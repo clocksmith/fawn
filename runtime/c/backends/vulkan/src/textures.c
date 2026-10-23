@@ -327,9 +327,16 @@ doe_vk_status doe_vk_sampler_create(doe_vk_context *context,
         desc->address_v < DOE_VK_ADDRESS_REPEAT || desc->address_v > DOE_VK_ADDRESS_CLAMP ||
         desc->address_w < DOE_VK_ADDRESS_REPEAT || desc->address_w > DOE_VK_ADDRESS_CLAMP ||
         !isfinite(desc->min_lod) || !isfinite(desc->max_lod) || desc->min_lod < 0 ||
-        desc->max_lod < desc->min_lod || desc->compare_operation > 7)
+        desc->max_lod < desc->min_lod || desc->compare_operation > 7 ||
+        (desc->max_anisotropy > 1 && (desc->min_filter != DOE_VK_FILTER_LINEAR ||
+            desc->mag_filter != DOE_VK_FILTER_LINEAR || desc->mipmap_filter != DOE_VK_FILTER_LINEAR)))
         return doe_vk_fail(DOE_VK_INVALID_ARGUMENT, "sampler descriptor", error);
     if (context->lost) return doe_vk_fail(DOE_VK_DEVICE_LOST, "sampler context", error);
+    const bool anisotropic = desc->max_anisotropy > 1;
+    if (anisotropic && !context->caps.sampler_anisotropy)
+        return doe_vk_fail(DOE_VK_UNSUPPORTED, "samplerAnisotropy not enabled", error);
+    float anisotropy = anisotropic ? (float)desc->max_anisotropy : 1.0f;
+    if (anisotropy > context->caps.max_sampler_anisotropy && anisotropic) anisotropy = context->caps.max_sampler_anisotropy;
     doe_vk_sampler *sampler = calloc(1, sizeof(*sampler));
     if (sampler == NULL) return doe_vk_fail(DOE_VK_OUT_OF_MEMORY, "sampler owner", error);
     doe_vk_status status = doe_vk_context_retain(context);
@@ -347,7 +354,8 @@ doe_vk_status doe_vk_sampler_create(doe_vk_context *context,
         .addressModeU = (uint32_t)desc->address_u,
         .addressModeV = (uint32_t)desc->address_v,
         .addressModeW = (uint32_t)desc->address_w,
-        .maxAnisotropy = 1,
+        .anisotropyEnable = anisotropic,
+        .maxAnisotropy = anisotropy,
         .compareEnable = desc->compare_enabled,
         .compareOp = desc->compare_operation,
         .minLod = desc->min_lod,

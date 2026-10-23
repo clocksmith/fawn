@@ -56,9 +56,14 @@ doe_resource_status doe_resource_external_texture_refresh(doe_resource_external_
 doe_resource_view *doe_resource_external_texture_plane(const doe_resource_external_texture *texture,
     size_t plane);
 
-/* One optional 2D color attachment and optional depth/stencil, at least one
- * required. Eight vertex buffers and four groups. Native support is separate. */
-enum { DOE_RESOURCE_MAX_VERTEX_BUFFERS = 8 };
+/* Up to eight indexed 2D color attachments (an absent view or Undefined format
+ * is an unused slot) and an optional depth/stencil; at least one attachment is
+ * required. Slot count and color bytes per sample use the config limits and the
+ * WebGPU render-target byte-cost table. Eight vertex buffers and four groups.
+ * Native support is separate. The single legacy color fields remain an input
+ * convenience for slot 0 only: they are rejected together with a nonzero color
+ * count and are normalized into the slot arrays, which alone are stored. */
+enum { DOE_RESOURCE_MAX_VERTEX_BUFFERS = 8, DOE_RESOURCE_MAX_COLOR_ATTACHMENTS = 8 };
 /* Undefined step mode plus last_attribute_end0 denotes a NULL slot, distinct
  * from an explicit Vertex/Instance slot with no attributes. Nonempty Undefined
  * defaults to Vertex. Pipeline construction normalizes actual holes to zero. */
@@ -67,19 +72,32 @@ typedef struct doe_resource_vertex_layout {
     WGPUVertexStepMode step_mode;
 } doe_resource_vertex_layout;
 typedef struct doe_resource_render_pipeline_desc {
-    WGPUTextureFormat color_format, depth_stencil_format;
+    WGPUTextureFormat color_format, depth_stencil_format; /* color_format: legacy slot 0. */
     uint32_t samples;
     bool depth_write, stencil_write;
     size_t vertex_count;
     doe_resource_vertex_layout vertices[DOE_RESOURCE_MAX_VERTEX_BUFFERS];
     WGPUPrimitiveTopology topology; /* Undefined defaults to TriangleList. */
     WGPUIndexFormat strip_index_format; /* Only meaningful for strip topologies. */
+    uint32_t color_count; /* Fragment target slots; Undefined entries are unused. */
+    WGPUTextureFormat color_formats[DOE_RESOURCE_MAX_COLOR_ATTACHMENTS];
 } doe_resource_render_pipeline_desc;
+/* Also the pass layout signature. Equal layouts ignore trailing unused slots. */
 typedef struct doe_resource_render_bundle_desc {
-    WGPUTextureFormat color_format, depth_stencil_format;
+    WGPUTextureFormat color_format, depth_stencil_format; /* color_format: legacy slot 0. */
     uint32_t samples;
     bool depth_read_only, stencil_read_only;
+    uint32_t color_count;
+    WGPUTextureFormat color_formats[DOE_RESOURCE_MAX_COLOR_ATTACHMENTS];
 } doe_resource_render_bundle_desc;
+/* One color slot. A NULL view is unused and requires Undefined load/store and
+ * no resolve target. A resolve target is a distinct single-sample view. */
+typedef struct doe_resource_color_attachment {
+    doe_resource_view *view, *resolve_target;
+    WGPULoadOp load;
+    WGPUStoreOp store;
+    double clear[4];
+} doe_resource_color_attachment;
 
 typedef struct doe_resource_render_targets {
     doe_resource_view *color, *depth_stencil;
@@ -97,6 +115,8 @@ typedef struct doe_resource_render_targets {
     /* False omits max_draw_count and ignores its value. True uses the exact
      * uint64 budget, including zero. Begin stores a normalized present value. */
     bool has_max_draw_count;
+    uint32_t color_count;
+    doe_resource_color_attachment colors[DOE_RESOURCE_MAX_COLOR_ATTACHMENTS];
 } doe_resource_render_targets;
 typedef struct doe_resource_render_state {
     float viewport[6]; /* x, y, width, height, minimum depth, maximum depth */

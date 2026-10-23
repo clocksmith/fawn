@@ -126,6 +126,7 @@ int main(void) {
     stencil_write_summary();
     doe_vk_context context = {.references = 1};
     context.caps.queue_flags = VK_QUEUE_GRAPHICS_BIT;
+    context.caps.max_color_attachments = 8;
     context.properties.limits.maxFramebufferWidth = context.properties.limits.maxFramebufferHeight = 64;
     context.properties.limits.maxViewportDimensions[0] = context.properties.limits.maxViewportDimensions[1] = 64;
     context.properties.limits.viewportBoundsRange[1] = 64;
@@ -189,7 +190,7 @@ int main(void) {
     desc.clear_depth = false;
     desc.depth_read_only = desc.stencil_read_only = true;
     doe_vk_pipeline pipeline = {.context = &context, .references = 1, .graphics = true,
-        .color_format = color.desc.format, .depth_stencil_format = depth.desc.format, .depth_write = true};
+        .color_count = 1, .color_formats = {color.desc.format}, .depth_stencil_format = depth.desc.format, .depth_write = true};
     doe_vk_render_pass_op op = {.kind = DOE_VK_RENDER_DRAW,
         .value.draw = {.pipeline = &pipeline, .draw = {.vertex_count = 3, .instance_count = 1,
             .viewport = {0, 0, 8, 8, 0, 1}, .scissor = {0, 0, 8, 8}}}};
@@ -214,7 +215,8 @@ int main(void) {
     doe_vk_render_pass_desc depth_only = {.depth_stencil = &depth_view,
         .depth_read_only = true, .stencil_read_only = true};
     rejected(&context, &depth_only, &op, DOE_VK_INVALID_ARGUMENT); /* Color pipeline mismatch. */
-    pipeline.color_format = 0;
+    pipeline.color_count = 0;
+    pipeline.color_formats[0] = 0;
     pipeline.depth_stencil_format = 0;
     rejected(&context, &depth_only, &op, DOE_VK_INVALID_ARGUMENT);
     pipeline.depth_stencil_format = depth.desc.format;

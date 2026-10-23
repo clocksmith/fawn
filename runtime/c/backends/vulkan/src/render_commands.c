@@ -53,14 +53,39 @@ typedef struct prepared_draw {
     VkBuffer indirect;
 } prepared_draw;
 
+/* Vulkan render-pass compatibility: equal per-slot formats, where missing
+ * trailing slots and unused slots are both unused. */
+static bool colors_compatible(const doe_vk_render_colors *colors, const doe_vk_pipeline *pipeline) {
+    uint32_t count = colors->count > pipeline->color_count ? colors->count : pipeline->color_count;
+    for (uint32_t i = 0; i < count; ++i) {
+        const doe_vk_texture_view *view = i < colors->count ? colors->slots[i].view : NULL;
+        doe_vk_texture_format pass = view != NULL ? view->texture->desc.format : 0;
+        if (pass != (i < pipeline->color_count ? pipeline->color_formats[i] : 0)) return false;
+    }
+    return true;
+}
+
+static bool attached(const doe_vk_render_pass_desc *desc, const doe_vk_render_colors *colors,
+    const doe_vk_texture *texture) {
+    if (desc->depth_stencil != NULL && desc->depth_stencil->texture == texture) return true;
+    for (uint32_t i = 0; i < colors->count; ++i) {
+        const doe_vk_color_attachment *slot = &colors->slots[i];
+        if ((slot->view != NULL && slot->view->texture == texture) ||
+            (slot->resolve_target != NULL && slot->resolve_target->texture == texture)) return true;
+    }
+    return false;
+}
+
 static doe_vk_status validate_pass_draw(doe_vk_commands *commands, const doe_vk_render_pass_desc *desc,
-    const doe_vk_render_pass_draw *draw, uint32_t width, uint32_t height, prepared_draw *prepared) {
+    const doe_vk_render_colors *colors, const doe_vk_render_pass_draw *draw, uint32_t width, uint32_t height,
+    prepared_draw *prepared) {
     doe_vk_pipeline *pipeline = draw->pipeline;
-    doe_vk_texture_view *target = desc->color != NULL ? desc->color : desc->depth_stencil;
+    doe_vk_texture_view *target = desc->depth_stencil;
+    for (uint32_t i = colors->count; i > 0; --i) if (colors->slots[i - 1].view != NULL) target = colors->slots[i - 1].view;
     if (pipeline == NULL || !pipeline->graphics || pipeline->context != commands->context ||
         draw->binding_count != pipeline->binding_count ||
         (draw->binding_count != 0 && draw->bindings == NULL) ||
-        (desc->color != NULL ? desc->color->texture->desc.format : 0) != pipeline->color_format ||
+        !colors_compatible(colors, pipeline) ||
         doe_vk_samples(target->texture->desc.sample_count) != doe_vk_samples(pipeline->sample_count) ||
         (desc->depth_stencil != NULL ? desc->depth_stencil->texture->desc.format : 0) != pipeline->depth_stencil_format ||
         (desc->depth_read_only && pipeline->depth_write) ||
@@ -105,9 +130,7 @@ static doe_vk_status validate_pass_draw(doe_vk_commands *commands, const doe_vk_
     for (size_t i = 0; i < draw->binding_count; ++i) {
         if ((draw->bindings[i].kind == DOE_VK_BINDING_SAMPLED_TEXTURE ||
             draw->bindings[i].kind == DOE_VK_BINDING_STORAGE_TEXTURE) &&
-            draw->bindings[i].value.view != NULL && (draw->bindings[i].value.view->texture == target->texture ||
-                (desc->depth_stencil != NULL && draw->bindings[i].value.view->texture == desc->depth_stencil->texture) ||
-                (desc->resolve_target != NULL && draw->bindings[i].value.view->texture == desc->resolve_target->texture)))
+            draw->bindings[i].value.view != NULL && attached(desc, colors, draw->bindings[i].value.view->texture))
             return DOE_VK_UNSUPPORTED;
     }
     prepared->scissor = (VkRect2D){
@@ -213,8 +236,11 @@ doe_vk_status doe_vk_commands_render_pass_full(doe_vk_commands *commands,
     if (status != DOE_VK_OK) return status;
     if ((count != 0 && ops == NULL) || count > SIZE_MAX / sizeof(prepared_draw))
         return doe_vk_poison(commands, DOE_VK_INVALID_ARGUMENT);
+    doe_vk_render_colors colors;
+    status = doe_vk_render_colors_normalize(desc, &colors);
+    if (status != DOE_VK_OK) return doe_vk_poison(commands, status);
     uint32_t width = 0, height = 0;
-    status = doe_vk_render_attachments_validate(commands, desc, &width, &height);
+    status = doe_vk_render_attachments_validate(commands, desc, &colors, &width, &height);
     if (status != DOE_VK_OK) return doe_vk_poison(commands, status);
     status = validate_query_ops(commands, occlusion, ops, count);
     if (status != DOE_VK_OK) return doe_vk_poison(commands, status);
@@ -222,7 +248,7 @@ doe_vk_status doe_vk_commands_render_pass_full(doe_vk_commands *commands,
     if (count != 0 && prepared == NULL) return doe_vk_poison(commands, DOE_VK_OUT_OF_MEMORY);
     for (size_t i = 0; i < count; ++i) {
         if (ops[i].kind != DOE_VK_RENDER_DRAW) continue;
-        status = validate_pass_draw(commands, desc, &ops[i].value.draw, width, height, &prepared[i]);
+        status = validate_pass_draw(commands, desc, &colors, &ops[i].value.draw, width, height, &prepared[i]);
         if (status != DOE_VK_OK) goto failed;
     }
     doe_vk_query_use *queries = NULL;
@@ -248,9 +274,9 @@ doe_vk_status doe_vk_commands_render_pass_full(doe_vk_commands *commands,
         if (status != DOE_VK_OK) goto failed;
     }
     doe_vk_render_use *use = NULL;
-    status = doe_vk_render_attachments_prepare(commands, desc, width, height, &use);
+    status = doe_vk_render_attachments_prepare(commands, desc, &colors, width, height, &use);
     if (status != DOE_VK_OK) goto failed;
-    doe_vk_render_attachments_begin(commands, use, desc, width, height);
+    doe_vk_render_attachments_begin(commands, use, desc, &colors, width, height);
     uint32_t active_index = 0;
     doe_vk_context *context = commands->context;
     for (size_t i = 0; i < count; ++i) {
@@ -321,9 +347,11 @@ void doe_vk_render_release(doe_vk_commands *commands) {
         commands->renders = use->next;
         if (use->framebuffer != 0) context->vk.vkDestroyFramebuffer(context->device, use->framebuffer, NULL);
         if (use->pass != 0) context->vk.vkDestroyRenderPass(context->device, use->pass, NULL);
-        doe_vk_texture_view_release(use->resolve);
+        for (uint32_t i = 0; i < use->color_count; ++i) {
+            doe_vk_texture_view_release(use->resolves[i]);
+            doe_vk_texture_view_release(use->colors[i]);
+        }
         doe_vk_texture_view_release(use->depth_stencil);
-        doe_vk_texture_view_release(use->target);
         free(use);
     }
 }

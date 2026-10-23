@@ -137,8 +137,11 @@ typedef struct doe_vk_sampler_desc {
     float max_lod;
     bool compare_enabled;
     uint32_t compare_operation; /* Vulkan NEVER=0 through ALWAYS=7. */
+    /* Zero or one disables anisotropy. Larger values require all three filters
+     * linear and enabled caps.sampler_anisotropy (UNSUPPORTED otherwise); the
+     * native value is clamped to caps.max_sampler_anisotropy. */
+    uint32_t max_anisotropy;
 } doe_vk_sampler_desc;
-/* No anisotropy is advertised/enabled by this baseline device owner. */
 doe_vk_status doe_vk_sampler_create(doe_vk_context *context,
     const doe_vk_sampler_desc *desc, doe_vk_sampler **out, doe_vk_error *error);
 doe_vk_status doe_vk_sampler_retain(doe_vk_sampler *sampler);

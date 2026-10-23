@@ -93,8 +93,8 @@ Apple SDK compilation, Darwin execution and physical qualification remain unrun.
   possibly poisoned normalizer; later work creates a fresh one. Unknown completion
   retains its command-owned dependencies and prevents reuse.
 - Genuine compiler-owned vertex/fragment entry reflection drives stage-specific selection,
-  shared automatic binding layouts and interface admission. Single-color render
-  or depth-only passes, direct draws, reusable bundles and occlusion queries lower through one
+  shared automatic binding layouts and interface admission. Color (up to the
+  device's eight indexed, possibly sparse, slots) or depth-only passes, direct draws, reusable bundles and occlusion queries lower through one
   ordered Vulkan pass span. The resource owner retains pass history, bindings,
   query identity and vertex ranges; native conversion owns no parallel recorder.
   Dynamic viewport/scissor/blend and culling use real backend state. Integer clear
@@ -320,19 +320,52 @@ every texture, as the reference core implementation does. Unknown or repeated ch
 nodes still reject. The provider does not yet advertise `CoreFeaturesAndLimits`;
 that separate claim needs complete core limits and is not made here.
 
+## Multiple color attachments and sampler anisotropy
+
+The resource owner admits indexed color slots (see its README); native conversion
+keeps WebGPU null slots (`view == NULL`, Undefined target format) as unused slots,
+never packing indices. Pipelines carry per-target format, write mask and blend
+state; each used target with a nonzero write mask needs the fragment output at its
+slot index with the format's scalar kind and enough components (four for source-
+alpha blending); alpha-to-coverage needs target 0. Passes carry per-slot load/store/
+clear values and optional resolve targets; bundles carry sparse color formats.
+`maxColorAttachments` reports the device's real count bounded by eight, and
+`maxColorAttachmentBytesPerSample` reports the WebGPU baseline 32 (Vulkan has no
+such per-sample byte limit); both feed resource admission. All slots lower into the
+backend's one native pass span. The C compiler already emits and reflects multiple
+`@location` fragment outputs (struct outputs; spirv-val clean for Vulkan 1.2).
+
+Sampler `maxAnisotropy` has no upper bound at admission; values above one require
+all filters linear, use the device's enabled `samplerAnisotropy`, and clamp to its
+maximum. A device without that feature rejects anisotropic samplers instead of
+silently using one (the spec would also permit clamping to 1). The C compiler only
+admits explicit-LOD `textureSampleLevel` (implicit `textureSample`, gradient and bias
+sampling are rejected), so derivative-driven anisotropic footprints cannot be
+exercised yet; the public check proves admission and a working anisotropic sampler.
+
+`tests/mrt.c` renders a sparse four-slot layout at exactly 32 bytes per sample
+(RGBA8Unorm additive blend, unused slot, RGBA32Uint, RGBA8Unorm with a green/alpha
+write mask) directly and through a sparse-format render bundle, resolves two 4x
+slots with discarded sources, and checks exact half-split pixels in every target.
+Negatives cover slot count, the byte budget, a subresource in two slots, only-unused
+slots, missing/mismatched outputs, blend on an unused slot and a packed pipeline
+against a sparse pass. `tests/anisotropy.c` checks zero/non-linear rejection, an
+above-maximum clamp and a 16x anisotropic explicit-LOD draw whose 1:1 texel-center
+oracle is exact for every filter; it is not a filtering-quality claim.
+
 ## Intentionally unprovided or rejected
 
 Vulkan indirect dispatch and nonindexed/indexed indirect
 pass/bundle draws use real GPU guards; Metal graphics, indirect and indexed draws remain uncomposed.
 Graphics
-admits one color attachment and/or depth/stencil, sample counts 1 and 4, direct
+admits up to eight sparse color slots and/or depth/stencil, sample counts 1 and 4, direct
 triangle/line lists or strips and 32-bit float/signed/unsigned vertex attributes.
 PointList target lowering, single-sample color Discard, dual-source blending,
 vertex or fragment storage writes and fragment FragDepth/SampleIndex/SampleMask
 remain explicitly rejected. WGSL discard requires actual enabled demote support;
 unsupported devices reject that pipeline. Blend constants must be finite f32.
 Texture format reinterpretation, depth storage, depth comparison sampling (compiler), multisampled
-sampling/copies/storage, cube arrays without device imageCubeArray and anisotropic sampling are rejected.
+sampling/copies/storage, and cube arrays without device imageCubeArray are rejected.
 The baseline admits 18 named Vulkan
 color formats, subject to actual device usage/format capabilities. Device
 descriptors may request TimestampQuery when the actual adapter supports the

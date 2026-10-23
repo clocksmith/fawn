@@ -67,6 +67,12 @@ typedef struct doe_resource_config {
      * Zero selects the WebGPU baseline 8192 for standalone internal callers;
      * public adapters must supply their actual requested device limit. */
     uint32_t max_texture_dimension_2d;
+    /* Requested color-attachment limits, copied with this config. Zero selects
+     * the WebGPU baselines 8 and 32 for standalone internal callers; public
+     * adapters supply their actual requested device limits. Counts above
+     * DOE_RESOURCE_MAX_COLOR_ATTACHMENTS are clamped to that storage bound. */
+    uint32_t max_color_attachments;
+    uint32_t max_color_attachment_bytes_per_sample;
 } doe_resource_config;
 
 typedef struct doe_resource_shader doe_resource_shader;

@@ -143,12 +143,55 @@ static void cube_array_admission(void) {
     assert(view == (doe_vk_texture_view *)&context && texture.references == 1 && context.references == 1);
 }
 
+static VkSamplerCreateInfo created_sampler;
+static unsigned sampler_creates;
+static VkResult create_sampler(VkDevice device, const VkSamplerCreateInfo *info,
+    const VkAllocationCallbacks *allocator, VkSampler *out) {
+    (void)device; (void)allocator;
+    created_sampler = *info;
+    ++sampler_creates;
+    *out = 5;
+    return 0;
+}
+static void destroy_sampler(VkDevice device, VkSampler sampler, const VkAllocationCallbacks *allocator) {
+    (void)device; (void)allocator;
+    assert(sampler == 5);
+}
+
+/* Anisotropy needs linear filters and enabled samplerAnisotropy; the native
+ * value clamps to the device maximum. Rejections make no native call. */
+static void sampler_anisotropy(void) {
+    doe_vk_context context = {.references = 1};
+    context.vk.vkCreateSampler = create_sampler;
+    context.vk.vkDestroySampler = destroy_sampler;
+    doe_vk_sampler_desc desc = {.min_filter = DOE_VK_FILTER_LINEAR, .mag_filter = DOE_VK_FILTER_LINEAR,
+        .mipmap_filter = DOE_VK_FILTER_LINEAR, .max_lod = 1, .max_anisotropy = 8};
+    doe_vk_sampler *sampler = NULL;
+    assert(doe_vk_sampler_create(&context, &desc, &sampler, NULL) == DOE_VK_UNSUPPORTED && !sampler);
+    context.caps.sampler_anisotropy = true;
+    context.caps.max_sampler_anisotropy = 4.0f;
+    desc.mipmap_filter = DOE_VK_FILTER_NEAREST;
+    assert(doe_vk_sampler_create(&context, &desc, &sampler, NULL) == DOE_VK_INVALID_ARGUMENT && !sampler);
+    assert(sampler_creates == 0 && context.references == 1);
+    desc.mipmap_filter = DOE_VK_FILTER_LINEAR;
+    assert(doe_vk_sampler_create(&context, &desc, &sampler, NULL) == DOE_VK_OK && sampler);
+    assert(created_sampler.anisotropyEnable == 1 && created_sampler.maxAnisotropy == 4.0f);
+    doe_vk_sampler_release(sampler);
+    desc.max_anisotropy = 1; /* One disables the feature even when filters are nearest. */
+    desc.min_filter = DOE_VK_FILTER_NEAREST;
+    assert(doe_vk_sampler_create(&context, &desc, &sampler, NULL) == DOE_VK_OK);
+    assert(created_sampler.anisotropyEnable == 0 && created_sampler.maxAnisotropy == 1.0f);
+    doe_vk_sampler_release(sampler);
+    assert(sampler_creates == 2 && context.references == 1);
+}
+
 int main(void) {
     format_admission();
     cube_array_admission();
+    sampler_anisotropy();
     bounds_and_pitch();
     queue_transfer_granularity();
     layout_and_initialization_transaction();
-    puts("PASS texture last-byte/mip/layer/overflow checks, cube-array feature/compatibility/whole-cube view admission, speculative layout/initialization rollback, concurrent owner exclusion and failed output");
+    puts("PASS texture last-byte/mip/layer/overflow checks, cube-array feature/compatibility/whole-cube view admission, speculative layout/initialization rollback, concurrent owner exclusion and failed output; sampler anisotropy feature gate, linear-filter rule and device-maximum clamp");
     return 0;
 }

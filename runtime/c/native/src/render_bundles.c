@@ -6,19 +6,24 @@ WGPURenderBundleEncoder wgpuDeviceCreateRenderBundleEncoder(WGPUDevice handle,
 {
     native_device *device = (native_device *)handle;
     if (!device) return NULL;
-    bool valid = descriptor && !descriptor->nextInChain && descriptor->colorFormatCount <= 1 &&
+    bool valid = descriptor && !descriptor->nextInChain && descriptor->colorFormatCount <= DOE_RESOURCE_MAX_COLOR_ATTACHMENTS &&
         (!descriptor->colorFormatCount || descriptor->colorFormats) &&
         (descriptor->sampleCount == 1 || descriptor->sampleCount == 4);
     doe_vk_texture_format depth;
     if (valid && descriptor->depthStencilFormat != WGPUTextureFormat_Undefined &&
         !native_depth_format(descriptor->depthStencilFormat, &depth)) valid = false;
     doe_resource_render_bundle_desc converted = {0};
-    if (valid) converted = (doe_resource_render_bundle_desc){.color_format=descriptor->colorFormatCount ? descriptor->colorFormats[0] : WGPUTextureFormat_Undefined,.depth_stencil_format=descriptor->depthStencilFormat,
-        .samples=descriptor->sampleCount,.depth_read_only=descriptor->depthReadOnly,.stencil_read_only=descriptor->stencilReadOnly};
+    if (valid) {
+        converted = (doe_resource_render_bundle_desc){.depth_stencil_format=descriptor->depthStencilFormat,
+            .samples=descriptor->sampleCount,.depth_read_only=descriptor->depthReadOnly,
+            .stencil_read_only=descriptor->stencilReadOnly,.color_count=(uint32_t)descriptor->colorFormatCount};
+        /* Undefined entries are unused slots; formats are admitted by the resource owner. */
+        for (size_t i = 0; i < descriptor->colorFormatCount; ++i) converted.color_formats[i] = descriptor->colorFormats[i];
+    }
     doe_resource_bundle_encoder *encoder = NULL;
     native_lock(device);
     doe_resource_status status = valid ? doe_resource_bundle_encoder_create(&device->resources,&converted,&encoder) :
-        DOE_RESOURCE_UNSUPPORTED;
+        descriptor && descriptor->colorFormatCount > DOE_RESOURCE_MAX_COLOR_ATTACHMENTS ? DOE_RESOURCE_RANGE : DOE_RESOURCE_UNSUPPORTED;
     native_unlock(device);
     if (status != DOE_RESOURCE_OK) native_error(device, native_resource_error(status), "render bundle descriptor unsupported or invalid");
     if (encoder) native_label(device, encoder, descriptor->label);

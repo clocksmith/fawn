@@ -90,7 +90,7 @@ static void test_resolve_targets(void)
             assert(count == 2);
             for (size_t i = 0; i < count; i++) {
                 const doe_resource_render_packet *packet = doe_resource_render_record_borrow(records[i].value.render);
-                assert(packet->targets.color == color && packet->targets.resolve_target == resolve);
+                assert(packet->targets.colors[0].view == color && packet->targets.colors[0].resolve_target == resolve);
             }
         } else {
             assert(!pass && f.allocations == allocations && f.device_references == references);
@@ -246,7 +246,7 @@ static void test_resolve_bundle_packets(void)
     assert(count == 4);
     for (size_t i = 0; i < count; i++) {
         const doe_resource_render_packet *packet = doe_resource_render_record_borrow(records[i].value.render);
-        assert(packet->targets.resolve_target == resolve && packet->targets.color == color);
+        assert(packet->targets.colors[0].resolve_target == resolve && packet->targets.colors[0].view == color);
         assert(packet->first_in_pass == (i == 0) && packet->last_in_pass == (i == 3));
         assert(!tokens[i].releases);
     }
