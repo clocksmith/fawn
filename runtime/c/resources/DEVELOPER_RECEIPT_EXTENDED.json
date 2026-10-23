@@ -1,0 +1,151 @@
+{
+  "status": "authored, developer-host and explicit-software-native exercised; unqualified",
+  "checked_at_utc": "2026-10-23T17:20:50.614588+00:00",
+  "observed_head": "e401fcface1b778823ac54dd3cea00ca7eb87a1b",
+  "compiler": "gcc (Debian 14.2.0-19) 14.2.0",
+  "source_unchanged_during_checks": true,
+  "checks": [
+    {
+      "command": [
+        "make",
+        "-C",
+        "runtime/c/resources",
+        "check"
+      ],
+      "environment": {},
+      "exit_code": 0,
+      "terminal_output": [
+        "make: Entering directory '/workspace/shared/doe-c-migration-20261023/runtime/c/resources'",
+        "/tmp/doe-c-resources/test_resources",
+        "resource owner: 13 host suites passed; no GPU execution claimed",
+        "/tmp/doe-c-resources/test_extended",
+        "extended resource owner: 7 host suites passed; no render/query GPU execution claimed",
+        "make: Leaving directory '/workspace/shared/doe-c-migration-20261023/runtime/c/resources'"
+      ]
+    },
+    {
+      "command": [
+        "make",
+        "-C",
+        "runtime/c/resources",
+        "BUILD=/tmp/doe-c-resources-asan",
+        "CFLAGS=-O1 -g -std=c11 -Wall -Wextra -Wpedantic -Werror -pthread -fsanitize=address,undefined -fno-omit-frame-pointer",
+        "check"
+      ],
+      "environment": {
+        "ASAN_OPTIONS": "detect_leaks=0"
+      },
+      "exit_code": 0,
+      "terminal_output": [
+        "gcc -Iinclude -I../instance/include -I../futures/include -I../labels/include -I../../zig/vendor/webgpu-headers -O1 -g -std=c11 -Wall -Wextra -Wpedantic -Werror -pthread -fsanitize=address,undefined -fno-omit-frame-pointer tests/test_extended.c /tmp/doe-c-resources-asan/libdoe_resources.a ../labels/src/native.c ../labels/src/store.c -o /tmp/doe-c-resources-asan/test_extended",
+        "/tmp/doe-c-resources-asan/test_resources",
+        "resource owner: 13 host suites passed; no GPU execution claimed",
+        "/tmp/doe-c-resources-asan/test_extended",
+        "extended resource owner: 7 host suites passed; no render/query GPU execution claimed",
+        "make: Leaving directory '/workspace/shared/doe-c-migration-20261023/runtime/c/resources'"
+      ]
+    },
+    {
+      "command": [
+        "timeout",
+        "--signal=TERM",
+        "--kill-after=5s",
+        "60s",
+        "make",
+        "-C",
+        "runtime/c/resources",
+        "vulkan-lifetime"
+      ],
+      "environment": {
+        "VK_ICD_FILENAMES": "/usr/lib/chromium/vk_swiftshader_icd.json"
+      },
+      "exit_code": 0,
+      "terminal_output": [
+        "make[1]: Leaving directory '/workspace/shared/doe-c-migration-20261023/runtime/c/backends/vulkan'",
+        "gcc -Iinclude -I../instance/include -I../futures/include -I../labels/include -I../../zig/vendor/webgpu-headers -I../backends/vulkan/include -O2 -g -std=c11 -Wall -Wextra -Wpedantic -Werror -pthread tests/vulkan_lifetime.c /tmp/doe-c-resources/libdoe_resources.a ../labels/src/native.c ../labels/src/store.c /tmp/doe-c-resources-vulkan/libdoe_vk.a -ldl -o /tmp/doe-c-resources/vulkan_lifetime",
+        "/tmp/doe-c-resources/vulkan_lifetime --allow-software",
+        "Software Vulkan lifetime consumer: SwiftShader Device (Subzero); not physical GPU qualification",
+        "PASS C resource adoption, early caller release, pending retention, real fill/buffer copy/image upload/copy/readback and terminal release",
+        "make: Leaving directory '/workspace/shared/doe-c-migration-20261023/runtime/c/resources'"
+      ]
+    },
+    {
+      "command": [
+        "python3",
+        "runtime/c/tools/check_source_size.py"
+      ],
+      "environment": {},
+      "exit_code": 0,
+      "terminal_output": [
+        "C size check: 329 files, 0 failures; limit 999"
+      ]
+    }
+  ],
+  "physical_line_limit": 999,
+  "max_owned_c_header_lines": 507,
+  "limitations": [
+    "LeakSanitizer disabled because ptrace environment prevents its execution; exact fixture allocations and native leases reach zero.",
+    "No independent acceptance, full retained-surface parity, physical GPU or performance claim.",
+    "Render/query/external-texture ownership host checked; no native render/query execution or external texture conversion claim."
+  ],
+  "sha256": {
+    "runtime/c/backends/vulkan/Makefile": "c6680130c2af8a62331a94ca9f408fcb90249b6f536a13bcb70752d55d325c32",
+    "runtime/c/backends/vulkan/include/doe_vk.h": "ef9164f13735d8c78762207a48ebe179160608e9b9aa3ea5468a386819fbfa24",
+    "runtime/c/backends/vulkan/include/doe_vk_texture.h": "7329f3e5cc6b0bd793a2a2a9b451d5836f7ffead6ead4c6b4ec863383d555511",
+    "runtime/c/backends/vulkan/src/commands.c": "32f72661b1d4a6b3686f920913663d53802a76bd37de4dd71f120eee4a5a8c82",
+    "runtime/c/backends/vulkan/src/internal.h": "d952ab0171a501e2f9ce62a593bef9d8ae31b50938edef994c98cb81fd748283",
+    "runtime/c/backends/vulkan/src/loader.c": "cd00b0409534c158b43bc161e48564297671cd8ac880465c7ddd7a5a731467c7",
+    "runtime/c/backends/vulkan/src/pipeline.c": "28a5899cc95f532e26768bc780625eff18ab31aa239a2c7c2edacdd8d829cce2",
+    "runtime/c/backends/vulkan/src/resources.c": "da8cb3df5fa3dec7549a4ed4c0e04e5b975e23d952d46c911e8d0e2acfb15b4c",
+    "runtime/c/backends/vulkan/src/texture_commands.c": "f9811c0c450fa5451574add925f24395ded65ace0e37f53bc8f850800934befb",
+    "runtime/c/backends/vulkan/src/texture_internal.h": "0d7b82689cab5564007e90dfeb2e50d60ea3e7394118c512576967d9e371ab31",
+    "runtime/c/backends/vulkan/src/textures.c": "7e8b473c2b2f5e6d7edcd5806010ddd1fe87c4b1aeed709fa7fc2fafb6bdec5a",
+    "runtime/c/backends/vulkan/src/vk_abi_caps.h": "0b059bf50f45d3b3989f480151f67787938ec54a4f52e6067f2cc6e807197a43",
+    "runtime/c/backends/vulkan/src/vk_abi_constants.h": "ef5c39f7d309616391f8987ebc80c63820b45740bd9fd2a6b89f363bbe2fc9e7",
+    "runtime/c/backends/vulkan/src/vk_abi_functions.h": "9291e3753eb544edcaed7cda16e3d747b17bf41b0add75655ea3e1b5cd01e558",
+    "runtime/c/backends/vulkan/src/vk_abi_images.h": "b6d5fc90ff6c74d5f0b54a6a030c0cec743535ee9a5f8e88ea31ae18460da280",
+    "runtime/c/backends/vulkan/src/vk_abi_structs.h": "9a3f6f239aae45ddcd00aefc7aea8d335d39c8aaf7b7a5b7411e982b92b385ad",
+    "runtime/c/backends/vulkan/src/vk_abi_types.h": "4fc5a2673419f35adb5fe7877619f743584e1398791577cd193449f1e0d0404e",
+    "runtime/c/backends/vulkan/tests/native_compute.c": "b477302b45d0369b07246eda1b3ed70753c45c0da95fa2cfaa58b61f8f7cff73",
+    "runtime/c/backends/vulkan/tests/native_texture.c": "26235c9473f3893cc15b6db92a6e94424ef344fd03638391d34b3d777fbed661",
+    "runtime/c/backends/vulkan/tests/ownership.c": "6ce4961eed9a33471000d2b20a888b66177923d641464166bbb1121ec3f3a7d2",
+    "runtime/c/backends/vulkan/tests/probe.c": "2a4e283c8886bb9a0c25acfd33debd5f7054a61ce76dfbf310eb9aaa56be73ed",
+    "runtime/c/backends/vulkan/tests/texture_contract.c": "4dacf808c7482890234e3950020762eb007fee7b7ced86c060217011f84f5343",
+    "runtime/c/futures/include/doe_futures.h": "64df7b659fa61de34c3f26a8a8762c70a41d3f35d301a54ffe11877f43ca3404",
+    "runtime/c/instance/include/doe_instance.h": "4356d4991f19d040a2d8a5d8e121d282530d362dcabdc892888148a68af8acfb",
+    "runtime/c/labels/Makefile": "1185bad69795d7b375afe29cbb831621c95fff8d50172b6a4a940757822b68cd",
+    "runtime/c/labels/include/doe_labels.h": "45e6dded64cbf366ddf5f4bcb409cb4bad93914b2af31cc58c82783ad7f12aea",
+    "runtime/c/labels/include/doe_labels_native_private.h": "fe80893339e7264e9672063e0ce89a3e5ce8757ce4e9298fbb3a63d164f4e4cb",
+    "runtime/c/labels/src/internal.h": "a84e6ae87c801faa9935466e89abad1ae5367fb0fc8946d30ebf71e5976c965c",
+    "runtime/c/labels/src/native.c": "e65399cdb50ef030b520388be1ee1f327c0a05e412281578c097d711e3dac2a2",
+    "runtime/c/labels/src/store.c": "2d67603cd1621e555340b4a52ad553377295c17215fed6c19c18bd4000c9595f",
+    "runtime/c/labels/tests/test_faults.c": "76c130d8df6b6fbc155dbb6290a2e744835cc84886341c5113cb0d9eaf79d21d",
+    "runtime/c/labels/tests/test_store.c": "c5615ef160473803b1b56fe37eab7e4425b4e32145c52f4901f02799a5d90135",
+    "runtime/c/resources/Makefile": "254c85ff5af3d823082d1afde2bbd69ebcd9ab0e554291a22342c7d6a3fcbece",
+    "runtime/c/resources/include/doe_resources.h": "89f2fea8336489a55cc73f0f0e0ecc5e64809bff1c10ef931584b159cd224456",
+    "runtime/c/resources/include/doe_resources_extended.h": "c28f100a7b0e8498e52ac3920f18b564c6cf9aa283d1401f09813ba918a5dd15",
+    "runtime/c/resources/src/accessors.c": "1978ca0718e2401321833cf253e6494db9bae8cdc50155f3559de0aa3f470a94",
+    "runtime/c/resources/src/bindings.c": "46008bd1ce8f6e93be6ec3ceee162cd11020ead59c931e4f1b7a2a8945b3f349",
+    "runtime/c/resources/src/commands.c": "c8aba11be77fb3d78b599ae45021847d80ada5b90ccc20cbfb58f39cf3c806a9",
+    "runtime/c/resources/src/compute_pass.c": "521a5ea7c85e95f19d75c20c47241dd1a1d1275eaf7db563a74fde8d69981684",
+    "runtime/c/resources/src/external_textures.c": "e7e8e3cd53d5c6d8e235533659a17856125d2e1cedb776cf08d8f7b1478490e7",
+    "runtime/c/resources/src/formats.c": "859c3d76a8859d34c1496d37534b839f9462ed489591099019aad0e0e7aa924d",
+    "runtime/c/resources/src/internal.h": "8995a03f3099bab0bac9cf350a0db4bbc83ddb553a41dd720f2b3079e3902a82",
+    "runtime/c/resources/src/objects.c": "9be5b59fc6f8eca943292c22e68725678e17a16fd8668d2528aac54a83b00914",
+    "runtime/c/resources/src/queries.c": "9fcf5e933813e6f5908436981e907233e88bf6229366f46638aa87416c263778",
+    "runtime/c/resources/src/render.c": "6c92eb772f28904021a1f08007e681b32c150acac7ed1fd9f5d9d9d6ab52fbb2",
+    "runtime/c/resources/src/texture_copy.c": "5e75ba4162f5d081960f56b62d7a9fe06f8c5ddf8fb71546b07e7d49cc86972b",
+    "runtime/c/resources/src/textures.c": "ed47609a655a9746b31b9ef926f1d81254754971f26a1cde697b91259badfdec",
+    "runtime/c/resources/tests/fixture.h": "2d5bf21b9e67fedd2298b8f443ed7341ba1991191a23ff6bebdaf05643329f98",
+    "runtime/c/resources/tests/test_extended.c": "01b29c88aced5bc2f3909d05c59f98863f0ab4d84e786fef6ef9f5fadb4e29c7",
+    "runtime/c/resources/tests/test_resources.c": "47180655fa848e29b437d51bfdfc7ee5cd515d11b278f2710a478ad7b56daf8e",
+    "runtime/c/resources/tests/vulkan_lifetime.c": "e9b0a9843edebd41706df2ac0ec88bba30242e0f4c55c169c4ef4a64fbf18f67",
+    "runtime/zig/vendor/webgpu-headers/webgpu.h": "7691d76ceb67056f89e97b9ff0b62163eacf19a8e0e09a8fa7dbb32069b7978c"
+  },
+  "binaries_sha256": {
+    "/tmp/doe-c-resources/test_resources": "9467640ca6ddfcd79d41a1753eca8a4f31c50b1c2f52ae38f960c2184765b3a6",
+    "/tmp/doe-c-resources/test_extended": "1d7443ad439d03830174961521817876e3c7e576174ef240199d4133282cb2e3",
+    "/tmp/doe-c-resources/vulkan_lifetime": "8ab9866a92f410fb86aea4de54c96c7e0646ef387ed85dd59a445e6682f7220a",
+    "/tmp/doe-c-resources-asan/test_extended": "fc890dd26679d67fd3882e6bee919d3ed215329c010bb647971431943b16a2c0"
+  }
+}

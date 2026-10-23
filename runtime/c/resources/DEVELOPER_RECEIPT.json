@@ -1,0 +1,74 @@
+{
+  "status": "authored, developer-host-exercised; unqualified",
+  "observed_head": "0fd4ef9967252177cba43f28f729111dffe9c8ee",
+  "checked_at_utc": "2026-10-23T16:56:39.807298+00:00",
+  "compiler": "gcc (Debian 14.2.0-19) 14.2.0",
+  "source_unchanged_during_checks": true,
+  "checks": [
+    {
+      "command": [
+        "make",
+        "-C",
+        "runtime/c/resources",
+        "check"
+      ],
+      "environment": {},
+      "exit_code": 0,
+      "result": "13 host suites passed; no GPU execution claimed"
+    },
+    {
+      "command": [
+        "make",
+        "-C",
+        "runtime/c/resources",
+        "BUILD=/tmp/doe-c-resources-asan",
+        "CFLAGS=-O1 -g -std=c11 -Wall -Wextra -Wpedantic -Werror -pthread -fsanitize=address,undefined -fno-omit-frame-pointer",
+        "check"
+      ],
+      "environment": {
+        "ASAN_OPTIONS": "detect_leaks=0"
+      },
+      "exit_code": 0,
+      "result": "13 host suites passed; no GPU execution claimed"
+    }
+  ],
+  "max_owned_c_header_lines": 604,
+  "physical_line_limit": 999,
+  "first_failures": [
+    {
+      "kind": "developer fixture correction",
+      "detail": "Overflow fixture incorrectly used UINT32_MAX rows-per-image, which denotes undefined stride. Corrected fixture to UINT32_MAX-1 to exercise checked multiplication; no acceptance threshold changed."
+    },
+    {
+      "kind": "environment limitation",
+      "detail": "Default LeakSanitizer exits fatally under ptrace. AddressSanitizer and UndefinedBehaviorSanitizer run successfully with detect_leaks=0. Exact fixture allocator/native ownership counters reach zero."
+    }
+  ],
+  "not_established": [
+    "production ABI integration",
+    "complete retained-surface parity",
+    "independent acceptance",
+    "physical GPU execution or performance",
+    "full-process leak qualification"
+  ],
+  "sha256": {
+    "runtime/c/resources/Makefile": "6604de4489902e451cfda5dde1300673376f151b80760a98e868ddd46db7ca53",
+    "runtime/c/resources/include/doe_resources.h": "a495e37d7b979ff67797c859ec5cb622f27da53862f3c3c54e192d3c2b81ac22",
+    "runtime/c/resources/src/bindings.c": "1ae135ce14849565277aa9d4e077678ef79cd753fd2ac71d455c723d53a9e8c4",
+    "runtime/c/resources/src/commands.c": "47b3fe5c6b7a37899bf5d5f75da1494af29f37a05ec43a6ababdd536cc77430e",
+    "runtime/c/resources/src/formats.c": "859c3d76a8859d34c1496d37534b839f9462ed489591099019aad0e0e7aa924d",
+    "runtime/c/resources/src/internal.h": "891d1ba137bfad91e29f8a59e7425e5490eb69e366d23c3e95ceea693edf09c5",
+    "runtime/c/resources/src/objects.c": "ad7ead4199e7e2db886af509cf8e43b9c9af2c67a77ec6e2a0d250df9a7771c4",
+    "runtime/c/resources/src/texture_copy.c": "62c6c8d84f6518a883d7ae47b5a705f6aff04e55c42213585d344f9d7da4318e",
+    "runtime/c/resources/src/textures.c": "ed47609a655a9746b31b9ef926f1d81254754971f26a1cde697b91259badfdec",
+    "runtime/c/resources/tests/test_resources.c": "7f590c24eb3a88b32782ad128db3cb3c043c3fd71dfacb9d2bf4e06265e4a65a",
+    "runtime/c/labels/src/internal.h": "a84e6ae87c801faa9935466e89abad1ae5367fb0fc8946d30ebf71e5976c965c",
+    "runtime/c/labels/src/native.c": "e65399cdb50ef030b520388be1ee1f327c0a05e412281578c097d711e3dac2a2",
+    "runtime/c/labels/src/store.c": "2d67603cd1621e555340b4a52ad553377295c17215fed6c19c18bd4000c9595f",
+    "runtime/c/labels/include/doe_labels.h": "45e6dded64cbf366ddf5f4bcb409cb4bad93914b2af31cc58c82783ad7f12aea",
+    "runtime/c/labels/include/doe_labels_native_private.h": "fe80893339e7264e9672063e0ce89a3e5ce8757ce4e9298fbb3a63d164f4e4cb",
+    "runtime/c/instance/include/doe_instance.h": "4356d4991f19d040a2d8a5d8e121d282530d362dcabdc892888148a68af8acfb",
+    "runtime/c/futures/include/doe_futures.h": "64df7b659fa61de34c3f26a8a8762c70a41d3f35d301a54ffe11877f43ca3404",
+    "runtime/zig/vendor/webgpu-headers/webgpu.h": "7691d76ceb67056f89e97b9ff0b62163eacf19a8e0e09a8fa7dbb32069b7978c"
+  }
+}
