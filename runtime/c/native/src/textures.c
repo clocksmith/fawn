@@ -22,7 +22,13 @@ WGPUTexture wgpuDeviceCreateTexture(WGPUDevice handle, const WGPUTextureDescript
     }
     const WGPUTextureUsage supported = WGPUTextureUsage_CopySrc | WGPUTextureUsage_CopyDst |
         WGPUTextureUsage_TextureBinding | WGPUTextureUsage_StorageBinding | WGPUTextureUsage_RenderAttachment;
-    if (!descriptor || descriptor->nextInChain ||
+    /* The header requires accepting WGPUTextureBindingViewDimension. This provider
+     * has no compatibility-mode view restrictions (flexible views, as in core
+     * mode), so its contents are ignored exactly like on a core device. Other
+     * or repeated chain nodes remain unsupported. */
+    const WGPUChainedStruct *chain = descriptor ? descriptor->nextInChain : NULL;
+    bool chain_supported = !chain || (chain->sType == WGPUSType_TextureBindingViewDimension && !chain->next);
+    if (!descriptor || !chain_supported ||
         descriptor->usage & ~supported || (descriptor->viewFormatCount && !descriptor->viewFormats)) {
         native_error(device, WGPUErrorType_Validation, "texture descriptor unsupported");
         return NULL;
@@ -161,4 +167,12 @@ WGPUTextureUsage wgpuTextureGetUsage(WGPUTexture texture)
 {
     const doe_resource_texture_desc *desc = doe_resource_texture_description((doe_resource_texture *)texture);
     return desc ? desc->usage : WGPUTextureUsage_None;
+}
+/* Core-mode semantics: the compatibility textureBindingViewDimension is not
+ * retained when texture views are flexible, so every texture reports Undefined
+ * (matching the reference core implementation), never a guessed default. */
+WGPUTextureViewDimension wgpuTextureGetTextureBindingViewDimension(WGPUTexture texture)
+{
+    (void)texture;
+    return WGPUTextureViewDimension_Undefined;
 }

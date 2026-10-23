@@ -131,6 +131,11 @@ static void surface_teardown(native_surface *surface)
         /* Unknown presentation retains surface, device and borrowed platform
          * obligations rather than freeing state the native queue may use. */
         if (status != DOE_VK_OK) return;
+        /* Lease guarantee: public teardown runs with no owner lock held. When a
+         * frame payload finalizer runs this inside settlement under the device
+         * mutex, the finalizing resource still holds its own device lease
+         * (released after its native payload), so this drop cannot finalize the
+         * device or join its progress worker. */
         native_device_release(device);
     }
     if (doe_label_store_destroy(surface->labels) != DOE_LABEL_OK) abort();
