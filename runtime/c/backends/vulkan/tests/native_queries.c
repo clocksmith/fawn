@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: MIT */
 #include "../include/doe_vk_queries.h"
 #include <stdio.h>
 #include <stdlib.h>

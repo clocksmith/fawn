@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: MIT */
 #include "../src/render_internal.h"
 #include "../src/query_internal.h"
 #include <assert.h>

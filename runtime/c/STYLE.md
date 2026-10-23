@@ -45,8 +45,8 @@ Do not reformat frozen milestones to meet a metric. See
 ## Readability and decisive checks
 
 Use ordinary four-space indentation, owner brace/naming conventions and one
-nontrivial state change per line. Every C source/header has at most **999 physical lines**, enforced by
-`python3 runtime/c/tools/check_source_size.py`. Split cohesive responsibilities,
+nontrivial state change per line. Every C/C++/Objective-C source and header has
+at most **999 physical lines**. Split cohesive responsibilities,
 not arbitrary chunks; keep explanatory comments, diagnostics and provenance. No minification,
 line packing, hidden mutable globals, public test-mutation hooks or code-golf macros.
 Existing bounded serialization macros do not justify a new framework.
@@ -64,6 +64,25 @@ separate from frozen independent acceptance. Compilation, sanitizers, target
 validation, native consumption and physical execution prove different things.
 Bind source/build/test identities, refuse drift and retain first failures. Later
 refactors need separate checks; earlier receipts never qualify changed bytes.
+
+## Mechanically enforced rules
+
+`python3 runtime/c/tools/check_style.py` (also run by `make -C runtime/c check`)
+fails on each of these; fix the source rather than adding an exemption:
+
+- **size**: at most 999 physical lines per C/C++/Objective-C source or header.
+- **license**: an `SPDX-License-Identifier` within the first three lines. Doe-authored
+  code is `MIT`; translated ABI declarations keep their provenance comment too.
+- **guard**: every header has an `#ifndef NAME` / `#define NAME` guard or `#pragma once`.
+- **pragma**: no `#pragma GCC|clang diagnostic ignored|warning`; fix the warning.
+- **flags**: an owner Makefile that defines `CFLAGS` compiles with
+  `-std=c11 -Wall -Wextra -Wpedantic -Werror`.
+
+Frozen evidence is exempt from license and guard only: `independent_tests*` trees and
+files whose bytes still match a committed `*.sha256` seal. Editing a sealed file makes
+it live source, subject to every rule. `make -C runtime/c check-build` builds every
+owner so a changed shared header, enum or status set cannot pass while breaking a
+consumer; owner `check` targets remain the behavioral gates.
 
 ## Pinned Gamma lessons, not a new engine or a size prediction
 

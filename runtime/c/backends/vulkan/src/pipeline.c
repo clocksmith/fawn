@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: MIT */
 #include "internal.h"
 
 static doe_vk_status validate_layout(const doe_vk_context *context,

@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: MIT */
 /* Exact selected retained vk_structs.zig records, including unions. */
 #ifndef DOE_VK_ABI_RENDER_H
 #define DOE_VK_ABI_RENDER_H

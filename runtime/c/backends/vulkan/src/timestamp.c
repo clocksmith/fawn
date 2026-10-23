@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: MIT */
 #include "timestamp_internal.h"
 #include "timestamp_shader.h"
 #include <float.h>

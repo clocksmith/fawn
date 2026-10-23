@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: MIT */
 #include "draw_indirect_internal.h"
 
 static const char draw_source[] =

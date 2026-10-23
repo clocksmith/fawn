@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: MIT */
 #ifndef DOE_VK_TIMESTAMP_SHADER_H
 #define DOE_VK_TIMESTAMP_SHADER_H
 /* Verbatim retained WGSL body; provenance and byte identity are checked by

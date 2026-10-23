@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: MIT */
 #ifndef DOE_VK_TEXTURE_H
 #define DOE_VK_TEXTURE_H
 #include "doe_vk.h"

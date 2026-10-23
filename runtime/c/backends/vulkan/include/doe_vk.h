@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: MIT */
 #ifndef DOE_VK_H
 #define DOE_VK_H
 #include <stdbool.h>

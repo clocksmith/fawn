@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: MIT */
 /* Exact selected retained vk_structs.zig declarations; see ABI_PROVENANCE.json. */
 #ifndef DOE_VK_ABI_IMAGES_H
 #define DOE_VK_ABI_IMAGES_H

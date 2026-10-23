@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: MIT */
 #ifndef DOE_VK_INTERNAL_H
 #define DOE_VK_INTERNAL_H
 #include "../include/doe_vk.h"

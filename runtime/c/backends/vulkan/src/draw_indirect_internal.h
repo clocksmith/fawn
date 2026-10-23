@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: MIT */
 #ifndef DOE_VK_DRAW_INDIRECT_INTERNAL_H
 #define DOE_VK_DRAW_INDIRECT_INTERNAL_H
 #include "render_internal.h"

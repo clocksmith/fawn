@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: MIT */
 #include "surface_internal.h"
 
 /* One bounded enumeration owner for optional features and explicit WSI. No

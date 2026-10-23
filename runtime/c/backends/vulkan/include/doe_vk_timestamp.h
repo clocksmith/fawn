@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: MIT */
 #ifndef DOE_VK_TIMESTAMP_H
 #define DOE_VK_TIMESTAMP_H
 #include "doe_vk_queries.h"

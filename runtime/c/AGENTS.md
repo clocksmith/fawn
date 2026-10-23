@@ -8,9 +8,15 @@ new exhaustive independent qualification campaign before implementing the next
 subsystem. Integrated independent qualification still precedes qualified cutover.
 Label authored, compiled, exercised, accepted and hardware-qualified separately.
 
-- Every C source and header is at most 999 physical lines. Run
-  `python3 runtime/c/tools/check_source_size.py` from the repository root.
+- Run `make -C runtime/c check` before committing: mechanical style
+  (`tools/check_style.py`), tool tests and a build of every owner. Each owner's own
+  `check` remains its behavioral gate; this one catches cross-owner breakage.
+- Every C/C++/Objective-C source and header is at most 999 physical lines.
   Split meaningful responsibilities; never pack lines or hide generated complexity.
+- A changed public header, enum or status set builds and checks every in-tree
+  consumer in the same commit. New or changed status conversions switch
+  exhaustively (no `default:` hiding a new value), so `-Werror=switch` names each
+  consumer to update.
 - One rule, representation and lifetime owner. Reuse existing typed operations
   rather than parallel parsers, classifiers, queues or reference counts.
 - Remove superseded helpers and obsolete live guidance when replacing them;
