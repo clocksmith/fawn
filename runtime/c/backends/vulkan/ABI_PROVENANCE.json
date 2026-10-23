@@ -457,6 +457,13 @@
       "result": "void",
       "parameters": "VkCommandBuffer, VkBuffer, VkDeviceSize, uint32_t, uint32_t",
       "usage": "One guarded indexed draw per call from distinct scratch, stride20; drawIndirectFirstInstance remains disabled."
+    },
+    "vkResetFences": {
+      "source": "vk_functions.zig:21",
+      "signature": "VkResult(VkDevice,u32,*const VkFence)",
+      "result": "VkResult",
+      "parameters": "VkDevice, uint32_t, const VkFence *",
+      "usage": "Re-arms a reusable compute-program recording's own fence before each resubmission, after proven completion."
     }
   },
   "retained_constants": {

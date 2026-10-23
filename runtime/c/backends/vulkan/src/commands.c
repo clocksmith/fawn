@@ -51,7 +51,7 @@ void doe_vk_barrier(doe_vk_commands *commands) {
         1, &barrier, 0, NULL, 0, NULL);
 }
 
-doe_vk_status doe_vk_commands_create(doe_vk_context *context,
+static doe_vk_status create_commands(doe_vk_context *context, bool reusable,
     doe_vk_commands **out, doe_vk_error *error) {
     if (context == NULL || out == NULL) return doe_vk_fail(DOE_VK_INVALID_ARGUMENT, "command descriptor", error);
     if (context->lost) return doe_vk_fail(DOE_VK_DEVICE_LOST, "command context", error);
@@ -65,6 +65,8 @@ doe_vk_status doe_vk_commands_create(doe_vk_context *context,
     commands->context = context;
     commands->state = DOE_VK_RECORDING;
     commands->uses_active = true;
+    commands->reusable = reusable;
+    commands->references = 1;
     const VkCommandPoolCreateInfo pool = {
         .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
         .flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT,
@@ -84,7 +86,7 @@ doe_vk_status doe_vk_commands_create(doe_vk_context *context,
     if (status != DOE_VK_OK) goto failed;
     const VkCommandBufferBeginInfo begin = {
         .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
-        .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT
+        .flags = reusable ? 0 : VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT
     };
     status = doe_vk_result(context, context->vk.vkBeginCommandBuffer(commands->command, &begin), "vkBeginCommandBuffer", error);
     if (status != DOE_VK_OK) goto failed;
@@ -93,6 +95,23 @@ doe_vk_status doe_vk_commands_create(doe_vk_context *context,
 failed:
     (void)doe_vk_commands_release(commands);
     return status;
+}
+
+doe_vk_status doe_vk_commands_create(doe_vk_context *context,
+    doe_vk_commands **out, doe_vk_error *error) {
+    return create_commands(context, false, out, error);
+}
+
+doe_vk_status doe_vk_commands_create_reusable(doe_vk_context *context,
+    doe_vk_commands **out, doe_vk_error *error) {
+    return create_commands(context, true, out, error);
+}
+
+doe_vk_status doe_vk_commands_retain(doe_vk_commands *commands) {
+    if (commands == NULL || !commands->reusable) return DOE_VK_INVALID_ARGUMENT;
+    if (commands->references == UINT32_MAX) return DOE_VK_OUT_OF_MEMORY;
+    ++commands->references;
+    return DOE_VK_OK;
 }
 
 doe_vk_status doe_vk_commands_copy(doe_vk_commands *commands,
@@ -154,7 +173,8 @@ static void complete(doe_vk_commands *commands, doe_vk_status status, const doe_
                 (doe_vk_error){status, 0, "terminal failure"};
         status = commands->failure.status;
     }
-    commands->state = status == DOE_VK_OK ? DOE_VK_COMPLETE : DOE_VK_FAILED;
+    commands->state = status != DOE_VK_OK ? DOE_VK_FAILED :
+        commands->reusable ? DOE_VK_READY : DOE_VK_COMPLETE;
     doe_vk_textures_complete(commands, status);
     doe_vk_queries_complete(commands, status);
     if (!commands->uses_active) return;
@@ -166,11 +186,93 @@ static void complete(doe_vk_commands *commands, doe_vk_status status, const doe_
     commands->uses_active = false;
 }
 
+/* A reusable recording keeps only state whose meaning does not change between
+ * submissions: buffer uses and descriptor-bound dispatches. */
+static bool reusable_admissible(const doe_vk_commands *commands) {
+    return commands->textures == NULL && commands->queries == NULL &&
+        commands->renders == NULL && commands->surface == NULL;
+}
+
+static doe_vk_status queue_submit(doe_vk_commands *commands, doe_vk_error *error) {
+    doe_vk_context *context = commands->context;
+    const VkSubmitInfo submit = {
+        .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+        .commandBufferCount = 1,
+        .pCommandBuffers = &commands->command,
+        .signalSemaphoreCount = commands->surface != NULL ? 1 : 0,
+        .pSignalSemaphores = commands->surface != NULL ? &commands->surface->render_finished : NULL
+    };
+    commands->state = DOE_VK_SUBMITTED;
+    doe_vk_status status = doe_vk_result(context, context->vk.vkQueueSubmit(context->queue, 1, &submit, commands->fence), "vkQueueSubmit", error);
+    if (status == DOE_VK_DEVICE_LOST) complete(commands, status, error);
+    else if (status != DOE_VK_OK) {
+        commands->state = DOE_VK_UNCERTAIN;
+        commands->failure = *error;
+    }
+    return status;
+}
+
+/* READY recording: buffer uses were dropped at completion so buffers could be
+ * mapped; re-acquire them, then re-arm this recording's own fence. */
+static doe_vk_status resubmit(doe_vk_commands *commands, doe_vk_error *error) {
+    doe_vk_context *context = commands->context;
+    if (context->lost) return doe_vk_fail(DOE_VK_DEVICE_LOST, "resubmit device lost", error);
+    for (doe_vk_buffer_use *use = commands->buffers; use != NULL; use = use->next) {
+        if (use->buffer->content_status != DOE_VK_OK)
+            return doe_vk_fail(use->buffer->content_status, "resource content from failed submission", error);
+        if (use->buffer->recorded_uses == UINT32_MAX) return doe_vk_fail(DOE_VK_OUT_OF_MEMORY, "buffer use count", error);
+    }
+    for (doe_vk_buffer_use *use = commands->buffers; use != NULL; use = use->next) ++use->buffer->recorded_uses;
+    commands->uses_active = true;
+    doe_vk_status status = doe_vk_result(context, context->vk.vkResetFences(context->device, 1, &commands->fence),
+        "vkResetFences", error);
+    if (status != DOE_VK_OK) {
+        /* Never dispatched: drop the uses without poisoning buffer contents, but
+         * the recording itself is terminal. */
+        for (doe_vk_buffer_use *use = commands->buffers; use != NULL; use = use->next) --use->buffer->recorded_uses;
+        commands->uses_active = false;
+        commands->state = DOE_VK_FAILED;
+        commands->failure = *error;
+        return status;
+    }
+    return queue_submit(commands, error);
+}
+
+doe_vk_status doe_vk_commands_seal(doe_vk_commands *commands, doe_vk_error *error) {
+    doe_vk_error local_error = {0};
+    if (error == NULL) error = &local_error;
+    if (commands == NULL || !commands->reusable) return doe_vk_fail(DOE_VK_INVALID_ARGUMENT, "seal reusable commands", error);
+    doe_vk_status status = doe_vk_recording(commands);
+    if (status != DOE_VK_OK) return doe_vk_fail(status, "seal recording state", error);
+    if (!reusable_admissible(commands)) {
+        status = doe_vk_poison(commands, DOE_VK_UNSUPPORTED);
+        return doe_vk_fail(status, "reusable recording state", error);
+    }
+    doe_vk_barrier(commands);
+    status = doe_vk_result(commands->context, commands->context->vk.vkEndCommandBuffer(commands->command),
+        "vkEndCommandBuffer", error);
+    if (status != DOE_VK_OK) {
+        (void)doe_vk_poison(commands, status);
+        commands->failure = *error;
+        return status;
+    }
+    for (doe_vk_buffer_use *use = commands->buffers; use != NULL; use = use->next) --use->buffer->recorded_uses;
+    commands->uses_active = false;
+    commands->state = DOE_VK_READY; /* The fence is unsignaled; resubmit re-arms it harmlessly. */
+    return doe_vk_fail(DOE_VK_OK, "reusable recording sealed", error);
+}
+
 doe_vk_status doe_vk_commands_submit(doe_vk_commands *commands, doe_vk_error *error) {
     doe_vk_error local_error = {0};
     if (error == NULL) error = &local_error;
+    if (commands != NULL && commands->reusable && commands->state == DOE_VK_READY)
+        return resubmit(commands, error);
     doe_vk_status status = doe_vk_recording(commands);
     if (status != DOE_VK_OK) return doe_vk_fail(status, "submit recording state", error);
+    if (commands->reusable && !reusable_admissible(commands)) {
+        status = doe_vk_poison(commands, DOE_VK_UNSUPPORTED);
+        return doe_vk_fail(status, "reusable recording state", error);
+    }
     doe_vk_context *context = commands->context;
     for (doe_vk_buffer_use *use = commands->buffers; use != NULL; use = use->next) {
         if (use->buffer->content_status != DOE_VK_OK) {
@@ -191,26 +293,13 @@ doe_vk_status doe_vk_commands_submit(doe_vk_commands *commands, doe_vk_error *er
         commands->failure = *error;
         return status;
     }
-    const VkSubmitInfo submit = {
-        .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
-        .commandBufferCount = 1,
-        .pCommandBuffers = &commands->command,
-        .signalSemaphoreCount = commands->surface != NULL ? 1 : 0,
-        .pSignalSemaphores = commands->surface != NULL ? &commands->surface->render_finished : NULL
-    };
-    commands->state = DOE_VK_SUBMITTED;
-    status = doe_vk_result(context, context->vk.vkQueueSubmit(context->queue, 1, &submit, commands->fence), "vkQueueSubmit", error);
-    if (status == DOE_VK_DEVICE_LOST) complete(commands, status, error);
-    else if (status != DOE_VK_OK) {
-        commands->state = DOE_VK_UNCERTAIN;
-        commands->failure = *error;
-    }
-    return status;
+    return queue_submit(commands, error);
 }
 
 static doe_vk_status completion_state(doe_vk_commands *commands, doe_vk_error *error) {
     if (commands == NULL) return doe_vk_fail(DOE_VK_INVALID_ARGUMENT, "completion command", error);
-    if (commands->state == DOE_VK_COMPLETE) return doe_vk_fail(DOE_VK_OK, "completed", error);
+    if (commands->state == DOE_VK_COMPLETE || commands->state == DOE_VK_READY)
+        return doe_vk_fail(DOE_VK_OK, "completed", error);
     if (commands->state == DOE_VK_FAILED) {
         if (error != NULL) *error = commands->failure;
         return commands->failure.status;
@@ -291,6 +380,10 @@ doe_vk_status doe_vk_commands_release(doe_vk_commands *commands) {
         if (!commands->context->lost) return DOE_VK_BUSY;
         complete(commands, DOE_VK_DEVICE_LOST, NULL);
     }
+    if (commands->references > 1) {
+        --commands->references;
+        return DOE_VK_OK;
+    }
     doe_vk_status surface_status = doe_vk_surface_commands_release(commands);
     if (surface_status != DOE_VK_OK) return surface_status;
     doe_vk_context *context = commands->context;
@@ -314,4 +407,14 @@ doe_vk_status doe_vk_commands_release(doe_vk_commands *commands) {
     free(commands);
     doe_vk_context_release(context);
     return DOE_VK_OK;
+}
+
+doe_vk_status doe_vk_commands_drop(doe_vk_commands *commands) {
+    if (commands == NULL) return DOE_VK_OK;
+    if (commands->references > 1) {
+        /* Another holder (a pending submission) owns completion and release. */
+        --commands->references;
+        return DOE_VK_OK;
+    }
+    return doe_vk_commands_release(commands);
 }

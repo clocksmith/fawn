@@ -220,6 +220,23 @@ doe_vk_status doe_vk_commands_poll(doe_vk_commands *commands, doe_vk_error *erro
  * timeout and may block. The original submission failure remains a failure. */
 doe_vk_status doe_vk_commands_recover(doe_vk_commands *commands, doe_vk_error *error);
 doe_vk_status doe_vk_commands_release(doe_vk_commands *commands);
+/* Reusable recording for the Doe compute-program extension. Created without
+ * one-time-submit; the first submit ends recording. After proven successful
+ * completion the recording is READY and may be submitted again: each submission
+ * re-acquires its buffer uses (so buffers can be mapped between runs), rejects
+ * poisoned buffer contents and re-arms its own fence. Failure stays terminal.
+ * Only copy, fill and direct buffer dispatch are admitted; recordings holding
+ * texture, query, render, indirect-guard or surface state reject at submit.
+ * retain adds a holder (one per pending submission); release keeps the existing
+ * BUSY rule for in-flight work. drop releases a holder that does not own
+ * completion: while another holder remains it never waits or reports BUSY. */
+doe_vk_status doe_vk_commands_create_reusable(doe_vk_context *context,
+    doe_vk_commands **out, doe_vk_error *error);
+/* Ends a reusable recording without submitting it and drops its buffer uses, so
+ * hosts may write or map buffers before the first submission. READY afterwards. */
+doe_vk_status doe_vk_commands_seal(doe_vk_commands *commands, doe_vk_error *error);
+doe_vk_status doe_vk_commands_retain(doe_vk_commands *commands);
+doe_vk_status doe_vk_commands_drop(doe_vk_commands *commands);
 const char *doe_vk_status_name(doe_vk_status status);
 #ifdef __cplusplus
 }
