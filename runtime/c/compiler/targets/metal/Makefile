@@ -3,7 +3,8 @@
 CC = gcc
 OUT ?= /tmp/doe-metal-target
 CFLAGS = -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror
-SOURCES = text.c zero.c types.c numeric.c access.c control.c stage.c handles.c image.c graphics.c
+include sources.mk
+SOURCES = $(METAL_SOURCE_NAMES)
 CORE = $(filter-out ../../src/cli.c ../../src/cli_json.c,$(wildcard ../../src/*.c))
 .PHONY: all check style clean
 all: $(OUT)/test_metal $(OUT)/test_images

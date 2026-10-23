@@ -2,12 +2,15 @@
 # Copyright (c) 2026 Doe contributors
 CC = gcc
 CXX = g++
+SHARED_LIBRARY ?= build/libdoe_compiler.so
+EXTRA_CFLAGS ?=
 export TMPDIR := $(CURDIR)/build/tmp
 export PYTHONDONTWRITEBYTECODE := 1
 CFLAGS = -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror
 CXXFLAGS = -std=c++17 -fno-exceptions -fno-rtti -O2 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror
-LIB_SOURCES = src/sema_matrix.c src/spirv_matrix.c src/spirv_atomic.c src/spirv_uniform.c src/sema_array.c src/sema_atomic.c src/sema_pointer.c src/stage.c src/parse_interface.c src/sema_stage.c src/spirv_stage.c src/sema_finalize.c src/image.c src/sema_image.c src/spirv_image.c src/module.c src/builtin.c src/numeric.c src/lex.c src/parse.c src/validate.c src/uniformity.c src/types.c src/constants.c src/sema_declarations.c src/sema_expression.c src/sema_call.c src/reflection.c src/spirv.c src/spirv_module.c src/spirv_subgroup.c src/compile.c src/storage.c
-HEADERS = include/doe_compiler_stages.h src/stage.h src/parse_internal.h include/doe_compiler_resources.h include/doe_compiler_features.h include/doe_compiler_module.h src/builtin.h src/spirv_decl.h src/spirv_internal.h include/doe_compiler_typed.h src/sema.h src/numeric.h src/internal.h include/doe_compiler.h include/doe_compiler_v2.h include/doe_compiler_job.h src/cli_json.h
+include targets/metal/sources.mk
+LIB_SOURCES = $(addprefix targets/metal/,$(METAL_SOURCE_NAMES)) src/pipeline.c src/compile_spans.c src/compile_metadata.c src/compile_text.c src/text_metal.c src/sema_matrix.c src/spirv_matrix.c src/spirv_atomic.c src/spirv_uniform.c src/sema_array.c src/sema_atomic.c src/sema_pointer.c src/stage.c src/parse_interface.c src/sema_stage.c src/spirv_stage.c src/sema_finalize.c src/image.c src/sema_image.c src/spirv_image.c src/module.c src/builtin.c src/numeric.c src/lex.c src/parse.c src/validate.c src/uniformity.c src/types.c src/constants.c src/sema_declarations.c src/sema_expression.c src/sema_call.c src/reflection.c src/spirv.c src/spirv_module.c src/spirv_subgroup.c src/compile.c src/storage.c
+HEADERS = include/doe_compiler_text.h src/compile_internal.h src/text_internal.h $(wildcard targets/metal/*.h targets/*.h) include/doe_compiler_stages.h src/stage.h src/parse_internal.h include/doe_compiler_resources.h include/doe_compiler_features.h include/doe_compiler_module.h src/builtin.h src/spirv_decl.h src/spirv_internal.h include/doe_compiler_typed.h src/sema.h src/numeric.h src/internal.h include/doe_compiler.h include/doe_compiler_v2.h include/doe_compiler_job.h src/cli_json.h
 SPIRV_VAL ?= spirv-val
 CLI_FAULT_FLAGS = -Wl,--wrap=write,--wrap=close,--wrap=link,--wrap=mkstemp,--wrap=malloc,--wrap=free,--wrap=doe_compiler_job_requirements
 .PHONY: all test test-cli-modes test-uniform sanitize sanitize-cli sanitize-uniform clean
@@ -27,8 +30,11 @@ build/test_cli_faults: $(LIB_SOURCES) src/cli.c src/cli_json.c tests/cli_io_faul
 	$(CC) $(CFLAGS) $(LIB_SOURCES) src/cli.c src/cli_json.c tests/cli_io_faults.c $(CLI_FAULT_FLAGS) -lm -o $@
 test-cli-modes: all build/test_cli_faults
 	cd ../../.. && SPIRV_VAL="$(SPIRV_VAL)" python3 -m unittest runtime.c.compiler.tests.test_cli_modes
-build/libdoe_compiler.so: $(LIB_SOURCES) $(HEADERS) src/exports.map | build/.ready
-	$(CC) $(CFLAGS) -fPIC -shared $(LIB_SOURCES) -Wl,--version-script=src/exports.map -lm -o $@
+$(SHARED_LIBRARY): $(LIB_SOURCES) $(HEADERS) targets/metal/sources.mk src/exports.map
+	mkdir -p $(dir $@) $(TMPDIR)
+	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) -fPIC -shared $(LIB_SOURCES) -Wl,--version-script=src/exports.map -lm -o $@
+.PHONY: shared
+shared: $(SHARED_LIBRARY)
 build/test_api: $(LIB_SOURCES) tests/test_api.c $(HEADERS) | build/.ready
 	$(CC) $(CFLAGS) $(LIB_SOURCES) tests/test_api.c -lm -o $@
 build/test_boundaries: $(LIB_SOURCES) tests/test_boundaries.c $(HEADERS) | build/.ready
@@ -234,3 +240,21 @@ test-pointers: $(OUT)/doe-compiler-c $(OUT)/test-pointer-api
 	DOE_COMPILER_CLI=$(abspath $(OUT)/doe-compiler-c) SPIRV_VAL=$(SPIRV_VAL) python3 -m unittest discover -s tests -p test_pointers.py -v
 $(OUT)/test-pointer-api: tests/test_pointer_api.c $(LIB_SOURCES) | $(OUT)
 	$(CC) $(CFLAGS) tests/test_pointer_api.c $(LIB_SOURCES) -lm -o $@
+
+.PHONY: print-library-sources
+print-library-sources:
+	@echo $(LIB_SOURCES)
+
+.PHONY: test-text
+test-text: build/test_text_api build/test_text_failure build/test_text_abi
+	build/test_text_api build/text_control.metal
+	build/test_text_failure
+	build/test_text_abi
+	$(CXX) -std=c++17 -O2 -fsanitize=undefined -Wno-attributes -Itargets/metal/tests/host -Ibuild tests/test_text_host.cpp -o build/test_text_host
+	build/test_text_host
+build/test_text_api: $(LIB_SOURCES) $(HEADERS) tests/test_text_api.c | build/.ready
+	$(CC) $(CFLAGS) $(LIB_SOURCES) tests/test_text_api.c -lm -o $@
+build/test_text_failure: $(LIB_SOURCES) $(HEADERS) tests/test_text_failure.c | build/.ready
+	$(CC) $(CFLAGS) $(LIB_SOURCES) tests/test_text_failure.c -Wl,--wrap=fesetenv -lm -o $@
+build/test_text_abi: build/libdoe_compiler.so include/doe_compiler_text.h tests/test_text_abi.cpp | build/.ready
+	$(CXX) $(CXXFLAGS) tests/test_text_abi.cpp -Lbuild -ldoe_compiler -Wl,-rpath,'$$ORIGIN' -o $@

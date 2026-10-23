@@ -10,5 +10,7 @@
     doe_compiler_compile_resources;
     doe_compiler_stage_requirements;
     doe_compiler_compile_stages;
+    doe_compiler_text_requirements;
+    doe_compiler_compile_text;
   local: *;
 };
