@@ -1,8 +1,10 @@
 # Experimental C future/completion owner
 
 The [contract](CONTRACT.md) and [public header](include/doe_futures.h) are frozen.
-This independently buildable owner has passed focused independent CPU acceptance.
-Production integration and wider runtime qualification remain separate.
+The original Linux owner passed focused independent CPU acceptance at the
+source identities in RESULTS.md. The later Darwin source-build extension below
+has focused developer controls only. Production and wider runtime qualification
+remain separate.
 [Provenance](PROVENANCE.md) binds the retained source; CONTRACT.sha256 seals the
 native boundary. The [migration gates](../../../docs/c-migration/MIGRATION.md)
 retain the production-promotion requirements.
@@ -87,3 +89,31 @@ Use a new output directory. Its separate smoke route consumes only the public
 header and an exact prebuilt archive. The exercised ABI is Linux x86-64 with
 GCC/G++ 14.2, C11/C++17 and pthreads; Windows/32-bit/cross-DSO compatibility is
 not established. See [results](RESULTS.md) for source-bound scope and limitations.
+
+## Darwin source-build extension
+
+The original frozen contract/receipts remain Linux evidence. The synchronization
+owner now also admits Darwin pthreads in source. It retains the same queue,
+identity, callback, active-call and cleanup state machine. No public ABI record
+changes; callers still query the current platform library's storage requirements.
+Darwin has no `pthread_condattr_setclock`, so the native condition uses its default
+attributes and finite waits call `pthread_cond_timedwait_relative_np`. Remaining
+time is recomputed from the one checked absolute `CLOCK_MONOTONIC` deadline after
+every wake, including nanosecond borrowing. It never restarts the original timeout
+or uses wall-clock deadlines. ETIMEDOUT still returns timeout without a readiness
+rescan; a subsequent call can observe the race. Scheduler delays and callbacks
+are not bounded execution-time promises; suspend/resume behavior is not qualified.
+
+Apple's declaration and implementation are inspected, not vendored:
+- https://github.com/apple-oss-distributions/libpthread/blob/main/include/pthread/pthread.h
+- https://github.com/apple-oss-distributions/libpthread/blob/main/src/pthread_cond.c
+
+`make check` retains the Linux behavior/fault/real-condition tests. On a Linux
+host, `make check-darwin-boundary` additionally compiles the real Darwin branch
+under the private testing guard and substitutes only its typed condition call and
+clock. It checks decreasing spans, borrowed seconds, timeout0, spurious wakes,
+platform error, readiness-timeout race and no unavailable clock-attribute call.
+This is not a Darwin runtime, SDK or scheduling test. No Apple SDK was installed.
+`make all CC=clang AR=ar` is the intended Darwin archive build; ordinary C/C++
+consumer checks may use `make check-portable`. GNU linker-wrapped controls remain
+Linux-only. Native Mach-O library/package linking is owned separately.

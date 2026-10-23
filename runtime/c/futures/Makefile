@@ -57,3 +57,17 @@ check-concurrency: $(BUILD)/test_concurrency
 	$(BUILD)/test_concurrency
 .PHONY: check-concurrency
 check: check-concurrency
+
+# Linux-host control of Darwin's typed relative-wait boundary, not an SDK build.
+$(BUILD)/test_darwin_time: tests/test_darwin_time.c src/storage.c src/futures.c src/internal.h include/doe_futures.h | $(BUILD)
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DDOE_FUTURES_TESTING -DDOE_FUTURES_TEST_DARWIN \
+	  tests/test_darwin_time.c src/storage.c src/futures.c $(LDFLAGS) \
+	  -Wl,--wrap=clock_gettime -Wl,--wrap=pthread_condattr_setclock -o $@
+.PHONY: check-darwin-boundary
+check-darwin-boundary: $(BUILD)/test_darwin_time
+	$(BUILD)/test_darwin_time
+
+.PHONY: check-portable
+check-portable: $(BUILD)/test_api $(BUILD)/test_cpp
+	$(BUILD)/test_api
+	$(BUILD)/test_cpp

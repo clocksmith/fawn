@@ -1,0 +1,83 @@
+{
+  "status": "Authored Darwin source extension, focused host branch controls pass; native Darwin qualification unrun",
+  "checked_at_utc": "2026-10-23T20:43:02.543822+00:00",
+  "observed_base": "dc6bf36e5fe09b8dc6f981853e6b7e603b29f501",
+  "platform_extension": "Linux absolute CLOCK_MONOTONIC condition remains unchanged. Darwin uses its relative condition API with the remaining duration from one absolute monotonic deadline; no second queue or callback state machine.",
+  "public_header_unchanged_from": "ad5377cef0c72fe74088a376db4f81ebf1aba201",
+  "checks": [
+    {
+      "command": [
+        "make",
+        "-C",
+        "runtime/c/futures",
+        "BUILD=/tmp/doe-futures-darwin-20261023/normal",
+        "check",
+        "check-darwin-boundary"
+      ],
+      "exit_code": 0,
+      "terminal_log_sha256": "a2ff5b9c3829d2d793538d1dd9f99cc5cf04f4b02c4f81ef4d59b8ded9e69b78"
+    },
+    {
+      "command": [
+        "make",
+        "-C",
+        "runtime/c/futures",
+        "BUILD=/tmp/doe-futures-darwin-20261023/asan",
+        "CFLAGS=-O1 -g -std=c11 -Wall -Wextra -Wpedantic -Werror -pthread -fsanitize=address,undefined -fno-omit-frame-pointer",
+        "CXXFLAGS=-O1 -g -std=c++17 -Wall -Wextra -Wpedantic -Werror -pthread -fsanitize=address,undefined -fno-omit-frame-pointer",
+        "check",
+        "check-darwin-boundary"
+      ],
+      "exit_code": 0,
+      "terminal_log_sha256": "39461fd4355ed8665e3a116b146335209219a54816d72e9f7060a42c789b8fd9"
+    }
+  ],
+  "negative_build": {
+    "command": [
+      "gcc",
+      "-std=c11",
+      "-DDOE_FUTURES_TEST_DARWIN",
+      "-Iruntime/c/futures/include",
+      "-c",
+      "runtime/c/futures/src/storage.c",
+      "-o",
+      "/tmp/doe-futures-darwin-20261023/forbidden.o"
+    ],
+    "exit_code": 1,
+    "expected": "Private Darwin branch override refused outside explicit test profile"
+  },
+  "source_unchanged_during_checks": true,
+  "test_coverage": [
+    "Retained public C/C++ storage/mode/order/reentry/lifetime controls",
+    "All Linux acquisition/cleanup fault boundaries and identity exhaustion",
+    "Real condition infinite wait and concurrent pumps",
+    "Linux monotonic deadline/overflow/readiness-timeout race",
+    "Darwin branch decreasing relative spans and nanosecond borrow across spurious wakes",
+    "Timeout0, platform wait error, readiness-timeout race and no unavailable clock attribute"
+  ],
+  "limitations": [
+    "No Apple SDK/header/runtime execution; test-only declaration matches inspected official API, not a native ABI qualification.",
+    "Suspend/resume and scheduling behavior remain unqualified. Windows synchronization is not implemented.",
+    "Linux GNU linker fault wrapping is separate from intended Darwin check-portable/archive routes.",
+    "ASan/UBSan instrument this owner and tests; LeakSanitizer disabled under ptrace."
+  ],
+  "references": [
+    "https://github.com/apple-oss-distributions/libpthread/blob/main/include/pthread/pthread.h",
+    "https://github.com/apple-oss-distributions/libpthread/blob/main/src/pthread_cond.c"
+  ],
+  "sha256": {
+    "runtime/c/futures/Makefile": "1e668af5e6bb1a9e5c8fc98b975c4cf93ffb412e53aee9d3dcd1f7c9f8e85c30",
+    "runtime/c/futures/README.md": "0b949cb26c00cdab628455771116ae2d46ff059b3023d1d4cb2c76c1b3ffce93",
+    "runtime/c/futures/src/futures.c": "3d51d7adf31184838d8c004958d0267315854deeab6ab93cc47fa0d05e2e88a3",
+    "runtime/c/futures/src/storage.c": "f1b12746981386baccc1ff6cf1e3715ee1765ecf6e672ea3448ff7085d369e16",
+    "runtime/c/futures/src/internal.h": "6af7ecfaacd93108a011b80462a308de22659ad6700cf9c9b642cf6b9b5d5829",
+    "runtime/c/futures/include/doe_futures.h": "64df7b659fa61de34c3f26a8a8762c70a41d3f35d301a54ffe11877f43ca3404",
+    "runtime/c/futures/tests/test_api.c": "8126cf0add5c32b7c465a652140344fb79399a7a75d268f265749d5877582dd5",
+    "runtime/c/futures/tests/test_concurrency.c": "91734368e748a41d550cfe7187ec2595ac0ac5b22a28925e327139a0f4f4eef2",
+    "runtime/c/futures/tests/test_darwin_time.c": "826a13623fc371f81e093a1edac11ba9f44c84dca2983f11fda2935251d0c877",
+    "runtime/c/futures/tests/test_exhaustion.c": "a338d0eaaa78eba564b370eb63ab85669f38dde04e8c37311df21eb90e90df25",
+    "runtime/c/futures/tests/test_faults.c": "0cca6a931165556e032cdeef783cc298717174c1c96cb5a8cfe776d7cd1c7e87",
+    "runtime/c/futures/tests/test_time.c": "93ad244fcbf865e0fb72e3c13d13f10507315d126145ef7bc08111b60d2c5077",
+    "runtime/c/futures/tests/test_cpp.cpp": "f6222e768c6c65b80953c5d05ee0dcedfb3a79d52c5ce8d058ba553737bb292e"
+  }
+}

@@ -35,7 +35,7 @@ _Static_assert(DOE_FUTURES_TEST_LEGACY_LIMIT >= LEGACY_FIRST &&
                DOE_FUTURES_TEST_LEGACY_LIMIT < UINT64_MAX,
                "Legacy test endpoint must stay in namespace");
 _Static_assert(sizeof(time_t) <= sizeof(uintmax_t) && (time_t)-1 < 0,
-               "This Linux boundary requires signed time_t no wider than uintmax_t");
+               "This pthread boundary requires signed time_t no wider than uintmax_t");
 
 static _Atomic uint32_t next_instance = 1;
 static _Atomic uint64_t next_legacy = LEGACY_FIRST;
@@ -301,8 +301,22 @@ doe_future_status doe_future_wait_any(doe_future_queue *queue,
             if (status != DOE_FUTURE_OK) return df_leave(queue, status);
             if (deadline_reached(&now, &deadline))
                 return df_leave(queue, DOE_FUTURE_TIMED_OUT);
+#if DF_RELATIVE_CONDITION
+            /* Darwin has no condition-clock attribute. Recompute the remaining
+             * span from the one absolute monotonic deadline after each wake;
+             * never restart the original timeout or consult wall-clock time. */
+            struct timespec remaining = {
+                deadline.tv_sec - now.tv_sec, deadline.tv_nsec - now.tv_nsec};
+            if (remaining.tv_nsec < 0) {
+                remaining.tv_sec--;
+                remaining.tv_nsec += (long)NS_PER_SECOND;
+            }
+            error = pthread_cond_timedwait_relative_np(&queue->changed,
+                &queue->mutex, &remaining);
+#else
             error = pthread_cond_timedwait(&queue->changed, &queue->mutex,
                                            &deadline);
+#endif
             /* Do not re-scan after ETIMEDOUT: a later wait observes a race. */
             if (error == ETIMEDOUT) return df_leave(queue, DOE_FUTURE_TIMED_OUT);
             if (error != 0) return df_leave(queue, DOE_FUTURE_SYSTEM_ERROR);
