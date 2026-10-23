@@ -474,6 +474,170 @@
     "VK_INDEX_TYPE_UINT32": {
       "source": "vk_constants.zig:538",
       "value": 1
+    },
+    "VK_FORMAT_R8_UNORM": {
+      "source": "vk_formats.zig:42",
+      "value": 9
+    },
+    "VK_FORMAT_R8_SNORM": {
+      "source": "vk_formats.zig:43",
+      "value": 10
+    },
+    "VK_FORMAT_R8_UINT": {
+      "source": "vk_formats.zig:44",
+      "value": 13
+    },
+    "VK_FORMAT_R8_SINT": {
+      "source": "vk_formats.zig:45",
+      "value": 14
+    },
+    "VK_FORMAT_R8G8_UNORM": {
+      "source": "vk_formats.zig:48",
+      "value": 16
+    },
+    "VK_FORMAT_R8G8_SNORM": {
+      "source": "vk_formats.zig:49",
+      "value": 17
+    },
+    "VK_FORMAT_R8G8_UINT": {
+      "source": "vk_formats.zig:50",
+      "value": 20
+    },
+    "VK_FORMAT_R8G8_SINT": {
+      "source": "vk_formats.zig:51",
+      "value": 21
+    },
+    "VK_FORMAT_R8G8B8A8_UNORM": {
+      "source": "vk_formats.zig:54",
+      "value": 37
+    },
+    "VK_FORMAT_R8G8B8A8_SNORM": {
+      "source": "vk_formats.zig:56",
+      "value": 38
+    },
+    "VK_FORMAT_R8G8B8A8_UINT": {
+      "source": "vk_formats.zig:57",
+      "value": 41
+    },
+    "VK_FORMAT_R8G8B8A8_SINT": {
+      "source": "vk_formats.zig:58",
+      "value": 42
+    },
+    "VK_FORMAT_B8G8R8A8_UNORM": {
+      "source": "vk_formats.zig:59",
+      "value": 44
+    },
+    "VK_FORMAT_A2B10G10R10_UNORM_PACK32": {
+      "source": "vk_formats.zig:64",
+      "value": 64
+    },
+    "VK_FORMAT_R16_UNORM": {
+      "source": "vk_formats.zig:67",
+      "value": 70
+    },
+    "VK_FORMAT_R16_SNORM": {
+      "source": "vk_formats.zig:68",
+      "value": 71
+    },
+    "VK_FORMAT_R16_UINT": {
+      "source": "vk_formats.zig:69",
+      "value": 74
+    },
+    "VK_FORMAT_R16_SINT": {
+      "source": "vk_formats.zig:70",
+      "value": 75
+    },
+    "VK_FORMAT_R16_SFLOAT": {
+      "source": "vk_formats.zig:71",
+      "value": 76
+    },
+    "VK_FORMAT_R16G16_UNORM": {
+      "source": "vk_formats.zig:74",
+      "value": 77
+    },
+    "VK_FORMAT_R16G16_SNORM": {
+      "source": "vk_formats.zig:75",
+      "value": 78
+    },
+    "VK_FORMAT_R16G16_UINT": {
+      "source": "vk_formats.zig:76",
+      "value": 81
+    },
+    "VK_FORMAT_R16G16_SINT": {
+      "source": "vk_formats.zig:77",
+      "value": 82
+    },
+    "VK_FORMAT_R16G16_SFLOAT": {
+      "source": "vk_formats.zig:78",
+      "value": 83
+    },
+    "VK_FORMAT_R16G16B16A16_UNORM": {
+      "source": "vk_formats.zig:81",
+      "value": 91
+    },
+    "VK_FORMAT_R16G16B16A16_SNORM": {
+      "source": "vk_formats.zig:82",
+      "value": 92
+    },
+    "VK_FORMAT_R16G16B16A16_UINT": {
+      "source": "vk_formats.zig:83",
+      "value": 95
+    },
+    "VK_FORMAT_R16G16B16A16_SINT": {
+      "source": "vk_formats.zig:84",
+      "value": 96
+    },
+    "VK_FORMAT_R16G16B16A16_SFLOAT": {
+      "source": "vk_formats.zig:85",
+      "value": 97
+    },
+    "VK_FORMAT_R32_UINT": {
+      "source": "vk_formats.zig:88",
+      "value": 98
+    },
+    "VK_FORMAT_R32_SINT": {
+      "source": "vk_formats.zig:89",
+      "value": 99
+    },
+    "VK_FORMAT_R32_SFLOAT": {
+      "source": "vk_formats.zig:90",
+      "value": 100
+    },
+    "VK_FORMAT_R32G32_UINT": {
+      "source": "vk_formats.zig:93",
+      "value": 101
+    },
+    "VK_FORMAT_R32G32_SINT": {
+      "source": "vk_formats.zig:94",
+      "value": 102
+    },
+    "VK_FORMAT_R32G32_SFLOAT": {
+      "source": "vk_formats.zig:95",
+      "value": 103
+    },
+    "VK_FORMAT_R32G32B32_UINT": {
+      "source": "vk_formats.zig:98",
+      "value": 104
+    },
+    "VK_FORMAT_R32G32B32_SINT": {
+      "source": "vk_formats.zig:99",
+      "value": 105
+    },
+    "VK_FORMAT_R32G32B32_SFLOAT": {
+      "source": "vk_formats.zig:100",
+      "value": 106
+    },
+    "VK_FORMAT_R32G32B32A32_UINT": {
+      "source": "vk_formats.zig:103",
+      "value": 107
+    },
+    "VK_FORMAT_R32G32B32A32_SINT": {
+      "source": "vk_formats.zig:104",
+      "value": 108
+    },
+    "VK_FORMAT_R32G32B32A32_SFLOAT": {
+      "source": "vk_formats.zig:105",
+      "value": 109
     }
   },
   "surface_policy": {

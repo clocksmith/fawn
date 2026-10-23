@@ -359,7 +359,9 @@ Vulkan indirect dispatch and nonindexed/indexed indirect
 pass/bundle draws use real GPU guards; Metal graphics, indirect and indexed draws remain uncomposed.
 Graphics
 admits up to eight sparse color slots and/or depth/stencil, sample counts 1 and 4, direct
-triangle/line lists or strips and 32-bit float/signed/unsigned vertex attributes.
+triangle/line lists or strips and every pinned WebGPU vertex format (8/16/32-bit
+integer and normalized, float16/32, unorm10-10-10-2, unorm8x4-bgra) with offsets
+aligned to min(4, format size).
 PointList target lowering, single-sample color Discard, dual-source blending,
 vertex or fragment storage writes and fragment FragDepth/SampleIndex/SampleMask
 remain explicitly rejected. WGSL discard requires actual enabled demote support;
