@@ -100,9 +100,17 @@ class TestUniforms(CompilerFixture):
         self.compile(header + ENTRY + "let snap=p.x;return;}")
         self.compile(header + STORAGE + ENTRY + "let first=p.x;let second=p.x;o[0u]=first+second;}")
         for body in ("o[0u]=p;", "o[0u]=p.missing;", "o[p.y]=1u;", "if(p.y<1u){}",
-                     "if(0u<p.y){}", "o[0u]=p.y+1u;", "let P=1u;", "let p=1u;",
+                     "if(0u<p.y){}", "o[0u]=p.y+1u;",
                      "p.x=1u;", "p[0u]=1u;", "o[0u]=p[0u];", "return;o[0u]=p.missing;"):
             self.reject(header + STORAGE + ENTRY + body + "}")
+        # These exact M6 CLI-v2 negatives become valid lexical shadowing under
+        # M7's job profile, without changing their unchanged resource reflection.
+        for body in ("let P=1u;", "let p=1u;"):
+            instructions, reflection = self.compile(header + STORAGE + ENTRY + body + "}")
+            memory = {(0,2): [99]}
+            execute(instructions, memory, 0, {(0,0): struct.pack("<IfI", 1, 2.0, 3)})
+            self.assertEqual(memory[(0,2)], [99])
+            self.assertEqual(reflection["struct_count"], 1)
         invalid_headers = (
             header.replace("z:u32", "x:u32"), header.replace("x:u32", "x:i32"),
             header.replace("x:u32", "x:array<u32>"), header.replace("x:u32", "@align(16) x:u32"),

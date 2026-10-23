@@ -1,0 +1,25 @@
+{
+  "candidate_executed": false,
+  "candidate_source_inspected": false,
+  "contract_commit": "d377c075392bc1595895f8478121fa75b55ba187",
+  "frozen_at_utc": "2026-10-23T04:16:24Z",
+  "inventory_file_sha256": "39f09e6c6325f1237a8a601ef363ea8269022fe18ed09aa171bfe64aad002f4b",
+  "prior_freeze": {
+    "preservation": "Initial source and expectation JSON recovered by reversing only source-only bit-pattern change, byte-identical SHA256 verified against the hashes sent before correction. They are now retained separately, not used for acceptance.",
+    "witness_expectations_m7.json": "3b4a35f14b9359ef10853c086853351f61d0ca89c75ef2fff2f56805acd907dc",
+    "witnesses_m7.py": "8470d22c9afb0531dcd80945c6566d8655d41d98d06f93ae5fc7577bdc08fedd"
+  },
+  "scope": "Five required unchanged witnesses plus explicitly source-reviewed write_known_logits. 17 expected corpus admissions, 81 expected emission skips. Packed bytes are independently calculated; all buffer tails and read-only inputs checked. No network installation, Zig, physical GPU, runtime adoption or performance claim.",
+  "source_only_controls": {
+    "first_failure_evidence": "witness_oracle_controls_first_failure_m7.txt",
+    "first_fixture_design_failure": "The original [2^24,-2^24,1] triple did not distinguish reverse order. Source-only independent control caught this before candidate use. Corrected to [2^25,-2^25,1], forward=1 and reverse=0. No compiler acceptance relaxed.",
+    "passed": 4
+  },
+  "source_sha256": {
+    "corpus_m7.py": "4b2095fa5f4bf59f0c4f5f36ea6b40cc916645c1603cbe2d63d7b1ff04404eab",
+    "witness_corpus_inventory_m7.json": "d5c273ddd478b49008dfbcfff69cea2ea312b178dfb06187a7f018725dd46aae",
+    "witness_expectations_m7.json": "2c468e1213fc75fa7fddf19db95af7f4475bbc70f5a8dfc79b05b809e2fe324e",
+    "witness_oracle_controls_m7.py": "8b8642c6454da197f12afe916056243d797819401e8f46a1f89f433bcb627cbe",
+    "witnesses_m7.py": "ceb5fe0ad9cdcda1e297f93a95b2d51cb57863d40c982c4e5e87d9d600c79421"
+  }
+}

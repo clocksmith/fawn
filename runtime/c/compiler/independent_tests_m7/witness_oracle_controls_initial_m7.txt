@@ -1,0 +1,53 @@
+"""Source-only controls for frozen packed witness expectations, no compiler use."""
+from __future__ import annotations
+
+import argparse
+from pathlib import Path
+import struct
+import unittest
+
+from witnesses_m7 import ONE, WITNESSES, dot_vectors, ordered_dot, packed, positives
+
+
+class TestWitnessExpectations(unittest.TestCase):
+    def test_forward_reverse_orders_differ(self) -> None:
+        pairs = [(0x4b800000, ONE), (0xcb800000, ONE), (ONE, ONE)]
+        self.assertEqual(ordered_dot(pairs), ONE)
+        self.assertEqual(ordered_dot(list(reversed(pairs))), 0)
+        forward = {v['label']: v for v in dot_vectors(False)}
+        reverse = {v['label']: v for v in dot_vectors(True)}
+        key = 'n3_left7_right7_out4'
+        self.assertEqual(forward[key]['raw_want'][(0, 3)][:4], packed([ONE]))
+        self.assertEqual(reverse[key]['raw_want'][(0, 3)][:4], packed([0]))
+
+    def test_no_fused_product_add(self) -> None:
+        pairs = [(0xbf800000, ONE), (0x3f800001, 0x3f7ffffe)]
+        self.assertEqual(ordered_dot(pairs), 0)
+
+    def test_oob_load_zero_and_untouched_tail(self) -> None:
+        case = next(v for v in dot_vectors(False)
+                    if v['label'] == 'n7_left0_right7_out4')
+        self.assertEqual(case['raw_want'][(0, 3)][:4], bytes(4))
+        self.assertEqual(case['raw_want'][(0, 3)][4:], case['raw_initial'][(0, 3)][4:])
+        self.assertEqual(case['raw_want'][(0, 1)], case['raw_initial'][(0, 1)])
+        self.assertEqual(case['raw_want'][(0, 2)], case['raw_initial'][(0, 2)])
+
+    def test_known_logits_literals_independent_host_unpack(self) -> None:
+        self.assertEqual(struct.unpack('<f', packed([0x411a8000]))[0], 9.65625)
+        self.assertEqual(struct.unpack('<f', packed([0x411b4000]))[0], 9.703125)
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--repo', required=True, type=Path,
+                        help='Source-only repository for unchanged hash checks.')
+    args = parser.parse_args()
+    cases = positives(args.repo)
+    if len(cases) != len(WITNESSES) + 1:
+        raise ValueError('Missing unchanged or additional corpus fixture')
+    suite = unittest.defaultTestLoader.loadTestsFromTestCase(TestWitnessExpectations)
+    return int(not unittest.TextTestRunner(verbosity=2).run(suite).wasSuccessful())
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())

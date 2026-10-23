@@ -169,10 +169,20 @@ class TestComputeExpressions(CompilerFixture):
             execute(instructions, memory, 0)
             self.assertEqual(memory[(0, 1)], expected)
         for body in ("out[1.0]=1u;", "if(1.0==1u){}", "if(1u==1.0){}",
-                     "if(1u<2u<3u){}", "if(1u){}", "if(1u==2u||1u==1u){}",
-                     "return;out[src[1.0]]=1u;", "let x=1u;if(x==1u){let x=2u;}",
+                     "if(1u<2u<3u){}", "if(1u){}",
+                     "return;out[src[1.0]]=1u;",
                      "out[0u]=src[missing];", "if(1u==1u){let q=1u;}out[q]=1u;"):
             self.reject(STORAGE + ENTRY + body + "}")
+
+    def test_m7_job_cli_scope_and_logical_lifts(self) -> None:
+        # M6 rejected these exact valid sources. M7's job CLI admits lexical
+        # shadowing and actual short-circuit control. Native ABI2 remains bounded.
+        from runtime.c.compiler.tests.job_machine import execute_job
+        for body in ("if(1u==2u||1u==1u){}", "let x=1u;if(x==1u){let x=2u;}"):
+            instructions, _ = self.compile(STORAGE + ENTRY + body + "}")
+            memory = {(0, 0): [], (0, 1): [99]}
+            execute_job(instructions, memory, 0)
+            self.assertEqual(memory[(0, 1)], [99])
 
     def test_precise_retained_negative_lifts(self) -> None:
         bodies = ("", "out[gid.y]=1u;", "out[(gid.x)]=1u;", "out[gid.x+1u+2u]=1u;",
@@ -225,7 +235,12 @@ class TestComputeExpressions(CompilerFixture):
         self.compile(header + "let lane=global.x;" + "out[0u]=1u;" * 16 + "}")
         for first in ("let lane=global.y;", "let lane=(global.x);", "let lane:u32=global.x;",
                       "let lane=local.x;", "let lane=flat;"):
-            self.reject(header + first + "out[0u]=1u;" * 16 + "}", "16 statements")
+            # M6 CLI-v2 rejected these 17-statement sources; M7 CLI owns 1024.
+            instructions, _ = self.compile(header + first + "out[0u]=1u;" * 16 + "}")
+            memory = {(0, 0): [], (0, 1): [99]}
+            execute(instructions, memory, 0, inputs={24: (1,1,1), 29: 0, 26: (0,0,0),
+                                                    28: (0,0,0), 27: (0,0,0)})
+            self.assertEqual(memory[(0, 1)], [1])
         # Parameter declarations resolve their own types in module context.
         self.compile(STORAGE + "@compute @workgroup_size(1) fn f(@builtin(local_invocation_index) u32:u32){out[0u]=u32;}")
         self.reject(STORAGE + "@compute @workgroup_size(1) fn f(@builtin(local_invocation_index) u32:u32){let q:u32=1u;}")
@@ -235,12 +250,16 @@ class TestComputeExpressions(CompilerFixture):
         expression = "+".join(["1u"] * 10)  # 19 nodes, plus one destination index.
         body = f"out[0u]={expression};" * 16
         self.compile(STORAGE + ENTRY + body + "}")  # Exactly 320 nodes.
-        self.reject(STORAGE + ENTRY + body.replace("=1u", "=src[0u]", 1) + "}", "320 expression nodes")
-        for depth in (18, 19):
+        # Exact old 321-node rejection now compiles under the job CLI profile.
+        instructions, _ = self.compile(STORAGE + ENTRY + body.replace("=1u", "=src[0u]", 1) + "}")
+        memory = {(0,0): [3], (0,1): [99]}
+        execute(instructions, memory, 0)
+        self.assertEqual(memory[(0,1)], [10])
+        for depth in (18, 19, 32, 33):
             for expression in ("(" * (depth - 1) + "1u" + ")" * (depth - 1),
                                "src[" * (depth - 1) + "0u" + "]" * (depth - 1)):
                 source = STORAGE + ENTRY + f"out[0u]={expression};}}"
-                if depth == 18:
+                if depth <= 32:
                     self.compile(source)
                 else:
-                    self.reject(source, "18 levels")
+                    self.reject(source, "expression depth capacity")

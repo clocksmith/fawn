@@ -2,6 +2,7 @@
  * Copyright (c) 2026 Doe contributors */
 #define _POSIX_C_SOURCE 200809L
 #include "cli_json.h"
+#include "../include/doe_compiler_job.h"
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
@@ -71,6 +72,8 @@ int main(int argc, char **argv) {
     void *workspace = NULL;
     DoeCompilerResultV2 *result_v2 = NULL;
     char *json = NULL;
+    uint32_t *words = NULL;
+    unsigned char *binary = NULL;
     input_fd = open(input, O_RDONLY);
     if (input_fd < 0) { perror("open shader"); goto cleanup; }
     while (length < sizeof(source)) {
@@ -82,29 +85,41 @@ int main(int argc, char **argv) {
     }
     if (close(input_fd) < 0) { input_fd = -1; perror("close shader"); goto cleanup; }
     input_fd = -1;
-    uint32_t words[DOE_COMPILER_MAX_WORDS];
-    DoeCompilerResult result;
-    DoeCompilerStatus compiled;
-    DoeCompilerDiagnostic *diagnostic;
-    size_t word_count;
-    if (legacy) {
-        compiled = doe_compiler_compile(DOE_COMPILER_ABI_VERSION, source, length,
-                                       words, DOE_COMPILER_MAX_WORDS, &result, sizeof(result));
-        diagnostic = &result.diagnostic;
-        word_count = result.word_count;
-    } else {
-        DoeCompilerWorkspaceRequirements requirements;
-        if (doe_compiler_workspace_requirements(DOE_COMPILER_ABI_VERSION_2, &requirements,
-                                                sizeof(requirements)) != DOE_COMPILER_OK) {
+    const DoeCompilerJobCapacities job = {
+        .source_bytes = 65536u, .tokens = 8192u, .statements = 1024u,
+        .expressions = 4096u, .words = 65536u,
+        .expression_depth = 32u, .control_depth = 16u
+    };
+    const size_t word_capacity = legacy ? DOE_COMPILER_MAX_WORDS : job.words;
+    DoeCompilerWorkspaceRequirements requirements = {0};
+    if (!legacy) {
+        if (doe_compiler_job_requirements(DOE_COMPILER_JOB_ABI_VERSION,
+                &job, sizeof(job), &requirements, sizeof(requirements)) != DOE_COMPILER_OK) {
             fprintf(stderr, "workspace requirements query failed\n"); goto cleanup;
         }
         workspace = malloc(requirements.size_bytes);
         if (workspace == NULL) { fprintf(stderr, "workspace allocation failed\n"); goto cleanup; }
         result_v2 = malloc(sizeof(*result_v2));
         if (result_v2 == NULL) { fprintf(stderr, "result allocation failed\n"); goto cleanup; }
-        compiled = doe_compiler_compile_v2(DOE_COMPILER_ABI_VERSION_2, workspace,
-            requirements.size_bytes, source, length, words, DOE_COMPILER_MAX_WORDS,
-            result_v2, sizeof(*result_v2));
+    }
+    if (word_capacity > SIZE_MAX / sizeof(*words)) {
+        fprintf(stderr, "word capacity exceeds byte range\n"); goto cleanup;
+    }
+    words = malloc(word_capacity * sizeof(*words));
+    if (words == NULL) { fprintf(stderr, "word allocation failed\n"); goto cleanup; }
+    DoeCompilerResult result;
+    DoeCompilerStatus compiled;
+    DoeCompilerDiagnostic *diagnostic;
+    size_t word_count;
+    if (legacy) {
+        compiled = doe_compiler_compile(DOE_COMPILER_ABI_VERSION, source, length,
+                                       words, word_capacity, &result, sizeof(result));
+        diagnostic = &result.diagnostic;
+        word_count = result.word_count;
+    } else {
+        compiled = doe_compiler_compile_job(DOE_COMPILER_JOB_ABI_VERSION,
+            &job, sizeof(job), workspace, requirements.size_bytes,
+            source, length, words, word_capacity, result_v2, sizeof(*result_v2));
         diagnostic = &result_v2->diagnostic;
         word_count = result_v2->word_count;
     }
@@ -128,7 +143,12 @@ int main(int argc, char **argv) {
             cli_json_v2(&result_v2->reflection, json, json_capacity, &json_length);
         if (!serialized) { fprintf(stderr, "reflection exceeds buffer\n"); goto cleanup; }
     }
-    unsigned char binary[DOE_COMPILER_MAX_WORDS * 4u];
+    if (word_count > word_capacity || word_count > SIZE_MAX / 4u) {
+        fprintf(stderr, "binary word count exceeds capacity\n"); goto cleanup;
+    }
+    const size_t binary_length = word_count * 4u;
+    binary = malloc(binary_length);
+    if (binary == NULL) { fprintf(stderr, "binary allocation failed\n"); goto cleanup; }
     for (size_t i = 0; i < word_count; ++i)
         for (unsigned b = 0; b < 4u; ++b) binary[i * 4u + b] = (unsigned char)(words[i] >> (b * 8u));
     binary_fd = temporary(output, binary_temp);
@@ -139,7 +159,7 @@ int main(int argc, char **argv) {
         if (json_fd < 0) { perror("create reflection temporary"); goto cleanup; }
         json_created = 1;
     }
-    if (write_all(binary_fd, binary, word_count * 4u) < 0 ||
+    if (write_all(binary_fd, binary, binary_length) < 0 ||
         (reflection != NULL && write_all(json_fd, (const unsigned char *)json, json_length) < 0)) { perror("write artifacts"); goto cleanup; }
     if (close(binary_fd) < 0) { binary_fd = -1; perror("close binary"); goto cleanup; }
     binary_fd = -1;
@@ -164,6 +184,8 @@ cleanup:
     if (status != 0 && json_published) (void)unlink(reflection);
     if (binary_created) (void)unlink(binary_temp);
     if (json_created) (void)unlink(json_temp);
+    free(binary);
+    free(words);
     free(json);
     free(result_v2);
     free(workspace);

@@ -8,14 +8,17 @@ enum {
     OP_NAME = 5, OP_MEMORY_MODEL = 14, OP_ENTRY_POINT = 15, OP_EXECUTION_MODE = 16,
     OP_CAPABILITY = 17, OP_TYPE_VOID = 19, OP_TYPE_BOOL = 20, OP_TYPE_INT = 21,
     OP_TYPE_FLOAT = 22, OP_TYPE_VECTOR = 23, OP_TYPE_RUNTIME_ARRAY = 29, OP_TYPE_STRUCT = 30,
-    OP_TYPE_POINTER = 32, OP_TYPE_FUNCTION = 33, OP_CONSTANT = 43, OP_FUNCTION = 54,
+    OP_TYPE_POINTER = 32, OP_TYPE_FUNCTION = 33, OP_CONSTANT_TRUE = 41, OP_CONSTANT_FALSE = 42,
+    OP_CONSTANT = 43, OP_FUNCTION = 54,
     OP_FUNCTION_END = 56, OP_VARIABLE = 59, OP_LOAD = 61, OP_STORE = 62,
     OP_ACCESS_CHAIN = 65, OP_ARRAY_LENGTH = 68, OP_DECORATE = 71,
     OP_MEMBER_DECORATE = 72, OP_COMPOSITE_EXTRACT = 81, OP_IADD = 128, OP_FADD = 129,
     OP_ISUB = 130, OP_FSUB = 131, OP_IMUL = 132, OP_FMUL = 133,
-    OP_SELECT = 169, OP_IEQUAL = 170, OP_INOT_EQUAL = 171,
+    OP_LOGICAL_EQUAL = 164, OP_LOGICAL_NOT_EQUAL = 165, OP_LOGICAL_NOT = 168, OP_SELECT = 169, OP_IEQUAL = 170, OP_INOT_EQUAL = 171,
     OP_UGREATER_THAN = 172, OP_UGREATER_EQUAL = 174,
-    OP_ULESS_THAN = 176, OP_ULESS_EQUAL = 178, OP_FORD_GREATER_THAN = 186, OP_PHI = 245, OP_SELECTION_MERGE = 247, OP_LABEL = 248,
+    OP_ULESS_THAN = 176, OP_ULESS_EQUAL = 178, OP_FORD_EQUAL = 180, OP_FUNORD_NOT_EQUAL = 183,
+    OP_FORD_LESS_THAN = 184, OP_FORD_GREATER_THAN = 186, OP_FORD_LESS_EQUAL = 188,
+    OP_FORD_GREATER_EQUAL = 190, OP_PHI = 245, OP_LOOP_MERGE = 246, OP_SELECTION_MERGE = 247, OP_LABEL = 248,
     OP_BRANCH = 249, OP_BRANCH_CONDITIONAL = 250, OP_RETURN = 253, OP_UNREACHABLE = 255
 };
 enum {
@@ -31,12 +34,25 @@ typedef struct {
     uint32_t next_id, current_label;
     uint32_t buffers[DOE_COMPILER_MAX_BINDINGS];
     uint32_t inputs[MAX_ENTRY_PARAMETERS];
-    uint32_t values[MAX_IR_VALUES];
+    uint32_t *values;
+    uint32_t local_base, local_pointers[3];
+    bool failed;
     uint32_t uniform_types[DOE_COMPILER_MAX_STRUCTS];
     uint32_t uniform_pointers[DOE_COMPILER_MAX_STRUCTS];
     uint32_t member_indices[DOE_COMPILER_MAX_STRUCT_MEMBERS];
     uint32_t uniform_u32_pointer, uniform_f32_pointer;
 } Emitter;
+static uint32_t reserve_ids(Emitter *e, uint32_t count) {
+    if (count > e->source->limits->target_bound - e->next_id) {
+        e->failed = true;
+        (void)source_error(e->source, DOE_COMPILER_INPUT_ERROR, e->source->length,
+                           "target ID capacity exceeded");
+        return 0u;
+    }
+    const uint32_t first = e->next_id;
+    e->next_id += count;
+    return first;
+}
 static uint32_t scalar_type(IrType type) {
     return type == IR_BOOL ? ID_BOOL : type == IR_F32 ? ID_F32 : ID_U32;
 }
@@ -45,7 +61,8 @@ static uint32_t element_pointer(IrType type) {
 }
 static bool instruction(Emitter *e, uint32_t opcode, const uint32_t *arguments, size_t count) {
     Spirv *s = e->output;
-    if (count + 1u > DOE_COMPILER_MAX_WORDS - s->count)
+    if (e->failed) return false;
+    if (count + 1u > s->capacity - s->count)
         return source_error(e->source, DOE_COMPILER_OUTPUT_TOO_SMALL, e->source->length,
                             "internal SPIR-V word budget exceeded");
     s->words[s->count++] = ((uint32_t)(count + 1u) << 16u) | opcode;
@@ -83,17 +100,17 @@ static uint32_t builtin_decoration(InputKind kind) {
     return 0u;
 }
 static bool module_declarations(Emitter *e, const IrProgram *program) {
-    for (size_t i = 0; i < program->binding_count; ++i) e->buffers[i] = e->next_id++;
-    for (size_t i = 0; i < program->parameter_count; ++i) e->inputs[i] = e->next_id++;
+    for (size_t i = 0; i < program->binding_count; ++i) e->buffers[i] = reserve_ids(e, 1u);
+    for (size_t i = 0; i < program->parameter_count; ++i) e->inputs[i] = reserve_ids(e, 1u);
     if (program->struct_count != 0u) {
-        e->uniform_u32_pointer = e->next_id++;
-        e->uniform_f32_pointer = e->next_id++;
+        e->uniform_u32_pointer = reserve_ids(e, 1u);
+        e->uniform_f32_pointer = reserve_ids(e, 1u);
         for (size_t i = 0; i < program->struct_count; ++i) {
-            e->uniform_types[i] = e->next_id++;
-            e->uniform_pointers[i] = e->next_id++;
+            e->uniform_types[i] = reserve_ids(e, 1u);
+            e->uniform_pointers[i] = reserve_ids(e, 1u);
         }
         for (size_t i = 0; i < DOE_COMPILER_MAX_STRUCT_MEMBERS; ++i)
-            e->member_indices[i] = e->next_id++;
+            e->member_indices[i] = reserve_ids(e, 1u);
     }
     EMIT(OP_CAPABILITY, 1u); /* Shader */
     EMIT(OP_MEMORY_MODEL, 0u, 1u); /* Logical, GLSL450 */
@@ -158,6 +175,12 @@ static bool module_declarations(Emitter *e, const IrProgram *program) {
     }
     EMIT(OP_TYPE_POINTER, ID_PTR_INPUT, 1u, ID_VEC3); /* Input */
     EMIT(OP_TYPE_POINTER, ID_PTR_INPUT_U32, 1u, ID_U32);
+    if (program->local_count != 0u) {
+        for (size_t i = 0u; i < 3u; ++i) {
+            e->local_pointers[i] = reserve_ids(e, 1u);
+            EMIT(OP_TYPE_POINTER, e->local_pointers[i], 7u, scalar_type((IrType)i));
+        }
+    }
     EMIT(OP_TYPE_FUNCTION, ID_FN_TYPE, ID_VOID);
     EMIT(OP_CONSTANT, ID_U32, ID_ZERO_U32, 0u);
     EMIT(OP_CONSTANT, ID_F32, ID_ZERO_F32, 0u);
@@ -167,8 +190,13 @@ static bool module_declarations(Emitter *e, const IrProgram *program) {
     for (size_t i = 0; i < program->instruction_count; ++i) {
         const IrInstruction *ir = &program->instructions[i];
         if (ir->opcode == IR_CONSTANT) {
-            e->values[ir->result] = e->next_id++;
-            EMIT(OP_CONSTANT, scalar_type(ir->type), e->values[ir->result], ir->literal);
+            e->values[ir->result] = reserve_ids(e, 1u);
+            if (ir->type == IR_BOOL) {
+                EMIT(ir->literal != 0u ? OP_CONSTANT_TRUE : OP_CONSTANT_FALSE,
+                     ID_BOOL, e->values[ir->result]);
+            } else {
+                EMIT(OP_CONSTANT, scalar_type(ir->type), e->values[ir->result], ir->literal);
+            }
         }
     }
     for (size_t i = 0; i < program->binding_count; ++i) {
@@ -186,11 +214,11 @@ static bool module_declarations(Emitter *e, const IrProgram *program) {
     return true;
 }
 static bool robust_access(Emitter *e, const IrInstruction *ir) {
-    const uint32_t length = e->next_id++;
-    const uint32_t condition = e->next_id++;
-    const uint32_t body = e->next_id++;
-    const uint32_t merge = e->next_id++;
-    const uint32_t pointer = e->next_id++;
+    const uint32_t length = reserve_ids(e, 1u);
+    const uint32_t condition = reserve_ids(e, 1u);
+    const uint32_t body = reserve_ids(e, 1u);
+    const uint32_t merge = reserve_ids(e, 1u);
+    const uint32_t pointer = reserve_ids(e, 1u);
     const uint32_t predecessor = e->current_label;
     EMIT(OP_ARRAY_LENGTH, ID_U32, length, e->buffers[ir->binding], 0u);
     EMIT(OP_ULESS_THAN, ID_BOOL, condition, e->values[ir->left], length);
@@ -202,7 +230,7 @@ static bool robust_access(Emitter *e, const IrInstruction *ir) {
          e->buffers[ir->binding], ID_ZERO_U32, e->values[ir->left]);
     uint32_t loaded = 0u;
     if (ir->opcode == IR_ROBUST_LOAD) {
-        loaded = e->next_id++;
+        loaded = reserve_ids(e, 1u);
         EMIT(OP_LOAD, scalar_type(ir->type), loaded, pointer);
     } else {
         EMIT(OP_STORE, pointer, e->values[ir->right]);
@@ -216,7 +244,19 @@ static bool robust_access(Emitter *e, const IrInstruction *ir) {
     e->current_label = merge;
     return true;
 }
-static uint32_t comparison_opcode(Comparison comparison) {
+static uint32_t comparison_opcode(Comparison comparison, IrType type) {
+    if (type == IR_BOOL)
+        return comparison == COMPARE_EQUAL ? OP_LOGICAL_EQUAL : OP_LOGICAL_NOT_EQUAL;
+    if (type == IR_F32) {
+        switch (comparison) {
+            case COMPARE_EQUAL: return OP_FORD_EQUAL;
+            case COMPARE_NOT_EQUAL: return OP_FUNORD_NOT_EQUAL;
+            case COMPARE_LESS: return OP_FORD_LESS_THAN;
+            case COMPARE_LESS_EQUAL: return OP_FORD_LESS_EQUAL;
+            case COMPARE_GREATER: return OP_FORD_GREATER_THAN;
+            case COMPARE_GREATER_EQUAL: return OP_FORD_GREATER_EQUAL;
+        }
+    }
     switch (comparison) {
         case COMPARE_EQUAL: return OP_IEQUAL;
         case COMPARE_NOT_EQUAL: return OP_INOT_EQUAL;
@@ -227,27 +267,33 @@ static uint32_t comparison_opcode(Comparison comparison) {
     }
     return 0u;
 }
+typedef struct EmitLoop EmitLoop;
+struct EmitLoop {
+    EmitLoop *parent;
+    uint32_t header, continuing, merge;
+    bool continue_live;
+};
 static bool emit_block(Emitter *e, const IrProgram *program, size_t *cursor,
-                       unsigned depth, bool *live);
+                       unsigned depth, EmitLoop *loop, bool *live);
 static bool emit_selection(Emitter *e, const IrProgram *program, size_t *cursor,
-                           unsigned depth, bool *live) {
+                           unsigned depth, EmitLoop *loop, bool *live) {
     const IrInstruction *test = &program->instructions[(*cursor)++];
-    if (depth == MAX_IF_DEPTH)
+    if (depth >= e->source->limits->control_depth + e->source->limits->expression_depth)
         return source_error(e->source, DOE_COMPILER_INPUT_ERROR, test->source_offset,
                             "internal structured IR depth exceeded");
     const bool active = *live;
     uint32_t yes = 0u, no = 0u, merge = 0u;
     if (active) {
-        yes = e->next_id++;
-        no = e->next_id++;
-        merge = e->next_id++;
+        yes = reserve_ids(e, 1u);
+        no = reserve_ids(e, 1u);
+        merge = reserve_ids(e, 1u);
         EMIT(OP_SELECTION_MERGE, merge, 0u);
         EMIT(OP_BRANCH_CONDITIONAL, e->values[test->left], yes, no);
         EMIT(OP_LABEL, yes);
         e->current_label = yes;
     }
     bool yes_live = active;
-    if (!emit_block(e, program, cursor, depth + 1u, &yes_live)) return false;
+    if (!emit_block(e, program, cursor, depth + 1u, loop, &yes_live)) return false;
     if (*cursor == program->instruction_count || program->instructions[*cursor].opcode != IR_ELSE)
         return source_error(e->source, DOE_COMPILER_INPUT_ERROR, test->source_offset,
                             "internal structured IR missing else boundary");
@@ -258,7 +304,7 @@ static bool emit_selection(Emitter *e, const IrProgram *program, size_t *cursor,
         e->current_label = no;
     }
     bool no_live = active;
-    if (!emit_block(e, program, cursor, depth + 1u, &no_live)) return false;
+    if (!emit_block(e, program, cursor, depth + 1u, loop, &no_live)) return false;
     if (*cursor == program->instruction_count || program->instructions[*cursor].opcode != IR_END_IF)
         return source_error(e->source, DOE_COMPILER_INPUT_ERROR, test->source_offset,
                             "internal structured IR missing merge boundary");
@@ -273,32 +319,125 @@ static bool emit_selection(Emitter *e, const IrProgram *program, size_t *cursor,
     }
     return true;
 }
+static bool expect_marker(Emitter *e, const IrProgram *program, size_t cursor, IrOpcode opcode) {
+    if (cursor < program->instruction_count && program->instructions[cursor].opcode == opcode) return true;
+    return source_error(e->source, DOE_COMPILER_INPUT_ERROR, e->source->length,
+                        "internal structured IR boundary mismatch");
+}
+static bool emit_short_circuit(Emitter *e, const IrProgram *program, size_t *cursor,
+                               unsigned depth, EmitLoop *loop, bool *live) {
+    const IrInstruction *begin = &program->instructions[(*cursor)++];
+    const bool active = *live;
+    uint32_t rhs = 0u, merge = 0u, predecessor = e->current_label;
+    if (active) {
+        rhs = reserve_ids(e, 1u); merge = reserve_ids(e, 1u);
+        EMIT(OP_SELECTION_MERGE, merge, 0u);
+        EMIT(OP_BRANCH_CONDITIONAL, e->values[begin->left],
+             begin->literal != 0u ? merge : rhs, begin->literal != 0u ? rhs : merge);
+        EMIT(OP_LABEL, rhs);
+        e->current_label = rhs;
+    }
+    bool rhs_live = active;
+    if (!emit_block(e, program, cursor, depth + 1u, loop, &rhs_live) ||
+        !expect_marker(e, program, *cursor, IR_SHORT_END)) return false;
+    const IrInstruction *end = &program->instructions[(*cursor)++];
+    if (active) {
+        const uint32_t rhs_predecessor = e->current_label;
+        EMIT(OP_BRANCH, merge);
+        EMIT(OP_LABEL, merge);
+        e->values[end->result] = reserve_ids(e, 1u);
+        EMIT(OP_PHI, ID_BOOL, e->values[end->result], e->values[end->left], predecessor,
+             e->values[end->right], rhs_predecessor);
+        e->current_label = merge;
+    }
+    return true;
+}
+static bool emit_loop(Emitter *e, const IrProgram *program, size_t *cursor,
+                      unsigned depth, EmitLoop *outer, bool *live) {
+    const IrInstruction *begin = &program->instructions[(*cursor)++];
+    const bool active = *live;
+    EmitLoop loop = { .parent = outer };
+    uint32_t test_label = 0u, body_label = 0u;
+    if (active) {
+        loop.header = reserve_ids(e, 1u); test_label = reserve_ids(e, 1u);
+        body_label = reserve_ids(e, 1u); loop.continuing = reserve_ids(e, 1u);
+        loop.merge = reserve_ids(e, 1u);
+        EMIT(OP_BRANCH, loop.header);
+        EMIT(OP_LABEL, loop.header);
+        EMIT(OP_LOOP_MERGE, loop.merge, loop.continuing, 0u);
+        EMIT(OP_BRANCH, test_label);
+        EMIT(OP_LABEL, test_label);
+        e->current_label = test_label;
+    }
+    bool test_live = active;
+    if (!emit_block(e, program, cursor, depth + 1u, &loop, &test_live) ||
+        !expect_marker(e, program, *cursor, IR_LOOP_TEST)) return false;
+    const IrInstruction *test = &program->instructions[(*cursor)++];
+    if (active) {
+        if (test->left != 0u) { EMIT(OP_BRANCH_CONDITIONAL, e->values[test->left], body_label, loop.merge); }
+        else { EMIT(OP_BRANCH, body_label); }
+        EMIT(OP_LABEL, body_label);
+        e->current_label = body_label;
+    }
+    bool body_live = active;
+    if (!emit_block(e, program, cursor, depth + 1u, &loop, &body_live) ||
+        !expect_marker(e, program, *cursor, IR_LOOP_CONTINUING)) return false;
+    ++*cursor;
+    if (body_live) { EMIT(OP_BRANCH, loop.continuing); loop.continue_live = true; }
+    if (active) {
+        EMIT(OP_LABEL, loop.continuing);
+        e->current_label = loop.continuing;
+        /* A predecessorless continuing block still supplies the one structural
+         * back-edge required by SPIR-V. Its source operations remain suppressed. */
+    }
+    bool tail_live = active && loop.continue_live;
+    if (!emit_block(e, program, cursor, depth + 1u, &loop, &tail_live) ||
+        !expect_marker(e, program, *cursor, IR_END_LOOP)) return false;
+    ++*cursor;
+    if (tail_live || (active && !loop.continue_live)) { EMIT(OP_BRANCH, loop.header); }
+    *live = active && ((begin->literal & 1u) != 0u);
+    if (active) {
+        EMIT(OP_LABEL, loop.merge);
+        e->current_label = loop.merge;
+        if (!*live && !instruction(e, OP_UNREACHABLE, NULL, 0u)) return false;
+    }
+    return true;
+}
 static bool emit_block(Emitter *e, const IrProgram *program, size_t *cursor,
-                       unsigned depth, bool *live) {
+                       unsigned depth, EmitLoop *loop, bool *live) {
     while (*cursor < program->instruction_count) {
         const IrInstruction *ir = &program->instructions[*cursor];
-        if (ir->opcode == IR_ELSE || ir->opcode == IR_END_IF) return true;
+        if (ir->opcode == IR_ELSE || ir->opcode == IR_END_IF || ir->opcode == IR_SHORT_END ||
+            ir->opcode == IR_LOOP_TEST || ir->opcode == IR_LOOP_CONTINUING || ir->opcode == IR_END_LOOP) return true;
         if (ir->opcode == IR_IF) {
-            if (!emit_selection(e, program, cursor, depth, live)) return false;
+            if (!emit_selection(e, program, cursor, depth, loop, live)) return false;
+            continue;
+        }
+        if (ir->opcode == IR_SHORT_BEGIN) {
+            if (!emit_short_circuit(e, program, cursor, depth, loop, live)) return false;
+            continue;
+        }
+        if (ir->opcode == IR_LOOP_BEGIN) {
+            if (!emit_loop(e, program, cursor, depth, loop, live)) return false;
             continue;
         }
         ++*cursor;
         if (!*live) continue; /* Validation already covered unreachable source. */
-        if (ir->result != 0u && ir->opcode != IR_CONSTANT) e->values[ir->result] = e->next_id++;
+        if (ir->result != 0u && ir->opcode != IR_CONSTANT) e->values[ir->result] = reserve_ids(e, 1u);
         switch (ir->opcode) {
             case IR_INPUT: {
                 const uint32_t input = e->inputs[ir->binding];
                 if (program->parameters[ir->binding].kind == INPUT_LOCAL_INDEX) {
                     EMIT(OP_LOAD, ID_U32, e->values[ir->result], input);
                 } else {
-                    const uint32_t vector = e->next_id++;
+                    const uint32_t vector = reserve_ids(e, 1u);
                     EMIT(OP_LOAD, ID_VEC3, vector, input);
                     EMIT(OP_COMPOSITE_EXTRACT, ID_U32, e->values[ir->result], vector, ir->literal);
                 }
                 break;
             }
             case IR_UNIFORM_LOAD: {
-                const uint32_t pointer = e->next_id++;
+                const uint32_t pointer = reserve_ids(e, 1u);
                 const uint32_t pointer_type = ir->type == IR_F32 ?
                     e->uniform_f32_pointer : e->uniform_u32_pointer;
                 EMIT(OP_ACCESS_CHAIN, pointer_type, pointer, e->buffers[ir->binding],
@@ -322,7 +461,7 @@ static bool emit_block(Emitter *e, const IrProgram *program, size_t *cursor,
                 break;
             }
             case IR_MAX: {
-                const uint32_t condition = e->next_id++;
+                const uint32_t condition = reserve_ids(e, 1u);
                 EMIT(ir->type == IR_F32 ? OP_FORD_GREATER_THAN : OP_UGREATER_THAN,
                      ID_BOOL, condition, e->values[ir->left], e->values[ir->right]);
                 EMIT(OP_SELECT, scalar_type(ir->type), e->values[ir->result], condition,
@@ -330,8 +469,31 @@ static bool emit_block(Emitter *e, const IrProgram *program, size_t *cursor,
                 break;
             }
             case IR_COMPARE:
-                EMIT(comparison_opcode(ir->comparison), ID_BOOL, e->values[ir->result],
+                EMIT(comparison_opcode(ir->comparison, ir->comparison_type), ID_BOOL, e->values[ir->result],
                      e->values[ir->left], e->values[ir->right]);
+                break;
+            case IR_NOT:
+                EMIT(OP_LOGICAL_NOT, ID_BOOL, e->values[ir->result], e->values[ir->left]);
+                break;
+            case IR_LOCAL_LOAD:
+                EMIT(OP_LOAD, scalar_type(ir->type), e->values[ir->result], e->local_base + ir->binding);
+                break;
+            case IR_LOCAL_STORE:
+                EMIT(OP_STORE, e->local_base + ir->binding, e->values[ir->right]);
+                break;
+            case IR_BREAK:
+            case IR_CONTINUE:
+            case IR_BREAK_IF:
+                if (loop == NULL)
+                    return source_error(e->source, DOE_COMPILER_INPUT_ERROR, ir->source_offset,
+                                        "internal loop target is missing");
+                if (ir->opcode == IR_BREAK_IF) {
+                    EMIT(OP_BRANCH_CONDITIONAL, e->values[ir->left], loop->merge, loop->header);
+                } else {
+                    EMIT(OP_BRANCH, ir->opcode == IR_BREAK ? loop->merge : loop->continuing);
+                    if (ir->opcode == IR_CONTINUE) loop->continue_live = true;
+                }
+                *live = false;
                 break;
             case IR_RETURN:
                 if (!instruction(e, OP_RETURN, NULL, 0u)) return false;
@@ -339,6 +501,12 @@ static bool emit_block(Emitter *e, const IrProgram *program, size_t *cursor,
                 break;
             case IR_CONSTANT:
                 break; /* Module-scope constant already emitted and assigned. */
+            case IR_SHORT_BEGIN:
+            case IR_SHORT_END:
+            case IR_LOOP_BEGIN:
+            case IR_LOOP_TEST:
+            case IR_LOOP_CONTINUING:
+            case IR_END_LOOP:
             case IR_IF:
             case IR_ELSE:
             case IR_END_IF:
@@ -350,11 +518,15 @@ static bool emit_block(Emitter *e, const IrProgram *program, size_t *cursor,
 }
 static bool function_body(Emitter *e, const IrProgram *program) {
     EMIT(OP_FUNCTION, ID_VOID, ID_ENTRY, 0u, ID_FN_TYPE);
-    e->current_label = e->next_id++;
+    e->current_label = reserve_ids(e, 1u);
     EMIT(OP_LABEL, e->current_label);
+    e->local_base = reserve_ids(e, (uint32_t)program->local_count);
+    for (size_t i = 0u; i < program->local_count; ++i) {
+        EMIT(OP_VARIABLE, e->local_pointers[program->locals[i].type], e->local_base + (uint32_t)i, 7u);
+    }
     size_t cursor = 0u;
     bool live = true;
-    if (!emit_block(e, program, &cursor, 0u, &live)) return false;
+    if (!emit_block(e, program, &cursor, 0u, NULL, &live)) return false;
     if (cursor != program->instruction_count)
         return source_error(e->source, DOE_COMPILER_INPUT_ERROR, e->source->length,
                             "unexpected top-level structured IR boundary");
@@ -363,13 +535,18 @@ static bool function_body(Emitter *e, const IrProgram *program) {
 }
 #undef EMIT
 
-bool emit_spirv(Source *source, const IrProgram *program, Spirv *spirv) {
-    memset(spirv, 0, sizeof(*spirv));
+bool emit_spirv(Source *source, const IrProgram *program, Spirv *spirv, uint32_t *values) {
+    spirv->count = 0u;
+    if (spirv->capacity < 5u)
+        return source_error(source, DOE_COMPILER_OUTPUT_TOO_SMALL, source->length,
+                            "SPIR-V staging capacity is smaller than the header");
+    memset(values, 0, source->limits->values * sizeof(*values));
     spirv->words[0] = 0x07230203u;
     spirv->words[1] = 0x00010300u;
     spirv->words[2] = 0u; /* Unregistered generator, no borrowed tool identity. */
+    spirv->words[4] = 0u;
     spirv->count = 5u;
-    Emitter emitter = { .source = source, .output = spirv, .next_id = FIRST_DYNAMIC_ID };
+    Emitter emitter = { .source = source, .output = spirv, .next_id = FIRST_DYNAMIC_ID, .values = values };
     if (!module_declarations(&emitter, program) || !function_body(&emitter, program)) return false;
     spirv->words[3] = emitter.next_id;
     return true;

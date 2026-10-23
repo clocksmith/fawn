@@ -1,0 +1,3 @@
+Pre-candidate evaluator correction, 2026-10-23T04:30Z.
+Original api_job_m7.py bytes preserved as job_api_initial_freeze_m7.py; their SHA256 equals the api_job_m7.py line in original job_TEST_FREEZE_M7.sha256, which is unchanged.
+Only the empty-source/NULL-zero-length smoke expectation adds INPUT_ERROR to the admitted failure statuses. The public pointer rule admits NULL at length zero, but does not promise a grammar-stage status for an empty compute module. Retained native_m5.c explicitly expects INPUT_ERROR for empty source. No candidate inspected or run. This is an evaluator expectation correction, not a candidate defect or new grammar lift.

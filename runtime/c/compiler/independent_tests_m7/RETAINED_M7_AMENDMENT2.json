@@ -1,0 +1,9 @@
+{
+  "amendment": "c13b358f9cd2841efce42ec0647acfe8849b33cd",
+  "historical_suite_sha256": "5b74e2c005d5aa346f4cdf5d048b1ef34ae76490044e85ba42f03541451cbea4",
+  "new_inventory_sha256": "9bc3f5271f7e650ca2a497dc60c976e3491b82a9e0f5ccf2f2df6f6665b0ca2a",
+  "case": "m5_struct_semicolon",
+  "source_sha256": "d93f7480eeac7a7739b8fe197851e17a8975a2665a3bfaf431d5178d1b5e5883",
+  "change": "Exact source admission only; expected out[0]=p.a, remaining output/input bytes unchanged. No other historical classification/source changed.",
+  "candidate_inspected": false
+}

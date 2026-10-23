@@ -267,7 +267,7 @@ class TestCliModes(unittest.TestCase):
             self.reflection.unlink(missing_ok=True)
 
     def test_allocation_and_query_failures_preserve_artifacts(self) -> None:
-        for reflected, allocations in [(False, 2), (True, 1), ("--reflection-v2", 3)]:
+        for reflected, allocations in [(False, 4), (True, 3), ("--reflection-v2", 5)]:
             for call in range(1, allocations + 1):
                 before = snapshot(self.folder)
                 env = dict(os.environ, DOE_CLI_FAULT="malloc", DOE_CLI_FAULT_CALL=str(call))

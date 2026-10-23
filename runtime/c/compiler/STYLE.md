@@ -13,15 +13,15 @@ Follow the repository's native adapter rules and the frozen milestone. This loca
 
 ## Structured owner limits
 
-The private syntax owns at most 16 preorder statements and 320 unified scalar
+The fixed ABI1/v2 capability owns at most 16 preorder statements and 320 charged scalar
 expression nodes. Each if records then/else ranges; the fifth nested if rejects.
 Expression depth is at most 18: leaves count one, load(index) adds one, binary/max
 adds one to the deepest child, and parentheses add one without another node.
 Every storage index and both unsigned comparison operands use this same tree
-and typed lowering, not a second atom/index grammar. These are this increment's
-explicit envelope, not a permanent full-compiler allocation model.
+and typed lowering, not a second atom/index grammar. These are legacy capability limits, not a permanent full-compiler allocation model.
+Job capacities use the same owners through checked caller slices.
 
-A scalar node emits at most one typed IR operation. Each if adds a comparison
+In the legacy capability, a scalar node emits at most one typed IR operation. Each if adds a comparison
 and three control markers; other statements add at most one operation. Only an
 exact leading unannotated global-invocation-x alias adds one exempt input value,
 with no statement or node charge. All other builtin reads count as nodes, with
@@ -40,8 +40,9 @@ Workgroup dimensions and their checked product remain within the frozen bound.
 Scope records retain evaluated typed value IDs, not expressions to replay.
 Save/restore the visible record count around each brace-delimited block. A new
 local enters scope only after its initializer; sibling scopes cannot leak
-values. Preserve legacy alias lookup rules, but reject new-local shadowing of
-visible user declarations. Resolve max and explicit type annotations against
+values. Preserve legacy alias lookup rules and its no-shadowing capability. Job scopes
+allow ordinary shadowing but reject same-scope duplicates; initializer and type
+lookup occur before the new binding enters scope. Resolve max and explicit type annotations against
 visible values before treating their spellings as builtins.
 
 Decimal syntax retains exact numerator/denominator records. Materialization
@@ -90,3 +91,47 @@ invalid flag; zero may select a valid outer read or store. Wrap u32 arithmetic
 before independently guarding the final index of each binding. Keep uniform
 minimum binding requirements separate from storage robustness. CLI JSON owns
 bounded append mechanics, not another semantic/reflection registry.
+
+## Configurable function jobs and structured state
+
+`storage.c` owns checked count-to-byte multiplication, aligned slice offsets and
+ID/header-bound arithmetic. Do not grow fixed arrays with language milestones.
+New jobs derive I=1+4*E+8*S instructions, I+1 semantic-value map entries and S+1
+local/scope entries; staging words remain independent. Fixed reflection/module
+bounds are explicit, not silently expanded by job sizing. Every append/reservation
+checks capacity even when a conservative sizing proof exists. The library never
+allocates; the caller distinguishes its own allocation failure from compiler
+INPUT_ERROR/OUTPUT_TOO_SMALL. Versioned public layout is separate from evolving
+language admission; amendments preserve receipts rather than arbitrary bugs.
+
+Keep source scope, semantic mutable-local identity and target pointer identity
+separate. Function OpVariable declarations are at entry; initialization stores
+are at the original declaration point on every iteration. Immutable bindings
+hold evaluated value IDs, not AST expressions to replay. For-header scope
+survives test/update/body, but body locals cannot leak into update. A loop body
+scope may be referenced by continuing only when a targeted continue cannot
+bypass that declaration. Check continuing control restrictions against the
+nearest loop and reject return through every enclosing continuing context.
+
+Lower Next/Break/Continue/Return behavior sets bottom-up while still checking
+unreachable source. An unreachable continuing block must not invent Next.
+The backend suppresses dead operations, not validation, and tracks actual labels
+after robust loads and short circuits. A predecessorless loop continuing block
+still supplies SPIR-V's structural back-edge, with no source operations emitted.
+Each logical RHS has a branch and Phi; eager select/logical operations cannot
+stand in for short circuit. Loop labels and target IDs are reserved independently
+of semantic values, never by indexing an array with arbitrary target IDs.
+
+Direct integer literals retain AbstractInt until direct contextual conversion.
+Do not propagate expected concrete types through unsupported abstract subtrees.
+Concrete u32 wraps; floating constant-only trees remain outside this owner.
+All name, type, mutability and behavior checks apply to dead source too.
+
+Expression/control depths are independently bounded at 64/32 for jobs, 18/4 for
+legacy adapters. Malformed nested continuing syntax also has a checked compound
+recursion ceiling of 2*control_depth+1. Neither source/node/statement capacity nor
+extra supplied workspace bytes increases stack depth. Record per-function GCC
+frames and a conservative combined call-path bound when changing recursion.
+The current legacy workspace/frame are 73,400/73,488 bytes; every other library
+frame is at most 672 bytes at GCC14.2 -O2. See README for the derived recursion
+bounds and exact native/CLI reproduction.

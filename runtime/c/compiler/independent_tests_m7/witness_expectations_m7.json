@@ -1,0 +1,611 @@
+{
+  "fixtures": [
+    {
+      "case": "real_moderate_matmul_naive",
+      "expected_reflection": {
+        "binding_count": 4,
+        "bindings": [
+          {
+            "access": "read",
+            "address_space_alignment_bytes": 4,
+            "binding": 0,
+            "element_stride": 4,
+            "group": 0,
+            "kind": "storage_buffer",
+            "minimum_binding_size_bytes": 4,
+            "name": "a",
+            "runtime_sized": 1,
+            "scalar": "f32",
+            "struct_index": null,
+            "type_alignment_bytes": 4
+          },
+          {
+            "access": "read",
+            "address_space_alignment_bytes": 4,
+            "binding": 1,
+            "element_stride": 4,
+            "group": 0,
+            "kind": "storage_buffer",
+            "minimum_binding_size_bytes": 4,
+            "name": "b",
+            "runtime_sized": 1,
+            "scalar": "f32",
+            "struct_index": null,
+            "type_alignment_bytes": 4
+          },
+          {
+            "access": "read_write",
+            "address_space_alignment_bytes": 4,
+            "binding": 2,
+            "element_stride": 4,
+            "group": 0,
+            "kind": "storage_buffer",
+            "minimum_binding_size_bytes": 4,
+            "name": "c",
+            "runtime_sized": 1,
+            "scalar": "f32",
+            "struct_index": null,
+            "type_alignment_bytes": 4
+          },
+          {
+            "access": "read",
+            "address_space_alignment_bytes": 16,
+            "binding": 3,
+            "element_stride": 0,
+            "group": 0,
+            "kind": "uniform_buffer",
+            "minimum_binding_size_bytes": 12,
+            "name": "dims",
+            "runtime_sized": 0,
+            "scalar": null,
+            "struct_index": 0,
+            "type_alignment_bytes": 4
+          }
+        ],
+        "entry_point": "main",
+        "schema_version": 2,
+        "struct_count": 1,
+        "structs": [
+          {
+            "alignment_bytes": 4,
+            "member_count": 3,
+            "members": [
+              {
+                "alignment_bytes": 4,
+                "name": "M",
+                "offset_bytes": 0,
+                "scalar": "u32",
+                "size_bytes": 4
+              },
+              {
+                "alignment_bytes": 4,
+                "name": "N",
+                "offset_bytes": 4,
+                "scalar": "u32",
+                "size_bytes": 4
+              },
+              {
+                "alignment_bytes": 4,
+                "name": "K",
+                "offset_bytes": 8,
+                "scalar": "u32",
+                "size_bytes": 4
+              }
+            ],
+            "name": "Dims",
+            "size_bytes": 12
+          }
+        ],
+        "workgroup_size": [
+          8,
+          8,
+          1
+        ]
+      },
+      "invocations": 7683,
+      "source": "bench/kernels/compilation-corpus/moderate_matmul_naive.wgsl",
+      "source_sha256": "691551e04ff875ec882b45993477ec40f432185921e3b0f7f77aec0e5e2b817b",
+      "vector_sha256": "dce7105a2707f9554aa0a300cef7a57d2af8b532e5a1d636e2165600f22d7a0e",
+      "vectors": 123
+    },
+    {
+      "case": "real_dot_product_forward_f32",
+      "expected_reflection": {
+        "binding_count": 4,
+        "bindings": [
+          {
+            "access": "read",
+            "address_space_alignment_bytes": 16,
+            "binding": 0,
+            "element_stride": 0,
+            "group": 0,
+            "kind": "uniform_buffer",
+            "minimum_binding_size_bytes": 16,
+            "name": "params",
+            "runtime_sized": 0,
+            "scalar": null,
+            "struct_index": 0,
+            "type_alignment_bytes": 4
+          },
+          {
+            "access": "read",
+            "address_space_alignment_bytes": 4,
+            "binding": 1,
+            "element_stride": 4,
+            "group": 0,
+            "kind": "storage_buffer",
+            "minimum_binding_size_bytes": 4,
+            "name": "lhs",
+            "runtime_sized": 1,
+            "scalar": "f32",
+            "struct_index": null,
+            "type_alignment_bytes": 4
+          },
+          {
+            "access": "read",
+            "address_space_alignment_bytes": 4,
+            "binding": 2,
+            "element_stride": 4,
+            "group": 0,
+            "kind": "storage_buffer",
+            "minimum_binding_size_bytes": 4,
+            "name": "rhs",
+            "runtime_sized": 1,
+            "scalar": "f32",
+            "struct_index": null,
+            "type_alignment_bytes": 4
+          },
+          {
+            "access": "read_write",
+            "address_space_alignment_bytes": 4,
+            "binding": 3,
+            "element_stride": 4,
+            "group": 0,
+            "kind": "storage_buffer",
+            "minimum_binding_size_bytes": 4,
+            "name": "output",
+            "runtime_sized": 1,
+            "scalar": "f32",
+            "struct_index": null,
+            "type_alignment_bytes": 4
+          }
+        ],
+        "entry_point": "main",
+        "schema_version": 2,
+        "struct_count": 1,
+        "structs": [
+          {
+            "alignment_bytes": 4,
+            "member_count": 4,
+            "members": [
+              {
+                "alignment_bytes": 4,
+                "name": "length",
+                "offset_bytes": 0,
+                "scalar": "u32",
+                "size_bytes": 4
+              },
+              {
+                "alignment_bytes": 4,
+                "name": "_pad0",
+                "offset_bytes": 4,
+                "scalar": "u32",
+                "size_bytes": 4
+              },
+              {
+                "alignment_bytes": 4,
+                "name": "_pad1",
+                "offset_bytes": 8,
+                "scalar": "u32",
+                "size_bytes": 4
+              },
+              {
+                "alignment_bytes": 4,
+                "name": "_pad2",
+                "offset_bytes": 12,
+                "scalar": "u32",
+                "size_bytes": 4
+              }
+            ],
+            "name": "Params",
+            "size_bytes": 16
+          }
+        ],
+        "workgroup_size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "invocations": 147,
+      "source": "bench/inference-pipeline/kernels/dot_product_forward_f32.wgsl",
+      "source_sha256": "c177724439e1041b66f302e7e5399b1ac4cc85170c990616539a5fc639a925cc",
+      "vector_sha256": "4982443f5a07f3105022585bb9b8bac66d5e6d5dbda0e2a2f0c1289f69653ae5",
+      "vectors": 75
+    },
+    {
+      "case": "real_dot_product_reverse_f32",
+      "expected_reflection": {
+        "binding_count": 4,
+        "bindings": [
+          {
+            "access": "read",
+            "address_space_alignment_bytes": 16,
+            "binding": 0,
+            "element_stride": 0,
+            "group": 0,
+            "kind": "uniform_buffer",
+            "minimum_binding_size_bytes": 16,
+            "name": "params",
+            "runtime_sized": 0,
+            "scalar": null,
+            "struct_index": 0,
+            "type_alignment_bytes": 4
+          },
+          {
+            "access": "read",
+            "address_space_alignment_bytes": 4,
+            "binding": 1,
+            "element_stride": 4,
+            "group": 0,
+            "kind": "storage_buffer",
+            "minimum_binding_size_bytes": 4,
+            "name": "lhs",
+            "runtime_sized": 1,
+            "scalar": "f32",
+            "struct_index": null,
+            "type_alignment_bytes": 4
+          },
+          {
+            "access": "read",
+            "address_space_alignment_bytes": 4,
+            "binding": 2,
+            "element_stride": 4,
+            "group": 0,
+            "kind": "storage_buffer",
+            "minimum_binding_size_bytes": 4,
+            "name": "rhs",
+            "runtime_sized": 1,
+            "scalar": "f32",
+            "struct_index": null,
+            "type_alignment_bytes": 4
+          },
+          {
+            "access": "read_write",
+            "address_space_alignment_bytes": 4,
+            "binding": 3,
+            "element_stride": 4,
+            "group": 0,
+            "kind": "storage_buffer",
+            "minimum_binding_size_bytes": 4,
+            "name": "output",
+            "runtime_sized": 1,
+            "scalar": "f32",
+            "struct_index": null,
+            "type_alignment_bytes": 4
+          }
+        ],
+        "entry_point": "main",
+        "schema_version": 2,
+        "struct_count": 1,
+        "structs": [
+          {
+            "alignment_bytes": 4,
+            "member_count": 4,
+            "members": [
+              {
+                "alignment_bytes": 4,
+                "name": "length",
+                "offset_bytes": 0,
+                "scalar": "u32",
+                "size_bytes": 4
+              },
+              {
+                "alignment_bytes": 4,
+                "name": "_pad0",
+                "offset_bytes": 4,
+                "scalar": "u32",
+                "size_bytes": 4
+              },
+              {
+                "alignment_bytes": 4,
+                "name": "_pad1",
+                "offset_bytes": 8,
+                "scalar": "u32",
+                "size_bytes": 4
+              },
+              {
+                "alignment_bytes": 4,
+                "name": "_pad2",
+                "offset_bytes": 12,
+                "scalar": "u32",
+                "size_bytes": 4
+              }
+            ],
+            "name": "Params",
+            "size_bytes": 16
+          }
+        ],
+        "workgroup_size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "invocations": 147,
+      "source": "bench/inference-pipeline/kernels/dot_product_reverse_f32.wgsl",
+      "source_sha256": "95a309042cf65345e32adb33fc685e8f987cc98f174b41fdfb3c5cd68cc12d7a",
+      "vector_sha256": "e342915e89084e9f5990957b3ffc2fa7f1be4555d449abc83e9e3f9841aa298f",
+      "vectors": 75
+    },
+    {
+      "case": "real_matmul_logits_forward_f32",
+      "expected_reflection": {
+        "binding_count": 4,
+        "bindings": [
+          {
+            "access": "read",
+            "address_space_alignment_bytes": 16,
+            "binding": 0,
+            "element_stride": 0,
+            "group": 0,
+            "kind": "uniform_buffer",
+            "minimum_binding_size_bytes": 16,
+            "name": "params",
+            "runtime_sized": 0,
+            "scalar": null,
+            "struct_index": 0,
+            "type_alignment_bytes": 4
+          },
+          {
+            "access": "read",
+            "address_space_alignment_bytes": 4,
+            "binding": 1,
+            "element_stride": 4,
+            "group": 0,
+            "kind": "storage_buffer",
+            "minimum_binding_size_bytes": 4,
+            "name": "hidden",
+            "runtime_sized": 1,
+            "scalar": "f32",
+            "struct_index": null,
+            "type_alignment_bytes": 4
+          },
+          {
+            "access": "read",
+            "address_space_alignment_bytes": 4,
+            "binding": 2,
+            "element_stride": 4,
+            "group": 0,
+            "kind": "storage_buffer",
+            "minimum_binding_size_bytes": 4,
+            "name": "weights",
+            "runtime_sized": 1,
+            "scalar": "f32",
+            "struct_index": null,
+            "type_alignment_bytes": 4
+          },
+          {
+            "access": "read_write",
+            "address_space_alignment_bytes": 4,
+            "binding": 3,
+            "element_stride": 4,
+            "group": 0,
+            "kind": "storage_buffer",
+            "minimum_binding_size_bytes": 4,
+            "name": "output",
+            "runtime_sized": 1,
+            "scalar": "f32",
+            "struct_index": null,
+            "type_alignment_bytes": 4
+          }
+        ],
+        "entry_point": "main",
+        "schema_version": 2,
+        "struct_count": 1,
+        "structs": [
+          {
+            "alignment_bytes": 4,
+            "member_count": 4,
+            "members": [
+              {
+                "alignment_bytes": 4,
+                "name": "rows",
+                "offset_bytes": 0,
+                "scalar": "u32",
+                "size_bytes": 4
+              },
+              {
+                "alignment_bytes": 4,
+                "name": "cols",
+                "offset_bytes": 4,
+                "scalar": "u32",
+                "size_bytes": 4
+              },
+              {
+                "alignment_bytes": 4,
+                "name": "_pad0",
+                "offset_bytes": 8,
+                "scalar": "u32",
+                "size_bytes": 4
+              },
+              {
+                "alignment_bytes": 4,
+                "name": "_pad1",
+                "offset_bytes": 12,
+                "scalar": "u32",
+                "size_bytes": 4
+              }
+            ],
+            "name": "Params",
+            "size_bytes": 16
+          }
+        ],
+        "workgroup_size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "invocations": 484,
+      "source": "bench/inference-pipeline/kernels/matmul_logits_forward_f32.wgsl",
+      "source_sha256": "f8d513cd51712d32e8d750733ad25a34d423947ecf3d5b4cba08b2e30b32229f",
+      "vector_sha256": "f2fb577c620c48aac40f858e795aaff3337aa08045868c52185d94472513e453",
+      "vectors": 124
+    },
+    {
+      "case": "real_matmul_logits_reverse_f32",
+      "expected_reflection": {
+        "binding_count": 4,
+        "bindings": [
+          {
+            "access": "read",
+            "address_space_alignment_bytes": 16,
+            "binding": 0,
+            "element_stride": 0,
+            "group": 0,
+            "kind": "uniform_buffer",
+            "minimum_binding_size_bytes": 16,
+            "name": "params",
+            "runtime_sized": 0,
+            "scalar": null,
+            "struct_index": 0,
+            "type_alignment_bytes": 4
+          },
+          {
+            "access": "read",
+            "address_space_alignment_bytes": 4,
+            "binding": 1,
+            "element_stride": 4,
+            "group": 0,
+            "kind": "storage_buffer",
+            "minimum_binding_size_bytes": 4,
+            "name": "hidden",
+            "runtime_sized": 1,
+            "scalar": "f32",
+            "struct_index": null,
+            "type_alignment_bytes": 4
+          },
+          {
+            "access": "read",
+            "address_space_alignment_bytes": 4,
+            "binding": 2,
+            "element_stride": 4,
+            "group": 0,
+            "kind": "storage_buffer",
+            "minimum_binding_size_bytes": 4,
+            "name": "weights",
+            "runtime_sized": 1,
+            "scalar": "f32",
+            "struct_index": null,
+            "type_alignment_bytes": 4
+          },
+          {
+            "access": "read_write",
+            "address_space_alignment_bytes": 4,
+            "binding": 3,
+            "element_stride": 4,
+            "group": 0,
+            "kind": "storage_buffer",
+            "minimum_binding_size_bytes": 4,
+            "name": "output",
+            "runtime_sized": 1,
+            "scalar": "f32",
+            "struct_index": null,
+            "type_alignment_bytes": 4
+          }
+        ],
+        "entry_point": "main",
+        "schema_version": 2,
+        "struct_count": 1,
+        "structs": [
+          {
+            "alignment_bytes": 4,
+            "member_count": 4,
+            "members": [
+              {
+                "alignment_bytes": 4,
+                "name": "rows",
+                "offset_bytes": 0,
+                "scalar": "u32",
+                "size_bytes": 4
+              },
+              {
+                "alignment_bytes": 4,
+                "name": "cols",
+                "offset_bytes": 4,
+                "scalar": "u32",
+                "size_bytes": 4
+              },
+              {
+                "alignment_bytes": 4,
+                "name": "_pad0",
+                "offset_bytes": 8,
+                "scalar": "u32",
+                "size_bytes": 4
+              },
+              {
+                "alignment_bytes": 4,
+                "name": "_pad1",
+                "offset_bytes": 12,
+                "scalar": "u32",
+                "size_bytes": 4
+              }
+            ],
+            "name": "Params",
+            "size_bytes": 16
+          }
+        ],
+        "workgroup_size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "invocations": 484,
+      "source": "bench/inference-pipeline/kernels/matmul_logits_reverse_f32.wgsl",
+      "source_sha256": "272b02d1becb9333409e7cc8afd2a4ca41676b5c9600f01b540d30f7b6664b1d",
+      "vector_sha256": "6f259cc6f2f5a182b68099f941c4a7e8651325b15abfb34e6b94771631de1cbe",
+      "vectors": 124
+    },
+    {
+      "case": "real_write_known_logits",
+      "expected_reflection": {
+        "binding_count": 1,
+        "bindings": [
+          {
+            "access": "read_write",
+            "address_space_alignment_bytes": 4,
+            "binding": 0,
+            "element_stride": 4,
+            "group": 0,
+            "kind": "storage_buffer",
+            "minimum_binding_size_bytes": 4,
+            "name": "output",
+            "runtime_sized": 1,
+            "scalar": "f32",
+            "struct_index": null,
+            "type_alignment_bytes": 4
+          }
+        ],
+        "entry_point": "main",
+        "schema_version": 2,
+        "struct_count": 0,
+        "structs": [],
+        "workgroup_size": [
+          1,
+          1,
+          1
+        ]
+      },
+      "invocations": 16,
+      "source": "bench/inference-pipeline/kernels/write_known_logits.wgsl",
+      "source_sha256": "4a0f3b417e16f4098a6f110c26deaf7258678a0971b5b0a35b32c45cbfd3c5a0",
+      "vector_sha256": "b53c37dcdb0e38bf33b7f976a54949ae554fd489c77564e93a0473ec27c21d19",
+      "vectors": 4
+    }
+  ],
+  "kind": "M7 unchanged-source frozen host expectations",
+  "numerical_oracle": "Fraction exact binary32 multiply then add, source order",
+  "physical_backend": "not_run"
+}

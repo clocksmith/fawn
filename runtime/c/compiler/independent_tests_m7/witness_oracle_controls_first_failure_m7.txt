@@ -1,0 +1,21 @@
+Source-only initial control invocation, before any candidate source or execution:
+python3 /workspace/shared/doe-c-migration-evidence-20261023/milestone7/evaluator/suite/witness_oracle_controls_m7.py --repo /workspace/shared/doe-c-migration-20261023
+
+Exact first failure from tool output:
+test_forward_reverse_orders_differ (__main__.TestWitnessExpectations.test_forward_reverse_orders_differ) ... FAIL
+test_known_logits_literals_independent_host_unpack (__main__.TestWitnessExpectations.test_known_logits_literals_independent_host_unpack) ... ok
+test_no_fused_product_add (__main__.TestWitnessExpectations.test_no_fused_product_add) ... ok
+test_oob_load_zero_and_untouched_tail (__main__.TestWitnessExpectations.test_oob_load_zero_and_untouched_tail) ... ok
+
+======================================================================
+FAIL: test_forward_reverse_orders_differ (__main__.TestWitnessExpectations.test_forward_reverse_orders_differ)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/shared/doe-c-migration-evidence-20261023/milestone7/evaluator/suite/witness_oracle_controls_m7.py", line 16, in test_forward_reverse_orders_differ
+    self.assertEqual(ordered_dot(list(reversed(pairs))), 0)
+AssertionError: 1065353216 != 0
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.003s
+
+FAILED (failures=1)

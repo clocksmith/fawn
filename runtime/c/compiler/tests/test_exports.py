@@ -23,7 +23,8 @@ class TestPublicExports(unittest.TestCase):
     def test_library_has_only_versioned_api_function(self) -> None:
         self.assertEqual(defined_exports(ROOT / "build/libdoe_compiler.so"),
                          {"doe_compiler_compile", "doe_compiler_compile_v2",
-                          "doe_compiler_workspace_requirements"})
+                          "doe_compiler_workspace_requirements", "doe_compiler_job_requirements",
+                          "doe_compiler_compile_job"})
 
     def test_library_has_no_allocator_dependency(self) -> None:
         run = subprocess.run(["nm", "-D", "--undefined-only", str(ROOT / "build/libdoe_compiler.so")],
