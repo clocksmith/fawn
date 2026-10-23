@@ -1,0 +1,19 @@
+{
+  "status": "focused shared-IR extension guards; not Metal SDK or physical qualification",
+  "core_commit": "9239cfec",
+  "checks": [
+    "strict C11 full core/target build",
+    "sampled-load and storage-write Metal rejection preserves output",
+    "retained scalar and aggregate emitted C++ host controls"
+  ],
+  "source_sha256": {
+    "runtime/c/compiler/targets/metal/stage.c": "d9b6d93313d8cdc96e04f2b6b228ec556ddc84f5f37475b1785e00154ba7dbe8",
+    "runtime/c/compiler/targets/metal/types.c": "cc94dd4ff0ecb2a195644bc8089fff24b9bcced9c4f76df29acf9a109258bb32",
+    "runtime/c/compiler/targets/metal/access.c": "4134ad4527f5edc3b568f01224b3d6f964551b175fd1cb72201d7ff006e8368c",
+    "runtime/c/compiler/targets/metal/control.c": "4ba7f832f7302c98f4c144511fe7ad2319a3fd0603c302d6de3e197badabb4e3",
+    "runtime/c/compiler/targets/metal/text.c": "c816290beba22c290219fb982db675b5adcb9cd4430b3a8d391f2d60925f29fd",
+    "runtime/c/compiler/targets/metal/numeric.c": "d59a08be3a63b246b5d911b827f36f790b36c204ae6fd315e552cab4d30a5871",
+    "runtime/c/compiler/targets/metal/tests/test_metal.c": "f9b86c031821e340910a47173399b88b8428f3efbad186e67fbcb6239a5b3256"
+  },
+  "log_sha256": "aeb0305d707dd3371d29a41f30c69a09d350b181ddf6e97d55682656425d0c26"
+}

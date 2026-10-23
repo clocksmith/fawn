@@ -1,9 +1,13 @@
 # Owned C shader results
 
-Authored and focused-host-checked, not integrated or independently qualified.
+Authored and focused-host-checked, consumed by the experimental C-only native
+compute path, not independently or physically qualified.
 This is the persistent ownership half of the standalone C compiler boundary:
 one compilation pipeline, copied source/compiler identity, exact immutable target,
-types, resource layouts and separate entry closures. It follows the allocation,
+types, resource layouts, sparse texture/sampler descriptors and separate entry
+closures. ABI6 handle descriptors are retained in the same owned allocation,
+not represented as fabricated buffer layouts. Static-library consumers rebuild
+with this internal view header; the versioned compiler ABI1–5 records do not grow. It follows the allocation,
 clone/deinit and entry-binding responsibility of the retained
 [TranslationInfo owner](../../zig/src/compiler/wgsl/runtime/runtime_translation_info.zig),
 without pretending that standalone reflection supplies its dispatch/texture
@@ -28,9 +32,20 @@ make -C runtime/c/shader sanitize BUILD=/tmp/doe-shader \
 ```
 
 The focused test covers two entry closures, exact identity, copied source,
-allocation failure at both acquisition points, error cleanup and retained views.
+allocation failure at both acquisition points for buffer and image modules, error
+cleanup and retained views. Image compilation is not device/image execution.
 Sanitizers instrument this owner; the selected compiler library has its own
 instrumentation status. LeakSanitizer is disabled in the ptrace cloud environment;
 allocation counters check this owner's cleanup, not universal leak freedom.
 The first local test exposed an adapter mistake: ABI5 measurement requires a NULL
 output descriptor. That was corrected without changing compiler semantics.
+
+`make test-vulkan-images BUILD=/tmp/doe-shader COMPILER_LIBRARY=/path/to/libdoe_compiler.so`
+is an optional real backend consumer of newly compiled WGSL, not a prebuilt shader.
+It checks texture dimensions, integer loads, level-zero sampling at reversed
+coordinates, storage-image writes, 72 invocations into 64 pixels, and early caller
+release against a 256-byte CPU result. The image and sampler metadata remain owned
+through pipeline creation. The target uses the Vulkan owner's canonical sources.
+Software adapters require explicit `NATIVE_ARGS=--allow-software`; select an ICD
+only in that process environment. A software pass does not qualify physical GPU
+execution or the not-yet-integrated public WebGPU texture APIs.

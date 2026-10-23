@@ -267,6 +267,25 @@ static void test_unimplemented_subgroups(void) {
         release(f);
     }
 }
+static void test_unimplemented_images(void) {
+    static const char *const sources[] = {
+        "@group(0) @binding(0) var tex:texture_2d<f32>;"
+        "@compute @workgroup_size(1) fn main(){let x=textureLoad(tex,vec2i(0),0);}",
+        "@group(0) @binding(0) var tex:texture_storage_2d<rgba8unorm,write>;"
+        "@compute @workgroup_size(1) fn main(){textureStore(tex,vec2i(0),vec4f(1));}"
+    };
+    for (size_t i = 0u; i < sizeof(sources) / sizeof(sources[0]); ++i) {
+        Fixture *f = prepare(sources[i]);
+        char untouched[64];
+        memset(untouched, 0x5a, sizeof(untouched));
+        DoeMetalResult result;
+        assert(doe_metal_emit(&f->source, f->module, NO_ID, untouched,
+                             sizeof(untouched), &result) == DOE_COMPILER_UNSUPPORTED);
+        assert(result.required_bytes == 0u && result.written_bytes == 0u);
+        for (size_t j = 0u; j < sizeof(untouched); ++j) assert(untouched[j] == 0x5a);
+        release(f);
+    }
+}
 int main(int argc, char **argv) {
     uint32_t slot = NO_ID;
     assert(doe_metal_binding_slot(1u, 13u, &slot) && slot == 29u);
@@ -274,6 +293,7 @@ int main(int argc, char **argv) {
     assert(!doe_metal_binding_slot(0u, 16u, &slot));
     assert(!doe_metal_binding_slot(UINT32_MAX, UINT32_MAX, &slot));
     test_unimplemented_subgroups();
+    test_unimplemented_images();
     test_residual();
     test_layout();
     test_workgroup();

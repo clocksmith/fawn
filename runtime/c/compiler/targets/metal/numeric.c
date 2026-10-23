@@ -273,6 +273,7 @@ void metal_expression(MetalEmitter *e, const IrInstruction *ir) {
             metal_text(e, ")");
             break;
         }
+        case IR_HANDLE: case IR_IMAGE:
         case IR_ROBUST_LOAD: case IR_UNIFORM_LOAD: case IR_MAX: case IR_ROBUST_STORE:
         case IR_IF: case IR_ELSE: case IR_END_IF: case IR_RETURN: case IR_SHORT_BEGIN:
         case IR_SHORT_END: case IR_LOCAL_STORE: case IR_LOOP_BEGIN: case IR_LOOP_TEST:
