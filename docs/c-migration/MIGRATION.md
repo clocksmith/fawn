@@ -105,6 +105,14 @@ execution; 75 still reject. Fixed workspace/frame are 76,512/76,592 bytes.
 Host floating-environment preservation is qualified on the tested Linux x86-64
 GCC envelope, not universal GPU numerical behavior or production adoption.
 
+The [ninth increment](../../runtime/c/compiler/MILESTONE_9_RESULTS.md) adds
+module-scope scalar functions, real target calls/returns and selected typed math
+builtins through that same pipeline. Independent semantic/native/format gates
+pass. The [new ledger](corpus-coverage-m9.json) admits 33 paths / 31 unique sources;
+65 still reject explicitly. Fixed workspace/frame are 119,408/119,520 bytes under
+reviewed ceilings, with separate conservative combined-stack accounting. No
+production owner or physical backend becomes qualified from these results.
+
 The first [CPU runtime owner](../../runtime/c/futures/RESULTS.md) is independently
 accepted as an isolated C library for future IDs and completion queues. It retains
 issuance-boundary selection, callback reentry, actual condition waits and explicit

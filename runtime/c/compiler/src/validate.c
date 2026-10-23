@@ -47,7 +47,10 @@ static bool span_name(Source *source, NameSpan span, Name *name) {
     name->offset = span.offset;
     return true;
 }
+static bool entry_scope(const Syntax *s) { return s->current_function == s->entry_function; }
+static bool alias_visible(const Syntax *s) { return entry_scope(s) && s->has_alias; }
 static size_t find_parameter(const Syntax *s, const Name *name) {
+    if (!entry_scope(s)) return s->parameter_count;
     for (size_t i = 0; i < s->parameter_count; ++i)
         if (same_name(name, &s->parameters[i].name)) return i;
     return s->parameter_count;
@@ -64,13 +67,27 @@ static size_t find_constant(const Source *source, const Syntax *s, const Name *n
         if (span_matches(source, s->constants[i].name, name)) return i;
     return s->constant_count;
 }
+static size_t find_function(const Source *source, const Syntax *s, const Name *name) {
+    for (size_t i = 0u; i < s->function_count; ++i)
+        if (span_matches(source, s->functions[i].name, name)) return i;
+    return s->function_count;
+}
+static size_t find_formal(const Source *source, const Syntax *s, const Name *name) {
+    if (s->current_function >= s->function_count) return s->formal_count;
+    const FunctionRecord *function = &s->functions[s->current_function];
+    for (uint32_t i = 0u; i < function->formal_count; ++i) {
+        const size_t index = function->formal_start + i;
+        if (span_matches(source, s->formals[index].name, name)) return index;
+    }
+    return s->formal_count;
+}
 static size_t find_struct(const Source *source, const Syntax *s, NameSpan name) {
     for (size_t i = 0; i < s->struct_count; ++i)
         if (spans_equal(source, name, s->structs[i].name)) return i;
     return s->struct_count;
 }
 static bool module_declared(const Source *source, const Syntax *s, const Name *name) {
-    if (same_name(name, &s->entry) || find_constant(source, s, name) != s->constant_count) return true;
+    if (find_function(source, s, name) != s->function_count || find_constant(source, s, name) != s->constant_count) return true;
     for (size_t i = 0; i < s->resource_count; ++i)
         if (span_matches(source, s->resources[i].name, name)) return true;
     for (size_t i = 0; i < s->struct_count; ++i)
@@ -108,18 +125,20 @@ static bool validate_declarations(Source *source, const Syntax *s) {
             return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, parameter->name.offset,
                                 "compute input type is shadowed by a module declaration");
     }
-    const size_t count = s->constant_count + s->resource_count + s->struct_count;
+    const size_t count = s->constant_count + s->resource_count + s->struct_count + s->function_count;
     for (size_t i = 0; i < count; ++i) {
         const NameSpan name = i < s->constant_count ? s->constants[i].name :
             i < s->constant_count + s->resource_count ? s->resources[i - s->constant_count].name :
-            s->structs[i - s->constant_count - s->resource_count].name;
+            i < s->constant_count + s->resource_count + s->struct_count ?
+            s->structs[i - s->constant_count - s->resource_count].name :
+            s->functions[i - s->constant_count - s->resource_count - s->struct_count].name;
         if (!valid_span(source, name)) return false;
-        if (span_matches(source, name, &s->entry))
-            return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, s->entry.offset, "duplicate module declaration");
         for (size_t j = 0; j < i; ++j) {
             const NameSpan previous = j < s->constant_count ? s->constants[j].name :
                 j < s->constant_count + s->resource_count ? s->resources[j - s->constant_count].name :
-                s->structs[j - s->constant_count - s->resource_count].name;
+                j < s->constant_count + s->resource_count + s->struct_count ?
+                s->structs[j - s->constant_count - s->resource_count].name :
+                s->functions[j - s->constant_count - s->resource_count - s->struct_count].name;
             if (spans_equal(source, name, previous))
                 return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, name.offset, "duplicate module declaration");
         }
@@ -166,7 +185,7 @@ static bool resolve_reference(Source *source, const Syntax *s, const Reference *
     Name storage;
     if (!span_name(source, reference->storage, &storage)) return false;
     const Name *name = &storage;
-    if (find_parameter(s, name) != s->parameter_count || (s->has_alias && same_name(name, &s->alias)))
+    if (find_formal(source, s, name) != s->formal_count || find_parameter(s, name) != s->parameter_count || (alias_visible(s) && same_name(name, &s->alias)))
         return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, name->offset,
                             "storage reference resolves to a shadowing local declaration");
     size_t index = 0u;
@@ -228,7 +247,8 @@ static bool check_local_use(Source *source, const LocalScope *scope,
 }
 static bool user_declared(const Source *source, const Syntax *s, const LocalScope *scope, const Name *name) {
     return module_declared(source, s, name) || find_parameter(s, name) != s->parameter_count ||
-        (s->has_alias && same_name(name, &s->alias)) || find_local(scope, name) != NULL;
+        find_formal(source, s, name) != s->formal_count ||
+        (alias_visible(s) && same_name(name, &s->alias)) || find_local(scope, name) != NULL;
 }
 static bool expression_emit(Source *, IrProgram *, bool, IrInstruction, IrValue *);
 static bool lower_input(Source *source, IrProgram *program, size_t parameter,
@@ -244,7 +264,8 @@ static bool lower_member(Source *source, const Syntax *s, const MemberSyntax *me
         !span_name(source, member->member, &field_name)) return false;
     const Name *object = &object_name;
     /* The retained leading alias may shadow a module declaration. */
-    if ((s->has_alias && same_name(object, &s->alias)) || find_local(scope, object) != NULL)
+    if ((alias_visible(s) && same_name(object, &s->alias)) || find_local(scope, object) != NULL ||
+        find_formal(source, s, object) != s->formal_count)
         return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, object->offset,
                             "scalar local has no members");
     const size_t parameter = find_parameter(s, object);
@@ -388,7 +409,7 @@ static IrOpcode binary_opcode(ExpressionKind kind) {
         case EXPRESSION_NAME: case EXPRESSION_MEMBER: case EXPRESSION_ABSTRACT_INTEGER:
         case EXPRESSION_BOOLEAN: case EXPRESSION_NOT: case EXPRESSION_AND: case EXPRESSION_OR:
         case EXPRESSION_LITERAL: case EXPRESSION_NEGATE: case EXPRESSION_COMPLEMENT:
-        case EXPRESSION_CONSTRUCT: case EXPRESSION_BITCAST: break;
+        case EXPRESSION_CONSTRUCT: case EXPRESSION_BITCAST: case EXPRESSION_CALL: break;
     }
     return IR_CONSTANT;
 }
@@ -436,6 +457,8 @@ static bool mandatory_rhs(Source *source, const Syntax *s, const Expression *nod
                             "concrete shift count const expression must be below 32");
     return true;
 }
+static bool call_value(Source *, const Syntax *, uint32_t, const LocalScope *, IrProgram *,
+                       bool, bool, bool, ExpressionValue *);
 static bool expression_value(Source *source, const Syntax *s, uint32_t id,
                              const LocalScope *scope, IrProgram *program,
                              bool evaluate, bool emit, ExpressionValue *out) {
@@ -445,6 +468,8 @@ static bool expression_value(Source *source, const Syntax *s, uint32_t id,
     const Expression *node = &s->expressions[id];
     *out = (ExpressionValue){ .value.source_offset = node->source_offset };
     switch (node->kind) {
+        case EXPRESSION_CALL:
+            return call_value(source, s, id, scope, program, evaluate, emit, false, out);
         case EXPRESSION_LITERAL:
             if (!numeric_parse_literal(source, node->value.name, &out->number)) return false;
             out->known = true; out->value.type = out->number.type;
@@ -483,9 +508,17 @@ static bool expression_value(Source *source, const Syntax *s, uint32_t id,
                 out->value = local->value; out->value.source_offset = node->source_offset;
                 return true;
             }
-            if (s->has_alias && same_name(&name, &s->alias)) {
+            const size_t formal = find_formal(source, s, &name);
+            if (formal != s->formal_count) {
+                out->runtime = true;
+                out->number.type = (IrType)s->formals[formal].type.resolved.type;
+                out->value = (IrValue){ .id = (uint32_t)(source->limits->instructions + 1u + formal),
+                    .type = out->number.type, .source_offset = node->source_offset };
+                return true;
+            }
+            if (alias_visible(s) && same_name(&name, &s->alias)) {
                 out->runtime = true; out->number.type = IR_U32;
-                out->value = (IrValue){ .id = 1u, .type = IR_U32, .source_offset = node->source_offset }; return true;
+                out->value = (IrValue){ .id = s->functions[s->entry_function].value_base, .type = IR_U32, .source_offset = node->source_offset }; return true;
             }
             const size_t parameter = find_parameter(s, &name);
             if (parameter != s->parameter_count) {
@@ -513,48 +546,7 @@ static bool expression_value(Source *source, const Syntax *s, uint32_t id,
                                     "max resolves to a user declaration, not the builtin");
             break;
         }
-        case EXPRESSION_CONSTRUCT:
-        case EXPRESSION_BITCAST: {
-            const bool bitcast = node->kind == EXPRESSION_BITCAST;
-            IrType target;
-            if (bitcast) {
-                Name name;
-                if (!span_name(source, node->value.call.callee, &name)) return false;
-                if (user_declared(source, s, scope, &name))
-                    return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, node->source_offset,
-                                        "bitcast resolves to a user declaration, not the builtin");
-            }
-            if (!scalar_name(source, s, scope, bitcast ? node->value.call.type : node->value.call.callee, &target)) return false;
-            out->number.type = target; out->value.type = target;
-            if (bitcast && target == IR_BOOL)
-                return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, node->source_offset, "bitcast requires numeric type");
-            if (node->left == UINT32_MAX) { out->known = evaluate; return true; }
-            ExpressionValue argument;
-            if (!expression_value(source, s, node->left, scope, program, evaluate, emit, &argument)) return false;
-            const IrType original = argument.number.type;
-            /* f32 and bitcast select concrete source overloads. The special
-             * AbstractInt->u32 bitcast overload instead checks its range. */
-            if (abstract_type(original) && (target == IR_F32 || bitcast) &&
-                !(bitcast && target == IR_U32 && original == IR_ABSTRACT_INT)) {
-                if (!materialize(source, &argument, original == IR_ABSTRACT_INT ? IR_I32 : IR_F32)) return false;
-            }
-            if (bitcast && target == IR_U32 && original == IR_ABSTRACT_INT &&
-                !materialize(source, &argument, IR_U32)) return false;
-            if (bitcast && argument.number.type == IR_BOOL)
-                return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, node->source_offset, "bitcast requires numeric argument");
-            out->runtime = argument.runtime;
-            if (!argument.runtime) {
-                out->known = evaluate && argument.known;
-                if (!out->known) return true;
-                return bitcast ? numeric_bitcast(source, node->source_offset, argument.number, target, &out->number) :
-                    numeric_convert(source, node->source_offset, argument.number, target, &out->number);
-            }
-            if (!ensure_value(source, program, &argument, emit)) return false;
-            if (argument.number.type == target) { out->value = argument.value; return true; }
-            return expression_emit(source, program, emit, (IrInstruction){ .opcode = bitcast ? IR_BITCAST : IR_CONVERT,
-                .type = target, .comparison_type = argument.number.type, .left = argument.value.id,
-                .source_offset = node->source_offset }, &out->value);
-        }
+        case EXPRESSION_CONSTRUCT: case EXPRESSION_BITCAST:
         case EXPRESSION_INTEGER: case EXPRESSION_DECIMAL: case EXPRESSION_ABSTRACT_INTEGER:
             return source_error(source, DOE_COMPILER_INPUT_ERROR, node->source_offset, "obsolete internal literal node");
         case EXPRESSION_ADD: case EXPRESSION_SUBTRACT: case EXPRESSION_MULTIPLY:
@@ -618,6 +610,158 @@ static bool expression_value(Source *source, const Syntax *s, uint32_t id,
     return expression_emit(source, program, emit, (IrInstruction){ .opcode = binary_opcode(node->kind),
         .type = out->number.type, .comparison_type = left.number.type, .comparison = node->value.comparison,
         .left = left.value.id, .right = right.value.id, .source_offset = node->source_offset }, &out->value);
+}
+/* One call owner handles user functions, constructors and the closed builtin
+ * table. Syntax arguments are linked; typed arguments are reserved once, only
+ * on emission, before nested calls can reserve their own contiguous segments. */
+static bool call_value(Source *source, const Syntax *s, uint32_t id,
+                       const LocalScope *scope, IrProgram *program,
+                       bool evaluate, bool emit, bool statement, ExpressionValue *out) {
+    const Expression *node = &s->expressions[id];
+    Name name;
+    if (!span_name(source, node->value.call.callee, &name)) return false;
+    *out = (ExpressionValue){ .value.source_offset = node->source_offset };
+    if (find_local(scope, &name) != NULL || find_formal(source, s, &name) != s->formal_count ||
+        find_parameter(s, &name) != s->parameter_count ||
+        (alias_visible(s) && same_name(&name, &s->alias)))
+        return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, name.offset,
+                            "call target resolves to a non-callable lexical binding");
+    const size_t callee = find_function(source, s, &name);
+    if (callee != s->function_count) {
+        const FunctionRecord *function = &s->functions[callee];
+        if ((function->flags & FUNCTION_ENTRY) != 0u)
+            return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, name.offset, "entry point cannot be called");
+        if (node->value.call.type.length != 0u)
+            return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, name.offset, "user function is not a template");
+        if (node->right != function->formal_count)
+            return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, name.offset, "function call argument count mismatch");
+        if (node->right > UINT16_MAX - 4u)
+            return source_error(source, DOE_COMPILER_UNSUPPORTED, name.offset,
+                                "SPIR-V instruction word-count format capacity exceeded");
+        if ((!statement && function->result_type == IR_VOID) ||
+            (statement && (function->flags & FUNCTION_MUST_USE) != 0u))
+            return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, name.offset,
+                                "function result is required in this call context");
+        /* This map is independent of emitted IR, so skipped and dead calls
+         * remain edges in the complete module dependency graph. */
+        s->callees[id] = (uint32_t)callee + 1u;
+        const uint32_t start = (uint32_t)program->argument_count;
+        if (emit) {
+            if (node->right > program->argument_capacity - program->argument_count)
+                return source_error(source, DOE_COMPILER_INPUT_ERROR, name.offset, "typed call argument capacity exceeded");
+            program->argument_count += node->right;
+        }
+        uint32_t link = node->left;
+        for (uint32_t i = 0u; i < node->right; ++i) {
+            if (link >= s->argument_count)
+                return source_error(source, DOE_COMPILER_INPUT_ERROR, name.offset, "invalid call argument link");
+            ExpressionValue argument;
+            const ArgumentSyntax *syntax = &s->arguments[link];
+            if (!expression_value(source, s, syntax->expression, scope, program, evaluate, emit, &argument) ||
+                !materialize(source, &argument, (IrType)s->formals[function->formal_start + i].type.resolved.type) ||
+                !ensure_value(source, program, &argument, emit)) return false;
+            if (emit) program->arguments[start + i] = argument.value.id;
+            link = syntax->next;
+        }
+        out->runtime = true;
+        out->number.type = (IrType)function->result_type;
+        out->value.type = out->number.type;
+        return expression_emit(source, program, emit, (IrInstruction){ .opcode = IR_CALL,
+            .type = out->number.type, .left = start, .right = node->right, .binding = (uint32_t)callee,
+            .source_offset = node->source_offset }, out->number.type == IR_VOID ? NULL : &out->value);
+    }
+    if (module_declared(source, s, &name))
+        return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, name.offset,
+                            "call target resolves to a non-callable module declaration");
+    const ScalarBuiltin *builtin = scalar_builtin_named(name.text);
+    if (builtin != NULL) {
+        if (statement || node->value.call.type.length != 0u || node->right != builtin->arity)
+            return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, name.offset,
+                                "scalar builtin requires its exact arguments and a used result");
+        ExpressionValue arguments[3];
+        uint32_t syntax_ids[3], link = node->left;
+        bool runtime = false, known = evaluate;
+        for (uint32_t i = 0u; i < builtin->arity; ++i) {
+            if (link >= s->argument_count)
+                return source_error(source, DOE_COMPILER_INPUT_ERROR, name.offset, "invalid builtin argument link");
+            syntax_ids[i] = s->arguments[link].expression;
+            if (!expression_value(source, s, syntax_ids[i], scope, program, evaluate, emit, &arguments[i])) return false;
+            runtime = runtime || arguments[i].runtime;
+            known = known && arguments[i].known;
+            link = s->arguments[link].next;
+        }
+        if (builtin->floating && arguments[0].number.type == IR_ABSTRACT_INT &&
+            !materialize(source, &arguments[0], IR_ABSTRACT_FLOAT)) return false;
+        for (uint32_t i = 1u; i < builtin->arity; ++i)
+            if (!common_type(source, &arguments[0], &arguments[i], name.offset)) return false;
+        IrType type = arguments[0].number.type;
+        if (type == IR_BOOL || type == IR_VOID ||
+            (builtin->floating && type != IR_F32 && type != IR_ABSTRACT_FLOAT))
+            return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, name.offset, "no matching scalar builtin overload");
+        if (runtime && abstract_type(type)) type = type == IR_ABSTRACT_INT ? IR_I32 : IR_F32;
+        for (uint32_t i = 0u; i < builtin->arity; ++i)
+            if (!materialize(source, &arguments[i], type)) return false;
+        if (builtin->kind == BUILTIN_CLAMP && !arguments[1].runtime && !arguments[2].runtime) {
+            for (uint32_t i = 1u; i < 3u; ++i) {
+                if (!arguments[i].known &&
+                    (!expression_value(source, s, syntax_ids[i], scope, program, true, false, &arguments[i]) ||
+                     !materialize(source, &arguments[i], type))) return false;
+            }
+            NumericValue comparison;
+            if (!numeric_binary(source, name.offset, EXPRESSION_COMPARE, COMPARE_GREATER,
+                                arguments[1].number, arguments[2].number, &comparison)) return false;
+            if (comparison.bits != 0u)
+                return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, name.offset,
+                                    "clamp constant lower bound exceeds upper bound");
+        }
+        out->runtime = runtime; out->known = known && !runtime;
+        out->number.type = type; out->value.type = type;
+        if (!runtime) {
+            NumericValue values[3];
+            for (uint32_t i = 0u; i < builtin->arity; ++i) values[i] = arguments[i].number;
+            return !out->known || numeric_builtin(source, name.offset, builtin->kind, values, &out->number);
+        }
+        for (uint32_t i = 0u; i < builtin->arity; ++i)
+            if (!ensure_value(source, program, &arguments[i], emit)) return false;
+        return expression_emit(source, program, emit, (IrInstruction){ .opcode = IR_BUILTIN,
+            .type = type, .literal = (uint32_t)builtin->kind, .left = arguments[0].value.id,
+            .right = builtin->arity > 1u ? arguments[1].value.id : 0u,
+            .binding = builtin->arity > 2u ? arguments[2].value.id : 0u,
+            .source_offset = node->source_offset }, &out->value);
+    }
+    const bool bitcast = strcmp(name.text, "bitcast") == 0;
+    if (statement || node->right > 1u || (bitcast && (node->right != 1u || node->value.call.type.length == 0u)) ||
+        (!bitcast && node->value.call.type.length != 0u))
+        return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, name.offset, "invalid scalar constructor or bitcast call");
+    IrType target;
+    if (!scalar_name(source, s, scope, bitcast ? node->value.call.type : node->value.call.callee, &target)) return false;
+    out->number.type = target; out->value.type = target;
+    if (bitcast && target == IR_BOOL)
+        return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, name.offset, "bitcast requires numeric type");
+    if (node->right == 0u) { out->known = evaluate; return true; }
+    if (node->left >= s->argument_count)
+        return source_error(source, DOE_COMPILER_INPUT_ERROR, name.offset, "invalid constructor argument link");
+    ExpressionValue argument;
+    if (!expression_value(source, s, s->arguments[node->left].expression, scope, program, evaluate, emit, &argument)) return false;
+    const IrType original = argument.number.type;
+    if (abstract_type(original) && (target == IR_F32 || bitcast) &&
+        !(bitcast && target == IR_U32 && original == IR_ABSTRACT_INT) &&
+        !materialize(source, &argument, original == IR_ABSTRACT_INT ? IR_I32 : IR_F32)) return false;
+    if (bitcast && target == IR_U32 && original == IR_ABSTRACT_INT && !materialize(source, &argument, IR_U32)) return false;
+    if (bitcast && argument.number.type == IR_BOOL)
+        return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, name.offset, "bitcast requires numeric argument");
+    out->runtime = argument.runtime;
+    if (!argument.runtime) {
+        out->known = evaluate && argument.known;
+        if (!out->known) return true;
+        return bitcast ? numeric_bitcast(source, name.offset, argument.number, target, &out->number) :
+            numeric_convert(source, name.offset, argument.number, target, &out->number);
+    }
+    if (!ensure_value(source, program, &argument, emit)) return false;
+    if (argument.number.type == target) { out->value = argument.value; return true; }
+    return expression_emit(source, program, emit, (IrInstruction){ .opcode = bitcast ? IR_BITCAST : IR_CONVERT,
+        .type = target, .comparison_type = argument.number.type, .left = argument.value.id,
+        .source_offset = name.offset }, &out->value);
 }
 static bool lower_boolean(Source *source, const Syntax *s, uint32_t id, const LocalScope *scope,
                           IrProgram *program, IrValue *value) {
@@ -705,8 +849,8 @@ static bool lower_local(Source *source, const Syntax *s, const LocalSyntax *loca
     bool duplicate = false;
     for (size_t i = scope->scope_start; i < scope->count; ++i)
         duplicate = duplicate || same_name(&name, &scope->values[i].name);
-    if (scope->level == 0u && (find_parameter(s, &name) != s->parameter_count ||
-        (s->has_alias && same_name(&name, &s->alias)))) duplicate = true;
+    if (scope->level == 0u && (find_formal(source, s, &name) != s->formal_count || find_parameter(s, &name) != s->parameter_count ||
+        (alias_visible(s) && same_name(&name, &s->alias)))) duplicate = true;
     if (duplicate)
         return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, name.offset,
                             "local declaration duplicates a binding in its scope");
@@ -837,13 +981,34 @@ static bool lower_block(Source *source, const Syntax *s, size_t start, size_t en
             case STATEMENT_VAR:
                 if (!lower_local(source, s, &st->value.local, scope, program)) return false;
                 break;
-            case STATEMENT_RETURN:
+            case STATEMENT_CALL: {
+                ExpressionValue ignored;
+                if (!call_value(source, s, st->value.condition, scope, program, true, true, true, &ignored)) return false;
+                break;
+            }
+            case STATEMENT_RETURN: {
                 if (inside_continuing(loop))
                     return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, st->source_offset,
                                         "return is prohibited inside continuing");
+                const IrType result_type = (IrType)s->functions[s->current_function].result_type;
+                IrInstruction result = { .opcode = IR_RETURN, .type = result_type, .source_offset = st->source_offset };
+                if (st->value.condition == UINT32_MAX) {
+                    if (result_type != IR_VOID)
+                        return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, st->source_offset,
+                                            "value-returning function requires a return value");
+                } else {
+                    if (result_type == IR_VOID)
+                        return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, st->source_offset,
+                                            "no-result function cannot return a value");
+                    ExpressionValue value;
+                    if (!expression_value(source, s, st->value.condition, scope, program, true, true, &value) ||
+                        !materialize(source, &value, result_type) || !ensure_value(source, program, &value, true)) return false;
+                    result.left = value.value.id;
+                }
                 current = BEHAVIOR_RETURN;
-                if (!marker(source, program, IR_RETURN, st->source_offset, 0u)) return false;
+                if (!append(source, program, result, NULL)) return false;
                 break;
+            }
             case STATEMENT_BREAK:
             case STATEMENT_CONTINUE:
                 if (loop == NULL || loop->continuing)
@@ -993,8 +1158,107 @@ static bool resolve_attributes(Source *source, Syntax *s, IrProgram *program, co
     }
     return true;
 }
+static int formal_order(const Source *source, const Syntax *s, uint32_t a, uint32_t b) {
+    const NameSpan left = s->formals[a].name, right = s->formals[b].name;
+    const size_t length = left.length < right.length ? left.length : right.length;
+    const int order = memcmp(source->source + left.offset, source->source + right.offset, length);
+    if (order != 0) return order;
+    return left.length < right.length ? -1 : left.length > right.length ? 1 : 0;
+}
+static void formal_sift(const Source *source, const Syntax *s, uint32_t *indices, size_t root, size_t count) {
+    while (root < count / 2u) {
+        size_t child = root * 2u + 1u;
+        if (child + 1u < count && formal_order(source, s, indices[child], indices[child + 1u]) < 0) ++child;
+        if (formal_order(source, s, indices[root], indices[child]) >= 0) return;
+        const uint32_t swap = indices[root]; indices[root] = indices[child]; indices[child] = swap;
+        root = child;
+    }
+}
+static bool resolve_signatures(Source *source, Syntax *s, IrProgram *program, const LocalScope *scope) {
+    /* The target-value slice is idle until emission; reuse it for an iterative
+     * heapsort rather than quadratic duplicate checks or host-stack formals. */
+    for (size_t f = 0u; f < s->function_count; ++f) {
+        FunctionRecord *function = &s->functions[f];
+        IrType result = IR_VOID;
+        if (function->annotation.length != 0u &&
+            !scalar_name(source, s, scope, function->annotation, &result)) return false;
+        if (((function->flags & FUNCTION_ENTRY) != 0u && result != IR_VOID) ||
+            ((function->flags & FUNCTION_MUST_USE) != 0u && result == IR_VOID))
+            return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, function->name.offset,
+                                "invalid entry or must_use function result declaration");
+        function->result_type = (uint32_t)result;
+        if (function->formal_count > UINT16_MAX - 3u)
+            return source_error(source, DOE_COMPILER_UNSUPPORTED, function->name.offset,
+                                "SPIR-V instruction word-count format capacity exceeded");
+        for (uint32_t p = 0u; p < function->formal_count; ++p) {
+            const uint32_t index = function->formal_start + p;
+            const FormalRecord *formal = &s->formals[index];
+            IrType type;
+            if (!valid_span(source, formal->name) ||
+                !scalar_name(source, s, scope, formal->type.annotation, &type)) return false;
+            program->scratch[p] = index;
+        }
+        const size_t count = function->formal_count;
+        for (size_t p = count / 2u; p != 0u; --p) formal_sift(source, s, program->scratch, p - 1u, count);
+        for (size_t p = count; p > 1u; --p) {
+            const uint32_t swap = program->scratch[0];
+            program->scratch[0] = program->scratch[p - 1u]; program->scratch[p - 1u] = swap;
+            formal_sift(source, s, program->scratch, 0u, p - 1u);
+        }
+        for (size_t p = 1u; p < count; ++p)
+            if (formal_order(source, s, program->scratch[p - 1u], program->scratch[p]) == 0)
+                return source_error(source, DOE_COMPILER_SEMANTIC_ERROR,
+                    s->formals[program->scratch[p]].name.offset, "duplicate formal parameter name");
+    }
+    /* Only after all annotations have validated may their spans be reused. */
+    for (size_t p = 0u; p < s->formal_count; ++p) {
+        FormalRecord *formal = &s->formals[p];
+        IrType type;
+        const uint32_t offset = formal->type.annotation.offset;
+        if (!scalar_name(source, s, scope, formal->type.annotation, &type)) return false;
+        formal->type.resolved.type = (uint32_t)type;
+        formal->type.resolved.offset = offset;
+    }
+    return true;
+}
+static bool reject_call_cycles(Source *source, Syntax *s) {
+    for (size_t f = 0u; f < s->function_count; ++f) s->functions[f].state.graph.color = 0u;
+    for (size_t root = 0u; root < s->function_count; ++root) {
+        if (s->functions[root].state.graph.color == 2u) continue;
+        uint32_t current = (uint32_t)root;
+        s->functions[current].state.graph.color = 1u;
+        s->functions[current].state.graph.scan = s->functions[current].expression_start;
+        s->functions[current].state.graph.parent = UINT32_MAX;
+        while (current != UINT32_MAX) {
+            FunctionRecord *function = &s->functions[current];
+            bool descend = false;
+            while (function->state.graph.scan < function->expression_end) {
+                const uint32_t expression = function->state.graph.scan++;
+                const uint32_t edge = s->callees[expression];
+                if (edge == 0u) continue;
+                FunctionRecord *child = &s->functions[edge - 1u];
+                if (child->state.graph.color == 1u)
+                    return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, s->expressions[expression].source_offset,
+                                        "function call dependency cycle");
+                if (child->state.graph.color == 2u) continue;
+                child->state.graph.color = 1u; child->state.graph.scan = child->expression_start;
+                child->state.graph.parent = current; current = edge - 1u; descend = true; break;
+            }
+            if (!descend) {
+                function->state.graph.color = 2u;
+                current = function->state.graph.parent;
+            }
+        }
+    }
+    return true;
+}
 bool validate_syntax(Source *source, Syntax *s, IrProgram *program, LocalBinding *bindings) {
+    s->current_function = s->entry_function;
     if (!validate_declarations(source, s)) return false;
+    s->current_function = UINT32_MAX;
+    program->functions = s->functions; program->function_count = s->function_count;
+    program->formals = s->formals; program->formal_count = s->formal_count;
+    program->entry_function = s->entry_function; program->argument_count = 0u;
     program->instruction_count = 0u;
     program->local_count = 0u;
     program->entry = s->entry;
@@ -1035,14 +1299,29 @@ bool validate_syntax(Source *source, Syntax *s, IrProgram *program, LocalBinding
         }
     }
     LocalScope scope = { .values = bindings, .capacity = source->limits->locals };
-    if (!resolve_constants(source, s, program, &scope) || !resolve_attributes(source, s, program, &scope)) return false;
-    if (s->has_alias) {
-        IrValue alias;
-        if (!lower_input(source, program, find_parameter(s, &s->alias_source),
-                         0u, s->alias_source.offset, &alias)) return false;
+    if (!resolve_signatures(source, s, program, &scope) ||
+        !resolve_constants(source, s, program, &scope) || !resolve_attributes(source, s, program, &scope)) return false;
+    for (size_t f = 0u; f < s->function_count; ++f) {
+        FunctionRecord *function = &s->functions[f];
+        s->current_function = (uint32_t)f;
+        scope.count = 0u; scope.scope_start = 0u; scope.level = 0u; scope.loop = NULL;
+        function->instruction_start = (uint32_t)program->instruction_count;
+        function->local_start = (uint32_t)program->local_count;
+        if (alias_visible(s)) {
+            IrValue alias = {0};
+            if (!lower_input(source, program, find_parameter(s, &s->alias_source),
+                             0u, s->alias_source.offset, &alias)) return false;
+            function->value_base = alias.id;
+        }
+        /* Unreachable and unused bodies still receive complete validation. */
+        unsigned behavior;
+        if (!lower_block(source, s, function->statement_start, function->statement_end,
+                         &scope, program, NULL, true, true, false, &behavior)) return false;
+        if (function->result_type != IR_VOID && behavior != BEHAVIOR_RETURN)
+            return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, function->name.offset,
+                                "value-returning function must return a value on every path");
+        function->instruction_end = (uint32_t)program->instruction_count;
+        function->local_count = (uint32_t)program->local_count - function->local_start;
     }
-    /* Unreachable statements are lowered too: no dead-code validation bypass. */
-    unsigned behavior;
-    return lower_block(source, s, 0u, s->statement_count, &scope, program, NULL,
-                       true, true, false, &behavior);
+    return reject_call_cycles(source, s);
 }

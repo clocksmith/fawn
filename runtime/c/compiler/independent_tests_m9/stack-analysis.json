@@ -1,0 +1,163 @@
+{
+  "bounds": [
+    {
+      "api": "doe_compiler_compile",
+      "combined_library_frame_bound": 159976,
+      "conservative_acyclic_base": 6152,
+      "control_depth": 4,
+      "expression_depth": 18,
+      "phase_recursive_bytes": {
+        "emission": 7680,
+        "parse": 9664,
+        "semantic": 34304
+      },
+      "wrapper_bytes": 119520
+    },
+    {
+      "api": "doe_compiler_compile_v2",
+      "combined_library_frame_bound": 40568,
+      "conservative_acyclic_base": 6152,
+      "control_depth": 4,
+      "expression_depth": 18,
+      "phase_recursive_bytes": {
+        "emission": 7680,
+        "parse": 9664,
+        "semantic": 34304
+      },
+      "wrapper_bytes": 112
+    },
+    {
+      "api": "doe_compiler_compile_job",
+      "combined_library_frame_bound": 149064,
+      "conservative_acyclic_base": 6152,
+      "control_depth": 32,
+      "expression_depth": 64,
+      "phase_recursive_bytes": {
+        "emission": 33792,
+        "parse": 38688,
+        "semantic": 142656
+      },
+      "wrapper_bytes": 256
+    }
+  ],
+  "definitions": 77,
+  "excluded_external_callees": [
+    "__errno_location",
+    "exp",
+    "expf",
+    "fegetenv",
+    "fegetround",
+    "feholdexcept",
+    "fesetenv",
+    "fesetround",
+    "fmod",
+    "fmodf",
+    "memchr",
+    "memcmp",
+    "memcpy",
+    "memset",
+    "strchr",
+    "strcmp",
+    "strlen",
+    "tanh",
+    "tanhf"
+  ],
+  "explanation": [
+    "All non-recursive library frames are summed once, even across disjoint phases, overestimating every acyclic internal path.",
+    "Parsing, semantic lowering and target emission return before the next phase. Their recursive contributions therefore combine by max, not sum.",
+    "Expression SCC multiplier D+2 includes the accepted D depth, one historical uncharged outer comparison and a boundary frame. Call lowering walks argument syntax children, never callee bodies.",
+    "The deliberately loose control multiplier 3C+4 covers at most 2C+1 nested brace blocks, C direct else-if links, outer/rejected/init-update frames. Semantic control lowering traverses the same parsed tree.",
+    "Emission multiplier 2C+D+4 overestimates nested control/short-circuit IR and boundary frames. Calls and signatures are streamed, not recursively expanded.",
+    "Function count, formal count, argument count and call-graph depth add no C stack depth. Iterative graph and constant-dependency walks retain state in caller-owned records."
+  ],
+  "frame_limit_failures": [],
+  "inputs": {
+    "candidate1-native/build/compile.ci.gz": "a1de05a1c97f12f4bf7288cb0291881007719af09e16cdf244f308eb444980f6",
+    "candidate1-native/build/lex.ci.gz": "4d3dde5e6c25daca7ef3e08543f13245c5ddf847d5aa8531666c7a1ee13d45d1",
+    "candidate1-native/build/numeric.ci.gz": "94349dcf22276e51d5cf3ee28aaf37c58d8aac7df3193af6335e09756b6a6147",
+    "candidate1-native/build/parse.ci.gz": "63686882893df5b316a2106c8fa8dae838484d8a51f051a9cb16cde40e9840f8",
+    "candidate1-native/build/reflection.ci.gz": "8961426ffc77e8d532ca65f818e46e9270846fe0d5110ef5ab87b4a9ac7601ea",
+    "candidate1-native/build/spirv.ci.gz": "9b00f6b631338ae505ef95063f7561c00187b2b65b626944477da295014e8aeb",
+    "candidate1-native/build/storage.ci.gz": "61c835d6c4c598d0ea37211343b19cac6c6dce6bc27a71f4c5506e945ee9638c",
+    "candidate1-native/build/validate.ci.gz": "e1f6a70fff6e978c8119dd412b46ccf13600ea06082d4491536034a7c3fb05e9"
+  },
+  "recursion_components": [
+    {
+      "nodes": [
+        {
+          "bytes": 192,
+          "name": "expression.part.0",
+          "translation_unit": "parse.ci.gz"
+        },
+        {
+          "bytes": 176,
+          "name": "primary",
+          "translation_unit": "parse.ci.gz"
+        }
+      ],
+      "weight": 368
+    },
+    {
+      "nodes": [
+        {
+          "bytes": 32,
+          "name": "block",
+          "translation_unit": "parse.ci.gz"
+        },
+        {
+          "bytes": 112,
+          "name": "statement",
+          "translation_unit": "parse.ci.gz"
+        }
+      ],
+      "weight": 144
+    },
+    {
+      "nodes": [
+        {
+          "bytes": 256,
+          "name": "emit_block",
+          "translation_unit": "spirv.ci.gz"
+        }
+      ],
+      "weight": 256
+    },
+    {
+      "nodes": [
+        {
+          "bytes": 528,
+          "name": "call_value",
+          "translation_unit": "validate.ci.gz"
+        },
+        {
+          "bytes": 432,
+          "name": "expression_value",
+          "translation_unit": "validate.ci.gz"
+        },
+        {
+          "bytes": 112,
+          "name": "lower_index",
+          "translation_unit": "validate.ci.gz"
+        },
+        {
+          "bytes": 144,
+          "name": "mandatory_rhs",
+          "translation_unit": "validate.ci.gz"
+        }
+      ],
+      "weight": 1216
+    },
+    {
+      "nodes": [
+        {
+          "bytes": 624,
+          "name": "lower_block",
+          "translation_unit": "validate.ci.gz"
+        }
+      ],
+      "weight": 624
+    }
+  ],
+  "scope": "GCC14.2 -O2 Linux x86-64 compiled-library frame upper accounting, excluding external library/OS/sanitizer frames, not measured runtime stack peak",
+  "status": "PASS"
+}

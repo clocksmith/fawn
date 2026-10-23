@@ -79,3 +79,13 @@ See [accepted scope and provenance](MILESTONE_4_RESULTS.md).
 ## Milestone 5
 
 Flat uniform resources, typed layout/member loads, versioned reflection and caller-workspace ownership are independent C work under the frozen M5 contract. No production Zig source was translated or removed. The selected independent evaluator sources retain their MIT notices and imported-source manifest; results and exact artifact identities are in MILESTONE_5_RESULTS.md. Primary WGSL/WebGPU layout sources are linked in the frozen contract.
+
+## Scalar function and math owner
+
+Milestone 9 extends the independently written C pipeline with typed module
+functions/calls and selected scalar builtins. Retained Zig sources and unchanged
+WGSL witnesses identify semantics and consumers; they are not mechanically
+translated implementation. The MIT source notices remain. Independent evaluator
+sources, numerical oracles, original seals and precisely named historical adapters
+are preserved under independent_tests_m9; no third-party implementation is copied.
+See MILESTONE_9_RESULTS.md for acceptance and explicit limits.

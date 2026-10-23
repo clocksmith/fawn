@@ -1,0 +1,12 @@
+{
+  "files": {
+    "POSTINSPECTION_CORRECTIONS.md": "d489c13dae1b16cadda708ada28d1c082cbde7c98cca48e735266409507c4c85",
+    "capacity_corrections_m9.py": "713a814bdb43cd8c34c0abc30b757b0f187cf507c04845ed24a230d4b3001842",
+    "guarded_final_m9.py": "70e05da4b154a64fa38aa1ec05abe0d20780a2963e375081336a9091308d9976",
+    "native_m6_m9_boundary.c": "4a73171c958d9a9973b307840cfd9422c1fa36e59546ffec2cf8c2ab17881c5a",
+    "run_all_m9_current.py": "1f38600d4b39f67fdb0ebcbfd36df95ed3253e7975bfc19adb05449bed1d4147",
+    "run_capacity_m9_final.py": "801e0418eb69251bd3b594cc3185112629923a39004c76a4648e340029fc2612",
+    "run_native_m9_final.py": "1de7ee770b532a79da753c4e19017c3647927cf54ba2407e1768274dd4e3fc09"
+  },
+  "original_fixture_seal_sha256": "042e7e255204046cfdf4ba2e07129da6b68e8e539c3c4eb276ba29ab066d4f8a"
+}

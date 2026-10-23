@@ -62,8 +62,10 @@ WGSL lookup across all adapters. Type names, constructors, max and bitcast must
 resolve normally before builtin dispatch. Immutable runtime bindings retain IDs,
 not ASTs to replay; const bindings retain typed numeric values.
 
-storage.c owns the frozen job formula I=1+4E+8S, I+1 semantic-value entries, S+1
-local/scope entries, E+1 constants and the target bound256+32I. Each typed slice
+storage.c owns the frozen job formula I=1+4E+8S, I+P+1 semantic-value entries, S+1
+local/scope entries, E+1 constants, F=floor(T/6) functions, P=floor(T/4) formals,
+E syntax/typed arguments, physical-expression callee slots and target bound
+256+32I+3F+P. Each typed slice
 checks SIZE_MAX/alignment, every semantic append checks capacity, each target
 reservation checks its bound, and word serialization remains independent. Record
 an operation-by-operation proof when adding IR/target operations; do not enlarge
@@ -72,8 +74,9 @@ bounds after failures. Semantic IDs alone index value maps, never target IDs.
 Fixed adapters retain source/token/statement/expression/depth/IR/word limits and
 exact leading-constant, leading-global-x-alias, old-if-comparison and bare-attribute
 accounting. Compact private names create space for constant metadata without
-expanding public headers. Actual measured workspace must remain<=77760 and ABI1
-frame<=77824; every other library frame<=8192. See README for current measurements.
+expanding public headers. M9 explicitly reviews workspace<=122880 and ABI1
+frame<=123136; every other library frame<=8192. M8 ceilings and measurements remain
+historical receipts, not a reason to steal old E/S budgets. See README for measurements.
 
 ## Structured state and resources
 
@@ -103,3 +106,24 @@ recursive owners change. Caller capacity and spare workspace never increase dept
 The emitter's local EMIT macro only serializes a bounded typed operand array and
 propagates failure; it is not an IR or dispatch framework. Preserve MIT notices,
 source provenance and the separation of developer tests from independent acceptance.
+
+## Module functions and selected builtins
+
+One function record owns ranges in shared syntax/IR/local storage. Parse all
+signatures before resolving bodies. Formals are separate immutable scalar values,
+not mutable-local records or entry interface variables. Reserve all target callee
+IDs before emission and emit each validated body once. Never recurse over callee
+bodies or replay runtime source on the host. Whole-module iterative cycle checking
+uses resolved expression callee slots, including non-emitted calls.
+
+Reserve contiguous typed user-call arguments only on emitting visits, before
+nested arguments, then fill once in source order. Helpers receive fresh function
+locals and cannot capture entry locals/builtin inputs. Every user call may write
+storage; no load cache crosses it. Scalar builtin names use ordinary lexical and
+module lookup before the closed typed registry. Clamp lowers to safe min/max
+composition, and constant bounds receive mandatory validation even in skipped
+expressions. Save entry errno in every public wrapper and restore it on every exit.
+
+Stream parameter and argument operands into checked private staging, with the
+separate 16-bit instruction count guard before writes. No operand-count VLA or
+arbitrary arity cap. Formal debug names are not emitted under the 4P word ledger.

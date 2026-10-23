@@ -1,7 +1,15 @@
 /* SPDX-License-Identifier: MIT
  * Copyright (c) 2026 Doe contributors */
 #include "numeric.h"
+#include <errno.h>
 #include <string.h>
+
+/* Public adapters capture errno before preflight and restore it only after all
+ * compilation, FP restoration and result publication have finished. */
+static DoeCompilerStatus compiler_return(DoeCompilerStatus status, int saved_errno) {
+    errno = saved_errno;
+    return status;
+}
 
 bool source_error(Source *source, DoeCompilerStatus status, size_t offset, const char *message) {
     DoeCompilerDiagnostic *diagnostic = source->diagnostic;
@@ -70,9 +78,10 @@ DoeCompilerStatus doe_compiler_compile(
     uint32_t abi_version, const char *source, size_t length,
     uint32_t *words, size_t capacity,
     DoeCompilerResult *result, size_t result_size) {
-    if (result == NULL) return DOE_COMPILER_INPUT_ERROR;
+    const int saved_errno = errno;
+    if (result == NULL) return compiler_return(DOE_COMPILER_INPUT_ERROR, saved_errno);
     if (abi_version != DOE_COMPILER_ABI_VERSION || result_size != sizeof(*result))
-        return DOE_COMPILER_ABI_MISMATCH;
+        return compiler_return(DOE_COMPILER_ABI_MISMATCH, saved_errno);
     memset(result, 0, sizeof(*result));
     Source context = { .source = source, .length = length, .diagnostic = &result->diagnostic };
     LegacyWorkspace workspace;
@@ -82,7 +91,7 @@ DoeCompilerStatus doe_compiler_compile(
         reflect_program(&workspace.job.program, &result->reflection);
         result->word_count = workspace.job.output.count;
     }
-    return result->diagnostic.status;
+    return compiler_return(result->diagnostic.status, saved_errno);
 }
 
 _Static_assert(_Alignof(LegacyWorkspace) <= _Alignof(max_align_t),
@@ -90,12 +99,13 @@ _Static_assert(_Alignof(LegacyWorkspace) <= _Alignof(max_align_t),
 DoeCompilerStatus doe_compiler_workspace_requirements(
     uint32_t abi_version, DoeCompilerWorkspaceRequirements *requirements,
     size_t requirements_size) {
-    if (requirements == NULL) return DOE_COMPILER_INPUT_ERROR;
+    const int saved_errno = errno;
+    if (requirements == NULL) return compiler_return(DOE_COMPILER_INPUT_ERROR, saved_errno);
     if (abi_version != DOE_COMPILER_ABI_VERSION_2 || requirements_size != sizeof(*requirements))
-        return DOE_COMPILER_ABI_MISMATCH;
+        return compiler_return(DOE_COMPILER_ABI_MISMATCH, saved_errno);
     requirements->size_bytes = sizeof(LegacyWorkspace);
     requirements->alignment_bytes = _Alignof(LegacyWorkspace);
-    return DOE_COMPILER_OK;
+    return compiler_return(DOE_COMPILER_OK, saved_errno);
 }
 
 DoeCompilerStatus doe_compiler_compile_v2(
@@ -103,16 +113,17 @@ DoeCompilerStatus doe_compiler_compile_v2(
     const char *source, size_t length,
     uint32_t *words, size_t capacity,
     DoeCompilerResultV2 *result, size_t result_size) {
-    if (result == NULL) return DOE_COMPILER_INPUT_ERROR;
+    const int saved_errno = errno;
+    if (result == NULL) return compiler_return(DOE_COMPILER_INPUT_ERROR, saved_errno);
     if (abi_version != DOE_COMPILER_ABI_VERSION_2 || result_size != sizeof(*result))
-        return DOE_COMPILER_ABI_MISMATCH;
+        return compiler_return(DOE_COMPILER_ABI_MISMATCH, saved_errno);
     memset(result, 0, sizeof(*result));
     Source context = { .source = source, .length = length, .diagnostic = &result->diagnostic };
     if (workspace == NULL || workspace_size < sizeof(LegacyWorkspace) ||
         (uintptr_t)workspace % _Alignof(LegacyWorkspace) != 0u) {
         (void)source_error(&context, DOE_COMPILER_INPUT_ERROR, 0u,
                            "workspace must satisfy queried size and alignment");
-        return result->diagnostic.status;
+        return compiler_return(result->diagnostic.status, saved_errno);
     }
     LegacyWorkspace *storage = workspace;
     compiler_legacy_bind(storage, true);
@@ -122,41 +133,44 @@ DoeCompilerStatus doe_compiler_compile_v2(
         reflect_program_v2(&job->program, &result->reflection);
         result->word_count = job->output.count;
     }
-    return result->diagnostic.status;
+    return compiler_return(result->diagnostic.status, saved_errno);
 }
 
 DoeCompilerStatus doe_compiler_job_requirements(
     uint32_t version, const DoeCompilerJobCapacities *capacities, size_t capacities_size,
     DoeCompilerWorkspaceRequirements *requirements, size_t requirements_size) {
-    if (requirements == NULL) return DOE_COMPILER_INPUT_ERROR;
+    const int saved_errno = errno;
+    if (requirements == NULL) return compiler_return(DOE_COMPILER_INPUT_ERROR, saved_errno);
     if (version != DOE_COMPILER_JOB_ABI_VERSION || capacities_size != sizeof(*capacities) ||
-        requirements_size != sizeof(*requirements)) return DOE_COMPILER_ABI_MISMATCH;
+        requirements_size != sizeof(*requirements)) return compiler_return(DOE_COMPILER_ABI_MISMATCH, saved_errno);
     CompilerLimits limits;
     size_t bytes;
-    if (!compiler_job_layout(capacities, &limits, &bytes)) return DOE_COMPILER_INPUT_ERROR;
+    if (!compiler_job_layout(capacities, &limits, &bytes))
+        return compiler_return(DOE_COMPILER_INPUT_ERROR, saved_errno);
     requirements->size_bytes = bytes;
     requirements->alignment_bytes = _Alignof(max_align_t);
-    return DOE_COMPILER_OK;
+    return compiler_return(DOE_COMPILER_OK, saved_errno);
 }
 DoeCompilerStatus doe_compiler_compile_job(
     uint32_t version, const DoeCompilerJobCapacities *capacities, size_t capacities_size,
     void *workspace, size_t workspace_size, const char *source, size_t length,
     uint32_t *words, size_t capacity, DoeCompilerResultV2 *result, size_t result_size) {
-    if (result == NULL) return DOE_COMPILER_INPUT_ERROR;
+    const int saved_errno = errno;
+    if (result == NULL) return compiler_return(DOE_COMPILER_INPUT_ERROR, saved_errno);
     if (version != DOE_COMPILER_JOB_ABI_VERSION || capacities_size != sizeof(*capacities) ||
-        result_size != sizeof(*result)) return DOE_COMPILER_ABI_MISMATCH;
+        result_size != sizeof(*result)) return compiler_return(DOE_COMPILER_ABI_MISMATCH, saved_errno);
     memset(result, 0, sizeof(*result));
     Source context = { .source = source, .length = length, .diagnostic = &result->diagnostic };
     CompilerLimits limits;
     size_t bytes;
     if (!compiler_job_layout(capacities, &limits, &bytes)) {
         (void)source_error(&context, DOE_COMPILER_INPUT_ERROR, 0u, "invalid job capacities or layout overflow");
-        return result->diagnostic.status;
+        return compiler_return(result->diagnostic.status, saved_errno);
     }
     if (workspace == NULL || workspace_size < bytes ||
         (uintptr_t)workspace % _Alignof(max_align_t) != 0u) {
         (void)source_error(&context, DOE_COMPILER_INPUT_ERROR, 0u, "workspace must satisfy job size and alignment");
-        return result->diagnostic.status;
+        return compiler_return(result->diagnostic.status, saved_errno);
     }
     CompilerWorkspace *job = workspace;
     compiler_job_bind(job, workspace, &limits);
@@ -165,5 +179,5 @@ DoeCompilerStatus doe_compiler_compile_job(
         reflect_program_v2(&job->program, &result->reflection);
         result->word_count = job->output.count;
     }
-    return result->diagnostic.status;
+    return compiler_return(result->diagnostic.status, saved_errno);
 }

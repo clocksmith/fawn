@@ -41,15 +41,20 @@ include workgroup storage (37), mathematical builtins (12), extension directives
 (12), vector storage (9), and five other cases. These are overlapping dependency
 observations, not a promise that one fix admits each source.
 
-Next trace and freeze the reusable module/function-call and typed scalar-builtin
-owner: signatures, lexical lookup, argument evaluation, return behavior, call
-graph validation, owned function IR and actual target calls. Scalar helper
-witnesses also need a coherent mathematical builtin family. Multiple compute
-entries additionally require explicit entry selection and reflection disposition;
-helper support must not silently claim that surface. Preserve independent numeric
-accuracy/domain oracles and guard target operations whose exceptional behavior
-differs from WGSL. Aggregate/address-space layout and workgroup collective
-semantics follow as separate owners, not shader-specific recognizers.
+The [accepted M9 owner](../../runtime/c/compiler/MILESTONE_9_RESULTS.md) now covers
+module/function calls and the selected scalar math family. The unchanged consumer
+admits 33 of 98 paths; 65 remain explicit rejections. General functions and scalar
+math do not imply aggregates, multiple entries or collective semantics.
+
+Next is the reusable aggregate/type/access-path and reflection owner: vectors,
+constant-length arrays, named/nested structures, constructors, by-value calls,
+member/index references, checked layout and per-access robustness. New typed
+reflection needs an explicit additive API because old scalar/flat-struct results
+cannot represent it. Preserve historical successful projections and use the same
+pipeline, not per-API grammars or silent omission. Independent packed-layout and
+instruction oracles must cover types absent from this 98-source corpus. Workgroup
+storage/barriers, matrices, pointers, extensions and wider math remain separately
+selected dependencies, not inferred aggregate coverage.
 
 ## Remaining dependency map
 

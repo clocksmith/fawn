@@ -126,6 +126,104 @@ static bool checked_float(Source *source, size_t offset, NumericValue value,
     return true;
 }
 
+/* This is the closed scalar builtin signature registry. Resolution retains its
+ * typed identity through constant evaluation and runtime IR lowering. */
+static const ScalarBuiltin scalar_builtins[] = {
+    { "min", BUILTIN_MIN, 2u, false },
+    { "max", BUILTIN_MAX, 2u, false },
+    { "clamp", BUILTIN_CLAMP, 3u, false },
+    { "exp", BUILTIN_EXP, 1u, true },
+    { "tanh", BUILTIN_TANH, 1u, true },
+    { "sqrt", BUILTIN_SQRT, 1u, true },
+};
+
+const ScalarBuiltin *scalar_builtin_named(const char *name) {
+    for (size_t i = 0u; i < sizeof(scalar_builtins) / sizeof(*scalar_builtins); ++i) {
+        if (strcmp(name, scalar_builtins[i].name) == 0) return &scalar_builtins[i];
+    }
+    return NULL;
+}
+
+static const ScalarBuiltin *scalar_builtin_kind(ScalarBuiltinKind kind) {
+    for (size_t i = 0u; i < sizeof(scalar_builtins) / sizeof(*scalar_builtins); ++i) {
+        if (kind == scalar_builtins[i].kind) return &scalar_builtins[i];
+    }
+    return NULL;
+}
+
+/* Inputs have one checked numeric type and finite payloads. Strict comparison
+ * selects the right operand on equality, preserving its signed-zero bits. */
+static bool numeric_less(NumericValue left, NumericValue right) {
+    if (left.type == IR_F32) return float_value(left.bits) < float_value(right.bits);
+    if (left.type == IR_ABSTRACT_FLOAT) return double_value(left.bits) < double_value(right.bits);
+    if (left.type == IR_U32) return left.bits < right.bits;
+    return signed_value(left) < signed_value(right);
+}
+
+static NumericValue numeric_minimum(NumericValue left, NumericValue right) {
+    return numeric_less(left, right) ? left : right;
+}
+
+static NumericValue numeric_maximum(NumericValue left, NumericValue right) {
+    return numeric_less(right, left) ? left : right;
+}
+
+bool numeric_builtin(Source *source, size_t offset, ScalarBuiltinKind kind,
+                     const NumericValue *arguments, NumericValue *result) {
+    const ScalarBuiltin *signature = scalar_builtin_kind(kind);
+    if (signature == NULL)
+        return numeric_error(source, offset, "invalid scalar builtin identity");
+    const IrType type = arguments[0].type;
+    if (!floating_type(type) && (signature->floating || !integer_type(type)))
+        return numeric_error(source, offset, "scalar builtin operand type is not supported");
+    for (uint32_t i = 0u; i < signature->arity; ++i) {
+        if (arguments[i].type != type)
+            return numeric_error(source, offset, "scalar builtin operands have different types");
+        if (!finite_value(arguments[i]))
+            return numeric_error(source, offset, "scalar builtin operand is a nonfinite evaluated constant");
+    }
+    switch (kind) {
+        case BUILTIN_MIN:
+            *result = numeric_minimum(arguments[0], arguments[1]);
+            return true;
+        case BUILTIN_MAX:
+            *result = numeric_maximum(arguments[0], arguments[1]);
+            return true;
+        case BUILTIN_CLAMP:
+            if (numeric_less(arguments[2], arguments[1]))
+                return numeric_error(source, offset, "constant clamp lower bound exceeds upper bound");
+            *result = numeric_minimum(numeric_maximum(arguments[0], arguments[1]), arguments[2]);
+            return true;
+        case BUILTIN_EXP:
+        case BUILTIN_TANH:
+        case BUILTIN_SQRT:
+            break;
+    }
+    NumericValue answer = { .bits = 0u, .type = type };
+    /* The volatile store forces the declared width before subsequent constant
+     * operations. Finite underflow is valid even when libm reports ERANGE. */
+    if (type == IR_F32) {
+        const float input = float_value(arguments[0].bits);
+        if (kind == BUILTIN_SQRT && input < 0.0f)
+            return numeric_error(source, offset, "constant sqrt operand is negative");
+        volatile float value;
+        if (kind == BUILTIN_EXP) value = expf(input);
+        else if (kind == BUILTIN_TANH) value = tanhf(input);
+        else value = sqrtf(input);
+        answer.bits = float_bits(value);
+    } else {
+        const double input = double_value(arguments[0].bits);
+        if (kind == BUILTIN_SQRT && input < 0.0)
+            return numeric_error(source, offset, "constant sqrt operand is negative");
+        volatile double value;
+        if (kind == BUILTIN_EXP) value = exp(input);
+        else if (kind == BUILTIN_TANH) value = tanh(input);
+        else value = sqrt(input);
+        answer.bits = double_bits(value);
+    }
+    return checked_float(source, offset, answer, result);
+}
+
 /* Literal precision is bounded by WGSL, not source length. The largest retained
  * decimal significand has 67 bits. A relevant decimal exponent is in [-400,310],
  * so its denominator needs at most 1330 bits and its numerator 1097 bits.
@@ -583,8 +681,7 @@ static bool float_binary(Source *source, size_t offset, ExpressionKind operation
             /* fmod is the truncating remainder, not remainder's nearest-integer
              * quotient or floor modulo. It avoids spurious quotient overflow. */
             value = fmodf(a, b);
-        } else if (operation == EXPRESSION_MAX) value = a < b ? b : a;
-        else return numeric_error(source, offset, "invalid floating-point binary operation");
+        } else return numeric_error(source, offset, "invalid floating-point binary operation");
         answer.bits = float_bits(value);
     } else {
         const double a = double_value(left.bits), b = double_value(right.bits);
@@ -596,8 +693,7 @@ static bool float_binary(Source *source, size_t offset, ExpressionKind operation
         else if (operation == EXPRESSION_REMAINDER) {
             if (b == 0.0) return numeric_error(source, offset, "constant floating-point remainder has zero divisor");
             value = fmod(a, b);
-        } else if (operation == EXPRESSION_MAX) value = a < b ? b : a;
-        else return numeric_error(source, offset, "invalid floating-point binary operation");
+        } else return numeric_error(source, offset, "invalid floating-point binary operation");
         answer.bits = double_bits(value);
     }
     return checked_float(source, offset, answer, result);
@@ -608,11 +704,15 @@ bool numeric_binary(Source *source, size_t offset, ExpressionKind operation,
                     NumericValue *result) {
     if (!finite_value(left) || !finite_value(right))
         return numeric_error(source, offset, "binary operand is a nonfinite evaluated constant");
+    if (operation == EXPRESSION_MAX) {
+        const NumericValue arguments[] = { left, right };
+        return numeric_builtin(source, offset, BUILTIN_MAX, arguments, result);
+    }
     if (operation == EXPRESSION_SHIFT_LEFT || operation == EXPRESSION_SHIFT_RIGHT)
         return integer_shift(source, offset, operation, left, right, result);
     if (left.type != right.type)
         return numeric_error(source, offset, "binary scalar operands have different types");
-    if (operation == EXPRESSION_COMPARE || operation == EXPRESSION_MAX) {
+    if (operation == EXPRESSION_COMPARE) {
         bool equal, less;
         if (left.type == IR_F32) {
             const float a = float_value(left.bits), b = float_value(right.bits);
@@ -624,12 +724,10 @@ bool numeric_binary(Source *source, size_t offset, ExpressionKind operation,
             const int64_t a = signed_value(left), b = signed_value(right);
             equal = a == b; less = a < b;
         } else { equal = left.bits == right.bits; less = left.bits < right.bits; }
-        if (left.type == IR_BOOL && (operation == EXPRESSION_MAX ||
-            (comparison != COMPARE_EQUAL && comparison != COMPARE_NOT_EQUAL)))
+        if (left.type == IR_BOOL && comparison != COMPARE_EQUAL && comparison != COMPARE_NOT_EQUAL)
             return numeric_error(source, offset, "bool does not support numeric ordering");
-        if (operation == EXPRESSION_MAX) *result = less ? right : left;
-        else *result = (NumericValue){ .bits = comparison_result(comparison, equal, less) ? 1u : 0u,
-                                      .type = IR_BOOL };
+        *result = (NumericValue){ .bits = comparison_result(comparison, equal, less) ? 1u : 0u,
+                                  .type = IR_BOOL };
         return true;
     }
     if (left.type == IR_BOOL) {

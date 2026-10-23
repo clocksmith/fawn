@@ -1,0 +1,140 @@
+{
+  "candidate": "m9-candidate-1",
+  "candidate_manifest_sha256": "55af8003b0611795585af60ae5f9881ae53d14b1936f6c02223e75f879b85937",
+  "capacity": {
+    "checks": 59,
+    "corrected_validator_routing_cases": 3,
+    "exact_source_cases": 41,
+    "format_edges": "OpTypeFunction 65532 pass/65533 reject; OpFunctionCall 65531 pass/65532 reject. Positive actual 65535-word instructions target-validate.",
+    "large_call_required_validator_seconds": 207.6858014180325,
+    "large_call_words": 589915,
+    "query_cases": 18,
+    "status": "PASS"
+  },
+  "cli": {
+    "builds": [
+      "ordinary",
+      "ASan/UBSan"
+    ],
+    "checks": 174,
+    "modes": [
+      "binary",
+      "legacy",
+      "v2"
+    ],
+    "no_clobber_rollback_acquisition_and_environment_failures": true,
+    "status": "PASS"
+  },
+  "cli_sampled_peak_bytes": 1396711,
+  "corrections": [
+    "Historical M7 77760 and M6 96208 private-workspace ceilings changed only to the frozen reviewed M9 122880 ceiling. Original files and first failures retained.",
+    "512/2048-formal validation uses the already sealed max-function-args65532 resource ceiling. WGSL/capacities/statuses unchanged.",
+    "65531-call optional default-limit validator timeout is retained as inconclusive, not a compiler failure. Required configured Vulkan1.1 invocation passed in207.686 seconds."
+  ],
+  "evidence_sha256": {
+    "FINAL_IDENTITY_RECHECK.json": "dc31552b12b9ad6181ed483454c1a2c7834009a881f8bf3362603b0050bdbd6c",
+    "candidate1-audit/AUDIT.md": "ee1287f615b866eef7186d2c99d38b07a7c1126d6619428cdb55ad42613c59cb",
+    "candidate1-audit/record-layout.json": "a76a38e6004ba350917a62f4889d3897f18f7de440520a2cfa8387bd94faaf1e",
+    "candidate1-audit/stack-analysis.json": "6391a7cddd9664d150215f5c091e517865e53efe0eefe15af738f1539023226d",
+    "candidate1-capacity-revalidation/results.json": "29c98519c5b816ed3c580952b6cda2a8310f3c17d79fad2031cda23096d0283e",
+    "candidate1-capacity/results.json": "71bd1434e65a5a8e8f4c6b17a873d30d2e5535ad1d81eb185ca50fb2e2db6694",
+    "candidate1-capacity/summary.json": "1bfd7bda641be83b4b127d27f9eb9a4d779ff8626f544e6f8320c504e4165437",
+    "candidate1-cli/disk-guard.json": "258574beb2ef2d343d33ad84f035b9d85139c81cc7fa93b8997af5a8aa0e13d2",
+    "candidate1-cli/results.json": "9f8bc8f51bb9d6b94bedd3e1abe150730676edb9ceae3deea1999d9f2658a8d9",
+    "candidate1-m6-recheck/results.json": "d24a616899c748b4baf5f729ba47db6f88a1ca62a16ee4dcd1f3322eff7859c0",
+    "candidate1-native/commands.json": "d656a1cb92bbd7af5ff760b989c8ff3b3e1c58c9562dbfbbc058b3a30808c809",
+    "candidate1-native/compressed-artifacts.json": "da4e81ef557d4fd1b3d465f4fee465475d9cf8811908ae3c91ad9db0c5566f8c",
+    "candidate1-native/disk-guard.json": "35198340d9848b981a70263d68ff5e0ced04ccfcc88bc7f3bb6b62f31f968e05",
+    "candidate1-native/frames.json": "001dc3140ba3d05cbf28c239181f5754b01942bf10f5e4b9125e0578eb2edd6f",
+    "candidate1-native/native-report.json": "4dee97fada711ccfa7e0137603015486142981e89d14613d88ca44a8afb5d07a",
+    "source/CURRENT_SOURCE_MANIFEST.json": "33477e5ada6bcd95e1d9b0f7738a746d8cacc0366b4d5ab6f8ff2305379f25fe",
+    "source/FIXTURE_SEAL.sha256": "042e7e255204046cfdf4ba2e07129da6b68e8e539c3c4eb276ba29ab066d4f8a",
+    "source/run_all_m9_current.py": "1f38600d4b39f67fdb0ebcbfd36df95ed3253e7975bfc19adb05449bed1d4147"
+  },
+  "identity_recheck": "PASS",
+  "limitations": [
+    "No physical GPU execution",
+    "Combined stack bounds exclude libc/libm/OS/sanitizer frames",
+    "Persistent fenv restore failure prevents publication but does not imply impossible restoration succeeded"
+  ],
+  "native": {
+    "abi1_frame_bytes": 119520,
+    "allocator_imports": [],
+    "applicable_fenv_paths": 30,
+    "configurations": [
+      "source_archive",
+      "source_shared",
+      "provided_prebuilt",
+      "ASan_UBSan_source_shared"
+    ],
+    "exports": 5,
+    "fenv_fault_cases": 60,
+    "headers": 3,
+    "host_calls_per_configuration": 2368,
+    "host_profiles": 432,
+    "max_other_frame_bytes": 1344,
+    "provided_prebuilt": {
+      "path": "/workspace/shared/doe-c-migration-20261023/runtime/c/compiler/build/libdoe_compiler.so",
+      "sha256": "b4a8b1e0203ecfbe8c114c5fb6694ce04f835ccba075e1a2ecefe15612baee35"
+    },
+    "public_exit_calls_per_configuration": 8352,
+    "retained_m6_recheck": [
+      "ordinary allocator-wrapped archive PASS",
+      "ASan/UBSan source-shared PASS"
+    ],
+    "source_built": {
+      "/workspace/shared/doe-c-migration-evidence-20261023/milestone9/evaluator/native_capacity/candidate1-native/build/libm8-source.a": "11a586017b3d118d4c814b3559c4a07bb60c7c8382b6ccd5011c12c3dd8a1207",
+      "/workspace/shared/doe-c-migration-evidence-20261023/milestone9/evaluator/native_capacity/candidate1-native/build/libm8-source.so": "bf6389c94721d487038aa0d4e8ef2e47f7e883d1b6579feacf15e6135233ab8d"
+    },
+    "status": "PASS after exact historical assertion correction",
+    "workspace_bytes": 119408
+  },
+  "native_sampled_peak_bytes": 3868399,
+  "pending_actions": [],
+  "scope": "Independent Linux x86-64 GCC/G++14.2 native/API/capacity/FP/errno/CLI evaluator only; no physical GPU or whole-migration claim",
+  "source_frontdoor": "source/run_all_m9_current.py",
+  "source_frontdoor_sha256": "1f38600d4b39f67fdb0ebcbfd36df95ed3253e7975bfc19adb05449bed1d4147",
+  "source_manifest_sha256": "33477e5ada6bcd95e1d9b0f7738a746d8cacc0366b4d5ab6f8ff2305379f25fe",
+  "stack_library_only_bounds": [
+    {
+      "api": "doe_compiler_compile",
+      "combined_library_frame_bound": 159976,
+      "conservative_acyclic_base": 6152,
+      "control_depth": 4,
+      "expression_depth": 18,
+      "phase_recursive_bytes": {
+        "emission": 7680,
+        "parse": 9664,
+        "semantic": 34304
+      },
+      "wrapper_bytes": 119520
+    },
+    {
+      "api": "doe_compiler_compile_v2",
+      "combined_library_frame_bound": 40568,
+      "conservative_acyclic_base": 6152,
+      "control_depth": 4,
+      "expression_depth": 18,
+      "phase_recursive_bytes": {
+        "emission": 7680,
+        "parse": 9664,
+        "semantic": 34304
+      },
+      "wrapper_bytes": 112
+    },
+    {
+      "api": "doe_compiler_compile_job",
+      "combined_library_frame_bound": 149064,
+      "conservative_acyclic_base": 6152,
+      "control_depth": 32,
+      "expression_depth": 64,
+      "phase_recursive_bytes": {
+        "emission": 33792,
+        "parse": 38688,
+        "semantic": 142656
+      },
+      "wrapper_bytes": 256
+    }
+  ],
+  "status": "PASS"
+}

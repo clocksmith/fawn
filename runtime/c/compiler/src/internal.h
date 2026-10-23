@@ -13,7 +13,7 @@ typedef enum {
     TOKEN_AND, TOKEN_OR, TOKEN_ADD_ASSIGN, TOKEN_SUB_ASSIGN, TOKEN_MUL_ASSIGN,
     TOKEN_INCREMENT, TOKEN_DECREMENT, TOKEN_DIV_ASSIGN, TOKEN_REM_ASSIGN,
     TOKEN_BIT_AND_ASSIGN, TOKEN_BIT_OR_ASSIGN, TOKEN_BIT_XOR_ASSIGN,
-    TOKEN_SHIFT_LEFT, TOKEN_SHIFT_RIGHT, TOKEN_SHIFT_LEFT_ASSIGN, TOKEN_SHIFT_RIGHT_ASSIGN
+    TOKEN_SHIFT_LEFT, TOKEN_SHIFT_RIGHT, TOKEN_SHIFT_LEFT_ASSIGN, TOKEN_SHIFT_RIGHT_ASSIGN, TOKEN_ARROW
 } TokenKind;
 enum { MAX_STATEMENTS = 16, MAX_IF_DEPTH = 4,
        MAX_EXPRESSIONS = 320, MAX_EXPRESSION_DEPTH = 18, MAX_ENTRY_PARAMETERS = 5,
@@ -24,7 +24,7 @@ enum { MAX_STATEMENTS = 16, MAX_IF_DEPTH = 4,
 typedef struct { unsigned kind; uint32_t offset, length; } Token;
 typedef struct {
     size_t source_bytes, tokens, statements, expressions, physical_expressions;
-    size_t instructions, values, locals, constants, words;
+    size_t instructions, values, locals, constants, words, functions, formals, arguments;
     uint32_t expression_depth, control_depth, target_bound;
     bool legacy_counts, uniforms;
 } CompilerLimits;
@@ -52,7 +52,7 @@ typedef enum {
     EXPRESSION_LITERAL, EXPRESSION_NEGATE, EXPRESSION_COMPLEMENT,
     EXPRESSION_DIVIDE, EXPRESSION_REMAINDER, EXPRESSION_BIT_AND, EXPRESSION_BIT_OR,
     EXPRESSION_BIT_XOR, EXPRESSION_SHIFT_LEFT, EXPRESSION_SHIFT_RIGHT,
-    EXPRESSION_CONSTRUCT, EXPRESSION_BITCAST
+    EXPRESSION_CONSTRUCT, EXPRESSION_BITCAST, EXPRESSION_CALL
 } ExpressionKind;
 typedef struct {
     uint32_t source_offset;
@@ -65,7 +65,9 @@ typedef struct {
             struct { NameSpan callee, type; } call; } value;
     bool grouped;
 } Expression;
-typedef enum { IR_U32, IR_F32, IR_BOOL, IR_I32, IR_ABSTRACT_INT, IR_ABSTRACT_FLOAT } IrType;
+typedef enum { IR_U32, IR_F32, IR_BOOL, IR_I32, IR_ABSTRACT_INT, IR_ABSTRACT_FLOAT, IR_VOID } IrType;
+typedef enum { BUILTIN_MIN, BUILTIN_MAX, BUILTIN_CLAMP, BUILTIN_EXP, BUILTIN_TANH, BUILTIN_SQRT } ScalarBuiltinKind;
+typedef struct { const char *name; ScalarBuiltinKind kind; uint32_t arity; bool floating; } ScalarBuiltin;
 typedef struct { uint64_t bits; IrType type; } NumericValue;
 typedef enum { UPDATE_SET, UPDATE_ADD, UPDATE_SUBTRACT, UPDATE_MULTIPLY,
                UPDATE_INCREMENT, UPDATE_DECREMENT, UPDATE_DIVIDE, UPDATE_REMAINDER,
@@ -86,7 +88,7 @@ typedef enum {
     STATEMENT_ASSIGN, STATEMENT_RETURN, STATEMENT_IF, STATEMENT_LET,
     STATEMENT_VAR, STATEMENT_BLOCK, STATEMENT_FOR, STATEMENT_WHILE,
     STATEMENT_LOOP, STATEMENT_CONTINUING, STATEMENT_BREAK, STATEMENT_CONTINUE,
-    STATEMENT_BREAK_IF, STATEMENT_EMPTY, STATEMENT_CONST
+    STATEMENT_BREAK_IF, STATEMENT_EMPTY, STATEMENT_CONST, STATEMENT_CALL
 } StatementKind;
 typedef struct {
     StatementKind kind;
@@ -121,6 +123,22 @@ typedef struct {
     IrType type;
     uint32_t state;
 } ConstantSyntax;
+enum { FUNCTION_ENTRY = 1u, FUNCTION_MUST_USE = 2u };
+typedef struct {
+    NameSpan name, annotation;
+    uint32_t formal_start, formal_count, statement_start, statement_end;
+    uint32_t expression_start, expression_end, instruction_start, instruction_end;
+    uint32_t local_start, local_count, result_type, flags, value_base;
+    union { struct { uint32_t scan, parent, color; } graph;
+            struct { uint32_t function, signature, label; } target; } state;
+} FunctionRecord;
+typedef struct {
+    NameSpan name;
+    union { NameSpan annotation; struct { uint32_t type, offset; } resolved; } type;
+} FormalRecord;
+typedef struct { uint32_t expression, next; } ArgumentSyntax;
+_Static_assert(sizeof(FunctionRecord) == 80u && sizeof(FormalRecord) == 16u &&
+               sizeof(ArgumentSyntax) == 8u, "M9 private record ledger");
 typedef struct {
     ResourceSyntax resources[DOE_COMPILER_MAX_BINDINGS];
     size_t resource_count;
@@ -137,6 +155,14 @@ typedef struct {
     size_t statement_count, statement_capacity;
     Expression *expressions;
     size_t expression_count, expression_capacity, expression_budget_count;
+    FunctionRecord *functions;
+    size_t function_count, function_capacity;
+    FormalRecord *formals;
+    size_t formal_count, formal_capacity;
+    ArgumentSyntax *arguments;
+    size_t argument_count, argument_capacity;
+    uint32_t *callees;
+    uint32_t entry_function, current_function;
 } Syntax;
 
 typedef struct {
@@ -168,7 +194,7 @@ typedef enum {
     IR_LOOP_BEGIN, IR_LOOP_TEST, IR_LOOP_CONTINUING, IR_END_LOOP,
     IR_BREAK, IR_CONTINUE, IR_BREAK_IF, IR_NEGATE, IR_COMPLEMENT,
     IR_DIVIDE, IR_REMAINDER, IR_BIT_AND, IR_BIT_OR, IR_BIT_XOR,
-    IR_SHIFT_LEFT, IR_SHIFT_RIGHT, IR_CONVERT, IR_BITCAST
+    IR_SHIFT_LEFT, IR_SHIFT_RIGHT, IR_CONVERT, IR_BITCAST, IR_CALL, IR_BUILTIN
 } IrOpcode;
 typedef struct { uint32_t id; IrType type; size_t source_offset; } IrValue;
 typedef struct {
@@ -197,6 +223,14 @@ typedef struct {
     size_t instruction_count, instruction_capacity;
     IrLocal *locals;
     size_t local_count, local_capacity;
+    FunctionRecord *functions;
+    size_t function_count;
+    FormalRecord *formals;
+    size_t formal_count;
+    uint32_t *arguments;
+    size_t argument_count, argument_capacity;
+    uint32_t entry_function;
+    uint32_t *scratch;
 } IrProgram;
 typedef struct { uint32_t *words; size_t count, capacity; } Spirv;
 typedef struct {
@@ -214,13 +248,18 @@ typedef struct {
     Statement statements[MAX_STATEMENTS];
     Expression expressions[MAX_EXPRESSIONS + MAX_STATEMENTS + 1u];
     ConstantSyntax constants[MAX_EXPRESSIONS + 1u];
+    FunctionRecord functions[DOE_COMPILER_MAX_TOKENS / 6u];
+    FormalRecord formals[DOE_COMPILER_MAX_TOKENS / 4u];
+    ArgumentSyntax arguments[MAX_EXPRESSIONS];
+    uint32_t callees[MAX_EXPRESSIONS + MAX_STATEMENTS + 1u];
     union {
         Token tokens[DOE_COMPILER_MAX_TOKENS + 1u];
         struct {
             IrInstruction instructions[MAX_IR_INSTRUCTIONS];
             IrLocal locals[MAX_STATEMENTS + 1u];
             LocalBinding scope[MAX_STATEMENTS + 1u];
-            uint32_t target_values[MAX_IR_VALUES];
+            uint32_t target_values[MAX_IR_VALUES + DOE_COMPILER_MAX_TOKENS / 4u];
+            uint32_t arguments[MAX_EXPRESSIONS];
             uint32_t words[DOE_COMPILER_MAX_WORDS];
         } lowered;
     } phase;
