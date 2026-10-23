@@ -26,3 +26,11 @@ test: $(BUILD)/test_shader $(BUILD)/cpp
 sanitize: | $(BUILD)
 	$(CC) $(CPPFLAGS) $(CFLAGS) -O1 -fsanitize=address,undefined -fno-omit-frame-pointer src/shader.c tests/test_shader.c $(COMPILER_LINK) -o $(BUILD)/sanitize
 	ASAN_OPTIONS=detect_leaks=0:halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1 $(BUILD)/sanitize
+
+# Optional real Vulkan consumer; no software adapter is enabled implicitly.
+VULKAN_SOURCES = $(addprefix ../backends/vulkan/,$(shell sed -n 's/^SOURCES = //p' ../backends/vulkan/Makefile))
+$(BUILD)/vulkan_images: tests/vulkan_images.c $(BUILD)/libdoe_shader.a $(COMPILER_LIBRARY) $(HEADERS) $(VULKAN_SOURCES) $(wildcard ../backends/vulkan/src/*.h ../backends/vulkan/include/*.h)
+	$(CC) $(CPPFLAGS) -I../backends/vulkan/include $(CFLAGS) tests/vulkan_images.c $(VULKAN_SOURCES) $(BUILD)/libdoe_shader.a $(COMPILER_LINK) -ldl -o $@
+.PHONY: test-vulkan-images
+test-vulkan-images: $(BUILD)/vulkan_images
+	$(BUILD)/vulkan_images $(NATIVE_ARGS)

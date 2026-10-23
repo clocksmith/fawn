@@ -77,6 +77,35 @@ int main(void)
     source[0]='@';
     assert(doe_shader_create(&options,source,strlen(source),&shader,&error)==DOE_SHADER_COMPILE_FAILED);
     assert(shader==sentinel && a.live==0);
-    puts("owned shader: metadata, identity, allocation rollback, lifetime PASS");
+    const char *image_source =
+        "@group(0) @binding(2) var input_tex:texture_2d<f32>;"
+        "@group(0) @binding(3) var output_tex:texture_storage_2d<rgba8unorm,write>;"
+        "@compute @workgroup_size(1) fn copy_image(){"
+        "textureStore(output_tex,vec2i(0),textureLoad(input_tex,vec2i(0),0));}";
+    options.selection = (DoeCompilerEntrySelectionV5){.mode=DOE_COMPILER_SELECT_NONE};
+    for (unsigned ordinal=1; ordinal<=2; ++ordinal) {
+        a = (allocations){.fail_at=ordinal};
+        assert(doe_shader_create(&options,image_source,strlen(image_source),&shader,&error)==DOE_SHADER_OUT_OF_MEMORY);
+        assert(shader==sentinel && a.live==0);
+    }
+    a = (allocations){0};
+    assert(doe_shader_create(&options,image_source,strlen(image_source),&shader,&error)==DOE_SHADER_OK);
+    assert(doe_shader_borrow(shader,&view)==DOE_SHADER_OK);
+    assert(view.module.schema_version==DOE_COMPILER_RESOURCES_SCHEMA_VERSION);
+    assert(view.handle_count==2 && view.counts.resources==2);
+    for (size_t i=0; i<view.handle_count; ++i) {
+        const DoeCompilerHandleV6 *handle=&view.handles[i];
+        assert(handle->resource_index==i && handle->view_dimension==DOE_COMPILER_VIEW_2D);
+        assert(handle->sample_scalar==DOE_COMPILER_LEAF_F32);
+        const DoeCompilerResourceV4 *resource=&view.resources[handle->resource_index];
+        assert(resource->type_index==DOE_COMPILER_MODULE_NONE);
+        assert(resource->minimum_binding_size_bytes==0);
+    }
+    assert(view.resources[0].kind==DOE_COMPILER_SAMPLED_TEXTURE);
+    assert(view.resources[1].kind==DOE_COMPILER_STORAGE_TEXTURE);
+    assert(view.handles[1].storage_format==DOE_COMPILER_FORMAT_RGBA8UNORM);
+    doe_shader_release(shader);
+    assert(a.live==0);
+    puts("owned shader: buffer/handle metadata, identity, allocation rollback, lifetime PASS");
     return 0;
 }

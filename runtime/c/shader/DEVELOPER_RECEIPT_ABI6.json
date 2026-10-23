@@ -1,0 +1,29 @@
+{
+  "status": "focused developer checks; not independent or physical qualification",
+  "core_commit": "9239cfec",
+  "vulkan_image_test_base": "e0006713c9b02b3ca0331223f824595db448a233",
+  "checks": [
+    "C11 and C++17 owned artifact clients",
+    "two allocation failure points, immutable source/identity and sparse texture/sampler metadata",
+    "ASan/UBSan for shader owner; core library uninstrumented in this test; leaks disabled",
+    "actual C-compiled WGSL on opt-in SwiftShader: texture dimensions/load/sampleLevel/store, reversed-coordinate 256-byte oracle, 72 invocations into64pixels and early releases"
+  ],
+  "limits": [
+    "internal static-library shader view requires rebuilding clients",
+    "not public WebGPU texture integration or device/format admission qualification",
+    "not LeakSanitizer or physical execution"
+  ],
+  "source_sha256": {
+    "runtime/c/shader/Makefile": "b0b93e3a4a948b93d60985ac5da22d1e1f6ddc3b4ec38b2ed634625cc39daaf5",
+    "runtime/c/shader/README.md": "62d975bf5986bd129c1ef0f36ffdbd7dc0e4e736a5c15cffa9b78570611b2da6",
+    "runtime/c/shader/include/doe_shader.h": "6c73fc1494300ab16ef02d782ef6d5ec06c64afe73df29009f19ef7c2af4bdb8",
+    "runtime/c/shader/src/shader.c": "44c0f41fb6154c809d927bc42b9b4a3aad4df40662c26a2f7f7359814f373712",
+    "runtime/c/shader/tests/test_shader.c": "97095f753f44a256e3949718cb8616bb87289c90736100ca8c5393bf7d898f26",
+    "runtime/c/shader/tests/cpp.cpp": "e4ccf651ecb3e960e2f436b7176ff32a0cb5eedc72dcba36798f420ad29c1cb5",
+    "runtime/c/shader/tests/vulkan_images.c": "c0351de9cd0953e66fbc45704353a6a96bb7c8afee6902973931c1d63206fad4"
+  },
+  "log_sha256": {
+    "doe-shader-abi6-build": "9dd0e3490e0ead04c45a4100852e9a38aa4a2256a53120da290295f6c35d14ec",
+    "doe-shader-abi6-images-final": "f24433ebe32ebbbdcd50ed315e41141668fed48abf34a1f4bd9eccd6c85c7a6c"
+  }
+}
