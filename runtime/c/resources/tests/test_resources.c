@@ -333,6 +333,86 @@ static void test_recorded_submission(void)
     empty(&f);
 }
 
+static doe_resource_commands *copy_commands(fixture *f, doe_resource_buffer *source,
+    doe_resource_buffer *destination)
+{
+    doe_resource_config c = config(f);
+    doe_resource_encoder *encoder;
+    assert(doe_resource_encoder_create(&c, &encoder) == DOE_RESOURCE_OK);
+    doe_resource_buffer_copy copy = {source, destination, 0, 0, UINT64_MAX};
+    assert(doe_resource_encoder_copy_buffer(encoder, &copy, DOE_RESOURCE_DISTINCT_BUFFERS) == DOE_RESOURCE_OK);
+    doe_resource_commands *commands;
+    assert(doe_resource_encoder_finish(encoder, &commands) == DOE_RESOURCE_OK);
+    doe_resource_encoder_release(encoder);
+    return commands;
+}
+
+/* Compute-program extension: claimed commands replay repeatedly, never return to
+ * the single-use queue path, and keep dependencies until the program releases. */
+static void test_program_replay(void)
+{
+    fixture f = fresh();
+    native_token source_token = {0}, destination_token = {0};
+    doe_resource_buffer *source = buffer(&f, &source_token, 64, WGPUBufferUsage_CopySrc);
+    doe_resource_buffer *destination = buffer(&f, &destination_token, 64, WGPUBufferUsage_CopyDst);
+    doe_resource_commands *commands = copy_commands(&f, source, destination);
+    assert(doe_resource_commands_begin_replay(commands) == DOE_RESOURCE_STATE); /* Not claimed. */
+    assert(doe_resource_commands_release_program(commands) == DOE_RESOURCE_STATE);
+    assert(doe_resource_commands_claim_program(commands) == DOE_RESOURCE_OK);
+    assert(doe_resource_commands_claim_program(commands) == DOE_RESOURCE_STATE);
+    assert(doe_resource_commands_begin_submit(commands) == DOE_RESOURCE_STATE);
+    doe_resource_commands_release(commands); /* Public handle gone; the program keeps it. */
+    for (int run = 0; run < 3; run++) {
+        assert(doe_resource_commands_begin_replay(commands) == DOE_RESOURCE_OK);
+        assert(doe_resource_commands_begin_replay(commands) == DOE_RESOURCE_STATE);
+        assert(doe_resource_commands_settle_replay(commands, DOE_RESOURCE_PENDING) == DOE_RESOURCE_PENDING);
+        doe_resource_status terminal = run == 1 ? DOE_RESOURCE_EXECUTION_FAILED : DOE_RESOURCE_OK;
+        assert(doe_resource_commands_settle_replay(commands, terminal) == terminal);
+        assert(doe_resource_commands_settle_replay(commands, DOE_RESOURCE_OK) == DOE_RESOURCE_STATE);
+    }
+    doe_resource_buffer_destroy(source); /* A destroyed dependency stops later replays. */
+    assert(doe_resource_commands_begin_replay(commands) == DOE_RESOURCE_UNAVAILABLE);
+    doe_resource_buffer_release(source);
+    doe_resource_buffer_release(destination);
+    assert(!source_token.releases && !destination_token.releases);
+    assert(doe_resource_commands_release_program(commands) == DOE_RESOURCE_OK);
+    assert(source_token.releases == 1 && destination_token.releases == 1);
+
+    /* Program released while a replay is unresolved: the replay's reference
+     * keeps commands and dependencies until it settles. */
+    native_token other_token = {0}, sink_token = {0};
+    doe_resource_buffer *other = buffer(&f, &other_token, 64, WGPUBufferUsage_CopySrc);
+    doe_resource_buffer *sink = buffer(&f, &sink_token, 64, WGPUBufferUsage_CopyDst);
+    commands = copy_commands(&f, other, sink);
+    assert(doe_resource_commands_claim_program(commands) == DOE_RESOURCE_OK);
+    doe_resource_commands_release(commands);
+    assert(doe_resource_commands_begin_replay(commands) == DOE_RESOURCE_OK);
+    assert(doe_resource_commands_release_program(commands) == DOE_RESOURCE_OK);
+    doe_resource_buffer_release(other);
+    doe_resource_buffer_release(sink);
+    assert(!other_token.releases && !sink_token.releases);
+    assert(doe_resource_commands_settle_replay(commands, DOE_RESOURCE_OK) == DOE_RESOURCE_OK);
+    assert(other_token.releases == 1 && sink_token.releases == 1);
+
+    /* Settled single-use commands and unavailable dependencies cannot be claimed. */
+    native_token third_token = {0}, fourth_token = {0};
+    doe_resource_buffer *third = buffer(&f, &third_token, 64, WGPUBufferUsage_CopySrc);
+    doe_resource_buffer *fourth = buffer(&f, &fourth_token, 64, WGPUBufferUsage_CopyDst);
+    commands = copy_commands(&f, third, fourth);
+    assert(doe_resource_commands_begin_submit(commands) == DOE_RESOURCE_OK);
+    assert(doe_resource_commands_settle(commands, DOE_RESOURCE_OK) == DOE_RESOURCE_OK);
+    assert(doe_resource_commands_claim_program(commands) == DOE_RESOURCE_STATE);
+    doe_resource_commands_release(commands);
+    commands = copy_commands(&f, third, fourth);
+    doe_resource_buffer_destroy(fourth);
+    assert(doe_resource_commands_claim_program(commands) == DOE_RESOURCE_UNAVAILABLE);
+    assert(doe_resource_commands_begin_submit(commands) == DOE_RESOURCE_UNAVAILABLE);
+    doe_resource_commands_release(commands);
+    doe_resource_buffer_release(third);
+    doe_resource_buffer_release(fourth);
+    empty(&f);
+}
+
 static void test_failed_publication(void)
 {
     fixture f = fresh();
@@ -586,6 +666,7 @@ int main(void)
     test_view_lifetime();
     test_binding_layouts();
     test_recorded_submission();
+    test_program_replay();
     test_failed_publication();
     test_dispatch_lifetime();
     test_dynamic_dispatch();
@@ -593,6 +674,6 @@ int main(void)
     test_sampler_and_texture_group();
     test_label_reuse();
     test_atomic_references();
-    puts("resource owner: 14 host suites passed; no GPU execution claimed");
+    puts("resource owner: 15 host suites passed; no GPU execution claimed");
     return 0;
 }

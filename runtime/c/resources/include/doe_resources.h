@@ -455,6 +455,20 @@ const doe_resource_command *doe_resource_commands_borrow(const doe_resource_comm
 doe_resource_status doe_resource_commands_begin_submit(doe_resource_commands *commands);
 doe_resource_status doe_resource_commands_settle(doe_resource_commands *commands,
     doe_resource_status terminal_status);
+/* Reusable program ownership for the Doe compute-program extension only; the
+ * standard queue path above stays single-use. claim_program validates a fresh,
+ * never-submitted command buffer and moves it to program ownership with an
+ * internal reference, after which begin_submit rejects it. begin_replay
+ * revalidates the same live dependencies before each program submission and
+ * holds a submission reference; settle_replay follows known completion or a
+ * confirmed never-dispatched failure. PENDING keeps the replay open and its own
+ * reference; release_program drops only the program reference, so commands
+ * with an unresolved replay stay alive until that replay settles. */
+doe_resource_status doe_resource_commands_claim_program(doe_resource_commands *commands);
+doe_resource_status doe_resource_commands_begin_replay(doe_resource_commands *commands);
+doe_resource_status doe_resource_commands_settle_replay(doe_resource_commands *commands,
+    doe_resource_status terminal_status);
+doe_resource_status doe_resource_commands_release_program(doe_resource_commands *commands);
 
 /* Typed borrowed identity/description access for native ABI adapters. */
 void *doe_resource_buffer_device(const doe_resource_buffer *buffer);

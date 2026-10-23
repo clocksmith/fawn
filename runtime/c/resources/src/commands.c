@@ -442,6 +442,79 @@ doe_resource_status doe_resource_commands_settle(doe_resource_commands *commands
     return terminal_status;
 }
 
+/* submission_state: 0 fresh, 1 submitted, 2 settled (single-use queue path);
+ * 3 program-owned idle, 4 program replay in flight (compute-program extension). */
+enum { COMMANDS_PROGRAM = 3, COMMANDS_REPLAYING = 4 };
+
+static doe_resource_status validate_all(const doe_resource_commands *commands)
+{
+    for (size_t i = 0; i < commands->count; i++) {
+        doe_resource_status status = validate_submission(&commands->commands[i]);
+        if (status != DOE_RESOURCE_OK) return status;
+    }
+    return DOE_RESOURCE_OK;
+}
+
+static doe_resource_status commands_transition(doe_resource_commands *commands,
+    unsigned from, unsigned to)
+{
+    unsigned expected = from;
+    return atomic_compare_exchange_strong_explicit(&commands->submission_state, &expected, to,
+        memory_order_acq_rel, memory_order_acquire) ? DOE_RESOURCE_OK : DOE_RESOURCE_STATE;
+}
+
+doe_resource_status doe_resource_commands_claim_program(doe_resource_commands *commands)
+{
+    if (!commands) return DOE_RESOURCE_INVALID_ARGUMENT;
+    if (!resource_alive(&commands->base)) return DOE_RESOURCE_UNAVAILABLE;
+    if (atomic_load_explicit(&commands->submission_state, memory_order_acquire) != 0)
+        return DOE_RESOURCE_STATE;
+    doe_resource_status status = validate_all(commands);
+    if (status != DOE_RESOURCE_OK) return status;
+    status = commands_transition(commands, 0, COMMANDS_PROGRAM);
+    if (status == DOE_RESOURCE_OK) doe_resource_commands_retain(commands);
+    return status;
+}
+
+doe_resource_status doe_resource_commands_begin_replay(doe_resource_commands *commands)
+{
+    if (!commands) return DOE_RESOURCE_INVALID_ARGUMENT;
+    if (!resource_alive(&commands->base)) return DOE_RESOURCE_UNAVAILABLE;
+    if (atomic_load_explicit(&commands->submission_state, memory_order_acquire) != COMMANDS_PROGRAM)
+        return DOE_RESOURCE_STATE;
+    doe_resource_status status = validate_all(commands);
+    if (status != DOE_RESOURCE_OK) return status;
+    status = commands_transition(commands, COMMANDS_PROGRAM, COMMANDS_REPLAYING);
+    if (status == DOE_RESOURCE_OK) doe_resource_commands_retain(commands);
+    return status;
+}
+
+doe_resource_status doe_resource_commands_settle_replay(doe_resource_commands *commands,
+    doe_resource_status terminal_status)
+{
+    if (!commands) return DOE_RESOURCE_INVALID_ARGUMENT;
+    if (terminal_status == DOE_RESOURCE_PENDING)
+        return atomic_load_explicit(&commands->submission_state, memory_order_acquire) == COMMANDS_REPLAYING ?
+            DOE_RESOURCE_PENDING : DOE_RESOURCE_STATE;
+    if (terminal_status != DOE_RESOURCE_OK && terminal_status != DOE_RESOURCE_EXECUTION_FAILED)
+        return DOE_RESOURCE_INVALID_ARGUMENT;
+    doe_resource_status status = commands_transition(commands, COMMANDS_REPLAYING, COMMANDS_PROGRAM);
+    if (status != DOE_RESOURCE_OK) return status;
+    doe_resource_commands_release(commands);
+    return terminal_status;
+}
+
+doe_resource_status doe_resource_commands_release_program(doe_resource_commands *commands)
+{
+    if (!commands) return DOE_RESOURCE_INVALID_ARGUMENT;
+    unsigned state = atomic_load_explicit(&commands->submission_state, memory_order_acquire);
+    if (state != COMMANDS_PROGRAM && state != COMMANDS_REPLAYING) return DOE_RESOURCE_STATE;
+    /* Program state is terminal for ownership: the command buffer never returns
+     * to the single-use queue path. An open replay keeps its own reference. */
+    doe_resource_commands_release(commands);
+    return DOE_RESOURCE_OK;
+}
+
 /* One arithmetic policy; active/finished/locked admission stays with each owner. */
 doe_resource_status resource_debug_apply(size_t *depth, doe_resource_debug_operation operation)
 {
