@@ -255,6 +255,53 @@ static void test_bundle_state_reset(void)
     }
 }
 
+static void test_empty_bundle_read_only_contract(void)
+{
+    for (unsigned scenario = 0; scenario < 3; scenario++) {
+        fixture f = fresh();
+        doe_resource_config c = config(&f);
+        native_token image_tokens[2] = {{0}, {0}}, view_tokens[2] = {{0}, {0}};
+        doe_resource_texture *images[2];
+        doe_resource_view *views[2];
+        doe_resource_texture_limits limits = texture_limits();
+        doe_resource_view_desc view_desc = {0};
+        for (size_t i = 0; i < 2; i++) {
+            doe_resource_texture_desc desc = texture_desc();
+            desc.usage = WGPUTextureUsage_RenderAttachment;
+            if (i) desc.format = WGPUTextureFormat_Depth24PlusStencil8;
+            assert(doe_resource_texture_create(&c, &desc, &limits, native(&f, &image_tokens[i]), &images[i]) == DOE_RESOURCE_OK);
+            assert(doe_resource_view_create(images[i], &view_desc, native(&f, &view_tokens[i]), &views[i]) == DOE_RESOURCE_OK);
+        }
+        doe_resource_render_bundle_desc signature = {.color_format = WGPUTextureFormat_RGBA8Unorm,
+            .depth_stencil_format = WGPUTextureFormat_Depth24PlusStencil8, .samples = 1,
+            .depth_read_only = scenario != 0, .stencil_read_only = scenario != 1};
+        doe_resource_bundle_encoder *builder;
+        doe_resource_render_bundle *bundle;
+        assert(doe_resource_bundle_encoder_create(&c, &signature, &builder) == DOE_RESOURCE_OK);
+        assert(doe_resource_bundle_encoder_finish(builder, &bundle) == DOE_RESOURCE_OK);
+        doe_resource_bundle_encoder_release(builder);
+        doe_resource_render_targets targets = {.color = views[0], .depth_stencil = views[1],
+            .color_load = WGPULoadOp_Clear, .color_store = WGPUStoreOp_Store,
+            .depth_read_only = true, .stencil_read_only = true};
+        doe_resource_encoder *encoder;
+        doe_resource_render_pass *pass;
+        assert(doe_resource_encoder_create(&c, &encoder) == DOE_RESOURCE_OK);
+        assert(doe_resource_encoder_begin_render(encoder, &targets, &pass) == DOE_RESOURCE_OK);
+        doe_resource_status status = doe_resource_render_pass_execute_bundles(pass, &bundle, 1);
+        assert(status == (scenario == 2 ? DOE_RESOURCE_OK : DOE_RESOURCE_LAYOUT));
+        if (scenario == 2) assert(doe_resource_render_pass_end(pass) == DOE_RESOURCE_OK);
+        doe_resource_render_pass_release(pass);
+        doe_resource_encoder_release(encoder);
+        doe_resource_render_bundle_release(bundle);
+        for (size_t i = 0; i < 2; i++) {
+            doe_resource_view_release(views[i]);
+            doe_resource_texture_release(images[i]);
+            assert(image_tokens[i].releases == 1 && view_tokens[i].releases == 1);
+        }
+        empty(&f);
+    }
+}
+
 int main(void)
 {
     test_bundle_replay_lifetimes();
@@ -262,6 +309,7 @@ int main(void)
     test_bundle_budget();
     test_bundle_replay_rejection();
     test_bundle_state_reset();
-    puts("render bundle owner: 5 host suites passed; no render GPU execution claimed");
+    test_empty_bundle_read_only_contract();
+    puts("render bundle owner: 6 host suites passed; no render GPU execution claimed");
     return 0;
 }

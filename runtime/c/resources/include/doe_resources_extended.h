@@ -18,6 +18,9 @@ void doe_resource_query_set_release(doe_resource_query_set *set);
 void doe_resource_query_set_destroy(doe_resource_query_set *set);
 void *doe_resource_query_set_native(const doe_resource_query_set *set);
 uint32_t doe_resource_query_set_count(const doe_resource_query_set *set);
+/* NULL type is zero (not a valid pinned query type); device is borrowed. */
+WGPUQueryType doe_resource_query_set_type(const doe_resource_query_set *set);
+void *doe_resource_query_set_device(const doe_resource_query_set *set);
 typedef enum doe_resource_timestamp_position {
     DOE_TIMESTAMP_COMMAND, DOE_TIMESTAMP_PASS_BEGIN, DOE_TIMESTAMP_PASS_END
 } doe_resource_timestamp_position;

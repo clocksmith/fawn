@@ -60,6 +60,9 @@ static void test_query_ownership(void)
     doe_resource_query_set *set;
     assert(doe_resource_query_set_create(&c, WGPUQueryType_Timestamp, 8,
         native(&f, &query_token), &set) == DOE_RESOURCE_OK);
+    assert(doe_resource_query_set_count(set) == 8 && doe_resource_query_set_type(set) == WGPUQueryType_Timestamp);
+    assert(doe_resource_query_set_device(set) == &f && doe_resource_query_set_type(NULL) == (WGPUQueryType)0);
+    assert(!doe_resource_query_set_device(NULL));
     doe_resource_buffer *dst = buffer(&f, &buffer_token, 512, WGPUBufferUsage_QueryResolve);
     doe_resource_encoder *encoder;
     assert(doe_resource_encoder_create(&c, &encoder) == DOE_RESOURCE_OK);
