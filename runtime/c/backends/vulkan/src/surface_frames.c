@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: MIT */
 #include "surface_internal.h"
 
 doe_vk_status doe_vk_surface_fence(doe_vk_surface *surface, VkFence *out, doe_vk_error *error) {

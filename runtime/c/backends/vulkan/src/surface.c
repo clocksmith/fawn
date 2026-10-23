@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: MIT */
 #include "surface_internal.h"
 
 bool doe_vk_surface_busy(const doe_vk_surface *surface) {

@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: MIT */
 #ifndef DOE_VK_RENDER_INTERNAL_H
 #define DOE_VK_RENDER_INTERNAL_H
 #include "texture_internal.h"

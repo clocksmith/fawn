@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: MIT */
 #include "internal.h"
 
 doe_vk_status doe_vk_fail(doe_vk_status status, const char *operation, doe_vk_error *error) {

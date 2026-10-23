@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: MIT */
 #include "doe_vk.h"
 #include "doe_compiler_stages.h"
 #include <assert.h>

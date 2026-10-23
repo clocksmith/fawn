@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: MIT */
 #include "texture_internal.h"
 #include <math.h>
 

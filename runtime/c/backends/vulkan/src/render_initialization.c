@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: MIT */
 #include "render_internal.h"
 
 /* Attachment initialization uses the same render pass and speculative image

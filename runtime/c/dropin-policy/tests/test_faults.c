@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: MIT */
 #define _POSIX_C_SOURCE 200809L
 #include "doe_dropin_policy_private.h"
 #include <assert.h>

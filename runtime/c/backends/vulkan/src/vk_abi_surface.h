@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: MIT */
 /* Linux LP64 WSI ABI from pinned retained vulkan_surface.zig and
  * vk_surface_sync.zig, plus separately verified official release-images ABI.
  * See ABI_PROVENANCE.json; no installed SDK or platform-header dependency. */

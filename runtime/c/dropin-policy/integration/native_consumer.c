@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: MIT */
 /* Actual dlopen consumer, not an exported GetProcAddress replacement. */
 #define _POSIX_C_SOURCE 200809L
 #include "webgpu.h"

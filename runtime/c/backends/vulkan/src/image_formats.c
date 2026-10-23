@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: MIT */
 #include "texture_internal.h"
 
 doe_vk_status doe_vk_image_format_properties(doe_vk_context *context,

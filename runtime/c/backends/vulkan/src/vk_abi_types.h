@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: MIT */
 /* Selected ABI translated from the retained Doe Zig Vulkan declarations.
  * Source commit: 7b709f49. See ABI_PROVENANCE.json. Linux LP64 only.
  * No SDK/header dependency or runtime Zig dependency. Repository license applies. */

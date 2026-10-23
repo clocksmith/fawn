@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: MIT */
 #include "texture_internal.h"
 #include "../include/doe_vk_bindings.h"
 

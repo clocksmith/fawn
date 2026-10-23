@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: MIT */
 #ifndef DOE_VK_RENDER_H
 #define DOE_VK_RENDER_H
 #include "doe_vk_bindings.h"

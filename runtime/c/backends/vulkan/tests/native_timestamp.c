@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: MIT */
 /* Real C compiler -> GPU arithmetic and query normalization. Seeded arithmetic
  * fixtures are not query results; actual query results come only from Vulkan. */
 #include "../include/doe_vk_timestamp.h"

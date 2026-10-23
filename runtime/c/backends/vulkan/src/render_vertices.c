@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: MIT */
 #include "render_internal.h"
 
 /* Native fetch bounds shared by direct admission and GPU indirect preparation.

@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: MIT */
 #ifndef DOE_VK_BINDINGS_H
 #define DOE_VK_BINDINGS_H
 #include "doe_vk_texture.h"

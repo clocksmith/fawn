@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: MIT */
 #include "../src/internal.h"
 #include <assert.h>
 #include <stdio.h>

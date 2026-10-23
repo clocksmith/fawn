@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: MIT */
 #ifndef DOE_VK_TIMESTAMP_INTERNAL_H
 #define DOE_VK_TIMESTAMP_INTERNAL_H
 #include "query_internal.h"

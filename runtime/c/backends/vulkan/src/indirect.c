@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: MIT */
 #include "indirect_internal.h"
 #include <inttypes.h>
 #include <stdio.h>
