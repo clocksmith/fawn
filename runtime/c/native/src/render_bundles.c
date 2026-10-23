@@ -18,7 +18,10 @@ WGPURenderBundleEncoder wgpuDeviceCreateRenderBundleEncoder(WGPUDevice handle,
             .samples=descriptor->sampleCount,.depth_read_only=descriptor->depthReadOnly,
             .stencil_read_only=descriptor->stencilReadOnly,.color_count=(uint32_t)descriptor->colorFormatCount};
         /* Undefined entries are unused slots; formats are admitted by the resource owner. */
-        for (size_t i = 0; i < descriptor->colorFormatCount; ++i) converted.color_formats[i] = descriptor->colorFormats[i];
+        for (size_t i = 0; i < descriptor->colorFormatCount; ++i) {
+            converted.color_formats[i] = descriptor->colorFormats[i];
+            if (!native_color_renderable(device->features, descriptor->colorFormats[i])) valid = false;
+        }
     }
     doe_resource_bundle_encoder *encoder = NULL;
     native_lock(device);

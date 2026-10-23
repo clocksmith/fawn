@@ -2,7 +2,9 @@
  * Public optional format features: float32-filterable (linear sampling of
  * r32float/rgba32float under the automatic 'float' layout), float32-blendable
  * (additive blending into r32float) and depth32float-stencil8 (rendered depth
- * and stencil read back per aspect). Each is reported only from the device's
+ * and stencil read back per aspect) and rg11b10ufloat-renderable (blended and
+ * 4x-resolved rg11b10ufloat targets read back as packed bits; without it the
+ * core format still samples exactly). Each is reported only from the device's
  * native format features; a device that did not enable it rejects every use. */
 #include "consumer.h"
 #include <stdlib.h>
@@ -95,6 +97,116 @@ static WGPUTextureView view_of(WGPUTexture texture)
     assert(view);
     return view;
 }
+/* rg11b10ufloat bits: R/G 5-bit exponent and 6-bit mantissa, B 5-bit mantissa, bias 15. */
+static uint32_t packed_rg11b10(uint32_t r, uint32_t g, uint32_t b) { return r | g << 11 | b << 22; }
+static const char *const load_code =
+    "@group(0) @binding(0) var t:texture_2d<f32>;"
+    "@group(0) @binding(1) var<storage,read_write> o:array<vec4f,2>;"
+    "@compute @workgroup_size(1) fn main(){o[0]=textureLoad(t,vec2i(0,0),0);o[1]=textureLoad(t,vec2i(1,0),0);}";
+/* Core rg11b10ufloat sampling: two packed texels load as exact floats. */
+static void rg11b10_sampled(state *s)
+{
+    WGPUTexture texture = image(s,WGPUTextureFormat_RG11B10Ufloat,WGPUTextureUsage_TextureBinding | WGPUTextureUsage_CopyDst,2,1);
+    assert(texture);
+    const uint32_t texels[2] = {packed_rg11b10(976,960,516),packed_rg11b10(960,896,416)}; /* (1.25,1,2.25), (1,.5,.25) */
+    upload(s,texture,texels,sizeof(texels),2);
+    WGPUComputePipeline reader = pipeline(s,load_code);
+    WGPUTextureView view = view_of(texture);
+    WGPUBuffer out = buffer(s,32,WGPUBufferUsage_Storage | WGPUBufferUsage_CopySrc);
+    WGPUBuffer readback = buffer(s,32,WGPUBufferUsage_MapRead | WGPUBufferUsage_CopyDst);
+    WGPUBindGroupEntry entries[2] = {{.binding=0,.textureView=view},{.binding=1,.buffer=out,.size=32}};
+    WGPUBindGroup bound = group(s,reader,entries,2);
+    WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(s->device,NULL);
+    WGPUComputePassEncoder pass = wgpuCommandEncoderBeginComputePass(encoder,NULL);
+    wgpuComputePassEncoderSetPipeline(pass,reader);
+    wgpuComputePassEncoderSetBindGroup(pass,0,bound,0,NULL);
+    wgpuComputePassEncoderDispatchWorkgroups(pass,1,1,1);
+    wgpuComputePassEncoderEnd(pass);
+    wgpuComputePassEncoderRelease(pass);
+    wgpuCommandEncoderCopyBufferToBuffer(encoder,out,0,readback,0,32);
+    submit(s,encoder);
+    const float expected[8] = {1.25f,1.0f,2.25f,1.0f, 1.0f,0.5f,0.25f,1.0f};
+    assert(!memcmp(map(s,readback,32),expected,sizeof(expected)));
+    wgpuBufferUnmap(readback);
+    wgpuBindGroupRelease(bound);
+    wgpuBufferRelease(readback);
+    wgpuBufferRelease(out);
+    wgpuTextureViewRelease(view);
+    wgpuComputePipelineRelease(reader);
+    wgpuTextureRelease(texture);
+}
+static void expect_packed(state *s, WGPUTexture texture, uint32_t expected, const char *name)
+{
+    WGPUBuffer readback = buffer(s,PITCH * SIZE,WGPUBufferUsage_MapRead | WGPUBufferUsage_CopyDst);
+    WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(s->device,NULL);
+    texture_to_buffer(encoder,texture,readback,0,SIZE,SIZE);
+    submit(s,encoder);
+    const unsigned char *bytes = map(s,readback,PITCH * SIZE);
+    for (uint32_t y = 0; y < SIZE; ++y) for (uint32_t x = 0; x < SIZE; ++x) {
+        uint32_t value;
+        memcpy(&value,bytes + y * PITCH + x * 4,4);
+        if (value != expected) {
+            fprintf(stderr,"%s texel (%u,%u): %08x != %08x\n",name,x,y,value,expected);
+            abort();
+        }
+    }
+    wgpuBufferUnmap(readback);
+    wgpuBufferRelease(readback);
+}
+/* rg11b10ufloat-renderable: an additive draw of (1,.5,.25) onto a (.25,.5,2)
+ * clear stores (1.25,1,2.25); a 4x target resolves the same draw to (1,.5,.25). */
+static void rg11b10_rendered(state *s)
+{
+    WGPUShaderModule shader = module(s,FULL_SCREEN "@fragment fn fragment()->@location(0) vec4f{return vec4f(1.0,0.5,0.25,1.0);}");
+    const WGPUBlendComponent add = {.operation=WGPUBlendOperation_Add,.srcFactor=WGPUBlendFactor_One,.dstFactor=WGPUBlendFactor_One};
+    const WGPUBlendState blend = {.color=add,.alpha=add};
+    WGPURenderPipeline blended_pipeline = color_pipeline(s,shader,WGPUTextureFormat_RG11B10Ufloat,&blend);
+    WGPUColorTargetState target_state = {.format=WGPUTextureFormat_RG11B10Ufloat,.writeMask=WGPUColorWriteMask_All};
+    WGPUFragmentState fragment = {.module=shader,.entryPoint={"fragment",WGPU_STRLEN},.targetCount=1,.targets=&target_state};
+    WGPURenderPipelineDescriptor msaa_desc = WGPU_RENDER_PIPELINE_DESCRIPTOR_INIT;
+    msaa_desc.vertex = (WGPUVertexState){.module=shader,.entryPoint={"vertex",WGPU_STRLEN}};
+    msaa_desc.fragment = &fragment;
+    msaa_desc.multisample.count = 4;
+    WGPURenderPipeline msaa_pipeline = wgpuDeviceCreateRenderPipeline(s->device,&msaa_desc);
+    const WGPUTextureUsage target_usage = WGPUTextureUsage_RenderAttachment | WGPUTextureUsage_CopySrc;
+    WGPUTexture blended_target = image(s,WGPUTextureFormat_RG11B10Ufloat,target_usage,SIZE,SIZE);
+    WGPUTexture resolved = image(s,WGPUTextureFormat_RG11B10Ufloat,target_usage,SIZE,SIZE);
+    WGPUTextureDescriptor msaa_texture = WGPU_TEXTURE_DESCRIPTOR_INIT;
+    msaa_texture.format = WGPUTextureFormat_RG11B10Ufloat;
+    msaa_texture.usage = WGPUTextureUsage_RenderAttachment;
+    msaa_texture.size = (WGPUExtent3D){SIZE,SIZE,1};
+    msaa_texture.sampleCount = 4;
+    WGPUTexture multisampled = wgpuDeviceCreateTexture(s->device,&msaa_texture);
+    assert(blended_pipeline && msaa_pipeline && blended_target && resolved && multisampled);
+    WGPUTextureView views[3] = {view_of(blended_target),view_of(multisampled),view_of(resolved)};
+    WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(s->device,NULL);
+    for (uint32_t i = 0; i < 2; ++i) {
+        WGPURenderPassColorAttachment color = WGPU_RENDER_PASS_COLOR_ATTACHMENT_INIT;
+        color.view = views[i];
+        color.resolveTarget = i ? views[2] : NULL;
+        color.loadOp = WGPULoadOp_Clear;
+        color.storeOp = i ? WGPUStoreOp_Discard : WGPUStoreOp_Store;
+        color.clearValue = i ? (WGPUColor){0,0,0,0} : (WGPUColor){0.25,0.5,2.0,0.0};
+        WGPURenderPassDescriptor descriptor = {.colorAttachmentCount=1,.colorAttachments=&color};
+        WGPURenderPassEncoder pass = wgpuCommandEncoderBeginRenderPass(encoder,&descriptor);
+        wgpuRenderPassEncoderSetPipeline(pass,i ? msaa_pipeline : blended_pipeline);
+        wgpuRenderPassEncoderDraw(pass,3,1,0,0);
+        wgpuRenderPassEncoderEnd(pass);
+        wgpuRenderPassEncoderRelease(pass);
+    }
+    submit(s,encoder);
+    expect_packed(s,blended_target,packed_rg11b10(976,960,516),"rg11b10 blended");
+    expect_packed(s,resolved,packed_rg11b10(960,896,416),"rg11b10 resolved");
+    for (size_t i = 0; i < 3; ++i) wgpuTextureViewRelease(views[i]);
+    wgpuTextureRelease(multisampled);
+    wgpuTextureRelease(resolved);
+    wgpuTextureRelease(blended_target);
+    wgpuRenderPipelineRelease(msaa_pipeline);
+    wgpuRenderPipelineRelease(blended_pipeline);
+    wgpuShaderModuleRelease(shader);
+    rg11b10_sampled(s);
+}
+
 static void request_failed(WGPURequestDeviceStatus status, WGPUDevice device, WGPUStringView message,
     void *userdata, void *unused)
 {
@@ -112,7 +224,8 @@ static void disabled_controls(state *s)
     wgpuSupportedFeaturesFreeMembers(listed);
     assert(!wgpuDeviceHasFeature(s->device,WGPUFeatureName_Float32Filterable) &&
         !wgpuDeviceHasFeature(s->device,WGPUFeatureName_Float32Blendable) &&
-        !wgpuDeviceHasFeature(s->device,WGPUFeatureName_Depth32FloatStencil8));
+        !wgpuDeviceHasFeature(s->device,WGPUFeatureName_Depth32FloatStencil8) &&
+        !wgpuDeviceHasFeature(s->device,WGPUFeatureName_RG11B10UfloatRenderable));
     /* An unoffered feature fails the request instead of creating a device. */
     unsigned failed = 0;
     WGPUFeatureName astc = WGPUFeatureName_TextureCompressionASTC;
@@ -133,6 +246,19 @@ static void disabled_controls(state *s)
     wgpuDevicePushErrorScope(s->device,WGPUErrorFilter_Validation);
     assert(!wgpuDeviceCreateRenderBundleEncoder(s->device,&bundle));
     expect_validation(s);
+    /* rg11b10ufloat is core-sampled but renderable only with its feature. */
+    wgpuDevicePushErrorScope(s->device,WGPUErrorFilter_Validation);
+    assert(!image(s,WGPUTextureFormat_RG11B10Ufloat,WGPUTextureUsage_RenderAttachment,SIZE,SIZE));
+    expect_validation(s);
+    wgpuDevicePushErrorScope(s->device,WGPUErrorFilter_Validation);
+    assert(!color_pipeline(s,shader,WGPUTextureFormat_RG11B10Ufloat,NULL));
+    expect_validation(s);
+    WGPUTextureFormat rg11b10 = WGPUTextureFormat_RG11B10Ufloat;
+    WGPURenderBundleEncoderDescriptor color_bundle = {.colorFormatCount=1,.colorFormats=&rg11b10,.sampleCount=1};
+    wgpuDevicePushErrorScope(s->device,WGPUErrorFilter_Validation);
+    assert(!wgpuDeviceCreateRenderBundleEncoder(s->device,&color_bundle));
+    expect_validation(s);
+    rg11b10_sampled(s);
     WGPURenderPipeline control = depth_pipeline(s,shader,WGPUTextureFormat_Depth24PlusStencil8);
     assert(control);
     wgpuRenderPipelineRelease(control);
@@ -323,14 +449,15 @@ int main(void)
 {
     state s = {0};
     consumer_init(&s);
-    const WGPUFeatureName names[3] = {WGPUFeatureName_Float32Filterable,WGPUFeatureName_Float32Blendable,
-        WGPUFeatureName_Depth32FloatStencil8};
-    const char *const labels[3] = {"float32-filterable","float32-blendable","depth32float-stencil8"};
-    WGPUFeatureName offered[3];
+    const WGPUFeatureName names[4] = {WGPUFeatureName_Float32Filterable,WGPUFeatureName_Float32Blendable,
+        WGPUFeatureName_Depth32FloatStencil8,WGPUFeatureName_RG11B10UfloatRenderable};
+    const char *const labels[4] = {"float32-filterable","float32-blendable","depth32float-stencil8",
+        "rg11b10ufloat-renderable"};
+    WGPUFeatureName offered[4];
     size_t count = 0;
     WGPUSupportedFeatures listed = WGPU_SUPPORTED_FEATURES_INIT;
     wgpuAdapterGetFeatures(s.adapter,&listed);
-    for (size_t i = 0; i < 3; ++i) {
+    for (size_t i = 0; i < 4; ++i) {
         bool in_list = false;
         for (size_t j = 0; j < listed.featureCount; ++j) in_list |= listed.features[j] == names[i];
         assert(in_list == (wgpuAdapterHasFeature(s.adapter,names[i]) != 0));
@@ -340,7 +467,7 @@ int main(void)
     }
     wgpuSupportedFeaturesFreeMembers(listed);
     disabled_controls(&s);
-    assert(s.validation_errors == 5);
+    assert(s.validation_errors == 8);
     consumer_finish(&s);
 
     state enabled = {0};
@@ -354,12 +481,15 @@ int main(void)
         if (offered[i] == WGPUFeatureName_Float32Filterable) filtered(&enabled);
         if (offered[i] == WGPUFeatureName_Float32Blendable) blended(&enabled);
         if (offered[i] == WGPUFeatureName_Depth32FloatStencil8) depth_stencil(&enabled);
+        if (offered[i] == WGPUFeatureName_RG11B10UfloatRenderable) rg11b10_rendered(&enabled);
     }
     consumer_finish(&enabled);
-    printf("PASS public format features: %zu of 3 offered and enabled (float32-filterable linear r32float/"
+    printf("PASS public format features: %zu of 4 offered and enabled (float32-filterable linear r32float/"
         "rgba32float midpoints exact, float32-blendable additive r32float 1000007.0, depth32float-stencil8 "
-        "depth 0.25/stencil 7 per aspect); without them depth32float-stencil8 texture/pipeline/bundle, "
-        "r32float blending and 'float' r32float binding reject, an unoffered feature fails the request "
-        "%s\n", count, adapter_class_scope());
+        "depth 0.25/stencil 7 per aspect, rg11b10ufloat-renderable blended (1.25,1,2.25) and 4x-resolved "
+        "(1,.5,.25) packed bits); without them depth32float-stencil8 texture/pipeline/bundle, r32float "
+        "blending, 'float' r32float binding and rg11b10ufloat attachment/target/bundle reject while "
+        "rg11b10ufloat still samples exactly, an unoffered feature fails the request %s\n",
+        count, adapter_class_scope());
     return 0;
 }

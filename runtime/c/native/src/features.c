@@ -23,6 +23,11 @@ static bool formats_offer(doe_vk_context *context, const doe_vk_texture_format *
 }
 static bool filterable(const doe_vk_format_caps *caps) { return caps->sampled && caps->filterable; }
 static bool blendable(const doe_vk_format_caps *caps) { return caps->color_attachment && caps->blendable; }
+/* Render attachment, blending and 4x multisampling (resolve uses the same). */
+static bool renderable_4x(const doe_vk_format_caps *caps)
+{
+    return caps->color_attachment && caps->blendable && (caps->attachment_sample_counts & 4);
+}
 static bool block_sampled(const doe_vk_format_caps *caps)
 {
     return caps->sampled && caps->filterable && caps->copy_src && caps->copy_dst;
@@ -46,6 +51,7 @@ uint32_t native_adapter_features(const native_backend *backend)
     static const doe_vk_texture_format float32[] = {DOE_VK_FORMAT_R32_FLOAT, DOE_VK_FORMAT_RG32_FLOAT,
         DOE_VK_FORMAT_RGBA32_FLOAT};
     static const doe_vk_texture_format depth32_stencil8[] = {DOE_VK_FORMAT_D32_FLOAT_S8_UINT};
+    static const doe_vk_texture_format rg11b10[] = {DOE_VK_FORMAT_RG11B10_UFLOAT};
     static const doe_vk_texture_format bc[] = {DOE_VK_FORMAT_BC1_RGBA_UNORM, DOE_VK_FORMAT_BC1_RGBA_SRGB,
         DOE_VK_FORMAT_BC2_RGBA_UNORM, DOE_VK_FORMAT_BC2_RGBA_SRGB, DOE_VK_FORMAT_BC3_RGBA_UNORM,
         DOE_VK_FORMAT_BC3_RGBA_SRGB, DOE_VK_FORMAT_BC4_R_UNORM, DOE_VK_FORMAT_BC4_R_SNORM,
@@ -57,6 +63,8 @@ uint32_t native_adapter_features(const native_backend *backend)
     if (formats_offer(context, float32, 3, blendable)) features |= NATIVE_FEATURE(WGPUFeatureName_Float32Blendable);
     if (formats_offer(context, depth32_stencil8, 1, depth_stencil))
         features |= NATIVE_FEATURE(WGPUFeatureName_Depth32FloatStencil8);
+    if (formats_offer(context, rg11b10, 1, renderable_4x))
+        features |= NATIVE_FEATURE(WGPUFeatureName_RG11B10UfloatRenderable);
     if (caps->draw_indirect_first_instance) features |= NATIVE_FEATURE(WGPUFeatureName_IndirectFirstInstance);
     if (caps->depth_clamp) features |= NATIVE_FEATURE(WGPUFeatureName_DepthClipControl);
     /* Enabled textureCompressionBC plus sampled, filterable, copyable formats;
