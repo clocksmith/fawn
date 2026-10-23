@@ -33,9 +33,10 @@ WGPURenderPassEncoder wgpuCommandEncoderBeginRenderPass(WGPUCommandEncoder handl
             }
             const doe_resource_texture_desc *parent = doe_resource_texture_description(
                 doe_resource_view_texture((doe_resource_view *)color->view));
-            valid = !color->nextInChain && color->depthSlice == WGPU_DEPTH_SLICE_UNDEFINED &&
-                (color->storeOp == WGPUStoreOp_Store ||
-                 (parent && parent->samples > 1 && color->storeOp == WGPUStoreOp_Discard));
+            /* Discard leaves the subresource undefined in the backend's per-aspect
+             * owner; later loads, copies and bindings see real zero clears. */
+            valid = !color->nextInChain && parent && color->depthSlice == WGPU_DEPTH_SLICE_UNDEFINED &&
+                (color->storeOp == WGPUStoreOp_Store || color->storeOp == WGPUStoreOp_Discard);
             targets.colors[i] = (doe_resource_color_attachment){.view=(doe_resource_view *)color->view,
                 .resolve_target=(doe_resource_view *)color->resolveTarget,.load=color->loadOp,.store=color->storeOp,
                 .clear={color->clearValue.r,color->clearValue.g,color->clearValue.b,color->clearValue.a}};
@@ -63,7 +64,7 @@ WGPURenderPassEncoder wgpuCommandEncoderBeginRenderPass(WGPUCommandEncoder handl
             targets.max_draw_count = budget->maxDrawCount;
         }
         if (writes) {
-            if (writes->nextInChain || !device->timestamp_enabled) valid = false;
+            if (writes->nextInChain || !native_feature_enabled(device, WGPUFeatureName_TimestampQuery)) valid = false;
             timestamps = (doe_resource_pass_timestamps){(doe_resource_query_set *)writes->querySet,
                 writes->beginningOfPassWriteIndex,writes->endOfPassWriteIndex};
         }
@@ -73,8 +74,15 @@ WGPURenderPassEncoder wgpuCommandEncoderBeginRenderPass(WGPUCommandEncoder handl
     doe_resource_status status = valid ? doe_resource_encoder_begin_render_with_timestamps(encoder,
         &targets, writes ? &timestamps : NULL, &pass) : doe_resource_encoder_invalidate(encoder, rejected);
     native_unlock(device);
-    if (status != DOE_RESOURCE_OK) native_error(device, native_resource_error(status), "render pass descriptor invalid or unsupported");
-    if (pass) native_label(device, pass, descriptor->label);
+    /* A rejected begin still returns a pass (WebGPU invalid pass): it records
+     * nothing and its commands, End and the encoder's Finish report the error. */
+    if (status != DOE_RESOURCE_OK) {
+        native_lock(device);
+        pass = doe_resource_render_pass_rejected(encoder);
+        native_unlock(device);
+        native_error(device, native_resource_error(status), "render pass descriptor invalid or unsupported");
+    }
+    if (pass && descriptor) native_label(device, pass, descriptor->label);
     return (WGPURenderPassEncoder)pass;
 }
 void wgpuRenderPassEncoderAddRef(WGPURenderPassEncoder pass) { doe_resource_render_pass_retain((doe_resource_render_pass *)pass); }

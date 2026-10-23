@@ -205,6 +205,7 @@ FnDevicePushErrorScope pfn_doeNativeDevicePushErrorScope = NULL;
 FnDevicePopErrorScope pfn_doeNativeDevicePopErrorScope = NULL;
 FnDevicePushErrorScope pfn_wgpuDevicePushErrorScope = NULL;
 FnDevicePopErrorScope pfn_wgpuDevicePopErrorScope = NULL;
+void* g_wgpuShaderModuleGetCompilationInfo = NULL; /* Standard procedure; typed at its call. */
 FnDeviceSetUncapturedErrorCallback pfn_doeNativeDeviceSetUncapturedErrorCallback = NULL;
 FnDeviceRegisterLostCallback pfn_doeNativeDeviceRegisterLostCallback = NULL;
 FnRenderPipelineGetBindGroupLayout pfn_doeNativeRenderPipelineGetBindGroupLayout = NULL;
@@ -276,6 +277,8 @@ napi_value doe_load_library(napi_env env, napi_callback_info info) {
     }
     // Keep this handle for the process lifetime: objects and native workers may outlive an env.
     g_lib = candidate;
+    /* Only Zig runtime libraries carry the drop-in build info export. */
+    g_zig_enum_order = LIB_SYM(g_lib, "doeWgpuDropinBuildInfoSchemaVersion") != NULL;
 
     LOAD_SYM(wgpuCreateInstance);
     LOAD_SYM(wgpuInstanceRelease);
@@ -446,12 +449,14 @@ napi_value doe_load_library(napi_env env, napi_callback_info info) {
     pfn_doeNativeAdapterFreeInfo = (FnAdapterFreeInfo)LIB_SYM(g_lib, "doeNativeAdapterFreeInfo");
     pfn_doeNativeAdapterGetPciIdentity = (FnAdapterGetPciIdentity)LIB_SYM(g_lib, "doeNativeAdapterGetPciIdentity");
     pfn_doeNativeShaderModuleGetCompilationInfo = (FnShaderModuleGetCompilationInfo)LIB_SYM(g_lib, "doeNativeShaderModuleGetCompilationInfo");
+    g_wgpuShaderModuleGetCompilationInfo = LIB_SYM(g_lib, "wgpuShaderModuleGetCompilationInfo");
     pfn_doeNativeDevicePushErrorScope = (FnDevicePushErrorScope)LIB_SYM(g_lib, "doeNativeDevicePushErrorScope");
     pfn_doeNativeDevicePopErrorScope = (FnDevicePopErrorScope)LIB_SYM(g_lib, "doeNativeDevicePopErrorScope");
     pfn_wgpuDevicePushErrorScope = (FnDevicePushErrorScope)LIB_SYM(g_lib, "wgpuDevicePushErrorScope");
     pfn_wgpuDevicePopErrorScope = (FnDevicePopErrorScope)LIB_SYM(g_lib, "wgpuDevicePopErrorScope");
     pfn_doeNativeDeviceSetUncapturedErrorCallback = (FnDeviceSetUncapturedErrorCallback)LIB_SYM(g_lib, "doeNativeDeviceSetUncapturedErrorCallback");
     pfn_doeNativeDeviceRegisterLostCallback = (FnDeviceRegisterLostCallback)LIB_SYM(g_lib, "doeNativeDeviceRegisterLostCallback");
+    device_events_install(); /* Standard descriptor callbacks when the Doe setters are absent. */
 
     /* GPURenderPassEncoder control methods — optional; absent on older builds. */
     pfn_doeNativeRenderPassSetViewport = (FnRenderPassSetViewport)LIB_SYM(g_lib, "doeNativeRenderPassSetViewport");

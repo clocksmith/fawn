@@ -6,7 +6,7 @@ static doe_vk_status record_dispatch(doe_vk_commands *commands, const doe_resour
 {
     native_pipeline *pipeline = doe_resource_pipeline_native(record->value.dispatch.pipeline);
     doe_vk_binding_resource bindings[DOE_RESOURCE_MAX_GROUPS * DOE_RESOURCE_MAX_BINDINGS];
-    doe_vk_status status = native_resolve_bindings(pipeline,
+    doe_vk_status status = native_resolve_bindings(commands, pipeline,
         doe_resource_pipeline_get_layout(record->value.dispatch.pipeline), record->value.dispatch.groups,
         record->value.dispatch.dynamic_offsets, bindings);
     if (status != DOE_VK_OK) return status;
@@ -50,6 +50,9 @@ static doe_vk_status record_vulkan_commands(doe_vk_commands *native, doe_resourc
             if (!copy->width || !copy->height || !copy->depth_or_layers) continue;
             native_buffer *buffer = doe_resource_buffer_native(record->value.texture.buffer);
             native_texture *texture = doe_resource_texture_native(record->value.texture.texture);
+            /* A discarded attachment reads (and partially updates) as zeros. */
+            status = doe_vk_commands_initialize_texture(native, texture->texture);
+            if (status != DOE_VK_OK) break;
             doe_vk_texture_buffer_layout layout = {copy->offset, record->value.texture.region.pitch,
                 record->value.texture.region.image_rows};
             doe_vk_texture_region region = {.mip=copy->mip,
@@ -70,6 +73,9 @@ static doe_vk_status record_vulkan_commands(doe_vk_commands *native, doe_resourc
             if (!copy->width || !copy->height || !copy->depth_or_layers) continue;
             native_texture *source = doe_resource_texture_native(copy->source.texture);
             native_texture *destination = doe_resource_texture_native(copy->destination.texture);
+            status = doe_vk_commands_initialize_texture(native, source->texture);
+            if (status == DOE_VK_OK) status = doe_vk_commands_initialize_texture(native, destination->texture);
+            if (status != DOE_VK_OK) break;
             doe_vk_texture_region from = {.mip=copy->source.mip,
                 .origin={copy->source.origin[0],copy->source.origin[1],copy->source.origin[2]},
                 .extent={copy->width,copy->height,copy->depth_or_layers}};

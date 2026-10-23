@@ -67,7 +67,7 @@ The retained production owners remain authoritative for those behaviors.
 ## Texture transactions
 
 `include/doe_vk_texture.h` uses named native format values, never WebGPU numeric
-casts. Eighteen uncompressed color formats plus four attachment-only depth/stencil formats
+casts. Twenty-three uncompressed color formats plus four attachment-only depth/stencil formats
 are admitted when native format support exists. Compressed formats, multisampling,
 swizzles remain outside this increment. Format reinterpretation is limited to the
 srgb/unorm pairs RGBA8 and BGRA8: `doe_vk_texture_desc.view_formats` naming the
@@ -143,6 +143,15 @@ viewport/scissor. Blend constants default to pipeline state; explicit per-draw o
 native dynamic state after whole-span finite-value validation. The full descriptor
 adds one depth/stencil attachment, independent per-aspect load/clear/store/discard,
 read-only admission and dynamic stencil reference. Indexed and guarded indirect draws are described below.
+
+### Optional storage features
+
+`shaderStorageImageExtendedFormats` and `fragmentStoresAndAtomics` are enabled
+only when the device offers them and reported as `caps.storage_image_extended_formats`
+and `caps.fragment_stores_and_atomics`; consumers admit the SPIR-V
+StorageImageExtendedFormats capability and fragment storage writes only then.
+Vertex-pipeline stores stay disabled. Storage image support per format still comes
+from the actual optimal-tiling STORAGE_IMAGE feature at image creation.
 
 ### Indexed color slots and anisotropic samplers
 
@@ -346,6 +355,25 @@ This is native no-fetch admission only: the public/resource owner still distingu
 an Undefined-step-mode layout hole from an explicit Vertex/Instance slot that
 requires a bound public buffer even when it declares no attributes.
 
+VK_KHR_maintenance5 is enabled by default when the device lists it together with
+its VK_KHR_dynamic_rendering dependency (required with the API 1.2 instance; see
+the vk.xml dependency recorded in ABI_PROVENANCE.json) and reports the feature;
+`caps.maintenance5` reports successful enablement only. Point-list pipelines
+require it, because maintenance5 defines an unwritten PointSize as 1.0; without
+it point lists return UNSUPPORTED and shaders are never rewritten. lavapipe and
+RADV (Mesa 26.0.3) both offer it here. `tests/feature_contract.c` and
+`tests/depth_pipeline_contract.c` check the selection chain and the gate.
+
+drawIndirectFirstInstance and depthClamp are likewise enabled when the device
+offers them and reported as `caps.draw_indirect_first_instance` and
+`caps.depth_clamp`. A render indirect request with `first_instance` set needs the
+first (UNSUPPORTED otherwise); its guard then admits a nonzero GPU firstInstance
+and bounds firstInstance+instanceCount against the instance capacity without
+forming the sum. A pipeline with `unclipped_depth` needs the second and sets
+native depthClampEnable: no depth clipping, depth clamped to the viewport range.
+`tests/draw_indirect_contract.c` and `tests/depth_pipeline_contract.c` check both
+gates; lavapipe and RADV (Mesa 26.0.3) offer both here.
+
 Optional demote feature selection is explicit: set
 `enable_shader_demote_if_supported` before device creation. The default remains
 off. `caps.shader_demote_to_helper_invocation` reports successful enablement,
@@ -391,6 +419,11 @@ D24S8 fixture as unsupported; the retained failure was followed by explicitly
 selecting D32S8, not a hidden backend fallback. `depth_contract` checks native
 aspect/load/store records, discard, preflight errors, leases and rollback.
 
+`doe_vk_commands_initialize_texture` is the whole-image form of the same owner for
+non-pass consumers (copies, sampled/storage bindings): it clears undefined aspects
+of an attachment-capable 2D image through temporary single-subresource views and
+is a no-op for initialized subresources and for images without attachment usage,
+which are complete from creation. `tests/depth_contract.c` checks it.
 `doe_vk_commands_initialize_attachment` owns zero initialization through actual
 empty native passes, not CPU availability mirrors. It examines the existing
 speculative aspect masks, clears only undefined aspects of the selected 2D
@@ -411,9 +444,11 @@ usage/flags combination, dimensions, mips, layers and samples through the native
 image-format query before creation. The added core ABI record/signature has
 separate official provenance and layout checks; this is not a driver test.
 
-Multisample images currently require 2D, one mip/layer, no cube flag and exclusively
-color or depth/stencil attachment usage. Copying, sampling and storage remain
-unsupported for them. Pipeline sample masks and alpha-to-coverage use native
+Multisample images currently require 2D, one mip/layer, no cube flag and one color
+or depth/stencil attachment usage, optionally plus SAMPLED for per-sample shader
+reads and COPY_SRC/COPY_DST (the native image-format query checks that exact
+combination). They copy only image-to-image between equal sample counts and of
+the whole subresource; buffer copies and storage remain unsupported for them. Pipeline sample masks and alpha-to-coverage use native
 multisample state without enabling sample-rate shading or alpha-to-one. Public
 WebGPU sample-count and shader-output admission remains upstream.
 
@@ -478,8 +513,9 @@ Nonindexed draw-indirect uses the same full-pass recorder. Supply the exact
 are prepared before argument copies/guards, after preceding producer commands.
 Each indirect draw has distinct command-retained32-byte scratch:16 copied argument
 bytes and exact host-produced vertex/instance capacities. The GPU suppresses
-over-capacity, wrapping, zero-count and nonzero-firstInstance draws; it never
-changes original arguments. No optional indirect-first-instance feature is enabled.
+over-capacity, wrapping, zero-count and unadmitted nonzero-firstInstance draws; it
+never changes original arguments. A nonzero firstInstance is admitted only for a
+request with `first_instance` on a context with drawIndirectFirstInstance.
 Stride-zero and attribute-free native holes retain their existing semantics.
 Only guarded native drawIndirect(count1,stride16) executes inside the pass; guards
 and barriers stay outside. Linux presentation is described below.
@@ -500,11 +536,12 @@ bound element capacity. The native bind has no size, so this range check and the
 guard below are what enforce the public bound range.
 
 Indexed draw-indirect uses the same validator and source as nonindexed draws. The
-source selects the layout from mode word 7: nonindexed scratch is 16 copied bytes,
-vertex/instance capacities, zero and mode0; indexed scratch is 20 copied
-drawIndexed bytes, index/instance capacities and mode1. The GPU guard suppresses
+source selects the layout from mode word 7 (bit 1 indexed, bit 2 firstInstance
+admitted): nonindexed scratch is 16 copied bytes, vertex/instance capacities, zero
+and the mode; indexed scratch is 20 copied drawIndexed bytes, index/instance
+capacities and the mode. The GPU guard suppresses
 firstIndex+indexCount beyond the bound index range (compared without forming the
-sum), zero counts, instance-step overrun and nonzero firstInstance by zeroing the
+sum), zero counts, instance-step overrun and unadmitted nonzero firstInstance by zeroing the
 copied record; it never changes the caller's arguments. Only guarded
 `vkCmdDrawIndexedIndirect(count1,stride20)` executes inside the pass. Index values
 are never read on the host or guarded: vertex-step fetches through arbitrary GPU

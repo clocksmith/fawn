@@ -6,6 +6,7 @@
 static unsigned expected_stages, modules, destroyed_modules, live_layouts, live_passes, live_pipelines;
 static VkResult pipeline_result;
 static VkBool32 expected_restart;
+static VkBool32 expected_clamp;
 static void format_properties(VkPhysicalDevice physical, uint32_t format, VkFormatProperties *out) {
     (void)physical;
     assert(format == DOE_VK_FORMAT_D32_FLOAT);
@@ -74,6 +75,7 @@ static VkResult create_pipeline(VkDevice device, VkPipelineCache cache, uint32_t
     assert(info->pStages[0].stage == VK_SHADER_STAGE_VERTEX_BIT);
     /* WebGPU strips restart at the all-ones index; lists never enable restart. */
     assert(info->pInputAssemblyState->primitiveRestartEnable == expected_restart);
+    assert(info->pRasterizationState->depthClampEnable == expected_clamp);
     if (expected_stages == 2) assert(info->pStages[1].stage == VK_SHADER_STAGE_FRAGMENT_BIT);
     const VkPipelineColorBlendStateCreateInfo *blend = info->pColorBlendState;
     assert(blend->attachmentCount == 0 && blend->pAttachments == NULL);
@@ -154,13 +156,38 @@ int main(void) {
         assert(doe_vk_render_pipeline_create(&context, &desc, &pipeline, NULL) == DOE_VK_OK);
         doe_vk_pipeline_release(pipeline);
     }
+    /* Point lists need enabled maintenance5 (default PointSize 1.0); without it
+     * admission rejects before any native module or pipeline call. */
+    desc.topology = DOE_VK_POINTS;
+    expected_restart = 0;
+    doe_vk_pipeline *points = (doe_vk_pipeline *)&context;
+    unsigned modules_before = modules;
+    assert(doe_vk_render_pipeline_create(&context, &desc, &points, NULL) == DOE_VK_UNSUPPORTED);
+    assert(points == (doe_vk_pipeline *)&context && modules == modules_before && context.references == 1);
+    context.caps.maintenance5 = true;
+    assert(doe_vk_render_pipeline_create(&context, &desc, &points, NULL) == DOE_VK_OK);
+    doe_vk_pipeline_release(points);
+    context.caps.maintenance5 = false;
     desc.topology = DOE_VK_TRIANGLES;
     expected_restart = 0;
+    /* Unclipped depth is native depthClampEnable and needs enabled depthClamp. */
+    desc.unclipped_depth = true;
+    doe_vk_pipeline *clamped = (doe_vk_pipeline *)&context;
+    modules_before = modules;
+    assert(doe_vk_render_pipeline_create(&context, &desc, &clamped, NULL) == DOE_VK_UNSUPPORTED);
+    assert(clamped == (doe_vk_pipeline *)&context && modules == modules_before && context.references == 1);
+    context.caps.depth_clamp = true;
+    expected_clamp = 1;
+    assert(doe_vk_render_pipeline_create(&context, &desc, &clamped, NULL) == DOE_VK_OK);
+    doe_vk_pipeline_release(clamped);
+    context.caps.depth_clamp = false;
+    expected_clamp = 0;
+    desc.unclipped_depth = false;
     pipeline_result = -1;
     doe_vk_pipeline *sentinel = (doe_vk_pipeline *)&context, *out = sentinel;
     assert(doe_vk_render_pipeline_create(&context, &desc, &out, NULL) == DOE_VK_OUT_OF_MEMORY);
     assert(out == sentinel && modules == destroyed_modules && context.references == 1);
     assert(live_pipelines == 0 && live_passes == 0 && live_layouts == 0);
-    puts("PASS genuine depth-only native pipeline packets, optional fragment stage, strip-only primitive restart, no color state/attachment, malformed or contradictory admission, output preservation and native failure cleanup");
+    puts("PASS genuine depth-only native pipeline packets, optional fragment stage, strip-only primitive restart, maintenance5-gated point lists, depthClamp-gated unclipped depth, no color state/attachment, malformed or contradictory admission, output preservation and native failure cleanup");
     return 0;
 }

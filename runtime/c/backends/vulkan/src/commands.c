@@ -187,9 +187,10 @@ static void complete(doe_vk_commands *commands, doe_vk_status status, const doe_
 }
 
 /* A reusable recording keeps only state whose meaning does not change between
- * submissions: buffer uses and descriptor-bound dispatches. */
+ * submissions: buffer uses, descriptor-bound dispatches, and query uses whose
+ * every written or resolved index is reset first by the recording itself. */
 static bool reusable_admissible(const doe_vk_commands *commands) {
-    return commands->textures == NULL && commands->queries == NULL &&
+    return commands->textures == NULL && doe_vk_queries_self_contained(commands) &&
         commands->renders == NULL && commands->surface == NULL;
 }
 
@@ -212,8 +213,9 @@ static doe_vk_status queue_submit(doe_vk_commands *commands, doe_vk_error *error
     return status;
 }
 
-/* READY recording: buffer uses were dropped at completion so buffers could be
- * mapped; re-acquire them, then re-arm this recording's own fence. */
+/* READY recording: buffer uses and query-pool ownership were dropped at
+ * completion so buffers could be mapped and pools used by other submissions;
+ * re-acquire both with their health checks, then re-arm this recording's fence. */
 static doe_vk_status resubmit(doe_vk_commands *commands, doe_vk_error *error) {
     doe_vk_context *context = commands->context;
     if (context->lost) return doe_vk_fail(DOE_VK_DEVICE_LOST, "resubmit device lost", error);
@@ -222,6 +224,8 @@ static doe_vk_status resubmit(doe_vk_commands *commands, doe_vk_error *error) {
             return doe_vk_fail(use->buffer->content_status, "resource content from failed submission", error);
         if (use->buffer->recorded_uses == UINT32_MAX) return doe_vk_fail(DOE_VK_OUT_OF_MEMORY, "buffer use count", error);
     }
+    doe_vk_status acquired = doe_vk_queries_acquire(commands);
+    if (acquired != DOE_VK_OK) return doe_vk_fail(acquired, "query pool ownership or content", error);
     for (doe_vk_buffer_use *use = commands->buffers; use != NULL; use = use->next) ++use->buffer->recorded_uses;
     commands->uses_active = true;
     doe_vk_status status = doe_vk_result(context, context->vk.vkResetFences(context->device, 1, &commands->fence),
@@ -231,6 +235,7 @@ static doe_vk_status resubmit(doe_vk_commands *commands, doe_vk_error *error) {
          * the recording itself is terminal. */
         for (doe_vk_buffer_use *use = commands->buffers; use != NULL; use = use->next) --use->buffer->recorded_uses;
         commands->uses_active = false;
+        doe_vk_queries_detach(commands);
         commands->state = DOE_VK_FAILED;
         commands->failure = *error;
         return status;
@@ -258,6 +263,7 @@ doe_vk_status doe_vk_commands_seal(doe_vk_commands *commands, doe_vk_error *erro
     }
     for (doe_vk_buffer_use *use = commands->buffers; use != NULL; use = use->next) --use->buffer->recorded_uses;
     commands->uses_active = false;
+    doe_vk_queries_detach(commands); /* Pools are free for other work until a run. */
     commands->state = DOE_VK_READY; /* The fence is unsignaled; resubmit re-arms it harmlessly. */
     return doe_vk_fail(DOE_VK_OK, "reusable recording sealed", error);
 }

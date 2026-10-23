@@ -2,27 +2,46 @@
  * Semantic names cross each enum domain; retained model numbers are not ABI. */
 #include "internal.h"
 
-/* Plus depth may use 32-bit float backing. Public optional Depth32FloatStencil8
- * remains separate; this mapping does not advertise or enable that feature. */
-bool native_depth_format(WGPUTextureFormat format, doe_vk_texture_format *out)
+/* A format whose WebGPU definition names a feature maps only when the device
+ * enabled that feature, wherever a format is admitted (textures, views,
+ * pipeline targets, bundles, layouts). Core formats need nothing. */
+static bool format_feature_enabled(uint32_t features, WGPUTextureFormat format)
 {
+    switch (format) {
+    case WGPUTextureFormat_Depth32FloatStencil8:
+        return (features & NATIVE_FEATURE(WGPUFeatureName_Depth32FloatStencil8)) != 0;
+    default: return true;
+    }
+}
+
+/* Plus depth may use 32-bit float backing. */
+bool native_depth_format(uint32_t features, WGPUTextureFormat format, doe_vk_texture_format *out)
+{
+    if (!format_feature_enabled(features, format)) return false;
     switch (format) {
     case WGPUTextureFormat_Depth16Unorm: *out = DOE_VK_FORMAT_D16_UNORM; return true;
     case WGPUTextureFormat_Depth24Plus:
     case WGPUTextureFormat_Depth32Float: *out = DOE_VK_FORMAT_D32_FLOAT; return true;
     case WGPUTextureFormat_Stencil8: *out = DOE_VK_FORMAT_S8_UINT; return true;
-    case WGPUTextureFormat_Depth24PlusStencil8: *out = DOE_VK_FORMAT_D32_FLOAT_S8_UINT; return true;
-    default: return false; /* Optional Depth32FloatStencil8 is not enabled. */
+    case WGPUTextureFormat_Depth24PlusStencil8:
+    case WGPUTextureFormat_Depth32FloatStencil8: *out = DOE_VK_FORMAT_D32_FLOAT_S8_UINT; return true;
+    default: return false;
     }
 }
 
-bool native_texture_format(WGPUTextureFormat format, doe_vk_texture_format *out)
+bool native_texture_format(uint32_t features, WGPUTextureFormat format, doe_vk_texture_format *out)
 {
+    if (!format_feature_enabled(features, format)) return false;
     switch (format) {
     case WGPUTextureFormat_R8Unorm: *out = DOE_VK_FORMAT_R8_UNORM; break;
     case WGPUTextureFormat_RG8Unorm: *out = DOE_VK_FORMAT_RG8_UNORM; break;
     case WGPUTextureFormat_RGBA8Unorm: *out = DOE_VK_FORMAT_RGBA8_UNORM; break;
     case WGPUTextureFormat_RGBA8UnormSrgb: *out = DOE_VK_FORMAT_RGBA8_SRGB; break;
+    case WGPUTextureFormat_RGBA8Snorm: *out = DOE_VK_FORMAT_RGBA8_SNORM; break;
+    case WGPUTextureFormat_RGBA8Uint: *out = DOE_VK_FORMAT_RGBA8_UINT; break;
+    case WGPUTextureFormat_RGBA8Sint: *out = DOE_VK_FORMAT_RGBA8_SINT; break;
+    case WGPUTextureFormat_RGBA16Uint: *out = DOE_VK_FORMAT_RGBA16_UINT; break;
+    case WGPUTextureFormat_RGBA16Sint: *out = DOE_VK_FORMAT_RGBA16_SINT; break;
     case WGPUTextureFormat_BGRA8Unorm: *out = DOE_VK_FORMAT_BGRA8_UNORM; break;
     case WGPUTextureFormat_BGRA8UnormSrgb: *out = DOE_VK_FORMAT_BGRA8_SRGB; break;
     case WGPUTextureFormat_R16Float: *out = DOE_VK_FORMAT_R16_FLOAT; break;
@@ -37,7 +56,7 @@ bool native_texture_format(WGPUTextureFormat format, doe_vk_texture_format *out)
     case WGPUTextureFormat_RGBA32Uint: *out = DOE_VK_FORMAT_RGBA32_UINT; break;
     case WGPUTextureFormat_RGBA32Sint: *out = DOE_VK_FORMAT_RGBA32_SINT; break;
     case WGPUTextureFormat_RGBA32Float: *out = DOE_VK_FORMAT_RGBA32_FLOAT; break;
-    default: return native_depth_format(format, out);
+    default: return native_depth_format(features, format, out);
     }
     return true;
 }
@@ -49,6 +68,11 @@ bool native_storage_format(uint32_t format, WGPUTextureFormat *out)
     case DOE_COMPILER_FORMAT_RGBA16FLOAT: *out = WGPUTextureFormat_RGBA16Float; break;
     case DOE_COMPILER_FORMAT_R32FLOAT: *out = WGPUTextureFormat_R32Float; break;
     case DOE_COMPILER_FORMAT_RGBA8UNORM: *out = WGPUTextureFormat_RGBA8Unorm; break;
+    case DOE_COMPILER_FORMAT_RGBA8SNORM: *out = WGPUTextureFormat_RGBA8Snorm; break;
+    case DOE_COMPILER_FORMAT_RGBA8SINT: *out = WGPUTextureFormat_RGBA8Sint; break;
+    case DOE_COMPILER_FORMAT_RGBA8UINT: *out = WGPUTextureFormat_RGBA8Uint; break;
+    case DOE_COMPILER_FORMAT_RGBA16SINT: *out = WGPUTextureFormat_RGBA16Sint; break;
+    case DOE_COMPILER_FORMAT_RGBA16UINT: *out = WGPUTextureFormat_RGBA16Uint; break;
     case DOE_COMPILER_FORMAT_RG32FLOAT: *out = WGPUTextureFormat_RG32Float; break;
     case DOE_COMPILER_FORMAT_RGBA32SINT: *out = WGPUTextureFormat_RGBA32Sint; break;
     case DOE_COMPILER_FORMAT_R32SINT: *out = WGPUTextureFormat_R32Sint; break;

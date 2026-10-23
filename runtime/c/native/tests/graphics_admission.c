@@ -54,8 +54,10 @@ static void stage_controls(state *s)
     color.format = WGPUTextureFormat_RGBA8Uint;
     reject_pipeline(s,&descriptor);
     color.format = WGPUTextureFormat_RGBA8Unorm;
-    descriptor.primitive.topology = WGPUPrimitiveTopology_PointList;
-    reject_pipeline(s,&descriptor); /* Explicit unsupported target lowering. */
+    /* PointList is admitted with maintenance5 (point_list.c); an unknown
+     * topology value still rejects. */
+    descriptor.primitive.topology = (WGPUPrimitiveTopology)0x7F;
+    reject_pipeline(s,&descriptor);
     descriptor.primitive.topology = WGPUPrimitiveTopology_TriangleList;
     const WGPUCallbackMode modes[] = {WGPUCallbackMode_WaitAnyOnly,WGPUCallbackMode_AllowProcessEvents,
         WGPUCallbackMode_AllowSpontaneous};

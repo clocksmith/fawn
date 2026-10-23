@@ -169,7 +169,12 @@ static void integer_clear(state *s)
         attachment.clearValue.r = i ? -2147483649.0 : 4294967296.0;
         encoder = wgpuDeviceCreateCommandEncoder(s->device,NULL);
         wgpuDevicePushErrorScope(s->device,WGPUErrorFilter_Validation);
-        assert(!wgpuCommandEncoderBeginRenderPass(encoder,&descriptor));
+        /* WebGPU invalid pass: commands on it record nothing; Finish fails. */
+        WGPURenderPassEncoder rejected = wgpuCommandEncoderBeginRenderPass(encoder,&descriptor);
+        assert(rejected);
+        wgpuRenderPassEncoderDraw(rejected,3,1,0,0);
+        wgpuRenderPassEncoderEnd(rejected);
+        wgpuRenderPassEncoderRelease(rejected);
         assert(!wgpuCommandEncoderFinish(encoder,NULL));
         expect_validation(s);
         wgpuCommandEncoderRelease(encoder);

@@ -163,6 +163,10 @@ static void test_texture_layout(void)
     assert(doe_resource_texture_validate(&desc, &limits) == DOE_RESOURCE_RANGE);
     desc.mip_levels = 1;
     desc.samples = 4;
+    assert(doe_resource_texture_validate(&desc, &limits) == DOE_RESOURCE_USAGE); /* no RenderAttachment */
+    desc.usage |= WGPUTextureUsage_RenderAttachment; /* copy and binding usages are admitted */
+    assert(doe_resource_texture_validate(&desc, &limits) == DOE_RESOURCE_OK);
+    desc.usage |= WGPUTextureUsage_StorageBinding;
     assert(doe_resource_texture_validate(&desc, &limits) == DOE_RESOURCE_LAYOUT);
     desc = texture_desc();
     doe_resource_texture_copy copy = {.width = 4, .height = 2, .depth_or_layers = 1};
@@ -170,6 +174,10 @@ static void test_texture_layout(void)
     assert(doe_resource_texture_copy_validate(32, &desc, &copy, DOE_RESOURCE_BUFFER_TO_TEXTURE,
         DOE_RESOURCE_COPY_NATIVE, &region) == DOE_RESOURCE_OK);
     assert(region.required_bytes == 32 && region.pitch == 16 && region.image_rows == 2);
+    desc.samples = 4; /* Buffer copies need one sample. */
+    assert(doe_resource_texture_copy_validate(32, &desc, &copy, DOE_RESOURCE_BUFFER_TO_TEXTURE,
+        DOE_RESOURCE_COPY_NATIVE, &region) == DOE_RESOURCE_RANGE);
+    desc.samples = 1;
     assert(doe_resource_texture_copy_validate(31, &desc, &copy, DOE_RESOURCE_BUFFER_TO_TEXTURE,
         DOE_RESOURCE_COPY_NATIVE, &region) == DOE_RESOURCE_RANGE);
     assert(region.required_bytes == 32);

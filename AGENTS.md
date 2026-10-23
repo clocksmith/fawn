@@ -18,7 +18,7 @@ applicable owner documents below; there is no repository-wide reading checklist.
 | Compiler, native objects, backend or ABI | [Runtime map and tests](runtime/zig/README.md), [Zig style](runtime/zig/STYLE.md), relevant [architecture](docs/architecture.md) section |
 | Native C/C++ integration | [Adapter subset](runtime/zig/STYLE.md#native-adapter-subset), adapter's charter and README |
 | C migration (`runtime/c`) | [C work guide](runtime/c/AGENTS.md), [C style](runtime/c/STYLE.md), [migration gates](docs/c-migration/MIGRATION.md); `make -C runtime/c check` before committing |
-| JavaScript package | [Package README](packages/doe-gpu/README.md), [JavaScript style](packages/doe-gpu/STYLE.md) |
+| JavaScript package | [Package README](packages/doe-gpu/README.md), [JavaScript style](packages/doe-gpu/STYLE.md); native addon: [addon guide](runtime/bridge/webgpu-addon/AGENTS.md) |
 | Python tools or evidence | [Python style](bench/STYLE.md), owning tool's help/tests; [benchmark front door](bench/README.md) when running workloads |
 | Config or contract | [Config style](config/STYLE.md), owning schema and applicable [process law](docs/process.md) section |
 | Formal proof or trace | [Lean guide](pipeline/lean/README.md), [Lean style](pipeline/lean/STYLE.md), or [trace guide](pipeline/trace/README.md), according to the changed boundary |

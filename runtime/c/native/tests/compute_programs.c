@@ -76,6 +76,120 @@ static void expect_null_prepare(state *s, void *(*prepare)(void *, void *), void
     expect_validation(s);
 }
 
+/* Long enough per invocation that begin/end GPU timestamps of one dispatch differ. */
+static const char *const busy_code =
+    "@group(0) @binding(0) var<storage, read_write> sink: array<u32>;\n"
+    "@compute @workgroup_size(64) fn main(@builtin(global_invocation_id) id: vec3u) {\n"
+    "  var value = id.x;\n"
+    "  for (var i = 0u; i < 4096u; i++) { value = value * 1664525u + 1013904223u; }\n"
+    "  sink[id.x] = value;\n"
+    "}\n";
+
+static WGPUCommandBuffer timed_commands(state *t, WGPUComputePipeline busy, WGPUBindGroup group,
+    WGPUQuerySet queries, WGPUBuffer resolved, WGPUBuffer readback, bool write)
+{
+    WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(t->device, NULL);
+    if (write) {
+        WGPUPassTimestampWrites writes = WGPU_PASS_TIMESTAMP_WRITES_INIT;
+        writes.querySet = queries;
+        writes.beginningOfPassWriteIndex = 0;
+        writes.endOfPassWriteIndex = 1;
+        WGPUComputePassDescriptor descriptor = {.timestampWrites=&writes};
+        WGPUComputePassEncoder pass = wgpuCommandEncoderBeginComputePass(encoder, &descriptor);
+        wgpuComputePassEncoderSetPipeline(pass, busy);
+        wgpuComputePassEncoderSetBindGroup(pass, 0, group, 0, NULL);
+        wgpuComputePassEncoderDispatchWorkgroups(pass, 64, 1, 1);
+        wgpuComputePassEncoderEnd(pass);
+        wgpuComputePassEncoderRelease(pass);
+    }
+    wgpuCommandEncoderResolveQuerySet(encoder, queries, 0, 2, resolved, 0);
+    wgpuCommandEncoderCopyBufferToBuffer(encoder, resolved, 0, readback, 0, 16);
+    WGPUCommandBuffer commands = wgpuCommandEncoderFinish(encoder, NULL);
+    wgpuCommandEncoderRelease(encoder);
+    assert(commands);
+    return commands;
+}
+
+static void read_times(state *t, WGPUBuffer readback, uint64_t out[2])
+{
+    memcpy(out, map(t, readback, 16), 16);
+    wgpuBufferUnmap(readback);
+}
+
+/* gpu-recorded program with compute-pass timestampWrites and a resolve: three
+ * runs of strictly increasing, nonzero GPU-ns intervals; ordinary submissions
+ * afterwards see the last run's published query state; a recording that
+ * resolves queries it did not write is rejected. */
+static void timestamp_program(const state *s)
+{
+    state t = {.instance=s->instance,.adapter=s->adapter};
+    WGPUFeatureName required = WGPUFeatureName_TimestampQuery;
+    WGPUDeviceDescriptor descriptor = WGPU_DEVICE_DESCRIPTOR_INIT;
+    descriptor.requiredFeatureCount = 1;
+    descriptor.requiredFeatures = &required;
+    descriptor.uncapturedErrorCallbackInfo = (WGPUUncapturedErrorCallbackInfo){.callback=error_reply,.userdata1=&t};
+    WGPURequestDeviceCallbackInfo reply = {.mode=WGPUCallbackMode_AllowSpontaneous,.callback=device_reply,.userdata1=&t};
+    assert(wgpuAdapterRequestDevice(t.adapter, &descriptor, reply).id && t.device);
+    t.queue = wgpuDeviceGetQueue(t.device);
+    double period = 0;
+    uint32_t bits = 0;
+    assert(doeNativeComputeProgramTimestampNanoseconds(t.device, &period, &bits) == 1 && period == 1.0 && bits == 64);
+    WGPUComputePipeline busy = pipeline(&t, busy_code);
+    WGPUBuffer sink = buffer(&t, 64 * 64 * 4, WGPUBufferUsage_Storage);
+    WGPUBindGroupEntry entry = {.binding=0,.buffer=sink,.size=64 * 64 * 4};
+    WGPUBindGroup sink_group = group(&t, busy, &entry, 1);
+    WGPUQuerySetDescriptor query_descriptor = {.type=WGPUQueryType_Timestamp,.count=2};
+    WGPUQuerySet queries = wgpuDeviceCreateQuerySet(t.device, &query_descriptor);
+    WGPUBuffer resolved = buffer(&t, 256, WGPUBufferUsage_QueryResolve | WGPUBufferUsage_CopySrc);
+    WGPUBuffer readback = buffer(&t, 16, WGPUBufferUsage_MapRead | WGPUBufferUsage_CopyDst);
+    assert(queries);
+
+    /* Not self-contained: resolving queries this recording never wrote. */
+    WGPUCommandBuffer commands = timed_commands(&t, busy, sink_group, queries, resolved, readback, false);
+    expect_null_prepare(&t, doeNativeComputeProgramPrepare, t.queue, commands);
+    wgpuCommandBufferRelease(commands);
+
+    commands = timed_commands(&t, busy, sink_group, queries, resolved, readback, true);
+    void *program = doeNativeComputeProgramPrepare(t.queue, commands);
+    assert(program);
+    wgpuCommandBufferRelease(commands);
+    uint64_t times[2] = {0, 0}, previous_end = 0;
+    for (int run = 0; run < 3; ++run) {
+        assert(doeNativeComputeProgramSubmit(program) == 1);
+        read_times(&t, readback, times);
+        assert(times[0] != 0 && times[1] > times[0]);  /* Nonzero GPU-ns interval. */
+        assert(times[0] > previous_end);               /* Each run measures new GPU time. */
+        previous_end = times[1];
+    }
+    /* Ordinary work sees the last run's published state: resolving the written
+     * indices returns those exact values, and new writes reset and advance. */
+    commands = timed_commands(&t, busy, sink_group, queries, resolved, readback, false);
+    wgpuQueueSubmit(t.queue, 1, &commands);
+    wgpuCommandBufferRelease(commands);
+    uint64_t again[2];
+    read_times(&t, readback, again);
+    assert(again[0] == times[0] && again[1] == times[1]);
+    commands = timed_commands(&t, busy, sink_group, queries, resolved, readback, true);
+    wgpuQueueSubmit(t.queue, 1, &commands);
+    wgpuCommandBufferRelease(commands);
+    read_times(&t, readback, again);
+    assert(again[0] > times[1] && again[1] > again[0]);
+    /* The program still runs after ordinary use of its query set. */
+    assert(doeNativeComputeProgramSubmit(program) == 1);
+    read_times(&t, readback, times);
+    assert(times[0] > again[1] && times[1] > times[0]);
+    doeNativeComputeProgramRelease(program);
+    wgpuBufferRelease(readback);
+    wgpuBufferRelease(resolved);
+    wgpuQuerySetRelease(queries);
+    wgpuBindGroupRelease(sink_group);
+    wgpuBufferRelease(sink);
+    wgpuComputePipelineRelease(busy);
+    assert(!t.errors);
+    wgpuQueueRelease(t.queue);
+    wgpuDeviceRelease(t.device);
+}
+
 int main(void)
 {
     state s = {0};
@@ -146,11 +260,12 @@ int main(void)
     wgpuTextureRelease(image);
     wgpuBufferRelease(b);
     wgpuBufferRelease(a);
+    timestamp_program(&s);
     assert(doeNativeComputeProgramPrepare(NULL, NULL) == NULL);
     assert(doeNativeComputeProgramSubmit(NULL) == 0);
     doeNativeComputeProgramRelease(NULL);
     consumer_finish(&s);
-    printf("PASS Doe compute programs: one reusable GPU recording and host replay, 3 exact runs each with changing inputs and mapped readback between runs, single-use queue rejection, claimed-twice, destroyed dependency, early public releases, GPU-recording admission and null handles %s\n",
+    printf("PASS Doe compute programs: one reusable GPU recording and host replay, 3 exact runs each with changing inputs and mapped readback between runs, single-use queue rejection, claimed-twice, destroyed dependency, early public releases, GPU-recording admission, gpu-recorded timestamp program (3 runs of increasing nonzero GPU-ns intervals, published state for later ordinary resolves/writes, non-self-contained resolve rejected) and null handles %s\n",
         adapter_class_scope());
     return 0;
 }

@@ -59,12 +59,15 @@ doe_resource_status doe_resource_texture_validate(const doe_resource_texture_des
     if (desc->mip_levels > mips) return DOE_RESOURCE_RANGE;
     if (desc->samples > 1 && (desc->dimension != WGPUTextureDimension_2D ||
         desc->depth_or_layers != 1 || desc->mip_levels != 1 ||
-        (desc->usage & (WGPUTextureUsage_CopySrc | WGPUTextureUsage_CopyDst | WGPUTextureUsage_StorageBinding))))
+        (desc->usage & WGPUTextureUsage_StorageBinding)))
         return DOE_RESOURCE_LAYOUT;
     if (desc->samples > 1 && !(desc->usage & WGPUTextureUsage_RenderAttachment))
         return DOE_RESOURCE_USAGE;
     if (resource_format_depth(desc->format) && desc->dimension != WGPUTextureDimension_2D)
         return DOE_RESOURCE_LAYOUT;
+    bool read_write;
+    if ((desc->usage & WGPUTextureUsage_StorageBinding) && !resource_storage_format(desc->format, &read_write))
+        return DOE_RESOURCE_USAGE;
     for (size_t i = 0; i < desc->view_format_count; i++)
         if (!resource_format_compatible(desc->format, desc->view_formats[i])) return DOE_RESOURCE_LAYOUT;
     return DOE_RESOURCE_OK;

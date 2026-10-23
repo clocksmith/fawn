@@ -444,6 +444,8 @@ napi_value doe_request_device(napi_env env, napi_callback_info info) {
         }
     }
 
+    void* events = pfn_doeRequestDeviceFlat ? NULL : device_events_describe(&descriptor);
+    if (events) descriptor_ptr = &descriptor;
     DeviceRequestResult result = {0};
     const WGPURequestDeviceCallbackInfo callback_info = {
         .nextInChain = NULL,
@@ -485,6 +487,7 @@ napi_value doe_request_device(napi_env env, napi_callback_info info) {
         return throw_status_error(env, "DOE_REQUEST_DEVICE_ERROR", "requestDevice failed", result.status, result.message);
     }
 
+    device_events_attach(events, result.device);
     if (descriptor_ptr) {
         if (pfn_doeNativeObjectSetLabel && descriptor.label.data && descriptor.label.length > 0) {
             pfn_doeNativeObjectSetLabel(result.device, (const uint8_t*)descriptor.label.data, descriptor.label.length);
