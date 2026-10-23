@@ -64,8 +64,8 @@ Developer checks below are not physical qualification or full feature closure.
    `97fb777c` now filters aliases by shared stage while preserving independent
    whole-render history. Zero/disjoint/shared-stage buffer and texture controls
    pass in49 host suites and sanitizers. Independent Suby source recheck at
-   `60f0ab17` closes the visibility finding; public graphics is separately pending.
-   Public graphics integration remains in progress.
+   `60f0ab17` closes the visibility finding; the separate exact graphics
+   composition below adds developer execution evidence.
 2. **Empty auto-layout holes:** resource/native owners, `45f8264d` and `c87e494f`.
    One required-group predicate normalizes ignored groups/offsets; explicit null
    unbind works. Native admission tests execute sparse group 2 and ignored holes.
@@ -75,7 +75,8 @@ Developer checks below are not physical qualification or full feature closure.
    found auto-created empty slots retained pipeline exclusivity. `f7a5383b`
    normalizes these before ownership claims; the reproduced auto-hole getter
    reused through explicit layouts now passes alongside NULL in56 host suites
-   and sanitizers. That final fix awaits independent recheck.
+   and sanitizers. Independent Suby source review at `d5b80542` closes the final
+   auto-empty reuse defect, with all46 resource inputs matching.
 3. **Typed failure propagation:** native owner, `c87e494f`. Layout allocation
    results are handled; one ABI status conversion preserves OOM versus internal
    execution failure versus validation. Real allocation/backend fault tests are
@@ -98,7 +99,11 @@ Developer checks below are not physical qualification or full feature closure.
    shared call DAGs revisit completed functions exponentially. A25-level doubling
    graph reproduced bounded-work exhaustion. Explicit caller-owned completed
    function/type maps now pass both source emitters and malformed-graph sanitizers
-   without higher work limits (`DEVELOPER_RECEIPT_DAG.json`); independent recheck pending. This trims resource helper multiplication, not every unused declaration.
+   without higher work limits (`DEVELOPER_RECEIPT_DAG.json`). Independent Suby
+   source review at `d5b80542` closes this defect, with all44 target inputs
+   matching. The receipt pins an earlier core:15 of51 core inputs differ at
+   the reviewed merge, so this is not merged-runtime qualification. This trims
+   resource helper multiplication, not every unused declaration.
 6. **Duplicate texture-copy footprint arithmetic:** resource/backend owners,
    `45f8264d` and `a6901a80`. Both call the small checked arithmetic leaf in
    `runtime/c/common`; 59,049 bounded independent arithmetic cases plus overflow
@@ -111,12 +116,18 @@ Guides: the common C style retains one parser/semantic/layout owner with multipl
 explicit target adapters. Vulkan's owner guide now states serialized operations
 and callback/lease boundaries; its recursive mutex is retained because finalizers
 reenter. No arbitrary mutex removal or claimed system-level security change.
-Native timestamp/recovery evidence binds its isolated ABI7 dependency snapshot,
-123/202 real exports, eight normal clients and focused full-stack sanitizers.
+Native graphics evidence at `11937bf9` binds181 exact dependency inputs,
+157/202 real exports, eleven normal clients and full compiler/native ASan/UBSan
+composition. Actual software rendering covers sparse layouts, bundles, occlusion,
+viewport/blend/scissor, typed errors and early release.45 pinned exports remain
+absent; this is not157/202 of the whole migration or physical qualification.
 Matrix ABI8 has separate exact24-byte-uniform software Vulkan execution and
 31 source/validator controls, not blanket qualification of all later composition.
-Metal image ownership has host/typed-call/sanitizer controls; Apple SDK/device
-execution and all physical hardware qualification remain pending.
+Metal graphics ownership at `74a329c5` has seven host/typed-call/sanitizer
+controls through the existing completion owner; Apple SDK/device execution
+remains pending. `d7455c73` adds actual software fragment demotion pixel checks
+with explicit enabled Vulkan capability, not derivative/helper parity. All
+physical hardware qualification remains pending.
 
 ## Accepted experimental coverage
 
