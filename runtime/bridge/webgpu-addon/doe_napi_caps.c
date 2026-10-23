@@ -219,17 +219,17 @@ napi_value doe_device_pop_error_scope(napi_env env, napi_callback_info info) {
     if (!device) NAPI_THROW(env, "Invalid device");
 
     DevicePopErrorScopeResult result = {0};
-    WGPUPopErrorScopeCallbackInfo2 cb_info = {
-        .next_in_chain = NULL,
-        .mode = WGPU_CALLBACK_MODE_ALLOW_PROCESS_EVENTS,
-        .callback = pop_error_scope_callback,
-        .userdata1 = &result,
-        .userdata2 = NULL,
-    };
-    if (pfn_wgpuDevicePopErrorScope) {
-        pfn_wgpuDevicePopErrorScope(device, cb_info);
+    if (pfn_doeNativeDevicePopErrorScope) {
+        WGPUPopErrorScopeCallbackInfo2 cb_info = {
+            .next_in_chain = NULL,
+            .mode = WGPU_CALLBACK_MODE_ALLOW_PROCESS_EVENTS,
+            .callback = pop_error_scope_callback,
+            .userdata1 = &result,
+            .userdata2 = NULL,
+        };
+        pfn_doeNativeDevicePopErrorScope(device, cb_info); /* The Doe entry delivers in the call. */
     } else {
-        pfn_doeNativeDevicePopErrorScope(device, cb_info);
+        result.done = doe_standard_pop_error_scope(device, &result.error_type, result.message, sizeof(result.message));
     }
     if (!result.done) {
         NAPI_THROW(env, "popErrorScope: no active error scope");
