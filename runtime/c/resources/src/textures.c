@@ -18,6 +18,12 @@ doe_resource_status doe_resource_texture_validate(const doe_resource_texture_des
         WGPUTextureUsage_TextureBinding | WGPUTextureUsage_StorageBinding |
         WGPUTextureUsage_RenderAttachment | WGPUTextureUsage_TransientAttachment;
     if (!desc->usage || (desc->usage & ~valid_usage)) return DOE_RESOURCE_USAGE;
+    if (desc->usage & WGPUTextureUsage_TransientAttachment) {
+        if (desc->usage != (WGPUTextureUsage_TransientAttachment | WGPUTextureUsage_RenderAttachment))
+            return DOE_RESOURCE_USAGE;
+        if (desc->view_format_count || desc->dimension != WGPUTextureDimension_2D ||
+            desc->mip_levels != 1 || desc->depth_or_layers != 1) return DOE_RESOURCE_LAYOUT;
+    }
     uint32_t bytes, block_width, block_height;
     doe_resource_status status = resource_format_block(desc->format, &bytes, &block_width, &block_height);
     if (status != DOE_RESOURCE_OK) return status;
@@ -30,6 +36,8 @@ doe_resource_status doe_resource_texture_validate(const doe_resource_texture_des
         if (desc->width > limits->dimension_1d || desc->height != 1 || desc->depth_or_layers != 1)
             return DOE_RESOURCE_RANGE;
         if (block_width != 1 || block_height != 1) return DOE_RESOURCE_UNSUPPORTED;
+        if (desc->mip_levels != 1) return DOE_RESOURCE_RANGE;
+        if (desc->usage & WGPUTextureUsage_RenderAttachment) return DOE_RESOURCE_USAGE;
         break;
     case WGPUTextureDimension_2D:
         if (desc->width > limits->dimension_2d || desc->height > limits->dimension_2d ||
@@ -53,6 +61,8 @@ doe_resource_status doe_resource_texture_validate(const doe_resource_texture_des
         desc->depth_or_layers != 1 || desc->mip_levels != 1 ||
         (desc->usage & (WGPUTextureUsage_CopySrc | WGPUTextureUsage_CopyDst | WGPUTextureUsage_StorageBinding))))
         return DOE_RESOURCE_LAYOUT;
+    if (desc->samples > 1 && !(desc->usage & WGPUTextureUsage_RenderAttachment))
+        return DOE_RESOURCE_USAGE;
     if (resource_format_depth(desc->format) && desc->dimension != WGPUTextureDimension_2D)
         return DOE_RESOURCE_LAYOUT;
     for (size_t i = 0; i < desc->view_format_count; i++)
@@ -138,6 +148,8 @@ doe_resource_status doe_resource_view_validate(const doe_resource_texture *textu
     if (!resource_format_aspect(view.format, view.aspect)) return DOE_RESOURCE_ASPECT;
     if (!view.usage) view.usage = tex->usage;
     if (view.usage & ~tex->usage) return DOE_RESOURCE_USAGE;
+    if ((tex->usage & WGPUTextureUsage_TransientAttachment) && view.usage != tex->usage)
+        return DOE_RESOURCE_USAGE;
     if (!view.dimension) {
         if (tex->dimension == WGPUTextureDimension_1D) view.dimension = WGPUTextureViewDimension_1D;
         else if (tex->dimension == WGPUTextureDimension_3D) view.dimension = WGPUTextureViewDimension_3D;

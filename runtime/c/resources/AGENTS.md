@@ -43,3 +43,6 @@ layout identity may accidentally claim a pipeline. Preserve true vertex holes
 (Undefined mode and no attributes) versus explicit empty required slots. Direct
 bounds use first+count, not count alone; never infer GPU indices on the host.
 Frontend rejection must poison the existing pass/bundle owner explicitly.
+Absent or read-only attachment aspects require undefined operations. Transient
+constraints span texture creation, view usage and pass Clear/Discard admission;
+keep them canonical without pretending host retention proves native memoryless use.

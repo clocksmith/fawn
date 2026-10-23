@@ -154,7 +154,7 @@ responsibilities. Unsupported consumer command kinds must reject before submit.
 
 `make -C runtime/c/resources check` builds GCC C11/Werror into `/tmp`: 13 base and
 8 extended, 6 bundle, 8 binding-feature, 7 dispatch-usage, 10 render-usage,
-1 query-admission and 3 draw-admission host suites cover transactional failure/untouched outputs, first error,
+1 query-admission, 3 draw-admission and 4 attachment-admission host suites cover transactional failure/untouched outputs, first error,
 label cleanup, atomic references, stale/read-only maps, copies/aliases, dynamic
 snapshots, pass abandonment/unbinding, shader/query/external/render leases and
 unresolved submission lifetime. Host native tokens test finalization, not GPU work.
@@ -242,3 +242,19 @@ and the first ignored-clear reproduction with its correction.
 frontend rejection, automatic-empty reuse and their preserved first reproductions.
 `DEVELOPER_RECEIPT.json` preserves the earlier smaller historical check.
 Run the common source-size check; every owned C source/header is below 999 lines.
+
+Attachment descriptor admission is shared by pass begin and immutable record
+submission. Missing or read-only depth/stencil aspects require undefined operations;
+transient attachments require Clear/Discard for each present aspect. Transient
+creation fixes usage to TransientAttachment|RenderAttachment, one 2D mip/layer
+and no view-format list; its views cannot drop the transient usage bit. One-dimensional
+textures have one mip and cannot be render attachments, and multisample textures
+require attachment usage. These structural rules follow the current
+[texture descriptor](https://gpuweb.github.io/gpuweb/#validating-gputexturedescriptor)
+and [attachment](https://gpuweb.github.io/gpuweb/#depth-stencil-attachments) contracts,
+correcting retained validation omissions rather than importing unsupported native
+features. Feature enablement, format capabilities, physical memoryless allocation
+and backend attachment contents remain separate owners. The retained Vulkan path
+explicitly rejects transient usage; these host checks do not claim otherwise.
+`DEVELOPER_RECEIPT_ATTACHMENT_ADMISSION.json` preserves the four first rejected-input
+reproductions and binds the corrected descriptor/lifetime checks.
