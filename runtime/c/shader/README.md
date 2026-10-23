@@ -5,10 +5,10 @@ compute path, not independently or physically qualified.
 This is the persistent ownership half of the standalone C compiler boundary:
 one compilation pipeline, copied source/compiler identity, exact immutable target,
 types, resource layouts, sparse texture/sampler descriptors, graphics IO leaves
-and separate entry closures. ABI6 handle and ABI8 interface descriptors are retained
+and separate entry closures. ABI6 handle and stage interface descriptors are retained
 in the same owned allocation,
 not represented as fabricated buffer layouts. Static-library consumers rebuild
-with this internal view header; the versioned compiler ABI1–6 records do not grow. It follows the allocation,
+with this internal view header; the retained versioned compiler records do not grow. It follows the allocation,
 clone/deinit and entry-binding responsibility of the retained
 [TranslationInfo owner](../../zig/src/compiler/wgsl/runtime/runtime_translation_info.zig),
 without pretending that standalone reflection supplies its dispatch/texture
@@ -77,3 +77,8 @@ explicit optional demote feature selection and an asymmetric discard-pixel oracl
 The baseline and demote modes pass on SwiftShader with early caller releases;
 this does not qualify physical hardware, derivatives or helper-invocation parity.
 An unavailable requested feature reports SKIP77 rather than substituting OpKill.
+
+The internal owned artifact selects explicit compiler ABI9. Atomic records retain
+their referenced scalar type and non-constructible flag; they are not ordinary
+scalar values. Buffer layout remains the compiler owner’s result. Both acquisition
+faults and retained-view lifetime are checked for atomic-containing modules.

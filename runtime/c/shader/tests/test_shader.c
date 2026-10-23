@@ -91,7 +91,7 @@ int main(void)
     a = (allocations){0};
     assert(doe_shader_create(&options,image_source,strlen(image_source),&shader,&error)==DOE_SHADER_OK);
     assert(doe_shader_borrow(shader,&view)==DOE_SHADER_OK);
-    assert(view.module.schema_version==DOE_COMPILER_MATRIX_SCHEMA_VERSION);
+    assert(view.module.schema_version==DOE_COMPILER_ATOMIC_SCHEMA_VERSION);
     assert(view.handle_count==2 && view.counts.resources==2);
     for (size_t i=0; i<view.handle_count; ++i) {
         const DoeCompilerHandleV6 *handle=&view.handles[i];
@@ -157,7 +157,7 @@ int main(void)
         a=(allocations){0};
         assert(doe_shader_create(&options,text,length,&shader,&error)==DOE_SHADER_OK);
         assert(doe_shader_borrow(shader,&view)==DOE_SHADER_OK);
-        assert(view.module.schema_version==DOE_COMPILER_MATRIX_SCHEMA_VERSION);
+        assert(view.module.schema_version==DOE_COMPILER_ATOMIC_SCHEMA_VERSION);
         assert(doe_shader_matches(shader,text,length,options.compiler_identity,17,&options.selection));
         if(source_index<3) {
             assert(view.counts.words==0 && view.counts.entries==0);
@@ -175,6 +175,33 @@ int main(void)
         doe_shader_release(shader);
         assert(a.live==0 && a.calls==2);
     }
+    const char *atomic_source =
+        "@group(0) @binding(0) var<storage,read_write> data:array<atomic<u32>>;"
+        "@compute @workgroup_size(1) fn atomic_main(){atomicStore(&data[0],3u);}";
+    shader = sentinel;
+    for (unsigned ordinal = 1u; ordinal <= 2u; ++ordinal) {
+        a = (allocations){.fail_at = ordinal};
+        assert(doe_shader_create(&options, atomic_source, strlen(atomic_source), &shader, &error) == DOE_SHADER_OUT_OF_MEMORY);
+        assert(shader == sentinel && a.live == 0u);
+    }
+    a = (allocations){0};
+    assert(doe_shader_create(&options, atomic_source, strlen(atomic_source), &shader, &error) == DOE_SHADER_OK);
+    assert(doe_shader_borrow(shader, &view) == DOE_SHADER_OK);
+    assert(view.module.schema_version == DOE_COMPILER_ATOMIC_SCHEMA_VERSION);
+    bool atomic_found = false;
+    for (size_t i = 0u; i < view.counts.types; ++i) {
+        if (view.types[i].kind != DOE_COMPILER_TYPE_ATOMIC) continue;
+        assert(view.types[i].element_type < view.counts.types && view.types[i].size_bytes == 4u);
+        assert(view.types[view.types[i].element_type].scalar_kind == DOE_COMPILER_LEAF_U32);
+        assert((view.types[i].flags & DOE_COMPILER_TYPE_CONSTRUCTIBLE) == 0u);
+        atomic_found = true;
+    }
+    assert(atomic_found);
+    assert(doe_shader_retain(shader) == DOE_SHADER_OK);
+    doe_shader_release(shader);
+    assert(a.live == 1u && view.words[0] == 0x07230203u);
+    doe_shader_release(shader);
+    assert(a.live == 0u);
     puts("owned shader: buffer/handle/stage metadata, matrix/library modules, identity, allocation rollback, lifetime PASS");
     return 0;
 }
