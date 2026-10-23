@@ -107,6 +107,29 @@ function destroyResource(resource, release) {
   resource._destroyed = true;
 }
 
+// GPUOrigin3D: a sequence [x, y, z] or a dictionary; omitted members are 0.
+function normalizeOrigin3D(origin, path, label) {
+  if (origin === undefined) return { x: 0, y: 0, z: 0 };
+  if (Array.isArray(origin)) {
+    if (origin.length > 3) failValidation(path, `${label} must have at most 3 entries`);
+    return { x: origin[0] ?? 0, y: origin[1] ?? 0, z: origin[2] ?? 0 };
+  }
+  const value = assertObject(origin, path, label);
+  return { x: value.x ?? 0, y: value.y ?? 0, z: value.z ?? 0 };
+}
+
+// GPUExtent3D: a sequence [width, height, depth] with 1 to 3 entries, or a
+// dictionary with a required width; height and depthOrArrayLayers default to 1.
+function normalizeExtent3D(extent, path, label) {
+  if (Array.isArray(extent)) {
+    if (extent.length < 1 || extent.length > 3) failValidation(path, `${label} must have 1 to 3 entries`);
+    return { width: extent[0], height: extent[1] ?? 1, depthOrArrayLayers: extent[2] ?? 1 };
+  }
+  const value = assertObject(extent, path, label);
+  if (value.width === undefined) failValidation(path, `${label}.width is required`);
+  return { width: value.width, height: value.height ?? 1, depthOrArrayLayers: value.depthOrArrayLayers ?? 1 };
+}
+
 export {
   MAX_SAFE_U64,
   UINT32_MAX,
@@ -124,4 +147,6 @@ export {
   assertLiveResource,
   destroyResource,
   releaseOwnedResource,
+  normalizeOrigin3D,
+  normalizeExtent3D,
 };
