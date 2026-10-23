@@ -78,11 +78,14 @@ typedef enum doe_vk_command_state {
     DOE_VK_SUBMITTED,
     DOE_VK_UNCERTAIN,
     DOE_VK_COMPLETE,
-    DOE_VK_FAILED
+    DOE_VK_FAILED,
+    DOE_VK_READY /* Reusable recording after proven success; may be submitted again. */
 } doe_vk_command_state;
 struct doe_vk_commands {
     doe_vk_context *context;
     doe_vk_command_state state;
+    bool reusable;
+    uint32_t references; /* Holders: creator plus each pending reusable submission. */
     doe_vk_error failure;
     bool uses_active;
     VkCommandPool pool;
