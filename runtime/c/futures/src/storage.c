@@ -80,8 +80,10 @@ doe_future_status doe_future_queue_init(uint32_t version, void *storage,
     queue->mutex_live = true;
     if (pthread_condattr_init(&queue->attributes) != 0) goto setup_failed;
     queue->attributes_live = true;
+#if !DF_RELATIVE_CONDITION
     if (pthread_condattr_setclock(&queue->attributes, CLOCK_MONOTONIC) != 0)
         goto setup_failed;
+#endif
     if (pthread_cond_init(&queue->changed, &queue->attributes) != 0)
         goto setup_failed;
     queue->condition_live = true;

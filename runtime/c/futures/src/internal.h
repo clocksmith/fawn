@@ -3,13 +3,29 @@
 #ifndef DOE_FUTURES_INTERNAL_H
 #define DOE_FUTURES_INTERNAL_H
 
+/* Darwin exposes its relative-condition API only in the extended namespace. */
+#if defined(__APPLE__) && defined(__MACH__) && !defined(_DARWIN_C_SOURCE)
+#define _DARWIN_C_SOURCE 1
+#endif
 #include "doe_futures.h"
 #include <pthread.h>
 #include <stdbool.h>
 #include <stdint.h>
 
-#if !defined(__linux__)
-#error "The frozen futures platform is Linux/POSIX pthreads"
+#if defined(DOE_FUTURES_TEST_DARWIN) && !defined(DOE_FUTURES_TESTING)
+#error "A host Darwin boundary control requires DOE_FUTURES_TESTING"
+#endif
+#if (defined(__APPLE__) && defined(__MACH__)) || defined(DOE_FUTURES_TEST_DARWIN)
+#define DF_RELATIVE_CONDITION 1
+#elif defined(__linux__)
+#define DF_RELATIVE_CONDITION 0
+#else
+#error "The futures synchronization owner requires Linux or Darwin pthreads"
+#endif
+#if defined(DOE_FUTURES_TEST_DARWIN)
+/* Test-only declaration; real Darwin gets its declaration from pthread.h. */
+int pthread_cond_timedwait_relative_np(pthread_cond_t *, pthread_mutex_t *,
+                                      const struct timespec *);
 #endif
 
 enum df_state { DF_DEAD, DF_LIVE, DF_CLEANUP };
