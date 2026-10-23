@@ -160,6 +160,7 @@ void native_device_release(void *identity)
     native_loss_bind(device->loss, NULL);
     native_loss_release(device->loss);
     doe_vk_timestamp_normalizer_release(device->timestamp_normalizer);
+    native_indirect_guards_release(device);
     native_backend_close(&device->backend);
     doe_instance *instance = device->instance;
     if (pthread_mutex_destroy(&device->mutex)) abort();
@@ -222,7 +223,8 @@ static native_device *create_device(native_adapter *adapter, const WGPUDeviceDes
     device->resources = (doe_resource_config){
         .allocator = {NULL, NULL, native_allocate, native_deallocate},
         .device = {device, native_device_alive, native_device_retain, native_device_release},
-        .labels = device->labels
+        .labels = device->labels,
+        .max_texture_dimension_2d = device->backend.limits.maxTextureDimension2D
     };
     if (descriptor) device->uncaptured = descriptor->uncapturedErrorCallbackInfo;
     result = doe_error_scope_set_handler(device->errors, uncaptured_error, device, NULL);

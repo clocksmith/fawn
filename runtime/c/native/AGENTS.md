@@ -47,3 +47,8 @@ Unsupported selections report unavailable without fallback. Metal shaders consum
 compiler-owned MSL entry/slot/size metadata; do not parse source or substitute a
 SPIR-V artifact. Distinguish chosen frontend limits from queried device and actual
 per-pipeline limits. Host native-call ledgers are not GPU execution evidence.
+
+Indirect conversion uses backend-owned generated guards and private scratch on the
+existing command owner. Never CPU-read caller arguments or invent a second bounds
+engine. Compile the exact guard source, preserve original argument bytes, and
+retain unknown work; discard failed terminal helper storage before reuse.
