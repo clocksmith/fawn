@@ -92,6 +92,9 @@ static void object_path(MetalEmitter *e, const IrInstruction *ir, const MetalPat
             if (root >= e->module->local_count) metal_error(e, "Metal local root identity is invalid");
             metal_format(e, "l%u", root);
             break;
+        case ROOT_POINTER:
+            metal_error(e, "METAL pointer dereference is not implemented");
+            break;
         case ROOT_VALUE: metal_value(e, root); break;
         case ROOT_WORKGROUP:
             if (root >= e->module->workgroup_count) metal_error(e, "Metal workgroup root identity is invalid");

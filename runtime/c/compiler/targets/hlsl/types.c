@@ -18,6 +18,10 @@ void hlsl_type(HlslEmitter *e, TypeId type) {
     }
     const TypeRecord *t = aggregate(e, type);
     if (t == NULL) return;
+    if (t->kind == TYPE_POINTER) {
+        hlsl_error(e, "HLSL function pointers are not implemented");
+        return;
+    }
     if (t->kind == TYPE_TEXTURE || t->kind == TYPE_SAMPLER) {
         hlsl_handle_type(e, type);
         return;

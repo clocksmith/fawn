@@ -404,7 +404,25 @@ static void test_array_length(const char *path) {
     free(text);
     release(f);
 }
+static void test_pointer_rejection(void) {
+    static const char *const sources[] = {
+        "fn write(p:ptr<function,u32>){*p=7u;}"
+        "@compute @workgroup_size(1) fn main(){var value=0u;write(&value);}",
+        "@compute @workgroup_size(1) fn main(){var value=0u;let p=&value;*p=7u;}"
+    };
+    for (size_t i = 0u; i < sizeof(sources) / sizeof(sources[0]); ++i) {
+        Fixture *f = prepare(sources[i]);
+        char output[16] = "intact";
+        DoeHlslResult result;
+        assert(doe_hlsl_emit(&f->source, f->module, 0u, f->scratch,
+            output, sizeof(output), &result) == DOE_COMPILER_UNSUPPORTED);
+        assert(result.written_bytes == 0u && result.required_bytes == 0u);
+        assert(strcmp(output, "intact") == 0);
+        release(f);
+    }
+}
 int main(int argc, char **argv) {
+    test_pointer_rejection();
     test_matrices(argc > 7 ? argv[7] : NULL);
     test_array_length(argc > 6 ? argv[6] : NULL);
     test_graphics(argc > 5 ? argv[5] : NULL);
