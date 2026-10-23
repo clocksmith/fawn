@@ -12,13 +12,19 @@ enum {
     OP_CONSTANT = 43, OP_FUNCTION = 54,
     OP_FUNCTION_END = 56, OP_VARIABLE = 59, OP_LOAD = 61, OP_STORE = 62,
     OP_ACCESS_CHAIN = 65, OP_ARRAY_LENGTH = 68, OP_DECORATE = 71,
-    OP_MEMBER_DECORATE = 72, OP_COMPOSITE_EXTRACT = 81, OP_IADD = 128, OP_FADD = 129,
+    OP_MEMBER_DECORATE = 72, OP_COMPOSITE_EXTRACT = 81,
+    OP_CONVERT_F_TO_U = 109, OP_CONVERT_F_TO_S = 110, OP_CONVERT_S_TO_F = 111, OP_CONVERT_U_TO_F = 112,
+    OP_BITCAST = 124, OP_SNEGATE = 126, OP_FNEGATE = 127, OP_IADD = 128, OP_FADD = 129,
     OP_ISUB = 130, OP_FSUB = 131, OP_IMUL = 132, OP_FMUL = 133,
+    OP_UDIV = 134, OP_SDIV = 135, OP_FDIV = 136, OP_UMOD = 137, OP_SREM = 138, OP_FREM = 140,
+    OP_IS_NAN = 156, OP_LOGICAL_OR = 166, OP_LOGICAL_AND = 167,
     OP_LOGICAL_EQUAL = 164, OP_LOGICAL_NOT_EQUAL = 165, OP_LOGICAL_NOT = 168, OP_SELECT = 169, OP_IEQUAL = 170, OP_INOT_EQUAL = 171,
-    OP_UGREATER_THAN = 172, OP_UGREATER_EQUAL = 174,
-    OP_ULESS_THAN = 176, OP_ULESS_EQUAL = 178, OP_FORD_EQUAL = 180, OP_FUNORD_NOT_EQUAL = 183,
+    OP_UGREATER_THAN = 172, OP_SGREATER_THAN = 173, OP_UGREATER_EQUAL = 174, OP_SGREATER_EQUAL = 175,
+    OP_ULESS_THAN = 176, OP_SLESS_THAN = 177, OP_ULESS_EQUAL = 178, OP_SLESS_EQUAL = 179, OP_FORD_EQUAL = 180, OP_FUNORD_NOT_EQUAL = 183,
     OP_FORD_LESS_THAN = 184, OP_FORD_GREATER_THAN = 186, OP_FORD_LESS_EQUAL = 188,
-    OP_FORD_GREATER_EQUAL = 190, OP_PHI = 245, OP_LOOP_MERGE = 246, OP_SELECTION_MERGE = 247, OP_LABEL = 248,
+    OP_FORD_GREATER_EQUAL = 190,
+    OP_SHIFT_RIGHT_LOGICAL = 194, OP_SHIFT_RIGHT_ARITHMETIC = 195, OP_SHIFT_LEFT = 196,
+    OP_BIT_OR = 197, OP_BIT_XOR = 198, OP_BIT_AND = 199, OP_NOT = 200, OP_PHI = 245, OP_LOOP_MERGE = 246, OP_SELECTION_MERGE = 247, OP_LABEL = 248,
     OP_BRANCH = 249, OP_BRANCH_CONDITIONAL = 250, OP_RETURN = 253, OP_UNREACHABLE = 255
 };
 enum {
@@ -26,7 +32,9 @@ enum {
     ID_ARRAY_U32, ID_ARRAY_F32, ID_BLOCK_U32, ID_BLOCK_F32,
     ID_PTR_BLOCK_U32, ID_PTR_BLOCK_F32, ID_PTR_ELEMENT_U32, ID_PTR_ELEMENT_F32,
     ID_PTR_INPUT, ID_PTR_INPUT_U32, ID_FN_TYPE, ID_ZERO_U32, ID_ZERO_F32,
-    ID_ENTRY, FIRST_DYNAMIC_ID
+    ID_ENTRY, ID_I32, ID_ZERO_I32, ID_ONE_U32, ID_ONE_I32, ID_ONE_F32,
+    ID_MIN_I32, ID_NEG_ONE_I32, ID_SHIFT_MASK, ID_F32_U32_MAX, ID_F32_I32_MAX, ID_F32_I32_MIN,
+    FIRST_DYNAMIC_ID
 };
 typedef struct {
     Source *source;
@@ -35,7 +43,7 @@ typedef struct {
     uint32_t buffers[DOE_COMPILER_MAX_BINDINGS];
     uint32_t inputs[MAX_ENTRY_PARAMETERS];
     uint32_t *values;
-    uint32_t local_base, local_pointers[3];
+    uint32_t local_base, local_pointers[4];
     bool failed;
     uint32_t uniform_types[DOE_COMPILER_MAX_STRUCTS];
     uint32_t uniform_pointers[DOE_COMPILER_MAX_STRUCTS];
@@ -54,7 +62,7 @@ static uint32_t reserve_ids(Emitter *e, uint32_t count) {
     return first;
 }
 static uint32_t scalar_type(IrType type) {
-    return type == IR_BOOL ? ID_BOOL : type == IR_F32 ? ID_F32 : ID_U32;
+    return type == IR_BOOL ? ID_BOOL : type == IR_F32 ? ID_F32 : type == IR_I32 ? ID_I32 : ID_U32;
 }
 static uint32_t element_pointer(IrType type) {
     return type == IR_F32 ? ID_PTR_ELEMENT_F32 : ID_PTR_ELEMENT_U32;
@@ -150,7 +158,15 @@ static bool module_declarations(Emitter *e, const IrProgram *program) {
         EMIT(OP_DECORATE, e->inputs[i], 11u, builtin_decoration(program->parameters[i].kind));
     EMIT(OP_TYPE_VOID, ID_VOID);
     EMIT(OP_TYPE_BOOL, ID_BOOL);
+    bool signed_type = false, guards = false;
+    for (size_t i = 0; i < program->instruction_count; ++i) {
+        const IrInstruction *ir = &program->instructions[i];
+        signed_type = signed_type || ir->type == IR_I32 || ir->comparison_type == IR_I32;
+        guards = guards || ir->opcode == IR_CONVERT || ir->opcode == IR_DIVIDE || ir->opcode == IR_REMAINDER ||
+            ir->opcode == IR_SHIFT_LEFT || ir->opcode == IR_SHIFT_RIGHT || ir->comparison_type == IR_I32;
+    }
     EMIT(OP_TYPE_INT, ID_U32, 32u, 0u);
+    if (signed_type || guards) { EMIT(OP_TYPE_INT, ID_I32, 32u, 1u); }
     EMIT(OP_TYPE_FLOAT, ID_F32, 32u);
     EMIT(OP_TYPE_VECTOR, ID_VEC3, ID_U32, 3u);
     EMIT(OP_TYPE_RUNTIME_ARRAY, ID_ARRAY_U32, ID_U32);
@@ -176,7 +192,7 @@ static bool module_declarations(Emitter *e, const IrProgram *program) {
     EMIT(OP_TYPE_POINTER, ID_PTR_INPUT, 1u, ID_VEC3); /* Input */
     EMIT(OP_TYPE_POINTER, ID_PTR_INPUT_U32, 1u, ID_U32);
     if (program->local_count != 0u) {
-        for (size_t i = 0u; i < 3u; ++i) {
+        for (size_t i = 0u; i < (signed_type || guards ? 4u : 3u); ++i) {
             e->local_pointers[i] = reserve_ids(e, 1u);
             EMIT(OP_TYPE_POINTER, e->local_pointers[i], 7u, scalar_type((IrType)i));
         }
@@ -184,6 +200,18 @@ static bool module_declarations(Emitter *e, const IrProgram *program) {
     EMIT(OP_TYPE_FUNCTION, ID_FN_TYPE, ID_VOID);
     EMIT(OP_CONSTANT, ID_U32, ID_ZERO_U32, 0u);
     EMIT(OP_CONSTANT, ID_F32, ID_ZERO_F32, 0u);
+    if (signed_type || guards) { EMIT(OP_CONSTANT, ID_I32, ID_ZERO_I32, 0u); }
+    if (guards) {
+        EMIT(OP_CONSTANT, ID_U32, ID_ONE_U32, 1u);
+        EMIT(OP_CONSTANT, ID_I32, ID_ONE_I32, 1u);
+        EMIT(OP_CONSTANT, ID_F32, ID_ONE_F32, UINT32_C(0x3f800000));
+        EMIT(OP_CONSTANT, ID_I32, ID_MIN_I32, UINT32_C(0x80000000));
+        EMIT(OP_CONSTANT, ID_I32, ID_NEG_ONE_I32, UINT32_MAX);
+        EMIT(OP_CONSTANT, ID_U32, ID_SHIFT_MASK, 31u);
+        EMIT(OP_CONSTANT, ID_F32, ID_F32_U32_MAX, UINT32_C(0x4f7fffff));
+        EMIT(OP_CONSTANT, ID_F32, ID_F32_I32_MAX, UINT32_C(0x4effffff));
+        EMIT(OP_CONSTANT, ID_F32, ID_F32_I32_MIN, UINT32_C(0xcf000000));
+    }
     if (program->struct_count != 0u)
         for (uint32_t i = 0; i < DOE_COMPILER_MAX_STRUCT_MEMBERS; ++i)
             EMIT(OP_CONSTANT, ID_U32, e->member_indices[i], i);
@@ -221,13 +249,21 @@ static bool robust_access(Emitter *e, const IrInstruction *ir) {
     const uint32_t pointer = reserve_ids(e, 1u);
     const uint32_t predecessor = e->current_label;
     EMIT(OP_ARRAY_LENGTH, ID_U32, length, e->buffers[ir->binding], 0u);
-    EMIT(OP_ULESS_THAN, ID_BOOL, condition, e->values[ir->left], length);
+    uint32_t index = e->values[ir->left];
+    if (ir->comparison_type == IR_I32) {
+        const uint32_t unsigned_index = reserve_ids(e, 1u), nonnegative = reserve_ids(e, 1u), in_range = reserve_ids(e, 1u);
+        EMIT(OP_BITCAST, ID_U32, unsigned_index, index);
+        EMIT(OP_SGREATER_EQUAL, ID_BOOL, nonnegative, index, ID_ZERO_I32);
+        EMIT(OP_ULESS_THAN, ID_BOOL, in_range, unsigned_index, length);
+        EMIT(OP_LOGICAL_AND, ID_BOOL, condition, nonnegative, in_range);
+        index = unsigned_index;
+    } else { EMIT(OP_ULESS_THAN, ID_BOOL, condition, index, length); }
     EMIT(OP_SELECTION_MERGE, merge, 0u);
     EMIT(OP_BRANCH_CONDITIONAL, condition, body, merge);
     EMIT(OP_LABEL, body);
     /* Even forming the element pointer is dominated by this resource's guard. */
     EMIT(OP_ACCESS_CHAIN, element_pointer(ir->type), pointer,
-         e->buffers[ir->binding], ID_ZERO_U32, e->values[ir->left]);
+         e->buffers[ir->binding], ID_ZERO_U32, index);
     uint32_t loaded = 0u;
     if (ir->opcode == IR_ROBUST_LOAD) {
         loaded = reserve_ids(e, 1u);
@@ -260,12 +296,70 @@ static uint32_t comparison_opcode(Comparison comparison, IrType type) {
     switch (comparison) {
         case COMPARE_EQUAL: return OP_IEQUAL;
         case COMPARE_NOT_EQUAL: return OP_INOT_EQUAL;
-        case COMPARE_LESS: return OP_ULESS_THAN;
-        case COMPARE_LESS_EQUAL: return OP_ULESS_EQUAL;
-        case COMPARE_GREATER: return OP_UGREATER_THAN;
-        case COMPARE_GREATER_EQUAL: return OP_UGREATER_EQUAL;
+        case COMPARE_LESS: return type == IR_I32 ? OP_SLESS_THAN : OP_ULESS_THAN;
+        case COMPARE_LESS_EQUAL: return type == IR_I32 ? OP_SLESS_EQUAL : OP_ULESS_EQUAL;
+        case COMPARE_GREATER: return type == IR_I32 ? OP_SGREATER_THAN : OP_UGREATER_THAN;
+        case COMPARE_GREATER_EQUAL: return type == IR_I32 ? OP_SGREATER_EQUAL : OP_UGREATER_EQUAL;
     }
     return 0u;
+}
+/* At most nine target identities including the result. Invalid integer inputs
+ * select a safe denominator before division, never after an invalid operation. */
+static bool emit_division(Emitter *e, const IrInstruction *ir) {
+    const uint32_t result = e->values[ir->result], left = e->values[ir->left], right = e->values[ir->right];
+    const bool remainder = ir->opcode == IR_REMAINDER;
+    if (ir->type == IR_F32) {
+        EMIT(remainder ? OP_FREM : OP_FDIV, ID_F32, result, left, right);
+        return true;
+    }
+    const bool is_signed = ir->type == IR_I32;
+    const uint32_t type = scalar_type(ir->type), zero = is_signed ? ID_ZERO_I32 : ID_ZERO_U32;
+    uint32_t invalid = reserve_ids(e, 1u);
+    EMIT(OP_IEQUAL, ID_BOOL, invalid, right, zero);
+    if (is_signed) {
+        const uint32_t minimum = reserve_ids(e, 1u), negative_one = reserve_ids(e, 1u);
+        const uint32_t overflow = reserve_ids(e, 1u), combined = reserve_ids(e, 1u);
+        EMIT(OP_IEQUAL, ID_BOOL, minimum, left, ID_MIN_I32);
+        EMIT(OP_IEQUAL, ID_BOOL, negative_one, right, ID_NEG_ONE_I32);
+        EMIT(OP_LOGICAL_AND, ID_BOOL, overflow, minimum, negative_one);
+        EMIT(OP_LOGICAL_OR, ID_BOOL, combined, invalid, overflow);
+        invalid = combined;
+    }
+    const uint32_t safe = reserve_ids(e, 1u), quotient = reserve_ids(e, 1u);
+    EMIT(OP_SELECT, type, safe, invalid, is_signed ? ID_ONE_I32 : ID_ONE_U32, right);
+    EMIT(remainder ? (is_signed ? OP_SREM : OP_UMOD) : (is_signed ? OP_SDIV : OP_UDIV), type, quotient, left, safe);
+    EMIT(OP_SELECT, type, result, invalid, remainder ? zero : left, quotient);
+    return true;
+}
+/* Seven target identities including result. Ordered clamps and explicit NaN
+ * normalization ensure OpConvertFTo[US] receives only in-range finite input. */
+static bool emit_conversion(Emitter *e, const IrInstruction *ir) {
+    const uint32_t result = e->values[ir->result], input = e->values[ir->left];
+    const IrType from = ir->comparison_type, to = ir->type;
+    if (to == IR_BOOL) {
+        EMIT(from == IR_F32 ? OP_FUNORD_NOT_EQUAL : OP_INOT_EQUAL, ID_BOOL, result, input,
+             from == IR_F32 ? ID_ZERO_F32 : from == IR_I32 ? ID_ZERO_I32 : ID_ZERO_U32);
+    } else if (from == IR_BOOL) {
+        EMIT(OP_SELECT, scalar_type(to), result, input,
+             to == IR_F32 ? ID_ONE_F32 : to == IR_I32 ? ID_ONE_I32 : ID_ONE_U32,
+             to == IR_F32 ? ID_ZERO_F32 : to == IR_I32 ? ID_ZERO_I32 : ID_ZERO_U32);
+    } else if (from == IR_F32) {
+        const uint32_t nan = reserve_ids(e, 1u), finite = reserve_ids(e, 1u);
+        const uint32_t low = reserve_ids(e, 1u), lower = reserve_ids(e, 1u);
+        const uint32_t high = reserve_ids(e, 1u), clamped = reserve_ids(e, 1u);
+        const uint32_t minimum = to == IR_I32 ? ID_F32_I32_MIN : ID_ZERO_F32;
+        const uint32_t maximum = to == IR_I32 ? ID_F32_I32_MAX : ID_F32_U32_MAX;
+        EMIT(OP_IS_NAN, ID_BOOL, nan, input);
+        EMIT(OP_SELECT, ID_F32, finite, nan, ID_ZERO_F32, input);
+        EMIT(OP_FORD_LESS_THAN, ID_BOOL, low, finite, minimum);
+        EMIT(OP_SELECT, ID_F32, lower, low, minimum, finite);
+        EMIT(OP_FORD_GREATER_THAN, ID_BOOL, high, lower, maximum);
+        EMIT(OP_SELECT, ID_F32, clamped, high, maximum, lower);
+        EMIT(to == IR_I32 ? OP_CONVERT_F_TO_S : OP_CONVERT_F_TO_U, scalar_type(to), result, clamped);
+    } else if (to == IR_F32) {
+        EMIT(from == IR_I32 ? OP_CONVERT_S_TO_F : OP_CONVERT_U_TO_F, ID_F32, result, input);
+    } else { EMIT(OP_BITCAST, scalar_type(to), result, input); }
+    return true;
 }
 typedef struct EmitLoop EmitLoop;
 struct EmitLoop {
@@ -460,9 +554,41 @@ static bool emit_block(Emitter *e, const IrProgram *program, size_t *cursor,
                      e->values[ir->left], e->values[ir->right]);
                 break;
             }
+            case IR_DIVIDE:
+            case IR_REMAINDER:
+                if (!emit_division(e, ir)) return false;
+                break;
+            case IR_CONVERT:
+                if (!emit_conversion(e, ir)) return false;
+                break;
+            case IR_BITCAST:
+            case IR_NEGATE:
+            case IR_COMPLEMENT:
+                EMIT(ir->opcode == IR_BITCAST ? OP_BITCAST : ir->opcode == IR_COMPLEMENT ? OP_NOT :
+                     ir->type == IR_F32 ? OP_FNEGATE : OP_SNEGATE,
+                     scalar_type(ir->type), e->values[ir->result], e->values[ir->left]);
+                break;
+            case IR_BIT_AND:
+            case IR_BIT_OR:
+            case IR_BIT_XOR: {
+                const uint32_t opcode = ir->type == IR_BOOL ?
+                    (ir->opcode == IR_BIT_AND ? OP_LOGICAL_AND : OP_LOGICAL_OR) :
+                    ir->opcode == IR_BIT_AND ? OP_BIT_AND : ir->opcode == IR_BIT_OR ? OP_BIT_OR : OP_BIT_XOR;
+                EMIT(opcode, scalar_type(ir->type), e->values[ir->result], e->values[ir->left], e->values[ir->right]);
+                break;
+            }
+            case IR_SHIFT_LEFT:
+            case IR_SHIFT_RIGHT: {
+                const uint32_t masked = reserve_ids(e, 1u);
+                EMIT(OP_BIT_AND, ID_U32, masked, e->values[ir->right], ID_SHIFT_MASK);
+                EMIT(ir->opcode == IR_SHIFT_LEFT ? OP_SHIFT_LEFT : ir->type == IR_I32 ?
+                     OP_SHIFT_RIGHT_ARITHMETIC : OP_SHIFT_RIGHT_LOGICAL, scalar_type(ir->type),
+                     e->values[ir->result], e->values[ir->left], masked);
+                break;
+            }
             case IR_MAX: {
                 const uint32_t condition = reserve_ids(e, 1u);
-                EMIT(ir->type == IR_F32 ? OP_FORD_GREATER_THAN : OP_UGREATER_THAN,
+                EMIT(ir->type == IR_F32 ? OP_FORD_GREATER_THAN : ir->type == IR_I32 ? OP_SGREATER_THAN : OP_UGREATER_THAN,
                      ID_BOOL, condition, e->values[ir->left], e->values[ir->right]);
                 EMIT(OP_SELECT, scalar_type(ir->type), e->values[ir->result], condition,
                      e->values[ir->left], e->values[ir->right]);

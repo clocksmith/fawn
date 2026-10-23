@@ -1,0 +1,370 @@
+{
+  "exact_cases": [
+    {
+      "accepted": true,
+      "budget": "expression",
+      "expressions": 0,
+      "name": "zero_empty_bare_attributes",
+      "source": "@compute @workgroup_size(1) fn main(){}",
+      "statements": 0
+    },
+    {
+      "accepted": true,
+      "budget": "expression",
+      "expressions": 0,
+      "name": "legacy_leading_const_exempt",
+      "source": "const K:u32=1u;@compute @workgroup_size(1) fn main(){}",
+      "statements": 0
+    },
+    {
+      "accepted": true,
+      "budget": "expression",
+      "expressions": 1,
+      "name": "legacy_exempt_plus_one",
+      "source": "const K:u32=1u;const J=2;@compute @workgroup_size(1) fn main(){}",
+      "statements": 0
+    },
+    {
+      "accepted": false,
+      "budget": "expression",
+      "expressions": 1,
+      "name": "legacy_exempt_plus_two_exhausts",
+      "source": "const K:u32=1u;const J=2;const H=3;@compute @workgroup_size(1) fn main(){}",
+      "statements": 0
+    },
+    {
+      "accepted": true,
+      "budget": "expression",
+      "expressions": 1,
+      "name": "new_leading_const_charged",
+      "source": "const K=1;@compute @workgroup_size(1) fn main(){}",
+      "statements": 0
+    },
+    {
+      "accepted": false,
+      "budget": "expression",
+      "expressions": 0,
+      "name": "new_leading_const_zero_budget",
+      "source": "const K=1;@compute @workgroup_size(1) fn main(){}",
+      "statements": 0
+    },
+    {
+      "accepted": true,
+      "budget": "expression",
+      "expressions": 3,
+      "name": "typed_complex_const_three_nodes",
+      "source": "const K:u32=1u+2u;@compute @workgroup_size(1) fn main(){}",
+      "statements": 0
+    },
+    {
+      "accepted": false,
+      "budget": "expression",
+      "expressions": 2,
+      "name": "typed_complex_const_two_nodes",
+      "source": "const K:u32=1u+2u;@compute @workgroup_size(1) fn main(){}",
+      "statements": 0
+    },
+    {
+      "accepted": true,
+      "budget": "expression",
+      "expressions": 1,
+      "name": "trailing_const_charged",
+      "source": "@compute @workgroup_size(1) fn main(){}const K:u32=1u;",
+      "statements": 0
+    },
+    {
+      "accepted": false,
+      "budget": "expression",
+      "expressions": 0,
+      "name": "trailing_const_not_exempt",
+      "source": "@compute @workgroup_size(1) fn main(){}const K:u32=1u;",
+      "statements": 0
+    },
+    {
+      "accepted": true,
+      "budget": "expression",
+      "expressions": 1,
+      "name": "attribute_reference_one_node",
+      "source": "const K:u32=1u;@compute @workgroup_size(K) fn main(){}",
+      "statements": 0
+    },
+    {
+      "accepted": false,
+      "budget": "expression",
+      "expressions": 0,
+      "name": "attribute_reference_exhausted",
+      "source": "const K:u32=1u;@compute @workgroup_size(K) fn main(){}",
+      "statements": 0
+    },
+    {
+      "accepted": true,
+      "budget": "expression",
+      "expressions": 2,
+      "name": "const_attribute_total_two",
+      "source": "const K=1u;@compute @workgroup_size(K) fn main(){}",
+      "statements": 0
+    },
+    {
+      "accepted": false,
+      "budget": "expression",
+      "expressions": 1,
+      "name": "const_attribute_total_one",
+      "source": "const K=1u;@compute @workgroup_size(K) fn main(){}",
+      "statements": 0
+    },
+    {
+      "accepted": true,
+      "budget": "expression",
+      "expressions": 3,
+      "name": "attribute_expression_three",
+      "source": "@compute @workgroup_size(1+1) fn main(){}",
+      "statements": 0
+    },
+    {
+      "accepted": false,
+      "budget": "expression",
+      "expressions": 2,
+      "name": "attribute_expression_two",
+      "source": "@compute @workgroup_size(1+1) fn main(){}",
+      "statements": 0
+    },
+    {
+      "accepted": true,
+      "budget": "expression",
+      "expressions": 1,
+      "name": "local_const_statement_node",
+      "source": "@compute @workgroup_size(1) fn main(){const K=1;}",
+      "statements": 1
+    },
+    {
+      "accepted": false,
+      "budget": "statement",
+      "expressions": 1,
+      "name": "local_const_no_statement",
+      "source": "@compute @workgroup_size(1) fn main(){const K=1;}",
+      "statements": 0
+    },
+    {
+      "accepted": false,
+      "budget": "expression",
+      "expressions": 0,
+      "name": "local_const_no_node",
+      "source": "@compute @workgroup_size(1) fn main(){const K=1;}",
+      "statements": 1
+    }
+  ],
+  "independent_accounting": {
+    "nodes": 315,
+    "source_depth_below": 18,
+    "statements": 15
+  },
+  "ir_expected": {
+    "bindings": [
+      {
+        "access": 2,
+        "address_space_alignment_bytes": 4,
+        "binding": 0,
+        "element_stride": 4,
+        "group": 0,
+        "kind": 1,
+        "minimum_binding_size_bytes": 4,
+        "name": "out",
+        "runtime_sized": 1,
+        "scalar": 1,
+        "struct_index": 4294967295,
+        "type_alignment_bytes": 4
+      },
+      {
+        "access": 1,
+        "address_space_alignment_bytes": 4,
+        "binding": 1,
+        "element_stride": 4,
+        "group": 0,
+        "kind": 1,
+        "minimum_binding_size_bytes": 4,
+        "name": "src",
+        "runtime_sized": 1,
+        "scalar": 1,
+        "struct_index": 4294967295,
+        "type_alignment_bytes": 4
+      }
+    ],
+    "builtins": [],
+    "entry": "main",
+    "n": [
+      1,
+      1,
+      1
+    ],
+    "structs": [],
+    "vectors": [
+      {
+        "initial": {
+          "(0, 0)": [
+            99,
+            99,
+            99,
+            99,
+            99,
+            99,
+            99,
+            99,
+            99,
+            99,
+            99,
+            99,
+            99,
+            99,
+            99,
+            99,
+            99
+          ],
+          "(0, 1)": [
+            1,
+            2,
+            3,
+            4
+          ]
+        },
+        "inputs": {
+          "24": [
+            1,
+            1,
+            1
+          ],
+          "26": [
+            0,
+            0,
+            0
+          ],
+          "27": [
+            0,
+            0,
+            0
+          ],
+          "28": [
+            0,
+            0,
+            0
+          ],
+          "29": 0
+        },
+        "synthetic": false,
+        "uniforms": {},
+        "want": {
+          "(0, 0)": [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            99,
+            99
+          ],
+          "(0, 1)": [
+            1,
+            2,
+            3,
+            4
+          ]
+        }
+      },
+      {
+        "initial": {
+          "(0, 0)": [
+            99,
+            99,
+            99,
+            99,
+            99,
+            99,
+            99,
+            99,
+            99,
+            99,
+            99,
+            99,
+            99,
+            99,
+            99,
+            99,
+            99
+          ],
+          "(0, 1)": [
+            1,
+            0,
+            3,
+            4
+          ]
+        },
+        "inputs": {
+          "24": [
+            1,
+            1,
+            1
+          ],
+          "26": [
+            0,
+            0,
+            0
+          ],
+          "27": [
+            0,
+            0,
+            0
+          ],
+          "28": [
+            0,
+            0,
+            0
+          ],
+          "29": 0
+        },
+        "synthetic": false,
+        "uniforms": {},
+        "want": {
+          "(0, 0)": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            99,
+            99
+          ],
+          "(0, 1)": [
+            1,
+            0,
+            3,
+            4
+          ]
+        }
+      }
+    ]
+  },
+  "ir_source": {
+    "bytes_hex": "4067726f7570283029204062696e64696e67283029207661723c73746f726167652c20726561645f77726974653e206f75743a2061727261793c7533323e3b0a4067726f7570283029204062696e64696e67283129207661723c73746f726167652c20726561643e207372633a2061727261793c7533323e3b0a40636f6d707574652040776f726b67726f75705f73697a6528312920666e206d61696e2829207b206f75745b30755d3d753332287372635b30755d3e3075202626207372635b31755d3e3075202626207372635b32755d3e3075202626207372635b33755d3e3075293b6f75745b31755d3d753332287372635b30755d3e3075202626207372635b31755d3e3075202626207372635b32755d3e3075202626207372635b33755d3e3075293b6f75745b32755d3d753332287372635b30755d3e3075202626207372635b31755d3e3075202626207372635b32755d3e3075202626207372635b33755d3e3075293b6f75745b33755d3d753332287372635b30755d3e3075202626207372635b31755d3e3075202626207372635b32755d3e3075202626207372635b33755d3e3075293b6f75745b34755d3d753332287372635b30755d3e3075202626207372635b31755d3e3075202626207372635b32755d3e3075202626207372635b33755d3e3075293b6f75745b35755d3d753332287372635b30755d3e3075202626207372635b31755d3e3075202626207372635b32755d3e3075202626207372635b33755d3e3075293b6f75745b36755d3d753332287372635b30755d3e3075202626207372635b31755d3e3075202626207372635b32755d3e3075202626207372635b33755d3e3075293b6f75745b37755d3d753332287372635b30755d3e3075202626207372635b31755d3e3075202626207372635b32755d3e3075202626207372635b33755d3e3075293b6f75745b38755d3d753332287372635b30755d3e3075202626207372635b31755d3e3075202626207372635b32755d3e3075202626207372635b33755d3e3075293b6f75745b39755d3d753332287372635b30755d3e3075202626207372635b31755d3e3075202626207372635b32755d3e3075202626207372635b33755d3e3075293b6f75745b3130755d3d753332287372635b30755d3e3075202626207372635b31755d3e3075202626207372635b32755d3e3075202626207372635b33755d3e3075293b6f75745b3131755d3d753332287372635b30755d3e3075202626207372635b31755d3e3075202626207372635b32755d3e3075202626207372635b33755d3e3075293b6f75745b3132755d3d753332287372635b30755d3e3075202626207372635b31755d3e3075202626207372635b32755d3e3075202626207372635b33755d3e3075293b6f75745b3133755d3d753332287372635b30755d3e3075202626207372635b31755d3e3075202626207372635b32755d3e3075202626207372635b33755d3e3075293b6f75745b3134755d3d753332287372635b30755d3e3075202626207372635b31755d3e3075202626207372635b32755d3e3075202626207372635b33755d3e3075293b207d"
+  },
+  "ir_source_sha256": "b6d2f1b702553379616be60730457f727bfd7be0ec2927ef969c4f3a43f23760",
+  "layout_bound": "C=E+1;I=1+4E+8S;IDs=256+32I; all products and final header checked"
+}

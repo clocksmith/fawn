@@ -93,6 +93,18 @@ WGSL, other targets, production callers or hardware. Generic module-semicolon
 admission applies across APIs; experimental old exclusions are not permanent
 language-dialect requirements.
 
+The [eighth increment](../../runtime/c/compiler/MILESTONE_8_RESULTS.md) adds
+stage-aware abstract/concrete scalar numerics, module/local constants and their
+dependencies, constant attributes, conversions and guarded target operations.
+All APIs use the same grammar, retaining actual storage/reflection limits rather
+than old experimental rejection dialects. Independent acceptance covers 997
+semantic cases and 839 historical cases, including 67 named new admissions.
+The [updated ledger](corpus-coverage-m8.json) admits 23 paths / 21 unique sources
+through the unchanged consumer, Vulkan 1.1 validation and CPU instruction
+execution; 75 still reject. Fixed workspace/frame are 76,512/76,592 bytes.
+Host floating-environment preservation is qualified on the tested Linux x86-64
+GCC envelope, not universal GPU numerical behavior or production adoption.
+
 The first [CPU runtime owner](../../runtime/c/futures/RESULTS.md) is independently
 accepted as an isolated C library for future IDs and completion queues. It retains
 issuance-boundary selection, callback reentry, actual condition waits and explicit

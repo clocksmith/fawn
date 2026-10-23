@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: MIT
  * Copyright (c) 2026 Doe contributors */
-#include "internal.h"
+#include "numeric.h"
 #include <string.h>
 
 bool source_error(Source *source, DoeCompilerStatus status, size_t offset, const char *message) {
@@ -36,7 +36,7 @@ static bool compile_pipeline(Source *context, CompilerWorkspace *workspace,
         return source_error(context, DOE_COMPILER_INPUT_ERROR, 0u, "NULL source requires zero length");
     }
     if (length > workspace->limits.source_bytes)
-        return source_error(context, DOE_COMPILER_INPUT_ERROR, workspace->limits.extended ? workspace->limits.source_bytes : 0u, "source byte capacity exceeded");
+        return source_error(context, DOE_COMPILER_INPUT_ERROR, workspace->limits.legacy_counts ? 0u : workspace->limits.source_bytes, "source byte capacity exceeded");
     if (words == NULL && capacity != 0u)
         return source_error(context, DOE_COMPILER_INPUT_ERROR, 0u, "NULL output requires zero capacity");
     if (length == 0u)
@@ -51,8 +51,13 @@ static bool compile_pipeline(Source *context, CompilerWorkspace *workspace,
      * not inspect stale token bytes. Syntax owns declaration names and validated source spans for expressions. */
     IrProgram *program = &workspace->program;
     Spirv *output = &workspace->output;
-    if (!validate_syntax(context, &workspace->syntax, program, workspace->scope) ||
-        !emit_spirv(context, program, output, workspace->target_values)) return false;
+    NumericEnvironment environment;
+    if (!numeric_environment_begin(context, &environment)) return false;
+    const bool lowered = validate_syntax(context, &workspace->syntax, program, workspace->scope) &&
+        emit_spirv(context, program, output, workspace->target_values);
+    /* Restore caller traps, flags, rounding and subnormal modes before any
+     * caller-visible word publication, including validation failure paths. */
+    if (!numeric_environment_end(context, &environment) || !lowered) return false;
     if (capacity < output->count)
         return source_error(context, DOE_COMPILER_OUTPUT_TOO_SMALL, length,
                             "caller output word capacity is too small");

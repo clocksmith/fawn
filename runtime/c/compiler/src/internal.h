@@ -11,7 +11,9 @@ typedef enum {
     TOKEN_END = 256, TOKEN_WORD, TOKEN_NUMBER, TOKEN_DECIMAL,
     TOKEN_EQUAL, TOKEN_NOT_EQUAL, TOKEN_LESS_EQUAL, TOKEN_GREATER_EQUAL,
     TOKEN_AND, TOKEN_OR, TOKEN_ADD_ASSIGN, TOKEN_SUB_ASSIGN, TOKEN_MUL_ASSIGN,
-    TOKEN_INCREMENT, TOKEN_DECREMENT
+    TOKEN_INCREMENT, TOKEN_DECREMENT, TOKEN_DIV_ASSIGN, TOKEN_REM_ASSIGN,
+    TOKEN_BIT_AND_ASSIGN, TOKEN_BIT_OR_ASSIGN, TOKEN_BIT_XOR_ASSIGN,
+    TOKEN_SHIFT_LEFT, TOKEN_SHIFT_RIGHT, TOKEN_SHIFT_LEFT_ASSIGN, TOKEN_SHIFT_RIGHT_ASSIGN
 } TokenKind;
 enum { MAX_STATEMENTS = 16, MAX_IF_DEPTH = 4,
        MAX_EXPRESSIONS = 320, MAX_EXPRESSION_DEPTH = 18, MAX_ENTRY_PARAMETERS = 5,
@@ -22,9 +24,9 @@ enum { MAX_STATEMENTS = 16, MAX_IF_DEPTH = 4,
 typedef struct { unsigned kind; uint32_t offset, length; } Token;
 typedef struct {
     size_t source_bytes, tokens, statements, expressions, physical_expressions;
-    size_t instructions, values, locals, words;
+    size_t instructions, values, locals, constants, words;
     uint32_t expression_depth, control_depth, target_bound;
-    bool extended, uniforms;
+    bool legacy_counts, uniforms;
 } CompilerLimits;
 typedef struct {
     const char *source;
@@ -34,7 +36,7 @@ typedef struct {
 } Source;
 typedef struct { Token *tokens; size_t count, capacity; } TokenList;
 typedef struct { char text[64]; size_t offset; } Name;
-typedef struct { uint32_t value; size_t offset; } Integer;
+typedef struct { uint32_t value, expression; size_t offset; } Integer;
 /* Offsets refer to the caller source, never the phase-unioned token list. */
 typedef struct { uint32_t offset, length; } NameSpan;
 typedef struct { NameSpan object, member; } MemberSyntax;
@@ -46,7 +48,11 @@ typedef enum {
     EXPRESSION_LOAD, EXPRESSION_INTEGER, EXPRESSION_DECIMAL, EXPRESSION_NAME,
     EXPRESSION_MEMBER, EXPRESSION_ADD, EXPRESSION_SUBTRACT,
     EXPRESSION_MULTIPLY, EXPRESSION_MAX, EXPRESSION_ABSTRACT_INTEGER,
-    EXPRESSION_BOOLEAN, EXPRESSION_COMPARE, EXPRESSION_NOT, EXPRESSION_AND, EXPRESSION_OR
+    EXPRESSION_BOOLEAN, EXPRESSION_COMPARE, EXPRESSION_NOT, EXPRESSION_AND, EXPRESSION_OR,
+    EXPRESSION_LITERAL, EXPRESSION_NEGATE, EXPRESSION_COMPLEMENT,
+    EXPRESSION_DIVIDE, EXPRESSION_REMAINDER, EXPRESSION_BIT_AND, EXPRESSION_BIT_OR,
+    EXPRESSION_BIT_XOR, EXPRESSION_SHIFT_LEFT, EXPRESSION_SHIFT_RIGHT,
+    EXPRESSION_CONSTRUCT, EXPRESSION_BITCAST
 } ExpressionKind;
 typedef struct {
     uint32_t source_offset;
@@ -55,12 +61,15 @@ typedef struct {
     uint32_t left, right;
     union { Reference reference; uint32_t integer;
             struct { uint32_t numerator, denominator; } decimal;
-            NameSpan name; MemberSyntax member; Comparison comparison; } value;
+            NameSpan name; MemberSyntax member; Comparison comparison;
+            struct { NameSpan callee, type; } call; } value;
     bool grouped;
 } Expression;
-typedef enum { IR_U32, IR_F32, IR_BOOL } IrType;
+typedef enum { IR_U32, IR_F32, IR_BOOL, IR_I32, IR_ABSTRACT_INT, IR_ABSTRACT_FLOAT } IrType;
+typedef struct { uint64_t bits; IrType type; } NumericValue;
 typedef enum { UPDATE_SET, UPDATE_ADD, UPDATE_SUBTRACT, UPDATE_MULTIPLY,
-               UPDATE_INCREMENT, UPDATE_DECREMENT } UpdateKind;
+               UPDATE_INCREMENT, UPDATE_DECREMENT, UPDATE_DIVIDE, UPDATE_REMAINDER,
+               UPDATE_BIT_AND, UPDATE_BIT_OR, UPDATE_BIT_XOR, UPDATE_SHIFT_LEFT, UPDATE_SHIFT_RIGHT } UpdateKind;
 typedef struct {
     Reference target;
     uint32_t expression;
@@ -69,7 +78,7 @@ typedef struct {
 } Assignment;
 typedef struct {
     NameSpan name, annotation;
-    bool annotated, mutable, initialized;
+    bool annotated, mutable, initialized, constant;
     IrType type;
     uint32_t expression;
 } LocalSyntax;
@@ -77,7 +86,7 @@ typedef enum {
     STATEMENT_ASSIGN, STATEMENT_RETURN, STATEMENT_IF, STATEMENT_LET,
     STATEMENT_VAR, STATEMENT_BLOCK, STATEMENT_FOR, STATEMENT_WHILE,
     STATEMENT_LOOP, STATEMENT_CONTINUING, STATEMENT_BREAK, STATEMENT_CONTINUE,
-    STATEMENT_BREAK_IF, STATEMENT_EMPTY
+    STATEMENT_BREAK_IF, STATEMENT_EMPTY, STATEMENT_CONST
 } StatementKind;
 typedef struct {
     StatementKind kind;
@@ -86,16 +95,16 @@ typedef struct {
     uint32_t body_start, else_start, end, initializer, update;
 } Statement;
 typedef struct {
-    Name name;
+    NameSpan name;
     Integer group, binding;
     DoeCompilerScalar scalar;
     DoeCompilerAccess access;
     uint32_t kind;
-    Name type_name;
+    NameSpan type_name;
 } ResourceSyntax;
-typedef struct { Name name, annotation; DoeCompilerScalar scalar; } MemberDeclaration;
+typedef struct { NameSpan name, annotation; DoeCompilerScalar scalar; } MemberDeclaration;
 typedef struct {
-    Name name;
+    NameSpan name;
     MemberDeclaration members[DOE_COMPILER_MAX_STRUCT_MEMBERS];
     size_t member_count;
 } StructSyntax;
@@ -104,6 +113,14 @@ typedef enum {
     INPUT_NUM_WORKGROUPS, INPUT_LOCAL_INDEX
 } InputKind;
 typedef struct { Name name; InputKind kind; bool vector_alias; } EntryParameter;
+/* Dependency traversal state is dead before this record publishes its value. */
+typedef struct {
+    NameSpan name, annotation;
+    uint32_t first_expression, expression;
+    union { uint64_t bits; struct { uint32_t scan, parent; } dependency; } value;
+    IrType type;
+    uint32_t state;
+} ConstantSyntax;
 typedef struct {
     ResourceSyntax resources[DOE_COMPILER_MAX_BINDINGS];
     size_t resource_count;
@@ -113,9 +130,9 @@ typedef struct {
     EntryParameter parameters[MAX_ENTRY_PARAMETERS];
     size_t parameter_count;
     Integer local_size[3];
-    bool has_alias, has_constant;
-    Name constant_name;
-    Integer constant_value;
+    bool has_alias;
+    ConstantSyntax *constants;
+    size_t constant_count, constant_capacity;
     Statement *statements;
     size_t statement_count, statement_capacity;
     Expression *expressions;
@@ -149,7 +166,9 @@ typedef enum {
     IR_COMPARE, IR_ROBUST_STORE, IR_IF, IR_ELSE, IR_END_IF, IR_RETURN,
     IR_NOT, IR_SHORT_BEGIN, IR_SHORT_END, IR_LOCAL_LOAD, IR_LOCAL_STORE,
     IR_LOOP_BEGIN, IR_LOOP_TEST, IR_LOOP_CONTINUING, IR_END_LOOP,
-    IR_BREAK, IR_CONTINUE, IR_BREAK_IF
+    IR_BREAK, IR_CONTINUE, IR_BREAK_IF, IR_NEGATE, IR_COMPLEMENT,
+    IR_DIVIDE, IR_REMAINDER, IR_BIT_AND, IR_BIT_OR, IR_BIT_XOR,
+    IR_SHIFT_LEFT, IR_SHIFT_RIGHT, IR_CONVERT, IR_BITCAST
 } IrOpcode;
 typedef struct { uint32_t id; IrType type; size_t source_offset; } IrValue;
 typedef struct {
@@ -162,7 +181,8 @@ typedef struct {
 } IrInstruction;
 typedef struct { IrType type; bool mutable; } IrLocal;
 typedef struct {
-    Name name; IrValue value; uint32_t local_id, declaration_offset; bool mutable;
+    Name name; IrValue value; NumericValue constant_value;
+    uint32_t local_id, declaration_offset; bool mutable, constant;
 } LocalBinding;
 typedef struct {
     Name entry;
@@ -192,7 +212,8 @@ typedef struct {
 typedef struct {
     CompilerWorkspace job;
     Statement statements[MAX_STATEMENTS];
-    Expression expressions[MAX_EXPRESSIONS + MAX_STATEMENTS];
+    Expression expressions[MAX_EXPRESSIONS + MAX_STATEMENTS + 1u];
+    ConstantSyntax constants[MAX_EXPRESSIONS + 1u];
     union {
         Token tokens[DOE_COMPILER_MAX_TOKENS + 1u];
         struct {
@@ -211,10 +232,8 @@ void compiler_legacy_bind(LegacyWorkspace *workspace, bool uniforms);
 
 bool source_error(Source *source, DoeCompilerStatus status, size_t offset, const char *message);
 bool lex_source(Source *source, TokenList *tokens);
-bool parse_decimal(Source *source, const Token *token, Decimal *decimal);
-bool decimal_binary32(Source *source, const Decimal *decimal, uint32_t *bits);
 bool parse_tokens(Source *source, const TokenList *tokens, Syntax *syntax, bool allow_uniforms);
-bool validate_syntax(Source *source, const Syntax *syntax, IrProgram *program, LocalBinding *scope);
+bool validate_syntax(Source *source, Syntax *syntax, IrProgram *program, LocalBinding *scope);
 bool emit_spirv(Source *source, const IrProgram *program, Spirv *spirv, uint32_t *values);
 void reflect_program(const IrProgram *program, DoeCompilerReflection *reflection);
 void reflect_program_v2(const IrProgram *program, DoeCompilerReflectionV2 *reflection);

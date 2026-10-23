@@ -1,0 +1,15 @@
+{
+  "candidate_inspected": false,
+  "expectations": "All three unchanged CLI modes accept numeric fixture with identical current words and Vulkan1.1 validation; allocation counts binary4/legacy3/v2=5; historical checked fault ordinals preserve acquisition cleanup, existing unowned targets, no-clobber two-output rollback; all reached host save/hold/restore/setround call failures prevent output and sidecar publication. Ordinary and sanitized source builds.",
+  "files": {
+    "cli_fenv_wrap_m8.c": "f6d1b2209fcc91b7f92a338802f4664a3142b7ec0ec49f4f07843f06bc4f8232",
+    "numeric_fixture_m8.wgsl": "67f983c7ad62d6db8eb9b26057138af913c5ebf773185cc1c0250d9ac1331966",
+    "run_cli_numeric_m8.py": "1ada51c425ca967ab83726faa1c9ace2a6f7dc444fed006d522eaeaeafc79cbd"
+  },
+  "retained": {
+    "runtime/c/compiler/independent_tests_m7/cli_job_m7.py": "7aa3bd1c953fa65b0fe9a29ded9706591c6eed34203ad7106093982108496c32",
+    "runtime/c/compiler/independent_tests_m7/cli_m5.py": "f942deabcb18ca650e815b090eafded739f964d8215313bb0b5de93d2bd66791",
+    "runtime/c/compiler/independent_tests_m7/job_cli_io_wrap_m7.c": "111a51196547d63a9939df214b2cffd6326683c40e9fd413c4f47f522d4223b3"
+  },
+  "source_sha256": "67f983c7ad62d6db8eb9b26057138af913c5ebf773185cc1c0250d9ac1331966"
+}
