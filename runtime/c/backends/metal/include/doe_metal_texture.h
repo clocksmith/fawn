@@ -34,11 +34,12 @@ typedef enum doe_mtl_format {
     DOE_MTL_BC4_R_UNORM = 140, DOE_MTL_BC4_R_SNORM = 141,
     DOE_MTL_BC5_RG_UNORM = 142, DOE_MTL_BC5_RG_SNORM = 143,
     DOE_MTL_BC6H_RGB_FLOAT = 150, DOE_MTL_BC6H_RGB_UFLOAT = 151,
-    DOE_MTL_BC7_RGBA = 152, DOE_MTL_BC7_RGBA_SRGB = 153
+    DOE_MTL_BC7_RGBA = 152, DOE_MTL_BC7_RGBA_SRGB = 153,
+    DOE_MTL_DEPTH16_UNORM = 250, DOE_MTL_DEPTH32_FLOAT = 252, DOE_MTL_STENCIL8 = 253
 } doe_mtl_format;
 typedef struct doe_mtl_format_info {
     uint32_t block_width, block_height, block_bytes;
-    bool compressed, srgb;
+    bool compressed, srgb, depth, stencil;
 } doe_mtl_format_info;
 /* Format layout facts, not hardware format-capability qualification. */
 doe_mtl_status doe_mtl_texture_format_info(doe_mtl_format format, doe_mtl_format_info *out);

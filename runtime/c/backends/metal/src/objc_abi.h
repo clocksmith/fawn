@@ -19,6 +19,7 @@ typedef bool doe_objc_bool;
 #else
 typedef signed char doe_objc_bool;
 #endif
+#include "objc_render_types.h"
 typedef doe_objc_bool (*doe_objc_responds_call)(void *, void *, void *);
 typedef void *(*doe_objc_object_call)(void *, void *);
 typedef void (*doe_objc_void_call)(void *, void *);
@@ -54,6 +55,7 @@ typedef void (*doe_objc_copy_image_call)(void *, void *, void *, size_t, size_t,
     doe_mtl_origin, doe_mtl_size, void *, size_t, size_t, doe_mtl_origin);
 
 typedef struct doe_mtl_objc {
+    doe_mtl_objc_graphics graphics;
     void *objc_library;
     void *foundation_library;
     void *metal_library;
@@ -147,6 +149,8 @@ void *doe_mtl_objc_string(doe_mtl_objc *runtime, const char *bytes, size_t lengt
 doe_mtl_status doe_mtl_objc_error(doe_mtl_objc *runtime, void *native_error,
     const char *operation, doe_mtl_error *error);
 void doe_mtl_objc_text(doe_mtl_objc *runtime, void *string, char *out, size_t capacity);
+doe_mtl_status doe_mtl_objc_function(doe_mtl_objc *runtime, void *device,
+    const char *msl, size_t length, const char *entrypoint, void **out, doe_mtl_error *error);
 doe_mtl_status doe_mtl_objc_pipeline(void *userdata, void *device,
     const doe_mtl_pipeline_desc *desc, void **out, size_t *max_threads, doe_mtl_error *error);
 doe_mtl_status doe_mtl_objc_command(void *userdata, void *queue, void **out,
@@ -175,6 +179,16 @@ doe_mtl_status doe_mtl_objc_read_image(void *userdata, void *command, void *text
 doe_mtl_status doe_mtl_objc_copy_image(void *userdata, void *command, void *source,
     const doe_mtl_native_texture_copy *from, void *destination,
     const doe_mtl_native_texture_copy *to, doe_mtl_error *error);
+bool doe_mtl_objc_load_render(doe_mtl_objc *runtime, doe_objc_message message);
+doe_mtl_status doe_mtl_objc_render_pipeline(void *userdata, void *device,
+    const doe_mtl_render_pipeline_desc *desc, void **pipeline, void **depth_stencil, doe_mtl_error *error);
+doe_mtl_status doe_mtl_objc_render(void *userdata, void *command,
+    const doe_mtl_native_render_pass *pass, const doe_mtl_native_render_draw *draws,
+    size_t draw_count, doe_mtl_error *error);
+void doe_mtl_objc_render_encode_draw(doe_mtl_objc *runtime, void *encoder,
+    const doe_mtl_native_render_pass *pass, const doe_mtl_native_render_draw *draw);
+void *doe_mtl_objc_depth_state(doe_mtl_objc *runtime, void *device,
+    const doe_mtl_depth_stencil *desc);
 void doe_mtl_objc_commit(void *userdata, void *command);
 size_t doe_mtl_objc_observe(void *userdata, void *command, bool wait, int64_t *code);
 #endif

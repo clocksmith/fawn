@@ -53,11 +53,15 @@ struct doe_mtl_commands {
     struct doe_mtl_texture_use *textures;
     struct doe_mtl_view_use *views;
     struct doe_mtl_sampler_use *samplers;
+    struct doe_mtl_render_pipeline_use *render_pipelines;
 };
 doe_mtl_status doe_mtl_native_record_result(doe_mtl_commands *commands,
     doe_mtl_status status, const doe_mtl_error *detail, doe_mtl_error *error);
 doe_mtl_status doe_mtl_buffer_preflight(const doe_mtl_commands *commands,
     const doe_mtl_buffer *buffer, bool readable);
+doe_mtl_status doe_mtl_buffer_bindings_preflight(doe_mtl_commands *commands,
+    const doe_mtl_buffer_binding *bindings, size_t count, uint32_t sizes_slot,
+    doe_mtl_native_binding *flat);
 bool doe_mtl_range(size_t allocation, uint64_t offset, uint64_t size);
 doe_mtl_status doe_mtl_recording(doe_mtl_commands *commands, doe_mtl_error *error);
 doe_mtl_status doe_mtl_poison(doe_mtl_commands *commands, doe_mtl_status status,

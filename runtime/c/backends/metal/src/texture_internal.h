@@ -58,5 +58,6 @@ doe_mtl_status doe_mtl_image_bindings_preflight(doe_mtl_commands *commands,
 doe_mtl_status doe_mtl_image_bindings_retain(doe_mtl_commands *commands,
     const doe_mtl_texture_binding *textures, size_t texture_count,
     const doe_mtl_sampler_binding *samplers, size_t sampler_count);
+doe_mtl_status doe_mtl_use_view(doe_mtl_commands *commands, doe_mtl_texture_view *view);
 void doe_mtl_images_retire(doe_mtl_commands *commands, bool completed, bool success);
 #endif

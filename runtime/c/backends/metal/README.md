@@ -8,8 +8,9 @@ No SDKs or dependencies were installed for this implementation.
 
 ## Implemented boundary
 
-`include/doe_metal.h` and `include/doe_metal_texture.h` expose a backend-private ABI for the shared native/resource
-owner to adopt, not a replacement WebGPU API or reference authority:
+`include/doe_metal.h`, `include/doe_metal_texture.h` and
+`include/doe_metal_render.h` expose a backend-private ABI for the shared
+native/resource owner to adopt, not a replacement WebGPU API or reference authority:
 
 - Owned default device, queue, shared/private buffers and compute pipelines.
 - Exact-length UTF-8 MSL compilation, named entrypoint and compiler-resolved
@@ -25,6 +26,12 @@ owner to adopt, not a replacement WebGPU API or reference authority:
   native capability property. Layout facts are not format-feature qualification.
 - Mixed compute uses the same dispatch and lifetime owner with separate sparse
   buffer, texture (128 slots) and sampler (16 slots) index spaces.
+- Real MSL vertex/fragment pipeline creation, explicit per-stage resource slots,
+  vertex layouts, per-target blending/write masks and depth/stencil state.
+- Whole render passes with color/depth/stencil attachments, native load/clear/store,
+  indexed/nonindexed and instanced direct draws, viewport/scissor, cull/winding,
+  blend constants, depth bias and stencil reference. Clear-only passes are real
+  native encodes. Pure Depth16/Depth32 and separate Stencil8 images are admitted.
 - One-shot submit, nonblocking poll, explicitly blocking native wait, terminal
   error and unknown-result handling, and deterministic owned cleanup.
 
@@ -75,6 +82,25 @@ out-of-range layouts fail before native calls. Native driver creation may still
 reject a format/usage combination. Upstream admission remains responsible for
 shader access, filtering, sample type and per-device format feature compatibility.
 
+Render pass validation checks every attachment and draw before native encoding;
+then it leases pipelines, attachment views/parents, buffers, textures and samplers
+under the existing command owner. No open encoder or second completion policy is
+exposed. Every draw binds an explicit vertex/fragment snapshot, including clearing
+absent high slots. Pipeline construction shares the existing exact-span MSL
+function builder; render and compute share buffer/image binding checks.
+
+Attachment LOAD requires initialized contents. CLEAR plus STORE establishes the
+whole selected mip/layer; STORE after LOAD preserves initialization. Either load
+or store DISCARD leaves contents uninitialized, regardless of presumed raster
+coverage. Combined depth/stencil formats and aliased depth/stencil subresources
+are rejected because the bitmap is per subresource, not per aspect. Depth/stencil
+images currently support render/sample use, not storage or staging transfers.
+
+Vertex attribute layouts and direct/instance fetch ranges are checked. Indexed
+buffer byte ranges and alignment are checked, but index-value-dependent vertex
+fetch safety remains an explicit upstream admission obligation. This layer does
+not scan GPU indices, infer shader bounds, or treat call-ledger tests as rendering.
+
 Only native Completed or Error status retires obligations. Pending/unknown
 command release returns BUSY without consuming the handle. Callers must keep the
 command, observe again, and release it after terminal status. A blocking wait
@@ -83,11 +109,11 @@ invented; shared async/future owners may build operational deadlines over poll.
 
 ## Scope still outside this increment
 
-Depth/stencil, multisampling, ETC/ASTC images, graphics, surfaces, timestamps,
+Combined depth/stencil, multisampling/resolve, ETC/ASTC images, surfaces, timestamps,
 external textures, shared-event notifications, async callbacks, library/binary
 caches, indirect-count validation, streamed encoder reuse, prepared-program
 caches and full native/WebGPU consumer wiring remain in their retained owners.
-Indirect dispatch explicitly returns UNSUPPORTED. Compiler/native owners must
+Indirect dispatch explicitly returns UNSUPPORTED; indirect draws are not exposed. Compiler/native owners must
 admit shader features, usage, exact layout and robust access before this API;
 it is not a standalone validation boundary for untrusted MSL. No exception bridge
 is introduced: nil/NSError/status failures are handled, but Objective-C language
@@ -96,7 +122,7 @@ exceptions are not caught by this plain-C adapter.
 ## ABI provenance
 
 `ABI_PROVENANCE.json` binds the retained bridge/native compute/completion sources
-and primary Apple references used for selectors, storage-mode constants,
+and render sources plus primary Apple references used for selectors, storage-mode constants,
 Objective-C function-pointer calls, ownership and threadgroup semantics.
 `src/objc_abi.h` contains only explicit method signatures and MTLSize/NSRange
 records plus the explicit four-byte swizzle record. x86_64 uses the struct-return dispatcher for the three-word device
@@ -106,7 +132,7 @@ structure storage or C++ runtime is involved.
 The host compiles both source branches and tests exact typed call arguments,
 including sparse identities, offsets, size-table bytes, dimensions and native
 error codes. Those checks do not validate against Apple SDK declarations or
-exercise Apple's Objective-C dispatcher. Apple compilation, SDK ABI comparison
+exercise Apple's Objective-C dispatcher or rasterizer. Apple compilation, SDK ABI comparison
 and real device compute/readback remain required before native acceptance.
 
 ## Focused checks
@@ -130,10 +156,12 @@ passes AddressSanitizer and UndefinedBehaviorSanitizer with leak scanning disabl
 Owned native allocations/releases are still checked by the call ledger. Run leak
 scanning in a supported environment before qualification.
 
-`IMAGE_SOURCE_INPUTS.sha256` binds the current sources/tests/build/documents
-exercised by `DEVELOPER_RECEIPT_IMAGES.json`. Verify with
-`sha256sum -c runtime/c/backends/metal/IMAGE_SOURCE_INPUTS.sha256` from the repository
-root. The earlier `SOURCE_INPUTS.sha256`, `DEVELOPER_RECEIPT.json` and
+`RENDER_SOURCE_INPUTS.sha256` binds the current sources/tests/build/documents
+exercised by `DEVELOPER_RECEIPT_RENDER.json`. Verify with
+`sha256sum -c runtime/c/backends/metal/RENDER_SOURCE_INPUTS.sha256` from the repository
+root. Image evidence (`IMAGE_SOURCE_INPUTS.sha256`, `DEVELOPER_RECEIPT_IMAGES.json`,
+`IMAGE_TERMINAL_RECEIPT.txt`) is preserved unchanged and binds commit `f6cd88b1`,
+not the changed graphics-capable sources. The earlier `SOURCE_INPUTS.sha256`, `DEVELOPER_RECEIPT.json` and
 `TERMINAL_RECEIPT.txt` are preserved historical compute-slice evidence, bound to
 commit `33bf0b04`, not to the changed image-capable sources. Receipt consumer: the C migration lead's integration decision,
 not physical support or performance promotion. No source-reduction or speedup

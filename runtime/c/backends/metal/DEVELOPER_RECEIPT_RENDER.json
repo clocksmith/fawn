@@ -1,0 +1,177 @@
+{
+  "schema": "doe-c-metal-render-developer-evidence-v1",
+  "consumer": "C migration lead integration review of experimental graphics pipeline/pass/draw lifetime owner",
+  "created_utc": "2026-10-23T19:32:44.505363+00:00",
+  "base_metal_commit": "f6cd88b1",
+  "repository_head_at_observation": "e2b0293c07b6fb239ce5f98c39cbc7750ec8e493",
+  "qualification": "developer controls only; default off; not accepted as full migration, SDK validation or physical support",
+  "source_manifest": {
+    "path": "runtime/c/backends/metal/RENDER_SOURCE_INPUTS.sha256",
+    "sha256": "328fcd217e95ff7d11b037d0969abd94f8eba234721649e022c7cd62849d24a4",
+    "input_count": 47
+  },
+  "terminal_receipt": {
+    "path": "runtime/c/backends/metal/RENDER_TERMINAL_RECEIPT.txt",
+    "sha256": "6ef6bc0802f1f70e00a1e6ac7c04efc64308e5c96d297ce138f74a22f38fd4f5"
+  },
+  "compiler": "cc (Debian 14.2.0-19) 14.2.0",
+  "checks": [
+    {
+      "command": "make -C runtime/c/backends/metal BUILD=/tmp/doe-c-metal-render-final all check probe abi-compile",
+      "outcome": "pass",
+      "scope": "strict C11; all seven control executables; 8 graphics ownership groups plus typed pipeline/encoder controls; original compute/image controls; unsupported Linux probe; x86_64/arm64 source branch compilation, not cross-compilation"
+    },
+    {
+      "command": "ASAN_OPTIONS=detect_leaks=0 make -C runtime/c/backends/metal BUILD=/tmp/doe-c-metal-render-final sanitize",
+      "outcome": "pass",
+      "scope": "all seven executables under ASan/UBSan; LeakSanitizer disabled due to preserved hosted ptrace failure"
+    },
+    {
+      "command": "cc ... -fanalyzer -c render_pipeline/render_attachments/render_draws/render_commands/objc_pipeline/objc_render_pipeline/objc_depth_state/objc_render_commands/objc_render_draws.c",
+      "outcome": "pass",
+      "scope": "GCC analyzer, nine changed owner translation units"
+    },
+    {
+      "command": "c++ -I. -std=c++17 -Wall -Wextra -Werror -x c++ - -fsyntax-only",
+      "outcome": "pass",
+      "scope": "render/texture/compute private backend headers"
+    },
+    {
+      "command": "git diff --check -- runtime/c/backends/metal",
+      "outcome": "pass"
+    },
+    {
+      "command": "python3 runtime/c/tools/check_source_size.py",
+      "outcome": "pass",
+      "scope": "498 files, zero failures at observation; each C/header <=999 physical lines"
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "/tmp/doe-c-metal-render-final/libdoe_metal.a",
+      "sha256": "f7f9e9f16895ef5c4fbcc4bf6b56aa1b9e093063dfa19f4259de3d29e5dddd4a"
+    },
+    {
+      "path": "/tmp/doe-c-metal-render-final/test_lifetime",
+      "sha256": "37bd997ab50fde219bc4143e6a6ae5731710ffe0b0f812602464ecc61ba5ea3f"
+    },
+    {
+      "path": "/tmp/doe-c-metal-render-final/test_objc_calls",
+      "sha256": "b7f944b577e344e5e1081ab3a5038b97cc60a071cbd24761f274fc73c37fe512"
+    },
+    {
+      "path": "/tmp/doe-c-metal-render-final/test_images",
+      "sha256": "c6a423dc60b48240ee0dcd4775e4ab296ece4f2adc9c11b3e8574acfd78fcfac"
+    },
+    {
+      "path": "/tmp/doe-c-metal-render-final/test_objc_images",
+      "sha256": "760b451cf20c5708a4a809541f4f53f629af8d1dbc6640d97be0c69edaa8795e"
+    },
+    {
+      "path": "/tmp/doe-c-metal-render-final/test_render",
+      "sha256": "c1ed3daf9042eff209880ffe6d89cd84bcf290df98ef628fb608696ab886af99"
+    },
+    {
+      "path": "/tmp/doe-c-metal-render-final/test_objc_render_pipeline",
+      "sha256": "66b37286fae5a167a13e6fce174d324de58abd40264cf1a4562c3b23e814af9d"
+    },
+    {
+      "path": "/tmp/doe-c-metal-render-final/test_objc_render_commands",
+      "sha256": "d4dcefe8d3eae3387100cdc23871ebd7688ecc4131443d47e1fa6dc5a758509f"
+    },
+    {
+      "path": "/tmp/doe-c-metal-render-final/probe",
+      "sha256": "db8fecb2eafe3d34f8f79c96746d01f5c3b4bd45661548326c519190f9cd6722"
+    },
+    {
+      "path": "/tmp/doe-c-metal-render-final/sanitize/test_lifetime",
+      "sha256": "bd81ad3128fcf66582cab59febe46e3ed35e9d0081f2abce24de83fa6f59b940"
+    },
+    {
+      "path": "/tmp/doe-c-metal-render-final/sanitize/test_objc_calls",
+      "sha256": "781d9d51a658e6393f633b1d6677f4d5bdbe0829b19c421364781efbaeecff31"
+    },
+    {
+      "path": "/tmp/doe-c-metal-render-final/sanitize/test_images",
+      "sha256": "a0ace9a217572a45f5219ad5ca88fb01f6bf85645ff97c94e4cfac7cc9a4bcee"
+    },
+    {
+      "path": "/tmp/doe-c-metal-render-final/sanitize/test_objc_images",
+      "sha256": "7fa820d61b5a68f303737aa183598f2dfc9c5f649c9d59a519a285577a1b5f87"
+    },
+    {
+      "path": "/tmp/doe-c-metal-render-final/sanitize/test_render",
+      "sha256": "ae56c4c774897ce6cac4d60b46656b487a06ca6f2b1bc84a1ca05279d732eb61"
+    },
+    {
+      "path": "/tmp/doe-c-metal-render-final/sanitize/test_objc_render_pipeline",
+      "sha256": "40f6bc4018f9466aaa12673a317b1b3160824b96686d63c54818fbc7236ef213"
+    },
+    {
+      "path": "/tmp/doe-c-metal-render-final/sanitize/test_objc_render_commands",
+      "sha256": "3b2765626ac7171b587c7db2488082a2fe86dbe5fd8c4c2548662972a7c31a45"
+    }
+  ],
+  "measurements": {
+    "c_header_files": 41,
+    "c_header_physical_lines": 6361,
+    "production_c_header_files": 31,
+    "production_c_header_physical_lines": 3798,
+    "maximum_file_physical_lines": 429,
+    "complete_retained_delivery_reduction_measured": false,
+    "performance_measured": false
+  },
+  "implemented": [
+    "Native exact-span MSL vertex/fragment functions and real render pipeline state; shared function construction with compute",
+    "Native vertex descriptors, per-target formats/write masks/blending and depth/stencil state",
+    "Whole-pass preflight, retained attachment views/parents and pipeline/draw resource leases in existing completion owner",
+    "Direct/indexed/instanced native draws; per-stage sparse buffer/texture/sampler snapshots with absent-slot clearing",
+    "Viewport/scissor, cull/winding, blend constants, depth bias and stencil reference",
+    "Pure Depth16/Depth32 and separate Stencil8; speculative clear/load/store initialization and combined-aspect alias rejection"
+  ],
+  "not_run": [
+    "Apple compiler/SDK ABI validation",
+    "Apple Objective-C runtime or GPU execution",
+    "Physical shader/raster/image readback",
+    "LeakSanitizer under a supported runtime",
+    "Full retained-consumer/native integration qualification"
+  ],
+  "remaining_surfaces": [
+    "Combined depth/stencil and aspect-qualified initialization; multisample/resolve; ETC/ASTC",
+    "Surfaces, timestamps, external images and shared events",
+    "Indirect draw/dispatch validation, caches and streaming reuse",
+    "Full native/frontend wiring and upstream index-value-dependent vertex fetch admission"
+  ],
+  "historical_evidence": [
+    {
+      "commit": "33bf0b04",
+      "files": [
+        "SOURCE_INPUTS.sha256",
+        "DEVELOPER_RECEIPT.json",
+        "TERMINAL_RECEIPT.txt"
+      ],
+      "unchanged": true,
+      "note": "Historical seals refer to committed inputs, not current graphics-capable bytes."
+    },
+    {
+      "commit": "f6cd88b1",
+      "files": [
+        "IMAGE_SOURCE_INPUTS.sha256",
+        "DEVELOPER_RECEIPT_IMAGES.json",
+        "IMAGE_TERMINAL_RECEIPT.txt"
+      ],
+      "unchanged": true,
+      "note": "Historical seals refer to committed inputs, not current graphics-capable bytes."
+    }
+  ],
+  "first_graphics_failure": {
+    "scope": "test initializer strict warning before runtime controls",
+    "retained_as": "observation summary in terminal receipt; raw scratch log overwritten; no failed-attempt input seal"
+  },
+  "boundary_effects": [
+    "Only runtime/c/backends/metal edited",
+    "No provider/default change or new public ownership policy",
+    "No SDK/tool installation, physical test or source deletion",
+    "No shader/raster simulation, fake device or synthesized pixel results"
+  ]
+}

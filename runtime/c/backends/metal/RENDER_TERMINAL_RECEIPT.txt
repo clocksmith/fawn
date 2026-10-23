@@ -1,0 +1,37 @@
+Metal graphics lane: hosted Linux GCC developer controls only, 2026-10-23 UTC.
+Not Apple SDK, Objective-C dispatcher execution, shader/raster output or physical qualification.
+Historical first LeakSanitizer failure remains unchanged in TERMINAL_RECEIPT.txt.
+
+First graphics failure, observed 19:22:41 UTC (observation summary, not raw log):
+Strict compilation rejected nested clear-color {0} in test_objc_render_commands.c
+lines171-172 with -Wmissing-field-initializers. Replaced by explicit four zeros.
+No graphics runtime test executed in that failed attempt; failed-attempt input
+seal was not captured and its scratch log was overwritten. This records the limit.
+
+$ make -C runtime/c/backends/metal BUILD=/tmp/doe-c-metal-render-final all check probe abi-compile
+Metal typed render encoder controls: attachments, full per-stage state, indexed/instanced args and failure cleanup passed; no SDK/GPU
+Metal typed render pipeline controls: exact stage/descriptor/depth/stencil fields and eight failure paths passed; no SDK/GPU
+Metal render ownership controls: 8 groups passed; no shader/raster/GPU execution
+Metal developer controls: 10 scenario groups passed; mocked calls, no GPU execution
+Metal typed-call controls: pipeline cleanup, exact dispatch/copy/fill and completion passed; no SDK/GPU
+Metal image ownership controls: 9 groups passed; mocked native calls, no pixel/GPU execution
+Metal typed image controls: descriptors, views, samplers, 2D/3D transfers and mixed dispatch passed; no SDK/GPU
+Metal probe: unsupported (Metal requires 64-bit macOS); no device or execution claimed
+exit=0
+
+$ ASAN_OPTIONS=detect_leaks=0 make -C runtime/c/backends/metal BUILD=/tmp/doe-c-metal-render-final sanitize
+Metal typed render encoder controls: attachments, full per-stage state, indexed/instanced args and failure cleanup passed; no SDK/GPU
+Metal typed render pipeline controls: exact stage/descriptor/depth/stencil fields and eight failure paths passed; no SDK/GPU
+Metal render ownership controls: 8 groups passed; no shader/raster/GPU execution
+Metal developer controls: 10 scenario groups passed; mocked calls, no GPU execution
+Metal typed-call controls: pipeline cleanup, exact dispatch/copy/fill and completion passed; no SDK/GPU
+Metal image ownership controls: 9 groups passed; mocked native calls, no pixel/GPU execution
+Metal typed image controls: descriptors, views, samplers, 2D/3D transfers and mixed dispatch passed; no SDK/GPU
+exit=0
+
+GCC -fanalyzer strict compilation: render_pipeline, render_attachments, render_draws,
+render_commands, objc_pipeline, objc_render_pipeline, objc_depth_state,
+objc_render_commands, objc_render_draws: exit=0
+C++17 strict doe_metal_render.h consumption (includes compute/image ABI): exit=0
+git diff --check -- runtime/c/backends/metal: exit=0
+python3 runtime/c/tools/check_source_size.py: 498 files, 0 failures; limit999 at observation.
