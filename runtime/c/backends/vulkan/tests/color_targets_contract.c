@@ -7,7 +7,9 @@
 #include <assert.h>
 #include <stdio.h>
 
+/* Copied out of the callee's frame: its pointers do not outlive the call. */
 static VkRenderPassCreateInfo pass_info;
+static uint32_t pass_color_count;
 static VkAttachmentDescription pass_attachments[17];
 static VkAttachmentReference color_refs[8], resolve_refs[8];
 static bool resolve_present;
@@ -40,6 +42,7 @@ static VkResult create_pass(VkDevice device, const VkRenderPassCreateInfo *info,
     const VkAllocationCallbacks *allocator, VkRenderPass *out) {
     (void)device; (void)allocator;
     pass_info = *info;
+    pass_color_count = info->pSubpasses[0].colorAttachmentCount;
     memcpy(pass_attachments, info->pAttachments, info->attachmentCount * sizeof(*pass_attachments));
     const VkSubpassDescription *subpass = info->pSubpasses;
     memcpy(color_refs, subpass->pColorAttachments, subpass->colorAttachmentCount * sizeof(*color_refs));
@@ -113,7 +116,7 @@ static void pipeline_packets(void) {
     assert(pipeline->color_count == 3 && pipeline->color_formats[1] == 0 &&
         pipeline->color_formats[2] == DOE_VK_FORMAT_R32_UINT);
     /* Pipeline-compatible pass: two used attachments, slot 1 unused, no resolve. */
-    assert(pass_info.attachmentCount == 2 && pass_info.pSubpasses[0].colorAttachmentCount == 3 && !resolve_present);
+    assert(pass_info.attachmentCount == 2 && pass_color_count == 3 && !resolve_present);
     assert(color_refs[0].attachment == 0 && color_refs[1].attachment == VK_ATTACHMENT_UNUSED &&
         color_refs[2].attachment == 1 && pass_attachments[1].format == DOE_VK_FORMAT_R32_UINT);
     assert(blend_count == 3 && blend_states[0].blendEnable && blend_states[0].colorWriteMask == 15 &&
