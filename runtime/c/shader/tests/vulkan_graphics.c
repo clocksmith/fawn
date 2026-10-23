@@ -27,14 +27,22 @@ static void require(doe_vk_status status, const char *operation)
 }
 int main(int argc, char **argv)
 {
-    if (argc > 2 || (argc == 2 && strcmp(argv[1], "--allow-software"))) return 2;
-    const char source[] =
+    bool software = false, demote = false;
+    for (int i = 1; i < argc; ++i) {
+        if (!strcmp(argv[i], "--allow-software")) software = true;
+        else if (!strcmp(argv[i], "--demote")) demote = true;
+        else return 2;
+    }
+    char source[1024];
+    const int source_bytes = snprintf(source, sizeof(source),
         "struct Output{@builtin(position) position:vec4f,"
         "@location(0) @interpolate(flat) tag:u32}"
         "@vertex fn vertex(@location(0) point:vec2f)->Output{"
         "return Output(vec4f(point,0.0,1.0),7u);}"
         "@fragment fn fragment(input:Output)->@location(0) vec4f{"
-        "if(input.tag==7u){return vec4f(1.0,0.0,1.0,1.0);}return vec4f(0.0);}";
+        "%sif(input.tag==7u){return vec4f(1.0,0.0,1.0,1.0);}return vec4f(0.0);}",
+        demote ? "if(input.position.x>=4.0){discard;}" : "");
+    if (source_bytes < 0 || (size_t)source_bytes >= sizeof(source)) return 2;
     const char identity[] = "developer-source-graphics-integration";
     const doe_shader_options shader_options = {
         .allocator = {NULL, allocate, deallocate},
@@ -51,7 +59,7 @@ int main(int argc, char **argv)
     };
     doe_shader *shader = NULL;
     doe_shader_error compile_error;
-    if (doe_shader_create(&shader_options, source, sizeof(source)-1, &shader, &compile_error) != DOE_SHADER_OK) {
+    if (doe_shader_create(&shader_options, source, (size_t)source_bytes, &shader, &compile_error) != DOE_SHADER_OK) {
         fprintf(stderr, "WGSL compile: %s\n", compile_error.diagnostic.message);
         return 1;
     }
@@ -59,7 +67,8 @@ int main(int argc, char **argv)
     if (doe_shader_borrow(shader, &compiled) != DOE_SHADER_OK || compiled.counts.entries != 2 ||
         compiled.interface_count != 6 || compiled.entries[0].stage != DOE_COMPILER_STAGE_VERTEX ||
         compiled.entries[1].stage != DOE_COMPILER_STAGE_FRAGMENT) return 1;
-    const doe_vk_options options = {.allow_cpu_adapter=argc == 2, .require_graphics_queue=true};
+    const doe_vk_options options = {.allow_cpu_adapter=software, .require_graphics_queue=true,
+        .enable_shader_demote_if_supported=demote};
     doe_vk_context *context = NULL;
     doe_vk_error error;
     const doe_vk_status status = doe_vk_context_create(&options, &context, &error);
@@ -71,6 +80,12 @@ int main(int argc, char **argv)
     }
     doe_vk_caps caps;
     require(doe_vk_context_caps(context, &caps), "caps");
+    if (demote && !caps.shader_demote_to_helper_invocation) {
+        puts("SKIP demote draw: requested optional feature unavailable");
+        doe_shader_release(shader);
+        doe_vk_context_release(context);
+        return 77;
+    }
     printf("C graphics integration adapter: %s software=%u\n", caps.device_name, caps.software_adapter);
     const float positions[6][2] = {{-1,0},{1,0},{-1,1},{-1,1},{1,0},{1,1}};
     doe_vk_buffer *vertices = NULL, *readback = NULL;
@@ -120,7 +135,7 @@ int main(int argc, char **argv)
     uint8_t pixels[8][8][4];
     require(doe_vk_buffer_read(readback,0,pixels,sizeof(pixels)), "pixels");
     for (unsigned y=0; y<8; ++y) for (unsigned x=0; x<8; ++x) {
-        const uint8_t expected[4] = {y<4 ? 255 : 0,0,255,255};
+        const uint8_t expected[4] = {y<4 && (!demote || x<4) ? 255 : 0,0,255,255};
         if (memcmp(pixels[y][x],expected,4)) {
             fprintf(stderr,"orientation/color mismatch %u,%u: %u,%u,%u,%u\n",x,y,
                 pixels[y][x][0],pixels[y][x][1],pixels[y][x][2],pixels[y][x][3]);
@@ -130,6 +145,7 @@ int main(int argc, char **argv)
     require(doe_vk_commands_release(commands), "retire");
     doe_vk_buffer_release(readback);
     doe_vk_context_release(context);
+    if (demote) puts("PASS actual C discard draw: explicit enabled capability, asymmetric pixel suppression; derivative/helper execution parity not claimed");
     puts("PASS C WGSL graphics: asymmetric top-half pixels, flat stage IO, exact256-byte oracle and early caller release");
     return 0;
 }
