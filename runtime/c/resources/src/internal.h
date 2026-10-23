@@ -130,6 +130,7 @@ struct doe_resource_render_pass {
     doe_resource_render_record *last_record;
     resource_usage_scope scope;
     uint64_t draw_count;
+    uint64_t occlusion_written[DOE_RESOURCE_MAX_QUERIES / 64];
     doe_resource_pass_timestamps timestamps;
     bool ended;
 };

@@ -121,6 +121,11 @@ doe_resource_status doe_resource_render_pipeline_create(const doe_resource_confi
 void doe_resource_render_pipeline_retain(doe_resource_render_pipeline *pipeline);
 void doe_resource_render_pipeline_release(doe_resource_render_pipeline *pipeline);
 void *doe_resource_render_pipeline_native(const doe_resource_render_pipeline *pipeline);
+/* Borrowed identity/layout/description remain valid while the object is held. */
+void *doe_resource_render_pipeline_device(const doe_resource_render_pipeline *pipeline);
+doe_resource_pipeline_layout *doe_resource_render_pipeline_get_layout(const doe_resource_render_pipeline *pipeline);
+const doe_resource_render_pipeline_desc *doe_resource_render_pipeline_description(const doe_resource_render_pipeline *pipeline);
+void *doe_resource_render_pass_device(const doe_resource_render_pass *pass);
 doe_resource_status doe_resource_encoder_begin_render(doe_resource_encoder *encoder,
     const doe_resource_render_targets *targets, doe_resource_render_pass **out);
 doe_resource_status doe_resource_encoder_begin_render_with_timestamps(doe_resource_encoder *encoder,
@@ -133,6 +138,7 @@ doe_resource_status doe_resource_render_pass_set_pipeline(doe_resource_render_pa
     doe_resource_render_pipeline *pipeline);
 doe_resource_status doe_resource_render_pass_set_group(doe_resource_render_pass *pass,
     uint32_t index, const doe_resource_dispatch_group *group);
+/* NULL unbinds only with offset0 and size0/UINT64_MAX; historical usage remains. */
 doe_resource_status doe_resource_render_pass_set_vertex(doe_resource_render_pass *pass,
     uint32_t slot, doe_resource_buffer *buffer, uint64_t offset, uint64_t size);
 doe_resource_status doe_resource_render_pass_set_index(doe_resource_render_pass *pass,
@@ -163,6 +169,9 @@ typedef struct doe_resource_bundle_encoder doe_resource_bundle_encoder;
 typedef struct doe_resource_render_bundle doe_resource_render_bundle;
 doe_resource_status doe_resource_bundle_encoder_create(const doe_resource_config *config,
     const doe_resource_render_bundle_desc *desc, doe_resource_bundle_encoder **out);
+/* Borrowed getters, NULL for a NULL handle. */
+void *doe_resource_bundle_encoder_device(const doe_resource_bundle_encoder *encoder);
+const doe_resource_render_bundle_desc *doe_resource_bundle_encoder_description(const doe_resource_bundle_encoder *encoder);
 void doe_resource_bundle_encoder_retain(doe_resource_bundle_encoder *encoder);
 void doe_resource_bundle_encoder_release(doe_resource_bundle_encoder *encoder);
 doe_resource_status doe_resource_bundle_encoder_set_pipeline(doe_resource_bundle_encoder *encoder,
@@ -180,6 +189,8 @@ doe_resource_status doe_resource_bundle_encoder_draw_indirect(doe_resource_bundl
     doe_resource_buffer *arguments, uint64_t offset, bool indexed);
 doe_resource_status doe_resource_bundle_encoder_finish(doe_resource_bundle_encoder *encoder,
     doe_resource_render_bundle **out);
+void *doe_resource_render_bundle_device(const doe_resource_render_bundle *bundle);
+const doe_resource_render_bundle_desc *doe_resource_render_bundle_description(const doe_resource_render_bundle *bundle);
 void doe_resource_render_bundle_retain(doe_resource_render_bundle *bundle);
 void doe_resource_render_bundle_release(doe_resource_render_bundle *bundle);
 doe_resource_status doe_resource_render_pass_execute_bundles(doe_resource_render_pass *pass,

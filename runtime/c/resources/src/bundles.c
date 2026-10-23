@@ -269,3 +269,20 @@ doe_resource_status doe_resource_render_pass_execute_bundles(doe_resource_render
     resource_render_clear_bindings(&pass->state);
     return DOE_RESOURCE_OK;
 }
+
+void *doe_resource_bundle_encoder_device(const doe_resource_bundle_encoder *encoder)
+{
+    return encoder ? encoder->base.config.device.identity : NULL;
+}
+const doe_resource_render_bundle_desc *doe_resource_bundle_encoder_description(const doe_resource_bundle_encoder *encoder)
+{
+    return encoder ? &encoder->desc : NULL;
+}
+void *doe_resource_render_bundle_device(const doe_resource_render_bundle *bundle)
+{
+    return bundle ? bundle->base.config.device.identity : NULL;
+}
+const doe_resource_render_bundle_desc *doe_resource_render_bundle_description(const doe_resource_render_bundle *bundle)
+{
+    return bundle ? &bundle->desc : NULL;
+}

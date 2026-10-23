@@ -98,6 +98,12 @@ unbind and bundle state reset cannot remove historical uses. The finished scope
 moves to the final pass record and remains alive through pending submission.
 Destroyed, mapped and expired unused resources are checked before native submit.
 No second native recorder, resource registry or completion engine is introduced.
+Nullable vertex bindings clear only logical state after offset/size validation
+against a zero-sized buffer; historical uses remain. Render/pipeline/bundle device,
+layout and descriptor getters borrow existing objects without extra leases.
+Occlusion indices are single-write within each pass, including empty query scopes;
+a later pass may reuse them. A bounded per-pass bitmap enforces this before
+command allocation, without introducing native query availability state.
 
 Query descriptors use one allocation-free preflight for named type and count
 0..4096, following current [WebGPU query creation](https://gpuweb.github.io/gpuweb/#dom-gpudevice-createqueryset)
@@ -121,7 +127,7 @@ responsibilities. Unsupported consumer command kinds must reject before submit.
 ## Focused checks and evidence
 
 `make -C runtime/c/resources check` builds GCC C11/Werror into `/tmp`: 13 base and
-8 extended, 6 bundle, 6 binding-feature, 4 dispatch-usage, 7 render-usage and 1 query-admission host suites cover transactional failure/untouched outputs, first error,
+8 extended, 6 bundle, 6 binding-feature, 4 dispatch-usage, 9 render-usage and 1 query-admission host suites cover transactional failure/untouched outputs, first error,
 label cleanup, atomic references, stale/read-only maps, copies/aliases, dynamic
 snapshots, pass abandonment/unbinding, shader/query/external/render leases and
 unresolved submission lifetime. Host native tokens test finalization, not GPU work.
@@ -183,5 +189,8 @@ real software bundle/render and transfer consumers, including backend and shader
 empty-bundle read-only correction; it does not claim nanosecond normalization.
 `DEVELOPER_RECEIPT_USAGE.json` binds historical dispatch-only scope admission.
 `DEVELOPER_RECEIPT_SCOPES.json` binds the subsequent shared arithmetic, empty-layout,
-whole-render-scope and query-descriptor checks. `DEVELOPER_RECEIPT.json` preserves the earlier smaller historical check.
+whole-render-scope and query-descriptor checks.
+`DEVELOPER_RECEIPT_RENDER_STATE.json` binds later borrowed graphics accessors,
+nullable vertex unbind and pass-local occlusion admission host checks.
+`DEVELOPER_RECEIPT.json` preserves the earlier smaller historical check.
 Run the common source-size check; every owned C source/header is below 999 lines.

@@ -380,6 +380,128 @@ static void test_indirect_history(void)
     empty(&f);
 }
 
+static void test_nullable_vertex_and_accessors(void)
+{
+    assert(!doe_resource_render_pipeline_device(NULL) && !doe_resource_render_pipeline_get_layout(NULL));
+    assert(!doe_resource_render_pipeline_description(NULL) && !doe_resource_render_pass_device(NULL));
+    assert(!doe_resource_bundle_encoder_device(NULL) && !doe_resource_bundle_encoder_description(NULL));
+    assert(!doe_resource_render_bundle_device(NULL) && !doe_resource_render_bundle_description(NULL));
+    for (unsigned scenario = 0; scenario < 6; scenario++) {
+        fixture f = fresh();
+        doe_resource_config c = config(&f);
+        native_token vertex_token = {0}, pipeline_token = {0}, image_token = {0}, view_token = {0};
+        doe_resource_buffer *vertices = buffer(&f, &vertex_token, 64, WGPUBufferUsage_Vertex);
+        doe_resource_pipeline_layout *layout;
+        assert(doe_resource_pipeline_layout_create(&c, NULL, 0, 0, &layout) == DOE_RESOURCE_OK);
+        doe_resource_render_pipeline_desc desc = {.color_format = WGPUTextureFormat_RGBA8Unorm, .samples = 1};
+        doe_resource_render_pipeline *pipeline;
+        assert(doe_resource_render_pipeline_create(&c, layout, &desc,
+            native(&f, &pipeline_token), &pipeline) == DOE_RESOURCE_OK);
+        unsigned leases = f.device_references;
+        assert(doe_resource_render_pipeline_device(pipeline) == &f);
+        assert(doe_resource_render_pipeline_get_layout(pipeline) == layout);
+        assert(doe_resource_render_pipeline_description(pipeline)->color_format == WGPUTextureFormat_RGBA8Unorm);
+        assert(f.device_references == leases); /* Getters borrow, never add leases. */
+        doe_resource_bundle_encoder *builder = bundle_encoder(&f);
+        assert(doe_resource_bundle_encoder_device(builder) == &f);
+        assert(doe_resource_bundle_encoder_description(builder)->samples == 1);
+        assert(doe_resource_bundle_encoder_set_pipeline(builder, pipeline) == DOE_RESOURCE_OK);
+        assert(doe_resource_bundle_encoder_set_vertex(builder, 7, vertices, 0, 64) == DOE_RESOURCE_OK);
+        uint64_t offset = scenario == 2 ? 1 : scenario == 3 ? 4 : 0;
+        uint64_t size = scenario == 1 ? UINT64_MAX : scenario == 4 ? 4 : 0;
+        uint32_t slot = scenario == 5 ? DOE_RESOURCE_MAX_VERTEX_BUFFERS : 7;
+        doe_resource_status expected = scenario < 2 ? DOE_RESOURCE_OK :
+            scenario == 2 ? DOE_RESOURCE_ALIGNMENT : DOE_RESOURCE_RANGE;
+        assert(doe_resource_bundle_encoder_set_vertex(builder, slot, NULL, offset, size) == expected);
+        if (expected == DOE_RESOURCE_OK) {
+            assert(doe_resource_bundle_encoder_draw(builder, false, 3, 1, 0, 0, 0) == DOE_RESOURCE_OK);
+            doe_resource_render_bundle *bundle;
+            assert(doe_resource_bundle_encoder_finish(builder, &bundle) == DOE_RESOURCE_OK);
+            assert(doe_resource_render_bundle_device(bundle) == &f);
+            assert(doe_resource_render_bundle_description(bundle)->color_format == WGPUTextureFormat_RGBA8Unorm);
+            doe_resource_bundle_encoder_release(builder);
+            doe_resource_buffer_release(vertices);
+            assert(!vertex_token.releases);
+            doe_resource_view *view = make_view(&f, &image_token, &view_token, WGPUTextureFormat_RGBA8Unorm);
+            doe_resource_encoder *encoder;
+            doe_resource_render_pass *pass = begin(&f, view, &encoder);
+            assert(doe_resource_render_pass_device(pass) == &f);
+            assert(doe_resource_render_pass_execute_bundles(pass, &bundle, 1) == DOE_RESOURCE_OK);
+            doe_resource_render_bundle_release(bundle);
+            doe_resource_commands *commands = finish(encoder, pass);
+            size_t count;
+            const doe_resource_command *records = doe_resource_commands_borrow(commands, &count);
+            assert(count == 3);
+            assert(!doe_resource_render_record_borrow(records[1].value.render)->vertices[7].buffer);
+            assert(doe_resource_commands_begin_submit(commands) == DOE_RESOURCE_OK);
+            doe_resource_commands_release(commands);
+            assert(!vertex_token.releases);
+            assert(doe_resource_commands_settle(commands, DOE_RESOURCE_OK) == DOE_RESOURCE_OK);
+            assert(vertex_token.releases == 1);
+            doe_resource_view_release(view);
+        } else {
+            doe_resource_render_bundle *sentinel = (void *)(uintptr_t)1;
+            assert(doe_resource_bundle_encoder_finish(builder, &sentinel) == expected);
+            assert(sentinel == (void *)(uintptr_t)1);
+            doe_resource_bundle_encoder_release(builder);
+            doe_resource_buffer_release(vertices);
+        }
+        doe_resource_render_pipeline_release(pipeline);
+        doe_resource_pipeline_layout_release(layout);
+        empty(&f);
+    }
+}
+
+static void test_occlusion_pass_identity(void)
+{
+    for (unsigned scenario = 0; scenario < 4; scenario++) {
+        fixture f = fresh();
+        doe_resource_config c = config(&f);
+        native_token image_token = {0}, view_token = {0}, query_token = {0};
+        doe_resource_view *view = make_view(&f, &image_token, &view_token, WGPUTextureFormat_RGBA8Unorm);
+        doe_resource_query_set *queries;
+        assert(doe_resource_query_set_create(&c, WGPUQueryType_Occlusion, DOE_RESOURCE_MAX_QUERIES,
+            native(&f, &query_token), &queries) == DOE_RESOURCE_OK);
+        doe_resource_render_targets targets = {.color = view, .color_load = WGPULoadOp_Clear,
+            .color_store = WGPUStoreOp_Store, .occlusion_queries = queries};
+        doe_resource_encoder *encoder;
+        doe_resource_render_pass *pass;
+        assert(doe_resource_encoder_create(&c, &encoder) == DOE_RESOURCE_OK);
+        assert(doe_resource_encoder_begin_render(encoder, &targets, &pass) == DOE_RESOURCE_OK);
+        assert(doe_resource_render_pass_begin_occlusion(pass, DOE_RESOURCE_MAX_QUERIES - 1) == DOE_RESOURCE_OK);
+        if (scenario == 2) {
+            assert(doe_resource_render_pass_begin_occlusion(pass, 0) == DOE_RESOURCE_STATE);
+        } else if (scenario == 3) {
+            assert(doe_resource_render_pass_end(pass) == DOE_RESOURCE_STATE);
+        } else {
+            assert(doe_resource_render_pass_end_occlusion(pass) == DOE_RESOURCE_OK);
+            if (!scenario) {
+                size_t allocations = f.allocations;
+                assert(doe_resource_render_pass_begin_occlusion(pass, DOE_RESOURCE_MAX_QUERIES - 1) == DOE_RESOURCE_STATE);
+                assert(f.allocations == allocations);
+            } else {
+                assert(doe_resource_render_pass_begin_occlusion(pass, 64) == DOE_RESOURCE_OK);
+                assert(doe_resource_render_pass_end_occlusion(pass) == DOE_RESOURCE_OK);
+                assert(doe_resource_render_pass_begin_occlusion(pass, 0) == DOE_RESOURCE_OK);
+                assert(doe_resource_render_pass_end_occlusion(pass) == DOE_RESOURCE_OK);
+                assert(doe_resource_render_pass_end(pass) == DOE_RESOURCE_OK);
+                doe_resource_render_pass_release(pass);
+                /* Usage identity resets per logical pass, not per command buffer. */
+                assert(doe_resource_encoder_begin_render(encoder, &targets, &pass) == DOE_RESOURCE_OK);
+                assert(doe_resource_render_pass_begin_occlusion(pass, DOE_RESOURCE_MAX_QUERIES - 1) == DOE_RESOURCE_OK);
+                assert(doe_resource_render_pass_end_occlusion(pass) == DOE_RESOURCE_OK);
+                assert(doe_resource_render_pass_end(pass) == DOE_RESOURCE_OK);
+            }
+        }
+        doe_resource_render_pass_release(pass);
+        doe_resource_encoder_release(encoder);
+        doe_resource_query_set_release(queries);
+        doe_resource_view_release(view);
+        assert(query_token.releases == 1);
+        empty(&f);
+    }
+}
+
 int main(void)
 {
     test_overwritten_setters();
@@ -389,6 +511,8 @@ int main(void)
     test_unused_external_expiry();
     test_scope_allocation_failure();
     test_indirect_history();
-    puts("render usage owner: 7 host suites passed; no GPU execution claimed");
+    test_nullable_vertex_and_accessors();
+    test_occlusion_pass_identity();
+    puts("render usage owner: 9 host suites passed; no GPU execution claimed");
     return 0;
 }

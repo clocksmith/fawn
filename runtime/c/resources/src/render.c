@@ -410,6 +410,9 @@ doe_resource_status doe_resource_render_pass_begin_occlusion(doe_resource_render
     if (!resource_query_available(set)) return resource_encoder_fail(pass->encoder, DOE_RESOURCE_UNAVAILABLE);
     if (pass->state.occlusion_active) return resource_encoder_fail(pass->encoder, DOE_RESOURCE_STATE);
     if (index >= set->count) return resource_encoder_fail(pass->encoder, DOE_RESOURCE_RANGE);
+    uint64_t bit = UINT64_C(1) << (index % 64);
+    if (pass->occlusion_written[index / 64] & bit)
+        return resource_encoder_fail(pass->encoder, DOE_RESOURCE_STATE);
     status = resource_encoder_reserve(pass->encoder);
     if (status != DOE_RESOURCE_OK) return status;
     doe_resource_command command = {.kind = DOE_COMMAND_BEGIN_OCCLUSION};
@@ -417,6 +420,7 @@ doe_resource_status doe_resource_render_pass_begin_occlusion(doe_resource_render
     command.value.timestamp.index = index;
     doe_resource_query_set_retain(set);
     pass->encoder->commands[pass->encoder->count++] = command;
+    pass->occlusion_written[index / 64] |= bit;
     pass->state.occlusion_active = true;
     pass->state.occlusion_index = index;
     return DOE_RESOURCE_OK;
