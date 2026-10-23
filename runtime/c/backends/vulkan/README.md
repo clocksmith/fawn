@@ -112,7 +112,7 @@ viewport/scissor. Blend constants default to pipeline state; explicit per-draw o
 native dynamic state after whole-span finite-value validation. The full descriptor
 adds one depth/stencil attachment, independent per-aspect load/clear/store/discard,
 read-only admission and dynamic stencil reference. Multiple color targets
-and indexed/indirect draws remain unsupported.
+and indexed draws remain unsupported. Guarded nonindexed indirect draws are described below.
 Unsupported resource packets must be rejected, not silently dropped. Graphics
 requires `require_graphics_queue=true` at context creation when the device offers
 separate compute-only queues; default compute queue selection is unchanged.
@@ -406,3 +406,17 @@ invocation-index builtins. The current compiler rejects both; adding them requir
 reflected usage and actual product guards, not assuming per-axis limits suffice.
 The retained Vulkan indirect native command/synchronization path is preserved,
 with the new guard preventing unchecked GPU-generated counts from reaching it.
+
+Nonindexed draw-indirect uses the same full-pass recorder. Supply the exact
+`doe_vk_draw_validator_source` shader through the compiler owner, then attach a
+`doe_vk_render_indirect` payload to an ordinary draw snapshot. All draw bindings
+are prepared before argument copies/guards, after preceding producer commands.
+Each indirect draw has distinct command-retained32-byte scratch:16 copied argument
+bytes and exact host-produced vertex/instance capacities. The GPU suppresses
+over-capacity, wrapping, zero-count and nonzero-firstInstance draws; it never
+changes original arguments. No optional indirect-first-instance feature is enabled.
+Stride-zero and attribute-free native holes retain their existing semantics.
+Only guarded native drawIndirect(count1,stride16) executes inside the pass; guards
+and barriers stay outside. Indexed drawing and presentation remain unsupported.
+Host boundary/geometry checks are not shader execution proof. The API preserves
+resource-owned pass usage history and failure/uncertain retirement obligations.

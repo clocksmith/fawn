@@ -94,6 +94,7 @@ static doe_vk_status load_functions(doe_vk_context *context, doe_vk_error *error
     _Static_assert(sizeof(context->vk.vkCmdSetStencilReference) == sizeof(void *), "vkCmdSetStencilReference POSIX pointer size");
     _Static_assert(sizeof(context->vk.vkCmdSetBlendConstants) == sizeof(void *), "vkCmdSetBlendConstants POSIX pointer size");
     _Static_assert(sizeof(context->vk.vkCmdDraw) == sizeof(void *), "vkCmdDraw POSIX pointer size");
+    _Static_assert(sizeof(context->vk.vkCmdDrawIndirect) == sizeof(void *), "vkCmdDrawIndirect POSIX pointer size");
     _Static_assert(sizeof(context->vk.vkCreateQueryPool) == sizeof(void *), "vkCreateQueryPool POSIX pointer size");
     _Static_assert(sizeof(context->vk.vkDestroyQueryPool) == sizeof(void *), "vkDestroyQueryPool POSIX pointer size");
     _Static_assert(sizeof(context->vk.vkCmdWriteTimestamp) == sizeof(void *), "vkCmdWriteTimestamp POSIX pointer size");
@@ -182,6 +183,7 @@ static doe_vk_status load_functions(doe_vk_context *context, doe_vk_error *error
         { "vkCmdSetStencilReference", &context->vk.vkCmdSetStencilReference, sizeof(context->vk.vkCmdSetStencilReference) },
         { "vkCmdSetBlendConstants", &context->vk.vkCmdSetBlendConstants, sizeof(context->vk.vkCmdSetBlendConstants) },
         { "vkCmdDraw", &context->vk.vkCmdDraw, sizeof(context->vk.vkCmdDraw) },
+        { "vkCmdDrawIndirect", &context->vk.vkCmdDrawIndirect, sizeof(context->vk.vkCmdDrawIndirect) },
         { "vkCreateQueryPool", &context->vk.vkCreateQueryPool, sizeof(context->vk.vkCreateQueryPool) },
         { "vkDestroyQueryPool", &context->vk.vkDestroyQueryPool, sizeof(context->vk.vkDestroyQueryPool) },
         { "vkCmdWriteTimestamp", &context->vk.vkCmdWriteTimestamp, sizeof(context->vk.vkCmdWriteTimestamp) },

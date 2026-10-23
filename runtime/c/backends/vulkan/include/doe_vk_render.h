@@ -94,6 +94,12 @@ typedef struct doe_vk_render_draw {
     float blend_constant[4];
     uint32_t stencil_reference;
 } doe_vk_render_draw;
+typedef struct doe_vk_draw_validator doe_vk_draw_validator;
+typedef struct doe_vk_render_indirect {
+    doe_vk_draw_validator *validator;
+    doe_vk_buffer *arguments;
+    uint64_t offset;
+} doe_vk_render_indirect;
 typedef struct doe_vk_render_pass_draw {
     doe_vk_pipeline *pipeline;
     const doe_vk_binding_resource *bindings;
@@ -102,6 +108,12 @@ typedef struct doe_vk_render_pass_draw {
     const doe_vk_buffer_binding *vertices;
     size_t vertex_buffer_count;
     doe_vk_render_draw draw;
+    /* NULL uses direct counts. Otherwise count/first fields are ignored and
+     * copied GPU arguments are guarded against these exact vertex bindings.
+     * Arguments require native INDIRECT|COPY_SRC, aligned offset and16 bytes.
+     * Nonzero firstInstance becomes no-op: that optional feature is disabled.
+     * Each draw owns distinct scratch through retirement; no in-pass compute. */
+    const doe_vk_render_indirect *indirect;
 } doe_vk_render_pass_draw;
 typedef enum doe_vk_render_operation {
     DOE_VK_RENDER_DRAW,
