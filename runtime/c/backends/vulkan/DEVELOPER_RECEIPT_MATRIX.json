@@ -1,0 +1,123 @@
+{
+  "kind": "Focused developer integration check, not independent acceptance or physical qualification",
+  "utc": "2026-10-23T19:08:30.373655+00:00",
+  "backend_base_commit": "c7ba36a4",
+  "implementation": "Optional direct ABI8 source/reflection/native execution test only; backend implementation unchanged.",
+  "input_drift": [],
+  "input_sha256": {
+    "/tmp/doe-matrix-author-20261023/libdoe_compiler.so": "3d1fd28882076cd7c511073127d4b6ab43e09c2b53dd7efa2a8f58c203c8028e",
+    "/usr/lib/chromium/libvk_swiftshader.so": "b4bd480a9acc0dd5a251a3b9082e2f001245fed0dbfdc607970c3ce6b6b2e6f3",
+    "/usr/lib/chromium/vk_swiftshader_icd.json": "c9eef28b6b984fec220ef0abfecc40b502d46946706e47bfe97707027cb818bd",
+    "/workspace/shared/doe-c-migration-evidence-20261023/milestone13/author/matrices1/AUTHOR_SOURCE.sha256": "cdeb1322d5d92383725a38b8bb4574406d68a002dbf2962548670aba70e6a0ce",
+    "runtime/c/backends/vulkan/ABI_PROVENANCE.json": "4d58c26f1c14394877f34382efbd43ab8bc7a0f69f92cc7bed6863c9ac2ec53b",
+    "runtime/c/backends/vulkan/Makefile": "3699f3035115190cffd0edb68334653e7daa39cf164009fcf0d59989e140c299",
+    "runtime/c/backends/vulkan/TIMESTAMP_PROVENANCE.json": "7e3c1b519e42b26188aa007857c92f95fe83c0fda165c1c83c4236826230c765",
+    "runtime/c/backends/vulkan/include/doe_vk.h": "b70ff6e6b22ec56c8eef2d3a8cf02630c6f44f6c61c04b0d019c6ee02905d67a",
+    "runtime/c/backends/vulkan/include/doe_vk_bindings.h": "4d1beb8e63b2f83261070663e371791f99dc5ecc281af20f75eb7151b536df40",
+    "runtime/c/backends/vulkan/include/doe_vk_queries.h": "9737e6d2354dcd23f4855e8bd4b9185ca4711025e681ee112ade5259ff5c4cdb",
+    "runtime/c/backends/vulkan/include/doe_vk_render.h": "d9dec84eb17adf1ce2b9dd499ec0b6935975184dc9290032edc13cf0710430a1",
+    "runtime/c/backends/vulkan/include/doe_vk_texture.h": "31cc48466daa62ff288cdea4dd7133ace2de289d61beedaae2ed5b1efab10952",
+    "runtime/c/backends/vulkan/include/doe_vk_timestamp.h": "3b921f6bb7cdfd6acc5047b7a4035ccf48cbf1d24fc2a8d09e12172e2402ddde",
+    "runtime/c/backends/vulkan/src/commands.c": "2751e75918138a9eada32879dd94ac2960ed6fb82d1dfabdacf86d149752db9f",
+    "runtime/c/backends/vulkan/src/descriptors.c": "d18cfbcbe86b6fa8153de3b561e0455a10f361c0865bbe63a9b8ab085f17c9f0",
+    "runtime/c/backends/vulkan/src/internal.h": "ca2a9eb39e4511533206535f72f84879e64cbda8e1307c3f17e398fce109e11f",
+    "runtime/c/backends/vulkan/src/loader.c": "6fb5c54eeb76fe1033b045d2ef484d0227f4b5fb4f7fa752824e2e5a7a3a2d55",
+    "runtime/c/backends/vulkan/src/pipeline.c": "cc18edd28d6556f83e28a12910090086f07c469c0e78bcd372d8163d8dd32109",
+    "runtime/c/backends/vulkan/src/queries.c": "f76b5efc701c7c0b90032fc98d9ad73d4ac3eaafe49b8f8e30837919ed27c07d",
+    "runtime/c/backends/vulkan/src/query_internal.h": "9ed57b12487199033f588f163caf551664b83dcd380314468248e1b3d463e05b",
+    "runtime/c/backends/vulkan/src/render_commands.c": "e5d0aa6a19b72973f4b46e600c9ed8c5c5e4a831e49b4d636701a501f18b3ab1",
+    "runtime/c/backends/vulkan/src/render_internal.h": "2de74a8720a01294fa1f150f64d4fc268a2b21d9bf9788be9a18f9a028da34dd",
+    "runtime/c/backends/vulkan/src/render_pipeline.c": "04bbea0977a47a2e83c8437c97648961d2f782073c91dc1f90c9dbc2074cd202",
+    "runtime/c/backends/vulkan/src/resources.c": "a5c16ff90d0b2c3240faec7afff98d012b5a6092551f325f07844c9d8cc0c7a8",
+    "runtime/c/backends/vulkan/src/texture_commands.c": "544dcab6905cddaea560681e8d68be71856821bf7a1217dc920fcf2008d85c84",
+    "runtime/c/backends/vulkan/src/texture_internal.h": "0d7b82689cab5564007e90dfeb2e50d60ea3e7394118c512576967d9e371ab31",
+    "runtime/c/backends/vulkan/src/textures.c": "026d18b638231ce4a75df0452823178cb4ca0b711d7580847a9d0a56ca37b6b1",
+    "runtime/c/backends/vulkan/src/timestamp.c": "1650f5e3a9fb0cc6477b69dd328b0076f938c2af44e9724292396462feb5924f",
+    "runtime/c/backends/vulkan/src/timestamp_internal.h": "5f62db5f230c9d80d8ac45001b98ddc216a8fe378bb7445140d6d30d89ae7284",
+    "runtime/c/backends/vulkan/src/timestamp_shader.h": "b909e353739d72fc392c142e86ffb822e271fa00d325684cec8bde74b351b804",
+    "runtime/c/backends/vulkan/src/vk_abi_caps.h": "0b059bf50f45d3b3989f480151f67787938ec54a4f52e6067f2cc6e807197a43",
+    "runtime/c/backends/vulkan/src/vk_abi_constants.h": "61186bbfa4a3c640b83d8f85bfd9afb0fed39ae827dff08a8699aa8745025f86",
+    "runtime/c/backends/vulkan/src/vk_abi_functions.h": "9768371c8dbce2dad54c73a9ad4930fd7b191acfe6143b4789b835c0827dabe9",
+    "runtime/c/backends/vulkan/src/vk_abi_images.h": "b6d5fc90ff6c74d5f0b54a6a030c0cec743535ee9a5f8e88ea31ae18460da280",
+    "runtime/c/backends/vulkan/src/vk_abi_render.h": "0c30920aff9f42ea8bb949900f5441b3384e10976664c74dd348d0045655b259",
+    "runtime/c/backends/vulkan/src/vk_abi_structs.h": "d66c30f350101858387d96372240e67a0b7d14c3808d1065a1d8418939ee7298",
+    "runtime/c/backends/vulkan/src/vk_abi_types.h": "7cddca8ea667a1e36abf3d0cc1923453764d6cd9184de14a1cbd448ba009a266",
+    "runtime/c/backends/vulkan/tests/compute.wgsl": "8883c7b6bddb87036ec685cca4695dbe3e2193174bb51cd7af12283bfb49a890",
+    "runtime/c/backends/vulkan/tests/descriptor_contract.c": "9417cc16a7d7a8edcb0ac75ec03d0a1e4e36e7a5ff3c9289bd922d83d84dd272",
+    "runtime/c/backends/vulkan/tests/loader_contract.c": "763ddc5dbfe36f6bd498e28b5d20d4383584f8c0b9adf3eb6e3e5e9141dede3b",
+    "runtime/c/backends/vulkan/tests/matrix_tail.wgsl": "2800e2eb314eea562f8893deffdddb96862e0c00acb570aaa2d57e7d4c0531ee",
+    "runtime/c/backends/vulkan/tests/native_compute.c": "b477302b45d0369b07246eda1b3ed70753c45c0da95fa2cfaa58b61f8f7cff73",
+    "runtime/c/backends/vulkan/tests/native_descriptors.c": "a041dc8d56a00f75efcfe8123a3c97bf5d05e6eb2b7c28f49906ca797ecd2de5",
+    "runtime/c/backends/vulkan/tests/native_matrix.c": "dc0548d2f75887961275a575186c2fa82078506e085154f21ae1194c2ddb143c",
+    "runtime/c/backends/vulkan/tests/native_queries.c": "c4ad2d0c23f4b61e52e7fd701ebc4d911429a7c15105d31fc294d129e0418f69",
+    "runtime/c/backends/vulkan/tests/native_render.c": "b6f9e69b9d1d86ae329a6df74ef8800268d1008d294082ea5ac23b4ccbdd43ee",
+    "runtime/c/backends/vulkan/tests/native_storage.c": "4642f9d523b140028ecef45f509cda832007902e312fbc54f031ad75334ae0db",
+    "runtime/c/backends/vulkan/tests/native_texture.c": "26235c9473f3893cc15b6db92a6e94424ef344fd03638391d34b3d777fbed661",
+    "runtime/c/backends/vulkan/tests/native_timestamp.c": "5825f8573b875139a74b2fb42ddc523a4636051edff4f094dbf24458f72057ac",
+    "runtime/c/backends/vulkan/tests/ownership.c": "6ce4961eed9a33471000d2b20a888b66177923d641464166bbb1121ec3f3a7d2",
+    "runtime/c/backends/vulkan/tests/pass_contract.c": "381631a9254b0c6250d30bcc595faa01a6f62c2e6e1b04e7dbf96422bf5c1a0b",
+    "runtime/c/backends/vulkan/tests/probe.c": "2a4e283c8886bb9a0c25acfd33debd5f7054a61ce76dfbf310eb9aaa56be73ed",
+    "runtime/c/backends/vulkan/tests/query_contract.c": "665aec2abfd9d31711d116f8ad3ead49ed5301f82f0d34614c94007994241a2d",
+    "runtime/c/backends/vulkan/tests/render_contract.c": "7db55ac5c3712dd065c92bef872c358d4bb3ca42ea0030b8f2eaaf75918041a5",
+    "runtime/c/backends/vulkan/tests/texture_contract.c": "498aaf136f61764bdb1f94dc2ab0fcc19912aa0d82bc23f61ecc82b0297eca0f",
+    "runtime/c/backends/vulkan/tests/timestamp_contract.c": "13f4906ec329acc78e92b95e0d29f90756d39e63587863b739287a7e2a822535",
+    "runtime/c/backends/vulkan/tests/timestamp_lifetime.c": "d6f94d5e677619964c857a16039257fe30453c6e7fc86acd417b8eb973471224",
+    "runtime/c/backends/vulkan/tools/check_abi.py": "43103339e0ea9136addac6b1224f24b86fcab0871d6a9e8d731ccaeda465206a",
+    "runtime/c/backends/vulkan/tools/check_timestamp_source.py": "2eacae78ad767930cd9005b68833974e89c86032ee02078574d15242e25d3470",
+    "runtime/c/common/include/doe_copy_footprint.h": "461535e48bc3d5248928416513b0978baadcc865db33826cb6244f5d9e3fde4b",
+    "runtime/c/compiler/include/doe_compiler.h": "5bf4f5e5a4e4624c094320ad9ec97119278bc7f6f06b0e47c01e444d42c6dc5b",
+    "runtime/c/compiler/include/doe_compiler_features.h": "face7d3315ec8bcd884f354cc08efa566c479b5136a509b7db751399bbbd320c",
+    "runtime/c/compiler/include/doe_compiler_job.h": "6160e631973ffcd9777553520d329b6d6048315f2a90b1283989077e9f51237f",
+    "runtime/c/compiler/include/doe_compiler_module.h": "01cc2966ce7866ccfde6cca75e6ec6e60921f63c271e31cf94648e8d78907cef",
+    "runtime/c/compiler/include/doe_compiler_resources.h": "b16c1f9f1a5129daeb32f83baaac1fb1bea41c1a00c084c5fe9c4d7f6cded2b2",
+    "runtime/c/compiler/include/doe_compiler_stages.h": "47aae26cc8e56e09130431d92d89d7392012e4ff13a132c759eca60a17249192",
+    "runtime/c/compiler/include/doe_compiler_typed.h": "c7decbdb8da093a3485ded84901bf97f88eea8db6237dfd4089c730aa08e6216",
+    "runtime/c/compiler/include/doe_compiler_v2.h": "b0a60c2f05b70dba0786365dadd81b993accbd93f7f68f0e3accf86a815ae891"
+  },
+  "core_changed_paths_source_manifest": "/workspace/shared/doe-c-migration-evidence-20261023/milestone13/author/matrices1/AUTHOR_SOURCE.sha256",
+  "core_changed_paths_source_check": "All26 pinned paths matched before execution; compiler library held by compiler owner.",
+  "commands": [
+    "make -C runtime/c/backends/vulkan OUT=/tmp/doe-c-vulkan COMPILER_LIBRARY=/tmp/doe-matrix-author-20261023/libdoe_compiler.so /tmp/doe-c-vulkan/native_matrix",
+    "VK_ICD_FILENAMES=/usr/lib/chromium/vk_swiftshader_icd.json timeout -k 5s 60s /tmp/doe-c-vulkan/native_matrix runtime/c/backends/vulkan/tests/matrix_tail.wgsl --allow-software",
+    "python3 runtime/c/tools/check_source_size.py"
+  ],
+  "logs": {
+    "build-final.log": {
+      "sha256": "bc0fb862bdb444323b3f7a37f2113ac669ddb2d9011c19aa72e4fd431f826c4b",
+      "terminal": [
+        "make: Entering directory '/workspace/shared/doe-c-migration-20261023/runtime/c/backends/vulkan'",
+        "cc -std=c11 -Wall -Wextra -Werror -Wpedantic -O2 -g -Iinclude -I../../../../runtime/c/compiler/include tests/native_matrix.c /tmp/doe-c-vulkan/libdoe_vk.a /tmp/doe-matrix-author-20261023/libdoe_compiler.so -Wl,-rpath,/tmp/doe-matrix-author-20261023 -ldl -o /tmp/doe-c-vulkan/native_matrix",
+        "make: Leaving directory '/workspace/shared/doe-c-migration-20261023/runtime/c/backends/vulkan'"
+      ]
+    },
+    "native-final.log": {
+      "sha256": "887bc146c6a4e61e8c3c73c94f0f7567816135f3bd87fed701d58e08f5fef06a",
+      "terminal": [
+        "Matrix adapter: SwiftShader Device (Subzero) software=1; ABI8 direct, not old shader projection or hardware qualification",
+        "PASS direct ABI8 WGSL/matrix reflection -> real Vulkan: exact24-byte mat3x2f uniform/final8-byte tail, dynamic column/row OOB zeros, whole reconstruction, transpose/products/determinant, exact35-float oracle and untouched padding; early caller release"
+      ]
+    },
+    "size-final.log": {
+      "sha256": "93def6bcd4d3120a399a1a2a0888f7efc8f96d0d686c47cc446ad58952e25026",
+      "terminal": [
+        "C size check: 461 files, 0 failures; limit 999"
+      ]
+    },
+    "core-source-check.log": {
+      "sha256": "0e83aa53ef5a962c6e83336d01ab00ad7b1dca5236cc9b605904e79db9b7b082",
+      "terminal": [
+        "runtime/c/compiler/src/types.c: OK",
+        "runtime/c/compiler/tests/test_matrices.py: OK",
+        "runtime/c/compiler/tests/test_matrix_api.c: OK",
+        "runtime/c/compiler/tests/test_matrix_cpp.cpp: OK"
+      ]
+    }
+  },
+  "limits": [
+    "Actual software Vulkan only, not physical GPU or performance qualification.",
+    "Compiler ABI8 selected reflection consumed directly; old shader ABI7 projection is not used.",
+    "Exact24-byte descriptor is not padded to32; no uniformBufferStandardLayout optional device feature is enabled.",
+    "35 finite small-integer float results compared by bits; this is not general floating-point matrix conformance.",
+    "Optional test links compiler; backend archive retains no compiler dependency."
+  ]
+}
