@@ -39,8 +39,7 @@ WGPUBindGroupLayout wgpuDeviceCreateBindGroupLayout(WGPUDevice handle,
                 WGPUTextureSampleType_Float : entry->texture.sampleType;
             converted.view_dimension = entry->texture.viewDimension;
             converted.multisampled = entry->texture.multisampled != 0;
-            if (converted.multisampled || converted.sample_type == WGPUTextureSampleType_Depth ||
-                converted.view_dimension == WGPUTextureViewDimension_CubeArray) valid = false;
+            if (converted.multisampled || converted.view_dimension == WGPUTextureViewDimension_CubeArray) valid = false;
         } else {
             converted.kind = DOE_BIND_STORAGE_TEXTURE;
             converted.storage_access = entry->storageTexture.access == WGPUStorageTextureAccess_Undefined ?

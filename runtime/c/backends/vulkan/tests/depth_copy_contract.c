@@ -99,13 +99,28 @@ int main(void) {
     layout(&color, DOE_VK_ASPECT_DEPTH, DOE_VK_INVALID_ARGUMENT, 0, 0, 0);
     layout(&color, (doe_vk_texture_aspect)3, DOE_VK_INVALID_ARGUMENT, 0, 0, 0);
 
-    /* Creation admission rejects depth sampling/storage and non-2D shapes before native calls. */
+    /* The one aspect resolver shared by views and transfers. */
+    uint32_t mask = 99;
+    assert(doe_vk_texture_aspects(&d32s8, DOE_VK_ASPECT_ALL, &mask) == DOE_VK_OK &&
+        mask == (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT));
+    assert(doe_vk_texture_aspects(&d32s8, DOE_VK_ASPECT_STENCIL, &mask) == DOE_VK_OK && mask == VK_IMAGE_ASPECT_STENCIL_BIT);
+    assert(doe_vk_texture_aspects(&d16, DOE_VK_ASPECT_DEPTH, &mask) == DOE_VK_OK && mask == VK_IMAGE_ASPECT_DEPTH_BIT);
+    mask = 99;
+    assert(doe_vk_texture_aspects(&d32, DOE_VK_ASPECT_STENCIL, &mask) == DOE_VK_INVALID_ARGUMENT && mask == 99);
+    assert(doe_vk_texture_aspects(&color, DOE_VK_ASPECT_DEPTH, &mask) == DOE_VK_INVALID_ARGUMENT && mask == 99);
+
+    /* Creation admission rejects depth storage and non-2D shapes before native calls. */
     doe_vk_texture *out = (doe_vk_texture *)&context;
     doe_vk_texture_desc desc = d32.desc;
-    desc.usage |= DOE_VK_TEXTURE_SAMPLED;
+    desc.usage |= DOE_VK_TEXTURE_STORAGE;
     assert(doe_vk_texture_create(&context, &desc, &out, NULL) == DOE_VK_UNSUPPORTED && out == (doe_vk_texture *)&context);
     desc.usage = DOE_VK_TEXTURE_COPY_SRC;
     desc.dimension = DOE_VK_TEXTURE_3D;
+    assert(doe_vk_texture_create(&context, &desc, &out, NULL) == DOE_VK_UNSUPPORTED && out == (doe_vk_texture *)&context);
+    desc.dimension = DOE_VK_TEXTURE_2D; /* Cube compatibility only for sampled depth. */
+    desc.width = desc.height = 2;
+    desc.depth_or_layers = 6;
+    desc.cube_compatible = true;
     assert(doe_vk_texture_create(&context, &desc, &out, NULL) == DOE_VK_UNSUPPORTED && out == (doe_vk_texture *)&context);
 
     /* Initialization is per aspect: a full stencil upload initializes only stencil. */
@@ -153,6 +168,6 @@ int main(void) {
     assert(image_copies == 1 && commands->textures == NULL);
     assert(doe_vk_commands_release(commands) == DOE_VK_OK);
     assert(d32s8.references == 1 && d32s8_copy.references == 1 && buffer.references == 1 && context.references == 1);
-    puts("PASS depth/stencil transfer packets: per-aspect D16/D32/D32S8/S8 linear bytes and native aspect masks, 4-byte offsets, single-aspect buffer copies, unsupported packed D24 depth, depth sampling/3D creation rejection, per-aspect initialization publication, partial-write refusal and all-aspect texture copies");
+    puts("PASS depth/stencil transfer packets: per-aspect D16/D32/D32S8/S8 linear bytes and native aspect masks, 4-byte offsets, single-aspect buffer copies, unsupported packed D24 depth, shared view/transfer aspect resolution, depth storage/3D/unsampled-cube creation rejection, per-aspect initialization publication, partial-write refusal and all-aspect texture copies");
     return 0;
 }

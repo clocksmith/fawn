@@ -14,6 +14,16 @@ uint32_t doe_vk_format_aspects(doe_vk_texture_format format) {
     }
 }
 
+doe_vk_status doe_vk_texture_aspects(const doe_vk_texture *texture, doe_vk_texture_aspect aspect, uint32_t *out) {
+    if (aspect != DOE_VK_ASPECT_ALL && aspect != DOE_VK_ASPECT_DEPTH && aspect != DOE_VK_ASPECT_STENCIL)
+        return DOE_VK_INVALID_ARGUMENT;
+    uint32_t aspects = doe_vk_format_aspects(texture->desc.format);
+    uint32_t selected = aspect == DOE_VK_ASPECT_ALL ? aspects : (uint32_t)aspect;
+    if ((selected & ~aspects) != 0) return DOE_VK_INVALID_ARGUMENT;
+    *out = selected;
+    return DOE_VK_OK;
+}
+
 static uint32_t texel_bytes(doe_vk_texture_format format) {
     switch (format) {
         case DOE_VK_FORMAT_S8_UINT:
@@ -88,9 +98,9 @@ static doe_vk_status validate_texture(doe_vk_context *context,
     if (*bytes == 0) return DOE_VK_UNSUPPORTED;
     bool depth_stencil = doe_vk_format_aspects(desc->format) != VK_IMAGE_ASPECT_COLOR_BIT;
     const uint32_t depth_usage = DOE_VK_TEXTURE_DEPTH_STENCIL_ATTACHMENT |
-        DOE_VK_TEXTURE_COPY_SRC | DOE_VK_TEXTURE_COPY_DST;
-    if (depth_stencil && (desc->dimension != DOE_VK_TEXTURE_2D ||
-        (desc->usage & ~depth_usage) != 0 || desc->cube_compatible))
+        DOE_VK_TEXTURE_COPY_SRC | DOE_VK_TEXTURE_COPY_DST | DOE_VK_TEXTURE_SAMPLED;
+    if (depth_stencil && (desc->dimension != DOE_VK_TEXTURE_2D || (desc->usage & ~depth_usage) != 0 ||
+        (desc->cube_compatible && !(desc->usage & DOE_VK_TEXTURE_SAMPLED))))
         return DOE_VK_UNSUPPORTED;
     if (!depth_stencil && (desc->usage & DOE_VK_TEXTURE_DEPTH_STENCIL_ATTACHMENT))
         return DOE_VK_INVALID_ARGUMENT;
@@ -226,8 +236,10 @@ void doe_vk_texture_release(doe_vk_texture *texture) {
     doe_vk_context_release(context);
 }
 
-static doe_vk_status validate_view(doe_vk_texture *texture, const doe_vk_texture_view_desc *desc) {
-    if (desc == NULL || desc->dimension < DOE_VK_VIEW_1D || desc->dimension > DOE_VK_VIEW_CUBE_ARRAY ||
+static doe_vk_status validate_view(doe_vk_texture *texture, const doe_vk_texture_view_desc *desc,
+    uint32_t *aspects) {
+    if (desc == NULL || doe_vk_texture_aspects(texture, desc->aspect, aspects) != DOE_VK_OK ||
+        desc->dimension < DOE_VK_VIEW_1D || desc->dimension > DOE_VK_VIEW_CUBE_ARRAY ||
         desc->mip_count == 0 || desc->layer_count == 0 ||
         !doe_vk_range(texture->desc.mip_levels, desc->base_mip, desc->mip_count)) return DOE_VK_INVALID_ARGUMENT;
     if (texture->borrowed_image && !texture->external_alive) return DOE_VK_INVALID_STATE;
@@ -255,7 +267,8 @@ doe_vk_status doe_vk_texture_view_create(doe_vk_texture *texture,
     const doe_vk_texture_view_desc *desc, doe_vk_texture_view **out, doe_vk_error *error) {
     if (texture == NULL || out == NULL) return doe_vk_fail(DOE_VK_INVALID_ARGUMENT, "texture view descriptor", error);
     if (texture->context->lost) return doe_vk_fail(DOE_VK_DEVICE_LOST, "texture view context", error);
-    doe_vk_status status = validate_view(texture, desc);
+    uint32_t aspects = 0;
+    doe_vk_status status = validate_view(texture, desc, &aspects);
     if (status != DOE_VK_OK) return doe_vk_fail(status, "texture view admission", error);
     doe_vk_texture_view *view = calloc(1, sizeof(*view));
     if (view == NULL) return doe_vk_fail(DOE_VK_OUT_OF_MEMORY, "texture view owner", error);
@@ -267,12 +280,13 @@ doe_vk_status doe_vk_texture_view_create(doe_vk_texture *texture,
     view->texture = texture;
     view->references = 1;
     view->desc = *desc;
+    view->aspects = aspects;
     const VkImageViewCreateInfo info = {
         .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
         .image = texture->image,
         .viewType = (uint32_t)desc->dimension,
         .format = (uint32_t)texture->desc.format,
-        .subresourceRange = { doe_vk_format_aspects(texture->desc.format), desc->base_mip, desc->mip_count, desc->base_layer, desc->layer_count }
+        .subresourceRange = { aspects, desc->base_mip, desc->mip_count, desc->base_layer, desc->layer_count }
     };
     doe_vk_context *context = texture->context;
     status = doe_vk_result(context, context->vk.vkCreateImageView(context->device, &info, NULL, &view->view), "vkCreateImageView", error);

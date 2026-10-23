@@ -97,7 +97,7 @@ int main(int argc, char **argv)
     require(doe_vk_texture_create(context, &descriptor, &input, &error), "input texture");
     descriptor.usage=DOE_VK_TEXTURE_COPY_DST|DOE_VK_TEXTURE_COPY_SRC|DOE_VK_TEXTURE_STORAGE;
     require(doe_vk_texture_create(context, &descriptor, &output, &error), "output texture");
-    const doe_vk_texture_view_desc view_descriptor={DOE_VK_VIEW_2D,0,1,0,1};
+    const doe_vk_texture_view_desc view_descriptor={DOE_VK_VIEW_2D,0,1,0,1, DOE_VK_ASPECT_ALL};
     require(doe_vk_texture_view_create(input, &view_descriptor, &input_view, &error), "input view");
     require(doe_vk_texture_view_create(output, &view_descriptor, &output_view, &error), "output view");
     doe_vk_sampler *sampler=NULL;

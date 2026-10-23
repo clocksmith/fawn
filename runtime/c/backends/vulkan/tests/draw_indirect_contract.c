@@ -131,7 +131,7 @@ int main(int argc, char **argv) {
     doe_vk_texture texture = {.context = &context, .references = 1, .subresource_count = 1,
         .initialized = &initialized, .desc = {.dimension = DOE_VK_TEXTURE_2D, .format = DOE_VK_FORMAT_RGBA8_UNORM,
             .width = 8, .height = 8, .depth_or_layers = 1, .mip_levels = 1, .usage = DOE_VK_TEXTURE_COLOR_ATTACHMENT}};
-    doe_vk_texture_view view = {.texture = &texture, .references = 1, .desc = {DOE_VK_VIEW_2D, 0, 1, 0, 1}};
+    doe_vk_texture_view view = {.texture = &texture, .references = 1, .aspects = 1, .desc = {DOE_VK_VIEW_2D, 0, 1, 0, 1, DOE_VK_ASPECT_ALL}};
     doe_vk_pipeline target = {.context = &context, .references = 1, .graphics = true, .color_format = DOE_VK_FORMAT_RGBA8_UNORM};
     doe_vk_render_pass_draw draw = {.pipeline = &target, .indirect = &indirect,
         .draw = {.viewport = {0, 0, 8, 8, 0, 1}, .scissor = {0, 0, 8, 8}}};

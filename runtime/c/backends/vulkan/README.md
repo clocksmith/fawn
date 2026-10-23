@@ -337,8 +337,13 @@ per-aspect masks, so discarding depth does not discard stencil and an abandoned
 clear does not publish either. A read-only aspect cannot clear/discard or use a
 pipeline that may write it. LOAD requires prior initialization, including empty
 passes. Views and native framebuffers stay retained through unresolved work.
-Depth/stencil images admit 2D attachment and/or copy usage; sampling and storage
-remain explicitly unsupported. Transfers carry an explicit aspect on
+Depth/stencil images admit 2D attachment, copy and/or sampled usage (cube
+compatibility only when sampled); storage remains unsupported. Views carry an
+explicit aspect (`doe_vk_texture_view_desc.aspect`), resolved by the same owner
+as transfers: a sampled view of a combined format must select DEPTH or STENCIL
+(descriptor admission rejects both), attachment views must cover every aspect,
+and sampled reads require the view's aspects to be initialized. Sampled depth
+uses the existing GENERAL descriptor layout. Transfers carry an explicit aspect on
 `doe_vk_texture_region`: ALL for color and for all-aspect texture-to-texture
 copies, DEPTH or STENCIL for buffer copies, which need exactly one aspect. Linear
 bytes are per aspect (D16 depth 2, D32 and D32S8 depth 4, stencil 1); packed D24

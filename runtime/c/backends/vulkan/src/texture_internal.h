@@ -22,6 +22,7 @@ struct doe_vk_texture_view {
     doe_vk_texture *texture;
     uint32_t references;
     doe_vk_texture_view_desc desc;
+    uint32_t aspects; /* Resolved native aspect bits of this view. */
     VkImageView view;
 };
 struct doe_vk_sampler {
@@ -44,6 +45,9 @@ doe_vk_status doe_vk_attachment_samples(doe_vk_context *context,
     doe_vk_texture_format format, uint32_t *out);
 /* Initialization bytes are per-aspect masks (color1, depth2, stencil4). */
 uint32_t doe_vk_format_aspects(doe_vk_texture_format format);
+/* One aspect-selection owner for views and transfers: ALL resolves to every
+ * format aspect; DEPTH/STENCIL must be present in the format. */
+doe_vk_status doe_vk_texture_aspects(const doe_vk_texture *texture, doe_vk_texture_aspect aspect, uint32_t *out);
 doe_vk_status doe_vk_use_texture(doe_vk_commands *commands, doe_vk_texture *texture,
     doe_vk_texture_use **out);
 void doe_vk_texture_transition(doe_vk_commands *commands, doe_vk_texture_use *use,
