@@ -18,7 +18,8 @@ SOURCES = $(wildcard src/*.c) $(wildcard ../instance/src/*.c) $(wildcard ../futu
 OBJECTS = $(patsubst src/%.c,$(BUILD)/native/%.o,$(filter src/%,$(SOURCES))) \
  $(patsubst ../%.c,$(BUILD)/owners/%.o,$(filter ../%,$(SOURCES)))
 HEADERS = $(wildcard src/*.h ../*/include/*.h ../resources/src/*.h ../backends/vulkan/src/*.h ../backends/vulkan/include/*.h)
-COMPILER_LINK = -L$(abspath $(dir $(COMPILER_LIBRARY))) -l:$(notdir $(COMPILER_LIBRARY)) -Wl,-rpath,$(abspath $(dir $(COMPILER_LIBRARY)))
+COMPILER_RUNPATH ?= $(abspath $(dir $(COMPILER_LIBRARY)))
+COMPILER_LINK = -L$(abspath $(dir $(COMPILER_LIBRARY))) -l:$(notdir $(COMPILER_LIBRARY)) '-Wl,-rpath,$(COMPILER_RUNPATH)'
 .PHONY: all check check-empty-module clean
 all: $(BUILD)/libwebgpu_doe_c.so
 $(BUILD):
@@ -35,6 +36,12 @@ $(BUILD)/owners/%.o: ../%.c $(HEADERS) Makefile
 $(BUILD)/libwebgpu_doe_c.so: $(OBJECTS) $(COMPILER_LIBRARY) | $(BUILD)
 	$(CC) $(CFLAGS) -shared -Wl,-z,defs -Wl,-Bsymbolic-functions $(OBJECTS) $(COMPILER_LINK) -ldl -o $@
 $(BUILD)/compute: tests/compute.c $(BUILD)/libwebgpu_doe_c.so
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
+$(BUILD)/atomics: tests/atomics.c tests/consumer.h $(BUILD)/libwebgpu_doe_c.so
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
+$(BUILD)/debug: tests/debug.c tests/consumer.h $(BUILD)/libwebgpu_doe_c.so
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
+$(BUILD)/msaa: tests/msaa.c tests/consumer.h $(BUILD)/libwebgpu_doe_c.so
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
 $(BUILD)/depth: tests/depth.c tests/consumer.h $(BUILD)/libwebgpu_doe_c.so
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
@@ -60,7 +67,10 @@ $(BUILD)/lifecycle: tests/lifecycle.c $(OBJECTS) $(COMPILER_LIBRARY) | $(BUILD)
 	$(CC) $(CPPFLAGS) $(CFLAGS) tests/lifecycle.c $(OBJECTS) $(COMPILER_LINK) -ldl -o $@
 $(BUILD)/procedures-cxx: tests/procedures.cpp $(BUILD)/libwebgpu_doe_c.so
 	$(CXX) $(CPPFLAGS) -std=c++17 -Wall -Wextra -Wpedantic -Werror $(SANITIZE) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
-check: $(BUILD)/depth $(BUILD)/demote $(BUILD)/graphics-admission $(BUILD)/empty-shader $(BUILD)/graphics $(BUILD)/compute $(BUILD)/procedures-cxx $(BUILD)/lifecycle $(BUILD)/textures $(BUILD)/admission $(BUILD)/failures $(BUILD)/timestamps $(BUILD)/recovery
+check: $(BUILD)/atomics $(BUILD)/debug $(BUILD)/msaa $(BUILD)/depth $(BUILD)/demote $(BUILD)/graphics-admission $(BUILD)/empty-shader $(BUILD)/graphics $(BUILD)/compute $(BUILD)/procedures-cxx $(BUILD)/lifecycle $(BUILD)/textures $(BUILD)/admission $(BUILD)/failures $(BUILD)/timestamps $(BUILD)/recovery
+	$(BUILD)/atomics
+	$(BUILD)/debug
+	$(BUILD)/msaa
 	$(BUILD)/depth
 	$(BUILD)/demote
 	$(BUILD)/graphics-admission
@@ -79,4 +89,4 @@ check-empty-module: $(BUILD)/empty-shader
 	$(BUILD)/empty-shader
 clean:
 	rm -f $(OBJECTS)
-	rm -f $(BUILD)/depth $(BUILD)/demote $(BUILD)/graphics-admission $(BUILD)/graphics $(BUILD)/empty-shader $(BUILD)/libwebgpu_doe_c.so $(BUILD)/libdoe_compiler.so $(BUILD)/compute $(BUILD)/procedures-cxx $(BUILD)/lifecycle $(BUILD)/textures $(BUILD)/admission $(BUILD)/failures $(BUILD)/timestamps $(BUILD)/recovery
+	rm -f $(BUILD)/atomics $(BUILD)/debug $(BUILD)/msaa $(BUILD)/depth $(BUILD)/demote $(BUILD)/graphics-admission $(BUILD)/graphics $(BUILD)/empty-shader $(BUILD)/libwebgpu_doe_c.so $(BUILD)/libdoe_compiler.so $(BUILD)/compute $(BUILD)/procedures-cxx $(BUILD)/lifecycle $(BUILD)/textures $(BUILD)/admission $(BUILD)/failures $(BUILD)/timestamps $(BUILD)/recovery

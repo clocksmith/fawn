@@ -7,7 +7,7 @@
 doe_vk_status native_initialize_texture(native_device *device, doe_vk_texture *texture,
     const doe_vk_texture_desc *desc, uint32_t texel_bytes)
 {
-    if (desc->usage & DOE_VK_TEXTURE_DEPTH_STENCIL_ATTACHMENT) {
+    if ((desc->usage & DOE_VK_TEXTURE_DEPTH_STENCIL_ATTACHMENT) || desc->sample_count > 1) {
         doe_vk_texture_view *view = NULL;
         doe_vk_commands *commands = NULL;
         doe_vk_texture_view_desc span = {.dimension=DOE_VK_VIEW_2D_ARRAY,

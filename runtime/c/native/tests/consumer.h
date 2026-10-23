@@ -4,6 +4,7 @@
 #define DOE_NATIVE_TEST_CONSUMER_H
 #include "webgpu.h"
 #include <assert.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -34,6 +35,30 @@ static inline void error_reply(WGPUDevice const *device, WGPUErrorType type, WGP
     (void)device; (void)type; (void)unused;
     ++((state *)userdata)->errors;
     fprintf(stderr, "native error: %.*s\n", (int)message.length, message.data);
+}
+static inline void consumer_init(state *s)
+{
+    s->instance = wgpuCreateInstance(NULL);
+    WGPURequestAdapterOptions options = WGPU_REQUEST_ADAPTER_OPTIONS_INIT;
+    options.forceFallbackAdapter = WGPU_TRUE;
+    WGPURequestAdapterCallbackInfo adapter = {.mode=WGPUCallbackMode_AllowSpontaneous,.callback=adapter_reply,.userdata1=s};
+    assert(wgpuInstanceRequestAdapter(s->instance,&options,adapter).id && s->adapter);
+    WGPUAdapterInfo info = WGPU_ADAPTER_INFO_INIT;
+    assert(wgpuAdapterGetInfo(s->adapter,&info) == WGPUStatus_Success && info.adapterType == WGPUAdapterType_CPU);
+    wgpuAdapterInfoFreeMembers(info);
+    WGPUDeviceDescriptor descriptor = WGPU_DEVICE_DESCRIPTOR_INIT;
+    descriptor.uncapturedErrorCallbackInfo = (WGPUUncapturedErrorCallbackInfo){.callback=error_reply,.userdata1=s};
+    WGPURequestDeviceCallbackInfo device = {.mode=WGPUCallbackMode_AllowSpontaneous,.callback=device_reply,.userdata1=s};
+    assert(wgpuAdapterRequestDevice(s->adapter,&descriptor,device).id && s->device);
+    s->queue = wgpuDeviceGetQueue(s->device);
+}
+static inline void consumer_finish(state *s)
+{
+    assert(!s->errors);
+    wgpuQueueRelease(s->queue);
+    wgpuDeviceRelease(s->device);
+    wgpuAdapterRelease(s->adapter);
+    wgpuInstanceRelease(s->instance);
 }
 static inline void validation_reply(WGPUPopErrorScopeStatus status, WGPUErrorType type,
     WGPUStringView message, void *userdata, void *unused)

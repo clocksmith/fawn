@@ -18,9 +18,9 @@ WGPUTexture wgpuDeviceCreateTexture(WGPUDevice handle, const WGPUTextureDescript
     if (!device) return NULL;
     const WGPUTextureUsage supported = WGPUTextureUsage_CopySrc | WGPUTextureUsage_CopyDst |
         WGPUTextureUsage_TextureBinding | WGPUTextureUsage_StorageBinding | WGPUTextureUsage_RenderAttachment;
-    if (!descriptor || descriptor->nextInChain || descriptor->sampleCount != 1 ||
+    if (!descriptor || descriptor->nextInChain ||
         descriptor->usage & ~supported || (descriptor->viewFormatCount && !descriptor->viewFormats)) {
-        native_error(device, WGPUErrorType_Validation, "texture descriptor or multisampling unsupported");
+        native_error(device, WGPUErrorType_Validation, "texture descriptor unsupported");
         return NULL;
     }
     for (size_t i = 0; i < descriptor->viewFormatCount; ++i)
@@ -39,7 +39,7 @@ WGPUTexture wgpuDeviceCreateTexture(WGPUDevice handle, const WGPUTextureDescript
         device->caps.max_texture_dimension_2d, device->caps.max_texture_dimension_3d,
         device->caps.max_texture_array_layers};
     doe_vk_texture_desc native = {.width=desc.width, .height=desc.height,
-        .depth_or_layers=desc.depth_or_layers, .mip_levels=desc.mip_levels,
+        .depth_or_layers=desc.depth_or_layers, .mip_levels=desc.mip_levels,.sample_count=desc.samples,
         .usage=DOE_VK_TEXTURE_COPY_DST}; /* Initialization is internal usage only. */
     if (doe_resource_texture_validate(&desc, &limits) != DOE_RESOURCE_OK ||
         !native_texture_format(desc.format, &native.format)) {
@@ -62,6 +62,14 @@ WGPUTexture wgpuDeviceCreateTexture(WGPUDevice handle, const WGPUTextureDescript
         }
         native.usage = DOE_VK_TEXTURE_DEPTH_STENCIL_ATTACHMENT;
         native.cube_compatible = false; /* Native depth supports array attachments, not cube sampling. */
+    }
+    if (desc.samples > 1) {
+        if (desc.usage != WGPUTextureUsage_RenderAttachment) {
+            native_error(device, WGPUErrorType_Validation, "multisample textures currently support attachment usage only");
+            return NULL;
+        }
+        native.usage = depth_stencil ? DOE_VK_TEXTURE_DEPTH_STENCIL_ATTACHMENT : DOE_VK_TEXTURE_COLOR_ATTACHMENT;
+        native.cube_compatible = false;
     }
     if (desc.usage & WGPUTextureUsage_CopySrc) native.usage |= DOE_VK_TEXTURE_COPY_SRC;
     if (desc.usage & WGPUTextureUsage_TextureBinding) native.usage |= DOE_VK_TEXTURE_SAMPLED;

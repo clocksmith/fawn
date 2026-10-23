@@ -45,6 +45,9 @@ static const native_procedure procedures[] = {
     {"wgpuCommandEncoderCopyTextureToBuffer", (WGPUProc)wgpuCommandEncoderCopyTextureToBuffer},
     {"wgpuCommandEncoderCopyTextureToTexture", (WGPUProc)wgpuCommandEncoderCopyTextureToTexture},
     {"wgpuCommandEncoderFinish", (WGPUProc)wgpuCommandEncoderFinish},
+    {"wgpuCommandEncoderInsertDebugMarker", (WGPUProc)wgpuCommandEncoderInsertDebugMarker},
+    {"wgpuCommandEncoderPopDebugGroup", (WGPUProc)wgpuCommandEncoderPopDebugGroup},
+    {"wgpuCommandEncoderPushDebugGroup", (WGPUProc)wgpuCommandEncoderPushDebugGroup},
     {"wgpuCommandEncoderRelease", (WGPUProc)wgpuCommandEncoderRelease},
     {"wgpuCommandEncoderResolveQuerySet", (WGPUProc)wgpuCommandEncoderResolveQuerySet},
     {"wgpuCommandEncoderSetLabel", (WGPUProc)wgpuCommandEncoderSetLabel},
@@ -52,6 +55,9 @@ static const native_procedure procedures[] = {
     {"wgpuComputePassEncoderAddRef", (WGPUProc)wgpuComputePassEncoderAddRef},
     {"wgpuComputePassEncoderDispatchWorkgroups", (WGPUProc)wgpuComputePassEncoderDispatchWorkgroups},
     {"wgpuComputePassEncoderEnd", (WGPUProc)wgpuComputePassEncoderEnd},
+    {"wgpuComputePassEncoderInsertDebugMarker", (WGPUProc)wgpuComputePassEncoderInsertDebugMarker},
+    {"wgpuComputePassEncoderPopDebugGroup", (WGPUProc)wgpuComputePassEncoderPopDebugGroup},
+    {"wgpuComputePassEncoderPushDebugGroup", (WGPUProc)wgpuComputePassEncoderPushDebugGroup},
     {"wgpuComputePassEncoderRelease", (WGPUProc)wgpuComputePassEncoderRelease},
     {"wgpuComputePassEncoderSetBindGroup", (WGPUProc)wgpuComputePassEncoderSetBindGroup},
     {"wgpuComputePassEncoderSetLabel", (WGPUProc)wgpuComputePassEncoderSetLabel},
@@ -116,6 +122,9 @@ static const native_procedure procedures[] = {
     {"wgpuRenderBundleEncoderAddRef", (WGPUProc)wgpuRenderBundleEncoderAddRef},
     {"wgpuRenderBundleEncoderDraw", (WGPUProc)wgpuRenderBundleEncoderDraw},
     {"wgpuRenderBundleEncoderFinish", (WGPUProc)wgpuRenderBundleEncoderFinish},
+    {"wgpuRenderBundleEncoderInsertDebugMarker", (WGPUProc)wgpuRenderBundleEncoderInsertDebugMarker},
+    {"wgpuRenderBundleEncoderPopDebugGroup", (WGPUProc)wgpuRenderBundleEncoderPopDebugGroup},
+    {"wgpuRenderBundleEncoderPushDebugGroup", (WGPUProc)wgpuRenderBundleEncoderPushDebugGroup},
     {"wgpuRenderBundleEncoderRelease", (WGPUProc)wgpuRenderBundleEncoderRelease},
     {"wgpuRenderBundleEncoderSetBindGroup", (WGPUProc)wgpuRenderBundleEncoderSetBindGroup},
     {"wgpuRenderBundleEncoderSetLabel", (WGPUProc)wgpuRenderBundleEncoderSetLabel},
@@ -129,6 +138,9 @@ static const native_procedure procedures[] = {
     {"wgpuRenderPassEncoderEnd", (WGPUProc)wgpuRenderPassEncoderEnd},
     {"wgpuRenderPassEncoderEndOcclusionQuery", (WGPUProc)wgpuRenderPassEncoderEndOcclusionQuery},
     {"wgpuRenderPassEncoderExecuteBundles", (WGPUProc)wgpuRenderPassEncoderExecuteBundles},
+    {"wgpuRenderPassEncoderInsertDebugMarker", (WGPUProc)wgpuRenderPassEncoderInsertDebugMarker},
+    {"wgpuRenderPassEncoderPopDebugGroup", (WGPUProc)wgpuRenderPassEncoderPopDebugGroup},
+    {"wgpuRenderPassEncoderPushDebugGroup", (WGPUProc)wgpuRenderPassEncoderPushDebugGroup},
     {"wgpuRenderPassEncoderRelease", (WGPUProc)wgpuRenderPassEncoderRelease},
     {"wgpuRenderPassEncoderSetBindGroup", (WGPUProc)wgpuRenderPassEncoderSetBindGroup},
     {"wgpuRenderPassEncoderSetBlendConstant", (WGPUProc)wgpuRenderPassEncoderSetBlendConstant},
@@ -167,7 +179,6 @@ static const native_procedure procedures[] = {
     {"wgpuTextureViewAddRef", (WGPUProc)wgpuTextureViewAddRef},
     {"wgpuTextureViewRelease", (WGPUProc)wgpuTextureViewRelease},
     {"wgpuTextureViewSetLabel", (WGPUProc)wgpuTextureViewSetLabel},
-
 };
 WGPUProc wgpuGetProcAddress(WGPUStringView name)
 {

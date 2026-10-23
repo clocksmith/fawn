@@ -55,16 +55,16 @@ exported; unknown and unimplemented names return NULL from `wgpuGetProcAddress`.
   than reporting success. Releasing all caller handles does not free unresolved
   work; unattended recovery/liveness remains unfinished.
 - TimestampQuery is opt-in at device creation. Generated backend WGSL is compiled
-  by the same ABI8 C compiler before a feature-enabled device is published. Query
+  by the same ABI9 C compiler before a feature-enabled device is published. Query
   sets alias the resource owner; zero-count sets need no native pool. Query resolve
   records raw timestamps, exact calibrated GPU nanosecond conversion and the copy
   into the caller's destination before later commands. There is no production CPU
   postprocessing or raw-tick fallback. A terminal failed submission discards the
   possibly poisoned normalizer; later work creates a fresh one. Unknown completion
   retains its command-owned dependencies and prevents reuse.
-- Genuine ABI8 vertex/fragment entry reflection drives stage-specific selection,
+- Genuine compiler-owned vertex/fragment entry reflection drives stage-specific selection,
   shared automatic binding layouts and interface admission. Single-color render
-  passes, direct draws, reusable bundles and occlusion queries lower through one
+  or depth-only passes, direct draws, reusable bundles and occlusion queries lower through one
   ordered Vulkan pass span. The resource owner retains pass history, bindings,
   query identity and vertex ranges; native conversion owns no parallel recorder.
   Dynamic viewport/scissor/blend and culling use real backend state. Integer clear
@@ -78,6 +78,14 @@ exported; unknown and unimplemented names return NULL from `wgpuGetProcAddress`.
   depth/stencil Discard followed by Load reinitializes only missing aspects on GPU.
   Initialized companion aspects survive. Partial combined-aspect views remain
   unsupported; same-format standalone DepthOnly/StencilOnly views are admitted.
+- Sample counts 1 and 4 use actual attachment storage, resolve, sample masks and
+  alpha-to-coverage. A vertex-only depth pipeline needs neither a fabricated
+  fragment shader nor a color target. Discarded multisample color is initialized
+  by the existing backend aspect owner before a later Load.
+- Debug push/pop/insert validate canonical encoder/pass/bundle state and balance.
+  Label bytes are optional diagnostics, not a second recorder or balance counter.
+  ABI9 storage/workgroup atomics use compiler-owned robust access and initialization;
+  no atomic type is reinterpreted by a frontend source parser.
 - Device serialization covers mutable resources and Vulkan state. Internal
   recursive acquisition permits resource-finalizer cleanup using the same lock.
   Foreign callbacks run only after unlocking, with required full-call leases.
@@ -85,16 +93,15 @@ exported; unknown and unimplemented names return NULL from `wgpuGetProcAddress`.
 ## Intentionally unprovided or rejected
 
 Surfaces, indexed/indirect draws and indirect dispatch remain absent. Graphics
-currently admits one stored color attachment, sample count 1, direct triangle/line
-lists or strips and 32-bit float/signed/unsigned vertex attributes. MSAA,
-PointList target lowering, color Discard stores, dual-source blending, vertex or
-fragment storage writes are explicitly rejected. WGSL discard requires actual
-enabled demote-to-helper support; unsupported devices reject that pipeline.
-Blend constants must be representable as finite f32 for this backend path.
-Texture format reinterpretation, depth copies/sampling/storage, multisampled images,
-cube arrays and anisotropic sampling are rejected. Public depth-only passes and
-depth-only draws are not yet composed; the private initializer uses real empty
-depth-only backend passes, never fabricated color attachments. The baseline admits 18 named Vulkan
+admits one color attachment and/or depth/stencil, sample counts 1 and 4, direct
+triangle/line lists or strips and 32-bit float/signed/unsigned vertex attributes.
+PointList target lowering, single-sample color Discard, dual-source blending,
+vertex or fragment storage writes and fragment FragDepth/SampleIndex/SampleMask
+remain explicitly rejected. WGSL discard requires actual enabled demote support;
+unsupported devices reject that pipeline. Blend constants must be finite f32.
+Texture format reinterpretation, depth copies/sampling/storage, multisampled
+sampling/copies/storage, cube arrays and anisotropic sampling are rejected.
+The baseline admits 18 named Vulkan
 color formats, subject to actual device usage/format capabilities. Device
 descriptors may request TimestampQuery when the actual adapter supports the
 canonical GPU nanosecond normalizer. Other required features and required limits
@@ -141,7 +148,10 @@ The checked-in test requires a fallback CPU adapter and verifies the returned
 adapter type is CPU. Its ordinary result is:
 
 ```
-PASS public depth/stencil: zero publication, depth ordering/read-only bundles, selected array/mip aspects, dynamic stencil, culled writes, same-batch discard/reinitialize preserving the other aspect, early releases and admission negatives (CPU Vulkan only)
+PASS public ABI9 atomics: storage accumulation, signed OOB suppression, compare-exchange result identity, fresh workgroup initialization across two groups and two dispatches, early releases (CPU Vulkan only)
+PASS public debug markers: typed procedures, independent nested balance, parent lock, underflow, malformed strings and finished/unbalanced command/pass/bundle rejection (CPU Vulkan only)
+PASS public MSAA: actual 4x color/depth, exact resolve pixels, mask0/zero-and-full alpha coverage, empty resolve, same-batch discard-zero and depth-only empty/query/bundle passes (CPU Vulkan only)
+PASS public depth/stencil: zero publication, genuine vertex-only depth draw, depth ordering/read-only bundles, selected array/mip aspects, dynamic stencil, culled writes, same-batch discard/reinitialize preserving the other aspect, early releases and admission negatives (CPU Vulkan only)
 PASS public discard: actual enabled feature, helper continuation, asymmetric pixel suppression, exact extension/capability gating and early releases (CPU Vulkan only)
 PASS public graphics admission: stage/output identity, async modes/reentry, explicit empty vertex slot, zero-count range and bundle state reset
 PASS valid empty WGSL has no compilation diagnostics; missing pipeline entry rejects
@@ -156,7 +166,7 @@ PASS public error types: resource allocation, automatic-layout allocation, compu
 PASS public timestamps: requested feature, zero/max/range/destroy admission, real pass/command writes, exact GPU nanoseconds, same-batch copy, scratch reuse and early query release (CPU Vulkan only)
 PASS typed recovery: native/OOM/pending errors survive submit/write/texture/workdone, unknown leases retained, terminal cleanup and fresh GPU normalizer recovery
 PASS every implemented procedure address matches; every unprovided name returns NULL
-PASS exact exports: 161 implemented, 41 pinned unprovided, no private exports
+PASS exact exports: 173 implemented, 29 pinned unprovided, no private exports
 ```
 
 A compute shader with two declared entries selects `transform`, runs 72
@@ -237,3 +247,13 @@ The depth receipt binds an isolated ABI8 compiler/shader composition with exact
 resource-view and Vulkan-initialization/cull overlays. Later shared ABI9/atomic,
 optional-color, debug-marker and MSAA source is not implicitly exercised by that
 receipt; each composition needs its own focused checks. Physical runs stay held.
+
+`DEVELOPER_RECEIPT_MSAA.json` separately binds the ABI9 composition: all 16 normal
+clients and seven fully instrumented compiler/runtime clients pass. It exercises
+4x resolve, mask0, alpha0/1 coverage, discarded-color zeroing, genuine vertex-only
+depth writes, independent debug-group balance, and robust atomic results across
+two workgroups and two dispatches. Its immutable dependencies exclude later
+pointer/ABI10 compiler changes and indirect work. The first atomic test failure
+used a reserved WGSL identifier; the corrected test and original log are retained.
+`COMPILER_RUNPATH` is overridable for staged builds; relocation is checked by the
+separate package owner, not implied by these development-path executions.

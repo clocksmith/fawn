@@ -12,16 +12,18 @@ static const DoeCompilerStageInterfaceV7 *location(const native_stage *stage, ui
     return NULL;
 }
 
-bool native_render_interfaces(const native_stage stages[2], const WGPUVertexState *vertex,
-    const WGPUColorTargetState *color, const doe_vk_caps *caps)
+bool native_render_interfaces(const native_stage stages[2], size_t stage_count, const WGPUVertexState *vertex,
+    const WGPUColorTargetState *color, bool alpha_to_coverage, const doe_vk_caps *caps)
 {
-    uint32_t color_scalar, color_components;
-    if (!native_color_scalar(color->format, &color_scalar) ||
-        doe_resource_format_color_components(color->format, &color_components) != DOE_RESOURCE_OK) return false;
-    const DoeCompilerStageInterfaceV7 *written = location(&stages[1], DOE_COMPILER_INTERFACE_OUTPUT, 0);
-    if (color->writeMask && !written) return false;
+    uint32_t color_scalar = 0, color_components = 0;
+    if (color && (!native_color_scalar(color->format, &color_scalar) ||
+        doe_resource_format_color_components(color->format, &color_components) != DOE_RESOURCE_OK)) return false;
+    const DoeCompilerStageInterfaceV7 *written = stage_count == 2 ? location(&stages[1], DOE_COMPILER_INTERFACE_OUTPUT, 0) : NULL;
+    if (color && color->writeMask && !written) return false;
+    if (alpha_to_coverage && (!written || written->scalar_kind != DOE_COMPILER_LEAF_F32 ||
+        written->lane_count != 4)) return false;
     bool source_alpha = false;
-    if (color->blend) {
+    if (color && color->blend) {
         WGPUBlendFactor from = color->blend->color.srcFactor;
         WGPUBlendFactor to = color->blend->color.dstFactor;
         source_alpha = from == WGPUBlendFactor_SrcAlpha || from == WGPUBlendFactor_OneMinusSrcAlpha ||
@@ -29,7 +31,7 @@ bool native_render_interfaces(const native_stage stages[2], const WGPUVertexStat
             to == WGPUBlendFactor_OneMinusSrcAlpha || to == WGPUBlendFactor_SrcAlphaSaturated;
     }
     /* https://gpuweb.github.io/gpuweb/#abstract-opdef-validating-gpufragmentstate */
-    for (size_t s = 0; s < 2; ++s) {
+    for (size_t s = 0; s < stage_count; ++s) {
         const native_stage *stage = &stages[s];
         size_t entry_index = (size_t)(stage->entry - stage->view.entries);
         uint32_t components = 0;
@@ -39,7 +41,7 @@ bool native_render_interfaces(const native_stage stages[2], const WGPUVertexStat
             if (item->builtin) {
                 if (s == 1 && (item->builtin == DOE_COMPILER_BUILTIN_FRAG_DEPTH ||
                     item->builtin == DOE_COMPILER_BUILTIN_SAMPLE_INDEX || item->builtin == DOE_COMPILER_BUILTIN_SAMPLE_MASK))
-                    return false; /* Depth/MSAA/sample-rate semantics are not enabled. */
+                    return false; /* Fragment depth outputs and sample-rate builtins remain unsupported. */
                 continue;
             }
             if (s == 0 && item->direction == DOE_COMPILER_INTERFACE_INPUT) {
@@ -56,7 +58,7 @@ bool native_render_interfaces(const native_stage stages[2], const WGPUVertexStat
                     }
                 if (!found) return false;
             } else if (s == 1 && item->direction == DOE_COMPILER_INTERFACE_OUTPUT) {
-                if (item->location != 0) continue; /* Untargeted outputs are ignored. */
+                if (!color || item->location != 0) continue; /* Untargeted outputs are ignored. */
                 if (item->scalar_kind != color_scalar || item->lane_count < color_components ||
                     (source_alpha && item->lane_count != 4)) return false;
             } else {

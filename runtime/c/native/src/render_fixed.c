@@ -40,8 +40,12 @@ bool native_render_fixed(const WGPURenderPipelineDescriptor *source, doe_vk_rend
 {
     if (source->primitive.nextInChain || source->primitive.unclippedDepth ||
         source->primitive.stripIndexFormat != WGPUIndexFormat_Undefined ||
-        source->multisample.nextInChain || source->multisample.count != 1 ||
-        source->multisample.mask != UINT32_MAX || source->multisample.alphaToCoverageEnabled) return false;
+        source->multisample.nextInChain || (source->multisample.count != 1 && source->multisample.count != 4) ||
+        (source->multisample.alphaToCoverageEnabled && source->multisample.count == 1)) return false;
+    target->sample_count = source->multisample.count;
+    target->override_sample_mask = true;
+    target->sample_mask = source->multisample.mask;
+    target->alpha_to_coverage = source->multisample.alphaToCoverageEnabled;
     switch (source->primitive.topology) {
     case WGPUPrimitiveTopology_Undefined:
     case WGPUPrimitiveTopology_TriangleList: target->topology = DOE_VK_TRIANGLES; break;
@@ -63,7 +67,9 @@ bool native_render_fixed(const WGPURenderPipelineDescriptor *source, doe_vk_rend
     case WGPUFrontFace_CW: target->clockwise_front = true; break;
     default: return false;
     }
-    const WGPUColorTargetState *color = source->fragment->targets;
+    const WGPUColorTargetState *color = source->fragment && source->fragment->targetCount ? source->fragment->targets : NULL;
+    if (!color || color->format == WGPUTextureFormat_Undefined)
+        return !source->multisample.alphaToCoverageEnabled;
     if (color->nextInChain || color->writeMask & ~WGPUColorWriteMask_All ||
         !native_texture_format(color->format, &target->color_format)) return false;
     target->color_write_mask = (uint32_t)color->writeMask;

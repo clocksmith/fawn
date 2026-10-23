@@ -125,10 +125,13 @@ static void depth_pixels(state *s, WGPUShaderModule module, WGPUBuffer vertices)
     attachment.depthStoreOp = WGPUStoreOp_Discard;
     encoder = wgpuDeviceCreateCommandEncoder(s->device,NULL);
     pass = begin(s,encoder,view,&attachment);
-    assert(pass); end(pass);
+    assert(pass);
+    end(pass);
     attachment.depthStoreOp = WGPUStoreOp_Store;
     pass = begin(s,encoder,view,&attachment);
-    assert(pass); draw(pass,writes,vertices,0); end(pass);
+    assert(pass);
+    draw(pass,writes,vertices,0);
+    end(pass);
     wgpuRenderPipelineRelease(writes);
     wgpuRenderPipelineRelease(readonly);
     wgpuTextureViewRelease(depth_view);
@@ -162,7 +165,8 @@ static void stencil_pixels(state *s, WGPUShaderModule module, WGPUBuffer vertice
     attachment.stencilClearValue = 7;
     WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(s->device,NULL);
     WGPURenderPassEncoder pass = begin(s,encoder,view,&attachment);
-    assert(pass); end(pass);
+    assert(pass);
+    end(pass);
     attachment.depthLoadOp = attachment.stencilLoadOp = WGPULoadOp_Undefined;
     attachment.depthStoreOp = attachment.stencilStoreOp = WGPUStoreOp_Undefined;
     attachment.depthReadOnly = attachment.stencilReadOnly = WGPU_TRUE;
@@ -182,6 +186,65 @@ static void stencil_pixels(state *s, WGPUShaderModule module, WGPUBuffer vertice
     wgpuTextureRelease(image);
     wgpuTextureViewRelease(view);
     read_pixels(s,encoder,color,255,0,0);
+    wgpuTextureRelease(color);
+}
+static void depth_only_draw(state *s, WGPUShaderModule module, WGPUBuffer vertices)
+{
+    WGPUShaderSourceWGSL source = WGPU_SHADER_SOURCE_WGSL_INIT;
+    source.code = (WGPUStringView){"@vertex fn vertex(@location(0) position:vec4f)->@builtin(position) vec4f{return position;}",WGPU_STRLEN};
+    WGPUShaderModuleDescriptor shader_desc = {.nextInChain=&source.chain};
+    WGPUShaderModule vertex_shader = wgpuDeviceCreateShaderModule(s->device,&shader_desc);
+    assert(vertex_shader);
+    WGPUVertexAttribute attribute = {.format=WGPUVertexFormat_Float32x4,.shaderLocation=0};
+    WGPUVertexBufferLayout vertex_layout = {.arrayStride=sizeof(vertex),.attributeCount=1,.attributes=&attribute};
+    WGPUDepthStencilState depth = WGPU_DEPTH_STENCIL_STATE_INIT;
+    depth.format = WGPUTextureFormat_Depth32Float;
+    depth.depthWriteEnabled = WGPUOptionalBool_True;
+    depth.depthCompare = WGPUCompareFunction_Less;
+    WGPURenderPipelineDescriptor desc = WGPU_RENDER_PIPELINE_DESCRIPTOR_INIT;
+    desc.vertex = (WGPUVertexState){.module=vertex_shader,.bufferCount=1,.buffers=&vertex_layout};
+    desc.depthStencil = &depth;
+    WGPURenderPipeline only_depth = wgpuDeviceCreateRenderPipeline(s->device,&desc);
+    assert(only_depth);
+    depth.depthWriteEnabled = WGPUOptionalBool_False;
+    WGPURenderPipeline observer = graphics(s,module,&depth,WGPUCullMode_None);
+    assert(observer);
+    WGPUTexture image = texture(s,WGPUTextureFormat_Depth32Float,WGPUTextureUsage_RenderAttachment,1);
+    WGPUTextureView depth_view = wgpuTextureCreateView(image,NULL);
+    WGPUTexture color = texture(s,WGPUTextureFormat_RGBA8Unorm,WGPUTextureUsage_RenderAttachment|WGPUTextureUsage_CopySrc,1);
+    WGPUTextureView view = wgpuTextureCreateView(color,NULL);
+    assert(depth_view && view);
+    WGPURenderPassDepthStencilAttachment attachment = WGPU_RENDER_PASS_DEPTH_STENCIL_ATTACHMENT_INIT;
+    attachment.view = depth_view;
+    attachment.depthLoadOp = WGPULoadOp_Clear;
+    attachment.depthStoreOp = WGPUStoreOp_Store;
+    attachment.depthClearValue = 1;
+    WGPURenderPassDescriptor pass_desc = {.depthStencilAttachment=&attachment};
+    WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(s->device,NULL);
+    WGPURenderPassEncoder pass = wgpuCommandEncoderBeginRenderPass(encoder,&pass_desc);
+    assert(pass);
+    draw(pass,only_depth,vertices,3); /* Actual vertex-only raster writes .25 with no color attachment. */
+    end(pass);
+    wgpuRenderPipelineRelease(only_depth);
+    wgpuShaderModuleRelease(vertex_shader);
+    attachment.depthLoadOp = WGPULoadOp_Undefined;
+    attachment.depthStoreOp = WGPUStoreOp_Undefined;
+    attachment.depthReadOnly = WGPU_TRUE;
+    pass = begin(s,encoder,view,&attachment);
+    assert(pass);
+    draw(pass,observer,vertices,0);
+    end(pass); /* .75 must fail against .25. */
+    read_pixels(s,encoder,color,0,0,0);
+    encoder = wgpuDeviceCreateCommandEncoder(s->device,NULL);
+    pass = begin(s,encoder,view,&attachment);
+    assert(pass);
+    draw(pass,observer,vertices,9);
+    end(pass); /* .1 must pass. */
+    wgpuRenderPipelineRelease(observer);
+    wgpuTextureViewRelease(depth_view);
+    wgpuTextureRelease(image);
+    wgpuTextureViewRelease(view);
+    read_pixels(s,encoder,color,0,0,255);
     wgpuTextureRelease(color);
 }
 static void array_aspects(state *s, WGPUShaderModule module, WGPUBuffer vertices)
@@ -292,6 +355,7 @@ int main(void)
     wgpuQueueWriteBuffer(s.queue,vertices,0,data,sizeof(data));
     depth_pixels(&s,module,vertices);
     stencil_pixels(&s,module,vertices);
+    depth_only_draw(&s,module,vertices);
     array_aspects(&s,module,vertices);
     negative_states(&s,module);
     assert(!s.errors && s.validation_errors == 4);
@@ -301,6 +365,6 @@ int main(void)
     wgpuDeviceRelease(s.device);
     wgpuAdapterRelease(s.adapter);
     wgpuInstanceRelease(s.instance);
-    puts("PASS public depth/stencil: zero publication, depth ordering/read-only bundles, selected array/mip aspects, dynamic stencil, culled writes, same-batch discard/reinitialize preserving the other aspect, early releases and admission negatives (CPU Vulkan only)");
+    puts("PASS public depth/stencil: zero publication, genuine vertex-only depth draw, depth ordering/read-only bundles, selected array/mip aspects, dynamic stencil, culled writes, same-batch discard/reinitialize preserving the other aspect, early releases and admission negatives (CPU Vulkan only)");
     return 0;
 }

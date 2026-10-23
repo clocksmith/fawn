@@ -47,25 +47,31 @@ WGPURenderPipeline native_create_render_pipeline(native_device *device,
 {
     *error = (native_pipeline_error){WGPUErrorType_Validation, "render descriptor, stage interface or capability unsupported"};
     if (!device || !descriptor || descriptor->nextInChain || descriptor->vertex.nextInChain ||
-        descriptor->vertex.constantCount || !descriptor->fragment || descriptor->fragment->nextInChain ||
-        descriptor->fragment->constantCount || descriptor->fragment->targetCount != 1 ||
-        !descriptor->fragment->targets) return NULL;
-    native_stage stages[2];
+        descriptor->vertex.constantCount) return NULL;
+    const WGPUFragmentState *fragment = descriptor->fragment;
+    if (fragment && (fragment->nextInChain || fragment->constantCount || fragment->targetCount > 1 ||
+        (fragment->targetCount && !fragment->targets))) return NULL;
+    const WGPUColorTargetState *color = fragment && fragment->targetCount &&
+        fragment->targets[0].format != WGPUTextureFormat_Undefined ? &fragment->targets[0] : NULL;
+    if (!color && !descriptor->depthStencil) return NULL;
+    native_stage stages[2] = {0};
+    size_t stage_count = fragment ? 2 : 1;
     if (!native_stage_load(device, descriptor->vertex.module, descriptor->vertex.entryPoint,
             DOE_COMPILER_STAGE_VERTEX, &stages[0]) ||
-        !native_stage_load(device, descriptor->fragment->module, descriptor->fragment->entryPoint,
-            DOE_COMPILER_STAGE_FRAGMENT, &stages[1])) return NULL;
+        (fragment && !native_stage_load(device, fragment->module, fragment->entryPoint,
+            DOE_COMPILER_STAGE_FRAGMENT, &stages[1]))) return NULL;
     doe_vk_render_pipeline_desc native = {
-        .vertex={stages[0].view.words,stages[0].view.counts.words,stages[0].name},
-        .fragment={stages[1].view.words,stages[1].view.counts.words,stages[1].name}
+        .vertex={stages[0].view.words,stages[0].view.counts.words,stages[0].name}
     };
-    doe_resource_render_pipeline_desc resource = {.color_format=descriptor->fragment->targets[0].format,.samples=1,
+    if (fragment) native.fragment = (doe_vk_shader){stages[1].view.words,stages[1].view.counts.words,stages[1].name};
+    doe_resource_render_pipeline_desc resource = {.color_format=color ? color->format : WGPUTextureFormat_Undefined,
+        .samples=descriptor->multisample.count,
         .topology=descriptor->primitive.topology,.strip_index_format=descriptor->primitive.stripIndexFormat};
     doe_vk_vertex_layout layouts[DOE_VK_MAX_VERTEX_BUFFERS];
     doe_vk_vertex_attribute attributes[DOE_VK_MAX_VERTEX_ATTRIBUTES];
     if (!native_render_fixed(descriptor, &native) || !native_render_depth(descriptor->depthStencil, &native, &resource) ||
         !vertices(&descriptor->vertex, &native, &resource, &device->caps, layouts, attributes) ||
-        !native_render_interfaces(stages, &descriptor->vertex, descriptor->fragment->targets, &device->caps)) return NULL;
+        !native_render_interfaces(stages, stage_count, &descriptor->vertex, color, descriptor->multisample.alphaToCoverageEnabled, &device->caps)) return NULL;
     native_pipeline *payload = calloc(1, sizeof(*payload));
     if (!payload) { *error = (native_pipeline_error){WGPUErrorType_OutOfMemory,"render pipeline payload allocation failed"}; return NULL; }
     payload->device = device;
@@ -75,9 +81,9 @@ WGPURenderPipeline native_create_render_pipeline(native_device *device,
     bool automatic = !layout;
     native_lock(device);
     doe_vk_status backend = native_device_status(device);
-    doe_resource_status status = automatic ? native_automatic_layout(device, stages, 2, &layout) : DOE_RESOURCE_OK;
+    doe_resource_status status = automatic ? native_automatic_layout(device, stages, stage_count, &layout) : DOE_RESOURCE_OK;
     if (status == DOE_RESOURCE_OK && (!layout || doe_resource_pipeline_layout_device(layout) != device ||
-        !native_pipeline_bindings(payload, stages, 2, layout))) status = DOE_RESOURCE_LAYOUT;
+        !native_pipeline_bindings(payload, stages, stage_count, layout))) status = DOE_RESOURCE_LAYOUT;
     if (status == DOE_RESOURCE_OK && backend == DOE_VK_OK) {
         native.bindings = payload->bindings;
         native.binding_count = payload->binding_count;

@@ -36,3 +36,7 @@ state. Use real attachment clears before publication and after Discard; never ad
 frontend availability bits or a fake color attachment. Public Plus format backing
 and optional feature identity are distinct. Preserve canonical absent-aspect,
 read-only and view-default admission when converting pinned ABI sentinels.
+
+Optional color and fragment stages remain genuinely absent; never synthesize a
+shader or attachment. Debug balance belongs to each existing recording owner.
+MSAA resolve and discard use the backend's same attachment initialization state.
