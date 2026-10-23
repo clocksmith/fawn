@@ -18,6 +18,11 @@ struct doe_vk_query_pool {
 typedef struct doe_vk_query_use {
     doe_vk_query_pool *pool;
     uint8_t *states;
+    /* Per index: reset or written by this recording. Completion publishes only
+     * these. depends_on_prior marks a write/resolve of an index this recording
+     * never reset, whose meaning would follow earlier pool state. */
+    uint8_t *touched;
+    bool depends_on_prior;
     struct doe_vk_query_use *next;
 } doe_vk_query_use;
 doe_vk_status doe_vk_use_queries(doe_vk_commands *commands, doe_vk_query_pool *pool,

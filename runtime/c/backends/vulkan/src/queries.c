@@ -80,13 +80,17 @@ doe_vk_status doe_vk_use_queries(doe_vk_commands *commands, doe_vk_query_pool *p
     doe_vk_query_use *use = calloc(1, sizeof(*use));
     if (use == NULL) return DOE_VK_OUT_OF_MEMORY;
     use->states = malloc(pool->count);
-    if (use->states == NULL) {
+    use->touched = calloc(pool->count, 1);
+    if (use->states == NULL || use->touched == NULL) {
+        free(use->states);
+        free(use->touched);
         free(use);
         return DOE_VK_OUT_OF_MEMORY;
     }
     doe_vk_status status = doe_vk_query_pool_retain(pool);
     if (status != DOE_VK_OK) {
         free(use->states);
+        free(use->touched);
         free(use);
         return status;
     }
@@ -115,6 +119,7 @@ doe_vk_status doe_vk_commands_reset_queries(doe_vk_commands *commands,
     doe_vk_barrier(commands);
     commands->context->vk.vkCmdResetQueryPool(commands->command, pool->pool, first, count);
     memset(use->states + first, DOE_VK_QUERY_RESET, count);
+    memset(use->touched + first, 1, count);
     return DOE_VK_OK;
 }
 
@@ -132,6 +137,8 @@ doe_vk_status doe_vk_commands_write_timestamp(doe_vk_commands *commands,
     uint32_t native_stage = stage == DOE_VK_TIMESTAMP_BEGIN ? VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT : VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
     commands->context->vk.vkCmdWriteTimestamp(commands->command, native_stage, pool->pool, index);
     use->states[index] = DOE_VK_QUERY_WRITTEN;
+    if (!use->touched[index]) use->depends_on_prior = true;
+    use->touched[index] = 1;
     return DOE_VK_OK;
 }
 
@@ -153,6 +160,8 @@ doe_vk_status doe_vk_commands_resolve_queries(doe_vk_commands *commands,
     if (status != DOE_VK_OK) return doe_vk_poison(commands, status);
     status = doe_vk_use_buffer(commands, destination);
     if (status != DOE_VK_OK) return doe_vk_poison(commands, status);
+    /* Copy-versus-zero is fixed at record time from these states. */
+    for (uint32_t i = 0; i < count; ++i) if (!use->touched[first + i]) use->depends_on_prior = true;
     doe_vk_barrier(commands);
     uint32_t start = 0;
     while (start < count) {
@@ -170,12 +179,38 @@ doe_vk_status doe_vk_commands_resolve_queries(doe_vk_commands *commands,
     return DOE_VK_OK;
 }
 
+/* Publishes only indices this recording reset or wrote. For one-shot work this
+ * equals the whole snapshot (the pool was exclusively owned since first use);
+ * for reusable runs it keeps state that other submissions set between runs. */
 void doe_vk_queries_complete(doe_vk_commands *commands, doe_vk_status status) {
     for (doe_vk_query_use *use = commands->queries; use != NULL; use = use->next) {
-        if (status == DOE_VK_OK) memcpy(use->pool->states, use->states, use->pool->count);
-        else if (use->pool->content_status == DOE_VK_OK) use->pool->content_status = status;
+        if (status == DOE_VK_OK) {
+            for (uint32_t i = 0; i < use->pool->count; ++i)
+                if (use->touched[i]) use->pool->states[i] = use->states[i];
+        } else if (use->pool->content_status == DOE_VK_OK) use->pool->content_status = status;
         if (use->pool->recording_owner == commands) use->pool->recording_owner = NULL;
     }
+}
+
+bool doe_vk_queries_self_contained(const doe_vk_commands *commands) {
+    for (const doe_vk_query_use *use = commands->queries; use != NULL; use = use->next)
+        if (use->depends_on_prior) return false;
+    return true;
+}
+
+void doe_vk_queries_detach(doe_vk_commands *commands) {
+    for (doe_vk_query_use *use = commands->queries; use != NULL; use = use->next)
+        if (use->pool->recording_owner == commands) use->pool->recording_owner = NULL;
+}
+
+doe_vk_status doe_vk_queries_acquire(doe_vk_commands *commands) {
+    for (doe_vk_query_use *use = commands->queries; use != NULL; use = use->next) {
+        if (use->pool->content_status != DOE_VK_OK) return use->pool->content_status;
+        if (use->pool->recording_owner != NULL && use->pool->recording_owner != commands) return DOE_VK_BUSY;
+    }
+    for (doe_vk_query_use *use = commands->queries; use != NULL; use = use->next)
+        use->pool->recording_owner = commands;
+    return DOE_VK_OK;
 }
 
 void doe_vk_queries_release(doe_vk_commands *commands) {
@@ -185,6 +220,7 @@ void doe_vk_queries_release(doe_vk_commands *commands) {
         if (use->pool->recording_owner == commands) use->pool->recording_owner = NULL;
         doe_vk_query_pool_release(use->pool);
         free(use->states);
+        free(use->touched);
         free(use);
     }
 }

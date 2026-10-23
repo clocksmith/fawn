@@ -123,6 +123,13 @@ doe_vk_status doe_vk_bind_resources(doe_vk_commands *commands, doe_vk_pipeline *
     const doe_vk_binding_resource *bindings, size_t count);
 void doe_vk_render_release(doe_vk_commands *commands);
 void doe_vk_queries_complete(doe_vk_commands *commands, doe_vk_status status);
+/* Reusable recordings: every written or resolved query index was reset first by
+ * the same recording, so each run's meaning is independent of prior pool state. */
+bool doe_vk_queries_self_contained(const doe_vk_commands *commands);
+/* Drops pool ownership (seal), or re-acquires it with health checks before a
+ * resubmission; acquisition is all-or-nothing and leaves no owner on failure. */
+void doe_vk_queries_detach(doe_vk_commands *commands);
+doe_vk_status doe_vk_queries_acquire(doe_vk_commands *commands);
 void doe_vk_queries_release(doe_vk_commands *commands);
 uint32_t doe_vk_descriptor_type(doe_vk_binding_kind kind);
 void doe_vk_dispatch_release(doe_vk_context *context, doe_vk_dispatch_use *use);
