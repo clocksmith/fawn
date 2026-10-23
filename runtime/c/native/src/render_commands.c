@@ -3,12 +3,30 @@
 #include <stdlib.h>
 #include <string.h>
 
+/* Named public index formats to native VkIndexType names; never a numeric cast.
+ * The resource owner already admitted the format at SetIndexBuffer. */
+static bool index_format(WGPUIndexFormat format, doe_vk_index_format *out)
+{
+    switch (format) {
+    case WGPUIndexFormat_Uint16:
+        *out = DOE_VK_INDEX_UINT16;
+        return true;
+    case WGPUIndexFormat_Uint32:
+        *out = DOE_VK_INDEX_UINT32;
+        return true;
+    case WGPUIndexFormat_Undefined:
+    case WGPUIndexFormat_Force32:
+        return false;
+    }
+    return false;
+}
+
 /* A temporary typed conversion of one immutable resource pass span. There is no
  * new recording state or lease registry: the resource owner already finalized
  * ordering, and one backend call consumes this entire borrowed pass. */
 static doe_vk_status prepare_draw(const doe_resource_render_packet *packet,
     doe_vk_render_pass_draw *draw, doe_vk_binding_resource *bindings, doe_vk_buffer_binding *vertices,
-    doe_vk_render_indirect *indirect)
+    doe_vk_render_indirect *indirect, doe_vk_render_indices *indices)
 {
     native_pipeline *pipeline = doe_resource_render_pipeline_native(packet->pipeline);
     doe_vk_status status = native_resolve_bindings(pipeline,
@@ -33,6 +51,19 @@ static doe_vk_status prepare_draw(const doe_resource_render_packet *packet,
             arguments->handle.vulkan,packet->indirect_offset};
         draw->indirect = indirect;
     }
+    if (packet->indexed) {
+        /* Indexed counts move from the shared packet fields into the native
+         * index record; direct vertex fields stay zero for the backend. */
+        native_buffer *buffer = doe_resource_buffer_native(packet->index.buffer);
+        doe_vk_index_format format;
+        if (!buffer || !index_format(packet->index_format, &format)) return DOE_VK_INVALID_ARGUMENT;
+        *indices = (doe_vk_render_indices){buffer->handle.vulkan, packet->index.offset, packet->index.size, format,
+            packet->indirect ? 0 : packet->count, packet->indirect ? 0 : packet->first,
+            packet->indirect ? 0 : packet->base_vertex};
+        draw->draw.vertex_count = 0;
+        draw->draw.first_vertex = 0;
+        draw->indices = indices;
+    }
     memcpy(draw->draw.viewport, packet->state.viewport, sizeof(draw->draw.viewport));
     memcpy(draw->draw.scissor, packet->state.scissor, sizeof(draw->draw.scissor));
     doe_vk_clear_color blend;
@@ -55,7 +86,7 @@ doe_vk_status native_record_render(doe_vk_commands *commands,
     const doe_resource_render_packet *begin = doe_resource_render_record_borrow(records[0].value.render);
     if (!begin || !begin->boundary_only || !begin->first_in_pass || begin->last_in_pass)
         return DOE_VK_INVALID_ARGUMENT;
-    size_t end = 0, binding_count = 0, vertex_count = 0, indirect_count = 0;
+    size_t end = 0, binding_count = 0, vertex_count = 0, indirect_count = 0, indexed_count = 0;
     for (size_t i = 1; i < count; ++i) {
         if (records[i].kind == DOE_COMMAND_BEGIN_OCCLUSION || records[i].kind == DOE_COMMAND_END_OCCLUSION) {
             if (records[i].value.timestamp.set != begin->targets.occlusion_queries) return DOE_VK_INVALID_ARGUMENT;
@@ -72,8 +103,9 @@ doe_vk_status native_record_render(doe_vk_commands *commands,
             end = i;
             break;
         }
-        if (packet->indexed || packet->last_in_pass) return DOE_VK_UNSUPPORTED;
+        if (packet->last_in_pass) return DOE_VK_UNSUPPORTED;
         if (packet->indirect && !add_size(&indirect_count,1)) return DOE_VK_OUT_OF_MEMORY;
+        if (packet->indexed && !add_size(&indexed_count,1)) return DOE_VK_OUT_OF_MEMORY;
         native_pipeline *pipeline = doe_resource_render_pipeline_native(packet->pipeline);
         if (!pipeline || !add_size(&binding_count, pipeline->binding_count) ||
             !add_size(&vertex_count, pipeline->vertex_count)) return DOE_VK_OUT_OF_MEMORY;
@@ -81,15 +113,18 @@ doe_vk_status native_record_render(doe_vk_commands *commands,
     if (!end) return DOE_VK_INVALID_ARGUMENT;
     size_t op_count = end - 1;
     if (op_count > SIZE_MAX / sizeof(doe_vk_render_pass_op) ||
-        indirect_count > SIZE_MAX / sizeof(doe_vk_render_indirect) || binding_count > SIZE_MAX / sizeof(doe_vk_binding_resource) ||
+        indirect_count > SIZE_MAX / sizeof(doe_vk_render_indirect) ||
+        indexed_count > SIZE_MAX / sizeof(doe_vk_render_indices) || binding_count > SIZE_MAX / sizeof(doe_vk_binding_resource) ||
         vertex_count > SIZE_MAX / sizeof(doe_vk_buffer_binding)) return DOE_VK_OUT_OF_MEMORY;
     doe_vk_render_pass_op *ops = op_count ? calloc(op_count, sizeof(*ops)) : NULL;
     doe_vk_render_indirect *indirect = indirect_count ? calloc(indirect_count,sizeof(*indirect)) : NULL;
+    doe_vk_render_indices *indices = indexed_count ? calloc(indexed_count,sizeof(*indices)) : NULL;
     doe_vk_binding_resource *bindings = binding_count ? calloc(binding_count, sizeof(*bindings)) : NULL;
     doe_vk_buffer_binding *vertices = vertex_count ? calloc(vertex_count, sizeof(*vertices)) : NULL;
-    doe_vk_status status = (op_count && !ops) || (indirect_count && !indirect) || (binding_count && !bindings) || (vertex_count && !vertices) ?
+    doe_vk_status status = (op_count && !ops) || (indirect_count && !indirect) || (indexed_count && !indices) ||
+        (binding_count && !bindings) || (vertex_count && !vertices) ?
         DOE_VK_OUT_OF_MEMORY : DOE_VK_OK;
-    size_t binding_at = 0, vertex_at = 0, indirect_at = 0;
+    size_t binding_at = 0, vertex_at = 0, indirect_at = 0, indexed_at = 0;
     for (size_t i = 1; status == DOE_VK_OK && i < end; ++i) {
         doe_vk_render_pass_op *op = &ops[i - 1];
         if (records[i].kind == DOE_COMMAND_BEGIN_OCCLUSION) {
@@ -100,7 +135,8 @@ doe_vk_status native_record_render(doe_vk_commands *commands,
             op->kind = DOE_VK_RENDER_DRAW;
             const doe_resource_render_packet *packet = doe_resource_render_record_borrow(records[i].value.render);
             status = prepare_draw(packet, &op->value.draw, bindings ? bindings + binding_at : NULL,
-                vertices ? vertices + vertex_at : NULL, packet->indirect ? &indirect[indirect_at++] : NULL);
+                vertices ? vertices + vertex_at : NULL, packet->indirect ? &indirect[indirect_at++] : NULL,
+                packet->indexed ? &indices[indexed_at++] : NULL);
             if (status == DOE_VK_OK) {
                 binding_at += op->value.draw.binding_count;
                 vertex_at += op->value.draw.vertex_buffer_count;
@@ -138,6 +174,7 @@ doe_vk_status native_record_render(doe_vk_commands *commands,
             query ? query->pool : NULL, ops, op_count);
     }
     free(indirect);
+    free(indices);
     free(vertices);
     free(bindings);
     free(ops);

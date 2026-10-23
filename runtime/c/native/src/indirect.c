@@ -85,30 +85,50 @@ void wgpuComputePassEncoderDispatchWorkgroupsIndirect(WGPUComputePassEncoder han
         "indirect dispatch admission failed or selected backend unsupported");
 }
 
-void wgpuRenderPassEncoderDrawIndirect(WGPURenderPassEncoder handle, WGPUBuffer arguments, uint64_t offset)
+static void pass_indirect(WGPURenderPassEncoder handle, WGPUBuffer arguments, uint64_t offset, bool indexed)
 {
     doe_resource_render_pass *pass = (doe_resource_render_pass *)handle;
     native_device *device = doe_resource_render_pass_device(pass);
     if (!device) return;
     native_lock(device);
     doe_resource_status status = device->backend.kind == WGPUBackendType_Vulkan ?
-        doe_resource_render_pass_draw_indirect(pass,(doe_resource_buffer *)arguments,offset,false) :
+        doe_resource_render_pass_draw_indirect(pass,(doe_resource_buffer *)arguments,offset,indexed) :
         doe_resource_render_pass_invalidate(pass,DOE_RESOURCE_UNSUPPORTED);
     native_unlock(device);
     if (status != DOE_RESOURCE_OK) native_error(device,native_resource_error(status),
         "indirect draw admission failed or selected backend unsupported");
 }
 
-void wgpuRenderBundleEncoderDrawIndirect(WGPURenderBundleEncoder handle, WGPUBuffer arguments, uint64_t offset)
+static void bundle_indirect(WGPURenderBundleEncoder handle, WGPUBuffer arguments, uint64_t offset, bool indexed)
 {
     doe_resource_bundle_encoder *encoder = (doe_resource_bundle_encoder *)handle;
     native_device *device = doe_resource_bundle_encoder_device(encoder);
     if (!device) return;
     native_lock(device);
     doe_resource_status status = device->backend.kind == WGPUBackendType_Vulkan ?
-        doe_resource_bundle_encoder_draw_indirect(encoder,(doe_resource_buffer *)arguments,offset,false) :
+        doe_resource_bundle_encoder_draw_indirect(encoder,(doe_resource_buffer *)arguments,offset,indexed) :
         doe_resource_bundle_encoder_invalidate(encoder,DOE_RESOURCE_UNSUPPORTED);
     native_unlock(device);
     if (status != DOE_RESOURCE_OK) native_error(device,native_resource_error(status),
         "indirect bundle draw admission failed or selected backend unsupported");
+}
+
+void wgpuRenderPassEncoderDrawIndirect(WGPURenderPassEncoder handle, WGPUBuffer arguments, uint64_t offset)
+{
+    pass_indirect(handle,arguments,offset,false);
+}
+
+void wgpuRenderPassEncoderDrawIndexedIndirect(WGPURenderPassEncoder handle, WGPUBuffer arguments, uint64_t offset)
+{
+    pass_indirect(handle,arguments,offset,true);
+}
+
+void wgpuRenderBundleEncoderDrawIndirect(WGPURenderBundleEncoder handle, WGPUBuffer arguments, uint64_t offset)
+{
+    bundle_indirect(handle,arguments,offset,false);
+}
+
+void wgpuRenderBundleEncoderDrawIndexedIndirect(WGPURenderBundleEncoder handle, WGPUBuffer arguments, uint64_t offset)
+{
+    bundle_indirect(handle,arguments,offset,true);
 }
