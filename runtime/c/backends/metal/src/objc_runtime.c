@@ -78,12 +78,33 @@ static doe_mtl_size device_dimensions(doe_mtl_objc *runtime, void *device) {
     return dimensions;
 }
 
+/* Read required device facts once. Caller policy may restrict these limits,
+ * but cannot replace them with inferred aggregate/pipeline capabilities. */
+bool doe_mtl_objc_limits(doe_mtl_objc *runtime, void *device, doe_mtl_caps *caps) {
+    doe_mtl_size dimensions;
+    size_t buffer_length, memory_length;
+    if (!runtime->responds_call(device, runtime->responds, runtime->max_buffer_length) ||
+        !runtime->responds_call(device, runtime->responds, runtime->max_threads) ||
+        !runtime->responds_call(device, runtime->responds, runtime->max_threadgroup_memory))
+        return false;
+    dimensions = device_dimensions(runtime, device);
+    buffer_length = doe_mtl_objc_size(runtime, device, runtime->max_buffer_length);
+    memory_length = doe_mtl_objc_size(runtime, device, runtime->max_threadgroup_memory);
+    if (buffer_length == 0 || memory_length == 0 || dimensions.width == 0 ||
+        dimensions.height == 0 || dimensions.depth == 0) return false;
+    caps->max_buffer_length = buffer_length;
+    caps->max_threadgroup_memory_length = memory_length;
+    caps->max_threads_per_dimension[0] = dimensions.width;
+    caps->max_threads_per_dimension[1] = dimensions.height;
+    caps->max_threads_per_dimension[2] = dimensions.depth;
+    return true;
+}
+
 static doe_mtl_status create_device(void *userdata, void **out, doe_mtl_caps *caps,
     doe_mtl_error *error) {
     doe_mtl_objc *runtime = userdata;
     void *pool = doe_mtl_objc_pool(runtime);
     void *device;
-    doe_mtl_size dimensions;
     doe_mtl_caps result = {0};
     if (pool == NULL) return doe_mtl_fail(DOE_MTL_NATIVE_FAILURE, "autorelease pool", error);
     device = runtime->create_device(); /* Create-family +1, non-ARC C caller. */
@@ -91,25 +112,13 @@ static doe_mtl_status create_device(void *userdata, void **out, doe_mtl_caps *ca
         doe_mtl_objc_drain(runtime, pool);
         return doe_mtl_fail(DOE_MTL_UNSUPPORTED, "MTLCreateSystemDefaultDevice", error);
     }
-    if (!runtime->responds_call(device, runtime->responds, runtime->max_buffer_length) ||
-        !runtime->responds_call(device, runtime->responds, runtime->max_threads)) {
-        doe_mtl_objc_void(runtime, device, runtime->release);
-        doe_mtl_objc_drain(runtime, pool);
-        return doe_mtl_fail(DOE_MTL_UNSUPPORTED, "Metal device limit selectors", error);
-    }
-    dimensions = device_dimensions(runtime, device);
-    result.max_threads_per_dimension[0] = dimensions.width;
-    result.max_threads_per_dimension[1] = dimensions.height;
-    result.max_threads_per_dimension[2] = dimensions.depth;
-    result.max_buffer_length = doe_mtl_objc_size(runtime, device, runtime->max_buffer_length);
-    doe_mtl_objc_text(runtime, doe_mtl_objc_object(runtime, device, runtime->name),
-        result.device_name, sizeof(result.device_name));
-    if (result.max_buffer_length == 0 || dimensions.width == 0 ||
-        dimensions.height == 0 || dimensions.depth == 0) {
+    if (!doe_mtl_objc_limits(runtime, device, &result)) {
         doe_mtl_objc_void(runtime, device, runtime->release);
         doe_mtl_objc_drain(runtime, pool);
         return doe_mtl_fail(DOE_MTL_UNSUPPORTED, "Metal device limits", error);
     }
+    doe_mtl_objc_text(runtime, doe_mtl_objc_object(runtime, device, runtime->name),
+        result.device_name, sizeof(result.device_name));
     doe_mtl_objc_image_caps(runtime, device, &result);
     doe_mtl_objc_query_caps(runtime, device, &result);
     *out = device;
@@ -184,6 +193,7 @@ static bool load_selectors(doe_mtl_objc *runtime) {
     runtime->contents = runtime->selector("contents");
     runtime->max_buffer_length = runtime->selector("maxBufferLength");
     runtime->max_threads = runtime->selector("maxThreadsPerThreadgroup");
+    runtime->max_threadgroup_memory = runtime->selector("maxThreadgroupMemoryLength");
     runtime->name = runtime->selector("name");
     runtime->utf8 = runtime->selector("UTF8String");
     runtime->string_init = runtime->selector("initWithBytes:length:encoding:");
@@ -212,7 +222,8 @@ static bool load_selectors(doe_mtl_objc *runtime) {
         runtime->retain != NULL && runtime->release != NULL && runtime->drain != NULL &&
         runtime->new_queue != NULL && runtime->new_buffer != NULL &&
         runtime->contents != NULL && runtime->max_buffer_length != NULL &&
-        runtime->max_threads != NULL && runtime->name != NULL && runtime->utf8 != NULL &&
+        runtime->max_threads != NULL && runtime->max_threadgroup_memory != NULL &&
+        runtime->name != NULL && runtime->utf8 != NULL &&
         runtime->string_init != NULL && runtime->new_library != NULL &&
         runtime->new_function != NULL && runtime->new_pipeline != NULL &&
         runtime->pipeline_max_threads != NULL && runtime->localized_description != NULL &&

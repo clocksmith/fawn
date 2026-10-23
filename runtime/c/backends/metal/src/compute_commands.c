@@ -117,4 +117,3 @@ doe_mtl_status doe_mtl_commands_dispatch(doe_mtl_commands *commands,
     return doe_mtl_commands_dispatch_resources(commands, pipeline, bindings, count,
         NULL, 0, NULL, 0, groups, repeat, error);
 }
-
