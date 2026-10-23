@@ -229,4 +229,12 @@ typedef struct VkPhysicalDeviceShaderDemoteToHelperInvocationFeatures {
     void *pNext;
     uint32_t shaderDemoteToHelperInvocation;
 } VkPhysicalDeviceShaderDemoteToHelperInvocationFeatures;
+
+/* Official VK_KHR_maintenance5 declaration (Vulkan-Headers v1.3.290), bound in
+ * ABI_PROVENANCE.json. Enabled only with its VK_KHR_dynamic_rendering dependency. */
+typedef struct VkPhysicalDeviceMaintenance5FeaturesKHR {
+    int32_t sType;
+    void *pNext;
+    uint32_t maintenance5;
+} VkPhysicalDeviceMaintenance5FeaturesKHR;
 #endif

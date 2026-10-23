@@ -8,6 +8,8 @@ typedef struct doe_vk_feature_selection {
     const uint8_t *extension;
     VkPhysicalDeviceSwapchainMaintenance1FeaturesEXT swapchain;
     bool surface_enabled;
+    VkPhysicalDeviceMaintenance5FeaturesKHR maintenance5;
+    bool maintenance5_enabled; /* With VK_KHR_dynamic_rendering, its dependency at API 1.2. */
 } doe_vk_feature_selection;
 /* Caller-owned immediate device-create data, no retained pointer or handles.
  * Failure leaves output unchanged. Optional unsupported demote stays disabled. */

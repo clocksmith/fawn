@@ -154,6 +154,18 @@ int main(void) {
         assert(doe_vk_render_pipeline_create(&context, &desc, &pipeline, NULL) == DOE_VK_OK);
         doe_vk_pipeline_release(pipeline);
     }
+    /* Point lists need enabled maintenance5 (default PointSize 1.0); without it
+     * admission rejects before any native module or pipeline call. */
+    desc.topology = DOE_VK_POINTS;
+    expected_restart = 0;
+    doe_vk_pipeline *points = (doe_vk_pipeline *)&context;
+    unsigned modules_before = modules;
+    assert(doe_vk_render_pipeline_create(&context, &desc, &points, NULL) == DOE_VK_UNSUPPORTED);
+    assert(points == (doe_vk_pipeline *)&context && modules == modules_before && context.references == 1);
+    context.caps.maintenance5 = true;
+    assert(doe_vk_render_pipeline_create(&context, &desc, &points, NULL) == DOE_VK_OK);
+    doe_vk_pipeline_release(points);
+    context.caps.maintenance5 = false;
     desc.topology = DOE_VK_TRIANGLES;
     expected_restart = 0;
     pipeline_result = -1;
@@ -161,6 +173,6 @@ int main(void) {
     assert(doe_vk_render_pipeline_create(&context, &desc, &out, NULL) == DOE_VK_OUT_OF_MEMORY);
     assert(out == sentinel && modules == destroyed_modules && context.references == 1);
     assert(live_pipelines == 0 && live_passes == 0 && live_layouts == 0);
-    puts("PASS genuine depth-only native pipeline packets, optional fragment stage, strip-only primitive restart, no color state/attachment, malformed or contradictory admission, output preservation and native failure cleanup");
+    puts("PASS genuine depth-only native pipeline packets, optional fragment stage, strip-only primitive restart, maintenance5-gated point lists, no color state/attachment, malformed or contradictory admission, output preservation and native failure cleanup");
     return 0;
 }
