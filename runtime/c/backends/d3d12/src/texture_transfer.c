@@ -26,7 +26,7 @@ static doe_dx_status transfer(doe_dx_commands *commands, doe_dx_buffer *buffer,
     size_t added = (doe_dx_find_buffer(commands, buffer) ? 0u : 1u) +
         (doe_dx_find_texture(commands, texture) ? 0u : 1u);
     if (commands->operation_count == 65536 ||
-        added > DOE_DX_MAX_COMMAND_RESOURCES - commands->buffer_count - commands->texture_count)
+        added > DOE_DX_MAX_COMMAND_RESOURCES - commands->buffer_count - commands->texture_count - commands->timestamp_count)
         return doe_dx_fail(DOE_DX_RANGE, 0, "texture.transfer.budget", error);
     doe_dx_use_buffer(commands, buffer);
     doe_dx_use_texture(commands, texture);
@@ -64,7 +64,7 @@ doe_dx_status doe_dx_commands_copy_texture(doe_dx_commands *commands,
     size_t added = (doe_dx_find_texture(commands, source) ? 0u : 1u) +
         (doe_dx_find_texture(commands, destination) ? 0u : 1u);
     if (commands->operation_count == 65536 ||
-        added > DOE_DX_MAX_COMMAND_RESOURCES - commands->buffer_count - commands->texture_count)
+        added > DOE_DX_MAX_COMMAND_RESOURCES - commands->buffer_count - commands->texture_count - commands->timestamp_count)
         return doe_dx_fail(DOE_DX_RANGE, 0, "texture.copy.budget", error);
     doe_dx_use_texture(commands, source);
     doe_dx_use_texture(commands, destination);

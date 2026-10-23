@@ -36,6 +36,13 @@ static void release_resources(doe_dx_commands *commands, bool publish) {
         doe_dx_texture_release(use->texture);
     }
     commands->texture_count = 0;
+    for (size_t index = 0; index < commands->timestamp_count; index++) {
+        doe_dx_timestamp_use *use = &commands->timestamps[index];
+        use->timestamps->owner = NULL;
+        if (publish) use->timestamps->initialized = use->initialized;
+        doe_dx_timestamps_release(use->timestamps);
+    }
+    commands->timestamp_count = 0;
     for (size_t index = 0; index < commands->pipeline_count; index++)
         doe_dx_pipeline_release(commands->pipelines[index]);
     commands->pipeline_count = 0;
@@ -122,7 +129,7 @@ doe_dx_status doe_dx_commands_copy(doe_dx_commands *commands,
         return doe_dx_fail(DOE_DX_ALIGNMENT, 0, "commands.copy", error);
     size_t added = (doe_dx_find_buffer(commands, source) ? 0u : 1u) +
         (doe_dx_find_buffer(commands, destination) ? 0u : 1u);
-    if (added > DOE_DX_MAX_COMMAND_RESOURCES - commands->buffer_count - commands->texture_count)
+    if (added > DOE_DX_MAX_COMMAND_RESOURCES - commands->buffer_count - commands->texture_count - commands->timestamp_count)
         return doe_dx_fail(DOE_DX_RANGE, 0, "commands.resource_budget", error);
     doe_dx_use_buffer(commands, source);
     doe_dx_use_buffer(commands, destination);

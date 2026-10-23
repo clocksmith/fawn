@@ -26,6 +26,7 @@ struct doe_dx_native_texture {
     ID3D12Resource *resource;
     D3D12_RESOURCE_DESC description;
 };
+struct doe_dx_native_timestamps { ID3D12QueryHeap *heap; };
 struct doe_dx_native_pipeline {
     ID3D12RootSignature *root;
     ID3D12PipelineState *state;
@@ -43,6 +44,10 @@ struct doe_dx_native_commands {
     doe_dx_descriptor_use *descriptors;
 };
 doe_dx_status doe_dx_hresult(HRESULT result, const char *operation, doe_dx_error *error);
+doe_dx_status doe_dx_create_root(doe_dx_native_context *context,
+    const doe_dx_resource_pipeline_desc *desc, doe_dx_native_pipeline *pipeline, doe_dx_error *error);
+void doe_dx_transition_resources(doe_dx_native_commands *commands, doe_dx_native_pipeline *pipeline,
+    const doe_dx_native_resources *resources, bool graphics, bool restore);
 DXGI_FORMAT doe_dx_texture_format(doe_dx_format format);
 doe_dx_status doe_dx_prepare_descriptors(doe_dx_native_commands *commands,
     doe_dx_native_pipeline *pipeline, const doe_dx_native_resources *resources,

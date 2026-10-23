@@ -14,7 +14,8 @@ typedef enum doe_dx_format {
 } doe_dx_format;
 enum {
     DOE_DX_TEXTURE_COPY_SRC = 1, DOE_DX_TEXTURE_COPY_DST = 2,
-    DOE_DX_TEXTURE_SAMPLED = 4, DOE_DX_TEXTURE_STORAGE = 8
+    DOE_DX_TEXTURE_SAMPLED = 4, DOE_DX_TEXTURE_STORAGE = 8,
+    DOE_DX_TEXTURE_RENDER_ATTACHMENT = 16 /* RGBA8_UNORM only. */
 };
 typedef struct doe_dx_texture_desc {
     uint32_t width, height;

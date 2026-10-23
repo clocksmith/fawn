@@ -7,7 +7,7 @@
 - The serialized context is the sole submitted-command retirement owner.
   Execute first publishes that ownership; failed signal/wait leaves every
   obligation intact. Only observed completion or terminal device loss settles it.
-- A buffer or texture is exclusive to one recorded or unresolved command. This deliberately
+- A buffer, texture or timestamp heap is exclusive to one recorded or unresolved command. This deliberately
   rejects cross-command resource reuse until completion, rather than pretending
   to support arbitrary overlapping command lists or WebGPU usage scopes.
 - Every default-buffer/texture operation begins/ends at COPY_DEST; upload/readback heap
@@ -21,3 +21,9 @@
 - Sampled/storage descriptors and static samplers are pipeline/command-owned, not
   a second resource registry. Dynamic views/samplers need a real consumer before
   broadening the boundary. Preserve historical source seals when extending it.
+- Graphics and compute share root layout, binding validation and pipeline lifetime.
+  A rejected draw must not record a clear or transition; allocate both RTV and
+  shader descriptor heaps first. Never infer full initialization from draw coverage.
+- Timestamp slots require an actual EndQuery before resolve. Track speculative slot
+  initialization on the existing command, publish at completion, and reject partial
+  readback into uninitialized bytes. Zero frequency is failure, never a fallback.

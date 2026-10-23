@@ -17,6 +17,11 @@ COM declarations. No retained Zig bridge is linked, invoked or removed.
   all 2D/single-mip/single-layer/single-sample. Native format capability checks,
   whole-resource upload/readback/copy, immutable same-format SRV/UAV bindings,
   mixed buffer/texture dispatch and copied static nearest/linear samplers.
+- Offscreen triangle-list graphics with procedural vertices, actual VS/PS PSOs,
+  one RGBA8_UNORM attachment, explicit clear/load, unconditional store and shared
+  sampled/storage bindings. Full-target viewport/scissor, no blend/cull/depth.
+- Timestamp heaps (1..64 slots), explicit EndQuery and ResolveQueryData into
+  readback, real direct-queue frequency and completion-backed slot publication.
 - Single-use command recording, early caller release, atomic submission ownership,
   finite waits, partial retirement, unknown-completion recovery and terminal loss.
 - Typed statuses, first close failure, allocation rollback and native bounds.
@@ -27,11 +32,12 @@ submissions, then call context_destroy. BUSY means the context is still owned by
 the caller and must remain available for polling/release. Submitted commands are
 context-owned even if the caller releases them. Recording-only commands are
 canceled by release. Different pending commands may use disjoint resources; a
-buffer or texture cannot belong to another recorded/unresolved command. This restriction is
+buffer, texture or timestamp heap cannot belong to another recorded/unresolved command. This restriction is
 explicit, not a claim of full command-buffer or WebGPU concurrency parity.
 
 No depth/compressed/sRGB texture, mip/array/partial copy, dynamic sampler/view,
-rendering, presentation, query, indirect dispatch, uniform-binding,
+vertex/index attributes, indexed/indirect draw, depth/MSAA/multiple attachments,
+presentation, occlusion/pipeline-statistic query, indirect dispatch, uniform-binding,
 WGSL-to-DXIL compiler invocation or public WebGPU export is implemented here.
 Unsupported broad surfaces are not padded out with success-looking exports.
 The native frontend/compiler still owns reflection, shader admission, workgroup
@@ -50,6 +56,17 @@ before publication. The SDK helper
 [uses last-occupied-row sizing](https://github.com/microsoft/DirectX-Headers/blob/main/include/directx/d3dx12_resource_helpers.h),
 matching the common arithmetic leaf for this four-byte, single-plane subset.
 
+A clear initializes the full color attachment; draw coverage alone never does.
+Graphics resources use both pixel and non-pixel shader read states and return to
+COPY_DEST after each draw. RTV and shader heaps remain owned by the command until
+completion or terminal loss. All fallible descriptor preparation precedes command
+mutation. Timestamp resolves reject unwritten slots and partial destinations with
+uninitialized bytes, following the native
+[query resolve obligations](https://learn.microsoft.com/en-us/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-resolvequerydata).
+The frequency is the actual queue frequency; zero/failure is never replaced by 1.
+Raw ticks remain raw, without an implicit conversion, calibration or performance
+claim. [Microsoft timing semantics](https://learn.microsoft.com/en-us/windows/win32/direct3d12/timing).
+
 ## Source trace and consolidation
 
 The retained Windows path creates/retains a native runtime in
@@ -59,7 +76,10 @@ through `native/compute/doe_compute_d3d12.zig` into
 `d3d12_native_runtime.zig`, `d3d12_runtime_compute.zig` and
 `d3d12_runtime_upload.zig`. Texture allocation/copy/view behavior traces
 `resources/d3d12_texture.zig` and the texture/SRV/UAV/sampler operations of
-`d3d12_bridge.c`. The new owner consolidates device, ownership, commands
+`d3d12_bridge.c`. Graphics traces `commands/d3d12_native_render_pass.zig`
+and bridge graphics PSO/RTV/draw operations. Timestamps trace
+`commands/d3d12_gpu_timestamps.zig` and `d3d12_query_set.zig`; this owner does not
+copy their separate query command/queue machinery. The new owner consolidates device, ownership, commands
 and resource rules by responsibility instead of translating every Zig file.
 Retained sources stay live until their consumers are separately migrated; none
 is superseded yet, so deleting them would break a current consumer.
@@ -91,11 +111,14 @@ On Windows in a configured MSVC/Windows SDK developer command prompt:
     build_windows.cmd
     dxc -T cs_6_0 -E main tests\native_compute.hlsl -Fo "%TEMP%\doe-c-d3d12\native_compute.dxil"
     dxc -T cs_6_0 -E main tests\native_texture.hlsl -Fo "%TEMP%\doe-c-d3d12\native_texture.dxil"
+    dxc -T vs_6_0 -E vertex_main tests\native_graphics.hlsl -Fo "%TEMP%\doe-c-d3d12\vertex.dxil"
+    dxc -T ps_6_0 -E fragment_main tests\native_graphics.hlsl -Fo "%TEMP%\doe-c-d3d12\fragment.dxil"
 
 The build script only builds. After separate execution authorization:
 
     "%TEMP%\doe-c-d3d12\native_compute.exe" "%TEMP%\doe-c-d3d12\native_compute.dxil"
     "%TEMP%\doe-c-d3d12\native_texture.exe" "%TEMP%\doe-c-d3d12\native_texture.dxil"
+    "%TEMP%\doe-c-d3d12\native_graphics.exe" "%TEMP%\doe-c-d3d12\vertex.dxil" "%TEMP%\doe-c-d3d12\fragment.dxil"
 
 A Windows-target C compiler with the actual SDK may alternatively use
 `make windows` and `make native-fixture`. Non-Windows `make` runs only host
@@ -104,13 +127,17 @@ fixture releases caller upload/storage/pipeline references before submission,
 then releases the caller command before polling and compares real readback. The
 texture fixture samples a 3x2 R32_FLOAT texture through a static sampler, writes
 a storage texture, copies to another texture and checks every byte of padded
-readback against binary-exact values, including preserved padding. Neither native
-fixture executes as part of host checks.
+readback against binary-exact values, including preserved padding. The graphics
+fixture draws a sampled green fullscreen triangle over a red clear and checks
+exact RGBA bytes plus real timestamp ordering/frequency, releasing caller texture,
+query, upload, pipeline and command references before completion. No native fixture
+executes as part of host checks.
 
 Windows SDK compilation, DXC compilation, native driver readback, debug-layer
 validation and physical qualification are **unrun** in the dot cloud environment.
 The fixture's portable syntax check is not any of those qualifications.
 
-The core SOURCE_INPUTS.sha256 / TERMINAL_RECEIPT.txt seal is historical. Current
-texture snapshot inputs and checks are in TEXTURE_SOURCE_INPUTS.sha256 and
-TEXTURE_TERMINAL_RECEIPT.txt; earlier evidence does not qualify changed bytes.
+The core SOURCE_INPUTS.sha256 / TERMINAL_RECEIPT.txt and texture TEXTURE_* seals
+are historical. Current graphics/query inputs and checks are in
+GRAPHICS_SOURCE_INPUTS.sha256 and GRAPHICS_TERMINAL_RECEIPT.txt; earlier evidence
+does not qualify changed bytes.

@@ -7,11 +7,11 @@
 typedef enum mock_failure {
     MOCK_NONE, MOCK_OPEN, MOCK_BUFFER, MOCK_PIPELINE, MOCK_COMMANDS,
     MOCK_DISPATCH, MOCK_FINISH, MOCK_SIGNAL, MOCK_COMPLETED, MOCK_WAIT,
-    MOCK_WRITE, MOCK_READ, MOCK_TEXTURE
+    MOCK_WRITE, MOCK_READ, MOCK_TEXTURE, MOCK_GRAPHICS, MOCK_DRAW, MOCK_TIMESTAMPS, MOCK_FREQUENCY
 } mock_failure;
 typedef struct mock_state {
     mock_failure failure;
-    size_t contexts, buffers, pipelines, commands, textures;
+    size_t contexts, buffers, pipelines, commands, textures, timestamps;
     size_t copies, dispatches, finishes, executes, signals, waits;
     size_t allocations, allocation_attempts, allocation_failure;
     uint64_t completed, last_signal;
@@ -28,6 +28,13 @@ typedef struct mock_state {
     doe_dx_resource_pipeline_desc pipeline_desc;
     doe_dx_texture_binding_layout texture_layouts[DOE_DX_MAX_BINDINGS];
     doe_dx_static_sampler samplers[DOE_DX_MAX_BINDINGS];
+    size_t draws, timestamp_writes, timestamp_resolves;
+    doe_dx_native_texture *draw_color;
+    doe_dx_draw_desc draw;
+    doe_dx_native_timestamps *timestamp_heap;
+    uint32_t timestamp_index, resolve_first, resolve_count;
+    uint64_t resolve_offset, frequency;
+    doe_dx_native_buffer *resolve_buffer;
     uint32_t x, y, z;
 } mock_state;
 extern mock_state mock;

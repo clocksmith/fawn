@@ -46,6 +46,7 @@ typedef struct doe_dx_options {
     bool allow_software_adapter;
 } doe_dx_options;
 
+/* Adapter identity only, not public WebGPU capability admission. */
 typedef struct doe_dx_caps {
     uint32_t adapter_ordinal, vendor_id, device_id;
     uint32_t luid_low;

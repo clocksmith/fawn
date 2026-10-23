@@ -32,6 +32,7 @@ doe_dx_status doe_dx_native_texture_create(doe_dx_native_context *context,
         required |= D3D12_FORMAT_SUPPORT1_SHADER_SAMPLE;
     if (desc->usage & DOE_DX_TEXTURE_STORAGE)
         required |= D3D12_FORMAT_SUPPORT1_TYPED_UNORDERED_ACCESS_VIEW;
+    if (desc->usage & DOE_DX_TEXTURE_RENDER_ATTACHMENT) required |= D3D12_FORMAT_SUPPORT1_RENDER_TARGET;
     if (((UINT)support.Support1 & required) != required)
         return doe_dx_fail(DOE_DX_UNSUPPORTED, 0, "texture.native_format", error);
     if (desc->usage & DOE_DX_TEXTURE_STORAGE) {
@@ -52,6 +53,8 @@ doe_dx_status doe_dx_native_texture_create(doe_dx_native_context *context,
     description->Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
     if (desc->usage & DOE_DX_TEXTURE_STORAGE)
         description->Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+    if (desc->usage & DOE_DX_TEXTURE_RENDER_ATTACHMENT)
+        description->Flags |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
     D3D12_HEAP_PROPERTIES heap = {0};
     heap.Type = D3D12_HEAP_TYPE_DEFAULT;
     heap.CreationNodeMask = 1;

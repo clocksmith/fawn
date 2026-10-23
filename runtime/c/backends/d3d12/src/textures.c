@@ -17,8 +17,10 @@ doe_dx_status doe_dx_texture_create(doe_dx_context *context,
     const doe_dx_texture_desc *desc, doe_dx_texture **out, doe_dx_error *error) {
     if (!context || !desc || !out || !desc->width || !desc->height || !desc->usage)
         return doe_dx_fail(DOE_DX_INVALID_ARGUMENT, 0, "texture.create", error);
-    if (!doe_dx_format_valid(desc->format) || (desc->usage & ~UINT32_C(15)))
+    if (!doe_dx_format_valid(desc->format) || (desc->usage & ~UINT32_C(31)))
         return doe_dx_fail(DOE_DX_UNSUPPORTED, 0, "texture.format_usage", error);
+    if ((desc->usage & DOE_DX_TEXTURE_RENDER_ATTACHMENT) && desc->format != DOE_DX_RGBA8_UNORM)
+        return doe_dx_fail(DOE_DX_UNSUPPORTED, 0, "texture.render_format", error);
     if (desc->width > 16384 || desc->height > 16384 || context->objects == SIZE_MAX)
         return doe_dx_fail(DOE_DX_RANGE, 0, "texture.extent", error);
     if (context->lost) return doe_dx_fail(DOE_DX_DEVICE_LOST, 0, "texture.create", error);

@@ -31,11 +31,20 @@ struct doe_dx_texture {
     uint32_t references;
     bool initialized;
 };
+struct doe_dx_timestamps {
+    doe_dx_context *context;
+    doe_dx_native_timestamps *native;
+    doe_dx_commands *owner;
+    uint32_t references, count;
+    uint64_t initialized;
+};
 struct doe_dx_pipeline {
     doe_dx_context *context;
     doe_dx_native_pipeline *native;
     uint32_t references;
     size_t binding_count, texture_count;
+    bool graphics;
+    doe_dx_format color_format;
     doe_dx_texture_binding_layout textures[DOE_DX_MAX_BINDINGS];
     doe_dx_binding_layout bindings[DOE_DX_MAX_BINDINGS];
 };
@@ -47,6 +56,10 @@ typedef struct doe_dx_texture_use {
     doe_dx_texture *texture;
     bool initialized;
 } doe_dx_texture_use;
+typedef struct doe_dx_timestamp_use {
+    doe_dx_timestamps *timestamps;
+    uint64_t initialized;
+} doe_dx_timestamp_use;
 typedef enum doe_dx_command_state {
     DOE_DX_RECORDING, DOE_DX_POISONED, DOE_DX_SUBMITTED, DOE_DX_COMPLETE, DOE_DX_FAILED
 } doe_dx_command_state;
@@ -61,12 +74,19 @@ struct doe_dx_commands {
     size_t buffer_count;
     doe_dx_texture_use textures[DOE_DX_MAX_COMMAND_RESOURCES];
     size_t texture_count;
+    doe_dx_timestamp_use timestamps[DOE_DX_MAX_COMMAND_RESOURCES];
+    size_t timestamp_count;
     doe_dx_pipeline *pipelines[DOE_DX_MAX_COMMAND_RESOURCES];
     size_t pipeline_count;
     uint32_t operation_count;
     doe_dx_commands *next;
 };
 
+doe_dx_status doe_dx_prepare_resources(doe_dx_commands *commands, doe_dx_pipeline *pipeline,
+    const doe_dx_compute_resources *resources, doe_dx_native_resources *native,
+    size_t *added, doe_dx_error *error);
+void doe_dx_use_resources(doe_dx_commands *commands, doe_dx_pipeline *pipeline,
+    const doe_dx_compute_resources *resources);
 bool doe_dx_range(uint64_t allocation, uint64_t offset, uint64_t size);
 doe_dx_status doe_dx_recording(doe_dx_commands *commands, doe_dx_error *error);
 doe_dx_status doe_dx_buffer_preflight(doe_dx_commands *commands,
