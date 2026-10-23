@@ -61,10 +61,17 @@ WGPUComputePipeline native_create_compute_pipeline(native_device *device,
     const WGPUComputePipelineDescriptor *descriptor, native_pipeline_error *error)
 {
     if (!device) return NULL;
-    if (!descriptor || descriptor->nextInChain || descriptor->compute.nextInChain ||
-        descriptor->compute.constantCount || !descriptor->compute.module ||
-        doe_resource_shader_device((doe_resource_shader *)descriptor->compute.module) != device) {
-        pipeline_failure(error, WGPUErrorType_Validation, "compute descriptor unsupported or shader device mismatch");
+    if (!descriptor || !descriptor->compute.module) {
+        pipeline_failure(error, WGPUErrorType_Validation, "compute pipeline requires a descriptor and shader module");
+        return NULL;
+    }
+    if (doe_resource_shader_device((doe_resource_shader *)descriptor->compute.module) != device) {
+        pipeline_failure(error, WGPUErrorType_Validation, "compute pipeline requires a shader created by this device");
+        return NULL;
+    }
+    if (descriptor->nextInChain || descriptor->compute.nextInChain || descriptor->compute.constantCount) {
+        pipeline_failure(error, WGPUErrorType_Validation,
+            "compute pipeline chained structs and override constants are unsupported");
         return NULL;
     }
     native_stage stage;
