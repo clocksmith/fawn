@@ -33,7 +33,8 @@ native_result native_backend_open(WGPUBackendType kind, bool fallback, native_ba
     native_result status;
     if (kind == WGPUBackendType_Vulkan) {
         result.value.vulkan.options = (doe_vk_options){.allow_cpu_adapter=fallback,
-            .require_graphics_queue=true,.enable_shader_demote_if_supported=true};
+            .require_graphics_queue=true,.enable_shader_demote_if_supported=true,
+            .adapter_selection=fallback ? DOE_VK_SELECT_SOFTWARE : DOE_VK_SELECT_ORDINAL};
         status = native_from_vulkan(doe_vk_context_create(&result.value.vulkan.options,
             &result.value.vulkan.context, NULL));
         if (status == NATIVE_OK)
@@ -61,10 +62,17 @@ native_result native_backend_device(const native_backend *adapter, native_backen
     native_result status;
     if (adapter->kind == WGPUBackendType_Vulkan) {
         result.value.vulkan.options = adapter->value.vulkan.options;
+        result.value.vulkan.options.adapter_selection = DOE_VK_SELECT_IDENTITY;
+        result.value.vulkan.options.required_identity = adapter->value.vulkan.caps.identity;
         status = native_from_vulkan(doe_vk_context_create(&result.value.vulkan.options,
             &result.value.vulkan.context, NULL));
         if (status == NATIVE_OK)
             status = native_from_vulkan(doe_vk_context_caps(result.value.vulkan.context, &result.value.vulkan.caps));
+        if (status == NATIVE_OK &&
+            (memcmp(&result.value.vulkan.caps.identity, &adapter->value.vulkan.caps.identity,
+                sizeof(result.value.vulkan.caps.identity)) != 0 ||
+             result.value.vulkan.caps.software_adapter != adapter->value.vulkan.caps.software_adapter))
+            status = NATIVE_UNAVAILABLE;
         if (status == NATIVE_OK && native_vulkan_limits(&result.value.vulkan.caps,
                 &result.limits) != WGPUStatus_Success) status = NATIVE_FAILURE;
     } else if (adapter->kind == WGPUBackendType_Metal) {

@@ -35,14 +35,18 @@ doe_vk_status __wrap_doe_vk_commands_recover(doe_vk_commands *commands, doe_vk_e
     doe_vk_status actual = __real_doe_vk_commands_recover(commands, error);
     if (commands != atomic_load(&observed_commands)) return actual;
     assert(actual == DOE_VK_OK);
-    return atomic_load(&hold) ? DOE_VK_PENDING : atomic_load(&terminal_status);
+    doe_vk_status status = atomic_load(&hold) ? DOE_VK_PENDING : atomic_load(&terminal_status);
+    if (error) *error = (doe_vk_error){status, -771, "injected background fence"};
+    return status;
 }
 doe_vk_status __wrap_doe_vk_commands_poll(doe_vk_commands *commands, doe_vk_error *error)
 {
     doe_vk_status actual = __real_doe_vk_commands_poll(commands, error);
     if (commands != atomic_load(&observed_commands)) return actual;
     assert(actual == DOE_VK_OK);
-    return atomic_load(&hold) ? DOE_VK_PENDING : atomic_load(&terminal_status);
+    doe_vk_status status = atomic_load(&hold) ? DOE_VK_PENDING : atomic_load(&terminal_status);
+    if (error) *error = (doe_vk_error){status, -771, "injected background fence"};
+    return status;
 }
 doe_vk_status __wrap_doe_vk_commands_release(doe_vk_commands *commands)
 {
@@ -146,9 +150,10 @@ static void startup_and_synchronous_release(void)
 static void cached_failure(WGPUPopErrorScopeStatus status, WGPUErrorType type,
     WGPUStringView message, void *userdata, void *unused)
 {
-    (void)message;
     (void)unused;
     assert(status == WGPUPopErrorScopeStatus_Success && type == WGPUErrorType_Internal);
+    const char *expected = "Vulkan: injected background fence (native=-771)";
+    assert(message.length == strlen(expected) && !memcmp(message.data, expected, message.length));
     ++*(unsigned *)userdata;
 }
 
@@ -173,7 +178,11 @@ static void background_failure_is_observed_once(void)
     for (unsigned i = 0; i < 500 && !complete; ++i) {
         native_lock(device);
         complete = !device->pending;
-        if (complete) assert(device->retired_failure == NATIVE_FAILURE);
+        if (complete) {
+            assert(device->retired_failure.status == NATIVE_FAILURE);
+            assert(device->retired_failure.native_code == -771);
+            assert(!strcmp(device->retired_failure.operation, "injected background fence"));
+        }
         native_unlock(device);
         if (!complete) {
             struct timespec delay = {.tv_sec = 0, .tv_nsec = 10000000};

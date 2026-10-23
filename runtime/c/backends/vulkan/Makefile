@@ -5,7 +5,7 @@ OUT ?= /tmp/doe-c-vulkan
 REPO ?= ../../../..
 CFLAGS ?= -O2 -g
 STRICT = -std=c11 -Wall -Wextra -Werror -Wpedantic
-SOURCES = src/surface.c src/surface_frames.c src/extensions.c src/surface_loader.c src/loader.c src/device_features.c src/resources.c src/pipeline.c src/descriptors.c src/commands.c src/textures.c src/image_formats.c src/texture_commands.c src/render_pipeline.c src/render_commands.c src/render_attachments.c src/render_initialization.c src/queries.c src/timestamp.c src/indirect.c src/draw_indirect.c src/render_vertices.c
+SOURCES = src/surface.c src/surface_frames.c src/extensions.c src/surface_loader.c src/loader.c src/device_selection.c src/device_features.c src/resources.c src/pipeline.c src/descriptors.c src/commands.c src/textures.c src/image_formats.c src/texture_commands.c src/render_pipeline.c src/render_commands.c src/render_attachments.c src/render_initialization.c src/queries.c src/timestamp.c src/indirect.c src/draw_indirect.c src/render_vertices.c
 OBJECTS = $(patsubst src/%.c,$(OUT)/%.o,$(SOURCES))
 HEADERS = $(wildcard src/*.h include/*.h) $(REPO)/runtime/c/common/include/doe_copy_footprint.h
 .PHONY: all check abi surface-probe native native-descriptors native-storage native-render native-queries native-texture probe sanitize clean
@@ -74,11 +74,20 @@ $(OUT)/render_contract: tests/render_contract.c $(OUT)/libdoe_vk.a $(HEADERS) | 
 	$(CC) $(STRICT) $(CFLAGS) $< $(OUT)/libdoe_vk.a -ldl -o $@
 $(OUT)/loader_contract: tests/loader_contract.c $(OUT)/libdoe_vk.a $(HEADERS) | $(OUT)
 	$(CC) $(STRICT) $(CFLAGS) $< $(OUT)/libdoe_vk.a -ldl -o $@
+$(OUT)/adapter_identity: tests/adapter_identity.c $(OUT)/libdoe_vk.a $(HEADERS) | $(OUT)
+	$(CC) $(STRICT) $(CFLAGS) $< $(OUT)/libdoe_vk.a -ldl -o $@
+.PHONY: check-adapter-identity
+check-adapter-identity: $(OUT)/adapter_identity
+	$(OUT)/adapter_identity
+.PHONY: sanitize-adapter-identity
+sanitize-adapter-identity: | $(OUT)
+	$(CC) $(STRICT) -O1 -g -fno-omit-frame-pointer -fsanitize=address,undefined $(SOURCES) tests/adapter_identity.c -ldl -o $(OUT)/adapter_identity-sanitize
+	ASAN_OPTIONS=detect_leaks=0:halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1 $(OUT)/adapter_identity-sanitize
 $(OUT)/descriptor_contract: tests/descriptor_contract.c $(OUT)/libdoe_vk.a $(HEADERS) | $(OUT)
 	$(CC) $(STRICT) $(CFLAGS) $< $(OUT)/libdoe_vk.a -ldl -o $@
 $(OUT)/texture_contract: tests/texture_contract.c $(OUT)/libdoe_vk.a $(HEADERS) | $(OUT)
 	$(CC) $(STRICT) $(CFLAGS) $< $(OUT)/libdoe_vk.a -ldl -o $@
-check: abi $(OUT)/surface_features $(OUT)/surface_contract $(OUT)/draw_indirect_contract $(OUT)/indexed_contract $(OUT)/indirect_contract $(OUT)/indirect_lifetime $(OUT)/depth_pipeline_contract $(OUT)/image_format_contract $(OUT)/depth_contract $(OUT)/feature_contract $(OUT)/pass_contract $(OUT)/timestamp_lifetime $(OUT)/timestamp_contract $(OUT)/ownership $(OUT)/texture_contract $(OUT)/descriptor_contract $(OUT)/loader_contract $(OUT)/render_contract $(OUT)/query_contract
+check: check-adapter-identity abi $(OUT)/surface_features $(OUT)/surface_contract $(OUT)/draw_indirect_contract $(OUT)/indexed_contract $(OUT)/indirect_contract $(OUT)/indirect_lifetime $(OUT)/depth_pipeline_contract $(OUT)/image_format_contract $(OUT)/depth_contract $(OUT)/feature_contract $(OUT)/pass_contract $(OUT)/timestamp_lifetime $(OUT)/timestamp_contract $(OUT)/ownership $(OUT)/texture_contract $(OUT)/descriptor_contract $(OUT)/loader_contract $(OUT)/render_contract $(OUT)/query_contract
 	$(OUT)/surface_features
 	$(OUT)/surface_contract
 	$(OUT)/draw_indirect_contract
@@ -155,6 +164,7 @@ sanitize: | $(OUT)
 	$(CC) $(STRICT) -O1 -g -fsanitize=address,undefined $(SOURCES) tests/descriptor_contract.c -ldl -o $(OUT)/descriptor_contract-sanitize
 	ASAN_OPTIONS=detect_leaks=0 $(OUT)/descriptor_contract-sanitize
 clean:
+	rm -f $(OUT)/adapter_identity $(OUT)/adapter_identity-sanitize
 	rm -f $(OUT)/indexed_contract $(OUT)/indexed_contract-sanitize $(OUT)/surface_contract $(OUT)/surface_contract-sanitize $(OUT)/surface_features $(OUT)/surface_features-sanitize $(OUT)/surface_probe $(OUT)/indirect_contract $(OUT)/indirect_lifetime $(OUT)/indirect_contract-sanitize $(OUT)/indirect_lifetime-sanitize $(OUT)/depth_pipeline_contract $(OUT)/depth_pipeline_contract-sanitize $(OUT)/image_format_contract $(OUT)/image_format_contract-sanitize $(OBJECTS) $(OUT)/libdoe_vk.a $(OUT)/ownership $(OUT)/native_compute $(OUT)/probe $(OUT)/native_texture $(OUT)/native_descriptors $(OUT)/native_storage $(OUT)/native_render $(OUT)/texture_contract $(OUT)/descriptor_contract $(OUT)/descriptor_contract-sanitize $(OUT)/texture_contract-sanitize $(OUT)/ownership-sanitize $(OUT)/header-cxx.o $(OUT)/loader_contract $(OUT)/loader_contract-sanitize $(OUT)/render_contract $(OUT)/render_contract-sanitize $(OUT)/query_contract $(OUT)/query_contract-sanitize $(OUT)/native_queries $(OUT)/timestamp_contract $(OUT)/timestamp_contract-sanitize $(OUT)/timestamp_lifetime $(OUT)/timestamp_lifetime-sanitize $(OUT)/native_timestamp $(OUT)/pass_contract $(OUT)/pass_contract-sanitize $(OUT)/native_matrix $(OUT)/feature_contract $(OUT)/native_features $(OUT)/depth_contract $(OUT)/depth_contract-sanitize
 
 # Compiler/shader dependencies belong only to this optional integration test.

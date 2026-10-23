@@ -390,3 +390,14 @@ Darwin recipe-only controls. It pins resource budget ownership to committed
 28dbe11d and preserves the earlier compiler closure, excluding subsequent mutable
 WSI, numeric and setter-admission changes. Presentation remains unprovided in
 this checkpoint.
+
+Native command and pipeline failures carry an owned status/operation/native-code/
+diagnostic snapshot through the existing pending owner. Background terminal errors
+remain available to the next public observation after command release. Public
+messages are formatted after unlocking and copied into deferred pipeline, queue
+and map callback payloads; native diagnostic strings never escape their lifetime.
+`tests/backend_failure.c` exercises wait/poll/recover transport over the retained
+Metal call boundary without GPU execution. `tests/metal_bridge.c` checks exact
+public synchronous and deferred messages; `tests/pending_progress.c` checks a
+background Vulkan detail is observed once. These are developer correctness
+controls, separate from physical failure/recovery qualification.

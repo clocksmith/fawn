@@ -15,6 +15,16 @@ import subprocess
 import tempfile
 
 
+def field_type(spelling, types):
+    if spelling == "pointer" or spelling.startswith(("*", "[*")):
+        return ctypes.c_void_p
+    array = re.fullmatch(r"\[([^]]+)\](.*)", spelling)
+    if array:
+        length = {"VK_MAX_PHYSICAL_DEVICE_NAME_SIZE": "256", "VK_UUID_SIZE": "16"}.get(array[1], array[1])
+        return types[array[2]] * int(length)
+    return types[spelling]
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repo", type=Path, required=True)
@@ -50,20 +60,11 @@ def main():
                     continue
                 member, spelling = line.split(": ", 1)
                 spelling = spelling.replace("vk.", "").removeprefix("?")
-                if spelling.startswith(("*", "[*")):
-                    value = ctypes.c_void_p
-                else:
-                    array = re.fullmatch(r"\[([^]]+)\](.*)", spelling)
-                    if array:
-                        length = {"VK_MAX_PHYSICAL_DEVICE_NAME_SIZE": "256", "VK_UUID_SIZE": "16"}.get(array[1], array[1])
-                        value = types[array[2]] * int(length)
-                    else:
-                        value = types[spelling]
-                members.append((member, value))
+                members.append((member, field_type(spelling, types)))
             types[name] = type(name, (ctypes.Structure if kind == "struct" else ctypes.Union,), {"_fields_": members})
             fields[name] = members
     for name, declaration in manifest.get("official_structs", {}).items():
-        members = [(member, ctypes.c_void_p if spelling == "pointer" else types[spelling])
+        members = [(member, field_type(spelling, types))
                    for member, spelling in declaration["fields"]]
         types[name] = type(name, (ctypes.Structure,), {"_fields_": members})
         fields[name] = members

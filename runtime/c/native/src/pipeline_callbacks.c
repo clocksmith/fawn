@@ -1,11 +1,12 @@
 /* SPDX-License-Identifier: MIT */
 #include "internal.h"
+#include <string.h>
 
 typedef struct pipeline_delivery {
     WGPUCreateComputePipelineAsyncCallbackInfo callback;
     WGPUComputePipeline pipeline;
     WGPUCreatePipelineAsyncStatus status;
-    const char *message;
+    char message[NATIVE_FAILURE_MESSAGE_CAPACITY];
 } pipeline_delivery;
 static void copy_pipeline(void *destination, const void *source)
 {
@@ -33,11 +34,14 @@ WGPUFuture wgpuDeviceCreateComputePipelineAsync(WGPUDevice handle,
     if (lost) native_loss_complete(device->loss, WGPUDeviceLostReason_Unknown, "native device lost");
     pipeline_delivery delivery = {.callback=callback, .pipeline=pipeline,
         .status=pipeline ? WGPUCreatePipelineAsyncStatus_Success :
-            error.type == WGPUErrorType_Validation ? WGPUCreatePipelineAsyncStatus_ValidationError : WGPUCreatePipelineAsyncStatus_InternalError,
-        .message=pipeline ? "" : error.message};
+            error.type == WGPUErrorType_Validation ? WGPUCreatePipelineAsyncStatus_ValidationError : WGPUCreatePipelineAsyncStatus_InternalError};
+    if (!pipeline) memcpy(delivery.message, error.message, sizeof(delivery.message));
     WGPUFuture future = native_callback(device->instance, callback.mode, &delivery,
         sizeof(delivery), _Alignof(pipeline_delivery), copy_pipeline, deliver_pipeline);
-    if (!future.id) wgpuComputePipelineRelease(pipeline);
+    if (!future.id) {
+        if (!pipeline) native_error(device, error.type, error.message);
+        else wgpuComputePipelineRelease(pipeline);
+    }
     native_device_release(device);
     return future;
 }

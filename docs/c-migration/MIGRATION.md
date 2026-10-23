@@ -114,13 +114,18 @@ Developer checks below are not physical qualification or full feature closure.
 
 Fresh backend/pending-work review of `cbdee872` found three additional
 source-level gaps, separate from the seven corrections above:
-- **Stable Vulkan device identity:** Vulkan/native owners. Recreating an adapter
-  by enumeration ordinal can select different physical hardware or lose fallback
-  identity. Preserve and verify identity across context creation; changed-order
-  and fallback controls are pending.
-- **Native error detail:** native owner. Wait/recover and Metal pipeline calls
-  discard operation/native-code detail. Carry a small typed first failure through
-  settlement and format once at the public boundary; targeted controls pending.
+- **Stable Vulkan device identity:** corrected at source. Native device creation
+  carries the selected device/driver UUID pair across independently owned contexts;
+  changed order, missing/duplicate identities and software-class mismatch reject
+  without substitution. Explicit CPU fallback searches CPU adapters rather than
+  depending on ordinal zero. Exact-ordinal private callers retain their contract.
+- **Native error detail:** corrected at source for command wait/poll/recover,
+  settlement and Metal pipeline construction. Backend command owners retain the
+  first operation/code; native transport copies bounded detail into owned callback
+  messages. Rejected callback admission reports the failure before dropping its
+  protecting lease. Destroy preserves unobserved receipts. Exact-message, changed-
+  order and sanitizer controls:
+  [identity/error receipt](../../runtime/c/native/DEVELOPER_RECEIPT_IDENTITY_ERRORS.json).
 - **Unattended pending retirement:** corrected at source with the existing pending
   owner and one device progress lease. Nonblocking backend polls retain unknown
   work and retire terminal success/failure after all public handles disappear.
@@ -130,8 +135,11 @@ source-level gaps, separate from the seven corrections above:
   in unmapped instructions. CPU Vulkan release-all/startup/recovery/lifecycle
   controls and real Linux/macOS loader controls pass. Exact inputs and limits:
   [pending progress receipt](../../runtime/c/native/DEVELOPER_RECEIPT_PROGRESS.json).
-The first two remain source-inferred findings requiring their targeted controls.
-This correction is developer evidence, not physical recovery qualification.
+These corrections are developer evidence, not physical recovery qualification.
+A later review of incoming public surfaces (`e517f23b4`) found a separate WSI
+release-all retirement leak and acquisition-retry ordering gap. Presentation
+fences have independent completion obligations; this newer path is not closed by
+command-only progress tests. Its integration and decisive controls remain open.
 
 Guides: the common C style retains one parser/semantic/layout owner with multiple
 explicit target adapters. Vulkan's owner guide now states serialized operations

@@ -19,6 +19,17 @@ one device lease and polls completion; do not add a second queue or report
 unknown work as terminal. Idle final release joins the worker. Preserve the first
 background terminal error for a public operation to observe.
 
+Error transport is an owned value over the existing native_result mapping, not
+another status or recovery engine. Snapshot operation, signed native code and
+bounded diagnostic before backend release; preserve the first terminal detail
+through background settlement. Format after unlocking, and copy the formatted
+message into every deferred pipeline, queue or map delivery. A borrowed stack
+message or a successful recovery must not replace the original failure detail.
+If callback admission fails after an operation consumed or produced an error,
+deliver that error through native_error outside locks before dropping the call's
+protecting device/resource lease. Successful untransferred results still release
+through their existing owner; never fabricate a completion future or error queue.
+
 Pipeline-layout required slots and usage conflicts belong to the resource owner.
 Skip canonical empty slots rather than inventing a native binding requirement.
 Carry typed resource/backend allocation and execution failures to the public ABI;

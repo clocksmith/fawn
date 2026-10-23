@@ -50,7 +50,7 @@ typedef struct native_device {
     doe_vk_dispatch_validator *dispatch_validator;
     doe_vk_draw_validator *draw_validator;
     native_pending *pending;
-    native_result retired_failure;
+    native_failure retired_failure;
 } native_device;
 
 /* Native payloads have no independent reference count. Their resource owner
@@ -86,7 +86,7 @@ typedef struct native_queries {
 
 typedef struct native_pipeline_error {
     WGPUErrorType type;
-    const char *message;
+    char message[NATIVE_FAILURE_MESSAGE_CAPACITY];
 } native_pipeline_error;
 
 typedef struct native_stage {
@@ -145,8 +145,8 @@ native_result native_buffer_create(native_buffer *buffer, uint64_t size, uint32_
 void native_buffer_close(native_buffer *buffer);
 native_result native_device_result(native_device *device);
 void native_pipeline_release(void *userdata, void *handle);
-native_result native_metal_pipeline_create(native_pipeline *pipeline, const native_stage *stage);
-native_result native_metal_dispatch(doe_mtl_commands *commands, const doe_resource_command *record);
+native_failure native_metal_pipeline_create(native_pipeline *pipeline, const native_stage *stage);
+native_failure native_metal_dispatch(doe_mtl_commands *commands, const doe_resource_command *record);
 bool native_vulkan_binding_layout(const native_pipeline *pipeline, doe_vk_binding_layout *out);
 doe_resource_status native_resolve_resources(const native_pipeline *pipeline,
     doe_resource_pipeline_layout *layout, doe_resource_bind_group *const *groups,
@@ -176,7 +176,7 @@ WGPUComputePipeline native_create_compute_pipeline(native_device *device,
  * linked and retains its backend and resource submissions, never freed. */
 typedef struct native_queue_settlement {
     bool complete;
-    native_result status;
+    native_failure failure;
 } native_queue_settlement;
 native_queue_settlement native_settle_pending(native_device *device);
 void native_progress_pending(native_device *device);
@@ -187,8 +187,8 @@ void native_pending_progress_wake(native_device *device);
 void native_pending_progress_destroy(native_device *device);
 /* Caller holds device mutex. Always adopts commands, including failed/unknown
  * completion. A private initialization submission has its own device lease. */
-doe_vk_status native_submit_commands(native_device *device, doe_vk_commands *commands);
-doe_vk_status native_initialize_texture(native_device *device, doe_vk_texture *texture,
+native_failure native_submit_commands(native_device *device, doe_vk_commands *commands);
+native_failure native_initialize_texture(native_device *device, doe_vk_texture *texture,
     const doe_vk_texture_desc *desc, uint32_t texel_bytes);
 bool native_compare_operation(WGPUCompareFunction value, uint32_t fallback, uint32_t *out);
 bool native_depth_format(WGPUTextureFormat format, doe_vk_texture_format *out);

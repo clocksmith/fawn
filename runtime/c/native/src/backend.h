@@ -13,6 +13,17 @@ typedef enum native_result {
     NATIVE_UNSUPPORTED, NATIVE_FAILURE, NATIVE_DEVICE_LOST, NATIVE_BUSY,
     NATIVE_INVALID_STATE, NATIVE_SURFACE_OUTDATED, NATIVE_SURFACE_LOST
 } native_result;
+/* A value snapshot, never another command state or status vocabulary. Backend
+ * command owners preserve their first native failure; this carries its detail
+ * across settlement/release without borrowing a native string or callback. */
+#define NATIVE_FAILURE_MESSAGE_CAPACITY 512u
+typedef struct native_failure {
+    native_result status;
+    WGPUBackendType backend;
+    int64_t native_code;
+    char operation[128];
+    char message[256];
+} native_failure;
 typedef struct native_backend {
     WGPUBackendType kind;
     WGPULimits limits; /* Public limits: real facts plus explicit frontend admission bounds. */
@@ -41,10 +52,17 @@ void native_backend_close(native_backend *backend);
 native_result native_backend_status(const native_backend *backend);
 WGPUStatus native_backend_info(const native_backend *backend, WGPUAdapterInfo *out);
 WGPUStatus native_vulkan_limits(const doe_vk_caps *caps, WGPULimits *out);
-native_result native_command_create(const native_backend *backend, native_command_handle *out);
-native_result native_command_submit(native_command_handle *commands);
-native_result native_command_wait(native_command_handle *commands);
-native_result native_command_poll(native_command_handle *commands);
-native_result native_command_recover(native_command_handle *commands);
+native_failure native_failure_status(native_result status);
+native_failure native_failure_vulkan(doe_vk_status status, const doe_vk_error *error);
+native_failure native_failure_metal(doe_mtl_status status, const doe_mtl_error *error);
+/* Output is always terminated. Success formats empty; absent native detail uses
+ * the public operation's fallback. Formatting occurs after the device unlock. */
+void native_failure_format(const native_failure *failure, const char *fallback,
+    char output[NATIVE_FAILURE_MESSAGE_CAPACITY]);
+native_failure native_command_create(const native_backend *backend, native_command_handle *out);
+native_failure native_command_submit(native_command_handle *commands);
+native_failure native_command_wait(native_command_handle *commands);
+native_failure native_command_poll(native_command_handle *commands);
+native_failure native_command_recover(native_command_handle *commands);
 native_result native_command_release(native_command_handle *commands);
 #endif

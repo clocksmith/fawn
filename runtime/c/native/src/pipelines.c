@@ -51,7 +51,9 @@ bool native_shader_capabilities(const doe_shader_view *view, const doe_vk_caps *
 
 static void pipeline_failure(native_pipeline_error *error, WGPUErrorType type, const char *message)
 {
-    *error = (native_pipeline_error){type, message};
+    error->type = type;
+    native_failure failure = native_failure_status(NATIVE_FAILURE);
+    native_failure_format(&failure, message, error->message);
 }
 
 WGPUComputePipeline native_create_compute_pipeline(native_device *device,
@@ -101,21 +103,25 @@ WGPUComputePipeline native_create_compute_pipeline(native_device *device,
     doe_resource_status resource_status = automatic ?
         native_automatic_layout(device, &stage, 1, &layout) : DOE_RESOURCE_OK;
     doe_resource_pipeline *pipeline = NULL;
-    native_result backend_status = native_device_result(device);
+    native_failure backend_failure = native_failure_status(native_device_result(device));
     if (resource_status == DOE_RESOURCE_OK && (!layout || doe_resource_pipeline_layout_device(layout) != device ||
         !native_device_alive(device) || !native_pipeline_bindings(payload, &stage, 1, layout)))
         resource_status = DOE_RESOURCE_LAYOUT;
-    if (resource_status == DOE_RESOURCE_OK && backend_status == NATIVE_OK) {
+    if (resource_status == DOE_RESOURCE_OK && backend_failure.status == NATIVE_OK) {
         if (device->backend.kind == WGPUBackendType_Vulkan) {
             doe_vk_binding_layout native_bindings[DOE_RESOURCE_MAX_GROUPS * DOE_RESOURCE_MAX_BINDINGS];
-            if (!native_vulkan_binding_layout(payload,native_bindings)) backend_status = NATIVE_UNSUPPORTED;
-            else backend_status = native_from_vulkan(doe_vk_pipeline_create(device->backend.value.vulkan.context,
-                view->words, view->counts.words, stage.name, native_bindings, payload->binding_count,
-                &payload->handle.vulkan, NULL));
+            if (!native_vulkan_binding_layout(payload,native_bindings)) backend_failure = native_failure_status(NATIVE_UNSUPPORTED);
+            else {
+                doe_vk_error detail = {0};
+                doe_vk_status status = doe_vk_pipeline_create(device->backend.value.vulkan.context,
+                    view->words, view->counts.words, stage.name, native_bindings, payload->binding_count,
+                    &payload->handle.vulkan, &detail);
+                backend_failure = native_failure_vulkan(status, &detail);
+            }
         } else if (device->backend.kind == WGPUBackendType_Metal)
-            backend_status = native_metal_pipeline_create(payload,&stage);
-        else backend_status = NATIVE_UNSUPPORTED;
-        if (backend_status == NATIVE_OK)
+            backend_failure = native_metal_pipeline_create(payload,&stage);
+        else backend_failure = native_failure_status(NATIVE_UNSUPPORTED);
+        if (backend_failure.status == NATIVE_OK)
             resource_status = doe_resource_pipeline_create(&device->resources, layout,
                 (doe_resource_native){payload, NULL, native_pipeline_release}, entry->workgroup_size, &pipeline);
     }
@@ -123,9 +129,13 @@ WGPUComputePipeline native_create_compute_pipeline(native_device *device,
     native_unlock(device);
     if (!pipeline) {
         native_pipeline_release(NULL, payload);
-        WGPUErrorType type = backend_status != NATIVE_OK ?
-            native_result_error(backend_status) : native_resource_error(resource_status);
-        pipeline_failure(error, type, "compute pipeline/layout failed or precise unfilterable texture/sampler pairing analysis unsupported");
+        WGPUErrorType type = backend_failure.status != NATIVE_OK ?
+            native_result_error(backend_failure.status) : native_resource_error(resource_status);
+        const char *fallback = "compute pipeline/layout failed or precise unfilterable texture/sampler pairing analysis unsupported";
+        if (backend_failure.status != NATIVE_OK) {
+            error->type = type;
+            native_failure_format(&backend_failure, fallback, error->message);
+        } else pipeline_failure(error, type, fallback);
     }
     if (pipeline) {
         size_t label_size;

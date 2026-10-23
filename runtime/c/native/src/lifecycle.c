@@ -318,7 +318,9 @@ void wgpuDeviceDestroy(WGPUDevice handle)
     native_lock(device);
     bool first = !device->destroyed;
     if (first) {
-        (void)native_settle_pending(device);
+        /* Destruction does not observe a queue error. Poll without consuming
+         * its receipt; a later work-done callback must retain the first detail. */
+        native_progress_pending(device);
         device->destroyed = true;
         if (doe_error_scope_set_handler(device->errors, NULL, NULL, NULL).status != DOE_ERROR_SCOPE_OK) abort();
     }

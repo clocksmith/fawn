@@ -104,36 +104,37 @@ static doe_vk_status record_vulkan_commands(doe_vk_commands *native, doe_resourc
     return DOE_VK_OK;
 }
 
-static native_result record_commands(native_command_handle *native, doe_resource_commands *commands)
+static native_failure record_commands(native_command_handle *native, doe_resource_commands *commands)
 {
     if (native->kind == WGPUBackendType_Vulkan)
-        return native_from_vulkan(record_vulkan_commands(native->value.vulkan, commands));
-    if (native->kind != WGPUBackendType_Metal) return NATIVE_UNSUPPORTED;
+        return native_failure_status(native_from_vulkan(record_vulkan_commands(native->value.vulkan, commands)));
+    if (native->kind != WGPUBackendType_Metal) return native_failure_status(NATIVE_UNSUPPORTED);
     size_t count = 0;
     const doe_resource_command *records = doe_resource_commands_borrow(commands, &count);
     for (size_t i = 0; i < count; ++i) {
         const doe_resource_command *record = &records[i];
         doe_mtl_status status;
+        doe_mtl_error error = {0};
         if (record->kind == DOE_COMMAND_COPY_BUFFER) {
             native_buffer *source = doe_resource_buffer_native(record->value.copy.source);
             native_buffer *destination = doe_resource_buffer_native(record->value.copy.destination);
             if (!record->value.copy.size) continue;
             status = doe_mtl_commands_copy(native->value.metal, source->handle.metal,
                 record->value.copy.source_offset, destination->handle.metal,
-                record->value.copy.destination_offset, record->value.copy.size, NULL);
+                record->value.copy.destination_offset, record->value.copy.size, &error);
         } else if (record->kind == DOE_COMMAND_CLEAR_BUFFER) {
             native_buffer *buffer = doe_resource_buffer_native(record->value.clear.buffer);
             if (!record->value.clear.size) continue;
             status = doe_mtl_commands_fill(native->value.metal, buffer->handle.metal,
-                record->value.clear.offset, record->value.clear.size, 0, NULL);
+                record->value.clear.offset, record->value.clear.size, 0, &error);
         } else if (record->kind == DOE_COMMAND_DISPATCH) {
-            native_result dispatched = native_metal_dispatch(native->value.metal,record);
-            if (dispatched != NATIVE_OK) return dispatched;
+            native_failure dispatched = native_metal_dispatch(native->value.metal,record);
+            if (dispatched.status != NATIVE_OK) return dispatched;
             continue;
-        } else return NATIVE_UNSUPPORTED;
-        if (status != DOE_MTL_OK) return native_from_metal(status);
+        } else return native_failure_status(NATIVE_UNSUPPORTED);
+        if (status != DOE_MTL_OK) return native_failure_metal(status, &error);
     }
-    return NATIVE_OK;
+    return native_failure_status(NATIVE_OK);
 }
 
 static void settle_resources(native_pending *pending, bool success)
@@ -151,24 +152,24 @@ static void settle_resources(native_pending *pending, bool success)
 
 static native_queue_settlement settle_pending(native_device *device, bool background)
 {
-    native_queue_settlement result = {true, NATIVE_OK};
+    native_queue_settlement result = {.complete = true};
     native_pending **cursor = &device->pending;
     while (*cursor) {
         native_pending *pending = *cursor;
-        native_result status = background ? native_command_poll(&pending->native) :
+        native_failure failure = background ? native_command_poll(&pending->native) :
             native_command_recover(&pending->native);
         native_result released = native_command_release(&pending->native);
-        if (result.status == NATIVE_OK && status != NATIVE_OK) result.status = status;
+        if (result.failure.status == NATIVE_OK && failure.status != NATIVE_OK) result.failure = failure;
         if (released == NATIVE_BUSY) {
             device->queue_failed = true;
             result.complete = false;
-            if (result.status == NATIVE_OK) result.status = NATIVE_PENDING;
+            if (result.failure.status == NATIVE_OK) result.failure = native_failure_status(NATIVE_PENDING);
             return result;
         }
         if (released != NATIVE_OK) abort();
         *cursor = pending->next;
-        if (status != NATIVE_OK) {
-            if (device->retired_failure == NATIVE_OK) device->retired_failure = status;
+        if (failure.status != NATIVE_OK) {
+            if (device->retired_failure.status == NATIVE_OK) device->retired_failure = failure;
             device->queue_failed = true;
             /* Proven terminal failure may poison private helper scratch. Later
              * operations reconstruct helpers, never reuse failed storage. */
@@ -176,7 +177,7 @@ static native_queue_settlement settle_pending(native_device *device, bool backgr
             device->timestamp_normalizer = NULL;
             native_indirect_guards_release(device);
         }
-        settle_resources(pending, status == NATIVE_OK);
+        settle_resources(pending, failure.status == NATIVE_OK);
     }
     return result;
 }
@@ -184,9 +185,9 @@ static native_queue_settlement settle_pending(native_device *device, bool backgr
 native_queue_settlement native_settle_pending(native_device *device)
 {
     native_queue_settlement result = settle_pending(device, false);
-    if (device->retired_failure != NATIVE_OK) {
-        result.status = device->retired_failure;
-        device->retired_failure = NATIVE_OK;
+    if (device->retired_failure.status != NATIVE_OK) {
+        result.failure = device->retired_failure;
+        device->retired_failure = native_failure_status(NATIVE_OK);
     }
     return result;
 }
@@ -198,29 +199,29 @@ void native_progress_pending(native_device *device)
     (void)settle_pending(device, true);
 }
 
-static native_result submit_pending(native_device *device, native_pending *pending)
+static native_failure submit_pending(native_device *device, native_pending *pending)
 {
     pending->next = device->pending;
     device->pending = pending;
     native_pending_progress_wake(device);
-    native_result status = native_command_submit(&pending->native);
-    if (status == NATIVE_OK) status = native_command_wait(&pending->native);
-    if (status != NATIVE_OK) device->queue_failed = true;
+    native_failure failure = native_command_submit(&pending->native);
+    if (failure.status == NATIVE_OK) failure = native_command_wait(&pending->native);
+    if (failure.status != NATIVE_OK) device->queue_failed = true;
     native_queue_settlement settled = native_settle_pending(device);
-    return status == NATIVE_OK ? settled.status : status;
+    return failure.status == NATIVE_OK ? settled.failure : failure;
 }
 
-doe_vk_status native_submit_commands(native_device *device, doe_vk_commands *commands)
+native_failure native_submit_commands(native_device *device, doe_vk_commands *commands)
 {
     native_pending *pending = calloc(1, sizeof(*pending));
     if (!pending) {
         if (doe_vk_commands_release(commands) != DOE_VK_OK) abort();
-        return DOE_VK_OUT_OF_MEMORY;
+        return native_failure_status(NATIVE_OUT_OF_MEMORY);
     }
     pending->device = device;
     native_device_retain(device);
     pending->native = (native_command_handle){.kind=WGPUBackendType_Vulkan,.value.vulkan=commands};
-    return native_to_vulkan(submit_pending(device, pending));
+    return submit_pending(device, pending);
 }
 
 void wgpuQueueSubmit(WGPUQueue handle, size_t count, const WGPUCommandBuffer *handles)
@@ -242,40 +243,45 @@ void wgpuQueueSubmit(WGPUQueue handle, size_t count, const WGPUCommandBuffer *ha
     pending->device = device;
     native_device_retain(device);
     native_lock(device);
-    native_result status = native_device_result(device);
-    if (status == NATIVE_OK) status = native_settle_pending(device).status;
-    for (size_t i = 0; status == NATIVE_OK && i < count; ++i) {
+    native_failure failure = native_failure_status(native_device_result(device));
+    if (failure.status == NATIVE_OK) failure = native_settle_pending(device).failure;
+    for (size_t i = 0; failure.status == NATIVE_OK && i < count; ++i) {
         pending->resources[i] = (doe_resource_commands *)handles[i];
-        if (doe_resource_commands_device(pending->resources[i]) != device) status = NATIVE_INVALID_ARGUMENT;
+        if (doe_resource_commands_device(pending->resources[i]) != device)
+            failure = native_failure_status(NATIVE_INVALID_ARGUMENT);
         for (size_t j = 0; j < i; ++j)
-            if (handles[i] == handles[j]) status = NATIVE_INVALID_ARGUMENT;
+            if (handles[i] == handles[j]) failure = native_failure_status(NATIVE_INVALID_ARGUMENT);
     }
     doe_resource_status resource_status = DOE_RESOURCE_OK;
-    if (status == NATIVE_OK) status = native_command_create(&device->backend, &pending->native);
-    for (size_t i = 0; status == NATIVE_OK && i < count; ++i)
-        status = record_commands(&pending->native, pending->resources[i]);
-    for (size_t i = 0; status == NATIVE_OK && i < count; ++i) {
+    if (failure.status == NATIVE_OK) failure = native_command_create(&device->backend, &pending->native);
+    for (size_t i = 0; failure.status == NATIVE_OK && i < count; ++i)
+        failure = record_commands(&pending->native, pending->resources[i]);
+    for (size_t i = 0; failure.status == NATIVE_OK && i < count; ++i) {
         resource_status = doe_resource_commands_begin_submit(pending->resources[i]);
-        if (resource_status != DOE_RESOURCE_OK) status = NATIVE_INVALID_ARGUMENT;
+        if (resource_status != DOE_RESOURCE_OK) failure = native_failure_status(NATIVE_INVALID_ARGUMENT);
         else ++pending->count;
     }
-    if (status == NATIVE_OK) {
-        /* recover preserves original submission failure; successful release is
-         * the backend's proof of terminal or never-dispatched ownership. */
-        status = submit_pending(device, pending);
+    if (failure.status == NATIVE_OK) {
+        /* Recovery preserves the original submission failure; successful release
+         * is the backend's proof of terminal or never-dispatched ownership. */
+        failure = submit_pending(device, pending);
     } else {
         if (native_command_release(&pending->native) != NATIVE_OK) abort();
         settle_resources(pending, false);
     }
     native_unlock(device);
-    if (status != NATIVE_OK) native_error(device, resource_status != DOE_RESOURCE_OK ?
-        native_resource_error(resource_status) : native_result_error(status),
-        "queue submission failed; unresolved work stays retained");
+    if (failure.status != NATIVE_OK) {
+        char message[NATIVE_FAILURE_MESSAGE_CAPACITY];
+        native_failure_format(&failure, "queue submission failed; unresolved work stays retained", message);
+        native_error(device, resource_status != DOE_RESOURCE_OK ?
+            native_resource_error(resource_status) : native_result_error(failure.status), message);
+    }
 }
 
 typedef struct queue_delivery {
     WGPUQueueWorkDoneCallbackInfo callback;
     WGPUQueueWorkDoneStatus status;
+    char message[NATIVE_FAILURE_MESSAGE_CAPACITY];
 } queue_delivery;
 static void copy_queue(void *destination, const void *source)
 {
@@ -285,7 +291,7 @@ static void deliver_queue(void *context)
 {
     queue_delivery value = *(queue_delivery *)context;
     if (value.callback.callback)
-        value.callback.callback(value.status, native_string(value.status == WGPUQueueWorkDoneStatus_Success ? "" : "queue work failed"),
+        value.callback.callback(value.status, native_string(value.message),
             value.callback.userdata1, value.callback.userdata2);
 }
 WGPUFuture wgpuQueueOnSubmittedWorkDone(WGPUQueue handle, WGPUQueueWorkDoneCallbackInfo callback)
@@ -295,12 +301,26 @@ WGPUFuture wgpuQueueOnSubmittedWorkDone(WGPUQueue handle, WGPUQueueWorkDoneCallb
     native_device_retain(device);
     native_lock(device);
     native_queue_settlement settled = native_settle_pending(device);
-    queue_delivery delivery = {callback, device->queue_failed ? WGPUQueueWorkDoneStatus_Error : WGPUQueueWorkDoneStatus_Success};
+    queue_delivery delivery = {.callback = callback,
+        .status = device->queue_failed ? WGPUQueueWorkDoneStatus_Error : WGPUQueueWorkDoneStatus_Success};
     native_unlock(device);
     WGPUFuture future = {0};
-    if (settled.complete) future = native_callback(device->instance, callback.mode, &delivery,
-        sizeof(delivery), _Alignof(queue_delivery), copy_queue, deliver_queue);
-    else native_error(device, native_result_error(settled.status), "queue completion remains unknown; no completion future published");
+    native_failure failure = settled.failure;
+    if (delivery.status == WGPUQueueWorkDoneStatus_Error && failure.status == NATIVE_OK)
+        failure = native_failure_status(NATIVE_FAILURE);
+    native_failure_format(&failure, "queue work failed", delivery.message);
+    if (settled.complete) {
+        future = native_callback(device->instance, callback.mode, &delivery,
+            sizeof(delivery), _Alignof(queue_delivery), copy_queue, deliver_queue);
+        /* No callback was admitted. Preserve the consumed receipt through the
+         * existing error channel while this call still owns its device lease. */
+        if (!future.id && settled.failure.status != NATIVE_OK)
+            native_error(device, native_result_error(settled.failure.status), delivery.message);
+    } else {
+        char message[NATIVE_FAILURE_MESSAGE_CAPACITY];
+        native_failure_format(&settled.failure, "queue completion remains unknown; no completion future published", message);
+        native_error(device, native_result_error(settled.failure.status), message);
+    }
     native_device_release(device);
     return future;
 }

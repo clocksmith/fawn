@@ -193,6 +193,7 @@ typedef struct map_delivery {
     size_t size;
     bool began;
     WGPUMapAsyncStatus status;
+    char message[NATIVE_FAILURE_MESSAGE_CAPACITY];
 } map_delivery;
 static void copy_map(void *destination, const void *source)
 {
@@ -215,8 +216,12 @@ static void deliver_map(void *context)
     }
     native_unlock(device);
     free(value.bytes);
+    if (value.status != WGPUMapAsyncStatus_Success && !value.message[0]) {
+        native_failure failure = native_failure_status(NATIVE_INVALID_STATE);
+        native_failure_format(&failure, "buffer map failed or aborted", value.message);
+    }
     if (value.callback.callback)
-        value.callback.callback(value.status, native_string(value.status == WGPUMapAsyncStatus_Success ? "" : "buffer map failed or aborted"),
+        value.callback.callback(value.status, native_string(value.message),
             value.callback.userdata1, value.callback.userdata2);
     doe_resource_buffer_release(value.buffer);
 }
@@ -230,6 +235,8 @@ WGPUFuture wgpuBufferMapAsync(WGPUBuffer handle, WGPUMapMode mode,
     doe_resource_buffer_retain(buffer);
     map_delivery delivery = {.callback = callback, .buffer = buffer, .offset = offset,
         .status = WGPUMapAsyncStatus_Error};
+    native_failure failure = native_failure_status(NATIVE_FAILURE);
+    native_failure consumed_failure = native_failure_status(NATIVE_OK);
     native_lock(device);
     uint64_t requested = size == WGPU_WHOLE_MAP_SIZE ? UINT64_MAX : size;
     doe_resource_status status = doe_resource_buffer_map_begin(buffer, mode, offset, requested, &delivery.generation);
@@ -239,11 +246,16 @@ WGPUFuture wgpuBufferMapAsync(WGPUBuffer handle, WGPUMapMode mode,
         delivery.size = size == WGPU_WHOLE_MAP_SIZE ? (size_t)(desc->size - offset) : size;
         delivery.bytes = malloc(delivery.size ? delivery.size : 1);
         native_buffer *payload = doe_resource_buffer_native(buffer);
-        if (delivery.bytes && native_settle_pending(device).status == NATIVE_OK &&
-            native_buffer_read(payload, offset, delivery.bytes, delivery.size) == NATIVE_OK)
-            delivery.status = WGPUMapAsyncStatus_Success;
+        if (delivery.bytes) {
+            failure = native_settle_pending(device).failure;
+            consumed_failure = failure;
+            if (failure.status == NATIVE_OK)
+                failure = native_failure_status(native_buffer_read(payload, offset, delivery.bytes, delivery.size));
+            if (failure.status == NATIVE_OK) delivery.status = WGPUMapAsyncStatus_Success;
+        } else failure = native_failure_status(NATIVE_OUT_OF_MEMORY);
     }
     native_unlock(device);
+    native_failure_format(&failure, "buffer map failed or aborted", delivery.message);
     WGPUFuture future = native_callback(device->instance, callback.mode, &delivery,
         sizeof(delivery), _Alignof(map_delivery), copy_map, deliver_map);
     if (!future.id) {
@@ -252,6 +264,10 @@ WGPUFuture wgpuBufferMapAsync(WGPUBuffer handle, WGPUMapMode mode,
             (void)doe_resource_buffer_map_complete(buffer, delivery.generation, false, NULL);
         native_unlock(device);
         free(delivery.bytes);
+        /* Admission did not transfer a callback obligation. The buffer lease
+         * still protects device storage while this consumed error is reported. */
+        if (consumed_failure.status != NATIVE_OK)
+            native_error(device, native_result_error(consumed_failure.status), delivery.message);
         doe_resource_buffer_release(buffer);
     }
     return future;
@@ -265,16 +281,19 @@ void wgpuQueueWriteBuffer(WGPUQueue handle, WGPUBuffer buffer_handle,
     if (!device) return;
     native_lock(device);
     doe_resource_status status = doe_resource_buffer_write_validate(buffer, device, offset, size);
-    native_result native_status = NATIVE_INVALID_ARGUMENT;
+    native_failure failure = native_failure_status(NATIVE_INVALID_ARGUMENT);
     if (status == DOE_RESOURCE_OK && (bytes || !size)) {
-        native_status = native_settle_pending(device).status;
-        if (native_status == NATIVE_OK) {
+        failure = native_settle_pending(device).failure;
+        if (failure.status == NATIVE_OK) {
             native_buffer *payload = doe_resource_buffer_native(buffer);
-            native_status = native_buffer_write(payload, offset, bytes, size);
+            failure = native_failure_status(native_buffer_write(payload, offset, bytes, size));
         }
     }
     native_unlock(device);
-    if (status != DOE_RESOURCE_OK || native_status != NATIVE_OK)
-        native_error(device, status != DOE_RESOURCE_OK ? native_resource_error(status) : native_result_error(native_status),
-            "queue buffer write failed");
+    if (status != DOE_RESOURCE_OK || failure.status != NATIVE_OK) {
+        char message[NATIVE_FAILURE_MESSAGE_CAPACITY];
+        native_failure_format(&failure, "queue buffer write failed", message);
+        native_error(device, status != DOE_RESOURCE_OK ? native_resource_error(status) : native_result_error(failure.status),
+            message);
+    }
 }
