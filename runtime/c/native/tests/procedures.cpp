@@ -35,6 +35,24 @@ int main()
     assert(render && async_render && begin && bundle);
     assert(!render(nullptr, nullptr) && !async_render(nullptr, nullptr, {}).id);
     assert(!begin(nullptr, nullptr) && !bundle(nullptr, nullptr));
+    auto instance_features = reinterpret_cast<WGPUProcGetInstanceFeatures>(wgpuGetProcAddress({"wgpuGetInstanceFeatures", WGPU_STRLEN}));
+    auto instance_limits = reinterpret_cast<WGPUProcGetInstanceLimits>(wgpuGetProcAddress({"wgpuGetInstanceLimits", WGPU_STRLEN}));
+    auto has_instance_feature = reinterpret_cast<WGPUProcHasInstanceFeature>(wgpuGetProcAddress({"wgpuHasInstanceFeature", WGPU_STRLEN}));
+    auto free_instance_features = reinterpret_cast<WGPUProcSupportedInstanceFeaturesFreeMembers>(wgpuGetProcAddress({"wgpuSupportedInstanceFeaturesFreeMembers", WGPU_STRLEN}));
+    assert(instance_features && instance_limits && has_instance_feature && free_instance_features);
+    WGPUSupportedInstanceFeatures features = WGPU_SUPPORTED_INSTANCE_FEATURES_INIT;
+    instance_features(&features);
+    assert(!features.featureCount && !features.features);
+    free_instance_features(features);
+    WGPUInstanceLimits limits = WGPU_INSTANCE_LIMITS_INIT;
+    assert(instance_limits(&limits) == WGPUStatus_Success && !limits.timedWaitAnyMaxCount);
+    assert(!has_instance_feature(WGPUInstanceFeatureName_TimedWaitAny));
+    assert(!has_instance_feature(WGPUInstanceFeatureName_ShaderSourceSPIRV));
+    assert(instance_limits(nullptr) == WGPUStatus_Error);
+    WGPUChainedStruct chain = {};
+    limits.nextInChain = &chain;
+    limits.timedWaitAnyMaxCount = 17;
+    assert(instance_limits(&limits) == WGPUStatus_Error && limits.timedWaitAnyMaxCount == 17);
     release(instance);
     std::puts("PASS C++ pinned typed procedure calls and unsupported-name rejection");
 }

@@ -136,7 +136,7 @@ doe_vk_status native_record_render(doe_vk_commands *commands,
 WGPURenderPipeline native_create_render_pipeline(native_device *device,
     const WGPURenderPipelineDescriptor *descriptor, native_pipeline_error *error);
 doe_shader_status native_compile_shader(const char *source, size_t size, doe_shader **out, doe_shader_error *error);
-bool native_shader_capabilities(const doe_shader_view *view);
+bool native_shader_capabilities(const doe_shader_view *view, const doe_vk_caps *caps);
 bool native_timestamp_supported(const doe_vk_caps *caps);
 uint32_t native_timestamp_workgroup(const doe_vk_caps *caps);
 doe_vk_status native_timestamp_initialize(native_device *device);
