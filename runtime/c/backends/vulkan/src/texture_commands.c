@@ -1,16 +1,5 @@
 #include "texture_internal.h"
-
-static bool multiply(uint64_t a, uint64_t b, uint64_t *out) {
-    if (b != 0 && a > UINT64_MAX / b) return false;
-    *out = a * b;
-    return true;
-}
-
-static bool add(uint64_t a, uint64_t b, uint64_t *out) {
-    if (b > UINT64_MAX - a) return false;
-    *out = a + b;
-    return true;
-}
+#include "../../../common/include/doe_copy_footprint.h"
 
 static uint32_t mip_extent(uint32_t size, uint32_t mip) {
     uint32_t value = size >> mip;
@@ -69,14 +58,8 @@ doe_vk_status doe_vk_texture_copy_region(const doe_vk_texture *texture,
     if (pitch < row_bytes || pitch % texture->texel_bytes != 0 || rows < region.extent[1] ||
         (layout.offset & 3) != 0 || layout.offset % texture->texel_bytes != 0 ||
         pitch / texture->texel_bytes > UINT32_MAX) return DOE_VK_INVALID_ARGUMENT;
-    uint64_t image_pitch;
-    uint64_t preceding_images;
-    uint64_t preceding_rows;
     uint64_t bytes;
-    if (!multiply(pitch, rows, &image_pitch) ||
-        !multiply(image_pitch, region.extent[2] - 1, &preceding_images) ||
-        !multiply(pitch, region.extent[1] - 1, &preceding_rows) ||
-        !add(preceding_images, preceding_rows, &bytes) || !add(bytes, row_bytes, &bytes) ||
+    if (!doe_copy_footprint(row_bytes, region.extent[1], rows, pitch, region.extent[2], &bytes) ||
         !doe_vk_range(buffer_size, layout.offset, bytes)) return DOE_VK_INVALID_ARGUMENT;
     bool volume = texture->desc.dimension == DOE_VK_TEXTURE_3D;
     VkBufferImageCopy copy = {

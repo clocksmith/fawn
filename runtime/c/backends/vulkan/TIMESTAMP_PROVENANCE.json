@@ -1,0 +1,8 @@
+{
+  "policy": "Exact retained binary32 period multiplication with masked ticks, integer truncation and low-64-bit output; no shaderInt64. Compiler and driver execution are separate checks.",
+  "sha256": {
+    "runtime/zig/src/backend/vulkan/vk_timestamp.zig": "4e906d85cd2d1faa49e7a4c1a23a0c22625727fe12cb32e1992e788c0e4ed6a8",
+    "runtime/zig/src/backend/vulkan/vk_timestamp_normalize.wgsl": "fa60acd818df753289f40e1c51517750a99d934f0b33f7744d86056ce3d4abd2",
+    "config/vulkan-timestamp-policy.json": "017d7294e4fee97a3d9dc6fefeae6146dcabbea95cf099d169d6af5fb5e13c6c"
+  }
+}

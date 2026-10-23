@@ -184,3 +184,40 @@ the helper still rejects older contexts. Host tests check offset and full-size
 transforms, raw preservation, invalid enum/version and failure output preservation.
 A full-screen triangle is not orientation evidence; the shader owner's asymmetric
 C-source consumer separately checks actual target orientation.
+
+
+### In-command timestamp normalization
+
+`doe_vk_timestamp.h` composes the existing raw query owner with the retained exact
+GPU nanosecond conversion. Generate WGSL using the actual context's positive
+binary32 period and valid counter bits; compile through the independent shader
+owner; pass those same calibration values, workgroup size and validated SPIR-V to
+the normalizer constructor. The constructor checks calibration and scratch/dispatch
+limits before native acquisition. The retained default workgroup size is 64 from
+`config/vulkan-timestamp-policy.json`; this is an explicit caller parameter, not a
+second configuration reader. `TIMESTAMP_PROVENANCE.json` binds that policy and the
+retained source; `tools/check_timestamp_source.py` verifies the embedded WGSL body
+byte-for-byte and refuses source drift.
+
+Nanosecond resolve records query copy/zero into device-local scratch, conversion
+compute, and destination copy in the same command stream. Subsequent copies see
+nanoseconds; CPU completion callbacks never patch output. Conversion masks unused
+counter bits and computes the exact integer floor of the binary32-period product,
+returning its low 64 bits, matching the retained numerical policy. It uses six
+base-2^16 limbs and does not require shaderInt64. Unwritten entries remain zero.
+
+The normalizer owns scratch and pipeline, but recorded commands independently
+retain those existing owners. Caller release before submission is safe; unknown
+execution still blocks command release. Scratch may be reused on this serialized
+single queue because every resolve contains ordered barriers and a complete copy.
+Terminal failed work poisons scratch, so construct a replacement normalizer rather
+than reuse failed output. A shorter resolve binds only its exact count*8 range.
+
+The backend archive has no compiler dependency. Only optional `native-timestamp`
+links explicit `SHADER_LIBRARY` and `COMPILER_LIBRARY` inputs. That consumer tests
+seeded fractional/masked/subnormal/overflow/identity arithmetic separately from
+actual timestamp queries, same-batch copy, short scratch reuse and early release.
+Seeded arithmetic is not timestamp evidence; query values come only from native
+Vulkan commands. Use the same process-local software selector and bounded process
+and fence waits as the other native checks. Public WebGPU feature exposure must
+wait for the real compiler/normalization integration, not merely the raw tick API.
