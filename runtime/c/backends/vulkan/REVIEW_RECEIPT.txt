@@ -1,0 +1,7 @@
+2026-10-23 first review finding, retained before physical handoff.
+Pre-fix SOURCE_MANIFEST.json SHA256: 1693b5042963953ddde27c60a6c328a6ee4b195149f90149d951e513c8483cba
+Focused regression failed against those sources, exit134:
+failed_output_requires_reinitialization: Assertion `doe_vk_buffer_read(buffer, 0, &output, sizeof(output)) == DOE_VK_OUT_OF_MEMORY' failed.
+Cause: queue-idle recovery preserved a failed submission status but allowed host readback from potentially uncertain buffer contents.
+Correction: preserve first content failure on participating buffers, reject reads/new recording/submission, allow only complete host initialization to recover. Device-local buffers require replacement. Partial writes cannot clear failure.
+Same focused regression now passes; strict host/ABI/C++ checks and ASan+UBSan pass. Tiny software Vulkan compute smoke still passes exact64-element oracle. No physical GPU evidence.

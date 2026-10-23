@@ -1,0 +1,43 @@
+# CATSCAN: Experimental C Vulkan backend
+
+Parent: [Experimental C migration](../../CATSCAN.md)
+
+## Target
+
+Execute admitted native Vulkan work through an independently usable C owner while preserving resource and completion obligations.
+
+## Authority
+
+- Owns experimental Vulkan loader, native allocations, descriptors, pipelines, command recording, submission and retirement.
+- Does not own WGSL meaning, public WebGPU validation, provider selection or qualification.
+
+## Scope
+
+- Includes this directory's private backend ABI and focused tests.
+
+## Contracts
+
+- Input: compiler-validated SPIR-V and explicit typed resource/command descriptions in [the boundary](include/doe_vk.h).
+- Output: native statuses, capability observations and completion-backed readback.
+- Lifecycle: [system invariants](../../../../INTENT.md).
+
+## Invariants
+
+- Unknown completion retains every resource; timeout is not completion.
+- No interpreter, silent backend substitution or production default change.
+- Pinned ABI verification, software execution and physical qualification remain distinct.
+- Caller serialization and ownership transfer remain explicit.
+
+## Acceptance
+
+- [Host checks](Makefile) verify ABI, rollback, invalid input and submission lifetime.
+- [Native test](tests/native_compute.c) checks actual Vulkan output and early caller release.
+- Physical backend and complete retained consumer parity remain separate gates.
+
+## Non-goals
+
+- Replacing native WebGPU validation or promoting authored code through compilation alone.
+
+## Freedom
+
+Any implementation is permitted if it preserves these boundaries and passes the acceptance evidence.
