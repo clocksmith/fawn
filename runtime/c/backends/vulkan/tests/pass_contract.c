@@ -2,6 +2,7 @@
 #include "../src/query_internal.h"
 #include <assert.h>
 #include <stdio.h>
+#include <math.h>
 
 static bool inside;
 static unsigned begins, ends, draws, barriers, destroyed;
@@ -62,6 +63,12 @@ static void bind(VkCommandBuffer command, int32_t point, VkPipeline pipeline) {
     (void)command;
     assert(inside && point == VK_PIPELINE_BIND_POINT_GRAPHICS && pipeline == 9);
 }
+static void blend_constants(VkCommandBuffer command, const float values[4]) {
+    (void)command;
+    assert(inside);
+    const float expected[4] = {0.25f, 0.5f, 0.75f, 1};
+    for (unsigned i = 0; i < 4; ++i) assert(values[i] == (draws == 1 ? expected[i] : 0));
+}
 static void viewport(VkCommandBuffer command, uint32_t first, uint32_t count, const VkViewport *view) {
     (void)command;
     assert(inside && first == 0 && count == 1 && view->height == 8);
@@ -116,7 +123,7 @@ int main(void) {
         .vkCreateFramebuffer = create_framebuffer, .vkDestroyRenderPass = destroy_pass,
         .vkDestroyFramebuffer = destroy_framebuffer, .vkCmdBeginRenderPass = begin, .vkCmdEndRenderPass = end,
         .vkCmdResetQueryPool = reset_query, .vkCmdBeginQuery = begin_query, .vkCmdEndQuery = end_query,
-        .vkCmdBindPipeline = bind, .vkCmdSetViewport = viewport, .vkCmdSetScissor = scissor, .vkCmdDraw = draw};
+        .vkCmdSetBlendConstants = blend_constants, .vkCmdBindPipeline = bind, .vkCmdSetViewport = viewport, .vkCmdSetScissor = scissor, .vkCmdDraw = draw};
     uint8_t initialized = 0;
     doe_vk_texture texture = {.context = &context, .references = 1, .subresource_count = 1,
         .initialized = &initialized, .desc = {.dimension = DOE_VK_TEXTURE_2D, .format = DOE_VK_FORMAT_RGBA8_UNORM,
@@ -151,6 +158,14 @@ int main(void) {
     items[1].pipeline = &pipeline;
     items[1].bindings = NULL;
     items[1].binding_count = 0;
+    items[1].draw.override_blend_constant = true;
+    items[1].draw.blend_constant[0] = NAN;
+    commands = recording(&context);
+    assert(doe_vk_commands_render_pass(commands, &view, &blue, items, 2) == DOE_VK_INVALID_ARGUMENT);
+    assert(commands->dispatches == NULL && commands->renders == NULL && begins == 0);
+    assert(doe_vk_commands_release(commands) == DOE_VK_OK);
+    const float dynamic_blend[4] = {0.25f, 0.5f, 0.75f, 1};
+    memcpy(items[1].draw.blend_constant, dynamic_blend, sizeof(dynamic_blend));
     barriers = 0;
     commands = recording(&context);
     assert(doe_vk_commands_render_pass(commands, &view, &blue, items, 2) == DOE_VK_OK);
@@ -164,6 +179,25 @@ int main(void) {
     assert(begins == 2 && ends == 2 && draws == 2);
     assert(doe_vk_commands_release(commands) == DOE_VK_OK);
     assert(destroyed == 2 && context.references == 1);
+    const doe_vk_buffer_binding unused_vertex = {NULL, 0, 0};
+    pipeline.vertex_count = 1;
+    items[0].vertices = &unused_vertex;
+    items[0].vertex_buffer_count = 1;
+    commands = recording(&context);
+    draws = 0;
+    assert(doe_vk_commands_render_pass(commands, &view, &blue, items, 1) == DOE_VK_OK);
+    assert(commands->buffers == NULL && draws == 1);
+    assert(doe_vk_commands_release(commands) == DOE_VK_OK);
+    pipeline.vertex_attribute_end[0] = 4;
+    commands = recording(&context);
+    assert(doe_vk_commands_render_pass(commands, &view, &blue, items, 1) == DOE_VK_INVALID_ARGUMENT);
+    assert(commands->dispatches == NULL && commands->renders == NULL);
+    assert(doe_vk_commands_release(commands) == DOE_VK_OK);
+    pipeline.vertex_attribute_end[0] = 0;
+    pipeline.vertex_count = 0;
+    items[0].vertices = NULL;
+    items[0].vertex_buffer_count = 0;
+    begins = ends = 2; /* The independent query controls below start here. */
     uint8_t query_states[3] = {0};
     doe_vk_query_pool pool = {.context = &context, .references = 1, .count = 3,
         .kind = DOE_VK_QUERY_OCCLUSION, .states = query_states, .pool = 91};
@@ -222,6 +256,6 @@ int main(void) {
     assert(doe_vk_commands_write_timestamp(commands, &pool, 1, DOE_VK_TIMESTAMP_BEGIN) == DOE_VK_INVALID_ARGUMENT);
     assert(doe_vk_commands_release(commands) == DOE_VK_OK);
     assert(pool.references == 1 && pool.recording_owner == NULL && query_states[0] == DOE_VK_QUERY_UNRESET);
-    puts("PASS whole-pass preflight, two draws in one native begin/end, no in-pass barriers, empty clear, occlusion type/nesting/duplicate/end rejection, native reset-before-pass and paired query events, exact leases and rollback");
+    puts("PASS whole-pass preflight, two draws in one native begin/end, no in-pass barriers, pipeline/default and per-draw blend constants, NaN preflight, empty clear, occlusion type/nesting/duplicate/end rejection, native reset-before-pass and paired query events, exact leases and rollback");
     return 0;
 }

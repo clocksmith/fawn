@@ -1,0 +1,120 @@
+{
+  "kind": "Focused developer graphics seam checks, not independent acceptance or physical qualification",
+  "utc": "2026-10-23T19:18:27.324839+00:00",
+  "implementation": "Actual graphics limit facts, per-draw dynamic blend constants with pipeline fallback, and attribute-free native vertex holes on the existing pass recorder.",
+  "input_drift": [],
+  "input_sha256": {
+    "/usr/lib/chromium/libvk_swiftshader.so": "b4bd480a9acc0dd5a251a3b9082e2f001245fed0dbfdc607970c3ce6b6b2e6f3",
+    "/usr/lib/chromium/vk_swiftshader_icd.json": "c9eef28b6b984fec220ef0abfecc40b502d46946706e47bfe97707027cb818bd",
+    "runtime/c/backends/vulkan/ABI_PROVENANCE.json": "c1f99a06bd56f32e54576f1260d5c1f94179112c27668347eed6e4342a78b8c8",
+    "runtime/c/backends/vulkan/Makefile": "3699f3035115190cffd0edb68334653e7daa39cf164009fcf0d59989e140c299",
+    "runtime/c/backends/vulkan/TIMESTAMP_PROVENANCE.json": "7e3c1b519e42b26188aa007857c92f95fe83c0fda165c1c83c4236826230c765",
+    "runtime/c/backends/vulkan/include/doe_vk.h": "4042324704c7cc18065584eb2a2a0f63fb268c9a357dd6746f9a28b2b93c6634",
+    "runtime/c/backends/vulkan/include/doe_vk_bindings.h": "4d1beb8e63b2f83261070663e371791f99dc5ecc281af20f75eb7151b536df40",
+    "runtime/c/backends/vulkan/include/doe_vk_queries.h": "9737e6d2354dcd23f4855e8bd4b9185ca4711025e681ee112ade5259ff5c4cdb",
+    "runtime/c/backends/vulkan/include/doe_vk_render.h": "7575a08485433a686cc4d91224494f54f6ab3975bbe7be20c06628c2128c31f7",
+    "runtime/c/backends/vulkan/include/doe_vk_texture.h": "31cc48466daa62ff288cdea4dd7133ace2de289d61beedaae2ed5b1efab10952",
+    "runtime/c/backends/vulkan/include/doe_vk_timestamp.h": "3b921f6bb7cdfd6acc5047b7a4035ccf48cbf1d24fc2a8d09e12172e2402ddde",
+    "runtime/c/backends/vulkan/src/commands.c": "2751e75918138a9eada32879dd94ac2960ed6fb82d1dfabdacf86d149752db9f",
+    "runtime/c/backends/vulkan/src/descriptors.c": "d18cfbcbe86b6fa8153de3b561e0455a10f361c0865bbe63a9b8ab085f17c9f0",
+    "runtime/c/backends/vulkan/src/internal.h": "87c841aa703b9e90f406c518849532d0777a88c16a5a2211a2969ccafc8d4959",
+    "runtime/c/backends/vulkan/src/loader.c": "b34c144260888e329d2d07fa2dc615f3ee540ac5054eac9c6a89621b4955a0a6",
+    "runtime/c/backends/vulkan/src/pipeline.c": "cc18edd28d6556f83e28a12910090086f07c469c0e78bcd372d8163d8dd32109",
+    "runtime/c/backends/vulkan/src/queries.c": "f76b5efc701c7c0b90032fc98d9ad73d4ac3eaafe49b8f8e30837919ed27c07d",
+    "runtime/c/backends/vulkan/src/query_internal.h": "9ed57b12487199033f588f163caf551664b83dcd380314468248e1b3d463e05b",
+    "runtime/c/backends/vulkan/src/render_commands.c": "8b94d1b11fc415ce7ab73981ab25239a14a3cd5f7dac8fd56a57de1c57497e8e",
+    "runtime/c/backends/vulkan/src/render_internal.h": "2de74a8720a01294fa1f150f64d4fc268a2b21d9bf9788be9a18f9a028da34dd",
+    "runtime/c/backends/vulkan/src/render_pipeline.c": "92fcb726cadf8cc103afce8e21fe40a0ce8675ad566ab63d5c125bccd4155e8e",
+    "runtime/c/backends/vulkan/src/resources.c": "a5c16ff90d0b2c3240faec7afff98d012b5a6092551f325f07844c9d8cc0c7a8",
+    "runtime/c/backends/vulkan/src/texture_commands.c": "544dcab6905cddaea560681e8d68be71856821bf7a1217dc920fcf2008d85c84",
+    "runtime/c/backends/vulkan/src/texture_internal.h": "0d7b82689cab5564007e90dfeb2e50d60ea3e7394118c512576967d9e371ab31",
+    "runtime/c/backends/vulkan/src/textures.c": "026d18b638231ce4a75df0452823178cb4ca0b711d7580847a9d0a56ca37b6b1",
+    "runtime/c/backends/vulkan/src/timestamp.c": "1650f5e3a9fb0cc6477b69dd328b0076f938c2af44e9724292396462feb5924f",
+    "runtime/c/backends/vulkan/src/timestamp_internal.h": "5f62db5f230c9d80d8ac45001b98ddc216a8fe378bb7445140d6d30d89ae7284",
+    "runtime/c/backends/vulkan/src/timestamp_shader.h": "b909e353739d72fc392c142e86ffb822e271fa00d325684cec8bde74b351b804",
+    "runtime/c/backends/vulkan/src/vk_abi_caps.h": "0b059bf50f45d3b3989f480151f67787938ec54a4f52e6067f2cc6e807197a43",
+    "runtime/c/backends/vulkan/src/vk_abi_constants.h": "582079b7297c8fc751bcd2ee037b53ceb8e8bdda030088f9b940eb78fc6dfd34",
+    "runtime/c/backends/vulkan/src/vk_abi_functions.h": "1bc8dd15955fe0e4a07b3f9f30d4ff1c2f7916416b86d241bf18788ecc9b058f",
+    "runtime/c/backends/vulkan/src/vk_abi_images.h": "b6d5fc90ff6c74d5f0b54a6a030c0cec743535ee9a5f8e88ea31ae18460da280",
+    "runtime/c/backends/vulkan/src/vk_abi_render.h": "0c30920aff9f42ea8bb949900f5441b3384e10976664c74dd348d0045655b259",
+    "runtime/c/backends/vulkan/src/vk_abi_structs.h": "d66c30f350101858387d96372240e67a0b7d14c3808d1065a1d8418939ee7298",
+    "runtime/c/backends/vulkan/src/vk_abi_types.h": "7cddca8ea667a1e36abf3d0cc1923453764d6cd9184de14a1cbd448ba009a266",
+    "runtime/c/backends/vulkan/tests/compute.wgsl": "8883c7b6bddb87036ec685cca4695dbe3e2193174bb51cd7af12283bfb49a890",
+    "runtime/c/backends/vulkan/tests/descriptor_contract.c": "9417cc16a7d7a8edcb0ac75ec03d0a1e4e36e7a5ff3c9289bd922d83d84dd272",
+    "runtime/c/backends/vulkan/tests/loader_contract.c": "763ddc5dbfe36f6bd498e28b5d20d4383584f8c0b9adf3eb6e3e5e9141dede3b",
+    "runtime/c/backends/vulkan/tests/matrix_tail.wgsl": "2800e2eb314eea562f8893deffdddb96862e0c00acb570aaa2d57e7d4c0531ee",
+    "runtime/c/backends/vulkan/tests/native_compute.c": "b477302b45d0369b07246eda1b3ed70753c45c0da95fa2cfaa58b61f8f7cff73",
+    "runtime/c/backends/vulkan/tests/native_descriptors.c": "a041dc8d56a00f75efcfe8123a3c97bf5d05e6eb2b7c28f49906ca797ecd2de5",
+    "runtime/c/backends/vulkan/tests/native_matrix.c": "dc0548d2f75887961275a575186c2fa82078506e085154f21ae1194c2ddb143c",
+    "runtime/c/backends/vulkan/tests/native_queries.c": "c4ad2d0c23f4b61e52e7fd701ebc4d911429a7c15105d31fc294d129e0418f69",
+    "runtime/c/backends/vulkan/tests/native_render.c": "e0e5b7f719dbc116f5af2a3b6a9db30599f0fcb4427ae7cf698e721d28fd551c",
+    "runtime/c/backends/vulkan/tests/native_storage.c": "4642f9d523b140028ecef45f509cda832007902e312fbc54f031ad75334ae0db",
+    "runtime/c/backends/vulkan/tests/native_texture.c": "26235c9473f3893cc15b6db92a6e94424ef344fd03638391d34b3d777fbed661",
+    "runtime/c/backends/vulkan/tests/native_timestamp.c": "5825f8573b875139a74b2fb42ddc523a4636051edff4f094dbf24458f72057ac",
+    "runtime/c/backends/vulkan/tests/ownership.c": "6ce4961eed9a33471000d2b20a888b66177923d641464166bbb1121ec3f3a7d2",
+    "runtime/c/backends/vulkan/tests/pass_contract.c": "a039fc608449a970c8755608e1912b5a990296b710dcf158b0538ccac15019f7",
+    "runtime/c/backends/vulkan/tests/probe.c": "2a4e283c8886bb9a0c25acfd33debd5f7054a61ce76dfbf310eb9aaa56be73ed",
+    "runtime/c/backends/vulkan/tests/query_contract.c": "665aec2abfd9d31711d116f8ad3ead49ed5301f82f0d34614c94007994241a2d",
+    "runtime/c/backends/vulkan/tests/render_contract.c": "7db55ac5c3712dd065c92bef872c358d4bb3ca42ea0030b8f2eaaf75918041a5",
+    "runtime/c/backends/vulkan/tests/texture_contract.c": "498aaf136f61764bdb1f94dc2ab0fcc19912aa0d82bc23f61ecc82b0297eca0f",
+    "runtime/c/backends/vulkan/tests/timestamp_contract.c": "13f4906ec329acc78e92b95e0d29f90756d39e63587863b739287a7e2a822535",
+    "runtime/c/backends/vulkan/tests/timestamp_lifetime.c": "d6f94d5e677619964c857a16039257fe30453c6e7fc86acd417b8eb973471224",
+    "runtime/c/backends/vulkan/tools/check_abi.py": "1f98decc80c9db33325b3cf1feaad689d212dd5e0309351140369c8b01d912a6",
+    "runtime/c/backends/vulkan/tools/check_timestamp_source.py": "2eacae78ad767930cd9005b68833974e89c86032ee02078574d15242e25d3470",
+    "runtime/c/common/include/doe_copy_footprint.h": "461535e48bc3d5248928416513b0978baadcc865db33826cb6244f5d9e3fde4b"
+  },
+  "commands": [
+    "make -C runtime/c/backends/vulkan OUT=/tmp/doe-c-vulkan all check /tmp/doe-c-vulkan/native_render",
+    "VK_ICD_FILENAMES=/usr/lib/chromium/vk_swiftshader_icd.json timeout -k 5s 60s /tmp/doe-c-vulkan/native_render examples/tint-compiler-evidence.benchmark-corpus.spirv.sample.artifacts/particles.wgsl/tint/output.vs_main.spv examples/tint-compiler-evidence.benchmark-corpus.spirv.sample.artifacts/particles.wgsl/tint/output.fs_main.spv --allow-software",
+    "cc -std=c11 -Wall -Wextra -Werror -Wpedantic -O1 -g -fsanitize=address,undefined src/loader.c src/resources.c src/pipeline.c src/descriptors.c src/commands.c src/textures.c src/texture_commands.c src/render_pipeline.c src/render_commands.c src/queries.c src/timestamp.c tests/pass_contract.c -ldl -o /tmp/doe-c-vulkan/blend-holes-sanitize; ASAN_OPTIONS=detect_leaks=0 /tmp/doe-c-vulkan/blend-holes-sanitize",
+    "python3 runtime/c/tools/check_source_size.py"
+  ],
+  "logs": {
+    "blend-final-check.log": {
+      "sha256": "1f10fbf60ca8ab706c8839608a26806734934b2627a52963ecb883193ef2f78b",
+      "terminal": [
+        "PASS retained timestamp policy hashes and verbatim embedded WGSL body",
+        "PASS pinned Linux LP64 ABI: 76 records, 1354 field/size/alignment assertions; not driver qualification",
+        "PASS host Vulkan boundary rollback, timeout, uncertain submission, device loss, bounds, poisoning",
+        "PASS real symbol lookup, typed call, precise missing-symbol diagnostic and unchanged destination on failed/invalid lookup",
+        "PASS explicit raw/WebGPU viewport, version/enum rejection and untouched output, render vertex last-byte, NaN viewport, scissor/count overflow, compute/graphics kind mismatch, graphics-family admission and framebuffer rollback without initialized-output publication",
+        "PASS whole-pass preflight, two draws in one native begin/end, no in-pass barriers, pipeline/default and per-draw blend constants, NaN preflight, empty clear, occlusion type/nesting/duplicate/end rejection, native reset-before-pass and paired query events, exact leases and rollback",
+        "PASS timestamp TOP/BOTTOM, mixed native copy/zero without unissued WAIT, reset/write/resolve state, last-byte/range rejection, exclusive unresolved owner, transactional completion, old-owner release and failed-query poisoning",
+        "PASS binary32 calibration, exact counter masks, subnormal/maximum periods, unchanged failure outputs and normalizer limit rejection",
+        "PASS timestamp native copy/zero/descriptor/dispatch/copy ordering, exact short binding, zero-count no-op, early normalizer release and uncertain/failure lifetime",
+        "PASS texture last-byte/mip/layer/overflow checks, speculative layout/initialization rollback, concurrent owner exclusion and failed output",
+        "PASS typed descriptor mismatch, uninitialized storage view, wrong usage, failed content and oversized dispatch rejection without native publication"
+      ]
+    },
+    "blend-holes-native.log": {
+      "sha256": "a4538fbf540437a51c6eb301290ed2d3d236fee78d118b2fb9268efbd34834dd",
+      "terminal": [
+        "Render adapter: SwiftShader Device (Subzero) software=1; retained Tint graphics, not C graphics compiler or hardware qualification",
+        "PASS one real offscreen clear/two-draw pass, dynamic scissors, an unused NULL vertex slot, uniform descriptors, exact64-pixel raw and dynamic-blend oracles, real occlusion hit/empty/clipped/unwritten results and later-pass index reuse, early native caller release"
+      ]
+    },
+    "blend-holes-sanitize.log": {
+      "sha256": "c58e798343b599f67600f5b7ba7a09dc76909815050ae47b16f87a8b3c169b6b",
+      "terminal": [
+        "PASS whole-pass preflight, two draws in one native begin/end, no in-pass barriers, pipeline/default and per-draw blend constants, NaN preflight, empty clear, occlusion type/nesting/duplicate/end rejection, native reset-before-pass and paired query events, exact leases and rollback"
+      ]
+    },
+    "blend-size.log": {
+      "sha256": "a23a29917dca95bbc205c212c74de4dffaa9dc80d7dbcabd8500bee42930dc7d",
+      "terminal": [
+        "C size check: 485 files, 0 failures; limit 999"
+      ]
+    }
+  },
+  "graphics_fixtures": {
+    "examples/tint-compiler-evidence.benchmark-corpus.spirv.sample.artifacts/particles.wgsl/tint/output.vs_main.spv": "67ce34bc1ab93c646fca282908b71fa1651072060411e1af26a8314cc64ad072",
+    "examples/tint-compiler-evidence.benchmark-corpus.spirv.sample.artifacts/particles.wgsl/tint/output.fs_main.spv": "18ca827fe6b6eb6d08cf4ac3eaa7c3896ac3a8b20bcceef113286bca77ba0fce"
+  },
+  "limits": [
+    "Explicit existing software Vulkan only, no physical or performance qualification.",
+    "Only robustBufferAccess enabled. New blend command is core1.0, not an optional-feature enablement.",
+    "Native attribute-free NULL acceptance does not replace upstream public Undefined-hole versus explicit Vertex/Instance binding requirements.",
+    "ASan/UBSan enabled, LSan disabled due hosted ptrace incompatibility.",
+    "Depth/stencil/MSAA/indexed/indirect remain unsupported."
+  ]
+}

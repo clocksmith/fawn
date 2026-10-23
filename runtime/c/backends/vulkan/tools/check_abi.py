@@ -63,6 +63,13 @@ def main():
             types[name] = type(name, (ctypes.Structure if kind == "struct" else ctypes.Union,), {"_fields_": members})
             fields[name] = members
     lines = ['#include "vk_abi_functions.h"', '#include "vk_abi_constants.h"']
+    if "vkCmdSetBlendConstants" in manifest.get("official_functions", {}):
+        lines.extend([
+            'void doe_vk_abi_blend_signature(doe_vk_functions *functions) {',
+            '    void (*set_blend)(VkCommandBuffer, const float *) = functions->vkCmdSetBlendConstants;',
+            '    (void)set_blend;',
+            '}'
+        ])
     assertions = 0
     for name, value in manifest.get("official_constants", {}).get("values", {}).items():
         lines.append(f'_Static_assert({name} == {value}, "{name} official constant");')

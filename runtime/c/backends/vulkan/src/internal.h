@@ -43,6 +43,7 @@ struct doe_vk_pipeline {
     bool graphics;
     VkRenderPass render_pass;
     doe_vk_texture_format color_format;
+    float blend_constant[4];
     uint32_t vertex_count;
     doe_vk_vertex_layout vertices[DOE_VK_MAX_VERTEX_BUFFERS];
     uint32_t vertex_attribute_end[DOE_VK_MAX_VERTEX_BUFFERS];
