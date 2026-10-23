@@ -30,6 +30,9 @@ Develop independently usable C compiler and runtime owners incrementally while p
 ## Acceptance
 
 - Each owner passes its declared contract, independent tests, native consumption and applicable lifecycle/backend gates before being marked migrated.
+- New work follows the [common C guide](STYLE.md) and prospective
+  [quality/size contract](../../docs/c-migration/QUALITY_TARGET.md); size never
+  substitutes for feature, readability or correctness acceptance.
 - Evidence: [migration manifest](../../docs/c-migration/MIGRATION.md).
 
 ## Non-goals
