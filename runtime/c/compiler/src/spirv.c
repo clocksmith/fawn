@@ -606,6 +606,10 @@ static bool emit_block(Emitter *e, const IrProgram *program, size_t *cursor,
         if (ir->result != 0u && ir->opcode != IR_CONSTANT) e->values[ir->result] = spirv_reserve_ids(e, 1u);
         const uint32_t result = e->values[ir->result];
         switch (ir->opcode) {
+            case IR_STAGE_INPUT:
+                EMIT(OP_COPY_OBJECT, spirv_target_type(e, ir->type), result,
+                    e->values[program->limits.instructions + 1u + ir->operands.scalar.binding]);
+                break;
             case IR_INPUT:
                 if (e->entry==NULL) return spirv_emit_error(e,ir->source_offset,"helper cannot read an entry input");
                 e->entry->state.resolved.target_input_mask|=1u<<program->entry_inputs[ir->operands.scalar.binding].kind; {
@@ -704,7 +708,9 @@ static bool emit_block(Emitter *e, const IrProgram *program, size_t *cursor,
                 *live = false;
                 break;
             case IR_RETURN:
-                if (ir->type == IR_VOID) {
+                if (e->entry != NULL && stage_graphics(&program->functions[e->entry->function])) {
+                    if (!spirv_stage_return(e, ir)) return false;
+                } else if (ir->type == IR_VOID) {
                     if (!spirv_instruction(e, OP_RETURN, NULL, 0u)) return false;
                 } else { EMIT(OP_RETURN_VALUE, e->values[ir->operands.scalar.left]); }
                 *live = false;
@@ -750,7 +756,7 @@ static bool emit_workgroup_initialization(Emitter *e) {
     return emit_workgroup_barrier(e);
 }
 static bool function_body(Emitter *e, const IrProgram *program, const FunctionRecord *function) {
-    EMIT(OP_FUNCTION, spirv_target_type(e, function->result_type), function->state.target.function, 0u, function->state.target.signature);
+    EMIT(OP_FUNCTION, stage_graphics(function) ? ID_VOID : spirv_target_type(e, function->result_type), function->state.target.function, 0u, function->state.target.signature);
     for (uint32_t p = 0u; p < function->formal_count; ++p) {
         const uint32_t index = function->formal_start + p;
         const uint32_t identity = e->program->limits.instructions + 1u + index;
@@ -765,6 +771,7 @@ static bool function_body(Emitter *e, const IrProgram *program, const FunctionRe
     for (uint32_t i = 0u; i < function->local_count; ++i)
         EMIT(OP_VARIABLE, spirv_pointer_type(e, program->locals[function->local_start + i].type, 7u), e->local_base + i, 7u);
     e->entry=(function->flags&FUNCTION_ENTRY)!=0u?&e->program->entries[function->entry_index]:NULL;
+    if (stage_graphics(function) && !spirv_stage_inputs(e, function->entry_index)) return false;
     if (e->entry!=NULL && e->entry->state.resolved.workgroup_count!=0u)
         if (!emit_workgroup_initialization(e)) return false;
     size_t cursor = function->instruction_start;
@@ -788,7 +795,9 @@ static bool finish_entry_interfaces(Emitter *e) {
             cursor+=c->words[cursor]>>16u;
         if (cursor>=c->word_count) return spirv_emit_error(e,0u,"missing staged entry declaration");
         const EntryRecord *entry=&c->entries[j];
+        const StageEntry *stage = e->source->stages != NULL ? &e->source->stages->entries[j] : NULL;
         size_t count=spirv_hidden_initialization_input(c,entry)?1u:0u;
+        if (stage != NULL) count += stage->interface_count;
         for (uint32_t i=entry->input_first;i<entry->input_first+entry->input_count;++i)
             if ((entry->state.resolved.target_input_mask&(1u<<c->entry_inputs[i].kind))!=0u) ++count;
         const size_t old_width=c->words[cursor]>>16u;
@@ -806,6 +815,9 @@ static bool finish_entry_interfaces(Emitter *e) {
             if ((entry->state.resolved.target_input_mask&(1u<<c->entry_inputs[i].kind))!=0u)
                 c->words[insert++]=c->entry_inputs[i].target;
         if (spirv_hidden_initialization_input(c,entry)) c->words[insert++]=entry->state.resolved.local_index_target;
+        if (stage != NULL)
+            for (uint32_t i = stage->interface_first; i < stage->interface_first + stage->interface_count; ++i)
+                c->words[insert++] = e->source->stages->interfaces[i].target;
         cursor=insert;
     }
     return true;
@@ -819,7 +831,7 @@ bool emit_spirv(Source *source, CompilerWorkspace *program) {
     const uint64_t ceiling = 256u + (uint64_t)program->limits.targets + 64u * (uint64_t)program->limits.instructions +
         3u * (uint64_t)(program->limits.tokens / 6u) + program->limits.tokens / 4u +
         (uint64_t)program->limits.statements + 1u + 11u * (uint64_t)program->limits.accesses + program->limits.resources +
-        program->limits.tokens / 8u + (uint64_t)program->limits.entry_inputs + 5u*(uint64_t)program->limits.entries + 8u;
+        program->limits.tokens / 8u + (uint64_t)program->limits.entry_inputs + 5u*(uint64_t)program->limits.entries + 8u + spirv_stage_id_budget(source);
     const uint32_t bound = ceiling < UINT32_MAX ? (uint32_t)ceiling : UINT32_MAX - 1u;
     const size_t values = (size_t)program->limits.instructions + program->limits.tokens / 4u + 1u;
     memset(program->values, 0, values * sizeof(*program->values));

@@ -3,6 +3,7 @@
 #ifndef DOE_COMPILER_SPIRV_INTERNAL_H
 #define DOE_COMPILER_SPIRV_INTERNAL_H
 #include "builtin.h"
+#include "stage.h"
 #include "spirv_decl.h"
 /* SPIR-V 1.3 numeric enums, from Khronos specification definitions. */
 enum {
@@ -51,6 +52,7 @@ typedef struct {
     uint32_t *values;
     uint32_t local_base, local_start, local_pointers[4][5], math_import;
     uint32_t barrier_semantics, subgroup_capabilities, image_capabilities;
+    bool sample_rate_shading;
     size_t function_end;
     uint32_t constants_used;
     bool failed;
@@ -72,6 +74,13 @@ bool spirv_plan_module(Emitter *e);
 bool spirv_hidden_initialization_input(const CompilerWorkspace *c, const EntryRecord *entry);
 bool spirv_module_declarations(Emitter *e);
 TypeId spirv_value_type(const CompilerWorkspace *, uint32_t);
+bool spirv_stage_plan(Emitter *);
+bool spirv_stage_annotations(Emitter *);
+bool spirv_stage_variables(Emitter *);
+bool spirv_stage_modes(Emitter *, uint32_t);
+bool spirv_stage_inputs(Emitter *, uint32_t);
+bool spirv_stage_return(Emitter *, const IrInstruction *);
+uint64_t spirv_stage_id_budget(const Source *);
 bool spirv_image_type(Emitter *, const TypeRecord *, uint32_t);
 bool spirv_image_plan(Emitter *, const IrInstruction *);
 bool spirv_image_operation(Emitter *, const IrInstruction *);

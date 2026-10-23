@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: MIT
  * Copyright (c) 2026 Doe contributors */
-#include "internal.h"
+#include "stage.h"
 #include <string.h>
 
 bool input_subgroup(InputKind kind) {
@@ -70,6 +70,7 @@ static bool check_bindings(Source *s, EntryRecord *entry, ClosureWork *work,
 static bool closure_reference(Source *s, EntryRecord *entry, SourceReference ref,
                                unsigned char *marks) {
     CompilerWorkspace *c=s->compiler;
+    if (!stage_closure(s, entry->function, ref)) return false;
     switch (ref.kind) {
         case SOURCE_RESOURCE: marks[ref.index]=1u; break;
         case SOURCE_WORKGROUP: marks[(size_t)c->resource_count+ref.index]=1u; break;

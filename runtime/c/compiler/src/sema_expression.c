@@ -74,6 +74,11 @@ static bool identity_value(Source *s,NameSpan name,const LocalScope *scope,Value
                     .operands.scalar.binding=local->local_id},&out->value);
             return true;
         }
+        case IDENTITY_STAGE_INPUT:
+            out->runtime = true;
+            out->constant.type = c->formals[identity.index].type.resolved.type;
+            return sema_emit(s, emit, (IrInstruction){.opcode = IR_STAGE_INPUT, .type = out->constant.type,
+                .source_offset = name.offset, .operands.scalar.binding = identity.index}, &out->value);
         case IDENTITY_FORMAL:
             out->runtime=true; out->constant.type=c->formals[identity.index].type.resolved.type;
             out->value=(IrValue){c->limits.instructions+1u+identity.index,out->constant.type,name.offset}; return true;

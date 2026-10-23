@@ -3,6 +3,7 @@
 #ifndef DOE_COMPILER_SEMA_H
 #define DOE_COMPILER_SEMA_H
 #include "numeric.h"
+#include "stage.h"
 typedef struct LoopScope LoopScope;
 struct LoopScope { LoopScope *parent; size_t body_scope_start, body_scope_end; uint32_t first_continue; bool continuing; };
 typedef struct { LocalBinding *values; size_t count, capacity, scope_start, level; LoopScope *loop; } LocalScope;
@@ -11,7 +12,7 @@ typedef struct { uint32_t root, path, category; TypeId type; bool writable; } Va
 typedef struct { uint64_t used, limit; uint32_t offset; } UniformityBudget;
 #define UNIFORMITY_WORK_LIMIT UINT64_C(67108864)
 typedef enum { IDENTITY_NONE, IDENTITY_LOCAL, IDENTITY_FORMAL, IDENTITY_INPUT,
-    IDENTITY_ALIAS, IDENTITY_CONSTANT, IDENTITY_RESOURCE, IDENTITY_WORKGROUP } ValueIdentityKind;
+    IDENTITY_STAGE_INPUT, IDENTITY_ALIAS, IDENTITY_CONSTANT, IDENTITY_RESOURCE, IDENTITY_WORKGROUP } ValueIdentityKind;
 typedef struct { ValueIdentityKind kind; uint32_t index; } ValueIdentity;
 bool uniformity_charge(Source *,UniformityBudget *,uint64_t);
 bool uniformity_analyze(Source *,uint64_t,uint64_t *);
@@ -29,6 +30,8 @@ bool sema_type_reference(Source *,TypeRef,const LocalScope *,TypeId *);
 bool sema_common_type(Source *,TypeId,TypeId,uint32_t,TypeId *);
 bool sema_default_type(Source *,TypeId,uint32_t,TypeId *);
 bool sema_resolve_declarations(Source *,LocalScope *);
+bool integer_attribute(Source *, uint32_t, const LocalScope *, bool, uint32_t *);
+bool sema_stage_interfaces(Source *, const LocalScope *);
 bool sema_valid_name(Source *,NameSpan);
 bool sema_module_declared(const Source *,NameSpan);
 uint32_t sema_find_function(const Source *,NameSpan);

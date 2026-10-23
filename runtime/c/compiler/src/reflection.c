@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: MIT
  * Copyright (c) 2026 Doe contributors */
-#include "internal.h"
+#include "stage.h"
 #include <string.h>
 static uint32_t declared_structs(const CompilerWorkspace *c) {
     uint32_t n = 0u;
@@ -166,7 +166,7 @@ void reflect_module(const Source *s, const CompilerWorkspace *c, const DoeCompil
         const EntryRecord *entry=&c->entries[i];
         DoeCompilerEntryV5 *out=&o->entries[i];
         memset(out,0,sizeof(*out));
-        out->stage=DOE_COMPILER_STAGE_COMPUTE;
+        out->stage=stage_kind(&c->functions[entry->function]);
         out->name=publish_name(s,c->functions[entry->function].name,o->names,&cursor);
         for (uint32_t k=0u;k<3u;++k) out->workgroup_size[k]=entry->state.resolved.workgroup_size[k];
         for (uint32_t k=entry->input_first;k<entry->input_first+entry->input_count;++k)

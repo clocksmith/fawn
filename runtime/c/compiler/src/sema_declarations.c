@@ -50,6 +50,7 @@ uint32_t sema_find_formal(const Source *s, NameSpan name) {
     const CompilerWorkspace *c = s->compiler;
     if (c->current_function >= c->function_count) return NO_ID;
     const FunctionRecord *f = &c->functions[c->current_function];
+    if (stage_graphics(f)) return stage_parameter(s, name);
     for (uint32_t i = 0u;i<f->formal_count;++i) if (source_spans_equal(s, name, c->formals[f->formal_start+i].name)) return f->formal_start+i;
     return NO_ID;
 }
@@ -77,6 +78,10 @@ bool sema_value_identity(Source *s,const LocalScope *scope,NameSpan name,Uniform
             if (same) {*out=(ValueIdentity){IDENTITY_FORMAL,f->formal_start+i};return true;}
         }
     }
+    if (budget != NULL && c->current_function < c->function_count && stage_graphics(&c->functions[c->current_function]) &&
+        !uniformity_charge(s, budget, s->stages->entries[c->functions[c->current_function].entry_index].formal_count)) return false;
+    const uint32_t stage_formal = stage_parameter(s, name);
+    if (stage_formal != NO_ID) {*out = (ValueIdentity){IDENTITY_STAGE_INPUT, stage_formal}; return true;}
     if (sema_alias_visible(s)) {
         if (!identity_name(s,name,c->alias,budget,&same)) return false;
         if (same) {*out=(ValueIdentity){IDENTITY_ALIAS,0u};return true;}
@@ -136,7 +141,7 @@ static bool base_type(Source *s, NameSpan name, const LocalScope *scope, TypeId 
     else return source_error(s, DOE_COMPILER_UNSUPPORTED, name.offset, "unsupported type name");
     return true;
 }
-static bool integer_attribute(Source *s, uint32_t expression, const LocalScope *scope, bool count, uint32_t *out) {
+bool integer_attribute(Source *s, uint32_t expression, const LocalScope *scope, bool count, uint32_t *out) {
     ExpressionValue v;
     if (!sema_expression(s, expression, scope, true, false, &v)) return false;
     if (count && v.constant.type == IR_ABSTRACT_INT && !sema_materialize(s, &v, IR_I32)) return false;
@@ -461,11 +466,14 @@ static bool resolve_signatures(Source *s, const LocalScope *scope) {
         FunctionRecord *fn = &c->functions[f];
         TypeId result = IR_VOID;
         if (fn->annotation.offset != NO_ID && !sema_type_reference(s, fn->annotation, scope, &result)) return false;
-        if ((result != IR_VOID && !type_constructible(c, result)) || ((fn->flags&FUNCTION_ENTRY) != 0u && result != IR_VOID) || ((fn->flags&FUNCTION_MUST_USE) != 0u && result == IR_VOID)) return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, fn->name.offset, "invalid function result declaration");
+        if ((result != IR_VOID && !type_constructible(c, result)) || ((fn->flags&FUNCTION_ENTRY) != 0u && !stage_graphics(fn) && result != IR_VOID) || ((fn->flags&FUNCTION_MUST_USE) != 0u && result == IR_VOID)) return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, fn->name.offset, "invalid function result declaration");
         fn->result_type = result;
-        if (fn->formal_count>UINT16_MAX-3u) return source_error(s, DOE_COMPILER_UNSUPPORTED, fn->name.offset, "SPIR-V instruction word-count format capacity exceeded");
-        for (uint32_t i = 0u;i<fn->formal_count;++i) {
-            const uint32_t index = fn->formal_start+i;
+        const StageEntry *stage = stage_graphics(fn) ? &s->stages->entries[fn->entry_index] : NULL;
+        const uint32_t first = stage != NULL ? stage->formal_first : fn->formal_start;
+        const uint32_t count = stage != NULL ? stage->formal_count : fn->formal_count;
+        if (count>UINT16_MAX-3u) return source_error(s, DOE_COMPILER_UNSUPPORTED, fn->name.offset, "SPIR-V instruction word-count format capacity exceeded");
+        for (uint32_t i = 0u;i<count;++i) {
+            const uint32_t index = first+i;
             FormalRecord *p = &c->formals[index];
             TypeId type;
             if (!sema_valid_name(s, p->name) || !sema_type_reference(s, p->type.annotation, scope, &type)) return false;
@@ -475,7 +483,6 @@ static bool resolve_signatures(Source *s, const LocalScope *scope) {
             p->type.resolved.offset = offset;
             c->values[i] = index;
         }
-        const size_t count = fn->formal_count;
         for (size_t i = count/2u;i != 0u;--i) sift_formals(s, c->values, i-1u, count);
         for (size_t i = count;i>1u;--i) {
             const uint32_t swap = c->values[0];
@@ -491,9 +498,13 @@ static bool resolve_signatures(Source *s, const LocalScope *scope) {
 bool sema_resolve_declarations(Source *s, LocalScope *scope) {
     CompilerWorkspace *c = s->compiler;
     c->current_function = NO_ID;
-    if (!declarations_valid(s) || !resolve_graph(s, scope) || !resolve_signatures(s, scope)) return false;
+    if (!declarations_valid(s) || !resolve_graph(s, scope) || !resolve_signatures(s, scope) || !sema_stage_interfaces(s, scope)) return false;
     for (uint32_t e=0u;e<c->entry_count;++e) {
         EntryRecord *entry=&c->entries[e];
+        if (stage_graphics(&c->functions[entry->function])) {
+            memset(&entry->state, 0, sizeof(entry->state));
+            continue;
+        }
         uint32_t dimensions[3],product=1u;
         for (uint32_t i=0u;i<3u;++i) {
             const Integer *v=&entry->state.dimensions[i];
