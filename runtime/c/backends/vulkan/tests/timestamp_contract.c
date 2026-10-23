@@ -49,6 +49,14 @@ int main(void) {
     context.caps = (doe_vk_caps){.timestamp_valid_bits = 64, .timestamp_period_ns = 1,
         .max_workgroup_size = {64, 1, 1}, .max_workgroup_invocations = 64,
         .max_workgroup_count = {1, 1, 1}, .max_storage_buffer_range = 512};
+    assert(doe_vk_timestamp_normalizer_validate(NULL, 1, 64) == DOE_VK_INVALID_ARGUMENT);
+    assert(doe_vk_timestamp_normalizer_validate(&context.caps, 0, 64) == DOE_VK_INVALID_ARGUMENT);
+    assert(doe_vk_timestamp_normalizer_validate(&context.caps, 1, 0) == DOE_VK_INVALID_ARGUMENT);
+    assert(doe_vk_timestamp_normalizer_validate(&context.caps, 64, 64) == DOE_VK_OK);
+    assert(doe_vk_timestamp_normalizer_validate(&context.caps, 65, 64) == DOE_VK_UNSUPPORTED);
+    assert(doe_vk_timestamp_normalizer_validate(&context.caps, 1, 1) == DOE_VK_OK);
+    assert(doe_vk_timestamp_normalizer_validate(&context.caps, 2, 1) == DOE_VK_UNSUPPORTED);
+    assert(doe_vk_timestamp_normalizer_validate(&context.caps, UINT32_MAX, 64) == DOE_VK_UNSUPPORTED);
     descriptor.capacity = 65;
     assert(doe_vk_timestamp_normalizer_create(&context, &descriptor, &normalizer, NULL) == DOE_VK_UNSUPPORTED);
     descriptor.capacity = 1;

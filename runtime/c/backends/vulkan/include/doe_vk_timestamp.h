@@ -25,6 +25,10 @@ typedef struct doe_vk_timestamp_normalizer_desc {
     float period_ns; /* Calibration used to generate source; must match context. */
     uint32_t valid_bits;
 } doe_vk_timestamp_normalizer_desc;
+/* Allocation-free device-feature admission. No compiler, native calls or
+ * output mutation; constructor reuses exactly these capacity/calibration rules. */
+doe_vk_status doe_vk_timestamp_normalizer_validate(const doe_vk_caps *caps,
+    uint32_t capacity, uint32_t workgroup_size);
 doe_vk_status doe_vk_timestamp_normalizer_create(doe_vk_context *context,
     const doe_vk_timestamp_normalizer_desc *descriptor,
     doe_vk_timestamp_normalizer **out, doe_vk_error *error);

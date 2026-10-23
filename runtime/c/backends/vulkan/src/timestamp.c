@@ -34,22 +34,29 @@ doe_vk_status doe_vk_timestamp_shader_source(float period_ns, uint32_t valid_bit
     return DOE_VK_OK;
 }
 
+doe_vk_status doe_vk_timestamp_normalizer_validate(const doe_vk_caps *caps,
+    uint32_t capacity, uint32_t workgroup_size) {
+    if (caps == NULL || capacity == 0 || workgroup_size == 0) return DOE_VK_INVALID_ARGUMENT;
+    uint64_t size = (uint64_t)capacity * 8;
+    uint32_t groups = (capacity - 1) / workgroup_size + 1;
+    if (caps->timestamp_valid_bits == 0 || caps->timestamp_valid_bits > 64 ||
+        !isfinite(caps->timestamp_period_ns) || caps->timestamp_period_ns <= 0 ||
+        workgroup_size > caps->max_workgroup_size[0] || workgroup_size > caps->max_workgroup_invocations ||
+        groups > caps->max_workgroup_count[0] || size > caps->max_storage_buffer_range)
+        return DOE_VK_UNSUPPORTED;
+    return DOE_VK_OK;
+}
+
 doe_vk_status doe_vk_timestamp_normalizer_create(doe_vk_context *context,
     const doe_vk_timestamp_normalizer_desc *descriptor,
     doe_vk_timestamp_normalizer **out, doe_vk_error *error) {
-    if (context == NULL || descriptor == NULL || out == NULL ||
-        descriptor->capacity == 0 || descriptor->workgroup_size == 0)
+    if (context == NULL || descriptor == NULL || out == NULL)
         return doe_vk_fail(DOE_VK_INVALID_ARGUMENT, "timestamp normalizer descriptor", error);
     if (context->lost) return doe_vk_fail(DOE_VK_DEVICE_LOST, "timestamp context", error);
     const doe_vk_caps *caps = &context->caps;
+    doe_vk_status status = doe_vk_timestamp_normalizer_validate(caps, descriptor->capacity, descriptor->workgroup_size);
+    if (status != DOE_VK_OK) return doe_vk_fail(status, "timestamp normalization limits", error);
     uint64_t size = (uint64_t)descriptor->capacity * 8;
-    uint32_t groups = (descriptor->capacity - 1) / descriptor->workgroup_size + 1;
-    if (caps->timestamp_valid_bits == 0 || caps->timestamp_valid_bits > 64 ||
-        !isfinite(caps->timestamp_period_ns) || caps->timestamp_period_ns <= 0 ||
-        descriptor->workgroup_size > caps->max_workgroup_size[0] ||
-        descriptor->workgroup_size > caps->max_workgroup_invocations ||
-        groups > caps->max_workgroup_count[0] || size > caps->max_storage_buffer_range)
-        return doe_vk_fail(DOE_VK_UNSUPPORTED, "timestamp normalization limits", error);
     if (descriptor->period_ns != caps->timestamp_period_ns ||
         descriptor->valid_bits != caps->timestamp_valid_bits)
         return doe_vk_fail(DOE_VK_INVALID_ARGUMENT, "timestamp calibration mismatch", error);
@@ -59,7 +66,7 @@ doe_vk_status doe_vk_timestamp_normalizer_create(doe_vk_context *context,
     normalizer->capacity = descriptor->capacity;
     normalizer->workgroup_size = descriptor->workgroup_size;
     const doe_vk_binding_layout layout = {0, 0, DOE_VK_BINDING_STORAGE};
-    doe_vk_status status = doe_vk_pipeline_create(context, descriptor->spirv,
+    status = doe_vk_pipeline_create(context, descriptor->spirv,
         descriptor->word_count, "main", &layout, 1, &normalizer->pipeline, error);
     if (status == DOE_VK_OK) status = doe_vk_buffer_create(context, size,
         DOE_VK_BUFFER_STORAGE | DOE_VK_BUFFER_COPY_SRC | DOE_VK_BUFFER_COPY_DST,
