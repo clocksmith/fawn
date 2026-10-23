@@ -1,0 +1,4 @@
+42f43675d30c53d0bfb971f50414a21dea0833192eb44efed115a7f85b7c0d2c  runtime/c/compiler/MILESTONE_5.md
+5bf4f5e5a4e4624c094320ad9ec97119278bc7f6f06b0e47c01e444d42c6dc5b  runtime/c/compiler/include/doe_compiler.h
+b0a60c2f05b70dba0786365dadd81b993accbd93f7f68f0e3accf86a815ae891  runtime/c/compiler/include/doe_compiler_v2.h
+da60e89733eb6d12c7a128f0d7ac2cfedf278684a6b6a4dd8659a4e81fd0de0c  docs/c-migration/corpus-coverage-m4.json
