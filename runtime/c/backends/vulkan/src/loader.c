@@ -1,252 +1,153 @@
 #include "internal.h"
 #include <dlfcn.h>
 
-static doe_vk_status load_functions(doe_vk_context *context) {
-    void *symbol;
-    symbol = dlsym(context->library, "vkCreateInstance");
-    if (symbol == NULL) return DOE_VK_LOADER_UNAVAILABLE;
-    _Static_assert(sizeof(context->vk.vkCreateInstance) == sizeof(symbol), "POSIX function pointer size");
-    memcpy(&context->vk.vkCreateInstance, &symbol, sizeof(symbol));
-    symbol = dlsym(context->library, "vkDestroyInstance");
-    if (symbol == NULL) return DOE_VK_LOADER_UNAVAILABLE;
-    _Static_assert(sizeof(context->vk.vkDestroyInstance) == sizeof(symbol), "POSIX function pointer size");
-    memcpy(&context->vk.vkDestroyInstance, &symbol, sizeof(symbol));
-    symbol = dlsym(context->library, "vkEnumeratePhysicalDevices");
-    if (symbol == NULL) return DOE_VK_LOADER_UNAVAILABLE;
-    _Static_assert(sizeof(context->vk.vkEnumeratePhysicalDevices) == sizeof(symbol), "POSIX function pointer size");
-    memcpy(&context->vk.vkEnumeratePhysicalDevices, &symbol, sizeof(symbol));
-    symbol = dlsym(context->library, "vkGetPhysicalDeviceQueueFamilyProperties");
-    if (symbol == NULL) return DOE_VK_LOADER_UNAVAILABLE;
-    _Static_assert(sizeof(context->vk.vkGetPhysicalDeviceQueueFamilyProperties) == sizeof(symbol), "POSIX function pointer size");
-    memcpy(&context->vk.vkGetPhysicalDeviceQueueFamilyProperties, &symbol, sizeof(symbol));
-    symbol = dlsym(context->library, "vkGetPhysicalDeviceMemoryProperties");
-    if (symbol == NULL) return DOE_VK_LOADER_UNAVAILABLE;
-    _Static_assert(sizeof(context->vk.vkGetPhysicalDeviceMemoryProperties) == sizeof(symbol), "POSIX function pointer size");
-    memcpy(&context->vk.vkGetPhysicalDeviceMemoryProperties, &symbol, sizeof(symbol));
-    symbol = dlsym(context->library, "vkGetPhysicalDeviceProperties2");
-    if (symbol == NULL) return DOE_VK_LOADER_UNAVAILABLE;
-    _Static_assert(sizeof(context->vk.vkGetPhysicalDeviceProperties2) == sizeof(symbol), "POSIX function pointer size");
-    memcpy(&context->vk.vkGetPhysicalDeviceProperties2, &symbol, sizeof(symbol));
-    symbol = dlsym(context->library, "vkGetPhysicalDeviceFeatures2");
-    if (symbol == NULL) return DOE_VK_LOADER_UNAVAILABLE;
-    _Static_assert(sizeof(context->vk.vkGetPhysicalDeviceFeatures2) == sizeof(symbol), "POSIX function pointer size");
-    memcpy(&context->vk.vkGetPhysicalDeviceFeatures2, &symbol, sizeof(symbol));
-    symbol = dlsym(context->library, "vkCreateDevice");
-    if (symbol == NULL) return DOE_VK_LOADER_UNAVAILABLE;
-    _Static_assert(sizeof(context->vk.vkCreateDevice) == sizeof(symbol), "POSIX function pointer size");
-    memcpy(&context->vk.vkCreateDevice, &symbol, sizeof(symbol));
-    symbol = dlsym(context->library, "vkDestroyDevice");
-    if (symbol == NULL) return DOE_VK_LOADER_UNAVAILABLE;
-    _Static_assert(sizeof(context->vk.vkDestroyDevice) == sizeof(symbol), "POSIX function pointer size");
-    memcpy(&context->vk.vkDestroyDevice, &symbol, sizeof(symbol));
-    symbol = dlsym(context->library, "vkGetDeviceQueue");
-    if (symbol == NULL) return DOE_VK_LOADER_UNAVAILABLE;
-    _Static_assert(sizeof(context->vk.vkGetDeviceQueue) == sizeof(symbol), "POSIX function pointer size");
-    memcpy(&context->vk.vkGetDeviceQueue, &symbol, sizeof(symbol));
-    symbol = dlsym(context->library, "vkCreateCommandPool");
-    if (symbol == NULL) return DOE_VK_LOADER_UNAVAILABLE;
-    _Static_assert(sizeof(context->vk.vkCreateCommandPool) == sizeof(symbol), "POSIX function pointer size");
-    memcpy(&context->vk.vkCreateCommandPool, &symbol, sizeof(symbol));
-    symbol = dlsym(context->library, "vkDestroyCommandPool");
-    if (symbol == NULL) return DOE_VK_LOADER_UNAVAILABLE;
-    _Static_assert(sizeof(context->vk.vkDestroyCommandPool) == sizeof(symbol), "POSIX function pointer size");
-    memcpy(&context->vk.vkDestroyCommandPool, &symbol, sizeof(symbol));
-    symbol = dlsym(context->library, "vkAllocateCommandBuffers");
-    if (symbol == NULL) return DOE_VK_LOADER_UNAVAILABLE;
-    _Static_assert(sizeof(context->vk.vkAllocateCommandBuffers) == sizeof(symbol), "POSIX function pointer size");
-    memcpy(&context->vk.vkAllocateCommandBuffers, &symbol, sizeof(symbol));
-    symbol = dlsym(context->library, "vkFreeCommandBuffers");
-    if (symbol == NULL) return DOE_VK_LOADER_UNAVAILABLE;
-    _Static_assert(sizeof(context->vk.vkFreeCommandBuffers) == sizeof(symbol), "POSIX function pointer size");
-    memcpy(&context->vk.vkFreeCommandBuffers, &symbol, sizeof(symbol));
-    symbol = dlsym(context->library, "vkCreateFence");
-    if (symbol == NULL) return DOE_VK_LOADER_UNAVAILABLE;
-    _Static_assert(sizeof(context->vk.vkCreateFence) == sizeof(symbol), "POSIX function pointer size");
-    memcpy(&context->vk.vkCreateFence, &symbol, sizeof(symbol));
-    symbol = dlsym(context->library, "vkDestroyFence");
-    if (symbol == NULL) return DOE_VK_LOADER_UNAVAILABLE;
-    _Static_assert(sizeof(context->vk.vkDestroyFence) == sizeof(symbol), "POSIX function pointer size");
-    memcpy(&context->vk.vkDestroyFence, &symbol, sizeof(symbol));
-    symbol = dlsym(context->library, "vkGetFenceStatus");
-    if (symbol == NULL) return DOE_VK_LOADER_UNAVAILABLE;
-    _Static_assert(sizeof(context->vk.vkGetFenceStatus) == sizeof(symbol), "POSIX function pointer size");
-    memcpy(&context->vk.vkGetFenceStatus, &symbol, sizeof(symbol));
-    symbol = dlsym(context->library, "vkWaitForFences");
-    if (symbol == NULL) return DOE_VK_LOADER_UNAVAILABLE;
-    _Static_assert(sizeof(context->vk.vkWaitForFences) == sizeof(symbol), "POSIX function pointer size");
-    memcpy(&context->vk.vkWaitForFences, &symbol, sizeof(symbol));
-    symbol = dlsym(context->library, "vkQueueSubmit");
-    if (symbol == NULL) return DOE_VK_LOADER_UNAVAILABLE;
-    _Static_assert(sizeof(context->vk.vkQueueSubmit) == sizeof(symbol), "POSIX function pointer size");
-    memcpy(&context->vk.vkQueueSubmit, &symbol, sizeof(symbol));
-    symbol = dlsym(context->library, "vkQueueWaitIdle");
-    if (symbol == NULL) return DOE_VK_LOADER_UNAVAILABLE;
-    _Static_assert(sizeof(context->vk.vkQueueWaitIdle) == sizeof(symbol), "POSIX function pointer size");
-    memcpy(&context->vk.vkQueueWaitIdle, &symbol, sizeof(symbol));
-    symbol = dlsym(context->library, "vkBeginCommandBuffer");
-    if (symbol == NULL) return DOE_VK_LOADER_UNAVAILABLE;
-    _Static_assert(sizeof(context->vk.vkBeginCommandBuffer) == sizeof(symbol), "POSIX function pointer size");
-    memcpy(&context->vk.vkBeginCommandBuffer, &symbol, sizeof(symbol));
-    symbol = dlsym(context->library, "vkEndCommandBuffer");
-    if (symbol == NULL) return DOE_VK_LOADER_UNAVAILABLE;
-    _Static_assert(sizeof(context->vk.vkEndCommandBuffer) == sizeof(symbol), "POSIX function pointer size");
-    memcpy(&context->vk.vkEndCommandBuffer, &symbol, sizeof(symbol));
-    symbol = dlsym(context->library, "vkCmdBindPipeline");
-    if (symbol == NULL) return DOE_VK_LOADER_UNAVAILABLE;
-    _Static_assert(sizeof(context->vk.vkCmdBindPipeline) == sizeof(symbol), "POSIX function pointer size");
-    memcpy(&context->vk.vkCmdBindPipeline, &symbol, sizeof(symbol));
-    symbol = dlsym(context->library, "vkCmdDispatch");
-    if (symbol == NULL) return DOE_VK_LOADER_UNAVAILABLE;
-    _Static_assert(sizeof(context->vk.vkCmdDispatch) == sizeof(symbol), "POSIX function pointer size");
-    memcpy(&context->vk.vkCmdDispatch, &symbol, sizeof(symbol));
-    symbol = dlsym(context->library, "vkCmdDispatchIndirect");
-    if (symbol == NULL) return DOE_VK_LOADER_UNAVAILABLE;
-    _Static_assert(sizeof(context->vk.vkCmdDispatchIndirect) == sizeof(symbol), "POSIX function pointer size");
-    memcpy(&context->vk.vkCmdDispatchIndirect, &symbol, sizeof(symbol));
-    symbol = dlsym(context->library, "vkCmdCopyBuffer");
-    if (symbol == NULL) return DOE_VK_LOADER_UNAVAILABLE;
-    _Static_assert(sizeof(context->vk.vkCmdCopyBuffer) == sizeof(symbol), "POSIX function pointer size");
-    memcpy(&context->vk.vkCmdCopyBuffer, &symbol, sizeof(symbol));
-    symbol = dlsym(context->library, "vkCmdFillBuffer");
-    if (symbol == NULL) return DOE_VK_LOADER_UNAVAILABLE;
-    _Static_assert(sizeof(context->vk.vkCmdFillBuffer) == sizeof(symbol), "POSIX function pointer size");
-    memcpy(&context->vk.vkCmdFillBuffer, &symbol, sizeof(symbol));
-    symbol = dlsym(context->library, "vkCmdPipelineBarrier");
-    if (symbol == NULL) return DOE_VK_LOADER_UNAVAILABLE;
-    _Static_assert(sizeof(context->vk.vkCmdPipelineBarrier) == sizeof(symbol), "POSIX function pointer size");
-    memcpy(&context->vk.vkCmdPipelineBarrier, &symbol, sizeof(symbol));
-    symbol = dlsym(context->library, "vkCreateBuffer");
-    if (symbol == NULL) return DOE_VK_LOADER_UNAVAILABLE;
-    _Static_assert(sizeof(context->vk.vkCreateBuffer) == sizeof(symbol), "POSIX function pointer size");
-    memcpy(&context->vk.vkCreateBuffer, &symbol, sizeof(symbol));
-    symbol = dlsym(context->library, "vkDestroyBuffer");
-    if (symbol == NULL) return DOE_VK_LOADER_UNAVAILABLE;
-    _Static_assert(sizeof(context->vk.vkDestroyBuffer) == sizeof(symbol), "POSIX function pointer size");
-    memcpy(&context->vk.vkDestroyBuffer, &symbol, sizeof(symbol));
-    symbol = dlsym(context->library, "vkGetBufferMemoryRequirements");
-    if (symbol == NULL) return DOE_VK_LOADER_UNAVAILABLE;
-    _Static_assert(sizeof(context->vk.vkGetBufferMemoryRequirements) == sizeof(symbol), "POSIX function pointer size");
-    memcpy(&context->vk.vkGetBufferMemoryRequirements, &symbol, sizeof(symbol));
-    symbol = dlsym(context->library, "vkAllocateMemory");
-    if (symbol == NULL) return DOE_VK_LOADER_UNAVAILABLE;
-    _Static_assert(sizeof(context->vk.vkAllocateMemory) == sizeof(symbol), "POSIX function pointer size");
-    memcpy(&context->vk.vkAllocateMemory, &symbol, sizeof(symbol));
-    symbol = dlsym(context->library, "vkFreeMemory");
-    if (symbol == NULL) return DOE_VK_LOADER_UNAVAILABLE;
-    _Static_assert(sizeof(context->vk.vkFreeMemory) == sizeof(symbol), "POSIX function pointer size");
-    memcpy(&context->vk.vkFreeMemory, &symbol, sizeof(symbol));
-    symbol = dlsym(context->library, "vkBindBufferMemory");
-    if (symbol == NULL) return DOE_VK_LOADER_UNAVAILABLE;
-    _Static_assert(sizeof(context->vk.vkBindBufferMemory) == sizeof(symbol), "POSIX function pointer size");
-    memcpy(&context->vk.vkBindBufferMemory, &symbol, sizeof(symbol));
-    symbol = dlsym(context->library, "vkMapMemory");
-    if (symbol == NULL) return DOE_VK_LOADER_UNAVAILABLE;
-    _Static_assert(sizeof(context->vk.vkMapMemory) == sizeof(symbol), "POSIX function pointer size");
-    memcpy(&context->vk.vkMapMemory, &symbol, sizeof(symbol));
-    symbol = dlsym(context->library, "vkUnmapMemory");
-    if (symbol == NULL) return DOE_VK_LOADER_UNAVAILABLE;
-    _Static_assert(sizeof(context->vk.vkUnmapMemory) == sizeof(symbol), "POSIX function pointer size");
-    memcpy(&context->vk.vkUnmapMemory, &symbol, sizeof(symbol));
-    symbol = dlsym(context->library, "vkCreateShaderModule");
-    if (symbol == NULL) return DOE_VK_LOADER_UNAVAILABLE;
-    _Static_assert(sizeof(context->vk.vkCreateShaderModule) == sizeof(symbol), "POSIX function pointer size");
-    memcpy(&context->vk.vkCreateShaderModule, &symbol, sizeof(symbol));
-    symbol = dlsym(context->library, "vkDestroyShaderModule");
-    if (symbol == NULL) return DOE_VK_LOADER_UNAVAILABLE;
-    _Static_assert(sizeof(context->vk.vkDestroyShaderModule) == sizeof(symbol), "POSIX function pointer size");
-    memcpy(&context->vk.vkDestroyShaderModule, &symbol, sizeof(symbol));
-    symbol = dlsym(context->library, "vkCreateDescriptorSetLayout");
-    if (symbol == NULL) return DOE_VK_LOADER_UNAVAILABLE;
-    _Static_assert(sizeof(context->vk.vkCreateDescriptorSetLayout) == sizeof(symbol), "POSIX function pointer size");
-    memcpy(&context->vk.vkCreateDescriptorSetLayout, &symbol, sizeof(symbol));
-    symbol = dlsym(context->library, "vkDestroyDescriptorSetLayout");
-    if (symbol == NULL) return DOE_VK_LOADER_UNAVAILABLE;
-    _Static_assert(sizeof(context->vk.vkDestroyDescriptorSetLayout) == sizeof(symbol), "POSIX function pointer size");
-    memcpy(&context->vk.vkDestroyDescriptorSetLayout, &symbol, sizeof(symbol));
-    symbol = dlsym(context->library, "vkCreateDescriptorPool");
-    if (symbol == NULL) return DOE_VK_LOADER_UNAVAILABLE;
-    _Static_assert(sizeof(context->vk.vkCreateDescriptorPool) == sizeof(symbol), "POSIX function pointer size");
-    memcpy(&context->vk.vkCreateDescriptorPool, &symbol, sizeof(symbol));
-    symbol = dlsym(context->library, "vkDestroyDescriptorPool");
-    if (symbol == NULL) return DOE_VK_LOADER_UNAVAILABLE;
-    _Static_assert(sizeof(context->vk.vkDestroyDescriptorPool) == sizeof(symbol), "POSIX function pointer size");
-    memcpy(&context->vk.vkDestroyDescriptorPool, &symbol, sizeof(symbol));
-    symbol = dlsym(context->library, "vkAllocateDescriptorSets");
-    if (symbol == NULL) return DOE_VK_LOADER_UNAVAILABLE;
-    _Static_assert(sizeof(context->vk.vkAllocateDescriptorSets) == sizeof(symbol), "POSIX function pointer size");
-    memcpy(&context->vk.vkAllocateDescriptorSets, &symbol, sizeof(symbol));
-    symbol = dlsym(context->library, "vkUpdateDescriptorSets");
-    if (symbol == NULL) return DOE_VK_LOADER_UNAVAILABLE;
-    _Static_assert(sizeof(context->vk.vkUpdateDescriptorSets) == sizeof(symbol), "POSIX function pointer size");
-    memcpy(&context->vk.vkUpdateDescriptorSets, &symbol, sizeof(symbol));
-    symbol = dlsym(context->library, "vkCreatePipelineLayout");
-    if (symbol == NULL) return DOE_VK_LOADER_UNAVAILABLE;
-    _Static_assert(sizeof(context->vk.vkCreatePipelineLayout) == sizeof(symbol), "POSIX function pointer size");
-    memcpy(&context->vk.vkCreatePipelineLayout, &symbol, sizeof(symbol));
-    symbol = dlsym(context->library, "vkDestroyPipelineLayout");
-    if (symbol == NULL) return DOE_VK_LOADER_UNAVAILABLE;
-    _Static_assert(sizeof(context->vk.vkDestroyPipelineLayout) == sizeof(symbol), "POSIX function pointer size");
-    memcpy(&context->vk.vkDestroyPipelineLayout, &symbol, sizeof(symbol));
-    symbol = dlsym(context->library, "vkCreateComputePipelines");
-    if (symbol == NULL) return DOE_VK_LOADER_UNAVAILABLE;
-    _Static_assert(sizeof(context->vk.vkCreateComputePipelines) == sizeof(symbol), "POSIX function pointer size");
-    memcpy(&context->vk.vkCreateComputePipelines, &symbol, sizeof(symbol));
-    symbol = dlsym(context->library, "vkDestroyPipeline");
-    if (symbol == NULL) return DOE_VK_LOADER_UNAVAILABLE;
-    _Static_assert(sizeof(context->vk.vkDestroyPipeline) == sizeof(symbol), "POSIX function pointer size");
-    memcpy(&context->vk.vkDestroyPipeline, &symbol, sizeof(symbol));
-    symbol = dlsym(context->library, "vkCmdBindDescriptorSets");
-    if (symbol == NULL) return DOE_VK_LOADER_UNAVAILABLE;
-    _Static_assert(sizeof(context->vk.vkCmdBindDescriptorSets) == sizeof(symbol), "POSIX function pointer size");
-    memcpy(&context->vk.vkCmdBindDescriptorSets, &symbol, sizeof(symbol));
-    symbol = dlsym(context->library, "vkGetPhysicalDeviceFormatProperties");
-    if (symbol == NULL) return DOE_VK_LOADER_UNAVAILABLE;
-    _Static_assert(sizeof(context->vk.vkGetPhysicalDeviceFormatProperties) == sizeof(symbol), "POSIX function pointer size");
-    memcpy(&context->vk.vkGetPhysicalDeviceFormatProperties, &symbol, sizeof(symbol));
-    symbol = dlsym(context->library, "vkCreateImage");
-    if (symbol == NULL) return DOE_VK_LOADER_UNAVAILABLE;
-    _Static_assert(sizeof(context->vk.vkCreateImage) == sizeof(symbol), "POSIX function pointer size");
-    memcpy(&context->vk.vkCreateImage, &symbol, sizeof(symbol));
-    symbol = dlsym(context->library, "vkDestroyImage");
-    if (symbol == NULL) return DOE_VK_LOADER_UNAVAILABLE;
-    _Static_assert(sizeof(context->vk.vkDestroyImage) == sizeof(symbol), "POSIX function pointer size");
-    memcpy(&context->vk.vkDestroyImage, &symbol, sizeof(symbol));
-    symbol = dlsym(context->library, "vkGetImageMemoryRequirements");
-    if (symbol == NULL) return DOE_VK_LOADER_UNAVAILABLE;
-    _Static_assert(sizeof(context->vk.vkGetImageMemoryRequirements) == sizeof(symbol), "POSIX function pointer size");
-    memcpy(&context->vk.vkGetImageMemoryRequirements, &symbol, sizeof(symbol));
-    symbol = dlsym(context->library, "vkBindImageMemory");
-    if (symbol == NULL) return DOE_VK_LOADER_UNAVAILABLE;
-    _Static_assert(sizeof(context->vk.vkBindImageMemory) == sizeof(symbol), "POSIX function pointer size");
-    memcpy(&context->vk.vkBindImageMemory, &symbol, sizeof(symbol));
-    symbol = dlsym(context->library, "vkCreateImageView");
-    if (symbol == NULL) return DOE_VK_LOADER_UNAVAILABLE;
-    _Static_assert(sizeof(context->vk.vkCreateImageView) == sizeof(symbol), "POSIX function pointer size");
-    memcpy(&context->vk.vkCreateImageView, &symbol, sizeof(symbol));
-    symbol = dlsym(context->library, "vkDestroyImageView");
-    if (symbol == NULL) return DOE_VK_LOADER_UNAVAILABLE;
-    _Static_assert(sizeof(context->vk.vkDestroyImageView) == sizeof(symbol), "POSIX function pointer size");
-    memcpy(&context->vk.vkDestroyImageView, &symbol, sizeof(symbol));
-    symbol = dlsym(context->library, "vkCreateSampler");
-    if (symbol == NULL) return DOE_VK_LOADER_UNAVAILABLE;
-    _Static_assert(sizeof(context->vk.vkCreateSampler) == sizeof(symbol), "POSIX function pointer size");
-    memcpy(&context->vk.vkCreateSampler, &symbol, sizeof(symbol));
-    symbol = dlsym(context->library, "vkDestroySampler");
-    if (symbol == NULL) return DOE_VK_LOADER_UNAVAILABLE;
-    _Static_assert(sizeof(context->vk.vkDestroySampler) == sizeof(symbol), "POSIX function pointer size");
-    memcpy(&context->vk.vkDestroySampler, &symbol, sizeof(symbol));
-    symbol = dlsym(context->library, "vkCmdCopyBufferToImage");
-    if (symbol == NULL) return DOE_VK_LOADER_UNAVAILABLE;
-    _Static_assert(sizeof(context->vk.vkCmdCopyBufferToImage) == sizeof(symbol), "POSIX function pointer size");
-    memcpy(&context->vk.vkCmdCopyBufferToImage, &symbol, sizeof(symbol));
-    symbol = dlsym(context->library, "vkCmdCopyImageToBuffer");
-    if (symbol == NULL) return DOE_VK_LOADER_UNAVAILABLE;
-    _Static_assert(sizeof(context->vk.vkCmdCopyImageToBuffer) == sizeof(symbol), "POSIX function pointer size");
-    memcpy(&context->vk.vkCmdCopyImageToBuffer, &symbol, sizeof(symbol));
-    symbol = dlsym(context->library, "vkCmdCopyImage");
-    if (symbol == NULL) return DOE_VK_LOADER_UNAVAILABLE;
-    _Static_assert(sizeof(context->vk.vkCmdCopyImage) == sizeof(symbol), "POSIX function pointer size");
-    memcpy(&context->vk.vkCmdCopyImage, &symbol, sizeof(symbol));
+/* POSIX supplies object-sized function symbols. Copy only after checking both
+ * storage size and lookup success; failed lookup leaves its destination intact. */
+doe_vk_status doe_vk_load_symbol(void *library, const char *name,
+    void *destination, size_t destination_size, doe_vk_error *error) {
+    if (library == NULL || name == NULL || destination == NULL ||
+        destination_size != sizeof(void *))
+        return doe_vk_fail(DOE_VK_INVALID_ARGUMENT, "loader symbol storage", error);
+    void *symbol = dlsym(library, name);
+    if (symbol == NULL) return doe_vk_fail(DOE_VK_LOADER_UNAVAILABLE, name, error);
+    memcpy(destination, &symbol, destination_size);
+    return DOE_VK_OK;
+}
+
+static doe_vk_status load_functions(doe_vk_context *context, doe_vk_error *error) {
+    _Static_assert(sizeof(context->vk.vkCreateInstance) == sizeof(void *), "vkCreateInstance POSIX pointer size");
+    _Static_assert(sizeof(context->vk.vkDestroyInstance) == sizeof(void *), "vkDestroyInstance POSIX pointer size");
+    _Static_assert(sizeof(context->vk.vkEnumeratePhysicalDevices) == sizeof(void *), "vkEnumeratePhysicalDevices POSIX pointer size");
+    _Static_assert(sizeof(context->vk.vkGetPhysicalDeviceQueueFamilyProperties) == sizeof(void *), "vkGetPhysicalDeviceQueueFamilyProperties POSIX pointer size");
+    _Static_assert(sizeof(context->vk.vkGetPhysicalDeviceMemoryProperties) == sizeof(void *), "vkGetPhysicalDeviceMemoryProperties POSIX pointer size");
+    _Static_assert(sizeof(context->vk.vkGetPhysicalDeviceProperties2) == sizeof(void *), "vkGetPhysicalDeviceProperties2 POSIX pointer size");
+    _Static_assert(sizeof(context->vk.vkGetPhysicalDeviceFeatures2) == sizeof(void *), "vkGetPhysicalDeviceFeatures2 POSIX pointer size");
+    _Static_assert(sizeof(context->vk.vkCreateDevice) == sizeof(void *), "vkCreateDevice POSIX pointer size");
+    _Static_assert(sizeof(context->vk.vkDestroyDevice) == sizeof(void *), "vkDestroyDevice POSIX pointer size");
+    _Static_assert(sizeof(context->vk.vkGetDeviceQueue) == sizeof(void *), "vkGetDeviceQueue POSIX pointer size");
+    _Static_assert(sizeof(context->vk.vkCreateCommandPool) == sizeof(void *), "vkCreateCommandPool POSIX pointer size");
+    _Static_assert(sizeof(context->vk.vkDestroyCommandPool) == sizeof(void *), "vkDestroyCommandPool POSIX pointer size");
+    _Static_assert(sizeof(context->vk.vkAllocateCommandBuffers) == sizeof(void *), "vkAllocateCommandBuffers POSIX pointer size");
+    _Static_assert(sizeof(context->vk.vkFreeCommandBuffers) == sizeof(void *), "vkFreeCommandBuffers POSIX pointer size");
+    _Static_assert(sizeof(context->vk.vkCreateFence) == sizeof(void *), "vkCreateFence POSIX pointer size");
+    _Static_assert(sizeof(context->vk.vkDestroyFence) == sizeof(void *), "vkDestroyFence POSIX pointer size");
+    _Static_assert(sizeof(context->vk.vkGetFenceStatus) == sizeof(void *), "vkGetFenceStatus POSIX pointer size");
+    _Static_assert(sizeof(context->vk.vkWaitForFences) == sizeof(void *), "vkWaitForFences POSIX pointer size");
+    _Static_assert(sizeof(context->vk.vkQueueSubmit) == sizeof(void *), "vkQueueSubmit POSIX pointer size");
+    _Static_assert(sizeof(context->vk.vkQueueWaitIdle) == sizeof(void *), "vkQueueWaitIdle POSIX pointer size");
+    _Static_assert(sizeof(context->vk.vkBeginCommandBuffer) == sizeof(void *), "vkBeginCommandBuffer POSIX pointer size");
+    _Static_assert(sizeof(context->vk.vkEndCommandBuffer) == sizeof(void *), "vkEndCommandBuffer POSIX pointer size");
+    _Static_assert(sizeof(context->vk.vkCmdBindPipeline) == sizeof(void *), "vkCmdBindPipeline POSIX pointer size");
+    _Static_assert(sizeof(context->vk.vkCmdDispatch) == sizeof(void *), "vkCmdDispatch POSIX pointer size");
+    _Static_assert(sizeof(context->vk.vkCmdDispatchIndirect) == sizeof(void *), "vkCmdDispatchIndirect POSIX pointer size");
+    _Static_assert(sizeof(context->vk.vkCmdCopyBuffer) == sizeof(void *), "vkCmdCopyBuffer POSIX pointer size");
+    _Static_assert(sizeof(context->vk.vkCmdFillBuffer) == sizeof(void *), "vkCmdFillBuffer POSIX pointer size");
+    _Static_assert(sizeof(context->vk.vkCmdPipelineBarrier) == sizeof(void *), "vkCmdPipelineBarrier POSIX pointer size");
+    _Static_assert(sizeof(context->vk.vkCreateBuffer) == sizeof(void *), "vkCreateBuffer POSIX pointer size");
+    _Static_assert(sizeof(context->vk.vkDestroyBuffer) == sizeof(void *), "vkDestroyBuffer POSIX pointer size");
+    _Static_assert(sizeof(context->vk.vkGetBufferMemoryRequirements) == sizeof(void *), "vkGetBufferMemoryRequirements POSIX pointer size");
+    _Static_assert(sizeof(context->vk.vkAllocateMemory) == sizeof(void *), "vkAllocateMemory POSIX pointer size");
+    _Static_assert(sizeof(context->vk.vkFreeMemory) == sizeof(void *), "vkFreeMemory POSIX pointer size");
+    _Static_assert(sizeof(context->vk.vkBindBufferMemory) == sizeof(void *), "vkBindBufferMemory POSIX pointer size");
+    _Static_assert(sizeof(context->vk.vkMapMemory) == sizeof(void *), "vkMapMemory POSIX pointer size");
+    _Static_assert(sizeof(context->vk.vkUnmapMemory) == sizeof(void *), "vkUnmapMemory POSIX pointer size");
+    _Static_assert(sizeof(context->vk.vkCreateShaderModule) == sizeof(void *), "vkCreateShaderModule POSIX pointer size");
+    _Static_assert(sizeof(context->vk.vkDestroyShaderModule) == sizeof(void *), "vkDestroyShaderModule POSIX pointer size");
+    _Static_assert(sizeof(context->vk.vkCreateDescriptorSetLayout) == sizeof(void *), "vkCreateDescriptorSetLayout POSIX pointer size");
+    _Static_assert(sizeof(context->vk.vkDestroyDescriptorSetLayout) == sizeof(void *), "vkDestroyDescriptorSetLayout POSIX pointer size");
+    _Static_assert(sizeof(context->vk.vkCreateDescriptorPool) == sizeof(void *), "vkCreateDescriptorPool POSIX pointer size");
+    _Static_assert(sizeof(context->vk.vkDestroyDescriptorPool) == sizeof(void *), "vkDestroyDescriptorPool POSIX pointer size");
+    _Static_assert(sizeof(context->vk.vkAllocateDescriptorSets) == sizeof(void *), "vkAllocateDescriptorSets POSIX pointer size");
+    _Static_assert(sizeof(context->vk.vkUpdateDescriptorSets) == sizeof(void *), "vkUpdateDescriptorSets POSIX pointer size");
+    _Static_assert(sizeof(context->vk.vkCreatePipelineLayout) == sizeof(void *), "vkCreatePipelineLayout POSIX pointer size");
+    _Static_assert(sizeof(context->vk.vkDestroyPipelineLayout) == sizeof(void *), "vkDestroyPipelineLayout POSIX pointer size");
+    _Static_assert(sizeof(context->vk.vkCreateComputePipelines) == sizeof(void *), "vkCreateComputePipelines POSIX pointer size");
+    _Static_assert(sizeof(context->vk.vkDestroyPipeline) == sizeof(void *), "vkDestroyPipeline POSIX pointer size");
+    _Static_assert(sizeof(context->vk.vkCmdBindDescriptorSets) == sizeof(void *), "vkCmdBindDescriptorSets POSIX pointer size");
+    _Static_assert(sizeof(context->vk.vkGetPhysicalDeviceFormatProperties) == sizeof(void *), "vkGetPhysicalDeviceFormatProperties POSIX pointer size");
+    _Static_assert(sizeof(context->vk.vkCreateImage) == sizeof(void *), "vkCreateImage POSIX pointer size");
+    _Static_assert(sizeof(context->vk.vkDestroyImage) == sizeof(void *), "vkDestroyImage POSIX pointer size");
+    _Static_assert(sizeof(context->vk.vkGetImageMemoryRequirements) == sizeof(void *), "vkGetImageMemoryRequirements POSIX pointer size");
+    _Static_assert(sizeof(context->vk.vkBindImageMemory) == sizeof(void *), "vkBindImageMemory POSIX pointer size");
+    _Static_assert(sizeof(context->vk.vkCreateImageView) == sizeof(void *), "vkCreateImageView POSIX pointer size");
+    _Static_assert(sizeof(context->vk.vkDestroyImageView) == sizeof(void *), "vkDestroyImageView POSIX pointer size");
+    _Static_assert(sizeof(context->vk.vkCreateSampler) == sizeof(void *), "vkCreateSampler POSIX pointer size");
+    _Static_assert(sizeof(context->vk.vkDestroySampler) == sizeof(void *), "vkDestroySampler POSIX pointer size");
+    _Static_assert(sizeof(context->vk.vkCmdCopyBufferToImage) == sizeof(void *), "vkCmdCopyBufferToImage POSIX pointer size");
+    _Static_assert(sizeof(context->vk.vkCmdCopyImageToBuffer) == sizeof(void *), "vkCmdCopyImageToBuffer POSIX pointer size");
+    _Static_assert(sizeof(context->vk.vkCmdCopyImage) == sizeof(void *), "vkCmdCopyImage POSIX pointer size");
+    const struct {
+        const char *name;
+        void *destination;
+        size_t destination_size;
+    } symbols[] = {
+        { "vkCreateInstance", &context->vk.vkCreateInstance, sizeof(context->vk.vkCreateInstance) },
+        { "vkDestroyInstance", &context->vk.vkDestroyInstance, sizeof(context->vk.vkDestroyInstance) },
+        { "vkEnumeratePhysicalDevices", &context->vk.vkEnumeratePhysicalDevices, sizeof(context->vk.vkEnumeratePhysicalDevices) },
+        { "vkGetPhysicalDeviceQueueFamilyProperties", &context->vk.vkGetPhysicalDeviceQueueFamilyProperties, sizeof(context->vk.vkGetPhysicalDeviceQueueFamilyProperties) },
+        { "vkGetPhysicalDeviceMemoryProperties", &context->vk.vkGetPhysicalDeviceMemoryProperties, sizeof(context->vk.vkGetPhysicalDeviceMemoryProperties) },
+        { "vkGetPhysicalDeviceProperties2", &context->vk.vkGetPhysicalDeviceProperties2, sizeof(context->vk.vkGetPhysicalDeviceProperties2) },
+        { "vkGetPhysicalDeviceFeatures2", &context->vk.vkGetPhysicalDeviceFeatures2, sizeof(context->vk.vkGetPhysicalDeviceFeatures2) },
+        { "vkCreateDevice", &context->vk.vkCreateDevice, sizeof(context->vk.vkCreateDevice) },
+        { "vkDestroyDevice", &context->vk.vkDestroyDevice, sizeof(context->vk.vkDestroyDevice) },
+        { "vkGetDeviceQueue", &context->vk.vkGetDeviceQueue, sizeof(context->vk.vkGetDeviceQueue) },
+        { "vkCreateCommandPool", &context->vk.vkCreateCommandPool, sizeof(context->vk.vkCreateCommandPool) },
+        { "vkDestroyCommandPool", &context->vk.vkDestroyCommandPool, sizeof(context->vk.vkDestroyCommandPool) },
+        { "vkAllocateCommandBuffers", &context->vk.vkAllocateCommandBuffers, sizeof(context->vk.vkAllocateCommandBuffers) },
+        { "vkFreeCommandBuffers", &context->vk.vkFreeCommandBuffers, sizeof(context->vk.vkFreeCommandBuffers) },
+        { "vkCreateFence", &context->vk.vkCreateFence, sizeof(context->vk.vkCreateFence) },
+        { "vkDestroyFence", &context->vk.vkDestroyFence, sizeof(context->vk.vkDestroyFence) },
+        { "vkGetFenceStatus", &context->vk.vkGetFenceStatus, sizeof(context->vk.vkGetFenceStatus) },
+        { "vkWaitForFences", &context->vk.vkWaitForFences, sizeof(context->vk.vkWaitForFences) },
+        { "vkQueueSubmit", &context->vk.vkQueueSubmit, sizeof(context->vk.vkQueueSubmit) },
+        { "vkQueueWaitIdle", &context->vk.vkQueueWaitIdle, sizeof(context->vk.vkQueueWaitIdle) },
+        { "vkBeginCommandBuffer", &context->vk.vkBeginCommandBuffer, sizeof(context->vk.vkBeginCommandBuffer) },
+        { "vkEndCommandBuffer", &context->vk.vkEndCommandBuffer, sizeof(context->vk.vkEndCommandBuffer) },
+        { "vkCmdBindPipeline", &context->vk.vkCmdBindPipeline, sizeof(context->vk.vkCmdBindPipeline) },
+        { "vkCmdDispatch", &context->vk.vkCmdDispatch, sizeof(context->vk.vkCmdDispatch) },
+        { "vkCmdDispatchIndirect", &context->vk.vkCmdDispatchIndirect, sizeof(context->vk.vkCmdDispatchIndirect) },
+        { "vkCmdCopyBuffer", &context->vk.vkCmdCopyBuffer, sizeof(context->vk.vkCmdCopyBuffer) },
+        { "vkCmdFillBuffer", &context->vk.vkCmdFillBuffer, sizeof(context->vk.vkCmdFillBuffer) },
+        { "vkCmdPipelineBarrier", &context->vk.vkCmdPipelineBarrier, sizeof(context->vk.vkCmdPipelineBarrier) },
+        { "vkCreateBuffer", &context->vk.vkCreateBuffer, sizeof(context->vk.vkCreateBuffer) },
+        { "vkDestroyBuffer", &context->vk.vkDestroyBuffer, sizeof(context->vk.vkDestroyBuffer) },
+        { "vkGetBufferMemoryRequirements", &context->vk.vkGetBufferMemoryRequirements, sizeof(context->vk.vkGetBufferMemoryRequirements) },
+        { "vkAllocateMemory", &context->vk.vkAllocateMemory, sizeof(context->vk.vkAllocateMemory) },
+        { "vkFreeMemory", &context->vk.vkFreeMemory, sizeof(context->vk.vkFreeMemory) },
+        { "vkBindBufferMemory", &context->vk.vkBindBufferMemory, sizeof(context->vk.vkBindBufferMemory) },
+        { "vkMapMemory", &context->vk.vkMapMemory, sizeof(context->vk.vkMapMemory) },
+        { "vkUnmapMemory", &context->vk.vkUnmapMemory, sizeof(context->vk.vkUnmapMemory) },
+        { "vkCreateShaderModule", &context->vk.vkCreateShaderModule, sizeof(context->vk.vkCreateShaderModule) },
+        { "vkDestroyShaderModule", &context->vk.vkDestroyShaderModule, sizeof(context->vk.vkDestroyShaderModule) },
+        { "vkCreateDescriptorSetLayout", &context->vk.vkCreateDescriptorSetLayout, sizeof(context->vk.vkCreateDescriptorSetLayout) },
+        { "vkDestroyDescriptorSetLayout", &context->vk.vkDestroyDescriptorSetLayout, sizeof(context->vk.vkDestroyDescriptorSetLayout) },
+        { "vkCreateDescriptorPool", &context->vk.vkCreateDescriptorPool, sizeof(context->vk.vkCreateDescriptorPool) },
+        { "vkDestroyDescriptorPool", &context->vk.vkDestroyDescriptorPool, sizeof(context->vk.vkDestroyDescriptorPool) },
+        { "vkAllocateDescriptorSets", &context->vk.vkAllocateDescriptorSets, sizeof(context->vk.vkAllocateDescriptorSets) },
+        { "vkUpdateDescriptorSets", &context->vk.vkUpdateDescriptorSets, sizeof(context->vk.vkUpdateDescriptorSets) },
+        { "vkCreatePipelineLayout", &context->vk.vkCreatePipelineLayout, sizeof(context->vk.vkCreatePipelineLayout) },
+        { "vkDestroyPipelineLayout", &context->vk.vkDestroyPipelineLayout, sizeof(context->vk.vkDestroyPipelineLayout) },
+        { "vkCreateComputePipelines", &context->vk.vkCreateComputePipelines, sizeof(context->vk.vkCreateComputePipelines) },
+        { "vkDestroyPipeline", &context->vk.vkDestroyPipeline, sizeof(context->vk.vkDestroyPipeline) },
+        { "vkCmdBindDescriptorSets", &context->vk.vkCmdBindDescriptorSets, sizeof(context->vk.vkCmdBindDescriptorSets) },
+        { "vkGetPhysicalDeviceFormatProperties", &context->vk.vkGetPhysicalDeviceFormatProperties, sizeof(context->vk.vkGetPhysicalDeviceFormatProperties) },
+        { "vkCreateImage", &context->vk.vkCreateImage, sizeof(context->vk.vkCreateImage) },
+        { "vkDestroyImage", &context->vk.vkDestroyImage, sizeof(context->vk.vkDestroyImage) },
+        { "vkGetImageMemoryRequirements", &context->vk.vkGetImageMemoryRequirements, sizeof(context->vk.vkGetImageMemoryRequirements) },
+        { "vkBindImageMemory", &context->vk.vkBindImageMemory, sizeof(context->vk.vkBindImageMemory) },
+        { "vkCreateImageView", &context->vk.vkCreateImageView, sizeof(context->vk.vkCreateImageView) },
+        { "vkDestroyImageView", &context->vk.vkDestroyImageView, sizeof(context->vk.vkDestroyImageView) },
+        { "vkCreateSampler", &context->vk.vkCreateSampler, sizeof(context->vk.vkCreateSampler) },
+        { "vkDestroySampler", &context->vk.vkDestroySampler, sizeof(context->vk.vkDestroySampler) },
+        { "vkCmdCopyBufferToImage", &context->vk.vkCmdCopyBufferToImage, sizeof(context->vk.vkCmdCopyBufferToImage) },
+        { "vkCmdCopyImageToBuffer", &context->vk.vkCmdCopyImageToBuffer, sizeof(context->vk.vkCmdCopyImageToBuffer) },
+        { "vkCmdCopyImage", &context->vk.vkCmdCopyImage, sizeof(context->vk.vkCmdCopyImage) },
+    };
+    for (size_t i = 0; i < sizeof(symbols) / sizeof(symbols[0]); ++i) {
+        doe_vk_status status = doe_vk_load_symbol(context->library, symbols[i].name,
+            symbols[i].destination, symbols[i].destination_size, error);
+        if (status != DOE_VK_OK) return status;
+    }
     return DOE_VK_OK;
 }
 
@@ -357,8 +258,11 @@ doe_vk_status doe_vk_context_create(const doe_vk_options *options,
     context->references = 1;
     context->library = dlopen("libvulkan.so.1", RTLD_NOW | RTLD_LOCAL);
     doe_vk_status status = DOE_VK_LOADER_UNAVAILABLE;
-    if (context->library == NULL) goto failed;
-    status = load_functions(context);
+    if (context->library == NULL) {
+        doe_vk_fail(status, "libvulkan.so.1", error);
+        goto failed;
+    }
+    status = load_functions(context, error);
     if (status != DOE_VK_OK) goto failed;
     const VkApplicationInfo application = {
         .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
@@ -407,7 +311,6 @@ doe_vk_status doe_vk_context_create(const doe_vk_options *options,
     *out = context;
     return doe_vk_fail(DOE_VK_OK, "context ready", error);
 failed:
-    if (status == DOE_VK_LOADER_UNAVAILABLE) doe_vk_fail(status, "Vulkan loader core symbols", error);
     doe_vk_context_release(context);
     return status;
 }

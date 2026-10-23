@@ -25,6 +25,29 @@ static uint32_t texel_bytes(doe_vk_texture_format format) {
     return 0;
 }
 
+doe_vk_status doe_vk_texture_format_caps(doe_vk_context *context,
+    doe_vk_texture_format format, doe_vk_format_caps *out) {
+    if (context == NULL || out == NULL) return DOE_VK_INVALID_ARGUMENT;
+    if (context->lost) return DOE_VK_DEVICE_LOST;
+    uint32_t bytes = texel_bytes(format);
+    if (bytes == 0) return DOE_VK_UNSUPPORTED;
+    VkFormatProperties properties = {0};
+    context->vk.vkGetPhysicalDeviceFormatProperties(context->physical, (uint32_t)format, &properties);
+    uint32_t flags = properties.optimalTilingFeatures;
+    const doe_vk_format_caps caps = {
+        .texel_bytes = bytes,
+        .sampled = (flags & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT) != 0,
+        .storage = (flags & VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT) != 0,
+        .color_attachment = (flags & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT) != 0,
+        .blendable = (flags & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT) != 0,
+        .filterable = (flags & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT) != 0,
+        .copy_src = (flags & VK_FORMAT_FEATURE_TRANSFER_SRC_BIT) != 0,
+        .copy_dst = (flags & VK_FORMAT_FEATURE_TRANSFER_DST_BIT) != 0
+    };
+    *out = caps;
+    return DOE_VK_OK;
+}
+
 static doe_vk_status validate_texture(doe_vk_context *context,
     const doe_vk_texture_desc *desc, uint32_t *bytes) {
     if (desc == NULL || desc->dimension < DOE_VK_TEXTURE_1D || desc->dimension > DOE_VK_TEXTURE_3D ||
@@ -52,15 +75,14 @@ static doe_vk_status validate_texture(doe_vk_context *context,
     if (desc->mip_levels > mips) return DOE_VK_INVALID_ARGUMENT;
     if (desc->cube_compatible && (desc->dimension != DOE_VK_TEXTURE_2D ||
         desc->width != desc->height || desc->depth_or_layers < 6)) return DOE_VK_INVALID_ARGUMENT;
-    VkFormatProperties properties = {0};
-    context->vk.vkGetPhysicalDeviceFormatProperties(context->physical, (uint32_t)desc->format, &properties);
-    if (properties.optimalTilingFeatures == 0) return DOE_VK_UNSUPPORTED;
-    /* These capability bits are pinned in vk_feature_caps.zig. Transfer-only
-     * images still use the native format's reported optimal-tiling admission. */
-    if ((desc->usage & DOE_VK_TEXTURE_STORAGE) && !(properties.optimalTilingFeatures & UINT32_C(0x2)))
-        return DOE_VK_UNSUPPORTED;
-    if ((desc->usage & DOE_VK_TEXTURE_COLOR_ATTACHMENT) && !(properties.optimalTilingFeatures & UINT32_C(0x80)))
-        return DOE_VK_UNSUPPORTED;
+    doe_vk_format_caps caps;
+    doe_vk_status status = doe_vk_texture_format_caps(context, desc->format, &caps);
+    if (status != DOE_VK_OK) return status;
+    if (((desc->usage & DOE_VK_TEXTURE_SAMPLED) && !caps.sampled) ||
+        ((desc->usage & DOE_VK_TEXTURE_STORAGE) && !caps.storage) ||
+        ((desc->usage & DOE_VK_TEXTURE_COLOR_ATTACHMENT) && !caps.color_attachment) ||
+        ((desc->usage & DOE_VK_TEXTURE_COPY_SRC) && !caps.copy_src) ||
+        ((desc->usage & DOE_VK_TEXTURE_COPY_DST) && !caps.copy_dst)) return DOE_VK_UNSUPPORTED;
     return DOE_VK_OK;
 }
 
@@ -75,8 +97,7 @@ doe_vk_status doe_vk_texture_create(doe_vk_context *context,
     if (texture == NULL) return doe_vk_fail(DOE_VK_OUT_OF_MEMORY, "texture owner", error);
     status = doe_vk_context_retain(context);
     if (status != DOE_VK_OK) {
-        free(texture->initialized);
-    free(texture);
+        free(texture);
         return doe_vk_fail(status, "texture context retain", error);
     }
     texture->context = context;

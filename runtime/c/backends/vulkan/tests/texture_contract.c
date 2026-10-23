@@ -2,6 +2,36 @@
 #include <assert.h>
 #include <stdio.h>
 
+static void transfer_only_format(VkPhysicalDevice device, uint32_t format, VkFormatProperties *out) {
+    (void)device;
+    assert(format == DOE_VK_FORMAT_RGBA8_UNORM);
+    out->optimalTilingFeatures = VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT;
+}
+
+static void format_admission(void) {
+    doe_vk_context context = { .references = 1 };
+    context.vk.vkGetPhysicalDeviceFormatProperties = transfer_only_format;
+    context.properties.limits.maxImageDimension2D = 64;
+    context.properties.limits.maxImageArrayLayers = 1;
+    doe_vk_format_caps caps;
+    assert(doe_vk_texture_format_caps(&context, DOE_VK_FORMAT_RGBA8_UNORM, &caps) == DOE_VK_OK);
+    assert(caps.texel_bytes == 4 && caps.copy_src && caps.copy_dst && !caps.sampled && !caps.storage);
+    doe_vk_format_caps before = caps;
+    assert(doe_vk_texture_format_caps(&context, (doe_vk_texture_format)999, &caps) == DOE_VK_UNSUPPORTED);
+    assert(memcmp(&before, &caps, sizeof(caps)) == 0);
+    doe_vk_texture_desc desc = { .dimension = DOE_VK_TEXTURE_2D,
+        .format = DOE_VK_FORMAT_RGBA8_UNORM, .width = 4, .height = 4,
+        .depth_or_layers = 1, .mip_levels = 1, .usage = DOE_VK_TEXTURE_SAMPLED };
+    doe_vk_texture *texture = NULL;
+    assert(doe_vk_texture_create(&context, &desc, &texture, NULL) == DOE_VK_UNSUPPORTED);
+    assert(texture == NULL && context.references == 1);
+    desc.usage = DOE_VK_TEXTURE_STORAGE;
+    assert(doe_vk_texture_create(&context, &desc, &texture, NULL) == DOE_VK_UNSUPPORTED);
+    context.lost = true;
+    assert(doe_vk_texture_format_caps(&context, DOE_VK_FORMAT_RGBA8_UNORM, &caps) == DOE_VK_DEVICE_LOST);
+    assert(memcmp(&before, &caps, sizeof(caps)) == 0);
+}
+
 static void bounds_and_pitch(void) {
     doe_vk_texture texture = {
         .desc = { .dimension = DOE_VK_TEXTURE_2D, .width = 8, .height = 4,
@@ -93,6 +123,7 @@ static void layout_and_initialization_transaction(void) {
 }
 
 int main(void) {
+    format_admission();
     bounds_and_pitch();
     queue_transfer_granularity();
     layout_and_initialization_transaction();

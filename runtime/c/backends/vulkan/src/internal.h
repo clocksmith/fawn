@@ -7,6 +7,9 @@
 #include <string.h>
 #include <limits.h>
 
+doe_vk_status doe_vk_load_symbol(void *library, const char *name,
+    void *destination, size_t destination_size, doe_vk_error *error);
+
 enum { DOE_VK_MAX_GROUPS = 4, DOE_VK_MAX_BINDINGS = 128 };
 struct doe_vk_context {
     uint32_t references;

@@ -53,6 +53,10 @@ Layouts and per-mip/layer initialization are speculative until successful native
 completion; discarded/failed recordings cannot publish them. Undefined subresources
 require a full upload before partial updates or reads. Terminal submission failure
 poisons the image instead of guessing a layout or exposing uncertain output.
+`doe_vk_texture_format_caps` exposes named optimal-tiling capability facts; image
+creation checks every requested usage bit. These observations do not enable shader
+features or admit every dimension/extent combination. The exact format flag values
+are from the [Khronos reference](https://docs.vulkan.org/refpages/latest/refpages/source/VkFormatFeatureFlagBits.html), recorded in ABI provenance.
 
 `make native-texture NATIVE_ARGS=--allow-software` with an explicitly selected
 existing software ICD checks real image/view/sampler creation, two mip levels and
@@ -75,8 +79,9 @@ transitions and transfer/shader visibility are real native barriers.
 bound in `SMOKE_IMAGE_FIXTURES.json`. It exercises a real sampled-image shader,
 not the still-separate C texture compiler: 64 exact fetched alpha values, sparse
 mixed descriptors, full upload and early caller release. An unused sampler binding
-checks native descriptor lifetime, not sampling semantics. Storage-image descriptor
-recording is implemented but a storage-image shader is not yet exercised here.
+checks native descriptor lifetime, not sampling semantics. `make native-storage SPIRV=<retained export_level fixture>` exercises an actual
+storage-image shader with 64 exact means and 256 exact RGBA8 bytes after shader-to-
+transfer barriers. Both fixtures are pinned; neither is C texture compiler evidence.
 
 ## ABI provenance and checks
 
@@ -84,7 +89,8 @@ No SDK headers were available. The selected declarations are a narrow translatio
 of the existing source hashes in `ABI_PROVENANCE.json`, not invented opaque-sized
 struct storage. `tools/check_abi.py` refuses source drift and independently models
 the pinned extern fields to compile 960 size/offset/alignment assertions over 50
-records. It does not prove the retained declarations against an official SDK.
+records, plus seven format-bit assertions verified against the linked Khronos
+reference. No SDK or other dependency was downloaded. It does not prove the retained declarations against an official SDK.
 `VK_ERROR_UNKNOWN` retains the existing Zig `UnsupportedFeature` classification;
 raw native error codes remain available. No Zig runs or links in the C backend.
 

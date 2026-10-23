@@ -30,6 +30,21 @@ typedef enum doe_vk_texture_format {
     DOE_VK_FORMAT_RGBA32_SINT = 108,
     DOE_VK_FORMAT_RGBA32_FLOAT = 109
 } doe_vk_texture_format;
+/* Optimal-tiling facts for admitted formats, not shader-feature enablement or
+ * a claim that every dimension/usage/extent combination is supported. Failure
+ * leaves output unchanged. Compiler/native admission must check shader features. */
+typedef struct doe_vk_format_caps {
+    uint32_t texel_bytes;
+    bool sampled;
+    bool storage;
+    bool color_attachment;
+    bool blendable;
+    bool filterable;
+    bool copy_src;
+    bool copy_dst;
+} doe_vk_format_caps;
+doe_vk_status doe_vk_texture_format_caps(doe_vk_context *context,
+    doe_vk_texture_format format, doe_vk_format_caps *out);
 typedef enum doe_vk_texture_dimension {
     DOE_VK_TEXTURE_1D,
     DOE_VK_TEXTURE_2D,

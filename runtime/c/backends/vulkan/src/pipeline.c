@@ -134,4 +134,3 @@ void doe_vk_pipeline_release(doe_vk_pipeline *pipeline) {
     free(pipeline);
     doe_vk_context_release(context);
 }
-
