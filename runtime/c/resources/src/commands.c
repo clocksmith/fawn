@@ -233,25 +233,18 @@ doe_resource_status doe_resource_encoder_dispatch_groups(doe_resource_encoder *e
     return resource_record_dispatch(encoder, pipeline, groups, group_count, x, y, z);
 }
 
-doe_resource_status resource_record_dispatch(doe_resource_encoder *encoder,
+static doe_resource_status record_dispatch(doe_resource_encoder *encoder,
     doe_resource_pipeline *pipeline, const doe_resource_dispatch_group *groups,
-    size_t group_count, uint32_t x, uint32_t y, uint32_t z)
+    size_t group_count, uint32_t x, uint32_t y, uint32_t z,
+    doe_resource_buffer *indirect, uint64_t indirect_offset)
 {
-    doe_resource_status status;
     if (!pipeline || (group_count && !groups)) return resource_encoder_fail(encoder, DOE_RESOURCE_INVALID_ARGUMENT);
     if (pipeline->base.config.device.identity != encoder->base.config.device.identity)
         return resource_encoder_fail(encoder, DOE_RESOURCE_DEVICE_MISMATCH);
-    if (group_count != pipeline->layout->count) return resource_encoder_fail(encoder, DOE_RESOURCE_LAYOUT);
-    bool dynamic = false;
-    for (size_t i = 0; i < group_count; i++) {
-        doe_resource_binding resolved[DOE_RESOURCE_MAX_BINDINGS];
-        status = doe_resource_bind_group_resolve(groups[i].group, groups[i].dynamic_offsets,
-            groups[i].dynamic_offset_count, resolved, DOE_RESOURCE_MAX_BINDINGS);
-        if (status != DOE_RESOURCE_OK) return resource_encoder_fail(encoder, status);
-        if (!doe_resource_layout_compatible(pipeline->layout->groups[i], groups[i].group->layout))
-            return resource_encoder_fail(encoder, DOE_RESOURCE_LAYOUT);
-        if (groups[i].dynamic_offset_count) dynamic = true;
-    }
+    bool dynamic;
+    doe_resource_status status = resource_dispatch_bindings_validate(pipeline->layout, groups,
+        group_count, indirect, &dynamic);
+    if (status != DOE_RESOURCE_OK) return resource_encoder_fail(encoder, status);
     doe_resource_dispatch_offsets *offsets = NULL;
     if (dynamic) {
         offsets = resource_allocate(&pipeline->base.config, sizeof(*offsets), _Alignof(doe_resource_dispatch_offsets));
@@ -268,13 +261,16 @@ doe_resource_status resource_record_dispatch(doe_resource_encoder *encoder,
         resource_free(&pipeline->base.config, offsets, sizeof(*offsets), _Alignof(doe_resource_dispatch_offsets));
         return status;
     }
-    doe_resource_command command = {.kind = DOE_COMMAND_DISPATCH};
+    doe_resource_command command = {.kind = indirect ? DOE_COMMAND_DISPATCH_INDIRECT : DOE_COMMAND_DISPATCH};
     command.value.dispatch.pipeline = pipeline;
     command.value.dispatch.group_count = group_count;
     command.value.dispatch.dynamic_offsets = offsets;
     command.value.dispatch.x = x;
     command.value.dispatch.y = y;
     command.value.dispatch.z = z;
+    command.value.dispatch.indirect = indirect;
+    command.value.dispatch.indirect_offset = indirect_offset;
+    doe_resource_buffer_retain(indirect);
     for (size_t i = 0; i < group_count; i++) {
         command.value.dispatch.groups[i] = groups[i].group;
         doe_resource_bind_group_retain(groups[i].group);
@@ -284,20 +280,20 @@ doe_resource_status resource_record_dispatch(doe_resource_encoder *encoder,
     return DOE_RESOURCE_OK;
 }
 
+doe_resource_status resource_record_dispatch(doe_resource_encoder *encoder,
+    doe_resource_pipeline *pipeline, const doe_resource_dispatch_group *groups,
+    size_t group_count, uint32_t x, uint32_t y, uint32_t z)
+{
+    return record_dispatch(encoder, pipeline, groups, group_count, x, y, z, NULL, 0);
+}
+
 doe_resource_status resource_record_dispatch_indirect(doe_resource_encoder *encoder,
     doe_resource_pipeline *pipeline, const doe_resource_dispatch_group *groups,
     size_t group_count, doe_resource_buffer *arguments, uint64_t offset)
 {
     doe_resource_status status = resource_indirect_validate(encoder->base.config.device.identity, arguments, offset, 12);
     if (status != DOE_RESOURCE_OK) return resource_encoder_fail(encoder, status);
-    status = resource_record_dispatch(encoder, pipeline, groups, group_count, 0, 0, 0);
-    if (status != DOE_RESOURCE_OK) return status;
-    doe_resource_command *command = &encoder->commands[encoder->count - 1];
-    command->kind = DOE_COMMAND_DISPATCH_INDIRECT;
-    command->value.dispatch.indirect = arguments;
-    command->value.dispatch.indirect_offset = offset;
-    doe_resource_buffer_retain(arguments);
-    return DOE_RESOURCE_OK;
+    return record_dispatch(encoder, pipeline, groups, group_count, 0, 0, 0, arguments, offset);
 }
 
 doe_resource_status doe_resource_encoder_dispatch_indirect(doe_resource_encoder *encoder,

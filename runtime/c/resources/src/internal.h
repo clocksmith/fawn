@@ -116,6 +116,9 @@ struct doe_resource_render_pass {
     bool ended;
 };
 
+doe_resource_status resource_dispatch_bindings_validate(const doe_resource_pipeline_layout *layout,
+    const doe_resource_dispatch_group *groups, size_t group_count,
+    doe_resource_buffer *indirect, bool *has_dynamic_offsets);
 doe_resource_status resource_record_dispatch(doe_resource_encoder *encoder,
     doe_resource_pipeline *pipeline, const doe_resource_dispatch_group *groups,
     size_t group_count, uint32_t x, uint32_t y, uint32_t z);

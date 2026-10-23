@@ -383,7 +383,11 @@ doe_resource_status doe_resource_encoder_blit_texture(doe_resource_encoder *enco
 doe_resource_status doe_resource_encoder_dispatch(doe_resource_encoder *encoder,
     doe_resource_pipeline *pipeline, doe_resource_bind_group *const *groups,
     size_t group_count, uint32_t x, uint32_t y, uint32_t z);
-/* Copies dynamic offsets and retains groups/pipeline as one recording operation.
+/* Validates one complete dispatch usage scope before any recording allocation:
+ * whole-buffer read/write compatibility, effective writable-range aliases and
+ * texture mip/layer/aspect conflicts across all used groups (including planes).
+ * Indirect dispatch includes its argument buffer as an input usage.
+ * Copies dynamic offsets and retains groups/pipeline as one recording operation.
  * Backend capability limits and shader dispatch preconditions must still be
  * checked by the consuming execution owner before native queue admission. */
 doe_resource_status doe_resource_encoder_dispatch_groups(doe_resource_encoder *encoder,

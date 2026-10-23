@@ -1,0 +1,116 @@
+{
+  "status": "authored, focused developer host-exercised; unqualified",
+  "checked_at_utc": "2026-10-23T18:05:50.617984+00:00",
+  "observed_head": "8a3fd4c11d427906989d764519c0baa6f65d2d91",
+  "source_unchanged_during_checks": true,
+  "compiler": "gcc (Debian 14.2.0-19) 14.2.0",
+  "checks": [
+    {
+      "command": [
+        "make",
+        "-C",
+        "runtime/c/resources",
+        "check"
+      ],
+      "environment": {},
+      "exit_code": 0,
+      "terminal_output": [
+        "resource owner: 13 host suites passed; no GPU execution claimed",
+        "extended resource owner: 8 host suites passed; no render/query GPU execution claimed",
+        "render bundle owner: 6 host suites passed; no render GPU execution claimed",
+        "binding feature owner: 6 host suites passed; no texture execution claimed",
+        "dispatch usage owner: 3 host suites passed; no GPU execution claimed"
+      ]
+    },
+    {
+      "command": [
+        "make",
+        "-C",
+        "runtime/c/resources",
+        "BUILD=/tmp/doe-c-resources-usage-asan",
+        "CFLAGS=-O1 -g -std=c11 -Wall -Wextra -Wpedantic -Werror -pthread -fsanitize=address,undefined -fno-omit-frame-pointer",
+        "check"
+      ],
+      "environment": {
+        "ASAN_OPTIONS": "detect_leaks=0"
+      },
+      "exit_code": 0,
+      "terminal_output": [
+        "resource owner: 13 host suites passed; no GPU execution claimed",
+        "extended resource owner: 8 host suites passed; no render/query GPU execution claimed",
+        "render bundle owner: 6 host suites passed; no render GPU execution claimed",
+        "binding feature owner: 6 host suites passed; no texture execution claimed",
+        "dispatch usage owner: 3 host suites passed; no GPU execution claimed"
+      ]
+    },
+    {
+      "command": [
+        "python3",
+        "runtime/c/tools/check_source_size.py"
+      ],
+      "environment": {},
+      "exit_code": 0,
+      "terminal_output": [
+        "C size check: 395 files, 0 failures; limit 999"
+      ]
+    }
+  ],
+  "physical_line_limit": 999,
+  "max_owned_c_header_lines": 519,
+  "first_failures": [],
+  "coverage": [
+    "36 host suites:13 base,8 extended,6 bundle,6 binding feature,3 dispatch usage.",
+    "One canonical dispatch preflight resolves layouts/dynamic offsets and compares all referenced resources before any recording allocation/publication.",
+    "Samebuffer writable+readonly usages reject even disjoint; overlapping writable ranges reject, disjoint writable allow, readonly overlaps allow; dynamic-offset change changes admission.",
+    "Across-group alias rejection, indirect input/writable conflict, texture mip/layer separation and different-object controls, overlapping array views, readonly texture overlap, external first/second plane conflicts.",
+    "Rejected dispatches preserve first error, perform no recording allocation, publish no command buffer and release every adopted native token."
+  ],
+  "semantic_reference": "https://gpuweb.github.io/gpuweb/#usage-scopes",
+  "limitations": [
+    "Host validation/ownership only; native frontend focused consumption is separately owned/evidenced.",
+    "This complete dispatch scope does not implement render-pass scope accumulation across state setters/draws/bundles.",
+    "No new native execution, graphics/query parity or physical GPU qualification claim.",
+    "LeakSanitizer disabled under ptrace; ASan/UBSan and exact fixture allocation/native finalizer counters pass."
+  ],
+  "sha256": {
+    "runtime/c/futures/include/doe_futures.h": "64df7b659fa61de34c3f26a8a8762c70a41d3f35d301a54ffe11877f43ca3404",
+    "runtime/c/instance/include/doe_instance.h": "4356d4991f19d040a2d8a5d8e121d282530d362dcabdc892888148a68af8acfb",
+    "runtime/c/labels/Makefile": "1185bad69795d7b375afe29cbb831621c95fff8d50172b6a4a940757822b68cd",
+    "runtime/c/labels/include/doe_labels.h": "45e6dded64cbf366ddf5f4bcb409cb4bad93914b2af31cc58c82783ad7f12aea",
+    "runtime/c/labels/include/doe_labels_native_private.h": "fe80893339e7264e9672063e0ce89a3e5ce8757ce4e9298fbb3a63d164f4e4cb",
+    "runtime/c/labels/src/internal.h": "a84e6ae87c801faa9935466e89abad1ae5367fb0fc8946d30ebf71e5976c965c",
+    "runtime/c/labels/src/native.c": "e65399cdb50ef030b520388be1ee1f327c0a05e412281578c097d711e3dac2a2",
+    "runtime/c/labels/src/store.c": "2d67603cd1621e555340b4a52ad553377295c17215fed6c19c18bd4000c9595f",
+    "runtime/c/labels/tests/test_faults.c": "76c130d8df6b6fbc155dbb6290a2e744835cc84886341c5113cb0d9eaf79d21d",
+    "runtime/c/labels/tests/test_store.c": "c5615ef160473803b1b56fe37eab7e4425b4e32145c52f4901f02799a5d90135",
+    "runtime/c/resources/Makefile": "abf2cbec09f0272f096ad57c808c22a9900ed962112ff84f4fa6dd9aac595912",
+    "runtime/c/resources/include/doe_resources.h": "2f36a0756f72acac83a6f67621b13d91cf7685f16a8e2a7c6f0fc09031278a30",
+    "runtime/c/resources/include/doe_resources_extended.h": "9c5cc46dab5ed45ae75c40070c553a18d732185a682e820f72574b4a9d0969ca",
+    "runtime/c/resources/src/accessors.c": "1905ae90a6556e11a7014949dde14496e2a5b43b8274c481b0d061c7605f8007",
+    "runtime/c/resources/src/bindings.c": "d0f38bec48d9d2addc6e3ecfbc1909567165dbf7d3b452f06d4c246afcef0bc2",
+    "runtime/c/resources/src/bundles.c": "efad2f195267a39f97b52e0c1156ad95a3b87b24bb7eb2637953e3c0f563c377",
+    "runtime/c/resources/src/commands.c": "695a717c31774248a73dca9d8056ab31245de860c346dcb583c2a51c2e4af783",
+    "runtime/c/resources/src/compute_pass.c": "22f7105f709d592e1350b5b28e2588e4b064ebf8f13ac6acf741f16cec111cb1",
+    "runtime/c/resources/src/external_textures.c": "e7e8e3cd53d5c6d8e235533659a17856125d2e1cedb776cf08d8f7b1478490e7",
+    "runtime/c/resources/src/formats.c": "261c813e2ab1da1adc9e99ddf804a48c8be23ed4302ce9a1cbe0135635f4d6f6",
+    "runtime/c/resources/src/internal.h": "20cce3253297f9e0fecb26654f357c7db6297740bea7cfeb6c6e8193f4451ca5",
+    "runtime/c/resources/src/objects.c": "ee1bab54647cfa1d2dcd8e492ccccf0ae7bd9cf2e57b591b719311cf6c31ab17",
+    "runtime/c/resources/src/queries.c": "40c58f9b734f64ade884c9b377d490f39d9c1ad8081ffaf964f123deaddfbfb0",
+    "runtime/c/resources/src/render.c": "8ab8aab7afac92355f215129d5663e796f28d5275be4193f2ca6f0f93a572aed",
+    "runtime/c/resources/src/render_state.c": "b525ded357a5770f174f79de0ad32ca4a0ed6106aef1b7d6e6d898b812bba3f9",
+    "runtime/c/resources/src/texture_copy.c": "5e75ba4162f5d081960f56b62d7a9fe06f8c5ddf8fb71546b07e7d49cc86972b",
+    "runtime/c/resources/src/textures.c": "862f38f57e91543370a5006210ad9242494123616ff96083b46194b7c220a713",
+    "runtime/c/resources/src/usage_scope.c": "5e80ab7c51ef41be559c94ed59b5b4b89c58772d1f438d9c0ba1e6e039965f71",
+    "runtime/c/resources/tests/fixture.h": "2d5bf21b9e67fedd2298b8f443ed7341ba1991191a23ff6bebdaf05643329f98",
+    "runtime/c/resources/tests/test_binding_features.c": "ce0aedfccf0c5abac0b6d4d5c3d2ffa87906f12e63367796e083d7e64743fd97",
+    "runtime/c/resources/tests/test_bundles.c": "8378965b8ad7972dde2d6b50efcdf2c5eedaeb932e44ff6a5ac2dc6ef9834671",
+    "runtime/c/resources/tests/test_extended.c": "94d478b0282fdd7d3ce1dbe84d120da98cb3797a723cf8c490f11589d992f3f7",
+    "runtime/c/resources/tests/test_resources.c": "3927cc250ed85bd957ff5a446bec87f3b6ec58d1c87655b14a767a905d5a8569",
+    "runtime/c/resources/tests/test_usage_scope.c": "4a074ecd85be27f96bfc8988f340805d75cd3c553bb2189c1830677f2e092109",
+    "runtime/c/resources/tests/vulkan_fixture.h": "c00a5a7be4eb2677ffe456d98e6f10f1d168676e1c72a6fccf52582910297c24",
+    "runtime/c/resources/tests/vulkan_lifetime.c": "634fe22783a0d1e0797eed609c75d9adce959d3b16e348306762d93abe408812",
+    "runtime/c/resources/tests/vulkan_query_lifetime.c": "3d13e0653aef0c79cb29edd737edfcdb0032ec33cff539401bf6469a83ae5901",
+    "runtime/c/resources/tests/vulkan_render_lifetime.c": "ae8dc05f3ecf187cca3667bc71a1e1bc64c92fa57f96ecdd0fcb7245a7ef7387",
+    "runtime/zig/vendor/webgpu-headers/webgpu.h": "7691d76ceb67056f89e97b9ff0b62163eacf19a8e0e09a8fa7dbb32069b7978c"
+  }
+}
