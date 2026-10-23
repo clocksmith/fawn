@@ -2,15 +2,16 @@
 
 ## Scope and present state
 
-This is the initial inventory for the explicitly requested, incremental C
-migration on the local experimental branch. It is not a mechanical translation,
-production switchover, new architecture authority, or claim that a rewrite is
-complete. Preserve retained Zig, the original main checkout, and previous
-language-experiment receipts. Changes are committed only on the requested
-experimental branch. The later explicit publication request permits tested
-source progress on that branch without force or a main change; publication is
-not production promotion. System installation and external-machine operation
-remain outside this campaign.
+This records the immutable inventory and the explicitly requested C migration.
+C is selected; this is not mechanical translation or a completed rewrite. The
+initial isolation branch preserved the retained implementation while owners were
+built. The subsequent explicit direction is to integrate focused-checked source
+progress into canonical main without force, rather than leave it on an unmerged
+branch. Keep retained Zig, production-default selectors and historical receipts.
+Source integration is not production promotion: authored, exercised, independently
+accepted and physically qualified remain distinct. System installation and
+external-machine operation require their own authorization; exposed or uncooled
+hardware must not be used for physical qualification.
 
 The immutable baseline is commit
 `665475907494d2095a760596218b4c2d363cb436`. The
@@ -32,11 +33,11 @@ receipts. The headline ceiling is 77,949 lines, with a separate mandatory fair
 implementation-only comparison. Inline-test spans and the final delivery closure
 are not yet audited; no achieved reduction or full feature parity is claimed.
 
-**Zero production Zig paths have an accepted C replacement in this baseline.**
-Experimental C code created beside it does not change that acceptance count.
-All migration stages below remain unqualified. There is no GPU execution or
-physical qualification from this inventory, including no Vulkan, Metal, or D3D12
-physical qualification. Host compilation, sanitizer passes, fixture output,
+**The immutable baseline contains zero C replacements.** Current bounded-owner
+results below do not turn partial compiler/runtime coverage into complete
+production replacement. Production-default cutover and physical qualification
+remain separate gates. This inventory itself establishes no GPU execution or
+Vulkan, Metal, or D3D12 physical qualification. Host compilation, sanitizer passes, fixture output,
 bytecode validation, and simulated completion never inherit that qualification.
 
 ## Current implementation workflow
