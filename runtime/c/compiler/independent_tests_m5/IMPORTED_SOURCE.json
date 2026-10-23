@@ -1,0 +1,116 @@
+[
+  {
+    "path": "LICENSE",
+    "source": "runtime/c/compiler/independent_tests_m4/LICENSE",
+    "sha256": "66ccf82f3056418261f3a501d5ad03f156655171980c6d51a25a46495353c4d3",
+    "status": "byte-identical selected M4 source"
+  },
+  {
+    "path": "all_fixtures.py",
+    "source": "runtime/c/compiler/independent_tests_m4/all_fixtures.py",
+    "sha256": "c89636168779612398525abedfb526fc6c9994b9b426da8698425b4868b02f0c",
+    "status": "byte-identical selected M4 source"
+  },
+  {
+    "path": "blackbox_m4.py",
+    "source": "runtime/c/compiler/independent_tests_m4/blackbox_m4.py",
+    "sha256": "f806dc1e14b1738aace3c40b415e455490f45516e9f33cc6f9885777d350d079",
+    "status": "byte-identical selected M4 source"
+  },
+  {
+    "path": "evaluate.py",
+    "source": "runtime/c/compiler/independent_tests_m4/evaluate.py",
+    "sha256": "bce10517cb59dcd905959639cb90f12e187cad54b8e5df2ca9c0e6eef0b90cc0",
+    "status": "byte-identical selected M4 source"
+  },
+  {
+    "path": "fixtures.py",
+    "source": "runtime/c/compiler/independent_tests_m4/fixtures.py",
+    "sha256": "97d2b9ee20934c9f92621be2c714b6bff4d3681a312f19c0216edadebb9b8558",
+    "status": "byte-identical selected M4 source"
+  },
+  {
+    "path": "fixtures_m1.py",
+    "source": "runtime/c/compiler/independent_tests_m4/fixtures_m1.py",
+    "sha256": "aafa54cbad2991cb4515538e13b9f9af1abf7ac62ab6a15f51afc8bf5cbc6fc4",
+    "status": "byte-identical selected M4 source"
+  },
+  {
+    "path": "legacy_fixtures.py",
+    "source": "runtime/c/compiler/independent_tests_m4/legacy_fixtures.py",
+    "sha256": "0ee7763cfe7ee5106008eae4e9f72f86c814502590f46e964c168b5473f6807b",
+    "status": "byte-identical selected M4 source"
+  },
+  {
+    "path": "legacy_named_fixtures.py",
+    "source": "runtime/c/compiler/independent_tests_m4/legacy_named_fixtures.py",
+    "sha256": "df6b362a61d04fb1005de9216ca82a1b577260ed1eb07a6895567a4239fda607",
+    "status": "byte-identical selected M4 source"
+  },
+  {
+    "path": "m2_fixtures.py",
+    "source": "runtime/c/compiler/independent_tests_m4/m2_fixtures.py",
+    "sha256": "c59dc1c423ac0900e48956acc9a048b5e2b98cbe96c2781d92b5d5f31dec4cfe",
+    "status": "byte-identical selected M4 source"
+  },
+  {
+    "path": "m4_fixtures.py",
+    "source": "runtime/c/compiler/independent_tests_m4/m4_fixtures.py",
+    "sha256": "9e00cd4f40392d2478e432c3853481166b871dd804347c8f7a780c8ec024b875",
+    "status": "byte-identical selected M4 source"
+  },
+  {
+    "path": "rational_oracle.py",
+    "source": "runtime/c/compiler/independent_tests_m4/rational_oracle.py",
+    "sha256": "d74dfcce5376a4920cf51cfc8598f40fcd665466b873fc3287304357d812abaf",
+    "status": "byte-identical selected M4 source"
+  },
+  {
+    "path": "semantic_checks.py",
+    "source": "runtime/c/compiler/independent_tests_m4/semantic_checks.py",
+    "sha256": "fc8e574c10a6729546e084cfdaa3e6fd27dd6aae2d034d49559efe9b13234d9f",
+    "status": "byte-identical selected M4 source"
+  },
+  {
+    "path": "semantic_checks_m1.py",
+    "source": "runtime/c/compiler/independent_tests_m4/semantic_checks_m1.py",
+    "sha256": "b30937b4a5d73d9725cdccb9752e01fb94ba7b1ce88749e9c8fc1933e74fb2d1",
+    "status": "byte-identical selected M4 source"
+  },
+  {
+    "path": "spirv_oracle_base.py",
+    "source": "runtime/c/compiler/independent_tests_m4/spirv_oracle_base.py",
+    "sha256": "019247bcc7691669d19fa1997456f9bb7963c9b10fdd21cd1d1a8225cc2975c6",
+    "status": "byte-identical selected M4 source"
+  },
+  {
+    "path": "typed_oracle.py",
+    "source": "runtime/c/compiler/independent_tests_m4/typed_oracle.py",
+    "sha256": "cea802c8e2ecb891eec39333af8b51f612c1b40f31820347828e295e4ba59773",
+    "status": "byte-identical selected M4 source"
+  },
+  {
+    "path": "test_oracle_m4.py",
+    "source": "runtime/c/compiler/independent_tests_m4/test_oracle_m4.py",
+    "sha256": "0d930945272df4f48b480433baa087fff346cc3917c41f2c9807d74efb8ec83c",
+    "status": "byte-identical selected M4 source"
+  },
+  {
+    "path": "native/retained/consumer_m4.c",
+    "source": "runtime/c/compiler/independent_tests_m4/native/consumer_m4.c",
+    "sha256": "3e06d6471184593434d26b1dfdacf61ba221f82c8becc389262ae6ccc23e1bf4",
+    "status": "byte-identical selected M4 source"
+  },
+  {
+    "path": "native/retained/sanitizer_m4.c",
+    "source": "runtime/c/compiler/independent_tests_m4/native/sanitizer_m4.c",
+    "sha256": "020e5fd7e7078253b8a4a81a9deef4f978fb9e8481bbce26f93d622b16dfaaed",
+    "status": "byte-identical selected M4 source"
+  },
+  {
+    "path": "native/inputs/package_vector_scale_add.wgsl",
+    "source": "bench/kernels/package_vector_scale_add.wgsl",
+    "sha256": "8f2b3e2bb6955c1f7507936773589195c80e6a119cbd50d975f652d4f834e8c1",
+    "status": "unchanged actual consumer witness"
+  }
+]

@@ -108,3 +108,32 @@ Current developer tests additionally cover the exact 64/65 expression-node,
 boundaries. `test_cli_modes.py` now routes both additional unchanged real sources
 through the same existing consumer and verifies binary/reflection equality and
 explicit Vulkan 1.1 target validation. No full discovery gate or GPU is run.
+
+## Milestone-5 uniform/workspace coverage
+
+`make test-uniform` compiles actual native C/C++ consumers and checks v2 field
+layout, caller malloc storage, NULL/short/misaligned/oversized workspace, version
+and exact-size no-write preflight, reuse after failures, guard pages, every short
+output capacity, source prefixes/mutations and 512 parallel compiles. The prebuilt
+C consumer reads unchanged `package_vector_scale_add.wgsl`. Export tests require
+exactly three ABI functions and no imported allocator symbols.
+
+`test_uniforms.py` exercises emitted Uniform storage-class pointers and member
+Offset decorations using independently packed raw byte buffers, not reflected
+values substituted into formulas. It covers the unchanged witness, count bounds,
+independent unequal storage lengths, zero/short inputs, preserved outputs/tails,
+y/z independence, all members in 1/3/4/5/8-field layouts, shared types/resources,
+mixed scalars, snapshots, member indices/comparisons and wrong-offset mutation
+controls. It rejects short uniform buffers before invocation. Syntax/type/scope,
+dead-source and exact struct/member/resource limit tests remain fail-closed.
+These extend only the developer oracle; historical independent suites stay intact.
+
+CLI tests run existing ownership/I/O/race/rollback cases in binary-only, legacy
+and v2 reflection modes, plus exact allocation counts/failures and cleanup.
+The query-failure wrapper asserts no allocation follows a failed query; allocation
+wrappers assert all successful acquisitions were freed. Binary-only uses exactly
+workspace/result allocations and no JSON allocation. Sanitizer CLI tests run the
+same checks through instrumented real CLI sources. Legacy reflection still
+rejects every struct/uniform module, including unused declarations; malformed or
+type-invalid cases were not relabeled as intentional lifts. M5 therefore needs
+no change to retained ABI1 negative expectations.

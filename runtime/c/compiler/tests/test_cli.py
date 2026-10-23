@@ -62,13 +62,18 @@ def float_bits(value: float) -> int:
 
 
 def execute(instructions: list[Instruction], memory: dict[Descriptor, list[int]],
-            invocation: int | tuple[int, int, int]) -> None:
+            invocation: int | tuple[int, int, int],
+            uniforms: dict[Descriptor, bytes] | None = None) -> None:
     """Execute actual instructions, asserting bounds at pointer and load/store use."""
     values: dict[int, int | tuple] = {}
     labels: dict[int, int] = {}
     decorations: dict[int, dict[int, int]] = {}
     readonly: set[int] = set()
     variables = []
+    pointers: dict[int, int] = {}
+    members: dict[int, tuple[int, ...]] = {}
+    offsets: dict[tuple[int, int], int] = {}
+    uniforms = {} if uniforms is None else uniforms
     entry = None
     body_start = None
     for pc, (op, args) in enumerate(instructions):
@@ -79,8 +84,14 @@ def execute(instructions: list[Instruction], memory: dict[Descriptor, list[int]]
                 readonly.add(args[0])
             elif len(args) == 3:
                 decorations.setdefault(args[0], {})[args[1]] = args[2]
+        elif op == 30:
+            members[args[0]] = args[1:]
+        elif op == 32:
+            pointers[args[0]] = args[2]
+        elif op == 72 and args[2] == 35:
+            offsets[(args[0], args[1])] = args[3]
         elif op == 59:
-            variables.append((args[1], args[2]))
+            variables.append((args[1], args[2], args[0]))
         elif op == 15:
             entry = args[1]
         elif op == 54:
@@ -89,13 +100,19 @@ def execute(instructions: list[Instruction], memory: dict[Descriptor, list[int]]
         elif op == 248:
             labels[args[0]] = pc
     assert entry is not None and body_start is not None
-    for ident, storage in variables:
+    for ident, storage, pointer_type in variables:
         if storage == 1:
             values[ident] = ("input",)
         elif storage == 12:
             descriptor = (decorations[ident][34], decorations[ident][33])
             assert descriptor in memory
             values[ident] = ("buffer", descriptor, ident)
+        elif storage == 2:
+            descriptor = (decorations[ident][34], decorations[ident][33])
+            type_id = pointers[pointer_type]
+            minimum = max(offsets[(type_id, i)] + 4 for i in range(len(members[type_id])))
+            assert len(uniforms[descriptor]) >= minimum, "short uniform binding rejected before invocation"
+            values[ident] = ("uniform", descriptor, type_id)
         else:
             raise AssertionError(("unexpected storage class", storage))
     pc, steps = body_start, 0
@@ -114,6 +131,8 @@ def execute(instructions: list[Instruction], memory: dict[Descriptor, list[int]]
             if pointer == ("input",):
                 values[args[1]] = ((invocation, 0, 0) if isinstance(invocation, int)
                                    else invocation)
+            elif pointer[0] == "member":
+                values[args[1]] = struct.unpack_from("<I", uniforms[pointer[1]], pointer[2])[0]
             else:
                 assert pointer[0] == "element"
                 buffer, index = memory[pointer[1]], pointer[2]
@@ -144,10 +163,18 @@ def execute(instructions: list[Instruction], memory: dict[Descriptor, list[int]]
             values[args[1]] = values[matches[0]]
         elif op == 65:
             pointer = values[args[2]]
-            assert pointer[0] == "buffer" and values[args[3]] == 0
-            index = values[args[4]]
-            assert 0 <= index < len(memory[pointer[1]]), "unguarded element pointer"
-            values[args[1]] = ("element", pointer[1], index, pointer[2])
+            if pointer[0] == "uniform":
+                assert len(args) == 4
+                member_index = values[args[3]]
+                assert 0 <= member_index < len(members[pointer[2]])
+                offset = offsets[(pointer[2], member_index)]
+                assert offset + 4 <= len(uniforms[pointer[1]])
+                values[args[1]] = ("member", pointer[1], offset)
+            else:
+                assert pointer[0] == "buffer" and values[args[3]] == 0
+                index = values[args[4]]
+                assert 0 <= index < len(memory[pointer[1]]), "unguarded element pointer"
+                values[args[1]] = ("element", pointer[1], index, pointer[2])
         elif op == 128:
             values[args[1]] = (values[args[2]] + values[args[3]]) & 0xFFFFFFFF
         elif op == 130:

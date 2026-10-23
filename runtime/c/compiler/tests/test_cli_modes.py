@@ -62,9 +62,10 @@ class TestCliModes(unittest.TestCase):
         return subprocess.run([str(executable), *args], capture_output=True,
                               text=True, timeout=15, env=env, cwd=self.folder)
 
-    def args(self, reflected: bool) -> list[str]:
+    def args(self, reflected: bool | str) -> list[str]:
         args = ["--shader-path", str(self.source), "--out", str(self.output)]
-        return args + ["--reflection", str(self.reflection)] if reflected else args
+        option = reflected if isinstance(reflected, str) else "--reflection"
+        return args + [option, str(self.reflection)] if reflected else args
 
     def test_real_consumer_and_reflection_are_byte_identical(self) -> None:
         for index, source in enumerate(SOURCES):
@@ -114,7 +115,11 @@ class TestCliModes(unittest.TestCase):
                  base + ["--unknown", "value"], base + ["--unknown"],
                  base + ["--shader-path", str(self.source)],
                  base + ["--out", str(self.output)],
-                 self.args(True) + ["--reflection", str(self.reflection)]]
+                 self.args(True) + ["--reflection", str(self.reflection)],
+                 base + ["--reflection-v2"], base + ["--reflection-v2", ""],
+                 base + ["--reflection-v2", "--out"], base + ["--out", "--reflection-v2"],
+                 self.args(True) + ["--reflection-v2", str(self.reflection)],
+                 self.args("--reflection-v2") + ["--reflection-v2", str(self.reflection)]]
         before = snapshot(self.folder)
         for args in cases:
             with self.subTest(args=args):
@@ -161,7 +166,7 @@ class TestCliModes(unittest.TestCase):
                 self.assertEqual(snapshot(self.folder), before)
 
     def test_missing_bad_and_oversized_source_preserve_files(self) -> None:
-        for reflected in [False, True]:
+        for reflected in [False, True, "--reflection-v2"]:
             for content in [None, b"", b"invalid", b" " * 65537,
                             SOURCES[0].read_bytes() + b"\0"]:
                 with self.subTest(reflected=reflected, content_length=(
@@ -176,7 +181,7 @@ class TestCliModes(unittest.TestCase):
                     self.assertEqual(snapshot(self.folder), before)
 
     def test_existing_destinations_and_invalid_paths(self) -> None:
-        for reflected in [False, True]:
+        for reflected in [False, True, "--reflection-v2"]:
             for target in ["output", "reflection"] if reflected else ["output"]:
                 for kind in ["file", "directory", "symlink", "dangling"]:
                     with self.subTest(reflected=reflected, target=target,
@@ -196,7 +201,7 @@ class TestCliModes(unittest.TestCase):
                         path.rmdir() if kind == "directory" else path.unlink()
             for value in ["", str(self.folder / "missing" / "output"),
                           str(self.source), "/" + "p" * 4096]:
-                for option in ["--out", "--reflection"] if reflected else ["--out"]:
+                for option in ["--out", reflected if isinstance(reflected, str) else "--reflection"] if reflected else ["--out"]:
                     with self.subTest(reflected=reflected, option=option,
                                       path_length=len(value)):
                         args = self.args(reflected)
@@ -212,7 +217,7 @@ class TestCliModes(unittest.TestCase):
 
     def test_injected_failures_clean_only_owned_files(self) -> None:
         (self.folder / "unrelated.tmp.owned-by-someone-else").write_bytes(b"keep")
-        for reflected in [False, True]:
+        for reflected in [False, True, "--reflection-v2"]:
             faults = [("write", 1), ("partial", 1), ("close", 1),
                       ("close", 2), ("link", 1), ("temporary", 1)]
             if reflected:
@@ -228,7 +233,7 @@ class TestCliModes(unittest.TestCase):
                     self.assertEqual(snapshot(self.folder), before)
 
     def test_publication_race_preserves_foreign_destination(self) -> None:
-        for reflected in [False, True]:
+        for reflected in [False, True, "--reflection-v2"]:
             for call in [1, 2] if reflected else [1]:
                 for operation in ["race", "race_symlink"]:
                     with self.subTest(reflected=reflected, call=call,
@@ -245,7 +250,7 @@ class TestCliModes(unittest.TestCase):
                         path.unlink()
 
     def test_interrupted_and_short_writes_complete(self) -> None:
-        for reflected in [False, True]:
+        for reflected in [False, True, "--reflection-v2"]:
             normal = self.invoke(self.args(reflected))
             self.assertEqual(normal.returncode, 0, normal.stderr)
             expected = snapshot(self.folder)
@@ -258,6 +263,62 @@ class TestCliModes(unittest.TestCase):
                     run = self.invoke(self.args(reflected), FAULT_CLI, env)
                     self.assertEqual(run.returncode, 0, run.stderr)
                     self.assertEqual(snapshot(self.folder), expected)
+            self.output.unlink()
+            self.reflection.unlink(missing_ok=True)
+
+    def test_allocation_and_query_failures_preserve_artifacts(self) -> None:
+        for reflected, allocations in [(False, 2), (True, 1), ("--reflection-v2", 3)]:
+            for call in range(1, allocations + 1):
+                before = snapshot(self.folder)
+                env = dict(os.environ, DOE_CLI_FAULT="malloc", DOE_CLI_FAULT_CALL=str(call))
+                run = self.invoke(self.args(reflected), FAULT_CLI, env)
+                self.assertEqual(run.returncode, 1, run.stderr)
+                self.assertIn("allocation failed", run.stderr)
+                self.assertEqual(snapshot(self.folder), before)
+            # One call beyond the exact allocation count must not fire.
+            env = dict(os.environ, DOE_CLI_FAULT="malloc", DOE_CLI_FAULT_CALL=str(allocations + 1))
+            run = self.invoke(self.args(reflected), FAULT_CLI, env)
+            self.assertEqual(run.returncode, 0, run.stderr)
+            self.output.unlink()
+            self.reflection.unlink(missing_ok=True)
+        for reflected in (False, "--reflection-v2"):
+            before = snapshot(self.folder)
+            env = dict(os.environ, DOE_CLI_FAULT="query", DOE_CLI_FAULT_CALL="1")
+            run = self.invoke(self.args(reflected), FAULT_CLI, env)
+            self.assertEqual(run.returncode, 1, run.stderr)
+            self.assertIn("query failed", run.stderr)
+            self.assertEqual(snapshot(self.folder), before)
+
+    def test_uniform_witness_real_consumer_and_legacy_rejection(self) -> None:
+        source = REPO / "bench/kernels/package_vector_scale_add.wgsl"
+        ok, message = emit_spirv_for_wgsl(str(CLI), source, self.output)
+        self.assertTrue(ok, message)
+        binary = self.output.read_bytes()
+        self.output.unlink()
+        self.source.write_bytes(source.read_bytes())
+        run = self.invoke(self.args("--reflection-v2"))
+        self.assertEqual(run.returncode, 0, run.stderr)
+        self.assertEqual(self.output.read_bytes(), binary)
+        reflection = json.loads(self.reflection.read_text(encoding="utf-8"))
+        self.assertEqual(reflection["schema_version"], 2)
+        self.assertIsNone(reflection["bindings"][0]["scalar"])
+        self.assertEqual(reflection["bindings"][0]["runtime_sized"], 0)
+        self.output.unlink()
+        self.reflection.unlink()
+        before = snapshot(self.folder)
+        run = self.invoke(self.args(True))
+        self.assertEqual(run.returncode, 1, run.stderr)
+        self.assertEqual(snapshot(self.folder), before)
+
+    def test_storage_binary_equality_across_three_modes(self) -> None:
+        expected = None
+        for reflected in [False, True, "--reflection-v2"]:
+            run = self.invoke(self.args(reflected))
+            self.assertEqual(run.returncode, 0, run.stderr)
+            binary = self.output.read_bytes()
+            if expected is None:
+                expected = binary
+            self.assertEqual(binary, expected)
             self.output.unlink()
             self.reflection.unlink(missing_ok=True)
 

@@ -75,3 +75,7 @@ fixtures, public header, CLI and compile/publication owner are unchanged.
 Historical independent suites and their receipts stay immutable; the new M4 suite
 records imported test-source identities and exact intentional grammar lifts.
 See [accepted scope and provenance](MILESTONE_4_RESULTS.md).
+
+## Milestone 5
+
+Flat uniform resources, typed layout/member loads, versioned reflection and caller-workspace ownership are independent C work under the frozen M5 contract. No production Zig source was translated or removed. The selected independent evaluator sources retain their MIT notices and imported-source manifest; results and exact artifact identities are in MILESTONE_5_RESULTS.md. Primary WGSL/WebGPU layout sources are linked in the frozen contract.

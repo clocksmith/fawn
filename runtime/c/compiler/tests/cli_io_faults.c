@@ -2,6 +2,8 @@
  * Copyright (c) 2026 Doe contributors
  * Test-only linker wrappers; never linked into the shipped CLI or library. */
 #define _POSIX_C_SOURCE 200809L
+#include "../include/doe_compiler_v2.h"
+#include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <stdlib.h>
@@ -64,4 +66,44 @@ int __wrap_mkstemp(char *path) {
     ++calls;
     if (selected("temporary", calls)) { errno = ENOSPC; return -1; }
     return __real_mkstemp(path);
+}
+
+void *__real_malloc(size_t size);
+void __real_free(void *pointer);
+void *__wrap_malloc(size_t size);
+void __wrap_free(void *pointer);
+DoeCompilerStatus __real_doe_compiler_workspace_requirements(uint32_t version,
+    DoeCompilerWorkspaceRequirements *requirements, size_t size);
+DoeCompilerStatus __wrap_doe_compiler_workspace_requirements(uint32_t version,
+    DoeCompilerWorkspaceRequirements *requirements, size_t size);
+static void *allocations[3];
+static void allocation_cleanup(void) {
+    for (size_t i = 0; i < 3u; ++i) assert(allocations[i] == NULL);
+}
+void *__wrap_malloc(size_t size) {
+    static unsigned calls;
+    if (calls++ == 0u) assert(atexit(allocation_cleanup) == 0);
+    /* A failed requirements query must never be followed by allocation. */
+    assert(!selected("query", 1u));
+    if (selected("malloc", calls)) { errno = ENOMEM; return NULL; }
+    void *pointer = __real_malloc(size);
+    if (pointer != NULL) {
+        size_t slot = 0;
+        while (slot < 3u && allocations[slot] != NULL) ++slot;
+        assert(slot < 3u); allocations[slot] = pointer;
+    }
+    return pointer;
+}
+void __wrap_free(void *pointer) {
+    if (pointer != NULL) {
+        size_t slot = 0;
+        while (slot < 3u && allocations[slot] != pointer) ++slot;
+        assert(slot < 3u); allocations[slot] = NULL;
+    }
+    __real_free(pointer);
+}
+DoeCompilerStatus __wrap_doe_compiler_workspace_requirements(uint32_t version,
+    DoeCompilerWorkspaceRequirements *requirements, size_t size) {
+    if (selected("query", 1u)) return DOE_COMPILER_ABI_MISMATCH;
+    return __real_doe_compiler_workspace_requirements(version, requirements, size);
 }

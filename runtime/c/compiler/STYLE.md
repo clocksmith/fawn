@@ -5,7 +5,7 @@ Follow the repository's native adapter rules and the frozen milestone. This loca
 - Use C11, explicit status/boolean results and caller-owned spans. Check lengths and capacities before indexing, casts and publication.
 - Keep lexical, parsed, validated and target representations separate. Emission consumes typed binding identities and operations, never source spelling.
 - Preserve source offsets through semantic lowering. Report the first admitted pipeline failure with a useful bounded message.
-- Keep ownership visible: stack records in the library, file descriptors in the CLI with one cleanup path, no retained caller pointers or mutable globals. Optional reflection is a nullable path, not a default filename; only a successfully acquired temporary or published artifact is eligible for cleanup.
+- Keep ownership visible: typed caller workspace (v2) or private stack workspace (ABI1), explicit CLI allocations and file descriptors with one cleanup path, no retained caller pointers or mutable globals. Optional reflection is a nullable path, not a default filename; only a successfully acquired temporary or published artifact is eligible for cleanup.
 - Prefer typed, bounded records over generic containers, callback frameworks or erased `void *` domain values.
 - Use named small helpers for parsing, resolution, validation and emission. The emitter's local serialization macro only supplies an array length and propagates failure; it is not an IR or dispatch framework.
 - Keep test evidence separate from implementation. Test semantics, error/output atomicity and real native consumers, not desired source snippets. Keep first failures when repairing implementation or classifying intentional contract expansion.
@@ -54,5 +54,31 @@ Validate and lower all source statements even after return. The emitter alone
 suppresses unreachable operations, carries actual current labels through robust
 access merges, and adds branches only to live blocks. Both-return selections
 still emit their required merge with `OpUnreachable`. This preserves nested Phi
-predecessors without ever adding a second terminator after return. Keep the public
-header byte-identical; private workspace growth is measured, not hidden.
+predecessors without ever adding a second terminator after return. Keep the ABI1 public
+header byte-identical; v2 has its own frozen header, and private workspace is measured, not hidden.
+
+## Resource layout and workspace ownership
+
+Represent module resources and flat struct/member declarations independently.
+Type resolution is declaration-order independent; member identity is an owner
+struct index plus member index, never a resource/field spelling convention.
+Validate the full module namespace before lowering. Use the same typed resource
+and layout IR for emission and each reflection schema. Uniform access uses the
+Uniform storage class with Block/Offset and fixed member indices, not runtime
+array length or short-buffer repair. Storage robustness keeps each access's own
+binding, even beside uniform loads and early returns.
+
+Syntax owns its copied names and survives parsing. TokenList lifetime ends at
+parse return, permitting its union storage to become the combined typed program
+and target scratch. Do not retain token pointers or reinterpret live token state
+as IR. ABI1 has a real typed local workspace, while v2 accepts correctly aligned
+malloc/aligned-allocation storage after version/size/alignment preflight. One
+shared capability-parameterized pipeline performs lexical admission through
+emission. Result layout projection stays at its API wrapper's successful
+publication point. No library allocator or implicit second workspace is allowed.
+
+The original 385-instruction capacity remains conservative: a new member load
+costs one instruction, including an index base or condition RHS, so it fits the
+old expression/index/condition bounds without growth. Uniform type/member limits
+and the target word cap remain checked separately. CLI JSON serialization owns
+only bounded append mechanics, not another semantic/reflection registry.

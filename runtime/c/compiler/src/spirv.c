@@ -31,6 +31,10 @@ typedef struct {
     uint32_t next_id, current_label;
     uint32_t buffers[DOE_COMPILER_MAX_BINDINGS];
     uint32_t values[MAX_IR_VALUES];
+    uint32_t uniform_types[DOE_COMPILER_MAX_STRUCTS];
+    uint32_t uniform_pointers[DOE_COMPILER_MAX_STRUCTS];
+    uint32_t member_indices[DOE_COMPILER_MAX_STRUCT_MEMBERS];
+    uint32_t uniform_u32_pointer, uniform_f32_pointer;
 } Emitter;
 static uint32_t scalar_type(IrType type) {
     return type == IR_BOOL ? ID_BOOL : type == IR_F32 ? ID_F32 : ID_U32;
@@ -69,6 +73,16 @@ static bool debug_name(Emitter *e, uint32_t id, const char *name) {
 
 static bool module_declarations(Emitter *e, const IrProgram *program) {
     for (size_t i = 0; i < program->binding_count; ++i) e->buffers[i] = e->next_id++;
+    if (program->struct_count != 0u) {
+        e->uniform_u32_pointer = e->next_id++;
+        e->uniform_f32_pointer = e->next_id++;
+        for (size_t i = 0; i < program->struct_count; ++i) {
+            e->uniform_types[i] = e->next_id++;
+            e->uniform_pointers[i] = e->next_id++;
+        }
+        for (size_t i = 0; i < DOE_COMPILER_MAX_STRUCT_MEMBERS; ++i)
+            e->member_indices[i] = e->next_id++;
+    }
     EMIT(OP_CAPABILITY, 1u); /* Shader */
     EMIT(OP_MEMORY_MODEL, 0u, 1u); /* Logical, GLSL450 */
     uint32_t entry_arguments[19] = { 5u, ID_ENTRY }; /* GLCompute */
@@ -92,6 +106,12 @@ static bool module_declarations(Emitter *e, const IrProgram *program) {
         if (program->bindings[i].access == DOE_COMPILER_READ)
             EMIT(OP_DECORATE, e->buffers[i], 24u); /* NonWritable */
     }
+    for (size_t i = 0; i < program->struct_count; ++i) {
+        EMIT(OP_DECORATE, e->uniform_types[i], 2u);
+        for (uint32_t j = 0; j < program->structs[i].member_count; ++j)
+            EMIT(OP_MEMBER_DECORATE, e->uniform_types[i], j, 35u,
+                 program->structs[i].members[j].offset_bytes);
+    }
     EMIT(OP_DECORATE, ID_INVOCATION, 11u, 28u); /* BuiltIn GlobalInvocationId */
     EMIT(OP_TYPE_VOID, ID_VOID);
     EMIT(OP_TYPE_BOOL, ID_BOOL);
@@ -106,10 +126,25 @@ static bool module_declarations(Emitter *e, const IrProgram *program) {
     EMIT(OP_TYPE_POINTER, ID_PTR_BLOCK_F32, 12u, ID_BLOCK_F32);
     EMIT(OP_TYPE_POINTER, ID_PTR_ELEMENT_U32, 12u, ID_U32);
     EMIT(OP_TYPE_POINTER, ID_PTR_ELEMENT_F32, 12u, ID_F32);
+    if (program->struct_count != 0u) {
+        EMIT(OP_TYPE_POINTER, e->uniform_u32_pointer, 2u, ID_U32); /* Uniform */
+        EMIT(OP_TYPE_POINTER, e->uniform_f32_pointer, 2u, ID_F32);
+        for (size_t i = 0; i < program->struct_count; ++i) {
+            uint32_t fields[1u + DOE_COMPILER_MAX_STRUCT_MEMBERS] = { e->uniform_types[i] };
+            const IrStruct *type = &program->structs[i];
+            for (size_t j = 0; j < type->member_count; ++j)
+                fields[j + 1u] = type->members[j].scalar == DOE_COMPILER_F32 ? ID_F32 : ID_U32;
+            if (!instruction(e, OP_TYPE_STRUCT, fields, 1u + type->member_count)) return false;
+            EMIT(OP_TYPE_POINTER, e->uniform_pointers[i], 2u, e->uniform_types[i]);
+        }
+    }
     EMIT(OP_TYPE_POINTER, ID_PTR_INPUT, 1u, ID_VEC3); /* Input */
     EMIT(OP_TYPE_FUNCTION, ID_FN_TYPE, ID_VOID);
     EMIT(OP_CONSTANT, ID_U32, ID_ZERO_U32, 0u);
     EMIT(OP_CONSTANT, ID_F32, ID_ZERO_F32, 0u);
+    if (program->struct_count != 0u)
+        for (uint32_t i = 0; i < DOE_COMPILER_MAX_STRUCT_MEMBERS; ++i)
+            EMIT(OP_CONSTANT, ID_U32, e->member_indices[i], i);
     for (size_t i = 0; i < program->instruction_count; ++i) {
         const IrInstruction *ir = &program->instructions[i];
         if (ir->opcode == IR_CONSTANT) {
@@ -118,9 +153,11 @@ static bool module_declarations(Emitter *e, const IrProgram *program) {
         }
     }
     for (size_t i = 0; i < program->binding_count; ++i) {
-        const uint32_t pointer_type = program->bindings[i].scalar == DOE_COMPILER_F32 ?
-                                      ID_PTR_BLOCK_F32 : ID_PTR_BLOCK_U32;
-        EMIT(OP_VARIABLE, pointer_type, e->buffers[i], 12u);
+        const IrBinding *binding = &program->bindings[i];
+        const bool uniform = binding->kind == DOE_COMPILER_UNIFORM_BUFFER;
+        const uint32_t pointer_type = uniform ? e->uniform_pointers[binding->struct_index] :
+            binding->scalar == DOE_COMPILER_F32 ? ID_PTR_BLOCK_F32 : ID_PTR_BLOCK_U32;
+        EMIT(OP_VARIABLE, pointer_type, e->buffers[i], uniform ? 2u : 12u);
     }
     EMIT(OP_VARIABLE, ID_PTR_INPUT, ID_INVOCATION, 1u);
     return true;
@@ -230,6 +267,15 @@ static bool emit_block(Emitter *e, const IrProgram *program, size_t *cursor,
                 const uint32_t vector = e->next_id++;
                 EMIT(OP_LOAD, ID_VEC3, vector, ID_INVOCATION);
                 EMIT(OP_COMPOSITE_EXTRACT, ID_U32, e->values[ir->result], vector, 0u);
+                break;
+            }
+            case IR_UNIFORM_LOAD: {
+                const uint32_t pointer = e->next_id++;
+                const uint32_t pointer_type = ir->type == IR_F32 ?
+                    e->uniform_f32_pointer : e->uniform_u32_pointer;
+                EMIT(OP_ACCESS_CHAIN, pointer_type, pointer, e->buffers[ir->binding],
+                     e->member_indices[ir->literal]);
+                EMIT(OP_LOAD, scalar_type(ir->type), e->values[ir->result], pointer);
                 break;
             }
             case IR_ROBUST_LOAD:

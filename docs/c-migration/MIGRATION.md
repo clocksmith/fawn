@@ -62,6 +62,14 @@ admitted paths /three unique sources; it does not replace the prior ledger or
 qualify the remaining 94 paths. Workspace growth is measured and bounded, not a
 permanent allocation policy for the complete compiler.
 
+The [fifth increment](../../runtime/c/compiler/MILESTONE_5_RESULTS.md) adds generic
+flat uniform layout/member access and a separately versioned caller-workspace API
+through the same compiler pipeline. ABI1 and legacy reflection remain compatible.
+Its independent native/semantic/fault tests pass; corpus coverage is five paths /
+four unique sources, with 93 explicit rejections. The old API frame decreases to
+96,272 bytes; v2 caller workspace is 96,208 bytes, not eliminated memory. This
+remains standalone compiler coverage, not runtime adoption or production replacement.
+
 ## Existing authority, not a parallel policy
 
 Owner paths and layer labels come from

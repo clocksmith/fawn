@@ -1,0 +1,7 @@
+The inventory phrase "three scalar uniform bytes" in case 1 is an evaluator transcription error: unchanged package_vector_scale_add has FOUR u32 members and requires 16 bytes. The separate three-member general-layout tests require 12 bytes. Original inventory is preserved. Correction made before inspecting/running candidate.
+
+First semantic candidate run exposed evaluator error expression_condition: p.a + 1u is an admitted M2 index base plus literal offset, including as a condition LHS. Candidate acceptance was correct. Original source/log/result retained in semantic-candidate-1. Test repaired to multiplication p.a * 2u, which is genuinely outside condition/index grammar; positive offset condition added. No candidate requirement relaxed.
+
+Native/CLI fixture corrections: single-N workgroup only (not4,2,1), at least one statement (return added), groups0..3 (not9 or4..7), v2 result size6904 not6912. Original failed receipts retained. LeakSanitizer is unavailable under ptrace; ASan/UBSan and explicit allocation/free balance remained enabled.
+
+Native stack checker initially applied8192 to CLI main and recorded failure107728. Parent and independent contract reviewer confirmed frozen M5 native-entrypoint/core scope, excluding separate inherited CLI buffers; final checker budgets only library frames and reports CLI107728 separately. Original failure retained; no implementation change or budget waiver. Library ABI1 frame96272, v2 frame64, core pipeline80, maximum other library frame1984. No aggregate stack high-water claim.

@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: MIT
  * Copyright (c) 2026 Doe contributors */
 #define _POSIX_C_SOURCE 200809L
-#include "../include/doe_compiler.h"
+#include "cli_json.h"
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
@@ -34,23 +34,30 @@ static int unused_destination(const char *path) {
     return errno == ENOENT ? 0 : -1;
 }
 int main(int argc, char **argv) {
-    const char *input = NULL, *output = NULL, *reflection = NULL;
+    const char *input = NULL, *output = NULL, *reflection = NULL, *reflection_v2 = NULL;
     for (int i = 1; i < argc; i += 2) {
         if (i + 1 >= argc || strcmp(argv[i + 1], "--shader-path") == 0 ||
-            strcmp(argv[i + 1], "--out") == 0 || strcmp(argv[i + 1], "--reflection") == 0) {
+            strcmp(argv[i + 1], "--out") == 0 || strcmp(argv[i + 1], "--reflection") == 0 ||
+            strcmp(argv[i + 1], "--reflection-v2") == 0) {
             fprintf(stderr, "each option requires a path\n"); return 2;
         }
         const char **slot = NULL;
         if (strcmp(argv[i], "--shader-path") == 0) slot = &input;
         else if (strcmp(argv[i], "--out") == 0) slot = &output;
         else if (strcmp(argv[i], "--reflection") == 0) slot = &reflection;
+        else if (strcmp(argv[i], "--reflection-v2") == 0) slot = &reflection_v2;
         if (slot == NULL || *slot != NULL) { fprintf(stderr, "unknown or duplicate option: %s\n", argv[i]); return 2; }
         *slot = argv[i + 1];
     }
     if (input == NULL || output == NULL) {
-        fprintf(stderr, "usage: doe-compiler-c --shader-path INPUT --out OUTPUT [--reflection JSON]\n");
+        fprintf(stderr, "usage: doe-compiler-c --shader-path INPUT --out OUTPUT [--reflection JSON | --reflection-v2 JSON]\n");
         return 2;
     }
+    if (reflection != NULL && reflection_v2 != NULL) {
+        fprintf(stderr, "reflection modes are mutually exclusive\n"); return 2;
+    }
+    const int legacy = reflection != NULL;
+    if (reflection_v2 != NULL) reflection = reflection_v2;
     if (reflection != NULL && reflection[0] == '\0') {
         fprintf(stderr, "reflection path must not be empty\n"); return 2;
     }
@@ -61,6 +68,9 @@ int main(int argc, char **argv) {
     char binary_temp[PATH_CAPACITY] = {0}, json_temp[PATH_CAPACITY] = {0};
     char source[DOE_COMPILER_MAX_SOURCE_BYTES + 1u];
     size_t length = 0;
+    void *workspace = NULL;
+    DoeCompilerResultV2 *result_v2 = NULL;
+    char *json = NULL;
     input_fd = open(input, O_RDONLY);
     if (input_fd < 0) { perror("open shader"); goto cleanup; }
     while (length < sizeof(source)) {
@@ -74,55 +84,52 @@ int main(int argc, char **argv) {
     input_fd = -1;
     uint32_t words[DOE_COMPILER_MAX_WORDS];
     DoeCompilerResult result;
-    if (doe_compiler_compile(DOE_COMPILER_ABI_VERSION, source, length,
-                             words, DOE_COMPILER_MAX_WORDS, &result, sizeof(result)) != DOE_COMPILER_OK) {
+    DoeCompilerStatus compiled;
+    DoeCompilerDiagnostic *diagnostic;
+    size_t word_count;
+    if (legacy) {
+        compiled = doe_compiler_compile(DOE_COMPILER_ABI_VERSION, source, length,
+                                       words, DOE_COMPILER_MAX_WORDS, &result, sizeof(result));
+        diagnostic = &result.diagnostic;
+        word_count = result.word_count;
+    } else {
+        DoeCompilerWorkspaceRequirements requirements;
+        if (doe_compiler_workspace_requirements(DOE_COMPILER_ABI_VERSION_2, &requirements,
+                                                sizeof(requirements)) != DOE_COMPILER_OK) {
+            fprintf(stderr, "workspace requirements query failed\n"); goto cleanup;
+        }
+        workspace = malloc(requirements.size_bytes);
+        if (workspace == NULL) { fprintf(stderr, "workspace allocation failed\n"); goto cleanup; }
+        result_v2 = malloc(sizeof(*result_v2));
+        if (result_v2 == NULL) { fprintf(stderr, "result allocation failed\n"); goto cleanup; }
+        compiled = doe_compiler_compile_v2(DOE_COMPILER_ABI_VERSION_2, workspace,
+            requirements.size_bytes, source, length, words, DOE_COMPILER_MAX_WORDS,
+            result_v2, sizeof(*result_v2));
+        diagnostic = &result_v2->diagnostic;
+        word_count = result_v2->word_count;
+    }
+    if (compiled != DOE_COMPILER_OK) {
         fprintf(stderr, "%s:%u:%u: category=%u offset=%zu: %s\n", input,
-                result.diagnostic.line, result.diagnostic.column, (unsigned)result.diagnostic.status,
-                result.diagnostic.offset, result.diagnostic.message);
+                diagnostic->line, diagnostic->column, (unsigned)diagnostic->status,
+                diagnostic->offset, diagnostic->message);
         goto cleanup;
     }
     if (unused_destination(output) < 0 ||
         (reflection != NULL && unused_destination(reflection) < 0)) {
         perror("destination unavailable (existing files are never overwritten)"); goto cleanup;
     }
-    char json[4096];
     size_t json_length = 0;
     if (reflection != NULL) {
-        const DoeCompilerReflection *r = &result.reflection;
-        int written = snprintf(json, sizeof(json),
-            "{\n  \"entry_point\": \"%s\",\n"
-            "  \"workgroup_size\": [%u, %u, %u],\n"
-            "  \"binding_count\": %u,\n  \"bindings\": [\n",
-            r->entry_point, r->workgroup_size[0], r->workgroup_size[1],
-            r->workgroup_size[2], r->binding_count);
-        if (written < 0 || (size_t)written >= sizeof(json)) {
-            fprintf(stderr, "reflection exceeds buffer\n"); goto cleanup;
-        }
-        json_length = (size_t)written;
-        for (uint32_t i = 0; i < r->binding_count; ++i) {
-            const DoeCompilerBinding *binding = &r->bindings[i];
-            written = snprintf(json + json_length, sizeof(json) - json_length,
-                "    {\"name\": \"%s\", \"group\": %u, \"binding\": %u, "
-                "\"scalar_type\": \"%s\", \"access\": \"%s\", "
-                "\"element_stride\": %u, \"runtime_sized\": %s}%s\n",
-                binding->name, binding->group, binding->binding,
-                binding->scalar == DOE_COMPILER_F32 ? "f32" : "u32",
-                binding->access == DOE_COMPILER_READ ? "read" : "read_write",
-                binding->element_stride, binding->runtime_sized != 0u ? "true" : "false",
-                i + 1u == r->binding_count ? "" : ",");
-            if (written < 0 || (size_t)written >= sizeof(json) - json_length) {
-                fprintf(stderr, "reflection exceeds buffer\n"); goto cleanup;
-            }
-            json_length += (size_t)written;
-        }
-        written = snprintf(json + json_length, sizeof(json) - json_length, "  ]\n}\n");
-        if (written < 0 || (size_t)written >= sizeof(json) - json_length) {
-            fprintf(stderr, "reflection exceeds buffer\n"); goto cleanup;
-        }
-        json_length += (size_t)written;
+        const size_t json_capacity = legacy ? CLI_JSON_V1_CAPACITY : CLI_JSON_V2_CAPACITY;
+        json = malloc(json_capacity);
+        if (json == NULL) { fprintf(stderr, "reflection allocation failed\n"); goto cleanup; }
+        const bool serialized = legacy ?
+            cli_json_v1(&result.reflection, json, json_capacity, &json_length) :
+            cli_json_v2(&result_v2->reflection, json, json_capacity, &json_length);
+        if (!serialized) { fprintf(stderr, "reflection exceeds buffer\n"); goto cleanup; }
     }
     unsigned char binary[DOE_COMPILER_MAX_WORDS * 4u];
-    for (size_t i = 0; i < result.word_count; ++i)
+    for (size_t i = 0; i < word_count; ++i)
         for (unsigned b = 0; b < 4u; ++b) binary[i * 4u + b] = (unsigned char)(words[i] >> (b * 8u));
     binary_fd = temporary(output, binary_temp);
     if (binary_fd < 0) { perror("create binary temporary"); goto cleanup; }
@@ -132,7 +139,7 @@ int main(int argc, char **argv) {
         if (json_fd < 0) { perror("create reflection temporary"); goto cleanup; }
         json_created = 1;
     }
-    if (write_all(binary_fd, binary, result.word_count * 4u) < 0 ||
+    if (write_all(binary_fd, binary, word_count * 4u) < 0 ||
         (reflection != NULL && write_all(json_fd, (const unsigned char *)json, json_length) < 0)) { perror("write artifacts"); goto cleanup; }
     if (close(binary_fd) < 0) { binary_fd = -1; perror("close binary"); goto cleanup; }
     binary_fd = -1;
@@ -157,5 +164,8 @@ cleanup:
     if (status != 0 && json_published) (void)unlink(reflection);
     if (binary_created) (void)unlink(binary_temp);
     if (json_created) (void)unlink(json_temp);
+    free(json);
+    free(result_v2);
+    free(workspace);
     return status;
 }
