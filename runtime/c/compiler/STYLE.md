@@ -29,14 +29,14 @@ precedes conversion, including concrete-only f32 constructor and runtime shift
 rules. Let snapshots are runtime-stage reads; consts retain their numeric stage.
 
 numeric.c owns locale-free bounded literal parsing, rounding, const arithmetic and
-checked conversions. Lexer/parser preserve raw literal spans, not floating host
-values. Const evaluation checks every evaluated intermediate. Skipped short-circuit
+checked conversions; numeric_math.c owns declared-width component math.
+Lexer/parser preserve raw literal spans, not floating host values. Const evaluation checks every evaluated intermediate. Skipped short-circuit
 numeric evaluation is distinct from required name/type/dependency validation and
 mandatory divisor/count checks. Runtime operators never call the const evaluator.
 
-The pipeline owns one NumericEnvironment. Save/hold/normalize caller rounding,
-traps, exception flags and SSE subnormal modes; restore before publication on both
-success and failure. Use the frozen strict FP build flags and qualified IEEE host,
+The pipeline owns one NumericEnvironment through numeric_environment.c.
+Save/hold/normalize caller rounding, precision, traps, exception flags and native
+subnormal modes; restore before publication on both success and failure. Use the frozen strict FP build flags and qualified IEEE host,
 with no contraction/reassociation or process-global locale changes. A failed
 restore is a specific host error, not a claim of successful state preservation.
 

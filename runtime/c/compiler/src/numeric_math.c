@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: MIT
  * Copyright (c) 2026 Doe contributors */
 #include "numeric.h"
+#include "numeric_host.h"
 #include <math.h>
 
 /* Only const-stage component operations reach libm. Runtime operations retain

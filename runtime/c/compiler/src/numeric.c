@@ -1,70 +1,12 @@
 /* SPDX-License-Identifier: MIT
  * Copyright (c) 2026 Doe contributors */
 #include "numeric.h"
-#include <float.h>
-#include <limits.h>
+#include "numeric_host.h"
 #include <math.h>
 #include <string.h>
-#include <xmmintrin.h>
-
-#if !defined(__linux__) || !defined(__x86_64__) || !defined(__GNUC__) || \
-    __GNUC__ != 14 || __GNUC_MINOR__ != 2
-#error "The scalar host-FP owner is qualified only for Linux x86-64 GCC 14.2"
-#endif
-#if defined(__FAST_MATH__)
-#error "The scalar numeric owner requires strict floating point evaluation"
-#endif
-_Static_assert(CHAR_BIT == 8 && sizeof(float) == 4u && sizeof(double) == 8u,
-               "numeric payload widths must match IEEE binary32/binary64");
-_Static_assert(FLT_RADIX == 2 && FLT_MANT_DIG == 24 && DBL_MANT_DIG == 53 &&
-               FLT_MIN_EXP == -125 && FLT_MAX_EXP == 128 &&
-               DBL_MIN_EXP == -1021 && DBL_MAX_EXP == 1024,
-               "numeric evaluation requires IEEE binary32/binary64");
-_Static_assert(INT64_MIN == -INT64_MAX - 1 && INT32_MIN == -INT32_MAX - 1,
-               "numeric integer representation must be two's complement");
 
 static bool numeric_error(Source *source, size_t offset, const char *message) {
     return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, offset, message);
-}
-static bool host_error(Source *source, const char *message) {
-    return source_error(source, DOE_COMPILER_INPUT_ERROR, 0u, message);
-}
-
-bool numeric_environment_begin(Source *source, NumericEnvironment *environment) {
-    environment->active = false;
-    environment->saved_mxcsr = _mm_getcsr();
-    if (fegetenv(&environment->saved) != 0)
-        return host_error(source, "cannot save compiler host floating-point environment");
-    environment->active = true;
-    fenv_t held;
-    if (fegetround() == -1 || feholdexcept(&held) != 0 || fesetround(FE_TONEAREST) != 0) {
-        if (!numeric_environment_end(source, environment)) return false;
-        return host_error(source, "cannot normalize compiler host floating-point environment");
-    }
-    /* All SSE exceptions masked, flags clear, nearest-even, gradual underflow.
-     * feholdexcept/fesetround also establish the x87 exception/rounding state. */
-    _mm_setcsr((_mm_getcsr() | UINT32_C(0x1f80)) & ~UINT32_C(0xe07f));
-    if (fegetround() != FE_TONEAREST ||
-        (_mm_getcsr() & UINT32_C(0xffff)) != UINT32_C(0x1f80)) {
-        if (!numeric_environment_end(source, environment)) return false;
-        return host_error(source, "cannot verify compiler host floating-point environment");
-    }
-    return true;
-}
-
-bool numeric_environment_end(Source *source, NumericEnvironment *environment) {
-    if (!environment->active) return true;
-    const int restored = fesetenv(&environment->saved);
-    _mm_setcsr(environment->saved_mxcsr);
-    environment->active = false;
-    if (restored != 0) {
-        /* A restoration error must fail publication even if this bounded retry
-         * succeeds. Do not raise the compiler's temporary exception flags. */
-        (void)fesetenv(&environment->saved);
-        _mm_setcsr(environment->saved_mxcsr);
-        return host_error(source, "compiler host floating-point environment restoration failed");
-    }
-    return true;
 }
 
 static bool integer_type(IrType type) {

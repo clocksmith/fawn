@@ -1,0 +1,82 @@
+{
+  "status": "Focused portable numeric-environment developer checks pass on Linux x86-64 GCC14.2; other platform paths remain unexecuted.",
+  "source_sha256": "57e37e198730ea31cccbe12c2aee179198cda323936feb65efc636fd2d2469b2",
+  "base_numeric_commit": "b054a51f5ec877bfc5f20df5f9cc8b305fc6cc10",
+  "scope": "Checked arithmetic host traits replace compiler-version/OS-brand lock; one fenv owner with x86-64 and ARM64 native controls, exact restoration, actual rounded-bit/subnormal admission; Darwin install name from canonical build authority.",
+  "actual_defect": "Previous normalization left incoming x87 precision unchanged. New owner forces extended precision while semantic host math runs, then restores the exact caller control word.",
+  "checks": {
+    "normal_source_methods": 59,
+    "asan_ubsan_source_methods": 59,
+    "additional_parent_phony_methods": 9,
+    "trait_and_export_methods": 7,
+    "environment": "Normal and ASan/UBSan real libc save/hold/round/clear/flag/final-restore failure injection, incoming x87 24-bit precision and exact native-mode restoration; bounded final-restore retry still reports failure.",
+    "numeric_regression": "Normal and ASan/UBSan literals/arithmetic/conversions/rounding/subnormals/traps/concurrency; six normal public API controls, sanitizer text/math/final-publication-failure controls.",
+    "build": "Canonical shared target links and consumes actual library, exact15 exports; Darwin default @rpath basename and explicit install-name override are dry-run-only tests.",
+    "source_size": "C size check: 633 files, 0 failures; limit 999",
+    "diff_check": "12 owned paths passed",
+    "complete_input_identity": "BUILD_INPUTS_BEFORE.json equals BUILD_INPUTS_AFTER.json for every canonical core/Metal source/header/build input.",
+    "layout": "NumericEnvironment remains40 bytes on executed x86-64 host; public ABI records, export count and workspace queries unchanged."
+  },
+  "bound_parallel_sources": {
+    "src/parse.c": "80b0dec73e9a3d106f5f9559bfeaaf58d601813b24a7980caf3b25e8f5dabad5",
+    "src/validate.c": "3edfa1472fbee1d1283a0fab534fa6954e1e7486790ee88612d9c27f422646bb",
+    "src/uniformity.c": "cb3406d04cabfd81232c1330d92889a330f99b2ae1ba43a7545d60cce694b416"
+  },
+  "charged_increment": {
+    "production_source_headers_build": {
+      "before_lines": 1241,
+      "after_lines": 1369,
+      "before_bytes": 69145,
+      "after_bytes": 75225
+    },
+    "all_owned": {
+      "before_bytes": 112047,
+      "after_bytes": 126898
+    }
+  },
+  "new_dependencies": [],
+  "preserved_first_failures": [],
+  "limitations": [
+    "Executed host is Linux x86-64 GCC14.2 only; ARM64 code and Darwin recipe are authored, not built or numerically qualified with Apple SDK/Clang.",
+    "Foreign libc/libm frames remain explicit external leaves, not hidden compiler stack.",
+    "No target IR or WGSL semantic broadening, production-default change, physical qualification or50percent reduction claim.",
+    "Graphs and whole-source checks include the three separately owned held phony-assignment source files; their exact hashes are recorded rather than attributed to this12-path increment."
+  ],
+  "bound_parallel_commit": "d671194075f4ca473e265a95afeee74ab5f2fa83",
+  "input_sha256": {
+    "runtime/c/compiler/Makefile": "a68564e574587066824bcbbbcf5463a08985c750e856374d709b9ff37170be0c",
+    "runtime/c/compiler/README.md": "39321f103c26857631eb6917caa0b82f3e2fcb0788969f2af363ecdf19e30b6a",
+    "runtime/c/compiler/STYLE.md": "126295d2a58c38e53b6ab5c3f3bf5de0991eba4b08605d8d3df3d730f965a482",
+    "runtime/c/compiler/src/numeric.c": "3d143da01209497f220ca58e5c784fe6cbc0d69f4a550356c306d30dee7d18d3",
+    "runtime/c/compiler/src/numeric.h": "7d7df256abb85d148b776f3f42e120d8894b198c2123d66191fa75ded9d50a01",
+    "runtime/c/compiler/src/numeric_math.c": "044063fc379f2148b68d3758bbe7c4902b6ab186f6beaea8cf27f5a912315a08",
+    "runtime/c/compiler/src/numeric_environment.c": "5bb2ef1570cc2e65c56f392b3064cb58c96fe08dd30b4df41426b61106e71432",
+    "runtime/c/compiler/src/numeric_host.h": "baaea4cf04242f73ac82a3ff535a7a9d8510d9725f93413433498ad464603454",
+    "runtime/c/compiler/tests/audit_text_stack.py": "a16820290c8a637af3c42551b2a7e58029d3a5cfae39bc801449f88fbad39724",
+    "runtime/c/compiler/tests/test_export_symbols.py": "a80c2445a74a3380beea4f0c248b6f30243a176b08da1322365f3c8c3bd3d3ec",
+    "runtime/c/compiler/tests/test_numeric_environment.c": "45bbd2310a7c8afb9480818ddbfd1781266c3e25e59568d9d0dad584932bf037",
+    "runtime/c/compiler/tests/test_numeric_host.py": "5699d470f767f9445c8518d6538b7ee80e2f36462256940b143433035d6bfd0b"
+  },
+  "artifacts_sha256": {
+    "libdoe_compiler.so": "65726c16cd3999c42e5baad7f72ecee189fa0715d4197cba3612baca6af6e57e",
+    "canonical/libdoe_compiler.so": "28d253f3c81aa31ee069cac415e9a51a1885f8c9b8b3bc3e6ed26ba0fb2f439b",
+    "doe-compiler-c": "d643db3ed703112c2bfa1603f38560d7e3c300ccd5377ab0931077250c923e0c",
+    "compiler-sanitize": "72accfdf763c69d316d3c0834b7ee2d2a13b00009e9312527f981f7b2b41ead9"
+  },
+  "stack": {
+    "normal": {
+      "frame_count": 353,
+      "maximum_acyclic_library_path_bytes": 2640,
+      "fixed_combined": 191840,
+      "maximum_job_combined": 181504,
+      "metal_composed_bound": 27632
+    },
+    "pic": {
+      "frame_count": 347,
+      "maximum_acyclic_library_path_bytes": 2640,
+      "fixed_combined": 191840,
+      "maximum_job_combined": 181504,
+      "metal_composed_bound": 29200
+    }
+  }
+}
