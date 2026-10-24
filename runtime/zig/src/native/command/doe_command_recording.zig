@@ -3,26 +3,57 @@ const commands = @import("../support/doe_native_command_types.zig");
 const errors = @import("../../runtime/diagnostics/error_scope.zig");
 const contract = @import("../../contracts/command_recording.zig");
 
+/// Invalidates the encoder with its first cause. WebGPU reports encoder
+/// validation at finish() (https://gpuweb.github.io/gpuweb/#dom-gpucommandencoder-finish),
+/// so the error is generated there, inside the caller's error scope.
 pub fn fail(encoder: *objects.DoeCommandEncoder, cause: contract.Failure) void {
-    if (encoder.state.fail(cause))
-        encoder.dev.error_scopes.deliver(errors.zig_error_to_type(cause), contract.message(cause));
+    _ = encoder.state.fail(cause);
+}
+
+/// The error finish() generates for a non-open encoder: the recorded cause,
+/// or InvalidState for a finished or still-locked (open pass) encoder.
+pub fn reportAtFinish(encoder: *objects.DoeCommandEncoder) void {
+    const cause: contract.Failure = switch (encoder.state) {
+        .open => return,
+        .failed => |recorded| recorded,
+        .pass, .finished => error.InvalidState,
+    };
+    encoder.dev.error_scopes.deliver(errors.zig_error_to_type(cause), contract.message(cause));
+}
+
+/// https://gpuweb.github.io/gpuweb/#abstract-opdef-validate-the-encoder-state:
+/// a command on an ended encoder or pass generates its validation error now;
+/// a command on a locked encoder (a pass is open) invalidates it, reported at
+/// finish(); an already invalid encoder stays silent.
+fn reportEnded(encoder: *objects.DoeCommandEncoder) void {
+    encoder.dev.error_scopes.deliver(errors.ERROR_TYPE_VALIDATION, contract.message(error.InvalidState));
 }
 
 pub fn requireOpen(encoder: *objects.DoeCommandEncoder) bool {
-    if (encoder.state == .open) return true;
-    fail(encoder, error.InvalidState);
+    switch (encoder.state) {
+        .open => return true,
+        .finished => reportEnded(encoder),
+        .pass => fail(encoder, error.InvalidState),
+        .failed => {},
+    }
     return false;
 }
 
 pub fn requireRecording(encoder: *objects.DoeCommandEncoder) bool {
-    if (encoder.state == .open or encoder.state == .pass) return true;
-    fail(encoder, error.InvalidState);
+    switch (encoder.state) {
+        .open, .pass => return true,
+        .finished => reportEnded(encoder),
+        .failed => {},
+    }
     return false;
 }
 
 pub fn requirePass(encoder: *objects.DoeCommandEncoder, identity: usize) bool {
-    if (encoder.state == .pass and encoder.state.pass == identity) return true;
-    fail(encoder, error.InvalidState);
+    switch (encoder.state) {
+        .pass => |current| if (current == identity) return true else reportEnded(encoder),
+        .failed => {},
+        .open, .finished => reportEnded(encoder),
+    }
     return false;
 }
 

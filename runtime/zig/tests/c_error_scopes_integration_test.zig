@@ -125,6 +125,8 @@ test "C error scopes integration: actual recording failure preserves first diagn
     device.error_scopes.push(2);
     try std.testing.expect(!recording.reserve(&encoder, 1, 0));
     try std.testing.expect(!recording.reserve(&encoder, 1, 0));
+    // finish() generates the first recorded cause.
+    recording.reportAtFinish(&encoder);
     var capture: Capture = .{};
     _ = device.error_scopes.pop(.{ .callback = Capture.receive, .userdata1 = &capture, .userdata2 = &capture.count });
     try std.testing.expectEqual(@as(u32, 3), capture.error_type);
@@ -142,6 +144,7 @@ test "C error scopes integration: actual immediate layout and recording validati
     device.error_scopes.push(1);
     @import("../src/native/command/doe_immediates_external_native.zig").doeNativeComputePassSetImmediates(&pass, 1, null, 0);
     try std.testing.expectEqual(error.ImmediateDataUnsupported, encoder.state.failed);
+    recording.reportAtFinish(&encoder);
     var capture: Capture = .{};
     _ = device.error_scopes.pop(.{ .callback = Capture.receive, .userdata1 = &capture, .userdata2 = &capture.count });
     try std.testing.expectEqual(@as(u32, 2), capture.error_type);
