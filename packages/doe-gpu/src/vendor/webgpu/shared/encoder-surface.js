@@ -166,6 +166,12 @@ function encoderSkipsUse(encoder, path, first = null, second = null) {
 // has no native pass, its encoder is already invalid, or it names an invalid
 // object.
 function passSkipsCommand(pass, encoder, path, first = null, second = null) {
+  if (pass === encoder && encoder._finished === true && !isDeviceLost(encoder._device)) {
+    // A render bundle encoder after finish(): a validation error, and nothing
+    // reaches its finished native encoder.
+    deliverDeviceError(encoder._device, 'validation', new GPUValidationError(`${path}: the render bundle encoder is already finished`));
+    return true;
+  }
   return pass._invalid || encoder._invalidMessage != null || encoderSkipsUse(encoder, path, first, second);
 }
 
@@ -341,6 +347,7 @@ function createEncoderClasses(backend) {
         return;
       }
       backend.computePassEnd(this);
+      if (this._encoder._openPass === this) this._encoder._openPass = null;
     }
   }
 
@@ -542,6 +549,7 @@ function createEncoderClasses(backend) {
         return;
       }
       backend.renderPassEnd(this);
+      if (this._encoder._openPass === this) this._encoder._openPass = null;
     }
   }
 
@@ -688,14 +696,17 @@ function createEncoderClasses(backend) {
     }
 
     pushDebugGroup(groupLabel) {
+      if (this._finished && passSkipsCommand(this, this, 'GPURenderBundleEncoder.pushDebugGroup')) return;
       if (passInert(this)) return;
       backend.renderBundleEncoderPushDebugGroup(this, groupLabel);
     }
     popDebugGroup() {
+      if (this._finished && passSkipsCommand(this, this, 'GPURenderBundleEncoder.popDebugGroup')) return;
       if (passInert(this)) return;
       backend.renderBundleEncoderPopDebugGroup(this);
     }
     insertDebugMarker(markerLabel) {
+      if (this._finished && passSkipsCommand(this, this, 'GPURenderBundleEncoder.insertDebugMarker')) return;
       if (passInert(this)) return;
       backend.renderBundleEncoderInsertDebugMarker(this, markerLabel);
     }
@@ -703,6 +714,10 @@ function createEncoderClasses(backend) {
     finish(descriptor) {
       this._assertOpen('GPURenderBundleEncoder.finish');
       const device = this._device;
+      if (this._finished && !isDeviceLost(device)) {
+        deliverDeviceError(device, 'validation', new GPUValidationError('GPURenderBundleEncoder.finish: the render bundle encoder is already finished'));
+        return markInvalid(new DoeGPURenderBundle(null, device), descriptor?.label);
+      }
       if (isDeviceLost(device)) {
         this._finished = true;
         return markInvalid(new DoeGPURenderBundle(null, device), descriptor?.label);
@@ -757,6 +772,7 @@ function createEncoderClasses(backend) {
     constructor(state, device) {
       this._device = device;
       this._invalidMessage = null;
+      this._openPass = null;
       this.label = '';
       initResource(this, 'GPUCommandEncoder', device);
       backend.commandEncoderInit(this, state);
@@ -781,6 +797,7 @@ function createEncoderClasses(backend) {
       }
       const pass = backend.commandEncoderBeginComputePass(this, descriptor, classes);
       pass.label = descriptor?.label ?? '';
+      this._openPass = pass;
       return pass;
     }
 
@@ -798,6 +815,7 @@ function createEncoderClasses(backend) {
       }
       const pass = backend.commandEncoderBeginRenderPass(this, passDescriptor, classes);
       pass.label = passDescriptor.label ?? '';
+      this._openPass = pass;
       return pass;
     }
 
@@ -979,8 +997,15 @@ function createEncoderClasses(backend) {
     }
 
     finish(descriptor) {
-      this._assertOpen('GPUCommandEncoder.finish');
       const device = this._device;
+      if (this._openPass !== null && !this._openPass._ended && !this._finished && !isDeviceLost(device)) {
+        // A locked encoder (a pass still open) finishes into an invalid
+        // command buffer with a validation error; it records nothing more.
+        this._finished = true;
+        deliverDeviceError(device, 'validation', new GPUValidationError('GPUCommandEncoder.finish: the command encoder has an open pass'));
+        return markInvalid(new DoeGPUCommandBuffer({ _batched: true, _commands: [] }, device), descriptor?.label);
+      }
+      this._assertOpen('GPUCommandEncoder.finish');
       if (isDeviceLost(device)) {
         // A lost device's encoder finishes into an invalid command buffer
         // without touching the provider; no error is generated.
