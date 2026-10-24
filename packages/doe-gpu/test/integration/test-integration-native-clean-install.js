@@ -4,6 +4,7 @@ import { copyFile, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promi
 import { release, tmpdir } from 'node:os';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { assertStagedPlatformFresh } from '../../scripts/platform-staging.js';
 
 // These tests resolve the library shipped in the installed platform package.
 // A developer DOE_WEBGPU_LIB override would bypass exactly that resolution.
@@ -91,6 +92,7 @@ if (!existsSync(stagedPlatformLibrary)) {
   console.log(`doe-gpu native clean-install integration: skipped unstaged ${platformPackageName}`);
   process.exit(0);
 }
+assertStagedPlatformFresh({ platformPackageRoot, packageRoot, workspaceRoot: repoRoot, libraryFilename: platformLibraryName });
 
 const scratch = await mkdtemp(join(tmpdir(), 'doe-gpu-native-clean-install-'));
 const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm';

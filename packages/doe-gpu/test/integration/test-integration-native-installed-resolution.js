@@ -4,6 +4,7 @@ import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { assertStagedPlatformFresh } from '../../scripts/platform-staging.js';
 
 // These tests resolve the library shipped in the installed platform package.
 // A developer DOE_WEBGPU_LIB override would bypass exactly that resolution.
@@ -33,6 +34,7 @@ if (!existsSync(resolve(platformPackageRoot, 'bin', platformLibraryName))) {
   console.log(`installed native resolution: skipped unstaged ${platformPackageName}`);
   process.exit(0);
 }
+assertStagedPlatformFresh({ platformPackageRoot, packageRoot, workspaceRoot: dirname(packagesRoot), libraryFilename: platformLibraryName });
 
 const scratchAlias = await mkdtemp(join(tmpdir(), 'doe-gpu-installed-resolution-'));
 const scratch = realpathSync.native(scratchAlias);
