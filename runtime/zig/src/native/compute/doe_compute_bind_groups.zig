@@ -3,6 +3,7 @@ const native_shared = @import("../support/doe_native_shared_types.zig");
 const native_types = @import("../support/doe_native_object_types.zig");
 const native_helpers = @import("../support/doe_native_object_helpers.zig");
 const binding_contract = @import("../../contracts/binding.zig");
+const abi_binding = @import("../../core/abi/wgpu_binding_base_types.zig");
 
 pub const MAX_BIND = native_shared.MAX_BIND;
 pub const MAX_COMPUTE_BIND_GROUPS = native_shared.MAX_COMPUTE_BIND_GROUPS;
@@ -144,16 +145,51 @@ pub fn validatePipelineBindGroups(
     }
 }
 
-/// Every binding the entry points use (`required_kinds`, per flat slot)
-/// must be in its group of the explicit pipeline layout with a matching
-/// resource kind (https://gpuweb.github.io/gpuweb/#abstract-opdef-validating-shader-binding).
-pub fn pipelineLayoutAdmitsBindings(layout: *const native_types.DoePipelineLayout, required_kinds: *const [MAX_FLAT_BIND]u8) bool {
-    for (required_kinds, 0..) |kind, slot| {
+/// How a pipeline's entry points use their bindings, per flat slot.
+pub const BindingUse = struct {
+    /// Layout resource kind (binding.LayoutResourceKind code, 0 = unused).
+    kinds: *const [MAX_FLAT_BIND]u8,
+    /// WGPUBufferBindingType a buffer binding needs.
+    buffer_types: *const [MAX_FLAT_BIND]u32,
+    /// WGPUShaderStage bits of the stages using each slot; `stage` when null.
+    stages: ?*const [MAX_FLAT_BIND]u8 = null,
+    stage: u8 = 0,
+};
+
+/// Every binding the entry points use must be in its group of the explicit
+/// pipeline layout with a matching resource kind, visible to every stage
+/// that uses it, and, for a buffer, of the buffer type the shader declares
+/// (https://gpuweb.github.io/gpuweb/#abstract-opdef-validating-shader-binding).
+/// Texture sample types and dimensions, sampler comparison and storage
+/// texture access and format are not compared: reflection does not record
+/// them. Entries of a Flat4 layout record only binding numbers and pass.
+pub fn pipelineLayoutAdmitsBindings(layout: *const native_types.DoePipelineLayout, use: BindingUse) bool {
+    for (use.kinds, 0..) |kind, slot| {
         if (kind == 0) continue;
         const group_index = slot / MAX_BIND;
         if (group_index >= layout.bind_group_layout_count) return false;
         const group_layout = layout.bind_group_layouts[group_index] orelse return false;
-        if (!layoutHasBinding(group_layout, @intCast(slot % MAX_BIND), kind)) return false;
+        const binding: u32 = @intCast(slot % MAX_BIND);
+        if (!layoutHasBinding(group_layout, binding, kind)) return false;
+        if (group_layout.entries_inline) continue;
+        const entry = for (layoutEntries(group_layout)) |candidate| {
+            if (candidate.binding == binding) break candidate;
+        } else unreachable;
+        const stages: u64 = if (use.stages) |per_slot| per_slot[slot] else use.stage;
+        if (entry.visibility & stages != stages) return false;
+        if (kind == binding_contract.layoutResourceKindCode(.buffer)) {
+            const declared = if (entry.buffer_binding_type == abi_binding.WGPUBufferBindingType_Undefined)
+                abi_binding.WGPUBufferBindingType_Uniform
+            else
+                entry.buffer_binding_type;
+            const required = use.buffer_types[slot];
+            // Reflection reports a storage variable with the default access
+            // (var<storage>, which is read) as read_write, so a read-only
+            // storage layout entry also serves a "storage" requirement.
+            const default_access_gap = required == abi_binding.WGPUBufferBindingType_Storage and
+                declared == abi_binding.WGPUBufferBindingType_ReadOnlyStorage;
+            if (declared != required and !default_access_gap) return false;
+        }
     }
     return true;
 }
@@ -292,24 +328,45 @@ test "validateDrawBindGroups compares every layout entry member, including visib
     try std.testing.expectError(error.DrawBindGroupIncompatible, validateDrawBindGroups(&pipeline, &.{&wrong}));
 }
 
-test "pipelineLayoutAdmitsBindings requires each used binding in its group with a matching kind" {
-    var entries = [_]native_shared.DoeBindGroupLayoutEntry{.{ .binding = 0, .resource_kind = 1 }};
+test "pipelineLayoutAdmitsBindings requires each used binding in its group with a matching kind, stage and buffer type" {
+    const uniform = abi_binding.WGPUBufferBindingType_Uniform;
+    var entries = [_]native_shared.DoeBindGroupLayoutEntry{.{ .binding = 0, .resource_kind = 1, .visibility = 4, .buffer_binding_type = uniform }};
     var group = native_types.DoeBindGroupLayout{ .entry_count = 1, .entries = entries[0..] };
     var empty = native_types.DoeBindGroupLayout{};
     var layout = native_types.DoePipelineLayout{ .bind_group_layout_count = 2 };
     layout.bind_group_layouts[0] = &empty;
     layout.bind_group_layouts[1] = &group;
     var kinds = [_]u8{0} ** MAX_FLAT_BIND;
+    var buffer_types = [_]u32{abi_binding.WGPUBufferBindingType_Storage} ** MAX_FLAT_BIND;
+    buffer_types[flatBindSlot(1, 0)] = uniform;
+    const use = BindingUse{ .kinds = &kinds, .buffer_types = &buffer_types, .stage = 4 };
     kinds[flatBindSlot(1, 0)] = 1;
-    try std.testing.expect(pipelineLayoutAdmitsBindings(&layout, &kinds));
+    try std.testing.expect(pipelineLayoutAdmitsBindings(&layout, use));
+    // Another stage, another buffer type.
+    try std.testing.expect(!pipelineLayoutAdmitsBindings(&layout, .{ .kinds = &kinds, .buffer_types = &buffer_types, .stage = 2 }));
+    buffer_types[flatBindSlot(1, 0)] = abi_binding.WGPUBufferBindingType_ReadOnlyStorage;
+    try std.testing.expect(!pipelineLayoutAdmitsBindings(&layout, use));
+    buffer_types[flatBindSlot(1, 0)] = uniform;
+    // A read-only storage entry serves a shader storage variable (whose
+    // reflected access may be the default read); a storage entry does not
+    // serve a read-only one.
+    entries[0].buffer_binding_type = abi_binding.WGPUBufferBindingType_ReadOnlyStorage;
+    buffer_types[flatBindSlot(1, 0)] = abi_binding.WGPUBufferBindingType_Storage;
+    try std.testing.expect(pipelineLayoutAdmitsBindings(&layout, use));
+    entries[0].buffer_binding_type = abi_binding.WGPUBufferBindingType_Storage;
+    buffer_types[flatBindSlot(1, 0)] = abi_binding.WGPUBufferBindingType_ReadOnlyStorage;
+    try std.testing.expect(!pipelineLayoutAdmitsBindings(&layout, use));
+    entries[0].buffer_binding_type = uniform;
+    buffer_types[flatBindSlot(1, 0)] = uniform;
+    // A binding missing from its group, another resource kind, a missing group.
     kinds[flatBindSlot(0, 0)] = 1;
-    try std.testing.expect(!pipelineLayoutAdmitsBindings(&layout, &kinds));
+    try std.testing.expect(!pipelineLayoutAdmitsBindings(&layout, use));
     kinds[flatBindSlot(0, 0)] = 0;
     kinds[flatBindSlot(1, 0)] = 3;
-    try std.testing.expect(!pipelineLayoutAdmitsBindings(&layout, &kinds));
+    try std.testing.expect(!pipelineLayoutAdmitsBindings(&layout, use));
     kinds[flatBindSlot(1, 0)] = 0;
     kinds[flatBindSlot(2, 0)] = 1;
-    try std.testing.expect(!pipelineLayoutAdmitsBindings(&layout, &kinds));
+    try std.testing.expect(!pipelineLayoutAdmitsBindings(&layout, use));
 }
 
 test "collectFlatResources preserves separate flattened texture and sampler slots" {

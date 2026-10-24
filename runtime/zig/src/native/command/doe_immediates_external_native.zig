@@ -116,18 +116,20 @@ test "setImmediates accepts aligned ranges within the limit and invalidates othe
     try std.testing.expectEqual(error.ImmediateDataRange, render_bundle.cast_bundle_encoder(encoder).?.state.failed);
 }
 
-test "immediate layouts reject unsupported state before retaining bindings" {
+test "pipeline layouts validate immediateSize before retaining bindings" {
     const bindings = @import("../resource/doe_bind_group_native.zig");
     const abi = @import("../../core/abi/wgpu_pipeline_descriptor_types.zig");
     var device = native_types.DoeDevice{};
     var group = native_types.DoeBindGroupLayout{};
-    try std.testing.expect(bindings.doeNativeDeviceCreatePipelineLayoutOne(&device, &group, 4) == null);
+    try std.testing.expect(bindings.doeNativeDeviceCreatePipelineLayoutOne(&device, &group, 2) == null);
     var descriptor = std.mem.zeroes(abi.WGPUPipelineLayoutDescriptor);
-    descriptor.immediateSize = 4;
+    descriptor.immediateSize = native_types.DEFAULT_MAX_IMMEDIATE_SIZE + 4;
     try std.testing.expect(bindings.doeNativeDeviceCreatePipelineLayout(&device, &descriptor) == null);
     try std.testing.expectEqual(@as(u32, 1), group.ref_count);
-    const layout = bindings.doeNativeDeviceCreatePipelineLayoutOne(&device, &group, 0).?;
-    bindings.doeNativePipelineLayoutRelease(layout);
+    for ([_]u32{ 0, 4, native_types.DEFAULT_MAX_IMMEDIATE_SIZE }) |size| {
+        const layout = bindings.doeNativeDeviceCreatePipelineLayoutOne(&device, &group, size).?;
+        bindings.doeNativePipelineLayoutRelease(layout);
+    }
     try std.testing.expectEqual(@as(u32, 1), group.ref_count);
     try std.testing.expectError(error.InvalidArgument, validate_payload(64, 0, null, 4));
 }

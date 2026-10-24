@@ -109,8 +109,13 @@ pub const DoeDevice = struct {
     /// The device's maxComputeWorkgroupsPerDimension: the WebGPU default
     /// unless the device descriptor required more.
     max_compute_workgroups_per_dimension: u32 = DEFAULT_MAX_COMPUTE_WORKGROUPS_PER_DIMENSION,
-    /// setImmediates validates against this; no layout admits immediates yet.
+    /// setImmediates and pipeline layout immediateSize validate against this;
+    /// no shader uses immediates yet.
     max_immediate_size: u32 = DEFAULT_MAX_IMMEDIATE_SIZE,
+    /// WebGPU's default per-pipeline-layout dynamic buffer limits, which
+    /// every Doe device reports.
+    max_dynamic_uniform_buffers_per_pipeline_layout: u32 = 8,
+    max_dynamic_storage_buffers_per_pipeline_layout: u32 = 4,
     external_ref_count: u32 = 1,
     destroyed: bool = false,
     loss: ?*@import("doe_device_loss.zig").Event = null,
@@ -279,6 +284,8 @@ pub const DoeBindGroupLayout = struct {
     pub const TYPE_MAGIC = MAGIC_BGL;
     magic: u32 = TYPE_MAGIC,
     ref_count: u32 = 1,
+    /// The creating device, compared by identity only (not retained).
+    device: ?*const DoeDevice = null,
     entry_count: u32 = 0,
     entries: ?[]shared.DoeBindGroupLayoutEntry = null,
     inline_entries: [4]shared.DoeBindGroupLayoutEntry = undefined,
@@ -504,6 +511,10 @@ pub const DoeRenderPipeline = struct {
     /// every slot the vertex and fragment entry points use; draws check bind
     /// groups against it when the pipeline has an automatic layout.
     required_binding_kinds: [shared.MAX_FLAT_BIND]u8 = [_]u8{0} ** shared.MAX_FLAT_BIND,
+    /// WGPUBufferBindingType each buffer binding needs and WGPUShaderStage
+    /// bits of the stages using each slot.
+    required_buffer_types: [shared.MAX_FLAT_BIND]u32 = [_]u32{0} ** shared.MAX_FLAT_BIND,
+    required_stages: [shared.MAX_FLAT_BIND]u8 = [_]u8{0} ** shared.MAX_FLAT_BIND,
     required_binding_kinds_ready: bool = false,
 };
 

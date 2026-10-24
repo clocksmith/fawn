@@ -298,6 +298,8 @@ pub export fn doeNativeDeviceGetLimits(raw: ?*anyopaque, limits: ?*abi_callback.
         l.minStorageBufferOffsetAlignment = d.buffer_offset_alignment.storage;
         l.maxComputeWorkgroupsPerDimension = d.max_compute_workgroups_per_dimension;
         l.maxImmediateSize = d.max_immediate_size;
+        l.maxDynamicUniformBuffersPerPipelineLayout = d.max_dynamic_uniform_buffers_per_pipeline_layout;
+        l.maxDynamicStorageBuffersPerPipelineLayout = d.max_dynamic_storage_buffers_per_pipeline_layout;
     };
     return status;
 }

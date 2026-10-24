@@ -307,6 +307,7 @@ pub export fn doeNativeDeviceCreateBindGroupLayout(dev_raw: ?*anyopaque, desc: ?
         }
     }
     bgl.* = .{
+        .device = owner,
         .entry_count = @intCast(d.entryCount),
         .entries = stored_entries,
     };
@@ -321,6 +322,7 @@ pub export fn doeNativeDeviceCreateBufferBindGroupLayoutFlat4(dev_raw: ?*anyopaq
     if (entry_count > FLAT_BUFFER_BIND_GROUP_ENTRY_LIMIT) return null;
     const bgl = make(DoeBindGroupLayout) orelse return null;
     bgl.* = .{
+        .device = owner,
         .entry_count = entry_count,
         .entries_inline = true,
     };
@@ -589,30 +591,57 @@ pub export fn doeNativeBindGroupRelease(raw: ?*anyopaque) callconv(.c) void {
     }
 }
 
-fn rejectImmediateLayout(device_raw: ?*anyopaque, immediate_size: u32) bool {
-    if (immediate_size == 0) return false;
-    if (cast(DoeDevice, device_raw)) |device| {
-        const cause = error.ImmediateDataUnsupported;
-        device.error_scopes.deliver(
-            @import("../../runtime/diagnostics/error_scope.zig").zig_error_to_type(cause),
-            @import("../../contracts/command_recording.zig").message(cause),
-        );
+/// createPipelineLayout validation
+/// (https://gpuweb.github.io/gpuweb/#dom-gpudevice-createpipelinelayout):
+/// immediateSize is 4-byte aligned and within maxImmediateSize, every bind
+/// group layout belongs to the device, and the layouts' dynamic uniform and
+/// storage buffers stay within the per-pipeline-layout limits. Returns the
+/// failure message, or null when the layout is valid. No shader uses
+/// immediates yet, so an accepted immediateSize is never read.
+fn pipelineLayoutFailure(device: *const DoeDevice, layouts: []const ?*anyopaque, immediate_size: u32) ?[]const u8 {
+    if (layouts.len > MAX_COMPUTE_BIND_GROUPS) return "createPipelineLayout: bindGroupLayouts exceeds maxBindGroups";
+    if (immediate_size % 4 != 0 or immediate_size > device.max_immediate_size)
+        return "createPipelineLayout: immediateSize must be a multiple of 4 and at most maxImmediateSize";
+    var dynamic_uniform: u32 = 0;
+    var dynamic_storage: u32 = 0;
+    for (layouts) |raw| {
+        const handle = raw orelse continue;
+        const layout = cast(DoeBindGroupLayout, handle) orelse return "createPipelineLayout: bindGroupLayouts holds an invalid bind group layout";
+        if (layout.device) |owner| if (owner != device) return "createPipelineLayout: a bind group layout belongs to a different device";
+        const entries = layout.entries orelse continue;
+        for (entries[0..@min(entries.len, layout.entry_count)]) |entry| {
+            if (entry.resource_kind != RESOURCE_KIND_BUFFER or !entry.buffer_has_dynamic_offset) continue;
+            if (entry.buffer_binding_type == abi_binding.WGPUBufferBindingType_Storage or
+                entry.buffer_binding_type == abi_binding.WGPUBufferBindingType_ReadOnlyStorage)
+                dynamic_storage += 1
+            else
+                dynamic_uniform += 1;
+        }
     }
+    if (dynamic_uniform > device.max_dynamic_uniform_buffers_per_pipeline_layout)
+        return "createPipelineLayout: dynamic uniform buffers exceed maxDynamicUniformBuffersPerPipelineLayout";
+    if (dynamic_storage > device.max_dynamic_storage_buffers_per_pipeline_layout)
+        return "createPipelineLayout: dynamic storage buffers exceed maxDynamicStorageBuffersPerPipelineLayout";
+    return null;
+}
+
+fn rejectPipelineLayout(device: *DoeDevice, layouts: []const ?*anyopaque, immediate_size: u32) bool {
+    const message = pipelineLayoutFailure(device, layouts, immediate_size) orelse return false;
+    device.error_scopes.deliver(@import("../../runtime/diagnostics/error_scope.zig").ERROR_TYPE_VALIDATION, message);
     return true;
 }
 
 pub export fn doeNativeDeviceCreatePipelineLayout(dev_raw: ?*anyopaque, desc: ?*const abi_pipeline.WGPUPipelineLayoutDescriptor) callconv(.c) ?*anyopaque {
     const owner = cast(DoeDevice, dev_raw) orelse return null;
     if (!owner.requireAlive()) return null;
-    if (desc) |pd| if (rejectImmediateLayout(dev_raw, pd.immediateSize)) return null;
+    if (desc) |pd| {
+        const layouts: []const ?*anyopaque = if (pd.bindGroupLayoutCount == 0) &.{} else @ptrCast(pd.bindGroupLayouts[0..pd.bindGroupLayoutCount]);
+        if (rejectPipelineLayout(owner, layouts, pd.immediateSize)) return null;
+    }
     const pl = make(DoePipelineLayout) orelse return null;
     pl.* = .{};
     const pl_result = toOpaque(pl);
     if (desc) |pd| {
-        if (pd.bindGroupLayoutCount > MAX_COMPUTE_BIND_GROUPS) {
-            doeNativePipelineLayoutRelease(pl_result);
-            return null;
-        }
         pl.immediate_size = pd.immediateSize;
         pl.bind_group_layout_count = @intCast(pd.bindGroupLayoutCount);
         for (0..pd.bindGroupLayoutCount) |index| {
@@ -679,7 +708,7 @@ pub export fn doeNativePipelineAdoptAutoBindGroupLayout(pipeline_raw: ?*anyopaqu
 pub export fn doeNativeDeviceCreatePipelineLayoutOne(dev_raw: ?*anyopaque, layout_raw: ?*anyopaque, immediate_size: u32) callconv(.c) ?*anyopaque {
     const owner = cast(DoeDevice, dev_raw) orelse return null;
     if (!owner.requireAlive()) return null;
-    if (rejectImmediateLayout(dev_raw, immediate_size)) return null;
+    if (rejectPipelineLayout(owner, &.{layout_raw}, immediate_size)) return null;
     const layout = cast(DoeBindGroupLayout, layout_raw) orelse return null;
     const pl = make(DoePipelineLayout) orelse return null;
     pl.* = .{
@@ -807,4 +836,23 @@ test "doeNativePipelineAdoptAutoBindGroupLayout gives each automatic pipeline it
     try std.testing.expectEqual(@as(u32, 0), doeNativePipelineAdoptAutoBindGroupLayout(toOpaque(&explicit), 0, 0, toOpaque(&c)));
     try std.testing.expectEqual(@as(u32, 0), doeNativePipelineAdoptAutoBindGroupLayout(toOpaque(&first), 0, MAX_COMPUTE_BIND_GROUPS, toOpaque(&c)));
     try std.testing.expect(!c.automatic);
+}
+
+test "createPipelineLayout rejects another device's layouts and too many dynamic buffers" {
+    const abi = @import("../../core/abi/wgpu_pipeline_descriptor_types.zig");
+    var device = DoeDevice{};
+    var other = DoeDevice{};
+    var foreign = DoeBindGroupLayout{ .device = &other };
+    var dynamic_entries = [_]DoeBindGroupLayoutEntry{.{ .resource_kind = RESOURCE_KIND_BUFFER, .buffer_has_dynamic_offset = true, .buffer_binding_type = abi_binding.WGPUBufferBindingType_Storage }} ** 3;
+    for (&dynamic_entries, 0..) |*entry, binding| entry.binding = @intCast(binding);
+    var storage = DoeBindGroupLayout{ .device = &device, .entry_count = 3, .entries = dynamic_entries[0..] };
+    try std.testing.expectEqual(@as(?[]const u8, null), pipelineLayoutFailure(&device, &.{ toOpaque(&storage), null }, 0));
+    try std.testing.expect(pipelineLayoutFailure(&device, &.{ toOpaque(&storage), toOpaque(&storage) }, 0) != null);
+    try std.testing.expect(pipelineLayoutFailure(&device, &.{toOpaque(&foreign)}, 0) != null);
+    var descriptor = std.mem.zeroes(abi.WGPUPipelineLayoutDescriptor);
+    const layouts = [_]?*anyopaque{toOpaque(&foreign)};
+    descriptor.bindGroupLayoutCount = 1;
+    descriptor.bindGroupLayouts = @ptrCast(&layouts);
+    try std.testing.expect(doeNativeDeviceCreatePipelineLayout(toOpaque(&device), &descriptor) == null);
+    try std.testing.expectEqual(@as(u32, 1), foreign.ref_count);
 }

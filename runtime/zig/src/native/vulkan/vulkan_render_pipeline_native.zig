@@ -10,6 +10,7 @@ const wgsl_bindings = @import("../../compiler/wgsl/pipeline/binding_reflection.z
 const wgsl_ir = @import("../../compiler/wgsl/ir/ir.zig");
 const shader_binding_reflection = @import("../shader/shader_binding_reflection.zig");
 const compute_bind_groups = @import("../compute/doe_compute_bind_groups.zig");
+const abi_binding = @import("../../core/abi/wgpu_binding_base_types.zig");
 
 pub fn vulkan_create_render_pipeline(
     dev: *shared.DoeDevice,
@@ -188,8 +189,9 @@ pub fn vulkan_create_render_pipeline(
         dev.error_scopes.deliver(error_scope.ERROR_TYPE_VALIDATION, "render pipeline entry point does not name a vertex or fragment entry point of its shader module");
         return false;
     }
-    if (pip.layout) |layout| if (pip.required_binding_kinds_ready and !compute_bind_groups.pipelineLayoutAdmitsBindings(layout, &pip.required_binding_kinds)) {
-        dev.error_scopes.deliver(error_scope.ERROR_TYPE_VALIDATION, "render pipeline layout lacks a binding the entry points use, or has it with another resource type");
+    const use = compute_bind_groups.BindingUse{ .kinds = &pip.required_binding_kinds, .buffer_types = &pip.required_buffer_types, .stages = &pip.required_stages };
+    if (pip.layout) |layout| if (pip.required_binding_kinds_ready and !compute_bind_groups.pipelineLayoutAdmitsBindings(layout, use)) {
+        dev.error_scopes.deliver(error_scope.ERROR_TYPE_VALIDATION, "render pipeline layout lacks a binding the entry points use, or has it with another resource or buffer type or without the stage's visibility");
         return false;
     };
     retainShaderCode(native_helpers.alloc, pip, vertex, fragment, vertex_entry, fragment_entry) catch |err| {
@@ -217,6 +219,8 @@ fn admitStageEntryPoints(
     fragment_entry: ?[]const u8,
 ) bool {
     @memset(&pipeline.required_binding_kinds, 0);
+    @memset(&pipeline.required_buffer_types, 0);
+    @memset(&pipeline.required_stages, 0);
     pipeline.required_binding_kinds_ready = false;
     var checked = true;
     switch (stageEntryPoint(pipeline, vertex, vertex_entry, .vertex)) {
@@ -254,7 +258,14 @@ fn stageEntryPoint(pipeline: *shared.DoeRenderPipeline, module: ?*const shared.D
     const count = wgsl_bindings.extractEntryPointBindings(native_helpers.alloc, &module_ir, name, &metadata) catch return .unchecked;
     for (metadata[0..count]) |meta| {
         if (meta.group >= native_shared.MAX_RENDER_BIND_GROUPS or meta.binding >= native_shared.MAX_BIND) continue;
-        pipeline.required_binding_kinds[meta.group * native_shared.MAX_BIND + meta.binding] = shader_binding_reflection.requiredLayoutKind(meta.kind);
+        const slot = meta.group * native_shared.MAX_BIND + meta.binding;
+        pipeline.required_binding_kinds[slot] = shader_binding_reflection.requiredLayoutKind(meta.kind);
+        pipeline.required_buffer_types[slot] = shader_binding_reflection.bufferBindingType(shader_binding_reflection.bindingInfo(meta));
+        pipeline.required_stages[slot] |= switch (stage) {
+            .vertex => @as(u8, @intCast(abi_binding.WGPUShaderStage_Vertex)),
+            .fragment => @as(u8, @intCast(abi_binding.WGPUShaderStage_Fragment)),
+            .compute => @as(u8, @intCast(abi_binding.WGPUShaderStage_Compute)),
+        };
     }
     return .checked;
 }
