@@ -662,6 +662,27 @@ pub fn vulkan_collect_recorded_bind_group_state(
     state.valid = true;
 }
 
+/// Add setBindGroup dynamic offsets to recorded buffer bindings. The prepared
+/// binding cache keeps base offsets, so the descriptor hash is recomputed here.
+pub fn vulkan_apply_dynamic_offsets(
+    state: *native_cmds.RecordedVulkanBindingState,
+    dynamic_offsets: *const [native_shared.MAX_COMPUTE_BIND_GROUPS]native_shared.BindGroupDynamicOffsets,
+) void {
+    var changed = false;
+    for (state.bindings[0..state.count]) |*binding| {
+        if (binding.resource_kind != .buffer) continue;
+        if (binding.group >= dynamic_offsets.len or binding.binding >= native_shared.MAX_BIND) continue;
+        const offset = dynamic_offsets[binding.group][binding.binding];
+        if (offset == 0) continue;
+        binding.buffer_offset += offset;
+        changed = true;
+    }
+    if (!changed) return;
+    var hasher = pipeline_hash.DescriptorBindingsHasher{};
+    for (state.bindings[0..state.count]) |binding| hasher.update(binding);
+    state.descriptor_hash = hasher.final();
+}
+
 pub fn vulkan_prepare_dispatch_binding_state(
     rt: *NativeVulkanRuntime,
     pip: *const DoeComputePipeline,

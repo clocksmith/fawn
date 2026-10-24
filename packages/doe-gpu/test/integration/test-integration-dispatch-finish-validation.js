@@ -3,18 +3,19 @@
 // provider's validation result surfaces at finish() as WebGPU requires, and
 // submitting the invalid command buffer is a second validation error.
 //
-// Known provider gap: the Zig drop-in records these dispatches without
-// validating workgroup counts or bind group compatibility, so the package keeps
-// deferring them to its submit-time flush there (index.js
-// deferNodeDispatchesToSubmit). On that provider this test checks that a valid
-// deferred dispatch still runs.
+// Known provider gap: the Zig drop-in does not yet validate automatic-layout
+// bind groups at record time, so the package keeps deferring its dispatch-only
+// encoders to the submit-time flush (index.js deferNodeDispatchesToSubmit). On
+// that provider this test checks that a valid deferred dispatch still runs.
 
 import assert from 'node:assert/strict';
 import { providerInfo, setupGlobals } from '../../src/index.js';
 
 const target = {};
 setupGlobals(target);
-const adapter = await target.navigator.gpu.requestAdapter();
+// A provider may offer its only adapter (lavapipe for the C runtime) as the fallback.
+const adapter = await target.navigator.gpu.requestAdapter()
+  ?? await target.navigator.gpu.requestAdapter({ forceFallbackAdapter: true });
 if (!adapter) {
   console.log('dispatch finish validation: skipped (GPU adapter unavailable)');
   process.exit(0);
@@ -23,7 +24,7 @@ const device = await adapter.requestDevice();
 const { GPUBufferUsage, GPUMapMode, GPUValidationError } = target;
 const flavor = providerInfo().libraryFlavor;
 const validatesDispatch = flavor !== 'doe-dropin';
-if (!validatesDispatch) console.log(`known gap: ${flavor} does not validate dispatches; checking the deferred dispatch runs`);
+if (!validatesDispatch) console.log(`known gap: ${flavor} defers dispatch-only encoders to submit; checking the deferred dispatch runs`);
 
 const module = device.createShaderModule({
   code: '@group(0) @binding(0) var<storage, read_write> value: u32; @compute @workgroup_size(1) fn main() { value = 5u; }',

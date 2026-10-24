@@ -90,7 +90,7 @@ fn populate_draw_cmd_from_pass(cmd: *model_render_types.RenderDrawCommand, pass:
     var tex_count: u32 = 0;
     var samp_count: u32 = 0;
     var buffer_count: u32 = 0;
-    for (pass.bind_groups) |maybe_bg| {
+    for (pass.bind_groups, 0..) |maybe_bg, group_index| {
         const bg = maybe_bg orelse continue;
         var binding: usize = 0;
         while (binding < native_shared.MAX_BIND and buffer_count < model_render_types.MAX_RENDER_BIND_ENTRIES) : (binding += 1) {
@@ -101,7 +101,7 @@ fn populate_draw_cmd_from_pass(cmd: *model_render_types.RenderDrawCommand, pass:
             cmd.bind_buffer_handles[buffer_count] = handle;
             cmd.bind_buffer_bindings[buffer_count] = @intCast(binding);
             cmd.bind_buffer_types[buffer_count] = bg.vk_buffer_binding_types[binding];
-            cmd.bind_buffer_offsets[buffer_count] = bg.offsets[binding];
+            cmd.bind_buffer_offsets[buffer_count] = bg.offsets[binding] + pass.dynamic_offsets[group_index][binding];
             cmd.bind_buffer_sizes[buffer_count] = bg.buffer_sizes[binding];
             buffer_count += 1;
         }

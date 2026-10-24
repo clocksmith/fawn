@@ -2,12 +2,19 @@ const std = @import("std");
 const builtin = @import("builtin");
 const vk_upload = @import("../../src/backend/vulkan/vk_upload.zig");
 const vk_resources = @import("../../src/backend/vulkan/vk_resources.zig");
+const vk_memory_policy = @import("../../src/backend/vulkan/vk_memory_policy.zig");
 const vk_device = @import("../../src/backend/vulkan/vk_device.zig");
 const vk_constants = @import("../../src/backend/vulkan/vk_constants.zig");
 const backend_policy = @import("../../src/backend/backend_policy.zig");
 const native_runtime = @import("../../src/backend/vulkan/native_runtime.zig");
 const webgpu = @import("../../src/compat/webgpu_ffi.zig");
 const model = @import("../../src/contracts/model/model_gpu_types.zig");
+
+test "vulkan: zero-size compute buffers get a nonzero backing" {
+    try std.testing.expectEqual(@as(u64, 4), vk_memory_policy.buffer_backing_bytes(0));
+    try std.testing.expectEqual(@as(u64, 1), vk_memory_policy.buffer_backing_bytes(1));
+    try std.testing.expectEqual(@as(u64, 4096), vk_memory_policy.buffer_backing_bytes(4096));
+}
 
 // ============================================================
 // Upload path classification — pure logic

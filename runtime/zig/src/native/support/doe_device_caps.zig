@@ -289,7 +289,18 @@ pub export fn doeNativeDeviceHasFeature(raw: ?*anyopaque, feature: u32) callconv
 // doeNativeDeviceGetLimits — dispatches to Vulkan or Metal limits based on backend.
 // Vulkan limits are hardware-queried at adapter/device creation and cached; falls
 // back to conservative static limits when the cache entry is absent.
+/// Device limits are the adapter's capabilities with the device's buffer offset
+/// alignments, which are WebGPU defaults unless the descriptor required lower.
 pub export fn doeNativeDeviceGetLimits(raw: ?*anyopaque, limits: ?*abi_callback.WGPULimits) callconv(.c) abi_core.WGPUStatus {
+    const status = deviceCapabilityLimits(raw, limits);
+    if (native_helpers.cast(DoeDevice, raw)) |d| if (limits) |l| {
+        l.minUniformBufferOffsetAlignment = d.buffer_offset_alignment.uniform;
+        l.minStorageBufferOffsetAlignment = d.buffer_offset_alignment.storage;
+    };
+    return status;
+}
+
+fn deviceCapabilityLimits(raw: ?*anyopaque, limits: ?*abi_callback.WGPULimits) abi_core.WGPUStatus {
     if (native_helpers.cast(DoeDevice, raw)) |d| {
         if (d.backend == .metal) {
             if (limits) |l| l.* = build_limits(d.mtl_device);

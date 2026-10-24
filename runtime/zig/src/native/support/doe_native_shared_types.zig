@@ -13,6 +13,9 @@ pub const MAX_BIND: usize = 32;
 pub const MAX_RENDER_BIND_GROUPS: usize = 4;
 pub const MAX_COMPUTE_BIND_GROUPS: usize = 4;
 pub const MAX_FLAT_BIND: usize = MAX_BIND * MAX_COMPUTE_BIND_GROUPS;
+/// Bytes setBindGroup's dynamic offsets add to each binding number of a group.
+pub const BindGroupDynamicOffsets = [MAX_BIND]u64;
+pub const NO_DYNAMIC_OFFSETS: BindGroupDynamicOffsets = [_]u64{0} ** MAX_BIND;
 pub const VULKAN_PREPARED_BINDING_CACHE_CAPACITY: usize = 32;
 pub const MAX_VERTEX_BUFFERS: usize = 8;
 pub const MAX_VERTEX_ATTRIBUTES: usize = 16;

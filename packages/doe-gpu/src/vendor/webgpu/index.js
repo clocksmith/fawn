@@ -98,11 +98,6 @@ const TEXTURE_DIMENSION_MAP = Object.freeze({
   '3d': 3,
 });
 const nodeBufferSizes = new WeakMap();
-// The Zig drop-in hands a zero size to vkCreateBuffer and crashes
-// (runtime/zig/src/backend/vulkan/vk_resources.zig create_compute_buffer_with_kind).
-// Until it sizes its own allocation like the C provider does, only that
-// provider gets a native stand-in; the GPUBuffer keeps the size 0 it was given.
-const ZIG_ZERO_SIZE_BUFFER_STAND_IN_BYTES = 4;
 // Zero-size buffers the provider created mapped; mapping a zero-size range is
 // otherwise handled here, but these still need the provider's unmap.
 const nodeZeroSizeMappedAtCreation = new WeakSet();
@@ -907,10 +902,11 @@ function lazyDispatchesShareBoundSlots(commands) {
   return true;
 }
 
-// The Zig drop-in records dispatches without validating them, so recording at
-// finish() reports nothing there and doubled its finish+submit cost; its
-// submit-time flush stays. Remove this once Zig validates dispatches when they
-// are recorded (workgroup counts, missing or incompatible bind groups).
+// The Zig drop-in's submit-time flush is about twice as fast as recording at
+// finish(), and recording there reported nothing while Zig did not validate
+// dispatches. Zig now validates workgroup counts and explicit-layout bind
+// groups at record time, but not automatic-layout bind groups. Remove this
+// gate once it does, so its dispatch validation surfaces at finish().
 function deferNodeDispatchesToSubmit(commands) {
   if (libraryFlavor(currentDoeLibraryPath()) !== 'doe-dropin') {
     return false;
@@ -2518,14 +2514,11 @@ const fullSurfaceBackend = {
     return addon.deviceTakeErrors(device._native).map(createGpuError);
   },
   deviceCreateBuffer(device, validated) {
-    const nativeDescriptor = validated.size === 0 && libraryFlavor(currentDoeLibraryPath()) === 'doe-dropin'
-      ? { ...validated, size: ZIG_ZERO_SIZE_BUFFER_STAND_IN_BYTES, mappedAtCreation: false }
-      : validated;
-    const native = addon.createBuffer(assertLiveResource(device, 'GPUDevice.createBuffer', 'GPUDevice'), nativeDescriptor);
+    const native = addon.createBuffer(assertLiveResource(device, 'GPUDevice.createBuffer', 'GPUDevice'), validated);
     if (native === null) {
       return null;
     }
-    if (nativeDescriptor.size === 0 && nativeDescriptor.mappedAtCreation) {
+    if (validated.size === 0 && validated.mappedAtCreation) {
       nodeZeroSizeMappedAtCreation.add(native);
     }
     nodeBufferSizes.set(native, validated.size);

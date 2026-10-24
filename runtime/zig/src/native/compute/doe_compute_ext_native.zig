@@ -9,6 +9,7 @@ const native_cmds = @import("../support/doe_native_command_types.zig");
 const native_helpers = @import("../support/doe_native_object_helpers.zig");
 const compute_bind_groups = @import("doe_compute_bind_groups.zig");
 const compute_preconditions = @import("doe_compute_preconditions_native.zig");
+const bind_group_native = @import("../resource/doe_bind_group_native.zig");
 const vulkan_compute = @import("../vulkan/vulkan_compute_native.zig");
 const shader_native = @import("../shader/doe_shader_native.zig");
 const query_native = @import("../resource/doe_query_native.zig");
@@ -142,14 +143,20 @@ fn setPassPipeline(pass: *DoeComputePass, pip: ?*DoeComputePipeline) void {
     bumpPassState(pass);
 }
 
-fn setPassBindGroup(pass: *DoeComputePass, index: usize, bg: ?*DoeBindGroup) void {
+fn setPassBindGroup(
+    pass: *DoeComputePass,
+    index: usize,
+    bg: ?*DoeBindGroup,
+    dynamic_offsets: native_shared.BindGroupDynamicOffsets,
+) void {
     if (index >= pass.bind_groups.len) return;
-    if (pass.bind_groups[index] == bg) return;
+    if (pass.bind_groups[index] == bg and std.mem.eql(u64, &pass.dynamic_offsets[index], &dynamic_offsets)) return;
     if (bg) |group| {
         if (!recording.reserve(pass.enc, 0, 1)) return;
         references.retainBindGroupAssumeCapacity(&pass.enc.references, group);
     }
     pass.bind_groups[index] = bg;
+    pass.dynamic_offsets[index] = dynamic_offsets;
     bumpPassState(pass);
 }
 
@@ -192,7 +199,6 @@ pub export fn doeNativeComputePassSetPipeline(pass_raw: ?*anyopaque, pip_raw: ?*
 }
 
 pub export fn doeNativeComputePassSetBindGroup(pass_raw: ?*anyopaque, index: u32, bg_raw: ?*anyopaque, dyn_count: usize, dyn_offsets: ?[*]const u32) callconv(.c) void {
-    _ = dyn_offsets;
     const pass = cast(DoeComputePass, pass_raw) orelse return;
     if (!recording.requirePass(pass.enc, @intFromPtr(pass))) return;
     // D3D12 admits only layouts without dynamic bindings. A supplied offset
@@ -201,12 +207,59 @@ pub export fn doeNativeComputePassSetBindGroup(pass_raw: ?*anyopaque, index: u32
         recording.fail(pass.enc, error.InvalidArgument);
         return;
     }
-    if (index < MAX_COMPUTE_BIND_GROUPS) setPassBindGroup(pass, @intCast(index), cast(DoeBindGroup, bg_raw));
+    if (index >= MAX_COMPUTE_BIND_GROUPS) {
+        recording.fail(pass.enc, error.BindGroupIndexOutOfRange);
+        return;
+    }
+    if (dyn_count != 0 and dyn_offsets == null) {
+        recording.fail(pass.enc, error.InvalidArgument);
+        return;
+    }
+    const offsets: []const u32 = if (dyn_count == 0) &.{} else dyn_offsets.?[0..dyn_count];
+    const group = cast(DoeBindGroup, bg_raw);
+    var resolved = native_shared.NO_DYNAMIC_OFFSETS;
+    if (group) |bound| {
+        resolved = bind_group_native.resolveDynamicOffsets(
+            bound,
+            offsets,
+            bind_group_native.deviceDynamicOffsetAlignment(pass.enc.dev),
+        ) catch |err| {
+            recording.fail(pass.enc, err);
+            return;
+        };
+    } else if (offsets.len != 0) {
+        recording.fail(pass.enc, error.BindGroupDynamicOffsetCount);
+        return;
+    }
+    setPassBindGroup(pass, @intCast(index), group, resolved);
+}
+
+/// WebGPU dispatch validation at record time; a failure invalidates the encoder.
+fn validateDispatch(pass: *DoeComputePass, pip: *const DoeComputePipeline, counts: ?[3]u32) bool {
+    if (counts) |workgroups| {
+        if (pass.max_workgroups_per_dimension == 0) {
+            var limits = std.mem.zeroes(@import("../../core/abi/wgpu_callback_descriptor_types.zig").WGPULimits);
+            _ = @import("../support/doe_device_caps.zig").doeNativeDeviceGetLimits(toOpaque(pass.enc.dev), &limits);
+            pass.max_workgroups_per_dimension = limits.maxComputeWorkgroupsPerDimension;
+        }
+        for (workgroups) |count| {
+            if (count > pass.max_workgroups_per_dimension) {
+                recording.fail(pass.enc, error.DispatchWorkgroupCountExceeded);
+                return false;
+            }
+        }
+    }
+    compute_bind_groups.validateDispatchBindGroups(pip.layout, pass.bind_groups[0..]) catch |err| {
+        recording.fail(pass.enc, err);
+        return false;
+    };
+    return true;
 }
 
 fn appendRecordedDispatch(pass: *DoeComputePass, pip: *DoeComputePipeline, x: u32, y: u32, z: u32) void {
     if (!recording.requirePass(pass.enc, @intFromPtr(pass))) return;
     if (tryRepeatLastRecordedDispatch(pass, pip, x, y, z)) return;
+    if (!validateDispatch(pass, pip, .{ x, y, z })) return;
     if (!validate_dispatch_preconditions(pass, pip, .{ x, y, z })) return;
     var cmd = RecordedCmd{ .dispatch = .{
         .compute_pipeline = toOpaque(pip),
@@ -232,12 +285,14 @@ fn appendRecordedDispatch(pass: *DoeComputePass, pip: *DoeComputePipeline, x: u3
         &cmd.dispatch.buf_offsets,
         &cmd.dispatch.buf_sizes,
     );
+    compute_bind_groups.applyDynamicOffsets(&pass.dynamic_offsets, &cmd.dispatch.buf_offsets);
     if (pip.spirv_data != null) {
         vulkan_compute.vulkan_collect_recorded_bind_group_state(
             pip,
             pass.bind_groups[0..],
             &cmd.dispatch.vulkan_binding_state,
         );
+        vulkan_compute.vulkan_apply_dynamic_offsets(&cmd.dispatch.vulkan_binding_state, &pass.dynamic_offsets);
     }
     if (native_cmds.tryMergeDispatchIntoLast(&pass.enc.cmds, &cmd)) {
         rememberLastRecordedDispatch(pass, pip, x, y, z);
@@ -250,7 +305,7 @@ fn appendRecordedDispatch(pass: *DoeComputePass, pip: *DoeComputePipeline, x: u3
 pub export fn doeNativeComputePassDispatch(pass_raw: ?*anyopaque, x: u32, y: u32, z: u32) callconv(.c) void {
     const pass = cast(DoeComputePass, pass_raw) orelse return;
     if (!recording.requirePass(pass.enc, @intFromPtr(pass))) return;
-    const pip = pass.pipeline orelse return;
+    const pip = pass.pipeline orelse return recording.fail(pass.enc, error.DispatchPipelineMissing);
     appendRecordedDispatch(pass, pip, x, y, z);
 }
 
@@ -266,7 +321,7 @@ pub export fn doeNativeComputePassDispatchBound(
     if (!recording.requirePass(pass.enc, @intFromPtr(pass))) return;
     const pip = cast(DoeComputePipeline, pip_raw) orelse return;
     setPassPipeline(pass, pip);
-    setPassBindGroup(pass, 0, cast(DoeBindGroup, bg0_raw));
+    setPassBindGroup(pass, 0, cast(DoeBindGroup, bg0_raw), native_shared.NO_DYNAMIC_OFFSETS);
     appendRecordedDispatch(pass, pip, x, y, z);
 }
 
@@ -375,7 +430,8 @@ pub export fn doeNativeComputePipelineGetBindGroupLayout(pip_raw: ?*anyopaque, g
 pub export fn doeNativeComputePassDispatchIndirect(pass_raw: ?*anyopaque, buf_raw: ?*anyopaque, offset: u64) callconv(.c) void {
     const pass = cast(DoeComputePass, pass_raw) orelse return;
     if (!recording.requirePass(pass.enc, @intFromPtr(pass))) return;
-    const pip = pass.pipeline orelse return;
+    const pip = pass.pipeline orelse return recording.fail(pass.enc, error.DispatchPipelineMissing);
+    if (!validateDispatch(pass, pip, null)) return;
     const indirect_buf = cast(DoeBuffer, buf_raw) orelse return;
     if (indirect_buf.error_object or indirect_buf.destroyed) return;
     if (pip.dispatch_preconditions.len > 0) {
@@ -405,6 +461,7 @@ pub export fn doeNativeComputePassDispatchIndirect(pass_raw: ?*anyopaque, buf_ra
         &cmd.dispatch_indirect.buf_offsets,
         &cmd.dispatch_indirect.buf_sizes,
     );
+    compute_bind_groups.applyDynamicOffsets(&pass.dynamic_offsets, &cmd.dispatch_indirect.buf_offsets);
     for (pass.bind_groups, 0..) |maybe_bg, index| {
         cmd.dispatch_indirect.bind_groups[index] = if (maybe_bg) |bg| toOpaque(bg) else null;
     }
@@ -414,6 +471,7 @@ pub export fn doeNativeComputePassDispatchIndirect(pass_raw: ?*anyopaque, buf_ra
             pass.bind_groups[0..],
             &cmd.dispatch_indirect.vulkan_binding_state,
         );
+        vulkan_compute.vulkan_apply_dynamic_offsets(&cmd.dispatch_indirect.vulkan_binding_state, &pass.dynamic_offsets);
     }
     if (!recording.reserve(pass.enc, 0, 1)) return;
     references.retainBufferAssumeCapacity(&pass.enc.references, indirect_buf);

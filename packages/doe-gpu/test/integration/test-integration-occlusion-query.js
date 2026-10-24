@@ -7,7 +7,9 @@ import { setupGlobals } from '../../src/index.js';
 
 const target = {};
 setupGlobals(target);
-const adapter = await target.navigator.gpu.requestAdapter();
+// A provider may offer its only adapter (lavapipe for the C runtime) as the fallback.
+const adapter = await target.navigator.gpu.requestAdapter()
+  ?? await target.navigator.gpu.requestAdapter({ forceFallbackAdapter: true });
 if (!adapter) {
   console.log('occlusion query: skipped (GPU adapter unavailable)');
   process.exit(0);

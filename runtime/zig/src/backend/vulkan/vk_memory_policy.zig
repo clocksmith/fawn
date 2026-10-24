@@ -19,6 +19,14 @@ pub fn select_memory_type_index(properties: c.VkPhysicalDeviceMemoryProperties, 
     return required_match orelse error.UnsupportedFeature;
 }
 
+/// Vulkan buffers and mappings need a nonzero size; a zero-size WebGPU buffer
+/// gets this minimal backing while its DoeBuffer keeps size 0.
+pub fn buffer_backing_bytes(bytes: u64) u64 {
+    return if (bytes == 0) ZERO_SIZE_BUFFER_BACKING_BYTES else bytes;
+}
+
+const ZERO_SIZE_BUFFER_BACKING_BYTES: u64 = 4;
+
 test "readback preference preserves coherence and supported memory type constraints" {
     var properties = std.mem.zeroes(c.VkPhysicalDeviceMemoryProperties);
     properties.memoryTypeCount = 3;
