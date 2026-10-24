@@ -112,35 +112,34 @@ napi_value doe_create_compute_pipeline(napi_env env, napi_callback_info info) {
     desc.compute.constantCount = override_count;
     desc.compute.constants = override_entries;
 
-    void* scoped = doe_scoped_validation_begin(device);
     WGPUComputePipeline pipeline = pfn_wgpuDeviceCreateComputePipeline(device, &desc);
-    char scoped_message[DOE_ERROR_BUF_CAP] = {0};
-    bool scoped_validation = doe_scoped_validation_end(device, scoped, scoped_message, sizeof(scoped_message));
     if (ep_on_heap) free(ep);
     free_override_constants(override_entries, override_count);
-    if (!pipeline && scoped_validation) {
-        char full_msg[DOE_ERROR_BUF_CAP + 32];
-        snprintf(full_msg, sizeof(full_msg), "createComputePipeline: %s", scoped_message);
-        napi_throw_error(env, "DOE_COMPUTE_PIPELINE_ERROR", full_msg);
-        return NULL;
-    }
-    if (!pipeline) {
-        char msg[DOE_ERROR_BUF_CAP];
-        char stage[64];
-        char kind[64];
-        copy_library_error_message(msg, sizeof(msg));
-        copy_library_error_meta(pfn_doeNativeCopyLastErrorStage, stage, sizeof(stage));
-        copy_library_error_meta(pfn_doeNativeCopyLastErrorKind, kind, sizeof(kind));
-        if (msg[0] != '\0') {
-            char full_msg[DOE_ERROR_BUF_CAP];
-            doe_format_library_error_message(full_msg, sizeof(full_msg), stage, kind, msg);
-            napi_throw_error(env, "DOE_COMPUTE_PIPELINE_ERROR", full_msg);
-        } else {
-            napi_throw_error(env, "DOE_COMPUTE_PIPELINE_ERROR", "createComputePipeline failed");
-        }
-        return NULL;
-    }
+    if (!pipeline) NAPI_RETURN_PROVIDER_REJECTED(env);
     return wrap_ptr(env, pipeline);
+}
+
+/* lastProviderError() -> the provider's last error text with its stage and
+ * kind, or null when the provider keeps none (the C runtime reports only to
+ * error scopes). JS uses it to word the exception it throws for a rejected
+ * creation that no error scope or uncaptured-error listener observes. */
+napi_value doe_last_provider_error(napi_env env, napi_callback_info info) {
+    (void)info;
+    char msg[DOE_ERROR_BUF_CAP];
+    char stage[64];
+    char kind[64];
+    copy_library_error_message(msg, sizeof(msg));
+    napi_value result;
+    if (msg[0] == '\0') {
+        napi_get_null(env, &result);
+        return result;
+    }
+    copy_library_error_meta(pfn_doeNativeCopyLastErrorStage, stage, sizeof(stage));
+    copy_library_error_meta(pfn_doeNativeCopyLastErrorKind, kind, sizeof(kind));
+    char full_msg[DOE_ERROR_BUF_CAP];
+    doe_format_library_error_message(full_msg, sizeof(full_msg), stage, kind, msg);
+    napi_create_string_utf8(env, full_msg, NAPI_AUTO_LENGTH, &result);
+    return result;
 }
 
 /* webgpu.h WGPUPopErrorScopeCallback: (status, type, message, userdata1, userdata2). */
@@ -158,12 +157,12 @@ typedef struct {
     _Atomic uint32_t state; /* 0 waiting, 1 delivered, 2 abandoned by the caller */
     uint32_t status, type;
     char message[DOE_ERROR_BUF_CAP];
-} ScopedValidation;
+} PopCapture;
 
-static void scoped_validation_reply(uint32_t status, uint32_t type, WGPUStringView message,
+static void pop_capture_reply(uint32_t status, uint32_t type, WGPUStringView message,
     void* userdata1, void* userdata2) {
     (void)userdata2;
-    ScopedValidation* capture = (ScopedValidation*)userdata1;
+    PopCapture* capture = (PopCapture*)userdata1;
     capture->status = status;
     capture->type = type;
     copy_string_view_message(message, capture->message, sizeof(capture->message));
@@ -171,21 +170,13 @@ static void scoped_validation_reply(uint32_t status, uint32_t type, WGPUStringVi
     if (!atomic_compare_exchange_strong(&capture->state, &expected, 1u)) free(capture);
 }
 
-void* doe_scoped_validation_begin(WGPUDevice device) {
-    if (pfn_doeNativeCopyLastErrorMessage || !pfn_wgpuDevicePushErrorScope || !pfn_wgpuDevicePopErrorScope) return NULL;
-    ScopedValidation* capture = (ScopedValidation*)calloc(1, sizeof(*capture));
-    if (!capture) return NULL;
-    pfn_wgpuDevicePushErrorScope(device, 0x00000001u /* WGPUErrorFilter_Validation */);
-    return capture;
-}
-
 /* Standard pop with a spontaneous callback. Returns false when the provider
  * rejected the pop or will deliver later (that callback then frees the capture);
  * otherwise fills status, type and message from the delivered result. */
-static bool standard_pop_error_scope(WGPUDevice device, ScopedValidation* capture,
+static bool standard_pop_error_scope(WGPUDevice device, PopCapture* capture,
     uint32_t* status, uint32_t* type, char* message, size_t capacity) {
     StandardPopErrorScopeCallbackInfo info = {NULL, WGPU_CALLBACK_MODE_ALLOW_SPONTANEOUS,
-        scoped_validation_reply, capture, NULL};
+        pop_capture_reply, capture, NULL};
     /* The loaded symbol is the standard procedure; only the addon's legacy
      * declaration types it with the Doe four-argument callback. */
     StandardPopErrorScope pop;
@@ -204,21 +195,10 @@ static bool standard_pop_error_scope(WGPUDevice device, ScopedValidation* captur
     return true;
 }
 
-bool doe_scoped_validation_end(WGPUDevice device, void* opaque, char* message, size_t capacity) {
-    ScopedValidation* capture = (ScopedValidation*)opaque;
-    if (!capture) return false;
-    uint32_t status = 0, type = 0;
-    char text[DOE_ERROR_BUF_CAP];
-    if (!standard_pop_error_scope(device, capture, &status, &type, text, sizeof(text))) return false;
-    bool validation = status == 0x00000001u && type == 0x00000002u;
-    if (validation) snprintf(message, capacity, "%s", text);
-    return validation;
-}
-
 /* GPUDevice.popErrorScope on a provider without the Doe entry. Returns false
  * when the provider did not deliver synchronously or reported a failed pop. */
 bool doe_standard_pop_error_scope(WGPUDevice device, uint32_t* type, char* message, size_t capacity) {
-    ScopedValidation* capture = (ScopedValidation*)calloc(1, sizeof(*capture));
+    PopCapture* capture = (PopCapture*)calloc(1, sizeof(*capture));
     if (!capture) return false;
     uint32_t status = 0;
     if (!standard_pop_error_scope(device, capture, &status, type, message, capacity)) return false;
@@ -412,7 +392,7 @@ napi_value doe_create_bind_group_layout(napi_env env, napi_callback_info info) {
 
     WGPUBindGroupLayout layout = pfn_wgpuDeviceCreateBindGroupLayout(device, &desc);
     free(heap_entries);
-    if (!layout) NAPI_THROW(env, "createBindGroupLayout failed");
+    if (!layout) NAPI_RETURN_PROVIDER_REJECTED(env);
     return wrap_ptr(env, layout);
 }
 
@@ -442,7 +422,7 @@ napi_value doe_create_buffer_bind_group_layout_flat4(napi_env env, napi_callback
         b2,
         b3
     );
-    if (!layout) NAPI_THROW(env, "createBufferBindGroupLayoutFlat4 failed");
+    if (!layout) NAPI_RETURN_PROVIDER_REJECTED(env);
     return wrap_ptr(env, layout);
 }
 
@@ -526,7 +506,7 @@ napi_value doe_create_bind_group(napi_env env, napi_callback_info info) {
 
     WGPUBindGroup group = pfn_wgpuDeviceCreateBindGroup(device, &desc);
     free(heap_entries);
-    if (!group) NAPI_THROW(env, "createBindGroup failed");
+    if (!group) NAPI_RETURN_PROVIDER_REJECTED(env);
     return wrap_ptr(env, group);
 }
 
@@ -580,7 +560,7 @@ napi_value doe_create_buffer_bind_group_flat4(napi_env env, napi_callback_info i
         buffer3,
         (uint64_t)offset3
     );
-    if (!group) NAPI_THROW(env, "createBufferBindGroupFlat4 failed");
+    if (!group) NAPI_RETURN_PROVIDER_REJECTED(env);
     return wrap_ptr(env, group);
 }
 
@@ -653,7 +633,7 @@ napi_value doe_create_pipeline_layout(napi_env env, napi_callback_info info) {
 
     WGPUPipelineLayout pl = pfn_wgpuDeviceCreatePipelineLayout(device, &desc);
     free(heap_layouts);
-    if (!pl) NAPI_THROW(env, "createPipelineLayout failed");
+    if (!pl) NAPI_RETURN_PROVIDER_REJECTED(env);
     return wrap_ptr(env, pl);
 }
 
@@ -677,7 +657,7 @@ napi_value doe_create_pipeline_layout_one(napi_env env, napi_callback_info info)
         };
         pipeline_layout = pfn_wgpuDeviceCreatePipelineLayout(device, &desc);
     }
-    if (!pipeline_layout) NAPI_THROW(env, "createPipelineLayoutOne failed");
+    if (!pipeline_layout) NAPI_RETURN_PROVIDER_REJECTED(env);
     return wrap_ptr(env, pipeline_layout);
 }
 

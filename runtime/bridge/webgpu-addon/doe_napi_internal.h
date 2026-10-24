@@ -815,6 +815,11 @@ bool doe_env_init(napi_env env);
  * ================================================================ */
 
 #define NAPI_THROW(env, msg) do { napi_throw_error(env, "DOE_ERROR", msg); return NULL; } while(0)
+/* A creator whose provider returned NULL. The provider has already reported
+ * the error to the device's error scopes or uncaptured-error callback, so JS
+ * receives null and builds the invalid object without reporting it again. */
+#define NAPI_RETURN_PROVIDER_REJECTED(env) \
+    do { napi_value _rejected; napi_get_null(env, &_rejected); return _rejected; } while(0)
 #define MAX_NAPI_ARGS 16
 #define NAPI_ASSERT_ARGC(env, info, n) \
     size_t _argc = (n); napi_value _args[MAX_NAPI_ARGS]; \
@@ -905,12 +910,6 @@ napi_value doe_canvas_surface_release(napi_env env, napi_callback_info info);
 /* Limits helper */
 napi_value create_limits_object(napi_env env, const WGPULimits* limits);
 void pop_error_scope_callback(uint32_t error_type, WGPUStringView message, void* userdata1, void* userdata2);
-/* Standard webgpu.h error scope used around pipeline creation when a provider
- * has no Doe last-error metadata. begin returns an opaque capture or NULL when
- * not applicable; end pops it and copies a captured validation message,
- * returning true only for a validation error. */
-void* doe_scoped_validation_begin(WGPUDevice device);
-bool doe_scoped_validation_end(WGPUDevice device, void* capture, char* message, size_t capacity);
 bool doe_standard_pop_error_scope(WGPUDevice device, uint32_t* type, char* message, size_t capacity);
 void extract_buffer_data(napi_env env, napi_value val, void** out_ptr, size_t* out_len);
 

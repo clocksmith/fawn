@@ -129,22 +129,7 @@ napi_value doe_create_shader_module(napi_env env, napi_callback_info info) {
     }
     free(hint_entry_points);
     free(hints);
-    if (!mod) {
-        char msg[DOE_ERROR_BUF_CAP];
-        char stage[64];
-        char kind[64];
-        copy_library_error_message(msg, sizeof(msg));
-        copy_library_error_meta(pfn_doeNativeCopyLastErrorStage, stage, sizeof(stage));
-        copy_library_error_meta(pfn_doeNativeCopyLastErrorKind, kind, sizeof(kind));
-        if (msg[0] != '\0') {
-            char full_msg[DOE_ERROR_BUF_CAP];
-            doe_format_library_error_message(full_msg, sizeof(full_msg), stage, kind, msg);
-            napi_throw_error(env, "DOE_SHADER_MODULE_ERROR", full_msg);
-        } else {
-            napi_throw_error(env, "DOE_SHADER_MODULE_ERROR", "createShaderModule failed (WGSL translation or compilation error)");
-        }
-        return NULL;
-    }
+    if (!mod) NAPI_RETURN_PROVIDER_REJECTED(env);
     return wrap_ptr(env, mod);
 }
 

@@ -498,7 +498,7 @@ napi_value doe_create_sampler(napi_env env, napi_callback_info info) {
 
     WGPUSampler sampler = pfn_wgpuDeviceCreateSampler(device, &desc);
     free(label_str);
-    if (!sampler) NAPI_THROW(env, "createSampler failed");
+    if (!sampler) NAPI_RETURN_PROVIDER_REJECTED(env);
     return wrap_ptr(env, sampler);
 }
 
@@ -574,7 +574,7 @@ napi_value doe_create_texture(napi_env env, napi_callback_info info) {
     WGPUTexture tex = pfn_wgpuDeviceCreateTexture(device, &desc);
     free(view_formats);
     free(label_str);
-    if (!tex) NAPI_THROW(env, "createTexture failed");
+    if (!tex) NAPI_RETURN_PROVIDER_REJECTED(env);
     return wrap_ptr(env, tex);
 }
 
@@ -636,7 +636,7 @@ napi_value doe_texture_create_view(napi_env env, napi_callback_info info) {
     }
 
     WGPUTextureView view = pfn_wgpuTextureCreateView(tex, view_desc_ptr);
-    if (!view) NAPI_THROW(env, "textureCreateView failed");
+    if (!view) NAPI_RETURN_PROVIDER_REJECTED(env);
     return wrap_ptr(env, view);
 }
 
@@ -677,7 +677,7 @@ napi_value doe_device_create_query_set(napi_env env, napi_callback_info info) {
         const WGPUQuerySetDescriptor desc = {NULL, {NULL, 0}, query_type, count};
         qs = pfn_wgpuDeviceCreateQuerySet(device, &desc);
     }
-    if (!qs) NAPI_THROW(env, "timestamp query sets are not supported on this backend/device");
+    if (!qs) NAPI_RETURN_PROVIDER_REJECTED(env);
     return wrap_ptr(env, qs);
 }
 
