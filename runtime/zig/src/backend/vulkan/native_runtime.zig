@@ -81,6 +81,8 @@ pub const NativeVulkanRuntime = struct {
     timestamp_query_supported_value: bool = false,
     timestamp_query_pool: c.VkQueryPool = VK_NULL_U64,
     timestamp_period: f32 = 0.0,
+    /// The physical device is Vulkan 1.2+, so VkImageFormatListCreateInfo is core.
+    image_format_list_supported: bool = false,
     command_pool: c.VkCommandPool = VK_NULL_U64,
     primary_command_buffer: c.VkCommandBuffer = null,
     fence: c.VkFence = VK_NULL_U64,

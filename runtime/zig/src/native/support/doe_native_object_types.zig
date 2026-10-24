@@ -351,8 +351,9 @@ pub const DoeTexture = struct {
     usage: u64 = 0,
     texture_binding_view_dimension: u32 = 0,
     view_format_count: usize = 0,
-    /// viewFormats named the srgb pair of `format` (the only other compatible format).
-    srgb_view_allowed: bool = false,
+    /// The srgb pair of `format` when viewFormats named it (the only other
+    /// compatible format), else 0; Vulkan creates such images MUTABLE_FORMAT.
+    srgb_view_format: u32 = 0,
     vk_id: u64 = 0,
     vk_runtime_ref: ?*anyopaque = null,
 

@@ -56,6 +56,7 @@ pub const VkFenceCreateInfo = structs.VkFenceCreateInfo;
 pub const VkBufferCreateInfo = structs.VkBufferCreateInfo;
 pub const VkExtent3D = structs.VkExtent3D;
 pub const VkImageCreateInfo = structs.VkImageCreateInfo;
+pub const VkImageFormatListCreateInfo = structs.VkImageFormatListCreateInfo;
 pub const VkMemoryAllocateInfo = structs.VkMemoryAllocateInfo;
 pub const VkMemoryRequirements = structs.VkMemoryRequirements;
 pub const VkCommandBufferInheritanceInfo = structs.VkCommandBufferInheritanceInfo;
@@ -253,6 +254,7 @@ pub const VK_STRUCTURE_TYPE_FENCE_CREATE_INFO: i32 = 8;
 pub const VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO: i32 = 11;
 pub const VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO: i32 = 12;
 pub const VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO: i32 = 14;
+pub const VK_STRUCTURE_TYPE_IMAGE_FORMAT_LIST_CREATE_INFO: i32 = 1000147000;
 pub const VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO: i32 = 15;
 pub const VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO: i32 = 16;
 pub const VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO: i32 = 17;
@@ -405,6 +407,7 @@ pub const VK_SAMPLE_COUNT_4_BIT: u32 = 0x00000004;
 pub const VK_SAMPLE_COUNT_8_BIT: u32 = 0x00000008;
 pub const VK_SAMPLE_COUNT_16_BIT: u32 = 0x00000010;
 pub const VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT: u32 = 0x00000010;
+pub const VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT: u32 = 0x00000008;
 pub const VK_FORMAT_R8G8B8A8_UNORM: u32 = 37;
 
 // --- VkResult error codes (canonical definitions in vulkan_errors.zig) ---
