@@ -7,7 +7,7 @@ import { readdir, readFile } from 'node:fs/promises';
 const ADDON = new URL('../../../../runtime/bridge/webgpu-addon/', import.meta.url);
 const MAX_LINES = 999;
 const CAPPED = new Map([
-  ['doe_napi_queue.c', 1932],
+  ['doe_napi_queue.c', 1923],
   ['doe_napi_internal.h', 961],
 ]);
 

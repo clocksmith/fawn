@@ -213,22 +213,6 @@ napi_value native_direct_compute_pass_set_pipeline(napi_env env, napi_callback_i
     return NULL;
 }
 
-napi_value native_direct_compute_pass_set_bind_group(napi_env env, napi_callback_info info) {
-    size_t argc = 2;
-    napi_value argv[2];
-    napi_value this_arg;
-    napi_get_cb_info(env, info, &argc, argv, &this_arg, NULL);
-    if (argc < 2) NAPI_THROW(env, "setBindGroup requires an index and bind group");
-    NativeDirectHandleCache* pass_cache = native_direct_get_handle_cache(env, this_arg);
-    NativeDirectHandleCache* bind_group_cache = native_direct_get_handle_cache(env, argv[1]);
-    WGPUComputePassEncoder pass = pass_cache ? (WGPUComputePassEncoder)pass_cache->native : native_direct_unwrap_external_prop(env, this_arg, DOE_DIRECT_NATIVE);
-    WGPUBindGroup bind_group = bind_group_cache ? (WGPUBindGroup)bind_group_cache->native : native_direct_unwrap_external_prop(env, argv[1], DOE_DIRECT_NATIVE);
-    uint32_t index = 0;
-    napi_get_value_uint32(env, argv[0], &index);
-    pfn_wgpuComputePassEncoderSetBindGroup(pass, index, bind_group, 0, NULL);
-    return NULL;
-}
-
 napi_value native_direct_compute_pass_dispatch_workgroups(napi_env env, napi_callback_info info) {
     size_t argc = 3;
     napi_value argv[3];

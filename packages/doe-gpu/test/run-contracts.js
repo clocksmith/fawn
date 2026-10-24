@@ -29,6 +29,7 @@ const contracts = [
   './unit/native-release-candidate-bundle.test.js',
   './unit/addon-enum-values.test.js',
   './unit/addon-source-size.test.js',
+  './unit/addon-entry-points.test.js',
   './unit/js-style.test.js',
 ];
 
