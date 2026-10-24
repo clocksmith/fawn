@@ -58,6 +58,8 @@ of the same type or remap registers. Keep attachment operations on the whole pas
 including empty/zero draws, with real initialization/discard clears and existing
 pending/resource leases. Explicitly reject state outside the currently composed
 envelope; partial source coverage cannot claim retained graphics parity.
+Keep reported limits composable with resource-owner admission. Render-target byte
+budgets use that owner's format costs, independently of texel allocation sizes.
 
 Graphics consumes compiler-owned stage/resource/interface reflection and canonical
 resource-owned pass/bundle snapshots. Preserve the whole pass when lowering to the
