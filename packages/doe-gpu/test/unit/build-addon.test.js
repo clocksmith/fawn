@@ -14,7 +14,7 @@ try {
   const environment = { CC: 'C:\\LLVM SDK\\bin\\clang.exe', NODE_LIB: library, ZIG: 'must-not-run' };
   const command = compilerCommand(directory, { platform: 'win32', arch: 'x64', environment });
   assert.equal(command.compiler, environment.CC);
-  assert.deepEqual(command.prefixArgs, ['--target=x86_64-pc-windows-msvc', '-fms-runtime-lib=dll']);
+  assert.deepEqual(command.prefixArgs, ['--target=x86_64-pc-windows-msvc', '-fms-runtime-lib=dll', '-Wl,/NODEFAULTLIB:libcmt']);
   assert.deepEqual(command.args.slice(0, command.prefixArgs.length), command.prefixArgs);
   assert(command.args.includes(library));
   assert(command.args.includes('-shared'));
@@ -27,7 +27,7 @@ try {
     platform: 'win32', arch: 'arm64', environment: { NODE_LIB: library, ZIG: 'must-not-run' },
   });
   assert.equal(defaultCompiler.compiler, 'clang');
-  assert.deepEqual(defaultCompiler.prefixArgs, ['--target=aarch64-pc-windows-msvc', '-fms-runtime-lib=dll']);
+  assert.deepEqual(defaultCompiler.prefixArgs, ['--target=aarch64-pc-windows-msvc', '-fms-runtime-lib=dll', '-Wl,/NODEFAULTLIB:libcmt']);
   assert.throws(() => compilerCommand(directory, {
     platform: 'win32', arch: 'x64', environment: { NODE_LIB: join(directory, 'missing.lib') },
   }), /Unable to locate/);
