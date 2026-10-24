@@ -140,6 +140,17 @@ int main(void)
     WGPURequestAdapterCallbackInfo adapter = {.mode=WGPUCallbackMode_AllowSpontaneous,.callback=adapter_reply,.userdata1=&value};
     assert(wgpuInstanceRequestAdapter(value.instance, &options, adapter).id && value.adapter);
     adapter_class_require(value.adapter);
+    /* With lavapipe as the only Vulkan device, a default request (no
+     * forceFallbackAdapter) returns that CPU adapter instead of nothing. */
+    const char *icd = getenv("VK_ICD_FILENAMES");
+    if (!adapter_class_physical() && icd && strstr(icd, "lvp_icd")) {
+        capture plain = {0};
+        WGPURequestAdapterOptions defaults = WGPU_REQUEST_ADAPTER_OPTIONS_INIT;
+        WGPURequestAdapterCallbackInfo reply = {.mode=WGPUCallbackMode_AllowSpontaneous,.callback=adapter_reply,.userdata1=&plain};
+        assert(wgpuInstanceRequestAdapter(value.instance, &defaults, reply).id && plain.adapter);
+        assert(adapter_class_is_cpu(plain.adapter));
+        wgpuAdapterRelease(plain.adapter);
+    }
     const WGPUCallbackMode modes[] = {WGPUCallbackMode_WaitAnyOnly,WGPUCallbackMode_AllowProcessEvents,WGPUCallbackMode_AllowSpontaneous};
     for (size_t i=0;i<3;++i) {
         value.lost=0;

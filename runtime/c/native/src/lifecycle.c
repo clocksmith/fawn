@@ -90,8 +90,14 @@ WGPUFuture wgpuInstanceRequestAdapter(WGPUInstance handle,
     }
     if (valid) {
         native_backend backend = {0};
-        native_result status = native_backend_open(kind, options && options->forceFallbackAdapter,
-            native_surface_platform(compatible), &backend);
+        const bool force_fallback = options && options->forceFallbackAdapter;
+        native_result status = native_backend_open(kind, force_fallback, native_surface_platform(compatible), &backend);
+        /* WebGPU may answer a default request with the fallback adapter; on
+         * Vulkan a host whose only device is a CPU implementation (lavapipe)
+         * gets it, reported as the fallback adapter, instead of nothing. */
+        if ((status == NATIVE_UNAVAILABLE || status == NATIVE_UNSUPPORTED) && !force_fallback &&
+            kind == WGPUBackendType_Vulkan)
+            status = native_backend_open(kind, true, native_surface_platform(compatible), &backend);
         if (status == NATIVE_OK && compatible) {
             status = native_surface_compatible(compatible, &backend);
             if (status != NATIVE_OK) native_backend_close(&backend);

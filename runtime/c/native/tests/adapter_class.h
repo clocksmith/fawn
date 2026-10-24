@@ -37,6 +37,15 @@ static inline void adapter_class_options(WGPURequestAdapterOptions *options)
     options->forceFallbackAdapter = adapter_class_physical() ? WGPU_FALSE : WGPU_TRUE;
 }
 
+static inline bool adapter_class_is_cpu(WGPUAdapter adapter)
+{
+    WGPUAdapterInfo info = WGPU_ADAPTER_INFO_INIT;
+    assert(wgpuAdapterGetInfo(adapter, &info) == WGPUStatus_Success);
+    const bool cpu = info.adapterType == WGPUAdapterType_CPU;
+    wgpuAdapterInfoFreeMembers(info);
+    return cpu;
+}
+
 /* Run label for PASS lines; set by adapter_class_require from the actual adapter. */
 static char adapter_class_label[160] = "(adapter not selected)";
 
