@@ -280,6 +280,10 @@ static napi_value native_direct_adapter_request_device(napi_env env, napi_callba
         .userdata1 = &result,
         .userdata2 = NULL,
     };
+    /* Providers without the Doe setters take uncaptured-error and lost
+     * callbacks only here; without them the device's errors are dropped. */
+    void* events = device_events_describe(&descriptor);
+    if (events) descriptor_ptr = &descriptor;
     WGPUFuture future = pfn_doeNativeAdapterRequestDevice
         ? pfn_doeNativeAdapterRequestDevice(adapter, descriptor_ptr, callback_info)
         : pfn_wgpuAdapterRequestDevice(adapter, descriptor_ptr, callback_info);
@@ -304,6 +308,7 @@ static napi_value native_direct_adapter_request_device(napi_env env, napi_callba
         return NULL;
     }
 
+    device_events_attach(events, result.device);
     napi_value device_obj = create_native_direct_device_object(env, inst, result.device);
     if (device_obj && descriptor_ptr) {
         if (descriptor.label.data && descriptor.label.length > 0) {

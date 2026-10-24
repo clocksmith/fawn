@@ -2767,10 +2767,10 @@ const fullSurfaceBackend = {
       descriptor.count,
     );
     if (querySet !== null && descriptor.label) {
-      if (typeof addon.objectSetLabel !== 'function') {
+      if (typeof addon.querySetSetLabel !== 'function') {
         throw unsupportedNodeDeviceCapability('GPUQuerySet.label');
       }
-      addon.objectSetLabel(querySet, descriptor.label);
+      addon.querySetSetLabel(querySet, descriptor.label);
     }
     return querySet;
   },

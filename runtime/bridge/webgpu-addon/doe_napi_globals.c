@@ -159,6 +159,7 @@ PFN_doeNativeCommandEncoderResolveQuerySet pfn_doeNativeCommandEncoderResolveQue
 PFN_doeNativeQuerySetDestroy pfn_doeNativeQuerySetDestroy = NULL;
 PFN_doeNativeQuerySetRelease pfn_doeNativeQuerySetRelease = NULL;
 PFN_wgpuRenderPassEncoderSetViewport pfn_wgpuRenderPassEncoderSetViewport = NULL;
+PFN_wgpuQuerySetSetLabel pfn_wgpuQuerySetSetLabel = NULL;
 PFN_wgpuRenderPassEncoderSetScissorRect pfn_wgpuRenderPassEncoderSetScissorRect = NULL;
 PFN_wgpuRenderPassEncoderSetBlendConstant pfn_wgpuRenderPassEncoderSetBlendConstant = NULL;
 PFN_wgpuComputePassEncoderSetImmediates pfn_wgpuComputePassEncoderSetImmediates = NULL;
@@ -438,6 +439,7 @@ napi_value doe_load_library(napi_env env, napi_callback_info info) {
     pfn_doeNativeQuerySetDestroy = (PFN_doeNativeQuerySetDestroy)LIB_SYM(g_lib, "doeNativeQuerySetDestroy");
     pfn_doeNativeQuerySetRelease = (PFN_doeNativeQuerySetRelease)LIB_SYM(g_lib, "doeNativeQuerySetRelease");
     LOAD_SYM(wgpuRenderPassEncoderSetViewport);
+    LOAD_SYM(wgpuQuerySetSetLabel);
     LOAD_SYM(wgpuRenderPassEncoderSetScissorRect);
     LOAD_SYM(wgpuRenderPassEncoderSetBlendConstant);
     LOAD_SYM(wgpuComputePassEncoderSetImmediates);

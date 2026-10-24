@@ -22,5 +22,7 @@ DECL_PFN(void, wgpuRenderBundleEncoderSetImmediates, (void*, uint32_t, const voi
 DECL_PFN(void, wgpuCommandEncoderPushDebugGroup, (WGPUCommandEncoder, WGPUStringView));
 DECL_PFN(void, wgpuCommandEncoderPopDebugGroup, (WGPUCommandEncoder));
 DECL_PFN(void, wgpuCommandEncoderInsertDebugMarker, (WGPUCommandEncoder, WGPUStringView));
+/* Query set labels for providers without the Doe label store. */
+DECL_PFN(void, wgpuQuerySetSetLabel, (WGPUQuerySet, WGPUStringView));
 
 #endif

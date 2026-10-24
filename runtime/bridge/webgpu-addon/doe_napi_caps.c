@@ -836,31 +836,19 @@ napi_value doe_query_set_destroy(napi_env env, napi_callback_info info) {
     return NULL;
 }
 
-/* ================================================================
- * Device label (stub — label tracking not implemented yet)
- * ================================================================ */
-
-napi_value doe_device_get_label(napi_env env, napi_callback_info info) {
-    NAPI_ASSERT_ARGC(env, info, 1);
-    (void)_args;
-    napi_value result;
-    napi_create_string_utf8(env, "", 0, &result);
-    return result;
-}
-
-napi_value doe_device_set_label(napi_env env, napi_callback_info info) {
+/* querySetSetLabel(querySet, label): the Doe label store when the provider
+ * has one, else wgpuQuerySetSetLabel; throws when neither is exported. */
+napi_value doe_query_set_set_label(napi_env env, napi_callback_info info) {
     NAPI_ASSERT_ARGC(env, info, 2);
-    (void)_args;
-    return NULL;
-}
-
-napi_value doe_object_set_label(napi_env env, napi_callback_info info) {
-    NAPI_ASSERT_ARGC(env, info, 2);
-    void* handle = unwrap_ptr(env, _args[0]);
-    if (!handle || !pfn_doeNativeObjectSetLabel) return NULL;
+    WGPUQuerySet query_set = unwrap_ptr(env, _args[0]);
+    if (!query_set) NAPI_THROW(env, "Invalid query set");
+    if (!pfn_doeNativeObjectSetLabel && !pfn_wgpuQuerySetSetLabel)
+        NAPI_THROW(env, "querySetSetLabel is not available in the loaded library");
     size_t label_len = 0;
     char* label = dup_string_value(env, _args[1], &label_len);
-    pfn_doeNativeObjectSetLabel(handle, (const uint8_t*)label, label_len);
+    if (!label) NAPI_THROW(env, "out of memory copying a query set label");
+    if (pfn_doeNativeObjectSetLabel) pfn_doeNativeObjectSetLabel(query_set, (const uint8_t*)label, label_len);
+    else pfn_wgpuQuerySetSetLabel(query_set, (WGPUStringView){label, label_len});
     free(label);
     return NULL;
 }

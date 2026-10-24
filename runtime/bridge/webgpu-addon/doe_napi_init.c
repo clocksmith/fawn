@@ -206,9 +206,7 @@ napi_value doe_adapter_has_feature(napi_env env, napi_callback_info info);
 napi_value doe_instance_has_wgsl_language_feature(napi_env env, napi_callback_info info);
 napi_value doe_device_get_limits(napi_env env, napi_callback_info info);
 napi_value doe_device_has_feature(napi_env env, napi_callback_info info);
-napi_value doe_device_get_label(napi_env env, napi_callback_info info);
-napi_value doe_device_set_label(napi_env env, napi_callback_info info);
-napi_value doe_object_set_label(napi_env env, napi_callback_info info);
+napi_value doe_query_set_set_label(napi_env env, napi_callback_info info);
 
 /* Query set */
 napi_value doe_device_create_query_set(napi_env env, napi_callback_info info);
@@ -384,9 +382,7 @@ napi_value doe_module_init(napi_env env, napi_value exports) {
         EXPORT_FN("computeProgramSubmit",                     doe_compute_program_submit),
         EXPORT_FN("computeProgramRelease",                    doe_compute_program_release),
         EXPORT_FN("deviceHasFeature",                         doe_device_has_feature),
-        EXPORT_FN("deviceGetLabel",                           doe_device_get_label),
-        EXPORT_FN("deviceSetLabel",                           doe_device_set_label),
-        EXPORT_FN("objectSetLabel",                           doe_object_set_label),
+        EXPORT_FN("querySetSetLabel",                         doe_query_set_set_label),
         EXPORT_FN("createQuerySet",                           doe_device_create_query_set),
         EXPORT_FN("commandEncoderWriteTimestamp",             doe_command_encoder_write_timestamp),
         EXPORT_FN("commandEncoderResolveQuerySet",            doe_command_encoder_resolve_query_set),
