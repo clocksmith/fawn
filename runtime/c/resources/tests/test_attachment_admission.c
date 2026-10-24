@@ -342,6 +342,48 @@ static void test_depth_slices(void)
     empty(&f);
 }
 
+/* A swizzled view is created with RenderAttachment usage; WebGPU rejects it as
+ * a color attachment, resolve target or depth-stencil attachment. */
+static void test_swizzled_views(void)
+{
+    fixture f = fresh();
+    doe_resource_config c = config(&f);
+    doe_resource_texture_limits limits = texture_limits();
+    doe_resource_texture_desc desc = texture_desc();
+    desc.usage = WGPUTextureUsage_RenderAttachment;
+    native_token tokens[3] = {{0}};
+    doe_resource_texture *texture;
+    doe_resource_view *plain, *swizzled;
+    assert(doe_resource_texture_create(&c, &desc, &limits, native(&f, &tokens[0]), &texture) == DOE_RESOURCE_OK);
+    assert(doe_resource_view_create(texture, &(doe_resource_view_desc){0}, native(&f, &tokens[1]), &plain) == DOE_RESOURCE_OK);
+    assert(doe_resource_view_create(texture, &(doe_resource_view_desc){.swizzled = true},
+        native(&f, &tokens[2]), &swizzled) == DOE_RESOURCE_OK);
+    assert(doe_resource_view_description(swizzled)->swizzled && !doe_resource_view_description(plain)->swizzled);
+    doe_resource_view *views[2] = {plain, swizzled};
+    for (size_t i = 0; i < 2; i++) {
+        doe_resource_encoder *encoder;
+        doe_resource_render_pass *pass = NULL;
+        doe_resource_commands *commands = NULL;
+        doe_resource_render_targets targets = {.color = views[i],
+            .color_load = WGPULoadOp_Clear, .color_store = WGPUStoreOp_Store};
+        doe_resource_status expected = i ? DOE_RESOURCE_LAYOUT : DOE_RESOURCE_OK;
+        assert(doe_resource_encoder_create(&c, &encoder) == DOE_RESOURCE_OK);
+        assert(doe_resource_encoder_begin_render(encoder, &targets, &pass) == expected);
+        if (pass) {
+            assert(doe_resource_render_pass_end(pass) == DOE_RESOURCE_OK);
+            doe_resource_render_pass_release(pass);
+        }
+        assert(doe_resource_encoder_finish(encoder, &commands) == expected);
+        doe_resource_commands_release(commands);
+        doe_resource_encoder_release(encoder);
+    }
+    doe_resource_view_release(plain);
+    doe_resource_view_release(swizzled);
+    doe_resource_texture_release(texture);
+    for (size_t i = 0; i < 3; i++) assert(tokens[i].releases == 1);
+    empty(&f);
+}
+
 int main(void)
 {
     test_texture_descriptor();
@@ -349,6 +391,7 @@ int main(void)
     test_attachment_aspects();
     test_transient_color();
     test_depth_slices();
-    puts("attachment admission owner: 5 host suites passed; no attachment GPU execution claimed");
+    test_swizzled_views();
+    puts("attachment admission owner: 6 host suites passed; no attachment GPU execution claimed");
     return 0;
 }

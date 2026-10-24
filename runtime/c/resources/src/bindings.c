@@ -332,7 +332,8 @@ static doe_resource_status validate_binding(const doe_resource_layout *layout,
                 return DOE_RESOURCE_LAYOUT;
         } else {
             if (!(view->desc.usage & WGPUTextureUsage_StorageBinding)) return DOE_RESOURCE_USAGE;
-            if (resource_format_depth(view->desc.format) || entry->storage_format != view->desc.format ||
+            if (view->desc.swizzled || resource_format_depth(view->desc.format) ||
+                entry->storage_format != view->desc.format ||
                 view->desc.mip_count != 1 || view->texture->desc.samples != 1) return DOE_RESOURCE_LAYOUT;
         }
         break;

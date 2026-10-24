@@ -15,10 +15,11 @@ void native_view_release(void *userdata, void *handle)
     free(payload);
 }
 /* WebGPU per-channel swizzle to native sources (Undefined is the channel's own
- * component). A non-identity swizzle needs texture-component-swizzle and a view
- * usage without RenderAttachment or StorageBinding. */
-static bool view_swizzle(const native_device *device, const WGPUChainedStruct *chain, WGPUTextureUsage usage,
-    doe_vk_swizzle out[4])
+ * component). A non-identity swizzle needs texture-component-swizzle. Its view
+ * may carry RenderAttachment or StorageBinding usage: WebGPU rejects such a view
+ * where it is used as an attachment, resolve target or storage binding (the
+ * resource view's swizzled flag), not at creation. */
+static bool view_swizzle(const native_device *device, const WGPUChainedStruct *chain, doe_vk_swizzle out[4])
 {
     for (uint32_t i = 0; i < 4; ++i) out[i] = DOE_VK_SWIZZLE_IDENTITY;
     if (!chain) return true;
@@ -43,8 +44,7 @@ static bool view_swizzle(const native_device *device, const WGPUChainedStruct *c
         if (sources[i] == own[i]) out[i] = DOE_VK_SWIZZLE_IDENTITY;
         identity &= out[i] == DOE_VK_SWIZZLE_IDENTITY;
     }
-    return identity || (native_feature_enabled(device, WGPUFeatureName_TextureComponentSwizzle) &&
-        !(usage & (WGPUTextureUsage_RenderAttachment | WGPUTextureUsage_StorageBinding)));
+    return identity || native_feature_enabled(device, WGPUFeatureName_TextureComponentSwizzle);
 }
 
 WGPUTextureView wgpuTextureCreateView(WGPUTexture handle, const WGPUTextureViewDescriptor *descriptor)
@@ -67,9 +67,10 @@ WGPUTextureView wgpuTextureCreateView(WGPUTexture handle, const WGPUTextureViewD
     doe_resource_status status = !descriptor->mipLevelCount || !descriptor->arrayLayerCount ? DOE_RESOURCE_RANGE :
         doe_resource_view_validate(texture, &desc, &resolved);
     doe_vk_texture_view_desc native = {0};
-    if (status == DOE_RESOURCE_OK && !view_swizzle(device, descriptor->nextInChain, resolved.usage, native.swizzle))
+    if (status == DOE_RESOURCE_OK && !view_swizzle(device, descriptor->nextInChain, native.swizzle))
         status = DOE_RESOURCE_UNSUPPORTED;
     if (status == DOE_RESOURCE_OK) {
+        for (uint32_t i = 0; i < 4; ++i) resolved.swizzled |= native.swizzle[i] != DOE_VK_SWIZZLE_IDENTITY;
         /* A DepthOnly/StencilOnly view resolves to its aspect format; the backend
          * view selects that native aspect over the same parent image. */
         WGPUTextureFormat aspect_format;
