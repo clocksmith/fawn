@@ -219,3 +219,10 @@ keep source order: the sampler compares the supplied reference to sampled depth.
 Sampling layers clamp; normalized coordinates and LOD retain sampler semantics,
 separate from guarded integer texel accesses. Preserve DEPTH/COMPARISON metadata
 for runtime admission instead of inferring sampler choices from emitted text.
+
+Implicit image sampling remains fragment-only through the bounded source call
+closure, including dead syntax and helper calls. Derivative call sites require
+uniform control, not uniform coordinates. Their results are potentially
+nonuniform even for constant coordinates; use the existing uniformity summaries
+and scratch, without treating a sample as a uniformity proof for later calls.
+Explicit-level image operations retain their separate stage/control contract.

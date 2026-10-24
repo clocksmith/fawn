@@ -103,11 +103,15 @@ void stage_reflect(const Source *source, DoeCompilerStageInterfaceV7 *outputs, c
         names[cursor++] = '\0';
     }
 }
-bool stage_closure(Source *source, uint32_t function, SourceReference reference) {
+bool stage_closure(Source *source, uint32_t function, SourceReference reference, uint32_t offset) {
     const FunctionRecord *entry = &source->compiler->functions[function];
     if (reference.kind == SOURCE_DISCARD && (entry->flags & FUNCTION_FRAGMENT) == 0u)
         return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, reference.index,
             "discard is restricted to fragment entry call graphs");
+    if (reference.kind == SOURCE_IMAGE && (reference.index & SOURCE_IMAGE_DERIVATIVE) != 0u &&
+        (entry->flags & FUNCTION_FRAGMENT) == 0u)
+        return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, offset,
+            "implicit texture sampling is restricted to fragment entry call graphs");
     if (!stage_graphics(entry)) return true;
     if (reference.kind == SOURCE_WORKGROUP || reference.kind == SOURCE_BARRIER)
         return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, entry->name.offset,

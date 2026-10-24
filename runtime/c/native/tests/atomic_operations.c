@@ -1,22 +1,10 @@
 /* SPDX-License-Identifier: MIT
  * Unchanged retained WGSL through the public C module/pipeline/queue boundary. */
 #include "consumer.h"
-#include <stdlib.h>
+#include "shader_fixture.h"
 
 enum { RESULT_WORDS = 336, TOTAL_WORDS = 344, READBACK_BYTES = 1392, PREFIX_WORDS = 2 };
 
-static char *read_shader(const char *path)
-{
-    FILE *file = fopen(path,"rb");
-    if (!file) { perror(path); exit(2); }
-    assert(!fseek(file,0,SEEK_END));
-    long length = ftell(file);
-    assert(length > 0 && length <= 65536 && !fseek(file,0,SEEK_SET));
-    char *source = malloc((size_t)length + 1);
-    assert(source && fread(source,1,(size_t)length,file) == (size_t)length && !fclose(file));
-    source[length] = '\0';
-    return source;
-}
 /* Retained all_ops oracle from compiler/tests/test_atomic_vulkan.c. These
  * finite old-value/result tables are independent of every shader emitter. */
 static void expected_words(size_t binding,uint32_t *words,size_t count)
@@ -46,7 +34,7 @@ int main(int argc,char **argv)
 {
     assert(argc == 1 || argc == 2);
     const char *path = argc == 2 ? argv[1] : "../compiler/tests/atomic_operations.wgsl";
-    char *source = read_shader(path);
+    char *source = native_test_shader(path);
     state s = {0};
     consumer_init(&s);
     WGPUComputePipeline program = pipeline(&s,source);

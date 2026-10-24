@@ -155,7 +155,7 @@ jobs:
             if ($name -eq 'select') { $runCommand += ' "' + $selectRetained + '" "' + $selectCases + '"' }
             $lines += @('if not "%errorlevel%"=="0" exit /b 1', $runCommand, 'if not "%errorlevel%"=="0" exit /b 1')
           }
-          $consumerSources = @('compute.c', 'uniform_standard.c', 'binding_aliases.c', 'command_resources.c', 'indirect_dispatch.c', 'atomics.c', 'atomic_operations.c', 'texture_transfers.c', 'texture_bindings.c', 'pipeline_overrides.c', 'select.c', 'd3d12_graphics.c', 'consumer.h', 'adapter_class.h')
+          $consumerSources = @('compute.c', 'uniform_standard.c', 'binding_aliases.c', 'command_resources.c', 'indirect_dispatch.c', 'atomics.c', 'atomic_operations.c', 'texture_transfers.c', 'texture_bindings.c', 'pipeline_overrides.c', 'select.c', 'd3d12_graphics.c', 'consumer.h', 'adapter_class.h', 'shader_fixture.h')
           $sourceHashes = @{}
           foreach ($name in $consumerSources) {
             $source = Join-Path $native ('tests/' + $name)

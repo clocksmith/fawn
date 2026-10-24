@@ -116,7 +116,9 @@ static bool call_bit(Uniformity *a,uint32_t id,uint32_t cf,uint32_t *out) {
     const uint32_t callee=reference.kind==SOURCE_FUNCTION?reference.index+1u:0u;
     *out=cf;
     if (reference.kind == SOURCE_ATOMIC) *out |= varying(a);
-    if (reference.kind == SOURCE_IMAGE && (reference.index & 256u) != 0u) *out |= varying(a);
+    if (reference.kind == SOURCE_IMAGE && (reference.index & SOURCE_IMAGE_VARYING) != 0u) *out |= varying(a);
+    if (reference.kind == SOURCE_IMAGE && (reference.index & SOURCE_IMAGE_DERIVATIVE) != 0u &&
+        !a->subgroup && !require_uniform(a,cf,e->source_offset)) return false;
     if (reference.kind==SOURCE_BARRIER)
         return a->subgroup || require_uniform(a,cf,e->source_offset);
     const NumericBuiltin *collective = reference.kind == SOURCE_SUBGROUP ?
@@ -450,7 +452,9 @@ bool uniformity_analyze(Source *source,uint64_t limit,uint64_t *used) {
     if (used!=NULL) *used=0u;
     bool barrier=false, subgroup=false;
     for (uint32_t i=0u;i<c->expression_count;++i) {
-        barrier=barrier || c->expression_references[i].kind==SOURCE_BARRIER;
+        const SourceReference reference=c->expression_references[i];
+        barrier=barrier || reference.kind==SOURCE_BARRIER ||
+            (reference.kind==SOURCE_IMAGE && (reference.index & SOURCE_IMAGE_DERIVATIVE)!=0u);
         subgroup=subgroup || c->expression_references[i].kind==SOURCE_SUBGROUP;
     }
     if (!barrier && !subgroup) return true;

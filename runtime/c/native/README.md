@@ -188,9 +188,10 @@ and exact exports; absent platform loaders remain explicitly unavailable.
   Sampled depth images may be cube-compatible. Comparison samplers bind only to
   'comparison' entries. textureLoad, dimension queries, depth textureSampleLevel
   and textureSampleCompareLevel execute through compiler-owned lowering. Explicit
-  depth LOD is integer; comparison uses mip zero. Implicit-derivative sampling
-  and textureSampleCompare remain unimplemented; see the
-  [compiler texture contract](../compiler/TEXTURES.md#explicit-depth-sampling).
+  depth LOD is integer; explicit comparison uses mip zero. Fragment textureSample
+  and textureSampleCompare derive their LOD under the compiler's transitive stage
+  and uniform-control rules; see the
+  [compiler texture contract](../compiler/TEXTURES.md#implicit-fragment-sampling).
   Depth24Plus readback values come from its D32 backing.
   Plus formats use D32/D32S8 backing, not an implied optional public feature;
   depth32float-stencil8 maps to D32S8 only on a device that enabled it.
@@ -609,10 +610,11 @@ backend's one native pass span. The C compiler already emits and reflects multip
 Sampler `maxAnisotropy` has no upper bound at admission; values above one require
 all filters linear, use the device's enabled `samplerAnisotropy`, and clamp to its
 maximum. A device without that feature rejects anisotropic samplers instead of
-silently using one (the spec would also permit clamping to 1). The C compiler only
-admits explicit-LOD `textureSampleLevel` (implicit `textureSample`, gradient and bias
-sampling are rejected), so derivative-driven anisotropic footprints cannot be
-exercised yet; the public check proves admission and a working anisotropic sampler.
+silently using one (the spec would also permit clamping to 1). The C compiler
+admits explicit-LOD sampling and implicit fragment sampling under uniform control;
+gradient and bias overloads remain unimplemented. The existing anisotropy client
+uses explicit LOD and proves admission and a working sampler, without establishing
+derivative-driven anisotropic filtering quality.
 
 `tests/mrt.c` renders a sparse four-slot layout at exactly 32 bytes per sample
 (RGBA8Unorm additive blend, unused slot, RGBA32Uint, RGBA8Unorm with a green/alpha
@@ -623,6 +625,15 @@ slots, missing/mismatched outputs, blend on an unused slot and a packed pipeline
 against a sparse pass. `tests/anisotropy.c` checks zero/non-linear rejection, an
 above-maximum clamp and a 16x anisotropic explicit-LOD draw whose 1:1 texel-center
 oracle is exact for every filter; it is not a filtering-quality claim.
+
+`tests/implicit_sampling.c` consumes the unchanged compiler fragment fixture over
+real four-mip color uploads and rendered depth clears. Its ten cases check 160
+literal RGBA8 pixels for derivative-selected LOD, Less/Greater/Equal and a runtime
+sampler LOD clamp, plus row/prefix/suffix guards and early releases. Focused CPU
+Vulkan execution passes; target SDK validation and physical execution keep their
+own source-bound evidence. D3D12 depth textures remain outside its current
+constructor envelope. The common bounded fixture reader preserves source bytes
+for this client and the select, atomics and explicit-depth controls.
 
 ## Intentionally unprovided or rejected
 
@@ -640,7 +651,7 @@ remain explicitly rejected. WGSL discard requires actual enabled demote support;
 unsupported devices reject that pipeline. Blend constants must be finite f32.
 Texture format reinterpretation beyond srgb/unorm viewFormats pairs (RGBA8,
 BGRA8; resource-validated, then a mutable Vulkan image with a format list), srgb
-viewFormats together with StorageBinding, depth storage, implicit-derivative depth comparison, multisampled
+viewFormats together with StorageBinding, depth storage, gradient/bias sampling, multisampled
 buffer copies/storage, and cube arrays without device imageCubeArray are rejected.
 `tests/core_formats.c` round-trips the thirteen formats added for the WebGPU core
 set (r8/rg8 snorm/uint/sint, r16/rg16 uint/sint, rgb10a2unorm/uint, rgb9e5ufloat)

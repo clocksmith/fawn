@@ -46,9 +46,9 @@ static bool decode(MetalEmitter *e, const IrInstruction *ir, MetalImage *image) 
         case IMAGE_STORE: expected = 3u + (image->arrayed ? 1u : 0u); break;
         case IMAGE_DIMENSIONS: expected = !image->storage && !image->multisampled && count == 2u ? 2u : 1u; break;
         case IMAGE_LEVELS: case IMAGE_LAYERS: case IMAGE_SAMPLES: break;
-        case IMAGE_SAMPLE_LEVEL: case IMAGE_SAMPLE_COMPARE_LEVEL:
-            expected = 4u + (image->arrayed ? 1u : 0u);
-            if (image->depth && image->width == 2u && count == expected + 1u) ++expected;
+        case IMAGE_SAMPLE: case IMAGE_SAMPLE_COMPARE: case IMAGE_SAMPLE_LEVEL: case IMAGE_SAMPLE_COMPARE_LEVEL:
+            expected = image_sample_arity(shape, image->operation);
+            if (image_offset_width(shape, image->operation) != 0u && count == expected + 1u) ++expected;
             break;
         default: metal_error(e, "Metal image operation has no implemented lowering"); return false;
     }
@@ -58,10 +58,9 @@ static bool decode(MetalEmitter *e, const IrInstruction *ir, MetalImage *image) 
     }
     const bool texel = image->operation == IMAGE_LOAD || image->operation == IMAGE_STORE;
     const TypeId result_scalar = image->operation == IMAGE_STORE ? IR_VOID :
-        image->operation == IMAGE_LOAD || image->operation == IMAGE_SAMPLE_LEVEL ||
-        image->operation == IMAGE_SAMPLE_COMPARE_LEVEL ? t->element : IR_U32;
+        image->operation == IMAGE_LOAD || image_sampling(image->operation) ? t->element : IR_U32;
     const uint32_t result_width = image->operation == IMAGE_DIMENSIONS ? (image->cube ? 2u : image->width) :
-        (image->operation == IMAGE_LOAD || image->operation == IMAGE_SAMPLE_LEVEL) && !image->depth ? 4u : 1u;
+        (image->operation == IMAGE_LOAD || image_sampling(image->operation)) && !image->depth ? 4u : 1u;
     if (type_leaf(c, ir->type) != result_scalar || type_vector_width(c, ir->type) != result_width ||
         (image->operation == IMAGE_STORE ? ir->result != 0u : ir->result == 0u)) {
         metal_error(e, "Metal image result differs from its typed operation");
@@ -73,9 +72,9 @@ static bool decode(MetalEmitter *e, const IrInstruction *ir, MetalImage *image) 
         (image->operation == IMAGE_LEVELS && (image->storage || image->multisampled)) ||
         (image->operation == IMAGE_LAYERS && !image->arrayed) ||
         (image->operation == IMAGE_SAMPLES && !image->multisampled) ||
-        ((image->operation == IMAGE_SAMPLE_LEVEL || image->operation == IMAGE_SAMPLE_COMPARE_LEVEL) &&
+        ((image_sampling(image->operation)) &&
          (image->storage || image->multisampled || t->element != IR_F32 ||
-          (image->operation == IMAGE_SAMPLE_COMPARE_LEVEL && !image->depth)))) {
+          (image_comparison(image->operation) && !image->depth)))) {
         metal_error(e, "Metal image operation is invalid for its texture access or shape");
         return false;
     }
@@ -87,24 +86,25 @@ static bool decode(MetalEmitter *e, const IrInstruction *ir, MetalImage *image) 
         else if (image->multisampled) image->sample = args[count - 1u];
         else if (!image->storage) image->level = args[count - 1u];
     } else if (image->operation == IMAGE_DIMENSIONS && count == 2u) image->level = args[1];
-    else if (image->operation == IMAGE_SAMPLE_LEVEL || image->operation == IMAGE_SAMPLE_COMPARE_LEVEL) {
+    else if (image_sampling(image->operation)) {
         image->sampler = args[1];
         image->coordinates = args[2];
         if (image->arrayed) image->layer = args[3];
         const uint32_t last = 3u + (image->arrayed ? 1u : 0u);
-        if (image->operation == IMAGE_SAMPLE_COMPARE_LEVEL) image->reference = args[last];
-        else image->level = args[last];
-        if (count == last + 2u) image->offset = args[last + 1u];
+        if (image_comparison(image->operation)) image->reference = args[last];
+        else if (!image_implicit(image->operation)) image->level = args[last];
+        const uint32_t arity = image_sample_arity(shape, image->operation);
+        if (count == arity + 1u) image->offset = args[arity];
         const TypeId sampler = metal_value_type(e, image->sampler);
         const TypeId coordinates = metal_value_type(e, image->coordinates);
         if (sampler < 7u || sampler - 7u >= c->type_count || c->types[sampler - 7u].kind != TYPE_SAMPLER ||
             c->types[sampler - 7u].state.image.flags !=
-                (image->operation == IMAGE_SAMPLE_COMPARE_LEVEL ? DOE_COMPILER_HANDLE_COMPARISON : 0u) || type_leaf(c, coordinates) != IR_F32 ||
+                (image_comparison(image->operation) ? DOE_COMPILER_HANDLE_COMPARISON : 0u) || type_leaf(c, coordinates) != IR_F32 ||
             type_vector_width(c, coordinates) != image->width ||
             (image->reference != NO_ID && metal_value_type(e, image->reference) != IR_F32) ||
             (image->level != NO_ID && !image->depth && metal_value_type(e, image->level) != IR_F32) ||
             (image->level != NO_ID && image->depth && !integer_operand(e, image->level, 1u))) {
-            metal_error(e, "Metal explicit sampling operand types differ from the typed image operation");
+            metal_error(e, "Metal sampling operand types differ from the typed image operation");
             return false;
         }
     }
@@ -230,12 +230,13 @@ static void sample_level(MetalEmitter *e, const IrInstruction *ir, const MetalIm
     if (image->arrayed) metal_text(e, ", image_layer");
     /* WebGPU 1D views have one level. MSL has no 1D LOD sample overload;
      * the supplied LOD has already evaluated, and the sole level is selected. */
-    if (!image->one_dimensional) {
-        if (image->reference != NO_ID) {
-            metal_text(e, ", ");
-            metal_value(e, image->reference);
-            metal_text(e, ", level(0.0f)");
-        } else {
+    if (image->reference != NO_ID) {
+        metal_text(e, ", ");
+        metal_value(e, image->reference);
+    }
+    if (!image->one_dimensional && !image_implicit(image->operation)) {
+        if (image->reference != NO_ID) metal_text(e, ", level(0.0f)");
+        else {
             metal_text(e, ", level(float(");
             metal_value(e, image->level);
             metal_text(e, "))");
@@ -244,8 +245,9 @@ static void sample_level(MetalEmitter *e, const IrInstruction *ir, const MetalIm
     if (image->offset != NO_ID) {
         if (image->offset == 0u || image->offset > e->module->instruction_count ||
             type_leaf(e->module, metal_value_type(e, image->offset)) != IR_I32 ||
-            type_vector_width(e->module, metal_value_type(e, image->offset)) != 2u) {
-            metal_error(e, "texture offset has no signed two-component constant identity");
+            type_vector_width(e->module, metal_value_type(e, image->offset)) !=
+                image_offset_width(image->type->state.image, image->operation)) {
+            metal_error(e, "texture offset has no matching signed constant identity");
             return;
         }
         const IrInstruction *offset = &e->module->instructions[image->offset - 1u];
@@ -288,7 +290,7 @@ void metal_image(MetalEmitter *e, const IrInstruction *ir) {
     }
     switch (image.operation) {
         case IMAGE_LOAD: case IMAGE_STORE: texel(e, ir, &image); break;
-        case IMAGE_SAMPLE_LEVEL: case IMAGE_SAMPLE_COMPARE_LEVEL: sample_level(e, ir, &image); break;
+        case IMAGE_SAMPLE: case IMAGE_SAMPLE_COMPARE: case IMAGE_SAMPLE_LEVEL: case IMAGE_SAMPLE_COMPARE_LEVEL: sample_level(e, ir, &image); break;
         case IMAGE_DIMENSIONS:
             dimensions(e, &image);
             assign_result(e, ir);

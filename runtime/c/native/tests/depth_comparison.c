@@ -1,9 +1,9 @@
 /* SPDX-License-Identifier: MIT
  * Unchanged WGSL over rendered depth maps, sampled through the public C API. */
 #include "consumer.h"
-#include <stdlib.h>
+#include "shader_fixture.h"
 
-enum { CASES = 4, RESULT_WORDS = 21, SUFFIX_WORDS = 2, SOURCE_LIMIT = 65536 };
+enum { CASES = 4, RESULT_WORDS = 21, SUFFIX_WORDS = 2 };
 #define CANARY UINT32_C(0xdeadbeef)
 #define QUARTER UINT32_C(0x3e800000)
 #define HALF UINT32_C(0x3f000000)
@@ -36,29 +36,6 @@ static const struct {
     {"less-repeat",WGPUCompareFunction_Less,WGPUAddressMode_Repeat}
 };
 
-static void input_error(const char *path,const char *reason)
-{
-    fprintf(stderr,"depth comparison fixture %s: %s\n",path,reason);
-    exit(2);
-}
-static char *read_shader(const char *path)
-{
-    FILE *file = fopen(path,"rb");
-    if (!file) input_error(path,"open failed");
-    if (fseek(file,0,SEEK_END)) input_error(path,"seek failed");
-    const long length = ftell(file);
-    if (length <= 0 || length > SOURCE_LIMIT || fseek(file,0,SEEK_SET))
-        input_error(path,"source must be nonempty and at most 65536 bytes");
-    const size_t bytes = (size_t)length;
-    char *source = malloc(bytes + 1);
-    if (!source) input_error(path,"allocation failed");
-    if (fread(source,1,bytes,file) != bytes || fgetc(file) != EOF || ferror(file))
-        input_error(path,"short read, I/O failure or changing file extent");
-    if (fclose(file)) input_error(path,"close failed");
-    if (memchr(source,0,bytes)) input_error(path,"embedded NUL byte");
-    source[bytes] = '\0';
-    return source;
-}
 static WGPUTexture depth_image(state *s,uint32_t width,uint32_t layers,uint32_t mips)
 {
     WGPUTextureDescriptor descriptor = WGPU_TEXTURE_DESCRIPTOR_INIT;
@@ -199,7 +176,7 @@ int main(int argc,char **argv)
         fprintf(stderr,"usage: %s [depth_sampling.wgsl]\n",argv[0]);
         return 2;
     }
-    char *source = read_shader(argc == 2 ? argv[1] : "../compiler/tests/depth_sampling.wgsl");
+    char *source = native_test_shader(argc == 2 ? argv[1] : "../compiler/tests/depth_sampling.wgsl");
     state s = {0};
     consumer_init(&s);
     WGPUComputePipeline program = pipeline(&s,source);

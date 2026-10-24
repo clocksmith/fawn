@@ -43,6 +43,13 @@ records exact overloads, comparison direction, target mapping and remaining scop
 `make depth-sampling-check` checks all public target adapters; target SDK validation
 and public CPU execution remain distinct evidence.
 
+Implicit `textureSample` and `textureSampleCompare` now use the same image owner
+with transitive fragment-only and default derivative-uniformity validation.
+`make implicit-sampling-check` covers public target admission, helper/control-flow
+restrictions and preserved explicit-level behavior. The [texture contract](TEXTURES.md#implicit-fragment-sampling)
+records exact scope and the independent fragment pixel fixture; actual execution
+and target validation remain separate evidence.
+
 ## Build and decisive checks
 
 From the repository root, ordinary source consumption is:
