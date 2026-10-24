@@ -78,7 +78,7 @@ int main(void)
         }
         wgpuRenderPassEncoderEnd(pass);
         wgpuRenderPassEncoderRelease(pass);
-        assert(!wgpuCommandEncoderFinish(encoder,NULL));
+        finish_invalid(encoder);
         wgpuCommandEncoderRelease(encoder);
         expect_validation(&s);
     }
@@ -92,7 +92,7 @@ int main(void)
         assert(rejected); /* WebGPU invalid pass; the error also surfaces at Finish. */
         wgpuRenderPassEncoderEnd(rejected);
         wgpuRenderPassEncoderRelease(rejected);
-        assert(!wgpuCommandEncoderFinish(encoder,NULL));
+        finish_invalid(encoder);
         wgpuCommandEncoderRelease(encoder);
         expect_validation(&s);
     }

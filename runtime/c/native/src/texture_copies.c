@@ -97,6 +97,13 @@ void wgpuQueueWriteTexture(WGPUQueue handle, const WGPUTexelCopyTextureInfo *des
     }
     WGPUBufferDescriptor descriptor = {.size=(bytes + 3) & ~UINT64_C(3),
         .usage=WGPUBufferUsage_CopySrc | WGPUBufferUsage_CopyDst};
+    /* A valid write whose staging exceeds the backend allocation limit is out of
+     * memory, not a validation error of the request. */
+    if (descriptor.size > native_allocation_bound(device)) {
+        native_error(device, WGPUErrorType_OutOfMemory, "queue texture write staging exceeds the allocation limit");
+        native_device_release(device);
+        return;
+    }
     /* WebGPU bounds writeTexture by the texture, not maxBufferSize: internal
      * staging keeps only the backend's real allocation limit. */
     WGPUBuffer staging = native_device_create_buffer(device, &descriptor, native_allocation_bound(device));

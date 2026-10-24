@@ -4,7 +4,7 @@
 static const WGPUStringView label = {"nested\0diagnostic",17};
 static void rejected_finish(state *s, WGPUCommandEncoder encoder)
 {
-    assert(!wgpuCommandEncoderFinish(encoder,NULL));
+    finish_invalid(encoder);
     expect_validation(s);
     wgpuCommandEncoderRelease(encoder);
 }

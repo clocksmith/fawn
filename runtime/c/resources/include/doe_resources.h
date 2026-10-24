@@ -473,6 +473,11 @@ doe_resource_status doe_resource_encoder_status(const doe_resource_encoder *enco
  * always closes an open pass, even an invalid one. NULL is not ended. */
 bool doe_resource_encoder_ended(const doe_resource_encoder *encoder);
 bool doe_resource_compute_pass_ended(const doe_resource_compute_pass *pass);
+/* End reports at the call: the pass ended or its parent encoder is not locked. */
+bool doe_resource_compute_pass_closed(const doe_resource_compute_pass *pass);
+/* The WebGPU invalid command buffer after a failed Finish: no commands; submit
+ * and program claims reject it. NULL unless the encoder failed, or on OOM. */
+doe_resource_commands *doe_resource_commands_rejected(doe_resource_encoder *encoder);
 /* Native descriptor preflight uses this same sticky error state, never a second
  * frontend poison flag. OK/PENDING and out-of-range statuses are not rejection. */
 doe_resource_status doe_resource_encoder_invalidate(doe_resource_encoder *encoder,

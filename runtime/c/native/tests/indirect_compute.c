@@ -36,7 +36,7 @@ static void rejected_record(state *s, WGPUComputePipeline program, WGPUBindGroup
     wgpuComputePassEncoderDispatchWorkgroupsIndirect(pass,arguments,offset);
     wgpuComputePassEncoderEnd(pass);
     wgpuComputePassEncoderRelease(pass);
-    assert(!wgpuCommandEncoderFinish(encoder,NULL));
+    finish_invalid(encoder);
     wgpuCommandEncoderRelease(encoder);
     expect_validation(s);
 }

@@ -57,7 +57,7 @@ static void invalid_ranges(state *s)
     wgpuDevicePushErrorScope(s->device,WGPUErrorFilter_Validation);
     WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(s->device,NULL);
     wgpuCommandEncoderResolveQuerySet(encoder,empty,0,0,destination,0);
-    assert(!wgpuCommandEncoderFinish(encoder,NULL));
+    finish_invalid(encoder);
     wgpuCommandEncoderRelease(encoder);
     expect_validation(s);
     wgpuQuerySetRelease(empty);
@@ -74,13 +74,13 @@ static void invalid_ranges(state *s)
     wgpuComputePassEncoderDispatchWorkgroups(rejected,1,1,1);
     wgpuComputePassEncoderEnd(rejected);
     wgpuComputePassEncoderRelease(rejected);
-    assert(!wgpuCommandEncoderFinish(encoder,NULL));
+    finish_invalid(encoder);
     wgpuCommandEncoderRelease(encoder);
     expect_validation(s);
     wgpuDevicePushErrorScope(s->device,WGPUErrorFilter_Validation);
     encoder = wgpuDeviceCreateCommandEncoder(s->device,NULL);
     wgpuCommandEncoderResolveQuerySet(encoder,set,0,1,destination,8);
-    assert(!wgpuCommandEncoderFinish(encoder,NULL));
+    finish_invalid(encoder);
     wgpuCommandEncoderRelease(encoder);
     expect_validation(s);
     encoder = wgpuDeviceCreateCommandEncoder(s->device,NULL);

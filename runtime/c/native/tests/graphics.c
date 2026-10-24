@@ -175,7 +175,7 @@ static void integer_clear(state *s)
         wgpuRenderPassEncoderDraw(rejected,3,1,0,0);
         wgpuRenderPassEncoderEnd(rejected);
         wgpuRenderPassEncoderRelease(rejected);
-        assert(!wgpuCommandEncoderFinish(encoder,NULL));
+        finish_invalid(encoder);
         expect_validation(s);
         wgpuCommandEncoderRelease(encoder);
         wgpuTextureViewRelease(view);
