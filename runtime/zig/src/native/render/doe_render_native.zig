@@ -214,6 +214,19 @@ pub export fn doeNativeCommandEncoderBeginRenderPass(enc_raw: ?*anyopaque, desc:
     return toOpaque(pass);
 }
 
+/// The pass's render pass layout: every color slot when the pass records
+/// slots, otherwise its single target.
+pub fn passColorFormats(pass: *const DoeRenderPass, out: *[model_render_types.MAX_COLOR_ATTACHMENTS]u32) []const u32 {
+    if (pass.color_attachment_count != 0) {
+        const count = @min(pass.color_attachment_count, out.len);
+        for (pass.color_attachments[0..count], out[0..count]) |slot, *format| format.* = slot.format;
+        return out[0..count];
+    }
+    if (pass.target_format == 0) return out[0..0];
+    out[0] = pass.target_format;
+    return out[0..1];
+}
+
 pub export fn doeNativeRenderPassSetPipeline(pass_raw: ?*anyopaque, pip_raw: ?*anyopaque) callconv(.c) void {
     const pass = cast(DoeRenderPass, pass_raw) orelse return;
     if (!recording.requirePass(pass.enc, @intFromPtr(pass))) return;

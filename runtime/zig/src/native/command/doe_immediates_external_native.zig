@@ -108,6 +108,10 @@ test "setImmediates accepts aligned ranges within the limit and invalidates othe
     }
     var descriptor = std.mem.zeroes(@import("../../full/render/wgpu_render_types.zig").RenderBundleEncoderDescriptor);
     descriptor.sampleCount = 1;
+    // A bundle layout names at least one attachment.
+    const color_formats = [_]u32{@import("../../core/abi/wgpu_texture_base_types.zig").WGPUTextureFormat_RGBA8Unorm};
+    descriptor.colorFormatCount = color_formats.len;
+    descriptor.colorFormats = &color_formats;
     const encoder = bundle_native.doeNativeDeviceCreateRenderBundleEncoder(&device, &descriptor).?;
     defer bundle_native.doeNativeRenderBundleEncoderRelease(encoder);
     doeNativeRenderBundleEncoderSetImmediates(encoder, 0, &bytes, 16);

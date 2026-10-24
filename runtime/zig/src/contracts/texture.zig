@@ -7,9 +7,17 @@ const texture = @import("model/model_texture_value_types.zig");
 /// alignment (https://gpuweb.github.io/gpuweb/#plain-color-formats).
 pub const RenderTargetCost = struct { cost: u32, alignment: u32 };
 
-/// Null for a format that is not a color render target.
+/// Null for a format that is not a color render target. The snorm and 16-bit
+/// unorm formats are color targets only with texture-formats-tier1
+/// (renderTargetNeedsTier1).
 pub fn renderTargetCost(format: texture.WGPUTextureFormat) ?RenderTargetCost {
     return switch (format) {
+        texture.WGPUTextureFormat_R8Snorm => .{ .cost = 1, .alignment = 1 },
+        texture.WGPUTextureFormat_RG8Snorm => .{ .cost = 2, .alignment = 1 },
+        texture.WGPUTextureFormat_RGBA8Snorm => .{ .cost = 4, .alignment = 1 },
+        texture.WGPUTextureFormat_R16Unorm, texture.WGPUTextureFormat_R16Snorm => .{ .cost = 2, .alignment = 2 },
+        texture.WGPUTextureFormat_RG16Unorm, texture.WGPUTextureFormat_RG16Snorm => .{ .cost = 4, .alignment = 2 },
+        texture.WGPUTextureFormat_RGBA16Unorm, texture.WGPUTextureFormat_RGBA16Snorm => .{ .cost = 8, .alignment = 2 },
         texture.WGPUTextureFormat_R8Unorm, texture.WGPUTextureFormat_R8Uint, texture.WGPUTextureFormat_R8Sint => .{ .cost = 1, .alignment = 1 },
         texture.WGPUTextureFormat_RG8Unorm, texture.WGPUTextureFormat_RG8Uint, texture.WGPUTextureFormat_RG8Sint => .{ .cost = 2, .alignment = 1 },
         texture.WGPUTextureFormat_RGBA8Uint, texture.WGPUTextureFormat_RGBA8Sint => .{ .cost = 4, .alignment = 1 },
@@ -31,6 +39,24 @@ pub fn renderTargetCost(format: texture.WGPUTextureFormat) ?RenderTargetCost {
         => .{ .cost = 8, .alignment = 4 },
         texture.WGPUTextureFormat_RGBA32Uint, texture.WGPUTextureFormat_RGBA32Sint, texture.WGPUTextureFormat_RGBA32Float => .{ .cost = 16, .alignment = 4 },
         else => null,
+    };
+}
+
+/// Color targets that texture-formats-tier1 adds
+/// (https://gpuweb.github.io/gpuweb/#texture-formats-tier1).
+pub fn renderTargetNeedsTier1(format: texture.WGPUTextureFormat) bool {
+    return switch (format) {
+        texture.WGPUTextureFormat_R8Snorm,
+        texture.WGPUTextureFormat_RG8Snorm,
+        texture.WGPUTextureFormat_RGBA8Snorm,
+        texture.WGPUTextureFormat_R16Unorm,
+        texture.WGPUTextureFormat_R16Snorm,
+        texture.WGPUTextureFormat_RG16Unorm,
+        texture.WGPUTextureFormat_RG16Snorm,
+        texture.WGPUTextureFormat_RGBA16Unorm,
+        texture.WGPUTextureFormat_RGBA16Snorm,
+        => true,
+        else => false,
     };
 }
 

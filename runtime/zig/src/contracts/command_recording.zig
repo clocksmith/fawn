@@ -18,6 +18,8 @@ pub const RenderAttachmentError = error{
     RenderAttachmentFormatMismatch,
     RenderAttachmentUnsupported,
     RenderAttachmentColorBytesExceeded,
+    RenderBundleIncompatible,
+    RenderPipelineIncompatible,
 };
 
 /// WebGPU draw-time buffer validation
@@ -65,6 +67,8 @@ pub fn message(cause: Failure) []const u8 {
         error.RenderAttachmentSampleMismatch => "render attachments and pipeline sample counts must match",
         error.RenderAttachmentFormatMismatch => "render attachment formats must match their roles and pipeline targets",
         error.RenderAttachmentUnsupported => "Vulkan rendering supports up to eight 2D color attachments and an optional depth/stencil attachment",
+        error.RenderBundleIncompatible => "render bundle layout or depth/stencil read-only state differs from the render pass",
+        error.RenderPipelineIncompatible => "render pipeline layout differs from the render pass or bundle, or writes a read-only depth or stencil aspect",
         error.RenderAttachmentColorBytesExceeded => "render pass color attachments exceed maxColorAttachmentBytesPerSample",
         error.DrawVertexBufferMissing => "draw requires a vertex buffer in every slot the pipeline uses",
         error.DrawVertexBufferOutOfBounds => "draw reads past the bound vertex buffer range",

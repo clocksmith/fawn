@@ -24,6 +24,8 @@ fn make_test_encoder(allocator: std.mem.Allocator) DoeBundleEncoder {
     return .{
         .allocator = allocator,
         .color_format = 0x04, // BGRA8Unorm-like placeholder
+        .color_formats = .{ 0x04, 0, 0, 0, 0, 0, 0, 0 },
+        .color_count = 1,
         .depth_stencil_format = 0,
         .sample_count = 1,
         .depth_read_only = false,
@@ -53,6 +55,8 @@ fn finish_to_bundle(enc: *DoeBundleEncoder) DoeRenderBundle {
     return .{
         .allocator = enc.allocator,
         .color_format = enc.color_format,
+        .color_formats = enc.color_formats,
+        .color_count = enc.color_count,
         .depth_stencil_format = enc.depth_stencil_format,
         .sample_count = enc.sample_count,
         .cmds = cmds_slice,

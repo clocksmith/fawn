@@ -10,6 +10,7 @@ const model_render_types = @import("../../contracts/model/model_render_types.zig
 const vertex_formats = @import("../../contracts/vertex_format.zig");
 const values = @import("../../contracts/model/model_texture_value_types.zig");
 const feature_abi = @import("../../core/abi/wgpu_feature_base_types.zig");
+const texture_contract = @import("../../contracts/texture.zig");
 const Extent = struct { width: u32, height: u32 };
 
 fn tier1Enabled(device: ?*const objects.DoeDevice) bool {
@@ -91,78 +92,9 @@ fn validateResolve(color: *const objects.DoeTextureView, resolve: *const objects
 /// (vk_device_caps.zig: the WebGPU minimum, not raisable).
 const MAX_COLOR_ATTACHMENT_BYTES_PER_SAMPLE: u32 = 32;
 
-const TargetCost = struct { bytes: u32, alignment: u32 };
-
-/// Render target pixel byte cost and component alignment
-/// (https://gpuweb.github.io/gpuweb/#plain-color-formats and the
-/// texture-formats-tier1 table); null for a format that is not a color target.
-fn targetCost(format: u32) ?TargetCost {
-    return switch (format) {
-        texture_abi.WGPUTextureFormat_R8Unorm,
-        texture_abi.WGPUTextureFormat_R8Uint,
-        texture_abi.WGPUTextureFormat_R8Sint,
-        values.WGPUTextureFormat_R8Snorm,
-        => .{ .bytes = 1, .alignment = 1 },
-        texture_abi.WGPUTextureFormat_RG8Unorm,
-        texture_abi.WGPUTextureFormat_RG8Uint,
-        texture_abi.WGPUTextureFormat_RG8Sint,
-        values.WGPUTextureFormat_RG8Snorm,
-        => .{ .bytes = 2, .alignment = 1 },
-        texture_abi.WGPUTextureFormat_RGBA8Uint,
-        texture_abi.WGPUTextureFormat_RGBA8Sint,
-        values.WGPUTextureFormat_RGBA8Snorm,
-        => .{ .bytes = 4, .alignment = 1 },
-        texture_abi.WGPUTextureFormat_RGBA8Unorm,
-        texture_abi.WGPUTextureFormat_RGBA8UnormSrgb,
-        texture_abi.WGPUTextureFormat_BGRA8Unorm,
-        texture_abi.WGPUTextureFormat_BGRA8UnormSrgb,
-        => .{ .bytes = 8, .alignment = 1 },
-        texture_abi.WGPUTextureFormat_R16Uint,
-        texture_abi.WGPUTextureFormat_R16Sint,
-        texture_abi.WGPUTextureFormat_R16Float,
-        values.WGPUTextureFormat_R16Unorm,
-        values.WGPUTextureFormat_R16Snorm,
-        => .{ .bytes = 2, .alignment = 2 },
-        texture_abi.WGPUTextureFormat_RG16Uint,
-        texture_abi.WGPUTextureFormat_RG16Sint,
-        texture_abi.WGPUTextureFormat_RG16Float,
-        values.WGPUTextureFormat_RG16Unorm,
-        values.WGPUTextureFormat_RG16Snorm,
-        => .{ .bytes = 4, .alignment = 2 },
-        texture_abi.WGPUTextureFormat_RGBA16Uint,
-        texture_abi.WGPUTextureFormat_RGBA16Sint,
-        texture_abi.WGPUTextureFormat_RGBA16Float,
-        values.WGPUTextureFormat_RGBA16Unorm,
-        values.WGPUTextureFormat_RGBA16Snorm,
-        => .{ .bytes = 8, .alignment = 2 },
-        texture_abi.WGPUTextureFormat_R32Uint,
-        texture_abi.WGPUTextureFormat_R32Sint,
-        texture_abi.WGPUTextureFormat_R32Float,
-        => .{ .bytes = 4, .alignment = 4 },
-        texture_abi.WGPUTextureFormat_RG32Uint,
-        texture_abi.WGPUTextureFormat_RG32Sint,
-        texture_abi.WGPUTextureFormat_RG32Float,
-        texture_abi.WGPUTextureFormat_RGB10A2Uint,
-        texture_abi.WGPUTextureFormat_RGB10A2Unorm,
-        texture_abi.WGPUTextureFormat_RG11B10Ufloat,
-        => .{ .bytes = 8, .alignment = 4 },
-        texture_abi.WGPUTextureFormat_RGBA32Uint,
-        texture_abi.WGPUTextureFormat_RGBA32Sint,
-        texture_abi.WGPUTextureFormat_RGBA32Float,
-        => .{ .bytes = 16, .alignment = 4 },
-        else => null,
-    };
-}
-
 /// https://gpuweb.github.io/gpuweb/#abstract-opdef-calculating-color-attachment-bytes-per-sample
 fn colorBytesPerSample(formats: []const u32) Error!u32 {
-    var total: u32 = 0;
-    for (formats) |format| {
-        if (format == 0) continue;
-        const cost = targetCost(format) orelse return error.RenderAttachmentFormatMismatch;
-        total = std.mem.alignForward(u32, total, cost.alignment) + cost.bytes;
-    }
-    return total;
+    return texture_contract.colorAttachmentBytesPerSample(formats) orelse error.RenderAttachmentFormatMismatch;
 }
 
 /// Every attachment of a pass shares the first one's extent and sample count.

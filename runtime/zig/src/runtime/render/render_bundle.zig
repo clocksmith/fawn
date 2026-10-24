@@ -42,6 +42,9 @@ pub const MAX_BIND_GROUPS: usize = 4;
 // Maximum bindings per bind group.
 pub const MAX_BINDINGS_PER_GROUP: usize = 16;
 
+// Color slots a bundle's render pass layout can name (maxColorAttachments).
+pub const MAX_COLOR_SLOTS: usize = 8;
+
 // Binding numbers a bind group's dynamic offsets can address.
 pub const MAX_DYNAMIC_OFFSET_BINDINGS: usize = 32;
 
@@ -139,7 +142,10 @@ pub const DoeBundleEncoder = struct {
     references: std.ArrayListUnmanaged(leases.ResourceLease) = .{},
     backend: backend_contract.NativeBackendKind = .metal,
     // Compatibility signature — validated against render pass at executeBundles time.
+    // color_format repeats slot 0 for single-target replay.
     color_format: abi_texture.WGPUTextureFormat,
+    color_formats: [MAX_COLOR_SLOTS]abi_texture.WGPUTextureFormat = [_]abi_texture.WGPUTextureFormat{0} ** MAX_COLOR_SLOTS,
+    color_count: u32 = 0,
     depth_stencil_format: abi_texture.WGPUTextureFormat,
     sample_count: u32,
     depth_read_only: bool,
@@ -166,10 +172,51 @@ pub const DoeRenderBundle = struct {
     references: std.ArrayListUnmanaged(leases.ResourceLease) = .{},
     backend: backend_contract.NativeBackendKind = .metal,
     color_format: abi_texture.WGPUTextureFormat,
+    /// The render pass layout: every color slot (null slots are 0), the
+    /// depth-stencil format and sample count, and the read-only flags.
+    color_formats: [MAX_COLOR_SLOTS]abi_texture.WGPUTextureFormat = [_]abi_texture.WGPUTextureFormat{0} ** MAX_COLOR_SLOTS,
+    color_count: u32 = 0,
     depth_stencil_format: abi_texture.WGPUTextureFormat,
     sample_count: u32,
+    depth_read_only: bool = false,
+    stencil_read_only: bool = false,
     cmds: []BundleCmd, // owned slice
 };
+
+/// Render pass layouts are equal when their sample counts and depth-stencil
+/// formats are equal and their color formats are equal ignoring trailing
+/// null slots (https://gpuweb.github.io/gpuweb/#abstract-opdef-equal-render-pass-layouts).
+pub fn layoutMatches(
+    b: *const DoeRenderBundle,
+    pass_color_formats: []const abi_texture.WGPUTextureFormat,
+    pass_depth_stencil_format: abi_texture.WGPUTextureFormat,
+    pass_sample_count: u32,
+) bool {
+    if (b.sample_count != pass_sample_count or b.depth_stencil_format != pass_depth_stencil_format) return false;
+    return colorFormatsEqual(b.color_formats[0..@min(b.color_count, MAX_COLOR_SLOTS)], pass_color_formats);
+}
+
+/// Color format lists compared slot by slot, ignoring trailing null slots.
+pub fn colorFormatsEqual(a: []const abi_texture.WGPUTextureFormat, b: []const abi_texture.WGPUTextureFormat) bool {
+    return std.mem.eql(abi_texture.WGPUTextureFormat, trimNullSlots(a), trimNullSlots(b));
+}
+
+fn trimNullSlots(formats: []const abi_texture.WGPUTextureFormat) []const abi_texture.WGPUTextureFormat {
+    var end = formats.len;
+    while (end > 0 and formats[end - 1] == 0) end -= 1;
+    return formats[0..end];
+}
+
+test "layoutMatches ignores trailing null color slots only" {
+    var b = DoeRenderBundle{ .allocator = std.testing.allocator, .color_format = 0x16, .depth_stencil_format = 0, .sample_count = 1, .cmds = &.{} };
+    b.color_formats[0] = 0x16;
+    b.color_formats[2] = 0x24;
+    b.color_count = 4;
+    try std.testing.expect(layoutMatches(&b, &.{ 0x16, 0, 0x24 }, 0, 1));
+    try std.testing.expect(!layoutMatches(&b, &.{ 0x16, 0x24 }, 0, 1));
+    try std.testing.expect(!layoutMatches(&b, &.{ 0x16, 0, 0x24 }, 0, 4));
+    try std.testing.expect(!layoutMatches(&b, &.{ 0x16, 0, 0x24 }, 0x28, 1));
+}
 
 // ============================================================
 // Bridge functions imported from metal_bridge.m
@@ -590,8 +637,12 @@ pub fn bundle_encoder_finish(enc: *DoeBundleEncoder) ?*DoeRenderBundle {
         .allocator = a,
         .backend = enc.backend,
         .color_format = enc.color_format,
+        .color_formats = enc.color_formats,
+        .color_count = enc.color_count,
         .depth_stencil_format = enc.depth_stencil_format,
         .sample_count = enc.sample_count,
+        .depth_read_only = enc.depth_read_only,
+        .stencil_read_only = enc.stencil_read_only,
         .cmds = cmds_slice,
         .references = enc.references,
     };
