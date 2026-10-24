@@ -1,0 +1,64 @@
+name: c-windows-host-build
+
+on:
+  workflow_dispatch:
+    inputs:
+      exact_revision:
+        description: Exact 40-character Doe commit for the Windows host controls
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  compiler-host:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.exact_revision }}
+          clean: true
+      - name: Bind exact source and discover the actual developer toolchain
+        shell: pwsh
+        env:
+          EXACT_REVISION: ${{ inputs.exact_revision }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if ($env:EXACT_REVISION -notmatch '^[0-9a-f]{40}$') { throw 'full lowercase commit required' }
+          if ((git rev-parse HEAD).Trim() -ne $env:EXACT_REVISION) { throw 'revision mismatch' }
+          if (git status --short) { throw 'source checkout is not clean' }
+          $evidence = Join-Path $env:RUNNER_TEMP 'doe-c-windows-host'
+          New-Item -ItemType Directory -Force $evidence | Out-Null
+          "EVIDENCE_ROOT=$evidence" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          $env:EXACT_REVISION | Set-Content "$evidence/commit.txt"
+          [System.Runtime.InteropServices.RuntimeInformation]::OSDescription | Set-Content "$evidence/host.txt"
+          'Windows compiler DLL and CPU host controls requested; logs determine their outcome. No native runtime, CLI, GPU or production qualification.' |
+            Set-Content "$evidence/SCOPE.txt"
+          $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio/Installer/vswhere.exe'
+          $installation = (& $vswhere -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath).Trim()
+          if (!$installation) { throw 'Windows SDK developer toolchain unavailable' }
+          $devcmd = Join-Path $installation 'Common7/Tools/VsDevCmd.bat'
+          if (!(Test-Path $devcmd)) { throw 'developer command environment missing' }
+          "DEVCMD=$devcmd" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+      - name: Build and exercise the genuine compiler DLL
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $script = Join-Path $env:GITHUB_WORKSPACE 'runtime/c/compiler/tools/build_windows.py'
+          $output = Join-Path $env:EVIDENCE_ROOT 'compiler'
+          $command = 'call "' + $env:DEVCMD + '" -arch=x64 >nul && (where clang-cl & clang-cl --version) && python "' + $script + '" --out "' + $output + '"'
+          $command | Set-Content "$env:EVIDENCE_ROOT/command.txt"
+          & cmd.exe /d /s /c $command 2>&1 | Tee-Object "$env:EVIDENCE_ROOT/compiler.log"
+          if ($LASTEXITCODE -ne 0) { throw "Windows compiler host control failed: $LASTEXITCODE" }
+          if (git status --short) { throw 'host controls changed source checkout' }
+          Get-ChildItem $env:EVIDENCE_ROOT -Recurse -File | Get-FileHash -Algorithm SHA256 |
+            Select-Object Path, Hash | ConvertTo-Json | Set-Content "$env:EVIDENCE_ROOT/artifacts.json"
+      - name: Retain first source-bound diagnostics
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: c-windows-host-${{ inputs.exact_revision }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/doe-c-windows-host/
+          if-no-files-found: error

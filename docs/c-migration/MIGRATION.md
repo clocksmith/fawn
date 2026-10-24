@@ -193,8 +193,13 @@ retaining conservative defaults. Natural layout and one physical uniform-load
 owner cover compact buffers without requiring a Vulkan optional layout feature;
 the [public compiler controls](../../runtime/c/compiler/tests/test_uniform_standard.c)
 and exact-range CPU consumer check small bindings, guarded dynamic access and
-layout identity. This compiler opt-in alone does not advertise a native WGSL
-language feature.
+layout identity. Native shader compilation now explicitly selects this policy,
+and WGSL language-feature discovery derives from that same function. The
+[public native consumer](../../runtime/c/native/tests/uniform_standard.c) exercises
+exact4/8/12/32/64-byte ranges, guarded dynamic access, aggregate/matrix layout,
+wrong-index and wrong-layout controls, and `requires` on the CPU Vulkan adapter.
+Standalone defaults remain conservative; native Metal and Windows execution of
+this policy still require their own source-bound evidence.
 
 Private D3D12 now has [actual CPU WARP execution evidence](../../runtime/c/backends/d3d12/DEVELOPER_RECEIPT_WARP.json)
 in addition to SDK compilation: explicit software selection, native compute,
