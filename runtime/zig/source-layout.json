@@ -2918,8 +2918,8 @@
       },
       "src/contracts/texture.zig": {
         "decision": "Keep",
-        "moduleSha256": "4d6c58b85da9d7b7a6de63d464aeb1bf895d5e830be29a3eb473172f4c6b0905",
-        "reason": "Keep: reachable neutral contract owner at src/contracts/texture.zig. aspectFormat resolves the single-aspect view format (depth24plus, depth32float or stencil8 for combined formats). A view's stencil aspect samples as uint and its depth aspect as depth. Render target byte cost and color attachment bytes per sample. Render target byte costs include the texture-formats-tier1 color targets. Owns which formats support multisampling.",
+        "moduleSha256": "e473825515ad635a666c9c5f3898337cf518d02f13dadada1f04c15ef33b1b0b",
+        "reason": "Keep: reachable neutral contract owner at src/contracts/texture.zig. aspectFormat resolves the single-aspect view format (depth24plus, depth32float or stencil8 for combined formats). A view's stencil aspect samples as uint and its depth aspect as depth. Render target byte cost and color attachment bytes per sample. Render target byte costs include the texture-formats-tier1 color targets. Owns which formats support multisampling. Owns color-renderable and blendable format classes for render pipeline targets.",
         "reviewer": "doe-c-claude-coordinator/2026-10-24"
       },
       "src/contracts/texture_format.zig": {
@@ -3662,9 +3662,9 @@
       },
       "src/native/render/doe_render_pipeline_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "f0b14de61e2fddd96faf60a0f21a59dbe6dfd10fdea2f5207129aadb7f4cb07a",
-        "reason": "Keep: preserves this native ownership or ABI boundary while separating internal device cleanup leases from application release and enforcing destroyed-device admission. Alpha-to-coverage on a single-sample pipeline is a validation error. Render pipelines reject color targets over maxColorAttachmentBytesPerSample. encoderLayoutAdmits checks a pipeline against a pass or bundle layout and read-only aspects.",
-        "reviewer": "doe-c-claude-indexed/2026-10-24"
+        "moduleSha256": "a72bed09334c62d94803131eff86836cda9f05239a2315886e67813e768fc460",
+        "reason": "Keep: preserves this native ownership or ABI boundary while separating internal device cleanup leases from application release and enforcing destroyed-device admission. Alpha-to-coverage on a single-sample pipeline is a validation error. Render pipelines reject color targets over maxColorAttachmentBytesPerSample. encoderLayoutAdmits checks a pipeline against a pass or bundle layout and read-only aspects. createRenderPipeline validates fragment targets (renderable format, writeMask, blend and min/max factors), depth-stencil format and stencil use without a stencil aspect, and vertex attribute offset alignment.",
+        "reviewer": "doe-c-claude-coordinator/2026-10-24"
       },
       "src/native/render/doe_render_state_native.zig": {
         "decision": "Keep",
@@ -3848,8 +3848,8 @@
       },
       "src/native/vulkan/vulkan_render_pipeline_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "3d2ef0355269bfa63fff3ddc45fd4e80ffc259a4a7d545dd077714823a79b156",
-        "reason": "Keep: native attachment admission owns view and pipeline compatibility; command recording preserves typed validation failures before submission. Backend execution and resource retirement retain their existing owners. The multisample mask and alpha-to-coverage reach the pipeline object. Render pipelines record required binding kinds from vertex and fragment entry points. Render pipeline creation rejects vertex or fragment entry points that do not name a function of that stage. Render pipeline creation rejects explicit layouts that lack a binding the entry points use. Render layout check passes buffer types and per-slot stages. Render pipelines reject bindings at or above maxBindingsPerBindGroup and color targets above maxColorAttachmentBytesPerSample. Pipelines record every fragment target and whether a fragment stage exists. Render pipelines and auto layouts include bindings above 31.",
+        "moduleSha256": "3b472e9ed43631a80b5b95ff77d717bab14de9affb1109681718e02cc42988e2",
+        "reason": "Keep: native attachment admission owns view and pipeline compatibility; command recording preserves typed validation failures before submission. Backend execution and resource retirement retain their existing owners. The multisample mask and alpha-to-coverage reach the pipeline object. Render pipelines record required binding kinds from vertex and fragment entry points. Render pipeline creation rejects vertex or fragment entry points that do not name a function of that stage. Render pipeline creation rejects explicit layouts that lack a binding the entry points use. Render layout check passes buffer types and per-slot stages. Render pipelines reject bindings at or above maxBindingsPerBindGroup and color targets above maxColorAttachmentBytesPerSample. Pipelines record every fragment target and whether a fragment stage exists. Render pipelines and auto layouts include bindings above 31. Checks fragment output and vertex input scalar types and component counts against targets and attribute formats from the stage IR.",
         "reviewer": "doe-c-claude-coordinator/2026-10-24"
       },
       "src/native/vulkan/vulkan_render_shared.zig": {
