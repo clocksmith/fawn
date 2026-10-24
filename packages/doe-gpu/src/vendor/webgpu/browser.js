@@ -496,8 +496,8 @@ function create_browser_backend({ native_gpu, canvasBackend }) {
       init_encoder_state(encoder, native);
     },
 
-    renderBundleEncoderSetBindGroup(encoder, index, bindGroup) {
-      encoder._native.setBindGroup(index, bindGroup);
+    renderBundleEncoderSetBindGroup(encoder, index, bindGroup, offsets = null) {
+      encoder._native.setBindGroup(index, bindGroup, offsets ?? []);
     },
 
     renderBundleEncoderSetIndexBuffer(encoder, buffer, format, offset, size) {
@@ -553,8 +553,8 @@ function create_browser_backend({ native_gpu, canvasBackend }) {
       init_encoder_state(pass, native);
     },
 
-    renderPassSetBindGroup(pass, index, bindGroup) {
-      pass._native.setBindGroup(index, bindGroup);
+    renderPassSetBindGroup(pass, index, bindGroup, offsets = null) {
+      pass._native.setBindGroup(index, bindGroup, offsets ?? []);
     },
 
     renderPassSetBlendConstant(pass, color) {
@@ -709,8 +709,8 @@ function create_browser_backend({ native_gpu, canvasBackend }) {
       init_encoder_state(pass, native);
     },
 
-    computePassSetBindGroup(pass, index, bindGroup) {
-      pass._native.setBindGroup(index, bindGroup);
+    computePassSetBindGroup(pass, index, bindGroup, offsets = null) {
+      pass._native.setBindGroup(index, bindGroup, offsets ?? []);
     },
 
     computePassSetPipeline(pass, pipeline) {

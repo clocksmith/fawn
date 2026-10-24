@@ -1125,12 +1125,23 @@ function updatePassPipelineState(pass, pipelineNative) {
     return true;
 }
 
-function updatePassBindGroupState(pass, index, bindGroupNative) {
-    if ((pass._bindGroups[index] ?? null) === bindGroupNative) {
+// Offsets are a Uint32Array or null; a slot with offsets is always re-recorded.
+function updatePassBindGroupState(pass, index, bindGroupNative, offsets = null) {
+    const offsetsByGroup = pass._bindGroupOffsets ?? (pass._bindGroupOffsets = []);
+    if ((pass._bindGroups[index] ?? null) === bindGroupNative
+        && offsets === null
+        && (offsetsByGroup[index] ?? null) === null) {
         return false;
     }
     pass._bindGroups[index] = bindGroupNative;
+    offsetsByGroup[index] = offsets;
     return true;
+}
+
+function setBunComputeBindGroup(nativePass, pass, index) {
+    const offsets = pass._bindGroupOffsets?.[index] ?? null;
+    wgpu.symbols.wgpuComputePassEncoderSetBindGroup(nativePass, index, pass._bindGroups[index] ?? null,
+        BigInt(offsets?.length ?? 0), offsets);
 }
 
 function initPendingComputeState(pass) {
@@ -1169,10 +1180,7 @@ function materializeBunPendingComputeState(pass, nativePass) {
         if (!pass._bindGroupDirty[index]) {
             continue;
         }
-        const bindGroupNative = pass._bindGroups[index] ?? null;
-        if (bindGroupNative != null) {
-            wgpu.symbols.wgpuComputePassEncoderSetBindGroup(nativePass, index, bindGroupNative, BigInt(0), null);
-        }
+        setBunComputeBindGroup(nativePass, pass, index);
         pass._bindGroupDirty[index] = false;
     }
 }
@@ -1769,7 +1777,7 @@ function buildBindGroupDescriptor(layoutPtr, entries) {
 function buildPipelineLayoutDescriptor(layouts, immediateSize = 0) {
     const ptrs = new BigUint64Array(layouts.length);
     for (let i = 0; i < layouts.length; i++) {
-        ptrs[i] = BigInt(layouts[i]);
+        ptrs[i] = layouts[i] == null ? 0n : BigInt(layouts[i]);
     }
 
     const descBuf = new ArrayBuffer(WGPU_PIPELINE_LAYOUT_DESCRIPTOR_SIZE);
@@ -2885,7 +2893,7 @@ function materializeLazyBunComputePass(pass) {
     }
     for (let index = 0; index < pass._bindGroups.length; index += 1) {
         if (pass._bindGroups[index]) {
-            wgpu.symbols.wgpuComputePassEncoderSetBindGroup(pass._native, index, pass._bindGroups[index], BigInt(0), null);
+            setBunComputeBindGroup(pass._native, pass, index);
         }
     }
 }
@@ -2927,9 +2935,13 @@ const bunEncoderBackend = {
         }
         markPassPipelineDirty(pass);
     },
-    computePassSetBindGroup(pass, index, bindGroupNative) {
-        if (!updatePassBindGroupState(pass, index, bindGroupNative)) {
+    computePassSetBindGroup(pass, index, bindGroupNative, offsets = null) {
+        if (!updatePassBindGroupState(pass, index, bindGroupNative, offsets)) {
             return;
+        }
+        if (offsets !== null) {
+            // Deferred dispatch commands carry no dynamic offsets; record natively.
+            materializeLazyBunComputePass(pass);
         }
         if (pass._lazy) {
             return;
@@ -2961,6 +2973,7 @@ const bunEncoderBackend = {
             typeof wgpu.symbols.doeNativeComputePassDispatchBound === "function"
             && (pass._pipelineDirty || pass._bindGroupDirty[0] === true)
             && !hasPendingNonZeroBindGroups(pass)
+            && (pass._bindGroupOffsets?.[0] ?? null) === null
         ) {
             wgpu.symbols.doeNativeComputePassDispatchBound(
                 nativePass,
@@ -2977,6 +2990,9 @@ const bunEncoderBackend = {
         wgpu.symbols.wgpuComputePassEncoderDispatchWorkgroups(nativePass, x, y, z);
     },
     computePassDispatchBound(pass, pipelineNative, bindGroupNative, x, y, z) {
+        if (pass._bindGroupOffsets) {
+            pass._bindGroupOffsets[0] = null;
+        }
         if (pass._lazy) {
             pass._pipeline = pipelineNative;
             pass._bindGroups[0] = bindGroupNative;
@@ -3055,16 +3071,16 @@ const bunEncoderBackend = {
             pipelineNative,
         );
     },
-    renderPassSetBindGroup(pass, index, bindGroupNative) {
-        if (!updatePassBindGroupState(pass, index, bindGroupNative)) {
+    renderPassSetBindGroup(pass, index, bindGroupNative, offsets = null) {
+        if (!updatePassBindGroupState(pass, index, bindGroupNative, offsets)) {
             return;
         }
         wgpu.symbols.wgpuRenderPassEncoderSetBindGroup(
             assertLiveResource(pass, "GPURenderPassEncoder.setBindGroup", "GPURenderPassEncoder"),
             index,
             bindGroupNative,
-            BigInt(0),
-            null,
+            BigInt(offsets?.length ?? 0),
+            offsets,
         );
     },
     renderPassSetVertexBuffer(pass, slot, bufferNative, offset, size) {
@@ -3207,16 +3223,16 @@ const bunEncoderBackend = {
             pipelineNative,
         );
     },
-    renderBundleEncoderSetBindGroup(encoder, index, bindGroupNative) {
-        if (!updatePassBindGroupState(encoder, index, bindGroupNative)) {
+    renderBundleEncoderSetBindGroup(encoder, index, bindGroupNative, offsets = null) {
+        if (!updatePassBindGroupState(encoder, index, bindGroupNative, offsets)) {
             return;
         }
         wgpu.symbols.wgpuRenderBundleEncoderSetBindGroup(
             assertLiveResource(encoder, "GPURenderBundleEncoder.setBindGroup", "GPURenderBundleEncoder"),
             index,
             bindGroupNative,
-            BigInt(0),
-            null,
+            BigInt(offsets?.length ?? 0),
+            offsets,
         );
     },
     renderBundleEncoderSetImmediates(encoder, index, data) {
@@ -4273,6 +4289,7 @@ const fullSurfaceBackend = {
         if (
             typeof wgpu.symbols.doeNativeDeviceCreatePipelineLayoutOne === "function"
             && layouts.length === 1
+            && layouts[0] != null
         ) {
             return wgpu.symbols.doeNativeDeviceCreatePipelineLayoutOne(
                 assertLiveResource(device, "GPUDevice.createPipelineLayout", "GPUDevice"),
