@@ -235,7 +235,10 @@ fn is_vulkan_feature_supported(
         FEATURE_INDIRECT_FIRST_INSTANCE => if (hw_caps) |hc| hc.has_draw_indirect_first_instance else true,
         FEATURE_FLOAT32_FILTERABLE => if (hw_caps) |hc| hc.has_float32_filterable else true,
         FEATURE_TIMESTAMP_QUERY => if (hw_caps) |hc| hc.has_timestamp_query else true,
-        // Features that remain unconditional on Vulkan.
+        // Features that remain unconditional on Vulkan. Core features and
+        // limits: no compatibility-mode restriction applies, and adapter
+        // limits meet every core default.
+        FEATURE_CORE_FEATURES_AND_LIMITS,
         FEATURE_BGRA8UNORM_STORAGE,
         FEATURE_RG11B10UFLOAT_RENDERABLE,
         FEATURE_CLIP_DISTANCES,
@@ -302,6 +305,13 @@ pub export fn doeNativeDeviceGetLimits(raw: ?*anyopaque, limits: ?*abi_callback.
         l.maxDynamicUniformBuffersPerPipelineLayout = d.max_dynamic_uniform_buffers_per_pipeline_layout;
         l.maxDynamicStorageBuffersPerPipelineLayout = d.max_dynamic_storage_buffers_per_pipeline_layout;
         l.maxColorAttachmentBytesPerSample = d.max_color_attachment_bytes_per_sample;
+        l.maxSampledTexturesPerShaderStage = d.stage_limits.sampled_textures;
+        l.maxSamplersPerShaderStage = d.stage_limits.samplers;
+        l.maxStorageBuffersPerShaderStage = d.stage_limits.storage_buffers;
+        l.maxStorageTexturesPerShaderStage = d.stage_limits.storage_textures;
+        l.maxUniformBuffersPerShaderStage = d.stage_limits.uniform_buffers;
+        l.maxInterStageShaderVariables = d.max_inter_stage_shader_variables;
+        l.maxComputeWorkgroupStorageSize = d.max_compute_workgroup_storage_size;
     };
     return status;
 }

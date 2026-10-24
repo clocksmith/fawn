@@ -2,9 +2,9 @@
 // Stage-specific storage limits (WebGPU "a new device"): a required
 // maxStorage{Buffers,Textures}In{Vertex,Fragment}Stage raises the per-stage
 // limit; on an adapter with core-features-and-limits the stage-specific limits
-// then equal the per-stage limit. The native device receives the raised value:
-// a fragment-visible layout at the adapter's limit is valid (a native device at
-// the default per-stage limit rejects it when the adapter exceeds the default).
+// then equal the per-stage limit. The native device enforces the raised value:
+// a fragment-visible layout at the adapter's limit is valid and one entry more
+// is a validation error.
 
 import assert from 'node:assert/strict';
 import { setupGlobals } from '../../src/index.js';
@@ -48,10 +48,14 @@ for (const [perStage, fragment, vertex, entry] of cases) {
     for (const name of core ? [perStage, fragment, vertex] : [perStage, required]) {
       assert.equal(device.limits[name], value, `${required} -> ${name}`);
     }
-    device.pushErrorScope('validation');
-    device.createBindGroupLayout({ entries: Array.from({ length: value }, (_, i) => entry(i)) });
-    assert.equal(await device.popErrorScope(), null, `${value} fragment entries at ${required}`);
+    const layout = (count) => {
+      device.pushErrorScope('validation');
+      device.createBindGroupLayout({ entries: Array.from({ length: count }, (_, i) => entry(i)) });
+      return device.popErrorScope();
+    };
+    assert.equal(await layout(value), null, `${value} fragment entries at ${required}`);
+    assert.ok(await layout(value + 1), `${value + 1} fragment entries exceed ${required}`);
     device.destroy();
-    console.log(`ok: requiring ${required}=${value} sets ${perStage}${core ? `, ${fragment} and ${vertex}` : ''}; the device admits that many`);
+    console.log(`ok: requiring ${required}=${value} sets ${perStage}${core ? `, ${fragment} and ${vertex}` : ''}; the device enforces it`);
   }
 }

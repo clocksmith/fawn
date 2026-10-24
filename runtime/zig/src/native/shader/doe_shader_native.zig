@@ -12,6 +12,7 @@ const wgsl_ir = @import("../../compiler/wgsl/ir/ir.zig");
 const wgsl_runtime_compile = @import("../../compiler/wgsl/runtime/runtime_compute_translation.zig");
 const shader_translation_cache = @import("doe_shader_translation_cache.zig");
 const shader_binding_reflection = @import("shader_binding_reflection.zig");
+const shader_stage_limits = @import("shader_stage_limits.zig");
 const package_metal_pipeline_cache = @import("../cache/doe_package_metal_pipeline_cache.zig");
 const native_types = @import("../support/doe_native_object_types.zig");
 const native_shared = @import("../support/doe_native_shared_types.zig");
@@ -831,6 +832,13 @@ fn doeNativeDeviceCreateComputePipelineOwned(dev_raw: ?*anyopaque, desc: ?*const
         }
     else
         entries[0..0];
+
+    if (shader_stage_limits.computeLimitFailure(alloc, dev, sm, stringViewSlice(d.compute.entryPoint), override_slice, d.layout == null)) |message| {
+        diagnostic.set_last_error_stage_name("native_compile");
+        diagnostic.set_last_error_kind("DeviceLimitExceeded");
+        diagnostic.set_last_error(message);
+        return null;
+    }
 
     if (dev.backend == .vulkan) {
         // Resolve the entry-point name from the descriptor so the

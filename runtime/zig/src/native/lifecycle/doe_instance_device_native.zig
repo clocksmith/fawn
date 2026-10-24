@@ -507,6 +507,9 @@ fn create_device_for_adapter(adapter: *DoeAdapter, adapter_raw: ?*anyopaque, des
             required.*.minStorageBufferOffsetAlignment,
         );
         device.max_compute_workgroups_per_dimension = native_types.requiredWorkgroupsPerDimension(required.*.maxComputeWorkgroupsPerDimension);
+        device.stage_limits = native_types.ShaderStageLimits.fromRequired(required.*);
+        device.max_inter_stage_shader_variables = native_types.requiredMaximum(native_types.DEFAULT_MAX_INTER_STAGE_SHADER_VARIABLES, required.*.maxInterStageShaderVariables);
+        device.max_compute_workgroup_storage_size = native_types.requiredMaximum(native_types.DEFAULT_MAX_COMPUTE_WORKGROUP_STORAGE_SIZE, required.*.maxComputeWorkgroupStorageSize);
     };
     // The backend's whole-object assignment is complete. Initialize only here,
     // at the final stable address and before any loss event can expose the device.

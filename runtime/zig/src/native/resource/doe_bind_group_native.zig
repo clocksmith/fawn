@@ -19,6 +19,7 @@ const command_recording = @import("../../contracts/command_recording.zig");
 const error_scope = @import("../../runtime/diagnostics/error_scope.zig");
 const device_caps = @import("../support/doe_device_caps.zig");
 const abi_feature = @import("../../core/abi/wgpu_feature_base_types.zig");
+const binding_slot_limits = @import("doe_binding_slot_limits.zig");
 
 const alloc = native_helpers.alloc;
 const make = native_helpers.make;
@@ -315,6 +316,12 @@ pub export fn doeNativeDeviceCreateBindGroupLayout(dev_raw: ?*anyopaque, desc: ?
         };
         for (d.entries[0..d.entryCount], 0..) |entry, i| {
             stored_entries.?[i] = classify_layout_entry(entry);
+        }
+        if (binding_slot_limits.layoutEntriesFailure(owner, stored_entries.?)) |limit| {
+            alloc.free(stored_entries.?);
+            alloc.destroy(bgl);
+            owner.error_scopes.deliver(error_scope.ERROR_TYPE_VALIDATION, binding_slot_limits.message("createBindGroupLayout: entries exceed ", limit));
+            return null;
         }
     }
     bgl.* = .{
@@ -810,11 +817,13 @@ fn pipelineLayoutFailure(device: *const DoeDevice, layouts: []const ?*anyopaque,
         return "createPipelineLayout: immediateSize must be a multiple of 4 and at most maxImmediateSize";
     var dynamic_uniform: u32 = 0;
     var dynamic_storage: u32 = 0;
+    var slots = binding_slot_limits.Counts{};
     for (layouts) |raw| {
         const handle = raw orelse continue;
         const layout = cast(DoeBindGroupLayout, handle) orelse return "createPipelineLayout: bindGroupLayouts holds an invalid bind group layout";
         if (layout.device) |owner| if (owner != device) return "createPipelineLayout: a bind group layout belongs to a different device";
         const entries = layout.entries orelse continue;
+        slots.addLayoutEntries(entries[0..@min(entries.len, layout.entry_count)]);
         for (entries[0..@min(entries.len, layout.entry_count)]) |entry| {
             if (entry.resource_kind != RESOURCE_KIND_BUFFER or !entry.buffer_has_dynamic_offset) continue;
             if (entry.buffer_binding_type == abi_binding.WGPUBufferBindingType_Storage or
@@ -828,6 +837,7 @@ fn pipelineLayoutFailure(device: *const DoeDevice, layouts: []const ?*anyopaque,
         return "createPipelineLayout: dynamic uniform buffers exceed maxDynamicUniformBuffersPerPipelineLayout";
     if (dynamic_storage > device.max_dynamic_storage_buffers_per_pipeline_layout)
         return "createPipelineLayout: dynamic storage buffers exceed maxDynamicStorageBuffersPerPipelineLayout";
+    if (slots.failure(device.stage_limits)) |limit| return binding_slot_limits.message("createPipelineLayout: bind group layouts exceed ", limit);
     return null;
 }
 
