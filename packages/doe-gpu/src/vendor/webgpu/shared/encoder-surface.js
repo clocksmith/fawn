@@ -10,6 +10,7 @@ import {
   normalizeOrigin3D,
   normalizeExtent3D,
 } from './resource-lifecycle.js';
+import { normalizeGpuColor } from './validation.js';
 
 const UINT32_RANGE = Object.freeze({ min: 0, max: UINT32_MAX });
 const NON_NEGATIVE_RANGE = Object.freeze({ min: 0 });
@@ -344,10 +345,10 @@ function createEncoderClasses(backend) {
 
     setBlendConstant(color) {
       this._assertOpen('GPURenderPassEncoder.setBlendConstant');
-      backend.renderPassSetBlendConstant(
-        this,
-        assertObject(color, 'GPURenderPassEncoder.setBlendConstant', 'color'),
-      );
+      if (color === undefined) failValidation('GPURenderPassEncoder.setBlendConstant', 'color is required');
+      // GPUColor is a four-component sequence or an {r, g, b, a} dictionary.
+      const { r, g, b, a } = normalizeGpuColor(color, 'GPURenderPassEncoder.setBlendConstant.color');
+      backend.renderPassSetBlendConstant(this, r, g, b, a);
     }
 
     setStencilReference(reference) {

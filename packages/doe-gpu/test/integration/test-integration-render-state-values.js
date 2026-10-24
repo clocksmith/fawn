@@ -93,6 +93,35 @@ for (const format of ['stencil8', 'depth24plus-stencil8']) {
   console.log(`ok: ${format} stencil replace writes the reference`);
 }
 
+for (const constant of [[0.25, 0.5, 0.75, 1], { r: 0.25, g: 0.5, b: 0.75, a: 1 }]) {
+  // White source times the blend constant: every channel reads the constant, so
+  // a dropped constant ((0, 0, 0, 1)) or a wrong component order shows up.
+  const color = device.createTexture({ size: SIZE, format: 'rgba8unorm', usage: T.RENDER_ATTACHMENT | T.COPY_SRC });
+  const blend = { srcFactor: 'constant', dstFactor: 'zero', operation: 'add' };
+  const pipeline = device.createRenderPipeline({
+    layout: 'auto',
+    vertex: { module: fullscreen, entryPoint: 'vs' },
+    fragment: { module: fullscreen, entryPoint: 'color', targets: [{ format: 'rgba8unorm', blend: { color: blend, alpha: blend } }] },
+  });
+  const encoder = device.createCommandEncoder();
+  const pass = encoder.beginRenderPass({ colorAttachments: [{ view: color.createView(), loadOp: 'clear', storeOp: 'store',
+    clearValue: { r: 0, g: 0, b: 0, a: 0 } }] });
+  pass.setPipeline(pipeline);
+  pass.setBlendConstant(constant);
+  pass.draw(3);
+  pass.end();
+  device.queue.submit([encoder.finish()]);
+  assert.deepEqual(Array.from(await readFirstTexel(color, 'all', 4)), [64, 128, 191, 255]);
+}
+{
+  const encoder = device.createCommandEncoder();
+  const pass = encoder.beginRenderPass({ colorAttachments: [{ view: device.createTexture({ size: SIZE, format: 'rgba8unorm',
+    usage: T.RENDER_ATTACHMENT }).createView(), loadOp: 'clear', storeOp: 'store' }] });
+  assert.throws(() => pass.setBlendConstant([1, 1, 1]), /four/);
+  pass.end();
+  console.log('ok: blend constants reach the provider as sequences and dictionaries');
+}
+
 {
   // A provider-side validation error lands in the innermost native error scope.
   const texture = device.createTexture({ size: SIZE, format: 'rgba8unorm', usage: T.COPY_DST });
