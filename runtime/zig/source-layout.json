@@ -4412,8 +4412,8 @@
       },
       "src/native/vulkan/vulkan_render_attachments.zig": {
         "decision": "Keep",
-        "moduleSha256": "e7f8976009c08a53cf829a107c106abc71f1dad27597abb0b68e26ab22d692ca",
-        "reason": "Keep: native attachment admission owns view and pipeline compatibility; command recording preserves typed validation failures before submission. Backend execution and resource retirement retain their existing owners. Admits a resolve target that is a single-sample view of the multisampled color format and extent. Validates draw reads against bound vertex and index buffer ranges. Resolve targets need a resolvable format. Single-layer 2d-array views are renderable attachments.",
+        "moduleSha256": "3a93bddea00b4fa1086e9bb28ee689874ca368440d690bc8fe5da66b3c1833b8",
+        "reason": "Keep: native attachment admission owns view and pipeline compatibility; command recording preserves typed validation failures before submission. Backend execution and resource retirement retain their existing owners. Admits a resolve target that is a single-sample view of the multisampled color format and extent. Validates draw reads against bound vertex and index buffer ranges. Resolve targets need a resolvable format. Single-layer 2d-array views are renderable attachments. texture-formats-tier1 adds the 8-bit snorm resolve formats.",
         "reviewer": "doe-c-claude-surface/2026-10-24"
       },
       "src/backend/vulkan/vk_surface_sync.zig": {
