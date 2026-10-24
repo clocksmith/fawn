@@ -168,6 +168,8 @@ doe_resource_status doe_resource_encoder_begin_render_with_timestamps(doe_resour
  * as doe_resource_compute_pass_rejected. */
 doe_resource_render_pass *doe_resource_render_pass_rejected(doe_resource_encoder *encoder);
 bool doe_resource_render_pass_ended(const doe_resource_render_pass *pass);
+/* End reports at the call: the pass ended or its parent encoder is not locked. */
+bool doe_resource_render_pass_closed(const doe_resource_render_pass *pass);
 /* Frontend preflight rejection poisons the canonical active recording owner;
  * non-rejection statuses are invalid arguments and do not mutate state. */
 doe_resource_status doe_resource_render_pass_invalidate(doe_resource_render_pass *pass,

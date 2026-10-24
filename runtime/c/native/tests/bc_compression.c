@@ -175,7 +175,7 @@ static void block_controls(state *s, bool sliced)
         WGPUTexelCopyBufferInfo destination = {.buffer=bytes,.layout={.bytesPerRow=PITCH,.rowsPerImage=1}};
         wgpuCommandEncoderCopyTextureToBuffer(encoder,&source,&destination,&(WGPUExtent3D){copies[i].width,4,1});
         wgpuDevicePushErrorScope(s->device,WGPUErrorFilter_Validation);
-        assert(!wgpuCommandEncoderFinish(encoder,NULL));
+        finish_invalid(encoder);
         expect_validation(s);
         wgpuCommandEncoderRelease(encoder);
     }

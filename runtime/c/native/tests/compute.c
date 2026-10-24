@@ -269,7 +269,7 @@ int main(void)
     uint32_t bad_offset = 1;
     wgpuComputePassEncoderSetBindGroup(pass, 0, group, 1, &bad_offset);
     wgpuComputePassEncoderEnd(pass);
-    assert(!wgpuCommandEncoderFinish(encoder, NULL));
+    { WGPUCommandBuffer invalid_commands = wgpuCommandEncoderFinish(encoder, NULL); assert(invalid_commands); wgpuCommandBufferRelease(invalid_commands); }
     wgpuComputePassEncoderRelease(pass);
     wgpuCommandEncoderRelease(encoder);
     wait_ready(instance, wgpuDevicePopErrorScope(device, pop));

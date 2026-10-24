@@ -115,7 +115,8 @@ static void controls(state *s)
             wgpuCommandEncoderCopyBufferToTexture(encoder,&source,&to,&size);
         } else wgpuCommandEncoderCopyTextureToTexture(encoder,&from,&to,&size);
         WGPUCommandBuffer commands = wgpuCommandEncoderFinish(encoder,NULL);
-        assert(!commands);
+        assert(commands); /* WebGPU invalid command buffer */
+        wgpuCommandBufferRelease(commands);
         expect_validation(s);
         wgpuCommandEncoderRelease(encoder);
     }

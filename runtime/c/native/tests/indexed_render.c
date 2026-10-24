@@ -287,7 +287,7 @@ static void rejected(state *s, const fixture *f, WGPUTextureView view, unsigned 
     default: assert(false);
     }
     wgpuRenderPassEncoderEnd(pass);
-    assert(!wgpuCommandEncoderFinish(encoder,NULL));
+    finish_invalid(encoder);
     expect_validation(s);
     wgpuRenderPassEncoderRelease(pass);
     wgpuCommandEncoderRelease(encoder);

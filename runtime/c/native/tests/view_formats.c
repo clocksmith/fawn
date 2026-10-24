@@ -102,7 +102,7 @@ static void controls(state *s, WGPURenderPipeline unorm_writer)
     WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(s->device,NULL);
     wgpuDevicePushErrorScope(s->device,WGPUErrorFilter_Validation);
     draw(encoder,srgb,unorm_writer);
-    assert(!wgpuCommandEncoderFinish(encoder,NULL));
+    finish_invalid(encoder);
     expect_validation(s);
     wgpuCommandEncoderRelease(encoder);
     wgpuTextureViewRelease(srgb);

@@ -95,6 +95,14 @@ static inline void submit(state *s, WGPUCommandEncoder encoder)
     wgpuQueueSubmit(s->queue, 1, &commands);
     wgpuCommandBufferRelease(commands);
 }
+/* A failed Finish returns a WebGPU invalid command buffer; Finish itself reports
+ * the validation error, and submitting the buffer would report another. */
+static inline void finish_invalid(WGPUCommandEncoder encoder)
+{
+    WGPUCommandBuffer commands = wgpuCommandEncoderFinish(encoder, NULL);
+    assert(commands);
+    wgpuCommandBufferRelease(commands);
+}
 static inline WGPUBuffer buffer(state *s, uint64_t size, WGPUBufferUsage usage)
 {
     WGPUBufferDescriptor descriptor = {.size=size,.usage=usage};

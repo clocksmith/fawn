@@ -158,7 +158,8 @@ int main(void)
     wgpuCommandEncoderCopyTextureToBuffer(encoder, &stale_source, &stale_destination, &(WGPUExtent3D){1, 1, 1});
     WGPUCommandBuffer rejected = wgpuCommandEncoderFinish(encoder, NULL);
     expect_validation(&s);
-    assert(!rejected);
+    assert(rejected); /* WebGPU invalid command buffer */
+    wgpuCommandBufferRelease(rejected);
     wgpuCommandEncoderRelease(encoder);
     push_validation(&s);
     WGPUSurfaceTexture blocked = acquire(surface);

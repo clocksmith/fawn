@@ -184,7 +184,7 @@ int main(void)
     WGPUTexelCopyBufferInfo bad_destination = {.buffer=readback,.layout={.bytesPerRow=8,.rowsPerImage=2}};
     wgpuDevicePushErrorScope(s.device,WGPUErrorFilter_Validation);
     wgpuCommandEncoderCopyTextureToBuffer(encoder,&bad_source,&bad_destination,&extent);
-    assert(!wgpuCommandEncoderFinish(encoder,NULL));
+    finish_invalid(encoder);
     expect_validation(&s);
     wgpuCommandEncoderRelease(encoder);
     wgpuTextureRelease(image);

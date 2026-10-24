@@ -186,7 +186,7 @@ static void rejected(state *s, const fixture *f, control which)
     bool queue_write = which == D32_WRITE || which == D16_PARTIAL_WRITE;
     if (queue_write) expect_validation(s);
     WGPUCommandBuffer commands = wgpuCommandEncoderFinish(encoder,NULL);
-    assert(queue_write ? commands != NULL : commands == NULL);
+    assert(commands); /* valid, or the WebGPU invalid buffer of a rejected copy */
     if (!queue_write) expect_validation(s);
     wgpuCommandBufferRelease(commands);
     wgpuCommandEncoderRelease(encoder);

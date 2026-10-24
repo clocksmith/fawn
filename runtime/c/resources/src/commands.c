@@ -320,8 +320,12 @@ doe_resource_status doe_resource_encoder_finish(doe_resource_encoder *encoder,
 {
     if (!out) return DOE_RESOURCE_INVALID_ARGUMENT;
     doe_resource_status status = resource_encoder_open(encoder);
-    /* Finish ends the encoder whether or not it records a command buffer. */
-    if (encoder) encoder->finished = true;
+    /* Finish ends the encoder whether or not it records a command buffer; an
+     * open pass no longer holds it locked. */
+    if (encoder) {
+        encoder->finished = true;
+        encoder->active_pass = NULL;
+    }
     if (status != DOE_RESOURCE_OK) return status;
     if (encoder->debug_depth) return resource_encoder_fail(encoder, DOE_RESOURCE_STATE);
     doe_resource_commands *commands = resource_allocate(&encoder->base.config,
@@ -329,6 +333,7 @@ doe_resource_status doe_resource_encoder_finish(doe_resource_encoder *encoder,
     if (!commands) return resource_encoder_fail(encoder, DOE_RESOURCE_OUT_OF_MEMORY);
     resource_init(&commands->base, &encoder->base.config, (doe_resource_native){0});
     atomic_init(&commands->submission_state, 0);
+    commands->invalid = false;
     commands->count = encoder->count;
     commands->capacity = encoder->capacity;
     commands->commands = encoder->commands;
@@ -338,6 +343,19 @@ doe_resource_status doe_resource_encoder_finish(doe_resource_encoder *encoder,
     encoder->finished = true;
     *out = commands;
     return DOE_RESOURCE_OK;
+}
+
+doe_resource_commands *doe_resource_commands_rejected(doe_resource_encoder *encoder)
+{
+    if (!encoder || encoder->status == DOE_RESOURCE_OK) return NULL;
+    doe_resource_commands *commands = resource_allocate(&encoder->base.config,
+        sizeof(*commands), _Alignof(doe_resource_commands));
+    if (!commands) return NULL;
+    memset(commands, 0, sizeof(*commands));
+    resource_init(&commands->base, &encoder->base.config, (doe_resource_native){0});
+    atomic_init(&commands->submission_state, 0);
+    commands->invalid = true;
+    return commands;
 }
 
 doe_resource_status doe_resource_encoder_status(const doe_resource_encoder *encoder)
@@ -419,7 +437,7 @@ static doe_resource_status validate_submission(const doe_resource_command *comma
 doe_resource_status doe_resource_commands_begin_submit(doe_resource_commands *commands)
 {
     if (!commands) return DOE_RESOURCE_INVALID_ARGUMENT;
-    if (!resource_alive(&commands->base)) return DOE_RESOURCE_UNAVAILABLE;
+    if (commands->invalid || !resource_alive(&commands->base)) return DOE_RESOURCE_UNAVAILABLE;
     if (atomic_load_explicit(&commands->submission_state, memory_order_acquire) != 0)
         return DOE_RESOURCE_STATE;
     for (size_t i = 0; i < commands->count; i++) {
@@ -477,7 +495,7 @@ static doe_resource_status commands_transition(doe_resource_commands *commands,
 doe_resource_status doe_resource_commands_reserve_program(doe_resource_commands *commands)
 {
     if (!commands) return DOE_RESOURCE_INVALID_ARGUMENT;
-    if (!resource_alive(&commands->base)) return DOE_RESOURCE_UNAVAILABLE;
+    if (commands->invalid || !resource_alive(&commands->base)) return DOE_RESOURCE_UNAVAILABLE;
     if (atomic_load_explicit(&commands->submission_state, memory_order_acquire) != 0)
         return DOE_RESOURCE_STATE;
     doe_resource_status status = validate_all(commands);

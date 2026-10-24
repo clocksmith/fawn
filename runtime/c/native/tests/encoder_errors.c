@@ -55,7 +55,7 @@ static WGPURenderBundleEncoder bundle_encoder(state *s)
 static void finish_rejected(state *s, WGPUCommandEncoder encoder, unsigned before, const char *name)
 {
     expect_errors(s,before,0,name);
-    assert(!wgpuCommandEncoderFinish(encoder,NULL));
+    finish_invalid(encoder);
     expect_errors(s,before,1,name);
     wgpuCommandEncoderRelease(encoder);
 }
@@ -135,10 +135,74 @@ int main(void)
     expect_errors(&s,before,3,"clear on an ended encoder");
     pass = begin_render(encoder,view,WGPUStoreOp_Store);
     expect_errors(&s,before,4,"render pass on an ended encoder");
-    wgpuRenderPassEncoderEnd(pass);
+    wgpuRenderPassEncoderEnd(pass); /* its parent is not locked */
+    expect_errors(&s,before,5,"End of a pass begun on an ended encoder");
     wgpuRenderPassEncoderRelease(pass);
-    assert(!wgpuCommandEncoderFinish(encoder,NULL));
-    expect_errors(&s,before,5,"second Finish");
+    finish_invalid(encoder);
+    expect_errors(&s,before,6,"second Finish");
+    wgpuCommandBufferRelease(commands);
+    wgpuCommandEncoderRelease(encoder);
+
+    /* Ended passes report at the call and leave a valid parent valid: End twice,
+     * Draw after End and Dispatch after End each give one error, and Finish
+     * returns a command buffer that submits without another error. */
+    before = s.errors;
+    encoder = wgpuDeviceCreateCommandEncoder(s.device,NULL);
+    pass = begin_render(encoder,view,WGPUStoreOp_Store);
+    wgpuRenderPassEncoderEnd(pass);
+    wgpuRenderPassEncoderEnd(pass);
+    expect_errors(&s,before,1,"second End on a valid encoder");
+    wgpuRenderPassEncoderDraw(pass,3,1,0,0);
+    expect_errors(&s,before,2,"Draw after End on a valid encoder");
+    wgpuRenderPassEncoderRelease(pass);
+    compute = wgpuCommandEncoderBeginComputePass(encoder,NULL);
+    wgpuComputePassEncoderEnd(compute);
+    wgpuComputePassEncoderDispatchWorkgroups(compute,1,1,1);
+    expect_errors(&s,before,3,"Dispatch after End on a valid encoder");
+    wgpuComputePassEncoderRelease(compute);
+    submit(&s,encoder);
+    expect_errors(&s,before,3,"valid encoder after ended-pass commands");
+
+    /* Locked encoder: a second begin while a pass is open invalidates silently;
+     * ending the second pass unlocks the parent, so ending the first reports at
+     * the call; Finish reports the invalid encoder once. */
+    before = s.errors;
+    encoder = wgpuDeviceCreateCommandEncoder(s.device,NULL);
+    pass = begin_render(encoder,view,WGPUStoreOp_Store);
+    WGPURenderPassEncoder second = begin_render(encoder,view,WGPUStoreOp_Store);
+    expect_errors(&s,before,0,"second begin while locked");
+    wgpuRenderPassEncoderEnd(second);
+    expect_errors(&s,before,0,"End of the second pass");
+    wgpuRenderPassEncoderEnd(pass);
+    expect_errors(&s,before,1,"End of the first pass after the parent unlocked");
+    wgpuRenderPassEncoderRelease(second);
+    wgpuRenderPassEncoderRelease(pass);
+    finish_rejected(&s,encoder,before + 1,"second begin while locked");
+    /* Finish while a pass is open: one error at Finish, then End reports (the
+     * parent ended), and submitting the invalid command buffer reports again. */
+    before = s.errors;
+    encoder = wgpuDeviceCreateCommandEncoder(s.device,NULL);
+    compute = wgpuCommandEncoderBeginComputePass(encoder,NULL);
+    commands = wgpuCommandEncoderFinish(encoder,NULL);
+    assert(commands);
+    expect_errors(&s,before,1,"Finish while a pass is open");
+    wgpuComputePassEncoderEnd(compute);
+    expect_errors(&s,before,2,"End after Finish");
+    wgpuComputePassEncoderRelease(compute);
+    wgpuQueueSubmit(s.queue,1,&commands);
+    expect_errors(&s,before,3,"submit of the invalid command buffer");
+    wgpuCommandBufferRelease(commands);
+    wgpuCommandEncoderRelease(encoder);
+    /* Finish with a chained descriptor still ends the encoder. */
+    before = s.errors;
+    encoder = wgpuDeviceCreateCommandEncoder(s.device,NULL);
+    WGPUChainedStruct chain = {.sType=WGPUSType_ShaderSourceWGSL};
+    WGPUCommandBufferDescriptor chained = {.nextInChain=&chain};
+    commands = wgpuCommandEncoderFinish(encoder,&chained);
+    assert(commands);
+    expect_errors(&s,before,1,"chained Finish descriptor");
+    wgpuCommandEncoderClearBuffer(encoder,bytes,0,4);
+    expect_errors(&s,before,2,"clear after a chained Finish");
     wgpuCommandBufferRelease(commands);
     wgpuCommandEncoderRelease(encoder);
 
@@ -241,7 +305,9 @@ int main(void)
         "End/dispatch on ended passes, copies/clears/begin on a finished encoder and a second Finish report at "
         "the call; render bundle encoders: invalid setPipeline/draw give one error at bundle Finish and an "
         "invalid bundle, executing it in a valid pass gives one error at the command encoder's Finish, commands "
-        "and a second Finish after bundle Finish report at the call, an invalid bundle encoder descriptor reports "
+        "and a second Finish after bundle Finish report at the call, ended passes on a valid encoder report at "
+        "the call and leave it valid, End with an unlocked parent and invalid-command-buffer submits report, "
+        "a chained Finish ends the encoder, an invalid bundle encoder descriptor reports "
         "once at creation and its bundle once at the executing encoder's Finish; core-features-and-limits listed and "
         "accepted %s\n", adapter_class_scope());
     return 0;

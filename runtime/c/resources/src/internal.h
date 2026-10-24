@@ -73,6 +73,7 @@ struct doe_resource_encoder {
 struct doe_resource_commands {
     resource_base base;
     atomic_uint submission_state;
+    bool invalid; /* From a failed Finish: never submittable or claimable. */
     size_t count, capacity;
     doe_resource_command *commands;
 };
