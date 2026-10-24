@@ -109,7 +109,8 @@ void native_error(native_device *device, WGPUErrorType type, const char *message
 
 void wgpuAdapterInfoFreeMembers(WGPUAdapterInfo info)
 {
-    free((void *)info.device.data);
+    /* native_backend_info owns every string in one block starting at vendor. */
+    free((void *)info.vendor.data);
 }
 
 WGPUStatus native_limits(const native_backend *backend, WGPULimits *out)

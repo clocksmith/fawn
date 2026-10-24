@@ -907,6 +907,11 @@ constants. Unlike the retained provider, resources no entry uses are not reporte
 since the compiler reflects per-entry closures only. `tests/shader_reflection.c`
 covers buffers, uniforms, textures, samplers and a write-only storage texture.
 
+Adapter info reports the vendor from the PCI/Khronos vendor ID (lowercase, empty
+when unknown, `mesa` for lavapipe), an empty architecture (no family source), and
+the driver's device name as both `device` and `description`; the strings share one
+allocation that `wgpuAdapterInfoFreeMembers` releases (`tests/adapter_info.c`).
+
 ## Doe compute-program extension
 
 `include/doe_native_programs.h` declares the doe-gpu native program contract the
