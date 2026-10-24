@@ -121,6 +121,15 @@ for (const constant of [[0.25, 0.5, 0.75, 1], { r: 0.25, g: 0.5, b: 0.75, a: 1 }
   pass.end();
   console.log('ok: blend constants reach the provider as sequences and dictionaries');
 }
+{
+  // An omitted clearValue clears to transparent black.
+  const color = device.createTexture({ size: SIZE, format: 'rgba8unorm', usage: T.RENDER_ATTACHMENT | T.COPY_SRC });
+  const encoder = device.createCommandEncoder();
+  encoder.beginRenderPass({ colorAttachments: [{ view: color.createView(), loadOp: 'clear', storeOp: 'store' }] }).end();
+  device.queue.submit([encoder.finish()]);
+  assert.deepEqual(Array.from(await readFirstTexel(color, 'all', 4)), [0, 0, 0, 0]);
+  console.log('ok: an omitted clearValue is (0, 0, 0, 0)');
+}
 
 {
   // A provider-side validation error lands in the innermost native error scope.

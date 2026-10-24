@@ -19,8 +19,9 @@ const SAMPLER_BINDING_TYPES = Object.freeze({
   comparison: 'comparison',
 });
 
+// An omitted GPUColor (GPURenderPassColorAttachment.clearValue) is {r: 0, g: 0, b: 0, a: 0}.
 function normalizeGpuColor(value, path) {
-  if (value === undefined) return { r: 0, g: 0, b: 0, a: 1 };
+  if (value === undefined) return { r: 0, g: 0, b: 0, a: 0 };
   let components;
   if (value !== null && typeof value !== 'string' && typeof value[Symbol.iterator] === 'function') {
     components = Array.from(value);
