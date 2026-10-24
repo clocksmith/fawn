@@ -94,17 +94,13 @@ pub const DrawRecording = struct {
         }
         const vp_width = cmd.viewport_width orelse @as(f32, @floatFromInt(target_width));
         const vp_height = cmd.viewport_height orelse @as(f32, @floatFromInt(target_height));
-        var viewport = c.VkViewport{
-            .x = cmd.viewport_x,
-            .y = cmd.viewport_y,
-            .width = vp_width,
-            .height = vp_height,
-            .minDepth = cmd.viewport_min_depth,
-            .maxDepth = cmd.viewport_max_depth,
-        };
+        const empty_viewport = vp_width == 0 or vp_height == 0;
+        var viewport = webgpu_viewport(cmd.viewport_x, cmd.viewport_y, vp_width, vp_height, cmd.viewport_min_depth, cmd.viewport_max_depth);
         c.vkCmdSetViewport(self.command_buffer, 0, 1, @ptrCast(&viewport));
-        const sc_width = cmd.scissor_width orelse target_width;
-        const sc_height = cmd.scissor_height orelse target_height;
+        // An empty WebGPU viewport rasterizes nothing: Vulkan needs a positive
+        // width, so the stand-in viewport is paired with an empty scissor.
+        const sc_width = if (empty_viewport) 0 else cmd.scissor_width orelse target_width;
+        const sc_height = if (empty_viewport) 0 else cmd.scissor_height orelse target_height;
         var scissor = c.VkRect2D{
             .offset = .{
                 .x = @intCast(cmd.scissor_x),
@@ -147,26 +143,16 @@ pub const DrawRecording = struct {
             );
         }
 
-        if (cmd.vertex_buffer_count > 0) {
-            var vk_buffers: [model_render_types.MAX_VERTEX_BUFFERS]c.VkBuffer = [_]c.VkBuffer{VK_NULL_U64} ** model_render_types.MAX_VERTEX_BUFFERS;
-            var vk_offsets: [model_render_types.MAX_VERTEX_BUFFERS]u64 = [_]u64{0} ** model_render_types.MAX_VERTEX_BUFFERS;
-            var bound_count: u32 = 0;
-            while (bound_count < cmd.vertex_buffer_count and bound_count < vk_buffers.len) : (bound_count += 1) {
-                const handle = cmd.vertex_buffer_handles[bound_count];
-                if (handle == 0) break;
-                const compute_buffer = self.buffers.get(handle) orelse return error.InvalidArgument;
-                vk_buffers[bound_count] = compute_buffer.buffer;
-                vk_offsets[bound_count] = cmd.vertex_buffer_offsets[bound_count];
-            }
-            if (bound_count > 0) {
-                c.vkCmdBindVertexBuffers(
-                    self.command_buffer,
-                    0,
-                    bound_count,
-                    vk_buffers[0..bound_count].ptr,
-                    vk_offsets[0..bound_count].ptr,
-                );
-            }
+        // Bound slots need not be contiguous (an unused slot is a hole), so
+        // each bound slot binds at its own index.
+        var slot: u32 = 0;
+        while (slot < cmd.vertex_buffer_count and slot < model_render_types.MAX_VERTEX_BUFFERS) : (slot += 1) {
+            const handle = cmd.vertex_buffer_handles[slot];
+            if (handle == 0) continue;
+            const compute_buffer = self.buffers.get(handle) orelse return error.InvalidArgument;
+            const buffers = [1]c.VkBuffer{compute_buffer.buffer};
+            const offsets = [1]u64{cmd.vertex_buffer_offsets[slot]};
+            c.vkCmdBindVertexBuffers(self.command_buffer, slot, 1, &buffers, &offsets);
         }
 
         if (index) |binding| c.vkCmdBindIndexBuffer(self.command_buffer, binding.buffer, binding.offset, binding.format);
@@ -196,3 +182,19 @@ pub const DrawRecording = struct {
         c.vkCmdEndRenderPass(self.command_buffer);
     }
 };
+
+/// WebGPU framebuffer coordinates put y = 0 at the top with clip-space +y up;
+/// Vulkan maps clip-space +y down. A negative-height viewport (core since
+/// Vulkan 1.1) anchored at the bottom edge gives WebGPU orientation without
+/// touching shaders. An empty WebGPU viewport becomes a 1x1 stand-in.
+pub fn webgpu_viewport(x: f32, y: f32, width: f32, height: f32, min_depth: f32, max_depth: f32) c.VkViewport {
+    if (width == 0 or height == 0) return .{ .x = 0, .y = 0, .width = 1, .height = 1, .minDepth = min_depth, .maxDepth = max_depth };
+    return .{ .x = x, .y = y + height, .width = width, .height = -height, .minDepth = min_depth, .maxDepth = max_depth };
+}
+
+test "WebGPU viewports flip to a negative Vulkan height anchored at the bottom edge" {
+    const viewport = webgpu_viewport(2, 4, 16, 8, 0, 1);
+    try std.testing.expectEqual(@as(f32, 12), viewport.y);
+    try std.testing.expectEqual(@as(f32, -8), viewport.height);
+    try std.testing.expectEqual(@as(f32, 1), webgpu_viewport(2, 4, 0, 8, 0, 1).width);
+}
