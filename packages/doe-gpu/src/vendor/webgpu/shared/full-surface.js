@@ -1392,11 +1392,15 @@ function createFullSurfaceClasses({
           ? 'descriptor.format must match texture.format or one of texture.viewFormats'
           : `descriptor.format must be the ${aspect} format of ${this.format}`);
       }
-      if (viewDescriptor.swizzle !== undefined && (typeof viewDescriptor.swizzle !== 'string' || !/^[rgba01]{4}$/.test(viewDescriptor.swizzle))) {
-        failValidation('GPUTexture.createView', 'descriptor.swizzle must be a 4-character string using r, g, b, a, 0, or 1');
+      // swizzle is a WebIDL DOMString (1111 converts to "1111"); a value outside
+      // the four-character [rgba01] grammar is a content-timeline TypeError.
+      const swizzle = viewDescriptor.swizzle === undefined ? undefined : String(viewDescriptor.swizzle);
+      if (swizzle !== undefined && !/^[rgba01]{4}$/.test(swizzle)) {
+        throw new TypeError('GPUTexture.createView: descriptor.swizzle must be a 4-character string using r, g, b, a, 0, or 1');
       }
       const normalizedDescriptor = normalizeTextureViewDescriptor({
         ...viewDescriptor,
+        ...(swizzle === undefined ? {} : { swizzle }),
         format,
         dimension,
         baseMipLevel,
@@ -2174,6 +2178,10 @@ function createFullSurfaceClasses({
       return createReportingErrors(this, path, () => {
         assertLiveResource(this, path, 'GPUDevice');
         const queryDescriptor = normalizeQuerySetDescriptor(descriptor, path);
+        // A timestamp set without timestamp-query is a content-timeline TypeError.
+        if (queryDescriptor.type === 'timestamp' && !this.features.has('timestamp-query')) {
+          throw new TypeError(`${path}: descriptor.type "timestamp" requires the timestamp-query feature`);
+        }
         // An empty query set is valid; only a count past 4096 is an error.
         assertIntegerInRange(queryDescriptor.count, path, 'descriptor.count', { min: 0, max: UINT32_MAX });
         if (queryDescriptor.count > MAX_QUERY_SET_COUNT) {

@@ -796,8 +796,10 @@ function normalizeTextureViewDescriptor(descriptor, texture, features, path = 'G
   } else if (texture?.format) {
     result.format = normalizeTextureFormat(texture.format, path, 'descriptor.format', features);
   }
-  if (normalized.swizzle !== undefined && !hasFeature(features, 'texture-component-swizzle')) {
-    failValidation(path, 'descriptor.swizzle requires the texture-component-swizzle feature');
+  // The identity "rgba" is the default and needs no feature.
+  if (normalized.swizzle !== undefined && normalized.swizzle !== 'rgba' &&
+      !hasFeature(features, 'texture-component-swizzle')) {
+    failValidation(path, 'a non-identity descriptor.swizzle requires the texture-component-swizzle feature');
   }
   return result;
 }
