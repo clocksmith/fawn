@@ -119,6 +119,11 @@ require both aspects of the same subresource explicitly represented, so no
 implicit preservation of an omitted aspect is assumed. Equivalent combined views
 use one native attachment identity while every wrapper keeps its ordinary lease.
 Combined-format sampling checks depth availability; X24/X32 views check stencil.
+Initializing an X24/X32 sampled view creates legal combined-parent attachment
+views for its selected mip/layers. Missing aspects clear to zero while initialized
+companions LOAD/STORE; temporary views join the ordinary command leases, and only
+terminal success publishes their speculative initialization. X formats never
+become render attachments.
 Depth/stencil and multisample images do not admit storage or staging transfers.
 
 `doe_mtl_commands_initialize_attachment` initializes a selected 2D/array/cube/MS

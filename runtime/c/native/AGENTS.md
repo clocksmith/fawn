@@ -65,6 +65,10 @@ state. Use real attachment clears before publication and after Discard; never ad
 frontend availability bits or a fake color attachment. Public Plus format backing
 and optional feature identity are distinct. Preserve canonical absent-aspect,
 read-only and view-default admission when converting pinned ABI sentinels.
+Canonical depth/stencil aspect formats are public identities: combined Metal depth
+views retain the native parent format, while stencil uses its X24/X32 view. Private
+format-view permission never expands public viewFormats. Initialize sampled stencil
+through legal parent attachments; an X-format shader view is not an attachment.
 
 Optional color and fragment stages remain genuinely absent; never synthesize a
 shader or attachment. Debug balance belongs to each existing recording owner.

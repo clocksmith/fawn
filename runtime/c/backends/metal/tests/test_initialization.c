@@ -143,10 +143,64 @@ static void terminal_failure_and_early_release(void) {
     mock_assert_closed(&mock);
 }
 
+static void sampled_stencil_initializes_parent(void) {
+    mock_native mock;
+    doe_mtl_context *context = context_new(&mock);
+    doe_mtl_texture *texture = NULL;
+    doe_mtl_texture_view *view = NULL;
+    doe_mtl_texture_desc desc = {DOE_MTL_TEXTURE_2D_ARRAY, DOE_MTL_DEPTH32_STENCIL8,
+        8, 8, 2, 2, DOE_MTL_TEXTURE_RENDER_TARGET | DOE_MTL_TEXTURE_SAMPLED, true, 1};
+    doe_mtl_texture_view_desc span = {DOE_MTL_TEXTURE_2D, DOE_MTL_X32_STENCIL8, 1, 1, 1, 1,
+        DOE_MTL_SWIZZLE_RED, DOE_MTL_SWIZZLE_GREEN, DOE_MTL_SWIZZLE_BLUE, DOE_MTL_SWIZZLE_ALPHA};
+    assert(doe_mtl_texture_create(context, &desc, &texture, NULL) == DOE_MTL_OK);
+    assert(doe_mtl_texture_view_create(texture, &span, &view, NULL) == DOE_MTL_OK);
+    /* Existing depth must survive stencil zero initialization at this exact
+     * mip/layer. Other subresources remain unavailable. */
+    texture->initialized[3] = DOE_MTL_ASPECT_DEPTH;
+    doe_mtl_commands *commands = commands_new(context);
+    mock.fail = MOCK_VIEW;
+    doe_mtl_error detail = {0};
+    assert(doe_mtl_commands_initialize_attachment(commands, view, &detail) == DOE_MTL_NATIVE_FAILURE);
+    assert(detail.native_code == -71 && mock.renders == 0 && texture->owner == NULL);
+    assert(doe_mtl_commands_release(commands) == DOE_MTL_OK);
+    mock.fail = MOCK_NONE;
+    commands = commands_new(context);
+    assert(doe_mtl_commands_initialize_attachment(commands, view, NULL) == DOE_MTL_OK);
+    assert(mock.view_desc.format == DOE_MTL_DEPTH32_STENCIL8 && mock.view_desc.base_mip == 1);
+    assert(mock.view_desc.base_layer == 1 && mock.view_desc.type == DOE_MTL_TEXTURE_2D);
+    assert(mock.render_pass.depth.load == DOE_MTL_LOAD && mock.render_pass.depth.store == DOE_MTL_STORE);
+    assert(mock.render_pass.stencil.load == DOE_MTL_CLEAR && mock.render_pass.stencil.stencil == 0);
+    assert(texture->initialized[3] == DOE_MTL_ASPECT_DEPTH);
+    assert(doe_mtl_texture_aspect_initialized(commands, view, DOE_MTL_ASPECT_STENCIL));
+    assert(doe_mtl_commands_release(commands) == DOE_MTL_OK); /* Abandon rolls back. */
+    assert(texture->initialized[3] == DOE_MTL_ASPECT_DEPTH);
+    commands = commands_new(context);
+    assert(doe_mtl_commands_initialize_attachment(commands, view, NULL) == DOE_MTL_OK);
+    assert(doe_mtl_commands_submit(commands, NULL) == DOE_MTL_OK);
+    mock_result(&mock, 0, 0);
+    assert(doe_mtl_commands_poll(commands, NULL) == DOE_MTL_COMPLETION_UNKNOWN);
+    assert(texture->initialized[3] == DOE_MTL_ASPECT_DEPTH);
+    assert(doe_mtl_commands_release(commands) == DOE_MTL_BUSY);
+    doe_mtl_texture_view_release(view);
+    assert(doe_mtl_texture_retain(texture) == DOE_MTL_OK); /* Test observation lease. */
+    /* Parent and temporary attachment native handles remain under the command
+     * owner after the caller releases its sampled view and allocation. */
+    doe_mtl_texture_release(texture);
+    mock_result(&mock, 4, 0);
+    assert(doe_mtl_commands_poll(commands, NULL) == DOE_MTL_OK);
+    assert(texture->initialized[3] == (DOE_MTL_ASPECT_DEPTH | DOE_MTL_ASPECT_STENCIL));
+    for (size_t i = 0; i < 3; ++i) assert(texture->initialized[i] == 0);
+    assert(doe_mtl_commands_release(commands) == DOE_MTL_OK);
+    doe_mtl_texture_release(texture);
+    doe_mtl_context_release(context);
+    mock_assert_closed(&mock);
+}
+
 int main(void) {
     speculative_and_pending();
     combined_discard_preserves_other_aspect();
     ranges_and_preparation_failure();
     terminal_failure_and_early_release();
+    sampled_stencil_initializes_parent();
     puts("PASS Metal attachment initialization: selected ranges, missing aspects, discard preservation, preflight, speculative/unknown/failure ownership");
 }

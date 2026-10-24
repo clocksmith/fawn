@@ -88,10 +88,15 @@ WGPUTexture native_metal_create_texture(native_device *device, const WGPUTexture
         native_error(device, WGPUErrorType_Validation, "Metal texture attachment format requires an enabled feature");
         return NULL;
     }
-    if ((format.depth || format.stencil) && (desc.usage & ~WGPUTextureUsage_RenderAttachment)) {
-        native_error(device, WGPUErrorType_Validation, "Metal depth/stencil transfers and sampling are not composed");
+    if ((format.depth || format.stencil) &&
+        (desc.usage & ~(WGPUTextureUsage_RenderAttachment | WGPUTextureUsage_TextureBinding))) {
+        native_error(device, WGPUErrorType_Validation, "Metal depth/stencil transfers and storage are not composed");
         return NULL;
     }
+    /* Stencil sampling uses a native X24/X32 view of the combined allocation.
+     * This private permission never admits extra public viewFormats. */
+    if (format.depth && format.stencil && (desc.usage & WGPUTextureUsage_TextureBinding))
+        native.allow_format_views = true;
     if (desc.dimension == WGPUTextureDimension_1D) native.type = DOE_MTL_TEXTURE_1D;
     else if (desc.dimension == WGPUTextureDimension_3D) native.type = DOE_MTL_TEXTURE_3D;
     else if (desc.samples > 1) native.type = desc.depth_or_layers > 1 ? DOE_MTL_TEXTURE_2D_MS_ARRAY : DOE_MTL_TEXTURE_2D_MS;
@@ -154,6 +159,16 @@ WGPUTextureView native_metal_create_view(doe_resource_texture *texture, const WG
         native.base_mip = resolved.base_mip; native.mip_count = resolved.mip_count;
         native.base_layer = resolved.base_layer; native.layer_count = resolved.layer_count;
         const doe_resource_texture_desc *parent = doe_resource_texture_description(texture);
+        /* Canonical aspect formats describe public identity, not native format
+         * reinterpretation. Metal exposes combined depth through its parent
+         * format and stencil through a matching view-only X format. */
+        if (status == DOE_RESOURCE_OK && resolved.aspect != WGPUTextureAspect_All) {
+            doe_mtl_format parent_format;
+            if (!native_metal_format(device->features, parent->format, &parent_format)) status = DOE_RESOURCE_UNSUPPORTED;
+            else if (parent_format == DOE_MTL_DEPTH24_STENCIL8 || parent_format == DOE_MTL_DEPTH32_STENCIL8)
+                native.format = resolved.aspect == WGPUTextureAspect_DepthOnly ? parent_format :
+                    parent_format == DOE_MTL_DEPTH24_STENCIL8 ? DOE_MTL_X24_STENCIL8 : DOE_MTL_X32_STENCIL8;
+        }
         switch (resolved.dimension) {
         case WGPUTextureViewDimension_1D: native.type=DOE_MTL_TEXTURE_1D; break;
         case WGPUTextureViewDimension_2D: native.type=parent->samples > 1 ? DOE_MTL_TEXTURE_2D_MS : DOE_MTL_TEXTURE_2D; break;
