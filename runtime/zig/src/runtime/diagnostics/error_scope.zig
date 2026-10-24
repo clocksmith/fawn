@@ -250,6 +250,7 @@ pub fn zig_error_to_type(err: anyerror) u32 {
         error.RenderAttachmentDeviceMismatch,
         error.RenderAttachmentUsageMissing,
         error.RenderAttachmentViewInvalid,
+        error.RenderAttachmentViewSwizzled,
         error.RenderAttachmentExtentMismatch,
         error.RenderAttachmentSampleMismatch,
         error.RenderAttachmentFormatMismatch,

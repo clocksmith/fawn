@@ -166,6 +166,8 @@ fn texture_view_matches_layout(layout_entry: DoeBindGroupLayoutEntry, view: *Doe
 }
 
 fn storage_texture_matches_layout(layout_entry: DoeBindGroupLayoutEntry, view: *DoeTextureView) bool {
+    // A swizzled view never binds as a storage texture.
+    if (view.swizzled) return false;
     switch (view.tex.format) {
         abi_texture.WGPUTextureFormat_Stencil8, abi_texture.WGPUTextureFormat_Depth16Unorm, abi_texture.WGPUTextureFormat_Depth24Plus, abi_texture.WGPUTextureFormat_Depth24PlusStencil8, abi_texture.WGPUTextureFormat_Depth32Float, abi_texture.WGPUTextureFormat_Depth32FloatStencil8 => return false,
         else => {},

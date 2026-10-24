@@ -712,6 +712,7 @@ pub export fn doeNativeTextureCreateView(tex_raw: ?*anyopaque, desc: ?*const abi
         .array_layer_count = resolved_array_layer_count,
         .aspect = if (d.aspect != 0) d.aspect else abi_texture.WGPUTextureAspect_All,
         .usage = resolved_usage,
+        .swizzled = !identity_swizzle(resolved_swizzle_r, resolved_swizzle_g, resolved_swizzle_b, resolved_swizzle_a),
     };
     const result = toOpaque(tv);
     if (!registerTextureView(result)) {

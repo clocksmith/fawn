@@ -436,6 +436,10 @@ pub const DoeTextureView = struct {
     array_layer_count: u32 = 0,
     aspect: u32 = 0,
     usage: u64 = 0,
+    /// A non-identity component swizzle (texture-component-swizzle): the view
+    /// samples, but WebGPU rejects it as a render attachment, resolve target,
+    /// depth-stencil attachment or storage binding.
+    swizzled: bool = false,
 };
 
 pub const DoeSampler = struct {
