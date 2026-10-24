@@ -48,8 +48,16 @@ function allocationTotal(clients, excluded) {
   return bytes;
 }
 
+const probe = process.platform === 'linux' ? await requestAdapter({ backend: 'vulkan' }) : null;
+// DRM client counters only see GPU devices; a CPU implementation (lavapipe)
+// allocates host memory that no DRM checkpoint observes.
+const cpuAdapter = probe?.info?.isFallbackAdapter === true ||
+  /llvmpipe|lavapipe|swiftshader/i.test(`${probe?.info?.device ?? ''} ${probe?.info?.description ?? ''}`);
+probe?.destroy?.();
 if (process.platform !== 'linux') {
   console.log('native resource retention: skipped Linux DRM checkpoints on this platform');
+} else if (cpuAdapter) {
+  console.log('native resource retention: skipped Linux DRM checkpoints on a CPU (fallback) adapter');
 } else {
   for (const execution of ['webgpu', 'native-recorded', 'gpu-recorded']) {
     for (const gpuTiming of ['off', 'timestamp-query']) {
