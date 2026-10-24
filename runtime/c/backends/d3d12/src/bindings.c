@@ -9,7 +9,7 @@ static bool overlapping(const doe_dx_buffer_binding *a, const doe_dx_buffer_bind
 /* Shared graphics/compute resource rules: validation only, no publication. */
 doe_dx_status doe_dx_prepare_resources(doe_dx_commands *commands, doe_dx_pipeline *pipeline,
     const doe_dx_compute_resources *resources, doe_dx_native_resources *native,
-    size_t *added, doe_dx_error *error) {
+    doe_dx_reservation *needed, doe_dx_error *error) {
     if (!pipeline || !resources)
         return doe_dx_fail(DOE_DX_INVALID_ARGUMENT, 0, "commands.resources", error);
     doe_dx_status status;
@@ -21,15 +21,11 @@ doe_dx_status doe_dx_prepare_resources(doe_dx_commands *commands, doe_dx_pipelin
         return doe_dx_fail(DOE_DX_DEVICE_MISMATCH, 0, "commands.bindings", error);
     if (binding_count != pipeline->binding_count || resources->texture_count != pipeline->texture_count)
         return doe_dx_fail(DOE_DX_INVALID_ARGUMENT, 0, "commands.bindings.bindings", error);
-    bool pipeline_used = false;
-    for (size_t index = 0; index < commands->pipeline_count; index++)
-        if (commands->pipelines[index] == pipeline) pipeline_used = true;
-    if (!pipeline_used && (commands->pipeline_count == DOE_DX_MAX_COMMAND_RESOURCES ||
-        pipeline->references == UINT32_MAX))
-        return doe_dx_fail(DOE_DX_RANGE, 0, "commands.pipeline_budget", error);
+    if (pipeline->references == UINT32_MAX)
+        return doe_dx_fail(DOE_DX_RANGE, 0, "commands.pipeline_references", error);
     native->buffer_count = binding_count;
     native->texture_count = resources->texture_count;
-    *added = 0;
+    *needed = (doe_dx_reservation){.pipelines=1};
     for (size_t index = 0; index < binding_count; index++) {
         const doe_dx_buffer_binding *binding = &bindings[index];
         doe_dx_buffer *buffer = binding->buffer;
@@ -62,7 +58,7 @@ doe_dx_status doe_dx_prepare_resources(doe_dx_commands *commands, doe_dx_pipelin
             if (writable != other_writable || (writable && overlapping(binding, &bindings[prior])))
                 return doe_dx_fail(DOE_DX_UNSUPPORTED, 0, "commands.bindings.alias", error);
         }
-        if (!repeated && !doe_dx_find_buffer(commands, buffer)) (*added)++;
+        if (!repeated && !doe_dx_find_buffer(commands, buffer)) needed->buffers++;
         native->buffers[index] = (doe_dx_native_binding){buffer->native, binding->offset, binding->size};
     }
     for (size_t index = 0; index < resources->texture_count; index++) {
@@ -76,11 +72,9 @@ doe_dx_status doe_dx_prepare_resources(doe_dx_commands *commands, doe_dx_pipelin
         for (size_t prior = 0; prior < index; prior++)
             if (resources->textures[prior] == texture)
                 return doe_dx_fail(DOE_DX_UNSUPPORTED, 0, "commands.bindings.texture_alias", error);
-        if (!doe_dx_find_texture(commands, texture)) (*added)++;
+        if (!doe_dx_find_texture(commands, texture)) needed->textures++;
         native->textures[index] = texture->native;
     }
-    if (*added > DOE_DX_MAX_COMMAND_RESOURCES - commands->buffer_count - commands->texture_count - commands->timestamp_count)
-        return doe_dx_fail(DOE_DX_RANGE, 0, "commands.resource_budget", error);
     return DOE_DX_OK;
 }
 
@@ -90,8 +84,7 @@ void doe_dx_use_resources(doe_dx_commands *commands, doe_dx_pipeline *pipeline,
         doe_dx_use_buffer(commands, resources->buffers[index].buffer);
     for (size_t index = 0; index < resources->texture_count; index++)
         doe_dx_use_texture(commands, resources->textures[index]);
-    for (size_t index = 0; index < commands->pipeline_count; index++)
-        if (commands->pipelines[index] == pipeline) return;
+    if (commands->pipeline_count >= commands->pipeline_capacity) abort();
     pipeline->references++;
     commands->pipelines[commands->pipeline_count++] = pipeline;
 }

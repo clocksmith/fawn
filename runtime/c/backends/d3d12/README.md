@@ -337,8 +337,8 @@ E_INVALIDARG is reported as `shader_model=0` (unknown), preserving DXBC use with
 inventing DXIL eligibility. Other query failures preserve their HRESULT.
 
 `limits` distinguishes backend admission from those raw facts. One CBV/SRV/UAV heap/table per use admits up to 64 descriptors, with existing command-owned
-retirement. The separate static-sampler limit remains 16 and command resource
-limit 64. Per-kind counts are checked before native preparation using actual
+retirement. The separate static-sampler limit remains 16. Cumulative command uses grow
+within the same owner rather than imposing a 64-resource limit. Per-kind counts are checked before native preparation using actual
 [resource binding tiers](https://learn.microsoft.com/en-us/windows/win32/direct3d12/hardware-support):
 Tier 1/2 CBVs 14, Tier 1 SRVs 128 (clamped to 64), Tier 1 FL11_0 UAVs 8, otherwise
 UAVs 64; Tier 3 CBVs are clamped to 64. ALL-visible graphics root tables use the
@@ -389,3 +389,35 @@ early caller release and unknown completion. The SDK CPU call control observes
 actual lowering's barrier count, identity and state bits, including graphics
 read bits and repeated UAVs. These controls do not execute a shader; actual
 public WARP consumption remains separate.
+
+## Growing command-use storage
+
+The command remains the only resource-retirement owner. Its existing buffer,
+texture, query and pipeline use records now occupy checked growable spans; there
+is no cumulative 64-resource or 65536-operation admission limit. Buffer, texture
+and query objects retain their existing exclusive command pointer plus a stable
+slot index. Lookup is constant time even when storage moves; no caller retains
+a use-record address across a reserve. Per-dispatch descriptor capacity remains
+64 and static samplers remain 16. Those pipeline bounds do not cap the number of
+objects a sequence of commands may use.
+
+All required span capacity is reserved before recording native work or publishing
+counts, initialization or leases. Growth checks count/byte arithmetic and uses
+calloc/copy/free, preserving the existing allocation-fault seam. A failed later
+reserve may leave prepared capacity owned by the command, while use counts and
+references remain unchanged. Failure reports actual allocation/addressability
+OOM; retry or discard releases every prepared allocation.
+
+Shared-read pipelines take one existing reference per successful draw/dispatch
+record, appended without a repeated ownership search. Retirement/discard drops
+each such reference exactly once. Exclusive resource uses remain deduplicated.
+There is no additional registry, queue or reference-count owner. The test native
+call seam records borrowed native occurrences only; it executes no data copy or
+shader.
+
+`test_dynamic.c` checks 65/129 unique buffers, 129 texture/query indices, 65537
+repeated pipeline records, partial multi-span allocation failure, actual recording
+OOM/retry and unknown-completion retention after early caller release. Active
+former-budget cases now test genuine reserve failures rather than preserving the
+removed artificial rejection. Historical sealed receipts remain unchanged and do
+not qualify this later source, Windows SDK composition or physical execution.

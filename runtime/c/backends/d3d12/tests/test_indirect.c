@@ -57,7 +57,7 @@ static void preflight(void) {
     binding.buffer = arguments;
     assert(doe_dx_commands_dispatch_indirect(work, shader, &resources, arguments, 0, NULL) == DOE_DX_UNSUPPORTED);
     binding.buffer = storage;
-    assert(!mock.indirect_dispatches && !work->pipeline_count && work->operation_count == 2);
+    assert(!mock.indirect_dispatches && !work->pipeline_count && mock.copies == 2);
     doe_dx_commands_release(work);
     doe_dx_pipeline_release(shader);
     doe_dx_buffer_release(upload);
@@ -83,12 +83,12 @@ static void lifetime_and_unknown_completion(void) {
     mock.failure = MOCK_DISPATCH_INDIRECT;
     assert(doe_dx_commands_dispatch_indirect(work, shader, &resources, arguments, 16, &error) == DOE_DX_NATIVE_FAILURE);
     assert(error.native_code == -100 - MOCK_DISPATCH_INDIRECT);
-    assert(!mock.indirect_dispatches && !work->pipeline_count && work->operation_count == 2);
+    assert(!mock.indirect_dispatches && !work->pipeline_count && mock.copies == 2);
     mock.failure = MOCK_NONE;
     assert(doe_dx_commands_dispatch_indirect(work, shader, &resources, arguments, 16, NULL) == DOE_DX_OK);
     assert(mock.indirect_dispatches == 1 && mock.indirect_arguments == arguments->native);
     assert(mock.indirect_offset == 16 && mock.bindings[0].buffer == storage->native);
-    assert(work->buffer_count == 3 && work->pipeline_count == 1 && work->operation_count == 3);
+    assert(work->buffer_count == 3 && work->pipeline_count == 1);
     assert(doe_dx_commands_dispatch_indirect(competing, shader, &resources, arguments, 16, NULL) == DOE_DX_BUSY);
     doe_dx_commands_release(competing);
     doe_dx_buffer_release(upload);
@@ -137,12 +137,13 @@ static void shared_resource_budget(void) {
     doe_dx_pipeline *shader = pipeline(owner);
     doe_dx_buffer_binding binding = {buffers[0], 0, 64};
     doe_dx_compute_resources resources = {&binding, 1, NULL, 0};
-    assert(doe_dx_commands_dispatch_indirect(work, shader, &resources, buffers[1], 0, NULL) == DOE_DX_RANGE);
+    mock.allocation_failure = mock.allocation_attempts + 1;
+    assert(doe_dx_commands_dispatch_indirect(work, shader, &resources, buffers[1], 0, NULL) == DOE_DX_OUT_OF_MEMORY);
     assert(!mock.indirect_dispatches && !work->pipeline_count && work->buffer_count == 63);
-    /* One existing binding plus the last argument owner exactly fills capacity. */
-    binding.buffer = buffers[2];
+    assert(!buffers[0]->owner && !buffers[1]->owner);
+    mock.allocation_failure = 0;
     assert(doe_dx_commands_dispatch_indirect(work, shader, &resources, buffers[1], 0, NULL) == DOE_DX_OK);
-    assert(work->buffer_count == 64 && mock.indirect_dispatches == 1);
+    assert(work->buffer_count == 65 && mock.indirect_dispatches == 1);
     doe_dx_commands_release(work);
     doe_dx_pipeline_release(shader);
     for (size_t index = 0; index < 65; index++) doe_dx_buffer_release(buffers[index]);

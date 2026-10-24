@@ -1,0 +1,158 @@
+{
+  "kind": "developer-correctness-evidence",
+  "component": "Public C Metal standard uniform layout and shared-allocation bindings",
+  "consumer": "C migration standard-uniform layout, binding descriptor/logical bounds and early-release correctness gate",
+  "intent": "preserved: compiler-owned layout/metadata and canonical resource usage/range authority",
+  "source": {
+    "commit": "19dfbd686374abdc7b8f9b73370431e8c932b8a3",
+    "git_tree": "5ca0db706a4e08d753390f0c82ab156e5d2b1346",
+    "original_build_folder": "/tmp/doe-c-metal-uniform-alias-t98_ofcu",
+    "archive_sha256": "f307d6eacf3372f63792286b505cebd764dd15f66766c72de514948bc0b52241",
+    "tracked_export_files_verified": 3925,
+    "binding": "Every SOURCE_BEFORE SHA256 equals the immutable Git blob at this commit; first and corrected SOURCE_AFTER match. No working-tree or later source substitution. Full manifests/Git blob IDs are retained in the ignored bundle.",
+    "source_drift_first_run": false,
+    "source_drift_corrected_run": false
+  },
+  "host": {
+    "machine": "Mars",
+    "os": "macOS 26.6.2",
+    "os_build": "25G83",
+    "architecture": "arm64",
+    "os_inventory": "Read-only sw_vers/uname query while retaining evidence, after controls; recorded in READ_ONLY_TOOL_INVENTORY.json.",
+    "consumer_dwarf_producer": "Apple clang version 17.0.0 (clang-1700.3.19.1)",
+    "producer_binding": "Retained consumer dSYM UUID matches its executable; producer comes from that debug artifact, not an inferred compiler version.",
+    "native_macho_build_version": {
+      "minimum_macos": "26.0",
+      "sdk": "26.0",
+      "linker_version": "1221.4"
+    },
+    "adapter": {
+      "backend": "Metal",
+      "public_backend_value": 5,
+      "name": "Apple M3",
+      "public_adapter_type": "Unknown",
+      "public_adapter_type_value": 4,
+      "public_driver_description": "not reported"
+    },
+    "selection": {
+      "DOE_C_TEST_BACKEND": "metal",
+      "DOE_C_TEST_ADAPTER": "physical"
+    },
+    "thermal_before_and_after": "pmset -g therm reports no recorded thermal/performance warning and no recorded CPU power status; raw first/corrected logs retained."
+  },
+  "artifacts_sha256": {
+    "build/binding-aliases": "9d4d174a16bd9b72312f8c9808d5d1cf3ee0620c2d808f6a845d84facdc97cc1",
+    "build/libwebgpu_doe_c.dylib": "fa88899ce63f84a0ad9aa85e57354d4cfeb310498d514e67c591660b6d548381",
+    "build/uniform-standard": "981896226bb580732fdbfc55c05e4d60fd35e0eac900668e9bac23f7f086055a",
+    "build/libdoe_compiler.dylib": "376f85d435ab82fad586b67a17a003f66a4dab0982d44996232a62eafaad853d"
+  },
+  "checks": {
+    "uniform-standard": "Unchanged public consumer: exact 4/8/12/32/64-byte bindings, final scalar lane, signed/unsigned dynamic OOB zeros, nested/attributed aggregates and narrow matrix, distinguishable wrong-index/layout controls, requires admission/rejection and early releases.",
+    "binding-aliases": "Unchanged public consumer: same allocation as Uniform+readonly storage and overlapping readonly views, sparse group 3/binding 999, num_workgroups/arrayLength, disjoint writable ranges, canonical overlapping-writable rejection, exact 20 output words and early releases."
+  },
+  "first_run": {
+    "child_results": [
+      {
+        "name": "uniform-standard",
+        "command": [
+          "/tmp/doe-c-metal-uniform-alias-t98_ofcu/build/uniform-standard"
+        ],
+        "exit": 0,
+        "elapsed": 0.2804108749842271,
+        "child_deadline_seconds": 5
+      },
+      {
+        "name": "binding-aliases",
+        "command": [
+          "/tmp/doe-c-metal-uniform-alias-t98_ofcu/build/binding-aliases"
+        ],
+        "exit": 0,
+        "elapsed": 0.07723570801317692,
+        "child_deadline_seconds": 5
+      }
+    ],
+    "outer_guardian_success": false,
+    "first_infrastructure_failure": "Sibling guardian signal-0 process-group probe failed EPERM/PermissionError. Both GPU children passed their separate 5-second bounds; no 20-second outer-guardian success is attributed to this run.",
+    "failure_record": "GUARDIAN_FIRST_FAILURE.txt",
+    "failure_record_sha256": "12ca6aece1f9e2a0e52dab2dcbe93ce8adcd0012e06cf686b263f4de065e84c8"
+  },
+  "corrected_run": {
+    "child_results": [
+      {
+        "name": "uniform-standard",
+        "exit": 0,
+        "timed_out": false,
+        "elapsed": 0.04087849997449666,
+        "child_deadline_seconds": 5
+      },
+      {
+        "name": "binding-aliases",
+        "exit": 0,
+        "timed_out": false,
+        "elapsed": 0.04543408309109509,
+        "child_deadline_seconds": 5
+      }
+    ],
+    "outer_guardian": {
+      "method": "independent parent controller; owns worker PID and verifies active leaf parent before positive-PID cleanup",
+      "exit": 0,
+      "timed_out": false,
+      "outer_deadline_seconds": 20,
+      "elapsed": 0.5154111669398844
+    },
+    "cleanup_probe": {
+      "scope": "harmless CPU sleeper only",
+      "method": "actual parent owns worker and kills positive PID after independent deadline",
+      "exit": -9,
+      "elapsed": 0.15684170892927796
+    },
+    "cleanup_scope": "Independent parent positive-PID cleanup is tested with a harmless CPU sleeper (exit -9). Completed GPU controls do not establish GPU timeout, immediate kernel termination or device-loss recovery.",
+    "stderr_bytes": {
+      "uniform-standard": 0,
+      "binding-aliases": 0
+    }
+  },
+  "retention": {
+    "ignored_folder": "bench/out/c-metal-uniform-aliases-19dfbd686/",
+    "ignored_bundle": "bench/out/c-metal-uniform-aliases-19dfbd686-evidence.tar.gz",
+    "bundle_sha256": "3d81998a1faaef3c3cdc7e78ba6460be3529c8ac7df6bfb00d4e5fa89aed87dc",
+    "files_sha256": {
+      "INPUTS.json": "443a290ccebb4dbd87c55fbe41765d3412a59f92a3d973ffaa944f75827fc041",
+      "ARTIFACTS.json": "7e70ef9b420c561e2bf07ae910788ab7831b0e83d4b812afe493c40abd19e3fe",
+      "SOURCE_BEFORE.json": "49d0948101aa60bbc505ea1ec96cee43127823dd95c862b91072b5be94cd6aad",
+      "SOURCE_AFTER.json": "49d0948101aa60bbc505ea1ec96cee43127823dd95c862b91072b5be94cd6aad",
+      "GUARDIAN.json": "ca49d2bfd9fb6f419c8d08de7ca2700d94091d5aef4fa29ee182e152374eddc2",
+      "GUARDIAN_FIRST_FAILURE.txt": "12ca6aece1f9e2a0e52dab2dcbe93ce8adcd0012e06cf686b263f4de065e84c8",
+      "GUARDIAN_PROBE.json": "000ceaa8e658236aa5bbc748540b6188e1b333752b99434610714222c6278497",
+      "RESULTS.json": "18957947c4da52bd837f8d3bfaac7e8beba952721490fea8857290153589b517",
+      "THERMAL_BEFORE.txt": "96de6076213225f787270bff80efd2011e0ad142953c37697dc547f77d302892",
+      "THERMAL_AFTER.txt": "96de6076213225f787270bff80efd2011e0ad142953c37697dc547f77d302892",
+      "uniform-standard.stdout": "586ccd241d23dc806bca8651b0daea03c49612e7b1ae1d55eaf29128af7f2758",
+      "uniform-standard.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "binding-aliases.stdout": "e0cd1d678a435b34a17aa86d9da0219eea0e6653126b39fc8e32a39cdcfcf46e",
+      "binding-aliases.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "run-physical.py": "9c9d0b2f57a69c382fd2470e1cd86e2d5e3eef2afe262bc4d7f2138fc7fe2a0f",
+      "guardian.py": "350052dca2ae84ff09fd0fae3ac540c8d8369cd09890caf219fa27cf5515aae3",
+      "guarded/worker.py": "33d32f8f1c4f9e5047cd9220de0da8ab865b4b17ee0f875e3275ea6750330d8e",
+      "guarded/RESULTS.json": "e834be90153023ed3fa71c3efb2ba4ca4d058ecf55e3197740ad80e65f881913",
+      "guarded/GUARDIAN.json": "adcaca0964fdf7f9417bcad1c3e8f747071ec8a163b7f89b9239420c96202aea",
+      "guarded/SOURCE_AFTER.json": "49d0948101aa60bbc505ea1ec96cee43127823dd95c862b91072b5be94cd6aad",
+      "guarded/THERMAL_BEFORE.txt": "96de6076213225f787270bff80efd2011e0ad142953c37697dc547f77d302892",
+      "guarded/THERMAL_AFTER.txt": "96de6076213225f787270bff80efd2011e0ad142953c37697dc547f77d302892",
+      "guarded/uniform-standard.stdout": "586ccd241d23dc806bca8651b0daea03c49612e7b1ae1d55eaf29128af7f2758",
+      "guarded/uniform-standard.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "guarded/binding-aliases.stdout": "e0cd1d678a435b34a17aa86d9da0219eea0e6653126b39fc8e32a39cdcfcf46e",
+      "guarded/binding-aliases.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "build.log": "21cdab4e96ecc04e51a9c81cabdaa0c623c701ed9d6844e2c5dc25bf5f4e6a17",
+      "SOURCE_GIT_BLOBS.json": "0d7e9173ecca0c8e6d479f4652301490a0c0864b6982d526484bb35e1e7aefe6",
+      "VERIFICATION.json": "8baf6f7ce44180e5969e0971c3daa1fa5b625a5219f606322973d52dcaea1fd3",
+      "READ_ONLY_TOOL_INVENTORY.json": "20bc89488fd4968429ccfd51665536ef1ca35760dc7bb740c9158e8f9fdae7c9",
+      "RETAINED_FILES.json": "0df6ee3f7b38420588642fe2f8b7ff4609b1a45ee8b25a9fbcdf8d1cad466a56"
+    }
+  },
+  "limits": [
+    "Bounded correctness on the named Apple M3 only; not a physical device matrix, performance comparison, production/default promotion or complete C migration.",
+    "No source attribution to later D3D12 dynamic-storage changes, public Windows execution or other backend/device tuples.",
+    "Earlier Metal receipts remain unchanged and bind their own source vintages. SDK/source compilation, these actual device controls and independent qualification remain separate."
+  ]
+}

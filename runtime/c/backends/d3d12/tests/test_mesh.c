@@ -312,8 +312,11 @@ static void composed_budget_and_shader_alias(void) {
         assert(doe_dx_timestamps_create(fixture.context, 1, &heaps[index], NULL) == DOE_DX_OK);
         assert(doe_dx_commands_timestamp(fixture.work, heaps[index], 0, NULL) == DOE_DX_OK);
     }
-    assert(draw(&fixture) == DOE_DX_RANGE);
+    mock.allocation_failure = mock.allocation_attempts + 1;
+    assert(draw(&fixture) == DOE_DX_OUT_OF_MEMORY);
     assert(!mock.draws && !fixture.color->owner && !fixture.depth->owner && !fixture.vertices->owner);
+    mock.allocation_failure = 0;
+    assert(draw(&fixture) == DOE_DX_OK);
     for (size_t index = 0; index < 61; index++) doe_dx_timestamps_release(heaps[index]);
     close_fixture(&fixture);
 }

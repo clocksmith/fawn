@@ -11,14 +11,14 @@ struct doe_dx_native_texture { unsigned recorded; };
 struct doe_dx_native_timestamps { unsigned recorded; };
 struct doe_dx_native_commands {
     uint64_t execution;
-    doe_dx_native_buffer *buffers[DOE_DX_MAX_COMMAND_RESOURCES];
-    size_t buffer_count;
-    doe_dx_native_pipeline *pipelines[DOE_DX_MAX_COMMAND_RESOURCES];
-    size_t pipeline_count;
-    doe_dx_native_texture *textures[DOE_DX_MAX_COMMAND_RESOURCES];
-    size_t texture_count;
-    doe_dx_native_timestamps *timestamps[DOE_DX_MAX_COMMAND_RESOURCES];
-    size_t timestamp_count;
+    doe_dx_native_buffer **buffers;
+    size_t buffer_count, buffer_capacity;
+    doe_dx_native_pipeline **pipelines;
+    size_t pipeline_count, pipeline_capacity;
+    doe_dx_native_texture **textures;
+    size_t texture_count, texture_capacity;
+    doe_dx_native_timestamps **timestamps;
+    size_t timestamp_count, timestamp_capacity;
 };
 mock_state mock;
 
@@ -184,13 +184,27 @@ void doe_dx_native_commands_destroy(doe_dx_native_commands *commands) {
         commands->timestamps[index]->recorded--;
     assert(mock.commands);
     mock.commands--;
+    free(commands->buffers);
+    free(commands->pipelines);
+    free(commands->textures);
+    free(commands->timestamps);
     free(commands);
 }
 
+/* Borrow observation per native use, not a simulated ownership registry. */
+static void *observation_capacity(void *old, size_t count, size_t *capacity, size_t element) {
+    if (count < *capacity) return old;
+    assert(*capacity <= SIZE_MAX / 2 && (*capacity ? *capacity * 2 : 8) <= SIZE_MAX / element);
+    size_t next = *capacity ? *capacity * 2 : 8;
+    void *fresh = realloc(old,next * element);
+    assert(fresh);
+    *capacity = next;
+    return fresh;
+}
+
 static void record_buffer(doe_dx_native_commands *commands, doe_dx_native_buffer *buffer) {
-    for (size_t index = 0; index < commands->buffer_count; index++)
-        if (commands->buffers[index] == buffer) return;
-    assert(commands->buffer_count < DOE_DX_MAX_COMMAND_RESOURCES);
+    commands->buffers = observation_capacity(commands->buffers,commands->buffer_count,
+        &commands->buffer_capacity,sizeof(*commands->buffers));
     commands->buffers[commands->buffer_count++] = buffer;
     buffer->recorded++;
 }
@@ -209,23 +223,18 @@ void doe_dx_native_copy(doe_dx_native_commands *commands, doe_dx_native_buffer *
 }
 
 static void record_texture(doe_dx_native_commands *commands, doe_dx_native_texture *texture) {
-    for (size_t index = 0; index < commands->texture_count; index++)
-        if (commands->textures[index] == texture) return;
-    assert(commands->texture_count < DOE_DX_MAX_COMMAND_RESOURCES);
+    commands->textures = observation_capacity(commands->textures,commands->texture_count,
+        &commands->texture_capacity,sizeof(*commands->textures));
     commands->textures[commands->texture_count++] = texture;
     texture->recorded++;
 }
 
 static void record_resources(doe_dx_native_commands *commands,
     doe_dx_native_pipeline *pipeline, const doe_dx_native_resources *resources) {
-    bool found = false;
-    for (size_t index = 0; index < commands->pipeline_count; index++)
-        if (commands->pipelines[index] == pipeline) found = true;
-    if (!found) {
-        assert(commands->pipeline_count < DOE_DX_MAX_COMMAND_RESOURCES);
-        commands->pipelines[commands->pipeline_count++] = pipeline;
-        pipeline->recorded++;
-    }
+    commands->pipelines = observation_capacity(commands->pipelines,commands->pipeline_count,
+        &commands->pipeline_capacity,sizeof(*commands->pipelines));
+    commands->pipelines[commands->pipeline_count++] = pipeline;
+    pipeline->recorded++;
     for (size_t index = 0; index < resources->buffer_count; index++) {
         record_buffer(commands, resources->buffers[index].buffer);
         mock.bindings[index] = resources->buffers[index];
@@ -402,9 +411,8 @@ doe_dx_status doe_dx_native_timestamp_frequency(doe_dx_native_context *context,
 }
 
 static void record_timestamps(doe_dx_native_commands *commands, doe_dx_native_timestamps *timestamps) {
-    for (size_t index = 0; index < commands->timestamp_count; index++)
-        if (commands->timestamps[index] == timestamps) return;
-    assert(commands->timestamp_count < DOE_DX_MAX_COMMAND_RESOURCES);
+    commands->timestamps = observation_capacity(commands->timestamps,commands->timestamp_count,
+        &commands->timestamp_capacity,sizeof(*commands->timestamps));
     commands->timestamps[commands->timestamp_count++] = timestamps;
     timestamps->recorded++;
 }

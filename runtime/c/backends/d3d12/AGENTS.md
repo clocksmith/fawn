@@ -25,7 +25,8 @@
   ceiling is validated allocation metadata, not free memory/residency; each
   allocation still owns its real failure. Never infer WebGPU CoreFeatures here.
 - Preserve one 64-descriptor heap/table owner with tier-limited kind counts,
-  separate 16 static samplers and the unchanged 64 command-resource budget.
+  separate 16 static samplers. Cumulative command resources use the existing
+  growable use spans, not a fixed resource budget.
   Official-SDK CPU vtable controls prove call composition only, never a device.
 - Keep evidence bound to its tested source. The [WARP developer receipt](DEVELOPER_RECEIPT_WARP.json)
   records actual hosted CPU direct-compute/readback/cleanup at `159b58a18`.
@@ -80,3 +81,11 @@
   mixed read/write classes before recording. Transition/restore each allocation
   once, retaining individual descriptor ranges. Resource budgeting counts unique
   allocations, never descriptor aliases. Separate-command exclusivity remains.
+
+- Growing use spans stay command-owned. Reserve all required capacities before
+  native recording or publishing counts, initialization or leases; failed
+  preparation retains every allocated span for retry/discard. Exclusive objects
+  carry stable owner indices, never cached addresses into movable use storage.
+- Pipeline use is shared-read: append one existing reference per successful
+  record, then drop each once. No repeated cumulative pipeline scan, auxiliary
+  registry or new lifetime counter. Keep genuine OOM distinct from validation.

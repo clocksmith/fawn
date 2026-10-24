@@ -122,11 +122,11 @@ static void writable_alias_rules(void) {
 
 static void unique_budget(void) {
     doe_dx_context *owner = context();
-    doe_dx_buffer *buffers[DOE_DX_MAX_COMMAND_RESOURCES];
-    for (size_t index = 0; index < DOE_DX_MAX_COMMAND_RESOURCES; ++index)
+    doe_dx_buffer *buffers[64];
+    for (size_t index = 0; index < 64; ++index)
         buffers[index] = initialized(owner,4);
     doe_dx_commands *work = commands(owner);
-    for (size_t index = 1; index < DOE_DX_MAX_COMMAND_RESOURCES - 1; ++index)
+    for (size_t index = 1; index < 64 - 1; ++index)
         assert(doe_dx_commands_copy(work,buffers[0],0,buffers[index],0,4,NULL) == DOE_DX_OK);
     assert(work->buffer_count == 63);
     doe_dx_binding_layout layouts[DOE_DX_MAX_BINDINGS];
@@ -139,7 +139,7 @@ static void unique_budget(void) {
     assert(doe_dx_commands_dispatch(work,shader,bindings,DOE_DX_MAX_BINDINGS,1,1,1,NULL) == DOE_DX_OK);
     assert(work->buffer_count == 64 && buffers[63]->references == 2);
     assert(mock.binding_count == DOE_DX_MAX_BINDINGS);
-    for (size_t index = 0; index < DOE_DX_MAX_COMMAND_RESOURCES; ++index)
+    for (size_t index = 0; index < 64; ++index)
         doe_dx_buffer_release(buffers[index]);
     doe_dx_pipeline_release(shader);
     retire(owner,work);

@@ -74,6 +74,10 @@ native_failure native_d3d12_compile_compute(const native_stage *stage, doe_dx_sh
     doe_dx_status status = doe_dx_shader_compile(&options, out, &error);
     doe_dx_error native = {status, error.native_code, error.operation};
     failure = native_failure_d3d12(status, &native);
+    /* These exact target bytes/options were produced by the provider after
+     * WGSL validation. A rejected DXC input is a provider/compiler failure,
+     * not a second diagnosis of invalid application WGSL. Keep its first detail. */
+    if (status == DOE_DX_INVALID_ARGUMENT) failure.status = NATIVE_FAILURE;
     if (status != DOE_DX_OK) {
         size_t size = error.message_size < sizeof(failure.message) - 1 ?
             error.message_size : sizeof(failure.message) - 1;

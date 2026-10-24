@@ -51,6 +51,9 @@ retained duplicate for recovery. `check-faults` is a GNU/Linux linker-wrapper
 control of recursive attribute/init cleanup and failed join/detach ownership.
 The futures, labels and error-scopes owner fault tests remain unchanged.
 
-These controls establish host primitives only. Windows source is not an executed
-Windows claim until the actual SDK workflow runs it. Historical owner archive
-contracts, sealed evidence and production Zig selection are unchanged.
+The [actual Win32 developer receipt](DEVELOPER_RECEIPT_WINDOWS_HOST.json) binds
+shared C/C++ primitive and provider-loader CPU controls to their exact source,
+SDK, tools and verified artifacts. This closes that bounded host prerequisite;
+public native DLL/D3D12 execution, later source and GPU qualification retain their
+separate gates. Historical owner archive contracts, sealed evidence and production
+Zig selection are unchanged.

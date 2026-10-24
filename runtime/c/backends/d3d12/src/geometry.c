@@ -19,7 +19,7 @@ static bool shader_alias(const doe_dx_compute_resources *resources, doe_dx_buffe
 
 doe_dx_status doe_dx_prepare_geometry(doe_dx_commands *commands, doe_dx_pipeline *pipeline,
     const doe_dx_compute_resources *resources, const doe_dx_mesh_draw_desc *mesh,
-    doe_dx_native_geometry *native, size_t *added, doe_dx_error *error) {
+    doe_dx_native_geometry *native, doe_dx_reservation *needed, doe_dx_error *error) {
     const doe_dx_draw_desc *draw = &mesh->draw;
     if (mesh->vertex_count != pipeline->vertex_buffer_count || (mesh->vertex_count && !mesh->vertices) ||
         pipeline->depth_enabled != (mesh->depth != NULL))
@@ -40,7 +40,7 @@ doe_dx_status doe_dx_prepare_geometry(doe_dx_commands *commands, doe_dx_pipeline
         if (shader_alias(resources, indices->binding.buffer))
             return doe_dx_fail(DOE_DX_UNSUPPORTED, 0, "draw.index_alias", error);
         native->indices = (doe_dx_native_binding){indices->binding.buffer->native, indices->binding.offset, indices->binding.size};
-        if (!doe_dx_find_buffer(commands, indices->binding.buffer)) (*added)++;
+        if (!doe_dx_find_buffer(commands, indices->binding.buffer)) needed->buffers++;
     }
     for (size_t index = 0; index < mesh->vertex_count; index++) {
         const doe_dx_buffer_binding *binding = &mesh->vertices[index];
@@ -62,7 +62,7 @@ doe_dx_status doe_dx_prepare_geometry(doe_dx_commands *commands, doe_dx_pipeline
         uint64_t required = last * layout->stride + pipeline->vertex_ends[index];
         if (required > binding->size) return doe_dx_fail(DOE_DX_RANGE, 0, "draw.vertex_span", error);
         native->vertices[index] = (doe_dx_native_binding){binding->buffer->native, binding->offset, binding->size};
-        if (!doe_dx_find_buffer(commands, binding->buffer)) (*added)++;
+        if (!doe_dx_find_buffer(commands, binding->buffer)) needed->buffers++;
     }
     if (mesh->depth) {
         if (mesh->depth == draw->color || mesh->depth->desc.format != DOE_DX_D32_FLOAT ||
@@ -76,7 +76,7 @@ doe_dx_status doe_dx_prepare_geometry(doe_dx_commands *commands, doe_dx_pipeline
             if (resources->textures[index] == mesh->depth)
                 return doe_dx_fail(DOE_DX_UNSUPPORTED, 0, "draw.depth_alias", error);
         native->depth = mesh->depth->native;
-        if (!doe_dx_find_texture(commands, mesh->depth)) (*added)++;
+        if (!doe_dx_find_texture(commands, mesh->depth)) needed->textures++;
     } else if (mesh->clear_depth) return doe_dx_fail(DOE_DX_INVALID_ARGUMENT, 0, "draw.depth_missing", error);
     return DOE_DX_OK;
 }

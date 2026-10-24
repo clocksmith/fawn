@@ -73,13 +73,13 @@ static void full_descriptor_lifetime(void) {
         layouts[index] = (doe_dx_binding_layout){index,0,4,DOE_DX_READ_ONLY,DOE_DX_STRUCTURED};
         bindings[index] = (doe_dx_buffer_binding){buffers[index],0,4};
     }
-    /* The transfer source also consumes a lease; initialize in two real owner
-     * command batches instead of inflating the existing64-resource budget. */
+    /* The transfer source also consumes a unique lease; exercise re-use
+     * across separate initialization batches before full descriptor use. */
     doe_dx_commands *commands = NULL;
     assert(doe_dx_commands_create(context,&commands,NULL) == DOE_DX_OK);
     for (size_t index = 0; index < DOE_DX_MAX_BINDINGS - 1; ++index)
         assert(doe_dx_commands_copy(commands,upload,0,buffers[index],0,4,NULL) == DOE_DX_OK);
-    assert(commands->buffer_count == DOE_DX_MAX_COMMAND_RESOURCES);
+    assert(commands->buffer_count == 64);
     retire(context,commands);
     assert(doe_dx_commands_create(context,&commands,NULL) == DOE_DX_OK);
     assert(doe_dx_commands_copy(commands,upload,0,buffers[DOE_DX_MAX_BINDINGS-1],0,4,NULL) == DOE_DX_OK);
@@ -91,7 +91,7 @@ static void full_descriptor_lifetime(void) {
     assert(doe_dx_pipeline_create(context,&desc,&pipeline,NULL) == DOE_DX_OK);
     assert(doe_dx_commands_create(context,&commands,NULL) == DOE_DX_OK);
     assert(doe_dx_commands_dispatch(commands,pipeline,bindings,DOE_DX_MAX_BINDINGS,1,1,1,NULL) == DOE_DX_OK);
-    assert(mock.binding_count == DOE_DX_MAX_BINDINGS && commands->buffer_count == DOE_DX_MAX_COMMAND_RESOURCES);
+    assert(mock.binding_count == DOE_DX_MAX_BINDINGS && commands->buffer_count == 64);
     for (size_t index = 0; index < DOE_DX_MAX_BINDINGS; ++index) {
         assert(mock.bindings[index].buffer == buffers[index]->native);
         doe_dx_buffer_release(buffers[index]);

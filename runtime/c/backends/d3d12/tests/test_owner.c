@@ -253,7 +253,6 @@ static void partial_retirement_and_budgets(void) {
     doe_dx_commands *first = commands(owner);
     doe_dx_commands *second = commands(owner);
     assert(doe_dx_commands_submit(first, NULL) == DOE_DX_OK);
-    second->operation_count = 65536;
     assert(doe_dx_commands_submit(second, NULL) == DOE_DX_OK);
     mock.completed = 1;
     assert(doe_dx_context_poll(owner, 0, NULL) == DOE_DX_PENDING);
@@ -284,11 +283,13 @@ static void resource_and_reference_limits(void) {
     upload->references = 1;
     for (size_t index = 0; index < 63; index++)
         assert(doe_dx_commands_copy(work, upload, 0, destinations[index], 0, 64, NULL) == DOE_DX_OK);
-    assert(work->buffer_count == DOE_DX_MAX_COMMAND_RESOURCES);
-    assert(doe_dx_commands_copy(work, upload, 0, destinations[63], 0, 64, NULL) == DOE_DX_RANGE);
-    assert(destinations[63]->owner == NULL && mock.copies == 63);
-    work->operation_count = 65536;
-    assert(doe_dx_commands_copy(work, upload, 0, destinations[0], 0, 64, NULL) == DOE_DX_RANGE);
+    assert(work->buffer_count == 64);
+    mock.allocation_failure = mock.allocation_attempts + 1;
+    assert(doe_dx_commands_copy(work, upload, 0, destinations[63], 0, 64, NULL) == DOE_DX_OUT_OF_MEMORY);
+    assert(destinations[63]->owner == NULL && mock.copies == 63 && work->buffer_count == 64);
+    mock.allocation_failure = 0;
+    assert(doe_dx_commands_copy(work, upload, 0, destinations[63], 0, 64, NULL) == DOE_DX_OK);
+    assert(work->buffer_count == 65 && mock.copies == 64);
     for (size_t index = 0; index < 64; index++) doe_dx_buffer_release(destinations[index]);
     doe_dx_buffer_release(upload);
     doe_dx_commands_release(work);
