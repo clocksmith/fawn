@@ -167,6 +167,8 @@ group creation, setBindGroup, copies and render attachments; submission rejects 
 (WebGPU validates destroyed textures at submit) and queue writes reject it at once.
 Every bind group a compute pass sets, whether or not a dispatch uses it, is held
 by the encoder and checked at submission (WebGPU `[[used_bind_groups]]`).
+Pipeline and bundle color layouts do not require multisample-capable formats;
+texture creation does.
 No second native recorder, resource registry or completion engine is introduced.
 Nullable vertex bindings clear only logical state after offset/size validation
 against a zero-sized buffer; historical uses remain. Render/pipeline/bundle device,

@@ -140,8 +140,10 @@ static doe_vk_status validate_pipeline(doe_vk_context *context,
         doe_vk_format_caps format;
         doe_vk_status status = doe_vk_texture_format_caps(context, slot->format, &format);
         if (status != DOE_VK_OK) return status;
-        if (!format.color_attachment || !(format.attachment_sample_counts & samples) ||
-            (slot->blend_enabled && !format.blendable)) return DOE_VK_UNSUPPORTED;
+        /* WebGPU checks a color target's renderability and blendability here,
+         * not its multisample support: a pipeline whose sample count the format
+         * lacks is valid, and no attachment it could render to can exist. */
+        if (!format.color_attachment || (slot->blend_enabled && !format.blendable)) return DOE_VK_UNSUPPORTED;
     }
     doe_vk_status status = validate_depth_stencil(context, desc);
     if (status != DOE_VK_OK) return status;

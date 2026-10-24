@@ -95,6 +95,12 @@ static void test_sparse_layout(void)
     assert(doe_resource_bundle_encoder_create(&c, &bundle, &bundle_encoder) == DOE_RESOURCE_LAYOUT);
     bundle = (doe_resource_render_bundle_desc){.samples = 1, .color_count = 2};
     assert(doe_resource_bundle_encoder_create(&c, &bundle, &bundle_encoder) == DOE_RESOURCE_LAYOUT); /* All unused. */
+    /* A 4x layout may name a format that cannot multisample (WebGPU checks that
+     * when a texture is created, not for a layout). */
+    bundle = (doe_resource_render_bundle_desc){.samples = 4, .color_count = 1,
+        .color_formats = {WGPUTextureFormat_RGBA32Uint}};
+    assert(doe_resource_bundle_encoder_create(&c, &bundle, &bundle_encoder) == DOE_RESOURCE_OK);
+    doe_resource_bundle_encoder_release(bundle_encoder);
     doe_resource_render_pipeline_release(matching);
     doe_resource_render_pipeline_release(trailing);
     doe_resource_render_pipeline_release(wrong);
