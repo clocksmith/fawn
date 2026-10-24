@@ -812,7 +812,7 @@ pub export fn doeNativeBindGroupRelease(raw: ?*anyopaque) callconv(.c) void {
 /// failure message, or null when the layout is valid. No shader uses
 /// immediates yet, so an accepted immediateSize is never read.
 fn pipelineLayoutFailure(device: *const DoeDevice, layouts: []const ?*anyopaque, immediate_size: u32) ?[]const u8 {
-    if (layouts.len > MAX_COMPUTE_BIND_GROUPS) return "createPipelineLayout: bindGroupLayouts exceeds maxBindGroups";
+    if (layouts.len > MAX_COMPUTE_BIND_GROUPS or layouts.len > device.shape_limits.bind_groups) return "createPipelineLayout: bindGroupLayouts exceeds maxBindGroups";
     if (immediate_size % 4 != 0 or immediate_size > device.max_immediate_size)
         return "createPipelineLayout: immediateSize must be a multiple of 4 and at most maxImmediateSize";
     var dynamic_uniform: u32 = 0;

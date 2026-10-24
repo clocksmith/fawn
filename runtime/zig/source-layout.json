@@ -1310,9 +1310,9 @@
       },
       "src/backend/vulkan/vk_device_caps.zig": {
         "decision": "Keep",
-        "moduleSha256": "cea89d534a56a42654f3281480c3f2a67c7a95641927d54dd10248ea4321aaef",
-        "reason": "Keep: reachable backend implementation with a distinct named responsibility and no merge, elevation, recomposition, or deletion signal. Reports maxImmediateSize 64, matching the recorded setImmediates range. Per-stage binding limits report the highest tier both per-stage and per-set descriptor counts reach; sliced 3D compression features require their base feature and 3D support. maxComputeWorkgroupsPerDimension is the smallest of the three Vulkan counts and maxStorageBufferBindingSize is a multiple of 4.",
-        "reviewer": "doe-c-claude-coordinator/2026-10-24"
+        "moduleSha256": "84f01c35d4b62aeccef26581d04d18038aeec0b59d70ec52ea63a6083fbad302",
+        "reason": "Keep: reachable backend implementation with a distinct named responsibility and no merge, elevation, recomposition, or deletion signal. Reports maxImmediateSize 64, matching the recorded setImmediates range. Per-stage binding limits report the highest tier both per-stage and per-set descriptor counts reach; sliced 3D compression features require their base feature and 3D support. maxComputeWorkgroupsPerDimension is the smallest of the three Vulkan counts and maxStorageBufferBindingSize is a multiple of 4. Offset alignment limits are reported as at least 32 bytes, as WebGPU requires.",
+        "reviewer": "doe-c-claude-surface/2026-10-24"
       },
       "src/backend/vulkan/vk_dispatch_indirect.zig": {
         "decision": "Keep",
@@ -3584,8 +3584,8 @@
       },
       "src/native/lifecycle/doe_instance_device_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "90af86a5154fad629a27b04780792692dcba444da0335c2302684c620e95045b",
-        "reason": "Keep: default-off C error-scope partial owner uses final-address typed storage, cold creation rollback and checked final deinit; original classifier, callbacks and device references remain with their existing owners. requestAdapter honors forceFallbackAdapter: a CPU adapter or unavailable. Device creation records required buffer offset alignment limits. requiredLimits resolve the per-stage slot, inter-stage and workgroup storage limits.",
+        "moduleSha256": "c34202e2c41d43b08554abff8a29c02b472dcfaf3ba3c52964c038dbc6c396f6",
+        "reason": "Keep: default-off C error-scope partial owner uses final-address typed storage, cold creation rollback and checked final deinit; original classifier, callbacks and device references remain with their existing owners. requestAdapter honors forceFallbackAdapter: a CPU adapter or unavailable. Device creation records required buffer offset alignment limits. requiredLimits resolve the per-stage slot, inter-stage and workgroup storage limits. requiredLimits also resolve the texture extent, bind group and vertex input limits.",
         "reviewer": "doe-c-claude-surface/2026-10-24"
       },
       "src/native/mod.zig": {
@@ -3644,15 +3644,15 @@
       },
       "src/native/render/doe_bundle_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "bb0043e75b0c84f9711a86b750a3fe8cd5765cd97d0570e5fd45cd1b56f7766f",
-        "reason": "Keep: preserves this native ownership or ABI boundary while separating internal device cleanup leases from application release and enforcing destroyed-device admission. Vulkan bundle replay starts from empty state rather than the pass's. Vulkan executeBundles resets the pass pipeline, bind groups and vertex/index buffers. Bundle setBindGroup validates and records dynamic offsets, records null groups as unbinds, and replay applies the offsets. Bundle debug groups are balanced at finish(). Bundle draws validate the bundle's pipeline and bind groups; draws past maxDrawCount fail. Render getBindGroupLayout returns explicit groups or a pipeline-owned automatic layout. Render getBindGroupLayout of an automatic layout lists the entry points' bindings by resource kind. Render bundle encoders reject color formats over maxColorAttachmentBytesPerSample. Bundles check required bindings at every binding number. Bundle encoders keep every color slot; bundle layout, setPipeline and executeBundles compatibility follow WebGPU and fail at finish. executeBundles adds each Vulkan bundle's bind groups and buffers to the pass usage scope. Bundles resolve bindings against the pipeline-built automatic layouts.",
-        "reviewer": "doe-c-claude-coordinator/2026-10-24"
+        "moduleSha256": "a946c619b0904f3ecd64778e71de72bd28e1f5510924fef948f0ba2d36379b20",
+        "reason": "Keep: preserves this native ownership or ABI boundary while separating internal device cleanup leases from application release and enforcing destroyed-device admission. Vulkan bundle replay starts from empty state rather than the pass's. Vulkan executeBundles resets the pass pipeline, bind groups and vertex/index buffers. Bundle setBindGroup validates and records dynamic offsets, records null groups as unbinds, and replay applies the offsets. Bundle debug groups are balanced at finish(). Bundle draws validate the bundle's pipeline and bind groups; draws past maxDrawCount fail. Render getBindGroupLayout returns explicit groups or a pipeline-owned automatic layout. Render getBindGroupLayout of an automatic layout lists the entry points' bindings by resource kind. Render bundle encoders reject color formats over maxColorAttachmentBytesPerSample. Bundles check required bindings at every binding number. Bundle encoders keep every color slot; bundle layout, setPipeline and executeBundles compatibility follow WebGPU and fail at finish. executeBundles adds each Vulkan bundle's bind groups and buffers to the pass usage scope. Bundles resolve bindings against the pipeline-built automatic layouts. Bundle setVertexBuffer rejects slots at or above the device's maxVertexBuffers.",
+        "reviewer": "doe-c-claude-surface/2026-10-24"
       },
       "src/native/render/doe_render_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "cad9224c02da11a0193e0364391ef74ca649e2707dcba3150821bbfca949614e",
-        "reason": "Keep: native attachment admission owns view and pipeline compatibility; command recording preserves typed validation failures before submission. Backend execution and resource retirement retain their existing owners. Render pass setBindGroup resolves dynamic offsets into pass state. Render pass debug groups are balanced at end(). Pass draws validate bind groups; draws past maxDrawCount fail. beginRenderPass records and retains every color attachment slot. passColorFormats gives a pass's render pass layout. Render pass setPipeline checks the pipeline against the pass layout; the pass sample count comes from any attachment. Render passes validate timestampWrites and occlusionQuerySet types; an invalid encoder returns an inert render pass. Each pass color slot records its depthSlice. Render passes add attachments, bind groups and vertex, index and indirect buffers to their usage scope; draws reject aliased writable bindings.",
-        "reviewer": "doe-c-claude-indexed/2026-10-24"
+        "moduleSha256": "39906c9267618c876678a2da0a477078ea10b6e084ac4ac49f12e86979dd75fc",
+        "reason": "Keep: native attachment admission owns view and pipeline compatibility; command recording preserves typed validation failures before submission. Backend execution and resource retirement retain their existing owners. Render pass setBindGroup resolves dynamic offsets into pass state. Render pass debug groups are balanced at end(). Pass draws validate bind groups; draws past maxDrawCount fail. beginRenderPass records and retains every color attachment slot. passColorFormats gives a pass's render pass layout. Render pass setPipeline checks the pipeline against the pass layout; the pass sample count comes from any attachment. Render passes validate timestampWrites and occlusionQuerySet types; an invalid encoder returns an inert render pass. Each pass color slot records its depthSlice. Render passes add attachments, bind groups and vertex, index and indirect buffers to their usage scope; draws reject aliased writable bindings. Pass setVertexBuffer rejects slots at or above the device's maxVertexBuffers instead of ignoring them.",
+        "reviewer": "doe-c-claude-surface/2026-10-24"
       },
       "src/native/render/doe_render_pass_controls_native.zig": {
         "decision": "Keep",
@@ -3662,9 +3662,9 @@
       },
       "src/native/render/doe_render_pipeline_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "a72bed09334c62d94803131eff86836cda9f05239a2315886e67813e768fc460",
-        "reason": "Keep: preserves this native ownership or ABI boundary while separating internal device cleanup leases from application release and enforcing destroyed-device admission. Alpha-to-coverage on a single-sample pipeline is a validation error. Render pipelines reject color targets over maxColorAttachmentBytesPerSample. encoderLayoutAdmits checks a pipeline against a pass or bundle layout and read-only aspects. createRenderPipeline validates fragment targets (renderable format, writeMask, blend and min/max factors), depth-stencil format and stencil use without a stencil aspect, and vertex attribute offset alignment.",
-        "reviewer": "doe-c-claude-coordinator/2026-10-24"
+        "moduleSha256": "f3b0781ae52d5c6e2e40b58efca9cfad859af610ba501218559421e58a4eb72b",
+        "reason": "Keep: preserves this native ownership or ABI boundary while separating internal device cleanup leases from application release and enforcing destroyed-device admission. Alpha-to-coverage on a single-sample pipeline is a validation error. Render pipelines reject color targets over maxColorAttachmentBytesPerSample. encoderLayoutAdmits checks a pipeline against a pass or bundle layout and read-only aspects. createRenderPipeline validates fragment targets (renderable format, writeMask, blend and min/max factors), depth-stencil format and stencil use without a stencil aspect, and vertex attribute offset alignment. Vertex state is checked against the device's maxVertexBuffers, maxVertexAttributes and maxVertexBufferArrayStride.",
+        "reviewer": "doe-c-claude-surface/2026-10-24"
       },
       "src/native/render/doe_render_state_native.zig": {
         "decision": "Keep",
@@ -3674,8 +3674,8 @@
       },
       "src/native/resource/doe_bind_group_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "b3400efb675711001baedabe0761d0c91d10afded233a75d5562b6d0a2d9c8bb",
-        "reason": "Keep: preserves this native ownership or ABI boundary while separating internal device cleanup leases from application release and enforcing destroyed-device admission; float and depth formats also bind as unfilterable-float; invalid samplers are rejected like invalid buffers and views. Texture binding sample types follow the view aspect, so stencil-only views bind as uint. Owns dynamic-offset resolution; null pipeline-layout entries become owned empty groups. Layout entries keep visibility, minBindingSize, sampler type and storage format. Automatic-layout identity and doeNativePipelineAdoptAutoBindGroupLayout. createPipelineLayout validates immediateSize limits, layout devices and dynamic buffer limits; layouts record their device. Bind group layout entries at or above maxBindingsPerBindGroup are validation errors; pipelines and bundle encoders check color attachment bytes per sample. createBindGroup and the flat-buffer path check entries against the layout at every binding number. createBindGroup checks each entry per the WebGPU algorithm: device, buffer range, usage, binding-size limits and offset alignment, sampler type, texture usage, view dimension, sample type, multisampling and storage format, mip count and swizzle. externalTexture layout entries accept a 2d single-mip, single-layer, single-sample rgba8unorm, bgra8unorm or rgba16float view with TEXTURE_BINDING usage, bound as a sampled texture. createBindGroupLayout and createPipelineLayout reject entries over the device's per-stage binding slot limits.",
+        "moduleSha256": "3b4d9e1b58f7d3230bab19417e9a0961a40437085adbeea00918f9cd7743a037",
+        "reason": "Keep: preserves this native ownership or ABI boundary while separating internal device cleanup leases from application release and enforcing destroyed-device admission; float and depth formats also bind as unfilterable-float; invalid samplers are rejected like invalid buffers and views. Texture binding sample types follow the view aspect, so stencil-only views bind as uint. Owns dynamic-offset resolution; null pipeline-layout entries become owned empty groups. Layout entries keep visibility, minBindingSize, sampler type and storage format. Automatic-layout identity and doeNativePipelineAdoptAutoBindGroupLayout. createPipelineLayout validates immediateSize limits, layout devices and dynamic buffer limits; layouts record their device. Bind group layout entries at or above maxBindingsPerBindGroup are validation errors; pipelines and bundle encoders check color attachment bytes per sample. createBindGroup and the flat-buffer path check entries against the layout at every binding number. createBindGroup checks each entry per the WebGPU algorithm: device, buffer range, usage, binding-size limits and offset alignment, sampler type, texture usage, view dimension, sample type, multisampling and storage format, mip count and swizzle. externalTexture layout entries accept a 2d single-mip, single-layer, single-sample rgba8unorm, bgra8unorm or rgba16float view with TEXTURE_BINDING usage, bound as a sampled texture. createBindGroupLayout and createPipelineLayout reject entries over the device's per-stage binding slot limits. createPipelineLayout counts bind group layouts against the device's maxBindGroups.",
         "reviewer": "doe-c-claude-surface/2026-10-24"
       },
       "src/native/resource/doe_binding_slot_limits.zig": {
@@ -3746,8 +3746,8 @@
       },
       "src/native/shader/shader_stage_limits.zig": {
         "decision": "Keep",
-        "moduleSha256": "6dcc88afab57e23e230fb759d115f30cb97da61c1b488966e73a1128ba76b040",
-        "reason": "Keep: compute pipeline device-limit checks from the stage IR: workgroup storage the entry point uses against maxComputeWorkgroupStorageSize, and an automatic layout's binding slots from cached entry reflection or the IR.",
+        "moduleSha256": "1999a76fe93b19e0af62ec327f62f76749e8e630f112969bdf737af450d4ab06",
+        "reason": "Keep: compute pipeline device-limit checks from the stage IR: workgroup storage the entry point uses against maxComputeWorkgroupStorageSize, and an automatic layout's binding slots from cached entry reflection or the IR. Automatic compute layouts reject bind group indices at or above maxBindGroups.",
         "reviewer": "doe-c-claude-surface/2026-10-24"
       },
       "src/native/support/doe_adapter_info_native.zig": {
@@ -3758,8 +3758,8 @@
       },
       "src/native/support/doe_device_caps.zig": {
         "decision": "Keep",
-        "moduleSha256": "8a7f1986af9f5fce332a8a8645b64c1a3ca349ed0932ac79febc910ac95e5e4a",
-        "reason": "Keep: native capability publication owns backend dispatch; Metal limits use the owning adapter/device handle. No boundary or ownership change. Device limits report the device's buffer offset alignments. Device limits report the device maxImmediateSize. Device limits report the device's dynamic buffer limits. Device limits report the device's maxColorAttachmentBytesPerSample. Device features keep the sliced 3D compression dependencies; devices keep maxColorAttachmentBytesPerSample. Device limits report the resolved slot, inter-stage and workgroup storage values; Vulkan adapters list core-features-and-limits.",
+        "moduleSha256": "6ceb575a766c8b24ebe5726ec37f9e5799182555f3c10a4ec09f19e9c1d209a8",
+        "reason": "Keep: native capability publication owns backend dispatch; Metal limits use the owning adapter/device handle. No boundary or ownership change. Device limits report the device's buffer offset alignments. Device limits report the device maxImmediateSize. Device limits report the device's dynamic buffer limits. Device limits report the device's maxColorAttachmentBytesPerSample. Device features keep the sliced 3D compression dependencies; devices keep maxColorAttachmentBytesPerSample. Device limits report the resolved slot, inter-stage and workgroup storage values; Vulkan adapters list core-features-and-limits. Device limits also report the resolved texture extent, bind group and vertex input limits.",
         "reviewer": "doe-c-claude-surface/2026-10-24"
       },
       "src/native/support/doe_future_ids.zig": {
@@ -3794,9 +3794,9 @@
       },
       "src/native/support/doe_native_object_types.zig": {
         "decision": "Keep",
-        "moduleSha256": "b43a8cf0e8dcf006ca80d6a9259a0fd8c2a3957ffeba100ea0ab6bc1843a2a57",
-        "reason": "Keep: default-off C error-scope partial owner uses final-address typed storage, cold creation rollback and checked final deinit; original classifier, callbacks and device references remain with their existing owners; textures record an allowed srgb view; samplers carry error_object; MUTABLE_FORMAT images with a VkImageFormatListCreateInfo only for textures whose viewFormats name the srgb pair. Render pipelines keep their multisample mask and alpha-to-coverage. Passes hold per-group dynamic offsets and the cached workgroup limit. Devices hold their buffer offset alignment limits. Device keeps maxImmediateSize. Compute pipelines keep required binding kinds for automatic-layout dispatch checks. Encoders and passes keep their open debug groups. Render pipelines keep required binding kinds. Layouts and pipelines keep automatic-layout identity. Devices keep dynamic buffer limits; layouts keep their device; render pipelines keep binding buffer types and stages. Devices keep maxColorAttachmentBytesPerSample. Render passes and pipelines keep per-slot color attachments and targets. Pipelines keep a required-binding list instead of a 32-slot table; views keep their swizzle flag. Samplers keep their comparison and filtering flags. Pass color slots hold depthSlice. The device holds resolved per-stage slot, inter-stage and workgroup storage limits. Render passes hold their usage scope.",
-        "reviewer": "doe-c-claude-indexed/2026-10-24"
+        "moduleSha256": "b0a3abf40164fe2b63b814d61b48b235ae667fa1446f21f5a0ca08274d11b7e2",
+        "reason": "Keep: default-off C error-scope partial owner uses final-address typed storage, cold creation rollback and checked final deinit; original classifier, callbacks and device references remain with their existing owners; textures record an allowed srgb view; samplers carry error_object; MUTABLE_FORMAT images with a VkImageFormatListCreateInfo only for textures whose viewFormats name the srgb pair. Render pipelines keep their multisample mask and alpha-to-coverage. Passes hold per-group dynamic offsets and the cached workgroup limit. Devices hold their buffer offset alignment limits. Device keeps maxImmediateSize. Compute pipelines keep required binding kinds for automatic-layout dispatch checks. Encoders and passes keep their open debug groups. Render pipelines keep required binding kinds. Layouts and pipelines keep automatic-layout identity. Devices keep dynamic buffer limits; layouts keep their device; render pipelines keep binding buffer types and stages. Devices keep maxColorAttachmentBytesPerSample. Render passes and pipelines keep per-slot color attachments and targets. Pipelines keep a required-binding list instead of a 32-slot table; views keep their swizzle flag. Samplers keep their comparison and filtering flags. Pass color slots hold depthSlice. The device holds resolved per-stage slot, inter-stage and workgroup storage limits. Render passes hold their usage scope. The device holds resolved texture extent, bind group and vertex input limits.",
+        "reviewer": "doe-c-claude-surface/2026-10-24"
       },
       "src/native/support/doe_native_runtime_helpers.zig": {
         "decision": "Keep",
@@ -3860,9 +3860,9 @@
       },
       "src/native/vulkan/vulkan_render_pipeline_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "dc5132ab78b9b43a424881021991c1a90e7d0955d307e402dbf37ee9f0069184",
-        "reason": "Keep: native attachment admission owns view and pipeline compatibility; command recording preserves typed validation failures before submission. Backend execution and resource retirement retain their existing owners. The multisample mask and alpha-to-coverage reach the pipeline object. Render pipelines record required binding kinds from vertex and fragment entry points. Render pipeline creation rejects vertex or fragment entry points that do not name a function of that stage. Render pipeline creation rejects explicit layouts that lack a binding the entry points use. Render layout check passes buffer types and per-slot stages. Render pipelines reject bindings at or above maxBindingsPerBindGroup and color targets above maxColorAttachmentBytesPerSample. Pipelines record every fragment target and whether a fragment stage exists. Render pipelines and auto layouts include bindings above 31. Checks fragment output and vertex input scalar types and component counts against targets and attribute formats from the stage IR. Vertex outputs and fragment inputs (with inter-stage builtins, point-list and clip_distances) are checked against maxInterStageShaderVariables, and an automatic layout's bindings against the per-stage slot limits. Render pipelines build their own automatic layouts from entry-point shader types (used bindings only).",
-        "reviewer": "doe-c-claude-coordinator/2026-10-24"
+        "moduleSha256": "47ae410edb912354436e7aad70d60039cac551e1a9c4d6f08bbf2c678fa353fa",
+        "reason": "Keep: native attachment admission owns view and pipeline compatibility; command recording preserves typed validation failures before submission. Backend execution and resource retirement retain their existing owners. The multisample mask and alpha-to-coverage reach the pipeline object. Render pipelines record required binding kinds from vertex and fragment entry points. Render pipeline creation rejects vertex or fragment entry points that do not name a function of that stage. Render pipeline creation rejects explicit layouts that lack a binding the entry points use. Render layout check passes buffer types and per-slot stages. Render pipelines reject bindings at or above maxBindingsPerBindGroup and color targets above maxColorAttachmentBytesPerSample. Pipelines record every fragment target and whether a fragment stage exists. Render pipelines and auto layouts include bindings above 31. Checks fragment output and vertex input scalar types and component counts against targets and attribute formats from the stage IR. Vertex outputs and fragment inputs (with inter-stage builtins, point-list and clip_distances) are checked against maxInterStageShaderVariables, and an automatic layout's bindings against the per-stage slot limits. Render pipelines build their own automatic layouts from entry-point shader types (used bindings only). Automatic render layouts reject bind group indices at or above maxBindGroups.",
+        "reviewer": "doe-c-claude-surface/2026-10-24"
       },
       "src/native/vulkan/vulkan_render_shared.zig": {
         "decision": "Keep",
@@ -3998,9 +3998,9 @@
       },
       "src/runtime/diagnostics/error_scope.zig": {
         "decision": "Keep",
-        "moduleSha256": "82d1cf63e6e1640eee6f8b55241aaeb0a78344c12e48bb52b43a1b964c824085",
-        "reason": "Keep: native attachment admission owns view and pipeline compatibility; command recording preserves typed validation failures before submission. Backend execution and resource retirement retain their existing owners. Draw buffer-bound failures are validation errors. Bind group and dispatch recording causes are validation errors. ImmediateDataRange maps to validation. DebugGroupUnbalanced maps to validation. Draw bind group and maxDrawCount failures map to validation. The color attachment bytes-per-sample failure is a validation error. Adds the message for bindings the execution path cannot run. Render bundle and pipeline incompatibility map to validation. The attachment load/store op failure maps to validation. The pass query set failure maps to validation. The depthSlice failure maps to validation. Usage-scope failures map to validation.",
-        "reviewer": "doe-c-claude-indexed/2026-10-24"
+        "moduleSha256": "11993a11ce562cfc224e6bc5f9f90683ba9678fcbba4922ce068f9879ad9b295",
+        "reason": "Keep: native attachment admission owns view and pipeline compatibility; command recording preserves typed validation failures before submission. Backend execution and resource retirement retain their existing owners. Draw buffer-bound failures are validation errors. Bind group and dispatch recording causes are validation errors. ImmediateDataRange maps to validation. DebugGroupUnbalanced maps to validation. Draw bind group and maxDrawCount failures map to validation. The color attachment bytes-per-sample failure is a validation error. Adds the message for bindings the execution path cannot run. Render bundle and pipeline incompatibility map to validation. The attachment load/store op failure maps to validation. The pass query set failure maps to validation. The depthSlice failure maps to validation. Usage-scope failures map to validation. VertexBufferSlotOutOfRange is a validation error.",
+        "reviewer": "doe-c-claude-surface/2026-10-24"
       },
       "src/runtime/env_flags.zig": {
         "decision": "Keep",
@@ -4340,9 +4340,9 @@
       },
       "src/contracts/command_recording.zig": {
         "decision": "Keep",
-        "moduleSha256": "2d2a3d34a40b143c6dd8287e2e06ceaecb54a85f568bc9d05f5df28060256b44",
-        "reason": "Keep: native attachment admission owns view and pipeline compatibility; command recording preserves typed validation failures before submission. Backend execution and resource retirement retain their existing owners. The unsupported-attachment message no longer lists resolve targets. Names WebGPU draw-time vertex and index buffer failures. Owns the setBindGroup dynamic-offset and dispatch validation causes. Adds ImmediateDataRange failure. Adds DebugGroups balance and the DebugGroupUnbalanced failure. Adds draw bind group and maxDrawCount failures. The unsupported-attachment message states the eight-slot limit. Names the color attachment bytes-per-sample failure. Render passes reject swizzled attachment views. Adds render bundle and pipeline layout incompatibility failures. Adds the attachment load/store op failure. Adds the pass query set failure. Adds the color attachment depthSlice failure. Adds the usage-scope conflict and writable binding alias failures.",
-        "reviewer": "doe-c-claude-indexed/2026-10-24"
+        "moduleSha256": "b8bc8a31d8beb12e04c5f321d4113a9a8a1861e877b83d139cdbc4800f013ad2",
+        "reason": "Keep: native attachment admission owns view and pipeline compatibility; command recording preserves typed validation failures before submission. Backend execution and resource retirement retain their existing owners. The unsupported-attachment message no longer lists resolve targets. Names WebGPU draw-time vertex and index buffer failures. Owns the setBindGroup dynamic-offset and dispatch validation causes. Adds ImmediateDataRange failure. Adds DebugGroups balance and the DebugGroupUnbalanced failure. Adds draw bind group and maxDrawCount failures. The unsupported-attachment message states the eight-slot limit. Names the color attachment bytes-per-sample failure. Render passes reject swizzled attachment views. Adds render bundle and pipeline layout incompatibility failures. Adds the attachment load/store op failure. Adds the pass query set failure. Adds the color attachment depthSlice failure. Adds the usage-scope conflict and writable binding alias failures. setVertexBuffer slots at or above maxVertexBuffers are a recorded failure.",
+        "reviewer": "doe-c-claude-surface/2026-10-24"
       },
       "src/native/command/doe_command_recording.zig": {
         "decision": "Keep",

@@ -324,17 +324,27 @@ fn depthStencilFailure(d: *const RenderPipelineDesc) ?[]const u8 {
     return null;
 }
 
-/// Vertex attributes (https://gpuweb.github.io/gpuweb/#abstract-opdef-validating-gpuvertexbufferlayout):
-/// each offset is a multiple of min(4, the format's size). Shader input
-/// types are checked with the shader's reflection by the backend.
-fn vertexAttributesFailure(d: *const RenderPipelineDesc) ?[]const u8 {
+/// Vertex state (https://gpuweb.github.io/gpuweb/#abstract-opdef-validating-gpuvertexstate,
+/// validating-gpuvertexbufferlayout): at most maxVertexBuffers layouts, each
+/// arrayStride within maxVertexBufferArrayStride, at most maxVertexAttributes
+/// attributes in all, each shaderLocation below it, and each offset a multiple
+/// of min(4, the format's size). Shader input types are checked with the
+/// shader's reflection by the backend.
+fn vertexAttributesFailure(dev: *const DoeDevice, d: *const RenderPipelineDesc) ?[]const u8 {
     if (d.vertex.bufferCount == 0) return null;
+    const limits = dev.shape_limits;
+    if (d.vertex.bufferCount > limits.vertex_buffers) return "render pipeline vertex buffers exceed maxVertexBuffers";
     const raw = d.vertex.buffers orelse return "render pipeline vertex buffers are missing";
     const layouts: [*]const RenderVertexBufferLayout = @ptrCast(@alignCast(raw));
+    var attribute_total: usize = 0;
     for (layouts[0..d.vertex.bufferCount]) |layout| {
+        if (layout.arrayStride > limits.vertex_buffer_array_stride) return "a vertex buffer arrayStride exceeds maxVertexBufferArrayStride";
         if (layout.attributeCount == 0) continue;
+        attribute_total += layout.attributeCount;
+        if (attribute_total > limits.vertex_attributes) return "render pipeline vertex attributes exceed maxVertexAttributes";
         const attributes = layout.attributes orelse return "a vertex buffer layout's attributes are missing";
         for (attributes[0..layout.attributeCount]) |attribute| {
+            if (attribute.shaderLocation >= limits.vertex_attributes) return "a vertex attribute shaderLocation is not below maxVertexAttributes";
             const format = vertex_format.fromCode(attribute.format) catch continue;
             if (attribute.offset % @min(4, vertex_format.byteSize(format)) != 0)
                 return "a vertex attribute offset must be a multiple of min(4, its format's size)";
@@ -363,7 +373,7 @@ fn createRenderPipeline(dev_raw: ?*anyopaque, desc_raw: ?*anyopaque) ?*anyopaque
         return null;
     }
     if (d.fragment) |fragment| if (!colorTargetsWithinLimit(dev, fragment)) return null;
-    if (fragmentTargetsFailure(dev, d) orelse depthStencilFailure(d) orelse vertexAttributesFailure(d)) |message| {
+    if (fragmentTargetsFailure(dev, d) orelse depthStencilFailure(d) orelse vertexAttributesFailure(dev, d)) |message| {
         dev.error_scopes.deliver(error_scope.ERROR_TYPE_VALIDATION, message);
         return null;
     }
@@ -833,17 +843,46 @@ test "a stencil test or stencil write needs a stencil aspect and the format is d
 }
 
 test "vertex attribute offsets are multiples of min(4, the format size)" {
+    const device = DoeDevice{};
     var attributes = [_]RenderVertexAttribute{.{ .nextInChain = null, .format = @intFromEnum(vertex_format.Format.uint8x2), .offset = 2, .shaderLocation = 0 }};
     var layouts = [_]RenderVertexBufferLayout{.{ .nextInChain = null, .stepMode = 0, .arrayStride = 16, .attributeCount = 1, .attributes = &attributes }};
     var desc = std.mem.zeroes(RenderPipelineDesc);
     desc.vertex.bufferCount = 1;
     desc.vertex.buffers = @ptrCast(&layouts);
-    try std.testing.expectEqual(@as(?[]const u8, null), vertexAttributesFailure(&desc));
+    try std.testing.expectEqual(@as(?[]const u8, null), vertexAttributesFailure(&device, &desc));
     attributes[0].offset = 1;
-    try std.testing.expect(vertexAttributesFailure(&desc) != null);
+    try std.testing.expect(vertexAttributesFailure(&device, &desc) != null);
     attributes[0].format = @intFromEnum(vertex_format.Format.float32x4);
     attributes[0].offset = 6;
-    try std.testing.expect(vertexAttributesFailure(&desc) != null);
+    try std.testing.expect(vertexAttributesFailure(&device, &desc) != null);
     attributes[0].offset = 8;
-    try std.testing.expectEqual(@as(?[]const u8, null), vertexAttributesFailure(&desc));
+    try std.testing.expectEqual(@as(?[]const u8, null), vertexAttributesFailure(&device, &desc));
+}
+
+test "vertex state stays within the device's vertex buffer, attribute and stride limits" {
+    var device = DoeDevice{};
+    var attributes: [17]RenderVertexAttribute = undefined;
+    for (&attributes, 0..) |*attribute, i| attribute.* = .{ .nextInChain = null, .format = @intFromEnum(vertex_format.Format.float32), .offset = 0, .shaderLocation = @intCast(i) };
+    var layouts: [9]RenderVertexBufferLayout = undefined;
+    for (&layouts) |*layout| layout.* = .{ .nextInChain = null, .stepMode = 0, .arrayStride = 2048, .attributeCount = 0, .attributes = null };
+    var desc = std.mem.zeroes(RenderPipelineDesc);
+    desc.vertex.buffers = @ptrCast(&layouts);
+    desc.vertex.bufferCount = 8;
+    try std.testing.expectEqual(@as(?[]const u8, null), vertexAttributesFailure(&device, &desc));
+    desc.vertex.bufferCount = 9;
+    try std.testing.expect(vertexAttributesFailure(&device, &desc) != null);
+    desc.vertex.bufferCount = 1;
+    layouts[0].arrayStride = 2052;
+    try std.testing.expect(vertexAttributesFailure(&device, &desc) != null);
+    layouts[0].arrayStride = 64;
+    layouts[0].attributes = &attributes;
+    layouts[0].attributeCount = 16;
+    try std.testing.expectEqual(@as(?[]const u8, null), vertexAttributesFailure(&device, &desc));
+    layouts[0].attributeCount = 17;
+    try std.testing.expect(vertexAttributesFailure(&device, &desc) != null);
+    layouts[0].attributeCount = 1;
+    attributes[0].shaderLocation = 16;
+    try std.testing.expect(vertexAttributesFailure(&device, &desc) != null);
+    device.shape_limits.vertex_attributes = 32;
+    try std.testing.expectEqual(@as(?[]const u8, null), vertexAttributesFailure(&device, &desc));
 }

@@ -258,6 +258,8 @@ pub export fn doeNativeRenderBundleEncoderSetVertexBuffer(
 ) callconv(.c) void {
     const enc = bundle.cast_bundle_encoder(enc_raw) orelse return;
     if (!requireBundleOpen(enc)) return;
+    const vertex_buffers: u32 = if (enc.device_lease) |lease| if (cast(DoeDevice, lease.handle)) |device| device.shape_limits.vertex_buffers else MAX_VERTEX_BUFFERS else MAX_VERTEX_BUFFERS;
+    if (slot >= MAX_VERTEX_BUFFERS or slot >= vertex_buffers) return failBundle(enc, error.VertexBufferSlotOutOfRange);
     const buf = cast(DoeBuffer, buf_raw) orelse return;
     if (buf.error_object) return;
     if (!reserveBundleReferences(enc, 1)) return;

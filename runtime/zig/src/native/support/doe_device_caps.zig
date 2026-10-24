@@ -312,6 +312,14 @@ pub export fn doeNativeDeviceGetLimits(raw: ?*anyopaque, limits: ?*abi_callback.
         l.maxUniformBuffersPerShaderStage = d.stage_limits.uniform_buffers;
         l.maxInterStageShaderVariables = d.max_inter_stage_shader_variables;
         l.maxComputeWorkgroupStorageSize = d.max_compute_workgroup_storage_size;
+        l.maxTextureDimension1D = d.shape_limits.texture_dimension_1d;
+        l.maxTextureDimension2D = d.shape_limits.texture_dimension_2d;
+        l.maxTextureDimension3D = d.shape_limits.texture_dimension_3d;
+        l.maxTextureArrayLayers = d.shape_limits.texture_array_layers;
+        l.maxBindGroups = d.shape_limits.bind_groups;
+        l.maxVertexBuffers = d.shape_limits.vertex_buffers;
+        l.maxVertexAttributes = d.shape_limits.vertex_attributes;
+        l.maxVertexBufferArrayStride = d.shape_limits.vertex_buffer_array_stride;
     };
     return status;
 }

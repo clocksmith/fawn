@@ -360,7 +360,10 @@ pub export fn doeNativeRenderPassDraw(pass_raw: ?*anyopaque, vertex_count: u32, 
 pub export fn doeNativeRenderPassSetVertexBuffer(pass_raw: ?*anyopaque, slot: u32, buffer_raw: ?*anyopaque, offset: u64, size: u64) callconv(.c) void {
     const pass = cast(DoeRenderPass, pass_raw) orelse return;
     if (!recording.requirePass(pass.enc, @intFromPtr(pass))) return;
-    if (slot >= native_shared.MAX_VERTEX_BUFFERS) return;
+    if (slot >= native_shared.MAX_VERTEX_BUFFERS or slot >= pass.enc.dev.shape_limits.vertex_buffers) {
+        recording.fail(pass.enc, error.VertexBufferSlotOutOfRange);
+        return;
+    }
     const buffer = cast(DoeBuffer, buffer_raw);
     if (buffer != null and buffer.?.error_object) return;
     if (buffer) |value| {
