@@ -52,6 +52,7 @@ async function runWorkerGeneration(generation) {
     new URL(import.meta.url), { workerData: { id, generation, start } }
   ));
   let ready = 0;
+  const exited = new Set();
   const completed = workers.map(worker => new Promise((resolve, reject) => {
     worker.on('message', message => {
       if (message.phase === 'ready') {
@@ -65,12 +66,17 @@ async function runWorkerGeneration(generation) {
       }
     });
     worker.on('error', reject);
-    worker.on('exit', code => code === 0 ? resolve() : reject(new Error(`worker exit ${code}`)));
+    worker.on('exit', code => {
+      exited.add(worker);
+      return code === 0 ? resolve() : reject(new Error(`worker exit ${code}`));
+    });
   }));
   try {
     await Promise.all(completed);
   } finally {
-    await Promise.all(workers.map(worker => worker.terminate()));
+    // Only a worker still running needs terminate(): Bun (1.3.10) never
+    // settles terminate() on a worker that has already exited.
+    await Promise.all(workers.filter(worker => !exited.has(worker)).map(worker => worker.terminate()));
   }
 }
 
