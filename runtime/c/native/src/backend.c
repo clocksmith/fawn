@@ -129,7 +129,11 @@ WGPUStatus native_backend_info(const native_backend *backend, WGPUAdapterInfo *o
 {
     if (!out || out->nextInChain) return WGPUStatus_Error;
     const char *name;
-    WGPUAdapterInfo result = {.backendType=backend->kind,.adapterType=WGPUAdapterType_Unknown};
+    /* No C backend offers "subgroups", so GPUAdapterInfo takes the spec's
+     * defaults (4 and 128), not the driver's sizes; real sizes belong with that
+     * feature once a backend offers it. */
+    WGPUAdapterInfo result = {.backendType=backend->kind,.adapterType=WGPUAdapterType_Unknown,
+        .subgroupMinSize=4,.subgroupMaxSize=128};
     if (backend->kind == WGPUBackendType_Vulkan) {
         const doe_vk_caps *caps = &backend->value.vulkan.caps;
         name = caps->device_name;
