@@ -3818,9 +3818,9 @@
       },
       "src/native/vulkan/vulkan_feature_cache.zig": {
         "decision": "Keep",
-        "moduleSha256": "edb3d2d17b9f615756f51cb6c12637e59234f98f1e45671daa12e8fe07be6e5a",
-        "reason": "Keep: reachable native implementation shared by 2 production consumers with no conflicting ownership signal.",
-        "reviewer": "codex-recomposition-review/2026-08-08"
+        "moduleSha256": "ddbdadc81c8b95be250ea75884aabf6da4d6d56f7ef795670387780e3cbe1056",
+        "reason": "Keep: process-wide Vulkan adapter/device capability cache; one mutex serializes every map access because adapters and devices are created and released on any worker thread.",
+        "reviewer": "doe-c-claude-surface/2026-10-23"
       },
       "src/native/vulkan/vulkan_lifetime.zig": {
         "decision": "Keep",
