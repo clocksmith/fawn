@@ -109,7 +109,9 @@ fn reserve_render_draw(pass: *DoeRenderPass) bool {
 
 pub export fn doeNativeCommandEncoderBeginRenderPass(enc_raw: ?*anyopaque, desc: ?*const abi_pipeline.WGPURenderPassDescriptor) callconv(.c) ?*anyopaque {
     const enc = cast(DoeCommandEncoder, enc_raw) orelse return null;
-    if (!recording.requireOpen(enc)) return null;
+    // An invalid encoder still returns a pass, which records nothing.
+    const inert = enc.state == .failed;
+    if (!inert and !recording.requireOpen(enc)) return null;
     const pass = native_helpers.create(DoeRenderPass, enc.allocator) catch |err| {
         recording.fail(enc, err);
         return null;
@@ -120,6 +122,7 @@ pub export fn doeNativeCommandEncoderBeginRenderPass(enc_raw: ?*anyopaque, desc:
         .owns_encoder = true,
         .recorded_command_start = enc.cmds.items.len,
     };
+    if (inert) return toOpaque(pass);
     enc.state = .{ .pass = @intFromPtr(pass) };
     if (enc.dev.backend == .vulkan) {
         @import("../vulkan/vulkan_render_attachments.zig").validateDescriptor(enc.dev, desc) catch |err| {
@@ -128,6 +131,11 @@ pub export fn doeNativeCommandEncoderBeginRenderPass(enc_raw: ?*anyopaque, desc:
         };
     }
     if (desc) |d| {
+        const writes: ?*const abi_pipeline.WGPUPassTimestampWrites = if (d.timestampWrites) |raw| @ptrCast(@alignCast(raw)) else null;
+        if (!query_native.passQueriesValid(d.occlusionQuerySet, writes)) {
+            recording.fail(enc, error.PassQuerySetInvalid);
+            return toOpaque(pass);
+        }
         pass.max_draw_count = renderPassMaxDrawCount(d);
         pass.occlusion_query_set = d.occlusionQuerySet;
         query_native.retainRecordedReference(enc, d.occlusionQuerySet);

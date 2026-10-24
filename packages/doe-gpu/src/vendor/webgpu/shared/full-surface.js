@@ -1426,6 +1426,7 @@ function createFullSurfaceClasses({
         return null;
       }
       const tv = new DoeGPUTextureView(view, this);
+      tv._dimension = dimension;
       if (destroyed) tv._textureDestroyed = true;
       if (!this._childViews) {
         this._childViews = new Set();

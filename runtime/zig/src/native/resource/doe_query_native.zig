@@ -6,6 +6,7 @@ const has_vulkan = (builtin.os.tag == .linux);
 const resource_ops = @import("../../backend/dropin_resource_ops.zig");
 const backend_contract = @import("../../contracts/backend.zig");
 const native_types = @import("../support/doe_native_object_types.zig");
+const abi_pipeline = @import("../../core/abi/wgpu_pipeline_descriptor_types.zig");
 const native_shared = @import("../support/doe_native_shared_types.zig");
 const native_cmds = @import("../support/doe_native_command_types.zig");
 const native_helpers = @import("../support/doe_native_object_helpers.zig");
@@ -112,6 +113,27 @@ pub export fn doeNativeCommandEncoderWriteTimestamp(
     query_index: u32,
 ) callconv(.c) void {
     doeNativeCommandEncoderWriteTimestampWithPosition(enc_raw, qs_raw, query_index, .command);
+}
+
+/// A pass's query sets (https://gpuweb.github.io/gpuweb/#abstract-opdef-validate-timestampwrites
+/// and GPURenderPassDescriptor valid usage): timestampWrites names a
+/// timestamp query set with at least one write index, each in range and the
+/// two distinct; an occlusionQuerySet is an occlusion query set.
+pub fn passQueriesValid(occlusion_raw: ?*anyopaque, writes: ?*const abi_pipeline.WGPUPassTimestampWrites) bool {
+    if (occlusion_raw != null) {
+        const occlusion = native_helpers.cast(DoeQuerySet, occlusion_raw) orelse return false;
+        if (occlusion.query_type != WGPU_QUERY_TYPE_OCCLUSION) return false;
+    }
+    const w = writes orelse return true;
+    const qs = native_helpers.cast(DoeQuerySet, w.querySet) orelse return false;
+    if (qs.query_type != WGPU_QUERY_TYPE_TIMESTAMP) return false;
+    const unused = native_types.UNUSED_PASS_TIMESTAMP_WRITE_INDEX;
+    const begin = w.beginningOfPassWriteIndex;
+    const end = w.endOfPassWriteIndex;
+    if (begin == unused and end == unused) return false;
+    if (begin != unused and begin >= qs.count) return false;
+    if (end != unused and end >= qs.count) return false;
+    return begin == unused or begin != end;
 }
 
 pub fn doeNativeCommandEncoderWriteTimestampWithPosition(
