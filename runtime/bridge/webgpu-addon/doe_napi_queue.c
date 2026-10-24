@@ -348,14 +348,14 @@ napi_value doe_compute_pass_set_pipeline(napi_env env, napi_callback_info info) 
 
 napi_value doe_compute_pass_set_immediates(napi_env env, napi_callback_info info) {
     NAPI_ASSERT_ARGC(env, info, 3);
-    if (!pfn_doeNativeComputePassSetImmediates) NAPI_THROW(env, "computePassSetImmediates not available");
+    if (!pfn_doeNativeComputePassSetImmediates && !pfn_wgpuComputePassEncoderSetImmediates) NAPI_THROW(env, "computePassSetImmediates not available");
     WGPUComputePassEncoder pass = unwrap_ptr(env, _args[0]);
     if (!pass) NAPI_THROW(env, "Invalid compute pass");
     uint32_t index = 0; napi_get_value_uint32(env, _args[1], &index);
-    void* data_ptr = NULL;
-    size_t data_len = 0;
+    void* data_ptr = NULL; size_t data_len = 0;
     extract_buffer_data(env, _args[2], &data_ptr, &data_len);
-    pfn_doeNativeComputePassSetImmediates(pass, index, (const uint8_t*)data_ptr, data_len);
+    if (pfn_doeNativeComputePassSetImmediates) pfn_doeNativeComputePassSetImmediates(pass, index, (const uint8_t*)data_ptr, data_len);
+    else pfn_wgpuComputePassEncoderSetImmediates(pass, index, data_ptr, data_len);
     return NULL;
 }
 

@@ -60,6 +60,45 @@ static void finish_rejected(state *s, WGPUCommandEncoder encoder, unsigned befor
     wgpuCommandEncoderRelease(encoder);
 }
 
+/* setImmediates: aligned ranges within maxImmediateSize record nothing an
+ * error; an unaligned offset or size, a range past the limit or a call on an
+ * ended pass invalidates the encoder (one error at Finish / at the call). */
+static void immediates(void)
+{
+    state own = {0};
+    state *s = &own;
+    consumer_init(s);
+    const uint32_t words[4] = {1,2,3,4};
+    const uint32_t limit = 64;
+    for (unsigned which = 0; which < 4; ++which) {
+        WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(s->device,NULL);
+        WGPUComputePassEncoder pass = wgpuCommandEncoderBeginComputePass(encoder,NULL);
+        const uint32_t offset = which == 1 ? 2 : which == 3 ? limit - 8 : 0;
+        const size_t size = which == 2 ? 6 : which == 3 ? 16 : sizeof(words);
+        unsigned before = s->errors;
+        wgpuComputePassEncoderSetImmediates(pass,offset,words,size);
+        wgpuComputePassEncoderEnd(pass);
+        wgpuComputePassEncoderRelease(pass);
+        if (which == 0) {
+            WGPUCommandBuffer commands = wgpuCommandEncoderFinish(encoder,NULL);
+            assert(commands);
+            expect_errors(s,before,0,"valid immediates");
+            wgpuCommandBufferRelease(commands);
+            wgpuCommandEncoderRelease(encoder);
+        } else finish_rejected(s,encoder,before,"invalid immediates");
+    }
+    WGPURenderBundleEncoder bundle = bundle_encoder(s);
+    unsigned before = s->errors;
+    wgpuRenderBundleEncoderSetImmediates(bundle,limit,words,4);
+    expect_errors(s,before,0,"bundle immediates at the call");
+    WGPURenderBundle invalid = wgpuRenderBundleEncoderFinish(bundle,NULL); /* an invalid bundle */
+    expect_errors(s,before,1,"bundle immediates at Finish");
+    if (invalid) wgpuRenderBundleRelease(invalid);
+    wgpuRenderBundleEncoderRelease(bundle);
+    s->errors = 0; /* every expected error was counted above */
+    consumer_finish(s);
+}
+
 int main(void)
 {
     state s = {0};
@@ -316,6 +355,7 @@ int main(void)
     wgpuTextureViewRelease(view);
     wgpuTextureRelease(target);
     consumer_finish(&s);
+    immediates();
 
     /* core-features-and-limits: listed by the adapter and accepted when required. */
     state core = {0};
@@ -333,6 +373,6 @@ int main(void)
         "a chained Finish ends the encoder, an invalid bundle encoder descriptor reports "
         "at creation and at its Finish and its bundle once at the executing encoder's Finish, a failed submit "
         "invalidates its whole batch in either order; core-features-and-limits listed and "
-        "accepted %s\n", adapter_class_scope());
+        "accepted; setImmediates alignment and maxImmediateSize rejections at Finish %s\n", adapter_class_scope());
     return 0;
 }

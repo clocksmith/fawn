@@ -284,7 +284,9 @@ int main(void)
     assert(wgpuGetProcAddress((WGPUStringView){"wgpuQueueSubmit", WGPU_STRLEN}));
     assert(wgpuGetProcAddress((WGPUStringView){"wgpuRenderPassEncoderDrawIndexed", WGPU_STRLEN}) ==
         (WGPUProc)wgpuRenderPassEncoderDrawIndexed);
-    assert(!wgpuGetProcAddress((WGPUStringView){"wgpuRenderPassEncoderSetImmediates", WGPU_STRLEN}));
+    assert(wgpuGetProcAddress((WGPUStringView){"wgpuRenderPassEncoderSetImmediates", WGPU_STRLEN}) ==
+        (WGPUProc)wgpuRenderPassEncoderSetImmediates);
+    assert(!wgpuGetProcAddress((WGPUStringView){"wgpuExternalTextureSetLabel", WGPU_STRLEN})); /* pinned, unprovided */
     assert(!wgpuGetProcAddress((WGPUStringView){"doe_vk_context_create", WGPU_STRLEN}));
     wgpuBufferRelease(readback);
     wgpuQueueRelease(queue);
