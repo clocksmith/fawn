@@ -1551,7 +1551,7 @@ function buildRenderPipelineDescriptor(descriptor) {
     if (vertexBuffers.length > 0) {
         let totalAttributeCount = 0;
         for (const buffer of vertexBuffers) {
-            totalAttributeCount += (buffer.attributes ?? []).length;
+            totalAttributeCount += (buffer?.attributes ?? []).length;
         }
         vertexAttributeArr = new Uint8Array(totalAttributeCount * WGPU_VERTEX_ATTRIBUTE_SIZE);
         vertexBufferArr = new Uint8Array(vertexBuffers.length * WGPU_VERTEX_BUFFER_LAYOUT_SIZE);
@@ -1559,11 +1559,13 @@ function buildRenderPipelineDescriptor(descriptor) {
         const layoutView = new DataView(vertexBufferArr.buffer);
         let attrIndex = 0;
         for (let bufferIndex = 0; bufferIndex < vertexBuffers.length; bufferIndex += 1) {
+            // A null slot is a hole: stepMode Undefined (0), no attributes.
+            const hole = vertexBuffers[bufferIndex] == null;
             const buffer = vertexBuffers[bufferIndex] ?? {};
             const attributes = buffer.attributes ?? [];
             const layoutOffset = bufferIndex * WGPU_VERTEX_BUFFER_LAYOUT_SIZE;
             writePtr(layoutView, layoutOffset + 0, null);
-            layoutView.setUint32(layoutOffset + 8, VERTEX_STEP_MODE_MAP[buffer.stepMode ?? "vertex"] ?? VERTEX_STEP_MODE_MAP.vertex, true);
+            layoutView.setUint32(layoutOffset + 8, hole ? 0 : VERTEX_STEP_MODE_MAP[buffer.stepMode ?? "vertex"] ?? VERTEX_STEP_MODE_MAP.vertex, true);
             layoutView.setBigUint64(layoutOffset + 16, BigInt(buffer.arrayStride ?? 0), true);
             layoutView.setBigUint64(layoutOffset + 24, BigInt(attributes.length), true);
             writePtr(layoutView, layoutOffset + 32, attributes.length > 0 ? bunPtr(vertexAttributeArr) + attrIndex * WGPU_VERTEX_ATTRIBUTE_SIZE : null);

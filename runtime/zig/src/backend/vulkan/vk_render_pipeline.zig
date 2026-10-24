@@ -378,6 +378,8 @@ pub fn create_graphics_pipeline(
         .lineWidth = 1.0,
     };
 
+    // VkSampleMask is an array of ceil(samples / 32) words; WebGPU counts are 1 or 4.
+    const sample_mask: u32 = cmd.sample_mask;
     var multisample = c.VkPipelineMultisampleStateCreateInfo{
         .sType = c.VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
         .pNext = null,
@@ -385,8 +387,8 @@ pub fn create_graphics_pipeline(
         .rasterizationSamples = sample_count_to_vk(cmd.sample_count),
         .sampleShadingEnable = c.VK_FALSE,
         .minSampleShading = 1.0,
-        .pSampleMask = null,
-        .alphaToCoverageEnable = c.VK_FALSE,
+        .pSampleMask = &sample_mask,
+        .alphaToCoverageEnable = if (cmd.alpha_to_coverage) c.VK_TRUE else c.VK_FALSE,
         .alphaToOneEnable = c.VK_FALSE,
     };
 
