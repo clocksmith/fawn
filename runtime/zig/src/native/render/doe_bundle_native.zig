@@ -13,6 +13,7 @@ const leases = @import("../../contracts/resource_lease.zig");
 const recording = @import("../command/doe_command_recording.zig");
 const recording_contract = @import("../../contracts/command_recording.zig");
 const bundle = @import("../../runtime/render/render_bundle.zig");
+const bind_group_native = @import("../resource/doe_bind_group_native.zig");
 
 const alloc = native_helpers.alloc;
 const make = native_helpers.make;
@@ -73,17 +74,22 @@ pub export fn doeNativeRenderBundleEncoderRelease(raw: ?*anyopaque) callconv(.c)
     a.destroy(enc);
 }
 
+/// Invalidates the bundle encoder; finish() reports the first cause
+/// (https://gpuweb.github.io/gpuweb/#dom-gpurenderbundleencoder-finish).
 pub fn failBundle(encoder: *bundle.DoeBundleEncoder, cause: recording_contract.Failure) void {
     _ = encoder.state.fail(cause);
-    if (encoder.device_lease) |lease| {
-        const device = cast(DoeDevice, lease.handle) orelse return;
-        device.error_scopes.deliver(error_scope.zig_error_to_type(cause), recording_contract.message(cause));
-    }
 }
 
+fn deliverBundleError(encoder: *const bundle.DoeBundleEncoder, cause: recording_contract.Failure) void {
+    const lease = encoder.device_lease orelse return;
+    const device = cast(DoeDevice, lease.handle) orelse return;
+    device.error_scopes.deliver(error_scope.zig_error_to_type(cause), recording_contract.message(cause));
+}
+
+/// A command on a finished bundle encoder is an immediate validation error.
 pub fn requireBundleOpen(encoder: *bundle.DoeBundleEncoder) bool {
     if (encoder.state == .open) return true;
-    if (encoder.state == .finished) failBundle(encoder, error.InvalidState);
+    if (encoder.state == .finished) deliverBundleError(encoder, error.InvalidState);
     return false;
 }
 
@@ -123,11 +129,26 @@ pub export fn doeNativeRenderBundleEncoderSetBindGroup(
     dynamic_offset_count: usize,
     dynamic_offsets: ?[*]const u32,
 ) callconv(.c) void {
-    _ = dynamic_offset_count;
-    _ = dynamic_offsets;
     const enc = bundle.cast_bundle_encoder(enc_raw) orelse return;
     if (!requireBundleOpen(enc)) return;
-    const bg = cast(DoeBindGroup, bg_raw) orelse return;
+    if (group_index >= native_shared.MAX_RENDER_BIND_GROUPS) return failBundle(enc, error.BindGroupIndexOutOfRange);
+    if (dynamic_offset_count != 0 and dynamic_offsets == null) return failBundle(enc, error.InvalidArgument);
+    const offsets: []const u32 = if (dynamic_offset_count == 0) &.{} else dynamic_offsets.?[0..dynamic_offset_count];
+    // A null group unbinds the slot (https://gpuweb.github.io/gpuweb/#dom-gpubindingcommandsmixin-setbindgroup).
+    const bg = cast(DoeBindGroup, bg_raw) orelse {
+        if (offsets.len != 0) return failBundle(enc, error.BindGroupDynamicOffsetCount);
+        bundle.bundle_encoder_push(enc, .{ .set_bind_group = .{
+            .group = group_index,
+            .bg = .{ .entries = undefined, .count = 0 },
+        } }) catch |err| return failBundle(enc, err);
+        return;
+    };
+    const device = if (enc.device_lease) |lease| cast(DoeDevice, lease.handle) else null;
+    const resolved = bind_group_native.resolveDynamicOffsets(
+        bg,
+        offsets,
+        if (device) |dev| bind_group_native.deviceDynamicOffsetAlignment(dev) else .{ .uniform = 0, .storage = 0 },
+    ) catch |err| return failBundle(enc, err);
     if (!reserveBundleReferences(enc, 1)) return;
     references.retainBindGroupAssumeCapacity(&enc.references, bg);
 
@@ -142,11 +163,19 @@ pub export fn doeNativeRenderBundleEncoderSetBindGroup(
             .offset = bg.offsets[i],
         };
     }
+    var bundle_offsets = bundle.NO_BUNDLE_DYNAMIC_OFFSETS;
+    // resolveDynamicOffsets widens WebGPU's u32 offsets.
+    for (resolved, 0..) |offset, binding| bundle_offsets[binding] = @intCast(offset);
     bundle.bundle_encoder_push(enc, .{ .set_bind_group = .{
         .group = group_index,
         .bg_handle = if (enc.backend == .vulkan) toOpaque(bg) else null,
         .bg = bg_entry,
+        .dynamic_offsets = bundle_offsets,
     } }) catch |err| return failBundle(enc, err);
+}
+
+comptime {
+    std.debug.assert(bundle.MAX_DYNAMIC_OFFSET_BINDINGS == native_shared.MAX_BIND);
 }
 
 pub export fn doeNativeRenderBundleEncoderSetVertexBuffer(
@@ -275,9 +304,12 @@ pub export fn doeNativeRenderBundleEncoderFinish(
 ) callconv(.c) ?*anyopaque {
     _ = desc;
     const enc = bundle.cast_bundle_encoder(enc_raw) orelse return null;
-    _ = requireBundleOpen(enc);
+    switch (enc.state) {
+        .failed => |cause| deliverBundleError(enc, cause),
+        else => _ = requireBundleOpen(enc),
+    }
     const b = bundle.bundle_encoder_finish(enc) orelse {
-        failBundle(enc, error.OutOfMemory);
+        deliverBundleError(enc, error.OutOfMemory);
         return null;
     };
     if (enc.device_lease) |lease| {
@@ -324,6 +356,24 @@ fn bundleAllocationScenario(allocator: std.mem.Allocator) !void {
 
 test "native bundle recording and finish release dependencies after every allocation failure" {
     try std.testing.checkAllAllocationFailures(std.testing.allocator, bundleAllocationScenario, .{});
+}
+
+test "bundle encoder errors surface at finish, not at the failing command" {
+    var device = DoeDevice{};
+    var group = DoeBindGroup{};
+    const encoder = bundle.make_bundle_encoder(std.testing.allocator, 0, 0, 1, false, false) orelse return error.OutOfMemory;
+    native_helpers.object_add_ref(DoeDevice, toOpaque(&device));
+    encoder.device_lease = .{ .handle = toOpaque(&device), .release = @import("../support/doe_native_exports.zig").doeNativeDeviceReleaseInternal };
+    defer doeNativeRenderBundleEncoderRelease(toOpaque(encoder));
+    device.error_scopes.push(error_scope.FILTER_VALIDATION);
+    const offsets = [_]u32{256};
+    doeNativeRenderBundleEncoderSetBindGroup(toOpaque(encoder), 0, toOpaque(&group), offsets.len, &offsets);
+    try std.testing.expectEqual(error.BindGroupDynamicOffsetCount, encoder.state.failed);
+    try std.testing.expect(device.error_scopes.scopes[0].captured == null);
+    const result = doeNativeRenderBundleEncoderFinish(toOpaque(encoder), null).?;
+    defer doeNativeRenderBundleRelease(result);
+    try std.testing.expect(bundle.cast_bundle(result).?.error_object);
+    try std.testing.expectEqual(error_scope.ERROR_TYPE_VALIDATION, device.error_scopes.scopes[0].captured.?.error_type);
 }
 
 test "failed bundle cannot replay into a valid command recording" {
@@ -407,6 +457,7 @@ const BundleReplayState = struct {
     pso: ?*anyopaque,
     pipeline: ?*DoeRenderPipeline,
     bind_groups: [native_shared.MAX_RENDER_BIND_GROUPS]?*DoeBindGroup,
+    dynamic_offsets: [native_shared.MAX_RENDER_BIND_GROUPS]native_shared.BindGroupDynamicOffsets,
     bind_buffers: [MAX_FLAT_BIND]?*anyopaque,
     bind_buffer_offsets: [MAX_FLAT_BIND]u64,
     vertex_buffer_objects: [MAX_VERTEX_BUFFERS]?*DoeBuffer,
@@ -424,6 +475,7 @@ const BundleReplayState = struct {
             .pso = null,
             .pipeline = null,
             .bind_groups = [_]?*DoeBindGroup{null} ** native_shared.MAX_RENDER_BIND_GROUPS,
+            .dynamic_offsets = [_]native_shared.BindGroupDynamicOffsets{native_shared.NO_DYNAMIC_OFFSETS} ** native_shared.MAX_RENDER_BIND_GROUPS,
             .bind_buffers = [_]?*anyopaque{null} ** MAX_FLAT_BIND,
             .bind_buffer_offsets = [_]u64{0} ** MAX_FLAT_BIND,
             .vertex_buffer_objects = [_]?*DoeBuffer{null} ** MAX_VERTEX_BUFFERS,
@@ -443,6 +495,7 @@ const BundleReplayState = struct {
             .pso = if (pass.pipeline) |p| p.mtl_pso else null,
             .pipeline = pass.pipeline,
             .bind_groups = pass.bind_groups,
+            .dynamic_offsets = pass.dynamic_offsets,
             .bind_buffers = [_]?*anyopaque{null} ** MAX_FLAT_BIND,
             .bind_buffer_offsets = [_]u64{0} ** MAX_FLAT_BIND,
             .vertex_buffer_objects = pass.vertex_buffers,
@@ -464,6 +517,7 @@ fn apply_vulkan_bundle_state(pass: *DoeRenderPass, state: *const BundleReplaySta
     pass.depth_compare = pipeline.depth_compare;
     pass.depth_write_enabled = pipeline.depth_write_enabled;
     pass.bind_groups = state.bind_groups;
+    pass.dynamic_offsets = state.dynamic_offsets;
     pass.vertex_buffers = state.vertex_buffer_objects;
     pass.vertex_buffer_offsets = state.vertex_buffer_offsets;
     pass.vertex_buffer_sizes = state.vertex_buffer_sizes;
@@ -591,15 +645,16 @@ pub export fn doeNativeRenderPassExecuteBundles(
                         p.pipeline_handle;
                 },
                 .set_bind_group => |bg_cmd| {
-                    if (is_vulkan and bg_cmd.group < native_shared.MAX_RENDER_BIND_GROUPS) {
-                        state.bind_groups[@intCast(bg_cmd.group)] = cast(DoeBindGroup, bg_cmd.bg_handle);
+                    if (bg_cmd.group < native_shared.MAX_RENDER_BIND_GROUPS) {
+                        if (is_vulkan) state.bind_groups[@intCast(bg_cmd.group)] = cast(DoeBindGroup, bg_cmd.bg_handle);
+                        for (&state.dynamic_offsets[@intCast(bg_cmd.group)], bg_cmd.dynamic_offsets) |*offset, value| offset.* = value;
                     }
                     const base = @as(usize, bg_cmd.group) * MAX_BIND;
                     const count = @min(@as(usize, bg_cmd.bg.count), bundle.MAX_BINDINGS_PER_GROUP);
                     for (0..count) |i| {
                         if (base + i < MAX_FLAT_BIND) {
                             state.bind_buffers[base + i] = bg_cmd.bg.entries[i].handle;
-                            state.bind_buffer_offsets[base + i] = bg_cmd.bg.entries[i].offset;
+                            state.bind_buffer_offsets[base + i] = bg_cmd.bg.entries[i].offset + bg_cmd.dynamic_offsets[i];
                         }
                     }
                 },
@@ -708,6 +763,7 @@ pub export fn doeNativeRenderPassExecuteBundles(
     if (is_vulkan) {
         pass.pipeline = null;
         pass.bind_groups = [_]?*DoeBindGroup{null} ** native_shared.MAX_RENDER_BIND_GROUPS;
+        pass.dynamic_offsets = [_]native_shared.BindGroupDynamicOffsets{native_shared.NO_DYNAMIC_OFFSETS} ** native_shared.MAX_RENDER_BIND_GROUPS;
         pass.vertex_buffers = [_]?*DoeBuffer{null} ** MAX_VERTEX_BUFFERS;
         pass.vertex_buffer_offsets = [_]u64{0} ** MAX_VERTEX_BUFFERS;
         pass.vertex_buffer_sizes = [_]u64{0} ** MAX_VERTEX_BUFFERS;
