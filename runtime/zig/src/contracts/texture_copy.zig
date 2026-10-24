@@ -109,14 +109,15 @@ fn validateExtent(texture: Texture, copy: Copy, alignment: Alignment) Error![3]u
 /// WebGPU copyTextureToTexture validation
 /// (https://gpuweb.github.io/gpuweb/#dom-gpucommandencoder-copytexturetotexture):
 /// equal sample counts, copy-compatible formats (equal, or differing only in
-/// srgb-ness as decided by the caller), all aspects, each copy box inside its
-/// mip and block-aligned, whole subresources for depth/stencil and
-/// multisampled textures, and no overlap when copying within one texture.
+/// srgb-ness as decided by the caller), aspects covering the whole format,
+/// each copy box inside its mip and block-aligned, whole subresources for
+/// depth/stencil and multisampled textures, and no overlap when copying
+/// within one texture.
 pub fn validateWebGPUTextureToTexture(source: Texture, source_copy: Copy, destination: Texture, destination_copy: Copy, formats_compatible: bool, same_texture: bool) Error!void {
     if (source.samples != destination.samples) return error.TextureCopyLayout;
     if (!formats_compatible) return error.TextureCopyUnsupported;
     for ([_]u32{ source_copy.aspect, destination_copy.aspect }) |aspect| {
-        if (aspect != values.WGPUTextureAspect_Undefined and aspect != values.WGPUTextureAspect_All) return error.TextureCopyAspect;
+        if (!coversAllAspects(source.format, aspect)) return error.TextureCopyAspect;
     }
     const source_extent = try validateCopyBox(source, source_copy);
     const destination_extent = try validateCopyBox(destination, destination_copy);
@@ -135,6 +136,19 @@ pub fn validateWebGPUTextureToTexture(source: Texture, source_copy: Copy, destin
         const count = source_copy.depth_or_layers;
         if (count != 0 and (if (a <= b) b - a < count else a - b < count)) return error.TextureCopyRange;
     }
+}
+
+/// A texture-to-texture copy moves every aspect of its format: `all`, or the
+/// single aspect a depth-only or stencil-only format has.
+fn coversAllAspects(format: u32, aspect: u32) bool {
+    const stencil = formats.hasStencilAspect(format);
+    const depth = formats.isDepthStencilFormat(format) and format != values.WGPUTextureFormat_Stencil8;
+    return switch (aspect) {
+        values.WGPUTextureAspect_Undefined, values.WGPUTextureAspect_All => true,
+        values.WGPUTextureAspect_DepthOnly => depth and !stencil,
+        values.WGPUTextureAspect_StencilOnly => stencil and !depth,
+        else => false,
+    };
 }
 
 /// The copy box of one side of a texture-to-texture copy (multisampled
@@ -289,6 +303,19 @@ test "WebGPU texture-to-texture copies check formats, samples, boxes, whole dept
     var whole = box;
     whole.width = 16;
     try validateWebGPUTextureToTexture(depth, whole, depth, whole, true, false);
+    // Aspects name every aspect of the format.
+    var depth_only = whole;
+    depth_only.aspect = values.WGPUTextureAspect_DepthOnly;
+    try validateWebGPUTextureToTexture(depth, depth_only, depth, whole, true, false);
+    var stencil_only = whole;
+    stencil_only.aspect = values.WGPUTextureAspect_StencilOnly;
+    try std.testing.expectError(error.TextureCopyAspect, validateWebGPUTextureToTexture(depth, stencil_only, depth, whole, true, false));
+    var combined = depth;
+    combined.format = values.WGPUTextureFormat_Depth24PlusStencil8;
+    try std.testing.expectError(error.TextureCopyAspect, validateWebGPUTextureToTexture(combined, depth_only, combined, whole, true, false));
+    var color_depth = box;
+    color_depth.aspect = values.WGPUTextureAspect_DepthOnly;
+    try std.testing.expectError(error.TextureCopyAspect, validateWebGPUTextureToTexture(color, box, color, color_depth, true, false));
     // Compressed boxes are block-aligned.
     var bc = color;
     bc.format = values.WGPUTextureFormat_BC1RGBAUnorm;
