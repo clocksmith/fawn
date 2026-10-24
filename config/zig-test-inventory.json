@@ -1059,6 +1059,10 @@
         {
           "path": "src/native/compute/doe_compute_program_native.zig",
           "kind": "inline"
+        },
+        {
+          "path": "src/native/vulkan/vulkan_feature_cache.zig",
+          "kind": "inline"
         }
       ],
       "includes": [
