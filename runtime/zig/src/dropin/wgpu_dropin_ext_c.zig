@@ -189,12 +189,15 @@ pub fn doeAbiBridgeQueueWriteTexture(
     write_size: *const abi_copy.WGPUExtent3D,
 ) callconv(.c) void {
     const cmd_texture = @import("../native/resource/doe_command_texture_native.zig");
-    const data_ptr: [*]const u8 = if (data) |d| @ptrCast(d) else return;
-    cmd_texture.doeNativeQueueWriteTexture(
+    const base: [*]const u8 = if (data) |d| @ptrCast(d) else return;
+    // The layout offset selects the first texel inside `data`; an offset past
+    // the end leaves no bytes, which the copy contract rejects as out of range.
+    const offset: usize = @intCast(@min(data_layout.offset, data_size));
+    cmd_texture.queueWriteTexture(
         queue,
         destination.texture,
-        data_ptr,
-        data_size,
+        base + offset,
+        data_size - offset,
         data_layout.bytesPerRow,
         data_layout.rowsPerImage,
         destination.origin.x,
@@ -205,6 +208,7 @@ pub fn doeAbiBridgeQueueWriteTexture(
         write_size.width,
         write_size.height,
         write_size.depthOrArrayLayers,
+        destination.aspect,
     );
 }
 

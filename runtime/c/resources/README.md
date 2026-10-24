@@ -18,13 +18,27 @@ an alias of device-free compiled data or a second count for one WebGPU object.
 - `objects.c` and `accessors.c`: native/device lifetime, checked buffer ranges,
   shader identity, map modes, span and stale-generation admission.
 - `formats.c`, `textures.c`, `texture_copy.c`: named format semantics, immutable
-  textures/views/samplers and shared checked block/mip/row/image copy geometry.
+  textures/views/samplers and shared checked block/mip/row/image copy geometry;
+  compressed textures have whole blocks at mip 0.
   The checked format/aspect sample-class and named channel-count functions serve
   native shader/clear scalar conversion; binding admission uses the same owner, including stencil-only
   combined formats. Baseline class is separate from optional feature promotion,
   native support and attachment renderability. Invalid inputs preserve output.
 - `bindings.c`: canonical layouts, exclusive automatic-layout identity, retained
   groups/pipeline layouts, dynamic binding ranges and native pipeline leases.
+  Binding numbers are sparse below `DOE_RESOURCE_MAX_BINDING_NUMBER` (1000, the
+  WebGPU maxBindingsPerBindGroup minimum): layouts and groups store exactly their
+  entries sorted by binding, never arrays indexed by binding number, and
+  `doe_resource_bind_group_resolve_binding` finds one by binary search after
+  `doe_resource_bind_group_check` validated the whole group. Layout and pipeline
+  layout creation enforce the WebGPU binding slot limits (per-stage counts, an
+  external texture counting 4 sampled textures, 1 sampler and 1 uniform buffer,
+  dynamic uniform/storage counts, bind group count) from `config.slot_limits`,
+  zero selecting each default; one group holds at most
+  `DOE_RESOURCE_MAX_DYNAMIC_OFFSETS` (32) dynamic buffers. Rejected layouts and
+  groups validate before allocating, and dispatch/draw usage scratch stays on
+  the stack up to `RESOURCE_STACK_USES` uses, so ordinary failures never touch
+  the allocator.
   Float32 textures require the explicit device-enabled `float32_filterable` policy
   for Float bindings; default admission is UnfilterableFloat regardless of driver
   capability. Features are copied for later resolve/submit revalidation. Normalized
@@ -190,7 +204,7 @@ responsibilities. Unsupported consumer command kinds must reject before submit.
 `make -C runtime/c/resources check` builds GCC C11/Werror into `/tmp`: 13 base and
 8 extended, 6 bundle, 8 binding-feature, 7 dispatch-usage, 10 render-usage,
 1 query-admission, 3 draw-admission, 4 attachment-admission, 4 resolve-admission,
-3 view-default, 6 debug-group and 3 depth-only host suites cover transactional
+3 view-default, 6 debug-group, 3 depth-only and 5 binding-limit host suites cover transactional
 failure/untouched outputs, first error,
 label cleanup, atomic references, stale/read-only maps, copies/aliases, dynamic
 snapshots, pass abandonment/unbinding, shader/query/external/render leases and

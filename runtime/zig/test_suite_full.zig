@@ -10,6 +10,7 @@ const test_src_native_support_doe_callback_delivery_zig_24ee01a5 = @import("src/
 const test_src_native_support_doe_future_ids_zig_46c77022 = @import("src/native/support/doe_future_ids.zig");
 const test_src_native_support_doe_device_loss_zig_09817a3f = @import("src/native/support/doe_device_loss.zig");
 const test_src_native_queue_doe_submission_validation_zig_5683d6fa = @import("src/native/queue/doe_submission_validation.zig");
+const test_src_native_compute_doe_compute_program_native_zig_ae67e6b8 = @import("src/native/compute/doe_compute_program_native.zig");
 
 comptime {
     _ = suite_aggregate_ee3c65b5;
@@ -22,4 +23,5 @@ comptime {
     _ = test_src_native_support_doe_future_ids_zig_46c77022;
     _ = test_src_native_support_doe_device_loss_zig_09817a3f;
     _ = test_src_native_queue_doe_submission_validation_zig_5683d6fa;
+    _ = test_src_native_compute_doe_compute_program_native_zig_ae67e6b8;
 }

@@ -35,17 +35,34 @@ typedef enum doe_vk_texture_format {
     DOE_VK_FORMAT_RGBA32_UINT = 107,
     DOE_VK_FORMAT_RGBA32_SINT = 108,
     DOE_VK_FORMAT_RGBA32_FLOAT = 109,
+    DOE_VK_FORMAT_RG11B10_UFLOAT = 122,
     DOE_VK_FORMAT_D16_UNORM = 124,
     DOE_VK_FORMAT_D32_FLOAT = 126,
     DOE_VK_FORMAT_S8_UINT = 127,
     DOE_VK_FORMAT_D24_UNORM_S8_UINT = 129,
-    DOE_VK_FORMAT_D32_FLOAT_S8_UINT = 130
+    DOE_VK_FORMAT_D32_FLOAT_S8_UINT = 130,
+    /* 4x4 block-compressed formats; usable only with enabled textureCompressionBC. */
+    DOE_VK_FORMAT_BC1_RGBA_UNORM = 133,
+    DOE_VK_FORMAT_BC1_RGBA_SRGB = 134,
+    DOE_VK_FORMAT_BC2_RGBA_UNORM = 135,
+    DOE_VK_FORMAT_BC2_RGBA_SRGB = 136,
+    DOE_VK_FORMAT_BC3_RGBA_UNORM = 137,
+    DOE_VK_FORMAT_BC3_RGBA_SRGB = 138,
+    DOE_VK_FORMAT_BC4_R_UNORM = 139,
+    DOE_VK_FORMAT_BC4_R_SNORM = 140,
+    DOE_VK_FORMAT_BC5_RG_UNORM = 141,
+    DOE_VK_FORMAT_BC5_RG_SNORM = 142,
+    DOE_VK_FORMAT_BC6H_RGB_UFLOAT = 143,
+    DOE_VK_FORMAT_BC6H_RGB_FLOAT = 144,
+    DOE_VK_FORMAT_BC7_RGBA_UNORM = 145,
+    DOE_VK_FORMAT_BC7_RGBA_SRGB = 146
 } doe_vk_texture_format;
 /* Optimal-tiling facts for admitted formats, not shader-feature enablement or
  * a claim that every dimension/usage/extent combination is supported. Failure
  * leaves output unchanged. Compiler/native admission must check shader features. */
 typedef struct doe_vk_format_caps {
-    uint32_t texel_bytes;
+    uint32_t texel_bytes; /* Bytes of one texel block. */
+    uint32_t block_extent; /* Texel width and height of one block: 4 for BC, else 1. */
     bool sampled;
     bool storage;
     bool color_attachment;
@@ -56,6 +73,8 @@ typedef struct doe_vk_format_caps {
     bool depth_stencil_attachment;
     uint32_t attachment_sample_counts; /* Exact 2D attachment-only native sample mask. */
     uint32_t aspects; /* Native aspect bits of the format: color1, depth2, stencil4. */
+    /* Sampled+transfer 3D images are supported (sliced 3D for block formats). */
+    bool volume;
 } doe_vk_format_caps;
 doe_vk_status doe_vk_texture_format_caps(doe_vk_context *context,
     doe_vk_texture_format format, doe_vk_format_caps *out);
@@ -119,6 +138,16 @@ typedef enum doe_vk_view_dimension {
     DOE_VK_VIEW_2D_ARRAY,
     DOE_VK_VIEW_CUBE_ARRAY
 } doe_vk_view_dimension;
+/* Native VkComponentSwizzle sources of one view channel; IDENTITY keeps it. */
+typedef enum doe_vk_swizzle {
+    DOE_VK_SWIZZLE_IDENTITY = 0,
+    DOE_VK_SWIZZLE_ZERO = 1,
+    DOE_VK_SWIZZLE_ONE = 2,
+    DOE_VK_SWIZZLE_R = 3,
+    DOE_VK_SWIZZLE_G = 4,
+    DOE_VK_SWIZZLE_B = 5,
+    DOE_VK_SWIZZLE_A = 6
+} doe_vk_swizzle;
 typedef struct doe_vk_texture_view_desc {
     doe_vk_view_dimension dimension;
     uint32_t base_mip;
@@ -130,8 +159,13 @@ typedef struct doe_vk_texture_view_desc {
     doe_vk_texture_aspect aspect;
     /* Zero is the image format; otherwise the image's admitted srgb/unorm pair. */
     doe_vk_texture_format format;
+    /* Per-channel (r, g, b, a) source for sampled reads; all IDENTITY (zero) is
+     * required for attachment and storage use of the view. */
+    doe_vk_swizzle swizzle[4];
 } doe_vk_texture_view_desc;
-/* A view retains its parent image. Reinterpretation/swizzle not yet admitted. */
+/* A view retains its parent image. Format reinterpretation is limited to the
+ * srgb/unorm pair; a swizzled view is sampled-only (attachments and storage
+ * bindings reject it). */
 doe_vk_status doe_vk_texture_view_create(doe_vk_texture *texture,
     const doe_vk_texture_view_desc *desc, doe_vk_texture_view **out, doe_vk_error *error);
 doe_vk_status doe_vk_texture_view_retain(doe_vk_texture_view *view);

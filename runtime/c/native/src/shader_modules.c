@@ -19,6 +19,13 @@ static void release_shader(void *userdata, void *handle)
     free(payload);
 }
 
+uint32_t native_shader_semantic_flags(void)
+{
+    /* Core public binding identities do not imply native slots or a new GPU
+     * capability. Standalone compiler/shader defaults remain conservative. */
+    return DOE_COMPILER_CORE_BINDING_NUMBERS;
+}
+
 static doe_shader_status compile_target(doe_shader_target target, const char *source, size_t size,
     doe_shader **out, doe_shader_error *error)
 {
@@ -26,7 +33,7 @@ static doe_shader_status compile_target(doe_shader_target target, const char *so
      * reparsing, fallback compiler, or claimed support beyond the selected compiler pools. */
     static const char identity[] = "experimental-c-native-abi10-no-cache";
     doe_shader_options options = {
-        .target=target,
+        .target=target,.semantic_flags=native_shader_semantic_flags(),
         .allocator = {NULL, shader_allocate, shader_deallocate},
         .capacities = {
             .typed = {.source_bytes=65536, .tokens=8192, .statements=2048, .expressions=8192,

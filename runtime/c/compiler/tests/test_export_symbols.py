@@ -19,7 +19,7 @@ class ExportSymbols(unittest.TestCase):
         output = subprocess.check_output(['python3', str(ROOT/'tools/export_symbols.py'),
                                           str(ROOT/'src/exports.map')], text=True)
         self.assertEqual(output.splitlines(), ['_'+name for name in names])
-        self.assertEqual(len(names), 15)
+        self.assertEqual(len(names), 19)
         self.assertEqual(len(names), len(set(names)))
 
     def test_reject_unrecognized_or_expanded_map(self):

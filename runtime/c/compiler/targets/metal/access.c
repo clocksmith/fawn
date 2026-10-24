@@ -50,14 +50,24 @@ static void bounds(MetalEmitter *e, const IrInstruction *ir, const MetalPath *pa
         metal_text(e, ")) < ");
         if (input->kind == TYPE_RUNTIME_ARRAY) {
             const ResourceRecord *r = resource_root(e, ir);
-            uint32_t slot;
-            if (r == NULL || r->tail_stride == 0u || !doe_metal_binding_slot(r->group, r->binding, &slot)) {
+            if (r == NULL || r->tail_stride == 0u) {
                 metal_error(e, "Metal runtime array has no valid sized resource root");
                 return;
             }
-            metal_format(e, "(ulong(ctx.sizes[%u]) >= %" PRIu64 "ul ? "
-                "(ulong(ctx.sizes[%u]) - %" PRIu64 "ul) / %" PRIu64 "ul : 0ul)",
-                slot, r->tail_offset, slot, r->tail_offset, r->tail_stride);
+            if (e->metadata != NULL) {
+                const uint32_t resource = ir->operands.access.root;
+                metal_format(e, "(ulong(ctx.r%u_bytes) >= %" PRIu64 "ul ? "
+                    "(ulong(ctx.r%u_bytes) - %" PRIu64 "ul) / %" PRIu64 "ul : 0ul)",
+                    resource, r->tail_offset, resource, r->tail_offset, r->tail_stride);
+            } else {
+                uint32_t slot;
+                if (!doe_metal_binding_slot(r->group, r->binding, &slot)) {
+                    metal_error(e, "Metal runtime array has no valid sized resource root"); return;
+                }
+                metal_format(e, "(ulong(ctx.sizes[%u]) >= %" PRIu64 "ul ? "
+                    "(ulong(ctx.sizes[%u]) - %" PRIu64 "ul) / %" PRIu64 "ul : 0ul)",
+                    slot, r->tail_offset, slot, r->tail_offset, r->tail_stride);
+            }
         } else metal_format(e, "%uul", input->count);
         metal_text(e, ")");
     }
@@ -177,12 +187,20 @@ void metal_access(MetalEmitter *e, const IrInstruction *ir) {
 
 void metal_array_length(MetalEmitter *e, const IrInstruction *ir) {
     const ResourceRecord *r = target_runtime_array(e->module, ir->operands.scalar.binding);
-    uint32_t slot;
-    if (r == NULL || ir->type != IR_U32 || !metal_resource_slot(e, r, &slot)) {
+    if (r == NULL || ir->type != IR_U32) {
         metal_error(e, "Metal arrayLength requires a sized storage runtime array");
         return;
     }
-    metal_format(e, "uint(ulong(ctx.sizes[%u]) >= %" PRIu64 "ul ? "
-        "(ulong(ctx.sizes[%u]) - %" PRIu64 "ul) / %" PRIu64 "ul : 0ul)",
-        slot, r->tail_offset, slot, r->tail_offset, r->tail_stride);
+    if (e->metadata != NULL) {
+        const uint32_t resource = ir->operands.scalar.binding;
+        metal_format(e, "uint(ulong(ctx.r%u_bytes) >= %" PRIu64 "ul ? "
+            "(ulong(ctx.r%u_bytes) - %" PRIu64 "ul) / %" PRIu64 "ul : 0ul)",
+            resource, r->tail_offset, resource, r->tail_offset, r->tail_stride);
+    } else {
+        uint32_t slot;
+        if (!metal_resource_slot(e, r, &slot)) return;
+        metal_format(e, "uint(ulong(ctx.sizes[%u]) >= %" PRIu64 "ul ? "
+            "(ulong(ctx.sizes[%u]) - %" PRIu64 "ul) / %" PRIu64 "ul : 0ul)",
+            slot, r->tail_offset, slot, r->tail_offset, r->tail_stride);
+    }
 }

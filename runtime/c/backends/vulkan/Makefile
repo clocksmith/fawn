@@ -1,7 +1,8 @@
 CC ?= cc
 CXX ?= c++
 AR ?= ar
-OUT ?= /tmp/doe-c-vulkan
+include $(dir $(lastword $(MAKEFILE_LIST)))../../build-root.mk
+OUT ?= $(DOE_C_TMP)/vulkan
 REPO ?= ../../../..
 CFLAGS ?= -O2 -g
 STRICT = -std=c11 -Wall -Wextra -Werror -Wpedantic

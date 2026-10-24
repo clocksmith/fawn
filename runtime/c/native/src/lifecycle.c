@@ -206,10 +206,12 @@ static native_device *create_device(native_adapter *adapter, const WGPUDeviceDes
 {
     uint32_t features = 0;
     if (!native_requested_features(&adapter->backend, descriptor, &features)) return NULL;
-    if (descriptor && (descriptor->nextInChain ||
-        descriptor->requiredLimits || descriptor->defaultQueue.nextInChain ||
+    if (descriptor && (descriptor->nextInChain || descriptor->defaultQueue.nextInChain ||
         descriptor->deviceLostCallbackInfo.nextInChain ||
         descriptor->uncapturedErrorCallbackInfo.nextInChain)) return NULL;
+    WGPULimits limits;
+    if (!native_resolve_limits(&adapter->backend.limits, descriptor ? descriptor->requiredLimits : NULL, &limits))
+        return NULL;
     native_device *device = calloc(1, sizeof(*device));
     if (!device) return NULL;
     pthread_mutexattr_t attributes;
@@ -244,6 +246,9 @@ static native_device *create_device(native_adapter *adapter, const WGPUDeviceDes
             goto failed_errors;
     }
     if (native_backend_device(&adapter->backend, &device->backend) != NATIVE_OK) goto failed_errors;
+    /* The device context reopens the adapter's own hardware, so its facts match
+     * the adapter's; every frontend check reads the resolved device limits. */
+    device->backend.limits = limits;
     device->features = features;
     if ((features & NATIVE_FEATURE(WGPUFeatureName_TimestampQuery)) && native_timestamp_initialize(device) != DOE_VK_OK) {
         native_backend_close(&device->backend);
@@ -260,7 +265,17 @@ static native_device *create_device(native_adapter *adapter, const WGPUDeviceDes
         .labels = device->labels,
         .max_texture_dimension_2d = device->backend.limits.maxTextureDimension2D,
         .max_color_attachments = device->backend.limits.maxColorAttachments,
-        .max_color_attachment_bytes_per_sample = device->backend.limits.maxColorAttachmentBytesPerSample
+        .max_color_attachment_bytes_per_sample = device->backend.limits.maxColorAttachmentBytesPerSample,
+        .slot_limits = {
+            .max_bind_groups = limits.maxBindGroups,
+            .max_dynamic_uniform_buffers = limits.maxDynamicUniformBuffersPerPipelineLayout,
+            .max_dynamic_storage_buffers = limits.maxDynamicStorageBuffersPerPipelineLayout,
+            .max_sampled_textures = limits.maxSampledTexturesPerShaderStage,
+            .max_samplers = limits.maxSamplersPerShaderStage,
+            .max_storage_buffers = limits.maxStorageBuffersPerShaderStage,
+            .max_storage_textures = limits.maxStorageTexturesPerShaderStage,
+            .max_uniform_buffers = limits.maxUniformBuffersPerShaderStage
+        }
     };
     if (descriptor) device->uncaptured = descriptor->uncapturedErrorCallbackInfo;
     result = doe_error_scope_set_handler(device->errors, uncaptured_error, device, NULL);

@@ -512,3 +512,20 @@ output directory argument to its binary emits SPIR-V/MSL/HLSL developer artifact
 wrong-offset SPIR-V control. `test-uniform-standard-host` consumes the emitted MSL
 with erased address spaces/attributes; it is not MSL SDK or GPU qualification.
 Independent semantic acceptance and physical qualification remain separate.
+
+## Core binding identifiers and Metal ABI12
+
+`DOE_COMPILER_CORE_BINDING_NUMBERS` is an explicit semantic flag for existing
+flags-bearing APIs and ABI12. It admits group0..3/binding0..999 as logical source
+identities. Without it the earlier binding0..31 admission remains unchanged.
+This is independent of resource counts, work budgets and physical argument slots;
+it is not a WGSL `requires` extension. No compiler pool or limit is enlarged.
+
+`doe_compiler_metal_requirements` and `doe_compiler_compile_metal` add ABI12 without
+changing ABI1–11 records or requirements. Metadata has exact per-entry binding
+spans, independent dense native namespaces, copied entry names and canonical
+runtime-tail size-table identity. ABI10 remains the explicit fixed-slot contract.
+`make test-metal-entry-text` covers measure/publish symmetry, source-default versus
+opt-in policy, namespace overflow, caller-byte preservation and FP/errno state.
+The emitted helper host control distinguishes conflicting entry mappings without
+claiming native Metal execution. See [the target contract](targets/metal/README.md).

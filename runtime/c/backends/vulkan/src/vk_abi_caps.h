@@ -213,6 +213,14 @@ struct VkPhysicalDeviceProperties2 {
 };
 
 /* Official core1.1 declaration; separately bound in ABI_PROVENANCE.json. */
+typedef struct VkPhysicalDeviceMaintenance3Properties {
+    VkStructureType sType;
+    void *pNext;
+    uint32_t maxPerSetDescriptors;
+    VkDeviceSize maxMemoryAllocationSize;
+} VkPhysicalDeviceMaintenance3Properties;
+
+/* Official core1.1 declaration; separately bound in ABI_PROVENANCE.json. */
 typedef struct VkPhysicalDeviceIDProperties {
     VkStructureType sType;
     void *pNext;

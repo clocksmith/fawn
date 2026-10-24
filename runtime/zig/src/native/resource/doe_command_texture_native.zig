@@ -7,6 +7,7 @@ const native_types = @import("../support/doe_native_object_types.zig");
 const native_helpers = @import("../support/doe_native_object_helpers.zig");
 const references = @import("../command/doe_command_references.zig");
 const resource_ops = @import("../../backend/dropin_resource_ops.zig");
+const texture_values = @import("../../contracts/model/model_texture_value_types.zig");
 const bridge = resource_ops.metal_bridge;
 
 const alloc = native_helpers.alloc;
@@ -106,6 +107,8 @@ pub export fn doeNativeCommandEncoderCopyTextureToTexture(
 // Mirrors writeBuffer: immediate memcpy, no command recording needed.
 // ============================================================
 
+/// Writes every aspect of the destination (`WGPUTextureAspect_All`); a
+/// single-aspect write goes through wgpuQueueWriteTexture.
 pub export fn doeNativeQueueWriteTexture(
     queue_raw: ?*anyopaque,
     texture_raw: ?*anyopaque,
@@ -122,6 +125,28 @@ pub export fn doeNativeQueueWriteTexture(
     height: u32,
     depth_or_layers: u32,
 ) callconv(.c) void {
+    queueWriteTexture(queue_raw, texture_raw, data_ptr, data_len, bytes_per_row, rows_per_image, dst_x, dst_y, dst_z, dst_mip, dst_slice, width, height, depth_or_layers, texture_values.WGPUTextureAspect_All);
+}
+
+/// `dst_slice` is an extra array-layer base added to `dst_z` on Vulkan; both
+/// public entries pass 0 and carry the layer in `dst_z`.
+pub fn queueWriteTexture(
+    queue_raw: ?*anyopaque,
+    texture_raw: ?*anyopaque,
+    data_ptr: [*]const u8,
+    data_len: usize,
+    bytes_per_row: u32,
+    rows_per_image: u32,
+    dst_x: u32,
+    dst_y: u32,
+    dst_z: u32,
+    dst_mip: u32,
+    dst_slice: u32,
+    width: u32,
+    height: u32,
+    depth_or_layers: u32,
+    aspect: u32,
+) void {
     const q = cast(DoeQueue, queue_raw);
     const tex = cast(DoeTexture, texture_raw) orelse return;
     if (tex.isUnavailable()) {
@@ -134,7 +159,11 @@ pub export fn doeNativeQueueWriteTexture(
         .bytes_per_row = bytes_per_row,
         .rows_per_image = rows_per_image,
         .dst_mip = dst_mip,
+        .origin = .{ dst_x, dst_y, dst_z +| dst_slice },
+        .width = width,
         .height = height,
+        .depth_or_layers = depth_or_layers,
+        .aspect = aspect,
     })) {
         return;
     }

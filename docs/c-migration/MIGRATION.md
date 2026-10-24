@@ -175,6 +175,19 @@ sampling, partial sample masks and presentation remain separate missing paths;
 this slice is not full Metal qualification. Backend-specific format queries and
 fragment-write admission must inspect only the selected payload arm.
 
+The additive [Metal ABI12](../../runtime/c/compiler/include/doe_compiler_metal.h)
+replaces sparse-number slot arithmetic for new consumers with compiler-owned,
+per-entry dense buffer/texture/sampler records. Shared helper bounds retain logical
+resource identity through entry-local byte-length facts. Legacy ABIs retain their
+layouts and mapping policy. One shader semantic policy carries explicit core
+binding-number admission through every target and participates in artifact identity;
+numeric labels do not raise resource or traversal budgets. Native compute/render
+use one typed map and snapshot owner; `mixed-resources` checks the public sparse
+four-group path and lifetime on its selected backend. The
+[frozen mixed-resource receipt](../../runtime/c/native/DEVELOPER_RECEIPT_METAL_MIXED_COMPUTE.json)
+binds actual Apple compute, the offscreen regression, and Node's unchanged first
+kernel to the same C library; SDK compilation has separate scope.
+
 The standalone compiler offers explicit standard uniform layout support while
 retaining conservative defaults. Natural layout and one physical uniform-load
 owner cover compact buffers without requiring a Vulkan optional layout feature;

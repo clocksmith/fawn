@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2026 Doe contributors
 CC = gcc
-OUT ?= /tmp/doe-metal-target
+include $(dir $(lastword $(MAKEFILE_LIST)))../../../build-root.mk
+OUT ?= $(DOE_C_TMP)/metal-target
 CFLAGS = -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror
 include sources.mk
 SOURCES = $(METAL_SOURCE_NAMES)
@@ -14,7 +15,7 @@ $(OUT)/test_metal: $(SOURCES) metal.h private.h ../ir_view.h ../closure.h ../scr
 $(OUT)/test_images: $(SOURCES) metal.h private.h ../ir_view.h ../closure.h ../scratch.h ../stage_view.h ../tests/array_length_source.h ../tests/closure_source.h tests/fixture.h tests/test_images.c $(CORE) $(wildcard ../../src/*.h)
 	mkdir -p $(OUT)
 	$(CC) $(CFLAGS) $(SOURCES) $(CORE) tests/test_images.c -lm -o $@
-check: all style $(OUT)/test_ir_view $(OUT)/test_closure $(OUT)/test_graphics $(OUT)/test_matrices
+check: binding-work-control all style $(OUT)/test_ir_view $(OUT)/test_closure $(OUT)/test_graphics $(OUT)/test_matrices
 	$(OUT)/test_metal
 	$(OUT)/test_images
 	$(OUT)/test_ir_view
@@ -82,3 +83,10 @@ component-math-control: $(OUT)/test_component_math
 	$(OUT)/test_component_math $(OUT)/component_math.metal
 	$(CXX) -std=c++17 -O2 -fno-fast-math -ffp-contract=off -fsanitize=undefined -Wno-attributes -Itests/host -I$(OUT) tests/host/check_component_math.cpp -o $(OUT)/check_component_math
 	$(OUT)/check_component_math
+
+$(OUT)/test_binding_work: $(SOURCES) metal.h private.h tests/test_binding_work.c $(CORE) $(wildcard ../../src/*.h)
+	mkdir -p $(OUT)
+	$(CC) $(CFLAGS) $(SOURCES) $(CORE) tests/test_binding_work.c -lm -o $@
+.PHONY: binding-work-control
+binding-work-control: $(OUT)/test_binding_work
+	$(OUT)/test_binding_work

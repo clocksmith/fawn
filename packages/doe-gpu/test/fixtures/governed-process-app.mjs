@@ -1,9 +1,13 @@
 import { __doeProofProviderIdentity, create } from 'webgpu';
 import { spawn } from 'node:child_process';
+import { connect } from 'node:net';
 import { readFileSync, writeFileSync } from 'node:fs';
 
 const mode = process.env.DOE_TEST_PROCESS_MODE ?? 'pass';
 if (mode === 'hang') {
+  // Tests that abort a running app wait for this connection instead of a delay;
+  // the sealed read-only filesystem rules out a marker file.
+  if (process.env.DOE_TEST_READY_PORT) connect(Number(process.env.DOE_TEST_READY_PORT), '127.0.0.1');
   setInterval(() => {}, 1_000);
 } else if (mode === 'spawn-child' || mode === 'spawn-child-loud') {
   const child = spawn(process.execPath, [

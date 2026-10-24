@@ -37,3 +37,12 @@ color attributes, and builtins are separately typed arguments. Preserve resource
 closure/size tables and call effects. Invariant needs a real compiler policy, not
 an ignored attribute. Test new mappings with the emitted-operation control while
 keeping Apple SDK acceptance explicitly unrun.
+
+ABI12 argument allocation belongs to one entry-specific typed plan. Preserve
+ABI10's explicit legacy mapping and workspace shape. Never derive dense slots
+from source group/binding numbers or reallocate them in metadata adapters. Every
+row belongs to an exact entry span; namespaces are independent, and runtime-tail
+size_index equals its physical buffer slot. Shared helper code uses logical
+ctx.rN_bytes facts set by each entry wrapper, never a global slot assumption.
+Charge all new plan/selection work to existing budgets; no repeated uncharged
+closure scans or additional allocator/work pool is permitted.

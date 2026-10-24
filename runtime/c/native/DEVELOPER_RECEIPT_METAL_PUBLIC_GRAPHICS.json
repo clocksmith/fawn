@@ -60,5 +60,53 @@
     "No surface/presentation, indirect/indexed Metal guards, depth/stencil transfer, partial sample masks or production cutover claim",
     "Five-second whole child deadline, no forced GPU cancellation or completion inference",
     "Source manifest binds first physical bytes; later source must be checked separately"
-  ]
+  ],
+  "merged_limits_followup": {
+    "kind": "developer correctness after merge, distinct source vintage",
+    "source_head": "ae5c9edcd763d4327a2f066f20bb66209a56b995",
+    "merge_head": "11700ef3bb7454c2765b3ad56fde79fa67384f68",
+    "source_manifest": {
+      "path": "runtime/c/native/METAL_PUBLIC_GRAPHICS_MERGED_SOURCE_INPUTS.json",
+      "sha256": "e4f2305bb2df7dd9ec53ec2d822d83056cbf75ef6f635fc34564aae7db2f1b3d"
+    },
+    "artifact": {
+      "path": "/tmp/doe-c-metal-merged-final-20261023/libwebgpu_doe_c.dylib",
+      "sha256": "fa485cbdc3ddfa4b36a6903b9a9c1ab45651d521b8f600a3634781985ab5d091"
+    },
+    "compiler_artifact": {
+      "path": "/tmp/doe-c-metal-merged-final-20261023/libdoe_compiler.dylib",
+      "sha256": "23b2a7c5c8d5cbf27d9498bd2f943a8f6c73183c1ccb40b227e4486ccdead6d9"
+    },
+    "binary": {
+      "path": "/tmp/doe-c-metal-merged-final-20261023/offscreen-triangle",
+      "sha256": "2c732cc559af33ca935f41d4a22edec5ff3c93e1688fe6f40c756ceee3fb8490"
+    },
+    "guardian_child_script": {
+      "path": "/tmp/doe-c-metal-merged-smoke.py",
+      "sha256": "0edc45bfe4e8c6adfb701d65c07f0a748da26e56bce018977163068fd478f582"
+    },
+    "actual_run": {
+      "elapsed_seconds": 0.19853725004941225,
+      "exit_code": 0,
+      "whole_child_timeout_seconds": 5,
+      "outer_guardian_seconds": 20,
+      "binary_sha256": "2c732cc559af33ca935f41d4a22edec5ff3c93e1688fe6f40c756ceee3fb8490",
+      "library_sha256": "fa485cbdc3ddfa4b36a6903b9a9c1ab45651d521b8f600a3634781985ab5d091",
+      "compiler_sha256": "23b2a7c5c8d5cbf27d9498bd2f943a8f6c73183c1ccb40b227e4486ccdead6d9",
+      "source_manifest_sha256": "e4f2305bb2df7dd9ec53ec2d822d83056cbf75ef6f635fc34564aae7db2f1b3d",
+      "output": "Selected adapter backend Metal, type 4: Apple M3\nPASS public WGSL triangle, early release, discard initialization and packed uploads (native Metal device: Apple M3; subtype unclassified; developer run, not qualification)\n",
+      "source_drift_after_run": []
+    },
+    "terminal": {
+      "path": "runtime/c/native/METAL_PUBLIC_GRAPHICS_MERGED_TERMINAL.txt",
+      "sha256": "119c8eddab5c9cee57fb230d58aef4117baf8e1cd531c57b53ff7fa573d53c20"
+    },
+    "cause": "Incoming device-resolved limits, graphics interface/point-list admission and canonical resource capacities; root Metal limit envelope correction",
+    "scope": "Same no-binding WGSL vertex_index offscreen triangle, early release, discard-zero readback and packed upload exact bytes. Native Metal Apple M3 subtype unclassified; not qualification.",
+    "limits": [
+      "No native sampling or sparse binding-number support qualification",
+      "No new presentation, indirect/indexed, shader coverage, performance or default-switch claim",
+      "Host GNU-wrapper requiredLimits controls and Linux composition are separate root checks"
+    ]
+  }
 }

@@ -557,7 +557,11 @@ bool sema_resolve_declarations(Source *s, LocalScope *scope) {
     for (uint32_t i = 0u;i<c->resource_count;++i) {
         ResourceRecord *r = &c->resources[i];
         if ((r->group_expression != NO_ID && !integer_attribute(s, r->group_expression, scope, false, &r->group)) || (r->binding_expression != NO_ID && !integer_attribute(s, r->binding_expression, scope, false, &r->binding)) || !sema_type_reference(s, r->annotation, scope, &r->type) || !type_resource_layout(s, r)) return false;
-        if (r->group>3u || r->binding>31u) return source_error(s, DOE_COMPILER_UNSUPPORTED, r->source_offset, "storage requires group 0..3 and binding 0..31");
+        const uint32_t maximum_binding = (c->module_flags & MODULE_CORE_BINDINGS) != 0u ? 999u : 31u;
+        if (r->group > 3u || r->binding > maximum_binding)
+            return source_error(s, DOE_COMPILER_UNSUPPORTED, r->source_offset,
+                maximum_binding == 31u ? "storage requires group 0..3 and binding 0..31" :
+                "resource requires group 0..3 and binding 0..999");
     }
     for (uint32_t i=0u;i<c->workgroup_count;++i) {
         WorkgroupRoot *root=&c->workgroups[i];

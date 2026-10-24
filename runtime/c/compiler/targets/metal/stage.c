@@ -27,6 +27,7 @@ bool metal_function_used(MetalEmitter *e, uint32_t wanted) {
     return target_function_used(&e->closure, wanted);
 }
 bool metal_selected_resource(MetalEmitter *e, uint32_t resource) {
+    if (e->metadata != NULL) return metal_dense_selected_resource(e, resource);
     for (uint32_t i = 0u; i < e->module->entry_count; ++i) {
         if ((e->selected_entry == NO_ID || e->selected_entry == i) &&
             metal_entry_resource(e->module, &e->module->entries[i], resource)) return true;
@@ -43,8 +44,12 @@ bool metal_selected_workgroup(MetalEmitter *e, uint32_t workgroup) {
 static void context_type(MetalEmitter *e) {
     metal_text(e, "struct DoeContext {\n");
     for (uint32_t i = 0u; i < e->module->resource_count; ++i) {
-        if (metal_selected_resource(e, i) && !type_handle(e->module, e->module->resources[i].type))
+        const bool selected = metal_selected_resource(e, i);
+        if (selected && !type_handle(e->module, e->module->resources[i].type))
             metal_format(e, "    %s uchar* r%u;\n", metal_buffer_qualifier(&e->module->resources[i]), i);
+        if (e->metadata != NULL && selected &&
+            (e->module->resources[i].flags & DOE_COMPILER_RESOURCE_RUNTIME_TAIL) != 0u)
+            metal_format(e, "    uint r%u_bytes;\n", i);
     }
     for (uint32_t i = 0u; i < e->module->workgroup_count; ++i) {
         if (!metal_selected_workgroup(e, i)) continue;
@@ -167,6 +172,7 @@ static bool entry_admit(MetalEmitter *e, const EntryRecord *entry) {
             return false;
         }
     }
+    if (e->metadata != NULL) return true; /* Typed dense plan already validated every row. */
     for (uint32_t i = 0u; i < c->resource_count; ++i) {
         if (!metal_entry_resource(c, entry, i)) continue;
         const ResourceRecord *r = &c->resources[i];
@@ -204,6 +210,12 @@ void metal_resource_context(MetalEmitter *e, const EntryRecord *entry) {
         if (metal_entry_resource(c, entry, i) && !type_handle(c, c->resources[i].type)) {
             metal_indent(e);
             metal_format(e, "ctx.r%u = r%u;\n", i, i);
+            if (e->metadata != NULL && (c->resources[i].flags & DOE_COMPILER_RESOURCE_RUNTIME_TAIL) != 0u) {
+                const DoeCompilerMetalBindingV12 *binding = metal_dense_binding(e, e->current_entry, i);
+                if (binding == NULL) return;
+                metal_indent(e);
+                metal_format(e, "ctx.r%u_bytes = sizes[%u];\n", i, binding->size_index);
+            }
         }
     }
     if (metal_entry_sizes(c, entry)) metal_line(e, "ctx.sizes = sizes;");
@@ -213,6 +225,7 @@ static void entry_wrapper(MetalEmitter *e, uint32_t index) {
         "threadgroup_position_in_grid", "threadgroups_per_grid", "thread_index_in_threadgroup"};
     const CompilerWorkspace *c = e->module;
     const EntryRecord *entry = &c->entries[index];
+    e->current_entry = index;
     if (!entry_admit(e, entry)) return;
     if ((c->functions[entry->function].flags & (FUNCTION_VERTEX | FUNCTION_FRAGMENT)) != 0u) {
         metal_graphics_wrapper(e, index);

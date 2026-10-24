@@ -65,3 +65,18 @@ bool compiler_text_metal(Source *source, uint32_t selected, DoeTargetScratch scr
         if (bindings[i].table != 0u) bindings[result->bindings++] = bindings[i];
     return true;
 }
+
+bool compiler_text_metal_entry(Source *source, uint32_t selected, DoeTargetScratch scratch,
+    DoeCompilerMetalBindingV12 *bindings, DoeCompilerMetalEntryV12 *entries, TextTargetResult *result) {
+    const CompilerWorkspace *c = source->compiler;
+    *result = (TextTargetResult){0};
+    if (c->entry_count == 0u) return true;
+    DoeMetalMetadata metadata = {.bindings=bindings,.binding_capacity=c->limits.entry_references,
+        .entries=entries,.entry_capacity=c->limits.entries};
+    MetalEmitter planner = {.source=source,.module=c,.selected_entry=selected};
+    if (!metal_dense_plan(&planner, &metadata)) return false;
+    DoeMetalResult measured;
+    if (doe_metal_emit_dense(source, c, selected, scratch, &metadata, NULL, 0u, &measured) != DOE_COMPILER_OK) return false;
+    *result = (TextTargetResult){measured.required_bytes,metadata.binding_count,metadata.entry_count};
+    return true;
+}

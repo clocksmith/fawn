@@ -60,11 +60,11 @@ Semantic/reference owners read during implementation:
   compiler path supply shader source/entry data to Metal consumers.
 - `runtime/zig/src/native/queue/doe_queue_submit_metal.zig` and
   `runtime/zig/src/native/compute/doe_compute_fast.zig` populate byte lengths in
-  slot 30. Buffer slots remain group * 16 + binding, with binding <16 and
+  slot 30. The legacy ABI10/private emitter maps group * 16 + binding, with binding <16 and
   slots 0..29; slot 30 remains reserved for byte sizes.
 
 The actual runtime must bind slot 30 whenever `needs_sizes_buffer` is true.
-Texture and sampler arguments use their separate native argument tables, with
+Legacy ABI10 texture and sampler arguments use their separate native argument tables, with
 slots also group * 16 + binding and binding <16. This target conservatively admits
 texture slots 0..30 and sampler slots 0..15. Texture slot 30 does not collide with
 buffer slot 30. It rejects out-of-range slots rather than silently compacting or
@@ -106,7 +106,7 @@ From this directory:
 `make library` creates a reusable private target archive; its shared compiler
 helper dependencies remain owned by the existing C core.
 
-All build/generated outputs go to `/tmp/doe-metal-target` by default; override
+All build/generated outputs go to `$(DOE_C_TMP)/metal-target` (per-checkout root, [build-root.mk](../../../build-root.mk)) by default; override
 OUT when needed. The first target links ordinary GCC C against the same shared
 parser/sema and checks real residual-style sources, explicit layout, vectors/math,
 workgroups, multiple entries, output sizing, deterministic publication, and
@@ -179,3 +179,31 @@ poisoned default matrices, short buffers and padding sentinels. This is not an M
 parser, SDK validation, GPU simulator, floating-point accuracy proof or physical
 qualification. Source-level workgroup/fragment mapping and failure-atomic atomic-
 operation rejection have separate focused controls.
+
+## ABI12 entry-specific arguments
+
+The additive `doe_compiler_metal.h` API allocates arguments densely per emitted
+entry and independently per buffer, texture and sampler namespace. Source group
+and binding numbers remain logical identities; they never become native slot
+arithmetic. Buffer resources occupy slots0..29, textures0..30 and samplers0..15.
+`DOE_COMPILER_METAL_SIZES_SLOT` is the canonical reserved size-table slot.
+
+Each `DoeCompilerMetalEntryV12` owns an exact span of
+`DoeCompilerMetalBindingV12` rows. A shared source resource may occupy different
+slots in different entries. Runtime-tail `size_index` equals its actual buffer
+slot; fixed resources use NONE. `sizes_bytes` covers exactly the highest used tail
+slot. The entry wrapper snapshots each logical resource's byte count into
+`ctx.rN_bytes`, which shared helper bounds and `arrayLength` consume. No global
+slot capture, private GPU remapping array, or native group/binding inference exists.
+
+One charged plan over canonical typed entry references feeds metadata and emitted
+attributes. Rows use the existing entry-reference capacity; source closure,
+traversal, text and namespace budgets remain bounded. Dense selection queries the
+prepared rows under the existing traversal budget. ABI10 fixed mapping, records,
+workspace requirements and accepted behavior remain explicit and unchanged.
+
+`test-metal-entry-text`, `test-metal-entry-host` and private
+`binding-work-control` cover sparse mixed arguments, conflicting shared closures,
+namespace boundaries, exact size identity, publication/FP failure and bounded
+lookup exhaustion. Host controls erase native attributes/address spaces and do
+not qualify MSL SDK, physical devices or numerical behavior.

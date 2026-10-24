@@ -1055,6 +1055,10 @@
         {
           "path": "src/native/queue/doe_submission_validation.zig",
           "kind": "inline"
+        },
+        {
+          "path": "src/native/compute/doe_compute_program_native.zig",
+          "kind": "inline"
         }
       ],
       "includes": [

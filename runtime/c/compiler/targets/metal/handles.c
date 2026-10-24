@@ -91,41 +91,25 @@ void metal_handle(MetalEmitter *e, const IrInstruction *ir) {
     }
 }
 bool metal_resource_slot(MetalEmitter *e, const ResourceRecord *r, uint32_t *slot) {
-    uint32_t limit;
-    switch (r->kind) {
-        case DOE_COMPILER_STORAGE_BUFFER: case DOE_COMPILER_UNIFORM_BUFFER:
-            if (type_handle(e->module, r->type)) {
-                metal_error(e, "Metal buffer resource cannot have an image handle type");
-                return false;
-            }
-            if (doe_metal_binding_slot(r->group, r->binding, slot)) return true;
-            metal_error(e, "Metal buffer binding exceeds slots 0 through 29 (slot 30 is sizes)");
-            return false;
-        case DOE_COMPILER_SAMPLED_TEXTURE: case DOE_COMPILER_STORAGE_TEXTURE:
-            limit = DOE_METAL_TEXTURE_SLOTS;
-            break;
-        case DOE_COMPILER_SAMPLER:
-            limit = DOE_METAL_SAMPLER_SLOTS;
-            break;
-        default:
-            metal_error(e, "Metal resource kind has no implemented lowering");
-            return false;
+    if (e->metadata != NULL) {
+        const uint32_t resource = (uint32_t)(r - e->module->resources);
+        const DoeCompilerMetalBindingV12 *binding = metal_dense_binding(e, e->current_entry, resource);
+        if (binding == NULL) return false;
+        *slot = binding->slot;
+        return true;
     }
-    if (r->type < 7u || r->type - 7u >= e->module->type_count || !type_handle(e->module, r->type)) {
-        metal_error(e, "Metal image resource has no handle type");
+    uint32_t table;
+    if (!metal_resource_table(e, r, &table)) return false;
+    if (table == DOE_COMPILER_TEXT_TABLE_BUFFER) {
+        if (doe_metal_binding_slot(r->group, r->binding, slot)) return true;
+        metal_error(e, "Metal buffer binding exceeds slots 0 through 29 (slot 30 is sizes)");
         return false;
     }
-    const TypeRecord *t = &e->module->types[r->type - 7u];
-    const uint32_t kind = t->kind == TYPE_SAMPLER ? DOE_COMPILER_SAMPLER :
-        t->state.image.format == 0u ? DOE_COMPILER_SAMPLED_TEXTURE : DOE_COMPILER_STORAGE_TEXTURE;
-    if (r->kind != kind) {
-        metal_error(e, "Metal image resource kind differs from its handle type");
-        return false;
-    }
+    const uint32_t limit = table == DOE_COMPILER_TEXT_TABLE_SAMPLER ? DOE_METAL_SAMPLER_SLOTS : DOE_METAL_TEXTURE_SLOTS;
     if (r->binding >= DOE_METAL_BINDINGS_PER_GROUP ||
         r->group > (limit - 1u) / DOE_METAL_BINDINGS_PER_GROUP ||
         r->group * DOE_METAL_BINDINGS_PER_GROUP + r->binding >= limit) {
-        metal_error(e, r->kind == DOE_COMPILER_SAMPLER ?
+        metal_error(e, table == DOE_COMPILER_TEXT_TABLE_SAMPLER ?
             "Metal sampler binding exceeds slots 0 through 15" : "Metal texture binding exceeds slots 0 through 30");
         return false;
     }
@@ -139,7 +123,7 @@ const char *metal_buffer_qualifier(const ResourceRecord *r) {
 void metal_resource_parameter(MetalEmitter *e, uint32_t index, bool attribute) {
     const ResourceRecord *r = &e->module->resources[index];
     uint32_t slot;
-    if (!metal_resource_slot(e, r, &slot)) return;
+    if (attribute && !metal_resource_slot(e, r, &slot)) return;
     const char *table;
     if (r->kind == DOE_COMPILER_UNIFORM_BUFFER || r->kind == DOE_COMPILER_STORAGE_BUFFER) {
         metal_format(e, "%s uchar*", metal_buffer_qualifier(r));

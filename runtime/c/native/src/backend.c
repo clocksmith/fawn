@@ -3,38 +3,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-static void metal_limits(const doe_mtl_caps *caps, WGPULimits *out)
-{
-    /* Frontend admission envelope, not queried hardware guarantees. Real per-
-     * pipeline maxTotalThreadsPerThreadgroup remains checked by the backend.
-     * 256-byte offsets are an explicit conservative subset across Metal families. */
-    uint64_t binding_size = caps->max_buffer_length < UINT32_MAX ? caps->max_buffer_length : UINT32_MAX;
-    uint32_t dimensions[3];
-    for (size_t i = 0; i < 3; ++i)
-        dimensions[i] = caps->max_threads_per_dimension[i] < 256 ?
-            (uint32_t)caps->max_threads_per_dimension[i] : 256;
-    *out = (WGPULimits){.maxBufferSize=caps->max_buffer_length,
-        .maxBindGroups=4,.maxBindingsPerBindGroup=128,
-        .maxDynamicUniformBuffersPerPipelineLayout=30,.maxDynamicStorageBuffersPerPipelineLayout=30,
-        .maxUniformBuffersPerShaderStage=30,.maxStorageBuffersPerShaderStage=30,
-        .maxSampledTexturesPerShaderStage=16,.maxSamplersPerShaderStage=16,
-        .maxStorageTexturesPerShaderStage=8,
-        .maxTextureDimension1D=caps->max_texture_1d,.maxTextureDimension2D=caps->max_texture_2d,
-        .maxTextureDimension3D=caps->max_texture_3d,.maxTextureArrayLayers=caps->max_texture_layers,
-        /* Conservative frontend graphics envelope; native creation still owns
-         * real format/sample/pipeline support. These are not queried maxima. */
-        .maxVertexBuffers=8,.maxVertexAttributes=16,.maxVertexBufferArrayStride=2048,
-        .maxInterStageShaderVariables=15,.maxColorAttachments=8,.maxColorAttachmentBytesPerSample=32,
-        .maxUniformBufferBindingSize=binding_size < 65536 ? binding_size : 65536,
-        .maxStorageBufferBindingSize=binding_size,
-        .minUniformBufferOffsetAlignment=256,.minStorageBufferOffsetAlignment=256,
-        .maxComputeWorkgroupStorageSize=caps->max_threadgroup_memory_length > UINT32_MAX ?
-            UINT32_MAX : (uint32_t)caps->max_threadgroup_memory_length,
-        .maxComputeInvocationsPerWorkgroup=256,.maxComputeWorkgroupSizeX=dimensions[0],
-        .maxComputeWorkgroupSizeY=dimensions[1],.maxComputeWorkgroupSizeZ=dimensions[2],
-        .maxComputeWorkgroupsPerDimension=65535};
-}
-
 native_result native_backend_open(WGPUBackendType kind, bool fallback, uint32_t surface_platforms,
     native_backend *out)
 {
@@ -54,6 +22,12 @@ native_result native_backend_open(WGPUBackendType kind, bool fallback, uint32_t 
                 &result.value.vulkan.caps));
         if (status == NATIVE_OK && fallback && !result.value.vulkan.caps.software_adapter)
             status = NATIVE_UNAVAILABLE;
+        /* WebGPU core admits writable storage buffers and textures in fragment
+         * shaders under the per-stage limits, and no limit can report their
+         * absence: a device without fragmentStoresAndAtomics is refused, not
+         * advertised with a hidden gap. */
+        if (status == NATIVE_OK && !result.value.vulkan.caps.fragment_stores_and_atomics)
+            status = NATIVE_UNAVAILABLE;
         if (status == NATIVE_OK && native_vulkan_limits(&result.value.vulkan.caps,
                 &result.limits) != WGPUStatus_Success) status = NATIVE_FAILURE;
     } else if (kind == WGPUBackendType_Metal) {
@@ -62,7 +36,8 @@ native_result native_backend_open(WGPUBackendType kind, bool fallback, uint32_t 
         status = native_from_metal(doe_mtl_context_create(&result.value.metal.context, NULL));
         if (status == NATIVE_OK)
             status = native_from_metal(doe_mtl_context_caps(result.value.metal.context, &result.value.metal.caps));
-        if (status == NATIVE_OK) metal_limits(&result.value.metal.caps, &result.limits);
+        if (status == NATIVE_OK && native_metal_limits(&result.value.metal.caps,
+                &result.limits) != WGPUStatus_Success) status = NATIVE_FAILURE;
     } else return NATIVE_UNSUPPORTED;
     if (status != NATIVE_OK) { native_backend_close(&result); return status; }
     *out = result;
@@ -98,7 +73,8 @@ native_result native_backend_device(const native_backend *adapter, native_backen
                 doe_mtl_context_device(adapter->value.metal.context)) status = NATIVE_UNAVAILABLE;
         if (status == NATIVE_OK)
             status = native_from_metal(doe_mtl_context_caps(result.value.metal.context, &result.value.metal.caps));
-        if (status == NATIVE_OK) metal_limits(&result.value.metal.caps, &result.limits);
+        if (status == NATIVE_OK && native_metal_limits(&result.value.metal.caps,
+                &result.limits) != WGPUStatus_Success) status = NATIVE_FAILURE;
     } else return NATIVE_UNSUPPORTED;
     if (status != NATIVE_OK) { native_backend_close(&result); return status; }
     *out = result;

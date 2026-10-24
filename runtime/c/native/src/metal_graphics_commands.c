@@ -5,9 +5,7 @@
 
 typedef struct draw_storage {
     doe_mtl_render_draw draw;
-    doe_mtl_buffer_binding buffers[2][DOE_MTL_BUFFER_SLOTS];
-    doe_mtl_texture_binding textures[2][DOE_MTL_TEXTURE_SLOTS];
-    doe_mtl_sampler_binding samplers[2][DOE_MTL_SAMPLER_SLOTS];
+    native_metal_snapshot stages[2];
 } draw_storage;
 
 static native_failure prepare_draw(doe_mtl_commands *commands, const doe_resource_render_packet *packet, draw_storage *storage)
@@ -17,7 +15,7 @@ static native_failure prepare_draw(doe_mtl_commands *commands, const doe_resourc
     native_pipeline *pipeline = doe_resource_render_pipeline_native(packet->pipeline);
     if (!pipeline || !pipeline->metal_graphics) return native_failure_status(NATIVE_INVALID_ARGUMENT);
     const native_metal_graphics *graphics = pipeline->metal_graphics;
-    doe_resource_binding resolved[DOE_RESOURCE_MAX_GROUPS * DOE_RESOURCE_MAX_BINDINGS];
+    doe_resource_binding resolved[NATIVE_MAX_PIPELINE_BINDINGS];
     if (native_resolve_resources(pipeline, doe_resource_render_pipeline_get_layout(packet->pipeline),
         packet->groups, &packet->offsets, resolved) != DOE_RESOURCE_OK)
         return native_failure_status(NATIVE_INVALID_ARGUMENT);
@@ -35,47 +33,19 @@ static native_failure prepare_draw(doe_mtl_commands *commands, const doe_resourc
         return native_failure_status(NATIVE_INVALID_ARGUMENT);
     memcpy(draw->blend_constant, blend.float32, sizeof(draw->blend_constant));
     for (size_t stage = 0; stage < 2; ++stage) {
-        doe_mtl_render_bindings *bindings = stage ? &draw->fragment : &draw->vertex;
-        bindings->buffers = storage->buffers[stage];
-        bindings->textures = storage->textures[stage];
-        bindings->samplers = storage->samplers[stage];
-        for (size_t i = 0; i < pipeline->binding_count; ++i) {
-            uint32_t table = graphics->tables[stage][i], slot = graphics->slots[stage][i];
-            if (!table) continue;
-            if (table == DOE_COMPILER_TEXT_TABLE_BUFFER) {
-                if (bindings->buffer_count == DOE_MTL_BUFFER_SLOTS || resolved[i].kind != DOE_BIND_BUFFER)
-                    return native_failure_status(NATIVE_UNSUPPORTED);
-                native_buffer *buffer = doe_resource_buffer_native(resolved[i].resource.buffer.buffer);
-                storage->buffers[stage][bindings->buffer_count++] = (doe_mtl_buffer_binding){slot,
-                    buffer->handle.metal, resolved[i].resource.buffer.offset, resolved[i].resource.buffer.size};
-            } else if (table == DOE_COMPILER_TEXT_TABLE_TEXTURE) {
-                if (bindings->texture_count == DOE_MTL_TEXTURE_SLOTS ||
-                    (resolved[i].kind != DOE_BIND_TEXTURE && resolved[i].kind != DOE_BIND_STORAGE_TEXTURE))
-                    return native_failure_status(NATIVE_UNSUPPORTED);
-                native_view *view = doe_resource_view_native(resolved[i].resource.view);
-                native_texture *texture = doe_resource_texture_native(doe_resource_view_texture(resolved[i].resource.view));
-                if (doe_mtl_texture_description(texture->metal)->usage & DOE_MTL_TEXTURE_RENDER_TARGET) {
-                    doe_mtl_error detail = {0};
-                    doe_mtl_status status = doe_mtl_commands_initialize_attachment(commands, view->metal, &detail);
-                    if (status != DOE_MTL_OK) return native_failure_metal(status, &detail);
-                }
-                storage->textures[stage][bindings->texture_count++] = (doe_mtl_texture_binding){slot,
-                    view->metal, resolved[i].kind == DOE_BIND_STORAGE_TEXTURE};
-            } else if (table == DOE_COMPILER_TEXT_TABLE_SAMPLER) {
-                if (bindings->sampler_count == DOE_MTL_SAMPLER_SLOTS || resolved[i].kind != DOE_BIND_SAMPLER)
-                    return native_failure_status(NATIVE_UNSUPPORTED);
-                native_sampler *sampler = doe_resource_sampler_native(resolved[i].resource.sampler);
-                storage->samplers[stage][bindings->sampler_count++] = (doe_mtl_sampler_binding){slot, sampler->metal};
-            } else return native_failure_status(NATIVE_UNSUPPORTED);
-        }
+        native_failure failure = native_metal_binding_snapshot(commands, pipeline, &graphics->stages[stage],
+            resolved, &storage->stages[stage]);
+        if (failure.status != NATIVE_OK) return failure;
     }
+    draw->vertex = storage->stages[0].bindings;
+    draw->fragment = storage->stages[1].bindings;
     for (size_t i = 0; i < pipeline->vertex_count; ++i) {
         uint32_t slot = graphics->vertex_slots[i];
         if (slot == UINT32_MAX) continue;
         if (draw->vertex.buffer_count == DOE_MTL_BUFFER_SLOTS) return native_failure_status(NATIVE_UNSUPPORTED);
         native_buffer *buffer = doe_resource_buffer_native(packet->vertices[i].buffer);
         if (!buffer) return native_failure_status(NATIVE_INVALID_ARGUMENT);
-        storage->buffers[0][draw->vertex.buffer_count++] = (doe_mtl_buffer_binding){slot,
+        storage->stages[0].buffers[draw->vertex.buffer_count++] = (doe_mtl_buffer_binding){slot,
             buffer->handle.metal, packet->vertices[i].offset, packet->vertices[i].size};
     }
     return native_failure_status(NATIVE_OK);

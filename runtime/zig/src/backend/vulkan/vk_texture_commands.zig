@@ -5,6 +5,7 @@ const std = @import("std");
 const model_gpu_types = @import("../../contracts/model/model_texture_value_types.zig");
 const model_render_types = @import("../../contracts/model/model_render_types.zig");
 const model_texture_types = @import("../../contracts/model/model_texture_types.zig");
+const model_resource_types = @import("../../contracts/model/model_resource_types.zig");
 const c = @import("vk_constants.zig");
 const vk_device = @import("vk_device.zig");
 const vk_sync = @import("vk_sync.zig");
@@ -129,12 +130,33 @@ test "compressed buffer copy converts block rows to Vulkan texels" {
     try std.testing.expectError(error.TextureCopyAspect, buffer_copy_region(1024, texture, copy, .texture_to_buffer));
 }
 
+/// The whole first layer of the command's mip level, the legacy command shape.
+fn whole_mip_copy(texture: anytype) BufferCopy {
+    const shift: u5 = @intCast(@min(texture.mip_level, 31));
+    return .{
+        .offset = 0,
+        .bytes_per_row = texture.bytes_per_row,
+        .rows_per_image = texture.rows_per_image,
+        .mip = texture.mip_level,
+        .width = @max(texture.width >> shift, 1),
+        .height = @max(texture.height >> shift, 1),
+        .depth_or_layers = 1,
+        .aspect = texture.aspect,
+    };
+}
+
+/// Writes `data` into the copy's origin, extent, layers and single aspect.
+/// Layout, range and aspect violations return the texture copy contract's
+/// errors before any staging allocation or submission.
 pub fn texture_write(self: anytype, cmd_arg: model_texture_types.TextureWriteCommand) !void {
     const resource = try vk_resources.ensure_texture_resource(self, cmd_arg.texture);
-    if (cmd_arg.data.len == 0) {
+    if (cmd_arg.data.len == 0 and cmd_arg.copy == null) {
         try vk_resources.ensure_texture_shader_layout(self, resource);
         return;
     }
+    const copy = cmd_arg.copy orelse whole_mip_copy(cmd_arg.texture);
+    const region = try buffer_copy_region(cmd_arg.data.len, resource.*, copy, .buffer_to_texture);
+    if (copy.width == 0 or copy.height == 0 or copy.depth_or_layers == 0) return;
     if (self.has_deferred_submissions or self.pending_uploads.items.len > 0) {
         _ = try self.flush_queue();
     }
@@ -162,26 +184,6 @@ pub fn texture_write(self: anytype, cmd_arg: model_texture_types.TextureWriteCom
         c.VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
         c.VK_PIPELINE_STAGE_TRANSFER_BIT,
     );
-    var region = c.VkBufferImageCopy{
-        .bufferOffset = 0,
-        .bufferRowLength = if (cmd_arg.texture.bytes_per_row > 0)
-            cmd_arg.texture.bytes_per_row / vk_resources.bytes_per_pixel_for_texture_format(cmd_arg.texture.format)
-        else
-            0,
-        .bufferImageHeight = cmd_arg.texture.rows_per_image,
-        .imageSubresource = .{
-            .aspectMask = vk_formats.aspect_mask_for_format(cmd_arg.texture.format),
-            .mipLevel = cmd_arg.texture.mip_level,
-            .baseArrayLayer = 0,
-            .layerCount = 1,
-        },
-        .imageOffset = .{ .x = 0, .y = 0, .z = 0 },
-        .imageExtent = .{
-            .width = @max(cmd_arg.texture.width >> @intCast(cmd_arg.texture.mip_level), 1),
-            .height = @max(cmd_arg.texture.height >> @intCast(cmd_arg.texture.mip_level), 1),
-            .depth = 1,
-        },
-    };
     c.vkCmdCopyBufferToImage(self.primary_command_buffer, staging.buffer, resource.image, c.VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, @ptrCast(&region));
     vk_resources.transition_texture_layout(
         self.primary_command_buffer,
@@ -196,6 +198,38 @@ pub fn texture_write(self: anytype, cmd_arg: model_texture_types.TextureWriteCom
     try c.check_vk(c.vkEndCommandBuffer(self.primary_command_buffer));
     try submit_and_wait_timeline(self);
     vk_resources.mark_texture_image_layout(self, resource.image, c.VK_IMAGE_LAYOUT_GENERAL);
+}
+
+test "queue texture writes keep the destination origin, extent and stencil plane" {
+    var texture = std.mem.zeroes(vk_resources.TextureResource);
+    texture.width = 4;
+    texture.height = 4;
+    texture.depth_or_array_layers = 3;
+    texture.mip_levels = 1;
+    texture.sample_count = 1;
+    texture.dimension = model_gpu_types.WGPUTextureDimension_2D;
+    texture.format = model_gpu_types.WGPUTextureFormat_RGBA8Unorm;
+    var copy = BufferCopy{ .offset = 0, .bytes_per_row = 256, .rows_per_image = 1, .mip = 0, .width = 1, .height = 1, .depth_or_layers = 1, .origin = .{ 1, 2, 2 } };
+    const region = try buffer_copy_region(4, texture, copy, .buffer_to_texture);
+    try std.testing.expectEqual(@as(i32, 1), region.imageOffset.x);
+    try std.testing.expectEqual(@as(i32, 2), region.imageOffset.y);
+    try std.testing.expectEqual(@as(u32, 2), region.imageSubresource.baseArrayLayer);
+    try std.testing.expectEqual(@as(u32, 1), region.imageExtent.width);
+    try std.testing.expectEqual(@as(u32, 64), region.bufferRowLength);
+    texture.depth_or_array_layers = 1;
+    texture.format = model_gpu_types.WGPUTextureFormat_Depth24PlusStencil8;
+    copy = .{ .offset = 0, .bytes_per_row = 4, .rows_per_image = 4, .mip = 0, .width = 4, .height = 4, .depth_or_layers = 1 };
+    try std.testing.expectError(error.TextureCopyAspect, buffer_copy_region(16, texture, copy, .buffer_to_texture));
+    copy.aspect = model_gpu_types.WGPUTextureAspect_DepthOnly;
+    try std.testing.expectError(error.TextureCopyUnsupported, buffer_copy_region(16, texture, copy, .buffer_to_texture));
+    copy.aspect = model_gpu_types.WGPUTextureAspect_StencilOnly;
+    const stencil = try buffer_copy_region(16, texture, copy, .buffer_to_texture);
+    try std.testing.expectEqual(@as(u32, vk_formats.VK_IMAGE_ASPECT_STENCIL_BIT), stencil.imageSubresource.aspectMask);
+    try std.testing.expectEqual(@as(u32, 4), stencil.bufferRowLength);
+    const legacy = model_resource_types.CopyTextureResource{ .handle = 1, .kind = .texture, .width = 8, .height = 2, .mip_level = 1, .bytes_per_row = 16, .aspect = model_gpu_types.WGPUTextureAspect_All };
+    const whole = whole_mip_copy(legacy);
+    try std.testing.expectEqual(@as(u32, 4), whole.width);
+    try std.testing.expectEqual(@as(u32, 1), whole.height);
 }
 
 pub fn texture_copy(self: anytype, args: struct {

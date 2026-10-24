@@ -2,6 +2,7 @@
  * Host call-ledger composition only. Existing Metal mock boundary supplies no
  * shader interpreter or GPU result. Public handles, owners and queue are real. */
 #include "../src/internal.h"
+#include "../src/metal_binding_internal.h"
 #include "../../backends/metal/tests/mock_native.h"
 #include "consumer.h"
 #include "metal_graphics_cases.h"
@@ -167,6 +168,86 @@ static void compute_binding_ledger(state *s)
         .callback=pipeline_ready,.userdata1=&pipeline};
     assert(wgpuDeviceCreateComputePipelineAsync(s->device,&descriptor,ready).id);
     assert(pipeline && !strcmp(mocks[2].entrypoint,"selected"));
+    native_stage selected;
+    assert(native_stage_load((native_device *)s->device, module, descriptor.compute.entryPoint,
+        DOE_COMPILER_STAGE_COMPUTE, &selected));
+    const DoeCompilerMetalEntryV12 *selected_entry = NULL;
+    for (size_t i = 0; i < selected.view.metal_entry_count; ++i)
+        if (selected.view.metal_entries[i].entry_index == (size_t)(selected.entry - selected.view.entries))
+            selected_entry = &selected.view.metal_entries[i];
+    assert(selected_entry);
+    uint32_t output_slot = UINT32_MAX, input_slot = UINT32_MAX, scale_slot = UINT32_MAX;
+    for (size_t i = 0; i < selected_entry->binding_count; ++i) {
+        const DoeCompilerMetalBindingV12 *binding = &selected.view.metal_bindings[selected_entry->first_binding + i];
+        const DoeCompilerResourceV4 *resource = &selected.view.resources[binding->resource_index];
+        if (resource->group == 1 && resource->binding == 7) output_slot = binding->slot;
+        else if (resource->group == 0 && resource->binding == 4) input_slot = binding->slot;
+        else if (resource->group == 0 && resource->binding == 2) scale_slot = binding->slot;
+    }
+    uint32_t sizes_slot = selected_entry->sizes_slot;
+    assert(output_slot < 3 && input_slot < 3 && scale_slot < 3 && sizes_slot < DOE_MTL_BUFFER_SLOTS);
+    /* Selected-entry records are independent of their siblings. Feed copied
+     * well-typed wrong rows to the shared compute/graphics converter, never
+     * mutate an immutable shader allocation or reinterpret legacy ABI10 rows. */
+    DoeCompilerMetalBindingV12 rows[3];
+    assert(selected_entry->binding_count == 3);
+    memcpy(rows, selected.view.metal_bindings + selected_entry->first_binding, sizeof(rows));
+    DoeCompilerMetalEntryV12 entry_copy = *selected_entry;
+    entry_copy.first_binding = 0;
+    native_stage altered = selected;
+    altered.view.metal_entries = &entry_copy;
+    altered.view.metal_entry_count = 1;
+    altered.view.metal_bindings = rows;
+    altered.view.metal_binding_count = 3;
+    native_metal_stage_map mapping;
+    doe_mtl_shader_stage native;
+    native_pipeline *native_payload = doe_resource_pipeline_native((doe_resource_pipeline *)pipeline);
+    assert(native_metal_stage_map_build(native_payload, &altered, DOE_COMPILER_STAGE_COMPUTE, &mapping, &native));
+    DoeCompilerMetalBindingV12 original = rows[1];
+    rows[1].entry_index ^= 1;
+    assert(!native_metal_stage_map_build(native_payload, &altered, DOE_COMPILER_STAGE_COMPUTE, &mapping, &native));
+    rows[1] = original;
+    rows[1].table = DOE_COMPILER_TEXT_TABLE_SAMPLER;
+    assert(!native_metal_stage_map_build(native_payload, &altered, DOE_COMPILER_STAGE_COMPUTE, &mapping, &native));
+    rows[1] = original;
+    rows[1].slot = rows[0].slot;
+    if (rows[1].size_index != UINT32_MAX) rows[1].size_index = rows[1].slot;
+    assert(!native_metal_stage_map_build(native_payload, &altered, DOE_COMPILER_STAGE_COMPUTE, &mapping, &native));
+    rows[1] = original;
+    entry_copy.first_binding = UINT32_MAX;
+    assert(!native_metal_stage_map_build(native_payload, &altered, DOE_COMPILER_STAGE_COMPUTE, &mapping, &native));
+    entry_copy.first_binding = 0;
+    size_t static_row = 3;
+    for (size_t i = 0; i < 3; ++i) {
+        if (!(selected.view.resources[rows[i].resource_index].flags & DOE_COMPILER_RESOURCE_RUNTIME_TAIL)) {
+            static_row = i;
+            continue;
+        }
+        uint32_t index = rows[i].size_index;
+        rows[i].size_index = UINT32_MAX;
+        assert(!native_metal_stage_map_build(native_payload, &altered, DOE_COMPILER_STAGE_COMPUTE, &mapping, &native));
+        rows[i].size_index = index;
+    }
+    assert(static_row < 3);
+    rows[static_row].size_index = rows[static_row].slot;
+    assert(!native_metal_stage_map_build(native_payload, &altered, DOE_COMPILER_STAGE_COMPUTE, &mapping, &native));
+    rows[static_row].size_index = UINT32_MAX;
+    entry_copy.sizes_slot = DOE_COMPILER_METAL_SIZES_SLOT - 1; /* Unoccupied, but not the ABI slot. */
+    assert(!native_metal_stage_map_build(native_payload, &altered, DOE_COMPILER_STAGE_COMPUTE, &mapping, &native));
+    entry_copy.sizes_slot = selected_entry->sizes_slot;
+    entry_copy.sizes_bytes += sizeof(uint32_t);
+    assert(!native_metal_stage_map_build(native_payload, &altered, DOE_COMPILER_STAGE_COMPUTE, &mapping, &native));
+    entry_copy.sizes_bytes = selected_entry->sizes_bytes - sizeof(uint32_t);
+    assert(!native_metal_stage_map_build(native_payload, &altered, DOE_COMPILER_STAGE_COMPUTE, &mapping, &native));
+    entry_copy.sizes_bytes = selected_entry->sizes_bytes;
+    for (size_t i = 0; i < 3; ++i) rows[i].size_index = UINT32_MAX;
+    entry_copy.sizes_slot = UINT32_MAX;
+    entry_copy.sizes_bytes = 0;
+    assert(!native_metal_stage_map_build(native_payload, &altered, DOE_COMPILER_STAGE_COMPUTE, &mapping, &native));
+    memcpy(rows, selected.view.metal_bindings + selected_entry->first_binding, sizeof(rows));
+    entry_copy.sizes_slot = selected_entry->sizes_slot;
+    entry_copy.sizes_bytes = selected_entry->sizes_bytes;
+    assert(native_metal_stage_map_build(native_payload, &altered, DOE_COMPILER_STAGE_COMPUTE, &mapping, &native));
     WGPUBuffer input = buffer(s,512,WGPUBufferUsage_Storage);
     WGPUBuffer output = buffer(s,512,WGPUBufferUsage_Storage);
     WGPUBuffer scale = buffer(s,256,WGPUBufferUsage_Uniform);
@@ -204,11 +285,11 @@ static void compute_binding_ledger(state *s)
     wgpuBufferRelease(output);
     wgpuBufferRelease(scale);
     submit(s,encoder);
-    assert(mocks[2].dispatches == 1 && mocks[2].sizes_slot == 30);
-    assert(mocks[2].bindings[2].buffer == scale_identity && mocks[2].bindings[2].size == 16);
-    assert(mocks[2].bindings[4].buffer == input_identity && mocks[2].bindings[4].offset == 256 && mocks[2].bindings[4].size == 32);
-    assert(mocks[2].bindings[23].buffer == output_identity && mocks[2].bindings[23].offset == 256 && mocks[2].bindings[23].size == 48);
-    assert(!mocks[2].bindings[0].buffer && !mocks[2].bindings[7].buffer);
+    assert(mocks[2].dispatches == 1 && mocks[2].sizes_slot == sizes_slot);
+    assert(mocks[2].bindings[scale_slot].buffer == scale_identity && mocks[2].bindings[scale_slot].size == 16);
+    assert(mocks[2].bindings[input_slot].buffer == input_identity && mocks[2].bindings[input_slot].offset == 256 && mocks[2].bindings[input_slot].size == 32);
+    assert(mocks[2].bindings[output_slot].buffer == output_identity && mocks[2].bindings[output_slot].offset == 256 && mocks[2].bindings[output_slot].size == 48);
+    assert(!mocks[2].bindings[3].buffer && !mocks[2].bindings[7].buffer);
     assert(mocks[2].groups.x == 3 && mocks[2].groups.y == 2 && mocks[2].groups.z == 1);
     assert(mocks[2].workgroup.x == 4 && mocks[2].workgroup.y == 1 && mocks[2].repeat == 1);
 }
@@ -476,6 +557,56 @@ static void host_replay_program(state *s)
 }
 
 
+#include "metal_mixed_host.h"
+
+static void required_metal_limits(state *s)
+{
+    WGPULimits supported = WGPU_LIMITS_INIT;
+    assert(wgpuAdapterGetLimits(s->adapter, &supported) == WGPUStatus_Success);
+    WGPULimits required = WGPU_LIMITS_INIT;
+    required.maxUniformBuffersPerShaderStage = supported.maxUniformBuffersPerShaderStage + 1;
+    WGPUDeviceDescriptor descriptor = WGPU_DEVICE_DESCRIPTOR_INIT;
+    descriptor.requiredLimits = &required;
+    unsigned rejected = 0, opened = context_count;
+    WGPURequestDeviceCallbackInfo rejection = {.mode=WGPUCallbackMode_AllowSpontaneous,
+        .callback=failed_device, .userdata1=&rejected};
+    assert(wgpuAdapterRequestDevice(s->adapter, &descriptor, rejection).id && rejected == 1);
+    assert(context_count == opened); /* Unsupported limits reject before native opening. */
+    required = WGPU_LIMITS_INIT;
+    required.maxBindGroupsPlusVertexBuffers = 24; /* WebGPU default combined budget. */
+    state limited = {.instance=s->instance, .adapter=s->adapter};
+    descriptor.uncapturedErrorCallbackInfo = (WGPUUncapturedErrorCallbackInfo){.callback=error_reply, .userdata1=&limited};
+    WGPURequestDeviceCallbackInfo requested = {.mode=WGPUCallbackMode_AllowSpontaneous,
+        .callback=device_reply, .userdata1=&limited};
+    assert(wgpuAdapterRequestDevice(s->adapter, &descriptor, requested).id && limited.device);
+    assert(context_count == opened + 1);
+    WGPULimits resolved = WGPU_LIMITS_INIT;
+    assert(wgpuDeviceGetLimits(limited.device, &resolved) == WGPUStatus_Success);
+    assert(resolved.maxBindGroupsPlusVertexBuffers == required.maxBindGroupsPlusVertexBuffers);
+    assert(resolved.maxUniformBuffersPerShaderStage <= supported.maxUniformBuffersPerShaderStage);
+    /* Reported resolution is enforced by actual public slot admission, not a
+     * second literal limit table. Exactly the device's uniform count succeeds;
+     * the next descriptor slot fails without allocating a native GPU object. */
+    WGPUBindGroupLayoutEntry entries[32] = {0};
+    size_t allowed = resolved.maxUniformBuffersPerShaderStage;
+    assert(allowed && allowed < sizeof(entries) / sizeof(entries[0]));
+    for (size_t i = 0; i <= allowed; ++i)
+        entries[i] = (WGPUBindGroupLayoutEntry){.binding=(uint32_t)i, .visibility=WGPUShaderStage_Fragment,
+            .buffer={.type=WGPUBufferBindingType_Uniform, .minBindingSize=4}};
+    WGPUBindGroupLayoutDescriptor layout_descriptor = {.entryCount=allowed, .entries=entries};
+    unsigned created = mocks[opened].created;
+    WGPUBindGroupLayout layout = wgpuDeviceCreateBindGroupLayout(limited.device, &layout_descriptor);
+    assert(layout);
+    wgpuBindGroupLayoutRelease(layout);
+    ++layout_descriptor.entryCount;
+    wgpuDevicePushErrorScope(limited.device, WGPUErrorFilter_Validation);
+    assert(!wgpuDeviceCreateBindGroupLayout(limited.device, &layout_descriptor));
+    pop(&limited, WGPUErrorType_Validation);
+    assert(mocks[opened].created == created && !limited.errors);
+    wgpuDeviceRelease(limited.device);
+    mock_assert_closed(&mocks[opened]);
+}
+
 static void sampled_float_admission(state *s)
 {
     unsigned baseline = mocks[2].live;
@@ -695,9 +826,11 @@ int main(void)
     assert(wgpuQueueOnSubmittedWorkDone(s.queue,completion).id && completed == 1 && !device->pending);
     assert(mocks[2].copies == 1 && mocks[2].fills == 2);
     host_replay_program(&s);
+    required_metal_limits(&s);
     sampled_float_admission(&s);
     reject_metal_fragment_stores(&s);
     graphics_ledger(&s);
+    mixed_resource_ledger(&s);
     public_error_detail(&s);
     consumer_finish(&s);
     for (unsigned i = 0; i < context_count; ++i) mock_assert_closed(&mocks[i]);

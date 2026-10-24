@@ -1,37 +1,43 @@
 # Experimental C public WebGPU native frontend
 
-Status: authored, strict-compiled and developer-exercised through the pinned
-public `webgpu.h`. Not independently qualified, a complete WebGPU replacement,
-a performance result or physical-GPU evidence. Production/default selection is
-unchanged. Only the explicitly implemented symbols in `src/procedures.c` are
-exported; unknown and unimplemented names return NULL from `wgpuGetProcAddress`.
+Status: source-built and developer-exercised through pinned `webgpu.h`.
+Production/default selection is unchanged. Scoped CPU and Apple device evidence
+does not establish independent acceptance, full WebGPU replacement, performance
+or a qualified hardware matrix. `src/procedures.c` and the exact export inventory
+own implemented symbols; unknown names return NULL from `wgpuGetProcAddress`.
 
 ## Backend selection and checked scope
 
-Explicit Vulkan and Metal requests use their own tagged context, typed payloads
-and finalizers within the same device/resource/pending-submission architecture.
-Unsupported backends, including D3D12, report unavailable without fallback.
-Undefined selects Vulkan on Linux and Metal on Apple within this experimental
-provider only; production/default provider selection is unchanged.
+Vulkan and Metal use tagged contexts and payloads within one device, resource and
+pending-submission architecture. Undefined selects Vulkan on Linux and Metal on
+Apple for this experimental provider. Unsupported backends fail without fallback.
+Public D3D12 remains unavailable; the separate [private backend](../backends/d3d12/README.md)
+has source-bound SDK, CPU WARP and Miles hardware controls.
 
-Metal adapter/device identity, shared buffers, writes/maps, copy/fill and direct
-compute are composed with the real Metal owner. The ABI10 compiler and shader
-owner supply MSL text, selected entry spelling, sparse binding slots and runtime
-size metadata. Native conversion neither parses WGSL nor substitutes SPIR-V.
-The focused host test replaces only the native platform boundary with its existing
-call ledger. It proves composition, ordering, errors and retained obligations,
-not GPU copies, Apple SDK compilation, driver MSL compilation or Apple execution.
-Linux's actual absent Metal loader also produces an explicit unavailable result.
+Vulkan composes compute, images, graphics, queries and Linux presentation within
+the explicit limits and feature checks below. CPU execution receipts prove their
+recorded outputs and lifetimes; they do not qualify physical Vulkan performance.
 
-Metal currently admits a chosen compute envelope: 256 total threads, at most
-256 per axis, 65535 groups per axis and 256-byte buffer offsets. These are frontend
-restrictions, not queried hardware claims. Actual buffer/threadgroup-memory and
-per-axis limits further constrain admission; the backend checks the real
-per-pipeline total-thread limit. Metal images, graphics, timestamps and indirect
-commands remain uncomposed. Native Metal execution failures are not guessed to
-mean device loss. Darwin recipes now select dylib, @rpath install identity, and an exact Mach-O
-export list. Host dry-run/parser controls and actual Linux linking are checked;
-Apple SDK compilation, Darwin execution and physical qualification remain unrun.
+Metal composes shared buffers, compute, initialized color textures/views/samplers,
+color transfers and direct nonindexed render passes. Compiler-owned MSL and ABI12
+per-entry metadata supply exact names, independent resource namespaces, dense
+native slots and runtime size indices. The common Metal binding owner validates
+and lowers those records for compute and graphics; public sparse binding numbers
+never become native slot arithmetic. WGSL meaning stays in the compiler.
+
+Metal's frontend compute envelope remains bounded to 256 total threads, at most
+256 per axis, 65535 groups per axis and conservative 256-byte buffer offsets.
+Actual buffer, threadgroup-memory and per-pipeline limits constrain it further.
+Resolved device limits bound graphics and resource admission. Partial sample
+masks, unclipped depth, indirect/indexed guards, queries, depth/stencil transfers
+and presentation remain explicit missing paths.
+
+[Public Apple graphics evidence](DEVELOPER_RECEIPT_METAL_PUBLIC_GRAPHICS.json)
+binds offscreen pixels, early releases, discard zeros and uploads on one M3.
+The host `metal-bridge` controls separately exercise failure detail, unknown
+completion and tagged routing. Neither evidence scope transfers to unexercised
+shader/resource combinations. Darwin builds produce dylibs with @rpath identity
+and exact exports; absent platform loaders remain explicitly unavailable.
 
 ## Actual ownership and execution path
 
@@ -144,11 +150,15 @@ Apple SDK compilation, Darwin execution and physical qualification remain unrun.
   subresource; buffer copies need one sample.
 - Texel copy layouts take WGPU_COPY_STRIDE_UNDEFINED as WebGPU's undefined:
   rowsPerImage for a one-image copy, bytesPerRow for a one-row copy
-  (`tests/copy_layouts.c`). A rejected buffer/texture or texture/texture copy
-  invalidates the encoder and its validation error is reported once, at Finish.
-- A rejected BeginRenderPass/BeginComputePass still returns a pass (WebGPU invalid
-  pass): it records nothing, and its commands, End and the encoder's Finish
-  report the rejection.
+  (`tests/copy_layouts.c`).
+- Encoding errors follow WebGPU: a rejected pass descriptor, pass command, copy,
+  clear, query or debug command only invalidates its encoder, and Finish reports
+  exactly one validation error; later valid passes on that encoder add nothing.
+  A rejected BeginRenderPass/BeginComputePass still returns an invalid pass that
+  records nothing. Only a command on an encoder or pass that already ended (End
+  always ends a pass; Finish always ends an encoder) is reported at the call
+  (`native_encoding_error`; `tests/encoder_errors.c` counts uncaptured errors).
+  Render bundle encoders still report their command rejections at the call.
 - Color storeOp Discard is admitted for single-sample attachments too: Vulkan
   STORE_OP_DONT_CARE and the backend's per-aspect owner marks the subresource
   undefined. Later Load passes, buffer/texture copies and sampled or storage
@@ -308,12 +318,20 @@ canonical timestamp normalizer for `timestamp-query`; linear filtering of
 r32/rg32/rgba32 float for `float32-filterable`; blending of those formats for
 `float32-blendable`; D32S8 depth/stencil attachment, sampling and transfer for
 `depth32float-stencil8`; enabled native drawIndirectFirstInstance for
-`indirect-first-instance` and depthClamp for `depth-clip-control`. A device
+`indirect-first-instance` and depthClamp for `depth-clip-control`; enabled
+color attachment, blending and 4x samples of rg11b10ufloat for
+`rg11b10ufloat-renderable`; enabled
+textureCompressionBC with sampled, filterable, copyable formats for all
+fourteen BC formats for `texture-compression-bc`, plus 3D images of each for
+`texture-compression-bc-sliced-3d`; and `texture-component-swizzle` on every
+Vulkan device (VkComponentMapping is core). A device
 request naming an unreported feature fails.
 The device keeps the requested set as `NATIVE_FEATURE` bits and every gated use
 checks that set, never the adapter facts: feature formats map only when enabled
 (textures, views, pipeline targets, bundles and layouts all reject
-depth32float-stencil8 otherwise); blending an r32/rg32/rgba32 float target rejects
+depth32float-stencil8 otherwise, and rg11b10ufloat render attachments,
+pipeline targets and bundle formats reject without rg11b10ufloat-renderable while
+the core format still samples); blending an r32/rg32/rgba32 float target rejects
 without float32-blendable; and without float32-filterable those views keep the
 'unfilterable-float' sample type, so a 'float' (sampler-using) layout rejects them.
 Indirect draws admit a GPU-produced nonzero firstInstance only with
@@ -324,14 +342,26 @@ depth-clip-control; with it the pipeline clamps depth instead of clipping.
 `tests/format_features.c` reads back exact results on a device that enabled every
 offered feature: linear midpoints of r32float/rgba32float values that no 16-bit
 format holds (1000001.0), two additive draws onto a 1000000.0 r32float clear
-(1000007.0) and depth 0.25/stencil 7 per aspect of depth32float-stencil8. On a
+(1000007.0), depth 0.25/stencil 7 per aspect of depth32float-stencil8, and
+rg11b10ufloat packed bits after an additive draw and a 4x resolve. On a
 device without them it checks each rejection and that an unoffered feature
 fails the request. `tests/draw_features.c` reads back exact r32uint values
 a*1000+instance_index for GPU firstInstance 2/1 through indirect, indexed indirect
 and bundle draws (an instance-buffer overrun stays a no-op; without the feature
 all stay no-ops while a direct firstInstance draws), and unclippedDepth geometry at
 z 1.5/-0.5 stored as depth 1.0/0.0 where the clipped control draws nothing. A
-feature the adapter does not offer prints SKIP with its reason.
+feature the adapter does not offer prints SKIP with its reason. BC formats map
+only with texture-compression-bc, 3D BC textures also need the sliced-3D feature,
+compressed textures have whole blocks at mip 0 (resource owner) and are never
+attachments or storage. `tests/bc_compression.c` decodes solid BC1, BC1-srgb and
+BC4 blocks to exact texels through queue writes and buffer copies, copies a 6x6
+mip by its physical 8x8 extent, returns exact blocks from texture and buffer
+copies, and decodes a 3D BC1 texture uploaded with rowsPerImage 2 per slice.
+A WGPUTextureComponentSwizzleDescriptor on a view maps each channel (Undefined is
+the channel's own); a non-identity swizzle needs texture-component-swizzle and a
+view usage without RenderAttachment or StorageBinding. `tests/component_swizzle.c`
+reads (b,a,0,r) and (1,g,r,g) views through textureLoad and nearest sampling as
+exact rearrangements of the identity view.
 
 ## WGSL language features and texture binding view dimension
 
@@ -376,8 +406,32 @@ header requires accepting a `WGPUTextureBindingViewDimension` chain on
 no compatibility-mode view restrictions, so it accepts exactly that one chain node,
 ignores the value, and the getter returns `WGPUTextureViewDimension_Undefined` for
 every texture, as the reference core implementation does. Unknown or repeated chain
-nodes still reject. The provider does not yet advertise `CoreFeaturesAndLimits`;
-that separate claim needs complete core limits and is not made here.
+nodes still reject. Every Vulkan adapter lists `core-features-and-limits`
+(there is no compatibility mode), and every device has it enabled whether or
+not `requiredFeatures` names it.
+
+## Limits
+
+`src/limits.c` owns the WebGPU limits. Adapter limits are Vulkan facts
+intersected with what this frontend enforces and executes: per-stage binding
+counts at the WebGPU defaults (pipeline binding storage holds two stages of
+them, `NATIVE_MAX_PIPELINE_BINDINGS`), maxBindingsPerBindGroup 1000 (sparse
+resource-owner storage), 16 dynamic uniform and 16 dynamic storage buffers
+(applied by the resource owner, 32 per group), maxBufferSize from Vulkan
+maxMemoryAllocationSize with binding sizes bounded by it and rounded down to 4,
+the minimum dispatch dimension across axes, and workgroup sizes/invocations at
+the C compiler's 256 bound. A device resolves requestDevice requiredLimits per
+the specification: an undefined member takes the default, a value better than
+the adapter's (or a non-power-of-two alignment) fails creation, and each device
+limit is the better of the required value and the default. An adapter below a
+default keeps its own value. Every frontend check (texture and surface sizes,
+buffer size, binding sizes and alignments, binding slot limits, binding numbers,
+bind group count, vertex buffers/attributes/stride, inter-stage variables,
+workgroup size/storage, dispatch counts) reads the device limits, and
+`wgpuDeviceGetLimits` reports them. `tests/limits.c` prints the default,
+adapter and device columns and checks each resolution rule and default-limit
+rejection. The compiler admits shader binding numbers 0..31 only, so groups with
+higher binding numbers execute while shaders cannot yet reference them.
 
 ## Storage textures
 
@@ -389,18 +443,29 @@ or read-write on other formats are Validation errors, as is StorageBinding usage
 a non-storage format; storage bindings need StorageBinding usage, one mip and the
 exact format. bgra8unorm storage (bgra8unorm-storage) is not offered: the C compiler
 has no bgra8unorm storage format. The compiler's sixteen storage formats map to
-these names; 1D, 2D, 2D-array and 3D storage views are admitted. Fragment-stage
-writes (write-only/read-write) use the device's enabled fragmentStoresAndAtomics;
-vertex-stage writes stay rejected. Default (automatic) layouts report
-`unfilterable-float` for f32 textures when the pipeline declares no sampler, per
-the WebGPU default-layout rule; with samplers the conservative `float` remains
-because the compiler does not reflect exact texture/sampler pairing.
+these names; 1D, 2D, 2D-array and 3D storage views are admitted. A `read-write`
+layout entry admits a shader declaring `read_write` or `write` access; `write-only`
+and `read-only` entries require the same shader access (validating shader binding).
+Fragment-stage writes (write-only/read-write) use the device's enabled
+fragmentStoresAndAtomics; a Vulkan adapter without that feature is refused at
+requestAdapter (UNAVAILABLE), because WebGPU core admits fragment storage writes
+under the per-stage limits and no limit can report their absence. Vertex-stage
+writes stay rejected.
+
+Spec deviation, not finished: default (automatic) layouts report
+`unfilterable-float` for f32 textures only when the pipeline declares no sampler.
+With any sampler every f32 texture becomes `float`, although the WebGPU
+default-layout rule makes `float` only those statically used with a sampler, so a
+textureLoad-only r32float texture is then rejected at createBindGroup. The fix
+needs per-entry-point texture/sampler pair-use reflection from the compiler.
 
 `tests/storage_textures.c` writes all sixteen formats with textureStore and checks
 every channel of a 4x4 readback exactly; reads r32uint/sint/float through read-only
 storage and increments them in place through read-write storage; writes 1D,
 2D-array and 3D views; stores from a fragment shader at each pixel; and repeats
-write-then-sample across passes in two submissions. Negatives cover StorageBinding
+write-then-sample across passes in two submissions; writes all 16 texels of an
+r32float texture through a write shader bound by an explicit read-write layout and
+reads them back exactly. Negatives cover three layout/shader access mismatches, StorageBinding
 on rgba8unorm-srgb, read-write rgba8unorm in an explicit layout and in a shader,
 sampling a storage-only texture and storage-binding a sampled-only texture.
 
@@ -446,7 +511,7 @@ oracle is exact for every filter; it is not a filtering-quality claim.
 ## Intentionally unprovided or rejected
 
 Vulkan indirect dispatch and nonindexed/indexed indirect
-pass/bundle draws use real GPU guards; Metal graphics, indirect and indexed draws remain uncomposed.
+pass/bundle draws use real GPU guards; Metal indirect and indexed guards remain uncomposed.
 Graphics
 admits up to eight sparse color slots and/or depth/stencil, sample counts 1 and 4, direct
 triangle/line lists or strips and every pinned WebGPU vertex format (8/16/32-bit
@@ -461,11 +526,13 @@ Texture format reinterpretation beyond srgb/unorm viewFormats pairs (RGBA8,
 BGRA8; resource-validated, then a mutable Vulkan image with a format list), srgb
 viewFormats together with StorageBinding, depth storage, depth comparison sampling (compiler), multisampled
 buffer copies/storage, and cube arrays without device imageCubeArray are rejected.
-The baseline admits 23 named Vulkan
+The baseline admits 24 named Vulkan (rg11b10ufloat sampled; renderable only
+with rg11b10ufloat-renderable)
 color formats, subject to actual device usage/format capabilities. Device
 descriptors may request the optional features `src/features.c` reports for the
-actual adapter (see Optional device features). Other required features and required limits
-reject rather than silently succeeding. Buffer, sampled/storage image and sampler layouts are
+actual adapter (see Optional device features). Other required features reject
+rather than silently succeeding; requiredLimits resolve as described under Limits.
+Buffer, sampled/storage image and sampler layouts are
 admitted; extensions, binding arrays,
 immediates, specialization constants and nonbaseline shader capabilities reject.
 ABI6 lacks exact texture/sampler pair-use reflection through helper parameters.
@@ -489,9 +556,10 @@ callback mode, not a claimed background compiler. No blanket success stubs or
 fallback provider resolution exist. The public advertised limits
 cover the implemented compute/image/graphics path only and do not claim the WebGPU
 Core feature level is complete; adapter/device creation remains experimental.
-Metal image/graphics/timestamp composition, Metal/Windows/Android surfaces, D3D12
-admission and package adoption remain unfinished. Private backend checks do not qualify those public
-integrations; the Metal compute bridge remains host-tested only.
+Metal timestamps, surfaces on Metal/Windows/Android, public D3D12 admission
+and complete package adoption remain unfinished. Private backend checks do not
+qualify those public integrations; see the current Metal scope and bound Apple
+evidence above.
 
 ## Reproduce from a coherent checkout
 
@@ -533,9 +601,12 @@ PASS device loss modes/future/last-external-release/failed-creation, owned label
 PASS public textures: actual zero mips, packed upload, linear sampling, image OOB guards, storage readback, early releases, exact view defaults and filter/pair/copy negatives (CPU Vulkan only)
 PASS public admission: sparse/trailing/null layout holes, null unbind, ignored destroyed resources, dynamic writable ranges, whole-buffer read/write conflicts and texture subresource aliases (CPU Vulkan only)
 PASS public error types: resource allocation, automatic-layout allocation, compute/render backend OOM/native/validation failures, failed requested-feature device and successful recovery
-PASS public format features: 3 of 3 offered and enabled (float32-filterable linear r32float/rgba32float midpoints exact, float32-blendable additive r32float 1000007.0, depth32float-stencil8 depth 0.25/stencil 7 per aspect); without them depth32float-stencil8 texture/pipeline/bundle, r32float blending and 'float' r32float binding reject, an unoffered feature fails the request (CPU Vulkan only)
+PASS public format features: 4 of 4 offered and enabled (float32-filterable linear r32float/rgba32float midpoints exact, float32-blendable additive r32float 1000007.0, depth32float-stencil8 depth 0.25/stencil 7 per aspect, rg11b10ufloat-renderable blended (1.25,1,2.25) and 4x-resolved (1,.5,.25) packed bits); without them depth32float-stencil8 texture/pipeline/bundle, r32float blending, 'float' r32float binding and rg11b10ufloat attachment/target/bundle reject while rg11b10ufloat still samples exactly, an unoffered feature fails the request (CPU Vulkan only)
 PASS public draw features: 2 of 2 offered and enabled (indirect-first-instance: GPU firstInstance 2/1 reaches instance attributes and instance_index exactly for indirect, indexed indirect and bundle draws, an instance-buffer overrun stays a no-op; depth-clip-control: unclippedDepth draws z 1.5/-0.5 clamped to depth 1.0/0.0 where the clipped control draws nothing); without them nonzero indirect firstInstance is a no-op while direct firstInstance draws, and unclippedDepth rejects (CPU Vulkan only)
 PASS public copy layouts: undefined rowsPerImage for one image and undefined bytesPerRow for one row through queue writes, buffer-to-texture and texture-to-buffer copies with exact texels; two-image and two-row undefined-stride and rowsPerImage-0 rejections reported once at Finish (CPU Vulkan only)
+PASS public BC compression: solid BC1/BC1-srgb/BC4 blocks decode to exact texels through queue writes and buffer copies, a 6x6 mip takes its physical 8x8 copy, texture-to-texture and texture-to-buffer copies return exact blocks, a 3D BC1 texture uploaded with rowsPerImage 2 decodes per slice (sliced 3D); without the feature, non-block sizes, attachment/storage usage, 3D without sliced 3D and unaligned copies reject (CPU Vulkan only)
+PASS public component swizzle: (b,a,0,r) and (1,g,r,g) sampled views return the identity view's rgba8unorm components rearranged exactly through textureLoad and nearest textureSampleLevel; identity swizzles need no feature, a non-identity swizzle without the feature, with RenderAttachment or StorageBinding view usage, or with an unknown source rejects (CPU Vulkan only)
+PASS public encoder errors: an invalid render/compute pass descriptor or command, an invalid copy or clear followed by valid passes, each reports exactly one uncaptured validation error at Finish; End/dispatch on ended passes, copies/clears/begin on a finished encoder and a second Finish report at the call; core-features-and-limits listed and accepted (CPU Vulkan only)
 PASS public timestamps: requested feature, zero/max/range/destroy admission, real pass/command writes, exact GPU nanoseconds, same-batch copy, scratch reuse and early query release (CPU Vulkan only)
 PASS typed recovery: native/OOM/pending errors survive submit/write/texture/workdone, unknown leases retained, terminal cleanup and fresh GPU normalizer recovery
 PASS every implemented procedure address matches; every unprovided name returns NULL
@@ -693,7 +764,11 @@ reads all 33 (including `storage-textures`, `point-list`, `color-discard` and
 `msaa-sampling`) passed; with optional format features all 34 (including
 `format-features`) passed; with optional draw features all 35 (including
 `draw-features`) passed; with undefined copy strides all 36 (including
-`copy-layouts`) passed. That is
+`copy-layouts`) passed; with limits resolution all 38 (including
+`program-prepare` and `limits`) passed; with BC compression all 39 (including
+`bc-compression`) passed; with component swizzle all 40 (including
+`component-swizzle`) passed; with the encoding error rule all 41 (including
+`encoder-errors`) passed. That is
 developer evidence for these exact clients on that
 adapter/driver: the oracles are the clients' own expected values, not frozen
 independent workloads, and it is not Vulkan backend qualification, a performance
@@ -791,3 +866,14 @@ subtype. These focused developer results do not qualify Metal graphics, broader
 platforms, performance or a production provider switch. The host-only
 `metal-bridge` control separately checks native initialization failure detail,
 unknown-work private lifetime and direct-render call identity without GPU emulation.
+
+`mixed-resources` uses the same public consumer on default CPU Vulkan and explicit
+Metal. It exercises four groups and binding 999 with uniform/storage buffers,
+sampled/storage textures and a sampler, independent buffer/image output checks
+and early public releases. The native shader policy explicitly selects the
+compiler's core binding-number namespace; standalone compiler defaults retain
+legacy numeric admission. Numeric binding labels do not consume native slots.
+ABI12 provides separate per-entry resource rows and runtime-tail size indices;
+compute and graphics consume one selected-entry map and typed snapshot owner.
+`metal-bridge` additionally rejects forged entry/table/slot/tail-size metadata and
+checks native failure delivery, unknown completion and final resource retirement.

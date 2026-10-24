@@ -2786,12 +2786,9 @@ const fullSurfaceBackend = {
   },
   adapterRequestDevice(adapter, _descriptor, classes) {
     assertLiveResource(adapter, 'GPUAdapter.requestDevice', 'GPUAdapter');
-    const descriptor = _descriptor === undefined
-      ? undefined
-      : {
-        ..._descriptor,
-        requiredLimits: undefined,
-      };
+    /* requiredLimits reach the provider: its validation uses the device limits
+     * that GPUDevice.limits reports, not the adapter's. */
+    const descriptor = _descriptor;
     const native = addon.requestDevice(adapter._instance, adapter._native, descriptor);
     const device = new classes.DoeGPUDevice(native, adapter._instance);
     device.label = descriptor?.label ?? '';

@@ -83,6 +83,11 @@ WGPUTexture native_metal_create_texture(native_device *device, const WGPUTexture
     }
     doe_mtl_format_info format;
     if (doe_mtl_texture_format_info(native.format, &format) != DOE_MTL_OK) abort();
+    if ((desc.usage & WGPUTextureUsage_RenderAttachment) && !format.depth && !format.stencil &&
+        !native_color_renderable(device->features, desc.format)) {
+        native_error(device, WGPUErrorType_Validation, "Metal texture attachment format requires an enabled feature");
+        return NULL;
+    }
     if ((format.depth || format.stencil) && (desc.usage & ~WGPUTextureUsage_RenderAttachment)) {
         native_error(device, WGPUErrorType_Validation, "Metal depth/stencil transfers and sampling are not composed");
         return NULL;

@@ -73,6 +73,15 @@ typedef struct doe_resource_config {
      * DOE_RESOURCE_MAX_COLOR_ATTACHMENTS are clamped to that storage bound. */
     uint32_t max_color_attachments;
     uint32_t max_color_attachment_bytes_per_sample;
+    /* Requested binding-slot limits (WebGPU "exceeds the binding slot limits"):
+     * per-stage counts over a layout's entries, and dynamic-offset buffer counts
+     * per pipeline layout. Zero selects the WebGPU default for that field. */
+    struct {
+        uint32_t max_bind_groups;
+        uint32_t max_dynamic_uniform_buffers, max_dynamic_storage_buffers;
+        uint32_t max_sampled_textures, max_samplers, max_storage_buffers;
+        uint32_t max_storage_textures, max_uniform_buffers;
+    } slot_limits;
 } doe_resource_config;
 
 typedef struct doe_resource_shader doe_resource_shader;
@@ -237,7 +246,10 @@ typedef struct doe_resource_layout_entry {
     WGPUTextureFormat storage_format;
 } doe_resource_layout_entry;
 
-enum { DOE_RESOURCE_MAX_BINDINGS = 32, DOE_RESOURCE_MAX_GROUPS = 4 };
+/* Binding numbers are below MAX_BINDING_NUMBER (WebGPU maxBindingsPerBindGroup)
+ * and stored compactly in ascending binding order, never indexed by number. A
+ * group holds at most MAX_DYNAMIC_OFFSETS dynamic-offset buffers. */
+enum { DOE_RESOURCE_MAX_BINDING_NUMBER = 1000, DOE_RESOURCE_MAX_DYNAMIC_OFFSETS = 32, DOE_RESOURCE_MAX_GROUPS = 4 };
 /* Entries copied and canonicalized by binding, duplicates rejected. Automatic
  * layout identity remains exclusive: compatibility requires pointer equality,
  * and only one pipeline can ever claim an automatic layout. */
@@ -295,6 +307,16 @@ const doe_resource_binding *doe_resource_bind_group_bindings(const doe_resource_
 doe_resource_status doe_resource_bind_group_resolve(const doe_resource_bind_group *group,
     const uint32_t *offsets, size_t offset_count,
     doe_resource_binding *out, size_t capacity);
+/* Whole-group validation of doe_resource_bind_group_resolve without output:
+ * liveness, map state and every dynamic offset's alignment and range. */
+doe_resource_status doe_resource_bind_group_check(const doe_resource_bind_group *group,
+    const uint32_t *offsets, size_t offset_count);
+/* The same validated resolution for one binding number, without materializing
+ * the whole group: that binding's liveness, map state and offset only, so
+ * callers pair it with doe_resource_bind_group_check. The offsets cover the
+ * whole group. Output unchanged on failure. */
+doe_resource_status doe_resource_bind_group_resolve_binding(const doe_resource_bind_group *group,
+    const uint32_t *offsets, size_t offset_count, uint32_t binding, doe_resource_binding *out);
 
 doe_resource_status doe_resource_pipeline_create(const doe_resource_config *config,
     doe_resource_pipeline_layout *layout, doe_resource_native native,
@@ -363,7 +385,7 @@ typedef struct doe_resource_dispatch_group {
 /* Optional immutable command-owned snapshot. Backend borrows it with commands. */
 typedef struct doe_resource_dispatch_offsets {
     size_t counts[DOE_RESOURCE_MAX_GROUPS];
-    uint32_t values[DOE_RESOURCE_MAX_GROUPS][DOE_RESOURCE_MAX_BINDINGS];
+    uint32_t values[DOE_RESOURCE_MAX_GROUPS][DOE_RESOURCE_MAX_DYNAMIC_OFFSETS];
 } doe_resource_dispatch_offsets;
 
 typedef enum doe_resource_command_kind {
@@ -433,12 +455,18 @@ doe_resource_status doe_resource_encoder_dispatch_groups(doe_resource_encoder *e
     doe_resource_pipeline *pipeline, const doe_resource_dispatch_group *groups,
     size_t group_count, uint32_t x, uint32_t y, uint32_t z);
 /* Finish moves command ownership, never copies resource leases. A failure is
- * sticky and cannot publish a partial command buffer. */
+ * sticky and cannot publish a partial command buffer. Finish always ends the
+ * encoder, successful or not (WebGPU "ended" state). */
 doe_resource_status doe_resource_encoder_debug(doe_resource_encoder *encoder,
     doe_resource_debug_operation operation);
 doe_resource_status doe_resource_encoder_finish(doe_resource_encoder *encoder,
     doe_resource_commands **out);
 doe_resource_status doe_resource_encoder_status(const doe_resource_encoder *encoder);
+/* WebGPU "ended" states: a command on an ended encoder or pass is reported at
+ * the call; any other rejection only invalidates the encoder for Finish. End
+ * always closes an open pass, even an invalid one. NULL is not ended. */
+bool doe_resource_encoder_ended(const doe_resource_encoder *encoder);
+bool doe_resource_compute_pass_ended(const doe_resource_compute_pass *pass);
 /* Native descriptor preflight uses this same sticky error state, never a second
  * frontend poison flag. OK/PENDING and out-of-range statuses are not rejection. */
 doe_resource_status doe_resource_encoder_invalidate(doe_resource_encoder *encoder,

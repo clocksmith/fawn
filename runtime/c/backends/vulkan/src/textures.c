@@ -24,8 +24,46 @@ doe_vk_status doe_vk_texture_aspects(const doe_vk_texture *texture, doe_vk_textu
     return DOE_VK_OK;
 }
 
+static bool block_compressed(doe_vk_texture_format format) {
+    return format >= DOE_VK_FORMAT_BC1_RGBA_UNORM && format <= DOE_VK_FORMAT_BC7_RGBA_SRGB;
+}
+_Static_assert((int)DOE_VK_FORMAT_RG11B10_UFLOAT == (int)VK_FORMAT_B10G11R11_UFLOAT_PACK32, "rg11b10");
+_Static_assert((int)DOE_VK_FORMAT_BC1_RGBA_UNORM == (int)VK_FORMAT_BC1_RGBA_UNORM_BLOCK, "bc1");
+_Static_assert((int)DOE_VK_FORMAT_BC1_RGBA_SRGB == (int)VK_FORMAT_BC1_RGBA_SRGB_BLOCK, "bc1 srgb");
+_Static_assert((int)DOE_VK_FORMAT_BC2_RGBA_UNORM == (int)VK_FORMAT_BC2_UNORM_BLOCK, "bc2");
+_Static_assert((int)DOE_VK_FORMAT_BC2_RGBA_SRGB == (int)VK_FORMAT_BC2_SRGB_BLOCK, "bc2 srgb");
+_Static_assert((int)DOE_VK_FORMAT_BC3_RGBA_UNORM == (int)VK_FORMAT_BC3_UNORM_BLOCK, "bc3");
+_Static_assert((int)DOE_VK_FORMAT_BC3_RGBA_SRGB == (int)VK_FORMAT_BC3_SRGB_BLOCK, "bc3 srgb");
+_Static_assert((int)DOE_VK_FORMAT_BC4_R_UNORM == (int)VK_FORMAT_BC4_UNORM_BLOCK, "bc4");
+_Static_assert((int)DOE_VK_FORMAT_BC4_R_SNORM == (int)VK_FORMAT_BC4_SNORM_BLOCK, "bc4 snorm");
+_Static_assert((int)DOE_VK_FORMAT_BC5_RG_UNORM == (int)VK_FORMAT_BC5_UNORM_BLOCK, "bc5");
+_Static_assert((int)DOE_VK_FORMAT_BC5_RG_SNORM == (int)VK_FORMAT_BC5_SNORM_BLOCK, "bc5 snorm");
+_Static_assert((int)DOE_VK_FORMAT_BC6H_RGB_UFLOAT == (int)VK_FORMAT_BC6H_UFLOAT_BLOCK, "bc6h");
+_Static_assert((int)DOE_VK_FORMAT_BC6H_RGB_FLOAT == (int)VK_FORMAT_BC6H_SFLOAT_BLOCK, "bc6h float");
+_Static_assert((int)DOE_VK_FORMAT_BC7_RGBA_UNORM == (int)VK_FORMAT_BC7_UNORM_BLOCK, "bc7");
+_Static_assert((int)DOE_VK_FORMAT_BC7_RGBA_SRGB == (int)VK_FORMAT_BC7_SRGB_BLOCK, "bc7 srgb");
+
+uint32_t doe_vk_format_block_extent(doe_vk_texture_format format) {
+    return block_compressed(format) ? 4 : 1;
+}
+
+/* Bytes of one texel block (one texel for uncompressed formats). */
 static uint32_t texel_bytes(doe_vk_texture_format format) {
     switch (format) {
+        case DOE_VK_FORMAT_BC1_RGBA_UNORM:
+        case DOE_VK_FORMAT_BC1_RGBA_SRGB:
+        case DOE_VK_FORMAT_BC4_R_UNORM:
+        case DOE_VK_FORMAT_BC4_R_SNORM: return 8;
+        case DOE_VK_FORMAT_BC2_RGBA_UNORM:
+        case DOE_VK_FORMAT_BC2_RGBA_SRGB:
+        case DOE_VK_FORMAT_BC3_RGBA_UNORM:
+        case DOE_VK_FORMAT_BC3_RGBA_SRGB:
+        case DOE_VK_FORMAT_BC5_RG_UNORM:
+        case DOE_VK_FORMAT_BC5_RG_SNORM:
+        case DOE_VK_FORMAT_BC6H_RGB_UFLOAT:
+        case DOE_VK_FORMAT_BC6H_RGB_FLOAT:
+        case DOE_VK_FORMAT_BC7_RGBA_UNORM:
+        case DOE_VK_FORMAT_BC7_RGBA_SRGB: return 16;
         case DOE_VK_FORMAT_S8_UINT:
         case DOE_VK_FORMAT_R8_UNORM: return 1;
         case DOE_VK_FORMAT_RG8_UNORM:
@@ -43,7 +81,8 @@ static uint32_t texel_bytes(doe_vk_texture_format format) {
         case DOE_VK_FORMAT_RG16_FLOAT:
         case DOE_VK_FORMAT_R32_UINT:
         case DOE_VK_FORMAT_R32_SINT:
-        case DOE_VK_FORMAT_R32_FLOAT: return 4;
+        case DOE_VK_FORMAT_R32_FLOAT:
+        case DOE_VK_FORMAT_RG11B10_UFLOAT: return 4;
         case DOE_VK_FORMAT_D32_FLOAT_S8_UINT:
         case DOE_VK_FORMAT_RGBA16_UINT:
         case DOE_VK_FORMAT_RGBA16_SINT:
@@ -64,11 +103,14 @@ doe_vk_status doe_vk_texture_format_caps(doe_vk_context *context,
     if (context->lost) return DOE_VK_DEVICE_LOST;
     uint32_t bytes = texel_bytes(format);
     if (bytes == 0) return DOE_VK_UNSUPPORTED;
+    /* BC formats exist for this context only with textureCompressionBC enabled. */
+    if (block_compressed(format) && !context->caps.texture_compression_bc) return DOE_VK_UNSUPPORTED;
     VkFormatProperties properties = {0};
     context->vk.vkGetPhysicalDeviceFormatProperties(context->physical, (uint32_t)format, &properties);
     uint32_t flags = properties.optimalTilingFeatures;
     doe_vk_format_caps caps = {
         .texel_bytes = bytes,
+        .block_extent = doe_vk_format_block_extent(format),
         .sampled = (flags & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT) != 0,
         .storage = (flags & VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT) != 0,
         .color_attachment = (flags & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT) != 0,
@@ -82,6 +124,13 @@ doe_vk_status doe_vk_texture_format_caps(doe_vk_context *context,
     if (caps.color_attachment || caps.depth_stencil_attachment) {
         doe_vk_status status = doe_vk_attachment_samples(context, format, &caps.attachment_sample_counts);
         if (status != DOE_VK_OK) return status;
+    }
+    if (caps.sampled && caps.copy_src && caps.copy_dst && caps.aspects == VK_IMAGE_ASPECT_COLOR_BIT) {
+        VkImageFormatProperties volume;
+        const doe_vk_texture_desc probe = {.dimension = DOE_VK_TEXTURE_3D, .format = format,
+            .usage = DOE_VK_TEXTURE_SAMPLED | DOE_VK_TEXTURE_COPY_SRC | DOE_VK_TEXTURE_COPY_DST};
+        caps.volume = context->vk.vkGetPhysicalDeviceImageFormatProperties(context->physical, (uint32_t)format,
+            (uint32_t)probe.dimension, VK_IMAGE_TILING_OPTIMAL, probe.usage, 0, &volume) == 0;
     }
     *out = caps;
     return DOE_VK_OK;
@@ -298,7 +347,22 @@ static doe_vk_status validate_view(doe_vk_texture *texture, const doe_vk_texture
         return DOE_VK_INVALID_ARGUMENT;
     if ((desc->dimension == DOE_VK_VIEW_1D || desc->dimension == DOE_VK_VIEW_2D || desc->dimension == DOE_VK_VIEW_3D) && desc->layer_count != 1)
         return DOE_VK_INVALID_ARGUMENT;
+    for (uint32_t i = 0; i < 4; ++i)
+        if (desc->swizzle[i] < DOE_VK_SWIZZLE_IDENTITY || desc->swizzle[i] > DOE_VK_SWIZZLE_A) return DOE_VK_INVALID_ARGUMENT;
     return DOE_VK_OK;
+}
+
+_Static_assert((int)DOE_VK_SWIZZLE_IDENTITY == (int)VK_COMPONENT_SWIZZLE_IDENTITY, "swizzle identity");
+_Static_assert((int)DOE_VK_SWIZZLE_ZERO == (int)VK_COMPONENT_SWIZZLE_ZERO, "swizzle zero");
+_Static_assert((int)DOE_VK_SWIZZLE_ONE == (int)VK_COMPONENT_SWIZZLE_ONE, "swizzle one");
+_Static_assert((int)DOE_VK_SWIZZLE_R == (int)VK_COMPONENT_SWIZZLE_R, "swizzle r");
+_Static_assert((int)DOE_VK_SWIZZLE_G == (int)VK_COMPONENT_SWIZZLE_G, "swizzle g");
+_Static_assert((int)DOE_VK_SWIZZLE_B == (int)VK_COMPONENT_SWIZZLE_B, "swizzle b");
+_Static_assert((int)DOE_VK_SWIZZLE_A == (int)VK_COMPONENT_SWIZZLE_A, "swizzle a");
+
+bool doe_vk_texture_view_swizzled(const doe_vk_texture_view *view) {
+    for (uint32_t i = 0; i < 4; ++i) if (view->desc.swizzle[i] != DOE_VK_SWIZZLE_IDENTITY) return true;
+    return false;
 }
 
 doe_vk_status doe_vk_texture_view_create(doe_vk_texture *texture,
@@ -326,6 +390,8 @@ doe_vk_status doe_vk_texture_view_create(doe_vk_texture *texture,
         .image = texture->image,
         .viewType = (uint32_t)desc->dimension,
         .format = (uint32_t)format,
+        .components = { (uint32_t)desc->swizzle[0], (uint32_t)desc->swizzle[1], (uint32_t)desc->swizzle[2],
+            (uint32_t)desc->swizzle[3] },
         .subresourceRange = { aspects, desc->base_mip, desc->mip_count, desc->base_layer, desc->layer_count }
     };
     doe_vk_context *context = texture->context;

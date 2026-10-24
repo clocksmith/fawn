@@ -12,11 +12,11 @@ static void command_debug(WGPUCommandEncoder handle, doe_resource_debug_operatio
     size_t size;
     bool valid = !label || native_string_size(*label, &size);
     native_lock(device);
+    const bool ended = doe_resource_encoder_ended(owner);
     doe_resource_status status = valid ? doe_resource_encoder_debug(owner, operation) :
         doe_resource_encoder_invalidate(owner, DOE_RESOURCE_INVALID_ARGUMENT);
     native_unlock(device);
-    if (status != DOE_RESOURCE_OK)
-        native_error(device, native_resource_error(status), "command debug recording failed");
+    native_encoding_error(device, ended, status, "command debug recording failed");
 }
 void wgpuCommandEncoderInsertDebugMarker(WGPUCommandEncoder handle, WGPUStringView label)
 {
@@ -40,11 +40,11 @@ static void compute_debug(WGPUComputePassEncoder handle, doe_resource_debug_oper
     size_t size;
     bool valid = !label || native_string_size(*label, &size);
     native_lock(device);
+    const bool ended = doe_resource_compute_pass_ended(owner);
     doe_resource_status status = valid ? doe_resource_compute_pass_debug(owner, operation) :
         doe_resource_compute_pass_invalidate(owner, DOE_RESOURCE_INVALID_ARGUMENT);
     native_unlock(device);
-    if (status != DOE_RESOURCE_OK)
-        native_error(device, native_resource_error(status), "compute debug recording failed");
+    native_encoding_error(device, ended, status, "compute debug recording failed");
 }
 void wgpuComputePassEncoderInsertDebugMarker(WGPUComputePassEncoder handle, WGPUStringView label)
 {
@@ -68,11 +68,11 @@ static void render_debug(WGPURenderPassEncoder handle, doe_resource_debug_operat
     size_t size;
     bool valid = !label || native_string_size(*label, &size);
     native_lock(device);
+    const bool ended = doe_resource_render_pass_ended(owner);
     doe_resource_status status = valid ? doe_resource_render_pass_debug(owner, operation) :
         doe_resource_render_pass_invalidate(owner, DOE_RESOURCE_INVALID_ARGUMENT);
     native_unlock(device);
-    if (status != DOE_RESOURCE_OK)
-        native_error(device, native_resource_error(status), "render debug recording failed");
+    native_encoding_error(device, ended, status, "render debug recording failed");
 }
 void wgpuRenderPassEncoderInsertDebugMarker(WGPURenderPassEncoder handle, WGPUStringView label)
 {

@@ -4,8 +4,9 @@ PYTHON ?= python3
 CC = gcc
 CXX = g++
 REVISION ?= HEAD
-BUILD ?= /tmp/doe-c-package-build
-STAGE ?= /tmp/doe-c-package
+include build-root.mk
+BUILD ?= $(DOE_C_TMP)/package-build
+STAGE ?= $(DOE_C_TMP)/package
 # Every owner with a library build, in dependency order. A changed public header
 # or enum must still build every consumer; owner checks alone cannot see that.
 OWNERS = futures callbacks instance labels error-scopes dropin-policy shader \
