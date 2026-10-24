@@ -407,6 +407,22 @@ test "bundle debug groups must be balanced at finish" {
     }
 }
 
+test "render getBindGroupLayout of an automatic layout lists the bindings its entry points use" {
+    var pipeline = DoeRenderPipeline{};
+    pipeline.required_binding_kinds[1 * MAX_BIND + 0] = 1;
+    pipeline.required_binding_kinds[1 * MAX_BIND + 3] = 3;
+    const raw = doeNativeRenderPipelineGetBindGroupLayout(toOpaque(&pipeline), 1) orelse return error.TestUnexpectedResult;
+    defer bind_group_native.doeNativeBindGroupLayoutRelease(raw);
+    const layout = cast(DoeBindGroupLayout, raw).?;
+    try std.testing.expectEqual(@as(u32, 2), layout.entry_count);
+    try std.testing.expectEqual(@as(u32, 3), layout.entries.?[1].binding);
+    try std.testing.expectEqual(@as(u32, 3), layout.entries.?[1].resource_kind);
+    try std.testing.expect(layout.automatic and layout.auto_layout_id == pipeline.auto_layout_id);
+    const empty = doeNativeRenderPipelineGetBindGroupLayout(toOpaque(&pipeline), 0) orelse return error.TestUnexpectedResult;
+    defer bind_group_native.doeNativeBindGroupLayoutRelease(empty);
+    try std.testing.expectEqual(@as(u32, 0), cast(DoeBindGroupLayout, empty).?.entry_count);
+}
+
 test "failed bundle cannot replay into a valid command recording" {
     var failing = std.testing.FailingAllocator.init(std.testing.allocator, .{});
     const encoder = bundle.make_bundle_encoder(failing.allocator(), 0, 0, 1, false, false).?;
@@ -431,9 +447,10 @@ test "failed bundle cannot replay into a valid command recording" {
 // ============================================================
 // Render pipeline: getBindGroupLayout
 // An explicit layout returns its group's layout. An automatic layout returns
-// an entry-less layout owned by the pipeline: the render pipeline keeps no
-// per-group entries, so doe-gpu builds those layouts from reflection and
-// adopts them (doeNativePipelineAdoptAutoBindGroupLayout).
+// a layout owned by the pipeline with the bindings its entry points use, by
+// resource kind only (as compute pipelines do); doe-gpu instead builds
+// complete layouts from reflection and adopts them
+// (doeNativePipelineAdoptAutoBindGroupLayout).
 // ============================================================
 
 pub export fn doeNativeRenderPipelineGetBindGroupLayout(
@@ -447,8 +464,27 @@ pub export fn doeNativeRenderPipelineGetBindGroupLayout(
         native_helpers.object_add_ref(DoeBindGroupLayout, toOpaque(retained));
         return toOpaque(retained);
     }
+    if (group_index >= native_shared.MAX_RENDER_BIND_GROUPS) return null;
+    // The entries the vertex and fragment entry points use, by resource kind.
+    const kinds = pip.required_binding_kinds[group_index * MAX_BIND ..][0..MAX_BIND];
+    var count: usize = 0;
+    for (kinds) |kind| count += @intFromBool(kind != 0);
     const bgl = make(DoeBindGroupLayout) orelse return null;
     bgl.* = .{};
+    if (count != 0) {
+        const entries = alloc.alloc(native_shared.DoeBindGroupLayoutEntry, count) catch {
+            alloc.destroy(bgl);
+            return null;
+        };
+        var next: usize = 0;
+        for (kinds, 0..) |kind, binding| {
+            if (kind == 0) continue;
+            entries[next] = .{ .binding = @intCast(binding), .resource_kind = kind };
+            next += 1;
+        }
+        bgl.entries = entries;
+        bgl.entry_count = @intCast(count);
+    }
     bind_group_native.adoptAutoLayout(bgl, bind_group_native.pipelineAutoLayoutId(&pip.auto_layout_id));
     return toOpaque(bgl);
 }
