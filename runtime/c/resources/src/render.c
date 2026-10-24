@@ -632,7 +632,7 @@ void resource_render_record_release(doe_resource_render_record *record)
 doe_resource_status resource_render_record_validate(const doe_resource_render_record *record)
 {
     if (!record) return DOE_RESOURCE_INVALID_ARGUMENT;
-    doe_resource_status status = resource_scope_validate(&record->scope);
+    doe_resource_status status = resource_scope_validate(&record->scope, true);
     return status == DOE_RESOURCE_OK ? validate_packet(&record->packet, &record->base.config, true) : status;
 }
 
