@@ -188,6 +188,7 @@ pub export fn doeNativeCommandEncoderCopyTextureToBuffer(
 
 pub export fn doeNativeCommandEncoderFinish(enc_raw: ?*anyopaque, desc: ?*const abi_pipeline.WGPUCommandBufferDescriptor) callconv(.c) ?*anyopaque {
     const enc = cast(DoeCommandEncoder, enc_raw) orelse return null;
+    if (enc.state == .open) enc.debug_groups.requireBalanced() catch |err| recording.fail(enc, err);
     const valid = enc.state == .open;
     recording.reportAtFinish(enc);
     const cb = native_helpers.create(DoeCommandBuffer, enc.allocator) catch |err| {
@@ -227,7 +228,7 @@ pub export fn doeNativeCommandBufferRelease(raw: ?*anyopaque) callconv(.c) void 
 }
 
 // ============================================================
-// Debug markers — no-ops in headless runtime; symbols required for API surface completeness.
+// Debug markers: labels are not forwarded to a backend; group balance is validated.
 // ============================================================
 
 pub export fn doeNativeCommandEncoderInsertDebugMarker(
@@ -245,14 +246,15 @@ pub export fn doeNativeCommandEncoderPushDebugGroup(
     _: usize,
 ) callconv(.c) void {
     const object = cast(DoeCommandEncoder, raw) orelse return;
-    _ = recording.requireOpen(object);
+    if (recording.requireOpen(object)) object.debug_groups.push();
 }
 
 pub export fn doeNativeCommandEncoderPopDebugGroup(
     raw: ?*anyopaque,
 ) callconv(.c) void {
     const object = cast(DoeCommandEncoder, raw) orelse return;
-    _ = recording.requireOpen(object);
+    if (!recording.requireOpen(object)) return;
+    object.debug_groups.pop() catch |err| recording.fail(object, err);
 }
 
 test "recorded copies transfer resource ownership to command buffers" {

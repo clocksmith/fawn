@@ -312,10 +312,7 @@ function createEncoderClasses(backend) {
     insertDebugMarker(markerLabel) {
       this._assertOpen('GPUComputePassEncoder.insertDebugMarker');
       if (this._invalid) return;
-      backend.computePassInsertDebugMarker(
-        this,
-        assertDOMString(markerLabel, 'GPUComputePassEncoder.insertDebugMarker', 'markerLabel'),
-      );
+      backend.computePassInsertDebugMarker(this, markerLabel);
     }
 
     end() {

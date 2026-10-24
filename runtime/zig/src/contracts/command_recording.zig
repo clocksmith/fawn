@@ -45,7 +45,7 @@ pub const DispatchError = error{
     DispatchBindGroupIncompatible,
 };
 
-pub const Failure = RenderAttachmentError || BufferCopyError || DrawError || BindGroupError || DispatchError || @import("texture_copy.zig").Error || error{ OutOfMemory, InvalidState, ImmediateDataUnsupported, ImmediateDataRange, TextureCopyDeviceMismatch, TextureCopyUsageMissing };
+pub const Failure = RenderAttachmentError || BufferCopyError || DrawError || BindGroupError || DispatchError || @import("texture_copy.zig").Error || error{ OutOfMemory, InvalidState, ImmediateDataUnsupported, ImmediateDataRange, DebugGroupUnbalanced, TextureCopyDeviceMismatch, TextureCopyUsageMissing };
 
 pub fn message(cause: Failure) []const u8 {
     return switch (cause) {
@@ -84,9 +84,30 @@ pub fn message(cause: Failure) []const u8 {
         error.TextureCopyDeviceMismatch => "texture copy resources must belong to the encoder's device",
         error.TextureCopyUsageMissing => "texture copy requires COPY_SRC on source and COPY_DST on destination",
         error.ImmediateDataRange => "setImmediates offset and size must be 4-byte aligned and within maxImmediateSize",
+        error.DebugGroupUnbalanced => "popDebugGroup needs an open debug group, and every pushDebugGroup must be popped before end() or finish()",
         error.ImmediateDataUnsupported => "setImmediates: shader-visible immediate data is unsupported; use buffer bindings",
     };
 }
+
+/// Open debug groups of an encoder, pass or bundle encoder: popDebugGroup
+/// needs one open, and end() or finish() needs none
+/// (https://gpuweb.github.io/gpuweb/#dom-gpudebugcommandsmixin-popdebuggroup).
+pub const DebugGroups = struct {
+    depth: u32 = 0,
+
+    pub fn push(self: *DebugGroups) void {
+        self.depth +|= 1;
+    }
+
+    pub fn pop(self: *DebugGroups) error{DebugGroupUnbalanced}!void {
+        if (self.depth == 0) return error.DebugGroupUnbalanced;
+        self.depth -= 1;
+    }
+
+    pub fn requireBalanced(self: DebugGroups) error{DebugGroupUnbalanced}!void {
+        if (self.depth != 0) return error.DebugGroupUnbalanced;
+    }
+};
 
 pub const State = union(enum) {
     open,

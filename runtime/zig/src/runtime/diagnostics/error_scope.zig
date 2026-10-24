@@ -245,6 +245,7 @@ pub fn zig_error_to_type(err: anyerror) u32 {
         error.InvalidState,
         error.ImmediateDataUnsupported,
         error.ImmediateDataRange,
+        error.DebugGroupUnbalanced,
         error.RenderAttachmentUnavailable,
         error.RenderAttachmentDeviceMismatch,
         error.RenderAttachmentUsageMissing,

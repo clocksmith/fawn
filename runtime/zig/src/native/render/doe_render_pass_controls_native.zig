@@ -115,10 +115,11 @@ pub export fn doeNativeRenderPassPushDebugGroup(
     label_len: usize,
 ) callconv(.c) void {
     // Debug labels do not affect execution and the logical pass does not own a
-    // backend encoder until queue submission.
-    validatePass(encoder_raw);
+    // backend encoder until queue submission; group balance is validated.
     _ = label_ptr;
     _ = label_len;
+    const pass = helpers.cast(objects.DoeRenderPass, encoder_raw) orelse return;
+    if (recording.requirePass(pass.enc, @intFromPtr(pass))) pass.debug_groups.push();
 }
 
 // ============================================================
@@ -128,7 +129,9 @@ pub export fn doeNativeRenderPassPushDebugGroup(
 pub export fn doeNativeRenderPassPopDebugGroup(
     encoder_raw: ?*anyopaque,
 ) callconv(.c) void {
-    validatePass(encoder_raw);
+    const pass = helpers.cast(objects.DoeRenderPass, encoder_raw) orelse return;
+    if (!recording.requirePass(pass.enc, @intFromPtr(pass))) return;
+    pass.debug_groups.pop() catch |err| recording.fail(pass.enc, err);
 }
 
 // ============================================================

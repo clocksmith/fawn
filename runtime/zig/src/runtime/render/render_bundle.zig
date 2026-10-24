@@ -131,6 +131,7 @@ pub const BundleCmd = union(BundleCmdTag) {
 pub const DoeBundleEncoder = struct {
     pub const TYPE_MAGIC = MAGIC_BUNDLE_ENCODER;
     state: recording.State = .open,
+    debug_groups: recording.DebugGroups = .{},
     device_lease: ?leases.ResourceLease = null,
     magic: u32 = TYPE_MAGIC,
     allocator: std.mem.Allocator,
