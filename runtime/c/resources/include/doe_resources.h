@@ -251,8 +251,9 @@ typedef struct doe_resource_layout_entry {
  * group holds at most MAX_DYNAMIC_OFFSETS dynamic-offset buffers. */
 enum { DOE_RESOURCE_MAX_BINDING_NUMBER = 1000, DOE_RESOURCE_MAX_DYNAMIC_OFFSETS = 32, DOE_RESOURCE_MAX_GROUPS = 4 };
 /* Entries copied and canonicalized by binding, duplicates rejected. Automatic
- * layout identity remains exclusive: compatibility requires pointer equality,
- * and only one pipeline can ever claim an automatic layout. */
+ * layout identity remains exclusive: only one pipeline can ever claim an
+ * automatic layout, and an automatic layout is compatible only with itself or
+ * an equal-entry group claimed by the same pipeline (WebGPU group-equivalent). */
 doe_resource_status doe_resource_layout_create(const doe_resource_config *config,
     const doe_resource_layout_entry *entries, size_t count, bool automatic,
     doe_resource_layout **out);
