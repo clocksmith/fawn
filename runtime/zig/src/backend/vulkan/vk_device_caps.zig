@@ -42,6 +42,26 @@ const WEBGPU_MIN_MAX_COMPUTE_WORKGROUP_SIZE_Y: u32 = 256;
 const WEBGPU_MIN_MAX_COMPUTE_WORKGROUP_SIZE_Z: u32 = 64;
 const WEBGPU_MIN_MAX_COMPUTE_WORKGROUPS_PER_DIMENSION: u32 = 65535;
 
+// Per-stage binding limits are reported in tiers, as browsers report them,
+// rather than as the raw driver count (lavapipe reports 1000000). The first
+// tier is the WebGPU default; a device reports the highest tier its per-stage
+// and per-set descriptor counts both reach.
+const SAMPLED_TEXTURE_TIERS = [_]u32{WEBGPU_MIN_MAX_SAMPLED_TEXTURES};
+const SAMPLER_TIERS = [_]u32{WEBGPU_MIN_MAX_SAMPLERS};
+const STORAGE_BUFFER_TIERS = [_]u32{ WEBGPU_MIN_MAX_STORAGE_BUFFERS, 10 };
+const STORAGE_TEXTURE_TIERS = [_]u32{ WEBGPU_MIN_MAX_STORAGE_TEXTURES, 8 };
+const UNIFORM_BUFFER_TIERS = [_]u32{WEBGPU_MIN_MAX_UNIFORM_BUFFERS};
+
+/// The highest tier at or below `native`. A device below the first (default)
+/// tier keeps the default, as every other limit here does.
+fn tier_limit(native: u32, tiers: []const u32) u32 {
+    var selected = tiers[0];
+    for (tiers) |tier| {
+        if (tier <= native) selected = tier;
+    }
+    return selected;
+}
+
 // WebGPU feature name constants.
 const FEATURE_DEPTH_CLIP_CONTROL: u32 = abi_feature.WGPUFeatureName_DepthClipControl;
 const FEATURE_DEPTH32FLOAT_STENCIL8: u32 = abi_feature.WGPUFeatureName_Depth32FloatStencil8;
@@ -122,11 +142,11 @@ fn map_vulkan_to_wgpu_limits(
         .maxBindingsPerBindGroup = WEBGPU_MIN_MAX_BINDINGS_PER_BIND_GROUP,
         .maxDynamicUniformBuffersPerPipelineLayout = WEBGPU_MIN_MAX_DYNAMIC_UNIFORM_BUFFERS,
         .maxDynamicStorageBuffersPerPipelineLayout = WEBGPU_MIN_MAX_DYNAMIC_STORAGE_BUFFERS,
-        .maxSampledTexturesPerShaderStage = @max(vk_limits.maxPerStageDescriptorSampledImages, WEBGPU_MIN_MAX_SAMPLED_TEXTURES),
-        .maxSamplersPerShaderStage = @max(vk_limits.maxPerStageDescriptorSamplers, WEBGPU_MIN_MAX_SAMPLERS),
-        .maxStorageBuffersPerShaderStage = @max(vk_limits.maxPerStageDescriptorStorageBuffers, WEBGPU_MIN_MAX_STORAGE_BUFFERS),
-        .maxStorageTexturesPerShaderStage = @max(vk_limits.maxPerStageDescriptorStorageImages, WEBGPU_MIN_MAX_STORAGE_TEXTURES),
-        .maxUniformBuffersPerShaderStage = @max(vk_limits.maxPerStageDescriptorUniformBuffers, WEBGPU_MIN_MAX_UNIFORM_BUFFERS),
+        .maxSampledTexturesPerShaderStage = tier_limit(@min(vk_limits.maxPerStageDescriptorSampledImages, vk_limits.maxDescriptorSetSampledImages), &SAMPLED_TEXTURE_TIERS),
+        .maxSamplersPerShaderStage = tier_limit(@min(vk_limits.maxPerStageDescriptorSamplers, vk_limits.maxDescriptorSetSamplers), &SAMPLER_TIERS),
+        .maxStorageBuffersPerShaderStage = tier_limit(@min(vk_limits.maxPerStageDescriptorStorageBuffers, vk_limits.maxDescriptorSetStorageBuffers), &STORAGE_BUFFER_TIERS),
+        .maxStorageTexturesPerShaderStage = tier_limit(@min(vk_limits.maxPerStageDescriptorStorageImages, vk_limits.maxDescriptorSetStorageImages), &STORAGE_TEXTURE_TIERS),
+        .maxUniformBuffersPerShaderStage = tier_limit(@min(vk_limits.maxPerStageDescriptorUniformBuffers, vk_limits.maxDescriptorSetUniformBuffers), &UNIFORM_BUFFER_TIERS),
         .maxUniformBufferBindingSize = @max(vk_limits.maxUniformBufferRange, WEBGPU_MIN_MAX_UNIFORM_BUFFER_BINDING_SIZE),
         .maxStorageBufferBindingSize = @max(vk_limits.maxStorageBufferRange, WEBGPU_MIN_MAX_STORAGE_BUFFER_BINDING_SIZE),
         .minUniformBufferOffsetAlignment = clamp_alignment(@intCast(vk_limits.minUniformBufferOffsetAlignment), WEBGPU_MAX_MIN_UNIFORM_BUFFER_OFFSET_ALIGNMENT),
@@ -248,4 +268,31 @@ pub fn probe_device_caps(allocator: std.mem.Allocator) !VulkanDeviceCaps {
         probe.physical_device,
         if (probe.timestamp_query_supported_value) 36 else 0,
     );
+}
+
+test "Vulkan per-stage binding limits report the highest reached tier, not the driver count" {
+    var vk_limits = std.mem.zeroes(c.VkPhysicalDeviceLimits);
+    vk_limits.maxPerStageDescriptorSampledImages = 1_000_000;
+    vk_limits.maxDescriptorSetSampledImages = 1_000_000;
+    vk_limits.maxPerStageDescriptorSamplers = 1_000_000;
+    vk_limits.maxDescriptorSetSamplers = 1_000_000;
+    vk_limits.maxPerStageDescriptorStorageBuffers = 1_000_000;
+    vk_limits.maxDescriptorSetStorageBuffers = 1_000_000;
+    vk_limits.maxPerStageDescriptorStorageImages = 1_000_000;
+    vk_limits.maxDescriptorSetStorageImages = 1_000_000;
+    vk_limits.maxPerStageDescriptorUniformBuffers = 1_000_000;
+    vk_limits.maxDescriptorSetUniformBuffers = 1_000_000;
+    var limits = map_vulkan_to_wgpu_limits(vk_limits);
+    try std.testing.expectEqual(@as(u32, 16), limits.maxSampledTexturesPerShaderStage);
+    try std.testing.expectEqual(@as(u32, 16), limits.maxSamplersPerShaderStage);
+    try std.testing.expectEqual(@as(u32, 10), limits.maxStorageBuffersPerShaderStage);
+    try std.testing.expectEqual(@as(u32, 8), limits.maxStorageTexturesPerShaderStage);
+    try std.testing.expectEqual(@as(u32, 12), limits.maxUniformBuffersPerShaderStage);
+
+    // A per-set count below the next tier holds the stage at the lower tier.
+    vk_limits.maxDescriptorSetStorageBuffers = 9;
+    vk_limits.maxPerStageDescriptorStorageImages = 7;
+    limits = map_vulkan_to_wgpu_limits(vk_limits);
+    try std.testing.expectEqual(@as(u32, 8), limits.maxStorageBuffersPerShaderStage);
+    try std.testing.expectEqual(@as(u32, 4), limits.maxStorageTexturesPerShaderStage);
 }
