@@ -97,10 +97,9 @@ doe_resource_status resource_color_layout_validate(const doe_resource_config *co
     if (!any && !depth_stencil) return DOE_RESOURCE_LAYOUT;
     if (depth_stencil && !resource_format_depth(depth_stencil)) return DOE_RESOURCE_LAYOUT;
     if (samples != 1 && samples != 4) return DOE_RESOURCE_UNSUPPORTED;
-    /* A multisampled layout needs every color format to support multisampling. */
-    for (uint32_t i = 0; samples > 1 && i < count; i++)
-        if (formats[i] != WGPUTextureFormat_Undefined && !resource_format_multisample(formats[i]))
-            return DOE_RESOURCE_LAYOUT;
+    /* WebGPU checks multisample support when a texture is created, not for a
+     * pipeline or bundle layout: a layout whose format cannot multisample is
+     * valid, and no attachment matching it can exist. */
     return DOE_RESOURCE_OK;
 }
 

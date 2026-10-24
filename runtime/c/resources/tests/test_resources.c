@@ -164,6 +164,11 @@ static void test_texture_layout(void)
     desc.mip_levels = 1;
     desc.samples = 4;
     assert(doe_resource_texture_validate(&desc, &limits) == DOE_RESOURCE_USAGE); /* no RenderAttachment */
+    desc.format = WGPUTextureFormat_RGBA32Uint; /* cannot multisample */
+    desc.usage |= WGPUTextureUsage_RenderAttachment;
+    assert(doe_resource_texture_validate(&desc, &limits) == DOE_RESOURCE_LAYOUT);
+    desc.format = texture_desc().format;
+    desc.usage = texture_desc().usage;
     desc.usage |= WGPUTextureUsage_RenderAttachment; /* copy and binding usages are admitted */
     assert(doe_resource_texture_validate(&desc, &limits) == DOE_RESOURCE_OK);
     desc.usage |= WGPUTextureUsage_StorageBinding;
