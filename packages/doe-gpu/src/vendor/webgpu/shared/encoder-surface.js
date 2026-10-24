@@ -43,6 +43,23 @@ function normalizeImmediateDataInput(data, dataOffset = 0, size, path) {
   return bytes.subarray(dataOffset, end);
 }
 
+// WebIDL [EnforceRange] integer conversion: ToNumber, reject NaN and
+// infinities, truncate, then range-check (TypeError on failure).
+function enforceRange(value, path, label, max) {
+  if (typeof value === 'bigint' || typeof value === 'symbol') {
+    throw new TypeError(`${path}: ${label} must be a number`);
+  }
+  const number = Number(value);
+  if (!Number.isFinite(number)) {
+    throw new TypeError(`${path}: ${label} must be a finite number`);
+  }
+  const integer = Math.trunc(number);
+  if (integer < 0 || integer > max) {
+    throw new TypeError(`${path}: ${label} ${integer} is outside [0, ${max}]`);
+  }
+  return integer;
+}
+
 // setBindGroup(index, bindGroup, dynamicOffsets = []) and
 // setBindGroup(index, bindGroup, dynamicOffsetsData, dataStart, dataLength).
 // Returns the offsets as a Uint32Array copy, or null when there are none.
@@ -51,15 +68,12 @@ function normalizeDynamicOffsets(path, argumentCount, offsets, dataStart, dataLe
     if (!(offsets instanceof Uint32Array)) {
       throw new TypeError(`${path}: dynamicOffsetsData must be a Uint32Array`);
     }
-    for (const [label, value] of [['dynamicOffsetsDataStart', dataStart], ['dynamicOffsetsDataLength', dataLength]]) {
-      if (!Number.isInteger(value) || value < 0 || value > Number.MAX_SAFE_INTEGER) {
-        throw new TypeError(`${path}: ${label} must be a non-negative integer`);
-      }
-    }
-    if (dataStart + dataLength > offsets.length) {
+    const start = enforceRange(dataStart, path, 'dynamicOffsetsDataStart', Number.MAX_SAFE_INTEGER);
+    const length = enforceRange(dataLength, path, 'dynamicOffsetsDataLength', UINT32_MAX);
+    if (start + length > offsets.length) {
       throw new RangeError(`${path}: dynamicOffsetsDataStart + dynamicOffsetsDataLength exceeds dynamicOffsetsData.length`);
     }
-    return dataLength === 0 ? null : offsets.slice(dataStart, dataStart + dataLength);
+    return length === 0 ? null : offsets.slice(start, start + length);
   }
   if (offsets === undefined) {
     return null;
@@ -67,17 +81,13 @@ function normalizeDynamicOffsets(path, argumentCount, offsets, dataStart, dataLe
   if (offsets === null || typeof offsets[Symbol.iterator] !== 'function') {
     throw new TypeError(`${path}: dynamicOffsets must be a sequence of GPUBufferDynamicOffset`);
   }
-  const values = Array.from(offsets);
-  for (const value of values) {
-    if (!Number.isInteger(value) || value < 0 || value > UINT32_MAX) {
-      throw new TypeError(`${path}: dynamic offset ${value} is not a 32-bit unsigned integer`);
-    }
-  }
+  const values = Array.from(offsets, (value) => enforceRange(value, path, 'dynamic offset', UINT32_MAX));
   return values.length === 0 ? null : Uint32Array.from(values);
 }
 
+// GPUBindGroup? : null and undefined both unbind the slot.
 function normalizeBindGroup(bindGroup, path) {
-  return bindGroup === null ? null : assertLiveResource(bindGroup, path, 'GPUBindGroup');
+  return bindGroup == null ? null : assertLiveResource(bindGroup, path, 'GPUBindGroup');
 }
 
 // === Invalid objects in encoders ===

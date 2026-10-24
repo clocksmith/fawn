@@ -611,17 +611,6 @@ function createGpuError(result) {
   return error;
 }
 
-function emptyAdapterInfo() {
-  return Object.freeze({
-    vendor: '',
-    architecture: '',
-    device: '',
-    description: '',
-    subgroupMinSize: 0,
-    subgroupMaxSize: 0,
-  });
-}
-
 function dispatchNodeDeviceEvent(device, event) {
   if (!event || typeof event !== 'object') {
     return;
@@ -842,6 +831,8 @@ function materializeNodeCommandEncoderCommands(encoder) {
       addon.computePassRelease(pass);
     } else if (cmd.t === 1) {
       addon.commandEncoderCopyBufferToBuffer(encoder._native, cmd.s, cmd.so, cmd.d, cmd.do, cmd.sz);
+    } else if (cmd.t === 99) {
+      encoder._deferredError ??= cmd.message;
     }
   }
   encoder._commands = [];
@@ -875,20 +866,15 @@ function lazyCopyBufferValidationMessage(srcNative, srcOffset, dstNative, dstOff
   return null;
 }
 
-function captureNodeValidationError(device, message) {
-  const error = new GPUValidationError(message);
-  const scopes = Array.isArray(device?._errorScopes) ? device._errorScopes : [];
-  for (let index = scopes.length - 1; index >= 0; index -= 1) {
-    const scope = scopes[index];
-    if (scope.filter !== 'validation') {
-      continue;
-    }
-    if (scope.error === null) {
-      scope.error = error;
-    }
-    return true;
-  }
-  return false;
+function reportNodeValidationError(device, message) {
+  device._reportValidationError(message);
+}
+
+// finish() of an invalid encoder: the error is generated now and the returned
+// command buffer is invalid, so submitting it is another validation error.
+function invalidNodeCommandBuffer(encoder, message) {
+  reportNodeValidationError(encoder._device, message);
+  return { _commands: [{ t: 99, message }], _batched: true };
 }
 
 function captureDeferredValidationCommand(queue, commands, commandBuffers) {
@@ -898,9 +884,7 @@ function captureDeferredValidationCommand(queue, commands, commandBuffers) {
   const invalid = commands.find(command => command?.t === 99);
   if (invalid) {
     const message = invalid.message ?? 'deferred command validation failed';
-    if (!captureNodeValidationError(queue?._device, message)) {
-      failValidation('GPUQueue.submit', message);
-    }
+    reportNodeValidationError(queue._device, message);
     queue.markSubmittedWorkDone();
     consumeSubmittedCommandBuffers(commandBuffers);
     presentPendingCanvasContexts(queue);
@@ -924,6 +908,53 @@ function canFinishNodeLazyDispatchCopyCommandsAsNativeBuffer(commands) {
     }
   }
   return true;
+}
+
+// Bind group slots a deferred dispatch command binds, as a bit mask.
+function lazyDispatchBoundSlots(command) {
+  if (command.b) {
+    return 1;
+  }
+  let mask = 0;
+  for (const [index, group] of (command.bg ?? []).entries()) {
+    if (group) {
+      mask |= 1 << index;
+    }
+  }
+  return mask;
+}
+
+// Merging deferred dispatches into one native pass is exact only when every
+// dispatch binds the same slots; otherwise a group bound by an earlier
+// dispatch would stay bound for a later one that left its slot unbound.
+function lazyDispatchesShareBoundSlots(commands) {
+  let mask = null;
+  for (const command of commands) {
+    if (command.t !== 0) {
+      continue;
+    }
+    const slots = lazyDispatchBoundSlots(command);
+    if (mask !== null && slots !== mask) {
+      return false;
+    }
+    mask = slots;
+  }
+  return true;
+}
+
+// The Zig drop-in records dispatches without validating them, so recording at
+// finish() reports nothing there and doubled its finish+submit cost; its
+// submit-time flush stays. Remove this once Zig validates dispatches when they
+// are recorded (workgroup counts, missing or incompatible bind groups).
+function deferNodeDispatchesToSubmit(commands) {
+  if (libraryFlavor(currentDoeLibraryPath()) !== 'doe-dropin') {
+    return false;
+  }
+  const last = commands[commands.length - 1];
+  const dispatches = last.t === 1 ? commands.slice(0, -1) : commands;
+  return dispatches.length > 0
+    && dispatches.every((command) => command.t === 0 && command.d === undefined)
+    && lazyDispatchesShareBoundSlots(dispatches);
 }
 
 function finishNodeLazyCommandsAsNativeCommandBuffer(encoder, commands) {
@@ -958,6 +989,7 @@ function finishNodeLazyCommandsAsNativeCommandBuffer(encoder, commands) {
     typeof addon.createComputeDispatchBatchCopyCommandBuffer === 'function'
     && commands.length > 2
     && canFinishNodeLazyDispatchCopyCommandsAsNativeBuffer(commands)
+    && lazyDispatchesShareBoundSlots(commands)
   ) {
     const commandBuffer = addon.createComputeDispatchBatchCopyCommandBuffer(
       assertLiveResource(encoder._device, 'GPUCommandEncoder', 'GPUDevice'),
@@ -990,9 +1022,7 @@ function finishNodeLazyCommandsAsNativeCommandBuffer(encoder, commands) {
     }
     return addon.commandEncoderFinish(encoderNative);
   } finally {
-    if (typeof addon.commandEncoderRelease === 'function') {
-      addon.commandEncoderRelease(encoderNative);
-    }
+    addon.commandEncoderRelease(encoderNative);
   }
 }
 
@@ -1020,7 +1050,7 @@ function materializeLazyComputePass(pass) {
   }
   for (let index = 0; index < pass._bindGroups.length; index += 1) {
     if (pass._bindGroups[index]) {
-      addon.computePassSetBindGroup(pass._native, index, pass._bindGroups[index], passBindGroupOffsets(pass, index));
+      addon.computePassSetBindGroup(pass._native, index, pass._bindGroups[index]);
     }
   }
 }
@@ -1039,6 +1069,21 @@ function consumeSubmittedCommandBuffers(commandBuffers) {
     commandBuffer._submitted = true;
     commandBuffer.destroy?.();
   }
+}
+
+// submitBatched merges dispatches into one native pass; command buffers whose
+// dispatches bind different slots go one at a time so no binding carries over.
+function submitNodeBatchedCommandBuffers(deviceNative, queueNative, commandBuffers, commands) {
+  if (lazyDispatchesShareBoundSlots(commands)) {
+    return addon.submitBatched(deviceNative, queueNative, commands);
+  }
+  let breakdown = null;
+  for (const commandBuffer of commandBuffers) {
+    if (commandBuffer._commands.length > 0) {
+      breakdown = addon.submitBatched(deviceNative, queueNative, commandBuffer._commands);
+    }
+  }
+  return breakdown;
 }
 
 function flattenBatchedCommands(commandBuffers) {
@@ -1155,70 +1200,19 @@ function accumulateQueueFlushBreakdown(queue, flushBreakdown) {
   accumulateQueueSubmitValue(queue, 'submitQueueFlushDeferredResolveTotalNs', flushBreakdown.deferredResolveNs);
 }
 
+// A lazy compute pass keeps only state its deferred replay reproduces exactly:
+// a pipeline and non-null bind groups below LAZY_BIND_GROUP_SLOTS without
+// dynamic offsets. Any other setBindGroup, and every call on a native pass,
+// goes to the provider when it is made, because WebGPU validates setBindGroup
+// at the call (a pass that never dispatches still reports it).
+const LAZY_BIND_GROUP_SLOTS = 4;
+
 function updatePassPipelineState(pass, pipelineNative) {
   if (pass._pipeline === pipelineNative) {
     return false;
   }
   pass._pipeline = pipelineNative;
   return true;
-}
-
-// Offsets are a Uint32Array or null; a slot with offsets is always re-recorded.
-function updatePassBindGroupState(pass, index, bindGroupNative, offsets = null) {
-  const offsetsByGroup = pass._bindGroupOffsets ?? (pass._bindGroupOffsets = []);
-  if ((pass._bindGroups[index] ?? null) === bindGroupNative
-    && offsets === null
-    && (offsetsByGroup[index] ?? null) === null) {
-    return false;
-  }
-  pass._bindGroups[index] = bindGroupNative;
-  offsetsByGroup[index] = offsets;
-  return true;
-}
-
-function passBindGroupOffsets(pass, index) {
-  return pass._bindGroupOffsets?.[index] ?? undefined;
-}
-
-function initPendingComputeState(pass) {
-  pass._pipelineDirty = false;
-  pass._bindGroupDirty = [];
-}
-
-function markPassPipelineDirty(pass) {
-  pass._pipelineDirty = true;
-}
-
-function markPassBindGroupDirty(pass, index) {
-  pass._bindGroupDirty[index] = true;
-}
-
-function clearPendingBoundDispatchState(pass) {
-  pass._pipelineDirty = false;
-  pass._bindGroupDirty[0] = false;
-}
-
-function hasPendingNonZeroBindGroups(pass) {
-  for (let index = 1; index < pass._bindGroupDirty.length; index += 1) {
-    if (pass._bindGroupDirty[index]) {
-      return true;
-    }
-  }
-  return false;
-}
-
-function materializeNodePendingComputeState(pass, nativePass) {
-  if (pass._pipelineDirty && pass._pipeline != null) {
-    addon.computePassSetPipeline(nativePass, pass._pipeline);
-    pass._pipelineDirty = false;
-  }
-  for (let index = 0; index < pass._bindGroupDirty.length; index += 1) {
-    if (!pass._bindGroupDirty[index]) {
-      continue;
-    }
-    addon.computePassSetBindGroup(nativePass, index, pass._bindGroups[index] ?? null, passBindGroupOffsets(pass, index));
-    pass._bindGroupDirty[index] = false;
-  }
 }
 
 function immediateBytesEqual(currentData, nextData) {
@@ -1276,7 +1270,6 @@ const nodeEncoderBackend = {
     pass._pipeline = null;
     pass._bindGroups = [];
     pass._immediates = [];
-    initPendingComputeState(pass);
     if (native === null) {
       pass._native = null;
       pass._lazy = true;
@@ -1296,26 +1289,27 @@ const nodeEncoderBackend = {
     }
   },
   computePassSetPipeline(pass, pipelineNative) {
-    if (!updatePassPipelineState(pass, pipelineNative)) {
-      return;
-    }
+    pass._pipeline = pipelineNative;
     if (pass._lazy) {
       return;
     }
-    markPassPipelineDirty(pass);
+    addon.computePassSetPipeline(
+      assertLiveResource(pass, 'GPUComputePassEncoder.setPipeline', 'GPUComputePassEncoder'),
+      pipelineNative,
+    );
   },
   computePassSetBindGroup(pass, index, bindGroupNative, offsets = null) {
-    if (!updatePassBindGroupState(pass, index, bindGroupNative, offsets)) {
+    if (pass._lazy && bindGroupNative !== null && offsets === null && index < LAZY_BIND_GROUP_SLOTS) {
+      pass._bindGroups[index] = bindGroupNative;
       return;
     }
-    if (offsets !== null) {
-      // Deferred dispatch commands carry no dynamic offsets; record natively.
-      materializeLazyComputePass(pass);
-    }
-    if (pass._lazy) {
-      return;
-    }
-    markPassBindGroupDirty(pass, index);
+    materializeLazyComputePass(pass);
+    addon.computePassSetBindGroup(
+      assertLiveResource(pass, 'GPUComputePassEncoder.setBindGroup', 'GPUComputePassEncoder'),
+      index,
+      bindGroupNative,
+      offsets ?? undefined,
+    );
   },
   computePassSetImmediates(pass, index, data) {
     if (!updatePassImmediateState(pass, index, data)) {
@@ -1329,10 +1323,11 @@ const nodeEncoderBackend = {
     );
   },
   computePassDispatchWorkgroups(pass, x, y, z) {
+    if (pass._lazy && pass._pipeline == null) {
+      // The provider reports the missing pipeline when the pass is recorded.
+      materializeLazyComputePass(pass);
+    }
     if (pass._lazy) {
-      if (pass._pipeline == null) {
-        failValidation('GPUComputePassEncoder.dispatchWorkgroups', 'setPipeline() must be called before dispatch');
-      }
       if (pass._descriptor !== undefined || pass._bindGroups.length > 1) {
         const command = { t: 0, p: pass._pipeline, bg: pass._bindGroups.slice(), x, y, z };
         if (pass._descriptor !== undefined) {
@@ -1352,30 +1347,9 @@ const nodeEncoderBackend = {
       'GPUComputePassEncoder.dispatchWorkgroups',
       'GPUComputePassEncoder',
     );
-    if (
-      typeof addon.computePassDispatchBound === 'function'
-      && (pass._pipelineDirty || pass._bindGroupDirty[0] === true)
-      && !hasPendingNonZeroBindGroups(pass)
-      && passBindGroupOffsets(pass, 0) === undefined
-    ) {
-      addon.computePassDispatchBound(
-        nativePass,
-        pass._pipeline,
-        pass._bindGroups[0] ?? null,
-        x,
-        y,
-        z,
-      );
-      clearPendingBoundDispatchState(pass);
-      return;
-    }
-    materializeNodePendingComputeState(pass, nativePass);
     addon.computePassDispatchWorkgroups(nativePass, x, y, z);
   },
   computePassDispatchBound(pass, pipelineNative, bindGroupNative, x, y, z) {
-    if (pass._bindGroupOffsets) {
-      pass._bindGroupOffsets[0] = null;
-    }
     if (pass._lazy) {
       pass._pipeline = pipelineNative;
       pass._bindGroups[0] = bindGroupNative;
@@ -1399,13 +1373,13 @@ const nodeEncoderBackend = {
     );
     if (typeof addon.computePassDispatchBound === 'function') {
       addon.computePassDispatchBound(nativePass, pipelineNative, bindGroupNative, x, y, z);
-      clearPendingBoundDispatchState(pass);
+      pass._pipeline = pipelineNative;
       return;
     }
     addon.computePassSetPipeline(nativePass, pipelineNative);
     addon.computePassSetBindGroup(nativePass, 0, bindGroupNative);
     addon.computePassDispatchWorkgroups(nativePass, x, y, z);
-    clearPendingBoundDispatchState(pass);
+    pass._pipeline = pipelineNative;
   },
   computePassDispatchWorkgroupsIndirect(pass, indirectBufferNative, indirectOffset) {
     materializeLazyComputePass(pass);
@@ -1414,7 +1388,6 @@ const nodeEncoderBackend = {
       'GPUComputePassEncoder.dispatchWorkgroupsIndirect',
       'GPUComputePassEncoder',
     );
-    materializeNodePendingComputeState(pass, nativePass);
     addon.computePassDispatchWorkgroupsIndirect(nativePass, indirectBufferNative, indirectOffset);
   },
   computePassEnd(pass) {
@@ -1462,9 +1435,6 @@ const nodeEncoderBackend = {
     );
   },
   renderPassSetBindGroup(pass, index, bindGroupNative, offsets = null) {
-    if (!updatePassBindGroupState(pass, index, bindGroupNative, offsets)) {
-      return;
-    }
     addon.renderPassSetBindGroup(
       assertLiveResource(pass, 'GPURenderPassEncoder.setBindGroup', 'GPURenderPassEncoder'),
       index,
@@ -1613,9 +1583,6 @@ const nodeEncoderBackend = {
     addon.renderBundleEncoderSetPipeline(enc._native, pipelineNative);
   },
   renderBundleEncoderSetBindGroup(enc, index, bindGroupNative, offsets = null) {
-    if (!updatePassBindGroupState(enc, index, bindGroupNative, offsets)) {
-      return;
-    }
     addon.renderBundleEncoderSetBindGroup(enc._native, index, bindGroupNative, offsets ?? undefined);
   },
   renderBundleEncoderSetImmediates(enc, index, data) {
@@ -1698,6 +1665,7 @@ const nodeEncoderBackend = {
     encoder._native = null;
     encoder._finished = false;
     encoder._activePass = null;
+    encoder._deferredError = null;
   },
   commandEncoderAssertOpen(encoder, path) {
     if (encoder._finished) {
@@ -1827,7 +1795,9 @@ const nodeEncoderBackend = {
       return;
     }
     if (validationMessage) {
-      failValidation('GPUCommandEncoder.copyBufferToBuffer', validationMessage);
+      // The encoder becomes invalid; finish() reports it.
+      encoder._deferredError ??= validationMessage;
+      return;
     }
     addon.commandEncoderCopyBufferToBuffer(encoder._native, srcNative, srcOffset, dstNative, dstOffset, size);
   },
@@ -1887,22 +1857,25 @@ const nodeEncoderBackend = {
     );
   },
   commandEncoderPushDebugGroup(encoder, label) {
-    if (typeof addon.commandEncoderPushDebugGroup === 'function') {
-      ensureNodeCommandEncoderNative(encoder);
-      addon.commandEncoderPushDebugGroup(encoder._native, label);
+    if (typeof addon.commandEncoderPushDebugGroup !== 'function') {
+      throw unsupportedNodeDeviceCapability('GPUCommandEncoder.pushDebugGroup');
     }
+    ensureNodeCommandEncoderNative(encoder);
+    addon.commandEncoderPushDebugGroup(encoder._native, label);
   },
   commandEncoderPopDebugGroup(encoder) {
-    if (typeof addon.commandEncoderPopDebugGroup === 'function') {
-      ensureNodeCommandEncoderNative(encoder);
-      addon.commandEncoderPopDebugGroup(encoder._native);
+    if (typeof addon.commandEncoderPopDebugGroup !== 'function') {
+      throw unsupportedNodeDeviceCapability('GPUCommandEncoder.popDebugGroup');
     }
+    ensureNodeCommandEncoderNative(encoder);
+    addon.commandEncoderPopDebugGroup(encoder._native);
   },
   commandEncoderInsertDebugMarker(encoder, label) {
-    if (typeof addon.commandEncoderInsertDebugMarker === 'function') {
-      ensureNodeCommandEncoderNative(encoder);
-      addon.commandEncoderInsertDebugMarker(encoder._native, label);
+    if (typeof addon.commandEncoderInsertDebugMarker !== 'function') {
+      throw unsupportedNodeDeviceCapability('GPUCommandEncoder.insertDebugMarker');
     }
+    ensureNodeCommandEncoderNative(encoder);
+    addon.commandEncoderInsertDebugMarker(encoder._native, label);
   },
   commandEncoderCopyTextureToTexture(encoder, source, destination, copySize) {
     ensureNodeCommandEncoderNative(encoder);
@@ -1930,26 +1903,25 @@ const nodeEncoderBackend = {
     if (encoder._native == null) {
       const commands = encoder._commands;
       encoder._commands = [];
-      // finish() reports the encoder's validation result (WebGPU), so deferred
-      // commands are recorded natively here rather than at submit. A deferred
-      // JavaScript validation failure is reported now and again at submit.
       const invalid = commands.find((command) => command?.t === 99);
       if (invalid) {
-        const message = invalid.message ?? 'deferred command validation failed';
-        if (!captureNodeValidationError(encoder._device, message)) {
-          failValidation('GPUCommandEncoder.finish', message);
-        }
+        return invalidNodeCommandBuffer(encoder, invalid.message ?? 'deferred command validation failed');
+      }
+      if (commands.length === 0 || deferNodeDispatchesToSubmit(commands)) {
         return { _commands: commands, _batched: true };
       }
-      if (commands.length > 0) {
-        const nativeCommandBuffer = finishNodeLazyCommandsAsNativeCommandBuffer(encoder, commands);
-        return { _native: nativeCommandBuffer, _batched: false, _commands: commands };
-      }
-      return { _commands: commands, _batched: true };
+      // finish() reports the encoder's validation result (WebGPU), so deferred
+      // commands are recorded natively here rather than at submit.
+      const nativeCommandBuffer = finishNodeLazyCommandsAsNativeCommandBuffer(encoder, commands);
+      return { _native: nativeCommandBuffer, _batched: false, _commands: commands };
     }
     const cmd = addon.commandEncoderFinish(encoder._native);
     addon.commandEncoderRelease(encoder._native);
     encoder._native = null;
+    if (encoder._deferredError != null) {
+      addon.commandBufferRelease(cmd);
+      return invalidNodeCommandBuffer(encoder, encoder._deferredError);
+    }
     return { _native: cmd, _batched: false };
   },
 };
@@ -2135,10 +2107,8 @@ const fullSurfaceBackend = {
     if (typeof _wrapper?._mapState === 'string') {
       return _wrapper._mapState;
     }
-    if (typeof addon.bufferGetMapState !== 'function') {
-      return null;
-    }
-    return addon.bufferGetMapState(native);
+    // The surface keeps its own map state when the provider reports none.
+    return typeof addon.bufferGetMapState === 'function' ? addon.bufferGetMapState(native) : null;
   },
   bufferAssertMappedPrefixF32(_wrapper, native, expected, count) {
     return addon.bufferAssertMappedPrefixF32(native, expected, count);
@@ -2248,7 +2218,7 @@ const fullSurfaceBackend = {
         return;
       }
       const addonStartedAt = submitTimingStart();
-      const addonBreakdown = addon.submitBatched(deviceNative, queueNative, allCommands);
+      const addonBreakdown = submitNodeBatchedCommandBuffers(deviceNative, queueNative, buffers, allCommands);
       accumulateQueueSubmitBreakdown(queue, 'submitAddonCallTotalNs', addonStartedAt);
       accumulateAddonSubmitBreakdown(queue, addonBreakdown);
       const addonCompletedSubmission = addonSubmitBreakdownIndicatesCompletedSubmission(addonBreakdown);
@@ -2301,7 +2271,7 @@ const fullSurfaceBackend = {
           const commands = flattenBatchedCommands(segment);
           if (commands.length > 0) {
             const addonStartedAt = submitTimingStart();
-            const addonBreakdown = addon.submitBatched(deviceNative, queueNative, commands);
+            const addonBreakdown = submitNodeBatchedCommandBuffers(deviceNative, queueNative, segment, commands);
             accumulateQueueSubmitBreakdown(queue, 'submitAddonCallTotalNs', addonStartedAt);
             accumulateAddonSubmitBreakdown(queue, addonBreakdown);
             if (addonSubmitBreakdownIndicatesCompletedSubmission(addonBreakdown)) {
@@ -2523,26 +2493,22 @@ const fullSurfaceBackend = {
       const entries = pipeline._autoLayoutEntriesByGroup.get(index) ?? [];
       return pipeline._device.createBindGroupLayout({ entries });
     }
-    if (typeof addon.computePipelineGetBindGroupLayout === 'function') {
-      return new classes.DoeGPUBindGroupLayout(
-        addon.computePipelineGetBindGroupLayout(pipeline._native, index),
-        pipeline._device,
-      );
+    if (typeof addon.computePipelineGetBindGroupLayout !== 'function') {
+      throw unsupportedNodeDeviceCapability('GPUComputePipeline.getBindGroupLayout');
     }
-    if (pipeline._autoLayoutEntriesByGroup) {
-      const entries = pipeline._autoLayoutEntriesByGroup.get(index) ?? [];
-      return pipeline._device.createBindGroupLayout({ entries });
-    }
-    return pipeline._device.createBindGroupLayout({ entries: [] });
+    return new classes.DoeGPUBindGroupLayout(
+      addon.computePipelineGetBindGroupLayout(pipeline._native, index),
+      pipeline._device,
+    );
   },
   renderPipelineGetBindGroupLayout(pipeline, index, classes) {
-    if (typeof addon.renderPipelineGetBindGroupLayout === 'function') {
-      return new classes.DoeGPUBindGroupLayout(
-        addon.renderPipelineGetBindGroupLayout(pipeline._native, index),
-        pipeline,
-      );
+    if (typeof addon.renderPipelineGetBindGroupLayout !== 'function') {
+      throw unsupportedNodeDeviceCapability('GPURenderPipeline.getBindGroupLayout');
     }
-    return new classes.DoeGPUBindGroupLayout(null, pipeline);
+    return new classes.DoeGPUBindGroupLayout(
+      addon.renderPipelineGetBindGroupLayout(pipeline._native, index),
+      pipeline,
+    );
   },
   deviceCreateRenderBundleEncoder(device, descriptor, encoderClasses) {
     const colorFormats = Array.isArray(descriptor.colorFormats) ? descriptor.colorFormats : [];
@@ -2831,7 +2797,10 @@ const fullSurfaceBackend = {
       descriptor.type === 'occlusion' ? QUERY_TYPE_OCCLUSION : QUERY_TYPE_TIMESTAMP,
       descriptor.count,
     );
-    if (querySet !== null && descriptor.label && typeof addon.objectSetLabel === 'function') {
+    if (querySet !== null && descriptor.label) {
+      if (typeof addon.objectSetLabel !== 'function') {
+        throw unsupportedNodeDeviceCapability('GPUQuerySet.label');
+      }
       addon.objectSetLabel(querySet, descriptor.label);
     }
     return querySet;
@@ -2874,7 +2843,7 @@ const fullSurfaceBackend = {
   },
   adapterGetInfo(_adapter, native) {
     if (typeof addon.adapterGetInfo !== 'function') {
-      return emptyAdapterInfo();
+      throw unsupportedNodeDeviceCapability('GPUAdapter.info');
     }
     return Object.freeze(addon.adapterGetInfo(native));
   },

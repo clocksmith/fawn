@@ -14,5 +14,9 @@ DECL_PFN(void, wgpuRenderPassEncoderEndOcclusionQuery, (WGPURenderPassEncoder));
 DECL_PFN(void, wgpuRenderPassEncoderPushDebugGroup, (WGPURenderPassEncoder, WGPUStringView));
 DECL_PFN(void, wgpuRenderPassEncoderPopDebugGroup, (WGPURenderPassEncoder));
 DECL_PFN(void, wgpuRenderPassEncoderInsertDebugMarker, (WGPURenderPassEncoder, WGPUStringView));
+/* Command encoder debug groups and markers. */
+DECL_PFN(void, wgpuCommandEncoderPushDebugGroup, (WGPUCommandEncoder, WGPUStringView));
+DECL_PFN(void, wgpuCommandEncoderPopDebugGroup, (WGPUCommandEncoder));
+DECL_PFN(void, wgpuCommandEncoderInsertDebugMarker, (WGPUCommandEncoder, WGPUStringView));
 
 #endif

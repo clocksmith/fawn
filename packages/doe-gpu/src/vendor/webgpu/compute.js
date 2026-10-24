@@ -197,10 +197,11 @@ function wrapComputePass(raw) {
      * pass.setBindGroup(0, bindGroup);
      * ```
      *
-     * - The bind group is unwrapped before forwarding to the underlying pass.
+     * - The bind group is unwrapped before forwarding to the underlying pass;
+     *   dynamic offsets (sequence or Uint32Array with start and length) pass through.
      */
-    setBindGroup(index, bindGroup) {
-      return raw.setBindGroup(index, unwrap(bindGroup));
+    setBindGroup(index, bindGroup, ...dynamicOffsets) {
+      return raw.setBindGroup(index, bindGroup == null ? bindGroup : unwrap(bindGroup), ...dynamicOffsets);
     },
     setImmediates(index, data, dataOffset = 0, size) {
       return raw.setImmediates(index, normalizeImmediateDataInput(data, dataOffset, size));

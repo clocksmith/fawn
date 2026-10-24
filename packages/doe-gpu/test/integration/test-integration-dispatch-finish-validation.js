@@ -4,8 +4,10 @@
 // submitting the invalid command buffer is a second validation error.
 //
 // Known provider gap: the Zig drop-in records these dispatches without
-// validating workgroup counts or bind group compatibility, so it reports no
-// error. On that provider this test checks native recording at finish only.
+// validating workgroup counts or bind group compatibility, so the package keeps
+// deferring them to its submit-time flush there (index.js
+// deferNodeDispatchesToSubmit). On that provider this test checks that a valid
+// deferred dispatch still runs.
 
 import assert from 'node:assert/strict';
 import { providerInfo, setupGlobals } from '../../src/index.js';
@@ -21,7 +23,7 @@ const device = await adapter.requestDevice();
 const { GPUBufferUsage, GPUMapMode, GPUValidationError } = target;
 const flavor = providerInfo().libraryFlavor;
 const validatesDispatch = flavor !== 'doe-dropin';
-if (!validatesDispatch) console.log(`known gap: ${flavor} does not validate dispatches; checking native recording only`);
+if (!validatesDispatch) console.log(`known gap: ${flavor} does not validate dispatches; checking the deferred dispatch runs`);
 
 const module = device.createShaderModule({
   code: '@group(0) @binding(0) var<storage, read_write> value: u32; @compute @workgroup_size(1) fn main() { value = 5u; }',
@@ -43,7 +45,7 @@ async function dispatchOnly(workgroups) {
   pass.end();
   const commandBuffer = encoder.finish();
   const atFinish = await device.popErrorScope();
-  assert.notEqual(commandBuffer._native, null, 'finish() recorded the dispatch natively');
+  if (validatesDispatch) assert.notEqual(commandBuffer._native, null, 'finish() recorded the dispatch natively');
   device.pushErrorScope('validation');
   device.queue.submit([commandBuffer]);
   const atSubmit = await device.popErrorScope();
@@ -65,5 +67,5 @@ if (validatesDispatch) {
   assert(invalid.atFinish instanceof GPUValidationError, 'an over-limit dispatch is a validation error at finish()');
   assert(invalid.atSubmit instanceof GPUValidationError, 'submitting the invalid command buffer is a validation error');
 }
-console.log(`ok: dispatch-only encoders are recorded natively at finish${validatesDispatch ? ' and report their validation result there' : ''}`);
+console.log(`ok: dispatch-only encoders ${validatesDispatch ? 'are recorded natively at finish and report their validation result there' : 'still run when deferred to submit'}`);
 device.destroy();

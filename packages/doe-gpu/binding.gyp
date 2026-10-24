@@ -16,6 +16,7 @@
         "../../runtime/bridge/webgpu-addon/doe_napi_formats.c",
         "../../runtime/bridge/webgpu-addon/doe_napi_render.c",
         "../../runtime/bridge/webgpu-addon/doe_napi_bind_groups.c",
+        "../../runtime/bridge/webgpu-addon/doe_napi_encoder_debug.c",
         "../../runtime/bridge/webgpu-addon/doe_napi_caps.c",
         "../../runtime/bridge/webgpu-addon/doe_napi_device_events.c",
         "../../runtime/bridge/webgpu-addon/doe_napi_program.c",

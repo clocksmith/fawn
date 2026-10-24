@@ -1126,19 +1126,6 @@ function updatePassPipelineState(pass, pipelineNative) {
     return true;
 }
 
-// Offsets are a Uint32Array or null; a slot with offsets is always re-recorded.
-function updatePassBindGroupState(pass, index, bindGroupNative, offsets = null) {
-    const offsetsByGroup = pass._bindGroupOffsets ?? (pass._bindGroupOffsets = []);
-    if ((pass._bindGroups[index] ?? null) === bindGroupNative
-        && offsets === null
-        && (offsetsByGroup[index] ?? null) === null) {
-        return false;
-    }
-    pass._bindGroups[index] = bindGroupNative;
-    offsetsByGroup[index] = offsets;
-    return true;
-}
-
 function setBunComputeBindGroup(nativePass, pass, index) {
     const offsets = pass._bindGroupOffsets?.[index] ?? null;
     wgpu.symbols.wgpuComputePassEncoderSetBindGroup(nativePass, index, pass._bindGroups[index] ?? null,
@@ -1152,10 +1139,6 @@ function initPendingComputeState(pass) {
 
 function markPassPipelineDirty(pass) {
     pass._pipelineDirty = true;
-}
-
-function markPassBindGroupDirty(pass, index) {
-    pass._bindGroupDirty[index] = true;
 }
 
 function clearPendingBoundDispatchState(pass) {
@@ -2937,17 +2920,18 @@ const bunEncoderBackend = {
         markPassPipelineDirty(pass);
     },
     computePassSetBindGroup(pass, index, bindGroupNative, offsets = null) {
-        if (!updatePassBindGroupState(pass, index, bindGroupNative, offsets)) {
+        // A lazy pass keeps only plain binds its deferred replay reproduces;
+        // every other setBindGroup reaches the provider when it is made, as
+        // WebGPU validates it at the call.
+        if (pass._lazy && bindGroupNative !== null && offsets === null && index < 4) {
+            pass._bindGroups[index] = bindGroupNative;
             return;
         }
-        if (offsets !== null) {
-            // Deferred dispatch commands carry no dynamic offsets; record natively.
-            materializeLazyBunComputePass(pass);
-        }
-        if (pass._lazy) {
-            return;
-        }
-        markPassBindGroupDirty(pass, index);
+        materializeLazyBunComputePass(pass);
+        pass._bindGroups[index] = bindGroupNative;
+        (pass._bindGroupOffsets ??= [])[index] = offsets;
+        pass._bindGroupDirty[index] = false;
+        setBunComputeBindGroup(assertLiveResource(pass, "GPUComputePassEncoder.setBindGroup", "GPUComputePassEncoder"), pass, index);
     },
     computePassSetImmediates(pass, index, data) {
         if (!updatePassImmediateState(pass, index, data)) {
@@ -3073,9 +3057,6 @@ const bunEncoderBackend = {
         );
     },
     renderPassSetBindGroup(pass, index, bindGroupNative, offsets = null) {
-        if (!updatePassBindGroupState(pass, index, bindGroupNative, offsets)) {
-            return;
-        }
         wgpu.symbols.wgpuRenderPassEncoderSetBindGroup(
             assertLiveResource(pass, "GPURenderPassEncoder.setBindGroup", "GPURenderPassEncoder"),
             index,
@@ -3225,9 +3206,6 @@ const bunEncoderBackend = {
         );
     },
     renderBundleEncoderSetBindGroup(encoder, index, bindGroupNative, offsets = null) {
-        if (!updatePassBindGroupState(encoder, index, bindGroupNative, offsets)) {
-            return;
-        }
         wgpu.symbols.wgpuRenderBundleEncoderSetBindGroup(
             assertLiveResource(encoder, "GPURenderBundleEncoder.setBindGroup", "GPURenderBundleEncoder"),
             index,

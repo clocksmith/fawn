@@ -1555,6 +1555,12 @@ function createFullSurfaceClasses({
       return this._adapterInfo;
     }
 
+    // A device-timeline validation error the package detects itself: the
+    // innermost validation scope captures it, or it is uncaptured.
+    _reportValidationError(message) {
+      captureDeviceError(this, 'validation', new GPUValidationError(message));
+    }
+
     pushErrorScope(filter) {
       const native = assertLiveResource(this, 'GPUDevice.pushErrorScope', 'GPUDevice');
       const encodedFilter = normalizeErrorFilter(filter, 'GPUDevice.pushErrorScope');

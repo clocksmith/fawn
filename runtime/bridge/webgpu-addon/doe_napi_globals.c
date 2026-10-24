@@ -164,6 +164,9 @@ PFN_wgpuRenderPassEncoderEndOcclusionQuery pfn_wgpuRenderPassEncoderEndOcclusion
 PFN_wgpuRenderPassEncoderPushDebugGroup pfn_wgpuRenderPassEncoderPushDebugGroup = NULL;
 PFN_wgpuRenderPassEncoderPopDebugGroup pfn_wgpuRenderPassEncoderPopDebugGroup = NULL;
 PFN_wgpuRenderPassEncoderInsertDebugMarker pfn_wgpuRenderPassEncoderInsertDebugMarker = NULL;
+PFN_wgpuCommandEncoderPushDebugGroup pfn_wgpuCommandEncoderPushDebugGroup = NULL;
+PFN_wgpuCommandEncoderPopDebugGroup pfn_wgpuCommandEncoderPopDebugGroup = NULL;
+PFN_wgpuCommandEncoderInsertDebugMarker pfn_wgpuCommandEncoderInsertDebugMarker = NULL;
 PFN_wgpuCommandEncoderClearBuffer pfn_wgpuCommandEncoderClearBuffer = NULL;
 PFN_wgpuRenderBundleEncoderPushDebugGroup pfn_wgpuRenderBundleEncoderPushDebugGroup = NULL;
 PFN_wgpuRenderBundleEncoderPopDebugGroup pfn_wgpuRenderBundleEncoderPopDebugGroup = NULL;
@@ -434,6 +437,9 @@ napi_value doe_load_library(napi_env env, napi_callback_info info) {
     LOAD_SYM(wgpuRenderPassEncoderPushDebugGroup);
     LOAD_SYM(wgpuRenderPassEncoderPopDebugGroup);
     LOAD_SYM(wgpuRenderPassEncoderInsertDebugMarker);
+    LOAD_SYM(wgpuCommandEncoderPushDebugGroup);
+    LOAD_SYM(wgpuCommandEncoderPopDebugGroup);
+    LOAD_SYM(wgpuCommandEncoderInsertDebugMarker);
     LOAD_SYM(wgpuCommandEncoderClearBuffer);
     LOAD_SYM(wgpuDeviceCreateQuerySet);
     LOAD_SYM(wgpuCommandEncoderWriteTimestamp);
