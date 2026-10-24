@@ -61,6 +61,18 @@ doe_shader_status native_compile_shader(const char *source, size_t size, doe_sha
     return native_compile_shader_target(DOE_SHADER_SPIRV,source,size,out,error);
 }
 
+doe_shader_status native_check_shader_module(doe_shader_target target, const char *source, size_t size,
+    doe_shader_error *error)
+{
+    /* The same whole-module validation and emission createShaderModule runs. */
+    const doe_shader_options options = shader_options(target);
+    doe_shader *module = NULL;
+    doe_shader_status status = doe_shader_create_module(&options,options.capacities.typed.expressions,
+        source,size,&module,error);
+    if (module) doe_shader_release(module);
+    return status;
+}
+
 static WGPUShaderModule create_shader_module(native_device *device, const WGPUShaderModuleDescriptor *descriptor)
 {
     if (!descriptor || !descriptor->nextInChain || descriptor->nextInChain->next ||

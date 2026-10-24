@@ -1,3 +1,4 @@
+doeNativeCheckShaderSource
 doeNativeComputeProgramContractVersion
 doeNativeComputeProgramPrepare
 doeNativeComputeProgramPrepareHostReplay
@@ -5,3 +6,8 @@ doeNativeComputeProgramRelease
 doeNativeComputeProgramSubmit
 doeNativeComputeProgramSupported
 doeNativeComputeProgramTimestampNanoseconds
+doeNativeCopyLastErrorKind
+doeNativeCopyLastErrorMessage
+doeNativeCopyLastErrorStage
+doeNativeGetLastErrorColumn
+doeNativeGetLastErrorLine
