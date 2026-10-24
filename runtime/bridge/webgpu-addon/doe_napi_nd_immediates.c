@@ -300,16 +300,12 @@ napi_value native_direct_queue_write_texture(napi_env env, napi_callback_info in
     uint32_t bytes_per_row = get_u32_prop(env, argv[2], "bytesPerRow");
     uint32_t rows_per_image = has_prop(env, argv[2], "rowsPerImage")
         ? get_u32_prop(env, argv[2], "rowsPerImage") : 0xFFFFFFFFu; /* WGPU_COPY_STRIDE_UNDEFINED */
-    if (layout_offset > 0 && layout_offset < data_len) {
-        data = ((uint8_t*)data) + layout_offset;
-        data_len -= layout_offset;
-    }
     /* copySize */
     uint32_t width = 1, height = 1, depth_or_layers = 1;
     napi_valuetype size_type;
     napi_typeof(env, argv[3], &size_type);
     if (size_type == napi_object) get_extent_3d(env, argv[3], &width, &height, &depth_or_layers);
-    if (!doe_queue_write_texture_native(queue, texture, data, data_len, bytes_per_row, rows_per_image,
+    if (!doe_queue_write_texture_native(queue, texture, data, data_len, layout_offset, bytes_per_row, rows_per_image,
             dst_x, dst_y, dst_z, dst_mip, width, height, depth_or_layers, dst_aspect))
         NAPI_THROW(env, "queueWriteTexture: no implementation available in loaded library");
     napi_value undefined_value;
