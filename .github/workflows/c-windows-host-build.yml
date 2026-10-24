@@ -144,7 +144,7 @@ jobs:
             $executable = Join-Path $output ($name + '.exe')
             $object = Join-Path $output ($name + '.obj')
             $imports = Join-Path $output 'webgpu_doe_c.lib'
-            $lines += ('clang-cl --target=x86_64-pc-windows-msvc /nologo /MD /O2 /WX /clang:-std=c11 /clang:-Wall /clang:-Wextra /clang:-Wpedantic /DWGPU_SHARED_LIBRARY /I"' + $header + '" "' + $source + '" /Fo"' + $object + '" /Fe"' + $executable + '" /link "' + $imports + '" /stack:8388608')
+            $lines += ('clang-cl --target=x86_64-pc-windows-msvc /nologo /MD /O2 /WX /clang:-std=c11 /clang:-Wall /clang:-Wextra /clang:-Wpedantic /DWGPU_SHARED_LIBRARY /D_CRT_SECURE_NO_WARNINGS /I"' + $header + '" "' + $source + '" /Fo"' + $object + '" /Fe"' + $executable + '" /link "' + $imports + '" /stack:8388608')
             $lines += @('if not "%errorlevel%"=="0" exit /b 1', ('"' + $executable + '"'), 'if not "%errorlevel%"=="0" exit /b 1')
           }
           $lines += 'exit /b 0'
