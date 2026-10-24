@@ -146,9 +146,9 @@ static void remaining_dimensions(void) {
         "let value=textureLoad(input_image,0);textureStore(output_image,vec3i(0),value);}";
     Fixture *f = prepare(source);
     char *text = emit(f, 0u);
-    has(text, "RWTexture1D<uint> r0");
+    has(text, "Texture1D<uint> r0");
     has(text, "RWTexture3D<uint2> r1");
-    has(text, "r0.GetDimensions(image_x)");
+    has(text, "r0.GetDimensions(0u, image_x, image_levels)");
     has(text, "r1.GetDimensions(image_x, image_y, image_z)");
     has(text, "uint4(image_texel, 0, 0, 1)");
     free(text);

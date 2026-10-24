@@ -107,7 +107,7 @@ jobs:
           $env:OUT = Join-Path $env:EVIDENCE_ROOT 'd3d12-sdk'
           New-Item -ItemType Directory -Force $env:OUT | Out-Null
           $owner = Join-Path $env:GITHUB_WORKSPACE 'runtime/c/backends/d3d12'
-          $command = 'call "' + $env:DEVCMD + '" -arch=x64 >nul && call build_windows.cmd && "' + $env:OUT + '\test_windows_caps.exe" && "' + $env:OUT + '\test_windows_texture_regions.exe"'
+          $command = 'call "' + $env:DEVCMD + '" -arch=x64 >nul && call build_windows.cmd && "' + $env:OUT + '\test_windows_caps.exe" && "' + $env:OUT + '\test_windows_texture_regions.exe" && "' + $env:OUT + '\test_windows_sampled.exe"'
           Push-Location $owner
           try {
             & cmd.exe /d /s /c $command 2>&1 | Tee-Object "$env:EVIDENCE_ROOT/d3d12-sdk.log"
@@ -141,7 +141,10 @@ jobs:
           $header = Join-Path $env:GITHUB_WORKSPACE 'runtime/zig/vendor/webgpu-headers'
           $lines = @('@echo off', ('call "' + $env:DEVCMD + '" -arch=x64 >nul'), 'if not "%errorlevel%"=="0" exit /b 1', 'set DOE_C_TEST_BACKEND=d3d12', 'set DOE_C_TEST_ADAPTER=software')
           $atomicSource = Join-Path $env:GITHUB_WORKSPACE 'runtime/c/compiler/tests/atomic_operations.wgsl'
-          foreach ($name in @('compute', 'uniform_standard', 'binding_aliases', 'command_resources', 'indirect_dispatch', 'atomics', 'atomic_operations', 'texture_transfers')) {
+          $selectRetained = Join-Path $env:GITHUB_WORKSPACE 'runtime/c/compiler/tests/select_retained.wgsl'
+          $selectCases = Join-Path $env:GITHUB_WORKSPACE 'runtime/c/compiler/tests/select_cases.wgsl'
+          $fixtureSources = @{ 'atomic_operations.wgsl'=$atomicSource; 'select_retained.wgsl'=$selectRetained; 'select_cases.wgsl'=$selectCases }
+          foreach ($name in @('compute', 'uniform_standard', 'binding_aliases', 'command_resources', 'indirect_dispatch', 'atomics', 'atomic_operations', 'texture_transfers', 'texture_bindings', 'pipeline_overrides', 'select')) {
             $source = Join-Path $native ('tests/' + $name + '.c')
             $executable = Join-Path $output ($name + '.exe')
             $object = Join-Path $output ($name + '.obj')
@@ -149,15 +152,16 @@ jobs:
             $lines += ('clang-cl --target=x86_64-pc-windows-msvc /nologo /MD /O2 /WX /clang:-std=c11 /clang:-Wall /clang:-Wextra /clang:-Wpedantic /DWGPU_SHARED_LIBRARY /D_CRT_SECURE_NO_WARNINGS /I"' + $header + '" "' + $source + '" /Fo"' + $object + '" /Fe"' + $executable + '" /link "' + $imports + '" /stack:8388608')
             $runCommand = '"' + $executable + '"'
             if ($name -eq 'atomic_operations') { $runCommand += ' "' + $atomicSource + '"' }
+            if ($name -eq 'select') { $runCommand += ' "' + $selectRetained + '" "' + $selectCases + '"' }
             $lines += @('if not "%errorlevel%"=="0" exit /b 1', $runCommand, 'if not "%errorlevel%"=="0" exit /b 1')
           }
-          $consumerSources = @('compute.c', 'uniform_standard.c', 'binding_aliases.c', 'command_resources.c', 'indirect_dispatch.c', 'atomics.c', 'atomic_operations.c', 'texture_transfers.c', 'consumer.h', 'adapter_class.h')
+          $consumerSources = @('compute.c', 'uniform_standard.c', 'binding_aliases.c', 'command_resources.c', 'indirect_dispatch.c', 'atomics.c', 'atomic_operations.c', 'texture_transfers.c', 'texture_bindings.c', 'pipeline_overrides.c', 'select.c', 'consumer.h', 'adapter_class.h')
           $sourceHashes = @{}
           foreach ($name in $consumerSources) {
             $source = Join-Path $native ('tests/' + $name)
             $sourceHashes[$name] = (Get-FileHash $source -Algorithm SHA256).Hash.ToLowerInvariant()
           }
-          $sourceHashes['atomic_operations.wgsl'] = (Get-FileHash $atomicSource -Algorithm SHA256).Hash.ToLowerInvariant()
+          foreach ($name in $fixtureSources.Keys) { $sourceHashes[$name] = (Get-FileHash $fixtureSources[$name] -Algorithm SHA256).Hash.ToLowerInvariant() }
           $sourceHashes | ConvertTo-Json | Set-Content "$output/consumer-source-sha256.json"
           $lines += 'exit /b 0'
           $runner = Join-Path $output 'public-warp.cmd'
@@ -181,7 +185,9 @@ jobs:
             $source = Join-Path $native ('tests/' + $name)
             if ((Get-FileHash $source -Algorithm SHA256).Hash.ToLowerInvariant() -ne $sourceHashes[$name]) { throw "consumer source changed: $name" }
           }
-          if ((Get-FileHash $atomicSource -Algorithm SHA256).Hash.ToLowerInvariant() -ne $sourceHashes['atomic_operations.wgsl']) { throw 'atomic shader source changed' }
+          foreach ($name in $fixtureSources.Keys) {
+            if ((Get-FileHash $fixtureSources[$name] -Algorithm SHA256).Hash.ToLowerInvariant() -ne $sourceHashes[$name]) { throw "consumer shader source changed: $name" }
+          }
           if (git status --short) { throw 'public WARP controls changed source checkout' }
       - name: Build the Node addon with LLVM and matching official Node inputs
         id: node_addon
@@ -223,7 +229,7 @@ jobs:
           $package = Join-Path $env:GITHUB_WORKSPACE 'packages/doe-gpu'
           $files = @(Get-ChildItem (Join-Path $package 'src') -Recurse -File)
           $files += Get-ChildItem (Join-Path $env:GITHUB_WORKSPACE 'runtime/bridge/webgpu-addon') -Recurse -File
-          foreach ($relative in @('package.json', 'binding.gyp', 'scripts/build-addon.js', 'scripts/native-abi-layout.js', 'scripts/check-provider-loader.js', 'examples/first-kernel.js', 'test/integration/test-c-provider-warp.js')) {
+          foreach ($relative in @('package.json', 'binding.gyp', 'scripts/build-addon.js', 'scripts/native-abi-layout.js', 'scripts/check-provider-loader.js', 'examples/first-kernel.js', 'test/integration/test-c-provider-warp.js', 'test/integration/test-c-provider-overrides.js')) {
             $files += Get-Item (Join-Path $package $relative)
           }
           $files += Get-Item (Join-Path $env:GITHUB_WORKSPACE 'runtime/zig/vendor/webgpu-headers/webgpu.h')
@@ -258,7 +264,7 @@ jobs:
             if ((Get-FileHash $path -Algorithm SHA256).Hash.ToLowerInvariant() -ne $sourceHashes[$path]) { throw "addon input source changed: $path" }
           }
           if (git status --short) { throw 'addon build changed tracked/unignored source' }
-      - name: Exercise the public Node C-provider first kernel on explicit CPU WARP
+      - name: Exercise public Node C-provider kernels and overrides on explicit CPU WARP
         if: ${{ !cancelled() && inputs.run_public_warp && steps.node_addon.outcome == 'success' }}
         shell: pwsh
         run: |
@@ -272,24 +278,28 @@ jobs:
           $env:DOE_WEBGPU_LIB = Join-Path $runtime 'libwebgpu_doe_c.dll'
           Copy-Item $source $env:DOE_WEBGPU_LIB
           $sourceHash = (Get-FileHash $source -Algorithm SHA256).Hash
+          $env:DOE_C_TEST_PROVIDER_SHA256 = $sourceHash.ToLowerInvariant()
           if ((Get-FileHash $env:DOE_WEBGPU_LIB -Algorithm SHA256).Hash -ne $sourceHash) { throw 'C provider staging changed bytes' }
           @{ source=$source; staged=$env:DOE_WEBGPU_LIB; sha256=$sourceHash } | ConvertTo-Json | Set-Content "$output/provider-stage.json"
           'Node JS CPU-WARP control requested; logs determine outcome. JS observes C path/hash/flavor and actual CPU/name. Numeric backend is supplied separately by same-source native controls. No physical/performance/full-migration qualification.' |
             Set-Content "$output/WARP_SCOPE.txt"
           $package = Join-Path $env:GITHUB_WORKSPACE 'packages/doe-gpu'
-          $stdout = Join-Path $output 'warp-stdout.json'
-          $stderr = Join-Path $output 'warp-stderr.txt'
-          $process = Start-Process -FilePath $env:NODE_CONTROL_EXE -ArgumentList 'test/integration/test-c-provider-warp.js' -WorkingDirectory $package -RedirectStandardOutput $stdout -RedirectStandardError $stderr -PassThru
-          if (!$process.WaitForExit(120000)) {
-            & taskkill.exe /PID $process.Id /T /F
-            throw 'Node CPU-WARP control exceeded its 120-second process-tree deadline'
+          $env:DOE_C_TEST_ADAPTER = 'software'
+          foreach ($control in @(@{name='warp'; script='test/integration/test-c-provider-warp.js'}, @{name='overrides'; script='test/integration/test-c-provider-overrides.js'})) {
+            $stdout = Join-Path $output ($control.name + '-stdout.json')
+            $stderr = Join-Path $output ($control.name + '-stderr.txt')
+            $process = Start-Process -FilePath $env:NODE_CONTROL_EXE -ArgumentList $control.script -WorkingDirectory $package -RedirectStandardOutput $stdout -RedirectStandardError $stderr -PassThru
+            if (!$process.WaitForExit(120000)) {
+              & taskkill.exe /PID $process.Id /T /F
+              throw ('Node CPU-WARP ' + $control.name + ' exceeded its 120-second process-tree deadline')
+            }
+            $process.WaitForExit()
+            $process.Refresh()
+            $process.ExitCode | Set-Content (Join-Path $output ($control.name + '-exit-code.txt'))
+            Get-Content $stdout
+            Get-Content $stderr
+            if ($process.ExitCode -ne 0) { throw ('Node CPU-WARP ' + $control.name + ' failed: ' + $process.ExitCode) }
           }
-          $process.WaitForExit()
-          $process.Refresh()
-          $process.ExitCode | Set-Content "$output/warp-exit-code.txt"
-          Get-Content $stdout
-          Get-Content $stderr
-          if ($process.ExitCode -ne 0) { throw "Node CPU-WARP control failed: $($process.ExitCode)" }
           $sourceHashes = Get-Content "$output/declared-source-sha256.json" -Raw | ConvertFrom-Json -AsHashtable
           foreach ($path in $sourceHashes.Keys) {
             if ((Get-FileHash $path -Algorithm SHA256).Hash.ToLowerInvariant() -ne $sourceHashes[$path]) { throw "Node control input source changed: $path" }

@@ -3,6 +3,7 @@
 #define DOE_DX_NATIVE_H
 #include "../include/doe_d3d12_mesh.h"
 #include "../include/doe_d3d12_texture_regions.h"
+#include "../include/doe_d3d12_dynamic.h"
 #if defined(DOE_DX_REQUIRE_WINDOWS) && !defined(_WIN32)
 #error "The native D3D12 build requires a Windows target and actual Windows SDK."
 #endif
@@ -24,6 +25,8 @@ typedef struct doe_dx_native_resources {
     doe_dx_native_binding buffers[DOE_DX_MAX_BINDINGS];
     doe_dx_native_texture *textures[DOE_DX_MAX_BINDINGS];
     size_t buffer_count, texture_count;
+    doe_dx_sampler_desc samplers[DOE_DX_MAX_DYNAMIC_SAMPLERS];
+    size_t sampler_count;
 } doe_dx_native_resources;
 
 typedef struct doe_dx_native_geometry {
@@ -55,6 +58,8 @@ doe_dx_status doe_dx_native_read(doe_dx_native_buffer *buffer, uint64_t offset,
     void *bytes, size_t size, doe_dx_error *error);
 doe_dx_status doe_dx_native_pipeline_create(doe_dx_native_context *context,
     const doe_dx_resource_pipeline_desc *desc, doe_dx_native_pipeline **out, doe_dx_error *error);
+doe_dx_status doe_dx_native_pipeline_create_dynamic(doe_dx_native_context *context,
+    const doe_dx_dynamic_pipeline_desc *desc,doe_dx_native_pipeline **out,doe_dx_error *error);
 /* Shared normalized footprint; native SDK query must agree before allocation publishes. */
 doe_dx_status doe_dx_texture_layout_2d(const doe_dx_texture_desc *desc,
     doe_dx_texture_layout layout, doe_dx_texture_footprint *out);

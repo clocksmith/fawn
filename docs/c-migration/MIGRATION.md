@@ -148,6 +148,15 @@ This does not establish physical presentation qualification.
 The additive [ABI11 HLSL facade](../../runtime/c/compiler/DEVELOPER_RECEIPT_HLSL_ABI11.json)
 now carries compiler-owned entry/register metadata through the shader owner;
 actual DXC outputs agree with its typed bindings. Existing ABI1–10 remain intact.
+The additive [ABI13 contract](../../runtime/c/compiler/SPECIALIZATION.md) now
+separates whole-module validation from selected-entry specialization, with typed
+override values, concrete workgroup layouts and independent SPIR-V/MSL/HLSL
+artifacts. The [shader owner](../../runtime/c/shader/README.md) retains immutable
+module/source policy and exact specialization identity; native compute and graphics
+consume the selected artifact through the same resource/backend owners. Ordinary
+WGSL `select` uses one semantic owner with eager arguments on all three targets.
+Focused public C and Node software-adapter controls exercise these paths; they do
+not establish full language, independent numerical or physical qualification.
 The [Windows SDK build](../../runtime/c/backends/d3d12/DEVELOPER_RECEIPT_WINDOWS_SDK.json)
 compiles the private backend and links its clients. Public Windows native DLL
 composition, D3D12 execution and physical qualification remain separate gates.
@@ -155,7 +164,11 @@ composition, D3D12 execution and physical qualification remain separate gates.
 The [public D3D12 receipt](../../runtime/c/native/DEVELOPER_RECEIPT_D3D12_PUBLIC.json)
 now binds one actual SDK-built native DLL and unchanged compute, uniform, alias
 and command-retention consumers to CPU WARP and the same binaries on Miles.
-It preserves the failed build/control attempts, including the false-green abort
+The separate [Windows Node receipt](../../runtime/c/native/DEVELOPER_RECEIPT_NODE_WINDOWS.json)
+binds an actual LLVM addon and unchanged public first kernel to WARP and the same
+provider/addon on Miles, with an isolated developer installation. It does not
+publish a platform package or promote production defaults.
+The public native receipt preserves the failed build/control attempts, including the false-green abort
 status and first bind-group rejection. Unexercised APIs, later source and broader
 qualification remain separate.
 

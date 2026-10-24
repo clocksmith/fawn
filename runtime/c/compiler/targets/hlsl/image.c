@@ -88,7 +88,7 @@ static void dimensions(HlslEmitter *e, const HlslImage *image, bool selected_lev
     hlsl_indent(e);
     hlsl_value(e, image->texture);
     hlsl_text(e, ".GetDimensions(");
-    if (!image->storage && !image->multisampled) {
+    if (!hlsl_image_uav(image->type) && !image->multisampled) {
         if (selected_level) {
             hlsl_text(e, "uint(");
             hlsl_value(e, image->level);
@@ -101,7 +101,7 @@ static void dimensions(HlslEmitter *e, const HlslImage *image, bool selected_lev
     if (dimension_width(image) == 3u) hlsl_text(e, ", image_z");
     if (image->arrayed) hlsl_text(e, ", image_layers");
     if (image->multisampled) hlsl_text(e, ", image_samples");
-    else if (!image->storage) hlsl_text(e, ", image_levels");
+    else if (!hlsl_image_uav(image->type)) hlsl_text(e, ", image_levels");
     hlsl_text(e, ");\n");
 }
 static void indexed_value(HlslEmitter *e, uint32_t value, uint32_t lane) {
@@ -135,7 +135,8 @@ static void texel_coordinates(HlslEmitter *e, const HlslImage *image, bool sampl
     }
     if (sampled && !image->multisampled) {
         hlsl_text(e, ", ");
-        hlsl_value(e, image->level);
+        if (image->storage) hlsl_text(e, "0u");
+        else hlsl_value(e, image->level);
     }
     hlsl_text(e, ")");
 }
@@ -165,7 +166,7 @@ static void texel(HlslEmitter *e, const IrInstruction *ir, const HlslImage *imag
         hlsl_text(e, " image_texel = ");
     } else hlsl_indent(e);
     hlsl_value(e, image->texture);
-    if (image->storage) {
+    if (hlsl_image_uav(image->type)) {
         hlsl_text(e, "[");
         texel_coordinates(e, image, false);
         hlsl_text(e, "]");

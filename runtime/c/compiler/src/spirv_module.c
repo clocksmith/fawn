@@ -163,6 +163,9 @@ static bool plan_workgroup_barrier(Emitter *e) {
 static bool plan_type(Emitter *e, TypeId type) {
     CompilerWorkspace *c = e->program;
     if (type < 7u) return spirv_scalar_type(type) != 0u;
+    if ((c->types[type - 7u].flags & TYPE_DEFERRED) != 0u)
+        return source_error(e->source, DOE_COMPILER_INPUT_ERROR, e->source->length,
+                            "deferred type reached executable target planning");
     if (c->types[type - 7u].target != 0u) return true;
     if (type_handle(c, type)) {
         const TypeRecord *current = &c->types[type - 7u];
@@ -328,7 +331,8 @@ bool spirv_plan_module(Emitter *e) {
     for (uint32_t i = 0u; i < c->type_count; ++i) { c->types[i].target = 0u; c->types[i].aux = 0u; }
     for (uint32_t i = 0u; i < c->constant_count; ++i) c->constants[i].target = 0u;
     for (uint32_t i = 0u; i < c->type_count; ++i) {
-        if (!type_abstract(c, i + 7u) && !plan_type(e, i + 7u)) return false;
+        if ((c->types[i].flags & TYPE_DEFERRED) == 0u &&
+            !type_abstract(c, i + 7u) && !plan_type(e, i + 7u)) return false;
         const TypeRecord *t = &c->types[i];
         if (t->kind != TYPE_TEXTURE) continue;
         const ImageType image = t->state.image;

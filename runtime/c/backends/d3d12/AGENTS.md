@@ -92,3 +92,10 @@
 - Pipeline use is shared-read: append one existing reference per successful
   record, then drop each once. No repeated cumulative pipeline scan, auxiliary
   registry or new lifetime counter. Keep genuine OOM distinct from validation.
+
+- Dynamic samplers are immutable values copied into each existing command-owned
+  descriptor use, with one separate sampler heap and root table. Preserve legacy
+  static descriptors. Compiler handle metadata selects sampled classes versus
+  exact storage formats; READ storage is an SRV with logical STORAGE admission.
+  Compatible read texture aliases share one lease/transition; writable aliases
+  reject before any native mutation. Do not infer a public usage bit from SRV.

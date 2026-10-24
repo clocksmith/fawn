@@ -66,7 +66,7 @@ typedef struct native_buffer {
 } native_buffer;
 
 typedef struct native_shader {
-    doe_shader *compiled;
+    doe_shader *module;
     doe_shader_error error;
 } native_shader;
 
@@ -94,6 +94,7 @@ typedef struct native_pipeline_error {
 } native_pipeline_error;
 
 typedef struct native_stage {
+    doe_shader *compiled; /* Temporary selected artifact; release outside owner locks. */
     doe_shader_view view;
     const DoeCompilerEntryV5 *entry;
     WGPUShaderStage visibility;
@@ -180,7 +181,9 @@ doe_resource_status native_resolve_resources(const native_pipeline *pipeline,
     doe_resource_pipeline_layout *layout, doe_resource_bind_group *const *groups,
     const doe_resource_dispatch_offsets *offsets, doe_resource_binding *out);
 bool native_stage_load(native_device *device, WGPUShaderModule module, WGPUStringView name,
-    uint32_t stage, native_stage *out);
+    uint32_t stage, const WGPUConstantEntry *constants, size_t count,
+    native_stage *out, native_pipeline_error *error);
+void native_stage_release(native_stage *stage);
 /* Non-NULL commands also zero-initialize each bound texture's undefined
  * subresources (after an attachment Discard) before the binding is recorded. */
 doe_vk_status native_resolve_bindings(doe_vk_commands *commands, const native_pipeline *pipeline,

@@ -2,6 +2,12 @@
  * Copyright (c) 2026 Doe contributors */
 #include "private.h"
 
+/* One native image-kind predicate drives declaration, access and reflection.
+ * WGSL read-only storage images are typed SRVs at relative mip zero. */
+bool hlsl_image_uav(const TypeRecord *type) {
+    return type->kind == TYPE_TEXTURE && type->state.image.format != 0u &&
+        type->state.image.access != DOE_COMPILER_READ;
+}
 uint32_t hlsl_image_components(HlslEmitter *e, const TypeRecord *t) {
     if ((t->state.image.flags & DOE_COMPILER_HANDLE_DEPTH) != 0u) return 1u;
     switch (t->state.image.format) {
@@ -61,7 +67,7 @@ void hlsl_handle_type(HlslEmitter *e, TypeId type) {
         hlsl_error(e, "HLSL storage cube images are unsupported");
         return;
     }
-    hlsl_format(e, "%sTexture%s<", storage ? "RW" : "", dimension);
+    hlsl_format(e, "%sTexture%s<", hlsl_image_uav(t) ? "RW" : "", dimension);
     hlsl_type(e, t->element);
     const uint32_t count = hlsl_image_components(e, t);
     if (count != 1u) hlsl_format(e, "%u", count);
@@ -88,6 +94,6 @@ void hlsl_image_resource(HlslEmitter *e, uint32_t index) {
     hlsl_handle_type(e, r->type);
     hlsl_format(e, " r%u : ", index);
     hlsl_register(e, index, sampler ? DOE_COMPILER_HLSL_REGISTER_SAMPLER :
-        storage ? DOE_COMPILER_HLSL_REGISTER_UAV : DOE_COMPILER_HLSL_REGISTER_SRV, 0u);
+        hlsl_image_uav(t) ? DOE_COMPILER_HLSL_REGISTER_UAV : DOE_COMPILER_HLSL_REGISTER_SRV, 0u);
     hlsl_text(e, ";\n");
 }

@@ -153,6 +153,9 @@ bool type_layout_struct(Source *s, TypeId id) {
     for (uint32_t i = 0u;i<t->count;++i) {
         MemberRecord *m = &c->members[t->element+i];
         const uint32_t child_flags = type_flags(c, m->type);
+        if ((child_flags & TYPE_DEFERRED) != 0u)
+            return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, m->name.offset,
+                                "structure members require creation-fixed footprints");
         if ((child_flags&TYPE_ABSTRACT) != 0u || m->type == IR_VOID || type_handle(c, m->type) || type_pointer(c, m->type))
             return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, m->name.offset, "struct member type must be concrete");
         const bool tail = m->type >= 7u && c->types[m->type-7u].kind == TYPE_RUNTIME_ARRAY;

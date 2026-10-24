@@ -48,4 +48,24 @@ int main() {
     doe_shader_release(shader);
     assert(view.hlsl_entries[0].dispatch_space == 7);
     doe_shader_release(shader);
+    options.selection = {DOE_COMPILER_SELECT_NONE, 0u, nullptr, 0};
+    const char module_source[] = "override width:u32;@compute @workgroup_size(width) fn chosen(){}";
+    doe_shader *module = nullptr;
+    assert(doe_shader_create_module(&options, 4, module_source, sizeof(module_source)-1, &module, &error) == DOE_SHADER_OK);
+    doe_shader_module_view metadata{};
+    assert(doe_shader_borrow_module(module, &metadata) == DOE_SHADER_OK);
+    assert(metadata.entry_count == 1 && metadata.override_count == 1);
+    assert(!std::strcmp(metadata.names + metadata.entries[0].name.offset, "chosen"));
+    view.text_size = 123;
+    assert(doe_shader_borrow(module, &view) == DOE_SHADER_INVALID_ARGUMENT && view.text_size == 123);
+    DoeCompilerEntrySelectionV5 selected{DOE_COMPILER_SELECT_NAME, 0u, "chosen", 6};
+    const DoeCompilerOverrideValueV13 width{"width", 5, 4.0};
+    assert(doe_shader_specialize(module, &selected, &width, 1, &shader, &error) == DOE_SHADER_OK);
+    assert(doe_shader_specialization_matches(shader, module, &selected, &width, 1));
+    doe_shader_release(module);
+    assert(doe_shader_borrow(shader, &view) == DOE_SHADER_OK);
+    assert(view.counts.entries == 1 && view.module.selected_entry == 0 && view.entries[0].workgroup_size[0] == 4);
+    assert(view.hlsl_entries[0].entry_index == 0 && !std::strcmp(view.hlsl_entries[0].name, "chosen"));
+    doe_shader_release(shader);
+
 }

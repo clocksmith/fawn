@@ -88,7 +88,8 @@ def main() -> None:
         raise ValueError(f'actual Windows DLL exports differ from canonical map: {actual}')
     # Genuine ordinary consumers exercise the DLL, not duplicated production code.
     consumers = [ROOT / 'tests/native_consumer.c', ROOT / 'tests/test_phony_api.c',
-                 ROOT / 'tests/test_windows_environment.c']
+                 ROOT / 'tests/test_windows_environment.c', ROOT / 'tests/test_overrides.c',
+                 ROOT / 'tests/test_specialization.c', ROOT / 'tests/test_select.c']
     for source in consumers:
         name = source.stem
         executable = out / (name + '.exe')
@@ -98,15 +99,23 @@ def main() -> None:
         arguments = [str(executable)]
         if name == 'native_consumer':
             arguments.append(str(ROOT.parents[2] / 'bench/inference-pipeline/kernels/residual.wgsl'))
+        if name == 'test_select':
+            arguments.extend(str(ROOT / 'tests' / source_name) for source_name in
+                             ['select_retained.wgsl', 'select_cases.wgsl'])
         invoke(arguments, out)
-    invoke([compiler, '/nologo', '/MD', '/O2', '/WX', '/std:c++17',
-            '/clang:-fno-exceptions', '/clang:-fno-rtti', str(ROOT / 'tests/cpp_consumer.cpp'),
-            '/Fo' + str(out / 'cpp_consumer.obj'),
-            '/Fe' + str(out / 'cpp_consumer.exe'), '/link', str(import_library), '/stack:8388608'], out)
-    invoke([str(out / 'cpp_consumer.exe')], out)
+    cpp_consumers = [ROOT / 'tests/cpp_consumer.cpp', ROOT / 'tests/cpp_consumer_specialization.cpp']
+    for source in cpp_consumers:
+        executable = out / (source.stem + '.exe')
+        invoke([compiler, '/nologo', '/MD', '/O2', '/WX', '/std:c++17',
+                '/clang:-fno-exceptions', '/clang:-fno-rtti', str(source),
+                '/Fo' + str(out / (source.stem + '.obj')),
+                '/Fe' + str(executable), '/link', str(import_library), '/stack:8388608'], out)
+        invoke([str(executable)], out)
     (out / 'scope.json').write_text(json.dumps({
         'compiler': compiler, 'sources': [str(path.relative_to(ROOT)) for path in sources],
         'exports': names, 'library': str(library),
+        'consumers': [str(path.relative_to(ROOT)) for path in consumers + cpp_consumers],
+        'consumer_inputs': ['tests/select_retained.wgsl', 'tests/select_cases.wgsl'],
         'scope': 'Actual Windows x64 DLL and ordinary C/C++ CPU consumers only; no GPU, runtime or CLI qualification.'
     }, indent=2) + '\n')
 

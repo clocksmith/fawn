@@ -24,4 +24,9 @@ void compiler_metadata_publish(Source *, const CompilerMetadata *, uint32_t sele
     const DoeCompilerModuleOutputs *, DoeCompilerModuleResult *,
     const DoeCompilerResourceOutputs *, DoeCompilerResourceResult *,
     const DoeCompilerStageOutputs *, DoeCompilerStageResult *);
+DoeCompilerStatus compiler_compile_module(const DoeCompilerModuleCapacities *,
+    void *, size_t, const char *, size_t, const DoeCompilerEntrySelectionV5 *, uint32_t,
+    const DoeCompilerModuleOutputs *, DoeCompilerModuleResult *, const DoeCompilerResourceOutputs *,
+    DoeCompilerResourceResult *, const DoeCompilerStageCapacities *, const DoeCompilerStageOutputs *,
+    DoeCompilerStageResult *, uint32_t, SpecializationContext *);
 #endif

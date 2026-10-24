@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: MIT */
 #include "d3d12_indirect.h"
+#include "d3d12_binding_internal.h"
 #include "../../common/include/doe_dispatch_guard.h"
 #include <stdlib.h>
 #include <string.h>
@@ -102,13 +103,11 @@ native_failure native_d3d12_dispatch_indirect(native_command_handle *commands,
 {
 #if defined(_WIN32)
     native_pipeline *pipeline = doe_resource_pipeline_native(record->value.dispatch.pipeline);
-    doe_dx_buffer_binding bindings[DOE_DX_MAX_BINDINGS];
-    size_t count = 0;
-    uint32_t metadata_index = UINT32_MAX;
-    doe_dx_pipeline *guard = NULL;
-    native_failure failure = native_d3d12_resolve_bindings(record,bindings,&count,&metadata_index,&guard);
+    native_d3d12_snapshot bindings;
+    native_failure failure = native_d3d12_binding_snapshot(record,&bindings);
     if (failure.status != NATIVE_OK) return failure;
-    if (!guard || (metadata_index != UINT32_MAX && metadata_index >= count))
+    if (!bindings.guard || (bindings.metadata_index != UINT32_MAX &&
+        bindings.metadata_index >= bindings.values.resources.buffer_count))
         return native_failure_status(NATIVE_INVALID_STATE);
     native_buffer *arguments = doe_resource_buffer_native(record->value.dispatch.indirect);
     uint64_t offset = record->value.dispatch.indirect_offset;
@@ -123,17 +122,16 @@ native_failure native_d3d12_dispatch_indirect(native_command_handle *commands,
             arguments->handle.d3d12->allocation,offset,scratch,0,12,&error);
     const doe_dx_buffer_binding scratch_binding = {scratch,0,12};
     if (status == DOE_DX_OK)
-        status = doe_dx_commands_dispatch(commands->value.d3d12.commands,guard,&scratch_binding,1,1,1,1,&error);
+        status = doe_dx_commands_dispatch(commands->value.d3d12.commands,bindings.guard,&scratch_binding,1,1,1,1,&error);
     failure = native_failure_d3d12(status,&error);
-    if (failure.status == NATIVE_OK && metadata_index != UINT32_MAX) {
+    if (failure.status == NATIVE_OK && bindings.metadata_index != UINT32_MAX) {
         failure = copy_metadata(commands,scratch,&metadata);
         if (failure.status == NATIVE_OK)
-            bindings[metadata_index] = (doe_dx_buffer_binding){metadata,0,256};
+            bindings.buffers[bindings.metadata_index] = (doe_dx_buffer_binding){metadata,0,256};
     }
     if (failure.status == NATIVE_OK) {
-        const doe_dx_compute_resources resources = {bindings,count,NULL,0};
-        status = doe_dx_commands_dispatch_indirect(commands->value.d3d12.commands,
-            pipeline->handle.d3d12,&resources,scratch,0,&error);
+        status = doe_dx_commands_dispatch_indirect_dynamic(commands->value.d3d12.commands,
+            pipeline->handle.d3d12,&bindings.values,scratch,0,&error);
         failure = native_failure_d3d12(status,&error);
     }
     /* Successful recording already acquired private command references. Unknown

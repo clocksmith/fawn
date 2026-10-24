@@ -19,6 +19,23 @@ now have focused software checks. ABI7 uses explicit interface pools; unchanged
 compute layouts remain available. Native graphics orientation, pipeline admission
 and physical execution are not inherited from SPIR-V validation.
 
+The additive [ABI13 override contract](SPECIALIZATION.md) separates whole-module
+validation from selected-entry specialization through the same semantic owner.
+Uninitialized overrides remain deferred until a pipeline supplies values; earlier
+compiler ABI admission and layouts remain unchanged. Focused host/target controls
+do not establish native pipeline adoption or GPU qualification.
+
+Core `select` supports scalar/vector numeric and boolean values, scalar or
+matching vector boolean masks, eager ordered arguments, and const/override/runtime
+stages through one semantic owner. `make test-select sanitize-select` exercises
+all target adapters and transactional failures. The unchanged retained source is
+[select_retained.wgsl](tests/select_retained.wgsl), extracted from the retained
+Zig backend translation test; [select_cases.wgsl](tests/select_cases.wgsl) adds
+asymmetric masks, exact value bits and observable argument ordering. Public native
+CPU execution is a separate consumer gate; target compilation alone is not that
+execution evidence. No parser, public ABI, work limits or production selector is
+changed by this builtin addition.
+
 ## Build and decisive checks
 
 From the repository root, ordinary source consumption is:

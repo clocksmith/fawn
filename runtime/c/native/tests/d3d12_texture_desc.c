@@ -39,17 +39,5 @@ int main(void)
     doe_dx_texture_region kept = region;
     copy.mip = 1;
     assert(!native_d3d12_texture_region(&copy,&region) && !memcmp(&region,&kept,sizeof(kept)));
-    WGPUSamplerDescriptor sampler = WGPU_SAMPLER_DESCRIPTOR_INIT;
-    sampler.minFilter = sampler.magFilter = WGPUFilterMode_Nearest;
-    sampler.maxAnisotropy = 1;
-    assert(native_d3d12_sampler_supported(&sampler));
-    sampler.magFilter = WGPUFilterMode_Linear;
-    assert(!native_d3d12_sampler_supported(&sampler));
-    sampler.minFilter = WGPUFilterMode_Linear;
-    assert(native_d3d12_sampler_supported(&sampler));
-    sampler.compare = WGPUCompareFunction_Less;
-    assert(!native_d3d12_sampler_supported(&sampler));
-    sampler.compare = WGPUCompareFunction_Undefined; sampler.lodMinClamp = 1;
-    assert(!native_d3d12_sampler_supported(&sampler));
-    puts("PASS D3D12 texture descriptor/control: exact formats/uses, shape/region/immutable sampler rejection, untouched failures; no SDK/GPU");
+    puts("PASS D3D12 texture descriptor/control: exact formats/uses, shape/region rejection, untouched failures; no SDK/GPU");
 }

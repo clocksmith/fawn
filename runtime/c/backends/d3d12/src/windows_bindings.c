@@ -9,17 +9,29 @@ doe_dx_status doe_dx_prepare_descriptors(doe_dx_native_commands *commands,
     if (!use) return doe_dx_fail(DOE_DX_OUT_OF_MEMORY, 0, "descriptors.allocate", error);
     ID3D12Device *device = commands->context->device;
     D3D12_DESCRIPTOR_HEAP_DESC description = {0};
-    description.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-    description.NumDescriptors = (UINT)(resources->buffer_count + resources->texture_count);
     description.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-    HRESULT result = ID3D12Device_CreateDescriptorHeap(device, &description,
-        &IID_ID3D12DescriptorHeap, (void **)&use->heap);
-    if (FAILED(result)) {
-        free(use);
-        return doe_dx_hresult(result, "ID3D12Device.CreateDescriptorHeap", error);
+    description.NumDescriptors = (UINT)(resources->buffer_count + resources->texture_count);
+    if (description.NumDescriptors) {
+        description.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+        HRESULT result = ID3D12Device_CreateDescriptorHeap(device,&description,
+            &IID_ID3D12DescriptorHeap,(void **)&use->heap);
+        if (FAILED(result)) {
+            doe_dx_release_descriptors(use);
+            return doe_dx_hresult(result,"ID3D12Device.CreateDescriptorHeap.resources",error);
+        }
     }
-    D3D12_CPU_DESCRIPTOR_HANDLE handle;
-    use->heap->lpVtbl->GetCPUDescriptorHandleForHeapStart(use->heap, &handle);
+    if (resources->sampler_count) {
+        description.Type = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
+        description.NumDescriptors = (UINT)resources->sampler_count;
+        HRESULT result = ID3D12Device_CreateDescriptorHeap(device,&description,
+            &IID_ID3D12DescriptorHeap,(void **)&use->sampler_heap);
+        if (FAILED(result)) {
+            doe_dx_release_descriptors(use);
+            return doe_dx_hresult(result,"ID3D12Device.CreateDescriptorHeap.samplers",error);
+        }
+    }
+    D3D12_CPU_DESCRIPTOR_HANDLE handle = {0};
+    if (use->heap) use->heap->lpVtbl->GetCPUDescriptorHandleForHeapStart(use->heap, &handle);
     UINT increment = ID3D12Device_GetDescriptorHandleIncrementSize(device,
         D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
     for (size_t index = 0; index < resources->buffer_count; index++) {
@@ -70,6 +82,16 @@ doe_dx_status doe_dx_prepare_descriptors(doe_dx_native_commands *commands,
         }
         handle.ptr += increment;
     }
+    if (use->sampler_heap) {
+        use->sampler_heap->lpVtbl->GetCPUDescriptorHandleForHeapStart(use->sampler_heap,&handle);
+        increment = ID3D12Device_GetDescriptorHandleIncrementSize(device,D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
+        for (size_t index = 0; index < resources->sampler_count; ++index) {
+            D3D12_SAMPLER_DESC sampler;
+            doe_dx_sampler_native(&resources->samplers[index],&sampler);
+            ID3D12Device_CreateSampler(device,&sampler,handle);
+            handle.ptr += increment;
+        }
+    }
     *out = use;
     return DOE_DX_OK;
 }
@@ -103,6 +125,10 @@ void doe_dx_transition_resources(doe_dx_native_commands *commands, doe_dx_native
             restore ? D3D12_RESOURCE_STATE_COPY_DEST : state);
     }
     for (size_t index = 0; index < resources->texture_count; index++) {
+        bool repeated = false;
+        for (size_t prior = 0; prior < index; ++prior)
+            if (resources->textures[prior] == resources->textures[index]) repeated = true;
+        if (repeated) continue;
         D3D12_RESOURCE_STATES state = pipeline->textures[index].access == DOE_DX_READ_ONLY ?
             read : D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
         doe_dx_transition(commands->list, resources->textures[index]->resource,

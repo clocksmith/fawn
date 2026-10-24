@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: MIT
  * Copyright (c) 2026 Doe contributors */
 #include "compile_internal.h"
+#include "override.h"
 #include <string.h>
 
 /* One analysis owner. The caller always ends the initialized environment, even
@@ -22,6 +23,8 @@ bool compiler_analyze(Source *source, CompilerWorkspace *c, NumericEnvironment *
     if (!lex_source(source, c) || !parse_tokens(source, c)) return false;
     for (uint32_t i=0u;i<c->expression_count;++i) c->expression_references[i]=(SourceReference){SOURCE_NONE,NO_ID};
     for (uint32_t i=0u;i<c->statement_count;++i) c->statement_references[i]=(SourceReference){SOURCE_NONE,NO_ID};
-    return numeric_environment_begin(source, environment) &&
-        validate_syntax(source, c) && compiler_target_phase(source);
+    if (!numeric_environment_begin(source, environment) || !validate_syntax(source, c)) return false;
+    if (source->specialization != NULL && source->specialization->selection != NULL &&
+        (!override_plan(source) || !override_reparse(source))) return false;
+    return compiler_target_phase(source);
 }

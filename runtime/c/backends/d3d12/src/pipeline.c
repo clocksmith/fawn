@@ -19,7 +19,8 @@ static bool same_register(uint32_t reg_a, uint32_t space_a, doe_dx_descriptor_ki
     return reg_a == reg_b && space_a == space_b && kind_a == kind_b;
 }
 
-static doe_dx_status validate_layout(const doe_dx_context *context, const doe_dx_resource_pipeline_desc *desc) {
+static doe_dx_status validate_layout(const doe_dx_context *context, const doe_dx_resource_pipeline_desc *desc,
+    const doe_dx_dynamic_pipeline_desc *dynamic) {
     const doe_dx_pipeline_desc *buffers = &desc->buffers;
     if (!buffers->bytecode || !buffers->bytecode_size ||
         (buffers->binding_count && !buffers->bindings) ||
@@ -28,6 +29,10 @@ static doe_dx_status validate_layout(const doe_dx_context *context, const doe_dx
     if (desc->texture_count > DOE_DX_MAX_BINDINGS || desc->sampler_count > DOE_DX_MAX_STATIC_SAMPLERS ||
         buffers->binding_count > DOE_DX_MAX_BINDINGS - desc->texture_count)
         return DOE_DX_RANGE;
+    size_t runtime_samplers = dynamic ? dynamic->sampler_count : 0;
+    if (runtime_samplers > DOE_DX_MAX_DYNAMIC_SAMPLERS ||
+        runtime_samplers > DOE_DX_MAX_DYNAMIC_SAMPLERS - desc->sampler_count) return DOE_DX_RANGE;
+    if (runtime_samplers && !dynamic->samplers) return DOE_DX_INVALID_ARGUMENT;
     const doe_dx_limits *limits = &context->caps.limits;
     if (buffers->binding_count + desc->texture_count > limits->max_descriptors ||
         desc->sampler_count > limits->max_static_samplers) return DOE_DX_RANGE;
@@ -52,8 +57,13 @@ static doe_dx_status validate_layout(const doe_dx_context *context, const doe_dx
     }
     for (size_t index = 0; index < desc->texture_count; index++) {
         const doe_dx_texture_binding_layout *binding = &desc->textures[index];
-        if (binding->format == DOE_DX_D32_FLOAT) return DOE_DX_UNSUPPORTED;
-        if (!doe_dx_format_valid(binding->format) ||
+        doe_dx_texture_contract contract = dynamic && dynamic->texture_contracts ?
+            dynamic->texture_contracts[index] : (doe_dx_texture_contract){0};
+        if (contract.sample_class == DOE_DX_SAMPLE_EXACT && binding->format == DOE_DX_D32_FLOAT)
+            return DOE_DX_UNSUPPORTED;
+        if (contract.sample_class < DOE_DX_SAMPLE_EXACT || contract.sample_class > DOE_DX_SAMPLE_UINT ||
+            ((binding->access != DOE_DX_READ_ONLY || contract.storage) && contract.sample_class != DOE_DX_SAMPLE_EXACT) ||
+            (contract.sample_class == DOE_DX_SAMPLE_EXACT && !doe_dx_format_valid(binding->format)) ||
             (binding->access != DOE_DX_READ_ONLY && binding->access != DOE_DX_READ_WRITE))
             return DOE_DX_INVALID_ARGUMENT;
         if (binding->access == DOE_DX_READ_ONLY) ++srvs;
@@ -82,23 +92,33 @@ static doe_dx_status validate_layout(const doe_dx_context *context, const doe_dx
                 sampler->register_space == desc->samplers[prior].register_space)
                 return DOE_DX_INVALID_ARGUMENT;
     }
+    for (size_t index = 0; index < runtime_samplers; ++index) {
+        const doe_dx_sampler_layout *sampler = &dynamic->samplers[index];
+        for (size_t prior = 0; prior < index; ++prior)
+            if (sampler->shader_register == dynamic->samplers[prior].shader_register &&
+                sampler->register_space == dynamic->samplers[prior].register_space) return DOE_DX_INVALID_ARGUMENT;
+        for (size_t prior = 0; prior < desc->sampler_count; ++prior)
+            if (sampler->shader_register == desc->samplers[prior].shader_register &&
+                sampler->register_space == desc->samplers[prior].register_space) return DOE_DX_INVALID_ARGUMENT;
+    }
     return DOE_DX_OK;
 }
 
 static doe_dx_status create_pipeline(doe_dx_context *context,
-    const doe_dx_resource_pipeline_desc *desc, const doe_dx_mesh_pipeline_desc *mesh,
-    doe_dx_pipeline **out, doe_dx_error *error) {
+    const doe_dx_resource_pipeline_desc *desc, const doe_dx_dynamic_pipeline_desc *dynamic,
+    const doe_dx_mesh_pipeline_desc *mesh, doe_dx_pipeline **out, doe_dx_error *error) {
     if (!context || !desc || !out)
         return doe_dx_fail(DOE_DX_INVALID_ARGUMENT, 0, "pipeline.create", error);
     uint32_t ends[DOE_DX_MAX_VERTEX_BUFFERS] = {0};
     doe_dx_status status = mesh ? doe_dx_validate_mesh(mesh, ends) : DOE_DX_OK;
-    if (status == DOE_DX_OK) status = validate_layout(context, desc);
+    if (status == DOE_DX_OK) status = validate_layout(context, desc, dynamic);
     if (status != DOE_DX_OK) return doe_dx_fail(status, 0, "pipeline.layout", error);
     if (context->objects == SIZE_MAX) return doe_dx_fail(DOE_DX_RANGE, 0, "pipeline.create", error);
     if (context->lost) return doe_dx_fail(DOE_DX_DEVICE_LOST, 0, "pipeline.create", error);
     doe_dx_pipeline *pipeline = calloc(1, sizeof(*pipeline));
     if (!pipeline) return doe_dx_fail(DOE_DX_OUT_OF_MEMORY, 0, "pipeline.allocate", error);
     if (mesh) status = doe_dx_native_graphics_create(context->native, mesh, &pipeline->native, error);
+    else if (dynamic) status = doe_dx_native_pipeline_create_dynamic(context->native, dynamic, &pipeline->native, error);
     else status = doe_dx_native_pipeline_create(context->native, desc, &pipeline->native, error);
     if (status != DOE_DX_OK) {
         free(pipeline);
@@ -124,6 +144,14 @@ static doe_dx_status create_pipeline(doe_dx_context *context,
     if (pipeline->texture_count)
         memcpy(pipeline->textures, desc->textures,
             pipeline->texture_count * sizeof(*pipeline->textures));
+    if (dynamic) {
+        if (dynamic->texture_contracts && pipeline->texture_count)
+            memcpy(pipeline->texture_contracts,dynamic->texture_contracts,
+                pipeline->texture_count * sizeof(*pipeline->texture_contracts));
+        pipeline->sampler_count = dynamic->sampler_count;
+        if (pipeline->sampler_count)
+            memcpy(pipeline->samplers,dynamic->samplers,pipeline->sampler_count * sizeof(*pipeline->samplers));
+    }
     context->objects++;
     *out = pipeline;
     return doe_dx_fail(DOE_DX_OK, 0, "pipeline.create", error);
@@ -131,7 +159,13 @@ static doe_dx_status create_pipeline(doe_dx_context *context,
 
 doe_dx_status doe_dx_pipeline_create_resources(doe_dx_context *context,
     const doe_dx_resource_pipeline_desc *desc, doe_dx_pipeline **out, doe_dx_error *error) {
-    return create_pipeline(context, desc, NULL, out, error);
+    return create_pipeline(context, desc, NULL, NULL, out, error);
+}
+
+doe_dx_status doe_dx_pipeline_create_dynamic(doe_dx_context *context,
+    const doe_dx_dynamic_pipeline_desc *desc,doe_dx_pipeline **out,doe_dx_error *error) {
+    if (!desc) return doe_dx_fail(DOE_DX_INVALID_ARGUMENT,0,"pipeline.dynamic",error);
+    return create_pipeline(context,&desc->resources,desc,NULL,out,error);
 }
 
 doe_dx_status doe_dx_pipeline_create_graphics(doe_dx_context *context,
@@ -145,7 +179,7 @@ doe_dx_status doe_dx_pipeline_create_graphics(doe_dx_context *context,
 doe_dx_status doe_dx_pipeline_create_mesh(doe_dx_context *context,
     const doe_dx_mesh_pipeline_desc *desc, doe_dx_pipeline **out, doe_dx_error *error) {
     if (!desc) return doe_dx_fail(DOE_DX_INVALID_ARGUMENT, 0, "mesh.create", error);
-    return create_pipeline(context, &desc->graphics.fragment, desc, out, error);
+    return create_pipeline(context, &desc->graphics.fragment, NULL, desc, out, error);
 }
 
 doe_dx_status doe_dx_pipeline_create(doe_dx_context *context,

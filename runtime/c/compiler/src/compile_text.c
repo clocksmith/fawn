@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: MIT
  * Copyright (c) 2026 Doe contributors */
 #include "text_internal.h"
+#include "override.h"
 #include <errno.h>
 #include <string.h>
 
@@ -40,6 +41,15 @@ static bool text_layout(uint32_t target, const DoeCompilerTextCapacities *caps, 
         append(&layout->total, dense_metal ? limits->entry_references : limits->resources, binding_size, binding_alignment, &layout->bindings) &&
         append(&layout->total, limits->entries, entry_size, entry_alignment, &layout->entries) &&
         append(&layout->total, caps->text_bytes, 1u, 1u, &layout->text);
+}
+bool compiler_text_workspace(uint32_t target, const DoeCompilerTextCapacities *caps,
+                             DoeCompilerWorkspaceRequirements *requirements) {
+    CompilerLimits limits;
+    TextLayout layout;
+    if ((target != DOE_COMPILER_TARGET_METAL && target != DOE_COMPILER_TARGET_HLSL) ||
+        !text_layout(target, caps, &limits, &layout, target == DOE_COMPILER_TARGET_METAL)) return false;
+    *requirements = (DoeCompilerWorkspaceRequirements){layout.total, _Alignof(max_align_t)};
+    return true;
 }
 static DoeCompilerStatus finish(DoeCompilerStatus status, int saved_errno) {
     errno = saved_errno;
@@ -177,12 +187,12 @@ static bool lower_text(uint32_t target_kind, Source *source, const DoeCompilerTe
 static DoeCompilerStatus compile_text(uint32_t target,
     const DoeCompilerTextCapacities *capacities, void *workspace, size_t workspace_size,
     const char *source, size_t length, const DoeCompilerEntrySelectionV5 *selection,
-    uint32_t flags, const TextOutputs *outputs, DoeCompilerTextResult *result, bool dense_metal) {
+    uint32_t flags, const TextOutputs *outputs, DoeCompilerTextResult *result, bool dense_metal, SpecializationContext *specialization) {
     const int saved_errno = errno;
     memset(result, 0, sizeof(*result));
     DoeCompilerModuleResult *module = &result->stages.resources.module;
     Source context = {.source = source, .length = length, .diagnostic = &module->diagnostic,
-        .exhausted_pool = &module->exhausted_pool, .minimum_pool_capacity = &module->minimum_pool_capacity};
+        .exhausted_pool = &module->exhausted_pool, .minimum_pool_capacity = &module->minimum_pool_capacity, .specialization=specialization};
     CompilerLimits limits;
     TextLayout layout;
     if (target != DOE_COMPILER_TARGET_METAL && target != DOE_COMPILER_TARGET_HLSL) {
@@ -201,6 +211,7 @@ static DoeCompilerStatus compile_text(uint32_t target,
     c->module_flags = ((flags & DOE_COMPILER_UNIFORM_BUFFER_STANDARD_LAYOUT) != 0u ? MODULE_STANDARD_UNIFORM : 0u) |
         ((flags & DOE_COMPILER_CORE_BINDING_NUMBERS) != 0u ? MODULE_CORE_BINDINGS : 0u);
     stage_bind(&context, workspace, &capacities->stages, layout.stage_base);
+    if (specialization != NULL) specialization->stage_base = layout.stage_base;
     NumericEnvironment environment;
     CompilerMetadata metadata;
     uint32_t selected = NO_ID;
@@ -268,7 +279,7 @@ DoeCompilerStatus doe_compiler_compile_text(uint32_t version, uint32_t target,
      * initialization. Only the additive typed ABI11 facade selects HLSL. */
     return compile_text(target == DOE_COMPILER_TARGET_METAL ? target : 0u, capacities,
         workspace, workspace_size, source, length, selection, flags,
-        outputs != NULL ? &normalized : NULL, result, false);
+        outputs != NULL ? &normalized : NULL, result, false, NULL);
 }
 
 DoeCompilerStatus doe_compiler_hlsl_requirements(uint32_t version,
@@ -308,7 +319,7 @@ DoeCompilerStatus doe_compiler_compile_hlsl(uint32_t version,
         .entry_capacity=outputs->entry_capacity,
         .value.hlsl={outputs->bindings, outputs->entries}};
     return compile_text(DOE_COMPILER_TARGET_HLSL, capacities, workspace, workspace_size,
-        source, length, selection, flags, outputs != NULL ? &normalized : NULL, result, false);
+        source, length, selection, flags, outputs != NULL ? &normalized : NULL, result, false, NULL);
 }
 
 DoeCompilerStatus doe_compiler_metal_requirements(uint32_t version,
@@ -346,5 +357,28 @@ DoeCompilerStatus doe_compiler_compile_metal(uint32_t version,
         .text_capacity=outputs->text_capacity,.binding_capacity=outputs->binding_capacity,
         .entry_capacity=outputs->entry_capacity,.value.metal12={outputs->bindings, outputs->entries}};
     return compile_text(DOE_COMPILER_TARGET_METAL, capacities, workspace, workspace_size,
-        source, length, selection, flags, outputs != NULL ? &normalized : NULL, result, true);
+        source, length, selection, flags, outputs != NULL ? &normalized : NULL, result, true, NULL);
+}
+
+DoeCompilerStatus compiler_specialized_text(uint32_t target,
+    const DoeCompilerTextCapacities *caps, void *workspace, size_t workspace_size,
+    const char *source, size_t length, const DoeCompilerEntrySelectionV5 *selection,
+    uint32_t flags, const DoeCompilerSpecializationOutputs *outputs,
+    DoeCompilerTextResult *result, SpecializationContext *context) {
+    TextOutputs normalized = {0};
+    if (outputs != NULL) {
+        if (target == DOE_COMPILER_TARGET_METAL) {
+            const DoeCompilerMetalOutputs *out = &outputs->metal;
+            normalized = (TextOutputs){.stages=out->stages,.text=out->text,
+                .text_capacity=out->text_capacity,.binding_capacity=out->binding_capacity,
+                .entry_capacity=out->entry_capacity,.value.metal12={out->bindings,out->entries}};
+        } else {
+            const DoeCompilerHlslOutputs *out = &outputs->hlsl;
+            normalized = (TextOutputs){.stages=out->stages,.text=out->text,
+                .text_capacity=out->text_capacity,.binding_capacity=out->binding_capacity,
+                .entry_capacity=out->entry_capacity,.value.hlsl={out->bindings,out->entries}};
+        }
+    }
+    return compile_text(target, caps, workspace, workspace_size, source, length, selection,
+        flags, outputs != NULL ? &normalized : NULL, result, target == DOE_COMPILER_TARGET_METAL, context);
 }

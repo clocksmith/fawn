@@ -247,8 +247,22 @@ int main(void)
     assert(shader == sentinel && a.calls == 0u);
     options.target = DOE_SHADER_METAL;
     options.selection = (DoeCompilerEntrySelectionV5){.mode = DOE_COMPILER_SELECT_NONE};
-    assert(doe_shader_create(&options, atomic_source, strlen(atomic_source), &shader, &error) == DOE_SHADER_COMPILE_FAILED);
-    assert(shader == sentinel && a.live == 0u); /* no SPIR-V fallback */
+    for (unsigned ordinal = 1u; ordinal <= 3u; ++ordinal) {
+        a = (allocations){.fail_at=ordinal};
+        assert(doe_shader_create(&options,atomic_source,strlen(atomic_source),&shader,&error) == DOE_SHADER_OUT_OF_MEMORY);
+        assert(shader == sentinel && !a.live);
+    }
+    a = (allocations){0};
+    assert(doe_shader_create(&options,atomic_source,strlen(atomic_source),&shader,&error) == DOE_SHADER_OK);
+    assert(doe_shader_borrow(shader,&view) == DOE_SHADER_OK);
+    assert(view.target == DOE_SHADER_METAL && !view.words && view.text_size && view.metal_entry_count == 1);
+    assert(!strcmp(view.metal_entries[0].name,"atomic_main"));
+    doe_shader_release(shader);
+    shader = sentinel;
+    const char *invalid_atomic = "@group(0) @binding(0) var<storage,read_write> data:array<u32>;"
+        "@compute @workgroup_size(1) fn bad(){atomicStore(&data[0],3u);}";
+    assert(doe_shader_create(&options,invalid_atomic,strlen(invalid_atomic),&shader,&error) == DOE_SHADER_COMPILE_FAILED);
+    assert(shader == sentinel && !a.live && error.diagnostic.message[0]);
     assert(doe_shader_create(&options, "", 0u, &shader, &error) == DOE_SHADER_OK);
     assert(doe_shader_borrow(shader, &view) == DOE_SHADER_OK);
     assert(view.target == DOE_SHADER_METAL && view.text == NULL && view.text_size == 0u);

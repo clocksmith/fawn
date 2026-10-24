@@ -34,6 +34,7 @@ void hlsl_handle_type(HlslEmitter *, TypeId);
 void hlsl_image_resource(HlslEmitter *, uint32_t);
 void hlsl_image(HlslEmitter *, const IrInstruction *);
 void hlsl_handle(HlslEmitter *, const IrInstruction *);
+bool hlsl_image_uav(const TypeRecord *);
 uint32_t hlsl_image_components(HlslEmitter *, const TypeRecord *);
 void hlsl_numeric_helpers(HlslEmitter *);
 void hlsl_expression(HlslEmitter *, const IrInstruction *);

@@ -19,7 +19,7 @@ Private ABI, Windows implementation and fixtures; [guide](README.md).
 
 ## Contracts
 
-- Inputs: [typed resources/bytecode](include/doe_d3d12.h) or [admitted HLSL/entry/stage/module](include/doe_d3d12_shader.h).
+- Inputs: [typed resources/bytecode](include/doe_d3d12.h), [dynamic bindings](include/doe_d3d12_dynamic.h) or [admitted HLSL/entry/stage/module](include/doe_d3d12_shader.h).
 - Outputs: queried identity/caps, statuses and completion-backed readback.
 
 ## Invariants

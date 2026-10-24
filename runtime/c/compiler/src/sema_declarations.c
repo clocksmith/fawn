@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: MIT
  * Copyright (c) 2026 Doe contributors */
 #include "sema.h"
+#include "override.h"
 #include <string.h>
 
 static const char *const forbidden_names[] = {
@@ -168,7 +169,7 @@ bool integer_attribute(Source *s, uint32_t expression, const LocalScope *scope, 
     ExpressionValue v;
     if (!sema_expression(s, expression, scope, true, false, &v)) return false;
     if (count && v.constant.type == IR_ABSTRACT_INT && !sema_materialize(s, &v, IR_I32)) return false;
-    if (v.runtime || !v.known || (v.constant.type != IR_U32 && v.constant.type != IR_I32 && v.constant.type != IR_ABSTRACT_INT) || (v.constant.type == IR_I32 && (v.constant.bits&UINT64_C(0x80000000)) != 0u) || v.constant.bits>UINT32_MAX)
+    if (v.runtime || v.overridable || !v.known || (v.constant.type != IR_U32 && v.constant.type != IR_I32 && v.constant.type != IR_ABSTRACT_INT) || (v.constant.type == IR_I32 && (v.constant.bits&UINT64_C(0x80000000)) != 0u) || v.constant.bits>UINT32_MAX)
         return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, v.value.source_offset, "attribute or array count requires a nonnegative 32-bit integer constant");
     *out = (uint32_t)v.constant.bits;
     return true;
@@ -205,7 +206,16 @@ bool sema_type_reference(Source *s, TypeRef ref, const LocalScope *scope, TypeId
             if (!type_intern(s, TYPE_ATOMIC, type, 1u, &type)) return false;
         } else if (source_span_is(s, g->name, "array")) {
             uint32_t count = 0u;
-            if (g->count_expression != NO_ID && (!integer_attribute(s, g->count_expression, scope, true, &count) || count == 0u)) {
+            bool deferred = false;
+            if (g->count_expression != NO_ID && s->specialization != NULL &&
+                !override_integer(s, g->count_expression, scope, &count, &deferred)) return false;
+            if (deferred) {
+                if (!override_array_type(s, type, index, &type)) return false;
+                --c->walk_count;
+                continue;
+            }
+            if (g->count_expression != NO_ID && ((s->specialization == NULL &&
+                !integer_attribute(s, g->count_expression, scope, true, &count)) || count == 0u)) {
                 if (s->diagnostic->status == DOE_COMPILER_OK) (void)source_error(s, DOE_COMPILER_SEMANTIC_ERROR, g->name.offset, "array count must be positive");
                 return false;
             }
@@ -349,7 +359,7 @@ static uint32_t declaration_state(const CompilerWorkspace *c, uint32_t kind, uin
 static void enter_declaration(CompilerWorkspace *c, uint32_t kind, uint32_t id, uint32_t parent_kind, uint32_t parent) {
     if (kind == 0u) {
         ConstantSyntax *d = &c->constant_decls[id];
-        d->state = 1u|(parent_kind<<2u);
+        d->state = (d->state & DECLARATION_OVERRIDE)|1u|(parent_kind<<2u);
         d->value.dependency.scan = NO_ID;
         d->value.dependency.parent = parent;
     }
@@ -368,7 +378,7 @@ static bool next_dependency(Source *s, uint32_t kind, uint32_t id, uint32_t *chi
     if (kind == 0u) {
         ConstantSyntax *d = &c->constant_decls[id];
         scan = &d->value.dependency.scan;
-        end = d->expression == NO_ID ? d->type : d->expression + 1u;
+        end = d->expression == NO_ID || d->expression == OVERRIDE_NO_INITIALIZER ? d->type : d->expression + 1u;
         if (*scan == NO_ID) {
             *scan = d->first_expression;
             if (type_dependency(s, d->annotation, child_kind, child)) return true;
@@ -390,6 +400,7 @@ static bool finish_declaration(Source *s, uint32_t kind, uint32_t id, LocalScope
     CompilerWorkspace *c = s->compiler;
     if (kind == 0u) {
         ConstantSyntax *d = &c->constant_decls[id];
+        if ((d->state & DECLARATION_OVERRIDE) != 0u) return override_finish(s, id, scope);
         if (d->expression == NO_ID) {
             TypeId type;
             if (!sema_type_reference(s, d->annotation, scope, &type)) return false;
@@ -399,7 +410,7 @@ static bool finish_declaration(Source *s, uint32_t kind, uint32_t id, LocalScope
         }
         ExpressionValue value;
         if (!sema_expression(s, d->expression, scope, true, false, &value)) return false;
-        if (value.runtime || !value.known) return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, d->name.offset, "module const initializer requires a const expression");
+        if (value.runtime || value.overridable || !value.known) return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, d->name.offset, "module const initializer requires a const expression");
         if (d->annotation.offset != NO_ID) {
             TypeId type;
             if (!sema_type_reference(s, d->annotation, scope, &type) || !sema_materialize(s, &value, type)) return false;
@@ -542,6 +553,10 @@ bool sema_resolve_declarations(Source *s, LocalScope *scope) {
             memset(&entry->state, 0, sizeof(entry->state));
             continue;
         }
+        if (s->specialization != NULL) {
+            if (!override_workgroup_size(s, entry, scope)) return false;
+            continue;
+        }
         uint32_t dimensions[3],product=1u;
         for (uint32_t i=0u;i<3u;++i) {
             const Integer *v=&entry->state.dimensions[i];
@@ -567,6 +582,7 @@ bool sema_resolve_declarations(Source *s, LocalScope *scope) {
         WorkgroupRoot *root=&c->workgroups[i];
         if (!sema_type_reference(s,root->annotation,scope,&root->type)) return false;
         const uint32_t flags=type_flags(c,root->type);
+        if ((flags & TYPE_DEFERRED) != 0u && s->specialization != NULL) continue;
         if ((flags & TYPE_FIXED) == 0u || (flags & (TYPE_CONSTRUCTIBLE | TYPE_ATOMIC_CONTENT)) == 0u || (flags & TYPE_ABSTRACT) != 0u)
             return source_error(s,DOE_COMPILER_SEMANTIC_ERROR,root->name.offset,"workgroup type must be concrete, fixed-footprint and constructible or contain atomics");
     }
@@ -595,7 +611,7 @@ bool sema_resolve_declarations(Source *s, LocalScope *scope) {
         }
     }
     }
-    c->current_function=c->entries[0].function;
+    c->current_function=c->entry_count != 0u ? c->entries[0].function : NO_ID;
     if (c->alias.length != 0u && (!sema_valid_name(s, c->alias) || sema_find_parameter(s, c->alias) != NO_ID || sema_find_parameter(s, c->alias_source) == NO_ID))
         return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, c->alias.offset, "invalid leading invocation alias");
     c->current_function = NO_ID;

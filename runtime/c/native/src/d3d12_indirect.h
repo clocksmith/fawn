@@ -19,7 +19,4 @@ native_failure native_d3d12_dispatch_indirect(native_command_handle *commands,
     const doe_resource_command *record);
 
 /* Borrowed direct/indirect binding conversion on the existing pipeline owner. */
-native_failure native_d3d12_resolve_bindings(const doe_resource_command *record,
-    doe_dx_buffer_binding bindings[DOE_DX_MAX_BINDINGS], size_t *count,
-    uint32_t *metadata_index, doe_dx_pipeline **guard);
 #endif

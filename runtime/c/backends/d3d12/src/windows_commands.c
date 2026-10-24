@@ -9,8 +9,7 @@ void doe_dx_native_commands_destroy(doe_dx_native_commands *commands) {
     doe_dx_descriptor_use *use = commands->descriptors;
     while (use) {
         doe_dx_descriptor_use *next = use->next;
-        ID3D12DescriptorHeap_Release(use->heap);
-        free(use);
+        doe_dx_release_descriptors(use);
         use = next;
     }
     free(commands);
@@ -88,7 +87,7 @@ static doe_dx_status record_dispatch(doe_dx_native_commands *commands,
         if (status != DOE_DX_OK) return status;
     }
     doe_dx_descriptor_use *use = NULL;
-    if (resources->buffer_count + resources->texture_count) {
+    if (resources->buffer_count + resources->texture_count + resources->sampler_count) {
         doe_dx_status status = doe_dx_prepare_descriptors(commands, pipeline, resources, &use, error);
         if (status != DOE_DX_OK) return status;
         use->next = commands->descriptors;
@@ -97,12 +96,7 @@ static doe_dx_status record_dispatch(doe_dx_native_commands *commands,
     ID3D12GraphicsCommandList *list = commands->list;
     ID3D12GraphicsCommandList_SetComputeRootSignature(list, pipeline->root);
     ID3D12GraphicsCommandList_SetPipelineState(list, pipeline->state);
-    if (use) {
-        ID3D12GraphicsCommandList_SetDescriptorHeaps(list, 1, &use->heap);
-        D3D12_GPU_DESCRIPTOR_HANDLE handle;
-        use->heap->lpVtbl->GetGPUDescriptorHandleForHeapStart(use->heap, &handle);
-        ID3D12GraphicsCommandList_SetComputeRootDescriptorTable(list, 0, handle);
-    }
+    if (use) doe_dx_bind_descriptors(commands,pipeline,use,false);
     doe_dx_transition_resources(commands, pipeline, resources, false, false);
     if (arguments) {
         doe_dx_transition(list, arguments->resource,

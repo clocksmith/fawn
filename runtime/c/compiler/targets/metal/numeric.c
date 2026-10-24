@@ -289,8 +289,32 @@ static void builtin_expression(MetalEmitter *e, const IrInstruction *ir) {
     }
     metal_text(e, ")");
 }
+static void select_expression(MetalEmitter *e, const IrInstruction *ir) {
+    const uint32_t width = type_vector_width(e->module, ir->type);
+    if (width > 1u) {
+        metal_type(e, ir->type);
+        metal_text(e, "(");
+    }
+    for (uint32_t i = 0u; i < width; ++i) {
+        if (i != 0u) metal_text(e, ", ");
+        metal_text(e, "(");
+        metal_value(e, ir->operands.scalar.binding);
+        if (width > 1u) metal_format(e, ".%c", "xyzw"[i]);
+        metal_text(e, " ? ");
+        metal_value(e, ir->operands.scalar.right);
+        if (width > 1u) metal_format(e, ".%c", "xyzw"[i]);
+        metal_text(e, " : ");
+        metal_value(e, ir->operands.scalar.left);
+        if (width > 1u) metal_format(e, ".%c", "xyzw"[i]);
+        metal_text(e, ")");
+    }
+    if (width > 1u) metal_text(e, ")");
+}
 void metal_expression(MetalEmitter *e, const IrInstruction *ir) {
     switch (ir->opcode) {
+        case IR_SELECT:
+            select_expression(e, ir);
+            break;
         case IR_CONSTANT:
             metal_constant(e, ir->type,
                 ir->operands.scalar.left != 0u ? ir->operands.scalar.binding : ir->operands.scalar.literal,
@@ -387,6 +411,7 @@ void metal_expression(MetalEmitter *e, const IrInstruction *ir) {
         case IR_LOOP_CONTINUING: case IR_END_LOOP: case IR_BREAK: case IR_CONTINUE:
         case IR_BREAK_IF: case IR_ACCESS_LOAD: case IR_ACCESS_STORE: case IR_VALUE_ACCESS:
         case IR_WORKGROUP_BARRIER:
+        case IR_DEFERRED_OVERRIDE:
         case IR_ADDRESS:
         case IR_ATOMIC_LOAD: case IR_ATOMIC_STORE: case IR_ATOMIC_ADD: case IR_ATOMIC_SUBTRACT:
         case IR_ATOMIC_MAX: case IR_ATOMIC_MIN: case IR_ATOMIC_AND: case IR_ATOMIC_OR:

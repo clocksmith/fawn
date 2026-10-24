@@ -27,6 +27,13 @@ a C ABI. No retained Zig bridge is linked, invoked or removed.
   all 2D/single-mip/single-layer/single-sample. Native format capability checks,
   whole-resource upload/readback/copy, immutable same-format SRV/UAV bindings,
   mixed buffer/texture dispatch and copied static nearest/linear samplers.
+  The additive [dynamic binding contract](include/doe_d3d12_dynamic.h) admits
+  sampled float/uint classes, exact-format read-storage SRVs and runtime sampler
+  values on a separate descriptor heap. Independent min/mag/mip, U/V/W address,
+  LOD, anisotropy and comparison fields are copied per record. Legacy exact-format
+  and static-sampler layouts retain their original representation. Compatible
+  sampled/read-storage aliases transition and retain each texture once; any
+  writable alias rejects before native recording.
   D32 requires depth-attachment usage and admits only copy usages in addition;
   it cannot be sampled or stored through shader bindings.
 - Offscreen triangle-list graphics with actual VS/PS PSOs, one RGBA8/BGRA8 UNORM
@@ -447,3 +454,10 @@ it creates no adapter/device. Authored SDK controls still require actual SDK
 compile/execution. Neither host controls nor SDK call composition establish GPU
 execution or qualify the public frontend. Public copy/view/sampler orchestration
 and its source-bound execution evidence remain in the native owner.
+
+The dynamic sampled/storage composition has focused portable owner controls in
+`tests/test_sampled.c`. `tests/test_windows_sampled.c` uses official SDK interfaces
+and real root-signature serialization to check descriptor classes, sampler fields,
+heap/table indices, alias barriers and second-heap OOM rollback without creating a
+device. Authored SDK controls require actual Windows compilation/execution;
+portable controls alone do not establish driver support or public execution.

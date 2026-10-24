@@ -117,7 +117,7 @@ doe_dx_status doe_dx_native_draw(doe_dx_native_commands *commands,
         status = prepare_depth(commands, geometry->depth, &dsv, &depth, error);
         if (status != DOE_DX_OK) goto fail;
     }
-    if (resources->buffer_count + resources->texture_count) {
+    if (resources->buffer_count + resources->texture_count + resources->sampler_count) {
         status = doe_dx_prepare_descriptors(commands, pipeline, resources, &bindings, error);
         if (status != DOE_DX_OK) goto fail;
         bindings->next = commands->descriptors;
@@ -136,12 +136,7 @@ doe_dx_status doe_dx_native_draw(doe_dx_native_commands *commands,
     doe_dx_transition_resources(commands, pipeline, resources, true, false);
     ID3D12GraphicsCommandList_SetGraphicsRootSignature(list, pipeline->root);
     ID3D12GraphicsCommandList_SetPipelineState(list, pipeline->state);
-    if (bindings) {
-        ID3D12GraphicsCommandList_SetDescriptorHeaps(list, 1, &bindings->heap);
-        D3D12_GPU_DESCRIPTOR_HANDLE handle;
-        bindings->heap->lpVtbl->GetGPUDescriptorHandleForHeapStart(bindings->heap, &handle);
-        ID3D12GraphicsCommandList_SetGraphicsRootDescriptorTable(list, 0, handle);
-    }
+    if (bindings) doe_dx_bind_descriptors(commands,pipeline,bindings,true);
     ID3D12GraphicsCommandList_OMSetRenderTargets(list, 1, &target, FALSE, dsv ? &depth : NULL);
     if (mesh->clear_depth) ID3D12GraphicsCommandList_ClearDepthStencilView(list, depth, D3D12_CLEAR_FLAG_DEPTH, mesh->depth_clear, 0, 0, NULL);
     if (draw->clear) ID3D12GraphicsCommandList_ClearRenderTargetView(list, target, draw->clear_color, 0, NULL);
@@ -164,11 +159,9 @@ doe_dx_status doe_dx_native_draw(doe_dx_native_commands *commands,
     return doe_dx_fail(DOE_DX_OK, 0, "native.draw", error);
 fail:
     if (dsv) {
-        ID3D12DescriptorHeap_Release(dsv->heap);
-        free(dsv);
+        doe_dx_release_descriptors(dsv);
     }
-    ID3D12DescriptorHeap_Release(rtv->heap);
-    free(rtv);
+    doe_dx_release_descriptors(rtv);
     return status;
 }
 #endif

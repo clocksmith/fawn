@@ -62,35 +62,10 @@ static void pipeline_failure(native_pipeline_error *error, WGPUErrorType type, c
     native_failure_format(&failure, message, error->message);
 }
 
-WGPUComputePipeline native_create_compute_pipeline(native_device *device,
-    const WGPUComputePipelineDescriptor *descriptor, native_pipeline_error *error)
+static WGPUComputePipeline create_compute_pipeline(native_device *device,
+    const WGPUComputePipelineDescriptor *descriptor, const native_stage *selected, native_pipeline_error *error)
 {
-    if (!device) return NULL;
-    if (!descriptor || !descriptor->compute.module) {
-        pipeline_failure(error, WGPUErrorType_Validation, "compute pipeline requires a descriptor and shader module");
-        return NULL;
-    }
-    if (doe_resource_shader_device((doe_resource_shader *)descriptor->compute.module) != device) {
-        pipeline_failure(error, WGPUErrorType_Validation, "compute pipeline requires a shader created by this device");
-        return NULL;
-    }
-    if (descriptor->nextInChain || descriptor->compute.nextInChain || descriptor->compute.constantCount) {
-        pipeline_failure(error, WGPUErrorType_Validation,
-            "compute pipeline chained structs and override constants are unsupported");
-        return NULL;
-    }
-    const native_shader *shader = doe_resource_shader_native((doe_resource_shader *)descriptor->compute.module);
-    if (!shader || !shader->compiled) {
-        pipeline_failure(error, WGPUErrorType_Validation,
-            "compute shader module failed WGSL compilation; see its compilation info");
-        return NULL;
-    }
-    native_stage stage;
-    if (!native_stage_load(device, descriptor->compute.module, descriptor->compute.entryPoint,
-            DOE_COMPILER_STAGE_COMPUTE, &stage)) {
-        pipeline_failure(error, WGPUErrorType_Validation, "compute shader entry/capability admission failed");
-        return NULL;
-    }
+    const native_stage stage = *selected;
     const doe_shader_view *view = &stage.view;
     const DoeCompilerEntryV5 *entry = stage.entry;
     /* The C compiler emits guarded storage accesses, including OpArrayLength
@@ -119,7 +94,6 @@ WGPUComputePipeline native_create_compute_pipeline(native_device *device,
     if (d3d12) {
         /* SDK loading/compilation and final module release occur outside every
          * owner lock. This ordinary call lease protects the frontend throughout. */
-        native_device_retain(device);
         native_failure failure = native_d3d12_compile_compute(&stage, &compiled);
         if (failure.status == NATIVE_OK) failure = native_d3d12_guard_compile(device,&guard);
         if (failure.status != NATIVE_OK) {
@@ -127,7 +101,6 @@ WGPUComputePipeline native_create_compute_pipeline(native_device *device,
             native_d3d12_guard_code_release(guard);
             error->type = native_result_error(failure.status);
             native_failure_format(&failure, "D3D12 shader compilation failed", error->message);
-            native_device_release(device);
             return NULL;
         }
     }
@@ -135,7 +108,6 @@ WGPUComputePipeline native_create_compute_pipeline(native_device *device,
     if (!payload) {
         native_d3d12_compiler_release(compiled);
         native_d3d12_guard_code_release(guard);
-        if (d3d12) native_device_release(device);
         pipeline_failure(error, WGPUErrorType_OutOfMemory, "pipeline allocation failed");
         return NULL;
     }
@@ -195,8 +167,25 @@ WGPUComputePipeline native_create_compute_pipeline(native_device *device,
             pipeline_failure(error, native_label_error(label_status), "pipeline label storage failed");
         }
     }
-    if (d3d12) native_device_release(device);
     return (WGPUComputePipeline)pipeline;
+}
+WGPUComputePipeline native_create_compute_pipeline(native_device *device,
+    const WGPUComputePipelineDescriptor *descriptor, native_pipeline_error *error)
+{
+    if (!device) return NULL;
+    if (!descriptor || descriptor->nextInChain || descriptor->compute.nextInChain) {
+        pipeline_failure(error,WGPUErrorType_Validation,"compute pipeline descriptor or chain is invalid");
+        return NULL;
+    }
+    native_device_retain(device);
+    native_stage stage = {0};
+    WGPUComputePipeline pipeline = NULL;
+    if (native_stage_load(device,descriptor->compute.module,descriptor->compute.entryPoint,
+        DOE_COMPILER_STAGE_COMPUTE,descriptor->compute.constants,descriptor->compute.constantCount,&stage,error))
+        pipeline = create_compute_pipeline(device,descriptor,&stage,error);
+    native_stage_release(&stage);
+    native_device_release(device);
+    return pipeline;
 }
 WGPUComputePipeline wgpuDeviceCreateComputePipeline(WGPUDevice handle,
     const WGPUComputePipelineDescriptor *descriptor)

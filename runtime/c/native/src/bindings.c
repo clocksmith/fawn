@@ -106,10 +106,11 @@ static bool group_backend_compatible(native_device *device, doe_resource_layout 
     size_t entry_count = 0, binding_count = 0;
     const doe_resource_layout_entry *entries = doe_resource_layout_entries(layout, &entry_count);
     if (device->backend.kind == WGPUBackendType_D3D12) {
-        /* This composed backend executes buffer bindings only. Empty layouts
-         * remain valid; missing image/sampler paths never read a Vulkan payload. */
+        /* Canonical resources checked format/sample compatibility. D3D12 now
+         * consumes whole 2D color views plus immutable runtime sampler values. */
         for (size_t i = 0; i < entry_count; ++i)
-            if (entries[i].kind != DOE_BIND_BUFFER) return false;
+            if (entries[i].kind != DOE_BIND_BUFFER && entries[i].kind != DOE_BIND_TEXTURE &&
+                entries[i].kind != DOE_BIND_STORAGE_TEXTURE && entries[i].kind != DOE_BIND_SAMPLER) return false;
         return true;
     }
     if (device->backend.kind != WGPUBackendType_Vulkan) return false;

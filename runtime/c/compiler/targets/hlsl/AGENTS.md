@@ -21,7 +21,10 @@ facade or a runtime consumer. Existing ABI10 Metal records never become HLSL rec
 - Texture handles preserve typed declaration/formal identity. Query a valid base
   mip first, then guard the requested mip before its dimension query and every
   coordinate/layer/sample before a texel operation. Sampling array layers clamp.
-  Storage image format channels govern load expansion/store projection; typed UAV
+  Storage image format channels govern load expansion/store projection. Read-only
+  storage textures use SRV declarations and mip-zero Load/GetDimensions forms;
+  one target predicate owns declaration, access and reflected register class.
+  Write/read-write storage remains UAV; logical storage usage stays upstream. Typed UAV
   device capabilities remain runtime obligations, not inferred support.
 - Stage interfaces come from shared ABI7 typed leaves, not source attribute replay.
   Preserve formal/member identity and original return values; stage semantics and

@@ -99,6 +99,13 @@ Preserve explicit zero draw budgets and delegate accounting to resource packets.
 Platform build recipes must keep one export inventory; never make a missing
 platform suite report the success of a narrower host-only substitute.
 
+Public shader resources retain validated immutable modules, not executable
+whole-module artifacts. Select the declared stage by name/type, specialize its
+constants through the shader/compiler owner and use the resulting single entry at
+index zero. Keep ordinary module/device call leases through preparation. Temporary
+executable artifacts outlive native pipeline creation and drop outside every owner
+lock; frontend code converts ABI spans without evaluating override expressions.
+
 Native shader semantic policy has one owner, native_shader_semantic_flags.
 Every target's measure/fill and WGSL feature reporting must consume that policy;
 an advertised compiler language capability must have public module, pipeline and
@@ -156,3 +163,10 @@ existing leases; unresolved work keeps the common pending device lease. Caller
 release alone never clears that native command pointer or authorizes cleanup.
 Report only composed frontend limits/features; SDK guarantees and private-backend
 controls never establish missing public graphics or presentation behavior.
+
+D3D12 image bindings use the compiler's selected handle/class/register records.
+Runtime samplers copy canonical immutable values into the command-owned heap;
+never infer a format from an unrelated bound view or cache borrowed descriptors.
+Read-storage SRVs retain logical STORAGE admission and share compatible read
+transitions with sampled aliases. Whole 2D views remain the explicit envelope;
+additional dimensions, formats and public graphics require their actual bridge.

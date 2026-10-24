@@ -154,6 +154,16 @@ doe_dx_status doe_dx_native_pipeline_create(doe_dx_native_context *context,
     return DOE_DX_OK;
 }
 
+doe_dx_status doe_dx_native_pipeline_create_dynamic(doe_dx_native_context *context,
+    const doe_dx_dynamic_pipeline_desc *desc,doe_dx_native_pipeline **out,doe_dx_error *error) {
+    doe_dx_status status = doe_dx_native_pipeline_create(context,&desc->resources,out,error);
+    if (status == DOE_DX_OK) {
+        mock.dynamic_sampler_count = desc->sampler_count;
+        for (size_t i = 0; i < desc->sampler_count; ++i) mock.dynamic_layouts[i] = desc->samplers[i];
+    }
+    return status;
+}
+
 void doe_dx_native_pipeline_destroy(doe_dx_native_pipeline *pipeline) {
     assert(pipeline && !pipeline->recorded && mock.pipelines);
     mock.pipelines--;
@@ -245,6 +255,8 @@ static void record_resources(doe_dx_native_commands *commands,
     }
     mock.binding_count = resources->buffer_count;
     mock.texture_count = resources->texture_count;
+    mock.dynamic_sampler_count = resources->sampler_count;
+    for (size_t i = 0; i < resources->sampler_count; ++i) mock.dynamic_values[i] = resources->samplers[i];
 }
 
 doe_dx_status doe_dx_native_dispatch(doe_dx_native_commands *commands,

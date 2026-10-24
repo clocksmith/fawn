@@ -36,7 +36,7 @@ doe_dx_status doe_dx_native_texture_create(doe_dx_native_context *context,
         (desc->format == DOE_DX_RGBA8_UNORM || desc->format == DOE_DX_BGRA8_UNORM || desc->format == DOE_DX_R32_FLOAT))
         required |= D3D12_FORMAT_SUPPORT1_SHADER_SAMPLE;
     if (desc->usage & DOE_DX_TEXTURE_STORAGE)
-        required |= D3D12_FORMAT_SUPPORT1_TYPED_UNORDERED_ACCESS_VIEW;
+        required |= D3D12_FORMAT_SUPPORT1_TYPED_UNORDERED_ACCESS_VIEW | D3D12_FORMAT_SUPPORT1_SHADER_LOAD;
     if (desc->usage & DOE_DX_TEXTURE_RENDER_ATTACHMENT) required |= D3D12_FORMAT_SUPPORT1_RENDER_TARGET;
     if (desc->usage & DOE_DX_TEXTURE_DEPTH_ATTACHMENT) required |= D3D12_FORMAT_SUPPORT1_DEPTH_STENCIL;
     if (((UINT)support.Support1 & required) != required)

@@ -15,7 +15,7 @@ static void release_shader(void *userdata, void *handle)
 {
     (void)userdata;
     native_shader *payload = handle;
-    doe_shader_release(payload->compiled);
+    doe_shader_release(payload->module);
     free(payload);
 }
 
@@ -27,11 +27,10 @@ uint32_t native_shader_semantic_flags(void)
     return DOE_COMPILER_CORE_BINDING_NUMBERS | DOE_COMPILER_UNIFORM_BUFFER_STANDARD_LAYOUT;
 }
 
-doe_shader_status native_compile_shader_target(doe_shader_target target, const char *source, size_t size,
-    doe_shader **out, doe_shader_error *error)
+static doe_shader_options shader_options(doe_shader_target target)
 {
-    /* Capacity is explicit and compiler-owned. Exhaustion fails visibly; no
-     * reparsing, fallback compiler, or claimed support beyond the selected compiler pools. */
+    /* Capacity is explicit and compiler-owned. Exhaustion fails visibly without
+     * growing pools or retrying through another compiler. */
     static const char identity[] = "experimental-c-native-no-cache";
     doe_shader_options options = {
         .target=target,.semantic_flags=native_shader_semantic_flags(),
@@ -47,6 +46,13 @@ doe_shader_status native_compile_shader_target(doe_shader_target target, const c
         .interface_attributes=4096, .stage_interfaces=1024,
         .compiler_identity=identity, .compiler_identity_size=sizeof(identity)-1
     };
+    return options;
+}
+
+doe_shader_status native_compile_shader_target(doe_shader_target target, const char *source, size_t size,
+    doe_shader **out, doe_shader_error *error)
+{
+    const doe_shader_options options = shader_options(target);
     return doe_shader_create(&options, source, size, out, error);
 }
 
@@ -55,10 +61,8 @@ doe_shader_status native_compile_shader(const char *source, size_t size, doe_sha
     return native_compile_shader_target(DOE_SHADER_SPIRV,source,size,out,error);
 }
 
-WGPUShaderModule wgpuDeviceCreateShaderModule(WGPUDevice handle, const WGPUShaderModuleDescriptor *descriptor)
+static WGPUShaderModule create_shader_module(native_device *device, const WGPUShaderModuleDescriptor *descriptor)
 {
-    native_device *device = (native_device *)handle;
-    if (!device) return NULL;
     if (!descriptor || !descriptor->nextInChain || descriptor->nextInChain->next ||
         descriptor->nextInChain->sType != WGPUSType_ShaderSourceWGSL) {
         native_error(device, WGPUErrorType_Validation, "only a single WGSL shader source is supported");
@@ -77,10 +81,11 @@ WGPUShaderModule wgpuDeviceCreateShaderModule(WGPUDevice handle, const WGPUShade
     }
     doe_shader_target target = device->backend.kind == WGPUBackendType_Metal ? DOE_SHADER_METAL :
         device->backend.kind == WGPUBackendType_D3D12 ? DOE_SHADER_HLSL : DOE_SHADER_SPIRV;
-    doe_shader_status status = native_compile_shader_target(target, source->code.data, size,
-        &payload->compiled, &payload->error);
+    const doe_shader_options options = shader_options(target);
+    doe_shader_status status = doe_shader_create_module(&options,options.capacities.typed.expressions,
+        source->code.data,size,&payload->module,&payload->error);
     if (status != DOE_SHADER_OK && !payload->error.diagnostic.message[0])
-        memcpy(payload->error.diagnostic.message, "C shader compilation failed", sizeof("C shader compilation failed"));
+        memcpy(payload->error.diagnostic.message, "C shader validation failed", sizeof("C shader validation failed"));
     doe_resource_shader *shader = NULL;
     native_lock(device);
     doe_resource_status created = doe_resource_shader_create(&device->resources,
@@ -96,6 +101,15 @@ WGPUShaderModule wgpuDeviceCreateShaderModule(WGPUDevice handle, const WGPUShade
                 payload->error.diagnostic.message);
     }
     return (WGPUShaderModule)shader;
+}
+WGPUShaderModule wgpuDeviceCreateShaderModule(WGPUDevice handle, const WGPUShaderModuleDescriptor *descriptor)
+{
+    native_device *device = (native_device *)handle;
+    if (!device) return NULL;
+    native_device_retain(device);
+    WGPUShaderModule shader = create_shader_module(device,descriptor);
+    native_device_release(device);
+    return shader;
 }
 void wgpuShaderModuleAddRef(WGPUShaderModule shader) { doe_resource_shader_retain((doe_resource_shader *)shader); }
 void wgpuShaderModuleRelease(WGPUShaderModule shader) { doe_resource_shader_release((doe_resource_shader *)shader); }

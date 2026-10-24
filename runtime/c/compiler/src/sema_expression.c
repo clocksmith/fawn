@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: MIT
  * Copyright (c) 2026 Doe contributors */
 #include "sema.h"
+#include "override.h"
 #include <string.h>
 bool sema_append(Source *s, IrInstruction instruction, IrValue *out) {
     CompilerWorkspace *c = s->compiler;
@@ -20,6 +21,9 @@ bool sema_emit(Source *s, bool emit, IrInstruction instruction, IrValue *out) {
 }
 bool sema_ensure_value(Source *s, ExpressionValue *v, bool emit) {
     if (!emit || v->value.id != 0u) return true;
+    if (!v->known && v->overridable)
+        return sema_append(s, (IrInstruction){.opcode=IR_DEFERRED_OVERRIDE, .type=v->constant.type,
+            .source_offset=v->value.source_offset}, &v->value);
     if (!v->known || type_abstract(s->compiler, v->constant.type))
         return source_error(s, DOE_COMPILER_INPUT_ERROR, v->value.source_offset, "unmaterialized value reached target lowering");
     const IrInstruction i = {.opcode = IR_CONSTANT, .type = v->constant.type, .source_offset = v->value.source_offset, .operands.scalar = {.left = (v->constant.flags&CONSTANT_AGGREGATE) != 0u?1u:0u, .binding = (v->constant.flags&CONSTANT_AGGREGATE) != 0u?(uint32_t)v->constant.bits:0u, .literal = (uint32_t)v->constant.bits}
@@ -99,7 +103,8 @@ static bool identity_value(Source *s,NameSpan name,const LocalScope *scope,Value
         case IDENTITY_CONSTANT: {
             const ConstantSyntax *d=&c->constant_decls[identity.index];
             if ((d->state&3u)!=2u) break;
-            out->known=true; out->constant=(ConstantValue){d->type,(d->state&16u)!=0u?CONSTANT_AGGREGATE:0u,d->value.bits};
+            out->overridable=(d->state&DECLARATION_OVERRIDE)!=0u;
+            out->known=!out->overridable || (d->state&DECLARATION_KNOWN)!=0u; out->constant=(ConstantValue){d->type,(d->state&16u)!=0u?CONSTANT_AGGREGATE:0u,d->value.bits};
             out->value.type=d->type; return true;
         }
         case IDENTITY_RESOURCE:
@@ -130,6 +135,9 @@ static bool capture_identity(Source *s, const LocalScope *scope, SourceReference
     }
     else if (identity.kind==IDENTITY_RESOURCE) kind=SOURCE_RESOURCE;
     else if (identity.kind==IDENTITY_WORKGROUP) kind=SOURCE_WORKGROUP;
+    else if (identity.kind==IDENTITY_CONSTANT &&
+             (s->compiler->constant_decls[identity.index].state&DECLARATION_OVERRIDE)!=0u)
+        kind=SOURCE_OVERRIDE;
     else if (identity.kind==IDENTITY_INPUT) kind=SOURCE_INPUT;
     else if (identity.kind==IDENTITY_ALIAS) {
         kind=SOURCE_INPUT;
@@ -296,13 +304,19 @@ static bool postfix_value(Source *s, const Expression *node, const LocalScope *s
         }
         const TypeRecord *t = &c->types[input-7u];
         output = t->element;
+        if (!is_ref && !base.runtime && !ix.runtime && !ix.known) {
+            *reference = false;
+            *out = (ExpressionValue){.overridable = base.overridable || ix.overridable,
+                .constant.type = output, .value = {.type = output, .source_offset = node->source_offset}};
+            return true;
+        }
         if (!ix.runtime && ix.known) {
             if ((ix.constant.type == IR_I32 && (ix.constant.bits&UINT64_C(0x80000000)) != 0u) || (t->kind != TYPE_RUNTIME_ARRAY && ix.constant.bits >= t->count))
                 return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, ix.value.source_offset, "constant index is out of bounds");
             if (!is_ref && !base.runtime) {
                 *reference = false;
                 *out = (ExpressionValue){
-                    .known = evaluate && base.known, .constant.type = output, .value = {.type = output, .source_offset = node->source_offset}
+                    .overridable = base.overridable, .known = evaluate && base.known, .constant.type = output, .value = {.type = output, .source_offset = node->source_offset}
                 };
                 return !out->known || constant_project(s, base.constant, (uint32_t)ix.constant.bits, &out->constant);
             }
@@ -322,7 +336,7 @@ static bool postfix_value(Source *s, const Expression *node, const LocalScope *s
     if (!is_ref && !base.runtime && node->kind == EXPRESSION_MEMBER) {
         *reference = false;
         *out = (ExpressionValue){
-            .known = evaluate && base.known, .constant.type = output, .value = {.type = output, .source_offset = node->source_offset}
+            .overridable = base.overridable, .known = evaluate && base.known, .constant.type = output, .value = {.type = output, .source_offset = node->source_offset}
         };
         return !out->known || constant_project(s, base.constant, index, &out->constant);
     }
@@ -487,7 +501,7 @@ bool sema_binary(Source *s, ExpressionKind op, Comparison cmp, ExpressionValue *
         }
     }
     *out = (ExpressionValue){
-        .runtime = a->runtime || b->runtime, .known = evaluate && a->known && b->known, .constant.type = type, .value = {.type = type, .source_offset = offset}
+        .runtime = a->runtime || b->runtime, .overridable = a->overridable || b->overridable, .known = evaluate && a->known && b->known, .constant.type = type, .value = {.type = type, .source_offset = offset}
     };
     if (!out->runtime) {
         if (!out->known) return true;
@@ -554,15 +568,18 @@ bool sema_expression(Source *s, uint32_t id, const LocalScope *scope, bool evalu
     if (logical) {
         if (b.constant.type != IR_BOOL) return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, e->source_offset, "logical operands require scalar bool");
         *out = (ExpressionValue){
-            .runtime = a.runtime || b.runtime, .constant.type = IR_BOOL, .value = {.type = IR_BOOL, .source_offset = e->source_offset}
+            .runtime = a.runtime || b.runtime, .overridable = a.overridable || b.overridable, .constant.type = IR_BOOL, .value = {.type = IR_BOOL, .source_offset = e->source_offset}
         };
         if (skip) {
             out->known = true;
             out->constant.bits = a.constant.bits;
             return true;
         }
+        if (!out->runtime && !a.known) return true;
         if (!a.runtime) {
+            const bool overridable = out->overridable;
             *out = b;
+            out->overridable = overridable;
             out->value.source_offset = e->source_offset;
             return true;
         }

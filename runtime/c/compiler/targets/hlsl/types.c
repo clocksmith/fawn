@@ -171,15 +171,21 @@ void hlsl_composite(HlslEmitter *e, const IrInstruction *ir) {
         hlsl_error(e, "HLSL composite operand range is invalid");
         return;
     }
+    const bool splat = ir->operands.composite.kind == 2u;
+    if (splat && (t->kind != TYPE_VECTOR || count != 1u)) {
+        hlsl_error(e, "HLSL vector splat requires one typed operand");
+        return;
+    }
     hlsl_indent(e);
     hlsl_value(e, ir->result);
     hlsl_text(e, " = ");
     if ((t->kind == TYPE_VECTOR || t->kind == TYPE_MATRIX) && count != 0u) {
         hlsl_type(e, ir->type);
         hlsl_text(e, "(");
-        for (uint32_t i = 0u; i < count; ++i) {
+        const uint32_t components = splat ? t->count : count;
+        for (uint32_t i = 0u; i < components; ++i) {
             if (i != 0u) hlsl_text(e, ", ");
-            hlsl_value(e, e->module->typed_operands[first + i]);
+            hlsl_value(e, e->module->typed_operands[first + (splat ? 0u : i)]);
         }
         hlsl_text(e, ");\n");
         return;
