@@ -121,6 +121,8 @@ const test_src_native_surface_doe_surface_native_zig_3bda77f3 = if (builtin.os.t
 const test_src_native_support_doe_callback_delivery_zig_24ee01a5 = @import("src/native/support/doe_callback_delivery.zig");
 const test_src_native_support_doe_future_ids_zig_46c77022 = @import("src/native/support/doe_future_ids.zig");
 const test_src_native_support_doe_device_loss_zig_09817a3f = @import("src/native/support/doe_device_loss.zig");
+const test_src_native_vulkan_vulkan_render_attachments_zig_980103b4 = @import("src/native/vulkan/vulkan_render_attachments.zig");
+const test_src_native_render_doe_render_pipeline_native_zig_3fcdde95 = @import("src/native/render/doe_render_pipeline_native.zig");
 
 comptime {
     _ = test_tests_metal_metal_render_state_test_zig_a5cdfde6;
@@ -243,4 +245,6 @@ comptime {
     _ = test_src_native_support_doe_callback_delivery_zig_24ee01a5;
     _ = test_src_native_support_doe_future_ids_zig_46c77022;
     _ = test_src_native_support_doe_device_loss_zig_09817a3f;
+    _ = test_src_native_vulkan_vulkan_render_attachments_zig_980103b4;
+    _ = test_src_native_render_doe_render_pipeline_native_zig_3fcdde95;
 }
