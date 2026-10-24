@@ -118,7 +118,8 @@ void metal_block(MetalEmitter *e, uint32_t *cursor, unsigned depth, uint32_t loo
             continue;
         }
         ++*cursor;
-        if (ir->opcode == IR_ACCESS_LOAD || ir->opcode == IR_ACCESS_STORE || ir->opcode == IR_VALUE_ACCESS) {
+        if (ir->opcode == IR_ACCESS_LOAD || ir->opcode == IR_ACCESS_STORE || ir->opcode == IR_VALUE_ACCESS ||
+            atomic_opcode(ir->opcode)) {
             metal_access(e, ir);
             continue;
         }

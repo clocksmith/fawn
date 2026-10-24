@@ -25,9 +25,9 @@ function sha256(value) {
   return createHash("sha256").update(bytes).digest("hex");
 }
 
-export async function runFirstKernel(runtimeHost, beforeRelease = null) {
+export async function runFirstKernel(runtimeHost, beforeRelease = null, adapterOptions = undefined) {
   const startedAt = performance.now();
-  const adapter = await requestAdapter();
+  const adapter = await requestAdapter(adapterOptions);
   if (!adapter) throw new Error('Doe native provider returned no adapter');
   let device;
   try {
@@ -39,7 +39,7 @@ export async function runFirstKernel(runtimeHost, beforeRelease = null) {
       workgroups: 1,
     });
     assert.deepEqual(Array.from(output), [2, 4, 6, 8, 10, 12, 14, 16]);
-    await beforeRelease?.(device);
+    await beforeRelease?.(device, adapter);
     const finishedAt = performance.now();
     return {
       kind: 'doe-gpu.first-kernel.receipt',

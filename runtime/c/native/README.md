@@ -1,7 +1,7 @@
 # Experimental C public WebGPU native frontend
 
 Status: source-built and developer-exercised through pinned `webgpu.h`.
-Production/default selection is unchanged. Scoped CPU and Apple device evidence
+Production/default selection is unchanged. Scoped CPU and selected-device evidence
 does not establish independent acceptance, full WebGPU replacement, performance
 or a qualified hardware matrix. `src/procedures.c` and the exact export inventory
 own implemented symbols; unknown names return NULL from `wgpuGetProcAddress`.
@@ -17,11 +17,20 @@ The authored Windows compute/buffer path consumes compiler-owned HLSL ABI11,
 the official DXC SDK adapter and the existing [private D3D12 owner](../backends/d3d12/README.md).
 Device creation reopens exact adapter identity. Native allocations start with real
 zero initialization; uniform padding never widens logical storage descriptors.
-Only composed compute/buffer limits are advertised; graphics/texture limits stay
-zero and CoreFeaturesAndLimits is absent until that frontend is implemented.
-This new public path still needs its own SDK build and WARP/native-consumer
-execution. Earlier private WARP/Miles and standalone compiler/host controls do
-not qualify these new composed bytes.
+The authored texture-copy path adds five four-byte color formats in 2D, with one
+mip, layer and sample, real zero initialization and partial GPU transfers that
+preserve public row padding. Immutable views and sampler descriptors use the
+canonical resource owner. Sampling/storage stage limits, graphics and presentation
+remain uncomposed; CoreFeaturesAndLimits is absent.
+The [public D3D12 developer receipt](DEVELOPER_RECEIPT_D3D12_PUBLIC.json) binds an
+actual Windows SDK DLL build and four unchanged C consumers to one source, with
+the same binaries passing on CPU WARP and the named Miles GPU. It covers compute,
+uniforms, binding aliases and command retention. Missing APIs, later source,
+Node/browser integration and broader qualification retain their own gates.
+The later indirect path copies GPU arguments to private scratch, executes the
+shared compiled bounds guard, and copies sanitized dispatch metadata without
+altering caller arguments. These indirect and texture additions need their own
+SDK and native-consumer execution evidence; the earlier receipt does not qualify them.
 
 Vulkan composes compute, images, graphics, queries and Linux presentation within
 the explicit limits and feature checks below. CPU execution receipts prove their
@@ -37,7 +46,9 @@ Direct vertex input lowers the pinned scalar/vector integer, normalized, half,
 packed and BGRA formats through SDK-bound Metal identities. Public scalar-kind
 and offset alignment remain independent of Metal's weaker component alignment.
 Host descriptor/rollback controls and SDK checks cover this conversion; per-format
-physical fetch correctness remains the unchanged `vertex-formats` consumer's gate.
+physical fetch has separate evidence. The [M3 vertex receipt](DEVELOPER_RECEIPT_METAL_VERTEX_FORMATS.json)
+binds the unchanged consumer's exact draw/readback for 33 selected formats and
+admission controls to its source. It does not qualify all 41 admitted formats.
 
 Metal's frontend compute envelope remains bounded to 256 total threads, at most
 256 per axis, 65535 groups per axis and conservative 256-byte buffer offsets.
@@ -627,7 +638,7 @@ callback mode, not a claimed background compiler. No blanket success stubs or
 fallback provider resolution exist. The public advertised limits
 cover the implemented compute/image/graphics path only and do not claim the WebGPU
 Core feature level is complete; adapter/device creation remains experimental.
-Metal timestamps, surfaces on Metal/Windows/Android, public D3D12 admission
+Metal timestamps, surfaces on Metal/Windows/Android, broader public D3D12 paths
 and complete package adoption remain unfinished. Private backend checks do not
 qualify those public integrations; see the current Metal scope and bound Apple
 evidence above.
@@ -643,9 +654,9 @@ provider directories; the Windows builder uses their actual C files and the same
 public/extension export inventories. It compiles the official-header DXC C++ seam,
 copies the selected x64 DXC runtime DLLs and licenses beside the native DLL, and
 records source/tool hashes. It audits the DLL exports and executes only a Win32
-typed-loader host control. This authored route does not establish a successful
-Windows native build, device execution or GPU qualification until its exact source
-passes the SDK workflow. Linux and Darwin builds keep their existing owner set.
+typed-loader host control. Its [recorded SDK/public-consumer checkpoint](DEVELOPER_RECEIPT_D3D12_PUBLIC.json)
+is source-bound; later changes need their own workflow result and executed scope.
+Linux and Darwin builds keep their existing owner set.
 
 The Makefile invokes the compiler owner's canonical `shared` target for
 `libdoe_compiler.so`, without parsing or duplicating its target source lists, then links `libwebgpu_doe_c.so` from C owners only. It writes

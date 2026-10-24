@@ -54,10 +54,9 @@ int main(int argc, char **argv) {
     release(f);
     f = prepare("@group(0) @binding(0) var<storage,read_write> a:atomic<u32>;"
         "@compute @workgroup_size(1) fn main(){atomicStore(&a,1u);}");
-    char intact[8] = "intact";
-    DoeMetalResult result;
-    assert(doe_metal_emit(&f->source, f->module, 0u, f->scratch, intact, sizeof(intact), &result) == DOE_COMPILER_UNSUPPORTED);
-    assert(strcmp(intact, "intact") == 0 && result.written_bytes == 0u);
+    text = emit(f, 0u);
+    has(text, "atomic_store_explicit(target");
+    free(text);
     release(f);
     puts("Metal matrix mapping: nine shapes, native products, compact typed zero, exact stride and continuing discard passed.");
     return 0;

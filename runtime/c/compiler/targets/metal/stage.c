@@ -270,9 +270,14 @@ static void entry_wrapper(MetalEmitter *e, uint32_t index) {
         for (uint32_t i = 0u; i < c->workgroup_count; ++i) {
             if (!metal_entry_workgroup(c, entry, i)) continue;
             metal_indent(e);
-            metal_format(e, "doe_wstore%u(&w%u, ", c->workgroups[i].type, i);
-            metal_zero(e, c->workgroups[i].type);
-            metal_text(e, ");\n");
+            const TypeId type = c->workgroups[i].type;
+            if ((type_flags(c, type) & TYPE_ATOMIC_CONTENT) != 0u)
+                metal_format(e, "doe_wzero%u(&w%u);\n", type, i);
+            else {
+                metal_format(e, "doe_wstore%u(&w%u, ", type, i);
+                metal_zero(e, type);
+                metal_text(e, ");\n");
+            }
         }
         --e->indent;
         metal_line(e, "}");

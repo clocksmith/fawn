@@ -339,6 +339,27 @@ void doe_dx_native_texture_transfer(doe_dx_native_commands *commands,
     mock.texture_transfers++;
 }
 
+void doe_dx_native_texture_region_transfer(doe_dx_native_commands *commands,
+    doe_dx_native_buffer *buffer, doe_dx_native_texture *texture,
+    const doe_dx_texture_footprint *footprint, doe_dx_texture_region region, bool upload) {
+    assert(region.width && region.height);
+    doe_dx_native_texture_transfer(commands,buffer,texture,footprint,upload);
+    mock.region = region;
+}
+
+void doe_dx_native_texture_blit(doe_dx_native_commands *commands,
+    doe_dx_native_texture *source, doe_dx_texture_region from, doe_dx_native_texture *destination,
+    uint32_t destination_x, uint32_t destination_y) {
+    record_texture(commands,source);
+    record_texture(commands,destination);
+    mock.texture_source = source;
+    mock.texture_destination = destination;
+    mock.region = from;
+    mock.destination_x = destination_x;
+    mock.destination_y = destination_y;
+    mock.texture_blits++;
+}
+
 void doe_dx_native_texture_copy(doe_dx_native_commands *commands,
     doe_dx_native_texture *source, doe_dx_native_texture *destination) {
     record_texture(commands, source);

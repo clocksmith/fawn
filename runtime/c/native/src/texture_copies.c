@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: MIT */
 #include "metal_frontend.h"
+#include "d3d12_texture.h"
 
 static doe_resource_texture_copy texture_copy(const WGPUTexelCopyTextureInfo *texture,
     const WGPUTexelCopyBufferLayout *layout, const WGPUExtent3D *size)
@@ -71,6 +72,10 @@ void wgpuQueueWriteTexture(WGPUQueue handle, const WGPUTexelCopyTextureInfo *des
     }
     if (device->backend.kind == WGPUBackendType_Metal) {
         native_metal_write_texture(device, destination, data, data_size, layout, size);
+        return;
+    }
+    if (device->backend.kind == WGPUBackendType_D3D12) {
+        native_d3d12_write_texture(device, destination, data, data_size, layout, size);
         return;
     }
     native_device_retain(device);

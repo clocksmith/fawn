@@ -362,6 +362,35 @@ build, or an explicitly configured native library path. The selected binary
 and provider must appear in diagnostics. A supported installation must not
 require a local Zig build.
 
+For a workspace addon build, run `npm run build:addon`. POSIX uses `CC` or `cc`.
+Windows uses LLVM's `clang` driver (`CC` may name its full executable path) in an
+actual Visual Studio/Windows SDK developer environment, with an explicit MSVC
+target and DLL CRT. It does not invoke Zig. Supply `NODE_INCLUDE_DIR` with the
+matching official Node headers and `NODE_LIB` with that release/architecture's
+`node.lib`, or use the existing node-gyp header/import-library cache. The build
+retains the `binding.gyp` source inventory and executes the real ABI mirror checks
+against the pinned WebGPU header before linking. Compiler availability alone does
+not establish Windows provider execution or installation support.
+
+The provider loader rejects embedded NULs and truncated path copies. On Windows
+it converts UTF-8 strictly, resolves a relative path once, and uses explicit
+DLL-directory plus System32 dependency search. Keep the C compiler and DXC runtime
+DLLs beside the selected provider; no PATH or working-directory change is needed.
+`scripts/check-provider-loader.js` runs the separate CPU-only loader controls:
+Windows builds a real sibling-import fixture with Unicode/relative paths and an
+ambient-directory rejection case; POSIX checks explicitly supplied C and retained
+Zig provider libraries without invoking a device. Its output directory must be new.
+
+The explicit developer control
+`node test/integration/test-c-provider-warp.js` requires actual Windows and an
+absolute `DOE_WEBGPU_LIB` naming the selected C DLL. It requests the CPU fallback
+adapter, checks the actual Microsoft WARP adapter name and fallback flag, validates
+the unchanged first-kernel output, and records the selected DLL path/hash/flavor
+after cleanup. The current JS adapter info omits the numeric native backend enum;
+bind the matching native C WARP control separately. This is CPU developer evidence,
+not a physical-device, performance or full-migration qualification. The control
+fails instead of skipping when its declared inputs or adapter are unavailable.
+
 Release staging must run the native clean-install gate after the platform
 payload is staged:
 

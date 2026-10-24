@@ -152,6 +152,13 @@ The [Windows SDK build](../../runtime/c/backends/d3d12/DEVELOPER_RECEIPT_WINDOWS
 compiles the private backend and links its clients. Public Windows native DLL
 composition, D3D12 execution and physical qualification remain separate gates.
 
+The [public D3D12 receipt](../../runtime/c/native/DEVELOPER_RECEIPT_D3D12_PUBLIC.json)
+now binds one actual SDK-built native DLL and unchanged compute, uniform, alias
+and command-retention consumers to CPU WARP and the same binaries on Miles.
+It preserves the failed build/control attempts, including the false-green abort
+status and first bind-group rejection. Unexercised APIs, later source and broader
+qualification remain separate.
+
 The [Win32 host/loader receipt](../../runtime/c/platform/DEVELOPER_RECEIPT_WINDOWS_HOST.json)
 separately binds actual SDK execution of shared C/C++ primitives, real thread
 handles/deadlines, DLL unload and pinned-worker residency. It closes that bounded
@@ -188,6 +195,12 @@ sampling, partial sample masks and presentation remain separate missing paths;
 this slice is not full Metal qualification. Backend-specific format queries and
 fragment-write admission must inspect only the selected payload arm.
 
+The separate [M3 vertex receipt](../../runtime/c/native/DEVELOPER_RECEIPT_METAL_VERTEX_FORMATS.json)
+binds exact public draw/readback for 33 selected formats, default component fill
+and admission controls to its source. Host/SDK checks cover all 41 conversions;
+the first host alignment failure is retained separately. The remaining formats,
+other devices, later source and broader graphics qualification remain separate.
+
 The additive [Metal ABI12](../../runtime/c/compiler/include/doe_compiler_metal.h)
 replaces sparse-number slot arithmetic for new consumers with compiler-owned,
 per-entry dense buffer/texture/sampler records. Shared helper bounds retain logical
@@ -219,8 +232,8 @@ execution and broader physical qualification retain their own gates.
 
 Private D3D12 now has [actual CPU WARP execution evidence](../../runtime/c/backends/d3d12/DEVELOPER_RECEIPT_WARP.json)
 in addition to SDK compilation: explicit software selection, native compute,
-readback, early release and terminal cleanup. Public native D3D12 integration,
-physical adapter coverage and performance remain distinct gates.
+readback, early release and terminal cleanup. The public consumer receipt above
+is separate; broader public APIs, physical coverage and performance remain gates.
 [Miles developer controls](../../runtime/c/backends/d3d12/DEVELOPER_RECEIPT_MILES_D3D12.json)
 now bind the SDK-built artifacts to physical AMD compute, indirect dispatch,
 uniforms, textures, sampled graphics/timestamps and indexed geometry/depth.

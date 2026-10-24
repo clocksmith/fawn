@@ -1,4 +1,4 @@
-/*
+/* SPDX-License-Identifier: MIT
  * doe_napi_globals.c — Global variable definitions and library loading for doe_napi.
  *
  * Defines all function pointer globals, shared state globals, native-direct
@@ -7,6 +7,7 @@
  */
 
 #include "doe_napi_internal.h"
+#include "doe_napi_library.h"
 
 #ifdef _WIN32
 static SRWLOCK library_mutex = SRWLOCK_INIT;
@@ -252,24 +253,26 @@ napi_value doe_load_library(napi_env env, napi_callback_info info) {
     size_t path_len = 0;
     if (_argc < 1 || napi_get_value_string_utf8(env, _args[0], NULL, 0, &path_len) != napi_ok)
         NAPI_THROW(env, "loadLibrary requires a library path string");
+    if (!path_len || path_len == SIZE_MAX) NAPI_THROW(env, "Library path length is invalid");
+    size_t expected_length = path_len;
     char* path = (char*)malloc(path_len + 1);
     if (!path) NAPI_THROW(env, "Out of memory retaining library path");
-    if (napi_get_value_string_utf8(env, _args[0], path, path_len + 1, &path_len) != napi_ok) {
+    if (napi_get_value_string_utf8(env, _args[0], path, path_len + 1, &path_len) != napi_ok ||
+        path_len != expected_length || memchr(path, 0, path_len)) {
         free(path);
         NAPI_THROW(env, "Invalid library path");
     }
 
-    library_lock();
-    void* candidate = LIB_OPEN(path);
+    /* Foreign module initialization runs outside the sole symbol-table lock. */
+    doe_library_error load_error = {0};
+    void* candidate = doe_library_open(path, path_len, &load_error);
     free(path);
-    if (!candidate) {
-        library_unlock();
-        NAPI_THROW(env, "Failed to load libwebgpu_doe");
-    }
+    if (!candidate) NAPI_THROW(env, load_error.message);
+    library_lock();
     if (g_lib) {
         const bool same_library = candidate == g_lib;
-        LIB_CLOSE(candidate);
         library_unlock();
+        LIB_CLOSE(candidate);
         if (!same_library)
             NAPI_THROW(env, "A different Doe native library is already loaded; use a separate process");
         doe_env_state(env)->library_loaded = true;
@@ -277,7 +280,10 @@ napi_value doe_load_library(napi_env env, napi_callback_info info) {
         napi_get_boolean(env, true, &result);
         return result;
     }
-    // Keep this handle for the process lifetime: objects and native workers may outlive an env.
+    /* Named symbol address lookup and table writes stay serialized by this
+     * existing publication owner. Doe C/Zig exports are ordinary functions, not
+     * foreign IFUNC resolvers. Module initialization/finalization stays outside.
+     * Keep the accepted handle: native objects/workers may outlive an env. */
     g_lib = candidate;
     /* Only Zig runtime libraries carry the drop-in build info export. */
     g_zig_enum_order = LIB_SYM(g_lib, "doeWgpuDropinBuildInfoSchemaVersion") != NULL;
@@ -537,9 +543,10 @@ napi_value doe_load_library(napi_env env, napi_callback_info info) {
         !pfn_wgpuCommandEncoderFinish || !pfn_wgpuQueueSubmit ||
         !pfn_wgpuQueueOnSubmittedWorkDone ||
         !pfn_wgpuBufferMapAsync2) {
-        LIB_CLOSE(g_lib);
+        void *rejected = g_lib;
         g_lib = NULL;
         library_unlock();
+        LIB_CLOSE(rejected);
         NAPI_THROW(env, "Failed to resolve required symbols from libwebgpu_doe");
     }
 

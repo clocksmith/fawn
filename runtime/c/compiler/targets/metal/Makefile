@@ -15,7 +15,7 @@ $(OUT)/test_metal: $(SOURCES) metal.h private.h ../ir_view.h ../closure.h ../scr
 $(OUT)/test_images: $(SOURCES) metal.h private.h ../ir_view.h ../closure.h ../scratch.h ../stage_view.h ../tests/array_length_source.h ../tests/closure_source.h tests/fixture.h tests/test_images.c $(CORE) $(wildcard ../../src/*.h)
 	mkdir -p $(OUT)
 	$(CC) $(CFLAGS) $(SOURCES) $(CORE) tests/test_images.c -lm -o $@
-check: binding-work-control all style $(OUT)/test_ir_view $(OUT)/test_closure $(OUT)/test_graphics $(OUT)/test_matrices
+check: atomic-control binding-work-control all style $(OUT)/test_ir_view $(OUT)/test_closure $(OUT)/test_graphics $(OUT)/test_matrices
 	$(OUT)/test_metal
 	$(OUT)/test_images
 	$(OUT)/test_ir_view
@@ -25,7 +25,7 @@ check: binding-work-control all style $(OUT)/test_ir_view $(OUT)/test_closure $(
 style:
 	python3 ../../../tools/check_source_size.py $(abspath $(SOURCES) metal.h private.h ../ir_view.h ../closure.h ../scratch.h ../stage_view.h ../tests/array_length_source.h ../tests/closure_source.h tests/fixture.h tests/test_metal.c tests/test_images.c tests/host/image_control.h tests/host/vector_control.h)
 clean:
-	rm -f $(OUT)/test_metal $(OUT)/test_images
+	rm -f $(OUT)/test_metal $(OUT)/test_images $(OUT)/test_atomics
 .PHONY: host-control
 host-control: all
 	$(OUT)/test_metal $(OUT)/control.metal $(OUT)/aggregate.metal $(OUT)/array_length.metal
@@ -90,3 +90,12 @@ $(OUT)/test_binding_work: $(SOURCES) metal.h private.h tests/test_binding_work.c
 .PHONY: binding-work-control
 binding-work-control: $(OUT)/test_binding_work
 	$(OUT)/test_binding_work
+
+$(OUT)/test_atomics: $(SOURCES) metal.h private.h tests/fixture.h tests/test_atomics.c $(CORE) $(wildcard ../../src/*.h)
+	mkdir -p $(OUT)
+	$(CC) $(CFLAGS) $(SOURCES) $(CORE) tests/test_atomics.c -lm -o $@
+.PHONY: atomic-control atomic-sdk
+atomic-control: $(OUT)/test_atomics
+	$(OUT)/test_atomics $(OUT)/atomic
+atomic-sdk: atomic-control
+	python3 tests/atomic_sdk_control.py $(OUT)

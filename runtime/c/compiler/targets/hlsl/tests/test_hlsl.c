@@ -422,6 +422,7 @@ static void test_pointer_rejection(void) {
     }
 }
 int main(int argc, char **argv) {
+    test_atomics(argc > 9 ? argv[9] : NULL);
     test_component_math(argc > 8 ? argv[8] : NULL);
     test_pointer_rejection();
     test_matrices(argc > 7 ? argv[7] : NULL);
@@ -442,6 +443,6 @@ int main(int argc, char **argv) {
     test_entries_and_rejection();
     test_control_and_host_fixture(argc > 1 ? argv[1] : NULL);
     test_aggregate_host_fixture(argc > 2 ? argv[2] : NULL);
-    puts("HLSL developer checks passed: typed source, layout, entry closures, workgroups, control, atomic rejection.");
+    puts("HLSL developer checks passed: typed source, layout, entry closures, workgroups, control and atomics.");
     return 0;
 }

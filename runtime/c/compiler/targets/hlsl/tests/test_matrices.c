@@ -49,8 +49,11 @@ void test_matrices(const char *path) {
         "@compute @workgroup_size(1) fn main(){atomicStore(&a,1u);}");
     char intact[8] = "intact";
     DoeHlslResult result;
-    assert(doe_hlsl_emit(&f->source, f->module, 0u, f->scratch, intact, sizeof(intact), &result) == DOE_COMPILER_UNSUPPORTED);
+    assert(doe_hlsl_emit(&f->source, f->module, 0u, f->scratch, intact, sizeof(intact), &result) == DOE_COMPILER_OUTPUT_TOO_SMALL);
     assert(strcmp(intact, "intact") == 0 && result.written_bytes == 0u);
+    text = emit(f, 0u);
+    has(text, "InterlockedExchange(");
+    free(text);
     release(f);
-    puts("HLSL matrix mapping: nine shapes, reversed products, exact stride and atomic rejection passed.");
+    puts("HLSL matrix mapping: nine shapes, reversed products, exact stride and explicitly admitted atomic store passed.");
 }

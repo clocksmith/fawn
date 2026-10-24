@@ -31,7 +31,11 @@ static void type_name(MetalEmitter *e, TypeId type, unsigned depth) {
         metal_handle_type(e, type);
         return;
     }
-    if ((t->flags & TYPE_CONSTRUCTIBLE) == 0u || (t->flags & TYPE_ABSTRACT) != 0u) {
+    if (t->kind == TYPE_ATOMIC && (t->element == IR_I32 || t->element == IR_U32)) {
+        metal_text(e, t->element == IR_I32 ? "atomic_int" : "atomic_uint");
+        return;
+    }
+    if ((t->flags & (TYPE_CONSTRUCTIBLE | TYPE_ATOMIC_CONTENT)) == 0u || (t->flags & TYPE_ABSTRACT) != 0u) {
         metal_error(e, "Metal value type is not concrete and constructible");
         return;
     }
@@ -58,6 +62,7 @@ static void type_name(MetalEmitter *e, TypeId type, unsigned depth) {
             type_name(e, t->element, depth + 1u);
             metal_format(e, ", %u>", t->count);
             break;
+        case TYPE_ATOMIC_RESULT:
         case TYPE_STRUCT:
             metal_format(e, "DoeT%u", type);
             break;
@@ -80,9 +85,12 @@ void metal_types(MetalEmitter *e) {
         bool pending = false;
         for (uint32_t i = 0u; i < c->type_count && !e->failed; ++i) {
             const TypeRecord *t = &c->types[i];
-            if (t->kind != TYPE_STRUCT || (t->flags & TYPE_CONSTRUCTIBLE) == 0u) continue;
+            if ((t->kind != TYPE_STRUCT && t->kind != TYPE_ATOMIC_RESULT) ||
+                (t->flags & (TYPE_CONSTRUCTIBLE | TYPE_ATOMIC_CONTENT)) == 0u ||
+                ((t->flags & TYPE_ATOMIC_CONTENT) != 0u && (t->flags & TYPE_FIXED) == 0u)) continue;
             unsigned d;
-            if (!target_type_depth(c, &e->closure, i + 7u, &d, &e->traversal_left, &error)) {
+            if (t->kind == TYPE_ATOMIC_RESULT) d = 1u;
+            else if (!target_type_depth(c, &e->closure, i + 7u, &d, &e->traversal_left, &error)) {
                 metal_error(e, error);
                 return;
             }
@@ -91,7 +99,7 @@ void metal_types(MetalEmitter *e) {
             metal_format(e, "struct DoeT%u {\n", i + 7u);
             for (uint32_t j = 0u; j < t->count; ++j) {
                 metal_text(e, "    ");
-                metal_type(e, c->members[t->element + j].type);
+                metal_type(e, type_child(c, i + 7u, j));
                 metal_format(e, " m%u;\n", j);
             }
             metal_text(e, "};\n");

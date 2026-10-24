@@ -8,6 +8,17 @@ apply to this C code; this file adds the addon's own invariants.
 
 ## Provider-neutral calls
 
+- The selected provider path has an exact byte length; reject embedded NULs,
+  truncation and invalid Win32 UTF-8. Windows resolves relative paths once to
+  absolute UTF-16 and loads with DLL_LOAD_DIR plus SYSTEM32 dependency search.
+  Never repair imports by changing PATH/CWD or falling back to another provider.
+  Copy the first native loader operation/code/diagnostic before cleanup. Library
+  residency remains on the existing process-lifetime owner, independent of GPU
+  resource release. Actual CPU DLL-loader controls do not establish GPU support.
+  Open candidates and close rejected/extra references outside the symbol-table
+  lock. Named address lookup and table writes remain serialized by that existing
+  publication owner; admitted C/Zig exports are ordinary functions, not foreign
+  IFUNC resolvers. Do not create a second procedure registry to bypass this owner.
 - A `doeNative*` symbol is an optional fast path. When it is absent, call the
   exact webgpu.h procedure the provider exports, or throw. Never fall back to a
   silent no-op, an empty result, or invented success.

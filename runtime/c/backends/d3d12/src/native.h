@@ -2,6 +2,7 @@
 #ifndef DOE_DX_NATIVE_H
 #define DOE_DX_NATIVE_H
 #include "../include/doe_d3d12_mesh.h"
+#include "../include/doe_d3d12_texture_regions.h"
 #if defined(DOE_DX_REQUIRE_WINDOWS) && !defined(_WIN32)
 #error "The native D3D12 build requires a Windows target and actual Windows SDK."
 #endif
@@ -63,6 +64,12 @@ void doe_dx_native_texture_destroy(doe_dx_native_texture *texture);
 void doe_dx_native_texture_transfer(doe_dx_native_commands *commands,
     doe_dx_native_buffer *buffer, doe_dx_native_texture *texture,
     const doe_dx_texture_footprint *footprint, bool upload);
+void doe_dx_native_texture_region_transfer(doe_dx_native_commands *commands,
+    doe_dx_native_buffer *buffer, doe_dx_native_texture *texture,
+    const doe_dx_texture_footprint *footprint, doe_dx_texture_region region, bool upload);
+void doe_dx_native_texture_blit(doe_dx_native_commands *commands,
+    doe_dx_native_texture *source, doe_dx_texture_region from, doe_dx_native_texture *destination,
+    uint32_t destination_x, uint32_t destination_y);
 void doe_dx_native_texture_copy(doe_dx_native_commands *commands,
     doe_dx_native_texture *source, doe_dx_native_texture *destination);
 doe_dx_status doe_dx_native_graphics_create(doe_dx_native_context *context,

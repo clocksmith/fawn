@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: MIT */
 #include "internal.h"
 #include "metal_frontend.h"
+#include "d3d12_texture.h"
 #include <stdlib.h>
 
 void native_view_release(void *userdata, void *handle)
@@ -9,7 +10,7 @@ void native_view_release(void *userdata, void *handle)
     native_view *payload = handle;
     native_lock(payload->device);
     if (payload->device->backend.kind == WGPUBackendType_Metal) doe_mtl_texture_view_release(payload->metal);
-    else doe_vk_texture_view_release(payload->view);
+    else if (payload->device->backend.kind != WGPUBackendType_D3D12) doe_vk_texture_view_release(payload->view);
     native_unlock(payload->device);
     free(payload);
 }
@@ -52,6 +53,7 @@ WGPUTextureView wgpuTextureCreateView(WGPUTexture handle, const WGPUTextureViewD
     native_device *device = doe_resource_texture_device(texture);
     if (!device) return NULL;
     if (device->backend.kind == WGPUBackendType_Metal) return native_metal_create_view(texture, descriptor);
+    if (device->backend.kind == WGPUBackendType_D3D12) return native_d3d12_create_view(texture, descriptor);
     WGPUTextureViewDescriptor defaults = WGPU_TEXTURE_VIEW_DESCRIPTOR_INIT;
     if (!descriptor) descriptor = &defaults;
     doe_resource_view_desc desc = {.format=descriptor->format, .dimension=descriptor->dimension,
@@ -125,7 +127,7 @@ void native_sampler_release(void *userdata, void *handle)
     native_sampler *payload = handle;
     native_lock(payload->device);
     if (payload->device->backend.kind == WGPUBackendType_Metal) doe_mtl_sampler_release(payload->metal);
-    else doe_vk_sampler_release(payload->sampler);
+    else if (payload->device->backend.kind != WGPUBackendType_D3D12) doe_vk_sampler_release(payload->sampler);
     native_unlock(payload->device);
     free(payload);
 }
@@ -142,6 +144,7 @@ WGPUSampler wgpuDeviceCreateSampler(WGPUDevice handle, const WGPUSamplerDescript
     native_device *device = (native_device *)handle;
     if (!device) return NULL;
     if (device->backend.kind == WGPUBackendType_Metal) return native_metal_create_sampler(device, descriptor);
+    if (device->backend.kind == WGPUBackendType_D3D12) return native_d3d12_create_sampler(device, descriptor);
     if (device->backend.kind != WGPUBackendType_Vulkan) {
         native_error(device, WGPUErrorType_Validation, "operation not yet composed for selected backend");
         return NULL;
