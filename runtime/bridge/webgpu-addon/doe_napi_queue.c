@@ -250,8 +250,6 @@ napi_value doe_command_encoder_copy_texture_to_texture(napi_env env, napi_callba
     CHECK_LIB_LOADED(env);
     if (argc != 16)
         NAPI_THROW(env, "commandEncoderCopyTextureToTexture requires 16 arguments");
-    if (!pfn_doeNativeCommandEncoderCopyTextureToTexture && !pfn_wgpuCommandEncoderCopyTextureToTexture)
-        NAPI_THROW(env, "commandEncoderCopyTextureToTexture: no implementation available in loaded library");
     WGPUCommandEncoder enc    = unwrap_ptr(env, argv[0]);
     WGPUTexture src_texture   = unwrap_ptr(env, argv[1]);
     WGPUTexture dst_texture   = unwrap_ptr(env, argv[7]);
@@ -274,12 +272,8 @@ napi_value doe_command_encoder_copy_texture_to_texture(napi_env env, napi_callba
     napi_get_value_uint32(env, argv[13], &width);
     napi_get_value_uint32(env, argv[14], &height);
     napi_get_value_uint32(env, argv[15], &depth_or_layers);
-    if (pfn_doeNativeCommandEncoderCopyTextureToTexture) {
-        pfn_doeNativeCommandEncoderCopyTextureToTexture(enc,
-            src_texture, src_mip, 0, src_x, src_y, src_z,
-            dst_texture, dst_mip, 0, dst_x, dst_y, dst_z,
-            width, height, depth_or_layers);
-    } else if (pfn_wgpuCommandEncoderCopyTextureToTexture) {
+    /* doeNative has no aspect parameter: only Undefined (0) or All (1) may use it. */
+    if (pfn_wgpuCommandEncoderCopyTextureToTexture) {
         WGPUTexelCopyTextureInfo s, d; WGPUExtent3D sz;
         memset(&s, 0, sizeof(s)); memset(&d, 0, sizeof(d));
         s.texture = src_texture; s.mipLevel = src_mip;
@@ -290,8 +284,13 @@ napi_value doe_command_encoder_copy_texture_to_texture(napi_env env, napi_callba
         d.aspect = dst_aspect;
         sz.width = width; sz.height = height; sz.depthOrArrayLayers = depth_or_layers;
         pfn_wgpuCommandEncoderCopyTextureToTexture(enc, &s, &d, &sz);
+    } else if (pfn_doeNativeCommandEncoderCopyTextureToTexture && src_aspect <= 1u && dst_aspect <= 1u) {
+        pfn_doeNativeCommandEncoderCopyTextureToTexture(enc,
+            src_texture, src_mip, 0, src_x, src_y, src_z,
+            dst_texture, dst_mip, 0, dst_x, dst_y, dst_z,
+            width, height, depth_or_layers);
     } else {
-        NAPI_THROW(env, "commandEncoderCopyTextureToTexture: no implementation available in loaded library");
+        NAPI_THROW(env, "commandEncoderCopyTextureToTexture: no implementation for these aspects in loaded library");
     }
     return NULL;
 }
