@@ -234,6 +234,45 @@ console.log('ok: a throwing listener neither escapes GPU calls nor loses errors'
 }
 console.log('ok: a failed finish() returns an invalid command buffer');
 
+// R5. Remaining class-b sites: a writeBuffer past the buffer's end inside a
+// scope is a validation error, a provider-reported uncaptured error has its
+// GPUError class, a render bundle encoder finished twice and a command
+// encoder finished with an open pass report validation errors.
+{
+  const range = await popAfter(() => device.queue.writeBuffer(b, 60, new Uint32Array(4)));
+  assert.equal(range.thrown, null, 'writeBuffer out of range does not throw inside a scope');
+  assert(range.error instanceof GPUValidationError, 'writeBuffer out of range is a validation error');
+  assert.throws(() => device.queue.writeBuffer(b, 60, new Uint32Array(4)), /exceeds buffer size/,
+    'without a scope or listener it still throws');
+
+  const events = [];
+  const listener = (event) => events.push(event.error);
+  device.addEventListener('uncapturederror', listener);
+  const [commands] = destroyedSourceCommands(1);
+  device.queue.submit([commands]);
+  await settle();
+  device.removeEventListener('uncapturederror', listener);
+  assert.equal(events.length, 1, 'the provider error is uncaptured once');
+  assert(events[0] instanceof GPUValidationError, `an uncaptured provider error is a GPUValidationError, got ${events[0]?.constructor?.name}`);
+
+  const bundleEncoder = device.createRenderBundleEncoder({ colorFormats: ['rgba8unorm'] });
+  bundleEncoder.finish();
+  const twice = await popAfter(() => bundleEncoder.finish());
+  assert.equal(twice.thrown, null, 'a second bundle finish() does not throw');
+  assert(twice.error instanceof GPUValidationError, 'a second bundle finish() is a validation error');
+  assert.equal(twice.value._invalid, true, 'and returns an invalid bundle');
+
+  const locked = await popAfter(() => {
+    const encoder = device.createCommandEncoder();
+    encoder.beginComputePass();
+    return encoder.finish();
+  });
+  assert.equal(locked.thrown, null, 'finish() with an open pass does not throw');
+  assert(locked.error instanceof GPUValidationError, 'finish() with an open pass is a validation error');
+  assert.equal(locked.value._invalid, true, 'and returns an invalid command buffer');
+}
+console.log('ok: writeBuffer range, uncaptured error classes, bundle reuse and locked finish are validation errors');
+
 // R2. Errors generated before destroy() are delivered.
 {
   const events = [];

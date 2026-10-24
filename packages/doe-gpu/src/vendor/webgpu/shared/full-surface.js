@@ -1183,7 +1183,9 @@ function createFullSurfaceClasses({
       const view = fastDefaultWriteBufferView(data, dataOffset, size)
         ?? validateWriteBufferInput(data, dataOffset, size, 'GPUQueue.writeBuffer');
       if (bufferOffset + view.byteLength > buffer.size) {
-        failValidation('GPUQueue.writeBuffer', `write range ${bufferOffset}+${view.byteLength} exceeds buffer size ${buffer.size}`);
+        // A device-timeline validation error: reported, or thrown unobserved.
+        reportValidationError(this._device, `GPUQueue.writeBuffer: write range ${bufferOffset}+${view.byteLength} exceeds buffer size ${buffer.size}`);
+        return;
       }
       return backend.queueWriteBuffer(this, native, bufferNative, bufferOffset, view);
     }

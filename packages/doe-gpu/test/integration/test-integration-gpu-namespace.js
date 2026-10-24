@@ -576,24 +576,24 @@ try {
   }
 }
 
-// 5d. command encoder rejects finish while a compute pass is open
+// 5d. finish() while a compute pass is open is a validation error (WebGPU: the
+// encoder is locked) and returns an invalid command buffer; once the pass has
+// ended, finish() succeeds.
 try {
   const bound = await gpu.requestDevice();
+  const locked = bound.device.createCommandEncoder();
+  locked.beginComputePass();
+  bound.device.pushErrorScope('validation');
+  const invalid = locked.finish();
+  const lockedError = await bound.device.popErrorScope();
+  check('command encoder finish with open compute pass is a validation error',
+    lockedError?.message?.includes('open pass') === true && invalid._invalid === true,
+    lockedError?.message);
   const encoder = bound.device.createCommandEncoder();
   const pass = encoder.beginComputePass();
-  try {
-    encoder.finish();
-    check('command encoder finish with open compute pass throws', false, 'did not throw');
-  } catch (err) {
-    check(
-      'command encoder finish with open compute pass throws',
-      err.message.includes('active pass'),
-      err.message,
-    );
-  }
   pass.end();
   const commandBuffer = encoder.finish();
-  check('command encoder finish after compute pass end succeeds', commandBuffer != null);
+  check('command encoder finish after compute pass end succeeds', commandBuffer != null && !commandBuffer._invalid);
   commandBuffer.destroy?.();
   bound.device.destroy();
 } catch (err) {
