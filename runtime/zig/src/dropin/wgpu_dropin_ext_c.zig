@@ -216,17 +216,15 @@ pub fn doeAbiBridgeQueueWriteTexture(
 }
 
 pub export fn wgpuRenderPassEncoderInsertDebugMarker(a0: abi_core.WGPURenderPassEncoder, a1: abi_core.WGPUStringView) callconv(.c) void {
-    _ = a0;
-    _ = a1;
+    native.doeNativeRenderPassInsertDebugMarker(a0, if (a1.data) |d| d else null, a1.length);
 }
 
 pub export fn wgpuRenderPassEncoderPopDebugGroup(a0: abi_core.WGPURenderPassEncoder) callconv(.c) void {
-    _ = a0;
+    native.doeNativeRenderPassPopDebugGroup(a0);
 }
 
 pub export fn wgpuRenderPassEncoderPushDebugGroup(a0: abi_core.WGPURenderPassEncoder, a1: abi_core.WGPUStringView) callconv(.c) void {
-    _ = a0;
-    _ = a1;
+    native.doeNativeRenderPassPushDebugGroup(a0, if (a1.data) |d| d else null, a1.length);
 }
 
 pub export fn wgpuRenderPassEncoderSetLabel(a0: abi_core.WGPURenderPassEncoder, a1: abi_core.WGPUStringView) callconv(.c) void {
