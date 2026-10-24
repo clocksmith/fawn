@@ -189,8 +189,8 @@ function encoderSkipsUse(encoder, path, first = null, second = null) {
 }
 
 // True when a binding, draw or dispatch command must record nothing: its pass
-// has no native pass, its encoder is already invalid, or it names an invalid
-// object.
+// has no native pass, its encoder is already invalid or fails at submit, or it
+// names an invalid object or a destroyed texture.
 function passSkipsCommand(pass, encoder, path, first = null, second = null) {
   if (pass === encoder && encoder._finished === true && !isDeviceLost(encoder._device)) {
     // A render bundle encoder after finish(): a validation error, and nothing
@@ -198,7 +198,8 @@ function passSkipsCommand(pass, encoder, path, first = null, second = null) {
     deliverDeviceError(encoder._device, 'validation', new GPUValidationError(`${path}: the render bundle encoder is already finished`));
     return true;
   }
-  return pass._invalid || encoder._invalidMessage != null || encoderSkipsUse(encoder, path, first, second);
+  return pass._invalid || encoder._invalidMessage != null || encoder._submitError != null
+    || encoderSkipsUse(encoder, path, first, second);
 }
 
 // A pass or bundle encoder that records nothing: it has no native pass, or
@@ -585,7 +586,8 @@ function createEncoderClasses(backend) {
       const path = 'GPURenderPassEncoder.executeBundles';
       if (this._assertOpen(path)) return;
       const list = assertArray(bundles, path, 'bundles');
-      if (passSkipsCommand(this, this._encoder, path, list.find(isInvalidResource))) return;
+      if (passSkipsCommand(this, this._encoder, path, list.find(isInvalidResource),
+        list.find((bundle) => bundle?._textureDestroyed === true))) return;
       backend.renderPassExecuteBundles(this, list);
     }
 
@@ -791,6 +793,8 @@ function createEncoderClasses(backend) {
         return markInvalid(new DoeGPURenderBundle(null, device), descriptor?.label);
       }
       result.label = descriptor?.label ?? '';
+      // A bundle that names a destroyed texture fails the submission it runs in.
+      if (this._submitError != null) result._textureDestroyed = true;
       return result;
     }
   }

@@ -357,7 +357,9 @@ static void test_pass_rejection_and_unbind(void)
     size_t live = f.live;
     binding.group = NULL;
     assert(doe_resource_compute_pass_set_group(pass, 0, &binding) == DOE_RESOURCE_OK);
-    assert(f.live == live - 2);
+    /* Unbinding keeps the group alive: the encoder holds every group a pass
+     * set until it (or its command buffer) is released, for submit checks. */
+    assert(f.live == live);
     assert(doe_resource_compute_pass_set_group(pass, 0, NULL) == DOE_RESOURCE_OK);
     assert(doe_resource_encoder_invalidate(encoder, DOE_RESOURCE_PENDING) == DOE_RESOURCE_INVALID_ARGUMENT);
     assert(doe_resource_encoder_status(encoder) == DOE_RESOURCE_OK);

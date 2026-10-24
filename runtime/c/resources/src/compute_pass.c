@@ -118,6 +118,8 @@ doe_resource_status doe_resource_compute_pass_set_group(doe_resource_compute_pas
     if (status != DOE_RESOURCE_OK) return resource_encoder_fail(pass->encoder, status);
     if (group->group->base.config.device.identity != pass->base.config.device.identity)
         return resource_encoder_fail(pass->encoder, DOE_RESOURCE_DEVICE_MISMATCH);
+    status = resource_encoder_reference_group(pass->encoder, group->group);
+    if (status != DOE_RESOURCE_OK) return status;
     doe_resource_bind_group_retain(group->group);
     doe_resource_bind_group_release(pass->groups[index]);
     pass->groups[index] = group->group;
