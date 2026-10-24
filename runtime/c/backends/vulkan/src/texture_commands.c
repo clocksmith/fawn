@@ -259,6 +259,13 @@ doe_vk_status doe_vk_commands_read_texture(doe_vk_commands *commands,
     return buffer_texture_copy(commands, destination, layout, source, region, false);
 }
 
+/* https://gpuweb.github.io/gpuweb/#copy-compatible: equal formats, or formats
+ * that differ only in srgb-ness. Vulkan copies such size-compatible pairs
+ * directly. */
+static bool copy_formats_compatible(doe_vk_texture_format source, doe_vk_texture_format destination) {
+    return source == destination || (destination != 0 && doe_vk_srgb_pair(source) == destination);
+}
+
 doe_vk_status doe_vk_commands_copy_texture(doe_vk_commands *commands,
     doe_vk_texture *source, doe_vk_texture_region source_region,
     doe_vk_texture *destination, doe_vk_texture_region destination_region) {
@@ -267,7 +274,8 @@ doe_vk_status doe_vk_commands_copy_texture(doe_vk_commands *commands,
     if (source == NULL || destination == NULL || source->context != commands->context ||
         destination->context != commands->context || !(source->desc.usage & DOE_VK_TEXTURE_COPY_SRC) ||
         !(destination->desc.usage & DOE_VK_TEXTURE_COPY_DST) || source == destination ||
-        source->desc.format != destination->desc.format || source->desc.dimension != destination->desc.dimension ||
+        !copy_formats_compatible(source->desc.format, destination->desc.format) ||
+        source->desc.dimension != destination->desc.dimension ||
         memcmp(source_region.extent, destination_region.extent, sizeof(source_region.extent)) != 0 ||
         doe_vk_samples(source->desc.sample_count) != doe_vk_samples(destination->desc.sample_count))
         return doe_vk_poison(commands, DOE_VK_INVALID_ARGUMENT);
