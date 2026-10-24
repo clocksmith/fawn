@@ -913,6 +913,9 @@ Adapter info reports the vendor from the PCI/Khronos vendor ID (lowercase, empty
 when unknown, `mesa` for lavapipe), an empty architecture (no family source), and
 the driver's device name as both `device` and `description`; the strings share one
 allocation that `wgpuAdapterInfoFreeMembers` releases (`tests/adapter_info.c`).
+No C backend offers the `subgroups` feature, so `subgroupMinSize` and
+`subgroupMaxSize` are the WebGPU defaults 4 and 128, not the driver's subgroup
+size; real sizes belong with that feature once a backend offers it.
 
 ## Doe compute-program extension
 

@@ -1,7 +1,8 @@
 /* SPDX-License-Identifier: MIT
  * Adapter info strings: vendor from the PCI/Khronos vendor ID (lowercase, empty
  * when unknown), no architecture family, and the driver's device name as both
- * device and description; adapter and device report the same. */
+ * device and description; adapter and device report the same. Without the
+ * "subgroups" feature the subgroup sizes are the spec defaults 4 and 128. */
 #include "consumer.h"
 #include <ctype.h>
 
@@ -21,6 +22,16 @@ static void check(const WGPUAdapterInfo *info)
     if (info->vendorID == 0x1002) assert(same(info->vendor, (WGPUStringView){"amd", 3}));
 }
 
+static bool offers_subgroups(WGPUAdapter adapter)
+{
+    WGPUSupportedFeatures features = WGPU_SUPPORTED_FEATURES_INIT;
+    wgpuAdapterGetFeatures(adapter, &features);
+    bool found = false;
+    for (size_t i = 0; i < features.featureCount; ++i) found |= features.features[i] == WGPUFeatureName_Subgroups;
+    wgpuSupportedFeaturesFreeMembers(features);
+    return found;
+}
+
 int main(void)
 {
     state s = {0};
@@ -30,6 +41,10 @@ int main(void)
     assert(wgpuDeviceGetAdapterInfo(s.device, &device) == WGPUStatus_Success);
     check(&adapter);
     check(&device);
+    /* Without "subgroups" the sizes are the spec defaults, not the driver's. */
+    if (!offers_subgroups(s.adapter))
+        assert(adapter.subgroupMinSize == 4 && adapter.subgroupMaxSize == 128 &&
+            device.subgroupMinSize == 4 && device.subgroupMaxSize == 128);
     assert(same(adapter.vendor, device.vendor) && same(adapter.description, device.description) &&
         adapter.vendorID == device.vendorID && adapter.deviceID == device.deviceID);
     printf("PASS adapter info vendor \"%.*s\", description \"%.*s\" %s\n", (int)adapter.vendor.length,
