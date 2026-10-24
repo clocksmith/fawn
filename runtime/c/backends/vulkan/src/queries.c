@@ -185,6 +185,7 @@ doe_vk_status doe_vk_commands_resolve_queries(doe_vk_commands *commands,
 void doe_vk_queries_complete(doe_vk_commands *commands, doe_vk_status status) {
     for (doe_vk_query_use *use = commands->queries; use != NULL; use = use->next) {
         if (status == DOE_VK_OK) {
+            if (commands->committed) continue; /* Published at submission. */
             for (uint32_t i = 0; i < use->pool->count; ++i)
                 if (use->touched[i]) use->pool->states[i] = use->states[i];
         } else if (use->pool->content_status == DOE_VK_OK) use->pool->content_status = status;

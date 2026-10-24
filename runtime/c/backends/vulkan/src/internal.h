@@ -88,6 +88,9 @@ struct doe_vk_commands {
     uint32_t references; /* Holders: creator plus each pending reusable submission. */
     doe_vk_error failure;
     bool uses_active;
+    /* The queue accepted (or refused) the latest submission: its texture and
+     * query state is already published, so completion only poisons on failure. */
+    bool committed;
     VkCommandPool pool;
     VkCommandBuffer command;
     VkFence fence;
