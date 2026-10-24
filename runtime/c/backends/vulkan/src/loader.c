@@ -377,6 +377,8 @@ doe_vk_status doe_vk_context_create(const doe_vk_options *options,
     context->caps.draw_indirect_first_instance = features.base.drawIndirectFirstInstance != 0;
     context->caps.depth_clamp = features.base.depthClamp != 0;
     context->caps.texture_compression_bc = features.base.textureCompressionBC != 0;
+    context->caps.sample_rate_shading = features.base.sampleRateShading != 0;
+    context->caps.depth_bias_clamp = features.base.depthBiasClamp != 0;
     context->caps.max_sampler_anisotropy = context->caps.sampler_anisotropy ?
         context->properties.limits.maxSamplerAnisotropy : 0.0f;
     *out = context;
