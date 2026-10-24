@@ -42,6 +42,8 @@ static doe_dx_status prepare_draw(doe_dx_commands *commands,const doe_dx_render_
     doe_dx_status status=doe_dx_stage_aliases(&pipeline->render->stages[0],&draw->stages[0],
         &pipeline->render->stages[1],&draw->stages[1]);
     if (status!=DOE_DX_OK) return doe_dx_fail(status,0,"render.stage_alias",error);
+    status=doe_dx_prepare_render_vertices(commands,pipeline,draw,out,needed,error);
+    if (status!=DOE_DX_OK) return status;
     out->pipeline=pipeline->native;
     out->vertex_count=draw->vertex_count;
     out->instance_count=draw->instance_count;
@@ -94,6 +96,8 @@ doe_dx_status doe_dx_commands_render(doe_dx_commands *commands,
                 for (size_t j=0;j<values->buffer_count;++j) doe_dx_use_buffer(commands,values->buffers[j].buffer);
                 for (size_t j=0;j<values->texture_count;++j) doe_dx_use_texture(commands,values->textures[j]);
             }
+            for (size_t slot=0;slot<draw->vertex_buffer_count;++slot)
+                if (draw->vertices[slot].buffer) doe_dx_use_buffer(commands,draw->vertices[slot].buffer);
             commands->pipelines[commands->pipeline_count++]=draw->pipeline;
         }
         doe_dx_use_texture(commands,pass->color);

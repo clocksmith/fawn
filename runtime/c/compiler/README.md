@@ -50,6 +50,12 @@ restrictions and preserved explicit-level behavior. The [texture contract](TEXTU
 records exact scope and the independent fragment pixel fixture; actual execution
 and target validation remain separate evidence.
 
+Core `all` and `any` now reduce bool scalar/vector inputs through the shared
+builtin registry, constant DAG and unary IR path. [Boolean reductions](LOGICAL_BUILTINS.md)
+records exact admission, eager operand semantics and the unchanged retained and
+literal-oracle fixtures. `make all-any-check sanitize-all-any` checks the public
+target adapters and failure/state boundaries; actual execution remains separate.
+
 ## Build and decisive checks
 
 From the repository root, ordinary source consumption is:

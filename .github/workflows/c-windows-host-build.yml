@@ -144,8 +144,10 @@ jobs:
           $atomicSource = Join-Path $env:GITHUB_WORKSPACE 'runtime/c/compiler/tests/atomic_operations.wgsl'
           $selectRetained = Join-Path $env:GITHUB_WORKSPACE 'runtime/c/compiler/tests/select_retained.wgsl'
           $selectCases = Join-Path $env:GITHUB_WORKSPACE 'runtime/c/compiler/tests/select_cases.wgsl'
-          $fixtureSources = @{ 'atomic_operations.wgsl'=$atomicSource; 'select_retained.wgsl'=$selectRetained; 'select_cases.wgsl'=$selectCases }
-          foreach ($name in @('compute', 'uniform_standard', 'binding_aliases', 'command_resources', 'indirect_dispatch', 'atomics', 'atomic_operations', 'texture_transfers', 'texture_bindings', 'pipeline_overrides', 'select', 'd3d12_graphics')) {
+          $allAnyRetained = Join-Path $env:GITHUB_WORKSPACE 'runtime/c/compiler/tests/all_any_retained.wgsl'
+          $allAnyCases = Join-Path $env:GITHUB_WORKSPACE 'runtime/c/compiler/tests/all_any_cases.wgsl'
+          $fixtureSources = @{ 'atomic_operations.wgsl'=$atomicSource; 'select_retained.wgsl'=$selectRetained; 'select_cases.wgsl'=$selectCases; 'all_any_retained.wgsl'=$allAnyRetained; 'all_any_cases.wgsl'=$allAnyCases }
+          foreach ($name in @('compute', 'uniform_standard', 'binding_aliases', 'command_resources', 'indirect_dispatch', 'atomics', 'atomic_operations', 'texture_transfers', 'texture_bindings', 'pipeline_overrides', 'select', 'all_any', 'd3d12_graphics', 'd3d12_vertex_inputs')) {
             $source = Join-Path $native ('tests/' + $name + '.c')
             $executable = Join-Path $output ($name + '.exe')
             $object = Join-Path $output ($name + '.obj')
@@ -154,9 +156,10 @@ jobs:
             $runCommand = '"' + $executable + '"'
             if ($name -eq 'atomic_operations') { $runCommand += ' "' + $atomicSource + '"' }
             if ($name -eq 'select') { $runCommand += ' "' + $selectRetained + '" "' + $selectCases + '"' }
+            if ($name -eq 'all_any') { $runCommand += ' "' + $allAnyRetained + '" "' + $allAnyCases + '"' }
             $lines += @('if not "%errorlevel%"=="0" exit /b 1', $runCommand, 'if not "%errorlevel%"=="0" exit /b 1')
           }
-          $consumerSources = @('compute.c', 'uniform_standard.c', 'binding_aliases.c', 'command_resources.c', 'indirect_dispatch.c', 'atomics.c', 'atomic_operations.c', 'texture_transfers.c', 'texture_bindings.c', 'pipeline_overrides.c', 'select.c', 'd3d12_graphics.c', 'consumer.h', 'adapter_class.h', 'shader_fixture.h')
+          $consumerSources = @('compute.c', 'uniform_standard.c', 'binding_aliases.c', 'command_resources.c', 'indirect_dispatch.c', 'atomics.c', 'atomic_operations.c', 'texture_transfers.c', 'texture_bindings.c', 'pipeline_overrides.c', 'select.c', 'all_any.c', 'd3d12_graphics.c', 'd3d12_vertex_inputs.c', 'd3d12_vertex_cases.h', 'consumer.h', 'adapter_class.h', 'shader_fixture.h')
           $sourceHashes = @{}
           foreach ($name in $consumerSources) {
             $source = Join-Path $native ('tests/' + $name)

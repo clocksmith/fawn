@@ -12,11 +12,14 @@ typedef struct cpu_device {
     cpu_heap heaps[3];
     cpu_root root;
     cpu_state state;
-    UINT heap_calls,fail_heap,srvs,samplers,rtvs;
+    UINT heap_calls,fail_heap,srvs,samplers,rtvs,format_queries;
+    DXGI_FORMAT expected_vertex;
+    bool deny_vertex;
 } cpu_device;
 typedef struct cpu_list {
     ID3D12GraphicsCommandList iface;
-    UINT mutations,heap_count,tables,barriers,clears,draws,releases;
+    UINT mutations,heap_count,tables,barriers,clears,draws,releases,vertex_sets;
+    ID3D12Resource *shared;
     UINT table_indices[4];
     UINT64 table_handles[4];
 } cpu_list;
@@ -65,6 +68,8 @@ static HRESULT STDMETHODCALLTYPE create_root(ID3D12Device *raw,UINT node,const v
     assert(SUCCEEDED(D3D12CreateRootSignatureDeserializer(bytes,size,&IID_ID3D12RootSignatureDeserializer,(void **)&decoded)));
     const D3D12_ROOT_SIGNATURE_DESC *root=ID3D12RootSignatureDeserializer_GetRootSignatureDesc(decoded);
     assert(root->NumParameters==4 && !root->NumStaticSamplers);
+    assert(root->Flags==(device->expected_vertex ? D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT :
+        D3D12_ROOT_SIGNATURE_FLAG_NONE));
     for (UINT table=0;table<4;++table) {
         const D3D12_ROOT_PARAMETER *parameter=&root->pParameters[table];
         assert(parameter->ShaderVisibility==(table<2 ? D3D12_SHADER_VISIBILITY_VERTEX : D3D12_SHADER_VISIBILITY_PIXEL));
@@ -92,8 +97,15 @@ static HRESULT STDMETHODCALLTYPE create_state(ID3D12Device *raw,const D3D12_GRAP
     cpu_device *device=(cpu_device *)raw;
     assert(desc->pRootSignature==&device->root.iface && desc->VS.BytecodeLength==1 && desc->PS.BytecodeLength==1);
     assert(desc->RasterizerState.FrontCounterClockwise && desc->RasterizerState.CullMode==D3D12_CULL_MODE_NONE);
-    assert(!desc->InputLayout.NumElements && !desc->DepthStencilState.DepthEnable && desc->SampleDesc.Count==1 &&
+    assert(!desc->DepthStencilState.DepthEnable && desc->SampleDesc.Count==1 &&
         desc->NumRenderTargets==1 && desc->RTVFormats[0]==DXGI_FORMAT_R8G8B8A8_UNORM);
+    if (device->expected_vertex) {
+        assert(desc->InputLayout.NumElements==1);
+        const D3D12_INPUT_ELEMENT_DESC *attribute=desc->InputLayout.pInputElementDescs;
+        assert(!strcmp(attribute->SemanticName,"TEXCOORD") && attribute->SemanticIndex==3 &&
+            attribute->Format==device->expected_vertex && attribute->InputSlot==1 && attribute->AlignedByteOffset==8 &&
+            attribute->InputSlotClass==D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA && attribute->InstanceDataStepRate==1);
+    } else assert(!desc->InputLayout.NumElements);
     device->state.iface.lpVtbl=&state_methods;
     device->state.refs=1;
     *out=&device->state.iface;
@@ -145,9 +157,19 @@ static void STDMETHODCALLTYPE create_rtv(ID3D12Device *raw,ID3D12Resource *resou
     assert(resource && desc->ViewDimension==D3D12_RTV_DIMENSION_TEXTURE2D && handle.ptr==2100);
     ++device->rtvs;
 }
+static HRESULT STDMETHODCALLTYPE feature(ID3D12Device *raw,D3D12_FEATURE kind,void *out,UINT size)
+{
+    cpu_device *device=(cpu_device *)raw;
+    assert(kind==D3D12_FEATURE_FORMAT_SUPPORT && size==sizeof(D3D12_FEATURE_DATA_FORMAT_SUPPORT));
+    D3D12_FEATURE_DATA_FORMAT_SUPPORT *support=out;
+    assert(support->Format==device->expected_vertex);
+    ++device->format_queries;
+    support->Support1=device->deny_vertex ? D3D12_FORMAT_SUPPORT1_NONE : D3D12_FORMAT_SUPPORT1_IA_VERTEX_BUFFER;
+    return S_OK;
+}
 static CONST_VTBL ID3D12DeviceVtbl device_methods={.CreateRootSignature=create_root,.CreateGraphicsPipelineState=create_state,
     .CreateDescriptorHeap=create_heap,.GetDescriptorHandleIncrementSize=increment,.CreateShaderResourceView=create_srv,
-    .CreateSampler=create_sampler,.CreateRenderTargetView=create_rtv};
+    .CreateSampler=create_sampler,.CreateRenderTargetView=create_rtv,.CheckFeatureSupport=feature};
 static ULONG STDMETHODCALLTYPE list_release(ID3D12GraphicsCommandList *raw)
 {
     ++((cpu_list *)raw)->releases;
@@ -171,6 +193,12 @@ static void STDMETHODCALLTYPE barrier(ID3D12GraphicsCommandList *raw,UINT count,
 {
     cpu_list *list=(cpu_list *)raw;
     assert(count==1 && values->Type==D3D12_RESOURCE_BARRIER_TYPE_TRANSITION);
+    if (values->Transition.pResource==list->shared) {
+        D3D12_RESOURCE_STATES state=D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER |
+            D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+        assert((values->Transition.StateBefore==D3D12_RESOURCE_STATE_COPY_DEST && values->Transition.StateAfter==state) ||
+            (values->Transition.StateBefore==state && values->Transition.StateAfter==D3D12_RESOURCE_STATE_COPY_DEST));
+    }
     ++list->barriers; ++list->mutations;
 }
 static void STDMETHODCALLTYPE root_signature(ID3D12GraphicsCommandList *raw,ID3D12RootSignature *root)
@@ -214,10 +242,88 @@ static void STDMETHODCALLTYPE draw(ID3D12GraphicsCommandList *raw,UINT vertices,
     assert(vertices==3 && instances==1 && !first && !base);
     ++((cpu_list *)raw)->draws; ++((cpu_list *)raw)->mutations;
 }
+static void STDMETHODCALLTYPE vertex_views(ID3D12GraphicsCommandList *raw,UINT first,UINT count,
+    const D3D12_VERTEX_BUFFER_VIEW *views)
+{
+    cpu_list *list=(cpu_list *)raw;
+    assert(!first && count==3 && !views[0].BufferLocation && !views[0].SizeInBytes && !views[0].StrideInBytes);
+    assert(views[1].BufferLocation==0x100010 && views[1].SizeInBytes==128 && !views[1].StrideInBytes);
+    assert(views[2].BufferLocation==0x100100 && views[2].SizeInBytes==64 && views[2].StrideInBytes==24);
+    ++list->vertex_sets; ++list->mutations;
+}
+static D3D12_GPU_VIRTUAL_ADDRESS STDMETHODCALLTYPE gpu_address(ID3D12Resource *resource)
+{
+    assert(resource);
+    return 0x100000;
+}
+static CONST_VTBL ID3D12ResourceVtbl resource_methods={.GetGPUVirtualAddress=gpu_address};
 static CONST_VTBL ID3D12GraphicsCommandListVtbl list_methods={.Release=list_release,.SetDescriptorHeaps=set_heaps,
     .SetGraphicsRootDescriptorTable=set_table,.ResourceBarrier=barrier,.SetGraphicsRootSignature=root_signature,
     .SetPipelineState=pipeline_state,.OMSetRenderTargets=targets,.ClearRenderTargetView=clear,
-    .RSSetViewports=viewport,.RSSetScissorRects=scissor,.IASetPrimitiveTopology=topology,.DrawInstanced=draw};
+    .RSSetViewports=viewport,.RSSetScissorRects=scissor,.IASetPrimitiveTopology=topology,.IASetVertexBuffers=vertex_views,.DrawInstanced=draw};
+static void vertex_formats(cpu_device *device,doe_dx_native_context *context,doe_dx_render_pipeline_desc *desc)
+{
+    static const struct { doe_dx_vertex_format typed; DXGI_FORMAT sdk; } cases[]={
+        {DOE_DX_FLOAT32,DXGI_FORMAT_R32_FLOAT},
+        {DOE_DX_FLOAT32X2,DXGI_FORMAT_R32G32_FLOAT},
+        {DOE_DX_FLOAT32X3,DXGI_FORMAT_R32G32B32_FLOAT},
+        {DOE_DX_FLOAT32X4,DXGI_FORMAT_R32G32B32A32_FLOAT},
+        {DOE_DX_UINT32,DXGI_FORMAT_R32_UINT},
+        {DOE_DX_UINT32X2,DXGI_FORMAT_R32G32_UINT},
+        {DOE_DX_UINT32X3,DXGI_FORMAT_R32G32B32_UINT},
+        {DOE_DX_UINT32X4,DXGI_FORMAT_R32G32B32A32_UINT},
+        {DOE_DX_SINT32,DXGI_FORMAT_R32_SINT},
+        {DOE_DX_SINT32X2,DXGI_FORMAT_R32G32_SINT},
+        {DOE_DX_SINT32X3,DXGI_FORMAT_R32G32B32_SINT},
+        {DOE_DX_SINT32X4,DXGI_FORMAT_R32G32B32A32_SINT},
+        {DOE_DX_UINT8,DXGI_FORMAT_R8_UINT},
+        {DOE_DX_SINT8,DXGI_FORMAT_R8_SINT},
+        {DOE_DX_UNORM8,DXGI_FORMAT_R8_UNORM},
+        {DOE_DX_SNORM8,DXGI_FORMAT_R8_SNORM},
+        {DOE_DX_UINT8X2,DXGI_FORMAT_R8G8_UINT},
+        {DOE_DX_SINT8X2,DXGI_FORMAT_R8G8_SINT},
+        {DOE_DX_UNORM8X2,DXGI_FORMAT_R8G8_UNORM},
+        {DOE_DX_SNORM8X2,DXGI_FORMAT_R8G8_SNORM},
+        {DOE_DX_UINT8X4,DXGI_FORMAT_R8G8B8A8_UINT},
+        {DOE_DX_SINT8X4,DXGI_FORMAT_R8G8B8A8_SINT},
+        {DOE_DX_UNORM8X4,DXGI_FORMAT_R8G8B8A8_UNORM},
+        {DOE_DX_SNORM8X4,DXGI_FORMAT_R8G8B8A8_SNORM},
+        {DOE_DX_UINT16,DXGI_FORMAT_R16_UINT},
+        {DOE_DX_SINT16,DXGI_FORMAT_R16_SINT},
+        {DOE_DX_UNORM16,DXGI_FORMAT_R16_UNORM},
+        {DOE_DX_SNORM16,DXGI_FORMAT_R16_SNORM},
+        {DOE_DX_FLOAT16,DXGI_FORMAT_R16_FLOAT},
+        {DOE_DX_UINT16X2,DXGI_FORMAT_R16G16_UINT},
+        {DOE_DX_SINT16X2,DXGI_FORMAT_R16G16_SINT},
+        {DOE_DX_UNORM16X2,DXGI_FORMAT_R16G16_UNORM},
+        {DOE_DX_SNORM16X2,DXGI_FORMAT_R16G16_SNORM},
+        {DOE_DX_FLOAT16X2,DXGI_FORMAT_R16G16_FLOAT},
+        {DOE_DX_UINT16X4,DXGI_FORMAT_R16G16B16A16_UINT},
+        {DOE_DX_SINT16X4,DXGI_FORMAT_R16G16B16A16_SINT},
+        {DOE_DX_UNORM16X4,DXGI_FORMAT_R16G16B16A16_UNORM},
+        {DOE_DX_SNORM16X4,DXGI_FORMAT_R16G16B16A16_SNORM},
+        {DOE_DX_FLOAT16X4,DXGI_FORMAT_R16G16B16A16_FLOAT},
+        {DOE_DX_UNORM10_10_10_2,DXGI_FORMAT_R10G10B10A2_UNORM},
+        {DOE_DX_UNORM8X4_BGRA,DXGI_FORMAT_B8G8R8A8_UNORM},
+    };
+    UINT before=device->format_queries;
+    const doe_dx_vertex_layout layouts[2]={{0,DOE_DX_PER_VERTEX},{0,DOE_DX_PER_INSTANCE}};
+    doe_dx_vertex_attribute attribute={3,1,8,DOE_DX_FLOAT32};
+    desc->vertex_buffers=layouts; desc->vertex_buffer_count=2; desc->attributes=&attribute; desc->attribute_count=1;
+    for (size_t i=0;i<sizeof(cases)/sizeof(*cases);++i) {
+        device->expected_vertex=cases[i].sdk;
+        attribute.format=cases[i].typed;
+        doe_dx_native_pipeline *pipeline=NULL;
+        assert(doe_dx_native_render_create(context,desc,&pipeline,NULL)==DOE_DX_OK);
+        assert(pipeline->vertex_buffers[1].stride==0 && pipeline->vertex_buffers[1].step==DOE_DX_PER_INSTANCE);
+        doe_dx_native_pipeline_destroy(pipeline);
+    }
+    assert(device->format_queries==before+41);
+    device->deny_vertex=true;
+    doe_dx_native_pipeline *rejected=NULL;
+    assert(doe_dx_native_render_create(context,desc,&rejected,NULL)==DOE_DX_UNSUPPORTED && !rejected);
+    assert(!device->root.refs && !device->state.refs && device->format_queries==before+42);
+}
 int main(void)
 {
     cpu_device device={0}; device.iface.lpVtbl=&device_methods;
@@ -235,7 +341,8 @@ int main(void)
     cpu_list list={0}; list.iface.lpVtbl=&list_methods;
     doe_dx_native_commands *commands=calloc(1,sizeof(*commands)); assert(commands);
     commands->context=&context; commands->list=&list.iface;
-    ID3D12Resource color_resource={0},buffer_resource={0};
+    ID3D12Resource color_resource={0},buffer_resource={.lpVtbl=&resource_methods};
+    list.shared=&buffer_resource;
     doe_dx_native_texture color={.resource=&color_resource};
     color.description.Width=color.description.Height=4; color.description.Format=DXGI_FORMAT_R8G8B8A8_UNORM;
     doe_dx_native_buffer buffer={.resource=&buffer_resource};
@@ -249,6 +356,11 @@ int main(void)
             .address_u=DOE_DX_CLAMP,.address_v=DOE_DX_CLAMP,.address_w=DOE_DX_CLAMP,
             .min_lod=(float)stage,.max_lod=8,.max_anisotropy=1};
     }
+    packet.vertex_buffer_count=3;
+    packet.vertices[1]=(doe_dx_native_binding){&buffer,16,128};
+    packet.vertices[2]=(doe_dx_native_binding){&buffer,256,64};
+    pipeline->vertex_buffers[1]=(doe_dx_vertex_layout){0,DOE_DX_PER_INSTANCE};
+    pipeline->vertex_buffers[2]=(doe_dx_vertex_layout){24,DOE_DX_PER_VERTEX};
     const float clear_color[4]={0.25f,0.5f,0.75f,1};
     device.fail_heap=3;
     assert(doe_dx_native_render(commands,&color,true,clear_color,true,&packet,1,NULL)==DOE_DX_OUT_OF_MEMORY);
@@ -257,7 +369,7 @@ int main(void)
     device.fail_heap=0;
     assert(doe_dx_native_render(commands,&color,true,clear_color,true,&packet,1,NULL)==DOE_DX_OK);
     assert(device.srvs==128 && device.samplers==32 && list.heap_count==2 && list.tables==4 &&
-        list.barriers==4 && list.clears==2 && list.draws==1);
+        list.barriers==4 && list.clears==2 && list.draws==1 && list.vertex_sets==1);
     const UINT64 expected[4]={10000,20000,10000+64*64,20000+16*32};
     for (UINT i=0;i<4;++i) assert(list.table_indices[i]==i && list.table_handles[i]==expected[i]);
     doe_dx_native_commands_destroy(commands);
@@ -265,6 +377,7 @@ int main(void)
     for (size_t i=0;i<3;++i) assert(!device.heaps[i].refs);
     doe_dx_native_pipeline_destroy(pipeline);
     assert(!device.root.refs && !device.state.refs);
-    puts("PASS SDK CPU render: disjoint stage register visibility,128/32 packed descriptors,4tables/2heaps, OOM before recording, clear/discard/native draws and cleanup; no device/GPU");
+    vertex_formats(&device,&context,&desc);
+    puts("PASS SDK CPU render: 41 queried vertex formats and negative IA support,  disjoint stage register visibility,128/32 packed descriptors,4tables/2heaps, OOM before recording, clear/discard/native draws and cleanup; no device/GPU");
     return 0;
 }

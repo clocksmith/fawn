@@ -28,6 +28,9 @@ doe_dx_status doe_dx_pipeline_create_render(doe_dx_context *context,
         doe_dx_status status=doe_dx_validate_layout(context,&desc->stages[i].resources,&desc->stages[i]);
         if (status!=DOE_DX_OK) return doe_dx_fail(status,0,"render.stage_layout",error);
     }
+    uint32_t ends[DOE_DX_MAX_VERTEX_BUFFERS]={0};
+    doe_dx_status vertex_status=doe_dx_validate_render_vertices(desc,ends);
+    if (vertex_status!=DOE_DX_OK) return doe_dx_fail(vertex_status,0,"render.vertex_layout",error);
     if (context->objects==SIZE_MAX) return doe_dx_fail(DOE_DX_RANGE,0,"render.objects",error);
     doe_dx_pipeline *pipeline=calloc(1,sizeof(*pipeline));
     if (!pipeline) return doe_dx_fail(DOE_DX_OUT_OF_MEMORY,0,"render.pipeline.allocate",error);
@@ -47,6 +50,10 @@ doe_dx_status doe_dx_pipeline_create_render(doe_dx_context *context,
     pipeline->context=context;
     pipeline->references=1;
     pipeline->graphics=true;
+    pipeline->vertex_buffer_count=desc->vertex_buffer_count;
+    if (desc->vertex_buffer_count) memcpy(pipeline->vertex_buffers,desc->vertex_buffers,
+        desc->vertex_buffer_count*sizeof(*desc->vertex_buffers));
+    memcpy(pipeline->vertex_ends,ends,sizeof(ends));
     pipeline->color_format=desc->color_format;
     context->objects++;
     *out=pipeline;

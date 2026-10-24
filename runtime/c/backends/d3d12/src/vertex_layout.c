@@ -2,8 +2,16 @@
 #include "internal.h"
 
 uint32_t doe_dx_vertex_format_size(doe_dx_vertex_format format) {
-    if (format < DOE_DX_FLOAT32 || format > DOE_DX_SINT32X4) return 0;
-    return ((uint32_t)format % 4 + 1) * 4;
+    if (format >= DOE_DX_FLOAT32 && format <= DOE_DX_SINT32X4)
+        return ((uint32_t)format % 4 + 1) * 4;
+    if (format >= DOE_DX_UINT8 && format <= DOE_DX_SNORM8) return 1;
+    if (format >= DOE_DX_UINT8X2 && format <= DOE_DX_SNORM8X2) return 2;
+    if (format >= DOE_DX_UINT8X4 && format <= DOE_DX_SNORM8X4) return 4;
+    if (format >= DOE_DX_UINT16 && format <= DOE_DX_FLOAT16) return 2;
+    if (format >= DOE_DX_UINT16X2 && format <= DOE_DX_FLOAT16X2) return 4;
+    if (format >= DOE_DX_UINT16X4 && format <= DOE_DX_FLOAT16X4) return 8;
+    if (format == DOE_DX_UNORM10_10_10_2 || format == DOE_DX_UNORM8X4_BGRA) return 4;
+    return 0;
 }
 
 doe_dx_status doe_dx_validate_mesh(const doe_dx_mesh_pipeline_desc *desc, uint32_t *ends) {

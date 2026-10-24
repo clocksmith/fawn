@@ -149,6 +149,14 @@ static bool emit_numeric_builtin(Emitter *e, const IrInstruction *ir) {
     const TypeId operand_type = spirv_value_type(e->program, ir->operands.scalar.left);
     const TypeId leaf = type_leaf(e->program, operand_type);
     if (builtin_subgroup(builtin)) return spirv_subgroup_builtin(e, ir, builtin, leaf);
+    if (builtin->family == BUILTIN_BOOLEAN_REDUCTION) {
+        if (leaf != IR_BOOL || ir->type != IR_BOOL ||
+            (builtin->kind != BUILTIN_ALL && builtin->kind != BUILTIN_ANY))
+            return spirv_emit_error(e, ir->source_offset, "boolean reduction requires boolean operands and scalar result");
+        if (operand_type == IR_BOOL) { EMIT(OP_COPY_OBJECT, ID_BOOL, result, left); }
+        else { EMIT(builtin->kind == BUILTIN_ALL ? OP_ALL : OP_ANY, ID_BOOL, result, left); }
+        return true;
+    }
     if (builtin->kind == BUILTIN_ABS && leaf == IR_U32) {
         EMIT(OP_COPY_OBJECT, spirv_target_type(e, ir->type), result, left);
         return true;

@@ -7,7 +7,7 @@ static bool descriptor(const native_device *device,const WGPURenderPipelineDescr
     const native_stage *stages,size_t count,doe_dx_render_pipeline_desc *out,doe_resource_render_pipeline_desc *resource)
 {
     const WGPUFragmentState *fragment=source->fragment;
-    if (!fragment || count!=2 || fragment->targetCount!=1 || !fragment->targets || source->vertex.bufferCount ||
+    if (!fragment || count!=2 || fragment->targetCount!=1 || !fragment->targets ||
         source->depthStencil || source->primitive.stripIndexFormat!=WGPUIndexFormat_Undefined) return false;
     const WGPUColorTargetState *color=&fragment->targets[0];
     if (color->format==WGPUTextureFormat_RGBA8Unorm) out->color_format=DOE_DX_RGBA8_UNORM;
@@ -24,8 +24,8 @@ static bool descriptor(const native_device *device,const WGPURenderPipelineDescr
         !native_render_interfaces(stages,count,&source->vertex,fragment,false,false,&interfaces,&device->backend.limits) ||
         !native_render_fragment_depth(stages,count,NULL)) return false;
     out->front_counter_clockwise=!fixed.clockwise_front;
-    *resource=(doe_resource_render_pipeline_desc){.color_count=1,.samples=1,.topology=WGPUPrimitiveTopology_TriangleList,
-        .color_formats={color->format}};
+    resource->color_count=1; resource->samples=1; resource->topology=WGPUPrimitiveTopology_TriangleList;
+    resource->color_formats[0]=color->format;
     return true;
 }
 #endif
@@ -37,7 +37,12 @@ WGPURenderPipeline native_d3d12_create_render_pipeline(native_device *device,
     *error=(native_pipeline_error){WGPUErrorType_Validation,"D3D12 render state or selected interfaces unsupported"};
     doe_dx_render_pipeline_desc desc={0};
     doe_resource_render_pipeline_desc resource={0};
-    if (!descriptor(device,source,stages,count,&desc,&resource)) return NULL;
+    doe_dx_vertex_layout vertices[DOE_DX_MAX_VERTEX_BUFFERS];
+    doe_dx_vertex_attribute attributes[DOE_DX_MAX_VERTEX_ATTRIBUTES];
+    /* Validate every caller-owned layout/attribute span before common interface
+     * validation traverses it; constructor scratch survives native PSO creation. */
+    if (!native_d3d12_graphics_vertices(&source->vertex,device,&desc,&resource,vertices,attributes) ||
+        !descriptor(device,source,stages,count,&desc,&resource)) return NULL;
     uint32_t interstage_mask=0;
     if (!native_d3d12_interstage_mask(&stages[1],&interstage_mask)) {
         *error=(native_pipeline_error){WGPUErrorType_Validation,"D3D12 fragment input projection unsupported"};
@@ -58,8 +63,9 @@ WGPURenderPipeline native_d3d12_create_render_pipeline(native_device *device,
     bool automatic=!layout;
     if (failure.status==NATIVE_OK) {
         payload->device=device;
+        payload->vertex_count=resource.vertex_count;
         native_lock(device);
-        failure=native_failure_status(native_device_result(device));
+        if (failure.status==NATIVE_OK) failure=native_failure_status(native_device_result(device));
         doe_resource_status status=automatic && failure.status==NATIVE_OK ?
             native_automatic_layout(device,stages,count,&layout) : DOE_RESOURCE_OK;
         if (status==DOE_RESOURCE_OK && failure.status==NATIVE_OK && (!layout ||

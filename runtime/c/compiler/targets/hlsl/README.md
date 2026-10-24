@@ -298,3 +298,7 @@ canaries and ordered operands even with an empty runtime tail. DXC's SPIR-V mode
 warns that allow_uav_condition is ignored; DXIL accepts the required attribute.
 These controls do not establish Windows/D3D12 execution, physical execution,
 concurrent forward-progress qualification, or the separate Metal atomic target.
+
+The [boolean reduction contract](../../LOGICAL_BUILTINS.md) adds scalar identity
+and bool-vector all/any through the same typed IR. Explicit native reductions
+consume saved operands; their SDK and execution evidence remain separate.

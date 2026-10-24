@@ -8,7 +8,7 @@ if not "%errorlevel%"=="0" exit /b 1
 cl /nologo /std:c11 /W4 /WX /Iinclude /DDOE_DX_REQUIRE_WINDOWS /c ^
     src\command_storage.c src\context.c src\resources.c src\commands.c ^
     src\compute.c src\pipeline.c src\textures.c ^
-    src\texture_transfer.c src\texture_regions.c src\render_pipeline.c src\render_commands.c src\samplers.c src\bindings.c src\graphics.c ^
+    src\texture_transfer.c src\texture_regions.c src\render_pipeline.c src\render_commands.c src\render_vertices.c src\samplers.c src\bindings.c src\graphics.c ^
     src\timestamps.c src\windows_context.c src\windows_caps.c src\windows_adapter.c src\windows_resources.c ^
     src\windows_commands.c src\windows_pipeline.c src\windows_bindings.c ^
     src\windows_textures.c src\windows_texture_regions.c src\windows_samplers.c src\windows_transitions.c src\windows_render_pipeline.c src\windows_render_commands.c src\windows_graphics.c src\windows_timestamps.c ^
@@ -18,7 +18,7 @@ if not "%errorlevel%"=="0" exit /b 1
 lib /nologo /OUT:"%OUT%\doe_d3d12.lib" ^
     "%OUT%\command_storage.obj" "%OUT%\context.obj" "%OUT%\resources.obj" "%OUT%\commands.obj" ^
     "%OUT%\compute.obj" "%OUT%\pipeline.obj" "%OUT%\textures.obj" ^
-    "%OUT%\texture_transfer.obj" "%OUT%\texture_regions.obj" "%OUT%\render_pipeline.obj" "%OUT%\render_commands.obj" "%OUT%\samplers.obj" "%OUT%\bindings.obj" "%OUT%\graphics.obj" ^
+    "%OUT%\texture_transfer.obj" "%OUT%\texture_regions.obj" "%OUT%\render_pipeline.obj" "%OUT%\render_commands.obj" "%OUT%\render_vertices.obj" "%OUT%\samplers.obj" "%OUT%\bindings.obj" "%OUT%\graphics.obj" ^
     "%OUT%\timestamps.obj" "%OUT%\windows_context.obj" "%OUT%\windows_caps.obj" "%OUT%\windows_adapter.obj" "%OUT%\windows_resources.obj" ^
     "%OUT%\windows_commands.obj" "%OUT%\windows_pipeline.obj" "%OUT%\windows_bindings.obj" ^
     "%OUT%\windows_textures.obj" "%OUT%\windows_texture_regions.obj" "%OUT%\windows_samplers.obj" "%OUT%\windows_transitions.obj" "%OUT%\windows_render_pipeline.obj" "%OUT%\windows_render_commands.obj" "%OUT%\windows_graphics.obj" "%OUT%\windows_timestamps.obj" ^

@@ -38,7 +38,7 @@ bool spirv_subgroup_builtin(Emitter *e, const IrInstruction *ir,
         case BUILTIN_TANH: case BUILTIN_SQRT: case BUILTIN_DOT: case BUILTIN_LENGTH:
         case BUILTIN_TRANSPOSE: case BUILTIN_DETERMINANT: case BUILTIN_CEIL:
         case BUILTIN_DISTANCE: case BUILTIN_NORMALIZE: case BUILTIN_CROSS: case BUILTIN_REFLECT:
-        case BUILTIN_FACE_FORWARD: case BUILTIN_REFRACT:
+        case BUILTIN_FACE_FORWARD: case BUILTIN_REFRACT: case BUILTIN_ALL: case BUILTIN_ANY:
             return spirv_emit_error(e, ir->source_offset, "non-subgroup builtin reached collective lowering");
     }
     if (builtin->kind == BUILTIN_SUBGROUP_INCLUSIVE_ADD || builtin->kind == BUILTIN_SUBGROUP_INCLUSIVE_MUL)

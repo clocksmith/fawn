@@ -439,6 +439,15 @@ build/cpp_consumer_specialization: tests/cpp_consumer_specialization.cpp include
 test-specialization-library: build/cpp_consumer_specialization
 	build/cpp_consumer_specialization
 
+build/test_all_any: $(LIB_SOURCES) tests/test_all_any.c tests/hlsl_fixture.h tests/all_any_retained.wgsl tests/all_any_cases.wgsl $(HEADERS) | build/.ready
+	$(CC) $(CFLAGS) $(LIB_SOURCES) tests/test_all_any.c -lm -o $@
+build/test_all_any_sanitize: $(LIB_SOURCES) tests/test_all_any.c tests/hlsl_fixture.h tests/all_any_retained.wgsl tests/all_any_cases.wgsl $(HEADERS) | build/.ready
+	$(CC) $(CFLAGS) -O1 -g -fno-omit-frame-pointer -fsanitize=address,undefined $(LIB_SOURCES) tests/test_all_any.c -lm -o $@
+.PHONY: all-any-check sanitize-all-any
+all-any-check: build/test_all_any
+	build/test_all_any
+sanitize-all-any: build/test_all_any_sanitize
+	ASAN_OPTIONS=detect_leaks=0:halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1 build/test_all_any_sanitize
 build/test_implicit_sampling: $(LIB_SOURCES) tests/test_implicit_sampling.c tests/hlsl_fixture.h tests/implicit_sampling.wgsl tests/implicit_sample_compute_retained.wgsl tests/implicit_compare_compute_retained.wgsl $(HEADERS) | build/.ready
 	$(CC) $(CFLAGS) $(LIB_SOURCES) tests/test_implicit_sampling.c -lm -o $@
 build/test_implicit_sampling_sanitize: $(LIB_SOURCES) tests/test_implicit_sampling.c tests/hlsl_fixture.h tests/implicit_sampling.wgsl tests/implicit_sample_compute_retained.wgsl tests/implicit_compare_compute_retained.wgsl $(HEADERS) | build/.ready

@@ -91,7 +91,8 @@ def main() -> None:
     consumers = [ROOT / 'tests/native_consumer.c', ROOT / 'tests/test_phony_api.c',
                  ROOT / 'tests/test_windows_environment.c', ROOT / 'tests/test_overrides.c',
                  ROOT / 'tests/test_specialization.c', ROOT / 'tests/test_select.c',
-                 ROOT / 'tests/test_depth_sampling.c', ROOT / 'tests/test_implicit_sampling.c']
+                 ROOT / 'tests/test_depth_sampling.c', ROOT / 'tests/test_implicit_sampling.c',
+                 ROOT / 'tests/test_all_any.c']
     for source in consumers:
         name = source.stem
         executable = out / (name + '.exe')
@@ -112,6 +113,10 @@ def main() -> None:
             arguments.extend([artifacts, *(str(ROOT / 'tests' / fixture) for fixture in
                              ['implicit_sampling.wgsl', 'implicit_sample_compute_retained.wgsl',
                               'implicit_compare_compute_retained.wgsl'])])
+        if name == 'test_all_any':
+            artifacts = tempfile.mkdtemp(prefix='all-any-', dir=out)
+            arguments.extend([artifacts, str(ROOT / 'tests/all_any_retained.wgsl'),
+                              str(ROOT / 'tests/all_any_cases.wgsl')])
         invoke(arguments, out)
     cpp_consumers = [ROOT / 'tests/cpp_consumer.cpp', ROOT / 'tests/cpp_consumer_specialization.cpp']
     for source in cpp_consumers:
@@ -128,7 +133,8 @@ def main() -> None:
         'consumer_inputs': ['tests/select_retained.wgsl', 'tests/select_cases.wgsl',
                             'tests/depth_sampling.wgsl', 'tests/implicit_sampling.wgsl',
                             'tests/implicit_sample_compute_retained.wgsl',
-                            'tests/implicit_compare_compute_retained.wgsl'],
+                            'tests/implicit_compare_compute_retained.wgsl',
+                            'tests/all_any_retained.wgsl', 'tests/all_any_cases.wgsl'],
         'scope': 'Actual Windows x64 DLL and ordinary C/C++ CPU consumers only; no GPU, runtime or CLI qualification.'
     }, indent=2) + '\n')
 

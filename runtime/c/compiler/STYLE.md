@@ -226,3 +226,10 @@ uniform control, not uniform coordinates. Their results are potentially
 nonuniform even for constant coordinates; use the existing uniformity summaries
 and scratch, without treating a sample as a uniformity proof for later calls.
 Explicit-level image operations retain their separate stage/control contract.
+
+Boolean reductions belong to the same typed builtin signature/constant/IR owner.
+Admit only bool scalars or bool vectors and return scalar bool. Evaluate the
+complete operand once, including all vector-constructor effects, before reducing
+saved values. Constant reductions project the existing DAG; preserve override
+stage and required dependencies. Scalar targets copy the operand; vector targets
+use explicitly mapped logical reductions and never infer numeric truthiness.

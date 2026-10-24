@@ -3,6 +3,8 @@
 #include "sema.h"
 
 static const NumericBuiltin numeric_builtins[] = {
+    {"all", BUILTIN_ALL, 1u, BUILTIN_BOOLEAN_REDUCTION, 0u},
+    {"any", BUILTIN_ANY, 1u, BUILTIN_BOOLEAN_REDUCTION, 0u},
     {"transpose", BUILTIN_TRANSPOSE, 1u, BUILTIN_MATRIX, 0u},
     {"determinant", BUILTIN_DETERMINANT, 1u, BUILTIN_MATRIX, 33u},
     {"min", BUILTIN_MIN, 2u, BUILTIN_COMPONENT_NUMERIC, 0u},
@@ -94,7 +96,8 @@ bool builtin_subgroup_uniform(const NumericBuiltin *builtin) {
 }
 
 bool builtin_scalar_result(const NumericBuiltin *builtin) {
-    return builtin->family == BUILTIN_NUMERIC_REDUCTION || builtin->family == BUILTIN_FLOAT_REDUCTION;
+    return builtin->family == BUILTIN_NUMERIC_REDUCTION || builtin->family == BUILTIN_FLOAT_REDUCTION ||
+        builtin->family == BUILTIN_BOOLEAN_REDUCTION;
 }
 
 bool builtin_shape(const NumericBuiltin *builtin, uint32_t width) {
@@ -289,8 +292,23 @@ static bool geometric_vector(Source *source, uint32_t offset, const NumericBuilt
     return constant_composite(source, result_type, lanes, width, false, out);
 }
 
+/* Boolean reduction projects the same typed constant DAG as numeric builtins;
+ * scalar input is the identity. Runtime arguments never visit this evaluator. */
+static bool boolean_constant(Source *source, const NumericBuiltin *builtin, ConstantValue value, ConstantValue *out) {
+    bool result = builtin->kind == BUILTIN_ALL;
+    const uint32_t width = type_vector_width(source->compiler, value.type);
+    for (uint32_t i = 0u; i < width; ++i) {
+        NumericValue lane;
+        if (!constant_lane(source, value, i, &lane)) return false;
+        result = builtin->kind == BUILTIN_ALL ? result && lane.bits != 0u : result || lane.bits != 0u;
+    }
+    *out = (ConstantValue){.type = IR_BOOL, .bits = result ? 1u : 0u};
+    return true;
+}
 bool builtin_constant(Source *source, uint32_t offset, const NumericBuiltin *builtin,
                       const ConstantValue *arguments, TypeId result_type, ConstantValue *out) {
+    if (builtin->family == BUILTIN_BOOLEAN_REDUCTION)
+        return boolean_constant(source, builtin, arguments[0], out);
     if (builtin->family == BUILTIN_MATRIX)
         return matrix_constant(source, offset, builtin->kind, arguments[0], result_type, out);
     if (builtin->family == BUILTIN_COMPONENT_NUMERIC || builtin->family == BUILTIN_COMPONENT_FLOAT)
