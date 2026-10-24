@@ -132,6 +132,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "public native SDK build failed: $LASTEXITCODE" }
           if (git status --short) { throw 'native build changed source checkout' }
       - name: Exercise unchanged public native consumers on explicit CPU WARP
+        id: public_warp
         if: ${{ inputs.run_public_warp }}
         shell: pwsh
         run: |
@@ -189,6 +190,17 @@ jobs:
             if ((Get-FileHash $fixtureSources[$name] -Algorithm SHA256).Hash.ToLowerInvariant() -ne $sourceHashes[$name]) { throw "consumer shader source changed: $name" }
           }
           if (git status --short) { throw 'public WARP controls changed source checkout' }
+      - name: Collect SDK debug diagnostics for failed public graphics
+        if: ${{ !cancelled() && inputs.run_public_warp && steps.native_sdk.outcome == 'success' && steps.public_warp.outcome == 'failure' }}
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $script = Join-Path $env:GITHUB_WORKSPACE 'runtime/c/native/tools/diagnose_windows_graphics.py'
+          $output = Join-Path $env:EVIDENCE_ROOT 'graphics-diagnostic'
+          $native = Join-Path $env:EVIDENCE_ROOT 'native-full'
+          $command = 'call "' + $env:DEVCMD + '" -arch=x64 >nul && python "' + $script + '" --out "' + $output + '" --native-dir "' + $native + '"'
+          & cmd.exe /d /s /c $command 2>&1 | Tee-Object "$env:EVIDENCE_ROOT/graphics-diagnostic.log"
+          if ($LASTEXITCODE -ne 0) { throw "public graphics diagnostic fixture failed: $LASTEXITCODE" }
       - name: Build the Node addon with LLVM and matching official Node inputs
         id: node_addon
         if: ${{ !cancelled() && steps.native_sdk.outcome == 'success' }}
