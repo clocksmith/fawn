@@ -1,0 +1,253 @@
+{
+  "kind": "developer-correctness-evidence",
+  "component": "Public C Metal indexed and indirect draw guards",
+  "acceptance_consumer": "Named C migration public native indexed/indirect guard correctness gate; not whole migration or release qualification",
+  "host": {
+    "machine": "Mars",
+    "os": "macOS26.6.2build25G83arm64",
+    "compiler": "Appleclang17.0.0 (clang-1700.3.19.1)",
+    "sdk": "26.0",
+    "adapter": "AppleM3",
+    "backend": "Metal",
+    "public_adapter_type_value": 4,
+    "subtype": "unclassified",
+    "driver": "not separately reported",
+    "selection": {
+      "DOE_C_TEST_BACKEND": "metal",
+      "DOE_C_TEST_ADAPTER": "physical"
+    },
+    "thermal": "Before/after pmset logs record no thermal/performance warning and no CPU power status."
+  },
+  "published_runs": [
+    {
+      "source_commit": "cb63401549bbe9e1645a5f8db80c6ce8c212d5ac",
+      "source_tree": "05f5bd389aa76230ec2893addb7ba45c7c2b3796",
+      "consumer": "runtime/c/native/tests/indexed_render.c",
+      "consumer_sha256": "d4e38c20b0d4e34646d0aa49d631637cef9d1f39d7c5af9dcc6e303a349eb300",
+      "source_binding": {
+        "verified_published_files_and_archive_members": 4584,
+        "source_archive_sha256": "89776251ee3d08e0b4e153d03e8dcc1c08cf000adb0c847e748a264b5b2f0f1a",
+        "input_manifest_sha256": "6ece80c11b0e299e318a307a5ffde4ecbaa68579296ccdf8971789129d78b969",
+        "six_artifacts_verified_before_and_after": true
+      },
+      "build": {
+        "exit": 0,
+        "elapsed_seconds": 4.830994458985515,
+        "command_record": "indexed/BUILD.json"
+      },
+      "result": {
+        "name": "indexed-render",
+        "exit": 0,
+        "timeout": false,
+        "leaf_deadline_seconds": 15,
+        "elapsed_seconds": 0.2839559999993071
+      },
+      "oracle_scope": "Unchanged public consumer:192 exact pixels; uint16/uint32, firstIndex, signed baseVertex, instance selection, offset ranges, passes/bundles, strip restart;9 GPU-produced indirect records,13 typed validation controls, preserved argument words and early releases.",
+      "stderr_bytes": 0,
+      "guardian": {
+        "exit": 0,
+        "timeout": false,
+        "parent_deadline_seconds": 45,
+        "elapsed_seconds": 0.3476392909651622,
+        "killed_owned_direct_children": [],
+        "scope": "owned worker and its direct native test children; no GPU termination claim"
+      },
+      "cleanup_probe": {
+        "exit": -9,
+        "timeout": true,
+        "parent_deadline_seconds": 0.5,
+        "elapsed_seconds": 0.5301664589205757,
+        "killed_owned_direct_children": [
+          95593
+        ],
+        "scope": "owned worker and its direct native test children; no GPU termination claim"
+      },
+      "artifacts_sha256": {
+        "build/indexed-render": "8b80ace746fc3f5f669996b8bfc008a889ce2b79f871df9f3914ddfc8220abc9",
+        "build/libwebgpu_doe_c.dylib": "bbc71d89843639aff102f5bfe4d65bc70738473e5d1e85c94eeeadb2abacd227",
+        "build/libdoe_compiler.dylib": "cc82709cc59049a5440d3e00fceb637309b9c613e8214fbb70037c417e8f82b1",
+        "worker.py": "f8ad314f45cfddbff7c71ed8cb20e91cfd11a461378cbe74d4d15b3a11e5ad87",
+        "guardian.py": "2bd072f26abe90a10e76d20914db1a21da6e38551b270b2c86d21532d61cddd7",
+        "probe.py": "c8b6389df155556941ebaf2ae640d81c4e4c64ea75f7a598e1c21d8e10f60801"
+      }
+    },
+    {
+      "source_commit": "6ca18bffa671a4ba6cfc53a087c688cbd0873732",
+      "source_tree": "f3a514b552ba6bbf46b5e74f2cb15665419a50e8",
+      "consumer": "runtime/c/native/tests/draw_guard.c",
+      "consumer_sha256": "92cc22a0ac34c12c0cfab24d7869640fa046c5d064b17f37afb657431404175a",
+      "source_binding": {
+        "verified_published_files_and_archive_members": 4584,
+        "source_archive_sha256": "afd1ecc2d965a820e6a9e517db3338eba26e3bd008cfea945c1fd972ca347d0f",
+        "input_manifest_sha256": "69edd33cc951e8262aaf3cbe916eb70e763fa5da1038f317954db8580856d71a",
+        "six_artifacts_verified_before_and_after": true
+      },
+      "build": {
+        "exit": 0,
+        "elapsed_seconds": 4.661502750008367,
+        "command_record": "guard/BUILD.json"
+      },
+      "result": {
+        "name": "draw-guard",
+        "exit": 0,
+        "timeout": false,
+        "leaf_deadline_seconds": 15,
+        "elapsed_seconds": 0.13196704199071974
+      },
+      "oracle_scope": "Actual common WGSL normalization/atomic index scan:23 exact records,64-bit capacities and simulated large ordinals in small index windows, exact intersections, signed base/INT_MIN, odd uint16 prefix/tail, strip-only restart, unchanged indices/arguments and early releases. No large actual allocation claim.",
+      "stderr_bytes": 0,
+      "guardian": {
+        "exit": 0,
+        "timeout": false,
+        "parent_deadline_seconds": 45,
+        "elapsed_seconds": 0.1876157500082627,
+        "killed_owned_direct_children": [],
+        "scope": "owned worker and its direct native test children; no GPU termination claim"
+      },
+      "cleanup_probe": {
+        "exit": -9,
+        "timeout": true,
+        "parent_deadline_seconds": 0.5,
+        "elapsed_seconds": 0.527762082987465,
+        "killed_owned_direct_children": [
+          97887
+        ],
+        "scope": "owned worker and its direct native test children; no GPU termination claim"
+      },
+      "artifacts_sha256": {
+        "build/draw-guard": "2e4c35f3d0953c7f9a3862686daefeb3842db67229f43d0480c79b52cfa58435",
+        "build/libwebgpu_doe_c.dylib": "4e73f2d356442f6eac5c9fff87a82ffc8be42160b6aa896f93a59827fd8107ba",
+        "build/libdoe_compiler.dylib": "c4bd7f9b76c859058fe7a6a2ac0b8dd27af1f6398e89589b716384cb1a3049c5",
+        "worker.py": "1d270c3da19d7236f6ce2056cfabe29bc9cc8f67fe7d4a96f7d4da42cf08d8a4",
+        "guardian.py": "d6d3d4f935da48bc149baf240e83407f4de08bb2c2c1e5983d8a12207a663d49",
+        "probe.py": "c8b6389df155556941ebaf2ae640d81c4e4c64ea75f7a598e1c21d8e10f60801"
+      }
+    }
+  ],
+  "separate_host_composition": {
+    "base_commit": "87365c259c077edb5752495fbec43fac68a363ef",
+    "overlay_files": 37,
+    "all_overlay_hashes_match_indexed_run_published_source": true,
+    "unchanged_source_inputs": 4633,
+    "verified_base_git_files": 4596,
+    "source_archive_sha256": "f2daa264f0e3f15489e20fd3ce2a81ca852adb3e28ee5b4d640f1f6d17ff1b93",
+    "input_manifest_sha256": "e617ec5c8c84ceb778c61bf9538603c27f68c947dbed64dd36187f6a1772174f",
+    "results_sha256": "933b6d25f970f325813ec92679b51a2132b0c4a07a1e0adf795c872140e1b3da",
+    "retained_build_artifact_count": 9,
+    "build_archive_sha256": "7ad45e311f7e415e1a4538135e3590122d099ccdfca8e6cb77dffb0c7fca4498",
+    "results": [
+      {
+        "name": "tool-gcc",
+        "exit": 0,
+        "timeout": false
+      },
+      {
+        "name": "all-c-gate",
+        "exit": 0,
+        "timeout": false
+      },
+      {
+        "name": "metal-private",
+        "exit": 0,
+        "timeout": false
+      },
+      {
+        "name": "native-build",
+        "exit": 0,
+        "timeout": false
+      },
+      {
+        "name": "native-draw-guard",
+        "exit": 0,
+        "timeout": false
+      },
+      {
+        "name": "native-indexed-render",
+        "exit": 0,
+        "timeout": false
+      },
+      {
+        "name": "native-backend-selection",
+        "exit": 0,
+        "timeout": false
+      },
+      {
+        "name": "native-metal-bridge",
+        "exit": 0,
+        "timeout": false
+      },
+      {
+        "name": "vulkan-lifetimes-build",
+        "exit": 0,
+        "timeout": false
+      },
+      {
+        "name": "vulkan-lifetime",
+        "exit": 0,
+        "timeout": false
+      },
+      {
+        "name": "vulkan-render-lifetime",
+        "exit": 0,
+        "timeout": false
+      },
+      {
+        "name": "vulkan-query-lifetime",
+        "exit": 0,
+        "timeout": false
+      },
+      {
+        "name": "vulkan-indirect-lifetime",
+        "exit": 0,
+        "timeout": false
+      },
+      {
+        "name": "vulkan-indirect-render-lifetime",
+        "exit": 0,
+        "timeout": false
+      },
+      {
+        "name": "asan-compiler",
+        "exit": 0,
+        "timeout": false
+      },
+      {
+        "name": "asan-native",
+        "exit": 0,
+        "timeout": false
+      }
+    ],
+    "scope": "Suby CPU lavapipe only:13-owner C/style/globals gate, private Metal call controls, actual CPU23-record guard and unchanged192-pixel client, backend selection/Metal bridge,5 resource lifetime clients, compiler+native ASan/UBSan with detect_leaks=1 host bridge. No Suby physical GPU run.",
+    "commands_environment_logs_and_artifact_hashes": "host-composition/ in retained bundle"
+  },
+  "first_failures": [
+    {
+      "record": "first-failures/private-build-first.log",
+      "scope": "Author compile error: obsolete extra argument to existing buffer_write; corrected before host checks."
+    },
+    {
+      "record": "first-failures/build.log",
+      "scope": "First GNU capture rejected anonymous enum comparison under -Werror; typed size_t casts fixed it. Original source manifest and archive retained beside log."
+    },
+    {
+      "record": "first-failures/CHECK_SCOPE_CORRECTION.txt",
+      "scope": "Initial SANITIZE variable was ignored by private Makefile: that check was ordinary strict. Subsequent private-undefined-final.log uses explicit instrumented CFLAGS. No sanitizer claim from ignored flag."
+    }
+  ],
+  "source_review": {
+    "source_commit": "cb63401549bbe9e1645a5f8db80c6ce8c212d5ac",
+    "scope": "Separate peer read-only review of7 unchanged published guard/native/ObjC files found no concrete defect; no execution or independent qualification claim."
+  },
+  "retention": {
+    "raw_directory": "bench/out/c-metal-draw-guards",
+    "verified_manifest_sha256": "7a424a0bad5cd2ecd50a5fb5eef3d55da520ba6191028fc271d2f554e7562d51",
+    "verified_bundle_members": 95,
+    "bundle": "bench/out/c-metal-draw-guards/evidence.tar.gz",
+    "bundle_sha256": "f38bd6513cbe48d929d14aa3c943b6ebcf6d342de42cd6e53eb5c204eb97fa69"
+  },
+  "limits": [
+    "Two source-bound runs on one M3, separately recorded; host controls never become physical evidence.",
+    "No physical large-buffer allocation, performance, contention/forward-progress, device-loss recovery, arbitrary shader/resource combinations or hardware-matrix qualification.",
+    "No D3D12, Node/browser integration, presentation, later source, whole-port acceptance or production/default promotion. Historical receipts retain their original scopes."
+  ]
+}
