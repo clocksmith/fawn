@@ -9,6 +9,8 @@ const native_shared = @import("../support/doe_native_shared_types.zig");
 const native_helpers = @import("../support/doe_native_object_helpers.zig");
 const error_scope = @import("../../runtime/diagnostics/error_scope.zig");
 const texture_contract = @import("../../contracts/texture.zig");
+const texture_values = @import("../../contracts/model/model_texture_value_types.zig");
+const abi_feature = @import("../../core/abi/wgpu_feature_base_types.zig");
 const render_bundle = @import("../../runtime/render/render_bundle.zig");
 const d3d12_formats = resource_ops.d3d12_formats;
 
@@ -244,6 +246,60 @@ fn colorTargetsWithinLimit(dev: *DoeDevice, fragment: *const RenderFragmentState
     return false;
 }
 
+// webgpu.h values these rules compare.
+const BLEND_OPERATION_MIN: u32 = 0x00000004;
+const BLEND_OPERATION_MAX: u32 = 0x00000005;
+const BLEND_FACTOR_UNDEFINED: u32 = 0x00000000;
+const BLEND_FACTOR_ONE: u32 = 0x00000002;
+const BLEND_FACTOR_ZERO: u32 = 0x00000001;
+const COLOR_WRITE_MASK_ALL: u64 = 0xF;
+
+fn deviceHasFeature(dev: *const DoeDevice, feature: u32) bool {
+    for (dev.enabled_features) |enabled| {
+        if (enabled == feature) return true;
+    }
+    return false;
+}
+
+/// A blend component with min or max uses factors one and one
+/// (https://gpuweb.github.io/gpuweb/#dictdef-gpublendcomponent).
+fn blendComponentValid(component: RenderBlendComponent) bool {
+    if (component.operation != BLEND_OPERATION_MIN and component.operation != BLEND_OPERATION_MAX) return true;
+    const src = if (component.srcFactor == BLEND_FACTOR_UNDEFINED) BLEND_FACTOR_ONE else component.srcFactor;
+    const dst = if (component.dstFactor == BLEND_FACTOR_UNDEFINED) BLEND_FACTOR_ZERO else component.dstFactor;
+    return src == BLEND_FACTOR_ONE and dst == BLEND_FACTOR_ONE;
+}
+
+/// Fragment targets (https://gpuweb.github.io/gpuweb/#abstract-opdef-validating-gpufragmentstate):
+/// a color target format is color-renderable, its writeMask below 16, and a
+/// blend needs a blendable format and, for min or max, factors one and one.
+/// Shader output rules are checked with the shader's reflection by the backend.
+fn fragmentTargetsFailure(dev: *const DoeDevice, d: *const RenderPipelineDesc) ?[]const u8 {
+    const fragment = d.fragment orelse return null;
+    if (fragment.targetCount == 0) return null;
+    const targets = fragment.targets orelse return "render pipeline fragment targets are missing";
+    const tier1 = deviceHasFeature(dev, abi_feature.WGPUFeatureName_TextureFormatsTier1);
+    const rg11b10 = deviceHasFeature(dev, abi_feature.WGPUFeatureName_RG11B10UfloatRenderable);
+    const float32_blendable = deviceHasFeature(dev, abi_feature.WGPUFeatureName_Float32Blendable);
+    for (targets[0..fragment.targetCount]) |target| {
+        if (target.format == 0) {
+            if (target.blend != null) return "an unused color target cannot have a blend state";
+            continue;
+        }
+        if (texture_contract.renderTargetCost(target.format) == null or
+            (texture_contract.renderTargetNeedsTier1(target.format) and !tier1) or
+            (target.format == texture_values.WGPUTextureFormat_RG11B10Ufloat and !rg11b10))
+            return "a color target format must be color-renderable";
+        if (target.writeMask & ~COLOR_WRITE_MASK_ALL != 0) return "a color target writeMask must be below 16";
+        if (target.blend) |blend| {
+            if (!texture_contract.blendable(target.format, float32_blendable)) return "a color target with blending needs a blendable format";
+            if (!blendComponentValid(blend.color) or !blendComponentValid(blend.alpha))
+                return "a blend component with min or max operation needs srcFactor and dstFactor one";
+        }
+    }
+    return null;
+}
+
 fn createRenderPipeline(dev_raw: ?*anyopaque, desc_raw: ?*anyopaque) ?*anyopaque {
     const dev = cast(DoeDevice, dev_raw) orelse return null;
     if (!dev.requireAlive()) return null;
@@ -264,6 +320,10 @@ fn createRenderPipeline(dev_raw: ?*anyopaque, desc_raw: ?*anyopaque) ?*anyopaque
         return null;
     }
     if (d.fragment) |fragment| if (!colorTargetsWithinLimit(dev, fragment)) return null;
+    if (fragmentTargetsFailure(dev, d)) |message| {
+        dev.error_scopes.deliver(error_scope.ERROR_TYPE_VALIDATION, message);
+        return null;
+    }
     const pip = make(DoeRenderPipeline) orelse return null;
     pip.* = .{};
     pip.layout = cast(DoePipelineLayout, d.layout);
@@ -678,4 +738,30 @@ fn writesStencil(pip: *const DoeRenderPipeline) bool {
     const front = pip.stencil_front_fail_op != 0 or pip.stencil_front_depth_fail_op != 0 or pip.stencil_front_pass_op != 0;
     const back = pip.stencil_back_fail_op != 0 or pip.stencil_back_depth_fail_op != 0 or pip.stencil_back_pass_op != 0;
     return (front and pip.cull_mode != 2) or (back and pip.cull_mode != 3);
+}
+
+test "fragment targets need renderable formats, blendable formats for blending, and one-one factors for min and max" {
+    const device = DoeDevice{};
+    var targets = [_]RenderColorTargetState{.{ .nextInChain = null, .format = texture_values.WGPUTextureFormat_RGBA8Unorm, .blend = null, .writeMask = 0xF }};
+    const fragment = RenderFragmentState{ .nextInChain = null, .module = null, .entryPoint = .{ .data = null, .length = 0 }, .constantCount = 0, .constants = null, .targetCount = 1, .targets = &targets };
+    var desc = std.mem.zeroes(RenderPipelineDesc);
+    desc.fragment = &fragment;
+    try std.testing.expectEqual(@as(?[]const u8, null), fragmentTargetsFailure(&device, &desc));
+    var blend = RenderBlendState{ .color = .{ .operation = BLEND_OPERATION_MIN, .srcFactor = BLEND_FACTOR_ONE, .dstFactor = BLEND_FACTOR_ONE }, .alpha = .{ .operation = 1, .srcFactor = 0, .dstFactor = 0 } };
+    targets[0].blend = &blend;
+    try std.testing.expectEqual(@as(?[]const u8, null), fragmentTargetsFailure(&device, &desc));
+    blend.color.dstFactor = BLEND_FACTOR_ZERO;
+    try std.testing.expect(fragmentTargetsFailure(&device, &desc) != null);
+    blend.color.dstFactor = BLEND_FACTOR_ONE;
+    targets[0].format = texture_values.WGPUTextureFormat_R8Uint;
+    try std.testing.expect(fragmentTargetsFailure(&device, &desc) != null);
+    targets[0].format = texture_values.WGPUTextureFormat_R32Float;
+    try std.testing.expect(fragmentTargetsFailure(&device, &desc) != null);
+    targets[0].blend = null;
+    try std.testing.expectEqual(@as(?[]const u8, null), fragmentTargetsFailure(&device, &desc));
+    targets[0].format = texture_values.WGPUTextureFormat_RGB9E5Ufloat;
+    try std.testing.expect(fragmentTargetsFailure(&device, &desc) != null);
+    targets[0].format = texture_values.WGPUTextureFormat_RGBA8Unorm;
+    targets[0].writeMask = 0x10;
+    try std.testing.expect(fragmentTargetsFailure(&device, &desc) != null);
 }

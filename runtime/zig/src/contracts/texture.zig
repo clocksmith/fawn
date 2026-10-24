@@ -42,6 +42,54 @@ pub fn renderTargetCost(format: texture.WGPUTextureFormat) ?RenderTargetCost {
     };
 }
 
+/// Channels a color target format stores
+/// (https://gpuweb.github.io/gpuweb/#plain-color-formats), or null for a format
+/// that is not a color target.
+pub fn colorComponentCount(format: texture.WGPUTextureFormat) ?u32 {
+    if (renderTargetCost(format) == null) return null;
+    return switch (format) {
+        texture.WGPUTextureFormat_R8Unorm,
+        texture.WGPUTextureFormat_R8Snorm,
+        texture.WGPUTextureFormat_R8Uint,
+        texture.WGPUTextureFormat_R8Sint,
+        texture.WGPUTextureFormat_R16Unorm,
+        texture.WGPUTextureFormat_R16Snorm,
+        texture.WGPUTextureFormat_R16Uint,
+        texture.WGPUTextureFormat_R16Sint,
+        texture.WGPUTextureFormat_R16Float,
+        texture.WGPUTextureFormat_R32Uint,
+        texture.WGPUTextureFormat_R32Sint,
+        texture.WGPUTextureFormat_R32Float,
+        => 1,
+        texture.WGPUTextureFormat_RG8Unorm,
+        texture.WGPUTextureFormat_RG8Snorm,
+        texture.WGPUTextureFormat_RG8Uint,
+        texture.WGPUTextureFormat_RG8Sint,
+        texture.WGPUTextureFormat_RG16Unorm,
+        texture.WGPUTextureFormat_RG16Snorm,
+        texture.WGPUTextureFormat_RG16Uint,
+        texture.WGPUTextureFormat_RG16Sint,
+        texture.WGPUTextureFormat_RG16Float,
+        texture.WGPUTextureFormat_RG32Uint,
+        texture.WGPUTextureFormat_RG32Sint,
+        texture.WGPUTextureFormat_RG32Float,
+        => 2,
+        texture.WGPUTextureFormat_RG11B10Ufloat => 3,
+        else => 4,
+    };
+}
+
+/// Color target formats that can blend: renderable float formats, the 32-bit
+/// float ones only with float32-blendable
+/// (https://gpuweb.github.io/gpuweb/#plain-color-formats).
+pub fn blendable(format: texture.WGPUTextureFormat, float32_blendable: bool) bool {
+    if (renderTargetCost(format) == null or inferSampleType(format) != binding.WGPUTextureSampleType_Float) return false;
+    return switch (format) {
+        texture.WGPUTextureFormat_R32Float, texture.WGPUTextureFormat_RG32Float, texture.WGPUTextureFormat_RGBA32Float => float32_blendable,
+        else => true,
+    };
+}
+
 /// Formats that can be multisampled: every depth-stencil format, and the
 /// color formats with the multisampling capability in the WebGPU format
 /// tables (https://gpuweb.github.io/gpuweb/#plain-color-formats); 32-bit
