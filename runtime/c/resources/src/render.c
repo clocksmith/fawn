@@ -9,8 +9,8 @@ static doe_resource_status record_draw(doe_resource_render_pass *pass, bool boun
 
 /* https://gpuweb.github.io/gpuweb/#abstract-opdef-validating-gpurenderpasscolorattachment:
  * a 3D view renders exactly one depth slice below its mip's depth; any other
- * view (2D here) has no depth slice. `slice` is NULL for depth/stencil and
- * resolve views, which are 2D only. */
+ * view (2D, or a single-layer 2D array) has no depth slice. `slice` is NULL
+ * for depth/stencil and resolve views, which are never 3D. */
 static doe_resource_status validate_attachment(void *device, const doe_resource_view *view,
     bool depth, const doe_resource_color_attachment *slice, uint32_t extent[2])
 {
@@ -23,7 +23,8 @@ static doe_resource_status validate_attachment(void *device, const doe_resource_
         if (!slice->has_depth_slice || slice->depth_slice >= (slices ? slices : 1)) return DOE_RESOURCE_RANGE;
     } else if (slice && slice->has_depth_slice) {
         return DOE_RESOURCE_LAYOUT;
-    } else if (view->desc.dimension != WGPUTextureViewDimension_2D) {
+    } else if (view->desc.dimension != WGPUTextureViewDimension_2D &&
+        view->desc.dimension != WGPUTextureViewDimension_2DArray) {
         return DOE_RESOURCE_UNSUPPORTED;
     }
     if (view->desc.mip_count != 1 || view->desc.layer_count != 1 ||

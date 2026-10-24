@@ -250,7 +250,10 @@ static void depth_only_draw(state *s, WGPUShaderModule module, WGPUBuffer vertic
 static void array_aspects(state *s, WGPUShaderModule module, WGPUBuffer vertices)
 {
     const WGPUTextureFormat formats[] = {WGPUTextureFormat_Depth24Plus,WGPUTextureFormat_Stencil8};
-    for (size_t i = 0; i < 2; ++i) {
+    /* A single-layer 2D array view is a renderable view like a 2D one. */
+    const WGPUTextureViewDimension dimensions[] = {WGPUTextureViewDimension_2D,WGPUTextureViewDimension_2DArray};
+    for (size_t case_index = 0; case_index < 4; ++case_index) {
+        const size_t i = case_index % 2;
         WGPUTextureDescriptor desc = WGPU_TEXTURE_DESCRIPTOR_INIT;
         desc.format = formats[i];
         desc.size = (WGPUExtent3D){4,4,3};
@@ -259,7 +262,8 @@ static void array_aspects(state *s, WGPUShaderModule module, WGPUBuffer vertices
         WGPUTexture image = wgpuDeviceCreateTexture(s->device,&desc);
         assert(image);
         WGPUTextureViewDescriptor selected = WGPU_TEXTURE_VIEW_DESCRIPTOR_INIT;
-        selected.dimension = WGPUTextureViewDimension_2D;
+        selected.dimension = dimensions[case_index / 2];
+        selected.arrayLayerCount = 1;
         selected.baseMipLevel = 1;
         selected.baseArrayLayer = 2;
         selected.aspect = i ? WGPUTextureAspect_StencilOnly : WGPUTextureAspect_DepthOnly;
@@ -525,6 +529,6 @@ int main(void)
     wgpuDeviceRelease(s.device);
     wgpuAdapterRelease(s.adapter);
     wgpuInstanceRelease(s.instance);
-    printf("PASS public depth/stencil: zero publication, genuine vertex-only depth draw, depth ordering/read-only bundles, selected array/mip aspects, dynamic stencil, culled writes, same-batch discard/reinitialize preserving the other aspect, frag_depth/sample_mask/sample_index fragment builtins, constant and clamped depth bias, early releases and admission negatives %s\n", adapter_class_scope());
+    printf("PASS public depth/stencil: zero publication, genuine vertex-only depth draw, depth ordering/read-only bundles, selected array/mip aspects through 2D and single-layer 2D array views, dynamic stencil, culled writes, same-batch discard/reinitialize preserving the other aspect, frag_depth/sample_mask/sample_index fragment builtins, constant and clamped depth bias, early releases and admission negatives %s\n", adapter_class_scope());
     return 0;
 }
