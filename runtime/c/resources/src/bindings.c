@@ -310,7 +310,7 @@ static doe_resource_status validate_binding(const doe_resource_layout *layout,
     case DOE_BIND_TEXTURE:
     case DOE_BIND_STORAGE_TEXTURE: {
         doe_resource_view *view = binding->resource.view;
-        if (!view || !resource_texture_available(view->texture)) return DOE_RESOURCE_UNAVAILABLE;
+        if (!view || !resource_texture_live(view->texture)) return DOE_RESOURCE_UNAVAILABLE;
         if (view->base.config.device.identity != device) return DOE_RESOURCE_DEVICE_MISMATCH;
         if (entry->view_dimension != view->desc.dimension) return DOE_RESOURCE_LAYOUT;
         if (entry->kind == DOE_BIND_TEXTURE) {
@@ -460,7 +460,8 @@ const doe_resource_binding *doe_resource_bind_group_bindings(const doe_resource_
     return group->bindings;
 }
 
-doe_resource_status resource_group_validate(const doe_resource_bind_group *group)
+/* Creation and setBindGroup admit a destroyed texture; `submit` rejects it. */
+doe_resource_status resource_group_validate(const doe_resource_bind_group *group, bool submit)
 {
     if (!group || !resource_alive(&group->base)) return DOE_RESOURCE_UNAVAILABLE;
     for (size_t i = 0; i < group->count; i++) {
@@ -468,6 +469,8 @@ doe_resource_status resource_group_validate(const doe_resource_bind_group *group
         doe_resource_status status = validate_binding(group->layout, &group->layout->entries[i],
             &group->bindings[i], &group->limits, &group->features, &resolved);
         if (status != DOE_RESOURCE_OK) return status;
+        if (submit && (resolved.kind == DOE_BIND_TEXTURE || resolved.kind == DOE_BIND_STORAGE_TEXTURE) &&
+            !resource_texture_available(resolved.resource.view->texture)) return DOE_RESOURCE_UNAVAILABLE;
         if (resolved.kind == DOE_BIND_BUFFER &&
             (resolved.resource.buffer.buffer->mapped || resolved.resource.buffer.buffer->map_pending))
             return DOE_RESOURCE_STATE;
@@ -502,7 +505,7 @@ doe_resource_status resource_group_check(const doe_resource_bind_group *group,
     const uint32_t *offsets, size_t offset_count)
 {
     if (!group || (offset_count && !offsets)) return DOE_RESOURCE_INVALID_ARGUMENT;
-    doe_resource_status status = resource_group_validate(group);
+    doe_resource_status status = resource_group_validate(group, false);
     if (status != DOE_RESOURCE_OK) return status;
     if (offset_count != group->layout->dynamic_count) return DOE_RESOURCE_LAYOUT;
     size_t next = 0;

@@ -1157,13 +1157,17 @@ function createFullSurfaceClasses({
         return;
       }
       const invalid = buffers.find(isInvalidResource);
-      if (invalid !== undefined) {
+      // A command buffer that names a destroyed texture fails here (WebGPU
+      // validates destroyed resources at submit).
+      const destroyedUse = buffers.find((buffer) => buffer?._submitError != null);
+      if (invalid !== undefined || destroyedUse !== undefined) {
         // A failed submit still consumes every command buffer it names.
         for (const buffer of buffers) {
           buffer.destroy?.();
           buffer._submitted = true;
         }
-        reportInvalidUse(this._device, 'GPUQueue.submit', invalid);
+        if (invalid !== undefined) reportInvalidUse(this._device, 'GPUQueue.submit', invalid);
+        else reportValidationError(this._device, `GPUQueue.submit: ${destroyedUse._submitError}`);
         return;
       }
       return backend.queueSubmit(this, native, buffers);
@@ -1201,6 +1205,10 @@ function createFullSurfaceClasses({
       const view = validateWriteBufferInput(data, 0, undefined, 'GPUQueue.writeTexture');
       if (isInvalidResource(destinationObject.texture)) {
         reportInvalidUse(this._device, 'GPUQueue.writeTexture', destinationObject.texture);
+        return;
+      }
+      if (destinationObject.texture?._resourceLabel === 'GPUTexture' && destinationObject.texture._destroyed) {
+        reportValidationError(this._device, 'GPUQueue.writeTexture: destination.texture was destroyed');
         return;
       }
       return backend.queueWriteTexture(
@@ -1356,7 +1364,10 @@ function createFullSurfaceClasses({
     }
 
     _createViewOrNull(descriptor) {
-      const texture = assertLiveResource(this, 'GPUTexture.createView', 'GPUTexture');
+      // A destroyed texture still makes views (WebGPU): it has no native
+      // handle, so the view has none either and any submission using it fails.
+      const destroyed = this._destroyed && !this._invalid;
+      const texture = destroyed ? null : assertLiveResource(this, 'GPUTexture.createView', 'GPUTexture');
       const features = this._resourceOwner?.features ?? this._features ?? null;
       const viewDescriptor = descriptor == null ? {} : assertObject(descriptor, 'GPUTexture.createView', 'descriptor');
       const baseMipLevel = assertIntegerInRange(viewDescriptor.baseMipLevel ?? 0, 'GPUTexture.createView', 'descriptor.baseMipLevel', { min: 0, max: UINT32_MAX });
@@ -1395,11 +1406,12 @@ function createFullSurfaceClasses({
         aspect,
         usage: viewDescriptor.usage ?? this.usage,
       }, this, features, 'GPUTexture.createView');
-      const view = backend.textureCreateView(this, texture, normalizedDescriptor);
-      if (view === null) {
+      const view = destroyed ? null : backend.textureCreateView(this, texture, normalizedDescriptor);
+      if (view === null && !destroyed) {
         return null;
       }
       const tv = new DoeGPUTextureView(view, this);
+      if (destroyed) tv._textureDestroyed = true;
       if (!this._childViews) {
         this._childViews = new Set();
       }

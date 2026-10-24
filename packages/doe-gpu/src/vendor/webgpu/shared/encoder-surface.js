@@ -159,8 +159,23 @@ function encoderEnded(device, message) {
   return true;
 }
 
+// A texture destroyed before this command, or a view created after its
+// texture was destroyed, has no native handle. WebGPU still encodes the
+// command and rejects the submission, so the encoder records nothing for it
+// and its command buffer fails at submit (queue.submit reports the error).
+function destroyedTextureUse(encoder, path, resources) {
+  const destroyed = resources.find((resource) => resource != null && (resource._textureDestroyed === true
+    || (resource._resourceLabel === 'GPUTexture' && resource._destroyed && !resource._invalid)));
+  if (destroyed === undefined) {
+    return false;
+  }
+  encoder._submitError ??= `${path}: ${describeResourceLabel(destroyed)} names a destroyed texture`;
+  return true;
+}
+
 // True when a command that names `first`/`second` must record nothing: the
-// device is lost (every command is inert), or an object is invalid.
+// device is lost (every command is inert), an object is invalid, or a texture
+// is destroyed.
 function encoderSkipsUse(encoder, path, first = null, second = null) {
   if (isDeviceLost(encoder._device)) {
     return true;
@@ -170,7 +185,7 @@ function encoderSkipsUse(encoder, path, first = null, second = null) {
     invalidateEncoder(encoder, message);
     return true;
   }
-  return false;
+  return destroyedTextureUse(encoder, path, [first, second]);
 }
 
 // True when a binding, draw or dispatch command must record nothing: its pass
@@ -850,6 +865,7 @@ function createEncoderClasses(backend) {
       // must not reach createView, which would report a second error.
       if (this._assertOpen('GPUCommandEncoder.beginRenderPass')
         || encoderSkipsUse(this, 'GPUCommandEncoder.beginRenderPass', named.find(isInvalidResource))
+        || destroyedTextureUse(this, 'GPUCommandEncoder.beginRenderPass', named)
         || renderPassLacksAttachments(this, passDescriptor)) {
         const invalidPass = new DoeGPURenderPassEncoder(null, this);
         invalidPass._invalid = true;
@@ -1068,6 +1084,7 @@ function createEncoderClasses(backend) {
       if (this._invalidMessage == null && errors.length === 0) {
         const cmdBuf = new classes.DoeGPUCommandBuffer(state, device);
         cmdBuf.label = descriptor?.label ?? '';
+        if (this._submitError != null) cmdBuf._submitError = this._submitError;
         return cmdBuf;
       }
       // An encoder that finished with an error, or was invalidated by an

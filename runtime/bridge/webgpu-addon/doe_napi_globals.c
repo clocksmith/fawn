@@ -95,6 +95,7 @@ PFN_wgpuCommandBufferRelease pfn_wgpuCommandBufferRelease = NULL;
 PFN_wgpuDeviceCreateTexture pfn_wgpuDeviceCreateTexture = NULL;
 PFN_wgpuTextureCreateView pfn_wgpuTextureCreateView = NULL;
 PFN_wgpuTextureRelease pfn_wgpuTextureRelease = NULL;
+PFN_wgpuTextureDestroy pfn_wgpuTextureDestroy = NULL;
 PFN_wgpuTextureViewRelease pfn_wgpuTextureViewRelease = NULL;
 PFN_wgpuDeviceCreateSampler pfn_wgpuDeviceCreateSampler = NULL;
 PFN_wgpuSamplerRelease pfn_wgpuSamplerRelease = NULL;
@@ -361,6 +362,7 @@ napi_value doe_load_library(napi_env env, napi_callback_info info) {
     LOAD_SYM(wgpuDeviceCreateTexture);
     LOAD_SYM(wgpuTextureCreateView);
     LOAD_SYM(wgpuTextureRelease);
+    LOAD_SYM(wgpuTextureDestroy);
     LOAD_SYM(wgpuTextureViewRelease);
     LOAD_SYM(wgpuDeviceCreateSampler);
     LOAD_SYM(wgpuSamplerRelease);

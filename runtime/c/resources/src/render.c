@@ -12,9 +12,11 @@ static doe_resource_status record_draw(doe_resource_render_pass *pass, bool boun
  * view (2D, or a single-layer 2D array) has no depth slice. `slice` is NULL
  * for depth/stencil and resolve views, which are never 3D. */
 static doe_resource_status validate_attachment(void *device, const doe_resource_view *view,
-    bool depth, const doe_resource_color_attachment *slice, uint32_t extent[2])
+    bool depth, const doe_resource_color_attachment *slice, uint32_t extent[2], bool submit)
 {
-    if (!view || !resource_texture_available(view->texture)) return DOE_RESOURCE_UNAVAILABLE;
+    /* A destroyed texture encodes; submission rejects it. */
+    if (!view || !(submit ? resource_texture_available(view->texture) : resource_texture_live(view->texture)))
+        return DOE_RESOURCE_UNAVAILABLE;
     if (view->base.config.device.identity != device) return DOE_RESOURCE_DEVICE_MISMATCH;
     if (!(view->desc.usage & WGPUTextureUsage_RenderAttachment)) return DOE_RESOURCE_USAGE;
     if (slice && view->desc.dimension == WGPUTextureViewDimension_3D) {
@@ -52,7 +54,7 @@ static bool valid_operations(bool present, bool read_only, bool transient,
 
 /* Targets are already normalized: legacy slot-0 fields are empty. */
 static doe_resource_status validate_targets(const doe_resource_config *config,
-    const doe_resource_render_targets *targets, uint32_t extent[2])
+    const doe_resource_render_targets *targets, uint32_t extent[2], bool submit)
 {
     void *device = config->device.identity;
     if (targets->color || targets->resolve_target) return DOE_RESOURCE_LAYOUT;
@@ -68,7 +70,7 @@ static doe_resource_status validate_targets(const doe_resource_config *config,
             continue;
         }
         uint32_t color_extent[2];
-        status = validate_attachment(device, color->view, false, color, color_extent);
+        status = validate_attachment(device, color->view, false, color, color_extent, submit);
         if (status != DOE_RESOURCE_OK) return status;
         if (sized && (extent[0] != color_extent[0] || extent[1] != color_extent[1] ||
             samples != color->view->texture->desc.samples)) return DOE_RESOURCE_LAYOUT;
@@ -92,7 +94,7 @@ static doe_resource_status validate_targets(const doe_resource_config *config,
             for (size_t c = 0; c < 4; c++) if (!isfinite(color->clear[c])) return DOE_RESOURCE_RANGE;
         if (color->resolve_target) {
             uint32_t resolve_extent[2];
-            status = validate_attachment(device, color->resolve_target, false, NULL, resolve_extent);
+            status = validate_attachment(device, color->resolve_target, false, NULL, resolve_extent, submit);
             if (status != DOE_RESOURCE_OK) return status;
             const doe_resource_view *resolve = color->resolve_target;
             if (color->view->texture->desc.samples <= 1 || resolve->texture->desc.samples != 1 ||
@@ -110,7 +112,7 @@ static doe_resource_status validate_targets(const doe_resource_config *config,
     if (status != DOE_RESOURCE_OK) return status;
     if (targets->depth_stencil) {
         uint32_t depth_extent[2];
-        status = validate_attachment(device, targets->depth_stencil, true, NULL, depth_extent);
+        status = validate_attachment(device, targets->depth_stencil, true, NULL, depth_extent, submit);
         if (status != DOE_RESOURCE_OK) return status;
         if (sized && (extent[0] != depth_extent[0] || extent[1] != depth_extent[1] ||
             samples != targets->depth_stencil->texture->desc.samples))
@@ -256,7 +258,7 @@ doe_resource_status doe_resource_encoder_begin_render_with_timestamps(doe_resour
     if (status != DOE_RESOURCE_OK) return resource_encoder_fail(encoder, status);
     targets = &normalized;
     uint32_t extent[2];
-    status = validate_targets(&encoder->base.config, targets, extent);
+    status = validate_targets(&encoder->base.config, targets, extent, false);
     if (status != DOE_RESOURCE_OK) return resource_encoder_fail(encoder, status);
     doe_resource_render_pass *pass = resource_allocate(&encoder->base.config,
         sizeof(*pass), _Alignof(doe_resource_render_pass));
@@ -419,7 +421,7 @@ doe_resource_status doe_resource_render_pass_set_state(doe_resource_render_pass 
     if (state->viewport[4] < 0 || state->viewport[5] > 1 || state->viewport[4] > state->viewport[5])
         return resource_encoder_fail(pass->encoder, DOE_RESOURCE_RANGE);
     uint32_t extent[2];
-    status = validate_targets(&pass->base.config, &pass->state.targets, extent);
+    status = validate_targets(&pass->base.config, &pass->state.targets, extent, false);
     if (status != DOE_RESOURCE_OK) return resource_encoder_fail(pass->encoder, status);
     if (state->scissor[0] > extent[0] || state->scissor[2] > extent[0] - state->scissor[0] ||
         state->scissor[1] > extent[1] || state->scissor[3] > extent[1] - state->scissor[1])
@@ -429,11 +431,11 @@ doe_resource_status doe_resource_render_pass_set_state(doe_resource_render_pass 
 }
 
 static doe_resource_status validate_packet(const doe_resource_render_packet *packet,
-    const doe_resource_config *config)
+    const doe_resource_config *config, bool submit)
 {
     void *device = config->device.identity;
     uint32_t extent[2];
-    doe_resource_status status = validate_targets(config, &packet->targets, extent);
+    doe_resource_status status = validate_targets(config, &packet->targets, extent, submit);
     if (status != DOE_RESOURCE_OK || packet->boundary_only) return status;
     doe_resource_render_bundle_desc signature = resource_render_targets_layout(&packet->targets);
     return resource_render_draw_validate(packet, device, &signature);
@@ -442,7 +444,7 @@ static doe_resource_status validate_packet(const doe_resource_render_packet *pac
 static doe_resource_status append_packet(doe_resource_render_pass *pass,
     doe_resource_render_packet packet)
 {
-    doe_resource_status status = validate_packet(&packet, &pass->base.config);
+    doe_resource_status status = validate_packet(&packet, &pass->base.config, false);
     if (status != DOE_RESOURCE_OK) return resource_encoder_fail(pass->encoder, status);
     if (packet.indirect) {
         status = resource_scope_input(&pass->base.config, &pass->scope, packet.indirect);
@@ -630,7 +632,7 @@ doe_resource_status resource_render_record_validate(const doe_resource_render_re
 {
     if (!record) return DOE_RESOURCE_INVALID_ARGUMENT;
     doe_resource_status status = resource_scope_validate(&record->scope);
-    return status == DOE_RESOURCE_OK ? validate_packet(&record->packet, &record->base.config) : status;
+    return status == DOE_RESOURCE_OK ? validate_packet(&record->packet, &record->base.config, true) : status;
 }
 
 const doe_resource_render_packet *doe_resource_render_record_borrow(const doe_resource_render_record *record)

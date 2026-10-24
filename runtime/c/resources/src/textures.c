@@ -122,6 +122,11 @@ void doe_resource_texture_destroy(doe_resource_texture *texture)
     if (texture) texture->destroyed = true;
 }
 
+bool doe_resource_texture_available(const doe_resource_texture *texture)
+{
+    return resource_texture_available(texture);
+}
+
 const doe_resource_texture_desc *doe_resource_texture_description(const doe_resource_texture *texture)
 {
     return texture ? &texture->desc : NULL;
@@ -146,7 +151,7 @@ doe_resource_status doe_resource_view_validate(const doe_resource_texture *textu
     const doe_resource_view_desc *input, doe_resource_view_desc *out)
 {
     if (!texture || !input || !out) return DOE_RESOURCE_INVALID_ARGUMENT;
-    if (!resource_texture_available(texture)) return DOE_RESOURCE_UNAVAILABLE;
+    if (!resource_texture_live(texture)) return DOE_RESOURCE_UNAVAILABLE;
     const doe_resource_texture_desc *tex = &texture->desc;
     doe_resource_view_desc view = *input;
     if (!view.aspect) view.aspect = WGPUTextureAspect_All;

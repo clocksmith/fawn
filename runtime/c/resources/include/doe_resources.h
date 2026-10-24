@@ -187,6 +187,8 @@ doe_resource_status doe_resource_texture_create(const doe_resource_config *confi
 void doe_resource_texture_retain(doe_resource_texture *texture);
 void doe_resource_texture_release(doe_resource_texture *texture);
 void doe_resource_texture_destroy(doe_resource_texture *texture);
+/* False once destroyed: encoding still admits the texture, submission and queue writes do not. */
+bool doe_resource_texture_available(const doe_resource_texture *texture);
 const doe_resource_texture_desc *doe_resource_texture_description(const doe_resource_texture *texture);
 void *doe_resource_texture_native(const doe_resource_texture *texture);
 

@@ -135,6 +135,7 @@ napi_value doe_queue_release(napi_env env, napi_callback_info info);
 /* Texture / sampler */
 napi_value doe_create_texture(napi_env env, napi_callback_info info);
 napi_value doe_texture_release(napi_env env, napi_callback_info info);
+napi_value doe_texture_destroy(napi_env env, napi_callback_info info);
 napi_value doe_texture_create_view(napi_env env, napi_callback_info info);
 napi_value doe_texture_view_release(napi_env env, napi_callback_info info);
 napi_value doe_create_sampler(napi_env env, napi_callback_info info);
@@ -312,6 +313,7 @@ napi_value doe_module_init(napi_env env, napi_value exports) {
         EXPORT_FN("queueRelease",                             doe_queue_release),
         EXPORT_FN("createTexture",                            doe_create_texture),
         EXPORT_FN("textureRelease",                           doe_texture_release),
+        EXPORT_FN("textureDestroy",                           doe_texture_destroy),
         EXPORT_FN("textureCreateView",                        doe_texture_create_view),
         EXPORT_FN("textureViewRelease",                       doe_texture_view_release),
         EXPORT_FN("createSampler",                            doe_create_sampler),

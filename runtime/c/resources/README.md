@@ -162,6 +162,9 @@ within one draw are not. Successful setters retain exact resource identities;
 unbind and bundle state reset cannot remove historical uses. The finished scope
 moves to the final pass record and remains alive through pending submission.
 Destroyed, mapped and expired unused resources are checked before native submit.
+A destroyed texture that is still referenced is admitted by view creation, bind
+group creation, setBindGroup, copies and render attachments; submission rejects it
+(WebGPU validates destroyed textures at submit) and queue writes reject it at once.
 No second native recorder, resource registry or completion engine is introduced.
 Nullable vertex bindings clear only logical state after offset/size validation
 against a zero-sized buffer; historical uses remain. Render/pipeline/bundle device,
