@@ -226,9 +226,10 @@ int main(void)
     wgpuPipelineLayoutRelease(pipeline_layout);
     wgpuBindGroupLayoutRelease(layout);
     wgpuTextureDestroy(image);
-    wgpuDevicePushErrorScope(s.device,WGPUErrorFilter_Validation);
-    assert(!wgpuTextureCreateView(image,NULL));
-    expect_validation(&s);
+    /* WebGPU: a view of a destroyed texture is still created; using it fails at submit. */
+    WGPUTextureView destroyed_view = wgpuTextureCreateView(image,NULL);
+    assert(destroyed_view);
+    wgpuTextureViewRelease(destroyed_view);
     wgpuTextureViewRelease(view);
     wgpuTextureRelease(image);
 
@@ -245,11 +246,11 @@ int main(void)
     wgpuCommandEncoderRelease(encoder);
     wgpuTextureRelease(image);
     wgpuBufferRelease(readback);
-    assert(!s.errors && s.validation_errors == 4);
+    assert(!s.errors && s.validation_errors == 3);
     view_defaults(&s);
-    assert(!s.errors && s.validation_errors == 6);
+    assert(!s.errors && s.validation_errors == 5);
     unviewable_and_transient(&s);
-    assert(!s.errors && s.validation_errors == 9);
+    assert(!s.errors && s.validation_errors == 8);
     wgpuQueueRelease(s.queue);
     wgpuDeviceRelease(s.device);
     wgpuAdapterRelease(s.adapter);
