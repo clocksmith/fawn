@@ -55,4 +55,17 @@ for (let layer = 0; layer < 2; layer++) {
 readback.unmap();
 console.log('ok: writeTexture with unaligned offset and bytesPerRow lands every row');
 console.log('ok: zero-extent buffer/texture copies are accepted no-ops');
+
+{
+  // dataLayout.offset past the data is a validation error even for an empty
+  // copy; an offset at the end of the data with an empty copy is valid.
+  const small = device.createTexture({ size: [3, 4], format: 'r8unorm', usage: GPUTextureUsage.COPY_DST });
+  for (const [offset, depth, invalid] of [[13, 0, true], [12, 0, false], [13, 1, true]]) {
+    device.pushErrorScope('validation');
+    device.queue.writeTexture({ texture: small }, new Uint8Array(12), { offset, bytesPerRow: 3, rowsPerImage: 4 }, [3, 4, depth]);
+    const error = await device.popErrorScope();
+    assert.equal(error !== null, invalid, `offset ${offset} depth ${depth}`);
+  }
+  console.log('ok: writeTexture validates dataLayout.offset against the data');
+}
 device.destroy();

@@ -657,10 +657,10 @@ extern FnCommandEncoderClearBuffer pfn_doeNativeCommandEncoderClearBuffer;
 extern FnCommandEncoderCopyTextureToTexture pfn_doeNativeCommandEncoderCopyTextureToTexture;
 extern FnWgpuCommandEncoderCopyTextureToTexture pfn_wgpuCommandEncoderCopyTextureToTexture;
 extern FnQueueWriteTexture pfn_doeNativeQueueWriteTexture;
-/* Doe fast path when present, otherwise standard wgpuQueueWriteTexture.
- * Returns false only when the provider has neither; never a silent no-op. */
+/* Doe fast path or standard wgpuQueueWriteTexture; the provider validates `offset`
+ * (dataLayout.offset). False only when the provider has neither; never a no-op. */
 bool doe_queue_write_texture_native(void* queue, void* texture, const void* data, size_t data_len,
-    uint32_t bytes_per_row, uint32_t rows_per_image, uint32_t x, uint32_t y, uint32_t z,
+    uint64_t offset, uint32_t bytes_per_row, uint32_t rows_per_image, uint32_t x, uint32_t y, uint32_t z,
     uint32_t mip, uint32_t width, uint32_t height, uint32_t depth_or_layers, uint32_t aspect);
 extern FnDeviceCreateRenderBundleEncoder pfn_doeNativeDeviceCreateRenderBundleEncoder;
 extern FnRenderBundleEncoderRelease pfn_doeNativeRenderBundleEncoderRelease;
