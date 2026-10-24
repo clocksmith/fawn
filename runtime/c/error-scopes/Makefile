@@ -9,7 +9,7 @@ CXXFLAGS ?= -O2 -g
 CXXFLAGS += -std=c++17 -fno-exceptions -fno-rtti -Wall -Wextra -Wpedantic -Werror -pthread
 LDLIBS += -pthread
 OBJECTS = $(BUILD)/error_scopes.o $(BUILD)/doe_error_scopes_zig_bridge.o
-HEADERS = include/doe_error_scopes.h src/internal.h integration/doe_error_scopes_zig_bridge.h \
+HEADERS = $(wildcard ../platform/include/*.h) include/doe_error_scopes.h src/internal.h integration/doe_error_scopes_zig_bridge.h \
           ../../zig/vendor/webgpu-headers/webgpu.h
 
 .PHONY: all check check-api check-faults check-concurrency check-layout native-archive

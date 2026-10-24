@@ -8,7 +8,7 @@ COMPILER_LIBRARY ?= $(BUILD)/libdoe_compiler.$(SHARED_SUFFIX)
 SANITIZE ?=
 # One owner list drives source, public include and private header dependencies.
 OWNER_DIRS = ../instance ../futures ../callbacks ../resources ../labels \
- ../error-scopes ../shader ../backends/vulkan ../backends/metal
+ ../error-scopes ../shader ../backends/vulkan ../backends/metal ../platform
 # The compute-program contract is the package schema's value, never a copied number.
 PROGRAM_SCHEMA ?= ../../../config/compute-program.schema.json
 PROGRAM_CONTRACT := $(shell python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["$$defs"]["nativeContractVersion"]["const"])' $(PROGRAM_SCHEMA) 2>/dev/null)

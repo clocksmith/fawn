@@ -4,7 +4,7 @@ Parent: [Experimental C migration](../CATSCAN.md)
 
 ## Target
 
-Provide an independently consumable C owner for instance future identities and CPU callback completion queues.
+Provide independent C instance future identities and completion queues.
 
 ## Authority
 
@@ -13,8 +13,11 @@ Provide an independently consumable C owner for instance future identities and C
 
 ## Scope
 
-- Includes the C futures implementation, public header, default-off private native
-  bridge and focused CPU owner/retained-consumer checks.
+- Includes the implementation, public header, default-off native bridge and CPU
+  consumer checks.
+
+Private [host primitives](../platform/CATSCAN.md) supply OS operations only.
+Semantic and lifetime authority stays here; Win32 source does not extend acceptance.
 
 ## Contracts
 
@@ -27,7 +30,7 @@ Provide an independently consumable C owner for instance future identities and C
 - Timeout is not retirement; unknown completion cannot justify freeing live state.
 - Borrowed payload/node/owner lifetimes remain explicit through callback return and outer call completion.
 - No library allocation, hidden Zig dependency or inherited GPU qualification.
-- The selected bridge adapts real retained consumers; payload allocation and
+- Selected bridge adapts real retained consumers; payload allocation and
   instance/device lease policy remain with their native owners. Mixed-language
   consumer evidence is not a Zig-free runtime claim.
 
@@ -44,4 +47,4 @@ Provide an independently consumable C owner for instance future identities and C
 
 ## Freedom
 
-Any implementation is permitted if it preserves these boundaries and passes the acceptance evidence.
+Implementation freedom requires these boundaries and acceptance evidence.

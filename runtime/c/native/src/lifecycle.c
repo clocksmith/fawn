@@ -38,7 +38,7 @@ void wgpuAdapterRelease(WGPUAdapter handle)
     if (!adapter || !native_release_count(&adapter->references)) return;
     doe_instance *instance = adapter->instance;
     native_backend_close(&adapter->backend);
-    if (pthread_mutex_destroy(&adapter->mutex)) abort();
+    if (doe_mutex_destroy(&adapter->mutex).status != DOE_HOST_OK) abort();
     free(adapter);
     doe_instance_release(instance);
 }
@@ -96,7 +96,8 @@ WGPUFuture wgpuInstanceRequestAdapter(WGPUInstance handle,
         }
         if (status == NATIVE_OK) {
             native_adapter *adapter = calloc(1, sizeof(*adapter));
-            if (adapter && pthread_mutex_init(&adapter->mutex, NULL)) {
+            if (adapter && doe_mutex_init(&adapter->mutex, false).status != DOE_HOST_OK) {
+                if (doe_mutex_destroy(&adapter->mutex).status != DOE_HOST_OK) abort();
                 free(adapter);
                 adapter = NULL;
             }
@@ -169,14 +170,15 @@ void native_device_release(void *identity)
     native_lock(device);
     if (device->pending_progress_ready && !device->pending &&
             atomic_load_explicit(&device->references, memory_order_acquire) == 2 &&
-            !pthread_equal(pthread_self(), device->pending_thread)) {
+            !doe_thread_equal(doe_thread_current(), doe_thread_identity(&device->pending_thread))) {
         /* No pending native use remains. Keep this caller's lease while joining
          * so ordinary final release completes before a loader may unload us. */
         device->pending_progress_join = true;
-        pthread_t thread = device->pending_thread;
         native_pending_progress_wake(device);
         native_unlock(device);
-        if (pthread_join(thread, NULL)) abort();
+        /* This caller's ordinary lease keeps the stored handle alive while the
+         * worker drops its lease; join consumes the one real host handle. */
+        if (doe_thread_join(&device->pending_thread).status != DOE_HOST_OK) abort();
         native_device_release(device);
         return;
     }
@@ -197,7 +199,7 @@ void native_device_release(void *identity)
     native_indirect_guards_release(device);
     native_backend_close(&device->backend);
     doe_instance *instance = device->instance;
-    if (pthread_mutex_destroy(&device->mutex)) abort();
+    if (doe_mutex_destroy(&device->mutex).status != DOE_HOST_OK) abort();
     free(device);
     doe_instance_release(instance);
 }
@@ -214,12 +216,11 @@ static native_device *create_device(native_adapter *adapter, const WGPUDeviceDes
         return NULL;
     native_device *device = calloc(1, sizeof(*device));
     if (!device) return NULL;
-    pthread_mutexattr_t attributes;
-    if (pthread_mutexattr_init(&attributes)) { free(device); return NULL; }
-    int mutex_status = pthread_mutexattr_settype(&attributes, PTHREAD_MUTEX_RECURSIVE);
-    if (!mutex_status) mutex_status = pthread_mutex_init(&device->mutex, &attributes);
-    if (pthread_mutexattr_destroy(&attributes)) abort();
-    if (mutex_status) { free(device); return NULL; }
+    if (doe_mutex_init(&device->mutex, true).status != DOE_HOST_OK) {
+        if (doe_mutex_destroy(&device->mutex).status != DOE_HOST_OK) abort();
+        free(device);
+        return NULL;
+    }
     doe_error_scope_requirements requirements;
     doe_error_scope_result result = doe_error_scope_storage_requirements(DOE_ERROR_SCOPES_ABI_VERSION,
         &requirements);
@@ -294,7 +295,7 @@ failed_errors:
 failed_storage:
     free(device->error_storage);
 failed_mutex:
-    if (pthread_mutex_destroy(&device->mutex)) abort();
+    if (doe_mutex_destroy(&device->mutex).status != DOE_HOST_OK) abort();
     free(device);
     return NULL;
 }

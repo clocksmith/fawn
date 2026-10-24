@@ -1,29 +1,29 @@
 /* SPDX-License-Identifier: MIT */
 #include "surface.h"
 #include "provider_pin.h"
-#include <errno.h>
 #include <stdlib.h>
-#include <time.h>
 
 /* The device mutex owns the pending list. This thread neither copies that list
  * nor creates resource references: it owns one existing device lease, allowing
  * the recorded submissions to retire even after every public handle is gone. */
-static void *pending_progress(void *identity)
+static void pending_progress(void *identity)
 {
     native_device *device = identity;
     native_lock(device);
     for (;;) {
         while (!device->pending && !device->pending_progress_join &&
                 atomic_load_explicit(&device->references, memory_order_acquire) > 1) {
-            if (pthread_cond_wait(&device->pending_changed, &device->mutex)) abort();
+            if (doe_condition_wait(&device->pending_changed, &device->mutex).status != DOE_HOST_OK) abort();
         }
         if (!device->pending) {
             device->pending_progress_ready = false;
             bool join = device->pending_progress_join;
             native_unlock(device);
-            if (!join && pthread_detach(pthread_self())) abort();
+            /* The worker's ordinary lease protects the actual stored host
+             * handle through self-detach; no pseudo-handle is substituted. */
+            if (!join && doe_thread_detach(&device->pending_thread).status != DOE_HOST_OK) abort();
             native_device_release(device);
-            return NULL;
+            return;
         }
         native_progress_pending(device);
         native_surface *surface = native_surface_retirement_peek(device);
@@ -33,37 +33,35 @@ static void *pending_progress(void *identity)
              * reconfigure can complete it synchronously instead of racing an
              * already-transferred cleanup. Neither path owns a copied record. */
             native_unlock(device);
-            if (pthread_mutex_lock(&surface->mutex)) abort();
+            if (doe_mutex_lock(&surface->mutex).status != DOE_HOST_OK) abort();
             native_lock(device);
             native_pending *retired = surface->retirement ?
                 native_surface_retirement_take(device, surface->retirement) : NULL;
             if (retired) native_surface_retirement_finish_locked(retired);
             native_unlock(device);
-            if (pthread_mutex_unlock(&surface->mutex)) abort();
+            if (doe_mutex_unlock(&surface->mutex).status != DOE_HOST_OK) abort();
             native_surface_retirement_release(retired);
             native_surface_release_lease(surface);
             native_lock(device);
             continue;
         }
         if (device->pending) {
-            struct timespec deadline;
-            if (timespec_get(&deadline, TIME_UTC) != TIME_UTC) {
-                /* A host-clock failure cannot discard live work. Retry without
-                 * holding the device mutex or spinning on the failed clock. */
+            struct timespec now, deadline;
+            doe_host_result clock = doe_monotonic_now(&now);
+            if (clock.status == DOE_HOST_OK) clock = doe_time_add(&now, UINT64_C(10000000), &deadline);
+            if (clock.status != DOE_HOST_OK) {
+                /* Clock failure cannot discard live work or spin with its
+                 * mutex held. Poll again after a real bounded host sleep. */
                 native_unlock(device);
-                struct timespec delay = {.tv_sec = 0, .tv_nsec = 10000000};
-                while (nanosleep(&delay, &delay) && errno == EINTR) {}
+                if (doe_sleep_for(UINT64_C(10000000)).status != DOE_HOST_OK) abort();
                 native_lock(device);
                 continue;
             }
-            deadline.tv_nsec += 10000000;
-            if (deadline.tv_nsec >= 1000000000) {
-                deadline.tv_nsec -= 1000000000;
-                ++deadline.tv_sec;
-            }
-            int status = pthread_cond_timedwait(&device->pending_changed,
-                &device->mutex, &deadline);
-            if (status && status != ETIMEDOUT) abort();
+            /* Only this worker waits: its recursive device mutex is held at
+             * depth1 here; all recursive helpers above returned balanced. */
+            doe_host_result waited = doe_condition_wait_until_at(&device->pending_changed,
+                &device->mutex, &deadline, &now);
+            if (waited.status != DOE_HOST_OK && waited.status != DOE_HOST_TIMED_OUT) abort();
         }
     }
 }
@@ -71,34 +69,34 @@ static void *pending_progress(void *identity)
 bool native_pending_progress_start(native_device *device)
 {
     if (!native_provider_pin()) return false;
-    if (pthread_cond_init(&device->pending_changed, NULL)) return false;
-    pthread_attr_t attributes;
-    int status = pthread_attr_init(&attributes);
-    if (status) {
-        if (pthread_cond_destroy(&device->pending_changed)) abort();
+    if (doe_condition_init(&device->pending_changed).status != DOE_HOST_OK) {
+        if (doe_condition_destroy(&device->pending_changed).status != DOE_HOST_OK) abort();
         return false;
     }
     native_device_retain(device);
+    /* The worker begins by taking this mutex. Exclude execution until the host
+     * thread control and its real handle have been completely published. */
+    native_lock(device);
     device->pending_progress_ready = true;
-    status = pthread_create(&device->pending_thread, &attributes, pending_progress, device);
-    if (status) {
+    doe_host_result created = doe_thread_create(&device->pending_thread, pending_progress, device);
+    if (created.status != DOE_HOST_OK) {
         device->pending_progress_ready = false;
         if (native_release_count(&device->references)) abort();
     }
-    if (pthread_attr_destroy(&attributes)) abort();
-    if (status && pthread_cond_destroy(&device->pending_changed)) abort();
-    return status == 0;
+    native_unlock(device);
+    if (created.status != DOE_HOST_OK && doe_condition_destroy(&device->pending_changed).status != DOE_HOST_OK) abort();
+    return created.status == DOE_HOST_OK;
 }
 
 void native_pending_progress_wake(native_device *device)
 {
     /* Caller holds device mutex and a live lease. A worker-less device is never
      * published, so no native submission can create an unserviceable obligation. */
-    if (device->pending_progress_ready && pthread_cond_signal(&device->pending_changed)) abort();
+    if (device->pending_progress_ready && doe_condition_signal(&device->pending_changed).status != DOE_HOST_OK) abort();
 }
 
 void native_pending_progress_destroy(native_device *device)
 {
     if (device->pending_progress_ready) abort();
-    if (pthread_cond_destroy(&device->pending_changed)) abort();
+    if (doe_condition_destroy(&device->pending_changed).status != DOE_HOST_OK) abort();
 }

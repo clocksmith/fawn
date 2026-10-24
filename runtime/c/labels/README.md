@@ -34,3 +34,18 @@ Follow [common C style](../STYLE.md), [owner style](STYLE.md) and the
 [author evaluation requirements](EVALUATION.md). The independent evaluator owns
 its own cases and verdict. No production-default, package/browser, complete
 migration, performance, size-reduction or GPU qualification is claimed.
+
+## Current host primitive source extension
+
+The C implementation now uses the private [host primitive owner](../platform/README.md)
+for its sole mutex. Allocation, map state, borrowed views, terminal lock errors and
+retryable closing-state cleanup remain here. The Linux static native bridge uses
+the primitive's genuine static POSIX initializer; its ELF destructor and historical
+GCC x86_64-linux-gnu archive contract are unchanged. The standalone store admits
+the Win32 primitive in source without adding a registry or lazy initializer.
+
+`make check` retains actual GNU fault boundaries and source-bound archive checks.
+The archive input closure includes all shared primitive headers, so a changed leaf
+invalidates an old archive's source binding. Darwin raw-source API checks and actual
+Windows SDK controls are separate from the historical acceptance record; no old
+seal or receipt is rewritten and no broader qualification follows from this port.

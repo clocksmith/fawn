@@ -215,14 +215,25 @@ and exact exports; absent platform loaders remain explicitly unavailable.
   handles disappear; terminal success or failure retires them. The first retired
   failure remains observable by a later public operation. An idle last release
   joins the worker before returning. Startup failure publishes no device.
-- Background execution pins one provider loader reference until process exit.
-  This keeps provider and dependency code valid after a caller's `dlclose`; it
-  retains no GPU/device resource after terminal retirement. A statically linked
-  main executable already has this code lifetime. Acquire the loader reference
-  outside device/resource locks, before starting a worker. Repeatedly loading
-  distinct provider images therefore retains each image's code until exit.
+- Background execution retains provider code until process exit, independently of
+  GPU/device resources. POSIX keeps one loader reference per non-main image;
+  Win32 uses `InitOnce` and `GetModuleHandleEx(FROM_ADDRESS|PIN)` with no ordinary
+  `LoadLibrary` fallback. Both admit the worker before publication, outside
+  device/resource locks; caller `errno` and Win32 `GetLastError` are preserved.
+  Distinct pinned images retain their code until exit, including after the caller
+  closes its loader handle. A statically linked main image already has this lifetime.
+- Private host primitives supply recursive device locks, ordinary surface/loss
+  locks, monotonic conditions and real thread handles. Condition waits hold the
+  device mutex at depth one. Thread creation publishes its control under the mutex
+  taken by worker entry. Idle release joins outside that lock; worker self-detach
+  consumes its real stored handle before releasing its existing device lease.
 - `make check-provider-pin` exercises real unload versus retained worker code on
-  Linux/macOS without a GPU. Linux `pending-progress` uses actual CPU Vulkan work
+  Linux/macOS without a GPU. The Windows host recipe builds the same real DLL
+  unload/pinned-worker control and a PIN-rejection control. Windows execution of
+  these native controls remains pending. Host primitives and loader residency are
+  prerequisites; they do not complete the public Windows provider, default backend
+  selection or D3D12 composition. Standalone compiler DLL evidence is separate.
+  Linux `pending-progress` uses actual CPU Vulkan work
   with completion obscured at backend boundaries: release-all success/failure,
   no premature resource destruction, failed worker startup and synchronous idle
   release. Neither control establishes physical failure recovery or driver liveness.

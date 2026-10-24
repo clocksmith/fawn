@@ -29,7 +29,7 @@ static void native_deallocate(void *state, const void *vtable, void *memory,
 
 static doe_label_store native_store = {
     .allocator = {NULL, NULL, native_allocate, native_deallocate},
-    .mutex = PTHREAD_MUTEX_INITIALIZER
+    .mutex = DOE_MUTEX_STATIC_INITIALIZER
 };
 
 doe_label_status doe_labels_native_set(const void *handle,

@@ -16,6 +16,10 @@ Own copied native debug-label bytes through a reusable C store and reversible re
 - Includes this C owner and its default-off native seam.
 - Independent case sealing precedes implementation.
 
+Private [host primitives](../platform/CATSCAN.md) supply OS operations only.
+Semantic and lifetime authority remains here; Win32 source portability does not
+extend historical acceptance.
+
 ## Contracts
 
 - Inputs: [ownership contract](CONTRACT.md), [native seam](integration/CONTRACT.md), [migration gates](../../../docs/c-migration/MIGRATION.md).

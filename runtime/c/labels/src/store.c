@@ -19,13 +19,13 @@ _Noreturn void doe_labels_fatal(const char *operation, int code) {
 }
 
 static void lock_store(doe_label_store *store) {
-    int code = pthread_mutex_lock(&store->mutex);
-    if (code != 0) doe_labels_fatal("pthread_mutex_lock", code);
+    doe_host_result result = doe_mutex_lock(&store->mutex);
+    if (result.status != DOE_HOST_OK) doe_labels_fatal("mutex lock", result.native_error);
 }
 
 static void unlock_store(doe_label_store *store) {
-    int code = pthread_mutex_unlock(&store->mutex);
-    if (code != 0) doe_labels_fatal("pthread_mutex_unlock", code);
+    doe_host_result result = doe_mutex_unlock(&store->mutex);
+    if (result.status != DOE_HOST_OK) doe_labels_fatal("mutex unlock", result.native_error);
 }
 
 static void *allocate(const doe_label_allocator *allocator, size_t size,
@@ -95,8 +95,8 @@ doe_label_status doe_label_store_create(const doe_label_config *config,
     store->capacity = 0;
     store->count = 0;
     store->closing = false;
-    int code = pthread_mutex_init(&store->mutex, NULL);
-    if (code != 0) {
+    doe_host_result result = doe_mutex_init(&store->mutex, false);
+    if (result.status != DOE_HOST_OK) {
         deallocate(&allocator, store, sizeof(*store), _Alignof(doe_label_store));
         return DOE_LABEL_SYNCHRONIZATION_INIT;
     }
@@ -218,8 +218,8 @@ doe_label_status doe_label_store_remove(doe_label_store *store,
 
 doe_label_status doe_labels_destroy_contents(doe_label_store *store) {
     store->closing = true;
-    int code = pthread_mutex_destroy(&store->mutex);
-    if (code != 0) return DOE_LABEL_CLEANUP_REQUIRED;
+    doe_host_result result = doe_mutex_destroy(&store->mutex);
+    if (result.status != DOE_HOST_OK) return DOE_LABEL_CLEANUP_REQUIRED;
     for (size_t i = 0; i < store->capacity; ++i) {
         doe_label_entry entry = store->entries[i];
         if (entry.key != 0) {

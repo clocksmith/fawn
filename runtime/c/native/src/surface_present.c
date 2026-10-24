@@ -89,23 +89,23 @@ void wgpuSurfaceGetCurrentTexture(WGPUSurface handle, WGPUSurfaceTexture *out)
     out->texture = NULL;
     out->status = WGPUSurfaceGetCurrentTextureStatus_Error;
     if (!surface || out->nextInChain) return;
-    if (pthread_mutex_lock(&surface->mutex)) abort();
+    if (doe_mutex_lock(&surface->mutex).status != DOE_HOST_OK) abort();
     native_device *device = surface->device;
     if (!surface->configured) {
-        if (pthread_mutex_unlock(&surface->mutex)) abort();
+        if (doe_mutex_unlock(&surface->mutex).status != DOE_HOST_OK) abort();
         return; /* Unconfigured: Error and NULL, no device to report to. */
     }
     if (surface->presented != NATIVE_OK) {
         out->status = surface->presented == NATIVE_SURFACE_LOST ? WGPUSurfaceGetCurrentTextureStatus_Lost :
             WGPUSurfaceGetCurrentTextureStatus_Outdated;
-        if (pthread_mutex_unlock(&surface->mutex)) abort();
+        if (doe_mutex_unlock(&surface->mutex).status != DOE_HOST_OK) abort();
         return;
     }
     if (surface->current) { /* Same frame until presented, with a new reference. */
         doe_resource_texture_retain(surface->current);
         out->texture = (WGPUTexture)surface->current;
         out->status = surface->current_status;
-        if (pthread_mutex_unlock(&surface->mutex)) abort();
+        if (doe_mutex_unlock(&surface->mutex).status != DOE_HOST_OK) abort();
         return;
     }
     native_device_retain(device);
@@ -144,7 +144,7 @@ void wgpuSurfaceGetCurrentTexture(WGPUSurface handle, WGPUSurfaceTexture *out)
         out->texture = (WGPUTexture)surface->current;
     }
     native_unlock(device);
-    if (pthread_mutex_unlock(&surface->mutex)) abort();
+    if (doe_mutex_unlock(&surface->mutex).status != DOE_HOST_OK) abort();
     if (message) {
         char formatted[NATIVE_FAILURE_MESSAGE_CAPACITY];
         native_failure_format(&failure, message, formatted);
@@ -157,9 +157,9 @@ WGPUStatus wgpuSurfacePresent(WGPUSurface handle)
 {
     native_surface *surface = (native_surface *)handle;
     if (!surface) return WGPUStatus_Error;
-    if (pthread_mutex_lock(&surface->mutex)) abort();
+    if (doe_mutex_lock(&surface->mutex).status != DOE_HOST_OK) abort();
     if (!surface->configured || !surface->current) {
-        if (pthread_mutex_unlock(&surface->mutex)) abort();
+        if (doe_mutex_unlock(&surface->mutex).status != DOE_HOST_OK) abort();
         return WGPUStatus_Error; /* No current texture. */
     }
     native_device *device = surface->device;
@@ -190,7 +190,7 @@ WGPUStatus wgpuSurfacePresent(WGPUSurface handle)
     if (result.presentation.status == NATIVE_SURFACE_OUTDATED || result.presentation.status == NATIVE_SURFACE_LOST)
         surface->presented = result.presentation.status;
     native_unlock(device);
-    if (pthread_mutex_unlock(&surface->mutex)) abort();
+    if (doe_mutex_unlock(&surface->mutex).status != DOE_HOST_OK) abort();
     WGPUStatus outcome = WGPUStatus_Success;
     char message[NATIVE_FAILURE_MESSAGE_CAPACITY];
     if (result.submission.status != NATIVE_OK) {

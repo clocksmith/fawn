@@ -42,12 +42,12 @@ bool native_release_count(atomic_uint *count)
 
 void native_lock(native_device *device)
 {
-    if (pthread_mutex_lock(&device->mutex)) abort();
+    if (doe_mutex_lock(&device->mutex).status != DOE_HOST_OK) abort();
 }
 
 void native_unlock(native_device *device)
 {
-    if (pthread_mutex_unlock(&device->mutex)) abort();
+    if (doe_mutex_unlock(&device->mutex).status != DOE_HOST_OK) abort();
 }
 
 WGPUStringView native_string(const char *text)

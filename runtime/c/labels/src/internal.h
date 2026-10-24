@@ -5,8 +5,8 @@
 #ifndef DOE_LABELS_INTERNAL_H
 #define DOE_LABELS_INTERNAL_H
 
+#include "../../platform/include/doe_platform.h"
 #include "doe_labels.h"
-#include <pthread.h>
 #include <stdbool.h>
 
 typedef struct doe_label_entry {
@@ -17,7 +17,7 @@ typedef struct doe_label_entry {
 
 struct doe_label_store {
     doe_label_allocator allocator;
-    pthread_mutex_t mutex;
+    doe_mutex mutex;
     doe_label_entry *entries;
     size_t capacity;
     size_t count;

@@ -32,7 +32,7 @@ typedef enum doe_error_scope_status {
     DOE_ERROR_SCOPE_CLEANUP_REQUIRED = 9
 } doe_error_scope_status;
 
-/* system_error is the original pthread return code only for SYSTEM_ERROR or
+/* system_error is the original POSIX return code or Win32 error bits only for SYSTEM_ERROR or
  * CLEANUP_REQUIRED; it is zero for every other status. No global last-error. */
 typedef struct doe_error_scope_result {
     doe_error_scope_status status;

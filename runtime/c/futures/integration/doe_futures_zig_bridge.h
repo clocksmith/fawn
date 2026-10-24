@@ -7,7 +7,7 @@
 extern "C" {
 #endif
 /* Size, alignment, then every field offset, in declaration order. */
-#define DOE_FUTURES_QUEUE_LAYOUT_COUNT 13
+#define DOE_FUTURES_QUEUE_LAYOUT_COUNT 9
 #define DOE_FUTURES_COMPLETION_LAYOUT_COUNT 12
 void doe_futures_zig_queue_layout(size_t out[DOE_FUTURES_QUEUE_LAYOUT_COUNT]);
 void doe_futures_zig_completion_layout(size_t out[DOE_FUTURES_COMPLETION_LAYOUT_COUNT]);

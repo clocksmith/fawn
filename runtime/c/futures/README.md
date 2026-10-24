@@ -117,3 +117,20 @@ This is not a Darwin runtime, SDK or scheduling test. No Apple SDK was installed
 `make all CC=clang AR=ar` is the intended Darwin archive build; ordinary C/C++
 consumer checks may use `make check-portable`. GNU linker-wrapped controls remain
 Linux-only. Native Mach-O library/package linking is owned separately.
+
+## Shared host primitive source extension
+
+Current source uses the private [host primitive owner](../platform/README.md) for
+mutexes, conditions, thread identity and monotonic time. The queue still owns
+IDs, registration, active calls, callback delivery, timeout/readiness ordering
+and cleanup state. Linux and Darwin use the same real pthread/clock symbols as
+the retained fault controls; the Darwin test guard selects only its relative-wait
+call boundary. The Win32 leaf uses actual SDK synchronization and QPC deadlines,
+with no new queue or scheduler. Platform-specific opaque storage sizes must be
+queried from the selected build. The public ABI declarations remain unchanged.
+
+`make check-portable` is the C/C++ API route without GNU linker wrapping. GNU
+`make check check-darwin-boundary` remains the full focused Linux owner gate. The
+shared primitive's CPU control is separate from this queue's behavioral gate.
+Source portability does not extend the historical Linux receipts, qualify suspend
+behavior or establish Windows public-frontend/GPU acceptance.

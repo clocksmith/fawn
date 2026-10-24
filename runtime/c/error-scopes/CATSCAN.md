@@ -12,6 +12,10 @@ Provide independently usable C error-scope capture and synchronous diagnostic de
 ## Scope
 - Includes the declared C owner and explicit default-off retained-device seam in the contract.
 
+Private [host primitives](../platform/CATSCAN.md) supply OS operations only.
+Semantic and lifetime authority remains here; Win32 source portability does not
+extend historical acceptance.
+
 ## Contracts
 - Inputs: [contract](CONTRACT.md), [source identities](SOURCE_INPUTS.json) and [header](include/doe_error_scopes.h).
 - Outputs: bounded scope results and original diagnostics with explicit storage and failure ownership.

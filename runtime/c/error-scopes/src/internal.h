@@ -4,8 +4,8 @@
 #ifndef DOE_ERROR_SCOPES_INTERNAL_H
 #define DOE_ERROR_SCOPES_INTERNAL_H
 
+#include "../../platform/include/doe_platform.h"
 #include "doe_error_scopes.h"
-#include <pthread.h>
 
 enum doe_error_scope_state {
     DOE_ERROR_SCOPES_DEAD,
@@ -21,7 +21,7 @@ typedef struct doe_error_scope_entry {
 } doe_error_scope_entry;
 
 struct doe_error_scope_stack {
-    pthread_mutex_t mutex;
+    doe_mutex mutex;
     doe_error_scope_entry scopes[DOE_ERROR_SCOPE_MAX_DEPTH];
     size_t depth;
     doe_error_scope_callback callback;

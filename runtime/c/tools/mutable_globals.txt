@@ -10,6 +10,6 @@ published_behavior runtime/c/dropin-policy/src/policy.c behavior value guarded b
 next_instance runtime/c/futures/src/futures.c process-wide monotonic instance identity counter (atomic)
 next_legacy runtime/c/futures/src/futures.c process-wide monotonic legacy future identity counter (atomic)
 native_store runtime/c/labels/src/native.c process label store used by the native provider build
-provider_once runtime/c/native/src/provider_pin.c pthread_once guard for the provider image pin
-provider_image runtime/c/native/src/provider_pin.c process-lifetime dlopen reference keeping worker code mapped
-provider_permanent runtime/c/native/src/provider_pin.c records that the provider is the main image and needs no pin
+provider_once runtime/c/native/src/provider_pin.c host once guard for the provider image pin
+provider_image runtime/c/native/src/provider_pin.c process-lifetime POSIX dlopen reference or Win32 module PIN keeping worker code mapped
+provider_permanent runtime/c/native/src/provider_pin.c records permanent main-image residency or successful Win32 module PIN

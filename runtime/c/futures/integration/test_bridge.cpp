@@ -12,7 +12,7 @@ int main()
     doe_futures_zig_completion_layout(n);
     assert(q[0] == sizeof(queue) && q[1] == alignof(decltype(queue)));
     assert(n[0] == sizeof(completion) && n[1] == alignof(decltype(completion)));
-    assert(q[5] == offsetof(doe_future_queue, head));
+    assert(q[4] == offsetof(doe_future_queue, head));
     assert(n[5] == offsetof(doe_future_completion, userdata));
     assert(doe_futures_zig_queue_init(&queue) == DOE_FUTURE_OK);
     assert(doe_futures_zig_completion_init(&completion,

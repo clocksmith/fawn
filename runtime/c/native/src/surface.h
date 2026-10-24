@@ -14,7 +14,7 @@
 typedef struct native_surface {
     atomic_uint references; /* Public handles. Zero triggers public teardown once. */
     atomic_uint leases; /* Public group, frame payloads and pending retirement/progress. */
-    pthread_mutex_t mutex; /* Public state; always taken before any device mutex. */
+    doe_mutex mutex; /* Public state; always taken before any device mutex. */
     doe_instance *instance;
     doe_vk_surface_desc source; /* Borrowed platform handles; caller keeps them alive. */
     doe_label_store *labels;

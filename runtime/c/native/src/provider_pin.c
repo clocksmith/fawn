@@ -6,6 +6,47 @@
 #define _DARWIN_C_SOURCE
 #endif
 #include "provider_pin.h"
+#include <errno.h>
+#if defined(_WIN32)
+#ifndef _WIN32_WINNT
+#define _WIN32_WINNT 0x0600
+#endif
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <windows.h>
+
+/* A loader PIN is irrevocable process-code residency, not a resource/device
+ * lease. InitOnce publishes one result and no LoadLibrary fallback can turn an
+ * unsuccessful pin into admission. The aligned object supplies an image address
+ * without an ISO C function/data pointer conversion. */
+static INIT_ONCE provider_once = INIT_ONCE_STATIC_INIT;
+static HMODULE provider_image;
+static bool provider_permanent;
+static const WCHAR provider_marker;
+
+static BOOL CALLBACK pin_provider_image(PINIT_ONCE once, PVOID argument, PVOID *context)
+{
+    (void)once;
+    (void)argument;
+    (void)context;
+    provider_permanent = GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
+        GET_MODULE_HANDLE_EX_FLAG_PIN, &provider_marker, &provider_image) != FALSE;
+    /* Cache failed admission too; retrying is not another residency policy. */
+    return TRUE;
+}
+
+bool native_provider_pin(void)
+{
+    DWORD previous_error = GetLastError();
+    int previous_errno = errno;
+    BOOL status = InitOnceExecuteOnce(&provider_once, pin_provider_image, NULL, NULL);
+    bool pinned = status != FALSE && provider_permanent && provider_image != NULL;
+    errno = previous_errno;
+    SetLastError(previous_error);
+    return pinned;
+}
+#else
 #include <dlfcn.h>
 #include <errno.h>
 #include <pthread.h>
@@ -67,3 +108,5 @@ bool native_provider_pin(void)
     errno = previous_errno;
     return pinned;
 }
+
+#endif
