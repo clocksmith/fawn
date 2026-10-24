@@ -1708,6 +1708,11 @@ const nodeEncoderBackend = {
     return pass;
   },
   commandEncoderBeginRenderPass(encoder, passDescriptor, classes) {
+    // An attachment names a GPUTextureView or a GPUTexture, which stands for
+    // its default view (https://gpuweb.github.io/gpuweb/#texture-view-creation).
+    const attachmentView = (resource, label) => assertLiveResource(
+      typeof resource?.createView === 'function' ? resource.createView() : resource,
+      'GPUCommandEncoder.beginRenderPass', label);
     const attachments = assertArray(passDescriptor.colorAttachments ?? [], 'GPUCommandEncoder.beginRenderPass', 'descriptor.colorAttachments');
     if (!attachments.some((attachment) => attachment != null) && passDescriptor.depthStencilAttachment == null) {
       failValidation('GPUCommandEncoder.beginRenderPass', 'descriptor needs a color attachment or a depthStencilAttachment');
@@ -1717,13 +1722,13 @@ const nodeEncoderBackend = {
       if (attachment === null || attachment === undefined) return null;
       const entry = assertObject(attachment, 'GPUCommandEncoder.beginRenderPass', `descriptor.colorAttachments[${index}]`);
       const normalized = {
-        view: assertLiveResource(entry.view, 'GPUCommandEncoder.beginRenderPass', 'GPUTextureView'),
+        view: attachmentView(entry.view, 'GPUTextureView'),
         clearValue: normalizeGpuColor(entry.clearValue, `descriptor.colorAttachments[${index}].clearValue`),
         loadOp: entry.loadOp ?? 'clear',
         storeOp: entry.storeOp ?? 'store',
       };
       if (entry.resolveTarget !== undefined && entry.resolveTarget !== null) {
-        normalized.resolveTarget = assertLiveResource(entry.resolveTarget, 'GPUCommandEncoder.beginRenderPass', 'GPUTextureView');
+        normalized.resolveTarget = attachmentView(entry.resolveTarget, 'GPUTextureView');
       }
       if (entry.depthSlice !== undefined) {
         normalized.depthSlice = entry.depthSlice;
@@ -1734,7 +1739,7 @@ const nodeEncoderBackend = {
     if (passDescriptor.depthStencilAttachment !== undefined) {
       const depthAttachment = assertObject(passDescriptor.depthStencilAttachment, 'GPUCommandEncoder.beginRenderPass', 'descriptor.depthStencilAttachment');
       depthStencilAttachment = {
-        view: assertLiveResource(depthAttachment.view, 'GPUCommandEncoder.beginRenderPass', 'GPUTextureView'),
+        view: attachmentView(depthAttachment.view, 'GPUTextureView'),
         // Operations stay absent when not given: the spec requires them only
         // for an aspect the format has, and forbids them otherwise.
         depthLoadOp: depthAttachment.depthLoadOp,
