@@ -27,6 +27,7 @@ native_failure native_d3d12_buffer_write(native_buffer *buffer, uint64_t offset,
 native_failure native_d3d12_record_commands(native_command_handle *commands, doe_resource_commands *resources);
 native_failure native_d3d12_dispatch(native_command_handle *commands, const doe_resource_command *record);
 native_failure native_d3d12_compile_stage(const native_stage *stage,doe_dx_shader **out);
+native_failure native_d3d12_compile_vertex(const native_stage *,uint32_t interstage_mask,doe_dx_shader **);
 native_failure native_d3d12_compile_compute(const native_stage *stage, doe_dx_shader **out);
 void native_d3d12_compiler_release(doe_dx_shader *shader);
 struct native_d3d12_guard_code;

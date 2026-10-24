@@ -21,6 +21,14 @@ typedef struct doe_dx_shader_options {
     bool has_entry_index;
     uint32_t entry_index; /* Compiler-owned DOE_HLSL_ENTRY value, never inferred. */
 } doe_dx_shader_options;
+/* Additive compiler-owned VS interface projection. Existing options and compile
+ * ABI stay unchanged. The uint32 mask selects numeric user-output locations;
+ * zero is valid, reserved must be zero, and only VERTEX accepts projection.
+ * The compiler emits/documented guards and owns declaration/assignment meaning;
+ * this SDK adapter only passes its named define before signature packing. */
+typedef struct doe_dx_shader_projection {
+    uint32_t interstage_mask, reserved;
+} doe_dx_shader_projection;
 enum { DOE_DX_SHADER_MESSAGE_CAPACITY = 1024 };
 typedef struct doe_dx_shader_error {
     doe_dx_status status;
@@ -33,6 +41,8 @@ typedef struct doe_dx_shader_error {
 
 /* No callbacks, shell, arbitrary flags, include handler or filesystem includes.
  * Uses -HV2021 -Ges -WX -Gis and exactly the requested stage/entry/optional index.
+ * Both graphics profiles explicitly use prefix-stable signature packing; this
+ * is a target ABI policy, not a new application compilation flag.
  * Inputs are borrowed only for this call. Output/error storage is live, aligned
  * and disjoint from each other and the inputs.
  * Failure leaves *out untouched and may replace error. Success owns one DXC
@@ -41,6 +51,10 @@ typedef struct doe_dx_shader_error {
  * normalization. Serialize release against every borrowed view. */
 doe_dx_status doe_dx_shader_compile(const doe_dx_shader_options *options,
     doe_dx_shader **out, doe_dx_shader_error *error);
+/* Same ownership/host-state/failure contract as compile. projection is required;
+ * wrong stage/reserved fields reject before DXC and leave *out unchanged. */
+doe_dx_status doe_dx_shader_compile_projected(const doe_dx_shader_options *options,
+    const doe_dx_shader_projection *projection,doe_dx_shader **out,doe_dx_shader_error *error);
 /* NULL shader returns NULL and size zero. Otherwise immutable bytes are borrowed
  * while the caller owns this object; native PSO creation copies those bytes. */
 const uint8_t *doe_dx_shader_bytes(const doe_dx_shader *shader, size_t *size);

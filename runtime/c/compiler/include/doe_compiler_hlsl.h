@@ -14,6 +14,18 @@ extern "C" {
 #define DOE_COMPILER_HLSL_REGISTER_SAMPLER 4u
 #define DOE_COMPILER_HLSL_ENTRY_WAVES 1u
 
+/* Optional DXC producer projection for a validated native VS/PS pair. The
+ * compiler-generated VS carrier keeps only user-output locations whose bits
+ * are set; its original return computation and ABI7 reflection stay intact.
+ * User fields are ordered by location before builtins in both stages. The
+ * consumer validates exact type/width/interpolation/sampling matches first.
+ * Absence preserves all output locations, including locations above31. When
+ * present, any declared VS location above31 fails target compilation explicitly.
+ * The define is a uint32 decimal value, valid only for vertex compilation; zero
+ * retains position with no user outputs. It is not a WGSL semantic option. */
+#define DOE_COMPILER_HLSL_INTERSTAGE_MASK_DEFINE "DOE_HLSL_INTERSTAGE_MASK"
+#define DOE_COMPILER_HLSL_INTERSTAGE_MASK_BITS 32u
+
 /* Sparse, source-resource ordered union of emitted entries. register_kind is a
  * separate namespace, not a resource-kind enum. Structured buffers require
  * stride four; all other descriptors use zero. The declared WGSL byte layout

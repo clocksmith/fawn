@@ -1,5 +1,27 @@
 /* SPDX-License-Identifier: MIT */
 #include "d3d12_graphics_internal.h"
+#include <limits.h>
+
+bool native_d3d12_interstage_mask(const native_stage *stage,uint32_t *out)
+{
+    if (!stage || !out || !stage->entry || !stage->view.entries ||
+        (stage->view.interface_count && !stage->view.interfaces)) return false;
+    const doe_shader_view *view=&stage->view;
+    size_t selected=SIZE_MAX;
+    for (size_t i=0;i<view->counts.entries;++i) if (&view->entries[i]==stage->entry) selected=i;
+    if (selected==SIZE_MAX || stage->entry->stage!=DOE_COMPILER_STAGE_FRAGMENT) return false;
+    uint32_t mask=0;
+    for (size_t i=0;i<view->interface_count;++i) {
+        const DoeCompilerStageInterfaceV7 *item=&view->interfaces[i];
+        if (item->entry_index!=selected || item->direction!=DOE_COMPILER_INTERFACE_INPUT || item->builtin) continue;
+        if (item->location>=sizeof(mask)*CHAR_BIT) return false;
+        uint32_t bit=UINT32_C(1)<<item->location;
+        if (mask&bit) return false;
+        mask|=bit;
+    }
+    *out=mask;
+    return true;
+}
 
 bool native_d3d12_graphics_maps(const native_pipeline *pipeline,const native_stage stages[2],
     native_d3d12_layout out[2],native_d3d12_graphics *maps)

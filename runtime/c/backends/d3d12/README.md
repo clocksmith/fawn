@@ -485,3 +485,22 @@ and real root-signature serialization to check descriptor classes, sampler field
 heap/table indices, alias barriers and second-heap OOM rollback without creating a
 device. Authored SDK controls require actual Windows compilation/execution;
 portable controls alone do not establish driver support or public execution.
+
+## Typed graphics projection
+
+The additive `doe_dx_shader_compile_projected` accepts a vertex-only typed mask
+and preserves the existing `doe_dx_shader_options` layout and legacy compile
+entrypoint. The native frontend derives that mask from selected, validated
+fragment input locations; the compiler emits the guarded VS carrier. This SDK
+adapter passes the compiler's named definition as a bounded uint32 literal and
+uses explicit prefix-stable DXC packing on both graphics profiles. It never
+rewrites WGSL/HLSL or reclassifies source fields. Zero keeps position only; absent
+projection retains the standalone compiler output. Invalid stage/reserved input
+leaves the caller's result untouched through the same FP/errno/LastError and
+blob/module lifetime owner.
+
+`tests/native_shader_projection.c`, run by `build_shader_windows.cmd`, is an
+actual official-DXC CPU control for zero/full/sparse masks together with the exact
+entry selector, legacy absence, wrong-stage/reserved/null failures and preserved
+host state. Its authored source has not yet run on the SDK; compiler DXIL controls
+and later source-bound Windows pipeline/pixel results are separate evidence.

@@ -110,3 +110,12 @@
   texture-use owner. Prepare every heap before recording; failure preserves
   earlier command records. Preserve the original static graphics ABI and compute
   capacity while extending this first graphics checkpoint toward full parity.
+
+- Native VS/PS composition uses the compiler-owned 32-bit interstage mask only
+  after selected interface admission. Keep the old shader options/compile ABI
+  intact; the additive projection descriptor rejects missing/wrong-stage/reserved
+  input through the same DXC/host-state owner. Zero is a valid position-only mask.
+- Pass the compiler's exact define with a bounded uint32 literal. Both graphics
+  profiles explicitly use verified `-pack-prefix-stable`; compute remains outside
+  this policy. Never rewrite shader text, infer WGSL fields or cache DXIL without
+  its entry/projection identity. Actual SDK construction/pixels remain separate.

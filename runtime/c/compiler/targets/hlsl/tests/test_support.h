@@ -18,6 +18,7 @@ void has(const char *, const char *);
 void test_readonly_images(const char *);
 void test_images(const char *);
 void test_graphics(const char *);
+void test_linkage(const char *);
 void test_matrices(const char *);
 void test_component_math(const char *);
 void test_atomics(const char *);
