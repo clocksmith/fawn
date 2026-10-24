@@ -491,6 +491,8 @@ doe_dx_status doe_dx_native_render(doe_dx_native_commands *commands,doe_dx_nativ
     for (size_t i=0;i<count;++i) {
         for (size_t stage=0;stage<DOE_DX_RENDER_STAGES;++stage)
             record_resources(commands,draws[i].pipeline,&draws[i].stages[stage]);
+        for (size_t slot=0;slot<draws[i].vertex_buffer_count;++slot)
+            if (draws[i].vertices[slot].buffer) record_buffer(commands,draws[i].vertices[slot].buffer);
         mock.last_render_draw=draws[i];
     }
     mock.render_passes++;

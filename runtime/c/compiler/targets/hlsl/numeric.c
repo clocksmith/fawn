@@ -150,7 +150,7 @@ static void subgroup_expression(HlslEmitter *e, const IrInstruction *ir, Numeric
         case BUILTIN_MIN: case BUILTIN_MAX: case BUILTIN_CLAMP: case BUILTIN_EXP:
         case BUILTIN_TANH: case BUILTIN_SQRT: case BUILTIN_DOT: case BUILTIN_LENGTH:
         case BUILTIN_DISTANCE: case BUILTIN_NORMALIZE: case BUILTIN_CROSS: case BUILTIN_REFLECT:
-        case BUILTIN_FACE_FORWARD: case BUILTIN_REFRACT:
+        case BUILTIN_FACE_FORWARD: case BUILTIN_REFRACT: case BUILTIN_ALL: case BUILTIN_ANY:
         default: hlsl_error(e, "HLSL subgroup builtin has no wave mapping"); return;
     }
     e->uses_subgroups = true;
@@ -215,6 +215,18 @@ static void builtin_expression(HlslEmitter *e, const IrInstruction *ir) {
     const NumericBuiltin *builtin = builtin_kind((NumericBuiltinKind)ir->operands.scalar.literal);
     if (builtin == NULL) {
         hlsl_error(e, "Hlsl builtin identity has no registered semantics");
+        return;
+    }
+    if (builtin->family == BUILTIN_BOOLEAN_REDUCTION) {
+        const TypeId operand = hlsl_value_type(e, ir->operands.scalar.left);
+        if (type_leaf(e->module, operand) != IR_BOOL || ir->type != IR_BOOL ||
+            (builtin->kind != BUILTIN_ALL && builtin->kind != BUILTIN_ANY)) {
+            hlsl_error(e, "boolean reduction requires boolean operands and scalar result");
+            return;
+        }
+        if (operand != IR_BOOL) hlsl_text(e, builtin->kind == BUILTIN_ALL ? "all(" : "any(");
+        hlsl_value(e, ir->operands.scalar.left);
+        if (operand != IR_BOOL) hlsl_text(e, ")");
         return;
     }
     if (builtin_subgroup(builtin)) {
@@ -317,7 +329,7 @@ static void builtin_expression(HlslEmitter *e, const IrInstruction *ir) {
         case BUILTIN_REFRACT: intrinsic = "refract"; break;
         case BUILTIN_TRANSPOSE: intrinsic = "transpose"; break;
         case BUILTIN_DETERMINANT: intrinsic = "determinant"; break;
-        case BUILTIN_ABS: case BUILTIN_SIGN: case BUILTIN_FRACT:
+        case BUILTIN_ABS: case BUILTIN_SIGN: case BUILTIN_FRACT: case BUILTIN_ALL: case BUILTIN_ANY:
         case BUILTIN_ASINH: case BUILTIN_ACOSH: case BUILTIN_ATANH:
         case BUILTIN_MIN: case BUILTIN_MAX: case BUILTIN_CLAMP:
         case BUILTIN_SUBGROUP_ADD: case BUILTIN_SUBGROUP_MIN: case BUILTIN_SUBGROUP_MAX:

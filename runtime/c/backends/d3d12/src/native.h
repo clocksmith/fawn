@@ -41,6 +41,8 @@ void doe_dx_binding_plan_copy(doe_dx_binding_plan *,const doe_dx_dynamic_pipelin
 typedef struct doe_dx_native_render_draw {
     doe_dx_native_pipeline *pipeline;
     doe_dx_native_resources stages[DOE_DX_RENDER_STAGES];
+    doe_dx_native_binding vertices[DOE_DX_MAX_VERTEX_BUFFERS];
+    size_t vertex_buffer_count;
     uint32_t vertex_count,instance_count,first_vertex,first_instance;
     float viewport[6];
     uint32_t scissor[4];

@@ -128,6 +128,21 @@ int main(int argc, char **argv) {
         expect(target,graphics,"vertex",&dx,1u,true);
         expect(target,graphics,"fragment",NULL,0u,true);
         expect(target,graphics,"compute_entry",NULL,0u,false);
+        const char *logical="override enabled:bool;override both=all(vec2<bool>(enabled,true));"
+            "override either=any(vec3<bool>(false,enabled,false));"
+            "@compute @workgroup_size(select(1u,2u,all(vec2<bool>(both,either)))) fn main(){}";
+        expect(target,logical,"main",NULL,0u,false);
+        HlslFixture *logical_storage=calloc(1u,sizeof(*logical_storage));
+        uint32_t *logical_words=calloc(65536u,sizeof(*logical_words));
+        assert(logical_storage!=NULL && logical_words!=NULL);
+        for (uint32_t flag=0u;flag<2u;++flag) {
+            const DoeCompilerOverrideValueV13 enabled={"enabled",7u,(double)flag};
+            DoeCompilerTextResult logical_result;
+            assert(compile(target,logical,"main",&enabled,1u,logical_storage,logical_words,&logical_result,false)==DOE_COMPILER_OK);
+            assert(logical_storage->entries[0].workgroup_size[0]==flag+1u);
+        }
+        free(logical_words);
+        free(logical_storage);
         const char *limits="override n:u32; @compute @workgroup_size(n,2) fn main(){}";
         const DoeCompilerOverrideValueV13 too_big={"n",1u,129.0};
         const DoeCompilerOverrideValueV13 zero={"n",1u,0.0};

@@ -68,3 +68,7 @@ Implicit sampling is already fragment/derivative-validated by the shared owner.
 Use the native implicit sample/comparison methods with saved operands and checked
 constant offsets; do not substitute mip zero or recompute gradients on the host.
 Depth returns scalar values; ordinary sampled textures return four components.
+
+Logical all/any consume the shared unary builtin operand. Copy scalar bool;
+map bool vectors explicitly to native reductions with scalar bool results.
+Use the saved operand once; source effects already occurred before reduction.

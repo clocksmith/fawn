@@ -5,7 +5,7 @@ BUILD ?= $(DOE_C_TMP)/d3d12
 CPPFLAGS += -Iinclude
 CFLAGS ?= -O2 -g
 STRICT = -std=c11 -Wall -Wextra -Wpedantic -Werror -Wconversion -Wshadow
-OWNER = src/command_storage.c src/context.c src/resources.c src/commands.c src/compute.c src/pipeline.c src/textures.c src/texture_transfer.c src/texture_regions.c src/samplers.c src/render_pipeline.c src/render_commands.c src/bindings.c src/graphics.c src/timestamps.c src/vertex_layout.c src/geometry.c
+OWNER = src/command_storage.c src/context.c src/resources.c src/commands.c src/compute.c src/pipeline.c src/textures.c src/texture_transfer.c src/texture_regions.c src/samplers.c src/render_pipeline.c src/render_commands.c src/render_vertices.c src/bindings.c src/graphics.c src/timestamps.c src/vertex_layout.c src/geometry.c
 WINDOWS = src/windows_context.c src/windows_caps.c src/windows_adapter.c src/windows_resources.c src/windows_commands.c src/windows_pipeline.c src/windows_bindings.c src/windows_textures.c src/windows_texture_regions.c src/windows_samplers.c src/windows_transitions.c src/windows_render_pipeline.c src/windows_render_commands.c src/windows_graphics.c src/windows_timestamps.c src/windows_geometry.c
 HOST_OBJECTS = $(OWNER:src/%.c=$(BUILD)/host/%.o)
 WINDOWS_OBJECTS = $(OWNER:src/%.c=$(BUILD)/windows/%.o) $(WINDOWS:src/%.c=$(BUILD)/windows/%.o)
@@ -41,7 +41,8 @@ $(BUILD)/test_aliases: tests/test_aliases.c tests/mock_native.c tests/mock_nativ
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(STRICT) tests/test_aliases.c tests/mock_native.c $(HOST_OBJECTS) -o $@
 $(BUILD)/test_dynamic: tests/test_dynamic.c tests/mock_native.c tests/mock_native.h $(HOST_OBJECTS)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(STRICT) tests/test_dynamic.c tests/mock_native.c $(HOST_OBJECTS) -o $@
-check: $(BUILD)/test_render $(BUILD)/test_sampled $(BUILD)/test_texture_regions $(BUILD)/test_dynamic $(BUILD)/test_aliases $(BUILD)/test_limits $(BUILD)/test_adapter_selection $(BUILD)/test_owner $(BUILD)/test_textures $(BUILD)/test_graphics $(BUILD)/test_mesh $(BUILD)/test_indirect $(BUILD)/test_uniform
+check: $(BUILD)/test_render_vertices $(BUILD)/test_render $(BUILD)/test_sampled $(BUILD)/test_texture_regions $(BUILD)/test_dynamic $(BUILD)/test_aliases $(BUILD)/test_limits $(BUILD)/test_adapter_selection $(BUILD)/test_owner $(BUILD)/test_textures $(BUILD)/test_graphics $(BUILD)/test_mesh $(BUILD)/test_indirect $(BUILD)/test_uniform
+	$(BUILD)/test_render_vertices
 	$(BUILD)/test_render
 	$(BUILD)/test_sampled
 	$(BUILD)/test_texture_regions
@@ -90,3 +91,6 @@ $(BUILD)/test_render: tests/test_render.c tests/mock_native.c tests/mock_native.
 
 $(BUILD)/test_windows_render.exe: tests/test_windows_render.c $(HEADERS) $(BUILD)/libdoe_d3d12.a
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(STRICT) $< $(BUILD)/libdoe_d3d12.a -ld3d12 -ldxgi -ldxguid -o $@
+
+$(BUILD)/test_render_vertices: tests/test_render_vertices.c tests/mock_native.c tests/mock_native.h $(HOST_OBJECTS)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(STRICT) tests/test_render_vertices.c tests/mock_native.c $(HOST_OBJECTS) -o $@

@@ -10,11 +10,19 @@ enum { DOE_DX_MAX_VERTEX_BUFFERS = 8, DOE_DX_MAX_VERTEX_ATTRIBUTES = 16 };
 typedef enum doe_dx_vertex_format {
     DOE_DX_FLOAT32, DOE_DX_FLOAT32X2, DOE_DX_FLOAT32X3, DOE_DX_FLOAT32X4,
     DOE_DX_UINT32, DOE_DX_UINT32X2, DOE_DX_UINT32X3, DOE_DX_UINT32X4,
-    DOE_DX_SINT32, DOE_DX_SINT32X2, DOE_DX_SINT32X3, DOE_DX_SINT32X4
+    DOE_DX_SINT32, DOE_DX_SINT32X2, DOE_DX_SINT32X3, DOE_DX_SINT32X4,
+    /* Appended identities preserve every legacy enum value. */
+    DOE_DX_UINT8, DOE_DX_SINT8, DOE_DX_UNORM8, DOE_DX_SNORM8,
+    DOE_DX_UINT8X2, DOE_DX_SINT8X2, DOE_DX_UNORM8X2, DOE_DX_SNORM8X2,
+    DOE_DX_UINT8X4, DOE_DX_SINT8X4, DOE_DX_UNORM8X4, DOE_DX_SNORM8X4,
+    DOE_DX_UINT16, DOE_DX_SINT16, DOE_DX_UNORM16, DOE_DX_SNORM16, DOE_DX_FLOAT16,
+    DOE_DX_UINT16X2, DOE_DX_SINT16X2, DOE_DX_UNORM16X2, DOE_DX_SNORM16X2, DOE_DX_FLOAT16X2,
+    DOE_DX_UINT16X4, DOE_DX_SINT16X4, DOE_DX_UNORM16X4, DOE_DX_SNORM16X4, DOE_DX_FLOAT16X4,
+    DOE_DX_UNORM10_10_10_2, DOE_DX_UNORM8X4_BGRA
 } doe_dx_vertex_format;
 typedef enum doe_dx_vertex_step { DOE_DX_PER_VERTEX, DOE_DX_PER_INSTANCE } doe_dx_vertex_step;
 typedef struct doe_dx_vertex_layout {
-    uint32_t stride; /* Multiple of 4, 4..2048. */
+    uint32_t stride; /* Multiple of 4; legacy mesh 4..2048, whole-pass render 0..2048. */
     doe_dx_vertex_step step; /* Instance step rate is exactly 1. */
 } doe_dx_vertex_layout;
 typedef struct doe_dx_vertex_attribute {

@@ -16,7 +16,7 @@ static native_failure prepare_draw(const doe_resource_render_packet *packet,
     if (packet->indexed || packet->indirect || packet->occlusion_active)
         return native_failure_status(NATIVE_UNSUPPORTED);
     native_pipeline *pipeline=doe_resource_render_pipeline_native(packet->pipeline);
-    if (!pipeline || !pipeline->d3d12_graphics || pipeline->vertex_count)
+    if (!pipeline || !pipeline->d3d12_graphics )
         return native_failure_status(NATIVE_INVALID_ARGUMENT);
     doe_resource_binding resolved[NATIVE_MAX_PIPELINE_BINDINGS];
     if (native_resolve_resources(pipeline,doe_resource_render_pipeline_get_layout(packet->pipeline),
@@ -28,6 +28,21 @@ static native_failure prepare_draw(const doe_resource_render_packet *packet,
             resolved,&storage->stages[stage]);
         if (failure.status!=NATIVE_OK) return failure;
         out->stages[stage]=storage->stages[stage].values;
+    }
+    out->vertices=storage->vertices;
+    out->vertex_buffer_count=pipeline->vertex_count;
+    for (size_t i=0;i<pipeline->vertex_count;++i) {
+        native_buffer *buffer=doe_resource_buffer_native(packet->vertices[i].buffer);
+        if (!buffer) {
+            if (doe_resource_render_pipeline_vertex_required(packet->pipeline,i))
+                return native_failure_status(NATIVE_INVALID_STATE);
+            continue;
+        }
+        native_d3d12_buffer *native=buffer->handle.d3d12;
+        uint64_t offset=packet->vertices[i].offset,size=packet->vertices[i].size;
+        if (!native || offset>native->allocation_size || size>native->allocation_size-offset)
+            return native_failure_status(NATIVE_INVALID_ARGUMENT);
+        storage->vertices[i]=(doe_dx_buffer_binding){native->allocation,offset,size};
     }
     memcpy(out->viewport,packet->state.viewport,sizeof(out->viewport));
     memcpy(out->scissor,packet->state.scissor,sizeof(out->scissor));

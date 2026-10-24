@@ -238,3 +238,7 @@ compiler stdout/stderr and command in the chosen output directory. SDK warnings
 remain visible under the native compilation policy; these are compile controls,
 not host shader emulation, device execution, contention/forward-progress proof,
 physical qualification or completion of the migration.
+
+The [boolean reduction contract](../../LOGICAL_BUILTINS.md) adds scalar identity
+and bool-vector all/any through the same typed IR. Explicit native reductions
+consume saved operands; their SDK and execution evidence remain separate.

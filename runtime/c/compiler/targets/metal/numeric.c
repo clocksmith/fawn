@@ -163,6 +163,18 @@ static void builtin_expression(MetalEmitter *e, const IrInstruction *ir) {
         metal_error(e, "Metal builtin identity has no registered semantics");
         return;
     }
+    if (builtin->family == BUILTIN_BOOLEAN_REDUCTION) {
+        const TypeId operand = metal_value_type(e, ir->operands.scalar.left);
+        if (type_leaf(e->module, operand) != IR_BOOL || ir->type != IR_BOOL ||
+            (builtin->kind != BUILTIN_ALL && builtin->kind != BUILTIN_ANY)) {
+            metal_error(e, "boolean reduction requires boolean operands and scalar result");
+            return;
+        }
+        if (operand != IR_BOOL) metal_text(e, builtin->kind == BUILTIN_ALL ? "all(" : "any(");
+        metal_value(e, ir->operands.scalar.left);
+        if (operand != IR_BOOL) metal_text(e, ")");
+        return;
+    }
     /* A source builtin registry is not a target support table. New shared
      * operations must never become unchecked MSL names by default. */
     static const char *const names[] = {

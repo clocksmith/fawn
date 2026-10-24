@@ -244,9 +244,11 @@ static inline bool sema_builtin_value(Source *source, const Expression *node, co
         }
         const TypeId argument_leaf = type_leaf(compiler, type);
         const uint32_t argument_width = type_vector_width(compiler, type);
-        if (argument_leaf == IR_VOID || argument_leaf == IR_BOOL ||
+        if (argument_leaf == IR_VOID ||
+            (builtin->family == BUILTIN_BOOLEAN_REDUCTION ? argument_leaf != IR_BOOL : argument_leaf == IR_BOOL) ||
             (i != 0u && argument_width != builtin_argument_width(builtin, i, width)))
             return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, node->source_offset,
+                                builtin->family == BUILTIN_BOOLEAN_REDUCTION ? "logical builtin requires a boolean scalar or vector" :
                                 "numeric builtin arguments require matching scalar or vector shapes");
         if (i == 0u) {
             leaf = argument_leaf;

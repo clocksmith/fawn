@@ -39,9 +39,13 @@ a C ABI. No retained Zig bridge is linked, invoked or removed.
 - Offscreen triangle-list graphics with actual VS/PS PSOs, one RGBA8/BGRA8 UNORM
   attachment, optional D32 depth compare/write, explicit clear/load, unconditional
   store and shared sampled/storage bindings. Full-target viewport/scissor, no blend/cull.
-- Procedural or typed vertex/instance input: up to eight slots, sixteen TEXCOORD
-  attributes, explicit 32-bit float/uint/sint scalar/vector formats, checked direct
-  spans and bounded uint16/uint32 indexed views. Layouts are copied at creation.
+- Procedural or typed vertex/instance input: up to eight slots and sixteen
+  TEXCOORD attributes. The whole-pass route converts all 41 canonical formats
+  through real SDK identities and required native input-format queries. Its new
+  source preserves holes, empty layouts, zero strides and checked direct spans;
+  a missing native format is a typed unsupported result, not an alternate fetch.
+  Legacy mesh controls retain bounded uint16/uint32 indexed views. Layouts are
+  copied at creation; broad format execution requires separate evidence.
 - Timestamp heaps (1..64 slots), explicit EndQuery and ResolveQueryData into
   readback, real direct-queue frequency and completion-backed slot publication.
 - Single-use command recording, early caller release, atomic submission ownership,
@@ -55,23 +59,35 @@ one resource heap and one sampler heap per command descriptor use. Compute keeps
 its existing 64/16 limits. Module-local resource ordinals never identify another
 stage's resource. Compatible read aliases share allocation leases and transitions.
 
-The first public graphics bridge is procedural triangle-list rendering to one
-RGBA8/BGRA8 UNORM color target at sample 1, with frontFace, viewport and scissor.
+The public graphics bridge composes triangle-list rendering to one RGBA8/BGRA8
+UNORM color target at sample 1, with frontFace, viewport and scissor. The next
+source increment adds direct vertex/instance inputs for all 41 canonical formats,
+with nonzero ranges, native default component fill and per-record read aliases.
+Public required empty slots remain the resource owner's admission obligation;
+backend holes never invent a buffer. This new increment has not had an SDK or
+driver run.
+
 Whole passes execute empty/zero-draw CLEAR/LOAD/STORE. Discard records a real zero
 clear at pass end, so later reads observe initialized zeros through the existing
 texture-use owner; no frontend availability bit is added. All native heaps/views
 prepare before recording. Ordinary command/pending leases retain every dependency
 through unknown completion. This is a checkpoint toward retained graphics parity,
-not a narrower final acceptance target. Eight MRT slots, broader color/vertex
-formats and vertex inputs, depth/stencil, MSAA, blend/cull and GPU-guarded indexed
-or indirect draws and public fragment UAV writes remain concrete migration work.
+not a narrower final acceptance target. Eight MRT slots, broader color formats,
+depth/stencil, MSAA, blend/cull, public fragment UAV writes and GPU-guarded indexed
+or indirect draws remain concrete migration work. The retained
+[all-format consumer](../../native/tests/vertex_formats.c) additionally needs
+RGBA32 float/uint/sint targets; its acceptance is unchanged by the new RGBA8 fetch control.
 
 `tests/test_render.c` exercises 128/32 stage capacity, immutable values, empty and
 zero draws, preparation failures and early-release/unknown leases at the portable
 call seam. `tests/test_windows_render.c` checks real SDK root serialization and
 native typed call composition without creating a device. The newer whole-pass
-source has not yet received an SDK or driver run; prior static-graphics receipts
-remain historical evidence for their exact sources.
+source evidence is bound separately from later vertex changes. The vertex
+increment's `tests/test_render_vertices.c` exercises typed formats, holes, zero
+stride, direct spans, aliases and unknown leases; the SDK CPU control checks
+actual format identities/queries and native views. None establishes fetched
+pixels. Prior static-graphics receipts remain historical evidence for their exact
+sources.
 
 All context calls require caller serialization. Objects keep the context busy,
 not independently reference-counted: release every caller object, poll pending

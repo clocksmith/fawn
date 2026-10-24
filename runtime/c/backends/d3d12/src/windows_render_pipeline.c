@@ -80,7 +80,8 @@ static doe_dx_status render_root(doe_dx_native_context *context,
             parameter->DescriptorTable=(D3D12_ROOT_DESCRIPTOR_TABLE){(UINT)(sampler_count-first),&samplers[first]};
         }
     }
-    const D3D12_ROOT_SIGNATURE_DESC root={table_count,table_count ? parameters : NULL,0,NULL,D3D12_ROOT_SIGNATURE_FLAG_NONE};
+    const D3D12_ROOT_SIGNATURE_DESC root={table_count,table_count ? parameters : NULL,0,NULL,
+        desc->attribute_count ? D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT : D3D12_ROOT_SIGNATURE_FLAG_NONE};
     ID3DBlob *blob=NULL,*diagnostic=NULL;
     HRESULT result=D3D12SerializeRootSignature(&root,D3D_ROOT_SIGNATURE_VERSION_1,&blob,&diagnostic);
     if (diagnostic) ID3D10Blob_Release(diagnostic);
@@ -101,7 +102,10 @@ doe_dx_status doe_dx_native_render_create(doe_dx_native_context *context,
         free(pipeline);
         return doe_dx_fail(DOE_DX_OUT_OF_MEMORY,0,"render.native.layout",error);
     }
-    doe_dx_status status=render_root(context,desc,pipeline,error);
+    D3D12_INPUT_ELEMENT_DESC attributes[DOE_DX_MAX_VERTEX_ATTRIBUTES]={0};
+    doe_dx_status status=doe_dx_input_layout_rows(context,desc->vertex_buffers,desc->vertex_buffer_count,
+        desc->attributes,desc->attribute_count,pipeline,attributes,error);
+    if (status==DOE_DX_OK) status=render_root(context,desc,pipeline,error);
     if (status==DOE_DX_OK) {
         D3D12_GRAPHICS_PIPELINE_STATE_DESC state={0};
         state.pRootSignature=pipeline->root;
@@ -109,6 +113,7 @@ doe_dx_status doe_dx_native_render_create(doe_dx_native_context *context,
         state.PS=(D3D12_SHADER_BYTECODE){desc->stages[1].resources.buffers.bytecode,desc->stages[1].resources.buffers.bytecode_size};
         doe_dx_graphics_defaults(&state,desc->color_format);
         state.RasterizerState.FrontCounterClockwise=desc->front_counter_clockwise;
+        state.InputLayout=(D3D12_INPUT_LAYOUT_DESC){desc->attribute_count ? attributes : NULL,(UINT)desc->attribute_count};
         HRESULT result=ID3D12Device_CreateGraphicsPipelineState(context->device,&state,
             &IID_ID3D12PipelineState,(void **)&pipeline->state);
         status=doe_dx_hresult(result,"ID3D12Device.CreateGraphicsPipelineState.render",error);

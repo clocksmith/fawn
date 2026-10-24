@@ -58,6 +58,10 @@ of the same type or remap registers. Keep attachment operations on the whole pas
 including empty/zero draws, with real initialization/discard clears and existing
 pending/resource leases. Explicitly reject state outside the currently composed
 envelope; partial source coverage cannot claim retained graphics parity.
+D3D vertex inputs use canonical scalar/size/alignment and required-slot owners,
+then typed SDK formats/queries. Preserve holes, zero strides and logical ranges;
+aggregate vertex/shader read states per allocation. Do not CPU-decode data or
+turn missing native format support into a silent fetch substitute.
 Keep reported limits composable with resource-owner admission. Render-target byte
 budgets use that owner's format costs, independently of texel allocation sizes.
 After shared typed stage-interface validation, derive the vertex-output projection

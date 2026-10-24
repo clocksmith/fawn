@@ -110,6 +110,9 @@ doe_dx_status doe_dx_prepare_binding_plan(doe_dx_commands *,const doe_dx_binding
     const doe_dx_dynamic_resources *,doe_dx_native_resources *,doe_dx_reservation *,doe_dx_error *);
 doe_dx_status doe_dx_stage_aliases(const doe_dx_binding_plan *,const doe_dx_dynamic_resources *,
     const doe_dx_binding_plan *,const doe_dx_dynamic_resources *);
+doe_dx_status doe_dx_validate_render_vertices(const doe_dx_render_pipeline_desc *,uint32_t *);
+doe_dx_status doe_dx_prepare_render_vertices(doe_dx_commands *,doe_dx_pipeline *,const doe_dx_render_draw *,
+    doe_dx_native_render_draw *,doe_dx_reservation *,doe_dx_error *);
 uint32_t doe_dx_vertex_format_size(doe_dx_vertex_format format);
 doe_dx_status doe_dx_validate_mesh(const doe_dx_mesh_pipeline_desc *desc, uint32_t *ends);
 doe_dx_status doe_dx_prepare_geometry(doe_dx_commands *commands, doe_dx_pipeline *pipeline,

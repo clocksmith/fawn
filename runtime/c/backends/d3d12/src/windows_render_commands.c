@@ -41,7 +41,7 @@ static void draw_packet(doe_dx_native_commands *commands,const doe_dx_native_ren
 {
     doe_dx_resource_set sets[DOE_DX_RENDER_STAGES];
     resource_sets(draw,sets);
-    doe_dx_transition_sets(commands,sets,DOE_DX_RENDER_STAGES,true,false);
+    doe_dx_transition_vertex_sets(commands,sets,DOE_DX_RENDER_STAGES,draw->vertices,draw->vertex_buffer_count,false);
     ID3D12GraphicsCommandList *list=commands->list;
     ID3D12GraphicsCommandList_SetGraphicsRootSignature(list,draw->pipeline->root);
     ID3D12GraphicsCommandList_SetPipelineState(list,draw->pipeline->state);
@@ -53,9 +53,10 @@ static void draw_packet(doe_dx_native_commands *commands,const doe_dx_native_ren
     ID3D12GraphicsCommandList_RSSetViewports(list,1,&viewport);
     ID3D12GraphicsCommandList_RSSetScissorRects(list,1,&scissor);
     ID3D12GraphicsCommandList_IASetPrimitiveTopology(list,D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    doe_dx_bind_vertex_views(commands,draw->pipeline,draw->vertices,draw->vertex_buffer_count);
     ID3D12GraphicsCommandList_DrawInstanced(list,draw->vertex_count,draw->instance_count,
         draw->first_vertex,draw->first_instance);
-    doe_dx_transition_sets(commands,sets,DOE_DX_RENDER_STAGES,true,true);
+    doe_dx_transition_vertex_sets(commands,sets,DOE_DX_RENDER_STAGES,draw->vertices,draw->vertex_buffer_count,true);
 }
 
 doe_dx_status doe_dx_native_render(doe_dx_native_commands *commands,doe_dx_native_texture *color,

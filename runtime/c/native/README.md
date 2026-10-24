@@ -719,9 +719,17 @@ the existing texture-use owner, retaining unknown work normally. The new source
 has focused portable owner/compiler controls; SDK and driver evidence must be
 bound separately before any execution claim. `tests/d3d12_graphics.c` is its
 seven-frame yellow/sampler/frontFace/discard/padding/early-release pixel control.
-Eight MRT slots, vertex input formats, depth/stencil, MSAA, blend/cull, public
-fragment UAV writes and GPU-guarded indexed/indirect graphics remain concrete
-migration work toward retained parity. Read-only storage binds as SRV while retaining logical StorageBinding
+The next direct vertex/instance source increment converts all 41 canonical
+formats to real SDK input identities, requires actual IA format support and
+preserves holes, required empty slots, zero strides, nonzero ranges and shared
+read aliases. Its new RGBA8 `tests/d3d12_vertex_inputs.c` control compares literal
+fetched lanes/default components against wrong-expected negatives, checks 86
+frames plus padding/canaries and releases dependencies before submission. This
+source has host/type/compiler controls only until separate SDK/device evidence
+is bound. The retained `tests/vertex_formats.c` endpoint remains unchanged and
+also requires RGBA32 float/uint/sint targets. Eight MRT slots, broader color
+formats, depth/stencil, MSAA, blend/cull, public fragment UAV writes and GPU-guarded
+indexed/indirect graphics remain concrete migration work toward retained parity. Read-only storage binds as SRV while retaining logical StorageBinding
 admission; compatible sampled/read-storage aliases use one private allocation
 lease and transition. Sampler values are copied into command-owned sampler heaps.
 `tests/texture_bindings.c` is the focused public execution control for nearest and

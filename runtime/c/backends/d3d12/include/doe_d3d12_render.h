@@ -2,6 +2,7 @@
 #ifndef DOE_D3D12_RENDER_H
 #define DOE_D3D12_RENDER_H
 #include "doe_d3d12_dynamic.h"
+#include "doe_d3d12_mesh.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -15,6 +16,12 @@ typedef struct doe_dx_render_pipeline_desc {
     doe_dx_dynamic_pipeline_desc stages[DOE_DX_RENDER_STAGES];
     doe_dx_format color_format; /* One RGBA8/BGRA8 UNORM target, sample 1. */
     bool front_counter_clockwise;
+    /* Public slot order, including holes/empty layouts. Stride0 fetches the
+     * same attribute for every vertex/instance; unused slots may be NULL. */
+    const doe_dx_vertex_layout *vertex_buffers;
+    size_t vertex_buffer_count;
+    const doe_dx_vertex_attribute *attributes;
+    size_t attribute_count;
 } doe_dx_render_pipeline_desc;
 typedef struct doe_dx_render_draw {
     doe_dx_pipeline *pipeline;
@@ -22,6 +29,8 @@ typedef struct doe_dx_render_draw {
     uint32_t vertex_count, instance_count, first_vertex, first_instance;
     float viewport[6]; /* x/y/w/h/minDepth/maxDepth, finite, within target. */
     uint32_t scissor[4]; /* x/y/w/h, within target; empty is permitted. */
+    const doe_dx_buffer_binding *vertices; /* Exactly pipeline slot order. */
+    size_t vertex_buffer_count;
 } doe_dx_render_draw;
 typedef struct doe_dx_render_pass {
     doe_dx_texture *color;
@@ -32,7 +41,7 @@ typedef struct doe_dx_render_pass {
     size_t draw_count; /* Zero draws still execute attachment operations. */
 } doe_dx_render_pass;
 /* Constructors copy typed declarations. No borrowed shader/DXC data survives.
- * No vertex/index buffers, depth, blending, culling, MSAA or indirect work yet.
+ * No index buffers, depth, blending, culling, MSAA or indirect work yet.
  * These are explicit initial composition gaps, not the final migration target. */
 doe_dx_status doe_dx_pipeline_create_render(doe_dx_context *context,
     const doe_dx_render_pipeline_desc *desc,doe_dx_pipeline **out,doe_dx_error *error);

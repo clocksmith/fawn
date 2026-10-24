@@ -4,6 +4,7 @@
  * against them and the WebGPU defaults. https://gpuweb.github.io/gpuweb/#limits */
 #include "internal.h"
 #include "../../backends/d3d12/include/doe_d3d12_dynamic.h"
+#include "../../backends/d3d12/include/doe_d3d12_mesh.h"
 #include "d3d12_frontend.h"
 #include "../../backends/d3d12/include/doe_d3d12_texture.h"
 #include <stddef.h>
@@ -186,18 +187,22 @@ WGPUStatus native_d3d12_limits(const doe_dx_caps *caps, WGPULimits *out)
     uint64_t buffer = native->max_buffer_size & ~UINT64_C(3);
     /* Explicit 2D/single-layer implementation envelope, checked against the
      * actual format/footprint queries at allocation. Procedural graphics uses
-     * one color attachment; presentation/mesh/depth/MSAA remain uncomposed. */
+     * one color attachment; presentation/indexed/depth/MSAA remain uncomposed. */
     *out = (WGPULimits){
         .maxTextureDimension2D = DOE_DX_MAX_TEXTURE_DIMENSION_2D,
         .maxTextureArrayLayers = 1,
-        /* Initial procedural single-color graphics envelope. Stage descriptors
-         * pack128/32 while compute retains its existing64/16 owner limits. */
+        /* Single-color direct vertex/instance graphics envelope. These chosen
+         * input bounds match the private8-slot/16-attribute owner and checked
+         * 2048-byte strides; SDK input-format support is queried per pipeline.
+         * Stage descriptors pack128/32; compute keeps its existing64/16. */
         /* WebGPU's UNORM render-target cost is8, independently of its4-byte
          * texture storage. The canonical resource owner enforces that cost. */
         .maxColorAttachments=1,.maxColorAttachmentBytesPerSample=8,.maxInterStageShaderVariables=16,
         .maxBufferSize = buffer,
         .maxBindGroups = DOE_RESOURCE_MAX_GROUPS,
-        .maxBindGroupsPlusVertexBuffers = DOE_RESOURCE_MAX_GROUPS,
+        .maxBindGroupsPlusVertexBuffers = GROUP_VERTEX_BUDGET,
+        .maxVertexBuffers=DOE_DX_MAX_VERTEX_BUFFERS,.maxVertexAttributes=DOE_DX_MAX_VERTEX_ATTRIBUTES,
+        .maxVertexBufferArrayStride=2048,
         .maxBindingsPerBindGroup = DOE_RESOURCE_MAX_BINDING_NUMBER,
         .maxDynamicUniformBuffersPerPipelineLayout = DYNAMIC_UNIFORM,
         .maxDynamicStorageBuffersPerPipelineLayout = DYNAMIC_STORAGE,
