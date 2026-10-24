@@ -36,7 +36,7 @@ def main() -> None:
     # Doe extensions are a separate, explicit inventory: never webgpu.h names,
     # never resolved through wgpuGetProcAddress.
     extensions = set((owner / "EXTENSION_SYMBOLS.txt").read_text().splitlines())
-    header_text = (owner / "include/doe_native_programs.h").read_text()
+    header_text = "".join(path.read_text() for path in sorted((owner / "include").glob("doe_native_*.h")))
     extension_declared = set(re.findall(r"DOE_NATIVE_EXTENSION[^;]*?\b(doe\w+)\(", header_text))
     procedures = set(re.findall(r'\{"(wgpu\w+)", \(WGPUProc\)\1\}',
                                 (owner / "src/procedures.c").read_text()))

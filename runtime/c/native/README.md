@@ -877,6 +877,20 @@ unfinished parallel ABI6 enum edits; checkpoint testing instead materialized the
 committed ABI5 compiler 54f0fb9f6f7202cb13d37e7440ea9d7e13e99b0f with the recorded
 runtime snapshot. That development drift is not a published checkpoint result.
 
+## Doe shader-check extension
+
+`include/doe_native_shader_check.h` declares the device-less WGSL check the addon's
+`checkShaderSource` (doe-gpu `preflightShaderSource`) resolves, listed in
+`EXTENSION_SYMBOLS.txt` with the same rules as the program extension. The check runs
+the whole-module validation and emission `wgpuDeviceCreateShaderModule` runs for the
+platform's default target (Metal on Apple, SPIR-V elsewhere) and discards the module.
+A rejection keeps its compiler diagnostic, stage (`parser`, `sema`, `unsupported`,
+`emit`, `native_check`), kind and 1-based position for the calling thread until its
+next check; the copy calls never report diagnostics from other operations.
+`tests/shader_check.c` exercises acceptance, parse and semantic rejection, truncated
+copies and a null source; `test-integration-shader-preflight.js` checks the same
+contract through doe-gpu on every provider.
+
 ## Doe compute-program extension
 
 `include/doe_native_programs.h` declares the doe-gpu native program contract the
