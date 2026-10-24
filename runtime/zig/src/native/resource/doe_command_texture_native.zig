@@ -72,8 +72,8 @@ fn copySide(texture: *const DoeTexture) texture_copy.Texture {
 }
 
 /// Encoder-time WebGPU rules; a failure invalidates the encoder (error at
-/// finish), matching the C resource owner. Mip/x/y/z per side, then size.
-fn validateTextureToTexture(device: *native_types.DoeDevice, src: *const DoeTexture, src_at: [4]u32, dst: *const DoeTexture, dst_at: [4]u32, size: [3]u32) command_contract.Failure!void {
+/// finish), matching the C resource owner. Mip/x/y/z/aspect per side, then size.
+fn validateTextureToTexture(device: *native_types.DoeDevice, src: *const DoeTexture, src_at: [5]u32, dst: *const DoeTexture, dst_at: [5]u32, size: [3]u32) command_contract.Failure!void {
     if (src.isUnavailable() or dst.isUnavailable()) return error.InvalidArgument;
     if (src.device_ref != device or dst.device_ref != device) return error.TextureCopyDeviceMismatch;
     if (src.usage & texture_abi.WGPUTextureUsage_CopySrc == 0 or dst.usage & texture_abi.WGPUTextureUsage_CopyDst == 0)
@@ -81,13 +81,15 @@ fn validateTextureToTexture(device: *native_types.DoeDevice, src: *const DoeText
     const compatible = src.format == dst.format or
         (texture_validation.srgbPair(src.format) != 0 and texture_validation.srgbPair(src.format) == dst.format);
     const copy = struct {
-        fn at(position: [4]u32, extent: [3]u32) texture_copy.Copy {
-            return .{ .offset = 0, .bytes_per_row = 0, .rows_per_image = 0, .mip = position[0], .width = extent[0], .height = extent[1], .depth_or_layers = extent[2], .origin = .{ position[1], position[2], position[3] } };
+        fn at(position: [5]u32, extent: [3]u32) texture_copy.Copy {
+            return .{ .offset = 0, .bytes_per_row = 0, .rows_per_image = 0, .mip = position[0], .width = extent[0], .height = extent[1], .depth_or_layers = extent[2], .origin = .{ position[1], position[2], position[3] }, .aspect = position[4] };
         }
     }.at;
     try texture_copy.validateWebGPUTextureToTexture(copySide(src), copy(src_at, size), copySide(dst), copy(dst_at, size), compatible, src == dst);
 }
 
+/// Copies every aspect (`WGPUTextureAspect_All`); wgpuCommandEncoderCopyTextureToTexture
+/// carries the caller's aspects.
 pub export fn doeNativeCommandEncoderCopyTextureToTexture(
     enc_raw: ?*anyopaque,
     src_texture_raw: ?*anyopaque,
@@ -106,11 +108,37 @@ pub export fn doeNativeCommandEncoderCopyTextureToTexture(
     height: u32,
     depth_or_layers: u32,
 ) callconv(.c) void {
+    const all = texture_values.WGPUTextureAspect_All;
+    copyTextureToTexture(enc_raw, src_texture_raw, src_mip, src_slice, src_x, src_y, src_z, all, dst_texture_raw, dst_mip, dst_slice, dst_x, dst_y, dst_z, all, width, height, depth_or_layers);
+}
+
+/// Records a texture-to-texture copy after WebGPU validation; the aspects
+/// must cover each format (the backend copies the format's whole aspect mask).
+pub fn copyTextureToTexture(
+    enc_raw: ?*anyopaque,
+    src_texture_raw: ?*anyopaque,
+    src_mip: u32,
+    src_slice: u32,
+    src_x: u32,
+    src_y: u32,
+    src_z: u32,
+    src_aspect: u32,
+    dst_texture_raw: ?*anyopaque,
+    dst_mip: u32,
+    dst_slice: u32,
+    dst_x: u32,
+    dst_y: u32,
+    dst_z: u32,
+    dst_aspect: u32,
+    width: u32,
+    height: u32,
+    depth_or_layers: u32,
+) void {
     const enc = cast(DoeCommandEncoder, enc_raw) orelse return;
     if (!recording.requireOpen(enc)) return;
     const src = cast(DoeTexture, src_texture_raw) orelse return recording.fail(enc, error.InvalidArgument);
     const dst = cast(DoeTexture, dst_texture_raw) orelse return recording.fail(enc, error.InvalidArgument);
-    validateTextureToTexture(enc.dev, src, .{ src_mip, src_x, src_y, src_z +| src_slice }, dst, .{ dst_mip, dst_x, dst_y, dst_z +| dst_slice }, .{ width, height, depth_or_layers }) catch |err| {
+    validateTextureToTexture(enc.dev, src, .{ src_mip, src_x, src_y, src_z +| src_slice, src_aspect }, dst, .{ dst_mip, dst_x, dst_y, dst_z +| dst_slice, dst_aspect }, .{ width, height, depth_or_layers }) catch |err| {
         recording.fail(enc, err);
         return;
     };
@@ -118,6 +146,9 @@ pub export fn doeNativeCommandEncoderCopyTextureToTexture(
     references.retainTextureAssumeCapacity(&enc.references, src);
     if (!recording.reserve(enc, 0, 1)) return;
     references.retainTextureAssumeCapacity(&enc.references, dst);
+    // A valid empty copy changes no texel but still uses both textures at
+    // submit; the backend region would treat a zero depth as one layer.
+    if (width == 0 or height == 0 or depth_or_layers == 0) return;
     if (!recording.append(enc, .{ .copy_texture_to_texture = .{
         .src_texture = if (enc.dev.backend == .vulkan) toOpaque(src) else src.mtl,
         .src_mip = src_mip,
