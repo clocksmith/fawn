@@ -37,6 +37,62 @@ static void view_defaults(state *s)
     wgpuTextureRelease(image);
 }
 
+/* WebGPU views of a texture without view-capable usage exist but bind nowhere;
+ * transient attachments (one or four samples) clear and discard. */
+static void unviewable_and_transient(state *s)
+{
+    WGPUTexture copies = texture(s,WGPUTextureFormat_RGBA8Unorm,WGPUTextureUsage_CopySrc | WGPUTextureUsage_CopyDst,1);
+    WGPUTextureView unviewable = wgpuTextureCreateView(copies,NULL);
+    assert(unviewable);
+    WGPUBindGroupLayoutEntry entry = WGPU_BIND_GROUP_LAYOUT_ENTRY_INIT;
+    entry.visibility = WGPUShaderStage_Compute;
+    entry.texture.sampleType = WGPUTextureSampleType_Float;
+    entry.texture.viewDimension = WGPUTextureViewDimension_2D;
+    WGPUBindGroupLayoutDescriptor layout_desc = {.entryCount=1,.entries=&entry};
+    WGPUBindGroupLayout layout = wgpuDeviceCreateBindGroupLayout(s->device,&layout_desc);
+    assert(layout);
+    WGPUBindGroupEntry binding = {.binding=0,.textureView=unviewable};
+    WGPUBindGroupDescriptor group_desc = {.layout=layout,.entryCount=1,.entries=&binding};
+    wgpuDevicePushErrorScope(s->device,WGPUErrorFilter_Validation);
+    WGPUBindGroup group = wgpuDeviceCreateBindGroup(s->device,&group_desc);
+    expect_validation(s);
+    if (group) wgpuBindGroupRelease(group);
+    wgpuBindGroupLayoutRelease(layout);
+    wgpuTextureViewRelease(unviewable);
+    wgpuTextureRelease(copies);
+    for (uint32_t samples = 1; samples <= 4; samples += 3) {
+        WGPUTextureDescriptor descriptor = WGPU_TEXTURE_DESCRIPTOR_INIT;
+        descriptor.format = WGPUTextureFormat_RGBA8Unorm;
+        descriptor.size = (WGPUExtent3D){4,4,1};
+        descriptor.sampleCount = samples;
+        descriptor.usage = WGPUTextureUsage_RenderAttachment | WGPUTextureUsage_TransientAttachment;
+        WGPUTexture transient = wgpuDeviceCreateTexture(s->device,&descriptor);
+        assert(transient);
+        WGPUTextureView view = wgpuTextureCreateView(transient,NULL);
+        assert(view);
+        for (int store = 0; store < 2; ++store) {
+            WGPURenderPassColorAttachment color = WGPU_RENDER_PASS_COLOR_ATTACHMENT_INIT;
+            color.view = view;
+            color.loadOp = WGPULoadOp_Clear;
+            color.storeOp = store ? WGPUStoreOp_Store : WGPUStoreOp_Discard;
+            WGPURenderPassDescriptor pass_desc = {.colorAttachmentCount=1,.colorAttachments=&color};
+            WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(s->device,NULL);
+            WGPURenderPassEncoder pass = wgpuCommandEncoderBeginRenderPass(encoder,&pass_desc);
+            wgpuRenderPassEncoderEnd(pass);
+            wgpuRenderPassEncoderRelease(pass);
+            if (store) {
+                /* A transient attachment is never stored. */
+                wgpuDevicePushErrorScope(s->device,WGPUErrorFilter_Validation);
+                finish_invalid(encoder);
+                expect_validation(s);
+                wgpuCommandEncoderRelease(encoder);
+            } else submit(s,encoder);
+        }
+        wgpuTextureViewRelease(view);
+        wgpuTextureRelease(transient);
+    }
+}
+
 int main(void)
 {
     state s = {0};
@@ -192,9 +248,11 @@ int main(void)
     assert(!s.errors && s.validation_errors == 4);
     view_defaults(&s);
     assert(!s.errors && s.validation_errors == 6);
+    unviewable_and_transient(&s);
+    assert(!s.errors && s.validation_errors == 9);
     wgpuQueueRelease(s.queue);
     wgpuDeviceRelease(s.device);
     wgpuAdapterRelease(s.adapter);
     wgpuInstanceRelease(s.instance);
-    printf("PASS public textures: actual zero mips, packed upload, linear sampling, image OOB guards, storage readback, early releases, exact view defaults and filter/pair/copy negatives %s\n", adapter_class_scope());
+    printf("PASS public textures: actual zero mips, packed upload, linear sampling, image OOB guards, storage readback, early releases, exact view defaults, unviewable copy-only views, transient attachments and filter/pair/copy negatives %s\n", adapter_class_scope());
 }

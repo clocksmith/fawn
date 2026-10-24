@@ -29,8 +29,11 @@ WGPUTexture wgpuDeviceCreateTexture(WGPUDevice handle, const WGPUTextureDescript
         native_error(device, WGPUErrorType_Validation, "operation not yet composed for selected backend");
         return NULL;
     }
+    /* Transient attachments are ordinary device-local attachments here; the
+     * resource owner enforces their usage and clear/discard rules. */
     const WGPUTextureUsage supported = WGPUTextureUsage_CopySrc | WGPUTextureUsage_CopyDst |
-        WGPUTextureUsage_TextureBinding | WGPUTextureUsage_StorageBinding | WGPUTextureUsage_RenderAttachment;
+        WGPUTextureUsage_TextureBinding | WGPUTextureUsage_StorageBinding | WGPUTextureUsage_RenderAttachment |
+        WGPUTextureUsage_TransientAttachment;
     /* The header requires accepting WGPUTextureBindingViewDimension. This provider
      * has no compatibility-mode view restrictions (flexible views, as in core
      * mode), so its contents are ignored exactly like on a core device. Other
@@ -109,7 +112,8 @@ WGPUTexture wgpuDeviceCreateTexture(WGPUDevice handle, const WGPUTextureDescript
     if (desc.samples > 1) {
         /* Resource validation requires RenderAttachment and rejects storage;
          * copy usage serves equal-count whole-subresource texture copies. */
-        const WGPUTextureUsage extra = WGPUTextureUsage_TextureBinding | WGPUTextureUsage_CopySrc | WGPUTextureUsage_CopyDst;
+        const WGPUTextureUsage extra = WGPUTextureUsage_TextureBinding | WGPUTextureUsage_CopySrc | WGPUTextureUsage_CopyDst |
+            WGPUTextureUsage_TransientAttachment;
         if ((desc.usage & ~extra) != WGPUTextureUsage_RenderAttachment) {
             native_error(device, WGPUErrorType_Validation, "multisample textures need attachment usage and no storage");
             return NULL;
