@@ -40,6 +40,12 @@ fn populate_draw_cmd_from_pass(cmd: *model_render_types.RenderDrawCommand, pass:
         }
     }
     cmd.target_format = pass.target_format;
+    if (pass.resolve_target_view_handle != 0) {
+        if (native_helpers.cast(shared.DoeTextureView, @ptrFromInt(pass.resolve_target_view_handle))) |view| {
+            cmd.resolve_target_handle = view.tex.vk_id;
+            cmd.resolve_target_view_handle = if (view.handle) |handle| @intFromPtr(handle) else view.tex.vk_id;
+        }
+    }
     cmd.sample_count = if (pass.sample_count != 0) pass.sample_count else cmd.sample_count;
     cmd.clear_color = .{
         @floatCast(pass.clear_r),
@@ -186,6 +192,8 @@ fn base_vulkan_render_cmd(pass: *shared.DoeRenderPass) model_render_types.Render
         .stencil_read_mask = if (pass.pipeline) |pip| pip.stencil_read_mask else 0xFFFF_FFFF,
         .stencil_write_mask = if (pass.pipeline) |pip| pip.stencil_write_mask else 0xFFFF_FFFF,
         .unclipped_depth = pip_unclipped,
+        .sample_mask = if (pass.pipeline) |pip| pip.sample_mask else 0xFFFF_FFFF,
+        .alpha_to_coverage = if (pass.pipeline) |pip| pip.alpha_to_coverage else false,
     };
 }
 

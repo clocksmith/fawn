@@ -38,6 +38,8 @@ pub const RenderState = struct {
     descriptor_set: u64 = VK_NULL_U64,
     render_target: ?vk_resources.TextureResource = null,
     depth_stencil_target: ?vk_resources.TextureResource = null,
+    /// Single-sample image the multisampled color attachment resolves into.
+    resolve_target: ?vk_resources.TextureResource = null,
     target_width: u32 = 0,
     target_height: u32 = 0,
     target_format: u32 = 0,
@@ -231,6 +233,18 @@ fn ensure_render_target(
         state.depth_stencil_target = try create_render_target_texture(self, depth_texture_spec);
         state.owns_depth_stencil_target = true;
     }
+    if (cmd.resolve_target_handle != 0) {
+        const texture = self.textures.get(cmd.resolve_target_handle) orelse return error.InvalidState;
+        const view = if (cmd.resolve_target_view_handle != 0)
+            self.textures.get(cmd.resolve_target_view_handle) orelse return error.InvalidState
+        else
+            texture;
+        if (!vk_resources.texture_view_matches_parent(view, cmd.resolve_target_handle, texture) or texture.sample_count > 1)
+            return error.InvalidArgument;
+        var attachment = texture;
+        attachment.view = view.view;
+        state.resolve_target = attachment;
+    }
     state.target_width = width;
     state.target_height = height;
 }
@@ -372,11 +386,15 @@ fn create_render_pass(
 ) !void {
     const color_initial_layout = if (state.render_target) |target| target.layout else c.VK_IMAGE_LAYOUT_UNDEFINED;
     const depth_initial_layout = if (state.depth_stencil_target) |target| target.layout else c.VK_IMAGE_LAYOUT_UNDEFINED;
+    // Attachments carry their image's sample count; the depth attachment
+    // matches the color attachment (validated when the pass began).
+    const samples = vk_render_pipeline.sample_count_to_vk(if (state.render_target) |target| target.sample_count else 1);
+    const resolve_initial_layout = if (state.resolve_target) |target| target.layout else c.VK_IMAGE_LAYOUT_UNDEFINED;
     var attachments = [_]c.VkAttachmentDescription{
         .{
             .flags = 0,
             .format = vk_format,
-            .samples = c.VK_SAMPLE_COUNT_1_BIT,
+            .samples = samples,
             .loadOp = switch (cmd.color_load) {
                 .clear => c.VK_ATTACHMENT_LOAD_OP_CLEAR,
                 .load => c.VK_ATTACHMENT_LOAD_OP_LOAD,
@@ -390,7 +408,7 @@ fn create_render_pass(
         .{
             .flags = 0,
             .format = depth_stencil_vk_format,
-            .samples = c.VK_SAMPLE_COUNT_1_BIT,
+            .samples = samples,
             .loadOp = switch (cmd.depth_load) {
                 .clear => c.VK_ATTACHMENT_LOAD_OP_CLEAR,
                 .load => c.VK_ATTACHMENT_LOAD_OP_LOAD,
@@ -404,6 +422,25 @@ fn create_render_pass(
             .initialLayout = depth_initial_layout,
             .finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
         },
+        .{
+            .flags = 0,
+            .format = vk_format,
+            .samples = c.VK_SAMPLE_COUNT_1_BIT,
+            .loadOp = c.VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+            .storeOp = c.VK_ATTACHMENT_STORE_OP_STORE,
+            .stencilLoadOp = c.VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+            .stencilStoreOp = c.VK_ATTACHMENT_STORE_OP_DONT_CARE,
+            .initialLayout = resolve_initial_layout,
+            .finalLayout = color_final_layout,
+        },
+    };
+    // Attachment order: color, then depth/stencil when present, then resolve.
+    const resolve_index: u32 = if (has_depth_stencil) 2 else 1;
+    if (!has_depth_stencil) attachments[1] = attachments[2];
+    const attachment_count: u32 = resolve_index + @intFromBool(state.resolve_target != null);
+    var resolve_ref = c.VkAttachmentReference{
+        .attachment = resolve_index,
+        .layout = c.VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
     };
 
     var color_ref = c.VkAttachmentReference{
@@ -422,7 +459,7 @@ fn create_render_pass(
         .pInputAttachments = null,
         .colorAttachmentCount = 1,
         .pColorAttachments = @ptrCast(&color_ref),
-        .pResolveAttachments = null,
+        .pResolveAttachments = if (state.resolve_target != null) @ptrCast(&resolve_ref) else null,
         .pDepthStencilAttachment = if (has_depth_stencil) @ptrCast(&depth_stencil_ref) else null,
         .preserveAttachmentCount = 0,
         .pPreserveAttachments = null,
@@ -430,17 +467,18 @@ fn create_render_pass(
 
     const color_source = vk_resources.texture_transition_source(color_initial_layout);
     const depth_source = vk_resources.texture_transition_source(depth_initial_layout);
+    const resolve_source = vk_resources.texture_transition_source(resolve_initial_layout);
     var dependency = c.VkSubpassDependency{
         .srcSubpass = c.VK_SUBPASS_EXTERNAL,
         .dstSubpass = 0,
-        .srcStageMask = color_source.src_stage | depth_source.src_stage,
+        .srcStageMask = color_source.src_stage | depth_source.src_stage | resolve_source.src_stage,
         .dstStageMask = if (has_depth_stencil)
             c.VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT |
                 VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
                 VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT
         else
             c.VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-        .srcAccessMask = color_source.src_access_mask | depth_source.src_access_mask,
+        .srcAccessMask = color_source.src_access_mask | depth_source.src_access_mask | resolve_source.src_access_mask,
         .dstAccessMask = if (has_depth_stencil)
             c.VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | c.VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
                 VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
@@ -454,8 +492,8 @@ fn create_render_pass(
         .sType = c.VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
         .pNext = null,
         .flags = 0,
-        .attachmentCount = if (has_depth_stencil) 2 else 1,
-        .pAttachments = attachments[0..if (has_depth_stencil) 2 else 1].ptr,
+        .attachmentCount = attachment_count,
+        .pAttachments = &attachments,
         .subpassCount = 1,
         .pSubpasses = @ptrCast(&subpass),
         .dependencyCount = 1,
@@ -471,18 +509,23 @@ fn create_framebuffer(
     height: u32,
 ) !void {
     const target = state.render_target orelse return error.InvalidState;
-    var attachments = [_]c.VkImageView{
-        target.view,
-        if (state.depth_stencil_target) |depth| depth.view else VK_NULL_U64,
-    };
+    // Same order as the render pass: color, depth/stencil, resolve.
+    var attachments: [3]c.VkImageView = undefined;
+    var count: u32 = 0;
+    for ([_]?vk_resources.TextureResource{ target, state.depth_stencil_target, state.resolve_target }) |attachment| {
+        if (attachment) |texture| {
+            attachments[count] = texture.view;
+            count += 1;
+        }
+    }
 
     var fb_info = c.VkFramebufferCreateInfo{
         .sType = c.VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
         .pNext = null,
         .flags = 0,
         .renderPass = state.render_pass,
-        .attachmentCount = if (state.depth_stencil_target != null) 2 else 1,
-        .pAttachments = attachments[0..if (state.depth_stencil_target != null) 2 else 1].ptr,
+        .attachmentCount = count,
+        .pAttachments = &attachments,
         .width = width,
         .height = height,
         .layers = 1,
@@ -567,6 +610,8 @@ fn mark_attachment_layouts(self: anytype, state: *const RenderState, color_layou
         if (state.depth_stencil_target) |texture|
             vk_resources.mark_texture_image_layout(self, texture.image, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
     }
+    if (state.resolve_target) |texture|
+        vk_resources.mark_texture_image_layout(self, texture.image, color_layout);
 }
 
 fn begin_primary_recording(self: anytype) !void {
@@ -756,7 +801,7 @@ pub fn execute_render_bundles(
         .pClearValues = @ptrCast(&clear_value),
     };
     c.vkCmdBeginRenderPass(self.primary_command_buffer, &render_pass_begin, c.VK_SUBPASS_CONTENTS_INLINE);
-    var viewport = c.VkViewport{ .x = 0, .y = 0, .width = @floatFromInt(width), .height = @floatFromInt(height), .minDepth = 0, .maxDepth = 1 };
+    var viewport = draw_recording.webgpu_viewport(0, 0, @floatFromInt(width), @floatFromInt(height), 0, 1);
     c.vkCmdSetViewport(self.primary_command_buffer, 0, 1, @ptrCast(&viewport));
     var scissor = c.VkRect2D{ .offset = .{ .x = 0, .y = 0 }, .extent = .{ .width = width, .height = height } };
     c.vkCmdSetScissor(self.primary_command_buffer, 0, 1, @ptrCast(&scissor));

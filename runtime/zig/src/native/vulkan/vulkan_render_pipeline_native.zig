@@ -107,6 +107,8 @@ pub fn vulkan_create_render_pipeline(
     pip.cull_mode = d.primitive.cullMode;
     pip.unclipped_depth = d.primitive.unclippedDepth != 0;
     pip.sample_count = if (d.multisample_count == 0) 1 else d.multisample_count;
+    pip.sample_mask = d.multisample_mask;
+    pip.alpha_to_coverage = d.multisample_alphaToCoverageEnabled != 0;
     pip.vertex_buffer_count = 0;
     pip.vertex_attribute_count = 0;
     if (d.vertex_bufferCount > 0 and d.vertex_buffers != null) {

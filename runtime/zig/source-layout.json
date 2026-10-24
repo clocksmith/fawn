@@ -1376,15 +1376,15 @@
       },
       "src/backend/vulkan/vk_render.zig": {
         "decision": "Keep",
-        "moduleSha256": "5787a8cf4febec8827d990b012c8f6396b876d06379741d64fb583a4cfb98e35",
-        "reviewer": "codex-doe-public-render-20260928",
-        "reason": "Keep: Vulkan render target and submission ownership uses target-typed clear values for draw, clear, and bundle paths."
+        "moduleSha256": "5b215a2860366869e8742fa00561ec73eb12570bf5a7baed5702f1e270cf6c94",
+        "reviewer": "doe-c-claude-surface/2026-10-24",
+        "reason": "Keep: Vulkan render target and submission ownership uses target-typed clear values for draw, clear, and bundle paths. Pass-level viewports use WebGPU orientation. Render passes use the color image's sample count for color and depth and add a resolve attachment for a resolve target."
       },
       "src/backend/vulkan/vk_render_pipeline.zig": {
         "decision": "Keep",
-        "moduleSha256": "5cd563db312049e78ba04f7832ea5df74edf9b14e27dbe525020aa7eae7026eb",
-        "reason": "Keep: Owns native graphics pipeline conversion with exact allocated entrypoint names and explicit zero color masks; binding/layout admission and unsupported graphics state remain open.",
-        "reviewer": "codex-vulkan-file-review/2026-09-20"
+        "moduleSha256": "1a363abb860087a1aaafccd12b00526830975facea13377f6e1df70e8e50c44d",
+        "reason": "Keep: Owns native graphics pipeline conversion with exact allocated entrypoint names and explicit zero color masks; binding/layout admission and unsupported graphics state remain open. Graphics pipelines carry the WebGPU sample mask and alpha-to-coverage.",
+        "reviewer": "doe-c-claude-surface/2026-10-24"
       },
       "src/backend/vulkan/vk_resources.zig": {
         "decision": "Keep",
@@ -2798,9 +2798,9 @@
       },
       "src/contracts/model/model_render_types.zig": {
         "decision": "Keep",
-        "moduleSha256": "596a984301f25c33a47d132fb71abe5e64a85b7da97341ee27d21aa1f3739644",
-        "reason": "Keep: neutral render-command values carry explicit attachment identities, load choices, and clear values without backend handles escaping native adaptation.",
-        "reviewer": "codex-depth-ownership/2026-09-06"
+        "moduleSha256": "c9b11c36d013400574e32c28dfabd9de26b435776704ed9600e9eb11d52a51bd",
+        "reason": "Keep: neutral render-command values carry explicit attachment identities, load choices, and clear values without backend handles escaping native adaptation. Draw commands carry the multisample mask and alpha-to-coverage. Draw commands carry the resolve target.",
+        "reviewer": "doe-c-claude-surface/2026-10-24"
       },
       "src/contracts/model/model_resource_types.zig": {
         "decision": "Keep",
@@ -3782,9 +3782,9 @@
       },
       "src/native/support/doe_native_object_types.zig": {
         "decision": "Keep",
-        "moduleSha256": "463b1daef745a21f33c59adefb9fc1fd2a6ab2192c6ceab9693dfd9051377ec9",
-        "reason": "Keep: default-off C error-scope partial owner uses final-address typed storage, cold creation rollback and checked final deinit; original classifier, callbacks and device references remain with their existing owners; textures record an allowed srgb view; samplers carry error_object; MUTABLE_FORMAT images with a VkImageFormatListCreateInfo only for textures whose viewFormats name the srgb pair.",
-        "reviewer": "doe-c-claude-surface/2026-10-23"
+        "moduleSha256": "a55fb1097fa0ef2234bbc3fac3fe84bad1027bd42e2b982b9fa734e65647aba6",
+        "reason": "Keep: default-off C error-scope partial owner uses final-address typed storage, cold creation rollback and checked final deinit; original classifier, callbacks and device references remain with their existing owners; textures record an allowed srgb view; samplers carry error_object; MUTABLE_FORMAT images with a VkImageFormatListCreateInfo only for textures whose viewFormats name the srgb pair. Render pipelines keep their multisample mask and alpha-to-coverage.",
+        "reviewer": "doe-c-claude-surface/2026-10-24"
       },
       "src/native/support/doe_native_runtime_helpers.zig": {
         "decision": "Keep",
@@ -3842,15 +3842,15 @@
       },
       "src/native/vulkan/vulkan_render_pass_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "8c2e6f257c182d0c824e2639a4017a14cc6a20579213c11c175b756eece5aad0",
-        "reason": "Keep: native attachment admission owns view and pipeline compatibility; command recording preserves typed validation failures before submission. Backend execution and resource retirement retain their existing owners.",
-        "reviewer": "codex-attachment-admission/2026-09-28"
+        "moduleSha256": "c9fed2882b5c3cb611cb61059c7fcdfae7a33cf1f89f9e0efd87500533ed443f",
+        "reason": "Keep: native attachment admission owns view and pipeline compatibility; command recording preserves typed validation failures before submission. Backend execution and resource retirement retain their existing owners. Draws forward the pipeline's multisample mask and alpha-to-coverage. Draws carry the pass resolve target.",
+        "reviewer": "doe-c-claude-surface/2026-10-24"
       },
       "src/native/vulkan/vulkan_render_pipeline_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "118a41ce4523c1cbcf4b1350bd963a857aa7e0e4421075d900f4fcd018b56e70",
-        "reason": "Keep: native attachment admission owns view and pipeline compatibility; command recording preserves typed validation failures before submission. Backend execution and resource retirement retain their existing owners.",
-        "reviewer": "codex-attachment-admission/2026-09-28"
+        "moduleSha256": "e4dabec89182d79d98062adcaa0c31668645ef5238613a0e86393f5bd4e6b7be",
+        "reason": "Keep: native attachment admission owns view and pipeline compatibility; command recording preserves typed validation failures before submission. Backend execution and resource retirement retain their existing owners. The multisample mask and alpha-to-coverage reach the pipeline object.",
+        "reviewer": "doe-c-claude-surface/2026-10-24"
       },
       "src/native/vulkan/vulkan_render_shared.zig": {
         "decision": "Keep",
@@ -4328,9 +4328,9 @@
       },
       "src/contracts/command_recording.zig": {
         "decision": "Keep",
-        "moduleSha256": "c5fce7da3204744d4d0d42c7c3eef2dd654564987c07d54260ca1e5804c8c335",
-        "reason": "Keep: native attachment admission owns view and pipeline compatibility; command recording preserves typed validation failures before submission. Backend execution and resource retirement retain their existing owners.",
-        "reviewer": "codex-attachment-admission/2026-09-28"
+        "moduleSha256": "928aaffef03ecf9f60a3d2efa84ca59dcf89af4d7b096feac1d3440fd524689c",
+        "reason": "Keep: native attachment admission owns view and pipeline compatibility; command recording preserves typed validation failures before submission. Backend execution and resource retirement retain their existing owners. The unsupported-attachment message no longer lists resolve targets.",
+        "reviewer": "doe-c-claude-surface/2026-10-24"
       },
       "src/native/command/doe_command_recording.zig": {
         "decision": "Keep",
@@ -4406,15 +4406,15 @@
       },
       "src/backend/vulkan/vk_draw_recording.zig": {
         "decision": "Keep",
-        "moduleSha256": "22200099e264fa015c28ecb67088f8e2cc7d0100c65a63059a00ccdda86c9024",
-        "reason": "Keep: Vulkan render recording converts WebGPU clear colors to the target format and records explicit draw state.",
-        "reviewer": "codex-doe-public-render-20260928"
+        "moduleSha256": "b378aad13612590d01efa6268cb877281b6e77445200790bac84ed8fce8dd714",
+        "reason": "Keep: Vulkan render recording converts WebGPU clear colors to the target format and records explicit draw state. Viewports flip to WebGPU orientation with a negative Vulkan height; an empty viewport rasterizes nothing. Vertex buffers bind at their own slots, so unused slots may precede bound ones.",
+        "reviewer": "doe-c-claude-surface/2026-10-24"
       },
       "src/native/vulkan/vulkan_render_attachments.zig": {
         "decision": "Keep",
-        "moduleSha256": "74cf74a5aad6134906c7f8a75183c517517bcfa548d26bd0906e9c9ba2b6adb7",
-        "reason": "Keep: native attachment admission owns view and pipeline compatibility; command recording preserves typed validation failures before submission. Backend execution and resource retirement retain their existing owners.",
-        "reviewer": "codex-attachment-admission/2026-09-28"
+        "moduleSha256": "af7ab8222160b6b14457ade7d8969935e54c21ca15fa2d9a28f7aa5108e8560a",
+        "reason": "Keep: native attachment admission owns view and pipeline compatibility; command recording preserves typed validation failures before submission. Backend execution and resource retirement retain their existing owners. Admits a resolve target that is a single-sample view of the multisampled color format and extent.",
+        "reviewer": "doe-c-claude-surface/2026-10-24"
       },
       "src/backend/vulkan/vk_surface_sync.zig": {
         "decision": "Keep",
