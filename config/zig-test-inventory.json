@@ -222,6 +222,10 @@
           "kind": "integration"
         },
         {
+          "path": "tests/core/doe_resource_validation_test.zig",
+          "kind": "integration"
+        },
+        {
           "path": "tests/core/model_test.zig",
           "kind": "integration"
         },
@@ -677,6 +681,10 @@
         },
         {
           "path": "tests/core/doe_shader_native_test.zig",
+          "kind": "integration"
+        },
+        {
+          "path": "tests/core/doe_resource_validation_test.zig",
           "kind": "integration"
         },
         {

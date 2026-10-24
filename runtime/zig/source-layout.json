@@ -3674,15 +3674,15 @@
       },
       "src/native/resource/doe_bind_group_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "ed0b3a6da0b5a2a91c7ee55d7d4e6a3d72fa05760c8e259c1648f75dd7b1ad47",
-        "reason": "Keep: preserves this native ownership or ABI boundary while separating internal device cleanup leases from application release and enforcing destroyed-device admission; float and depth formats also bind as unfilterable-float.",
-        "reviewer": "doe-c-claude/2026-10-23"
+        "moduleSha256": "d821d231120231364c7ec3f7d6158af7eba2911e4884ef3e348d45e7d693861b",
+        "reason": "Keep: preserves this native ownership or ABI boundary while separating internal device cleanup leases from application release and enforcing destroyed-device admission; float and depth formats also bind as unfilterable-float; invalid samplers are rejected like invalid buffers and views.",
+        "reviewer": "doe-c-claude-surface/2026-10-23"
       },
       "src/native/resource/doe_buffer_ops_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "0db8129375f3bfce6e37edd81e25cf84fbe5b751a3336898c8b07371373dcbcb",
-        "reason": "Keep: Buffer owner selects UAV-capable DEFAULT allocation only for storage usage; upload/readback roles and map-completion fix preserved.",
-        "reviewer": "codex-public-d3d12-compute/2026-10-19"
+        "moduleSha256": "2dc6bbbf326824fb355245fd60d38246bd5bc523541b789f41e293ad7992c95e",
+        "reason": "Keep: Buffer owner selects UAV-capable DEFAULT allocation only for storage usage; upload/readback roles and map-completion fix preserved; invalid usage or mapped size generates a validation error and an invalid buffer (C resource rules).",
+        "reviewer": "doe-c-claude-surface/2026-10-23"
       },
       "src/native/resource/doe_command_texture_native.zig": {
         "decision": "Keep",
@@ -3704,15 +3704,15 @@
       },
       "src/native/resource/doe_texture_sampler_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "1b87c7bcf7378efcfbe8a1816d56af653f0a8ab4c1e7be245a2018b1a2f419a2",
-        "reason": "Keep: preserves this native ownership or ABI boundary while separating internal device cleanup leases from application release and enforcing destroyed-device admission.",
-        "reviewer": "codex"
+        "moduleSha256": "e4675eb798d00b6ea9aab6930baef486accbc948e70e7f653239fb9ca474d0b9",
+        "reason": "Keep: preserves this native ownership or ABI boundary while separating internal device cleanup leases from application release and enforcing destroyed-device admission; invalid sampler clamps/anisotropy and view formats generate validation errors with invalid objects.",
+        "reviewer": "doe-c-claude-surface/2026-10-23"
       },
       "src/native/resource/doe_texture_validation.zig": {
         "decision": "Keep",
-        "moduleSha256": "f3da921b53eef900fb2085f2f213878ea518e778b144c30c7f119f5e5d31c26b",
-        "reason": "Keep: reachable native implementation with private behavior tests and no merge, elevation, recomposition, or deletion signal.",
-        "reviewer": "codex-recomposition-review/2026-08-08"
+        "moduleSha256": "f501c4baead3c0e30d27e342e691f0760d2fa3d1cf9b6d4fc8400aef035baef3",
+        "reason": "Keep: reachable native implementation with private behavior tests and no merge, elevation, recomposition, or deletion signal; owns the srgb view-format pair rule.",
+        "reviewer": "doe-c-claude-surface/2026-10-23"
       },
       "src/native/shader/doe_shader_compilation_info_native.zig": {
         "decision": "Keep",
@@ -3782,9 +3782,9 @@
       },
       "src/native/support/doe_native_object_types.zig": {
         "decision": "Keep",
-        "moduleSha256": "48a0ebec0686c459fc360f1c0b9f1579d0628026147c093f21df818d3b386329",
-        "reason": "Keep: default-off C error-scope partial owner uses final-address typed storage, cold creation rollback and checked final deinit; original classifier, callbacks and device references remain with their existing owners.",
-        "reviewer": "codex-c-error-scopes-author/2026-10-23"
+        "moduleSha256": "9da5bf28cba9cf7f0472050b075970d8f1bd9e8d4c89c536093d38725a06447d",
+        "reason": "Keep: default-off C error-scope partial owner uses final-address typed storage, cold creation rollback and checked final deinit; original classifier, callbacks and device references remain with their existing owners; textures record an allowed srgb view; samplers carry error_object.",
+        "reviewer": "doe-c-claude-surface/2026-10-23"
       },
       "src/native/support/doe_native_runtime_helpers.zig": {
         "decision": "Keep",
@@ -3806,9 +3806,9 @@
       },
       "src/native/vulkan/vulkan_compute_bindings.zig": {
         "decision": "Keep",
-        "moduleSha256": "ac57a5ae2e5e7666a8445a397ab0fac0bf9dfd3131d07285a5f3e7ef429267e9",
-        "reason": "Keep: single Vulkan descriptor collector preserves explicit pipeline layouts and retained bind-group metadata for automatic layouts.",
-        "reviewer": "codex-shader-semantics/2026-09-19"
+        "moduleSha256": "10b211d17c457fb7876af502e3d297c6d950dedfc1ed67fe097792df726b1497",
+        "reason": "Keep: single Vulkan descriptor collector preserves explicit pipeline layouts and retained bind-group metadata for automatic layouts; invalid samplers never bind.",
+        "reviewer": "doe-c-claude-surface/2026-10-23"
       },
       "src/native/vulkan/vulkan_compute_native.zig": {
         "decision": "Keep",
