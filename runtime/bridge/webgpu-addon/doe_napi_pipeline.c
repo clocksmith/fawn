@@ -119,29 +119,6 @@ napi_value doe_create_compute_pipeline(napi_env env, napi_callback_info info) {
     return wrap_ptr(env, pipeline);
 }
 
-/* lastProviderError() -> the provider's last error text with its stage and
- * kind, or null when the provider keeps none (the C runtime reports only to
- * error scopes). JS uses it to word the exception it throws for a rejected
- * creation that no error scope or uncaptured-error listener observes. */
-napi_value doe_last_provider_error(napi_env env, napi_callback_info info) {
-    (void)info;
-    char msg[DOE_ERROR_BUF_CAP];
-    char stage[64];
-    char kind[64];
-    copy_library_error_message(msg, sizeof(msg));
-    napi_value result;
-    if (msg[0] == '\0') {
-        napi_get_null(env, &result);
-        return result;
-    }
-    copy_library_error_meta(pfn_doeNativeCopyLastErrorStage, stage, sizeof(stage));
-    copy_library_error_meta(pfn_doeNativeCopyLastErrorKind, kind, sizeof(kind));
-    char full_msg[DOE_ERROR_BUF_CAP];
-    doe_format_library_error_message(full_msg, sizeof(full_msg), stage, kind, msg);
-    napi_create_string_utf8(env, full_msg, NAPI_AUTO_LENGTH, &result);
-    return result;
-}
-
 /* webgpu.h WGPUPopErrorScopeCallback: (status, type, message, userdata1, userdata2). */
 typedef void (*StandardPopErrorScopeCallback)(uint32_t status, uint32_t type, WGPUStringView message,
     void* userdata1, void* userdata2);

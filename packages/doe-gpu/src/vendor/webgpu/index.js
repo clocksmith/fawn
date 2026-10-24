@@ -3,7 +3,7 @@ import { existsSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { globals } from './webgpu-constants.js';
-import { NATIVE_ERROR_FILTERS as ERROR_SCOPE_FILTERS, captureProviderErrorScopes } from './shared/provider-error-scopes.js';
+import { NATIVE_ERROR_FILTERS as ERROR_SCOPE_FILTERS } from './shared/provider-error-scopes.js';
 import { registerNativeProgramProvider } from '../../compute-program-native.js';
 import {
   createDoeRuntime as createDoeRuntimeCli,
@@ -576,14 +576,15 @@ function requireAutoLayoutEntriesFromNative(shaderNative, visibility, path, entr
   return autoLayoutEntriesFromNativeBindings(bindings, visibility);
 }
 
-// Pops a scope captureProviderErrors pushed: the GPUError it caught, or null
-// when it caught none or the provider could not deliver synchronously.
-function popPrivateErrorScope(device, deviceNative) {
-  try {
-    return createGpuError(addon.devicePopErrorScope(deviceNative, device._instance ?? null));
-  } catch {
-    return null;
+// The provider error sequence (a Uint32Array over the addon's counter), read
+// without a native call; NaN where the addon cannot share it, so every check
+// then takes the log.
+let providerErrorSequence;
+function providerErrorMark() {
+  if (providerErrorSequence === undefined) {
+    providerErrorSequence = typeof addon?.providerErrorSequence === 'function' ? addon.providerErrorSequence() : null;
   }
+  return providerErrorSequence ? providerErrorSequence[0] : Number.NaN;
 }
 
 function createGpuError(result) {
@@ -604,18 +605,6 @@ function createGpuError(result) {
   }
   error.type = result.type ?? 'unknown';
   return error;
-}
-
-function dispatchNodeDeviceEvent(device, event) {
-  if (!event || typeof event !== 'object') {
-    return;
-  }
-  if (typeof event.type === 'string') {
-    dispatchDeviceEvent(device, event.type, event);
-  }
-  if (event.type === 'uncapturederror' && typeof device._onuncapturederror === 'function') {
-    device._onuncapturederror.call(device, event);
-  }
 }
 
 function unsupportedNodeDeviceCapability(name) {
@@ -694,43 +683,24 @@ function installNodeDeviceCallbacks(device) {
           failValidation('GPUDevice.onuncapturederror', 'handler must be a function or null');
         }
         this._onuncapturederror = handler ?? null;
-        syncNodeUncapturedErrorCallback(this, 'GPUDevice.onuncapturederror');
       },
     },
   });
 }
 
-// The provider reports uncaptured errors through one native callback; it is
-// registered while onuncapturederror or an 'uncapturederror' listener exists,
-// and dispatches to both.
-function syncNodeUncapturedErrorCallback(device, path) {
-  if (device._destroyed) return;
-  const listeners = device._eventListeners?.get('uncapturederror');
-  const wanted = typeof device._onuncapturederror === 'function'
-    || (listeners instanceof Set && listeners.size > 0);
-  if (typeof addon?.deviceSetUncapturedErrorCallback !== 'function') {
-    if (wanted) {
-      throw unsupportedNodeDeviceCapability(path);
-    }
+// Provider errors go to one native callback for the device's lifetime; the
+// addon logs them in order and wakes this drain, and the full surface routes
+// them to its error scopes or uncapturederror listeners. No native error
+// scope is pushed, so the log sees every error.
+function installNodeProviderErrorLog(device) {
+  device._providerErrorLog = false;
+  device._providerErrorSeen = providerErrorMark();
+  if (typeof addon?.deviceSetUncapturedErrorCallback !== 'function'
+    || typeof addon?.deviceTakeErrors !== 'function') {
     return;
   }
-  try {
-    const registered = addon.deviceSetUncapturedErrorCallback(
-      device._native,
-      wanted ? (event) => dispatchNodeDeviceEvent(device, event) : null,
-    );
-    if (registered === false && wanted) {
-      throw unsupportedNodeDeviceCapability(path);
-    }
-  } catch (error) {
-    if (String(error?.message ?? '').includes('not available')) {
-      if (wanted) {
-        throw unsupportedNodeDeviceCapability(path);
-      }
-      return;
-    }
-    throw error;
-  }
+  const registered = addon.deviceSetUncapturedErrorCallback(device._native, () => device._drainProviderErrors());
+  device._providerErrorLog = registered !== false;
 }
 
 function nodeDevicePushErrorScope(filter) {
@@ -2543,31 +2513,9 @@ const fullSurfaceBackend = {
   deviceGetQueue(native) {
     return addon.deviceGetQueue(native);
   },
-  deviceUncapturedErrorListenersChanged(device) {
-    syncNodeUncapturedErrorCallback(device, 'GPUDevice.addEventListener');
-  },
-  // The exception for a creation the provider rejected while nothing observed
-  // errors; the provider's own message when it keeps one (Zig drop-in).
-  providerRejection(path) {
-    const text = typeof addon?.lastProviderError === 'function' ? addon.lastProviderError() : null;
-    if (!text) {
-      return new Error(`${path}: the provider rejected the descriptor`);
-    }
-    const error = enrichNativeCompilerError(new Error(text), path, null);
-    if (!error.message.startsWith(`${path}: `)) {
-      error.message = `${path}: ${error.message}`;
-    }
-    return error;
-  },
-  // Keep every native creation error out of the caller's scopes until the
-  // common surface routes its original type exactly once.
-  captureProviderErrors(device, create) {
-    const deviceNative = assertLiveResource(device, 'GPUDevice', 'GPUDevice');
-    return captureProviderErrorScopes(
-      create,
-      filter => addon.devicePushErrorScope(deviceNative, filter),
-      () => popPrivateErrorScope(device, deviceNative),
-    );
+  providerErrorMark,
+  deviceTakeProviderErrors(device) {
+    return addon.deviceTakeErrors(device._native).map(createGpuError);
   },
   deviceCreateBuffer(device, validated) {
     const nativeDescriptor = validated.size === 0 && libraryFlavor(currentDoeLibraryPath()) === 'doe-dropin'
@@ -2855,6 +2803,7 @@ const fullSurfaceBackend = {
     device._adapter = adapter;
     device._adapterInfo = adapter.info;
     installNodeDeviceCallbacks(device);
+    installNodeProviderErrorLog(device);
     registerNativeProgramProvider(device, {
       contractVersion: addon.nativeComputeProgramContractVersion?.() ?? 0,
       gpuRecorded: addon.computeProgramSupported?.() ?? false,

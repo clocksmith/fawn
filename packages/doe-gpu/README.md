@@ -65,7 +65,8 @@ registered, a synchronous creation that fails validation reports one
 `GPUValidationError` there and returns an invalid object, as WebGPU specifies.
 Every later use of that object is a validation error; an encoder that used one
 reports at `finish()` and returns an invalid command buffer. With no scope and
-no handler, the creation throws instead. `createComputePipelineAsync` and
+no handler, the creation throws instead; a missing descriptor or an argument
+of the wrong type always throws `TypeError`. `createComputePipelineAsync` and
 `createRenderPipelineAsync` reject with `GPUPipelineError` and report nothing.
 
 ## Repeated computation

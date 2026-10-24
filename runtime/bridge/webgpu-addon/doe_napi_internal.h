@@ -680,15 +680,16 @@ extern FnMetalBridgeRelease pfn_metalBridgeRelease;
  * Shared structs and globals
  * ================================================================ */
 
+#include "doe_napi_error_log.h"
 typedef struct DeviceCallbackBinding {
     void* device;
     napi_threadsafe_function tsfn;
     napi_ref value_ref;
     struct DeviceCallbackBinding* next;
+    ProviderErrorLog log; /* Uncaptured-error bindings only. */
 } DeviceCallbackBinding;
 
 typedef struct { napi_env env; napi_deferred deferred; } PopErrorScopeRequest;
-typedef struct { uint32_t error_type; char* message; } UncapturedCallbackData;
 typedef struct { uint32_t reason; char* message; } LostCallbackData;
 typedef struct { uint32_t status; WGPUAdapter adapter; uint32_t done; char message[DOE_ERROR_BUF_CAP]; } AdapterRequestResult;
 typedef struct { uint32_t status; WGPUDevice device; uint32_t done; char message[DOE_ERROR_BUF_CAP]; } DeviceRequestResult;
@@ -815,9 +816,7 @@ bool doe_env_init(napi_env env);
  * ================================================================ */
 
 #define NAPI_THROW(env, msg) do { napi_throw_error(env, "DOE_ERROR", msg); return NULL; } while(0)
-/* A creator whose provider returned NULL. The provider has already reported
- * the error to the device's error scopes or uncaptured-error callback, so JS
- * receives null and builds the invalid object without reporting it again. */
+/* A creator whose provider returned NULL: JS gets null (see AGENTS.md). */
 #define NAPI_RETURN_PROVIDER_REJECTED(env) \
     do { napi_value _rejected; napi_get_null(env, &_rejected); return _rejected; } while(0)
 #define MAX_NAPI_ARGS 16
@@ -871,6 +870,7 @@ void pop_error_scope_native_callback(uint32_t error_type, WGPUStringView message
 void js_call_uncaptured_error(napi_env env, napi_value js_cb, void* context, void* data);
 void js_call_lost_callback(napi_env env, napi_value js_cb, void* context, void* data);
 void uncaptured_error_native_callback(uint32_t error_type, WGPUStringView message, void* userdata1, void* userdata2);
+
 void lost_native_callback(uint32_t reason, const char* message_ptr, size_t message_len, void* userdata);
 
 /* Map/queue callbacks */

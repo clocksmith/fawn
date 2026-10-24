@@ -6,6 +6,12 @@ function failValidation(path, message) {
   throw new Error(`${path}: ${message}`);
 }
 
+// A WebIDL conversion failure (wrong type, missing required member): a
+// content-timeline TypeError, thrown even where validation errors are reported.
+function failType(path, message) {
+  throw new TypeError(`${path}: ${message}`);
+}
+
 // A Doe capability gap rather than a WebGPU validation failure: it always
 // throws, even where a validation error would go to an error scope.
 function failUnsupported(path, message) {
@@ -48,14 +54,14 @@ function releaseOwnedResource(resource) {
 
 function assertObject(value, path, label) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
-    failValidation(path, `${label} must be an object`);
+    failType(path, `${label} must be an object`);
   }
   return value;
 }
 
 function assertArray(value, path, label) {
   if (!Array.isArray(value)) {
-    failValidation(path, `${label} must be an array`);
+    failType(path, `${label} must be an array`);
   }
   return value;
 }
@@ -115,7 +121,7 @@ function assertLiveResource(resource, path, label = null) {
   }
   const resourceLabel = label ?? describeResourceLabel(resource);
   if (!resource || typeof resource !== 'object' || !('_native' in resource)) {
-    failValidation(path, `${resourceLabel} must be a Doe WebGPU object`);
+    failType(path, `${resourceLabel} must be a Doe WebGPU object`);
   }
   if (resource._invalid === true) {
     failValidation(path, `${resourceLabel} is invalid because its creation failed validation`);
@@ -159,6 +165,7 @@ export {
   MAX_SAFE_U64,
   UINT32_MAX,
   failValidation,
+  failType,
   failUnsupported,
   describeResourceLabel,
   initResource,
