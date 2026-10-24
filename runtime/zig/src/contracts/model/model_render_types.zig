@@ -30,6 +30,8 @@ pub const RenderAttachmentLoad = enum { clear, load };
 pub const MAX_VERTEX_BUFFERS: usize = 8;
 pub const MAX_VERTEX_ATTRIBUTES: usize = 16;
 pub const MAX_RENDER_BIND_ENTRIES: usize = 16;
+/// WebGPU bind group indices a draw can use; each becomes its own descriptor set.
+pub const MAX_RENDER_BIND_GROUPS: usize = 4;
 pub const RENDER_BINDING_UNSET: u32 = 0xFFFF_FFFF;
 
 /// Undefined with no attributes is an unused (null) vertex buffer slot.
@@ -189,6 +191,10 @@ pub const RenderDrawCommand = struct {
     vertex_entry_point: ?[]const u8 = null,
     fragment_entry_point: ?[]const u8 = null,
     bind_buffer_count: u32 = 0,
+    /// Bind group index (descriptor set) of each buffer, texture and sampler entry.
+    bind_buffer_groups: [MAX_RENDER_BIND_ENTRIES]u8 = [_]u8{0} ** MAX_RENDER_BIND_ENTRIES,
+    bind_texture_groups: [MAX_RENDER_BIND_ENTRIES]u8 = [_]u8{0} ** MAX_RENDER_BIND_ENTRIES,
+    bind_sampler_groups: [MAX_RENDER_BIND_ENTRIES]u8 = [_]u8{0} ** MAX_RENDER_BIND_ENTRIES,
     bind_buffer_handles: [MAX_RENDER_BIND_ENTRIES]u64 = [_]u64{0} ** MAX_RENDER_BIND_ENTRIES,
     bind_buffer_bindings: [MAX_RENDER_BIND_ENTRIES]u32 = [_]u32{RENDER_BINDING_UNSET} ** MAX_RENDER_BIND_ENTRIES,
     bind_buffer_types: [MAX_RENDER_BIND_ENTRIES]u32 = [_]u32{0} ** MAX_RENDER_BIND_ENTRIES,
