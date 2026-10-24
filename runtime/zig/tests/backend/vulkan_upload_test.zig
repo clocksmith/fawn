@@ -415,9 +415,15 @@ test "vulkan upload: Depth32Float maps to VK_FORMAT_D32_SFLOAT (126)" {
     try std.testing.expectEqual(@as(u32, 126), vk_fmt);
 }
 
-test "vulkan upload: Depth24PlusStencil8 maps to VK_FORMAT_D24_UNORM_S8_UINT (129)" {
+// D24_UNORM_S8_UINT is optional in Vulkan (RADV on RDNA lists it unsupported).
+test "vulkan upload: Depth24Plus maps to VK_FORMAT_D32_SFLOAT (126)" {
+    const vk_fmt = try vk_formats.wgpu_format_to_vk_format(model.WGPUTextureFormat_Depth24Plus);
+    try std.testing.expectEqual(@as(u32, 126), vk_fmt);
+}
+
+test "vulkan upload: Depth24PlusStencil8 maps to VK_FORMAT_D32_SFLOAT_S8_UINT (130)" {
     const vk_fmt = try vk_formats.wgpu_format_to_vk_format(model.WGPUTextureFormat_Depth24PlusStencil8);
-    try std.testing.expectEqual(@as(u32, 129), vk_fmt);
+    try std.testing.expectEqual(@as(u32, 130), vk_fmt);
 }
 
 test "vulkan upload: Undefined format returns UnsupportedFeature" {
