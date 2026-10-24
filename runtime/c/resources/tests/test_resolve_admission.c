@@ -26,7 +26,8 @@ static void test_resolve_targets(void)
 {
     const doe_resource_status expected[] = {
         DOE_RESOURCE_OK, DOE_RESOURCE_LAYOUT, DOE_RESOURCE_LAYOUT, DOE_RESOURCE_LAYOUT,
-        DOE_RESOURCE_LAYOUT, DOE_RESOURCE_USAGE, DOE_RESOURCE_USAGE, DOE_RESOURCE_UNAVAILABLE,
+        DOE_RESOURCE_LAYOUT, DOE_RESOURCE_USAGE, DOE_RESOURCE_USAGE,
+        DOE_RESOURCE_OK /* a destroyed resolve texture encodes; submission rejects it */,
         DOE_RESOURCE_DEVICE_MISMATCH, DOE_RESOURCE_OK, DOE_RESOURCE_LAYOUT, DOE_RESOURCE_LAYOUT,
         DOE_RESOURCE_OK, DOE_RESOURCE_OK, DOE_RESOURCE_LAYOUT, DOE_RESOURCE_OK,
         DOE_RESOURCE_OK /* a single-layer 2D array view is a renderable view */
@@ -102,10 +103,15 @@ static void test_resolve_targets(void)
         doe_resource_view_release(resolve);
         if (commands) {
             for (size_t i = 0; i < 4; i++) assert(!tokens[i].releases);
-            assert(doe_resource_commands_begin_submit(commands) == DOE_RESOURCE_OK);
-            doe_resource_commands_release(commands);
-            assert(doe_resource_commands_settle(commands, DOE_RESOURCE_PENDING) == DOE_RESOURCE_PENDING);
-            assert(doe_resource_commands_settle(commands, DOE_RESOURCE_OK) == DOE_RESOURCE_OK);
+            if (scenario == 7) {
+                assert(doe_resource_commands_begin_submit(commands) == DOE_RESOURCE_UNAVAILABLE);
+                doe_resource_commands_release(commands);
+            } else {
+                assert(doe_resource_commands_begin_submit(commands) == DOE_RESOURCE_OK);
+                doe_resource_commands_release(commands);
+                assert(doe_resource_commands_settle(commands, DOE_RESOURCE_PENDING) == DOE_RESOURCE_PENDING);
+                assert(doe_resource_commands_settle(commands, DOE_RESOURCE_OK) == DOE_RESOURCE_OK);
+            }
         }
         for (size_t i = 0; i < 4; i++) assert(tokens[i].releases == 1);
         empty(&f);

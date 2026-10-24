@@ -185,7 +185,7 @@ doe_resource_status doe_resource_encoder_copy_texture(doe_resource_encoder *enco
 {
     doe_resource_status status = resource_encoder_open(encoder);
     if (status != DOE_RESOURCE_OK) return status;
-    if (!resource_buffer_available(buffer) || !resource_texture_available(texture))
+    if (!resource_buffer_available(buffer) || !resource_texture_live(texture))
         return resource_encoder_fail(encoder, DOE_RESOURCE_UNAVAILABLE);
     if (buffer->base.config.device.identity != encoder->base.config.device.identity ||
         texture->base.config.device.identity != encoder->base.config.device.identity)
@@ -442,7 +442,7 @@ static doe_resource_status validate_submission(const doe_resource_command *comma
         if (!resource_alive(&command->value.dispatch.pipeline->base)) return DOE_RESOURCE_UNAVAILABLE;
         for (size_t i = 0; i < command->value.dispatch.group_count; i++) {
             if (!command->value.dispatch.groups[i]) continue;
-            status = resource_group_validate(command->value.dispatch.groups[i]);
+            status = resource_group_validate(command->value.dispatch.groups[i], true);
             if (status != DOE_RESOURCE_OK) return status;
         }
         return DOE_RESOURCE_OK;

@@ -113,7 +113,9 @@ function assertLiveResource(resource, path, label = null) {
   const native = resource?._native;
   if (native != null && !resource._destroyed && !resource._invalid) {
     const owner = resource._resourceOwner;
-    if (!owner || !owner._destroyed) return native;
+    // A view of a destroyed texture still encodes; the provider rejects the
+    // submission (WebGPU validates destroyed textures at submit).
+    if (!owner || !owner._destroyed || owner._resourceLabel === 'GPUTexture') return native;
     failValidation(
       path,
       `${label ?? describeResourceLabel(resource)} cannot be used after ${describeResourceLabel(owner, 'owning resource')} was destroyed`,

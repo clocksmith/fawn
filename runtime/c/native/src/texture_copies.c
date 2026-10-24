@@ -83,9 +83,10 @@ void wgpuQueueWriteTexture(WGPUQueue handle, const WGPUTexelCopyTextureInfo *des
     doe_resource_texture_copy copy = texture_copy(destination, layout, size);
     doe_resource_copy_region region;
     native_lock(device);
-    doe_resource_status status = doe_resource_texture_device(texture) == device ?
+    doe_resource_status status = doe_resource_texture_device(texture) != device ? DOE_RESOURCE_DEVICE_MISMATCH :
+        !doe_resource_texture_available(texture) ? DOE_RESOURCE_UNAVAILABLE :
         doe_resource_texture_copy_validate(data_size, doe_resource_texture_description(texture), &copy,
-            DOE_RESOURCE_BUFFER_TO_TEXTURE, DOE_RESOURCE_COPY_QUEUE, &region) : DOE_RESOURCE_DEVICE_MISMATCH;
+            DOE_RESOURCE_BUFFER_TO_TEXTURE, DOE_RESOURCE_COPY_QUEUE, &region);
     native_unlock(device);
     /* writeTexture data needs no offset or bytesPerRow block alignment: stage
      * the touched block rows tightly at offset 0 (row_bytes pitch, `rows` rows

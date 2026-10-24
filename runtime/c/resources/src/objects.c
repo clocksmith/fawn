@@ -111,6 +111,11 @@ bool resource_texture_available(const doe_resource_texture *texture)
     return texture && !texture->destroyed && resource_alive(&texture->base);
 }
 
+bool resource_texture_live(const doe_resource_texture *texture)
+{
+    return texture && resource_alive(&texture->base);
+}
+
 doe_resource_status resource_range(uint64_t total, uint64_t offset,
     uint64_t requested, uint64_t *size)
 {

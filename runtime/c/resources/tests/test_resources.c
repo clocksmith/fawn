@@ -277,6 +277,38 @@ static void test_view_lifetime(void)
     empty(&f);
 }
 
+/* WebGPU defers a destroyed texture's error to submission: views, copies and
+ * bind groups naming it are admitted, and the recorded copy is rejected. */
+static void test_destroyed_texture(void)
+{
+    fixture f = fresh();
+    native_token texture_token = {0}, view_token = {0}, buffer_token = {0};
+    doe_resource_config c = config(&f);
+    doe_resource_texture_desc desc = texture_desc();
+    doe_resource_texture_limits limits = texture_limits();
+    doe_resource_texture *texture;
+    assert(doe_resource_texture_create(&c, &desc, &limits, native(&f, &texture_token), &texture) == DOE_RESOURCE_OK);
+    doe_resource_texture_destroy(texture);
+    doe_resource_view *view;
+    assert(doe_resource_view_create(texture, &(doe_resource_view_desc){0}, native(&f, &view_token), &view) == DOE_RESOURCE_OK);
+    doe_resource_buffer *readback = buffer(&f, &buffer_token, 256 * 8, WGPUBufferUsage_CopyDst);
+    doe_resource_encoder *encoder;
+    assert(doe_resource_encoder_create(&c, &encoder) == DOE_RESOURCE_OK);
+    doe_resource_texture_copy copy = {.width = 8, .height = 8, .depth_or_layers = 1, .bytes_per_row = 256, .rows_per_image = 8};
+    assert(doe_resource_encoder_copy_texture(encoder, readback, texture, &copy, DOE_RESOURCE_TEXTURE_TO_BUFFER,
+        DOE_RESOURCE_COPY_WEBGPU) == DOE_RESOURCE_OK);
+    doe_resource_commands *commands;
+    assert(doe_resource_encoder_finish(encoder, &commands) == DOE_RESOURCE_OK);
+    assert(doe_resource_commands_begin_submit(commands) == DOE_RESOURCE_UNAVAILABLE);
+    doe_resource_commands_release(commands);
+    doe_resource_encoder_release(encoder);
+    doe_resource_view_release(view);
+    doe_resource_texture_release(texture);
+    doe_resource_buffer_release(readback);
+    assert(texture_token.releases == 1 && view_token.releases == 1 && buffer_token.releases == 1);
+    empty(&f);
+}
+
 static doe_resource_layout_entry storage_entry(uint32_t binding, bool dynamic)
 {
     return (doe_resource_layout_entry){.binding = binding, .visibility = WGPUShaderStage_Compute,
@@ -729,6 +761,7 @@ int main(void)
     test_mapping_completion_tokens();
     test_texture_layout();
     test_view_lifetime();
+    test_destroyed_texture();
     test_binding_layouts();
     test_recorded_submission();
     test_program_replay();
@@ -739,6 +772,6 @@ int main(void)
     test_sampler_and_texture_group();
     test_label_reuse();
     test_atomic_references();
-    puts("resource owner: 15 host suites passed; no GPU execution claimed");
+    puts("resource owner: 16 host suites passed; no GPU execution claimed");
     return 0;
 }

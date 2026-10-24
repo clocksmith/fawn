@@ -2452,6 +2452,12 @@ const fullSurfaceBackend = {
       }
       return;
     }
+    // Mark it destroyed in the provider first: a recorded command buffer that
+    // still references it then fails at submit instead of running.
+    if (typeof addon.textureDestroy !== 'function') {
+      throw unsupportedNodeDeviceCapability('GPUTexture.destroy');
+    }
+    addon.textureDestroy(native);
     addon.textureRelease(native);
   },
   shaderModuleDestroy(native) {

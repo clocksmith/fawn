@@ -241,6 +241,9 @@ bool resource_last_reference(resource_base *base);
 void resource_finalize(resource_base *base, size_t size, size_t alignment);
 bool resource_buffer_available(const doe_resource_buffer *buffer);
 bool resource_texture_available(const doe_resource_texture *texture);
+/* A texture still referenced, destroyed or not: WebGPU admits a destroyed
+ * texture when encoding and rejects it at submit (resource_texture_available). */
+bool resource_texture_live(const doe_resource_texture *texture);
 doe_resource_status resource_range(uint64_t total, uint64_t offset, uint64_t requested, uint64_t *size);
 bool resource_format_compatible(WGPUTextureFormat base, WGPUTextureFormat view);
 bool resource_format_depth(WGPUTextureFormat format);
@@ -255,6 +258,6 @@ bool resource_format_aspect(WGPUTextureFormat format, WGPUTextureAspect aspect);
 unsigned resource_format_aspects(WGPUTextureFormat format);
 doe_resource_status resource_format_block(WGPUTextureFormat format, uint32_t *bytes,
     uint32_t *width, uint32_t *height);
-doe_resource_status resource_group_validate(const doe_resource_bind_group *group);
+doe_resource_status resource_group_validate(const doe_resource_bind_group *group, bool submit);
 void resource_command_release(doe_resource_command *command);
 #endif

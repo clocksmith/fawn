@@ -124,7 +124,7 @@ doe_resource_status doe_resource_texture_blit_validate(const void *device,
         return DOE_RESOURCE_INVALID_ARGUMENT;
     const doe_resource_texture *source = copy->source.texture;
     const doe_resource_texture *destination = copy->destination.texture;
-    if (!resource_texture_available(source) || !resource_texture_available(destination))
+    if (!resource_texture_live(source) || !resource_texture_live(destination))
         return DOE_RESOURCE_UNAVAILABLE;
     if (source->base.config.device.identity != device || destination->base.config.device.identity != device)
         return DOE_RESOURCE_DEVICE_MISMATCH;

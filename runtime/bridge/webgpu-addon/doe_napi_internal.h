@@ -493,6 +493,7 @@ DECL_PFN(void, wgpuCommandBufferRelease, (WGPUCommandBuffer));
 DECL_PFN(WGPUTexture, wgpuDeviceCreateTexture, (WGPUDevice, const WGPUTextureDescriptor*));
 DECL_PFN(WGPUTextureView, wgpuTextureCreateView, (WGPUTexture, const WGPUTextureViewDescriptor*));
 DECL_PFN(void, wgpuTextureRelease, (WGPUTexture));
+DECL_PFN(void, wgpuTextureDestroy, (WGPUTexture));
 DECL_PFN(void, wgpuTextureViewRelease, (WGPUTextureView));
 DECL_PFN(WGPUSampler, wgpuDeviceCreateSampler, (WGPUDevice, const WGPUSamplerDescriptor*));
 DECL_PFN(void, wgpuSamplerRelease, (WGPUSampler));

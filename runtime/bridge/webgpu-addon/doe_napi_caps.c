@@ -724,6 +724,16 @@ napi_value doe_texture_release(napi_env env, napi_callback_info info) {
     return NULL;
 }
 
+/* GPUTexture.destroy(): the provider marks the texture destroyed, so a later
+ * submission that uses it is rejected; the caller still releases its handle. */
+napi_value doe_texture_destroy(napi_env env, napi_callback_info info) {
+    NAPI_ASSERT_ARGC(env, info, 1);
+    if (!pfn_wgpuTextureDestroy) NAPI_THROW(env, "textureDestroy not available");
+    void* p = unwrap_ptr(env, _args[0]);
+    if (p) pfn_wgpuTextureDestroy(p);
+    return NULL;
+}
+
 napi_value doe_texture_view_release(napi_env env, napi_callback_info info) {
     NAPI_ASSERT_ARGC(env, info, 1);
     void* p = unwrap_ptr(env, _args[0]);
