@@ -3518,8 +3518,8 @@
       },
       "src/native/command/doe_encoder_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "7825990daf93c8c21652536c55cc0512242b67c8bbfed20fc6df5b839f576800",
-        "reason": "Keep: preserves this native ownership or ABI boundary while separating internal device cleanup leases from application release and enforcing destroyed-device admission; finish reports the first recorded command failure as the encoder's validation error. Encoder debug groups are balanced at finish().",
+        "moduleSha256": "4a8532d87580f8eb09d9fc833a47f7b37bfe9cb151953bbc85e9b1bcd1b4a245",
+        "reason": "Keep: preserves this native ownership or ABI boundary while separating internal device cleanup leases from application release and enforcing destroyed-device admission; finish reports the first recorded command failure as the encoder's validation error. Encoder debug groups are balanced at finish(). Compute passes validate timestampWrites; an invalid encoder returns an inert compute pass.",
         "reviewer": "doe-c-claude-indexed/2026-10-24"
       },
       "src/native/command/doe_immediates_external_native.zig": {
@@ -3650,8 +3650,8 @@
       },
       "src/native/render/doe_render_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "6df55b18e1dfdac0f90dcdf1908716c51781cb1c1e9461ccc46431aab3e8d63a",
-        "reason": "Keep: native attachment admission owns view and pipeline compatibility; command recording preserves typed validation failures before submission. Backend execution and resource retirement retain their existing owners. Render pass setBindGroup resolves dynamic offsets into pass state. Render pass debug groups are balanced at end(). Pass draws validate bind groups; draws past maxDrawCount fail. beginRenderPass records and retains every color attachment slot. passColorFormats gives a pass's render pass layout. Render pass setPipeline checks the pipeline against the pass layout; the pass sample count comes from any attachment.",
+        "moduleSha256": "4410fa2e5004766f27f8593c125b06046be3fad392cceb8432d447fb13a5e9f4",
+        "reason": "Keep: native attachment admission owns view and pipeline compatibility; command recording preserves typed validation failures before submission. Backend execution and resource retirement retain their existing owners. Render pass setBindGroup resolves dynamic offsets into pass state. Render pass debug groups are balanced at end(). Pass draws validate bind groups; draws past maxDrawCount fail. beginRenderPass records and retains every color attachment slot. passColorFormats gives a pass's render pass layout. Render pass setPipeline checks the pipeline against the pass layout; the pass sample count comes from any attachment. Render passes validate timestampWrites and occlusionQuerySet types; an invalid encoder returns an inert render pass.",
         "reviewer": "doe-c-claude-indexed/2026-10-24"
       },
       "src/native/render/doe_render_pass_controls_native.zig": {
@@ -3698,9 +3698,9 @@
       },
       "src/native/resource/doe_query_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "69b16838b7ba73554ee46bb8656bd2bae58171d160b154886dbe36fc9c6ed37d",
-        "reason": "Keep: preserves this native ownership or ABI boundary while separating internal device cleanup leases from application release and enforcing destroyed-device admission.",
-        "reviewer": "codex"
+        "moduleSha256": "fa02959ceb1773a4212cebb38507c0eddb1de883b875e1b93da0f49d9c54364d",
+        "reason": "Keep: preserves this native ownership or ABI boundary while separating internal device cleanup leases from application release and enforcing destroyed-device admission. passQueriesValid checks pass timestampWrites and occlusionQuerySet.",
+        "reviewer": "doe-c-claude-indexed/2026-10-24"
       },
       "src/native/resource/doe_texture_sampler_native.zig": {
         "decision": "Keep",
@@ -3986,8 +3986,8 @@
       },
       "src/runtime/diagnostics/error_scope.zig": {
         "decision": "Keep",
-        "moduleSha256": "264b61fbad8ceef1107027c74380876df6708df6b3005d3015e5c3bd3206eb73",
-        "reason": "Keep: native attachment admission owns view and pipeline compatibility; command recording preserves typed validation failures before submission. Backend execution and resource retirement retain their existing owners. Draw buffer-bound failures are validation errors. Bind group and dispatch recording causes are validation errors. ImmediateDataRange maps to validation. DebugGroupUnbalanced maps to validation. Draw bind group and maxDrawCount failures map to validation. The color attachment bytes-per-sample failure is a validation error. Adds the message for bindings the execution path cannot run. Render bundle and pipeline incompatibility map to validation. The attachment load/store op failure maps to validation.",
+        "moduleSha256": "2d558dd06f89e32907aa4f2c3dca637113ea25fd05a6d96c55bde4288a51393b",
+        "reason": "Keep: native attachment admission owns view and pipeline compatibility; command recording preserves typed validation failures before submission. Backend execution and resource retirement retain their existing owners. Draw buffer-bound failures are validation errors. Bind group and dispatch recording causes are validation errors. ImmediateDataRange maps to validation. DebugGroupUnbalanced maps to validation. Draw bind group and maxDrawCount failures map to validation. The color attachment bytes-per-sample failure is a validation error. Adds the message for bindings the execution path cannot run. Render bundle and pipeline incompatibility map to validation. The attachment load/store op failure maps to validation. The pass query set failure maps to validation.",
         "reviewer": "doe-c-claude-indexed/2026-10-24"
       },
       "src/runtime/env_flags.zig": {
@@ -4328,8 +4328,8 @@
       },
       "src/contracts/command_recording.zig": {
         "decision": "Keep",
-        "moduleSha256": "225e667b2b9484840ba45756ad75412d5411e1adbbaf64bd2cf6297f93493606",
-        "reason": "Keep: native attachment admission owns view and pipeline compatibility; command recording preserves typed validation failures before submission. Backend execution and resource retirement retain their existing owners. The unsupported-attachment message no longer lists resolve targets. Names WebGPU draw-time vertex and index buffer failures. Owns the setBindGroup dynamic-offset and dispatch validation causes. Adds ImmediateDataRange failure. Adds DebugGroups balance and the DebugGroupUnbalanced failure. Adds draw bind group and maxDrawCount failures. The unsupported-attachment message states the eight-slot limit. Names the color attachment bytes-per-sample failure. Render passes reject swizzled attachment views. Adds render bundle and pipeline layout incompatibility failures. Adds the attachment load/store op failure.",
+        "moduleSha256": "1683aeccb199ffe09b664edb320a20e41f1011863be991f072d352e25f848aa7",
+        "reason": "Keep: native attachment admission owns view and pipeline compatibility; command recording preserves typed validation failures before submission. Backend execution and resource retirement retain their existing owners. The unsupported-attachment message no longer lists resolve targets. Names WebGPU draw-time vertex and index buffer failures. Owns the setBindGroup dynamic-offset and dispatch validation causes. Adds ImmediateDataRange failure. Adds DebugGroups balance and the DebugGroupUnbalanced failure. Adds draw bind group and maxDrawCount failures. The unsupported-attachment message states the eight-slot limit. Names the color attachment bytes-per-sample failure. Render passes reject swizzled attachment views. Adds render bundle and pipeline layout incompatibility failures. Adds the attachment load/store op failure. Adds the pass query set failure.",
         "reviewer": "doe-c-claude-indexed/2026-10-24"
       },
       "src/native/command/doe_command_recording.zig": {

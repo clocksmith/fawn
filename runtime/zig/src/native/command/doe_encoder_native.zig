@@ -78,16 +78,25 @@ pub export fn doeNativeCommandEncoderRelease(raw: ?*anyopaque) callconv(.c) void
 
 pub export fn doeNativeCommandEncoderBeginComputePass(enc_raw: ?*anyopaque, desc: ?*const abi_pipeline.WGPUComputePassDescriptor) callconv(.c) ?*anyopaque {
     const enc = cast(DoeCommandEncoder, enc_raw) orelse return null;
-    if (!recording.requireOpen(enc)) return null;
+    // An invalid encoder still returns a pass, which records nothing.
+    const inert = enc.state == .failed;
+    if (!inert and !recording.requireOpen(enc)) return null;
     const pass = native_helpers.create(DoeComputePass, enc.allocator) catch |err| {
         recording.fail(enc, err);
         return null;
     };
+    if (inert) {
+        native_helpers.object_add_ref(DoeCommandEncoder, enc_raw);
+        pass.* = .{ .enc = enc, .owns_encoder = true };
+        return toOpaque(pass);
+    }
     enc.state = .{ .pass = @intFromPtr(pass) };
     var timestamp_end_query_set: ?*anyopaque = null;
     var timestamp_end_write_index = native_types.UNUSED_PASS_TIMESTAMP_WRITE_INDEX;
     if (desc) |d| {
-        if (d.timestampWrites != null) {
+        if (d.timestampWrites != null and !query_native.passQueriesValid(null, @ptrCast(d.timestampWrites))) {
+            recording.fail(enc, error.PassQuerySetInvalid);
+        } else if (d.timestampWrites != null) {
             const timestamp_writes: *const abi_pipeline.WGPUPassTimestampWrites = @ptrCast(d.timestampWrites);
             if (cast(query_native.DoeQuerySet, timestamp_writes.querySet)) |query_set| {
                 const query_set_raw = toOpaque(query_set);

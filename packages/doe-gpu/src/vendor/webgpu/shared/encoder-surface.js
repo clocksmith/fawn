@@ -224,14 +224,46 @@ function renderPassDescriptorObjects(descriptor) {
   return objects;
 }
 
-// A render pass with no attachment is invalid (WebGPU "GPURenderPassDescriptor
-// valid usage"): the encoder is invalidated, so finish() reports the error.
-function renderPassLacksAttachments(encoder, descriptor) {
+// GPURenderPassDescriptor valid usage a provider cannot see through webgpu.h
+// (https://gpuweb.github.io/gpuweb/#render-pass-descriptor-valid-usage): an
+// invalid descriptor invalidates the encoder, so finish() reports the error.
+function renderPassDescriptorMessage(encoder, descriptor) {
   const colors = descriptor.colorAttachments;
-  if (!Array.isArray(colors) || colors.some((attachment) => attachment != null) || descriptor.depthStencilAttachment != null) {
-    return false;
+  if (!Array.isArray(colors)) return null;
+  if (!colors.some((attachment) => attachment != null) && descriptor.depthStencilAttachment == null) {
+    return 'descriptor needs a color attachment or a depthStencilAttachment';
   }
-  invalidateEncoder(encoder, 'GPUCommandEncoder.beginRenderPass: descriptor needs a color attachment or a depthStencilAttachment');
+  const maxColorAttachments = encoder._device?.limits?.maxColorAttachments ?? 8;
+  if (colors.length > maxColorAttachments) {
+    return `descriptor.colorAttachments has ${colors.length} slots, more than maxColorAttachments (${maxColorAttachments})`;
+  }
+  for (const [index, attachment] of colors.entries()) {
+    if (attachment == null || attachment.view == null) continue;
+    // webgpu.h has no way to tell an absent depthSlice from a given one, so
+    // definedness is checked here: a 3d view needs one, any other view none.
+    const dimension = attachment.view._dimension ?? attachment.view.dimension;
+    if (dimension === '3d' && attachment.depthSlice === undefined) {
+      return `descriptor.colorAttachments[${index}].depthSlice is required for a 3d view`;
+    }
+    if (dimension !== undefined && dimension !== '3d' && attachment.depthSlice !== undefined) {
+      return `descriptor.colorAttachments[${index}].depthSlice is only allowed for a 3d view`;
+    }
+  }
+  const depth = descriptor.depthStencilAttachment;
+  if (depth != null && depth.depthLoadOp === 'clear' && depth.depthClearValue === undefined) {
+    return 'descriptor.depthStencilAttachment.depthClearValue is required when depthLoadOp is "clear"';
+  }
+  const writes = descriptor.timestampWrites;
+  if (writes != null && writes.beginningOfPassWriteIndex === undefined && writes.endOfPassWriteIndex === undefined) {
+    return 'descriptor.timestampWrites needs beginningOfPassWriteIndex or endOfPassWriteIndex';
+  }
+  return null;
+}
+
+function renderPassDescriptorInvalid(encoder, descriptor) {
+  const message = renderPassDescriptorMessage(encoder, descriptor);
+  if (message === null) return false;
+  invalidateEncoder(encoder, `GPUCommandEncoder.beginRenderPass: ${message}`);
   return true;
 }
 
@@ -870,7 +902,7 @@ function createEncoderClasses(backend) {
       if (this._assertOpen('GPUCommandEncoder.beginRenderPass')
         || encoderSkipsUse(this, 'GPUCommandEncoder.beginRenderPass', named.find(isInvalidResource))
         || destroyedTextureUse(this, 'GPUCommandEncoder.beginRenderPass', named)
-        || renderPassLacksAttachments(this, passDescriptor)) {
+        || renderPassDescriptorInvalid(this, passDescriptor)) {
         const invalidPass = new DoeGPURenderPassEncoder(null, this);
         invalidPass._invalid = true;
         invalidPass.label = passDescriptor.label ?? '';
