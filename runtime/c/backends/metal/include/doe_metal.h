@@ -127,10 +127,6 @@ doe_mtl_status doe_mtl_commands_fill(doe_mtl_commands *commands,
 doe_mtl_status doe_mtl_commands_dispatch(doe_mtl_commands *commands,
     doe_mtl_pipeline *pipeline, const doe_mtl_buffer_binding *bindings,
     size_t count, doe_mtl_dimensions groups, uint32_t repeat, doe_mtl_error *error);
-/* Indirect GPU counts need a separate native admission/validation contract.
- * This entrypoint explicitly rejects rather than dispatching unchecked counts. */
-doe_mtl_status doe_mtl_commands_dispatch_indirect(doe_mtl_commands *commands,
-    doe_mtl_error *error);
 doe_mtl_status doe_mtl_commands_submit(doe_mtl_commands *commands, doe_mtl_error *error);
 doe_mtl_status doe_mtl_commands_poll(doe_mtl_commands *commands, doe_mtl_error *error);
 /* Blocking native wait, not a bounded operational timeout. Unknown retains all

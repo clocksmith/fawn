@@ -18,7 +18,9 @@ Private backend ABI, native adapter and focused tests in this directory.
 Validated MSL and explicit compiler workgroup/slot facts enter the
 [compute boundary](include/doe_metal.h); stage/render facts enter the
 [graphics boundary](include/doe_metal_render.h). Outputs are native statuses and
-completion-backed shared-buffer access under [system invariants](../../../../INTENT.md).
+completion-backed shared-buffer access. Typed indirect compute copies GPU arguments
+to private scratch and executes the shared compiled bounds guard before consumption,
+under [system invariants](../../../../INTENT.md).
 
 ## Invariants
 Pending/unknown work retains every resource obligation; failed work never authorizes

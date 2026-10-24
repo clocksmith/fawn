@@ -2,7 +2,7 @@
 #include "texture_internal.h"
 #include "query_internal.h"
 
-static doe_mtl_status use_pipeline(doe_mtl_commands *commands,
+doe_mtl_status doe_mtl_use_compute_pipeline(doe_mtl_commands *commands,
     doe_mtl_pipeline *pipeline) {
     doe_mtl_pipeline_use *use;
     doe_mtl_status status;
@@ -77,7 +77,7 @@ doe_mtl_status doe_mtl_commands_compute(doe_mtl_commands *commands,
         groups.y > SIZE_MAX / pipeline->workgroup.y ||
         groups.z > SIZE_MAX / pipeline->workgroup.z)
         return doe_mtl_poison(commands, DOE_MTL_RANGE, "dispatch grid", error);
-    status = use_pipeline(commands, pipeline);
+    status = doe_mtl_use_compute_pipeline(commands, pipeline);
     for (i = 0; status == DOE_MTL_OK && i < count; ++i) {
         doe_mtl_buffer_use *use;
         status = doe_mtl_use_buffer(commands, bindings[i].buffer, &use);

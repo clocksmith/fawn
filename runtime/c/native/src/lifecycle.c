@@ -199,6 +199,7 @@ void native_device_release(void *identity)
     native_loss_release(device->loss);
     doe_vk_timestamp_normalizer_release(device->timestamp_normalizer);
     native_indirect_guards_release(device);
+    doe_mtl_dispatch_guard_release(device->metal_dispatch_guard);
     native_backend_close(&device->backend);
     doe_instance *instance = device->instance;
     if (doe_mutex_destroy(&device->mutex).status != DOE_HOST_OK) abort();

@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: MIT */
 #include "mock_native.h"
+#include "../include/doe_metal_indirect.h"
 #include "../src/internal.h"
 #include <assert.h>
 #include <stdio.h>
@@ -372,7 +373,7 @@ static void test_validation_and_empty_work(void) {
     assert(doe_mtl_commands_copy(command, buffer, UINT64_MAX - 3, buffer, 0, 8, NULL) == DOE_MTL_RANGE);
     assert(doe_mtl_commands_release(command) == DOE_MTL_OK);
     command = command_create(context);
-    assert(doe_mtl_commands_dispatch_indirect(command, NULL) == DOE_MTL_UNSUPPORTED);
+    assert(doe_mtl_commands_dispatch_indirect(command, NULL, NULL) == DOE_MTL_INVALID_ARGUMENT);
     assert(doe_mtl_commands_release(command) == DOE_MTL_OK);
     command = command_create(context);
     bindings[0] = (doe_mtl_buffer_binding){2, buffer, 0, 64};

@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: MIT */
 #include "internal.h"
+#include "metal_indirect.h"
 #include <string.h>
 
 /* The backend owns guard meaning, private scratch and GPU ordering. Compile its
@@ -76,14 +77,34 @@ void wgpuComputePassEncoderDispatchWorkgroupsIndirect(WGPUComputePassEncoder han
     doe_resource_compute_pass *pass = (doe_resource_compute_pass *)handle;
     native_device *device = doe_resource_compute_pass_device(pass);
     if (!device) return;
+    native_device_retain(device);
     native_lock(device);
+    doe_resource_compute_pass_retain(pass);
     const bool ended = doe_resource_compute_pass_ended(pass);
+    bool metal = device->backend.kind == WGPUBackendType_Metal;
     doe_resource_status status = (device->backend.kind == WGPUBackendType_Vulkan ||
-        device->backend.kind == WGPUBackendType_D3D12) ?
+        device->backend.kind == WGPUBackendType_D3D12 || metal) ?
         doe_resource_compute_pass_dispatch_indirect(pass,(doe_resource_buffer *)arguments,offset) :
         doe_resource_compute_pass_invalidate(pass,DOE_RESOURCE_UNSUPPORTED);
     native_unlock(device);
-    native_encoding_error(device, ended, status, "indirect dispatch admission failed or selected backend unsupported");
+    native_failure failure = native_failure_status(NATIVE_OK);
+    if (metal && status == DOE_RESOURCE_OK) failure = native_metal_guard_initialize(device);
+    if (failure.status != NATIVE_OK) {
+        native_lock(device);
+        doe_resource_status rejection = failure.status == NATIVE_OUT_OF_MEMORY ? DOE_RESOURCE_OUT_OF_MEMORY :
+            native_result_error(failure.status) == WGPUErrorType_Internal ? DOE_RESOURCE_EXECUTION_FAILED :
+            DOE_RESOURCE_INVALID_ARGUMENT;
+        (void)doe_resource_compute_pass_invalidate(pass,rejection);
+        native_unlock(device);
+        char message[NATIVE_FAILURE_MESSAGE_CAPACITY];
+        native_failure_format(&failure,"Metal indirect guard preparation failed",message);
+        native_error(device,native_result_error(failure.status),message);
+    } else native_encoding_error(device, ended, status, "indirect dispatch admission failed or selected backend unsupported");
+    native_lock(device);
+    /* This call's ordinary device lease prevents a final drop under its mutex. */
+    doe_resource_compute_pass_release(pass);
+    native_unlock(device);
+    native_device_release(device);
 }
 
 static void pass_indirect(WGPURenderPassEncoder handle, WGPUBuffer arguments, uint64_t offset, bool indexed)

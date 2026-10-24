@@ -36,6 +36,7 @@ typedef void (*doe_objc_set_object_call)(void *, void *, void *);
 typedef void (*doe_objc_bind_buffer_call)(void *, void *, void *, size_t, size_t);
 typedef void (*doe_objc_bind_bytes_call)(void *, void *, const void *, size_t, size_t);
 typedef void (*doe_objc_dispatch_call)(void *, void *, doe_mtl_size, doe_mtl_size);
+typedef void (*doe_objc_indirect_dispatch_call)(void *, void *, void *, size_t, doe_mtl_size);
 typedef void (*doe_objc_copy_call)(void *, void *, void *, size_t, void *, size_t, size_t);
 typedef void (*doe_objc_fill_call)(void *, void *, void *, doe_mtl_range_abi, uint8_t);
 typedef doe_mtl_size (*doe_objc_dimensions_call)(void *, void *);
@@ -82,6 +83,7 @@ typedef struct doe_mtl_objc {
     doe_objc_bind_buffer_call bind_buffer_call;
     doe_objc_bind_bytes_call bind_bytes_call;
     doe_objc_dispatch_call dispatch_call;
+    doe_objc_indirect_dispatch_call dispatch_indirect_call;
     doe_objc_copy_call copy_call;
     doe_objc_fill_call fill_call;
     doe_objc_dimensions_call dimensions_call;
@@ -138,6 +140,7 @@ typedef struct doe_mtl_objc {
     void *set_buffer;
     void *set_bytes;
     void *dispatch;
+    void *dispatch_indirect;
     void *commit;
     void *wait;
     void *status;
@@ -206,6 +209,9 @@ doe_mtl_status doe_mtl_objc_resolve_timestamps(void *userdata, void *command,
     size_t offset, doe_mtl_error *error);
 void *doe_mtl_objc_timed_compute(doe_mtl_objc *runtime, void *command,
     const doe_mtl_native_timestamps *timestamps);
+doe_mtl_status doe_mtl_objc_dispatch_indirect(void *userdata, void *command, void *pipeline,
+    const doe_mtl_native_resources *resources, uint32_t sizes_slot,
+    void *arguments, size_t offset, doe_mtl_dimensions workgroup, doe_mtl_error *error);
 void doe_mtl_objc_commit(void *userdata, void *command);
 size_t doe_mtl_objc_observe(void *userdata, void *command, bool wait, doe_mtl_error *error);
 #endif

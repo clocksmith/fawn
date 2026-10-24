@@ -69,6 +69,7 @@ doe_mtl_status doe_mtl_poison(doe_mtl_commands *commands, doe_mtl_status status,
     const char *operation, doe_mtl_error *error);
 doe_mtl_status doe_mtl_use_buffer(doe_mtl_commands *commands,
     doe_mtl_buffer *buffer, doe_mtl_buffer_use **out);
+doe_mtl_status doe_mtl_use_compute_pipeline(doe_mtl_commands *commands, doe_mtl_pipeline *pipeline);
 bool doe_mtl_buffer_initialized(const doe_mtl_commands *commands,
     const doe_mtl_buffer *buffer);
 #endif

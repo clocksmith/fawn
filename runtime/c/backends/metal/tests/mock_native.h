@@ -5,13 +5,14 @@
 
 typedef enum mock_operation {
     MOCK_NONE, MOCK_DEVICE, MOCK_QUEUE, MOCK_BUFFER, MOCK_CONTENTS,
-    MOCK_PIPELINE, MOCK_COMMAND, MOCK_COPY, MOCK_FILL, MOCK_DISPATCH,
+    MOCK_PIPELINE, MOCK_COMMAND, MOCK_COPY, MOCK_FILL, MOCK_DISPATCH, MOCK_INDIRECT,
     MOCK_TEXTURE, MOCK_VIEW, MOCK_SAMPLER, MOCK_UPLOAD_IMAGE, MOCK_READ_IMAGE, MOCK_COPY_IMAGE,
     MOCK_RENDER_PIPELINE, MOCK_DEPTH_STATE, MOCK_RENDER, MOCK_TIMESTAMPS, MOCK_TIMESTAMP, MOCK_RESOLVE_TIMESTAMPS
 } mock_operation;
 typedef struct mock_object mock_object;
 typedef struct mock_native {
     mock_operation fail;
+    doe_mtl_status pipeline_failure;
     unsigned live;
     unsigned created;
     unsigned released;
@@ -19,6 +20,13 @@ typedef struct mock_native {
     unsigned copies;
     unsigned fills;
     unsigned dispatches;
+    unsigned indirects;
+    unsigned content_queries;
+    unsigned operation_sequence;
+    unsigned copy_sequence, dispatch_sequence, indirect_sequence;
+    void *indirect_arguments;
+    size_t indirect_offset;
+    void *indirect_pipeline;
     unsigned commits;
     unsigned polls;
     unsigned waits;
@@ -35,6 +43,7 @@ typedef struct mock_native {
     uint8_t last_fill;
     doe_mtl_native_binding bindings[DOE_MTL_BUFFER_SLOTS];
     doe_mtl_native_resources resources;
+    doe_mtl_native_resources direct_resources;
     doe_mtl_texture_desc texture_desc;
     doe_mtl_texture_view_desc view_desc;
     doe_mtl_sampler_desc sampler_desc;
