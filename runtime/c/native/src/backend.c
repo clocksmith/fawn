@@ -103,6 +103,28 @@ native_result native_backend_status(const native_backend *backend)
     return NATIVE_UNSUPPORTED;
 }
 
+/* Lowercase vendor names for PCI and Khronos vendor IDs; empty when unknown
+ * (GPUAdapterInfo.vendor: "empty string otherwise"). */
+static const char *vendor_name(uint32_t id)
+{
+    switch (id) {
+    case 0x1002: case 0x1022: return "amd";
+    case 0x10DE: return "nvidia";
+    case 0x8086: return "intel";
+    case 0x13B5: return "arm";
+    case 0x5143: return "qualcomm";
+    case 0x1010: return "imagination";
+    case 0x106B: return "apple";
+    case 0x14E4: return "broadcom";
+    case 0x144D: return "samsung";
+    case 0x15AD: return "vmware";
+    case 0x1414: return "microsoft";
+    case 0x1AE0: return "google";
+    case 0x10005: return "mesa";
+    default: return "";
+    }
+}
+
 WGPUStatus native_backend_info(const native_backend *backend, WGPUAdapterInfo *out)
 {
     if (!out || out->nextInChain) return WGPUStatus_Error;
@@ -126,11 +148,24 @@ WGPUStatus native_backend_info(const native_backend *backend, WGPUAdapterInfo *o
             caps->unified_memory ? WGPUAdapterType_IntegratedGPU : WGPUAdapterType_DiscreteGPU;
     }
     else return WGPUStatus_Error;
-    size_t size = strlen(name);
-    char *owned = malloc(size + 1);
+    /* One owned block: vendor, architecture, device, description (the driver's
+     * device name). No architecture family is known, so it stays empty. */
+    const char *vendor = vendor_name(result.vendorID);
+    const size_t vendor_size = strlen(vendor), size = strlen(name);
+    char *owned = malloc(vendor_size + 1 + 1 + 2 * (size + 1));
     if (!owned) return WGPUStatus_Error;
-    memcpy(owned, name, size + 1);
-    result.device = (WGPUStringView){owned,size};
+    char *at = owned;
+    memcpy(at, vendor, vendor_size + 1);
+    result.vendor = (WGPUStringView){at,vendor_size};
+    at += vendor_size + 1;
+    *at = '\0';
+    result.architecture = (WGPUStringView){at,0};
+    at += 1;
+    memcpy(at, name, size + 1);
+    result.device = (WGPUStringView){at,size};
+    at += size + 1;
+    memcpy(at, name, size + 1);
+    result.description = (WGPUStringView){at,size};
     *out = result;
     return WGPUStatus_Success;
 }
