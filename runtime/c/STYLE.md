@@ -68,6 +68,10 @@ boundaries, not a second implementation as oracle. Developer controls remain
 separate from frozen independent acceptance. Compilation, sanitizers, target
 validation, native consumption and physical execution prove different things.
 Bind source/build/test identities, refuse drift and retain first failures.
+Build and test drivers reject every nonzero child exit code. Windows CRT/NTSTATUS
+failures can be negative: a positive-only `if errorlevel 1` check misses them.
+Compare a captured exit code with zero, accounting for batch-block expansion;
+later cleanup, logging or successful commands must not replace that status.
 Every execution claim names where it ran: CPU fallback adapter, or the physical
 adapter, driver and host. Print that from the selected adapter at run time rather
 than a fixed label, and keep developer runs on one device distinct from
