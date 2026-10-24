@@ -25,6 +25,9 @@ pub const DrawError = error{
     DrawVertexBufferOutOfBounds,
     DrawIndexBufferMissing,
     DrawIndexBufferOutOfBounds,
+    DrawBindGroupMissing,
+    DrawBindGroupIncompatible,
+    DrawCountExceeded,
 };
 
 /// WebGPU setBindGroup dynamic offsets
@@ -61,6 +64,9 @@ pub fn message(cause: Failure) []const u8 {
         error.DrawVertexBufferOutOfBounds => "draw reads past the bound vertex buffer range",
         error.DrawIndexBufferMissing => "drawIndexed requires a bound index buffer",
         error.DrawIndexBufferOutOfBounds => "drawIndexed reads past the bound index buffer range",
+        error.DrawBindGroupMissing => "draw requires a bind group in every group the pipeline uses",
+        error.DrawBindGroupIncompatible => "draw bind group layout is not compatible with the pipeline layout",
+        error.DrawCountExceeded => "render pass draws exceed its maxDrawCount",
         error.BindGroupIndexOutOfRange => "setBindGroup index must be less than maxBindGroups",
         error.BindGroupDynamicOffsetCount => "setBindGroup dynamic offset count must match the layout's dynamic bindings",
         error.BindGroupDynamicOffsetUnaligned => "setBindGroup dynamic offsets must meet the minimum buffer offset alignment",

@@ -146,6 +146,10 @@ pub const DoeBundleEncoder = struct {
     stencil_read_only: bool,
     // Recorded commands.
     cmds: std.ArrayListUnmanaged(BundleCmd),
+    // Pipeline and bind groups a draw validates against (native objects,
+    // opaque to this module).
+    draw_pipeline: ?*anyopaque = null,
+    draw_bind_groups: [MAX_BIND_GROUPS]?*anyopaque = [_]?*anyopaque{null} ** MAX_BIND_GROUPS,
 };
 
 // ============================================================

@@ -312,7 +312,7 @@ fn populate_pipeline_buffer_binding_typesWithDiagnostic(pip: *DoeComputePipeline
             if (meta.group >= MAX_COMPUTE_BIND_GROUPS or meta.binding >= MAX_BIND) continue;
             const slot = (meta.group * MAX_BIND) + meta.binding;
             pip.vk_flat_buffer_binding_types[slot] = shader_binding_reflection.bufferBindingType(shader_binding_reflection.bindingInfo(meta));
-            pip.vk_required_binding_kinds[slot] = requiredLayoutKind(meta.kind);
+            pip.vk_required_binding_kinds[slot] = shader_binding_reflection.requiredLayoutKind(meta.kind);
         }
         pip.vk_flat_buffer_binding_types_ready = true;
         pip.vk_required_binding_kinds_ready = true;
@@ -324,23 +324,13 @@ fn populate_pipeline_buffer_binding_typesWithDiagnostic(pip: *DoeComputePipeline
         if (meta.group >= MAX_COMPUTE_BIND_GROUPS or meta.binding >= MAX_BIND) continue;
         const slot = (meta.group * MAX_BIND) + meta.binding;
         pip.vk_flat_buffer_binding_types[slot] = shader_binding_reflection.bufferBindingType(shader_binding_reflection.bindingInfo(meta));
-        pip.vk_required_binding_kinds[slot] = requiredLayoutKind(meta.kind);
+        pip.vk_required_binding_kinds[slot] = shader_binding_reflection.requiredLayoutKind(meta.kind);
     }
     pip.vk_flat_buffer_binding_types_ready = true;
     pip.vk_required_binding_kinds_ready = true;
 }
 
 /// The bind group layout resource kind a shader binding needs.
-fn requiredLayoutKind(kind: wgsl_bindings.BindingKind) u8 {
-    const layout_kind: binding_contract.LayoutResourceKind = switch (kind) {
-        .buffer => .buffer,
-        .sampler => .sampler,
-        .texture => .texture,
-        .storage_texture => .storage_texture,
-    };
-    return @intCast(binding_contract.layoutResourceKindCode(layout_kind));
-}
-
 fn reset_pipeline_static_hashes(pip: *DoeComputePipeline) void {
     clearPipelinePreparedBindingCache(pip);
     pip.vk_static_layout_hash = 0;

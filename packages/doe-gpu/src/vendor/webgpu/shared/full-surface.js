@@ -381,63 +381,6 @@ function isObjectRecord(value) {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
 }
 
-function hasActiveNonBufferLayoutMember(entry) {
-  return Boolean(entry.sampler || entry.texture || entry.storageTexture || entry.externalTexture);
-}
-
-function tryCreateBufferBindGroupLayoutFast4(backend, device, layoutDescriptor) {
-  if (typeof backend.deviceCreateBufferBindGroupLayoutFlat4 !== 'function') {
-    return FAST_PATH_NOT_APPLIED;
-  }
-  if (layoutDescriptor.label !== undefined && layoutDescriptor.label !== '') {
-    return FAST_PATH_NOT_APPLIED;
-  }
-  const path = 'GPUDevice.createBindGroupLayout';
-  const entries = layoutDescriptor.entries ?? [];
-  if (!Array.isArray(entries) || entries.length > 4) {
-    return FAST_PATH_NOT_APPLIED;
-  }
-  let b0 = 0;
-  let b1 = 0;
-  let b2 = 0;
-  let b3 = 0;
-  for (let index = 0; index < entries.length; index += 1) {
-    const entry = entries[index];
-    if (!isObjectRecord(entry) || !entry.buffer || hasActiveNonBufferLayoutMember(entry)) {
-      return FAST_PATH_NOT_APPLIED;
-    }
-    const buffer = assertObject(entry.buffer, path, `descriptor.entries[${index}].buffer`);
-    const hasDynamicOffset = buffer.hasDynamicOffset === undefined
-      ? false
-      : assertBoolean(buffer.hasDynamicOffset, path, `descriptor.entries[${index}].buffer.hasDynamicOffset`);
-    if (hasDynamicOffset) {
-      return FAST_PATH_NOT_APPLIED;
-    }
-    assertOptionalIntegerInRange(
-      buffer.minBindingSize ?? 0,
-      path,
-      `descriptor.entries[${index}].buffer.minBindingSize`,
-      { min: 0 },
-    );
-    assertIntegerInRange(entry.visibility, path, `descriptor.entries[${index}].visibility`, { min: 0 });
-    const binding = assertIntegerInRange(entry.binding, path, `descriptor.entries[${index}].binding`, { min: 0, max: UINT32_MAX });
-    if (index === 0) b0 = binding;
-    else if (index === 1) b1 = binding;
-    else if (index === 2) b2 = binding;
-    else b3 = binding;
-  }
-  const native = backend.deviceCreateBufferBindGroupLayoutFlat4(
-    device,
-    entries.length,
-    b0,
-    b1,
-    b2,
-    b3,
-    layoutDescriptor.label || undefined,
-  );
-  return native === undefined ? FAST_PATH_NOT_APPLIED : native;
-}
-
 function resolveFastBufferBindingResource(resource, path, index) {
   if (!isObjectRecord(resource)) {
     return null;
@@ -1960,12 +1903,11 @@ function createFullSurfaceClasses({
       const path = 'GPUDevice.createBindGroupLayout';
       return createReportingErrors(this, path, () => {
         const layoutDescriptor = assertObject(descriptor, path, 'descriptor');
-        let native = tryCreateBufferBindGroupLayoutFast4(backend, this, layoutDescriptor);
-        if (native === FAST_PATH_NOT_APPLIED) {
-          const entries = assertArray(layoutDescriptor.entries ?? [], path, 'descriptor.entries')
-            .map((entry, index) => normalizeBindGroupLayoutEntry(entry, index, path, this.features));
-          native = backend.deviceCreateBindGroupLayout(this, entries, layoutDescriptor.label || undefined);
-        }
+        // Every layout goes through complete entry descriptors: layout
+        // compatibility compares each entry's type, visibility and sizes.
+        const entries = assertArray(layoutDescriptor.entries ?? [], path, 'descriptor.entries')
+          .map((entry, index) => normalizeBindGroupLayoutEntry(entry, index, path, this.features));
+        const native = backend.deviceCreateBindGroupLayout(this, entries, layoutDescriptor.label || undefined);
         if (native === null) {
           return null;
         }

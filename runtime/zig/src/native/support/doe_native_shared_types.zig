@@ -50,4 +50,10 @@ pub const DoeBindGroupLayoutEntry = struct {
     texture_view_dimension: u32 = abi_texture.WGPUTextureViewDimension_Undefined,
     texture_multisampled: bool = false,
     binding_array_size: u32 = 0,
+    /// Remaining WebGPU entry members, so equal-entry layout comparison sees
+    /// every member (https://gpuweb.github.io/gpuweb/#bind-group-layout-equal).
+    visibility: u64 = 0,
+    buffer_min_binding_size: u64 = 0,
+    sampler_binding_type: u32 = 0,
+    storage_texture_format: u32 = 0,
 };

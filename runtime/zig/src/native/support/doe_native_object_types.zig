@@ -492,6 +492,11 @@ pub const DoeRenderPipeline = struct {
     fragment_wgsl_sha256_ready: bool = false,
     vertex_entry_point: ?[]const u8 = null,
     fragment_entry_point: ?[]const u8 = null,
+    /// Layout resource kind (binding.LayoutResourceKind code, 0 = unused) of
+    /// every slot the vertex and fragment entry points use; draws check bind
+    /// groups against it when the pipeline has an automatic layout.
+    required_binding_kinds: [shared.MAX_FLAT_BIND]u8 = [_]u8{0} ** shared.MAX_FLAT_BIND,
+    required_binding_kinds_ready: bool = false,
 };
 
 pub const DoeRenderPass = struct {

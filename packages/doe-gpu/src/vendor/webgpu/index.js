@@ -2548,19 +2548,6 @@ const fullSurfaceBackend = {
     }
     return addon.createBindGroupLayout(assertLiveResource(device, 'GPUDevice.createBindGroupLayout', 'GPUDevice'), entries, label);
   },
-  deviceCreateBufferBindGroupLayoutFlat4(device, entryCount, b0, b1, b2, b3, label) {
-    if (label !== undefined || typeof addon.createBufferBindGroupLayoutFlat4 !== 'function') {
-      return undefined;
-    }
-    return addon.createBufferBindGroupLayoutFlat4(
-      assertLiveResource(device, 'GPUDevice.createBindGroupLayout', 'GPUDevice'),
-      entryCount,
-      b0,
-      b1,
-      b2,
-      b3,
-    );
-  },
   deviceCreateBindGroup(device, layoutNative, entries, label) {
     if (entries.some((entry) => entry.externalTexture)) {
       failUnsupported(

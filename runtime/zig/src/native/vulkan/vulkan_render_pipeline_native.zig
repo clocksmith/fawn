@@ -6,6 +6,8 @@ const wgsl_analysis = @import("../../compiler/wgsl/pipeline/analysis.zig");
 const runtime_compile = @import("../../compiler/wgsl/runtime/runtime_graphics_translation.zig");
 const shared = @import("vulkan_render_shared.zig");
 const error_scope = @import("../../runtime/diagnostics/error_scope.zig");
+const wgsl_bindings = @import("../../compiler/wgsl/pipeline/binding_reflection.zig");
+const shader_binding_reflection = @import("../shader/shader_binding_reflection.zig");
 
 pub fn vulkan_create_render_pipeline(
     dev: *shared.DoeDevice,
@@ -183,7 +185,36 @@ pub fn vulkan_create_render_pipeline(
         return false;
     };
 
+    recordRequiredBindingKinds(pip, vertex, pip.vertex_entry_point, fragment, pip.fragment_entry_point);
     pip.mtl_pso = null;
+    return true;
+}
+
+/// Records the layout resource kind of every binding the vertex and fragment
+/// entry points use; without a named entry point or WGSL source it records
+/// nothing and draws skip the automatic-layout check.
+fn recordRequiredBindingKinds(
+    pipeline: *shared.DoeRenderPipeline,
+    vertex: ?*const shared.DoeShaderModule,
+    vertex_entry: ?[]const u8,
+    fragment: ?*const shared.DoeShaderModule,
+    fragment_entry: ?[]const u8,
+) void {
+    @memset(&pipeline.required_binding_kinds, 0);
+    pipeline.required_binding_kinds_ready = false;
+    if (!addStageBindingKinds(pipeline, vertex, vertex_entry)) return;
+    if (fragment != null and !addStageBindingKinds(pipeline, fragment, fragment_entry)) return;
+    pipeline.required_binding_kinds_ready = true;
+}
+
+fn addStageBindingKinds(pipeline: *shared.DoeRenderPipeline, module: ?*const shared.DoeShaderModule, entry: ?[]const u8) bool {
+    const wgsl = (module orelse return false).wgsl_source orelse return false;
+    var metadata: [native_shared.MAX_SHADER_BINDINGS]wgsl_bindings.BindingMeta = undefined;
+    const count = wgsl_bindings.extractBindingsForEntryPoint(native_helpers.alloc, wgsl, entry orelse return false, &metadata) catch return false;
+    for (metadata[0..count]) |meta| {
+        if (meta.group >= native_shared.MAX_RENDER_BIND_GROUPS or meta.binding >= native_shared.MAX_BIND) continue;
+        pipeline.required_binding_kinds[meta.group * native_shared.MAX_BIND + meta.binding] = shader_binding_reflection.requiredLayoutKind(meta.kind);
+    }
     return true;
 }
 
