@@ -195,8 +195,7 @@ doe_resource_status doe_resource_render_pipeline_create(const doe_resource_confi
     if (!pipeline) return DOE_RESOURCE_OUT_OF_MEMORY;
     pipeline->layout = layout;
     pipeline->desc = normalized;
-    for (size_t i = 0; i < layout->count; i++)
-        if (doe_resource_pipeline_layout_group_required(layout, i) && layout->groups[i]->automatic) layout->groups[i]->automatic_claimed = true;
+    resource_pipeline_layout_claim(layout);
     doe_resource_pipeline_layout_retain(layout);
     resource_init(&pipeline->base, config, native);
     *out = pipeline;

@@ -310,6 +310,34 @@ static void test_binding_layouts(void)
         workgroup, &exclusive) == DOE_RESOURCE_LAYOUT);
     assert(first_pipeline.releases == 1 && second_pipeline.releases == 0);
     doe_resource_pipeline_layout_release(automatic_pipeline_layout);
+    /* Equal automatic groups of one pipeline are group-equivalent; equal
+     * groups of another pipeline, or not yet claimed, are not. */
+    doe_resource_layout *siblings[3], *other;
+    for (size_t i = 0; i < 3; i++)
+        assert(doe_resource_layout_create(&c, entries, 2, true, &siblings[i]) == DOE_RESOURCE_OK);
+    assert(doe_resource_layout_create(&c, entries, 2, true, &other) == DOE_RESOURCE_OK);
+    assert(!doe_resource_layout_compatible(siblings[0], siblings[1]));
+    doe_resource_pipeline_layout *sibling_layout, *other_layout;
+    assert(doe_resource_pipeline_layout_create(&c, siblings, 3, 0, &sibling_layout) == DOE_RESOURCE_OK);
+    assert(doe_resource_pipeline_layout_create(&c, &other, 1, 0, &other_layout) == DOE_RESOURCE_OK);
+    native_token sibling_pipeline = {0}, other_pipeline = {0};
+    doe_resource_pipeline *sibling_owner, *other_owner;
+    assert(doe_resource_pipeline_create(&c, sibling_layout, native(&f, &sibling_pipeline),
+        workgroup, &sibling_owner) == DOE_RESOURCE_OK);
+    assert(doe_resource_layout_compatible(siblings[2], siblings[1]));
+    assert(!doe_resource_layout_compatible(siblings[1], other) && !doe_resource_layout_compatible(a, siblings[0]));
+    assert(doe_resource_pipeline_create(&c, other_layout, native(&f, &other_pipeline),
+        workgroup, &other_owner) == DOE_RESOURCE_OK);
+    assert(!doe_resource_layout_compatible(siblings[0], other));
+    /* The shared identity outlives the first group's own references. */
+    doe_resource_pipeline_release(sibling_owner);
+    doe_resource_pipeline_layout_release(sibling_layout);
+    doe_resource_layout_release(siblings[0]);
+    assert(doe_resource_layout_compatible(siblings[1], siblings[2]));
+    doe_resource_pipeline_release(other_owner);
+    doe_resource_pipeline_layout_release(other_layout);
+    for (size_t i = 1; i < 3; i++) doe_resource_layout_release(siblings[i]);
+    doe_resource_layout_release(other);
     native_token token = {0};
     doe_resource_buffer *buf = buffer(&f, &token, 128, WGPUBufferUsage_Storage);
     doe_resource_binding values[] = {
