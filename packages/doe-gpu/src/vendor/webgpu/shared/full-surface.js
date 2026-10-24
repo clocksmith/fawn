@@ -1576,7 +1576,10 @@ function createFullSurfaceClasses({
     createPipelineLayout(descriptor) {
       const layoutDescriptor = assertObject(descriptor, 'GPUDevice.createPipelineLayout', 'descriptor');
       const layouts = assertArray(layoutDescriptor.bindGroupLayouts ?? [], 'GPUDevice.createPipelineLayout', 'descriptor.bindGroupLayouts')
-        .map((layout, index) => assertLiveResource(layout, 'GPUDevice.createPipelineLayout', `descriptor.bindGroupLayouts[${index}]`));
+        // sequence<GPUBindGroupLayout?>: a null entry is an empty group.
+        .map((layout, index) => (layout == null
+          ? null
+          : assertLiveResource(layout, 'GPUDevice.createPipelineLayout', `descriptor.bindGroupLayouts[${index}]`)));
       const immediateSize = assertIntegerInRange(
         layoutDescriptor.immediateSize ?? 0,
         'GPUDevice.createPipelineLayout',

@@ -95,8 +95,15 @@ const TEXTURE_DIMENSION_MAP = Object.freeze({
   '2d': 2,
   '3d': 3,
 });
-const NODE_ZERO_SIZE_BUFFER_NATIVE_BYTES = 4;
 const nodeBufferSizes = new WeakMap();
+// The Zig drop-in hands a zero size to vkCreateBuffer and crashes
+// (runtime/zig/src/backend/vulkan/vk_resources.zig create_compute_buffer_with_kind).
+// Until it sizes its own allocation like the C provider does, only that
+// provider gets a native stand-in; the GPUBuffer keeps the size 0 it was given.
+const ZIG_ZERO_SIZE_BUFFER_STAND_IN_BYTES = 4;
+// Zero-size buffers the provider created mapped; mapping a zero-size range is
+// otherwise handled here, but these still need the provider's unmap.
+const nodeZeroSizeMappedAtCreation = new WeakSet();
 const TEXTURE_VIEW_DIMENSION_MAP = Object.freeze({
   '1d': 1,
   '2d': 2,
@@ -847,10 +854,6 @@ function lazyCopyBufferValidationMessage(srcNative, srcOffset, dstNative, dstOff
   return null;
 }
 
-function hasDeferredValidationCommand(commands) {
-  return Array.isArray(commands) && commands.some(command => command?.t === 99);
-}
-
 function captureNodeValidationError(device, message) {
   const error = new GPUValidationError(message);
   const scopes = Array.isArray(device?._errorScopes) ? device._errorScopes : [];
@@ -883,23 +886,6 @@ function captureDeferredValidationCommand(queue, commands, commandBuffers) {
     return true;
   }
   return false;
-}
-
-function isNodeLazyDispatchCommand(command) {
-  return command?.t === 0 && command.d === undefined;
-}
-
-function canSubmitNodeLazyCommandsBatched(commands) {
-  if (!Array.isArray(commands) || commands.length === 0) {
-    return false;
-  }
-  if (commands.every(isNodeLazyDispatchCommand)) {
-    return true;
-  }
-  if (commands.length < 2 || commands[commands.length - 1]?.t !== 1) {
-    return false;
-  }
-  return commands.slice(0, -1).every(isNodeLazyDispatchCommand);
 }
 
 function canFinishNodeLazyDispatchCopyCommandsAsNativeBuffer(commands) {
@@ -1013,7 +999,7 @@ function materializeLazyComputePass(pass) {
   }
   for (let index = 0; index < pass._bindGroups.length; index += 1) {
     if (pass._bindGroups[index]) {
-      addon.computePassSetBindGroup(pass._native, index, pass._bindGroups[index]);
+      addon.computePassSetBindGroup(pass._native, index, pass._bindGroups[index], passBindGroupOffsets(pass, index));
     }
   }
 }
@@ -1156,12 +1142,21 @@ function updatePassPipelineState(pass, pipelineNative) {
   return true;
 }
 
-function updatePassBindGroupState(pass, index, bindGroupNative) {
-  if ((pass._bindGroups[index] ?? null) === bindGroupNative) {
+// Offsets are a Uint32Array or null; a slot with offsets is always re-recorded.
+function updatePassBindGroupState(pass, index, bindGroupNative, offsets = null) {
+  const offsetsByGroup = pass._bindGroupOffsets ?? (pass._bindGroupOffsets = []);
+  if ((pass._bindGroups[index] ?? null) === bindGroupNative
+    && offsets === null
+    && (offsetsByGroup[index] ?? null) === null) {
     return false;
   }
   pass._bindGroups[index] = bindGroupNative;
+  offsetsByGroup[index] = offsets;
   return true;
+}
+
+function passBindGroupOffsets(pass, index) {
+  return pass._bindGroupOffsets?.[index] ?? undefined;
 }
 
 function initPendingComputeState(pass) {
@@ -1200,10 +1195,7 @@ function materializeNodePendingComputeState(pass, nativePass) {
     if (!pass._bindGroupDirty[index]) {
       continue;
     }
-    const bindGroupNative = pass._bindGroups[index] ?? null;
-    if (bindGroupNative != null) {
-      addon.computePassSetBindGroup(nativePass, index, bindGroupNative);
-    }
+    addon.computePassSetBindGroup(nativePass, index, pass._bindGroups[index] ?? null, passBindGroupOffsets(pass, index));
     pass._bindGroupDirty[index] = false;
   }
 }
@@ -1291,9 +1283,13 @@ const nodeEncoderBackend = {
     }
     markPassPipelineDirty(pass);
   },
-  computePassSetBindGroup(pass, index, bindGroupNative) {
-    if (!updatePassBindGroupState(pass, index, bindGroupNative)) {
+  computePassSetBindGroup(pass, index, bindGroupNative, offsets = null) {
+    if (!updatePassBindGroupState(pass, index, bindGroupNative, offsets)) {
       return;
+    }
+    if (offsets !== null) {
+      // Deferred dispatch commands carry no dynamic offsets; record natively.
+      materializeLazyComputePass(pass);
     }
     if (pass._lazy) {
       return;
@@ -1339,6 +1335,7 @@ const nodeEncoderBackend = {
       typeof addon.computePassDispatchBound === 'function'
       && (pass._pipelineDirty || pass._bindGroupDirty[0] === true)
       && !hasPendingNonZeroBindGroups(pass)
+      && passBindGroupOffsets(pass, 0) === undefined
     ) {
       addon.computePassDispatchBound(
         nativePass,
@@ -1355,6 +1352,9 @@ const nodeEncoderBackend = {
     addon.computePassDispatchWorkgroups(nativePass, x, y, z);
   },
   computePassDispatchBound(pass, pipelineNative, bindGroupNative, x, y, z) {
+    if (pass._bindGroupOffsets) {
+      pass._bindGroupOffsets[0] = null;
+    }
     if (pass._lazy) {
       pass._pipeline = pipelineNative;
       pass._bindGroups[0] = bindGroupNative;
@@ -1440,14 +1440,15 @@ const nodeEncoderBackend = {
       pipelineNative,
     );
   },
-  renderPassSetBindGroup(pass, index, bindGroupNative) {
-    if (!updatePassBindGroupState(pass, index, bindGroupNative)) {
+  renderPassSetBindGroup(pass, index, bindGroupNative, offsets = null) {
+    if (!updatePassBindGroupState(pass, index, bindGroupNative, offsets)) {
       return;
     }
     addon.renderPassSetBindGroup(
       assertLiveResource(pass, 'GPURenderPassEncoder.setBindGroup', 'GPURenderPassEncoder'),
       index,
       bindGroupNative,
+      offsets ?? undefined,
     );
   },
   renderPassSetImmediates(pass, index, data) {
@@ -1515,49 +1516,58 @@ const nodeEncoderBackend = {
     addon.renderPassSetStencilReference(pass._native, ref);
   },
   renderPassBeginOcclusionQuery(pass, queryIndex) {
-    if (typeof addon.renderPassBeginOcclusionQuery === 'function') {
-      addon.renderPassBeginOcclusionQuery(pass._native, queryIndex);
+    if (typeof addon.renderPassBeginOcclusionQuery !== 'function') {
+      throw unsupportedNodeDeviceCapability('GPURenderPassEncoder.beginOcclusionQuery');
     }
+    addon.renderPassBeginOcclusionQuery(pass._native, queryIndex);
   },
   renderPassEndOcclusionQuery(pass) {
-    if (typeof addon.renderPassEndOcclusionQuery === 'function') {
-      addon.renderPassEndOcclusionQuery(pass._native);
+    if (typeof addon.renderPassEndOcclusionQuery !== 'function') {
+      throw unsupportedNodeDeviceCapability('GPURenderPassEncoder.endOcclusionQuery');
     }
+    addon.renderPassEndOcclusionQuery(pass._native);
   },
   renderPassExecuteBundles(pass, bundles) {
-    if (typeof addon.renderPassExecuteBundles === 'function') {
-      addon.renderPassExecuteBundles(pass._native, bundles.map((b) => b._native));
+    if (typeof addon.renderPassExecuteBundles !== 'function') {
+      throw unsupportedNodeDeviceCapability('GPURenderPassEncoder.executeBundles');
     }
+    addon.renderPassExecuteBundles(pass._native, bundles.map((b) => b._native));
   },
   renderPassPushDebugGroup(pass, label) {
-    if (typeof addon.renderPassPushDebugGroup === 'function') {
-      addon.renderPassPushDebugGroup(pass._native, label);
+    if (typeof addon.renderPassPushDebugGroup !== 'function') {
+      throw unsupportedNodeDeviceCapability('GPURenderPassEncoder.pushDebugGroup');
     }
+    addon.renderPassPushDebugGroup(pass._native, label);
   },
   renderPassPopDebugGroup(pass) {
-    if (typeof addon.renderPassPopDebugGroup === 'function') {
-      addon.renderPassPopDebugGroup(pass._native);
+    if (typeof addon.renderPassPopDebugGroup !== 'function') {
+      throw unsupportedNodeDeviceCapability('GPURenderPassEncoder.popDebugGroup');
     }
+    addon.renderPassPopDebugGroup(pass._native);
   },
   renderPassInsertDebugMarker(pass, label) {
-    if (typeof addon.renderPassInsertDebugMarker === 'function') {
-      addon.renderPassInsertDebugMarker(pass._native, label);
+    if (typeof addon.renderPassInsertDebugMarker !== 'function') {
+      throw unsupportedNodeDeviceCapability('GPURenderPassEncoder.insertDebugMarker');
     }
+    addon.renderPassInsertDebugMarker(pass._native, label);
   },
   computePassPushDebugGroup(pass, label) {
-    if (typeof addon.computePassPushDebugGroup === 'function') {
-      addon.computePassPushDebugGroup(pass._native, label);
+    if (typeof addon.computePassPushDebugGroup !== 'function') {
+      throw unsupportedNodeDeviceCapability('GPUComputePassEncoder.pushDebugGroup');
     }
+    addon.computePassPushDebugGroup(pass._native, label);
   },
   computePassPopDebugGroup(pass) {
-    if (typeof addon.computePassPopDebugGroup === 'function') {
-      addon.computePassPopDebugGroup(pass._native);
+    if (typeof addon.computePassPopDebugGroup !== 'function') {
+      throw unsupportedNodeDeviceCapability('GPUComputePassEncoder.popDebugGroup');
     }
+    addon.computePassPopDebugGroup(pass._native);
   },
   computePassInsertDebugMarker(pass, label) {
-    if (typeof addon.computePassInsertDebugMarker === 'function') {
-      addon.computePassInsertDebugMarker(pass._native, label);
+    if (typeof addon.computePassInsertDebugMarker !== 'function') {
+      throw unsupportedNodeDeviceCapability('GPUComputePassEncoder.insertDebugMarker');
     }
+    addon.computePassInsertDebugMarker(pass._native, label);
   },
   renderPassEnd(pass) {
     addon.renderPassEnd(pass._native);
@@ -1581,11 +1591,11 @@ const nodeEncoderBackend = {
     }
     addon.renderBundleEncoderSetPipeline(enc._native, pipelineNative);
   },
-  renderBundleEncoderSetBindGroup(enc, index, bindGroupNative) {
-    if (!updatePassBindGroupState(enc, index, bindGroupNative)) {
+  renderBundleEncoderSetBindGroup(enc, index, bindGroupNative, offsets = null) {
+    if (!updatePassBindGroupState(enc, index, bindGroupNative, offsets)) {
       return;
     }
-    addon.renderBundleEncoderSetBindGroup(enc._native, index, bindGroupNative);
+    addon.renderBundleEncoderSetBindGroup(enc._native, index, bindGroupNative, offsets ?? undefined);
   },
   renderBundleEncoderSetImmediates(enc, index, data) {
     if (!updatePassImmediateState(enc, index, data)) {
@@ -1628,24 +1638,28 @@ const nodeEncoderBackend = {
     addon.renderBundleEncoderDrawIndexedIndirect(enc._native, indirectBufferNative, indirectOffset);
   },
   commandBufferDestroy(native) {
-    if (typeof addon.commandBufferRelease === 'function') {
-      addon.commandBufferRelease(native);
+    if (typeof addon.commandBufferRelease !== 'function') {
+      throw unsupportedNodeDeviceCapability('GPUCommandBuffer.release');
     }
+    addon.commandBufferRelease(native);
   },
   renderBundleEncoderPushDebugGroup(enc, label) {
-    if (typeof addon.renderBundleEncoderPushDebugGroup === 'function') {
-      addon.renderBundleEncoderPushDebugGroup(enc._native, label);
+    if (typeof addon.renderBundleEncoderPushDebugGroup !== 'function') {
+      throw unsupportedNodeDeviceCapability('GPURenderBundleEncoder.pushDebugGroup');
     }
+    addon.renderBundleEncoderPushDebugGroup(enc._native, label);
   },
   renderBundleEncoderPopDebugGroup(enc) {
-    if (typeof addon.renderBundleEncoderPopDebugGroup === 'function') {
-      addon.renderBundleEncoderPopDebugGroup(enc._native);
+    if (typeof addon.renderBundleEncoderPopDebugGroup !== 'function') {
+      throw unsupportedNodeDeviceCapability('GPURenderBundleEncoder.popDebugGroup');
     }
+    addon.renderBundleEncoderPopDebugGroup(enc._native);
   },
   renderBundleEncoderInsertDebugMarker(enc, label) {
-    if (typeof addon.renderBundleEncoderInsertDebugMarker === 'function') {
-      addon.renderBundleEncoderInsertDebugMarker(enc._native, label);
+    if (typeof addon.renderBundleEncoderInsertDebugMarker !== 'function') {
+      throw unsupportedNodeDeviceCapability('GPURenderBundleEncoder.insertDebugMarker');
     }
+    addon.renderBundleEncoderInsertDebugMarker(enc._native, label);
   },
   renderBundleEncoderFinish(enc, _descriptor, classes) {
     const bundle = addon.renderBundleEncoderFinish(enc._native);
@@ -1653,9 +1667,10 @@ const nodeEncoderBackend = {
     return new classes.DoeGPURenderBundle(bundle, enc._encoder ?? enc);
   },
   renderBundleDestroy(native) {
-    if (typeof addon.renderBundleRelease === 'function') {
-      addon.renderBundleRelease(native);
+    if (typeof addon.renderBundleRelease !== 'function') {
+      throw unsupportedNodeDeviceCapability('GPURenderBundle.release');
     }
+    addon.renderBundleRelease(native);
   },
   commandEncoderInit(encoder) {
     encoder._commands = [];
@@ -1708,6 +1723,11 @@ const nodeEncoderBackend = {
     return pass;
   },
   commandEncoderBeginRenderPass(encoder, passDescriptor, classes) {
+    // An attachment names a GPUTextureView or a GPUTexture, which stands for
+    // its default view (https://gpuweb.github.io/gpuweb/#texture-view-creation).
+    const attachmentView = (resource, label) => assertLiveResource(
+      typeof resource?.createView === 'function' ? resource.createView() : resource,
+      'GPUCommandEncoder.beginRenderPass', label);
     const attachments = assertArray(passDescriptor.colorAttachments ?? [], 'GPUCommandEncoder.beginRenderPass', 'descriptor.colorAttachments');
     if (!attachments.some((attachment) => attachment != null) && passDescriptor.depthStencilAttachment == null) {
       failValidation('GPUCommandEncoder.beginRenderPass', 'descriptor needs a color attachment or a depthStencilAttachment');
@@ -1717,13 +1737,13 @@ const nodeEncoderBackend = {
       if (attachment === null || attachment === undefined) return null;
       const entry = assertObject(attachment, 'GPUCommandEncoder.beginRenderPass', `descriptor.colorAttachments[${index}]`);
       const normalized = {
-        view: assertLiveResource(entry.view, 'GPUCommandEncoder.beginRenderPass', 'GPUTextureView'),
+        view: attachmentView(entry.view, 'GPUTextureView'),
         clearValue: normalizeGpuColor(entry.clearValue, `descriptor.colorAttachments[${index}].clearValue`),
         loadOp: entry.loadOp ?? 'clear',
         storeOp: entry.storeOp ?? 'store',
       };
       if (entry.resolveTarget !== undefined && entry.resolveTarget !== null) {
-        normalized.resolveTarget = assertLiveResource(entry.resolveTarget, 'GPUCommandEncoder.beginRenderPass', 'GPUTextureView');
+        normalized.resolveTarget = attachmentView(entry.resolveTarget, 'GPUTextureView');
       }
       if (entry.depthSlice !== undefined) {
         normalized.depthSlice = entry.depthSlice;
@@ -1734,7 +1754,7 @@ const nodeEncoderBackend = {
     if (passDescriptor.depthStencilAttachment !== undefined) {
       const depthAttachment = assertObject(passDescriptor.depthStencilAttachment, 'GPUCommandEncoder.beginRenderPass', 'descriptor.depthStencilAttachment');
       depthStencilAttachment = {
-        view: assertLiveResource(depthAttachment.view, 'GPUCommandEncoder.beginRenderPass', 'GPUTextureView'),
+        view: attachmentView(depthAttachment.view, 'GPUTextureView'),
         // Operations stay absent when not given: the spec requires them only
         // for an aspect the format has, and forbids them otherwise.
         depthLoadOp: depthAttachment.depthLoadOp,
@@ -1889,15 +1909,20 @@ const nodeEncoderBackend = {
     if (encoder._native == null) {
       const commands = encoder._commands;
       encoder._commands = [];
-      if (
-        commands.length > 0
-        && !hasDeferredValidationCommand(commands)
-        && !canSubmitNodeLazyCommandsBatched(commands)
-      ) {
-        const nativeCommandBuffer = finishNodeLazyCommandsAsNativeCommandBuffer(encoder, commands);
-        if (nativeCommandBuffer) {
-          return { _native: nativeCommandBuffer, _batched: false, _commands: commands };
+      // finish() reports the encoder's validation result (WebGPU), so deferred
+      // commands are recorded natively here rather than at submit. A deferred
+      // JavaScript validation failure is reported now and again at submit.
+      const invalid = commands.find((command) => command?.t === 99);
+      if (invalid) {
+        const message = invalid.message ?? 'deferred command validation failed';
+        if (!captureNodeValidationError(encoder._device, message)) {
+          failValidation('GPUCommandEncoder.finish', message);
         }
+        return { _commands: commands, _batched: true };
+      }
+      if (commands.length > 0) {
+        const nativeCommandBuffer = finishNodeLazyCommandsAsNativeCommandBuffer(encoder, commands);
+        return { _native: nativeCommandBuffer, _batched: false, _commands: commands };
       }
       return { _commands: commands, _batched: true };
     }
@@ -2113,7 +2138,7 @@ const fullSurfaceBackend = {
     }
     wrapper._mappedWriteRanges = [];
     wrapper._mapMode = 0;
-    if (wrapper.size > 0) {
+    if (wrapper.size > 0 || nodeZeroSizeMappedAtCreation.delete(native)) {
       addon.bufferUnmap(native);
     }
   },
@@ -2529,10 +2554,13 @@ const fullSurfaceBackend = {
     return addon.deviceGetQueue(native);
   },
   deviceCreateBuffer(device, validated) {
-    const nativeDescriptor = validated.size === 0
-      ? { ...validated, size: NODE_ZERO_SIZE_BUFFER_NATIVE_BYTES, mappedAtCreation: false }
+    const nativeDescriptor = validated.size === 0 && libraryFlavor(currentDoeLibraryPath()) === 'doe-dropin'
+      ? { ...validated, size: ZIG_ZERO_SIZE_BUFFER_STAND_IN_BYTES, mappedAtCreation: false }
       : validated;
     const native = addon.createBuffer(assertLiveResource(device, 'GPUDevice.createBuffer', 'GPUDevice'), nativeDescriptor);
+    if (nativeDescriptor.size === 0 && nativeDescriptor.mappedAtCreation) {
+      nodeZeroSizeMappedAtCreation.add(native);
+    }
     nodeBufferSizes.set(native, validated.size);
     return native;
   },
@@ -2644,6 +2672,7 @@ const fullSurfaceBackend = {
   deviceCreatePipelineLayout(device, layouts, label, immediateSize = 0) {
     if (
       layouts.length === 1
+      && layouts[0] != null
       && label === undefined
       && typeof addon.createPipelineLayoutOne === 'function'
     ) {

@@ -3,6 +3,7 @@
  * https://gpuweb.github.io/gpuweb/#depth-stencil-state
  * https://gpuweb.github.io/gpuweb/#dom-gpudevice-createrenderpipeline */
 #include "render_internal.h"
+#include <math.h>
 
 static bool stencil(WGPUStencilOperation value, uint32_t *out)
 {
@@ -35,7 +36,12 @@ bool native_render_depth(uint32_t features, const WGPUDepthStencilState *source,
     doe_resource_render_pipeline_desc *resource)
 {
     if (!source) return true;
-    if (source->nextInChain || source->depthBias || source->depthBiasSlopeScale != 0 || source->depthBiasClamp != 0 ||
+    /* https://gpuweb.github.io/gpuweb/#abstract-opdef-validating-gpudepthstencilstate:
+     * depth bias applies to triangle topologies only. */
+    const bool biased = source->depthBias || source->depthBiasSlopeScale != 0 || source->depthBiasClamp != 0;
+    if (source->nextInChain ||
+        (biased && target->topology != DOE_VK_TRIANGLES && target->topology != DOE_VK_TRIANGLE_STRIP) ||
+        !isfinite(source->depthBiasSlopeScale) || !isfinite(source->depthBiasClamp) ||
         !native_depth_format(features, source->format, &target->depth_stencil_format) ||
         !face(&source->stencilFront, &target->stencil_front) || !face(&source->stencilBack, &target->stencil_back) ||
         !native_compare_operation(source->depthCompare, 7, &target->depth_compare)) return false;
@@ -57,6 +63,9 @@ bool native_render_depth(uint32_t features, const WGPUDepthStencilState *source,
         target->stencil_front.depth_fail_operation || target->stencil_back.depth_fail_operation)) return false;
     target->depth_test = depth;
     target->stencil_test = has_stencil;
+    target->depth_bias = source->depthBias;
+    target->depth_bias_slope_scale = source->depthBiasSlopeScale;
+    target->depth_bias_clamp = source->depthBiasClamp;
     target->stencil_read_mask = source->stencilReadMask;
     target->stencil_write_mask = source->stencilWriteMask;
     resource->depth_stencil_format = source->format;

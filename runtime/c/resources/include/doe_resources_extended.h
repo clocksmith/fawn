@@ -91,12 +91,16 @@ typedef struct doe_resource_render_bundle_desc {
     WGPUTextureFormat color_formats[DOE_RESOURCE_MAX_COLOR_ATTACHMENTS];
 } doe_resource_render_bundle_desc;
 /* One color slot. A NULL view is unused and requires Undefined load/store and
- * no resolve target. A resolve target is a distinct single-sample view. */
+ * no resolve target. A resolve target is a distinct single-sample view. A 3D
+ * view renders one depth slice (has_depth_slice, depth_slice below the view
+ * mip's depth); every other view leaves has_depth_slice false. */
 typedef struct doe_resource_color_attachment {
     doe_resource_view *view, *resolve_target;
     WGPULoadOp load;
     WGPUStoreOp store;
     double clear[4];
+    bool has_depth_slice;
+    uint32_t depth_slice;
 } doe_resource_color_attachment;
 
 typedef struct doe_resource_render_targets {

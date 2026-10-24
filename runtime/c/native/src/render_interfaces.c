@@ -62,11 +62,19 @@ bool native_render_interfaces(const native_stage stages[2], size_t stage_count, 
             const DoeCompilerStageInterfaceV7 *item = &stage->view.interfaces[i];
             if (item->entry_index != entry_index) continue;
             if (item->builtin) {
-                if (s == 1 && item->direction == DOE_COMPILER_INTERFACE_INPUT &&
-                    item->builtin == DOE_COMPILER_BUILTIN_FRONT_FACING && variable_budget) --variable_budget;
-                if (s == 1 && (item->builtin == DOE_COMPILER_BUILTIN_FRAG_DEPTH ||
-                    item->builtin == DOE_COMPILER_BUILTIN_SAMPLE_INDEX || item->builtin == DOE_COMPILER_BUILTIN_SAMPLE_MASK))
-                    return false; /* Fragment depth outputs and sample-rate builtins remain unsupported. */
+                const bool fragment_input = s == 1 && item->direction == DOE_COMPILER_INTERFACE_INPUT;
+                const bool sample_builtin = item->builtin == DOE_COMPILER_BUILTIN_SAMPLE_INDEX ||
+                    item->builtin == DOE_COMPILER_BUILTIN_SAMPLE_MASK;
+                /* Each front_facing, sample_index and sample_mask input takes one slot. */
+                if (fragment_input && (sample_builtin || item->builtin == DOE_COMPILER_BUILTIN_FRONT_FACING)) {
+                    if (!variable_budget) return false;
+                    --variable_budget;
+                }
+                if (s == 1 && (sample_builtin || item->builtin == DOE_COMPILER_BUILTIN_FRAG_DEPTH) &&
+                    !caps->fragment_builtins) return false;
+                /* https://gpuweb.github.io/gpuweb/#abstract-opdef-validating-gpumultisamplestate */
+                if (s == 1 && item->direction == DOE_COMPILER_INTERFACE_OUTPUT &&
+                    item->builtin == DOE_COMPILER_BUILTIN_SAMPLE_MASK && alpha_to_coverage) return false;
                 continue;
             }
             if (s == 0 && item->direction == DOE_COMPILER_INTERFACE_INPUT) {
@@ -100,6 +108,24 @@ bool native_render_interfaces(const native_stage stages[2], size_t stage_count, 
         /* Native component capacity stays a backstop; the reported limit is
          * derived from it (limits.c), so admitted shaders fit. */
         if (components > (s ? caps->max_fragment_input_components : caps->max_vertex_output_components)) return false;
+    }
+    return true;
+}
+
+bool native_render_fragment_depth(const native_stage stages[2], size_t stage_count,
+    const WGPUDepthStencilState *depth_stencil)
+{
+    if (stage_count != 2) return true;
+    const native_stage *fragment = &stages[1];
+    size_t entry_index = (size_t)(fragment->entry - fragment->view.entries);
+    for (size_t i = 0; i < fragment->view.interface_count; ++i) {
+        const DoeCompilerStageInterfaceV7 *item = &fragment->view.interfaces[i];
+        if (item->entry_index != entry_index || item->direction != DOE_COMPILER_INTERFACE_OUTPUT ||
+            item->builtin != DOE_COMPILER_BUILTIN_FRAG_DEPTH) continue;
+        WGPUTextureFormat aspect;
+        /* https://gpuweb.github.io/gpuweb/#abstract-opdef-validating-gpudepthstencilstate */
+        return depth_stencil && doe_resource_format_aspect_format(depth_stencil->format,
+            WGPUTextureAspect_DepthOnly, &aspect) == DOE_RESOURCE_OK;
     }
     return true;
 }

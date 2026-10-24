@@ -40,6 +40,10 @@ doe_vk_status doe_vk_prepare_features(doe_vk_context *context, const doe_vk_opti
     if (features.features.depthClamp) selection.base.depthClamp = 1;
     /* Optional BC block compression (WebGPU texture-compression-bc). */
     if (features.features.textureCompressionBC) selection.base.textureCompressionBC = 1;
+    /* Optional per-sample shading (WebGPU core sample_index and sample interpolation). */
+    if (features.features.sampleRateShading) selection.base.sampleRateShading = 1;
+    /* Optional clamped depth bias (WebGPU depthBiasClamp). */
+    if (features.features.depthBiasClamp) selection.base.depthBiasClamp = 1;
     if (available && demote.shaderDemoteToHelperInvocation) {
         selection.demote = demote;
         selection.extension = demote_extension;

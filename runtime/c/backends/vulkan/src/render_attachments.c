@@ -94,7 +94,8 @@ doe_vk_status doe_vk_render_pass_create(doe_vk_context *context, const doe_vk_re
 static doe_vk_status validate_view(doe_vk_commands *commands, doe_vk_texture_view *view,
     uint32_t usage, uint32_t *width, uint32_t *height) {
     if (view == NULL || view->texture->context != commands->context ||
-        view->desc.dimension != DOE_VK_VIEW_2D || view->desc.mip_count != 1 || view->desc.layer_count != 1 ||
+        (view->desc.dimension != DOE_VK_VIEW_2D && view->desc.dimension != DOE_VK_VIEW_2D_ARRAY) ||
+        view->desc.mip_count != 1 || view->desc.layer_count != 1 ||
         view->aspects != doe_vk_format_aspects(view->texture->desc.format) ||
         doe_vk_texture_view_swizzled(view) || !(view->texture->desc.usage & usage)) return DOE_VK_INVALID_ARGUMENT;
     const doe_vk_texture *texture = view->texture;
@@ -179,7 +180,10 @@ doe_vk_status doe_vk_render_attachments_validate(doe_vk_commands *commands,
     return DOE_VK_OK;
 }
 
+/* Per-aspect owner state has one entry per mip of a 3D image (its slices
+ * share it) and one per (mip, layer) otherwise. */
 static size_t subresource_index(const doe_vk_texture_view *view) {
+    if (view->texture->desc.dimension == DOE_VK_TEXTURE_3D) return view->desc.base_mip;
     return (size_t)view->desc.base_mip * view->texture->desc.depth_or_layers + view->desc.base_layer;
 }
 
@@ -264,8 +268,11 @@ doe_vk_status doe_vk_render_attachments_prepare(doe_vk_commands *commands, const
      * command completion. Discard cannot become initialized through a draw. */
     for (uint32_t i = 0; i < colors->count; ++i) {
         const doe_vk_color_attachment *slot = &colors->slots[i];
+        /* A discarded 3D slice is re-zeroed right after the pass (its mip's
+         * other slices keep their contents), so the mip stays initialized. */
         if (color[i] != NULL)
-            color[i]->initialized[subresource_index(slot->view)] = slot->discard ? 0 : VK_IMAGE_ASPECT_COLOR_BIT;
+            color[i]->initialized[subresource_index(slot->view)] =
+                slot->discard && !doe_vk_texture_view_is_slice(slot->view) ? 0 : VK_IMAGE_ASPECT_COLOR_BIT;
         if (resolve[i] != NULL) resolve[i]->initialized[subresource_index(slot->resolve_target)] = VK_IMAGE_ASPECT_COLOR_BIT;
     }
     if (depth != NULL) {

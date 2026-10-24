@@ -468,15 +468,6 @@ napi_value doe_render_pass_set_pipeline(napi_env env, napi_callback_info info) {
     return NULL;
 }
 
-napi_value doe_render_pass_set_bind_group(napi_env env, napi_callback_info info) {
-    NAPI_ASSERT_ARGC(env, info, 3);
-    WGPURenderPassEncoder pass = unwrap_ptr(env, _args[0]);
-    uint32_t index = 0; napi_get_value_uint32(env, _args[1], &index);
-    WGPUBindGroup bg = unwrap_ptr(env, _args[2]);
-    pfn_wgpuRenderPassEncoderSetBindGroup(pass, index, bg, 0, NULL);
-    return NULL;
-}
-
 napi_value doe_render_pass_set_immediates(napi_env env, napi_callback_info info) {
     NAPI_ASSERT_ARGC(env, info, 3);
     if (!pfn_doeNativeRenderPassSetImmediates) NAPI_THROW(env, "renderPassSetImmediates not available");
@@ -854,16 +845,6 @@ napi_value doe_render_bundle_encoder_set_pipeline(napi_env env, napi_callback_in
     if (!enc || !pipeline) return NULL;
     if (!pfn_doeNativeRenderBundleEncoderSetPipeline) NAPI_THROW(env, "renderBundleEncoderSetPipeline not available");
     pfn_doeNativeRenderBundleEncoderSetPipeline(enc, pipeline);
-    return NULL;
-}
-
-napi_value doe_render_bundle_encoder_set_bind_group(napi_env env, napi_callback_info info) {
-    NAPI_ASSERT_ARGC(env, info, 3);
-    void* enc = unwrap_ptr(env, _args[0]); if (!enc) return NULL;
-    uint32_t index = 0; napi_get_value_uint32(env, _args[1], &index);
-    void* bg = unwrap_ptr(env, _args[2]); if (!bg) return NULL;
-    if (!pfn_doeNativeRenderBundleEncoderSetBindGroup) NAPI_THROW(env, "renderBundleEncoderSetBindGroup not available");
-    pfn_doeNativeRenderBundleEncoderSetBindGroup(enc, index, bg, 0, NULL);
     return NULL;
 }
 

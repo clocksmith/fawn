@@ -7,6 +7,7 @@ const query_native = @import("../resource/doe_query_native.zig");
 const std = @import("std");
 const upstream = @import("../../core/abi/generated/webgpu_upstream.zig").c;
 const shared = @import("vulkan_render_shared.zig");
+const attachments = @import("vulkan_render_attachments.zig");
 
 const RESOURCE_KIND_STORAGE_TEXTURE = binding_contract.layoutResourceKindCode(.storage_texture);
 
@@ -211,7 +212,16 @@ fn recordRender(pass: *shared.DoeRenderPass, cmd: model_render_types.RenderDrawC
     pass.attachments_started = true;
 }
 
+fn admitDraw(pass: *shared.DoeRenderPass, draw: attachments.Draw) bool {
+    attachments.validateDrawBounds(pass, draw) catch |err| {
+        recording.fail(pass.enc, err);
+        return false;
+    };
+    return true;
+}
+
 pub fn vulkan_render_pass_draw(pass: *shared.DoeRenderPass, vertex_count: u32, instance_count: u32, first_vertex: u32, first_instance: u32) void {
+    if (!admitDraw(pass, .{ .direct = .{ .vertex_count = vertex_count, .instance_count = instance_count, .first_vertex = first_vertex, .first_instance = first_instance } })) return;
     var cmd = base_vulkan_render_cmd(pass);
     cmd.vertex_count = vertex_count;
     cmd.instance_count = instance_count;
@@ -222,6 +232,7 @@ pub fn vulkan_render_pass_draw(pass: *shared.DoeRenderPass, vertex_count: u32, i
 }
 
 pub fn vulkan_render_pass_draw_indexed(pass: *shared.DoeRenderPass, index_count: u32, instance_count: u32, first_index: u32, base_vertex: i32, first_instance: u32) void {
+    if (!admitDraw(pass, .{ .indexed = .{ .index_count = index_count, .instance_count = instance_count, .first_index = first_index, .first_instance = first_instance } })) return;
     var cmd = base_vulkan_render_cmd(pass);
     cmd.instance_count = instance_count;
     cmd.first_instance = first_instance;
@@ -233,6 +244,7 @@ pub fn vulkan_render_pass_draw_indexed(pass: *shared.DoeRenderPass, index_count:
 }
 
 pub fn vulkan_render_pass_draw_indirect(pass: *shared.DoeRenderPass, indirect_buffer_raw: ?*anyopaque, indirect_offset: u64) void {
+    if (!admitDraw(pass, .indirect)) return;
     const indirect = native_helpers.cast(shared.DoeBuffer, indirect_buffer_raw) orelse return;
     if (indirect.error_object or indirect.vk_id == 0) return;
     var cmd = base_vulkan_render_cmd(pass);
@@ -243,6 +255,7 @@ pub fn vulkan_render_pass_draw_indirect(pass: *shared.DoeRenderPass, indirect_bu
 }
 
 pub fn vulkan_render_pass_draw_indexed_indirect(pass: *shared.DoeRenderPass, indirect_buffer_raw: ?*anyopaque, indirect_offset: u64) void {
+    if (!admitDraw(pass, .indirect)) return;
     const indirect = native_helpers.cast(shared.DoeBuffer, indirect_buffer_raw) orelse return;
     if (indirect.error_object or indirect.vk_id == 0) return;
     var cmd = base_vulkan_render_cmd(pass);

@@ -5,6 +5,18 @@ pub fn fromCode(code: u32) error{UnsupportedFeature}!Format {
     return std.meta.intToEnum(Format, code) catch error.UnsupportedFeature;
 }
 
+/// Bytes one attribute of this format reads from its vertex buffer.
+pub fn byteSize(format: Format) u64 {
+    return switch (format) {
+        .uint8, .sint8, .unorm8, .snorm8 => 1,
+        .uint8x2, .sint8x2, .unorm8x2, .snorm8x2, .uint16, .sint16, .unorm16, .snorm16, .float16 => 2,
+        .uint8x4, .sint8x4, .unorm8x4, .snorm8x4, .uint16x2, .sint16x2, .unorm16x2, .snorm16x2, .float16x2, .float32, .uint32, .sint32, .unorm10_10_10_2, .unorm8x4_bgra => 4,
+        .uint16x4, .sint16x4, .unorm16x4, .snorm16x4, .float16x4, .float32x2, .uint32x2, .sint32x2 => 8,
+        .float32x3, .uint32x3, .sint32x3 => 12,
+        .float32x4, .uint32x4, .sint32x4 => 16,
+    };
+}
+
 pub const Format = enum(u32) {
     uint8 = 0x01,
     uint8x2 = 0x02,

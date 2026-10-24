@@ -346,15 +346,6 @@ napi_value doe_compute_pass_set_pipeline(napi_env env, napi_callback_info info) 
     return NULL;
 }
 
-napi_value doe_compute_pass_set_bind_group(napi_env env, napi_callback_info info) {
-    NAPI_ASSERT_ARGC(env, info, 3);
-    WGPUComputePassEncoder pass = unwrap_ptr(env, _args[0]);
-    uint32_t index; napi_get_value_uint32(env, _args[1], &index);
-    WGPUBindGroup group = unwrap_ptr(env, _args[2]);
-    pfn_wgpuComputePassEncoderSetBindGroup(pass, index, group, 0, NULL);
-    return NULL;
-}
-
 napi_value doe_compute_pass_set_immediates(napi_env env, napi_callback_info info) {
     NAPI_ASSERT_ARGC(env, info, 3);
     if (!pfn_doeNativeComputePassSetImmediates) NAPI_THROW(env, "computePassSetImmediates not available");

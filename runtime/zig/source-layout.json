@@ -848,9 +848,9 @@
       },
       "src/backend/d3d12/commands/d3d12_render_vertex.zig": {
         "decision": "Keep",
-        "moduleSha256": "8468145dbc797d26ed2689562fa7c075c0e1a1d070015fc8e398f924a85df7bd",
-        "reason": "Keep: reachable backend implementation with private behavior tests and no merge, elevation, recomposition, or deletion signal.",
-        "reviewer": "codex-recomposition-review/2026-08-08"
+        "moduleSha256": "bc2d1ee01f0a736b12e7b0032ec51260ecc70290f72ad0ba6bc705f2fe546135",
+        "reason": "Keep: reachable backend implementation with private behavior tests and no merge, elevation, recomposition, or deletion signal. Vertex format sizes come from the shared vertex format contract.",
+        "reviewer": "doe-c-claude-surface/2026-10-24"
       },
       "src/backend/d3d12/commands/d3d12_streaming_copy.zig": {
         "decision": "Keep",
@@ -2798,8 +2798,8 @@
       },
       "src/contracts/model/model_render_types.zig": {
         "decision": "Keep",
-        "moduleSha256": "c9b11c36d013400574e32c28dfabd9de26b435776704ed9600e9eb11d52a51bd",
-        "reason": "Keep: neutral render-command values carry explicit attachment identities, load choices, and clear values without backend handles escaping native adaptation. Draw commands carry the multisample mask and alpha-to-coverage. Draw commands carry the resolve target.",
+        "moduleSha256": "37b7bd8331d8c058ea9e89cb158699b8ff3643d2e0fd4d45bed0c66b07dce295",
+        "reason": "Keep: neutral render-command values carry explicit attachment identities, load choices, and clear values without backend handles escaping native adaptation. Draw commands carry the multisample mask and alpha-to-coverage. Draw commands carry the resolve target. Names the Undefined vertex step mode (unused slot) and index formats.",
         "reviewer": "doe-c-claude-surface/2026-10-24"
       },
       "src/contracts/model/model_resource_types.zig": {
@@ -2918,9 +2918,9 @@
       },
       "src/contracts/texture.zig": {
         "decision": "Keep",
-        "moduleSha256": "a19d48993cc655bf9f5d482094f5221395ca3481dddc6128dee191c034d8be05",
-        "reason": "Keep: reachable neutral contract owner at src/contracts/texture.zig.",
-        "reviewer": "codex-recomposition-review/2026-08-08"
+        "moduleSha256": "5060b8a4a7ce436ed36636d52e75e7c4a9b6abf04af39d3d237c280a49b0f7cd",
+        "reason": "Keep: reachable neutral contract owner at src/contracts/texture.zig. aspectFormat resolves the single-aspect view format (depth24plus, depth32float or stencil8 for combined formats).",
+        "reviewer": "doe-c-claude/2026-10-24"
       },
       "src/contracts/texture_format.zig": {
         "decision": "Keep",
@@ -3704,9 +3704,9 @@
       },
       "src/native/resource/doe_texture_sampler_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "1f0d609413adb836e9b99563d002d2e94be94c9d9d429b261c6829c1d8f41921",
-        "reason": "Keep: preserves this native ownership or ABI boundary while separating internal device cleanup leases from application release and enforcing destroyed-device admission; invalid sampler clamps/anisotropy and view formats generate validation errors with invalid objects; MUTABLE_FORMAT images with a VkImageFormatListCreateInfo only for textures whose viewFormats name the srgb pair.",
-        "reviewer": "doe-c-claude-surface/2026-10-23"
+        "moduleSha256": "3deb910b14b80875432afe9c672046a9ae91d30dfe6c67b31d9367fff223d8b1",
+        "reason": "Keep: preserves this native ownership or ABI boundary while separating internal device cleanup leases from application release and enforcing destroyed-device admission; invalid sampler clamps/anisotropy and view formats generate validation errors with invalid objects; MUTABLE_FORMAT images with a VkImageFormatListCreateInfo only for textures whose viewFormats name the srgb pair. A single-aspect view naming its aspect format is admitted and keeps the texture format internally.",
+        "reviewer": "doe-c-claude/2026-10-24"
       },
       "src/native/resource/doe_texture_validation.zig": {
         "decision": "Keep",
@@ -3842,8 +3842,8 @@
       },
       "src/native/vulkan/vulkan_render_pass_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "c9fed2882b5c3cb611cb61059c7fcdfae7a33cf1f89f9e0efd87500533ed443f",
-        "reason": "Keep: native attachment admission owns view and pipeline compatibility; command recording preserves typed validation failures before submission. Backend execution and resource retirement retain their existing owners. Draws forward the pipeline's multisample mask and alpha-to-coverage. Draws carry the pass resolve target.",
+        "moduleSha256": "7fd7259b67f90431eb5cf8e2d2fe7ad97504c10d05f23ee8868cf060921c75fe",
+        "reason": "Keep: native attachment admission owns view and pipeline compatibility; command recording preserves typed validation failures before submission. Backend execution and resource retirement retain their existing owners. Draws forward the pipeline's multisample mask and alpha-to-coverage. Draws carry the pass resolve target. Draws pass WebGPU vertex and index buffer bounds validation before recording.",
         "reviewer": "doe-c-claude-surface/2026-10-24"
       },
       "src/native/vulkan/vulkan_render_pipeline_native.zig": {
@@ -3986,9 +3986,9 @@
       },
       "src/runtime/diagnostics/error_scope.zig": {
         "decision": "Keep",
-        "moduleSha256": "5f6a200ec8c36fcbabce057d6fe87ff563f505d3091166ccf8fc81ed4b61e681",
-        "reason": "Keep: native attachment admission owns view and pipeline compatibility; command recording preserves typed validation failures before submission. Backend execution and resource retirement retain their existing owners.",
-        "reviewer": "codex-attachment-admission/2026-09-28"
+        "moduleSha256": "620e77cd1f89887529f969d639a7982bb4c3886327612daa2d3f5c581375d6f5",
+        "reason": "Keep: native attachment admission owns view and pipeline compatibility; command recording preserves typed validation failures before submission. Backend execution and resource retirement retain their existing owners. Draw buffer-bound failures are validation errors.",
+        "reviewer": "doe-c-claude-surface/2026-10-24"
       },
       "src/runtime/env_flags.zig": {
         "decision": "Keep",
@@ -4316,9 +4316,9 @@
       },
       "src/contracts/vertex_format.zig": {
         "decision": "Keep",
-        "moduleSha256": "9a030fbd3207e2266c6ebaa1345655a2eb4a97f323a296a5848edf63d06f57d5",
-        "reviewer": "codex-render-submission/2026-09-06",
-        "reason": "Keep: shared vertex-format identity is checked against the pinned WebGPU header; native backend conversion and recorded execution remain owned by their existing components."
+        "moduleSha256": "d7600b101c19fe1fc254506674f78a448ca417fb41bbb7c5284ea441bbd4fb07",
+        "reviewer": "doe-c-claude-surface/2026-10-24",
+        "reason": "Keep: shared vertex-format identity is checked against the pinned WebGPU header; native backend conversion and recorded execution remain owned by their existing components. Owns each vertex format's byte size."
       },
       "src/native/compute/doe_compute_recorded.zig": {
         "decision": "Keep",
@@ -4328,8 +4328,8 @@
       },
       "src/contracts/command_recording.zig": {
         "decision": "Keep",
-        "moduleSha256": "928aaffef03ecf9f60a3d2efa84ca59dcf89af4d7b096feac1d3440fd524689c",
-        "reason": "Keep: native attachment admission owns view and pipeline compatibility; command recording preserves typed validation failures before submission. Backend execution and resource retirement retain their existing owners. The unsupported-attachment message no longer lists resolve targets.",
+        "moduleSha256": "b5e8f3e9bdb6b77ee683e4b704a2dd916065c0f046785a707939aec572cb05fe",
+        "reason": "Keep: native attachment admission owns view and pipeline compatibility; command recording preserves typed validation failures before submission. Backend execution and resource retirement retain their existing owners. The unsupported-attachment message no longer lists resolve targets. Names WebGPU draw-time vertex and index buffer failures.",
         "reviewer": "doe-c-claude-surface/2026-10-24"
       },
       "src/native/command/doe_command_recording.zig": {
@@ -4412,8 +4412,8 @@
       },
       "src/native/vulkan/vulkan_render_attachments.zig": {
         "decision": "Keep",
-        "moduleSha256": "af7ab8222160b6b14457ade7d8969935e54c21ca15fa2d9a28f7aa5108e8560a",
-        "reason": "Keep: native attachment admission owns view and pipeline compatibility; command recording preserves typed validation failures before submission. Backend execution and resource retirement retain their existing owners. Admits a resolve target that is a single-sample view of the multisampled color format and extent.",
+        "moduleSha256": "9114dc9cafe60fc99887b515a623014005fe51969568c2c7043d1491462502ad",
+        "reason": "Keep: native attachment admission owns view and pipeline compatibility; command recording preserves typed validation failures before submission. Backend execution and resource retirement retain their existing owners. Admits a resolve target that is a single-sample view of the multisampled color format and extent. Validates draw reads against bound vertex and index buffer ranges.",
         "reviewer": "doe-c-claude-surface/2026-10-24"
       },
       "src/backend/vulkan/vk_surface_sync.zig": {
