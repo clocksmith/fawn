@@ -147,7 +147,7 @@ pub const VULKAN_LIMITS_STATIC = abi_callback.WGPULimits{
     .maxComputeWorkgroupSizeY = 1024,
     .maxComputeWorkgroupSizeZ = 64,
     .maxComputeWorkgroupsPerDimension = 65535,
-    .maxImmediateSize = 0,
+    .maxImmediateSize = native_types.DEFAULT_MAX_IMMEDIATE_SIZE,
 };
 
 // Resolved by metal_bridge.m at link time. This file is only compiled on
@@ -297,6 +297,7 @@ pub export fn doeNativeDeviceGetLimits(raw: ?*anyopaque, limits: ?*abi_callback.
         l.minUniformBufferOffsetAlignment = d.buffer_offset_alignment.uniform;
         l.minStorageBufferOffsetAlignment = d.buffer_offset_alignment.storage;
         l.maxComputeWorkgroupsPerDimension = d.max_compute_workgroups_per_dimension;
+        l.maxImmediateSize = d.max_immediate_size;
     };
     return status;
 }

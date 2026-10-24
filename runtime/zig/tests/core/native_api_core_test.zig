@@ -1364,6 +1364,45 @@ test "device buffer offset alignments default to 256 and accept lower requests" 
     try std.testing.expectEqual(@as(u32, 65535), limits.maxComputeWorkgroupsPerDimension);
 }
 
+test "setImmediates accepts aligned ranges within maxImmediateSize and invalidates otherwise" {
+    var device = native.DoeDevice{};
+    var bytes = [_]u8{0} ** 64;
+    const cases = [_]struct { offset: u32, len: usize, valid: bool }{
+        .{ .offset = 0, .len = 0, .valid = true },
+        .{ .offset = 0, .len = 64, .valid = true },
+        .{ .offset = 60, .len = 4, .valid = true },
+        .{ .offset = 2, .len = 4, .valid = false },
+        .{ .offset = 0, .len = 6, .valid = false },
+        .{ .offset = 64, .len = 4, .valid = false },
+        .{ .offset = 68, .len = 0, .valid = false },
+    };
+    for ([_]bool{ false, true }) |render_pass| {
+        for (cases) |case| {
+            const encoder = native.doeNativeDeviceCreateCommandEncoder(@ptrCast(&device), null) orelse return error.TestUnexpectedResult;
+            defer native.doeNativeCommandEncoderRelease(encoder);
+            const pass = (if (render_pass)
+                native.doeNativeCommandEncoderBeginRenderPass(encoder, null)
+            else
+                native.doeNativeCommandEncoderBeginComputePass(encoder, null)) orelse return error.TestUnexpectedResult;
+            defer if (render_pass) native.doeNativeRenderPassRelease(pass) else native.doeNativeComputePassRelease(pass);
+            if (render_pass)
+                native.doeNativeRenderPassSetImmediates(pass, case.offset, &bytes, case.len)
+            else
+                native.doeNativeComputePassSetImmediates(pass, case.offset, &bytes, case.len);
+            const state = @as(*native.DoeCommandEncoder, @ptrCast(@alignCast(encoder))).state;
+            if (case.valid) {
+                try std.testing.expect(state == .pass);
+            } else {
+                try std.testing.expect(state == .failed);
+                try std.testing.expectEqual(error.ImmediateDataRange, @as(anyerror, state.failed));
+            }
+        }
+    }
+    var limits = std.mem.zeroes(@import("../../src/core/abi/wgpu_callback_descriptor_types.zig").WGPULimits);
+    _ = native.doeNativeDeviceGetLimits(@ptrCast(&device), &limits);
+    try std.testing.expectEqual(@as(u32, 64), limits.maxImmediateSize);
+}
+
 test "doeNativePipelineLayoutRelease: null input is safe" {
     native.doeNativePipelineLayoutRelease(null);
 }

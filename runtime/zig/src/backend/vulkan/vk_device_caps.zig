@@ -144,7 +144,9 @@ fn map_vulkan_to_wgpu_limits(
         .maxComputeWorkgroupSizeY = @max(vk_limits.maxComputeWorkGroupSize[1], WEBGPU_MIN_MAX_COMPUTE_WORKGROUP_SIZE_Y),
         .maxComputeWorkgroupSizeZ = @max(vk_limits.maxComputeWorkGroupSize[2], WEBGPU_MIN_MAX_COMPUTE_WORKGROUP_SIZE_Z),
         .maxComputeWorkgroupsPerDimension = @max(vk_limits.maxComputeWorkGroupCount[0], WEBGPU_MIN_MAX_COMPUTE_WORKGROUPS_PER_DIMENSION),
-        .maxImmediateSize = 0,
+        // setImmediates ranges validate against the WebGPU default; shader
+        // immediates remain unsupported, so layouts with immediateSize reject.
+        .maxImmediateSize = 64,
     };
 }
 

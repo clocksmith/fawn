@@ -64,6 +64,8 @@ pub const DoeAdapter = struct {
 };
 
 pub const DEFAULT_MAX_COMPUTE_WORKGROUPS_PER_DIMENSION: u32 = 65535;
+/// WebGPU's default maxImmediateSize, which every Doe device reports.
+pub const DEFAULT_MAX_IMMEDIATE_SIZE: u32 = 64;
 
 /// A required maxComputeWorkgroupsPerDimension raises the WebGPU default;
 /// an undefined or absent request keeps it.
@@ -107,6 +109,8 @@ pub const DoeDevice = struct {
     /// The device's maxComputeWorkgroupsPerDimension: the WebGPU default
     /// unless the device descriptor required more.
     max_compute_workgroups_per_dimension: u32 = DEFAULT_MAX_COMPUTE_WORKGROUPS_PER_DIMENSION,
+    /// setImmediates validates against this; no layout admits immediates yet.
+    max_immediate_size: u32 = DEFAULT_MAX_IMMEDIATE_SIZE,
     external_ref_count: u32 = 1,
     destroyed: bool = false,
     loss: ?*@import("doe_device_loss.zig").Event = null,

@@ -1310,9 +1310,9 @@
       },
       "src/backend/vulkan/vk_device_caps.zig": {
         "decision": "Keep",
-        "moduleSha256": "c392f5b78d81b7d22ca5aa5cd6e9b9686facd637ef88a6492a4197c3e6a62e54",
-        "reason": "Keep: reachable backend implementation with a distinct named responsibility and no merge, elevation, recomposition, or deletion signal.",
-        "reviewer": "codex-recomposition-review/2026-08-08"
+        "moduleSha256": "587aa7edcc6b7793e1da0c94af6fc7e46f666ffc8c4b5883a7f59c32b7eba6e6",
+        "reason": "Keep: reachable backend implementation with a distinct named responsibility and no merge, elevation, recomposition, or deletion signal. Reports maxImmediateSize 64, matching the recorded setImmediates range.",
+        "reviewer": "doe-c-claude-indexed/2026-10-24"
       },
       "src/backend/vulkan/vk_dispatch_indirect.zig": {
         "decision": "Keep",
@@ -3524,9 +3524,9 @@
       },
       "src/native/command/doe_immediates_external_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "c57564995086570b7cc7894fd7bf8673ac5beb4ba674280fb24382f14c078caf",
-        "reason": "Keep: native admission preserves typed unsupported failures and complete recording ownership without claiming unexecuted shader-visible payloads.",
-        "reviewer": "doe-c-claude-surface/2026-10-24"
+        "moduleSha256": "ab5755601e7d2540561332c3488136acf4697d1d246f3d1da0c020e5a55cdde8",
+        "reason": "Keep: native admission preserves typed unsupported failures and complete recording ownership without claiming unexecuted shader-visible payloads. setImmediates validates 4-byte alignment and maxImmediateSize range and records nothing.",
+        "reviewer": "doe-c-claude-indexed/2026-10-24"
       },
       "src/native/compute/doe_compute_bind_groups.zig": {
         "decision": "Keep",
@@ -3746,8 +3746,8 @@
       },
       "src/native/support/doe_device_caps.zig": {
         "decision": "Keep",
-        "moduleSha256": "9882351dd538579d48842c29f59b1bcf071679ee0f8440e76763c6edf58bd2b7",
-        "reason": "Keep: native capability publication owns backend dispatch; Metal limits use the owning adapter/device handle. No boundary or ownership change. Device limits report the device's buffer offset alignments.",
+        "moduleSha256": "1d50ddbad7d1af2f389a0a220f1626e7dc51f7a7b4ccfd475e442ef1695e3355",
+        "reason": "Keep: native capability publication owns backend dispatch; Metal limits use the owning adapter/device handle. No boundary or ownership change. Device limits report the device's buffer offset alignments. Device limits report the device maxImmediateSize.",
         "reviewer": "doe-c-claude-indexed/2026-10-24"
       },
       "src/native/support/doe_future_ids.zig": {
@@ -3782,8 +3782,8 @@
       },
       "src/native/support/doe_native_object_types.zig": {
         "decision": "Keep",
-        "moduleSha256": "66aaa11fee3b4b39ca4b4d29556292df8c32d563a45f82a62d5c3a183bac16cd",
-        "reason": "Keep: default-off C error-scope partial owner uses final-address typed storage, cold creation rollback and checked final deinit; original classifier, callbacks and device references remain with their existing owners; textures record an allowed srgb view; samplers carry error_object; MUTABLE_FORMAT images with a VkImageFormatListCreateInfo only for textures whose viewFormats name the srgb pair. Render pipelines keep their multisample mask and alpha-to-coverage. Passes hold per-group dynamic offsets and the cached workgroup limit. Devices hold their buffer offset alignment limits.",
+        "moduleSha256": "4c733160e997eeb969928aa4b64a00e8add9429a38d3221ddb3f31cabcd35c08",
+        "reason": "Keep: default-off C error-scope partial owner uses final-address typed storage, cold creation rollback and checked final deinit; original classifier, callbacks and device references remain with their existing owners; textures record an allowed srgb view; samplers carry error_object; MUTABLE_FORMAT images with a VkImageFormatListCreateInfo only for textures whose viewFormats name the srgb pair. Render pipelines keep their multisample mask and alpha-to-coverage. Passes hold per-group dynamic offsets and the cached workgroup limit. Devices hold their buffer offset alignment limits. Device keeps maxImmediateSize.",
         "reviewer": "doe-c-claude-indexed/2026-10-24"
       },
       "src/native/support/doe_native_runtime_helpers.zig": {
@@ -3986,8 +3986,8 @@
       },
       "src/runtime/diagnostics/error_scope.zig": {
         "decision": "Keep",
-        "moduleSha256": "1d696fe097c60fc32832be910c2cb11f56e5d4bb513b71abc36bc1a2536c98b9",
-        "reason": "Keep: native attachment admission owns view and pipeline compatibility; command recording preserves typed validation failures before submission. Backend execution and resource retirement retain their existing owners. Draw buffer-bound failures are validation errors. Bind group and dispatch recording causes are validation errors.",
+        "moduleSha256": "5b2a3eaebefdc0cf7df49cd6a6dda6cf1d43bbf8b679e440f9ef53cbbc398603",
+        "reason": "Keep: native attachment admission owns view and pipeline compatibility; command recording preserves typed validation failures before submission. Backend execution and resource retirement retain their existing owners. Draw buffer-bound failures are validation errors. Bind group and dispatch recording causes are validation errors. ImmediateDataRange maps to validation.",
         "reviewer": "doe-c-claude-indexed/2026-10-24"
       },
       "src/runtime/env_flags.zig": {
@@ -4328,8 +4328,8 @@
       },
       "src/contracts/command_recording.zig": {
         "decision": "Keep",
-        "moduleSha256": "350fa6424cf7d080bae3b028d192cadb9f9d55efb51808a722f4c8c285c93734",
-        "reason": "Keep: native attachment admission owns view and pipeline compatibility; command recording preserves typed validation failures before submission. Backend execution and resource retirement retain their existing owners. The unsupported-attachment message no longer lists resolve targets. Names WebGPU draw-time vertex and index buffer failures. Owns the setBindGroup dynamic-offset and dispatch validation causes.",
+        "moduleSha256": "102906c6c85e87d7b305a72bc53a0c27b4b87d26097ef2d5e59df5f93755be37",
+        "reason": "Keep: native attachment admission owns view and pipeline compatibility; command recording preserves typed validation failures before submission. Backend execution and resource retirement retain their existing owners. The unsupported-attachment message no longer lists resolve targets. Names WebGPU draw-time vertex and index buffer failures. Owns the setBindGroup dynamic-offset and dispatch validation causes. Adds ImmediateDataRange failure.",
         "reviewer": "doe-c-claude-indexed/2026-10-24"
       },
       "src/native/command/doe_command_recording.zig": {

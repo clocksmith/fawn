@@ -45,7 +45,7 @@ pub const DispatchError = error{
     DispatchBindGroupIncompatible,
 };
 
-pub const Failure = RenderAttachmentError || BufferCopyError || DrawError || BindGroupError || DispatchError || @import("texture_copy.zig").Error || error{ OutOfMemory, InvalidState, ImmediateDataUnsupported, TextureCopyDeviceMismatch, TextureCopyUsageMissing };
+pub const Failure = RenderAttachmentError || BufferCopyError || DrawError || BindGroupError || DispatchError || @import("texture_copy.zig").Error || error{ OutOfMemory, InvalidState, ImmediateDataUnsupported, ImmediateDataRange, TextureCopyDeviceMismatch, TextureCopyUsageMissing };
 
 pub fn message(cause: Failure) []const u8 {
     return switch (cause) {
@@ -83,6 +83,7 @@ pub fn message(cause: Failure) []const u8 {
         error.TextureCopyUnsupported => "texture copy format or execution backend is unsupported",
         error.TextureCopyDeviceMismatch => "texture copy resources must belong to the encoder's device",
         error.TextureCopyUsageMissing => "texture copy requires COPY_SRC on source and COPY_DST on destination",
+        error.ImmediateDataRange => "setImmediates offset and size must be 4-byte aligned and within maxImmediateSize",
         error.ImmediateDataUnsupported => "setImmediates: shader-visible immediate data is unsupported; use buffer bindings",
     };
 }
