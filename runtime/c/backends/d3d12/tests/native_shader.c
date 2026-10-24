@@ -80,7 +80,10 @@ static doe_dx_shader_error invalid(doe_dx_shader_options *options, doe_dx_status
     assert(error.operation && strcmp(error.operation, operation) == 0);
     assert(error.message_size && error.message_size < sizeof(error.message));
     assert(error.message[error.message_size] == 0);
-    if (needle) assert(strstr(error.message, needle));
+    if (needle && !strstr(error.message, needle)) {
+        fprintf(stderr, "DXC diagnostic expected '%s', received: %s\n", needle, error.message);
+        assert(strstr(error.message, needle));
+    }
     return error;
 }
 
@@ -99,7 +102,7 @@ int main(int argc, char **argv)
     options.source_size = sizeof(compute)-1;
     options.stage = DOE_DX_SHADER_COMPUTE;
     options.entry = "missing_entry";
-    invalid(&options, DOE_DX_INVALID_ARGUMENT, "DXC.compile", "missing_entry");
+    invalid(&options, DOE_DX_INVALID_ARGUMENT, "DXC.compile", "missing entry point definition");
     options.entry = "main";
     options.stage = DOE_DX_SHADER_VERTEX;
     invalid(&options, DOE_DX_INVALID_ARGUMENT, "DXC.compile", NULL);

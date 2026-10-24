@@ -162,7 +162,7 @@ static doe_vk_status validate_config(doe_vk_surface *surface, const doe_vk_surfa
         return doe_vk_fail(DOE_VK_UNSUPPORTED, "surface format subset", error);
     bool format = false, mode = false;
     for (uint32_t i = 0; i < caps->format_count; ++i)
-        if ((caps->formats[i].format == config->format || caps->formats[i].format == 0) && caps->formats[i].color_space == 0) format = true;
+        if ((caps->formats[i].format == (uint32_t)config->format || caps->formats[i].format == 0) && caps->formats[i].color_space == 0) format = true;
     for (uint32_t i = 0; i < caps->present_mode_count; ++i)
         if (caps->present_modes[i] == (uint32_t)config->present_mode) mode = true;
     if (!format || !mode) return doe_vk_fail(DOE_VK_UNSUPPORTED, "surface format/color-space/present mode", error);

@@ -138,14 +138,14 @@ jobs:
           $output = Join-Path $env:EVIDENCE_ROOT 'native-full'
           $native = Join-Path $env:GITHUB_WORKSPACE 'runtime/c/native'
           $header = Join-Path $env:GITHUB_WORKSPACE 'runtime/zig/vendor/webgpu-headers'
-          $lines = @('@echo off', ('call "' + $env:DEVCMD + '" -arch=x64 >nul'), 'if errorlevel 1 exit /b 1', 'set DOE_C_TEST_BACKEND=d3d12', 'set DOE_C_TEST_ADAPTER=software')
+          $lines = @('@echo off', ('call "' + $env:DEVCMD + '" -arch=x64 >nul'), 'if not "%errorlevel%"=="0" exit /b 1', 'set DOE_C_TEST_BACKEND=d3d12', 'set DOE_C_TEST_ADAPTER=software')
           foreach ($name in @('compute', 'uniform_standard', 'binding_aliases', 'command_resources')) {
             $source = Join-Path $native ('tests/' + $name + '.c')
             $executable = Join-Path $output ($name + '.exe')
             $object = Join-Path $output ($name + '.obj')
             $imports = Join-Path $output 'webgpu_doe_c.lib'
             $lines += ('clang-cl --target=x86_64-pc-windows-msvc /nologo /MD /O2 /WX /clang:-std=c11 /clang:-Wall /clang:-Wextra /clang:-Wpedantic /DWGPU_SHARED_LIBRARY /I"' + $header + '" "' + $source + '" /Fo"' + $object + '" /Fe"' + $executable + '" /link "' + $imports + '" /stack:8388608')
-            $lines += @('if errorlevel 1 exit /b 1', ('"' + $executable + '"'), 'if errorlevel 1 exit /b 1')
+            $lines += @('if not "%errorlevel%"=="0" exit /b 1', ('"' + $executable + '"'), 'if not "%errorlevel%"=="0" exit /b 1')
           }
           $lines += 'exit /b 0'
           $runner = Join-Path $output 'public-warp.cmd'
