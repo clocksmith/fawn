@@ -1298,9 +1298,9 @@
       },
       "src/backend/vulkan/vk_constants.zig": {
         "decision": "Keep",
-        "moduleSha256": "671ce89da09f9fb647b56d7c315b9465db66d1943a51c801ab9923cc43f82918",
+        "moduleSha256": "81a39de2ead1636c45d53ffc597d3c567c97c883a11e82c08c80379577ae46f3",
         "reason": "Keep: Vulkan capability/device owner. Integer-dot operation availability and signed/unsigned packed acceleration remain distinct; logical-device admission enables the observed feature and extension only when both are available; MUTABLE_FORMAT images with a VkImageFormatListCreateInfo only for textures whose viewFormats name the srgb pair.",
-        "reviewer": "doe-c-claude-surface/2026-10-23"
+        "reviewer": "doe-c-claude-surface/2026-10-24"
       },
       "src/backend/vulkan/vk_device.zig": {
         "decision": "Keep",
@@ -1346,9 +1346,9 @@
       },
       "src/backend/vulkan/vk_functions.zig": {
         "decision": "Keep",
-        "moduleSha256": "329f4092d2b6e8fd90a1de254c0077e8490b890d152617e799b014d7b414732a",
-        "reason": "Keep: existing native recording, query ownership, queue submission or Vulkan ABI owner. Logical occlusion spans completed native draws; native query metadata does not cross the public ABI.",
-        "reviewer": "codex-production-query/2026-09-28"
+        "moduleSha256": "016f8c73401fa94eff21afd95cb0bed66dcdcef2d782adc38a31c9b6efe6c1a8",
+        "reason": "Keep: existing native recording, query ownership, queue submission or Vulkan ABI owner. Logical occlusion spans completed native draws; native query metadata does not cross the public ABI; image clear commands back lazy zero-initialization of copy sources and destinations.",
+        "reviewer": "doe-c-claude-surface/2026-10-24"
       },
       "src/backend/vulkan/vk_metrics.zig": {
         "decision": "Keep",
@@ -1436,9 +1436,9 @@
       },
       "src/backend/vulkan/vk_texture_commands.zig": {
         "decision": "Keep",
-        "moduleSha256": "70e7c80f06aacb53c7ae7bce437dc728df54ebfd40cd9a36a0d810bf300e5279",
-        "reason": "Keep: Vulkan texture command capsule; queue writes derive their region from the shared texel copy contract instead of whole-mip, color-only arithmetic.",
-        "reviewer": "doe-c-claude-surface/2026-10-23"
+        "moduleSha256": "ab495857609223264aaba09cd23107b50b9c510de3e3810244c2df886b0e75f5",
+        "reason": "Keep: Vulkan texture command capsule; queue writes derive their region from the shared texel copy contract instead of whole-mip, color-only arithmetic; texture-to-texture copies zero-initialize undefined subresources and address array layers separately from 3D depth.",
+        "reviewer": "doe-c-claude-surface/2026-10-24"
       },
       "src/backend/vulkan/vk_upload.zig": {
         "decision": "Keep",
@@ -3518,15 +3518,15 @@
       },
       "src/native/command/doe_encoder_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "2d018f8fbc4ef0b3be560b36d5ed340009c9ebcb62a376a83d75ad9bb1982504",
-        "reason": "Keep: preserves this native ownership or ABI boundary while separating internal device cleanup leases from application release and enforcing destroyed-device admission.",
-        "reviewer": "codex"
+        "moduleSha256": "171470e9697a48cdac58a968daad0641d99138c0255c0de8370933174051aab0",
+        "reason": "Keep: preserves this native ownership or ABI boundary while separating internal device cleanup leases from application release and enforcing destroyed-device admission; finish reports the first recorded command failure as the encoder's validation error.",
+        "reviewer": "doe-c-claude-surface/2026-10-24"
       },
       "src/native/command/doe_immediates_external_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "336a3c8a133995cf62efa48fe003d167de0c9672957ec27ebd0a338541f16b77",
+        "moduleSha256": "c57564995086570b7cc7894fd7bf8673ac5beb4ba674280fb24382f14c078caf",
         "reason": "Keep: native admission preserves typed unsupported failures and complete recording ownership without claiming unexecuted shader-visible payloads.",
-        "reviewer": "codex-immediate-admission/2026-09-06"
+        "reviewer": "doe-c-claude-surface/2026-10-24"
       },
       "src/native/compute/doe_compute_bind_groups.zig": {
         "decision": "Keep",
@@ -3686,9 +3686,9 @@
       },
       "src/native/resource/doe_command_texture_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "48db0848e6c8eb789c502fe77c9a401ad8fb5befe598bb85a789cd219523cf90",
-        "reason": "Keep: native texture command ABI boundary; queue writes forward destination origin, extent and aspect to the backend.",
-        "reviewer": "doe-c-claude-surface/2026-10-23"
+        "moduleSha256": "14762a3336048b020ec9dd8738446326c67849660a54e3017eb36e07fa270776",
+        "reason": "Keep: native texture command ABI boundary; queue writes forward destination origin, extent and aspect to the backend; texture-to-texture copies validate availability, device, usage and srgb-pair format compatibility before recording.",
+        "reviewer": "doe-c-claude-surface/2026-10-24"
       },
       "src/native/resource/doe_external_texture_native.zig": {
         "decision": "Keep",
@@ -4334,9 +4334,9 @@
       },
       "src/native/command/doe_command_recording.zig": {
         "decision": "Keep",
-        "moduleSha256": "f4b2e166e747b512fabde1cbeb6a0cb280351714f3afb81cfa854e95c0d6c3ec",
-        "reason": "Keep: preserves existing native ownership; build-selected diagnostics observe actual command storage and export device-scoped metadata after cleanup.",
-        "reviewer": "codex-command-storage-observation/2026-09-12"
+        "moduleSha256": "9041ad71c7dfd5f585b6e180d545c2c8b7e5aa430960dc3543583d8ec65bd86f",
+        "reason": "Keep: preserves existing native ownership; build-selected diagnostics observe actual command storage and export device-scoped metadata after cleanup; command failures invalidate the encoder and are reported at finish, while commands on ended encoders or passes report immediately.",
+        "reviewer": "doe-c-claude-surface/2026-10-24"
       },
       "src/native/command/doe_buffer_copy.zig": {
         "decision": "Keep",
@@ -4352,9 +4352,9 @@
       },
       "src/contracts/texture_copy.zig": {
         "decision": "Keep",
-        "moduleSha256": "1d347d6b5d880f6d09128924342db2e0c34814161cbf3669a30872298b827000",
-        "reason": "Keep: buffer-texture copies use one neutral region/format contract and preserve validated origins, aspects and resource ownership through native execution.",
-        "reviewer": "codex-texture-copy-regions/2026-09-07"
+        "moduleSha256": "a5d4527de5e733bd2f5ecd7b64218bef3dd3fbcff1b84f3ca1b29e26ff1cc94e",
+        "reason": "Keep: buffer-texture copies use one neutral region/format contract and preserve validated origins, aspects and resource ownership through native execution; texture-to-texture copies share the WebGPU sample, format, block, whole-subresource and overlap rules.",
+        "reviewer": "doe-c-claude-surface/2026-10-24"
       },
       "src/contracts/texture_format_layout.zig": {
         "decision": "Keep",

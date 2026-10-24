@@ -15,6 +15,7 @@ const vk_formats = @import("vk_formats.zig");
 const vk_compute_sync = @import("vk_compute_sync.zig");
 
 const copy_contract = @import("../../contracts/texture_copy.zig");
+const texture_format_layout = @import("../../contracts/texture_format_layout.zig");
 pub const BufferCopy = copy_contract.Copy;
 
 pub fn buffer_copy_region(buffer_size: u64, texture: vk_resources.TextureResource, copy: BufferCopy, direction: copy_contract.Direction) !c.VkBufferImageCopy {
@@ -232,6 +233,53 @@ test "queue texture writes keep the destination origin, extent and stencil plane
     try std.testing.expectEqual(@as(u32, 1), whole.height);
 }
 
+/// Records UNDEFINED -> TRANSFER_DST and zero contents for every subresource:
+/// clears for color and depth/stencil, a zeroed buffer copy for block-
+/// compressed formats (which cannot be cleared). Returns the new layout.
+fn record_zero_initialization(self: anytype, texture: *vk_resources.TextureResource, staging: *?vk_resources.ComputeBuffer) !u32 {
+    const command_buffer = self.primary_command_buffer;
+    vk_resources.transition_texture_layout(command_buffer, texture.*, c.VK_IMAGE_LAYOUT_UNDEFINED, c.VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 0, c.VK_ACCESS_TRANSFER_WRITE_BIT, c.VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, c.VK_PIPELINE_STAGE_TRANSFER_BIT);
+    const is_3d = texture.dimension == model_gpu_types.WGPUTextureDimension_3D;
+    const layers: u32 = if (is_3d) 1 else @max(texture.depth_or_array_layers, 1);
+    const aspect = vk_formats.aspect_mask_for_format(texture.format);
+    const range = c.VkImageSubresourceRange{ .aspectMask = aspect, .baseMipLevel = 0, .levelCount = @max(texture.mip_levels, 1), .baseArrayLayer = 0, .layerCount = layers };
+    const block = vk_formats.copy_block_extent(texture.format);
+    if (vk_formats.is_depth_stencil(texture.format)) {
+        const value = c.VkClearDepthStencilValue{ .depth = 0, .stencil = 0 };
+        c.vkCmdClearDepthStencilImage(command_buffer, texture.image, c.VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &value, 1, @ptrCast(&range));
+    } else if (block[0] == 1 and block[1] == 1) {
+        const value = std.mem.zeroes(c.VkClearColorValue);
+        c.vkCmdClearColorImage(command_buffer, texture.image, c.VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &value, 1, @ptrCast(&range));
+    } else {
+        const block_bytes: u64 = try texture_format_layout.bytes_per_pixel(texture.format);
+        const width = std.math.divCeil(u64, texture.width, block[0]) catch unreachable;
+        const height = std.math.divCeil(u64, texture.height, block[1]) catch unreachable;
+        const depth: u64 = if (is_3d) @max(texture.depth_or_array_layers, 1) else 1;
+        const bytes = try std.math.mul(u64, try std.math.mul(u64, try std.math.mul(u64, width * height, block_bytes), depth), layers);
+        const buffer = try vk_resources.create_host_visible_buffer(self, bytes, c.VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+        staging.* = buffer;
+        if (buffer.mapped) |raw| @memset(@as([*]u8, @ptrCast(raw))[0..@intCast(bytes)], 0);
+        var mip: u32 = 0;
+        while (mip < @max(texture.mip_levels, 1)) : (mip += 1) {
+            const shift: u5 = @intCast(@min(mip, 31));
+            const region = c.VkBufferImageCopy{
+                .bufferOffset = 0,
+                .bufferRowLength = 0,
+                .bufferImageHeight = 0,
+                .imageSubresource = .{ .aspectMask = aspect, .mipLevel = mip, .baseArrayLayer = 0, .layerCount = layers },
+                .imageOffset = .{ .x = 0, .y = 0, .z = 0 },
+                .imageExtent = .{
+                    .width = @max(texture.width >> shift, 1),
+                    .height = @max(texture.height >> shift, 1),
+                    .depth = if (is_3d) @max(texture.depth_or_array_layers >> shift, 1) else 1,
+                },
+            };
+            c.vkCmdCopyBufferToImage(command_buffer, buffer.buffer, texture.image, c.VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, @ptrCast(&region));
+        }
+    }
+    return c.VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+}
+
 pub fn texture_copy(self: anytype, args: struct {
     src_handle: u64,
     src_mip: u32,
@@ -252,9 +300,6 @@ pub fn texture_copy(self: anytype, args: struct {
     if (self.has_deferred_submissions or self.pending_uploads.items.len > 0) {
         _ = try self.flush_queue();
     }
-    const src_prev = src.layout;
-    if (src_prev == c.VK_IMAGE_LAYOUT_UNDEFINED) return error.InvalidState;
-    const dst_prev = dst.layout;
     try vk_device.ensure_submission_state(self);
     try c.check_vk(c.vkResetCommandPool(self.device, self.command_pool, 0));
     var begin_info = c.VkCommandBufferBeginInfo{
@@ -264,15 +309,29 @@ pub fn texture_copy(self: anytype, args: struct {
         .pInheritanceInfo = null,
     };
     try c.check_vk(c.vkBeginCommandBuffer(self.primary_command_buffer, &begin_info));
+    // A never-written image holds WebGPU's zero contents, which Vulkan's
+    // UNDEFINED layout does not guarantee: zero it in this same submission.
+    var src_zero: ?vk_resources.ComputeBuffer = null;
+    var dst_zero: ?vk_resources.ComputeBuffer = null;
+    defer if (src_zero) |staging| vk_resources.destroy_host_visible_buffer(self, staging);
+    defer if (dst_zero) |staging| vk_resources.destroy_host_visible_buffer(self, staging);
+    const src_prev = if (src.layout == c.VK_IMAGE_LAYOUT_UNDEFINED) try record_zero_initialization(self, src, &src_zero) else src.layout;
+    const dst_prev = if (dst.layout == c.VK_IMAGE_LAYOUT_UNDEFINED and src.image != dst.image)
+        try record_zero_initialization(self, dst, &dst_zero)
+    else if (src.image == dst.image) src_prev else dst.layout;
     vk_resources.transition_texture_layout(self.primary_command_buffer, src.*, src_prev, c.VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, vk_resources.texture_transition_source(src_prev).src_access_mask, c.VK_ACCESS_TRANSFER_READ_BIT, vk_resources.texture_transition_source(src_prev).src_stage, c.VK_PIPELINE_STAGE_TRANSFER_BIT);
     vk_resources.transition_texture_layout(self.primary_command_buffer, dst.*, dst_prev, c.VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, vk_resources.texture_transition_source(dst_prev).src_access_mask, c.VK_ACCESS_TRANSFER_WRITE_BIT, vk_resources.texture_transition_source(dst_prev).src_stage, c.VK_PIPELINE_STAGE_TRANSFER_BIT);
     const layers = if (args.depth_or_layers > 0) args.depth_or_layers else 1;
+    // WebGPU origin.z and depthOrArrayLayers are array layers for 1D/2D
+    // textures and depth slices for 3D textures.
+    const src_3d = src.dimension == model_gpu_types.WGPUTextureDimension_3D;
+    const dst_3d = dst.dimension == model_gpu_types.WGPUTextureDimension_3D;
     var region = c.VkImageCopy{
-        .srcSubresource = .{ .aspectMask = vk_formats.aspect_mask_for_format(src.format), .mipLevel = args.src_mip, .baseArrayLayer = 0, .layerCount = layers },
-        .srcOffset = .{ .x = @intCast(args.src_x), .y = @intCast(args.src_y), .z = @intCast(args.src_z) },
-        .dstSubresource = .{ .aspectMask = vk_formats.aspect_mask_for_format(dst.format), .mipLevel = args.dst_mip, .baseArrayLayer = 0, .layerCount = layers },
-        .dstOffset = .{ .x = @intCast(args.dst_x), .y = @intCast(args.dst_y), .z = @intCast(args.dst_z) },
-        .extent = .{ .width = args.width, .height = args.height, .depth = 1 },
+        .srcSubresource = .{ .aspectMask = vk_formats.aspect_mask_for_format(src.format), .mipLevel = args.src_mip, .baseArrayLayer = if (src_3d) 0 else args.src_z, .layerCount = if (src_3d) 1 else layers },
+        .srcOffset = .{ .x = @intCast(args.src_x), .y = @intCast(args.src_y), .z = if (src_3d) @intCast(args.src_z) else 0 },
+        .dstSubresource = .{ .aspectMask = vk_formats.aspect_mask_for_format(dst.format), .mipLevel = args.dst_mip, .baseArrayLayer = if (dst_3d) 0 else args.dst_z, .layerCount = if (dst_3d) 1 else layers },
+        .dstOffset = .{ .x = @intCast(args.dst_x), .y = @intCast(args.dst_y), .z = if (dst_3d) @intCast(args.dst_z) else 0 },
+        .extent = .{ .width = args.width, .height = args.height, .depth = if (src_3d or dst_3d) layers else 1 },
     };
     c.vkCmdCopyImage(self.primary_command_buffer, src.image, c.VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dst.image, c.VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, @ptrCast(&region));
     vk_resources.transition_texture_layout(self.primary_command_buffer, src.*, c.VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, c.VK_IMAGE_LAYOUT_GENERAL, c.VK_ACCESS_TRANSFER_READ_BIT, c.VK_ACCESS_SHADER_READ_BIT | c.VK_ACCESS_SHADER_WRITE_BIT, c.VK_PIPELINE_STAGE_TRANSFER_BIT, c.VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);

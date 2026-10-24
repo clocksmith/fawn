@@ -95,12 +95,12 @@ test "immediate payload rejection invalidates compute render and bundle recordin
             doeNativeComputePassSetImmediates(pass, 0, &bytes, bytes.len);
         }
         try std.testing.expectEqual(error.ImmediateDataUnsupported, encoder.state.failed);
-        var capture = Capture{};
-        try std.testing.expect(device.error_scopes.pop(.{ .callback = Capture.receive, .userdata1 = &capture }));
-        try std.testing.expect(capture.rejected);
         const commands = encoders.doeNativeCommandEncoderFinish(encoder, null).?;
         defer encoders.doeNativeCommandBufferRelease(commands);
         try std.testing.expect(native_helpers.cast(native_types.DoeCommandBuffer, commands).?.error_object);
+        var capture = Capture{};
+        try std.testing.expect(device.error_scopes.pop(.{ .callback = Capture.receive, .userdata1 = &capture }));
+        try std.testing.expect(capture.rejected);
     }
     var descriptor = std.mem.zeroes(@import("../../full/render/wgpu_render_types.zig").RenderBundleEncoderDescriptor);
     descriptor.sampleCount = 1;
