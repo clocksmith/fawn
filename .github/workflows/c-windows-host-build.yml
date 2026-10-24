@@ -48,13 +48,41 @@ jobs:
           $ErrorActionPreference = 'Stop'
           $script = Join-Path $env:GITHUB_WORKSPACE 'runtime/c/compiler/tools/build_windows.py'
           $output = Join-Path $env:EVIDENCE_ROOT 'compiler'
-          $command = 'call "' + $env:DEVCMD + '" -arch=x64 >nul && (where clang-cl & clang-cl --version) && python "' + $script + '" --out "' + $output + '"'
+          $command = 'call "' + $env:DEVCMD + '" -arch=x64 >nul && (set WindowsSDKVersion & set VCToolsVersion & where clang-cl & clang-cl --version) && python "' + $script + '" --out "' + $output + '"'
           $command | Set-Content "$env:EVIDENCE_ROOT/command.txt"
           & cmd.exe /d /s /c $command 2>&1 | Tee-Object "$env:EVIDENCE_ROOT/compiler.log"
           if ($LASTEXITCODE -ne 0) { throw "Windows compiler host control failed: $LASTEXITCODE" }
           if (git status --short) { throw 'host controls changed source checkout' }
           Get-ChildItem $env:EVIDENCE_ROOT -Recurse -File | Get-FileHash -Algorithm SHA256 |
             Select-Object Path, Hash | ConvertTo-Json | Set-Content "$env:EVIDENCE_ROOT/artifacts.json"
+      - name: Exercise actual Win32 primitives and loader lifetime
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $env:OUT = Join-Path $env:EVIDENCE_ROOT 'native-host'
+          New-Item -ItemType Directory -Force $env:OUT | Out-Null
+          $script = Join-Path $env:GITHUB_WORKSPACE 'runtime/c/native/build_windows_host.cmd'
+          $runner = Join-Path $env:OUT 'run.cmd'
+          $command = 'call "' + $env:DEVCMD + '" -arch=x64 >nul && call "' + $script + '"'
+          @('@echo off', $command, 'exit /b %errorlevel%') | Set-Content $runner -Encoding ascii
+          $stdout = Join-Path $env:OUT 'stdout.txt'
+          $stderr = Join-Path $env:OUT 'stderr.txt'
+          $arguments = '/d /s /c ""' + $runner + '""'
+          $process = Start-Process -FilePath 'cmd.exe' -ArgumentList $arguments -RedirectStandardOutput $stdout -RedirectStandardError $stderr -PassThru
+          if (!$process.WaitForExit(120000)) {
+            & taskkill.exe /PID $process.Id /T /F
+            throw 'Win32 host control exceeded its external 120-second deadline'
+          }
+          $process.WaitForExit()
+          $process.Refresh()
+          $process.ExitCode | Set-Content "$env:OUT/exit-code.txt"
+          Get-Content $stdout
+          Get-Content $stderr
+          if ($process.ExitCode -ne 0) { throw "Win32 host control failed: $($process.ExitCode)" }
+          if (git status --short) { throw 'host controls changed source checkout' }
+          Get-ChildItem $env:EVIDENCE_ROOT -Recurse -File | Where-Object { $_.Name -ne 'artifacts.json' } |
+            Get-FileHash -Algorithm SHA256 | Select-Object Path, Hash | ConvertTo-Json |
+            Set-Content "$env:EVIDENCE_ROOT/artifacts.json"
       - name: Retain first source-bound diagnostics
         if: always()
         uses: actions/upload-artifact@v7

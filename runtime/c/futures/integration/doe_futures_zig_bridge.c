@@ -5,11 +5,9 @@ void doe_futures_zig_queue_layout(size_t out[DOE_FUTURES_QUEUE_LAYOUT_COUNT])
 {
     const size_t layout[] = {sizeof(doe_future_queue), _Alignof(doe_future_queue),
         offsetof(doe_future_queue, mutex), offsetof(doe_future_queue, changed),
-        offsetof(doe_future_queue, attributes), offsetof(doe_future_queue, head),
+        offsetof(doe_future_queue, head),
         offsetof(doe_future_queue, active), offsetof(doe_future_queue, instance_id),
-        offsetof(doe_future_queue, next_sequence), offsetof(doe_future_queue, state),
-        offsetof(doe_future_queue, mutex_live), offsetof(doe_future_queue, condition_live),
-        offsetof(doe_future_queue, attributes_live)};
+        offsetof(doe_future_queue, next_sequence), offsetof(doe_future_queue, state)};
     memcpy(out, layout, sizeof(layout));
 }
 void doe_futures_zig_completion_layout(size_t out[DOE_FUTURES_COMPLETION_LAYOUT_COUNT])

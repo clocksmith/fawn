@@ -199,7 +199,7 @@ pub fn verifyLayout() !void {
     var node_layout: [c.DOE_FUTURES_COMPLETION_LAYOUT_COUNT]usize = undefined;
     c.doe_futures_zig_queue_layout(&queue_layout);
     c.doe_futures_zig_completion_layout(&node_layout);
-    const queue_expected = [_]usize{ @sizeOf(Queue), @alignOf(Queue) } ++ offsets(Queue, .{ "mutex", "changed", "attributes", "head", "active", "instance_id", "next_sequence", "state", "mutex_live", "condition_live", "attributes_live" });
+    const queue_expected = [_]usize{ @sizeOf(Queue), @alignOf(Queue) } ++ offsets(Queue, .{ "mutex", "changed", "head", "active", "instance_id", "next_sequence", "state" });
     const node_expected = [_]usize{ @sizeOf(Node), @alignOf(Node) } ++ offsets(Node, .{ "owner", "next", "dispatch", "userdata", "id", "delivery_thread", "mode", "ready", "delivering", "initialized" });
     if (!std.mem.eql(usize, &queue_layout, &queue_expected) or !std.mem.eql(usize, &node_layout, &node_expected)) return error.FutureBridgeLayoutMismatch;
 }

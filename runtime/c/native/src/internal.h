@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: MIT */
 #ifndef DOE_NATIVE_INTERNAL_H
 #define DOE_NATIVE_INTERNAL_H
+#include "doe_platform.h"
 #include "webgpu.h"
 #include "backend.h"
 #include "doe_metal_render.h"
@@ -15,13 +16,12 @@
 #include "doe_vk_render.h"
 #include "doe_vk_indirect.h"
 #include "doe_error_scopes.h"
-#include <pthread.h>
 #include <stdatomic.h>
 #include <stdbool.h>
 
 typedef struct native_adapter {
     atomic_uint references;
-    pthread_mutex_t mutex; /* Serializes surface queries on the adapter's own context. */
+    doe_mutex mutex; /* Serializes surface queries on the adapter's own context. */
     doe_instance *instance;
     native_backend backend;
 } native_adapter;
@@ -32,9 +32,9 @@ typedef struct native_device {
     atomic_uint references;
     atomic_uint external_references;
     native_loss *loss;
-    pthread_mutex_t mutex;
-    pthread_cond_t pending_changed;
-    pthread_t pending_thread;
+    doe_mutex mutex;
+    doe_condition pending_changed;
+    doe_thread pending_thread;
     bool pending_progress_ready;
     bool pending_progress_join;
     doe_instance *instance;

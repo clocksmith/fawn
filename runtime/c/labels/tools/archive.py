@@ -81,6 +81,8 @@ def inputs(root: Path, compiler: str, archiver: str) -> dict[str, object]:
              OWNER / "integration/CONTRACT.md"}
     paths.update(path.relative_to(root) for directory in ("src", "include")
                  for path in (root / OWNER / directory).rglob("*") if path.is_file())
+    paths.update(path.relative_to(root) for path in
+                 (root / "runtime/c/platform/include").glob("*.h"))
     return {"format_version": 1, "target": TARGET, "profile": "normal",
             "root": str(root), "flags": FLAGS, "tools": tools,
             "sources": {str(path): digest(root / path) for path in sorted(paths)}}

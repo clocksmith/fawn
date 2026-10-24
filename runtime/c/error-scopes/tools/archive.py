@@ -25,7 +25,10 @@ SOURCES = {"error_scopes.o": OWNER / "src/error_scopes.c",
 INPUTS = [*SOURCES.values(), OWNER / "src/internal.h", OWNER / "include/doe_error_scopes.h",
           OWNER / "integration/doe_error_scopes_zig_bridge.h", OWNER / "CONTRACT.md",
           OWNER / "CONTRACT.sha256", OWNER / "Makefile", OWNER / "tools/archive.py",
-          Path("runtime/zig/vendor/webgpu-headers/webgpu.h")]
+          Path("runtime/zig/vendor/webgpu-headers/webgpu.h"),
+          Path("runtime/c/platform/include/doe_platform.h"),
+          Path("runtime/c/platform/include/doe_platform_posix.h"),
+          Path("runtime/c/platform/include/doe_platform_win32.h")]
 
 
 def digest(data: bytes) -> str:

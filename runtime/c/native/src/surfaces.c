@@ -54,12 +54,16 @@ WGPUSurface wgpuInstanceCreateSurface(WGPUInstance handle, const WGPUSurfaceDesc
     if (!surface) return NULL;
     doe_label_config labels = {.abi_version=DOE_LABELS_ABI_VERSION,
         .allocator={NULL,NULL,native_allocate,native_deallocate}};
-    if (pthread_mutex_init(&surface->mutex, NULL)) { free(surface); return NULL; }
+    if (doe_mutex_init(&surface->mutex, false).status != DOE_HOST_OK) {
+        if (doe_mutex_destroy(&surface->mutex).status != DOE_HOST_OK) abort();
+        free(surface);
+        return NULL;
+    }
     if (doe_label_store_create(&labels, &surface->labels) != DOE_LABEL_OK ||
         doe_label_store_set(surface->labels, surface, (const unsigned char *)descriptor->label.data,
             label_size) != DOE_LABEL_OK) {
         if (surface->labels && doe_label_store_destroy(surface->labels) != DOE_LABEL_OK) abort();
-        if (pthread_mutex_destroy(&surface->mutex)) abort();
+        if (doe_mutex_destroy(&surface->mutex).status != DOE_HOST_OK) abort();
         free(surface);
         return NULL;
     }
@@ -153,7 +157,7 @@ static void surface_teardown(native_surface *surface)
      * therefore proves configuration retirement already completed. */
     if (surface->vulkan || surface->device || surface->retirement) abort();
     if (doe_label_store_destroy(surface->labels) != DOE_LABEL_OK) abort();
-    if (pthread_mutex_destroy(&surface->mutex)) abort();
+    if (doe_mutex_destroy(&surface->mutex).status != DOE_HOST_OK) abort();
     doe_instance *instance = surface->instance;
     free(surface);
     doe_instance_release(instance);
@@ -173,9 +177,9 @@ void wgpuSurfaceRelease(WGPUSurface handle)
 {
     native_surface *surface = (native_surface *)handle;
     if (!surface || !native_release_count(&surface->references)) return;
-    if (pthread_mutex_lock(&surface->mutex)) abort();
+    if (doe_mutex_lock(&surface->mutex).status != DOE_HOST_OK) abort();
     native_pending *retired = native_surface_unconfigure_locked(surface);
-    if (pthread_mutex_unlock(&surface->mutex)) abort();
+    if (doe_mutex_unlock(&surface->mutex).status != DOE_HOST_OK) abort();
     native_surface_retirement_release(retired);
     native_surface_release_lease(surface);
 }
@@ -270,13 +274,13 @@ WGPUStatus wgpuSurfaceGetCapabilities(WGPUSurface handle, WGPUAdapter adapter_ha
         return WGPUStatus_Error;
     doe_vk_surface_caps caps;
     doe_vk_surface *probe = NULL;
-    if (pthread_mutex_lock(&adapter->mutex)) abort();
+    if (doe_mutex_lock(&adapter->mutex).status != DOE_HOST_OK) abort();
     doe_vk_status status = doe_vk_surface_create(adapter->backend.value.vulkan.context, &surface->source, &probe, NULL);
     if (status == DOE_VK_OK) {
         status = doe_vk_surface_capabilities(probe, &caps, NULL);
         if (doe_vk_surface_release(probe) != DOE_VK_OK) abort(); /* Never configured. */
     }
-    if (pthread_mutex_unlock(&adapter->mutex)) abort();
+    if (doe_mutex_unlock(&adapter->mutex).status != DOE_HOST_OK) abort();
     return status == DOE_VK_OK ? fill_capabilities(&caps, out) : WGPUStatus_Error;
 }
 
@@ -335,7 +339,7 @@ void wgpuSurfaceConfigure(WGPUSurface handle, const WGPUSurfaceConfiguration *co
     native_device_retain(device);
     WGPUErrorType type = WGPUErrorType_Validation;
     const char *message = NULL;
-    if (pthread_mutex_lock(&surface->mutex)) abort();
+    if (doe_mutex_lock(&surface->mutex).status != DOE_HOST_OK) abort();
     native_pending *retired = native_surface_unconfigure_locked(surface);
     if (config->nextInChain) message = "surface configuration extension unsupported";
     else if (device->backend.kind != WGPUBackendType_Vulkan) message = "surfaces are composed for Vulkan only";
@@ -392,7 +396,7 @@ void wgpuSurfaceConfigure(WGPUSurface handle, const WGPUSurfaceConfiguration *co
         if (native && doe_vk_surface_release(native) != DOE_VK_OK) abort(); /* Unconfigured. */
     }
     native_unlock(device);
-    if (pthread_mutex_unlock(&surface->mutex)) abort();
+    if (doe_mutex_unlock(&surface->mutex).status != DOE_HOST_OK) abort();
     native_surface_retirement_release(retired);
     if (status == DOE_VK_OK) return;
     if (!message) {
@@ -411,8 +415,8 @@ void wgpuSurfaceUnconfigure(WGPUSurface handle)
 {
     native_surface *surface = (native_surface *)handle;
     if (!surface) return;
-    if (pthread_mutex_lock(&surface->mutex)) abort();
+    if (doe_mutex_lock(&surface->mutex).status != DOE_HOST_OK) abort();
     native_pending *retired = native_surface_unconfigure_locked(surface);
-    if (pthread_mutex_unlock(&surface->mutex)) abort();
+    if (doe_mutex_unlock(&surface->mutex).status != DOE_HOST_OK) abort();
     native_surface_retirement_release(retired);
 }

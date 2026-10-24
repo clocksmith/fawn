@@ -7,7 +7,7 @@
 
 struct native_loss {
     atomic_uint references; /* Device/creator lease plus pending callback lease. */
-    pthread_mutex_t mutex;
+    doe_mutex mutex;
     doe_callback_event *event;
     WGPUFuture future;
     WGPUDeviceLostCallbackInfo callback;
@@ -19,16 +19,16 @@ typedef struct loss_delivery { native_loss *loss; } loss_delivery;
 
 static void lock_loss(native_loss *loss)
 {
-    if (pthread_mutex_lock(&loss->mutex)) abort();
+    if (doe_mutex_lock(&loss->mutex).status != DOE_HOST_OK) abort();
 }
 static void unlock_loss(native_loss *loss)
 {
-    if (pthread_mutex_unlock(&loss->mutex)) abort();
+    if (doe_mutex_unlock(&loss->mutex).status != DOE_HOST_OK) abort();
 }
 void native_loss_release(native_loss *loss)
 {
     if (!loss || !native_release_count(&loss->references)) return;
-    if (pthread_mutex_destroy(&loss->mutex)) abort();
+    if (doe_mutex_destroy(&loss->mutex).status != DOE_HOST_OK) abort();
     free(loss);
 }
 static void copy_loss(void *destination, const void *source)
@@ -62,7 +62,11 @@ native_loss *native_loss_create(doe_instance *instance, WGPUDeviceLostCallbackIn
     if (callback.nextInChain) return NULL;
     native_loss *loss = calloc(1, sizeof(*loss));
     if (!loss) return NULL;
-    if (pthread_mutex_init(&loss->mutex, NULL)) { free(loss); return NULL; }
+    if (doe_mutex_init(&loss->mutex, false).status != DOE_HOST_OK) {
+        if (doe_mutex_destroy(&loss->mutex).status != DOE_HOST_OK) abort();
+        free(loss);
+        return NULL;
+    }
     atomic_init(&loss->references, 2);
     loss->callback = callback;
     doe_instance_queue_lease lease = doe_instance_borrow_queue(instance);

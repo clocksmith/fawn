@@ -13,11 +13,21 @@ not a second device owner. Clear it before the last external reference drops;
 callback delivery may retain storage only while snapshotting under its mutex.
 Keep synchronous construction distinct from callback scheduling and pending
 queue progress. Before worker publication, acquire process-code residency without
-holding device/resource locks. A single loader reference deliberately survives to
-process exit; GPU/resource leases settle independently. The pending owner retains
+holding device/resource locks. POSIX retains one loader reference per provider image;
+Win32 uses InitOnce and a permanent FROM_ADDRESS|PIN loader pin, with no ordinary
+LoadLibrary fallback. This code residency survives to process exit; GPU/resource
+leases settle independently. The pending owner retains
 one device lease and polls completion; do not add a second queue or report
 unknown work as terminal. Idle final release joins the worker. Preserve the first
 background terminal error for a public operation to observe.
+
+Use the private host primitives for mutexes, conditions and real thread handles.
+Condition waits hold the recursive device mutex at depth one. Publish the thread
+record while holding the same mutex its entry acquires; never detach or free its
+storage before startup fields are consumed. Join outside that mutex under the
+existing caller lease; self-detach consumes the stored real handle under the
+worker lease. Failed initialization must destroy partially live host primitives
+before freeing storage; failed join/detach retains its handle obligation.
 
 Error transport is an owned value over the existing native_result mapping, not
 another status or recovery engine. Snapshot operation, signed native code and

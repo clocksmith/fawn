@@ -8,6 +8,7 @@ CFLAGS += -std=c11 -Wall -Wextra -Wpedantic -Werror -pthread
 CXXFLAGS ?= -O2 -g
 CXXFLAGS += -std=c++17 -Wall -Wextra -Wpedantic -Werror -fno-exceptions -fno-rtti -pthread
 LDFLAGS += -pthread
+PLATFORM_HEADERS = $(wildcard ../platform/include/*.h)
 OBJECTS = $(BUILD)/storage.o $(BUILD)/futures.o
 
 .PHONY: all check clean
@@ -15,7 +16,7 @@ all: $(BUILD)/libdoe_futures.a
 
 $(BUILD):
 	mkdir -p $@
-$(BUILD)/%.o: src/%.c src/internal.h include/doe_futures.h | $(BUILD)
+$(BUILD)/%.o: src/%.c src/internal.h include/doe_futures.h $(PLATFORM_HEADERS) | $(BUILD)
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 $(BUILD)/libdoe_futures.a: $(OBJECTS)
 	$(AR) rcs $@ $^
@@ -35,7 +36,7 @@ FAULT_WRAPS = pthread_mutex_init pthread_condattr_init pthread_condattr_setclock
 $(BUILD)/test_faults: tests/test_faults.c $(BUILD)/libdoe_futures.a
 	$(CC) $(CPPFLAGS) $(CFLAGS) $^ $(LDFLAGS) $(addprefix -Wl$(comma)--wrap=,$(FAULT_WRAPS)) -o $@
 comma := ,
-$(BUILD)/test_exhaustion: tests/test_exhaustion.c src/storage.c src/futures.c src/internal.h include/doe_futures.h | $(BUILD)
+$(BUILD)/test_exhaustion: tests/test_exhaustion.c src/storage.c src/futures.c src/internal.h include/doe_futures.h $(PLATFORM_HEADERS) | $(BUILD)
 	$(CC) $(CPPFLAGS) $(CFLAGS) -DDOE_FUTURES_TESTING \
 	  -DDOE_FUTURES_TEST_INSTANCE_LIMIT=2 -DDOE_FUTURES_TEST_SEQUENCE_LIMIT=2 \
 	  -DDOE_FUTURES_TEST_LEGACY_LIMIT=0x8000000000000001ULL \
@@ -59,7 +60,7 @@ check-concurrency: $(BUILD)/test_concurrency
 check: check-concurrency
 
 # Linux-host control of Darwin's typed relative-wait boundary, not an SDK build.
-$(BUILD)/test_darwin_time: tests/test_darwin_time.c src/storage.c src/futures.c src/internal.h include/doe_futures.h | $(BUILD)
+$(BUILD)/test_darwin_time: tests/test_darwin_time.c src/storage.c src/futures.c src/internal.h include/doe_futures.h $(PLATFORM_HEADERS) | $(BUILD)
 	$(CC) $(CPPFLAGS) $(CFLAGS) -DDOE_FUTURES_TESTING -DDOE_FUTURES_TEST_DARWIN \
 	  tests/test_darwin_time.c src/storage.c src/futures.c $(LDFLAGS) \
 	  -Wl,--wrap=clock_gettime -Wl,--wrap=pthread_condattr_setclock -o $@

@@ -28,18 +28,18 @@ static doe_error_scope_result enter(doe_error_scope_stack *stack)
         return (doe_error_scope_result){DOE_ERROR_SCOPE_INVALID_ARGUMENT, 0};
     if (stack->state != DOE_ERROR_SCOPES_LIVE)
         return (doe_error_scope_result){DOE_ERROR_SCOPE_INVALID_STATE, 0};
-    const int error = pthread_mutex_lock(&stack->mutex);
-    if (error != 0)
-        return (doe_error_scope_result){DOE_ERROR_SCOPE_SYSTEM_ERROR, error};
+    const doe_host_result host = doe_mutex_lock(&stack->mutex);
+    if (host.status != DOE_HOST_OK)
+        return (doe_error_scope_result){DOE_ERROR_SCOPE_SYSTEM_ERROR, host.native_error};
     return (doe_error_scope_result){DOE_ERROR_SCOPE_OK, 0};
 }
 
 static void leave(doe_error_scope_stack *stack, const char *operation)
 {
-    const int error = pthread_mutex_unlock(&stack->mutex);
-    if (error != 0) {
-        fprintf(stderr, "C error scopes %s: pthread_mutex_unlock failed: %d\n",
-                operation, error);
+    const doe_host_result host = doe_mutex_unlock(&stack->mutex);
+    if (host.status != DOE_HOST_OK) {
+        fprintf(stderr, "C error scopes %s: mutex unlock failed: %d\n",
+                operation, host.native_error);
         abort();
     }
 }
@@ -93,9 +93,9 @@ doe_error_scope_result doe_error_scope_init(uint32_t abi_version,
     if ((uintptr_t)storage % _Alignof(doe_error_scope_stack) != 0)
         return result(DOE_ERROR_SCOPE_MISALIGNED_STORAGE, 0, saved_errno);
     doe_error_scope_stack *stack = storage;
-    const int error = pthread_mutex_init(&stack->mutex, NULL);
-    if (error != 0)
-        return result(DOE_ERROR_SCOPE_SYSTEM_ERROR, error, saved_errno);
+    const doe_host_result host = doe_mutex_init(&stack->mutex, false);
+    if (host.status != DOE_HOST_OK)
+        return result(DOE_ERROR_SCOPE_SYSTEM_ERROR, host.native_error, saved_errno);
     stack->depth = 0;
     stack->callback = NULL;
     stack->userdata1 = NULL;
@@ -113,10 +113,10 @@ doe_error_scope_result doe_error_scope_deinit(doe_error_scope_stack *stack)
     if (stack->state != DOE_ERROR_SCOPES_LIVE &&
         stack->state != DOE_ERROR_SCOPES_CLEANUP)
         return result(DOE_ERROR_SCOPE_INVALID_STATE, 0, saved_errno);
-    const int error = pthread_mutex_destroy(&stack->mutex);
-    if (error != 0) {
+    const doe_host_result host = doe_mutex_destroy(&stack->mutex);
+    if (host.status != DOE_HOST_OK) {
         stack->state = DOE_ERROR_SCOPES_CLEANUP;
-        return result(DOE_ERROR_SCOPE_CLEANUP_REQUIRED, error, saved_errno);
+        return result(DOE_ERROR_SCOPE_CLEANUP_REQUIRED, host.native_error, saved_errno);
     }
     stack->state = DOE_ERROR_SCOPES_DEAD;
     return result(DOE_ERROR_SCOPE_OK, 0, saved_errno);
