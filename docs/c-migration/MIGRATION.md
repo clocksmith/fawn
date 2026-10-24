@@ -152,6 +152,13 @@ The [Windows SDK build](../../runtime/c/backends/d3d12/DEVELOPER_RECEIPT_WINDOWS
 compiles the private backend and links its clients. Native Windows host portability,
 public D3D12 composition and physical execution remain distinct unfinished gates.
 
+The standalone [Windows compiler host receipt](../../runtime/c/compiler/DEVELOPER_RECEIPT_WINDOWS_HOST.json)
+binds an actual SDK-built x64 DLL, canonical exports and four ordinary CPU
+consumers to one source revision, retaining both earlier build/fixture failures.
+It supplies bounded compiler host evidence, not full numerical acceptance,
+native Windows runtime/CLI execution, later platform-owner changes or GPU
+qualification. The first successful run did not record an SDK version.
+
 Reusable compute programs now share the ordinary resource submission owner.
 Unpublished preparation reserves a command buffer, publishes only after native
 recording succeeds, and aborts after releasing failed native artifacts. Failed

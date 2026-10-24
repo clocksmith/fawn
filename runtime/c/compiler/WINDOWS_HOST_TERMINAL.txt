@@ -1,0 +1,25 @@
+Actual Windows compiler DLL and CPU consumer developer control
+Source: fe231af0697d60c862250240298fed33026dc5b6
+Run: https://github.com/doerun/doe/actions/runs/40050061263/job/120740548000
+Host: Microsoft Windows 10.0.26100; x86_64-pc-windows-msvc; LLVM clang-cl20.1.8
+SDK/UCRT: actual vswhere-selected developer environment; SDK version not recorded
+DLL SHA256: eedd0f4903767ac092e57241844be247ec9ea2bc21f02c52386d330776fc0aac
+Artifact ZIP SHA256: e30e9a57753f6da720431c970be42b38f4aafac181e9359bbe4b7085046dedc8
+Verified:82 artifact manifest entries; exact19 canonical DLL exports
+
+Selected verbatim consumer terminal (compiler.log lines74,77,80,83):
+Native C consumer: unchanged residual compiled through loaded shared library
+Phony API: exact static entry closure, discarded handles/pointers, workspace reuse and atomic failure passed.
+Windows DLL: concurrent exact-word emission, failure nonpublication, errno, rounding, x87 and MXCSR restoration passed
+C++17 consumer: public C ABI included, shared library linked and called
+
+Retained first failures:
+40049685001,896c1af63c96831989a41656cce201114e5ed6bd:
+  clang-cl rejected /Fo with multiple inputs; import library moved after /link.
+40049816717,8ce7ff9971a7fc155e5ba61438b8e42f441faba9:
+  wrong input fixture correctly rejected: legacy reflection projection cannot represent Params.
+  Existing residual.wgsl restored; compiler and consumer assertions not weakened.
+
+Scope: actual standalone DLL/C/C++ CPU controls only. No native Windows runtime,
+POSIX CLI, GPU, full numerical acceptance, performance or production promotion.
+Later platform changes are outside this source identity.
