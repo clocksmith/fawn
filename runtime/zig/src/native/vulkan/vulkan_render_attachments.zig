@@ -35,6 +35,14 @@ fn validatePair(color: *const objects.DoeTextureView, depth: *const objects.DoeT
     if (color.tex.sample_count != depth.tex.sample_count) return error.RenderAttachmentSampleMismatch;
 }
 
+/// A resolve target is a single-sample view of the multisampled color
+/// attachment's format and extent.
+fn validateResolve(color: *const objects.DoeTextureView, resolve: *const objects.DoeTextureView) Error!void {
+    if (color.tex.sample_count <= 1 or resolve.tex.sample_count > 1) return error.RenderAttachmentSampleMismatch;
+    if (color.format != resolve.format) return error.RenderAttachmentFormatMismatch;
+    if (!std.meta.eql(extent(color), extent(resolve))) return error.RenderAttachmentExtentMismatch;
+}
+
 /// Admit native attachment semantics before retaining views or recording work.
 /// Unsupported attachment topologies cannot silently become a different pass.
 pub fn validateDescriptor(device: *objects.DoeDevice, descriptor: ?*const abi.WGPURenderPassDescriptor) Error!void {
@@ -42,7 +50,7 @@ pub fn validateDescriptor(device: *objects.DoeDevice, descriptor: ?*const abi.WG
     if (desc.colorAttachmentCount != 1) return error.RenderAttachmentUnsupported;
     const colors = desc.colorAttachments orelse return error.RenderAttachmentUnavailable;
     const color = try validateView(device, colors[0].view, false);
-    if (colors[0].resolveTarget != null) return error.RenderAttachmentUnsupported;
+    if (colors[0].resolveTarget) |raw| try validateResolve(color, try validateView(device, raw, false));
     if (desc.depthStencilAttachment) |raw| {
         const attachment: *const abi.WGPURenderPassDepthStencilAttachment = @ptrCast(@alignCast(raw));
         const depth = try validateView(device, attachment.view, true);
@@ -60,6 +68,8 @@ pub fn validateDraw(pass: *const objects.DoeRenderPass, clear_only: bool) Error!
     else
         null;
     if (depth) |view| try validatePair(color, view);
+    if (pass.resolve_target_view_handle != 0)
+        try validateResolve(color, try validateView(pass.enc.dev, @ptrFromInt(pass.resolve_target_view_handle), false));
     if (clear_only) return;
     const pipeline = pass.pipeline orelse return error.RenderAttachmentUnavailable;
     if (pipeline.device_ref != pass.enc.dev) return error.RenderAttachmentDeviceMismatch;
@@ -150,4 +160,29 @@ test "attachment admission rejects unavailable foreign nonrenderable and broad v
     try std.testing.expectError(error.RenderAttachmentFormatMismatch, validateView(&device, &view, true));
     texture.error_object = true;
     try std.testing.expectError(error.RenderAttachmentUnavailable, validateView(&device, &view, false));
+}
+
+test "resolve targets are single-sample views of the multisampled color format and extent" {
+    var device = objects.DoeDevice{};
+    var msaa = objects.DoeTexture{ .device_ref = &device, .width = 8, .height = 8, .sample_count = 4 };
+    var single = objects.DoeTexture{ .device_ref = &device, .width = 8, .height = 8 };
+    const base = objects.DoeTextureView{
+        .tex = &msaa,
+        .format = texture_abi.WGPUTextureFormat_RGBA8Unorm,
+        .dimension = texture_abi.WGPUTextureViewDimension_2D,
+        .mip_level_count = 1,
+        .array_layer_count = 1,
+        .aspect = texture_abi.WGPUTextureAspect_All,
+        .usage = texture_abi.WGPUTextureUsage_RenderAttachment,
+    };
+    var color = base;
+    var resolve = base;
+    resolve.tex = &single;
+    try validateResolve(&color, &resolve);
+    try std.testing.expectError(error.RenderAttachmentSampleMismatch, validateResolve(&resolve, &resolve));
+    resolve.format = texture_abi.WGPUTextureFormat_BGRA8Unorm;
+    try std.testing.expectError(error.RenderAttachmentFormatMismatch, validateResolve(&color, &resolve));
+    resolve.format = base.format;
+    single.width = 4;
+    try std.testing.expectError(error.RenderAttachmentExtentMismatch, validateResolve(&color, &resolve));
 }

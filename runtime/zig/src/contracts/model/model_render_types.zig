@@ -136,6 +136,9 @@ pub const RenderDrawCommand = struct {
     depth_stencil_format: transfer.WGPUTextureFormat = transfer.WGPUTextureFormat_Undefined,
     depth_target_handle: u64 = 0,
     depth_target_view_handle: u64 = 0,
+    /// Single-sample resolve target of a multisampled color attachment.
+    resolve_target_handle: u64 = 0,
+    resolve_target_view_handle: u64 = 0,
     depth_load: RenderAttachmentLoad = .clear,
     stencil_load: RenderAttachmentLoad = .clear,
     depth_clear_value: f32 = 1,
@@ -156,6 +159,9 @@ pub const RenderDrawCommand = struct {
     depth_bias_slope_scale: f32 = 0,
     depth_bias_clamp: f32 = 0,
     unclipped_depth: bool = false,
+    /// GPUMultisampleState.mask and alphaToCoverageEnabled.
+    sample_mask: u32 = 0xFFFF_FFFF,
+    alpha_to_coverage: bool = false,
     indirect_buffer_handle: u64 = 0,
     indirect_offset: u64 = 0,
     vertex_spirv: ?[]const u32 = null,

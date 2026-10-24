@@ -149,7 +149,8 @@ napi_value doe_create_render_pipeline(napi_env env, napi_callback_info info) {
             size_t total_attributes = 0;
             for (uint32_t i = 0; i < vertex_buffer_count; i++) {
                 napi_value buffer_desc; napi_get_element(env, buffers, i, &buffer_desc);
-                if (prop_type(env, buffer_desc, "attributes") == napi_object) {
+                napi_valuetype buffer_type; napi_typeof(env, buffer_desc, &buffer_type);
+                if (buffer_type == napi_object && prop_type(env, buffer_desc, "attributes") == napi_object) {
                     napi_value attrs = get_prop(env, buffer_desc, "attributes");
                     bool attrs_is_array = false; napi_is_array(env, attrs, &attrs_is_array);
                     if (!attrs_is_array) { free(vertex_entry); free(fragment_entry); NAPI_THROW(env, "createRenderPipeline: descriptor.vertex.buffers[*].attributes must be an array"); }
@@ -166,6 +167,8 @@ napi_value doe_create_render_pipeline(napi_env env, napi_callback_info info) {
             size_t attr_index = 0;
             for (uint32_t i = 0; i < vertex_buffer_count; i++) {
                 napi_value buffer_desc; napi_get_element(env, buffers, i, &buffer_desc);
+                napi_valuetype buffer_type; napi_typeof(env, buffer_desc, &buffer_type);
+                if (buffer_type != napi_object) continue; /* null slot: zeroed hole (stepMode Undefined, no attributes). */
                 vertex_buffers[i].nextInChain = NULL;
                 vertex_buffers[i].stepMode = has_prop(env, buffer_desc, "stepMode")
                     ? vertex_step_mode_from_value(env, get_prop(env, buffer_desc, "stepMode")) : 0x00000001;

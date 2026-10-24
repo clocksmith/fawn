@@ -29,7 +29,7 @@ pub fn message(cause: Failure) []const u8 {
         error.RenderAttachmentExtentMismatch => "render color and depth attachment mip extents must match",
         error.RenderAttachmentSampleMismatch => "render attachments and pipeline sample counts must match",
         error.RenderAttachmentFormatMismatch => "render attachment formats must match their roles and pipeline targets",
-        error.RenderAttachmentUnsupported => "Vulkan rendering supports one 2D color attachment and optional depth/stencil; resolve and depth-only passes are unsupported",
+        error.RenderAttachmentUnsupported => "Vulkan rendering supports one 2D color attachment and optional depth/stencil; depth-only passes are unsupported",
         error.OutOfMemory => "GPU command recording could not allocate owned storage",
         error.InvalidState => "GPU command recording requires an open encoder or its active pass",
         error.InvalidArgument => "GPU command recording received an invalid dependency or payload",
