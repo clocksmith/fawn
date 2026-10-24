@@ -185,9 +185,16 @@ pub fn vulkan_create_render_pipeline(
     }
     const vertex_entry = entryPoint(d.vertex_ep_data, d.vertex_ep_length);
     const fragment_entry = if (d.fragment) |frag| entryPoint(frag.entryPoint.data, frag.entryPoint.length) else null;
-    if (!admitStageEntryPoints(pip, vertex, vertex_entry, fragment, fragment_entry)) {
-        dev.error_scopes.deliver(error_scope.ERROR_TYPE_VALIDATION, "render pipeline entry point does not name a vertex or fragment entry point of its shader module");
-        return false;
+    switch (admitStageEntryPoints(pip, vertex, vertex_entry, fragment, fragment_entry)) {
+        .admitted => {},
+        .missing => {
+            dev.error_scopes.deliver(error_scope.ERROR_TYPE_VALIDATION, "render pipeline entry point does not name a vertex or fragment entry point of its shader module");
+            return false;
+        },
+        .binding_over_limit => {
+            dev.error_scopes.deliver(error_scope.ERROR_TYPE_VALIDATION, "render pipeline entry point uses a binding number not below maxBindingsPerBindGroup (" ++ std.fmt.comptimePrint("{d}", .{native_shared.MAX_BINDINGS_PER_BIND_GROUP}) ++ ")");
+            return false;
+        },
     }
     const use = compute_bind_groups.BindingUse{ .kinds = &pip.required_binding_kinds, .buffer_types = &pip.required_buffer_types, .stages = &pip.required_stages };
     if (pip.layout) |layout| if (pip.required_binding_kinds_ready and !compute_bind_groups.pipelineLayoutAdmitsBindings(layout, use)) {
@@ -203,38 +210,42 @@ pub fn vulkan_create_render_pipeline(
     return true;
 }
 
-const StageEntryPoint = enum { checked, unchecked, missing };
+const StageEntryPoint = enum { checked, unchecked, missing, binding_over_limit };
+const StageAdmission = enum { admitted, missing, binding_over_limit };
 
 /// Each stage's entry point must name a function of that stage in its module;
 /// an omitted name needs exactly one such function
 /// (https://gpuweb.github.io/gpuweb/#abstract-opdef-validating-gpuprogrammablestage).
 /// Also records the layout resource kind of every binding the entry points
-/// use. Returns false for a missing entry point; a module without WGSL source
-/// is not checked, and draws then skip the automatic-layout check.
+/// use, and rejects a used binding number at or above maxBindingsPerBindGroup.
+/// A module without WGSL source is not checked, and draws then skip the
+/// automatic-layout check.
 fn admitStageEntryPoints(
     pipeline: *shared.DoeRenderPipeline,
     vertex: ?*const shared.DoeShaderModule,
     vertex_entry: ?[]const u8,
     fragment: ?*const shared.DoeShaderModule,
     fragment_entry: ?[]const u8,
-) bool {
+) StageAdmission {
     @memset(&pipeline.required_binding_kinds, 0);
     @memset(&pipeline.required_buffer_types, 0);
     @memset(&pipeline.required_stages, 0);
     pipeline.required_binding_kinds_ready = false;
     var checked = true;
     switch (stageEntryPoint(pipeline, vertex, vertex_entry, .vertex)) {
-        .missing => return false,
+        .missing => return .missing,
+        .binding_over_limit => return .binding_over_limit,
         .unchecked => checked = false,
         .checked => {},
     }
     if (fragment != null) switch (stageEntryPoint(pipeline, fragment, fragment_entry, .fragment)) {
-        .missing => return false,
+        .missing => return .missing,
+        .binding_over_limit => return .binding_over_limit,
         .unchecked => checked = false,
         .checked => {},
     };
     pipeline.required_binding_kinds_ready = checked;
-    return true;
+    return .admitted;
 }
 
 fn stageEntryPoint(pipeline: *shared.DoeRenderPipeline, module: ?*const shared.DoeShaderModule, entry: ?[]const u8, stage: wgsl_ir.ShaderStage) StageEntryPoint {
@@ -256,6 +267,7 @@ fn stageEntryPoint(pipeline: *shared.DoeRenderPipeline, module: ?*const shared.D
     if (function.stage != stage) return .missing;
     var metadata: [native_shared.MAX_SHADER_BINDINGS]wgsl_bindings.BindingMeta = undefined;
     const count = wgsl_bindings.extractEntryPointBindings(native_helpers.alloc, &module_ir, name, &metadata) catch return .unchecked;
+    if (shader_binding_reflection.bindingOverLimit(metadata[0..count]) != null) return .binding_over_limit;
     for (metadata[0..count]) |meta| {
         if (meta.group >= native_shared.MAX_RENDER_BIND_GROUPS or meta.binding >= native_shared.MAX_BIND) continue;
         const slot = meta.group * native_shared.MAX_BIND + meta.binding;

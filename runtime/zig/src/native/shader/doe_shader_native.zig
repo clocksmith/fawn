@@ -625,6 +625,12 @@ pub export fn doeNativeShaderModuleRelease(raw: ?*anyopaque) callconv(.c) void {
 // ============================================================
 
 fn createComputePipelineVulkanOwned(sm: *DoeShaderModule, layout: ?*DoePipelineLayout, entry_point: ?[]const u8, overrides: []const wgsl_ir.OverrideEntry, diagnostic: *ShaderDiagnostic) ?*anyopaque {
+    if (shader_binding_reflection.computeEntryBindingOverLimit(sm, entry_point)) |binding| {
+        diagnostic.set_last_error_stage_name("native_compile");
+        diagnostic.set_last_error_kind("BindingNumberOverLimit");
+        diagnostic.set_last_error_fmt("compute entry point uses @binding({d}); binding numbers must be below maxBindingsPerBindGroup ({d})", .{ binding, native_shared.MAX_BINDINGS_PER_BIND_GROUP });
+        return null;
+    }
     const cp = make(DoeComputePipeline) orelse {
         recordAllocationFailure(diagnostic, "native_compile", "compute pipeline allocation failed");
         return null;
