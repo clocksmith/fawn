@@ -301,36 +301,12 @@ napi_value doe_create_render_pipeline(napi_env env, napi_callback_info info) {
 
     desc.fragment = has_fragment ? &fragment_state : NULL;
 
-    void* scoped = doe_scoped_validation_begin(device);
     WGPURenderPipeline rp = pfn_wgpuDeviceCreateRenderPipeline(device, &desc);
-    char scoped_message[DOE_ERROR_BUF_CAP] = {0};
-    bool scoped_validation = doe_scoped_validation_end(device, scoped, scoped_message, sizeof(scoped_message));
     free_override_constants(vertex_constants, vertex_constant_count);
     free_override_constants(fragment_constants, fragment_constant_count);
     free(depth_stencil); free(vertex_attributes); free(vertex_buffers);
     free(vertex_entry); free(fragment_entry); free(label_str);
-    if (!rp && scoped_validation) {
-        char full_msg[DOE_ERROR_BUF_CAP + 32];
-        snprintf(full_msg, sizeof(full_msg), "createRenderPipeline: %s", scoped_message);
-        napi_throw_error(env, "DOE_RENDER_PIPELINE_ERROR", full_msg);
-        return NULL;
-    }
-    if (!rp) {
-        char msg[DOE_ERROR_BUF_CAP];
-        char stage[64];
-        char kind[64];
-        copy_library_error_message(msg, sizeof(msg));
-        copy_library_error_meta(pfn_doeNativeCopyLastErrorStage, stage, sizeof(stage));
-        copy_library_error_meta(pfn_doeNativeCopyLastErrorKind, kind, sizeof(kind));
-        if (msg[0] != '\0') {
-            char full_msg[DOE_ERROR_BUF_CAP];
-            doe_format_library_error_message(full_msg, sizeof(full_msg), stage, kind, msg);
-            napi_throw_error(env, "DOE_RENDER_PIPELINE_ERROR", full_msg);
-        } else {
-            napi_throw_error(env, "DOE_RENDER_PIPELINE_ERROR", "createRenderPipeline failed");
-        }
-        return NULL;
-    }
+    if (!rp) NAPI_RETURN_PROVIDER_REJECTED(env);
     return wrap_ptr(env, rp);
 }
 
@@ -835,7 +811,7 @@ napi_value doe_create_render_bundle_encoder(napi_env env, napi_callback_info inf
     void* enc = pfn_doeNativeDeviceCreateRenderBundleEncoder(device, &desc);
     free(label);
     free(fmts);
-    if (!enc) NAPI_THROW(env, "createRenderBundleEncoder failed");
+    if (!enc) NAPI_RETURN_PROVIDER_REJECTED(env);
     return wrap_ptr(env, enc);
 }
 

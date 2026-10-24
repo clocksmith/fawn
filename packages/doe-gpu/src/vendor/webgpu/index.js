@@ -20,6 +20,7 @@ import {
 import {
   UINT32_MAX,
   failValidation,
+  failUnsupported,
   describeResourceLabel,
   initResource,
   assertObject,
@@ -552,7 +553,7 @@ function requireAutoLayoutEntriesFromNative(shaderNative, visibility, path, entr
     ? addon?.shaderModuleGetBindingsForEntryPoint
     : addon?.shaderModuleGetBindings;
   if (typeof reflectionMethod !== 'function') {
-    failValidation(
+    failUnsupported(
       path,
       `layout: "auto" requires ${entryPointSpecific ? 'entry-point-specific ' : ''}native shader binding metadata on this package surface`
     );
@@ -579,6 +580,16 @@ const ERROR_SCOPE_FILTERS = Object.freeze({
   'out-of-memory': 0x00000002,
   internal: 0x00000003,
 });
+
+// Pops a scope captureProviderErrors pushed: the GPUError it caught, or null
+// when it caught none or the provider could not deliver synchronously.
+function popPrivateErrorScope(device, deviceNative) {
+  try {
+    return createGpuError(addon.devicePopErrorScope(deviceNative, device._instance ?? null));
+  } catch {
+    return null;
+  }
+}
 
 function createGpuError(result) {
   if (!result || result.type === 'no-error') {
@@ -699,35 +710,43 @@ function installNodeDeviceCallbacks(device) {
           failValidation('GPUDevice.onuncapturederror', 'handler must be a function or null');
         }
         this._onuncapturederror = handler ?? null;
-        if (this._destroyed) return;
-        if (typeof addon?.deviceSetUncapturedErrorCallback !== 'function') {
-          if (handler) {
-            throw unsupportedNodeDeviceCapability('GPUDevice.onuncapturederror');
-          }
-          return;
-        }
-        try {
-          const registered = addon.deviceSetUncapturedErrorCallback(
-            this._native,
-            handler
-              ? (event) => dispatchNodeDeviceEvent(this, event)
-              : null,
-          );
-          if (registered === false && handler) {
-            throw unsupportedNodeDeviceCapability('GPUDevice.onuncapturederror');
-          }
-        } catch (error) {
-          if (String(error?.message ?? '').includes('not available')) {
-            if (handler) {
-              throw unsupportedNodeDeviceCapability('GPUDevice.onuncapturederror');
-            }
-            return;
-          }
-          throw error;
-        }
+        syncNodeUncapturedErrorCallback(this, 'GPUDevice.onuncapturederror');
       },
     },
   });
+}
+
+// The provider reports uncaptured errors through one native callback; it is
+// registered while onuncapturederror or an 'uncapturederror' listener exists,
+// and dispatches to both.
+function syncNodeUncapturedErrorCallback(device, path) {
+  if (device._destroyed) return;
+  const listeners = device._eventListeners?.get('uncapturederror');
+  const wanted = typeof device._onuncapturederror === 'function'
+    || (listeners instanceof Set && listeners.size > 0);
+  if (typeof addon?.deviceSetUncapturedErrorCallback !== 'function') {
+    if (wanted) {
+      throw unsupportedNodeDeviceCapability(path);
+    }
+    return;
+  }
+  try {
+    const registered = addon.deviceSetUncapturedErrorCallback(
+      device._native,
+      wanted ? (event) => dispatchNodeDeviceEvent(device, event) : null,
+    );
+    if (registered === false && wanted) {
+      throw unsupportedNodeDeviceCapability(path);
+    }
+  } catch (error) {
+    if (String(error?.message ?? '').includes('not available')) {
+      if (wanted) {
+        throw unsupportedNodeDeviceCapability(path);
+      }
+      return;
+    }
+    throw error;
+  }
 }
 
 function nodeDevicePushErrorScope(filter) {
@@ -2536,7 +2555,7 @@ const fullSurfaceBackend = {
       descriptor.stencilReadOnly ?? false,
       descriptor.label ?? null,
     );
-    return new encoderClasses.DoeGPURenderBundleEncoder(native, device);
+    return native === null ? null : new encoderClasses.DoeGPURenderBundleEncoder(native, device);
   },
   deviceLimits,
   deviceFeatures,
@@ -2555,11 +2574,49 @@ const fullSurfaceBackend = {
   deviceGetQueue(native) {
     return addon.deviceGetQueue(native);
   },
+  deviceUncapturedErrorListenersChanged(device) {
+    syncNodeUncapturedErrorCallback(device, 'GPUDevice.addEventListener');
+  },
+  // The exception for a creation the provider rejected while nothing observed
+  // errors; the provider's own message when it keeps one (Zig drop-in).
+  providerRejection(path) {
+    const text = typeof addon?.lastProviderError === 'function' ? addon.lastProviderError() : null;
+    if (!text) {
+      return new Error(`${path}: the provider rejected the descriptor`);
+    }
+    const error = enrichNativeCompilerError(new Error(text), path, null);
+    if (!error.message.startsWith(`${path}: `)) {
+      error.message = `${path}: ${error.message}`;
+    }
+    return error;
+  },
+  // Runs create() inside private validation and out-of-memory scopes, so the
+  // provider's error comes back to the caller instead of the user's scopes.
+  captureProviderErrors(device, create) {
+    const deviceNative = assertLiveResource(device, 'GPUDevice', 'GPUDevice');
+    addon.devicePushErrorScope(deviceNative, ERROR_SCOPE_FILTERS['out-of-memory']);
+    addon.devicePushErrorScope(deviceNative, ERROR_SCOPE_FILTERS.validation);
+    let value;
+    try {
+      value = create();
+    } catch (error) {
+      popPrivateErrorScope(device, deviceNative);
+      popPrivateErrorScope(device, deviceNative);
+      throw error;
+    }
+    const validation = popPrivateErrorScope(device, deviceNative);
+    const outOfMemory = popPrivateErrorScope(device, deviceNative);
+    const error = validation ?? outOfMemory;
+    return { value, filter: error?.type ?? null, error };
+  },
   deviceCreateBuffer(device, validated) {
     const nativeDescriptor = validated.size === 0 && libraryFlavor(currentDoeLibraryPath()) === 'doe-dropin'
       ? { ...validated, size: ZIG_ZERO_SIZE_BUFFER_STAND_IN_BYTES, mappedAtCreation: false }
       : validated;
     const native = addon.createBuffer(assertLiveResource(device, 'GPUDevice.createBuffer', 'GPUDevice'), nativeDescriptor);
+    if (native === null) {
+      return null;
+    }
     if (nativeDescriptor.size === 0 && nativeDescriptor.mappedAtCreation) {
       nodeZeroSizeMappedAtCreation.add(native);
     }
@@ -2596,7 +2653,7 @@ const fullSurfaceBackend = {
   },
   deviceCreateBindGroupLayout(device, entries, label) {
     if (entries.some((entry) => entry.externalTexture)) {
-      failValidation(
+      failUnsupported(
         'GPUDevice.createBindGroupLayout',
         'externalTexture bindings require a browser canvas backend provider, not the headless Doe runtime package surface',
       );
@@ -2618,7 +2675,7 @@ const fullSurfaceBackend = {
   },
   deviceCreateBindGroup(device, layoutNative, entries, label) {
     if (entries.some((entry) => entry.externalTexture)) {
-      failValidation(
+      failUnsupported(
         'GPUDevice.createBindGroup',
         'externalTexture resources require a browser canvas backend provider, not the headless Doe runtime package surface',
       );
@@ -2774,7 +2831,7 @@ const fullSurfaceBackend = {
       descriptor.type === 'occlusion' ? QUERY_TYPE_OCCLUSION : QUERY_TYPE_TIMESTAMP,
       descriptor.count,
     );
-    if (descriptor.label && typeof addon.objectSetLabel === 'function') {
+    if (querySet !== null && descriptor.label && typeof addon.objectSetLabel === 'function') {
       addon.objectSetLabel(querySet, descriptor.label);
     }
     return querySet;
