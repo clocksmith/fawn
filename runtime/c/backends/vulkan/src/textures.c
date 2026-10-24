@@ -224,6 +224,9 @@ static doe_vk_status validate_texture(doe_vk_context *context,
         ((desc->usage & DOE_VK_TEXTURE_DEPTH_STENCIL_ATTACHMENT) && !caps.depth_stencil_attachment) ||
         ((desc->usage & DOE_VK_TEXTURE_COPY_SRC) && !caps.copy_src) ||
         ((desc->usage & DOE_VK_TEXTURE_COPY_DST) && !caps.copy_dst)) return DOE_VK_UNSUPPORTED;
+    /* 2D views of 3D slices (render attachments) are core from Vulkan 1.1. */
+    if (doe_vk_texture_slice_renderable(desc) && context->caps.api_version < VK_API_VERSION_1_1)
+        return DOE_VK_UNSUPPORTED;
     VkImageFormatProperties image;
     status = doe_vk_image_format_properties(context, desc, &image);
     if (status != DOE_VK_OK) return status;
@@ -283,7 +286,8 @@ doe_vk_status doe_vk_texture_create(doe_vk_context *context,
         .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
         .pNext = texture->view_format_count != 0 ? &format_list : NULL,
         .flags = (desc->cube_compatible ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0) |
-            (texture->view_format_count != 0 ? VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT : 0),
+            (texture->view_format_count != 0 ? VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT : 0) |
+            (doe_vk_texture_slice_renderable(desc) ? VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT : 0),
         .imageType = (uint32_t)desc->dimension,
         .format = (uint32_t)desc->format,
         .extent = { desc->width, desc->height, desc->dimension == DOE_VK_TEXTURE_3D ? desc->depth_or_layers : 1 },
@@ -357,8 +361,18 @@ static doe_vk_status validate_view(doe_vk_texture *texture, const doe_vk_texture
     if (!(texture->desc.usage & (DOE_VK_TEXTURE_SAMPLED | DOE_VK_TEXTURE_STORAGE | DOE_VK_TEXTURE_COLOR_ATTACHMENT | DOE_VK_TEXTURE_DEPTH_STENCIL_ATTACHMENT)))
         return DOE_VK_INVALID_ARGUMENT;
     uint32_t layers = texture->desc.dimension == DOE_VK_TEXTURE_3D ? 1 : texture->desc.depth_or_layers;
+    /* A 2D view of one slice of a 3D mip is a render attachment only: its
+     * layer is the depth slice (2D_ARRAY_COMPATIBLE image, Vulkan 1.1). */
+    const bool slice = texture->desc.dimension == DOE_VK_TEXTURE_3D && desc->dimension == DOE_VK_VIEW_2D;
+    if (slice) {
+        uint32_t depth = texture->desc.depth_or_layers >> desc->base_mip;
+        if (!doe_vk_texture_slice_renderable(&texture->desc) || desc->mip_count != 1 ||
+            doe_vk_texture_view_swizzled_desc(desc)) return DOE_VK_INVALID_ARGUMENT;
+        layers = depth != 0 ? depth : 1;
+    }
     if (!doe_vk_range(layers, desc->base_layer, desc->layer_count)) return DOE_VK_INVALID_ARGUMENT;
-    if (texture->desc.dimension == DOE_VK_TEXTURE_1D) {
+    if (slice) {
+    } else if (texture->desc.dimension == DOE_VK_TEXTURE_1D) {
         if (desc->dimension != DOE_VK_VIEW_1D && desc->dimension != DOE_VK_VIEW_1D_ARRAY)
             return DOE_VK_INVALID_ARGUMENT;
     } else if (texture->desc.dimension == DOE_VK_TEXTURE_3D) {
@@ -386,9 +400,21 @@ _Static_assert((int)DOE_VK_SWIZZLE_G == (int)VK_COMPONENT_SWIZZLE_G, "swizzle g"
 _Static_assert((int)DOE_VK_SWIZZLE_B == (int)VK_COMPONENT_SWIZZLE_B, "swizzle b");
 _Static_assert((int)DOE_VK_SWIZZLE_A == (int)VK_COMPONENT_SWIZZLE_A, "swizzle a");
 
-bool doe_vk_texture_view_swizzled(const doe_vk_texture_view *view) {
-    for (uint32_t i = 0; i < 4; ++i) if (view->desc.swizzle[i] != DOE_VK_SWIZZLE_IDENTITY) return true;
+bool doe_vk_texture_view_swizzled_desc(const doe_vk_texture_view_desc *desc) {
+    for (uint32_t i = 0; i < 4; ++i) if (desc->swizzle[i] != DOE_VK_SWIZZLE_IDENTITY) return true;
     return false;
+}
+
+bool doe_vk_texture_view_swizzled(const doe_vk_texture_view *view) {
+    return doe_vk_texture_view_swizzled_desc(&view->desc);
+}
+
+bool doe_vk_texture_slice_renderable(const doe_vk_texture_desc *desc) {
+    return desc->dimension == DOE_VK_TEXTURE_3D && (desc->usage & DOE_VK_TEXTURE_COLOR_ATTACHMENT) != 0;
+}
+
+bool doe_vk_texture_view_is_slice(const doe_vk_texture_view *view) {
+    return view->texture->desc.dimension == DOE_VK_TEXTURE_3D && view->desc.dimension == DOE_VK_VIEW_2D;
 }
 
 doe_vk_status doe_vk_texture_view_create(doe_vk_texture *texture,
@@ -428,6 +454,18 @@ doe_vk_status doe_vk_texture_view_create(doe_vk_texture *texture,
     }
     *out = view;
     return doe_vk_fail(DOE_VK_OK, "texture view ready", error);
+}
+
+doe_vk_status doe_vk_texture_view_slice_create(doe_vk_texture_view *volume, uint32_t slice,
+    doe_vk_texture_view **out, doe_vk_error *error) {
+    if (volume == NULL || volume->desc.dimension != DOE_VK_VIEW_3D || volume->desc.mip_count != 1)
+        return doe_vk_fail(DOE_VK_INVALID_ARGUMENT, "3D slice view source", error);
+    doe_vk_texture_view_desc desc = volume->desc;
+    desc.dimension = DOE_VK_VIEW_2D;
+    desc.base_layer = slice;
+    desc.layer_count = 1;
+    desc.format = volume->format;
+    return doe_vk_texture_view_create(volume->texture, &desc, out, error);
 }
 
 doe_vk_status doe_vk_texture_view_retain(doe_vk_texture_view *view) {

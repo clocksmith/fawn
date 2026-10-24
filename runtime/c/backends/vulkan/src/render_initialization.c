@@ -58,8 +58,11 @@ doe_vk_status doe_vk_commands_initialize_attachment(doe_vk_commands *commands,
     doe_vk_texture_view *view) {
     doe_vk_status status = doe_vk_recording(commands);
     if (status != DOE_VK_OK) return status;
-    if (view == NULL || view->texture->context != commands->context || !attachment_capable(view->texture))
-        return doe_vk_poison(commands, DOE_VK_INVALID_ARGUMENT);
+    if (view == NULL || view->texture->context != commands->context) return doe_vk_poison(commands, DOE_VK_INVALID_ARGUMENT);
+    /* 3D mips are zero-initialized at creation and a discarded slice is
+     * re-zeroed by its pass, so a slice view never needs initialization. */
+    if (doe_vk_texture_view_is_slice(view)) return DOE_VK_OK;
+    if (!attachment_capable(view->texture)) return doe_vk_poison(commands, DOE_VK_INVALID_ARGUMENT);
     return initialize_span(commands, view->texture, view, view->desc.base_mip, view->desc.mip_count,
         view->desc.base_layer, view->desc.layer_count);
 }
