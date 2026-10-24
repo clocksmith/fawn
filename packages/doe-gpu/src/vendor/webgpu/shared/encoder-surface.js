@@ -26,6 +26,18 @@ const NON_NEGATIVE_RANGE = Object.freeze({ min: 0 });
 const POSITIVE_RANGE = Object.freeze({ min: 1 });
 const POSITIVE_UINT32_RANGE = Object.freeze({ min: 1, max: UINT32_MAX });
 
+// https://gpuweb.github.io/gpuweb/#dom-gpubindingcommandsmixin-setimmediates
+// (content timeline): dataOffset and size count elements of a typed array
+// (bytes for an ArrayBuffer); a range past the data or a byte size that is not a
+// multiple of 4 throws OperationError. rangeOffset limits are device validation.
+function immediateOperationError(path, message) {
+  const text = `${path}: ${message}`;
+  if (typeof DOMException === 'function') return new DOMException(text, 'OperationError');
+  const error = new Error(text);
+  error.name = 'OperationError';
+  return error;
+}
+
 function normalizeImmediateDataInput(data, dataOffset = 0, size, path) {
   const isSharedArrayBuffer = typeof SharedArrayBuffer !== 'undefined' && data instanceof SharedArrayBuffer;
   if (!ArrayBuffer.isView(data) && !(data instanceof ArrayBuffer) && !isSharedArrayBuffer) {
@@ -35,14 +47,19 @@ function normalizeImmediateDataInput(data, dataOffset = 0, size, path) {
   if (size !== undefined) {
     assertIntegerInRange(size, path, 'size', { min: 0 });
   }
+  const elementSize = ArrayBuffer.isView(data) && !(data instanceof DataView) ? data.BYTES_PER_ELEMENT : 1;
   const bytes = ArrayBuffer.isView(data)
     ? new Uint8Array(data.buffer, data.byteOffset, data.byteLength)
     : new Uint8Array(data);
-  const end = size === undefined ? bytes.byteLength : dataOffset + size;
-  if (end > bytes.byteLength) {
-    failValidation(path, `data range ${dataOffset}+${size ?? (bytes.byteLength - dataOffset)} exceeds source byteLength ${bytes.byteLength}`);
+  const elements = bytes.byteLength / elementSize;
+  const count = size === undefined ? Math.max(0, elements - dataOffset) : size;
+  if (dataOffset + count > elements) {
+    throw immediateOperationError(path, `data range ${dataOffset}+${count} exceeds ${elements} elements`);
   }
-  return bytes.subarray(dataOffset, end);
+  if ((count * elementSize) % 4 !== 0) {
+    throw immediateOperationError(path, `content size ${count * elementSize} bytes is not a multiple of 4`);
+  }
+  return bytes.subarray(dataOffset * elementSize, (dataOffset + count) * elementSize);
 }
 
 // WebIDL [EnforceRange] integer conversion: ToNumber, reject NaN and
