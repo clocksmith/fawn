@@ -9,6 +9,7 @@ const error_scope = @import("../../runtime/diagnostics/error_scope.zig");
 const wgsl_bindings = @import("../../compiler/wgsl/pipeline/binding_reflection.zig");
 const wgsl_ir = @import("../../compiler/wgsl/ir/ir.zig");
 const shader_binding_reflection = @import("../shader/shader_binding_reflection.zig");
+const compute_bind_groups = @import("../compute/doe_compute_bind_groups.zig");
 
 pub fn vulkan_create_render_pipeline(
     dev: *shared.DoeDevice,
@@ -187,6 +188,10 @@ pub fn vulkan_create_render_pipeline(
         dev.error_scopes.deliver(error_scope.ERROR_TYPE_VALIDATION, "render pipeline entry point does not name a vertex or fragment entry point of its shader module");
         return false;
     }
+    if (pip.layout) |layout| if (pip.required_binding_kinds_ready and !compute_bind_groups.pipelineLayoutAdmitsBindings(layout, &pip.required_binding_kinds)) {
+        dev.error_scopes.deliver(error_scope.ERROR_TYPE_VALIDATION, "render pipeline layout lacks a binding the entry points use, or has it with another resource type");
+        return false;
+    };
     retainShaderCode(native_helpers.alloc, pip, vertex, fragment, vertex_entry, fragment_entry) catch |err| {
         dev.error_scopes.deliver(error_scope.zig_error_to_type(err), if (err == error.OutOfMemory) "render pipeline could not retain shader code" else "render pipeline requires compiled graphics shader code");
         return false;
