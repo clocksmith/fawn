@@ -46,7 +46,8 @@ the explicit limits and feature checks below. CPU execution receipts prove their
 recorded outputs and lifetimes; they do not qualify physical Vulkan performance.
 
 Metal composes shared buffers, compute, initialized color and depth/stencil
-textures/views, samplers, color transfers and direct nonindexed render passes.
+textures/views, samplers, color transfers, direct/indexed render passes and
+GPU-guarded indirect draws.
 Depth/stencil sampled views use canonical aspect admission, combined native depth
 formats and X24/X32 stencil views. Real parent-format clears preserve initialized
 companion aspects; sampled views and temporary clears retain the same pending
@@ -82,13 +83,22 @@ Metal's frontend compute envelope remains bounded to 256 total threads, at most
 256 per axis, 65535 groups per axis and conservative 256-byte buffer offsets.
 Actual buffer, threadgroup-memory and per-pipeline limits constrain it further.
 Resolved device limits bound graphics and resource admission. Partial sample
-masks, unclipped depth, indexed guards, queries, depth/stencil transfers and
+masks, unclipped depth, queries, depth/stencil transfers and
 presentation remain explicit missing paths. Compute indirect dispatch now lowers
 through a lazy immutable device guard, GPU-copied private arguments and the actual
 Metal indirect-dispatch selector. Host rejection, rollback, sanitizer and lifetime
 controls pass. The [M3 indirect receipt](DEVELOPER_RECEIPT_METAL_INDIRECT.json)
 binds actual public GPU-generated arguments, bounds suppression, dispatch
 metadata, preserved caller bytes and early releases to its exact source.
+
+The [Metal draw-guard receipt](DEVELOPER_RECEIPT_METAL_DRAW_GUARDS.json) separately
+binds the unchanged `indexed-render` consumer to `cb6340154`: 192 exact pixels,
+nine GPU-produced indirect records, 13 validation controls and early releases on
+one M3. The common argument normalizer and GPU index scan use existing command
+leases; caller arguments and indices stay unchanged. A companion `6ca18bffa` run
+executes 23 guard records, testing 64-bit capacities and simulated large ordinals
+with small index windows. It does not establish large-allocation support or
+broader graphics qualification.
 
 [Public Apple graphics evidence](DEVELOPER_RECEIPT_METAL_PUBLIC_GRAPHICS.json)
 binds offscreen pixels, early releases, discard zeros and uploads on one M3.
@@ -261,7 +271,10 @@ and exact exports; absent platform loaders remain explicitly unavailable.
   firstInstance becomes a native no-op.
   Uint32 indices require the enabled native fullDrawIndexUint32 feature. Index
   values are never read on the host; vertex-step fetches through arbitrary GPU
-  indices rely on enabled robustBufferAccess. Metal indexed drawing is absent.
+  indices rely on enabled robustBufferAccess. Metal instead uses the shared
+  argument normalizer plus GPU index scans, including signed base vertices,
+  strip restart and initialized physical padding for odd uint16 ends, without
+  widening logical index ranges or reading indices on the host.
 - Viewports use the canonical requested-device bounds, including negative origins,
   outside-attachment viewports and zero extents. Scissors remain attachment-bound;
   zero viewport extent preserves native draw/query ordering with an empty scissor.
@@ -637,10 +650,10 @@ for this client and the select, atomics and explicit-depth controls.
 
 ## Intentionally unprovided or rejected
 
-Vulkan indirect dispatch and nonindexed/indexed indirect
-pass/bundle draws use real GPU guards; Metal indirect and indexed guards remain uncomposed.
-Graphics
-admits up to eight sparse color slots and/or depth/stencil, sample counts 1 and 4, direct
+Vulkan and Metal indirect dispatch and nonindexed/indexed indirect pass/bundle
+draws use real GPU guards. Metal indexed fetches additionally scan the requested
+GPU index windows before one whole native render pass.
+Graphics admits up to eight sparse color slots and/or depth/stencil, sample counts 1 and 4, direct
 triangle/line lists or strips and every pinned WebGPU vertex format (8/16/32-bit
 integer and normalized, float16/32, unorm10-10-10-2, unorm8x4-bgra) with offsets
 aligned to min(4, format size).
@@ -982,7 +995,9 @@ CopySrc, eight indirect draw query outcomes, four viewport query outcomes, exact
 64 pixels, bundle replay, stride-zero instances, early caller releases and typed
 helper acquisition failures. Recovery checks keep helpers while completion is
 unknown, then discard and recreate them after proven terminal failure. These are
-software Vulkan results; Metal indirect and indexed rendering remain unsupported.
+software Vulkan results and provide no Metal execution coverage. The later
+[Metal draw-guard receipt](DEVELOPER_RECEIPT_METAL_DRAW_GUARDS.json) retains its
+own published source and actual M3 consumer results.
 
 The public RenderPassMaxDrawCount chain converts its exact uint64 value into the
 canonical resource budget. Explicit zero is not the omitted default; direct and
@@ -1020,11 +1035,12 @@ controls, separate from physical failure/recovery qualification.
 
 The Metal frontend now composes real initialized textures/views/samplers, color
 copies and packed QueueWriteTexture uploads, compiler-reflected vertex/fragment
-pipelines and direct nonindexed whole passes. Vertex and fragment use their own
+pipelines and direct, indexed and GPU-guarded indirect whole passes. Vertex and
+fragment use their own
 compiler-provided binding tables; vertex-fetch slots avoid shader buffer/size
 slots. Shared public fixed/depth/interface admission is converted explicitly to
 Metal without synthetic Vulkan capabilities. Partial sample masks, unclipped depth,
-Metal indirect/indexed draws and depth/stencil texture transfers reject explicitly.
+and depth/stencil texture transfers reject explicitly.
 Texture initialization, discard recovery and public submissions share the same
 backend aspect state and tagged pending owner. An initialization that becomes
 unknown does not publish a public texture and cannot drop its private allocation.
