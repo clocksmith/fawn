@@ -32,6 +32,29 @@ pub const MAX_VERTEX_ATTRIBUTES: usize = 16;
 pub const MAX_RENDER_BIND_ENTRIES: usize = 16;
 /// WebGPU bind group indices a draw can use; each becomes its own descriptor set.
 pub const MAX_RENDER_BIND_GROUPS: usize = 4;
+/// WebGPU maxColorAttachments upper bound.
+pub const MAX_COLOR_ATTACHMENTS: usize = 8;
+
+/// One color attachment slot of a pass and the pipeline's state for it. A slot
+/// with format 0 is a null (unused) attachment.
+pub const RenderColorAttachment = struct {
+    handle: u64 = 0,
+    view_handle: u64 = 0,
+    format: u32 = 0,
+    /// Single-sample resolve target of a multisampled attachment.
+    resolve_handle: u64 = 0,
+    resolve_view_handle: u64 = 0,
+    load: RenderAttachmentLoad = .clear,
+    clear: [4]f32 = .{ 0, 0, 0, 1 },
+    blend_enabled: bool = false,
+    color_operation: u32 = 1,
+    color_src_factor: u32 = 2,
+    color_dst_factor: u32 = 1,
+    alpha_operation: u32 = 1,
+    alpha_src_factor: u32 = 2,
+    alpha_dst_factor: u32 = 1,
+    write_mask: u32 = 0xF,
+};
 pub const RENDER_BINDING_UNSET: u32 = 0xFFFF_FFFF;
 
 /// Undefined with no attributes is an unused (null) vertex buffer slot.
@@ -137,6 +160,14 @@ pub const RenderDrawCommand = struct {
     blend_constant: [4]f32 = .{ 0, 0, 0, 0 },
     clear_color: [4]f32 = .{ 0, 0, 0, 1 },
     color_load: RenderAttachmentLoad = .clear,
+    /// When set, the pass's color slots (zero to MAX_COLOR_ATTACHMENTS, null
+    /// slots included) replace the single-target fields above.
+    explicit_color_attachments: bool = false,
+    color_attachment_count: u32 = 0,
+    color_attachments: [MAX_COLOR_ATTACHMENTS]RenderColorAttachment = [_]RenderColorAttachment{.{}} ** MAX_COLOR_ATTACHMENTS,
+    /// A pipeline without a fragment stage (depth-only) when false and the
+    /// attachments are explicit.
+    has_fragment_stage: bool = true,
     stencil_reference: u32 = 0,
     occlusion_query_pool: u64 = 0,
     occlusion_query_index: ?u32 = null,

@@ -79,7 +79,8 @@ pub const DrawRecording = struct {
     pipeline_layout: c.VkPipelineLayout,
     /// Descriptor sets for bind groups 0..len, bound at set 0.
     descriptor_sets: []const c.VkDescriptorSet,
-    has_depth_stencil: bool,
+    /// One clear value per render pass attachment, in attachment order.
+    clear_values: []const c.VkClearValue,
 
     fn resolve_buffer(self: *const DrawRecording, raw: ?*anyopaque) ?c.VkBuffer {
         const handle = raw orelse return null;
@@ -89,12 +90,6 @@ pub const DrawRecording = struct {
 
     /// `indirect` is the validated argument set for an indirect draw (ignored otherwise).
     pub fn record(self: *const DrawRecording, cmd: model_render_types.RenderDrawCommand, index: ?IndexBinding, draw_count: u32, target_width: u32, target_height: u32, indirect: IndirectDraw) error{InvalidArgument}!void {
-        var clear_values = [_]c.VkClearValue{
-            try color_clear_value(cmd.target_format, cmd.clear_color),
-            .{
-                .depthStencil = .{ .depth = cmd.depth_clear_value, .stencil = cmd.stencil_clear_value },
-            },
-        };
         var render_pass_begin = c.VkRenderPassBeginInfo{
             .sType = c.VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
             .pNext = null,
@@ -104,8 +99,8 @@ pub const DrawRecording = struct {
                 .offset = .{ .x = 0, .y = 0 },
                 .extent = .{ .width = target_width, .height = target_height },
             },
-            .clearValueCount = if (self.has_depth_stencil) 2 else 1,
-            .pClearValues = clear_values[0..if (self.has_depth_stencil) 2 else 1].ptr,
+            .clearValueCount = @intCast(self.clear_values.len),
+            .pClearValues = self.clear_values.ptr,
         };
         if (cmd.occlusion_query_pool != 0) {
             if (cmd.occlusion_query_index) |query_index|

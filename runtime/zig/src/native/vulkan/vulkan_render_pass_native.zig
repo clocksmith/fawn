@@ -65,8 +65,15 @@ fn populate_draw_cmd_from_pass(cmd: *model_render_types.RenderDrawCommand, pass:
             cmd.depth_target_handle = view.tex.vk_id;
             cmd.depth_target_view_handle = if (view.handle) |handle| @intFromPtr(handle) else view.tex.vk_id;
             cmd.depth_stencil_format = pass.depth_stencil_format;
+            // A depth-only pass takes its extent and sample count from depth.
+            if (pass.target_view_handle == 0) {
+                cmd.target_width = @max(1, view.tex.width >> @intCast(view.base_mip_level));
+                cmd.target_height = @max(1, view.tex.height >> @intCast(view.base_mip_level));
+                cmd.sample_count = if (view.tex.sample_count != 0) view.tex.sample_count else 1;
+            }
         }
     }
+    populate_color_attachments(cmd, pass);
     cmd.depth_load = if (pass.attachments_started or pass.depth_read_only or pass.depth_load_op == upstream.WGPULoadOp_Load) .load else .clear;
     cmd.stencil_load = if (pass.attachments_started or pass.stencil_read_only or pass.stencil_load_op == upstream.WGPULoadOp_Load) .load else .clear;
     cmd.depth_clear_value = pass.depth_clear_value;
@@ -142,6 +149,43 @@ fn populate_draw_cmd_from_pass(cmd: *model_render_types.RenderDrawCommand, pass:
     cmd.bind_texture_count = tex_count;
     cmd.bind_sampler_count = samp_count;
     cmd.bind_buffer_count = buffer_count;
+}
+
+fn view_key(view: *const shared.DoeTextureView) u64 {
+    return if (view.handle) |handle| @intFromPtr(handle) else view.tex.vk_id;
+}
+
+/// Every color slot of the pass (null slots included) with the pipeline's
+/// target state, replacing the single-target fields on the Vulkan backend.
+fn populate_color_attachments(cmd: *model_render_types.RenderDrawCommand, pass: *shared.DoeRenderPass) void {
+    const count = @min(pass.color_attachment_count, model_render_types.MAX_COLOR_ATTACHMENTS);
+    cmd.explicit_color_attachments = true;
+    cmd.color_attachment_count = count;
+    cmd.has_fragment_stage = if (pass.pipeline) |pip| pip.has_fragment_stage else true;
+    var sized = false;
+    for (pass.color_attachments[0..count], 0..) |slot, index| {
+        const out = &cmd.color_attachments[index];
+        out.* = if (pass.pipeline) |pip| pip.color_targets[index] else .{};
+        out.format = 0;
+        const view = native_helpers.cast(shared.DoeTextureView, @ptrFromInt(slot.view_handle)) orelse continue;
+        // The render area is the first color attachment's extent, which a null
+        // slot 0 leaves unset in the single-target fields.
+        if (!sized) {
+            cmd.target_width = @max(1, view.tex.width >> @intCast(view.base_mip_level));
+            cmd.target_height = @max(1, view.tex.height >> @intCast(view.base_mip_level));
+            cmd.sample_count = if (view.tex.sample_count != 0) view.tex.sample_count else 1;
+            sized = true;
+        }
+        out.handle = view.tex.vk_id;
+        out.view_handle = view_key(view);
+        out.format = slot.format;
+        if (native_helpers.cast(shared.DoeTextureView, @ptrFromInt(slot.resolve_view_handle))) |resolve| {
+            out.resolve_handle = resolve.tex.vk_id;
+            out.resolve_view_handle = view_key(resolve);
+        }
+        out.load = if (pass.attachments_started or slot.load_op == upstream.WGPULoadOp_Load) .load else .clear;
+        out.clear = .{ @floatCast(slot.clear[0]), @floatCast(slot.clear[1]), @floatCast(slot.clear[2]), @floatCast(slot.clear[3]) };
+    }
 }
 
 fn base_vulkan_render_cmd(pass: *shared.DoeRenderPass) model_render_types.RenderDrawCommand {
