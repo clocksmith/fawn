@@ -169,7 +169,7 @@ function destroyedTextureUse(encoder, path, resources) {
   if (destroyed === undefined) {
     return false;
   }
-  encoder._submitError ??= `${path}: ${describeResourceLabel(destroyed)} names a destroyed texture`;
+  encoder._submitError ??= `${path}: ${describeResourceLabel(destroyed)} names a destroyed ${destroyed._destroyedResourceKind ?? 'texture'}`;
   return true;
 }
 
