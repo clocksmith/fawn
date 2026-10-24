@@ -552,6 +552,11 @@ function preflightShaderSource(code) {
 }
 
 function requireAutoLayoutEntriesFromNative(shaderNative, visibility, path, entryPoint) {
+  // A provider that cannot adopt reflection-built automatic layouts keeps its
+  // own (wgpu*PipelineGetBindGroupLayout), even when it reflects bindings.
+  if (addon?.pipelineAdoptsAutoBindGroupLayouts?.() === false) {
+    return null;
+  }
   const entryPointSpecific = typeof entryPoint === 'string' && entryPoint.length > 0;
   const reflectionMethod = entryPointSpecific
     ? addon?.shaderModuleGetBindingsForEntryPoint

@@ -204,6 +204,9 @@ uint32_t native_shader_semantic_flags(void);
 doe_shader_status native_compile_shader(const char *source, size_t size, doe_shader **out, doe_shader_error *error);
 doe_shader_status native_check_shader_module(doe_shader_target target, const char *source, size_t size,
     doe_shader_error *error);
+/* Sets the calling thread's diagnostic that doeNativeCopyLastError* report
+ * (device-less check and binding reflection); a NULL message clears it. */
+void native_check_report(const char *stage, const char *kind, const char *message, uint32_t line, uint32_t column);
 doe_shader_status native_compile_shader_target(doe_shader_target target, const char *source,
     size_t size, doe_shader **out, doe_shader_error *error);
 bool native_shader_capabilities(const doe_shader_view *view, const doe_vk_caps *caps);
