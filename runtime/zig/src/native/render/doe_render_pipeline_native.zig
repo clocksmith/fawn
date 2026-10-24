@@ -9,6 +9,7 @@ const native_shared = @import("../support/doe_native_shared_types.zig");
 const native_helpers = @import("../support/doe_native_object_helpers.zig");
 const error_scope = @import("../../runtime/diagnostics/error_scope.zig");
 const texture_contract = @import("../../contracts/texture.zig");
+const render_bundle = @import("../../runtime/render/render_bundle.zig");
 const d3d12_formats = resource_ops.d3d12_formats;
 
 const alloc = native_helpers.alloc;
@@ -643,4 +644,38 @@ test "alpha-to-coverage on a single-sample pipeline is a validation error" {
     var capture = Capture{};
     try std.testing.expect(device.error_scopes.pop(.{ .callback = Capture.receive, .userdata1 = &capture }));
     try std.testing.expectEqual(error_scope.ERROR_TYPE_VALIDATION, capture.kind);
+}
+
+/// A pipeline set in a render pass or bundle: its render pass layout (color
+/// target formats ignoring trailing null slots, depth-stencil format, sample
+/// count) equals the encoder's, and it writes no aspect the encoder holds
+/// read-only (https://gpuweb.github.io/gpuweb/#dom-gpurendercommandsmixin-setpipeline).
+pub fn encoderLayoutAdmits(
+    pip: *const DoeRenderPipeline,
+    color_formats: []const u32,
+    depth_stencil_format: u32,
+    sample_count: u32,
+    depth_read_only: bool,
+    stencil_read_only: bool,
+) bool {
+    var formats: [model_render_types.MAX_COLOR_ATTACHMENTS]u32 = [_]u32{0} ** model_render_types.MAX_COLOR_ATTACHMENTS;
+    const count = @min(pip.color_target_count, formats.len);
+    for (pip.color_targets[0..count], formats[0..count]) |target, *format| format.* = target.format;
+    if (!render_bundle.colorFormatsEqual(formats[0..count], color_formats)) return false;
+    if (pip.depth_stencil_format != depth_stencil_format) return false;
+    if ((if (pip.sample_count == 0) 1 else pip.sample_count) != (if (sample_count == 0) 1 else sample_count)) return false;
+    if (depth_read_only and pip.depth_write_enabled) return false;
+    if (stencil_read_only and writesStencil(pip)) return false;
+    return true;
+}
+
+/// https://gpuweb.github.io/gpuweb/#writes-stencil: a nonzero write mask and
+/// a non-keep operation on a face the cull mode does not discard. The Zig
+/// runtime counts stencil operations from keep = 0; cull modes are
+/// webgpu.h values (front 2, back 3).
+fn writesStencil(pip: *const DoeRenderPipeline) bool {
+    if (pip.stencil_write_mask == 0) return false;
+    const front = pip.stencil_front_fail_op != 0 or pip.stencil_front_depth_fail_op != 0 or pip.stencil_front_pass_op != 0;
+    const back = pip.stencil_back_fail_op != 0 or pip.stencil_back_depth_fail_op != 0 or pip.stencil_back_pass_op != 0;
+    return (front and pip.cull_mode != 2) or (back and pip.cull_mode != 3);
 }

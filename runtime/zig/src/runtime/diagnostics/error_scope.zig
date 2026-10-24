@@ -255,6 +255,8 @@ pub fn zig_error_to_type(err: anyerror) u32 {
         error.RenderAttachmentSampleMismatch,
         error.RenderAttachmentFormatMismatch,
         error.RenderAttachmentUnsupported,
+        error.RenderBundleIncompatible,
+        error.RenderPipelineIncompatible,
         error.RenderAttachmentColorBytesExceeded,
         error.DrawVertexBufferMissing,
         error.DrawVertexBufferOutOfBounds,

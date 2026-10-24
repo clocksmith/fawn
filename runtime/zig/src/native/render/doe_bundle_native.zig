@@ -4,6 +4,7 @@
 const std = @import("std");
 const error_scope = @import("../../runtime/diagnostics/error_scope.zig");
 const texture_contract = @import("../../contracts/texture.zig");
+const texture_format_contract = @import("../../contracts/texture_format.zig");
 const abi_texture = @import("../../core/abi/wgpu_texture_base_types.zig");
 const native_types = @import("../support/doe_native_object_types.zig");
 const native_shared = @import("../support/doe_native_shared_types.zig");
@@ -14,6 +15,9 @@ const leases = @import("../../contracts/resource_lease.zig");
 const recording = @import("../command/doe_command_recording.zig");
 const recording_contract = @import("../../contracts/command_recording.zig");
 const bundle = @import("../../runtime/render/render_bundle.zig");
+const render_pipeline = @import("doe_render_pipeline_native.zig");
+const render_native = @import("doe_render_native.zig");
+const model_render_types = @import("../../contracts/model/model_render_types.zig");
 const bind_group_native = @import("../resource/doe_bind_group_native.zig");
 const compute_bind_groups = @import("../compute/doe_compute_bind_groups.zig");
 
@@ -42,14 +46,9 @@ pub export fn doeNativeDeviceCreateRenderBundleEncoder(
     const dev = cast(DoeDevice, dev_raw) orelse return null;
     if (!dev.requireAlive()) return null;
     const d = desc orelse return null;
-    // https://gpuweb.github.io/gpuweb/#abstract-opdef-validating-gpurenderpasslayout:
-    // the color formats' bytes per sample stay within the device limit.
-    if (d.colorFormatCount != 0) {
-        const bytes = texture_contract.colorAttachmentBytesPerSample(d.colorFormats[0..d.colorFormatCount]);
-        if (bytes != null and bytes.? > dev.max_color_attachment_bytes_per_sample) {
-            dev.error_scopes.deliver(error_scope.ERROR_TYPE_VALIDATION, "render bundle color formats exceed maxColorAttachmentBytesPerSample");
-            return null;
-        }
+    if (bundleLayoutFailure(dev, d)) |message| {
+        dev.error_scopes.deliver(error_scope.ERROR_TYPE_VALIDATION, message);
+        return null;
     }
 
     const color_fmt: abi_texture.WGPUTextureFormat = if (d.colorFormatCount > 0)
@@ -69,9 +68,43 @@ pub export fn doeNativeDeviceCreateRenderBundleEncoder(
         return null;
     };
     enc.backend = dev.backend;
+    enc.color_count = @intCast(d.colorFormatCount);
+    for (d.colorFormats[0..d.colorFormatCount], 0..) |format, slot| enc.color_formats[slot] = format;
     native_helpers.object_add_ref(DoeDevice, dev_raw);
     enc.device_lease = .{ .handle = dev_raw, .release = @import("../support/doe_native_exports.zig").doeNativeDeviceReleaseInternal };
     return @ptrCast(enc);
+}
+
+/// A render bundle's render pass layout
+/// (https://gpuweb.github.io/gpuweb/#abstract-opdef-validating-gpurenderpasslayout):
+/// at most maxColorAttachments color slots, each null or a color renderable
+/// format, within maxColorAttachmentBytesPerSample; a depth-stencil format if
+/// any; at least one attachment; a sample count of 1 or 4.
+fn tier1Enabled(dev: *const DoeDevice) bool {
+    for (dev.enabled_features) |feature| {
+        if (feature == @import("../../core/abi/wgpu_feature_base_types.zig").WGPUFeatureName_TextureFormatsTier1) return true;
+    }
+    return false;
+}
+
+fn bundleLayoutFailure(dev: *const DoeDevice, d: *const RenderBundleEncoderDescriptor) ?[]const u8 {
+    if (d.colorFormatCount > bundle.MAX_COLOR_SLOTS) return "render bundle colorFormats exceeds maxColorAttachments";
+    const formats = d.colorFormats[0..d.colorFormatCount];
+    var any = d.depthStencilFormat != 0;
+    for (formats) |format| {
+        if (format == 0) continue;
+        if (texture_contract.renderTargetCost(format) == null or
+            (texture_contract.renderTargetNeedsTier1(format) and !tier1Enabled(dev)))
+            return "render bundle color format is not color renderable";
+        any = true;
+    }
+    if (!any) return "render bundle layout names no attachment";
+    if (d.depthStencilFormat != 0 and !texture_format_contract.isDepthStencilFormat(d.depthStencilFormat))
+        return "render bundle depthStencilFormat is not a depth or stencil format";
+    if (d.sampleCount != 0 and d.sampleCount != 1 and d.sampleCount != 4) return "render bundle sampleCount must be 1 or 4";
+    const bytes = texture_contract.colorAttachmentBytesPerSample(formats) orelse 0;
+    if (bytes > dev.max_color_attachment_bytes_per_sample) return "render bundle color formats exceed maxColorAttachmentBytesPerSample";
+    return null;
 }
 
 pub export fn doeNativeRenderBundleEncoderRelease(raw: ?*anyopaque) callconv(.c) void {
@@ -117,6 +150,14 @@ fn reserveBundleReferences(encoder: *bundle.DoeBundleEncoder, count: usize) bool
 // Bundle encoder: record commands
 // ============================================================
 
+/// setPipeline on a bundle encoder: the pipeline's render pass layout equals
+/// the bundle's and writes no aspect the bundle holds read-only.
+fn bundlePipelineFailure(enc: *const bundle.DoeBundleEncoder, pip: *const DoeRenderPipeline) ?recording_contract.Failure {
+    const formats = enc.color_formats[0..@min(enc.color_count, bundle.MAX_COLOR_SLOTS)];
+    if (render_pipeline.encoderLayoutAdmits(pip, formats, enc.depth_stencil_format, enc.sample_count, enc.depth_read_only, enc.stencil_read_only)) return null;
+    return error.RenderPipelineIncompatible;
+}
+
 pub export fn doeNativeRenderBundleEncoderSetPipeline(
     enc_raw: ?*anyopaque,
     pip_raw: ?*anyopaque,
@@ -124,6 +165,7 @@ pub export fn doeNativeRenderBundleEncoderSetPipeline(
     const enc = bundle.cast_bundle_encoder(enc_raw) orelse return;
     if (!requireBundleOpen(enc)) return;
     const pip = cast(DoeRenderPipeline, pip_raw) orelse return;
+    if (bundlePipelineFailure(enc, pip)) |cause| return failBundle(enc, cause);
     if (!reserveBundleReferences(enc, 1)) return;
     references.retainRenderPipelineAssumeCapacity(&enc.references, pip);
     enc.draw_pipeline = toOpaque(pip);
@@ -450,7 +492,7 @@ test "failed bundle cannot replay into a valid command recording" {
     pass.enc.state = .{ .pass = @intFromPtr(&pass) };
     const bundles = [_]?*anyopaque{result};
     doeNativeRenderPassExecuteBundles(toOpaque(&pass), bundles.len, &bundles);
-    try std.testing.expectEqual(error.InvalidArgument, commands.state.failed);
+    try std.testing.expectEqual(error.RenderBundleIncompatible, commands.state.failed);
     try std.testing.expectEqual(@as(usize, 0), commands.cmds.items.len);
 }
 
@@ -698,6 +740,21 @@ fn require_index_buffer_for_bundle_draw(state: *const BundleReplayState, kind: [
     return state.index_buffer != null;
 }
 
+/// executeBundles: the bundle is valid, its layout equals the pass's, and a
+/// read-only depth or stencil pass runs only bundles that are read-only there
+/// (https://gpuweb.github.io/gpuweb/#dom-gpurenderpassencoder-executebundles).
+fn bundleCompatible(b: *const bundle.DoeRenderBundle, pass: *const DoeRenderPass) bool {
+    if (b.error_object) return false;
+    if (b.device_lease) |lease| if (lease.handle != toOpaque(pass.enc.dev)) return false;
+    var formats: [model_render_types.MAX_COLOR_ATTACHMENTS]u32 = undefined;
+    const pass_formats = render_native.passColorFormats(pass, &formats);
+    const sample_count = if (pass.sample_count == 0) 1 else pass.sample_count;
+    if (!bundle.layoutMatches(b, pass_formats, pass.depth_stencil_format, sample_count)) return false;
+    if (pass.depth_read_only and !b.depth_read_only) return false;
+    if (pass.stencil_read_only and !b.stencil_read_only) return false;
+    return true;
+}
+
 pub export fn doeNativeRenderPassExecuteBundles(
     pass_raw: ?*anyopaque,
     bundle_count: usize,
@@ -709,16 +766,8 @@ pub export fn doeNativeRenderPassExecuteBundles(
 
     for (bundles[0..bundle_count]) |raw| {
         const b = bundle.cast_bundle(raw) orelse return recording.fail(pass.enc, error.InvalidArgument);
-        bundle.check_compatibility(b, pass.target_format, pass.sample_count) catch |err| {
-            _ = pass.enc.state.fail(error.InvalidArgument);
-            pass.enc.dev.error_scopes.deliver(error_scope.ERROR_TYPE_VALIDATION, @errorName(err));
-            return;
-        };
-        if (b.depth_stencil_format != pass.depth_stencil_format) {
-            _ = pass.enc.state.fail(error.InvalidArgument);
-            pass.enc.dev.error_scopes.deliver(error_scope.ERROR_TYPE_VALIDATION, "render bundle depth/stencil format differs from the render pass");
-            return;
-        }
+        // An incompatible bundle invalidates the encoder; finish() reports it.
+        if (!bundleCompatible(b, pass)) return recording.fail(pass.enc, error.RenderBundleIncompatible);
         if (!recording.reserve(pass.enc, 0, 1)) return;
         references.retainRenderBundleAssumeCapacity(&pass.enc.references, b);
 
