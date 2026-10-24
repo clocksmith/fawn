@@ -211,7 +211,24 @@ pub export fn doeNativeCommandEncoderBeginRenderPass(enc_raw: ?*anyopaque, desc:
             pass.stencil_clear_value = depth_att.stencilClearValue;
         }
     }
+    pass.sample_count = attachmentSampleCount(pass);
     return toOpaque(pass);
+}
+
+/// The pass's sample count: its first color attachment's, or its
+/// depth/stencil attachment's when color slot 0 is null or absent.
+fn attachmentSampleCount(pass: *const DoeRenderPass) u32 {
+    const count = @min(pass.color_attachment_count, model_render_types.MAX_COLOR_ATTACHMENTS);
+    for (pass.color_attachments[0..count]) |slot| {
+        if (slot.view_handle == 0) continue;
+        const view: *const DoeTextureView = @ptrFromInt(slot.view_handle);
+        return if (view.tex.sample_count != 0) view.tex.sample_count else 1;
+    }
+    if (pass.depth_target_view_handle != 0) {
+        const view: *const DoeTextureView = @ptrFromInt(pass.depth_target_view_handle);
+        return if (view.tex.sample_count != 0) view.tex.sample_count else 1;
+    }
+    return pass.sample_count;
 }
 
 /// The pass's render pass layout: every color slot when the pass records
@@ -227,11 +244,19 @@ pub fn passColorFormats(pass: *const DoeRenderPass, out: *[model_render_types.MA
     return out[0..1];
 }
 
+fn pipelineMatchesPass(pass: *const DoeRenderPass, pipeline: *const DoeRenderPipeline) bool {
+    // Passes without slot records (non-Vulkan backends) keep their own checks.
+    if (pass.enc.dev.backend != .vulkan) return true;
+    var formats: [model_render_types.MAX_COLOR_ATTACHMENTS]u32 = undefined;
+    return render_pipeline.encoderLayoutAdmits(pipeline, passColorFormats(pass, &formats), pass.depth_stencil_format, pass.sample_count, pass.depth_read_only, pass.stencil_read_only);
+}
+
 pub export fn doeNativeRenderPassSetPipeline(pass_raw: ?*anyopaque, pip_raw: ?*anyopaque) callconv(.c) void {
     const pass = cast(DoeRenderPass, pass_raw) orelse return;
     if (!recording.requirePass(pass.enc, @intFromPtr(pass))) return;
     pass.pipeline = cast(DoeRenderPipeline, pip_raw);
     if (pass.pipeline) |pipeline| {
+        if (!pipelineMatchesPass(pass, pipeline)) return recording.fail(pass.enc, error.RenderPipelineIncompatible);
         if (!recording.reserve(pass.enc, 0, 1)) return;
         references.retainRenderPipelineAssumeCapacity(&pass.enc.references, pipeline);
         pass.depth_compare = pipeline.depth_compare;

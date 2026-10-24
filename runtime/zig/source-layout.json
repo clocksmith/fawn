@@ -3650,8 +3650,8 @@
       },
       "src/native/render/doe_render_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "a947342530b3518f18466cb5522be42b43905d8d1ba1060847ba6ab6f24c2c62",
-        "reason": "Keep: native attachment admission owns view and pipeline compatibility; command recording preserves typed validation failures before submission. Backend execution and resource retirement retain their existing owners. Render pass setBindGroup resolves dynamic offsets into pass state. Render pass debug groups are balanced at end(). Pass draws validate bind groups; draws past maxDrawCount fail. beginRenderPass records and retains every color attachment slot. passColorFormats gives a pass's render pass layout.",
+        "moduleSha256": "6df55b18e1dfdac0f90dcdf1908716c51781cb1c1e9461ccc46431aab3e8d63a",
+        "reason": "Keep: native attachment admission owns view and pipeline compatibility; command recording preserves typed validation failures before submission. Backend execution and resource retirement retain their existing owners. Render pass setBindGroup resolves dynamic offsets into pass state. Render pass debug groups are balanced at end(). Pass draws validate bind groups; draws past maxDrawCount fail. beginRenderPass records and retains every color attachment slot. passColorFormats gives a pass's render pass layout. Render pass setPipeline checks the pipeline against the pass layout; the pass sample count comes from any attachment.",
         "reviewer": "doe-c-claude-indexed/2026-10-24"
       },
       "src/native/render/doe_render_pass_controls_native.zig": {
@@ -3986,8 +3986,8 @@
       },
       "src/runtime/diagnostics/error_scope.zig": {
         "decision": "Keep",
-        "moduleSha256": "331d5057fb0e67dd7f76a3918b3cd2b5d9b9e9b5c6d8fb93415796ed6952a254",
-        "reason": "Keep: native attachment admission owns view and pipeline compatibility; command recording preserves typed validation failures before submission. Backend execution and resource retirement retain their existing owners. Draw buffer-bound failures are validation errors. Bind group and dispatch recording causes are validation errors. ImmediateDataRange maps to validation. DebugGroupUnbalanced maps to validation. Draw bind group and maxDrawCount failures map to validation. The color attachment bytes-per-sample failure is a validation error. Adds the message for bindings the execution path cannot run. Render bundle and pipeline incompatibility map to validation.",
+        "moduleSha256": "264b61fbad8ceef1107027c74380876df6708df6b3005d3015e5c3bd3206eb73",
+        "reason": "Keep: native attachment admission owns view and pipeline compatibility; command recording preserves typed validation failures before submission. Backend execution and resource retirement retain their existing owners. Draw buffer-bound failures are validation errors. Bind group and dispatch recording causes are validation errors. ImmediateDataRange maps to validation. DebugGroupUnbalanced maps to validation. Draw bind group and maxDrawCount failures map to validation. The color attachment bytes-per-sample failure is a validation error. Adds the message for bindings the execution path cannot run. Render bundle and pipeline incompatibility map to validation. The attachment load/store op failure maps to validation.",
         "reviewer": "doe-c-claude-indexed/2026-10-24"
       },
       "src/runtime/env_flags.zig": {
@@ -4328,8 +4328,8 @@
       },
       "src/contracts/command_recording.zig": {
         "decision": "Keep",
-        "moduleSha256": "79ed371a1d7a156b1662eba2274bc24882270f4f59938cecf6352519178b33f1",
-        "reason": "Keep: native attachment admission owns view and pipeline compatibility; command recording preserves typed validation failures before submission. Backend execution and resource retirement retain their existing owners. The unsupported-attachment message no longer lists resolve targets. Names WebGPU draw-time vertex and index buffer failures. Owns the setBindGroup dynamic-offset and dispatch validation causes. Adds ImmediateDataRange failure. Adds DebugGroups balance and the DebugGroupUnbalanced failure. Adds draw bind group and maxDrawCount failures. The unsupported-attachment message states the eight-slot limit. Names the color attachment bytes-per-sample failure. Render passes reject swizzled attachment views. Adds render bundle and pipeline layout incompatibility failures.",
+        "moduleSha256": "225e667b2b9484840ba45756ad75412d5411e1adbbaf64bd2cf6297f93493606",
+        "reason": "Keep: native attachment admission owns view and pipeline compatibility; command recording preserves typed validation failures before submission. Backend execution and resource retirement retain their existing owners. The unsupported-attachment message no longer lists resolve targets. Names WebGPU draw-time vertex and index buffer failures. Owns the setBindGroup dynamic-offset and dispatch validation causes. Adds ImmediateDataRange failure. Adds DebugGroups balance and the DebugGroupUnbalanced failure. Adds draw bind group and maxDrawCount failures. The unsupported-attachment message states the eight-slot limit. Names the color attachment bytes-per-sample failure. Render passes reject swizzled attachment views. Adds render bundle and pipeline layout incompatibility failures. Adds the attachment load/store op failure.",
         "reviewer": "doe-c-claude-indexed/2026-10-24"
       },
       "src/native/command/doe_command_recording.zig": {
@@ -4412,8 +4412,8 @@
       },
       "src/native/vulkan/vulkan_render_attachments.zig": {
         "decision": "Keep",
-        "moduleSha256": "b90b0b498e4646893dc6437fe1751291598cab2e2b396fb4ae356264a827dae7",
-        "reason": "Keep: native attachment admission owns view and pipeline compatibility; command recording preserves typed validation failures before submission. Backend execution and resource retirement retain their existing owners. Admits a resolve target that is a single-sample view of the multisampled color format and extent. Validates draw reads against bound vertex and index buffer ranges. Resolve targets need a resolvable format. Single-layer 2d-array views are renderable attachments. texture-formats-tier1 adds the 8-bit snorm resolve formats. Attachment admission covers up to eight color slots, null slots and depth-only passes, matching pipeline targets slot by slot. beginRenderPass checks color attachment bytes per sample against the WebGPU byte cost table. Swizzled views are rejected as color, resolve and depth-stencil attachments. Color bytes per sample uses the contract byte cost table.",
+        "moduleSha256": "a16a076a9181fdbb2d09135767470a8782657d56b92ae7f23beb0bf6fa3d13ce",
+        "reason": "Keep: native attachment admission owns view and pipeline compatibility; command recording preserves typed validation failures before submission. Backend execution and resource retirement retain their existing owners. Admits a resolve target that is a single-sample view of the multisampled color format and extent. Validates draw reads against bound vertex and index buffer ranges. Resolve targets need a resolvable format. Single-layer 2d-array views are renderable attachments. texture-formats-tier1 adds the 8-bit snorm resolve formats. Attachment admission covers up to eight color slots, null slots and depth-only passes, matching pipeline targets slot by slot. beginRenderPass checks color attachment bytes per sample against the WebGPU byte cost table. Swizzled views are rejected as color, resolve and depth-stencil attachments. Color bytes per sample uses the contract byte cost table. Depth/stencil and transient attachment load/store ops and depthClearValue are validated.",
         "reviewer": "doe-c-claude-indexed/2026-10-24"
       },
       "src/backend/vulkan/vk_surface_sync.zig": {

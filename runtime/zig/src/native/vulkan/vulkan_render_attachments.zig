@@ -11,6 +11,7 @@ const vertex_formats = @import("../../contracts/vertex_format.zig");
 const values = @import("../../contracts/model/model_texture_value_types.zig");
 const feature_abi = @import("../../core/abi/wgpu_feature_base_types.zig");
 const texture_contract = @import("../../contracts/texture.zig");
+const depth_stencil_formats = @import("../../contracts/texture_format.zig");
 const Extent = struct { width: u32, height: u32 };
 
 fn tier1Enabled(device: ?*const objects.DoeDevice) bool {
@@ -119,6 +120,10 @@ pub fn validateDescriptor(device: *objects.DoeDevice, descriptor: ?*const abi.WG
             }
             const color = try validateView(device, attachment.view, false);
             try admitAttachment(&reference, color);
+            // A transient color attachment clears and discards.
+            if (color.tex.usage & texture_abi.WGPUTextureUsage_TransientAttachment != 0 and
+                (attachment.loadOp != LOAD_OP_CLEAR or attachment.storeOp != STORE_OP_DISCARD))
+                return error.RenderAttachmentDepthStencilOps;
             if (attachment.resolveTarget) |raw| try validateResolve(color, try validateView(device, raw, false));
             formats[index] = color.format;
         }
@@ -127,9 +132,40 @@ pub fn validateDescriptor(device: *objects.DoeDevice, descriptor: ?*const abi.WG
         return error.RenderAttachmentColorBytesExceeded;
     if (desc.depthStencilAttachment) |raw| {
         const attachment: *const abi.WGPURenderPassDepthStencilAttachment = @ptrCast(@alignCast(raw));
-        try admitAttachment(&reference, try validateView(device, attachment.view, true));
+        const view = try validateView(device, attachment.view, true);
+        try admitAttachment(&reference, view);
+        try validateDepthStencilOps(attachment, view);
     }
     if (reference == null) return error.RenderAttachmentUnavailable;
+}
+
+const LOAD_OP_CLEAR: u32 = 0x00000002;
+const STORE_OP_DISCARD: u32 = 0x00000002;
+
+/// https://gpuweb.github.io/gpuweb/#abstract-opdef-gpurenderpassdepthstencilattachment-gpurenderpassdepthstencilattachment-valid-usage:
+/// an aspect the format has and that is not read-only takes both a load and a
+/// store op; any other aspect takes neither. A transient attachment clears
+/// and discards every aspect it has. Clearing depth needs a depthClearValue in
+/// [0, 1].
+fn validateDepthStencilOps(attachment: *const abi.WGPURenderPassDepthStencilAttachment, view: *const objects.DoeTextureView) Error!void {
+    const format = if (view.format != 0) view.format else view.tex.format;
+    const has_stencil = depth_stencil_formats.hasStencilAspect(format);
+    const has_depth = format != texture_abi.WGPUTextureFormat_Stencil8;
+    try aspectOps(has_depth and attachment.depthReadOnly == 0, attachment.depthLoadOp, attachment.depthStoreOp);
+    try aspectOps(has_stencil and attachment.stencilReadOnly == 0, attachment.stencilLoadOp, attachment.stencilStoreOp);
+    if (view.tex.usage & texture_abi.WGPUTextureUsage_TransientAttachment != 0) {
+        if (has_depth and (attachment.depthLoadOp != LOAD_OP_CLEAR or attachment.depthStoreOp != STORE_OP_DISCARD))
+            return error.RenderAttachmentDepthStencilOps;
+        if (has_stencil and (attachment.stencilLoadOp != LOAD_OP_CLEAR or attachment.stencilStoreOp != STORE_OP_DISCARD))
+            return error.RenderAttachmentDepthStencilOps;
+    }
+    if (has_depth and attachment.depthLoadOp == LOAD_OP_CLEAR and !(attachment.depthClearValue >= 0 and attachment.depthClearValue <= 1))
+        return error.RenderAttachmentDepthStencilOps;
+}
+
+fn aspectOps(writable: bool, load_op: u32, store_op: u32) Error!void {
+    const ok = if (writable) load_op != 0 and store_op != 0 else load_op == 0 and store_op == 0;
+    if (!ok) return error.RenderAttachmentDepthStencilOps;
 }
 
 /// Pass views have encoder-owned leases. Recheck availability at each draw;
@@ -413,4 +449,12 @@ test "resolve targets are single-sample views of the multisampled color format a
     resolve.format = base.format;
     single.width = 4;
     try std.testing.expectError(error.RenderAttachmentExtentMismatch, validateResolve(&color, &resolve));
+}
+
+test "aspectOps requires both ops on a writable aspect and neither otherwise" {
+    try aspectOps(true, LOAD_OP_CLEAR, STORE_OP_DISCARD);
+    try aspectOps(false, 0, 0);
+    try std.testing.expectError(error.RenderAttachmentDepthStencilOps, aspectOps(true, LOAD_OP_CLEAR, 0));
+    try std.testing.expectError(error.RenderAttachmentDepthStencilOps, aspectOps(false, LOAD_OP_CLEAR, 0));
+    try std.testing.expectError(error.RenderAttachmentDepthStencilOps, aspectOps(false, 0, STORE_OP_DISCARD));
 }
