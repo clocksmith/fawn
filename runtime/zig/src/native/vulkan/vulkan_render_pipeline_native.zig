@@ -11,6 +11,8 @@ const wgsl_ir = @import("../../compiler/wgsl/ir/ir.zig");
 const shader_binding_reflection = @import("../shader/shader_binding_reflection.zig");
 const compute_bind_groups = @import("../compute/doe_compute_bind_groups.zig");
 const abi_binding = @import("../../core/abi/wgpu_binding_base_types.zig");
+const texture_contract = @import("../../contracts/texture.zig");
+const texture_contract_values = @import("../../contracts/model/model_texture_value_types.zig");
 
 pub fn vulkan_create_render_pipeline(
     dev: *shared.DoeDevice,
@@ -199,8 +201,12 @@ pub fn vulkan_create_render_pipeline(
     }
     const vertex_entry = entryPoint(d.vertex_ep_data, d.vertex_ep_length);
     const fragment_entry = if (d.fragment) |frag| entryPoint(frag.entryPoint.data, frag.entryPoint.length) else null;
-    switch (admitStageEntryPoints(pip, vertex, vertex_entry, fragment, fragment_entry)) {
-        .admitted => {},
+    var interface = StageInterface{};
+    switch (admitStageEntryPoints(pip, vertex, vertex_entry, fragment, fragment_entry, &interface)) {
+        .admitted => if (pip.required_binding_kinds_ready) if (fragmentInterfaceFailure(pip, &interface)) |message| {
+            dev.error_scopes.deliver(error_scope.ERROR_TYPE_VALIDATION, message);
+            return false;
+        },
         .missing => {
             dev.error_scopes.deliver(error_scope.ERROR_TYPE_VALIDATION, "render pipeline entry point does not name a vertex or fragment entry point of its shader module");
             return false;
@@ -223,6 +229,94 @@ pub fn vulkan_create_render_pipeline(
     return true;
 }
 
+/// The scalar kind and component count of a stage interface value, from the
+/// shader's IR (bool and composite values are `other`).
+const InterfaceValue = struct {
+    location: u32,
+    kind: Kind,
+    components: u32,
+
+    const Kind = enum { float, sint, uint, other };
+
+    fn of(module_ir: *const wgsl_ir.Module, location: u32, ty: wgsl_ir.TypeId) InterfaceValue {
+        return switch (module_ir.types.get(ty)) {
+            .scalar => |scalar| .{ .location = location, .kind = scalarKind(scalar), .components = 1 },
+            .vector => |vector| .{ .location = location, .kind = switch (module_ir.types.get(vector.elem)) {
+                .scalar => |scalar| scalarKind(scalar),
+                else => .other,
+            }, .components = vector.len },
+            else => .{ .location = location, .kind = .other, .components = 0 },
+        };
+    }
+
+    fn scalarKind(scalar: wgsl_ir.ScalarType) Kind {
+        return switch (scalar) {
+            .f32, .f16, .abstract_float => .float,
+            .i32, .abstract_int => .sint,
+            .u32 => .uint,
+            .void, .bool => .other,
+        };
+    }
+};
+
+/// The fragment outputs with @location, for the
+/// createRenderPipeline rules that compare them with the descriptor.
+const StageInterface = struct {
+    const CAPACITY = 32;
+    fragment_outputs: [CAPACITY]InterfaceValue = undefined,
+    fragment_count: usize = 0,
+
+    fn recordFragmentOutputs(self: *StageInterface, module_ir: *const wgsl_ir.Module, ty: wgsl_ir.TypeId, io: ?wgsl_ir.IoAttr) void {
+        switch (module_ir.types.get(ty)) {
+            .struct_ => |id| for (module_ir.structs.items[id].fields.items) |field| self.recordFragmentOutputs(module_ir, field.ty, field.io),
+            else => if (io) |attr| if (attr.location) |location| if ((attr.blend_src orelse 0) == 0 and self.fragment_count < CAPACITY) {
+                self.fragment_outputs[self.fragment_count] = InterfaceValue.of(module_ir, location, ty);
+                self.fragment_count += 1;
+            },
+        }
+    }
+
+    fn find(values: []const InterfaceValue, location: u32) ?InterfaceValue {
+        for (values) |value| if (value.location == location) return value;
+        return null;
+    }
+};
+
+/// webgpu.h blend factors that read the source alpha.
+fn readsSourceAlpha(factor: u32) bool {
+    return switch (factor) {
+        0x00000005, 0x00000006, 0x0000000B, 0x00000010, 0x00000011 => true, // src-alpha, one-minus-src-alpha, src-alpha-saturated, src1-alpha, one-minus-src1-alpha
+        else => false,
+    };
+}
+
+/// Fragment outputs against color targets
+/// (https://gpuweb.github.io/gpuweb/#abstract-opdef-validating-gpufragmentstate):
+/// a color target with an output at its location needs an output of the
+/// format's scalar type with at least the format's components (four when its
+/// color blend reads the source alpha); without one its writeMask is 0.
+fn fragmentInterfaceFailure(pip: *const shared.DoeRenderPipeline, interface: *const StageInterface) ?[]const u8 {
+    if (!pip.has_fragment_stage) return null;
+    for (pip.color_targets[0..@min(pip.color_target_count, pip.color_targets.len)], 0..) |target, index| {
+        if (target.format == 0) continue;
+        const output = StageInterface.find(interface.fragment_outputs[0..interface.fragment_count], @intCast(index)) orelse {
+            if (target.write_mask != 0) return "a color target without a fragment output at its location must have writeMask 0";
+            continue;
+        };
+        const kind: InterfaceValue.Kind = switch (texture_contract.inferSampleType(target.format)) {
+            abi_binding.WGPUTextureSampleType_Uint => .uint,
+            abi_binding.WGPUTextureSampleType_Sint => .sint,
+            else => .float,
+        };
+        if (output.kind != kind) return "a fragment output's scalar type does not match its color target format";
+        const components = texture_contract.colorComponentCount(target.format) orelse continue;
+        if (output.components < components) return "a fragment output has fewer components than its color target format";
+        if (target.blend_enabled and (readsSourceAlpha(target.color_src_factor) or readsSourceAlpha(target.color_dst_factor)) and output.components != 4)
+            return "a color blend that reads the source alpha needs a four-component fragment output";
+    }
+    return null;
+}
+
 const StageEntryPoint = enum { checked, unchecked, missing, binding_over_limit };
 const StageAdmission = enum { admitted, missing, binding_over_limit };
 
@@ -239,17 +333,18 @@ fn admitStageEntryPoints(
     vertex_entry: ?[]const u8,
     fragment: ?*const shared.DoeShaderModule,
     fragment_entry: ?[]const u8,
+    interface: *StageInterface,
 ) StageAdmission {
     pipeline.required_bindings = .{};
     pipeline.required_binding_kinds_ready = false;
     var checked = true;
-    switch (stageEntryPoint(pipeline, vertex, vertex_entry, .vertex)) {
+    switch (stageEntryPoint(pipeline, vertex, vertex_entry, .vertex, interface)) {
         .missing => return .missing,
         .binding_over_limit => return .binding_over_limit,
         .unchecked => checked = false,
         .checked => {},
     }
-    if (fragment != null) switch (stageEntryPoint(pipeline, fragment, fragment_entry, .fragment)) {
+    if (fragment != null) switch (stageEntryPoint(pipeline, fragment, fragment_entry, .fragment, interface)) {
         .missing => return .missing,
         .binding_over_limit => return .binding_over_limit,
         .unchecked => checked = false,
@@ -259,7 +354,7 @@ fn admitStageEntryPoints(
     return .admitted;
 }
 
-fn stageEntryPoint(pipeline: *shared.DoeRenderPipeline, module: ?*const shared.DoeShaderModule, entry: ?[]const u8, stage: wgsl_ir.ShaderStage) StageEntryPoint {
+fn stageEntryPoint(pipeline: *shared.DoeRenderPipeline, module: ?*const shared.DoeShaderModule, entry: ?[]const u8, stage: wgsl_ir.ShaderStage, interface: *StageInterface) StageEntryPoint {
     const wgsl = (module orelse return .unchecked).wgsl_source orelse return .unchecked;
     var module_ir = wgsl_analysis.analyzeToIr(native_helpers.alloc, wgsl) catch return .unchecked;
     defer module_ir.deinit();
@@ -276,6 +371,10 @@ fn stageEntryPoint(pipeline: *shared.DoeRenderPipeline, module: ?*const shared.D
         if (std.mem.eql(u8, candidate.name, name)) break candidate;
     } else return .missing;
     if (function.stage != stage) return .missing;
+    switch (stage) {
+        .fragment => interface.recordFragmentOutputs(&module_ir, function.return_type, function.return_io),
+        .vertex, .compute => {},
+    }
     var metadata: [native_shared.MAX_SHADER_BINDINGS]wgsl_bindings.BindingMeta = undefined;
     const count = wgsl_bindings.extractEntryPointBindings(native_helpers.alloc, &module_ir, name, &metadata) catch return .unchecked;
     if (shader_binding_reflection.bindingOverLimit(metadata[0..count]) != null) return .binding_over_limit;
@@ -385,4 +484,29 @@ pub fn vulkan_create_graphics_shader_moduleWithDiagnostic(sm: *shared.DoeShaderM
 
 pub fn vulkan_create_graphics_shader_module(sm: *shared.DoeShaderModule, wgsl: []const u8) wgsl_analysis.TranslateError!void {
     return vulkan_create_graphics_shader_moduleWithDiagnostic(sm, wgsl, wgsl_analysis.compatibilityDiagnostic());
+}
+
+test "fragment outputs match their color targets' scalar type and components" {
+    var pip = shared.DoeRenderPipeline{};
+    pip.has_fragment_stage = true;
+    pip.color_target_count = 1;
+    pip.color_targets[0] = .{ .format = texture_contract_values.WGPUTextureFormat_RG8Unorm, .write_mask = 0xF };
+    var interface = StageInterface{};
+    try std.testing.expect(fragmentInterfaceFailure(&pip, &interface) != null); // no output, writeMask 0xF
+    pip.color_targets[0].write_mask = 0;
+    try std.testing.expectEqual(@as(?[]const u8, null), fragmentInterfaceFailure(&pip, &interface));
+    pip.color_targets[0].write_mask = 0xF;
+    interface.fragment_outputs[0] = .{ .location = 0, .kind = .float, .components = 1 };
+    interface.fragment_count = 1;
+    try std.testing.expect(fragmentInterfaceFailure(&pip, &interface) != null); // fewer components
+    interface.fragment_outputs[0].components = 2;
+    try std.testing.expectEqual(@as(?[]const u8, null), fragmentInterfaceFailure(&pip, &interface));
+    interface.fragment_outputs[0].kind = .uint;
+    try std.testing.expect(fragmentInterfaceFailure(&pip, &interface) != null); // scalar type
+    interface.fragment_outputs[0].kind = .float;
+    pip.color_targets[0].blend_enabled = true;
+    pip.color_targets[0].color_src_factor = 0x00000005; // src-alpha
+    try std.testing.expect(fragmentInterfaceFailure(&pip, &interface) != null);
+    interface.fragment_outputs[0].components = 4;
+    try std.testing.expectEqual(@as(?[]const u8, null), fragmentInterfaceFailure(&pip, &interface));
 }
