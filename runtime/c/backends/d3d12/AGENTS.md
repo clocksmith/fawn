@@ -24,8 +24,9 @@
   implementation ceilings. Required queries fail construction. The 256 MiB buffer
   ceiling is validated allocation metadata, not free memory/residency; each
   allocation still owns its real failure. Never infer WebGPU CoreFeatures here.
-- Preserve one 64-descriptor heap/table owner with tier-limited kind counts,
-  separate 16 static samplers. Cumulative command resources use the existing
+- Preserve the compute 64-resource/16-sampler capacity with tier-limited kind
+  counts. Graphics packs two 64-resource/16-sampler stages into 128/32 on the
+  same descriptor-use owner; legacy 16 static samplers retain their ABI. Cumulative command resources use the existing
   growable use spans, not a fixed resource budget.
   Official-SDK CPU vtable controls prove call composition only, never a device.
 - Keep evidence bound to its tested source. The [WARP developer receipt](DEVELOPER_RECEIPT_WARP.json)
@@ -99,3 +100,13 @@
   exact storage formats; READ storage is an SRV with logical STORAGE admission.
   Compatible read texture aliases share one lease/transition; writable aliases
   reject before any native mutation. Do not infer a public usage bit from SRV.
+
+- The additive procedural render path owns two typed stage maps on the existing
+  pipeline, never independent shader owners. Root tables carry VERTEX/PIXEL
+  visibility. Pack both stages into exactly one resource heap and one sampler
+  heap per descriptor use, with explicit table offsets; never remap registers.
+- Attachment operations belong to the whole pass, including empty/zero draws.
+  Eager real zero clear on discard keeps initialization with the existing command
+  texture-use owner. Prepare every heap before recording; failure preserves
+  earlier command records. Preserve the original static graphics ABI and compute
+  capacity while extending this first graphics checkpoint toward full parity.

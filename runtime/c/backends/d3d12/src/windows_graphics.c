@@ -18,19 +18,7 @@ doe_dx_status doe_dx_native_graphics_create(doe_dx_native_context *context,
     state.VS.BytecodeLength = desc->vertex_bytecode_size;
     state.PS.pShaderBytecode = desc->fragment.buffers.bytecode;
     state.PS.BytecodeLength = desc->fragment.buffers.bytecode_size;
-    D3D12_RENDER_TARGET_BLEND_DESC *blend = &state.BlendState.RenderTarget[0];
-    blend->SrcBlend = D3D12_BLEND_ONE;
-    blend->DestBlend = D3D12_BLEND_ZERO;
-    blend->BlendOp = D3D12_BLEND_OP_ADD;
-    blend->SrcBlendAlpha = D3D12_BLEND_ONE;
-    blend->DestBlendAlpha = D3D12_BLEND_ZERO;
-    blend->BlendOpAlpha = D3D12_BLEND_OP_ADD;
-    blend->LogicOp = D3D12_LOGIC_OP_NOOP;
-    blend->RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
-    state.SampleMask = UINT32_MAX;
-    state.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
-    state.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
-    state.RasterizerState.DepthClipEnable = TRUE;
+    doe_dx_graphics_defaults(&state,desc->color_format);
     state.InputLayout.NumElements = (UINT)mesh->attribute_count;
     state.InputLayout.pInputElementDescs = mesh->attribute_count ? attributes : NULL;
     state.DepthStencilState.DepthEnable = mesh->depth_enabled ? TRUE : FALSE;
@@ -44,10 +32,6 @@ doe_dx_status doe_dx_native_graphics_create(doe_dx_native_context *context,
     state.DepthStencilState.FrontFace.StencilPassOp = D3D12_STENCIL_OP_KEEP;
     state.DepthStencilState.FrontFace.StencilFunc = D3D12_COMPARISON_FUNC_ALWAYS;
     state.DepthStencilState.BackFace = state.DepthStencilState.FrontFace;
-    state.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-    state.NumRenderTargets = 1;
-    state.RTVFormats[0] = doe_dx_texture_format(desc->color_format);
-    state.SampleDesc.Count = 1;
     HRESULT result = ID3D12Device_CreateGraphicsPipelineState(context->device, &state,
         &IID_ID3D12PipelineState, (void **)&pipeline->state);
     status = doe_dx_hresult(result, "ID3D12Device.CreateGraphicsPipelineState", error);
@@ -59,7 +43,7 @@ fail:
     return status;
 }
 
-static doe_dx_status prepare_target(doe_dx_native_commands *commands, doe_dx_native_texture *color,
+doe_dx_status doe_dx_prepare_color_target(doe_dx_native_commands *commands, doe_dx_native_texture *color,
     doe_dx_descriptor_use **out, D3D12_CPU_DESCRIPTOR_HANDLE *handle, doe_dx_error *error) {
     doe_dx_descriptor_use *use = calloc(1, sizeof(*use));
     if (!use) return doe_dx_fail(DOE_DX_OUT_OF_MEMORY, 0, "rtv.allocate", error);
@@ -111,7 +95,7 @@ doe_dx_status doe_dx_native_draw(doe_dx_native_commands *commands,
     const doe_dx_draw_desc *draw = &mesh->draw;
     doe_dx_descriptor_use *rtv = NULL, *dsv = NULL, *bindings = NULL;
     D3D12_CPU_DESCRIPTOR_HANDLE target = {0}, depth = {0};
-    doe_dx_status status = prepare_target(commands, color, &rtv, &target, error);
+    doe_dx_status status = doe_dx_prepare_color_target(commands, color, &rtv, &target, error);
     if (status != DOE_DX_OK) return status;
     if (geometry->depth) {
         status = prepare_depth(commands, geometry->depth, &dsv, &depth, error);

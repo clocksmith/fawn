@@ -207,3 +207,15 @@ omitting it. MEASURE and each output selection still perform full private emissi
 and honor the same capacities. Preserve each frozen version's symbol and record
 contract; new exports require an explicit additive versioned facade. No private
 cross-file helper or test hook becomes a public export.
+
+## Explicit image sampling
+
+The common image semantic owner selects depth/color result width, sampler kind,
+integer depth LOD and constant offset overloads. Targets consume typed operands,
+not source spellings. Keep optional offsets as checked constant IR identities,
+including const evaluation in skipped branches; never pass a runtime temporary
+where the native instruction requires an immediate offset. Comparison operands
+keep source order: the sampler compares the supplied reference to sampled depth.
+Sampling layers clamp; normalized coordinates and LOD retain sampler semantics,
+separate from guarded integer texel accesses. Preserve DEPTH/COMPARISON metadata
+for runtime admission instead of inferring sampler choices from emitted text.

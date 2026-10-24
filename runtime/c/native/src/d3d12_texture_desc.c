@@ -19,7 +19,11 @@ bool native_d3d12_texture_descriptor(const doe_resource_texture_desc *source,doe
     default: return false;
     }
     if (source->usage & ~(WGPUTextureUsage_CopySrc|WGPUTextureUsage_CopyDst|
-        WGPUTextureUsage_TextureBinding|WGPUTextureUsage_StorageBinding)) return false;
+        WGPUTextureUsage_TextureBinding|WGPUTextureUsage_StorageBinding|WGPUTextureUsage_RenderAttachment)) return false;
+    if (source->usage & WGPUTextureUsage_RenderAttachment) {
+        if (result.format!=DOE_DX_RGBA8_UNORM && result.format!=DOE_DX_BGRA8_UNORM) return false;
+        result.usage|=DOE_DX_TEXTURE_RENDER_ATTACHMENT;
+    }
     if (source->usage & WGPUTextureUsage_CopySrc) result.usage |= DOE_DX_TEXTURE_COPY_SRC;
     if (source->usage & WGPUTextureUsage_TextureBinding) result.usage |= DOE_DX_TEXTURE_SAMPLED;
     if (source->usage & WGPUTextureUsage_StorageBinding) result.usage |= DOE_DX_TEXTURE_STORAGE;

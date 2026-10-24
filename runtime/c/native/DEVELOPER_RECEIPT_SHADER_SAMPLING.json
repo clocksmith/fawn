@@ -1,0 +1,316 @@
+{
+  "kind": "developer-correctness-evidence",
+  "date": "2026-10-24",
+  "component": "Public C shader modules/specialization, selected-entry execution and Metal depth/stencil sampling",
+  "consumer": "C migration public shader/sampling correctness gates; no production promotion",
+  "intent": "Preserved compiler meaning, immutable shader ownership and existing tagged resource/pending lifetimes",
+  "checkpoints": [
+    {
+      "source_commit": "5134cbf068570a750af9c858dae8be3e65425312",
+      "source_tree": "db7ae3fbb4f4c9b91a6a0bae752b3861984f98e4",
+      "scope": [
+        "ABI13 validated module ownership and selected-entry typed overrides",
+        "eager select operands and immutable snapshots",
+        "existing sampled/storage texture and guarded indirect paths exercised by named consumers"
+      ],
+      "linux_host": {
+        "machine": "Suby",
+        "execution": "CPU llvmpipe Vulkan and host-only controls; no Suby physical GPU",
+        "checks": 30,
+        "all_exit_zero": true,
+        "public_c_clients": 15,
+        "gates": [
+          "mandatory C owner/style/globals",
+          "compiler override/specialization/select and C/C++ library controls",
+          "shader owner",
+          "D3D12 metadata controls",
+          "native host bridge",
+          "15 selected public C clients",
+          "5 Vulkan lifetime controls",
+          "Node addon/override consumer",
+          "compiler/shader/native-host ASan/UBSan and explicit shader LSan"
+        ],
+        "source_binding": {
+          "input_files_verified": 4855,
+          "archive_sha256": "25250c026502b736edc28c873297e2a58b3703267b95d139d9287f2110d19677",
+          "commit_differences": [
+            "runtime/c/native/README.md"
+          ],
+          "retention": {
+            "path": "bench/out/c-shader-sampling-milestones/suby5134.tar.gz",
+            "sha256": "dde4521ed95d8f04f24de21322c07310696ef484f446372d9513bd5585d37a3f"
+          },
+          "note": "Capture INPUTS base_commit is bd216cd6a2a8b09e20d7f2715211b35e3a94e993 with uncommitted candidate overlay. All 4855 captured file hashes verified; 4854 match published5134 exactly, sole difference native README prose. No code/build/test input differs."
+        },
+        "results_sha256": "98e50bb0a6b4de65e27d31047001ffa369494d8088fd97c2dcb3a43931916089",
+        "verification_sha256": "667a5edd88d9efaab27d15ef08964e5d0cfd4a6212402edb7f4966722a1306ad",
+        "primary_logs": "bench/out/c-shader-sampling-milestones/host-5134-logs.tar.gz"
+      },
+      "metal_m3": {
+        "machine": "Mars",
+        "os": "macOS26.6.2build25G83arm64",
+        "compiler": "Appleclang17.0.0clang-1700.3.19.1",
+        "sdk": "26.0",
+        "adapter": {
+          "name": "Apple M3",
+          "backend": "Metal",
+          "public_type": 4,
+          "subtype": "Unknown; unclassified",
+          "driver": "not separately reported"
+        },
+        "source_binding": {
+          "input_files_verified": 4855,
+          "archive_sha256": "d73b5075cda29a9b12a67b2cebae122ce8f78b8f52f00f8215e2b746be3ee220",
+          "commit_differences": [],
+          "artifacts_verified": 9,
+          "retention": {
+            "path": "bench/out/c-shader-sampling-milestones/metal5134.tar.gz",
+            "sha256": "6ef7c67f561c05e479a4d05e13bde6803963711752b78da67eb197aadfbb8f35"
+          }
+        },
+        "c_controls": [
+          {
+            "name": "pipeline-overrides",
+            "exit": 0,
+            "timeout": false,
+            "leaf_deadline_seconds": 15,
+            "elapsed_seconds": 0.2950397500535473
+          },
+          {
+            "name": "select",
+            "exit": 0,
+            "timeout": false,
+            "leaf_deadline_seconds": 15,
+            "elapsed_seconds": 0.13875045790337026
+          },
+          {
+            "name": "texture-bindings",
+            "exit": 0,
+            "timeout": false,
+            "leaf_deadline_seconds": 15,
+            "elapsed_seconds": 0.612995957955718
+          },
+          {
+            "name": "indirect-dispatch",
+            "exit": 0,
+            "timeout": false,
+            "leaf_deadline_seconds": 15,
+            "elapsed_seconds": 0.07816425000783056
+          }
+        ],
+        "oracle_scope": "pipeline-overrides exact26words plus separate vertex/fragment specializations exact8pixels/padding; select exact68words/eager traces/signed zero; texture-bindings actual sampled/storage/indirect results; indirect-dispatch GPU arguments and exact preserved bytes",
+        "guard": {
+          "exit": 0,
+          "timeout": false,
+          "parent_deadline_seconds": 45,
+          "elapsed_seconds": 1.1843201250303537
+        },
+        "cleanup_probe": "Owned direct child SIGKILL demonstrated; no process-group or GPU termination claim",
+        "artifacts_sha256": {
+          "build/pipeline-overrides": "28e3370e13d0ea2127b7c50058a481ac5a3b9492650867b74b5d5471887fd733",
+          "build/select": "fce2ff1d6ec0335364383708fa6e6af0a08526f8dcf1ee71641bc85297ebd1ea",
+          "build/texture-bindings": "e69e1f95be2674cef016cfb02f144fe3f33cc829370f075d263a9a7e17489c84",
+          "build/indirect-dispatch": "fffca72a1ff54f131e1b155f06ba4c52f62cea7464fcc850acb51c1ce1ee64a4",
+          "build/libwebgpu_doe_c.dylib": "034e9b1750272126a82425b5f30872684901140ef7a5e13cd74f4502f80fe7c5",
+          "build/libdoe_compiler.dylib": "3dbe15ad6fed43033cf3250bc428f0efab60579abed5d904ee04446deadc2f25"
+        },
+        "node_overrides": {
+          "result": {
+            "exit": 0,
+            "timeout": false,
+            "deadline_seconds": 20,
+            "elapsed_seconds": 0.1799729160265997
+          },
+          "node": "v22.20.0",
+          "selected_flavor": "doe-c",
+          "same_c_library_sha256": "034e9b1750272126a82425b5f30872684901140ef7a5e13cd74f4502f80fe7c5",
+          "addon_sha256": "f4c971941ae9a7f8ed0d2cda42135e6084f8e087c6fa65bbdc99f0c84771475f",
+          "exact_words": 18,
+          "backend_scope": "JavaScript does not expose numeric backend enum; explicit C flavor/path, observed Apple M3 nonfallback adapter and separate same-provider native Metal controls establish this scoped path."
+        },
+        "thermal": "Retained before/after pmset logs; no thermal/performance warning recorded."
+      },
+      "windows_sdk_and_warp": {
+        "run_url": "https://github.com/doerun/doe/actions/runs/40068579887",
+        "job_id": 120796917214,
+        "artifact_id": 12550262014,
+        "github_reported_zip_sha256": "5077950cffb5c4499228041a59be5d69279dad6b048bacd9b548f78584fbf356",
+        "zip_digest_scope": "GitHub-reported; this receipt independently verifies extracted manifest members, not unavailable outer ZIP bytes.",
+        "source_binding": {
+          "artifact_manifest_members_verified": 3185,
+          "native_inputs": {
+            "exact": 1,
+            "LF_to_CRLF": 284
+          },
+          "node_declared_inputs": {
+            "exact": 1,
+            "LF_to_CRLF": 114
+          },
+          "artifact_manifest_sha256": "d05bfa1f85964849cecc11629dc4f37a33ec01797281114a6c248107012de89a"
+        },
+        "compiler": "clang-cl20.1.8",
+        "vc_tools": "14.51.36231",
+        "windows_sdk": "10.0.26100.0",
+        "public_exports": 203,
+        "native_dll_sha256": "4ea13676fb414ded40b6d913f4fa2f83ce9e00bdfd914c6b37be261721b0bbd1",
+        "compiler_dll_sha256": "48c7ff6b56a13628efbd2663212224543c790f2f8eefcc4b62d09998b0f20100",
+        "adapter": {
+          "name": "Microsoft Basic Render Driver",
+          "backend": "D3D12",
+          "type": 3,
+          "vendor": 5140,
+          "device": 140
+        },
+        "c_controls": [
+          "compute",
+          "uniform_standard",
+          "binding_aliases",
+          "command_resources",
+          "indirect_dispatch",
+          "atomics",
+          "atomic_operations",
+          "texture_transfers",
+          "texture_bindings",
+          "pipeline_overrides",
+          "select"
+        ],
+        "all_11_c_and_2_node_controls_exit_zero": true,
+        "node_controls": [
+          "unchanged first-kernel",
+          "pipeline overrides exact18words"
+        ],
+        "primary_artifacts": "bench/out/c-windows-host-5134cbf06-40068579887/evidence/c-windows-host-5134cbf068570a750af9c858dae8be3e65425312-40068579887-1",
+        "retained_scope_manifests_and_logs": "bench/out/c-shader-sampling-milestones/windows5134-manifests-logs.tar.gz"
+      },
+      "miles_physical": {
+        "os": "Windows11Probuild22631x64",
+        "adapter": {
+          "name": "AMD Radeon(TM) Graphics",
+          "backend": "D3D12",
+          "type": 2,
+          "vendor": 4098,
+          "device": 5761,
+          "driver": "32.0.21030.2001"
+        },
+        "c_controls": [
+          "compute",
+          "uniform_standard",
+          "binding_aliases",
+          "command_resources",
+          "indirect_dispatch",
+          "atomics",
+          "atomic_operations",
+          "texture_transfers",
+          "texture_bindings",
+          "pipeline_overrides",
+          "select"
+        ],
+        "node_controls": [
+          "unchanged first-kernel",
+          "pipeline overrides exact18words"
+        ],
+        "all_13_exit_zero": true,
+        "binary_binding": "The same SDK-built provider/compiler/addon and C consumers as the CPU WARP checkpoint; 95 package members match INPUTS, ZIP and physical evidence tar independently.",
+        "package_sha256": "0aacdc5516f1423875e6853de25b3998e957f9171e8d68781874a696af8493a3",
+        "evidence_tar_sha256": "9eaac0007a50ebf8bca836671cba59617660626b074f774962880bbe9cfd70f0",
+        "native_dll_sha256": "4ea13676fb414ded40b6d913f4fa2f83ce9e00bdfd914c6b37be261721b0bbd1",
+        "compiler_dll_sha256": "48c7ff6b56a13628efbd2663212224543c790f2f8eefcc4b62d09998b0f20100",
+        "guardian": {
+          "code": 0,
+          "signal": null,
+          "timedOut": false,
+          "deadline_ms": 240000,
+          "elapsed_ms": 11905
+        },
+        "leaf_deadline_seconds": 20,
+        "cleanup_probe": "Retained harmless CPU taskkill /PID /T control exited successfully and observed target termination; no GPU cancellation claim.",
+        "raw": "bench/out/c-shader-sampling-milestones/miles5134-evidence.tar.gz"
+      }
+    },
+    {
+      "source_commit": "63f86dfc42682ce4a81524e90f8df0d51417d214",
+      "scope": "Later source: public Metal depth/stencil sampling only; do not transfer5134 qualification to changed source.",
+      "consumer": "runtime/c/native/tests/depth_sampling.c",
+      "consumer_sha256": "8466690189cfa8e2d5e57c2f815c989cca794d00de3cbfc487e86d3b1cc7b0b9",
+      "source_binding": {
+        "input_files_verified": 4546,
+        "archive_sha256": "7b7d5bbd1a2909f8f87f99e8b1cca46ac44d8a9191e50eb92b97bf10ea7cb350",
+        "commit_differences": [],
+        "artifacts_verified": 6,
+        "retention": {
+          "path": "bench/out/c-shader-sampling-milestones/metal63f.tar.gz",
+          "sha256": "04824bda4c17444b6a09c7caed6618c9bee6598521b8958ae42a4af9dd820e74"
+        }
+      },
+      "host": {
+        "os": "macOS26.6.2build25G83arm64",
+        "compiler": "Appleclang17.0.0",
+        "sdk": "26.0",
+        "adapter": "Apple M3",
+        "backend": "Metal",
+        "public_adapter_type": 4,
+        "driver": "not separately reported"
+      },
+      "results": [
+        {
+          "name": "depth-sampling",
+          "exit": 0,
+          "timeout": false,
+          "leaf_deadline_seconds": 15,
+          "elapsed_seconds": 0.5273325409507379
+        }
+      ],
+      "guardian": {
+        "exit": 0,
+        "timeout": false,
+        "parent_deadline_seconds": 45,
+        "elapsed_seconds": 0.5570836670231074
+      },
+      "oracle": "48 exact rendered depth values,8 stencil values,2 cube dimensions; depth32float/combined DepthOnly/StencilOnly, plain-float depth binding, array depth loads,7 admission negatives and early releases. Comparison sampler admission only; no comparison sampling at this source.",
+      "artifacts_sha256": {
+        "build/depth-sampling": "f7323acf33dade5ab7c63f2268e0c658012e64f3d4f671b7238652d9502d246a",
+        "build/libwebgpu_doe_c.dylib": "a3363f187125ad2fd8502f36228c2f047b473786e564f02167a52cdeaeaac1a4",
+        "build/libdoe_compiler.dylib": "3dbe15ad6fed43033cf3250bc428f0efab60579abed5d904ee04446deadc2f25"
+      },
+      "cleanup_scope": "Owned direct worker/native child; harmless SIGKILL probe passed; no GPU termination claim."
+    }
+  ],
+  "retained_failures": {
+    "first_stack": {
+      "raw": "bench/out/c-shader-sampling-milestones/first-failures.tar.gz",
+      "source": "bench/out/c-shader-sampling-milestones/first-stack-source.tar.gz",
+      "semantic_recursive_scc_bytes": 1952,
+      "ceiling_bytes": 1536,
+      "note": "Initial audit also stopped on unresolved __memcpy_chk; raw frames and measured SCC expose actual1952 failure independently."
+    },
+    "corrected_stack": {
+      "raw": "bench/out/c-shader-sampling-milestones/corrected-stack-proof.tar.gz",
+      "semantic_recursive_scc_bytes": 1536,
+      "ceiling_bytes": 1536,
+      "nonrecursive_select_frame": 288,
+      "fixed_combined": 193072,
+      "fixed_ceiling": 212992,
+      "job_combined": 182512,
+      "job_ceiling": 196608,
+      "scope": "Actual GCC13.3.0 PIC stack/callgraph evidence, not execution qualification."
+    },
+    "first_composed_host": {
+      "raw": "bench/out/c-shader-sampling-milestones/first-failures.tar.gz",
+      "source": "bench/out/c-shader-sampling-milestones/first-composed-source.tar.gz",
+      "failure": "Host assertion expected Metal render descriptor/reflection rejection but received pipeline stage requires a shader from this device. Corrected public stage/module admission control passed in final host/sanitizer capture."
+    }
+  },
+  "retention": {
+    "manifest": "bench/out/c-shader-sampling-milestones/MANIFEST.json",
+    "verification": "bench/out/c-shader-sampling-milestones/VERIFIED.json",
+    "policy": "Raw archives are ignored local retention, not tracked source or a public download guarantee. Original full Windows CI artifact remains at named primary_artifacts path; its outer ZIP was not independently available.",
+    "manifest_sha256": "35e97db0864c753c946d05cc834327611917fbb677ead512f0d53c0c05dbaba8",
+    "verification_sha256": "0c524955a5d27c7e8a582313e3346679d9b52c89e892d9ebfabee4b70ff7f2e7"
+  },
+  "limits": [
+    "Named developer correctness only; not independent evaluation, performance, contention, full support matrix, release qualification or production default promotion.",
+    "Each checkpoint, platform, binary and consumer retains its own scope; no qualification transfers to later compiler/comparison/graphics changes.",
+    "D3D12 graphics/presentation remain uncomposed at5134; this receipt does not claim them.",
+    "Depth/stencil transfers, comparison sampling and wider graphics at63f remain outside its depth-load consumer."
+  ]
+}

@@ -49,27 +49,37 @@ static native_failure compiler_path(char **out)
 }
 #endif
 
-native_failure native_d3d12_compile_compute(const native_stage *stage, doe_dx_shader **out)
+native_failure native_d3d12_compile_stage(const native_stage *stage, doe_dx_shader **out)
 {
+    if (!stage || !stage->entry || !out) return native_failure_status(NATIVE_INVALID_ARGUMENT);
 #if defined(_WIN32)
     const doe_shader_view *view = &stage->view;
     if (view->target != DOE_SHADER_HLSL || view->target_language_version != 600 ||
-        !view->text || !view->text_size) return native_failure_status(NATIVE_INVALID_ARGUMENT);
-    size_t selected = (size_t)(stage->entry - view->entries);
+        !view->text || !view->text_size || !view->entries || !view->hlsl_entries) return native_failure_status(NATIVE_INVALID_ARGUMENT);
+    size_t selected=SIZE_MAX;
+    for (size_t i=0;i<view->counts.entries;++i) if (&view->entries[i]==stage->entry) selected=i;
+    if (selected==SIZE_MAX) return native_failure_status(NATIVE_INVALID_ARGUMENT);
     const DoeCompilerHlslEntryV11 *entry = NULL;
     for (size_t i = 0; i < view->hlsl_entry_count; ++i) {
         if (view->hlsl_entries[i].entry_index != selected) continue;
         if (entry) return native_failure_status(NATIVE_INVALID_ARGUMENT);
         entry = &view->hlsl_entries[i];
     }
-    if (!entry || entry->stage != DOE_COMPILER_STAGE_COMPUTE || entry->flags ||
+    if (!entry || entry->stage != stage->entry->stage || entry->flags ||
         !memchr(entry->name, 0, sizeof(entry->name))) return native_failure_status(NATIVE_UNSUPPORTED);
+    doe_dx_shader_stage target;
+    switch (entry->stage) {
+    case DOE_COMPILER_STAGE_COMPUTE: target=DOE_DX_SHADER_COMPUTE; break;
+    case DOE_COMPILER_STAGE_VERTEX: target=DOE_DX_SHADER_VERTEX; break;
+    case DOE_COMPILER_STAGE_FRAGMENT: target=DOE_DX_SHADER_FRAGMENT; break;
+    default: return native_failure_status(NATIVE_UNSUPPORTED);
+    }
     char *path = NULL;
     native_failure failure = compiler_path(&path);
     if (failure.status != NATIVE_OK) return failure;
     doe_dx_shader_options options = {.compiler_module_path = path,
         .source = view->text, .source_size = view->text_size, .entry = entry->name,
-        .stage = DOE_DX_SHADER_COMPUTE, .has_entry_index = true, .entry_index = entry->entry_index};
+        .stage = target, .has_entry_index = true, .entry_index = entry->entry_index};
     doe_dx_shader_error error = {0};
     doe_dx_status status = doe_dx_shader_compile(&options, out, &error);
     doe_dx_error native = {status, error.native_code, error.operation};
@@ -91,6 +101,13 @@ native_failure native_d3d12_compile_compute(const native_stage *stage, doe_dx_sh
     (void)out;
     return native_failure_status(NATIVE_UNAVAILABLE);
 #endif
+}
+
+native_failure native_d3d12_compile_compute(const native_stage *stage,doe_dx_shader **out)
+{
+    if (!stage || !stage->entry || stage->entry->stage!=DOE_COMPILER_STAGE_COMPUTE)
+        return native_failure_status(NATIVE_INVALID_ARGUMENT);
+    return native_d3d12_compile_stage(stage,out);
 }
 
 void native_d3d12_compiler_release(doe_dx_shader *shader)

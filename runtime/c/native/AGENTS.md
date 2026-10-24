@@ -51,6 +51,14 @@ before publishing an enabled feature. Never replace this with CPU postprocessing
 or raw tick success. Distinguish terminal failure from unknown completion while
 preserving typed error status and all pending leases.
 
+D3D12 graphics projects each selected compiler entry into the canonical binding
+union, preserving module-local identity and stage visibility. Pack VS/PS resources
+into one resource heap and one sampler heap per draw; never bind competing heaps
+of the same type or remap registers. Keep attachment operations on the whole pass,
+including empty/zero draws, with real initialization/discard clears and existing
+pending/resource leases. Explicitly reject state outside the currently composed
+envelope; partial source coverage cannot claim retained graphics parity.
+
 Graphics consumes compiler-owned stage/resource/interface reflection and canonical
 resource-owned pass/bundle snapshots. Preserve the whole pass when lowering to the
 backend, including empty LOAD/CLEAR and ordered occlusion events. Empty vertex

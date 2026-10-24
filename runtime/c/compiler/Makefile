@@ -439,6 +439,15 @@ build/cpp_consumer_specialization: tests/cpp_consumer_specialization.cpp include
 test-specialization-library: build/cpp_consumer_specialization
 	build/cpp_consumer_specialization
 
+build/test_depth_sampling: $(LIB_SOURCES) tests/test_depth_sampling.c tests/hlsl_fixture.h tests/depth_sampling.wgsl $(HEADERS) | build/.ready
+	$(CC) $(CFLAGS) $(LIB_SOURCES) tests/test_depth_sampling.c -lm -o $@
+build/test_depth_sampling_sanitize: $(LIB_SOURCES) tests/test_depth_sampling.c tests/hlsl_fixture.h tests/depth_sampling.wgsl $(HEADERS) | build/.ready
+	$(CC) $(CFLAGS) -O1 -g -fno-omit-frame-pointer -fsanitize=address,undefined $(LIB_SOURCES) tests/test_depth_sampling.c -lm -o $@
+.PHONY: depth-sampling-check sanitize-depth-sampling
+depth-sampling-check: build/test_depth_sampling
+	build/test_depth_sampling
+sanitize-depth-sampling: build/test_depth_sampling_sanitize
+	ASAN_OPTIONS=detect_leaks=0:halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1 build/test_depth_sampling_sanitize
 build/test_select: $(LIB_SOURCES) tests/test_select.c tests/hlsl_fixture.h tests/select_retained.wgsl tests/select_cases.wgsl $(HEADERS) | build/.ready
 	$(CC) $(CFLAGS) $(LIB_SOURCES) tests/test_select.c -lm -o $@
 build/test_select_sanitize: $(LIB_SOURCES) tests/test_select.c tests/hlsl_fixture.h tests/select_retained.wgsl tests/select_cases.wgsl $(HEADERS) | build/.ready

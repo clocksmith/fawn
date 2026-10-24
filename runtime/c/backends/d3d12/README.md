@@ -48,6 +48,31 @@ a C ABI. No retained Zig bridge is linked, invoked or removed.
   finite waits, partial retirement, unknown-completion recovery and terminal loss.
 - Typed statuses, first close failure, allocation rollback and native bounds.
 
+The additive [whole-pass render API](include/doe_d3d12_render.h) composes
+independent VS/PS layouts with stage-visible root tables. Its two immutable stage
+maps preserve 64 resource rows and 16 runtime sampler rows each, packing 128/32 into
+one resource heap and one sampler heap per command descriptor use. Compute keeps
+its existing 64/16 limits. Module-local resource ordinals never identify another
+stage's resource. Compatible read aliases share allocation leases and transitions.
+
+The first public graphics bridge is procedural triangle-list rendering to one
+RGBA8/BGRA8 UNORM color target at sample 1, with frontFace, viewport and scissor.
+Whole passes execute empty/zero-draw CLEAR/LOAD/STORE. Discard records a real zero
+clear at pass end, so later reads observe initialized zeros through the existing
+texture-use owner; no frontend availability bit is added. All native heaps/views
+prepare before recording. Ordinary command/pending leases retain every dependency
+through unknown completion. This is a checkpoint toward retained graphics parity,
+not a narrower final acceptance target. Eight MRT slots, broader color/vertex
+formats and vertex inputs, depth/stencil, MSAA, blend/cull and GPU-guarded indexed
+or indirect draws and public fragment UAV writes remain concrete migration work.
+
+`tests/test_render.c` exercises 128/32 stage capacity, immutable values, empty and
+zero draws, preparation failures and early-release/unknown leases at the portable
+call seam. `tests/test_windows_render.c` checks real SDK root serialization and
+native typed call composition without creating a device. The newer whole-pass
+source has not yet received an SDK or driver run; prior static-graphics receipts
+remain historical evidence for their exact sources.
+
 All context calls require caller serialization. Objects keep the context busy,
 not independently reference-counted: release every caller object, poll pending
 submissions, then call context_destroy. BUSY means the context is still owned by
@@ -57,8 +82,7 @@ canceled by release. Different pending commands may use disjoint resources; a
 buffer, texture or timestamp heap cannot belong to another recorded/unresolved command. This restriction is
 explicit, not a claim of full command-buffer or WebGPU concurrency parity.
 
-No depth sampling/stencil/compressed/sRGB texture, mip/array/partial copy, dynamic
-sampler/view, indirect draw, base vertex, primitive restart, MSAA/multiple attachments,
+No depth sampling/stencil/compressed/sRGB texture, mip/array texture or general view, indirect draw, base vertex, primitive restart, MSAA/multiple attachments,
 presentation, occlusion/pipeline-statistic query,
 WGSL-to-DXIL compiler invocation or public WebGPU export is implemented here.
 Unsupported broad surfaces are not padded out with success-looking exports.

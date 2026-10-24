@@ -14,6 +14,7 @@ from pathlib import Path
 import re
 import shutil
 import subprocess
+import tempfile
 
 from export_symbols import symbols
 
@@ -89,7 +90,8 @@ def main() -> None:
     # Genuine ordinary consumers exercise the DLL, not duplicated production code.
     consumers = [ROOT / 'tests/native_consumer.c', ROOT / 'tests/test_phony_api.c',
                  ROOT / 'tests/test_windows_environment.c', ROOT / 'tests/test_overrides.c',
-                 ROOT / 'tests/test_specialization.c', ROOT / 'tests/test_select.c']
+                 ROOT / 'tests/test_specialization.c', ROOT / 'tests/test_select.c',
+                 ROOT / 'tests/test_depth_sampling.c']
     for source in consumers:
         name = source.stem
         executable = out / (name + '.exe')
@@ -102,6 +104,9 @@ def main() -> None:
         if name == 'test_select':
             arguments.extend(str(ROOT / 'tests' / source_name) for source_name in
                              ['select_retained.wgsl', 'select_cases.wgsl'])
+        if name == 'test_depth_sampling':
+            artifacts = tempfile.mkdtemp(prefix='depth-sampling-', dir=out)
+            arguments.extend([artifacts, str(ROOT / 'tests/depth_sampling.wgsl')])
         invoke(arguments, out)
     cpp_consumers = [ROOT / 'tests/cpp_consumer.cpp', ROOT / 'tests/cpp_consumer_specialization.cpp']
     for source in cpp_consumers:
@@ -115,7 +120,8 @@ def main() -> None:
         'compiler': compiler, 'sources': [str(path.relative_to(ROOT)) for path in sources],
         'exports': names, 'library': str(library),
         'consumers': [str(path.relative_to(ROOT)) for path in consumers + cpp_consumers],
-        'consumer_inputs': ['tests/select_retained.wgsl', 'tests/select_cases.wgsl'],
+        'consumer_inputs': ['tests/select_retained.wgsl', 'tests/select_cases.wgsl',
+                            'tests/depth_sampling.wgsl'],
         'scope': 'Actual Windows x64 DLL and ordinary C/C++ CPU consumers only; no GPU, runtime or CLI qualification.'
     }, indent=2) + '\n')
 

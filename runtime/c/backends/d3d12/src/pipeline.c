@@ -19,7 +19,7 @@ static bool same_register(uint32_t reg_a, uint32_t space_a, doe_dx_descriptor_ki
     return reg_a == reg_b && space_a == space_b && kind_a == kind_b;
 }
 
-static doe_dx_status validate_layout(const doe_dx_context *context, const doe_dx_resource_pipeline_desc *desc,
+doe_dx_status doe_dx_validate_layout(const doe_dx_context *context, const doe_dx_resource_pipeline_desc *desc,
     const doe_dx_dynamic_pipeline_desc *dynamic) {
     const doe_dx_pipeline_desc *buffers = &desc->buffers;
     if (!buffers->bytecode || !buffers->bytecode_size ||
@@ -111,7 +111,7 @@ static doe_dx_status create_pipeline(doe_dx_context *context,
         return doe_dx_fail(DOE_DX_INVALID_ARGUMENT, 0, "pipeline.create", error);
     uint32_t ends[DOE_DX_MAX_VERTEX_BUFFERS] = {0};
     doe_dx_status status = mesh ? doe_dx_validate_mesh(mesh, ends) : DOE_DX_OK;
-    if (status == DOE_DX_OK) status = validate_layout(context, desc, dynamic);
+    if (status == DOE_DX_OK) status = doe_dx_validate_layout(context, desc, dynamic);
     if (status != DOE_DX_OK) return doe_dx_fail(status, 0, "pipeline.layout", error);
     if (context->objects == SIZE_MAX) return doe_dx_fail(DOE_DX_RANGE, 0, "pipeline.create", error);
     if (context->lost) return doe_dx_fail(DOE_DX_DEVICE_LOST, 0, "pipeline.create", error);
@@ -203,5 +203,6 @@ void doe_dx_pipeline_release(doe_dx_pipeline *pipeline) {
     if (pipeline->references) return;
     doe_dx_native_pipeline_destroy(pipeline->native);
     pipeline->context->objects--;
+    free(pipeline->render);
     free(pipeline);
 }

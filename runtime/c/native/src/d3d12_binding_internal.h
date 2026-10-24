@@ -30,6 +30,10 @@ typedef struct native_d3d12_snapshot {
  * No shader parsing, source interpretation, native calls or ownership changes. */
 bool native_d3d12_stage_bindings(const native_pipeline *pipeline,const native_stage *stage,
     native_d3d12_layout *out,native_d3d12_compute *map);
+bool native_d3d12_stage_bindings_for(const native_pipeline *,const native_stage *,uint32_t,
+    native_d3d12_layout *,native_d3d12_compute *);
+native_failure native_d3d12_binding_values(const native_pipeline *,const native_d3d12_compute *,
+    const doe_resource_binding *,native_d3d12_snapshot *);
 /* Requires the canonical resource owner's normalized sampler descriptor. The
  * private backend separately admits native descriptor values when recording. */
 bool native_d3d12_sampler_descriptor(const WGPUSamplerDescriptor *normalized,doe_dx_sampler_desc *out);

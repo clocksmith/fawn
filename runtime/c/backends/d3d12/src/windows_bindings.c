@@ -2,40 +2,13 @@
 #include "windows_internal.h"
 #ifdef _WIN32
 
-doe_dx_status doe_dx_prepare_descriptors(doe_dx_native_commands *commands,
-    doe_dx_native_pipeline *pipeline, const doe_dx_native_resources *resources,
-    doe_dx_descriptor_use **out, doe_dx_error *error) {
-    doe_dx_descriptor_use *use = calloc(1, sizeof(*use));
-    if (!use) return doe_dx_fail(DOE_DX_OUT_OF_MEMORY, 0, "descriptors.allocate", error);
-    ID3D12Device *device = commands->context->device;
-    D3D12_DESCRIPTOR_HEAP_DESC description = {0};
-    description.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-    description.NumDescriptors = (UINT)(resources->buffer_count + resources->texture_count);
-    if (description.NumDescriptors) {
-        description.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-        HRESULT result = ID3D12Device_CreateDescriptorHeap(device,&description,
-            &IID_ID3D12DescriptorHeap,(void **)&use->heap);
-        if (FAILED(result)) {
-            doe_dx_release_descriptors(use);
-            return doe_dx_hresult(result,"ID3D12Device.CreateDescriptorHeap.resources",error);
-        }
-    }
-    if (resources->sampler_count) {
-        description.Type = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
-        description.NumDescriptors = (UINT)resources->sampler_count;
-        HRESULT result = ID3D12Device_CreateDescriptorHeap(device,&description,
-            &IID_ID3D12DescriptorHeap,(void **)&use->sampler_heap);
-        if (FAILED(result)) {
-            doe_dx_release_descriptors(use);
-            return doe_dx_hresult(result,"ID3D12Device.CreateDescriptorHeap.samplers",error);
-        }
-    }
-    D3D12_CPU_DESCRIPTOR_HANDLE handle = {0};
-    if (use->heap) use->heap->lpVtbl->GetCPUDescriptorHandleForHeapStart(use->heap, &handle);
+static void write_set(ID3D12Device *device,const doe_dx_resource_set *set,
+    D3D12_CPU_DESCRIPTOR_HANDLE handle,D3D12_CPU_DESCRIPTOR_HANDLE sampler_handle) {
+    const doe_dx_native_resources *resources=set->resources;
     UINT increment = ID3D12Device_GetDescriptorHandleIncrementSize(device,
         D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
     for (size_t index = 0; index < resources->buffer_count; index++) {
-        const doe_dx_binding_layout *layout = &pipeline->bindings[index];
+        const doe_dx_binding_layout *layout = &set->buffers[index];
         const doe_dx_native_binding *binding = &resources->buffers[index];
         doe_dx_descriptor_kind kind = doe_dx_buffer_descriptor_kind(layout);
         if (kind == DOE_DX_DESCRIPTOR_CBV) {
@@ -65,7 +38,7 @@ doe_dx_status doe_dx_prepare_descriptors(doe_dx_native_commands *commands,
         handle.ptr += increment;
     }
     for (size_t index = 0; index < resources->texture_count; index++) {
-        const doe_dx_texture_binding_layout *layout = &pipeline->textures[index];
+        const doe_dx_texture_binding_layout *layout = &set->textures[index];
         doe_dx_native_texture *texture = resources->textures[index];
         if (layout->access == DOE_DX_READ_ONLY) {
             D3D12_SHADER_RESOURCE_VIEW_DESC view = {0};
@@ -82,8 +55,8 @@ doe_dx_status doe_dx_prepare_descriptors(doe_dx_native_commands *commands,
         }
         handle.ptr += increment;
     }
-    if (use->sampler_heap) {
-        use->sampler_heap->lpVtbl->GetCPUDescriptorHandleForHeapStart(use->sampler_heap,&handle);
+    if (resources->sampler_count) {
+        handle=sampler_handle;
         increment = ID3D12Device_GetDescriptorHandleIncrementSize(device,D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
         for (size_t index = 0; index < resources->sampler_count; ++index) {
             D3D12_SAMPLER_DESC sampler;
@@ -92,48 +65,65 @@ doe_dx_status doe_dx_prepare_descriptors(doe_dx_native_commands *commands,
             handle.ptr += increment;
         }
     }
-    *out = use;
-    return DOE_DX_OK;
 }
 
-void doe_dx_transition_resources(doe_dx_native_commands *commands, doe_dx_native_pipeline *pipeline,
-    const doe_dx_native_resources *resources, bool graphics, bool restore) {
-    D3D12_RESOURCE_STATES read = D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
-    if (graphics) read |= D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
-    for (size_t index = 0; index < resources->buffer_count; index++) {
-        doe_dx_native_buffer *buffer = resources->buffers[index].buffer;
-        bool repeated = false;
-        for (size_t prior = 0; prior < index; ++prior)
-            if (resources->buffers[prior].buffer == buffer) repeated = true;
-        if (repeated) continue;
-        /* The portable owner rejects mixed read/write classes and overlapping
-         * UAV views before native mutation. Read aliases combine native state
-         * bits; every allocation transitions once regardless of view count. */
-        D3D12_RESOURCE_STATES state = D3D12_RESOURCE_STATE_COMMON;
-        for (size_t alias = index; alias < resources->buffer_count; ++alias) {
-            if (resources->buffers[alias].buffer != buffer) continue;
-            doe_dx_descriptor_kind kind = doe_dx_buffer_descriptor_kind(&pipeline->bindings[alias]);
-            switch (kind) {
-            case DOE_DX_DESCRIPTOR_CBV: state |= D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER; break;
-            case DOE_DX_DESCRIPTOR_SRV: state |= read; break;
-            case DOE_DX_DESCRIPTOR_UAV: state |= D3D12_RESOURCE_STATE_UNORDERED_ACCESS; break;
-            case DOE_DX_DESCRIPTOR_INVALID: abort();
-            }
+doe_dx_status doe_dx_prepare_sets(doe_dx_native_commands *commands,
+    const doe_dx_resource_set *sets,size_t count,doe_dx_descriptor_use **out,doe_dx_error *error) {
+    if (!sets || !count || count>DOE_DX_RENDER_STAGES)
+        return doe_dx_fail(DOE_DX_INVALID_ARGUMENT,0,"descriptors.sets",error);
+    size_t resource_count=0,sampler_count=0;
+    for (size_t i=0;i<count;++i) {
+        const doe_dx_native_resources *values=sets[i].resources;
+        if (!values || values->texture_count>DOE_DX_MAX_BINDINGS ||
+            values->buffer_count>DOE_DX_MAX_BINDINGS-values->texture_count ||
+            values->sampler_count>DOE_DX_MAX_DYNAMIC_SAMPLERS)
+            return doe_dx_fail(DOE_DX_RANGE,0,"descriptors.set_range",error);
+        resource_count+=sets[i].resources->buffer_count+sets[i].resources->texture_count;
+        sampler_count+=sets[i].resources->sampler_count;
+    }
+    doe_dx_descriptor_use *use = calloc(1, sizeof(*use));
+    if (!use) return doe_dx_fail(DOE_DX_OUT_OF_MEMORY, 0, "descriptors.allocate", error);
+    ID3D12Device *device = commands->context->device;
+    D3D12_DESCRIPTOR_HEAP_DESC description = {0};
+    description.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+    description.NumDescriptors = (UINT)resource_count;
+    if (description.NumDescriptors) {
+        description.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+        HRESULT result = ID3D12Device_CreateDescriptorHeap(device,&description,
+            &IID_ID3D12DescriptorHeap,(void **)&use->heap);
+        if (FAILED(result)) {
+            doe_dx_release_descriptors(use);
+            return doe_dx_hresult(result,"ID3D12Device.CreateDescriptorHeap.resources",error);
         }
-        doe_dx_transition(commands->list, buffer->resource,
-            restore ? state : D3D12_RESOURCE_STATE_COPY_DEST,
-            restore ? D3D12_RESOURCE_STATE_COPY_DEST : state);
     }
-    for (size_t index = 0; index < resources->texture_count; index++) {
-        bool repeated = false;
-        for (size_t prior = 0; prior < index; ++prior)
-            if (resources->textures[prior] == resources->textures[index]) repeated = true;
-        if (repeated) continue;
-        D3D12_RESOURCE_STATES state = pipeline->textures[index].access == DOE_DX_READ_ONLY ?
-            read : D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
-        doe_dx_transition(commands->list, resources->textures[index]->resource,
-            restore ? state : D3D12_RESOURCE_STATE_COPY_DEST,
-            restore ? D3D12_RESOURCE_STATE_COPY_DEST : state);
+    if (sampler_count) {
+        description.Type = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
+        description.NumDescriptors = (UINT)sampler_count;
+        HRESULT result = ID3D12Device_CreateDescriptorHeap(device,&description,
+            &IID_ID3D12DescriptorHeap,(void **)&use->sampler_heap);
+        if (FAILED(result)) {
+            doe_dx_release_descriptors(use);
+            return doe_dx_hresult(result,"ID3D12Device.CreateDescriptorHeap.samplers",error);
+        }
     }
+    D3D12_CPU_DESCRIPTOR_HANDLE handle={0},samplers={0};
+    if (use->heap) use->heap->lpVtbl->GetCPUDescriptorHandleForHeapStart(use->heap,&handle);
+    if (use->sampler_heap) use->sampler_heap->lpVtbl->GetCPUDescriptorHandleForHeapStart(use->sampler_heap,&samplers);
+    UINT resource_stride=ID3D12Device_GetDescriptorHandleIncrementSize(device,D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+    UINT sampler_stride=ID3D12Device_GetDescriptorHandleIncrementSize(device,D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
+    for (size_t i=0;i<count;++i) {
+        const doe_dx_native_resources *values=sets[i].resources;
+        write_set(device,&sets[i],handle,samplers);
+        handle.ptr+=(values->buffer_count+values->texture_count)*resource_stride;
+        samplers.ptr+=values->sampler_count*sampler_stride;
+    }
+    *out=use;
+    return DOE_DX_OK;
+}
+doe_dx_status doe_dx_prepare_descriptors(doe_dx_native_commands *commands,
+    doe_dx_native_pipeline *pipeline,const doe_dx_native_resources *resources,
+    doe_dx_descriptor_use **out,doe_dx_error *error) {
+    const doe_dx_resource_set set={pipeline->bindings,pipeline->textures,resources};
+    return doe_dx_prepare_sets(commands,&set,1,out,error);
 }
 #endif

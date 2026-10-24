@@ -15,6 +15,7 @@ void doe_dx_native_pipeline_destroy(doe_dx_native_pipeline *pipeline) {
     if (!pipeline) return;
     if (pipeline->state) ID3D12PipelineState_Release(pipeline->state);
     if (pipeline->root) ID3D12RootSignature_Release(pipeline->root);
+    free(pipeline->render);
     free(pipeline);
 }
 

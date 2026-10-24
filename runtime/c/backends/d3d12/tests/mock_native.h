@@ -39,6 +39,9 @@ typedef struct mock_state {
     doe_dx_resource_pipeline_desc pipeline_desc;
     doe_dx_texture_binding_layout texture_layouts[DOE_DX_MAX_BINDINGS];
     doe_dx_static_sampler samplers[DOE_DX_MAX_STATIC_SAMPLERS];
+    size_t render_passes, render_draws;
+    bool render_clear,render_discard;
+    doe_dx_native_render_draw last_render_draw;
     size_t draws, timestamp_writes, timestamp_resolves;
     doe_dx_native_texture *draw_color;
     doe_dx_draw_desc draw;

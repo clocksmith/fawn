@@ -22,7 +22,8 @@ mip, layer and sample, real zero initialization and partial GPU transfers that
 preserve public row padding. Immutable views and sampler descriptors use the
 canonical resource owner. Sampled/storage compute bindings and runtime sampler
 values now follow compiler-owned resource metadata; their newer SDK/device
-execution has separate evidence. Graphics and presentation remain uncomposed;
+execution has separate evidence. Procedural single-color graphics is now authored
+with a separate public pixel control; presentation remains uncomposed.
 CoreFeaturesAndLimits is absent.
 The [public D3D12 developer receipt](DEVELOPER_RECEIPT_D3D12_PUBLIC.json) binds an
 actual Windows SDK DLL build and four unchanged C consumers to one source, with
@@ -53,7 +54,13 @@ command leases. Depth/stencil copies and storage remain explicitly unsupported.
 `tests/metal_depth_cases.h` covers host call identities, discard/reinitialization,
 typed failure rollback and early-release/unknown lifetimes. The unchanged
 `depth-sampling` consumer owns the independent rendered-depth/stencil readback
-oracle; host and SDK compilation do not establish its Metal execution.
+oracle. The [shader and sampling receipt](DEVELOPER_RECEIPT_SHADER_SAMPLING.json)
+binds its actual M3 readbacks to `63f86dfc4` separately from the earlier `5134cbf06`
+compiler/module/override controls on CPU Vulkan, M3, WARP and Miles. Those sources
+and consumers do not qualify later changes. `depth-comparison` separately executes
+the unchanged compiler WGSL fixture over rendered mipmapped and layered depth,
+checking Less/Greater/Equal, sampler addressing, offsets, argument order and
+allocation guards; its execution evidence must bind its own source.
 Compiler-owned MSL and ABI12
 per-entry metadata supply exact names, independent resource namespaces, dense
 native slots and runtime size indices. The common Metal binding owner validates
@@ -179,9 +186,11 @@ and exact exports; absent platform loaders remain explicitly unavailable.
   DepthOnly/StencilOnly views of combined formats select one native aspect.
   An all-aspect view of a combined format cannot be bound as a texture.
   Sampled depth images may be cube-compatible. Comparison samplers bind only to
-  'comparison' entries. textureLoad and dimension queries execute; WGSL
-  textureSampleCompare/textureSampleCompareLevel and depth textureSampleLevel
-  are absent from the C compiler, so comparison sampling is not yet possible.
+  'comparison' entries. textureLoad, dimension queries, depth textureSampleLevel
+  and textureSampleCompareLevel execute through compiler-owned lowering. Explicit
+  depth LOD is integer; comparison uses mip zero. Implicit-derivative sampling
+  and textureSampleCompare remain unimplemented; see the
+  [compiler texture contract](../compiler/TEXTURES.md#explicit-depth-sampling).
   Depth24Plus readback values come from its D32 backing.
   Plus formats use D32/D32S8 backing, not an implied optional public feature;
   depth32float-stencil8 maps to D32S8 only on a device that enabled it.
@@ -631,7 +640,7 @@ remain explicitly rejected. WGSL discard requires actual enabled demote support;
 unsupported devices reject that pipeline. Blend constants must be finite f32.
 Texture format reinterpretation beyond srgb/unorm viewFormats pairs (RGBA8,
 BGRA8; resource-validated, then a mutable Vulkan image with a format list), srgb
-viewFormats together with StorageBinding, depth storage, depth comparison sampling (compiler), multisampled
+viewFormats together with StorageBinding, depth storage, implicit-derivative depth comparison, multisampled
 buffer copies/storage, and cube arrays without device imageCubeArray are rejected.
 `tests/core_formats.c` round-trips the thirteen formats added for the WebGPU core
 set (r8/rg8 snorm/uint/sint, r16/rg16 uint/sint, rgb10a2unorm/uint, rgb9e5ufloat)
@@ -675,8 +684,20 @@ evidence above.
 The D3D12 texture compute bridge now converts selected compiler HLSL resource and
 handle metadata into whole 2D sampled float/uint classes, exact-format storage
 SRV/UAV rows and runtime sampler layouts. The five existing color formats remain
-the constructor envelope; depth, arrays, extra mips/MSAA and public graphics are
-not implied. Read-only storage binds as SRV while retaining logical StorageBinding
+the texture constructor envelope; depth, arrays and extra mips/MSAA remain
+uncomposed. The new D3D12 procedural graphics bridge handles one RGBA8/BGRA8 UNORM
+color target at sample 1, independent VS/PS modules, canonical shared bindings,
+runtime samplers, frontFace, viewport/scissor and whole-pass empty/zero-draw
+CLEAR/LOAD/STORE/Discard. Stage-visible root tables pack both selected maps into
+one resource heap and one sampler heap per descriptor use; module-local ordinals
+never identify another module's binding. Discard records an actual zero clear on
+the existing texture-use owner, retaining unknown work normally. The new source
+has focused portable owner/compiler controls; SDK and driver evidence must be
+bound separately before any execution claim. `tests/d3d12_graphics.c` is its
+seven-frame yellow/sampler/frontFace/discard/padding/early-release pixel control.
+Eight MRT slots, vertex input formats, depth/stencil, MSAA, blend/cull, public
+fragment UAV writes and GPU-guarded indexed/indirect graphics remain concrete
+migration work toward retained parity. Read-only storage binds as SRV while retaining logical StorageBinding
 admission; compatible sampled/read-storage aliases use one private allocation
 lease and transition. Sampler values are copied into command-owned sampler heaps.
 `tests/texture_bindings.c` is the focused public execution control for nearest and
@@ -718,7 +739,7 @@ result is:
 ```
 PASS public view formats: rgba8unorm rendered through its srgb view stores exact sRGB codes 64/128/200/255 (copy and unorm-view textureLoad), rgba8unorm-srgb rendered through its unorm view stores raw bytes, bgra8unorm srgb view keeps byte order, non-pair/unlisted/pipeline-mismatch controls and the srgb-storage limitation, early releases; exact 96 bytes and 4 decoded codes (CPU Vulkan only)
 PASS public cube arrays: enabled imageCubeArray, two uniformly filled cubes sampled along all six face axes per array index via texture_cube_array/textureSampleLevel, textureNumLayers, automatic CubeArray layout, partial/cube-dimension view and storage-layout controls, early releases; exact 12 face values and 1 layer count (CPU Vulkan only)
-PASS public depth/stencil sampling: rendered depth32float and depth24plus-stencil8 DepthOnly maps via texture_depth_2d (automatic depth layout) and texture_2d<f32> (explicit unfilterable-float), StencilOnly as texture_2d<u32>, two-layer texture_depth_2d_array, texture_depth_cube dimensions, comparison-sampler binding admission, 7 view/binding/creation controls, early releases; exact 48 depth values, 8 stencil values and 2 dimensions (no comparison sampling: compiler lacks the builtins) (CPU Vulkan only)
+PASS public depth/stencil sampling: rendered depth32float and depth24plus-stencil8 DepthOnly maps via texture_depth_2d (automatic depth layout) and texture_2d<f32> (explicit unfilterable-float), StencilOnly as texture_2d<u32>, two-layer texture_depth_2d_array, texture_depth_cube dimensions, comparison-sampler binding admission, 7 view/binding/creation controls, early releases; exact 48 depth values, 8 stencil values and 2 dimensions (comparison sampling has its own depth-comparison control) (CPU Vulkan only)
 PASS public depth/stencil copies: rendered depth32float .25/.75 via DepthOnly/All readback and texture copy, depth16unorm rendered 0/65535, writeTexture and buffer upload plus texture copy, stencil8 upload then IncrementClamp, depth24plus-stencil8 stencil Replace and StencilOnly upload, depth24plus texture copy observed by depth test, 11 copy and 1 creation validation controls, early releases; exact 72 depth/stencil texels and 8 color pixels (CPU Vulkan only)
 PASS public indexed draws: uint16/uint32 indices, firstIndex, signed base vertex, instance selection, offset index ranges, pass/bundle replay, uint16/uint32 strip primitive restart, 9 GPU-produced drawIndexedIndirect records with exact-end/out-of-range/wrapping/zero/firstInstance/instance-overrun guards, unchanged arguments, 13 typed validation controls and early releases; exact 192 pixels (CPU Vulkan only)
 PASS public ABI9 atomics: storage accumulation, signed OOB suppression, compare-exchange result identity, fresh workgroup initialization across two groups and two dispatches, early releases (CPU Vulkan only)

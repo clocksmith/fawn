@@ -55,6 +55,8 @@ void native_d3d12_pipeline_close(native_pipeline *pipeline)
 #endif
     free(pipeline->d3d12_compute);
     pipeline->d3d12_compute = NULL;
+    free(pipeline->d3d12_graphics);
+    pipeline->d3d12_graphics = NULL;
 }
 
 #if defined(_WIN32)

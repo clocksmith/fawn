@@ -185,11 +185,14 @@ WGPUStatus native_d3d12_limits(const doe_dx_caps *caps, WGPULimits *out)
     const doe_dx_limits *native = &caps->limits;
     uint64_t buffer = native->max_buffer_size & ~UINT64_C(3);
     /* Explicit 2D/single-layer implementation envelope, checked against the
-     * actual format/footprint queries at allocation. Graphics and
-     * presentation remain uncomposed; descriptor kind budgets remain coupled. */
+     * actual format/footprint queries at allocation. Procedural graphics uses
+     * one color attachment; presentation/mesh/depth/MSAA remain uncomposed. */
     *out = (WGPULimits){
         .maxTextureDimension2D = DOE_DX_MAX_TEXTURE_DIMENSION_2D,
         .maxTextureArrayLayers = 1,
+        /* Initial procedural single-color graphics envelope. Stage descriptors
+         * pack128/32 while compute retains its existing64/16 owner limits. */
+        .maxColorAttachments=1,.maxColorAttachmentBytesPerSample=4,.maxInterStageShaderVariables=16,
         .maxBufferSize = buffer,
         .maxBindGroups = DOE_RESOURCE_MAX_GROUPS,
         .maxBindGroupsPlusVertexBuffers = DOE_RESOURCE_MAX_GROUPS,

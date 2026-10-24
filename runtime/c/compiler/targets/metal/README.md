@@ -30,8 +30,11 @@ integer formatting and bit-pattern floating constants, not host float evaluation
   host_name attributes. Selection filters kernel wrappers, not module validation.
   All five compute input builtins are mapped; helpers receive a thread context.
 - Texture/sampler handles remain typed by shared ABI6 type/resource identity.
-  All seven admitted image operations lower to MSL methods: load, store,
-  dimensions, mip count, layer count, sample count and explicit-LOD sampling.
+  All eight admitted image operations lower to MSL methods: load, store,
+  dimensions, mip count, layer count, sample count, explicit-LOD sampling
+  and explicit mip-zero depth comparison. Depth sampling returns scalar float;
+  comparison sampling uses a comparison sampler and the saved reference.
+  Optional 2D depth offsets retain their checked constant DAG identity.
   The shared sampled/depth/multisampled dimensions and sixteen storage formats
   are covered. MSL supplies storage format conversion and absent-channel defaults;
   this target does not reimplement those conversions.

@@ -124,6 +124,7 @@ typedef struct native_pipeline {
     size_t vertex_count;
     struct native_metal_stage_map *metal_compute;
     struct native_d3d12_compute *d3d12_compute;
+    struct native_d3d12_graphics *d3d12_graphics;
     native_binding bindings[NATIVE_MAX_PIPELINE_BINDINGS];
     uint64_t minimum_sizes[NATIVE_MAX_PIPELINE_BINDINGS];
 } native_pipeline;

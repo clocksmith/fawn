@@ -33,10 +33,13 @@ bool spirv_image_type(Emitter *e, const TypeRecord *t, uint32_t id) {
 }
 bool spirv_image_plan(Emitter *e, const IrInstruction *ir) {
     const ImageType image = e->program->types[ir->operands.composite.reserved - 7u].state.image;
-    if (ir->operands.composite.kind != IMAGE_SAMPLE_LEVEL || image_arrayed(image.dimension)) e->image_capabilities |= 1u;
-    if (ir->operands.composite.kind == IMAGE_SAMPLE_LEVEL && spirv_sampled_type(e, ir->operands.composite.reserved) == 0u) return false;
+    const bool sampling = ir->operands.composite.kind == IMAGE_SAMPLE_LEVEL ||
+        ir->operands.composite.kind == IMAGE_SAMPLE_COMPARE_LEVEL;
+    if (!sampling || image_arrayed(image.dimension)) e->image_capabilities |= 1u;
+    if (sampling && spirv_sampled_type(e, ir->operands.composite.reserved) == 0u) return false;
     if (ir->type != IR_VOID && spirv_zero_constant(e, ir->type) == 0u) return false;
     (void)spirv_zero_constant(e, IR_I32);
+    if (sampling) (void)spirv_zero_constant(e, IR_F32);
     (void)spirv_unsigned_constant(e, 0u);
     (void)spirv_unsigned_constant(e, 1u);
     e->constants_used |= UINT32_C(1) << ID_TRUE;
@@ -210,19 +213,41 @@ static bool sampled_coordinates(Emitter *e, ImageType image, const uint32_t *ope
     *coordinate = combined;
     return true;
 }
+static bool sample(Emitter *e, const IrInstruction *ir, const TypeRecord *texture, const uint32_t *operands) {
+    const bool compare = ir->operands.composite.kind == IMAGE_SAMPLE_COMPARE_LEVEL;
+    const bool depth = (texture->state.image.flags & DOE_COMPILER_HANDLE_DEPTH) != 0u;
+    uint32_t coordinate;
+    if (!sampled_coordinates(e, texture->state.image, operands, &coordinate)) return false;
+    const uint32_t sampled = spirv_reserve_ids(e, 1u);
+    EMIT(OP_SAMPLED_IMAGE, texture->aux, sampled, e->values[operands[0]], e->values[operands[1]]);
+    const uint32_t last = 3u + (image_arrayed(texture->state.image.dimension) ? 1u : 0u);
+    const bool offset = ir->operands.composite.count == last + 2u;
+    uint32_t lod = compare ? spirv_zero_constant(e, IR_F32) : e->values[operands[last]];
+    if (depth && !compare) {
+        lod = spirv_reserve_ids(e, 1u);
+        if (spirv_value_type(e->program, operands[last]) == IR_I32) {
+            EMIT(OP_CONVERT_S_TO_F, ID_F32, lod, e->values[operands[last]]);
+        } else { EMIT(OP_CONVERT_U_TO_F, ID_F32, lod, e->values[operands[last]]); }
+    }
+    const uint32_t result = depth && !compare ? spirv_reserve_ids(e, 1u) : e->values[ir->result];
+    const uint32_t type = depth && !compare ? spirv_target_type(e, vector_type(e, IR_F32, 4u)) : spirv_target_type(e, ir->type);
+    if (compare) {
+        if (offset) {
+            EMIT(OP_IMAGE_SAMPLE_DREF_EXPLICIT_LOD, type, result, sampled, coordinate, e->values[operands[last]],
+                 10u, lod, e->values[operands[last + 1u]]);
+        } else { EMIT(OP_IMAGE_SAMPLE_DREF_EXPLICIT_LOD, type, result, sampled, coordinate, e->values[operands[last]], 2u, lod); }
+    } else if (offset) {
+        EMIT(OP_IMAGE_SAMPLE_EXPLICIT_LOD, type, result, sampled, coordinate, 10u, lod, e->values[operands[last + 1u]]);
+    } else { EMIT(OP_IMAGE_SAMPLE_EXPLICIT_LOD, type, result, sampled, coordinate, 2u, lod); }
+    if (depth && !compare) { EMIT(OP_COMPOSITE_EXTRACT, ID_F32, e->values[ir->result], result, 0u); }
+    return !e->failed;
+}
 bool spirv_image_operation(Emitter *e, const IrInstruction *ir) {
     const TypeRecord *texture = &e->program->types[ir->operands.composite.reserved - 7u];
     const uint32_t *operands = e->program->typed_operands + ir->operands.composite.first;
     const ImageOperation op = (ImageOperation)ir->operands.composite.kind;
     if (op == IMAGE_LOAD || op == IMAGE_STORE) return texel(e, ir, texture, operands);
-    if (op != IMAGE_SAMPLE_LEVEL) return query(e, ir, texture->state.image, operands);
-    uint32_t coordinate;
-    if (!sampled_coordinates(e, texture->state.image, operands, &coordinate)) return false;
-    const uint32_t sampled = spirv_reserve_ids(e, 1u);
-    EMIT(OP_SAMPLED_IMAGE, texture->aux, sampled, e->values[operands[0]], e->values[operands[1]]);
-    const uint32_t level = 3u + (image_arrayed(texture->state.image.dimension) ? 1u : 0u);
-    EMIT(OP_IMAGE_SAMPLE_EXPLICIT_LOD, spirv_target_type(e, ir->type), e->values[ir->result], sampled,
-         coordinate, 2u, e->values[operands[level]]);
-    return true;
+    if (op == IMAGE_SAMPLE_LEVEL || op == IMAGE_SAMPLE_COMPARE_LEVEL) return sample(e, ir, texture, operands);
+    return query(e, ir, texture->state.image, operands);
 }
 #undef EMIT

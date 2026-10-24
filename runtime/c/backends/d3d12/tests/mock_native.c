@@ -470,3 +470,32 @@ void doe_dx_native_resolve_timestamps(doe_dx_native_commands *commands,
     mock.resolve_buffer = destination;
     mock.timestamp_resolves++;
 }
+
+doe_dx_status doe_dx_native_render_create(doe_dx_native_context *context,
+    const doe_dx_render_pipeline_desc *desc,doe_dx_native_pipeline **out,doe_dx_error *error) {
+    assert(context && desc);
+    doe_dx_status status=outcome(MOCK_GRAPHICS,error);
+    if (status!=DOE_DX_OK) return status;
+    *out=calloc(1,sizeof(**out));
+    assert(*out);
+    mock.pipelines++;
+    return DOE_DX_OK;
+}
+doe_dx_status doe_dx_native_render(doe_dx_native_commands *commands,doe_dx_native_texture *color,
+    bool clear,const float clear_color[4],bool discard,const doe_dx_native_render_draw *draws,
+    size_t count,doe_dx_error *error) {
+    (void)clear_color;
+    doe_dx_status status=outcome(MOCK_DRAW,error);
+    if (status!=DOE_DX_OK) return status;
+    record_texture(commands,color);
+    for (size_t i=0;i<count;++i) {
+        for (size_t stage=0;stage<DOE_DX_RENDER_STAGES;++stage)
+            record_resources(commands,draws[i].pipeline,&draws[i].stages[stage]);
+        mock.last_render_draw=draws[i];
+    }
+    mock.render_passes++;
+    mock.render_draws+=count;
+    mock.render_clear=clear;
+    mock.render_discard=discard;
+    return DOE_DX_OK;
+}

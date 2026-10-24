@@ -45,10 +45,12 @@ static bool texture(const DoeCompilerResourceV4 *resource,const DoeCompilerHandl
         DOE_COMPILER_HLSL_REGISTER_SRV : DOE_COMPILER_HLSL_REGISTER_UAV);
 }
 
-bool native_d3d12_stage_bindings(const native_pipeline *pipeline,const native_stage *stage,
-    native_d3d12_layout *out,native_d3d12_compute *map)
+bool native_d3d12_stage_bindings_for(const native_pipeline *pipeline,const native_stage *stage,
+    uint32_t expected_stage,native_d3d12_layout *out,native_d3d12_compute *map)
 {
-    if (!pipeline || !stage || !out || !map) return false;
+    if (!pipeline || !stage || !out || !map ||
+        (expected_stage!=DOE_COMPILER_STAGE_COMPUTE && expected_stage!=DOE_COMPILER_STAGE_VERTEX &&
+         expected_stage!=DOE_COMPILER_STAGE_FRAGMENT)) return false;
     const doe_shader_view *view = &stage->view;
     const DoeCompilerEntryV5 *entry = stage->entry;
     if (view->target != DOE_SHADER_HLSL || view->target_language_version != 600 ||
@@ -59,7 +61,7 @@ bool native_d3d12_stage_bindings(const native_pipeline *pipeline,const native_st
         return false;
     size_t selected = SIZE_MAX;
     for (size_t i = 0; i < view->counts.entries; ++i) if (&view->entries[i] == entry) selected=i;
-    if (selected == SIZE_MAX || entry->stage != DOE_COMPILER_STAGE_COMPUTE ||
+    if (selected == SIZE_MAX || entry->stage != expected_stage ||
         entry->first_resource_reference > view->counts.entry_references ||
         entry->resource_reference_count > view->counts.entry_references - entry->first_resource_reference ||
         entry->resource_reference_count != pipeline->binding_count) return false;
@@ -126,7 +128,8 @@ bool native_d3d12_stage_bindings(const native_pipeline *pipeline,const native_st
         if (native) return false;
         native = &view->hlsl_entries[i];
     }
-    if (!native || native->stage != DOE_COMPILER_STAGE_COMPUTE || native->flags) return false;
+    if (!native || native->stage != expected_stage || native->flags) return false;
+    if (expected_stage != DOE_COMPILER_STAGE_COMPUTE && native->dispatch_bytes) return false;
     if (!native->dispatch_bytes) {
         if (native->dispatch_register != UINT32_MAX || native->dispatch_space != UINT32_MAX) return false;
     } else {
@@ -140,4 +143,10 @@ bool native_d3d12_stage_bindings(const native_pipeline *pipeline,const native_st
     *out = layout;
     *map = result;
     return true;
+}
+
+bool native_d3d12_stage_bindings(const native_pipeline *pipeline,const native_stage *stage,
+    native_d3d12_layout *out,native_d3d12_compute *map)
+{
+    return native_d3d12_stage_bindings_for(pipeline,stage,DOE_COMPILER_STAGE_COMPUTE,out,map);
 }

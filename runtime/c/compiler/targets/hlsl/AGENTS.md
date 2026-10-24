@@ -66,3 +66,10 @@ fence or insert unrelated synchronization. Keep group initialization/barriers
 with the existing workgroup owner. The optional atomic-software route executes
 fresh emitted HLSL through official DXC/SPIR-V on explicit CPU Vulkan; it does
 not establish D3D12 or physical GPU support.
+
+Explicit depth sampling consumes the common image operation and existing handle
+flags: ordinary sampling uses an integer WGSL LOD and scalar result; comparison
+sampling uses a comparison sampler, saved depth reference and explicit mip zero.
+Keep 2D optional offsets attached to their validated constant IR/DAG identity,
+never a replayed expression or runtime local. Cube variants have no offset.
+Target-native packed coordinates must retain the separately clamped array layer.

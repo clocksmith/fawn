@@ -19,12 +19,13 @@ remain unsupported, not inferred from ordinary numeric constructibility.
 
 The common typed operation owner implements textureLoad, textureStore,
 textureDimensions, textureNumLevels, textureNumLayers, textureNumSamples, and
-non-depth textureSampleLevel without optional offsets. Integer coordinates,
+non-depth textureSampleLevel without optional offsets, depth textureSampleLevel,
+and textureSampleCompareLevel. Integer coordinates,
 array indices and mip/sample indices accept independently selected i32/u32;
-abstract integers materialize to i32. Explicit-level sampling uses f32 coordinates
+abstract integers materialize to i32. Non-depth explicit-level sampling uses f32 coordinates
 and LOD, an ordinary sampler and an integer array layer. Depth loads return scalar
 f32; other loads return vec4 of the declared sample type. Unsupported overloads,
-formats, external textures and implicit-derivative/compare/gather operations are
+formats, external textures and implicit-derivative/comparison-with-derivatives/gather operations are
 rejected rather than recognized from a particular shader's text.
 
 All operands evaluate once in source order. Handles use resolved typed resource
@@ -47,6 +48,47 @@ invalid mip are zero. Sampling coordinates retain sampler addressing semantics;
 only the separate array layer is clamped before constructing sample coordinates.
 No image-pointer operation, undefined query or invalid fetch is hidden behind an
 after-the-fact select.
+
+## Explicit depth sampling
+
+`textureSampleLevel` admits depth 2D, 2D-array, cube and cube-array textures,
+an ordinary sampler, floating coordinates and an independently selected i32/u32
+mip level. Its result is scalar f32. `textureSampleCompareLevel` admits the same
+shapes with a comparison sampler and f32 depth reference; it always requests mip
+zero. Both operations are allowed in compute, vertex and fragment stages and
+retain ordinary sampler addressing/filtering. Array indices clamp independently
+to the valid layer range, including negative signed and large unsigned indices.
+
+The optional offset on the 2D and 2D-array overloads is a const-expression
+vec2<i32>, with each component in [-8,7]. Const evaluation and range checking also
+apply in skipped runtime branches; let, mutable and override-stage offsets reject.
+Cube overloads do not accept an offset. The offset retains its typed constant DAG
+identity through target lowering; a runtime value is not substituted for an
+immediate native operand. All other arguments retain eager once-only source order.
+
+The existing DEPTH and COMPARISON handle flags are the complete public facts;
+there is no new ABI, implicit runtime sampler choice or target-specific grammar.
+SPIR-V uses OpImageSampleDrefExplicitLod with LOD zero for comparisons and preserves
+ConstOffset module constants. Non-comparison depth sampling extracts the scalar
+from the sampled vector and converts its integer LOD to target floating LOD.
+MSL uses depth texture methods sample/sample_compare; HLSL uses SampleLevel and
+SampleCmpLevelZero with their matching sampler types. The comparison sampler
+compares the supplied reference with the sampled depth, as specified by
+[WebGPU GPUCompareFunction](https://www.w3.org/TR/webgpu/#enumdef-gpucomparefunction).
+
+`make depth-sampling-check` exercises every admitted depth shape across the three
+public target adapters, sampler/type/arity errors, const offsets, stage admission,
+exact handle metadata, measurement symmetry and untouched failure outputs. The
+optional test arguments are an empty artifact directory and the unchanged
+[depth_sampling.wgsl](tests/depth_sampling.wgsl) runtime fixture. It adds observable
+argument order, mip/layer/addressing differences and OOB buffer guards. Actual
+SPIR-V/DXC/MSL validation and public CPU execution are separate recorded checks;
+host admission is not an execution oracle or physical-device qualification.
+
+Implicit-derivative depth sampling/comparison, sampleGrad, gather, external
+textures and optional offsets on non-depth sampling remain outside this slice.
+The authoritative overloads are [WGSL explicit level sampling](https://www.w3.org/TR/WGSL/#texturesamplelevel)
+and [explicit comparison sampling](https://www.w3.org/TR/WGSL/#texturesamplecomparelevel).
 
 ## Public metadata and physical requirements
 
