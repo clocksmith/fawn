@@ -42,9 +42,24 @@ pub const Region = struct {
     image_height: u32,
     /// Bytes touched after copy.offset, excluding trailing row/image padding.
     required_bytes: u64,
+    /// Bytes of one block row of the copy, and block rows per image.
+    row_bytes: u32,
+    rows: u32,
 };
 
 pub fn validate(buffer_size: u64, texture: Texture, copy: Copy, direction: Direction, alignment: Alignment) Error!Region {
+    return validateLayout(buffer_size, texture, copy, direction, alignment, true);
+}
+
+/// GPUQueue.writeTexture layout: like a buffer copy, but neither the data
+/// offset nor bytesPerRow need texel alignment
+/// (https://gpuweb.github.io/gpuweb/#dom-gpuqueue-writetexture). Callers
+/// repack such data before a native buffer-to-image copy.
+pub fn validateWrite(data_size: u64, texture: Texture, copy: Copy) Error!Region {
+    return validateLayout(data_size, texture, copy, .buffer_to_texture, .native, false);
+}
+
+fn validateLayout(buffer_size: u64, texture: Texture, copy: Copy, direction: Direction, alignment: Alignment, texel_aligned: bool) Error!Region {
     const extent = try validateExtent(texture, copy, alignment);
     const block = layout.copy_block_extent(texture.format);
     const aspect = try resolveAspect(texture.format, copy.aspect, direction);
@@ -52,7 +67,7 @@ pub fn validate(buffer_size: u64, texture: Texture, copy: Copy, direction: Direc
     const depth_stencil = formats.isDepthStencilFormat(texture.format);
     if (depth_stencil and (copy.width != extent[0] or copy.height != extent[1])) return error.TextureCopyRange;
     const offset_alignment = if (depth_stencil) DEPTH_STENCIL_OFFSET_ALIGNMENT else bytes;
-    if (copy.offset % offset_alignment != 0) return error.TextureCopyLayout;
+    if (texel_aligned and copy.offset % offset_alignment != 0) return error.TextureCopyLayout;
     const columns = std.math.divCeil(u64, copy.width, block[0]) catch unreachable;
     const rows = std.math.divCeil(u64, copy.height, block[1]) catch unreachable;
     const row_bytes = columns * bytes;
@@ -65,7 +80,7 @@ pub fn validate(buffer_size: u64, texture: Texture, copy: Copy, direction: Direc
     }
     const pitch = if (pitch_missing) row_bytes else copy.bytes_per_row;
     const image_rows = if (image_rows_missing) rows else copy.rows_per_image;
-    if (pitch < row_bytes or pitch % bytes != 0 or image_rows < rows) return error.TextureCopyLayout;
+    if (pitch < row_bytes or (texel_aligned and pitch % bytes != 0) or image_rows < rows) return error.TextureCopyLayout;
     var required: u64 = 0;
     if (copy.depth_or_layers != 0) {
         const image_stride = std.math.mul(u64, pitch, image_rows) catch return error.TextureCopyRange;
@@ -83,6 +98,8 @@ pub fn validate(buffer_size: u64, texture: Texture, copy: Copy, direction: Direc
         .image_rows = std.math.cast(u32, image_rows) orelse return error.TextureCopyRange,
         .row_length = std.math.cast(u32, (pitch / bytes) * block[0]) orelse return error.TextureCopyRange,
         .image_height = std.math.cast(u32, image_rows * block[1]) orelse return error.TextureCopyRange,
+        .row_bytes = std.math.cast(u32, row_bytes) orelse return error.TextureCopyRange,
+        .rows = std.math.cast(u32, rows) orelse return error.TextureCopyRange,
     };
 }
 
@@ -192,6 +209,17 @@ fn resolveAspect(format: u32, requested: u32, direction: Direction) Error!Aspect
     if (format == values.WGPUTextureFormat_Depth24Plus or format == values.WGPUTextureFormat_Depth24PlusStencil8) return error.TextureCopyUnsupported;
     if (direction == .buffer_to_texture and (format == values.WGPUTextureFormat_Depth32Float or format == values.WGPUTextureFormat_Depth32FloatStencil8)) return error.TextureCopyAspect;
     return .depth;
+}
+
+test "queue writes accept unaligned offsets and row pitches that buffer copies reject" {
+    const texture = Texture{ .width = 8, .height = 4, .layers = 1, .mip_levels = 1, .samples = 1, .dimension = values.WGPUTextureDimension_2D, .format = values.WGPUTextureFormat_RG8Unorm };
+    const copy = Copy{ .offset = 3, .bytes_per_row = 21, .rows_per_image = 4, .mip = 0, .width = 3, .height = 4, .depth_or_layers = 1 };
+    try std.testing.expectError(error.TextureCopyLayout, validate(3 + 21 * 3 + 6, texture, copy, .buffer_to_texture, .native));
+    const region = try validateWrite(3 + 21 * 3 + 6, texture, copy);
+    try std.testing.expectEqual(@as(u32, 6), region.row_bytes);
+    try std.testing.expectEqual(@as(u32, 4), region.rows);
+    try std.testing.expectEqual(@as(u32, 21), region.pitch);
+    try std.testing.expectError(error.TextureCopyRange, validateWrite(3 + 21 * 3 + 5, texture, copy));
 }
 
 test "copy regions preserve array and volume origins and reject bounds before arithmetic" {
