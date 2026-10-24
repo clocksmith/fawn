@@ -560,8 +560,9 @@ maxMemoryAllocationSize, never by maxBufferSize (`tests/large_write.c` writes
 past the 256 MiB default and checks that a public buffer of that size still
 fails). `tests/limits.c` prints the default,
 adapter and device columns and checks each resolution rule and default-limit
-rejection. The compiler admits shader binding numbers 0..31 only, so groups with
-higher binding numbers execute while shaders cannot yet reference them.
+rejection. The native shader policy selects core binding numbers
+(`native_shader_semantic_flags`), so shaders reference bindings 0..999 in groups
+0..3; the compiler's standalone default stays 0..31.
 
 ## Storage textures
 
@@ -658,9 +659,9 @@ triangle/line lists or strips and every pinned WebGPU vertex format (8/16/32-bit
 integer and normalized, float16/32, unorm10-10-10-2, unorm8x4-bgra) with offsets
 aligned to min(4, format size).
 PointList without device maintenance5, dual-source blending,
-vertex-stage storage writes (fragment writes need enabled fragmentStoresAndAtomics)
-and fragment FragDepth/SampleIndex/SampleMask
-remain explicitly rejected. WGSL discard requires actual enabled demote support;
+and vertex-stage storage writes (fragment writes need enabled fragmentStoresAndAtomics)
+remain explicitly rejected. Fragment frag_depth, sample_index and sample_mask are
+admitted where the backend reports fragment builtins (`tests/depth.c`). WGSL discard requires actual enabled demote support;
 unsupported devices reject that pipeline. Blend constants must be finite f32.
 Texture format reinterpretation beyond srgb/unorm viewFormats pairs (RGBA8,
 BGRA8; resource-validated, then a mutable Vulkan image with a format list), srgb
