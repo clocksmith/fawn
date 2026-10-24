@@ -559,6 +559,79 @@ static void host_replay_program(state *s)
 
 #include "metal_mixed_host.h"
 
+static void queue_upload_admission(state *s)
+{
+    native_device *device = (native_device *)s->device;
+    unsigned baseline = mocks[2].live;
+    WGPUTextureDescriptor descriptor = WGPU_TEXTURE_DESCRIPTOR_INIT;
+    descriptor.size = (WGPUExtent3D){1,2,1};
+    descriptor.format = WGPUTextureFormat_RGBA8Unorm;
+    descriptor.usage = WGPUTextureUsage_CopyDst;
+    WGPUTexture image = wgpuDeviceCreateTexture(s->device, &descriptor);
+    assert(image);
+    unsigned live = mocks[2].live;
+    /* Isolate the public admission bound in this host-owned fixture. The real
+     * mock backend allocation cap remains4096; no public mutation API exists. */
+    native_lock(device);
+    uint64_t original = device->backend.limits.maxBufferSize;
+    device->backend.limits.maxBufferSize = 256;
+    native_unlock(device);
+    assert(native_allocation_bound(device) == device->backend.value.metal.caps.max_buffer_length);
+    WGPUBufferDescriptor public_buffer = {.size=512, .usage=WGPUBufferUsage_CopyDst};
+    wgpuDevicePushErrorScope(s->device, WGPUErrorFilter_Validation);
+    assert(!wgpuDeviceCreateBuffer(s->device, &public_buffer));
+    pop(s, WGPUErrorType_Validation);
+    const unsigned char data[12] = {0xa5,0x5a,0xf0,17,31,63,127,0xc3,192,128,64,8};
+    WGPUTexelCopyTextureInfo destination = {.texture=image};
+    WGPUTexelCopyBufferLayout layout = {.offset=3,.bytesPerRow=5,.rowsPerImage=2};
+    WGPUExtent3D extent = {1,2,1};
+    unsigned uploads = mocks[2].uploads;
+    wgpuQueueWriteTexture(s->queue, &destination, data, sizeof(data), &layout, &extent);
+    assert(mocks[2].uploads == uploads + 1 && mocks[2].live == live && !s->errors);
+    assert(mocks[2].image_to.buffer_offset == 0 && mocks[2].image_to.bytes_per_row == 256 &&
+        mocks[2].image_to.bytes_per_image == 512 && mocks[2].image_to.region.height == 2);
+    buffer_failure = DOE_MTL_OUT_OF_MEMORY;
+    wgpuDevicePushErrorScope(s->device, WGPUErrorFilter_OutOfMemory);
+    wgpuQueueWriteTexture(s->queue, &destination, data, sizeof(data), &layout, &extent);
+    pop(s, WGPUErrorType_OutOfMemory);
+    buffer_failure = DOE_MTL_OK;
+    assert(mocks[2].uploads == uploads + 1 && mocks[2].live == live);
+    mocks[2].fail = MOCK_UPLOAD_IMAGE;
+    exact_message expected = {"Metal: injected native failure (native=-71): owned fault boundary", 0};
+    WGPUPopErrorScopeCallbackInfo scope = {.mode=WGPUCallbackMode_AllowProcessEvents,
+        .callback=exact_scope,.userdata1=&expected};
+    wgpuDevicePushErrorScope(s->device, WGPUErrorFilter_Internal);
+    wgpuQueueWriteTexture(s->queue, &destination, data, sizeof(data), &layout, &extent);
+    mocks[2].fail = MOCK_NONE;
+    assert(wgpuDevicePopErrorScope(s->device, scope).id);
+    overwrite_stack();
+    wgpuInstanceProcessEvents(s->instance);
+    assert(expected.calls == 1 && mocks[2].live == live);
+    wgpuQueueWriteTexture(s->queue, &destination, data, sizeof(data), &layout, &extent);
+    assert(mocks[2].uploads == uploads + 2 && mocks[2].live == live && !s->errors);
+    native_lock(device);
+    device->backend.limits.maxBufferSize = original;
+    native_unlock(device);
+    wgpuTextureRelease(image);
+    assert(mocks[2].live == baseline);
+    /* A valid texture write beyond the actual native allocation cap is OOM,
+     * before either CPU staging or a native buffer/command can be published. */
+    descriptor.size.height = 17;
+    image = wgpuDeviceCreateTexture(s->device, &descriptor);
+    assert(image);
+    unsigned created = mocks[2].created;
+    unsigned char larger[68] = {0};
+    destination.texture = image;
+    layout = (WGPUTexelCopyBufferLayout){.bytesPerRow=4,.rowsPerImage=17};
+    extent.height = 17;
+    wgpuDevicePushErrorScope(s->device, WGPUErrorFilter_OutOfMemory);
+    wgpuQueueWriteTexture(s->queue, &destination, larger, sizeof(larger), &layout, &extent);
+    pop(s, WGPUErrorType_OutOfMemory);
+    assert(mocks[2].created == created && !device->pending);
+    wgpuTextureRelease(image);
+    assert(mocks[2].live == baseline && !s->errors);
+}
+
 static void required_metal_limits(state *s)
 {
     WGPULimits supported = WGPU_LIMITS_INIT;
@@ -826,6 +899,7 @@ int main(void)
     assert(wgpuQueueOnSubmittedWorkDone(s.queue,completion).id && completed == 1 && !device->pending);
     assert(mocks[2].copies == 1 && mocks[2].fills == 2);
     host_replay_program(&s);
+    queue_upload_admission(&s);
     required_metal_limits(&s);
     sampled_float_admission(&s);
     reject_metal_fragment_stores(&s);

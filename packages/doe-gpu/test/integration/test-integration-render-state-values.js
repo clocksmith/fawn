@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 // Render and copy state crosses the addon as webgpu.h values on every provider:
 // sampler filters, stencil operations, copy aspects, per-aspect attachment
-// operations, null color slots and fragment-less pipelines, checked by readback.
+// operations, null color slots and fragment-less pipelines, checked by readback;
+// provider validation errors reach native error scopes.
 
 import assert from 'node:assert/strict';
 import { providerInfo } from '../../src/index.js';
@@ -92,10 +93,28 @@ for (const format of ['stencil8', 'depth24plus-stencil8']) {
 }
 
 {
+  // A provider-side validation error lands in the innermost native error scope.
+  const texture = device.createTexture({ size: SIZE, format: 'rgba8unorm', usage: T.COPY_DST });
+  device.pushErrorScope('validation');
+  device.queue.writeTexture({ texture, origin: { x: 3 } }, new Uint8Array(64), { bytesPerRow: 16 }, SIZE);
+  const error = await device.popErrorScope();
+  assert(error instanceof Error && error.message.length > 0, `writeTexture range error reaches the scope, got ${error}`);
+  console.log('ok: error scopes capture provider validation errors');
+}
+
+{
+  // createShaderModule generates a validation error for invalid WGSL as well
+  // as reporting it through getCompilationInfo; a valid module generates none.
+  device.pushErrorScope('validation');
   const invalid = device.createShaderModule({ code: 'not WGSL' });
+  const error = await device.popErrorScope();
+  assert(error instanceof Error && error.message.length > 0, `invalid WGSL reaches the validation scope, got ${error}`);
   const messages = (await invalid.getCompilationInfo()).messages;
   assert(messages.some((message) => message.type === 'error' && message.message.length > 0), 'invalid WGSL reports an error message');
-  console.log('ok: invalid WGSL reports compilation errors');
+  device.pushErrorScope('validation');
+  device.createShaderModule({ code: '@compute @workgroup_size(1) fn main() {}' });
+  assert((await device.popErrorScope()) === null, 'valid WGSL generates no validation error');
+  console.log('ok: invalid WGSL reports a validation error and compilation errors');
 }
 
 // The Zig drop-in renders one color attachment and no depth-only passes; it

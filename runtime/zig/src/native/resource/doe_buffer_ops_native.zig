@@ -16,6 +16,7 @@ const callback_delivery = @import("../support/doe_callback_owner.zig");
 const runtime_helpers = @import("../support/doe_native_runtime_helpers.zig");
 const vulkan_lifetime = @import("../vulkan/vulkan_lifetime.zig");
 const queue_submit_shared = @import("../queue/doe_queue_submit_shared.zig");
+const error_scope = @import("../../runtime/diagnostics/error_scope.zig");
 const d3d12_constants = resource_ops.d3d12_constants;
 const bridge = resource_ops.metal_bridge;
 const vk_resources = if (has_vulkan) resource_ops.vk_resources else struct {};
@@ -118,10 +119,42 @@ pub export fn doeNativeDeviceCreateBuffer(dev_raw: ?*anyopaque, desc: ?*const ab
     return raw;
 }
 
+/// webgpu.h WGPUBufferUsage_Indirect; the core ABI module omits it.
+const BUFFER_USAGE_INDIRECT: u64 = 0x0000000000000100;
+const VALID_BUFFER_USAGE: u64 = abi_core.WGPUBufferUsage_MapRead | abi_core.WGPUBufferUsage_MapWrite |
+    abi_core.WGPUBufferUsage_CopySrc | abi_core.WGPUBufferUsage_CopyDst | abi_core.WGPUBufferUsage_Index |
+    abi_core.WGPUBufferUsage_Vertex | abi_core.WGPUBufferUsage_Uniform | abi_core.WGPUBufferUsage_Storage |
+    BUFFER_USAGE_INDIRECT | abi_core.WGPUBufferUsage_QueryResolve;
+
+/// https://gpuweb.github.io/gpuweb/#dom-gpudevice-createbuffer device-timeline
+/// rules, matching runtime/c/resources doe_resource_buffer_validate.
+pub fn bufferDescriptorError(d: *const abi_pipeline.WGPUBufferDescriptor) ?[]const u8 {
+    if (d.usage == 0) return "buffer usage must not be zero";
+    if ((d.usage & ~VALID_BUFFER_USAGE) != 0) return "buffer usage contains unknown flags";
+    if ((d.usage & abi_core.WGPUBufferUsage_MapRead) != 0 and
+        (d.usage & ~(abi_core.WGPUBufferUsage_MapRead | abi_core.WGPUBufferUsage_CopyDst)) != 0)
+        return "MAP_READ buffer usage may only combine with COPY_DST";
+    if ((d.usage & abi_core.WGPUBufferUsage_MapWrite) != 0 and
+        (d.usage & ~(abi_core.WGPUBufferUsage_MapWrite | abi_core.WGPUBufferUsage_CopySrc)) != 0)
+        return "MAP_WRITE buffer usage may only combine with COPY_SRC";
+    if (d.mappedAtCreation != 0 and d.size % 4 != 0) return "mappedAtCreation buffer size must be a multiple of 4";
+    return null;
+}
+
 fn createBuffer(dev_raw: ?*anyopaque, desc: ?*const abi_pipeline.WGPUBufferDescriptor) ?*anyopaque {
     const dev = cast(DoeDevice, dev_raw) orelse return null;
     if (!dev.requireAlive()) return null;
     const d = desc orelse return null;
+    if (bufferDescriptorError(d)) |message| {
+        // An invalid buffer object, never NULL: later uses report through the
+        // existing error_object checks (bind groups, copies, maps, submit).
+        dev.error_scopes.deliver(error_scope.ERROR_TYPE_VALIDATION, message);
+        const invalid = make(DoeBuffer) orelse return null;
+        invalid.* = .{ .backend = dev.backend, .dev = dev, .size = d.size, .usage = d.usage, .error_object = true };
+        const result = toOpaque(invalid);
+        label_store.set(result, d.label.data, d.label.length);
+        return result;
+    }
     const buf = make(DoeBuffer) orelse return null;
     buf.* = .{ .backend = dev.backend, .dev = dev, .size = d.size, .usage = d.usage };
     if (comptime has_vulkan) {

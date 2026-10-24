@@ -76,7 +76,12 @@ sliced 3D). Buffer copies of block formats count block columns and rows
 (`rows_per_image` is in block rows; native row length and image height are
 texels), regions start block-aligned and end on whole blocks or at the
 subresource edge, and a block-rounded WebGPU extent is clamped to that edge.
-`tests/image_format_contract.c` checks the gate, block caps and copy regions.
+Texture copies clamp each side to its own edge; when the clamped extents differ
+(a block at one side's edge only) no VkImageCopy region is valid, so the copy
+stages through a command-owned device buffer of whole blocks.
+`tests/image_format_contract.c` checks the gate, block caps and copy regions;
+`tests/block_copy_contract.c` the staged and direct copy packets. The srgb/unorm
+view-format pairs include BC1, BC2, BC3 and BC7.
 `doe_vk_texture_view_desc.swizzle` names each channel's native VkComponentSwizzle
 source (zero is identity); a swizzled view is sampled-only, so color/depth
 attachments and storage bindings reject it (`tests/texture_contract.c`,

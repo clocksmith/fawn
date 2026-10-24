@@ -107,6 +107,23 @@ static void metal_graphics_pixels(state *s)
     pixels = map(s, readback, 2048);
     for (size_t y = 0; y < 8; ++y) assert(!memcmp(pixels + y * 256, upload + y * 32, 32));
     wgpuBufferUnmap(readback);
+    /* Queue data is byte-addressed: offset3 and pitch5 are legal for these two
+     * RGBA8 rows. Distinct prefix/inter-row padding must not reach the image. */
+    const unsigned char unaligned[12] = {0xa5,0x5a,0xf0,17,31,63,127,0xc3,192,128,64,8};
+    destination.origin = (WGPUOrigin3D){3,2,0};
+    layout = (WGPUTexelCopyBufferLayout){.offset=3,.bytesPerRow=5,.rowsPerImage=2};
+    extent = (WGPUExtent3D){1,2,1};
+    wgpuQueueWriteTexture(s->queue, &destination, unaligned, sizeof(unaligned), &layout, &extent);
+    encoder = wgpuDeviceCreateCommandEncoder(s->device, NULL);
+    texture_to_buffer(encoder, image, readback, 0, 8, 8);
+    submit(s, encoder);
+    pixels = map(s, readback, 2048);
+    const unsigned char first[4] = {17,31,63,127}, second[4] = {192,128,64,8};
+    for (size_t y = 0; y < 8; ++y) for (size_t x = 0; x < 8; ++x) {
+        const unsigned char *expected = x == 3 && y == 2 ? first : x == 3 && y == 3 ? second : upload + y * 32 + x * 4;
+        assert(!memcmp(pixels + y * 256 + x * 4, expected, 4));
+    }
+    wgpuBufferUnmap(readback);
     wgpuBufferRelease(readback);
     wgpuRenderPipelineRelease(pipeline);
     wgpuTextureViewRelease(view);

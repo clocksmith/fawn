@@ -102,7 +102,7 @@ typedef struct doe_vk_texture_desc {
     bool cube_compatible;
     uint32_t sample_count; /* Zero preserves the original sample1 default. */
     /* Optional borrowed reinterpretation list: only the image format and its
-     * srgb/unorm pair (RGBA8, BGRA8). A list naming the pair creates a
+     * srgb/unorm pair (RGBA8, BGRA8, BC1, BC2, BC3, BC7). A list naming the pair creates a
      * mutable-format image with VkImageFormatListCreateInfo; storage usage is
      * then unsupported because the srgb view could not be a storage image. */
     const doe_vk_texture_format *view_formats;

@@ -91,7 +91,8 @@ static void test_compute_groups(void)
             doe_resource_commands_release(commands);
         } else {
             assert(doe_resource_encoder_finish(encoder, &commands) == expected && !commands);
-            assert(doe_resource_compute_pass_debug(pass, DOE_RESOURCE_DEBUG_MARKER) == expected);
+            /* An ended pass reports STATE itself, whatever its encoder's status. */
+            assert(doe_resource_compute_pass_debug(pass, DOE_RESOURCE_DEBUG_MARKER) == DOE_RESOURCE_STATE);
         }
         doe_resource_encoder_release(encoder);
         doe_resource_compute_pass_release(pass);
@@ -252,7 +253,11 @@ static void test_compute_invalidation(void)
         assert(f.allocations == allocations && encoder->count == 0);
         assert(doe_resource_compute_pass_debug(pass, DOE_RESOURCE_DEBUG_PUSH) == expected);
         doe_resource_commands *commands = NULL;
-        assert(doe_resource_encoder_finish(encoder, &commands) == expected && !commands);
+        if (scenario == 1) {
+            /* Commands on an ended pass report STATE but leave the encoder valid. */
+            assert(doe_resource_encoder_finish(encoder, &commands) == DOE_RESOURCE_OK && commands);
+            doe_resource_commands_release(commands);
+        } else assert(doe_resource_encoder_finish(encoder, &commands) == expected && !commands);
         doe_resource_encoder_release(encoder);
         doe_resource_compute_pass_release(pass);
         empty(&f);

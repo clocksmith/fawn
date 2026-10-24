@@ -402,7 +402,7 @@ pub export fn doeNativeDeviceCreateBindGroup(dev_raw: ?*anyopaque, desc: ?*const
                 if (e.binding + 1 > bg.count) bg.count = e.binding + 1;
             }
         } else if (cast(DoeSampler, e.sampler)) |sampler| {
-            if (!append_render_sampler_binding(bg, e.binding, sampler)) {
+            if (sampler.error_object or !append_render_sampler_binding(bg, e.binding, sampler)) {
                 doeNativeBindGroupRelease(toOpaque(bg));
                 return null;
             }

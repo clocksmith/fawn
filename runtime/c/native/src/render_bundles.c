@@ -27,9 +27,13 @@ WGPURenderBundleEncoder wgpuDeviceCreateRenderBundleEncoder(WGPUDevice handle,
     native_lock(device);
     doe_resource_status status = valid ? doe_resource_bundle_encoder_create(&device->resources,&converted,&encoder) :
         descriptor && descriptor->colorFormatCount > DOE_RESOURCE_MAX_COLOR_ATTACHMENTS ? DOE_RESOURCE_RANGE : DOE_RESOURCE_UNSUPPORTED;
+    /* A rejected descriptor reports here and still returns a WebGPU invalid
+     * encoder: its commands record nothing and its Finish reports and yields an
+     * invalid bundle. */
+    if (status != DOE_RESOURCE_OK) encoder = doe_resource_bundle_encoder_rejected(&device->resources, status);
     native_unlock(device);
     if (status != DOE_RESOURCE_OK) native_error(device, native_resource_error(status), "render bundle descriptor unsupported or invalid");
-    if (encoder) native_label(device, encoder, descriptor->label);
+    if (encoder && descriptor) native_label(device, encoder, descriptor->label);
     return (WGPURenderBundleEncoder)encoder;
 }
 void wgpuRenderBundleEncoderAddRef(WGPURenderBundleEncoder encoder) { doe_resource_bundle_encoder_retain((doe_resource_bundle_encoder *)encoder); }
@@ -54,9 +58,10 @@ void wgpuRenderBundleEncoderSetPipeline(WGPURenderBundleEncoder handle, WGPURend
     native_device *device = doe_resource_bundle_encoder_device(encoder);
     if (!device) return;
     native_lock(device);
+    const bool ended = doe_resource_bundle_encoder_ended(encoder);
     doe_resource_status status = doe_resource_bundle_encoder_set_pipeline(encoder,(doe_resource_render_pipeline *)pipeline);
     native_unlock(device);
-    if (status != DOE_RESOURCE_OK) native_error(device, native_resource_error(status), "bundle pipeline binding failed");
+    native_encoding_error(device, ended, status, "bundle pipeline binding failed");
 }
 void wgpuRenderBundleEncoderSetBindGroup(WGPURenderBundleEncoder handle, uint32_t index,
     WGPUBindGroup group, size_t count, const uint32_t *offsets)
@@ -66,9 +71,10 @@ void wgpuRenderBundleEncoderSetBindGroup(WGPURenderBundleEncoder handle, uint32_
     if (!device) return;
     doe_resource_dispatch_group binding = {(doe_resource_bind_group *)group,offsets,count};
     native_lock(device);
+    const bool ended = doe_resource_bundle_encoder_ended(encoder);
     doe_resource_status status = doe_resource_bundle_encoder_set_group(encoder,index,&binding);
     native_unlock(device);
-    if (status != DOE_RESOURCE_OK) native_error(device, native_resource_error(status), "bundle group binding failed");
+    native_encoding_error(device, ended, status, "bundle group binding failed");
 }
 void wgpuRenderBundleEncoderSetVertexBuffer(WGPURenderBundleEncoder handle, uint32_t slot,
     WGPUBuffer buffer, uint64_t offset, uint64_t size)
@@ -77,9 +83,10 @@ void wgpuRenderBundleEncoderSetVertexBuffer(WGPURenderBundleEncoder handle, uint
     native_device *device = doe_resource_bundle_encoder_device(encoder);
     if (!device) return;
     native_lock(device);
+    const bool ended = doe_resource_bundle_encoder_ended(encoder);
     doe_resource_status status = doe_resource_bundle_encoder_set_vertex(encoder,slot,(doe_resource_buffer *)buffer,offset,size);
     native_unlock(device);
-    if (status != DOE_RESOURCE_OK) native_error(device, native_resource_error(status), "bundle vertex binding failed");
+    native_encoding_error(device, ended, status, "bundle vertex binding failed");
 }
 void wgpuRenderBundleEncoderSetIndexBuffer(WGPURenderBundleEncoder handle, WGPUBuffer buffer,
     WGPUIndexFormat format, uint64_t offset, uint64_t size)
@@ -88,9 +95,10 @@ void wgpuRenderBundleEncoderSetIndexBuffer(WGPURenderBundleEncoder handle, WGPUB
     native_device *device = doe_resource_bundle_encoder_device(encoder);
     if (!device) return;
     native_lock(device);
+    const bool ended = doe_resource_bundle_encoder_ended(encoder);
     doe_resource_status status = doe_resource_bundle_encoder_set_index(encoder,(doe_resource_buffer *)buffer,format,offset,size);
     native_unlock(device);
-    if (status != DOE_RESOURCE_OK) native_error(device, native_resource_error(status), "bundle index binding failed");
+    native_encoding_error(device, ended, status, "bundle index binding failed");
 }
 void wgpuRenderBundleEncoderDrawIndexed(WGPURenderBundleEncoder handle, uint32_t count,
     uint32_t instances, uint32_t first_index, int32_t base_vertex, uint32_t first_instance)
@@ -99,9 +107,10 @@ void wgpuRenderBundleEncoderDrawIndexed(WGPURenderBundleEncoder handle, uint32_t
     native_device *device = doe_resource_bundle_encoder_device(encoder);
     if (!device) return;
     native_lock(device);
+    const bool ended = doe_resource_bundle_encoder_ended(encoder);
     doe_resource_status status = doe_resource_bundle_encoder_draw(encoder,true,count,instances,first_index,base_vertex,first_instance);
     native_unlock(device);
-    if (status != DOE_RESOURCE_OK) native_error(device, native_resource_error(status), "bundle indexed draw failed");
+    native_encoding_error(device, ended, status, "bundle indexed draw failed");
 }
 void wgpuRenderBundleEncoderDraw(WGPURenderBundleEncoder handle, uint32_t count,
     uint32_t instances, uint32_t first, uint32_t first_instance)
@@ -110,9 +119,10 @@ void wgpuRenderBundleEncoderDraw(WGPURenderBundleEncoder handle, uint32_t count,
     native_device *device = doe_resource_bundle_encoder_device(encoder);
     if (!device) return;
     native_lock(device);
+    const bool ended = doe_resource_bundle_encoder_ended(encoder);
     doe_resource_status status = doe_resource_bundle_encoder_draw(encoder,false,count,instances,first,0,first_instance);
     native_unlock(device);
-    if (status != DOE_RESOURCE_OK) native_error(device, native_resource_error(status), "bundle draw failed");
+    native_encoding_error(device, ended, status, "bundle draw failed");
 }
 WGPURenderBundle wgpuRenderBundleEncoderFinish(WGPURenderBundleEncoder handle, const WGPURenderBundleDescriptor *descriptor)
 {
@@ -121,11 +131,16 @@ WGPURenderBundle wgpuRenderBundleEncoderFinish(WGPURenderBundleEncoder handle, c
     if (!device) return NULL;
     doe_resource_render_bundle *bundle = NULL;
     native_lock(device);
-    doe_resource_status status = descriptor && descriptor->nextInChain ?
-        doe_resource_bundle_encoder_invalidate(encoder,DOE_RESOURCE_UNSUPPORTED) :
-        doe_resource_bundle_encoder_finish(encoder,&bundle);
+    if (descriptor && descriptor->nextInChain) (void)doe_resource_bundle_encoder_invalidate(encoder,DOE_RESOURCE_UNSUPPORTED);
+    /* Finish always ends the encoder. A failed finish (including on an encoder
+     * from a rejected descriptor: "this must be valid") reports its error and
+     * returns a WebGPU invalid bundle; executing that bundle invalidates the
+     * pass's command encoder, whose Finish reports it. */
+    doe_resource_status status = doe_resource_bundle_encoder_finish(encoder,&bundle);
+    if (status != DOE_RESOURCE_OK) bundle = doe_resource_render_bundle_rejected(encoder);
     native_unlock(device);
-    if (status != DOE_RESOURCE_OK) native_error(device, native_resource_error(status), "bundle finish failed");
+    if (status != DOE_RESOURCE_OK)
+        native_error(device, native_resource_error(status), "render bundle encoder invalid: an encoded command or the finish was rejected");
     if (bundle && descriptor) native_label(device, bundle, descriptor->label);
     return (WGPURenderBundle)bundle;
 }

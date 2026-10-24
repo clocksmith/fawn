@@ -80,9 +80,20 @@ void wgpuQueueWriteTexture(WGPUQueue handle, const WGPUTexelCopyTextureInfo *des
     native_lock(device);
     doe_resource_status status = doe_resource_texture_device(texture) == device ?
         doe_resource_texture_copy_validate(data_size, doe_resource_texture_description(texture), &copy,
-            DOE_RESOURCE_BUFFER_TO_TEXTURE, DOE_RESOURCE_COPY_NATIVE, &region) : DOE_RESOURCE_DEVICE_MISMATCH;
+            DOE_RESOURCE_BUFFER_TO_TEXTURE, DOE_RESOURCE_COPY_QUEUE, &region) : DOE_RESOURCE_DEVICE_MISMATCH;
     native_unlock(device);
-    uint64_t bytes = status == DOE_RESOURCE_OK ? copy.offset + region.required_bytes : 0;
+    /* writeTexture data needs no offset or bytesPerRow block alignment: stage
+     * the touched block rows tightly at offset 0 (row_bytes pitch, `rows` rows
+     * per image), which the native copy can address. */
+    const uint64_t first = copy.offset;
+    const uint64_t images = copy.depth_or_layers;
+    uint64_t bytes = status == DOE_RESOURCE_OK ? (uint64_t)region.row_bytes * region.rows * images : 0;
+    const bool tight = status == DOE_RESOURCE_OK && region.pitch == region.row_bytes && region.image_rows == region.rows;
+    copy.offset = 0;
+    if (status == DOE_RESOURCE_OK) {
+        copy.bytes_per_row = region.row_bytes;
+        copy.rows_per_image = region.rows;
+    }
     if (status != DOE_RESOURCE_OK || bytes > SIZE_MAX - 3) {
         native_error(device, WGPUErrorType_Validation, "queue texture write range invalid");
         native_device_release(device);
@@ -90,18 +101,33 @@ void wgpuQueueWriteTexture(WGPUQueue handle, const WGPUTexelCopyTextureInfo *des
     }
     WGPUBufferDescriptor descriptor = {.size=(bytes + 3) & ~UINT64_C(3),
         .usage=WGPUBufferUsage_CopySrc | WGPUBufferUsage_CopyDst};
-    WGPUBuffer staging = wgpuDeviceCreateBuffer((WGPUDevice)device, &descriptor);
+    /* A valid write whose staging exceeds the backend allocation limit is out of
+     * memory, not a validation error of the request. */
+    if (descriptor.size > native_allocation_bound(device)) {
+        native_error(device, WGPUErrorType_OutOfMemory, "queue texture write staging exceeds the allocation limit");
+        native_device_release(device);
+        return;
+    }
+    /* WebGPU bounds writeTexture by the texture, not maxBufferSize: internal
+     * staging keeps only the backend's real allocation limit. */
+    WGPUBuffer staging = native_device_create_buffer(device, &descriptor, native_allocation_bound(device));
     doe_resource_encoder *encoder = NULL;
     doe_resource_commands *commands = NULL;
     native_lock(device);
     doe_vk_status written = DOE_VK_OK;
     if (staging) {
         native_buffer *payload = doe_resource_buffer_native((doe_resource_buffer *)staging);
-        written = doe_vk_buffer_write(payload->handle.vulkan, 0, data, (size_t)bytes);
+        if (tight || !bytes) written = doe_vk_buffer_write(payload->handle.vulkan, 0,
+            bytes ? (const unsigned char *)data + first : data, (size_t)bytes);
+        else for (uint64_t image = 0; written == DOE_VK_OK && image < images; ++image)
+            for (uint64_t row = 0; written == DOE_VK_OK && row < region.rows; ++row)
+                written = doe_vk_buffer_write(payload->handle.vulkan, (image * region.rows + row) * region.row_bytes,
+                    (const unsigned char *)data + first + (image * region.image_rows + row) * region.pitch,
+                    region.row_bytes);
         status = written == DOE_VK_OK ? doe_resource_encoder_create(&device->resources, &encoder) : DOE_RESOURCE_STATE;
         if (status == DOE_RESOURCE_OK)
             status = doe_resource_encoder_copy_texture(encoder, (doe_resource_buffer *)staging,
-                texture, &copy, DOE_RESOURCE_BUFFER_TO_TEXTURE, DOE_RESOURCE_COPY_NATIVE);
+                texture, &copy, DOE_RESOURCE_BUFFER_TO_TEXTURE, DOE_RESOURCE_COPY_QUEUE);
         if (status == DOE_RESOURCE_OK) status = doe_resource_encoder_finish(encoder, &commands);
     } else status = DOE_RESOURCE_OUT_OF_MEMORY;
     doe_resource_encoder_release(encoder);

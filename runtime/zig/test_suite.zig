@@ -53,6 +53,7 @@ const test_tests_core_precompiled_shader_test_zig_b774eaad = @import("tests/core
 const test_tests_core_command_json_test_zig_64a4dfd4 = @import("tests/core/command_json_test.zig");
 const test_tests_core_trace_test_zig_bedd1081 = @import("tests/core/trace_test.zig");
 const test_tests_core_doe_shader_native_test_zig_58e1b8af = @import("tests/core/doe_shader_native_test.zig");
+const test_tests_core_doe_resource_validation_test_zig_f979441b = @import("tests/core/doe_resource_validation_test.zig");
 const test_tests_core_model_test_zig_200531d0 = @import("tests/core/model_test.zig");
 const test_tests_core_lean_proof_test_zig_62de4475 = @import("tests/core/lean_proof_test.zig");
 const test_tests_core_dispatch_preconditions_test_zig_5beeb735 = @import("tests/core/dispatch_preconditions_test.zig");
@@ -174,6 +175,7 @@ comptime {
     _ = test_tests_core_command_json_test_zig_64a4dfd4;
     _ = test_tests_core_trace_test_zig_bedd1081;
     _ = test_tests_core_doe_shader_native_test_zig_58e1b8af;
+    _ = test_tests_core_doe_resource_validation_test_zig_f979441b;
     _ = test_tests_core_model_test_zig_200531d0;
     _ = test_tests_core_lean_proof_test_zig_62de4475;
     _ = test_tests_core_dispatch_preconditions_test_zig_5beeb735;

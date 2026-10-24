@@ -110,7 +110,7 @@ void wgpuComputePassEncoderEnd(WGPUComputePassEncoder handle)
     native_device *device = doe_resource_compute_pass_device(pass);
     if (!device) return;
     native_lock(device);
-    const bool ended = doe_resource_compute_pass_ended(pass);
+    const bool ended = doe_resource_compute_pass_closed(pass); /* End's at-call rule */
     doe_resource_status status = doe_resource_compute_pass_end(pass);
     native_unlock(device);
     native_encoding_error(device, ended, status, "compute pass end failed");
@@ -147,9 +147,12 @@ WGPUCommandBuffer wgpuCommandEncoderFinish(WGPUCommandEncoder handle, const WGPU
     if (!device) return NULL;
     doe_resource_commands *commands = NULL;
     native_lock(device);
-    doe_resource_status status = descriptor && descriptor->nextInChain ?
-        doe_resource_encoder_invalidate(encoder, DOE_RESOURCE_UNSUPPORTED) :
-        doe_resource_encoder_finish(encoder, &commands);
+    /* A chained descriptor invalidates the encoder; Finish still ends it. A
+     * failed Finish reports once and returns a WebGPU invalid command buffer,
+     * whose submit reports again as WebGPU requires. */
+    if (descriptor && descriptor->nextInChain) (void)doe_resource_encoder_invalidate(encoder, DOE_RESOURCE_UNSUPPORTED);
+    doe_resource_status status = doe_resource_encoder_finish(encoder, &commands);
+    if (status != DOE_RESOURCE_OK) commands = doe_resource_commands_rejected(encoder);
     native_unlock(device);
     if (status != DOE_RESOURCE_OK)
         native_error(device, native_resource_error(status), "command encoder invalid: an encoded command or the finish was rejected");

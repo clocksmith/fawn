@@ -15,6 +15,44 @@ static atomic_uint submits, faults, closed_recordings, closed_contexts;
 static atomic_bool arm_unknown, hold_unknown;
 static _Atomic(doe_vk_commands *) unknown;
 static _Atomic(doe_vk_context *) observed_context;
+static _Thread_local unsigned queue_allocation_countdown, queue_allocation_calls;
+static atomic_uint queue_allocation_faults, command_pool_allocations;
+static VkResult (*command_pool_create)(VkDevice, const VkCommandPoolCreateInfo *,
+    const VkAllocationCallbacks *, VkCommandPool *);
+
+void *__real_calloc(size_t, size_t);
+void *__wrap_calloc(size_t count, size_t size)
+{
+    if (queue_allocation_countdown) {
+        ++queue_allocation_calls;
+        if (!--queue_allocation_countdown) {
+            atomic_fetch_add(&queue_allocation_faults, 1);
+            errno = ENOMEM;
+            return NULL;
+        }
+    }
+    return __real_calloc(count, size);
+}
+
+static VkResult counted_command_pool(VkDevice device, const VkCommandPoolCreateInfo *info,
+    const VkAllocationCallbacks *allocator, VkCommandPool *out)
+{
+    atomic_fetch_add(&command_pool_allocations, 1);
+    return command_pool_create(device, info, allocator, out);
+}
+
+static void count_command_pools(state *s, bool enable)
+{
+    native_device *device = (native_device *)s->device;
+    native_lock(device);
+    doe_vk_context *context = device->backend.value.vulkan.context;
+    if (enable) {
+        command_pool_create = context->vk.vkCreateCommandPool;
+        context->vk.vkCreateCommandPool = counted_command_pool;
+        atomic_store(&command_pool_allocations, 0);
+    } else context->vk.vkCreateCommandPool = command_pool_create;
+    native_unlock(device);
+}
 
 static VkResult allocation_failure(VkDevice device, const VkCommandPoolCreateInfo *info,
     const VkAllocationCallbacks *allocator, VkCommandPool *out)
@@ -185,7 +223,7 @@ static void expect_output(state *s, fixture *f, uint32_t runs)
     wgpuBufferUnmap(f->readback);
 }
 
-typedef struct expected_error { WGPUErrorType type; const char *detail; unsigned count; } expected_error;
+typedef struct expected_error { WGPUErrorType type; const char *detail; unsigned count; bool exact; } expected_error;
 static void failed_preparation(WGPUPopErrorScopeStatus status, WGPUErrorType type,
     WGPUStringView message, void *userdata, void *unused)
 {
@@ -197,9 +235,113 @@ static void failed_preparation(WGPUPopErrorScopeStatus status, WGPUErrorType typ
         assert(message.length < sizeof(bounded));
         memcpy(bounded, message.data, message.length);
         bounded[message.length] = 0;
-        assert(strstr(bounded, expected->detail));
+        if (expected->exact) assert(!strcmp(bounded, expected->detail));
+        else assert(strstr(bounded, expected->detail));
     }
     ++expected->count;
+}
+
+static void bookkeeping_failure(state *s, unsigned allocation)
+{
+    fixture f = create_fixture(s, false);
+    WGPUCommandBuffer commands[2] = {record(s, &f), record(s, &f)};
+    count_command_pools(s, true);
+    expected_error expected = {.type=WGPUErrorType_OutOfMemory,
+        .detail="submission ownership allocation failed", .exact=true};
+    wgpuDevicePushErrorScope(s->device, WGPUErrorFilter_OutOfMemory);
+    atomic_store(&submits, 0);
+    atomic_store(&queue_allocation_faults, 0);
+    queue_allocation_calls = 0;
+    queue_allocation_countdown = allocation;
+    wgpuQueueSubmit(s->queue, 2, commands);
+    assert(!queue_allocation_countdown && queue_allocation_calls == allocation);
+    assert(atomic_load(&queue_allocation_faults) == 1);
+    WGPUPopErrorScopeCallbackInfo popped = {.mode=WGPUCallbackMode_AllowSpontaneous,
+        .callback=failed_preparation,.userdata1=&expected};
+    assert(wgpuDevicePopErrorScope(s->device, popped).id && expected.count == 1 && !s->errors);
+    for (size_t i = 0; i < 2; ++i) {
+        wgpuDevicePushErrorScope(s->device, WGPUErrorFilter_Validation);
+        wgpuQueueSubmit(s->queue, 1, &commands[i]);
+        expect_validation(s);
+        wgpuDevicePushErrorScope(s->device, WGPUErrorFilter_Validation);
+        assert(!doeNativeComputeProgramPrepareHostReplay(s->queue, commands[i]));
+        expect_validation(s);
+        wgpuCommandBufferRelease(commands[i]);
+    }
+    assert(!atomic_load(&submits) && !atomic_load(&command_pool_allocations));
+    count_command_pools(s, false);
+    release_fixture(&f);
+}
+
+typedef struct bookkeeping_release {
+    state *owner;
+    fixture *resources;
+    WGPUCommandBuffer commands[2];
+    unsigned errors;
+} bookkeeping_release;
+
+static void release_in_bookkeeping_error(WGPUDevice const *device, WGPUErrorType type,
+    WGPUStringView message, void *userdata, void *unused)
+{
+    (void)device; (void)unused;
+    static const char detail[] = "submission ownership allocation failed";
+    bookkeeping_release *release = userdata;
+    state *s = release->owner;
+    assert(type == WGPUErrorType_OutOfMemory && !release->errors++);
+    assert(message.length == sizeof(detail) - 1 && !memcmp(message.data, detail, sizeof(detail) - 1));
+    assert(!atomic_load(&submits) && !atomic_load(&command_pool_allocations));
+    /* Invalidation must precede foreign error delivery, so reentrant program
+     * admission cannot acquire a reservation from either fresh batch member. */
+    for (size_t i = 0; i < 2; ++i) {
+        wgpuDevicePushErrorScope(s->device, WGPUErrorFilter_Validation);
+        assert(!doeNativeComputeProgramPrepareHostReplay(s->queue, release->commands[i]));
+        expect_validation(s);
+        wgpuCommandBufferRelease(release->commands[i]);
+        release->commands[i] = NULL;
+    }
+    count_command_pools(s, false);
+    release_fixture(release->resources);
+    wgpuQueueRelease(s->queue);
+    s->queue = NULL;
+    wgpuDeviceRelease(s->device);
+    s->device = NULL;
+    /* Full-call/error leases protect the device even after this callback drops
+     * every public device, queue, command and dependent resource reference. */
+    assert(!atomic_load(&closed_contexts));
+}
+
+static void reentrant_bookkeeping_release(void)
+{
+    state s = {0};
+    consumer_init(&s);
+    fixture f = create_fixture(&s, false);
+    bookkeeping_release release = {.owner=&s,.resources=&f,
+        .commands={record(&s, &f), record(&s, &f)}};
+    native_device *device = (native_device *)s.device;
+    native_lock(device);
+    device->uncaptured = (WGPUUncapturedErrorCallbackInfo){
+        .callback=release_in_bookkeeping_error,.userdata1=&release};
+    atomic_store(&observed_context, device->backend.value.vulkan.context);
+    native_unlock(device);
+    count_command_pools(&s, true);
+    atomic_store(&closed_contexts, 0);
+    atomic_store(&submits, 0);
+    atomic_store(&queue_allocation_faults, 0);
+    queue_allocation_calls = 0;
+    queue_allocation_countdown = 2;
+    wgpuQueueSubmit(s.queue, 2, release.commands);
+    assert(!queue_allocation_countdown && queue_allocation_calls == 2);
+    assert(atomic_load(&queue_allocation_faults) == 1 && release.errors == 1);
+    assert(!s.queue && !s.device && !release.commands[0] && !release.commands[1] && !s.errors);
+    assert(!atomic_load(&submits) && !atomic_load(&command_pool_allocations));
+    for (unsigned i = 0; i < 500 && !atomic_load(&closed_contexts); ++i) {
+        struct timespec delay = {.tv_sec=0,.tv_nsec=10000000};
+        while (nanosleep(&delay, &delay) && errno == EINTR) {}
+    }
+    assert(atomic_load(&closed_contexts) == 1);
+    atomic_store(&observed_context, NULL);
+    wgpuAdapterRelease(s.adapter);
+    wgpuInstanceRelease(s.instance);
 }
 
 static void preparation_fallback(state *s, preparation_fault selected, bool host_replay, bool image_binding)
@@ -324,9 +466,13 @@ int main(void)
     preparation_fallback(&s, FAULT_NONE, true, true); /* Backend seal rejects texture state; host replay admits it. */
     preparation_fallback(&s, FAULT_NONE, false, true);
     reentrant_fallback(&s);
+    bookkeeping_failure(&s, 1);
+    bookkeeping_failure(&s, 2);
     consumer_finish(&s);
+    reentrant_bookkeeping_release();
     pending_program_release();
     printf("PASS program preparation: real Vulkan allocation/record/seal faults restore same-command ordinary/host fallback, "
         "no preparation submissions, texture-binding seal rejection, permanent published ownership, reentrant error fallback "
+        "first/second submit bookkeeping OOM consumes fresh batches with reentrant release-all, "
         "and unknown replay release-all retention %s\n", adapter_class_scope());
 }

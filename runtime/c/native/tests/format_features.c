@@ -246,7 +246,9 @@ static void disabled_controls(state *s)
     expect_validation(s);
     WGPURenderBundleEncoderDescriptor bundle = {.depthStencilFormat=WGPUTextureFormat_Depth32FloatStencil8,.sampleCount=1};
     wgpuDevicePushErrorScope(s->device,WGPUErrorFilter_Validation);
-    assert(!wgpuDeviceCreateRenderBundleEncoder(s->device,&bundle));
+    WGPURenderBundleEncoder invalid_bundle = wgpuDeviceCreateRenderBundleEncoder(s->device,&bundle);
+    assert(invalid_bundle); /* WebGPU invalid encoder; the error is reported at creation */
+    wgpuRenderBundleEncoderRelease(invalid_bundle);
     expect_validation(s);
     /* rg11b10ufloat is core-sampled but renderable only with its feature. */
     wgpuDevicePushErrorScope(s->device,WGPUErrorFilter_Validation);
@@ -258,7 +260,9 @@ static void disabled_controls(state *s)
     WGPUTextureFormat rg11b10 = WGPUTextureFormat_RG11B10Ufloat;
     WGPURenderBundleEncoderDescriptor color_bundle = {.colorFormatCount=1,.colorFormats=&rg11b10,.sampleCount=1};
     wgpuDevicePushErrorScope(s->device,WGPUErrorFilter_Validation);
-    assert(!wgpuDeviceCreateRenderBundleEncoder(s->device,&color_bundle));
+    WGPURenderBundleEncoder invalid_color_bundle = wgpuDeviceCreateRenderBundleEncoder(s->device,&color_bundle);
+    assert(invalid_color_bundle); /* WebGPU invalid encoder; the error is reported at creation */
+    wgpuRenderBundleEncoderRelease(invalid_color_bundle);
     expect_validation(s);
     rg11b10_sampled(s);
     WGPURenderPipeline control = depth_pipeline(s,shader,WGPUTextureFormat_Depth24PlusStencil8);

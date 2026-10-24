@@ -494,6 +494,17 @@ fn configureCOwnersModule(module: *std.Build.Module, b: *std.Build, archive: []c
     module.link_libc = true;
 }
 
+/// Drop-in libraries are dlopen'ed providers whose Zig code calls C (Vulkan,
+/// libc) on any host thread. In Debug, Zig 0.15.2's self-hosted x86_64 backend
+/// had callees read and, on caught-error paths, write through r9 as an
+/// error-return-trace pointer that callers never set after C calls; under
+/// concurrent devices this crashed (null r9) or corrupted memory (ld.so
+/// _dl_add_to_slotinfo assertion). LLVM codegen, already used by every
+/// release mode, passed the same workload 10/10 in Debug.
+fn pinDropinCodegen(artifact: *std.Build.Step.Compile) void {
+    artifact.use_llvm = true;
+}
+
 fn configureCDropinPolicyModule(module: *std.Build.Module, b: *std.Build, archive: []const u8) void {
     module.addIncludePath(b.path("../c/dropin-policy/include"));
     module.addObjectFile(.{ .cwd_relative = archive });
@@ -736,6 +747,7 @@ pub fn build(b: *std.Build) void {
         }),
     });
     configureNativeGraphics(dropin_lib, b, target);
+    pinDropinCodegen(dropin_lib);
     const install_dropin = b.addInstallArtifact(dropin_lib, .{});
 
     const dropin_step = b.step("dropin", "Build the drop-in WebGPU shared library");
@@ -1527,6 +1539,7 @@ pub fn build(b: *std.Build) void {
         }),
     });
     configureNativeGraphics(core_dropin_lib, b, target);
+    pinDropinCodegen(core_dropin_lib);
     const install_core_dropin = b.addInstallArtifact(core_dropin_lib, .{});
     const core_dropin_step = b.step("dropin-compute", "Build compute-only drop-in library (dispatch + buffer, no render)");
     core_dropin_step.dependOn(&install_core_dropin.step);
@@ -1581,6 +1594,7 @@ pub fn build(b: *std.Build) void {
         }),
     });
     configureNativeGraphics(full_dropin_lib, b, target);
+    pinDropinCodegen(full_dropin_lib);
     const install_full_dropin = b.addInstallArtifact(full_dropin_lib, .{});
     const full_dropin_step = b.step("dropin-full", "Build full Dawn drop-in library (all procs, surface, external textures)");
     full_dropin_step.dependOn(&install_full_dropin.step);

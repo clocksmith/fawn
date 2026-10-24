@@ -30,7 +30,7 @@ static void sparse_groups(state *s)
     wgpuComputePassEncoderSetPipeline(pass,compute);
     wgpuComputePassEncoderDispatchWorkgroups(pass,1,1,1);
     wgpuComputePassEncoderEnd(pass);
-    assert(!wgpuCommandEncoderFinish(encoder,NULL));
+    finish_invalid(encoder);
     wgpuComputePassEncoderRelease(pass);
     wgpuCommandEncoderRelease(encoder);
     expect_validation(s); /* Nonempty group2 is still required. */
@@ -180,7 +180,7 @@ static void dynamic_aliases(state *s)
     wgpuComputePassEncoderSetBindGroup(pass,0,bound,2,offsets);
     wgpuComputePassEncoderDispatchWorkgroups(pass,1,1,1);
     wgpuComputePassEncoderEnd(pass);
-    assert(!wgpuCommandEncoderFinish(encoder,NULL));
+    finish_invalid(encoder);
     wgpuComputePassEncoderRelease(pass);
     wgpuCommandEncoderRelease(encoder);
     expect_validation(s);
@@ -210,7 +210,7 @@ static void readonly_alias(state *s)
     wgpuDevicePushErrorScope(s->device,WGPUErrorFilter_Validation);
     WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(s->device,NULL);
     dispatch(encoder,compute,bound);
-    assert(!wgpuCommandEncoderFinish(encoder,NULL));
+    finish_invalid(encoder);
     wgpuCommandEncoderRelease(encoder);
     expect_validation(s); /* Read/write + readonly is whole-buffer usage conflict. */
     wgpuBindGroupRelease(bound);
@@ -236,7 +236,7 @@ static void image_aliases(state *s)
     wgpuDevicePushErrorScope(s->device,WGPUErrorFilter_Validation);
     WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(s->device,NULL);
     dispatch(encoder,compute,bound);
-    assert(!wgpuCommandEncoderFinish(encoder,NULL));
+    finish_invalid(encoder);
     wgpuCommandEncoderRelease(encoder);
     expect_validation(s);
     wgpuBindGroupRelease(bound);

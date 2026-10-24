@@ -776,6 +776,28 @@ pub fn create_texture_resource_full(
     format: model_gpu_types.WGPUTextureFormat,
     usage: model_gpu_types.WGPUFlags,
 ) !TextureResource {
+    return create_texture_resource_viewable(self, width, height, depth_or_array_layers, mip_levels, sample_count, dimension, view_dimension, aspect, format, usage, 0);
+}
+
+/// `view_format`, when nonzero and different from `format`, is the one other
+/// format views may use (the srgb pair). Only such images are MUTABLE_FORMAT
+/// (VUID-VkImageViewCreateInfo-image-01019), with a two-entry format list
+/// where Vulkan 1.2 makes it core; every other image keeps the immutable,
+/// compression-friendly default.
+pub fn create_texture_resource_viewable(
+    self: anytype,
+    width: u32,
+    height: u32,
+    depth_or_array_layers: u32,
+    mip_levels: u32,
+    sample_count: u32,
+    dimension: u32,
+    view_dimension: u32,
+    aspect: u32,
+    format: model_gpu_types.WGPUTextureFormat,
+    usage: model_gpu_types.WGPUFlags,
+    view_format: model_gpu_types.WGPUTextureFormat,
+) !TextureResource {
     const generation = try identity.nextGeneration(self);
     var image: VkImage = VK_NULL_U64;
     var memory: VkDeviceMemory = VK_NULL_U64;
@@ -792,12 +814,21 @@ pub fn create_texture_resource_full(
     const sample_count_vk = try texture_sample_count_to_vk(sample_count);
     const view_type = texture_view_dimension_to_vk_view_type(resolved_view_dimension, image_array_layers);
 
+    const mutable = view_format != 0 and view_format != format;
+    const view_formats = [2]u32{ try texture_format_to_vk(format), if (mutable) try texture_format_to_vk(view_format) else 0 };
+    const format_list = c.VkImageFormatListCreateInfo{
+        .sType = c.VK_STRUCTURE_TYPE_IMAGE_FORMAT_LIST_CREATE_INFO,
+        .pNext = null,
+        .viewFormatCount = view_formats.len,
+        .pViewFormats = &view_formats,
+    };
+    const cube_flags: u32 = if (image_array_layers >= 6 and resolved_dimension == model_gpu_types.WGPUTextureDimension_2D) c.VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT else 0;
     var image_info = c.VkImageCreateInfo{
         .sType = c.VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-        .pNext = null,
-        .flags = if (image_array_layers >= 6 and resolved_dimension == model_gpu_types.WGPUTextureDimension_2D) c.VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT else 0,
+        .pNext = if (mutable and self.image_format_list_supported) @ptrCast(&format_list) else null,
+        .flags = cube_flags | (if (mutable) c.VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT else 0),
         .imageType = image_type,
-        .format = try texture_format_to_vk(format),
+        .format = view_formats[0],
         .extent = .{ .width = width, .height = height, .depth = image_depth },
         .mipLevels = resolved_mip_levels,
         .arrayLayers = image_array_layers,

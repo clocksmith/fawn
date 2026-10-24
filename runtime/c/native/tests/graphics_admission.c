@@ -142,7 +142,7 @@ static void draw_controls(state *s)
         if (test == 2) wgpuRenderPassEncoderExecuteBundles(pass,0,NULL);
         wgpuRenderPassEncoderDraw(pass,0,1,test == 1 ? 2 : 0,0);
         wgpuRenderPassEncoderEnd(pass);
-        assert(!wgpuCommandEncoderFinish(encoder,NULL));
+        finish_invalid(encoder);
         expect_validation(s);
         wgpuRenderPassEncoderRelease(pass);
         wgpuCommandEncoderRelease(encoder);

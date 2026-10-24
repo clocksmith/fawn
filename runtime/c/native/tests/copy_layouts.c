@@ -100,7 +100,7 @@ int main(void)
         wgpuCommandEncoderCopyTextureToBuffer(rejected,&from,&to,&size);
         assert(s.errors == before); /* nothing reported at the encoding call */
         wgpuDevicePushErrorScope(s.device,WGPUErrorFilter_Validation);
-        assert(!wgpuCommandEncoderFinish(rejected,NULL));
+        finish_invalid(rejected);
         expect_validation(&s);
         wgpuCommandEncoderRelease(rejected);
     }

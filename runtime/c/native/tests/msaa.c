@@ -160,7 +160,7 @@ static void negatives(state *s)
     assert(rejected); /* WebGPU invalid pass; the error also surfaces at Finish. */
     wgpuRenderPassEncoderEnd(rejected);
     wgpuRenderPassEncoderRelease(rejected);
-    assert(!wgpuCommandEncoderFinish(encoder,NULL));
+    finish_invalid(encoder);
     expect_validation(s);
     wgpuCommandEncoderRelease(encoder);
     wgpuTextureViewRelease(from);

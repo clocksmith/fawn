@@ -2,6 +2,16 @@
 #include "internal.h"
 #include <string.h>
 
+/* submission_state is the sole command/program admission owner. Ordinary queue
+ * use is 0 fresh, 1 submitted, 2 settled. Preparation alone may return to fresh;
+ * published programs stay consumed even after their program lease is released.
+ * Invalidation consumes only fresh commands, without acquiring a lease. */
+enum {
+    COMMANDS_PROGRAM = 3, COMMANDS_REPLAYING = 4, COMMANDS_RESERVED = 5,
+    COMMANDS_PROGRAM_RELEASED = 6, COMMANDS_REPLAYING_RELEASED = 7,
+    COMMANDS_INVALID = 8
+};
+
 doe_resource_status resource_encoder_fail(doe_resource_encoder *encoder, doe_resource_status status)
 {
     if (encoder && encoder->status == DOE_RESOURCE_OK) encoder->status = status;
@@ -320,8 +330,12 @@ doe_resource_status doe_resource_encoder_finish(doe_resource_encoder *encoder,
 {
     if (!out) return DOE_RESOURCE_INVALID_ARGUMENT;
     doe_resource_status status = resource_encoder_open(encoder);
-    /* Finish ends the encoder whether or not it records a command buffer. */
-    if (encoder) encoder->finished = true;
+    /* Finish ends the encoder whether or not it records a command buffer; an
+     * open pass no longer holds it locked. */
+    if (encoder) {
+        encoder->finished = true;
+        encoder->active_pass = NULL;
+    }
     if (status != DOE_RESOURCE_OK) return status;
     if (encoder->debug_depth) return resource_encoder_fail(encoder, DOE_RESOURCE_STATE);
     doe_resource_commands *commands = resource_allocate(&encoder->base.config,
@@ -338,6 +352,26 @@ doe_resource_status doe_resource_encoder_finish(doe_resource_encoder *encoder,
     encoder->finished = true;
     *out = commands;
     return DOE_RESOURCE_OK;
+}
+
+doe_resource_commands *doe_resource_commands_rejected(doe_resource_encoder *encoder)
+{
+    if (!encoder || encoder->status == DOE_RESOURCE_OK) return NULL;
+    doe_resource_commands *commands = resource_allocate(&encoder->base.config,
+        sizeof(*commands), _Alignof(doe_resource_commands));
+    if (!commands) return NULL;
+    memset(commands, 0, sizeof(*commands));
+    resource_init(&commands->base, &encoder->base.config, (doe_resource_native){0});
+    atomic_init(&commands->submission_state, COMMANDS_INVALID);
+    return commands;
+}
+
+void doe_resource_commands_invalidate(doe_resource_commands *commands)
+{
+    if (!commands) return;
+    unsigned expected = 0;
+    (void)atomic_compare_exchange_strong_explicit(&commands->submission_state, &expected,
+        COMMANDS_INVALID, memory_order_acq_rel, memory_order_acquire);
 }
 
 doe_resource_status doe_resource_encoder_status(const doe_resource_encoder *encoder)
@@ -448,14 +482,6 @@ doe_resource_status doe_resource_commands_settle(doe_resource_commands *commands
     doe_resource_commands_release(commands);
     return terminal_status;
 }
-
-/* submission_state is the sole command/program admission owner. Ordinary queue
- * use is 0 fresh, 1 submitted, 2 settled. Preparation alone may return to fresh;
- * published programs stay consumed even after their program lease is released. */
-enum {
-    COMMANDS_PROGRAM = 3, COMMANDS_REPLAYING = 4, COMMANDS_RESERVED = 5,
-    COMMANDS_PROGRAM_RELEASED = 6, COMMANDS_REPLAYING_RELEASED = 7
-};
 
 static doe_resource_status validate_all(const doe_resource_commands *commands)
 {

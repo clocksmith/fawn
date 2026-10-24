@@ -291,8 +291,10 @@ doe_resource_status doe_resource_encoder_begin_render_with_timestamps(doe_resour
 doe_resource_status resource_render_pass_active(doe_resource_render_pass *pass)
 {
     if (!pass) return DOE_RESOURCE_INVALID_ARGUMENT;
+    /* A command on an ended pass is reported at the call; the parent stays valid. */
+    if (pass->ended) return DOE_RESOURCE_STATE;
     if (pass->encoder->status != DOE_RESOURCE_OK) return pass->encoder->status;
-    if (pass->ended || pass->encoder->active_pass != pass) return resource_encoder_fail(pass->encoder, DOE_RESOURCE_STATE);
+    if (pass->encoder->active_pass != pass) return resource_encoder_fail(pass->encoder, DOE_RESOURCE_STATE);
     if (!resource_alive(&pass->base)) return resource_encoder_fail(pass->encoder, DOE_RESOURCE_UNAVAILABLE);
     return DOE_RESOURCE_OK;
 }
@@ -307,6 +309,9 @@ doe_resource_render_pass *doe_resource_render_pass_rejected(doe_resource_encoder
     pass->encoder = encoder;
     doe_resource_encoder_retain(encoder);
     resource_init(&pass->base, &encoder->base.config, (doe_resource_native){0});
+    /* begin() on an open encoder locks it even for an invalid pass; a locked or
+     * ended encoder stays as it is. */
+    if (!encoder->finished && !encoder->active_pass) encoder->active_pass = pass;
     return pass;
 }
 
@@ -555,14 +560,21 @@ bool doe_resource_render_pass_ended(const doe_resource_render_pass *pass)
 static doe_resource_status render_pass_close(doe_resource_render_pass *pass);
 /* End closes an open pass even when it or its encoder is invalid; only the
  * recorded effects require a valid pass. */
+bool doe_resource_render_pass_closed(const doe_resource_render_pass *pass)
+{
+    return pass && (pass->ended || !pass->encoder->active_pass);
+}
+
+/* WebGPU end(): an ended pass or a parent encoder that is not locked reports at
+ * the call and changes nothing. Otherwise the pass ends and its parent unlocks
+ * (even when another pass locked it); the recorded effects need a valid pass. */
 doe_resource_status doe_resource_render_pass_end(doe_resource_render_pass *pass)
 {
     if (!pass) return DOE_RESOURCE_INVALID_ARGUMENT;
+    if (doe_resource_render_pass_closed(pass)) return DOE_RESOURCE_STATE;
     doe_resource_status status = render_pass_close(pass);
-    if (!pass->ended) {
-        pass->ended = true;
-        if (pass->encoder->active_pass == pass) pass->encoder->active_pass = NULL;
-    }
+    pass->ended = true;
+    pass->encoder->active_pass = NULL;
     return status;
 }
 

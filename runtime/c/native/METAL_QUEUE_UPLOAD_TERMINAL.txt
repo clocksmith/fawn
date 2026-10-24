@@ -1,0 +1,16 @@
+{
+  "source_tree": "8d0afca78c549bc9c6410fac50a8dc9e9a87b5e4",
+  "client": "offscreen-triangle",
+  "exit_code": 0,
+  "elapsed_seconds": 0.1553788329474628,
+  "child_deadline_seconds": 5,
+  "outer_guardian_seconds": 20,
+  "thermal_preflight": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded\n",
+  "stdout": "Selected adapter backend Metal, type 4: Apple M3\nPASS public WGSL triangle, early release, discard initialization and packed uploads (native Metal device: Apple M3; subtype unclassified; developer run, not qualification)\n",
+  "stderr": "",
+  "source_manifest_sha256": "bf07e5f08641861bb353636ca874f1ff552b7f739fd71ffe547afa61e1ee3b76",
+  "binary_sha256": "1b25fea8fa7175f598685c545260aad854e28c58cd134375c76f401b327635b4",
+  "native_sha256": "502d025164c57b08374f5496873cddb3ed27aab0f043e2e0ec283c40505fbedb",
+  "compiler_sha256": "376f85d435ab82fad586b67a17a003f66a4dab0982d44996232a62eafaad853d",
+  "source_drift_after_run": []
+}

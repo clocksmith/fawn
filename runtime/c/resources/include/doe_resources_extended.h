@@ -168,6 +168,8 @@ doe_resource_status doe_resource_encoder_begin_render_with_timestamps(doe_resour
  * as doe_resource_compute_pass_rejected. */
 doe_resource_render_pass *doe_resource_render_pass_rejected(doe_resource_encoder *encoder);
 bool doe_resource_render_pass_ended(const doe_resource_render_pass *pass);
+/* End reports at the call: the pass ended or its parent encoder is not locked. */
+bool doe_resource_render_pass_closed(const doe_resource_render_pass *pass);
 /* Frontend preflight rejection poisons the canonical active recording owner;
  * non-rejection statuses are invalid arguments and do not mutate state. */
 doe_resource_status doe_resource_render_pass_invalidate(doe_resource_render_pass *pass,
@@ -234,8 +236,19 @@ doe_resource_status doe_resource_bundle_encoder_draw_indirect(doe_resource_bundl
     doe_resource_buffer *arguments, uint64_t offset, bool indexed);
 doe_resource_status doe_resource_bundle_encoder_debug(doe_resource_bundle_encoder *encoder,
     doe_resource_debug_operation operation);
+/* Finish always ends the encoder (WebGPU "ended"), successful or not. */
 doe_resource_status doe_resource_bundle_encoder_finish(doe_resource_bundle_encoder *encoder,
     doe_resource_render_bundle **out);
+bool doe_resource_bundle_encoder_ended(const doe_resource_bundle_encoder *encoder);
+/* The WebGPU invalid bundle encoder for a rejected descriptor: it records
+ * nothing and its Finish fails with `rejection` and yields an invalid bundle.
+ * `rejection` must be a rejection status; NULL on allocation failure. */
+doe_resource_bundle_encoder *doe_resource_bundle_encoder_rejected(const doe_resource_config *config,
+    doe_resource_status rejection);
+/* The WebGPU invalid bundle returned after a failed finish: no draws, and
+ * executing it invalidates the pass's command encoder. NULL unless the encoder
+ * has failed, or on allocation failure. */
+doe_resource_render_bundle *doe_resource_render_bundle_rejected(doe_resource_bundle_encoder *encoder);
 void *doe_resource_render_bundle_device(const doe_resource_render_bundle *bundle);
 const doe_resource_render_bundle_desc *doe_resource_render_bundle_description(const doe_resource_render_bundle *bundle);
 void doe_resource_render_bundle_retain(doe_resource_render_bundle *bundle);

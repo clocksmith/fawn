@@ -419,6 +419,7 @@ fn createTexture(dev_raw: ?*anyopaque, desc: ?*const abi_pipeline.WGPUTextureDes
         .usage = usage,
         .texture_binding_view_dimension = 0,
         .view_format_count = d.viewFormatCount,
+        .srgb_view_format = texture_validation.srgbPairViewFormat(d),
     };
     if (dev.backend == .vulkan) {
         const vk_render = @import("../vulkan/vulkan_render_native.zig");
@@ -497,6 +498,50 @@ fn createTexture(dev_raw: ?*anyopaque, desc: ?*const abi_pipeline.WGPUTextureDes
     return result;
 }
 
+/// The view format is the texture format, or its srgb pair when the texture's
+/// viewFormats named it.
+pub fn viewFormatAllowed(tex: *const DoeTexture, format: u32) bool {
+    return format == tex.format or (tex.srgb_view_format != 0 and format == tex.srgb_view_format);
+}
+
+/// An invalid view, never NULL. Its texture is a private invalid texture, so
+/// every consumer's existing `view.tex.isUnavailable()` / `error_object`
+/// check rejects it (bind groups, render attachments, submission).
+fn invalidTextureView(source: *const DoeTexture, d: *const abi_pipeline.WGPUTextureViewDescriptor, format: u32) ?*anyopaque {
+    const invalid_texture = make(DoeTexture) orelse return null;
+    invalid_texture.* = .{
+        .error_object = true,
+        .backend = source.backend,
+        .format = source.format,
+        .width = source.width,
+        .height = source.height,
+        .depth_or_array_layers = source.depth_or_array_layers,
+        .dimension = source.dimension,
+        .mip_level_count = source.mip_level_count,
+        .sample_count = source.sample_count,
+        .usage = source.usage,
+    };
+    const tv = make(DoeTextureView) orelse {
+        alloc.destroy(invalid_texture);
+        return null;
+    };
+    tv.* = .{
+        .backend = source.backend,
+        .tex = invalid_texture,
+        .format = format,
+        .dimension = d.dimension,
+        .base_mip_level = d.baseMipLevel,
+        .mip_level_count = d.mipLevelCount,
+        .base_array_layer = d.baseArrayLayer,
+        .array_layer_count = d.arrayLayerCount,
+        .aspect = d.aspect,
+        .usage = d.usage,
+    };
+    const result = toOpaque(tv);
+    label_store.set(result, d.label.data, d.label.length);
+    return result;
+}
+
 pub export fn doeNativeTextureCreateView(tex_raw: ?*anyopaque, desc: ?*const abi_pipeline.WGPUTextureViewDescriptor) callconv(.c) ?*anyopaque {
     const tex = cast(DoeTexture, tex_raw) orelse return null;
     if (tex.error_object) return null;
@@ -522,6 +567,12 @@ pub export fn doeNativeTextureCreateView(tex_raw: ?*anyopaque, desc: ?*const abi
     const resolved_format = if (d.format != 0) d.format else tex.format;
     const resolved_dimension = if (d.dimension != 0) d.dimension else default_texture_view_dimension(tex);
     const resolved_usage = if (d.usage != 0) d.usage else tex.usage;
+    if (!viewFormatAllowed(tex, resolved_format)) {
+        // https://gpuweb.github.io/gpuweb/#dom-gputexture-createview: the view
+        // format must be the texture format or one of its viewFormats.
+        if (tex.device_ref) |dev| dev.error_scopes.deliver(error_scope.ERROR_TYPE_VALIDATION, "texture view format is neither the texture format nor one of its viewFormats");
+        return invalidTextureView(tex, d, resolved_format);
+    }
     const resolved_swizzle = resolveTextureViewSwizzle(d);
     const resolved_swizzle_r = resolved_swizzle.r;
     const resolved_swizzle_g = resolved_swizzle.g;
@@ -750,11 +801,34 @@ pub export fn doeNativeDeviceCreateSampler(dev_raw: ?*anyopaque, desc: ?*const a
     return raw;
 }
 
+/// webgpu.h WGPUFilterMode_Linear and WGPUMipmapFilterMode_Linear.
+const FILTER_LINEAR: u32 = 0x00000002;
+
+/// https://gpuweb.github.io/gpuweb/#dom-gpudevice-createsampler, matching
+/// runtime/c/resources doe_resource_sampler_validate for clamps and anisotropy.
+pub fn samplerDescriptorError(d: *const abi_pipeline.WGPUSamplerDescriptor) ?[]const u8 {
+    if (!std.math.isFinite(d.lodMinClamp) or !std.math.isFinite(d.lodMaxClamp) or d.lodMinClamp < 0)
+        return "sampler lodMinClamp must be a finite value at least 0";
+    if (d.lodMaxClamp < d.lodMinClamp) return "sampler lodMaxClamp must not be less than lodMinClamp";
+    if (d.maxAnisotropy == 0) return "sampler maxAnisotropy must be at least 1";
+    if (d.maxAnisotropy > 1 and (d.minFilter != FILTER_LINEAR or d.magFilter != FILTER_LINEAR or d.mipmapFilter != FILTER_LINEAR))
+        return "sampler maxAnisotropy above 1 requires linear min, mag and mipmap filters";
+    return null;
+}
+
 fn createSampler(dev_raw: ?*anyopaque, desc: ?*const abi_pipeline.WGPUSamplerDescriptor) ?*anyopaque {
     const dev = cast(DoeDevice, dev_raw) orelse return null;
     if (!dev.requireAlive()) return null;
     const d = desc orelse return null;
     const s = make(DoeSampler) orelse return null;
+    if (samplerDescriptorError(d)) |message| {
+        // An invalid sampler, never NULL; bind group creation rejects it.
+        dev.error_scopes.deliver(error_scope.ERROR_TYPE_VALIDATION, message);
+        s.* = .{ .error_object = true, .backend = dev.backend };
+        const result = toOpaque(s);
+        label_store.set(result, d.label.data, d.label.length);
+        return result;
+    }
     s.* = .{};
     if (dev.backend == .vulkan) {
         const vk_render = @import("../vulkan/vulkan_render_native.zig");

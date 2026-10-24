@@ -4,7 +4,7 @@
 static const WGPUStringView label = {"nested\0diagnostic",17};
 static void rejected_finish(state *s, WGPUCommandEncoder encoder)
 {
-    assert(!wgpuCommandEncoderFinish(encoder,NULL));
+    finish_invalid(encoder);
     expect_validation(s);
     wgpuCommandEncoderRelease(encoder);
 }
@@ -114,7 +114,9 @@ static void render_and_bundles(state *s)
         if (!which) wgpuRenderBundleEncoderPopDebugGroup(builder);
         else if (which == 1) wgpuRenderBundleEncoderPushDebugGroup(builder,label);
         else wgpuRenderBundleEncoderInsertDebugMarker(builder,(WGPUStringView){NULL,2});
-        assert(!wgpuRenderBundleEncoderFinish(builder,NULL));
+        WGPURenderBundle invalid_bundle = wgpuRenderBundleEncoderFinish(builder,NULL);
+        assert(invalid_bundle); /* WebGPU invalid bundle */
+        wgpuRenderBundleRelease(invalid_bundle);
         expect_validation(s);
         wgpuRenderBundleEncoderRelease(builder);
     }

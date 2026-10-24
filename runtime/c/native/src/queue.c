@@ -330,20 +330,35 @@ native_presentation native_submit_present(native_device *device, doe_vk_commands
     return result;
 }
 
+/* Caller holds the device mutex and a call lease; INVALID consumes only fresh
+ * aliases, preserving existing submitted/program/replay ownership. */
+static void invalidate_batch(native_device *device, size_t count, const WGPUCommandBuffer *handles)
+{
+    for (size_t i = 0; i < count; ++i)
+        if (doe_resource_commands_device((doe_resource_commands *)handles[i]) == device)
+            doe_resource_commands_invalidate((doe_resource_commands *)handles[i]);
+}
+
 void wgpuQueueSubmit(WGPUQueue handle, size_t count, const WGPUCommandBuffer *handles)
 {
     native_device *device = (native_device *)handle;
     if (!device) return;
     if (!count) return;
+    native_device_retain(device);
     if (!handles || count > SIZE_MAX / sizeof(doe_resource_commands *)) {
         native_error(device, WGPUErrorType_Validation, "invalid queue submit array");
+        native_device_release(device);
         return;
     }
     native_pending *pending = calloc(1, sizeof(*pending));
     if (pending) pending->resources = calloc(count, sizeof(*pending->resources));
     if (!pending || !pending->resources) {
         free(pending);
+        native_lock(device);
+        invalidate_batch(device, count, handles);
+        native_unlock(device);
         native_error(device, WGPUErrorType_OutOfMemory, "submission ownership allocation failed");
+        native_device_release(device);
         return;
     }
     pending->device = device;
@@ -358,15 +373,17 @@ void wgpuQueueSubmit(WGPUQueue handle, size_t count, const WGPUCommandBuffer *ha
         for (size_t j = 0; j < i; ++j)
             if (handles[i] == handles[j]) failure = native_failure_status(NATIVE_INVALID_ARGUMENT);
     }
+    /* Submission validity (including single use) is decided before any native
+     * recording, so an invalid buffer never initializes or records backend work. */
     doe_resource_status resource_status = DOE_RESOURCE_OK;
-    if (failure.status == NATIVE_OK) failure = native_command_create(&device->backend, &pending->native);
-    for (size_t i = 0; failure.status == NATIVE_OK && i < count; ++i)
-        failure = native_record_resource_commands(&pending->native, pending->resources[i]);
     for (size_t i = 0; failure.status == NATIVE_OK && i < count; ++i) {
         resource_status = doe_resource_commands_begin_submit(pending->resources[i]);
         if (resource_status != DOE_RESOURCE_OK) failure = native_failure_status(NATIVE_INVALID_ARGUMENT);
         else ++pending->count;
     }
+    if (failure.status == NATIVE_OK) failure = native_command_create(&device->backend, &pending->native);
+    for (size_t i = 0; failure.status == NATIVE_OK && i < count; ++i)
+        failure = native_record_resource_commands(&pending->native, pending->resources[i]);
     if (failure.status == NATIVE_OK) {
         /* Recovery preserves the original submission failure; successful release
          * is the backend's proof of terminal or never-dispatched ownership. */
@@ -374,6 +391,10 @@ void wgpuQueueSubmit(WGPUQueue handle, size_t count, const WGPUCommandBuffer *ha
     } else {
         if (native_command_release(&pending->native) != NATIVE_OK) abort();
         settle_resources(pending, false);
+        /* A command buffer is single-use: any failed submit (validation or a
+         * backend OOM/internal failure) consumes every command buffer it names
+         * on this device, so a resubmission is a validation error. */
+        invalidate_batch(device, count, handles);
     }
     native_unlock(device);
     if (failure.status != NATIVE_OK) {
@@ -382,6 +403,7 @@ void wgpuQueueSubmit(WGPUQueue handle, size_t count, const WGPUCommandBuffer *ha
         native_error(device, resource_status != DOE_RESOURCE_OK ?
             native_resource_error(resource_status) : native_result_error(failure.status), message);
     }
+    native_device_release(device);
 }
 
 typedef struct queue_delivery {

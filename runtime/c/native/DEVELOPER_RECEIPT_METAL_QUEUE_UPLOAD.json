@@ -1,0 +1,115 @@
+{
+  "kind": "developer-correctness-evidence",
+  "component": "Native Metal queue texture upload parity",
+  "consumer": "C migration queue-write layout, private staging allocation and pending ownership correctness gate",
+  "date": "2026-10-23",
+  "intent": "preserved: caller queue-write layout and canonical private aligned copy keep distinct admission contracts",
+  "source_tree": "8d0afca78c549bc9c6410fac50a8dc9e9a87b5e4",
+  "frozen_source_export": "/tmp/doe-c-metal-upload-final-source-20261023",
+  "source_archive": {
+    "path": "/tmp/doe-c-metal-upload-final-source-20261023.tar",
+    "sha256": "fda5025590d52749f129299a9969ae59c1c5df31d16a011bf7a37c43fb4dafe2"
+  },
+  "source_manifest": {
+    "path": "runtime/c/native/METAL_QUEUE_UPLOAD_SOURCE_INPUTS.json",
+    "sha256": "bf07e5f08641861bb353636ca874f1ff552b7f739fd71ffe547afa61e1ee3b76"
+  },
+  "native_artifact": {
+    "path": "/tmp/doe-c-metal-upload-final-build-20261023/libwebgpu_doe_c.dylib",
+    "sha256": "502d025164c57b08374f5496873cddb3ed27aab0f043e2e0ec283c40505fbedb"
+  },
+  "compiler_artifact": {
+    "path": "/tmp/doe-c-metal-upload-final-build-20261023/libdoe_compiler.dylib",
+    "sha256": "376f85d435ab82fad586b67a17a003f66a4dab0982d44996232a62eafaad853d"
+  },
+  "binary": {
+    "path": "/tmp/doe-c-metal-upload-final-build-20261023/offscreen-triangle",
+    "sha256": "1b25fea8fa7175f598685c545260aad854e28c58cd134375c76f401b327635b4"
+  },
+  "guardian_child_script": {
+    "path": "/tmp/doe-c-metal-upload-device-run.py",
+    "sha256": "c5748f01ebf574d88a699a76157b07523b4a3d95b77ce38a087aee3cddb25d5a"
+  },
+  "build": {
+    "result": "PASS fresh strict Darwin native plus updated public offscreen consumer from exact source tree",
+    "log": {
+      "path": "/tmp/doe-c-metal-upload-final-build-first.log",
+      "sha256": "03c4df79b6240abfaa15a8129889287db77e13cb61e18114b631b0220aa6589d"
+    },
+    "sdk_scope": "Changed C code built against installed Apple SDK; shader source unchanged. No redundant new shader-language or Node campaign."
+  },
+  "device_run": {
+    "source_tree": "8d0afca78c549bc9c6410fac50a8dc9e9a87b5e4",
+    "client": "offscreen-triangle",
+    "exit_code": 0,
+    "elapsed_seconds": 0.1553788329474628,
+    "child_deadline_seconds": 5,
+    "outer_guardian_seconds": 20,
+    "thermal_preflight": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded\n",
+    "stdout": "Selected adapter backend Metal, type 4: Apple M3\nPASS public WGSL triangle, early release, discard initialization and packed uploads (native Metal device: Apple M3; subtype unclassified; developer run, not qualification)\n",
+    "stderr": "",
+    "source_manifest_sha256": "bf07e5f08641861bb353636ca874f1ff552b7f739fd71ffe547afa61e1ee3b76",
+    "binary_sha256": "1b25fea8fa7175f598685c545260aad854e28c58cd134375c76f401b327635b4",
+    "native_sha256": "502d025164c57b08374f5496873cddb3ed27aab0f043e2e0ec283c40505fbedb",
+    "compiler_sha256": "376f85d435ab82fad586b67a17a003f66a4dab0982d44996232a62eafaad853d",
+    "source_drift_after_run": []
+  },
+  "host": {
+    "model": "Mac15,12",
+    "os": "ProductName:\t\tmacOS\nProductVersion:\t\t26.6.2\nBuildVersion:\t\t25G83"
+  },
+  "physical_oracle": {
+    "layout": {
+      "source_offset": 3,
+      "source_bytes_per_row": 5,
+      "width": 1,
+      "height": 2,
+      "destination_origin": [
+        3,
+        2,
+        0
+      ]
+    },
+    "expected_rgba8": [
+      [
+        17,
+        31,
+        63,
+        127
+      ],
+      [
+        192,
+        128,
+        64,
+        8
+      ]
+    ],
+    "independent_readback": "Read full8x8 image through separate texture-to-buffer copy and map; these two texels equal explicit constants and every other texel equals earlier full-frame upload pattern.",
+    "other_exercised_checks": [
+      "Public WGSL offscreen triangle and early release",
+      "Attachment discard then zero readback",
+      "Packed full-frame upload exact bytes"
+    ]
+  },
+  "host_controls": {
+    "source": "runtime/c/native/tests/metal_bridge.c queue_upload_admission",
+    "scope": "Root owns separate Linux composition/fault-injection result; no host ledger is a GPU oracle.",
+    "cases": [
+      "Test-local public maxBufferSize256 versus actual mock native allocation cap4096: public512byte buffer rejects Validation; private aligned512byte queue staging succeeds",
+      "Injected staging OOM retains OutOfMemory scope and releases temporary storage",
+      "Injected native upload error preserves exact operation/code/text through deferred scope, releases leases and permits later valid write",
+      "Valid4352byte staging beyond real native4096cap rejects OutOfMemory before any native allocation"
+    ]
+  },
+  "first_failure": "None in the single authorized frozen-source device run; no mixed-resource or Node rerun.",
+  "limits": [
+    "Bounded developer correctness on one Apple M3/macOS tuple, not backend/platform/performance qualification",
+    "Host-only lowered public limit does not claim a large physical-device allocation campaign",
+    "Earlier tree53 mixed-compute/Node/SDK receipts remain historical and unchanged",
+    "No new Metal surface, indirect/indexed, depth/stencil transfer or provider-default promotion claim"
+  ],
+  "terminal": {
+    "path": "runtime/c/native/METAL_QUEUE_UPLOAD_TERMINAL.txt",
+    "sha256": "cfff47f1a6f3ab0c183009562d6f2b54607984ad3de2348cde036645c6ab4430"
+  }
+}

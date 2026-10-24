@@ -175,12 +175,164 @@ static void block_controls(state *s, bool sliced)
         WGPUTexelCopyBufferInfo destination = {.buffer=bytes,.layout={.bytesPerRow=PITCH,.rowsPerImage=1}};
         wgpuCommandEncoderCopyTextureToBuffer(encoder,&source,&destination,&(WGPUExtent3D){copies[i].width,4,1});
         wgpuDevicePushErrorScope(s->device,WGPUErrorFilter_Validation);
-        assert(!wgpuCommandEncoderFinish(encoder,NULL));
+        finish_invalid(encoder);
         expect_validation(s);
         wgpuCommandEncoderRelease(encoder);
     }
     wgpuBufferRelease(bytes);
     wgpuTextureRelease(texture);
+}
+
+/* Reads whole blocks of mip `mip` (blocks_wide x blocks_high) into out. */
+static void read_blocks(state *s, WGPUTexture texture, uint32_t mip, uint32_t layer, uint32_t blocks_wide,
+    uint32_t blocks_high, uint8_t *out)
+{
+    WGPUBuffer readback = buffer(s,PITCH * blocks_high,WGPUBufferUsage_MapRead | WGPUBufferUsage_CopyDst);
+    WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(s->device,NULL);
+    WGPUTexelCopyTextureInfo source = {.texture=texture,.mipLevel=mip,.origin={0,0,layer},.aspect=WGPUTextureAspect_All};
+    WGPUTexelCopyBufferInfo destination = {.buffer=readback,.layout={.bytesPerRow=PITCH,.rowsPerImage=blocks_high}};
+    wgpuCommandEncoderCopyTextureToBuffer(encoder,&source,&destination,&(WGPUExtent3D){blocks_wide * 4,blocks_high * 4,1});
+    submit(s,encoder);
+    const uint8_t *bytes = map(s,readback,PITCH * blocks_high);
+    for (uint32_t row = 0; row < blocks_high; ++row) memcpy(out + row * blocks_wide * 8,bytes + row * PITCH,blocks_wide * 8);
+    wgpuBufferUnmap(readback);
+    wgpuBufferRelease(readback);
+}
+
+/* Copies whose block extent reaches one side's edge but not the other's,
+ * whole-block queue writes, srgb view formats and a large zero-initialized texture. */
+static void blocks_edges(state *s)
+{
+    uint8_t grid[4 * 8];
+    for (size_t i = 0; i < 4; ++i) bc1(grid + i * 8,colors[i]);
+    uint8_t gray[8];
+    bc1(gray,0x7BEF);
+    WGPUTexture edge = image(s,WGPUTextureFormat_BC1RGBAUnorm,WGPUTextureDimension_2D,(WGPUExtent3D){12,12,1},2,sampled_copy);
+    WGPUTexture wide = image(s,WGPUTextureFormat_BC1RGBAUnorm,WGPUTextureDimension_2D,(WGPUExtent3D){16,16,1},1,sampled_copy);
+    assert(edge && wide);
+    write_blocks(s,edge,1,grid,sizeof(grid),16,2,(WGPUExtent3D){8,8,1}); /* 6x6 mip: physical 8x8 */
+    WGPUTexelCopyTextureInfo middle = {.texture=wide,.origin={8,8,0},.aspect=WGPUTextureAspect_All};
+    wgpuQueueWriteTexture(s->queue,&middle,gray,8,&(WGPUTexelCopyBufferLayout){.bytesPerRow=8,.rowsPerImage=1},
+        &(WGPUExtent3D){4,4,1});
+    /* Edge to middle: mip 1 block (1,0) (2 texels wide there) into wide block (1,0);
+     * middle to edge: wide block (2,2) into mip 1 block (1,1). */
+    WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(s->device,NULL);
+    wgpuCommandEncoderCopyTextureToTexture(encoder,&(WGPUTexelCopyTextureInfo){.texture=edge,.mipLevel=1,.origin={4,0,0}},
+        &(WGPUTexelCopyTextureInfo){.texture=wide,.origin={4,0,0}},&(WGPUExtent3D){4,4,1});
+    wgpuCommandEncoderCopyTextureToTexture(encoder,&middle,
+        &(WGPUTexelCopyTextureInfo){.texture=edge,.mipLevel=1,.origin={4,4,0}},&(WGPUExtent3D){4,4,1});
+    submit(s,encoder);
+    uint8_t wide_blocks[16 * 8], edge_blocks[4 * 8], expected_wide[16 * 8] = {0};
+    read_blocks(s,wide,0,0,4,4,wide_blocks);
+    memcpy(expected_wide + 1 * 8,grid + 1 * 8,8);     /* green */
+    memcpy(expected_wide + 10 * 8,gray,8);            /* block (2,2) */
+    assert(!memcmp(wide_blocks,expected_wide,sizeof(wide_blocks)));
+    read_blocks(s,edge,1,0,2,2,edge_blocks);
+    assert(!memcmp(edge_blocks,grid,24) && !memcmp(edge_blocks + 24,gray,8));
+
+    /* writeTexture needs whole blocks: 2x2 into a 2x2 mip rejects, 4x4 passes. */
+    WGPUTexture small = image(s,WGPUTextureFormat_BC1RGBAUnorm,WGPUTextureDimension_2D,(WGPUExtent3D){8,8,1},3,sampled_copy);
+    WGPUTexelCopyTextureInfo tiny = {.texture=small,.mipLevel=2,.aspect=WGPUTextureAspect_All};
+    const WGPUTexelCopyBufferLayout one_block = {.bytesPerRow=8,.rowsPerImage=1};
+    wgpuDevicePushErrorScope(s->device,WGPUErrorFilter_Validation);
+    wgpuQueueWriteTexture(s->queue,&tiny,gray,8,&one_block,&(WGPUExtent3D){2,2,1});
+    expect_validation(s);
+    wgpuQueueWriteTexture(s->queue,&tiny,gray,8,&one_block,&(WGPUExtent3D){4,4,1});
+    uint8_t written[8];
+    read_blocks(s,small,2,0,1,1,written);
+    assert(!memcmp(written,gray,8));
+
+    /* writeTexture data needs no block alignment: odd offsets and a bytesPerRow
+     * of 8*w+3 into a two-layer BC1 array with rowsPerImage 3, read back exactly. */
+    WGPUTextureDescriptor layered_desc = WGPU_TEXTURE_DESCRIPTOR_INIT;
+    layered_desc.format = WGPUTextureFormat_BC1RGBAUnorm;
+    layered_desc.usage = sampled_copy;
+    layered_desc.size = (WGPUExtent3D){8,8,2};
+    WGPUTexture layered = wgpuDeviceCreateTexture(s->device,&layered_desc);
+    assert(layered);
+    enum { ODD_OFFSET = 7, ODD_PITCH = 8 * 2 + 3, ODD_ROWS = 3 };
+    uint8_t odd[ODD_OFFSET + ODD_PITCH * ODD_ROWS * 2];
+    for (size_t i = 0; i < sizeof(odd); ++i) odd[i] = (uint8_t)(0xA5 ^ i); /* filler outside the blocks */
+    uint8_t layer_blocks[2][4 * 8];
+    for (size_t layer = 0; layer < 2; ++layer)
+        for (size_t block = 0; block < 4; ++block) {
+            bc1(layer_blocks[layer] + block * 8,layer ? colors[3 - block] : colors[block]);
+            memcpy(odd + ODD_OFFSET + layer * ODD_PITCH * ODD_ROWS + (block / 2) * ODD_PITCH + (block % 2) * 8,
+                layer_blocks[layer] + block * 8,8);
+        }
+    WGPUTexelCopyTextureInfo layered_target = {.texture=layered,.aspect=WGPUTextureAspect_All};
+    wgpuQueueWriteTexture(s->queue,&layered_target,odd,sizeof(odd),
+        &(WGPUTexelCopyBufferLayout){.offset=ODD_OFFSET,.bytesPerRow=ODD_PITCH,.rowsPerImage=ODD_ROWS},
+        &(WGPUExtent3D){8,8,2});
+    for (uint32_t layer = 0; layer < 2; ++layer) {
+        uint8_t back[4 * 8];
+        read_blocks(s,layered,0,layer,2,2,back);
+        assert(!memcmp(back,layer_blocks[layer],sizeof(back)));
+    }
+    /* A single odd-offset row with an odd pitch into one block row. */
+    uint8_t row[3 + 16];
+    memcpy(row + 3,gray,8);
+    memcpy(row + 11,gray,8);
+    WGPUTexelCopyTextureInfo second_row = {.texture=layered,.origin={0,4,1},.aspect=WGPUTextureAspect_All};
+    wgpuQueueWriteTexture(s->queue,&second_row,row,sizeof(row),
+        &(WGPUTexelCopyBufferLayout){.offset=3,.bytesPerRow=17,.rowsPerImage=1},&(WGPUExtent3D){8,4,1});
+    uint8_t back[4 * 8];
+    read_blocks(s,layered,0,1,2,2,back);
+    assert(!memcmp(back,layer_blocks[1],16) && !memcmp(back + 16,gray,8) && !memcmp(back + 24,gray,8));
+    wgpuTextureRelease(layered);
+
+    /* srgb view formats on BC: the same bytes decode darker through the srgb view. */
+    const WGPUTextureFormat bc7_srgb = WGPUTextureFormat_BC7RGBAUnormSrgb, bc1_srgb = WGPUTextureFormat_BC1RGBAUnormSrgb;
+    WGPUTextureDescriptor described = WGPU_TEXTURE_DESCRIPTOR_INIT;
+    described.format = WGPUTextureFormat_BC7RGBAUnorm;
+    described.usage = sampled_copy;
+    described.size = (WGPUExtent3D){8,8,1};
+    described.viewFormatCount = 1;
+    described.viewFormats = &bc7_srgb;
+    WGPUTexture bc7 = wgpuDeviceCreateTexture(s->device,&described);
+    assert(bc7);
+    WGPUTextureViewDescriptor srgb_view_desc = WGPU_TEXTURE_VIEW_DESCRIPTOR_INIT;
+    srgb_view_desc.format = bc7_srgb;
+    WGPUTextureView bc7_view = wgpuTextureCreateView(bc7,&srgb_view_desc);
+    assert(bc7_view);
+    wgpuTextureViewRelease(bc7_view);
+    wgpuTextureRelease(bc7);
+    described.format = WGPUTextureFormat_BC1RGBAUnorm;
+    described.size = (WGPUExtent3D){4,4,1};
+    described.viewFormats = &bc1_srgb;
+    WGPUTexture bc1_texture = wgpuDeviceCreateTexture(s->device,&described);
+    assert(bc1_texture);
+    write_blocks(s,bc1_texture,0,gray,8,8,1,(WGPUExtent3D){4,4,1});
+    srgb_view_desc.format = bc1_srgb;
+    WGPUTextureView views[2] = {wgpuTextureCreateView(bc1_texture,NULL),wgpuTextureCreateView(bc1_texture,&srgb_view_desc)};
+    assert(views[0] && views[1]);
+    const char *const load = "@group(0) @binding(0) var t:texture_2d<f32>;"
+        "@group(0) @binding(1) var<storage,read_write> o:array<vec4f>;"
+        "@compute @workgroup_size(1) fn main(){o[0]=textureLoad(t,vec2i(0,0),0);}";
+    float *linear = load_texels(s,load,views[0],1), *srgb = load_texels(s,load,views[1],1);
+    assert(linear[3] == 1.0f && srgb[3] == 1.0f && srgb[0] < linear[0] - 0.2f && srgb[0] > 0.0f);
+    free(linear);
+    free(srgb);
+    wgpuTextureViewRelease(views[0]);
+    wgpuTextureViewRelease(views[1]);
+    /* Without the listed view format, the srgb view rejects. */
+    WGPUTextureView unlisted = NULL;
+    wgpuDevicePushErrorScope(s->device,WGPUErrorFilter_Validation);
+    unlisted = wgpuTextureCreateView(small,&srgb_view_desc);
+    assert(!unlisted);
+    expect_validation(s);
+    wgpuTextureRelease(bc1_texture);
+
+    /* Zero staging is block-sized: 8192x8192x8 BC1 is 256 MiB of blocks. */
+    WGPUTexture large = image(s,WGPUTextureFormat_BC1RGBAUnorm,WGPUTextureDimension_2D,(WGPUExtent3D){8192,8192,8},1,sampled_copy);
+    assert(large);
+    uint8_t zero_block[8], zeros[8] = {0};
+    read_blocks(s,large,0,7,1,1,zero_block);
+    assert(!memcmp(zero_block,zeros,8));
+    wgpuTextureRelease(large);
+    wgpuTextureRelease(small);
+    wgpuTextureRelease(wide);
+    wgpuTextureRelease(edge);
 }
 
 /* 3D BC1 4x4x2: slice 0 red, slice 1 blue. */
@@ -232,6 +384,7 @@ int main(void)
     const WGPUFeatureName only_bc = WGPUFeatureName_TextureCompressionBC;
     consumer_init_features(&enabled,&only_bc,1);
     blocks_2d(&enabled);
+    blocks_edges(&enabled);
     block_controls(&enabled,false);
     consumer_finish(&enabled);
     if (!sliced) {
@@ -247,7 +400,10 @@ int main(void)
     }
     printf("PASS public BC compression: solid BC1/BC1-srgb/BC4 blocks decode to exact texels through queue writes "
         "and buffer copies, a 6x6 mip takes its physical 8x8 copy, texture-to-texture and texture-to-buffer "
-        "copies return exact blocks%s; without the feature, non-block sizes, attachment/storage usage, 3D without "
+        "copies return exact blocks, copies whose block reaches only one side's edge (both directions) land "
+        "exactly, writeTexture of whole blocks into a 2x2 mip and with odd offsets and bytesPerRow 8*w+3 "
+        "(two layers, rowsPerImage 3), bc1/bc7 srgb view formats, a zeroed "
+        "8192x8192x8 BC1 texture%s; without the feature, a partial-block writeTexture, non-block sizes, attachment/storage usage, 3D without "
         "sliced 3D and unaligned copies reject %s\n",
         sliced ? ", a 3D BC1 texture uploaded with rowsPerImage 2 decodes per slice (sliced 3D)" : "", adapter_class_scope());
     return 0;

@@ -19,7 +19,11 @@ an alias of device-free compiled data or a second count for one WebGPU object.
   shader identity, map modes, span and stale-generation admission.
 - `formats.c`, `textures.c`, `texture_copy.c`: named format semantics, immutable
   textures/views/samplers and shared checked block/mip/row/image copy geometry;
-  compressed textures have whole blocks at mip 0.
+  compressed textures have whole blocks at mip 0; view formats may differ only
+  in srgb-ness (RGBA8, BGRA8, BC1, BC2, BC3, BC7). Copy validation modes:
+  WEBGPU (buffer copies), QUEUE (writeTexture: no 256-byte or block alignment of
+  bytesPerRow and offset; `row_bytes`/`rows` let the caller repack) and
+  NATIVE (internal uploads that may end a partial block at the edge).
   The checked format/aspect sample-class and named channel-count functions serve
   native shader/clear scalar conversion; binding admission uses the same owner, including stencil-only
   combined formats. Baseline class is separate from optional feature promotion,
@@ -52,6 +56,12 @@ an alias of device-free compiled data or a second count for one WebGPU object.
   direct/indirect compute snapshots and single-use submission self-leases.
   After a rejected begin, `doe_resource_*_pass_rejected` returns the WebGPU
   invalid pass: one encoder lease, no records, the encoder's rejection reported.
+  A command on an ended pass returns STATE without failing its encoder; End
+  checks the parent lock (`doe_resource_*_pass_closed`); a failed Finish may
+  return `doe_resource_commands_rejected`, an invalid command buffer that submit
+  and program claims reject.
+  After a failed bundle finish, `doe_resource_render_bundle_rejected` returns
+  an invalid bundle that has no draws and fails execution.
 - `queries.c`, `external_textures.c`, `render.c`, `render_state.c`: real native query-pool ownership,
   retained imported plane views, and attachment/draw/query replay snapshots.
   Render begin/end packets bracket query events, including empty query scopes.

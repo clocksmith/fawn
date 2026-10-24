@@ -36,9 +36,38 @@ static void rejected_record(state *s, WGPUComputePipeline program, WGPUBindGroup
     wgpuComputePassEncoderDispatchWorkgroupsIndirect(pass,arguments,offset);
     wgpuComputePassEncoderEnd(pass);
     wgpuComputePassEncoderRelease(pass);
-    assert(!wgpuCommandEncoderFinish(encoder,NULL));
+    finish_invalid(encoder);
     wgpuCommandEncoderRelease(encoder);
     expect_validation(s);
+}
+typedef struct recording {
+    WGPUComputePipeline producer, counter, inspect;
+    WGPUBindGroup producer_group, counter_group, inspect_group;
+    WGPUBuffer arguments, result, readback;
+    WGPUProcComputePassEncoderDispatchWorkgroupsIndirect indirect;
+} recording;
+/* One complete produce/count/inspect submission's command buffer. */
+static WGPUCommandBuffer encode(state *s, const recording *r)
+{
+    WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(s->device,NULL);
+    WGPUComputePassEncoder pass = wgpuCommandEncoderBeginComputePass(encoder,NULL);
+    wgpuComputePassEncoderSetPipeline(pass,r->producer);
+    wgpuComputePassEncoderSetBindGroup(pass,0,r->producer_group,0,NULL);
+    wgpuComputePassEncoderDispatchWorkgroups(pass,1,1,1);
+    wgpuComputePassEncoderSetPipeline(pass,r->counter);
+    wgpuComputePassEncoderSetBindGroup(pass,0,r->counter_group,0,NULL);
+    const uint64_t offsets[] = {4,20,36,52,68,4};
+    for (size_t i=0;i<sizeof(offsets)/sizeof(*offsets);++i) r->indirect(pass,r->arguments,offsets[i]);
+    wgpuComputePassEncoderSetPipeline(pass,r->inspect);
+    wgpuComputePassEncoderSetBindGroup(pass,0,r->inspect_group,0,NULL);
+    wgpuComputePassEncoderDispatchWorkgroups(pass,1,1,1);
+    wgpuComputePassEncoderEnd(pass);
+    wgpuComputePassEncoderRelease(pass);
+    wgpuCommandEncoderCopyBufferToBuffer(encoder,r->result,0,r->readback,0,84);
+    WGPUCommandBuffer commands = wgpuCommandEncoderFinish(encoder,NULL);
+    assert(commands);
+    wgpuCommandEncoderRelease(encoder);
+    return commands;
 }
 int main(void)
 {
@@ -82,28 +111,34 @@ int main(void)
     rejected_record(&s,counter,counter_group,arguments,72);
     rejected_record(&s,counter,counter_group,result,0); /* Missing public Indirect usage. */
     rejected_record(&s,producer,producer_group,arguments,4); /* Writable/indirect scope conflict. */
-    WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(s.device,NULL);
-    WGPUComputePassEncoder pass = wgpuCommandEncoderBeginComputePass(encoder,NULL);
-    wgpuComputePassEncoderSetPipeline(pass,producer);
-    wgpuComputePassEncoderSetBindGroup(pass,0,producer_group,0,NULL);
-    wgpuComputePassEncoderDispatchWorkgroups(pass,1,1,1);
-    wgpuComputePassEncoderSetPipeline(pass,counter);
-    wgpuComputePassEncoderSetBindGroup(pass,0,counter_group,0,NULL);
     WGPUProcComputePassEncoderDispatchWorkgroupsIndirect indirect =
         (WGPUProcComputePassEncoderDispatchWorkgroupsIndirect)wgpuGetProcAddress(
             (WGPUStringView){"wgpuComputePassEncoderDispatchWorkgroupsIndirect",WGPU_STRLEN});
     assert(indirect);
-    const uint64_t offsets[] = {4,20,36,52,68,4};
-    for (size_t i=0;i<sizeof(offsets)/sizeof(*offsets);++i) indirect(pass,arguments,offsets[i]);
-    wgpuComputePassEncoderSetPipeline(pass,inspect);
-    wgpuComputePassEncoderSetBindGroup(pass,0,inspect_group,0,NULL);
-    wgpuComputePassEncoderDispatchWorkgroups(pass,1,1,1);
-    wgpuComputePassEncoderEnd(pass);
-    wgpuComputePassEncoderRelease(pass);
-    wgpuCommandEncoderCopyBufferToBuffer(encoder,result,0,readback,0,84);
-    WGPUCommandBuffer commands = wgpuCommandEncoderFinish(encoder,NULL);
-    assert(commands);
-    wgpuCommandEncoderRelease(encoder);
+    const recording r = {producer,counter,inspect,producer_group,counter_group,inspect_group,arguments,result,
+        readback,indirect};
+    /* A command buffer is single-use whatever happens to its submission: after
+     * each injected backend failure (typed OOM/internal at that submit), its
+     * resubmission is one validation error and a freshly encoded buffer proves
+     * recovery of the guard. */
+    const struct { doe_vk_status injected; WGPUErrorFilter filter; WGPUErrorType type; } failures[2] = {
+        {DOE_VK_OUT_OF_MEMORY,WGPUErrorFilter_OutOfMemory,WGPUErrorType_OutOfMemory},
+        {DOE_VK_NATIVE_FAILURE,WGPUErrorFilter_Internal,WGPUErrorType_Internal}};
+    for (size_t i = 0; i < 2; ++i) {
+        WGPUCommandBuffer failed = encode(&s,&r);
+        injected = failures[i].injected;
+        wgpuDevicePushErrorScope(s.device,failures[i].filter);
+        wgpuQueueSubmit(s.queue,1,&failed);
+        pop_error(&s,failures[i].type);
+        assert(!((native_device *)s.device)->dispatch_validator);
+        injected = DOE_VK_OK;
+        const unsigned before = s.errors; /* uncaptured: counts every error */
+        wgpuQueueSubmit(s.queue,1,&failed);
+        assert(s.errors == before + 1 && s.last_error == WGPUErrorType_Validation);
+        s.errors = before;
+        wgpuCommandBufferRelease(failed);
+    }
+    WGPUCommandBuffer commands = encode(&s,&r);
     wgpuComputePipelineRelease(producer);
     wgpuComputePipelineRelease(counter);
     wgpuComputePipelineRelease(inspect);
@@ -112,17 +147,6 @@ int main(void)
     wgpuBindGroupRelease(inspect_group);
     wgpuBufferRelease(arguments);
     wgpuBufferRelease(result);
-    injected = DOE_VK_OUT_OF_MEMORY;
-    wgpuDevicePushErrorScope(s.device,WGPUErrorFilter_OutOfMemory);
-    wgpuQueueSubmit(s.queue,1,&commands);
-    pop_error(&s,WGPUErrorType_OutOfMemory);
-    assert(!((native_device *)s.device)->dispatch_validator);
-    injected = DOE_VK_NATIVE_FAILURE;
-    wgpuDevicePushErrorScope(s.device,WGPUErrorFilter_Internal);
-    wgpuQueueSubmit(s.queue,1,&commands);
-    pop_error(&s,WGPUErrorType_Internal);
-    assert(!((native_device *)s.device)->dispatch_validator);
-    injected = DOE_VK_OK;
     wgpuQueueSubmit(s.queue,1,&commands);
     wgpuCommandBufferRelease(commands);
     assert(((native_device *)s.device)->dispatch_validator);
@@ -135,5 +159,5 @@ int main(void)
     wgpuBufferUnmap(readback);
     wgpuBufferRelease(readback);
     consumer_finish(&s);
-    printf("PASS public indirect compute: same-command GPU-produced valid/overlimit XYZ/zero/valid counts, four actual atomic invocations, unchanged arguments/padding without public CopySrc, typed guard failures/retry and early releases %s\n", adapter_class_scope());
+    printf("PASS public indirect compute: same-command GPU-produced valid/overlimit XYZ/zero/valid counts, four actual atomic invocations, unchanged arguments/padding without public CopySrc, typed guard failures, one validation error for each failed buffer's resubmission, recovery with fresh buffers and early releases %s\n", adapter_class_scope());
 }

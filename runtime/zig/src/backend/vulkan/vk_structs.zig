@@ -99,6 +99,15 @@ pub const VkImageCreateInfo = extern struct {
     initialLayout: u32,
 };
 
+/// Vulkan 1.2 core (VK_KHR_image_format_list): the formats a MUTABLE_FORMAT
+/// image will be viewed as.
+pub const VkImageFormatListCreateInfo = extern struct {
+    sType: vk.VkStructureType,
+    pNext: ?*const anyopaque,
+    viewFormatCount: u32,
+    pViewFormats: ?[*]const u32,
+};
+
 pub const VkMemoryAllocateInfo = extern struct {
     sType: vk.VkStructureType,
     pNext: ?*const anyopaque,
