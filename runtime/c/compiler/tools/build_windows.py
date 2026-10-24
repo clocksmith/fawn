@@ -97,7 +97,7 @@ def main() -> None:
                          '/link', str(import_library), '/stack:8388608'], out)
         arguments = [str(executable)]
         if name == 'native_consumer':
-            arguments.append(str(ROOT.parents[2] / 'bench/kernels/package_vector_scale_add.wgsl'))
+            arguments.append(str(ROOT.parents[2] / 'bench/inference-pipeline/kernels/residual.wgsl'))
         invoke(arguments, out)
     invoke([compiler, '/nologo', '/MD', '/O2', '/WX', '/std:c++17',
             '/clang:-fno-exceptions', '/clang:-fno-rtti', str(ROOT / 'tests/cpp_consumer.cpp'),
