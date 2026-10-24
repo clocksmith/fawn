@@ -1746,6 +1746,17 @@ pub fn build(b: *std.Build) void {
     wgsl_test_step.dependOn(&test_inventory_check.step);
     wgsl_test_step.dependOn(&run_wgsl_tests.step);
 
+    // Every source file that declares tests must be compiled into an unfiltered
+    // suite binary (or be listed as deliberately unreached); test-full runs it.
+    const reachability_step = b.step("test-reachability", "Check that every source-local Zig test is compiled into a test suite");
+    if (test_filters.len == 0 and target.result.os.tag == .linux) {
+        const reachability = b.addSystemCommand(&.{ "python3", "tools/check_test_reachability.py" });
+        for ([_]*std.Build.Step.Compile{ test_exec, device_test_exec, core_test_exec, full_test_exec, d3d12_test_exec, wgsl_test_exec }) |suite|
+            reachability.addArtifactArg(suite);
+        reachability_step.dependOn(&reachability.step);
+        full_test_step.dependOn(&reachability.step);
+    }
+
     const metal_staged_write_bench_tests = b.addTest(.{
         .root_module = metal_staged_write_bench.root_module,
         .filters = test_filters,

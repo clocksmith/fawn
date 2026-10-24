@@ -507,6 +507,14 @@
         {
           "path": "src/native/support/doe_device_loss.zig",
           "kind": "inline"
+        },
+        {
+          "path": "src/native/vulkan/vulkan_render_attachments.zig",
+          "kind": "inline"
+        },
+        {
+          "path": "src/native/render/doe_render_pipeline_native.zig",
+          "kind": "inline"
         }
       ]
     },
@@ -896,6 +904,14 @@
         },
         {
           "path": "src/backend/vulkan/vk_descriptors.zig",
+          "kind": "inline"
+        },
+        {
+          "path": "src/native/vulkan/vulkan_render_attachments.zig",
+          "kind": "inline"
+        },
+        {
+          "path": "src/native/render/doe_render_pipeline_native.zig",
           "kind": "inline"
         }
       ]
@@ -1487,6 +1503,80 @@
         "tests/c_error_scopes_integration_test.zig",
         "test_c_error_scopes_library.zig"
       ]
+    }
+  ],
+  "unreachedSourceTests": [
+    {
+      "path": "src/cli/runtime_cli_inputs.zig",
+      "reason": "declares tests that no Zig test suite compiled when the reachability check was added (2026-10-24); its owner should wire it into a suite or remove the dead tests"
+    },
+    {
+      "path": "src/compiler/wgsl/emit/csl/emit_csl_host_runtime.zig",
+      "reason": "declares tests that no Zig test suite compiled when the reachability check was added (2026-10-24); its owner should wire it into a suite or remove the dead tests"
+    },
+    {
+      "path": "src/compiler/wgsl/emit/csl/emit_csl_simulator.zig",
+      "reason": "declares tests that no Zig test suite compiled when the reachability check was added (2026-10-24); its owner should wire it into a suite or remove the dead tests"
+    },
+    {
+      "path": "src/compiler/wgsl/emit/csl/emit_csl_toolchain.zig",
+      "reason": "declares tests that no Zig test suite compiled when the reachability check was added (2026-10-24); its owner should wire it into a suite or remove the dead tests"
+    },
+    {
+      "path": "src/compiler/wgsl/runtime/runtime_compile_report.zig",
+      "reason": "declares tests that no Zig test suite compiled when the reachability check was added (2026-10-24); its owner should wire it into a suite or remove the dead tests"
+    },
+    {
+      "path": "src/composition/execution_session.zig",
+      "reason": "declares tests that no Zig test suite compiled when the reachability check was added (2026-10-24); its owner should wire it into a suite or remove the dead tests"
+    },
+    {
+      "path": "src/dropin/dropin_browser_shared_memory.zig",
+      "reason": "declares tests that no Zig test suite compiled when the reachability check was added (2026-10-24); its owner should wire it into a suite or remove the dead tests"
+    },
+    {
+      "path": "src/dropin/wgpu_dropin_lib.zig",
+      "reason": "declares tests that no Zig test suite compiled when the reachability check was added (2026-10-24); its owner should wire it into a suite or remove the dead tests"
+    },
+    {
+      "path": "src/plan/dawn_plan_types.zig",
+      "reason": "declares tests that no Zig test suite compiled when the reachability check was added (2026-10-24); its owner should wire it into a suite or remove the dead tests"
+    },
+    {
+      "path": "src/plan/plan_validation.zig",
+      "reason": "declares tests that no Zig test suite compiled when the reachability check was added (2026-10-24); its owner should wire it into a suite or remove the dead tests"
+    },
+    {
+      "path": "src/runtime/numeric_stability/policy.zig",
+      "reason": "declares tests that no Zig test suite compiled when the reachability check was added (2026-10-24); its owner should wire it into a suite or remove the dead tests"
+    },
+    {
+      "path": "src/runtime/numeric_stability/runtime_decode.zig",
+      "reason": "declares tests that no Zig test suite compiled when the reachability check was added (2026-10-24); its owner should wire it into a suite or remove the dead tests"
+    },
+    {
+      "path": "src/runtime/numeric_stability/service/numeric_stability.zig",
+      "reason": "declares tests that no Zig test suite compiled when the reachability check was added (2026-10-24); its owner should wire it into a suite or remove the dead tests"
+    },
+    {
+      "path": "src/runtime/output_oracle.zig",
+      "reason": "declares tests that no Zig test suite compiled when the reachability check was added (2026-10-24); its owner should wire it into a suite or remove the dead tests"
+    },
+    {
+      "path": "src/runtime/trace/trace_jsonl_emit.zig",
+      "reason": "declares tests that no Zig test suite compiled when the reachability check was added (2026-10-24); its owner should wire it into a suite or remove the dead tests"
+    },
+    {
+      "path": "src/spatial/csl/csl_host_plan_materialize.zig",
+      "reason": "declares tests that no Zig test suite compiled when the reachability check was added (2026-10-24); its owner should wire it into a suite or remove the dead tests"
+    },
+    {
+      "path": "src/spatial/csl/csl_host_plan_tool.zig",
+      "reason": "declares tests that no Zig test suite compiled when the reachability check was added (2026-10-24); its owner should wire it into a suite or remove the dead tests"
+    },
+    {
+      "path": "src/spatial/csl/csl_pe_program_metadata.zig",
+      "reason": "declares tests that no Zig test suite compiled when the reachability check was added (2026-10-24); its owner should wire it into a suite or remove the dead tests"
     }
   ]
 }
