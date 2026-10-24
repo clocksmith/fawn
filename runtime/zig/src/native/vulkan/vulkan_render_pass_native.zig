@@ -101,6 +101,7 @@ fn populate_draw_cmd_from_pass(cmd: *model_render_types.RenderDrawCommand, pass:
             const handle = bg.vk_buffer_handles[binding];
             if (handle == 0) continue;
             cmd.bind_buffer_handles[buffer_count] = handle;
+            cmd.bind_buffer_groups[buffer_count] = @intCast(group_index);
             cmd.bind_buffer_bindings[buffer_count] = @intCast(binding);
             cmd.bind_buffer_types[buffer_count] = bg.vk_buffer_binding_types[binding];
             cmd.bind_buffer_offsets[buffer_count] = bg.offsets[binding] + pass.dynamic_offsets[group_index][binding];
@@ -118,6 +119,7 @@ fn populate_draw_cmd_from_pass(cmd: *model_render_types.RenderDrawCommand, pass:
             if (texture_key == 0) continue;
             if (tex_count < model_render_types.MAX_RENDER_BIND_ENTRIES) {
                 cmd.bind_texture_handles[tex_count] = texture_key;
+                cmd.bind_texture_groups[tex_count] = @intCast(group_index);
                 cmd.bind_texture_bindings[tex_count] = bg.render_texture_bindings[texture_index];
                 cmd.bind_texture_storage[tex_count] = bg.render_texture_resource_kinds[texture_index] == RESOURCE_KIND_STORAGE_TEXTURE;
                 tex_count += 1;
@@ -131,6 +133,7 @@ fn populate_draw_cmd_from_pass(cmd: *model_render_types.RenderDrawCommand, pass:
             if (maybe_s == null) continue;
             if (samp_count < model_render_types.MAX_RENDER_BIND_ENTRIES) {
                 cmd.bind_sampler_handles[samp_count] = @intFromPtr(maybe_s.?);
+                cmd.bind_sampler_groups[samp_count] = @intCast(group_index);
                 cmd.bind_sampler_bindings[samp_count] = bg.render_sampler_bindings[sampler_index];
                 samp_count += 1;
             }

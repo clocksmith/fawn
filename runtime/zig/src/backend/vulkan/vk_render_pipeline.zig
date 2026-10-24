@@ -259,13 +259,12 @@ pub fn create_graphics_pipeline(
         try createRenderDescriptorState(self, state, cmd);
     }
 
-    var set_layouts = [1]u64{state.descriptor_set_layout};
     var layout_info = c.VkPipelineLayoutCreateInfo{
         .sType = c.VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
         .pNext = null,
         .flags = 0,
-        .setLayoutCount = if (has_bind_groups) 1 else 0,
-        .pSetLayouts = if (has_bind_groups) &set_layouts else null,
+        .setLayoutCount = state.descriptor_set_count,
+        .pSetLayouts = if (state.descriptor_set_count > 0) &state.descriptor_set_layouts else null,
         .pushConstantRangeCount = 0,
         .pPushConstantRanges = null,
     };
@@ -499,6 +498,11 @@ pub fn create_graphics_pipeline(
 }
 
 const MAX_RENDER_DESCRIPTOR_BINDINGS: usize = model_render_types.MAX_RENDER_BIND_ENTRIES * 3;
+
+/// The WGSL @binding number of an entry, or its positional fallback.
+fn renderBinding(recorded: u32, fallback: u32) u32 {
+    return if (recorded != model_render_types.RENDER_BINDING_UNSET) recorded else fallback;
+}
 const VK_SHADER_STAGE_ALL_GRAPHICS: u32 = c.VK_SHADER_STAGE_VERTEX_BIT | c.VK_SHADER_STAGE_FRAGMENT_BIT;
 
 /// Build descriptor set layout, pool, and set for render pipeline bindings.
@@ -516,70 +520,72 @@ fn createRenderDescriptorState(
     const total_bindings = buffer_count + tex_count + samp_count;
     if (total_bindings == 0) return;
 
-    // Build layout bindings at the WGSL-decorated binding numbers.
-    var bindings: [MAX_RENDER_DESCRIPTOR_BINDINGS]c.VkDescriptorSetLayoutBinding = undefined;
-    var binding_count: u32 = 0;
-    var buffer_binding_index: u32 = 0;
-    while (buffer_binding_index < buffer_count) : (buffer_binding_index += 1) {
-        const binding = if (cmd.bind_buffer_bindings[buffer_binding_index] != model_render_types.RENDER_BINDING_UNSET)
-            cmd.bind_buffer_bindings[buffer_binding_index]
-        else
-            buffer_binding_index;
-        bindings[binding_count] = .{
-            .binding = binding,
-            .descriptorType = render_buffer_descriptor_type(cmd.bind_buffer_types[buffer_binding_index]),
-            .descriptorCount = 1,
-            .stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS,
-            .pImmutableSamplers = null,
-        };
-        binding_count += 1;
-    }
-    var tex_binding_index: u32 = 0;
-    while (tex_binding_index < tex_count) : (tex_binding_index += 1) {
-        const fallback_binding = tex_binding_index;
-        const binding = if (cmd.bind_texture_bindings[tex_binding_index] != model_render_types.RENDER_BINDING_UNSET)
-            cmd.bind_texture_bindings[tex_binding_index]
-        else
-            fallback_binding;
-        bindings[binding_count] = .{
-            .binding = binding,
-            .descriptorType = render_texture_descriptor_type(cmd.bind_texture_storage[tex_binding_index]),
-            .descriptorCount = 1,
-            .stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS,
-            .pImmutableSamplers = null,
-        };
-        binding_count += 1;
-    }
-    var samp_binding_index: u32 = 0;
-    while (samp_binding_index < samp_count) : (samp_binding_index += 1) {
-        const fallback_binding = buffer_count + tex_count + samp_binding_index;
-        const binding = if (cmd.bind_sampler_bindings[samp_binding_index] != model_render_types.RENDER_BINDING_UNSET)
-            cmd.bind_sampler_bindings[samp_binding_index]
-        else
-            fallback_binding;
-        bindings[binding_count] = .{
-            .binding = binding,
-            .descriptorType = c.VK_DESCRIPTOR_TYPE_SAMPLER,
-            .descriptorCount = 1,
-            .stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS,
-            .pImmutableSamplers = null,
-        };
-        binding_count += 1;
-    }
-
-    // Create descriptor set layout
-    var layout_ci = c.VkDescriptorSetLayoutCreateInfo{
-        .sType = c.VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
-        .pNext = null,
-        .flags = 0,
-        .bindingCount = binding_count,
-        .pBindings = bindings[0..binding_count].ptr,
-    };
-    try c.check_vk(c.vkCreateDescriptorSetLayout(self.device, &layout_ci, null, &state.descriptor_set_layout));
+    // One descriptor set per bind group index up to the highest one used; a
+    // group the draw does not bind gets an empty layout so set numbers match
+    // the shader's @group decorations.
+    var set_count: u32 = 0;
+    for (cmd.bind_buffer_groups[0..buffer_count]) |group| set_count = @max(set_count, @as(u32, group) + 1);
+    for (cmd.bind_texture_groups[0..tex_count]) |group| set_count = @max(set_count, @as(u32, group) + 1);
+    for (cmd.bind_sampler_groups[0..samp_count]) |group| set_count = @max(set_count, @as(u32, group) + 1);
+    if (set_count > model_render_types.MAX_RENDER_BIND_GROUPS) return error.InvalidArgument;
     errdefer {
-        c.vkDestroyDescriptorSetLayout(self.device, state.descriptor_set_layout, null);
-        state.descriptor_set_layout = VK_NULL_U64;
+        for (&state.descriptor_set_layouts) |*layout| {
+            if (layout.* != VK_NULL_U64) c.vkDestroyDescriptorSetLayout(self.device, layout.*, null);
+            layout.* = VK_NULL_U64;
+        }
+        state.descriptor_set_count = 0;
     }
+    var group: u32 = 0;
+    while (group < set_count) : (group += 1) {
+        // Build layout bindings at the WGSL-decorated binding numbers.
+        var bindings: [MAX_RENDER_DESCRIPTOR_BINDINGS]c.VkDescriptorSetLayoutBinding = undefined;
+        var binding_count: u32 = 0;
+        var buffer_binding_index: u32 = 0;
+        while (buffer_binding_index < buffer_count) : (buffer_binding_index += 1) {
+            if (cmd.bind_buffer_groups[buffer_binding_index] != group) continue;
+            bindings[binding_count] = .{
+                .binding = renderBinding(cmd.bind_buffer_bindings[buffer_binding_index], buffer_binding_index),
+                .descriptorType = render_buffer_descriptor_type(cmd.bind_buffer_types[buffer_binding_index]),
+                .descriptorCount = 1,
+                .stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS,
+                .pImmutableSamplers = null,
+            };
+            binding_count += 1;
+        }
+        var tex_binding_index: u32 = 0;
+        while (tex_binding_index < tex_count) : (tex_binding_index += 1) {
+            if (cmd.bind_texture_groups[tex_binding_index] != group) continue;
+            bindings[binding_count] = .{
+                .binding = renderBinding(cmd.bind_texture_bindings[tex_binding_index], tex_binding_index),
+                .descriptorType = render_texture_descriptor_type(cmd.bind_texture_storage[tex_binding_index]),
+                .descriptorCount = 1,
+                .stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS,
+                .pImmutableSamplers = null,
+            };
+            binding_count += 1;
+        }
+        var samp_binding_index: u32 = 0;
+        while (samp_binding_index < samp_count) : (samp_binding_index += 1) {
+            if (cmd.bind_sampler_groups[samp_binding_index] != group) continue;
+            bindings[binding_count] = .{
+                .binding = renderBinding(cmd.bind_sampler_bindings[samp_binding_index], buffer_count + tex_count + samp_binding_index),
+                .descriptorType = c.VK_DESCRIPTOR_TYPE_SAMPLER,
+                .descriptorCount = 1,
+                .stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS,
+                .pImmutableSamplers = null,
+            };
+            binding_count += 1;
+        }
+        var layout_ci = c.VkDescriptorSetLayoutCreateInfo{
+            .sType = c.VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+            .pNext = null,
+            .flags = 0,
+            .bindingCount = binding_count,
+            .pBindings = if (binding_count > 0) bindings[0..binding_count].ptr else null,
+        };
+        try c.check_vk(c.vkCreateDescriptorSetLayout(self.device, &layout_ci, null, &state.descriptor_set_layouts[group]));
+    }
+    state.descriptor_set_count = set_count;
 
     // Create descriptor pool
     var sampled_texture_count: u32 = 0;
@@ -643,7 +649,7 @@ fn createRenderDescriptorState(
         .sType = c.VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
         .pNext = null,
         .flags = 0,
-        .maxSets = 1,
+        .maxSets = set_count,
         .poolSizeCount = pool_size_count,
         .pPoolSizes = pool_sizes[0..pool_size_count].ptr,
     };
@@ -653,16 +659,15 @@ fn createRenderDescriptorState(
         state.descriptor_pool = VK_NULL_U64;
     }
 
-    // Allocate descriptor set
-    const set_layout = [1]u64{state.descriptor_set_layout};
+    // Allocate one descriptor set per bind group index.
     var alloc_info = c.VkDescriptorSetAllocateInfo{
         .sType = c.VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
         .pNext = null,
         .descriptorPool = state.descriptor_pool,
-        .descriptorSetCount = 1,
-        .pSetLayouts = &set_layout,
+        .descriptorSetCount = set_count,
+        .pSetLayouts = &state.descriptor_set_layouts,
     };
-    try c.check_vk(c.vkAllocateDescriptorSets(self.device, &alloc_info, @ptrCast(&state.descriptor_set)));
+    try c.check_vk(c.vkAllocateDescriptorSets(self.device, &alloc_info, @ptrCast(&state.descriptor_sets)));
 
     // Write descriptor updates for buffer, texture, and sampler bindings.
     var buffer_infos: [MAX_RENDER_DESCRIPTOR_BINDINGS]c.VkDescriptorBufferInfo = undefined;
@@ -687,7 +692,7 @@ fn createRenderDescriptorState(
         writes[write_count] = .{
             .sType = c.VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
             .pNext = null,
-            .dstSet = state.descriptor_set,
+            .dstSet = state.descriptor_sets[cmd.bind_buffer_groups[bi]],
             .dstBinding = binding,
             .dstArrayElement = 0,
             .descriptorCount = 1,
@@ -716,7 +721,7 @@ fn createRenderDescriptorState(
         writes[write_count] = .{
             .sType = c.VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
             .pNext = null,
-            .dstSet = state.descriptor_set,
+            .dstSet = state.descriptor_sets[cmd.bind_texture_groups[ti]],
             .dstBinding = binding,
             .dstArrayElement = 0,
             .descriptorCount = 1,
@@ -748,7 +753,7 @@ fn createRenderDescriptorState(
         writes[write_count] = .{
             .sType = c.VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
             .pNext = null,
-            .dstSet = state.descriptor_set,
+            .dstSet = state.descriptor_sets[cmd.bind_sampler_groups[si]],
             .dstBinding = binding,
             .dstArrayElement = 0,
             .descriptorCount = 1,

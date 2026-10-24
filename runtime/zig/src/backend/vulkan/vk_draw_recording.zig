@@ -77,7 +77,8 @@ pub const DrawRecording = struct {
     framebuffer: c.VkFramebuffer,
     pipeline: c.VkPipeline,
     pipeline_layout: c.VkPipelineLayout,
-    descriptor_set: c.VkDescriptorSet,
+    /// Descriptor sets for bind groups 0..len, bound at set 0.
+    descriptor_sets: []const c.VkDescriptorSet,
     has_depth_stencil: bool,
 
     fn resolve_buffer(self: *const DrawRecording, raw: ?*anyopaque) ?c.VkBuffer {
@@ -163,15 +164,14 @@ pub const DrawRecording = struct {
 
         c.vkCmdBindPipeline(self.command_buffer, c.VK_PIPELINE_BIND_POINT_GRAPHICS, self.pipeline);
 
-        if (self.descriptor_set != VK_NULL_U64) {
-            const sets = [1]u64{self.descriptor_set};
+        if (self.descriptor_sets.len > 0) {
             c.vkCmdBindDescriptorSets(
                 self.command_buffer,
                 c.VK_PIPELINE_BIND_POINT_GRAPHICS,
                 self.pipeline_layout,
                 0,
-                1,
-                &sets,
+                @intCast(self.descriptor_sets.len),
+                self.descriptor_sets.ptr,
                 0,
                 null,
             );

@@ -34,9 +34,12 @@ pub const RenderState = struct {
     graphics_pipeline_layout: c.VkPipelineLayout = VK_NULL_U64,
     vertex_shader: c.VkShaderModule = VK_NULL_U64,
     fragment_shader: c.VkShaderModule = VK_NULL_U64,
-    descriptor_set_layout: u64 = VK_NULL_U64,
+    /// One descriptor set per bind group index 0..descriptor_set_count; a
+    /// group the draw does not bind gets an empty set layout.
+    descriptor_set_layouts: [model_render_types.MAX_RENDER_BIND_GROUPS]u64 = [_]u64{VK_NULL_U64} ** model_render_types.MAX_RENDER_BIND_GROUPS,
     descriptor_pool: u64 = VK_NULL_U64,
-    descriptor_set: u64 = VK_NULL_U64,
+    descriptor_sets: [model_render_types.MAX_RENDER_BIND_GROUPS]u64 = [_]u64{VK_NULL_U64} ** model_render_types.MAX_RENDER_BIND_GROUPS,
+    descriptor_set_count: u32 = 0,
     render_target: ?vk_resources.TextureResource = null,
     depth_stencil_target: ?vk_resources.TextureResource = null,
     /// Single-sample image the multisampled color attachment resolves into.
@@ -64,8 +67,9 @@ pub fn release_render_state(device: c.VkDevice, state: *RenderState) void {
         state.index_buffer = null;
     }
     destroyVkHandle(device, &state.descriptor_pool, c.vkDestroyDescriptorPool);
-    state.descriptor_set = VK_NULL_U64;
-    destroyVkHandle(device, &state.descriptor_set_layout, c.vkDestroyDescriptorSetLayout);
+    state.descriptor_sets = [_]u64{VK_NULL_U64} ** model_render_types.MAX_RENDER_BIND_GROUPS;
+    state.descriptor_set_count = 0;
+    for (&state.descriptor_set_layouts) |*layout| destroyVkHandle(device, layout, c.vkDestroyDescriptorSetLayout);
     destroyVkHandle(device, &state.graphics_pipeline, c.vkDestroyPipeline);
     destroyVkHandle(device, &state.graphics_pipeline_layout, c.vkDestroyPipelineLayout);
     destroyVkHandle(device, &state.fragment_shader, c.vkDestroyShaderModule);
@@ -598,7 +602,7 @@ fn record_and_submit_draws(
         .framebuffer = state.framebuffer,
         .pipeline = state.graphics_pipeline,
         .pipeline_layout = state.graphics_pipeline_layout,
-        .descriptor_set = state.descriptor_set,
+        .descriptor_sets = state.descriptor_sets[0..state.descriptor_set_count],
         .has_depth_stencil = state.depth_stencil_target != null,
     };
     try recording.record(cmd, index, draw_count, target_width, target_height, indirect);
