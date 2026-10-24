@@ -6,7 +6,7 @@
 
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -19,7 +19,7 @@ try {
     `const { providerInfo } = await import(${JSON.stringify(entry)}); process.stdout.write(JSON.stringify(providerInfo()));`],
   { cwd: directory, env: { ...process.env, DOE_WEBGPU_LIB: 'libwebgpu_doe_c.so' }, encoding: 'utf8' });
   const info = JSON.parse(reported);
-  assert.equal(info.doeLibraryPath, join(directory, 'libwebgpu_doe_c.so'));
+  assert.equal(info.doeLibraryPath, join(realpathSync(directory), 'libwebgpu_doe_c.so'));
   // The empty file cannot load; providerInfo reports that instead of loaded.
   assert.equal(info.loaded, false);
   assert.ok(info.loadError.length > 0, 'loadError names the load failure');
