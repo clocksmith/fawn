@@ -1465,6 +1465,9 @@ function createFullSurfaceClasses({
       if (this._autoLayoutEntriesByGroup) {
         const entries = this._autoLayoutEntriesByGroup.get(index) ?? [];
         const layout = this._device.createBindGroupLayout({ entries });
+        if (typeof backend.pipelineAdoptAutoBindGroupLayout === 'function') {
+          backend.pipelineAdoptAutoBindGroupLayout(this, true, index, layout);
+        }
         this._cachedLayouts.set(index, layout);
         return layout;
       }

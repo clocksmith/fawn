@@ -2447,7 +2447,9 @@ const fullSurfaceBackend = {
   computePipelineGetBindGroupLayout(pipeline, index, classes) {
     if (pipeline._autoLayoutEntriesByGroup) {
       const entries = pipeline._autoLayoutEntriesByGroup.get(index) ?? [];
-      return pipeline._device.createBindGroupLayout({ entries });
+      const layout = pipeline._device.createBindGroupLayout({ entries });
+      fullSurfaceBackend.pipelineAdoptAutoBindGroupLayout(pipeline, false, index, layout);
+      return layout;
     }
     if (typeof addon.computePipelineGetBindGroupLayout !== 'function') {
       throw unsupportedNodeDeviceCapability('GPUComputePipeline.getBindGroupLayout');
@@ -2456,6 +2458,19 @@ const fullSurfaceBackend = {
       addon.computePipelineGetBindGroupLayout(pipeline._native, index),
       pipeline._device,
     );
+  },
+  // A layout built from an automatic-layout pipeline's reflection belongs to
+  // that pipeline's automatic layout: the provider accepts bind groups made
+  // from it only with that pipeline. An invalid layout has already reported
+  // its creation error.
+  pipelineAdoptAutoBindGroupLayout(pipeline, isRender, index, layout) {
+    if (layout?._native == null) {
+      return;
+    }
+    if (typeof addon.pipelineAdoptAutoBindGroupLayout !== 'function') {
+      throw unsupportedNodeDeviceCapability('automatic pipeline layouts');
+    }
+    addon.pipelineAdoptAutoBindGroupLayout(pipeline._native, isRender, index, layout._native);
   },
   renderPipelineGetBindGroupLayout(pipeline, index, classes) {
     if (typeof addon.renderPipelineGetBindGroupLayout !== 'function') {

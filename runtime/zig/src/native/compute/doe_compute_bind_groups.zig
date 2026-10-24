@@ -82,9 +82,10 @@ pub const DrawBindingError = error{ DrawBindGroupMissing, DrawBindGroupIncompati
 pub fn validateDispatchBindGroups(
     layout: ?*const native_types.DoePipelineLayout,
     required_kinds: ?*const [MAX_FLAT_BIND]u8,
+    auto_layout_id: u64,
     bind_groups: []const ?*DoeBindGroup,
 ) DispatchBindingError!void {
-    validatePipelineBindGroups(layout, required_kinds, bind_groups) catch |err| return switch (err) {
+    validatePipelineBindGroups(layout, required_kinds, auto_layout_id, bind_groups) catch |err| return switch (err) {
         error.BindGroupMissing => error.DispatchBindGroupMissing,
         error.BindGroupIncompatible => error.DispatchBindGroupIncompatible,
     };
@@ -96,7 +97,7 @@ pub fn validateDrawBindGroups(
     bind_groups: []const ?*DoeBindGroup,
 ) DrawBindingError!void {
     const required_kinds = if (pipeline.required_binding_kinds_ready) &pipeline.required_binding_kinds else null;
-    validatePipelineBindGroups(pipeline.layout, required_kinds, bind_groups) catch |err| return switch (err) {
+    validatePipelineBindGroups(pipeline.layout, required_kinds, pipeline.auto_layout_id, bind_groups) catch |err| return switch (err) {
         error.BindGroupMissing => error.DrawBindGroupMissing,
         error.BindGroupIncompatible => error.DrawBindGroupIncompatible,
     };
@@ -105,12 +106,15 @@ pub fn validateDrawBindGroups(
 /// Bind groups a pipeline requires
 /// (https://gpuweb.github.io/gpuweb/#abstract-opdef-validate-encoder-bind-groups).
 /// An explicit layout requires each nonempty group bound with the same or an
-/// equal-entry layout. An automatic layout requires a bound group whose layout
-/// has every binding the entry points use, with the same resource kind
-/// (`required_kinds`, per flat slot); layout exclusivity is not checked.
+/// equal-entry layout; another pipeline's automatic layout never matches. An
+/// automatic layout requires, for every group the entry points use
+/// (`required_kinds`, per flat slot), a bound group made from one of this
+/// pipeline's own layouts (`auto_layout_id`) whose entries have the required
+/// resource kinds.
 pub fn validatePipelineBindGroups(
     layout: ?*const native_types.DoePipelineLayout,
     required_kinds: ?*const [MAX_FLAT_BIND]u8,
+    auto_layout_id: u64,
     bind_groups: []const ?*DoeBindGroup,
 ) PipelineBindingError!void {
     const pipeline_layout = layout orelse {
@@ -122,6 +126,8 @@ pub fn validatePipelineBindGroups(
             const bound = (if (group_index < bind_groups.len) bind_groups[group_index] else null) orelse
                 return error.BindGroupMissing;
             const bound_layout = bound.layout orelse return error.BindGroupIncompatible;
+            if (auto_layout_id == 0 or bound_layout.auto_layout_id != auto_layout_id)
+                return error.BindGroupIncompatible;
             const entry = for (layoutEntries(bound_layout)) |candidate| {
                 if (candidate.binding == binding) break candidate;
             } else return error.BindGroupIncompatible;
@@ -149,8 +155,12 @@ fn layoutEntries(layout: *const native_types.DoeBindGroupLayout) []const native_
     return entries[0..@min(entries.len, layout.entry_count)];
 }
 
+/// Group-equivalent layouts (https://gpuweb.github.io/gpuweb/#group-equivalent):
+/// the same exclusive pipeline, if any, and equal entries.
 fn layoutsEquivalent(a: *const native_types.DoeBindGroupLayout, b: *const native_types.DoeBindGroupLayout) bool {
-    if (a.automatic or b.automatic) return false;
+    if (a.automatic or b.automatic) {
+        if (a.auto_layout_id == 0 or a.auto_layout_id != b.auto_layout_id) return false;
+    }
     const a_entries = layoutEntries(a);
     const b_entries = layoutEntries(b);
     if (a_entries.len != b_entries.len) return false;
@@ -224,21 +234,28 @@ test "validateDispatchBindGroups requires explicit groups with equal layouts and
     layout.bind_group_layouts[1] = &required;
     var bound = DoeBindGroup{ .layout = &equal };
     var wrong = DoeBindGroup{ .layout = &different };
-    try validateDispatchBindGroups(&layout, null, &.{ null, &bound });
-    try validateDispatchBindGroups(null, null, &.{});
-    try std.testing.expectError(error.DispatchBindGroupMissing, validateDispatchBindGroups(&layout, null, &.{ null, null }));
-    try std.testing.expectError(error.DispatchBindGroupIncompatible, validateDispatchBindGroups(&layout, null, &.{ null, &wrong }));
+    try validateDispatchBindGroups(&layout, null, 0, &.{ null, &bound });
+    try validateDispatchBindGroups(null, null, 0, &.{});
+    try std.testing.expectError(error.DispatchBindGroupMissing, validateDispatchBindGroups(&layout, null, 0, &.{ null, null }));
+    try std.testing.expectError(error.DispatchBindGroupIncompatible, validateDispatchBindGroups(&layout, null, 0, &.{ null, &wrong }));
     equal.automatic = true;
-    try std.testing.expectError(error.DispatchBindGroupIncompatible, validateDispatchBindGroups(&layout, null, &.{ null, &bound }));
-    // Automatic layouts: group 1 binding 0 must be a buffer.
+    try std.testing.expectError(error.DispatchBindGroupIncompatible, validateDispatchBindGroups(&layout, null, 0, &.{ null, &bound }));
+    // Automatic layouts: group 1 binding 0 must be a buffer, bound from this
+    // pipeline's (id 7) own layouts.
     var kinds = [_]u8{0} ** MAX_FLAT_BIND;
     kinds[flatBindSlot(1, 0)] = 1;
-    equal.automatic = false;
-    try validateDispatchBindGroups(null, &kinds, &.{ null, &bound });
-    try std.testing.expectError(error.DispatchBindGroupMissing, validateDispatchBindGroups(null, &kinds, &.{ &bound, null }));
-    try std.testing.expectError(error.DispatchBindGroupIncompatible, validateDispatchBindGroups(null, &kinds, &.{ null, &wrong }));
+    equal.auto_layout_id = 7;
+    different.auto_layout_id = 7;
+    try validateDispatchBindGroups(null, &kinds, 7, &.{ null, &bound });
+    try std.testing.expectError(error.DispatchBindGroupMissing, validateDispatchBindGroups(null, &kinds, 7, &.{ &bound, null }));
+    try std.testing.expectError(error.DispatchBindGroupIncompatible, validateDispatchBindGroups(null, &kinds, 7, &.{ null, &wrong }));
     kinds[flatBindSlot(1, 0)] = 3;
-    try std.testing.expectError(error.DispatchBindGroupIncompatible, validateDispatchBindGroups(null, &kinds, &.{ null, &bound }));
+    try std.testing.expectError(error.DispatchBindGroupIncompatible, validateDispatchBindGroups(null, &kinds, 7, &.{ null, &bound }));
+    // Another pipeline's automatic layout or an explicit layout never matches.
+    kinds[flatBindSlot(1, 0)] = 1;
+    try std.testing.expectError(error.DispatchBindGroupIncompatible, validateDispatchBindGroups(null, &kinds, 8, &.{ null, &bound }));
+    var explicit = DoeBindGroup{ .layout = &required };
+    try std.testing.expectError(error.DispatchBindGroupIncompatible, validateDispatchBindGroups(null, &kinds, 7, &.{ null, &explicit }));
 }
 
 test "validateDrawBindGroups compares every layout entry member, including visibility" {

@@ -245,7 +245,7 @@ fn validateDispatch(pass: *DoeComputePass, pip: *const DoeComputePipeline, count
         }
     }
     const required_kinds = if (pip.vk_required_binding_kinds_ready) &pip.vk_required_binding_kinds else null;
-    compute_bind_groups.validateDispatchBindGroups(pip.layout, required_kinds, pass.bind_groups[0..]) catch |err| {
+    compute_bind_groups.validateDispatchBindGroups(pip.layout, required_kinds, pip.auto_layout_id, pass.bind_groups[0..]) catch |err| {
         recording.fail(pass.enc, err);
         return false;
     };
@@ -418,6 +418,7 @@ pub export fn doeNativeComputePipelineGetBindGroupLayout(pip_raw: ?*anyopaque, g
         .entry_count = @intCast(entry_count),
         .entries = entries,
     };
+    bind_group_native.adoptAutoLayout(bgl, bind_group_native.pipelineAutoLayoutId(&pip.auto_layout_id));
     return toOpaque(bgl);
 }
 
