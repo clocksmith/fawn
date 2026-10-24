@@ -293,10 +293,12 @@ function resolveDoeLibraryPath() {
     workspaceRoot: WORKSPACE_ROOT,
   });
 
+  // Absolute, so the library checked here is the one the loader opens: dlopen
+  // would search the system library path for a bare name instead of cwd.
   const configuredCandidates = [
     process.env.DOE_WEBGPU_LIB,
     process.env.DOE_LIB,
-  ];
+  ].map((path) => (path ? resolve(path) : path));
   const workspaceCandidates = [
     ...workspaceLibraryNames.map((name) => resolve(WORKSPACE_ROOT, 'runtime', 'zig', 'zig-out', 'lib', name)),
     ...workspaceLibraryNames.map((name) => resolve(WORKSPACE_ROOT, 'zig', 'zig-out', 'lib', name)),
