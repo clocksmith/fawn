@@ -6,7 +6,10 @@
 // finish() reports once (1), scopes keep the first error (2), deep scope
 // stacks (3), lost devices discard errors (5), WebIDL failures throw TypeError
 // (6), provider-reported objects are invalid (7), finish() never throws and
-// listeners follow EventTarget rules (8).
+// listeners follow EventTarget rules (8). Review of 9b7f5819b: a throwing
+// listener cannot break GPU calls or lose errors (R1), errors raised before
+// destroy() are delivered (R2), and an error during finish() invalidates the
+// command buffer (R4).
 
 import assert from 'node:assert/strict';
 import { requestNativeDeviceOrSkip } from './native-device-test-helper.js';
@@ -17,6 +20,22 @@ const { GPUBufferUsage, GPUTextureUsage, GPUValidationError } = globalThis;
 const a = device.createBuffer({ size: 64, usage: GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST });
 const b = device.createBuffer({ size: 64, usage: GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST });
 const BAD_WGSL = '@compute @workgroup_size(1) fn main() { let x: u32 = 1.5; }';
+
+const settle = () => new Promise((resolve) => setTimeout(resolve, 20));
+
+// Two command buffers that copy from a buffer destroyed before submit: each
+// submit is a validation error.
+function destroyedSourceCommands(count) {
+  const source = device.createBuffer({ size: 64, usage: GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST });
+  const commands = [];
+  for (let index = 0; index < count; index += 1) {
+    const encoder = device.createCommandEncoder();
+    encoder.copyBufferToBuffer(source, 0, b, 0, 4);
+    commands.push(encoder.finish());
+  }
+  source.destroy();
+  return commands;
+}
 
 async function popAfter(action) {
   device.pushErrorScope('validation');
@@ -153,20 +172,76 @@ console.log('ok: provider-reported objects are invalid');
   device.removeEventListener('uncapturederror', listener);
   const commands = encoder.finish();
   assert.equal(commands._invalid, true, 'finish() without an observer returns an invalid command buffer');
+  await settle(); // its queued uncapturederror fires to no listener
 
   const seen = [];
   const object = { handleEvent: (event) => seen.push(event.error) };
   device.addEventListener('uncapturederror', object);
   packageError();
+  assert.equal(seen.length, 0, 'uncapturederror fires from a queued task, not inside the call');
+  await settle();
   device.removeEventListener('uncapturederror', object);
   assert.equal(seen.length, 1, 'a handleEvent listener object receives the event');
 
   let calls = 0;
   device.addEventListener('uncapturederror', () => { calls += 1; }, { once: true });
   packageError();
+  await settle();
   assert.equal(calls, 1, 'a once listener runs');
   assert.throws(packageError, Error, 'after its single call the once listener is gone, so creation throws again');
 }
 console.log('ok: finish() never throws and listeners follow EventTarget rules');
 
-device.destroy();
+// R1. A listener that throws: no GPU call throws its exception, and no error
+// is lost.
+{
+  const uncaught = [];
+  const onUncaught = (error) => uncaught.push(error);
+  process.on('uncaughtException', onUncaught);
+  let calls = 0;
+  const listener = () => {
+    calls += 1;
+    if (calls === 1) throw new Error('listener boom');
+  };
+  device.addEventListener('uncapturederror', listener);
+  const [first, second] = destroyedSourceCommands(2);
+  device.queue.submit([first]);
+  device.queue.submit([second]);
+  device.pushErrorScope('validation');
+  assert.equal(await device.popErrorScope(), null, 'the scope pushed after the errors stays empty');
+  device.createBuffer({ size: 16, usage: GPUBufferUsage.COPY_DST });
+  const encoder = device.createCommandEncoder();
+  encoder.copyBufferToBuffer(invalidBuffer, 0, b, 0, 16);
+  encoder.finish();
+  await settle();
+  device.removeEventListener('uncapturederror', listener);
+  process.off('uncaughtException', onUncaught);
+  assert.equal(calls, 3, `every error reaches the listener (2 submits, 1 finish), got ${calls}`);
+  assert.equal(uncaught.length, 1, 'the listener exception is reported as uncaught once');
+  assert.equal(uncaught[0].message, 'listener boom');
+}
+console.log('ok: a throwing listener neither escapes GPU calls nor loses errors');
+
+// R4. An error during finish() makes the command buffer invalid.
+{
+  const { value, error } = await popAfter(() => {
+    const encoder = device.createCommandEncoder();
+    encoder.copyBufferToBuffer(a, 0, b, 0, 3);
+    return encoder.finish();
+  });
+  assert(error instanceof GPUValidationError, 'the misaligned copy is reported');
+  assert.equal(value._invalid, true, 'the command buffer from a failed finish() is invalid');
+}
+console.log('ok: a failed finish() returns an invalid command buffer');
+
+// R2. Errors generated before destroy() are delivered.
+{
+  const events = [];
+  device.addEventListener('uncapturederror', (event) => events.push(event.error));
+  const [commands] = destroyedSourceCommands(1);
+  device.queue.submit([commands]);
+  device.destroy();
+  await settle();
+  assert.equal(events.length, 1, `the error raised before destroy() is delivered, got ${events.length}`);
+}
+console.log('ok: errors raised before destroy() are delivered');

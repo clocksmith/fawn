@@ -79,13 +79,14 @@ for (let index = 0; index < cycleCount; index += 1) {
   if (lostInfo?.reason !== 'destroyed') {
     throw new Error(`cycle ${index} device loss reason mismatch: ${lostInfo?.reason}`);
   }
+  // WebGPU makes a lost device inert: its encoder finishes into an invalid
+  // command buffer without reaching the provider, and nothing throws.
   let postDestroyRejected = false;
   let postDestroyError = '';
   try {
-    bound.device.createCommandEncoder();
+    postDestroyRejected = bound.device.createCommandEncoder().finish()._invalid === true;
   } catch (error) {
     postDestroyError = String(error?.message ?? error);
-    postDestroyRejected = postDestroyError.includes('GPUDevice was destroyed');
   }
   if (!postDestroyRejected) {
     throw new Error(`cycle ${index} post-destroy use did not fail closed: ${postDestroyError}`);

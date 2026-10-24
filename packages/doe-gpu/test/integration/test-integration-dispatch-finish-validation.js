@@ -40,7 +40,11 @@ async function dispatchOnly(workgroups, bindGroup = group) {
   pass.end();
   const commandBuffer = encoder.finish();
   const atFinish = await device.popErrorScope();
-  assert.notEqual(commandBuffer._native, null, 'finish() recorded the dispatch natively');
+  // A finish() the provider rejected returns an invalid command buffer
+  // without its native recording; a valid one keeps it.
+  if (!commandBuffer._invalid) {
+    assert.notEqual(commandBuffer._native, null, 'finish() recorded the dispatch natively');
+  }
   device.pushErrorScope('validation');
   device.queue.submit([commandBuffer]);
   const atSubmit = await device.popErrorScope();

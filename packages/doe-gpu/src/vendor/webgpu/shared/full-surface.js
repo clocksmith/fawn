@@ -216,6 +216,22 @@ function resolveDeviceLost(device, reason = 'unknown', message = '') {
   return info;
 }
 
+// A destroyed or lost device: WebGPU makes its operations inert. Creation
+// returns invalid objects, queue operations do nothing, nothing throws, and no
+// error is generated.
+function isDeviceLost(device) {
+  return device != null && (device._destroyed === true || (device._lostInfo ?? null) !== null);
+}
+
+function abortError(message) {
+  if (typeof DOMException === 'function') {
+    return new DOMException(message, 'AbortError');
+  }
+  const error = new Error(message);
+  error.name = 'AbortError';
+  return error;
+}
+
 function shouldRouteDeviceError(device) {
   if (Array.isArray(device._errorScopes) && device._errorScopes.length > 0) {
     return true;
@@ -239,7 +255,7 @@ function captureDeviceError(device, filter, error) {
 // uncapturederror event. A lost device discards errors (WebGPU), and while
 // finish() collects its errors they are held for it instead.
 function deliverDeviceError(device, filter, error) {
-  if (device._destroyed || (device._lostInfo ?? null) !== null) {
+  if (isDeviceLost(device)) {
     return false;
   }
   if (Array.isArray(device._errorCollection)) {
@@ -258,12 +274,42 @@ function deliverDeviceError(device, filter, error) {
     return true;
   }
 
-  const event = new GPUUncapturedErrorEvent('uncapturederror', { error });
-  if (typeof device._onuncapturederror === 'function') {
-    device._onuncapturederror.call(device, event);
-  }
-  dispatchDeviceEvent(device, 'uncapturederror', event);
+  queueUncapturedError(device, error);
   return false;
+}
+
+// uncapturederror fires from a queued task (WebGPU), so no GPU call runs a
+// listener: a listener that throws cannot interrupt the call that generated
+// the error, nor drop errors still being delivered.
+function queueUncapturedError(device, error) {
+  const fire = () => {
+    const event = new GPUUncapturedErrorEvent('uncapturederror', { error });
+    if (typeof device._onuncapturederror === 'function') {
+      invokeListener(device, device._onuncapturederror, event);
+    }
+    dispatchDeviceEvent(device, 'uncapturederror', event);
+  };
+  if (typeof setImmediate === 'function') {
+    setImmediate(fire);
+  } else {
+    setTimeout(fire, 0);
+  }
+}
+
+// A listener's exception is reported as uncaught, as EventTarget does, and
+// the remaining listeners still run.
+function invokeListener(device, listener, event) {
+  try {
+    if (typeof listener === 'function') {
+      listener.call(device, event);
+    } else if (typeof listener?.handleEvent === 'function') {
+      listener.handleEvent(event);
+    }
+  } catch (error) {
+    queueMicrotask(() => {
+      throw error;
+    });
+  }
 }
 
 // A validation error outside creation: reported where an error scope or
@@ -600,11 +646,7 @@ function dispatchDeviceEvent(device, type, event) {
     if (entry.once) {
       removeDeviceEventListener(device, type, listener);
     }
-    if (typeof listener === 'function') {
-      listener.call(device, event);
-    } else if (typeof listener.handleEvent === 'function') {
-      listener.handleEvent(event);
-    }
+    invokeListener(device, listener, event);
   }
 }
 
@@ -657,6 +699,9 @@ function createFullSurfaceClasses({
   // during the call make the result invalid and are delivered as they are; a
   // rejection without a report gets one package error.
   function createReportingErrors(device, path, create, makeInvalid, toThrown = passThrough) {
+    if (isDeviceLost(device)) {
+      return makeInvalid();
+    }
     const logged = device?._providerErrorLog === true;
     if (logged) {
       device._drainProviderErrors();
@@ -695,7 +740,10 @@ function createFullSurfaceClasses({
       if (reported.length > 0) markInvalid(created, created.label);
       return created;
     }
-    if (logged && reported.length === 0) {
+    // Without a provider log (Bun) nothing shows whether the provider
+    // reported, and its native scopes are not read back, so the package
+    // reports the rejection itself.
+    if (reported.length === 0) {
       deliverDeviceError(device, 'validation', new GPUValidationError(`${path}: the provider rejected the descriptor without reporting an error`));
     }
     return makeInvalid();
@@ -930,6 +978,12 @@ function createFullSurfaceClasses({
 
   // An invalid buffer keeps a real stand-in allocation so that mappedAtCreation
   // still yields a mapping; only mapping calls reach it.
+  // A buffer created mappedAtCreation on a lost device has no allocation; its
+  // mapping is host memory that unmap() discards.
+  function lostDeviceMapping(buffer) {
+    return buffer._lostDeviceMapping ?? null;
+  }
+
   function bufferMappingNative(buffer, path) {
     if (buffer._invalid && buffer._native != null && !buffer._destroyed) {
       return buffer._native;
@@ -963,6 +1017,9 @@ function createFullSurfaceClasses({
     }
 
     async mapAsync(mode, offset = 0, size = Math.max(0, this.size - offset)) {
+      if (isDeviceLost(this._resourceOwner)) {
+        throw abortError('GPUBuffer.mapAsync: the device is lost');
+      }
       const native = bufferMappingNative(this, 'GPUBuffer.mapAsync');
       assertIntegerInRange(mode, 'GPUBuffer.mapAsync', 'mode', { min: 0, max: UINT32_MAX });
       assertIntegerInRange(offset, 'GPUBuffer.mapAsync', 'offset', { min: 0 });
@@ -998,9 +1055,9 @@ function createFullSurfaceClasses({
           return rejectValidationAsync('mode must be GPUMapMode.READ or GPUMapMode.WRITE', 'unmapped');
         }
         await backend.bufferMapAsync(this, native, mode, offset, size);
-        if (this._destroyed || this._mapState !== 'pending') {
+        if (this._destroyed || this._mapState !== 'pending' || isDeviceLost(this._resourceOwner)) {
           this._mapState = 'unmapped';
-          throw operationError('GPUBuffer.mapAsync: mapping was cancelled before it resolved');
+          throw abortError('GPUBuffer.mapAsync: mapping was cancelled before it resolved');
         }
         this._mapState = 'mapped';
       } catch (error) {
@@ -1010,6 +1067,15 @@ function createFullSurfaceClasses({
     }
 
     getMappedRange(offset = 0, size = Math.max(0, this.size - offset)) {
+      const hostMapping = lostDeviceMapping(this);
+      if (hostMapping !== null) {
+        assertIntegerInRange(offset, 'GPUBuffer.getMappedRange', 'offset', { min: 0 });
+        assertIntegerInRange(size, 'GPUBuffer.getMappedRange', 'size', { min: 0 });
+        if (offset + size > this.size) {
+          failValidation('GPUBuffer.getMappedRange', `mapped range ${offset}+${size} exceeds buffer size ${this.size}`);
+        }
+        return hostMapping.slice(offset, offset + size);
+      }
       const native = bufferMappingNative(this, 'GPUBuffer.getMappedRange');
       assertIntegerInRange(offset, 'GPUBuffer.getMappedRange', 'offset', { min: 0 });
       assertIntegerInRange(size, 'GPUBuffer.getMappedRange', 'size', { min: 0 });
@@ -1076,7 +1142,8 @@ function createFullSurfaceClasses({
     }
 
     unmap() {
-      if (this._destroyed || this._native == null) {
+      this._lostDeviceMapping = null;
+      if (this._destroyed || this._native == null || isDeviceLost(this._resourceOwner)) {
         this._mapState = 'unmapped';
         return;
       }
@@ -1135,8 +1202,14 @@ function createFullSurfaceClasses({
     }
 
     submit(commandBuffers) {
-      const native = assertLiveResource(this, 'GPUQueue.submit', 'GPUQueue');
       const buffers = assertArray(commandBuffers, 'GPUQueue.submit', 'commandBuffers');
+      if (isDeviceLost(this._device)) {
+        for (const buffer of buffers) {
+          if (buffer && typeof buffer === 'object') buffer._submitted = true;
+        }
+        return;
+      }
+      const native = assertLiveResource(this, 'GPUQueue.submit', 'GPUQueue');
       if (buffers.length === 0) {
         return;
       }
@@ -1154,6 +1227,9 @@ function createFullSurfaceClasses({
     }
 
     writeBuffer(buffer, bufferOffset, data, dataOffset = 0, size) {
+      if (isDeviceLost(this._device)) {
+        return;
+      }
       const native = assertLiveResource(this, 'GPUQueue.writeBuffer', 'GPUQueue');
       if (isInvalidResource(buffer)) {
         reportInvalidUse(this._device, 'GPUQueue.writeBuffer', buffer);
@@ -1170,6 +1246,9 @@ function createFullSurfaceClasses({
     }
 
     writeTexture(destination, data, dataLayout, size) {
+      if (isDeviceLost(this._device)) {
+        return;
+      }
       const native = assertLiveResource(this, 'GPUQueue.writeTexture', 'GPUQueue');
       const destinationObject = assertObject(destination, 'GPUQueue.writeTexture', 'destination');
       const layoutObject = assertObject(dataLayout, 'GPUQueue.writeTexture', 'dataLayout');
@@ -1203,7 +1282,7 @@ function createFullSurfaceClasses({
     }
 
     async onSubmittedWorkDone() {
-      if (this._device?._destroyed) {
+      if (isDeviceLost(this._device)) {
         await this._submittedWorkDone;
         return;
       }
@@ -1218,6 +1297,9 @@ function createFullSurfaceClasses({
     }
 
     copyExternalImageToTexture(source, destination, copySize) {
+      if (isDeviceLost(this._device)) {
+        return;
+      }
       const native = assertLiveResource(this, 'GPUQueue.copyExternalImageToTexture', 'GPUQueue');
       const sourceObject = assertObject(source, 'GPUQueue.copyExternalImageToTexture', 'source');
       const destinationObject = assertObject(destination, 'GPUQueue.copyExternalImageToTexture', 'destination');
@@ -1665,8 +1747,13 @@ function createFullSurfaceClasses({
     }
 
     pushErrorScope(filter) {
-      const native = assertLiveResource(this, 'GPUDevice.pushErrorScope', 'GPUDevice');
       const encodedFilter = normalizeErrorFilter(filter, 'GPUDevice.pushErrorScope');
+      if (isDeviceLost(this)) {
+        this._errorScopes.push({ filter, error: null });
+        this._errorScopeDepth = this._errorScopes.length;
+        return;
+      }
+      const native = assertLiveResource(this, 'GPUDevice.pushErrorScope', 'GPUDevice');
       if (this._providerErrorLog === true) {
         this._drainProviderErrors();
       } else if (typeof backend.devicePushErrorScope === 'function') {
@@ -1676,7 +1763,13 @@ function createFullSurfaceClasses({
       this._errorScopeDepth = this._errorScopes.length;
     }
 
+    // A lost device resolves every pop with null, even past the stack.
     popErrorScope() {
+      if (isDeviceLost(this)) {
+        this._errorScopes.pop();
+        this._errorScopeDepth = this._errorScopes.length;
+        return Promise.resolve(null);
+      }
       const native = assertLiveResource(this, 'GPUDevice.popErrorScope', 'GPUDevice');
       if (!Array.isArray(this._errorScopes) || this._errorScopes.length <= 0) {
         return Promise.reject(operationError('GPUDevice.popErrorScope: no active error scope'));
@@ -1762,6 +1855,9 @@ function createFullSurfaceClasses({
       if (native !== null && mappedAtCreation && typeof backend.bufferMarkMappedAtCreation === 'function') {
         backend.bufferMarkMappedAtCreation(buffer);
         buffer._mapState = 'mapped';
+      } else if (native === null && mappedAtCreation) {
+        buffer._lostDeviceMapping = new ArrayBuffer(Number.isSafeInteger(requestedSize) && requestedSize >= 0 ? requestedSize : fallbackSize);
+        buffer._mapState = 'mapped';
       }
       return buffer;
     }
@@ -1842,6 +1938,9 @@ function createFullSurfaceClasses({
     // Rejects with GPUPipelineError for every failure; no error reaches a scope.
     async createComputePipelineAsync(descriptor) {
       const path = 'GPUDevice.createComputePipelineAsync';
+      if (isDeviceLost(this)) {
+        return markInvalid(new DoeGPUComputePipeline(null, this, null, null), labelOf(descriptor));
+      }
       try {
         const request = this._computePipelineRequest(descriptor, path);
         const native = request.createAsync
@@ -2048,6 +2147,9 @@ function createFullSurfaceClasses({
     // Rejects with GPUPipelineError for every failure; no error reaches a scope.
     async createRenderPipelineAsync(descriptor) {
       const path = 'GPUDevice.createRenderPipelineAsync';
+      if (isDeviceLost(this)) {
+        return markInvalid(new DoeGPURenderPipeline(null, this, null, null), labelOf(descriptor));
+      }
       try {
         const request = this._renderPipelineRequest(descriptor, path);
         const native = request.createAsync
@@ -2122,7 +2224,9 @@ function createFullSurfaceClasses({
       if (descriptor !== undefined) {
         assertObject(descriptor, 'GPUDevice.createCommandEncoder', 'descriptor');
       }
-      assertLiveResource(this, 'GPUDevice.createCommandEncoder', 'GPUDevice');
+      if (!isDeviceLost(this)) {
+        assertLiveResource(this, 'GPUDevice.createCommandEncoder', 'GPUDevice');
+      }
       const encoder = backend.deviceCreateCommandEncoder(this, descriptor, classes);
       encoder.label = descriptor?.label ?? '';
       return encoder;
@@ -2154,6 +2258,8 @@ function createFullSurfaceClasses({
     }
 
     destroy() {
+      // Errors generated before destroy() are still delivered.
+      this._drainProviderErrors();
       resolveDeviceLost(this, 'destroyed', 'GPUDevice.destroy() was called');
       destroyResource(this, (native) => backend.deviceDestroy(native, this));
     }
@@ -2291,6 +2397,7 @@ function createFullSurfaceClasses({
 export {
   createFullSurfaceClasses,
   shouldRouteDeviceError,
+  isDeviceLost,
   deliverDeviceError,
   collectDeviceErrors,
   addDeviceEventListener,
