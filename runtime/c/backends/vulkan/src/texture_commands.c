@@ -107,8 +107,11 @@ doe_vk_status doe_vk_texture_copy_region(const doe_vk_texture *texture,
     uint64_t row_bytes = block_columns * texel;
     uint64_t pitch = layout.bytes_per_row != 0 ? layout.bytes_per_row : row_bytes;
     uint64_t rows = layout.rows_per_image != 0 ? layout.rows_per_image : block_rows;
+    /* Vulkan (graphics queue) needs only a texel-block-aligned buffer offset;
+     * depth/stencil aspects also need a multiple of 4, as WebGPU does. */
+    const bool depth_stencil = (aspect & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)) != 0;
     if (pitch < row_bytes || pitch % texel != 0 || rows < block_rows ||
-        (layout.offset & 3) != 0 || layout.offset % texel != 0 ||
+        (depth_stencil && (layout.offset & 3) != 0) || layout.offset % texel != 0 ||
         pitch / texel * block > UINT32_MAX || rows * block > UINT32_MAX) return DOE_VK_INVALID_ARGUMENT;
     uint64_t bytes;
     if (!doe_copy_footprint(row_bytes, block_rows, rows, pitch, region.extent[2], &bytes) ||
