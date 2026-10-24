@@ -44,8 +44,17 @@ Vulkan composes compute, images, graphics, queries and Linux presentation within
 the explicit limits and feature checks below. CPU execution receipts prove their
 recorded outputs and lifetimes; they do not qualify physical Vulkan performance.
 
-Metal composes shared buffers, compute, initialized color textures/views/samplers,
-color transfers and direct nonindexed render passes. Compiler-owned MSL and ABI12
+Metal composes shared buffers, compute, initialized color and depth/stencil
+textures/views, samplers, color transfers and direct nonindexed render passes.
+Depth/stencil sampled views use canonical aspect admission, combined native depth
+formats and X24/X32 stencil views. Real parent-format clears preserve initialized
+companion aspects; sampled views and temporary clears retain the same pending
+command leases. Depth/stencil copies and storage remain explicitly unsupported.
+`tests/metal_depth_cases.h` covers host call identities, discard/reinitialization,
+typed failure rollback and early-release/unknown lifetimes. The unchanged
+`depth-sampling` consumer owns the independent rendered-depth/stencil readback
+oracle; host and SDK compilation do not establish its Metal execution.
+Compiler-owned MSL and ABI12
 per-entry metadata supply exact names, independent resource namespaces, dense
 native slots and runtime size indices. The common Metal binding owner validates
 and lowers those records for compute and graphics; public sparse binding numbers

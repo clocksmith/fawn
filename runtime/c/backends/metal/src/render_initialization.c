@@ -46,11 +46,14 @@ doe_mtl_status doe_mtl_commands_initialize_attachment(doe_mtl_commands *commands
     if (status != DOE_MTL_OK) return doe_mtl_poison(commands, status, "initialize attachment texture", error);
     if (view->texture->desc.type == DOE_MTL_TEXTURE_3D || view->texture->desc.type == DOE_MTL_TEXTURE_1D ||
         view->texture->desc.type == DOE_MTL_TEXTURE_1D_ARRAY || format.compressed ||
-        view->desc.format == DOE_MTL_X24_STENCIL8 || view->desc.format == DOE_MTL_X32_STENCIL8 ||
         view->desc.red != DOE_MTL_SWIZZLE_RED || view->desc.green != DOE_MTL_SWIZZLE_GREEN ||
         view->desc.blue != DOE_MTL_SWIZZLE_BLUE || view->desc.alpha != DOE_MTL_SWIZZLE_ALPHA)
         return doe_mtl_poison(commands, DOE_MTL_UNSUPPORTED, "initialize attachment shape/aspects", error);
-    aspects = doe_mtl_format_aspects(view->desc.format);
+    const bool stencil_view = view->desc.format == DOE_MTL_X24_STENCIL8 || view->desc.format == DOE_MTL_X32_STENCIL8;
+    /* X24/X32 is a sampled stencil view, never an attachment format. Clear via
+     * the real combined parent, preserving initialized companion depth. The
+     * same command's per-aspect snapshot remains the sole availability owner. */
+    aspects = doe_mtl_format_aspects(stencil_view ? view->texture->desc.format : view->desc.format);
     if (doe_mtl_texture_aspect_initialized(commands, view, aspects))
         return doe_mtl_fail(DOE_MTL_OK, "initialized attachment", error);
     if (view->desc.mip_count > SIZE_MAX / view->desc.layer_count)
@@ -68,11 +71,12 @@ doe_mtl_status doe_mtl_commands_initialize_attachment(doe_mtl_commands *commands
         for (layer = 0; layer < view->desc.layer_count && status == DOE_MTL_OK; ++layer) {
             doe_mtl_texture_view_desc selected = view->desc;
             attachment_clear *clear = &clears[at++];
-            if (count == 1) {
+            if (count == 1 && !stencil_view) {
                 status = doe_mtl_texture_view_retain(view);
                 if (status == DOE_MTL_OK) clear->view = view;
             } else {
                 selected.type = view->texture->desc.sample_count > 1 ? DOE_MTL_TEXTURE_2D_MS : DOE_MTL_TEXTURE_2D;
+                if (stencil_view) selected.format = view->texture->desc.format;
                 selected.base_mip += mip;
                 selected.base_layer += layer;
                 selected.mip_count = selected.layer_count = 1;

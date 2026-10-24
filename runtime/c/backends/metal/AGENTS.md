@@ -29,6 +29,9 @@ Already initialized aspects must LOAD/STORE, and abandonment/unknown completion
 must not publish the speculative bits. Logical empty viewport/scissor still encode
 the draw so vertex effects and visibility ordering survive. Never use a scissor,
 source rewrite or skipped draw to imitate unsupported partial sample masks.
+X24/X32 shader views initialize through temporary combined-parent attachment views
+over the same selected range. Never attach an X format or discard initialized
+companion depth/stencil; reuse the existing speculative aspect and command leases.
 Visibility offsets form one contiguous run per pass and share buffer completion
 access rules. Timestamp samples share that completion owner too: distinguish stage
 and blit capabilities, never resolve unwritten samples, and preserve native error
