@@ -51,6 +51,16 @@ pub const RequiredBinding = struct {
     buffer_type: u32 = 0,
     /// WGPUShaderStage bits of the stages that use it.
     stages: u8 = 0,
+    /// The default bind group layout entry members the shader's types imply
+    /// (https://gpuweb.github.io/gpuweb/#default-pipeline-layout), recorded
+    /// for render pipelines; 0 where they do not apply.
+    sampler_type: u32 = 0,
+    sample_type: u32 = 0,
+    view_dimension: u32 = 0,
+    multisampled: bool = false,
+    storage_format: u32 = 0,
+    storage_access: u32 = 0,
+    min_binding_size: u64 = 0,
 };
 
 /// The bindings a pipeline's entry points use: one record per (group,
@@ -68,6 +78,12 @@ pub const RequiredBindings = struct {
         for (self.items[0..self.len]) |*existing| {
             if (existing.group != binding.group or existing.binding != binding.binding) continue;
             existing.stages |= binding.stages;
+            // A texture any entry point samples through a sampler is "float"
+            // in the default layout.
+            if (binding.sample_type == abi_binding.WGPUTextureSampleType_Float and
+                existing.sample_type == abi_binding.WGPUTextureSampleType_UnfilterableFloat)
+                existing.sample_type = binding.sample_type;
+            existing.min_binding_size = @max(existing.min_binding_size, binding.min_binding_size);
             return;
         }
         if (self.len == CAPACITY) return error.TooManyBindings;

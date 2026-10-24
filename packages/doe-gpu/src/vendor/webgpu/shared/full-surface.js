@@ -1520,16 +1520,20 @@ function createFullSurfaceClasses({
       if (this._cachedLayouts.has(index)) {
         return this._cachedLayouts.get(index);
       }
-      if (this._autoLayoutEntriesByGroup) {
+      // The provider's own layout comes first: its default layout follows the
+      // entry points' shader types. A provider that reports none (null) gets
+      // a layout built from module reflection, adopted by this pipeline.
+      let layout = backend.renderPipelineGetBindGroupLayout(this, index, classes);
+      if (layout == null && this._autoLayoutEntriesByGroup) {
         const entries = this._autoLayoutEntriesByGroup.get(index) ?? [];
-        const layout = this._device.createBindGroupLayout({ entries });
+        layout = this._device.createBindGroupLayout({ entries });
         if (typeof backend.pipelineAdoptAutoBindGroupLayout === 'function') {
           backend.pipelineAdoptAutoBindGroupLayout(this, true, index, layout);
         }
-        this._cachedLayouts.set(index, layout);
-        return layout;
       }
-      const layout = backend.renderPipelineGetBindGroupLayout(this, index, classes);
+      if (layout == null) {
+        throw new Error('[doe-gpu] renderPipelineGetBindGroupLayout failed');
+      }
       this._cachedLayouts.set(index, layout);
       return layout;
     }

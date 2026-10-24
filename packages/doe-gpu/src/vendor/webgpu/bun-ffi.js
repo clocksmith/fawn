@@ -4409,7 +4409,9 @@ const fullSurfaceBackend = {
     },
     renderPipelineGetBindGroupLayout(pipeline, index, classes) {
         const native = wgpu.symbols.wgpuRenderPipelineGetBindGroupLayout(pipeline._native, index);
-        return new classes.DoeGPUBindGroupLayout(native, pipeline);
+        // null: the provider reports no automatic layout for this group; the
+        // caller derives one from reflection.
+        return native ? new classes.DoeGPUBindGroupLayout(native, pipeline) : null;
     },
     deviceCreateRenderBundleEncoder(device, descriptor, encoderClasses) {
         const { desc, _refs } = buildRenderBundleEncoderDescriptor(descriptor);
