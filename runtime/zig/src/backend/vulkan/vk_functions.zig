@@ -56,6 +56,7 @@ pub extern fn vkGetPhysicalDeviceMemoryProperties(physicalDevice: vk.VkPhysicalD
 pub extern fn vkGetPhysicalDeviceFeatures2(physicalDevice: vk.VkPhysicalDevice, pFeatures: *capability_structs.VkPhysicalDeviceFeatures2) callconv(.c) void;
 pub extern fn vkGetPhysicalDeviceProperties2(physicalDevice: vk.VkPhysicalDevice, pProperties: *capability_structs.VkPhysicalDeviceProperties2) callconv(.c) void;
 pub extern fn vkGetPhysicalDeviceFormatProperties(physicalDevice: vk.VkPhysicalDevice, format: u32, pFormatProperties: *capability_structs.VkFormatProperties) callconv(.c) void;
+pub extern fn vkGetPhysicalDeviceImageFormatProperties(physicalDevice: vk.VkPhysicalDevice, format: u32, imageType: u32, tiling: u32, usage: vk.VkFlags, flags: vk.VkFlags, pImageFormatProperties: *capability_structs.VkImageFormatProperties) callconv(.c) vk.VkResult;
 pub extern fn vkCreateShaderModule(device: vk.VkDevice, pCreateInfo: *const structs.VkShaderModuleCreateInfo, pAllocator: ?*const vk.VkAllocationCallbacks, pShaderModule: *vk.VkShaderModule) callconv(.c) vk.VkResult;
 pub extern fn vkDestroyShaderModule(device: vk.VkDevice, shaderModule: vk.VkShaderModule, pAllocator: ?*const vk.VkAllocationCallbacks) callconv(.c) void;
 pub extern fn vkCreateDescriptorSetLayout(device: vk.VkDevice, pCreateInfo: *const structs.VkDescriptorSetLayoutCreateInfo, pAllocator: ?*const vk.VkAllocationCallbacks, pSetLayout: *vk.VkDescriptorSetLayout) callconv(.c) vk.VkResult;

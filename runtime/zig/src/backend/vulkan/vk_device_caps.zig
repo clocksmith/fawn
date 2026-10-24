@@ -9,6 +9,7 @@ const std = @import("std");
 const c = @import("vk_constants.zig");
 const abi_callback = @import("../../core/abi/wgpu_callback_descriptor_types.zig");
 const abi_feature = @import("../../core/abi/wgpu_feature_base_types.zig");
+const vk_formats = @import("vk_formats.zig");
 
 // WebGPU spec minimum limits — used as floor values to guarantee spec compliance.
 const WEBGPU_MIN_MAX_TEXTURE_DIMENSION_1D: u32 = 8192;
@@ -79,6 +80,10 @@ pub const VulkanDeviceCaps = struct {
     has_texture_compression_bc: bool,
     has_texture_compression_etc2: bool,
     has_texture_compression_astc: bool,
+    /// texture-compression-bc-sliced-3d / -astc-sliced-3d: the base
+    /// compression feature plus 3D images of every format in its family.
+    has_texture_compression_bc_sliced_3d: bool,
+    has_texture_compression_astc_sliced_3d: bool,
     has_draw_indirect_first_instance: bool,
     has_float32_filterable: bool,
     has_timestamp_query: bool,
@@ -121,6 +126,10 @@ pub fn query_device_caps(
         .has_texture_compression_bc = vk_features.textureCompressionBC == c.VK_TRUE,
         .has_texture_compression_etc2 = vk_features.textureCompressionETC2 == c.VK_TRUE,
         .has_texture_compression_astc = vk_features.textureCompressionASTC_LDR == c.VK_TRUE,
+        .has_texture_compression_bc_sliced_3d = vk_features.textureCompressionBC == c.VK_TRUE and
+            formats_support_3d(physical_device, &BC_FORMATS),
+        .has_texture_compression_astc_sliced_3d = vk_features.textureCompressionASTC_LDR == c.VK_TRUE and
+            formats_support_3d(physical_device, &ASTC_FORMATS),
         .has_draw_indirect_first_instance = vk_features.drawIndirectFirstInstance == c.VK_TRUE,
         .has_float32_filterable = float32_filterable,
         .has_timestamp_query = timestamp_valid_bits > 0,
@@ -205,6 +214,41 @@ fn check_float32_filterable(physical_device: c.VkPhysicalDevice) bool {
         if ((props.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT) == 0) {
             return false;
         }
+    }
+    return true;
+}
+
+const BC_FORMATS = [_]u32{
+    vk_formats.VK_FORMAT_BC1_RGBA_UNORM_BLOCK, vk_formats.VK_FORMAT_BC1_RGBA_SRGB_BLOCK,
+    vk_formats.VK_FORMAT_BC2_UNORM_BLOCK,      vk_formats.VK_FORMAT_BC2_SRGB_BLOCK,
+    vk_formats.VK_FORMAT_BC3_UNORM_BLOCK,      vk_formats.VK_FORMAT_BC3_SRGB_BLOCK,
+    vk_formats.VK_FORMAT_BC4_UNORM_BLOCK,      vk_formats.VK_FORMAT_BC4_SNORM_BLOCK,
+    vk_formats.VK_FORMAT_BC5_UNORM_BLOCK,      vk_formats.VK_FORMAT_BC5_SNORM_BLOCK,
+    vk_formats.VK_FORMAT_BC6H_UFLOAT_BLOCK,    vk_formats.VK_FORMAT_BC6H_SFLOAT_BLOCK,
+    vk_formats.VK_FORMAT_BC7_UNORM_BLOCK,      vk_formats.VK_FORMAT_BC7_SRGB_BLOCK,
+};
+
+/// The 28 ASTC LDR formats are contiguous: 4x4 UNORM through 12x12 SRGB.
+const ASTC_FORMATS = blk: {
+    var formats: [vk_formats.VK_FORMAT_ASTC_12X12_SRGB_BLOCK - vk_formats.VK_FORMAT_ASTC_4X4_UNORM_BLOCK + 1]u32 = undefined;
+    for (&formats, 0..) |*format, index| format.* = vk_formats.VK_FORMAT_ASTC_4X4_UNORM_BLOCK + index;
+    break :blk formats;
+};
+
+/// Every format admits an optimally tiled, sampled and copy-destination 3D image.
+fn formats_support_3d(physical_device: c.VkPhysicalDevice, formats: []const u32) bool {
+    for (formats) |format| {
+        var properties = std.mem.zeroes(c.VkImageFormatProperties);
+        const result = c.vkGetPhysicalDeviceImageFormatProperties(
+            physical_device,
+            format,
+            c.VK_IMAGE_TYPE_3D,
+            c.VK_IMAGE_TILING_OPTIMAL,
+            c.VK_IMAGE_USAGE_SAMPLED_BIT | c.VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+            0,
+            &properties,
+        );
+        if (result != c.VK_SUCCESS) return false;
     }
     return true;
 }

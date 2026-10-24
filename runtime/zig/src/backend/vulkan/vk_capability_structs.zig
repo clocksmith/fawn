@@ -10,6 +10,14 @@ pub const VkFormatProperties = extern struct {
     bufferFeatures: vk.VkFlags,
 };
 
+pub const VkImageFormatProperties = extern struct {
+    maxExtent: @import("vk_structs.zig").VkExtent3D,
+    maxMipLevels: u32,
+    maxArrayLayers: u32,
+    sampleCounts: vk.VkFlags,
+    maxResourceSize: u64,
+};
+
 pub const VkPhysicalDeviceFeatures = extern struct {
     robustBufferAccess: vk.VkBool32,
     fullDrawIndexUint32: vk.VkBool32,
