@@ -80,8 +80,10 @@ static doe_dx_status failed(compile_state *state, doe_dx_shader_error *error,
     size_t length = std::strlen(operation);
     if (state->result) {
         /* Best-effort diagnostics never replace the first failure/code. */
+        /* The SDK macro uses Microsoft UUID metadata. Acknowledge only that
+         * required expression extension, retaining its typed output checks. */
         HRESULT retrieved = state->result->GetOutput(DXC_OUT_ERRORS,
-            IID_PPV_ARGS(&state->diagnostic), nullptr);
+            __extension__ IID_PPV_ARGS(&state->diagnostic), nullptr);
         if (SUCCEEDED(retrieved) && state->diagnostic && state->diagnostic->GetStringLength()) {
             message = state->diagnostic->GetStringPointer();
             length = state->diagnostic->GetStringLength();
@@ -158,7 +160,7 @@ static doe_dx_status compile_shader(const doe_dx_shader_options *options,
     DxcCreateInstanceProc create;
     static_assert(sizeof(create) == sizeof(symbol), "Windows DXC procedure pointer ABI");
     std::memcpy(&create, &symbol, sizeof(create));
-    HRESULT result = create(CLSID_DxcCompiler, IID_PPV_ARGS(&state.compiler));
+    HRESULT result = create(CLSID_DxcCompiler, __extension__ IID_PPV_ARGS(&state.compiler));
     if (FAILED(result) || !state.compiler) return failed(&state, error,
         native_status(FAILED(result) ? result : E_FAIL),
         static_cast<int32_t>(FAILED(result) ? result : E_FAIL), "DxcCreateInstance(IDxcCompiler3)");
@@ -175,7 +177,7 @@ static doe_dx_status compile_shader(const doe_dx_shader_options *options,
         arguments[count++] = selected;
     }
     DxcBuffer source = {options->source, options->source_size, DXC_CP_UTF8};
-    result = state.compiler->Compile(&source, arguments, count, nullptr, IID_PPV_ARGS(&state.result));
+    result = state.compiler->Compile(&source, arguments, count, nullptr, __extension__ IID_PPV_ARGS(&state.result));
     if (FAILED(result) || !state.result) return failed(&state, error,
         native_status(FAILED(result) ? result : E_FAIL),
         static_cast<int32_t>(FAILED(result) ? result : E_FAIL), "IDxcCompiler3::Compile");
@@ -186,7 +188,7 @@ static doe_dx_status compile_shader(const doe_dx_shader_options *options,
     if (FAILED(compilation)) return failed(&state, error,
         compilation == E_OUTOFMEMORY ? DOE_DX_OUT_OF_MEMORY : DOE_DX_INVALID_ARGUMENT,
         static_cast<int32_t>(compilation), "DXC.compile");
-    result = state.result->GetOutput(DXC_OUT_OBJECT, IID_PPV_ARGS(&state.bytecode), nullptr);
+    result = state.result->GetOutput(DXC_OUT_OBJECT, __extension__ IID_PPV_ARGS(&state.bytecode), nullptr);
     if (FAILED(result) || !state.bytecode || !state.bytecode->GetBufferSize() ||
             !state.bytecode->GetBufferPointer())
         return failed(&state, error, native_status(FAILED(result) ? result : E_FAIL),

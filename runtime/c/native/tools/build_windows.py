@@ -159,7 +159,7 @@ def main() -> int:
     invoke([compiler, '--target=x86_64-pc-windows-msvc', '/nologo', '/MD', '/O2', '/WX',
             '/fp:strict', '/std:c++17', '/clang:-fno-exceptions', '/clang:-fno-rtti',
             '/clang:-Wall', '/clang:-Wextra', '/clang:-Wpedantic',
-            '/I' + str(dxc / 'inc'), '/I' + str(C_ROOT / 'backends/d3d12/include'),
+            '/imsvc' + str(dxc / 'inc'), '/I' + str(C_ROOT / 'backends/d3d12/include'),
             '/c', str(shader_adapter), '/Fo' + str(shader_object)], out)
     objects.append(shader_object)
     library = out / 'webgpu_doe_c.dll'
