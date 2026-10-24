@@ -66,10 +66,11 @@ const fullscreen = device.createShaderModule({ code: `
 
 for (const format of ['stencil8', 'depth24plus-stencil8']) {
   // Stencil replace with reference 7; depth operations only where the format has depth.
+  // A member present with the value undefined is absent (WebIDL), so failOp is keep.
   const hasDepth = format !== 'stencil8';
   const stencil = device.createTexture({ size: SIZE, format, usage: T.RENDER_ATTACHMENT | T.COPY_SRC });
   const color = device.createTexture({ size: SIZE, format: 'rgba8unorm', usage: T.RENDER_ATTACHMENT });
-  const face = { compare: 'always', passOp: 'replace', failOp: 'keep', depthFailOp: 'keep' };
+  const face = { compare: 'always', passOp: 'replace', failOp: undefined, depthFailOp: 'keep' };
   const pipeline = device.createRenderPipeline({
     layout: 'auto',
     vertex: { module: fullscreen, entryPoint: 'vs' },
