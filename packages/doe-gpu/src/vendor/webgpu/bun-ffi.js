@@ -67,6 +67,8 @@ import {
   GPUInternalError,
   GPUDeviceLostInfo,
   GPUUncapturedErrorEvent,
+  GPUError,
+  GPUPipelineError,
 } from "./shared/full-surface.js";
 import {
   createEncoderClasses,
@@ -398,6 +400,23 @@ function openLibrary(path) {
         wgpuCommandEncoderBeginComputePass: { args: [FFIType.ptr, FFIType.ptr], returns: FFIType.ptr },
         wgpuCommandEncoderCopyBufferToBuffer: { args: [FFIType.ptr, FFIType.ptr, FFIType.u64, FFIType.ptr, FFIType.u64, FFIType.u64], returns: FFIType.void },
         wgpuCommandEncoderCopyTextureToBuffer: { args: [FFIType.ptr, FFIType.ptr, FFIType.ptr, FFIType.ptr], returns: FFIType.void },
+        wgpuCommandEncoderCopyBufferToTexture: { args: [FFIType.ptr, FFIType.ptr, FFIType.ptr, FFIType.ptr], returns: FFIType.void },
+        wgpuCommandEncoderCopyTextureToTexture: { args: [FFIType.ptr, FFIType.ptr, FFIType.ptr, FFIType.ptr], returns: FFIType.void },
+        wgpuCommandEncoderClearBuffer: { args: [FFIType.ptr, FFIType.ptr, FFIType.u64, FFIType.u64], returns: FFIType.void },
+        wgpuRenderPassEncoderDrawIndirect: { args: [FFIType.ptr, FFIType.ptr, FFIType.u64], returns: FFIType.void },
+        wgpuRenderPassEncoderDrawIndexedIndirect: { args: [FFIType.ptr, FFIType.ptr, FFIType.u64], returns: FFIType.void },
+        wgpuRenderPassEncoderBeginOcclusionQuery: { args: [FFIType.ptr, FFIType.u32], returns: FFIType.void },
+        wgpuRenderPassEncoderEndOcclusionQuery: { args: [FFIType.ptr], returns: FFIType.void },
+        wgpuRenderPassEncoderExecuteBundles: { args: [FFIType.ptr, FFIType.u64, FFIType.ptr], returns: FFIType.void },
+        // The drop-in's standard render pass debug entries forward nothing; the
+        // Doe entries track group balance (the Node addon uses them too).
+        doeNativeRenderPassPushDebugGroup: { args: [FFIType.ptr, FFIType.ptr, FFIType.u64], returns: FFIType.void },
+        doeNativeRenderPassPopDebugGroup: { args: [FFIType.ptr], returns: FFIType.void },
+        doeNativeRenderPassInsertDebugMarker: { args: [FFIType.ptr, FFIType.ptr, FFIType.u64], returns: FFIType.void },
+        wgpuTextureDestroy: { args: [FFIType.ptr], returns: FFIType.void },
+        doeNativeShaderModuleGetCompilationInfo: { args: [FFIType.ptr], returns: FFIType.cstring },
+        wgpuAdapterGetInfo: { args: [FFIType.ptr, FFIType.ptr], returns: FFIType.u32 },
+        doeNativePipelineAdoptAutoBindGroupLayout: { args: [FFIType.ptr, FFIType.u32, FFIType.u32, FFIType.ptr], returns: FFIType.u32 },
         doeNativeCommandEncoderCopyTextureToBuffer: { args: [FFIType.ptr, FFIType.ptr, FFIType.u32, FFIType.ptr, FFIType.u64, FFIType.u32, FFIType.u32, FFIType.u32, FFIType.u32, FFIType.u32], returns: FFIType.void },
         wgpuCommandEncoderFinish: { args: [FFIType.ptr, FFIType.ptr], returns: FFIType.ptr },
         wgpuCommandBufferRelease: { args: [FFIType.ptr], returns: FFIType.void },
@@ -462,9 +481,6 @@ function openLibrary(path) {
         wgpuRenderBundleEncoderDrawIndexed: { args: [FFIType.ptr, FFIType.u32, FFIType.u32, FFIType.u32, FFIType.i32, FFIType.u32], returns: FFIType.void },
         wgpuRenderBundleEncoderDrawIndirect: { args: [FFIType.ptr, FFIType.ptr, FFIType.u64], returns: FFIType.void },
         wgpuRenderBundleEncoderDrawIndexedIndirect: { args: [FFIType.ptr, FFIType.ptr, FFIType.u64], returns: FFIType.void },
-        wgpuRenderBundleEncoderPushDebugGroup: { args: [FFIType.ptr, FFIType.cstring], returns: FFIType.void },
-        wgpuRenderBundleEncoderPopDebugGroup: { args: [FFIType.ptr], returns: FFIType.void },
-        wgpuRenderBundleEncoderInsertDebugMarker: { args: [FFIType.ptr, FFIType.cstring], returns: FFIType.void },
         wgpuRenderBundleEncoderFinish: { args: [FFIType.ptr, FFIType.ptr], returns: FFIType.ptr },
         wgpuRenderBundleEncoderRelease: { args: [FFIType.ptr], returns: FFIType.void },
         wgpuRenderBundleRelease: { args: [FFIType.ptr], returns: FFIType.void },
@@ -1808,15 +1824,17 @@ const TEXTURE_DESC_SIZE = 88;
 
 const TEXTURE_FORMAT_MAP = {
     r8unorm: 0x01, r8snorm: 0x02, r8uint: 0x03, r8sint: 0x04,
-    r16uint: 0x07, r16sint: 0x08, r16float: 0x09,
+    r16unorm: 0x05, r16snorm: 0x06, r16uint: 0x07, r16sint: 0x08, r16float: 0x09,
     rg8unorm: 0x0A, rg8snorm: 0x0B, rg8uint: 0x0C, rg8sint: 0x0D,
     r32float: 0x0E, r32uint: 0x0F, r32sint: 0x10,
-    rg16uint: 0x13, rg16sint: 0x14, rg16float: 0x15,
+    rg16unorm: 0x11, rg16snorm: 0x12, rg16uint: 0x13, rg16sint: 0x14, rg16float: 0x15,
     rgba8unorm: 0x16, "rgba8unorm-srgb": 0x17, rgba8snorm: 0x18, rgba8uint: 0x19, rgba8sint: 0x1A,
     bgra8unorm: 0x1B, "bgra8unorm-srgb": 0x1C,
     rgb10a2uint: 0x1D, rgb10a2unorm: 0x1E, rg11b10ufloat: 0x1F, rgb9e5ufloat: 0x20,
     rg32float: 0x21, rg32uint: 0x22, rg32sint: 0x23,
     rgba16uint: 0x24, rgba16sint: 0x25, rgba16float: 0x26,
+    // The drop-in numbers rgba16unorm/snorm after the RGBA32 formats.
+    rgba16unorm: 0x2A, rgba16snorm: 0x2B,
     rgba32float: 0x27, rgba32uint: 0x28, rgba32sint: 0x29,
     stencil8: 0x2C, depth16unorm: 0x2D,
     depth24plus: 0x2E, "depth24plus-stencil8": 0x2F,
@@ -1855,19 +1873,49 @@ const TEXTURE_FORMAT_MAP = {
 // Alias used by bind group layout storage texture format lookup
 const TEXTURE_FORMATS = TEXTURE_FORMAT_MAP;
 
+// Values of the pinned webgpu.h (the drop-in uses them as the Node addon does).
 const VERTEX_FORMAT_MAP = {
-    float32: 0x00000019,
-    float32x2: 0x0000001A,
-    float32x3: 0x0000001B,
-    float32x4: 0x0000001C,
-    uint32: 0x00000021,
-    uint32x2: 0x00000022,
-    uint32x3: 0x00000023,
-    uint32x4: 0x00000024,
-    sint32: 0x00000025,
-    sint32x2: 0x00000026,
-    sint32x3: 0x00000027,
-    sint32x4: 0x00000028,
+    "uint8": 0x00000001,
+    "uint8x2": 0x00000002,
+    "uint8x4": 0x00000003,
+    "sint8": 0x00000004,
+    "sint8x2": 0x00000005,
+    "sint8x4": 0x00000006,
+    "unorm8": 0x00000007,
+    "unorm8x2": 0x00000008,
+    "unorm8x4": 0x00000009,
+    "snorm8": 0x0000000A,
+    "snorm8x2": 0x0000000B,
+    "snorm8x4": 0x0000000C,
+    "uint16": 0x0000000D,
+    "uint16x2": 0x0000000E,
+    "uint16x4": 0x0000000F,
+    "sint16": 0x00000010,
+    "sint16x2": 0x00000011,
+    "sint16x4": 0x00000012,
+    "unorm16": 0x00000013,
+    "unorm16x2": 0x00000014,
+    "unorm16x4": 0x00000015,
+    "snorm16": 0x00000016,
+    "snorm16x2": 0x00000017,
+    "snorm16x4": 0x00000018,
+    "float16": 0x00000019,
+    "float16x2": 0x0000001A,
+    "float16x4": 0x0000001B,
+    "float32": 0x0000001C,
+    "float32x2": 0x0000001D,
+    "float32x3": 0x0000001E,
+    "float32x4": 0x0000001F,
+    "uint32": 0x00000020,
+    "uint32x2": 0x00000021,
+    "uint32x3": 0x00000022,
+    "uint32x4": 0x00000023,
+    "sint32": 0x00000024,
+    "sint32x2": 0x00000025,
+    "sint32x3": 0x00000026,
+    "sint32x4": 0x00000027,
+    "unorm10-10-10-2": 0x00000028,
+    "unorm8x4-bgra": 0x00000029,
 };
 
 const VERTEX_STEP_MODE_MAP = {
@@ -1886,26 +1934,28 @@ const COMPARE_FUNC_MAP = {
     always: 0x00000008,
 };
 
+// The drop-in numbers stencil operations from zero (webgpu.h starts at
+// Keep = 1); the Node addon translates the same way (g_zig_enum_order).
 const STENCIL_OPERATION_MAP = {
-    keep: 0x00000001,
-    zero: 0x00000002,
-    replace: 0x00000003,
-    invert: 0x00000004,
-    "increment-clamp": 0x00000005,
-    "decrement-clamp": 0x00000006,
-    "increment-wrap": 0x00000007,
-    "decrement-wrap": 0x00000008,
+    keep: 0x00000000,
+    zero: 0x00000001,
+    replace: 0x00000002,
+    invert: 0x00000003,
+    "increment-clamp": 0x00000004,
+    "decrement-clamp": 0x00000005,
+    "increment-wrap": 0x00000006,
+    "decrement-wrap": 0x00000007,
 };
 
 const FILTER_MODE_MAP = {
-    nearest: 0,
-    linear: 1,
+    nearest: 0x00000001,
+    linear: 0x00000002,
 };
 
 const ADDRESS_MODE_MAP = {
-    repeat: 1,
-    "mirror-repeat": 2,
-    "clamp-to-edge": 3,
+    "clamp-to-edge": 0x00000001,
+    repeat: 0x00000002,
+    "mirror-repeat": 0x00000003,
 };
 
 const POWER_PREFERENCE_MAP = {
@@ -2001,6 +2051,10 @@ function buildTextureDescriptor(descriptor) {
     return { desc: new Uint8Array(buf), _refs: refs };
 }
 
+// { WGPUChainedStruct chain (next@0, sType@8), WGPUTextureComponentSwizzle (r@16, g@20, b@24, a@28) } = 32
+const WGPU_TEXTURE_COMPONENT_SWIZZLE_DESCRIPTOR_SIZE = 32;
+const STYPE_TEXTURE_COMPONENT_SWIZZLE_DESCRIPTOR = 0x0000000C;
+
 function buildTextureViewDescriptor(descriptor) {
     const buf = new ArrayBuffer(TEXTURE_VIEW_DESC_SIZE);
     const v = new DataView(buf);
@@ -2020,11 +2074,20 @@ function buildTextureViewDescriptor(descriptor) {
     const aspect = descriptor.aspect;
     v.setUint32(48, aspect ? (typeof aspect === "number" ? aspect : (TEXTURE_ASPECT_MAP[aspect] ?? 0)) : 0, true);
     v.setBigUint64(56, BigInt(descriptor.usage ?? 0), true);
+    // webgpu.h carries the swizzle in a chained
+    // WGPUTextureComponentSwizzleDescriptor, never in the view itself.
     const swizzle = typeof descriptor.swizzle === "string" && descriptor.swizzle.length === 4 ? descriptor.swizzle : null;
-    v.setUint32(64, swizzle ? (TEXTURE_SWIZZLE_COMPONENT_MAP[swizzle[0]] ?? 0) : 0, true);
-    v.setUint32(68, swizzle ? (TEXTURE_SWIZZLE_COMPONENT_MAP[swizzle[1]] ?? 0) : 0, true);
-    v.setUint32(72, swizzle ? (TEXTURE_SWIZZLE_COMPONENT_MAP[swizzle[2]] ?? 0) : 0, true);
-    v.setUint32(76, swizzle ? (TEXTURE_SWIZZLE_COMPONENT_MAP[swizzle[3]] ?? 0) : 0, true);
+    if (swizzle) {
+        const chain = new Uint8Array(WGPU_TEXTURE_COMPONENT_SWIZZLE_DESCRIPTOR_SIZE);
+        const c = new DataView(chain.buffer);
+        writePtr(c, 0, null);
+        c.setUint32(8, STYPE_TEXTURE_COMPONENT_SWIZZLE_DESCRIPTOR, true);
+        for (let index = 0; index < 4; index += 1) {
+            c.setUint32(16 + index * 4, TEXTURE_SWIZZLE_COMPONENT_MAP[swizzle[index]] ?? 0, true);
+        }
+        refs.push(chain);
+        writePtr(v, 0, bunPtr(chain));
+    }
     return { desc: new Uint8Array(buf), _refs: refs };
 }
 
@@ -2236,42 +2299,63 @@ const DEFAULT_MAX_DRAW_COUNT = 50_000_000;
 // WGPURenderPassDescriptor:
 // { nextInChain:ptr@0, label:sv@8, colorAttachmentCount:size_t@24, colorAttachments:ptr@32,
 //   depthStencilAttachment:ptr@40, occlusionQuerySet:ptr@48, timestampWrites:ptr@56 } = 64
+// An attachment names a GPUTextureView or a GPUTexture, which stands for its
+// default view (as the Node backend does); null when absent.
+function renderAttachmentViewNative(resource, label) {
+    if (resource === undefined || resource === null) return null;
+    const view = typeof resource?.createView === "function" ? resource.createView() : resource;
+    return assertLiveResource(view, "GPUCommandEncoder.beginRenderPass", label);
+}
+
+const LOAD_OP_CODES = Object.freeze({ load: 1, clear: 2 });
+const STORE_OP_CODES = Object.freeze({ store: 1, discard: 2 });
+
 function buildRenderPassDescriptor(descriptor) {
     const colorAttachments = descriptor.colorAttachments || [];
-    const attBuf = new Uint8Array(colorAttachments.length * RENDER_PASS_COLOR_ATTACHMENT_SIZE);
+    const attBuf = new Uint8Array(Math.max(1, colorAttachments.length) * RENDER_PASS_COLOR_ATTACHMENT_SIZE);
     const attView = new DataView(attBuf.buffer);
 
     for (let i = 0; i < colorAttachments.length; i++) {
         const a = colorAttachments[i];
         const off = i * RENDER_PASS_COLOR_ATTACHMENT_SIZE;
         writePtr(attView, off + 0, null);
-        writePtr(attView, off + 8, a.view._native);
-        attView.setUint32(off + 16, 0xFFFFFFFF, true); // depthSlice = WGPU_DEPTH_SLICE_UNDEFINED
-        writePtr(attView, off + 24, null); // resolveTarget
-        attView.setUint32(off + 32, a.loadOp === 'load' ? 1 : 2, true);
-        attView.setUint32(off + 36, a.storeOp === 'discard' ? 2 : 1, true);
+        if (a === null || a === undefined) {
+            // A sparse slot: a null view and undefined operations.
+            writePtr(attView, off + 8, null);
+            attView.setUint32(off + 16, 0xFFFFFFFF, true);
+            writePtr(attView, off + 24, null);
+            continue;
+        }
+        writePtr(attView, off + 8, renderAttachmentViewNative(a.view, "GPUTextureView"));
+        attView.setUint32(off + 16, a.depthSlice ?? 0xFFFFFFFF, true); // WGPU_DEPTH_SLICE_UNDEFINED when omitted
+        writePtr(attView, off + 24, renderAttachmentViewNative(a.resolveTarget, "GPUTextureView"));
+        attView.setUint32(off + 32, LOAD_OP_CODES[a.loadOp ?? "clear"] ?? 0, true);
+        attView.setUint32(off + 36, STORE_OP_CODES[a.storeOp ?? "store"] ?? 0, true);
         const cv = normalizeGpuColor(a.clearValue, `colorAttachments[${i}].clearValue`);
         attView.setFloat64(off + 40, cv.r ?? 0, true);
         attView.setFloat64(off + 48, cv.g ?? 0, true);
         attView.setFloat64(off + 56, cv.b ?? 0, true);
-        attView.setFloat64(off + 64, cv.a ?? 1, true);
+        attView.setFloat64(off + 64, cv.a ?? 0, true);
     }
 
     let depthStencilAttachmentArr = null;
     let timestampWritesArr = null;
-    if (descriptor.depthStencilAttachment?.view) {
+    const depth = descriptor.depthStencilAttachment;
+    if (depth?.view) {
         const depthBuf = new ArrayBuffer(WGPU_RENDER_PASS_DEPTH_STENCIL_ATTACHMENT_SIZE);
         const depthView = new DataView(depthBuf);
         writePtr(depthView, 0, null);
-        writePtr(depthView, 8, descriptor.depthStencilAttachment.view._native);
-        depthView.setUint32(16, 1, true); // clear
-        depthView.setUint32(20, 1, true); // store
-        depthView.setFloat32(24, descriptor.depthStencilAttachment.depthClearValue ?? 1.0, true);
-        depthView.setUint32(28, descriptor.depthStencilAttachment.depthReadOnly ? 1 : 0, true);
-        depthView.setUint32(32, 1, true); // clear
-        depthView.setUint32(36, 1, true); // store
-        depthView.setUint32(40, descriptor.depthStencilAttachment.stencilClearValue ?? 0, true);
-        depthView.setUint32(44, descriptor.depthStencilAttachment.stencilReadOnly ? 1 : 0, true);
+        writePtr(depthView, 8, renderAttachmentViewNative(depth.view, "GPUTextureView"));
+        // Operations stay undefined when not given: the spec requires them
+        // only for an aspect the format has, and forbids them otherwise.
+        depthView.setUint32(16, LOAD_OP_CODES[depth.depthLoadOp] ?? 0, true);
+        depthView.setUint32(20, STORE_OP_CODES[depth.depthStoreOp] ?? 0, true);
+        depthView.setFloat32(24, depth.depthClearValue ?? 1.0, true);
+        depthView.setUint32(28, depth.depthReadOnly ? 1 : 0, true);
+        depthView.setUint32(32, LOAD_OP_CODES[depth.stencilLoadOp] ?? 0, true);
+        depthView.setUint32(36, STORE_OP_CODES[depth.stencilStoreOp] ?? 0, true);
+        depthView.setUint32(40, depth.stencilClearValue ?? 0, true);
+        depthView.setUint32(44, depth.stencilReadOnly ? 1 : 0, true);
         depthStencilAttachmentArr = new Uint8Array(depthBuf);
     }
     if (descriptor.timestampWrites?.querySet) {
@@ -2295,6 +2379,23 @@ function buildRenderPassDescriptor(descriptor) {
     return { desc: new Uint8Array(descBuf), _refs: [attBuf, depthStencilAttachmentArr, timestampWritesArr, drawCount].filter(Boolean) };
 }
 
+// An omitted aspect is "all"; a stride left undefined is
+// WGPU_COPY_STRIDE_UNDEFINED, never 0, which is a real stride.
+const WGPU_COPY_STRIDE_UNDEFINED = 0xFFFFFFFF;
+const WGPU_WHOLE_SIZE = 0xFFFFFFFFFFFFFFFFn;
+
+function textureAspectCode(aspect) {
+    if (aspect === undefined) return TEXTURE_ASPECT_MAP.all;
+    if (typeof aspect === "number") return aspect;
+    const value = TEXTURE_ASPECT_MAP[aspect];
+    if (value === undefined) failValidation("GPUTexelCopyTextureInfo.aspect", `unknown aspect "${aspect}"`);
+    return value;
+}
+
+function strideCode(stride) {
+    return stride === undefined ? WGPU_COPY_STRIDE_UNDEFINED : stride;
+}
+
 function buildTexelCopyTextureInfo(source) {
     const buf = new ArrayBuffer(TEXEL_COPY_TEXTURE_INFO_SIZE);
     const view = new DataView(buf);
@@ -2303,7 +2404,7 @@ function buildTexelCopyTextureInfo(source) {
     view.setUint32(12, source.origin?.x ?? 0, true);
     view.setUint32(16, source.origin?.y ?? 0, true);
     view.setUint32(20, source.origin?.z ?? 0, true);
-    view.setUint32(24, source.aspect ?? 1, true);
+    view.setUint32(24, textureAspectCode(source.aspect), true);
     return { desc: new Uint8Array(buf), srcRefs: null };
 }
 
@@ -2311,8 +2412,8 @@ function buildTexelCopyBufferInfo(destination) {
     const buf = new ArrayBuffer(TEXEL_COPY_BUFFER_INFO_SIZE);
     const view = new DataView(buf);
     view.setBigUint64(0, BigInt(destination.offset ?? 0), true);
-    view.setUint32(8, destination.bytesPerRow ?? 0, true);
-    view.setUint32(12, destination.rowsPerImage ?? 0, true);
+    view.setUint32(8, strideCode(destination.bytesPerRow), true);
+    view.setUint32(12, strideCode(destination.rowsPerImage), true);
     writePtr(view, 16, destination.buffer);
     return { desc: new Uint8Array(buf), dstRefs: null };
 }
@@ -2347,8 +2448,8 @@ function buildTexelCopyBufferLayout(layout) {
     const buf = new ArrayBuffer(WGPU_TEXEL_COPY_BUFFER_LAYOUT_SIZE);
     const v = new DataView(buf);
     v.setBigUint64(0, BigInt(layout.offset ?? 0), true);
-    v.setUint32(8, layout.bytesPerRow ?? 0, true);
-    v.setUint32(12, layout.rowsPerImage ?? 0, true);
+    v.setUint32(8, strideCode(layout.bytesPerRow), true);
+    v.setUint32(12, strideCode(layout.rowsPerImage), true);
     return new Uint8Array(buf);
 }
 
@@ -2539,6 +2640,21 @@ function dispatchBunDeviceEvent(device, event) {
     }
 }
 
+// WebGPU's fallback adapter is the CPU implementation (WGPUAdapterType_CPU).
+// The Doe info fast path carries no adapter type, so it is read from the
+// standard WGPUAdapterInfo (adapterType at byte 76 of 96), as the Node addon
+// does. The drop-in's info strings are not allocated per call
+// (wgpuAdapterInfoFreeMembers is a no-op there), so nothing is freed.
+const WGPU_ADAPTER_INFO_SIZE = 96;
+const WGPU_ADAPTER_INFO_ADAPTER_TYPE_OFFSET = 76;
+const WGPU_ADAPTER_TYPE_CPU = 3;
+
+function bunAdapterIsCpu(native) {
+    const info = new Uint8Array(WGPU_ADAPTER_INFO_SIZE);
+    if (wgpu.symbols.wgpuAdapterGetInfo(native, info) !== WGPU_STATUS_SUCCESS) return false;
+    return new DataView(info.buffer).getUint32(WGPU_ADAPTER_INFO_ADAPTER_TYPE_OFFSET, true) === WGPU_ADAPTER_TYPE_CPU;
+}
+
 function readAdapterInfo(native) {
     const getInfo = wgpu?.symbols?.doeNativeAdapterGetInfo;
     const freeInfo = wgpu?.symbols?.doeNativeAdapterFreeInfo;
@@ -2568,6 +2684,7 @@ function readAdapterInfo(native) {
             vendorID: vendorIdOut[0],
             deviceID: deviceIdOut[0],
             driverVersion: driverVersionOut[0],
+            isFallbackAdapter: bunAdapterIsCpu(native),
             subgroupMinSize: process.platform === "darwin"
                 ? METAL_WEBGPU_SUBGROUP_MIN_SIZE
                 : 32,
@@ -2592,17 +2709,25 @@ function ensureBunDeviceLostRegistration(device, native) {
         device._lostSupported = false;
         return false;
     }
+    // A weak reference: the native callback must not keep the device alive.
+    const deviceRef = new WeakRef(device);
+    const releaseList = device._releaseCallbacks;
     const callback = new JSCallback(
         (reason, msgPtr, msgLen) => {
-            resolveDeviceLost(device, mapDeviceLostReason(reason), decodeStringView(msgPtr, msgLen));
+            const lostDevice = deviceRef.deref();
+            if (lostDevice) resolveDeviceLost(lostDevice, mapDeviceLostReason(reason), decodeStringView(msgPtr, msgLen));
             // The callback trampoline must survive the return through native code.
             setImmediate(() => {
                 callback.close();
-                if (device._lostCallback === callback) device._lostCallback = null;
+                const pending = releaseList?.indexOf(callback) ?? -1;
+                if (pending >= 0) releaseList.splice(pending, 1);
+                const current = deviceRef.deref();
+                if (current && current._lostCallback === callback) current._lostCallback = null;
             });
         },
         { args: [FFIType.u32, FFIType.ptr, FFIType.u64, FFIType.ptr], returns: FFIType.void },
     );
+    device._releaseCallbacks?.push(callback);
     try {
         registerLost(native, callback.ptr, null);
     } catch (error) {
@@ -2659,6 +2784,55 @@ function setBunDeviceUncapturedErrorHandler(device, native, handler) {
         throw error;
     }
     device._uncapturedErrorCallback = callback;
+}
+
+// Provider errors reach the full surface through one ordered log, as on Node:
+// the provider reports every error to the device's uncaptured-error callback
+// (no native error scopes are pushed), the callback appends it, and the full
+// surface delivers logged errors to its own scopes in call order.
+let bunProviderErrorSequence = 0;
+
+// A device collected without destroy() releases its native queue and device
+// and closes its callbacks, as on Node (WebGPU destroys a collected device).
+const bunDeviceReleases = typeof FinalizationRegistry === "function"
+    ? new FinalizationRegistry(({ device, queue, callbacks }) => {
+        wgpu.symbols.doeNativeDeviceSetUncapturedErrorCallback?.(device, null, null, null);
+        wgpu.symbols.doeNativeDeviceRegisterLostCallback?.(device, null, null);
+        for (const callback of callbacks) callback?.close();
+        if (queue) wgpu.symbols.wgpuQueueRelease(queue);
+        wgpu.symbols.wgpuDeviceRelease(device);
+    })
+    : null;
+
+function installBunProviderErrorLog(device, native) {
+    device._providerErrorLog = false;
+    const setCallback = wgpu?.symbols?.doeNativeDeviceSetUncapturedErrorCallback;
+    if (typeof setCallback !== "function") {
+        return;
+    }
+    const entries = [];
+    // A weak reference: the native callback must not keep the device alive.
+    const deviceRef = new WeakRef(device);
+    let wakeQueued = false;
+    const callback = new JSCallback(
+        (errorType, msgPtr, msgLen) => {
+            entries.push(createGpuError({ type: mapErrorType(errorType), message: decodeStringView(msgPtr, msgLen) }));
+            bunProviderErrorSequence += 1;
+            if (!wakeQueued) {
+                wakeQueued = true;
+                setImmediate(() => {
+                    wakeQueued = false;
+                    deviceRef.deref()?._drainProviderErrors();
+                });
+            }
+        },
+        { args: [FFIType.u32, FFIType.ptr, FFIType.u64, FFIType.ptr, FFIType.ptr], returns: FFIType.void },
+    );
+    setCallback(native, callback.ptr, null, null);
+    device._uncapturedErrorCallback = callback;
+    device._providerErrorEntries = entries;
+    device._providerErrorSeen = bunProviderErrorSequence;
+    device._providerErrorLog = true;
 }
 
 function popDeviceErrorScope(native) {
@@ -2872,6 +3046,13 @@ function materializeLazyBunComputePass(pass) {
     ensureBunCommandEncoderNative(pass._encoder);
     pass._lazy = false;
     pass._native = wgpu.symbols.wgpuCommandEncoderBeginComputePass(pass._encoder._native, null);
+    if (!pass._native) {
+        // The provider refused the pass (its encoder is already invalid and
+        // reports at finish()); the pass records nothing more.
+        pass._native = null;
+        pass._invalid = true;
+        return;
+    }
     if (pass._pipeline != null) {
         wgpu.symbols.wgpuComputePassEncoderSetPipeline(pass._native, pass._pipeline);
     }
@@ -2928,6 +3109,7 @@ const bunEncoderBackend = {
             return;
         }
         materializeLazyBunComputePass(pass);
+        if (pass._invalid) return;
         pass._bindGroups[index] = bindGroupNative;
         (pass._bindGroupOffsets ??= [])[index] = offsets;
         pass._bindGroupDirty[index] = false;
@@ -2938,6 +3120,7 @@ const bunEncoderBackend = {
             return;
         }
         materializeLazyBunComputePass(pass);
+        if (pass._invalid) return;
         wgpu.symbols.wgpuComputePassEncoderSetImmediates(
             assertLiveResource(pass, "GPUComputePassEncoder.setImmediates", "GPUComputePassEncoder"),
             index,
@@ -3008,6 +3191,7 @@ const bunEncoderBackend = {
             failValidation("GPUComputePassEncoder.dispatchWorkgroupsIndirect", "setPipeline() must be called before dispatch");
         }
         materializeLazyBunComputePass(pass);
+        if (pass._invalid) return;
         const nativePass = assertLiveResource(pass, "GPUComputePassEncoder.dispatchWorkgroupsIndirect", "GPUComputePassEncoder");
         materializeBunPendingComputeState(pass, nativePass);
         wgpu.symbols.wgpuComputePassEncoderDispatchWorkgroupsIndirect(
@@ -3074,7 +3258,7 @@ const bunEncoderBackend = {
             slot,
             bufferNative,
             BigInt(offset),
-            BigInt(size ?? 0),
+            size === undefined ? WGPU_WHOLE_SIZE : BigInt(size),
         );
     },
     renderPassSetIndexBuffer(pass, bufferNative, format, offset, size) {
@@ -3086,7 +3270,7 @@ const bunEncoderBackend = {
             bufferNative,
             INDEX_FORMAT_MAP[format] ?? INDEX_FORMAT_MAP.uint16,
             BigInt(offset),
-            BigInt(size ?? 0),
+            size === undefined ? WGPU_WHOLE_SIZE : BigInt(size),
         );
     },
     renderPassDraw(pass, vertexCount, instanceCount, firstVertex, firstInstance) {
@@ -3140,26 +3324,28 @@ const bunEncoderBackend = {
     },
     renderPassPushDebugGroup(pass, label) {
         const { bytes, len } = encodeStringView(label);
-        wgpu.symbols.wgpuRenderPassEncoderPushDebugGroup(
+        wgpu.symbols.doeNativeRenderPassPushDebugGroup(
             assertLiveResource(pass, "GPURenderPassEncoder.pushDebugGroup", "GPURenderPassEncoder"),
             bytes,
             BigInt(len),
         );
     },
     renderPassPopDebugGroup(pass) {
-        wgpu.symbols.wgpuRenderPassEncoderPopDebugGroup(
+        wgpu.symbols.doeNativeRenderPassPopDebugGroup(
             assertLiveResource(pass, "GPURenderPassEncoder.popDebugGroup", "GPURenderPassEncoder"),
         );
     },
     renderPassInsertDebugMarker(pass, label) {
         const { bytes, len } = encodeStringView(label);
-        wgpu.symbols.wgpuRenderPassEncoderInsertDebugMarker(
+        wgpu.symbols.doeNativeRenderPassInsertDebugMarker(
             assertLiveResource(pass, "GPURenderPassEncoder.insertDebugMarker", "GPURenderPassEncoder"),
             bytes,
             BigInt(len),
         );
     },
     computePassPushDebugGroup(pass, label) {
+        materializeLazyBunComputePass(pass);
+        if (pass._invalid) return;
         const { bytes, len } = encodeStringView(label);
         wgpu.symbols.wgpuComputePassEncoderPushDebugGroup(
             assertLiveResource(pass, "GPUComputePassEncoder.pushDebugGroup", "GPUComputePassEncoder"),
@@ -3168,17 +3354,65 @@ const bunEncoderBackend = {
         );
     },
     computePassPopDebugGroup(pass) {
+        materializeLazyBunComputePass(pass);
+        if (pass._invalid) return;
         wgpu.symbols.wgpuComputePassEncoderPopDebugGroup(
             assertLiveResource(pass, "GPUComputePassEncoder.popDebugGroup", "GPUComputePassEncoder"),
         );
     },
     computePassInsertDebugMarker(pass, label) {
+        materializeLazyBunComputePass(pass);
+        if (pass._invalid) return;
         const { bytes, len } = encodeStringView(label);
         wgpu.symbols.wgpuComputePassEncoderInsertDebugMarker(
             assertLiveResource(pass, "GPUComputePassEncoder.insertDebugMarker", "GPUComputePassEncoder"),
             bytes,
             BigInt(len),
         );
+    },
+    renderPassDrawIndirect(pass, indirectBufferNative, indirectOffset) {
+        wgpu.symbols.wgpuRenderPassEncoderDrawIndirect(
+            assertLiveResource(pass, "GPURenderPassEncoder.drawIndirect", "GPURenderPassEncoder"),
+            indirectBufferNative,
+            BigInt(indirectOffset),
+        );
+    },
+    renderPassDrawIndexedIndirect(pass, indirectBufferNative, indirectOffset) {
+        wgpu.symbols.wgpuRenderPassEncoderDrawIndexedIndirect(
+            assertLiveResource(pass, "GPURenderPassEncoder.drawIndexedIndirect", "GPURenderPassEncoder"),
+            indirectBufferNative,
+            BigInt(indirectOffset),
+        );
+    },
+    renderPassBeginOcclusionQuery(pass, queryIndex) {
+        wgpu.symbols.wgpuRenderPassEncoderBeginOcclusionQuery(
+            assertLiveResource(pass, "GPURenderPassEncoder.beginOcclusionQuery", "GPURenderPassEncoder"),
+            queryIndex,
+        );
+    },
+    renderPassEndOcclusionQuery(pass) {
+        wgpu.symbols.wgpuRenderPassEncoderEndOcclusionQuery(
+            assertLiveResource(pass, "GPURenderPassEncoder.endOcclusionQuery", "GPURenderPassEncoder"),
+        );
+    },
+    renderPassExecuteBundles(pass, bundles) {
+        const natives = new BigUint64Array(Math.max(1, bundles.length));
+        bundles.forEach((bundle, index) => {
+            natives[index] = BigInt(assertLiveResource(bundle, "GPURenderPassEncoder.executeBundles", "GPURenderBundle"));
+        });
+        wgpu.symbols.wgpuRenderPassEncoderExecuteBundles(
+            assertLiveResource(pass, "GPURenderPassEncoder.executeBundles", "GPURenderPassEncoder"),
+            BigInt(bundles.length),
+            natives,
+        );
+        // executeBundles resets the pass's pipeline, bind groups and vertex/index
+        // buffers, so the redundant-state cache must not skip setting them again.
+        pass._pipeline = null;
+        pass._bindGroups = [];
+        pass._bindGroupOffsets = [];
+        pass._immediates = [];
+        pass._vertexBuffers = [];
+        pass._indexBuffer = null;
     },
     renderPassEnd(pass) {
         wgpu.symbols.wgpuRenderPassEncoderEnd(assertLiveResource(pass, "GPURenderPassEncoder.end", "GPURenderPassEncoder"));
@@ -3234,7 +3468,7 @@ const bunEncoderBackend = {
             slot,
             bufferNative,
             BigInt(offset),
-            BigInt(size ?? 0),
+            size === undefined ? WGPU_WHOLE_SIZE : BigInt(size),
         );
     },
     renderBundleEncoderSetIndexBuffer(encoder, bufferNative, format, offset, size) {
@@ -3246,7 +3480,7 @@ const bunEncoderBackend = {
             bufferNative,
             INDEX_FORMAT_MAP[format] ?? INDEX_FORMAT_MAP.uint16,
             BigInt(offset),
-            BigInt(size ?? 0),
+            size === undefined ? WGPU_WHOLE_SIZE : BigInt(size),
         );
     },
     renderBundleEncoderDraw(encoder, vertexCount, instanceCount, firstVertex, firstInstance) {
@@ -3333,7 +3567,12 @@ const bunEncoderBackend = {
         const { desc, _refs } = buildComputePassDescriptor(descriptor);
         const native = wgpu.symbols.wgpuCommandEncoderBeginComputePass(encoder._native, desc);
         void _refs;
-        const pass = new classes.DoeGPUComputePassEncoder(native, encoder);
+        const pass = new classes.DoeGPUComputePassEncoder(native || null, encoder);
+        if (!native) {
+            // Refused by the provider (an invalid encoder): an inert pass.
+            pass._lazy = false;
+            pass._invalid = true;
+        }
         pass.label = String(descriptor.label ?? "");
         encoder._activePass = pass;
         return pass;
@@ -3343,7 +3582,11 @@ const bunEncoderBackend = {
         const { desc, _refs } = buildRenderPassDescriptor(descriptor);
         const pass = wgpu.symbols.wgpuCommandEncoderBeginRenderPass(encoder._native, desc);
         void _refs;
-        const wrapper = new classes.DoeGPURenderPassEncoder(pass, encoder);
+        const wrapper = new classes.DoeGPURenderPassEncoder(pass || null, encoder);
+        if (!pass) {
+            // Refused by the provider (an invalid encoder): an inert pass.
+            wrapper._invalid = true;
+        }
         encoder._activePass = wrapper;
         return wrapper;
     },
@@ -3400,6 +3643,35 @@ const bunEncoderBackend = {
         }
         throw new Error("[doe-gpu] copyBufferToTexture is unavailable in the loaded library");
     },
+    commandEncoderCopyTextureToTexture(encoder, source, destination, copySize) {
+        ensureBunCommandEncoderNative(encoder);
+        const { desc: srcDesc } = buildTexelCopyTextureInfo(source);
+        const { desc: dstDesc } = buildTexelCopyTextureInfo(destination);
+        wgpu.symbols.wgpuCommandEncoderCopyTextureToTexture(encoder._native, srcDesc, dstDesc, buildExtent3D(copySize));
+    },
+    commandEncoderClearBuffer(encoder, bufferNative, offset, size) {
+        ensureBunCommandEncoderNative(encoder);
+        wgpu.symbols.wgpuCommandEncoderClearBuffer(
+            encoder._native,
+            bufferNative,
+            BigInt(offset ?? 0),
+            size === undefined ? WGPU_WHOLE_SIZE : BigInt(size),
+        );
+    },
+    commandEncoderPushDebugGroup(encoder, label) {
+        ensureBunCommandEncoderNative(encoder);
+        const { bytes, len } = encodeStringView(label);
+        wgpu.symbols.wgpuCommandEncoderPushDebugGroup(encoder._native, bytes, BigInt(len));
+    },
+    commandEncoderPopDebugGroup(encoder) {
+        ensureBunCommandEncoderNative(encoder);
+        wgpu.symbols.wgpuCommandEncoderPopDebugGroup(encoder._native);
+    },
+    commandEncoderInsertDebugMarker(encoder, label) {
+        ensureBunCommandEncoderNative(encoder);
+        const { bytes, len } = encodeStringView(label);
+        wgpu.symbols.wgpuCommandEncoderInsertDebugMarker(encoder._native, bytes, BigInt(len));
+    },
     commandEncoderCopyTextureToBuffer(encoder, source, destination, copySize) {
         ensureBunCommandEncoderNative(encoder);
         const { desc: srcDesc } = buildTexelCopyTextureInfo({
@@ -3433,6 +3705,11 @@ const bunEncoderBackend = {
         throw new Error("[doe-gpu] copyTextureToBuffer is unavailable in the loaded library");
     },
     commandEncoderFinish(encoder) {
+        // finish() reports the encoder's validation result (WebGPU), so
+        // deferred commands are recorded natively now, as on Node.
+        if (!encoder._native && encoder._commands.length > 0) {
+            ensureBunCommandEncoderNative(encoder);
+        }
         encoder._finished = true;
         if (encoder._native) {
             const cmd = wgpu.symbols.wgpuCommandEncoderFinish(encoder._native, null);
@@ -3449,13 +3726,15 @@ const bunEncoderBackend = {
     },
 };
 
+let fullSurfaceClasses = null;
+const bunEncoderClasses = createEncoderClasses(bunEncoderBackend);
 const {
     DoeGPUComputePassEncoder,
     DoeGPUCommandEncoder,
     DoeGPURenderPassEncoder,
     DoeGPURenderBundleEncoder,
     DoeGPURenderBundle,
-} = createEncoderClasses(bunEncoderBackend);
+} = bunEncoderClasses;
 
 const fullSurfaceBackend = {
     initBufferState(buffer) {
@@ -3592,6 +3871,11 @@ const fullSurfaceBackend = {
         }
     },
     bufferGetMappedRange(wrapper, native, offset, size) {
+        // An empty range is an empty ArrayBuffer (Bun's toArrayBuffer returns
+        // undefined for zero bytes).
+        if (size === 0) {
+            return new ArrayBuffer(0);
+        }
         const isWrite = (wrapper._mapMode & 0x0002) !== 0;
         if (isWrite) {
             const dataPtr = wgpu.symbols.wgpuBufferGetMappedRange(native, BigInt(offset), BigInt(size));
@@ -3609,6 +3893,9 @@ const fullSurfaceBackend = {
         return copy;
     },
     bufferReadCopy(_wrapper, native, offset, size) {
+        if (size === 0) {
+            return new ArrayBuffer(0);
+        }
         const dataPtr = wgpu.symbols.wgpuBufferGetConstMappedRange(native, BigInt(offset), BigInt(size));
         if (!dataPtr) throw new Error("[doe-gpu] bufferReadCopy getMappedRange returned NULL");
         const nativeView = toArrayBuffer(dataPtr, 0, size);
@@ -4064,20 +4351,36 @@ const fullSurfaceBackend = {
         if (texture?._externallyOwned) {
             return;
         }
+        // Mark it destroyed in the provider first, as on Node: a recorded
+        // command buffer that still references it then fails at submit.
+        wgpu.symbols.wgpuTextureDestroy(native);
         wgpu.symbols.wgpuTextureRelease(native);
     },
     shaderModuleDestroy(native) {
         wgpu.symbols.wgpuShaderModuleRelease(native);
     },
     computePipelineGetBindGroupLayout(pipeline, index, classes) {
-        if (pipeline._autoLayoutEntriesByGroup && process.platform === "darwin") {
+        if (pipeline._autoLayoutEntriesByGroup) {
             const entries = pipeline._autoLayoutEntriesByGroup.get(index) ?? [];
-            return pipeline._device.createBindGroupLayout({ entries });
+            const layout = pipeline._device.createBindGroupLayout({ entries });
+            fullSurfaceBackend.pipelineAdoptAutoBindGroupLayout(pipeline, false, index, layout);
+            return layout;
         }
         const native = process.platform === "darwin"
             ? wgpu.symbols.doeNativeComputePipelineGetBindGroupLayout(pipeline._native, index)
             : wgpu.symbols.wgpuComputePipelineGetBindGroupLayout(pipeline._native, index);
         return new classes.DoeGPUBindGroupLayout(native, pipeline._device);
+    },
+    // A layout built from an automatic-layout pipeline's reflection belongs to
+    // that pipeline's automatic layout (as on Node): the provider accepts bind
+    // groups made from it only with that pipeline.
+    pipelineAdoptAutoBindGroupLayout(pipeline, isRender, index, layout) {
+        if (layout?._native == null) {
+            return;
+        }
+        if (!wgpu.symbols.doeNativePipelineAdoptAutoBindGroupLayout(pipeline._native, isRender ? 1 : 0, index, layout._native)) {
+            throw new Error("[doe-gpu] pipelineAdoptAutoBindGroupLayout: the provider rejected the layout");
+        }
     },
     renderPipelineGetBindGroupLayout(pipeline, index, classes) {
         const native = wgpu.symbols.wgpuRenderPipelineGetBindGroupLayout(pipeline._native, index);
@@ -4340,27 +4643,6 @@ const fullSurfaceBackend = {
             wgpu.symbols.doeNativeQuerySetRelease(native);
         }
     },
-    commandEncoderPushDebugGroup(encoder, label) {
-        const { bytes, len } = encodeStringView(label);
-        wgpu.symbols.wgpuCommandEncoderPushDebugGroup(
-            assertLiveResource(encoder, "GPUCommandEncoder.pushDebugGroup", "GPUCommandEncoder"),
-            bytes,
-            BigInt(len),
-        );
-    },
-    commandEncoderPopDebugGroup(encoder) {
-        wgpu.symbols.wgpuCommandEncoderPopDebugGroup(
-            assertLiveResource(encoder, "GPUCommandEncoder.popDebugGroup", "GPUCommandEncoder"),
-        );
-    },
-    commandEncoderInsertDebugMarker(encoder, label) {
-        const { bytes, len } = encodeStringView(label);
-        wgpu.symbols.wgpuCommandEncoderInsertDebugMarker(
-            assertLiveResource(encoder, "GPUCommandEncoder.insertDebugMarker", "GPUCommandEncoder"),
-            bytes,
-            BigInt(len),
-        );
-    },
     deviceCreateCommandEncoder(device) {
         return new DoeGPUCommandEncoder(null, device);
     },
@@ -4390,9 +4672,41 @@ const fullSurfaceBackend = {
         return wrapper._onuncapturederror ?? null;
     },
     deviceSetOnUncapturedError(wrapper, native, handler) {
+        // With the provider log, the full surface dispatches to the handler.
+        if (wrapper._providerErrorLog === true) {
+            return;
+        }
         setBunDeviceUncapturedErrorHandler(wrapper, native, handler);
     },
+    providerErrorMark() {
+        return bunProviderErrorSequence;
+    },
+    // The drop-in's compilation messages as JSON, each completed with the
+    // GPUCompilationMessage fields it omits (as the Node addon does).
+    shaderModuleGetCompilationInfo(_module, native) {
+        const json = String(wgpu.symbols.doeNativeShaderModuleGetCompilationInfo(native) ?? "[]");
+        let messages;
+        try {
+            messages = JSON.parse(json);
+        } catch {
+            messages = [];
+        }
+        return {
+            messages: (Array.isArray(messages) ? messages : []).map((message) => ({
+                lineNum: 0,
+                linePos: 0,
+                offset: 0,
+                length: 0,
+                type: "error",
+                ...message,
+            })),
+        };
+    },
+    deviceTakeProviderErrors(device) {
+        return device._providerErrorEntries?.splice(0) ?? [];
+    },
     deviceDestroy(native, wrapper) {
+        bunDeviceReleases?.unregister(wrapper);
         if (wrapper._uncapturedErrorCallback) {
             setBunDeviceUncapturedErrorHandler(wrapper, native, null);
         }
@@ -4416,6 +4730,13 @@ const fullSurfaceBackend = {
         device._lostCallback = null;
         device._errorScopes = [];
         device._uncapturedErrorCallback = null;
+        installBunProviderErrorLog(device, native);
+        device._releaseCallbacks = [device._uncapturedErrorCallback];
+        bunDeviceReleases?.register(device, {
+            device: native,
+            queue: device.queue?._native ?? null,
+            callbacks: device._releaseCallbacks,
+        }, device);
         device.label = descriptor?.label ?? "";
         if (device.queue) {
             device.queue.label = descriptor?.defaultQueue?.label ?? "";
@@ -4446,11 +4767,11 @@ const {
     DoeGPUDevice,
     DoeGPUAdapter,
     DoeGPU,
-} = createFullSurfaceClasses({
+} = (fullSurfaceClasses = createFullSurfaceClasses({
     globals,
     backend: fullSurfaceBackend,
     encoderClasses: { DoeGPURenderBundleEncoder, DoeGPURenderBundle },
-});
+}));
 
 // ---------------------------------------------------------------------------
 // Library initialization
@@ -4491,9 +4812,19 @@ export function createInstance(createArgs = null) {
     return create(createArgs);
 }
 
+// WebGPU interface objects (GPUAdapter, GPUDevice, ...) as the Node entry
+// installs them, so `instanceof` and interface checks work.
+function webgpuInterfaceGlobals() {
+    const interfaces = {};
+    for (const [name, value] of Object.entries({ ...fullSurfaceClasses, ...bunEncoderClasses })) {
+        if (name.startsWith("DoeGPU") && typeof value === "function") interfaces[name.slice(3)] = value;
+    }
+    return { ...interfaces, GPUError, GPUPipelineError };
+}
+
 export function setupGlobals(target = globalThis, createArgs = null) {
     const gpu = create(createArgs);
-    return setupGlobalsOnTarget(target, gpu, WEBGPU_GLOBALS);
+    return setupGlobalsOnTarget(target, gpu, { ...WEBGPU_GLOBALS, ...webgpuInterfaceGlobals() });
 }
 
 export async function requestAdapter(adapterOptions = undefined, createArgs = null) {
@@ -4502,6 +4833,21 @@ export async function requestAdapter(adapterOptions = undefined, createArgs = nu
 
 export async function requestDevice(options = {}) {
     return requestDeviceFromRequestAdapter(requestAdapter, options);
+}
+
+// Whether the library exports the Doe flat adapter/device entry points this
+// backend needs (only the Zig drop-in does).
+export function providerHasFlatEntryPoints() {
+    if (!DOE_LIB_PATH) return false;
+    try {
+        dlopen(DOE_LIB_PATH, {
+            doeRequestAdapterFlat: { args: [FFIType.ptr, FFIType.ptr, FFIType.u32, FFIType.ptr, FFIType.ptr, FFIType.ptr], returns: FFIType.u64 },
+            doeRequestDeviceFlat: { args: [FFIType.ptr, FFIType.ptr, FFIType.u32, FFIType.ptr, FFIType.ptr, FFIType.ptr], returns: FFIType.u64 },
+        }).close();
+        return true;
+    } catch {
+        return false;
+    }
 }
 
 export function providerInfo() {

@@ -1,15 +1,18 @@
 #!/usr/bin/env node
 // A device the application no longer references can be garbage collected,
 // destroyed or not: the addon's callback bindings hold it weakly, and a
-// collected undestroyed device releases its native device. Uses V8's gc().
+// collected undestroyed device releases its native device. Uses V8's gc()
+// (Bun.gc under Bun).
 
 import assert from 'node:assert/strict';
 import { setFlagsFromString } from 'node:v8';
 import { runInNewContext } from 'node:vm';
 import { requestNativeDeviceOrSkip } from './native-device-test-helper.js';
 
-setFlagsFromString('--expose_gc');
-const gc = runInNewContext('gc');
+// Bun exposes its collector directly; V8 needs its flag first.
+const gc = typeof Bun !== 'undefined'
+  ? () => Bun.gc(true)
+  : (setFlagsFromString('--expose_gc'), runInNewContext('gc'));
 const collected = new Set();
 const registry = new FinalizationRegistry((name) => collected.add(name));
 

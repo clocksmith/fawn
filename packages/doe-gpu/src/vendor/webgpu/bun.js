@@ -4,7 +4,11 @@ import { createDoeNamespace } from '../doe-namespace.js';
 
 const ffiDefaultPlatforms = new Set(["darwin", "linux"]);
 const requestedBackend = process.env.DOE_BUN_WEBGPU_BACKEND ?? "";
-const ffiLoaded = ffi.providerInfo().loaded;
+// bun-ffi needs the Doe flat entry points (doeRequestAdapterFlat, ...),
+// which only the Zig drop-in exports: webgpu.h passes its async callback
+// structs by value, which Bun FFI cannot. Other providers (the C runtime) run
+// through the N-API surface, which Bun loads.
+const ffiLoaded = ffi.providerInfo().loaded && ffi.providerHasFlatEntryPoints();
 const runtime = requestedBackend === "full"
   ? full
   : (requestedBackend === "ffi" || ffiDefaultPlatforms.has(process.platform)) && ffiLoaded
