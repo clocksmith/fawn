@@ -161,7 +161,8 @@ Apple SDK compilation, Darwin execution and physical qualification remain unrun.
   pass's command encoder, whose Finish reports it. An invalid bundle encoder
   descriptor reports at creation and returns an invalid encoder whose commands
   add nothing and whose Finish reports again. A queue submit that fails
-  validation invalidates every command buffer it names.
+  validation or in the backend consumes every command buffer it names
+  (single use), and submission validity is decided before native recording.
 - Color storeOp Discard is admitted for single-sample attachments too: Vulkan
   STORE_OP_DONT_CARE and the backend's per-aspect owner marks the subresource
   undefined. Later Load passes, buffer/texture copies and sampled or storage
