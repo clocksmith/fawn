@@ -8,6 +8,7 @@ const native_types = @import("../support/doe_native_object_types.zig");
 const native_shared = @import("../support/doe_native_shared_types.zig");
 const native_helpers = @import("../support/doe_native_object_helpers.zig");
 const error_scope = @import("../../runtime/diagnostics/error_scope.zig");
+const texture_contract = @import("../../contracts/texture.zig");
 const d3d12_formats = resource_ops.d3d12_formats;
 
 const alloc = native_helpers.alloc;
@@ -226,6 +227,22 @@ fn stageEntryName(sv: RenderStringView, fallback: [*:0]const u8) [*:0]const u8 {
 // Render Pipeline
 // ============================================================
 
+/// The fragment targets' color attachment bytes per sample must not exceed
+/// maxColorAttachmentBytesPerSample
+/// (https://gpuweb.github.io/gpuweb/#abstract-opdef-validating-gpufragmentstate).
+fn colorTargetsWithinLimit(dev: *DoeDevice, fragment: *const RenderFragmentState) bool {
+    var formats: [8]u32 = undefined;
+    const count = @min(fragment.targetCount, formats.len);
+    if (count != 0) {
+        const targets = fragment.targets orelse return true;
+        for (targets[0..count], formats[0..count]) |target, *format| format.* = target.format;
+    }
+    const bytes = texture_contract.colorAttachmentBytesPerSample(formats[0..count]) orelse return true;
+    if (bytes <= dev.max_color_attachment_bytes_per_sample) return true;
+    dev.error_scopes.deliver(error_scope.ERROR_TYPE_VALIDATION, "render pipeline color targets exceed maxColorAttachmentBytesPerSample");
+    return false;
+}
+
 fn createRenderPipeline(dev_raw: ?*anyopaque, desc_raw: ?*anyopaque) ?*anyopaque {
     const dev = cast(DoeDevice, dev_raw) orelse return null;
     if (!dev.requireAlive()) return null;
@@ -245,6 +262,7 @@ fn createRenderPipeline(dev_raw: ?*anyopaque, desc_raw: ?*anyopaque) ?*anyopaque
         dev.error_scopes.deliver(error_scope.ERROR_TYPE_VALIDATION, "alphaToCoverageEnabled requires multisample.count greater than 1");
         return null;
     }
+    if (d.fragment) |fragment| if (!colorTargetsWithinLimit(dev, fragment)) return null;
     const pip = make(DoeRenderPipeline) orelse return null;
     pip.* = .{};
     pip.layout = cast(DoePipelineLayout, d.layout);

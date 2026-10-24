@@ -116,6 +116,9 @@ pub const DoeDevice = struct {
     /// every Doe device reports.
     max_dynamic_uniform_buffers_per_pipeline_layout: u32 = 8,
     max_dynamic_storage_buffers_per_pipeline_layout: u32 = 4,
+    /// WebGPU's default maxColorAttachmentBytesPerSample, which every Doe
+    /// device reports.
+    max_color_attachment_bytes_per_sample: u32 = 32,
     external_ref_count: u32 = 1,
     destroyed: bool = false,
     loss: ?*@import("doe_device_loss.zig").Event = null,
