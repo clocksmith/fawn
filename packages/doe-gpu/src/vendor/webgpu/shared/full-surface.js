@@ -1596,23 +1596,35 @@ function createFullSurfaceClasses({
     }
 
     createTexture(descriptor) {
+      let size;
+      let usage;
+      let normalizedDescriptor;
       try {
         const textureDescriptor = assertObject(descriptor, 'GPUDevice.createTexture', 'descriptor');
-        const size = assertTextureSize(textureDescriptor.size, 'GPUDevice.createTexture');
-        const usage = assertIntegerInRange(textureDescriptor.usage, 'GPUDevice.createTexture', 'descriptor.usage', { min: 1 });
-        const normalizedDescriptor = normalizeTextureDescriptor(
+        size = assertTextureSize(textureDescriptor.size, 'GPUDevice.createTexture');
+        usage = assertIntegerInRange(textureDescriptor.usage, 'GPUDevice.createTexture', 'descriptor.usage', { min: 1 });
+        normalizedDescriptor = normalizeTextureDescriptor(
           textureDescriptor,
           size,
           usage,
           this.features,
           'GPUDevice.createTexture',
         );
-        return this._createTextureFromNormalizedDescriptor(textureDescriptor, normalizedDescriptor, size, usage);
       } catch (error) {
         if (!shouldRouteDeviceError(this)) {
           throw error;
         }
-        captureDeviceError(this, 'out-of-memory', gpuErrorFromCreationFailure('out-of-memory', error));
+        captureDeviceError(this, 'validation', gpuErrorFromCreationFailure('validation', error));
+        return this._createErrorScopeFallbackTexture(descriptor?.label ?? '');
+      }
+      try {
+        return this._createTextureFromNormalizedDescriptor(descriptor, normalizedDescriptor, size, usage);
+      } catch (error) {
+        if (!shouldRouteDeviceError(this)) {
+          throw error;
+        }
+        // The provider already reported its own validation or out-of-memory
+        // error to the native error scopes or uncaptured-error listeners.
         return this._createErrorScopeFallbackTexture(descriptor?.label ?? '');
       }
     }
@@ -1898,9 +1910,6 @@ function createFullSurfaceClasses({
 
     async requestAdapter(options) {
       const normalized = normalizeRequestAdapterOptions(options, 'GPU.requestAdapter');
-      if (normalized?.forceFallbackAdapter === true) {
-        return null;
-      }
       if (
         normalized?.featureLevel !== undefined
         && normalized.featureLevel !== 'core'
@@ -1908,11 +1917,18 @@ function createFullSurfaceClasses({
       ) {
         return null;
       }
-      return backend.gpuRequestAdapter(
+      const adapter = await backend.gpuRequestAdapter(
         this,
         normalized,
         classes,
       );
+      // A forceFallbackAdapter request resolves to a fallback adapter or null,
+      // never to an ordinary one a provider returned instead.
+      if (adapter && normalized?.forceFallbackAdapter === true && adapter.info?.isFallbackAdapter !== true) {
+        adapter.destroy?.();
+        return null;
+      }
+      return adapter;
     }
   }
 
