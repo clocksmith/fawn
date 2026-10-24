@@ -2710,6 +2710,7 @@ const fullSurfaceBackend = {
             frontFace: descriptor.primitive.frontFace ?? 'ccw',
             cullMode: descriptor.primitive.cullMode ?? 'none',
             unclippedDepth: descriptor.primitive.unclippedDepth ?? false,
+            stripIndexFormat: descriptor.primitive.stripIndexFormat,
           } : undefined,
           multisample: descriptor.multisample ? {
             count: descriptor.multisample.count ?? 1,

@@ -248,6 +248,9 @@ napi_value doe_create_render_pipeline(napi_env env, napi_callback_info info) {
             desc.primitive.cullMode = cull_mode_from_string(env, get_prop(env, primitive, "cullMode"));
         if (has_prop(env, primitive, "unclippedDepth"))
             desc.primitive.unclippedDepth = get_bool_prop(env, primitive, "unclippedDepth") ? 1 : 0;
+        if (has_prop(env, primitive, "stripIndexFormat") &&
+            prop_type(env, primitive, "stripIndexFormat") == napi_string)
+            desc.primitive.stripIndexFormat = index_format_from_value(env, get_prop(env, primitive, "stripIndexFormat"));
     }
     if (has_prop(env, _args[1], "depthStencil") && prop_type(env, _args[1], "depthStencil") == napi_object) {
         napi_value depth_obj = get_prop(env, _args[1], "depthStencil");
