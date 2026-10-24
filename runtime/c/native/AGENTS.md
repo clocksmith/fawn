@@ -7,6 +7,11 @@ handles alias the resource owner, and instance handles alias the accepted instan
 Never call a foreign callback under a device mutex. A pending backend submission
 keeps every resource lease until proven terminal. Unimplemented exports remain
 absent; do not generate placeholder success symbols to satisfy a symbol inventory.
+Doe extensions (`doeNative*`) match a retained Zig signature the addon resolves:
+declare each with `DOE_NATIVE_EXTENSION` in an `include/doe_native_*.h` header and
+list it in `EXTENSION_SYMBOLS.txt`; `tests/audit-exports.py` requires the header,
+the inventory and the library's exports to agree. An extension reports real work
+or a real diagnostic, never a fixed success the addon would pass through.
 
 Device loss is an independent callback obligation with a weak device identity,
 not a second device owner. Clear it before the last external reference drops;
