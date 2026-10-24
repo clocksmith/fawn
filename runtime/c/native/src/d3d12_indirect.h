@@ -2,6 +2,7 @@
 #ifndef DOE_NATIVE_D3D12_INDIRECT_H
 #define DOE_NATIVE_D3D12_INDIRECT_H
 #include "d3d12_frontend.h"
+#include "../../backends/d3d12/include/doe_d3d12_texture.h"
 #include "d3d12_indirect_layout.h"
 
 typedef struct native_d3d12_guard_code native_d3d12_guard_code;
