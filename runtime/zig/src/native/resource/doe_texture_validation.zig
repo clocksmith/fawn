@@ -55,12 +55,32 @@ fn isKnownFormat(format: u32) bool {
         format <= abi_texture.WGPUTextureFormat_ASTC12x12UnormSrgb;
 }
 
+/// The format differing only in srgb-ness, or 0. Texture-view format
+/// compatibility (https://gpuweb.github.io/gpuweb/#texture-view-format-compatible)
+/// is equality or this pair. The C provider also pairs BC1/2/3/7; Vulkan images
+/// here are created without VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT, so the drop-in
+/// keeps the uncompressed pairs it already admitted.
+pub fn srgbPair(format: u32) u32 {
+    return switch (format) {
+        abi_texture.WGPUTextureFormat_RGBA8Unorm => abi_texture.WGPUTextureFormat_RGBA8UnormSrgb,
+        abi_texture.WGPUTextureFormat_RGBA8UnormSrgb => abi_texture.WGPUTextureFormat_RGBA8Unorm,
+        abi_texture.WGPUTextureFormat_BGRA8Unorm => abi_texture.WGPUTextureFormat_BGRA8UnormSrgb,
+        abi_texture.WGPUTextureFormat_BGRA8UnormSrgb => abi_texture.WGPUTextureFormat_BGRA8Unorm,
+        else => 0,
+    };
+}
+
 fn isViewFormatCompatible(base: u32, view: u32) bool {
-    if (base == view) return true;
-    return (base == abi_texture.WGPUTextureFormat_RGBA8Unorm and view == abi_texture.WGPUTextureFormat_RGBA8UnormSrgb) or
-        (base == abi_texture.WGPUTextureFormat_RGBA8UnormSrgb and view == abi_texture.WGPUTextureFormat_RGBA8Unorm) or
-        (base == abi_texture.WGPUTextureFormat_BGRA8Unorm and view == abi_texture.WGPUTextureFormat_BGRA8UnormSrgb) or
-        (base == abi_texture.WGPUTextureFormat_BGRA8UnormSrgb and view == abi_texture.WGPUTextureFormat_BGRA8Unorm);
+    return base == view or (view != 0 and srgbPair(base) == view);
+}
+
+/// Whether a texture created from `desc` may be viewed as its srgb pair.
+pub fn allowsSrgbPairView(desc: *const abi_pipeline.WGPUTextureDescriptor) bool {
+    const pair = srgbPair(desc.format);
+    if (pair == 0 or desc.viewFormatCount == 0) return false;
+    const view_formats = desc.viewFormats orelse return false;
+    for (view_formats[0..desc.viewFormatCount]) |view_format| if (view_format == pair) return true;
+    return false;
 }
 
 fn maxMipLevelCount(desc: *const abi_pipeline.WGPUTextureDescriptor) u32 {

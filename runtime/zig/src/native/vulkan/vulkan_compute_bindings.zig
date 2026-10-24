@@ -232,6 +232,7 @@ fn bindingAtSlot(
 
     if (group.samplers[binding_index]) |raw_sampler| {
         const sampler = cast(DoeSampler, raw_sampler) orelse return null;
+        if (sampler.error_object) return null;
         if (layout_entry) |entry| {
             if (entry.resource_kind != RESOURCE_KIND_SAMPLER) return null;
         }
