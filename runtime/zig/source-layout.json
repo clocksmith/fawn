@@ -3254,9 +3254,9 @@
       },
       "src/dropin/wgpu_dropin_ext_c.zig": {
         "decision": "Keep",
-        "moduleSha256": "04207d53f7a0dc2b58f0cdefd8f241344356edfde160e7189ee6ac2a2c7abce9",
-        "reason": "Keep: drop-in C ABI bridge; wgpuQueueWriteTexture forwards the destination aspect and data-layout offset. writeTexture rejects a dataLayout.offset past the data before any copy, including empty copies. Command encoder debug markers forward to the native encoder. Standard render-pass debug-group procedures reach the native pass.",
-        "reviewer": "doe-c-claude-coordinator/2026-10-24"
+        "moduleSha256": "4eb8aef43a54080901a711344f7d6b7dfd4c330d995969985f1eca365e86baa8",
+        "reason": "Keep: drop-in C ABI bridge; wgpuQueueWriteTexture forwards the destination aspect and data-layout offset. writeTexture rejects a dataLayout.offset past the data before any copy, including empty copies. Command encoder debug markers forward to the native encoder. Standard render-pass debug-group procedures reach the native pass. writeTexture with empty data and no pointer still validates its offset and copy.",
+        "reviewer": "doe-c-claude-surface/2026-10-24"
       },
       "src/dropin/wgpu_dropin_lib.zig": {
         "decision": "Keep",
@@ -3692,9 +3692,9 @@
       },
       "src/native/resource/doe_command_texture_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "3e6d6843ac74527e5cc558200cf6ee39466ad4d207b288d08371e3664012e789",
-        "reason": "Keep: native texture command ABI boundary; queue writes forward destination origin, extent and aspect to the backend; texture-to-texture copies validate availability, device, usage and srgb-pair format compatibility before recording. Copy aspects reach validation; valid empty copies retain their textures without recording a region. rejectQueueWrite reports queue texture writes refused before texture work.",
-        "reviewer": "doe-c-claude/2026-10-24"
+        "moduleSha256": "5c2d06e444762172883975f98d9355d104e843639794da12d835408beadd8b4e",
+        "reason": "Keep: native texture command ABI boundary; queue writes forward destination origin, extent and aspect to the backend; texture-to-texture copies validate availability, device, usage and srgb-pair format compatibility before recording. Copy aspects reach validation; valid empty copies retain their textures without recording a region. rejectQueueWrite reports queue texture writes refused before texture work. queue.writeTexture validates device, COPY_DST usage, the destination box, aspect and data layout before any backend work.",
+        "reviewer": "doe-c-claude-surface/2026-10-24"
       },
       "src/native/resource/doe_external_texture_native.zig": {
         "decision": "Keep",
@@ -4364,8 +4364,8 @@
       },
       "src/contracts/texture_copy.zig": {
         "decision": "Keep",
-        "moduleSha256": "53fff109ecb063089df5f94ffa8b8294586dd483bfd18f17cb7eb5d9e5431faf",
-        "reason": "Keep: buffer-texture copies use one neutral region/format contract and preserve validated origins, aspects and resource ownership through native execution; texture-to-texture copies share the WebGPU sample, format, block, whole-subresource and overlap rules. Texture-to-texture aspects must cover the whole format. validateWrite admits writeTexture layouts without texel-aligned offset or pitch.",
+        "moduleSha256": "f2d072e6a03fad3d44b2b21d8e894777f74e81b72597c2249354ec7c1ad0b37f",
+        "reason": "Keep: buffer-texture copies use one neutral region/format contract and preserve validated origins, aspects and resource ownership through native execution; texture-to-texture copies share the WebGPU sample, format, block, whole-subresource and overlap rules. Texture-to-texture aspects must cover the whole format. validateWrite admits writeTexture layouts without texel-aligned offset or pitch. validateQueueWrite applies GPUQueue.writeTexture's texture buffer copy rules with explicit zero strides and unaligned offsets.",
         "reviewer": "doe-c-claude-surface/2026-10-24"
       },
       "src/contracts/texture_format_layout.zig": {

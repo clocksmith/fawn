@@ -55,6 +55,66 @@ pub fn validate(buffer_size: u64, texture: Texture, copy: Copy, direction: Direc
 /// offset nor bytesPerRow need texel alignment
 /// (https://gpuweb.github.io/gpuweb/#dom-gpuqueue-writetexture). Callers
 /// repack such data before a native buffer-to-image copy.
+/// queue.writeTexture validation (https://gpuweb.github.io/gpuweb/#dom-gpuqueue-writetexture,
+/// "validating texture buffer copy" with aligned = false): the destination box
+/// inside its mip and block-aligned, an aspect the format can be written in,
+/// and linear data where only an omitted (undefined) stride may be absent:
+/// bytesPerRow is needed for several block rows or images, rowsPerImage for
+/// several images, explicit values must cover a row and an image, and the
+/// offset plus the bytes the copy reads lie within the data, also for an
+/// empty copy. Neither offset nor bytesPerRow needs alignment.
+pub fn validateQueueWrite(data_size: u64, texture: Texture, copy: Copy) Error!void {
+    _ = try validateExtent(texture, copy, .webgpu);
+    const aspect = try resolveAspect(texture.format, copy.aspect, .buffer_to_texture);
+    const bytes: u64 = if (aspect == .stencil) 1 else if (aspect == .depth and texture.format == values.WGPUTextureFormat_Depth32FloatStencil8) 4 else layout.bytes_per_pixel(texture.format) catch return error.TextureCopyUnsupported;
+    const block = layout.copy_block_extent(texture.format);
+    const rows = std.math.divCeil(u64, copy.height, block[1]) catch unreachable;
+    const row_bytes = (std.math.divCeil(u64, copy.width, block[0]) catch unreachable) * bytes;
+    const pitch_missing = copy.bytes_per_row == STRIDE_UNDEFINED;
+    const image_rows_missing = copy.rows_per_image == STRIDE_UNDEFINED;
+    if (pitch_missing and (rows > 1 or copy.depth_or_layers > 1)) return error.TextureCopyLayout;
+    if (image_rows_missing and copy.depth_or_layers > 1) return error.TextureCopyLayout;
+    if (!pitch_missing and copy.bytes_per_row < row_bytes) return error.TextureCopyLayout;
+    if (!image_rows_missing and copy.rows_per_image < rows) return error.TextureCopyLayout;
+    var required: u64 = 0;
+    if (copy.depth_or_layers != 0 and rows != 0 and row_bytes != 0) {
+        const pitch: u64 = if (pitch_missing) row_bytes else copy.bytes_per_row;
+        const image_rows: u64 = if (image_rows_missing) rows else copy.rows_per_image;
+        const image_stride = std.math.mul(u64, pitch, image_rows) catch return error.TextureCopyRange;
+        required = std.math.mul(u64, image_stride, copy.depth_or_layers - 1) catch return error.TextureCopyRange;
+        required = std.math.add(u64, required, std.math.mul(u64, pitch, rows - 1) catch return error.TextureCopyRange) catch return error.TextureCopyRange;
+        required = std.math.add(u64, required, row_bytes) catch return error.TextureCopyRange;
+    }
+    if (copy.offset > data_size or required > data_size - copy.offset) return error.TextureCopyRange;
+}
+
+test "queue texture writes need explicit strides that cover the copy and data that holds it" {
+    const texture = Texture{ .width = 4, .height = 4, .layers = 3, .mip_levels = 1, .samples = 1, .dimension = values.WGPUTextureDimension_2D, .format = values.WGPUTextureFormat_R8Unorm };
+    var copy = Copy{ .offset = 0, .bytes_per_row = STRIDE_UNDEFINED, .rows_per_image = STRIDE_UNDEFINED, .mip = 0, .width = 4, .height = 1, .depth_or_layers = 1 };
+    try validateQueueWrite(4, texture, copy);
+    copy.height = 2;
+    try std.testing.expectError(error.TextureCopyLayout, validateQueueWrite(64, texture, copy));
+    copy.bytes_per_row = 3;
+    try std.testing.expectError(error.TextureCopyLayout, validateQueueWrite(64, texture, copy));
+    copy.bytes_per_row = 5; // no alignment requirement
+    try validateQueueWrite(9, texture, copy);
+    try std.testing.expectError(error.TextureCopyRange, validateQueueWrite(8, texture, copy));
+    copy.depth_or_layers = 2;
+    try std.testing.expectError(error.TextureCopyLayout, validateQueueWrite(64, texture, copy));
+    copy.rows_per_image = 1;
+    try std.testing.expectError(error.TextureCopyLayout, validateQueueWrite(64, texture, copy));
+    copy.rows_per_image = 0;
+    try std.testing.expectError(error.TextureCopyLayout, validateQueueWrite(64, texture, copy));
+    copy.rows_per_image = 2;
+    try validateQueueWrite(19, texture, copy);
+    // An empty copy still needs its offset inside the data.
+    const empty = Copy{ .offset = 1, .bytes_per_row = STRIDE_UNDEFINED, .rows_per_image = STRIDE_UNDEFINED, .mip = 0, .width = 0, .height = 0, .depth_or_layers = 0 };
+    try validateQueueWrite(1, texture, empty);
+    try std.testing.expectError(error.TextureCopyRange, validateQueueWrite(0, texture, empty));
+    // A missing mip level is out of range.
+    try std.testing.expectError(error.TextureCopyRange, validateQueueWrite(64, texture, .{ .offset = 0, .bytes_per_row = 4, .rows_per_image = 4, .mip = 1, .width = 1, .height = 1, .depth_or_layers = 1 }));
+}
+
 pub fn validateWrite(data_size: u64, texture: Texture, copy: Copy) Error!Region {
     return validateLayout(data_size, texture, copy, .buffer_to_texture, .native, false);
 }

@@ -202,6 +202,19 @@ pub fn rejectQueueWrite(queue_raw: ?*anyopaque, message: []const u8) void {
 
 /// `dst_slice` is an extra array-layer base added to `dst_z` on Vulkan; both
 /// public entries pass 0 and carry the layer in `dst_z`.
+/// queue.writeTexture device-timeline validation before any backend work
+/// (https://gpuweb.github.io/gpuweb/#dom-gpuqueue-writetexture).
+fn queueWriteFailure(queue: ?*DoeQueue, texture: *const DoeTexture, data_len: usize, copy: texture_copy.Copy) ?[]const u8 {
+    if (queue) |q| if (texture.device_ref) |owner| if (owner != q.dev) return "writeTexture: the texture belongs to a different device";
+    if (texture.usage & texture_abi.WGPUTextureUsage_CopyDst == 0) return "writeTexture: the texture lacks COPY_DST usage";
+    texture_copy.validateQueueWrite(data_len, copySide(texture), copy) catch |err| return switch (err) {
+        error.TextureCopyRange => "writeTexture: the copy is outside the texture subresource or the data",
+        error.TextureCopyLayout => "writeTexture: the data layout or copy extent is invalid for the texture format",
+        error.TextureCopyAspect, error.TextureCopyUnsupported => "writeTexture: the texture aspect or format cannot be written",
+    };
+    return null;
+}
+
 pub fn queueWriteTexture(
     queue_raw: ?*anyopaque,
     texture_raw: ?*anyopaque,
@@ -223,6 +236,10 @@ pub fn queueWriteTexture(
     const tex = cast(DoeTexture, texture_raw) orelse return;
     if (tex.isUnavailable()) {
         if (q) |queue| queue.dev.error_scopes.deliver(@import("../../runtime/diagnostics/error_scope.zig").ERROR_TYPE_VALIDATION, "texture write requires a valid, undestroyed texture");
+        return;
+    }
+    if (queueWriteFailure(q, tex, data_len, .{ .offset = 0, .bytes_per_row = bytes_per_row, .rows_per_image = rows_per_image, .mip = dst_mip, .width = width, .height = height, .depth_or_layers = depth_or_layers, .origin = .{ dst_x, dst_y, dst_z +| dst_slice }, .aspect = aspect })) |message| {
+        if (q) |queue| queue.dev.error_scopes.deliver(@import("../../runtime/diagnostics/error_scope.zig").ERROR_TYPE_VALIDATION, message);
         return;
     }
     if (resource_ops.handleVulkanQueueWriteTexture(q, tex, .{
