@@ -291,6 +291,16 @@ doe_vk_status doe_vk_commands_render_pass_full(doe_vk_commands *commands,
     }
     context->vk.vkCmdEndRenderPass(commands->command);
     free(prepared);
+    /* WebGPU discard leaves zeros. One slice of a 3D mip cannot be marked
+     * undefined on its own, so a discarded slice is cleared to zero now. */
+    const doe_vk_clear_color zero = {0};
+    for (uint32_t i = 0; i < colors.count; ++i) {
+        doe_vk_texture_view *view = colors.slots[i].view;
+        if (view == NULL || !colors.slots[i].discard || !doe_vk_texture_view_is_slice(view)) continue;
+        const doe_vk_render_pass_desc clear = {.color = view, .clear_color = &zero};
+        status = doe_vk_commands_render_pass_full(commands, &clear, NULL, NULL, 0);
+        if (status != DOE_VK_OK) return status;
+    }
     return DOE_VK_OK;
 failed:
     free(prepared);

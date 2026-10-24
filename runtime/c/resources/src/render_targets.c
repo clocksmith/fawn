@@ -128,8 +128,9 @@ doe_resource_status resource_render_targets_normalize(const doe_resource_render_
         if (in->color_count) return DOE_RESOURCE_LAYOUT;
         memset(normalized.colors, 0, sizeof(normalized.colors));
         normalized.color_count = 1;
-        normalized.colors[0] = (doe_resource_color_attachment){in->color, in->resolve_target,
-            in->color_load, in->color_store, {in->clear_color[0], in->clear_color[1], in->clear_color[2], in->clear_color[3]}};
+        normalized.colors[0] = (doe_resource_color_attachment){.view=in->color, .resolve_target=in->resolve_target,
+            .load=in->color_load, .store=in->color_store,
+            .clear={in->clear_color[0], in->clear_color[1], in->clear_color[2], in->clear_color[3]}};
     }
     for (uint32_t i = normalized.color_count; i < DOE_RESOURCE_MAX_COLOR_ATTACHMENTS; i++)
         normalized.colors[i] = (doe_resource_color_attachment){0};

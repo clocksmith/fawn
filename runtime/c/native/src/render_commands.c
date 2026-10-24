@@ -86,23 +86,32 @@ static bool same_attachments(const doe_resource_render_targets *a, const doe_res
 {
     if (a->color_count != b->color_count || a->depth_stencil != b->depth_stencil) return false;
     for (uint32_t i = 0; i < a->color_count; ++i)
-        if (a->colors[i].view != b->colors[i].view || a->colors[i].resolve_target != b->colors[i].resolve_target)
+        if (a->colors[i].view != b->colors[i].view || a->colors[i].resolve_target != b->colors[i].resolve_target ||
+            a->colors[i].has_depth_slice != b->colors[i].has_depth_slice || a->colors[i].depth_slice != b->colors[i].depth_slice)
             return false;
     return true;
 }
 
-/* Converts every canonical slot; unused slots stay NULL with no operations. */
+/* Converts every canonical slot; unused slots stay NULL with no operations. A
+ * 3D slot renders through a temporary 2D view of its depth slice (`slices`),
+ * which the caller releases after the pass has retained it. */
 static doe_vk_status lower_colors(const doe_resource_render_targets *source, doe_vk_render_pass_desc *pass,
-    native_view *views[DOE_RESOURCE_MAX_COLOR_ATTACHMENTS])
+    native_view *views[DOE_RESOURCE_MAX_COLOR_ATTACHMENTS], doe_vk_texture_view *slices[DOE_RESOURCE_MAX_COLOR_ATTACHMENTS])
 {
     pass->color_attachment_count = source->color_count;
     for (uint32_t i = 0; i < source->color_count; ++i) {
         const doe_resource_color_attachment *color = &source->colors[i];
         views[i] = doe_resource_view_native(color->view);
         if (!views[i]) continue;
+        doe_vk_texture_view *target = views[i]->view;
+        if (color->has_depth_slice) {
+            doe_vk_status status = doe_vk_texture_view_slice_create(target, color->depth_slice, &slices[i], NULL);
+            if (status != DOE_VK_OK) return status;
+            target = slices[i];
+        }
         doe_vk_color_attachment *slot = &pass->color_attachments[i];
         native_view *resolve = doe_resource_view_native(color->resolve_target);
-        *slot = (doe_vk_color_attachment){.view=views[i]->view,.discard=color->store == WGPUStoreOp_Discard,
+        *slot = (doe_vk_color_attachment){.view=target,.discard=color->store == WGPUStoreOp_Discard,
             .resolve_target=resolve ? resolve->view : NULL};
         if (color->load == WGPULoadOp_Clear) {
             const doe_resource_view_desc *view = doe_resource_view_description(color->view);
@@ -177,7 +186,8 @@ doe_vk_status native_record_render(doe_vk_commands *commands,
     }
     doe_vk_render_pass_desc pass = {0};
     native_view *colors[DOE_RESOURCE_MAX_COLOR_ATTACHMENTS] = {0};
-    if (status == DOE_VK_OK) status = lower_colors(&begin->targets, &pass, colors);
+    doe_vk_texture_view *slices[DOE_RESOURCE_MAX_COLOR_ATTACHMENTS] = {0};
+    if (status == DOE_VK_OK) status = lower_colors(&begin->targets, &pass, colors, slices);
     if (status == DOE_VK_OK) {
         native_queries *query = doe_resource_query_set_native(begin->targets.occlusion_queries);
         native_view *depth = doe_resource_view_native(begin->targets.depth_stencil);
@@ -194,11 +204,13 @@ doe_vk_status native_record_render(doe_vk_commands *commands,
         /* Canonical speculative aspect state decides whether a real zero clear
          * is needed after Discard. No native shadow initialization bit exists. */
         for (uint32_t i = 0; status == DOE_VK_OK && i < source->color_count; ++i)
-            if (colors[i]) status = doe_vk_commands_initialize_attachment(commands, colors[i]->view);
+            if (colors[i]) status = doe_vk_commands_initialize_attachment(commands,
+                slices[i] ? slices[i] : colors[i]->view);
         if (status == DOE_VK_OK && depth) status = doe_vk_commands_initialize_attachment(commands, depth->view);
         if (status == DOE_VK_OK) status = doe_vk_commands_render_pass_full(commands, &pass,
             query ? query->pool : NULL, ops, op_count);
     }
+    for (uint32_t i = 0; i < DOE_RESOURCE_MAX_COLOR_ATTACHMENTS; ++i) doe_vk_texture_view_release(slices[i]);
     free(indirect);
     free(indices);
     free(vertices);
