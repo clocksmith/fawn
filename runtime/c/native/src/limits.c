@@ -192,7 +192,9 @@ WGPUStatus native_d3d12_limits(const doe_dx_caps *caps, WGPULimits *out)
         .maxTextureArrayLayers = 1,
         /* Initial procedural single-color graphics envelope. Stage descriptors
          * pack128/32 while compute retains its existing64/16 owner limits. */
-        .maxColorAttachments=1,.maxColorAttachmentBytesPerSample=4,.maxInterStageShaderVariables=16,
+        /* WebGPU's UNORM render-target cost is8, independently of its4-byte
+         * texture storage. The canonical resource owner enforces that cost. */
+        .maxColorAttachments=1,.maxColorAttachmentBytesPerSample=8,.maxInterStageShaderVariables=16,
         .maxBufferSize = buffer,
         .maxBindGroups = DOE_RESOURCE_MAX_GROUPS,
         .maxBindGroupsPlusVertexBuffers = DOE_RESOURCE_MAX_GROUPS,

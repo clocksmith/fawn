@@ -304,7 +304,7 @@ check-host-bridge: $(BUILD)/backend-selection $(BUILD)/metal-bridge
 check-empty-module: $(BUILD)/empty-shader
 	$(BUILD)/empty-shader
 clean:
-	rm -f $(BUILD)/d3d12-graphics-layout $(BUILD)/d3d12-graphics $(BUILD)/depth-comparison $(BUILD)/select $(BUILD)/pipeline-overrides $(BUILD)/texture-bindings $(BUILD)/command-resources $(BUILD)/indirect-dispatch $(BUILD)/texture-transfers $(BUILD)/d3d12-texture-desc $(BUILD)/atomic-operations
+	rm -f $(BUILD)/d3d12-graphics-limits $(BUILD)/d3d12-graphics-layout $(BUILD)/d3d12-graphics $(BUILD)/depth-comparison $(BUILD)/select $(BUILD)/pipeline-overrides $(BUILD)/texture-bindings $(BUILD)/command-resources $(BUILD)/indirect-dispatch $(BUILD)/texture-transfers $(BUILD)/d3d12-texture-desc $(BUILD)/atomic-operations
 	rm -f $(OBJECTS)
 	rm -f $(BUILD)/map-oom $(BUILD)/binding-aliases $(BUILD)/native.exports $(BUILD)/native.exports.tmp $(BUILD)/draw-budget $(BUILD)/indirect-render $(BUILD)/indexed-render $(BUILD)/depth-sampling $(BUILD)/cube-array $(BUILD)/view-formats $(BUILD)/point-list $(BUILD)/color-discard $(BUILD)/msaa-sampling $(BUILD)/format-features $(BUILD)/draw-features $(BUILD)/copy-layouts $(BUILD)/bc-compression $(BUILD)/component-swizzle $(BUILD)/encoder-errors $(BUILD)/core-formats $(BUILD)/indirect-compute $(BUILD)/backend-selection $(BUILD)/metal-bridge $(BUILD)/atomics $(BUILD)/debug $(BUILD)/msaa $(BUILD)/depth $(BUILD)/demote $(BUILD)/graphics-admission $(BUILD)/graphics $(BUILD)/empty-shader $(NATIVE_LIBRARY) $(BUILD)/libdoe_compiler.$(SHARED_SUFFIX) $(BUILD)/compute $(BUILD)/procedures-cxx $(BUILD)/lifecycle $(BUILD)/textures $(BUILD)/admission $(BUILD)/failures $(BUILD)/timestamps $(BUILD)/recovery $(BUILD)/pending-progress $(BUILD)/vulkan-identity $(BUILD)/provider-pin $(BUILD)/provider-pin-fixture.$(SHARED_SUFFIX) $(BUILD)/backend-failure $(BUILD)/depth-copies $(BUILD)/surface-present $(BUILD)/surface-platforms $(BUILD)/uniform-standard $(BUILD)/wgsl-language-features $(BUILD)/texture-binding-view-dimension $(BUILD)/mrt $(BUILD)/anisotropy $(BUILD)/storage-textures $(BUILD)/compute-programs $(BUILD)/program-prepare $(BUILD)/surface-progress $(BUILD)/limits $(BUILD)/large-write $(BUILD)/slice-render $(BUILD)/mixed-resources $(BUILD)/offscreen-triangle
 
@@ -347,8 +347,12 @@ $(BUILD)/depth-comparison: tests/depth_comparison.c tests/consumer.h tests/adapt
 $(BUILD)/d3d12-graphics-layout: tests/d3d12_graphics_layout.c src/d3d12_graphics_bindings.c src/d3d12_stage_bindings.c $(wildcard ../shader/src/*.c) $(HEADERS) $(COMPILER_LIBRARY) | $(BUILD)
 	$(CC) $(CPPFLAGS) $(CFLAGS) tests/d3d12_graphics_layout.c src/d3d12_graphics_bindings.c src/d3d12_stage_bindings.c $(wildcard ../shader/src/*.c) $(COMPILER_LINK) -o $@
 .PHONY: check-d3d12-graphics-layout
-check-d3d12-graphics-layout: $(BUILD)/d3d12-graphics-layout
+check-d3d12-graphics-layout: $(BUILD)/d3d12-graphics-layout $(BUILD)/d3d12-graphics-limits
 	$(BUILD)/d3d12-graphics-layout
+	$(BUILD)/d3d12-graphics-limits
+
+$(BUILD)/d3d12-graphics-limits: tests/d3d12_graphics_limits.c ../resources/tests/fixture.h $(OBJECTS) $(COMPILER_LIBRARY) | $(BUILD)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< $(OBJECTS) $(COMPILER_LINK) $(PLATFORM_LIBS) -o $@
 
 $(BUILD)/d3d12-graphics: tests/d3d12_graphics.c tests/consumer.h tests/adapter_class.h $(NATIVE_LIBRARY) | $(BUILD)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
