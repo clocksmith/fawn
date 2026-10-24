@@ -74,19 +74,45 @@ pub fn applyDynamicOffsets(
     }
 }
 
+pub const PipelineBindingError = error{ BindGroupMissing, BindGroupIncompatible };
 pub const DispatchBindingError = error{ DispatchBindGroupMissing, DispatchBindGroupIncompatible };
+pub const DrawBindingError = error{ DrawBindGroupMissing, DrawBindGroupIncompatible };
 
-/// Bind groups a pipeline requires at dispatch
-/// (https://gpuweb.github.io/gpuweb/#abstract-opdef-validate-encoder-bind-groups).
-/// An explicit layout requires each nonempty group bound with the same or an
-/// equal-entry layout. An automatic layout requires a bound group whose layout
-/// has every binding the entry point uses, with the same resource kind
-/// (`required_kinds`, per flat slot); layout exclusivity is not checked.
+/// Bind groups a compute pipeline requires at dispatch.
 pub fn validateDispatchBindGroups(
     layout: ?*const native_types.DoePipelineLayout,
     required_kinds: ?*const [MAX_FLAT_BIND]u8,
     bind_groups: []const ?*DoeBindGroup,
 ) DispatchBindingError!void {
+    validatePipelineBindGroups(layout, required_kinds, bind_groups) catch |err| return switch (err) {
+        error.BindGroupMissing => error.DispatchBindGroupMissing,
+        error.BindGroupIncompatible => error.DispatchBindGroupIncompatible,
+    };
+}
+
+/// Bind groups a render pipeline requires at a pass or bundle draw.
+pub fn validateDrawBindGroups(
+    pipeline: *const native_types.DoeRenderPipeline,
+    bind_groups: []const ?*DoeBindGroup,
+) DrawBindingError!void {
+    const required_kinds = if (pipeline.required_binding_kinds_ready) &pipeline.required_binding_kinds else null;
+    validatePipelineBindGroups(pipeline.layout, required_kinds, bind_groups) catch |err| return switch (err) {
+        error.BindGroupMissing => error.DrawBindGroupMissing,
+        error.BindGroupIncompatible => error.DrawBindGroupIncompatible,
+    };
+}
+
+/// Bind groups a pipeline requires
+/// (https://gpuweb.github.io/gpuweb/#abstract-opdef-validate-encoder-bind-groups).
+/// An explicit layout requires each nonempty group bound with the same or an
+/// equal-entry layout. An automatic layout requires a bound group whose layout
+/// has every binding the entry points use, with the same resource kind
+/// (`required_kinds`, per flat slot); layout exclusivity is not checked.
+pub fn validatePipelineBindGroups(
+    layout: ?*const native_types.DoePipelineLayout,
+    required_kinds: ?*const [MAX_FLAT_BIND]u8,
+    bind_groups: []const ?*DoeBindGroup,
+) PipelineBindingError!void {
     const pipeline_layout = layout orelse {
         const kinds = required_kinds orelse return;
         for (kinds, 0..) |kind, slot| {
@@ -94,15 +120,15 @@ pub fn validateDispatchBindGroups(
             const group_index = slot / MAX_BIND;
             const binding: u32 = @intCast(slot % MAX_BIND);
             const bound = (if (group_index < bind_groups.len) bind_groups[group_index] else null) orelse
-                return error.DispatchBindGroupMissing;
-            const bound_layout = bound.layout orelse return error.DispatchBindGroupIncompatible;
+                return error.BindGroupMissing;
+            const bound_layout = bound.layout orelse return error.BindGroupIncompatible;
             const entry = for (layoutEntries(bound_layout)) |candidate| {
                 if (candidate.binding == binding) break candidate;
-            } else return error.DispatchBindGroupIncompatible;
+            } else return error.BindGroupIncompatible;
             const external = binding_contract.layoutResourceKindCode(.external_texture);
             const texture = binding_contract.layoutResourceKindCode(.texture);
             if (entry.resource_kind != kind and !(entry.resource_kind == external and kind == texture))
-                return error.DispatchBindGroupIncompatible;
+                return error.BindGroupIncompatible;
         }
         return;
     };
@@ -111,10 +137,10 @@ pub fn validateDispatchBindGroups(
         const required = maybe_required orelse continue;
         if (required.entry_count == 0) continue;
         const bound = (if (index < bind_groups.len) bind_groups[index] else null) orelse
-            return error.DispatchBindGroupMissing;
-        const bound_layout = bound.layout orelse return error.DispatchBindGroupIncompatible;
+            return error.BindGroupMissing;
+        const bound_layout = bound.layout orelse return error.BindGroupIncompatible;
         if (bound_layout != required and !layoutsEquivalent(bound_layout, required))
-            return error.DispatchBindGroupIncompatible;
+            return error.BindGroupIncompatible;
     }
 }
 
@@ -213,6 +239,21 @@ test "validateDispatchBindGroups requires explicit groups with equal layouts and
     try std.testing.expectError(error.DispatchBindGroupIncompatible, validateDispatchBindGroups(null, &kinds, &.{ null, &wrong }));
     kinds[flatBindSlot(1, 0)] = 3;
     try std.testing.expectError(error.DispatchBindGroupIncompatible, validateDispatchBindGroups(null, &kinds, &.{ null, &bound }));
+}
+
+test "validateDrawBindGroups compares every layout entry member, including visibility" {
+    var fragment_entries = [_]native_shared.DoeBindGroupLayoutEntry{.{ .binding = 0, .resource_kind = 1, .visibility = 2 }};
+    var vertex_entries = [_]native_shared.DoeBindGroupLayoutEntry{.{ .binding = 0, .resource_kind = 1, .visibility = 1 }};
+    var required = native_types.DoeBindGroupLayout{ .entry_count = 1, .entries = fragment_entries[0..] };
+    var other_stage = native_types.DoeBindGroupLayout{ .entry_count = 1, .entries = vertex_entries[0..] };
+    var layout = native_types.DoePipelineLayout{ .bind_group_layout_count = 1 };
+    layout.bind_group_layouts[0] = &required;
+    const pipeline = native_types.DoeRenderPipeline{ .layout = &layout };
+    var bound = DoeBindGroup{ .layout = &required };
+    var wrong = DoeBindGroup{ .layout = &other_stage };
+    try validateDrawBindGroups(&pipeline, &.{&bound});
+    try std.testing.expectError(error.DrawBindGroupMissing, validateDrawBindGroups(&pipeline, &.{null}));
+    try std.testing.expectError(error.DrawBindGroupIncompatible, validateDrawBindGroups(&pipeline, &.{&wrong}));
 }
 
 test "collectFlatResources preserves separate flattened texture and sampler slots" {

@@ -91,11 +91,13 @@ fn classify_layout_entry(entry: abi_pipeline.WGPUBindGroupLayoutEntry) DoeBindGr
         .binding = entry.binding,
         .resource_kind = RESOURCE_KIND_NONE,
         .binding_array_size = entry.bindingArraySize,
+        .visibility = @intCast(entry.visibility),
     };
     if (buffer_binding_type_active(entry.buffer.type)) {
         out.resource_kind = RESOURCE_KIND_BUFFER;
         out.buffer_binding_type = entry.buffer.type;
         out.buffer_has_dynamic_offset = entry.buffer.hasDynamicOffset != 0;
+        out.buffer_min_binding_size = entry.buffer.minBindingSize;
         return out;
     }
     if (texture_sample_type_active(entry.texture.sampleType)) {
@@ -109,10 +111,12 @@ fn classify_layout_entry(entry: abi_pipeline.WGPUBindGroupLayoutEntry) DoeBindGr
         out.resource_kind = RESOURCE_KIND_STORAGE_TEXTURE;
         out.texture_sample_type = entry.storageTexture.access;
         out.texture_view_dimension = entry.storageTexture.viewDimension;
+        out.storage_texture_format = entry.storageTexture.format;
         return out;
     }
     if (sampler_binding_type_active(entry.sampler.type)) {
         out.resource_kind = RESOURCE_KIND_SAMPLER;
+        out.sampler_binding_type = entry.sampler.type;
         return out;
     }
     if (external_texture_layout_chain(entry.nextInChain) != null) {

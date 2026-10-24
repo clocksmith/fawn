@@ -14,6 +14,7 @@ const recording = @import("../command/doe_command_recording.zig");
 const recording_contract = @import("../../contracts/command_recording.zig");
 const bundle = @import("../../runtime/render/render_bundle.zig");
 const bind_group_native = @import("../resource/doe_bind_group_native.zig");
+const compute_bind_groups = @import("../compute/doe_compute_bind_groups.zig");
 
 const alloc = native_helpers.alloc;
 const make = native_helpers.make;
@@ -115,6 +116,7 @@ pub export fn doeNativeRenderBundleEncoderSetPipeline(
     const pip = cast(DoeRenderPipeline, pip_raw) orelse return;
     if (!reserveBundleReferences(enc, 1)) return;
     references.retainRenderPipelineAssumeCapacity(&enc.references, pip);
+    enc.draw_pipeline = toOpaque(pip);
     const pipeline_handle = if (enc.backend == .vulkan) toOpaque(pip) else pip.mtl_pso;
     bundle.bundle_encoder_push(enc, .{ .set_pipeline = .{
         .pipeline_handle = pipeline_handle,
@@ -137,6 +139,7 @@ pub export fn doeNativeRenderBundleEncoderSetBindGroup(
     // A null group unbinds the slot (https://gpuweb.github.io/gpuweb/#dom-gpubindingcommandsmixin-setbindgroup).
     const bg = cast(DoeBindGroup, bg_raw) orelse {
         if (offsets.len != 0) return failBundle(enc, error.BindGroupDynamicOffsetCount);
+        enc.draw_bind_groups[group_index] = null;
         bundle.bundle_encoder_push(enc, .{ .set_bind_group = .{
             .group = group_index,
             .bg = .{ .entries = undefined, .count = 0 },
@@ -151,6 +154,7 @@ pub export fn doeNativeRenderBundleEncoderSetBindGroup(
     ) catch |err| return failBundle(enc, err);
     if (!reserveBundleReferences(enc, 1)) return;
     references.retainBindGroupAssumeCapacity(&enc.references, bg);
+    enc.draw_bind_groups[group_index] = toOpaque(bg);
 
     var bg_entry = bundle.BundleBindGroup{
         .entries = undefined,
@@ -176,6 +180,20 @@ pub export fn doeNativeRenderBundleEncoderSetBindGroup(
 
 comptime {
     std.debug.assert(bundle.MAX_DYNAMIC_OFFSET_BINDINGS == native_shared.MAX_BIND);
+    std.debug.assert(bundle.MAX_BIND_GROUPS == native_shared.MAX_RENDER_BIND_GROUPS);
+}
+
+/// A bundle draw validates the bundle's own pipeline and bind groups.
+fn admitBundleDraw(enc: *bundle.DoeBundleEncoder) bool {
+    if (!requireBundleOpen(enc)) return false;
+    const pipeline = cast(DoeRenderPipeline, enc.draw_pipeline) orelse return true;
+    var groups: [native_shared.MAX_RENDER_BIND_GROUPS]?*DoeBindGroup = undefined;
+    for (&groups, enc.draw_bind_groups) |*group, raw| group.* = cast(DoeBindGroup, raw);
+    compute_bind_groups.validateDrawBindGroups(pipeline, groups[0..]) catch |err| {
+        failBundle(enc, err);
+        return false;
+    };
+    return true;
 }
 
 pub export fn doeNativeRenderBundleEncoderSetVertexBuffer(
@@ -230,7 +248,7 @@ pub export fn doeNativeRenderBundleEncoderDraw(
     first_instance: u32,
 ) callconv(.c) void {
     const enc = bundle.cast_bundle_encoder(enc_raw) orelse return;
-    if (!requireBundleOpen(enc)) return;
+    if (!admitBundleDraw(enc)) return;
     bundle.bundle_encoder_push(enc, .{ .draw = .{
         .vertex_count = vertex_count,
         .instance_count = instance_count,
@@ -248,7 +266,7 @@ pub export fn doeNativeRenderBundleEncoderDrawIndexed(
     first_instance: u32,
 ) callconv(.c) void {
     const enc = bundle.cast_bundle_encoder(enc_raw) orelse return;
-    if (!requireBundleOpen(enc)) return;
+    if (!admitBundleDraw(enc)) return;
     bundle.bundle_encoder_push(enc, .{ .draw_indexed = .{
         .index_count = index_count,
         .instance_count = instance_count,
@@ -264,7 +282,7 @@ pub export fn doeNativeRenderBundleEncoderDrawIndirect(
     indirect_offset: u64,
 ) callconv(.c) void {
     const enc = bundle.cast_bundle_encoder(enc_raw) orelse return;
-    if (!requireBundleOpen(enc)) return;
+    if (!admitBundleDraw(enc)) return;
     const ibuf = cast(DoeBuffer, indirect_buf_raw) orelse return;
     if (ibuf.error_object) return;
     if (!reserveBundleReferences(enc, 1)) return;
@@ -282,7 +300,7 @@ pub export fn doeNativeRenderBundleEncoderDrawIndexedIndirect(
     indirect_offset: u64,
 ) callconv(.c) void {
     const enc = bundle.cast_bundle_encoder(enc_raw) orelse return;
-    if (!requireBundleOpen(enc)) return;
+    if (!admitBundleDraw(enc)) return;
     const ibuf = cast(DoeBuffer, indirect_buf_raw) orelse return;
     if (ibuf.error_object) return;
     if (!reserveBundleReferences(enc, 1)) return;
@@ -412,17 +430,25 @@ test "failed bundle cannot replay into a valid command recording" {
 
 // ============================================================
 // Render pipeline: getBindGroupLayout
-// Returns a minimal DoeBindGroupLayout seeded with the group index.
-// Full reflection requires shader metadata not yet stored on the render pipeline.
+// An explicit layout returns its group's layout, which draws compare against.
+// An automatic layout returns an entry-less placeholder: the render pipeline
+// keeps no per-group entries, and doe-gpu builds those layouts from
+// reflection instead.
 // ============================================================
 
 pub export fn doeNativeRenderPipelineGetBindGroupLayout(
     pip_raw: ?*anyopaque,
     group_index: u32,
 ) callconv(.c) ?*anyopaque {
-    _ = cast(DoeRenderPipeline, pip_raw) orelse return null;
+    const pip = cast(DoeRenderPipeline, pip_raw) orelse return null;
+    if (pip.layout) |layout| {
+        if (group_index >= layout.bind_group_layout_count) return null;
+        const retained = layout.bind_group_layouts[group_index] orelse return null;
+        native_helpers.object_add_ref(DoeBindGroupLayout, toOpaque(retained));
+        return toOpaque(retained);
+    }
     const bgl = make(DoeBindGroupLayout) orelse return null;
-    bgl.* = .{ .entry_count = group_index };
+    bgl.* = .{};
     return toOpaque(bgl);
 }
 
@@ -687,7 +713,7 @@ pub export fn doeNativeRenderPassExecuteBundles(
                     state.index_format = ib.format;
                 },
                 .draw => |d| {
-                    if (pass.recorded_draw_count >= pass.max_draw_count) continue;
+                    if (pass.recorded_draw_count >= pass.max_draw_count) return recording.fail(pass.enc, error.DrawCountExceeded);
                     if (is_vulkan) {
                         if (!apply_vulkan_bundle_state(pass, &state)) continue;
                         pass.recorded_draw_count += 1;
@@ -707,7 +733,7 @@ pub export fn doeNativeRenderPassExecuteBundles(
                     if (!require_index_buffer_for_bundle_draw(&state, "draw_indexed")) {
                         continue;
                     }
-                    if (pass.recorded_draw_count >= pass.max_draw_count) continue;
+                    if (pass.recorded_draw_count >= pass.max_draw_count) return recording.fail(pass.enc, error.DrawCountExceeded);
                     if (is_vulkan) {
                         if (state.index_buffer_object == null or !apply_vulkan_bundle_state(pass, &state)) continue;
                         pass.recorded_draw_count += 1;
@@ -730,7 +756,7 @@ pub export fn doeNativeRenderPassExecuteBundles(
                     if (!recording.append(pass.enc, rc)) return;
                 },
                 .draw_indirect => |d| {
-                    if (pass.recorded_draw_count >= pass.max_draw_count) continue;
+                    if (pass.recorded_draw_count >= pass.max_draw_count) return recording.fail(pass.enc, error.DrawCountExceeded);
                     if (is_vulkan) {
                         if (d.indirect_buffer == null or !apply_vulkan_bundle_state(pass, &state)) continue;
                         pass.recorded_draw_count += 1;
@@ -749,7 +775,7 @@ pub export fn doeNativeRenderPassExecuteBundles(
                     if (!require_index_buffer_for_bundle_draw(&state, "draw_indexed_indirect")) {
                         continue;
                     }
-                    if (pass.recorded_draw_count >= pass.max_draw_count) continue;
+                    if (pass.recorded_draw_count >= pass.max_draw_count) return recording.fail(pass.enc, error.DrawCountExceeded);
                     if (is_vulkan) {
                         if (state.index_buffer_object == null or d.indirect_buffer == null or !apply_vulkan_bundle_state(pass, &state)) continue;
                         pass.recorded_draw_count += 1;

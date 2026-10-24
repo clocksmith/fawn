@@ -7,9 +7,22 @@ const wgsl_bindings = @import("../../compiler/wgsl/pipeline/binding_reflection.z
 const native_types = @import("../support/doe_native_object_types.zig");
 const native_shared = @import("../support/doe_native_shared_types.zig");
 const native_helpers = @import("../support/doe_native_object_helpers.zig");
+const binding_contract = @import("../../contracts/binding.zig");
 
 const alloc = native_helpers.alloc;
 const DoeShaderModule = native_types.DoeShaderModule;
+
+/// The bind group layout resource kind (binding.LayoutResourceKind code) a
+/// shader binding needs.
+pub fn requiredLayoutKind(kind: wgsl_bindings.BindingKind) u8 {
+    const layout_kind: binding_contract.LayoutResourceKind = switch (kind) {
+        .buffer => .buffer,
+        .sampler => .sampler,
+        .texture => .texture,
+        .storage_texture => .storage_texture,
+    };
+    return @intCast(binding_contract.layoutResourceKindCode(layout_kind));
+}
 
 pub fn ensureShaderBindings(sm: *DoeShaderModule) wgsl_analysis.TranslateError!void {
     return ensureShaderBindingsWithAllocator(alloc, sm);

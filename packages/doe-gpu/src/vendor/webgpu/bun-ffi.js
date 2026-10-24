@@ -4180,19 +4180,6 @@ const fullSurfaceBackend = {
         }
         return native;
     },
-    deviceCreateBufferBindGroupLayoutFlat4(device, entryCount, b0, b1, b2, b3, _label) {
-        if (typeof wgpu.symbols.doeNativeDeviceCreateBufferBindGroupLayoutFlat4 !== "function") {
-            return undefined;
-        }
-        return wgpu.symbols.doeNativeDeviceCreateBufferBindGroupLayoutFlat4(
-            assertLiveResource(device, "GPUDevice.createBindGroupLayout", "GPUDevice"),
-            entryCount,
-            b0,
-            b1,
-            b2,
-            b3,
-        );
-    },
     deviceCreateBindGroupLayout(device, entries, _label) {
         if (entries.some((entry) => entry.externalTexture)) {
             failValidation(

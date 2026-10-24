@@ -51,6 +51,7 @@ const RecordedRenderCmd = std.meta.TagPayloadByName(native_cmds.RecordedCmd, "re
 
 const texture_sampler = @import("../resource/doe_texture_sampler_native.zig");
 const bind_group_native = @import("../resource/doe_bind_group_native.zig");
+const compute_bind_groups = @import("../compute/doe_compute_bind_groups.zig");
 const render_pipeline = @import("doe_render_pipeline_native.zig");
 const references = @import("../command/doe_command_references.zig");
 const native_exports = @import("../support/doe_native_exports.zig");
@@ -88,8 +89,14 @@ fn renderPassMaxDrawCount(desc: *const abi_pipeline.WGPURenderPassDescriptor) u6
 fn reserve_render_draw(pass: *DoeRenderPass) bool {
     if (!recording.requirePass(pass.enc, @intFromPtr(pass))) return false;
     if (pass.recorded_draw_count >= pass.max_draw_count) {
-        std.log.err("doe: render pass draw rejected: maxDrawCount={} exhausted", .{pass.max_draw_count});
+        recording.fail(pass.enc, error.DrawCountExceeded);
         return false;
+    }
+    if (pass.pipeline) |pipeline| {
+        compute_bind_groups.validateDrawBindGroups(pipeline, pass.bind_groups[0..]) catch |err| {
+            recording.fail(pass.enc, err);
+            return false;
+        };
     }
     pass.recorded_draw_count += 1;
     return true;
