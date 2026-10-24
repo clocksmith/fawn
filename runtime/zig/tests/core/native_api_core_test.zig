@@ -1415,7 +1415,7 @@ test "debug groups must be balanced on encoders, passes and bundles" {
     };
     for (cases) |case| {
         const balanced = case.push == case.pop;
-        inline for (.{ "encoder", "compute", "render" }) |kind| {
+        inline for (.{ "encoder", "compute", "render", "standard render" }) |kind| {
             const encoder = native.doeNativeDeviceCreateCommandEncoder(@ptrCast(&device), null) orelse return error.TestUnexpectedResult;
             defer native.doeNativeCommandEncoderRelease(encoder);
             if (comptime std.mem.eql(u8, kind, "encoder")) {
@@ -1427,11 +1427,21 @@ test "debug groups must be balanced on encoders, passes and bundles" {
                 for (0..case.push) |_| native.doeNativeComputePassPushDebugGroup(pass, label.ptr, label.len);
                 for (0..case.pop) |_| native.doeNativeComputePassPopDebugGroup(pass);
                 native.doeNativeComputePassEnd(pass);
-            } else {
+            } else if (comptime std.mem.eql(u8, kind, "render")) {
                 const pass = native.doeNativeCommandEncoderBeginRenderPass(encoder, null) orelse return error.TestUnexpectedResult;
                 defer native.doeNativeRenderPassRelease(pass);
                 for (0..case.push) |_| native.doeNativeRenderPassPushDebugGroup(pass, label.ptr, label.len);
                 for (0..case.pop) |_| native.doeNativeRenderPassPopDebugGroup(pass);
+                native.doeNativeRenderPassEnd(pass);
+            } else {
+                // The standard webgpu.h render pass procs share the native balance check.
+                const standard = @import("../../src/dropin/wgpu_dropin_ext_c.zig");
+                const pass = native.doeNativeCommandEncoderBeginRenderPass(encoder, null) orelse return error.TestUnexpectedResult;
+                defer native.doeNativeRenderPassRelease(pass);
+                const view = @import("../../src/core/abi/wgpu_core_base_types.zig").WGPUStringView{ .data = label.ptr, .length = label.len };
+                for (0..case.push) |_| standard.wgpuRenderPassEncoderPushDebugGroup(@ptrCast(pass), view);
+                standard.wgpuRenderPassEncoderInsertDebugMarker(@ptrCast(pass), view);
+                for (0..case.pop) |_| standard.wgpuRenderPassEncoderPopDebugGroup(@ptrCast(pass));
                 native.doeNativeRenderPassEnd(pass);
             }
             const command_buffer = native.doeNativeCommandEncoderFinish(encoder, null) orelse return error.TestUnexpectedResult;
