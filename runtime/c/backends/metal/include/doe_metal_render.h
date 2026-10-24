@@ -2,6 +2,7 @@
 #ifndef DOE_METAL_RENDER_H
 #define DOE_METAL_RENDER_H
 #include "doe_metal_texture.h"
+#include "doe_metal_draw_guard.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -137,6 +138,7 @@ typedef struct doe_mtl_render_draw {
     uint32_t stencil_reference;
     uint32_t visibility_mode; /* Native disabled=0, boolean=1, counting=2. */
     uint64_t visibility_offset; /* 8-byte aligned; each offset occupies one contiguous run. */
+    const doe_mtl_guarded_draw *guarded; /* Copies/normalizes/scans on this command before the pass. */
 } doe_mtl_render_draw;
 /* Encodes one whole pass, including clear-only passes. All inputs are borrowed
  * only for this call; resources/pipelines are leased before native encoding and
@@ -146,9 +148,10 @@ typedef struct doe_mtl_render_draw {
  * Visibility result reset/aggregation and query-set policy remain upstream;
  * the result buffer shares ordinary pending/error access restrictions. No CPU
  * visibility value is synthesized, including for empty draw ranges.
- * Indexed vertex-fetch bounds and shader interface/access compatibility must be
- * admitted upstream; this boundary validates the index-buffer byte range but
- * does not read GPU index bytes or synthesize an index-range proof. */
+ * Legacy direct indexed vertex-fetch proofs remain upstream. A typed guarded
+ * draw instead runs the shared GPU normalizer/index scan on command-owned scratch
+ * before native rendering. Shader interface/access admission remains upstream;
+ * no caller arguments/indices are read by the host. */
 doe_mtl_status doe_mtl_commands_render(doe_mtl_commands *commands,
     const doe_mtl_render_pass_desc *pass, const doe_mtl_render_draw *draws,
     size_t draw_count, doe_mtl_error *error);

@@ -1,40 +1,16 @@
 /* SPDX-License-Identifier: MIT */
 #include "draw_indirect_internal.h"
+#include "../../../common/include/doe_draw_guard.h"
 
-/* Words 0..3 (nonindexed) or 0..4 (indexed) are copied GPU arguments. The host
- * writes capacities and the mode word before the copy. Comparisons never form
- * first+count, so wrapping sums suppress the draw instead of passing. */
-static const char draw_source[] =
-    "@group(0) @binding(0) var<storage, read_write> record: array<u32>;\n"
-    "@compute @workgroup_size(1) fn main() {\n"
-    "    let count = record[0];\n"
-    "    let instance_count = record[1];\n"
-    "    let first = record[2];\n"
-    "    let indexed = (record[7] & 1u) != 0u;\n"
-    "    let first_allowed = (record[7] & 2u) != 0u;\n"
-    "    var first_instance = record[3];\n"
-    "    var count_limit = record[4];\n"
-    "    var instance_limit = record[5];\n"
-    "    if (indexed) {\n"
-    "        first_instance = record[4];\n"
-    "        count_limit = record[5];\n"
-    "        instance_limit = record[6];\n"
-    "    }\n"
-    "    if (count == 0u || instance_count == 0u || (first_instance != 0u && !first_allowed) ||\n"
-    "        first > count_limit || count > count_limit - first ||\n"
-    "        first_instance > instance_limit || instance_count > instance_limit - first_instance) {\n"
-    "        record[0] = 0u;\n        record[1] = 0u;\n"
-    "        record[2] = 0u;\n        record[3] = 0u;\n"
-    "        if (indexed) {\n            record[4] = 0u;\n        }\n"
-    "    }\n}\n";
-
-_Static_assert(sizeof(draw_source) <= DOE_VK_DRAW_INDIRECT_SOURCE_CAPACITY, "draw source capacity");
+_Static_assert((size_t)DOE_DRAW_ARGUMENT_SOURCE_CAPACITY == (size_t)DOE_VK_DRAW_INDIRECT_SOURCE_CAPACITY, "draw source capacity");
 
 doe_vk_status doe_vk_draw_validator_source(char *out, size_t capacity, size_t *out_length) {
-    if (out == NULL || out_length == NULL || capacity < sizeof(draw_source)) return DOE_VK_INVALID_ARGUMENT;
-    memcpy(out, draw_source, sizeof(draw_source));
-    *out_length = sizeof(draw_source) - 1;
-    return DOE_VK_OK;
+    switch (doe_draw_argument_source(out, capacity, out_length)) {
+    case DOE_DRAW_GUARD_SOURCE_OK: return DOE_VK_OK;
+    case DOE_DRAW_GUARD_SOURCE_INVALID_ARGUMENT:
+    case DOE_DRAW_GUARD_SOURCE_TOO_SMALL: return DOE_VK_INVALID_ARGUMENT;
+    }
+    return DOE_VK_INVALID_ARGUMENT;
 }
 
 doe_vk_status doe_vk_draw_validator_validate(const doe_vk_caps *caps) {

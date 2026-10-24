@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: MIT */
 #include "render_internal.h"
+#include "metal_draw_guard.h"
 
 WGPURenderPassEncoder wgpuCommandEncoderBeginRenderPass(WGPUCommandEncoder handle,
     const WGPURenderPassDescriptor *descriptor)
@@ -239,11 +240,18 @@ void wgpuRenderPassEncoderDrawIndexed(WGPURenderPassEncoder handle, uint32_t cou
     doe_resource_render_pass *pass = (doe_resource_render_pass *)handle;
     native_device *device = doe_resource_render_pass_device(pass);
     if (!device) return;
+    native_device_retain(device);
     native_lock(device);
+    doe_resource_render_pass_retain(pass);
     const bool ended = doe_resource_render_pass_ended(pass);
     doe_resource_status status = doe_resource_render_pass_draw_indexed(pass,count,instances,first_index,base_vertex,first_instance);
     native_unlock(device);
-    native_encoding_error(device, ended, status, "render indexed draw failed");
+    native_metal_draw_guard_finish(device,pass,NULL,status,ended,"render indexed draw failed");
+    native_lock(device);
+    /* The ordinary device call lease protects this owner drop under its mutex. */
+    doe_resource_render_pass_release(pass);
+    native_unlock(device);
+    native_device_release(device);
 }
 void wgpuRenderPassEncoderBeginOcclusionQuery(WGPURenderPassEncoder handle, uint32_t index)
 {

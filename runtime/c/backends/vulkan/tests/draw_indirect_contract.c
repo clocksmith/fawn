@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: MIT */
 #include "../src/draw_indirect_internal.h"
+#include "../../../common/include/doe_draw_guard.h"
 #include <assert.h>
 #include <stdio.h>
 
@@ -88,6 +89,13 @@ int main(int argc, char **argv) {
     assert(memcmp(before, source, sizeof(source)) == 0 && length == strlen(before));
     assert(doe_vk_draw_validator_source(NULL, sizeof(source), &length) == DOE_VK_INVALID_ARGUMENT);
     assert(doe_vk_draw_validator_source(source, sizeof(source), NULL) == DOE_VK_INVALID_ARGUMENT);
+    size_t shared_length = 123;
+    assert(doe_draw_argument_source(NULL, sizeof(source), &shared_length) == DOE_DRAW_GUARD_SOURCE_INVALID_ARGUMENT);
+    assert(shared_length == 123);
+    assert(doe_draw_argument_source(source, 0, &shared_length) == DOE_DRAW_GUARD_SOURCE_TOO_SMALL);
+    assert(shared_length == 123 && memcmp(before, source, sizeof(source)) == 0);
+    assert(doe_draw_argument_source(source, sizeof(source), &shared_length) == DOE_DRAW_GUARD_SOURCE_OK);
+    assert(shared_length == length && memcmp(before, source, length + 1) == 0);
     doe_vk_caps caps = {.max_workgroup_count = {1, 1, 1}, .max_workgroup_size = {1, 1, 1},
         .max_workgroup_invocations = 1, .max_storage_buffer_range = 32, .max_bind_groups = 1,
         .max_bindings_per_group = 1, .max_storage_buffers_per_stage = 1, .queue_flags = VK_QUEUE_GRAPHICS_BIT,

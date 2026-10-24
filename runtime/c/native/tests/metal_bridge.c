@@ -863,6 +863,7 @@ static void graphics_ledger(state *s)
 
 #include "metal_indirect_cases.h"
 #include "metal_depth_cases.h"
+#include "metal_draw_cases.h"
 
 int main(void)
 {
@@ -958,6 +959,7 @@ int main(void)
     mixed_resource_ledger(&s);
     metal_indirect_ledger(&s, &mocks[2]);
     metal_depth_admission(&s, &mocks[2]);
+    metal_draw_guard_ledger(&s, &mocks[2]);
     public_error_detail(&s);
     consumer_finish(&s);
     for (unsigned i = 0; i < context_count; ++i) mock_assert_closed(&mocks[i]);

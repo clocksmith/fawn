@@ -52,6 +52,7 @@ typedef struct native_device {
     doe_vk_timestamp_normalizer *timestamp_normalizer;
     doe_vk_dispatch_validator *dispatch_validator;
     doe_mtl_dispatch_guard *metal_dispatch_guard;
+    doe_mtl_draw_guard *metal_draw_guard;
     doe_vk_draw_validator *draw_validator;
     native_pending *pending;
     native_failure retired_failure;

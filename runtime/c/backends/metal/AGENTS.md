@@ -57,3 +57,12 @@ existing command leases; partial recording failure discards the entire command,
 while unknown retains it. Actual num_workgroups comes from Metal's builtin. Keep
 canonical source preparation outside frontend locks; actual MTLLibrary/PSO
 creation retains this private owner's context serialization.
+Indexed/indirect rendering uses the shared common draw source. Preserve the exact
+legacy Vulkan bytes separately from the V2 40-byte record with 64-bit capacity
+words. GPU index scans use atomic cancellation, signed-base carry/borrow and
+strip-only restart markers; never read caller arguments/indices on the host.
+Bound packed-index windows to native storage spans without reducing public buffer
+limits. Odd uint16 ends require initialized physical padding while logical ranges
+stay unchanged. All compute guards precede one whole native render pass. A partial
+record failure discards the whole command; unknown retains scratch, PSOs, source
+buffers and temporary parameters through the same ordinary leases.

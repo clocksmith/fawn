@@ -9,7 +9,7 @@ typedef struct fixture {
     doe_mtl_objc runtime;
     token pool, classes[5], descriptor, colors, attachments[8], depth, stencil, encoder, command;
     int pipeline, depth_state, buffer, index_buffer, texture, sampler;
-    unsigned pools, drains, releases, begins, ends, draws, indexed_draws;
+    unsigned pools, drains, releases, begins, ends, draws, indexed_draws, indirect_draws, indexed_indirect_draws;
     unsigned buffer_sets[2], texture_sets[2], sampler_sets[2], bytes_sets[2];
     bool no_descriptor, no_encoder, no_attachment;
     size_t load[10], store[10], level[10], slice[10];
@@ -168,6 +168,18 @@ static void visibility(void *object, void *sel, size_t mode, size_t offset) {
     active->visibility_modes[i] = mode;
     active->visibility_offsets[i] = offset;
 }
+static void indirect(void *object,void *sel,size_t topology,void *arguments,size_t offset) {
+    assert(object==&active->encoder && named(sel,"drawPrimitives:indirectBuffer:indirectBufferOffset:"));
+    assert(topology==3 && arguments==&active->buffer && offset==0);
+    ++active->indirect_draws;
+}
+static void indexed_indirect(void *object,void *sel,size_t topology,size_t type,
+    void *indices,size_t offset,void *arguments,size_t argument_offset) {
+    assert(object==&active->encoder && named(sel,"drawIndexedPrimitives:indexType:indexBuffer:indexBufferOffset:indirectBuffer:indirectBufferOffset:"));
+    assert(topology==4 && type==0 && indices==&active->index_buffer && offset==2);
+    assert(arguments==&active->buffer && argument_offset==0);
+    ++active->indexed_indirect_draws;
+}
 static void initialize(fixture *f) {
     doe_mtl_objc *r;
     unsigned i;
@@ -183,6 +195,7 @@ static void initialize(fixture *f) {
     r->graphics.index_object = indexed; r->graphics.clear_color = clear; r->graphics.set_double = set_double;
     r->graphics.set_u32 = set_u32; r->graphics.viewport = viewport; r->graphics.scissor = scissor;
     r->graphics.blend_color = blend; r->graphics.depth_bias = bias; r->graphics.draw = draw; r->graphics.draw_indexed = draw_indexed; r->graphics.visibility = visibility;
+    r->graphics.draw_indirect=indirect; r->graphics.draw_indexed_indirect=indexed_indirect;
 }
 static doe_mtl_native_render_pass pass_new(fixture *f) {
     doe_mtl_native_render_pass pass = {0};
@@ -296,6 +309,21 @@ int main(void) {
     empty_raster_state();
     resolves_and_visibility();
     encoding(); clear_and_failure();
+    fixture f;
+    initialize(&f);
+    doe_mtl_native_render_pass pass=pass_new(&f);
+    doe_mtl_native_render_draw packets[2]={0};
+    for (unsigned i=0;i<2;++i) {
+        packets[i].pipeline=&f.pipeline;
+        packets[i].vertex_sizes_slot=packets[i].fragment_sizes_slot=UINT32_MAX;
+        packets[i].indirect_arguments=&f.buffer;
+        packets[i].values.topology=i ? 4 : 3;
+    }
+    packets[1].index_buffer=&f.index_buffer; packets[1].index_offset=2;
+    /* Counts intentionally remain zero on the CPU: only GPU scratch owns the
+     * actual counts, and both real indirect selectors must still be called. */
+    assert(doe_mtl_objc_render(&f.runtime,&f.command,&pass,packets,2,NULL)==DOE_MTL_OK);
+    assert(f.indirect_draws==1 && f.indexed_indirect_draws==1 && f.draws==0 && f.indexed_draws==0);
     puts("Metal typed render encoder controls: attachments, full per-stage state, indexed/instanced args and failure cleanup passed; no SDK/GPU");
     return 0;
 }

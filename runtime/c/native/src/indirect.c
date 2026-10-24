@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: MIT */
 #include "internal.h"
+#include "metal_draw_guard.h"
 #include "metal_indirect.h"
 #include <string.h>
 
@@ -112,13 +113,20 @@ static void pass_indirect(WGPURenderPassEncoder handle, WGPUBuffer arguments, ui
     doe_resource_render_pass *pass = (doe_resource_render_pass *)handle;
     native_device *device = doe_resource_render_pass_device(pass);
     if (!device) return;
+    native_device_retain(device);
     native_lock(device);
+    doe_resource_render_pass_retain(pass);
     const bool ended = doe_resource_render_pass_ended(pass);
-    doe_resource_status status = device->backend.kind == WGPUBackendType_Vulkan ?
+    doe_resource_status status = (device->backend.kind == WGPUBackendType_Vulkan || device->backend.kind == WGPUBackendType_Metal) ?
         doe_resource_render_pass_draw_indirect(pass,(doe_resource_buffer *)arguments,offset,indexed) :
         doe_resource_render_pass_invalidate(pass,DOE_RESOURCE_UNSUPPORTED);
     native_unlock(device);
-    native_encoding_error(device, ended, status, "indirect draw admission failed or selected backend unsupported");
+    native_metal_draw_guard_finish(device,pass,NULL,status,ended,"indirect draw admission failed or selected backend unsupported");
+    native_lock(device);
+    /* The ordinary device call lease protects this owner drop under its mutex. */
+    doe_resource_render_pass_release(pass);
+    native_unlock(device);
+    native_device_release(device);
 }
 
 static void bundle_indirect(WGPURenderBundleEncoder handle, WGPUBuffer arguments, uint64_t offset, bool indexed)
@@ -126,13 +134,20 @@ static void bundle_indirect(WGPURenderBundleEncoder handle, WGPUBuffer arguments
     doe_resource_bundle_encoder *encoder = (doe_resource_bundle_encoder *)handle;
     native_device *device = doe_resource_bundle_encoder_device(encoder);
     if (!device) return;
+    native_device_retain(device);
     native_lock(device);
+    doe_resource_bundle_encoder_retain(encoder);
     const bool ended = doe_resource_bundle_encoder_ended(encoder);
-    doe_resource_status status = device->backend.kind == WGPUBackendType_Vulkan ?
+    doe_resource_status status = (device->backend.kind == WGPUBackendType_Vulkan || device->backend.kind == WGPUBackendType_Metal) ?
         doe_resource_bundle_encoder_draw_indirect(encoder,(doe_resource_buffer *)arguments,offset,indexed) :
         doe_resource_bundle_encoder_invalidate(encoder,DOE_RESOURCE_UNSUPPORTED);
     native_unlock(device);
-    native_encoding_error(device, ended, status, "indirect bundle draw admission failed or selected backend unsupported");
+    native_metal_draw_guard_finish(device,NULL,encoder,status,ended,"indirect bundle draw admission failed or selected backend unsupported");
+    native_lock(device);
+    /* The ordinary device call lease protects this owner drop under its mutex. */
+    doe_resource_bundle_encoder_release(encoder);
+    native_unlock(device);
+    native_device_release(device);
 }
 
 void wgpuRenderPassEncoderDrawIndirect(WGPURenderPassEncoder handle, WGPUBuffer arguments, uint64_t offset)

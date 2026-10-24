@@ -53,7 +53,7 @@ $(BUILD)/native.exports: EXPORTED_SYMBOLS.txt EXTENSION_SYMBOLS.txt | $(BUILD)
 	mv $@.tmp $@
 $(BUILD)/backend-selection: tests/backend_selection.c tests/consumer.h tests/adapter_class.h $(NATIVE_LIBRARY)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
-$(BUILD)/metal-bridge: tests/metal_bridge.c tests/metal_depth_cases.h tests/metal_indirect_cases.h tests/metal_vertex_cases.h tests/metal_graphics_cases.h tests/mixed_resource_cases.h tests/metal_mixed_host.h tests/consumer.h tests/adapter_class.h $(OBJECTS) $(COMPILER_LIBRARY) | $(BUILD)
+$(BUILD)/metal-bridge: tests/metal_bridge.c tests/metal_draw_cases.h tests/metal_depth_cases.h tests/metal_indirect_cases.h tests/metal_vertex_cases.h tests/metal_graphics_cases.h tests/mixed_resource_cases.h tests/metal_mixed_host.h tests/consumer.h tests/adapter_class.h $(OBJECTS) $(COMPILER_LIBRARY) | $(BUILD)
 	$(CC) $(CPPFLAGS) $(CFLAGS) tests/metal_bridge.c ../backends/metal/tests/mock_native.c $(OBJECTS) $(COMPILER_LINK) $(PLATFORM_LIBS) \
 	  -Wl,--wrap=doe_mtl_context_create -Wl,--wrap=doe_mtl_context_device -Wl,--wrap=doe_mtl_commands_create \
 	  -Wl,--wrap=doe_mtl_commands_wait -Wl,--wrap=doe_mtl_buffer_create \
@@ -183,7 +183,7 @@ $(BUILD)/lifecycle: tests/lifecycle.c tests/adapter_class.h $(OBJECTS) $(COMPILE
 $(BUILD)/procedures-cxx: tests/procedures.cpp $(NATIVE_LIBRARY)
 	$(CXX) $(CPPFLAGS) -std=c++17 -Wall -Wextra -Wpedantic -Werror $(SANITIZE) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
 ifeq ($(SHARED_PLATFORM),Linux)
-check: $(BUILD)/implicit-sampling $(BUILD)/d3d12-graphics check-d3d12-graphics-layout $(BUILD)/depth-comparison $(BUILD)/select $(BUILD)/pipeline-overrides check-d3d12-bindings $(BUILD)/texture-bindings $(BUILD)/atomic-operations $(BUILD)/d3d12-texture-desc $(BUILD)/texture-transfers check-d3d12-indirect-layout $(BUILD)/indirect-dispatch $(BUILD)/map-oom $(BUILD)/command-resources $(BUILD)/binding-aliases $(BUILD)/mixed-resources $(BUILD)/offscreen-triangle check-provider-pin $(BUILD)/backend-failure $(BUILD)/vulkan-identity $(BUILD)/draw-budget $(BUILD)/indirect-render $(BUILD)/indexed-render $(BUILD)/depth-sampling $(BUILD)/cube-array $(BUILD)/view-formats $(BUILD)/point-list $(BUILD)/color-discard $(BUILD)/msaa-sampling $(BUILD)/format-features $(BUILD)/draw-features $(BUILD)/copy-layouts $(BUILD)/bc-compression $(BUILD)/component-swizzle $(BUILD)/encoder-errors $(BUILD)/core-formats $(BUILD)/indirect-compute check-build-dependencies check-host-bridge $(BUILD)/atomics $(BUILD)/debug $(BUILD)/msaa $(BUILD)/depth $(BUILD)/demote $(BUILD)/graphics-admission $(BUILD)/empty-shader $(BUILD)/graphics $(BUILD)/compute $(BUILD)/procedures-cxx $(BUILD)/lifecycle $(BUILD)/textures $(BUILD)/admission $(BUILD)/failures $(BUILD)/timestamps $(BUILD)/recovery $(BUILD)/pending-progress $(BUILD)/depth-copies $(BUILD)/uniform-standard $(BUILD)/wgsl-language-features $(BUILD)/texture-binding-view-dimension $(BUILD)/compute-programs $(BUILD)/program-prepare $(BUILD)/vertex-formats $(BUILD)/mrt $(BUILD)/anisotropy $(BUILD)/storage-textures $(BUILD)/limits $(BUILD)/large-write $(BUILD)/slice-render
+check: $(BUILD)/draw-guard $(BUILD)/implicit-sampling $(BUILD)/d3d12-graphics check-d3d12-graphics-layout $(BUILD)/depth-comparison $(BUILD)/select $(BUILD)/pipeline-overrides check-d3d12-bindings $(BUILD)/texture-bindings $(BUILD)/atomic-operations $(BUILD)/d3d12-texture-desc $(BUILD)/texture-transfers check-d3d12-indirect-layout $(BUILD)/indirect-dispatch $(BUILD)/map-oom $(BUILD)/command-resources $(BUILD)/binding-aliases $(BUILD)/mixed-resources $(BUILD)/offscreen-triangle check-provider-pin $(BUILD)/backend-failure $(BUILD)/vulkan-identity $(BUILD)/draw-budget $(BUILD)/indirect-render $(BUILD)/indexed-render $(BUILD)/depth-sampling $(BUILD)/cube-array $(BUILD)/view-formats $(BUILD)/point-list $(BUILD)/color-discard $(BUILD)/msaa-sampling $(BUILD)/format-features $(BUILD)/draw-features $(BUILD)/copy-layouts $(BUILD)/bc-compression $(BUILD)/component-swizzle $(BUILD)/encoder-errors $(BUILD)/core-formats $(BUILD)/indirect-compute check-build-dependencies check-host-bridge $(BUILD)/atomics $(BUILD)/debug $(BUILD)/msaa $(BUILD)/depth $(BUILD)/demote $(BUILD)/graphics-admission $(BUILD)/empty-shader $(BUILD)/graphics $(BUILD)/compute $(BUILD)/procedures-cxx $(BUILD)/lifecycle $(BUILD)/textures $(BUILD)/admission $(BUILD)/failures $(BUILD)/timestamps $(BUILD)/recovery $(BUILD)/pending-progress $(BUILD)/depth-copies $(BUILD)/uniform-standard $(BUILD)/wgsl-language-features $(BUILD)/texture-binding-view-dimension $(BUILD)/compute-programs $(BUILD)/program-prepare $(BUILD)/vertex-formats $(BUILD)/mrt $(BUILD)/anisotropy $(BUILD)/storage-textures $(BUILD)/limits $(BUILD)/large-write $(BUILD)/slice-render
 	$(BUILD)/map-oom
 	$(BUILD)/binding-aliases
 	$(BUILD)/command-resources
@@ -194,6 +194,7 @@ check: $(BUILD)/implicit-sampling $(BUILD)/d3d12-graphics check-d3d12-graphics-l
 	$(BUILD)/depth-sampling
 	$(BUILD)/depth-comparison
 	$(BUILD)/implicit-sampling
+	$(BUILD)/draw-guard
 	$(BUILD)/d3d12-graphics
 	$(BUILD)/cube-array
 	$(BUILD)/view-formats
@@ -252,7 +253,7 @@ check: $(BUILD)/implicit-sampling $(BUILD)/d3d12-graphics check-d3d12-graphics-l
 # The same public clients on a nonfallback GPU adapter (DOE_C_TEST_ADAPTER=physical).
 # Developer evidence on the printed adapter/driver only, not qualification. Uses the
 # system ICDs: unset VK_ICD_FILENAMES. Never run on a host under a physical hold.
-PHYSICAL_CLIENTS = implicit-sampling d3d12-graphics depth-comparison select pipeline-overrides texture-bindings atomic-operations texture-transfers indirect-dispatch map-oom command-resources binding-aliases mixed-resources offscreen-triangle draw-budget indirect-render indexed-render depth-copies depth-sampling cube-array view-formats point-list color-discard msaa-sampling format-features draw-features copy-layouts bc-compression component-swizzle encoder-errors core-formats indirect-compute atomics debug msaa depth \
+PHYSICAL_CLIENTS = draw-guard implicit-sampling d3d12-graphics depth-comparison select pipeline-overrides texture-bindings atomic-operations texture-transfers indirect-dispatch map-oom command-resources binding-aliases mixed-resources offscreen-triangle draw-budget indirect-render indexed-render depth-copies depth-sampling cube-array view-formats point-list color-discard msaa-sampling format-features draw-features copy-layouts bc-compression component-swizzle encoder-errors core-formats indirect-compute atomics debug msaa depth \
 	demote graphics-admission empty-shader graphics compute lifecycle textures admission \
 	failures timestamps recovery uniform-standard wgsl-language-features texture-binding-view-dimension compute-programs program-prepare vertex-formats mrt anisotropy storage-textures limits large-write slice-render
 # Real-window presentation (XCB on a reachable X server, e.g. Xwayland); not part
@@ -305,7 +306,7 @@ check-host-bridge: $(BUILD)/backend-selection $(BUILD)/metal-bridge
 check-empty-module: $(BUILD)/empty-shader
 	$(BUILD)/empty-shader
 clean:
-	rm -f $(BUILD)/implicit-sampling $(BUILD)/d3d12-graphics-limits $(BUILD)/d3d12-graphics-layout $(BUILD)/d3d12-graphics $(BUILD)/depth-comparison $(BUILD)/select $(BUILD)/pipeline-overrides $(BUILD)/texture-bindings $(BUILD)/command-resources $(BUILD)/indirect-dispatch $(BUILD)/texture-transfers $(BUILD)/d3d12-texture-desc $(BUILD)/atomic-operations
+	rm -f $(BUILD)/draw-guard $(BUILD)/implicit-sampling $(BUILD)/d3d12-graphics-limits $(BUILD)/d3d12-graphics-layout $(BUILD)/d3d12-graphics $(BUILD)/depth-comparison $(BUILD)/select $(BUILD)/pipeline-overrides $(BUILD)/texture-bindings $(BUILD)/command-resources $(BUILD)/indirect-dispatch $(BUILD)/texture-transfers $(BUILD)/d3d12-texture-desc $(BUILD)/atomic-operations
 	rm -f $(OBJECTS)
 	rm -f $(BUILD)/map-oom $(BUILD)/binding-aliases $(BUILD)/native.exports $(BUILD)/native.exports.tmp $(BUILD)/draw-budget $(BUILD)/indirect-render $(BUILD)/indexed-render $(BUILD)/depth-sampling $(BUILD)/cube-array $(BUILD)/view-formats $(BUILD)/point-list $(BUILD)/color-discard $(BUILD)/msaa-sampling $(BUILD)/format-features $(BUILD)/draw-features $(BUILD)/copy-layouts $(BUILD)/bc-compression $(BUILD)/component-swizzle $(BUILD)/encoder-errors $(BUILD)/core-formats $(BUILD)/indirect-compute $(BUILD)/backend-selection $(BUILD)/metal-bridge $(BUILD)/atomics $(BUILD)/debug $(BUILD)/msaa $(BUILD)/depth $(BUILD)/demote $(BUILD)/graphics-admission $(BUILD)/graphics $(BUILD)/empty-shader $(NATIVE_LIBRARY) $(BUILD)/libdoe_compiler.$(SHARED_SUFFIX) $(BUILD)/compute $(BUILD)/procedures-cxx $(BUILD)/lifecycle $(BUILD)/textures $(BUILD)/admission $(BUILD)/failures $(BUILD)/timestamps $(BUILD)/recovery $(BUILD)/pending-progress $(BUILD)/vulkan-identity $(BUILD)/provider-pin $(BUILD)/provider-pin-fixture.$(SHARED_SUFFIX) $(BUILD)/backend-failure $(BUILD)/depth-copies $(BUILD)/surface-present $(BUILD)/surface-platforms $(BUILD)/uniform-standard $(BUILD)/wgsl-language-features $(BUILD)/texture-binding-view-dimension $(BUILD)/mrt $(BUILD)/anisotropy $(BUILD)/storage-textures $(BUILD)/compute-programs $(BUILD)/program-prepare $(BUILD)/surface-progress $(BUILD)/limits $(BUILD)/large-write $(BUILD)/slice-render $(BUILD)/mixed-resources $(BUILD)/offscreen-triangle
 
@@ -359,4 +360,7 @@ $(BUILD)/d3d12-graphics: tests/d3d12_graphics.c tests/consumer.h tests/adapter_c
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
 
 $(BUILD)/implicit-sampling: tests/implicit_sampling.c tests/shader_fixture.h tests/consumer.h tests/adapter_class.h ../compiler/tests/implicit_sampling.wgsl $(NATIVE_LIBRARY) | $(BUILD)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
+
+$(BUILD)/draw-guard: tests/draw_guard.c tests/consumer.h tests/adapter_class.h ../common/include/doe_draw_guard.h $(NATIVE_LIBRARY) | $(BUILD)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@

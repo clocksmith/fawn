@@ -154,10 +154,14 @@ disjoint reuse or changing mode at the same offset fails before native encoding.
 The shared query owner remains responsible for reset, logical aggregation and
 public query-set policy. This backend never manufactures a visibility value.
 
-Vertex attribute layouts and direct/instance fetch ranges are checked. Indexed
-buffer byte ranges and alignment are checked, but index-value-dependent vertex
-fetch safety remains an explicit upstream admission obligation. This layer does
-not scan GPU indices, infer shader bounds, or treat call-ledger tests as rendering.
+Vertex layouts and direct/instance fetch ranges are checked. Legacy direct indexed
+draws retain their explicit upstream fetch-proof contract. The typed guarded path
+normalizes private GPU argument scratch and scans index windows before the whole
+pass, deriving capacities from the same admitted attributes/layouts. Its V2 record
+uses low/high capacity words; uint16 prefix/tail windows use initialized physical
+padding without widening logical ranges. Atomic cancellation suppresses unsafe
+fetches while valid caller indices/arguments stay unchanged. Common WGSL, SDK and
+call-ledger controls do not establish physical indexed rendering.
 
 Only native Completed or Error status retires obligations. Pending/unknown
 command release returns BUSY without consuming the handle. Callers must keep the
@@ -229,10 +233,10 @@ compilation do not establish GPU execution or physical qualification.
 
 ETC/ASTC images, surfaces, render-stage counter attachment mapping,
 external textures, shared-event notifications, async callbacks, library/binary
-caches, indirect-draw validation, streamed encoder reuse, prepared-program
+caches, streamed encoder reuse, prepared-program
 caches and full native/WebGPU consumer wiring remain in their retained owners.
-Indirect draws are not exposed. Compiler/native owners must
-admit shader features, usage, exact layout and robust access before this API;
+Indexed/indirect draws require the typed common normalizer/scan guard described
+above. Compiler/native owners admit shader features, usage and exact layout before this API;
 it is not a standalone validation boundary for untrusted MSL. No exception bridge
 is introduced: nil/NSError/status failures are handled, but Objective-C language
 exceptions are not caught by this plain-C adapter.

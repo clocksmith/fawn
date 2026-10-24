@@ -12,6 +12,15 @@ native_failure native_buffer_create(native_buffer *buffer, uint64_t size, uint32
         return native_failure_vulkan(status, &error);
     }
     if (backend->kind == WGPUBackendType_Metal) {
+        /* GPU index validation loads packed words, including an odd final
+         * uint16. Only the private allocation is padded; resource bindings,
+         * public size and mapped ranges retain their original logical extent.
+         * Shared Metal creation initializes this padding before publication. */
+        if (usage & DOE_VK_BUFFER_INDEX) {
+            if (size > UINT64_MAX - 3 || ((size + 3) & ~UINT64_C(3)) > backend->value.metal.caps.max_buffer_length)
+                return native_failure_status(NATIVE_OUT_OF_MEMORY);
+            size = (size + 3) & ~UINT64_C(3);
+        }
         doe_mtl_error error = {0};
         doe_mtl_status status = doe_mtl_buffer_create(backend->value.metal.context,
             size, DOE_MTL_SHARED, &buffer->handle.metal, &error);
