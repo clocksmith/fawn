@@ -39,6 +39,9 @@ an alias of device-free compiled data or a second count for one WebGPU object.
   `doe_resource_bind_group_check` validated the whole group. Layout and pipeline
   layout creation enforce the WebGPU binding slot limits (per-stage counts, an
   external texture counting 4 sampled textures, 1 sampler and 1 uniform buffer,
+  and an external texture entry also binding a 2d, single-mip, single-layer,
+  single-sample TEXTURE_BINDING view of rgba8unorm, bgra8unorm or rgba16float as
+  a sampled texture,
   dynamic uniform/storage counts, bind group count) from `config.slot_limits`,
   zero selecting each default; one group holds at most
   `DOE_RESOURCE_MAX_DYNAMIC_OFFSETS` (32) dynamic buffers. Rejected layouts and

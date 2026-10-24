@@ -288,7 +288,9 @@ static doe_resource_status validate_binding(const doe_resource_layout *layout,
     const doe_resource_binding_limits *limits, const doe_resource_binding_features *features,
     doe_resource_binding *out)
 {
-    if (binding->binding != entry->binding || binding->kind != entry->kind) return DOE_RESOURCE_LAYOUT;
+    /* A GPUTextureView may bind to an externalTexture entry as a sampled texture. */
+    const bool external_view = entry->kind == DOE_BIND_EXTERNAL_TEXTURE && binding->kind == DOE_BIND_TEXTURE;
+    if (binding->binding != entry->binding || (binding->kind != entry->kind && !external_view)) return DOE_RESOURCE_LAYOUT;
     doe_resource_binding resolved = *binding;
     void *device = layout->base.config.device.identity;
     switch (entry->kind) {
@@ -343,6 +345,20 @@ static doe_resource_status validate_binding(const doe_resource_layout *layout,
         break;
     }
     case DOE_BIND_EXTERNAL_TEXTURE:
+        if (external_view) {
+            /* https://gpuweb.github.io/gpuweb/#dom-gpudevice-createbindgroup: a 2d,
+             * single-mip, single-layer, single-sample TEXTURE_BINDING view of
+             * rgba8unorm, bgra8unorm or rgba16float. */
+            doe_resource_view *view = binding->resource.view;
+            if (!view || !resource_texture_live(view->texture)) return DOE_RESOURCE_UNAVAILABLE;
+            if (view->base.config.device.identity != device) return DOE_RESOURCE_DEVICE_MISMATCH;
+            if (!(view->desc.usage & WGPUTextureUsage_TextureBinding)) return DOE_RESOURCE_USAGE;
+            if (view->desc.dimension != WGPUTextureViewDimension_2D || view->desc.mip_count != 1 ||
+                view->desc.layer_count != 1 || view->texture->desc.samples != 1) return DOE_RESOURCE_LAYOUT;
+            if (view->desc.format != WGPUTextureFormat_RGBA8Unorm && view->desc.format != WGPUTextureFormat_BGRA8Unorm &&
+                view->desc.format != WGPUTextureFormat_RGBA16Float) return DOE_RESOURCE_LAYOUT;
+            break;
+        }
         if (!resource_external_available(binding->resource.external_texture)) return DOE_RESOURCE_UNAVAILABLE;
         if (binding->resource.external_texture->base.config.device.identity != device) return DOE_RESOURCE_DEVICE_MISMATCH;
         break;

@@ -1686,16 +1686,31 @@ function buildRenderPipelineDescriptor(descriptor) {
 // NOTE: The exact layout is ABI-dependent. We use the wgpu.h canonical layout.
 // BindGroupLayoutEntry total = 136 bytes on 64-bit.
 const BIND_GROUP_LAYOUT_ENTRY_SIZE = 120;
+// webgpu.h WGPUSType_ExternalTextureBindingLayout; the Zig drop-in keeps the
+// older Dawn value.
+const WGPU_STYPE_EXTERNAL_TEXTURE_BINDING_LAYOUT = 0x0000000D;
+const ZIG_STYPE_EXTERNAL_TEXTURE_BINDING_LAYOUT = 0x00050002;
 
 function buildBindGroupLayoutDescriptor(entries) {
     const entryBufs = new Uint8Array(entries.length * BIND_GROUP_LAYOUT_ENTRY_SIZE);
     const entryView = new DataView(entryBufs.buffer);
+    const chains = [];
 
     for (let i = 0; i < entries.length; i++) {
         const e = entries[i];
         const off = i * BIND_GROUP_LAYOUT_ENTRY_SIZE;
-        // nextInChain: ptr@0
-        writePtr(entryView, off + 0, null);
+        // nextInChain: ptr@0; an externalTexture entry chains a
+        // WGPUExternalTextureBindingLayout { next:ptr@0, sType:u32@8 }.
+        if (e.externalTexture) {
+            const chain = new Uint8Array(16);
+            const chainView = new DataView(chain.buffer);
+            writePtr(chainView, 0, null);
+            chainView.setUint32(8, DOE_LIBRARY_FLAVOR === "doe-dropin" ? ZIG_STYPE_EXTERNAL_TEXTURE_BINDING_LAYOUT : WGPU_STYPE_EXTERNAL_TEXTURE_BINDING_LAYOUT, true);
+            chains.push(chain);
+            writePtr(entryView, off + 0, bunPtr(chain));
+        } else {
+            writePtr(entryView, off + 0, null);
+        }
         // binding: u32@8
         entryView.setUint32(off + 8, e.binding, true);
         // visibility: u64@16 (WGPUShaderStageFlags, after 4-byte pad at @12)
@@ -1745,7 +1760,7 @@ function buildBindGroupLayoutDescriptor(entries) {
     descView.setBigUint64(24, BigInt(entries.length), true);
     writePtr(descView, 32, entries.length > 0 ? bunPtr(entryBufs) : null);
 
-    return { desc: new Uint8Array(descBuf), _refs: [entryBufs] };
+    return { desc: new Uint8Array(descBuf), _refs: [entryBufs, ...chains] };
 }
 
 // WGPUBindGroupEntry: { nextInChain:ptr@0, binding:u32@8, pad@12, buffer:ptr@16, offset:u64@24, size:u64@32,
@@ -4495,12 +4510,8 @@ const fullSurfaceBackend = {
         return native;
     },
     deviceCreateBindGroupLayout(device, entries, _label) {
-        if (entries.some((entry) => entry.externalTexture)) {
-            failValidation(
-                "GPUDevice.createBindGroupLayout",
-                "externalTexture bindings require a browser canvas backend provider, not the headless Doe runtime package surface",
-            );
-        }
+        // An externalTexture entry reaches the provider; a GPUTextureView can
+        // bind to it (GPUExternalTexture resources stay unsupported here).
         const { desc, _refs } = buildBindGroupLayoutDescriptor(entries);
         const native = wgpu.symbols.wgpuDeviceCreateBindGroupLayout(assertLiveResource(device, "GPUDevice.createBindGroupLayout", "GPUDevice"), desc);
         void _refs;
