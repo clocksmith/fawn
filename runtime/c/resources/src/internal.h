@@ -237,6 +237,11 @@ bool resource_texture_available(const doe_resource_texture *texture);
 doe_resource_status resource_range(uint64_t total, uint64_t offset, uint64_t requested, uint64_t *size);
 bool resource_format_compatible(WGPUTextureFormat base, WGPUTextureFormat view);
 bool resource_format_depth(WGPUTextureFormat format);
+/* WebGPU color-target capabilities (render_targets.c): renderable, multisample
+ * (depth formats included) and resolve. */
+bool resource_format_color_renderable(WGPUTextureFormat format);
+bool resource_format_multisample(WGPUTextureFormat format);
+bool resource_format_resolvable(WGPUTextureFormat format);
 /* Core storage-texture format; read_write reports the read-write access subset. */
 bool resource_storage_format(WGPUTextureFormat format, bool *read_write);
 bool resource_format_aspect(WGPUTextureFormat format, WGPUTextureAspect aspect);

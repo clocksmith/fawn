@@ -3,9 +3,9 @@
   "source_directory": "runtime/zig/src/backend/vulkan",
   "sha256": {
     "vulkan_types.zig": "c3383b635816af941e9d8e882b5dc97643c626bdf3cc1549f4d9d1a4a9363e32",
-    "vk_structs.zig": "881813e86e21d77a71a58193040eaaf4d5557f04ce95a6d4fbaffe1862443163",
+    "vk_structs.zig": "128ed4443455c18c5d4accd349f2abe786f659b04b3d2b0850fd1a239f908db9",
     "vk_capability_structs.zig": "1af41c016be269ec93b56c01e21b2afe0e3bb9528ebf108b0a157b37b285c6b4",
-    "vk_constants.zig": "ae715db139eabdb5fa8a733c6c28207dc6345c76643160542cab8cef6ec58d56",
+    "vk_constants.zig": "671ce89da09f9fb647b56d7c315b9465db66d1943a51c801ab9923cc43f82918",
     "vk_functions.zig": "329f4092d2b6e8fd90a1de254c0077e8490b890d152617e799b014d7b414732a",
     "vk_formats.zig": "ec953998cab8cab6679c26fd0431d91ab0bc9f006e73f6cbf94db6f089f2880d",
     "vk_samplers.zig": "d69660a49a4d143b1fddbd59a8140c424f598ff37ce020553ea9f5b15c641caf",
@@ -513,11 +513,11 @@
   },
   "retained_constants": {
     "VK_INDEX_TYPE_UINT16": {
-      "source": "vk_constants.zig:537",
+      "source": "vk_constants.zig:540",
       "value": 0
     },
     "VK_INDEX_TYPE_UINT32": {
-      "source": "vk_constants.zig:538",
+      "source": "vk_constants.zig:541",
       "value": 1
     },
     "VK_FORMAT_R8_UNORM": {
@@ -743,6 +743,14 @@
     "VK_FORMAT_BC7_SRGB_BLOCK": {
       "source": "vk_formats.zig:130",
       "value": 146
+    },
+    "VK_FORMAT_A2B10G10R10_UINT_PACK32": {
+      "source": "vk_formats.zig:63",
+      "value": 68
+    },
+    "VK_FORMAT_E5B9G9R9_UFLOAT_PACK32": {
+      "source": "vk_formats.zig:109",
+      "value": 123
     }
   },
   "surface_policy": {

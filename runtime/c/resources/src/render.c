@@ -85,6 +85,7 @@ static doe_resource_status validate_targets(const doe_resource_config *config,
                 color->view->texture->desc.format != resolve->texture->desc.format ||
                 color_extent[0] != resolve_extent[0] || color_extent[1] != resolve_extent[1]) return DOE_RESOURCE_LAYOUT;
             if (resolve->desc.usage & WGPUTextureUsage_TransientAttachment) return DOE_RESOURCE_USAGE;
+            if (!resource_format_resolvable(resolve->desc.format)) return DOE_RESOURCE_LAYOUT;
         }
     }
     if (!sized && !targets->depth_stencil) return DOE_RESOURCE_LAYOUT;

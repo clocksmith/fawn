@@ -8,35 +8,67 @@
 #include "internal.h"
 #include <string.h>
 
-/* Core renderable color formats only; anything else is not a color target. */
-static bool target_cost(WGPUTextureFormat format, uint32_t *cost, uint32_t *alignment)
+/* WebGPU color-target capabilities (plain color formats table): byte cost,
+ * alignment, multisampling and resolve. Formats absent here (snorm, rgb9e5,
+ * compressed) are not color targets. rg11b10ufloat is listed; its feature gate
+ * is native. https://gpuweb.github.io/gpuweb/#plain-color-formats */
+enum { MS = 1, RESOLVE = 2 };
+static bool target_caps(WGPUTextureFormat format, uint32_t *cost, uint32_t *alignment, unsigned *caps)
 {
+    uint32_t c, a;
+    unsigned flags;
     switch (format) {
-    case WGPUTextureFormat_R8Unorm: case WGPUTextureFormat_R8Uint: case WGPUTextureFormat_R8Sint:
-        *cost = 1; *alignment = 1; return true;
-    case WGPUTextureFormat_RG8Unorm: case WGPUTextureFormat_RG8Uint: case WGPUTextureFormat_RG8Sint:
-        *cost = 2; *alignment = 1; return true;
-    case WGPUTextureFormat_RGBA8Uint: case WGPUTextureFormat_RGBA8Sint:
-        *cost = 4; *alignment = 1; return true;
+    case WGPUTextureFormat_R8Unorm: c = 1; a = 1; flags = MS | RESOLVE; break;
+    case WGPUTextureFormat_R8Uint: case WGPUTextureFormat_R8Sint: c = 1; a = 1; flags = MS; break;
+    case WGPUTextureFormat_RG8Unorm: c = 2; a = 1; flags = MS | RESOLVE; break;
+    case WGPUTextureFormat_RG8Uint: case WGPUTextureFormat_RG8Sint: c = 2; a = 1; flags = MS; break;
+    case WGPUTextureFormat_RGBA8Uint: case WGPUTextureFormat_RGBA8Sint: c = 4; a = 1; flags = MS; break;
     case WGPUTextureFormat_RGBA8Unorm: case WGPUTextureFormat_RGBA8UnormSrgb:
     case WGPUTextureFormat_BGRA8Unorm: case WGPUTextureFormat_BGRA8UnormSrgb:
-        *cost = 8; *alignment = 1; return true;
-    case WGPUTextureFormat_R16Uint: case WGPUTextureFormat_R16Sint: case WGPUTextureFormat_R16Float:
-        *cost = 2; *alignment = 2; return true;
-    case WGPUTextureFormat_RG16Uint: case WGPUTextureFormat_RG16Sint: case WGPUTextureFormat_RG16Float:
-        *cost = 4; *alignment = 2; return true;
-    case WGPUTextureFormat_RGBA16Uint: case WGPUTextureFormat_RGBA16Sint: case WGPUTextureFormat_RGBA16Float:
-        *cost = 8; *alignment = 2; return true;
-    case WGPUTextureFormat_R32Uint: case WGPUTextureFormat_R32Sint: case WGPUTextureFormat_R32Float:
-        *cost = 4; *alignment = 4; return true;
+        c = 8; a = 1; flags = MS | RESOLVE; break;
+    case WGPUTextureFormat_R16Uint: case WGPUTextureFormat_R16Sint: c = 2; a = 2; flags = MS; break;
+    case WGPUTextureFormat_R16Float: c = 2; a = 2; flags = MS | RESOLVE; break;
+    case WGPUTextureFormat_RG16Uint: case WGPUTextureFormat_RG16Sint: c = 4; a = 2; flags = MS; break;
+    case WGPUTextureFormat_RG16Float: c = 4; a = 2; flags = MS | RESOLVE; break;
+    case WGPUTextureFormat_RGBA16Uint: case WGPUTextureFormat_RGBA16Sint: c = 8; a = 2; flags = MS; break;
+    case WGPUTextureFormat_RGBA16Float: c = 8; a = 2; flags = MS | RESOLVE; break;
+    case WGPUTextureFormat_R32Uint: case WGPUTextureFormat_R32Sint: c = 4; a = 4; flags = 0; break;
+    case WGPUTextureFormat_R32Float: c = 4; a = 4; flags = MS; break;
     case WGPUTextureFormat_RG32Uint: case WGPUTextureFormat_RG32Sint: case WGPUTextureFormat_RG32Float:
-    case WGPUTextureFormat_RGB10A2Uint: case WGPUTextureFormat_RGB10A2Unorm: case WGPUTextureFormat_RG11B10Ufloat:
-        *cost = 8; *alignment = 4; return true;
+        c = 8; a = 4; flags = 0; break;
+    case WGPUTextureFormat_RGB10A2Uint: c = 8; a = 4; flags = MS; break;
+    case WGPUTextureFormat_RGB10A2Unorm: case WGPUTextureFormat_RG11B10Ufloat: c = 8; a = 4; flags = MS | RESOLVE; break;
     case WGPUTextureFormat_RGBA32Uint: case WGPUTextureFormat_RGBA32Sint: case WGPUTextureFormat_RGBA32Float:
-        *cost = 16; *alignment = 4; return true;
+        c = 16; a = 4; flags = 0; break;
     default:
         return false;
     }
+    if (cost) *cost = c;
+    if (alignment) *alignment = a;
+    if (caps) *caps = flags;
+    return true;
+}
+static bool target_cost(WGPUTextureFormat format, uint32_t *cost, uint32_t *alignment)
+{
+    return target_caps(format, cost, alignment, NULL);
+}
+
+bool resource_format_color_renderable(WGPUTextureFormat format)
+{
+    return target_caps(format, NULL, NULL, NULL);
+}
+
+/* Depth/stencil formats all multisample; color formats per the table. */
+bool resource_format_multisample(WGPUTextureFormat format)
+{
+    unsigned caps = 0;
+    return resource_format_depth(format) || (target_caps(format, NULL, NULL, &caps) && (caps & MS));
+}
+
+bool resource_format_resolvable(WGPUTextureFormat format)
+{
+    unsigned caps = 0;
+    return target_caps(format, NULL, NULL, &caps) && (caps & RESOLVE);
 }
 
 uint32_t resource_max_color_attachments(const doe_resource_config *config)
@@ -64,7 +96,12 @@ doe_resource_status resource_color_layout_validate(const doe_resource_config *co
     }
     if (!any && !depth_stencil) return DOE_RESOURCE_LAYOUT;
     if (depth_stencil && !resource_format_depth(depth_stencil)) return DOE_RESOURCE_LAYOUT;
-    return samples == 1 || samples == 4 ? DOE_RESOURCE_OK : DOE_RESOURCE_UNSUPPORTED;
+    if (samples != 1 && samples != 4) return DOE_RESOURCE_UNSUPPORTED;
+    /* A multisampled layout needs every color format to support multisampling. */
+    for (uint32_t i = 0; samples > 1 && i < count; i++)
+        if (formats[i] != WGPUTextureFormat_Undefined && !resource_format_multisample(formats[i]))
+            return DOE_RESOURCE_LAYOUT;
+    return DOE_RESOURCE_OK;
 }
 
 doe_resource_status resource_color_formats_normalize(WGPUTextureFormat legacy, uint32_t count,

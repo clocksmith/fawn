@@ -28,6 +28,19 @@ static bool block_compressed(doe_vk_texture_format format) {
     return format >= DOE_VK_FORMAT_BC1_RGBA_UNORM && format <= DOE_VK_FORMAT_BC7_RGBA_SRGB;
 }
 _Static_assert((int)DOE_VK_FORMAT_RG11B10_UFLOAT == (int)VK_FORMAT_B10G11R11_UFLOAT_PACK32, "rg11b10");
+_Static_assert((int)DOE_VK_FORMAT_R8_SNORM == (int)VK_FORMAT_R8_SNORM, "r8snorm");
+_Static_assert((int)DOE_VK_FORMAT_R8_UINT == (int)VK_FORMAT_R8_UINT, "r8uint");
+_Static_assert((int)DOE_VK_FORMAT_R8_SINT == (int)VK_FORMAT_R8_SINT, "r8sint");
+_Static_assert((int)DOE_VK_FORMAT_RG8_SNORM == (int)VK_FORMAT_R8G8_SNORM, "rg8snorm");
+_Static_assert((int)DOE_VK_FORMAT_RG8_UINT == (int)VK_FORMAT_R8G8_UINT, "rg8uint");
+_Static_assert((int)DOE_VK_FORMAT_RG8_SINT == (int)VK_FORMAT_R8G8_SINT, "rg8sint");
+_Static_assert((int)DOE_VK_FORMAT_R16_UINT == (int)VK_FORMAT_R16_UINT, "r16uint");
+_Static_assert((int)DOE_VK_FORMAT_R16_SINT == (int)VK_FORMAT_R16_SINT, "r16sint");
+_Static_assert((int)DOE_VK_FORMAT_RG16_UINT == (int)VK_FORMAT_R16G16_UINT, "rg16uint");
+_Static_assert((int)DOE_VK_FORMAT_RG16_SINT == (int)VK_FORMAT_R16G16_SINT, "rg16sint");
+_Static_assert((int)DOE_VK_FORMAT_RGB10A2_UNORM == (int)VK_FORMAT_A2B10G10R10_UNORM_PACK32, "rgb10a2unorm");
+_Static_assert((int)DOE_VK_FORMAT_RGB10A2_UINT == (int)VK_FORMAT_A2B10G10R10_UINT_PACK32, "rgb10a2uint");
+_Static_assert((int)DOE_VK_FORMAT_RGB9E5_UFLOAT == (int)VK_FORMAT_E5B9G9R9_UFLOAT_PACK32, "rgb9e5ufloat");
 _Static_assert((int)DOE_VK_FORMAT_BC1_RGBA_UNORM == (int)VK_FORMAT_BC1_RGBA_UNORM_BLOCK, "bc1");
 _Static_assert((int)DOE_VK_FORMAT_BC1_RGBA_SRGB == (int)VK_FORMAT_BC1_RGBA_SRGB_BLOCK, "bc1 srgb");
 _Static_assert((int)DOE_VK_FORMAT_BC2_RGBA_UNORM == (int)VK_FORMAT_BC2_UNORM_BLOCK, "bc2");
@@ -65,8 +78,16 @@ static uint32_t texel_bytes(doe_vk_texture_format format) {
         case DOE_VK_FORMAT_BC7_RGBA_UNORM:
         case DOE_VK_FORMAT_BC7_RGBA_SRGB: return 16;
         case DOE_VK_FORMAT_S8_UINT:
-        case DOE_VK_FORMAT_R8_UNORM: return 1;
+        case DOE_VK_FORMAT_R8_UNORM:
+        case DOE_VK_FORMAT_R8_SNORM:
+        case DOE_VK_FORMAT_R8_UINT:
+        case DOE_VK_FORMAT_R8_SINT: return 1;
         case DOE_VK_FORMAT_RG8_UNORM:
+        case DOE_VK_FORMAT_RG8_SNORM:
+        case DOE_VK_FORMAT_RG8_UINT:
+        case DOE_VK_FORMAT_RG8_SINT:
+        case DOE_VK_FORMAT_R16_UINT:
+        case DOE_VK_FORMAT_R16_SINT:
         case DOE_VK_FORMAT_D16_UNORM:
         case DOE_VK_FORMAT_R16_FLOAT: return 2;
         case DOE_VK_FORMAT_D32_FLOAT:
@@ -82,6 +103,11 @@ static uint32_t texel_bytes(doe_vk_texture_format format) {
         case DOE_VK_FORMAT_R32_UINT:
         case DOE_VK_FORMAT_R32_SINT:
         case DOE_VK_FORMAT_R32_FLOAT:
+        case DOE_VK_FORMAT_RG16_UINT:
+        case DOE_VK_FORMAT_RG16_SINT:
+        case DOE_VK_FORMAT_RGB10A2_UNORM:
+        case DOE_VK_FORMAT_RGB10A2_UINT:
+        case DOE_VK_FORMAT_RGB9E5_UFLOAT:
         case DOE_VK_FORMAT_RG11B10_UFLOAT: return 4;
         case DOE_VK_FORMAT_D32_FLOAT_S8_UINT:
         case DOE_VK_FORMAT_RGBA16_UINT:
