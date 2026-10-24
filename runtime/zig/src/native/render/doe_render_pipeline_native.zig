@@ -9,6 +9,7 @@ const native_shared = @import("../support/doe_native_shared_types.zig");
 const native_helpers = @import("../support/doe_native_object_helpers.zig");
 const error_scope = @import("../../runtime/diagnostics/error_scope.zig");
 const texture_contract = @import("../../contracts/texture.zig");
+const texture_format = @import("../../contracts/texture_format.zig");
 const texture_values = @import("../../contracts/model/model_texture_value_types.zig");
 const abi_feature = @import("../../core/abi/wgpu_feature_base_types.zig");
 const render_bundle = @import("../../runtime/render/render_bundle.zig");
@@ -246,12 +247,16 @@ fn colorTargetsWithinLimit(dev: *DoeDevice, fragment: *const RenderFragmentState
     return false;
 }
 
-// webgpu.h values these rules compare.
+// webgpu.h values these rules compare. The Zig runtime numbers stencil
+// operations from Keep = 0 (the addon translates), so 0 is Keep or Undefined.
 const BLEND_OPERATION_MIN: u32 = 0x00000004;
 const BLEND_OPERATION_MAX: u32 = 0x00000005;
 const BLEND_FACTOR_UNDEFINED: u32 = 0x00000000;
 const BLEND_FACTOR_ONE: u32 = 0x00000002;
 const BLEND_FACTOR_ZERO: u32 = 0x00000001;
+const COMPARE_UNDEFINED: u32 = 0x00000000;
+const COMPARE_ALWAYS: u32 = 0x00000008;
+const STENCIL_OPERATION_KEEP: u32 = 0x00000000;
 const COLOR_WRITE_MASK_ALL: u64 = 0xF;
 
 fn deviceHasFeature(dev: *const DoeDevice, feature: u32) bool {
@@ -300,6 +305,24 @@ fn fragmentTargetsFailure(dev: *const DoeDevice, d: *const RenderPipelineDesc) ?
     return null;
 }
 
+/// Depth-stencil state (https://gpuweb.github.io/gpuweb/#abstract-opdef-validating-gpudepthstencilstate):
+/// the format is a depth or stencil format, and a stencil test (a compare
+/// other than always) or a stencil write (a nonzero write mask with an
+/// operation other than keep) needs a stencil aspect.
+fn depthStencilFailure(d: *const RenderPipelineDesc) ?[]const u8 {
+    const raw = d.depthStencil orelse return null;
+    const ds: *const RenderDepthStencilDesc = @ptrCast(@alignCast(raw));
+    if (!texture_format.isDepthStencilFormat(ds.format)) return "depthStencil.format must be a depth or stencil format";
+    if (texture_format.hasStencilAspect(ds.format)) return null;
+    for ([_]u32{ ds.stencilFront.compare, ds.stencilBack.compare }) |compare| {
+        if (compare != COMPARE_UNDEFINED and compare != COMPARE_ALWAYS) return "a stencil test needs a depth-stencil format with a stencil aspect";
+    }
+    if (ds.stencilWriteMask != 0) for ([_]u32{ ds.stencilFront.failOp, ds.stencilFront.depthFailOp, ds.stencilFront.passOp, ds.stencilBack.failOp, ds.stencilBack.depthFailOp, ds.stencilBack.passOp }) |op| {
+        if (op != STENCIL_OPERATION_KEEP) return "a stencil write needs a depth-stencil format with a stencil aspect";
+    };
+    return null;
+}
+
 fn createRenderPipeline(dev_raw: ?*anyopaque, desc_raw: ?*anyopaque) ?*anyopaque {
     const dev = cast(DoeDevice, dev_raw) orelse return null;
     if (!dev.requireAlive()) return null;
@@ -320,7 +343,7 @@ fn createRenderPipeline(dev_raw: ?*anyopaque, desc_raw: ?*anyopaque) ?*anyopaque
         return null;
     }
     if (d.fragment) |fragment| if (!colorTargetsWithinLimit(dev, fragment)) return null;
-    if (fragmentTargetsFailure(dev, d)) |message| {
+    if (fragmentTargetsFailure(dev, d) orelse depthStencilFailure(d)) |message| {
         dev.error_scopes.deliver(error_scope.ERROR_TYPE_VALIDATION, message);
         return null;
     }
@@ -764,4 +787,27 @@ test "fragment targets need renderable formats, blendable formats for blending, 
     targets[0].format = texture_values.WGPUTextureFormat_RGBA8Unorm;
     targets[0].writeMask = 0x10;
     try std.testing.expect(fragmentTargetsFailure(&device, &desc) != null);
+}
+
+test "a stencil test or stencil write needs a stencil aspect and the format is depth or stencil" {
+    var ds = std.mem.zeroes(RenderDepthStencilDesc);
+    ds.format = texture_values.WGPUTextureFormat_Depth16Unorm;
+    ds.stencilFront.compare = COMPARE_ALWAYS;
+    ds.stencilBack.compare = COMPARE_UNDEFINED;
+    ds.stencilWriteMask = 0xFFFF_FFFF;
+    var desc = std.mem.zeroes(RenderPipelineDesc);
+    desc.depthStencil = @ptrCast(&ds);
+    try std.testing.expectEqual(@as(?[]const u8, null), depthStencilFailure(&desc));
+    ds.stencilBack.compare = 0x00000002; // less
+    try std.testing.expect(depthStencilFailure(&desc) != null);
+    ds.stencilBack.compare = COMPARE_ALWAYS;
+    ds.stencilFront.passOp = 0x00000001; // zero
+    try std.testing.expect(depthStencilFailure(&desc) != null);
+    ds.stencilWriteMask = 0;
+    try std.testing.expectEqual(@as(?[]const u8, null), depthStencilFailure(&desc));
+    ds.stencilWriteMask = 0xFF;
+    ds.format = texture_values.WGPUTextureFormat_Depth24PlusStencil8;
+    try std.testing.expectEqual(@as(?[]const u8, null), depthStencilFailure(&desc));
+    ds.format = texture_values.WGPUTextureFormat_RGBA8Unorm;
+    try std.testing.expect(depthStencilFailure(&desc) != null);
 }
