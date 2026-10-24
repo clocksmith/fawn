@@ -6,6 +6,8 @@ const abi_texture = @import("../../core/abi/wgpu_texture_base_types.zig");
 const device_caps = @import("../support/doe_device_caps.zig");
 const native_types = @import("../support/doe_native_object_types.zig");
 const texture_contract = @import("../../contracts/texture.zig");
+const texture_layout = @import("../../contracts/texture_format_layout.zig");
+const abi_feature = @import("../../core/abi/wgpu_feature_base_types.zig");
 
 const DoeDevice = native_types.DoeDevice;
 const MAX_TEXTURE_DESCRIPTOR_CHAIN_NODES: u32 = 16;
@@ -91,9 +93,16 @@ pub fn srgbPairViewFormat(desc: *const abi_pipeline.WGPUTextureDescriptor) u32 {
     return 0;
 }
 
+fn featureEnabled(device: *const DoeDevice, feature: abi_feature.WGPUFeatureName) bool {
+    for (device.enabled_features) |enabled| if (enabled == feature) return true;
+    return false;
+}
+
+/// https://gpuweb.github.io/gpuweb/#abstract-opdef-maximum-miplevel-count:
+/// a 1d texture has one mip level.
 fn maxMipLevelCount(desc: *const abi_pipeline.WGPUTextureDescriptor) u32 {
     const max_extent = switch (desc.dimension) {
-        abi_texture.WGPUTextureDimension_1D => desc.size.width,
+        abi_texture.WGPUTextureDimension_1D => 1,
         abi_texture.WGPUTextureDimension_3D => @max(desc.size.width, @max(desc.size.height, desc.size.depthOrArrayLayers)),
         else => @max(desc.size.width, desc.size.height),
     };
@@ -160,6 +169,12 @@ pub fn validateTextureDescriptor(
     }
     if (abi_texture.isDepthStencilFormat(desc.format) and desc.dimension != abi_texture.WGPUTextureDimension_2D)
         return "depth-stencil textures must be 2D";
+    if (usageFormatMessage(device, desc)) |message| return message;
+    // Mip level 0 of a block-compressed texture covers whole texel blocks
+    // (no texture-compression-unaligned in webgpu.h).
+    const block = texture_layout.copy_block_extent(desc.format);
+    if (desc.size.width % block[0] != 0 or desc.size.height % block[1] != 0)
+        return "a compressed texture's width and height must be multiples of its block size";
     if ((abi_texture.isBCFormat(desc.format) or abi_texture.isETC2Format(desc.format) or abi_texture.isASTCFormat(desc.format)) and
         desc.dimension == abi_texture.WGPUTextureDimension_1D)
         return "compressed textures cannot be 1D";
@@ -175,6 +190,25 @@ pub fn validateTextureDescriptor(
         if (srgbPairViewFormat(desc) != 0 and (usage & abi_texture.WGPUTextureUsage_StorageBinding) != 0)
             return "storage usage with an srgb view format is unsupported";
     }
+    return null;
+}
+
+/// https://gpuweb.github.io/gpuweb/#dom-gpudevice-createtexture: STORAGE_BINDING
+/// needs a storage format, RENDER_ATTACHMENT a renderable format and a 2d or
+/// 3d texture, and TRANSIENT_ATTACHMENT a 2d texture.
+fn usageFormatMessage(device: *const DoeDevice, desc: *const abi_pipeline.WGPUTextureDescriptor) ?[]const u8 {
+    const tier1 = featureEnabled(device, abi_feature.WGPUFeatureName_TextureFormatsTier1);
+    if ((desc.usage & abi_texture.WGPUTextureUsage_StorageBinding) != 0 and
+        !texture_contract.storageCapable(desc.format, tier1, featureEnabled(device, abi_feature.WGPUFeatureName_BGRA8UnormStorage)))
+        return "texture format does not support STORAGE_BINDING usage";
+    if ((desc.usage & abi_texture.WGPUTextureUsage_RenderAttachment) != 0) {
+        if (desc.dimension == abi_texture.WGPUTextureDimension_1D) return "a 1D texture cannot have RENDER_ATTACHMENT usage";
+        if (!abi_texture.isDepthStencilFormat(desc.format) and (texture_contract.renderTargetCost(desc.format) == null or
+            (texture_contract.renderTargetNeedsTier1(desc.format) and !tier1)))
+            return "texture format is not renderable";
+    }
+    if ((desc.usage & abi_texture.WGPUTextureUsage_TransientAttachment) != 0 and desc.dimension != abi_texture.WGPUTextureDimension_2D)
+        return "a transient attachment must be 2D";
     return null;
 }
 
@@ -241,5 +275,56 @@ test "multisampled and transient texture descriptors follow WebGPU createTexture
     const formats = [_]u32{T.WGPUTextureFormat_RGBA8Unorm};
     desc.viewFormatCount = formats.len;
     desc.viewFormats = &formats;
+    try std.testing.expect(validateTextureDescriptor(&device, &desc) != null);
+}
+
+test "texture usages need capable formats and dimensions; 1d has one mip; compressed sizes cover whole blocks" {
+    var device: DoeDevice = .{};
+    const T = abi_texture;
+    var desc = abi_pipeline.WGPUTextureDescriptor{
+        .nextInChain = null,
+        .label = .{ .data = null, .length = 0 },
+        .usage = T.WGPUTextureUsage_StorageBinding,
+        .dimension = T.WGPUTextureDimension_2D,
+        .size = .{ .width = 8, .height = 8, .depthOrArrayLayers = 1 },
+        .format = T.WGPUTextureFormat_R16Float,
+        .mipLevelCount = 1,
+        .sampleCount = 1,
+        .viewFormatCount = 0,
+        .viewFormats = null,
+    };
+    // r16float storage needs texture-formats-tier1.
+    try std.testing.expect(validateTextureDescriptor(&device, &desc) != null);
+    var tier1 = [_]abi_feature.WGPUFeatureName{abi_feature.WGPUFeatureName_TextureFormatsTier1};
+    device.enabled_features = &tier1;
+    try std.testing.expect(validateTextureDescriptor(&device, &desc) == null);
+    desc.format = T.WGPUTextureFormat_RGBA8UnormSrgb;
+    try std.testing.expect(validateTextureDescriptor(&device, &desc) != null);
+    // Render attachments are renderable, and not 1d.
+    desc.usage = T.WGPUTextureUsage_RenderAttachment;
+    try std.testing.expect(validateTextureDescriptor(&device, &desc) == null);
+    desc.format = T.WGPUTextureFormat_RGB9E5Ufloat;
+    try std.testing.expect(validateTextureDescriptor(&device, &desc) != null);
+    desc.format = T.WGPUTextureFormat_RGBA8Unorm;
+    desc.dimension = T.WGPUTextureDimension_1D;
+    desc.size = .{ .width = 8, .height = 1, .depthOrArrayLayers = 1 };
+    try std.testing.expect(validateTextureDescriptor(&device, &desc) != null);
+    // A 1d texture has one mip level.
+    desc.usage = T.WGPUTextureUsage_TextureBinding;
+    try std.testing.expect(validateTextureDescriptor(&device, &desc) == null);
+    desc.mipLevelCount = 2;
+    try std.testing.expect(validateTextureDescriptor(&device, &desc) != null);
+    // Transient attachments are 2d.
+    desc.mipLevelCount = 1;
+    desc.dimension = T.WGPUTextureDimension_3D;
+    desc.size = .{ .width = 8, .height = 8, .depthOrArrayLayers = 1 };
+    desc.usage = T.WGPUTextureUsage_RenderAttachment | T.WGPUTextureUsage_TransientAttachment;
+    try std.testing.expect(validateTextureDescriptor(&device, &desc) != null);
+    // Compressed mip level 0 covers whole 4x4 blocks.
+    desc.dimension = T.WGPUTextureDimension_2D;
+    desc.usage = T.WGPUTextureUsage_TextureBinding;
+    desc.format = T.WGPUTextureFormat_BC1RGBAUnorm;
+    try std.testing.expect(validateTextureDescriptor(&device, &desc) == null);
+    desc.size.width = 6;
     try std.testing.expect(validateTextureDescriptor(&device, &desc) != null);
 }

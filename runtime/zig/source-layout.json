@@ -2918,9 +2918,9 @@
       },
       "src/contracts/texture.zig": {
         "decision": "Keep",
-        "moduleSha256": "e473825515ad635a666c9c5f3898337cf518d02f13dadada1f04c15ef33b1b0b",
-        "reason": "Keep: reachable neutral contract owner at src/contracts/texture.zig. aspectFormat resolves the single-aspect view format (depth24plus, depth32float or stencil8 for combined formats). A view's stencil aspect samples as uint and its depth aspect as depth. Render target byte cost and color attachment bytes per sample. Render target byte costs include the texture-formats-tier1 color targets. Owns which formats support multisampling. Owns color-renderable and blendable format classes for render pipeline targets.",
-        "reviewer": "doe-c-claude-coordinator/2026-10-24"
+        "moduleSha256": "f71d2338b622996157341e25529603d89ae6b01760a78ed664fb94e0b649af80",
+        "reason": "Keep: reachable neutral contract owner at src/contracts/texture.zig. aspectFormat resolves the single-aspect view format (depth24plus, depth32float or stencil8 for combined formats). A view's stencil aspect samples as uint and its depth aspect as depth. Render target byte cost and color attachment bytes per sample. Render target byte costs include the texture-formats-tier1 color targets. Owns which formats support multisampling. Owns color-renderable and blendable format classes for render pipeline targets. storageCapable names the STORAGE_BINDING formats, including bgra8unorm-storage and texture-formats-tier1 formats.",
+        "reviewer": "doe-c-claude-indexed/2026-10-24"
       },
       "src/contracts/texture_format.zig": {
         "decision": "Keep",
@@ -3716,9 +3716,9 @@
       },
       "src/native/resource/doe_texture_validation.zig": {
         "decision": "Keep",
-        "moduleSha256": "c22dbf3b3ee173ba4fd478c76167d1030c296d81afb7df3ede1f1f27bce72b67",
-        "reason": "Keep: reachable native implementation with private behavior tests and no merge, elevation, recomposition, or deletion signal; owns the srgb view-format pair rule; MUTABLE_FORMAT images with a VkImageFormatListCreateInfo only for textures whose viewFormats name the srgb pair. Multisampled textures need RENDER_ATTACHMENT and a multisample-capable format and may carry copy usages; transient attachments need exactly RENDER_ATTACHMENT and TRANSIENT_ATTACHMENT, one layer and mip, and no viewFormats.",
-        "reviewer": "doe-c-claude-coordinator/2026-10-24"
+        "moduleSha256": "b4bc0d0fd2f0de63bc3c07938be980ae582de50228c7849e704d8e53c018ef9c",
+        "reason": "Keep: reachable native implementation with private behavior tests and no merge, elevation, recomposition, or deletion signal; owns the srgb view-format pair rule; MUTABLE_FORMAT images with a VkImageFormatListCreateInfo only for textures whose viewFormats name the srgb pair. Multisampled textures need RENDER_ATTACHMENT and a multisample-capable format and may carry copy usages; transient attachments need exactly RENDER_ATTACHMENT and TRANSIENT_ATTACHMENT, one layer and mip, and no viewFormats. createTexture checks STORAGE_BINDING, RENDER_ATTACHMENT and TRANSIENT_ATTACHMENT format and dimension rules, one mip level for 1d, and whole-block compressed sizes.",
+        "reviewer": "doe-c-claude-indexed/2026-10-24"
       },
       "src/native/shader/doe_shader_compilation_info_native.zig": {
         "decision": "Keep",

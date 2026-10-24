@@ -2,6 +2,7 @@
 
 const binding = @import("model/model_binding_value_types.zig");
 const texture = @import("model/model_texture_value_types.zig");
+const texture_format = @import("texture_format.zig");
 
 /// A color target format's render target pixel byte cost and component
 /// alignment (https://gpuweb.github.io/gpuweb/#plain-color-formats).
@@ -114,6 +115,41 @@ pub fn multisampleCapable(format: texture.WGPUTextureFormat) bool {
         texture.WGPUTextureFormat_RGBA32Float,
         => false,
         else => renderTargetCost(format) != null,
+    };
+}
+
+/// Formats a texture may have with STORAGE_BINDING usage: the base storage
+/// formats, bgra8unorm with bgra8unorm-storage, and the formats
+/// texture-formats-tier1 adds
+/// (https://gpuweb.github.io/gpuweb/#texture-formats-tier1).
+pub fn storageCapable(format: texture.WGPUTextureFormat, tier1: bool, bgra8unorm_storage: bool) bool {
+    if (texture_format.isStorageTextureFormat(format, bgra8unorm_storage)) return true;
+    return tier1 and switch (format) {
+        texture.WGPUTextureFormat_R8Unorm,
+        texture.WGPUTextureFormat_R8Snorm,
+        texture.WGPUTextureFormat_R8Uint,
+        texture.WGPUTextureFormat_R8Sint,
+        texture.WGPUTextureFormat_RG8Unorm,
+        texture.WGPUTextureFormat_RG8Snorm,
+        texture.WGPUTextureFormat_RG8Uint,
+        texture.WGPUTextureFormat_RG8Sint,
+        texture.WGPUTextureFormat_R16Unorm,
+        texture.WGPUTextureFormat_R16Snorm,
+        texture.WGPUTextureFormat_R16Uint,
+        texture.WGPUTextureFormat_R16Sint,
+        texture.WGPUTextureFormat_R16Float,
+        texture.WGPUTextureFormat_RG16Unorm,
+        texture.WGPUTextureFormat_RG16Snorm,
+        texture.WGPUTextureFormat_RG16Uint,
+        texture.WGPUTextureFormat_RG16Sint,
+        texture.WGPUTextureFormat_RG16Float,
+        texture.WGPUTextureFormat_RGBA16Unorm,
+        texture.WGPUTextureFormat_RGBA16Snorm,
+        texture.WGPUTextureFormat_RGB10A2Uint,
+        texture.WGPUTextureFormat_RGB10A2Unorm,
+        texture.WGPUTextureFormat_RG11B10Ufloat,
+        => true,
+        else => false,
     };
 }
 
