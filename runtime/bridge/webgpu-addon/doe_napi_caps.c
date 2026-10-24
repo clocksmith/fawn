@@ -433,7 +433,8 @@ napi_value doe_adapter_get_info(napi_env env, napi_callback_info info) {
         set_adapter_info_string_prop(env, obj, "architecture", info_view.architecture);
         set_adapter_info_string_prop(env, obj, "device", info_view.device);
         set_adapter_info_string_prop(env, obj, "description", info_view.description);
-        napi_get_boolean(env, false, &v_is_fallback);
+        /* WebGPU's fallback adapter is the CPU implementation (WGPUAdapterType_CPU). */
+        napi_get_boolean(env, info_view.adapterType == 0x00000003u, &v_is_fallback);
         napi_create_uint32(env, info_view.subgroupMinSize, &v_sg_min);
         napi_create_uint32(env, info_view.subgroupMaxSize, &v_sg_max);
         napi_set_named_property(env, obj, "isFallbackAdapter", v_is_fallback);

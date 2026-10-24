@@ -67,7 +67,7 @@ The retained production owners remain authoritative for those behaviors.
 ## Texture transactions
 
 `include/doe_vk_texture.h` uses named native format values, never WebGPU numeric
-casts. Twenty-four uncompressed color formats (including rg11b10ufloat) plus four attachment-only depth/stencil formats
+casts. All thirty-seven WebGPU core uncompressed color formats (including rg11b10ufloat) plus four attachment-only depth/stencil formats
 are admitted when native format support exists. The fourteen BC formats (4x4
 blocks of 8 or 16 bytes) exist for a context only with enabled
 textureCompressionBC (`caps.texture_compression_bc`); `doe_vk_format_caps` then
