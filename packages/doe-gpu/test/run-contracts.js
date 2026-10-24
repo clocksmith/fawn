@@ -21,6 +21,7 @@ const contracts = [
   './unit/one-shot-resources.test.js',
   './unit/capability-publication.test.js',
   './unit/provider-diagnostics.test.js',
+  './unit/provider-path.test.js',
   './unit/stage-platform-freshness.test.js',
   './unit/plan-contracts.test.js',
   './unit/plan-refactor-receipt.test.js',

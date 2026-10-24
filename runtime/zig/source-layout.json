@@ -3254,9 +3254,9 @@
       },
       "src/dropin/wgpu_dropin_ext_c.zig": {
         "decision": "Keep",
-        "moduleSha256": "3ed7184afb2ab97762971efab93d8a089c3d17f57956d49ac5d0e2a547eda096",
-        "reason": "Keep: drop-in C ABI bridge; wgpuQueueWriteTexture forwards the destination aspect and data-layout offset.",
-        "reviewer": "doe-c-claude-surface/2026-10-23"
+        "moduleSha256": "4ae940851bc23afebbd3ca76edb69d8753fddfc4ba522873ad52b049eea05712",
+        "reason": "Keep: drop-in C ABI bridge; wgpuQueueWriteTexture forwards the destination aspect and data-layout offset. writeTexture rejects a dataLayout.offset past the data before any copy, including empty copies.",
+        "reviewer": "doe-c-claude/2026-10-24"
       },
       "src/dropin/wgpu_dropin_lib.zig": {
         "decision": "Keep",
@@ -3686,9 +3686,9 @@
       },
       "src/native/resource/doe_command_texture_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "03792679e8bae38570be4171ea7cd85722cc99dad7e15c250edf25a244c702fa",
-        "reason": "Keep: native texture command ABI boundary; queue writes forward destination origin, extent and aspect to the backend; texture-to-texture copies validate availability, device, usage and srgb-pair format compatibility before recording. Copy aspects reach validation; valid empty copies retain their textures without recording a region.",
-        "reviewer": "doe-c-claude-surface/2026-10-24"
+        "moduleSha256": "3e6d6843ac74527e5cc558200cf6ee39466ad4d207b288d08371e3664012e789",
+        "reason": "Keep: native texture command ABI boundary; queue writes forward destination origin, extent and aspect to the backend; texture-to-texture copies validate availability, device, usage and srgb-pair format compatibility before recording. Copy aspects reach validation; valid empty copies retain their textures without recording a region. rejectQueueWrite reports queue texture writes refused before texture work.",
+        "reviewer": "doe-c-claude/2026-10-24"
       },
       "src/native/resource/doe_external_texture_native.zig": {
         "decision": "Keep",
@@ -4412,8 +4412,8 @@
       },
       "src/native/vulkan/vulkan_render_attachments.zig": {
         "decision": "Keep",
-        "moduleSha256": "e7f8976009c08a53cf829a107c106abc71f1dad27597abb0b68e26ab22d692ca",
-        "reason": "Keep: native attachment admission owns view and pipeline compatibility; command recording preserves typed validation failures before submission. Backend execution and resource retirement retain their existing owners. Admits a resolve target that is a single-sample view of the multisampled color format and extent. Validates draw reads against bound vertex and index buffer ranges. Resolve targets need a resolvable format. Single-layer 2d-array views are renderable attachments.",
+        "moduleSha256": "3a93bddea00b4fa1086e9bb28ee689874ca368440d690bc8fe5da66b3c1833b8",
+        "reason": "Keep: native attachment admission owns view and pipeline compatibility; command recording preserves typed validation failures before submission. Backend execution and resource retirement retain their existing owners. Admits a resolve target that is a single-sample view of the multisampled color format and extent. Validates draw reads against bound vertex and index buffer ranges. Resolve targets need a resolvable format. Single-layer 2d-array views are renderable attachments. texture-formats-tier1 adds the 8-bit snorm resolve formats.",
         "reviewer": "doe-c-claude-surface/2026-10-24"
       },
       "src/backend/vulkan/vk_surface_sync.zig": {

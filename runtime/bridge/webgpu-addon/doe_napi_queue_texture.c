@@ -5,12 +5,16 @@
 #include "doe_napi_internal.h"
 
 bool doe_queue_write_texture_native(void* queue, void* texture, const void* data, size_t data_len,
-    uint32_t bytes_per_row, uint32_t rows_per_image, uint32_t x, uint32_t y, uint32_t z,
+    uint64_t offset, uint32_t bytes_per_row, uint32_t rows_per_image, uint32_t x, uint32_t y, uint32_t z,
     uint32_t mip, uint32_t width, uint32_t height, uint32_t depth_or_layers, uint32_t aspect) {
-    /* The Doe entry writes every aspect; a single-aspect write needs the standard procedure. */
-    if (pfn_doeNativeQueueWriteTexture && (aspect == 0u || aspect == 1u || !pfn_wgpuQueueWriteTexture)) {
-        pfn_doeNativeQueueWriteTexture(queue, texture, data, data_len, bytes_per_row, rows_per_image,
-            x, y, z, mip, 0, width, height, depth_or_layers);
+    /* The Doe entry writes every aspect and takes no offset: it serves whole-format
+     * writes whose offset lies within the data. Anything else, including an
+     * offset past the data (a validation error), goes to the standard procedure. */
+    const bool doe_entry = pfn_doeNativeQueueWriteTexture && (aspect == 0u || aspect == 1u) && offset <= data_len;
+    if (doe_entry || (pfn_doeNativeQueueWriteTexture && !pfn_wgpuQueueWriteTexture)) {
+        const size_t skip = offset <= data_len ? (size_t)offset : data_len;
+        pfn_doeNativeQueueWriteTexture(queue, texture, (const uint8_t*)data + skip, data_len - skip,
+            bytes_per_row, rows_per_image, x, y, z, mip, 0, width, height, depth_or_layers);
         return true;
     }
     if (!pfn_wgpuQueueWriteTexture) return false;
@@ -19,7 +23,7 @@ bool doe_queue_write_texture_native(void* queue, void* texture, const void* data
     destination.mipLevel = mip;
     destination.origin = (WGPUOrigin3D){x, y, z};
     destination.aspect = aspect ? aspect : 1u; /* WGPUTextureAspect_All when omitted */
-    const WGPUTexelCopyBufferLayout layout = {0u, bytes_per_row, rows_per_image};
+    const WGPUTexelCopyBufferLayout layout = {offset, bytes_per_row, rows_per_image};
     const WGPUExtent3D size = {width, height, depth_or_layers};
     pfn_wgpuQueueWriteTexture(queue, &destination, data, data_len, &layout, &size);
     return true;
@@ -65,11 +69,7 @@ napi_value doe_queue_write_texture(napi_env env, napi_callback_info info) {
     uint32_t depth_or_layers = 1; napi_get_value_uint32(env, _args[12], &depth_or_layers);
     uint32_t aspect = 0;
     if (_argc > 13) napi_get_value_uint32(env, _args[13], &aspect);
-    if (data_offset > 0 && data_offset < (uint32_t)data_len) {
-        data = ((uint8_t*)data) + data_offset;
-        data_len -= data_offset;
-    }
-    if (!doe_queue_write_texture_native(queue, texture, data, data_len, bytes_per_row, rows_per_image,
+    if (!doe_queue_write_texture_native(queue, texture, data, data_len, data_offset, bytes_per_row, rows_per_image,
             origin_x, origin_y, origin_z, mip_level, width, height, depth_or_layers, aspect))
         NAPI_THROW(env, "queueWriteTexture: no implementation available in loaded library");
     napi_value undefined_value;

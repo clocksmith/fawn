@@ -265,10 +265,11 @@ function resolveDoeLibraryPath() {
         workspaceRoot: WORKSPACE_ROOT,
     });
     const libraryNames = libraryBasenamesForPlatform();
+    // Absolute, so the library checked here is the one dlopen opens.
     const configuredCandidates = [
         process.env.DOE_WEBGPU_LIB,
         process.env.DOE_LIB,
-    ];
+    ].map((path) => (path ? resolve(path) : path));
     const workspaceCandidates = [
         ...libraryNames.map((name) => resolve(WORKSPACE_ROOT, "runtime", "zig", "zig-out", "lib", name)),
         ...libraryNames.map((name) => resolve(WORKSPACE_ROOT, "zig", "zig-out", "lib", name)),
