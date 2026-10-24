@@ -1376,9 +1376,9 @@
       },
       "src/backend/vulkan/vk_render.zig": {
         "decision": "Keep",
-        "moduleSha256": "5b215a2860366869e8742fa00561ec73eb12570bf5a7baed5702f1e270cf6c94",
+        "moduleSha256": "e35151ce694da57f0b057387808ab7008b888780aefd9cddd224b0b6a20c02ab",
         "reviewer": "doe-c-claude-surface/2026-10-24",
-        "reason": "Keep: Vulkan render target and submission ownership uses target-typed clear values for draw, clear, and bundle paths. Pass-level viewports use WebGPU orientation. Render passes use the color image's sample count for color and depth and add a resolve attachment for a resolve target."
+        "reason": "Keep: Vulkan render target and submission ownership uses target-typed clear values for draw, clear, and bundle paths. Pass-level viewports use WebGPU orientation. Render passes use the color image's sample count for color and depth and add a resolve attachment for a resolve target. Attachment images move whole into their attachment layout before each pass, so tracked image layouts stay exact for single-mip views."
       },
       "src/backend/vulkan/vk_render_pipeline.zig": {
         "decision": "Keep",
@@ -3644,9 +3644,9 @@
       },
       "src/native/render/doe_bundle_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "db0ffd7729f1cee33275313c8a39a8b2d668f4a52e0fd11adf939eb976f6e462",
-        "reason": "Keep: preserves this native ownership or ABI boundary while separating internal device cleanup leases from application release and enforcing destroyed-device admission.",
-        "reviewer": "codex"
+        "moduleSha256": "2a2f2a9f46bc6397ad1de568936cde15b88c8d12c0372032e45cd5d2e93dfc6e",
+        "reason": "Keep: preserves this native ownership or ABI boundary while separating internal device cleanup leases from application release and enforcing destroyed-device admission. Vulkan bundle replay starts from empty state rather than the pass's.",
+        "reviewer": "doe-c-claude-surface/2026-10-24"
       },
       "src/native/render/doe_render_native.zig": {
         "decision": "Keep",
@@ -3662,9 +3662,9 @@
       },
       "src/native/render/doe_render_pipeline_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "f6bd9727be3a30df8d5530cacf99812cbc9833a8c18b5ca39cd7675bbdcb4b95",
-        "reason": "Keep: preserves this native ownership or ABI boundary while separating internal device cleanup leases from application release and enforcing destroyed-device admission.",
-        "reviewer": "codex"
+        "moduleSha256": "c501eaa1653809c7ce9a2804b6e9c8528ffcb98b2ad27e1e1029eebb30dad870",
+        "reason": "Keep: preserves this native ownership or ABI boundary while separating internal device cleanup leases from application release and enforcing destroyed-device admission. Alpha-to-coverage on a single-sample pipeline is a validation error.",
+        "reviewer": "doe-c-claude-surface/2026-10-24"
       },
       "src/native/render/doe_render_state_native.zig": {
         "decision": "Keep",
@@ -4412,8 +4412,8 @@
       },
       "src/native/vulkan/vulkan_render_attachments.zig": {
         "decision": "Keep",
-        "moduleSha256": "9114dc9cafe60fc99887b515a623014005fe51969568c2c7043d1491462502ad",
-        "reason": "Keep: native attachment admission owns view and pipeline compatibility; command recording preserves typed validation failures before submission. Backend execution and resource retirement retain their existing owners. Admits a resolve target that is a single-sample view of the multisampled color format and extent. Validates draw reads against bound vertex and index buffer ranges.",
+        "moduleSha256": "e7f8976009c08a53cf829a107c106abc71f1dad27597abb0b68e26ab22d692ca",
+        "reason": "Keep: native attachment admission owns view and pipeline compatibility; command recording preserves typed validation failures before submission. Backend execution and resource retirement retain their existing owners. Admits a resolve target that is a single-sample view of the multisampled color format and extent. Validates draw reads against bound vertex and index buffer ranges. Resolve targets need a resolvable format. Single-layer 2d-array views are renderable attachments.",
         "reviewer": "doe-c-claude-surface/2026-10-24"
       },
       "src/backend/vulkan/vk_surface_sync.zig": {

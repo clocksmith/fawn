@@ -384,12 +384,15 @@ fn create_render_pass(
     color_final_layout: u32,
     cmd: model_render_types.RenderDrawCommand,
 ) !void {
-    const color_initial_layout = if (state.render_target) |target| target.layout else c.VK_IMAGE_LAYOUT_UNDEFINED;
-    const depth_initial_layout = if (state.depth_stencil_target) |target| target.layout else c.VK_IMAGE_LAYOUT_UNDEFINED;
+    // transition_attachments moved every attachment image, all subresources,
+    // into its attachment layout before the pass, so per-image layout tracking
+    // stays exact even when the view selects one mip or layer.
+    const color_initial_layout: u32 = c.VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    const depth_initial_layout: u32 = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
     // Attachments carry their image's sample count; the depth attachment
     // matches the color attachment (validated when the pass began).
     const samples = vk_render_pipeline.sample_count_to_vk(if (state.render_target) |target| target.sample_count else 1);
-    const resolve_initial_layout = if (state.resolve_target) |target| target.layout else c.VK_IMAGE_LAYOUT_UNDEFINED;
+    const resolve_initial_layout: u32 = c.VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     var attachments = [_]c.VkAttachmentDescription{
         .{
             .flags = 0,
@@ -583,6 +586,7 @@ fn record_and_submit_draws(
 ) !void {
     const index = try prepare_index_binding(self, state, cmd);
     try begin_primary_recording(self);
+    transition_attachments(self, state);
     transition_bound_textures(self, cmd);
 
     const recording = draw_recording.DrawRecording{
@@ -599,6 +603,21 @@ fn record_and_submit_draws(
     try c.check_vk(c.vkEndCommandBuffer(self.primary_command_buffer));
     try submit_and_wait(self);
     mark_attachment_layouts(self, state, c.VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+}
+
+/// Moves each attachment image (every mip and layer) from its tracked layout
+/// into its attachment layout, recorded before the render pass begins.
+fn transition_attachments(self: anytype, state: *const RenderState) void {
+    const color_access = c.VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | c.VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    for ([_]?vk_resources.TextureResource{ state.render_target, state.resolve_target }) |attachment| {
+        const texture = attachment orelse continue;
+        const source = vk_resources.texture_transition_source(texture.layout);
+        vk_resources.transition_texture_layout(self.primary_command_buffer, texture, texture.layout, c.VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, source.src_access_mask, color_access, source.src_stage, c.VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
+    }
+    if (state.depth_stencil_target) |texture| {
+        const source = vk_resources.texture_transition_source(texture.layout);
+        vk_resources.transition_texture_layout(self.primary_command_buffer, texture, texture.layout, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, source.src_access_mask, VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT, source.src_stage, VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT);
+    }
 }
 
 fn mark_attachment_layouts(self: anytype, state: *const RenderState, color_layout: u32) void {
@@ -633,6 +652,7 @@ fn record_and_submit_clear(
     target_height: u32,
 ) !void {
     try begin_primary_recording(self);
+    transition_attachments(self, state);
 
     var clear_values = [_]c.VkClearValue{
         try draw_recording.color_clear_value(cmd.target_format, cmd.clear_color),
@@ -786,6 +806,7 @@ pub fn execute_render_bundles(
     const encode_end = common_timing.now_ns();
     const draw_start = common_timing.now_ns();
     try begin_primary_recording(self);
+    transition_attachments(self, &state);
 
     var clear_value = try draw_recording.color_clear_value(bundle_cmd.target_format, .{ 0, 0, 0, 1 });
     var render_pass_begin = c.VkRenderPassBeginInfo{

@@ -239,6 +239,12 @@ fn createRenderPipeline(dev_raw: ?*anyopaque, desc_raw: ?*anyopaque) ?*anyopaque
             }
         }
     }
+    // https://gpuweb.github.io/gpuweb/#abstract-opdef-validating-gpumultisamplestate:
+    // alpha-to-coverage needs a multisampled pipeline.
+    if (d.multisample.alphaToCoverageEnabled != 0 and d.multisample.count <= 1) {
+        dev.error_scopes.deliver(error_scope.ERROR_TYPE_VALIDATION, "alphaToCoverageEnabled requires multisample.count greater than 1");
+        return null;
+    }
     const pip = make(DoeRenderPipeline) orelse return null;
     pip.* = .{};
     pip.layout = cast(DoePipelineLayout, d.layout);
@@ -601,4 +607,22 @@ pub fn createLostRenderPipeline(device: *DoeDevice) ?*anyopaque {
     native_helpers.object_add_ref(DoeDevice, toOpaque(device));
     pipeline.* = .{ .error_object = true, .device_ref = device };
     return toOpaque(pipeline);
+}
+
+test "alpha-to-coverage on a single-sample pipeline is a validation error" {
+    var device = DoeDevice{};
+    device.error_scopes.push(error_scope.FILTER_VALIDATION);
+    var desc = std.mem.zeroes(RenderPipelineDesc);
+    desc.multisample = .{ .nextInChain = null, .count = 1, .mask = 0xFFFF_FFFF, .alphaToCoverageEnabled = 1 };
+    try std.testing.expect(createRenderPipeline(toOpaque(&device), @ptrCast(&desc)) == null);
+    const Capture = struct {
+        kind: u32 = error_scope.ERROR_TYPE_NO_ERROR,
+        fn receive(kind: u32, _: @import("../../core/abi/wgpu_handle_types.zig").WGPUStringView, userdata: ?*anyopaque, _: ?*anyopaque) callconv(.c) void {
+            const self: *@This() = @ptrCast(@alignCast(userdata.?));
+            self.kind = kind;
+        }
+    };
+    var capture = Capture{};
+    try std.testing.expect(device.error_scopes.pop(.{ .callback = Capture.receive, .userdata1 = &capture }));
+    try std.testing.expectEqual(error_scope.ERROR_TYPE_VALIDATION, capture.kind);
 }
