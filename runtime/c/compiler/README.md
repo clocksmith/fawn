@@ -47,6 +47,12 @@ floating-point restoration controls. It does not build the POSIX CLI or establis
 Windows runtime, target-device or full numerical qualification. The
 [source-bound Windows host workflow](../../../.github/workflows/c-windows-host-build.yml)
 retains first failures and exact artifacts; its existence alone is not a pass.
+The [Windows host receipt](DEVELOPER_RECEIPT_WINDOWS_HOST.json) records the actual
+SDK-built DLL and four passing CPU consumers at its pinned source revision,
+including both preceding failures. [Selected terminal](WINDOWS_HOST_TERMINAL.txt)
+is retained separately from the full artifact archive. This evidence covers the
+standalone DLL host boundary, not later platform changes or full numerical/runtime
+qualification; the first run did not record an SDK version.
 
 The focused developer command is `make -C runtime/c/compiler test-module`.
 Its C/C++ ABI checks, all-entry SPIR-V validation and selected-body instruction
@@ -497,9 +503,11 @@ failure still blocks publication after one bounded recovery attempt. Caller errn
 remains the public adapter's responsibility. Focused checks include real libc
 failure wrapping, x87 24-bit incoming precision, all rounding modes, exception
 flags/traps, subnormals and independent threads. Current executed qualification
-is Linux x86-64 GCC 14.2 only. ARM64/Darwin and other compiler builds are authored
-paths, not executed or numerically qualified platforms; Apple SDK checks remain
-pending. Existing historical host restrictions/receipts are unchanged.
+is Linux x86-64 GCC 14.2 only. The separately scoped
+[Windows DLL developer controls](DEVELOPER_RECEIPT_WINDOWS_HOST.json) exercise
+caller-state restoration and ordinary C/C++ consumption; they do not establish
+full numerical qualification on Windows or other required host configurations.
+Existing historical host restrictions/receipts are unchanged.
 
 ## Explicit standard uniform layout
 
