@@ -386,6 +386,17 @@ $(CONSUMER_BUILD)/test_reflect_vulkan: tests/test_reflect_vulkan.c tests/reflect
 	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) -I../backends/vulkan/include $< $(VULKAN_BUILD)/libdoe_vk.a $(CONSUMER_COMPILER_LINK) -ldl -o $@
 test-reflect-vulkan: require-software-vulkan $(CONSUMER_BUILD)/test_reflect_vulkan
 	VK_ICD_FILENAMES="$(abspath $(SOFTWARE_VULKAN_ICD))" $(CONSUMER_BUILD)/test_reflect_vulkan "$(REFLECT_SPIRV)"
+.PHONY: test-geometric test-geometric-vulkan
+$(CONSUMER_BUILD)/test_geometric: tests/test_geometric.c tests/geometric_fixture.h tests/hlsl_fixture.h $(HEADERS) $(SHARED_LIBRARY)
+	mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) $< $(CONSUMER_COMPILER_LINK) -lm -o $@
+test-geometric: $(CONSUMER_BUILD)/test_geometric
+	$(CONSUMER_BUILD)/test_geometric
+$(CONSUMER_BUILD)/test_geometric_vulkan: tests/test_geometric_vulkan.c tests/geometric_fixture.h $(HEADERS) $(SHARED_LIBRARY) $(VULKAN_BUILD)/libdoe_vk.a $(VULKAN_CONSUMER_DEPS)
+	mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) -I../backends/vulkan/include $< $(VULKAN_BUILD)/libdoe_vk.a $(CONSUMER_COMPILER_LINK) -ldl -o $@
+test-geometric-vulkan: require-software-vulkan $(CONSUMER_BUILD)/test_geometric_vulkan
+	VK_ICD_FILENAMES="$(abspath $(SOFTWARE_VULKAN_ICD))" $(CONSUMER_BUILD)/test_geometric_vulkan "$(GEOMETRIC_SPIRV)"
 test-metal-entry-text: $(TEXT_TEST_BUILD)/test_metal12 $(TEXT_TEST_BUILD)/test_metal12_abi
 	$(TEXT_TEST_BUILD)/test_metal12
 	$(TEXT_TEST_BUILD)/test_metal12_abi

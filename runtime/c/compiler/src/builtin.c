@@ -43,6 +43,8 @@ static const NumericBuiltin numeric_builtins[] = {
     {"normalize", BUILTIN_NORMALIZE, 1u, BUILTIN_FLOAT_VECTOR, 69u},
     {"cross", BUILTIN_CROSS, 2u, BUILTIN_FLOAT_CROSS, 68u},
     {"reflect", BUILTIN_REFLECT, 2u, BUILTIN_FLOAT_VECTOR, 71u},
+    {"faceForward", BUILTIN_FACE_FORWARD, 3u, BUILTIN_FLOAT_VECTOR, 70u},
+    {"refract", BUILTIN_REFRACT, 3u, BUILTIN_FLOAT_REFRACT, 72u},
     {"subgroupAdd", BUILTIN_SUBGROUP_ADD, 1u, BUILTIN_SUBGROUP_NUMERIC, 0u},
     {"subgroupMin", BUILTIN_SUBGROUP_MIN, 1u, BUILTIN_SUBGROUP_NUMERIC, 0u},
     {"subgroupMax", BUILTIN_SUBGROUP_MAX, 1u, BUILTIN_SUBGROUP_NUMERIC, 0u},
@@ -76,7 +78,8 @@ uint32_t builtin_extended_instruction(const NumericBuiltin *builtin, TypeId leaf
 
 bool builtin_floating(const NumericBuiltin *builtin) {
     return builtin->family == BUILTIN_COMPONENT_FLOAT || builtin->family == BUILTIN_FLOAT_REDUCTION ||
-        builtin->family == BUILTIN_FLOAT_VECTOR || builtin->family == BUILTIN_FLOAT_CROSS;
+        builtin->family == BUILTIN_FLOAT_VECTOR || builtin->family == BUILTIN_FLOAT_CROSS ||
+        builtin->family == BUILTIN_FLOAT_REFRACT;
 }
 
 bool builtin_subgroup(const NumericBuiltin *builtin) {
@@ -96,9 +99,14 @@ bool builtin_scalar_result(const NumericBuiltin *builtin) {
 
 bool builtin_shape(const NumericBuiltin *builtin, uint32_t width) {
     if (builtin->family == BUILTIN_FLOAT_CROSS) return width == 3u;
-    if (builtin->family == BUILTIN_NUMERIC_REDUCTION || builtin->family == BUILTIN_FLOAT_VECTOR)
+    if (builtin->family == BUILTIN_NUMERIC_REDUCTION || builtin->family == BUILTIN_FLOAT_VECTOR ||
+        builtin->family == BUILTIN_FLOAT_REFRACT)
         return width >= 2u && width <= 4u;
     return width >= 1u && width <= 4u;
+}
+
+uint32_t builtin_argument_width(const NumericBuiltin *builtin, uint32_t argument, uint32_t vector_width) {
+    return builtin->family == BUILTIN_FLOAT_REFRACT && argument == 2u ? 1u : vector_width;
 }
 
 /* Projection borrows an existing compact constant DAG. Only the completed
@@ -195,6 +203,33 @@ static bool cross_lane(Source *source, uint32_t offset, const ConstantValue *arg
     return numeric_binary(source, offset, EXPRESSION_SUBTRACT, COMPARE_EQUAL, product, left, out);
 }
 
+/* Scalar refraction factors share declared-width arithmetic with every const
+ * operator. Test k before sqrt: total internal reflection is a zero result,
+ * not an invalid square root evaluated and then selected away. */
+static bool refraction_scale(Source *source, uint32_t offset, const ConstantValue *arguments,
+                             NumericValue *scale, bool *total_internal) {
+    const ConstantValue pair[2] = {arguments[1], arguments[0]};
+    NumericValue dot, eta, one, zero, square, eta_square, k, negative, root, product;
+    if (!dot_constant(source, offset, pair, &dot) ||
+        !constant_lane(source, arguments[2], 0u, &eta) ||
+        !numeric_materialize(source, offset, (NumericValue){1u, IR_ABSTRACT_INT}, dot.type, &one) ||
+        !numeric_materialize(source, offset, (NumericValue){0u, IR_ABSTRACT_INT}, dot.type, &zero) ||
+        !numeric_binary(source, offset, EXPRESSION_MULTIPLY, COMPARE_EQUAL, dot, dot, &square) ||
+        !numeric_binary(source, offset, EXPRESSION_SUBTRACT, COMPARE_EQUAL, one, square, &k) ||
+        !numeric_binary(source, offset, EXPRESSION_MULTIPLY, COMPARE_EQUAL, eta, eta, &eta_square) ||
+        !numeric_binary(source, offset, EXPRESSION_MULTIPLY, COMPARE_EQUAL, eta_square, k, &k) ||
+        !numeric_binary(source, offset, EXPRESSION_SUBTRACT, COMPARE_EQUAL, one, k, &k) ||
+        !numeric_binary(source, offset, EXPRESSION_COMPARE, COMPARE_LESS, k, zero, &negative)) return false;
+    *total_internal = negative.bits != 0u;
+    if (*total_internal) {
+        *scale = zero;
+        return true;
+    }
+    return numeric_builtin(source, offset, builtin_kind(BUILTIN_SQRT), &k, &root) &&
+        numeric_binary(source, offset, EXPRESSION_MULTIPLY, COMPARE_EQUAL, eta, dot, &product) &&
+        numeric_binary(source, offset, EXPRESSION_ADD, COMPARE_EQUAL, product, root, scale);
+}
+
 static bool geometric_vector(Source *source, uint32_t offset, const NumericBuiltin *builtin,
                               const ConstantValue *arguments, TypeId result_type, ConstantValue *out) {
     const uint32_t width = type_vector_width(source->compiler, result_type);
@@ -210,6 +245,17 @@ static bool geometric_vector(Source *source, uint32_t offset, const NumericBuilt
             !numeric_materialize(source, offset, (NumericValue){2u, IR_ABSTRACT_INT}, leaf, &two) ||
             !numeric_binary(source, offset, EXPRESSION_MULTIPLY, COMPARE_EQUAL, two, dot, &reflection_scale)) return false;
     }
+    NumericValue refraction = {0};
+    bool total_internal = false, forward_negative = false;
+    if (builtin->kind == BUILTIN_REFRACT &&
+        !refraction_scale(source, offset, arguments, &refraction, &total_internal)) return false;
+    if (builtin->kind == BUILTIN_FACE_FORWARD) {
+        NumericValue dot, zero, negative;
+        if (!dot_constant(source, offset, arguments + 1, &dot) ||
+            !numeric_materialize(source, offset, (NumericValue){0u, IR_ABSTRACT_INT}, dot.type, &zero) ||
+            !numeric_binary(source, offset, EXPRESSION_COMPARE, COMPARE_LESS, dot, zero, &negative)) return false;
+        forward_negative = negative.bits != 0u;
+    }
     for (uint32_t i = 0u; i < width; ++i) {
         NumericValue result;
         if (builtin->kind == BUILTIN_CROSS) {
@@ -223,6 +269,20 @@ static bool geometric_vector(Source *source, uint32_t offset, const NumericBuilt
                 !constant_lane(source, arguments[1], i, &normal) ||
                 !numeric_binary(source, offset, EXPRESSION_MULTIPLY, COMPARE_EQUAL, reflection_scale, normal, &correction) ||
                 !numeric_binary(source, offset, EXPRESSION_SUBTRACT, COMPARE_EQUAL, incident, correction, &result)) return false;
+        } else if (builtin->kind == BUILTIN_FACE_FORWARD) {
+            if (!constant_lane(source, arguments[0], i, &result) ||
+                (!forward_negative && !numeric_unary(source, offset, EXPRESSION_NEGATE, result, &result))) return false;
+        } else if (builtin->kind == BUILTIN_REFRACT) {
+            result = refraction;
+            if (!total_internal) {
+                NumericValue incident, normal, eta, correction;
+                if (!constant_lane(source, arguments[0], i, &incident) ||
+                    !constant_lane(source, arguments[1], i, &normal) ||
+                    !constant_lane(source, arguments[2], 0u, &eta) ||
+                    !numeric_binary(source, offset, EXPRESSION_MULTIPLY, COMPARE_EQUAL, eta, incident, &incident) ||
+                    !numeric_binary(source, offset, EXPRESSION_MULTIPLY, COMPARE_EQUAL, refraction, normal, &correction) ||
+                    !numeric_binary(source, offset, EXPRESSION_SUBTRACT, COMPARE_EQUAL, incident, correction, &result)) return false;
+            }
         } else return source_error(source, DOE_COMPILER_UNSUPPORTED, offset, "geometric builtin has no constant mapping");
         lanes[i] = (ConstantValue){.type = (TypeId)result.type, .bits = result.bits};
     }
@@ -235,7 +295,8 @@ bool builtin_constant(Source *source, uint32_t offset, const NumericBuiltin *bui
         return matrix_constant(source, offset, builtin->kind, arguments[0], result_type, out);
     if (builtin->family == BUILTIN_COMPONENT_NUMERIC || builtin->family == BUILTIN_COMPONENT_FLOAT)
         return component_constant(source, offset, builtin, arguments, result_type, out);
-    if (builtin->family == BUILTIN_FLOAT_VECTOR || builtin->family == BUILTIN_FLOAT_CROSS)
+    if (builtin->family == BUILTIN_FLOAT_VECTOR || builtin->family == BUILTIN_FLOAT_CROSS ||
+        builtin->family == BUILTIN_FLOAT_REFRACT)
         return geometric_vector(source, offset, builtin, arguments, result_type, out);
     NumericValue result;
     const bool valid = builtin->kind == BUILTIN_DOT ?
