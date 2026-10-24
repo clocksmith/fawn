@@ -17,6 +17,7 @@ const contracts = [
   './unit/root-export-parity.test.js',
   './unit/program-bundle-runner.test.js',
   './unit/full-surface-lifecycle.test.js',
+  './unit/provider-error-scopes.test.js',
   './unit/compute-buffer-identity.test.js',
   './unit/one-shot-resources.test.js',
   './unit/capability-publication.test.js',
