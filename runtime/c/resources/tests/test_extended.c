@@ -304,6 +304,22 @@ static void test_texture_blit(void)
     assert(doe_resource_texture_blit_validate(&f, &copy, DOE_RESOURCE_COPY_WEBGPU, &normalized) == DOE_RESOURCE_ASPECT);
     assert(normalized.source.aspect == WGPUTextureAspect_All);
     copy.source.aspect = WGPUTextureAspect_All;
+    {
+        /* A single-aspect depth or stencil format copies by naming its aspect. */
+        native_token depth_tokens[2] = {{0}};
+        doe_resource_texture_desc depth_desc = texture_desc();
+        depth_desc.format = WGPUTextureFormat_Depth16Unorm;
+        doe_resource_texture *depth[2];
+        for (size_t i = 0; i < 2; i++)
+            assert(doe_resource_texture_create(&c, &depth_desc, &limits, native(&f, &depth_tokens[i]), &depth[i]) == DOE_RESOURCE_OK);
+        doe_resource_texture_blit depth_copy = {.source = {.texture = depth[0], .aspect = WGPUTextureAspect_DepthOnly},
+            .destination = {.texture = depth[1], .aspect = WGPUTextureAspect_DepthOnly}, .width = 8, .height = 8, .depth_or_layers = 1};
+        assert(doe_resource_texture_blit_validate(&f, &depth_copy, DOE_RESOURCE_COPY_WEBGPU, &normalized) == DOE_RESOURCE_OK);
+        assert(normalized.source.aspect == WGPUTextureAspect_All && normalized.destination.aspect == WGPUTextureAspect_All);
+        depth_copy.destination.aspect = WGPUTextureAspect_StencilOnly;
+        assert(doe_resource_texture_blit_validate(&f, &depth_copy, DOE_RESOURCE_COPY_WEBGPU, &normalized) == DOE_RESOURCE_ASPECT);
+        for (size_t i = 0; i < 2; i++) doe_resource_texture_release(depth[i]);
+    }
     doe_resource_encoder *encoder;
     doe_resource_commands *commands;
     assert(doe_resource_encoder_create(&c, &encoder) == DOE_RESOURCE_OK);
