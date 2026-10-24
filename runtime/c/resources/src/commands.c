@@ -358,6 +358,11 @@ doe_resource_commands *doe_resource_commands_rejected(doe_resource_encoder *enco
     return commands;
 }
 
+void doe_resource_commands_invalidate(doe_resource_commands *commands)
+{
+    if (commands) commands->invalid = true;
+}
+
 doe_resource_status doe_resource_encoder_status(const doe_resource_encoder *encoder)
 {
     return encoder ? encoder->status : DOE_RESOURCE_INVALID_ARGUMENT;

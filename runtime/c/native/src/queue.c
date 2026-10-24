@@ -391,6 +391,14 @@ void wgpuQueueSubmit(WGPUQueue handle, size_t count, const WGPUCommandBuffer *ha
     } else {
         if (native_command_release(&pending->native) != NATIVE_OK) abort();
         settle_resources(pending, false);
+        /* WebGPU: a submit that fails validation invalidates every command
+         * buffer it names (this device's), not only those before the first
+         * rejection. Backend OOM/internal failures keep them resubmittable. */
+        const WGPUErrorType type = resource_status != DOE_RESOURCE_OK ?
+            native_resource_error(resource_status) : native_result_error(failure.status);
+        for (size_t i = 0; type == WGPUErrorType_Validation && i < count; ++i)
+            if (doe_resource_commands_device((doe_resource_commands *)handles[i]) == device)
+                doe_resource_commands_invalidate((doe_resource_commands *)handles[i]);
     }
     native_unlock(device);
     if (failure.status != NATIVE_OK) {
