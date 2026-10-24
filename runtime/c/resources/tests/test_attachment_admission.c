@@ -254,12 +254,101 @@ static void test_transient_color(void)
     check_pass(WGPUTextureFormat_Undefined, true, false, t, DOE_RESOURCE_RANGE);
 }
 
+static doe_resource_status begin_slices(doe_resource_config *c, doe_resource_color_attachment a,
+    doe_resource_color_attachment b, uint32_t count)
+{
+    doe_resource_render_targets targets = {.color_count = count, .colors = {a, b}};
+    doe_resource_encoder *encoder;
+    doe_resource_render_pass *pass = NULL;
+    assert(doe_resource_encoder_create(c, &encoder) == DOE_RESOURCE_OK);
+    doe_resource_status status = doe_resource_encoder_begin_render(encoder, &targets, &pass);
+    if (status == DOE_RESOURCE_OK) {
+        assert(doe_resource_render_pass_end(pass) == DOE_RESOURCE_OK);
+        doe_resource_render_pass_release(pass);
+        doe_resource_commands *commands = NULL;
+        assert(doe_resource_encoder_finish(encoder, &commands) == DOE_RESOURCE_OK);
+        size_t records;
+        const doe_resource_command *list = doe_resource_commands_borrow(commands, &records);
+        const doe_resource_render_packet *first = doe_resource_render_record_borrow(list[0].value.render);
+        assert(first->targets.colors[0].has_depth_slice == a.has_depth_slice &&
+            first->targets.colors[0].depth_slice == a.depth_slice);
+        assert(doe_resource_commands_begin_submit(commands) == DOE_RESOURCE_OK);
+        doe_resource_commands_release(commands);
+        assert(doe_resource_commands_settle(commands, DOE_RESOURCE_OK) == DOE_RESOURCE_OK);
+    }
+    doe_resource_encoder_release(encoder);
+    return status;
+}
+
+/* https://gpuweb.github.io/gpuweb/#abstract-opdef-validating-gpurenderpasscolorattachment:
+ * a 3D view renders one depth slice below its mip's depth, a 2D view none, and
+ * two slots may not render the same (texture, mip, slice). */
+static void test_depth_slices(void)
+{
+    fixture f = fresh();
+    doe_resource_config c = config(&f);
+    doe_resource_texture_limits limits = texture_limits();
+    doe_resource_texture_desc desc = texture_desc();
+    desc.dimension = WGPUTextureDimension_3D;
+    desc.depth_or_layers = 4;
+    desc.mip_levels = 2;
+    desc.usage = WGPUTextureUsage_RenderAttachment;
+    native_token tokens[4] = {{0}};
+    doe_resource_texture *volume, *flat;
+    doe_resource_view *mip0, *mip1, *plane;
+    assert(doe_resource_texture_create(&c, &desc, &limits, native(&f, &tokens[0]), &volume) == DOE_RESOURCE_OK);
+    assert(doe_resource_view_create(volume, &(doe_resource_view_desc){.mip_count = 1}, native(&f, &tokens[1]), &mip0) == DOE_RESOURCE_OK);
+    assert(doe_resource_view_create(volume, &(doe_resource_view_desc){.base_mip = 1, .mip_count = 1}, native(&f, &tokens[2]), &mip1) == DOE_RESOURCE_OK);
+    assert(doe_resource_view_description(mip0)->dimension == WGPUTextureViewDimension_3D);
+    doe_resource_texture_desc flat_desc = texture_desc();
+    flat_desc.usage = WGPUTextureUsage_RenderAttachment;
+    assert(doe_resource_texture_create(&c, &flat_desc, &limits, native(&f, &tokens[3]), &flat) == DOE_RESOURCE_OK);
+    native_token plane_token = {0};
+    assert(doe_resource_view_create(flat, &(doe_resource_view_desc){0}, native(&f, &plane_token), &plane) == DOE_RESOURCE_OK);
+    const doe_resource_color_attachment none = {0};
+    doe_resource_color_attachment slice = {.view = mip0, .load = WGPULoadOp_Clear, .store = WGPUStoreOp_Store,
+        .has_depth_slice = true, .depth_slice = 3};
+    assert(begin_slices(&c, slice, none, 1) == DOE_RESOURCE_OK);
+    slice.depth_slice = 4;
+    assert(begin_slices(&c, slice, none, 1) == DOE_RESOURCE_RANGE);
+    slice.has_depth_slice = false;
+    slice.depth_slice = 0;
+    assert(begin_slices(&c, slice, none, 1) == DOE_RESOURCE_RANGE);
+    /* Mip 1 of a depth-4 volume has two slices. */
+    slice = (doe_resource_color_attachment){.view = mip1, .load = WGPULoadOp_Clear, .store = WGPUStoreOp_Store,
+        .has_depth_slice = true, .depth_slice = 1};
+    assert(begin_slices(&c, slice, none, 1) == DOE_RESOURCE_OK);
+    slice.depth_slice = 2;
+    assert(begin_slices(&c, slice, none, 1) == DOE_RESOURCE_RANGE);
+    /* Two slots: distinct slices of one mip render together; one slice twice aliases. */
+    doe_resource_color_attachment first = {.view = mip0, .load = WGPULoadOp_Clear, .store = WGPUStoreOp_Store,
+        .has_depth_slice = true, .depth_slice = 0};
+    doe_resource_color_attachment second = first;
+    second.depth_slice = 2;
+    assert(begin_slices(&c, first, second, 2) == DOE_RESOURCE_OK);
+    second.depth_slice = 0;
+    assert(begin_slices(&c, first, second, 2) == DOE_RESOURCE_ALIAS);
+    /* A 2D view never names a depth slice. */
+    doe_resource_color_attachment planar = {.view = plane, .load = WGPULoadOp_Clear, .store = WGPUStoreOp_Store,
+        .has_depth_slice = true};
+    assert(begin_slices(&c, planar, none, 1) == DOE_RESOURCE_LAYOUT);
+    planar.has_depth_slice = false;
+    assert(begin_slices(&c, planar, none, 1) == DOE_RESOURCE_OK);
+    doe_resource_view_release(mip0);
+    doe_resource_view_release(mip1);
+    doe_resource_view_release(plane);
+    doe_resource_texture_release(volume);
+    doe_resource_texture_release(flat);
+    empty(&f);
+}
+
 int main(void)
 {
     test_texture_descriptor();
     test_transient_views();
     test_attachment_aspects();
     test_transient_color();
-    puts("attachment admission owner: 4 host suites passed; no attachment GPU execution claimed");
+    test_depth_slices();
+    puts("attachment admission owner: 5 host suites passed; no attachment GPU execution claimed");
     return 0;
 }

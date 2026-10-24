@@ -124,6 +124,8 @@ static doe_vk_status validate_pipeline(doe_vk_context *context,
      * shaders to supply it. */
     if (desc->topology == DOE_VK_POINTS && !context->caps.maintenance5) return DOE_VK_UNSUPPORTED;
     if (desc->unclipped_depth && !context->caps.depth_clamp) return DOE_VK_UNSUPPORTED;
+    if (!isfinite(desc->depth_bias_slope_scale) || !isfinite(desc->depth_bias_clamp)) return DOE_VK_INVALID_ARGUMENT;
+    if (desc->depth_bias_clamp != 0 && !context->caps.depth_bias_clamp) return DOE_VK_UNSUPPORTED;
     if (!targets->used) {
         if (desc->depth_stencil_format == 0 || desc->alpha_to_coverage) return DOE_VK_INVALID_ARGUMENT;
     } else if (fragment_absent(desc)) return DOE_VK_INVALID_ARGUMENT;
@@ -255,6 +257,9 @@ doe_vk_status doe_vk_render_pipeline_create(doe_vk_context *context,
     const VkPipelineRasterizationStateCreateInfo rasterization = {
         .sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO, .depthClampEnable = desc->unclipped_depth,
         .polygonMode = VK_POLYGON_MODE_FILL,
+        .depthBiasEnable = desc->depth_bias != 0 || desc->depth_bias_slope_scale != 0 || desc->depth_bias_clamp != 0,
+        .depthBiasConstantFactor = (float)desc->depth_bias, .depthBiasClamp = desc->depth_bias_clamp,
+        .depthBiasSlopeFactor = desc->depth_bias_slope_scale,
         .cullMode = desc->cull_mask, .frontFace = desc->clockwise_front ? 1 : 0, .lineWidth = 1.0f
     };
     const uint32_t sample_mask[2] = {(uint32_t)desc->sample_mask, (uint32_t)(desc->sample_mask >> 32)};

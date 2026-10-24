@@ -55,6 +55,11 @@ uint32_t doe_vk_format_aspects(doe_vk_texture_format format);
 uint32_t doe_vk_format_block_extent(doe_vk_texture_format format);
 /* Any non-identity channel: such a view is sampled-only. */
 bool doe_vk_texture_view_swizzled(const doe_vk_texture_view *view);
+bool doe_vk_texture_view_swizzled_desc(const doe_vk_texture_view_desc *desc);
+/* 3D color-attachment images are 2D_ARRAY_COMPATIBLE; a 2D view of one of
+ * their mips' depth slices is a render attachment. */
+bool doe_vk_texture_slice_renderable(const doe_vk_texture_desc *desc);
+bool doe_vk_texture_view_is_slice(const doe_vk_texture_view *view);
 /* One aspect-selection owner for views and transfers: ALL resolves to every
  * format aspect; DEPTH/STENCIL must be present in the format. */
 doe_vk_status doe_vk_texture_aspects(const doe_vk_texture *texture, doe_vk_texture_aspect aspect, uint32_t *out);

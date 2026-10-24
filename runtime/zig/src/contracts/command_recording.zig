@@ -18,7 +18,16 @@ pub const RenderAttachmentError = error{
     RenderAttachmentUnsupported,
 };
 
-pub const Failure = RenderAttachmentError || BufferCopyError || @import("texture_copy.zig").Error || error{ OutOfMemory, InvalidState, ImmediateDataUnsupported, TextureCopyDeviceMismatch, TextureCopyUsageMissing };
+/// WebGPU draw-time buffer validation
+/// (https://gpuweb.github.io/gpuweb/#abstract-opdef-validate-draw).
+pub const DrawError = error{
+    DrawVertexBufferMissing,
+    DrawVertexBufferOutOfBounds,
+    DrawIndexBufferMissing,
+    DrawIndexBufferOutOfBounds,
+};
+
+pub const Failure = RenderAttachmentError || BufferCopyError || DrawError || @import("texture_copy.zig").Error || error{ OutOfMemory, InvalidState, ImmediateDataUnsupported, TextureCopyDeviceMismatch, TextureCopyUsageMissing };
 
 pub fn message(cause: Failure) []const u8 {
     return switch (cause) {
@@ -30,6 +39,10 @@ pub fn message(cause: Failure) []const u8 {
         error.RenderAttachmentSampleMismatch => "render attachments and pipeline sample counts must match",
         error.RenderAttachmentFormatMismatch => "render attachment formats must match their roles and pipeline targets",
         error.RenderAttachmentUnsupported => "Vulkan rendering supports one 2D color attachment and optional depth/stencil; depth-only passes are unsupported",
+        error.DrawVertexBufferMissing => "draw requires a vertex buffer in every slot the pipeline uses",
+        error.DrawVertexBufferOutOfBounds => "draw reads past the bound vertex buffer range",
+        error.DrawIndexBufferMissing => "drawIndexed requires a bound index buffer",
+        error.DrawIndexBufferOutOfBounds => "drawIndexed reads past the bound index buffer range",
         error.OutOfMemory => "GPU command recording could not allocate owned storage",
         error.InvalidState => "GPU command recording requires an open encoder or its active pass",
         error.InvalidArgument => "GPU command recording received an invalid dependency or payload",

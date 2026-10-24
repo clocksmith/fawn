@@ -67,9 +67,27 @@ pub fn aspectMatches(format: texture.WGPUTextureFormat, aspect: u32) bool {
     };
 }
 
+/// https://gpuweb.github.io/gpuweb/#abstract-opdef-resolving-gputextureaspect:
+/// the format of a single-aspect view, or null when the format lacks the aspect.
+pub fn aspectFormat(format: texture.WGPUTextureFormat, aspect: u32) ?texture.WGPUTextureFormat {
+    if (!aspectMatches(format, aspect)) return null;
+    return switch (aspect) {
+        texture.WGPUTextureAspect_DepthOnly => switch (format) {
+            texture.WGPUTextureFormat_Depth24PlusStencil8 => texture.WGPUTextureFormat_Depth24Plus,
+            texture.WGPUTextureFormat_Depth32FloatStencil8 => texture.WGPUTextureFormat_Depth32Float,
+            else => format,
+        },
+        texture.WGPUTextureAspect_StencilOnly => texture.WGPUTextureFormat_Stencil8,
+        else => format,
+    };
+}
+
 test "texture format classifications are stable" {
     const std = @import("std");
     try std.testing.expectEqual(binding.WGPUTextureSampleType_Uint, inferSampleType(texture.WGPUTextureFormat_RGBA8Uint));
     try std.testing.expectEqual(binding.WGPUTextureSampleType_Depth, inferSampleType(texture.WGPUTextureFormat_Depth32Float));
     try std.testing.expect(aspectMatches(texture.WGPUTextureFormat_Depth24PlusStencil8, texture.WGPUTextureAspect_StencilOnly));
+    try std.testing.expectEqual(@as(?texture.WGPUTextureFormat, texture.WGPUTextureFormat_Depth24Plus), aspectFormat(texture.WGPUTextureFormat_Depth24PlusStencil8, texture.WGPUTextureAspect_DepthOnly));
+    try std.testing.expectEqual(@as(?texture.WGPUTextureFormat, texture.WGPUTextureFormat_Stencil8), aspectFormat(texture.WGPUTextureFormat_Depth32FloatStencil8, texture.WGPUTextureAspect_StencilOnly));
+    try std.testing.expectEqual(@as(?texture.WGPUTextureFormat, null), aspectFormat(texture.WGPUTextureFormat_RGBA8Unorm, texture.WGPUTextureAspect_DepthOnly));
 }

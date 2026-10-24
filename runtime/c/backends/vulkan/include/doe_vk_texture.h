@@ -183,6 +183,11 @@ doe_vk_status doe_vk_texture_view_create(doe_vk_texture *texture,
     const doe_vk_texture_view_desc *desc, doe_vk_texture_view **out, doe_vk_error *error);
 doe_vk_status doe_vk_texture_view_retain(doe_vk_texture_view *view);
 void doe_vk_texture_view_release(doe_vk_texture_view *view);
+/* A render-attachment view of depth slice `slice` of a single-mip 3D view of a
+ * color-attachment texture: a 2D view of that mip and slice in the 3D view's
+ * format. The caller releases it; render passes retain what they use. */
+doe_vk_status doe_vk_texture_view_slice_create(doe_vk_texture_view *volume, uint32_t slice,
+    doe_vk_texture_view **out, doe_vk_error *error);
 
 typedef enum doe_vk_filter { DOE_VK_FILTER_NEAREST, DOE_VK_FILTER_LINEAR } doe_vk_filter;
 typedef enum doe_vk_address { DOE_VK_ADDRESS_REPEAT, DOE_VK_ADDRESS_MIRROR, DOE_VK_ADDRESS_CLAMP } doe_vk_address;

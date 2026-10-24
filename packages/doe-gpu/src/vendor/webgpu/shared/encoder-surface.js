@@ -35,6 +35,43 @@ function normalizeImmediateDataInput(data, dataOffset = 0, size, path) {
   return bytes.subarray(dataOffset, end);
 }
 
+// setBindGroup(index, bindGroup, dynamicOffsets = []) and
+// setBindGroup(index, bindGroup, dynamicOffsetsData, dataStart, dataLength).
+// Returns the offsets as a Uint32Array copy, or null when there are none.
+function normalizeDynamicOffsets(path, argumentCount, offsets, dataStart, dataLength) {
+  if (argumentCount > 3) {
+    if (!(offsets instanceof Uint32Array)) {
+      throw new TypeError(`${path}: dynamicOffsetsData must be a Uint32Array`);
+    }
+    for (const [label, value] of [['dynamicOffsetsDataStart', dataStart], ['dynamicOffsetsDataLength', dataLength]]) {
+      if (!Number.isInteger(value) || value < 0 || value > Number.MAX_SAFE_INTEGER) {
+        throw new TypeError(`${path}: ${label} must be a non-negative integer`);
+      }
+    }
+    if (dataStart + dataLength > offsets.length) {
+      throw new RangeError(`${path}: dynamicOffsetsDataStart + dynamicOffsetsDataLength exceeds dynamicOffsetsData.length`);
+    }
+    return dataLength === 0 ? null : offsets.slice(dataStart, dataStart + dataLength);
+  }
+  if (offsets === undefined) {
+    return null;
+  }
+  if (offsets === null || typeof offsets[Symbol.iterator] !== 'function') {
+    throw new TypeError(`${path}: dynamicOffsets must be a sequence of GPUBufferDynamicOffset`);
+  }
+  const values = Array.from(offsets);
+  for (const value of values) {
+    if (!Number.isInteger(value) || value < 0 || value > UINT32_MAX) {
+      throw new TypeError(`${path}: dynamic offset ${value} is not a 32-bit unsigned integer`);
+    }
+  }
+  return values.length === 0 ? null : Uint32Array.from(values);
+}
+
+function normalizeBindGroup(bindGroup, path) {
+  return bindGroup === null ? null : assertLiveResource(bindGroup, path, 'GPUBindGroup');
+}
+
 function normalizeCopySize(copySize, path) {
   return normalizeExtent3D(copySize, path, 'copySize');
 }
@@ -95,14 +132,18 @@ function createEncoderClasses(backend) {
       );
     }
 
-    setBindGroup(index, bindGroup) {
-      this._assertOpen('GPUComputePassEncoder.setBindGroup');
-      assertIntegerInRange(index, 'GPUComputePassEncoder.setBindGroup', 'index', UINT32_RANGE);
-      backend.computePassSetBindGroup(
-        this,
-        index,
-        assertLiveResource(bindGroup, 'GPUComputePassEncoder.setBindGroup', 'GPUBindGroup'),
+    setBindGroup(index, bindGroup, dynamicOffsets, dynamicOffsetsDataStart, dynamicOffsetsDataLength) {
+      const path = 'GPUComputePassEncoder.setBindGroup';
+      this._assertOpen(path);
+      assertIntegerInRange(index, path, 'index', UINT32_RANGE);
+      const offsets = normalizeDynamicOffsets(
+        path,
+        arguments.length,
+        dynamicOffsets,
+        dynamicOffsetsDataStart,
+        dynamicOffsetsDataLength,
       );
+      backend.computePassSetBindGroup(this, index, normalizeBindGroup(bindGroup, path), offsets);
     }
 
     setImmediates(index, data, dataOffset = 0, size) {
@@ -194,14 +235,18 @@ function createEncoderClasses(backend) {
       );
     }
 
-    setBindGroup(index, bindGroup) {
-      this._assertOpen('GPURenderPassEncoder.setBindGroup');
-      assertIntegerInRange(index, 'GPURenderPassEncoder.setBindGroup', 'index', UINT32_RANGE);
-      backend.renderPassSetBindGroup(
-        this,
-        index,
-        assertLiveResource(bindGroup, 'GPURenderPassEncoder.setBindGroup', 'GPUBindGroup'),
+    setBindGroup(index, bindGroup, dynamicOffsets, dynamicOffsetsDataStart, dynamicOffsetsDataLength) {
+      const path = 'GPURenderPassEncoder.setBindGroup';
+      this._assertOpen(path);
+      assertIntegerInRange(index, path, 'index', UINT32_RANGE);
+      const offsets = normalizeDynamicOffsets(
+        path,
+        arguments.length,
+        dynamicOffsets,
+        dynamicOffsetsDataStart,
+        dynamicOffsetsDataLength,
       );
+      backend.renderPassSetBindGroup(this, index, normalizeBindGroup(bindGroup, path), offsets);
     }
 
     setImmediates(index, data, dataOffset = 0, size) {
@@ -384,14 +429,18 @@ function createEncoderClasses(backend) {
       );
     }
 
-    setBindGroup(index, bindGroup) {
-      this._assertOpen('GPURenderBundleEncoder.setBindGroup');
-      assertIntegerInRange(index, 'GPURenderBundleEncoder.setBindGroup', 'index', UINT32_RANGE);
-      backend.renderBundleEncoderSetBindGroup(
-        this,
-        index,
-        assertLiveResource(bindGroup, 'GPURenderBundleEncoder.setBindGroup', 'GPUBindGroup'),
+    setBindGroup(index, bindGroup, dynamicOffsets, dynamicOffsetsDataStart, dynamicOffsetsDataLength) {
+      const path = 'GPURenderBundleEncoder.setBindGroup';
+      this._assertOpen(path);
+      assertIntegerInRange(index, path, 'index', UINT32_RANGE);
+      const offsets = normalizeDynamicOffsets(
+        path,
+        arguments.length,
+        dynamicOffsets,
+        dynamicOffsetsDataStart,
+        dynamicOffsetsDataLength,
       );
+      backend.renderBundleEncoderSetBindGroup(this, index, normalizeBindGroup(bindGroup, path), offsets);
     }
 
     setImmediates(index, data, dataOffset = 0, size) {
@@ -560,9 +609,6 @@ function createEncoderClasses(backend) {
       const dstNative = assertLiveResource(dst, 'GPUCommandEncoder.copyBufferToBuffer', 'GPUBuffer');
       const size = explicitSize === undefined ? Math.max(0, srcBuffer.size - srcOffset) : explicitSize;
       assertIntegerInRange(size, 'GPUCommandEncoder.copyBufferToBuffer', 'size', NON_NEGATIVE_RANGE);
-      if (size === 0) {
-        return;
-      }
       backend.commandEncoderCopyBufferToBuffer(
         this,
         srcNative,

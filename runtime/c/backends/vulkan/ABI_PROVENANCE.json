@@ -5,12 +5,12 @@
     "vulkan_types.zig": "c3383b635816af941e9d8e882b5dc97643c626bdf3cc1549f4d9d1a4a9363e32",
     "vk_structs.zig": "128ed4443455c18c5d4accd349f2abe786f659b04b3d2b0850fd1a239f908db9",
     "vk_capability_structs.zig": "1af41c016be269ec93b56c01e21b2afe0e3bb9528ebf108b0a157b37b285c6b4",
-    "vk_constants.zig": "671ce89da09f9fb647b56d7c315b9465db66d1943a51c801ab9923cc43f82918",
-    "vk_functions.zig": "329f4092d2b6e8fd90a1de254c0077e8490b890d152617e799b014d7b414732a",
+    "vk_constants.zig": "81a39de2ead1636c45d53ffc597d3c567c97c883a11e82c08c80379577ae46f3",
+    "vk_functions.zig": "016f8c73401fa94eff21afd95cb0bed66dcdcef2d782adc38a31c9b6efe6c1a8",
     "vk_formats.zig": "ec953998cab8cab6679c26fd0431d91ab0bc9f006e73f6cbf94db6f089f2880d",
     "vk_samplers.zig": "d69660a49a4d143b1fddbd59a8140c424f598ff37ce020553ea9f5b15c641caf",
     "vk_feature_caps.zig": "3317a92ff51e84baacc6de5f7fea0063a1ed8e99e8e81493606a170fd8298e41",
-    "vk_render_pipeline.zig": "5cd563db312049e78ba04f7832ea5df74edf9b14e27dbe525020aa7eae7026eb",
+    "vk_render_pipeline.zig": "1a363abb860087a1aaafccd12b00526830975facea13377f6e1df70e8e50c44d",
     "vulkan_surface.zig": "f095055b695e9c6b9fd3821b98f1f54f949746c701660d4568207046cf3c2ba3",
     "vk_surface_sync.zig": "7652fdf18cfcfae843a3c3ef5985b45863a3e27833123409b61156ab25b0eb87"
   },
@@ -217,6 +217,7 @@
       "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ID_PROPERTIES": 1000071004,
       "VK_ATTACHMENT_UNUSED": 4294967295,
       "VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT": 8,
+      "VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT": 32,
       "VK_STRUCTURE_TYPE_IMAGE_FORMAT_LIST_CREATE_INFO": 1000147000,
       "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_5_FEATURES_KHR": 1000470000,
       "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_3_PROPERTIES": 1000168000
@@ -476,28 +477,28 @@
   },
   "retained_functions": {
     "vkCmdDrawIndirect": {
-      "source": "vk_functions.zig:97",
+      "source": "vk_functions.zig:99",
       "signature": "void(VkCommandBuffer,VkBuffer,VkDeviceSize,u32,u32)",
       "usage": "One guarded nonindexed draw per call, stride16; drawIndirectFirstInstance remains disabled.",
       "result": "void",
       "parameters": "VkCommandBuffer, VkBuffer, VkDeviceSize, uint32_t, uint32_t"
     },
     "vkCmdBindIndexBuffer": {
-      "source": "vk_functions.zig:94",
+      "source": "vk_functions.zig:96",
       "signature": "void(VkCommandBuffer,VkBuffer,VkDeviceSize,u32)",
       "result": "void",
       "parameters": "VkCommandBuffer, VkBuffer, VkDeviceSize, uint32_t",
       "usage": "Binds the exact public index buffer offset per draw; the native call carries no size, so the bound range is enforced by direct admission and the GPU guard."
     },
     "vkCmdDrawIndexed": {
-      "source": "vk_functions.zig:96",
+      "source": "vk_functions.zig:98",
       "signature": "void(VkCommandBuffer,u32,u32,u32,i32,u32)",
       "result": "void",
       "parameters": "VkCommandBuffer, uint32_t, uint32_t, uint32_t, int32_t, uint32_t",
       "usage": "Direct indexed draw after exact firstIndex+indexCount range admission; signed base vertex."
     },
     "vkCmdDrawIndexedIndirect": {
-      "source": "vk_functions.zig:98",
+      "source": "vk_functions.zig:100",
       "signature": "void(VkCommandBuffer,VkBuffer,VkDeviceSize,u32,u32)",
       "result": "void",
       "parameters": "VkCommandBuffer, VkBuffer, VkDeviceSize, uint32_t, uint32_t",
@@ -513,11 +514,11 @@
   },
   "retained_constants": {
     "VK_INDEX_TYPE_UINT16": {
-      "source": "vk_constants.zig:540",
+      "source": "vk_constants.zig:542",
       "value": 0
     },
     "VK_INDEX_TYPE_UINT32": {
-      "source": "vk_constants.zig:541",
+      "source": "vk_constants.zig:543",
       "value": 1
     },
     "VK_FORMAT_R8_UNORM": {

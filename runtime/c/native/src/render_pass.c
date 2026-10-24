@@ -35,11 +35,19 @@ WGPURenderPassEncoder wgpuCommandEncoderBeginRenderPass(WGPUCommandEncoder handl
                 doe_resource_view_texture((doe_resource_view *)color->view));
             /* Discard leaves the subresource undefined in the backend's per-aspect
              * owner; later loads, copies and bindings see real zero clears. */
-            valid = !color->nextInChain && parent && color->depthSlice == WGPU_DEPTH_SLICE_UNDEFINED &&
+            valid = !color->nextInChain && parent &&
                 (color->storeOp == WGPUStoreOp_Store || color->storeOp == WGPUStoreOp_Discard);
+            const bool sliced = color->depthSlice != WGPU_DEPTH_SLICE_UNDEFINED;
+            /* Only the Vulkan backend renders 3D slices; Metal and D3D12 keep
+             * rejecting a defined depthSlice as unsupported. */
+            if (valid && sliced && device->backend.kind != WGPUBackendType_Vulkan) {
+                valid = false;
+                rejected = DOE_RESOURCE_UNSUPPORTED;
+            }
             targets.colors[i] = (doe_resource_color_attachment){.view=(doe_resource_view *)color->view,
                 .resolve_target=(doe_resource_view *)color->resolveTarget,.load=color->loadOp,.store=color->storeOp,
-                .clear={color->clearValue.r,color->clearValue.g,color->clearValue.b,color->clearValue.a}};
+                .clear={color->clearValue.r,color->clearValue.g,color->clearValue.b,color->clearValue.a},
+                .has_depth_slice=sliced,.depth_slice=sliced ? color->depthSlice : 0};
             const doe_resource_view_desc *view = doe_resource_view_description(targets.colors[i].view);
             doe_vk_clear_color converted;
             if (valid && color->loadOp == WGPULoadOp_Clear &&

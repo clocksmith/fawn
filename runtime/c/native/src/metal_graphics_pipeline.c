@@ -150,9 +150,10 @@ WGPURenderPipeline native_metal_create_render_pipeline(native_device *device,
     doe_resource_render_pipeline_desc resource = {.samples=descriptor->multisample.count,
         .topology=descriptor->primitive.topology, .strip_index_format=descriptor->primitive.stripIndexFormat,
         .color_count=fragment ? (uint32_t)fragment->targetCount : 0};
-    native_graphics_limits interfaces = {60,60};
+    native_graphics_limits interfaces = {60,60,false}; /* Metal admission of fragment builtins is unverified. */
     if (!native_render_fixed(device->features, descriptor, &fixed) || fixed.unclipped_depth ||
         !native_render_depth(device->features, descriptor->depthStencil, &fixed, &resource) ||
+        fixed.depth_bias || fixed.depth_bias_slope_scale != 0 || fixed.depth_bias_clamp != 0 ||
         !native_render_interfaces(stages, stage_count, &descriptor->vertex, fragment,
             descriptor->multisample.alphaToCoverageEnabled, fixed.topology == DOE_VK_POINTS,
             &interfaces, &device->backend.limits)) return NULL;

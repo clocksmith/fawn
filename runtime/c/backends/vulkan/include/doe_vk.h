@@ -150,6 +150,11 @@ typedef struct doe_vk_caps {
     bool depth_clamp;
     /* Enabled textureCompressionBC: BC formats report format caps only then. */
     bool texture_compression_bc;
+    /* Enabled sampleRateShading: fragment shaders may read sample_index and use
+     * per-sample interpolation (SPIR-V SampleRateShading). */
+    bool sample_rate_shading;
+    /* Enabled depthBiasClamp: pipelines may clamp a nonzero depth bias. */
+    bool depth_bias_clamp;
 } doe_vk_caps;
 
 /* One owned reference on success. Objects retain their creating context. */

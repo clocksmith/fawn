@@ -7,13 +7,26 @@ static doe_resource_status record_draw(doe_resource_render_pass *pass, bool boun
     bool indexed, uint32_t count, uint32_t instances, uint32_t first,
     int32_t base_vertex, uint32_t first_instance, doe_resource_buffer *arguments, uint64_t indirect_offset);
 
+/* https://gpuweb.github.io/gpuweb/#abstract-opdef-validating-gpurenderpasscolorattachment:
+ * a 3D view renders exactly one depth slice below its mip's depth; any other
+ * view (2D, or a single-layer 2D array) has no depth slice. `slice` is NULL
+ * for depth/stencil and resolve views, which are never 3D. */
 static doe_resource_status validate_attachment(void *device, const doe_resource_view *view,
-    bool depth, uint32_t extent[2])
+    bool depth, const doe_resource_color_attachment *slice, uint32_t extent[2])
 {
     if (!view || !resource_texture_available(view->texture)) return DOE_RESOURCE_UNAVAILABLE;
     if (view->base.config.device.identity != device) return DOE_RESOURCE_DEVICE_MISMATCH;
     if (!(view->desc.usage & WGPUTextureUsage_RenderAttachment)) return DOE_RESOURCE_USAGE;
-    if (view->desc.dimension != WGPUTextureViewDimension_2D) return DOE_RESOURCE_UNSUPPORTED;
+    if (slice && view->desc.dimension == WGPUTextureViewDimension_3D) {
+        if (view->desc.base_mip >= 32) return DOE_RESOURCE_LAYOUT;
+        uint32_t slices = view->texture->desc.depth_or_layers >> view->desc.base_mip;
+        if (!slice->has_depth_slice || slice->depth_slice >= (slices ? slices : 1)) return DOE_RESOURCE_RANGE;
+    } else if (slice && slice->has_depth_slice) {
+        return DOE_RESOURCE_LAYOUT;
+    } else if (view->desc.dimension != WGPUTextureViewDimension_2D &&
+        view->desc.dimension != WGPUTextureViewDimension_2DArray) {
+        return DOE_RESOURCE_UNSUPPORTED;
+    }
     if (view->desc.mip_count != 1 || view->desc.layer_count != 1 ||
         resource_view_aspects(view) != resource_format_aspects(view->texture->desc.format) ||
         view->desc.base_mip >= 32)
@@ -55,7 +68,7 @@ static doe_resource_status validate_targets(const doe_resource_config *config,
             continue;
         }
         uint32_t color_extent[2];
-        status = validate_attachment(device, color->view, false, color_extent);
+        status = validate_attachment(device, color->view, false, color, color_extent);
         if (status != DOE_RESOURCE_OK) return status;
         if (sized && (extent[0] != color_extent[0] || extent[1] != color_extent[1] ||
             samples != color->view->texture->desc.samples)) return DOE_RESOURCE_LAYOUT;
@@ -68,7 +81,9 @@ static doe_resource_status validate_targets(const doe_resource_config *config,
         for (uint32_t j = 0; j < i; j++) {
             const doe_resource_view *other = targets->colors[j].view;
             if (other && other->texture == color->view->texture && other->desc.base_mip == color->view->desc.base_mip &&
-                other->desc.base_layer == color->view->desc.base_layer) return DOE_RESOURCE_ALIAS;
+                other->desc.base_layer == color->view->desc.base_layer &&
+                (!color->has_depth_slice || targets->colors[j].depth_slice == color->depth_slice))
+                return DOE_RESOURCE_ALIAS;
         }
         transient = (color->view->desc.usage & WGPUTextureUsage_TransientAttachment) != 0;
         if (!valid_operations(true, false, transient, color->load, color->store))
@@ -77,7 +92,7 @@ static doe_resource_status validate_targets(const doe_resource_config *config,
             for (size_t c = 0; c < 4; c++) if (!isfinite(color->clear[c])) return DOE_RESOURCE_RANGE;
         if (color->resolve_target) {
             uint32_t resolve_extent[2];
-            status = validate_attachment(device, color->resolve_target, false, resolve_extent);
+            status = validate_attachment(device, color->resolve_target, false, NULL, resolve_extent);
             if (status != DOE_RESOURCE_OK) return status;
             const doe_resource_view *resolve = color->resolve_target;
             if (color->view->texture->desc.samples <= 1 || resolve->texture->desc.samples != 1 ||
@@ -95,7 +110,7 @@ static doe_resource_status validate_targets(const doe_resource_config *config,
     if (status != DOE_RESOURCE_OK) return status;
     if (targets->depth_stencil) {
         uint32_t depth_extent[2];
-        status = validate_attachment(device, targets->depth_stencil, true, depth_extent);
+        status = validate_attachment(device, targets->depth_stencil, true, NULL, depth_extent);
         if (status != DOE_RESOURCE_OK) return status;
         if (sized && (extent[0] != depth_extent[0] || extent[1] != depth_extent[1] ||
             samples != targets->depth_stencil->texture->desc.samples))

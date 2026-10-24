@@ -433,10 +433,11 @@ bool get_bool_prop(napi_env env, napi_value obj, const char* key) {
     return out;
 }
 
+/* A WebIDL dictionary member whose value is undefined is not present. */
 bool has_prop(napi_env env, napi_value obj, const char* key) {
     bool result = false;
     napi_has_named_property(env, obj, key, &result);
-    return result;
+    return result && prop_type(env, obj, key) != napi_undefined;
 }
 
 napi_value get_prop(napi_env env, napi_value obj, const char* key) {

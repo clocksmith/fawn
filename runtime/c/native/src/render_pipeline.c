@@ -83,13 +83,15 @@ WGPURenderPipeline native_create_render_pipeline(native_device *device,
     doe_vk_vertex_layout layouts[DOE_VK_MAX_VERTEX_BUFFERS];
     doe_vk_vertex_attribute attributes[DOE_VK_MAX_VERTEX_ATTRIBUTES];
     native_graphics_limits interface_limits = {device->backend.value.vulkan.caps.max_vertex_output_components,
-        device->backend.value.vulkan.caps.max_fragment_input_components};
+        device->backend.value.vulkan.caps.max_fragment_input_components,
+        device->backend.value.vulkan.caps.sample_rate_shading};
     if (!native_render_fixed(device->features, descriptor, &native) ||
         !native_render_depth(device->features, descriptor->depthStencil, &native, &resource) ||
         !vertices(&descriptor->vertex, &native, &resource, &device->backend.limits, layouts, attributes) ||
         !native_render_interfaces(stages, stage_count, &descriptor->vertex, fragment,
             descriptor->multisample.alphaToCoverageEnabled, descriptor->primitive.topology == WGPUPrimitiveTopology_PointList,
-            &interface_limits, &device->backend.limits)) return NULL;
+            &interface_limits, &device->backend.limits) ||
+        !native_render_fragment_depth(stages, stage_count, descriptor->depthStencil)) return NULL;
     native_pipeline *payload = calloc(1, sizeof(*payload));
     if (!payload) { *error = (native_pipeline_error){WGPUErrorType_OutOfMemory,"render pipeline payload allocation failed"}; return NULL; }
     payload->device = device;

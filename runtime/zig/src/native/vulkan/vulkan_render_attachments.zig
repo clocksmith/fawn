@@ -6,6 +6,8 @@ const objects = @import("../support/doe_native_object_types.zig");
 const helpers = @import("../support/doe_native_object_helpers.zig");
 
 const Error = contract.RenderAttachmentError;
+const model_render_types = @import("../../contracts/model/model_render_types.zig");
+const vertex_formats = @import("../../contracts/vertex_format.zig");
 const Extent = struct { width: u32, height: u32 };
 
 fn validateView(device: *objects.DoeDevice, raw: ?*anyopaque, depth: bool) Error!*objects.DoeTextureView {
@@ -78,6 +80,83 @@ pub fn validateDraw(pass: *const objects.DoeRenderPass, clear_only: bool) Error!
         pipeline.depth_stencil_format != (if (depth) |view| view.format else @as(u32, 0)))
         return error.RenderAttachmentFormatMismatch;
     if (pipeline.sample_count != color.tex.sample_count) return error.RenderAttachmentSampleMismatch;
+}
+
+/// The draw parameters WebGPU validates against bound buffer ranges;
+/// indirect draws carry none (their bounds are not CPU-validated).
+pub const Draw = union(enum) {
+    direct: struct { vertex_count: u32, instance_count: u32, first_vertex: u32, first_instance: u32 },
+    indexed: struct { index_count: u32, instance_count: u32, first_index: u32, first_instance: u32 },
+    indirect,
+};
+
+fn boundSize(pass: *const objects.DoeRenderPass, slot: usize, buffer: *const objects.DoeBuffer) u64 {
+    const size = pass.vertex_buffer_sizes[slot];
+    return if (size == std.math.maxInt(u64)) buffer.size -| pass.vertex_buffer_offsets[slot] else size;
+}
+
+/// https://gpuweb.github.io/gpuweb/#abstract-opdef-validate-draw: every
+/// pipeline vertex slot has a bound buffer; a direct draw reads
+/// (strideCount - 1) * arrayStride + lastStride bytes of each vertex-step
+/// buffer (vertex count) and each instance-step buffer (instance count);
+/// an indexed draw checks instance-step buffers and its index range.
+pub fn validateDrawBounds(pass: *const objects.DoeRenderPass, draw: Draw) contract.DrawError!void {
+    const pipeline = pass.pipeline orelse return;
+    const count = @min(pipeline.vertex_layout_count, model_render_types.MAX_VERTEX_BUFFERS);
+    for (pipeline.vertex_layouts[0..count], 0..) |layout, slot| {
+        if (layout.step_mode == model_render_types.WGPUVertexStepMode_Undefined and layout.attribute_count == 0) continue;
+        const buffer = pass.vertex_buffers[slot] orelse return error.DrawVertexBufferMissing;
+        const instance = layout.step_mode == model_render_types.WGPUVertexStepMode_Instance;
+        const stride_count: u64 = switch (draw) {
+            .direct => |d| if (instance) @as(u64, d.first_instance) + d.instance_count else @as(u64, d.first_vertex) + d.vertex_count,
+            .indexed => |d| if (instance) @as(u64, d.first_instance) + d.instance_count else continue,
+            .indirect => continue,
+        };
+        if (stride_count == 0) continue;
+        var last_stride: u64 = 0;
+        for (layout.attributes[0..@min(layout.attribute_count, model_render_types.MAX_VERTEX_ATTRIBUTES)]) |attribute| {
+            const format = vertex_formats.fromCode(attribute.format) catch continue;
+            last_stride = @max(last_stride, attribute.offset +| vertex_formats.byteSize(format));
+        }
+        const required = (stride_count - 1) *| layout.array_stride +| last_stride;
+        if (required > boundSize(pass, slot, buffer)) return error.DrawVertexBufferOutOfBounds;
+    }
+    switch (draw) {
+        .indexed => |d| {
+            if (pass.index_buffer == null) return error.DrawIndexBufferMissing;
+            const index_bytes: u64 = if (pass.index_format == model_render_types.WGPUIndexFormat_Uint32) 4 else 2;
+            const size = if (pass.index_buffer_size == std.math.maxInt(u64)) pass.index_buffer.?.size -| pass.index_offset else pass.index_buffer_size;
+            if (@as(u64, d.first_index) + d.index_count > size / index_bytes) return error.DrawIndexBufferOutOfBounds;
+        },
+        else => {},
+    }
+}
+
+test "draws read within bound vertex and index buffer ranges" {
+    var device = objects.DoeDevice{};
+    var encoder = objects.DoeCommandEncoder{ .dev = &device };
+    var pipeline = objects.DoeRenderPipeline{ .device_ref = &device, .vertex_layout_count = 2 };
+    pipeline.vertex_layouts[1] = .{ .array_stride = 8, .step_mode = model_render_types.WGPUVertexStepMode_Vertex, .attribute_count = 1 };
+    pipeline.vertex_layouts[1].attributes[0] = .{ .format = @intFromEnum(vertex_formats.Format.float32), .offset = 4 };
+    pipeline.vertex_layouts[0] = .{ .step_mode = model_render_types.WGPUVertexStepMode_Undefined };
+    var buffer = objects.DoeBuffer{ .size = 64 };
+    var pass = objects.DoeRenderPass{ .enc = &encoder, .pipeline = &pipeline };
+    const draw = Draw{ .direct = .{ .vertex_count = 3, .instance_count = 1, .first_vertex = 0, .first_instance = 0 } };
+    try std.testing.expectError(error.DrawVertexBufferMissing, validateDrawBounds(&pass, draw));
+    pass.vertex_buffers[1] = &buffer;
+    pass.vertex_buffer_sizes[1] = 2 * 8 + 8;
+    try validateDrawBounds(&pass, draw);
+    pass.vertex_buffer_sizes[1] = 2 * 8 + 7;
+    try std.testing.expectError(error.DrawVertexBufferOutOfBounds, validateDrawBounds(&pass, draw));
+    // Indexed draws do not bound vertex-step buffers, but do bound indices.
+    const indexed = Draw{ .indexed = .{ .index_count = 4, .instance_count = 1, .first_index = 1, .first_instance = 0 } };
+    try std.testing.expectError(error.DrawIndexBufferMissing, validateDrawBounds(&pass, indexed));
+    pass.index_buffer = &buffer;
+    pass.index_format = model_render_types.WGPUIndexFormat_Uint16;
+    pass.index_buffer_size = 10;
+    try validateDrawBounds(&pass, indexed);
+    pass.index_buffer_size = 9;
+    try std.testing.expectError(error.DrawIndexBufferOutOfBounds, validateDrawBounds(&pass, indexed));
 }
 
 test "attachment admission compares selected mip extent and preserves format and sample identities" {
