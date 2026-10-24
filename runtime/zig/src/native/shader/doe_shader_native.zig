@@ -40,6 +40,7 @@ const DoePipelineLayout = native_types.DoePipelineLayout;
 const DoeBindGroupLayout = native_types.DoeBindGroupLayout;
 const CompilationMessageKind = native_shared.CompilationMessageKind;
 const ShaderDiagnostic = @import("shader_diagnostic.zig").ShaderDiagnostic;
+const compute_bind_groups = @import("../compute/doe_compute_bind_groups.zig");
 const device_lifecycle = @import("../lifecycle/doe_instance_device_native.zig");
 threadlocal var last_diagnostic = ShaderDiagnostic{};
 pub fn lastErrorSnapshot() ShaderDiagnostic {
@@ -682,6 +683,18 @@ fn createComputePipelineVulkanOwned(sm: *DoeShaderModule, layout: ?*DoePipelineL
         alloc.destroy(cp);
         return null;
     };
+    if (layout) |pipeline_layout| {
+        if (cp.vk_required_binding_kinds_ready and !compute_bind_groups.pipelineLayoutAdmitsBindings(pipeline_layout, &cp.vk_required_binding_kinds)) {
+            diagnostic.set_last_error_stage_name("native_compile");
+            diagnostic.set_last_error_kind("PipelineLayoutMismatch");
+            diagnostic.set_last_error("compute pipeline layout lacks a binding the entry point uses, or has it with another resource type");
+            if (cp.dispatch_preconditions.len > 0) alloc.free(cp.dispatch_preconditions);
+            if (cp.texture_dispatch_preconditions.len > 0) alloc.free(cp.texture_dispatch_preconditions);
+            vk_compute.vulkan_release_compute_pipeline(cp);
+            alloc.destroy(cp);
+            return null;
+        }
+    }
     if (layout) |pipeline_layout| native_helpers.object_add_ref(DoePipelineLayout, toOpaque(pipeline_layout));
     native_helpers.object_add_ref(DoeShaderModule, toOpaque(sm));
     return toOpaque(cp);

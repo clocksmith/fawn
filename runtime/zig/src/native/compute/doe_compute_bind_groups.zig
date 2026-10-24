@@ -128,13 +128,7 @@ pub fn validatePipelineBindGroups(
             const bound_layout = bound.layout orelse return error.BindGroupIncompatible;
             if (auto_layout_id == 0 or bound_layout.auto_layout_id != auto_layout_id)
                 return error.BindGroupIncompatible;
-            const entry = for (layoutEntries(bound_layout)) |candidate| {
-                if (candidate.binding == binding) break candidate;
-            } else return error.BindGroupIncompatible;
-            const external = binding_contract.layoutResourceKindCode(.external_texture);
-            const texture = binding_contract.layoutResourceKindCode(.texture);
-            if (entry.resource_kind != kind and !(entry.resource_kind == external and kind == texture))
-                return error.BindGroupIncompatible;
+            if (!layoutHasBinding(bound_layout, binding, kind)) return error.BindGroupIncompatible;
         }
         return;
     };
@@ -148,6 +142,31 @@ pub fn validatePipelineBindGroups(
         if (bound_layout != required and !layoutsEquivalent(bound_layout, required))
             return error.BindGroupIncompatible;
     }
+}
+
+/// Every binding the entry points use (`required_kinds`, per flat slot)
+/// must be in its group of the explicit pipeline layout with a matching
+/// resource kind (https://gpuweb.github.io/gpuweb/#abstract-opdef-validating-shader-binding).
+pub fn pipelineLayoutAdmitsBindings(layout: *const native_types.DoePipelineLayout, required_kinds: *const [MAX_FLAT_BIND]u8) bool {
+    for (required_kinds, 0..) |kind, slot| {
+        if (kind == 0) continue;
+        const group_index = slot / MAX_BIND;
+        if (group_index >= layout.bind_group_layout_count) return false;
+        const group_layout = layout.bind_group_layouts[group_index] orelse return false;
+        if (!layoutHasBinding(group_layout, @intCast(slot % MAX_BIND), kind)) return false;
+    }
+    return true;
+}
+
+/// The layout has an entry for `binding` of resource kind `kind`; an
+/// external texture entry serves a texture binding.
+fn layoutHasBinding(layout: *const native_types.DoeBindGroupLayout, binding: u32, kind: u8) bool {
+    const entry = for (layoutEntries(layout)) |candidate| {
+        if (candidate.binding == binding) break candidate;
+    } else return false;
+    const external = binding_contract.layoutResourceKindCode(.external_texture);
+    const texture = binding_contract.layoutResourceKindCode(.texture);
+    return entry.resource_kind == kind or (entry.resource_kind == external and kind == texture);
 }
 
 fn layoutEntries(layout: *const native_types.DoeBindGroupLayout) []const native_shared.DoeBindGroupLayoutEntry {
@@ -271,6 +290,26 @@ test "validateDrawBindGroups compares every layout entry member, including visib
     try validateDrawBindGroups(&pipeline, &.{&bound});
     try std.testing.expectError(error.DrawBindGroupMissing, validateDrawBindGroups(&pipeline, &.{null}));
     try std.testing.expectError(error.DrawBindGroupIncompatible, validateDrawBindGroups(&pipeline, &.{&wrong}));
+}
+
+test "pipelineLayoutAdmitsBindings requires each used binding in its group with a matching kind" {
+    var entries = [_]native_shared.DoeBindGroupLayoutEntry{.{ .binding = 0, .resource_kind = 1 }};
+    var group = native_types.DoeBindGroupLayout{ .entry_count = 1, .entries = entries[0..] };
+    var empty = native_types.DoeBindGroupLayout{};
+    var layout = native_types.DoePipelineLayout{ .bind_group_layout_count = 2 };
+    layout.bind_group_layouts[0] = &empty;
+    layout.bind_group_layouts[1] = &group;
+    var kinds = [_]u8{0} ** MAX_FLAT_BIND;
+    kinds[flatBindSlot(1, 0)] = 1;
+    try std.testing.expect(pipelineLayoutAdmitsBindings(&layout, &kinds));
+    kinds[flatBindSlot(0, 0)] = 1;
+    try std.testing.expect(!pipelineLayoutAdmitsBindings(&layout, &kinds));
+    kinds[flatBindSlot(0, 0)] = 0;
+    kinds[flatBindSlot(1, 0)] = 3;
+    try std.testing.expect(!pipelineLayoutAdmitsBindings(&layout, &kinds));
+    kinds[flatBindSlot(1, 0)] = 0;
+    kinds[flatBindSlot(2, 0)] = 1;
+    try std.testing.expect(!pipelineLayoutAdmitsBindings(&layout, &kinds));
 }
 
 test "collectFlatResources preserves separate flattened texture and sampler slots" {

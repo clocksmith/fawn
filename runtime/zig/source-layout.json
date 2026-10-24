@@ -3530,8 +3530,8 @@
       },
       "src/native/compute/doe_compute_bind_groups.zig": {
         "decision": "Keep",
-        "moduleSha256": "57903af500e437402e72b9ae38352e1e757377a54fecaa59052e6ff9aa6f7efe",
-        "reason": "Keep: reachable native implementation with private behavior tests and no merge, elevation, recomposition, or deletion signal. Applies dynamic offsets to flattened bindings and checks explicit-layout bind groups at dispatch. Dispatch validation also checks automatic-layout bindings by required resource kind. Pipeline bind group validation is shared by dispatch and draws. Automatic-layout pipelines accept only groups from their own layouts; group equivalence includes the exclusive pipeline.",
+        "moduleSha256": "04e212c3b2c2d7d6e2a7f10329edb2bc1bc0add467f88a84b549009d2e816787",
+        "reason": "Keep: reachable native implementation with private behavior tests and no merge, elevation, recomposition, or deletion signal. Applies dynamic offsets to flattened bindings and checks explicit-layout bind groups at dispatch. Dispatch validation also checks automatic-layout bindings by required resource kind. Pipeline bind group validation is shared by dispatch and draws. Automatic-layout pipelines accept only groups from their own layouts; group equivalence includes the exclusive pipeline. pipelineLayoutAdmitsBindings checks entry-point bindings against an explicit pipeline layout.",
         "reviewer": "doe-c-claude-indexed/2026-10-24"
       },
       "src/native/compute/doe_compute_ext_native.zig": {
@@ -3722,9 +3722,9 @@
       },
       "src/native/shader/doe_shader_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "24be375901aa888c5f4de1f30c46fc7ab14bdd0917b82778b4b647061afebd58",
-        "reason": "Keep: Shader owner validates and retains WGSL for D3D12; routes compute to bounded native integration; releases D3D12 PSO/root through COM. Failed module and synchronous compute pipeline creation generate the device error (OutOfMemory for allocation failure, otherwise validation); async creation reports through its callback only.",
-        "reviewer": "doe-c-claude-surface/2026-10-23"
+        "moduleSha256": "dd3b4120fef9d5db16cd42152cb03e0c6c3bd717a013ece34fc6f90eca690076",
+        "reason": "Keep: Shader owner validates and retains WGSL for D3D12; routes compute to bounded native integration; releases D3D12 PSO/root through COM. Failed module and synchronous compute pipeline creation generate the device error (OutOfMemory for allocation failure, otherwise validation); async creation reports through its callback only. Compute pipeline creation rejects explicit layouts that lack a binding the entry point uses.",
+        "reviewer": "doe-c-claude-indexed/2026-10-24"
       },
       "src/native/shader/doe_shader_translation_cache.zig": {
         "decision": "Keep",
@@ -3848,8 +3848,8 @@
       },
       "src/native/vulkan/vulkan_render_pipeline_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "60ca2ff8cd034ca11b1512b4394f0eb0b69eb3a0de64da644f475f44aa1bbffb",
-        "reason": "Keep: native attachment admission owns view and pipeline compatibility; command recording preserves typed validation failures before submission. Backend execution and resource retirement retain their existing owners. The multisample mask and alpha-to-coverage reach the pipeline object. Render pipelines record required binding kinds from vertex and fragment entry points. Render pipeline creation rejects vertex or fragment entry points that do not name a function of that stage.",
+        "moduleSha256": "09106e1b3a3b933bb2bd398db95c72b2637ca23ee8b0ec5576b08b73bb5efce0",
+        "reason": "Keep: native attachment admission owns view and pipeline compatibility; command recording preserves typed validation failures before submission. Backend execution and resource retirement retain their existing owners. The multisample mask and alpha-to-coverage reach the pipeline object. Render pipelines record required binding kinds from vertex and fragment entry points. Render pipeline creation rejects vertex or fragment entry points that do not name a function of that stage. Render pipeline creation rejects explicit layouts that lack a binding the entry points use.",
         "reviewer": "doe-c-claude-indexed/2026-10-24"
       },
       "src/native/vulkan/vulkan_render_shared.zig": {
