@@ -5,6 +5,7 @@ import { execFileSync } from 'node:child_process';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { checkNativeAbiLayouts } from './native-abi-layout.js';
+import { writeAddonSourceStamp } from './platform-staging.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PACKAGE_ROOT = resolve(__dirname, '..');
@@ -133,6 +134,7 @@ function main() {
     cwd: PACKAGE_ROOT,
     stdio: 'inherit',
   });
+  writeAddonSourceStamp(OUTPUT_DIR, PACKAGE_ROOT, WORKSPACE_ROOT);
   console.log(`doe-gpu: built native addon at ${OUTPUT_PATH} (${checkedLayouts} struct layouts match webgpu.h)`);
 }
 

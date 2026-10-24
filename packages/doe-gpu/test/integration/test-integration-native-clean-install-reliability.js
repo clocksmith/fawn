@@ -5,6 +5,7 @@ import { copyFile, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promi
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { assertStagedPlatformFresh } from '../../scripts/platform-staging.js';
 
 // These tests resolve the library shipped in the installed platform package.
 // A developer DOE_WEBGPU_LIB override would bypass exactly that resolution.
@@ -55,6 +56,7 @@ if (!existsSync(stagedPlatformLibrary)) {
   }
   throw new Error(`required staged platform library is missing: ${stagedPlatformLibrary}`);
 }
+assertStagedPlatformFresh({ platformPackageRoot, packageRoot, workspaceRoot: dirname(packagesRoot), libraryFilename: platformLibraryName });
 
 const scratch = await mkdtemp(join(tmpdir(), 'doe-gpu-native-reliability-'));
 const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm';
