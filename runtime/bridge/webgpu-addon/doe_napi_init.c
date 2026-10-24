@@ -174,6 +174,9 @@ napi_value doe_render_pass_end_occlusion_query(napi_env env, napi_callback_info 
 napi_value doe_render_pass_push_debug_group(napi_env env, napi_callback_info info);
 napi_value doe_render_pass_pop_debug_group(napi_env env, napi_callback_info info);
 napi_value doe_render_pass_insert_debug_marker(napi_env env, napi_callback_info info);
+napi_value doe_command_encoder_push_debug_group(napi_env env, napi_callback_info info);
+napi_value doe_command_encoder_pop_debug_group(napi_env env, napi_callback_info info);
+napi_value doe_command_encoder_insert_debug_marker(napi_env env, napi_callback_info info);
 
 /* Render bundle encoder / bundle */
 napi_value doe_create_render_bundle_encoder(napi_env env, napi_callback_info info);
@@ -340,6 +343,9 @@ napi_value doe_module_init(napi_env env, napi_value exports) {
         EXPORT_FN("renderPassPushDebugGroup",                 doe_render_pass_push_debug_group),
         EXPORT_FN("renderPassPopDebugGroup",                  doe_render_pass_pop_debug_group),
         EXPORT_FN("renderPassInsertDebugMarker",              doe_render_pass_insert_debug_marker),
+        EXPORT_FN("commandEncoderPushDebugGroup",             doe_command_encoder_push_debug_group),
+        EXPORT_FN("commandEncoderPopDebugGroup",              doe_command_encoder_pop_debug_group),
+        EXPORT_FN("commandEncoderInsertDebugMarker",          doe_command_encoder_insert_debug_marker),
         EXPORT_FN("createRenderBundleEncoder",                doe_create_render_bundle_encoder),
         EXPORT_FN("renderBundleEncoderSetPipeline",           doe_render_bundle_encoder_set_pipeline),
         EXPORT_FN("renderBundleEncoderSetBindGroup",          doe_render_bundle_encoder_set_bind_group),

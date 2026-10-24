@@ -25,6 +25,18 @@ static bool dynamic_offsets(napi_env env, napi_value value, size_t* count, const
     return true;
 }
 
+/* null or undefined unbinds; anything else must be a live bind group handle. */
+static bool bind_group_argument(napi_env env, napi_value value, void** group) {
+    napi_valuetype type = napi_undefined;
+    if (napi_typeof(env, value, &type) != napi_ok) return false;
+    if (type == napi_null || type == napi_undefined) {
+        *group = NULL;
+        return true;
+    }
+    *group = unwrap_ptr(env, value);
+    return *group != NULL;
+}
+
 typedef struct {
     void* encoder;
     uint32_t index;
@@ -45,11 +57,19 @@ static bool read_bind_group_call(napi_env env, napi_callback_info info, const ch
     }
     call->encoder = unwrap_ptr(env, args[0]);
     call->index = 0;
-    napi_get_value_uint32(env, args[1], &call->index);
-    call->group = unwrap_ptr(env, args[2]);
     if (!call->encoder) {
         snprintf(message, sizeof(message), "%s: invalid encoder", name);
         napi_throw_error(env, NULL, message);
+        return false;
+    }
+    if (napi_get_value_uint32(env, args[1], &call->index) != napi_ok) {
+        snprintf(message, sizeof(message), "%s: index must be a 32-bit unsigned integer", name);
+        napi_throw_type_error(env, NULL, message);
+        return false;
+    }
+    if (!bind_group_argument(env, args[2], &call->group)) {
+        snprintf(message, sizeof(message), "%s: bind group must be a bind group or null", name);
+        napi_throw_type_error(env, NULL, message);
         return false;
     }
     if (!dynamic_offsets(env, argc > 3 ? args[3] : NULL, &call->offset_count, &call->offsets)) {
@@ -98,9 +118,10 @@ napi_value native_direct_compute_pass_set_bind_group(napi_env env, napi_callback
     if (group_type != napi_null && group_type != napi_undefined) {
         NativeDirectHandleCache* bind_group_cache = native_direct_get_handle_cache(env, argv[1]);
         bind_group = bind_group_cache ? (WGPUBindGroup)bind_group_cache->native : native_direct_unwrap_external_prop(env, argv[1], DOE_DIRECT_NATIVE);
+        if (!bind_group) NAPI_THROW(env, "setBindGroup: bind group must be a bind group or null");
     }
     uint32_t index = 0;
-    napi_get_value_uint32(env, argv[0], &index);
+    if (napi_get_value_uint32(env, argv[0], &index) != napi_ok) NAPI_THROW(env, "setBindGroup: index must be a 32-bit unsigned integer");
     size_t offset_count = 0; const uint32_t* offsets = NULL;
     if (!dynamic_offsets(env, argc > 2 ? argv[2] : NULL, &offset_count, &offsets))
         NAPI_THROW(env, "setBindGroup: dynamic offsets must be a Uint32Array");

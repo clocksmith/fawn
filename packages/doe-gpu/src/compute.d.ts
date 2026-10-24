@@ -59,7 +59,8 @@ export interface ComputeComputePipeline {
 
 export interface ComputePassEncoder {
   setPipeline(pipeline: ComputeComputePipeline): void;
-  setBindGroup(index: number, bindGroup: ComputeBindGroup): void;
+  setBindGroup(index: number, bindGroup: ComputeBindGroup | null, dynamicOffsets?: Iterable<number>): void;
+  setBindGroup(index: number, bindGroup: ComputeBindGroup | null, dynamicOffsetsData: Uint32Array, dynamicOffsetsDataStart: number, dynamicOffsetsDataLength: number): void;
   dispatchWorkgroups(x: number, y?: number, z?: number): void;
   dispatchWorkgroupsIndirect(indirectBuffer: ComputeGPUBuffer, indirectOffset?: number): void;
   writeTimestamp?(querySet: ComputeQuerySet, queryIndex: number): void;
