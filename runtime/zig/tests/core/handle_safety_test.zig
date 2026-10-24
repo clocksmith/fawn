@@ -273,7 +273,14 @@ test "bind group retains its layout and releases partial resources on rejection"
     const groups = @import("../../src/native/resource/doe_bind_group_native.zig");
     const abi = @import("../../src/core/abi/wgpu_pipeline_descriptor_types.zig");
     var device = native.DoeDevice{};
-    var layout = native.DoeBindGroupLayout{};
+    // Entry 1's range is past the buffer: the structurally valid descriptor
+    // fails after entry 0 retained its buffer.
+    var layout_entries = [_]native.DoeBindGroupLayoutEntry{
+        .{ .binding = 0, .resource_kind = 1 },
+        .{ .binding = 1, .resource_kind = 1 },
+    };
+    var layout = native.DoeBindGroupLayout{ .entry_count = 2, .entries = layout_entries[0..] };
+    var single = native.DoeBindGroupLayout{ .entry_count = 1, .entries = layout_entries[0..1] };
     var buffer = native.DoeBuffer{ .size = 16 };
     var entries = [_]abi.WGPUBindGroupEntry{
         std.mem.zeroes(abi.WGPUBindGroupEntry),
@@ -294,11 +301,12 @@ test "bind group retains its layout and releases partial resources on rejection"
     try std.testing.expectEqual(@as(u32, 1), buffer.ref_count);
 
     descriptor.entryCount = 1;
+    descriptor.layout = @ptrCast(&single);
     const raw = groups.doeNativeDeviceCreateBindGroup(@ptrCast(&device), &descriptor) orelse return error.TestUnexpectedResult;
-    try std.testing.expectEqual(@as(u32, 2), layout.ref_count);
+    try std.testing.expectEqual(@as(u32, 2), single.ref_count);
     try std.testing.expectEqual(@as(u32, 2), buffer.ref_count);
     groups.doeNativeBindGroupRelease(raw);
-    try std.testing.expectEqual(@as(u32, 1), layout.ref_count);
+    try std.testing.expectEqual(@as(u32, 1), single.ref_count);
     try std.testing.expectEqual(@as(u32, 1), buffer.ref_count);
 }
 

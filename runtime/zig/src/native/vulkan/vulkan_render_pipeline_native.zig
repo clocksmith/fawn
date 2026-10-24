@@ -210,8 +210,7 @@ pub fn vulkan_create_render_pipeline(
             return false;
         },
     }
-    const use = compute_bind_groups.BindingUse{ .kinds = &pip.required_binding_kinds, .buffer_types = &pip.required_buffer_types, .stages = &pip.required_stages };
-    if (pip.layout) |layout| if (pip.required_binding_kinds_ready and !compute_bind_groups.pipelineLayoutAdmitsBindings(layout, use)) {
+    if (pip.layout) |layout| if (pip.required_binding_kinds_ready and !compute_bind_groups.pipelineLayoutAdmitsBindings(layout, pip.required_bindings.slice())) {
         dev.error_scopes.deliver(error_scope.ERROR_TYPE_VALIDATION, "render pipeline layout lacks a binding the entry points use, or has it with another resource or buffer type or without the stage's visibility");
         return false;
     };
@@ -241,9 +240,7 @@ fn admitStageEntryPoints(
     fragment: ?*const shared.DoeShaderModule,
     fragment_entry: ?[]const u8,
 ) StageAdmission {
-    @memset(&pipeline.required_binding_kinds, 0);
-    @memset(&pipeline.required_buffer_types, 0);
-    @memset(&pipeline.required_stages, 0);
+    pipeline.required_bindings = .{};
     pipeline.required_binding_kinds_ready = false;
     var checked = true;
     switch (stageEntryPoint(pipeline, vertex, vertex_entry, .vertex)) {
@@ -282,16 +279,13 @@ fn stageEntryPoint(pipeline: *shared.DoeRenderPipeline, module: ?*const shared.D
     var metadata: [native_shared.MAX_SHADER_BINDINGS]wgsl_bindings.BindingMeta = undefined;
     const count = wgsl_bindings.extractEntryPointBindings(native_helpers.alloc, &module_ir, name, &metadata) catch return .unchecked;
     if (shader_binding_reflection.bindingOverLimit(metadata[0..count]) != null) return .binding_over_limit;
+    const stage_bit: u8 = switch (stage) {
+        .vertex => @intCast(abi_binding.WGPUShaderStage_Vertex),
+        .fragment => @intCast(abi_binding.WGPUShaderStage_Fragment),
+        .compute => @intCast(abi_binding.WGPUShaderStage_Compute),
+    };
     for (metadata[0..count]) |meta| {
-        if (meta.group >= native_shared.MAX_RENDER_BIND_GROUPS or meta.binding >= native_shared.MAX_BIND) continue;
-        const slot = meta.group * native_shared.MAX_BIND + meta.binding;
-        pipeline.required_binding_kinds[slot] = shader_binding_reflection.requiredLayoutKind(meta.kind);
-        pipeline.required_buffer_types[slot] = shader_binding_reflection.bufferBindingType(shader_binding_reflection.bindingInfo(meta));
-        pipeline.required_stages[slot] |= switch (stage) {
-            .vertex => @as(u8, @intCast(abi_binding.WGPUShaderStage_Vertex)),
-            .fragment => @as(u8, @intCast(abi_binding.WGPUShaderStage_Fragment)),
-            .compute => @as(u8, @intCast(abi_binding.WGPUShaderStage_Compute)),
-        };
+        pipeline.required_bindings.record(shader_binding_reflection.requiredBinding(meta, stage_bit)) catch return .unchecked;
     }
     return .checked;
 }

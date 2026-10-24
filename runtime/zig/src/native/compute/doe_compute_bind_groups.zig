@@ -76,20 +76,33 @@ pub fn applyDynamicOffsets(
 }
 
 pub const PipelineBindingError = error{ BindGroupMissing, BindGroupIncompatible };
-pub const DispatchBindingError = error{ DispatchBindGroupMissing, DispatchBindGroupIncompatible };
-pub const DrawBindingError = error{ DrawBindGroupMissing, DrawBindGroupIncompatible };
+pub const DispatchBindingError = error{ DispatchBindGroupMissing, DispatchBindGroupIncompatible, DispatchBindingUnsupported };
+pub const DrawBindingError = error{ DrawBindGroupMissing, DrawBindGroupIncompatible, DrawBindingUnsupported };
+
+/// Bind groups, dispatches and draws execute through tables indexed by
+/// binding number below MAX_BIND in each group. A pipeline whose entry points
+/// use a larger (valid) binding number is checked like any other but cannot
+/// execute, and its dispatches and draws report that instead of silently
+/// leaving the binding out.
+fn usesUnexecutableBinding(required: ?[]const native_shared.RequiredBinding) bool {
+    for (required orelse return false) |use| {
+        if (use.binding >= MAX_BIND) return true;
+    }
+    return false;
+}
 
 /// Bind groups a compute pipeline requires at dispatch.
 pub fn validateDispatchBindGroups(
     layout: ?*const native_types.DoePipelineLayout,
-    required_kinds: ?*const [MAX_FLAT_BIND]u8,
+    required: ?[]const native_shared.RequiredBinding,
     auto_layout_id: u64,
     bind_groups: []const ?*DoeBindGroup,
 ) DispatchBindingError!void {
-    validatePipelineBindGroups(layout, required_kinds, auto_layout_id, bind_groups) catch |err| return switch (err) {
+    validatePipelineBindGroups(layout, required, auto_layout_id, bind_groups) catch |err| return switch (err) {
         error.BindGroupMissing => error.DispatchBindGroupMissing,
         error.BindGroupIncompatible => error.DispatchBindGroupIncompatible,
     };
+    if (usesUnexecutableBinding(required)) return error.DispatchBindingUnsupported;
 }
 
 /// Bind groups a render pipeline requires at a pass or bundle draw.
@@ -97,64 +110,49 @@ pub fn validateDrawBindGroups(
     pipeline: *const native_types.DoeRenderPipeline,
     bind_groups: []const ?*DoeBindGroup,
 ) DrawBindingError!void {
-    const required_kinds = if (pipeline.required_binding_kinds_ready) &pipeline.required_binding_kinds else null;
-    validatePipelineBindGroups(pipeline.layout, required_kinds, pipeline.auto_layout_id, bind_groups) catch |err| return switch (err) {
+    const required = if (pipeline.required_binding_kinds_ready) pipeline.required_bindings.slice() else null;
+    validatePipelineBindGroups(pipeline.layout, required, pipeline.auto_layout_id, bind_groups) catch |err| return switch (err) {
         error.BindGroupMissing => error.DrawBindGroupMissing,
         error.BindGroupIncompatible => error.DrawBindGroupIncompatible,
     };
+    if (usesUnexecutableBinding(required)) return error.DrawBindingUnsupported;
 }
 
 /// Bind groups a pipeline requires
 /// (https://gpuweb.github.io/gpuweb/#abstract-opdef-validate-encoder-bind-groups).
 /// An explicit layout requires each nonempty group bound with the same or an
 /// equal-entry layout; another pipeline's automatic layout never matches. An
-/// automatic layout requires, for every group the entry points use
-/// (`required_kinds`, per flat slot), a bound group made from one of this
-/// pipeline's own layouts (`auto_layout_id`) whose entries have the required
-/// resource kinds.
+/// automatic layout requires, for every binding the entry points use
+/// (`required`), a bound group made from one of this pipeline's own layouts
+/// (`auto_layout_id`) whose entries have the required resource kinds.
 pub fn validatePipelineBindGroups(
     layout: ?*const native_types.DoePipelineLayout,
-    required_kinds: ?*const [MAX_FLAT_BIND]u8,
+    required: ?[]const native_shared.RequiredBinding,
     auto_layout_id: u64,
     bind_groups: []const ?*DoeBindGroup,
 ) PipelineBindingError!void {
     const pipeline_layout = layout orelse {
-        const kinds = required_kinds orelse return;
-        for (kinds, 0..) |kind, slot| {
-            if (kind == 0) continue;
-            const group_index = slot / MAX_BIND;
-            const binding: u32 = @intCast(slot % MAX_BIND);
-            const bound = (if (group_index < bind_groups.len) bind_groups[group_index] else null) orelse
+        for (required orelse return) |use| {
+            const bound = (if (use.group < bind_groups.len) bind_groups[use.group] else null) orelse
                 return error.BindGroupMissing;
             const bound_layout = bound.layout orelse return error.BindGroupIncompatible;
             if (auto_layout_id == 0 or bound_layout.auto_layout_id != auto_layout_id)
                 return error.BindGroupIncompatible;
-            if (!layoutHasBinding(bound_layout, binding, kind)) return error.BindGroupIncompatible;
+            if (!layoutHasBinding(bound_layout, use.binding, use.kind)) return error.BindGroupIncompatible;
         }
         return;
     };
     const count: usize = @min(pipeline_layout.bind_group_layout_count, MAX_COMPUTE_BIND_GROUPS);
     for (pipeline_layout.bind_group_layouts[0..count], 0..) |maybe_required, index| {
-        const required = maybe_required orelse continue;
-        if (required.entry_count == 0) continue;
+        const group_layout = maybe_required orelse continue;
+        if (group_layout.entry_count == 0) continue;
         const bound = (if (index < bind_groups.len) bind_groups[index] else null) orelse
             return error.BindGroupMissing;
         const bound_layout = bound.layout orelse return error.BindGroupIncompatible;
-        if (bound_layout != required and !layoutsEquivalent(bound_layout, required))
+        if (bound_layout != group_layout and !layoutsEquivalent(bound_layout, group_layout))
             return error.BindGroupIncompatible;
     }
 }
-
-/// How a pipeline's entry points use their bindings, per flat slot.
-pub const BindingUse = struct {
-    /// Layout resource kind (binding.LayoutResourceKind code, 0 = unused).
-    kinds: *const [MAX_FLAT_BIND]u8,
-    /// WGPUBufferBindingType a buffer binding needs.
-    buffer_types: *const [MAX_FLAT_BIND]u32,
-    /// WGPUShaderStage bits of the stages using each slot; `stage` when null.
-    stages: ?*const [MAX_FLAT_BIND]u8 = null,
-    stage: u8 = 0,
-};
 
 /// Every binding the entry points use must be in its group of the explicit
 /// pipeline layout with a matching resource kind, visible to every stage
@@ -163,32 +161,31 @@ pub const BindingUse = struct {
 /// Texture sample types and dimensions, sampler comparison and storage
 /// texture access and format are not compared: reflection does not record
 /// them. Entries of a Flat4 layout record only binding numbers and pass.
-pub fn pipelineLayoutAdmitsBindings(layout: *const native_types.DoePipelineLayout, use: BindingUse) bool {
-    for (use.kinds, 0..) |kind, slot| {
-        if (kind == 0) continue;
-        const group_index = slot / MAX_BIND;
-        if (group_index >= layout.bind_group_layout_count) return false;
-        const group_layout = layout.bind_group_layouts[group_index] orelse return false;
-        const binding: u32 = @intCast(slot % MAX_BIND);
+pub fn pipelineLayoutAdmitsBindings(layout: *const native_types.DoePipelineLayout, required: []const native_shared.RequiredBinding) bool {
+    for (required) |use| {
+        const kind = use.kind;
+        if (use.group >= layout.bind_group_layout_count) return false;
+        const group_layout = layout.bind_group_layouts[use.group] orelse return false;
+        const binding = use.binding;
         if (!layoutHasBinding(group_layout, binding, kind)) return false;
         if (group_layout.entries_inline) continue;
         const entry = for (layoutEntries(group_layout)) |candidate| {
             if (candidate.binding == binding) break candidate;
         } else unreachable;
-        const stages: u64 = if (use.stages) |per_slot| per_slot[slot] else use.stage;
+        const stages: u64 = use.stages;
         if (entry.visibility & stages != stages) return false;
         if (kind == binding_contract.layoutResourceKindCode(.buffer)) {
             const declared = if (entry.buffer_binding_type == abi_binding.WGPUBufferBindingType_Undefined)
                 abi_binding.WGPUBufferBindingType_Uniform
             else
                 entry.buffer_binding_type;
-            const required = use.buffer_types[slot];
+            const required_type = use.buffer_type;
             // Reflection reports a storage variable with the default access
             // (var<storage>, which is read) as read_write, so a read-only
             // storage layout entry also serves a "storage" requirement.
-            const default_access_gap = required == abi_binding.WGPUBufferBindingType_Storage and
+            const default_access_gap = required_type == abi_binding.WGPUBufferBindingType_Storage and
                 declared == abi_binding.WGPUBufferBindingType_ReadOnlyStorage;
-            if (declared != required and !default_access_gap) return false;
+            if (declared != required_type and !default_access_gap) return false;
         }
     }
     return true;
@@ -297,20 +294,27 @@ test "validateDispatchBindGroups requires explicit groups with equal layouts and
     try std.testing.expectError(error.DispatchBindGroupIncompatible, validateDispatchBindGroups(&layout, null, 0, &.{ null, &bound }));
     // Automatic layouts: group 1 binding 0 must be a buffer, bound from this
     // pipeline's (id 7) own layouts.
-    var kinds = [_]u8{0} ** MAX_FLAT_BIND;
-    kinds[flatBindSlot(1, 0)] = 1;
+    var uses = [_]native_shared.RequiredBinding{.{ .group = 1, .binding = 0, .kind = 1 }};
     equal.auto_layout_id = 7;
     different.auto_layout_id = 7;
-    try validateDispatchBindGroups(null, &kinds, 7, &.{ null, &bound });
-    try std.testing.expectError(error.DispatchBindGroupMissing, validateDispatchBindGroups(null, &kinds, 7, &.{ &bound, null }));
-    try std.testing.expectError(error.DispatchBindGroupIncompatible, validateDispatchBindGroups(null, &kinds, 7, &.{ null, &wrong }));
-    kinds[flatBindSlot(1, 0)] = 3;
-    try std.testing.expectError(error.DispatchBindGroupIncompatible, validateDispatchBindGroups(null, &kinds, 7, &.{ null, &bound }));
+    try validateDispatchBindGroups(null, &uses, 7, &.{ null, &bound });
+    try std.testing.expectError(error.DispatchBindGroupMissing, validateDispatchBindGroups(null, &uses, 7, &.{ &bound, null }));
+    try std.testing.expectError(error.DispatchBindGroupIncompatible, validateDispatchBindGroups(null, &uses, 7, &.{ null, &wrong }));
+    uses[0].kind = 3;
+    try std.testing.expectError(error.DispatchBindGroupIncompatible, validateDispatchBindGroups(null, &uses, 7, &.{ null, &bound }));
     // Another pipeline's automatic layout or an explicit layout never matches.
-    kinds[flatBindSlot(1, 0)] = 1;
-    try std.testing.expectError(error.DispatchBindGroupIncompatible, validateDispatchBindGroups(null, &kinds, 8, &.{ null, &bound }));
+    uses[0].kind = 1;
+    try std.testing.expectError(error.DispatchBindGroupIncompatible, validateDispatchBindGroups(null, &uses, 8, &.{ null, &bound }));
     var explicit = DoeBindGroup{ .layout = &required };
-    try std.testing.expectError(error.DispatchBindGroupIncompatible, validateDispatchBindGroups(null, &kinds, 7, &.{ null, &explicit }));
+    try std.testing.expectError(error.DispatchBindGroupIncompatible, validateDispatchBindGroups(null, &uses, 7, &.{ null, &explicit }));
+    // A binding number past the execution slot table is still checked, and
+    // a compatible group for it reports that it cannot execute.
+    uses[0].binding = 40;
+    try std.testing.expectError(error.DispatchBindGroupIncompatible, validateDispatchBindGroups(null, &uses, 7, &.{ null, &bound }));
+    var high_entries = [_]native_shared.DoeBindGroupLayoutEntry{.{ .binding = 40, .resource_kind = 1 }};
+    var high_layout = native_types.DoeBindGroupLayout{ .entry_count = 1, .entries = high_entries[0..], .auto_layout_id = 7, .automatic = true };
+    var high = DoeBindGroup{ .layout = &high_layout };
+    try std.testing.expectError(error.DispatchBindingUnsupported, validateDispatchBindGroups(null, &uses, 7, &.{ null, &high }));
 }
 
 test "validateDrawBindGroups compares every layout entry member, including visibility" {
@@ -330,43 +334,50 @@ test "validateDrawBindGroups compares every layout entry member, including visib
 
 test "pipelineLayoutAdmitsBindings requires each used binding in its group with a matching kind, stage and buffer type" {
     const uniform = abi_binding.WGPUBufferBindingType_Uniform;
-    var entries = [_]native_shared.DoeBindGroupLayoutEntry{.{ .binding = 0, .resource_kind = 1, .visibility = 4, .buffer_binding_type = uniform }};
-    var group = native_types.DoeBindGroupLayout{ .entry_count = 1, .entries = entries[0..] };
+    var entries = [_]native_shared.DoeBindGroupLayoutEntry{
+        .{ .binding = 0, .resource_kind = 1, .visibility = 4, .buffer_binding_type = uniform },
+        .{ .binding = 900, .resource_kind = 1, .visibility = 4, .buffer_binding_type = uniform },
+    };
+    var group = native_types.DoeBindGroupLayout{ .entry_count = 2, .entries = entries[0..] };
     var empty = native_types.DoeBindGroupLayout{};
     var layout = native_types.DoePipelineLayout{ .bind_group_layout_count = 2 };
     layout.bind_group_layouts[0] = &empty;
     layout.bind_group_layouts[1] = &group;
-    var kinds = [_]u8{0} ** MAX_FLAT_BIND;
-    var buffer_types = [_]u32{abi_binding.WGPUBufferBindingType_Storage} ** MAX_FLAT_BIND;
-    buffer_types[flatBindSlot(1, 0)] = uniform;
-    const use = BindingUse{ .kinds = &kinds, .buffer_types = &buffer_types, .stage = 4 };
-    kinds[flatBindSlot(1, 0)] = 1;
-    try std.testing.expect(pipelineLayoutAdmitsBindings(&layout, use));
+    var uses = [_]native_shared.RequiredBinding{.{ .group = 1, .binding = 0, .kind = 1, .buffer_type = uniform, .stages = 4 }};
+    try std.testing.expect(pipelineLayoutAdmitsBindings(&layout, &uses));
     // Another stage, another buffer type.
-    try std.testing.expect(!pipelineLayoutAdmitsBindings(&layout, .{ .kinds = &kinds, .buffer_types = &buffer_types, .stage = 2 }));
-    buffer_types[flatBindSlot(1, 0)] = abi_binding.WGPUBufferBindingType_ReadOnlyStorage;
-    try std.testing.expect(!pipelineLayoutAdmitsBindings(&layout, use));
-    buffer_types[flatBindSlot(1, 0)] = uniform;
+    uses[0].stages = 2;
+    try std.testing.expect(!pipelineLayoutAdmitsBindings(&layout, &uses));
+    uses[0].stages = 4;
+    uses[0].buffer_type = abi_binding.WGPUBufferBindingType_ReadOnlyStorage;
+    try std.testing.expect(!pipelineLayoutAdmitsBindings(&layout, &uses));
     // A read-only storage entry serves a shader storage variable (whose
     // reflected access may be the default read); a storage entry does not
     // serve a read-only one.
     entries[0].buffer_binding_type = abi_binding.WGPUBufferBindingType_ReadOnlyStorage;
-    buffer_types[flatBindSlot(1, 0)] = abi_binding.WGPUBufferBindingType_Storage;
-    try std.testing.expect(pipelineLayoutAdmitsBindings(&layout, use));
+    uses[0].buffer_type = abi_binding.WGPUBufferBindingType_Storage;
+    try std.testing.expect(pipelineLayoutAdmitsBindings(&layout, &uses));
     entries[0].buffer_binding_type = abi_binding.WGPUBufferBindingType_Storage;
-    buffer_types[flatBindSlot(1, 0)] = abi_binding.WGPUBufferBindingType_ReadOnlyStorage;
-    try std.testing.expect(!pipelineLayoutAdmitsBindings(&layout, use));
+    uses[0].buffer_type = abi_binding.WGPUBufferBindingType_ReadOnlyStorage;
+    try std.testing.expect(!pipelineLayoutAdmitsBindings(&layout, &uses));
     entries[0].buffer_binding_type = uniform;
-    buffer_types[flatBindSlot(1, 0)] = uniform;
+    uses[0].buffer_type = uniform;
+    // Binding numbers past the execution slot table: present, absent, other type.
+    uses[0].binding = 900;
+    try std.testing.expect(pipelineLayoutAdmitsBindings(&layout, &uses));
+    uses[0].binding = 901;
+    try std.testing.expect(!pipelineLayoutAdmitsBindings(&layout, &uses));
+    uses[0].binding = 900;
+    uses[0].buffer_type = abi_binding.WGPUBufferBindingType_Storage;
+    try std.testing.expect(!pipelineLayoutAdmitsBindings(&layout, &uses));
+    uses[0].buffer_type = uniform;
     // A binding missing from its group, another resource kind, a missing group.
-    kinds[flatBindSlot(0, 0)] = 1;
-    try std.testing.expect(!pipelineLayoutAdmitsBindings(&layout, use));
-    kinds[flatBindSlot(0, 0)] = 0;
-    kinds[flatBindSlot(1, 0)] = 3;
-    try std.testing.expect(!pipelineLayoutAdmitsBindings(&layout, use));
-    kinds[flatBindSlot(1, 0)] = 0;
-    kinds[flatBindSlot(2, 0)] = 1;
-    try std.testing.expect(!pipelineLayoutAdmitsBindings(&layout, use));
+    uses[0] = .{ .group = 0, .binding = 0, .kind = 1, .buffer_type = uniform, .stages = 4 };
+    try std.testing.expect(!pipelineLayoutAdmitsBindings(&layout, &uses));
+    uses[0] = .{ .group = 1, .binding = 0, .kind = 3, .stages = 4 };
+    try std.testing.expect(!pipelineLayoutAdmitsBindings(&layout, &uses));
+    uses[0] = .{ .group = 2, .binding = 0, .kind = 1, .buffer_type = uniform, .stages = 4 };
+    try std.testing.expect(!pipelineLayoutAdmitsBindings(&layout, &uses));
 }
 
 test "collectFlatResources preserves separate flattened texture and sampler slots" {

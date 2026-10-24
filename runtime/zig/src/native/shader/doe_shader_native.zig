@@ -41,7 +41,6 @@ const DoeBindGroupLayout = native_types.DoeBindGroupLayout;
 const CompilationMessageKind = native_shared.CompilationMessageKind;
 const ShaderDiagnostic = @import("shader_diagnostic.zig").ShaderDiagnostic;
 const compute_bind_groups = @import("../compute/doe_compute_bind_groups.zig");
-const abi_binding_stage_compute = @import("../../core/abi/wgpu_binding_base_types.zig").WGPUShaderStage_Compute;
 const device_lifecycle = @import("../lifecycle/doe_instance_device_native.zig");
 threadlocal var last_diagnostic = ShaderDiagnostic{};
 pub fn lastErrorSnapshot() ShaderDiagnostic {
@@ -691,12 +690,7 @@ fn createComputePipelineVulkanOwned(sm: *DoeShaderModule, layout: ?*DoePipelineL
         return null;
     };
     if (layout) |pipeline_layout| {
-        const use = compute_bind_groups.BindingUse{
-            .kinds = &cp.vk_required_binding_kinds,
-            .buffer_types = &cp.vk_flat_buffer_binding_types,
-            .stage = @intCast(abi_binding_stage_compute),
-        };
-        if (cp.vk_required_binding_kinds_ready and !compute_bind_groups.pipelineLayoutAdmitsBindings(pipeline_layout, use)) {
+        if (cp.vk_required_binding_kinds_ready and !compute_bind_groups.pipelineLayoutAdmitsBindings(pipeline_layout, cp.vk_required_bindings.slice())) {
             diagnostic.set_last_error_stage_name("native_compile");
             diagnostic.set_last_error_kind("PipelineLayoutMismatch");
             diagnostic.set_last_error("compute pipeline layout lacks a binding the entry point uses, or has it with another resource or buffer type or without compute visibility");

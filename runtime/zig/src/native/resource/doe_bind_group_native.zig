@@ -358,10 +358,50 @@ pub export fn doeNativeBindGroupLayoutRelease(raw: ?*anyopaque) callconv(.c) voi
     }
 }
 
+/// The entries of a bind group descriptor against its layout
+/// (https://gpuweb.github.io/gpuweb/#dom-gpudevice-createbindgroup): one entry
+/// per layout binding (each element of a binding array), no duplicates, no
+/// binding the layout lacks, and exactly one resource of the layout entry's
+/// type. Any binding number below maxBindingsPerBindGroup is checked.
+fn bindGroupEntriesFailure(layout: *const DoeBindGroupLayout, entries: []const abi_pipeline.WGPUBindGroupEntry) ?[]const u8 {
+    const layout_entries = if (layout.entries) |all| all[0..@min(all.len, layout.entry_count)] else &[_]DoeBindGroupLayoutEntry{};
+    var expected: usize = 0;
+    for (layout_entries) |entry| expected += @max(entry.binding_array_size, 1);
+    if (entries.len != expected) return "createBindGroup: descriptor.entries must have one entry per layout binding";
+    for (entries, 0..) |entry, index| {
+        for (entries[0..index]) |earlier| {
+            if (earlier.binding == entry.binding) return "createBindGroup: two entries name the same binding";
+        }
+        const layout_entry = for (layout_entries) |candidate| {
+            if (entry.binding >= candidate.binding and entry.binding - candidate.binding < @max(candidate.binding_array_size, 1)) break candidate;
+        } else return "createBindGroup: an entry names a binding the layout does not have";
+        const external = resolve_external_texture(entry) != null;
+        const resources = @as(u32, @intFromBool(entry.buffer != null)) + @intFromBool(entry.sampler != null) +
+            @intFromBool(entry.textureView != null) + @intFromBool(external);
+        if (resources != 1) return "createBindGroup: an entry must have exactly one resource";
+        const matches = switch (layout_entry.resource_kind) {
+            RESOURCE_KIND_BUFFER => entry.buffer != null,
+            RESOURCE_KIND_SAMPLER => entry.sampler != null,
+            RESOURCE_KIND_TEXTURE, RESOURCE_KIND_STORAGE_TEXTURE => entry.textureView != null,
+            RESOURCE_KIND_EXTERNAL_TEXTURE => external or entry.textureView != null,
+            else => true,
+        };
+        if (!matches) return "createBindGroup: an entry's resource is not of its layout binding's type";
+    }
+    return null;
+}
+
 pub export fn doeNativeDeviceCreateBindGroup(dev_raw: ?*anyopaque, desc: ?*const abi_pipeline.WGPUBindGroupDescriptor) callconv(.c) ?*anyopaque {
     const owner = cast(DoeDevice, dev_raw) orelse return null;
     if (!owner.requireAlive()) return null;
     const d = desc orelse return null;
+    if (d.entryCount > 0 and d.entries == null) return null;
+    if (cast(DoeBindGroupLayout, d.layout)) |bgl| {
+        if (bindGroupEntriesFailure(bgl, if (d.entryCount > 0) d.entries[0..d.entryCount] else &.{})) |message| {
+            owner.error_scopes.deliver(error_scope.ERROR_TYPE_VALIDATION, message);
+            return null;
+        }
+    }
     const bg = make(DoeBindGroup) orelse return null;
     bg.* = .{};
     const layout = cast(DoeBindGroupLayout, d.layout);
@@ -544,6 +584,20 @@ pub export fn doeNativeDeviceCreateBufferBindGroupFlat4(
     const owner = cast(DoeDevice, dev_raw) orelse return null;
     if (!owner.requireAlive()) return null;
     if (entry_count > FLAT_BUFFER_BIND_GROUP_ENTRY_LIMIT) return null;
+    if (cast(DoeBindGroupLayout, layout_raw)) |layout| {
+        // The fast path's buffer entries meet the same layout checks.
+        const flat_bindings = [_]u32{ b0, b1, b2, b3 };
+        const flat_buffers = [_]?*anyopaque{ buffer0_raw, buffer1_raw, buffer2_raw, buffer3_raw };
+        var entries = [_]abi_pipeline.WGPUBindGroupEntry{std.mem.zeroes(abi_pipeline.WGPUBindGroupEntry)} ** FLAT_BUFFER_BIND_GROUP_ENTRY_LIMIT;
+        for (entries[0..entry_count], flat_bindings[0..entry_count], flat_buffers[0..entry_count]) |*entry, binding, buffer| {
+            entry.binding = binding;
+            entry.buffer = @ptrCast(buffer);
+        }
+        if (bindGroupEntriesFailure(layout, entries[0..entry_count])) |message| {
+            owner.error_scopes.deliver(error_scope.ERROR_TYPE_VALIDATION, message);
+            return null;
+        }
+    }
     const bg = make(DoeBindGroup) orelse return null;
     bg.* = .{};
     if (cast(DoeBindGroupLayout, layout_raw)) |layout| {
@@ -893,4 +947,32 @@ test "a bind group layout entry binding at maxBindingsPerBindGroup is a validati
     capture = .{};
     try std.testing.expect(device.error_scopes.pop(.{ .callback = Capture.receive, .userdata1 = &capture }));
     try std.testing.expectEqual(error_scope.ERROR_TYPE_VALIDATION, capture.kind);
+}
+
+test "bind group entries must match the layout at every binding number" {
+    var layout_entries = [_]DoeBindGroupLayoutEntry{
+        .{ .binding = 40, .resource_kind = RESOURCE_KIND_BUFFER },
+        .{ .binding = 900, .resource_kind = RESOURCE_KIND_SAMPLER },
+    };
+    const layout = DoeBindGroupLayout{ .entry_count = 2, .entries = layout_entries[0..] };
+    var buffer = DoeBuffer{ .size = 16 };
+    var sampler: u8 = 0;
+    var entries = [_]abi_pipeline.WGPUBindGroupEntry{ std.mem.zeroes(abi_pipeline.WGPUBindGroupEntry), std.mem.zeroes(abi_pipeline.WGPUBindGroupEntry) };
+    entries[0].binding = 40;
+    entries[0].buffer = @ptrCast(&buffer);
+    entries[1].binding = 900;
+    entries[1].sampler = @ptrCast(&sampler);
+    try std.testing.expectEqual(@as(?[]const u8, null), bindGroupEntriesFailure(&layout, &entries));
+    // Missing entry, unknown binding, duplicate, wrong and doubled resources.
+    try std.testing.expect(bindGroupEntriesFailure(&layout, entries[0..1]) != null);
+    entries[1].binding = 901;
+    try std.testing.expect(bindGroupEntriesFailure(&layout, &entries) != null);
+    entries[1].binding = 40;
+    try std.testing.expect(bindGroupEntriesFailure(&layout, &entries) != null);
+    entries[1].binding = 900;
+    entries[1].sampler = null;
+    entries[1].buffer = @ptrCast(&buffer);
+    try std.testing.expect(bindGroupEntriesFailure(&layout, &entries) != null);
+    entries[1].sampler = @ptrCast(&sampler);
+    try std.testing.expect(bindGroupEntriesFailure(&layout, &entries) != null);
 }

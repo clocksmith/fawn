@@ -291,7 +291,7 @@ const shader_buffer_binding_type = shader_binding_reflection.shaderBufferBinding
 
 fn populate_pipeline_buffer_binding_typesWithDiagnostic(pip: *DoeComputePipeline, shader_module: ?*DoeShaderModule, specialized_info: ?*const runtime_compile.TranslationInfo, diagnostic: *wgsl_analysis.Diagnostic) wgsl_analysis.TranslateError!void {
     @memset(&pip.vk_flat_buffer_binding_types, model_binding_types.WGPUBufferBindingType_Storage);
-    @memset(&pip.vk_required_binding_kinds, 0);
+    pip.vk_required_bindings = .{};
     pip.vk_required_binding_kinds_ready = false;
     const sm = shader_module orelse {
         pip.vk_flat_buffer_binding_types_ready = true;
@@ -308,26 +308,25 @@ fn populate_pipeline_buffer_binding_typesWithDiagnostic(pip: *DoeComputePipeline
     const entries = if (specialized_info) |info| info.entry_point_bindings else sm.vk_entry_point_bindings;
     for (entries) |entry| {
         if (!std.mem.eql(u8, entry.name, entry_point)) continue;
-        for (entry.bindings) |meta| {
-            if (meta.group >= MAX_COMPUTE_BIND_GROUPS or meta.binding >= MAX_BIND) continue;
-            const slot = (meta.group * MAX_BIND) + meta.binding;
-            pip.vk_flat_buffer_binding_types[slot] = shader_binding_reflection.bufferBindingType(shader_binding_reflection.bindingInfo(meta));
-            pip.vk_required_binding_kinds[slot] = shader_binding_reflection.requiredLayoutKind(meta.kind);
-        }
+        for (entry.bindings) |meta| try record_pipeline_binding(pip, meta);
         pip.vk_flat_buffer_binding_types_ready = true;
         pip.vk_required_binding_kinds_ready = true;
         return;
     }
     var metadata: [native_shared.MAX_SHADER_BINDINGS]wgsl_bindings.BindingMeta = undefined;
     const count = try wgsl_bindings.extractBindingsForEntryPointWithDiagnostic(alloc, wgsl, entry_point, &metadata, diagnostic);
-    for (metadata[0..count]) |meta| {
-        if (meta.group >= MAX_COMPUTE_BIND_GROUPS or meta.binding >= MAX_BIND) continue;
-        const slot = (meta.group * MAX_BIND) + meta.binding;
-        pip.vk_flat_buffer_binding_types[slot] = shader_binding_reflection.bufferBindingType(shader_binding_reflection.bindingInfo(meta));
-        pip.vk_required_binding_kinds[slot] = shader_binding_reflection.requiredLayoutKind(meta.kind);
-    }
+    for (metadata[0..count]) |meta| try record_pipeline_binding(pip, meta);
     pip.vk_flat_buffer_binding_types_ready = true;
     pip.vk_required_binding_kinds_ready = true;
+}
+
+/// Every used binding is recorded for layout and bind group checks; the
+/// execution slot table holds the buffer type of bindings below MAX_BIND.
+fn record_pipeline_binding(pip: *DoeComputePipeline, meta: wgsl_bindings.BindingMeta) wgsl_analysis.TranslateError!void {
+    pip.vk_required_bindings.record(shader_binding_reflection.requiredBinding(meta, @intCast(model_binding_types.WGPUShaderStage_Compute))) catch return error.UnsupportedConstruct;
+    if (meta.group >= MAX_COMPUTE_BIND_GROUPS or meta.binding >= MAX_BIND) return;
+    const slot = (meta.group * MAX_BIND) + meta.binding;
+    pip.vk_flat_buffer_binding_types[slot] = shader_binding_reflection.bufferBindingType(shader_binding_reflection.bindingInfo(meta));
 }
 
 /// The bind group layout resource kind a shader binding needs.

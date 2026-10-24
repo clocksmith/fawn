@@ -24,6 +24,18 @@ pub fn requiredLayoutKind(kind: wgsl_bindings.BindingKind) u8 {
     return @intCast(binding_contract.layoutResourceKindCode(layout_kind));
 }
 
+/// The pipeline-use record of a reflected binding in `stages`
+/// (WGPUShaderStage bits).
+pub fn requiredBinding(meta: wgsl_bindings.BindingMeta, stages: u8) native_shared.RequiredBinding {
+    return .{
+        .group = meta.group,
+        .binding = meta.binding,
+        .kind = requiredLayoutKind(meta.kind),
+        .buffer_type = bufferBindingType(bindingInfo(meta)),
+        .stages = stages,
+    };
+}
+
 /// The first binding number at or above maxBindingsPerBindGroup that the
 /// named compute entry point (or the module's only compute entry point when
 /// unnamed) uses, from the module's cached Vulkan entry-point reflection.
