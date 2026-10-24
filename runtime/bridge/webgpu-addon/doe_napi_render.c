@@ -627,6 +627,29 @@ napi_value doe_render_pass_set_stencil_reference(napi_env env, napi_callback_inf
     return NULL;
 }
 
+napi_value doe_render_pass_begin_occlusion_query(napi_env env, napi_callback_info info) {
+    NAPI_ASSERT_ARGC(env, info, 2);
+    void* pass = unwrap_ptr(env, _args[0]);
+    if (!pass) NAPI_THROW(env, "beginOcclusionQuery: invalid render pass");
+    if (!pfn_doeNativeRenderPassBeginOcclusionQuery && !pfn_wgpuRenderPassEncoderBeginOcclusionQuery)
+        NAPI_THROW(env, "beginOcclusionQuery not available in loaded library");
+    uint32_t query_index = 0; napi_get_value_uint32(env, _args[1], &query_index);
+    if (pfn_doeNativeRenderPassBeginOcclusionQuery) pfn_doeNativeRenderPassBeginOcclusionQuery(pass, query_index);
+    else pfn_wgpuRenderPassEncoderBeginOcclusionQuery(pass, query_index);
+    return NULL;
+}
+
+napi_value doe_render_pass_end_occlusion_query(napi_env env, napi_callback_info info) {
+    NAPI_ASSERT_ARGC(env, info, 1);
+    void* pass = unwrap_ptr(env, _args[0]);
+    if (!pass) NAPI_THROW(env, "endOcclusionQuery: invalid render pass");
+    if (!pfn_doeNativeRenderPassEndOcclusionQuery && !pfn_wgpuRenderPassEncoderEndOcclusionQuery)
+        NAPI_THROW(env, "endOcclusionQuery not available in loaded library");
+    if (pfn_doeNativeRenderPassEndOcclusionQuery) pfn_doeNativeRenderPassEndOcclusionQuery(pass);
+    else pfn_wgpuRenderPassEncoderEndOcclusionQuery(pass);
+    return NULL;
+}
+
 /* Debug markers */
 
 napi_value doe_render_pass_push_debug_group(napi_env env, napi_callback_info info) {

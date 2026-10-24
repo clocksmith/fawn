@@ -158,6 +158,8 @@ PFN_wgpuRenderPassEncoderSetViewport pfn_wgpuRenderPassEncoderSetViewport = NULL
 PFN_wgpuRenderPassEncoderSetScissorRect pfn_wgpuRenderPassEncoderSetScissorRect = NULL;
 PFN_wgpuRenderPassEncoderSetBlendConstant pfn_wgpuRenderPassEncoderSetBlendConstant = NULL;
 PFN_wgpuRenderPassEncoderSetStencilReference pfn_wgpuRenderPassEncoderSetStencilReference = NULL;
+PFN_wgpuRenderPassEncoderBeginOcclusionQuery pfn_wgpuRenderPassEncoderBeginOcclusionQuery = NULL;
+PFN_wgpuRenderPassEncoderEndOcclusionQuery pfn_wgpuRenderPassEncoderEndOcclusionQuery = NULL;
 PFN_wgpuRenderPassEncoderPushDebugGroup pfn_wgpuRenderPassEncoderPushDebugGroup = NULL;
 PFN_wgpuRenderPassEncoderPopDebugGroup pfn_wgpuRenderPassEncoderPopDebugGroup = NULL;
 PFN_wgpuRenderPassEncoderInsertDebugMarker pfn_wgpuRenderPassEncoderInsertDebugMarker = NULL;
@@ -421,6 +423,8 @@ napi_value doe_load_library(napi_env env, napi_callback_info info) {
     LOAD_SYM(wgpuRenderPassEncoderSetScissorRect);
     LOAD_SYM(wgpuRenderPassEncoderSetBlendConstant);
     LOAD_SYM(wgpuRenderPassEncoderSetStencilReference);
+    LOAD_SYM(wgpuRenderPassEncoderBeginOcclusionQuery);
+    LOAD_SYM(wgpuRenderPassEncoderEndOcclusionQuery);
     LOAD_SYM(wgpuRenderPassEncoderPushDebugGroup);
     LOAD_SYM(wgpuRenderPassEncoderPopDebugGroup);
     LOAD_SYM(wgpuRenderPassEncoderInsertDebugMarker);

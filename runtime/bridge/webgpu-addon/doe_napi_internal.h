@@ -560,14 +560,7 @@ DECL_PFN(void, wgpuCommandEncoderClearBuffer, (WGPUCommandEncoder, WGPUBuffer, u
 DECL_PFN(void, wgpuRenderBundleEncoderPushDebugGroup, (void*, WGPUStringView));
 DECL_PFN(void, wgpuRenderBundleEncoderPopDebugGroup, (void*));
 DECL_PFN(void, wgpuRenderBundleEncoderInsertDebugMarker, (void*, WGPUStringView));
-/* Standard render pass state for providers without the Doe entries. */
-DECL_PFN(void, wgpuRenderPassEncoderSetViewport, (WGPURenderPassEncoder, float, float, float, float, float, float));
-DECL_PFN(void, wgpuRenderPassEncoderSetScissorRect, (WGPURenderPassEncoder, uint32_t, uint32_t, uint32_t, uint32_t));
-DECL_PFN(void, wgpuRenderPassEncoderSetBlendConstant, (WGPURenderPassEncoder, const WGPUColor*));
-DECL_PFN(void, wgpuRenderPassEncoderSetStencilReference, (WGPURenderPassEncoder, uint32_t));
-DECL_PFN(void, wgpuRenderPassEncoderPushDebugGroup, (WGPURenderPassEncoder, WGPUStringView));
-DECL_PFN(void, wgpuRenderPassEncoderPopDebugGroup, (WGPURenderPassEncoder));
-DECL_PFN(void, wgpuRenderPassEncoderInsertDebugMarker, (WGPURenderPassEncoder, WGPUStringView));
+#include "doe_napi_render_procs.h"
 DECL_PFN(WGPUQuerySet, wgpuDeviceCreateQuerySet, (WGPUDevice, const WGPUQuerySetDescriptor*));
 DECL_PFN(void, wgpuCommandEncoderWriteTimestamp, (WGPUCommandEncoder, WGPUQuerySet, uint32_t));
 DECL_PFN(void, wgpuCommandEncoderResolveQuerySet, (WGPUCommandEncoder, WGPUQuerySet, uint32_t, uint32_t, WGPUBuffer, uint64_t));
