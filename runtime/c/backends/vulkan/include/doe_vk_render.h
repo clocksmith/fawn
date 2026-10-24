@@ -118,6 +118,10 @@ typedef struct doe_vk_render_pipeline_desc {
     /* Native depthClampEnable: no depth clipping, depth clamped to the viewport
      * depth range. Requires caps.depth_clamp; otherwise UNSUPPORTED. */
     bool unclipped_depth;
+    /* Native depth bias for triangle topologies; all zero disables it. A
+     * nonzero clamp requires caps.depth_bias_clamp; otherwise UNSUPPORTED. */
+    int32_t depth_bias;
+    float depth_bias_slope_scale, depth_bias_clamp;
 } doe_vk_render_pipeline_desc;
 /* Graphics pipeline with zero or more indexed color targets and format-admitted
  * native sample counts. Compiler/native admission validates

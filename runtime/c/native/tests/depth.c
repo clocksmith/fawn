@@ -302,6 +302,163 @@ static void array_aspects(state *s, WGPUShaderModule module, WGPUBuffer vertices
         wgpuTextureRelease(color);
     }
 }
+static WGPUShaderModule wgsl(state *s, const char *fragment)
+{
+    char code[1024];
+    int length = snprintf(code,sizeof(code),"struct Output{@builtin(position) position:vec4f,@location(0) color:vec4f}"
+        "@vertex fn vertex(@location(0) point:vec4f,@location(1) color:vec4f)->Output{return Output(point,color);}%s",
+        fragment);
+    assert(length > 0 && (size_t)length < sizeof(code));
+    WGPUShaderSourceWGSL source = WGPU_SHADER_SOURCE_WGSL_INIT;
+    source.code = (WGPUStringView){code,WGPU_STRLEN};
+    WGPUShaderModuleDescriptor descriptor = {.nextInChain=&source.chain};
+    WGPUShaderModule module = wgpuDeviceCreateShaderModule(s->device,&descriptor);
+    assert(module);
+    return module;
+}
+/* frag_depth replaces the rasterized depth; sample_mask 0 writes no sample;
+ * WebGPU rejects frag_depth without a depth aspect and sample_mask output with
+ * alpha-to-coverage. */
+static void fragment_builtins(state *s, WGPUShaderModule plain, WGPUBuffer vertices)
+{
+    WGPUShaderModule replaced = wgsl(s,"struct Fragment{@location(0) color:vec4f,@builtin(frag_depth) depth:f32}"
+        "@fragment fn fragment(input:Output)->Fragment{return Fragment(input.color,.6);}");
+    WGPUShaderModule masked = wgsl(s,"struct Fragment{@location(0) color:vec4f,@builtin(sample_mask) mask:u32}"
+        "@fragment fn fragment(input:Output)->Fragment{return Fragment(input.color,0u);}");
+    WGPUShaderModule indexed = wgsl(s,"@fragment fn fragment(input:Output,@builtin(sample_index) index:u32,"
+        "@builtin(sample_mask) mask:u32)->@location(0) vec4f{return input.color*f32(1u+index+(mask&0u));}");
+    WGPUTexture color = texture(s,WGPUTextureFormat_RGBA8Unorm,WGPUTextureUsage_RenderAttachment|WGPUTextureUsage_CopySrc,1);
+    WGPUTexture image = texture(s,WGPUTextureFormat_Depth32Float,WGPUTextureUsage_RenderAttachment,1);
+    WGPUTextureView view = wgpuTextureCreateView(color,NULL);
+    WGPUTextureView depth_view = wgpuTextureCreateView(image,NULL);
+    assert(view && depth_view);
+    WGPUDepthStencilState depth = WGPU_DEPTH_STENCIL_STATE_INIT;
+    depth.format = WGPUTextureFormat_Depth32Float;
+    depth.depthWriteEnabled = WGPUOptionalBool_True;
+    depth.depthCompare = WGPUCompareFunction_Less;
+    WGPURenderPipeline writes = graphics(s,replaced,&depth,WGPUCullMode_None);
+    WGPURenderPipeline ordinary = graphics(s,plain,&depth,WGPUCullMode_None);
+    WGPURenderPipeline sampled = graphics(s,indexed,&depth,WGPUCullMode_None);
+    assert(writes && ordinary && sampled);
+    WGPURenderPassDepthStencilAttachment attachment = WGPU_RENDER_PASS_DEPTH_STENCIL_ATTACHMENT_INIT;
+    attachment.view = depth_view;
+    attachment.depthLoadOp = WGPULoadOp_Clear;
+    attachment.depthStoreOp = WGPUStoreOp_Store;
+    attachment.depthClearValue = 1;
+    WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(s->device,NULL);
+    WGPURenderPassEncoder pass = begin(s,encoder,view,&attachment);
+    assert(pass);
+    draw(pass,writes,vertices,3); /* green at .25 writes depth .6 */
+    draw(pass,ordinary,vertices,6); /* blue .5 passes only against .6 */
+    draw(pass,ordinary,vertices,0); /* red .75 fails */
+    end(pass);
+    read_pixels(s,encoder,color,0,0,255);
+    WGPURenderPipeline none = graphics(s,masked,NULL,WGPUCullMode_None);
+    assert(none);
+    encoder = wgpuDeviceCreateCommandEncoder(s->device,NULL);
+    pass = begin(s,encoder,view,NULL);
+    assert(pass);
+    draw(pass,none,vertices,0); /* red with an empty sample mask */
+    end(pass);
+    read_pixels(s,encoder,color,0,0,0);
+    wgpuDevicePushErrorScope(s->device,WGPUErrorFilter_Validation);
+    assert(!graphics(s,replaced,NULL,WGPUCullMode_None));
+    expect_validation(s);
+    depth.format = WGPUTextureFormat_Stencil8;
+    depth.depthWriteEnabled = WGPUOptionalBool_False;
+    depth.depthCompare = WGPUCompareFunction_Undefined;
+    wgpuDevicePushErrorScope(s->device,WGPUErrorFilter_Validation);
+    assert(!graphics(s,replaced,&depth,WGPUCullMode_None));
+    expect_validation(s);
+    WGPUVertexAttribute attributes[2] = {{.format=WGPUVertexFormat_Float32x4,.shaderLocation=0},
+        {.format=WGPUVertexFormat_Float32x4,.offset=16,.shaderLocation=1}};
+    WGPUVertexBufferLayout layout = {.arrayStride=sizeof(vertex),.attributeCount=2,.attributes=attributes};
+    WGPUColorTargetState target = {.format=WGPUTextureFormat_RGBA8Unorm,.writeMask=WGPUColorWriteMask_All};
+    WGPUFragmentState fragment = {.module=masked,.targetCount=1,.targets=&target};
+    WGPURenderPipelineDescriptor coverage = WGPU_RENDER_PIPELINE_DESCRIPTOR_INIT;
+    coverage.vertex = (WGPUVertexState){.module=masked,.bufferCount=1,.buffers=&layout};
+    coverage.fragment = &fragment;
+    coverage.multisample.count = 4;
+    coverage.multisample.alphaToCoverageEnabled = WGPU_TRUE;
+    wgpuDevicePushErrorScope(s->device,WGPUErrorFilter_Validation);
+    assert(!wgpuDeviceCreateRenderPipeline(s->device,&coverage));
+    expect_validation(s);
+    wgpuRenderPipelineRelease(none);
+    wgpuRenderPipelineRelease(sampled);
+    wgpuRenderPipelineRelease(ordinary);
+    wgpuRenderPipelineRelease(writes);
+    wgpuTextureViewRelease(depth_view);
+    wgpuTextureViewRelease(view);
+    wgpuTextureRelease(image);
+    wgpuTextureRelease(color);
+    wgpuShaderModuleRelease(indexed);
+    wgpuShaderModuleRelease(masked);
+    wgpuShaderModuleRelease(replaced);
+}
+/* A constant bias of 2^20 at z .5 in depth32float (r = 2^-24) writes .5625, so
+ * a later .55 draw passes Less; a .03 clamp writes .53 and the .55 draw fails. */
+static void depth_bias(state *s, WGPUShaderModule module)
+{
+    vertex data[6];
+    const float positions[3][2] = {{-1,-1},{3,-1},{-1,3}};
+    for (size_t i = 0; i < 6; ++i)
+        data[i] = (vertex){.position={positions[i%3][0],positions[i%3][1],i < 3 ? .5f : .55f,1},
+            .color={0,i < 3 ? 1.0f : 0.0f,i < 3 ? 0.0f : 1.0f,1}};
+    WGPUBuffer vertices = buffer(s,sizeof(data),WGPUBufferUsage_Vertex|WGPUBufferUsage_CopyDst);
+    wgpuQueueWriteBuffer(s->queue,vertices,0,data,sizeof(data));
+    WGPUTexture color = texture(s,WGPUTextureFormat_RGBA8Unorm,WGPUTextureUsage_RenderAttachment|WGPUTextureUsage_CopySrc,1);
+    WGPUTexture image = texture(s,WGPUTextureFormat_Depth32Float,WGPUTextureUsage_RenderAttachment,1);
+    WGPUTextureView view = wgpuTextureCreateView(color,NULL);
+    WGPUTextureView depth_view = wgpuTextureCreateView(image,NULL);
+    assert(view && depth_view);
+    WGPUDepthStencilState depth = WGPU_DEPTH_STENCIL_STATE_INIT;
+    depth.format = WGPUTextureFormat_Depth32Float;
+    depth.depthWriteEnabled = WGPUOptionalBool_True;
+    depth.depthCompare = WGPUCompareFunction_Less;
+    WGPURenderPipeline plain = graphics(s,module,&depth,WGPUCullMode_None);
+    depth.depthBias = 1 << 20;
+    WGPURenderPipeline biased = graphics(s,module,&depth,WGPUCullMode_None);
+    depth.depthBiasClamp = .03f;
+    WGPURenderPipeline clamped = graphics(s,module,&depth,WGPUCullMode_None);
+    assert(plain && biased && clamped);
+    WGPURenderPassDepthStencilAttachment attachment = WGPU_RENDER_PASS_DEPTH_STENCIL_ATTACHMENT_INIT;
+    attachment.view = depth_view;
+    attachment.depthLoadOp = WGPULoadOp_Clear;
+    attachment.depthStoreOp = WGPUStoreOp_Store;
+    attachment.depthClearValue = 1;
+    const WGPURenderPipeline first[2] = {biased,clamped};
+    const unsigned char blue[2] = {255,0};
+    for (size_t i = 0; i < 2; ++i) {
+        WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(s->device,NULL);
+        WGPURenderPassEncoder pass = begin(s,encoder,view,&attachment);
+        assert(pass);
+        draw(pass,first[i],vertices,0);
+        draw(pass,plain,vertices,3);
+        end(pass);
+        read_pixels(s,encoder,color,0,blue[i] ? 0 : 255,blue[i]);
+    }
+    WGPUVertexAttribute attributes[2] = {{.format=WGPUVertexFormat_Float32x4,.shaderLocation=0},
+        {.format=WGPUVertexFormat_Float32x4,.offset=16,.shaderLocation=1}};
+    WGPUVertexBufferLayout layout = {.arrayStride=sizeof(vertex),.attributeCount=2,.attributes=attributes};
+    WGPUColorTargetState target = {.format=WGPUTextureFormat_RGBA8Unorm,.writeMask=WGPUColorWriteMask_All};
+    WGPUFragmentState fragment = {.module=module,.targetCount=1,.targets=&target};
+    WGPURenderPipelineDescriptor lines = WGPU_RENDER_PIPELINE_DESCRIPTOR_INIT;
+    lines.vertex = (WGPUVertexState){.module=module,.bufferCount=1,.buffers=&layout};
+    lines.fragment = &fragment;
+    lines.depthStencil = &depth;
+    lines.primitive.topology = WGPUPrimitiveTopology_LineList;
+    wgpuDevicePushErrorScope(s->device,WGPUErrorFilter_Validation);
+    assert(!wgpuDeviceCreateRenderPipeline(s->device,&lines));
+    expect_validation(s);
+    wgpuRenderPipelineRelease(clamped);
+    wgpuRenderPipelineRelease(biased);
+    wgpuRenderPipelineRelease(plain);
+    wgpuTextureViewRelease(depth_view);
+    wgpuTextureViewRelease(view);
+    wgpuTextureRelease(image);
+    wgpuTextureRelease(color);
+    wgpuBufferRelease(vertices);
+}
 static void negative_states(state *s, WGPUShaderModule module)
 {
     WGPUDepthStencilState depth = WGPU_DEPTH_STENCIL_STATE_INIT;
@@ -359,13 +516,15 @@ int main(void)
     depth_only_draw(&s,module,vertices);
     array_aspects(&s,module,vertices);
     negative_states(&s,module);
-    assert(!s.errors && s.validation_errors == 4);
+    fragment_builtins(&s,module,vertices);
+    depth_bias(&s,module);
+    assert(!s.errors && s.validation_errors == 8);
     wgpuBufferRelease(vertices);
     wgpuShaderModuleRelease(module);
     wgpuQueueRelease(s.queue);
     wgpuDeviceRelease(s.device);
     wgpuAdapterRelease(s.adapter);
     wgpuInstanceRelease(s.instance);
-    printf("PASS public depth/stencil: zero publication, genuine vertex-only depth draw, depth ordering/read-only bundles, selected array/mip aspects, dynamic stencil, culled writes, same-batch discard/reinitialize preserving the other aspect, early releases and admission negatives %s\n", adapter_class_scope());
+    printf("PASS public depth/stencil: zero publication, genuine vertex-only depth draw, depth ordering/read-only bundles, selected array/mip aspects, dynamic stencil, culled writes, same-batch discard/reinitialize preserving the other aspect, frag_depth/sample_mask/sample_index fragment builtins, constant and clamped depth bias, early releases and admission negatives %s\n", adapter_class_scope());
     return 0;
 }
