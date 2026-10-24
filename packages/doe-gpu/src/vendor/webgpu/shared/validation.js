@@ -931,6 +931,19 @@ function normalizeDepthStencilState(depthStencil, features, path = 'GPUDevice.cr
       'descriptor.depthStencil.stencilBack',
     );
   }
+  // https://gpuweb.github.io/gpuweb/#abstract-opdef-gpudepthstencilstate-validation:
+  // a format with a depth aspect needs depthWriteEnabled, and depthCompare
+  // once depth writes or a stencil depthFailOp use the depth test.
+  if (isDepthStencilFormat(result.format, features) && result.format !== 'stencil8') {
+    if (normalized.depthWriteEnabled === undefined) {
+      failValidation(path, 'descriptor.depthStencil.depthWriteEnabled is required for a format with a depth aspect');
+    }
+    const depthFailOpUsed = (result.stencilFront?.depthFailOp ?? 'keep') !== 'keep'
+      || (result.stencilBack?.depthFailOp ?? 'keep') !== 'keep';
+    if (result.depthCompare === undefined && (normalized.depthWriteEnabled || depthFailOpUsed)) {
+      failValidation(path, 'descriptor.depthStencil.depthCompare is required when depth writes or a stencil depthFailOp use the depth test');
+    }
+  }
   return result;
 }
 
