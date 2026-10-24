@@ -639,6 +639,43 @@ pub export fn doeNativeDeviceCreatePipelineLayout(dev_raw: ?*anyopaque, desc: ?*
     return pl_result;
 }
 
+var next_auto_layout_id = std.atomic.Value(u64).init(1);
+
+/// A pipeline's automatic-layout identity, assigned on first use.
+pub fn pipelineAutoLayoutId(id: *u64) u64 {
+    if (id.* == 0) id.* = next_auto_layout_id.fetchAdd(1, .monotonic);
+    return id.*;
+}
+
+/// Marks a bind group layout as part of the automatic layout owned by `id`:
+/// only that pipeline accepts groups made from it
+/// (https://gpuweb.github.io/gpuweb/#default-pipeline-layout).
+pub fn adoptAutoLayout(layout: *DoeBindGroupLayout, id: u64) void {
+    layout.automatic = true;
+    layout.auto_layout_id = id;
+}
+
+/// Makes a layout the caller built from an automatic-layout pipeline's
+/// reflection part of that pipeline's automatic layout. `render` names the
+/// pipeline kind (0 compute, 1 render). Returns 0, changing nothing, for a
+/// pipeline with an explicit layout, a group index past maxBindGroups or a
+/// layout another pipeline already owns.
+pub export fn doeNativePipelineAdoptAutoBindGroupLayout(pipeline_raw: ?*anyopaque, render: u32, group_index: u32, layout_raw: ?*anyopaque) callconv(.c) u32 {
+    const layout = cast(DoeBindGroupLayout, layout_raw) orelse return 0;
+    if (group_index >= MAX_COMPUTE_BIND_GROUPS) return 0;
+    const id_slot = if (render == 0) blk: {
+        const pipeline = cast(native_types.DoeComputePipeline, pipeline_raw) orelse return 0;
+        break :blk if (pipeline.layout == null) &pipeline.auto_layout_id else return 0;
+    } else blk: {
+        const pipeline = cast(native_types.DoeRenderPipeline, pipeline_raw) orelse return 0;
+        break :blk if (pipeline.layout == null) &pipeline.auto_layout_id else return 0;
+    };
+    const id = pipelineAutoLayoutId(id_slot);
+    if (layout.automatic and layout.auto_layout_id != id) return 0;
+    adoptAutoLayout(layout, id);
+    return 1;
+}
+
 pub export fn doeNativeDeviceCreatePipelineLayoutOne(dev_raw: ?*anyopaque, layout_raw: ?*anyopaque, immediate_size: u32) callconv(.c) ?*anyopaque {
     const owner = cast(DoeDevice, dev_raw) orelse return null;
     if (!owner.requireAlive()) return null;
@@ -751,4 +788,23 @@ test "external texture layout ignores Dawn undefined nested defaults" {
     entry.storageTexture.access = abi_binding.WGPUStorageTextureAccess_Undefined;
 
     try std.testing.expectEqual(RESOURCE_KIND_EXTERNAL_TEXTURE, classify_layout_entry(entry).resource_kind);
+}
+
+test "doeNativePipelineAdoptAutoBindGroupLayout gives each automatic pipeline its own layout identity" {
+    var first = native_types.DoeComputePipeline{};
+    var second = native_types.DoeRenderPipeline{};
+    var explicit_layout = DoePipelineLayout{};
+    var explicit = native_types.DoeComputePipeline{ .layout = &explicit_layout };
+    var a = DoeBindGroupLayout{};
+    var b = DoeBindGroupLayout{};
+    var c = DoeBindGroupLayout{};
+    try std.testing.expectEqual(@as(u32, 1), doeNativePipelineAdoptAutoBindGroupLayout(toOpaque(&first), 0, 0, toOpaque(&a)));
+    try std.testing.expectEqual(@as(u32, 1), doeNativePipelineAdoptAutoBindGroupLayout(toOpaque(&second), 1, 0, toOpaque(&b)));
+    try std.testing.expect(a.automatic and b.automatic);
+    try std.testing.expect(a.auto_layout_id == first.auto_layout_id and b.auto_layout_id == second.auto_layout_id);
+    try std.testing.expect(first.auto_layout_id != second.auto_layout_id);
+    try std.testing.expectEqual(@as(u32, 0), doeNativePipelineAdoptAutoBindGroupLayout(toOpaque(&second), 1, 0, toOpaque(&a)));
+    try std.testing.expectEqual(@as(u32, 0), doeNativePipelineAdoptAutoBindGroupLayout(toOpaque(&explicit), 0, 0, toOpaque(&c)));
+    try std.testing.expectEqual(@as(u32, 0), doeNativePipelineAdoptAutoBindGroupLayout(toOpaque(&first), 0, MAX_COMPUTE_BIND_GROUPS, toOpaque(&c)));
+    try std.testing.expect(!c.automatic);
 }

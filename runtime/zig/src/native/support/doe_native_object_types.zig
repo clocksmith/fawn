@@ -229,6 +229,9 @@ pub const DoeComputePipeline = struct {
     d3d12_root_signature: ?*anyopaque = null,
     d3d12_storage: [D3D12_STORAGE_BINDING_LIMIT]D3D12StorageBinding = @splat(.{}),
     layout: ?*DoePipelineLayout = null,
+    /// Identity of this pipeline's automatic layout, assigned when the
+    /// pipeline first hands out one of its bind group layouts.
+    auto_layout_id: u64 = 0,
     shader_module: ?*DoeShaderModule = null,
     binding_count: u32 = 0,
     wg_x: u32 = 0,
@@ -282,6 +285,8 @@ pub const DoeBindGroupLayout = struct {
     entries_inline: bool = false,
     /// Created for one pipeline's automatic layout; WebGPU makes it exclusive to that pipeline.
     automatic: bool = false,
+    /// The owning pipeline's automatic-layout identity (0: not adopted).
+    auto_layout_id: u64 = 0,
 };
 
 pub const DoePipelineLayout = struct {
@@ -445,6 +450,9 @@ pub const DoeRenderPipeline = struct {
     mtl_pso: ?*anyopaque = null,
     backend_root_signature: ?*anyopaque = null,
     layout: ?*DoePipelineLayout = null,
+    /// Identity of this pipeline's automatic layout, assigned when the
+    /// pipeline first hands out one of its bind group layouts.
+    auto_layout_id: u64 = 0,
     vertex_layout_count: u32 = 0,
     vertex_layouts: [model_render_types.MAX_VERTEX_BUFFERS]model_render_types.RenderVertexBufferLayout = [_]model_render_types.RenderVertexBufferLayout{.{}} ** model_render_types.MAX_VERTEX_BUFFERS,
     depth_state: ?*anyopaque = null,

@@ -70,6 +70,7 @@ napi_value doe_device_take_errors(napi_env env, napi_callback_info info);
 napi_value doe_provider_error_sequence(napi_env env, napi_callback_info info);
 napi_value doe_compute_pipeline_release(napi_env env, napi_callback_info info);
 napi_value doe_compute_pipeline_get_bind_group_layout(napi_env env, napi_callback_info info);
+napi_value doe_pipeline_adopt_auto_bind_group_layout(napi_env env, napi_callback_info info);
 
 /* Bind group layout / bind group */
 napi_value doe_create_bind_group_layout(napi_env env, napi_callback_info info);
@@ -260,6 +261,7 @@ napi_value doe_module_init(napi_env env, napi_value exports) {
         EXPORT_FN("createComputePipeline",                    doe_create_compute_pipeline),
         EXPORT_FN("computePipelineRelease",                   doe_compute_pipeline_release),
         EXPORT_FN("computePipelineGetBindGroupLayout",        doe_compute_pipeline_get_bind_group_layout),
+        EXPORT_FN("pipelineAdoptAutoBindGroupLayout",         doe_pipeline_adopt_auto_bind_group_layout),
         EXPORT_FN("createBindGroupLayout",                    doe_create_bind_group_layout),
         EXPORT_FN("createBufferBindGroupLayoutFlat4",         doe_create_buffer_bind_group_layout_flat4),
         EXPORT_FN("bindGroupLayoutRelease",                   doe_bind_group_layout_release),

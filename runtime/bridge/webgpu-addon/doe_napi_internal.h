@@ -527,6 +527,7 @@ DECL_PFN(WGPUFuture, doeRequestDeviceFlat, (WGPUAdapter, const void*, uint32_t, 
 DECL_PFN(WGPUBindGroupLayout, doeNativeDeviceCreateBufferBindGroupLayoutFlat4, (WGPUDevice, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t));
 DECL_PFN(WGPUBindGroup, doeNativeDeviceCreateBufferBindGroupFlat4, (WGPUDevice, WGPUBindGroupLayout, uint32_t, uint32_t, WGPUBuffer, uint64_t, uint32_t, WGPUBuffer, uint64_t, uint32_t, WGPUBuffer, uint64_t, uint32_t, WGPUBuffer, uint64_t));
 DECL_PFN(WGPUPipelineLayout, doeNativeDeviceCreatePipelineLayoutOne, (WGPUDevice, WGPUBindGroupLayout, uint32_t));
+DECL_PFN(uint32_t, doeNativePipelineAdoptAutoBindGroupLayout, (void*, uint32_t, uint32_t, WGPUBindGroupLayout));
 DECL_PFN(void, doeNativePackagePipelineCacheFlush, (void));
 DECL_PFN(void, doeNativeQueueFlush, (void*));
 DECL_PFN(void, doeNativeQueueFlushBreakdown, (void*, uint64_t*, uint64_t*, uint64_t*));

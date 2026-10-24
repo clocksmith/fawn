@@ -129,6 +129,7 @@ PFN_doeRequestDeviceFlat pfn_doeRequestDeviceFlat = NULL;
 PFN_doeNativeDeviceCreateBufferBindGroupLayoutFlat4 pfn_doeNativeDeviceCreateBufferBindGroupLayoutFlat4 = NULL;
 PFN_doeNativeDeviceCreateBufferBindGroupFlat4 pfn_doeNativeDeviceCreateBufferBindGroupFlat4 = NULL;
 PFN_doeNativeDeviceCreatePipelineLayoutOne pfn_doeNativeDeviceCreatePipelineLayoutOne = NULL;
+PFN_doeNativePipelineAdoptAutoBindGroupLayout pfn_doeNativePipelineAdoptAutoBindGroupLayout = NULL;
 PFN_doeNativePackagePipelineCacheFlush pfn_doeNativePackagePipelineCacheFlush = NULL;
 PFN_doeNativeQueueFlush pfn_doeNativeQueueFlush = NULL;
 PFN_doeNativeQueueFlushBreakdown pfn_doeNativeQueueFlushBreakdown = NULL;
@@ -405,6 +406,7 @@ napi_value doe_load_library(napi_env env, napi_callback_info info) {
     pfn_doeNativeDeviceCreateBufferBindGroupLayoutFlat4 = (PFN_doeNativeDeviceCreateBufferBindGroupLayoutFlat4)LIB_SYM(g_lib, "doeNativeDeviceCreateBufferBindGroupLayoutFlat4");
     pfn_doeNativeDeviceCreateBufferBindGroupFlat4 = (PFN_doeNativeDeviceCreateBufferBindGroupFlat4)LIB_SYM(g_lib, "doeNativeDeviceCreateBufferBindGroupFlat4");
     pfn_doeNativeDeviceCreatePipelineLayoutOne = (PFN_doeNativeDeviceCreatePipelineLayoutOne)LIB_SYM(g_lib, "doeNativeDeviceCreatePipelineLayoutOne");
+    pfn_doeNativePipelineAdoptAutoBindGroupLayout = (PFN_doeNativePipelineAdoptAutoBindGroupLayout)LIB_SYM(g_lib, "doeNativePipelineAdoptAutoBindGroupLayout");
     pfn_doeNativePackagePipelineCacheFlush = (PFN_doeNativePackagePipelineCacheFlush)LIB_SYM(g_lib, "doeNativePackagePipelineCacheFlush");
     pfn_doeNativeQueueFlush = (PFN_doeNativeQueueFlush)LIB_SYM(g_lib, "doeNativeQueueFlush");
     pfn_doeNativeQueueFlushBreakdown = (PFN_doeNativeQueueFlushBreakdown)LIB_SYM(g_lib, "doeNativeQueueFlushBreakdown");

@@ -107,6 +107,7 @@ pub const doeNativeDeviceCreateBufferBindGroupFlat4 = bind_group.doeNativeDevice
 pub const doeNativeBindGroupRelease = bind_group.doeNativeBindGroupRelease;
 pub const doeNativeDeviceCreatePipelineLayout = bind_group.doeNativeDeviceCreatePipelineLayout;
 pub const doeNativeDeviceCreatePipelineLayoutOne = bind_group.doeNativeDeviceCreatePipelineLayoutOne;
+pub const doeNativePipelineAdoptAutoBindGroupLayout = bind_group.doeNativePipelineAdoptAutoBindGroupLayout;
 pub const doeNativePipelineLayoutRelease = bind_group.doeNativePipelineLayoutRelease;
 
 const encoder = @import("../command/doe_encoder_native.zig");

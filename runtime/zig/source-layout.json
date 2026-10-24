@@ -3488,9 +3488,9 @@
       },
       "src/native/api/doe_native_api_core_exports.zig": {
         "decision": "Keep",
-        "moduleSha256": "4f8c264959eecae6d574de351cd866251c10b840f39e42d077f176263033ffd4",
-        "reason": "Keep: preserves this native ownership or ABI boundary while separating internal device cleanup leases from application release and enforcing destroyed-device admission.",
-        "reviewer": "codex"
+        "moduleSha256": "ff166b8ef8474bf83e6422cffca2e574968e4791423117cb00b8d2b5ddc47088",
+        "reason": "Keep: preserves this native ownership or ABI boundary while separating internal device cleanup leases from application release and enforcing destroyed-device admission. Exports doeNativePipelineAdoptAutoBindGroupLayout.",
+        "reviewer": "doe-c-claude-indexed/2026-10-24"
       },
       "src/native/api/doe_native_api_misc_exports.zig": {
         "decision": "Keep",
@@ -3530,14 +3530,14 @@
       },
       "src/native/compute/doe_compute_bind_groups.zig": {
         "decision": "Keep",
-        "moduleSha256": "16ca11cfb0b5c64fe9a27a70b98d61c1c88c4ccec7842ffedc3a765fafbeac4b",
-        "reason": "Keep: reachable native implementation with private behavior tests and no merge, elevation, recomposition, or deletion signal. Applies dynamic offsets to flattened bindings and checks explicit-layout bind groups at dispatch. Dispatch validation also checks automatic-layout bindings by required resource kind. Pipeline bind group validation is shared by dispatch and draws.",
+        "moduleSha256": "57903af500e437402e72b9ae38352e1e757377a54fecaa59052e6ff9aa6f7efe",
+        "reason": "Keep: reachable native implementation with private behavior tests and no merge, elevation, recomposition, or deletion signal. Applies dynamic offsets to flattened bindings and checks explicit-layout bind groups at dispatch. Dispatch validation also checks automatic-layout bindings by required resource kind. Pipeline bind group validation is shared by dispatch and draws. Automatic-layout pipelines accept only groups from their own layouts; group equivalence includes the exclusive pipeline.",
         "reviewer": "doe-c-claude-indexed/2026-10-24"
       },
       "src/native/compute/doe_compute_ext_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "5f7fa45de003d50559b3695b7d2f6b62a3f61cb91a9cac4f4da331f6a29049cf",
-        "reason": "Keep: the encoder owns pass identity and recording lifetime; native adapters validate operations against that single state. setBindGroup resolves dynamic offsets; dispatch validates pipeline, workgroup counts and explicit-layout bind groups. Dispatch passes the pipeline's required binding kinds for automatic layouts. Compute pass debug groups are balanced at end().",
+        "moduleSha256": "cc9bc631c148dba173ff685515aa1038e5716c08defefbd187395baf1512e221",
+        "reason": "Keep: the encoder owns pass identity and recording lifetime; native adapters validate operations against that single state. setBindGroup resolves dynamic offsets; dispatch validates pipeline, workgroup counts and explicit-layout bind groups. Dispatch passes the pipeline's required binding kinds for automatic layouts. Compute pass debug groups are balanced at end(). Compute getBindGroupLayout layouts belong to the pipeline's automatic layout; dispatch passes its identity.",
         "reviewer": "doe-c-claude-indexed/2026-10-24"
       },
       "src/native/compute/doe_compute_fast.zig": {
@@ -3590,9 +3590,9 @@
       },
       "src/native/mod.zig": {
         "decision": "Keep",
-        "moduleSha256": "5bb9695ce4a9701037f3e3ade698ee14acba5137d790b58cafab62060e3d8506",
-        "reason": "Keep: preserves this native ownership or ABI boundary while separating internal device cleanup leases from application release and enforcing destroyed-device admission.",
-        "reviewer": "codex"
+        "moduleSha256": "8e5ac64649cc07c05a85bf9bd5bf0a19dac8e3188c008abdad2b80d4e83cd1f5",
+        "reason": "Keep: preserves this native ownership or ABI boundary while separating internal device cleanup leases from application release and enforcing destroyed-device admission. Exports doeNativePipelineAdoptAutoBindGroupLayout.",
+        "reviewer": "doe-c-claude-indexed/2026-10-24"
       },
       "src/native/queue/doe_queue_copy_native.zig": {
         "decision": "Keep",
@@ -3644,8 +3644,8 @@
       },
       "src/native/render/doe_bundle_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "80baacd4bee56a6c1d4c11e7ce1b761020d25bdb9ffdfc4f75e4695176a3c0fa",
-        "reason": "Keep: preserves this native ownership or ABI boundary while separating internal device cleanup leases from application release and enforcing destroyed-device admission. Vulkan bundle replay starts from empty state rather than the pass's. Vulkan executeBundles resets the pass pipeline, bind groups and vertex/index buffers. Bundle setBindGroup validates and records dynamic offsets, records null groups as unbinds, and replay applies the offsets. Bundle debug groups are balanced at finish(). Bundle draws validate the bundle's pipeline and bind groups; draws past maxDrawCount fail. Render getBindGroupLayout returns an explicit layout's groups.",
+        "moduleSha256": "4fbead07a83d273d039f739647380a205aaafe019ed25347c13806a99fa9eff3",
+        "reason": "Keep: preserves this native ownership or ABI boundary while separating internal device cleanup leases from application release and enforcing destroyed-device admission. Vulkan bundle replay starts from empty state rather than the pass's. Vulkan executeBundles resets the pass pipeline, bind groups and vertex/index buffers. Bundle setBindGroup validates and records dynamic offsets, records null groups as unbinds, and replay applies the offsets. Bundle debug groups are balanced at finish(). Bundle draws validate the bundle's pipeline and bind groups; draws past maxDrawCount fail. Render getBindGroupLayout returns explicit groups or a pipeline-owned automatic layout.",
         "reviewer": "doe-c-claude-indexed/2026-10-24"
       },
       "src/native/render/doe_render_native.zig": {
@@ -3674,8 +3674,8 @@
       },
       "src/native/resource/doe_bind_group_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "2b9a574c989d7eec35a9202d4107c46e12e7fda9d480c6558bbb424233939ae3",
-        "reason": "Keep: preserves this native ownership or ABI boundary while separating internal device cleanup leases from application release and enforcing destroyed-device admission; float and depth formats also bind as unfilterable-float; invalid samplers are rejected like invalid buffers and views. Texture binding sample types follow the view aspect, so stencil-only views bind as uint. Owns dynamic-offset resolution; null pipeline-layout entries become owned empty groups. Layout entries keep visibility, minBindingSize, sampler type and storage format.",
+        "moduleSha256": "ed25aede001c049b5c38ed083c8a1aa29e141f2efc0d0ac2dfb1d9f62a7544d8",
+        "reason": "Keep: preserves this native ownership or ABI boundary while separating internal device cleanup leases from application release and enforcing destroyed-device admission; float and depth formats also bind as unfilterable-float; invalid samplers are rejected like invalid buffers and views. Texture binding sample types follow the view aspect, so stencil-only views bind as uint. Owns dynamic-offset resolution; null pipeline-layout entries become owned empty groups. Layout entries keep visibility, minBindingSize, sampler type and storage format. Automatic-layout identity and doeNativePipelineAdoptAutoBindGroupLayout.",
         "reviewer": "doe-c-claude-indexed/2026-10-24"
       },
       "src/native/resource/doe_buffer_ops_native.zig": {
@@ -3782,8 +3782,8 @@
       },
       "src/native/support/doe_native_object_types.zig": {
         "decision": "Keep",
-        "moduleSha256": "b8d48b81eecf71e2edc94480f3182aaff5860f4fb74bcaa6565753dd297bddc0",
-        "reason": "Keep: default-off C error-scope partial owner uses final-address typed storage, cold creation rollback and checked final deinit; original classifier, callbacks and device references remain with their existing owners; textures record an allowed srgb view; samplers carry error_object; MUTABLE_FORMAT images with a VkImageFormatListCreateInfo only for textures whose viewFormats name the srgb pair. Render pipelines keep their multisample mask and alpha-to-coverage. Passes hold per-group dynamic offsets and the cached workgroup limit. Devices hold their buffer offset alignment limits. Device keeps maxImmediateSize. Compute pipelines keep required binding kinds for automatic-layout dispatch checks. Encoders and passes keep their open debug groups. Render pipelines keep required binding kinds.",
+        "moduleSha256": "49890c74209ebdfdbb00cd1fd471a7e37a8938b490c26ae7d4c09063f1ea0caf",
+        "reason": "Keep: default-off C error-scope partial owner uses final-address typed storage, cold creation rollback and checked final deinit; original classifier, callbacks and device references remain with their existing owners; textures record an allowed srgb view; samplers carry error_object; MUTABLE_FORMAT images with a VkImageFormatListCreateInfo only for textures whose viewFormats name the srgb pair. Render pipelines keep their multisample mask and alpha-to-coverage. Passes hold per-group dynamic offsets and the cached workgroup limit. Devices hold their buffer offset alignment limits. Device keeps maxImmediateSize. Compute pipelines keep required binding kinds for automatic-layout dispatch checks. Encoders and passes keep their open debug groups. Render pipelines keep required binding kinds. Layouts and pipelines keep automatic-layout identity.",
         "reviewer": "doe-c-claude-indexed/2026-10-24"
       },
       "src/native/support/doe_native_runtime_helpers.zig": {

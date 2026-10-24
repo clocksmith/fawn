@@ -17,7 +17,6 @@ const OPTIONAL_FAST_PATHS = new Set([
   'computePassDispatchBound',
   'createComputeDispatchBatchCopyCommandBuffer',
   'createBufferBindGroupFlat4',
-  'createBufferBindGroupLayoutFlat4',
   'createComputeDispatchCopyCommandBuffer',
   'createPipelineLayoutOne',
   'queueSubmitOne',

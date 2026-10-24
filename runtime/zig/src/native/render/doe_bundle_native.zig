@@ -430,10 +430,10 @@ test "failed bundle cannot replay into a valid command recording" {
 
 // ============================================================
 // Render pipeline: getBindGroupLayout
-// An explicit layout returns its group's layout, which draws compare against.
-// An automatic layout returns an entry-less placeholder: the render pipeline
-// keeps no per-group entries, and doe-gpu builds those layouts from
-// reflection instead.
+// An explicit layout returns its group's layout. An automatic layout returns
+// an entry-less layout owned by the pipeline: the render pipeline keeps no
+// per-group entries, so doe-gpu builds those layouts from reflection and
+// adopts them (doeNativePipelineAdoptAutoBindGroupLayout).
 // ============================================================
 
 pub export fn doeNativeRenderPipelineGetBindGroupLayout(
@@ -449,6 +449,7 @@ pub export fn doeNativeRenderPipelineGetBindGroupLayout(
     }
     const bgl = make(DoeBindGroupLayout) orelse return null;
     bgl.* = .{};
+    bind_group_native.adoptAutoLayout(bgl, bind_group_native.pipelineAutoLayoutId(&pip.auto_layout_id));
     return toOpaque(bgl);
 }
 

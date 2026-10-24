@@ -98,6 +98,7 @@ pub const doeNativeDeviceCreateBufferBindGroupFlat4 = m0.doeNativeDeviceCreateBu
 pub const doeNativeBindGroupRelease = m0.doeNativeBindGroupRelease;
 pub const doeNativeDeviceCreatePipelineLayout = m0.doeNativeDeviceCreatePipelineLayout;
 pub const doeNativeDeviceCreatePipelineLayoutOne = m0.doeNativeDeviceCreatePipelineLayoutOne;
+pub const doeNativePipelineAdoptAutoBindGroupLayout = m0.doeNativePipelineAdoptAutoBindGroupLayout;
 pub const doeNativePipelineLayoutRelease = m0.doeNativePipelineLayoutRelease;
 pub const doeNativeDeviceCreateCommandEncoder = m0.doeNativeDeviceCreateCommandEncoder;
 pub const doeNativeCommandEncoderRelease = m0.doeNativeCommandEncoderRelease;

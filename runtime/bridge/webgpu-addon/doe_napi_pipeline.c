@@ -202,6 +202,26 @@ napi_value doe_compute_pipeline_get_bind_group_layout(napi_env env, napi_callbac
     return wrap_ptr(env, layout);
 }
 
+/* pipelineAdoptAutoBindGroupLayout(pipeline, isRender, groupIndex, layout):
+ * makes a layout built from an automatic-layout compute or render pipeline's
+ * reflection group groupIndex of that pipeline's automatic layout, so only
+ * that pipeline accepts bind groups made from it. Doe Zig providers only;
+ * throws when the provider lacks the entry point or rejects the layout. */
+napi_value doe_pipeline_adopt_auto_bind_group_layout(napi_env env, napi_callback_info info) {
+    NAPI_ASSERT_ARGC(env, info, 4);
+    CHECK_LIB_LOADED(env);
+    if (!pfn_doeNativePipelineAdoptAutoBindGroupLayout) NAPI_THROW(env, "pipelineAdoptAutoBindGroupLayout is not available in the loaded library");
+    void* pipeline = unwrap_ptr(env, _args[0]);
+    WGPUBindGroupLayout layout = unwrap_ptr(env, _args[3]);
+    if (!pipeline || !layout) NAPI_THROW(env, "Invalid pipeline or bind group layout");
+    bool is_render = false;
+    uint32_t index = 0;
+    napi_get_value_bool(env, _args[1], &is_render);
+    napi_get_value_uint32(env, _args[2], &index);
+    if (!pfn_doeNativePipelineAdoptAutoBindGroupLayout(pipeline, is_render ? 1u : 0u, index, layout)) NAPI_THROW(env, "pipelineAdoptAutoBindGroupLayout: the provider rejected the layout");
+    return NULL;
+}
+
 /* ================================================================
  * Bind Group Layout
  * createBindGroupLayout(device, entries[])
