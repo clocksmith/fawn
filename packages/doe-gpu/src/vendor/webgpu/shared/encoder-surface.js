@@ -1,7 +1,10 @@
 import {
   UINT32_MAX,
   failValidation,
+  describeResourceLabel,
   initResource,
+  markInvalid,
+  isInvalidResource,
   assertObject,
   assertArray,
   assertIntegerInRange,
@@ -11,6 +14,10 @@ import {
   normalizeExtent3D,
 } from './resource-lifecycle.js';
 import { normalizeGpuColor } from './validation.js';
+import {
+  shouldRouteDeviceError,
+  reportValidationError,
+} from './full-surface.js';
 
 const UINT32_RANGE = Object.freeze({ min: 0, max: UINT32_MAX });
 const NON_NEGATIVE_RANGE = Object.freeze({ min: 0 });
@@ -73,6 +80,60 @@ function normalizeBindGroup(bindGroup, path) {
   return bindGroup === null ? null : assertLiveResource(bindGroup, path, 'GPUBindGroup');
 }
 
+// === Invalid objects in encoders ===
+// A command that names an invalid object makes its encoder invalid (WebGPU
+// "invalidate the encoder"): it records nothing, later binding, draw and
+// dispatch commands record nothing, and finish() reports the error. With no
+// error scope or uncapturederror listener the use throws at once instead.
+function invalidUseMessage(path, first, second) {
+  const invalid = isInvalidResource(first) ? first : (isInvalidResource(second) ? second : null);
+  return invalid === null
+    ? null
+    : `${path}: ${describeResourceLabel(invalid)} is invalid because its creation failed validation`;
+}
+
+function invalidateEncoder(encoder, message) {
+  if (!shouldRouteDeviceError(encoder._device)) {
+    throw new Error(message);
+  }
+  if (encoder._invalidMessage == null) {
+    encoder._invalidMessage = message;
+  }
+}
+
+// True when a command that names `first`/`second` must record nothing.
+function encoderSkipsUse(encoder, path, first = null, second = null) {
+  const message = invalidUseMessage(path, first, second);
+  if (message !== null) {
+    invalidateEncoder(encoder, message);
+    return true;
+  }
+  return false;
+}
+
+// True when a binding, draw or dispatch command must record nothing: its pass
+// has no native pass, its encoder is already invalid, or it names an invalid
+// object.
+function passSkipsCommand(pass, encoder, path, first = null, second = null) {
+  return pass._invalid || encoder._invalidMessage != null || encoderSkipsUse(encoder, path, first, second);
+}
+
+// Objects a render pass descriptor names, for the invalid-object check.
+function renderPassDescriptorObjects(descriptor) {
+  const objects = [];
+  if (Array.isArray(descriptor.colorAttachments)) {
+    for (const attachment of descriptor.colorAttachments) {
+      objects.push(attachment?.view, attachment?.resolveTarget);
+    }
+  }
+  objects.push(
+    descriptor.depthStencilAttachment?.view,
+    descriptor.occlusionQuerySet,
+    descriptor.timestampWrites?.querySet,
+  );
+  return objects;
+}
+
 function normalizeCopySize(copySize, path) {
   return normalizeExtent3D(copySize, path, 'copySize');
 }
@@ -127,6 +188,7 @@ function createEncoderClasses(backend) {
 
     setPipeline(pipeline) {
       this._assertOpen('GPUComputePassEncoder.setPipeline');
+      if (passSkipsCommand(this, this._encoder, 'GPUComputePassEncoder.setPipeline', pipeline)) return;
       backend.computePassSetPipeline(
         this,
         assertLiveResource(pipeline, 'GPUComputePassEncoder.setPipeline', 'GPUComputePipeline'),
@@ -144,12 +206,14 @@ function createEncoderClasses(backend) {
         dynamicOffsetsDataStart,
         dynamicOffsetsDataLength,
       );
+      if (passSkipsCommand(this, this._encoder, path, bindGroup)) return;
       backend.computePassSetBindGroup(this, index, normalizeBindGroup(bindGroup, path), offsets);
     }
 
     setImmediates(index, data, dataOffset = 0, size) {
       this._assertOpen('GPUComputePassEncoder.setImmediates');
       assertIntegerInRange(index, 'GPUComputePassEncoder.setImmediates', 'index', UINT32_RANGE);
+      if (passSkipsCommand(this, this._encoder, 'GPUComputePassEncoder.setImmediates')) return;
       backend.computePassSetImmediates(
         this,
         index,
@@ -162,6 +226,7 @@ function createEncoderClasses(backend) {
       assertIntegerInRange(x, 'GPUComputePassEncoder.dispatchWorkgroups', 'x', UINT32_RANGE);
       assertIntegerInRange(y, 'GPUComputePassEncoder.dispatchWorkgroups', 'y', UINT32_RANGE);
       assertIntegerInRange(z, 'GPUComputePassEncoder.dispatchWorkgroups', 'z', UINT32_RANGE);
+      if (passSkipsCommand(this, this._encoder, 'GPUComputePassEncoder.dispatchWorkgroups')) return;
       backend.computePassDispatchWorkgroups(this, x, y, z);
     }
 
@@ -170,6 +235,7 @@ function createEncoderClasses(backend) {
       assertIntegerInRange(x, 'GPUComputePassEncoder._dispatchBound', 'x', UINT32_RANGE);
       assertIntegerInRange(y, 'GPUComputePassEncoder._dispatchBound', 'y', UINT32_RANGE);
       assertIntegerInRange(z, 'GPUComputePassEncoder._dispatchBound', 'z', UINT32_RANGE);
+      if (passSkipsCommand(this, this._encoder, 'GPUComputePassEncoder._dispatchBound', pipeline, bindGroup)) return;
       backend.computePassDispatchBound(
         this,
         assertLiveResource(pipeline, 'GPUComputePassEncoder._dispatchBound', 'GPUComputePipeline'),
@@ -185,6 +251,7 @@ function createEncoderClasses(backend) {
     dispatchWorkgroupsIndirect(indirectBuffer, indirectOffset = 0) {
       this._assertOpen('GPUComputePassEncoder.dispatchWorkgroupsIndirect');
       assertIntegerInRange(indirectOffset, 'GPUComputePassEncoder.dispatchWorkgroupsIndirect', 'indirectOffset', NON_NEGATIVE_RANGE);
+      if (passSkipsCommand(this, this._encoder, 'GPUComputePassEncoder.dispatchWorkgroupsIndirect', indirectBuffer)) return;
       backend.computePassDispatchWorkgroupsIndirect(
         this,
         assertLiveResource(indirectBuffer, 'GPUComputePassEncoder.dispatchWorkgroupsIndirect', 'GPUBuffer'),
@@ -194,14 +261,17 @@ function createEncoderClasses(backend) {
 
     pushDebugGroup(groupLabel) {
       this._assertOpen('GPUComputePassEncoder.pushDebugGroup');
+      if (this._invalid) return;
       backend.computePassPushDebugGroup(this, groupLabel);
     }
     popDebugGroup() {
       this._assertOpen('GPUComputePassEncoder.popDebugGroup');
+      if (this._invalid) return;
       backend.computePassPopDebugGroup(this);
     }
     insertDebugMarker(markerLabel) {
       this._assertOpen('GPUComputePassEncoder.insertDebugMarker');
+      if (this._invalid) return;
       backend.computePassInsertDebugMarker(
         this,
         assertDOMString(markerLabel, 'GPUComputePassEncoder.insertDebugMarker', 'markerLabel'),
@@ -210,6 +280,10 @@ function createEncoderClasses(backend) {
 
     end() {
       this._assertOpen('GPUComputePassEncoder.end');
+      if (this._invalid) {
+        this._ended = true;
+        return;
+      }
       backend.computePassEnd(this);
     }
   }
@@ -230,6 +304,7 @@ function createEncoderClasses(backend) {
 
     setPipeline(pipeline) {
       this._assertOpen('GPURenderPassEncoder.setPipeline');
+      if (passSkipsCommand(this, this._encoder, 'GPURenderPassEncoder.setPipeline', pipeline)) return;
       backend.renderPassSetPipeline(
         this,
         assertLiveResource(pipeline, 'GPURenderPassEncoder.setPipeline', 'GPURenderPipeline'),
@@ -247,12 +322,14 @@ function createEncoderClasses(backend) {
         dynamicOffsetsDataStart,
         dynamicOffsetsDataLength,
       );
+      if (passSkipsCommand(this, this._encoder, path, bindGroup)) return;
       backend.renderPassSetBindGroup(this, index, normalizeBindGroup(bindGroup, path), offsets);
     }
 
     setImmediates(index, data, dataOffset = 0, size) {
       this._assertOpen('GPURenderPassEncoder.setImmediates');
       assertIntegerInRange(index, 'GPURenderPassEncoder.setImmediates', 'index', UINT32_RANGE);
+      if (passSkipsCommand(this, this._encoder, 'GPURenderPassEncoder.setImmediates')) return;
       backend.renderPassSetImmediates(
         this,
         index,
@@ -267,6 +344,7 @@ function createEncoderClasses(backend) {
       if (size !== undefined) {
         assertIntegerInRange(size, 'GPURenderPassEncoder.setVertexBuffer', 'size', NON_NEGATIVE_RANGE);
       }
+      if (passSkipsCommand(this, this._encoder, 'GPURenderPassEncoder.setVertexBuffer', buffer)) return;
       backend.renderPassSetVertexBuffer(
         this,
         slot,
@@ -282,6 +360,7 @@ function createEncoderClasses(backend) {
       if (size !== undefined) {
         assertIntegerInRange(size, 'GPURenderPassEncoder.setIndexBuffer', 'size', NON_NEGATIVE_RANGE);
       }
+      if (passSkipsCommand(this, this._encoder, 'GPURenderPassEncoder.setIndexBuffer', buffer)) return;
       backend.renderPassSetIndexBuffer(
         this,
         assertLiveResource(buffer, 'GPURenderPassEncoder.setIndexBuffer', 'GPUBuffer'),
@@ -297,6 +376,7 @@ function createEncoderClasses(backend) {
       assertIntegerInRange(instanceCount, 'GPURenderPassEncoder.draw', 'instanceCount', UINT32_RANGE);
       assertIntegerInRange(firstVertex, 'GPURenderPassEncoder.draw', 'firstVertex', UINT32_RANGE);
       assertIntegerInRange(firstInstance, 'GPURenderPassEncoder.draw', 'firstInstance', UINT32_RANGE);
+      if (passSkipsCommand(this, this._encoder, 'GPURenderPassEncoder.draw')) return;
       backend.renderPassDraw(this, vertexCount, instanceCount, firstVertex, firstInstance);
     }
 
@@ -306,12 +386,14 @@ function createEncoderClasses(backend) {
       assertIntegerInRange(instanceCount, 'GPURenderPassEncoder.drawIndexed', 'instanceCount', UINT32_RANGE);
       assertIntegerInRange(firstIndex, 'GPURenderPassEncoder.drawIndexed', 'firstIndex', UINT32_RANGE);
       assertIntegerInRange(firstInstance, 'GPURenderPassEncoder.drawIndexed', 'firstInstance', UINT32_RANGE);
+      if (passSkipsCommand(this, this._encoder, 'GPURenderPassEncoder.drawIndexed')) return;
       backend.renderPassDrawIndexed(this, indexCount, instanceCount, firstIndex, baseVertex, firstInstance);
     }
 
     drawIndirect(indirectBuffer, indirectOffset = 0) {
       this._assertOpen('GPURenderPassEncoder.drawIndirect');
       assertIntegerInRange(indirectOffset, 'GPURenderPassEncoder.drawIndirect', 'indirectOffset', NON_NEGATIVE_RANGE);
+      if (passSkipsCommand(this, this._encoder, 'GPURenderPassEncoder.drawIndirect', indirectBuffer)) return;
       backend.renderPassDrawIndirect(
         this,
         assertLiveResource(indirectBuffer, 'GPURenderPassEncoder.drawIndirect', 'GPUBuffer'),
@@ -322,6 +404,7 @@ function createEncoderClasses(backend) {
     drawIndexedIndirect(indirectBuffer, indirectOffset = 0) {
       this._assertOpen('GPURenderPassEncoder.drawIndexedIndirect');
       assertIntegerInRange(indirectOffset, 'GPURenderPassEncoder.drawIndexedIndirect', 'indirectOffset', NON_NEGATIVE_RANGE);
+      if (passSkipsCommand(this, this._encoder, 'GPURenderPassEncoder.drawIndexedIndirect', indirectBuffer)) return;
       backend.renderPassDrawIndexedIndirect(
         this,
         assertLiveResource(indirectBuffer, 'GPURenderPassEncoder.drawIndexedIndirect', 'GPUBuffer'),
@@ -331,6 +414,7 @@ function createEncoderClasses(backend) {
 
     setViewport(x, y, width, height, minDepth, maxDepth) {
       this._assertOpen('GPURenderPassEncoder.setViewport');
+      if (this._invalid) return;
       backend.renderPassSetViewport(this, x, y, width, height, minDepth, maxDepth);
     }
 
@@ -340,6 +424,7 @@ function createEncoderClasses(backend) {
       assertIntegerInRange(y, 'GPURenderPassEncoder.setScissorRect', 'y', UINT32_RANGE);
       assertIntegerInRange(width, 'GPURenderPassEncoder.setScissorRect', 'width', UINT32_RANGE);
       assertIntegerInRange(height, 'GPURenderPassEncoder.setScissorRect', 'height', UINT32_RANGE);
+      if (this._invalid) return;
       backend.renderPassSetScissorRect(this, x, y, width, height);
     }
 
@@ -348,46 +433,57 @@ function createEncoderClasses(backend) {
       if (color === undefined) failValidation('GPURenderPassEncoder.setBlendConstant', 'color is required');
       // GPUColor is a four-component sequence or an {r, g, b, a} dictionary.
       const { r, g, b, a } = normalizeGpuColor(color, 'GPURenderPassEncoder.setBlendConstant.color');
+      if (this._invalid) return;
       backend.renderPassSetBlendConstant(this, r, g, b, a);
     }
 
     setStencilReference(reference) {
       this._assertOpen('GPURenderPassEncoder.setStencilReference');
       assertIntegerInRange(reference, 'GPURenderPassEncoder.setStencilReference', 'reference', UINT32_RANGE);
+      if (this._invalid) return;
       backend.renderPassSetStencilReference(this, reference);
     }
 
     beginOcclusionQuery(queryIndex) {
       this._assertOpen('GPURenderPassEncoder.beginOcclusionQuery');
       assertIntegerInRange(queryIndex, 'GPURenderPassEncoder.beginOcclusionQuery', 'queryIndex', UINT32_RANGE);
+      if (this._invalid) return;
       backend.renderPassBeginOcclusionQuery(this, queryIndex);
     }
 
     endOcclusionQuery() {
       this._assertOpen('GPURenderPassEncoder.endOcclusionQuery');
+      if (this._invalid) return;
       backend.renderPassEndOcclusionQuery(this);
     }
 
     pushDebugGroup(groupLabel) {
+      if (this._invalid) return;
       backend.renderPassPushDebugGroup(this, groupLabel);
     }
     popDebugGroup() {
+      if (this._invalid) return;
       backend.renderPassPopDebugGroup(this);
     }
     insertDebugMarker(markerLabel) {
+      if (this._invalid) return;
       backend.renderPassInsertDebugMarker(this, markerLabel);
     }
 
     executeBundles(bundles) {
-      this._assertOpen('GPURenderPassEncoder.executeBundles');
-      backend.renderPassExecuteBundles(
-        this,
-        assertArray(bundles, 'GPURenderPassEncoder.executeBundles', 'bundles'),
-      );
+      const path = 'GPURenderPassEncoder.executeBundles';
+      this._assertOpen(path);
+      const list = assertArray(bundles, path, 'bundles');
+      if (passSkipsCommand(this, this._encoder, path, list.find(isInvalidResource))) return;
+      backend.renderPassExecuteBundles(this, list);
     }
 
     end() {
       this._assertOpen('GPURenderPassEncoder.end');
+      if (this._invalid) {
+        this._ended = true;
+        return;
+      }
       backend.renderPassEnd(this);
     }
   }
@@ -410,6 +506,7 @@ function createEncoderClasses(backend) {
   class DoeGPURenderBundleEncoder {
     constructor(state, device) {
       this._device = device;
+      this._invalidMessage = null;
       this.label = '';
       initResource(this, 'GPURenderBundleEncoder', device);
       backend.renderBundleEncoderInit(this, state);
@@ -424,6 +521,7 @@ function createEncoderClasses(backend) {
 
     setPipeline(pipeline) {
       this._assertOpen('GPURenderBundleEncoder.setPipeline');
+      if (passSkipsCommand(this, this, 'GPURenderBundleEncoder.setPipeline', pipeline)) return;
       backend.renderBundleEncoderSetPipeline(
         this,
         assertLiveResource(pipeline, 'GPURenderBundleEncoder.setPipeline', 'GPURenderPipeline'),
@@ -441,12 +539,14 @@ function createEncoderClasses(backend) {
         dynamicOffsetsDataStart,
         dynamicOffsetsDataLength,
       );
+      if (passSkipsCommand(this, this, path, bindGroup)) return;
       backend.renderBundleEncoderSetBindGroup(this, index, normalizeBindGroup(bindGroup, path), offsets);
     }
 
     setImmediates(index, data, dataOffset = 0, size) {
       this._assertOpen('GPURenderBundleEncoder.setImmediates');
       assertIntegerInRange(index, 'GPURenderBundleEncoder.setImmediates', 'index', UINT32_RANGE);
+      if (passSkipsCommand(this, this, 'GPURenderBundleEncoder.setImmediates')) return;
       backend.renderBundleEncoderSetImmediates(
         this,
         index,
@@ -461,6 +561,7 @@ function createEncoderClasses(backend) {
       if (size !== undefined) {
         assertIntegerInRange(size, 'GPURenderBundleEncoder.setVertexBuffer', 'size', NON_NEGATIVE_RANGE);
       }
+      if (passSkipsCommand(this, this, 'GPURenderBundleEncoder.setVertexBuffer', buffer)) return;
       backend.renderBundleEncoderSetVertexBuffer(
         this,
         slot,
@@ -476,6 +577,7 @@ function createEncoderClasses(backend) {
       if (size !== undefined) {
         assertIntegerInRange(size, 'GPURenderBundleEncoder.setIndexBuffer', 'size', NON_NEGATIVE_RANGE);
       }
+      if (passSkipsCommand(this, this, 'GPURenderBundleEncoder.setIndexBuffer', buffer)) return;
       backend.renderBundleEncoderSetIndexBuffer(
         this,
         assertLiveResource(buffer, 'GPURenderBundleEncoder.setIndexBuffer', 'GPUBuffer'),
@@ -491,6 +593,7 @@ function createEncoderClasses(backend) {
       assertIntegerInRange(instanceCount, 'GPURenderBundleEncoder.draw', 'instanceCount', UINT32_RANGE);
       assertIntegerInRange(firstVertex, 'GPURenderBundleEncoder.draw', 'firstVertex', UINT32_RANGE);
       assertIntegerInRange(firstInstance, 'GPURenderBundleEncoder.draw', 'firstInstance', UINT32_RANGE);
+      if (passSkipsCommand(this, this, 'GPURenderBundleEncoder.draw')) return;
       backend.renderBundleEncoderDraw(this, vertexCount, instanceCount, firstVertex, firstInstance);
     }
 
@@ -500,12 +603,14 @@ function createEncoderClasses(backend) {
       assertIntegerInRange(instanceCount, 'GPURenderBundleEncoder.drawIndexed', 'instanceCount', UINT32_RANGE);
       assertIntegerInRange(firstIndex, 'GPURenderBundleEncoder.drawIndexed', 'firstIndex', UINT32_RANGE);
       assertIntegerInRange(firstInstance, 'GPURenderBundleEncoder.drawIndexed', 'firstInstance', UINT32_RANGE);
+      if (passSkipsCommand(this, this, 'GPURenderBundleEncoder.drawIndexed')) return;
       backend.renderBundleEncoderDrawIndexed(this, indexCount, instanceCount, firstIndex, baseVertex, firstInstance);
     }
 
     drawIndirect(indirectBuffer, indirectOffset = 0) {
       this._assertOpen('GPURenderBundleEncoder.drawIndirect');
       assertIntegerInRange(indirectOffset, 'GPURenderBundleEncoder.drawIndirect', 'indirectOffset', NON_NEGATIVE_RANGE);
+      if (passSkipsCommand(this, this, 'GPURenderBundleEncoder.drawIndirect', indirectBuffer)) return;
       backend.renderBundleEncoderDrawIndirect(
         this,
         assertLiveResource(indirectBuffer, 'GPURenderBundleEncoder.drawIndirect', 'GPUBuffer'),
@@ -516,6 +621,7 @@ function createEncoderClasses(backend) {
     drawIndexedIndirect(indirectBuffer, indirectOffset = 0) {
       this._assertOpen('GPURenderBundleEncoder.drawIndexedIndirect');
       assertIntegerInRange(indirectOffset, 'GPURenderBundleEncoder.drawIndexedIndirect', 'indirectOffset', NON_NEGATIVE_RANGE);
+      if (passSkipsCommand(this, this, 'GPURenderBundleEncoder.drawIndexedIndirect', indirectBuffer)) return;
       backend.renderBundleEncoderDrawIndexedIndirect(
         this,
         assertLiveResource(indirectBuffer, 'GPURenderBundleEncoder.drawIndexedIndirect', 'GPUBuffer'),
@@ -524,17 +630,23 @@ function createEncoderClasses(backend) {
     }
 
     pushDebugGroup(groupLabel) {
+      if (this._invalid) return;
       backend.renderBundleEncoderPushDebugGroup(this, groupLabel);
     }
     popDebugGroup() {
+      if (this._invalid) return;
       backend.renderBundleEncoderPopDebugGroup(this);
     }
     insertDebugMarker(markerLabel) {
+      if (this._invalid) return;
       backend.renderBundleEncoderInsertDebugMarker(this, markerLabel);
     }
 
     finish(descriptor) {
       this._assertOpen('GPURenderBundleEncoder.finish');
+      if (this._invalidMessage != null) {
+        return this._finishInvalid(descriptor);
+      }
       const bundle = backend.renderBundleEncoderFinish(
         this,
         descriptor === undefined ? undefined : assertObject(descriptor, 'GPURenderBundleEncoder.finish', 'descriptor'),
@@ -543,6 +655,17 @@ function createEncoderClasses(backend) {
       bundle.label = descriptor?.label ?? '';
       this._finished = true;
       return bundle;
+    }
+
+    // finish() on an invalid bundle encoder: a validation error and an
+    // invalid bundle; a native recording, if any, is finished and dropped.
+    _finishInvalid(descriptor) {
+      if (!this._invalid) {
+        backend.renderBundleEncoderFinish(this, undefined, classes).destroy();
+      }
+      this._finished = true;
+      reportValidationError(this._device, this._invalidMessage);
+      return markInvalid(new DoeGPURenderBundle(null, this._device), descriptor?.label);
     }
   }
 
@@ -569,6 +692,7 @@ function createEncoderClasses(backend) {
   class DoeGPUCommandEncoder {
     constructor(state, device) {
       this._device = device;
+      this._invalidMessage = null;
       this.label = '';
       initResource(this, 'GPUCommandEncoder', device);
       backend.commandEncoderInit(this, state);
@@ -582,7 +706,14 @@ function createEncoderClasses(backend) {
     }
 
     beginComputePass(descriptor) {
-      this._assertOpen('GPUCommandEncoder.beginComputePass');
+      const path = 'GPUCommandEncoder.beginComputePass';
+      this._assertOpen(path);
+      if (encoderSkipsUse(this, path, descriptor?.timestampWrites?.querySet)) {
+        const invalidPass = new DoeGPUComputePassEncoder(null, this);
+        invalidPass._invalid = true;
+        invalidPass.label = descriptor?.label ?? '';
+        return invalidPass;
+      }
       const pass = backend.commandEncoderBeginComputePass(this, descriptor, classes);
       pass.label = descriptor?.label ?? '';
       return pass;
@@ -591,6 +722,15 @@ function createEncoderClasses(backend) {
     beginRenderPass(descriptor) {
       this._assertOpen('GPUCommandEncoder.beginRenderPass');
       const passDescriptor = assertObject(descriptor, 'GPUCommandEncoder.beginRenderPass', 'descriptor');
+      const named = renderPassDescriptorObjects(passDescriptor);
+      // A GPUTexture attachment stands for its default view; an invalid one
+      // must not reach createView, which would report a second error.
+      if (encoderSkipsUse(this, 'GPUCommandEncoder.beginRenderPass', named.find(isInvalidResource))) {
+        const invalidPass = new DoeGPURenderPassEncoder(null, this);
+        invalidPass._invalid = true;
+        invalidPass.label = passDescriptor.label ?? '';
+        return invalidPass;
+      }
       const pass = backend.commandEncoderBeginRenderPass(this, passDescriptor, classes);
       pass.label = passDescriptor.label ?? '';
       return pass;
@@ -606,6 +746,7 @@ function createEncoderClasses(backend) {
       const explicitSize = useNewSignature ? dstOrSize : sizeOrUndefined;
       assertIntegerInRange(srcOffset, 'GPUCommandEncoder.copyBufferToBuffer', 'srcOffset', NON_NEGATIVE_RANGE);
       assertIntegerInRange(dstOffset, 'GPUCommandEncoder.copyBufferToBuffer', 'dstOffset', NON_NEGATIVE_RANGE);
+      if (encoderSkipsUse(this, 'GPUCommandEncoder.copyBufferToBuffer', srcBuffer, dst)) return;
       const srcNative = assertLiveResource(srcBuffer, 'GPUCommandEncoder.copyBufferToBuffer', 'GPUBuffer');
       const dstNative = assertLiveResource(dst, 'GPUCommandEncoder.copyBufferToBuffer', 'GPUBuffer');
       const size = explicitSize === undefined ? Math.max(0, srcBuffer.size - srcOffset) : explicitSize;
@@ -632,6 +773,7 @@ function createEncoderClasses(backend) {
       if (sizeObject.depthOrArrayLayers !== undefined) {
         assertIntegerInRange(sizeObject.depthOrArrayLayers, 'GPUCommandEncoder.copyBufferToTexture', 'copySize.depthOrArrayLayers', UINT32_RANGE);
       }
+      if (encoderSkipsUse(this, path, sourceObject.buffer, destinationObject.texture)) return;
       backend.commandEncoderCopyBufferToTexture(
         this,
         {
@@ -666,6 +808,7 @@ function createEncoderClasses(backend) {
       if (sizeObject.depthOrArrayLayers !== undefined) {
         assertIntegerInRange(sizeObject.depthOrArrayLayers, 'GPUCommandEncoder.copyTextureToBuffer', 'copySize.depthOrArrayLayers', UINT32_RANGE);
       }
+      if (encoderSkipsUse(this, path, sourceObject.texture, destinationObject.buffer)) return;
       backend.commandEncoderCopyTextureToBuffer(
         this,
         {
@@ -694,6 +837,7 @@ function createEncoderClasses(backend) {
       const sourceObject = assertObject(source, 'GPUCommandEncoder.copyTextureToTexture', 'source');
       const destinationObject = assertObject(destination, 'GPUCommandEncoder.copyTextureToTexture', 'destination');
       const sizeObject = normalizeCopySize(copySize, 'GPUCommandEncoder.copyTextureToTexture');
+      if (encoderSkipsUse(this, path, sourceObject.texture, destinationObject.texture)) return;
       backend.commandEncoderCopyTextureToTexture(
         this,
         {
@@ -722,6 +866,7 @@ function createEncoderClasses(backend) {
       if (size !== undefined) {
         assertIntegerInRange(size, 'GPUCommandEncoder.clearBuffer', 'size', NON_NEGATIVE_RANGE);
       }
+      if (encoderSkipsUse(this, 'GPUCommandEncoder.clearBuffer', buffer)) return;
       backend.commandEncoderClearBuffer(
         this,
         assertLiveResource(buffer, 'GPUCommandEncoder.clearBuffer', 'GPUBuffer'),
@@ -732,6 +877,7 @@ function createEncoderClasses(backend) {
 
     writeTimestamp(querySet, queryIndex) {
       this._assertOpen('GPUCommandEncoder.writeTimestamp');
+      if (encoderSkipsUse(this, 'GPUCommandEncoder.writeTimestamp', querySet)) return;
       const querySetNative = assertLiveResource(querySet, 'GPUCommandEncoder.writeTimestamp', 'GPUQuerySet');
       assertIntegerInRange(queryIndex, 'GPUCommandEncoder.writeTimestamp', 'queryIndex', UINT32_RANGE);
       if (queryIndex >= querySet.count) {
@@ -742,6 +888,7 @@ function createEncoderClasses(backend) {
 
     resolveQuerySet(querySet, firstQuery, queryCount, destination, destinationOffset) {
       this._assertOpen('GPUCommandEncoder.resolveQuerySet');
+      if (encoderSkipsUse(this, 'GPUCommandEncoder.resolveQuerySet', querySet, destination)) return;
       const querySetNative = assertLiveResource(querySet, 'GPUCommandEncoder.resolveQuerySet', 'GPUQuerySet');
       assertIntegerInRange(firstQuery, 'GPUCommandEncoder.resolveQuerySet', 'firstQuery', UINT32_RANGE);
       assertIntegerInRange(queryCount, 'GPUCommandEncoder.resolveQuerySet', 'queryCount', POSITIVE_UINT32_RANGE);
@@ -765,12 +912,27 @@ function createEncoderClasses(backend) {
 
     finish(descriptor) {
       this._assertOpen('GPUCommandEncoder.finish');
-      const cmdBuf = new classes.DoeGPUCommandBuffer(
-        backend.commandEncoderFinish(this),
-        this._device,
-      );
+      const state = backend.commandEncoderFinish(this);
+      if (this._invalidMessage != null) {
+        return this._finishInvalid(state, descriptor);
+      }
+      const cmdBuf = new classes.DoeGPUCommandBuffer(state, this._device);
       cmdBuf.label = descriptor?.label ?? '';
       return cmdBuf;
+    }
+
+    // finish() on an invalid encoder: one validation error and an invalid
+    // command buffer. The native recording is dropped. A deferred validation
+    // failure (command t: 99) was already reported by the backend's finish.
+    _finishInvalid(state, descriptor) {
+      if (state?._native != null && typeof backend.commandBufferDestroy === 'function') {
+        backend.commandBufferDestroy(state._native);
+      }
+      const reported = Array.isArray(state?._commands) && state._commands.some((command) => command?.t === 99);
+      if (!reported) {
+        reportValidationError(this._device, this._invalidMessage);
+      }
+      return markInvalid(new DoeGPUCommandBuffer({ _batched: true, _commands: [] }, this._device), descriptor?.label);
     }
   }
 
