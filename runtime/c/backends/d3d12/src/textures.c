@@ -93,9 +93,10 @@ doe_dx_status doe_dx_texture_copy_footprint(const doe_dx_texture *texture,
 }
 
 doe_dx_texture_use *doe_dx_find_texture(doe_dx_commands *commands, doe_dx_texture *texture) {
-    for (size_t index = 0; index < commands->texture_count; index++)
-        if (commands->textures[index].texture == texture) return &commands->textures[index];
-    return NULL;
+    if (!texture || texture->owner != commands) return NULL;
+    size_t index = texture->owner_index;
+    if (index >= commands->texture_count || commands->textures[index].texture != texture) abort();
+    return &commands->textures[index];
 }
 
 doe_dx_status doe_dx_texture_preflight(doe_dx_commands *commands,
@@ -112,6 +113,8 @@ doe_dx_status doe_dx_texture_preflight(doe_dx_commands *commands,
 
 void doe_dx_use_texture(doe_dx_commands *commands, doe_dx_texture *texture) {
     if (doe_dx_find_texture(commands, texture)) return;
+    if (commands->texture_count >= commands->texture_capacity) abort();
+    texture->owner_index = commands->texture_count;
     doe_dx_texture_use *use = &commands->textures[commands->texture_count++];
     use->texture = texture;
     use->initialized = texture->initialized;

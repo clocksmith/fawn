@@ -238,10 +238,11 @@ and exact exports; absent platform loaders remain explicitly unavailable.
   consumes its real stored handle before releasing its existing device lease.
 - `make check-provider-pin` exercises real unload versus retained worker code on
   Linux/macOS without a GPU. The Windows host recipe builds the same real DLL
-  unload/pinned-worker control and a PIN-rejection control. Windows execution of
-  these native controls remains pending. Host primitives and loader residency are
-  prerequisites; they do not complete the public Windows provider, default backend
-  selection or D3D12 composition. Standalone compiler DLL evidence is separate.
+  unload/pinned-worker control and a PIN-rejection control. Their
+  [actual Win32 developer receipt](../platform/DEVELOPER_RECEIPT_WINDOWS_HOST.json)
+  closes the bounded host/loader prerequisite at its recorded source. It does not
+  qualify the public native DLL, D3D12 execution or production/default promotion.
+  Standalone compiler DLL evidence is separate.
   Linux `pending-progress` uses actual CPU Vulkan work
   with completion obscured at backend boundaries: release-all success/failure,
   no premature resource destruction, failed worker startup and synchronous idle
@@ -452,6 +453,10 @@ Both plain source and `requires uniform_buffer_standard_layout;` execute;
 rejected. Raw compiler lowering uses baseline backend layouts and needs no Vulkan
 uniformBufferStandardLayout device feature. These focused software controls do
 not transfer physical qualification to this policy change.
+The separate [Apple uniform/alias receipt](DEVELOPER_RECEIPT_METAL_UNIFORM_ALIASES.json)
+binds actual execution of this consumer and shared-allocation binding controls
+to one Metal device and exact source. It preserves the first guardian failure
+and the corrected guarded results; broader qualification remains separate.
 
 `wgpuTextureGetTextureBindingViewDimension` follows core-mode semantics. The pinned
 header requires accepting a `WGPUTextureBindingViewDimension` chain on

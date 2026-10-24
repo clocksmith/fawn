@@ -49,9 +49,10 @@ doe_dx_status doe_dx_timestamp_frequency(doe_dx_context *context, uint64_t *out,
 }
 
 static doe_dx_timestamp_use *find_timestamps(doe_dx_commands *commands, doe_dx_timestamps *timestamps) {
-    for (size_t index = 0; index < commands->timestamp_count; index++)
-        if (commands->timestamps[index].timestamps == timestamps) return &commands->timestamps[index];
-    return NULL;
+    if (!timestamps || timestamps->owner != commands) return NULL;
+    size_t index = timestamps->owner_index;
+    if (index >= commands->timestamp_count || commands->timestamps[index].timestamps != timestamps) abort();
+    return &commands->timestamps[index];
 }
 
 static doe_dx_status preflight(doe_dx_commands *commands, doe_dx_timestamps *timestamps) {
@@ -65,6 +66,8 @@ static doe_dx_status preflight(doe_dx_commands *commands, doe_dx_timestamps *tim
 static doe_dx_timestamp_use *use_timestamps(doe_dx_commands *commands, doe_dx_timestamps *timestamps) {
     doe_dx_timestamp_use *use = find_timestamps(commands, timestamps);
     if (use) return use;
+    if (commands->timestamp_count >= commands->timestamp_capacity) abort();
+    timestamps->owner_index = commands->timestamp_count;
     use = &commands->timestamps[commands->timestamp_count++];
     use->timestamps = timestamps;
     use->initialized = timestamps->initialized;
@@ -79,14 +82,14 @@ doe_dx_status doe_dx_commands_timestamp(doe_dx_commands *commands,
     if (status != DOE_DX_OK) return status;
     status = preflight(commands, timestamps);
     if (status != DOE_DX_OK) return doe_dx_fail(status, 0, "commands.timestamp", error);
-    if (index >= timestamps->count || commands->operation_count == 65536 ||
-        (!find_timestamps(commands, timestamps) && commands->buffer_count + commands->texture_count +
-        commands->timestamp_count == DOE_DX_MAX_COMMAND_RESOURCES))
+    if (index >= timestamps->count)
         return doe_dx_fail(DOE_DX_RANGE, 0, "commands.timestamp.range", error);
+    doe_dx_reservation needed = {.timestamps=find_timestamps(commands,timestamps) ? 0u : 1u};
+    status = doe_dx_reserve_uses(commands, needed, error);
+    if (status != DOE_DX_OK) return status;
     doe_dx_timestamp_use *use = use_timestamps(commands, timestamps);
     doe_dx_native_timestamp(commands->native, timestamps->native, index);
     use->initialized |= UINT64_C(1) << index;
-    commands->operation_count++;
     return doe_dx_fail(DOE_DX_OK, 0, "commands.timestamp", error);
 }
 
@@ -116,14 +119,13 @@ doe_dx_status doe_dx_commands_resolve_timestamps(doe_dx_commands *commands,
         status = doe_dx_buffer_preflight(commands, destination, true);
         if (status != DOE_DX_OK) return doe_dx_fail(status, 0, "commands.resolve.partial", error);
     }
-    size_t added = (use ? 0u : 1u) + (doe_dx_find_buffer(commands, destination) ? 0u : 1u);
-    if (commands->operation_count == 65536 ||
-        added > DOE_DX_MAX_COMMAND_RESOURCES - commands->buffer_count - commands->texture_count - commands->timestamp_count)
-        return doe_dx_fail(DOE_DX_RANGE, 0, "commands.resolve.budget", error);
+    doe_dx_reservation needed = {.buffers=doe_dx_find_buffer(commands,destination) ? 0u : 1u,
+        .timestamps=use ? 0u : 1u};
+    status = doe_dx_reserve_uses(commands, needed, error);
+    if (status != DOE_DX_OK) return status;
     use_timestamps(commands, timestamps);
     doe_dx_use_buffer(commands, destination);
     doe_dx_native_resolve_timestamps(commands->native, timestamps->native, first, count, destination->native, offset);
     if (whole) doe_dx_find_buffer(commands, destination)->initialized = true;
-    commands->operation_count++;
     return doe_dx_fail(DOE_DX_OK, 0, "commands.resolve", error);
 }

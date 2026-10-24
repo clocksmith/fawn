@@ -1,0 +1,130 @@
+{
+  "status": "PASS: actual Windows SDK C/C++ host primitives and provider-loader CPU controls; bounded developer evidence.",
+  "consumer": "C migration host-primitives and provider-code residency prerequisite; not public native DLL or D3D12 execution acceptance.",
+  "source_commit": "27b6c6f0706f66fdfa6a6174c25b62fa7990eb6e",
+  "source_tree": "e18e2dc29c710813d6b814c461542660686d6952",
+  "source_binding": "Exact revision and clean checkout checked by workflow before/after controls. Host build recipe, every compiled host-control source and selected Windows platform headers below are bound to immutable Git blobs, never later working-tree bytes.",
+  "host": {
+    "os": "Microsoft Windows Server 2025 Datacenter, 10.0.26100",
+    "target": "x86_64-pc-windows-msvc",
+    "compiler": "C:/Program Files/LLVM/bin/clang-cl.EXE",
+    "llvm_version": "20.1.8",
+    "windows_sdk_version": "10.0.26100.0",
+    "vc_tools_version": "14.51.36231",
+    "version_source": "Primary job log explicitly prints WindowsSDKVersion, VCToolsVersion and clang-cl --version.",
+    "host_flags": "/MD /O2 /WX -Wall -Wextra -Wpedantic; C11 and C++17; C++ exceptions/RTTI disabled."
+  },
+  "execution": {
+    "run_id": 40050906001,
+    "job_id": 120743135499,
+    "attempt": 1,
+    "url": "https://github.com/doerun/doe/actions/runs/40050906001/job/120743135499",
+    "conclusion": "success",
+    "recipe": "runtime/c/native/build_windows_host.cmd after actual VsDevCmd.bat -arch=x64, with fresh external OUT",
+    "external_process_tree_deadline_seconds": 120,
+    "native_host_exit": 0,
+    "native_host_stderr_bytes": 0,
+    "checks": [
+      "Shared C primitive control: QPC deadlines, finite timeout/overflow, signal/broadcast predicate ordering, ordinary and recursive depth-one waits, real thread identity and consumed join/detach handles.",
+      "Actual Win32 invalid-handle join/detach failures preserve the live obligation; a retained real duplicate permits recovery and final handle consumption.",
+      "C++17 platform header consumer initializes, locks, unlocks and destroys a recursive mutex.",
+      "PIN rejection is injected at GetModuleHandleExW; real InitOnce caches that failed admission once, without fallback, preserving errno/GetLastError.",
+      "Real unpinned DLL unload is observed; an actual FROM_ADDRESS|PIN keeps the second DLL/worker alive after caller FreeLibrary, followed by terminal join and host-control storage cleanup. Main-image pin also succeeds."
+    ]
+  },
+  "compiler_repeat": {
+    "scope": "The same job also rebuilds the standalone compiler DLL and passes residual C, phony-API, concurrent numeric-environment and C++17 CPU consumers. This is separate from the host primitive/loader gate.",
+    "compiler_tree": "fa649772a162a7c53baf7768b11bef36b341426e",
+    "scope_manifest_sha256": "f3083644eee64c49bc96b8f8d36af91666366506baf03dc6397cb90ba3e21af0",
+    "prior_receipt": "../compiler/DEVELOPER_RECEIPT_WINDOWS_HOST.json",
+    "prior_failures": "Both earlier import-library and legacy-fixture failures remain preserved in the prior receipt and its ignored first logs; this record does not rewrite them."
+  },
+  "artifact": {
+    "id": 12542763501,
+    "name": "c-windows-host-27b6c6f0706f66fdfa6a6174c25b62fa7990eb6e-40050906001-1",
+    "zip_url": "https://api.github.com/repos/doerun/doe/actions/artifacts/12542763501/zip",
+    "zip_sha256": "33ecc06d003fed2f937f5457b4cff9e36956cc3808b3d825a3f27532b6f7a3ea",
+    "github_digest_matches": true,
+    "manifest_entries_verified": 99,
+    "verification": "ZIP CRC and all 99 manifest SHA256 entries verified; normalized PureWindowsPath members relative to D:/a/_temp/doe-c-windows-host use forward slashes. No duplicate/missing/extra member beyond artifacts.json itself.",
+    "local_ignored_archive": "bench/out/c-windows-native-host-27b6c6f07/evidence.zip",
+    "local_ignored_extracted": "bench/out/c-windows-native-host-27b6c6f07/evidence/",
+    "local_ignored_verified_manifest": "bench/out/c-windows-native-host-27b6c6f07/VERIFIED_ARTIFACTS.json",
+    "verified_manifest_sha256": "91d40be24141525f378eaf124a4709f181712fda1fd88c979cae33def5407063",
+    "decoded_primary_job_log": "bench/out/c-windows-native-host-27b6c6f07/job.log",
+    "decoded_primary_job_log_sha256": "5e760d77ed4830365d80c432908e37060d832c9b13436260ddee8ed8ab9a9e8b",
+    "files_sha256": {
+      "artifacts.json": "a7aaf625ef69a0e0bccecfc5c837c75c96688a53fb02b272e7104816a753777e",
+      "commit.txt": "0b0a642fe665ff1c2cce0749dc5945fe890753bd21c8c8bb24a67b734807e893",
+      "command.txt": "bffd08db37e27e111a428399c2ce0258b37bde1451eb75bc78db1578348e4acf",
+      "host.txt": "44c8e8d11f917c928b9c8cff5d51da5c6d40f939f7fb0ba6735e6b77da74a167",
+      "compiler.log": "68df4c12009cdc0f0f5a1e1e7bcd2847243e4887198b10d5ec3e0178e6341ec9",
+      "compiler/scope.json": "f3083644eee64c49bc96b8f8d36af91666366506baf03dc6397cb90ba3e21af0",
+      "native-host/run.cmd": "ed84eba9143e34489fbfb8a34cf23593d3bda4288101bf839e31de38821b40d4",
+      "native-host/stdout.txt": "f52e9795279ad8a6ead1af28c2aa0a0bcdff2e324bbe5d42fe084ceaa7273cfe",
+      "native-host/stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "native-host/exit-code.txt": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354",
+      "native-host/test_primitives.exe": "eb64ec0ca5688ec1461073ff3b01bdb48aa2b06b364d66f242852aec13acf3ad",
+      "native-host/test_cpp.exe": "4a9f6f7ec741a9219c2b12424b9024eb1ce101e26d8082dec05fc8899b16b072",
+      "native-host/provider_pin.exe": "22d4501b33c2f34d4ac198635691cacbdb4423c8a8495247dbe77f49f1ac6fdf",
+      "native-host/provider_pin_failure.exe": "f0ac53497c416484a6de05ae54eb6e32ab6b5bcc8756bdd6f4a8749e24b291db",
+      "native-host/provider_pin_fixture.dll": "347fdc9e62475662cd6277f667fb823a7fc4d15ae829e63995fbe9cd51503a9e"
+    }
+  },
+  "limits": [
+    "The native public WebGPU DLL was not built or exercised by this host recipe; no backend/device/GPU was created by these host controls.",
+    "No physical adapter, driver recovery, CLI, numerical qualification, performance, complete migration or production/default promotion claim.",
+    "Only recorded 27b6 host-control bytes and selected Windows branches are covered; later public D3D12 source and separate POSIX fault controls are not covered.",
+    "The permanent loader pin intentionally retains code until process exit; the fixture independently releases worker/host-control storage. It is not a GPU/resource lifetime receipt."
+  ],
+  "source_inputs": {
+    ".github/workflows/c-windows-host-build.yml": {
+      "git_blob": "01c6bad4293c8f798c00e5b554d65351b3eaa4cc",
+      "sha256": "9272245308f5ad1a08c4b0068ef6c997ccfcfd9ee7af11b93f18119c1f6e64c1"
+    },
+    "runtime/c/native/build_windows_host.cmd": {
+      "git_blob": "352debae334554089c76056642ca118b8ce37fad",
+      "sha256": "93974bcea99331ff244a8c4c5e4f5d804edaab68c14f2a83b98f8296087e718c"
+    },
+    "runtime/c/platform/include/doe_platform.h": {
+      "git_blob": "c442b4d79b199c0e1f073a38e2d773d8caa4ff9b",
+      "sha256": "9d45d7aad700fb202c06428f9a1dffbf904175f592e6d2c547420c6b685a205d"
+    },
+    "runtime/c/platform/include/doe_platform_win32.h": {
+      "git_blob": "cf06e6372312c722a62c76b1bb19975e6bd54647",
+      "sha256": "db191b05008865d570a3023c74df2a29096dae5f07c2fa3c2587de925eae89fc"
+    },
+    "runtime/c/platform/tests/test_primitives.c": {
+      "git_blob": "519a848f96c7a0798ef457fd097c5e69f3dbf8d5",
+      "sha256": "cd8ca5ca0e107f7ad0689c1881a33a9e26ba408548e6f0497cd7be5376920816"
+    },
+    "runtime/c/platform/tests/test_cpp.cpp": {
+      "git_blob": "b883a13b413f23deefbb71dfab6eaaf8e85f75b8",
+      "sha256": "d6605fd8573991fb9b8167909d5b7b10323aa75965fd419d9f641e45ca8647b4"
+    },
+    "runtime/c/native/src/provider_pin.c": {
+      "git_blob": "464bf8fde1a68d525ec9d74df074f2ba098b9726",
+      "sha256": "c6f61264e60b09c75e388fbeed28dbec4016ad68d2ef078bf1a9007211668a96"
+    },
+    "runtime/c/native/src/provider_pin.h": {
+      "git_blob": "cd86e112c683c324f55a34cb809e096d612d3e37",
+      "sha256": "0e3f2181c9d0642ff18861b6f3e9c287b6e5fd6c7dbb4f536212ed0f0dca6398"
+    },
+    "runtime/c/native/tests/provider_pin.c": {
+      "git_blob": "310c3f6a46ed839f008b09aff3b70c046c17baf1",
+      "sha256": "57c892db705958e124a016c7f125497d73a46971604109aa0f466928a07a34fd"
+    },
+    "runtime/c/native/tests/provider_pin_fixture.c": {
+      "git_blob": "6b040795d01d93d1a4a288840603d324c915b323",
+      "sha256": "644c26f02dd4f6254e36735055fa94adc987bce753c1db33c78442623f8d8394"
+    },
+    "runtime/c/native/tests/provider_pin_fixture.h": {
+      "git_blob": "7d7ff5ac62d73f2a5c420c6bcbe80eba6cabac2b",
+      "sha256": "f817024552aa1804c47d71aed597e2e1b40fdaaaa5c207916a68722fa1bd2434"
+    },
+    "runtime/c/native/tests/provider_pin_win32_failure.c": {
+      "git_blob": "9b9d44097a38a9cb8d2844eda4cdd8b8cef5ce3d",
+      "sha256": "46a414b6bd3f49eed3255ccc388002063144b42afab99c6b11bb99584b12be58"
+    }
+  }
+}

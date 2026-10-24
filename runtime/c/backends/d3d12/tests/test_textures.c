@@ -245,8 +245,8 @@ static void texture_and_buffer_budget(void) {
     for (size_t index = 0; index < 63; index++)
         assert(doe_dx_commands_upload_texture(work, upload, (doe_dx_texture_layout){0}, textures[index], NULL) == DOE_DX_OK);
     assert(work->buffer_count == 1 && work->texture_count == 63);
-    assert(doe_dx_commands_upload_texture(work, upload, (doe_dx_texture_layout){0}, textures[63], NULL) == DOE_DX_RANGE);
-    assert(textures[63]->owner == NULL);
+    assert(doe_dx_commands_upload_texture(work, upload, (doe_dx_texture_layout){0}, textures[63], NULL) == DOE_DX_OK);
+    assert(textures[63]->owner == work && work->texture_count == 64 && work->buffer_count == 1);
     for (size_t index = 0; index < 64; index++) doe_dx_texture_release(textures[index]);
     doe_dx_buffer_release(upload);
     doe_dx_commands_release(work);
@@ -277,10 +277,9 @@ static void transfer_rejections(void) {
     assert(doe_dx_commands_copy_texture(work, texture, wrong_shape, NULL) == DOE_DX_UNSUPPORTED);
     assert(doe_dx_commands_read_texture(work, texture, readback, (doe_dx_texture_layout){512, 0}, NULL) == DOE_DX_OK);
     assert(!mock.upload && mock.footprint.offset == 512);
-    work->operation_count = 65536;
     size_t transfers = mock.texture_transfers;
-    assert(doe_dx_commands_upload_texture(work, upload, (doe_dx_texture_layout){0}, texture, NULL) == DOE_DX_RANGE);
-    assert(mock.texture_transfers == transfers && !wrong_shape->owner && !no_copy->owner);
+    assert(doe_dx_commands_upload_texture(work, upload, (doe_dx_texture_layout){0}, texture, NULL) == DOE_DX_OK);
+    assert(mock.texture_transfers == transfers + 1 && !wrong_shape->owner && !no_copy->owner);
     doe_dx_commands_release(work);
     doe_dx_buffer_release(upload);
     doe_dx_buffer_release(short_upload);

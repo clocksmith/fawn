@@ -18,7 +18,8 @@ if errorlevel 1 goto fail
 if errorlevel 1 goto fail
 "%CLANG_CL%" /nologo /MD "%OUT%\native_shader.obj" "%OUT%\windows_shader.obj" /Fe"%OUT%\native_shader.exe"
 if errorlevel 1 goto fail
-powershell.exe -NoProfile -Command "$ErrorActionPreference='Stop'; $p=Join-Path $env:DXC_ROOT 'bin/x64/dxcompiler.dll'; (Get-Item $p).VersionInfo | Format-List FileVersion,ProductVersion,FileName; Get-FileHash -Algorithm SHA256 $p; Get-FileHash -Algorithm SHA256 (Join-Path $env:DXC_ROOT 'inc/dxcapi.h')"
+rem Framework methods avoid inherited PowerShell module-path dependencies.
+powershell.exe -NoProfile -Command "$ErrorActionPreference='Stop'; $p=[IO.Path]::Combine($env:DXC_ROOT,'bin/x64/dxcompiler.dll'); $v=[Diagnostics.FileVersionInfo]::GetVersionInfo($p); 'FileVersion : '+$v.FileVersion; 'ProductVersion : '+$v.ProductVersion; 'FileName : '+$v.FileName; foreach ($file in @($p,[IO.Path]::Combine($env:DXC_ROOT,'inc/dxcapi.h'))) { $algorithm=[Security.Cryptography.SHA256]::Create(); try { $stream=[IO.File]::OpenRead($file); try { $bytes=$algorithm.ComputeHash($stream) } finally { $stream.Dispose() } } finally { $algorithm.Dispose() }; 'SHA256 '+[BitConverter]::ToString($bytes).Replace('-','').ToLowerInvariant()+'  '+$file }"
 if errorlevel 1 goto fail
 > "%OUT%\negative-include.hlsl" echo #define DOE_INCLUDE_VALUE 7
 "%OUT%\native_shader.exe" "%DXC_ROOT%\bin\x64\dxcompiler.dll" "%OUT%\negative-include.hlsl"

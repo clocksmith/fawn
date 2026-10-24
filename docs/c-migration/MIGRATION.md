@@ -149,8 +149,14 @@ The additive [ABI11 HLSL facade](../../runtime/c/compiler/DEVELOPER_RECEIPT_HLSL
 now carries compiler-owned entry/register metadata through the shader owner;
 actual DXC outputs agree with its typed bindings. Existing ABI1–10 remain intact.
 The [Windows SDK build](../../runtime/c/backends/d3d12/DEVELOPER_RECEIPT_WINDOWS_SDK.json)
-compiles the private backend and links its clients. Native Windows host portability,
-public D3D12 composition and physical execution remain distinct unfinished gates.
+compiles the private backend and links its clients. Public Windows native DLL
+composition, D3D12 execution and physical qualification remain separate gates.
+
+The [Win32 host/loader receipt](../../runtime/c/platform/DEVELOPER_RECEIPT_WINDOWS_HOST.json)
+separately binds actual SDK execution of shared C/C++ primitives, real thread
+handles/deadlines, DLL unload and pinned-worker residency. It closes that bounded
+host prerequisite at its recorded source; it does not qualify later public D3D12
+source, native provider execution or GPU behavior.
 
 The standalone [Windows compiler host receipt](../../runtime/c/compiler/DEVELOPER_RECEIPT_WINDOWS_HOST.json)
 binds an actual SDK-built x64 DLL, canonical exports and four ordinary CPU
@@ -205,8 +211,11 @@ and WGSL language-feature discovery derives from that same function. The
 [public native consumer](../../runtime/c/native/tests/uniform_standard.c) exercises
 exact4/8/12/32/64-byte ranges, guarded dynamic access, aggregate/matrix layout,
 wrong-index and wrong-layout controls, and `requires` on the CPU Vulkan adapter.
-Standalone defaults remain conservative; native Metal and Windows execution of
-this policy still require their own source-bound evidence.
+Standalone defaults remain conservative. The separate
+[Apple uniform/alias receipt](../../runtime/c/native/DEVELOPER_RECEIPT_METAL_UNIFORM_ALIASES.json)
+binds these uniform controls and shared-buffer alias execution to one Metal device,
+retaining the first guardian failure and corrected guarded results. Windows
+execution and broader physical qualification retain their own gates.
 
 Private D3D12 now has [actual CPU WARP execution evidence](../../runtime/c/backends/d3d12/DEVELOPER_RECEIPT_WARP.json)
 in addition to SDK compilation: explicit software selection, native compute,

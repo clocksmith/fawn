@@ -52,6 +52,10 @@ void doe_dx_commands_dispose(doe_dx_commands *commands) {
     doe_dx_native_commands_destroy(commands->native);
     release_resources(commands, false);
     commands->context->objects--;
+    free(commands->buffers);
+    free(commands->textures);
+    free(commands->timestamps);
+    free(commands->pipelines);
     free(commands);
 }
 
@@ -83,9 +87,10 @@ doe_dx_status doe_dx_recording(doe_dx_commands *commands, doe_dx_error *error) {
 }
 
 doe_dx_buffer_use *doe_dx_find_buffer(doe_dx_commands *commands, doe_dx_buffer *buffer) {
-    for (size_t index = 0; index < commands->buffer_count; index++)
-        if (commands->buffers[index].buffer == buffer) return &commands->buffers[index];
-    return NULL;
+    if (!buffer || buffer->owner != commands) return NULL;
+    size_t index = buffer->owner_index;
+    if (index >= commands->buffer_count || commands->buffers[index].buffer != buffer) abort();
+    return &commands->buffers[index];
 }
 
 doe_dx_status doe_dx_buffer_preflight(doe_dx_commands *commands,
@@ -101,6 +106,8 @@ doe_dx_status doe_dx_buffer_preflight(doe_dx_commands *commands,
 
 void doe_dx_use_buffer(doe_dx_commands *commands, doe_dx_buffer *buffer) {
     if (doe_dx_find_buffer(commands, buffer)) return;
+    if (commands->buffer_count >= commands->buffer_capacity) abort();
+    buffer->owner_index = commands->buffer_count;
     doe_dx_buffer_use *use = &commands->buffers[commands->buffer_count++];
     use->buffer = buffer;
     use->initialized = buffer->initialized;
@@ -116,8 +123,6 @@ doe_dx_status doe_dx_commands_copy(doe_dx_commands *commands,
     status = doe_dx_buffer_preflight(commands, source, true);
     if (status == DOE_DX_OK) status = doe_dx_buffer_preflight(commands, destination, false);
     if (status != DOE_DX_OK) return doe_dx_fail(status, 0, "commands.copy", error);
-    if (commands->operation_count == 65536)
-        return doe_dx_fail(DOE_DX_RANGE, 0, "commands.operation_budget", error);
     if (source == destination || !size)
         return doe_dx_fail(DOE_DX_INVALID_ARGUMENT, 0, "commands.copy", error);
     if (source->memory == DOE_DX_READBACK || destination->memory == DOE_DX_UPLOAD)
@@ -129,15 +134,14 @@ doe_dx_status doe_dx_commands_copy(doe_dx_commands *commands,
         return doe_dx_fail(DOE_DX_ALIGNMENT, 0, "commands.copy", error);
     size_t added = (doe_dx_find_buffer(commands, source) ? 0u : 1u) +
         (doe_dx_find_buffer(commands, destination) ? 0u : 1u);
-    if (added > DOE_DX_MAX_COMMAND_RESOURCES - commands->buffer_count - commands->texture_count - commands->timestamp_count)
-        return doe_dx_fail(DOE_DX_RANGE, 0, "commands.resource_budget", error);
+    status = doe_dx_reserve_uses(commands, (doe_dx_reservation){.buffers=added}, error);
+    if (status != DOE_DX_OK) return status;
     doe_dx_use_buffer(commands, source);
     doe_dx_use_buffer(commands, destination);
     doe_dx_native_copy(commands->native, source->native, source_offset,
         destination->native, destination_offset, size);
     if (!destination_offset && size == destination->size)
         doe_dx_find_buffer(commands, destination)->initialized = true;
-    commands->operation_count++;
     return doe_dx_fail(DOE_DX_OK, 0, "commands.copy", error);
 }
 

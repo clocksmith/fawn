@@ -6,7 +6,7 @@ if "%OUT%"=="" set "OUT=%TEMP%\doe-c-d3d12"
 if not exist "%OUT%" mkdir "%OUT%"
 if errorlevel 1 exit /b 1
 cl /nologo /std:c11 /W4 /WX /Iinclude /DDOE_DX_REQUIRE_WINDOWS /c ^
-    src\context.c src\resources.c src\commands.c ^
+    src\command_storage.c src\context.c src\resources.c src\commands.c ^
     src\compute.c src\pipeline.c src\textures.c ^
     src\texture_transfer.c src\bindings.c src\graphics.c ^
     src\timestamps.c src\windows_context.c src\windows_caps.c src\windows_adapter.c src\windows_resources.c ^
@@ -16,7 +16,7 @@ cl /nologo /std:c11 /W4 /WX /Iinclude /DDOE_DX_REQUIRE_WINDOWS /c ^
     /Fo"%OUT%\\"
 if errorlevel 1 exit /b 1
 lib /nologo /OUT:"%OUT%\doe_d3d12.lib" ^
-    "%OUT%\context.obj" "%OUT%\resources.obj" "%OUT%\commands.obj" ^
+    "%OUT%\command_storage.obj" "%OUT%\context.obj" "%OUT%\resources.obj" "%OUT%\commands.obj" ^
     "%OUT%\compute.obj" "%OUT%\pipeline.obj" "%OUT%\textures.obj" ^
     "%OUT%\texture_transfer.obj" "%OUT%\bindings.obj" "%OUT%\graphics.obj" ^
     "%OUT%\timestamps.obj" "%OUT%\windows_context.obj" "%OUT%\windows_caps.obj" "%OUT%\windows_adapter.obj" "%OUT%\windows_resources.obj" ^

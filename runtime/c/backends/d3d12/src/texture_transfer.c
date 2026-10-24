@@ -23,17 +23,15 @@ static doe_dx_status transfer(doe_dx_commands *commands, doe_dx_buffer *buffer,
         status = doe_dx_buffer_preflight(commands, buffer, true);
         if (status != DOE_DX_OK) return doe_dx_fail(status, 0, "texture.readback.padding", error);
     }
-    size_t added = (doe_dx_find_buffer(commands, buffer) ? 0u : 1u) +
-        (doe_dx_find_texture(commands, texture) ? 0u : 1u);
-    if (commands->operation_count == 65536 ||
-        added > DOE_DX_MAX_COMMAND_RESOURCES - commands->buffer_count - commands->texture_count - commands->timestamp_count)
-        return doe_dx_fail(DOE_DX_RANGE, 0, "texture.transfer.budget", error);
+    doe_dx_reservation needed = {.buffers=doe_dx_find_buffer(commands, buffer) ? 0u : 1u,
+        .textures=doe_dx_find_texture(commands, texture) ? 0u : 1u};
+    status = doe_dx_reserve_uses(commands, needed, error);
+    if (status != DOE_DX_OK) return status;
     doe_dx_use_buffer(commands, buffer);
     doe_dx_use_texture(commands, texture);
     doe_dx_native_texture_transfer(commands->native, buffer->native, texture->native, &footprint, upload);
     if (upload) doe_dx_find_texture(commands, texture)->initialized = true;
     else if (covers_buffer) doe_dx_find_buffer(commands, buffer)->initialized = true;
-    commands->operation_count++;
     return doe_dx_fail(DOE_DX_OK, 0, "texture.transfer", error);
 }
 
@@ -61,15 +59,13 @@ doe_dx_status doe_dx_commands_copy_texture(doe_dx_commands *commands,
     if (source->desc.width != destination->desc.width || source->desc.height != destination->desc.height ||
         source->desc.format != destination->desc.format)
         return doe_dx_fail(DOE_DX_UNSUPPORTED, 0, "texture.copy.shape", error);
-    size_t added = (doe_dx_find_texture(commands, source) ? 0u : 1u) +
-        (doe_dx_find_texture(commands, destination) ? 0u : 1u);
-    if (commands->operation_count == 65536 ||
-        added > DOE_DX_MAX_COMMAND_RESOURCES - commands->buffer_count - commands->texture_count - commands->timestamp_count)
-        return doe_dx_fail(DOE_DX_RANGE, 0, "texture.copy.budget", error);
+    doe_dx_reservation needed = {.textures=(doe_dx_find_texture(commands, source) ? 0u : 1u) +
+        (doe_dx_find_texture(commands, destination) ? 0u : 1u)};
+    status = doe_dx_reserve_uses(commands, needed, error);
+    if (status != DOE_DX_OK) return status;
     doe_dx_use_texture(commands, source);
     doe_dx_use_texture(commands, destination);
     doe_dx_native_texture_copy(commands->native, source->native, destination->native);
     doe_dx_find_texture(commands, destination)->initialized = true;
-    commands->operation_count++;
     return doe_dx_fail(DOE_DX_OK, 0, "texture.copy", error);
 }

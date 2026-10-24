@@ -121,7 +121,7 @@ doe_dx_status doe_dx_buffer_write(doe_dx_buffer *buffer, uint64_t offset,
 doe_dx_status doe_dx_buffer_read(doe_dx_buffer *buffer, uint64_t offset,
     void *bytes, size_t size, doe_dx_error *error);
 
-enum { DOE_DX_MAX_BINDINGS = 64, DOE_DX_MAX_STATIC_SAMPLERS = 16, DOE_DX_MAX_COMMAND_RESOURCES = 64 };
+enum { DOE_DX_MAX_BINDINGS = 64, DOE_DX_MAX_STATIC_SAMPLERS = 16 };
 typedef enum doe_dx_binding_access { DOE_DX_READ_ONLY, DOE_DX_READ_WRITE } doe_dx_binding_access;
 typedef enum doe_dx_buffer_view { DOE_DX_STRUCTURED, DOE_DX_UNIFORM } doe_dx_buffer_view;
 typedef struct doe_dx_binding_layout {
