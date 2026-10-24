@@ -478,6 +478,10 @@ bool doe_resource_compute_pass_closed(const doe_resource_compute_pass *pass);
 /* The WebGPU invalid command buffer after a failed Finish: no commands; submit
  * and program claims reject it. NULL unless the encoder failed, or on OOM. */
 doe_resource_commands *doe_resource_commands_rejected(doe_resource_encoder *encoder);
+/* A failed queue submit invalidates every command buffer of its batch: an
+ * unsubmitted buffer becomes permanently unsubmittable. Caller holds the
+ * owning device's lock. */
+void doe_resource_commands_invalidate(doe_resource_commands *commands);
 /* Native descriptor preflight uses this same sticky error state, never a second
  * frontend poison flag. OK/PENDING and out-of-range statuses are not rejection. */
 doe_resource_status doe_resource_encoder_invalidate(doe_resource_encoder *encoder,

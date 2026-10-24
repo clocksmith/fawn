@@ -240,12 +240,11 @@ doe_resource_status doe_resource_bundle_encoder_debug(doe_resource_bundle_encode
 doe_resource_status doe_resource_bundle_encoder_finish(doe_resource_bundle_encoder *encoder,
     doe_resource_render_bundle **out);
 bool doe_resource_bundle_encoder_ended(const doe_resource_bundle_encoder *encoder);
-/* The WebGPU invalid bundle encoder for a rejected descriptor (the creation
- * reported the error): it records nothing and its Finish yields an invalid
- * bundle. `rejection` must be a rejection status; NULL on allocation failure. */
+/* The WebGPU invalid bundle encoder for a rejected descriptor: it records
+ * nothing and its Finish fails with `rejection` and yields an invalid bundle.
+ * `rejection` must be a rejection status; NULL on allocation failure. */
 doe_resource_bundle_encoder *doe_resource_bundle_encoder_rejected(const doe_resource_config *config,
     doe_resource_status rejection);
-bool doe_resource_bundle_encoder_created_invalid(const doe_resource_bundle_encoder *encoder);
 /* The WebGPU invalid bundle returned after a failed finish: no draws, and
  * executing it invalidates the pass's command encoder. NULL unless the encoder
  * has failed, or on allocation failure. */

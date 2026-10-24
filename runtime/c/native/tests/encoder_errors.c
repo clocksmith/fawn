@@ -206,6 +206,28 @@ int main(void)
     wgpuCommandBufferRelease(commands);
     wgpuCommandEncoderRelease(encoder);
 
+    /* A failed submit invalidates every command buffer of its batch, in either
+     * order: resubmitting the valid buffer reports again. */
+    for (uint32_t order = 0; order < 2; ++order) {
+        encoder = wgpuDeviceCreateCommandEncoder(s.device,NULL);
+        wgpuCommandEncoderClearBuffer(encoder,bytes,0,3); /* rejected: unaligned */
+        WGPUCommandBuffer bad_buffer = wgpuCommandEncoderFinish(encoder,NULL);
+        wgpuCommandEncoderRelease(encoder);
+        encoder = wgpuDeviceCreateCommandEncoder(s.device,NULL);
+        wgpuCommandEncoderClearBuffer(encoder,bytes,0,4);
+        WGPUCommandBuffer good_buffer = wgpuCommandEncoderFinish(encoder,NULL);
+        wgpuCommandEncoderRelease(encoder);
+        assert(bad_buffer && good_buffer);
+        before = s.errors;
+        WGPUCommandBuffer batch[2] = {order ? good_buffer : bad_buffer, order ? bad_buffer : good_buffer};
+        wgpuQueueSubmit(s.queue,2,batch);
+        expect_errors(&s,before,1,order ? "submit [valid, invalid]" : "submit [invalid, valid]");
+        wgpuQueueSubmit(s.queue,1,&good_buffer);
+        expect_errors(&s,before,2,"resubmit of a buffer from a failed batch");
+        wgpuCommandBufferRelease(bad_buffer);
+        wgpuCommandBufferRelease(good_buffer);
+    }
+
     /* A valid encoder still records and submits after all of the above. */
     encoder = wgpuDeviceCreateCommandEncoder(s.device,NULL);
     pass = begin_render(encoder,view,WGPUStoreOp_Store);
@@ -258,8 +280,9 @@ int main(void)
         } else finish_rejected(&s,encoder,before,"invalid bundle execution");
     }
     /* An invalid descriptor: one error at creation and an invalid encoder whose
-     * commands and Finish add nothing; its invalid bundle invalidates the pass's
-     * command encoder, whose Finish reports once; a second Finish reports. */
+     * commands add nothing; Finish reports ("this must be valid") and returns an
+     * invalid bundle that invalidates the pass's command encoder, whose Finish
+     * reports once; a second Finish reports again. */
     before = s.errors;
     WGPURenderBundleEncoderDescriptor bad = WGPU_RENDER_BUNDLE_ENCODER_DESCRIPTOR_INIT;
     bad.depthStencilFormat = WGPUTextureFormat_RGBA8Unorm; /* a color format as depth/stencil */
@@ -270,9 +293,9 @@ int main(void)
     wgpuRenderBundleEncoderDraw(builder,3,1,0,0);
     WGPURenderBundle born_invalid = wgpuRenderBundleEncoderFinish(builder,NULL);
     assert(born_invalid);
-    expect_errors(&s,before,1,"invalid-descriptor encoder commands and Finish");
+    expect_errors(&s,before,2,"invalid-descriptor encoder Finish");
     WGPURenderBundle finished_twice = wgpuRenderBundleEncoderFinish(builder,NULL);
-    expect_errors(&s,before,2,"second Finish of an invalid-descriptor encoder");
+    expect_errors(&s,before,3,"second Finish of an invalid-descriptor encoder");
     wgpuRenderBundleRelease(finished_twice);
     wgpuRenderBundleEncoderRelease(builder);
     before = s.errors;
@@ -308,7 +331,8 @@ int main(void)
         "and a second Finish after bundle Finish report at the call, ended passes on a valid encoder report at "
         "the call and leave it valid, End with an unlocked parent and invalid-command-buffer submits report, "
         "a chained Finish ends the encoder, an invalid bundle encoder descriptor reports "
-        "once at creation and its bundle once at the executing encoder's Finish; core-features-and-limits listed and "
+        "at creation and at its Finish and its bundle once at the executing encoder's Finish, a failed submit "
+        "invalidates its whole batch in either order; core-features-and-limits listed and "
         "accepted %s\n", adapter_class_scope());
     return 0;
 }
