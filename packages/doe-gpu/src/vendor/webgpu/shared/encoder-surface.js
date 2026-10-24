@@ -148,6 +148,17 @@ function invalidateEncoder(encoder, message) {
   }
 }
 
+// WebGPU "validate the encoder state" for an ended encoder: the command
+// generates a validation error now and records nothing. With no error scope or
+// uncapturederror listener it throws at once instead.
+function encoderEnded(device, message) {
+  if (!shouldRouteDeviceError(device)) {
+    throw new Error(message);
+  }
+  deliverDeviceError(device, 'validation', new GPUValidationError(message));
+  return true;
+}
+
 // True when a command that names `first`/`second` must record nothing: the
 // device is lost (every command is inert), or an object is invalid.
 function encoderSkipsUse(encoder, path, first = null, second = null) {
@@ -197,6 +208,17 @@ function renderPassDescriptorObjects(descriptor) {
   return objects;
 }
 
+// A render pass with no attachment is invalid (WebGPU "GPURenderPassDescriptor
+// valid usage"): the encoder is invalidated, so finish() reports the error.
+function renderPassLacksAttachments(encoder, descriptor) {
+  const colors = descriptor.colorAttachments;
+  if (!Array.isArray(colors) || colors.some((attachment) => attachment != null) || descriptor.depthStencilAttachment != null) {
+    return false;
+  }
+  invalidateEncoder(encoder, 'GPUCommandEncoder.beginRenderPass: descriptor needs a color attachment or a depthStencilAttachment');
+  return true;
+}
+
 function normalizeCopySize(copySize, path) {
   return normalizeExtent3D(copySize, path, 'copySize');
 }
@@ -243,16 +265,21 @@ function createEncoderClasses(backend) {
       backend.computePassInit(this, state);
     }
 
-    // On a lost device every call is inert, so state errors do not throw.
+    // True when the command must record nothing: the pass or its encoder has
+    // ended, which is a validation error (WebGPU "validate the encoder state").
     _assertOpen(path) {
-      if (isDeviceLost(this._encoder?._device)) return;
+      // On a lost device every call is inert, so state errors are not reported.
+      if (isDeviceLost(this._encoder?._device)) return false;
+      if (this._ended) return encoderEnded(this._encoder._device, `${path}: compute pass is already ended`);
+      if (this._encoder._finished) return encoderEnded(this._encoder._device, `${path}: command encoder is already finished`);
       if (_hasComputePassAssertOpen) {
         backend.computePassAssertOpen(this, path);
       }
+      return false;
     }
 
     setPipeline(pipeline) {
-      this._assertOpen('GPUComputePassEncoder.setPipeline');
+      if (this._assertOpen('GPUComputePassEncoder.setPipeline')) return;
       if (passSkipsCommand(this, this._encoder, 'GPUComputePassEncoder.setPipeline', pipeline)) return;
       backend.computePassSetPipeline(
         this,
@@ -262,7 +289,7 @@ function createEncoderClasses(backend) {
 
     setBindGroup(index, bindGroup, dynamicOffsets, dynamicOffsetsDataStart, dynamicOffsetsDataLength) {
       const path = 'GPUComputePassEncoder.setBindGroup';
-      this._assertOpen(path);
+      if (this._assertOpen(path)) return;
       assertIntegerInRange(index, path, 'index', UINT32_RANGE);
       const offsets = normalizeDynamicOffsets(
         path,
@@ -276,7 +303,7 @@ function createEncoderClasses(backend) {
     }
 
     setImmediates(index, data, dataOffset = 0, size) {
-      this._assertOpen('GPUComputePassEncoder.setImmediates');
+      if (this._assertOpen('GPUComputePassEncoder.setImmediates')) return;
       assertIntegerInRange(index, 'GPUComputePassEncoder.setImmediates', 'index', UINT32_RANGE);
       if (passSkipsCommand(this, this._encoder, 'GPUComputePassEncoder.setImmediates')) return;
       backend.computePassSetImmediates(
@@ -287,7 +314,7 @@ function createEncoderClasses(backend) {
     }
 
     dispatchWorkgroups(x, y = 1, z = 1) {
-      this._assertOpen('GPUComputePassEncoder.dispatchWorkgroups');
+      if (this._assertOpen('GPUComputePassEncoder.dispatchWorkgroups')) return;
       assertIntegerInRange(x, 'GPUComputePassEncoder.dispatchWorkgroups', 'x', UINT32_RANGE);
       assertIntegerInRange(y, 'GPUComputePassEncoder.dispatchWorkgroups', 'y', UINT32_RANGE);
       assertIntegerInRange(z, 'GPUComputePassEncoder.dispatchWorkgroups', 'z', UINT32_RANGE);
@@ -296,7 +323,7 @@ function createEncoderClasses(backend) {
     }
 
     _dispatchBound(pipeline, bindGroup, x, y = 1, z = 1) {
-      this._assertOpen('GPUComputePassEncoder._dispatchBound');
+      if (this._assertOpen('GPUComputePassEncoder._dispatchBound')) return;
       assertIntegerInRange(x, 'GPUComputePassEncoder._dispatchBound', 'x', UINT32_RANGE);
       assertIntegerInRange(y, 'GPUComputePassEncoder._dispatchBound', 'y', UINT32_RANGE);
       assertIntegerInRange(z, 'GPUComputePassEncoder._dispatchBound', 'z', UINT32_RANGE);
@@ -314,7 +341,7 @@ function createEncoderClasses(backend) {
     }
 
     dispatchWorkgroupsIndirect(indirectBuffer, indirectOffset = 0) {
-      this._assertOpen('GPUComputePassEncoder.dispatchWorkgroupsIndirect');
+      if (this._assertOpen('GPUComputePassEncoder.dispatchWorkgroupsIndirect')) return;
       assertIntegerInRange(indirectOffset, 'GPUComputePassEncoder.dispatchWorkgroupsIndirect', 'indirectOffset', NON_NEGATIVE_RANGE);
       if (passSkipsCommand(this, this._encoder, 'GPUComputePassEncoder.dispatchWorkgroupsIndirect', indirectBuffer)) return;
       backend.computePassDispatchWorkgroupsIndirect(
@@ -325,23 +352,23 @@ function createEncoderClasses(backend) {
     }
 
     pushDebugGroup(groupLabel) {
-      this._assertOpen('GPUComputePassEncoder.pushDebugGroup');
+      if (this._assertOpen('GPUComputePassEncoder.pushDebugGroup')) return;
       if (passInert(this)) return;
       backend.computePassPushDebugGroup(this, groupLabel);
     }
     popDebugGroup() {
-      this._assertOpen('GPUComputePassEncoder.popDebugGroup');
+      if (this._assertOpen('GPUComputePassEncoder.popDebugGroup')) return;
       if (passInert(this)) return;
       backend.computePassPopDebugGroup(this);
     }
     insertDebugMarker(markerLabel) {
-      this._assertOpen('GPUComputePassEncoder.insertDebugMarker');
+      if (this._assertOpen('GPUComputePassEncoder.insertDebugMarker')) return;
       if (passInert(this)) return;
       backend.computePassInsertDebugMarker(this, markerLabel);
     }
 
     end() {
-      this._assertOpen('GPUComputePassEncoder.end');
+      if (this._assertOpen('GPUComputePassEncoder.end')) return;
       if (passInert(this)) {
         this._ended = true;
         return;
@@ -359,15 +386,20 @@ function createEncoderClasses(backend) {
       backend.renderPassInit(this, state);
     }
 
+    // True when the command must record nothing (see the compute pass).
     _assertOpen(path) {
-      if (isDeviceLost(this._encoder?._device)) return;
+      // On a lost device every call is inert, so state errors are not reported.
+      if (isDeviceLost(this._encoder?._device)) return false;
+      if (this._ended) return encoderEnded(this._encoder._device, `${path}: render pass is already ended`);
+      if (this._encoder._finished) return encoderEnded(this._encoder._device, `${path}: command encoder is already finished`);
       if (typeof backend.renderPassAssertOpen === 'function') {
         backend.renderPassAssertOpen(this, path);
       }
+      return false;
     }
 
     setPipeline(pipeline) {
-      this._assertOpen('GPURenderPassEncoder.setPipeline');
+      if (this._assertOpen('GPURenderPassEncoder.setPipeline')) return;
       if (passSkipsCommand(this, this._encoder, 'GPURenderPassEncoder.setPipeline', pipeline)) return;
       backend.renderPassSetPipeline(
         this,
@@ -377,7 +409,7 @@ function createEncoderClasses(backend) {
 
     setBindGroup(index, bindGroup, dynamicOffsets, dynamicOffsetsDataStart, dynamicOffsetsDataLength) {
       const path = 'GPURenderPassEncoder.setBindGroup';
-      this._assertOpen(path);
+      if (this._assertOpen(path)) return;
       assertIntegerInRange(index, path, 'index', UINT32_RANGE);
       const offsets = normalizeDynamicOffsets(
         path,
@@ -391,7 +423,7 @@ function createEncoderClasses(backend) {
     }
 
     setImmediates(index, data, dataOffset = 0, size) {
-      this._assertOpen('GPURenderPassEncoder.setImmediates');
+      if (this._assertOpen('GPURenderPassEncoder.setImmediates')) return;
       assertIntegerInRange(index, 'GPURenderPassEncoder.setImmediates', 'index', UINT32_RANGE);
       if (passSkipsCommand(this, this._encoder, 'GPURenderPassEncoder.setImmediates')) return;
       backend.renderPassSetImmediates(
@@ -402,7 +434,7 @@ function createEncoderClasses(backend) {
     }
 
     setVertexBuffer(slot, buffer, offset = 0, size) {
-      this._assertOpen('GPURenderPassEncoder.setVertexBuffer');
+      if (this._assertOpen('GPURenderPassEncoder.setVertexBuffer')) return;
       assertIntegerInRange(slot, 'GPURenderPassEncoder.setVertexBuffer', 'slot', UINT32_RANGE);
       assertIntegerInRange(offset, 'GPURenderPassEncoder.setVertexBuffer', 'offset', NON_NEGATIVE_RANGE);
       if (size !== undefined) {
@@ -419,7 +451,7 @@ function createEncoderClasses(backend) {
     }
 
     setIndexBuffer(buffer, format, offset = 0, size) {
-      this._assertOpen('GPURenderPassEncoder.setIndexBuffer');
+      if (this._assertOpen('GPURenderPassEncoder.setIndexBuffer')) return;
       assertIntegerInRange(offset, 'GPURenderPassEncoder.setIndexBuffer', 'offset', NON_NEGATIVE_RANGE);
       if (size !== undefined) {
         assertIntegerInRange(size, 'GPURenderPassEncoder.setIndexBuffer', 'size', NON_NEGATIVE_RANGE);
@@ -435,7 +467,7 @@ function createEncoderClasses(backend) {
     }
 
     draw(vertexCount, instanceCount = 1, firstVertex = 0, firstInstance = 0) {
-      this._assertOpen('GPURenderPassEncoder.draw');
+      if (this._assertOpen('GPURenderPassEncoder.draw')) return;
       assertIntegerInRange(vertexCount, 'GPURenderPassEncoder.draw', 'vertexCount', UINT32_RANGE);
       assertIntegerInRange(instanceCount, 'GPURenderPassEncoder.draw', 'instanceCount', UINT32_RANGE);
       assertIntegerInRange(firstVertex, 'GPURenderPassEncoder.draw', 'firstVertex', UINT32_RANGE);
@@ -445,7 +477,7 @@ function createEncoderClasses(backend) {
     }
 
     drawIndexed(indexCount, instanceCount = 1, firstIndex = 0, baseVertex = 0, firstInstance = 0) {
-      this._assertOpen('GPURenderPassEncoder.drawIndexed');
+      if (this._assertOpen('GPURenderPassEncoder.drawIndexed')) return;
       assertIntegerInRange(indexCount, 'GPURenderPassEncoder.drawIndexed', 'indexCount', UINT32_RANGE);
       assertIntegerInRange(instanceCount, 'GPURenderPassEncoder.drawIndexed', 'instanceCount', UINT32_RANGE);
       assertIntegerInRange(firstIndex, 'GPURenderPassEncoder.drawIndexed', 'firstIndex', UINT32_RANGE);
@@ -455,7 +487,7 @@ function createEncoderClasses(backend) {
     }
 
     drawIndirect(indirectBuffer, indirectOffset = 0) {
-      this._assertOpen('GPURenderPassEncoder.drawIndirect');
+      if (this._assertOpen('GPURenderPassEncoder.drawIndirect')) return;
       assertIntegerInRange(indirectOffset, 'GPURenderPassEncoder.drawIndirect', 'indirectOffset', NON_NEGATIVE_RANGE);
       if (passSkipsCommand(this, this._encoder, 'GPURenderPassEncoder.drawIndirect', indirectBuffer)) return;
       backend.renderPassDrawIndirect(
@@ -466,7 +498,7 @@ function createEncoderClasses(backend) {
     }
 
     drawIndexedIndirect(indirectBuffer, indirectOffset = 0) {
-      this._assertOpen('GPURenderPassEncoder.drawIndexedIndirect');
+      if (this._assertOpen('GPURenderPassEncoder.drawIndexedIndirect')) return;
       assertIntegerInRange(indirectOffset, 'GPURenderPassEncoder.drawIndexedIndirect', 'indirectOffset', NON_NEGATIVE_RANGE);
       if (passSkipsCommand(this, this._encoder, 'GPURenderPassEncoder.drawIndexedIndirect', indirectBuffer)) return;
       backend.renderPassDrawIndexedIndirect(
@@ -477,13 +509,13 @@ function createEncoderClasses(backend) {
     }
 
     setViewport(x, y, width, height, minDepth, maxDepth) {
-      this._assertOpen('GPURenderPassEncoder.setViewport');
+      if (this._assertOpen('GPURenderPassEncoder.setViewport')) return;
       if (passInert(this)) return;
       backend.renderPassSetViewport(this, x, y, width, height, minDepth, maxDepth);
     }
 
     setScissorRect(x, y, width, height) {
-      this._assertOpen('GPURenderPassEncoder.setScissorRect');
+      if (this._assertOpen('GPURenderPassEncoder.setScissorRect')) return;
       assertIntegerInRange(x, 'GPURenderPassEncoder.setScissorRect', 'x', UINT32_RANGE);
       assertIntegerInRange(y, 'GPURenderPassEncoder.setScissorRect', 'y', UINT32_RANGE);
       assertIntegerInRange(width, 'GPURenderPassEncoder.setScissorRect', 'width', UINT32_RANGE);
@@ -493,7 +525,7 @@ function createEncoderClasses(backend) {
     }
 
     setBlendConstant(color) {
-      this._assertOpen('GPURenderPassEncoder.setBlendConstant');
+      if (this._assertOpen('GPURenderPassEncoder.setBlendConstant')) return;
       if (color === undefined) failValidation('GPURenderPassEncoder.setBlendConstant', 'color is required');
       // GPUColor is a four-component sequence or an {r, g, b, a} dictionary.
       const { r, g, b, a } = normalizeGpuColor(color, 'GPURenderPassEncoder.setBlendConstant.color');
@@ -502,48 +534,48 @@ function createEncoderClasses(backend) {
     }
 
     setStencilReference(reference) {
-      this._assertOpen('GPURenderPassEncoder.setStencilReference');
+      if (this._assertOpen('GPURenderPassEncoder.setStencilReference')) return;
       assertIntegerInRange(reference, 'GPURenderPassEncoder.setStencilReference', 'reference', UINT32_RANGE);
       if (passInert(this)) return;
       backend.renderPassSetStencilReference(this, reference);
     }
 
     beginOcclusionQuery(queryIndex) {
-      this._assertOpen('GPURenderPassEncoder.beginOcclusionQuery');
+      if (this._assertOpen('GPURenderPassEncoder.beginOcclusionQuery')) return;
       assertIntegerInRange(queryIndex, 'GPURenderPassEncoder.beginOcclusionQuery', 'queryIndex', UINT32_RANGE);
       if (passInert(this)) return;
       backend.renderPassBeginOcclusionQuery(this, queryIndex);
     }
 
     endOcclusionQuery() {
-      this._assertOpen('GPURenderPassEncoder.endOcclusionQuery');
+      if (this._assertOpen('GPURenderPassEncoder.endOcclusionQuery')) return;
       if (passInert(this)) return;
       backend.renderPassEndOcclusionQuery(this);
     }
 
     pushDebugGroup(groupLabel) {
-      if (passInert(this)) return;
+      if (this._assertOpen('GPURenderPassEncoder.pushDebugGroup') || passInert(this)) return;
       backend.renderPassPushDebugGroup(this, groupLabel);
     }
     popDebugGroup() {
-      if (passInert(this)) return;
+      if (this._assertOpen('GPURenderPassEncoder.popDebugGroup') || passInert(this)) return;
       backend.renderPassPopDebugGroup(this);
     }
     insertDebugMarker(markerLabel) {
-      if (passInert(this)) return;
+      if (this._assertOpen('GPURenderPassEncoder.insertDebugMarker') || passInert(this)) return;
       backend.renderPassInsertDebugMarker(this, markerLabel);
     }
 
     executeBundles(bundles) {
       const path = 'GPURenderPassEncoder.executeBundles';
-      this._assertOpen(path);
+      if (this._assertOpen(path)) return;
       const list = assertArray(bundles, path, 'bundles');
       if (passSkipsCommand(this, this._encoder, path, list.find(isInvalidResource))) return;
       backend.renderPassExecuteBundles(this, list);
     }
 
     end() {
-      this._assertOpen('GPURenderPassEncoder.end');
+      if (this._assertOpen('GPURenderPassEncoder.end')) return;
       if (passInert(this)) {
         this._ended = true;
         return;
@@ -778,18 +810,28 @@ function createEncoderClasses(backend) {
       backend.commandEncoderInit(this, state);
     }
 
+    // True when the command must record nothing. A finished encoder is ended
+    // (a validation error now); one with an open pass is locked, which
+    // invalidates it so finish() reports the error.
     _assertOpen(path) {
-      if (isDeviceLost(this._device)) return;
+      // On a lost device every call is inert, so state errors are not reported.
+      if (isDeviceLost(this._device)) return false;
       assertLiveResource(this._device, path, 'GPUDevice');
+      if (this._finished) return encoderEnded(this._device, `${path}: command encoder is already finished`);
+      const activePass = this._activePass;
+      if (activePass != null && !activePass._ended) {
+        invalidateEncoder(this, `${path}: command encoder has an active pass`);
+        return true;
+      }
       if (typeof backend.commandEncoderAssertOpen === 'function') {
         backend.commandEncoderAssertOpen(this, path);
       }
+      return false;
     }
 
     beginComputePass(descriptor) {
       const path = 'GPUCommandEncoder.beginComputePass';
-      this._assertOpen(path);
-      if (encoderSkipsUse(this, path, descriptor?.timestampWrites?.querySet)) {
+      if (this._assertOpen(path) || encoderSkipsUse(this, path, descriptor?.timestampWrites?.querySet)) {
         const invalidPass = new DoeGPUComputePassEncoder(null, this);
         invalidPass._invalid = true;
         invalidPass.label = descriptor?.label ?? '';
@@ -802,12 +844,13 @@ function createEncoderClasses(backend) {
     }
 
     beginRenderPass(descriptor) {
-      this._assertOpen('GPUCommandEncoder.beginRenderPass');
       const passDescriptor = assertObject(descriptor, 'GPUCommandEncoder.beginRenderPass', 'descriptor');
       const named = renderPassDescriptorObjects(passDescriptor);
       // A GPUTexture attachment stands for its default view; an invalid one
       // must not reach createView, which would report a second error.
-      if (encoderSkipsUse(this, 'GPUCommandEncoder.beginRenderPass', named.find(isInvalidResource))) {
+      if (this._assertOpen('GPUCommandEncoder.beginRenderPass')
+        || encoderSkipsUse(this, 'GPUCommandEncoder.beginRenderPass', named.find(isInvalidResource))
+        || renderPassLacksAttachments(this, passDescriptor)) {
         const invalidPass = new DoeGPURenderPassEncoder(null, this);
         invalidPass._invalid = true;
         invalidPass.label = passDescriptor.label ?? '';
@@ -820,7 +863,7 @@ function createEncoderClasses(backend) {
     }
 
     copyBufferToBuffer(src, srcOffsetOrDst, dstOrSize, dstOffsetOrUndefined, sizeOrUndefined) {
-      this._assertOpen('GPUCommandEncoder.copyBufferToBuffer');
+      if (this._assertOpen('GPUCommandEncoder.copyBufferToBuffer')) return;
       const srcBuffer = src;
       const useNewSignature = typeof srcOffsetOrDst === 'object' && srcOffsetOrDst !== null;
       const srcOffset = useNewSignature ? 0 : srcOffsetOrDst;
@@ -846,7 +889,7 @@ function createEncoderClasses(backend) {
 
     copyBufferToTexture(source, destination, copySize) {
       const path = 'GPUCommandEncoder.copyBufferToTexture';
-      this._assertOpen(path);
+      if (this._assertOpen(path)) return;
       const sourceObject = assertObject(source, 'GPUCommandEncoder.copyBufferToTexture', 'source');
       const destinationObject = assertObject(destination, 'GPUCommandEncoder.copyBufferToTexture', 'destination');
       const sizeObject = normalizeCopySize(copySize, 'GPUCommandEncoder.copyBufferToTexture');
@@ -881,7 +924,7 @@ function createEncoderClasses(backend) {
 
     copyTextureToBuffer(source, destination, copySize) {
       const path = 'GPUCommandEncoder.copyTextureToBuffer';
-      this._assertOpen(path);
+      if (this._assertOpen(path)) return;
       const sourceObject = assertObject(source, 'GPUCommandEncoder.copyTextureToBuffer', 'source');
       const destinationObject = assertObject(destination, 'GPUCommandEncoder.copyTextureToBuffer', 'destination');
       const sizeObject = normalizeCopySize(copySize, 'GPUCommandEncoder.copyTextureToBuffer');
@@ -916,7 +959,7 @@ function createEncoderClasses(backend) {
 
     copyTextureToTexture(source, destination, copySize) {
       const path = 'GPUCommandEncoder.copyTextureToTexture';
-      this._assertOpen(path);
+      if (this._assertOpen(path)) return;
       const sourceObject = assertObject(source, 'GPUCommandEncoder.copyTextureToTexture', 'source');
       const destinationObject = assertObject(destination, 'GPUCommandEncoder.copyTextureToTexture', 'destination');
       const sizeObject = normalizeCopySize(copySize, 'GPUCommandEncoder.copyTextureToTexture');
@@ -944,7 +987,7 @@ function createEncoderClasses(backend) {
     }
 
     clearBuffer(buffer, offset = 0, size) {
-      this._assertOpen('GPUCommandEncoder.clearBuffer');
+      if (this._assertOpen('GPUCommandEncoder.clearBuffer')) return;
       assertIntegerInRange(offset, 'GPUCommandEncoder.clearBuffer', 'offset', NON_NEGATIVE_RANGE);
       if (size !== undefined) {
         assertIntegerInRange(size, 'GPUCommandEncoder.clearBuffer', 'size', NON_NEGATIVE_RANGE);
@@ -959,7 +1002,7 @@ function createEncoderClasses(backend) {
     }
 
     writeTimestamp(querySet, queryIndex) {
-      this._assertOpen('GPUCommandEncoder.writeTimestamp');
+      if (this._assertOpen('GPUCommandEncoder.writeTimestamp')) return;
       if (encoderSkipsUse(this, 'GPUCommandEncoder.writeTimestamp', querySet)) return;
       const querySetNative = assertLiveResource(querySet, 'GPUCommandEncoder.writeTimestamp', 'GPUQuerySet');
       assertIntegerInRange(queryIndex, 'GPUCommandEncoder.writeTimestamp', 'queryIndex', UINT32_RANGE);
@@ -970,7 +1013,7 @@ function createEncoderClasses(backend) {
     }
 
     resolveQuerySet(querySet, firstQuery, queryCount, destination, destinationOffset) {
-      this._assertOpen('GPUCommandEncoder.resolveQuerySet');
+      if (this._assertOpen('GPUCommandEncoder.resolveQuerySet')) return;
       if (encoderSkipsUse(this, 'GPUCommandEncoder.resolveQuerySet', querySet, destination)) return;
       const querySetNative = assertLiveResource(querySet, 'GPUCommandEncoder.resolveQuerySet', 'GPUQuerySet');
       assertIntegerInRange(firstQuery, 'GPUCommandEncoder.resolveQuerySet', 'firstQuery', UINT32_RANGE);
@@ -984,15 +1027,15 @@ function createEncoderClasses(backend) {
     }
 
     pushDebugGroup(groupLabel) {
-      if (isDeviceLost(this._device)) return;
+      if (isDeviceLost(this._device) || this._assertOpen('GPUCommandEncoder.pushDebugGroup')) return;
       backend.commandEncoderPushDebugGroup(this, groupLabel);
     }
     popDebugGroup() {
-      if (isDeviceLost(this._device)) return;
+      if (isDeviceLost(this._device) || this._assertOpen('GPUCommandEncoder.popDebugGroup')) return;
       backend.commandEncoderPopDebugGroup(this);
     }
     insertDebugMarker(markerLabel) {
-      if (isDeviceLost(this._device)) return;
+      if (isDeviceLost(this._device) || this._assertOpen('GPUCommandEncoder.insertDebugMarker')) return;
       backend.commandEncoderInsertDebugMarker(this, markerLabel);
     }
 
@@ -1010,6 +1053,14 @@ function createEncoderClasses(backend) {
         // A lost device's encoder finishes into an invalid command buffer
         // without touching the provider; no error is generated.
         this._finished = true;
+        return markInvalid(new DoeGPUCommandBuffer({ _batched: true, _commands: [] }, device), descriptor?.label);
+      }
+      const ended = this._finished;
+      if (this._assertOpen('GPUCommandEncoder.finish')) {
+        // A locked encoder (open pass) is invalid and now ended; an ended one
+        // already generated its error.
+        this._finished = true;
+        if (!ended) reportFinishError(device, [], this._invalidMessage);
         return markInvalid(new DoeGPUCommandBuffer({ _batched: true, _commands: [] }, device), descriptor?.label);
       }
       const { result: state, errors } = collectDeviceErrors(device, () => backend.commandEncoderFinish(this));
