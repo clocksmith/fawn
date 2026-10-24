@@ -12,7 +12,7 @@ if errorlevel 1 exit /b 1
 pushd "%~dp0"
 if errorlevel 1 exit /b 1
 set "BASE=/nologo /MD /O2 /WX /clang:-Wall /clang:-Wextra /clang:-Wpedantic /Iinclude"
-"%CLANG_CL%" %BASE% /std:c++17 /clang:-fno-exceptions /clang:-fno-rtti /fp:strict /I"%DXC_ROOT%\inc" /c src/windows_shader.cpp /Fo"%OUT%\windows_shader.obj"
+"%CLANG_CL%" %BASE% /std:c++17 /clang:-fno-exceptions /clang:-fno-rtti /fp:strict /imsvc"%DXC_ROOT%\inc" /c src/windows_shader.cpp /Fo"%OUT%\windows_shader.obj"
 if errorlevel 1 goto fail
 "%CLANG_CL%" %BASE% /clang:-std=c11 /fp:strict /D_CRT_SECURE_NO_WARNINGS /c tests/native_shader.c /Fo"%OUT%\native_shader.obj"
 if errorlevel 1 goto fail
