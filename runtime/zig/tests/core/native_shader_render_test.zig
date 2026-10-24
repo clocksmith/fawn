@@ -1495,6 +1495,7 @@ fn attachmentRecordingFailures(allocator: std.mem.Allocator) !void {
     }
     var attachment = std.mem.zeroes(types.WGPURenderPassColorAttachment);
     attachment.view = @ptrCast(&view);
+    attachment.depthSlice = std.math.maxInt(u32); // WGPU_DEPTH_SLICE_UNDEFINED: a 2d view takes none
     var descriptor = std.mem.zeroes(types.WGPURenderPassDescriptor);
     descriptor.colorAttachmentCount = 1;
     descriptor.colorAttachments = @ptrCast(&attachment);

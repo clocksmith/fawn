@@ -54,7 +54,10 @@ pub const RenderColorAttachment = struct {
     alpha_src_factor: u32 = 2,
     alpha_dst_factor: u32 = 1,
     write_mask: u32 = 0xF,
+    /// A 3d attachment renders one depth slice of one mip level.
+    depth_slice: ?DepthSlice = null,
 };
+pub const DepthSlice = struct { mip_level: u32, slice: u32 };
 pub const RENDER_BINDING_UNSET: u32 = 0xFFFF_FFFF;
 
 /// Undefined with no attributes is an unused (null) vertex buffer slot.

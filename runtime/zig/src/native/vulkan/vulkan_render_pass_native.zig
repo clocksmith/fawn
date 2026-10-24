@@ -179,6 +179,8 @@ fn populate_color_attachments(cmd: *model_render_types.RenderDrawCommand, pass: 
         out.handle = view.tex.vk_id;
         out.view_handle = view_key(view);
         out.format = slot.format;
+        if (view.dimension == upstream.WGPUTextureViewDimension_3D)
+            out.depth_slice = .{ .mip_level = view.base_mip_level, .slice = slot.depth_slice };
         if (native_helpers.cast(shared.DoeTextureView, @ptrFromInt(slot.resolve_view_handle))) |resolve| {
             out.resolve_handle = resolve.tex.vk_id;
             out.resolve_view_handle = view_key(resolve);

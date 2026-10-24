@@ -176,6 +176,7 @@ pub export fn doeNativeCommandEncoderBeginRenderPass(enc_raw: ?*anyopaque, desc:
                 for (attachments[0..count], 0..) |slot_att, index| {
                     const slot = &pass.color_attachments[index];
                     slot.load_op = slot_att.loadOp;
+                    slot.depth_slice = slot_att.depthSlice;
                     slot.clear = .{ slot_att.clearValue.r, slot_att.clearValue.g, slot_att.clearValue.b, slot_att.clearValue.a };
                     if (cast(DoeTextureView, slot_att.view)) |v| {
                         if (index > 0) {

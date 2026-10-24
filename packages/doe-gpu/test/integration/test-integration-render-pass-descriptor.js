@@ -33,10 +33,18 @@ async function finishError(descriptor) {
 }
 
 const occlusion = device.createQuerySet({ type: 'occlusion', count: 2 });
+// A 4x4x4 3d texture: its mip level 1 is two slices deep.
+const volume = device.createTexture({ dimension: '3d', size: [4, 4, 4], mipLevelCount: 2, format: 'rgba8unorm', usage: GPUTextureUsage.RENDER_ATTACHMENT });
+const slice = (depthSlice, baseMipLevel = 0) => ({ view: volume.createView({ baseMipLevel, mipLevelCount: 1 }), depthSlice, loadOp: 'clear', storeOp: 'store' });
 const cases = [
   ['a valid pass', { colorAttachments: [attachment()] }, true],
   ['more color slots than maxColorAttachments', { colorAttachments: Array.from({ length: device.limits.maxColorAttachments + 1 }, attachment) }, false],
   ['depthSlice on a 2d view', { colorAttachments: [{ ...attachment(), depthSlice: 0 }] }, false],
+  ['a 3d view without depthSlice', { colorAttachments: [{ ...slice(0), depthSlice: undefined }] }, false],
+  ['the last depth slice of mip level 1', { colorAttachments: [slice(1, 1)] }, true],
+  ['a depth slice past mip level 1', { colorAttachments: [slice(2, 1)] }, false],
+  ['two depth slices of one texture', { colorAttachments: [slice(0), slice(3)] }, true],
+  ['one depth slice twice', { colorAttachments: [slice(1), slice(1)] }, false],
   ['a cleared depth aspect without depthClearValue', {
     colorAttachments: [],
     depthStencilAttachment: { view: depth(), depthLoadOp: 'clear', depthStoreOp: 'store' },

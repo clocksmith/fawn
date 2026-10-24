@@ -21,6 +21,7 @@ pub const RenderAttachmentError = error{
     RenderBundleIncompatible,
     RenderPipelineIncompatible,
     RenderAttachmentDepthStencilOps,
+    RenderAttachmentDepthSliceInvalid,
     PassQuerySetInvalid,
 };
 
@@ -68,7 +69,8 @@ pub fn message(cause: Failure) []const u8 {
         error.RenderAttachmentExtentMismatch => "render color and depth attachment mip extents must match",
         error.RenderAttachmentSampleMismatch => "render attachments and pipeline sample counts must match",
         error.RenderAttachmentFormatMismatch => "render attachment formats must match their roles and pipeline targets",
-        error.RenderAttachmentUnsupported => "Vulkan rendering supports up to eight 2D color attachments and an optional depth/stencil attachment",
+        error.RenderAttachmentUnsupported => "Vulkan rendering supports up to eight 2D or 3D color attachments and an optional depth/stencil attachment",
+        error.RenderAttachmentDepthSliceInvalid => "a 3d color attachment needs a depthSlice within its mip level's depth, other views take none, and no two color attachments may share a subresource and depth slice",
         error.RenderAttachmentDepthStencilOps => "attachment load and store ops: depth/stencil ops exactly for each writable aspect the format has, clear and discard for any transient attachment, and a depthClearValue in [0, 1] when clearing depth",
         error.PassQuerySetInvalid => "pass timestampWrites need a timestamp query set and at least one distinct in-range index; occlusionQuerySet needs an occlusion query set",
         error.RenderBundleIncompatible => "render bundle layout or depth/stencil read-only state differs from the render pass",
