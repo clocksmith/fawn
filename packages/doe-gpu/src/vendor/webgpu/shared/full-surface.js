@@ -759,6 +759,11 @@ function createFullSurfaceClasses({
     return Object.freeze(new Set());
   }
 
+  const STAGE_STORAGE_LIMITS = [
+    ['maxStorageBuffersPerShaderStage', ['maxStorageBuffersInVertexStage', 'maxStorageBuffersInFragmentStage']],
+    ['maxStorageTexturesPerShaderStage', ['maxStorageTexturesInVertexStage', 'maxStorageTexturesInFragmentStage']],
+  ];
+
   function validateRequiredLimitValue(name, value, adapterLimits) {
     if (!(name in WEBGPU_DEFAULT_LIMITS)) {
       throw operationError(`GPUAdapter.requestDevice: requiredLimits.${name} is not a supported limit`);
@@ -799,7 +804,30 @@ function createFullSurfaceClasses({
         limits[name] = Math.max(WEBGPU_DEFAULT_LIMITS[name], value);
       }
     }
+    // https://gpuweb.github.io/gpuweb/#a-new-device: the per-stage storage
+    // limits rise to the stage-specific ones, and a core device's
+    // stage-specific limits then equal the per-stage limits.
+    for (const [perStage, stages] of STAGE_STORAGE_LIMITS) {
+      limits[perStage] = Math.max(limits[perStage], ...stages.map((stage) => limits[stage]));
+      if (adapter.features.has(CORE_FEATURES_AND_LIMITS)) {
+        for (const stage of stages) limits[stage] = limits[perStage];
+      }
+    }
     return Object.freeze(limits);
+  }
+
+  /* The native providers know only the per-stage storage limits: a required
+   * stage-specific limit reaches them as its per-stage limit. */
+  function nativeRequestDeviceDescriptor(descriptor) {
+    const requiredLimits = descriptor?.requiredLimits;
+    if (requiredLimits === undefined) return descriptor;
+    const limits = { ...requiredLimits };
+    for (const [perStage, stages] of STAGE_STORAGE_LIMITS) {
+      const values = [perStage, ...stages].map((name) => limits[name]).filter((value) => value !== undefined);
+      for (const stage of stages) delete limits[stage];
+      if (values.length > 0) limits[perStage] = Math.max(...values);
+    }
+    return { ...descriptor, requiredLimits: limits };
   }
 
   function autoLayoutEntryKind(entry) {
@@ -2321,7 +2349,7 @@ function createFullSurfaceClasses({
       const normalized = normalizeRequestDeviceDescriptor(descriptor, 'GPUAdapter.requestDevice');
       const resolvedFeatures = resolveDeviceFeatures(this, normalized);
       const resolvedLimits = resolveDeviceLimits(this, normalized);
-      const deviceResult = backend.adapterRequestDevice(this, normalized, classes);
+      const deviceResult = backend.adapterRequestDevice(this, nativeRequestDeviceDescriptor(normalized), classes);
       this._consumed = true;
       let device;
       try {
