@@ -52,8 +52,9 @@ static doe_resource_status binding_uses(const doe_resource_binding *binding, con
     case DOE_BIND_STORAGE_TEXTURE:
         use.view = binding->resource.view;
         use.aspects = resource_view_aspects(use.view);
-        use.usage = binding->kind == DOE_BIND_STORAGE_TEXTURE && entry->storage_access != WGPUStorageTextureAccess_ReadOnly ?
-            RESOURCE_STORAGE : RESOURCE_READ;
+        use.usage = binding->kind != DOE_BIND_STORAGE_TEXTURE ||
+            entry->storage_access == WGPUStorageTextureAccess_ReadOnly ? RESOURCE_READ :
+            entry->storage_access == WGPUStorageTextureAccess_ReadWrite ? RESOURCE_STORAGE_READ_WRITE : RESOURCE_STORAGE;
         break;
     case DOE_BIND_EXTERNAL_TEXTURE:
         use.external = binding->resource.external_texture;
