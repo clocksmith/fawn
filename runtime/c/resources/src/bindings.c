@@ -242,7 +242,11 @@ doe_resource_status doe_resource_pipeline_layout_create(const doe_resource_confi
 {
     if (!out || !resource_config_valid(config) || (count && !groups)) return DOE_RESOURCE_INVALID_ARGUMENT;
     if (!config->device.alive(config->device.identity)) return DOE_RESOURCE_UNAVAILABLE;
-    if (immediate_size || count > DOE_RESOURCE_MAX_GROUPS) return DOE_RESOURCE_UNSUPPORTED;
+    if (count > DOE_RESOURCE_MAX_GROUPS) return DOE_RESOURCE_UNSUPPORTED;
+    /* WebGPU createPipelineLayout: immediateSize is a multiple of 4 within
+     * maxImmediateSize. No shader declares immediates yet, so an accepted
+     * size needs no push-constant range and nothing reads it. */
+    if (immediate_size % 4 || immediate_size > limit_or(config->max_immediate_size, 64)) return DOE_RESOURCE_RANGE;
     if (count > limit_or(config->slot_limits.max_bind_groups, 4)) return DOE_RESOURCE_RANGE;
     slot_counts counts = {0};
     for (size_t i = 0; i < count; i++) {

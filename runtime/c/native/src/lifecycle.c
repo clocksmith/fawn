@@ -277,6 +277,7 @@ static native_device *create_device(native_adapter *adapter, const WGPUDeviceDes
         .max_texture_dimension_2d = device->backend.limits.maxTextureDimension2D,
         .max_color_attachments = device->backend.limits.maxColorAttachments,
         .max_color_attachment_bytes_per_sample = device->backend.limits.maxColorAttachmentBytesPerSample,
+        .max_immediate_size = device->backend.limits.maxImmediateSize,
         .slot_limits = {
             .max_bind_groups = limits.maxBindGroups,
             .max_dynamic_uniform_buffers = limits.maxDynamicUniformBuffersPerPipelineLayout,

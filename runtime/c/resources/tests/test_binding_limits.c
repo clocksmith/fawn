@@ -137,6 +137,28 @@ static void test_pipeline_layout_totals(void)
     empty(&f);
 }
 
+/* createPipelineLayout immediateSize: a multiple of 4 within
+ * maxImmediateSize (zero config selects the WebGPU default 64). */
+static void test_immediate_size(void)
+{
+    fixture f = fresh();
+    doe_resource_config c = config(&f);
+    doe_resource_pipeline_layout *layout = NULL;
+    const uint32_t valid[] = {0, 4, 64};
+    for (size_t i = 0; i < sizeof valid / sizeof valid[0]; i++) {
+        assert(doe_resource_pipeline_layout_create(&c, NULL, 0, valid[i], &layout) == DOE_RESOURCE_OK);
+        doe_resource_pipeline_layout_release(layout);
+    }
+    const uint32_t invalid[] = {1, 2, 3, 5, 68};
+    for (size_t i = 0; i < sizeof invalid / sizeof invalid[0]; i++)
+        assert(doe_resource_pipeline_layout_create(&c, NULL, 0, invalid[i], &layout) == DOE_RESOURCE_RANGE);
+    c.max_immediate_size = 128;
+    assert(doe_resource_pipeline_layout_create(&c, NULL, 0, 128, &layout) == DOE_RESOURCE_OK);
+    doe_resource_pipeline_layout_release(layout);
+    assert(doe_resource_pipeline_layout_create(&c, NULL, 0, 132, &layout) == DOE_RESOURCE_RANGE);
+    empty(&f);
+}
+
 static void test_full_group(void)
 {
     /* maxBindingsPerBindGroup entries in one group, with usage collected
@@ -192,7 +214,8 @@ int main(void)
     test_binding_numbers();
     test_slot_limits();
     test_pipeline_layout_totals();
+    test_immediate_size();
     test_full_group();
-    puts("binding limit owner: 5 host suites passed; no native execution claimed");
+    puts("binding limit owner: 6 host suites passed; no native execution claimed");
     return 0;
 }
