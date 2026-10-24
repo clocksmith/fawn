@@ -98,7 +98,8 @@ doe_resource_status resource_scope_targets(const doe_resource_config *config, re
     return resource_scope_add(config, scope, uses, count);
 }
 
-doe_resource_status resource_scope_validate(const resource_usage_scope *scope)
+/* executeBundles admits a destroyed texture like setBindGroup; `submit` rejects it. */
+doe_resource_status resource_scope_validate(const resource_usage_scope *scope, bool submit)
 {
     for (size_t i = 0; i < scope->count; i++) {
         const resource_use *use = &scope->uses[i];
@@ -106,7 +107,8 @@ doe_resource_status resource_scope_validate(const resource_usage_scope *scope)
             if (!resource_buffer_available(use->buffer)) return DOE_RESOURCE_UNAVAILABLE;
             if (use->buffer->mapped || use->buffer->map_pending) return DOE_RESOURCE_STATE;
         }
-        if (use->view && !resource_texture_available(use->view->texture)) return DOE_RESOURCE_UNAVAILABLE;
+        if (use->view && !(submit ? resource_texture_available(use->view->texture) :
+                resource_texture_live(use->view->texture))) return DOE_RESOURCE_UNAVAILABLE;
         if (use->external && !resource_external_available(use->external)) return DOE_RESOURCE_UNAVAILABLE;
     }
     return DOE_RESOURCE_OK;

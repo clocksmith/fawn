@@ -163,7 +163,7 @@ unbind and bundle state reset cannot remove historical uses. The finished scope
 moves to the final pass record and remains alive through pending submission.
 Destroyed, mapped and expired unused resources are checked before native submit.
 A destroyed texture that is still referenced is admitted by view creation, bind
-group creation, setBindGroup, copies and render attachments; submission rejects it
+group creation, setBindGroup, executeBundles, copies and render attachments; submission rejects it
 (WebGPU validates destroyed textures at submit) and queue writes reject it at once.
 Every bind group a compute pass sets, whether or not a dispatch uses it, is held
 by the encoder and checked at submission (WebGPU `[[used_bind_groups]]`).

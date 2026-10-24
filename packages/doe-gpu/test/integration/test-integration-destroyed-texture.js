@@ -3,7 +3,9 @@
 // it still encode and finish, and queue.submit reports a validation error,
 // whether the texture was destroyed before encoding or after finish().
 // queue.writeTexture to a destroyed texture is a validation error at once. A
-// bind group set in a compute pass counts even without a dispatch.
+// bind group set in a compute pass counts even without a dispatch. A render
+// bundle whose bind group names a destroyed texture encodes, executes and
+// finishes, and fails at submit.
 
 import assert from 'node:assert/strict';
 import { setupGlobals } from '../../src/index.js';
@@ -119,5 +121,29 @@ function encodePass(view) {
   const submitted = await scoped(() => device.queue.submit([finished.value]));
   assert.ok(submitted.error, 'a bind group of a destroyed texture fails at submit');
   console.log('ok: set-only and post-destroy bind groups fail at submit');
+}
+// A render bundle's bind group of a destroyed texture fails at submit.
+{
+  const S = globalThis.GPUShaderStage;
+  const sampled = device.createTexture({ size: [4, 4], format: 'rgba8unorm', usage: T.TEXTURE_BINDING });
+  const layout = device.createBindGroupLayout({ entries: [{ binding: 0, visibility: S.FRAGMENT, texture: {} }] });
+  const group = device.createBindGroup({ layout, entries: [{ binding: 0, resource: sampled.createView() }] });
+  sampled.destroy();
+  const target = texture();
+  const encoded = await scoped(() => {
+    const bundleEncoder = device.createRenderBundleEncoder({ colorFormats: ['rgba8unorm'] });
+    bundleEncoder.setBindGroup(0, group);
+    const bundle = bundleEncoder.finish();
+    const encoder = device.createCommandEncoder();
+    const pass = encoder.beginRenderPass({ colorAttachments: [{ view: target.createView(), loadOp: 'clear', storeOp: 'store' }] });
+    pass.executeBundles([bundle]);
+    pass.end();
+    return encoder.finish();
+  });
+  assert.equal(encoded.error, null, 'a bundle naming a destroyed texture encodes, executes and finishes');
+  const submitted = await scoped(() => device.queue.submit([encoded.value]));
+  assert.ok(submitted.error, 'a bundle bind group of a destroyed texture fails at submit');
+  target.destroy();
+  console.log('ok: a render bundle bind group of a destroyed texture fails at submit');
 }
 device.destroy();

@@ -277,7 +277,7 @@ doe_resource_status doe_resource_render_pass_execute_bundles(doe_resource_render
             (signature.depth_read_only && !bundle->desc.depth_read_only) ||
             (signature.stencil_read_only && !bundle->desc.stencil_read_only))
             return resource_encoder_fail(pass->encoder, DOE_RESOURCE_LAYOUT);
-        status = resource_scope_validate(&bundle->scope);
+        status = resource_scope_validate(&bundle->scope, false);
         if (status != DOE_RESOURCE_OK) return resource_encoder_fail(pass->encoder, status);
         if (bundle->count > remaining) return resource_encoder_fail(pass->encoder, DOE_RESOURCE_RANGE);
         remaining -= bundle->count;

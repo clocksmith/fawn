@@ -189,7 +189,7 @@ doe_resource_status resource_scope_input(const doe_resource_config *config, reso
     doe_resource_buffer *buffer);
 doe_resource_status resource_scope_targets(const doe_resource_config *config, resource_usage_scope *scope,
     const doe_resource_render_targets *targets);
-doe_resource_status resource_scope_validate(const resource_usage_scope *scope);
+doe_resource_status resource_scope_validate(const resource_usage_scope *scope, bool submit);
 void resource_scope_release(const doe_resource_config *config, resource_usage_scope *scope);
 doe_resource_status resource_record_dispatch(doe_resource_encoder *encoder,
     doe_resource_pipeline *pipeline, const doe_resource_dispatch_group *groups,
