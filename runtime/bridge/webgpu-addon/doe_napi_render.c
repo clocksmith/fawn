@@ -446,14 +446,16 @@ napi_value doe_render_pass_set_pipeline(napi_env env, napi_callback_info info) {
 
 napi_value doe_render_pass_set_immediates(napi_env env, napi_callback_info info) {
     NAPI_ASSERT_ARGC(env, info, 3);
-    if (!pfn_doeNativeRenderPassSetImmediates) NAPI_THROW(env, "renderPassSetImmediates not available");
+    if (!pfn_doeNativeRenderPassSetImmediates && !pfn_wgpuRenderPassEncoderSetImmediates)
+        NAPI_THROW(env, "renderPassSetImmediates not available");
     WGPURenderPassEncoder pass = unwrap_ptr(env, _args[0]);
     if (!pass) NAPI_THROW(env, "Invalid render pass");
     uint32_t index = 0; napi_get_value_uint32(env, _args[1], &index);
     void* data_ptr = NULL;
     size_t data_len = 0;
     extract_buffer_data(env, _args[2], &data_ptr, &data_len);
-    pfn_doeNativeRenderPassSetImmediates(pass, index, (const uint8_t*)data_ptr, data_len);
+    if (pfn_doeNativeRenderPassSetImmediates) pfn_doeNativeRenderPassSetImmediates(pass, index, (const uint8_t*)data_ptr, data_len);
+    else pfn_wgpuRenderPassEncoderSetImmediates(pass, index, data_ptr, data_len);
     return NULL;
 }
 
@@ -826,13 +828,16 @@ napi_value doe_render_bundle_encoder_set_pipeline(napi_env env, napi_callback_in
 
 napi_value doe_render_bundle_encoder_set_immediates(napi_env env, napi_callback_info info) {
     NAPI_ASSERT_ARGC(env, info, 3);
-    if (!pfn_doeNativeRenderBundleEncoderSetImmediates) NAPI_THROW(env, "renderBundleEncoderSetImmediates not available");
+    if (!pfn_doeNativeRenderBundleEncoderSetImmediates && !pfn_wgpuRenderBundleEncoderSetImmediates)
+        NAPI_THROW(env, "renderBundleEncoderSetImmediates not available");
     void* enc = unwrap_ptr(env, _args[0]); if (!enc) NAPI_THROW(env, "Invalid render bundle encoder");
     uint32_t index = 0; napi_get_value_uint32(env, _args[1], &index);
     void* data_ptr = NULL;
     size_t data_len = 0;
     extract_buffer_data(env, _args[2], &data_ptr, &data_len);
-    pfn_doeNativeRenderBundleEncoderSetImmediates(enc, index, (const uint8_t*)data_ptr, data_len);
+    if (pfn_doeNativeRenderBundleEncoderSetImmediates)
+        pfn_doeNativeRenderBundleEncoderSetImmediates(enc, index, (const uint8_t*)data_ptr, data_len);
+    else pfn_wgpuRenderBundleEncoderSetImmediates(enc, index, data_ptr, data_len);
     return NULL;
 }
 

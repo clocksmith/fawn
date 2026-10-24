@@ -14,6 +14,10 @@ DECL_PFN(void, wgpuRenderPassEncoderEndOcclusionQuery, (WGPURenderPassEncoder));
 DECL_PFN(void, wgpuRenderPassEncoderPushDebugGroup, (WGPURenderPassEncoder, WGPUStringView));
 DECL_PFN(void, wgpuRenderPassEncoderPopDebugGroup, (WGPURenderPassEncoder));
 DECL_PFN(void, wgpuRenderPassEncoderInsertDebugMarker, (WGPURenderPassEncoder, WGPUStringView));
+/* Standard setImmediates for providers without the Doe entries. */
+DECL_PFN(void, wgpuComputePassEncoderSetImmediates, (WGPUComputePassEncoder, uint32_t, const void*, size_t));
+DECL_PFN(void, wgpuRenderPassEncoderSetImmediates, (WGPURenderPassEncoder, uint32_t, const void*, size_t));
+DECL_PFN(void, wgpuRenderBundleEncoderSetImmediates, (void*, uint32_t, const void*, size_t));
 /* Command encoder debug groups and markers. */
 DECL_PFN(void, wgpuCommandEncoderPushDebugGroup, (WGPUCommandEncoder, WGPUStringView));
 DECL_PFN(void, wgpuCommandEncoderPopDebugGroup, (WGPUCommandEncoder));

@@ -181,3 +181,16 @@ void wgpuRenderPassEncoderExecuteBundles(WGPURenderPassEncoder handle, size_t co
     if (converted) native_deallocate(NULL,NULL,converted,count*sizeof(*converted),_Alignof(doe_resource_render_bundle *));
     native_encoding_error(device, ended, status, "bundle execution recording failed");
 }
+void wgpuRenderBundleEncoderSetImmediates(WGPURenderBundleEncoder handle, uint32_t offset, void const *data, size_t size)
+{
+    doe_resource_bundle_encoder *encoder = (doe_resource_bundle_encoder *)handle;
+    native_device *device = doe_resource_bundle_encoder_device(encoder);
+    if (!device) return;
+    native_lock(device);
+    const bool ended = doe_resource_bundle_encoder_ended(encoder);
+    doe_resource_status status = DOE_RESOURCE_OK;
+    if (ended || !native_immediates_valid(device, offset, data, size))
+        status = doe_resource_bundle_encoder_invalidate(encoder, DOE_RESOURCE_RANGE);
+    native_unlock(device);
+    native_encoding_error(device, ended, status, "bundle immediates failed");
+}

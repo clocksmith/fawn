@@ -677,8 +677,11 @@ descriptors may request the optional features `src/features.c` reports for the
 actual adapter (see Optional device features). Other required features reject
 rather than silently succeeding; requiredLimits resolve as described under Limits.
 Buffer, sampled/storage image and sampler layouts are
-admitted; extensions, binding arrays,
-immediates, specialization constants and nonbaseline shader capabilities reject.
+admitted; extensions, binding arrays, layouts with a nonzero immediateSize,
+specialization constants and nonbaseline shader capabilities reject.
+setImmediates validates its range (4-byte aligned offset and size within
+maxImmediateSize) and invalidates the encoder otherwise; since no pipeline
+admits immediates, a valid call records nothing a draw or dispatch reads.
 ABI6 lacks exact texture/sampler pair-use reflection through helper parameters.
 Selected layouts combining UnfilterableFloat with Filtering samplers therefore
 reject explicitly; this is an unsupported analysis case, not full admission parity.
