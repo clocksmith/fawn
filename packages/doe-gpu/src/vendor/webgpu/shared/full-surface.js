@@ -1,3 +1,4 @@
+import { NATIVE_ERROR_FILTERS as ERROR_FILTER_MAP } from './provider-error-scopes.js';
 import {
   UINT32_MAX,
   failValidation,
@@ -592,12 +593,6 @@ function createFullSurfaceClasses({
   encoderClasses,
 }) {
   let classes = null;
-  const ERROR_FILTER_MAP = Object.freeze({
-    validation: 0x00000001,
-    'out-of-memory': 0x00000002,
-    internal: 0x00000003,
-  });
-
   function normalizeErrorFilter(filter, path) {
     const encoded = ERROR_FILTER_MAP[filter];
     if (encoded === undefined) {
@@ -648,8 +643,8 @@ function createFullSurfaceClasses({
     return makeInvalid();
   }
 
-  // { value, filter, error }: what create() returned and the validation or
-  // out-of-memory error the provider reported meanwhile, kept from the
+  // { value, filter, error }: what create() returned and the typed native
+  // error the provider reported meanwhile, kept from the
   // caller's scopes. Backends without native error scopes report directly.
   function captureProviderErrors(device, create) {
     if (typeof backend.captureProviderErrors !== 'function') {
