@@ -2265,8 +2265,17 @@ function createFullSurfaceClasses({
     }
   }
 
+  // WebGPU has no adapter destroy: a native adapter is released when its JS
+  // adapter is collected (devices hold their own native references).
+  const adapterReleases = typeof FinalizationRegistry === 'function'
+    ? new FinalizationRegistry((native) => {
+      try { backend.adapterDestroy(native); } catch { /* the addon or library is gone */ }
+    })
+    : null;
+
   class DoeGPUAdapter {
     constructor(native, instance, requestOptions = null) {
+      if (native != null) adapterReleases?.register(this, native, this);
       this._native = native;
       this._instance = instance;
       this._requestOptions = requestOptions;
@@ -2312,22 +2321,37 @@ function createFullSurfaceClasses({
     }
 
     async requestDevice(descriptor) {
-      assertLiveResource(this, 'GPUAdapter.requestDevice', 'GPUAdapter');
       if (this._consumed) {
         throw operationError('GPUAdapter.requestDevice: adapter has already produced a device');
       }
+      assertLiveResource(this, 'GPUAdapter.requestDevice', 'GPUAdapter');
       const normalized = normalizeRequestDeviceDescriptor(descriptor, 'GPUAdapter.requestDevice');
       const resolvedFeatures = resolveDeviceFeatures(this, normalized);
       const resolvedLimits = resolveDeviceLimits(this, normalized);
       const deviceResult = backend.adapterRequestDevice(this, normalized, classes);
       this._consumed = true;
-      const device = await deviceResult;
+      let device;
+      try {
+        device = await deviceResult;
+      } finally {
+        // A consumed adapter only answers features, limits and info: cache them
+        // and release the native adapter now (its device holds its own native
+        // references), so adapters do not outlive their use until collection.
+        void this.features;
+        void this.limits;
+        void this.info;
+        const native = this._native;
+        this._native = null;
+        adapterReleases?.unregister(this);
+        if (native != null) backend.adapterDestroy(native);
+      }
       device._features = resolvedFeatures;
       device._limits = resolvedLimits;
       return device;
     }
 
     destroy() {
+      adapterReleases?.unregister(this);
       destroyResource(this, (native) => backend.adapterDestroy(native));
     }
   }
