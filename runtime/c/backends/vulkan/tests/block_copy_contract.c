@@ -122,9 +122,21 @@ int main(void) {
     doe_vk_texture other = texture(&context, 12, 2, (uint8_t[2]){1, 1});
     assert(doe_vk_commands_copy_texture(commands, &edge, edge_corner, &other, edge_corner) == DOE_VK_OK);
     assert(image_copies == 2 && buffers_created == 2 && last_copy.extent.width == 2 && last_copy.extent.height == 2);
+    /* Copy-compatible formats differ only in srgb-ness; any other pair is rejected. */
+    doe_vk_texture srgb = texture(&context, 12, 2, (uint8_t[2]){1, 1});
+    srgb.desc.format = DOE_VK_FORMAT_BC1_RGBA_SRGB;
+    assert(doe_vk_commands_copy_texture(commands, &edge, edge_corner, &srgb, edge_corner) == DOE_VK_OK);
+    assert(doe_vk_commands_copy_texture(commands, &srgb, edge_corner, &edge, edge_corner) == DOE_VK_OK);
+    assert(image_copies == 4);
     assert(doe_vk_commands_release(commands) == DOE_VK_OK);
+    doe_vk_texture bc2 = texture(&context, 12, 2, (uint8_t[2]){1, 1});
+    bc2.desc.format = DOE_VK_FORMAT_BC2_RGBA_UNORM;
+    commands = recording(&context);
+    assert(doe_vk_commands_copy_texture(commands, &edge, edge_corner, &bc2, edge_corner) == DOE_VK_INVALID_ARGUMENT);
+    assert(image_copies == 4);
+    doe_vk_commands_release(commands);
     assert(buffers_destroyed == 2 && context.references == 1);
     puts("PASS block copy staging: edge-to-middle and middle-to-edge BC1 blocks stage through one block of device "
-        "buffer with per-side clamped extents; equal clamped extents copy directly; host only");
+        "buffer with per-side clamped extents; equal clamped extents copy directly; an srgb pair copies, another format is rejected; host only");
     return 0;
 }
