@@ -557,8 +557,8 @@ function create_browser_backend({ native_gpu, canvasBackend }) {
       pass._native.setBindGroup(index, bindGroup, offsets ?? []);
     },
 
-    renderPassSetBlendConstant(pass, color) {
-      pass._native.setBlendConstant(color);
+    renderPassSetBlendConstant(pass, r, g, b, a) {
+      pass._native.setBlendConstant({ r, g, b, a });
     },
 
     renderPassSetIndexBuffer(pass, buffer, format, offset, size) {

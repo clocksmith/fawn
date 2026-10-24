@@ -419,6 +419,25 @@ const BundleReplayState = struct {
     index_size: u64,
     index_format: u32,
 
+    fn empty() BundleReplayState {
+        return .{
+            .pso = null,
+            .pipeline = null,
+            .bind_groups = [_]?*DoeBindGroup{null} ** native_shared.MAX_RENDER_BIND_GROUPS,
+            .bind_buffers = [_]?*anyopaque{null} ** MAX_FLAT_BIND,
+            .bind_buffer_offsets = [_]u64{0} ** MAX_FLAT_BIND,
+            .vertex_buffer_objects = [_]?*DoeBuffer{null} ** MAX_VERTEX_BUFFERS,
+            .vertex_buffers = [_]?*anyopaque{null} ** MAX_VERTEX_BUFFERS,
+            .vertex_buffer_offsets = [_]u64{0} ** MAX_VERTEX_BUFFERS,
+            .vertex_buffer_sizes = [_]u64{0} ** MAX_VERTEX_BUFFERS,
+            .index_buffer_object = null,
+            .index_buffer = null,
+            .index_offset = 0,
+            .index_size = 0,
+            .index_format = 0x2,
+        };
+    }
+
     fn init(pass: *const DoeRenderPass) BundleReplayState {
         return .{
             .pso = if (pass.pipeline) |p| p.mtl_pso else null,
@@ -598,8 +617,10 @@ pub export fn doeNativeRenderPassExecuteBundles(
         else
             null;
 
-        // Each bundle starts with a fresh replay state seeded from the pass.
-        var state = BundleReplayState.init(pass);
+        // Each bundle starts with a fresh replay state. On Vulkan it is empty, as
+        // WebGPU specifies (a bundle never sees the pass's pipeline, bind groups
+        // or vertex/index buffers); other backends keep seeding it from the pass.
+        var state = if (is_vulkan) BundleReplayState.empty() else BundleReplayState.init(pass);
 
         for (b.cmds) |cmd| {
             switch (cmd) {
