@@ -348,6 +348,19 @@ static void set_adapter_info_string_prop(napi_env env, napi_value obj, const cha
     napi_set_named_property(env, obj, name, value);
 }
 
+/* WebGPU's fallback adapter is the CPU implementation (WGPUAdapterType_CPU).
+ * The doeNative info fast path carries no adapter type, so it is read from
+ * the standard info when the provider exports it. */
+static bool adapter_is_cpu(void* adapter) {
+    if (!pfn_wgpuAdapterGetInfo) return false;
+    WGPUAdapterInfo view;
+    memset(&view, 0, sizeof(view));
+    if (pfn_wgpuAdapterGetInfo(adapter, &view) != WGPU_STATUS_SUCCESS) return false;
+    const bool cpu = view.adapterType == 0x00000003u;
+    if (pfn_wgpuAdapterInfoFreeMembers) pfn_wgpuAdapterInfoFreeMembers(view);
+    return cpu;
+}
+
 napi_value doe_adapter_get_info(napi_env env, napi_callback_info info) {
     NAPI_ASSERT_ARGC(env, info, 1);
     CHECK_LIB_LOADED(env);
@@ -395,7 +408,7 @@ napi_value doe_adapter_get_info(napi_env env, napi_callback_info info) {
         napi_create_string_utf8(env, arch, NAPI_AUTO_LENGTH, &v_arch);
         napi_create_string_utf8(env, device, NAPI_AUTO_LENGTH, &v_device);
         napi_create_string_utf8(env, desc, NAPI_AUTO_LENGTH, &v_desc);
-        napi_get_boolean(env, false, &v_is_fallback);
+        napi_get_boolean(env, adapter_is_cpu(adapter), &v_is_fallback);
         napi_create_uint32(env, 32, &v_sg_min);
         napi_create_uint32(env, 32, &v_sg_max);
         napi_set_named_property(env, obj, "vendor", v_vendor);

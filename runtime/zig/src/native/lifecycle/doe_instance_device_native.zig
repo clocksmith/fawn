@@ -250,7 +250,10 @@ fn create_adapter_error_message(err: CreateAdapterError) abi_base.WGPUStringView
     };
 }
 
-fn create_adapter_for_instance(inst: ?*anyopaque) CreateAdapterError!*DoeAdapter {
+/// `fallback` is WebGPU's forceFallbackAdapter: only a CPU implementation is
+/// returned (Vulkan VK_PHYSICAL_DEVICE_TYPE_CPU, D3D12 WARP); without one the
+/// request is unavailable.
+fn create_adapter_for_instance(inst: ?*anyopaque, fallback: bool) CreateAdapterError!*DoeAdapter {
     const retained_instance = cast(DoeInstance, inst);
 
     switch (selected_backend()) {
@@ -258,6 +261,7 @@ fn create_adapter_for_instance(inst: ?*anyopaque) CreateAdapterError!*DoeAdapter
             var rt = NativeD3D12Runtime.init(alloc, null) catch return error.D3D12AdapterProbeFailed;
             defer rt.deinit();
             const identity = rt.adapterIdentity() catch return error.D3D12AdapterProbeFailed;
+            if (fallback and identity.software == 0) return error.AdapterUnavailable;
             const adapter = make(DoeAdapter) orelse return error.AdapterAllocationFailed;
             if (retained_instance) |instance_ref| instance_add_ref(instance_ref);
             adapter.* = .{ .backend = .d3d12, .instance = retained_instance };
@@ -279,7 +283,8 @@ fn create_adapter_for_instance(inst: ?*anyopaque) CreateAdapterError!*DoeAdapter
                 var adapter_probe = vk_adapter_probe.probe_selected_adapter(
                     alloc,
                     selected_policy.queue_family_policy,
-                ) catch return error.VkAdapterProbeFailed;
+                    fallback,
+                ) catch |err| return if (fallback and err == error.UnsupportedFeature) error.AdapterUnavailable else error.VkAdapterProbeFailed;
                 errdefer adapter_probe.deinit(alloc);
                 const identity = adapter_probe.identity;
                 const adapter = make(DoeAdapter) orelse return error.AdapterAllocationFailed;
@@ -306,6 +311,8 @@ fn create_adapter_for_instance(inst: ?*anyopaque) CreateAdapterError!*DoeAdapter
         .metal => {},
     }
 
+    // Metal has no CPU implementation to offer as the fallback adapter.
+    if (fallback) return error.AdapterUnavailable;
     const device = metal_bridge_create_default_device() orelse return error.AdapterUnavailable;
     const adapter = make(DoeAdapter) orelse {
         metal_bridge_release(device);
@@ -635,8 +642,8 @@ pub export fn doeNativeInstanceCreateAdapter(
     inst: ?*anyopaque,
     options: ?*const abi_callback.WGPURequestAdapterOptions,
 ) callconv(.c) ?*anyopaque {
-    _ = options;
-    const adapter = create_adapter_for_instance(inst) catch return null;
+    const fallback = if (options) |opts| opts.forceFallbackAdapter != 0 else false;
+    const adapter = create_adapter_for_instance(inst, fallback) catch return null;
     return toOpaque(adapter);
 }
 
@@ -656,9 +663,9 @@ pub export fn doeNativeInstanceRequestAdapter(
     options: ?*const abi_callback.WGPURequestAdapterOptions,
     info: abi_callback.WGPURequestAdapterCallbackInfo,
 ) callconv(.c) abi_base.WGPUFuture {
-    _ = options;
     var reply = AdapterReply{ .info = info, .status = .success, .adapter = null, .message = stringView("") };
-    if (create_adapter_for_instance(inst)) |adapter| reply.adapter = toOpaque(adapter) else |err| {
+    const fallback = if (options) |opts| opts.forceFallbackAdapter != 0 else false;
+    if (create_adapter_for_instance(inst, fallback)) |adapter| reply.adapter = toOpaque(adapter) else |err| {
         reply.status = if (err == error.AdapterUnavailable) .unavailable else .@"error";
         reply.message = create_adapter_error_message(err);
     }
