@@ -77,6 +77,18 @@ enum {
 _Static_assert(2 * (SAMPLED_PER_STAGE + SAMPLERS_PER_STAGE + STORAGE_BUFFERS_PER_STAGE +
     STORAGE_TEXTURES_PER_STAGE + UNIFORM_BUFFERS_PER_STAGE) <= NATIVE_MAX_PIPELINE_BINDINGS,
     "pipeline binding storage must hold the reported per-stage limits for two stages");
+/* Vulkan raises the two smallest per-stage counts to what the same two-stage
+ * binding storage still holds (also NATIVE_MAX_PIPELINE_BINDINGS, the Vulkan
+ * backend's per-pipeline binding capacity). Sampled textures, samplers and
+ * uniform buffers keep their defaults: the storage has no room for more. */
+enum { VK_STORAGE_BUFFERS_PER_STAGE = 10, VK_STORAGE_TEXTURES_PER_STAGE = 8 };
+_Static_assert(2 * (SAMPLED_PER_STAGE + SAMPLERS_PER_STAGE + VK_STORAGE_BUFFERS_PER_STAGE +
+    VK_STORAGE_TEXTURES_PER_STAGE + UNIFORM_BUFFERS_PER_STAGE) <= NATIVE_MAX_PIPELINE_BINDINGS,
+    "pipeline binding storage must hold the Vulkan per-stage limits for two stages");
+/* WebGPU's largest render-target byte cost is 16 (rgba32 formats). Vulkan has
+ * no per-sample color byte limit, so every combination of the admitted slots
+ * fits: the slot count is the only bound. */
+enum { MAX_COLOR_TARGET_BYTES = 16 };
 /* The C compiler admits workgroup dimensions and their product only up to 256
  * (runtime/c/compiler/src/sema_declarations.c); larger Vulkan values would be
  * reported but never compile. */
@@ -97,6 +109,7 @@ WGPUStatus native_vulkan_limits(const doe_vk_caps *caps, WGPULimits *out)
         caps->max_storage_buffer_range;
     uint32_t vertex_buffers = min32(caps->max_vertex_input_bindings, DOE_VK_MAX_VERTEX_BUFFERS);
     uint32_t bind_groups = min32(caps->max_bind_groups, DOE_RESOURCE_MAX_GROUPS);
+    uint32_t color_bytes = min32(caps->max_color_attachments, DOE_VK_MAX_COLOR_ATTACHMENTS) * MAX_COLOR_TARGET_BYTES;
     *out = (WGPULimits){
         .maxTextureDimension1D = caps->max_texture_dimension_1d,
         .maxTextureDimension2D = caps->max_texture_dimension_2d,
@@ -109,20 +122,19 @@ WGPUStatus native_vulkan_limits(const doe_vk_caps *caps, WGPULimits *out)
         .maxVertexBuffers = vertex_buffers,
         .maxVertexAttributes = min32(caps->max_vertex_input_attributes, DOE_VK_MAX_VERTEX_ATTRIBUTES),
         .maxVertexBufferArrayStride = caps->max_vertex_input_binding_stride,
-        /* Real native slot count bounded by the frontend's eight-slot storage;
-         * the WebGPU baseline byte budget (Vulkan has no per-sample byte limit). */
+        /* Real native slot count bounded by the frontend's eight-slot storage. */
         .maxColorAttachments = min32(caps->max_color_attachments, DOE_VK_MAX_COLOR_ATTACHMENTS),
-        .maxColorAttachmentBytesPerSample = 32,
+        .maxColorAttachmentBytesPerSample = color_bytes > 32 ? color_bytes : 32,
         .maxInterStageShaderVariables = min32(caps->max_vertex_output_components,
             caps->max_fragment_input_components) / 4,
         .maxBindingsPerBindGroup = DOE_RESOURCE_MAX_BINDING_NUMBER,
         .maxDynamicUniformBuffersPerPipelineLayout = DYNAMIC_UNIFORM,
         .maxDynamicStorageBuffersPerPipelineLayout = DYNAMIC_STORAGE,
-        .maxStorageBuffersPerShaderStage = min32(caps->max_storage_buffers_per_stage, STORAGE_BUFFERS_PER_STAGE),
+        .maxStorageBuffersPerShaderStage = min32(caps->max_storage_buffers_per_stage, VK_STORAGE_BUFFERS_PER_STAGE),
         .maxUniformBuffersPerShaderStage = min32(caps->max_uniform_buffers_per_stage, UNIFORM_BUFFERS_PER_STAGE),
         .maxSampledTexturesPerShaderStage = min32(caps->max_sampled_textures_per_stage, SAMPLED_PER_STAGE),
         .maxSamplersPerShaderStage = min32(caps->max_samplers_per_stage, SAMPLERS_PER_STAGE),
-        .maxStorageTexturesPerShaderStage = min32(caps->max_storage_textures_per_stage, STORAGE_TEXTURES_PER_STAGE),
+        .maxStorageTexturesPerShaderStage = min32(caps->max_storage_textures_per_stage, VK_STORAGE_TEXTURES_PER_STAGE),
         .maxComputeWorkgroupStorageSize = caps->max_workgroup_storage_size,
         /* Binding sizes are multiples of 4 (WebGPU requires it of the limit). */
         .maxUniformBufferBindingSize = min64(caps->max_uniform_buffer_range, buffer_size) & ~(uint64_t)3,

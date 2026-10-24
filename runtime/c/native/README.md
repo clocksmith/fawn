@@ -540,8 +540,12 @@ not `requiredFeatures` names it.
 
 `src/limits.c` owns the WebGPU limits. Adapter limits are Vulkan facts
 intersected with what this frontend enforces and executes: per-stage binding
-counts at the WebGPU defaults (pipeline binding storage holds two stages of
-them, `NATIVE_MAX_PIPELINE_BINDINGS`), maxBindingsPerBindGroup 1000 (sparse
+counts the pipeline binding storage holds for two stages
+(`NATIVE_MAX_PIPELINE_BINDINGS`, also the Vulkan backend's per-pipeline binding
+capacity), which on Vulkan is 10 storage buffers and 8 storage textures with
+sampled textures, samplers and uniform buffers at their defaults; 32 vertex
+attributes from the device (the backend's attribute storage) with vertex buffers
+at eight (resource-owner draw packets); maxBindingsPerBindGroup 1000 (sparse
 resource-owner storage), 16 dynamic uniform and 16 dynamic storage buffers
 (applied by the resource owner, 32 per group), maxBufferSize from Vulkan
 maxMemoryAllocationSize with binding sizes bounded by it and rounded down to 4,
@@ -560,7 +564,12 @@ maxMemoryAllocationSize, never by maxBufferSize (`tests/large_write.c` writes
 past the 256 MiB default and checks that a public buffer of that size still
 fails). `tests/limits.c` prints the default,
 adapter and device columns and checks each resolution rule and default-limit
-rejection. The native shader policy selects core binding numbers
+rejection, and on a device that requires the adapter limits executes 10
+storage buffers, 8 storage textures, 32 vertex attributes and eight rgba32float
+targets with exact readback, each refused on the default device. Bind groups
+(groups 0..3), binding numbers (0..999) and workgroup size/invocations (256)
+stay at the C compiler's bounds; maxImmediateSize stays 64 (no compiler
+immediates). The native shader policy selects core binding numbers
 (`native_shader_semantic_flags`), so shaders reference bindings 0..999 in groups
 0..3; the compiler's standalone default stays 0..31.
 
@@ -616,8 +625,9 @@ slot index with the format's scalar kind and enough components (four for source-
 alpha blending); alpha-to-coverage needs target 0. Passes carry per-slot load/store/
 clear values and optional resolve targets; bundles carry sparse color formats.
 `maxColorAttachments` reports the device's real count bounded by eight, and
-`maxColorAttachmentBytesPerSample` reports the WebGPU baseline 32 (Vulkan has no
-such per-sample byte limit); both feed resource admission. All slots lower into the
+`maxColorAttachmentBytesPerSample` reports 16 bytes (the largest WebGPU
+render-target cost) per admitted slot, 128 for eight slots, since Vulkan has no
+per-sample byte limit; both feed resource admission. All slots lower into the
 backend's one native pass span. The C compiler already emits and reflects multiple
 `@location` fragment outputs (struct outputs; spirv-val clean for Vulkan 1.2).
 
