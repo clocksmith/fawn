@@ -902,22 +902,6 @@ function lazyDispatchesShareBoundSlots(commands) {
   return true;
 }
 
-// The Zig drop-in's submit-time flush is about twice as fast as recording at
-// finish(), and recording there reported nothing while Zig did not validate
-// dispatches. Zig now validates workgroup counts and explicit-layout bind
-// groups at record time, but not automatic-layout bind groups. Remove this
-// gate once it does, so its dispatch validation surfaces at finish().
-function deferNodeDispatchesToSubmit(commands) {
-  if (libraryFlavor(currentDoeLibraryPath()) !== 'doe-dropin') {
-    return false;
-  }
-  const last = commands[commands.length - 1];
-  const dispatches = last.t === 1 ? commands.slice(0, -1) : commands;
-  return dispatches.length > 0
-    && dispatches.every((command) => command.t === 0 && command.d === undefined)
-    && lazyDispatchesShareBoundSlots(dispatches);
-}
-
 function finishNodeLazyCommandsAsNativeCommandBuffer(encoder, commands) {
   if (
     typeof addon.createComputeDispatchCopyCommandBuffer === 'function'
@@ -1876,7 +1860,7 @@ const nodeEncoderBackend = {
       if (invalid) {
         return invalidNodeCommandBuffer(encoder, invalid.message ?? 'deferred command validation failed');
       }
-      if (commands.length === 0 || deferNodeDispatchesToSubmit(commands)) {
+      if (commands.length === 0) {
         return { _commands: commands, _batched: true };
       }
       // finish() reports the encoder's validation result (WebGPU), so deferred

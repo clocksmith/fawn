@@ -247,6 +247,11 @@ pub const DoeComputePipeline = struct {
     vk_static_pipeline_hash_ready: bool = false,
     vk_flat_buffer_binding_types: [shared.MAX_FLAT_BIND]u32 = [_]u32{0} ** shared.MAX_FLAT_BIND,
     vk_flat_buffer_binding_types_ready: bool = false,
+    /// Layout resource kind (binding.LayoutResourceKind code, 0 = unused) of
+    /// every slot the pipeline's entry point uses; dispatch checks bind groups
+    /// against it when the pipeline has an automatic layout.
+    vk_required_binding_kinds: [shared.MAX_FLAT_BIND]u8 = [_]u8{0} ** shared.MAX_FLAT_BIND,
+    vk_required_binding_kinds_ready: bool = false,
     vk_prepared_binding_cache_next: u32 = 0,
     vk_prepared_binding_cache_keys: [shared.VULKAN_PREPARED_BINDING_CACHE_CAPACITY]u64 = [_]u64{0} ** shared.VULKAN_PREPARED_BINDING_CACHE_CAPACITY,
     vk_prepared_binding_cache_counts: [shared.VULKAN_PREPARED_BINDING_CACHE_CAPACITY]u32 = [_]u32{0} ** shared.VULKAN_PREPARED_BINDING_CACHE_CAPACITY,

@@ -3530,14 +3530,14 @@
       },
       "src/native/compute/doe_compute_bind_groups.zig": {
         "decision": "Keep",
-        "moduleSha256": "4b58a7aa353dfa8141eff94ace9ec2e48ca49b782f5ef4488f4c50908221534f",
-        "reason": "Keep: reachable native implementation with private behavior tests and no merge, elevation, recomposition, or deletion signal. Applies dynamic offsets to flattened bindings and checks explicit-layout bind groups at dispatch.",
+        "moduleSha256": "8cbe46841a5cc7e863f7b5a7659af8676174044ceb56c84c4027142ea5e10dce",
+        "reason": "Keep: reachable native implementation with private behavior tests and no merge, elevation, recomposition, or deletion signal. Applies dynamic offsets to flattened bindings and checks explicit-layout bind groups at dispatch. Dispatch validation also checks automatic-layout bindings by required resource kind.",
         "reviewer": "doe-c-claude-indexed/2026-10-24"
       },
       "src/native/compute/doe_compute_ext_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "971eb68b55d382aff748bb5ef3dc5eeeaf688aa49f75e04c91e17d13f826e3f7",
-        "reason": "Keep: the encoder owns pass identity and recording lifetime; native adapters validate operations against that single state. setBindGroup resolves dynamic offsets; dispatch validates pipeline, workgroup counts and explicit-layout bind groups.",
+        "moduleSha256": "fb4c2253c569a5c34f3e5e14c9b99c8152d43cbc1bf5876f61558c9e9e3c40de",
+        "reason": "Keep: the encoder owns pass identity and recording lifetime; native adapters validate operations against that single state. setBindGroup resolves dynamic offsets; dispatch validates pipeline, workgroup counts and explicit-layout bind groups. Dispatch passes the pipeline's required binding kinds for automatic layouts.",
         "reviewer": "doe-c-claude-indexed/2026-10-24"
       },
       "src/native/compute/doe_compute_fast.zig": {
@@ -3782,8 +3782,8 @@
       },
       "src/native/support/doe_native_object_types.zig": {
         "decision": "Keep",
-        "moduleSha256": "4c733160e997eeb969928aa4b64a00e8add9429a38d3221ddb3f31cabcd35c08",
-        "reason": "Keep: default-off C error-scope partial owner uses final-address typed storage, cold creation rollback and checked final deinit; original classifier, callbacks and device references remain with their existing owners; textures record an allowed srgb view; samplers carry error_object; MUTABLE_FORMAT images with a VkImageFormatListCreateInfo only for textures whose viewFormats name the srgb pair. Render pipelines keep their multisample mask and alpha-to-coverage. Passes hold per-group dynamic offsets and the cached workgroup limit. Devices hold their buffer offset alignment limits. Device keeps maxImmediateSize.",
+        "moduleSha256": "358267c525cb50bfd7876cab6319aa1040699948bbaf04f36029be97df915e76",
+        "reason": "Keep: default-off C error-scope partial owner uses final-address typed storage, cold creation rollback and checked final deinit; original classifier, callbacks and device references remain with their existing owners; textures record an allowed srgb view; samplers carry error_object; MUTABLE_FORMAT images with a VkImageFormatListCreateInfo only for textures whose viewFormats name the srgb pair. Render pipelines keep their multisample mask and alpha-to-coverage. Passes hold per-group dynamic offsets and the cached workgroup limit. Devices hold their buffer offset alignment limits. Device keeps maxImmediateSize. Compute pipelines keep required binding kinds for automatic-layout dispatch checks.",
         "reviewer": "doe-c-claude-indexed/2026-10-24"
       },
       "src/native/support/doe_native_runtime_helpers.zig": {
@@ -3812,8 +3812,8 @@
       },
       "src/native/vulkan/vulkan_compute_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "5a257d5b8748d3b2ac92a512f2fdc894b6b94c3d3ee5a538464a01769e5eb979",
-        "reason": "Keep: Vulkan pipeline preparation consumes translation-owned binding metadata and preserves specialized-override metadata from the same analyzed IR. Recorded Vulkan bindings receive dynamic offsets with a recomputed descriptor hash. Indirect dispatch replay guards its arguments before preparing the application dispatch.",
+        "moduleSha256": "c2f236d7a7d1048bf817679bf013547fd0881d42942bda41c2cd545a31a535dd",
+        "reason": "Keep: Vulkan pipeline preparation consumes translation-owned binding metadata and preserves specialized-override metadata from the same analyzed IR. Recorded Vulkan bindings receive dynamic offsets with a recomputed descriptor hash. Indirect dispatch replay guards its arguments before preparing the application dispatch. Pipeline creation records required binding kinds from entry-point bindings.",
         "reviewer": "doe-c-claude-indexed/2026-10-24"
       },
       "src/native/vulkan/vulkan_feature_cache.zig": {
