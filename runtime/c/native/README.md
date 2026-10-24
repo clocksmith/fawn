@@ -8,11 +8,20 @@ own implemented symbols; unknown names return NULL from `wgpuGetProcAddress`.
 
 ## Backend selection and checked scope
 
-Vulkan and Metal use tagged contexts and payloads within one device, resource and
-pending-submission architecture. Undefined selects Vulkan on Linux and Metal on
-Apple for this experimental provider. Unsupported backends fail without fallback.
-Public D3D12 remains unavailable; the separate [private backend](../backends/d3d12/README.md)
-has source-bound SDK, CPU WARP and Miles hardware controls.
+Vulkan, Metal and Windows D3D12 use tagged contexts and payloads within one device,
+resource and pending-submission architecture. Undefined selects Vulkan on Linux,
+Metal on Apple and D3D12 on Windows for this experimental provider. Unsupported
+selections fail without fallback.
+
+The authored Windows compute/buffer path consumes compiler-owned HLSL ABI11,
+the official DXC SDK adapter and the existing [private D3D12 owner](../backends/d3d12/README.md).
+Device creation reopens exact adapter identity. Native allocations start with real
+zero initialization; uniform padding never widens logical storage descriptors.
+Only composed compute/buffer limits are advertised; graphics/texture limits stay
+zero and CoreFeaturesAndLimits is absent until that frontend is implemented.
+This new public path still needs its own SDK build and WARP/native-consumer
+execution. Earlier private WARP/Miles and standalone compiler/host controls do
+not qualify these new composed bytes.
 
 Vulkan composes compute, images, graphics, queries and Linux presentation within
 the explicit limits and feature checks below. CPU execution receipts prove their
@@ -614,6 +623,19 @@ qualify those public integrations; see the current Metal scope and bound Apple
 evidence above.
 
 ## Reproduce from a coherent checkout
+
+The actual Windows SDK build route is
+`python runtime/c/native/tools/build_windows.py --out C:\doe-build\native --dxc-root C:\doe-tools\dxc`.
+It requires a fresh directory outside the checkout and real x64 `clang-cl`/SDK.
+Optional `--compiler-dir` reuses the existing compiler builder's audited output;
+otherwise that builder runs first. `sources.mk` owns common and Windows-only
+provider directories; the Windows builder uses their actual C files and the same
+public/extension export inventories. It compiles the official-header DXC C++ seam,
+copies the selected x64 DXC runtime DLLs and licenses beside the native DLL, and
+records source/tool hashes. It audits the DLL exports and executes only a Win32
+typed-loader host control. This authored route does not establish a successful
+Windows native build, device execution or GPU qualification until its exact source
+passes the SDK workflow. Linux and Darwin builds keep their existing owner set.
 
 The Makefile invokes the compiler owner's canonical `shared` target for
 `libdoe_compiler.so`, without parsing or duplicating its target source lists, then links `libwebgpu_doe_c.so` from C owners only. It writes

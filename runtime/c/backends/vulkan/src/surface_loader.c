@@ -5,6 +5,10 @@ doe_vk_status doe_vk_surface_instance_extensions(doe_vk_context *context,
     uint32_t platforms, doe_vk_instance_extensions *out, doe_vk_error *error) {
     if (context == NULL || out == NULL || (platforms & ~UINT32_C(7)) != 0)
         return doe_vk_fail(DOE_VK_INVALID_ARGUMENT, "surface platform selection", error);
+#if defined(_WIN32)
+    if (platforms != 0)
+        return doe_vk_fail(DOE_VK_UNSUPPORTED, "Linux surface platforms require a Linux host", error);
+#endif
     doe_vk_instance_extensions selection = {0};
     if (platforms == 0) {
         *out = selection;

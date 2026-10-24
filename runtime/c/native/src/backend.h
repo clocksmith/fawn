@@ -4,6 +4,7 @@
 #include "webgpu.h"
 #include "doe_vk.h"
 #include "doe_metal.h"
+#include "../../backends/d3d12/include/doe_d3d12.h"
 
 /* Typed conversion only: backend objects keep their existing ownership. These
  * unions add no reference count, command state, capability inference or retry. */
@@ -30,19 +31,27 @@ typedef struct native_backend {
     union {
         struct { doe_vk_context *context; doe_vk_caps caps; doe_vk_options options; } vulkan;
         struct { doe_mtl_context *context; doe_mtl_caps caps; } metal;
+        struct { doe_dx_context *context; doe_dx_caps caps; doe_dx_options options; } d3d12;
     } value;
 } native_backend;
 typedef union native_buffer_handle {
     doe_vk_buffer *vulkan;
     doe_mtl_buffer *metal;
+    struct native_d3d12_buffer *d3d12;
 } native_buffer_handle;
 typedef struct native_command_handle {
     WGPUBackendType kind;
-    union { doe_vk_commands *vulkan; doe_mtl_commands *metal; } value;
+    union {
+        doe_vk_commands *vulkan;
+        doe_mtl_commands *metal;
+        /* Borrowed context is protected by the existing pending device lease. */
+        struct { doe_dx_context *context; doe_dx_commands *commands; } d3d12;
+    } value;
 } native_command_handle;
 
 native_result native_from_vulkan(doe_vk_status status);
 native_result native_from_metal(doe_mtl_status status);
+native_result native_from_d3d12(doe_dx_status status);
 /* Used only by still Vulkan-specific lowering, never a Metal capability claim. */
 doe_vk_status native_to_vulkan(native_result status);
 WGPUErrorType native_result_error(native_result status);
@@ -59,6 +68,7 @@ WGPUStatus native_metal_limits(const doe_mtl_caps *caps, WGPULimits *out);
 native_failure native_failure_status(native_result status);
 native_failure native_failure_vulkan(doe_vk_status status, const doe_vk_error *error);
 native_failure native_failure_metal(doe_mtl_status status, const doe_mtl_error *error);
+native_failure native_failure_d3d12(doe_dx_status status, const doe_dx_error *error);
 /* Output is always terminated. Success formats empty; absent native detail uses
  * the public operation's fallback. Formatting occurs after the device unlock. */
 void native_failure_format(const native_failure *failure, const char *fallback,

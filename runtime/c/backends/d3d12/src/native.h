@@ -42,6 +42,9 @@ doe_dx_status doe_dx_fail(doe_dx_status status, int32_t native_code,
 doe_dx_status doe_dx_native_open(const doe_dx_options *options,
     doe_dx_native_context **out, doe_dx_caps *caps, doe_dx_error *error);
 void doe_dx_native_close(doe_dx_native_context *context);
+/* Shared actual-identity check, also exercised through the host link seam. */
+doe_dx_status doe_dx_validate_adapter(const doe_dx_options *options,
+    const doe_dx_caps *caps, doe_dx_error *error);
 doe_dx_status doe_dx_native_buffer_create(doe_dx_native_context *context,
     uint64_t size, doe_dx_memory memory, doe_dx_native_buffer **out, doe_dx_error *error);
 void doe_dx_native_buffer_destroy(doe_dx_native_buffer *buffer);

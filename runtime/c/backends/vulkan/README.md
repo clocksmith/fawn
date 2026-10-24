@@ -236,6 +236,17 @@ clipped, unwritten and later-pass reused query slots, with early pool release.
 
 ## ABI provenance and checks
 
+The loader has a separate real Win64 boundary: system-directory-only
+`LoadLibraryExW` for `vulkan-1.dll`, typed `GetProcAddress` storage checked before
+copying, original Win32 failure bits and `FreeLibrary` cleanup. Existing POSIX
+`dlopen`/`dlsym`/`dlclose` behavior is unchanged. The retained Linux Xlib wire
+record keeps its 64-bit Window field on every compilation host; Windows rejects
+all Linux surface selections before extension probing. No Win32 WSI ABI is
+invented. `tests/loader_win32.c` is an actual SDK host control routed by the native
+Windows builder: it calls a real kernel32 procedure and checks failed-lookup
+publication and Linux-WSI rejection without loading a Vulkan device. An authored
+Windows branch or host-loader pass does not qualify Windows Vulkan execution.
+
 No SDK headers were available. The selected declarations are a narrow translation
 of the existing source hashes in `ABI_PROVENANCE.json`, not invented opaque-sized
 struct storage. `tools/check_abi.py` refuses source drift and independently models

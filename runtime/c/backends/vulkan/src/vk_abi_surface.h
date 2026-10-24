@@ -5,7 +5,12 @@
 #ifndef DOE_VK_ABI_SURFACE_H
 #define DOE_VK_ABI_SURFACE_H
 #include "vk_abi_render.h"
+/* The retained Xlib wire record below always stores its Linux 64-bit Window.
+ * Win64 compiles that declaration for shared dispatch storage, but cannot select
+ * any Linux WSI platform; it does not reinterpret LLP64 unsigned long as Xlib. */
+#if !defined(_WIN32)
 _Static_assert(sizeof(unsigned long) == 8, "Xlib Window requires Linux LP64");
+#endif
 typedef uint64_t VkSurfaceKHR;
 typedef uint64_t VkSwapchainKHR;
 typedef uint64_t VkSemaphore;

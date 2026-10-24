@@ -5,7 +5,7 @@ doe_dx_status doe_dx_buffer_create(doe_dx_context *context, uint64_t size,
     doe_dx_memory memory, doe_dx_buffer **out, doe_dx_error *error) {
     if (!context || !out || !size || memory < DOE_DX_DEFAULT || memory > DOE_DX_READBACK)
         return doe_dx_fail(DOE_DX_INVALID_ARGUMENT, 0, "buffer.create", error);
-    if (size > SIZE_MAX || context->objects == SIZE_MAX)
+    if (size > SIZE_MAX || size > context->caps.limits.max_buffer_size || context->objects == SIZE_MAX)
         return doe_dx_fail(DOE_DX_RANGE, 0, "buffer.create", error);
     if (context->lost) return doe_dx_fail(DOE_DX_DEVICE_LOST, 0, "buffer.create", error);
     doe_dx_buffer *buffer = calloc(1, sizeof(*buffer));

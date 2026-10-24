@@ -29,6 +29,8 @@ uint64_t native_allocation_bound(const native_device *device)
         return device->backend.value.vulkan.caps.max_memory_allocation_size;
     if (device->backend.kind == WGPUBackendType_Metal)
         return device->backend.value.metal.caps.max_buffer_length;
+    if (device->backend.kind == WGPUBackendType_D3D12)
+        return device->backend.value.d3d12.caps.limits.max_buffer_size;
     return UINT64_MAX;
 }
 
@@ -61,11 +63,12 @@ WGPUBuffer native_device_create_buffer(native_device *device, const WGPUBufferDe
         WGPUBufferUsage_Vertex | WGPUBufferUsage_Index;
     doe_resource_buffer *buffer = NULL;
     native_lock(device);
-    native_result status = descriptor->usage & ~supported ? NATIVE_UNSUPPORTED : native_device_result(device);
-    if (status == NATIVE_OK)
-        status = native_buffer_create(payload, descriptor->size ? descriptor->size : 4, usage);
+    native_failure failure = native_failure_status(descriptor->usage & ~supported ?
+        NATIVE_UNSUPPORTED : native_device_result(device));
+    if (failure.status == NATIVE_OK)
+        failure = native_buffer_create(payload, descriptor->size ? descriptor->size : 4, usage);
     doe_resource_status created = DOE_RESOURCE_OK;
-    if (status == NATIVE_OK) {
+    if (failure.status == NATIVE_OK) {
         created = doe_resource_buffer_create(&device->resources, &desc,
             (doe_resource_native){payload, NULL, native_buffer_release}, &buffer);
         if (created == DOE_RESOURCE_OK && descriptor->mappedAtCreation) {
@@ -82,8 +85,11 @@ WGPUBuffer native_device_create_buffer(native_device *device, const WGPUBufferDe
     native_unlock(device);
     if (!buffer) {
         if (payload) native_buffer_release(NULL, payload);
-        native_error(device, status != NATIVE_OK ? native_result_error(status) : native_resource_error(created),
-            "buffer creation failed or unsupported usage");
+        char message[NATIVE_FAILURE_MESSAGE_CAPACITY];
+        if (failure.status == NATIVE_OK) failure = native_failure_status(NATIVE_INVALID_STATE);
+        native_failure_format(&failure, "buffer creation failed or unsupported usage", message);
+        native_error(device, created != DOE_RESOURCE_OK ? native_resource_error(created) :
+            native_result_error(failure.status), message);
     }
     if (buffer) native_label(device, buffer, descriptor->label);
     return (WGPUBuffer)buffer;
@@ -132,18 +138,23 @@ void wgpuBufferUnmap(WGPUBuffer handle)
     if (!device) return;
     native_lock(device);
     native_buffer *payload = doe_resource_buffer_native(buffer);
-    native_result status = NATIVE_OK;
+    native_failure failure = native_failure_status(NATIVE_OK);
     uint64_t offset = 0, size = 0;
     if (payload->mapping && doe_resource_buffer_map_mode(buffer) == WGPUMapMode_Write &&
         doe_resource_buffer_map_span(buffer, &offset, &size) == DOE_RESOURCE_OK)
-        status = native_buffer_write(payload, offset, payload->mapping, (size_t)size);
+        failure = native_buffer_write(payload, offset, payload->mapping, (size_t)size);
     doe_resource_status resource_status = doe_resource_buffer_unmap(buffer);
     free(payload->mapping);
     payload->mapping = NULL;
     native_unlock(device);
-    if (status != NATIVE_OK || resource_status != DOE_RESOURCE_OK)
-        native_error(device, status != NATIVE_OK ? native_result_error(status) : native_resource_error(resource_status),
-            "buffer unmap or writeback failed");
+    if (failure.status != NATIVE_OK || resource_status != DOE_RESOURCE_OK) {
+        WGPUErrorType type = failure.status != NATIVE_OK ? native_result_error(failure.status) :
+            native_resource_error(resource_status);
+        char message[NATIVE_FAILURE_MESSAGE_CAPACITY];
+        if (failure.status == NATIVE_OK) failure = native_failure_status(NATIVE_INVALID_STATE);
+        native_failure_format(&failure, "buffer unmap or writeback failed", message);
+        native_error(device, type, message);
+    }
 }
 
 static void *mapped_range(WGPUBuffer handle, size_t offset, size_t size, bool writable)
@@ -266,9 +277,13 @@ WGPUFuture wgpuBufferMapAsync(WGPUBuffer handle, WGPUMapMode mode,
             failure = native_settle_pending(device).failure;
             consumed_failure = failure;
             if (failure.status == NATIVE_OK)
-                failure = native_failure_status(native_buffer_read(payload, offset, delivery.bytes, delivery.size));
+                failure = native_buffer_read(payload, offset, delivery.bytes, delivery.size);
+            if (failure.status != NATIVE_OK) consumed_failure = failure;
             if (failure.status == NATIVE_OK) delivery.status = WGPUMapAsyncStatus_Success;
-        } else failure = native_failure_status(NATIVE_OUT_OF_MEMORY);
+        } else {
+            failure = native_failure_status(NATIVE_OUT_OF_MEMORY);
+            consumed_failure = failure;
+        }
     }
     native_unlock(device);
     native_failure_format(&failure, "buffer map failed or aborted", delivery.message);
@@ -302,7 +317,7 @@ void wgpuQueueWriteBuffer(WGPUQueue handle, WGPUBuffer buffer_handle,
         failure = native_settle_pending(device).failure;
         if (failure.status == NATIVE_OK) {
             native_buffer *payload = doe_resource_buffer_native(buffer);
-            failure = native_failure_status(native_buffer_write(payload, offset, bytes, size));
+            failure = native_buffer_write(payload, offset, bytes, size);
         }
     }
     native_unlock(device);

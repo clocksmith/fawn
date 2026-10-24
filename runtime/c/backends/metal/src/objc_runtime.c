@@ -1,6 +1,8 @@
 /* SPDX-License-Identifier: MIT */
 #include "objc_abi.h"
+#if !defined(_WIN32)
 #include <dlfcn.h>
+#endif
 
 void *doe_mtl_objc_object(doe_mtl_objc *runtime, void *object, void *selector) {
     return runtime->object_call(object, selector);
@@ -100,6 +102,7 @@ bool doe_mtl_objc_limits(doe_mtl_objc *runtime, void *device, doe_mtl_caps *caps
     return true;
 }
 
+#if !defined(_WIN32)
 static doe_mtl_status create_device(void *userdata, void **out, doe_mtl_caps *caps,
     doe_mtl_error *error) {
     doe_mtl_objc *runtime = userdata;
@@ -324,6 +327,8 @@ unavailable:
     return doe_mtl_fail(DOE_MTL_LOADER_UNAVAILABLE, "Metal runtime load", error);
 }
 
+#endif /* POSIX loader; no Objective-C runtime loader exists on Windows. */
+
 doe_mtl_status doe_mtl_native_open(doe_mtl_native *out, doe_mtl_error *error) {
     if (out == NULL)
         return doe_mtl_fail(DOE_MTL_INVALID_ARGUMENT, "Metal runtime load", error);
@@ -334,7 +339,9 @@ doe_mtl_status doe_mtl_native_open(doe_mtl_native *out, doe_mtl_error *error) {
 #else
     /* Keep the native ABI source compiled on portable hosts, but never load a
      * substitute implementation or manufacture a successful device there. */
+#if !defined(_WIN32)
     (void)open_apple_runtime;
+#endif
     return doe_mtl_fail(DOE_MTL_UNSUPPORTED, "Metal requires 64-bit macOS", error);
 #endif
 }

@@ -43,6 +43,28 @@ native_result native_from_metal(doe_mtl_status status)
     return NATIVE_FAILURE;
 }
 
+native_result native_from_d3d12(doe_dx_status status)
+{
+    switch (status) {
+    case DOE_DX_OK: return NATIVE_OK;
+    case DOE_DX_PENDING: return NATIVE_PENDING;
+    case DOE_DX_COMPLETION_UNKNOWN: return NATIVE_UNKNOWN;
+    case DOE_DX_INVALID_ARGUMENT:
+    case DOE_DX_RANGE:
+    case DOE_DX_ALIGNMENT:
+    case DOE_DX_DEVICE_MISMATCH: return NATIVE_INVALID_ARGUMENT;
+    case DOE_DX_INVALID_STATE:
+    case DOE_DX_UNINITIALIZED: return NATIVE_INVALID_STATE;
+    case DOE_DX_OUT_OF_MEMORY: return NATIVE_OUT_OF_MEMORY;
+    case DOE_DX_UNAVAILABLE: return NATIVE_UNAVAILABLE;
+    case DOE_DX_UNSUPPORTED: return NATIVE_UNSUPPORTED;
+    case DOE_DX_NATIVE_FAILURE: return NATIVE_FAILURE;
+    case DOE_DX_DEVICE_LOST: return NATIVE_DEVICE_LOST;
+    case DOE_DX_BUSY: return NATIVE_BUSY;
+    }
+    return NATIVE_FAILURE;
+}
+
 doe_vk_status native_to_vulkan(native_result status)
 {
     switch (status) {

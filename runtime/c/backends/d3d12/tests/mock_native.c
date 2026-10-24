@@ -47,9 +47,29 @@ void doe_dx_test_free(void *pointer) {
 
 static doe_dx_status outcome(mock_failure point, doe_dx_error *error) {
     if (mock.lost) return doe_dx_fail(DOE_DX_DEVICE_LOST, -200, "mock.device_removed", error);
+    if (mock.failure == MOCK_NO_HARDWARE && point == MOCK_OPEN)
+        return doe_dx_fail(DOE_DX_UNAVAILABLE, -1000, "mock.no_hardware", error);
     if (mock.failure == point)
         return doe_dx_fail(DOE_DX_NATIVE_FAILURE, -100 - (int32_t)point, "mock.injected", error);
     return doe_dx_fail(DOE_DX_OK, 0, "mock", error);
+}
+
+doe_dx_caps mock_default_caps(void) {
+    /* Programmed call-seam facts only: not an actual SDK query or adapter. */
+    doe_dx_caps caps = {0};
+    caps.feature_level = 0xb100;
+    caps.resource_binding_tier = 2;
+    caps.resource_heap_tier = 1;
+    caps.gpu_va_bits_per_resource = caps.gpu_va_bits_per_process = 40;
+    caps.shader_model = 0x60;
+    caps.limits = (doe_dx_limits){
+        .max_descriptors=DOE_DX_MAX_BINDINGS, .max_static_samplers=DOE_DX_MAX_STATIC_SAMPLERS,
+        .max_cbvs=14, .max_srvs=64, .max_uavs=64, .max_compute_threads=1024,
+        .max_compute_size={1024,1024,64}, .max_dispatch_groups={65535,65535,65535},
+        .max_compute_shared_bytes=32768, .uniform_offset_alignment=256, .max_uniform_bytes=65536,
+        .max_buffer_size=UINT64_C(268435456), .max_buffer_allocation_bytes=UINT64_C(268435456),
+        .buffer_allocation_alignment=65536};
+    return caps;
 }
 
 doe_dx_status doe_dx_native_open(const doe_dx_options *options,
@@ -60,11 +80,18 @@ doe_dx_status doe_dx_native_open(const doe_dx_options *options,
     if (status != DOE_DX_OK) return status;
     doe_dx_native_context *context = calloc(1, sizeof(*context));
     assert(context);
-    *caps = (doe_dx_caps){0};
-    caps->adapter_ordinal = options->adapter_selection == DOE_DX_SELECT_WARP ?
-        DOE_DX_NO_ADAPTER_ORDINAL : options->adapter_ordinal;
+    *caps = mock_default_caps();
+    caps->adapter_ordinal = options->adapter_selection == DOE_DX_SELECT_ORDINAL ||
+        options->adapter_selection == DOE_DX_SELECT_HARDWARE ?
+        options->adapter_ordinal : DOE_DX_NO_ADAPTER_ORDINAL;
     caps->adapter_selection = options->adapter_selection;
     caps->software_adapter = options->adapter_selection == DOE_DX_SELECT_WARP;
+    if (options->adapter_selection == DOE_DX_SELECT_LUID) {
+        caps->luid_low = options->adapter_identity.luid_low;
+        caps->luid_high = options->adapter_identity.luid_high;
+        caps->software_adapter = options->adapter_identity.software_adapter;
+    }
+    if (mock.override_caps) *caps = mock.reported_caps;
     strcpy(caps->name, "host call-control, not an adapter");
     *out = context;
     mock.contexts++;

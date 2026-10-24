@@ -1,12 +1,14 @@
 # Experimental C D3D12 backend
 
 This is a standalone backend-private C owner, not a production-provider switch
-or a complete WebGPU backend. Actual Windows code uses the installed SDK's C
-COM declarations. No retained Zig bridge is linked, invoked or removed.
+or a complete WebGPU backend. Windows execution uses the installed SDK's C COM
+declarations; the narrow shader adapter uses official DXC C++ interfaces behind
+a C ABI. No retained Zig bridge is linked, invoked or removed.
 
 ## Implemented boundary
 
-- Exact DXGI adapter ordinal or explicit CPU WARP selection, software-adapter opt-in, D3D12 device,
+- Exact DXGI ordinal/LUID, first hardware-class member or explicit CPU WARP
+  selection, software-adapter opt-in, D3D12 device,
   direct command queue, private fence and observable adapter identity.
 - Default/UAV-capable, zero-initialized upload, and readback buffers; checked
   transfer ranges and scoped map/unmap. Default/readback initialization requires
@@ -140,6 +142,40 @@ in [Microsoft DirectX-Headers](https://github.com/microsoft/DirectX-Headers/blob
 An actual installed SDK must accept these signatures; documentation inspection
 is not SDK compilation. Bounded fence polling avoids a timed-out native event
 registration retaining an unsafe event handle. Its performance is unqualified.
+
+## Official DXC SDK adapter
+
+[The shader boundary](include/doe_d3d12_shader.h) accepts exact HLSL bytes, an
+explicit entry and stage, an optional compiler-owned `DOE_HLSL_ENTRY` index, and
+a fully qualified UTF-8 `dxcompiler.dll` path. It generates no HLSL or reflection.
+`windows_shader.cpp` uses the official
+[IDxcCompiler3/IDxcResult interfaces](https://github.com/microsoft/DirectXShaderCompiler/blob/v1.9.2609/include/dxc/dxcapi.h),
+with exceptions and RTTI disabled, to compile cs/vs/ps Shader Model 6.0 under
+`-HV 2021 -Ges -WX -Gis`. No caller flags, subprocess, include handler or filesystem
+include capability is supplied. The compiler/frontend still owns entry metadata,
+workgroup limits and native feature admission, including wave requirements.
+
+Failure leaves the caller's bytecode output untouched. Operation, signed native
+code and a bounded complete UTF-8 diagnostic prefix are copied before releasing
+DXC results. Successful bytecode owns its `IDxcBlob` and loaded module until
+release; views borrow immutable bytes. The SDK call preserves caller errno,
+LastError, standard fenv and x86 MXCSR, without claiming WGSL numeric normalization.
+An explicit module is loaded with its directory and system-directory dependency
+search only; there is no ambient compiler lookup or alternate compiler fallback.
+
+`build_shader_windows.cmd` requires an actual Windows SDK developer environment,
+`OUT`, and `DXC_ROOT` naming a previously verified official portable release.
+The pinned release is [DXC 1.9.2609.5](https://github.com/microsoft/DirectXShaderCompiler/releases/tag/v1.9.2609),
+archive `dxc_2026_09_29.zip`, SHA256
+`ad31b1fc8443175d204f77a611fdb3ef2ec42759bdc2f1167368de24a4a7e7f1`.
+Headers and binaries stay outside Git. The route records actual module version,
+module/header hashes, then runs the C ABI CPU control: valid cs/vs/ps objects,
+wrong entry/stage/index, invalid source, an existing-file include rejection,
+diagnostic truncation/copy, unchanged failure output, source/module lifetime and
+perturbed host-state preservation. No device is created or GPU shader executed.
+Authored controls and cross-compilation are not an actual Windows SDK execution
+pass; public WGSL/provider integration, hardware and production promotion retain
+their separate gates.
 
 ## Checks
 
@@ -278,3 +314,78 @@ binds 43 source blobs, binary and shader hashes, commands, actual adapter/driver
 run changes no existing checkout, PATH, SDK installation or execution policy.
 This is bounded private-backend hardware evidence for those cases, with no public
 D3D12 frontend, presentation, performance or release qualification claim.
+
+## Exact identity and queried admission bounds
+
+`DOE_DX_SELECT_HARDWARE` requires ordinal zero and an empty identity. It skips
+actual DXGI software entries, selects the first nonsoftware member, and never
+tries another member after device creation or a query fails. An empty hardware
+class returns UNAVAILABLE. The legacy zero/default ordinal mode remains exact,
+and WARP still requires explicit selection and software opt-in.
+
+Device reopening uses `DOE_DX_SELECT_LUID` and `adapter_identity`, with both LUID
+words and the expected software flag. The actual
+[EnumAdapterByLuid](https://learn.microsoft.com/en-us/windows/win32/api/dxgi1_4/nf-dxgi1_4-idxgifactory4-enumadapterbyluid)
+result is checked against GetDesc1; a missing or mismatched identity fails without
+ordinal/WARP retry. The created device's own GetAdapterLuid must match too. A LUID
+is a current host identity, not a persistent cross-reboot device identifier.
+
+Caps contain actual required feature-level (requested FL11_0..FL12_1), resource
+binding/heap tier, GPU address-width and node0 UMA query facts. Query failure
+rejects construction. Shader-model queries ask up to SM6_0; an older runtime's
+E_INVALIDARG is reported as `shader_model=0` (unknown), preserving DXBC use without
+inventing DXIL eligibility. Other query failures preserve their HRESULT.
+
+`limits` distinguishes backend admission from those raw facts. One CBV/SRV/UAV heap/table per use admits up to 64 descriptors, with existing command-owned
+retirement. The separate static-sampler limit remains 16 and command resource
+limit 64. Per-kind counts are checked before native preparation using actual
+[resource binding tiers](https://learn.microsoft.com/en-us/windows/win32/direct3d12/hardware-support):
+Tier 1/2 CBVs 14, Tier 1 SRVs 128 (clamped to 64), Tier 1 FL11_0 UAVs 8, otherwise
+UAVs 64; Tier 3 CBVs are clamped to 64. ALL-visible graphics root tables use the
+same conservative combined counts. This is not complete WebGPU graphics admission.
+
+After actual FL11_0+ admission, SDK guarantees supply compute threads 1024,
+axis sizes 1024/1024/64, dispatch groups 65535 per axis, shared memory 32768 bytes,
+CBV offset alignment 256 and CBV size 65536. They are not separately queried
+optional features or a WebGPU CoreFeatures claim. The compiler/frontend still
+proves workgroup dimensions, total threads, shared memory and indirect counts.
+
+The single-buffer ceiling is an explicit 256 MiB implementation bound clamped by
+actual resource/process GPU-VA widths and SIZE_MAX. A matching UAV-buffer
+GetResourceAllocationInfo query must return a valid non-sentinel allocation
+size/alignment within that address bound before caps publish. Each real buffer
+allocation rechecks its own queried allocation cost against the admitted ceiling.
+This is not a residency budget, free-memory measurement or allocation guarantee;
+CreateCommittedResource can still fail. Uniform logical size/padding policy
+remains upstream. No buffer range is widened implicitly. `context_status` reads
+existing terminal state without polling, consuming an error or settling a lease.
+
+`make check` now also covers wrong LUID words/class, no hardware, narrowed
+reported descriptor/buffer/dispatch bounds, 40 mixed resource descriptors and 64
+initialized buffer bindings through early release and actual owner retirement.
+These are programmed native-call facts, not hardware queries or shader execution.
+`build_windows.cmd` additionally builds `test_windows_caps.exe`; the root hosted
+workflow runs it explicitly. This CPU control uses official SDK vtable types to
+exercise required-query failures, tier derivation, unknown shader-model query,
+VA clamping, bad allocation size/alignment and exact hardware/LUID selection. It
+creates no device and establishes no real driver capability. Historical source
+receipts above do not qualify this later source.
+
+## Buffer aliases within one command
+
+Repeated read-only views of one buffer may overlap, including CBV plus structured
+SRV views. Disjoint writable UAV ranges may share that buffer too; overlapping
+writable ranges and read/write class mixing reject before native recording.
+Aliasing between separate unresolved commands is still rejected by the existing
+exclusive-use owner. Texture, geometry and indirect-argument alias restrictions
+remain unchanged.
+
+Each unique buffer consumes one existing command resource slot and lease. Native
+barriers combine compatible CBV/SRV read-state bits and transition/restore once
+per allocation, while descriptors retain each view's exact range. There is no
+shadow allocation or additional lifetime list. `test_aliases.c` covers read views,
+disjoint/overlapping UAVs, bad ranges, mixed classes, the last resource slot,
+early caller release and unknown completion. The SDK CPU call control observes
+actual lowering's barrier count, identity and state bits, including graphics
+read bits and repeated UAVs. These controls do not execute a shader; actual
+public WARP consumption remains separate.

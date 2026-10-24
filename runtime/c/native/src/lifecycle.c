@@ -82,6 +82,8 @@ WGPUFuture wgpuInstanceRequestAdapter(WGPUInstance handle,
     if (kind == WGPUBackendType_Undefined) {
 #if defined(__APPLE__)
         kind = WGPUBackendType_Metal;
+#elif defined(_WIN32)
+        kind = WGPUBackendType_D3D12;
 #else
         kind = WGPUBackendType_Vulkan;
 #endif

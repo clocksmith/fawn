@@ -32,7 +32,7 @@ static doe_shader_status compile_target(doe_shader_target target, const char *so
 {
     /* Capacity is explicit and compiler-owned. Exhaustion fails visibly; no
      * reparsing, fallback compiler, or claimed support beyond the selected compiler pools. */
-    static const char identity[] = "experimental-c-native-abi10-no-cache";
+    static const char identity[] = "experimental-c-native-no-cache";
     doe_shader_options options = {
         .target=target,.semantic_flags=native_shader_semantic_flags(),
         .allocator = {NULL, shader_allocate, shader_deallocate},
@@ -75,8 +75,9 @@ WGPUShaderModule wgpuDeviceCreateShaderModule(WGPUDevice handle, const WGPUShade
         native_error(device, WGPUErrorType_OutOfMemory, "shader payload allocation failed");
         return NULL;
     }
-    doe_shader_status status = compile_target(device->backend.kind == WGPUBackendType_Metal ?
-        DOE_SHADER_METAL : DOE_SHADER_SPIRV, source->code.data, size,
+    doe_shader_target target = device->backend.kind == WGPUBackendType_Metal ? DOE_SHADER_METAL :
+        device->backend.kind == WGPUBackendType_D3D12 ? DOE_SHADER_HLSL : DOE_SHADER_SPIRV;
+    doe_shader_status status = compile_target(target, source->code.data, size,
         &payload->compiled, &payload->error);
     if (status != DOE_SHADER_OK && !payload->error.diagnostic.message[0])
         memcpy(payload->error.diagnostic.message, "C shader compilation failed", sizeof("C shader compilation failed"));

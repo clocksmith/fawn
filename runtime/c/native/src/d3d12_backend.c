@@ -1,0 +1,88 @@
+/* SPDX-License-Identifier: MIT */
+#include "d3d12_frontend.h"
+#include <stdlib.h>
+#if defined(_WIN32)
+#include <d3d12.h>
+
+static native_result open_selected(const doe_dx_options *options, native_backend *out)
+{
+    native_backend backend = {.kind = WGPUBackendType_D3D12};
+    backend.value.d3d12.options = *options;
+    doe_dx_status status = doe_dx_context_create(options, &backend.value.d3d12.context, NULL);
+    native_result result = native_from_d3d12(status);
+    if (result == NATIVE_OK)
+        result = native_from_d3d12(doe_dx_context_caps(backend.value.d3d12.context,
+            &backend.value.d3d12.caps));
+    /* The public compiler target is DXIL Shader Model6.0. Bytecode compilation
+     * cannot qualify a device which did not positively offer that profile. */
+    if (result == NATIVE_OK && backend.value.d3d12.caps.shader_model < D3D_SHADER_MODEL_6_0)
+        result = NATIVE_UNAVAILABLE;
+    if (result == NATIVE_OK && native_d3d12_limits(&backend.value.d3d12.caps,
+        &backend.limits) != WGPUStatus_Success) result = NATIVE_UNAVAILABLE;
+    if (result != NATIVE_OK) {
+        native_d3d12_close(&backend);
+        return result;
+    }
+    *out = backend;
+    return NATIVE_OK;
+}
+#endif
+
+native_result native_d3d12_open(bool fallback, native_backend *out)
+{
+#if defined(_WIN32)
+    doe_dx_options options = {.allow_software_adapter = fallback,
+        .adapter_selection = fallback ? DOE_DX_SELECT_WARP : DOE_DX_SELECT_HARDWARE};
+    return open_selected(&options, out);
+#else
+    (void)fallback;
+    (void)out;
+    return NATIVE_UNAVAILABLE;
+#endif
+}
+
+native_result native_d3d12_reopen(const native_backend *adapter, native_backend *out)
+{
+#if defined(_WIN32)
+    const doe_dx_caps *expected = &adapter->value.d3d12.caps;
+    doe_dx_options options = {.allow_software_adapter = expected->software_adapter,
+        .adapter_selection = DOE_DX_SELECT_LUID,
+        .adapter_identity = {expected->luid_low, expected->luid_high, expected->software_adapter}};
+    native_backend result = {0};
+    native_result status = open_selected(&options, &result);
+    if (status != NATIVE_OK) return status;
+    const doe_dx_caps *actual = &result.value.d3d12.caps;
+    if (actual->luid_low == expected->luid_low && actual->luid_high == expected->luid_high &&
+        actual->software_adapter == expected->software_adapter) {
+        *out = result;
+        return NATIVE_OK;
+    }
+    native_d3d12_close(&result);
+    return NATIVE_UNAVAILABLE;
+#else
+    (void)adapter;
+    (void)out;
+    return NATIVE_UNAVAILABLE;
+#endif
+}
+
+void native_d3d12_close(native_backend *backend)
+{
+#if defined(_WIN32)
+    /* Existing resource and pending device leases prevent this final close
+     * until every private allocation/command is terminal and released. */
+    if (backend->value.d3d12.context &&
+        doe_dx_context_destroy(backend->value.d3d12.context) != DOE_DX_OK) abort();
+#endif
+    backend->value.d3d12.context = NULL;
+}
+
+native_result native_d3d12_status(const native_backend *backend)
+{
+#if defined(_WIN32)
+    return native_from_d3d12(doe_dx_context_status(backend->value.d3d12.context));
+#else
+    (void)backend;
+    return NATIVE_UNAVAILABLE;
+#endif
+}

@@ -66,11 +66,11 @@ void native_metal_write_texture(native_device *device, const WGPUTexelCopyTextur
     doe_resource_encoder *encoder = NULL;
     doe_resource_commands *commands = NULL;
     native_lock(device);
-    native_result written = NATIVE_OK;
+    native_failure written = native_failure_status(NATIVE_OK);
     if (staging) {
         native_buffer *payload = doe_resource_buffer_native((doe_resource_buffer *)staging);
         written = native_buffer_write(payload, 0, packed, (size_t)bytes);
-        status = written == NATIVE_OK ? doe_resource_encoder_create(&device->resources, &encoder) : DOE_RESOURCE_STATE;
+        status = written.status == NATIVE_OK ? doe_resource_encoder_create(&device->resources, &encoder) : DOE_RESOURCE_STATE;
         copy.offset = 0;
         copy.bytes_per_row = (uint32_t)pitch;
         copy.rows_per_image = copy.height;
@@ -85,8 +85,14 @@ void native_metal_write_texture(native_device *device, const WGPUTexelCopyTextur
         WGPUCommandBuffer command = (WGPUCommandBuffer)commands;
         wgpuQueueSubmit((WGPUQueue)device, 1, &command);
         doe_resource_commands_release(commands);
-    } else if (staging) native_error(device, written == NATIVE_OK ? native_resource_error(status) :
-        native_result_error(written), "Metal queue texture write recording failed");
+    } else if (staging) {
+        WGPUErrorType type = written.status == NATIVE_OK ? native_resource_error(status) :
+            native_result_error(written.status);
+        char message[NATIVE_FAILURE_MESSAGE_CAPACITY];
+        if (written.status == NATIVE_OK) written = native_failure_status(NATIVE_INVALID_STATE);
+        native_failure_format(&written, "Metal queue texture write recording failed", message);
+        native_error(device, type, message);
+    }
     wgpuBufferRelease(staging);
     native_device_release(device);
 }

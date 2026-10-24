@@ -14,6 +14,9 @@ bool native_stage_load(native_device *device, WGPUShaderModule module, WGPUStrin
     } else if (device->backend.kind == WGPUBackendType_Metal) {
         if (out->view.target != DOE_SHADER_METAL || out->view.counts.words ||
             out->view.words || out->view.target_language_version != 300) return false;
+    } else if (device->backend.kind == WGPUBackendType_D3D12) {
+        if (out->view.target != DOE_SHADER_HLSL || out->view.counts.words ||
+            out->view.words || out->view.target_language_version != 600) return false;
     } else return false;
     size_t length;
     if (!native_string_size(name, &length) || length > 63 ||

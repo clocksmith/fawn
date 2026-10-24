@@ -11,8 +11,8 @@ callback queues, shader meaning, GPU execution or production defaults.
 
 ## Scope
 Public objects, compute, graphics, copies and Linux Vulkan presentation.
-[Current coverage](README.md) distinguishes Vulkan and Metal. Missing Metal
-guards, transfers and presentation remain explicit rejections, never fake success.
+[Coverage](README.md) separates Vulkan, Metal and Windows D3D12 composition.
+Missing backend paths reject explicitly, never fabricate success.
 
 ## Contracts
 Pinned `runtime/zig/vendor/webgpu-headers/webgpu.h` and instance, callback,
