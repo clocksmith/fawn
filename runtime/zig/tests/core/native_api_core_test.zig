@@ -1264,6 +1264,101 @@ test "pipeline layout requires a live device and rejects loss without allocation
     try std.testing.expect(native.doeNativeDeviceCreatePipelineLayout(@ptrCast(&device), null) == null);
 }
 
+test "pipeline layout treats null bind group layouts as empty groups" {
+    var device = native.DoeDevice{};
+    const group_descriptor = std.mem.zeroes(abi_pipeline.WGPUBindGroupLayoutDescriptor);
+    const group_layout = native.doeNativeDeviceCreateBindGroupLayout(@ptrCast(&device), &group_descriptor) orelse
+        return error.TestUnexpectedResult;
+    defer native.doeNativeBindGroupLayoutRelease(group_layout);
+    const LayoutHandle = @typeInfo(@FieldType(abi_pipeline.WGPUPipelineLayoutDescriptor, "bindGroupLayouts")).pointer.child;
+    var layouts = [_]LayoutHandle{ null, @ptrCast(group_layout) };
+    var descriptor = std.mem.zeroes(abi_pipeline.WGPUPipelineLayoutDescriptor);
+    descriptor.bindGroupLayoutCount = layouts.len;
+    descriptor.bindGroupLayouts = &layouts;
+    const result = native.doeNativeDeviceCreatePipelineLayout(@ptrCast(&device), &descriptor) orelse
+        return error.TestUnexpectedResult;
+    defer native.doeNativePipelineLayoutRelease(result);
+    const layout: *native.DoePipelineLayout = @ptrCast(@alignCast(result));
+    try std.testing.expectEqual(@as(u32, 2), layout.bind_group_layout_count);
+    const empty = layout.bind_group_layouts[0] orelse return error.TestUnexpectedResult;
+    try std.testing.expectEqual(@as(u32, 0), empty.entry_count);
+    try std.testing.expect(layout.bind_group_layouts[1] == @as(*native.DoeBindGroupLayout, @ptrCast(@alignCast(group_layout))));
+}
+
+test "setBindGroup dynamic offsets follow binding order, alignment and buffer range" {
+    const bind_group_native = @import("../../src/native/resource/doe_bind_group_native.zig");
+    const shared = @import("../../src/native/support/doe_native_shared_types.zig");
+    var entries = [_]shared.DoeBindGroupLayoutEntry{
+        .{ .binding = 3, .resource_kind = 1, .buffer_binding_type = types.WGPUBufferBindingType_Storage, .buffer_has_dynamic_offset = true },
+        .{ .binding = 1, .resource_kind = 1, .buffer_binding_type = types.WGPUBufferBindingType_Uniform, .buffer_has_dynamic_offset = true },
+        .{ .binding = 2, .resource_kind = 1, .buffer_binding_type = types.WGPUBufferBindingType_Uniform },
+    };
+    var layout = native.DoeBindGroupLayout{ .entry_count = entries.len, .entries = entries[0..] };
+    var buffer = native.DoeBuffer{ .size = 1024 };
+    var group = native.DoeBindGroup{ .layout = &layout, .count = 4 };
+    for ([_]usize{ 1, 2, 3 }) |binding| {
+        group.retained_buffers[binding] = &buffer;
+        group.buffer_sizes[binding] = 16;
+    }
+    const alignment = bind_group_native.DynamicOffsetAlignment{ .uniform = 256, .storage = 32 };
+    // Offsets apply to bindings 1 then 3, in ascending binding order.
+    const resolved = try bind_group_native.resolveDynamicOffsets(&group, &.{ 512, 64 }, alignment);
+    try std.testing.expectEqual(@as(u64, 512), resolved[1]);
+    try std.testing.expectEqual(@as(u64, 0), resolved[2]);
+    try std.testing.expectEqual(@as(u64, 64), resolved[3]);
+    try std.testing.expectError(error.BindGroupDynamicOffsetCount, bind_group_native.resolveDynamicOffsets(&group, &.{512}, alignment));
+    try std.testing.expectError(error.BindGroupDynamicOffsetCount, bind_group_native.resolveDynamicOffsets(&group, &.{ 0, 0, 0 }, alignment));
+    try std.testing.expectError(error.BindGroupDynamicOffsetUnaligned, bind_group_native.resolveDynamicOffsets(&group, &.{ 32, 0 }, alignment));
+    try std.testing.expectError(error.BindGroupDynamicOffsetOutOfBounds, bind_group_native.resolveDynamicOffsets(&group, &.{ 1024, 0 }, alignment));
+    const none = try bind_group_native.resolveDynamicOffsets(&group, &.{ 0, 0 }, alignment);
+    try std.testing.expectEqual(@as(u64, 0), none[1]);
+}
+
+test "compute pass setBindGroup and dispatch invalidate the encoder for out-of-range or missing state" {
+    var device = native.DoeDevice{};
+    const cases = [_]struct { index: u32, dispatch: bool, cause: anyerror }{
+        .{ .index = 4, .dispatch = false, .cause = error.BindGroupIndexOutOfRange },
+        .{ .index = 0, .dispatch = true, .cause = error.DispatchPipelineMissing },
+    };
+    for (cases) |case| {
+        const encoder = native.doeNativeDeviceCreateCommandEncoder(@ptrCast(&device), null) orelse return error.TestUnexpectedResult;
+        defer native.doeNativeCommandEncoderRelease(encoder);
+        const pass = native.doeNativeCommandEncoderBeginComputePass(encoder, null) orelse return error.TestUnexpectedResult;
+        defer native.doeNativeComputePassRelease(pass);
+        if (case.dispatch) native.doeNativeComputePassDispatch(pass, 1, 1, 1) else native.doeNativeComputePassSetBindGroup(pass, case.index, null, 0, null);
+        const state = @as(*native.DoeCommandEncoder, @ptrCast(@alignCast(encoder))).state;
+        try std.testing.expect(state == .failed);
+        try std.testing.expectEqual(case.cause, @as(anyerror, state.failed));
+    }
+}
+
+test "every command recording failure except allocation is a validation error" {
+    const recording_contract = @import("../../src/contracts/command_recording.zig");
+    const error_scope = @import("../../src/runtime/diagnostics/error_scope.zig");
+    inline for (@typeInfo(recording_contract.Failure).error_set.?) |cause| {
+        const err = @field(anyerror, cause.name);
+        const expected = if (err == error.OutOfMemory) error_scope.ERROR_TYPE_OUT_OF_MEMORY else error_scope.ERROR_TYPE_VALIDATION;
+        std.testing.expectEqual(expected, error_scope.zig_error_to_type(err)) catch |failure| {
+            std.debug.print("command recording cause {s} is not reported as a validation error\n", .{cause.name});
+            return failure;
+        };
+    }
+}
+
+test "device buffer offset alignments default to 256 and accept lower requests" {
+    const Alignment = @import("../../src/native/support/doe_native_object_types.zig").BufferOffsetAlignment;
+    const defaults = Alignment.fromRequired(0, std.math.maxInt(u32));
+    try std.testing.expectEqual(@as(u32, 256), defaults.uniform);
+    try std.testing.expectEqual(@as(u32, 256), defaults.storage);
+    const requested = Alignment.fromRequired(64, 512);
+    try std.testing.expectEqual(@as(u32, 64), requested.uniform);
+    try std.testing.expectEqual(@as(u32, 256), requested.storage);
+    var device = native.DoeDevice{};
+    var limits = std.mem.zeroes(@import("../../src/core/abi/wgpu_callback_descriptor_types.zig").WGPULimits);
+    _ = native.doeNativeDeviceGetLimits(@ptrCast(&device), &limits);
+    try std.testing.expectEqual(@as(u32, 256), limits.minStorageBufferOffsetAlignment);
+}
+
 test "doeNativePipelineLayoutRelease: null input is safe" {
     native.doeNativePipelineLayoutRelease(null);
 }

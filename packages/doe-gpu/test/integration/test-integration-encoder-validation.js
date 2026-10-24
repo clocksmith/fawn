@@ -11,18 +11,20 @@
 // 8 the doe-gpu/compute facade forwards dynamic offsets;
 // 9 the addon rejects a bind group argument that is not a bind group.
 //
-// Known provider gap: the Zig drop-in does not validate setBindGroup
-// arguments, dispatch bind groups or debug group balance, so on it 1, 2, 3 and
-// 5 check only that the calls reach the provider without errors.
+// Known provider gaps: the Zig drop-in does not check bind groups for pipelines
+// with automatic layouts at dispatch, nor debug group balance, so on it 3 and 5
+// check only that the calls reach the provider without errors.
 
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 import { providerInfo, setupGlobals } from '../../src/index.js';
-import { requestDevice as requestComputeDevice } from '../../src/compute.js';
+import { requestAdapter as requestComputeAdapter } from '../../src/compute.js';
 
 const target = {};
 setupGlobals(target);
-const adapter = await target.navigator.gpu.requestAdapter();
+// A provider may offer its only adapter (lavapipe for the C runtime) as the fallback.
+const adapter = await target.navigator.gpu.requestAdapter()
+  ?? await target.navigator.gpu.requestAdapter({ forceFallbackAdapter: true });
 if (!adapter) {
   console.log('encoder validation: skipped (GPU adapter unavailable)');
   process.exit(0);
@@ -30,8 +32,8 @@ if (!adapter) {
 const device = await adapter.requestDevice();
 const { GPUBufferUsage, GPUMapMode, GPUShaderStage, GPUValidationError } = target;
 const flavor = providerInfo().libraryFlavor;
-const providerValidates = flavor !== 'doe-dropin';
-if (!providerValidates) console.log(`known gap: ${flavor} does not validate bind groups or debug groups; checking delivery only`);
+const providerValidatesAll = flavor !== 'doe-dropin';
+if (!providerValidatesAll) console.log(`known gap: ${flavor} does not check automatic-layout dispatch groups or debug group balance`);
 
 const module = device.createShaderModule({
   code: '@group(0) @binding(0) var<storage, read_write> value: u32; @compute @workgroup_size(1) fn main() { value = 5u; }',
@@ -58,9 +60,9 @@ async function finishError(encode) {
   return device.popErrorScope();
 }
 
-async function expectInvalid(name, encode, providerCheck = true) {
+async function expectInvalid(name, encode, zigGap = false) {
   const error = await finishError(encode);
-  if (!providerCheck || providerValidates) {
+  if (!zigGap || providerValidatesAll) {
     assert(error instanceof GPUValidationError, `${name}: finish() reports a validation error`);
   }
 }
@@ -108,7 +110,7 @@ await expectInvalid('3 unbind between dispatches', (encoder) => {
   pass.dispatchWorkgroups(1);
   pass.end();
   encoder.copyBufferToBuffer(output, 0, other, 0, 4);
-});
+}, true);
 await expectInvalid('3 second pass without a bind group', (encoder) => {
   let pass = encoder.beginComputePass();
   pass.setPipeline(pipeline);
@@ -120,14 +122,14 @@ await expectInvalid('3 second pass without a bind group', (encoder) => {
   pass.dispatchWorkgroups(1);
   pass.end();
   encoder.copyBufferToBuffer(output, 0, other, 0, 4);
-});
+}, true);
 console.log('ok 3: merged deferred dispatches keep their own bind groups');
 
 // 4: a deferred copy error survives materialization (package-side).
 await expectInvalid('4 deferred copy then clearBuffer', (encoder) => {
   encoder.copyBufferToBuffer(output, 0, other, 0, 1024);
   encoder.clearBuffer(other, 0, 4);
-}, false);
+});
 await expectInvalid('4 deferred copy then pass with offsets', (encoder) => {
   encoder.copyBufferToBuffer(output, 0, other, 0, 1024);
   const pass = encoder.beginComputePass();
@@ -135,12 +137,12 @@ await expectInvalid('4 deferred copy then pass with offsets', (encoder) => {
   pass.setBindGroup(0, dynamicGroup, [0]);
   pass.dispatchWorkgroups(1);
   pass.end();
-}, false);
+});
 console.log('ok 4: a deferred copy error survives native materialization');
 
 // 5: encoder debug groups reach the provider.
-await expectInvalid('5 popDebugGroup with an empty stack', (encoder) => encoder.popDebugGroup());
-await expectInvalid('5 pushDebugGroup left open at finish', (encoder) => encoder.pushDebugGroup('open'));
+await expectInvalid('5 popDebugGroup with an empty stack', (encoder) => encoder.popDebugGroup(), true);
+await expectInvalid('5 pushDebugGroup left open at finish', (encoder) => encoder.pushDebugGroup('open'), true);
 assert.equal(await finishError((encoder) => {
   encoder.pushDebugGroup('outer');
   encoder.insertDebugMarker('marker');
@@ -182,7 +184,7 @@ console.log('ok 5: GPUCommandEncoder debug groups reach the provider');
   device.queue.submit([encoder.finish()]);
   assert.equal(await device.popErrorScope(), null, '7 "256" and 256.75 convert to 256; undefined unbinds');
   await readback.mapAsync(GPUMapMode.READ);
-  if (flavor !== 'doe-dropin') assert.equal(new Uint32Array(readback.getMappedRange())[0], 5);
+  assert.equal(new Uint32Array(readback.getMappedRange())[0], 5);
   readback.unmap();
   const probe = device.createCommandEncoder().beginComputePass();
   assert.throws(() => probe.setBindGroup(0, dynamicGroup, [-1]), TypeError);
@@ -193,7 +195,8 @@ console.log('ok 5: GPUCommandEncoder debug groups reach the provider');
 
 // 8: the compute facade forwards dynamic offsets.
 {
-  const compute = await requestComputeDevice();
+  const computeAdapter = await requestComputeAdapter() ?? await requestComputeAdapter({ forceFallbackAdapter: true });
+  const compute = await computeAdapter.requestDevice();
   const facadeLayout = compute.createBindGroupLayout({
     entries: [{ binding: 0, visibility: GPUShaderStage.COMPUTE, buffer: { type: 'storage', hasDynamicOffset: true } }],
   });

@@ -1,27 +1,22 @@
 #!/usr/bin/env node
 // Zero-size buffers keep size 0 all the way to the provider: they map to empty
-// ranges, unmap before submission, zero-byte copies validate their offsets, and an indexed draw reading
-// past an empty index buffer is a validation error.
-//
-// Known provider gap: the Zig drop-in crashes creating a zero-size Vulkan
-// buffer, so the package gives that provider a 4-byte native stand-in; an
-// indexed draw then fits inside the stand-in and is not rejected there.
+// ranges, unmap before submission, zero-byte copies validate their offsets,
+// and an indexed draw reading past an empty index buffer is a validation error.
 
 import assert from 'node:assert/strict';
-import { providerInfo, setupGlobals } from '../../src/index.js';
+import { setupGlobals } from '../../src/index.js';
 
 const target = {};
 setupGlobals(target);
-const adapter = await target.navigator.gpu.requestAdapter();
+// A provider may offer its only adapter (lavapipe for the C runtime) as the fallback.
+const adapter = await target.navigator.gpu.requestAdapter()
+  ?? await target.navigator.gpu.requestAdapter({ forceFallbackAdapter: true });
 if (!adapter) {
   console.log('zero-size buffers: skipped (GPU adapter unavailable)');
   process.exit(0);
 }
 const device = await adapter.requestDevice();
 const { GPUBufferUsage, GPUMapMode, GPUTextureUsage, GPUValidationError } = target;
-const flavor = providerInfo().libraryFlavor;
-const nativeZeroSize = flavor !== 'doe-dropin';
-if (!nativeZeroSize) console.log(`known gap: ${flavor} needs a native stand-in for zero-size buffers`);
 
 async function errorOf(action) {
   device.pushErrorScope('validation');
@@ -58,7 +53,7 @@ assert(await errorOf(() => {
 }) instanceof GPUValidationError, 'a zero-byte copy past the end of a zero-size buffer is rejected at finish');
 console.log('ok: zero-byte copies validate their offsets');
 
-if (nativeZeroSize) {
+{
   const indices = device.createBuffer({ size: 0, usage: GPUBufferUsage.INDEX });
   const module = device.createShaderModule({
     code: `@vertex fn vs() -> @builtin(position) vec4f { return vec4f(0.0, 0.0, 0.0, 1.0); }

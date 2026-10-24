@@ -61,6 +61,60 @@ pub fn populateFlatBindings(
     return total;
 }
 
+/// Add setBindGroup dynamic offsets to flattened buffer binding offsets.
+pub fn applyDynamicOffsets(
+    dynamic_offsets: *const [MAX_COMPUTE_BIND_GROUPS]native_shared.BindGroupDynamicOffsets,
+    buf_offsets: *[MAX_FLAT_BIND]u64,
+) void {
+    for (dynamic_offsets, 0..) |group_offsets, group_index| {
+        for (group_offsets, 0..) |offset, binding_index| {
+            buf_offsets[flatBindSlot(group_index, binding_index)] += offset;
+        }
+    }
+}
+
+pub const DispatchBindingError = error{ DispatchBindGroupMissing, DispatchBindGroupIncompatible };
+
+/// Bind groups an explicit pipeline layout requires at dispatch: each nonempty
+/// group must be bound with the same or an equal-entry layout
+/// (https://gpuweb.github.io/gpuweb/#abstract-opdef-validate-encoder-bind-groups).
+/// Automatic layouts are not checked here.
+pub fn validateDispatchBindGroups(
+    layout: ?*const native_types.DoePipelineLayout,
+    bind_groups: []const ?*DoeBindGroup,
+) DispatchBindingError!void {
+    const pipeline_layout = layout orelse return;
+    const count: usize = @min(pipeline_layout.bind_group_layout_count, MAX_COMPUTE_BIND_GROUPS);
+    for (pipeline_layout.bind_group_layouts[0..count], 0..) |maybe_required, index| {
+        const required = maybe_required orelse continue;
+        if (required.entry_count == 0) continue;
+        const bound = (if (index < bind_groups.len) bind_groups[index] else null) orelse
+            return error.DispatchBindGroupMissing;
+        const bound_layout = bound.layout orelse return error.DispatchBindGroupIncompatible;
+        if (bound_layout != required and !layoutsEquivalent(bound_layout, required))
+            return error.DispatchBindGroupIncompatible;
+    }
+}
+
+fn layoutEntries(layout: *const native_types.DoeBindGroupLayout) []const native_shared.DoeBindGroupLayoutEntry {
+    const entries = layout.entries orelse return &.{};
+    return entries[0..@min(entries.len, layout.entry_count)];
+}
+
+fn layoutsEquivalent(a: *const native_types.DoeBindGroupLayout, b: *const native_types.DoeBindGroupLayout) bool {
+    if (a.automatic or b.automatic) return false;
+    const a_entries = layoutEntries(a);
+    const b_entries = layoutEntries(b);
+    if (a_entries.len != b_entries.len) return false;
+    for (a_entries) |entry| {
+        const match = for (b_entries) |candidate| {
+            if (candidate.binding == entry.binding) break candidate;
+        } else return false;
+        if (!std.meta.eql(entry, match)) return false;
+    }
+    return true;
+}
+
 pub fn collectFlatResources(bind_groups: []const ?*DoeBindGroup) FlatResources {
     std.debug.assert(bind_groups.len <= MAX_COMPUTE_BIND_GROUPS);
 
@@ -99,6 +153,35 @@ test "flatBindSlot matches compute bind slot layout" {
     try std.testing.expectEqual(@as(usize, 0), flatBindSlot(0, 0));
     try std.testing.expectEqual(@as(usize, MAX_BIND), flatBindSlot(1, 0));
     try std.testing.expectEqual(@as(usize, MAX_FLAT_BIND - 1), flatBindSlot(MAX_COMPUTE_BIND_GROUPS - 1, MAX_BIND - 1));
+}
+
+test "applyDynamicOffsets adds per-binding offsets to flattened slots" {
+    var dynamic = [_]native_shared.BindGroupDynamicOffsets{native_shared.NO_DYNAMIC_OFFSETS} ** MAX_COMPUTE_BIND_GROUPS;
+    dynamic[1][2] = 256;
+    var offsets = [_]u64{16} ** MAX_FLAT_BIND;
+    applyDynamicOffsets(&dynamic, &offsets);
+    try std.testing.expectEqual(@as(u64, 272), offsets[flatBindSlot(1, 2)]);
+    try std.testing.expectEqual(@as(u64, 16), offsets[flatBindSlot(0, 2)]);
+}
+
+test "validateDispatchBindGroups requires every nonempty explicit group with an equal layout" {
+    var entries = [_]native_shared.DoeBindGroupLayoutEntry{.{ .binding = 0, .resource_kind = 1 }};
+    var other_entries = [_]native_shared.DoeBindGroupLayoutEntry{.{ .binding = 1, .resource_kind = 1 }};
+    var required = native_types.DoeBindGroupLayout{ .entry_count = 1, .entries = entries[0..] };
+    var equal = native_types.DoeBindGroupLayout{ .entry_count = 1, .entries = entries[0..] };
+    var different = native_types.DoeBindGroupLayout{ .entry_count = 1, .entries = other_entries[0..] };
+    var empty = native_types.DoeBindGroupLayout{};
+    var layout = native_types.DoePipelineLayout{ .bind_group_layout_count = 2 };
+    layout.bind_group_layouts[0] = &empty;
+    layout.bind_group_layouts[1] = &required;
+    var bound = DoeBindGroup{ .layout = &equal };
+    var wrong = DoeBindGroup{ .layout = &different };
+    try validateDispatchBindGroups(&layout, &.{ null, &bound });
+    try validateDispatchBindGroups(null, &.{});
+    try std.testing.expectError(error.DispatchBindGroupMissing, validateDispatchBindGroups(&layout, &.{ null, null }));
+    try std.testing.expectError(error.DispatchBindGroupIncompatible, validateDispatchBindGroups(&layout, &.{ null, &wrong }));
+    equal.automatic = true;
+    try std.testing.expectError(error.DispatchBindGroupIncompatible, validateDispatchBindGroups(&layout, &.{ null, &bound }));
 }
 
 test "collectFlatResources preserves separate flattened texture and sampler slots" {

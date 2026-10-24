@@ -798,7 +798,9 @@ function wrapGpu(raw) {
      * - The wrapped adapter later produces compute-only devices.
      */
     async requestAdapter(options) {
-      return wrapAdapter(await raw.requestAdapter(options));
+      // GPU.requestAdapter resolves to null when no adapter matches the options.
+      const adapter = await raw.requestAdapter(options);
+      return adapter === null ? null : wrapAdapter(adapter);
     },
   };
 }

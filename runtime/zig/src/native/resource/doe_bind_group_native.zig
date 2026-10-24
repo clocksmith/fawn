@@ -15,6 +15,7 @@ const binding_contract = @import("../../contracts/binding.zig");
 const model_render_types = @import("../../contracts/model/model_render_types.zig");
 const texture_contract = @import("../../contracts/texture.zig");
 const texture_sampler = @import("doe_texture_sampler_native.zig");
+const command_recording = @import("../../contracts/command_recording.zig");
 
 const alloc = native_helpers.alloc;
 const make = native_helpers.make;
@@ -171,6 +172,52 @@ fn storage_texture_matches_layout(layout_entry: DoeBindGroupLayoutEntry, view: *
         layout_entry.texture_view_dimension != resolve_view_dimension(view)) return false;
     if (!texture_aspect_matches(view.tex, view)) return false;
     return storage_texture_access_supported(layout_entry.texture_sample_type);
+}
+
+/// Minimum dynamic offset alignments, from the device limits.
+pub const DynamicOffsetAlignment = struct {
+    uniform: u64,
+    storage: u64,
+};
+
+pub fn deviceDynamicOffsetAlignment(device: *const native_types.DoeDevice) DynamicOffsetAlignment {
+    return .{ .uniform = device.buffer_offset_alignment.uniform, .storage = device.buffer_offset_alignment.storage };
+}
+
+/// WebGPU setBindGroup dynamic offsets: one per dynamic buffer entry in
+/// ascending binding order, aligned, and keeping each binding in its buffer
+/// (https://gpuweb.github.io/gpuweb/#dom-gpubindingcommandsmixin-setbindgroup).
+/// Returns the bytes to add per binding number.
+pub fn resolveDynamicOffsets(
+    group: *const DoeBindGroup,
+    offsets: []const u32,
+    alignment: DynamicOffsetAlignment,
+) command_recording.BindGroupError!native_shared.BindGroupDynamicOffsets {
+    var resolved = native_shared.NO_DYNAMIC_OFFSETS;
+    const entries: []const DoeBindGroupLayoutEntry = if (group.layout) |layout| layout.entries orelse &.{} else &.{};
+    var used: usize = 0;
+    for (0..MAX_BIND) |binding| {
+        const entry = for (entries) |candidate| {
+            if (candidate.binding == binding) break candidate;
+        } else continue;
+        if (!entry.buffer_has_dynamic_offset) continue;
+        if (used == offsets.len) return error.BindGroupDynamicOffsetCount;
+        const offset: u64 = offsets[used];
+        used += 1;
+        const required = if (entry.buffer_binding_type == abi_binding.WGPUBufferBindingType_Uniform)
+            alignment.uniform
+        else
+            alignment.storage;
+        if (required == 0 or offset % required != 0) return error.BindGroupDynamicOffsetUnaligned;
+        const buffer = group.retained_buffers[binding] orelse return error.BindGroupDynamicOffsetOutOfBounds;
+        const binding_end = std.math.add(u64, group.offsets[binding], group.buffer_sizes[binding]) catch
+            return error.BindGroupDynamicOffsetOutOfBounds;
+        const end = std.math.add(u64, binding_end, offset) catch return error.BindGroupDynamicOffsetOutOfBounds;
+        if (end > buffer.size) return error.BindGroupDynamicOffsetOutOfBounds;
+        resolved[binding] = offset;
+    }
+    if (used != offsets.len) return error.BindGroupDynamicOffsetCount;
+    return resolved;
 }
 
 fn find_layout_entry(layout: *DoeBindGroupLayout, binding: u32) ?DoeBindGroupLayoutEntry {
@@ -565,6 +612,17 @@ pub export fn doeNativeDeviceCreatePipelineLayout(dev_raw: ?*anyopaque, desc: ?*
         pl.immediate_size = pd.immediateSize;
         pl.bind_group_layout_count = @intCast(pd.bindGroupLayoutCount);
         for (0..pd.bindGroupLayoutCount) |index| {
+            // WebGPU bindGroupLayouts is sequence<GPUBindGroupLayout?>: a null
+            // entry is an empty group, owned here like an explicit layout.
+            if (pd.bindGroupLayouts[index] == null) {
+                const empty = make(DoeBindGroupLayout) orelse {
+                    doeNativePipelineLayoutRelease(pl_result);
+                    return null;
+                };
+                empty.* = .{};
+                pl.bind_group_layouts[index] = empty;
+                continue;
+            }
             const layout = cast(DoeBindGroupLayout, pd.bindGroupLayouts[index]) orelse {
                 doeNativePipelineLayoutRelease(pl_result);
                 return null;

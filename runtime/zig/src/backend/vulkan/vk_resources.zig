@@ -315,10 +315,11 @@ pub fn create_readback_buffer(self: anytype, bytes: u64, initialize_buffers_on_c
 
 fn create_compute_buffer_with_kind(
     self: anytype,
-    bytes: u64,
+    requested_bytes: u64,
     initialize_buffers_on_create: bool,
     memory_kind: ComputeBufferMemoryKind,
 ) !ComputeBuffer {
+    const bytes = memory_policy.buffer_backing_bytes(requested_bytes);
     try self.retirement.requireActive();
     const generation = try identity.nextGeneration(self);
     if (memory_kind == .host_visible) {

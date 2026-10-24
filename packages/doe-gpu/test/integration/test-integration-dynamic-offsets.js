@@ -3,26 +3,27 @@
 // passes and render bundles, in both the sequence and the Uint32Array forms:
 // each shader reads the uniform at the offset it was given.
 //
-// Known provider gap: the Zig drop-in accepts dynamic offsets and discards them
-// (runtime/zig/src/native/compute/doe_compute_ext_native.zig
-// doeNativeComputePassSetBindGroup, native/render/doe_render_native.zig
-// doeNativeRenderPassSetBindGroup), so its shaders read offset 0. On that
-// provider this test checks encoding and argument handling only.
+// Known provider gap: the Zig drop-in's render bundles discard dynamic offsets
+// (runtime/zig/src/native/render/doe_bundle_native.zig
+// doeNativeRenderBundleEncoderSetBindGroup), so its bundles read offset 0. On
+// that provider the bundle draw checks encoding only.
 
 import assert from 'node:assert/strict';
 import { providerInfo, setupGlobals } from '../../src/index.js';
 
 const target = {};
 setupGlobals(target);
-const adapter = await target.navigator.gpu.requestAdapter();
+// A provider may offer its only adapter (lavapipe for the C runtime) as the fallback.
+const adapter = await target.navigator.gpu.requestAdapter()
+  ?? await target.navigator.gpu.requestAdapter({ forceFallbackAdapter: true });
 if (!adapter) {
   console.log('dynamic offsets: skipped (GPU adapter unavailable)');
   process.exit(0);
 }
 const device = await adapter.requestDevice();
 const flavor = providerInfo().libraryFlavor;
-const appliesOffsets = flavor !== 'doe-dropin';
-if (!appliesOffsets) console.log(`known gap: ${flavor} discards dynamic offsets; checking encoding only`);
+const bundlesApplyOffsets = flavor !== 'doe-dropin';
+if (!bundlesApplyOffsets) console.log(`known gap: ${flavor} bundles discard dynamic offsets; checking bundle encoding only`);
 const { GPUBufferUsage, GPUMapMode, GPUShaderStage, GPUTextureUsage } = target;
 const stride = Math.max(device.limits.minUniformBufferOffsetAlignment, device.limits.minStorageBufferOffsetAlignment);
 
@@ -84,10 +85,8 @@ async function readWords(buffer, count) {
   device.queue.submit([encoder.finish()]);
   assert.equal(await device.popErrorScope(), null, 'compute dynamic offsets encode without errors');
   const result = await readWords(output, stride / 2);
-  if (appliesOffsets) {
-    assert.deepEqual([result[0], result[stride / 4]], [12, 13], 'each dispatch read the uniform at its own offset');
-  }
-  console.log(`ok: compute passes ${appliesOffsets ? 'apply' : 'encode'} sequence and Uint32Array dynamic offsets`);
+  assert.deepEqual([result[0], result[stride / 4]], [12, 13], 'each dispatch read the uniform at its own offset');
+  console.log('ok: compute passes apply sequence and Uint32Array dynamic offsets');
 }
 
 // Render pass and bundle: the fragment colour is the uniform at the offset.
@@ -135,15 +134,15 @@ async function readWords(buffer, count) {
     pass.setBindGroup(0, group, new Uint32Array([stride, stride * 2]), 1, 1);
     pass.draw(3);
   });
-  if (appliesOffsets) assert.equal(direct, 12, 'a render pass reads the uniform at its Uint32Array dynamic offset');
+  assert.equal(direct, 12, 'a render pass reads the uniform at its Uint32Array dynamic offset');
   const bundleEncoder = device.createRenderBundleEncoder({ colorFormats: ['rgba8unorm'] });
   bundleEncoder.setPipeline(pipeline);
   bundleEncoder.setBindGroup(0, group, [stride * 3]);
   bundleEncoder.draw(3);
   const bundle = bundleEncoder.finish();
   const bundled = await redChannel((pass) => pass.executeBundles([bundle]));
-  if (appliesOffsets) assert.equal(bundled, 13, 'a render bundle reads the uniform at its dynamic offset');
-  console.log(`ok: render passes and bundles ${appliesOffsets ? 'apply' : 'encode'} dynamic offsets`);
+  if (bundlesApplyOffsets) assert.equal(bundled, 13, 'a render bundle reads the uniform at its dynamic offset');
+  console.log(`ok: render passes apply dynamic offsets; bundles ${bundlesApplyOffsets ? 'apply' : 'encode'} them`);
 }
 
 assert.throws(() => {

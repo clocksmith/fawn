@@ -50,6 +50,7 @@ const DoeCommandEncoder = native_types.DoeCommandEncoder;
 const RecordedRenderCmd = std.meta.TagPayloadByName(native_cmds.RecordedCmd, "render_pass");
 
 const texture_sampler = @import("../resource/doe_texture_sampler_native.zig");
+const bind_group_native = @import("../resource/doe_bind_group_native.zig");
 const render_pipeline = @import("doe_render_pipeline_native.zig");
 const references = @import("../command/doe_command_references.zig");
 const native_exports = @import("../support/doe_native_exports.zig");
@@ -307,14 +308,34 @@ pub export fn doeNativeRenderPassSetIndexBuffer(pass_raw: ?*anyopaque, buffer_ra
 pub export fn doeNativeRenderPassSetBindGroup(pass_raw: ?*anyopaque, group_index: u32, group_raw: ?*anyopaque, dynamic_offset_count: usize, dynamic_offsets: ?[*]const u32) callconv(.c) void {
     const pass = cast(DoeRenderPass, pass_raw) orelse return;
     if (!recording.requirePass(pass.enc, @intFromPtr(pass))) return;
-    if (group_index >= native_shared.MAX_RENDER_BIND_GROUPS) return;
-    pass.bind_groups[group_index] = cast(DoeBindGroup, group_raw);
-    if (pass.bind_groups[group_index]) |group| {
+    if (group_index >= native_shared.MAX_RENDER_BIND_GROUPS) {
+        recording.fail(pass.enc, error.BindGroupIndexOutOfRange);
+        return;
+    }
+    if (dynamic_offset_count != 0 and dynamic_offsets == null) {
+        recording.fail(pass.enc, error.InvalidArgument);
+        return;
+    }
+    const offsets: []const u32 = if (dynamic_offset_count == 0) &.{} else dynamic_offsets.?[0..dynamic_offset_count];
+    const bound = cast(DoeBindGroup, group_raw);
+    var resolved = native_shared.NO_DYNAMIC_OFFSETS;
+    if (bound) |group| {
+        resolved = bind_group_native.resolveDynamicOffsets(
+            group,
+            offsets,
+            bind_group_native.deviceDynamicOffsetAlignment(pass.enc.dev),
+        ) catch |err| {
+            recording.fail(pass.enc, err);
+            return;
+        };
         if (!recording.reserve(pass.enc, 0, 1)) return;
         references.retainBindGroupAssumeCapacity(&pass.enc.references, group);
+    } else if (offsets.len != 0) {
+        recording.fail(pass.enc, error.BindGroupDynamicOffsetCount);
+        return;
     }
-    _ = dynamic_offset_count;
-    _ = dynamic_offsets;
+    pass.bind_groups[group_index] = bound;
+    pass.dynamic_offsets[group_index] = resolved;
 }
 
 pub export fn doeNativeRenderPassDrawIndexed(pass_raw: ?*anyopaque, index_count: u32, instance_count: u32, first_index: u32, base_vertex: i32, first_instance: u32) callconv(.c) void {
@@ -343,6 +364,7 @@ pub export fn doeNativeRenderPassDrawIndexed(pass_raw: ?*anyopaque, index_count:
 
 fn populate_render_bindings(
     bind_groups: []const ?*DoeBindGroup,
+    dynamic_offsets: []const native_shared.BindGroupDynamicOffsets,
     cmd: *RecordedRenderCmd,
 ) void {
     std.debug.assert(bind_groups.len <= native_shared.MAX_RENDER_BIND_GROUPS);
@@ -352,7 +374,7 @@ fn populate_render_bindings(
         for (0..count) |binding_index| {
             const slot = group_index * native_shared.MAX_BIND + binding_index;
             cmd.bind_buffers[slot] = group.buffers[binding_index];
-            cmd.bind_buffer_offsets[slot] = group.offsets[binding_index];
+            cmd.bind_buffer_offsets[slot] = group.offsets[binding_index] + dynamic_offsets[group_index][binding_index];
             cmd.bind_textures[slot] = group.textures[binding_index];
             cmd.bind_samplers[slot] = group.samplers[binding_index];
         }
@@ -429,7 +451,7 @@ fn base_render_cmd(pass: *DoeRenderPass, pip: ?*DoeRenderPipeline) RecordedRende
         .clear_b = pass.clear_b,
         .clear_a = pass.clear_a,
     };
-    populate_render_bindings(pass.bind_groups[0..], &cmd);
+    populate_render_bindings(pass.bind_groups[0..], pass.dynamic_offsets[0..], &cmd);
     return cmd;
 }
 
@@ -547,12 +569,14 @@ test "Metal render commands flatten bind groups into shader slots" {
         .first_instance = 0,
     };
 
-    populate_render_bindings(groups[0..], &cmd);
+    var dynamic = [_]native_shared.BindGroupDynamicOffsets{native_shared.NO_DYNAMIC_OFFSETS} ** native_shared.MAX_RENDER_BIND_GROUPS;
+    dynamic[1][2] = 256;
+    populate_render_bindings(groups[0..], dynamic[0..], &cmd);
 
     try std.testing.expectEqual(sampler, cmd.bind_samplers[0]);
     try std.testing.expectEqual(texture, cmd.bind_textures[1]);
     try std.testing.expectEqual(buffer, cmd.bind_buffers[native_shared.MAX_BIND + 2]);
-    try std.testing.expectEqual(@as(u64, 64), cmd.bind_buffer_offsets[native_shared.MAX_BIND + 2]);
+    try std.testing.expectEqual(@as(u64, 320), cmd.bind_buffer_offsets[native_shared.MAX_BIND + 2]);
 }
 
 test "Metal render commands snapshot logical dynamic state" {

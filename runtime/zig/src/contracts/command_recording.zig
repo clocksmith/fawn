@@ -27,7 +27,25 @@ pub const DrawError = error{
     DrawIndexBufferOutOfBounds,
 };
 
-pub const Failure = RenderAttachmentError || BufferCopyError || DrawError || @import("texture_copy.zig").Error || error{ OutOfMemory, InvalidState, ImmediateDataUnsupported, TextureCopyDeviceMismatch, TextureCopyUsageMissing };
+/// WebGPU setBindGroup dynamic offsets
+/// (https://gpuweb.github.io/gpuweb/#dom-gpubindingcommandsmixin-setbindgroup).
+pub const BindGroupError = error{
+    BindGroupIndexOutOfRange,
+    BindGroupDynamicOffsetCount,
+    BindGroupDynamicOffsetUnaligned,
+    BindGroupDynamicOffsetOutOfBounds,
+};
+
+/// WebGPU dispatch validation
+/// (https://gpuweb.github.io/gpuweb/#dom-gpucomputepassencoder-dispatchworkgroups).
+pub const DispatchError = error{
+    DispatchPipelineMissing,
+    DispatchWorkgroupCountExceeded,
+    DispatchBindGroupMissing,
+    DispatchBindGroupIncompatible,
+};
+
+pub const Failure = RenderAttachmentError || BufferCopyError || DrawError || BindGroupError || DispatchError || @import("texture_copy.zig").Error || error{ OutOfMemory, InvalidState, ImmediateDataUnsupported, TextureCopyDeviceMismatch, TextureCopyUsageMissing };
 
 pub fn message(cause: Failure) []const u8 {
     return switch (cause) {
@@ -43,6 +61,14 @@ pub fn message(cause: Failure) []const u8 {
         error.DrawVertexBufferOutOfBounds => "draw reads past the bound vertex buffer range",
         error.DrawIndexBufferMissing => "drawIndexed requires a bound index buffer",
         error.DrawIndexBufferOutOfBounds => "drawIndexed reads past the bound index buffer range",
+        error.BindGroupIndexOutOfRange => "setBindGroup index must be less than maxBindGroups",
+        error.BindGroupDynamicOffsetCount => "setBindGroup dynamic offset count must match the layout's dynamic bindings",
+        error.BindGroupDynamicOffsetUnaligned => "setBindGroup dynamic offsets must meet the minimum buffer offset alignment",
+        error.BindGroupDynamicOffsetOutOfBounds => "setBindGroup dynamic offset moves a binding past its buffer",
+        error.DispatchPipelineMissing => "dispatch requires a compute pipeline",
+        error.DispatchWorkgroupCountExceeded => "dispatch workgroup count exceeds maxComputeWorkgroupsPerDimension",
+        error.DispatchBindGroupMissing => "dispatch requires a bind group in every group the pipeline uses",
+        error.DispatchBindGroupIncompatible => "dispatch bind group layout is not compatible with the pipeline layout",
         error.OutOfMemory => "GPU command recording could not allocate owned storage",
         error.InvalidState => "GPU command recording requires an open encoder or its active pass",
         error.InvalidArgument => "GPU command recording received an invalid dependency or payload",

@@ -63,6 +63,23 @@ pub const DoeAdapter = struct {
     device_name_len: usize = 0,
 };
 
+pub const BufferOffsetAlignment = struct {
+    pub const WEBGPU_DEFAULT: u32 = 256;
+    uniform: u32 = WEBGPU_DEFAULT,
+    storage: u32 = WEBGPU_DEFAULT,
+
+    /// https://gpuweb.github.io/gpuweb/#limits: an alignment limit is better
+    /// when lower; an undefined or absent request keeps the default.
+    pub fn fromRequired(uniform: u32, storage: u32) BufferOffsetAlignment {
+        return .{ .uniform = requested(uniform), .storage = requested(storage) };
+    }
+
+    fn requested(value: u32) u32 {
+        if (value == 0 or value == std.math.maxInt(u32)) return WEBGPU_DEFAULT;
+        return @min(WEBGPU_DEFAULT, value);
+    }
+};
+
 pub const DoeDevice = struct {
     pub const TYPE_MAGIC = MAGIC_DEVICE;
     metal_libraries: ?@import("../cache/doe_metal_library_cache.zig").Cache = null,
@@ -75,6 +92,9 @@ pub const DoeDevice = struct {
     mtl_queue: ?*anyopaque = null,
     queue: ?*DoeQueue = null,
     error_scopes: error_scope_owner.ErrorScopeStack = error_scope_owner.ErrorScopeStack.init(),
+    /// The device's min{Uniform,Storage}BufferOffsetAlignment: WebGPU defaults
+    /// unless the device descriptor required lower values.
+    buffer_offset_alignment: BufferOffsetAlignment = .{},
     external_ref_count: u32 = 1,
     destroyed: bool = false,
     loss: ?*@import("doe_device_loss.zig").Event = null,
@@ -308,6 +328,9 @@ pub const DoeComputePass = struct {
     owns_encoder: bool = false,
     pipeline: ?*DoeComputePipeline = null,
     bind_groups: [4]?*DoeBindGroup = [_]?*DoeBindGroup{null} ** 4,
+    dynamic_offsets: [4]shared.BindGroupDynamicOffsets = [_]shared.BindGroupDynamicOffsets{shared.NO_DYNAMIC_OFFSETS} ** 4,
+    /// The device's maxComputeWorkgroupsPerDimension, read at the first dispatch.
+    max_workgroups_per_dimension: u32 = 0,
     state_generation: u64 = INITIAL_COMPUTE_PASS_STATE_GENERATION,
     last_dispatch_state_generation: u64 = INVALID_COMPUTE_PASS_STATE_GENERATION,
     last_dispatch_cmd_index: usize = 0,
@@ -488,6 +511,8 @@ pub const DoeRenderPass = struct {
     clear_b: f64 = 0,
     clear_a: f64 = 1,
     bind_groups: [shared.MAX_RENDER_BIND_GROUPS]?*DoeBindGroup = [_]?*DoeBindGroup{null} ** shared.MAX_RENDER_BIND_GROUPS,
+    dynamic_offsets: [shared.MAX_RENDER_BIND_GROUPS]shared.BindGroupDynamicOffsets =
+        [_]shared.BindGroupDynamicOffsets{shared.NO_DYNAMIC_OFFSETS} ** shared.MAX_RENDER_BIND_GROUPS,
     vertex_buffers: [shared.MAX_VERTEX_BUFFERS]?*DoeBuffer = [_]?*DoeBuffer{null} ** shared.MAX_VERTEX_BUFFERS,
     vertex_buffer_offsets: [shared.MAX_VERTEX_BUFFERS]u64 = [_]u64{0} ** shared.MAX_VERTEX_BUFFERS,
     vertex_buffer_sizes: [shared.MAX_VERTEX_BUFFERS]u64 = [_]u64{0} ** shared.MAX_VERTEX_BUFFERS,

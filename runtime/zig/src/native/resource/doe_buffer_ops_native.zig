@@ -157,6 +157,9 @@ fn createBuffer(dev_raw: ?*anyopaque, desc: ?*const abi_pipeline.WGPUBufferDescr
     }
     const buf = make(DoeBuffer) orelse return null;
     buf.* = .{ .backend = dev.backend, .dev = dev, .size = d.size, .usage = d.usage };
+    // WebGPU admits zero-size buffers; native allocations need bytes, so a
+    // zero-size buffer gets a minimal backing while buf.size stays 0.
+    const allocation_size: u64 = if (d.size == 0) 4 else d.size;
     if (comptime has_vulkan) {
         if (dev.backend == .vulkan) {
             const rt = runtime_helpers.device_vk_runtime(dev) orelse {
@@ -208,9 +211,9 @@ fn createBuffer(dev_raw: ?*anyopaque, desc: ?*const abi_pipeline.WGPUBufferDescr
             return null;
         };
         buf.mtl = if ((d.usage & abi_core.WGPUBufferUsage_Storage) != 0 and heap_type == D3D12_HEAP_TYPE_DEFAULT)
-            d3d12_bridge_device_create_storage_buffer(rt.device, @intCast(d.size))
+            d3d12_bridge_device_create_storage_buffer(rt.device, @intCast(allocation_size))
         else
-            d3d12_bridge_device_create_buffer(rt.device, @intCast(d.size), heap_type);
+            d3d12_bridge_device_create_buffer(rt.device, @intCast(allocation_size), heap_type);
         if (buf.mtl == null) {
             alloc.destroy(buf);
             return null;
@@ -231,9 +234,9 @@ fn createBuffer(dev_raw: ?*anyopaque, desc: ?*const abi_pipeline.WGPUBufferDescr
     }
     const use_private_storage = metalBufferShouldUsePrivateStorage(d);
     buf.mtl = if (use_private_storage)
-        metal_bridge_device_new_buffer_private(dev.mtl_device, @intCast(d.size))
+        metal_bridge_device_new_buffer_private(dev.mtl_device, @intCast(allocation_size))
     else
-        metal_bridge_device_new_buffer_shared(dev.mtl_device, @intCast(d.size));
+        metal_bridge_device_new_buffer_shared(dev.mtl_device, @intCast(allocation_size));
     if (buf.mtl == null) {
         alloc.destroy(buf);
         return null;
