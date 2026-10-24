@@ -60,4 +60,26 @@ assert.equal(await encode(true), null);
 console.log('ok: a bundle that sets its own vertex buffer encodes cleanly');
 assert.ok(await encode(false), 'the pass vertex buffer must not reach the bundle draw');
 console.log('ok: bundle draws do not inherit the pass vertex buffer');
+
+// executeBundles resets the pass state: a later pass draw must set its
+// pipeline and vertex buffer again.
+async function drawAfterBundles(resetState) {
+  device.pushErrorScope('validation');
+  const encoder = device.createCommandEncoder();
+  const pass = encoder.beginRenderPass({ colorAttachments: [{ view: target.createView(), loadOp: 'clear', storeOp: 'store' }] });
+  pass.setPipeline(pipeline);
+  pass.setVertexBuffer(0, vertices);
+  pass.executeBundles([bundle(true)]);
+  if (resetState) {
+    pass.setPipeline(pipeline);
+    pass.setVertexBuffer(0, vertices);
+  }
+  pass.draw(3);
+  pass.end();
+  device.queue.submit([encoder.finish()]);
+  return device.popErrorScope();
+}
+assert.equal(await drawAfterBundles(true), null);
+assert.ok(await drawAfterBundles(false), 'a draw after executeBundles must not use the pre-bundle pipeline');
+console.log('ok: executeBundles resets the pass pipeline and vertex buffers');
 device.destroy();

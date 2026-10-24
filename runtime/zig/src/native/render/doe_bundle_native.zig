@@ -458,44 +458,6 @@ const BundleReplayState = struct {
     }
 };
 
-const SavedVulkanBundlePassState = struct {
-    pipeline: ?*DoeRenderPipeline,
-    bind_groups: [native_shared.MAX_RENDER_BIND_GROUPS]?*DoeBindGroup,
-    vertex_buffers: [MAX_VERTEX_BUFFERS]?*DoeBuffer,
-    vertex_buffer_offsets: [MAX_VERTEX_BUFFERS]u64,
-    vertex_buffer_sizes: [MAX_VERTEX_BUFFERS]u64,
-    index_buffer: ?*DoeBuffer,
-    index_offset: u64,
-    index_format: u32,
-    index_buffer_size: u64,
-
-    fn capture(pass: *const DoeRenderPass) SavedVulkanBundlePassState {
-        return .{
-            .pipeline = pass.pipeline,
-            .bind_groups = pass.bind_groups,
-            .vertex_buffers = pass.vertex_buffers,
-            .vertex_buffer_offsets = pass.vertex_buffer_offsets,
-            .vertex_buffer_sizes = pass.vertex_buffer_sizes,
-            .index_buffer = pass.index_buffer,
-            .index_offset = pass.index_offset,
-            .index_format = pass.index_format,
-            .index_buffer_size = pass.index_buffer_size,
-        };
-    }
-
-    fn restore(saved: SavedVulkanBundlePassState, pass: *DoeRenderPass) void {
-        pass.pipeline = saved.pipeline;
-        pass.bind_groups = saved.bind_groups;
-        pass.vertex_buffers = saved.vertex_buffers;
-        pass.vertex_buffer_offsets = saved.vertex_buffer_offsets;
-        pass.vertex_buffer_sizes = saved.vertex_buffer_sizes;
-        pass.index_buffer = saved.index_buffer;
-        pass.index_offset = saved.index_offset;
-        pass.index_format = saved.index_format;
-        pass.index_buffer_size = saved.index_buffer_size;
-    }
-};
-
 fn apply_vulkan_bundle_state(pass: *DoeRenderPass, state: *const BundleReplayState) bool {
     const pipeline = state.pipeline orelse return false;
     pass.pipeline = pipeline;
@@ -612,10 +574,6 @@ pub export fn doeNativeRenderPassExecuteBundles(
         }
         if (!recording.reserve(pass.enc, 0, 1)) return;
         references.retainRenderBundleAssumeCapacity(&pass.enc.references, b);
-        const saved_vulkan_state: ?SavedVulkanBundlePassState = if (is_vulkan)
-            SavedVulkanBundlePassState.capture(pass)
-        else
-            null;
 
         // Each bundle starts with a fresh replay state. On Vulkan it is empty, as
         // WebGPU specifies (a bundle never sees the pass's pipeline, bind groups
@@ -743,8 +701,18 @@ pub export fn doeNativeRenderPassExecuteBundles(
                 },
             }
         }
-        if (saved_vulkan_state) |saved| {
-            saved.restore(pass);
-        }
+    }
+    // WebGPU executeBundles resets the pass's pipeline, bind groups and
+    // vertex/index buffers (https://gpuweb.github.io/gpuweb/#dom-gpurenderpassencoder-executebundles):
+    // a later pass draw must set them again.
+    if (is_vulkan) {
+        pass.pipeline = null;
+        pass.bind_groups = [_]?*DoeBindGroup{null} ** native_shared.MAX_RENDER_BIND_GROUPS;
+        pass.vertex_buffers = [_]?*DoeBuffer{null} ** MAX_VERTEX_BUFFERS;
+        pass.vertex_buffer_offsets = [_]u64{0} ** MAX_VERTEX_BUFFERS;
+        pass.vertex_buffer_sizes = [_]u64{0} ** MAX_VERTEX_BUFFERS;
+        pass.index_buffer = null;
+        pass.index_offset = 0;
+        pass.index_buffer_size = 0;
     }
 }
