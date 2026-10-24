@@ -179,9 +179,11 @@ void* doe_scoped_validation_begin(WGPUDevice device) {
     return capture;
 }
 
-bool doe_scoped_validation_end(WGPUDevice device, void* opaque, char* message, size_t capacity) {
-    ScopedValidation* capture = (ScopedValidation*)opaque;
-    if (!capture) return false;
+/* Standard pop with a spontaneous callback. Returns false when the provider
+ * rejected the pop or will deliver later (that callback then frees the capture);
+ * otherwise fills status, type and message from the delivered result. */
+static bool standard_pop_error_scope(WGPUDevice device, ScopedValidation* capture,
+    uint32_t* status, uint32_t* type, char* message, size_t capacity) {
     StandardPopErrorScopeCallbackInfo info = {NULL, WGPU_CALLBACK_MODE_ALLOW_SPONTANEOUS,
         scoped_validation_reply, capture, NULL};
     /* The loaded symbol is the standard procedure; only the addon's legacy
@@ -195,10 +197,32 @@ bool doe_scoped_validation_end(WGPUDevice device, void* opaque, char* message, s
         if (!future.id) free(capture); /* Rejected: no callback will run. */
         return false;                  /* Not delivered yet: the callback frees it. */
     }
-    bool validation = capture->status == 0x00000001u && capture->type == 0x00000002u;
-    if (validation) snprintf(message, capacity, "%s", capture->message);
+    *status = capture->status;
+    *type = capture->type;
+    snprintf(message, capacity, "%s", capture->message);
     free(capture);
+    return true;
+}
+
+bool doe_scoped_validation_end(WGPUDevice device, void* opaque, char* message, size_t capacity) {
+    ScopedValidation* capture = (ScopedValidation*)opaque;
+    if (!capture) return false;
+    uint32_t status = 0, type = 0;
+    char text[DOE_ERROR_BUF_CAP];
+    if (!standard_pop_error_scope(device, capture, &status, &type, text, sizeof(text))) return false;
+    bool validation = status == 0x00000001u && type == 0x00000002u;
+    if (validation) snprintf(message, capacity, "%s", text);
     return validation;
+}
+
+/* GPUDevice.popErrorScope on a provider without the Doe entry. Returns false
+ * when the provider did not deliver synchronously or reported a failed pop. */
+bool doe_standard_pop_error_scope(WGPUDevice device, uint32_t* type, char* message, size_t capacity) {
+    ScopedValidation* capture = (ScopedValidation*)calloc(1, sizeof(*capture));
+    if (!capture) return false;
+    uint32_t status = 0;
+    if (!standard_pop_error_scope(device, capture, &status, type, message, capacity)) return false;
+    return status == 0x00000001u; /* WGPUPopErrorScopeStatus_Success */
 }
 
 napi_value doe_compute_pipeline_release(napi_env env, napi_callback_info info) {

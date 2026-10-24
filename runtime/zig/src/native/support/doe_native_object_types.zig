@@ -351,6 +351,9 @@ pub const DoeTexture = struct {
     usage: u64 = 0,
     texture_binding_view_dimension: u32 = 0,
     view_format_count: usize = 0,
+    /// The srgb pair of `format` when viewFormats named it (the only other
+    /// compatible format), else 0; Vulkan creates such images MUTABLE_FORMAT.
+    srgb_view_format: u32 = 0,
     vk_id: u64 = 0,
     vk_runtime_ref: ?*anyopaque = null,
 
@@ -380,6 +383,7 @@ pub const DoeSampler = struct {
     pub const TYPE_MAGIC = MAGIC_SAMPLER;
     magic: u32 = TYPE_MAGIC,
     ref_count: u32 = 1,
+    error_object: bool = false,
     device_ref: ?*DoeDevice = null,
     backend: backend_contract.NativeBackendKind = .metal,
     mtl: ?*anyopaque = null,

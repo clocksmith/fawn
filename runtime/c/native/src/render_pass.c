@@ -265,7 +265,7 @@ void wgpuRenderPassEncoderEnd(WGPURenderPassEncoder handle)
     native_device *device = doe_resource_render_pass_device(pass);
     if (!device) return;
     native_lock(device);
-    const bool ended = doe_resource_render_pass_ended(pass);
+    const bool ended = doe_resource_render_pass_closed(pass); /* End's at-call rule */
     doe_resource_status status = doe_resource_render_pass_end(pass);
     native_unlock(device);
     native_encoding_error(device, ended, status, "render pass end failed");

@@ -283,16 +283,26 @@ doe_vk_status doe_vk_commands_copy_texture(doe_vk_commands *commands,
         status = region_aspect(destination, destination_region.aspect, false, &destination_aspects, &unused);
     if (status == DOE_VK_OK && source_aspects != destination_aspects) status = DOE_VK_INVALID_ARGUMENT;
     if (status != DOE_VK_OK) return doe_vk_poison(commands, status);
-    /* Block formats: one native extent valid at both edges (each clamped). */
-    const doe_vk_texture_region clamped[2] = {native_region(source, source_region),
-        native_region(destination, destination_region)};
-    for (uint32_t axis = 0; axis < 2; ++axis) {
-        uint32_t extent = clamped[0].extent[axis] < clamped[1].extent[axis] ? clamped[0].extent[axis] : clamped[1].extent[axis];
-        source_region.extent[axis] = destination_region.extent[axis] = extent;
-    }
+    /* Each side's block-rounded extent stops at its own subresource edge. */
+    source_region = native_region(source, source_region);
+    destination_region = native_region(destination, destination_region);
     status = doe_vk_texture_transfer_region(commands->context, source, source_region);
     if (status == DOE_VK_OK) status = doe_vk_texture_transfer_region(commands->context, destination, destination_region);
     if (status != DOE_VK_OK) return doe_vk_poison(commands, status);
+    /* Clamped block extents that differ (one side at its edge, the other not)
+     * have no valid VkImageCopy region; such copies go through a staging buffer. */
+    const bool staged = memcmp(source_region.extent, destination_region.extent, sizeof(source_region.extent)) != 0;
+    doe_vk_buffer *staging = NULL;
+    const uint32_t block = doe_vk_format_block_extent(source->desc.format);
+    const uint64_t columns = ((uint64_t)source_region.extent[0] + block - 1) / block;
+    const uint64_t rows = ((uint64_t)source_region.extent[1] + block - 1) / block;
+    if (staged) {
+        status = doe_vk_buffer_create(commands->context, columns * rows * source_region.extent[2] * source->texel_bytes,
+            DOE_VK_BUFFER_COPY_SRC | DOE_VK_BUFFER_COPY_DST, DOE_VK_MEMORY_DEVICE, &staging, NULL);
+        if (status == DOE_VK_OK) status = doe_vk_use_buffer(commands, staging);
+        doe_vk_buffer_release(staging); /* The command owner retains its use. */
+        if (status != DOE_VK_OK) return doe_vk_poison(commands, status);
+    }
     doe_vk_texture_use *source_use = NULL;
     doe_vk_texture_use *destination_use = NULL;
     status = doe_vk_use_texture(commands, source, &source_use);
@@ -301,20 +311,38 @@ doe_vk_status doe_vk_commands_copy_texture(doe_vk_commands *commands,
     if (status == DOE_VK_OK) status = initialize_region(destination_use, destination_region, destination_aspects, true);
     if (status != DOE_VK_OK) return doe_vk_poison(commands, status);
     bool volume = source->desc.dimension == DOE_VK_TEXTURE_3D;
-    const VkImageCopy copy = {
-        .srcSubresource = { source_aspects, source_region.mip,
-            volume ? 0 : source_region.origin[2], volume ? 1 : source_region.extent[2] },
-        .srcOffset = { (int32_t)source_region.origin[0], (int32_t)source_region.origin[1], volume ? (int32_t)source_region.origin[2] : 0 },
-        .dstSubresource = { destination_aspects, destination_region.mip,
-            volume ? 0 : destination_region.origin[2], volume ? 1 : destination_region.extent[2] },
-        .dstOffset = { (int32_t)destination_region.origin[0], (int32_t)destination_region.origin[1], volume ? (int32_t)destination_region.origin[2] : 0 },
-        .extent = { source_region.extent[0], source_region.extent[1], volume ? source_region.extent[2] : 1 }
-    };
+    const VkImageSubresourceLayers from = { source_aspects, source_region.mip,
+        volume ? 0 : source_region.origin[2], volume ? 1 : source_region.extent[2] };
+    const VkImageSubresourceLayers to = { destination_aspects, destination_region.mip,
+        volume ? 0 : destination_region.origin[2], volume ? 1 : destination_region.extent[2] };
+    const VkOffset3D from_offset = { (int32_t)source_region.origin[0], (int32_t)source_region.origin[1],
+        volume ? (int32_t)source_region.origin[2] : 0 };
+    const VkOffset3D to_offset = { (int32_t)destination_region.origin[0], (int32_t)destination_region.origin[1],
+        volume ? (int32_t)destination_region.origin[2] : 0 };
     doe_vk_barrier(commands);
     doe_vk_texture_transition(commands, source_use, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
     doe_vk_texture_transition(commands, destination_use, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-    commands->context->vk.vkCmdCopyImage(commands->command, source->image,
-        VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, destination->image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy);
+    if (!staged) {
+        const VkImageCopy copy = { .srcSubresource = from, .srcOffset = from_offset, .dstSubresource = to,
+            .dstOffset = to_offset,
+            .extent = { source_region.extent[0], source_region.extent[1], volume ? source_region.extent[2] : 1 } };
+        commands->context->vk.vkCmdCopyImage(commands->command, source->image,
+            VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, destination->image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy);
+        return DOE_VK_OK;
+    }
+    /* Both sides cover the same whole blocks; tight block rows in the buffer. */
+    const VkBufferImageCopy out = { .bufferOffset = 0, .bufferRowLength = (uint32_t)(columns * block),
+        .bufferImageHeight = (uint32_t)(rows * block), .imageSubresource = from, .imageOffset = from_offset,
+        .imageExtent = { source_region.extent[0], source_region.extent[1], volume ? source_region.extent[2] : 1 } };
+    const VkBufferImageCopy in = { .bufferOffset = 0, .bufferRowLength = (uint32_t)(columns * block),
+        .bufferImageHeight = (uint32_t)(rows * block), .imageSubresource = to, .imageOffset = to_offset,
+        .imageExtent = { destination_region.extent[0], destination_region.extent[1],
+            volume ? destination_region.extent[2] : 1 } };
+    commands->context->vk.vkCmdCopyImageToBuffer(commands->command, source->image,
+        VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, staging->buffer, 1, &out);
+    doe_vk_barrier(commands);
+    commands->context->vk.vkCmdCopyBufferToImage(commands->command, staging->buffer, destination->image,
+        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &in);
     return DOE_VK_OK;
 }
 

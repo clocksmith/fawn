@@ -96,11 +96,11 @@ static void bundle_debug(WGPURenderBundleEncoder handle, doe_resource_debug_oper
     size_t size;
     bool valid = !label || native_string_size(*label, &size);
     native_lock(device);
+    const bool ended = doe_resource_bundle_encoder_ended(owner);
     doe_resource_status status = valid ? doe_resource_bundle_encoder_debug(owner, operation) :
         doe_resource_bundle_encoder_invalidate(owner, DOE_RESOURCE_INVALID_ARGUMENT);
     native_unlock(device);
-    if (status != DOE_RESOURCE_OK)
-        native_error(device, native_resource_error(status), "bundle debug recording failed");
+    native_encoding_error(device, ended, status, "bundle debug recording failed");
 }
 void wgpuRenderBundleEncoderInsertDebugMarker(WGPURenderBundleEncoder handle, WGPUStringView label)
 {

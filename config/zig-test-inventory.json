@@ -222,6 +222,10 @@
           "kind": "integration"
         },
         {
+          "path": "tests/core/doe_resource_validation_test.zig",
+          "kind": "integration"
+        },
+        {
           "path": "tests/core/model_test.zig",
           "kind": "integration"
         },
@@ -680,6 +684,10 @@
           "kind": "integration"
         },
         {
+          "path": "tests/core/doe_resource_validation_test.zig",
+          "kind": "integration"
+        },
+        {
           "path": "tests/core/model_test.zig",
           "kind": "integration"
         },
@@ -1058,6 +1066,10 @@
         },
         {
           "path": "src/native/compute/doe_compute_program_native.zig",
+          "kind": "inline"
+        },
+        {
+          "path": "src/native/vulkan/vulkan_feature_cache.zig",
           "kind": "inline"
         }
       ],

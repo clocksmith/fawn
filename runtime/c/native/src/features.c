@@ -45,7 +45,8 @@ static bool depth_stencil(const doe_vk_format_caps *caps)
  * descriptor fields checks the enabled set, never these adapter facts. */
 uint32_t native_adapter_features(const native_backend *backend)
 {
-    if (backend->kind != WGPUBackendType_Vulkan) return 0;
+    /* No compatibility mode: every adapter that can create a device is core. */
+    if (backend->kind != WGPUBackendType_Vulkan) return NATIVE_FEATURE(WGPUFeatureName_CoreFeaturesAndLimits);
     const doe_vk_caps *caps = &backend->value.vulkan.caps;
     doe_vk_context *context = backend->value.vulkan.context;
     static const doe_vk_texture_format float32[] = {DOE_VK_FORMAT_R32_FLOAT, DOE_VK_FORMAT_RG32_FLOAT,
@@ -57,7 +58,6 @@ uint32_t native_adapter_features(const native_backend *backend)
         DOE_VK_FORMAT_BC3_RGBA_SRGB, DOE_VK_FORMAT_BC4_R_UNORM, DOE_VK_FORMAT_BC4_R_SNORM,
         DOE_VK_FORMAT_BC5_RG_UNORM, DOE_VK_FORMAT_BC5_RG_SNORM, DOE_VK_FORMAT_BC6H_RGB_UFLOAT,
         DOE_VK_FORMAT_BC6H_RGB_FLOAT, DOE_VK_FORMAT_BC7_RGBA_UNORM, DOE_VK_FORMAT_BC7_RGBA_SRGB};
-    /* No compatibility mode: every adapter is a core adapter. */
     uint32_t features = NATIVE_FEATURE(WGPUFeatureName_CoreFeaturesAndLimits);
     if (native_timestamp_supported(caps)) features |= NATIVE_FEATURE(WGPUFeatureName_TimestampQuery);
     if (formats_offer(context, float32, 3, filterable)) features |= NATIVE_FEATURE(WGPUFeatureName_Float32Filterable);
@@ -83,7 +83,7 @@ bool native_requested_features(const native_backend *backend,
     const WGPUDeviceDescriptor *descriptor, uint32_t *enabled)
 {
     /* A core device always has core-features-and-limits, requested or not. */
-    const uint32_t core = backend->kind == WGPUBackendType_Vulkan ? NATIVE_FEATURE(WGPUFeatureName_CoreFeaturesAndLimits) : 0;
+    const uint32_t core = NATIVE_FEATURE(WGPUFeatureName_CoreFeaturesAndLimits);
     *enabled = core;
     if (!descriptor || !descriptor->requiredFeatureCount) return true;
     if (!descriptor->requiredFeatures) return false;

@@ -137,6 +137,7 @@ pub fn select_physical_device(self: anytype) !void {
     properties2.sType = c.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
     c.vkGetPhysicalDeviceProperties2(self.physical_device, &properties2);
     self.timestamp_period = properties2.properties.limits.timestampPeriod;
+    self.image_format_list_supported = properties2.properties.apiVersion >= c.VK_API_VERSION_1_2;
     if (self.timestamp_query_supported_value and (!std.math.isFinite(self.timestamp_period) or self.timestamp_period <= 0)) {
         return error.UnsupportedFeature;
     }

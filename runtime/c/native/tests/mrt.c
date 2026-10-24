@@ -227,7 +227,7 @@ static void rejected_pass(state *s, const WGPURenderPassColorAttachment *attachm
         wgpuRenderPassEncoderEnd(pass);
         wgpuRenderPassEncoderRelease(pass);
     }
-    assert(!wgpuCommandEncoderFinish(encoder, NULL));
+    finish_invalid(encoder);
     expect_validation(s);
     wgpuCommandEncoderRelease(encoder);
 }
@@ -299,7 +299,7 @@ static void negatives(state *s)
     wgpuRenderPassEncoderSetPipeline(pass, mismatched);
     wgpuRenderPassEncoderEnd(pass); /* The failed encoder reports again; one scope holds the first. */
     wgpuRenderPassEncoderRelease(pass);
-    assert(!wgpuCommandEncoderFinish(encoder, NULL));
+    finish_invalid(encoder);
     expect_validation(s);
     wgpuCommandEncoderRelease(encoder);
     for (int i = 0; i < 3; ++i) {

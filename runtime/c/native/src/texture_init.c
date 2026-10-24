@@ -9,7 +9,7 @@
 native_failure native_initialize_texture(native_device *device, doe_vk_texture *texture,
     const doe_vk_texture_desc *desc, const doe_vk_format_caps *caps)
 {
-    const uint32_t texel_bytes = caps->texel_bytes;
+    const uint32_t texel_bytes = caps->texel_bytes; /* Bytes of one texel block. */
     if ((desc->usage & DOE_VK_TEXTURE_DEPTH_STENCIL_ATTACHMENT) || desc->sample_count > 1 ||
         !(desc->usage & DOE_VK_TEXTURE_COPY_DST)) {
         doe_vk_texture_view *view = NULL;
@@ -26,9 +26,12 @@ native_failure native_initialize_texture(native_device *device, doe_vk_texture *
         doe_vk_texture_view_release(view);
         return failure;
     }
-    uint64_t size = desc->width;
-    if (size > SIZE_MAX / desc->height) return native_failure_status(NATIVE_OUT_OF_MEMORY);
-    size *= desc->height;
+    /* Zero staging holds mip 0's texel blocks (whole 4x4 blocks for BC). */
+    const uint64_t block = caps->block_extent ? caps->block_extent : 1;
+    uint64_t size = (desc->width + block - 1) / block;
+    const uint64_t rows = (desc->height + block - 1) / block;
+    if (size > SIZE_MAX / rows) return native_failure_status(NATIVE_OUT_OF_MEMORY);
+    size *= rows;
     if (size > SIZE_MAX / desc->depth_or_layers) return native_failure_status(NATIVE_OUT_OF_MEMORY);
     size *= desc->depth_or_layers;
     if (size > SIZE_MAX / texel_bytes) return native_failure_status(NATIVE_OUT_OF_MEMORY);

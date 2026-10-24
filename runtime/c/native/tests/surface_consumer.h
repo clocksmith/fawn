@@ -59,6 +59,19 @@ static inline WGPUSurfaceTexture acquire(WGPUSurface surface)
     return frame;
 }
 
+/* Back-to-back presents of untouched (zero-initialized) frames: FIFO keeps
+ * them queued, so the configuration still has presentation in flight. */
+static inline void present_burst(WGPUSurface surface, unsigned count)
+{
+    for (unsigned i = 0; i < count; ++i) {
+        WGPUSurfaceTexture frame = acquire(surface);
+        assert(frame.texture && (frame.status == WGPUSurfaceGetCurrentTextureStatus_SuccessOptimal ||
+            frame.status == WGPUSurfaceGetCurrentTextureStatus_SuccessSuboptimal));
+        assert(wgpuSurfacePresent(surface) == WGPUStatus_Success);
+        wgpuTextureRelease(frame.texture);
+    }
+}
+
 /* Expected unorm8 bytes in memory order for the configured format. */
 static inline void pixel(WGPUTextureFormat format, const unsigned char rgba[4], unsigned char out[4])
 {

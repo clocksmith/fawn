@@ -340,8 +340,12 @@ doe_resource_status doe_resource_buffer_copy_validate(const void *device,
 typedef enum doe_resource_copy_direction {
     DOE_RESOURCE_BUFFER_TO_TEXTURE, DOE_RESOURCE_TEXTURE_TO_BUFFER
 } doe_resource_copy_direction;
+/* NATIVE: zero strides mean tight and a partial block may reach the logical
+ * edge (internal uploads). WEBGPU: buffer copies (whole blocks, undefined
+ * stride sentinels, 256-byte bytesPerRow). QUEUE: writeTexture, the WEBGPU
+ * rules without the 256-byte bytesPerRow alignment. */
 typedef enum doe_resource_copy_alignment {
-    DOE_RESOURCE_COPY_NATIVE, DOE_RESOURCE_COPY_WEBGPU
+    DOE_RESOURCE_COPY_NATIVE, DOE_RESOURCE_COPY_WEBGPU, DOE_RESOURCE_COPY_QUEUE
 } doe_resource_copy_alignment;
 typedef struct doe_resource_texture_copy {
     uint64_t offset;
@@ -353,6 +357,8 @@ typedef struct doe_resource_copy_region {
     WGPUTextureAspect aspect;
     uint32_t pitch, image_rows, row_length, image_height;
     uint64_t required_bytes;
+    /* Bytes of one copied texel-block row and block rows per copied image. */
+    uint32_t row_bytes, rows;
 } doe_resource_copy_region;
 
 doe_resource_status doe_resource_texture_copy_validate(uint64_t buffer_size,
@@ -467,6 +473,17 @@ doe_resource_status doe_resource_encoder_status(const doe_resource_encoder *enco
  * always closes an open pass, even an invalid one. NULL is not ended. */
 bool doe_resource_encoder_ended(const doe_resource_encoder *encoder);
 bool doe_resource_compute_pass_ended(const doe_resource_compute_pass *pass);
+/* End reports at the call: the pass ended or its parent encoder is not locked. */
+bool doe_resource_compute_pass_closed(const doe_resource_compute_pass *pass);
+/* The WebGPU invalid command buffer after a failed Finish: no commands; submit
+ * and program claims reject it. NULL unless the encoder failed, or on OOM. */
+doe_resource_commands *doe_resource_commands_rejected(doe_resource_encoder *encoder);
+/* A failed queue submit invalidates every command buffer of its batch: an
+ * otherwise fresh buffer becomes permanently unsubmittable. Existing submission,
+ * reservation and published program claims retain their state and exact leases.
+ * This atomic admission competes with submit/reserve on the same state. Caller
+ * holds a command reference and serializes dependency mutation with its device. */
+void doe_resource_commands_invalidate(doe_resource_commands *commands);
 /* Native descriptor preflight uses this same sticky error state, never a second
  * frontend poison flag. OK/PENDING and out-of-range statuses are not rejection. */
 doe_resource_status doe_resource_encoder_invalidate(doe_resource_encoder *encoder,

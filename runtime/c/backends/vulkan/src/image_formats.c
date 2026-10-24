@@ -7,6 +7,14 @@ doe_vk_texture_format doe_vk_srgb_pair(doe_vk_texture_format format) {
         case DOE_VK_FORMAT_RGBA8_SRGB: return DOE_VK_FORMAT_RGBA8_UNORM;
         case DOE_VK_FORMAT_BGRA8_UNORM: return DOE_VK_FORMAT_BGRA8_SRGB;
         case DOE_VK_FORMAT_BGRA8_SRGB: return DOE_VK_FORMAT_BGRA8_UNORM;
+        case DOE_VK_FORMAT_BC1_RGBA_UNORM: return DOE_VK_FORMAT_BC1_RGBA_SRGB;
+        case DOE_VK_FORMAT_BC1_RGBA_SRGB: return DOE_VK_FORMAT_BC1_RGBA_UNORM;
+        case DOE_VK_FORMAT_BC2_RGBA_UNORM: return DOE_VK_FORMAT_BC2_RGBA_SRGB;
+        case DOE_VK_FORMAT_BC2_RGBA_SRGB: return DOE_VK_FORMAT_BC2_RGBA_UNORM;
+        case DOE_VK_FORMAT_BC3_RGBA_UNORM: return DOE_VK_FORMAT_BC3_RGBA_SRGB;
+        case DOE_VK_FORMAT_BC3_RGBA_SRGB: return DOE_VK_FORMAT_BC3_RGBA_UNORM;
+        case DOE_VK_FORMAT_BC7_RGBA_UNORM: return DOE_VK_FORMAT_BC7_RGBA_SRGB;
+        case DOE_VK_FORMAT_BC7_RGBA_SRGB: return DOE_VK_FORMAT_BC7_RGBA_UNORM;
         default: return (doe_vk_texture_format)0;
     }
 }

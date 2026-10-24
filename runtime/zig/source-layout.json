@@ -1256,9 +1256,9 @@
       },
       "src/backend/vulkan/native_runtime.zig": {
         "decision": "Keep",
-        "moduleSha256": "e4d99a6aea45a36d196586ae6e6ada42aa149ef3c41067ee762439b3cf37f3fd",
-        "reviewer": "codex-focused-projection-interchange/2026-10-11",
-        "reason": "Keep: per-device runtime borrows the adapter-selected Vulkan instance while retaining its own VkDevice and queue; runtime teardown never destroys the borrowed instance."
+        "moduleSha256": "929ac0b957a50e3f169027469512784dbb47fb2849e018950c1c243bd3d288a8",
+        "reason": "Keep: per-device runtime borrows the adapter-selected Vulkan instance while retaining its own VkDevice and queue; runtime teardown never destroys the borrowed instance; MUTABLE_FORMAT images with a VkImageFormatListCreateInfo only for textures whose viewFormats name the srgb pair.",
+        "reviewer": "doe-c-claude-surface/2026-10-23"
       },
       "src/backend/vulkan/vk_adapter_probe.zig": {
         "decision": "Keep",
@@ -1298,15 +1298,15 @@
       },
       "src/backend/vulkan/vk_constants.zig": {
         "decision": "Keep",
-        "moduleSha256": "ae715db139eabdb5fa8a733c6c28207dc6345c76643160542cab8cef6ec58d56",
-        "reason": "Keep: Vulkan capability/device owner. Integer-dot operation availability and signed/unsigned packed acceleration remain distinct; logical-device admission enables the observed feature and extension only when both are available.",
-        "reviewer": "codex-focused-projection-interchange/2026-10-11"
+        "moduleSha256": "671ce89da09f9fb647b56d7c315b9465db66d1943a51c801ab9923cc43f82918",
+        "reason": "Keep: Vulkan capability/device owner. Integer-dot operation availability and signed/unsigned packed acceleration remain distinct; logical-device admission enables the observed feature and extension only when both are available; MUTABLE_FORMAT images with a VkImageFormatListCreateInfo only for textures whose viewFormats name the srgb pair.",
+        "reviewer": "doe-c-claude-surface/2026-10-23"
       },
       "src/backend/vulkan/vk_device.zig": {
         "decision": "Keep",
-        "moduleSha256": "017c64f64b28ca4b4c9b25c02431b0cd5ef6be90a416c69305bd19c48f6f0a35",
-        "reviewer": "codex-focused-projection-interchange/2026-10-11",
-        "reason": "Keep: Vulkan capability/device owner. Integer-dot operation availability and signed/unsigned packed acceleration remain distinct; logical-device admission enables the observed feature and extension only when both are available."
+        "moduleSha256": "d557d26de9f5ca21bce7a179850c7584b99e7f6581de2a98877c5b305852e8a7",
+        "reason": "Keep: Vulkan capability/device owner. Integer-dot operation availability and signed/unsigned packed acceleration remain distinct; logical-device admission enables the observed feature and extension only when both are available; MUTABLE_FORMAT images with a VkImageFormatListCreateInfo only for textures whose viewFormats name the srgb pair.",
+        "reviewer": "doe-c-claude-surface/2026-10-23"
       },
       "src/backend/vulkan/vk_device_caps.zig": {
         "decision": "Keep",
@@ -1388,9 +1388,9 @@
       },
       "src/backend/vulkan/vk_resources.zig": {
         "decision": "Keep",
-        "moduleSha256": "7e91013282097030b03a3a49b46fd57126a80a6d752edcb07730d72be4933124",
-        "reason": "Keep: buffer allocation and resource operations remain backend-private; completed allocation caching now owns entries and accounting through typed admission facts, without a whole-runtime parameter. Remaining allocation, texture and sampler concerns require separate review.",
-        "reviewer": "codex-buffer-lifecycle/2026-09-27"
+        "moduleSha256": "2d6555ddf9ade71beac08d106eb6bf20cd6ca9048a8b712da140ede15c3a3036",
+        "reason": "Keep: buffer allocation and resource operations remain backend-private; completed allocation caching now owns entries and accounting through typed admission facts, without a whole-runtime parameter. Remaining allocation, texture and sampler concerns require separate review; MUTABLE_FORMAT images with a VkImageFormatListCreateInfo only for textures whose viewFormats name the srgb pair.",
+        "reviewer": "doe-c-claude-surface/2026-10-23"
       },
       "src/backend/vulkan/vk_runtime_probe_ops.zig": {
         "decision": "Keep",
@@ -1424,9 +1424,9 @@
       },
       "src/backend/vulkan/vk_structs.zig": {
         "decision": "Keep",
-        "moduleSha256": "881813e86e21d77a71a58193040eaaf4d5557f04ce95a6d4fbaffe1862443163",
-        "reason": "Keep: reachable backend implementation shared by 2 production consumers with no conflicting ownership signal.",
-        "reviewer": "codex-recomposition-review/2026-08-08"
+        "moduleSha256": "128ed4443455c18c5d4accd349f2abe786f659b04b3d2b0850fd1a239f908db9",
+        "reason": "Keep: reachable backend implementation shared by 2 production consumers with no conflicting ownership signal; MUTABLE_FORMAT images with a VkImageFormatListCreateInfo only for textures whose viewFormats name the srgb pair.",
+        "reviewer": "doe-c-claude-surface/2026-10-23"
       },
       "src/backend/vulkan/vk_sync.zig": {
         "decision": "Keep",
@@ -3242,9 +3242,9 @@
       },
       "src/dropin/wgpu_dropin_ext_a_pipeline.zig": {
         "decision": "Keep",
-        "moduleSha256": "3efb9351176e6d84404be272f8daccc1bfe7472dd3fc64387b12fae9aeff51da",
-        "reason": "Keep: frozen C-instance seam preserves this native owner and default behavior; only selected identity/lease routing and required test-only observations change.",
-        "reviewer": "codex-c-instance-author/2026-10-23"
+        "moduleSha256": "da8500a5b35b383c35d1df4b516359842ced64e5ee6a2ff8e9927053deb560ee",
+        "reason": "Keep: frozen C-instance seam preserves this native owner and default behavior; only selected identity/lease routing and required test-only observations change; async compute creation uses the unreported shader-owner entry so failures reach only the callback.",
+        "reviewer": "doe-c-claude-surface/2026-10-23"
       },
       "src/dropin/wgpu_dropin_ext_b.zig": {
         "decision": "Keep",
@@ -3674,15 +3674,15 @@
       },
       "src/native/resource/doe_bind_group_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "ed0b3a6da0b5a2a91c7ee55d7d4e6a3d72fa05760c8e259c1648f75dd7b1ad47",
-        "reason": "Keep: preserves this native ownership or ABI boundary while separating internal device cleanup leases from application release and enforcing destroyed-device admission; float and depth formats also bind as unfilterable-float.",
-        "reviewer": "doe-c-claude/2026-10-23"
+        "moduleSha256": "d821d231120231364c7ec3f7d6158af7eba2911e4884ef3e348d45e7d693861b",
+        "reason": "Keep: preserves this native ownership or ABI boundary while separating internal device cleanup leases from application release and enforcing destroyed-device admission; float and depth formats also bind as unfilterable-float; invalid samplers are rejected like invalid buffers and views.",
+        "reviewer": "doe-c-claude-surface/2026-10-23"
       },
       "src/native/resource/doe_buffer_ops_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "0db8129375f3bfce6e37edd81e25cf84fbe5b751a3336898c8b07371373dcbcb",
-        "reason": "Keep: Buffer owner selects UAV-capable DEFAULT allocation only for storage usage; upload/readback roles and map-completion fix preserved.",
-        "reviewer": "codex-public-d3d12-compute/2026-10-19"
+        "moduleSha256": "2dc6bbbf326824fb355245fd60d38246bd5bc523541b789f41e293ad7992c95e",
+        "reason": "Keep: Buffer owner selects UAV-capable DEFAULT allocation only for storage usage; upload/readback roles and map-completion fix preserved; invalid usage or mapped size generates a validation error and an invalid buffer (C resource rules).",
+        "reviewer": "doe-c-claude-surface/2026-10-23"
       },
       "src/native/resource/doe_command_texture_native.zig": {
         "decision": "Keep",
@@ -3704,15 +3704,15 @@
       },
       "src/native/resource/doe_texture_sampler_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "1b87c7bcf7378efcfbe8a1816d56af653f0a8ab4c1e7be245a2018b1a2f419a2",
-        "reason": "Keep: preserves this native ownership or ABI boundary while separating internal device cleanup leases from application release and enforcing destroyed-device admission.",
-        "reviewer": "codex"
+        "moduleSha256": "1f0d609413adb836e9b99563d002d2e94be94c9d9d429b261c6829c1d8f41921",
+        "reason": "Keep: preserves this native ownership or ABI boundary while separating internal device cleanup leases from application release and enforcing destroyed-device admission; invalid sampler clamps/anisotropy and view formats generate validation errors with invalid objects; MUTABLE_FORMAT images with a VkImageFormatListCreateInfo only for textures whose viewFormats name the srgb pair.",
+        "reviewer": "doe-c-claude-surface/2026-10-23"
       },
       "src/native/resource/doe_texture_validation.zig": {
         "decision": "Keep",
-        "moduleSha256": "f3da921b53eef900fb2085f2f213878ea518e778b144c30c7f119f5e5d31c26b",
-        "reason": "Keep: reachable native implementation with private behavior tests and no merge, elevation, recomposition, or deletion signal.",
-        "reviewer": "codex-recomposition-review/2026-08-08"
+        "moduleSha256": "2032b1fc649b0dc4f42fcd1b3fe1e015dcc0135b9ea897ba76a77fb77d9ad1c9",
+        "reason": "Keep: reachable native implementation with private behavior tests and no merge, elevation, recomposition, or deletion signal; owns the srgb view-format pair rule; MUTABLE_FORMAT images with a VkImageFormatListCreateInfo only for textures whose viewFormats name the srgb pair.",
+        "reviewer": "doe-c-claude-surface/2026-10-23"
       },
       "src/native/shader/doe_shader_compilation_info_native.zig": {
         "decision": "Keep",
@@ -3722,9 +3722,9 @@
       },
       "src/native/shader/doe_shader_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "39bb270af3f79d445ea8fc253a05e8c415a3f734946ffd28f2406b5b18f2d4fe",
-        "reason": "Keep: Shader owner validates and retains WGSL for D3D12; routes compute to bounded native integration; releases D3D12 PSO/root through COM, with existing shader/layout references and diagnostics preserved.",
-        "reviewer": "codex-public-d3d12-compute/2026-10-19"
+        "moduleSha256": "24be375901aa888c5f4de1f30c46fc7ab14bdd0917b82778b4b647061afebd58",
+        "reason": "Keep: Shader owner validates and retains WGSL for D3D12; routes compute to bounded native integration; releases D3D12 PSO/root through COM. Failed module and synchronous compute pipeline creation generate the device error (OutOfMemory for allocation failure, otherwise validation); async creation reports through its callback only.",
+        "reviewer": "doe-c-claude-surface/2026-10-23"
       },
       "src/native/shader/doe_shader_translation_cache.zig": {
         "decision": "Keep",
@@ -3782,9 +3782,9 @@
       },
       "src/native/support/doe_native_object_types.zig": {
         "decision": "Keep",
-        "moduleSha256": "48a0ebec0686c459fc360f1c0b9f1579d0628026147c093f21df818d3b386329",
-        "reason": "Keep: default-off C error-scope partial owner uses final-address typed storage, cold creation rollback and checked final deinit; original classifier, callbacks and device references remain with their existing owners.",
-        "reviewer": "codex-c-error-scopes-author/2026-10-23"
+        "moduleSha256": "463b1daef745a21f33c59adefb9fc1fd2a6ab2192c6ceab9693dfd9051377ec9",
+        "reason": "Keep: default-off C error-scope partial owner uses final-address typed storage, cold creation rollback and checked final deinit; original classifier, callbacks and device references remain with their existing owners; textures record an allowed srgb view; samplers carry error_object; MUTABLE_FORMAT images with a VkImageFormatListCreateInfo only for textures whose viewFormats name the srgb pair.",
+        "reviewer": "doe-c-claude-surface/2026-10-23"
       },
       "src/native/support/doe_native_runtime_helpers.zig": {
         "decision": "Keep",
@@ -3806,9 +3806,9 @@
       },
       "src/native/vulkan/vulkan_compute_bindings.zig": {
         "decision": "Keep",
-        "moduleSha256": "ac57a5ae2e5e7666a8445a397ab0fac0bf9dfd3131d07285a5f3e7ef429267e9",
-        "reason": "Keep: single Vulkan descriptor collector preserves explicit pipeline layouts and retained bind-group metadata for automatic layouts.",
-        "reviewer": "codex-shader-semantics/2026-09-19"
+        "moduleSha256": "10b211d17c457fb7876af502e3d297c6d950dedfc1ed67fe097792df726b1497",
+        "reason": "Keep: single Vulkan descriptor collector preserves explicit pipeline layouts and retained bind-group metadata for automatic layouts; invalid samplers never bind.",
+        "reviewer": "doe-c-claude-surface/2026-10-23"
       },
       "src/native/vulkan/vulkan_compute_native.zig": {
         "decision": "Keep",
@@ -3818,9 +3818,9 @@
       },
       "src/native/vulkan/vulkan_feature_cache.zig": {
         "decision": "Keep",
-        "moduleSha256": "edb3d2d17b9f615756f51cb6c12637e59234f98f1e45671daa12e8fe07be6e5a",
-        "reason": "Keep: reachable native implementation shared by 2 production consumers with no conflicting ownership signal.",
-        "reviewer": "codex-recomposition-review/2026-08-08"
+        "moduleSha256": "ddbdadc81c8b95be250ea75884aabf6da4d6d56f7ef795670387780e3cbe1056",
+        "reason": "Keep: process-wide Vulkan adapter/device capability cache; one mutex serializes every map access because adapters and devices are created and released on any worker thread.",
+        "reviewer": "doe-c-claude-surface/2026-10-23"
       },
       "src/native/vulkan/vulkan_lifetime.zig": {
         "decision": "Keep",
@@ -3866,9 +3866,9 @@
       },
       "src/native/vulkan/vulkan_texture_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "1189377efd5f769573e7899b4674b4a96176eb2657e124690c6684d244e1499f",
-        "reason": "Keep: Vulkan owns native image-view admission; copy-only texture views retain WebGPU metadata without allocating an invalid native view.",
-        "reviewer": "codex-texture-transfer/2026-09-07"
+        "moduleSha256": "6e312a6ff33d5e01fe0a9be6683a8ebb4d5595e0bdad1357a1e47fe65184ae8a",
+        "reason": "Keep: Vulkan owns native image-view admission; copy-only texture views retain WebGPU metadata without allocating an invalid native view; MUTABLE_FORMAT images with a VkImageFormatListCreateInfo only for textures whose viewFormats name the srgb pair.",
+        "reviewer": "doe-c-claude-surface/2026-10-23"
       },
       "src/plan/dawn_plan_types.zig": {
         "decision": "Keep",

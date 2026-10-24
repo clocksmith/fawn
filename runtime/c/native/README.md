@@ -155,10 +155,20 @@ and exact exports; absent platform loaders remain explicitly unavailable.
   clear, query or debug command only invalidates its encoder, and Finish reports
   exactly one validation error; later valid passes on that encoder add nothing.
   A rejected BeginRenderPass/BeginComputePass still returns an invalid pass that
-  records nothing. Only a command on an encoder or pass that already ended (End
-  always ends a pass; Finish always ends an encoder) is reported at the call
+  records nothing and locks an open parent. Only a command on an encoder or pass
+  that already ended (Finish always ends an encoder and unlocks it; a chained
+  Finish descriptor too) is reported at the call, and it leaves a valid parent
+  valid; End also reports at the call when its parent is not locked (after
+  Finish, or after another pass's End). A failed Finish returns a WebGPU invalid
+  command buffer whose submit reports again
   (`native_encoding_error`; `tests/encoder_errors.c` counts uncaptured errors).
-  Render bundle encoders still report their command rejections at the call.
+  Render bundle encoders follow the same rule: their Finish reports one error
+  and returns an invalid bundle, and executing an invalid bundle invalidates the
+  pass's command encoder, whose Finish reports it. An invalid bundle encoder
+  descriptor reports at creation and returns an invalid encoder whose commands
+  add nothing and whose Finish reports again. A queue submit that fails
+  validation or in the backend consumes every command buffer it names
+  (single use), and submission validity is decided before native recording.
 - Color storeOp Discard is admitted for single-sample attachments too: Vulkan
   STORE_OP_DONT_CARE and the backend's per-aspect owner marks the subresource
   undefined. Later Load passes, buffer/texture copies and sampled or storage
@@ -353,10 +363,17 @@ z 1.5/-0.5 stored as depth 1.0/0.0 where the clipped control draws nothing. A
 feature the adapter does not offer prints SKIP with its reason. BC formats map
 only with texture-compression-bc, 3D BC textures also need the sliced-3D feature,
 compressed textures have whole blocks at mip 0 (resource owner) and are never
-attachments or storage. `tests/bc_compression.c` decodes solid BC1, BC1-srgb and
+attachments or storage. writeTexture validates with the resource owner's QUEUE
+mode (whole blocks and undefined-stride rules, without the 256-byte bytesPerRow
+alignment or any block alignment of the data offset and bytesPerRow) and repacks
+the touched block rows into tight staging before the native copy; BC1/BC2/BC3/BC7 accept their srgb pair as a view format; zero
+initialization stages mip 0's blocks, not texels. `tests/bc_compression.c` decodes solid BC1, BC1-srgb and
 BC4 blocks to exact texels through queue writes and buffer copies, copies a 6x6
 mip by its physical 8x8 extent, returns exact blocks from texture and buffer
-copies, and decodes a 3D BC1 texture uploaded with rowsPerImage 2 per slice.
+copies, copies a block that reaches only one side's edge in both directions,
+writes whole blocks into a 2x2 mip (a 2x2 write rejects), reads one block through
+unorm and srgb views, zero-initializes an 8192x8192x8 BC1 texture, and decodes a
+3D BC1 texture uploaded with rowsPerImage 2 per slice.
 A WGPUTextureComponentSwizzleDescriptor on a view maps each channel (Undefined is
 the channel's own); a non-identity swizzle needs texture-component-swizzle and a
 view usage without RenderAttachment or StorageBinding. `tests/component_swizzle.c`
@@ -428,7 +445,11 @@ default keeps its own value. Every frontend check (texture and surface sizes,
 buffer size, binding sizes and alignments, binding slot limits, binding numbers,
 bind group count, vertex buffers/attributes/stride, inter-stage variables,
 workgroup size/storage, dispatch counts) reads the device limits, and
-`wgpuDeviceGetLimits` reports them. `tests/limits.c` prints the default,
+`wgpuDeviceGetLimits` reports them. Internal buffers are not WebGPU buffers:
+queue writeTexture stages only the touched bytes in a buffer bounded by Vulkan
+maxMemoryAllocationSize, never by maxBufferSize (`tests/large_write.c` writes
+past the 256 MiB default and checks that a public buffer of that size still
+fails). `tests/limits.c` prints the default,
 adapter and device columns and checks each resolution rule and default-limit
 rejection. The compiler admits shader binding numbers 0..31 only, so groups with
 higher binding numbers execute while shaders cannot yet reference them.
@@ -604,9 +625,9 @@ PASS public error types: resource allocation, automatic-layout allocation, compu
 PASS public format features: 4 of 4 offered and enabled (float32-filterable linear r32float/rgba32float midpoints exact, float32-blendable additive r32float 1000007.0, depth32float-stencil8 depth 0.25/stencil 7 per aspect, rg11b10ufloat-renderable blended (1.25,1,2.25) and 4x-resolved (1,.5,.25) packed bits); without them depth32float-stencil8 texture/pipeline/bundle, r32float blending, 'float' r32float binding and rg11b10ufloat attachment/target/bundle reject while rg11b10ufloat still samples exactly, an unoffered feature fails the request (CPU Vulkan only)
 PASS public draw features: 2 of 2 offered and enabled (indirect-first-instance: GPU firstInstance 2/1 reaches instance attributes and instance_index exactly for indirect, indexed indirect and bundle draws, an instance-buffer overrun stays a no-op; depth-clip-control: unclippedDepth draws z 1.5/-0.5 clamped to depth 1.0/0.0 where the clipped control draws nothing); without them nonzero indirect firstInstance is a no-op while direct firstInstance draws, and unclippedDepth rejects (CPU Vulkan only)
 PASS public copy layouts: undefined rowsPerImage for one image and undefined bytesPerRow for one row through queue writes, buffer-to-texture and texture-to-buffer copies with exact texels; two-image and two-row undefined-stride and rowsPerImage-0 rejections reported once at Finish (CPU Vulkan only)
-PASS public BC compression: solid BC1/BC1-srgb/BC4 blocks decode to exact texels through queue writes and buffer copies, a 6x6 mip takes its physical 8x8 copy, texture-to-texture and texture-to-buffer copies return exact blocks, a 3D BC1 texture uploaded with rowsPerImage 2 decodes per slice (sliced 3D); without the feature, non-block sizes, attachment/storage usage, 3D without sliced 3D and unaligned copies reject (CPU Vulkan only)
+PASS public BC compression: solid BC1/BC1-srgb/BC4 blocks decode to exact texels through queue writes and buffer copies, a 6x6 mip takes its physical 8x8 copy, texture-to-texture and texture-to-buffer copies return exact blocks, copies whose block reaches only one side's edge (both directions) land exactly, writeTexture of whole blocks into a 2x2 mip and with odd offsets and bytesPerRow 8*w+3 (two layers, rowsPerImage 3), bc1/bc7 srgb view formats, a zeroed 8192x8192x8 BC1 texture, a 3D BC1 texture uploaded with rowsPerImage 2 decodes per slice (sliced 3D); without the feature, a partial-block writeTexture, non-block sizes, attachment/storage usage, 3D without sliced 3D and unaligned copies reject (CPU Vulkan only)
 PASS public component swizzle: (b,a,0,r) and (1,g,r,g) sampled views return the identity view's rgba8unorm components rearranged exactly through textureLoad and nearest textureSampleLevel; identity swizzles need no feature, a non-identity swizzle without the feature, with RenderAttachment or StorageBinding view usage, or with an unknown source rejects (CPU Vulkan only)
-PASS public encoder errors: an invalid render/compute pass descriptor or command, an invalid copy or clear followed by valid passes, each reports exactly one uncaptured validation error at Finish; End/dispatch on ended passes, copies/clears/begin on a finished encoder and a second Finish report at the call; core-features-and-limits listed and accepted (CPU Vulkan only)
+PASS public encoder errors: an invalid render/compute pass descriptor or command, an invalid copy or clear followed by valid passes, each reports exactly one uncaptured validation error at Finish; End/dispatch on ended passes, copies/clears/begin on a finished encoder and a second Finish report at the call; render bundle encoders: invalid setPipeline/draw give one error at bundle Finish and an invalid bundle, executing it in a valid pass gives one error at the command encoder's Finish, commands and a second Finish after bundle Finish report at the call, ended passes on a valid encoder report at the call and leave it valid, End with an unlocked parent and invalid-command-buffer submits report, a chained Finish ends the encoder, an invalid bundle encoder descriptor reports at creation and at its Finish and its bundle once at the executing encoder's Finish, a failed submit invalidates its whole batch in either order; core-features-and-limits listed and accepted (CPU Vulkan only)
 PASS public timestamps: requested feature, zero/max/range/destroy admission, real pass/command writes, exact GPU nanoseconds, same-batch copy, scratch reuse and early query release (CPU Vulkan only)
 PASS typed recovery: native/OOM/pending errors survive submit/write/texture/workdone, unknown leases retained, terminal cleanup and fresh GPU normalizer recovery
 PASS every implemented procedure address matches; every unprovided name returns NULL
@@ -768,7 +789,7 @@ reads all 33 (including `storage-textures`, `point-list`, `color-discard` and
 `program-prepare` and `limits`) passed; with BC compression all 39 (including
 `bc-compression`) passed; with component swizzle all 40 (including
 `component-swizzle`) passed; with the encoding error rule all 41 (including
-`encoder-errors`) passed. That is
+`encoder-errors`) passed; after the BC review fixes all 42 passed. That is
 developer evidence for these exact clients on that
 adapter/driver: the oracles are the clients' own expected values, not frozen
 independent workloads, and it is not Vulkan backend qualification, a performance

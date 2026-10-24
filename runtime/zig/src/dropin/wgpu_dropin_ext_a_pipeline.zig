@@ -555,7 +555,7 @@ pub fn run_compute_pipeline_async(ctx_raw: ?*anyopaque) void {
     const entry: *ComputeInflightEntry = @ptrCast(@alignCast(ctx_raw orelse return));
     const head = g_compute_inflight.take(entry) orelse return;
     const lead = head;
-    lead.pipeline = @ptrCast(native.doeNativeDeviceCreateComputePipeline(lead.device, &lead.descriptor));
+    lead.pipeline = @ptrCast(@import("../native/shader/doe_shader_native.zig").createComputePipelineUnreported(lead.device, &lead.descriptor));
     if (lead.pipeline == null) {
         set_compute_pipeline_request_error(lead, "pipeline creation failed");
     }

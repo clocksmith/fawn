@@ -150,6 +150,12 @@ WGPUFuture native_callback(doe_instance *instance, WGPUCallbackMode mode,
     doe_callback_copy_context copy, doe_callback_deliver_context deliver);
 
 WGPUStatus native_limits(const native_backend *backend, WGPULimits *out);
+/* wgpuDeviceCreateBuffer with an explicit size bound: the public entry passes
+ * the device's maxBufferSize; internal staging (not bound by WebGPU limits)
+ * passes native_allocation_bound, the backend's real single-allocation size. */
+WGPUBuffer native_device_create_buffer(native_device *device, const WGPUBufferDescriptor *descriptor,
+    uint64_t max_size);
+uint64_t native_allocation_bound(const native_device *device);
 /* requestDevice limit resolution (limits.c); false rejects the request. */
 bool native_resolve_limits(const WGPULimits *supported, const WGPULimits *required, WGPULimits *out);
 void native_buffer_release(void *userdata, void *handle);

@@ -55,12 +55,39 @@ fn isKnownFormat(format: u32) bool {
         format <= abi_texture.WGPUTextureFormat_ASTC12x12UnormSrgb;
 }
 
+/// The format differing only in srgb-ness, or 0. Texture-view format
+/// compatibility (https://gpuweb.github.io/gpuweb/#texture-view-format-compatible)
+/// is equality or this pair; the set matches the C provider (rgba8, bgra8 and
+/// BC1/2/3/7, each pair sharing one Vulkan compatibility class).
+pub fn srgbPair(format: u32) u32 {
+    return switch (format) {
+        abi_texture.WGPUTextureFormat_RGBA8Unorm => abi_texture.WGPUTextureFormat_RGBA8UnormSrgb,
+        abi_texture.WGPUTextureFormat_RGBA8UnormSrgb => abi_texture.WGPUTextureFormat_RGBA8Unorm,
+        abi_texture.WGPUTextureFormat_BGRA8Unorm => abi_texture.WGPUTextureFormat_BGRA8UnormSrgb,
+        abi_texture.WGPUTextureFormat_BGRA8UnormSrgb => abi_texture.WGPUTextureFormat_BGRA8Unorm,
+        abi_texture.WGPUTextureFormat_BC1RGBAUnorm => abi_texture.WGPUTextureFormat_BC1RGBAUnormSrgb,
+        abi_texture.WGPUTextureFormat_BC1RGBAUnormSrgb => abi_texture.WGPUTextureFormat_BC1RGBAUnorm,
+        abi_texture.WGPUTextureFormat_BC2RGBAUnorm => abi_texture.WGPUTextureFormat_BC2RGBAUnormSrgb,
+        abi_texture.WGPUTextureFormat_BC2RGBAUnormSrgb => abi_texture.WGPUTextureFormat_BC2RGBAUnorm,
+        abi_texture.WGPUTextureFormat_BC3RGBAUnorm => abi_texture.WGPUTextureFormat_BC3RGBAUnormSrgb,
+        abi_texture.WGPUTextureFormat_BC3RGBAUnormSrgb => abi_texture.WGPUTextureFormat_BC3RGBAUnorm,
+        abi_texture.WGPUTextureFormat_BC7RGBAUnorm => abi_texture.WGPUTextureFormat_BC7RGBAUnormSrgb,
+        abi_texture.WGPUTextureFormat_BC7RGBAUnormSrgb => abi_texture.WGPUTextureFormat_BC7RGBAUnorm,
+        else => 0,
+    };
+}
+
 fn isViewFormatCompatible(base: u32, view: u32) bool {
-    if (base == view) return true;
-    return (base == abi_texture.WGPUTextureFormat_RGBA8Unorm and view == abi_texture.WGPUTextureFormat_RGBA8UnormSrgb) or
-        (base == abi_texture.WGPUTextureFormat_RGBA8UnormSrgb and view == abi_texture.WGPUTextureFormat_RGBA8Unorm) or
-        (base == abi_texture.WGPUTextureFormat_BGRA8Unorm and view == abi_texture.WGPUTextureFormat_BGRA8UnormSrgb) or
-        (base == abi_texture.WGPUTextureFormat_BGRA8UnormSrgb and view == abi_texture.WGPUTextureFormat_BGRA8Unorm);
+    return base == view or (view != 0 and srgbPair(base) == view);
+}
+
+/// The srgb pair a texture created from `desc` may be viewed as, else 0.
+pub fn srgbPairViewFormat(desc: *const abi_pipeline.WGPUTextureDescriptor) u32 {
+    const pair = srgbPair(desc.format);
+    if (pair == 0 or desc.viewFormatCount == 0) return 0;
+    const view_formats = desc.viewFormats orelse return 0;
+    for (view_formats[0..desc.viewFormatCount]) |view_format| if (view_format == pair) return pair;
+    return 0;
 }
 
 fn maxMipLevelCount(desc: *const abi_pipeline.WGPUTextureDescriptor) u32 {
@@ -130,6 +157,10 @@ pub fn validateTextureDescriptor(
             if (!isKnownFormat(view_format) or !isViewFormatCompatible(desc.format, view_format))
                 return "texture view format is incompatible with the base format";
         }
+        // As in the C backend: a storage image of a MUTABLE_FORMAT image would
+        // need every listed view format to support storage (srgb formats do not).
+        if (srgbPairViewFormat(desc) != 0 and (usage & abi_texture.WGPUTextureUsage_StorageBinding) != 0)
+            return "storage usage with an srgb view format is unsupported";
     }
     return null;
 }
