@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // A pipeline with an explicit layout is invalid when its entry points use a
-// binding the layout does not have, or has with another resource type
+// binding the layout does not have, has with another resource or buffer
+// type, or does not make visible to the stage that uses it
 // (https://gpuweb.github.io/gpuweb/#abstract-opdef-validating-shader-binding).
 // A null bind group layout in the pipeline layout has no bindings.
 
@@ -21,6 +22,8 @@ const { GPUShaderStage, GPUValidationError } = target;
 const stages = GPUShaderStage.COMPUTE | GPUShaderStage.FRAGMENT;
 const uniform = device.createBindGroupLayout({ entries: [{ binding: 0, visibility: stages, buffer: { type: 'uniform' } }] });
 const texture = device.createBindGroupLayout({ entries: [{ binding: 0, visibility: stages, texture: {} }] });
+const storage = device.createBindGroupLayout({ entries: [{ binding: 0, visibility: stages, buffer: { type: 'read-only-storage' } }] });
+const vertexOnly = device.createBindGroupLayout({ entries: [{ binding: 0, visibility: GPUShaderStage.VERTEX, buffer: { type: 'uniform' } }] });
 const declarations = '@group(1) @binding(0) var<uniform> value: vec4f;';
 const compute = device.createShaderModule({ code: `${declarations}\n@compute @workgroup_size(1) fn main() { _ = value; }` });
 const render = device.createShaderModule({
@@ -42,6 +45,8 @@ const cases = [
   ['a null layout in the used group', [uniform, null], false],
   ['too few groups', [uniform], false],
   ['another resource type', [uniform, texture], false],
+  ['another buffer type', [uniform, storage], false],
+  ['no visibility for the using stage', [uniform, vertexOnly], false],
 ];
 for (const [kind, createPipeline] of Object.entries(create)) {
   for (const [label, bindGroupLayouts, valid] of cases) {
@@ -52,5 +57,5 @@ for (const [kind, createPipeline] of Object.entries(create)) {
     else assert(error instanceof GPUValidationError, `${kind} pipeline with ${label} is a validation error`);
   }
 }
-console.log('ok: pipelines reject explicit layouts that lack the bindings their entry points use');
+console.log('ok: pipelines reject explicit layouts that lack, mistype or hide the bindings their entry points use');
 device.destroy();
