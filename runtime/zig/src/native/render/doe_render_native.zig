@@ -11,6 +11,7 @@ const native_types = @import("../support/doe_native_object_types.zig");
 const native_shared = @import("../support/doe_native_shared_types.zig");
 const native_cmds = @import("../support/doe_native_command_types.zig");
 const native_helpers = @import("../support/doe_native_object_helpers.zig");
+const model_render_types = @import("../../contracts/model/model_render_types.zig");
 
 const alloc = native_helpers.alloc;
 const make = native_helpers.make;
@@ -160,6 +161,30 @@ pub export fn doeNativeCommandEncoderBeginRenderPass(enc_raw: ?*anyopaque, desc:
                 pass.clear_g = att.clearValue.g;
                 pass.clear_b = att.clearValue.b;
                 pass.clear_a = att.clearValue.a;
+                // Every slot, null ones included, for multi-target backends;
+                // slot 0's views were retained above.
+                const count = @min(d.colorAttachmentCount, model_render_types.MAX_COLOR_ATTACHMENTS);
+                pass.color_attachment_count = @intCast(count);
+                for (attachments[0..count], 0..) |slot_att, index| {
+                    const slot = &pass.color_attachments[index];
+                    slot.load_op = slot_att.loadOp;
+                    slot.clear = .{ slot_att.clearValue.r, slot_att.clearValue.g, slot_att.clearValue.b, slot_att.clearValue.a };
+                    if (cast(DoeTextureView, slot_att.view)) |v| {
+                        if (index > 0) {
+                            if (!recording.reserve(enc, 0, 1)) return toOpaque(pass);
+                            references.retainTextureViewAssumeCapacity(&enc.references, v);
+                        }
+                        slot.view_handle = @intFromPtr(v);
+                        slot.format = if (v.format != 0) v.format else v.tex.format;
+                    }
+                    if (cast(DoeTextureView, slot_att.resolveTarget)) |resolve_view| {
+                        if (index > 0) {
+                            if (!recording.reserve(enc, 0, 1)) return toOpaque(pass);
+                            references.retainTextureViewAssumeCapacity(&enc.references, resolve_view);
+                        }
+                        slot.resolve_view_handle = @intFromPtr(resolve_view);
+                    }
+                }
             }
         }
         if (d.depthStencilAttachment != null) {

@@ -493,6 +493,11 @@ pub const DoeRenderPipeline = struct {
     alpha_src_factor: u32 = 0,
     alpha_dst_factor: u32 = 0,
     color_write_mask: u32 = 0xF,
+    /// Every fragment target in order (format 0 for a null target); the fields
+    /// above repeat target 0 for single-target consumers.
+    color_targets: [model_render_types.MAX_COLOR_ATTACHMENTS]model_render_types.RenderColorAttachment = [_]model_render_types.RenderColorAttachment{.{}} ** model_render_types.MAX_COLOR_ATTACHMENTS,
+    /// False for a pipeline without a fragment stage (depth-only).
+    has_fragment_stage: bool = true,
     sample_count: u32 = 1,
     vertex_buffer_count: u32 = 0,
     vertex_buffer_strides: [shared.MAX_VERTEX_BUFFERS]u64 = [_]u64{0} ** shared.MAX_VERTEX_BUFFERS,
@@ -521,6 +526,15 @@ pub const DoeRenderPipeline = struct {
     required_binding_kinds_ready: bool = false,
 };
 
+/// One color attachment of a render pass as begun; a zero view is a null slot.
+pub const RenderPassColorAttachment = struct {
+    view_handle: u64 = 0,
+    resolve_view_handle: u64 = 0,
+    format: u32 = 0,
+    load_op: u32 = 0,
+    clear: [4]f64 = .{ 0, 0, 0, 0 },
+};
+
 pub const DoeRenderPass = struct {
     pub const TYPE_MAGIC = MAGIC_RENDER_PASS;
     magic: u32 = TYPE_MAGIC,
@@ -539,6 +553,10 @@ pub const DoeRenderPass = struct {
     resolve_target_view_handle: u64 = 0,
     depth_target_view_handle: u64 = 0,
     target_format: u32 = 0,
+    /// Every color attachment in order (Vulkan); the target fields above
+    /// repeat attachment 0 for single-target consumers.
+    color_attachment_count: u32 = 0,
+    color_attachments: [model_render_types.MAX_COLOR_ATTACHMENTS]RenderPassColorAttachment = [_]RenderPassColorAttachment{.{}} ** model_render_types.MAX_COLOR_ATTACHMENTS,
     depth_stencil_format: u32 = 0,
     sample_count: u32 = 1,
     depth_slice: u32 = 0,

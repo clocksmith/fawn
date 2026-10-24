@@ -86,41 +86,151 @@ fn validateResolve(color: *const objects.DoeTextureView, resolve: *const objects
     if (!std.meta.eql(extent(color), extent(resolve))) return error.RenderAttachmentExtentMismatch;
 }
 
-/// Admit native attachment semantics before retaining views or recording work.
-/// Unsupported attachment topologies cannot silently become a different pass.
+/// maxColorAttachmentBytesPerSample every Vulkan device reports
+/// (vk_device_caps.zig: the WebGPU minimum, not raisable).
+const MAX_COLOR_ATTACHMENT_BYTES_PER_SAMPLE: u32 = 32;
+
+const TargetCost = struct { bytes: u32, alignment: u32 };
+
+/// Render target pixel byte cost and component alignment
+/// (https://gpuweb.github.io/gpuweb/#plain-color-formats and the
+/// texture-formats-tier1 table); null for a format that is not a color target.
+fn targetCost(format: u32) ?TargetCost {
+    return switch (format) {
+        texture_abi.WGPUTextureFormat_R8Unorm,
+        texture_abi.WGPUTextureFormat_R8Uint,
+        texture_abi.WGPUTextureFormat_R8Sint,
+        values.WGPUTextureFormat_R8Snorm,
+        => .{ .bytes = 1, .alignment = 1 },
+        texture_abi.WGPUTextureFormat_RG8Unorm,
+        texture_abi.WGPUTextureFormat_RG8Uint,
+        texture_abi.WGPUTextureFormat_RG8Sint,
+        values.WGPUTextureFormat_RG8Snorm,
+        => .{ .bytes = 2, .alignment = 1 },
+        texture_abi.WGPUTextureFormat_RGBA8Uint,
+        texture_abi.WGPUTextureFormat_RGBA8Sint,
+        values.WGPUTextureFormat_RGBA8Snorm,
+        => .{ .bytes = 4, .alignment = 1 },
+        texture_abi.WGPUTextureFormat_RGBA8Unorm,
+        texture_abi.WGPUTextureFormat_RGBA8UnormSrgb,
+        texture_abi.WGPUTextureFormat_BGRA8Unorm,
+        texture_abi.WGPUTextureFormat_BGRA8UnormSrgb,
+        => .{ .bytes = 8, .alignment = 1 },
+        texture_abi.WGPUTextureFormat_R16Uint,
+        texture_abi.WGPUTextureFormat_R16Sint,
+        texture_abi.WGPUTextureFormat_R16Float,
+        values.WGPUTextureFormat_R16Unorm,
+        values.WGPUTextureFormat_R16Snorm,
+        => .{ .bytes = 2, .alignment = 2 },
+        texture_abi.WGPUTextureFormat_RG16Uint,
+        texture_abi.WGPUTextureFormat_RG16Sint,
+        texture_abi.WGPUTextureFormat_RG16Float,
+        values.WGPUTextureFormat_RG16Unorm,
+        values.WGPUTextureFormat_RG16Snorm,
+        => .{ .bytes = 4, .alignment = 2 },
+        texture_abi.WGPUTextureFormat_RGBA16Uint,
+        texture_abi.WGPUTextureFormat_RGBA16Sint,
+        texture_abi.WGPUTextureFormat_RGBA16Float,
+        values.WGPUTextureFormat_RGBA16Unorm,
+        values.WGPUTextureFormat_RGBA16Snorm,
+        => .{ .bytes = 8, .alignment = 2 },
+        texture_abi.WGPUTextureFormat_R32Uint,
+        texture_abi.WGPUTextureFormat_R32Sint,
+        texture_abi.WGPUTextureFormat_R32Float,
+        => .{ .bytes = 4, .alignment = 4 },
+        texture_abi.WGPUTextureFormat_RG32Uint,
+        texture_abi.WGPUTextureFormat_RG32Sint,
+        texture_abi.WGPUTextureFormat_RG32Float,
+        texture_abi.WGPUTextureFormat_RGB10A2Uint,
+        texture_abi.WGPUTextureFormat_RGB10A2Unorm,
+        texture_abi.WGPUTextureFormat_RG11B10Ufloat,
+        => .{ .bytes = 8, .alignment = 4 },
+        texture_abi.WGPUTextureFormat_RGBA32Uint,
+        texture_abi.WGPUTextureFormat_RGBA32Sint,
+        texture_abi.WGPUTextureFormat_RGBA32Float,
+        => .{ .bytes = 16, .alignment = 4 },
+        else => null,
+    };
+}
+
+/// https://gpuweb.github.io/gpuweb/#abstract-opdef-calculating-color-attachment-bytes-per-sample
+fn colorBytesPerSample(formats: []const u32) Error!u32 {
+    var total: u32 = 0;
+    for (formats) |format| {
+        if (format == 0) continue;
+        const cost = targetCost(format) orelse return error.RenderAttachmentFormatMismatch;
+        total = std.mem.alignForward(u32, total, cost.alignment) + cost.bytes;
+    }
+    return total;
+}
+
+/// Every attachment of a pass shares the first one's extent and sample count.
+fn admitAttachment(reference: *?*const objects.DoeTextureView, view: *const objects.DoeTextureView) Error!void {
+    if (reference.*) |first| try validatePair(first, view) else reference.* = view;
+}
+
+/// Admit native attachment semantics before retaining views or recording work:
+/// up to MAX_COLOR_ATTACHMENTS color slots (null slots allowed) and an optional
+/// depth/stencil attachment, with at least one attachment in all.
 pub fn validateDescriptor(device: *objects.DoeDevice, descriptor: ?*const abi.WGPURenderPassDescriptor) Error!void {
     const desc = descriptor orelse return error.RenderAttachmentUnavailable;
-    if (desc.colorAttachmentCount != 1) return error.RenderAttachmentUnsupported;
-    const colors = desc.colorAttachments orelse return error.RenderAttachmentUnavailable;
-    const color = try validateView(device, colors[0].view, false);
-    if (colors[0].resolveTarget) |raw| try validateResolve(color, try validateView(device, raw, false));
+    if (desc.colorAttachmentCount > model_render_types.MAX_COLOR_ATTACHMENTS) return error.RenderAttachmentUnsupported;
+    var reference: ?*const objects.DoeTextureView = null;
+    var formats = [_]u32{0} ** model_render_types.MAX_COLOR_ATTACHMENTS;
+    if (desc.colorAttachmentCount > 0) {
+        const colors = desc.colorAttachments orelse return error.RenderAttachmentUnavailable;
+        for (colors[0..desc.colorAttachmentCount], 0..) |attachment, index| {
+            if (attachment.view == null) {
+                if (attachment.resolveTarget != null) return error.RenderAttachmentUnavailable;
+                continue;
+            }
+            const color = try validateView(device, attachment.view, false);
+            try admitAttachment(&reference, color);
+            if (attachment.resolveTarget) |raw| try validateResolve(color, try validateView(device, raw, false));
+            formats[index] = color.format;
+        }
+    }
+    if (try colorBytesPerSample(formats[0..desc.colorAttachmentCount]) > MAX_COLOR_ATTACHMENT_BYTES_PER_SAMPLE)
+        return error.RenderAttachmentColorBytesExceeded;
     if (desc.depthStencilAttachment) |raw| {
         const attachment: *const abi.WGPURenderPassDepthStencilAttachment = @ptrCast(@alignCast(raw));
-        const depth = try validateView(device, attachment.view, true);
-        try validatePair(color, depth);
+        try admitAttachment(&reference, try validateView(device, attachment.view, true));
     }
+    if (reference == null) return error.RenderAttachmentUnavailable;
 }
 
 /// Pass views have encoder-owned leases. Recheck availability at each draw;
 /// queue-wide lease validation separately rejects destruction after recording.
+/// A draw's pipeline matches the pass slot by slot (null slots included), in
+/// depth/stencil format and in sample count.
 pub fn validateDraw(pass: *const objects.DoeRenderPass, clear_only: bool) Error!void {
-    if (pass.target_view_handle == 0) return error.RenderAttachmentUnavailable;
-    const color = try validateView(pass.enc.dev, @ptrFromInt(pass.target_view_handle), false);
+    var reference: ?*const objects.DoeTextureView = null;
+    const count = @min(pass.color_attachment_count, model_render_types.MAX_COLOR_ATTACHMENTS);
+    for (pass.color_attachments[0..count]) |slot| {
+        if (slot.view_handle == 0) continue;
+        const color = try validateView(pass.enc.dev, @ptrFromInt(slot.view_handle), false);
+        try admitAttachment(&reference, color);
+        if (slot.resolve_view_handle != 0)
+            try validateResolve(color, try validateView(pass.enc.dev, @ptrFromInt(slot.resolve_view_handle), false));
+    }
     const depth = if (pass.depth_target_view_handle != 0)
         try validateView(pass.enc.dev, @ptrFromInt(pass.depth_target_view_handle), true)
     else
         null;
-    if (depth) |view| try validatePair(color, view);
-    if (pass.resolve_target_view_handle != 0)
-        try validateResolve(color, try validateView(pass.enc.dev, @ptrFromInt(pass.resolve_target_view_handle), false));
+    if (depth) |view| try admitAttachment(&reference, view);
+    const first = reference orelse return error.RenderAttachmentUnavailable;
     if (clear_only) return;
     const pipeline = pass.pipeline orelse return error.RenderAttachmentUnavailable;
     if (pipeline.device_ref != pass.enc.dev) return error.RenderAttachmentDeviceMismatch;
-    if (pipeline.color_target_count != 1) return error.RenderAttachmentUnsupported;
-    if (pipeline.color_target_format != color.format or
-        pipeline.depth_stencil_format != (if (depth) |view| view.format else @as(u32, 0)))
+    const pipeline_count = @min(pipeline.color_target_count, model_render_types.MAX_COLOR_ATTACHMENTS);
+    for (0..@max(count, pipeline_count)) |index| {
+        const pass_format = if (index < count) pass.color_attachments[index].format else 0;
+        const pipeline_format = if (index < pipeline_count) pipeline.color_targets[index].format else 0;
+        if (pass_format != pipeline_format) return error.RenderAttachmentFormatMismatch;
+    }
+    if (pipeline.depth_stencil_format != (if (depth) |view| view.format else @as(u32, 0)))
         return error.RenderAttachmentFormatMismatch;
-    if (pipeline.sample_count != color.tex.sample_count) return error.RenderAttachmentSampleMismatch;
+    if (pipeline.sample_count != first.tex.sample_count) return error.RenderAttachmentSampleMismatch;
 }
 
 /// The draw parameters WebGPU validates against bound buffer ranges;
@@ -232,24 +342,58 @@ test "attachment admission compares selected mip extent and preserves format and
         .color_target_format = color.format,
         .depth_stencil_format = depth.format,
     };
+    pipeline.color_targets[0].format = color.format;
     var pass = objects.DoeRenderPass{
         .enc = &encoder,
         .pipeline = &pipeline,
         .target_view_handle = @intFromPtr(&color),
         .depth_target_view_handle = @intFromPtr(&depth),
+        .color_attachment_count = 1,
     };
+    pass.color_attachments[0] = .{ .view_handle = @intFromPtr(&color), .format = color.format };
     try validateDraw(&pass, false);
     pipeline.sample_count = 4;
     try std.testing.expectError(error.RenderAttachmentSampleMismatch, validateDraw(&pass, false));
     pipeline.sample_count = 1;
-    pipeline.color_target_format = texture_abi.WGPUTextureFormat_BGRA8Unorm;
+    pipeline.color_targets[0].format = texture_abi.WGPUTextureFormat_BGRA8Unorm;
     try std.testing.expectError(error.RenderAttachmentFormatMismatch, validateDraw(&pass, false));
-    pipeline.color_target_format = color.format;
+    pipeline.color_targets[0].format = color.format;
     pipeline.depth_stencil_format = 0;
     try std.testing.expectError(error.RenderAttachmentFormatMismatch, validateDraw(&pass, false));
+    pipeline.depth_stencil_format = depth.format;
+    // A null slot must be null in both the pass and the pipeline.
+    pass.color_attachment_count = 3;
+    pass.color_attachments[2] = .{ .view_handle = @intFromPtr(&color), .format = color.format };
+    pipeline.color_target_count = 3;
+    pipeline.color_targets[2].format = color.format;
+    try validateDraw(&pass, false);
+    pipeline.color_targets[1].format = color.format;
+    try std.testing.expectError(error.RenderAttachmentFormatMismatch, validateDraw(&pass, false));
+    pipeline.color_targets[1].format = 0;
+    // Depth-only: no color slots, a pipeline without targets.
+    pass.color_attachment_count = 0;
+    pipeline.color_target_count = 0;
+    try validateDraw(&pass, false);
+    pass.depth_target_view_handle = 0;
+    try std.testing.expectError(error.RenderAttachmentUnavailable, validateDraw(&pass, true));
+    pass.depth_target_view_handle = @intFromPtr(&depth);
+    pass.color_attachment_count = 1;
+    pipeline.color_target_count = 1;
     try validateDraw(&pass, true);
     color_texture.destroyed = true;
     try std.testing.expectError(error.RenderAttachmentUnavailable, validateDraw(&pass, true));
+}
+
+test "color attachment bytes per sample follow the WebGPU byte cost and alignment" {
+    const r8 = texture_abi.WGPUTextureFormat_R8Unorm;
+    const r32f = texture_abi.WGPUTextureFormat_R32Float;
+    const rgba8 = texture_abi.WGPUTextureFormat_RGBA8Unorm;
+    const rgba32f = texture_abi.WGPUTextureFormat_RGBA32Float;
+    // r8 (1) -> align 4 + r32float (4) = 8, + rgba8 (8) = 16, align 4 + rgba32float (16) = 32, + r8 = 33.
+    try std.testing.expectEqual(@as(u32, 33), try colorBytesPerSample(&.{ r8, r32f, rgba8, rgba32f, r8 }));
+    try std.testing.expectEqual(@as(u32, 30), try colorBytesPerSample(&.{ r32f, rgba8, rgba32f, r8, r8 }));
+    try std.testing.expectEqual(@as(u32, 9), try colorBytesPerSample(&.{ r8, 0, rgba8 }));
+    try std.testing.expectError(error.RenderAttachmentFormatMismatch, colorBytesPerSample(&.{texture_abi.WGPUTextureFormat_Depth32Float}));
 }
 
 test "attachment admission rejects unavailable foreign nonrenderable and broad views" {

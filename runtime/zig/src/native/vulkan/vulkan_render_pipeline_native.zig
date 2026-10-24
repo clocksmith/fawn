@@ -159,8 +159,22 @@ pub fn vulkan_create_render_pipeline(
         pip.stencil_write_mask = ds.stencilWriteMask;
     }
 
+    pip.has_fragment_stage = d.fragment != null;
     if (d.fragment) |frag| {
         pip.color_target_count = frag.targetCount;
+        if (frag.targets) |targets| for (targets[0..@min(frag.targetCount, pip.color_targets.len)], 0..) |target, index| {
+            const slot = &pip.color_targets[index];
+            slot.* = .{ .format = target.format, .write_mask = @intCast(target.writeMask) };
+            if (target.blend) |blend| {
+                slot.blend_enabled = true;
+                slot.color_operation = blend.color.operation;
+                slot.color_src_factor = blend.color.srcFactor;
+                slot.color_dst_factor = blend.color.dstFactor;
+                slot.alpha_operation = blend.alpha.operation;
+                slot.alpha_src_factor = blend.alpha.srcFactor;
+                slot.alpha_dst_factor = blend.alpha.dstFactor;
+            }
+        };
         if (frag.targetCount > 0 and frag.targets != null) {
             const target0 = frag.targets.?[0];
             pip.color_target_format = target0.format;

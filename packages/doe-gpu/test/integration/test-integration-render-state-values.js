@@ -5,7 +5,6 @@
 // provider validation errors reach native error scopes.
 
 import assert from 'node:assert/strict';
-import { providerInfo } from '../../src/index.js';
 import { requestNativeDeviceOrSkip } from './native-device-test-helper.js';
 
 const device = await requestNativeDeviceOrSkip('render state values');
@@ -156,9 +155,8 @@ for (const constant of [[0.25, 0.5, 0.75, 1], { r: 0.25, g: 0.5, b: 0.75, a: 1 }
   console.log('ok: invalid WGSL reports a validation error and compilation errors');
 }
 
-// The Zig drop-in renders one color attachment and no depth-only passes; it
-// reports those pipelines as unsupported rather than drawing them.
-if (providerInfo().libraryFlavor === 'doe-c') {
+// Several color targets with a null slot, and a depth-only pass.
+{
   const first = device.createTexture({ size: SIZE, format: 'rgba8unorm', usage: T.RENDER_ATTACHMENT | T.COPY_SRC });
   const third = device.createTexture({ size: SIZE, format: 'r32uint', usage: T.RENDER_ATTACHMENT | T.COPY_SRC });
   const pipeline = device.createRenderPipeline({
@@ -192,8 +190,6 @@ if (providerInfo().libraryFlavor === 'doe-c') {
   device.queue.submit([encoder.finish()]);
   assert.equal(new Float32Array((await readFirstTexel(depth, 'depth-only', 4)).buffer)[0], 0.25);
   console.log('ok: a fragment-less pipeline writes depth');
-} else {
-  console.log(`skip: multiple targets and depth-only passes (${providerInfo().libraryFlavor} renders one color attachment)`);
 }
 
 device.destroy();

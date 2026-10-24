@@ -1376,14 +1376,14 @@
       },
       "src/backend/vulkan/vk_render.zig": {
         "decision": "Keep",
-        "moduleSha256": "2ce2fa35b43ae552c442cc0bd5f61aed71f3137d3db18482c38020fcbd04d01c",
+        "moduleSha256": "e94be0f289f5f764be83aca8fe2db63003d33e2d0d988ee673d410b055a705fa",
         "reviewer": "doe-c-claude-surface/2026-10-24",
-        "reason": "Keep: Vulkan render target and submission ownership uses target-typed clear values for draw, clear, and bundle paths. Pass-level viewports use WebGPU orientation. Render passes use the color image's sample count for color and depth and add a resolve attachment for a resolve target. Attachment images move whole into their attachment layout before each pass, so tracked image layouts stay exact for single-mip views. Indirect draws read their arguments after the queue flush (mapped, or copied out) and validate them before the per-draw submit. Render state holds one descriptor set and layout per bind group index."
+        "reason": "Keep: Vulkan render target and submission ownership uses target-typed clear values for draw, clear, and bundle paths. Pass-level viewports use WebGPU orientation. Render passes use the color image's sample count for color and depth and add a resolve attachment for a resolve target. Attachment images move whole into their attachment layout before each pass, so tracked image layouts stay exact for single-mip views. Indirect draws read their arguments after the queue flush (mapped, or copied out) and validate them before the per-draw submit. Render state holds one descriptor set and layout per bind group index. Render passes carry every color slot (null slots as unused references), depth/stencil and per-slot resolves, including depth-only passes."
       },
       "src/backend/vulkan/vk_render_pipeline.zig": {
         "decision": "Keep",
-        "moduleSha256": "b669613d1bd181869435997f14c8f0bb326d7d64dfef0662cc818b42cf27dbcc",
-        "reason": "Keep: Owns native graphics pipeline conversion with exact allocated entrypoint names and explicit zero color masks; binding/layout admission and unsupported graphics state remain open. Graphics pipelines carry the WebGPU sample mask and alpha-to-coverage. Render descriptor sets follow WebGPU bind group indices (empty layouts for unbound groups) instead of flattening every group into set 0.",
+        "moduleSha256": "7393b16e534d749969e900db2155b1a6589843e3d7b0db666137ffbcf61ac756",
+        "reason": "Keep: Owns native graphics pipeline conversion with exact allocated entrypoint names and explicit zero color masks; binding/layout admission and unsupported graphics state remain open. Graphics pipelines carry the WebGPU sample mask and alpha-to-coverage. Render descriptor sets follow WebGPU bind group indices (empty layouts for unbound groups) instead of flattening every group into set 0. Pipelines blend per color slot and omit the fragment stage for fragment-less (depth-only) pipelines.",
         "reviewer": "doe-c-claude-surface/2026-10-24"
       },
       "src/backend/vulkan/vk_resources.zig": {
@@ -2798,8 +2798,8 @@
       },
       "src/contracts/model/model_render_types.zig": {
         "decision": "Keep",
-        "moduleSha256": "b1527427e59b74983b55f297e4d927aff5993e65594659b8f6c57de52a15bd22",
-        "reason": "Keep: neutral render-command values carry explicit attachment identities, load choices, and clear values without backend handles escaping native adaptation. Draw commands carry the multisample mask and alpha-to-coverage. Draw commands carry the resolve target. Names the Undefined vertex step mode (unused slot) and index formats. Recorded indirect draws carry the WebGPU limits their arguments must satisfy. Draw commands record each binding's bind group index.",
+        "moduleSha256": "271650e8662c206ec5f77478bd53818a7353387282c67fb95768709c488ed9c4",
+        "reason": "Keep: neutral render-command values carry explicit attachment identities, load choices, and clear values without backend handles escaping native adaptation. Draw commands carry the multisample mask and alpha-to-coverage. Draw commands carry the resolve target. Names the Undefined vertex step mode (unused slot) and index formats. Recorded indirect draws carry the WebGPU limits their arguments must satisfy. Draw commands record each binding's bind group index. Draw commands can carry explicit color slots and whether the pipeline has a fragment stage.",
         "reviewer": "doe-c-claude-surface/2026-10-24"
       },
       "src/contracts/model/model_resource_types.zig": {
@@ -3650,9 +3650,9 @@
       },
       "src/native/render/doe_render_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "96901b4129015387389b8c2cba23145f0b48a9505cf8223d32a0b42c63ae9afd",
-        "reason": "Keep: native attachment admission owns view and pipeline compatibility; command recording preserves typed validation failures before submission. Backend execution and resource retirement retain their existing owners. Render pass setBindGroup resolves dynamic offsets into pass state. Render pass debug groups are balanced at end(). Pass draws validate bind groups; draws past maxDrawCount fail.",
-        "reviewer": "doe-c-claude-indexed/2026-10-24"
+        "moduleSha256": "733fa2dde31e06f7bacc7b326ecefb6aec6d847b41ab078f4158995fd1d2cbf4",
+        "reason": "Keep: native attachment admission owns view and pipeline compatibility; command recording preserves typed validation failures before submission. Backend execution and resource retirement retain their existing owners. Render pass setBindGroup resolves dynamic offsets into pass state. Render pass debug groups are balanced at end(). Pass draws validate bind groups; draws past maxDrawCount fail. beginRenderPass records and retains every color attachment slot.",
+        "reviewer": "doe-c-claude-surface/2026-10-24"
       },
       "src/native/render/doe_render_pass_controls_native.zig": {
         "decision": "Keep",
@@ -3782,9 +3782,9 @@
       },
       "src/native/support/doe_native_object_types.zig": {
         "decision": "Keep",
-        "moduleSha256": "3f4eb0ff3e95d7950316b26ce29ff6adb997036be17361265e0901127d70f5b6",
-        "reason": "Keep: default-off C error-scope partial owner uses final-address typed storage, cold creation rollback and checked final deinit; original classifier, callbacks and device references remain with their existing owners; textures record an allowed srgb view; samplers carry error_object; MUTABLE_FORMAT images with a VkImageFormatListCreateInfo only for textures whose viewFormats name the srgb pair. Render pipelines keep their multisample mask and alpha-to-coverage. Passes hold per-group dynamic offsets and the cached workgroup limit. Devices hold their buffer offset alignment limits. Device keeps maxImmediateSize. Compute pipelines keep required binding kinds for automatic-layout dispatch checks. Encoders and passes keep their open debug groups. Render pipelines keep required binding kinds. Layouts and pipelines keep automatic-layout identity. Devices keep dynamic buffer limits; layouts keep their device; render pipelines keep binding buffer types and stages. Devices keep maxColorAttachmentBytesPerSample.",
-        "reviewer": "doe-c-claude-indexed/2026-10-24"
+        "moduleSha256": "658990ddbf83ee8c8ea1b5996e8b1e4aba123ade854909e11bdee3e09ec1e6ac",
+        "reason": "Keep: default-off C error-scope partial owner uses final-address typed storage, cold creation rollback and checked final deinit; original classifier, callbacks and device references remain with their existing owners; textures record an allowed srgb view; samplers carry error_object; MUTABLE_FORMAT images with a VkImageFormatListCreateInfo only for textures whose viewFormats name the srgb pair. Render pipelines keep their multisample mask and alpha-to-coverage. Passes hold per-group dynamic offsets and the cached workgroup limit. Devices hold their buffer offset alignment limits. Device keeps maxImmediateSize. Compute pipelines keep required binding kinds for automatic-layout dispatch checks. Encoders and passes keep their open debug groups. Render pipelines keep required binding kinds. Layouts and pipelines keep automatic-layout identity. Devices keep dynamic buffer limits; layouts keep their device; render pipelines keep binding buffer types and stages. Devices keep maxColorAttachmentBytesPerSample. Render passes and pipelines keep per-slot color attachments and targets.",
+        "reviewer": "doe-c-claude-surface/2026-10-24"
       },
       "src/native/support/doe_native_runtime_helpers.zig": {
         "decision": "Keep",
@@ -3842,15 +3842,15 @@
       },
       "src/native/vulkan/vulkan_render_pass_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "9615e557fd00e7a71c9716fae2106f80cef10924389b406240c8f9a723ab1556",
-        "reason": "Keep: native attachment admission owns view and pipeline compatibility; command recording preserves typed validation failures before submission. Backend execution and resource retirement retain their existing owners. Draws forward the pipeline's multisample mask and alpha-to-coverage. Draws carry the pass resolve target. Draws pass WebGPU vertex and index buffer bounds validation before recording. Render buffer bindings add the pass dynamic offsets. Indirect draws record vertex, instance and index limits from the bound buffers. Draws record each binding's bind group index.",
+        "moduleSha256": "66e2fc3b413caef3674c7388da7c04146703a04e26d2430e5afcf282b2693a20",
+        "reason": "Keep: native attachment admission owns view and pipeline compatibility; command recording preserves typed validation failures before submission. Backend execution and resource retirement retain their existing owners. Draws forward the pipeline's multisample mask and alpha-to-coverage. Draws carry the pass resolve target. Draws pass WebGPU vertex and index buffer bounds validation before recording. Render buffer bindings add the pass dynamic offsets. Indirect draws record vertex, instance and index limits from the bound buffers. Draws record each binding's bind group index. Draws carry every color slot with the pipeline's target state. The render area is the first non-null color slot's extent.",
         "reviewer": "doe-c-claude-surface/2026-10-24"
       },
       "src/native/vulkan/vulkan_render_pipeline_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "8019442c6b75e4d497dcfd2b5e762c0c819fd73afb0f914e63e06774d8bdd695",
-        "reason": "Keep: native attachment admission owns view and pipeline compatibility; command recording preserves typed validation failures before submission. Backend execution and resource retirement retain their existing owners. The multisample mask and alpha-to-coverage reach the pipeline object. Render pipelines record required binding kinds from vertex and fragment entry points. Render pipeline creation rejects vertex or fragment entry points that do not name a function of that stage. Render pipeline creation rejects explicit layouts that lack a binding the entry points use. Render layout check passes buffer types and per-slot stages. Render pipelines reject bindings at or above maxBindingsPerBindGroup and color targets above maxColorAttachmentBytesPerSample.",
-        "reviewer": "doe-c-claude-coordinator/2026-10-24"
+        "moduleSha256": "c10c32ee3973aadb42f5a8001dc206a4985c12f498dfa25de22aebddb152c4ba",
+        "reason": "Keep: native attachment admission owns view and pipeline compatibility; command recording preserves typed validation failures before submission. Backend execution and resource retirement retain their existing owners. The multisample mask and alpha-to-coverage reach the pipeline object. Render pipelines record required binding kinds from vertex and fragment entry points. Render pipeline creation rejects vertex or fragment entry points that do not name a function of that stage. Render pipeline creation rejects explicit layouts that lack a binding the entry points use. Render layout check passes buffer types and per-slot stages. Render pipelines reject bindings at or above maxBindingsPerBindGroup and color targets above maxColorAttachmentBytesPerSample. Pipelines record every fragment target and whether a fragment stage exists.",
+        "reviewer": "doe-c-claude-surface/2026-10-24"
       },
       "src/native/vulkan/vulkan_render_shared.zig": {
         "decision": "Keep",
@@ -3986,9 +3986,9 @@
       },
       "src/runtime/diagnostics/error_scope.zig": {
         "decision": "Keep",
-        "moduleSha256": "75a8242d6a1318d8dfeadc0747787d5a93e66a5a4aa5f9ba5d955759308560cc",
-        "reason": "Keep: native attachment admission owns view and pipeline compatibility; command recording preserves typed validation failures before submission. Backend execution and resource retirement retain their existing owners. Draw buffer-bound failures are validation errors. Bind group and dispatch recording causes are validation errors. ImmediateDataRange maps to validation. DebugGroupUnbalanced maps to validation. Draw bind group and maxDrawCount failures map to validation.",
-        "reviewer": "doe-c-claude-indexed/2026-10-24"
+        "moduleSha256": "1276c7ec82e5f0df72d7bdba2a2ea7534bf4e5dd9e00cc013a2100dd08c12353",
+        "reason": "Keep: native attachment admission owns view and pipeline compatibility; command recording preserves typed validation failures before submission. Backend execution and resource retirement retain their existing owners. Draw buffer-bound failures are validation errors. Bind group and dispatch recording causes are validation errors. ImmediateDataRange maps to validation. DebugGroupUnbalanced maps to validation. Draw bind group and maxDrawCount failures map to validation. The color attachment bytes-per-sample failure is a validation error.",
+        "reviewer": "doe-c-claude-surface/2026-10-24"
       },
       "src/runtime/env_flags.zig": {
         "decision": "Keep",
@@ -4328,9 +4328,9 @@
       },
       "src/contracts/command_recording.zig": {
         "decision": "Keep",
-        "moduleSha256": "a56eaa41bf7d7495bf7493a57d01ddf98e72c31c416a404fa4aad5061abb83e1",
-        "reason": "Keep: native attachment admission owns view and pipeline compatibility; command recording preserves typed validation failures before submission. Backend execution and resource retirement retain their existing owners. The unsupported-attachment message no longer lists resolve targets. Names WebGPU draw-time vertex and index buffer failures. Owns the setBindGroup dynamic-offset and dispatch validation causes. Adds ImmediateDataRange failure. Adds DebugGroups balance and the DebugGroupUnbalanced failure. Adds draw bind group and maxDrawCount failures.",
-        "reviewer": "doe-c-claude-indexed/2026-10-24"
+        "moduleSha256": "ab684375447d6dd4ee4c97995bcb422870cb11180884f847d863d29449a6ef86",
+        "reason": "Keep: native attachment admission owns view and pipeline compatibility; command recording preserves typed validation failures before submission. Backend execution and resource retirement retain their existing owners. The unsupported-attachment message no longer lists resolve targets. Names WebGPU draw-time vertex and index buffer failures. Owns the setBindGroup dynamic-offset and dispatch validation causes. Adds ImmediateDataRange failure. Adds DebugGroups balance and the DebugGroupUnbalanced failure. Adds draw bind group and maxDrawCount failures. The unsupported-attachment message states the eight-slot limit. Names the color attachment bytes-per-sample failure.",
+        "reviewer": "doe-c-claude-surface/2026-10-24"
       },
       "src/native/command/doe_command_recording.zig": {
         "decision": "Keep",
@@ -4406,14 +4406,14 @@
       },
       "src/backend/vulkan/vk_draw_recording.zig": {
         "decision": "Keep",
-        "moduleSha256": "c6293c823f0763107500dec452768cd6dbd863e37d6edfc320087f10e98a805e",
-        "reason": "Keep: Vulkan render recording converts WebGPU clear colors to the target format and records explicit draw state. Viewports flip to WebGPU orientation with a negative Vulkan height; an empty viewport rasterizes nothing. Vertex buffers bind at their own slots, so unused slots may precede bound ones. Indirect draws record vkCmdDraw/vkCmdDrawIndexed with validated arguments or are skipped; unvalidated arguments never reach the GPU. Binds one descriptor set per bind group index.",
+        "moduleSha256": "763e35efa4b47e32403024b23a7376e2f95f14cdaf0bfceb43f923843bb3897d",
+        "reason": "Keep: Vulkan render recording converts WebGPU clear colors to the target format and records explicit draw state. Viewports flip to WebGPU orientation with a negative Vulkan height; an empty viewport rasterizes nothing. Vertex buffers bind at their own slots, so unused slots may precede bound ones. Indirect draws record vkCmdDraw/vkCmdDrawIndexed with validated arguments or are skipped; unvalidated arguments never reach the GPU. Binds one descriptor set per bind group index. Draw recording takes the caller's per-attachment clear values.",
         "reviewer": "doe-c-claude-surface/2026-10-24"
       },
       "src/native/vulkan/vulkan_render_attachments.zig": {
         "decision": "Keep",
-        "moduleSha256": "3a93bddea00b4fa1086e9bb28ee689874ca368440d690bc8fe5da66b3c1833b8",
-        "reason": "Keep: native attachment admission owns view and pipeline compatibility; command recording preserves typed validation failures before submission. Backend execution and resource retirement retain their existing owners. Admits a resolve target that is a single-sample view of the multisampled color format and extent. Validates draw reads against bound vertex and index buffer ranges. Resolve targets need a resolvable format. Single-layer 2d-array views are renderable attachments. texture-formats-tier1 adds the 8-bit snorm resolve formats.",
+        "moduleSha256": "1587e84236ab4ddd166c34c04f2a4159c986866005db920b5927e553cfcaf8fb",
+        "reason": "Keep: native attachment admission owns view and pipeline compatibility; command recording preserves typed validation failures before submission. Backend execution and resource retirement retain their existing owners. Admits a resolve target that is a single-sample view of the multisampled color format and extent. Validates draw reads against bound vertex and index buffer ranges. Resolve targets need a resolvable format. Single-layer 2d-array views are renderable attachments. texture-formats-tier1 adds the 8-bit snorm resolve formats. Attachment admission covers up to eight color slots, null slots and depth-only passes, matching pipeline targets slot by slot. beginRenderPass checks color attachment bytes per sample against the WebGPU byte cost table.",
         "reviewer": "doe-c-claude-surface/2026-10-24"
       },
       "src/backend/vulkan/vk_surface_sync.zig": {

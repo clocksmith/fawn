@@ -1485,6 +1485,7 @@ fn attachmentRecordingFailures(allocator: std.mem.Allocator) !void {
         .usage = types.WGPUTextureUsage_RenderAttachment,
     };
     var pipeline = objects.DoeRenderPipeline{ .device_ref = &device, .color_target_count = 1, .color_target_format = view.format };
+    pipeline.color_targets[0].format = view.format;
     var encoder = objects.DoeCommandEncoder{ .allocator = allocator, .dev = &device };
     defer {
         references.releaseAll(allocator, &encoder.references);

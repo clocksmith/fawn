@@ -214,10 +214,14 @@ pub fn color_write_mask_to_vk(write_mask: u32) u32 {
 pub fn create_graphics_pipeline(
     self: anytype,
     state: anytype,
-    vk_format: u32,
+    targets: *const [model_render_types.MAX_COLOR_ATTACHMENTS]model_render_types.RenderColorAttachment,
+    target_count: u32,
     cmd: model_render_types.RenderDrawCommand,
 ) !void {
-    _ = vk_format;
+    // A pass with explicit attachments draws a fragment-less (depth-only)
+    // pipeline without a fragment stage; only legacy draws without shaders
+    // fall back to the proxy pair below.
+    const fragment_stage = !cmd.explicit_color_attachments or cmd.has_fragment_stage;
     // When the render-draw command carries explicit shader SPIR-V, use it.
     // Otherwise fall back to Doe's canonical draw_call_proxy_vertex /
     // draw_call_proxy_fragment pair shipped under bench/kernels/ so draws
@@ -228,7 +232,7 @@ pub fn create_graphics_pipeline(
     const vertex_spirv_words = cmd.vertex_spirv orelse
         vk_shader_source.load_kernel_spirv_cached(self, DEFAULT_VERTEX_SHADER_NAME) catch
         return error.ShaderCompileFailed;
-    const fragment_spirv_words = cmd.fragment_spirv orelse
+    const fragment_spirv_words: []const u32 = if (!fragment_stage) &.{} else cmd.fragment_spirv orelse
         vk_shader_source.load_kernel_spirv_cached(self, DEFAULT_FRAGMENT_SHADER_NAME) catch
         return error.ShaderCompileFailed;
     const vertex_entry = try resolve_entry_point_name(self.allocator, cmd.vertex_entry_point, "main");
@@ -245,14 +249,16 @@ pub fn create_graphics_pipeline(
     };
     try c.check_vk(c.vkCreateShaderModule(self.device, &vertex_shader_info, null, &state.vertex_shader));
 
-    var fragment_shader_info = c.VkShaderModuleCreateInfo{
-        .sType = c.VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
-        .pNext = null,
-        .flags = 0,
-        .codeSize = fragment_spirv_words.len * @sizeOf(u32),
-        .pCode = fragment_spirv_words.ptr,
-    };
-    try c.check_vk(c.vkCreateShaderModule(self.device, &fragment_shader_info, null, &state.fragment_shader));
+    if (fragment_stage) {
+        var fragment_shader_info = c.VkShaderModuleCreateInfo{
+            .sType = c.VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
+            .pNext = null,
+            .flags = 0,
+            .codeSize = fragment_spirv_words.len * @sizeOf(u32),
+            .pCode = fragment_spirv_words.ptr,
+        };
+        try c.check_vk(c.vkCreateShaderModule(self.device, &fragment_shader_info, null, &state.fragment_shader));
+    }
 
     const has_bind_groups = cmd.bind_buffer_count > 0 or cmd.bind_texture_count > 0 or cmd.bind_sampler_count > 0;
     if (has_bind_groups) {
@@ -391,16 +397,22 @@ pub fn create_graphics_pipeline(
         .alphaToOneEnable = c.VK_FALSE,
     };
 
-    var blend_attachment = c.VkPipelineColorBlendAttachmentState{
-        .blendEnable = if (cmd.blend_enabled) c.VK_TRUE else c.VK_FALSE,
-        .srcColorBlendFactor = blend_factor_to_vk(cmd.color_src_factor),
-        .dstColorBlendFactor = blend_factor_to_vk(cmd.color_dst_factor),
-        .colorBlendOp = blend_operation_to_vk(cmd.color_operation),
-        .srcAlphaBlendFactor = blend_factor_to_vk(cmd.alpha_src_factor),
-        .dstAlphaBlendFactor = blend_factor_to_vk(cmd.alpha_dst_factor),
-        .alphaBlendOp = blend_operation_to_vk(cmd.alpha_operation),
-        .colorWriteMask = color_write_mask_to_vk(cmd.color_write_mask),
-    };
+    // One blend state per subpass color slot; a null slot writes nothing.
+    var blend_attachments: [model_render_types.MAX_COLOR_ATTACHMENTS]c.VkPipelineColorBlendAttachmentState = undefined;
+    const blend_count = @min(target_count, model_render_types.MAX_COLOR_ATTACHMENTS);
+    for (targets[0..blend_count], blend_attachments[0..blend_count]) |target, *blend| {
+        const used = target.format != model_gpu_types.WGPUTextureFormat_Undefined;
+        blend.* = .{
+            .blendEnable = if (used and target.blend_enabled) c.VK_TRUE else c.VK_FALSE,
+            .srcColorBlendFactor = blend_factor_to_vk(target.color_src_factor),
+            .dstColorBlendFactor = blend_factor_to_vk(target.color_dst_factor),
+            .colorBlendOp = blend_operation_to_vk(target.color_operation),
+            .srcAlphaBlendFactor = blend_factor_to_vk(target.alpha_src_factor),
+            .dstAlphaBlendFactor = blend_factor_to_vk(target.alpha_dst_factor),
+            .alphaBlendOp = blend_operation_to_vk(target.alpha_operation),
+            .colorWriteMask = if (used) color_write_mask_to_vk(target.write_mask) else 0,
+        };
+    }
 
     var color_blend = c.VkPipelineColorBlendStateCreateInfo{
         .sType = c.VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
@@ -408,8 +420,8 @@ pub fn create_graphics_pipeline(
         .flags = 0,
         .logicOpEnable = c.VK_FALSE,
         .logicOp = c.VK_LOGIC_OP_CLEAR,
-        .attachmentCount = 1,
-        .pAttachments = @ptrCast(&blend_attachment),
+        .attachmentCount = blend_count,
+        .pAttachments = &blend_attachments,
         .blendConstants = cmd.blend_constant,
     };
 
@@ -469,7 +481,7 @@ pub fn create_graphics_pipeline(
         .sType = c.VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
         .pNext = null,
         .flags = 0,
-        .stageCount = 2,
+        .stageCount = if (fragment_stage) 2 else 1,
         .pStages = &stages,
         .pVertexInputState = &vertex_input,
         .pInputAssemblyState = &input_assembly,
