@@ -2918,9 +2918,9 @@
       },
       "src/contracts/texture.zig": {
         "decision": "Keep",
-        "moduleSha256": "26b222b3833835d6ad5256d631a4271d3173d83d41d9cb650001a730457a9eb1",
-        "reason": "Keep: reachable neutral contract owner at src/contracts/texture.zig. aspectFormat resolves the single-aspect view format (depth24plus, depth32float or stencil8 for combined formats). A view's stencil aspect samples as uint and its depth aspect as depth. Render target byte cost and color attachment bytes per sample. Render target byte costs include the texture-formats-tier1 color targets.",
-        "reviewer": "doe-c-claude-indexed/2026-10-24"
+        "moduleSha256": "4d6c58b85da9d7b7a6de63d464aeb1bf895d5e830be29a3eb473172f4c6b0905",
+        "reason": "Keep: reachable neutral contract owner at src/contracts/texture.zig. aspectFormat resolves the single-aspect view format (depth24plus, depth32float or stencil8 for combined formats). A view's stencil aspect samples as uint and its depth aspect as depth. Render target byte cost and color attachment bytes per sample. Render target byte costs include the texture-formats-tier1 color targets. Owns which formats support multisampling.",
+        "reviewer": "doe-c-claude-coordinator/2026-10-24"
       },
       "src/contracts/texture_format.zig": {
         "decision": "Keep",
@@ -3674,8 +3674,8 @@
       },
       "src/native/resource/doe_bind_group_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "086f83551b3faf845251077c9c44622b42e04901376ca2f13cf8bf99dcc8529a",
-        "reason": "Keep: preserves this native ownership or ABI boundary while separating internal device cleanup leases from application release and enforcing destroyed-device admission; float and depth formats also bind as unfilterable-float; invalid samplers are rejected like invalid buffers and views. Texture binding sample types follow the view aspect, so stencil-only views bind as uint. Owns dynamic-offset resolution; null pipeline-layout entries become owned empty groups. Layout entries keep visibility, minBindingSize, sampler type and storage format. Automatic-layout identity and doeNativePipelineAdoptAutoBindGroupLayout. createPipelineLayout validates immediateSize limits, layout devices and dynamic buffer limits; layouts record their device. Bind group layout entries at or above maxBindingsPerBindGroup are validation errors; pipelines and bundle encoders check color attachment bytes per sample. createBindGroup and the flat-buffer path check entries against the layout at every binding number. createBindGroup checks each entry per the WebGPU algorithm: device, buffer range, usage, binding-size limits and offset alignment, sampler type, texture usage, view dimension, sample type, multisampling and storage format, mip count and swizzle.",
+        "moduleSha256": "825ce1bc6bd11316ff88c57160c75ba4a1e286216a2edfba9c09a67aeb753bb0",
+        "reason": "Keep: preserves this native ownership or ABI boundary while separating internal device cleanup leases from application release and enforcing destroyed-device admission; float and depth formats also bind as unfilterable-float; invalid samplers are rejected like invalid buffers and views. Texture binding sample types follow the view aspect, so stencil-only views bind as uint. Owns dynamic-offset resolution; null pipeline-layout entries become owned empty groups. Layout entries keep visibility, minBindingSize, sampler type and storage format. Automatic-layout identity and doeNativePipelineAdoptAutoBindGroupLayout. createPipelineLayout validates immediateSize limits, layout devices and dynamic buffer limits; layouts record their device. Bind group layout entries at or above maxBindingsPerBindGroup are validation errors; pipelines and bundle encoders check color attachment bytes per sample. createBindGroup and the flat-buffer path check entries against the layout at every binding number. createBindGroup checks each entry per the WebGPU algorithm: device, buffer range, usage, binding-size limits and offset alignment, sampler type, texture usage, view dimension, sample type, multisampling and storage format, mip count and swizzle. externalTexture layout entries accept a 2d single-mip, single-layer, single-sample rgba8unorm, bgra8unorm or rgba16float view with TEXTURE_BINDING usage, bound as a sampled texture.",
         "reviewer": "doe-c-claude-coordinator/2026-10-24"
       },
       "src/native/resource/doe_buffer_ops_native.zig": {
@@ -3710,9 +3710,9 @@
       },
       "src/native/resource/doe_texture_validation.zig": {
         "decision": "Keep",
-        "moduleSha256": "2032b1fc649b0dc4f42fcd1b3fe1e015dcc0135b9ea897ba76a77fb77d9ad1c9",
-        "reason": "Keep: reachable native implementation with private behavior tests and no merge, elevation, recomposition, or deletion signal; owns the srgb view-format pair rule; MUTABLE_FORMAT images with a VkImageFormatListCreateInfo only for textures whose viewFormats name the srgb pair.",
-        "reviewer": "doe-c-claude-surface/2026-10-23"
+        "moduleSha256": "c22dbf3b3ee173ba4fd478c76167d1030c296d81afb7df3ede1f1f27bce72b67",
+        "reason": "Keep: reachable native implementation with private behavior tests and no merge, elevation, recomposition, or deletion signal; owns the srgb view-format pair rule; MUTABLE_FORMAT images with a VkImageFormatListCreateInfo only for textures whose viewFormats name the srgb pair. Multisampled textures need RENDER_ATTACHMENT and a multisample-capable format and may carry copy usages; transient attachments need exactly RENDER_ATTACHMENT and TRANSIENT_ATTACHMENT, one layer and mip, and no viewFormats.",
+        "reviewer": "doe-c-claude-coordinator/2026-10-24"
       },
       "src/native/shader/doe_shader_compilation_info_native.zig": {
         "decision": "Keep",
