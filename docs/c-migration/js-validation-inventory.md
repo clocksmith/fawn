@@ -1,6 +1,18 @@
 # doe-gpu JavaScript validation inventory
 
-Evidence for an owner decision; no package behaviour changed. Source: `packages/doe-gpu/src/vendor/webgpu/index.js` and `shared/*.js` (browser shims and `bun-ffi.js` excluded) at c5f00ae3b. Each row is one literal `throw` or `failValidation(...)` site, plus rows for helper call sites whose bounds change the class (integer minimums of 1).
+Evidence for an owner decision, recorded without behaviour changes; [Creation routing](#creation-routing-applied-after-the-inventory) describes the behaviour applied since. Source: `packages/doe-gpu/src/vendor/webgpu/index.js` and `shared/*.js` (browser shims and `bun-ffi.js` excluded) at c5f00ae3b. Each row is one literal `throw` or `failValidation(...)` site, plus rows for helper call sites whose bounds change the class (integer minimums of 1).
+
+## Creation routing (applied after the inventory)
+
+The inventory rows keep their c5f00ae3b line numbers. Since then, every synchronous creator follows the createBuffer rule: with an error scope or an `uncapturederror` handler or listener, a class-b failure reports one validation error and returns an invalid object of the right class; with neither, it throws as before. This covers createBuffer, createTexture, GPUTexture.createView, createSampler, createBindGroupLayout, createBindGroup, createPipelineLayout, createShaderModule, createQuerySet, createRenderBundleEncoder, the synchronous createComputePipeline/createRenderPipeline and getBindGroupLayout. The async pipeline creators still reject with GPUPipelineError and report nothing.
+
+- A provider that returns NULL makes the addon return `null`; it no longer throws, and it no longer wraps pipeline creation in an internal error scope.
+- While errors are observed, the package runs the native creation inside private validation and out-of-memory scopes and re-reports what the provider reported, so each failure arrives once on both providers. A provider that rejects without reporting (the Zig drop-in for some createView failures) gets a package-reported validation error. Package (JS) checks run before the native call, so they never double-report on C, and they still cover what the Zig drop-in accepts.
+- createTexture reports descriptor failures as `validation` (including sampleCount and usage checks made after normalization); only a provider's own out-of-memory report is `out-of-memory`.
+- Using an invalid object is a validation error: as a descriptor member of another creation, in queue.writeBuffer/writeTexture, in a submitted command buffer, and in encoder commands. An encoder command that names one records nothing and invalidates the encoder; later binding, draw and dispatch commands record nothing; finish() reports the error and returns an invalid command buffer. Without a scope or listener these uses throw at once.
+- createQuerySet accepts `count` 0 (the `full-surface.js:1763` row) and reports a count above 4096 as a validation error; createRenderBundleEncoder reports a descriptor with neither a color format nor a depthStencilFormat.
+- Doe capability gaps on these paths (externalTexture on the headless surface, missing binding reflection for `layout: "auto"`, a build without render bundles) are class c and still throw.
+- Evidence: `packages/doe-gpu/test/integration/test-integration-creation-errors.js`.
 
 Classes: **a** the specification throws or rejects (WebIDL conversion, content-timeline TypeError/RangeError/OperationError, promise rejection); **b** the specification generates a validation error and returns an invalid object or does nothing; **c** Doe-only API, provider/surface capability, or behaviour the specification does not define (including places where WebIDL would convert silently instead of throwing).
 
