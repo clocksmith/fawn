@@ -7,6 +7,7 @@ const vk_sync = @import("vk_sync.zig");
 const vk_formats = @import("vk_formats.zig");
 const vk_upload = @import("vk_upload.zig");
 const vk_resources = @import("vk_resources.zig");
+const vk_compute_sync = @import("vk_compute_sync.zig");
 const BackendNativeError = @import("../../contracts/execution.zig").BackendNativeError;
 const model_resource_types = @import("../../contracts/model/model_resource_types.zig");
 const model_gpu_types = @import("../../contracts/model/model_texture_value_types.zig");
@@ -585,6 +586,7 @@ fn record_and_submit_draws(
     target_height: u32,
 ) !void {
     const index = try prepare_index_binding(self, state, cmd);
+    const indirect = if (cmd.indirect_buffer_handle != 0) try resolve_indirect_draw(self, cmd, index != null) else draw_recording.IndirectDraw.skip;
     try begin_primary_recording(self);
     transition_attachments(self, state);
     transition_bound_textures(self, cmd);
@@ -599,10 +601,37 @@ fn record_and_submit_draws(
         .descriptor_set = state.descriptor_set,
         .has_depth_stencil = state.depth_stencil_target != null,
     };
-    try recording.record(cmd, index, draw_count, target_width, target_height);
+    try recording.record(cmd, index, draw_count, target_width, target_height, indirect);
     try c.check_vk(c.vkEndCommandBuffer(self.primary_command_buffer));
     try submit_and_wait(self);
     mark_attachment_layouts(self, state, c.VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+}
+
+/// Reads an indirect draw's arguments and validates them against the limits
+/// recorded with it. The queue was flushed and every earlier draw waited for,
+/// so a host read sees all prior writes; an unmapped buffer is copied out.
+fn resolve_indirect_draw(self: anytype, cmd: model_render_types.RenderDrawCommand, indexed: bool) !draw_recording.IndirectDraw {
+    const source = self.compute_buffers.get(cmd.indirect_buffer_handle) orelse return error.InvalidArgument;
+    const word_count: usize = if (indexed) 5 else 4;
+    var words: [5]u32 = undefined;
+    const bytes = std.mem.sliceAsBytes(words[0..word_count]);
+    const end = std.math.add(u64, cmd.indirect_offset, bytes.len) catch return error.InvalidArgument;
+    if (end > source.size) return error.InvalidArgument;
+    if (source.mapped) |mapped| {
+        @memcpy(bytes, @as([*]const u8, @ptrCast(mapped))[@intCast(cmd.indirect_offset)..@intCast(end)]);
+    } else {
+        const staging = try vk_resources.create_host_visible_buffer(self, bytes.len, c.VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+        defer vk_resources.release_compute_buffer(self, staging);
+        try begin_primary_recording(self);
+        const region = c.VkBufferCopy{ .srcOffset = cmd.indirect_offset, .dstOffset = 0, .size = bytes.len };
+        c.vkCmdCopyBuffer(self.primary_command_buffer, source.buffer, staging.buffer, 1, @ptrCast(&region));
+        vk_compute_sync.make_transfer_writes_visible_for_host_read(self.primary_command_buffer);
+        try c.check_vk(c.vkEndCommandBuffer(self.primary_command_buffer));
+        try submit_and_wait(self);
+        const mapped = staging.mapped orelse return error.InvalidState;
+        @memcpy(bytes, @as([*]const u8, @ptrCast(mapped))[0..bytes.len]);
+    }
+    return draw_recording.admitIndirect(draw_recording.IndirectArgs.decode(words[0..word_count], indexed), cmd.indirect_limits, indexed);
 }
 
 /// Moves each attachment image (every mip and layer) from its tracked layout

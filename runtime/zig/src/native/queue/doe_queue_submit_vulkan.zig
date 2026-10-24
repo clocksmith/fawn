@@ -144,9 +144,12 @@ pub fn submit_vulkan_commands(q: *DoeQueue, count: usize, cmd_bufs: [*]const ?*a
                     recorded_replay_work = true;
                 },
                 .dispatch_indirect => |*dispatch_indirect_cmd| {
-                    if (!prepareRecordedDispatchIfNeeded(rt, dispatch_indirect_cmd, &prepared_dispatch)) continue;
-                    vulkan_compute.vulkan_run_prepared_dispatch_indirect(rt, dispatch_indirect_cmd);
+                    const guarded = vulkan_compute.vulkan_guard_dispatch_indirect(rt, dispatch_indirect_cmd) orelse continue;
                     recorded_replay_work = true;
+                    // The guard replaced the bound pipeline and bindings.
+                    resetPreparedDispatchState(&prepared_dispatch);
+                    if (!prepareRecordedDispatchIfNeeded(rt, dispatch_indirect_cmd, &prepared_dispatch)) continue;
+                    vulkan_compute.vulkan_run_guarded_dispatch_indirect(rt, guarded);
                 },
                 .copy_buf => |copy_cmd| {
                     const src_buf = cast(native_types.DoeBuffer, copy_cmd.src) orelse continue;

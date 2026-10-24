@@ -1353,10 +1353,15 @@ test "device buffer offset alignments default to 256 and accept lower requests" 
     const requested = Alignment.fromRequired(64, 512);
     try std.testing.expectEqual(@as(u32, 64), requested.uniform);
     try std.testing.expectEqual(@as(u32, 256), requested.storage);
+    const objects = @import("../../src/native/support/doe_native_object_types.zig");
+    try std.testing.expectEqual(@as(u32, 65535), objects.requiredWorkgroupsPerDimension(std.math.maxInt(u32)));
+    try std.testing.expectEqual(@as(u32, 65535), objects.requiredWorkgroupsPerDimension(1024));
+    try std.testing.expectEqual(@as(u32, 1 << 20), objects.requiredWorkgroupsPerDimension(1 << 20));
     var device = native.DoeDevice{};
     var limits = std.mem.zeroes(@import("../../src/core/abi/wgpu_callback_descriptor_types.zig").WGPULimits);
     _ = native.doeNativeDeviceGetLimits(@ptrCast(&device), &limits);
     try std.testing.expectEqual(@as(u32, 256), limits.minStorageBufferOffsetAlignment);
+    try std.testing.expectEqual(@as(u32, 65535), limits.maxComputeWorkgroupsPerDimension);
 }
 
 test "doeNativePipelineLayoutRelease: null input is safe" {

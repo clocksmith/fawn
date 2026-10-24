@@ -150,6 +150,8 @@ pub const NativeVulkanRuntime = struct {
     /// Stable buffer identity used by descriptor and hazard caches. Object
     /// addresses are allocator-reusable and must not serve as resource IDs.
     next_buffer_resource_handle: u64 = 1,
+    /// Scratch the indirect-dispatch guard copies and validates arguments in.
+    dispatch_indirect_guard_handle: u64 = 0,
     textures: std.AutoHashMapUnmanaged(u64, vk_resources.TextureResource) = .{},
     samplers: std.AutoHashMapUnmanaged(u64, descriptor_identity.Sampler) = .{},
 

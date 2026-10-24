@@ -1256,9 +1256,9 @@
       },
       "src/backend/vulkan/native_runtime.zig": {
         "decision": "Keep",
-        "moduleSha256": "414ce018a9dcb88f3d3c698d2797a70a9883f5bc2c797e6ffcdd1061e8b8a2db",
-        "reason": "Keep: per-device runtime borrows the adapter-selected Vulkan instance while retaining its own VkDevice and queue; runtime teardown never destroys the borrowed instance; MUTABLE_FORMAT images with a VkImageFormatListCreateInfo only for textures whose viewFormats name the srgb pair. Carries the CPU-only (fallback adapter) selection flag.",
-        "reviewer": "doe-c-claude-surface/2026-10-24"
+        "moduleSha256": "4e666567c5424f1b1aa6f5acf4854300e6f3151a6962e77cefd4b8001f25ed79",
+        "reason": "Keep: per-device runtime borrows the adapter-selected Vulkan instance while retaining its own VkDevice and queue; runtime teardown never destroys the borrowed instance; MUTABLE_FORMAT images with a VkImageFormatListCreateInfo only for textures whose viewFormats name the srgb pair. Carries the CPU-only (fallback adapter) selection flag. Owns the indirect-dispatch guard scratch handle.",
+        "reviewer": "doe-c-claude-indexed/2026-10-24"
       },
       "src/backend/vulkan/vk_adapter_probe.zig": {
         "decision": "Keep",
@@ -1316,9 +1316,9 @@
       },
       "src/backend/vulkan/vk_dispatch_indirect.zig": {
         "decision": "Keep",
-        "moduleSha256": "8fdd969b3816f2853ac3a54849b01b83f28678ae33eb582ef413634169e428a4",
-        "reason": "Keep: indirect argument visibility precedes the shared conservative compute dependency; avoids duplicate shader barriers while preserving indirect-read synchronization.",
-        "reviewer": "codex-gpu-program/2026-09-05"
+        "moduleSha256": "c4cef4ed4da1255c55bcea08547642a1fe757645440a8538c92e938fc19145e5",
+        "reason": "Keep: indirect argument visibility precedes the shared conservative compute dependency; avoids duplicate shader barriers while preserving indirect-read synchronization. Indirect dispatches run from a scratch copy that a one-invocation guard zeroes when a count exceeds maxComputeWorkgroupsPerDimension.",
+        "reviewer": "doe-c-claude-indexed/2026-10-24"
       },
       "src/backend/vulkan/vk_dispatch_repeat.zig": {
         "decision": "Keep",
@@ -1376,9 +1376,9 @@
       },
       "src/backend/vulkan/vk_render.zig": {
         "decision": "Keep",
-        "moduleSha256": "e35151ce694da57f0b057387808ab7008b888780aefd9cddd224b0b6a20c02ab",
-        "reviewer": "doe-c-claude-surface/2026-10-24",
-        "reason": "Keep: Vulkan render target and submission ownership uses target-typed clear values for draw, clear, and bundle paths. Pass-level viewports use WebGPU orientation. Render passes use the color image's sample count for color and depth and add a resolve attachment for a resolve target. Attachment images move whole into their attachment layout before each pass, so tracked image layouts stay exact for single-mip views."
+        "moduleSha256": "6ce47e386bd0d933ca32c179681e0e71b447cdcfc39aad84ca77a987b7ce27b5",
+        "reviewer": "doe-c-claude-indexed/2026-10-24",
+        "reason": "Keep: Vulkan render target and submission ownership uses target-typed clear values for draw, clear, and bundle paths. Pass-level viewports use WebGPU orientation. Render passes use the color image's sample count for color and depth and add a resolve attachment for a resolve target. Attachment images move whole into their attachment layout before each pass, so tracked image layouts stay exact for single-mip views. Indirect draws read their arguments after the queue flush (mapped, or copied out) and validate them before the per-draw submit."
       },
       "src/backend/vulkan/vk_render_pipeline.zig": {
         "decision": "Keep",
@@ -2798,9 +2798,9 @@
       },
       "src/contracts/model/model_render_types.zig": {
         "decision": "Keep",
-        "moduleSha256": "37b7bd8331d8c058ea9e89cb158699b8ff3643d2e0fd4d45bed0c66b07dce295",
-        "reason": "Keep: neutral render-command values carry explicit attachment identities, load choices, and clear values without backend handles escaping native adaptation. Draw commands carry the multisample mask and alpha-to-coverage. Draw commands carry the resolve target. Names the Undefined vertex step mode (unused slot) and index formats.",
-        "reviewer": "doe-c-claude-surface/2026-10-24"
+        "moduleSha256": "73198850e61918e7d512ddc93ad32b01451cc441c9d7a1f8578415cc5970923c",
+        "reason": "Keep: neutral render-command values carry explicit attachment identities, load choices, and clear values without backend handles escaping native adaptation. Draw commands carry the multisample mask and alpha-to-coverage. Draw commands carry the resolve target. Names the Undefined vertex step mode (unused slot) and index formats. Recorded indirect draws carry the WebGPU limits their arguments must satisfy.",
+        "reviewer": "doe-c-claude-indexed/2026-10-24"
       },
       "src/contracts/model/model_resource_types.zig": {
         "decision": "Keep",
@@ -3536,7 +3536,7 @@
       },
       "src/native/compute/doe_compute_ext_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "69da7b0205945f64fd61d945cda5b75a862f2f415f1c7c8206e576df4aa25fac",
+        "moduleSha256": "971eb68b55d382aff748bb5ef3dc5eeeaf688aa49f75e04c91e17d13f826e3f7",
         "reason": "Keep: the encoder owns pass identity and recording lifetime; native adapters validate operations against that single state. setBindGroup resolves dynamic offsets; dispatch validates pipeline, workgroup counts and explicit-layout bind groups.",
         "reviewer": "doe-c-claude-indexed/2026-10-24"
       },
@@ -3584,7 +3584,7 @@
       },
       "src/native/lifecycle/doe_instance_device_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "366e52404d0db2acccb09b3eaeb1ff341744824abaeda3d9ba9a22383b43f8fc",
+        "moduleSha256": "9e442234319cf6e5ac854b0e8d254fca1e831530de7278bd953d1a72772bc798",
         "reason": "Keep: default-off C error-scope partial owner uses final-address typed storage, cold creation rollback and checked final deinit; original classifier, callbacks and device references remain with their existing owners. requestAdapter honors forceFallbackAdapter: a CPU adapter or unavailable. Device creation records required buffer offset alignment limits.",
         "reviewer": "doe-c-claude-indexed/2026-10-24"
       },
@@ -3638,9 +3638,9 @@
       },
       "src/native/queue/doe_queue_submit_vulkan.zig": {
         "decision": "Keep",
-        "moduleSha256": "c059e543ee44e3bbda0fec9c7e12f1a28189f836453b3497d50161f88990b184",
-        "reason": "Keep: existing native recording, query ownership, queue submission or Vulkan ABI owner. Logical occlusion spans completed native draws; native query metadata does not cross the public ABI.",
-        "reviewer": "codex-production-query/2026-09-28"
+        "moduleSha256": "2fae50ae66534d2ab7c31987b25c15f18301a6a11c36d1b4277d881fdd9461c9",
+        "reason": "Keep: existing native recording, query ownership, queue submission or Vulkan ABI owner. Logical occlusion spans completed native draws; native query metadata does not cross the public ABI. Queue replay guards indirect dispatch arguments and re-prepares the application dispatch after the guard.",
+        "reviewer": "doe-c-claude-indexed/2026-10-24"
       },
       "src/native/render/doe_bundle_native.zig": {
         "decision": "Keep",
@@ -3746,7 +3746,7 @@
       },
       "src/native/support/doe_device_caps.zig": {
         "decision": "Keep",
-        "moduleSha256": "9e8e8a0694fa6cd26e404384b3de65b0633fef1996cfcf409727f8506bca5798",
+        "moduleSha256": "9882351dd538579d48842c29f59b1bcf071679ee0f8440e76763c6edf58bd2b7",
         "reason": "Keep: native capability publication owns backend dispatch; Metal limits use the owning adapter/device handle. No boundary or ownership change. Device limits report the device's buffer offset alignments.",
         "reviewer": "doe-c-claude-indexed/2026-10-24"
       },
@@ -3764,9 +3764,9 @@
       },
       "src/native/support/doe_native_command_types.zig": {
         "decision": "Keep",
-        "moduleSha256": "c09323863ab47aa09a32fefe91dbc58bcc40f90273b109a58d72a6a950b25010",
-        "reason": "Keep: existing native recording, query ownership, queue submission or Vulkan ABI owner. Logical occlusion spans completed native draws; native query metadata does not cross the public ABI.",
-        "reviewer": "codex-production-query/2026-09-28"
+        "moduleSha256": "3da01f4be78017ecd3c0de4a18a5c0010393d882753c85305671b558aa111da7",
+        "reason": "Keep: existing native recording, query ownership, queue submission or Vulkan ABI owner. Logical occlusion spans completed native draws; native query metadata does not cross the public ABI. Recorded indirect dispatches carry the device workgroup limit.",
+        "reviewer": "doe-c-claude-indexed/2026-10-24"
       },
       "src/native/support/doe_native_exports.zig": {
         "decision": "Keep",
@@ -3782,7 +3782,7 @@
       },
       "src/native/support/doe_native_object_types.zig": {
         "decision": "Keep",
-        "moduleSha256": "e185a334967f5431a1410dbbd73655fa1fceb2e7ceb1f67ac5b1ce1c49820767",
+        "moduleSha256": "66aaa11fee3b4b39ca4b4d29556292df8c32d563a45f82a62d5c3a183bac16cd",
         "reason": "Keep: default-off C error-scope partial owner uses final-address typed storage, cold creation rollback and checked final deinit; original classifier, callbacks and device references remain with their existing owners; textures record an allowed srgb view; samplers carry error_object; MUTABLE_FORMAT images with a VkImageFormatListCreateInfo only for textures whose viewFormats name the srgb pair. Render pipelines keep their multisample mask and alpha-to-coverage. Passes hold per-group dynamic offsets and the cached workgroup limit. Devices hold their buffer offset alignment limits.",
         "reviewer": "doe-c-claude-indexed/2026-10-24"
       },
@@ -3812,8 +3812,8 @@
       },
       "src/native/vulkan/vulkan_compute_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "e199ed4f5ac8dddd3c7ab94335b039f6de45167f38358f98d7b4ed175a2828d4",
-        "reason": "Keep: Vulkan pipeline preparation consumes translation-owned binding metadata and preserves specialized-override metadata from the same analyzed IR. Recorded Vulkan bindings receive dynamic offsets with a recomputed descriptor hash.",
+        "moduleSha256": "5a257d5b8748d3b2ac92a512f2fdc894b6b94c3d3ee5a538464a01769e5eb979",
+        "reason": "Keep: Vulkan pipeline preparation consumes translation-owned binding metadata and preserves specialized-override metadata from the same analyzed IR. Recorded Vulkan bindings receive dynamic offsets with a recomputed descriptor hash. Indirect dispatch replay guards its arguments before preparing the application dispatch.",
         "reviewer": "doe-c-claude-indexed/2026-10-24"
       },
       "src/native/vulkan/vulkan_feature_cache.zig": {
@@ -3842,8 +3842,8 @@
       },
       "src/native/vulkan/vulkan_render_pass_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "f61f36bc10fceed6365e05e22f78c273b350245b30a1c750db01645ce3628a40",
-        "reason": "Keep: native attachment admission owns view and pipeline compatibility; command recording preserves typed validation failures before submission. Backend execution and resource retirement retain their existing owners. Draws forward the pipeline's multisample mask and alpha-to-coverage. Draws carry the pass resolve target. Draws pass WebGPU vertex and index buffer bounds validation before recording. Render buffer bindings add the pass dynamic offsets.",
+        "moduleSha256": "7124be2ec46027a510e584303be1119744b3c2d79d8d5541dea18c43f415d4df",
+        "reason": "Keep: native attachment admission owns view and pipeline compatibility; command recording preserves typed validation failures before submission. Backend execution and resource retirement retain their existing owners. Draws forward the pipeline's multisample mask and alpha-to-coverage. Draws carry the pass resolve target. Draws pass WebGPU vertex and index buffer bounds validation before recording. Render buffer bindings add the pass dynamic offsets. Indirect draws record vertex, instance and index limits from the bound buffers.",
         "reviewer": "doe-c-claude-indexed/2026-10-24"
       },
       "src/native/vulkan/vulkan_render_pipeline_native.zig": {
@@ -4406,9 +4406,9 @@
       },
       "src/backend/vulkan/vk_draw_recording.zig": {
         "decision": "Keep",
-        "moduleSha256": "b378aad13612590d01efa6268cb877281b6e77445200790bac84ed8fce8dd714",
-        "reason": "Keep: Vulkan render recording converts WebGPU clear colors to the target format and records explicit draw state. Viewports flip to WebGPU orientation with a negative Vulkan height; an empty viewport rasterizes nothing. Vertex buffers bind at their own slots, so unused slots may precede bound ones.",
-        "reviewer": "doe-c-claude-surface/2026-10-24"
+        "moduleSha256": "4c206706bc25802dca2388b6d4ee5aaaf18a15f913829643c86f4495c72b6a09",
+        "reason": "Keep: Vulkan render recording converts WebGPU clear colors to the target format and records explicit draw state. Viewports flip to WebGPU orientation with a negative Vulkan height; an empty viewport rasterizes nothing. Vertex buffers bind at their own slots, so unused slots may precede bound ones. Indirect draws record vkCmdDraw/vkCmdDrawIndexed with validated arguments or are skipped; unvalidated arguments never reach the GPU.",
+        "reviewer": "doe-c-claude-indexed/2026-10-24"
       },
       "src/native/vulkan/vulkan_render_attachments.zig": {
         "decision": "Keep",

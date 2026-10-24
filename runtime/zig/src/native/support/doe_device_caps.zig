@@ -296,6 +296,7 @@ pub export fn doeNativeDeviceGetLimits(raw: ?*anyopaque, limits: ?*abi_callback.
     if (native_helpers.cast(DoeDevice, raw)) |d| if (limits) |l| {
         l.minUniformBufferOffsetAlignment = d.buffer_offset_alignment.uniform;
         l.minStorageBufferOffsetAlignment = d.buffer_offset_alignment.storage;
+        l.maxComputeWorkgroupsPerDimension = d.max_compute_workgroups_per_dimension;
     };
     return status;
 }
