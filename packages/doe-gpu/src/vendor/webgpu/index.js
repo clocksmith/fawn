@@ -1509,8 +1509,8 @@ const nodeEncoderBackend = {
   renderPassSetScissorRect(pass, x, y, width, height) {
     addon.renderPassSetScissorRect(pass._native, x, y, width, height);
   },
-  renderPassSetBlendConstant(pass, color) {
-    addon.renderPassSetBlendConstant(pass._native, color);
+  renderPassSetBlendConstant(pass, r, g, b, a) {
+    addon.renderPassSetBlendConstant(pass._native, r, g, b, a);
   },
   renderPassSetStencilReference(pass, ref) {
     addon.renderPassSetStencilReference(pass._native, ref);

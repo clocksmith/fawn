@@ -121,7 +121,7 @@ static void test_cross_group_scope(void)
 
 static void test_texture_scope(void)
 {
-    for (unsigned scenario = 0; scenario < 12; scenario++) {
+    for (unsigned scenario = 0; scenario < 13; scenario++) {
         fixture f = fresh();
         doe_resource_config c = config(&f);
         native_token image_tokens[2] = {{0}, {0}}, view_tokens[2] = {{0}, {0}};
@@ -129,6 +129,7 @@ static void test_texture_scope(void)
         desc.depth_or_layers = 2;
         desc.mip_levels = 2;
         desc.usage = WGPUTextureUsage_TextureBinding | WGPUTextureUsage_StorageBinding;
+        if (scenario == 12) desc.format = WGPUTextureFormat_R32Float; /* read-write storage format */
         doe_resource_texture_limits texture_limit = texture_limits();
         doe_resource_texture *images[2];
         doe_resource_view *views[2];
@@ -171,6 +172,17 @@ static void test_texture_scope(void)
             entries[1].visibility = scenario == 9 ? 0 : scenario == 10 ? WGPUShaderStage_Fragment : WGPUShaderStage_Compute;
             bindings[1].kind = DOE_BIND_STORAGE_TEXTURE;
             expected = scenario == 11 ? DOE_RESOURCE_ALIAS : DOE_RESOURCE_OK;
+        }
+        if (scenario == 12) {
+            /* Write-only and read-write storage of one subresource never mix,
+             * even without a shared stage. */
+            entries[1] = entries[0];
+            entries[1].binding = 1;
+            entries[1].visibility = 0;
+            entries[0].storage_format = entries[1].storage_format = WGPUTextureFormat_R32Float;
+            entries[1].storage_access = WGPUStorageTextureAccess_ReadWrite;
+            bindings[1].kind = DOE_BIND_STORAGE_TEXTURE;
+            expected = DOE_RESOURCE_USAGE;
         }
         doe_resource_external_texture *external = NULL;
         if (scenario == 8) entries[1].view_dimension = WGPUTextureViewDimension_2DArray;

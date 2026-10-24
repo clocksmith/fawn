@@ -28,7 +28,8 @@ static void test_resolve_targets(void)
         DOE_RESOURCE_OK, DOE_RESOURCE_LAYOUT, DOE_RESOURCE_LAYOUT, DOE_RESOURCE_LAYOUT,
         DOE_RESOURCE_LAYOUT, DOE_RESOURCE_USAGE, DOE_RESOURCE_USAGE, DOE_RESOURCE_UNAVAILABLE,
         DOE_RESOURCE_DEVICE_MISMATCH, DOE_RESOURCE_OK, DOE_RESOURCE_LAYOUT, DOE_RESOURCE_LAYOUT,
-        DOE_RESOURCE_OK, DOE_RESOURCE_OK, DOE_RESOURCE_LAYOUT, DOE_RESOURCE_OK, DOE_RESOURCE_UNSUPPORTED
+        DOE_RESOURCE_OK, DOE_RESOURCE_OK, DOE_RESOURCE_LAYOUT, DOE_RESOURCE_OK,
+        DOE_RESOURCE_OK /* a single-layer 2D array view is a renderable view */
     };
     for (size_t scenario = 0; scenario < sizeof(expected) / sizeof(*expected); scenario++) {
         fixture f = fresh(), other = fresh();

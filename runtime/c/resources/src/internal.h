@@ -104,7 +104,11 @@ struct doe_resource_external_texture {
     bool expired;
 };
 
-typedef enum resource_usage { RESOURCE_READ, RESOURCE_STORAGE, RESOURCE_ATTACHMENT } resource_usage;
+/* Write-only and read-write storage textures are distinct usages: one
+ * subresource may repeat either within a scope but not mix them. */
+typedef enum resource_usage {
+    RESOURCE_READ, RESOURCE_STORAGE, RESOURCE_STORAGE_READ_WRITE, RESOURCE_ATTACHMENT
+} resource_usage;
 typedef struct resource_use {
     doe_resource_buffer *buffer;
     doe_resource_view *view;

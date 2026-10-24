@@ -16,7 +16,10 @@ fn validateView(device: *objects.DoeDevice, raw: ?*anyopaque, depth: bool) Error
     if (texture.isUnavailable()) return error.RenderAttachmentUnavailable;
     if (texture.device_ref != device) return error.RenderAttachmentDeviceMismatch;
     if ((view.usage & texture_abi.WGPUTextureUsage_RenderAttachment) == 0) return error.RenderAttachmentUsageMissing;
-    if (view.dimension != texture_abi.WGPUTextureViewDimension_2D) return error.RenderAttachmentUnsupported;
+    // A renderable view is 2d, or 2d-array with one layer (the default view of
+    // one layer of a layered texture); the layer count is checked below.
+    if (view.dimension != texture_abi.WGPUTextureViewDimension_2D and
+        view.dimension != texture_abi.WGPUTextureViewDimension_2DArray) return error.RenderAttachmentUnsupported;
     if (view.mip_level_count != 1 or view.array_layer_count != 1 or
         view.aspect != texture_abi.WGPUTextureAspect_All or
         view.base_mip_level >= texture.mip_level_count or view.base_mip_level >= @bitSizeOf(u32))
@@ -37,11 +40,32 @@ fn validatePair(color: *const objects.DoeTextureView, depth: *const objects.DoeT
     if (color.tex.sample_count != depth.tex.sample_count) return error.RenderAttachmentSampleMismatch;
 }
 
+/// Formats with the "resolve" capability in the WebGPU texture format table
+/// (https://gpuweb.github.io/gpuweb/#plain-color-formats); integer and 32-bit
+/// float formats cannot resolve.
+fn resolvable(format: u32) bool {
+    return switch (format) {
+        texture_abi.WGPUTextureFormat_R8Unorm,
+        texture_abi.WGPUTextureFormat_RG8Unorm,
+        texture_abi.WGPUTextureFormat_RGBA8Unorm,
+        texture_abi.WGPUTextureFormat_RGBA8UnormSrgb,
+        texture_abi.WGPUTextureFormat_BGRA8Unorm,
+        texture_abi.WGPUTextureFormat_BGRA8UnormSrgb,
+        texture_abi.WGPUTextureFormat_R16Float,
+        texture_abi.WGPUTextureFormat_RG16Float,
+        texture_abi.WGPUTextureFormat_RGBA16Float,
+        texture_abi.WGPUTextureFormat_RGB10A2Unorm,
+        texture_abi.WGPUTextureFormat_RG11B10Ufloat,
+        => true,
+        else => false,
+    };
+}
+
 /// A resolve target is a single-sample view of the multisampled color
-/// attachment's format and extent.
+/// attachment's resolvable format and extent.
 fn validateResolve(color: *const objects.DoeTextureView, resolve: *const objects.DoeTextureView) Error!void {
     if (color.tex.sample_count <= 1 or resolve.tex.sample_count > 1) return error.RenderAttachmentSampleMismatch;
-    if (color.format != resolve.format) return error.RenderAttachmentFormatMismatch;
+    if (color.format != resolve.format or !resolvable(resolve.format)) return error.RenderAttachmentFormatMismatch;
     if (!std.meta.eql(extent(color), extent(resolve))) return error.RenderAttachmentExtentMismatch;
 }
 
@@ -235,7 +259,14 @@ test "attachment admission rejects unavailable foreign nonrenderable and broad v
     view.mip_level_count = 1;
     view.array_layer_count = 2;
     try std.testing.expectError(error.RenderAttachmentViewInvalid, validateView(&device, &view, false));
+    // One layer of a 2d-array view renders; more layers do not.
+    view.dimension = texture_abi.WGPUTextureViewDimension_2DArray;
+    try std.testing.expectError(error.RenderAttachmentViewInvalid, validateView(&device, &view, false));
     view.array_layer_count = 1;
+    try std.testing.expectEqual(&view, try validateView(&device, &view, false));
+    view.dimension = texture_abi.WGPUTextureViewDimension_Cube;
+    try std.testing.expectError(error.RenderAttachmentUnsupported, validateView(&device, &view, false));
+    view.dimension = texture_abi.WGPUTextureViewDimension_2D;
     try std.testing.expectError(error.RenderAttachmentFormatMismatch, validateView(&device, &view, true));
     texture.error_object = true;
     try std.testing.expectError(error.RenderAttachmentUnavailable, validateView(&device, &view, false));
@@ -261,6 +292,14 @@ test "resolve targets are single-sample views of the multisampled color format a
     try std.testing.expectError(error.RenderAttachmentSampleMismatch, validateResolve(&resolve, &resolve));
     resolve.format = texture_abi.WGPUTextureFormat_BGRA8Unorm;
     try std.testing.expectError(error.RenderAttachmentFormatMismatch, validateResolve(&color, &resolve));
+    resolve.format = base.format;
+    // Integer and 32-bit float formats have no resolve capability.
+    for ([_]u32{ texture_abi.WGPUTextureFormat_RGBA8Uint, texture_abi.WGPUTextureFormat_R32Float }) |format| {
+        color.format = format;
+        resolve.format = format;
+        try std.testing.expectError(error.RenderAttachmentFormatMismatch, validateResolve(&color, &resolve));
+    }
+    color.format = base.format;
     resolve.format = base.format;
     single.width = 4;
     try std.testing.expectError(error.RenderAttachmentExtentMismatch, validateResolve(&color, &resolve));
