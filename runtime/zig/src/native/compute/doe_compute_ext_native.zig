@@ -1,4 +1,5 @@
 const recording = @import("../command/doe_command_recording.zig");
+const usage_scope = @import("../command/doe_usage_scope.zig");
 // doe_compute_ext_native.zig — Compute pass and pipeline extensions for Doe native Metal backend.
 // Sharded from doe_wgpu_native.zig: compute pass operations, getBindGroupLayout, dispatchIndirect.
 
@@ -235,7 +236,7 @@ pub export fn doeNativeComputePassSetBindGroup(pass_raw: ?*anyopaque, index: u32
 }
 
 /// WebGPU dispatch validation at record time; a failure invalidates the encoder.
-fn validateDispatch(pass: *DoeComputePass, pip: *const DoeComputePipeline, counts: ?[3]u32) bool {
+fn validateDispatch(pass: *DoeComputePass, pip: *const DoeComputePipeline, counts: ?[3]u32, indirect: ?*const DoeBuffer) bool {
     if (counts) |workgroups| {
         for (workgroups) |count| {
             if (count > pass.enc.dev.max_compute_workgroups_per_dimension) {
@@ -249,13 +250,25 @@ fn validateDispatch(pass: *DoeComputePass, pip: *const DoeComputePipeline, count
         recording.fail(pass.enc, err);
         return false;
     };
+    // Each dispatch is a usage scope of the bind groups its pipeline uses
+    // and its indirect buffer.
+    var uses: [native_shared.MAX_COMPUTE_BIND_GROUPS * usage_scope.MAX_GROUP_USES + 1]usage_scope.Use = undefined;
+    var count = usage_scope.pipelineGroupUses(pip.layout, required, pass.bind_groups[0..], pass.dynamic_offsets[0..], uses[0 .. uses.len - 1]);
+    if (indirect) |buffer| {
+        uses[count] = usage_scope.bufferUse(buffer);
+        count += 1;
+    }
+    usage_scope.validateDispatchUses(uses[0..count]) catch |err| {
+        recording.fail(pass.enc, err);
+        return false;
+    };
     return true;
 }
 
 fn appendRecordedDispatch(pass: *DoeComputePass, pip: *DoeComputePipeline, x: u32, y: u32, z: u32) void {
     if (!recording.requirePass(pass.enc, @intFromPtr(pass))) return;
     if (tryRepeatLastRecordedDispatch(pass, pip, x, y, z)) return;
-    if (!validateDispatch(pass, pip, .{ x, y, z })) return;
+    if (!validateDispatch(pass, pip, .{ x, y, z }, null)) return;
     if (!validate_dispatch_preconditions(pass, pip, .{ x, y, z })) return;
     var cmd = RecordedCmd{ .dispatch = .{
         .compute_pipeline = toOpaque(pip),
@@ -430,7 +443,7 @@ pub export fn doeNativeComputePassDispatchIndirect(pass_raw: ?*anyopaque, buf_ra
     const pass = cast(DoeComputePass, pass_raw) orelse return;
     if (!recording.requirePass(pass.enc, @intFromPtr(pass))) return;
     const pip = pass.pipeline orelse return recording.fail(pass.enc, error.DispatchPipelineMissing);
-    if (!validateDispatch(pass, pip, null)) return;
+    if (!validateDispatch(pass, pip, null, cast(DoeBuffer, buf_raw))) return;
     const indirect_buf = cast(DoeBuffer, buf_raw) orelse return;
     if (indirect_buf.error_object or indirect_buf.destroyed) return;
     if (pip.dispatch_preconditions.len > 0) {

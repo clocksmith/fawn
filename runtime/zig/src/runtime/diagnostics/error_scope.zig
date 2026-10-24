@@ -259,6 +259,8 @@ pub fn zig_error_to_type(err: anyerror) u32 {
         error.RenderAttachmentDepthStencilOps,
         error.RenderAttachmentDepthSliceInvalid,
         error.PassQuerySetInvalid,
+        error.ResourceUsageConflict,
+        error.WritableBindingAlias,
         error.RenderPipelineIncompatible,
         error.RenderAttachmentColorBytesExceeded,
         error.DrawVertexBufferMissing,

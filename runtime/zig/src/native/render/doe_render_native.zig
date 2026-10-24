@@ -55,6 +55,7 @@ const bind_group_native = @import("../resource/doe_bind_group_native.zig");
 const compute_bind_groups = @import("../compute/doe_compute_bind_groups.zig");
 const render_pipeline = @import("doe_render_pipeline_native.zig");
 const references = @import("../command/doe_command_references.zig");
+const usage_scope = @import("../command/doe_usage_scope.zig");
 const native_exports = @import("../support/doe_native_exports.zig");
 const query_native = @import("../resource/doe_query_native.zig");
 
@@ -98,6 +99,7 @@ fn reserve_render_draw(pass: *DoeRenderPass) bool {
             recording.fail(pass.enc, err);
             return false;
         };
+        if (!usage_scope.admitDraw(pass, pipeline)) return false;
     }
     pass.recorded_draw_count += 1;
     return true;
@@ -221,6 +223,7 @@ pub export fn doeNativeCommandEncoderBeginRenderPass(enc_raw: ?*anyopaque, desc:
         }
     }
     pass.sample_count = attachmentSampleCount(pass);
+    _ = usage_scope.admitPassAttachments(pass);
     return toOpaque(pass);
 }
 
@@ -361,6 +364,7 @@ pub export fn doeNativeRenderPassSetVertexBuffer(pass_raw: ?*anyopaque, slot: u3
     const buffer = cast(DoeBuffer, buffer_raw);
     if (buffer != null and buffer.?.error_object) return;
     if (buffer) |value| {
+        if (!usage_scope.admitPassBuffer(pass, value)) return;
         if (!recording.reserve(pass.enc, 0, 1)) return;
         references.retainBufferAssumeCapacity(&pass.enc.references, value);
     }
@@ -375,6 +379,7 @@ pub export fn doeNativeRenderPassSetIndexBuffer(pass_raw: ?*anyopaque, buffer_ra
     const buffer = cast(DoeBuffer, buffer_raw);
     if (buffer != null and buffer.?.error_object) return;
     if (buffer) |value| {
+        if (!usage_scope.admitPassBuffer(pass, value)) return;
         if (!recording.reserve(pass.enc, 0, 1)) return;
         references.retainBufferAssumeCapacity(&pass.enc.references, value);
     }
@@ -407,6 +412,7 @@ pub export fn doeNativeRenderPassSetBindGroup(pass_raw: ?*anyopaque, group_index
             recording.fail(pass.enc, err);
             return;
         };
+        if (!usage_scope.admitPassGroup(pass, group, &resolved)) return;
         if (!recording.reserve(pass.enc, 0, 1)) return;
         references.retainBindGroupAssumeCapacity(&pass.enc.references, group);
     } else if (offsets.len != 0) {
@@ -539,6 +545,7 @@ pub export fn doeNativeRenderPassDrawIndirect(pass_raw: ?*anyopaque, indirect_bu
     if (!recording.requirePass(pass.enc, @intFromPtr(pass))) return;
     if (!reserve_render_draw(pass)) return;
     if (cast(DoeBuffer, indirect_buffer_raw)) |buffer| {
+        if (!usage_scope.admitPassBuffer(pass, buffer)) return;
         if (!recording.reserve(pass.enc, 0, 1)) return;
         references.retainBufferAssumeCapacity(&pass.enc.references, buffer);
     }
@@ -562,6 +569,7 @@ pub export fn doeNativeRenderPassDrawIndexedIndirect(pass_raw: ?*anyopaque, indi
     if (!recording.requirePass(pass.enc, @intFromPtr(pass))) return;
     if (!reserve_render_draw(pass)) return;
     if (cast(DoeBuffer, indirect_buffer_raw)) |buffer| {
+        if (!usage_scope.admitPassBuffer(pass, buffer)) return;
         if (!recording.reserve(pass.enc, 0, 1)) return;
         references.retainBufferAssumeCapacity(&pass.enc.references, buffer);
     }
@@ -589,6 +597,7 @@ pub export fn doeNativeRenderPassEnd(raw: ?*anyopaque) callconv(.c) void {
     const pass = cast(DoeRenderPass, raw) orelse return;
     if (!recording.requirePass(pass.enc, @intFromPtr(pass))) return;
     defer recording.endPass(pass.enc, @intFromPtr(pass));
+    pass.usage_scope.deinit(pass.enc.allocator);
     pass.debug_groups.requireBalanced() catch |err| recording.fail(pass.enc, err);
     if (pass.enc.dev.backend == .vulkan) {
         const vk_render = @import("../vulkan/vulkan_render_native.zig");
@@ -616,6 +625,7 @@ pub export fn doeNativeRenderPassRelease(raw: ?*anyopaque) callconv(.c) void {
         if (!native_helpers.object_should_destroy(p)) return;
         label_store.remove(raw);
         const allocator = p.enc.allocator;
+        p.usage_scope.deinit(allocator);
         if (p.owns_encoder) native_exports.doeNativeCommandEncoderRelease(toOpaque(p.enc));
         allocator.destroy(p);
     }

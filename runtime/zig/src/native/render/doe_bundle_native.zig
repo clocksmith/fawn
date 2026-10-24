@@ -13,6 +13,7 @@ const native_helpers = @import("../support/doe_native_object_helpers.zig");
 const references = @import("../command/doe_command_references.zig");
 const leases = @import("../../contracts/resource_lease.zig");
 const recording = @import("../command/doe_command_recording.zig");
+const usage_scope = @import("../command/doe_usage_scope.zig");
 const recording_contract = @import("../../contracts/command_recording.zig");
 const bundle = @import("../../runtime/render/render_bundle.zig");
 const render_pipeline = @import("doe_render_pipeline_native.zig");
@@ -755,6 +756,30 @@ fn bundleCompatible(b: *const bundle.DoeRenderBundle, pass: *const DoeRenderPass
     return true;
 }
 
+/// A bundle's bind groups and vertex, index and indirect buffers join the
+/// pass's usage scope. Vulkan bundles record the native objects themselves.
+fn admitBundleUsages(pass: *DoeRenderPass, b: *const bundle.DoeRenderBundle) bool {
+    for (b.cmds) |cmd| {
+        const buffer_handle = switch (cmd) {
+            .set_bind_group => |bg_cmd| {
+                const group = cast(DoeBindGroup, bg_cmd.bg_handle) orelse continue;
+                var offsets = native_shared.NO_DYNAMIC_OFFSETS;
+                for (&offsets, bg_cmd.dynamic_offsets) |*offset, value| offset.* = value;
+                if (!usage_scope.admitPassGroup(pass, group, &offsets)) return false;
+                continue;
+            },
+            .set_vertex_buffer => |vb| vb.buffer_handle,
+            .set_index_buffer => |ib| ib.buffer_handle,
+            .draw_indirect => |d| d.indirect_buffer,
+            .draw_indexed_indirect => |d| d.indirect_buffer,
+            else => continue,
+        };
+        const buffer = cast(DoeBuffer, buffer_handle) orelse continue;
+        if (!usage_scope.admitPassBuffer(pass, buffer)) return false;
+    }
+    return true;
+}
+
 pub export fn doeNativeRenderPassExecuteBundles(
     pass_raw: ?*anyopaque,
     bundle_count: usize,
@@ -768,6 +793,7 @@ pub export fn doeNativeRenderPassExecuteBundles(
         const b = bundle.cast_bundle(raw) orelse return recording.fail(pass.enc, error.InvalidArgument);
         // An incompatible bundle invalidates the encoder; finish() reports it.
         if (!bundleCompatible(b, pass)) return recording.fail(pass.enc, error.RenderBundleIncompatible);
+        if (is_vulkan and !admitBundleUsages(pass, b)) return;
         if (!recording.reserve(pass.enc, 0, 1)) return;
         references.retainRenderBundleAssumeCapacity(&pass.enc.references, b);
 
