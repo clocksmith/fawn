@@ -16,6 +16,8 @@ typedef void (*doe_objc_visibility_call)(void *, void *, size_t, size_t);
 typedef void (*doe_objc_draw_call)(void *, void *, size_t, size_t, size_t, size_t, size_t);
 typedef void (*doe_objc_draw_indexed_call)(void *, void *, size_t, size_t, size_t,
     void *, size_t, size_t, intptr_t, size_t);
+typedef void (*doe_objc_draw_indirect_call)(void *, void *, size_t, void *, size_t);
+typedef void (*doe_objc_draw_indexed_indirect_call)(void *, void *, size_t, size_t, void *, size_t, void *, size_t);
 typedef struct doe_mtl_objc_graphics {
     doe_objc_index_object_call index_object;
     doe_objc_set_bool_call set_bool;
@@ -29,6 +31,8 @@ typedef struct doe_mtl_objc_graphics {
     doe_objc_draw_call draw;
     doe_objc_visibility_call visibility;
     doe_objc_draw_indexed_call draw_indexed;
+    doe_objc_draw_indirect_call draw_indirect;
+    doe_objc_draw_indexed_indirect_call draw_indexed_indirect;
     void *pipeline_class, *vertex_class, *pass_class, *depth_class, *stencil_class;
     void *new_pipeline, *new_depth, *new_encoder;
     void *set_vertex_function, *set_fragment_function, *colors, *index;
@@ -47,6 +51,7 @@ typedef struct doe_mtl_objc_graphics {
     void *set_vertex_texture, *set_fragment_texture, *set_vertex_sampler, *set_fragment_sampler;
     void *set_viewport, *set_scissor, *set_winding, *set_cull, *set_blend_color, *set_depth_bias, *set_stencil_reference;
     void *draw_primitives, *draw_indexed_primitives;
+    void *draw_primitives_indirect, *draw_indexed_primitives_indirect;
     void *set_visibility_buffer, *set_visibility;
 } doe_mtl_objc_graphics;
 #endif

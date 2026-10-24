@@ -37,6 +37,13 @@ _Static_assert(sizeof(MTLCounterResultTimestamp) == sizeof(uint64_t), "Timestamp
 _Static_assert(sizeof(MTLDispatchThreadgroupsIndirectArguments) == 3 * sizeof(uint32_t), "Indirect XYZ byte span");
 _Static_assert(_Alignof(MTLDispatchThreadgroupsIndirectArguments) == _Alignof(uint32_t), "Indirect XYZ alignment");
 _Static_assert(offsetof(MTLDispatchThreadgroupsIndirectArguments, threadgroupsPerGrid) == 0, "Indirect XYZ offset");
+_Static_assert(sizeof(MTLDrawPrimitivesIndirectArguments) == 4*sizeof(uint32_t), "Draw indirect byte span");
+_Static_assert(offsetof(MTLDrawPrimitivesIndirectArguments, baseInstance) == 3*sizeof(uint32_t), "Draw base-instance offset");
+_Static_assert(sizeof(MTLDrawIndexedPrimitivesIndirectArguments) == 5*sizeof(uint32_t), "Indexed indirect byte span");
+_Static_assert(offsetof(MTLDrawIndexedPrimitivesIndirectArguments, indexStart) == 2*sizeof(uint32_t), "Indexed first-index offset");
+_Static_assert(offsetof(MTLDrawIndexedPrimitivesIndirectArguments, baseVertex) == 3*sizeof(uint32_t), "Indexed base-vertex offset");
+_Static_assert(offsetof(MTLDrawIndexedPrimitivesIndirectArguments, baseInstance) == 4*sizeof(uint32_t), "Indexed base-instance offset");
+_Static_assert(__builtin_types_compatible_p(__typeof__(((MTLDrawIndexedPrimitivesIndirectArguments *)0)->baseVertex), int32_t), "Indirect signed base vertex");
 
 SAME_ENUM(DOE_MTL_TEXTURE_1D, MTLTextureType1D);
 SAME_ENUM(DOE_MTL_TEXTURE_2D_ARRAY, MTLTextureType2DArray);
@@ -109,6 +116,9 @@ void doe_mtl_sdk_calls(id<MTLComputeCommandEncoder> compute,
     id<MTLRenderCommandEncoder> render, id<MTLBlitCommandEncoder> blit,
     id<MTLBuffer> buffer, id<MTLCounterSampleBuffer> counters, MTLRenderPipelineDescriptor *pipeline) {
     [pipeline setAlphaToCoverageEnabled:(BOOL)YES];
+    [render drawPrimitives:MTLPrimitiveTypeTriangle indirectBuffer:buffer indirectBufferOffset:(NSUInteger)0];
+    [render drawIndexedPrimitives:MTLPrimitiveTypeTriangle indexType:MTLIndexTypeUInt16
+        indexBuffer:buffer indexBufferOffset:(NSUInteger)2 indirectBuffer:buffer indirectBufferOffset:(NSUInteger)0];
     [compute dispatchThreadgroups:(MTLSize){1, 1, 1} threadsPerThreadgroup:(MTLSize){1, 1, 1}];
     [compute dispatchThreadgroupsWithIndirectBuffer:buffer indirectBufferOffset:(NSUInteger)4
         threadsPerThreadgroup:(MTLSize){1, 1, 1}];

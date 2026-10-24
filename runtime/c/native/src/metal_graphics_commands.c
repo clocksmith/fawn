@@ -6,11 +6,12 @@
 typedef struct draw_storage {
     doe_mtl_render_draw draw;
     native_metal_snapshot stages[2];
+    doe_mtl_guarded_draw guarded;
 } draw_storage;
 
 static native_failure prepare_draw(doe_mtl_commands *commands, const doe_resource_render_packet *packet, draw_storage *storage)
 {
-    if (packet->indexed || packet->indirect || packet->occlusion_active)
+    if (packet->occlusion_active)
         return native_failure_status(NATIVE_UNSUPPORTED);
     native_pipeline *pipeline = doe_resource_render_pipeline_native(packet->pipeline);
     if (!pipeline || !pipeline->metal_graphics) return native_failure_status(NATIVE_INVALID_ARGUMENT);
@@ -22,12 +23,36 @@ static native_failure prepare_draw(doe_mtl_commands *commands, const doe_resourc
     doe_mtl_render_draw *draw = &storage->draw;
     *draw = (doe_mtl_render_draw){.pipeline=pipeline->handle.metal_render,
         .topology=graphics->topology, .count=packet->count, .instance_count=packet->instances,
-        .first_vertex=packet->first, .first_instance=packet->first_instance,
+        .first_vertex=packet->indexed ? 0 : packet->first, .first_instance=packet->first_instance,
         .winding=graphics->winding, .cull=graphics->cull, .viewport_enabled=true, .scissor_enabled=true,
         .viewport={packet->state.viewport[0],packet->state.viewport[1],packet->state.viewport[2],
             packet->state.viewport[3],packet->state.viewport[4],packet->state.viewport[5]},
         .scissor={packet->state.scissor[0],packet->state.scissor[1],packet->state.scissor[2],packet->state.scissor[3]},
         .stencil_reference=packet->state.stencil_reference};
+    if (packet->indexed || packet->indirect) {
+        native_device *device=pipeline->device;
+        if (!device->metal_draw_guard) return native_failure_status(NATIVE_INVALID_STATE);
+        native_buffer *arguments=doe_resource_buffer_native(packet->indirect);
+        storage->guarded=(doe_mtl_guarded_draw){.guard=device->metal_draw_guard,
+            .arguments=arguments ? arguments->handle.metal : NULL,.argument_offset=packet->indirect_offset,
+            .first_index=packet->first,.first_instance_allowed=!packet->indirect ||
+                native_feature_enabled(device,WGPUFeatureName_IndirectFirstInstance)};
+        if (packet->indexed) {
+            native_buffer *index=doe_resource_buffer_native(packet->index.buffer);
+            if (!index) return native_failure_status(NATIVE_INVALID_ARGUMENT);
+            switch (packet->index_format) {
+            case WGPUIndexFormat_Uint16: draw->index_type=0; break;
+            case WGPUIndexFormat_Uint32: draw->index_type=1; break;
+            case WGPUIndexFormat_Undefined:
+            case WGPUIndexFormat_Force32: return native_failure_status(NATIVE_INVALID_ARGUMENT);
+            }
+            draw->index_buffer=index->handle.metal;
+            draw->index_offset=packet->index.offset;
+            draw->base_vertex=packet->base_vertex;
+            storage->guarded.index_size=packet->index.size;
+        }
+        draw->guarded=&storage->guarded;
+    }
     doe_vk_clear_color blend;
     if (!native_render_clear(WGPUTextureFormat_RGBA32Float, packet->state.blend, &blend))
         return native_failure_status(NATIVE_INVALID_ARGUMENT);

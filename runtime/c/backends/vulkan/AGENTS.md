@@ -71,6 +71,9 @@ nonzero unsupported firstInstance suppresses the entire draw, not just that fiel
 Indexed variants share that guard owner and mode word; the native index bind has
 no size, so the bound index range is enforced only by direct admission and the
 GPU guard. Never read index values on the host.
+The argument normalizer source lives in common/doe_draw_guard.h. Keep the Vulkan
+wrapper's exact retained bytes/record layout and native capacities unchanged;
+sharing that source never establishes another backend's indexed-fetch proof.
 
 Viewport physical bounds and logical requested limits are distinct. An empty
 logical viewport still executes vertices and query ordering: normalize only its

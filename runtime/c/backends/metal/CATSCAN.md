@@ -21,6 +21,7 @@ Validated MSL and explicit compiler workgroup/slot facts enter the
 completion-backed shared-buffer access. Typed indirect compute copies GPU arguments
 to private scratch and executes the shared compiled bounds guard before consumption,
 under [system invariants](../../../../INTENT.md).
+Indexed/indirect [draws](include/doe_metal_draw_guard.h) use the shared GPU normalizer/scan and existing command owner.
 
 ## Invariants
 Pending/unknown work retains every resource obligation; failed work never authorizes

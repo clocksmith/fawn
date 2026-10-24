@@ -27,4 +27,7 @@ doe_mtl_status doe_mtl_render_draw_retain(doe_mtl_commands *commands, const doe_
 doe_mtl_status doe_mtl_render_visibility_preflight(doe_mtl_commands *commands,
     const doe_mtl_render_pass_desc *pass, const doe_mtl_render_draw *draws, size_t count);
 void doe_mtl_render_retire(doe_mtl_commands *commands);
+doe_mtl_status doe_mtl_draw_guard_preflight(doe_mtl_commands *, const doe_mtl_render_draw *);
+doe_mtl_status doe_mtl_draw_guard_prepare(doe_mtl_commands *, const doe_mtl_render_draw *,
+    doe_mtl_native_render_draw *, doe_mtl_error *);
 #endif

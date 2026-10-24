@@ -39,7 +39,7 @@ static doe_mtl_status vertex_fetch(const doe_mtl_render_draw *draw) {
         for (j = 0; j < draw->vertex.buffer_count; ++j)
             if (draw->vertex.buffers[j].slot == attribute->slot) binding = &draw->vertex.buffers[j];
         if (layout == NULL || binding == NULL) return DOE_MTL_INVALID_ARGUMENT;
-        if (draw->count == 0 || draw->instance_count == 0) continue;
+        if (draw->guarded || draw->count == 0 || draw->instance_count == 0) continue;
         if (layout->step == 2) last = (uint64_t)draw->first_instance + draw->instance_count - 1;
         else if (layout->step == 1 && draw->index_buffer == NULL) last = (uint64_t)draw->first_vertex + draw->count - 1;
         /* For indexed per-vertex input, the upstream admitted index-range proof
@@ -86,6 +86,7 @@ doe_mtl_status doe_mtl_render_draw_preflight(doe_mtl_commands *commands,
     if (status == DOE_MTL_OK) status = bindings_check(commands, pass, &draw->vertex, pipeline->vertex.sizes_slot, &native->vertex);
     if (status == DOE_MTL_OK) status = bindings_check(commands, pass, &draw->fragment, pipeline->fragment.sizes_slot, &native->fragment);
     if (status == DOE_MTL_OK) status = vertex_fetch(draw);
+    if (status == DOE_MTL_OK) status = doe_mtl_draw_guard_preflight(commands, draw);
     if (status != DOE_MTL_OK) return status;
     if (draw->index_buffer != NULL) {
         if (draw->first_vertex != 0) return DOE_MTL_INVALID_ARGUMENT;
@@ -94,7 +95,8 @@ doe_mtl_status doe_mtl_render_draw_preflight(doe_mtl_commands *commands,
         status = doe_mtl_buffer_preflight(commands, draw->index_buffer, draw->count != 0 && draw->instance_count != 0);
         if (status != DOE_MTL_OK) return status;
         if (draw->index_offset % element_size != 0) return DOE_MTL_ALIGNMENT;
-        if (!doe_mtl_range(draw->index_buffer->size, draw->index_offset, (uint64_t)draw->count * element_size)) return DOE_MTL_RANGE;
+        if (!doe_mtl_range(draw->index_buffer->size, draw->index_offset,
+            draw->guarded ? draw->guarded->index_size : (uint64_t)draw->count * element_size)) return DOE_MTL_RANGE;
         native->index_buffer = draw->index_buffer->native;
         native->index_offset = (size_t)draw->index_offset;
     } else if (draw->base_vertex != 0) return DOE_MTL_INVALID_ARGUMENT;

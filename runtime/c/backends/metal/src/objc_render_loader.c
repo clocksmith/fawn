@@ -15,6 +15,8 @@ bool doe_mtl_objc_load_render(doe_mtl_objc *r, doe_objc_message message) {
     g->draw = (doe_objc_draw_call)message;
     g->visibility = (doe_objc_visibility_call)message;
     g->draw_indexed = (doe_objc_draw_indexed_call)message;
+    g->draw_indirect = (doe_objc_draw_indirect_call)message;
+    g->draw_indexed_indirect = (doe_objc_draw_indexed_indirect_call)message;
     g->pipeline_class = r->get_class("MTLRenderPipelineDescriptor");
     g->vertex_class = r->get_class("MTLVertexDescriptor");
     g->pass_class = r->get_class("MTLRenderPassDescriptor");
@@ -94,6 +96,8 @@ bool doe_mtl_objc_load_render(doe_mtl_objc *r, doe_objc_message message) {
     g->set_stencil_reference = r->selector("setStencilReferenceValue:");
     g->draw_primitives = r->selector("drawPrimitives:vertexStart:vertexCount:instanceCount:baseInstance:");
     g->draw_indexed_primitives = r->selector("drawIndexedPrimitives:indexCount:indexType:indexBuffer:indexBufferOffset:instanceCount:baseVertex:baseInstance:");
+    g->draw_primitives_indirect = r->selector("drawPrimitives:indirectBuffer:indirectBufferOffset:");
+    g->draw_indexed_primitives_indirect = r->selector("drawIndexedPrimitives:indexType:indexBuffer:indexBufferOffset:indirectBuffer:indirectBufferOffset:");
     return g->set_visibility_buffer != NULL && g->set_visibility != NULL && g->set_resolve != NULL && g->set_resolve_level != NULL && g->set_resolve_slice != NULL &&
         g->set_depth_resolve != NULL && g->set_stencil_resolve != NULL && g->pipeline_class != NULL && g->vertex_class != NULL && g->pass_class != NULL &&
         g->depth_class != NULL && g->stencil_class != NULL && g->new_pipeline != NULL &&
@@ -118,5 +122,6 @@ bool doe_mtl_objc_load_render(doe_mtl_objc *r, doe_objc_message message) {
         g->set_vertex_sampler != NULL && g->set_fragment_sampler != NULL && g->set_viewport != NULL &&
         g->set_scissor != NULL && g->set_winding != NULL && g->set_cull != NULL && g->set_blend_color != NULL &&
         g->set_depth_bias != NULL && g->set_stencil_reference != NULL &&
-        g->draw_primitives != NULL && g->draw_indexed_primitives != NULL;
+        g->draw_primitives != NULL && g->draw_indexed_primitives != NULL &&
+        g->draw_primitives_indirect != NULL && g->draw_indexed_primitives_indirect != NULL;
 }

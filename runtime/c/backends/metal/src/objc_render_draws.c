@@ -27,7 +27,7 @@ void doe_mtl_objc_render_encode_draw(doe_mtl_objc *r, void *encoder,
     const doe_mtl_render_draw *v = &draw->values;
     doe_mtl_viewport viewport = {0, 0, pass->width, pass->height, 0, 1};
     doe_mtl_scissor_abi scissor = {0, 0, pass->width, pass->height};
-    if (v->count == 0 || v->instance_count == 0) return;
+    if (!draw->indirect_arguments && (v->count == 0 || v->instance_count == 0)) return;
     if (v->viewport_enabled) viewport = v->viewport;
     if (v->scissor_enabled) scissor = (doe_mtl_scissor_abi){v->scissor.x, v->scissor.y, v->scissor.width, v->scissor.height};
     /* Logical empty raster state still runs vertices/visibility ordering. Use a
@@ -47,7 +47,12 @@ void doe_mtl_objc_render_encode_draw(doe_mtl_objc *r, void *encoder,
     g->blend_color(encoder, g->set_blend_color, v->blend_constant[0], v->blend_constant[1], v->blend_constant[2], v->blend_constant[3]);
     g->depth_bias(encoder, g->set_depth_bias, v->depth_bias, v->depth_slope, v->depth_clamp);
     g->set_u32(encoder, g->set_stencil_reference, v->stencil_reference);
-    if (draw->index_buffer == NULL)
+    if (draw->indirect_arguments && draw->index_buffer)
+        g->draw_indexed_indirect(encoder, g->draw_indexed_primitives_indirect, v->topology, v->index_type,
+            draw->index_buffer, draw->index_offset, draw->indirect_arguments, 0);
+    else if (draw->indirect_arguments)
+        g->draw_indirect(encoder, g->draw_primitives_indirect, v->topology, draw->indirect_arguments, 0);
+    else if (draw->index_buffer == NULL)
         g->draw(encoder, g->draw_primitives, v->topology, v->first_vertex, v->count, v->instance_count, v->first_instance);
     else g->draw_indexed(encoder, g->draw_indexed_primitives, v->topology, v->count, v->index_type,
         draw->index_buffer, draw->index_offset, v->instance_count, v->base_vertex, v->first_instance);

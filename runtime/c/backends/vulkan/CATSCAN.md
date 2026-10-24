@@ -18,6 +18,7 @@ Execute admitted native Vulkan work through an independently usable C owner whil
 ## Contracts
 
 - Input: compiler-validated SPIR-V and explicit typed resource/command descriptions in [the boundary](include/doe_vk.h).
+- Indirect draw arguments use the [shared normalizer source](../../common/include/doe_draw_guard.h); native bounds and retirement stay here.
 - Output: native statuses, capability observations and completion-backed readback.
 - Lifecycle: [system invariants](../../../../INTENT.md).
 

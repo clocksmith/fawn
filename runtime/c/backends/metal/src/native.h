@@ -50,6 +50,7 @@ typedef struct doe_mtl_native_render_draw {
     uint32_t vertex_sizes_slot, fragment_sizes_slot;
     void *index_buffer;
     size_t index_offset;
+    void *indirect_arguments;
     doe_mtl_render_draw values; /* Only scalar/dynamic fields used by adapter. */
 } doe_mtl_native_render_draw;
 

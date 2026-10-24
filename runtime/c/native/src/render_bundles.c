@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: MIT */
 #include "internal.h"
+#include "metal_draw_guard.h"
 
 WGPURenderBundleEncoder wgpuDeviceCreateRenderBundleEncoder(WGPUDevice handle,
     const WGPURenderBundleEncoderDescriptor *descriptor)
@@ -106,11 +107,18 @@ void wgpuRenderBundleEncoderDrawIndexed(WGPURenderBundleEncoder handle, uint32_t
     doe_resource_bundle_encoder *encoder = (doe_resource_bundle_encoder *)handle;
     native_device *device = doe_resource_bundle_encoder_device(encoder);
     if (!device) return;
+    native_device_retain(device);
     native_lock(device);
+    doe_resource_bundle_encoder_retain(encoder);
     const bool ended = doe_resource_bundle_encoder_ended(encoder);
     doe_resource_status status = doe_resource_bundle_encoder_draw(encoder,true,count,instances,first_index,base_vertex,first_instance);
     native_unlock(device);
-    native_encoding_error(device, ended, status, "bundle indexed draw failed");
+    native_metal_draw_guard_finish(device,NULL,encoder,status,ended,"bundle indexed draw failed");
+    native_lock(device);
+    /* The ordinary device call lease protects this owner drop under its mutex. */
+    doe_resource_bundle_encoder_release(encoder);
+    native_unlock(device);
+    native_device_release(device);
 }
 void wgpuRenderBundleEncoderDraw(WGPURenderBundleEncoder handle, uint32_t count,
     uint32_t instances, uint32_t first, uint32_t first_instance)

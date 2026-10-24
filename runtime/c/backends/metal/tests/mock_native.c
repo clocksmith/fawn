@@ -57,7 +57,7 @@ static doe_mtl_status device_create(void *userdata, void **out,
     mock_native *mock = userdata;
     doe_mtl_caps result = {0};
     if (mock->fail == MOCK_DEVICE) return failure(error);
-    result.max_buffer_length = 4096;
+    result.max_buffer_length = mock->buffer_limit ? mock->buffer_limit : 4096;
     result.max_threadgroup_memory_length = 32768;
     result.max_threads_per_dimension[0] = 1024;
     result.max_threads_per_dimension[1] = 1024;
@@ -124,7 +124,8 @@ static doe_mtl_status pipeline_create(void *userdata, void *device,
     doe_mtl_error *error) {
     mock_native *mock = userdata;
     assert(device != NULL && desc != NULL);
-    if (mock->fail == MOCK_PIPELINE) {
+    ++mock->pipeline_calls;
+    if (mock->fail == MOCK_PIPELINE || mock->pipeline_calls == mock->fail_pipeline_at) {
         doe_mtl_status status = failure(error);
         if (mock->pipeline_failure != DOE_MTL_OK) {
             status = mock->pipeline_failure;
@@ -308,6 +309,7 @@ static doe_mtl_status render(void *userdata, void *command,
     assert(command != NULL && pass->width != 0);
     if (mock->fail == MOCK_RENDER) return failure(error);
     mock->renders++;
+    mock->render_sequence = ++mock->operation_sequence;
     mock->render_pass = *pass;
     mock->render_draw_count = count;
     for (i = 0; i < count && i < 2; ++i) mock->render_draws[i] = draws[i];

@@ -75,6 +75,12 @@ doe_mtl_status doe_mtl_commands_render(doe_mtl_commands *commands,
         free(native_draws);
         return doe_mtl_poison(commands, status, "render validation/lease", error);
     }
+    for (i = 0; i < draw_count && status == DOE_MTL_OK; ++i)
+        status = doe_mtl_draw_guard_prepare(commands, &draws[i], &native_draws[i], &detail);
+    if (status != DOE_MTL_OK) {
+        free(native_draws);
+        return doe_mtl_native_record_result(commands, status, &detail, error);
+    }
     status = native->render(native->userdata, commands->native, &native_pass, native_draws, draw_count, &detail);
     free(native_draws);
     if (status == DOE_MTL_OK) doe_mtl_render_pass_publish(commands, pass);
