@@ -63,8 +63,10 @@ This guide is the JavaScript style contract for `packages/doe-gpu`.
   discriminate.
 - Attaching stable machine-readable fields to `Error` objects is acceptable
   when callers need structured diagnostics.
-- Native creation reports the original typed provider cause once. Private capture
-  covers every supported error filter and restores caller scopes on exceptions.
+- Native creation reports the original typed provider cause once. Provider
+  errors of every filter (validation, out-of-memory, internal) reach scopes and
+  `uncapturederror` in call order through one owner, the per-device provider
+  error log; the package pushes no private native error scopes.
 - Use try-catch only for expected failure modes (import probing, optional
   features).
 
