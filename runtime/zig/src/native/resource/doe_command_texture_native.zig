@@ -8,6 +8,10 @@ const native_helpers = @import("../support/doe_native_object_helpers.zig");
 const references = @import("../command/doe_command_references.zig");
 const resource_ops = @import("../../backend/dropin_resource_ops.zig");
 const texture_values = @import("../../contracts/model/model_texture_value_types.zig");
+const texture_copy = @import("../../contracts/texture_copy.zig");
+const command_contract = @import("../../contracts/command_recording.zig");
+const texture_abi = @import("../../core/abi/wgpu_texture_base_types.zig");
+const texture_validation = @import("doe_texture_validation.zig");
 const bridge = resource_ops.metal_bridge;
 
 const alloc = native_helpers.alloc;
@@ -55,6 +59,35 @@ pub export fn doeNativeCommandEncoderClearBuffer(
 // Encodes a texture-to-texture blit.
 // ============================================================
 
+fn copySide(texture: *const DoeTexture) texture_copy.Texture {
+    return .{
+        .width = texture.width,
+        .height = texture.height,
+        .layers = texture.depth_or_array_layers,
+        .mip_levels = texture.mip_level_count,
+        .samples = texture.sample_count,
+        .dimension = texture.dimension,
+        .format = texture.format,
+    };
+}
+
+/// Encoder-time WebGPU rules; a failure invalidates the encoder (error at
+/// finish), matching the C resource owner. Mip/x/y/z per side, then size.
+fn validateTextureToTexture(device: *native_types.DoeDevice, src: *const DoeTexture, src_at: [4]u32, dst: *const DoeTexture, dst_at: [4]u32, size: [3]u32) command_contract.Failure!void {
+    if (src.isUnavailable() or dst.isUnavailable()) return error.InvalidArgument;
+    if (src.device_ref != device or dst.device_ref != device) return error.TextureCopyDeviceMismatch;
+    if (src.usage & texture_abi.WGPUTextureUsage_CopySrc == 0 or dst.usage & texture_abi.WGPUTextureUsage_CopyDst == 0)
+        return error.TextureCopyUsageMissing;
+    const compatible = src.format == dst.format or
+        (texture_validation.srgbPair(src.format) != 0 and texture_validation.srgbPair(src.format) == dst.format);
+    const copy = struct {
+        fn at(position: [4]u32, extent: [3]u32) texture_copy.Copy {
+            return .{ .offset = 0, .bytes_per_row = 0, .rows_per_image = 0, .mip = position[0], .width = extent[0], .height = extent[1], .depth_or_layers = extent[2], .origin = .{ position[1], position[2], position[3] } };
+        }
+    }.at;
+    try texture_copy.validateWebGPUTextureToTexture(copySide(src), copy(src_at, size), copySide(dst), copy(dst_at, size), compatible, src == dst);
+}
+
 pub export fn doeNativeCommandEncoderCopyTextureToTexture(
     enc_raw: ?*anyopaque,
     src_texture_raw: ?*anyopaque,
@@ -75,9 +108,12 @@ pub export fn doeNativeCommandEncoderCopyTextureToTexture(
 ) callconv(.c) void {
     const enc = cast(DoeCommandEncoder, enc_raw) orelse return;
     if (!recording.requireOpen(enc)) return;
-    const src = cast(DoeTexture, src_texture_raw) orelse return;
-    const dst = cast(DoeTexture, dst_texture_raw) orelse return;
-    if (src.error_object or dst.error_object) return;
+    const src = cast(DoeTexture, src_texture_raw) orelse return recording.fail(enc, error.InvalidArgument);
+    const dst = cast(DoeTexture, dst_texture_raw) orelse return recording.fail(enc, error.InvalidArgument);
+    validateTextureToTexture(enc.dev, src, .{ src_mip, src_x, src_y, src_z +| src_slice }, dst, .{ dst_mip, dst_x, dst_y, dst_z +| dst_slice }, .{ width, height, depth_or_layers }) catch |err| {
+        recording.fail(enc, err);
+        return;
+    };
     if (!recording.reserve(enc, 0, 1)) return;
     references.retainTextureAssumeCapacity(&enc.references, src);
     if (!recording.reserve(enc, 0, 1)) return;

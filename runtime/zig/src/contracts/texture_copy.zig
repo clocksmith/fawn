@@ -106,6 +106,56 @@ fn validateExtent(texture: Texture, copy: Copy, alignment: Alignment) Error![3]u
     return extent;
 }
 
+/// WebGPU copyTextureToTexture validation
+/// (https://gpuweb.github.io/gpuweb/#dom-gpucommandencoder-copytexturetotexture):
+/// equal sample counts, copy-compatible formats (equal, or differing only in
+/// srgb-ness as decided by the caller), all aspects, each copy box inside its
+/// mip and block-aligned, whole subresources for depth/stencil and
+/// multisampled textures, and no overlap when copying within one texture.
+pub fn validateWebGPUTextureToTexture(source: Texture, source_copy: Copy, destination: Texture, destination_copy: Copy, formats_compatible: bool, same_texture: bool) Error!void {
+    if (source.samples != destination.samples) return error.TextureCopyLayout;
+    if (!formats_compatible) return error.TextureCopyUnsupported;
+    for ([_]u32{ source_copy.aspect, destination_copy.aspect }) |aspect| {
+        if (aspect != values.WGPUTextureAspect_Undefined and aspect != values.WGPUTextureAspect_All) return error.TextureCopyAspect;
+    }
+    const source_extent = try validateCopyBox(source, source_copy);
+    const destination_extent = try validateCopyBox(destination, destination_copy);
+    if (formats.isDepthStencilFormat(source.format) or source.samples > 1) {
+        for ([_][3]u32{ source_extent, destination_extent }, [_]Copy{ source_copy, destination_copy }) |extent, copy| {
+            if (copy.origin[0] != 0 or copy.origin[1] != 0 or copy.width != extent[0] or copy.height != extent[1])
+                return error.TextureCopyRange;
+        }
+    }
+    // Within one texture the copied subresources (mip, layer range) must not
+    // overlap; a 3D texture has a single layer per mip.
+    if (same_texture and source_copy.mip == destination_copy.mip) {
+        if (source.dimension == values.WGPUTextureDimension_3D) return error.TextureCopyRange;
+        const a = source_copy.origin[2];
+        const b = destination_copy.origin[2];
+        const count = source_copy.depth_or_layers;
+        if (count != 0 and (if (a <= b) b - a < count else a - b < count)) return error.TextureCopyRange;
+    }
+}
+
+/// The copy box of one side of a texture-to-texture copy (multisampled
+/// textures allowed); returns the block-rounded mip extent.
+fn validateCopyBox(texture: Texture, copy: Copy) Error![3]u32 {
+    if (copy.mip >= texture.mip_levels or copy.mip >= @bitSizeOf(u32)) return error.TextureCopyRange;
+    const shift: u5 = @intCast(copy.mip);
+    const is_3d = texture.dimension == values.WGPUTextureDimension_3D;
+    const block = layout.copy_block_extent(texture.format);
+    var extent = [3]u32{ @max(texture.width >> shift, 1), @max(texture.height >> shift, 1), if (is_3d) @max(texture.layers >> shift, 1) else texture.layers };
+    extent[0] = std.math.cast(u32, (std.math.divCeil(u64, extent[0], block[0]) catch unreachable) * block[0]) orelse return error.TextureCopyRange;
+    extent[1] = std.math.cast(u32, (std.math.divCeil(u64, extent[1], block[1]) catch unreachable) * block[1]) orelse return error.TextureCopyRange;
+    const size = [3]u32{ copy.width, copy.height, copy.depth_or_layers };
+    for (copy.origin, size, extent) |origin, count, bound| {
+        if (origin > bound or count > bound - origin) return error.TextureCopyRange;
+    }
+    if (copy.origin[0] % block[0] != 0 or copy.origin[1] % block[1] != 0 or
+        copy.width % block[0] != 0 or copy.height % block[1] != 0) return error.TextureCopyLayout;
+    return extent;
+}
+
 /// Texture copies preserve complete aspects and an identical selected extent.
 pub fn validateTextureToTexture(source: Texture, source_copy: Copy, destination: Texture, destination_copy: Copy) Error!void {
     _ = layout.bytes_per_pixel(source.format) catch return error.TextureCopyUnsupported;
@@ -206,4 +256,43 @@ test "direct texture copies preserve full depth stencil aspects without buffer u
     invalid = copy;
     invalid.mip = 32;
     try std.testing.expectError(error.TextureCopyRange, validateTextureToTexture(texture, copy, texture, invalid));
+}
+
+test "WebGPU texture-to-texture copies check formats, samples, boxes, whole depth subresources and overlap" {
+    const color = Texture{ .width = 16, .height = 8, .layers = 4, .mip_levels = 2, .samples = 1, .dimension = values.WGPUTextureDimension_2D, .format = values.WGPUTextureFormat_RGBA8Unorm };
+    const box = Copy{ .offset = 0, .bytes_per_row = 0, .rows_per_image = 0, .mip = 0, .width = 8, .height = 8, .depth_or_layers = 1 };
+    try validateWebGPUTextureToTexture(color, box, color, box, true, false);
+    try std.testing.expectError(error.TextureCopyUnsupported, validateWebGPUTextureToTexture(color, box, color, box, false, false));
+    var multisampled = color;
+    multisampled.samples = 4;
+    try std.testing.expectError(error.TextureCopyLayout, validateWebGPUTextureToTexture(color, box, multisampled, box, true, false));
+    var wide = box;
+    wide.width = 9;
+    wide.origin = .{ 8, 0, 0 };
+    try std.testing.expectError(error.TextureCopyRange, validateWebGPUTextureToTexture(color, wide, color, box, true, false));
+    var high_mip = box;
+    high_mip.mip = 2;
+    try std.testing.expectError(error.TextureCopyRange, validateWebGPUTextureToTexture(color, high_mip, color, box, true, false));
+    // Within one texture, overlapping layers of the same mip are rejected.
+    var layers = box;
+    layers.depth_or_layers = 2;
+    var shifted = layers;
+    shifted.origin = .{ 0, 0, 1 };
+    try std.testing.expectError(error.TextureCopyRange, validateWebGPUTextureToTexture(color, layers, color, shifted, true, true));
+    shifted.origin = .{ 0, 0, 2 };
+    try validateWebGPUTextureToTexture(color, layers, color, shifted, true, true);
+    // Depth/stencil copies cover whole subresources.
+    var depth = color;
+    depth.format = values.WGPUTextureFormat_Depth32Float;
+    depth.layers = 1;
+    try std.testing.expectError(error.TextureCopyRange, validateWebGPUTextureToTexture(depth, box, depth, box, true, false));
+    var whole = box;
+    whole.width = 16;
+    try validateWebGPUTextureToTexture(depth, whole, depth, whole, true, false);
+    // Compressed boxes are block-aligned.
+    var bc = color;
+    bc.format = values.WGPUTextureFormat_BC1RGBAUnorm;
+    var unaligned = box;
+    unaligned.width = 6;
+    try std.testing.expectError(error.TextureCopyLayout, validateWebGPUTextureToTexture(bc, unaligned, bc, unaligned, true, false));
 }
