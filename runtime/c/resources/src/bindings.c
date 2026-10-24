@@ -174,6 +174,7 @@ doe_resource_status doe_resource_layout_create(const doe_resource_config *config
     layout->dynamic_count = counts.dynamic_uniform + counts.dynamic_storage;
     layout->automatic = automatic;
     layout->automatic_claimed = false;
+    layout->exclusive = NULL;
     resource_init(&layout->base, config, (doe_resource_native){0});
     *out = layout;
     return DOE_RESOURCE_OK;
@@ -186,15 +187,34 @@ void doe_resource_layout_retain(doe_resource_layout *layout)
 
 void doe_resource_layout_release(doe_resource_layout *layout)
 {
-    if (layout && resource_last_reference(&layout->base))
-        resource_finalize(&layout->base, layout_size(layout->count), _Alignof(doe_resource_layout));
+    if (!layout || !resource_last_reference(&layout->base)) return;
+    doe_resource_layout *exclusive = layout->exclusive != layout ? layout->exclusive : NULL;
+    resource_finalize(&layout->base, layout_size(layout->count), _Alignof(doe_resource_layout));
+    doe_resource_layout_release(exclusive);
+}
+
+/* A pipeline claims its nonempty automatic groups; they share one exclusive
+ * identity so WebGPU group-equivalence holds across groups of that pipeline. */
+void resource_pipeline_layout_claim(doe_resource_pipeline_layout *layout)
+{
+    doe_resource_layout *head = NULL;
+    for (size_t i = 0; i < layout->count; i++) {
+        doe_resource_layout *group = layout->groups[i];
+        if (!doe_resource_pipeline_layout_group_required(layout, i) || !group->automatic) continue;
+        group->automatic_claimed = true;
+        if (!head) head = group;
+        else doe_resource_layout_retain(head);
+        group->exclusive = head;
+    }
 }
 
 bool doe_resource_layout_compatible(const doe_resource_layout *a, const doe_resource_layout *b)
 {
     if (!a || !b) return false;
     if (a == b) return true;
-    if (a->automatic || b->automatic || a->count != b->count ||
+    /* https://gpuweb.github.io/gpuweb/#abstract-opdef-group-equivalent */
+    if ((a->automatic || b->automatic) && (!a->exclusive || a->exclusive != b->exclusive)) return false;
+    if (a->count != b->count ||
         a->base.config.device.identity != b->base.config.device.identity) return false;
     for (size_t i = 0; i < a->count; i++) {
         const doe_resource_layout_entry *x = &a->entries[i], *y = &b->entries[i];
@@ -565,8 +585,7 @@ doe_resource_status doe_resource_pipeline_create(const doe_resource_config *conf
     if (!pipeline) return DOE_RESOURCE_OUT_OF_MEMORY;
     pipeline->layout = layout;
     memcpy(pipeline->workgroup, workgroup, sizeof(pipeline->workgroup));
-    for (size_t i = 0; i < layout->count; i++)
-        if (doe_resource_pipeline_layout_group_required(layout, i) && layout->groups[i]->automatic) layout->groups[i]->automatic_claimed = true;
+    resource_pipeline_layout_claim(layout);
     doe_resource_pipeline_layout_retain(layout);
     resource_init(&pipeline->base, config, native);
     *out = pipeline;

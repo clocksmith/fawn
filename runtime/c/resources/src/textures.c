@@ -65,6 +65,11 @@ doe_resource_status doe_resource_texture_validate(const doe_resource_texture_des
         return DOE_RESOURCE_LAYOUT;
     if (desc->samples > 1 && !(desc->usage & WGPUTextureUsage_RenderAttachment))
         return DOE_RESOURCE_USAGE;
+    /* Render attachments need a renderable format; multisampling a format that
+     * supports it (WebGPU plain color formats table). */
+    if ((desc->usage & WGPUTextureUsage_RenderAttachment) && !resource_format_depth(desc->format) &&
+        !resource_format_color_renderable(desc->format)) return DOE_RESOURCE_USAGE;
+    if (desc->samples > 1 && !resource_format_multisample(desc->format)) return DOE_RESOURCE_LAYOUT;
     if (resource_format_depth(desc->format) && desc->dimension != WGPUTextureDimension_2D)
         return DOE_RESOURCE_LAYOUT;
     bool read_write;

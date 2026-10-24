@@ -121,7 +121,15 @@ napi_value throw_status_error(napi_env env, const char* code, const char* prefix
     } else {
         snprintf(msg, sizeof(msg), "%s (status=%u)", prefix, status);
     }
-    napi_throw_error(env, code, msg);
+    /* The provider status travels as a property, e.g. for requestAdapter's
+     * Unavailable, which JavaScript maps to a null adapter. */
+    napi_value error, code_value, message_value, status_value;
+    napi_create_string_utf8(env, code, NAPI_AUTO_LENGTH, &code_value);
+    napi_create_string_utf8(env, msg, NAPI_AUTO_LENGTH, &message_value);
+    napi_create_error(env, code_value, message_value, &error);
+    napi_create_uint32(env, status, &status_value);
+    napi_set_named_property(env, error, "status", status_value);
+    napi_throw(env, error);
     return NULL;
 }
 

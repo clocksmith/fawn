@@ -42,7 +42,20 @@ bool native_texture_format(uint32_t features, WGPUTextureFormat format, doe_vk_t
     if (!format_feature_enabled(features, format)) return false;
     switch (format) {
     case WGPUTextureFormat_R8Unorm: *out = DOE_VK_FORMAT_R8_UNORM; break;
+    case WGPUTextureFormat_R8Snorm: *out = DOE_VK_FORMAT_R8_SNORM; break;
+    case WGPUTextureFormat_R8Uint: *out = DOE_VK_FORMAT_R8_UINT; break;
+    case WGPUTextureFormat_R8Sint: *out = DOE_VK_FORMAT_R8_SINT; break;
     case WGPUTextureFormat_RG8Unorm: *out = DOE_VK_FORMAT_RG8_UNORM; break;
+    case WGPUTextureFormat_RG8Snorm: *out = DOE_VK_FORMAT_RG8_SNORM; break;
+    case WGPUTextureFormat_RG8Uint: *out = DOE_VK_FORMAT_RG8_UINT; break;
+    case WGPUTextureFormat_RG8Sint: *out = DOE_VK_FORMAT_RG8_SINT; break;
+    case WGPUTextureFormat_R16Uint: *out = DOE_VK_FORMAT_R16_UINT; break;
+    case WGPUTextureFormat_R16Sint: *out = DOE_VK_FORMAT_R16_SINT; break;
+    case WGPUTextureFormat_RG16Uint: *out = DOE_VK_FORMAT_RG16_UINT; break;
+    case WGPUTextureFormat_RG16Sint: *out = DOE_VK_FORMAT_RG16_SINT; break;
+    case WGPUTextureFormat_RGB10A2Unorm: *out = DOE_VK_FORMAT_RGB10A2_UNORM; break;
+    case WGPUTextureFormat_RGB10A2Uint: *out = DOE_VK_FORMAT_RGB10A2_UINT; break;
+    case WGPUTextureFormat_RGB9E5Ufloat: *out = DOE_VK_FORMAT_RGB9E5_UFLOAT; break;
     case WGPUTextureFormat_RGBA8Unorm: *out = DOE_VK_FORMAT_RGBA8_UNORM; break;
     case WGPUTextureFormat_RGBA8UnormSrgb: *out = DOE_VK_FORMAT_RGBA8_SRGB; break;
     case WGPUTextureFormat_RGBA8Snorm: *out = DOE_VK_FORMAT_RGBA8_SNORM; break;

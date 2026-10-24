@@ -39,6 +39,9 @@ struct doe_resource_layout {
     resource_base base;
     size_t count;
     bool automatic, automatic_claimed;
+    /* Claimed automatic layouts name their pipeline's first claimed group;
+     * every other group of that pipeline retains it (WebGPU exclusivePipeline). */
+    doe_resource_layout *exclusive;
     size_t dynamic_count;
     doe_resource_layout_entry entries[]; /* count entries, ascending binding. */
 };
@@ -142,6 +145,7 @@ struct doe_resource_render_pass {
     bool ended;
 };
 
+void resource_pipeline_layout_claim(doe_resource_pipeline_layout *layout);
 doe_resource_status resource_shader_bindings_validate(const doe_resource_pipeline_layout *layout,
     const doe_resource_dispatch_group *groups, size_t group_count,
     doe_resource_buffer *indirect, bool *has_dynamic_offsets);
@@ -236,6 +240,11 @@ bool resource_texture_available(const doe_resource_texture *texture);
 doe_resource_status resource_range(uint64_t total, uint64_t offset, uint64_t requested, uint64_t *size);
 bool resource_format_compatible(WGPUTextureFormat base, WGPUTextureFormat view);
 bool resource_format_depth(WGPUTextureFormat format);
+/* WebGPU color-target capabilities (render_targets.c): renderable, multisample
+ * (depth formats included) and resolve. */
+bool resource_format_color_renderable(WGPUTextureFormat format);
+bool resource_format_multisample(WGPUTextureFormat format);
+bool resource_format_resolvable(WGPUTextureFormat format);
 /* Core storage-texture format; read_write reports the read-write access subset. */
 bool resource_storage_format(WGPUTextureFormat format, bool *read_write);
 bool resource_format_aspect(WGPUTextureFormat format, WGPUTextureAspect aspect);

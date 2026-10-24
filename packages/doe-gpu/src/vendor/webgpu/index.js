@@ -62,6 +62,8 @@ import {
   createFullSurfaceClasses,
   dispatchDeviceEvent,
   resolveDeviceLost,
+  GPUError,
+  GPUPipelineError,
   GPUValidationError,
   GPUOutOfMemoryError,
   GPUInternalError,
@@ -127,6 +129,7 @@ const TEXTURE_SWIZZLE_COMPONENT_MAP = Object.freeze({
   a: 6,
 });
 const NS_PER_MS = 1_000_000;
+const REQUEST_ADAPTER_STATUS_UNAVAILABLE = 3;
 const WHOLE_SIZE_SENTINEL = -1;
 const fastPathStats = { dispatchFlush: 0, flushAndMap: 0, commandBufferBuild: 0 };
 const providerDiagnosticStats = {
@@ -212,6 +215,7 @@ function attachProviderAvailability(error, failure) {
 
 let fullSurfaceClasses = null;
 let canvasSurfaceClasses = null;
+let encoderClasses = null;
 let DoeGPUComputePassEncoder;
 let DoeGPUCommandEncoder;
 let DoeGPURenderPassEncoder;
@@ -412,13 +416,14 @@ function ensureEncoderClasses() {
   if (DoeGPUCommandEncoder) {
     return;
   }
+  encoderClasses = createEncoderClasses(nodeEncoderBackend);
   ({
     DoeGPUComputePassEncoder,
     DoeGPUCommandEncoder,
     DoeGPURenderPassEncoder,
     DoeGPURenderBundleEncoder,
     DoeGPURenderBundle,
-  } = createEncoderClasses(nodeEncoderBackend));
+  } = encoderClasses);
 }
 
 function ensureFullSurfaceClasses() {
@@ -2705,6 +2710,7 @@ const fullSurfaceBackend = {
             frontFace: descriptor.primitive.frontFace ?? 'ccw',
             cullMode: descriptor.primitive.cullMode ?? 'none',
             unclippedDepth: descriptor.primitive.unclippedDepth ?? false,
+            stripIndexFormat: descriptor.primitive.stripIndexFormat,
           } : undefined,
           multisample: descriptor.multisample ? {
             count: descriptor.multisample.count ?? 1,
@@ -2844,7 +2850,15 @@ const fullSurfaceBackend = {
     addon.adapterRelease(native);
   },
   gpuRequestAdapter(gpu, options, classes) {
-    const adapter = addon.requestAdapter(gpu._instance, options);
+    let adapter;
+    try {
+      adapter = addon.requestAdapter(gpu._instance, options);
+    } catch (error) {
+      // WGPURequestAdapterStatus_Unavailable: no adapter matches (for example a
+      // forceFallbackAdapter request on a host without one); WebGPU resolves null.
+      if (error?.code === 'DOE_REQUEST_ADAPTER_ERROR' && error.status === REQUEST_ADAPTER_STATUS_UNAVAILABLE) return null;
+      throw error;
+    }
     return new classes.DoeGPUAdapter(adapter, gpu._instance, options);
   },
 };
@@ -2932,7 +2946,19 @@ export function setNativeTimeoutMs(timeoutMs) {
  */
 export function setupGlobals(target = globalThis, createArgs = null) {
   const gpu = create(createArgs);
-  return setupGlobalsOnTarget(target, gpu, WEBGPU_GLOBALS);
+  return setupGlobalsOnTarget(target, gpu, { ...WEBGPU_GLOBALS, ...webgpuInterfaceGlobals() });
+}
+
+// WebGPU interface objects (GPUAdapter, GPUDevice, ...) as browsers expose them,
+// so `instanceof` and interface checks work. They are the package's classes;
+// constructing them directly is not supported, as in browsers.
+function webgpuInterfaceGlobals() {
+  const surface = ensureFullSurfaceClasses();
+  const interfaces = {};
+  for (const [name, value] of Object.entries({ ...surface, ...encoderClasses })) {
+    if (name.startsWith('DoeGPU') && typeof value === 'function') interfaces[name.slice(3)] = value;
+  }
+  return { ...interfaces, GPUError, GPUPipelineError };
 }
 
 /**

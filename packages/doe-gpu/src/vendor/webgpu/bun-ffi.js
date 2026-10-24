@@ -1626,7 +1626,7 @@ function buildRenderPipelineDescriptor(descriptor) {
         "triangle-list": 0x00000004,
         "triangle-strip": 0x00000005,
     }[primitive.topology ?? "triangle-list"] ?? 0x00000004, true);
-    view.setUint32(108, 0, true);
+    view.setUint32(108, { uint16: 0x00000001, uint32: 0x00000002 }[primitive.stripIndexFormat] ?? 0, true);
     view.setUint32(112, { ccw: 0x00000001, cw: 0x00000002 }[primitive.frontFace ?? "ccw"] ?? 0x00000001, true);
     view.setUint32(116, { none: 0x00000001, front: 0x00000002, back: 0x00000003 }[primitive.cullMode ?? "none"] ?? 0x00000001, true);
     view.setUint32(120, primitive.unclippedDepth ? 1 : 0, true);

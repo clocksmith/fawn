@@ -85,6 +85,7 @@ static doe_resource_status validate_targets(const doe_resource_config *config,
                 color->view->texture->desc.format != resolve->texture->desc.format ||
                 color_extent[0] != resolve_extent[0] || color_extent[1] != resolve_extent[1]) return DOE_RESOURCE_LAYOUT;
             if (resolve->desc.usage & WGPUTextureUsage_TransientAttachment) return DOE_RESOURCE_USAGE;
+            if (!resource_format_resolvable(resolve->desc.format)) return DOE_RESOURCE_LAYOUT;
         }
     }
     if (!sized && !targets->depth_stencil) return DOE_RESOURCE_LAYOUT;
@@ -194,8 +195,7 @@ doe_resource_status doe_resource_render_pipeline_create(const doe_resource_confi
     if (!pipeline) return DOE_RESOURCE_OUT_OF_MEMORY;
     pipeline->layout = layout;
     pipeline->desc = normalized;
-    for (size_t i = 0; i < layout->count; i++)
-        if (doe_resource_pipeline_layout_group_required(layout, i) && layout->groups[i]->automatic) layout->groups[i]->automatic_claimed = true;
+    resource_pipeline_layout_claim(layout);
     doe_resource_pipeline_layout_retain(layout);
     resource_init(&pipeline->base, config, native);
     *out = pipeline;

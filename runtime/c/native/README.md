@@ -547,8 +547,12 @@ Texture format reinterpretation beyond srgb/unorm viewFormats pairs (RGBA8,
 BGRA8; resource-validated, then a mutable Vulkan image with a format list), srgb
 viewFormats together with StorageBinding, depth storage, depth comparison sampling (compiler), multisampled
 buffer copies/storage, and cube arrays without device imageCubeArray are rejected.
-The baseline admits 24 named Vulkan (rg11b10ufloat sampled; renderable only
-with rg11b10ufloat-renderable)
+`tests/core_formats.c` round-trips the thirteen formats added for the WebGPU core
+set (r8/rg8 snorm/uint/sint, r16/rg16 uint/sint, rgb10a2unorm/uint, rgb9e5ufloat)
+through writeTexture and copies, clears the renderable ones and decodes them in
+textureLoad exactly.
+The baseline admits all 37 WebGPU core color formats (rg11b10ufloat sampled;
+renderable only with rg11b10ufloat-renderable) as named Vulkan
 color formats, subject to actual device usage/format capabilities. Device
 descriptors may request the optional features `src/features.c` reports for the
 actual adapter (see Optional device features). Other required features reject
@@ -628,6 +632,7 @@ PASS public copy layouts: undefined rowsPerImage for one image and undefined byt
 PASS public BC compression: solid BC1/BC1-srgb/BC4 blocks decode to exact texels through queue writes and buffer copies, a 6x6 mip takes its physical 8x8 copy, texture-to-texture and texture-to-buffer copies return exact blocks, copies whose block reaches only one side's edge (both directions) land exactly, writeTexture of whole blocks into a 2x2 mip and with odd offsets and bytesPerRow 8*w+3 (two layers, rowsPerImage 3), bc1/bc7 srgb view formats, a zeroed 8192x8192x8 BC1 texture, a 3D BC1 texture uploaded with rowsPerImage 2 decodes per slice (sliced 3D); without the feature, a partial-block writeTexture, non-block sizes, attachment/storage usage, 3D without sliced 3D and unaligned copies reject (CPU Vulkan only)
 PASS public component swizzle: (b,a,0,r) and (1,g,r,g) sampled views return the identity view's rgba8unorm components rearranged exactly through textureLoad and nearest textureSampleLevel; identity swizzles need no feature, a non-identity swizzle without the feature, with RenderAttachment or StorageBinding view usage, or with an unknown source rejects (CPU Vulkan only)
 PASS public encoder errors: an invalid render/compute pass descriptor or command, an invalid copy or clear followed by valid passes, each reports exactly one uncaptured validation error at Finish; End/dispatch on ended passes, copies/clears/begin on a finished encoder and a second Finish report at the call; render bundle encoders: invalid setPipeline/draw give one error at bundle Finish and an invalid bundle, executing it in a valid pass gives one error at the command encoder's Finish, commands and a second Finish after bundle Finish report at the call, ended passes on a valid encoder report at the call and leave it valid, End with an unlocked parent and invalid-command-buffer submits report, a chained Finish ends the encoder, an invalid bundle encoder descriptor reports at creation and at its Finish and its bundle once at the executing encoder's Finish, a failed submit invalidates its whole batch in either order; core-features-and-limits listed and accepted (CPU Vulkan only)
+PASS public core formats: 13 added core color formats round-trip exact bytes through writeTexture and texture/buffer copies, 10 renderable ones clear to exact encodings, snorm/rgb9e5/rgb10a2/int textureLoad decodes exactly, and non-renderable attachments (r8snorm, rgba8snorm, rgb9e5ufloat), multisampled r32uint/rg32float and an r8uint resolve reject (CPU Vulkan only)
 PASS public timestamps: requested feature, zero/max/range/destroy admission, real pass/command writes, exact GPU nanoseconds, same-batch copy, scratch reuse and early query release (CPU Vulkan only)
 PASS typed recovery: native/OOM/pending errors survive submit/write/texture/workdone, unknown leases retained, terminal cleanup and fresh GPU normalizer recovery
 PASS every implemented procedure address matches; every unprovided name returns NULL
@@ -789,7 +794,8 @@ reads all 33 (including `storage-textures`, `point-list`, `color-discard` and
 `program-prepare` and `limits`) passed; with BC compression all 39 (including
 `bc-compression`) passed; with component swizzle all 40 (including
 `component-swizzle`) passed; with the encoding error rule all 41 (including
-`encoder-errors`) passed; after the BC review fixes all 42 passed. That is
+`encoder-errors`) passed; after the BC review fixes all 42 passed; with the core formats all 43
+(including `core-formats`) passed. That is
 developer evidence for these exact clients on that
 adapter/driver: the oracles are the clients' own expected values, not frozen
 independent workloads, and it is not Vulkan backend qualification, a performance
