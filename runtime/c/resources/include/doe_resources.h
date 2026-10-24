@@ -73,6 +73,9 @@ typedef struct doe_resource_config {
      * DOE_RESOURCE_MAX_COLOR_ATTACHMENTS are clamped to that storage bound. */
     uint32_t max_color_attachments;
     uint32_t max_color_attachment_bytes_per_sample;
+    /* Requested maxImmediateSize, copied with this config. Zero selects the
+     * WebGPU default 64 for standalone internal callers. */
+    uint32_t max_immediate_size;
     /* Requested binding-slot limits (WebGPU "exceeds the binding slot limits"):
      * per-stage counts over a layout's entries, and dynamic-offset buffer counts
      * per pipeline layout. Zero selects the WebGPU default for that field. */

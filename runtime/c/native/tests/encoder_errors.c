@@ -95,6 +95,30 @@ static void immediates(void)
     expect_errors(s,before,1,"bundle immediates at Finish");
     if (invalid) wgpuRenderBundleRelease(invalid);
     wgpuRenderBundleEncoderRelease(bundle);
+    /* createPipelineLayout immediateSize: a multiple of 4 within
+     * maxImmediateSize is valid, and a pipeline can use the layout. */
+    const uint32_t sizes[] = {4, limit, 6, limit + 4};
+    for (size_t i = 0; i < 4; ++i) {
+        before = s->errors;
+        WGPUPipelineLayoutDescriptor layout_desc = {.immediateSize=sizes[i]};
+        WGPUPipelineLayout layout = wgpuDeviceCreatePipelineLayout(s->device,&layout_desc);
+        expect_errors(s,before,i < 2 ? 0 : 1,"pipeline layout immediateSize");
+        if (i < 2) {
+            WGPUShaderSourceWGSL source = WGPU_SHADER_SOURCE_WGSL_INIT;
+            source.code = (WGPUStringView){"@compute @workgroup_size(1) fn main(){}",WGPU_STRLEN};
+            WGPUShaderModuleDescriptor shader_desc = {.nextInChain=&source.chain};
+            WGPUShaderModule shader = wgpuDeviceCreateShaderModule(s->device,&shader_desc);
+            WGPUComputePipelineDescriptor descriptor = WGPU_COMPUTE_PIPELINE_DESCRIPTOR_INIT;
+            descriptor.layout = layout;
+            descriptor.compute.module = shader;
+            WGPUComputePipeline compute = wgpuDeviceCreateComputePipeline(s->device,&descriptor);
+            expect_errors(s,before,0,"pipeline with an immediateSize layout");
+            assert(compute);
+            wgpuComputePipelineRelease(compute);
+            wgpuShaderModuleRelease(shader);
+        }
+        if (layout) wgpuPipelineLayoutRelease(layout);
+    }
     s->errors = 0; /* every expected error was counted above */
     consumer_finish(s);
 }
@@ -373,6 +397,6 @@ int main(void)
         "a chained Finish ends the encoder, an invalid bundle encoder descriptor reports "
         "at creation and at its Finish and its bundle once at the executing encoder's Finish, a failed submit "
         "invalidates its whole batch in either order; core-features-and-limits listed and "
-        "accepted; setImmediates alignment and maxImmediateSize rejections at Finish %s\n", adapter_class_scope());
+        "accepted; setImmediates alignment and maxImmediateSize rejections at Finish, pipeline layout immediateSize accepted when aligned within maxImmediateSize and usable by a compute pipeline %s\n", adapter_class_scope());
     return 0;
 }

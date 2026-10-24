@@ -151,8 +151,9 @@ void native_error(native_device *device, WGPUErrorType type, const char *message
  * reported at the call. */
 void native_encoding_error(native_device *device, bool ended, doe_resource_status status, const char *message);
 /* setImmediates range: 4-byte aligned offset and size within maxImmediateSize.
- * No pipeline admits immediates yet (layouts with immediateSize reject), so a
- * valid call records nothing a draw or dispatch could read. */
+ * No shader declares immediates yet (pipeline layouts accept an immediateSize
+ * but no pipeline reads it), so a valid call records nothing a draw or
+ * dispatch could read. */
 bool native_immediates_valid(const native_device *device, uint32_t offset, const void *data, size_t size);
 WGPUErrorType native_resource_error(doe_resource_status status);
 WGPUErrorType native_backend_error(doe_vk_status status);
