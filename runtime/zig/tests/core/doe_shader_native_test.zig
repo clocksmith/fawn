@@ -481,6 +481,50 @@ test "createShaderModule: valid WGSL generates no device error" {
     shader.doeNativeShaderModuleRelease(result);
 }
 
+fn popScope(dev: *native.DoeDevice) !PoppedScope {
+    var popped = PoppedScope{};
+    try std.testing.expect(dev.error_scopes.pop(.{ .callback = recordPoppedScope, .userdata1 = &popped }));
+    return popped;
+}
+
+test "createShaderModule: a descriptor without a source chain is a validation error with an invalid module" {
+    var dev = native.DoeDevice{ .backend = .vulkan };
+    dev.error_scopes.push(error_scope.FILTER_VALIDATION);
+    const desc = types.WGPUShaderModuleDescriptor{ .nextInChain = null, .label = .{ .data = null, .length = 0 } };
+    const result = shader.doeNativeDeviceCreateShaderModule(@ptrCast(&dev), &desc);
+    try std.testing.expect(result != null);
+    const popped = try popScope(&dev);
+    try std.testing.expectEqual(error_scope.ERROR_TYPE_VALIDATION, popped.error_type);
+    const sm = native.cast(native.DoeShaderModule, result).?;
+    try std.testing.expectEqual(native.CompilationMessageKind.@"error", sm.compilation_message_kind);
+    shader.doeNativeShaderModuleRelease(result);
+}
+
+fn computeDescriptor(module: ?*anyopaque) types.WGPUComputePipelineDescriptor {
+    return .{
+        .nextInChain = null,
+        .label = .{ .data = null, .length = 0 },
+        .layout = null,
+        .compute = .{ .nextInChain = null, .module = @ptrCast(module), .entryPoint = .{ .data = "main", .length = 4 }, .constantCount = 0, .constants = null },
+    };
+}
+
+test "createComputePipeline: an invalid module generates the pipeline's own validation error" {
+    var dev = native.DoeDevice{ .backend = .vulkan };
+    const module = createVulkanWgslModule(&dev, "not WGSL");
+    dev.error_scopes.push(error_scope.FILTER_VALIDATION);
+    const desc = computeDescriptor(module);
+    try std.testing.expect(shader.doeNativeDeviceCreateComputePipeline(@ptrCast(&dev), &desc) == null);
+    const popped = try popScope(&dev);
+    try std.testing.expectEqual(error_scope.ERROR_TYPE_VALIDATION, popped.error_type);
+    try std.testing.expect(std.mem.startsWith(u8, popped.message[0..popped.message_len], "createComputePipeline: "));
+    // Asynchronous creation reports through its callback only.
+    dev.error_scopes.push(error_scope.FILTER_VALIDATION);
+    try std.testing.expect(shader.createComputePipelineUnreported(@ptrCast(&dev), &desc) == null);
+    try std.testing.expectEqual(error_scope.ERROR_TYPE_NO_ERROR, (try popScope(&dev)).error_type);
+    shader.doeNativeShaderModuleRelease(module);
+}
+
 // ============================================================
 // 10. DoeShaderModule defaults and lifecycle
 // ============================================================

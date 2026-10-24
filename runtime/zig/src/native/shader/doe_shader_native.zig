@@ -47,6 +47,26 @@ pub fn lastErrorSnapshot() ShaderDiagnostic {
 }
 const DIAGNOSTIC_DIRECTIVE_INFO: []const u8 =
     "WGSL diagnostic directives are parsed on this path and currently reported as advisory compilation info only.";
+fn recordAllocationFailure(diagnostic: *ShaderDiagnostic, stage: []const u8, what: []const u8) void {
+    diagnostic.set_last_error_stage_name(stage);
+    diagnostic.set_last_error_kind("OutOfMemory");
+    diagnostic.set_last_error(what);
+}
+
+/// Allocation failures are OutOfMemory errors; every other creation failure
+/// is a validation error of the descriptor or its shader.
+fn failureErrorType(diagnostic: *const ShaderDiagnostic) u32 {
+    const kind = diagnostic.last_error_kind_buf[0..diagnostic.last_error_kind_len];
+    return if (std.mem.eql(u8, kind, "OutOfMemory")) error_scope.ERROR_TYPE_OUT_OF_MEMORY else error_scope.ERROR_TYPE_VALIDATION;
+}
+
+fn reportFailure(dev: *DoeDevice, diagnostic: *const ShaderDiagnostic, comptime operation: []const u8, fallback: []const u8) void {
+    const message = if (diagnostic.last_error_len > 0) diagnostic.last_error_buf[0..diagnostic.last_error_len] else fallback;
+    var buf: [512]u8 = undefined;
+    const scope_message = std.fmt.bufPrint(&buf, operation ++ ": {s}", .{message}) catch message;
+    dev.error_scopes.deliver(failureErrorType(diagnostic), scope_message);
+}
+
 fn tryCreateCachedWgslShaderModule(dev: *DoeDevice, wgsl: []const u8) error{OutOfMemory}!?*anyopaque {
     const cache = if (dev.metal_libraries) |*value| value else return null;
     var cached = (try cache.lookup(alloc, wgsl, shader_translation_cache.metalLibraryConfiguration())) orelse return null;
@@ -217,26 +237,20 @@ fn doeNativeDeviceCreateShaderModuleOwned(dev_raw: ?*anyopaque, desc: ?*const ab
     const dev = cast(DoeDevice, dev_raw) orelse return null;
     if (!dev.requireAlive()) return null;
     const d = desc orelse return null;
-    if (d.nextInChain == null) return null;
-    const chain: *const abi_callback.WGPUChainedStruct = @ptrCast(d.nextInChain);
-
-    const result = switch (chain.sType) {
-        abi_core.WGPUSType_ShaderSourceWGSL => createFromWGSLOwned(dev, chain, diagnostic),
-        abi_core.WGPUSType_ShaderSourceMSL => createFromMSLOwned(dev, chain, diagnostic),
-        abi_core.WGPUSType_ShaderSourceSPIRV => createFromSPIRVOwned(chain, diagnostic),
-        abi_core.WGPUSType_ShaderSourceHLSL => createFromHLSLOwned(chain, diagnostic),
-        else => blk: {
-            diagnostic.set_last_error_stage_name("native_shader_create");
-            diagnostic.set_last_error_kind("UnsupportedShaderFormat");
-            diagnostic.set_last_error_fmt("unsupported shader source sType: 0x{x:0>8}", .{chain.sType});
-            std.log.warn("doe: createShaderModule failed: unsupported sType 0x{x:0>8}", .{chain.sType});
-            break :blk null;
-        },
-    };
+    const result = if (d.nextInChain == null) blk: {
+        diagnostic.set_last_error_stage_name("native_shader_create");
+        diagnostic.set_last_error_kind("MissingShaderSource");
+        diagnostic.set_last_error("shader module descriptor has no WGSL, SPIR-V, MSL or HLSL source chain");
+        break :blk null;
+    } else createFromChainOwned(dev, @ptrCast(d.nextInChain), diagnostic);
     // Return a valid error-flagged module when compilation fails so Dawn's
     // wire server never gets null (which causes SIGSEGV in the GPU process).
     const handle = result orelse blk: {
-        const err_sm = make(DoeShaderModule) orelse return null;
+        const err_sm = make(DoeShaderModule) orelse {
+            recordAllocationFailure(diagnostic, "native_shader_create", "shader module allocation failed");
+            reportFailure(dev, diagnostic, "createShaderModule", "shader module creation failed");
+            return null;
+        };
         err_sm.* = .{};
         const message = if (diagnostic.last_error_len > 0)
             diagnostic.last_error_buf[0..diagnostic.last_error_len]
@@ -251,14 +265,29 @@ fn doeNativeDeviceCreateShaderModuleOwned(dev_raw: ?*anyopaque, desc: ?*const ab
         );
         // https://gpuweb.github.io/gpuweb/#dom-gpudevice-createshadermodule: an
         // error-level compilation message also generates a validation error on
-        // the device; getCompilationInfo keeps reporting the same message.
-        var buf: [512]u8 = undefined;
-        const scope_message = std.fmt.bufPrint(&buf, "createShaderModule: {s}", .{message}) catch message;
-        dev.error_scopes.deliver(error_scope.ERROR_TYPE_VALIDATION, scope_message);
+        // the device (allocation failure: OutOfMemory); getCompilationInfo keeps
+        // reporting the same message.
+        reportFailure(dev, diagnostic, "createShaderModule", "shader module creation failed");
         break :blk toOpaque(err_sm);
     };
     label_store.set(handle, d.label.data, d.label.length);
     return handle;
+}
+
+fn createFromChainOwned(dev: *DoeDevice, chain: *const abi_callback.WGPUChainedStruct, diagnostic: *ShaderDiagnostic) ?*anyopaque {
+    return switch (chain.sType) {
+        abi_core.WGPUSType_ShaderSourceWGSL => createFromWGSLOwned(dev, chain, diagnostic),
+        abi_core.WGPUSType_ShaderSourceMSL => createFromMSLOwned(dev, chain, diagnostic),
+        abi_core.WGPUSType_ShaderSourceSPIRV => createFromSPIRVOwned(chain, diagnostic),
+        abi_core.WGPUSType_ShaderSourceHLSL => createFromHLSLOwned(chain, diagnostic),
+        else => blk: {
+            diagnostic.set_last_error_stage_name("native_shader_create");
+            diagnostic.set_last_error_kind("UnsupportedShaderFormat");
+            diagnostic.set_last_error_fmt("unsupported shader source sType: 0x{x:0>8}", .{chain.sType});
+            std.log.warn("doe: createShaderModule failed: unsupported sType 0x{x:0>8}", .{chain.sType});
+            break :blk null;
+        },
+    };
 }
 
 fn doeNativeDeviceCreateShaderModuleWgslOwned(dev_raw: ?*anyopaque, code_ptr: ?[*]const u8, code_len: usize, diagnostic: *ShaderDiagnostic) ?*anyopaque {
@@ -285,13 +314,19 @@ fn doeNativeDeviceCreateShaderModuleWgslOwned(dev_raw: ?*anyopaque, code_ptr: ?[
 // ============================================================
 fn createFromWGSLOwned(dev: *DoeDevice, chain: *const abi_callback.WGPUChainedStruct, diagnostic: *ShaderDiagnostic) ?*anyopaque {
     const wgsl_chain: *const abi_pipeline.WGPUShaderSourceWGSL = @ptrCast(@alignCast(chain));
-    const wgsl = resolveStringView(wgsl_chain.code) orelse return null;
+    const wgsl = resolveStringView(wgsl_chain.code) orelse {
+        diagnostic.set_last_error_stage_name("native_shader_create");
+        diagnostic.set_last_error_kind("InvalidInput");
+        diagnostic.set_last_error("WGSL source code is null");
+        return null;
+    };
 
     if (dev.backend == .vulkan) return createFromWGSLVulkanOwned(dev, wgsl, diagnostic);
     if (dev.backend == .d3d12) {
         const source = retainWgslSourceOwned(wgsl, diagnostic) orelse return null;
         const sm = make(DoeShaderModule) orelse {
             alloc.free(source);
+            recordAllocationFailure(diagnostic, "native_shader_create", "shader module allocation failed");
             return null;
         };
         sm.* = .{ .wgsl_source = source };
@@ -353,6 +388,7 @@ fn createFromWGSLOwned(dev: *DoeDevice, chain: *const abi_callback.WGPUChainedSt
 
     const sm = make(DoeShaderModule) orelse {
         metal_bridge_release(lib);
+        recordAllocationFailure(diagnostic, "native_shader_create", "shader module allocation failed");
         return null;
     };
     sm.* = .{ .mtl_library = lib };
@@ -380,7 +416,10 @@ fn createFromWGSLOwned(dev: *DoeDevice, chain: *const abi_callback.WGPUChainedSt
 
 fn createFromWGSLVulkanOwned(dev: *DoeDevice, wgsl: []const u8, diagnostic: *ShaderDiagnostic) ?*anyopaque {
     _ = dev;
-    const sm = make(DoeShaderModule) orelse return null;
+    const sm = make(DoeShaderModule) orelse {
+        recordAllocationFailure(diagnostic, "native_shader_create", "shader module allocation failed");
+        return null;
+    };
     sm.* = .{};
     var complete = false;
     defer if (!complete) doeNativeShaderModuleRelease(toOpaque(sm));
@@ -445,6 +484,7 @@ fn createFromMSLOwned(dev: *DoeDevice, chain: *const abi_callback.WGPUChainedStr
 
     const sm = make(DoeShaderModule) orelse {
         metal_bridge_release(lib);
+        recordAllocationFailure(diagnostic, "native_shader_create", "shader module allocation failed");
         return null;
     };
     sm.* = .{ .mtl_library = lib };
@@ -482,6 +522,7 @@ fn createFromSPIRVOwned(chain: *const abi_callback.WGPUChainedStruct, diagnostic
 
     const sm = make(DoeShaderModule) orelse {
         alloc.free(spirv_copy);
+        recordAllocationFailure(diagnostic, "native_shader_create", "shader module allocation failed");
         return null;
     };
     sm.* = .{};
@@ -517,6 +558,7 @@ fn createFromHLSLOwned(chain: *const abi_callback.WGPUChainedStruct, diagnostic:
 
     const sm = make(DoeShaderModule) orelse {
         alloc.free(hlsl_copy);
+        recordAllocationFailure(diagnostic, "native_shader_create", "shader module allocation failed");
         return null;
     };
     sm.* = .{};
@@ -581,7 +623,10 @@ pub export fn doeNativeShaderModuleRelease(raw: ?*anyopaque) callconv(.c) void {
 // ============================================================
 
 fn createComputePipelineVulkanOwned(sm: *DoeShaderModule, layout: ?*DoePipelineLayout, entry_point: ?[]const u8, overrides: []const wgsl_ir.OverrideEntry, diagnostic: *ShaderDiagnostic) ?*anyopaque {
-    const cp = make(DoeComputePipeline) orelse return null;
+    const cp = make(DoeComputePipeline) orelse {
+        recordAllocationFailure(diagnostic, "native_compile", "compute pipeline allocation failed");
+        return null;
+    };
     cp.* = .{};
     if (layout) |pipeline_layout| {
         cp.layout = pipeline_layout;
@@ -853,6 +898,7 @@ fn doeNativeDeviceCreateComputePipelineOwned(dev_raw: ?*anyopaque, desc: ?*const
 
     const cp = make(DoeComputePipeline) orelse {
         metal_bridge_release(pso);
+        recordAllocationFailure(diagnostic, "native_compile", "compute pipeline allocation failed");
         return null;
     };
     cp.* = .{ .mtl_pso = pso };
@@ -945,10 +991,28 @@ pub export fn doeNativeShaderModuleGetBindings(raw: ?*anyopaque, out_ptr: ?[*]na
     return doeNativeShaderModuleGetBindingsOwned(raw, out_ptr, out_len, &diagnostic);
 }
 
+/// Synchronous creation: a failure generates the device error (validation, or
+/// OutOfMemory for allocation failure) in addition to the diagnostic snapshot.
 pub export fn doeNativeDeviceCreateComputePipeline(dev_raw: ?*anyopaque, desc: ?*const abi_pipeline.WGPUComputePipelineDescriptor) callconv(.c) ?*anyopaque {
     var diagnostic = ShaderDiagnostic{};
     defer last_diagnostic = diagnostic;
+    return reportedComputePipeline(dev_raw, doeNativeDeviceCreateComputePipelineOwned(dev_raw, desc, &diagnostic), &diagnostic);
+}
+
+/// Asynchronous creation reports failure through its callback status only;
+/// it never generates a device error.
+pub fn createComputePipelineUnreported(dev_raw: ?*anyopaque, desc: ?*const abi_pipeline.WGPUComputePipelineDescriptor) ?*anyopaque {
+    var diagnostic = ShaderDiagnostic{};
+    defer last_diagnostic = diagnostic;
     return doeNativeDeviceCreateComputePipelineOwned(dev_raw, desc, &diagnostic);
+}
+
+fn reportedComputePipeline(dev_raw: ?*anyopaque, result: ?*anyopaque, diagnostic: *const ShaderDiagnostic) ?*anyopaque {
+    if (result != null) return result;
+    const dev = cast(DoeDevice, dev_raw) orelse return null;
+    // A destroyed device already reported its own validation error.
+    if (!dev.isDestroyed()) reportFailure(dev, diagnostic, "createComputePipeline", "compute pipeline creation failed");
+    return null;
 }
 
 pub export fn doeNativeDeviceCreateShaderModuleWgsl(dev_raw: ?*anyopaque, code_ptr: ?[*]const u8, code_len: usize) callconv(.c) ?*anyopaque {
@@ -975,7 +1039,7 @@ fn retainShaderDevice(dev_raw: ?*anyopaque, shader_raw: ?*anyopaque) ?*anyopaque
 pub export fn doeNativeDeviceCreateComputePipelineMain(dev_raw: ?*anyopaque, shader_raw: ?*anyopaque, layout_raw: ?*anyopaque) callconv(.c) ?*anyopaque {
     var diagnostic = ShaderDiagnostic{};
     defer last_diagnostic = diagnostic;
-    return doeNativeDeviceCreateComputePipelineMainOwned(dev_raw, shader_raw, layout_raw, &diagnostic);
+    return reportedComputePipeline(dev_raw, doeNativeDeviceCreateComputePipelineMainOwned(dev_raw, shader_raw, layout_raw, &diagnostic), &diagnostic);
 }
 
 pub export fn doeNativeShaderModuleGetBindingsForEntryPoint(raw: ?*anyopaque, entry_ptr: ?[*]const u8, entry_len: usize, out_ptr: ?[*]native_shared.BindingInfo, out_len: usize) callconv(.c) usize {
@@ -1004,4 +1068,30 @@ pub fn createLostComputePipeline(device: *DoeDevice) ?*anyopaque {
     native_helpers.object_add_ref(DoeDevice, toOpaque(device));
     pipeline.* = .{ .error_object = true, .device_ref = device };
     return toOpaque(pipeline);
+}
+
+test "shader creation failures classify allocation failure as OutOfMemory" {
+    var dev = DoeDevice{};
+    var diagnostic = ShaderDiagnostic{};
+    recordAllocationFailure(&diagnostic, "native_shader_create", "shader module allocation failed");
+    try std.testing.expectEqual(error_scope.ERROR_TYPE_OUT_OF_MEMORY, failureErrorType(&diagnostic));
+    dev.error_scopes.push(error_scope.FILTER_VALIDATION);
+    dev.error_scopes.push(error_scope.FILTER_OUT_OF_MEMORY);
+    reportFailure(&dev, &diagnostic, "createShaderModule", "unused");
+    var types: [2]u32 = .{ 0, 0 };
+    const record = struct {
+        fn callback(error_type: u32, message: abi_core.WGPUStringView, userdata1: ?*anyopaque, userdata2: ?*anyopaque) callconv(.c) void {
+            _ = message;
+            _ = userdata2;
+            const slot: *u32 = @ptrCast(@alignCast(userdata1.?));
+            slot.* = error_type;
+        }
+    }.callback;
+    try std.testing.expect(dev.error_scopes.pop(.{ .callback = record, .userdata1 = &types[0] }));
+    try std.testing.expect(dev.error_scopes.pop(.{ .callback = record, .userdata1 = &types[1] }));
+    try std.testing.expectEqual(error_scope.ERROR_TYPE_OUT_OF_MEMORY, types[0]);
+    try std.testing.expectEqual(error_scope.ERROR_TYPE_NO_ERROR, types[1]);
+    var parse = ShaderDiagnostic{};
+    parse.set_last_error_kind("UnexpectedToken");
+    try std.testing.expectEqual(error_scope.ERROR_TYPE_VALIDATION, failureErrorType(&parse));
 }
