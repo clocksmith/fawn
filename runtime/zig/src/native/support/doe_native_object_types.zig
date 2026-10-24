@@ -620,6 +620,8 @@ pub const DoeRenderPass = struct {
     clear_g: f64 = 0,
     clear_b: f64 = 0,
     clear_a: f64 = 1,
+    /// The pass's usage scope (https://gpuweb.github.io/gpuweb/#programming-model-synchronization).
+    usage_scope: @import("doe_usage_scope_types.zig").Scope = .{},
     bind_groups: [shared.MAX_RENDER_BIND_GROUPS]?*DoeBindGroup = [_]?*DoeBindGroup{null} ** shared.MAX_RENDER_BIND_GROUPS,
     dynamic_offsets: [shared.MAX_RENDER_BIND_GROUPS]shared.BindGroupDynamicOffsets =
         [_]shared.BindGroupDynamicOffsets{shared.NO_DYNAMIC_OFFSETS} ** shared.MAX_RENDER_BIND_GROUPS,

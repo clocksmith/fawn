@@ -35,12 +35,24 @@ fn validateView(device: *objects.DoeDevice, raw: ?*anyopaque, depth: bool) Error
     const three_d = view.dimension == texture_abi.WGPUTextureViewDimension_3D and !depth;
     if (view.dimension != texture_abi.WGPUTextureViewDimension_2D and
         view.dimension != texture_abi.WGPUTextureViewDimension_2DArray and !three_d) return error.RenderAttachmentUnsupported;
-    if (view.mip_level_count != 1 or view.array_layer_count != 1 or
-        view.aspect != texture_abi.WGPUTextureAspect_All or
+    if (view.mip_level_count != 1 or view.array_layer_count != 1 or !coversAllAspects(view) or
         view.base_mip_level >= texture.mip_level_count or view.base_mip_level >= @bitSizeOf(u32))
         return error.RenderAttachmentViewInvalid;
     if (texture_abi.isDepthStencilFormat(view.format) != depth) return error.RenderAttachmentFormatMismatch;
     return view;
+}
+
+/// https://gpuweb.github.io/gpuweb/#renderable-texture-view: the view's
+/// aspect refers to every aspect of its format (depth-only of a depth
+/// format, stencil-only of stencil8).
+fn coversAllAspects(view: *const objects.DoeTextureView) bool {
+    const format = view.tex.format;
+    return switch (view.aspect) {
+        texture_abi.WGPUTextureAspect_All => true,
+        texture_abi.WGPUTextureAspect_DepthOnly => texture_abi.isDepthStencilFormat(format) and !depth_stencil_formats.hasStencilAspect(format),
+        texture_abi.WGPUTextureAspect_StencilOnly => format == texture_abi.WGPUTextureFormat_Stencil8,
+        else => false,
+    };
 }
 
 const DEPTH_SLICE_UNDEFINED: u32 = std.math.maxInt(u32);
