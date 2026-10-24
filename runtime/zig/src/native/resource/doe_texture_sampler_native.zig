@@ -419,7 +419,7 @@ fn createTexture(dev_raw: ?*anyopaque, desc: ?*const abi_pipeline.WGPUTextureDes
         .usage = usage,
         .texture_binding_view_dimension = 0,
         .view_format_count = d.viewFormatCount,
-        .srgb_view_allowed = texture_validation.allowsSrgbPairView(d),
+        .srgb_view_format = texture_validation.srgbPairViewFormat(d),
     };
     if (dev.backend == .vulkan) {
         const vk_render = @import("../vulkan/vulkan_render_native.zig");
@@ -501,7 +501,7 @@ fn createTexture(dev_raw: ?*anyopaque, desc: ?*const abi_pipeline.WGPUTextureDes
 /// The view format is the texture format, or its srgb pair when the texture's
 /// viewFormats named it.
 pub fn viewFormatAllowed(tex: *const DoeTexture, format: u32) bool {
-    return format == tex.format or (tex.srgb_view_allowed and format == texture_validation.srgbPair(tex.format));
+    return format == tex.format or (tex.srgb_view_format != 0 and format == tex.srgb_view_format);
 }
 
 /// An invalid view, never NULL. Its texture is a private invalid texture, so

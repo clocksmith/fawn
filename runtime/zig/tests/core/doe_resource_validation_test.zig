@@ -128,7 +128,7 @@ test "createTextureView: a format outside the texture format and viewFormats is 
     // srgb/non-srgb: the pair is allowed only when viewFormats named it.
     try std.testing.expect(textures.viewFormatAllowed(&texture, types.WGPUTextureFormat_RGBA8Unorm));
     try std.testing.expect(!textures.viewFormatAllowed(&texture, types.WGPUTextureFormat_RGBA8UnormSrgb));
-    texture.srgb_view_allowed = true;
+    texture.srgb_view_format = types.WGPUTextureFormat_RGBA8UnormSrgb;
     try std.testing.expect(textures.viewFormatAllowed(&texture, types.WGPUTextureFormat_RGBA8UnormSrgb));
     try std.testing.expect(!textures.viewFormatAllowed(&texture, types.WGPUTextureFormat_BGRA8UnormSrgb));
     const view_formats = [_]u32{types.WGPUTextureFormat_RGBA8UnormSrgb};
@@ -136,7 +136,8 @@ test "createTextureView: a format outside the texture format and viewFormats is 
     texture_desc.format = types.WGPUTextureFormat_RGBA8Unorm;
     texture_desc.viewFormatCount = view_formats.len;
     texture_desc.viewFormats = &view_formats;
-    try std.testing.expect(texture_validation.allowsSrgbPairView(&texture_desc));
+    try std.testing.expectEqual(@as(u32, types.WGPUTextureFormat_RGBA8UnormSrgb), texture_validation.srgbPairViewFormat(&texture_desc));
     texture_desc.format = types.WGPUTextureFormat_R8Unorm;
-    try std.testing.expect(!texture_validation.allowsSrgbPairView(&texture_desc));
+    try std.testing.expectEqual(@as(u32, 0), texture_validation.srgbPairViewFormat(&texture_desc));
+    try std.testing.expectEqual(@as(u32, types.WGPUTextureFormat_BC1RGBAUnormSrgb), texture_validation.srgbPair(types.WGPUTextureFormat_BC1RGBAUnorm));
 }
