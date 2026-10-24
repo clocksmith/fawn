@@ -85,6 +85,8 @@ pub const RecordedCmd = union(CmdTag) {
         bind_groups: [shared.MAX_COMPUTE_BIND_GROUPS]?*anyopaque = [_]?*anyopaque{null} ** shared.MAX_COMPUTE_BIND_GROUPS,
         indirect_buf: ?*anyopaque,
         offset: u64,
+        /// The device's maxComputeWorkgroupsPerDimension when recorded.
+        workgroup_limit: u32 = 65535,
         wg_x: u32 = 0,
         wg_y: u32 = 0,
         wg_z: u32 = 0,

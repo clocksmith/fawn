@@ -35,6 +35,39 @@ pub fn color_clear_value(format: model_gpu_types.WGPUTextureFormat, color: [4]f3
     };
 }
 
+/// An indirect draw's arguments after WebGPU validation: drawn directly with
+/// these values, or skipped (the render pass still loads, clears and stores).
+pub const IndirectDraw = union(enum) {
+    skip,
+    draw: IndirectArgs,
+};
+
+/// VkDrawIndirectCommand (4 words) or VkDrawIndexedIndirectCommand (5 words).
+pub const IndirectArgs = struct {
+    count: u32,
+    instance_count: u32,
+    first: u32,
+    base_vertex: i32 = 0,
+    first_instance: u32,
+
+    pub fn decode(words: []const u32, indexed: bool) IndirectArgs {
+        if (indexed) return .{ .count = words[0], .instance_count = words[1], .first = words[2], .base_vertex = @bitCast(words[3]), .first_instance = words[4] };
+        return .{ .count = words[0], .instance_count = words[1], .first = words[2], .first_instance = words[3] };
+    }
+};
+
+/// https://gpuweb.github.io/gpuweb/#abstract-opdef-validate-draw applied to
+/// GPU-supplied arguments: each vertex, instance and index range must fit the
+/// bound buffers, or the draw does nothing. Sums are formed in u64.
+pub fn admitIndirect(args: IndirectArgs, limits: model_render_types.IndirectDrawLimits, indexed: bool) IndirectDraw {
+    if (args.count == 0 or args.instance_count == 0) return .skip;
+    if (args.first_instance != 0 and !limits.first_instance_allowed) return .skip;
+    const count_limit = if (indexed) limits.index else limits.vertex;
+    if (@as(u64, args.first) + args.count > count_limit) return .skip;
+    if (@as(u64, args.first_instance) + args.instance_count > limits.instance) return .skip;
+    return .{ .draw = args };
+}
+
 /// Borrows native handles and a read-only buffer registry only for recording.
 /// Its caller owns allocation, image transitions, submission and retirement.
 pub const DrawRecording = struct {
@@ -53,7 +86,8 @@ pub const DrawRecording = struct {
         return buffer.buffer;
     }
 
-    pub fn record(self: *const DrawRecording, cmd: model_render_types.RenderDrawCommand, index: ?IndexBinding, draw_count: u32, target_width: u32, target_height: u32) error{InvalidArgument}!void {
+    /// `indirect` is the validated argument set for an indirect draw (ignored otherwise).
+    pub fn record(self: *const DrawRecording, cmd: model_render_types.RenderDrawCommand, index: ?IndexBinding, draw_count: u32, target_width: u32, target_height: u32, indirect: IndirectDraw) error{InvalidArgument}!void {
         var clear_values = [_]c.VkClearValue{
             try color_clear_value(cmd.target_format, cmd.clear_color),
             .{
@@ -157,11 +191,14 @@ pub const DrawRecording = struct {
 
         if (index) |binding| c.vkCmdBindIndexBuffer(self.command_buffer, binding.buffer, binding.offset, binding.format);
         if (cmd.indirect_buffer_handle != 0) {
-            const indirect = self.buffers.get(cmd.indirect_buffer_handle) orelse return error.InvalidArgument;
-            if (index != null) {
-                c.vkCmdDrawIndexedIndirect(self.command_buffer, indirect.buffer, cmd.indirect_offset, 1, c.VK_DRAW_INDEXED_INDIRECT_COMMAND_STRIDE);
-            } else {
-                c.vkCmdDrawIndirect(self.command_buffer, indirect.buffer, cmd.indirect_offset, 1, c.VK_DRAW_INDIRECT_COMMAND_STRIDE);
+            // The arguments were read and validated before recording; the GPU
+            // never consumes unvalidated indirect arguments.
+            switch (indirect) {
+                .skip => {},
+                .draw => |args| if (index != null)
+                    c.vkCmdDrawIndexed(self.command_buffer, args.count, args.instance_count, args.first, args.base_vertex, args.first_instance)
+                else
+                    c.vkCmdDraw(self.command_buffer, args.count, args.instance_count, args.first, args.first_instance),
             }
         } else {
             for (0..draw_count) |_| {

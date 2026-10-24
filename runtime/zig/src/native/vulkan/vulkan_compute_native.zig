@@ -780,23 +780,36 @@ pub fn vulkan_submit_recorded_dispatch(rt: *NativeVulkanRuntime, dispatch: anyty
     vulkan_run_prepared_dispatch(rt, dispatch);
 }
 
-/// Replay a recorded indirect compute dispatch through NativeVulkanRuntime at queue-submit time.
-pub fn vulkan_run_prepared_dispatch_indirect(rt: *NativeVulkanRuntime, dispatch: anytype) void {
+/// Copies a recorded indirect dispatch's arguments to scratch and records the
+/// WebGPU workgroup-limit guard on them. The guard pipeline stays bound, so the
+/// caller prepares the application dispatch again before running it.
+pub fn vulkan_guard_dispatch_indirect(rt: *NativeVulkanRuntime, dispatch: anytype) ?GuardedDispatchArgs {
+    if (comptime !has_vulkan) return null;
+    const indirect_buffer = resolve_indirect_buffer(rt, dispatch.indirect_buf, dispatch.offset) orelse return null;
+    const guarded = vk_dispatch_indirect.record_guard(rt, indirect_buffer.buffer, dispatch.offset, dispatch.workgroup_limit) catch |err| {
+        std.log.err("doe_vulkan_compute: indirect dispatch guard failed: {s}", .{@errorName(err)});
+        return null;
+    };
+    return .{ .buffer = guarded.buffer, .resource_handle = guarded.resource_handle };
+}
+
+pub const GuardedDispatchArgs = struct {
+    buffer: if (has_vulkan) c.VkBuffer else void,
+    resource_handle: u64,
+};
+
+/// Dispatches a prepared indirect dispatch from its guarded argument copy.
+pub fn vulkan_run_guarded_dispatch_indirect(rt: *NativeVulkanRuntime, guarded: GuardedDispatchArgs) void {
     if (comptime !has_vulkan) return;
-    const indirect_buffer = resolve_indirect_buffer(rt, dispatch.indirect_buf, dispatch.offset) orelse return;
-    _ = vk_dispatch_indirect.record_prepared_replay(
-        rt,
-        indirect_buffer.buffer,
-        dispatch.offset,
-        indirect_buffer.resource_handle,
-    ) catch |err| {
+    vk_dispatch_indirect.record_prepared_replay(rt, guarded.buffer, 0, guarded.resource_handle) catch |err| {
         std.log.err("doe_vulkan_compute: recorded dispatch_indirect failed: {s}", .{@errorName(err)});
     };
 }
 
 pub fn vulkan_submit_recorded_dispatch_indirect(rt: *NativeVulkanRuntime, dispatch: anytype) void {
+    const guarded = vulkan_guard_dispatch_indirect(rt, dispatch) orelse return;
     if (!vulkan_prepare_recorded_dispatch(rt, dispatch)) return;
-    vulkan_run_prepared_dispatch_indirect(rt, dispatch);
+    vulkan_run_guarded_dispatch_indirect(rt, guarded);
 }
 
 // ============================================================

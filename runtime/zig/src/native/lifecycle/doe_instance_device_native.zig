@@ -506,6 +506,7 @@ fn create_device_for_adapter(adapter: *DoeAdapter, adapter_raw: ?*anyopaque, des
             required.*.minUniformBufferOffsetAlignment,
             required.*.minStorageBufferOffsetAlignment,
         );
+        device.max_compute_workgroups_per_dimension = native_types.requiredWorkgroupsPerDimension(required.*.maxComputeWorkgroupsPerDimension);
     };
     // The backend's whole-object assignment is complete. Initialize only here,
     // at the final stable address and before any loss event can expose the device.

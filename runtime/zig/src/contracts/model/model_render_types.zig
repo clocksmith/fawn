@@ -70,6 +70,21 @@ pub const RenderIndexData = union(RenderIndexFormat) {
     uint32: []const u32,
 };
 
+/// The bounds an indirect draw's GPU-supplied arguments must satisfy, taken
+/// from the state bound when it was recorded. An argument set outside them is
+/// skipped, never executed (https://gpuweb.github.io/gpuweb/#abstract-opdef-validate-draw).
+pub const IndirectDrawLimits = struct {
+    pub const UNBOUNDED: u64 = 0xFFFF_FFFF_FFFF_FFFF;
+    /// Vertices readable from every vertex-step buffer (non-indexed draws).
+    vertex: u64 = UNBOUNDED,
+    /// Instances readable from every instance-step buffer.
+    instance: u64 = UNBOUNDED,
+    /// Indices in the bound index range (indexed draws).
+    index: u64 = UNBOUNDED,
+    /// firstInstance may be nonzero only with the indirect-first-instance feature.
+    first_instance_allowed: bool = true,
+};
+
 pub const RenderDrawCommand = struct {
     draw_count: u32,
     vertex_count: u32 = 3,
@@ -123,6 +138,7 @@ pub const RenderDrawCommand = struct {
     stencil_reference: u32 = 0,
     occlusion_query_pool: u64 = 0,
     occlusion_query_index: ?u32 = null,
+    indirect_limits: IndirectDrawLimits = .{},
     bind_group_dynamic_offsets: ?[]const u32 = null,
     vertex_buffer_count: u32 = 0,
     vertex_buffer_handles: [8]u64 = [_]u64{0} ** 8,

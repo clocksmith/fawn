@@ -237,13 +237,8 @@ pub export fn doeNativeComputePassSetBindGroup(pass_raw: ?*anyopaque, index: u32
 /// WebGPU dispatch validation at record time; a failure invalidates the encoder.
 fn validateDispatch(pass: *DoeComputePass, pip: *const DoeComputePipeline, counts: ?[3]u32) bool {
     if (counts) |workgroups| {
-        if (pass.max_workgroups_per_dimension == 0) {
-            var limits = std.mem.zeroes(@import("../../core/abi/wgpu_callback_descriptor_types.zig").WGPULimits);
-            _ = @import("../support/doe_device_caps.zig").doeNativeDeviceGetLimits(toOpaque(pass.enc.dev), &limits);
-            pass.max_workgroups_per_dimension = limits.maxComputeWorkgroupsPerDimension;
-        }
         for (workgroups) |count| {
-            if (count > pass.max_workgroups_per_dimension) {
+            if (count > pass.enc.dev.max_compute_workgroups_per_dimension) {
                 recording.fail(pass.enc, error.DispatchWorkgroupCountExceeded);
                 return false;
             }
@@ -451,6 +446,7 @@ pub export fn doeNativeComputePassDispatchIndirect(pass_raw: ?*anyopaque, buf_ra
         .buf_count = 0,
         .indirect_buf = toOpaque(indirect_buf),
         .offset = offset,
+        .workgroup_limit = pass.enc.dev.max_compute_workgroups_per_dimension,
         .wg_x = pip.wg_x,
         .wg_y = pip.wg_y,
         .wg_z = pip.wg_z,

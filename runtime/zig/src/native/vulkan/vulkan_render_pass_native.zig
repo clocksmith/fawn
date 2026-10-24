@@ -8,6 +8,8 @@ const std = @import("std");
 const upstream = @import("../../core/abi/generated/webgpu_upstream.zig").c;
 const shared = @import("vulkan_render_shared.zig");
 const attachments = @import("vulkan_render_attachments.zig");
+const vertex_formats = @import("../../contracts/vertex_format.zig");
+const abi_feature = @import("../../core/abi/wgpu_feature_base_types.zig");
 
 const RESOURCE_KIND_STORAGE_TEXTURE = binding_contract.layoutResourceKindCode(.storage_texture);
 
@@ -243,6 +245,56 @@ pub fn vulkan_render_pass_draw_indexed(pass: *shared.DoeRenderPass, index_count:
     recordRender(pass, cmd, false);
 }
 
+/// Vertices or instances one vertex buffer slot can supply: (count - 1) *
+/// arrayStride + lastStride bytes must fit in the bound range.
+fn strideCountLimit(bound: u64, array_stride: u64, last_stride: u64) u64 {
+    if (bound < last_stride) return 0;
+    if (array_stride == 0) return model_render_types.IndirectDrawLimits.UNBOUNDED;
+    return (bound - last_stride) / array_stride + 1;
+}
+
+/// Limits for an indirect draw recorded with the pass's current bindings; the
+/// arguments themselves are validated against them when the draw executes.
+pub fn indirectDrawLimits(pass: *const shared.DoeRenderPass, indexed: bool) model_render_types.IndirectDrawLimits {
+    var limits = model_render_types.IndirectDrawLimits{
+        .first_instance_allowed = deviceHasFeature(pass.enc.dev, abi_feature.WGPUFeatureName_IndirectFirstInstance),
+    };
+    const pipeline = pass.pipeline orelse return limits;
+    const count = @min(pipeline.vertex_layout_count, model_render_types.MAX_VERTEX_BUFFERS);
+    for (pipeline.vertex_layouts[0..count], 0..) |layout, slot| {
+        if (layout.step_mode == model_render_types.WGPUVertexStepMode_Undefined and layout.attribute_count == 0) continue;
+        const buffer = pass.vertex_buffers[slot] orelse continue; // a missing buffer already fails the draw
+        const size = pass.vertex_buffer_sizes[slot];
+        const bound = if (size == std.math.maxInt(u64)) buffer.size -| pass.vertex_buffer_offsets[slot] else size;
+        var last_stride: u64 = 0;
+        for (layout.attributes[0..@min(layout.attribute_count, model_render_types.MAX_VERTEX_ATTRIBUTES)]) |attribute| {
+            const format = vertex_formats.fromCode(attribute.format) catch continue;
+            last_stride = @max(last_stride, attribute.offset +| vertex_formats.byteSize(format));
+        }
+        const slot_limit = strideCountLimit(bound, layout.array_stride, last_stride);
+        if (layout.step_mode == model_render_types.WGPUVertexStepMode_Instance) {
+            limits.instance = @min(limits.instance, slot_limit);
+        } else if (!indexed) {
+            limits.vertex = @min(limits.vertex, slot_limit);
+        }
+    }
+    if (indexed) {
+        if (pass.index_buffer) |buffer| {
+            const index_bytes: u64 = if (pass.index_format == model_render_types.WGPUIndexFormat_Uint32) 4 else 2;
+            const size = if (pass.index_buffer_size == std.math.maxInt(u64)) buffer.size -| pass.index_offset else pass.index_buffer_size;
+            limits.index = size / index_bytes;
+        } else limits.index = 0;
+    }
+    return limits;
+}
+
+fn deviceHasFeature(device: anytype, feature: abi_feature.WGPUFeatureName) bool {
+    for (device.enabled_features) |enabled| {
+        if (enabled == feature) return true;
+    }
+    return false;
+}
+
 pub fn vulkan_render_pass_draw_indirect(pass: *shared.DoeRenderPass, indirect_buffer_raw: ?*anyopaque, indirect_offset: u64) void {
     if (!admitDraw(pass, .indirect)) return;
     const indirect = native_helpers.cast(shared.DoeBuffer, indirect_buffer_raw) orelse return;
@@ -250,6 +302,7 @@ pub fn vulkan_render_pass_draw_indirect(pass: *shared.DoeRenderPass, indirect_bu
     var cmd = base_vulkan_render_cmd(pass);
     cmd.indirect_buffer_handle = indirect.vk_id;
     cmd.indirect_offset = indirect_offset;
+    cmd.indirect_limits = indirectDrawLimits(pass, false);
     populate_draw_cmd_from_pass(&cmd, pass);
     recordRender(pass, cmd, false);
 }
@@ -261,6 +314,7 @@ pub fn vulkan_render_pass_draw_indexed_indirect(pass: *shared.DoeRenderPass, ind
     var cmd = base_vulkan_render_cmd(pass);
     cmd.indirect_buffer_handle = indirect.vk_id;
     cmd.indirect_offset = indirect_offset;
+    cmd.indirect_limits = indirectDrawLimits(pass, true);
     cmd.index_count = 0;
     populate_draw_cmd_from_pass(&cmd, pass);
     recordRender(pass, cmd, false);

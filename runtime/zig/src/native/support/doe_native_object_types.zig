@@ -63,6 +63,15 @@ pub const DoeAdapter = struct {
     device_name_len: usize = 0,
 };
 
+pub const DEFAULT_MAX_COMPUTE_WORKGROUPS_PER_DIMENSION: u32 = 65535;
+
+/// A required maxComputeWorkgroupsPerDimension raises the WebGPU default;
+/// an undefined or absent request keeps it.
+pub fn requiredWorkgroupsPerDimension(value: u32) u32 {
+    if (value == 0 or value == std.math.maxInt(u32)) return DEFAULT_MAX_COMPUTE_WORKGROUPS_PER_DIMENSION;
+    return @max(DEFAULT_MAX_COMPUTE_WORKGROUPS_PER_DIMENSION, value);
+}
+
 pub const BufferOffsetAlignment = struct {
     pub const WEBGPU_DEFAULT: u32 = 256;
     uniform: u32 = WEBGPU_DEFAULT,
@@ -95,6 +104,9 @@ pub const DoeDevice = struct {
     /// The device's min{Uniform,Storage}BufferOffsetAlignment: WebGPU defaults
     /// unless the device descriptor required lower values.
     buffer_offset_alignment: BufferOffsetAlignment = .{},
+    /// The device's maxComputeWorkgroupsPerDimension: the WebGPU default
+    /// unless the device descriptor required more.
+    max_compute_workgroups_per_dimension: u32 = DEFAULT_MAX_COMPUTE_WORKGROUPS_PER_DIMENSION,
     external_ref_count: u32 = 1,
     destroyed: bool = false,
     loss: ?*@import("doe_device_loss.zig").Event = null,
@@ -329,8 +341,6 @@ pub const DoeComputePass = struct {
     pipeline: ?*DoeComputePipeline = null,
     bind_groups: [4]?*DoeBindGroup = [_]?*DoeBindGroup{null} ** 4,
     dynamic_offsets: [4]shared.BindGroupDynamicOffsets = [_]shared.BindGroupDynamicOffsets{shared.NO_DYNAMIC_OFFSETS} ** 4,
-    /// The device's maxComputeWorkgroupsPerDimension, read at the first dispatch.
-    max_workgroups_per_dimension: u32 = 0,
     state_generation: u64 = INITIAL_COMPUTE_PASS_STATE_GENERATION,
     last_dispatch_state_generation: u64 = INVALID_COMPUTE_PASS_STATE_GENERATION,
     last_dispatch_cmd_index: usize = 0,

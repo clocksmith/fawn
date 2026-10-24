@@ -10,6 +10,66 @@ const native_runtime = @import("../../src/backend/vulkan/native_runtime.zig");
 const webgpu = @import("../../src/compat/webgpu_ffi.zig");
 const model = @import("../../src/contracts/model/model_gpu_types.zig");
 
+test "vulkan: indirect draw arguments outside the recorded limits are skipped" {
+    const draw_recording = @import("../../src/backend/vulkan/vk_draw_recording.zig");
+    const render_types = @import("../../src/contracts/model/model_render_types.zig");
+    const limits = render_types.IndirectDrawLimits{ .vertex = 3, .instance = 2, .index = 6, .first_instance_allowed = false };
+    const valid = draw_recording.IndirectArgs.decode(&.{ 3, 2, 0, 0 }, false);
+    try std.testing.expectEqual(draw_recording.IndirectDraw{ .draw = valid }, draw_recording.admitIndirect(valid, limits, false));
+    for ([_][4]u32{ .{ 4, 1, 0, 0 }, .{ 1, 1, 3, 0 }, .{ 3, 3, 0, 0 }, .{ 3, 1, 0, 1 }, .{ 0, 1, 0, 0 }, .{ 0xFFFF_FFFF, 1, 1, 0 } }) |words| {
+        try std.testing.expectEqual(draw_recording.IndirectDraw.skip, draw_recording.admitIndirect(draw_recording.IndirectArgs.decode(&words, false), limits, false));
+    }
+    const indexed = draw_recording.IndirectArgs.decode(&.{ 6, 1, 0, @bitCast(@as(i32, -2)), 0 }, true);
+    try std.testing.expectEqual(@as(i32, -2), indexed.base_vertex);
+    try std.testing.expectEqual(draw_recording.IndirectDraw{ .draw = indexed }, draw_recording.admitIndirect(indexed, limits, true));
+    try std.testing.expectEqual(draw_recording.IndirectDraw.skip, draw_recording.admitIndirect(draw_recording.IndirectArgs.decode(&.{ 2, 1, 5, 0, 0 }, true), limits, true));
+}
+
+test "vulkan: indirect draw limits follow bound vertex, instance and index ranges" {
+    const pass_native = @import("../../src/native/vulkan/vulkan_render_pass_native.zig");
+    const objects = @import("../../src/native/support/doe_native_object_types.zig");
+    const render_types = @import("../../src/contracts/model/model_render_types.zig");
+    const vertex_formats = @import("../../src/contracts/vertex_format.zig");
+    var device = objects.DoeDevice{};
+    var encoder = objects.DoeCommandEncoder{ .dev = &device };
+    var pipeline = objects.DoeRenderPipeline{ .device_ref = &device, .vertex_layout_count = 2 };
+    pipeline.vertex_layouts[0] = .{ .array_stride = 8, .step_mode = render_types.WGPUVertexStepMode_Vertex, .attribute_count = 1 };
+    pipeline.vertex_layouts[0].attributes[0] = .{ .format = @intFromEnum(vertex_formats.Format.float32), .offset = 4 };
+    pipeline.vertex_layouts[1] = .{ .array_stride = 4, .step_mode = render_types.WGPUVertexStepMode_Instance, .attribute_count = 1 };
+    pipeline.vertex_layouts[1].attributes[0] = .{ .format = @intFromEnum(vertex_formats.Format.float32), .offset = 0 };
+    var vertices = objects.DoeBuffer{ .size = 64 };
+    var instances = objects.DoeBuffer{ .size = 64 };
+    var indices = objects.DoeBuffer{ .size = 64 };
+    var pass = objects.DoeRenderPass{ .enc = &encoder, .pipeline = &pipeline };
+    pass.vertex_buffers[0] = &vertices;
+    pass.vertex_buffer_sizes[0] = 2 * 8 + 8; // vertices 0..2 end at byte 24
+    pass.vertex_buffers[1] = &instances;
+    pass.vertex_buffer_sizes[1] = 8;
+    pass.index_buffer = &indices;
+    pass.index_format = render_types.WGPUIndexFormat_Uint32;
+    pass.index_buffer_size = 20;
+    const plain = pass_native.indirectDrawLimits(&pass, false);
+    try std.testing.expectEqual(@as(u64, 3), plain.vertex);
+    try std.testing.expectEqual(@as(u64, 2), plain.instance);
+    try std.testing.expect(!plain.first_instance_allowed);
+    const indexed = pass_native.indirectDrawLimits(&pass, true);
+    try std.testing.expectEqual(@as(u64, 5), indexed.index);
+    try std.testing.expectEqual(render_types.IndirectDrawLimits.UNBOUNDED, indexed.vertex);
+}
+
+test "vulkan: the indirect dispatch guard zeroes counts above the workgroup limit" {
+    const guard = @import("../../src/backend/vulkan/vk_dispatch_indirect.zig");
+    const source = try guard.guard_source(std.testing.allocator, 65535);
+    defer std.testing.allocator.free(source);
+    try std.testing.expect(std.mem.startsWith(u8, source, "const LIMIT = 65535u;\n"));
+    try std.testing.expect(std.mem.indexOf(u8, source, "args[0] > LIMIT || args[1] > LIMIT || args[2] > LIMIT") != null);
+    // The guard must compile through the runtime WGSL to SPIR-V path.
+    const translation = @import("../../src/compiler/wgsl/pipeline/translate_spirv.zig");
+    const bytes = try std.testing.allocator.alloc(u8, translation.MAX_OUTPUT);
+    defer std.testing.allocator.free(bytes);
+    try std.testing.expect(try translation.translateToSpirv(std.testing.allocator, source, bytes) > 0);
+}
+
 test "vulkan: zero-size compute buffers get a nonzero backing" {
     try std.testing.expectEqual(@as(u64, 4), vk_memory_policy.buffer_backing_bytes(0));
     try std.testing.expectEqual(@as(u64, 1), vk_memory_policy.buffer_backing_bytes(1));
