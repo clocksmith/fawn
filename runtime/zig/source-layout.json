@@ -2918,9 +2918,9 @@
       },
       "src/contracts/texture.zig": {
         "decision": "Keep",
-        "moduleSha256": "5060b8a4a7ce436ed36636d52e75e7c4a9b6abf04af39d3d237c280a49b0f7cd",
-        "reason": "Keep: reachable neutral contract owner at src/contracts/texture.zig. aspectFormat resolves the single-aspect view format (depth24plus, depth32float or stencil8 for combined formats).",
-        "reviewer": "doe-c-claude/2026-10-24"
+        "moduleSha256": "1b17aaefb7b55cdb399a0836bb74a6328beec2e984002954106250aef0b5df6c",
+        "reason": "Keep: reachable neutral contract owner at src/contracts/texture.zig. aspectFormat resolves the single-aspect view format (depth24plus, depth32float or stencil8 for combined formats). A view's stencil aspect samples as uint and its depth aspect as depth.",
+        "reviewer": "doe-c-claude-surface/2026-10-24"
       },
       "src/contracts/texture_format.zig": {
         "decision": "Keep",
@@ -3644,8 +3644,8 @@
       },
       "src/native/render/doe_bundle_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "2a2f2a9f46bc6397ad1de568936cde15b88c8d12c0372032e45cd5d2e93dfc6e",
-        "reason": "Keep: preserves this native ownership or ABI boundary while separating internal device cleanup leases from application release and enforcing destroyed-device admission. Vulkan bundle replay starts from empty state rather than the pass's.",
+        "moduleSha256": "d50ed766db64dfe0a76b1f37d8a746102d43f09d57430353fcfc77c2a914d428",
+        "reason": "Keep: preserves this native ownership or ABI boundary while separating internal device cleanup leases from application release and enforcing destroyed-device admission. Vulkan bundle replay starts from empty state rather than the pass's. Vulkan executeBundles resets the pass pipeline, bind groups and vertex/index buffers.",
         "reviewer": "doe-c-claude-surface/2026-10-24"
       },
       "src/native/render/doe_render_native.zig": {
@@ -3674,9 +3674,9 @@
       },
       "src/native/resource/doe_bind_group_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "d821d231120231364c7ec3f7d6158af7eba2911e4884ef3e348d45e7d693861b",
-        "reason": "Keep: preserves this native ownership or ABI boundary while separating internal device cleanup leases from application release and enforcing destroyed-device admission; float and depth formats also bind as unfilterable-float; invalid samplers are rejected like invalid buffers and views.",
-        "reviewer": "doe-c-claude-surface/2026-10-23"
+        "moduleSha256": "f5ee846a82d3496f9454c5b446035dd4a75fe32a3111dc1fa93972441061689a",
+        "reason": "Keep: preserves this native ownership or ABI boundary while separating internal device cleanup leases from application release and enforcing destroyed-device admission; float and depth formats also bind as unfilterable-float; invalid samplers are rejected like invalid buffers and views. Texture binding sample types follow the view aspect, so stencil-only views bind as uint.",
+        "reviewer": "doe-c-claude-surface/2026-10-24"
       },
       "src/native/resource/doe_buffer_ops_native.zig": {
         "decision": "Keep",

@@ -3,6 +3,23 @@
 const binding = @import("model/model_binding_value_types.zig");
 const texture = @import("model/model_texture_value_types.zig");
 
+/// The sample type of a view: its stencil aspect (a stencil-only view, or a
+/// stencil8 texture) samples as uint, a depth-only view as depth, and any other
+/// view as its format does
+/// (https://gpuweb.github.io/gpuweb/#depth-formats, "aspect-specific format").
+pub fn inferViewSampleType(format: texture.WGPUTextureFormat, aspect: u32) u32 {
+    if (aspect == texture.WGPUTextureAspect_StencilOnly or format == texture.WGPUTextureFormat_Stencil8)
+        return binding.WGPUTextureSampleType_Uint;
+    return inferSampleType(format);
+}
+
+test "stencil aspects sample as uint and depth aspects as depth" {
+    const depth_stencil = texture.WGPUTextureFormat_Depth24PlusStencil8;
+    try @import("std").testing.expectEqual(binding.WGPUTextureSampleType_Uint, inferViewSampleType(depth_stencil, texture.WGPUTextureAspect_StencilOnly));
+    try @import("std").testing.expectEqual(binding.WGPUTextureSampleType_Depth, inferViewSampleType(depth_stencil, texture.WGPUTextureAspect_DepthOnly));
+    try @import("std").testing.expectEqual(binding.WGPUTextureSampleType_Uint, inferViewSampleType(texture.WGPUTextureFormat_Stencil8, texture.WGPUTextureAspect_All));
+}
+
 pub fn inferSampleType(format: texture.WGPUTextureFormat) u32 {
     return switch (format) {
         texture.WGPUTextureFormat_Depth16Unorm,

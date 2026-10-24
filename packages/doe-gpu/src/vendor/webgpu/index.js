@@ -1518,6 +1518,14 @@ const nodeEncoderBackend = {
       throw unsupportedNodeDeviceCapability('GPURenderPassEncoder.executeBundles');
     }
     addon.renderPassExecuteBundles(pass._native, bundles.map((b) => b._native));
+    // executeBundles resets the pass's pipeline, bind groups and vertex/index
+    // buffers, so the redundant-state cache must not skip setting them again.
+    pass._pipeline = null;
+    pass._bindGroups = [];
+    pass._bindGroupOffsets = [];
+    pass._immediates = [];
+    pass._vertexBuffers = [];
+    pass._indexBuffer = null;
   },
   renderPassPushDebugGroup(pass, label) {
     if (typeof addon.renderPassPushDebugGroup !== 'function') {

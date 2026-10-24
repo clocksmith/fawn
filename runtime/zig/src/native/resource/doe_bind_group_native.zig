@@ -120,14 +120,11 @@ fn classify_layout_entry(entry: abi_pipeline.WGPUBindGroupLayoutEntry) DoeBindGr
     return out;
 }
 
-fn infer_texture_sample_type(tex: *DoeTexture) u32 {
-    return texture_contract.inferSampleType(tex.format);
-}
-
 /// Float and depth formats also bind as unfilterable-float (WebGPU texture
-/// format capabilities, "compatible sample types").
-fn texture_sample_type_compatible(layout_type: u32, tex: *DoeTexture) bool {
-    const inferred = infer_texture_sample_type(tex);
+/// format capabilities, "compatible sample types"); a stencil aspect binds as
+/// uint.
+fn texture_sample_type_compatible(layout_type: u32, view: *DoeTextureView) bool {
+    const inferred = texture_contract.inferViewSampleType(view.tex.format, view.aspect);
     if (layout_type == inferred) return true;
     return layout_type == abi_binding.WGPUTextureSampleType_UnfilterableFloat and
         (inferred == abi_binding.WGPUTextureSampleType_Float or
@@ -157,7 +154,7 @@ fn texture_view_matches_layout(layout_entry: DoeBindGroupLayoutEntry, view: *Doe
         layout_entry.texture_view_dimension != resolve_view_dimension(view)) return false;
     if (layout_entry.texture_sample_type != 0 and
         layout_entry.texture_sample_type != abi_binding.WGPUTextureSampleType_Undefined and
-        !texture_sample_type_compatible(layout_entry.texture_sample_type, tex)) return false;
+        !texture_sample_type_compatible(layout_entry.texture_sample_type, view)) return false;
     if (!texture_aspect_matches(tex, view)) return false;
     return true;
 }
