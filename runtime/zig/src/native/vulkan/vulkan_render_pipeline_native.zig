@@ -14,6 +14,10 @@ const abi_binding = @import("../../core/abi/wgpu_binding_base_types.zig");
 const texture_contract = @import("../../contracts/texture.zig");
 const vertex_format = @import("../../contracts/vertex_format.zig");
 const texture_contract_values = @import("../../contracts/model/model_texture_value_types.zig");
+const binding_slot_limits = @import("../resource/doe_binding_slot_limits.zig");
+
+/// webgpu.h WGPUPrimitiveTopology_PointList.
+const PRIMITIVE_TOPOLOGY_POINT_LIST: u32 = 0x00000001;
 
 pub fn vulkan_create_render_pipeline(
     dev: *shared.DoeDevice,
@@ -217,6 +221,19 @@ pub fn vulkan_create_render_pipeline(
             return false;
         },
     }
+    if (pip.required_binding_kinds_ready) if (interface.interStageFailure(dev.max_inter_stage_shader_variables, pip.topology == PRIMITIVE_TOPOLOGY_POINT_LIST, d.fragment != null)) |message| {
+        dev.error_scopes.deliver(error_scope.ERROR_TYPE_VALIDATION, message);
+        return false;
+    };
+    // An automatic layout holds exactly the bindings the entry points use.
+    if (pip.layout == null and pip.required_binding_kinds_ready) {
+        var slots = binding_slot_limits.Counts{};
+        slots.addRequired(pip.required_bindings.slice());
+        if (slots.failure(dev.stage_limits)) |limit| {
+            dev.error_scopes.deliver(error_scope.ERROR_TYPE_VALIDATION, binding_slot_limits.message("render pipeline automatic layout exceeds ", limit));
+            return false;
+        }
+    }
     if (pip.layout) |layout| if (pip.required_binding_kinds_ready and !compute_bind_groups.pipelineLayoutAdmitsBindings(layout, pip.required_bindings.slice())) {
         dev.error_scopes.deliver(error_scope.ERROR_TYPE_VALIDATION, "render pipeline layout lacks a binding the entry points use, or has it with another resource or buffer type or without the stage's visibility");
         return false;
@@ -268,6 +285,56 @@ const StageInterface = struct {
     vertex_count: usize = 0,
     fragment_outputs: [CAPACITY]InterfaceValue = undefined,
     fragment_count: usize = 0,
+    /// Inter-stage variables: user-defined vertex outputs (with the largest
+    /// location and the clip_distances array size) and fragment inputs (with
+    /// the inter-stage builtins the fragment stage reads).
+    vertex_outputs: u32 = 0,
+    vertex_output_location_end: u32 = 0,
+    clip_distances: u32 = 0,
+    fragment_inputs: u32 = 0,
+    fragment_input_builtins: u32 = 0,
+
+    fn recordVertexOutputs(self: *StageInterface, module_ir: *const wgsl_ir.Module, ty: wgsl_ir.TypeId, io: ?wgsl_ir.IoAttr) void {
+        switch (module_ir.types.get(ty)) {
+            .struct_ => |id| for (module_ir.structs.items[id].fields.items) |field| self.recordVertexOutputs(module_ir, field.ty, field.io),
+            else => if (io) |attr| {
+                if (attr.location) |location| {
+                    self.vertex_outputs += 1;
+                    self.vertex_output_location_end = @max(self.vertex_output_location_end, location + 1);
+                } else if (attr.builtin == .clip_distances) switch (module_ir.types.get(ty)) {
+                    .array => |array| self.clip_distances = array.len orelse 0,
+                    else => {},
+                };
+            },
+        }
+    }
+
+    fn recordFragmentInputs(self: *StageInterface, module_ir: *const wgsl_ir.Module, ty: wgsl_ir.TypeId, io: ?wgsl_ir.IoAttr) void {
+        switch (module_ir.types.get(ty)) {
+            .struct_ => |id| for (module_ir.structs.items[id].fields.items) |field| self.recordFragmentInputs(module_ir, field.ty, field.io),
+            else => if (io) |attr| {
+                if (attr.location != null) {
+                    self.fragment_inputs += 1;
+                } else switch (attr.builtin) {
+                    // https://gpuweb.github.io/gpuweb/#inter-stage-builtins
+                    .front_facing, .sample_index, .sample_mask, .primitive_index, .subgroup_invocation_id, .subgroup_size => self.fragment_input_builtins += 1,
+                    else => {},
+                }
+            },
+        }
+    }
+
+    /// "validating inter-stage interfaces" limits
+    /// (https://gpuweb.github.io/gpuweb/#abstract-opdef-validating-inter-stage-interfaces).
+    fn interStageFailure(self: *const StageInterface, limit: u32, point_list: bool, has_fragment: bool) ?[]const u8 {
+        const clip_slots = (self.clip_distances + 3) / 4;
+        const output_budget = limit -| (@as(u32, @intFromBool(point_list)) + clip_slots);
+        if (self.vertex_outputs > output_budget or self.vertex_output_location_end > limit -| clip_slots)
+            return "render pipeline vertex outputs exceed maxInterStageShaderVariables";
+        if (has_fragment and self.fragment_inputs > limit -| self.fragment_input_builtins)
+            return "render pipeline fragment inputs exceed maxInterStageShaderVariables";
+        return null;
+    }
 
     fn recordVertexInput(self: *StageInterface, module_ir: *const wgsl_ir.Module, ty: wgsl_ir.TypeId, io: ?wgsl_ir.IoAttr) void {
         switch (module_ir.types.get(ty)) {
@@ -427,8 +494,14 @@ fn stageEntryPoint(pipeline: *shared.DoeRenderPipeline, module: ?*const shared.D
     } else return .missing;
     if (function.stage != stage) return .missing;
     switch (stage) {
-        .vertex => for (function.params.items) |param| interface.recordVertexInput(&module_ir, param.ty, param.io),
-        .fragment => interface.recordFragmentOutputs(&module_ir, function.return_type, function.return_io),
+        .vertex => {
+            for (function.params.items) |param| interface.recordVertexInput(&module_ir, param.ty, param.io);
+            interface.recordVertexOutputs(&module_ir, function.return_type, function.return_io);
+        },
+        .fragment => {
+            interface.recordFragmentOutputs(&module_ir, function.return_type, function.return_io);
+            for (function.params.items) |param| interface.recordFragmentInputs(&module_ir, param.ty, param.io);
+        },
         .compute => {},
     }
     var metadata: [native_shared.MAX_SHADER_BINDINGS]wgsl_bindings.BindingMeta = undefined;

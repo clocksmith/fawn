@@ -74,6 +74,39 @@ pub fn requiredWorkgroupsPerDimension(value: u32) u32 {
     return @max(DEFAULT_MAX_COMPUTE_WORKGROUPS_PER_DIMENSION, value);
 }
 
+/// A required maximum limit raises its WebGPU default; an undefined, absent
+/// or lower request keeps it (https://gpuweb.github.io/gpuweb/#a-new-device).
+pub fn requiredMaximum(default: u32, value: u32) u32 {
+    if (value == std.math.maxInt(u32)) return default;
+    return @max(default, value);
+}
+
+/// The device's per-shader-stage binding slot limits
+/// (https://gpuweb.github.io/gpuweb/#exceeds-the-binding-slot-limits). The
+/// stage-specific storage limits equal the per-stage ones on these
+/// core-features-and-limits devices.
+pub const ShaderStageLimits = struct {
+    sampled_textures: u32 = 16,
+    samplers: u32 = 16,
+    storage_buffers: u32 = 8,
+    storage_textures: u32 = 4,
+    uniform_buffers: u32 = 12,
+
+    pub fn fromRequired(required: anytype) ShaderStageLimits {
+        const defaults = ShaderStageLimits{};
+        return .{
+            .sampled_textures = requiredMaximum(defaults.sampled_textures, required.maxSampledTexturesPerShaderStage),
+            .samplers = requiredMaximum(defaults.samplers, required.maxSamplersPerShaderStage),
+            .storage_buffers = requiredMaximum(defaults.storage_buffers, required.maxStorageBuffersPerShaderStage),
+            .storage_textures = requiredMaximum(defaults.storage_textures, required.maxStorageTexturesPerShaderStage),
+            .uniform_buffers = requiredMaximum(defaults.uniform_buffers, required.maxUniformBuffersPerShaderStage),
+        };
+    }
+};
+
+pub const DEFAULT_MAX_INTER_STAGE_SHADER_VARIABLES: u32 = 16;
+pub const DEFAULT_MAX_COMPUTE_WORKGROUP_STORAGE_SIZE: u32 = 16384;
+
 pub const BufferOffsetAlignment = struct {
     pub const WEBGPU_DEFAULT: u32 = 256;
     uniform: u32 = WEBGPU_DEFAULT,
@@ -109,6 +142,11 @@ pub const DoeDevice = struct {
     /// The device's maxComputeWorkgroupsPerDimension: the WebGPU default
     /// unless the device descriptor required more.
     max_compute_workgroups_per_dimension: u32 = DEFAULT_MAX_COMPUTE_WORKGROUPS_PER_DIMENSION,
+    /// The device's binding slot, inter-stage and workgroup storage limits:
+    /// WebGPU defaults unless the device descriptor required more.
+    stage_limits: ShaderStageLimits = .{},
+    max_inter_stage_shader_variables: u32 = DEFAULT_MAX_INTER_STAGE_SHADER_VARIABLES,
+    max_compute_workgroup_storage_size: u32 = DEFAULT_MAX_COMPUTE_WORKGROUP_STORAGE_SIZE,
     /// setImmediates and pipeline layout immediateSize validate against this;
     /// no shader uses immediates yet.
     max_immediate_size: u32 = DEFAULT_MAX_IMMEDIATE_SIZE,
