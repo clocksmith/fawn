@@ -65,7 +65,12 @@ function compilerCommand(includeDir, {
     const architectures = { x64: 'x86_64', arm64: 'aarch64', ia32: 'i686' };
     const targetArch = architectures[arch];
     if (!targetArch) throw new Error(`Unsupported Windows Node architecture: ${arch}`);
-    const prefixArgs = [`--target=${targetArch}-pc-windows-msvc`, '-fms-runtime-lib=dll'];
+    // clang's GNU driver can also inject libcmt at link time despite selecting
+    // the DLL CRT above. Exclude that static CRT so headers and linker agree.
+    const prefixArgs = [
+      `--target=${targetArch}-pc-windows-msvc`, '-fms-runtime-lib=dll',
+      '-Wl,/NODEFAULTLIB:libcmt',
+    ];
     return {
       compiler: environment.CC || 'clang',
       prefixArgs,
