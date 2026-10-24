@@ -6,7 +6,7 @@ OUT ?= $(DOE_C_TMP)/hlsl-target
 CFLAGS = -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror
 include sources.mk
 SOURCES = $(HLSL_SOURCE_NAMES)
-TESTS = tests/test_readonly_images.c tests/test_atomics.c tests/test_component_math.c tests/test_hlsl.c tests/test_images.c tests/test_graphics.c tests/test_matrices.c
+TESTS = tests/test_linkage.c tests/test_readonly_images.c tests/test_atomics.c tests/test_component_math.c tests/test_hlsl.c tests/test_images.c tests/test_graphics.c tests/test_matrices.c
 CORE = $(filter-out ../../src/specialization.c ../../src/specialization_compile.c ../../src/cli.c ../../src/cli_json.c ../../src/compile_text.c ../../src/text_metal.c ../../src/text_hlsl.c,$(wildcard ../../src/*.c))
 .PHONY: all check style clean
 all: $(OUT)/test_hlsl
@@ -43,3 +43,7 @@ $(OUT)/test_closure: ../tests/test_closure.c ../closure.h ../scratch.h ../stage_
 .PHONY: atomic-software
 atomic-software: all
 	python3 tests/atomic_spirv_control.py $(OUT) "$(DXC)" "$(SOFTWARE_VULKAN_ICD)"
+
+.PHONY: linkage-dxc
+linkage-dxc: all
+	python3 tests/linkage_dxc.py $(OUT) "$(DXC)"

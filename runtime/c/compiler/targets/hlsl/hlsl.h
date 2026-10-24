@@ -14,7 +14,9 @@
  * Buffers use 4-byte StructuredBuffer<uint> views; CBVs preserve WGSL byte offsets.
  * Dispatch metadata, when required, follows retained b0, space7 uint3 + padding.
  * Graphics requires the shared Source stage workspace and maps its typed leaves;
- * invariant output is unsupported without qualified target compilation policy. */
+ * invariant output is unsupported without qualified target compilation policy.
+ * LINKAGE.md owns canonical target carrier ordering and the optional compiler-
+ * named VS output projection define; logical stage reflection is unchanged. */
 enum { DOE_HLSL_MAX_OUTPUT = 1024 * 1024, DOE_HLSL_MAX_DEPTH = 96,
        DOE_HLSL_DISPATCH_SLOT = 0, DOE_HLSL_DISPATCH_SPACE = 7 };
 typedef struct {

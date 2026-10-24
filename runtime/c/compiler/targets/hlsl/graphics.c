@@ -83,21 +83,60 @@ static void interpolation(HlslEmitter *e, const StageInterface *leaf) {
     if (leaf->sampling == DOE_COMPILER_SAMPLING_CENTROID) hlsl_text(e, "centroid ");
     else if (leaf->sampling == DOE_COMPILER_SAMPLING_SAMPLE) hlsl_text(e, "sample ");
 }
+/* Sorting only the target carrier preserves the shared source/reflection IDs.
+ * A matched user prefix must precede target-generated system values in both
+ * stages. The native pipeline projects unused producer locations before DXC. */
+static bool interface_before(const StageInterface *left, const StageInterface *right) {
+    if ((left->location != NO_ID) != (right->location != NO_ID)) return left->location != NO_ID;
+    return left->location != NO_ID ? left->location < right->location : left->builtin < right->builtin;
+}
+static bool projected_output(HlslEmitter *e, const StageInterface *leaf, bool declaration) {
+    const FunctionRecord *function = &e->module->functions[e->module->entries[e->entry].function];
+    if ((function->flags & FUNCTION_VERTEX) == 0u ||
+        leaf->direction != DOE_COMPILER_INTERFACE_OUTPUT || leaf->location == NO_ID) return false;
+    if (leaf->location >= DOE_COMPILER_HLSL_INTERSTAGE_MASK_BITS) {
+        if (declaration) hlsl_text(e, "#if defined(" DOE_COMPILER_HLSL_INTERSTAGE_MASK_DEFINE ")\n"
+            "#error HLSL interstage projection location exceeds the 32-bit profile\n#endif\n");
+        return false;
+    }
+    hlsl_format(e, "#if !defined(" DOE_COMPILER_HLSL_INTERSTAGE_MASK_DEFINE ") || ("
+        DOE_COMPILER_HLSL_INTERSTAGE_MASK_DEFINE " & %uu) != 0\n", UINT32_C(1) << leaf->location);
+    return true;
+}
 static uint32_t interface_type(HlslEmitter *e, const StageEntry *entry, uint32_t direction) {
+    const StageInterface *leaves = e->source->stages->interfaces + entry->interface_first;
     uint32_t count = 0u;
     for (uint32_t i = 0u; i < entry->interface_count; ++i)
-        if (e->source->stages->interfaces[entry->interface_first + i].direction == direction) ++count;
+        if (leaves[i].direction == direction) ++count;
     if (count == 0u) return 0u;
     hlsl_format(e, "struct DoeStage%u {\n", direction);
-    for (uint32_t i = 0u; i < entry->interface_count; ++i) {
-        const StageInterface *leaf = &e->source->stages->interfaces[entry->interface_first + i];
-        if (leaf->direction != direction) continue;
+    uint32_t previous = NO_ID;
+    for (uint32_t emitted = 0u; emitted < count && !e->failed; ++emitted) {
+        uint32_t next = NO_ID;
+        for (uint32_t i = 0u; i < entry->interface_count; ++i) {
+            if (e->traversal_left == 0u) {
+                hlsl_error(e, "HLSL interface ordering exceeds the traversal budget");
+                return count;
+            }
+            --e->traversal_left;
+            if (leaves[i].direction != direction ||
+                (previous != NO_ID && !interface_before(&leaves[previous], &leaves[i]))) continue;
+            if (next == NO_ID || interface_before(&leaves[i], &leaves[next])) next = i;
+        }
+        if (next == NO_ID) {
+            hlsl_error(e, "HLSL interface ordering has duplicate or invalid leaf identities");
+            return count;
+        }
+        const StageInterface *leaf = &leaves[next];
+        const bool projected = projected_output(e, leaf, true);
         hlsl_text(e, "    ");
         interpolation(e, leaf);
         hlsl_type(e, leaf->type);
-        hlsl_format(e, " field%u : ", i);
+        hlsl_format(e, " field%u : ", next);
         semantic(e, leaf);
         hlsl_text(e, ";\n");
+        if (projected) hlsl_text(e, "#endif\n");
+        previous = next;
     }
     hlsl_text(e, "};\n");
     return count;
@@ -130,9 +169,11 @@ void hlsl_graphics_wrapper(HlslEmitter *e) {
         for (uint32_t i = 0u; i < entry->interface_count; ++i) {
             const StageInterface *leaf = &e->source->stages->interfaces[entry->interface_first + i];
             if (leaf->direction != DOE_COMPILER_INTERFACE_OUTPUT) continue;
+            const bool projected = projected_output(e, leaf, false);
             hlsl_format(e, "    output.field%u = value", i);
             if (leaf->member != NO_ID) hlsl_format(e, ".m%u", leaf->member);
             hlsl_text(e, ";\n");
+            if (projected) hlsl_text(e, "#endif\n");
         }
         hlsl_text(e, "    return output;\n");
     }

@@ -38,9 +38,15 @@ WGPURenderPipeline native_d3d12_create_render_pipeline(native_device *device,
     doe_dx_render_pipeline_desc desc={0};
     doe_resource_render_pipeline_desc resource={0};
     if (!descriptor(device,source,stages,count,&desc,&resource)) return NULL;
+    uint32_t interstage_mask=0;
+    if (!native_d3d12_interstage_mask(&stages[1],&interstage_mask)) {
+        *error=(native_pipeline_error){WGPUErrorType_Validation,"D3D12 fragment input projection unsupported"};
+        return NULL;
+    }
     doe_dx_shader *compiled[2]={0};
     native_failure failure=native_failure_status(NATIVE_OK);
-    for (size_t i=0;i<2 && failure.status==NATIVE_OK;++i) failure=native_d3d12_compile_stage(&stages[i],&compiled[i]);
+    failure=native_d3d12_compile_vertex(&stages[0],interstage_mask,&compiled[0]);
+    if (failure.status==NATIVE_OK) failure=native_d3d12_compile_stage(&stages[1],&compiled[1]);
     native_pipeline *payload=NULL;
     if (failure.status==NATIVE_OK) {
         payload=calloc(1,sizeof(*payload));

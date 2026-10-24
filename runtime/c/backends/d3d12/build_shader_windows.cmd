@@ -24,6 +24,13 @@ if not "%errorlevel%"=="0" goto fail
 > "%OUT%\negative-include.hlsl" echo #define DOE_INCLUDE_VALUE 7
 "%OUT%\native_shader.exe" "%DXC_ROOT%\bin\x64\dxcompiler.dll" "%OUT%\negative-include.hlsl"
 if not "%errorlevel%"=="0" goto fail
+rem Additive typed VS projection uses the same official DXC/host-state owner.
+"%CLANG_CL%" %BASE% /clang:-std=c11 /fp:strict /D_CRT_SECURE_NO_WARNINGS /c tests/native_shader_projection.c /Fo"%OUT%\native_shader_projection.obj"
+if not "%errorlevel%"=="0" goto fail
+"%CLANG_CL%" /nologo /MD "%OUT%\native_shader_projection.obj" "%OUT%\windows_shader.obj" /Fe"%OUT%\native_shader_projection.exe"
+if not "%errorlevel%"=="0" goto fail
+"%OUT%\native_shader_projection.exe" "%DXC_ROOT%\bin\x64\dxcompiler.dll"
+if not "%errorlevel%"=="0" goto fail
 popd
 exit /b 0
 :fail

@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: MIT */
 #include "doe_d3d12_shader.h"
+#include "../../../compiler/include/doe_compiler_hlsl.h"
 #ifndef _WIN32
 #error This official DXC adapter requires Windows and the official DXC SDK.
 #endif
@@ -124,13 +125,17 @@ static bool absolute_path(const wchar_t *path)
 }
 
 static doe_dx_status compile_shader(const doe_dx_shader_options *options,
-    doe_dx_shader **out, doe_dx_shader_error *error)
+    const doe_dx_shader_projection *projection,bool require_projection,
+    doe_dx_shader **out,doe_dx_shader_error *error)
 {
     wchar_t entry[64];
     if (!options || !out || !options->compiler_module_path || !options->source ||
         !options->source_size || !identifier(options->entry, entry) ||
         std::memchr(options->source, 0, options->source_size))
         return reject(error, "invalid DXC source, module path, entry or output");
+    if ((require_projection && !projection) || (projection &&
+        (projection->reserved || options->stage!=DOE_DX_SHADER_VERTEX)))
+        return reject(error,"projection requires a vertex stage and zero reserved fields");
     const wchar_t *profile;
     switch (options->stage) {
     case DOE_DX_SHADER_COMPUTE: profile = L"cs_6_0"; break;
@@ -164,10 +169,25 @@ static doe_dx_status compile_shader(const doe_dx_shader_options *options,
     if (FAILED(result) || !state.compiler) return failed(&state, error,
         native_status(FAILED(result) ? result : E_FAIL),
         static_cast<int32_t>(FAILED(result) ? result : E_FAIL), "DxcCreateInstance(IDxcCompiler3)");
-    const wchar_t *arguments[12] = {L"-T", profile, L"-E", entry, L"-HV", L"2021",
+    const wchar_t *arguments[16] = {L"-T", profile, L"-E", entry, L"-HV", L"2021",
         DXC_ARG_ENABLE_STRICTNESS, DXC_ARG_WARNINGS_ARE_ERRORS, DXC_ARG_IEEE_STRICTNESS};
     UINT32 count = 9;
-    wchar_t selected[32];
+    /* Verified pinned DXC spelling. Appended signature elements must not move
+     * the shared prefix; compute has no graphics signature policy. */
+    if (options->stage!=DOE_DX_SHADER_COMPUTE) arguments[count++]=L"-pack-prefix-stable";
+    wchar_t selected[32],projected[64];
+    if (projection) {
+        static_assert(DOE_COMPILER_HLSL_INTERSTAGE_MASK_BITS==32u,"projection mask width matches compiler");
+        char encoded[64];
+        int length=std::snprintf(encoded,sizeof(encoded),"%s=%uu",
+            DOE_COMPILER_HLSL_INTERSTAGE_MASK_DEFINE,static_cast<unsigned>(projection->interstage_mask));
+        if (length<=0 || static_cast<size_t>(length)>=sizeof(encoded))
+            return failed(&state,error,DOE_DX_RANGE,static_cast<int32_t>(E_INVALIDARG),"DXC.projection_define");
+        for (size_t i=0;i<=static_cast<size_t>(length);++i)
+            projected[i]=static_cast<wchar_t>(static_cast<unsigned char>(encoded[i]));
+        arguments[count++]=L"-D";
+        arguments[count++]=projected;
+    }
     if (options->has_entry_index) {
         int length = std::swprintf(selected, sizeof(selected) / sizeof(*selected),
             L"DOE_HLSL_ENTRY=%u", static_cast<unsigned>(options->entry_index));
@@ -206,8 +226,9 @@ static doe_dx_status compile_shader(const doe_dx_shader_options *options,
     return report(error, DOE_DX_OK, 0, nullptr, nullptr, 0);
 }
 
-doe_dx_status doe_dx_shader_compile(const doe_dx_shader_options *options,
-    doe_dx_shader **out, doe_dx_shader_error *error)
+static doe_dx_status shader_compile(const doe_dx_shader_options *options,
+    const doe_dx_shader_projection *projection,bool require_projection,
+    doe_dx_shader **out,doe_dx_shader_error *error)
 {
     DWORD saved_error = GetLastError();
     int saved_errno = errno;
@@ -219,7 +240,7 @@ doe_dx_status doe_dx_shader_compile(const doe_dx_shader_options *options,
     if (std::fegetenv(&saved_environment)) {
         status = report(&failure, DOE_DX_NATIVE_FAILURE, 0, "fegetenv(DXC)", "cannot save FP environment", 26);
     } else {
-        status = compile_shader(options, out ? &shader : nullptr, &failure);
+        status = compile_shader(options,projection,require_projection,out ? &shader : nullptr,&failure);
         if (std::fesetenv(&saved_environment)) {
             doe_dx_shader_release(shader);
             shader = nullptr;
@@ -234,6 +255,18 @@ doe_dx_status doe_dx_shader_compile(const doe_dx_shader_options *options,
     errno = saved_errno;
     SetLastError(saved_error);
     return status;
+}
+
+doe_dx_status doe_dx_shader_compile(const doe_dx_shader_options *options,
+    doe_dx_shader **out,doe_dx_shader_error *error)
+{
+    return shader_compile(options,nullptr,false,out,error);
+}
+
+doe_dx_status doe_dx_shader_compile_projected(const doe_dx_shader_options *options,
+    const doe_dx_shader_projection *projection,doe_dx_shader **out,doe_dx_shader_error *error)
+{
+    return shader_compile(options,projection,true,out,error);
 }
 
 const uint8_t *doe_dx_shader_bytes(const doe_dx_shader *shader, size_t *size)

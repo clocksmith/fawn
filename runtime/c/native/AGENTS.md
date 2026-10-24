@@ -60,6 +60,10 @@ pending/resource leases. Explicitly reject state outside the currently composed
 envelope; partial source coverage cannot claim retained graphics parity.
 Keep reported limits composable with resource-owner admission. Render-target byte
 budgets use that owner's format costs, independently of texel allocation sizes.
+After shared typed stage-interface validation, derive the vertex-output projection
+from selected fragment input locations in compiler reflection. Pass that mask to
+the compiler-owned HLSL guards through the SDK adapter before taking device locks;
+never trim WGSL computation, rewrite reflection or infer linkage by parsing HLSL.
 
 Graphics consumes compiler-owned stage/resource/interface reflection and canonical
 resource-owned pass/bundle snapshots. Preserve the whole pass when lowering to the

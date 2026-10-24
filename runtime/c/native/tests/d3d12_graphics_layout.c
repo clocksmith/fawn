@@ -33,6 +33,39 @@ static doe_shader *compile(const char *source)
     assert(status==DOE_SHADER_OK);
     return shader;
 }
+static void projection(const native_stage *fragment,const native_stage *vertex)
+{
+    uint32_t mask=UINT32_MAX;
+    assert(native_d3d12_interstage_mask(fragment,&mask) && mask==1);
+    DoeCompilerStageInterfaceV7 rows[2];
+    bool found=false;
+    for (size_t i=0;i<fragment->view.interface_count;++i) {
+        const DoeCompilerStageInterfaceV7 *item=&fragment->view.interfaces[i];
+        if (item->direction==DOE_COMPILER_INTERFACE_INPUT && !item->builtin) {
+            rows[0]=rows[1]=*item;
+            found=true;
+            break;
+        }
+    }
+    assert(found);
+    native_stage sparse=*fragment;
+    sparse.view.interfaces=rows; sparse.view.interface_count=2;
+    rows[0].location=2; rows[1].location=31;
+    assert(native_d3d12_interstage_mask(&sparse,&mask) && mask==(UINT32_C(1)<<2 | UINT32_C(1)<<31));
+    uint32_t saved=mask;
+    rows[1].location=2;
+    assert(!native_d3d12_interstage_mask(&sparse,&mask) && mask==saved);
+    rows[1].location=32;
+    assert(!native_d3d12_interstage_mask(&sparse,&mask) && mask==saved);
+    rows[1].location=UINT32_MAX;
+    assert(!native_d3d12_interstage_mask(&sparse,&mask) && mask==saved);
+    sparse.view.interface_count=0;
+    assert(native_d3d12_interstage_mask(&sparse,&mask) && mask==0);
+    assert(!native_d3d12_interstage_mask(vertex,&mask) && mask==0);
+    sparse.view.entries=NULL;
+    assert(!native_d3d12_interstage_mask(&sparse,&mask) && mask==0);
+}
+
 int main(void)
 {
     const char *vertex="@group(0) @binding(2) var<uniform> a:vec4f;"
@@ -53,6 +86,7 @@ int main(void)
         assert(doe_shader_borrow(shaders[i],&stages[i].view)==DOE_SHADER_OK);
         stages[i].entry=&stages[i].view.entries[0];
     }
+    projection(&stages[1],&stages[0]);
     assert(stages[0].view.resources[0].binding==2 && stages[1].view.resources[0].binding==5);
     native_pipeline pipeline={.binding_count=5,.bindings={
         {.group=2,.binding=4,.kind=DOE_BIND_SAMPLER},

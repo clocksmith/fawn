@@ -15,6 +15,8 @@ typedef struct native_d3d12_graphics_snapshot {
  * list. Module-local resource ordinals never become cross-stage identities. */
 bool native_d3d12_graphics_maps(const native_pipeline *,const native_stage [2],
     native_d3d12_layout [2],native_d3d12_graphics *);
+/* Called after shared stage-interface validation; source reflection is unchanged. */
+bool native_d3d12_interstage_mask(const native_stage *,uint32_t *);
 WGPURenderPipeline native_d3d12_create_render_pipeline(native_device *,
     const WGPURenderPipelineDescriptor *,const native_stage *,size_t,native_pipeline_error *);
 native_failure native_d3d12_render(native_command_handle *,const doe_resource_command *,size_t,size_t *);

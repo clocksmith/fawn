@@ -422,6 +422,7 @@ static void test_pointer_rejection(void) {
     }
 }
 int main(int argc, char **argv) {
+    test_linkage(argc > 11 ? argv[11] : NULL);
     test_readonly_images(argc > 10 ? argv[10] : NULL);
     test_atomics(argc > 9 ? argv[9] : NULL);
     test_component_math(argc > 8 ? argv[8] : NULL);

@@ -49,9 +49,11 @@ static native_failure compiler_path(char **out)
 }
 #endif
 
-native_failure native_d3d12_compile_stage(const native_stage *stage, doe_dx_shader **out)
+static native_failure compile_stage(const native_stage *stage,const uint32_t *interstage_mask,doe_dx_shader **out)
 {
     if (!stage || !stage->entry || !out) return native_failure_status(NATIVE_INVALID_ARGUMENT);
+    if (interstage_mask && stage->entry->stage!=DOE_COMPILER_STAGE_VERTEX)
+        return native_failure_status(NATIVE_INVALID_ARGUMENT);
 #if defined(_WIN32)
     const doe_shader_view *view = &stage->view;
     if (view->target != DOE_SHADER_HLSL || view->target_language_version != 600 ||
@@ -81,7 +83,9 @@ native_failure native_d3d12_compile_stage(const native_stage *stage, doe_dx_shad
         .source = view->text, .source_size = view->text_size, .entry = entry->name,
         .stage = target, .has_entry_index = true, .entry_index = entry->entry_index};
     doe_dx_shader_error error = {0};
-    doe_dx_status status = doe_dx_shader_compile(&options, out, &error);
+    const doe_dx_shader_projection projection={.interstage_mask=interstage_mask ? *interstage_mask : 0};
+    doe_dx_status status = interstage_mask ? doe_dx_shader_compile_projected(&options,&projection,out,&error) :
+        doe_dx_shader_compile(&options,out,&error);
     doe_dx_error native = {status, error.native_code, error.operation};
     failure = native_failure_d3d12(status, &native);
     /* These exact target bytes/options were produced by the provider after
@@ -98,9 +102,22 @@ native_failure native_d3d12_compile_stage(const native_stage *stage, doe_dx_shad
     return failure;
 #else
     (void)stage;
+    (void)interstage_mask;
     (void)out;
     return native_failure_status(NATIVE_UNAVAILABLE);
 #endif
+}
+
+native_failure native_d3d12_compile_stage(const native_stage *stage,doe_dx_shader **out)
+{
+    return compile_stage(stage,NULL,out);
+}
+
+native_failure native_d3d12_compile_vertex(const native_stage *stage,uint32_t interstage_mask,doe_dx_shader **out)
+{
+    if (!stage || !stage->entry || stage->entry->stage!=DOE_COMPILER_STAGE_VERTEX)
+        return native_failure_status(NATIVE_INVALID_ARGUMENT);
+    return compile_stage(stage,&interstage_mask,out);
 }
 
 native_failure native_d3d12_compile_compute(const native_stage *stage,doe_dx_shader **out)
