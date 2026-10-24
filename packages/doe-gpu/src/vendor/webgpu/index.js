@@ -1262,6 +1262,7 @@ const nodeEncoderBackend = {
   computePassSetBindGroup(pass, index, bindGroupNative, offsets = null) {
     if (pass._lazy && bindGroupNative !== null && offsets === null && index < LAZY_BIND_GROUP_SLOTS) {
       pass._bindGroups[index] = bindGroupNative;
+      pass._groupsSinceDispatch = true;
       return;
     }
     materializeLazyComputePass(pass);
@@ -1289,6 +1290,7 @@ const nodeEncoderBackend = {
       materializeLazyComputePass(pass);
     }
     if (pass._lazy) {
+      pass._groupsSinceDispatch = false;
       if (pass._descriptor !== undefined || pass._bindGroups.length > 1) {
         const command = { t: 0, p: pass._pipeline, bg: pass._bindGroups.slice(), x, y, z };
         if (pass._descriptor !== undefined) {
@@ -1314,6 +1316,7 @@ const nodeEncoderBackend = {
     if (pass._lazy) {
       pass._pipeline = pipelineNative;
       pass._bindGroups[0] = bindGroupNative;
+      pass._groupsSinceDispatch = false;
       if (pass._descriptor !== undefined || pass._bindGroups.length > 1) {
         const command = { t: 0, p: pipelineNative, bg: pass._bindGroups.slice(), x, y, z };
         if (pass._descriptor !== undefined) {
@@ -1352,6 +1355,12 @@ const nodeEncoderBackend = {
     addon.computePassDispatchWorkgroupsIndirect(nativePass, indirectBufferNative, indirectOffset);
   },
   computePassEnd(pass) {
+    // Bind groups set after the last dispatch are still part of the command
+    // buffer's usage (a destroyed resource in one fails the submit), so the
+    // pass is recorded natively to carry them.
+    if (pass._lazy && pass._groupsSinceDispatch) {
+      materializeLazyComputePass(pass);
+    }
     if (pass._lazy) {
       pass._ended = true;
       if (pass._encoder._activePass === pass) {

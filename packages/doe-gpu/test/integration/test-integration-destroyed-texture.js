@@ -2,7 +2,8 @@
 // A destroyed texture (WebGPU): createView still succeeds, commands that name
 // it still encode and finish, and queue.submit reports a validation error,
 // whether the texture was destroyed before encoding or after finish().
-// queue.writeTexture to a destroyed texture is a validation error at once.
+// queue.writeTexture to a destroyed texture is a validation error at once. A
+// bind group set in a compute pass counts even without a dispatch.
 
 import assert from 'node:assert/strict';
 import { setupGlobals } from '../../src/index.js';
@@ -81,5 +82,42 @@ function encodePass(view) {
     assert.ok(submitted.error, 'a texture destroyed after finish fails at submit');
   }
   console.log('ok: a texture destroyed after finish fails at submit');
+}
+// A compute pass that sets a bind group and never dispatches still uses it.
+{
+  const S = globalThis.GPUShaderStage;
+  const sampled = device.createTexture({ size: [4, 4], format: 'rgba8unorm', usage: T.TEXTURE_BINDING });
+  const storage = device.createBuffer({ size: 16, usage: B.STORAGE });
+  const textureLayout = device.createBindGroupLayout({ entries: [{ binding: 0, visibility: S.COMPUTE, texture: {} }] });
+  const bufferLayout = device.createBindGroupLayout({ entries: [{ binding: 0, visibility: S.COMPUTE, buffer: { type: 'storage' } }] });
+  const groups = [
+    [sampled, device.createBindGroup({ layout: textureLayout, entries: [{ binding: 0, resource: sampled.createView() }] })],
+    [storage, device.createBindGroup({ layout: bufferLayout, entries: [{ binding: 0, resource: { buffer: storage } }] })],
+  ];
+  for (const [resource, group] of groups) {
+    const encoder = device.createCommandEncoder();
+    const pass = encoder.beginComputePass();
+    pass.setBindGroup(0, group);
+    pass.end();
+    const commandBuffer = encoder.finish();
+    resource.destroy();
+    const submitted = await scoped(() => device.queue.submit([commandBuffer]));
+    assert.ok(submitted.error, `a set-only bind group naming a destroyed ${resource.constructor.name} fails at submit`);
+  }
+
+  // createBindGroup with a view made after destroy() is valid; using it fails at submit.
+  const gone = device.createTexture({ size: [4, 4], format: 'rgba8unorm', usage: T.TEXTURE_BINDING });
+  gone.destroy();
+  const created = await scoped(() => device.createBindGroup({ layout: textureLayout, entries: [{ binding: 0, resource: gone.createView() }] }));
+  assert.equal(created.error, null, 'createBindGroup with a view of a destroyed texture is valid');
+  const encoder = device.createCommandEncoder();
+  const pass = encoder.beginComputePass();
+  pass.setBindGroup(0, created.value);
+  pass.end();
+  const finished = await scoped(() => encoder.finish());
+  assert.equal(finished.error, null);
+  const submitted = await scoped(() => device.queue.submit([finished.value]));
+  assert.ok(submitted.error, 'a bind group of a destroyed texture fails at submit');
+  console.log('ok: set-only and post-destroy bind groups fail at submit');
 }
 device.destroy();

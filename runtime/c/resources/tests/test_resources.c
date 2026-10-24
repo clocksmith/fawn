@@ -579,6 +579,51 @@ static void test_dispatch_lifetime(void)
     empty(&f);
 }
 
+/* setBindGroup without a dispatch still counts for submission: a group whose
+ * buffer is destroyed after finish() fails begin_submit. */
+static void test_set_group_without_dispatch(void)
+{
+    for (unsigned destroyed = 0; destroyed < 2; destroyed++) {
+        fixture f = fresh();
+        doe_resource_config c = config(&f);
+        native_token buffer_token = {0};
+        doe_resource_buffer *buf = buffer(&f, &buffer_token, 64, WGPUBufferUsage_Storage);
+        doe_resource_layout_entry entry = storage_entry(0, false);
+        doe_resource_layout *layout;
+        assert(doe_resource_layout_create(&c, &entry, 1, false, &layout) == DOE_RESOURCE_OK);
+        doe_resource_binding binding = {.binding = 0, .kind = DOE_BIND_BUFFER, .resource.buffer = {buf, 0, UINT64_MAX}};
+        doe_resource_binding_limits limits = {16, 16, 64, 64};
+        doe_resource_bind_group *group;
+        assert(doe_resource_bind_group_create(layout, &binding, 1, &limits, &group) == DOE_RESOURCE_OK);
+        doe_resource_encoder *encoder;
+        doe_resource_compute_pass *pass;
+        assert(doe_resource_encoder_create(&c, &encoder) == DOE_RESOURCE_OK);
+        assert(doe_resource_encoder_begin_compute(encoder, &pass) == DOE_RESOURCE_OK);
+        doe_resource_dispatch_group set = {.group = group};
+        assert(doe_resource_compute_pass_set_group(pass, 0, &set) == DOE_RESOURCE_OK);
+        assert(doe_resource_compute_pass_set_group(pass, 0, NULL) == DOE_RESOURCE_OK);
+        assert(doe_resource_compute_pass_end(pass) == DOE_RESOURCE_OK);
+        doe_resource_compute_pass_release(pass);
+        doe_resource_commands *commands;
+        assert(doe_resource_encoder_finish(encoder, &commands) == DOE_RESOURCE_OK);
+        doe_resource_encoder_release(encoder);
+        doe_resource_bind_group_release(group);
+        doe_resource_layout_release(layout);
+        if (destroyed) doe_resource_buffer_destroy(buf);
+        doe_resource_buffer_release(buf);
+        assert(!buffer_token.releases);
+        if (destroyed) {
+            assert(doe_resource_commands_begin_submit(commands) == DOE_RESOURCE_UNAVAILABLE);
+        } else {
+            assert(doe_resource_commands_begin_submit(commands) == DOE_RESOURCE_OK);
+            assert(doe_resource_commands_settle(commands, DOE_RESOURCE_OK) == DOE_RESOURCE_OK);
+        }
+        doe_resource_commands_release(commands);
+        assert(buffer_token.releases == 1);
+        empty(&f);
+    }
+}
+
 static void test_dynamic_dispatch(void)
 {
     fixture f = fresh();
@@ -767,11 +812,12 @@ int main(void)
     test_program_replay();
     test_failed_publication();
     test_dispatch_lifetime();
+    test_set_group_without_dispatch();
     test_dynamic_dispatch();
     test_rejected_dependencies();
     test_sampler_and_texture_group();
     test_label_reuse();
     test_atomic_references();
-    puts("resource owner: 16 host suites passed; no GPU execution claimed");
+    puts("resource owner: 17 host suites passed; no GPU execution claimed");
     return 0;
 }

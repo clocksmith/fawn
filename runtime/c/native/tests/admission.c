@@ -48,8 +48,9 @@ static void sparse_groups(state *s)
     wgpuComputePassEncoderEnd(pass);
     wgpuComputePassEncoderRelease(pass);
     wgpuCommandEncoderCopyBufferToBuffer(encoder,output,0,readback,0,4);
-    /* Ignored hole groups create no submitted resource obligation. */
-    wgpuBufferDestroy(ignored);
+    /* A group set in a slot the pipeline ignores still joins the command
+     * buffer's used bind groups (WebGPU setBindGroup), so destroying its buffer
+     * would fail the submit; releasing it does not. */
     wgpuBindGroupRelease(unused);
     wgpuBufferRelease(ignored);
     wgpuBindGroupRelease(active);

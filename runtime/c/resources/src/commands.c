@@ -126,9 +126,39 @@ void doe_resource_encoder_retain(doe_resource_encoder *encoder)
     if (encoder) resource_retain(&encoder->base);
 }
 
+static void release_group_references(const doe_resource_config *config, resource_group_references *groups)
+{
+    for (size_t i = 0; i < groups->count; i++) doe_resource_bind_group_release(groups->items[i]);
+    resource_free(config, groups->items, groups->capacity * sizeof(*groups->items), _Alignof(doe_resource_bind_group *));
+    *groups = (resource_group_references){0};
+}
+
+doe_resource_status resource_encoder_reference_group(doe_resource_encoder *encoder, doe_resource_bind_group *group)
+{
+    resource_group_references *groups = &encoder->groups;
+    for (size_t i = 0; i < groups->count; i++)
+        if (groups->items[i] == group) return DOE_RESOURCE_OK;
+    if (groups->count == groups->capacity) {
+        size_t capacity = groups->capacity ? groups->capacity * 2 : 4;
+        if (capacity > SIZE_MAX / sizeof(*groups->items)) return resource_encoder_fail(encoder, DOE_RESOURCE_OVERFLOW);
+        doe_resource_bind_group **items = resource_allocate(&encoder->base.config,
+            capacity * sizeof(*items), _Alignof(doe_resource_bind_group *));
+        if (!items) return resource_encoder_fail(encoder, DOE_RESOURCE_OUT_OF_MEMORY);
+        if (groups->count) memcpy(items, groups->items, groups->count * sizeof(*items));
+        resource_free(&encoder->base.config, groups->items, groups->capacity * sizeof(*items),
+            _Alignof(doe_resource_bind_group *));
+        groups->items = items;
+        groups->capacity = capacity;
+    }
+    doe_resource_bind_group_retain(group);
+    groups->items[groups->count++] = group;
+    return DOE_RESOURCE_OK;
+}
+
 void doe_resource_encoder_release(doe_resource_encoder *encoder)
 {
     if (!encoder || !resource_last_reference(&encoder->base)) return;
+    release_group_references(&encoder->base.config, &encoder->groups);
     for (size_t i = 0; i < encoder->count; i++) resource_command_release(&encoder->commands[i]);
     resource_free(&encoder->base.config, encoder->commands,
         encoder->capacity * sizeof(*encoder->commands), _Alignof(doe_resource_command));
@@ -346,9 +376,11 @@ doe_resource_status doe_resource_encoder_finish(doe_resource_encoder *encoder,
     commands->count = encoder->count;
     commands->capacity = encoder->capacity;
     commands->commands = encoder->commands;
+    commands->groups = encoder->groups;
     encoder->count = 0;
     encoder->capacity = 0;
     encoder->commands = NULL;
+    encoder->groups = (resource_group_references){0};
     encoder->finished = true;
     *out = commands;
     return DOE_RESOURCE_OK;
@@ -387,6 +419,7 @@ void doe_resource_commands_retain(doe_resource_commands *commands)
 void doe_resource_commands_release(doe_resource_commands *commands)
 {
     if (!commands || !resource_last_reference(&commands->base)) return;
+    release_group_references(&commands->base.config, &commands->groups);
     for (size_t i = 0; i < commands->count; i++) resource_command_release(&commands->commands[i]);
     resource_free(&commands->base.config, commands->commands,
         commands->capacity * sizeof(*commands->commands), _Alignof(doe_resource_command));
@@ -450,16 +483,16 @@ static doe_resource_status validate_submission(const doe_resource_command *comma
     return DOE_RESOURCE_UNSUPPORTED;
 }
 
+static doe_resource_status validate_all(const doe_resource_commands *commands);
+
 doe_resource_status doe_resource_commands_begin_submit(doe_resource_commands *commands)
 {
     if (!commands) return DOE_RESOURCE_INVALID_ARGUMENT;
     if (!resource_alive(&commands->base)) return DOE_RESOURCE_UNAVAILABLE;
     if (atomic_load_explicit(&commands->submission_state, memory_order_acquire) != 0)
         return DOE_RESOURCE_STATE;
-    for (size_t i = 0; i < commands->count; i++) {
-        doe_resource_status status = validate_submission(&commands->commands[i]);
-        if (status != DOE_RESOURCE_OK) return status;
-    }
+    doe_resource_status status = validate_all(commands);
+    if (status != DOE_RESOURCE_OK) return status;
     unsigned expected = 0;
     if (!atomic_compare_exchange_strong_explicit(&commands->submission_state, &expected, 1,
             memory_order_acq_rel, memory_order_acquire)) return DOE_RESOURCE_STATE;
@@ -487,6 +520,10 @@ static doe_resource_status validate_all(const doe_resource_commands *commands)
 {
     for (size_t i = 0; i < commands->count; i++) {
         doe_resource_status status = validate_submission(&commands->commands[i]);
+        if (status != DOE_RESOURCE_OK) return status;
+    }
+    for (size_t i = 0; i < commands->groups.count; i++) {
+        doe_resource_status status = resource_group_validate(commands->groups.items[i], true);
         if (status != DOE_RESOURCE_OK) return status;
     }
     return DOE_RESOURCE_OK;

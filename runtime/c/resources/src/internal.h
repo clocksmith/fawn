@@ -64,6 +64,15 @@ struct doe_resource_pipeline {
     doe_resource_pipeline_layout *layout;
     uint32_t workgroup[3];
 };
+/* Bind groups a compute pass set, whether or not a dispatch used them: every
+ * setBindGroup is part of the command buffer's usage, so submission checks
+ * them (a destroyed buffer or texture fails it). Each is retained once. */
+typedef struct {
+    doe_resource_bind_group **items;
+    size_t count, capacity;
+} resource_group_references;
+doe_resource_status resource_encoder_reference_group(doe_resource_encoder *encoder, doe_resource_bind_group *group);
+
 struct doe_resource_encoder {
     resource_base base;
     doe_resource_status status;
@@ -72,12 +81,14 @@ struct doe_resource_encoder {
     void *active_pass; /* Exact active pass identity, not backend storage. */
     size_t count, capacity;
     doe_resource_command *commands;
+    resource_group_references groups;
 };
 struct doe_resource_commands {
     resource_base base;
     atomic_uint submission_state;
     size_t count, capacity;
     doe_resource_command *commands;
+    resource_group_references groups;
 };
 
 struct doe_resource_compute_pass {

@@ -1939,6 +1939,19 @@ function createFullSurfaceClasses({
       return createReportingErrors(this, path, () => {
         const bindGroupDescriptor = assertObject(descriptor, path, 'descriptor');
         const layoutNative = assertLiveResource(bindGroupDescriptor.layout, path, 'GPUBindGroupLayout');
+        // A view made after its texture's destroy() (or a destroyed GPUTexture)
+        // has no native handle; the bind group is still valid (WebGPU) and any
+        // command buffer that uses it fails at submit.
+        if (Array.isArray(bindGroupDescriptor.entries) && bindGroupDescriptor.entries.some((entry) => {
+          const resource = entry?.resource;
+          return resource?._textureDestroyed === true
+            || (resource?._resourceLabel === 'GPUTexture' && resource._destroyed && !resource._invalid);
+        })) {
+          const bg = new DoeGPUBindGroup(null, this);
+          bg._textureDestroyed = true;
+          bg.label = bindGroupDescriptor.label ?? '';
+          return bg;
+        }
         let native = tryCreateBufferBindGroupFast4(backend, this, layoutNative, bindGroupDescriptor);
         if (native === FAST_PATH_NOT_APPLIED) {
           const entries = assertArray(bindGroupDescriptor.entries ?? [], path, 'descriptor.entries')
