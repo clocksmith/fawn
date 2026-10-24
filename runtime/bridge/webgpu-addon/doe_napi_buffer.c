@@ -36,7 +36,7 @@ napi_value doe_create_buffer(napi_env env, napi_callback_info info) {
 
     WGPUBuffer buf = pfn_wgpuDeviceCreateBuffer(device, &desc);
     free(label_str);
-    if (!buf) NAPI_THROW(env, "createBuffer failed");
+    if (!buf) NAPI_RETURN_PROVIDER_REJECTED(env);
     return wrap_ptr(env, buf);
 }
 

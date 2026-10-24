@@ -6,6 +6,14 @@ function failValidation(path, message) {
   throw new Error(`${path}: ${message}`);
 }
 
+// A Doe capability gap rather than a WebGPU validation failure: it always
+// throws, even where a validation error would go to an error scope.
+function failUnsupported(path, message) {
+  const error = new Error(`${path}: ${message}`);
+  error.code = 'DOE_UNSUPPORTED';
+  throw error;
+}
+
 function describeResourceLabel(value, fallback = 'resource') {
   return value?._resourceLabel ?? fallback;
 }
@@ -14,8 +22,22 @@ function initResource(target, label, owner = null, release = null) {
   target._resourceLabel = label;
   target._resourceOwner = owner;
   target._destroyed = false;
+  target._invalid = false;
   if (release) RESOURCE_RELEASES.set(target, release);
   return target;
+}
+
+// An invalid object (WebGPU "invalid" state) results from a creation whose
+// validation error was reported to an error scope or uncapturederror listener.
+// Every later use of it is itself a validation error.
+function markInvalid(target, label = '') {
+  target._invalid = true;
+  target.label = typeof label === 'string' ? label : '';
+  return target;
+}
+
+function isInvalidResource(value) {
+  return value?._invalid === true;
 }
 
 function releaseOwnedResource(resource) {
@@ -83,7 +105,7 @@ function validatePositiveInteger(value, label) {
 
 function assertLiveResource(resource, path, label = null) {
   const native = resource?._native;
-  if (native != null && !resource._destroyed) {
+  if (native != null && !resource._destroyed && !resource._invalid) {
     const owner = resource._resourceOwner;
     if (!owner || !owner._destroyed) return native;
     failValidation(
@@ -94,6 +116,9 @@ function assertLiveResource(resource, path, label = null) {
   const resourceLabel = label ?? describeResourceLabel(resource);
   if (!resource || typeof resource !== 'object' || !('_native' in resource)) {
     failValidation(path, `${resourceLabel} must be a Doe WebGPU object`);
+  }
+  if (resource._invalid === true) {
+    failValidation(path, `${resourceLabel} is invalid because its creation failed validation`);
   }
   failValidation(path, `${resourceLabel} was destroyed`);
 }
@@ -134,8 +159,11 @@ export {
   MAX_SAFE_U64,
   UINT32_MAX,
   failValidation,
+  failUnsupported,
   describeResourceLabel,
   initResource,
+  markInvalid,
+  isInvalidResource,
   assertObject,
   assertArray,
   assertBoolean,

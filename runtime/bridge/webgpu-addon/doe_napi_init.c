@@ -66,6 +66,7 @@ napi_value doe_shader_module_get_compilation_info(napi_env env, napi_callback_in
 
 /* Compute pipeline */
 napi_value doe_create_compute_pipeline(napi_env env, napi_callback_info info);
+napi_value doe_last_provider_error(napi_env env, napi_callback_info info);
 napi_value doe_compute_pipeline_release(napi_env env, napi_callback_info info);
 napi_value doe_compute_pipeline_get_bind_group_layout(napi_env env, napi_callback_info info);
 
@@ -251,6 +252,7 @@ napi_value doe_module_init(napi_env env, napi_value exports) {
         EXPORT_FN("shaderModuleGetBindingsForEntryPoint",     doe_shader_module_get_bindings_for_entry_point),
         EXPORT_FN("shaderModuleGetCompilationInfo",           doe_shader_module_get_compilation_info),
         EXPORT_FN("createComputePipeline",                    doe_create_compute_pipeline),
+        EXPORT_FN("lastProviderError",                        doe_last_provider_error),
         EXPORT_FN("computePipelineRelease",                   doe_compute_pipeline_release),
         EXPORT_FN("computePipelineGetBindGroupLayout",        doe_compute_pipeline_get_bind_group_layout),
         EXPORT_FN("createBindGroupLayout",                    doe_create_bind_group_layout),

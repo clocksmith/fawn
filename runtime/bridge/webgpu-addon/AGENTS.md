@@ -27,8 +27,13 @@ apply to this C code; this file adds the addon's own invariants.
   ([doe_napi_device_events.c](doe_napi_device_events.c)), so that JS
   registration code is the same for both providers.
 - A synchronous wait on a standard callback uses `AllowSpontaneous` with the
-  atomic handoff in `doe_scoped_validation_end`. A provider that delivers late
+  atomic handoff in `standard_pop_error_scope`. A provider that delivers late
   frees the capture, so the wait never writes into a dead frame.
+- A creator whose provider returns NULL returns `null` to JS instead of
+  throwing. The provider has already reported the error to the device's error
+  scopes or uncaptured-error callback; JS returns an invalid object, or throws
+  when nothing observes errors. The addon never wraps a creation in its own
+  error scope, which would hide the error from the caller's scopes.
 
 ## Values and layouts
 
