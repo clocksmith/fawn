@@ -5,7 +5,7 @@ BUILD ?= $(DOE_C_TMP)/metal
 CPPFLAGS += -Iinclude
 CFLAGS ?= -O2 -g
 STRICT = -std=c11 -Wall -Wextra -Wpedantic -Werror -Wconversion -Wshadow
-SOURCES = src/context.c src/resources.c src/commands.c src/compute_commands.c src/timestamps.c src/objc_queries.c src/objc_runtime.c \
+SOURCES = src/context.c src/resources.c src/commands.c src/indirect_commands.c src/compute_commands.c src/timestamps.c src/objc_queries.c src/objc_runtime.c \
           src/objc_pipeline.c src/objc_commands.c src/texture_formats.c src/textures.c \
           src/samplers.c src/texture_ownership.c src/texture_initialization.c src/texture_transfer.c \
           src/objc_images.c src/objc_image_transfer.c src/render_pipeline.c \
@@ -23,7 +23,7 @@ endif
 all: $(BUILD)/libdoe_metal.a
 $(BUILD):
 	mkdir -p $@
-$(BUILD)/%.o: src/%.c src/internal.h src/native.h src/objc_abi.h include/doe_metal.h include/doe_metal_texture.h src/texture_internal.h src/render_internal.h src/objc_render_types.h include/doe_metal_render.h include/doe_metal_query.h src/query_internal.h src/objc_query_types.h | $(BUILD)
+$(BUILD)/%.o: src/%.c src/internal.h src/native.h src/objc_abi.h include/doe_metal.h include/doe_metal_indirect.h include/doe_metal_texture.h src/texture_internal.h src/render_internal.h src/objc_render_types.h include/doe_metal_render.h include/doe_metal_query.h src/query_internal.h src/objc_query_types.h | $(BUILD)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(STRICT) -c $< -o $@
 $(BUILD)/libdoe_metal.a: $(OBJECTS)
 	$(AR) rcs $@ $^
@@ -65,7 +65,8 @@ $(BUILD)/test_timestamps: tests/test_timestamps.c tests/mock_native.c tests/mock
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(STRICT) tests/test_timestamps.c tests/mock_native.c $(BUILD)/libdoe_metal.a $(LDLIBS) -o $@
 $(BUILD)/test_objc_queries: tests/test_objc_queries.c $(BUILD)/libdoe_metal.a
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(STRICT) $< $(BUILD)/libdoe_metal.a $(LDLIBS) -o $@
-check: $(BUILD)/test_initialization $(BUILD)/test_device_limits $(BUILD)/test_objc_queries $(BUILD)/test_timestamps $(BUILD)/test_visibility $(BUILD)/test_multisample $(BUILD)/test_objc_render_commands $(BUILD)/test_objc_render_pipeline $(BUILD)/test_render $(BUILD)/test_lifetime $(BUILD)/test_objc_calls $(BUILD)/test_images $(BUILD)/test_objc_images
+check: $(BUILD)/test_indirect $(BUILD)/test_initialization $(BUILD)/test_device_limits $(BUILD)/test_objc_queries $(BUILD)/test_timestamps $(BUILD)/test_visibility $(BUILD)/test_multisample $(BUILD)/test_objc_render_commands $(BUILD)/test_objc_render_pipeline $(BUILD)/test_render $(BUILD)/test_lifetime $(BUILD)/test_objc_calls $(BUILD)/test_images $(BUILD)/test_objc_images
+	$(BUILD)/test_indirect
 	$(BUILD)/test_initialization
 	$(BUILD)/test_device_limits
 	$(BUILD)/test_objc_queries
@@ -101,3 +102,6 @@ sdk-abi: | $(BUILD)
 	@test "$(UNAME_S)" = Darwin || { echo 'sdk-abi requires an installed Apple SDK'; exit 1; }
 	xcrun --sdk macosx clang $(CPPFLAGS) $(STRICT) -fblocks -target arm64-apple-macos13 -fsyntax-only $(SOURCES) tests/sdk_abi.m
 	xcrun --sdk macosx clang $(CPPFLAGS) $(STRICT) -fblocks -target x86_64-apple-macos13 -fsyntax-only $(SOURCES) tests/sdk_abi.m
+
+$(BUILD)/test_indirect: tests/test_indirect.c tests/mock_native.c tests/mock_native.h $(BUILD)/libdoe_metal.a
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(STRICT) tests/test_indirect.c tests/mock_native.c $(BUILD)/libdoe_metal.a $(LDLIBS) -o $@

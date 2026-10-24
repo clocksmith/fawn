@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: MIT */
 #include "metal_graphics_internal.h"
+#include "metal_indirect.h"
 
 static doe_mtl_status initialize(doe_mtl_commands *commands, native_texture *texture, doe_mtl_error *error)
 {
@@ -67,6 +68,9 @@ native_failure native_metal_record_commands(doe_mtl_commands *commands, doe_reso
         }
         case DOE_COMMAND_DISPATCH:
             failure = native_metal_dispatch(commands, record);
+            break;
+        case DOE_COMMAND_DISPATCH_INDIRECT:
+            failure = native_metal_dispatch_indirect(commands, record);
             break;
         case DOE_COMMAND_BUFFER_TEXTURE:
             failure = transfer(commands, record);

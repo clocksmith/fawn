@@ -44,3 +44,13 @@ Do not install Apple SDKs or silently substitute Vulkan/software execution.
 20-second process and five-second completion bounds as `native-check`.
 Keep the first failing receipt when recording a constrained rerun. No production
 selection or public support claim follows from this directory's host controls.
+
+
+Indirect compute accepts only the typed guard contract: exact shared guard source
+and compiler-selected MSL/slots, never unchecked counts. Copy the three GPU words
+to private scratch, execute the guard and consume that scratch in native indirect
+dispatch. No host argument read or caller mutation. Scratch and both PSOs join the
+existing command leases; partial recording failure discards the entire command,
+while unknown retains it. Actual num_workgroups comes from Metal's builtin. Keep
+canonical source preparation outside frontend locks; actual MTLLibrary/PSO
+creation retains this private owner's context serialization.

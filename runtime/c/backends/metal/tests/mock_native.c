@@ -114,6 +114,7 @@ static void *buffer_contents(void *userdata, void *handle) {
     mock_native *mock = userdata;
     mock_object *buffer = handle;
     assert(buffer->kind == MOCK_KIND_BUFFER);
+    ++mock->content_queries;
     if (mock->fail == MOCK_CONTENTS) return NULL;
     return buffer->bytes;
 }
@@ -123,7 +124,14 @@ static doe_mtl_status pipeline_create(void *userdata, void *device,
     doe_mtl_error *error) {
     mock_native *mock = userdata;
     assert(device != NULL && desc != NULL);
-    if (mock->fail == MOCK_PIPELINE) return failure(error);
+    if (mock->fail == MOCK_PIPELINE) {
+        doe_mtl_status status = failure(error);
+        if (mock->pipeline_failure != DOE_MTL_OK) {
+            status = mock->pipeline_failure;
+            if (error) error->status = status;
+        }
+        return status;
+    }
     assert(strlen(desc->entrypoint) < sizeof(mock->entrypoint));
     strcpy(mock->entrypoint, desc->entrypoint);
     *out = object_create(mock, MOCK_KIND_PIPELINE);
@@ -148,6 +156,7 @@ static doe_mtl_status copy_buffer(void *userdata, void *command, void *source,
     assert(command != NULL && source != NULL && destination != NULL);
     if (mock->fail == MOCK_COPY) return failure(error);
     mock->copies++;
+    mock->copy_sequence = ++mock->operation_sequence;
     mock->last_source = source;
     mock->last_destination = destination;
     mock->last_source_offset = source_offset;
@@ -177,6 +186,8 @@ static doe_mtl_status dispatch(void *userdata, void *command, void *pipeline,
     assert(command != NULL && pipeline != NULL && resources != NULL);
     if (mock->fail == MOCK_DISPATCH) return failure(error);
     mock->dispatches++;
+    mock->dispatch_sequence = ++mock->operation_sequence;
+    mock->direct_resources = *resources;
     if (timestamps != NULL) mock->timestamp_pair = *timestamps;
     memcpy(mock->bindings, resources->buffers, sizeof(mock->bindings));
     mock->resources = *resources;
@@ -185,6 +196,24 @@ static doe_mtl_status dispatch(void *userdata, void *command, void *pipeline,
     mock->workgroup = workgroup;
     mock->repeat = repeat;
     return doe_mtl_fail(DOE_MTL_OK, "mock dispatch", error);
+}
+
+static doe_mtl_status dispatch_indirect(void *userdata, void *command, void *pipeline,
+    const doe_mtl_native_resources *resources, uint32_t sizes_slot,
+    void *arguments, size_t offset, doe_mtl_dimensions workgroup, doe_mtl_error *error) {
+    mock_native *mock = userdata;
+    assert(command && pipeline && resources && arguments);
+    if (mock->fail == MOCK_INDIRECT) return failure(error);
+    ++mock->indirects;
+    mock->indirect_sequence = ++mock->operation_sequence;
+    mock->indirect_arguments = arguments;
+    mock->indirect_offset = offset;
+    mock->indirect_pipeline = pipeline;
+    memcpy(mock->bindings, resources->buffers, sizeof(mock->bindings));
+    mock->resources = *resources;
+    mock->sizes_slot = sizes_slot;
+    mock->workgroup = workgroup;
+    return doe_mtl_fail(DOE_MTL_OK, "mock indirect dispatch", error);
 }
 
 static doe_mtl_status texture_create(void *userdata, void *device,
@@ -356,6 +385,7 @@ doe_mtl_native mock_driver(mock_native *mock) {
     native.copy = copy_buffer;
     native.fill = fill_buffer;
     native.dispatch = dispatch;
+    native.dispatch_indirect = dispatch_indirect;
     native.texture = texture_create;
     native.view = view_create;
     native.sampler = sampler_create;

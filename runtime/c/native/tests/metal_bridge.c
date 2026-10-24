@@ -853,6 +853,8 @@ static void graphics_ledger(state *s)
     assert(mocks[2].live == baseline && !s->errors);
 }
 
+#include "metal_indirect_cases.h"
+
 int main(void)
 {
     state s = {0};
@@ -945,6 +947,7 @@ int main(void)
     graphics_ledger(&s);
     metal_vertex_formats(&s, &mocks[2]);
     mixed_resource_ledger(&s);
+    metal_indirect_ledger(&s, &mocks[2]);
     public_error_detail(&s);
     consumer_finish(&s);
     for (unsigned i = 0; i < context_count; ++i) mock_assert_closed(&mocks[i]);

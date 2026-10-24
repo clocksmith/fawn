@@ -16,7 +16,7 @@ typedef enum selector_index {
     SELECT_NEW_PIPELINE, SELECT_PIPELINE_MAX, SELECT_DESCRIPTION, SELECT_CODE,
     SELECT_NEW_COMMAND, SELECT_BLIT_ENCODER, SELECT_COMPUTE_ENCODER,
     SELECT_COPY, SELECT_FILL, SELECT_END, SELECT_PIPELINE, SELECT_BUFFER,
-    SELECT_BYTES, SELECT_DISPATCH, SELECT_COMMIT, SELECT_WAIT, SELECT_STATUS,
+    SELECT_BYTES, SELECT_DISPATCH, SELECT_INDIRECT, SELECT_COMMIT, SELECT_WAIT, SELECT_STATUS,
     SELECT_ERROR, SELECT_COUNT
 } selector_index;
 struct call_fixture {
@@ -26,7 +26,7 @@ struct call_fixture {
     call_object source, name, library, function, pipeline, encoder, source_buffer,
         destination_buffer, error, description;
     unsigned pools, drains, strings, releases, retain_calls, ends, pipeline_sets;
-    unsigned buffer_sets, bytes_sets, dispatches, copies, fills, commits, waits;
+    unsigned buffer_sets, bytes_sets, dispatches, indirects, copies, fills, commits, waits;
     size_t native_status, wait_status;
     int64_t error_code;
     char diagnostic[512];
@@ -208,6 +208,15 @@ static void dispatch_call(void *receiver, void *selector, doe_mtl_size grid, doe
     fixture->dispatches++;
 }
 
+static void indirect_call(void *receiver, void *selector, void *arguments, size_t offset, doe_mtl_size group) {
+    call_fixture *fixture = owner(receiver);
+    assert(receiver == &fixture->encoder && selector == fixture->runtime.dispatch_indirect);
+    assert(arguments == &fixture->source_buffer);
+    fixture->source_offset = offset;
+    fixture->group = group;
+    ++fixture->indirects;
+}
+
 static void copy_call(void *receiver, void *selector, void *source,
     size_t source_offset, void *destination, size_t destination_offset, size_t length) {
     call_fixture *fixture = owner(receiver);
@@ -265,6 +274,7 @@ static void fixture_init(call_fixture *fixture) {
     runtime->set_buffer = &fixture->selector[SELECT_BUFFER];
     runtime->set_bytes = &fixture->selector[SELECT_BYTES];
     runtime->dispatch = &fixture->selector[SELECT_DISPATCH];
+    runtime->dispatch_indirect = &fixture->selector[SELECT_INDIRECT];
     runtime->commit = &fixture->selector[SELECT_COMMIT];
     runtime->wait = &fixture->selector[SELECT_WAIT];
     runtime->status = &fixture->selector[SELECT_STATUS];
@@ -282,6 +292,7 @@ static void fixture_init(call_fixture *fixture) {
     runtime->bind_buffer_call = bind_buffer_call;
     runtime->bind_bytes_call = bind_bytes_call;
     runtime->dispatch_call = dispatch_call;
+    runtime->dispatch_indirect_call = indirect_call;
     runtime->copy_call = copy_call;
     runtime->fill_call = fill_call;
 }
@@ -317,6 +328,25 @@ static void pipeline_controls(void) {
         assert(fixture.library.references == 0 && fixture.function.references == 0);
         assert(fixture.pipeline.references == 0 && fixture.pools == fixture.drains);
     }
+}
+
+static void indirect_controls(void) {
+    call_fixture fixture;
+    fixture_init(&fixture);
+    doe_mtl_native_resources resources = {0};
+    resources.buffers[5] = (doe_mtl_native_binding){&fixture.destination_buffer, 16, 24};
+    assert(doe_mtl_objc_dispatch_indirect(&fixture.runtime, &fixture.command, &fixture.pipeline,
+        &resources, 30, &fixture.source_buffer, 24, (doe_mtl_dimensions){7,3,2}, NULL) == DOE_MTL_OK);
+    assert(fixture.indirects == 1 && fixture.dispatches == 0 && fixture.source_offset == 24);
+    assert(fixture.pipeline_sets == 1 && fixture.buffer_sets == 31 && fixture.bytes_sets == 1);
+    assert(fixture.bound[5].buffer == &fixture.destination_buffer && fixture.bound[5].offset == 16);
+    assert(!fixture.bound[0].buffer && fixture.sizes[5] == 24 && fixture.bytes_slot == 30);
+    assert(fixture.group.width == 7 && fixture.group.height == 3 && fixture.group.depth == 2);
+    assert(fixture.ends == 1 && fixture.pools == fixture.drains);
+    fixture.fail_encoder = true;
+    assert(doe_mtl_objc_dispatch_indirect(&fixture.runtime, &fixture.command, &fixture.pipeline,
+        &resources, 30, &fixture.source_buffer, 24, (doe_mtl_dimensions){7,3,2}, NULL) == DOE_MTL_NATIVE_FAILURE);
+    assert(fixture.indirects == 1 && fixture.ends == 1 && fixture.pools == fixture.drains);
 }
 
 static void encoding_controls(void) {
@@ -389,6 +419,7 @@ static void completion_controls(void) {
 int main(void) {
     pipeline_controls();
     encoding_controls();
+    indirect_controls();
     completion_controls();
     puts("Metal typed-call controls: pipeline cleanup, exact dispatch/copy/fill and completion passed; no SDK/GPU");
     return 0;

@@ -195,13 +195,6 @@ doe_mtl_status doe_mtl_buffer_bindings_preflight(doe_mtl_commands *commands,
     return DOE_MTL_OK;
 }
 
-doe_mtl_status doe_mtl_commands_dispatch_indirect(doe_mtl_commands *commands,
-    doe_mtl_error *error) {
-    doe_mtl_status status = doe_mtl_recording(commands, error);
-    if (status != DOE_MTL_OK) return status;
-    return doe_mtl_poison(commands, DOE_MTL_UNSUPPORTED, "indirect dispatch", error);
-}
-
 static void retire_uses(doe_mtl_commands *commands, bool completed, bool success) {
     doe_mtl_timestamps_retire(commands, completed, success);
     doe_mtl_render_retire(commands);

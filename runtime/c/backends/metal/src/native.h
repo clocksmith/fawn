@@ -83,6 +83,9 @@ typedef struct doe_mtl_native {
         const doe_mtl_native_resources *resources, uint32_t sizes_slot,
         doe_mtl_dimensions groups, doe_mtl_dimensions workgroup,
         uint32_t repeat, const doe_mtl_native_timestamps *timestamps, doe_mtl_error *error);
+    doe_mtl_status (*dispatch_indirect)(void *userdata, void *command, void *pipeline,
+        const doe_mtl_native_resources *resources, uint32_t sizes_slot,
+        void *arguments, size_t offset, doe_mtl_dimensions workgroup, doe_mtl_error *error);
     doe_mtl_status (*texture)(void *userdata, void *device,
         const doe_mtl_texture_desc *desc, void **out, doe_mtl_error *error);
     doe_mtl_status (*view)(void *userdata, void *texture,

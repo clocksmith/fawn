@@ -216,6 +216,8 @@ static bool load_selectors(doe_mtl_objc *runtime) {
     runtime->set_buffer = runtime->selector("setBuffer:offset:atIndex:");
     runtime->set_bytes = runtime->selector("setBytes:length:atIndex:");
     runtime->dispatch = runtime->selector("dispatchThreadgroups:threadsPerThreadgroup:");
+    runtime->dispatch_indirect = runtime->selector(
+        "dispatchThreadgroupsWithIndirectBuffer:indirectBufferOffset:threadsPerThreadgroup:");
     runtime->commit = runtime->selector("commit");
     runtime->wait = runtime->selector("waitUntilCompleted");
     runtime->status = runtime->selector("status");
@@ -234,7 +236,8 @@ static bool load_selectors(doe_mtl_objc *runtime) {
         runtime->compute_encoder != NULL && runtime->copy_buffer != NULL &&
         runtime->fill_buffer != NULL && runtime->end_encoding != NULL &&
         runtime->set_pipeline != NULL && runtime->set_buffer != NULL &&
-        runtime->set_bytes != NULL && runtime->dispatch != NULL && runtime->commit != NULL &&
+        runtime->set_bytes != NULL && runtime->dispatch != NULL && runtime->dispatch_indirect != NULL &&
+        runtime->commit != NULL &&
         runtime->wait != NULL && runtime->status != NULL && runtime->error != NULL;
 }
 
@@ -278,6 +281,7 @@ static doe_mtl_status open_apple_runtime(doe_mtl_native *out, doe_mtl_error *err
     runtime->bind_buffer_call = (doe_objc_bind_buffer_call)message;
     runtime->bind_bytes_call = (doe_objc_bind_bytes_call)message;
     runtime->dispatch_call = (doe_objc_dispatch_call)message;
+    runtime->dispatch_indirect_call = (doe_objc_indirect_dispatch_call)message;
     runtime->copy_call = (doe_objc_copy_call)message;
     runtime->fill_call = (doe_objc_fill_call)message;
     runtime->dimensions_call = (doe_objc_dimensions_call)message;
@@ -307,6 +311,7 @@ static doe_mtl_status open_apple_runtime(doe_mtl_native *out, doe_mtl_error *err
     native.copy = doe_mtl_objc_copy;
     native.fill = doe_mtl_objc_fill;
     native.dispatch = doe_mtl_objc_dispatch;
+    native.dispatch_indirect = doe_mtl_objc_dispatch_indirect;
     native.texture = doe_mtl_objc_texture;
     native.view = doe_mtl_objc_view;
     native.sampler = doe_mtl_objc_sampler;

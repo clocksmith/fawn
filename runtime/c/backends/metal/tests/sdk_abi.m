@@ -34,6 +34,9 @@ _Static_assert(offsetof(doe_mtl_viewport, max_depth) == offsetof(MTLViewport, zf
 SAME_LAYOUT(doe_mtl_scissor_abi, MTLScissorRect);
 SAME_FIELD(doe_mtl_scissor_abi, MTLScissorRect, height);
 _Static_assert(sizeof(MTLCounterResultTimestamp) == sizeof(uint64_t), "Timestamp resolve result ABI");
+_Static_assert(sizeof(MTLDispatchThreadgroupsIndirectArguments) == 3 * sizeof(uint32_t), "Indirect XYZ byte span");
+_Static_assert(_Alignof(MTLDispatchThreadgroupsIndirectArguments) == _Alignof(uint32_t), "Indirect XYZ alignment");
+_Static_assert(offsetof(MTLDispatchThreadgroupsIndirectArguments, threadgroupsPerGrid) == 0, "Indirect XYZ offset");
 
 SAME_ENUM(DOE_MTL_TEXTURE_1D, MTLTextureType1D);
 SAME_ENUM(DOE_MTL_TEXTURE_2D_ARRAY, MTLTextureType2DArray);
@@ -107,6 +110,8 @@ void doe_mtl_sdk_calls(id<MTLComputeCommandEncoder> compute,
     id<MTLBuffer> buffer, id<MTLCounterSampleBuffer> counters, MTLRenderPipelineDescriptor *pipeline) {
     [pipeline setAlphaToCoverageEnabled:(BOOL)YES];
     [compute dispatchThreadgroups:(MTLSize){1, 1, 1} threadsPerThreadgroup:(MTLSize){1, 1, 1}];
+    [compute dispatchThreadgroupsWithIndirectBuffer:buffer indirectBufferOffset:(NSUInteger)4
+        threadsPerThreadgroup:(MTLSize){1, 1, 1}];
     [render setViewport:(MTLViewport){0, 0, 1, 1, 0, 1}];
     [render setScissorRect:(MTLScissorRect){0, 0, 1, 1}];
     [render drawIndexedPrimitives:MTLPrimitiveTypeTriangle indexCount:3

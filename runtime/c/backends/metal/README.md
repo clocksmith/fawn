@@ -22,7 +22,8 @@ native/resource owner to adopt, not a replacement WebGPU API or reference author
 - Sparse buffer slots, nonzero offsets and bound byte sizes. The optional
   compiler-selected size slot receives the retained checked bridge's packed
   uint32 lengths. Missing slots are explicitly cleared. No guessed workgroups.
-- Direct/repeated threadgroup dispatch, buffer-region copy and byte-pattern fill.
+- Direct/repeated threadgroup dispatch, guarded GPU-generated indirect compute,
+  buffer-region copy and byte-pattern fill.
   Every native operation uses the real Metal encoder and ends it before the next.
 - Private 1D/2D/array/cube/3D and device-admitted 2D multisample images, explicit mip/layer views and swizzles,
   retained samplers, staging-buffer upload/readback and texture-region copies.
@@ -199,25 +200,33 @@ must preserve these seams:
   packaging, full frontend execution and graphics/query/presentation wiring
   have their own native/shared acceptance; backend-only readback is not that proof.
 
-True GPU-generated indirect commands remain a separate missing preparation
-closure. Retained `metal_dispatch_runtime.zig` has a host-authored benchmark path
-that flushes, uploads three uint32 dimensions, then dispatches indirectly; this
-is not the native WebGPU GPU-produced argument path. Retained
-`doe_queue_submit_metal.zig` forwards arbitrary indirect buffers, while both its
-checked bridge and C `resources/src/objects.c` validate only record alignment,
-byte range and ownership, not generated counts or index-dependent fetch bounds.
-Coherent public admission needs shared/native submission preparation that orders
-argument validation/sanitization after producers and before consumption using
-actual dispatch/vertex/index limits, plus command-owned scratch lifetime. No
-host-only surrogate API or unchecked native indirect success was added here.
+Guarded indirect compute consumes the typed contract in
+[doe_metal_indirect.h](include/doe_metal_indirect.h). The caller compiles the exact
+shared `doe_dispatch_guard_source` for the resolved device bounds and supplies its
+compiler-selected MSL entry, scratch binding and size slot. This backend does not
+interpret source or accept an unchecked native dispatch request. Each recording
+GPU-copies exactly three uint32 argument words into private scratch, runs that
+validated guard and dispatches using the actual Metal indirect-buffer selector.
+Caller arguments remain unchanged; no host contents query supplies counts.
+
+The guard's PSO, target PSO, scratch and all buffer/image/sampler bindings use the
+existing command resource leases. Failed recording poisons the entire unsubmitted
+command; pending/unknown retains it. Native preparation compiles WGSL to owned
+MSL outside the device mutex, then creates MTLLibrary/PSO under the existing
+private context serialization and publishes one lazy device guard only while the
+device remains live. Immutable duplicate source artifacts release outside locks;
+there is no second queue or scratch cache. The current compiler supplies actual
+`threadgroups_per_grid`, including indirect dispatch, rather than host-invented
+`num_workgroups` values. Host call-order/lifetime controls and actual SDK selector
+compilation do not establish GPU execution or physical qualification.
 
 ## Scope still outside this increment
 
 ETC/ASTC images, surfaces, render-stage counter attachment mapping,
 external textures, shared-event notifications, async callbacks, library/binary
-caches, indirect-count validation, streamed encoder reuse, prepared-program
+caches, indirect-draw validation, streamed encoder reuse, prepared-program
 caches and full native/WebGPU consumer wiring remain in their retained owners.
-Indirect dispatch explicitly returns UNSUPPORTED; indirect draws are not exposed. Compiler/native owners must
+Indirect draws are not exposed. Compiler/native owners must
 admit shader features, usage, exact layout and robust access before this API;
 it is not a standalone validation boundary for untrusted MSL. No exception bridge
 is introduced: nil/NSError/status failures are handled, but Objective-C language

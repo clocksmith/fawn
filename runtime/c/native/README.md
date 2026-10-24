@@ -64,8 +64,11 @@ Metal's frontend compute envelope remains bounded to 256 total threads, at most
 256 per axis, 65535 groups per axis and conservative 256-byte buffer offsets.
 Actual buffer, threadgroup-memory and per-pipeline limits constrain it further.
 Resolved device limits bound graphics and resource admission. Partial sample
-masks, unclipped depth, indirect/indexed guards, queries, depth/stencil transfers
-and presentation remain explicit missing paths.
+masks, unclipped depth, indexed guards, queries, depth/stencil transfers and
+presentation remain explicit missing paths. Compute indirect dispatch now lowers
+through a lazy immutable device guard, GPU-copied private arguments and the actual
+Metal indirect-dispatch selector. Host rejection, rollback, sanitizer and lifetime
+controls pass; physical execution of this new path has its own gate.
 
 [Public Apple graphics evidence](DEVELOPER_RECEIPT_METAL_PUBLIC_GRAPHICS.json)
 binds offscreen pixels, early releases, discard zeros and uploads on one M3.
