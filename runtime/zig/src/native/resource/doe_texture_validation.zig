@@ -5,6 +5,7 @@ const abi_pipeline = @import("../../core/abi/wgpu_pipeline_descriptor_types.zig"
 const abi_texture = @import("../../core/abi/wgpu_texture_base_types.zig");
 const device_caps = @import("../support/doe_device_caps.zig");
 const native_types = @import("../support/doe_native_object_types.zig");
+const texture_contract = @import("../../contracts/texture.zig");
 
 const DoeDevice = native_types.DoeDevice;
 const MAX_TEXTURE_DESCRIPTOR_CHAIN_NODES: u32 = 16;
@@ -137,14 +138,26 @@ pub fn validateTextureDescriptor(
     }
 
     if (desc.mipLevelCount > maxMipLevelCount(desc)) return "texture mip level count exceeds its extent";
-    if (desc.sampleCount > 1 and
-        (desc.dimension != abi_texture.WGPUTextureDimension_2D or
-            desc.size.depthOrArrayLayers != 1 or
-            desc.mipLevelCount != 1 or
-            (usage & (abi_texture.WGPUTextureUsage_CopySrc |
-                abi_texture.WGPUTextureUsage_CopyDst |
-                abi_texture.WGPUTextureUsage_StorageBinding)) != 0))
-        return "multisampled texture descriptor has an incompatible dimension, extent, mip count, or usage";
+    // https://gpuweb.github.io/gpuweb/#dom-gpudevice-createtexture: a
+    // multisampled texture is 2D with one layer and mip, has
+    // RENDER_ATTACHMENT and not STORAGE_BINDING usage (copy usages are
+    // allowed), and has a format that supports multisampling.
+    if (desc.sampleCount > 1) {
+        if (desc.dimension != abi_texture.WGPUTextureDimension_2D or desc.size.depthOrArrayLayers != 1 or desc.mipLevelCount != 1)
+            return "a multisampled texture must be 2D with one array layer and one mip level";
+        if ((usage & abi_texture.WGPUTextureUsage_StorageBinding) != 0) return "a multisampled texture cannot have STORAGE_BINDING usage";
+        if ((usage & abi_texture.WGPUTextureUsage_RenderAttachment) == 0) return "a multisampled texture needs RENDER_ATTACHMENT usage";
+        if (!texture_contract.multisampleCapable(desc.format)) return "texture format does not support multisampling";
+    }
+    // TRANSIENT_ATTACHMENT: exactly RENDER_ATTACHMENT | TRANSIENT_ATTACHMENT,
+    // one array layer and mip level, and no viewFormats.
+    if ((usage & abi_texture.WGPUTextureUsage_TransientAttachment) != 0) {
+        if (desc.usage != (abi_texture.WGPUTextureUsage_RenderAttachment | abi_texture.WGPUTextureUsage_TransientAttachment))
+            return "a transient attachment's usage must be exactly RENDER_ATTACHMENT | TRANSIENT_ATTACHMENT";
+        if (desc.size.depthOrArrayLayers != 1 or desc.mipLevelCount != 1)
+            return "a transient attachment must have one array layer and one mip level";
+        if (desc.viewFormatCount != 0) return "a transient attachment cannot list viewFormats";
+    }
     if (abi_texture.isDepthStencilFormat(desc.format) and desc.dimension != abi_texture.WGPUTextureDimension_2D)
         return "depth-stencil textures must be 2D";
     if ((abi_texture.isBCFormat(desc.format) or abi_texture.isETC2Format(desc.format) or abi_texture.isASTCFormat(desc.format)) and
@@ -187,5 +200,46 @@ test "browser canvas texture descriptor validates locally" {
 
     try std.testing.expect(validateTextureDescriptor(&device, &desc) == null);
     desc.size.width = 0;
+    try std.testing.expect(validateTextureDescriptor(&device, &desc) != null);
+}
+
+test "multisampled and transient texture descriptors follow WebGPU createTexture" {
+    var device: DoeDevice = .{};
+    const T = abi_texture;
+    var desc = abi_pipeline.WGPUTextureDescriptor{
+        .nextInChain = null,
+        .label = .{ .data = null, .length = 0 },
+        .usage = T.WGPUTextureUsage_RenderAttachment | T.WGPUTextureUsage_CopySrc | T.WGPUTextureUsage_CopyDst,
+        .dimension = T.WGPUTextureDimension_2D,
+        .size = .{ .width = 16, .height = 16, .depthOrArrayLayers = 1 },
+        .format = T.WGPUTextureFormat_R32Float,
+        .mipLevelCount = 1,
+        .sampleCount = 4,
+        .viewFormatCount = 0,
+        .viewFormats = null,
+    };
+    // Copy usages are allowed on a multisampled texture.
+    try std.testing.expect(validateTextureDescriptor(&device, &desc) == null);
+    desc.usage = T.WGPUTextureUsage_RenderAttachment | T.WGPUTextureUsage_TransientAttachment;
+    try std.testing.expect(validateTextureDescriptor(&device, &desc) == null);
+    desc.usage = T.WGPUTextureUsage_TextureBinding;
+    try std.testing.expect(validateTextureDescriptor(&device, &desc) != null);
+    desc.usage = T.WGPUTextureUsage_RenderAttachment | T.WGPUTextureUsage_StorageBinding;
+    try std.testing.expect(validateTextureDescriptor(&device, &desc) != null);
+    desc.usage = T.WGPUTextureUsage_RenderAttachment;
+    desc.format = T.WGPUTextureFormat_RGBA32Float;
+    try std.testing.expect(validateTextureDescriptor(&device, &desc) != null);
+    // Transient attachments: exact usage, one layer and mip, no viewFormats.
+    desc.format = T.WGPUTextureFormat_RGBA8Unorm;
+    desc.sampleCount = 1;
+    desc.usage = T.WGPUTextureUsage_RenderAttachment | T.WGPUTextureUsage_TransientAttachment | T.WGPUTextureUsage_CopySrc;
+    try std.testing.expect(validateTextureDescriptor(&device, &desc) != null);
+    desc.usage = T.WGPUTextureUsage_RenderAttachment | T.WGPUTextureUsage_TransientAttachment;
+    desc.size.depthOrArrayLayers = 2;
+    try std.testing.expect(validateTextureDescriptor(&device, &desc) != null);
+    desc.size.depthOrArrayLayers = 1;
+    const formats = [_]u32{T.WGPUTextureFormat_RGBA8Unorm};
+    desc.viewFormatCount = formats.len;
+    desc.viewFormats = &formats;
     try std.testing.expect(validateTextureDescriptor(&device, &desc) != null);
 }

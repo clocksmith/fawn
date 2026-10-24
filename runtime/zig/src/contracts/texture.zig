@@ -42,6 +42,33 @@ pub fn renderTargetCost(format: texture.WGPUTextureFormat) ?RenderTargetCost {
     };
 }
 
+/// Formats that can be multisampled: every depth-stencil format, and the
+/// color formats with the multisampling capability in the WebGPU format
+/// tables (https://gpuweb.github.io/gpuweb/#plain-color-formats); 32-bit
+/// integer and two- and four-component 32-bit formats cannot. The
+/// texture-formats-tier1 color targets multisample once they are renderable.
+pub fn multisampleCapable(format: texture.WGPUTextureFormat) bool {
+    return switch (format) {
+        texture.WGPUTextureFormat_Stencil8,
+        texture.WGPUTextureFormat_Depth16Unorm,
+        texture.WGPUTextureFormat_Depth24Plus,
+        texture.WGPUTextureFormat_Depth24PlusStencil8,
+        texture.WGPUTextureFormat_Depth32Float,
+        texture.WGPUTextureFormat_Depth32FloatStencil8,
+        => true,
+        texture.WGPUTextureFormat_R32Uint,
+        texture.WGPUTextureFormat_R32Sint,
+        texture.WGPUTextureFormat_RG32Uint,
+        texture.WGPUTextureFormat_RG32Sint,
+        texture.WGPUTextureFormat_RG32Float,
+        texture.WGPUTextureFormat_RGBA32Uint,
+        texture.WGPUTextureFormat_RGBA32Sint,
+        texture.WGPUTextureFormat_RGBA32Float,
+        => false,
+        else => renderTargetCost(format) != null,
+    };
+}
+
 /// Color targets that texture-formats-tier1 adds
 /// (https://gpuweb.github.io/gpuweb/#texture-formats-tier1).
 pub fn renderTargetNeedsTier1(format: texture.WGPUTextureFormat) bool {
