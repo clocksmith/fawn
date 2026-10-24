@@ -3710,14 +3710,14 @@
       },
       "src/native/resource/doe_texture_sampler_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "20275069a34c1bbe296b5b68a4c9dcb3cf8b46c65304f8e24b2a02f32931bf94",
-        "reason": "Keep: preserves this native ownership or ABI boundary while separating internal device cleanup leases from application release and enforcing destroyed-device admission; invalid sampler clamps/anisotropy and view formats generate validation errors with invalid objects; MUTABLE_FORMAT images with a VkImageFormatListCreateInfo only for textures whose viewFormats name the srgb pair. A single-aspect view naming its aspect format is admitted and keeps the texture format internally. Texture views record a non-identity swizzle. Samplers record whether they compare and whether they filter.",
-        "reviewer": "doe-c-claude-coordinator/2026-10-24"
+        "moduleSha256": "9d3685dbcc471c5de8cc39673f6b09ff022c9883e00f9fb45b0c32393754cdcc",
+        "reason": "Keep: preserves this native ownership or ABI boundary while separating internal device cleanup leases from application release and enforcing destroyed-device admission; invalid sampler clamps/anisotropy and view formats generate validation errors with invalid objects; MUTABLE_FORMAT images with a VkImageFormatListCreateInfo only for textures whose viewFormats name the srgb pair. A single-aspect view naming its aspect format is admitted and keeps the texture format internally. Texture views record a non-identity swizzle. Samplers record whether they compare and whether they filter. createView resolves an undefined layer count per view dimension and reports view descriptor errors with an invalid view.",
+        "reviewer": "doe-c-claude-indexed/2026-10-24"
       },
       "src/native/resource/doe_texture_validation.zig": {
         "decision": "Keep",
-        "moduleSha256": "b4bc0d0fd2f0de63bc3c07938be980ae582de50228c7849e704d8e53c018ef9c",
-        "reason": "Keep: reachable native implementation with private behavior tests and no merge, elevation, recomposition, or deletion signal; owns the srgb view-format pair rule; MUTABLE_FORMAT images with a VkImageFormatListCreateInfo only for textures whose viewFormats name the srgb pair. Multisampled textures need RENDER_ATTACHMENT and a multisample-capable format and may carry copy usages; transient attachments need exactly RENDER_ATTACHMENT and TRANSIENT_ATTACHMENT, one layer and mip, and no viewFormats. createTexture checks STORAGE_BINDING, RENDER_ATTACHMENT and TRANSIENT_ATTACHMENT format and dimension rules, one mip level for 1d, and whole-block compressed sizes.",
+        "moduleSha256": "babd95f384d22ae18758f71dd2371bfb6eda95416154ec056a5e6d67b1a79992",
+        "reason": "Keep: reachable native implementation with private behavior tests and no merge, elevation, recomposition, or deletion signal; owns the srgb view-format pair rule; MUTABLE_FORMAT images with a VkImageFormatListCreateInfo only for textures whose viewFormats name the srgb pair. Multisampled textures need RENDER_ATTACHMENT and a multisample-capable format and may carry copy usages; transient attachments need exactly RENDER_ATTACHMENT and TRANSIENT_ATTACHMENT, one layer and mip, and no viewFormats. createTexture checks STORAGE_BINDING, RENDER_ATTACHMENT and TRANSIENT_ATTACHMENT format and dimension rules, one mip level for 1d, and whole-block compressed sizes. viewDescriptorMessage checks createView usage subsets (whole usage for transient attachments), dimension compatibility, layer counts and square cube faces.",
         "reviewer": "doe-c-claude-indexed/2026-10-24"
       },
       "src/native/shader/doe_shader_compilation_info_native.zig": {

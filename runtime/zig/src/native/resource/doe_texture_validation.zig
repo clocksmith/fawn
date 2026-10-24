@@ -212,6 +212,38 @@ fn usageFormatMessage(device: *const DoeDevice, desc: *const abi_pipeline.WGPUTe
     return null;
 }
 
+/// https://gpuweb.github.io/gpuweb/#abstract-opdef-gputextureviewdescriptor-valid-usage
+/// for a view of `tex` with resolved `dimension` and `layer_count` and the
+/// descriptor's `usage` (0 inherits the texture's): the usage is a subset of
+/// the texture's (all of it for a transient attachment), the dimension fits
+/// the texture's, 1d/2d/3d views have one layer, cube views six and
+/// cube-array views a multiple of six, and cube faces are square.
+pub fn viewDescriptorMessage(tex: *const native_types.DoeTexture, dimension: u32, usage: u64, layer_count: u32) ?[]const u8 {
+    if ((usage & ~tex.usage) != 0) return "texture view usage must be a subset of the texture's usage";
+    if ((tex.usage & abi_texture.WGPUTextureUsage_TransientAttachment) != 0 and usage != 0 and usage != tex.usage)
+        return "a view of a transient attachment must have all of its usages";
+    const T = abi_texture;
+    const fits = switch (tex.dimension) {
+        T.WGPUTextureDimension_1D => dimension == T.WGPUTextureViewDimension_1D,
+        T.WGPUTextureDimension_3D => dimension == T.WGPUTextureViewDimension_3D,
+        else => switch (dimension) {
+            T.WGPUTextureViewDimension_2D, T.WGPUTextureViewDimension_2DArray, T.WGPUTextureViewDimension_Cube, T.WGPUTextureViewDimension_CubeArray => true,
+            else => false,
+        },
+    };
+    if (!fits) return "texture view dimension is incompatible with the texture dimension";
+    const layers_ok = switch (dimension) {
+        T.WGPUTextureViewDimension_1D, T.WGPUTextureViewDimension_2D, T.WGPUTextureViewDimension_3D => layer_count == 1,
+        T.WGPUTextureViewDimension_Cube => layer_count == 6,
+        T.WGPUTextureViewDimension_CubeArray => layer_count % 6 == 0,
+        else => true,
+    };
+    if (!layers_ok) return "texture view array layer count does not fit its dimension";
+    if ((dimension == T.WGPUTextureViewDimension_Cube or dimension == T.WGPUTextureViewDimension_CubeArray) and tex.width != tex.height)
+        return "cube texture view faces must be square";
+    return null;
+}
+
 test "browser canvas texture descriptor validates locally" {
     var device: DoeDevice = .{};
     var internal = abi_pipeline.WGPUDawnTextureInternalUsageDescriptor{
