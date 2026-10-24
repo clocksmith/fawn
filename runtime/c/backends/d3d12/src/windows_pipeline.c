@@ -55,7 +55,7 @@ doe_dx_status doe_dx_create_root(doe_dx_native_context *context,
         ranges[slot].OffsetInDescriptorsFromTableStart = (UINT)slot;
         pipeline->textures[index] = *binding;
     }
-    D3D12_STATIC_SAMPLER_DESC samplers[DOE_DX_MAX_BINDINGS] = {0};
+    D3D12_STATIC_SAMPLER_DESC samplers[DOE_DX_MAX_STATIC_SAMPLERS] = {0};
     for (size_t index = 0; index < desc->sampler_count; index++) {
         const doe_dx_static_sampler *sampler = &desc->samplers[index];
         samplers[index].ShaderRegister = sampler->shader_register;

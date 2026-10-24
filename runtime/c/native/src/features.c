@@ -45,6 +45,7 @@ static bool depth_stencil(const doe_vk_format_caps *caps)
  * descriptor fields checks the enabled set, never these adapter facts. */
 uint32_t native_adapter_features(const native_backend *backend)
 {
+    if (backend->kind == WGPUBackendType_D3D12) return 0;
     /* No compatibility mode: every adapter that can create a device is core. */
     if (backend->kind != WGPUBackendType_Vulkan) return NATIVE_FEATURE(WGPUFeatureName_CoreFeaturesAndLimits);
     const doe_vk_caps *caps = &backend->value.vulkan.caps;

@@ -39,6 +39,16 @@ native_failure native_failure_metal(doe_mtl_status status, const doe_mtl_error *
     return failure;
 }
 
+native_failure native_failure_d3d12(doe_dx_status status, const doe_dx_error *error)
+{
+    native_failure failure = {.status = native_from_d3d12(status), .backend = WGPUBackendType_D3D12};
+    if (status != DOE_DX_OK && error && error->status == status) {
+        failure.native_code = error->native_code;
+        copy_text(failure.operation, sizeof(failure.operation), error->operation);
+    }
+    return failure;
+}
+
 void native_failure_format(const native_failure *failure, const char *fallback,
     char output[NATIVE_FAILURE_MESSAGE_CAPACITY])
 {
@@ -46,7 +56,8 @@ void native_failure_format(const native_failure *failure, const char *fallback,
     if (failure->status == NATIVE_OK) output[0] = '\0';
     else if (!failure->operation[0]) copy_text(output, NATIVE_FAILURE_MESSAGE_CAPACITY, fallback);
     else {
-        const char *backend = failure->backend == WGPUBackendType_Metal ? "Metal" : "Vulkan";
+        const char *backend = failure->backend == WGPUBackendType_Metal ? "Metal" :
+            failure->backend == WGPUBackendType_D3D12 ? "D3D12" : "Vulkan";
         (void)snprintf(output, NATIVE_FAILURE_MESSAGE_CAPACITY, "%s: %s (native=%" PRId64 ")%s%s",
             backend, failure->operation, failure->native_code,
             failure->message[0] ? ": " : "", failure->message);

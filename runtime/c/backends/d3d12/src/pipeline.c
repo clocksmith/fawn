@@ -19,20 +19,29 @@ static bool same_register(uint32_t reg_a, uint32_t space_a, doe_dx_descriptor_ki
     return reg_a == reg_b && space_a == space_b && kind_a == kind_b;
 }
 
-static doe_dx_status validate_layout(const doe_dx_resource_pipeline_desc *desc) {
+static doe_dx_status validate_layout(const doe_dx_context *context, const doe_dx_resource_pipeline_desc *desc) {
     const doe_dx_pipeline_desc *buffers = &desc->buffers;
     if (!buffers->bytecode || !buffers->bytecode_size ||
         (buffers->binding_count && !buffers->bindings) ||
         (desc->texture_count && !desc->textures) || (desc->sampler_count && !desc->samplers))
         return DOE_DX_INVALID_ARGUMENT;
-    if (desc->texture_count > DOE_DX_MAX_BINDINGS || desc->sampler_count > DOE_DX_MAX_BINDINGS ||
+    if (desc->texture_count > DOE_DX_MAX_BINDINGS || desc->sampler_count > DOE_DX_MAX_STATIC_SAMPLERS ||
         buffers->binding_count > DOE_DX_MAX_BINDINGS - desc->texture_count)
         return DOE_DX_RANGE;
+    const doe_dx_limits *limits = &context->caps.limits;
+    if (buffers->binding_count + desc->texture_count > limits->max_descriptors ||
+        desc->sampler_count > limits->max_static_samplers) return DOE_DX_RANGE;
+    uint32_t cbvs = 0, srvs = 0, uavs = 0;
     for (size_t index = 0; index < buffers->binding_count; index++) {
         const doe_dx_binding_layout *binding = &buffers->bindings[index];
         doe_dx_descriptor_kind kind = doe_dx_buffer_descriptor_kind(binding);
-        if (kind == DOE_DX_DESCRIPTOR_INVALID ||
-            (kind == DOE_DX_DESCRIPTOR_CBV ? binding->stride != 0 :
+        switch (kind) {
+        case DOE_DX_DESCRIPTOR_CBV: ++cbvs; break;
+        case DOE_DX_DESCRIPTOR_SRV: ++srvs; break;
+        case DOE_DX_DESCRIPTOR_UAV: ++uavs; break;
+        case DOE_DX_DESCRIPTOR_INVALID: return DOE_DX_INVALID_ARGUMENT;
+        }
+        if ((kind == DOE_DX_DESCRIPTOR_CBV ? binding->stride != 0 :
                 binding->stride < 4 || binding->stride > 2048 || binding->stride % 4))
             return DOE_DX_INVALID_ARGUMENT;
         for (size_t prior = 0; prior < index; prior++) {
@@ -47,6 +56,8 @@ static doe_dx_status validate_layout(const doe_dx_resource_pipeline_desc *desc) 
         if (!doe_dx_format_valid(binding->format) ||
             (binding->access != DOE_DX_READ_ONLY && binding->access != DOE_DX_READ_WRITE))
             return DOE_DX_INVALID_ARGUMENT;
+        if (binding->access == DOE_DX_READ_ONLY) ++srvs;
+        else ++uavs;
         for (size_t prior = 0; prior < index; prior++) {
             const doe_dx_texture_binding_layout *other = &desc->textures[prior];
             if (same_register(binding->shader_register, binding->register_space, texture_kind(binding->access),
@@ -58,6 +69,8 @@ static doe_dx_status validate_layout(const doe_dx_resource_pipeline_desc *desc) 
                 other->shader_register, other->register_space, doe_dx_buffer_descriptor_kind(other))) return DOE_DX_INVALID_ARGUMENT;
         }
     }
+    if (cbvs > limits->max_cbvs || srvs > limits->max_srvs || uavs > limits->max_uavs)
+        return DOE_DX_RANGE;
     for (size_t index = 0; index < desc->sampler_count; index++) {
         const doe_dx_static_sampler *sampler = &desc->samplers[index];
         if ((sampler->filter != DOE_DX_NEAREST && sampler->filter != DOE_DX_LINEAR) ||
@@ -79,7 +92,7 @@ static doe_dx_status create_pipeline(doe_dx_context *context,
         return doe_dx_fail(DOE_DX_INVALID_ARGUMENT, 0, "pipeline.create", error);
     uint32_t ends[DOE_DX_MAX_VERTEX_BUFFERS] = {0};
     doe_dx_status status = mesh ? doe_dx_validate_mesh(mesh, ends) : DOE_DX_OK;
-    if (status == DOE_DX_OK) status = validate_layout(desc);
+    if (status == DOE_DX_OK) status = validate_layout(context, desc);
     if (status != DOE_DX_OK) return doe_dx_fail(status, 0, "pipeline.layout", error);
     if (context->objects == SIZE_MAX) return doe_dx_fail(DOE_DX_RANGE, 0, "pipeline.create", error);
     if (context->lost) return doe_dx_fail(DOE_DX_DEVICE_LOST, 0, "pipeline.create", error);

@@ -1,11 +1,14 @@
 /* SPDX-License-Identifier: MIT */
 #include "backend.h"
+#include "d3d12_frontend.h"
 #include <stdlib.h>
 #include <string.h>
 
 native_result native_backend_open(WGPUBackendType kind, bool fallback, uint32_t surface_platforms,
     native_backend *out)
 {
+    if (kind == WGPUBackendType_D3D12)
+        return surface_platforms ? NATIVE_UNSUPPORTED : native_d3d12_open(fallback, out);
     native_backend result = {.kind=kind};
     native_result status;
     if (kind == WGPUBackendType_Vulkan) {
@@ -46,6 +49,7 @@ native_result native_backend_open(WGPUBackendType kind, bool fallback, uint32_t 
 
 native_result native_backend_device(const native_backend *adapter, native_backend *out)
 {
+    if (adapter->kind == WGPUBackendType_D3D12) return native_d3d12_reopen(adapter, out);
     native_backend result = {.kind=adapter->kind};
     native_result status;
     if (adapter->kind == WGPUBackendType_Vulkan) {
@@ -85,6 +89,7 @@ void native_backend_close(native_backend *backend)
 {
     if (backend->kind == WGPUBackendType_Vulkan) doe_vk_context_release(backend->value.vulkan.context);
     else if (backend->kind == WGPUBackendType_Metal) doe_mtl_context_release(backend->value.metal.context);
+    else if (backend->kind == WGPUBackendType_D3D12) native_d3d12_close(backend);
     *backend = (native_backend){0};
 }
 
@@ -94,6 +99,7 @@ native_result native_backend_status(const native_backend *backend)
         return doe_vk_context_alive(backend->value.vulkan.context) ? NATIVE_OK : NATIVE_DEVICE_LOST;
     if (backend->kind == WGPUBackendType_Metal)
         return backend->value.metal.context ? NATIVE_OK : NATIVE_INVALID_STATE;
+    if (backend->kind == WGPUBackendType_D3D12) return native_d3d12_status(backend);
     return NATIVE_UNSUPPORTED;
 }
 
@@ -111,6 +117,14 @@ WGPUStatus native_backend_info(const native_backend *backend, WGPUAdapterInfo *o
         else if (caps->device_type == 1) result.adapterType = WGPUAdapterType_IntegratedGPU;
         else if (caps->device_type == 2) result.adapterType = WGPUAdapterType_DiscreteGPU;
     } else if (backend->kind == WGPUBackendType_Metal) name = backend->value.metal.caps.device_name;
+    else if (backend->kind == WGPUBackendType_D3D12) {
+        const doe_dx_caps *caps = &backend->value.d3d12.caps;
+        name = caps->name;
+        result.vendorID = caps->vendor_id;
+        result.deviceID = caps->device_id;
+        result.adapterType = caps->software_adapter ? WGPUAdapterType_CPU :
+            caps->unified_memory ? WGPUAdapterType_IntegratedGPU : WGPUAdapterType_DiscreteGPU;
+    }
     else return WGPUStatus_Error;
     size_t size = strlen(name);
     char *owned = malloc(size + 1);

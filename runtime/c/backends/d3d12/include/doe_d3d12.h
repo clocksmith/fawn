@@ -42,31 +42,58 @@ typedef struct doe_dx_error {
 } doe_dx_error;
 
 typedef enum doe_dx_adapter_selection {
-    DOE_DX_SELECT_ORDINAL = 0, DOE_DX_SELECT_WARP = 1
+    DOE_DX_SELECT_ORDINAL = 0, DOE_DX_SELECT_WARP = 1, DOE_DX_SELECT_LUID = 2, DOE_DX_SELECT_HARDWARE = 3
 } doe_dx_adapter_selection;
 #define DOE_DX_NO_ADAPTER_ORDINAL UINT32_MAX
+typedef struct doe_dx_adapter_identity {
+    uint32_t luid_low;
+    int32_t luid_high;
+    bool software_adapter;
+} doe_dx_adapter_identity;
 typedef struct doe_dx_options {
     uint32_t adapter_ordinal; /* Exact DXGI ordinal, no adapter fallback. */
     bool allow_software_adapter;
     /* Zero preserves exact ordinal selection. WARP explicitly selects the CPU
      * renderer and requires allow_software_adapter=true and adapter_ordinal=0.
      * No unavailable selection falls back to another adapter. */
+    /* HARDWARE scans past software entries, then selects the first hardware
+     * identity exactly. Requires ordinal0; device/open failure never retries. */
     doe_dx_adapter_selection adapter_selection;
+    /* LUID requires ordinal0 and matches both words and software identity.
+     * Other selectors require this record zeroed; software still needs opt-in. */
+    doe_dx_adapter_identity adapter_identity;
 } doe_dx_options;
 
-/* Adapter identity only, not public WebGPU capability admission. */
+/* Raw SDK query facts plus the backend's admitted implementation bounds.
+ * No field establishes WebGPU feature/core admission, current free memory,
+ * allocation success, or physical qualification. */
+typedef struct doe_dx_limits {
+    uint32_t max_descriptors, max_static_samplers;
+    uint32_t max_cbvs, max_srvs, max_uavs; /* Combined across ALL-visible root stages. */
+    uint32_t max_compute_threads, max_compute_size[3], max_dispatch_groups[3];
+    uint32_t max_compute_shared_bytes, uniform_offset_alignment, max_uniform_bytes;
+    uint64_t max_buffer_size, max_buffer_allocation_bytes, buffer_allocation_alignment;
+} doe_dx_limits;
 typedef struct doe_dx_caps {
-    uint32_t adapter_ordinal, vendor_id, device_id; /* WARP ordinal is NO_ADAPTER_ORDINAL. */
+    uint32_t adapter_ordinal, vendor_id, device_id; /* WARP/LUID use NO_ADAPTER_ORDINAL. */
     uint32_t luid_low;
     int32_t luid_high;
     bool software_adapter;
     char name[256]; /* UTF-8, NUL terminated. */
     doe_dx_adapter_selection adapter_selection;
+    bool unified_memory; /* Actual node0 ARCHITECTURE.UMA query. */
+    uint32_t feature_level; /* Highest queried profile among FL11_0..FL12_1. */
+    uint32_t resource_binding_tier, resource_heap_tier;
+    uint32_t gpu_va_bits_per_resource, gpu_va_bits_per_process;
+    uint32_t shader_model; /* Queried up to SM6_0; 0 means query unavailable. */
+    doe_dx_limits limits;
 } doe_dx_caps;
 
 doe_dx_status doe_dx_context_create(const doe_dx_options *options,
     doe_dx_context **out, doe_dx_error *error);
 doe_dx_status doe_dx_context_caps(const doe_dx_context *context, doe_dx_caps *out);
+/* Nonmutating; no polling, error consumption or completion settlement. */
+doe_dx_status doe_dx_context_status(const doe_dx_context *context);
 /* Refuses destruction with BUSY until all caller objects have been released and
  * all submissions retired. On BUSY the context remains usable for polling. */
 doe_dx_status doe_dx_context_destroy(doe_dx_context *context);
@@ -94,7 +121,7 @@ doe_dx_status doe_dx_buffer_write(doe_dx_buffer *buffer, uint64_t offset,
 doe_dx_status doe_dx_buffer_read(doe_dx_buffer *buffer, uint64_t offset,
     void *bytes, size_t size, doe_dx_error *error);
 
-enum { DOE_DX_MAX_BINDINGS = 16, DOE_DX_MAX_COMMAND_RESOURCES = 64 };
+enum { DOE_DX_MAX_BINDINGS = 64, DOE_DX_MAX_STATIC_SAMPLERS = 16, DOE_DX_MAX_COMMAND_RESOURCES = 64 };
 typedef enum doe_dx_binding_access { DOE_DX_READ_ONLY, DOE_DX_READ_WRITE } doe_dx_binding_access;
 typedef enum doe_dx_buffer_view { DOE_DX_STRUCTURED, DOE_DX_UNIFORM } doe_dx_buffer_view;
 typedef struct doe_dx_binding_layout {
@@ -133,7 +160,9 @@ void doe_dx_commands_release(doe_dx_commands *commands);
 doe_dx_status doe_dx_commands_copy(doe_dx_commands *commands,
     doe_dx_buffer *source, uint64_t source_offset, doe_dx_buffer *destination,
     uint64_t destination_offset, uint64_t size, doe_dx_error *error);
-/* Binding order is exactly pipeline descriptor order; aliasing is rejected.
+/* Binding order is exactly pipeline descriptor order. Repeated read bindings
+ * may overlap; writable views of one buffer must be disjoint and cannot mix
+ * with read bindings. One command lease/state transition covers each buffer.
  * All buffers must be initialized. Dimensions are 1..65535 independently. */
 doe_dx_status doe_dx_commands_dispatch(doe_dx_commands *commands,
     doe_dx_pipeline *pipeline, const doe_dx_buffer_binding *bindings,

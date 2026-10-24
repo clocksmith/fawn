@@ -7,8 +7,8 @@ NATIVE_LIBRARY ?= $(BUILD)/libwebgpu_doe_c.$(SHARED_SUFFIX)
 COMPILER_LIBRARY ?= $(BUILD)/libdoe_compiler.$(SHARED_SUFFIX)
 SANITIZE ?=
 # One owner list drives source, public include and private header dependencies.
-OWNER_DIRS = ../instance ../futures ../callbacks ../resources ../labels \
- ../error-scopes ../shader ../backends/vulkan ../backends/metal ../platform
+include sources.mk
+OWNER_DIRS = $(NATIVE_OWNER_DIRS)
 # The compute-program contract is the package schema's value, never a copied number.
 PROGRAM_SCHEMA ?= ../../../config/compute-program.schema.json
 PROGRAM_CONTRACT := $(shell python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["$$defs"]["nativeContractVersion"]["const"])' $(PROGRAM_SCHEMA) 2>/dev/null)
@@ -23,7 +23,7 @@ CFLAGS += -std=c11 -Wall -Wextra -Wpedantic -Werror -fPIC -pthread $(SANITIZE)
 SOURCES = $(wildcard src/*.c) $(foreach owner,$(OWNER_DIRS),$(wildcard $(owner)/src/*.c))
 OBJECTS = $(patsubst src/%.c,$(BUILD)/native/%.o,$(filter src/%,$(SOURCES))) \
  $(patsubst ../%.c,$(BUILD)/owners/%.o,$(filter ../%,$(SOURCES)))
-HEADERS = $(wildcard src/*.h include/*.h ../compiler/include/*.h ../common/include/*.h) $(PROGRAM_SCHEMA) \
+HEADERS = sources.mk $(wildcard src/*.h include/*.h ../compiler/include/*.h ../common/include/*.h ../backends/d3d12/include/*.h) $(PROGRAM_SCHEMA) \
  $(foreach owner,$(OWNER_DIRS),$(wildcard $(owner)/include/*.h $(owner)/src/*.h)) \
  ../../zig/vendor/webgpu-headers/webgpu.h
 COMPILER_RUNPATH ?= $(abspath $(dir $(COMPILER_LIBRARY)))
@@ -142,6 +142,11 @@ $(BUILD)/pending-progress: tests/pending_progress.c tests/consumer.h tests/adapt
 	$(CC) $(CPPFLAGS) $(CFLAGS) tests/pending_progress.c $(OBJECTS) $(COMPILER_LINK) $(PLATFORM_LIBS) \
 	  -Wl,--wrap=pthread_create -Wl,--wrap=native_backend_close -Wl,--wrap=native_buffer_close \
 	  -Wl,--wrap=doe_vk_commands_submit -Wl,--wrap=doe_vk_commands_poll -Wl,--wrap=doe_vk_commands_recover -Wl,--wrap=doe_vk_commands_release -o $@
+$(BUILD)/map-oom: tests/map_oom.c tests/consumer.h tests/adapter_class.h $(OBJECTS) $(COMPILER_LIBRARY) | $(BUILD)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< $(OBJECTS) $(COMPILER_LINK) $(PLATFORM_LIBS) \
+	  -Wl,--wrap=malloc -Wl,--wrap=native_buffer_close -Wl,--wrap=native_backend_close -o $@
+$(BUILD)/binding-aliases: tests/binding_aliases.c tests/consumer.h tests/adapter_class.h $(NATIVE_LIBRARY)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
 $(BUILD)/program-prepare: tests/program_prepare.c tests/consumer.h tests/adapter_class.h include/doe_native_programs.h $(OBJECTS) $(COMPILER_LIBRARY) | $(BUILD)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< $(OBJECTS) $(COMPILER_LINK) $(PLATFORM_LIBS) \
 	  -Wl,--wrap=doe_vk_commands_create_reusable -Wl,--wrap=doe_vk_commands_dispatch_resources -Wl,--wrap=doe_vk_commands_seal \
@@ -174,7 +179,9 @@ $(BUILD)/lifecycle: tests/lifecycle.c tests/adapter_class.h $(OBJECTS) $(COMPILE
 $(BUILD)/procedures-cxx: tests/procedures.cpp $(NATIVE_LIBRARY)
 	$(CXX) $(CPPFLAGS) -std=c++17 -Wall -Wextra -Wpedantic -Werror $(SANITIZE) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
 ifeq ($(SHARED_PLATFORM),Linux)
-check: $(BUILD)/mixed-resources $(BUILD)/offscreen-triangle check-provider-pin $(BUILD)/backend-failure $(BUILD)/vulkan-identity $(BUILD)/draw-budget $(BUILD)/indirect-render $(BUILD)/indexed-render $(BUILD)/depth-sampling $(BUILD)/cube-array $(BUILD)/view-formats $(BUILD)/point-list $(BUILD)/color-discard $(BUILD)/msaa-sampling $(BUILD)/format-features $(BUILD)/draw-features $(BUILD)/copy-layouts $(BUILD)/bc-compression $(BUILD)/component-swizzle $(BUILD)/encoder-errors $(BUILD)/core-formats $(BUILD)/indirect-compute check-build-dependencies check-host-bridge $(BUILD)/atomics $(BUILD)/debug $(BUILD)/msaa $(BUILD)/depth $(BUILD)/demote $(BUILD)/graphics-admission $(BUILD)/empty-shader $(BUILD)/graphics $(BUILD)/compute $(BUILD)/procedures-cxx $(BUILD)/lifecycle $(BUILD)/textures $(BUILD)/admission $(BUILD)/failures $(BUILD)/timestamps $(BUILD)/recovery $(BUILD)/pending-progress $(BUILD)/depth-copies $(BUILD)/uniform-standard $(BUILD)/wgsl-language-features $(BUILD)/texture-binding-view-dimension $(BUILD)/compute-programs $(BUILD)/program-prepare $(BUILD)/vertex-formats $(BUILD)/mrt $(BUILD)/anisotropy $(BUILD)/storage-textures $(BUILD)/limits $(BUILD)/large-write
+check: $(BUILD)/map-oom $(BUILD)/binding-aliases $(BUILD)/mixed-resources $(BUILD)/offscreen-triangle check-provider-pin $(BUILD)/backend-failure $(BUILD)/vulkan-identity $(BUILD)/draw-budget $(BUILD)/indirect-render $(BUILD)/indexed-render $(BUILD)/depth-sampling $(BUILD)/cube-array $(BUILD)/view-formats $(BUILD)/point-list $(BUILD)/color-discard $(BUILD)/msaa-sampling $(BUILD)/format-features $(BUILD)/draw-features $(BUILD)/copy-layouts $(BUILD)/bc-compression $(BUILD)/component-swizzle $(BUILD)/encoder-errors $(BUILD)/core-formats $(BUILD)/indirect-compute check-build-dependencies check-host-bridge $(BUILD)/atomics $(BUILD)/debug $(BUILD)/msaa $(BUILD)/depth $(BUILD)/demote $(BUILD)/graphics-admission $(BUILD)/empty-shader $(BUILD)/graphics $(BUILD)/compute $(BUILD)/procedures-cxx $(BUILD)/lifecycle $(BUILD)/textures $(BUILD)/admission $(BUILD)/failures $(BUILD)/timestamps $(BUILD)/recovery $(BUILD)/pending-progress $(BUILD)/depth-copies $(BUILD)/uniform-standard $(BUILD)/wgsl-language-features $(BUILD)/texture-binding-view-dimension $(BUILD)/compute-programs $(BUILD)/program-prepare $(BUILD)/vertex-formats $(BUILD)/mrt $(BUILD)/anisotropy $(BUILD)/storage-textures $(BUILD)/limits $(BUILD)/large-write
+	$(BUILD)/map-oom
+	$(BUILD)/binding-aliases
 	$(BUILD)/draw-budget
 	$(BUILD)/indirect-render
 	$(BUILD)/indexed-render
@@ -229,7 +236,7 @@ check: $(BUILD)/mixed-resources $(BUILD)/offscreen-triangle check-provider-pin $
 # The same public clients on a nonfallback GPU adapter (DOE_C_TEST_ADAPTER=physical).
 # Developer evidence on the printed adapter/driver only, not qualification. Uses the
 # system ICDs: unset VK_ICD_FILENAMES. Never run on a host under a physical hold.
-PHYSICAL_CLIENTS = mixed-resources offscreen-triangle draw-budget indirect-render indexed-render depth-copies depth-sampling cube-array view-formats point-list color-discard msaa-sampling format-features draw-features copy-layouts bc-compression component-swizzle encoder-errors core-formats indirect-compute atomics debug msaa depth \
+PHYSICAL_CLIENTS = map-oom binding-aliases mixed-resources offscreen-triangle draw-budget indirect-render indexed-render depth-copies depth-sampling cube-array view-formats point-list color-discard msaa-sampling format-features draw-features copy-layouts bc-compression component-swizzle encoder-errors core-formats indirect-compute atomics debug msaa depth \
 	demote graphics-admission empty-shader graphics compute lifecycle textures admission \
 	failures timestamps recovery uniform-standard wgsl-language-features texture-binding-view-dimension compute-programs program-prepare vertex-formats mrt anisotropy storage-textures limits large-write
 # Real-window presentation (XCB on a reachable X server, e.g. Xwayland); not part
@@ -258,7 +265,7 @@ else
 check:
 	@echo "The SwiftShader/fault-injection suite requires Linux; use check-portable for host ABI checks." >&2
 	@exit 2
-GNU_ONLY_TESTS = metal-bridge demote failures recovery indirect-compute pending-progress vulkan-identity surface-progress program-prepare
+GNU_ONLY_TESTS = map-oom metal-bridge demote failures recovery indirect-compute pending-progress vulkan-identity surface-progress program-prepare
 $(addprefix $(BUILD)/,$(GNU_ONLY_TESTS)): | unavailable-gnu-tests
 .PHONY: unavailable-gnu-tests
 unavailable-gnu-tests:
@@ -283,7 +290,7 @@ check-empty-module: $(BUILD)/empty-shader
 	$(BUILD)/empty-shader
 clean:
 	rm -f $(OBJECTS)
-	rm -f $(BUILD)/native.exports $(BUILD)/native.exports.tmp $(BUILD)/draw-budget $(BUILD)/indirect-render $(BUILD)/indexed-render $(BUILD)/depth-sampling $(BUILD)/cube-array $(BUILD)/view-formats $(BUILD)/point-list $(BUILD)/color-discard $(BUILD)/msaa-sampling $(BUILD)/format-features $(BUILD)/draw-features $(BUILD)/copy-layouts $(BUILD)/bc-compression $(BUILD)/component-swizzle $(BUILD)/encoder-errors $(BUILD)/core-formats $(BUILD)/indirect-compute $(BUILD)/backend-selection $(BUILD)/metal-bridge $(BUILD)/atomics $(BUILD)/debug $(BUILD)/msaa $(BUILD)/depth $(BUILD)/demote $(BUILD)/graphics-admission $(BUILD)/graphics $(BUILD)/empty-shader $(NATIVE_LIBRARY) $(BUILD)/libdoe_compiler.$(SHARED_SUFFIX) $(BUILD)/compute $(BUILD)/procedures-cxx $(BUILD)/lifecycle $(BUILD)/textures $(BUILD)/admission $(BUILD)/failures $(BUILD)/timestamps $(BUILD)/recovery $(BUILD)/pending-progress $(BUILD)/vulkan-identity $(BUILD)/provider-pin $(BUILD)/provider-pin-fixture.$(SHARED_SUFFIX) $(BUILD)/backend-failure $(BUILD)/depth-copies $(BUILD)/surface-present $(BUILD)/surface-platforms $(BUILD)/uniform-standard $(BUILD)/wgsl-language-features $(BUILD)/texture-binding-view-dimension $(BUILD)/mrt $(BUILD)/anisotropy $(BUILD)/storage-textures $(BUILD)/compute-programs $(BUILD)/program-prepare $(BUILD)/surface-progress $(BUILD)/limits $(BUILD)/large-write $(BUILD)/mixed-resources $(BUILD)/offscreen-triangle
+	rm -f $(BUILD)/map-oom $(BUILD)/binding-aliases $(BUILD)/native.exports $(BUILD)/native.exports.tmp $(BUILD)/draw-budget $(BUILD)/indirect-render $(BUILD)/indexed-render $(BUILD)/depth-sampling $(BUILD)/cube-array $(BUILD)/view-formats $(BUILD)/point-list $(BUILD)/color-discard $(BUILD)/msaa-sampling $(BUILD)/format-features $(BUILD)/draw-features $(BUILD)/copy-layouts $(BUILD)/bc-compression $(BUILD)/component-swizzle $(BUILD)/encoder-errors $(BUILD)/core-formats $(BUILD)/indirect-compute $(BUILD)/backend-selection $(BUILD)/metal-bridge $(BUILD)/atomics $(BUILD)/debug $(BUILD)/msaa $(BUILD)/depth $(BUILD)/demote $(BUILD)/graphics-admission $(BUILD)/graphics $(BUILD)/empty-shader $(NATIVE_LIBRARY) $(BUILD)/libdoe_compiler.$(SHARED_SUFFIX) $(BUILD)/compute $(BUILD)/procedures-cxx $(BUILD)/lifecycle $(BUILD)/textures $(BUILD)/admission $(BUILD)/failures $(BUILD)/timestamps $(BUILD)/recovery $(BUILD)/pending-progress $(BUILD)/vulkan-identity $(BUILD)/provider-pin $(BUILD)/provider-pin-fixture.$(SHARED_SUFFIX) $(BUILD)/backend-failure $(BUILD)/depth-copies $(BUILD)/surface-present $(BUILD)/surface-platforms $(BUILD)/uniform-standard $(BUILD)/wgsl-language-features $(BUILD)/texture-binding-view-dimension $(BUILD)/mrt $(BUILD)/anisotropy $(BUILD)/storage-textures $(BUILD)/compute-programs $(BUILD)/program-prepare $(BUILD)/surface-progress $(BUILD)/limits $(BUILD)/large-write $(BUILD)/mixed-resources $(BUILD)/offscreen-triangle
 
 $(BUILD)/offscreen-triangle: tests/offscreen_triangle.c tests/metal_graphics_cases.h tests/consumer.h tests/adapter_class.h $(NATIVE_LIBRARY)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@

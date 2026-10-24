@@ -4,47 +4,43 @@ Parent: [Experimental C migration](../../CATSCAN.md)
 
 ## Target
 
-Execute admitted D3D12 direct/indirect compute, uniform/storage resource views,
-offscreen draws, transfers and timestamps through an independently usable C owner,
-preserving native resource and completion obligations.
+Execute admitted D3D12 compute, offscreen graphics, transfers and timestamps with
+explicit native resource/completion obligations.
 
 ## Authority
 
-- Owns experimental D3D12 adapter/device, resource, pipeline, command, queue and fence lifetime.
-- Excludes WGSL meaning, WebGPU object validation, provider selection and qualification.
+- Owns adapters, devices, resources, pipelines, commands, queues and fences.
+- Owns official DXC invocation and bytecode/module lifetime; shader meaning and metadata remain compiler-owned.
+- Excludes WebGPU validation, provider selection and qualification.
 
 ## Scope
 
-- Includes this directory's backend-private ABI, Windows implementation and fixtures.
+Private ABI, Windows implementation and fixtures; [guide](README.md).
 
 ## Contracts
 
-- Input: validated bytecode and typed resource/binding descriptions in [the boundary](include/doe_d3d12.h).
-- Output: adapter identity, typed status and completion-backed readback.
-- Retained trace and limitations: [owner guide](README.md).
+- Inputs: [typed resources/bytecode](include/doe_d3d12.h) or [admitted HLSL/entry/stage/module](include/doe_d3d12_shader.h).
+- Outputs: queried identity/caps, statuses and completion-backed readback.
 
 ## Invariants
 
-- Unknown completion retains all allocations and dependencies.
-- Caller release and timeout are not completion; destruction refuses unresolved obligations.
-- Host controls do not simulate shaders or qualify SDK ABI or physical execution.
-- Production Zig remains intact, without fallback or default-provider change.
-- WARP CPU execution requires explicit typed selection and observed DXGI
-  software identity. Failed selection never tries another adapter; hosted WARP
-  evidence does not qualify physical hardware or public WebGPU integration.
+- Unknown completion retains dependencies; release/timeout never settles obligations; destruction refuses unresolved work.
+- Production Zig remains intact; no hidden runtime delegation or default change.
+- Portable controls prove ownership; SDK CPU controls prove call composition, never driver execution.
+- DXC preserves first owned diagnostics and retains its module through bytecode release; no CLI, filesystem includes or source interpretation.
+- WARP requires explicit selection/software identity. Failed selection never falls back. CPU evidence never qualifies hardware/public integration.
 
 ## Acceptance
 
-- [Focused checks](Makefile) exercise rollback, ranges, ordering and lifetime through a private native-call seam.
-- [Native fixtures](tests/native_mesh.c) require Windows SDK compilation and separately authorized driver execution.
-- Complete retained consumer parity and physical qualification remain separate gates.
-- Evidence: [current developer receipt](DEVELOPER_RECEIPT_INDIRECT_UNIFORM.json);
-  [historical mesh](MESH_TERMINAL_RECEIPT.txt), [historical core](TERMINAL_RECEIPT.txt).
+- [Owner controls](Makefile) cover rollback, ranges, order and lifetime.
+- [SDK CPU controls](tests/test_windows_caps.c) and [DXC control](tests/native_shader.c) create no device.
+- [Driver fixtures](tests/native_mesh.c) require separate execution authorization; retained parity and hardware qualification remain separate.
+- Evidence: [host receipt](DEVELOPER_RECEIPT_INDIRECT_UNIFORM.json), [SDK/driver scope](README.md).
 
 ## Non-goals
 
-- Replacing WebGPU or asserting complete graphics, textures, presentation or queries.
+Replacing WebGPU or asserting complete graphics, textures, presentation or queries.
 
 ## Freedom
 
-Implementation is free within these boundaries and acceptance obligations.
+Implementation freedom requires these boundaries and acceptance obligations.

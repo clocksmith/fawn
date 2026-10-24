@@ -2,17 +2,43 @@
 #include "internal.h"
 #include "feature_internal.h"
 #include "surface_internal.h"
+#if defined(_WIN32)
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <windows.h>
+_Static_assert(sizeof(FARPROC) == sizeof(void *), "Win64 loader symbol storage");
+static doe_vk_status win32_loader_error(const char *operation, doe_vk_error *error) {
+    DWORD code = GetLastError();
+    _Static_assert(sizeof(code) == sizeof(error->native_result), "Win32 loader error storage");
+    doe_vk_status status = doe_vk_fail(DOE_VK_LOADER_UNAVAILABLE, operation, error);
+    if (error != NULL) memcpy(&error->native_result, &code, sizeof(code));
+    return status;
+}
+#else
 #include <dlfcn.h>
+#endif
 
-/* POSIX supplies object-sized function symbols. Copy only after checking both
- * storage size and lookup success; failed lookup leaves its destination intact. */
+/* POSIX dlsym and Win64 GetProcAddress have distinct native result types.
+ * Copy only checked native symbol storage; failed lookup leaves the typed
+ * destination intact. No object/function-pointer cast or procedure call is made. */
 doe_vk_status doe_vk_load_symbol(void *library, const char *name,
     void *destination, size_t destination_size, doe_vk_error *error) {
     if (library == NULL || name == NULL || destination == NULL ||
         destination_size != sizeof(void *))
         return doe_vk_fail(DOE_VK_INVALID_ARGUMENT, "loader symbol storage", error);
+#if defined(_WIN32)
+    FARPROC symbol = GetProcAddress((HMODULE)library, name);
+#else
     void *symbol = dlsym(library, name);
-    if (symbol == NULL) return doe_vk_fail(DOE_VK_LOADER_UNAVAILABLE, name, error);
+#endif
+    if (symbol == NULL) {
+#if defined(_WIN32)
+        return win32_loader_error(name, error);
+#else
+        return doe_vk_fail(DOE_VK_LOADER_UNAVAILABLE, name, error);
+#endif
+    }
     memcpy(destination, &symbol, destination_size);
     return DOE_VK_OK;
 }
@@ -248,10 +274,22 @@ doe_vk_status doe_vk_context_create(const doe_vk_options *options,
     doe_vk_context *context = calloc(1, sizeof(*context));
     if (context == NULL) return doe_vk_fail(DOE_VK_OUT_OF_MEMORY, "context", error);
     context->references = 1;
-    context->library = dlopen("libvulkan.so.1", RTLD_NOW | RTLD_LOCAL);
+#if defined(_WIN32)
+    /* The system loader is installed by the Vulkan runtime. Never search the
+     * working directory or silently substitute another implementation. */
+    const char *library_name = "vulkan-1.dll";
+    context->library = LoadLibraryExW(L"vulkan-1.dll", NULL, LOAD_LIBRARY_SEARCH_SYSTEM32);
+#else
+    const char *library_name = "libvulkan.so.1";
+    context->library = dlopen(library_name, RTLD_NOW | RTLD_LOCAL);
+#endif
     doe_vk_status status = DOE_VK_LOADER_UNAVAILABLE;
     if (context->library == NULL) {
-        doe_vk_fail(status, "libvulkan.so.1", error);
+#if defined(_WIN32)
+        win32_loader_error(library_name, error);
+#else
+        doe_vk_fail(status, library_name, error);
+#endif
         goto failed;
     }
     status = load_functions(context, error);
@@ -362,7 +400,13 @@ void doe_vk_context_release(doe_vk_context *context) {
      * can exist here. Unknown submissions cannot be released. */
     if (context->device != NULL) context->vk.vkDestroyDevice(context->device, NULL);
     if (context->instance != NULL) context->vk.vkDestroyInstance(context->instance, NULL);
-    if (context->library != NULL) dlclose(context->library);
+    if (context->library != NULL) {
+#if defined(_WIN32)
+        (void)FreeLibrary((HMODULE)context->library);
+#else
+        (void)dlclose(context->library);
+#endif
+    }
     free(context);
 }
 

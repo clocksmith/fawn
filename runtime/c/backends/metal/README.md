@@ -5,6 +5,10 @@ loads the macOS Metal/Foundation/Objective-C system libraries and invokes typed
 Objective-C runtime methods. It does not compile/link Zig, embed an interpreter,
 load an alternative backend or manufacture a successful device on other hosts.
 No SDKs or dependencies were installed for this implementation.
+On Windows the POSIX-only library/symbol loader is excluded at compilation;
+`doe_mtl_native_open` retains its explicit unsupported result. Portable typed call
+and resource owners still compile, with no fake POSIX APIs, Apple loader or
+successful substitute provider.
 
 ## Implemented boundary
 

@@ -10,6 +10,8 @@ void doe_dx_native_buffer_destroy(doe_dx_native_buffer *buffer) {
 
 doe_dx_status doe_dx_native_buffer_create(doe_dx_native_context *context,
     uint64_t size, doe_dx_memory memory, doe_dx_native_buffer **out, doe_dx_error *error) {
+    if (size > context->limits.max_buffer_size)
+        return doe_dx_fail(DOE_DX_RANGE, 0, "native.buffer.size", error);
     doe_dx_native_buffer *buffer = calloc(1, sizeof(*buffer));
     if (!buffer) return doe_dx_fail(DOE_DX_OUT_OF_MEMORY, 0, "native.buffer.allocate", error);
     D3D12_HEAP_PROPERTIES heap = {0};
@@ -26,6 +28,15 @@ doe_dx_status doe_dx_native_buffer_create(doe_dx_native_context *context,
     description.SampleDesc.Count = 1;
     description.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
     if (memory == DOE_DX_DEFAULT) description.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+    D3D12_RESOURCE_ALLOCATION_INFO allocation = {0};
+    context->device->lpVtbl->GetResourceAllocationInfo(context->device, &allocation, 0, 1, &description);
+    if (allocation.SizeInBytes == UINT64_MAX || allocation.SizeInBytes < size ||
+        allocation.SizeInBytes > context->limits.max_buffer_allocation_bytes ||
+        !allocation.Alignment || (allocation.Alignment & (allocation.Alignment - 1u)) ||
+        allocation.SizeInBytes % allocation.Alignment) {
+        doe_dx_native_buffer_destroy(buffer);
+        return doe_dx_fail(DOE_DX_UNSUPPORTED, 0, "ID3D12Device.GetResourceAllocationInfo.buffer", error);
+    }
     D3D12_RESOURCE_STATES state = memory == DOE_DX_UPLOAD ?
         D3D12_RESOURCE_STATE_GENERIC_READ : D3D12_RESOURCE_STATE_COPY_DEST;
     HRESULT result = ID3D12Device_CreateCommittedResource(context->device, &heap,

@@ -110,11 +110,17 @@ typedef struct native_binding {
 
 typedef struct native_pipeline {
     native_device *device;
-    union { doe_vk_pipeline *vulkan; doe_mtl_pipeline *metal; doe_mtl_render_pipeline *metal_render; } handle;
+    union {
+        doe_vk_pipeline *vulkan;
+        doe_mtl_pipeline *metal;
+        doe_mtl_render_pipeline *metal_render;
+        doe_dx_pipeline *d3d12;
+    } handle;
     struct native_metal_graphics *metal_graphics;
     size_t binding_count;
     size_t vertex_count;
     struct native_metal_stage_map *metal_compute;
+    struct native_d3d12_compute *d3d12_compute;
     native_binding bindings[NATIVE_MAX_PIPELINE_BINDINGS];
     uint64_t minimum_sizes[NATIVE_MAX_PIPELINE_BINDINGS];
 } native_pipeline;
@@ -159,9 +165,9 @@ uint64_t native_allocation_bound(const native_device *device);
 /* requestDevice limit resolution (limits.c); false rejects the request. */
 bool native_resolve_limits(const WGPULimits *supported, const WGPULimits *required, WGPULimits *out);
 void native_buffer_release(void *userdata, void *handle);
-native_result native_buffer_read(native_buffer *buffer, uint64_t offset, void *bytes, size_t size);
-native_result native_buffer_write(native_buffer *buffer, uint64_t offset, const void *bytes, size_t size);
-native_result native_buffer_create(native_buffer *buffer, uint64_t size, uint32_t usage);
+native_failure native_buffer_read(native_buffer *buffer, uint64_t offset, void *bytes, size_t size);
+native_failure native_buffer_write(native_buffer *buffer, uint64_t offset, const void *bytes, size_t size);
+native_failure native_buffer_create(native_buffer *buffer, uint64_t size, uint32_t usage);
 void native_buffer_close(native_buffer *buffer);
 native_result native_device_result(native_device *device);
 void native_pipeline_release(void *userdata, void *handle);

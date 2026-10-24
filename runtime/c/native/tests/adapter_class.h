@@ -26,7 +26,8 @@ static inline WGPUBackendType adapter_class_backend(void)
     const char *value = getenv("DOE_C_TEST_BACKEND");
     if (!value || !strcmp(value, "vulkan")) return WGPUBackendType_Vulkan;
     if (!strcmp(value, "metal")) return WGPUBackendType_Metal;
-    fprintf(stderr, "DOE_C_TEST_BACKEND must be vulkan or metal, not %s\n", value);
+    if (!strcmp(value, "d3d12")) return WGPUBackendType_D3D12;
+    fprintf(stderr, "DOE_C_TEST_BACKEND must be vulkan, metal or d3d12, not %s\n", value);
     abort();
 }
 
@@ -66,12 +67,18 @@ static inline void adapter_class_require(WGPUAdapter adapter)
         assert(info.adapterType == WGPUAdapterType_DiscreteGPU ||
                info.adapterType == WGPUAdapterType_IntegratedGPU);
         snprintf(adapter_class_label, sizeof(adapter_class_label),
-                 "(physical Vulkan developer run: %.*s; not qualification)",
+                 "(physical %s developer run: %.*s; not qualification)",
+                 info.backendType == WGPUBackendType_D3D12 ? "D3D12" : "Vulkan",
                  (int)info.device.length, info.device.data);
     } else {
         assert(info.adapterType == WGPUAdapterType_CPU);
-        snprintf(adapter_class_label, sizeof(adapter_class_label), "(CPU Vulkan only)");
+        snprintf(adapter_class_label, sizeof(adapter_class_label), "(CPU %s only)",
+            info.backendType == WGPUBackendType_D3D12 ? "D3D12 WARP" : "Vulkan");
     }
+    if (info.backendType == WGPUBackendType_D3D12)
+        printf("Selected adapter backend D3D12, type %u, vendor %u, device %u: %.*s\n",
+            (unsigned)info.adapterType, info.vendorID, info.deviceID,
+            (int)info.device.length, info.device.data);
     wgpuAdapterInfoFreeMembers(info);
 }
 #endif

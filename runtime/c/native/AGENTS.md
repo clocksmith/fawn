@@ -140,3 +140,14 @@ Never publish a public texture until its real initialization completes; unknown
 initialization retains the private allocation on the existing pending owner.
 Depth/stencil transfers, indirect/indexed render guards and sample-mask support
 must be admitted by their actual composed path, not inferred from another backend.
+
+D3D12 devices reopen the selected adapter by its exact LUID and software identity.
+The compiler owns HLSL entry names, bundle indices, registers and dispatch metadata;
+the SDK adapter never interprets WGSL. Load the explicit DXC dependency beside the
+provider, compile before taking the device mutex, and release compiler modules
+after unlocking. Keep logical binding lengths distinct from initialized private
+CBV padding. Transient upload/readback buffers belong to the private command's
+existing leases; unresolved work keeps the common pending device lease. Caller
+release alone never clears that native command pointer or authorizes cleanup.
+Report only composed frontend limits/features; SDK guarantees and private-backend
+controls never establish missing public graphics or presentation behavior.

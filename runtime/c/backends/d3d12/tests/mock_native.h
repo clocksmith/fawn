@@ -8,12 +8,14 @@ typedef enum mock_failure {
     MOCK_NONE, MOCK_OPEN, MOCK_BUFFER, MOCK_PIPELINE, MOCK_COMMANDS,
     MOCK_DISPATCH, MOCK_FINISH, MOCK_SIGNAL, MOCK_COMPLETED, MOCK_WAIT,
     MOCK_WRITE, MOCK_READ, MOCK_TEXTURE, MOCK_GRAPHICS, MOCK_DRAW, MOCK_TIMESTAMPS, MOCK_FREQUENCY,
-    MOCK_DISPATCH_INDIRECT
+    MOCK_DISPATCH_INDIRECT, MOCK_NO_HARDWARE
 } mock_failure;
 typedef struct mock_state {
     mock_failure failure;
     size_t opens;
     doe_dx_options open_options;
+    bool override_caps;
+    doe_dx_caps reported_caps;
     size_t contexts, buffers, pipelines, commands, textures, timestamps;
     size_t copies, dispatches, finishes, executes, signals, waits;
     size_t allocations, allocation_attempts, allocation_failure;
@@ -30,7 +32,7 @@ typedef struct mock_state {
     bool upload;
     doe_dx_resource_pipeline_desc pipeline_desc;
     doe_dx_texture_binding_layout texture_layouts[DOE_DX_MAX_BINDINGS];
-    doe_dx_static_sampler samplers[DOE_DX_MAX_BINDINGS];
+    doe_dx_static_sampler samplers[DOE_DX_MAX_STATIC_SAMPLERS];
     size_t draws, timestamp_writes, timestamp_resolves;
     doe_dx_native_texture *draw_color;
     doe_dx_draw_desc draw;
@@ -50,6 +52,7 @@ typedef struct mock_state {
 } mock_state;
 extern mock_state mock;
 void mock_reset(void);
+doe_dx_caps mock_default_caps(void);
 void *doe_dx_test_calloc(size_t count, size_t size);
 void doe_dx_test_free(void *pointer);
 #endif

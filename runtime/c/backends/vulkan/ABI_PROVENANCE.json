@@ -881,5 +881,9 @@
       "parameters": "VkDevice, const VkReleaseSwapchainImagesInfoEXT *",
       "source": "https://raw.githubusercontent.com/KhronosGroup/Vulkan-Headers/v1.3.290/include/vulkan/vulkan_core.h"
     }
-  ]
+  ],
+  "host_loader_portability": {
+    "win64_loader": "Real LoadLibraryExW/GetProcAddress/FreeLibrary with checked FARPROC storage; loader host controls do not establish Vulkan device/driver ABI qualification.",
+    "linux_wsi": "Retained Linux LP64 Xlib Window wire storage is uint64_t on every compilation host. The native unsigned-long assertion applies on POSIX; Win64 rejects all Linux surface platform selections before native extension lookup. Existing Linux record layout is unchanged; no Win32 WSI declarations are fabricated."
+  }
 }

@@ -79,10 +79,26 @@ void doe_dx_transition_resources(doe_dx_native_commands *commands, doe_dx_native
     D3D12_RESOURCE_STATES read = D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
     if (graphics) read |= D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
     for (size_t index = 0; index < resources->buffer_count; index++) {
-        doe_dx_descriptor_kind kind = doe_dx_buffer_descriptor_kind(&pipeline->bindings[index]);
-        D3D12_RESOURCE_STATES state = kind == DOE_DX_DESCRIPTOR_CBV ? D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER :
-            kind == DOE_DX_DESCRIPTOR_SRV ? read : D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
-        doe_dx_transition(commands->list, resources->buffers[index].buffer->resource,
+        doe_dx_native_buffer *buffer = resources->buffers[index].buffer;
+        bool repeated = false;
+        for (size_t prior = 0; prior < index; ++prior)
+            if (resources->buffers[prior].buffer == buffer) repeated = true;
+        if (repeated) continue;
+        /* The portable owner rejects mixed read/write classes and overlapping
+         * UAV views before native mutation. Read aliases combine native state
+         * bits; every allocation transitions once regardless of view count. */
+        D3D12_RESOURCE_STATES state = D3D12_RESOURCE_STATE_COMMON;
+        for (size_t alias = index; alias < resources->buffer_count; ++alias) {
+            if (resources->buffers[alias].buffer != buffer) continue;
+            doe_dx_descriptor_kind kind = doe_dx_buffer_descriptor_kind(&pipeline->bindings[alias]);
+            switch (kind) {
+            case DOE_DX_DESCRIPTOR_CBV: state |= D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER; break;
+            case DOE_DX_DESCRIPTOR_SRV: state |= read; break;
+            case DOE_DX_DESCRIPTOR_UAV: state |= D3D12_RESOURCE_STATE_UNORDERED_ACCESS; break;
+            case DOE_DX_DESCRIPTOR_INVALID: abort();
+            }
+        }
+        doe_dx_transition(commands->list, buffer->resource,
             restore ? state : D3D12_RESOURCE_STATE_COPY_DEST,
             restore ? D3D12_RESOURCE_STATE_COPY_DEST : state);
     }

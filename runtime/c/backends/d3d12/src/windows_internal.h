@@ -17,6 +17,7 @@ struct doe_dx_native_context {
     ID3D12CommandQueue *queue;
     ID3D12Fence *fence;
     ID3D12CommandSignature *dispatch_signature;
+    doe_dx_limits limits;
 };
 struct doe_dx_native_buffer {
     ID3D12Resource *resource;
@@ -45,6 +46,9 @@ struct doe_dx_native_commands {
     ID3D12GraphicsCommandList *list;
     doe_dx_descriptor_use *descriptors;
 };
+doe_dx_status doe_dx_open_adapter(IDXGIFactory4 *factory, const doe_dx_options *options,
+    IDXGIAdapter1 **out, doe_dx_caps *caps, doe_dx_error *error);
+doe_dx_status doe_dx_query_caps(doe_dx_native_context *context, doe_dx_caps *out, doe_dx_error *error);
 doe_dx_status doe_dx_hresult(HRESULT result, const char *operation, doe_dx_error *error);
 doe_dx_status doe_dx_create_root(doe_dx_native_context *context,
     const doe_dx_resource_pipeline_desc *desc, doe_dx_native_pipeline *pipeline,

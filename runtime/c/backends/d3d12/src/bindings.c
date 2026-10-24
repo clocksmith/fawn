@@ -1,6 +1,11 @@
 /* SPDX-License-Identifier: MIT */
 #include "internal.h"
 
+static bool overlapping(const doe_dx_buffer_binding *a, const doe_dx_buffer_binding *b) {
+    return a->offset <= b->offset ? b->offset - a->offset < a->size :
+        a->offset - b->offset < b->size;
+}
+
 /* Shared graphics/compute resource rules: validation only, no publication. */
 doe_dx_status doe_dx_prepare_resources(doe_dx_commands *commands, doe_dx_pipeline *pipeline,
     const doe_dx_compute_resources *resources, doe_dx_native_resources *native,
@@ -36,9 +41,10 @@ doe_dx_status doe_dx_prepare_resources(doe_dx_commands *commands, doe_dx_pipelin
             return doe_dx_fail(DOE_DX_RANGE, 0, "commands.bindings.range", error);
         const doe_dx_binding_layout *layout = &pipeline->bindings[index];
         if (doe_dx_buffer_descriptor_kind(layout) == DOE_DX_DESCRIPTOR_CBV) {
-            if ((binding->offset | binding->size) & 255u)
+            if (binding->offset % commands->context->caps.limits.uniform_offset_alignment ||
+                binding->size % commands->context->caps.limits.uniform_offset_alignment)
                 return doe_dx_fail(DOE_DX_ALIGNMENT, 0, "commands.bindings.uniform_alignment", error);
-            if (binding->size > 65536)
+            if (binding->size > commands->context->caps.limits.max_uniform_bytes)
                 return doe_dx_fail(DOE_DX_RANGE, 0, "commands.bindings.uniform_size", error);
         } else {
             uint32_t stride = layout->stride;
@@ -47,10 +53,16 @@ doe_dx_status doe_dx_prepare_resources(doe_dx_commands *commands, doe_dx_pipelin
             if (binding->size / stride > UINT32_MAX)
                 return doe_dx_fail(DOE_DX_RANGE, 0, "commands.bindings.elements", error);
         }
-        for (size_t prior = 0; prior < index; prior++)
-            if (bindings[prior].buffer == buffer)
+        bool repeated = false;
+        for (size_t prior = 0; prior < index; prior++) {
+            if (bindings[prior].buffer != buffer) continue;
+            repeated = true;
+            bool writable = doe_dx_buffer_descriptor_kind(layout) == DOE_DX_DESCRIPTOR_UAV;
+            bool other_writable = doe_dx_buffer_descriptor_kind(&pipeline->bindings[prior]) == DOE_DX_DESCRIPTOR_UAV;
+            if (writable != other_writable || (writable && overlapping(binding, &bindings[prior])))
                 return doe_dx_fail(DOE_DX_UNSUPPORTED, 0, "commands.bindings.alias", error);
-        if (!doe_dx_find_buffer(commands, buffer)) (*added)++;
+        }
+        if (!repeated && !doe_dx_find_buffer(commands, buffer)) (*added)++;
         native->buffers[index] = (doe_dx_native_binding){buffer->native, binding->offset, binding->size};
     }
     for (size_t index = 0; index < resources->texture_count; index++) {

@@ -9,7 +9,9 @@ doe_dx_status doe_dx_commands_dispatch_resources(doe_dx_commands *commands,
     if (!pipeline || !x || !y || !z)
         return doe_dx_fail(DOE_DX_INVALID_ARGUMENT, 0, "commands.dispatch", error);
     if (pipeline->graphics) return doe_dx_fail(DOE_DX_INVALID_ARGUMENT, 0, "commands.compute_pipeline", error);
-    if (x > 65535 || y > 65535 || z > 65535 || commands->operation_count == 65536)
+    const doe_dx_limits *limits = &commands->context->caps.limits;
+    if (x > limits->max_dispatch_groups[0] || y > limits->max_dispatch_groups[1] ||
+        z > limits->max_dispatch_groups[2] || commands->operation_count == 65536)
         return doe_dx_fail(DOE_DX_RANGE, 0, "commands.dispatch", error);
     doe_dx_native_resources native = {0};
     size_t added = 0;

@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: MIT */
 #include "internal.h"
+#include "d3d12_frontend.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -10,6 +11,7 @@ void native_pipeline_release(void *userdata, void *handle)
     native_lock(payload->device);
     if (payload->device->backend.kind == WGPUBackendType_Vulkan) doe_vk_pipeline_release(payload->handle.vulkan);
     else if (payload->device->backend.kind == WGPUBackendType_Metal) doe_mtl_pipeline_release(payload->handle.metal);
+    else if (payload->device->backend.kind == WGPUBackendType_D3D12) native_d3d12_pipeline_close(payload);
     native_unlock(payload->device);
     free(payload->metal_compute);
     free(payload);
@@ -110,8 +112,27 @@ WGPUComputePipeline native_create_compute_pipeline(native_device *device,
         }
         invocations *= entry->workgroup_size[i];
     }
+    bool d3d12 = device->backend.kind == WGPUBackendType_D3D12;
+    doe_dx_shader *compiled = NULL;
+    if (d3d12) {
+        /* SDK loading/compilation and final module release occur outside every
+         * owner lock. This ordinary call lease protects the frontend throughout. */
+        native_device_retain(device);
+        native_failure failure = native_d3d12_compile_compute(&stage, &compiled);
+        if (failure.status != NATIVE_OK) {
+            error->type = native_result_error(failure.status);
+            native_failure_format(&failure, "D3D12 shader compilation failed", error->message);
+            native_device_release(device);
+            return NULL;
+        }
+    }
     native_pipeline *payload = calloc(1, sizeof(*payload));
-    if (!payload) { pipeline_failure(error, WGPUErrorType_OutOfMemory, "pipeline allocation failed"); return NULL; }
+    if (!payload) {
+        native_d3d12_compiler_release(compiled);
+        if (d3d12) native_device_release(device);
+        pipeline_failure(error, WGPUErrorType_OutOfMemory, "pipeline allocation failed");
+        return NULL;
+    }
     payload->device = device;
     native_lock(device);
     doe_resource_pipeline_layout *layout = (doe_resource_pipeline_layout *)descriptor->layout;
@@ -136,6 +157,7 @@ WGPUComputePipeline native_create_compute_pipeline(native_device *device,
             }
         } else if (device->backend.kind == WGPUBackendType_Metal)
             backend_failure = native_metal_pipeline_create(payload,&stage);
+        else if (d3d12) backend_failure = native_d3d12_pipeline_create(payload, &stage, compiled);
         else backend_failure = native_failure_status(NATIVE_UNSUPPORTED);
         if (backend_failure.status == NATIVE_OK)
             resource_status = doe_resource_pipeline_create(&device->resources, layout,
@@ -143,6 +165,7 @@ WGPUComputePipeline native_create_compute_pipeline(native_device *device,
     }
     if (automatic) doe_resource_pipeline_layout_release(layout);
     native_unlock(device);
+    native_d3d12_compiler_release(compiled);
     if (!pipeline) {
         native_pipeline_release(NULL, payload);
         WGPUErrorType type = backend_failure.status != NATIVE_OK ?
@@ -165,6 +188,7 @@ WGPUComputePipeline native_create_compute_pipeline(native_device *device,
             pipeline_failure(error, native_label_error(label_status), "pipeline label storage failed");
         }
     }
+    if (d3d12) native_device_release(device);
     return (WGPUComputePipeline)pipeline;
 }
 WGPUComputePipeline wgpuDeviceCreateComputePipeline(WGPUDevice handle,

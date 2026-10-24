@@ -3,6 +3,7 @@
  * this frontend enforces and executes; device limits resolve requiredLimits
  * against them and the WebGPU defaults. https://gpuweb.github.io/gpuweb/#limits */
 #include "internal.h"
+#include "d3d12_frontend.h"
 #include <stddef.h>
 
 typedef struct limit_field {
@@ -172,6 +173,40 @@ WGPUStatus native_metal_limits(const doe_mtl_caps *caps, WGPULimits *out)
         .maxComputeInvocationsPerWorkgroup=256,.maxComputeWorkgroupSizeX=dimensions[0],
         .maxComputeWorkgroupSizeY=dimensions[1],.maxComputeWorkgroupSizeZ=dimensions[2],
         .maxComputeWorkgroupsPerDimension=65535,.maxImmediateSize=64};
+    return WGPUStatus_Success;
+}
+
+WGPUStatus native_d3d12_limits(const doe_dx_caps *caps, WGPULimits *out)
+{
+    if (!caps || !out || out->nextInChain || !caps->limits.uniform_offset_alignment ||
+        !caps->limits.max_buffer_size || !caps->limits.max_descriptors) return WGPUStatus_Error;
+    const doe_dx_limits *native = &caps->limits;
+    uint64_t buffer = native->max_buffer_size & ~UINT64_C(3);
+    /* Only the composed compute/buffer path is admitted at this checkpoint.
+     * Missing texture/graphics/presentation limits remain zero; neither queried
+     * D3D hardware facts nor a successful DXC compile invent frontend support. */
+    *out = (WGPULimits){
+        .maxBufferSize = buffer,
+        .maxBindGroups = DOE_RESOURCE_MAX_GROUPS,
+        .maxBindGroupsPlusVertexBuffers = DOE_RESOURCE_MAX_GROUPS,
+        .maxBindingsPerBindGroup = DOE_RESOURCE_MAX_BINDING_NUMBER,
+        .maxDynamicUniformBuffersPerPipelineLayout = DYNAMIC_UNIFORM,
+        .maxDynamicStorageBuffersPerPipelineLayout = DYNAMIC_STORAGE,
+        .maxUniformBuffersPerShaderStage = min32(UNIFORM_BUFFERS_PER_STAGE, native->max_cbvs),
+        .maxStorageBuffersPerShaderStage = min32(STORAGE_BUFFERS_PER_STAGE,
+            min32(native->max_srvs, native->max_uavs)),
+        .maxUniformBufferBindingSize = min64(buffer, native->max_uniform_bytes),
+        .maxStorageBufferBindingSize = buffer,
+        .minUniformBufferOffsetAlignment = native->uniform_offset_alignment,
+        .minStorageBufferOffsetAlignment = 256,
+        .maxComputeWorkgroupStorageSize = native->max_compute_shared_bytes,
+        .maxComputeInvocationsPerWorkgroup = min32(COMPILER_WORKGROUP_BOUND, native->max_compute_threads),
+        .maxComputeWorkgroupSizeX = min32(COMPILER_WORKGROUP_BOUND, native->max_compute_size[0]),
+        .maxComputeWorkgroupSizeY = min32(COMPILER_WORKGROUP_BOUND, native->max_compute_size[1]),
+        .maxComputeWorkgroupSizeZ = min32(COMPILER_WORKGROUP_BOUND, native->max_compute_size[2]),
+        .maxComputeWorkgroupsPerDimension = min32(native->max_dispatch_groups[0],
+            min32(native->max_dispatch_groups[1], native->max_dispatch_groups[2]))
+    };
     return WGPUStatus_Success;
 }
 

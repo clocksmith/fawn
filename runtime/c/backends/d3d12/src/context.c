@@ -11,20 +11,59 @@ bool doe_dx_range(uint64_t allocation, uint64_t offset, uint64_t size) {
     return offset <= allocation && size <= allocation - offset;
 }
 
+doe_dx_status doe_dx_validate_adapter(const doe_dx_options *options,
+    const doe_dx_caps *caps, doe_dx_error *error) {
+    if (options->adapter_selection == DOE_DX_SELECT_LUID &&
+        (caps->luid_low != options->adapter_identity.luid_low ||
+         caps->luid_high != options->adapter_identity.luid_high ||
+         caps->software_adapter != options->adapter_identity.software_adapter))
+        return doe_dx_fail(DOE_DX_DEVICE_MISMATCH, 0, "adapter.luid_identity", error);
+    if (options->adapter_selection == DOE_DX_SELECT_HARDWARE && caps->software_adapter)
+        return doe_dx_fail(DOE_DX_DEVICE_MISMATCH, 0, "adapter.hardware_identity", error);
+    if (options->adapter_selection == DOE_DX_SELECT_WARP && !caps->software_adapter)
+        return doe_dx_fail(DOE_DX_DEVICE_MISMATCH, 0, "adapter.warp_identity", error);
+    if (caps->software_adapter && !options->allow_software_adapter)
+        return doe_dx_fail(DOE_DX_UNSUPPORTED, 0, "adapter.software", error);
+    return DOE_DX_OK;
+}
+
 doe_dx_status doe_dx_context_create(const doe_dx_options *options,
     doe_dx_context **out, doe_dx_error *error) {
     if (!out) return doe_dx_fail(DOE_DX_INVALID_ARGUMENT, 0, "context.create", error);
     doe_dx_options defaults = {0};
     if (!options) options = &defaults;
-    if ((options->adapter_selection != DOE_DX_SELECT_ORDINAL &&
-            options->adapter_selection != DOE_DX_SELECT_WARP) ||
-        (options->adapter_selection == DOE_DX_SELECT_WARP &&
-            (!options->allow_software_adapter || options->adapter_ordinal != 0)))
+    bool has_identity = options->adapter_identity.luid_low != 0 ||
+        options->adapter_identity.luid_high != 0 || options->adapter_identity.software_adapter;
+    switch (options->adapter_selection) {
+    case DOE_DX_SELECT_ORDINAL:
+        if (has_identity) return doe_dx_fail(DOE_DX_INVALID_ARGUMENT, 0, "context.unused_identity", error);
+        break;
+    case DOE_DX_SELECT_HARDWARE:
+        if (has_identity || options->adapter_ordinal != 0)
+            return doe_dx_fail(DOE_DX_INVALID_ARGUMENT, 0, "context.adapter_selection", error);
+        break;
+    case DOE_DX_SELECT_WARP:
+        if (has_identity || !options->allow_software_adapter || options->adapter_ordinal != 0)
+            return doe_dx_fail(DOE_DX_INVALID_ARGUMENT, 0, "context.adapter_selection", error);
+        break;
+    case DOE_DX_SELECT_LUID:
+        if (options->adapter_ordinal != 0 ||
+            (options->adapter_identity.software_adapter && !options->allow_software_adapter))
+            return doe_dx_fail(DOE_DX_INVALID_ARGUMENT, 0, "context.adapter_selection", error);
+        break;
+    default:
         return doe_dx_fail(DOE_DX_INVALID_ARGUMENT, 0, "context.adapter_selection", error);
+    }
     doe_dx_context *context = calloc(1, sizeof(*context));
     if (!context) return doe_dx_fail(DOE_DX_OUT_OF_MEMORY, 0, "context.allocate", error);
     doe_dx_status status = doe_dx_native_open(options, &context->native, &context->caps, error);
     if (status != DOE_DX_OK) {
+        free(context);
+        return status;
+    }
+    status = doe_dx_validate_adapter(options, &context->caps, error);
+    if (status != DOE_DX_OK) {
+        doe_dx_native_close(context->native);
         free(context);
         return status;
     }
@@ -36,6 +75,11 @@ doe_dx_status doe_dx_context_caps(const doe_dx_context *context, doe_dx_caps *ou
     if (!context || !out) return DOE_DX_INVALID_ARGUMENT;
     *out = context->caps;
     return DOE_DX_OK;
+}
+
+doe_dx_status doe_dx_context_status(const doe_dx_context *context) {
+    if (!context) return DOE_DX_INVALID_ARGUMENT;
+    return context->lost ? DOE_DX_DEVICE_LOST : DOE_DX_OK;
 }
 
 doe_dx_status doe_dx_context_destroy(doe_dx_context *context) {

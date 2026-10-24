@@ -851,7 +851,7 @@ int main(void)
     native_buffer *source_payload = doe_resource_buffer_native((doe_resource_buffer *)source);
     void *source_identity = doe_mtl_buffer_native(source_payload->handle.metal);
     uint32_t host_written[4] = {0};
-    assert(native_buffer_read(source_payload,0,host_written,sizeof(host_written)) == NATIVE_OK);
+    assert(native_buffer_read(source_payload,0,host_written,sizeof(host_written)).status == NATIVE_OK);
     assert(memcmp(host_written,input,sizeof(input)) == 0);
     WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(s.device,NULL);
     wgpuCommandEncoderCopyBufferToBuffer(encoder,source,0,target,0,16);

@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: MIT */
 #include "objc_abi.h"
+#if !defined(_WIN32)
 #include <dlfcn.h>
 
 static void *constant_object(void *library, const char *name) {
@@ -34,6 +35,7 @@ void doe_mtl_objc_load_queries(doe_mtl_objc *r, doe_objc_message message) {
     q->set_end = r->selector("setEndOfEncoderSampleIndex:");
     q->compute_encoder = r->selector("computeCommandEncoderWithDescriptor:");
 }
+#endif /* These symbols are resolved only by the POSIX Objective-C loader. */
 
 static void *timestamp_set(doe_mtl_objc *r, void *device) {
     doe_mtl_objc_queries *q = &r->queries;

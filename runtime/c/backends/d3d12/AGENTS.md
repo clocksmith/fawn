@@ -4,10 +4,29 @@
   validation and shader meaning remain outside this backend-private ABI.
 - Use Windows SDK C declarations in `windows_*.c`; do not construct replacement
   COM vtables, spoof `_WIN32`, or call host controls an SDK/driver check.
+- `windows_shader.cpp` alone adapts official `dxcapi.h` C++ interfaces behind
+  [the private C shader ABI](include/doe_d3d12_shader.h), with exceptions/RTTI off.
+  Load only the explicit fully qualified compiler module, use fixed compile flags
+  and pass the compiler-owned entry index verbatim. No CLI, include handler,
+  handwritten COM ABI, WGSL interpretation or capability policy belongs here.
+  Copy the first diagnostic before releasing DXC objects; returned bytecode owns
+  its blob and module. Restore caller fenv/MXCSR/errno/LastError before publication.
+  SDK compilation/control evidence does not establish GPU execution.
 - Exact ordinal selection stays the zero default. WARP requires its explicit
   selector and software opt-in, uses EnumWarpAdapter, and verifies the actual
   DXGI software flag. Never retry another adapter after selection failure.
   Hosted WARP execution is CPU software evidence, never physical GPU evidence.
+- Hardware-class selection may skip software entries only before selecting a
+  member; subsequent device/query failure never retries a different member.
+  Device reopening uses exact LUID words and software identity, checked against
+  both DXGI description and the created device. Missing identity fails closed.
+- Keep raw feature/tier/VA/UMA queries separate from SDK guarantees and explicit
+  implementation ceilings. Required queries fail construction. The 256 MiB buffer
+  ceiling is validated allocation metadata, not free memory/residency; each
+  allocation still owns its real failure. Never infer WebGPU CoreFeatures here.
+- Preserve one 64-descriptor heap/table owner with tier-limited kind counts,
+  separate 16 static samplers and the unchanged 64 command-resource budget.
+  Official-SDK CPU vtable controls prove call composition only, never a device.
 - Keep evidence bound to its tested source. The [WARP developer receipt](DEVELOPER_RECEIPT_WARP.json)
   records actual hosted CPU direct-compute/readback/cleanup at `159b58a18`.
   It does not qualify other fixtures, public D3D12 integration, later source,
@@ -55,3 +74,9 @@
   descriptor-kind owner. Uniform ranges include initialized physical padding,
   obey native alignment/size limits, and share graphics/compute resource leases.
   Do not reinterpret b-registers as t-registers or widen a logical binding silently.
+
+- Within a command, compatible read aliases share one buffer lease and aggregate
+  CBV/SRV native state. Writable UAV aliases require disjoint byte ranges; reject
+  mixed read/write classes before recording. Transition/restore each allocation
+  once, retaining individual descriptor ranges. Resource budgeting counts unique
+  allocations, never descriptor aliases. Separate-command exclusivity remains.

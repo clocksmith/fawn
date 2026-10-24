@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: MIT */
 #include "surface.h"
 #include "metal_frontend.h"
+#include "d3d12_frontend.h"
 #include <stdlib.h>
 
 static doe_vk_status record_dispatch(doe_vk_commands *commands, const doe_resource_command *record)
@@ -120,6 +121,8 @@ native_failure native_record_resource_commands(native_command_handle *native, do
         return native_failure_status(native_from_vulkan(record_vulkan_commands(native->value.vulkan, commands)));
     if (native->kind == WGPUBackendType_Metal)
         return native_metal_record_commands(native->value.metal, commands);
+    if (native->kind == WGPUBackendType_D3D12)
+        return native_d3d12_record_commands(native, commands);
     return native_failure_status(NATIVE_UNSUPPORTED);
 }
 
