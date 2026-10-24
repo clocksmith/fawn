@@ -504,6 +504,25 @@ fn entryResourceFailure(device: *const DoeDevice, layout_entry: DoeBindGroupLayo
                 if (view.swizzled) return "createBindGroup: a swizzled texture view cannot bind as a storage texture";
             }
         },
+        RESOURCE_KIND_EXTERNAL_TEXTURE => {
+            // A GPUTextureView bound to an externalTexture entry: a 2d
+            // single-mip, single-layer, single-sample view with
+            // TEXTURE_BINDING usage of rgba8unorm, bgra8unorm or rgba16float.
+            // A GPUExternalTexture is checked where it is resolved.
+            const view = cast(DoeTextureView, entry.textureView) orelse return null;
+            const texture = view.tex;
+            if (texture.error_object) return "createBindGroup: an entry's texture view is invalid";
+            if (texture.device_ref) |creator| if (creator != device) return "createBindGroup: an entry's texture view belongs to another device";
+            if (resolve_view_dimension(view) != abi_texture.WGPUTextureViewDimension_2D) return "createBindGroup: a texture view bound to an externalTexture entry must be 2d";
+            if (view.mip_level_count != 1) return "createBindGroup: a texture view bound to an externalTexture entry must have one mip level";
+            if (view.array_layer_count > 1) return "createBindGroup: a texture view bound to an externalTexture entry must have one array layer";
+            const usage = if (view.usage != 0) view.usage else texture.usage;
+            if (usage & abi_texture.WGPUTextureUsage_TextureBinding == 0) return "createBindGroup: a texture view bound to an externalTexture entry needs TEXTURE_BINDING usage";
+            const format = if (view.format != 0) view.format else texture.format;
+            if (format != abi_texture.WGPUTextureFormat_RGBA8Unorm and format != abi_texture.WGPUTextureFormat_BGRA8Unorm and format != abi_texture.WGPUTextureFormat_RGBA16Float)
+                return "createBindGroup: a texture view bound to an externalTexture entry must be rgba8unorm, bgra8unorm or rgba16float";
+            if (texture.sample_count != 1) return "createBindGroup: a texture view bound to an externalTexture entry must be single-sampled";
+        },
         else => {},
     }
     return null;
@@ -565,6 +584,10 @@ pub export fn doeNativeDeviceCreateBindGroup(dev_raw: ?*anyopaque, desc: ?*const
                         doeNativeBindGroupRelease(toOpaque(bg));
                         return null;
                     }
+                } else if (layout_entry.resource_kind == RESOURCE_KIND_EXTERNAL_TEXTURE and e.textureView != null) {
+                    // A texture view in an externalTexture slot binds as a
+                    // sampled texture (its rules were checked above).
+                    resource_kind = RESOURCE_KIND_TEXTURE;
                 } else if (layout_entry.resource_kind == RESOURCE_KIND_EXTERNAL_TEXTURE) {
                     const external_texture = resolve_external_texture(e) orelse {
                         doeNativeBindGroupRelease(toOpaque(bg));
@@ -1140,4 +1163,26 @@ test "bind group entries meet their layout binding's resource rules" {
     try std.testing.expect(bindGroupEntriesFailure(&device, &sampler_layout, &entries) != null);
     sampler_entries[0].sampler_binding_type = abi_binding.WGPUSamplerBindingType_Comparison;
     try std.testing.expectEqual(@as(?[]const u8, null), bindGroupEntriesFailure(&device, &sampler_layout, &entries));
+}
+
+test "a texture view binds to an externalTexture entry when it is a 2d single-mip rgba8unorm, bgra8unorm or rgba16float view" {
+    var device = DoeDevice{};
+    var layout_entries = [_]DoeBindGroupLayoutEntry{.{ .binding = 0, .resource_kind = RESOURCE_KIND_EXTERNAL_TEXTURE }};
+    const layout = DoeBindGroupLayout{ .entry_count = 1, .entries = layout_entries[0..] };
+    var texture = DoeTexture{ .format = abi_texture.WGPUTextureFormat_RGBA8Unorm, .usage = abi_texture.WGPUTextureUsage_TextureBinding, .device_ref = &device };
+    var view = DoeTextureView{ .tex = &texture, .dimension = abi_texture.WGPUTextureViewDimension_2D, .mip_level_count = 1, .array_layer_count = 1 };
+    var entries = [_]abi_pipeline.WGPUBindGroupEntry{std.mem.zeroes(abi_pipeline.WGPUBindGroupEntry)};
+    entries[0].textureView = @ptrCast(&view);
+    try std.testing.expectEqual(@as(?[]const u8, null), bindGroupEntriesFailure(&device, &layout, &entries));
+    texture.format = abi_texture.WGPUTextureFormat_R8Unorm;
+    try std.testing.expect(bindGroupEntriesFailure(&device, &layout, &entries) != null);
+    texture.format = abi_texture.WGPUTextureFormat_RGBA8Unorm;
+    view.mip_level_count = 2;
+    try std.testing.expect(bindGroupEntriesFailure(&device, &layout, &entries) != null);
+    view.mip_level_count = 1;
+    texture.usage = abi_texture.WGPUTextureUsage_CopyDst;
+    try std.testing.expect(bindGroupEntriesFailure(&device, &layout, &entries) != null);
+    texture.usage = abi_texture.WGPUTextureUsage_TextureBinding;
+    texture.sample_count = 4;
+    try std.testing.expect(bindGroupEntriesFailure(&device, &layout, &entries) != null);
 }

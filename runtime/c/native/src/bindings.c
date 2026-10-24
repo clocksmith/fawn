@@ -17,11 +17,15 @@ WGPUBindGroupLayout wgpuDeviceCreateBindGroupLayout(WGPUDevice handle,
     valid = valid && entries;
     if (valid) for (size_t i = 0; i < descriptor->entryCount; ++i) {
         const WGPUBindGroupLayoutEntry *entry = &descriptor->entries[i];
+        /* An externalTexture entry is a chained WGPUExternalTextureBindingLayout
+         * and no other binding type. */
+        const bool external = entry->nextInChain && !entry->nextInChain->next &&
+            entry->nextInChain->sType == WGPUSType_ExternalTextureBindingLayout;
         unsigned kinds = (entry->buffer.type != WGPUBufferBindingType_BindingNotUsed) +
             (entry->sampler.type != WGPUSamplerBindingType_BindingNotUsed) +
             (entry->texture.sampleType != WGPUTextureSampleType_BindingNotUsed) +
-            (entry->storageTexture.access != WGPUStorageTextureAccess_BindingNotUsed);
-        if (entry->nextInChain || entry->bindingArraySize || entry->buffer.nextInChain ||
+            (entry->storageTexture.access != WGPUStorageTextureAccess_BindingNotUsed) + external;
+        if ((entry->nextInChain && !external) || entry->bindingArraySize || entry->buffer.nextInChain ||
             entry->binding >= device->backend.limits.maxBindingsPerBindGroup ||
             entry->sampler.nextInChain || entry->texture.nextInChain || entry->storageTexture.nextInChain ||
             kinds != 1 || entry->visibility & ~(WGPUShaderStage_Compute | WGPUShaderStage_Vertex | WGPUShaderStage_Fragment)) {
@@ -29,7 +33,9 @@ WGPUBindGroupLayout wgpuDeviceCreateBindGroupLayout(WGPUDevice handle,
             break;
         }
         doe_resource_layout_entry converted = {.binding=entry->binding, .visibility=entry->visibility};
-        if (entry->buffer.type) {
+        if (external) {
+            converted.kind = DOE_BIND_EXTERNAL_TEXTURE;
+        } else if (entry->buffer.type) {
             converted.kind = DOE_BIND_BUFFER;
             converted.buffer_type = entry->buffer.type == WGPUBufferBindingType_Undefined ?
                 WGPUBufferBindingType_Uniform : entry->buffer.type;
@@ -160,6 +166,9 @@ WGPUBindGroup wgpuDeviceCreateBindGroup(WGPUDevice handle, const WGPUBindGroupDe
                 doe_resource_layout_entries((doe_resource_layout *)descriptor->layout, &count);
             for (size_t j = 0; j < count; ++j)
                 if (layout_entries[j].binding == entry->binding) bindings[i].kind = layout_entries[j].kind;
+            /* A view in an externalTexture slot binds as a sampled texture; the
+             * resource owner checks the external-view rules. */
+            if (bindings[i].kind == DOE_BIND_EXTERNAL_TEXTURE) bindings[i].kind = DOE_BIND_TEXTURE;
             if (bindings[i].kind != DOE_BIND_TEXTURE && bindings[i].kind != DOE_BIND_STORAGE_TEXTURE) valid = false;
         }
     }

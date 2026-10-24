@@ -11,6 +11,7 @@
 /* True when the loaded provider is the Zig runtime, whose ABI numbers some
  * texture formats and stencil operations differently (doe_napi_formats.c). */
 extern bool g_zig_enum_order;
+uint32_t provider_external_texture_binding_layout_stype(void);
 
 uint32_t texture_format_from_string(napi_env env, napi_value val);
 uint32_t primitive_topology_from_string(napi_env env, napi_value val);

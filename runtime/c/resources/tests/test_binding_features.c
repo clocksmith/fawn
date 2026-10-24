@@ -165,6 +165,49 @@ static void check_color_components(void)
     assert(doe_resource_format_color_components(WGPUTextureFormat_RGBA8Unorm, NULL) == DOE_RESOURCE_INVALID_ARGUMENT);
 }
 
+/* A texture view binds to an externalTexture entry as a sampled texture when
+ * it is a 2d, single-mip, single-layer TEXTURE_BINDING view of rgba8unorm,
+ * bgra8unorm or rgba16float. */
+static doe_resource_status external_view_status(WGPUTextureFormat format, uint32_t mips,
+    WGPUTextureUsage usage)
+{
+    fixture f = fresh();
+    doe_resource_config c = config(&f);
+    native_token image_token = {0}, view_token = {0};
+    doe_resource_texture_desc desc = {.dimension = WGPUTextureDimension_2D,
+        .format = format, .width = 4, .height = 4, .depth_or_layers = 1,
+        .mip_levels = mips, .samples = 1, .usage = usage};
+    doe_resource_texture_limits texture_limits = {64, 64, 64, 64};
+    doe_resource_texture *texture;
+    doe_resource_view *view;
+    assert(doe_resource_texture_create(&c, &desc, &texture_limits, native(&f, &image_token), &texture) == DOE_RESOURCE_OK);
+    assert(doe_resource_view_create(texture, &(doe_resource_view_desc){0}, native(&f, &view_token), &view) == DOE_RESOURCE_OK);
+    doe_resource_layout_entry entry = {.visibility = WGPUShaderStage_Fragment, .kind = DOE_BIND_EXTERNAL_TEXTURE};
+    doe_resource_layout *layout;
+    assert(doe_resource_layout_create(&c, &entry, 1, false, &layout) == DOE_RESOURCE_OK);
+    doe_resource_binding binding = {.kind = DOE_BIND_TEXTURE, .resource.view = view};
+    doe_resource_binding_limits limits = {16, 16, 1024, 1024};
+    doe_resource_bind_group *group = NULL;
+    doe_resource_status status = doe_resource_bind_group_create(layout, &binding, 1, &limits, &group);
+    if (group) doe_resource_bind_group_release(group);
+    doe_resource_layout_release(layout);
+    doe_resource_view_release(view);
+    doe_resource_texture_release(texture);
+    assert(image_token.releases == 1 && view_token.releases == 1);
+    empty(&f);
+    return status;
+}
+
+static void check_external_view(void)
+{
+    assert(external_view_status(WGPUTextureFormat_RGBA8Unorm, 1, WGPUTextureUsage_TextureBinding) == DOE_RESOURCE_OK);
+    assert(external_view_status(WGPUTextureFormat_BGRA8Unorm, 1, WGPUTextureUsage_TextureBinding) == DOE_RESOURCE_OK);
+    assert(external_view_status(WGPUTextureFormat_RGBA16Float, 1, WGPUTextureUsage_TextureBinding) == DOE_RESOURCE_OK);
+    assert(external_view_status(WGPUTextureFormat_R8Unorm, 1, WGPUTextureUsage_TextureBinding) == DOE_RESOURCE_LAYOUT);
+    assert(external_view_status(WGPUTextureFormat_RGBA8Unorm, 2, WGPUTextureUsage_TextureBinding) == DOE_RESOURCE_LAYOUT);
+    assert(external_view_status(WGPUTextureFormat_RGBA8Unorm, 1, WGPUTextureUsage_CopyDst) == DOE_RESOURCE_USAGE);
+}
+
 int main(void)
 {
     check_sample_class(WGPUTextureFormat_R32Float, WGPUTextureAspect_All,
@@ -180,6 +223,7 @@ int main(void)
     check_sampler_filter();
     check_format_class();
     check_color_components();
-    puts("binding feature owner: 8 host suites passed; no texture execution claimed");
+    check_external_view();
+    puts("binding feature owner: 9 host suites passed; no texture execution claimed");
     return 0;
 }

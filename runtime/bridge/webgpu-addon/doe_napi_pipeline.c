@@ -311,6 +311,10 @@ uint32_t storage_texture_access_from_string(napi_env env, napi_value val) {
     return 0x00000001;
 }
 
+/* webgpu.h WGPUExternalTextureBindingLayout, chained on an externalTexture
+ * entry; it has no members of its own (private mirror, kept by hand). */
+typedef struct { WGPUChainedStruct chain; } WGPUExternalTextureBindingLayout;
+
 napi_value doe_create_bind_group_layout(napi_env env, napi_callback_info info) {
     NAPI_ASSERT_ARGC(env, info, 3);
     CHECK_LIB_LOADED(env);
@@ -330,12 +334,26 @@ napi_value doe_create_bind_group_layout(napi_env env, napi_callback_info info) {
         if (!heap_entries) NAPI_THROW(env, "createBindGroupLayout: out of memory");
         entries = heap_entries;
     }
+    /* An externalTexture entry chains a WGPUExternalTextureBindingLayout;
+     * one per entry, allocated when the first is seen. */
+    WGPUExternalTextureBindingLayout* externals = NULL;
 
     for (uint32_t i = 0; i < entry_count; i++) {
         napi_value elem;
         napi_get_element(env, _args[1], i, &elem);
 
         entries[i].binding = get_uint32_prop(env, elem, "binding");
+        if (has_prop(env, elem, "externalTexture") && prop_type(env, elem, "externalTexture") == napi_object) {
+            if (!externals) {
+                externals = (WGPUExternalTextureBindingLayout*)calloc(entry_count, sizeof(WGPUExternalTextureBindingLayout));
+                if (!externals) {
+                    free(heap_entries);
+                    NAPI_THROW(env, "createBindGroupLayout: out of memory");
+                }
+            }
+            externals[i].chain.sType = provider_external_texture_binding_layout_stype();
+            entries[i].nextInChain = &externals[i].chain;
+        }
         entries[i].visibility = (uint64_t)get_int64_prop(env, elem, "visibility");
 
         if (has_prop(env, elem, "buffer") && prop_type(env, elem, "buffer") == napi_object) {
@@ -399,6 +417,7 @@ napi_value doe_create_bind_group_layout(napi_env env, napi_callback_info info) {
     };
 
     WGPUBindGroupLayout layout = pfn_wgpuDeviceCreateBindGroupLayout(device, &desc);
+    free(externals);
     free(heap_entries);
     if (!layout) NAPI_RETURN_PROVIDER_REJECTED(env);
     return wrap_ptr(env, layout);

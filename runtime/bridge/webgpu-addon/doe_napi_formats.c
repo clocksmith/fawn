@@ -20,6 +20,11 @@ static uint32_t provider_texture_format(uint32_t standard) {
     return standard <= 0x25 ? standard + 6 : standard - 2; /* unorm/snorm moved last */
 }
 
+/* The Zig runtime keeps the older Dawn sType for WGPUExternalTextureBindingLayout. */
+uint32_t provider_external_texture_binding_layout_stype(void) {
+    return g_zig_enum_order ? 0x00050002u : (uint32_t)WGPUSType_ExternalTextureBindingLayout;
+}
+
 static uint32_t standard_texture_format(uint32_t provider) {
     if (!g_zig_enum_order || provider < 0x24 || provider > 0x2B) return provider;
     return provider >= 0x2A ? provider - 6 : provider + 2;

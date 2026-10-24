@@ -2600,12 +2600,8 @@ const fullSurfaceBackend = {
     }
   },
   deviceCreateBindGroupLayout(device, entries, label) {
-    if (entries.some((entry) => entry.externalTexture)) {
-      failUnsupported(
-        'GPUDevice.createBindGroupLayout',
-        'externalTexture bindings require a browser canvas backend provider, not the headless Doe runtime package surface',
-      );
-    }
+    // An externalTexture entry reaches the provider; a GPUTextureView can bind
+    // to it (GPUExternalTexture resources stay unsupported here).
     return addon.createBindGroupLayout(assertLiveResource(device, 'GPUDevice.createBindGroupLayout', 'GPUDevice'), entries, label);
   },
   deviceCreateBindGroup(device, layoutNative, entries, label) {
