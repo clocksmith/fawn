@@ -430,6 +430,7 @@ DECL_PFN(uint32_t, wgpuInstanceWaitAny, (WGPUInstance, size_t, WGPUFutureWaitInf
 DECL_PFN(void, wgpuInstanceProcessEvents, (WGPUInstance));
 DECL_PFN(void, wgpuAdapterRelease, (WGPUAdapter));
 DECL_PFN(WGPUBool, wgpuAdapterHasFeature, (WGPUAdapter, uint32_t));
+DECL_PFN(WGPUBool, wgpuInstanceHasWGSLLanguageFeature, (WGPUInstance, uint32_t));
 DECL_PFN(uint32_t, wgpuAdapterGetInfo, (WGPUAdapter, WGPUAdapterInfo*));
 DECL_PFN(uint32_t, wgpuAdapterGetLimits, (WGPUAdapter, void*));
 DECL_PFN(void, wgpuAdapterInfoFreeMembers, (WGPUAdapterInfo));

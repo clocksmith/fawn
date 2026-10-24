@@ -32,6 +32,7 @@ PFN_wgpuInstanceWaitAny pfn_wgpuInstanceWaitAny = NULL;
 PFN_wgpuInstanceProcessEvents pfn_wgpuInstanceProcessEvents = NULL;
 PFN_wgpuAdapterRelease pfn_wgpuAdapterRelease = NULL;
 PFN_wgpuAdapterHasFeature pfn_wgpuAdapterHasFeature = NULL;
+PFN_wgpuInstanceHasWGSLLanguageFeature pfn_wgpuInstanceHasWGSLLanguageFeature = NULL;
 PFN_wgpuAdapterGetInfo pfn_wgpuAdapterGetInfo = NULL;
 PFN_wgpuAdapterGetLimits pfn_wgpuAdapterGetLimits = NULL;
 PFN_wgpuAdapterInfoFreeMembers pfn_wgpuAdapterInfoFreeMembers = NULL;
@@ -304,6 +305,7 @@ napi_value doe_load_library(napi_env env, napi_callback_info info) {
     LOAD_SYM(wgpuAdapterRelease);
     LOAD_SYM(wgpuAdapterHasFeature);
     LOAD_SYM(wgpuAdapterGetLimits);
+    LOAD_SYM(wgpuInstanceHasWGSLLanguageFeature);
     LOAD_SYM(wgpuAdapterRequestDevice);
     LOAD_SYM(wgpuDeviceRelease);
     LOAD_SYM(wgpuDeviceHasFeature);

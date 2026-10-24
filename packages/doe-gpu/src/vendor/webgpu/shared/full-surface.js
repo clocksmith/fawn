@@ -2336,18 +2336,14 @@ function createFullSurfaceClasses({
     }
   }
 
-  const WGSL_LANGUAGE_FEATURES = Object.freeze(new Set([
-    'readonly-and-readwrite-storage-textures',
-    'packed_4x8_integer_dot_product',
-  ]));
-
   class DoeGPU {
     constructor(instance) {
       this._instance = instance;
     }
 
     get wgslLanguageFeatures() {
-      return WGSL_LANGUAGE_FEATURES;
+      this._wgslLanguageFeatures ??= backend.wgslLanguageFeatures(this._instance);
+      return this._wgslLanguageFeatures;
     }
 
     getPreferredCanvasFormat() {

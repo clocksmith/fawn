@@ -37,6 +37,7 @@ import {
 import {
   publishLimits,
   publishFeatures,
+  wgslLanguageFeatureSet,
 } from './shared/capabilities.js';
 import {
   assertBufferDescriptor,
@@ -513,6 +514,13 @@ function adapterFeatures(native) {
       ? (feature) => addon.adapterHasFeature(native, feature)
       : null,
   );
+}
+
+function wgslLanguageFeatures(instance) {
+  if (typeof addon?.instanceHasWGSLLanguageFeature !== 'function') {
+    throw new Error('wgslLanguageFeatures: the native addon does not export instanceHasWGSLLanguageFeature');
+  }
+  return wgslLanguageFeatureSet((feature) => addon.instanceHasWGSLLanguageFeature(instance, feature));
 }
 
 function deviceFeatures(native) {
@@ -2529,6 +2537,7 @@ const fullSurfaceBackend = {
   deviceFeatures,
   adapterLimits,
   adapterFeatures,
+  wgslLanguageFeatures,
   preflightShaderSource,
   preflightShaderSourceOnCreate: false,
   requireAutoLayoutEntriesFromNative(shader, visibility, path, entryPoint) {

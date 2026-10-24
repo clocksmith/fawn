@@ -174,6 +174,31 @@ function publishFeatures(hasFeature) {
   return featureSet(hasFeature);
 }
 
+// Pinned webgpu.h WGPUWGSLLanguageFeatureName values and their WGSL names.
+const WGSL_LANGUAGE_FEATURE_VALUES = Object.freeze([
+  ['readonly_and_readwrite_storage_textures', 0x1],
+  ['packed_4x8_integer_dot_product', 0x2],
+  ['unrestricted_pointer_parameters', 0x3],
+  ['pointer_composite_access', 0x4],
+  ['uniform_buffer_standard_layout', 0x5],
+  ['subgroup_id', 0x6],
+  ['texture_and_sampler_let', 0x7],
+  ['subgroup_uniformity', 0x8],
+  ['texture_formats_tier1', 0x9],
+  ['linear_indexing', 0xA],
+  ['immediate_address_space', 0xB],
+  ['buffer_view', 0xC],
+]);
+
+// The provider's instance owns language-feature support: its compiler is what
+// accepts a `requires` directive, so nothing is advertised on its behalf.
+function wgslLanguageFeatureSet(hasLanguageFeature) {
+  const names = WGSL_LANGUAGE_FEATURE_VALUES
+    .filter(([, value]) => hasLanguageFeature(value))
+    .map(([name]) => name);
+  return Object.freeze(new Set(names));
+}
+
 export {
   FEATURE_DEPTH_CLIP_CONTROL,
   FEATURE_DEPTH32FLOAT_STENCIL8,
@@ -206,4 +231,6 @@ export {
   featureSet,
   publishLimits,
   publishFeatures,
+  WGSL_LANGUAGE_FEATURE_VALUES,
+  wgslLanguageFeatureSet,
 };
