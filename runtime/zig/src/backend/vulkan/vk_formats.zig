@@ -244,10 +244,14 @@ pub fn wgpu_format_to_vk_format(format: model_gpu_types.WGPUTextureFormat) !u32 
         model_gpu_types.WGPUTextureFormat_Depth16Unorm => VK_FORMAT_D16_UNORM,
         model_gpu_types.WGPUTextureFormat_Depth32Float => VK_FORMAT_D32_SFLOAT,
         model_gpu_types.WGPUTextureFormat_Stencil8 => VK_FORMAT_S8_UINT,
-        model_gpu_types.WGPUTextureFormat_Depth24Plus,
+        // depth24plus admits any depth format of at least 24 bits. Vulkan
+        // requires D32_SFLOAT depth attachments everywhere, while
+        // D24_UNORM_S8_UINT is optional (RADV on RDNA lists it unsupported);
+        // a depth-only format also takes depth-only barriers and copies.
+        model_gpu_types.WGPUTextureFormat_Depth24Plus => VK_FORMAT_D32_SFLOAT,
         model_gpu_types.WGPUTextureFormat_Depth24PlusStencil8,
-        => VK_FORMAT_D24_UNORM_S8_UINT,
-        model_gpu_types.WGPUTextureFormat_Depth32FloatStencil8 => VK_FORMAT_D32_SFLOAT_S8_UINT,
+        model_gpu_types.WGPUTextureFormat_Depth32FloatStencil8,
+        => VK_FORMAT_D32_SFLOAT_S8_UINT,
         model_gpu_types.WGPUTextureFormat_BC1RGBAUnorm => VK_FORMAT_BC1_RGBA_UNORM_BLOCK,
         model_gpu_types.WGPUTextureFormat_BC1RGBAUnormSrgb => VK_FORMAT_BC1_RGBA_SRGB_BLOCK,
         model_gpu_types.WGPUTextureFormat_BC2RGBAUnorm => VK_FORMAT_BC2_UNORM_BLOCK,
