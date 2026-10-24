@@ -2,9 +2,10 @@
  * Public texture-component-swizzle: sampled views with (b,a,0,r) and (1,g,r,g)
  * swizzles read through textureLoad and a nearest textureSampleLevel return the
  * identity view's components rearranged exactly, with constant 0/1 sources. A
- * device without the feature accepts only identity swizzles; with it, a view
- * usage including RenderAttachment or StorageBinding and an unknown source
- * value reject. */
+ * device without the feature accepts only identity swizzles; with it, an
+ * unknown source value rejects. A swizzled view may carry RenderAttachment or
+ * StorageBinding usage; using it as a color attachment or a storage binding is
+ * the validation error (WebGPU checks the swizzle where the view is used). */
 #include "consumer.h"
 #include <stdlib.h>
 
@@ -34,6 +35,51 @@ static void rejected(state *s, WGPUTexture texture, WGPUTextureUsage usage, WGPU
     assert(!swizzled_view(texture,usage,r,WGPUComponentSwizzle_A,WGPUComponentSwizzle_Zero,WGPUComponentSwizzle_R));
     expect_validation(s);
 }
+/* A swizzled view with RenderAttachment in its (default) usage is created; a
+ * render pass that names it as a color attachment fails at finish(). */
+static void attachment_rejected(state *s, WGPUTexture texture)
+{
+    WGPUTextureView view = swizzled_view(texture,0,WGPUComponentSwizzle_B,WGPUComponentSwizzle_A,
+        WGPUComponentSwizzle_Zero,WGPUComponentSwizzle_R);
+    assert(view);
+    WGPURenderPassColorAttachment color = {.view=view,.depthSlice=WGPU_DEPTH_SLICE_UNDEFINED,
+        .loadOp=WGPULoadOp_Clear,.storeOp=WGPUStoreOp_Store};
+    WGPURenderPassDescriptor descriptor = {.colorAttachmentCount=1,.colorAttachments=&color};
+    wgpuDevicePushErrorScope(s->device,WGPUErrorFilter_Validation);
+    WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(s->device,NULL);
+    WGPURenderPassEncoder pass = wgpuCommandEncoderBeginRenderPass(encoder,&descriptor);
+    if (pass) {
+        wgpuRenderPassEncoderEnd(pass);
+        wgpuRenderPassEncoderRelease(pass);
+    }
+    WGPUCommandBuffer commands = wgpuCommandEncoderFinish(encoder,NULL);
+    if (commands) wgpuCommandBufferRelease(commands);
+    wgpuCommandEncoderRelease(encoder);
+    expect_validation(s);
+    wgpuTextureViewRelease(view);
+}
+/* A swizzled view of a storage texture is created; binding it as a storage
+ * texture is the validation error. */
+static void storage_rejected(state *s, WGPUTexture texture)
+{
+    WGPUTextureView view = swizzled_view(texture,0,WGPUComponentSwizzle_B,WGPUComponentSwizzle_A,
+        WGPUComponentSwizzle_Zero,WGPUComponentSwizzle_R);
+    assert(view);
+    WGPUBindGroupLayoutEntry entry = {.binding=0,.visibility=WGPUShaderStage_Compute,
+        .storageTexture={.access=WGPUStorageTextureAccess_WriteOnly,.format=WGPUTextureFormat_RGBA8Unorm,
+            .viewDimension=WGPUTextureViewDimension_2D}};
+    WGPUBindGroupLayoutDescriptor layout_descriptor = {.entryCount=1,.entries=&entry};
+    WGPUBindGroupLayout layout = wgpuDeviceCreateBindGroupLayout(s->device,&layout_descriptor);
+    assert(layout);
+    WGPUBindGroupEntry bound = {.binding=0,.textureView=view};
+    WGPUBindGroupDescriptor descriptor = {.layout=layout,.entryCount=1,.entries=&bound};
+    wgpuDevicePushErrorScope(s->device,WGPUErrorFilter_Validation);
+    WGPUBindGroup group = wgpuDeviceCreateBindGroup(s->device,&descriptor);
+    expect_validation(s);
+    if (group) wgpuBindGroupRelease(group);
+    wgpuBindGroupLayoutRelease(layout);
+    wgpuTextureViewRelease(view);
+}
 static const WGPUTextureUsage sampled_usage = WGPUTextureUsage_TextureBinding | WGPUTextureUsage_CopyDst |
     WGPUTextureUsage_RenderAttachment;
 
@@ -59,12 +105,12 @@ static void swizzled(state *s)
     WGPUTexelCopyTextureInfo destination = {.texture=texture,.aspect=WGPUTextureAspect_All};
     WGPUTexelCopyBufferLayout layout = {.bytesPerRow=8,.rowsPerImage=1};
     wgpuQueueWriteTexture(s->queue,&destination,texels,sizeof(texels),&layout,&(WGPUExtent3D){2,1,1});
-    /* RenderAttachment in the (default) view usage, storage usage and an unknown
-     * source reject on a device with the feature. */
-    rejected(s,texture,0,WGPUComponentSwizzle_B);
+    /* An unknown source rejects; RenderAttachment or StorageBinding in the view
+     * usage does not, but the swizzled view is rejected where it is used. */
     rejected(s,texture,WGPUTextureUsage_TextureBinding,(WGPUComponentSwizzle)7);
+    attachment_rejected(s,texture);
     WGPUTexture storage = source(s,WGPUTextureUsage_StorageBinding | WGPUTextureUsage_TextureBinding);
-    rejected(s,storage,WGPUTextureUsage_StorageBinding,WGPUComponentSwizzle_B);
+    storage_rejected(s,storage);
     wgpuTextureRelease(storage);
 
     WGPUTextureView identity = wgpuTextureCreateView(texture,NULL);
@@ -143,7 +189,7 @@ int main(void)
     consumer_finish(&enabled);
     printf("PASS public component swizzle: (b,a,0,r) and (1,g,r,g) sampled views return the identity view's "
         "rgba8unorm components rearranged exactly through textureLoad and nearest textureSampleLevel; identity "
-        "swizzles need no feature, a non-identity swizzle without the feature, with RenderAttachment or "
-        "StorageBinding view usage, or with an unknown source rejects %s\n", adapter_class_scope());
+        "swizzles need no feature, a non-identity swizzle without the feature or with an unknown source "
+        "rejects, and a swizzled view used as a color attachment or storage binding rejects %s\n", adapter_class_scope());
     return 0;
 }

@@ -198,6 +198,10 @@ typedef struct doe_resource_view_desc {
     uint32_t base_mip, mip_count, base_layer, layer_count;
     WGPUTextureAspect aspect;
     WGPUTextureUsage usage;
+    /* A non-identity component swizzle (texture-component-swizzle): the view
+     * samples, but render attachments, resolve targets and storage bindings
+     * reject it as a validation error at use. */
+    bool swizzled;
 } doe_resource_view_desc;
 /* Zero/UINT32_MAX counts select defaults: remaining mips; one layer for 1D,
  * 2D and 3D views, six for Cube, remaining for array views. Other zero enum/usage

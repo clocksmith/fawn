@@ -19,6 +19,7 @@ static doe_resource_status validate_attachment(void *device, const doe_resource_
         return DOE_RESOURCE_UNAVAILABLE;
     if (view->base.config.device.identity != device) return DOE_RESOURCE_DEVICE_MISMATCH;
     if (!(view->desc.usage & WGPUTextureUsage_RenderAttachment)) return DOE_RESOURCE_USAGE;
+    if (view->desc.swizzled) return DOE_RESOURCE_LAYOUT;
     if (slice && view->desc.dimension == WGPUTextureViewDimension_3D) {
         if (view->desc.base_mip >= 32) return DOE_RESOURCE_LAYOUT;
         uint32_t slices = view->texture->desc.depth_or_layers >> view->desc.base_mip;
