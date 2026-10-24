@@ -42,6 +42,39 @@ static void expect_texels(state *s, WGPUTexture texture, uint32_t rows, const ch
     wgpuBufferRelease(readback);
 }
 
+/* Color copies need only texel-aligned buffer offsets: an r8unorm row moves
+ * through buffer offset 3 in both directions with exact bytes. */
+static void unaligned_offsets(state *s)
+{
+    WGPUTextureDescriptor descriptor = WGPU_TEXTURE_DESCRIPTOR_INIT;
+    descriptor.format = WGPUTextureFormat_R8Unorm;
+    descriptor.usage = WGPUTextureUsage_CopySrc | WGPUTextureUsage_CopyDst;
+    descriptor.size = (WGPUExtent3D){SIZE,1,1};
+    WGPUTexture bytes_texture = wgpuDeviceCreateTexture(s->device,&descriptor);
+    assert(bytes_texture);
+    const unsigned char pattern[8] = {0,0,0,11,22,33,44,0};
+    WGPUBuffer source = buffer(s,8,WGPUBufferUsage_CopySrc | WGPUBufferUsage_CopyDst);
+    wgpuQueueWriteBuffer(s->queue,source,0,pattern,sizeof(pattern));
+    WGPUBuffer readback = buffer(s,8,WGPUBufferUsage_MapRead | WGPUBufferUsage_CopyDst);
+    const WGPUExtent3D size = {SIZE,1,1};
+    WGPUTexelCopyTextureInfo texture = {.texture=bytes_texture,.aspect=WGPUTextureAspect_All};
+    WGPUTexelCopyBufferInfo from = {.buffer=source,.layout={.offset=3,.bytesPerRow=WGPU_COPY_STRIDE_UNDEFINED,
+        .rowsPerImage=WGPU_COPY_STRIDE_UNDEFINED}};
+    WGPUTexelCopyBufferInfo to = {.buffer=readback,.layout={.offset=1,.bytesPerRow=WGPU_COPY_STRIDE_UNDEFINED,
+        .rowsPerImage=WGPU_COPY_STRIDE_UNDEFINED}};
+    WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(s->device,NULL);
+    wgpuCommandEncoderCopyBufferToTexture(encoder,&from,&texture,&size);
+    wgpuCommandEncoderCopyTextureToBuffer(encoder,&texture,&to,&size);
+    submit(s,encoder);
+    const unsigned char *bytes = map(s,readback,8);
+    const unsigned char expected[5] = {0,11,22,33,44};
+    assert(!memcmp(bytes,expected,sizeof(expected)));
+    wgpuBufferUnmap(readback);
+    wgpuBufferRelease(readback);
+    wgpuBufferRelease(source);
+    wgpuTextureRelease(bytes_texture);
+}
+
 int main(void)
 {
     state s = {0};
@@ -111,8 +144,9 @@ int main(void)
     wgpuBufferRelease(source);
     wgpuTextureRelease(uploaded);
     wgpuTextureRelease(written);
+    unaligned_offsets(&s);
     consumer_finish(&s);
-    printf("PASS public copy layouts: undefined rowsPerImage for one image and undefined bytesPerRow for one row "
+    printf("PASS public copy layouts: r8unorm copies through odd buffer offsets both ways; undefined rowsPerImage for one image and undefined bytesPerRow for one row "
         "through queue writes, buffer-to-texture and texture-to-buffer copies with exact texels; two-image and "
         "two-row undefined-stride and rowsPerImage-0 rejections reported once at Finish %s\n", adapter_class_scope());
     return 0;
