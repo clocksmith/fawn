@@ -565,6 +565,8 @@ DECL_PFN(void, wgpuRenderPassEncoderSetViewport, (WGPURenderPassEncoder, float, 
 DECL_PFN(void, wgpuRenderPassEncoderSetScissorRect, (WGPURenderPassEncoder, uint32_t, uint32_t, uint32_t, uint32_t));
 DECL_PFN(void, wgpuRenderPassEncoderSetBlendConstant, (WGPURenderPassEncoder, const WGPUColor*));
 DECL_PFN(void, wgpuRenderPassEncoderSetStencilReference, (WGPURenderPassEncoder, uint32_t));
+DECL_PFN(void, wgpuRenderPassEncoderBeginOcclusionQuery, (WGPURenderPassEncoder, uint32_t));
+DECL_PFN(void, wgpuRenderPassEncoderEndOcclusionQuery, (WGPURenderPassEncoder));
 DECL_PFN(void, wgpuRenderPassEncoderPushDebugGroup, (WGPURenderPassEncoder, WGPUStringView));
 DECL_PFN(void, wgpuRenderPassEncoderPopDebugGroup, (WGPURenderPassEncoder));
 DECL_PFN(void, wgpuRenderPassEncoderInsertDebugMarker, (WGPURenderPassEncoder, WGPUStringView));
