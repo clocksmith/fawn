@@ -24,7 +24,7 @@ static void metal_limits(const doe_mtl_caps *caps, WGPULimits *out)
             UINT32_MAX : (uint32_t)caps->max_threadgroup_memory_length,
         .maxComputeInvocationsPerWorkgroup=256,.maxComputeWorkgroupSizeX=dimensions[0],
         .maxComputeWorkgroupSizeY=dimensions[1],.maxComputeWorkgroupSizeZ=dimensions[2],
-        .maxComputeWorkgroupsPerDimension=65535};
+        .maxComputeWorkgroupsPerDimension=65535,.maxImmediateSize=64};
 }
 
 native_result native_backend_open(WGPUBackendType kind, bool fallback, uint32_t surface_platforms,
