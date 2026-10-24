@@ -358,8 +358,6 @@ static doe_vk_status validate_view(doe_vk_texture *texture, const doe_vk_texture
         !doe_vk_range(texture->desc.mip_levels, desc->base_mip, desc->mip_count)) return DOE_VK_INVALID_ARGUMENT;
     if (texture->borrowed_image && !texture->external_alive) return DOE_VK_INVALID_STATE;
     if (texture->content_status != DOE_VK_OK) return texture->content_status;
-    if (!(texture->desc.usage & (DOE_VK_TEXTURE_SAMPLED | DOE_VK_TEXTURE_STORAGE | DOE_VK_TEXTURE_COLOR_ATTACHMENT | DOE_VK_TEXTURE_DEPTH_STENCIL_ATTACHMENT)))
-        return DOE_VK_INVALID_ARGUMENT;
     uint32_t layers = texture->desc.dimension == DOE_VK_TEXTURE_3D ? 1 : texture->desc.depth_or_layers;
     /* A 2D view of one slice of a 3D mip is a render attachment only: its
      * layer is the depth slice (2D_ARRAY_COMPATIBLE image, Vulkan 1.1). */
@@ -447,6 +445,15 @@ doe_vk_status doe_vk_texture_view_create(doe_vk_texture *texture,
         .subresourceRange = { aspects, desc->base_mip, desc->mip_count, desc->base_layer, desc->layer_count }
     };
     doe_vk_context *context = texture->context;
+    /* WebGPU admits views of any texture; one without sampled, storage or
+     * attachment usage can never be bound or rendered (both check usage), and
+     * Vulkan forbids an image view of it, so it has no native view. */
+    const uint32_t viewable = DOE_VK_TEXTURE_SAMPLED | DOE_VK_TEXTURE_STORAGE |
+        DOE_VK_TEXTURE_COLOR_ATTACHMENT | DOE_VK_TEXTURE_DEPTH_STENCIL_ATTACHMENT;
+    if (!(texture->desc.usage & viewable)) {
+        *out = view;
+        return doe_vk_fail(DOE_VK_OK, "texture view ready without a native view", error);
+    }
     status = doe_vk_result(context, context->vk.vkCreateImageView(context->device, &info, NULL, &view->view), "vkCreateImageView", error);
     if (status != DOE_VK_OK) {
         doe_vk_texture_view_release(view);
