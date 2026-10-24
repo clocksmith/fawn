@@ -29,8 +29,10 @@ uniforms, binding aliases and command retention. Missing APIs, later source,
 Node/browser integration and broader qualification retain their own gates.
 The later indirect path copies GPU arguments to private scratch, executes the
 shared compiled bounds guard, and copies sanitized dispatch metadata without
-altering caller arguments. These indirect and texture additions need their own
-SDK and native-consumer execution evidence; the earlier receipt does not qualify them.
+altering caller arguments. The [later public backend receipt](DEVELOPER_RECEIPT_ATOMICS_INDIRECT_TRANSFERS.json)
+binds eight unchanged C controls to a newer exact source: actual Windows SDK build,
+CPU WARP and the same binaries on Miles. It adds indirect dispatch, all 11 atomic
+operations and texture transfers; it retains the separate Node loader link failure.
 
 Vulkan composes compute, images, graphics, queries and Linux presentation within
 the explicit limits and feature checks below. CPU execution receipts prove their
@@ -49,6 +51,10 @@ Host descriptor/rollback controls and SDK checks cover this conversion; per-form
 physical fetch has separate evidence. The [M3 vertex receipt](DEVELOPER_RECEIPT_METAL_VERTEX_FORMATS.json)
 binds the unchanged consumer's exact draw/readback for 33 selected formats and
 admission controls to its source. It does not qualify all 41 admitted formats.
+
+The same later receipt binds both public atomic consumers to actual M3 execution,
+including the unchanged retained all-operations WGSL and its exact readback oracle.
+It does not establish atomic contention or forward-progress qualification.
 
 Metal's frontend compute envelope remains bounded to 256 total threads, at most
 256 per axis, 65535 groups per axis and conservative 256-byte buffer offsets.

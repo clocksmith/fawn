@@ -1,0 +1,217 @@
+{
+  "kind": "developer-correctness-evidence",
+  "component": "Public C atomics, D3D12 indirect dispatch and texture transfers",
+  "consumer": "C migration backend correctness gates for unchanged public C consumers; no production promotion",
+  "source_commit": "bcaabc372b0d01d5977e670dd610d8b6049b7e4b",
+  "source_tree": "b4da02ac1b354bc0cf5c5493221b2335f725e719",
+  "windows_sdk_and_cpu_warp": {
+    "run_id": 40063371890,
+    "job_id": 120781424672,
+    "artifact_id": 12548322979,
+    "github_reported_zip_sha256": "0c584b6f56f6086176ba12b03339248b2ab63fb058ec34c2bcc4d2b99aa3ae89",
+    "audit": {
+      "commit": "bcaabc372b0d01d5977e670dd610d8b6049b7e4b",
+      "artifact_members_verified": 3134,
+      "source_inputs_verified": 269,
+      "CRLF_checkout_paths": 268,
+      "exports": 203
+    },
+    "scope": "Actual LLVM20.1.8 Windows SDK public DLL build,203 exports,8 public C CPU WARP controls. All8 pass. Separate Node CPU loader link fails; no addon/GPU success claimed.",
+    "ignored_folder": "bench/out/c-windows-host-bcaabc372-40063371890",
+    "artifact_manifest_sha256": "fa612d15e97e63a92fcb493a4753785bbc257ed9ccb0620a829dfaefcb2f39a6",
+    "audit_sha256": "88f60ead22ee9f2f588813d4486805be0b51b066cf4721af4fcbd16105b5f68e"
+  },
+  "miles_physical_d3d12": {
+    "adapter": "AMD Radeon(TM) Graphics",
+    "backend_value": 4,
+    "adapter_type_value": 2,
+    "vendor_id": 4098,
+    "device_id": 5761,
+    "driver": "32.0.21030.2001",
+    "os": "Windows11Pro10.0.22631x64",
+    "selection": {
+      "DOE_C_TEST_BACKEND": "d3d12",
+      "DOE_C_TEST_ADAPTER": "physical"
+    },
+    "same_native_binaries_as_warp": true,
+    "files_sha256": {
+      "compute.exe": "f6953aa73628680febbb76f1ea0e0f4ec310b226237ae8a6fa2e08b8fb3de8dc",
+      "uniform_standard.exe": "27fae78013143eacf15b19f3de5f22933f83b201ad49b0bc9f34ba8a7002fc99",
+      "binding_aliases.exe": "e92a03d67e59c4b00da0e2d8d12ec2d37c90a9c057edd9e3a48a23bbcdcc938f",
+      "command_resources.exe": "08c066d06783b147eac9ffc81bdee9e262d8674eddd154845433e952729dea8c",
+      "indirect_dispatch.exe": "fc4dee4c46da5ea18dcce50a50b6a22f8631ac7291d4fe9603197e1d8cf72e2e",
+      "atomics.exe": "507ae979445950e0e02d49d7878cbf1faccceb0ab2ccc9d86cd227c2ff3515f0",
+      "atomic_operations.exe": "7284335b6626cc86e15189b56d934359d85597b88cbd8496824a0e0cb7502113",
+      "texture_transfers.exe": "e779a63805c304521658b5550b0f42e2e5da868d79c849877507a6d0a0e52d8b",
+      "webgpu_doe_c.dll": "54bad8902f28e2021db2cdb60c07f40cd0650bf3457accd292ae018a7dc74f43",
+      "doe_compiler.dll": "f10bba561bc8082348699fb91cabbe9793f09794cc2602e1e8ff1c69fbd706b7",
+      "dxcompiler.dll": "0689e2fee0a1c9df8662a59680469f24e2a3ad7ce6bbbcc9284f7a83172bfc59",
+      "dxil.dll": "64be2368211d257a038a7d4ea6bb3e24c878eb8d588c7b8414fccf759b69c2ac",
+      "atomic_operations.wgsl": "7934191c6ba9ff5f45d6cfb83a02eefbc43698ca0abc448c3e29fc2b5bc328da"
+    },
+    "results": {
+      "compute": {
+        "code": 0,
+        "signal": null,
+        "expired": false,
+        "elapsed_seconds": 0.4218104,
+        "finished_utc": "2026-10-24T04:52:17.838Z"
+      },
+      "uniform_standard": {
+        "code": 0,
+        "signal": null,
+        "expired": false,
+        "elapsed_seconds": 1.8971429,
+        "finished_utc": "2026-10-24T04:52:19.742Z"
+      },
+      "binding_aliases": {
+        "code": 0,
+        "signal": null,
+        "expired": false,
+        "elapsed_seconds": 0.3492155,
+        "finished_utc": "2026-10-24T04:52:20.097Z"
+      },
+      "command_resources": {
+        "code": 0,
+        "signal": null,
+        "expired": false,
+        "elapsed_seconds": 4.3035447,
+        "finished_utc": "2026-10-24T04:52:24.402Z"
+      },
+      "indirect_dispatch": {
+        "code": 0,
+        "signal": null,
+        "expired": false,
+        "elapsed_seconds": 0.3478925,
+        "finished_utc": "2026-10-24T04:52:24.752Z"
+      },
+      "atomics": {
+        "code": 0,
+        "signal": null,
+        "expired": false,
+        "elapsed_seconds": 0.2784816,
+        "finished_utc": "2026-10-24T04:52:25.037Z"
+      },
+      "atomic_operations": {
+        "code": 0,
+        "signal": null,
+        "expired": false,
+        "elapsed_seconds": 0.4806658,
+        "finished_utc": "2026-10-24T04:52:25.524Z"
+      },
+      "texture_transfers": {
+        "code": 0,
+        "signal": null,
+        "expired": false,
+        "elapsed_seconds": 0.507483,
+        "finished_utc": "2026-10-24T04:52:26.038Z"
+      }
+    },
+    "parent_guardian": {
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "deadline_ms": 195000,
+      "elapsed_ms": 9309
+    },
+    "cleanup_probe": {
+      "killed": {
+        "code": 0,
+        "text": "SUCCESS: The process with PID 7284 (child process of PID 20860) has been terminated.\r\nSUCCESS: The process with PID 20860 (child process of PID 20732) has been terminated.\r\n",
+        "pid": 20860
+      },
+      "terminal": {
+        "code": 1,
+        "signal": null
+      }
+    },
+    "retained_bundle": "bench/out/c-d3d12-public-bcaabc372/evidence.tar.gz",
+    "bundle_sha256": "e8ae5ccc29fc50915f9a5a9e728fb1e9e120f36ce5c94206b866597e97746e42",
+    "input_manifest_sha256": "4f8a0401e816ac3d94a5b93996eb32c3420778637870e4cc345b80cadff372f5",
+    "scope": "8 exact public controls: compute, uniform layout, aliasing, command retention, GPU-generated guarded indirect dispatch, existing2group/2dispatch atomics, retained all11atomics and GPU texture transfers. Isolated per-run AppData directory, no repo/PATH/system changes."
+  },
+  "mars_physical_metal": {
+    "adapter": "AppleM3",
+    "public_adapter_type_value": 4,
+    "os": "macOS26.6.2build25G83arm64",
+    "compiler": "Appleclang17.0.0",
+    "selection": {
+      "DOE_C_TEST_BACKEND": "metal",
+      "DOE_C_TEST_ADAPTER": "physical"
+    },
+    "source_binding": {
+      "commit": "bcaabc372b0d01d5977e670dd610d8b6049b7e4b",
+      "verified_git_blob_and_source_files": 4495,
+      "source_archive_sha256": "1f25dcb6aafa8c0c0d0c64e531486ffa4a24f39aeed5e36ecfcf761b141528ff",
+      "artifacts_verified": 7
+    },
+    "input_manifest_sha256": "6950e76a7ae519f3e861cb61a6be5b18103deb41cca67dabf0223a61574654d9",
+    "artifacts_sha256": {
+      "build/atomics": "c2552e1d90881e3e12f70fb3490fb0bd40520f11925686b4c6113c7b7c725cfb",
+      "build/atomic-operations": "c5c7da8027e5e63cc9b425f059f01540adc8244ab2357859834bec9abde09e39",
+      "build/libwebgpu_doe_c.dylib": "80f46fa992956026067b4de00d72978bc38bc0b95e23c75570eaaca00f518765",
+      "build/libdoe_compiler.dylib": "90c69e1f7848881bc768b66e2da1782e022de232fa6376460fa5581fee4f4835",
+      "worker.py": "f8dbed1214394c1ec3e40a918d4083bf1e6e52f2a1f516d3536374e1b0d8dfdb",
+      "guardian.py": "29466678f6a80f73ea3310f6ac7c657366873d55f5b4be7c3eb4c8dabf359c10",
+      "probe.py": "c8b6389df155556941ebaf2ae640d81c4e4c64ea75f7a598e1c21d8e10f60801"
+    },
+    "build": {
+      "command": [
+        "make",
+        "-C",
+        "runtime/c/native",
+        "-j8",
+        "CC=cc",
+        "CXX=c++",
+        "BUILD=/tmp/doe-c-metal-all-atomic-ejmsfg20/build",
+        "/tmp/doe-c-metal-all-atomic-ejmsfg20/build/atomics",
+        "/tmp/doe-c-metal-all-atomic-ejmsfg20/build/atomic-operations"
+      ],
+      "exit": 0,
+      "elapsed": 4.323378374916501
+    },
+    "results": [
+      {
+        "name": "atomics",
+        "exit": 0,
+        "timeout": false,
+        "leaf_deadline_seconds": 15,
+        "elapsed_seconds": 0.22652320796623826
+      },
+      {
+        "name": "atomic-operations",
+        "exit": 0,
+        "timeout": false,
+        "leaf_deadline_seconds": 15,
+        "elapsed_seconds": 0.1783414160599932
+      }
+    ],
+    "parent_guardian": {
+      "exit": 0,
+      "timeout": false,
+      "parent_deadline_seconds": 45,
+      "elapsed_seconds": 0.48012995801400393,
+      "killed_owned_direct_children": [],
+      "scope": "owned worker and its direct native test children; no GPU termination claim"
+    },
+    "cleanup_probe": {
+      "exit": -9,
+      "timeout": true,
+      "parent_deadline_seconds": 0.5,
+      "elapsed_seconds": 0.5304111250443384,
+      "killed_owned_direct_children": [
+        39790
+      ],
+      "scope": "owned worker and its direct native test children; no GPU termination claim"
+    },
+    "scope": "Existing2group/2dispatch atomic lifecycle and retained all11atomicOperations WGSL. All11 signed/unsigned storage/workgroup operations, wrap/min/max/exchange success/failure/signedOOB;344 exact words+4sentinels, early releases.",
+    "thermal": "Before/after pmset logs record no thermal/performance warning; no power status recorded.",
+    "retained_bundle": "bench/out/c-metal-atomic-bcaabc372-evidence.tar.gz",
+    "bundle_sha256": "5c2740f897f950aec9dabdcde5d5a6564ab05d9e5d7ee896e319177d923deee5"
+  },
+  "limits": [
+    "Developer oracles and one named GPU per backend; not independent acceptance, contention/progress, a hardware matrix, performance, recovery or release qualification.",
+    "Windows Node loader CRT link first failure retained separately. Later Metal indirect, sampled/storage D3D12 bindings and ABI13 specialization remain outside this evidence.",
+    "C remains experimental; retained Zig production default and historical receipts are unchanged."
+  ]
+}
