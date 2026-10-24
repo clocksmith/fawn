@@ -18,8 +18,8 @@ const copy_contract = @import("../../contracts/texture_copy.zig");
 const texture_format_layout = @import("../../contracts/texture_format_layout.zig");
 pub const BufferCopy = copy_contract.Copy;
 
-pub fn buffer_copy_region(buffer_size: u64, texture: vk_resources.TextureResource, copy: BufferCopy, direction: copy_contract.Direction) !c.VkBufferImageCopy {
-    const region = try copy_contract.validate(buffer_size, .{
+fn copy_texture(texture: vk_resources.TextureResource) copy_contract.Texture {
+    return .{
         .width = texture.width,
         .height = texture.height,
         .layers = texture.depth_or_array_layers,
@@ -27,7 +27,11 @@ pub fn buffer_copy_region(buffer_size: u64, texture: vk_resources.TextureResourc
         .samples = texture.sample_count,
         .dimension = texture.dimension,
         .format = texture.format,
-    }, copy, direction, .native);
+    };
+}
+
+pub fn buffer_copy_region(buffer_size: u64, texture: vk_resources.TextureResource, copy: BufferCopy, direction: copy_contract.Direction) !c.VkBufferImageCopy {
+    const region = try copy_contract.validate(buffer_size, copy_texture(texture), copy, direction, .native);
     const is_3d = texture.dimension == model_gpu_types.WGPUTextureDimension_3D;
     return .{
         .bufferOffset = copy.offset,
@@ -156,16 +160,34 @@ pub fn texture_write(self: anytype, cmd_arg: model_texture_types.TextureWriteCom
         return;
     }
     const copy = cmd_arg.copy orelse whole_mip_copy(cmd_arg.texture);
-    const region = try buffer_copy_region(cmd_arg.data.len, resource.*, copy, .buffer_to_texture);
+    // writeTexture data needs no texel-aligned offset or row pitch; the rows
+    // are repacked tightly into staging, which Vulkan's texel-unit
+    // bufferRowLength can always describe.
+    const source = try copy_contract.validateWrite(cmd_arg.data.len, copy_texture(resource.*), copy);
     if (copy.width == 0 or copy.height == 0 or copy.depth_or_layers == 0) return;
+    var tight = copy;
+    tight.offset = 0;
+    tight.bytes_per_row = source.row_bytes;
+    tight.rows_per_image = source.rows;
+    const packed_len = @as(u64, source.row_bytes) * source.rows * copy.depth_or_layers;
+    const region = try buffer_copy_region(packed_len, resource.*, tight, .buffer_to_texture);
     if (self.has_deferred_submissions or self.pending_uploads.items.len > 0) {
         _ = try self.flush_queue();
     }
     try vk_device.ensure_submission_state(self);
-    const staging = try vk_resources.create_host_visible_buffer(self, @intCast(cmd_arg.data.len), c.VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+    const staging = try vk_resources.create_host_visible_buffer(self, packed_len, c.VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
     defer vk_resources.destroy_host_visible_buffer(self, staging);
     if (staging.mapped) |raw| {
-        @memcpy(@as([*]u8, @ptrCast(raw))[0..cmd_arg.data.len], cmd_arg.data);
+        const destination = @as([*]u8, @ptrCast(raw))[0..@intCast(packed_len)];
+        var image: u64 = 0;
+        while (image < copy.depth_or_layers) : (image += 1) {
+            var row: u64 = 0;
+            while (row < source.rows) : (row += 1) {
+                const from: usize = @intCast(copy.offset + image * source.pitch * source.image_rows + row * source.pitch);
+                const to: usize = @intCast((image * source.rows + row) * source.row_bytes);
+                @memcpy(destination[to..][0..source.row_bytes], cmd_arg.data[from..][0..source.row_bytes]);
+            }
+        }
     }
     try c.check_vk(c.vkResetCommandPool(self.device, self.command_pool, 0));
     var begin_info = c.VkCommandBufferBeginInfo{
