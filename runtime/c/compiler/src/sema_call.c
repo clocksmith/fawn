@@ -325,7 +325,8 @@ static inline bool sema_image_call(Source *s, const Expression *node, const Loca
         link = c->arguments[link].next;
     }
     if (!sema_image_auxiliaries(s, texture, operation)) return false;
-    const uint32_t varying = operation == IMAGE_LOAD && c->types[texture - 7u].state.image.access == DOE_COMPILER_READ_WRITE ? 256u : 0u;
+    const uint32_t varying = image_implicit(operation) ? SOURCE_IMAGE_VARYING | SOURCE_IMAGE_DERIVATIVE :
+        operation == IMAGE_LOAD && c->types[texture - 7u].state.image.access == DOE_COMPILER_READ_WRITE ? SOURCE_IMAGE_VARYING : 0u;
     if (!source_reference_record(s, &c->expression_references[(size_t)(node - c->expressions)], SOURCE_IMAGE,
                                  (uint32_t)operation | varying, node->source_offset)) return false;
     *out = (ExpressionValue){.runtime = true, .constant.type = result,

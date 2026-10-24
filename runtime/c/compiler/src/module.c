@@ -68,9 +68,9 @@ static bool check_bindings(Source *s, EntryRecord *entry, ClosureWork *work,
     return true;
 }
 static bool closure_reference(Source *s, EntryRecord *entry, SourceReference ref,
-                               unsigned char *marks) {
+                               unsigned char *marks, uint32_t offset) {
     CompilerWorkspace *c=s->compiler;
-    if (!stage_closure(s, entry->function, ref)) return false;
+    if (!stage_closure(s, entry->function, ref, offset)) return false;
     switch (ref.kind) {
         case SOURCE_RESOURCE: marks[ref.index]=1u; break;
         case SOURCE_WORKGROUP: marks[(size_t)c->resource_count+ref.index]=1u; break;
@@ -100,8 +100,9 @@ static bool collect_entry(Source *s, EntryRecord *entry, ClosureWork *work,
         FunctionRecord *f=&c->functions[current];
         if (!closure_charge(s,work,5u)) return false;
         if (f->state.graph.color==1u && f->state.graph.scan<f->expression_end) {
-            const SourceReference ref=c->expression_references[f->state.graph.scan++];
-            if (!closure_reference(s,entry,ref,marks)) return false;
+            const uint32_t expression=f->state.graph.scan++;
+            const SourceReference ref=c->expression_references[expression];
+            if (!closure_reference(s,entry,ref,marks,c->expressions[expression].source_offset)) return false;
             if (ref.kind==SOURCE_FUNCTION && c->functions[ref.index].state.graph.color==0u) {
                 FunctionRecord *child=&c->functions[ref.index];
                 child->state.graph.color=1u;
@@ -116,7 +117,8 @@ static bool collect_entry(Source *s, EntryRecord *entry, ClosureWork *work,
             f->state.graph.scan=f->statement_start;
         }
         if (f->state.graph.scan<f->statement_end) {
-            if (!closure_reference(s,entry,c->statement_references[f->state.graph.scan++],marks)) return false;
+            const uint32_t statement=f->state.graph.scan++;
+            if (!closure_reference(s,entry,c->statement_references[statement],marks,c->statements[statement].source_offset)) return false;
             continue;
         }
         f->state.graph.color=3u;

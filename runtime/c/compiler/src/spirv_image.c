@@ -33,8 +33,7 @@ bool spirv_image_type(Emitter *e, const TypeRecord *t, uint32_t id) {
 }
 bool spirv_image_plan(Emitter *e, const IrInstruction *ir) {
     const ImageType image = e->program->types[ir->operands.composite.reserved - 7u].state.image;
-    const bool sampling = ir->operands.composite.kind == IMAGE_SAMPLE_LEVEL ||
-        ir->operands.composite.kind == IMAGE_SAMPLE_COMPARE_LEVEL;
+    const bool sampling = image_sampling((ImageOperation)ir->operands.composite.kind);
     if (!sampling || image_arrayed(image.dimension)) e->image_capabilities |= 1u;
     if (sampling && spirv_sampled_type(e, ir->operands.composite.reserved) == 0u) return false;
     if (ir->type != IR_VOID && spirv_zero_constant(e, ir->type) == 0u) return false;
@@ -214,16 +213,18 @@ static bool sampled_coordinates(Emitter *e, ImageType image, const uint32_t *ope
     return true;
 }
 static bool sample(Emitter *e, const IrInstruction *ir, const TypeRecord *texture, const uint32_t *operands) {
-    const bool compare = ir->operands.composite.kind == IMAGE_SAMPLE_COMPARE_LEVEL;
+    const ImageOperation operation = (ImageOperation)ir->operands.composite.kind;
+    const bool compare = image_comparison(operation), implicit = image_implicit(operation);
     const bool depth = (texture->state.image.flags & DOE_COMPILER_HANDLE_DEPTH) != 0u;
     uint32_t coordinate;
     if (!sampled_coordinates(e, texture->state.image, operands, &coordinate)) return false;
     const uint32_t sampled = spirv_reserve_ids(e, 1u);
     EMIT(OP_SAMPLED_IMAGE, texture->aux, sampled, e->values[operands[0]], e->values[operands[1]]);
     const uint32_t last = 3u + (image_arrayed(texture->state.image.dimension) ? 1u : 0u);
-    const bool offset = ir->operands.composite.count == last + 2u;
-    uint32_t lod = compare ? spirv_zero_constant(e, IR_F32) : e->values[operands[last]];
-    if (depth && !compare) {
+    const uint32_t arity = image_sample_arity(texture->state.image, operation);
+    const bool offset = ir->operands.composite.count == arity + 1u;
+    uint32_t lod = implicit || compare ? spirv_zero_constant(e, IR_F32) : e->values[operands[last]];
+    if (depth && !compare && !implicit) {
         lod = spirv_reserve_ids(e, 1u);
         if (spirv_value_type(e->program, operands[last]) == IR_I32) {
             EMIT(OP_CONVERT_S_TO_F, ID_F32, lod, e->values[operands[last]]);
@@ -231,7 +232,14 @@ static bool sample(Emitter *e, const IrInstruction *ir, const TypeRecord *textur
     }
     const uint32_t result = depth && !compare ? spirv_reserve_ids(e, 1u) : e->values[ir->result];
     const uint32_t type = depth && !compare ? spirv_target_type(e, vector_type(e, IR_F32, 4u)) : spirv_target_type(e, ir->type);
-    if (compare) {
+    if (implicit) {
+        if (compare) {
+            if (offset) { EMIT(OP_IMAGE_SAMPLE_DREF_IMPLICIT_LOD, type, result, sampled, coordinate,
+                e->values[operands[last]], 8u, e->values[operands[arity]]); }
+            else { EMIT(OP_IMAGE_SAMPLE_DREF_IMPLICIT_LOD, type, result, sampled, coordinate, e->values[operands[last]]); }
+        } else if (offset) { EMIT(OP_IMAGE_SAMPLE_IMPLICIT_LOD, type, result, sampled, coordinate, 8u, e->values[operands[arity]]); }
+        else { EMIT(OP_IMAGE_SAMPLE_IMPLICIT_LOD, type, result, sampled, coordinate); }
+    } else if (compare) {
         if (offset) {
             EMIT(OP_IMAGE_SAMPLE_DREF_EXPLICIT_LOD, type, result, sampled, coordinate, e->values[operands[last]],
                  10u, lod, e->values[operands[last + 1u]]);
@@ -247,7 +255,7 @@ bool spirv_image_operation(Emitter *e, const IrInstruction *ir) {
     const uint32_t *operands = e->program->typed_operands + ir->operands.composite.first;
     const ImageOperation op = (ImageOperation)ir->operands.composite.kind;
     if (op == IMAGE_LOAD || op == IMAGE_STORE) return texel(e, ir, texture, operands);
-    if (op == IMAGE_SAMPLE_LEVEL || op == IMAGE_SAMPLE_COMPARE_LEVEL) return sample(e, ir, texture, operands);
+    if (image_sampling(op)) return sample(e, ir, texture, operands);
     return query(e, ir, texture->state.image, operands);
 }
 #undef EMIT

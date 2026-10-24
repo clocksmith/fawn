@@ -20,12 +20,12 @@ remain unsupported, not inferred from ordinary numeric constructibility.
 The common typed operation owner implements textureLoad, textureStore,
 textureDimensions, textureNumLevels, textureNumLayers, textureNumSamples, and
 non-depth textureSampleLevel without optional offsets, depth textureSampleLevel,
-and textureSampleCompareLevel. Integer coordinates,
+textureSampleCompareLevel, textureSample and textureSampleCompare. Integer coordinates,
 array indices and mip/sample indices accept independently selected i32/u32;
 abstract integers materialize to i32. Non-depth explicit-level sampling uses f32 coordinates
 and LOD, an ordinary sampler and an integer array layer. Depth loads return scalar
 f32; other loads return vec4 of the declared sample type. Unsupported overloads,
-formats, external textures and implicit-derivative/comparison-with-derivatives/gather operations are
+formats, external textures and remaining bias/gradient/gather operations are
 rejected rather than recognized from a particular shader's text.
 
 All operands evaluate once in source order. Handles use resolved typed resource
@@ -85,10 +85,55 @@ argument order, mip/layer/addressing differences and OOB buffer guards. Actual
 SPIR-V/DXC/MSL validation and public CPU execution are separate recorded checks;
 host admission is not an execution oracle or physical-device qualification.
 
-Implicit-derivative depth sampling/comparison, sampleGrad, gather, external
-textures and optional offsets on non-depth sampling remain outside this slice.
+SampleBias, sampleGrad, gather, external textures and optional offsets on
+explicit non-depth sampling remain outside this slice.
 The authoritative overloads are [WGSL explicit level sampling](https://www.w3.org/TR/WGSL/#texturesamplelevel)
 and [explicit comparison sampling](https://www.w3.org/TR/WGSL/#texturesamplecomparelevel).
+
+## Implicit fragment sampling
+
+`textureSample` admits all declared non-multisampled f32 sampled shapes and the
+four depth shapes. `textureSampleCompare` admits those depth shapes with a
+comparison sampler and f32 reference. Results and layer handling match the
+explicit family. Optional const offsets are vec2<i32> for 2D/2D-array and
+vec3<i32> for non-depth 3D sampling, with the same [-8,7] component bounds.
+Other shapes have no offset. Ordinary name resolution still precedes the builtin
+registry, including user functions and aliases named textureSample.
+
+The existing bounded source call graph enforces fragment-only reachability,
+including helpers, dead syntax and unselected invalid entries. The call's original
+source offset identifies a stage violation. The existing uniformity analysis also
+runs when these derivative operations appear, propagating call-site requirements
+and formal dependencies through the same summaries and scratch. Calls require
+uniform control flow, while their coordinate/reference arguments may vary. Their
+results are always potentially nonuniform, even with constant coordinates. This
+prevents using an earlier sample to justify a later divergent sample. Explicit
+level operations retain their previous unrestricted-stage/non-derivative rules.
+The default derivative_uniformity error is enforced; diagnostic filter syntax
+remains explicitly unsupported. No new ABI, stage flag, workspace or limit is
+introduced.
+
+SPIR-V uses OpImageSampleImplicitLod/OpImageSampleDrefImplicitLod, with optional
+ConstOffset. HLSL uses Sample/SampleCmp and MSL uses sample/sample_compare without
+a level modifier. No target substitutes a fixed mip or host-calculated gradients.
+The existing DEPTH/COMPARISON handle records remain authoritative for native
+layout and sampler admission. Native backends retain their independently declared
+texture/graphics envelopes.
+
+`make implicit-sampling-check` exercises all three public target adapters,
+transitive fragment/stage restrictions, divergent control and early returns,
+nonuniform sample results, offset bounds, measurement and untouched failures.
+The exact retained Zig compute sources are preserved as rejection controls in
+[implicit_sample_compute_retained.wgsl](tests/implicit_sample_compute_retained.wgsl)
+and [implicit_compare_compute_retained.wgsl](tests/implicit_compare_compute_retained.wgsl):
+those historical opcode-only tests use stages forbidden by WGSL. The new
+[implicit_sampling.wgsl](tests/implicit_sampling.wgsl) fragment fixture declares
+independent literal RGBA8 mip/compare results for future public execution. Target
+validators alone do not establish its pixel results or hardware qualification.
+
+See [WGSL textureSample](https://www.w3.org/TR/WGSL/#texturesample),
+[textureSampleCompare](https://www.w3.org/TR/WGSL/#texturesamplecompare) and
+[uniformity](https://www.w3.org/TR/WGSL/#uniformity).
 
 ## Public metadata and physical requirements
 

@@ -1,9 +1,9 @@
 /* SPDX-License-Identifier: MIT
  * Unchanged select fixtures through public C pipelines and real GPU readback. */
 #include "consumer.h"
-#include <stdlib.h>
+#include "shader_fixture.h"
 
-enum { CASE_WORDS = 32, RETAINED_WORDS = 4, SUFFIX_WORDS = 2, SOURCE_LIMIT = 65536 };
+enum { CASE_WORDS = 32, RETAINED_WORDS = 4, SUFFIX_WORDS = 2 };
 #define CANARY UINT32_C(0xdeadbeef)
 
 static const uint32_t retained_seed[RETAINED_WORDS] = {
@@ -18,30 +18,6 @@ static const uint32_t cases_expected[2][CASE_WORDS] = {
     {29,13,17,19,23,13,4,19,8,UINT32_C(0xfffffff9),37,UINT32_C(0x40e80000),UINT32_C(0x3fc00000),
         1,1,0,43,2,123,99,5,13,4,19,CANARY,CANARY,CANARY,CANARY,123,5,CANARY,1}
 };
-
-static void input_error(const char *path,const char *reason)
-{
-    fprintf(stderr,"select fixture %s: %s\n",path,reason);
-    exit(2);
-}
-static char *read_shader(const char *path)
-{
-    FILE *file = fopen(path,"rb");
-    if (!file) input_error(path,"open failed");
-    if (fseek(file,0,SEEK_END)) input_error(path,"seek failed");
-    long length = ftell(file);
-    if (length <= 0 || length > SOURCE_LIMIT || fseek(file,0,SEEK_SET))
-        input_error(path,"source must be nonempty and at most 65536 bytes");
-    size_t bytes = (size_t)length;
-    char *source = malloc(bytes + 1);
-    if (!source) input_error(path,"allocation failed");
-    if (fread(source,1,bytes,file) != bytes || fgetc(file) != EOF || ferror(file))
-        input_error(path,"short read, I/O failure or changing file extent");
-    if (fclose(file)) input_error(path,"close failed");
-    if (memchr(source,0,bytes)) input_error(path,"embedded NUL byte");
-    source[bytes] = '\0';
-    return source;
-}
 
 static size_t prefix_words(state *s)
 {
@@ -114,7 +90,7 @@ int main(int argc,char **argv)
     }
     const char *retained_path = argc > 1 ? argv[1] : "../compiler/tests/select_retained.wgsl";
     const char *cases_path = argc > 2 ? argv[2] : "../compiler/tests/select_cases.wgsl";
-    char *retained = read_shader(retained_path), *cases = read_shader(cases_path);
+    char *retained = native_test_shader(retained_path), *cases = native_test_shader(cases_path);
     state s = {0};
     consumer_init(&s);
     run_case(&s,"retained",retained,true,0);

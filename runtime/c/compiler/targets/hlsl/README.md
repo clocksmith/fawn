@@ -82,9 +82,10 @@ Implemented over current C IR:
   Inclusive scans combine the exclusive result with the already evaluated input;
   integer signed sum/product operations use unsigned bit-preserving arithmetic.
 - ABI6 sampled/depth/multisampled textures, storage textures and samplers use
-  typed HLSL resource objects. Eight image operations cover guarded texel loads,
-  stores, dimensions/mip/layer/sample counts, explicit-LOD depth/color sampling
-  and explicit mip-zero depth comparison. Matching ordinary/comparison sampler
+  typed HLSL resource objects. Ten image operations cover guarded texel loads,
+  stores, dimensions/mip/layer/sample counts, explicit-LOD depth/color sampling,
+  explicit mip-zero depth comparison and implicit fragment sampling/comparison.
+  Matching ordinary/comparison sampler
   types and checked constant depth offsets retain the shared image contract. Integer
   coordinates, layers, LODs and sample indices are independently guarded before
   native access. LOD is range-checked before its dimensions query; array sampling
@@ -162,8 +163,8 @@ and [structure interpolation](https://learn.microsoft.com/en-us/windows/win32/di
 
 ## Unfinished surface
 
-Derivative/implicit-LOD texture sampling, gather,
-comparison with derivatives, offsets on remaining non-depth sampling overloads,
+Derivative builtins, textureSampleBias/Grad, gather,
+offsets on remaining explicit non-depth sampling overloads,
 external textures, f16, pointer parameters,
 overrides and remaining retained builtin families remain incomplete. New shared
 atomic IR is lowered through the canonical guarded access owner as described below.

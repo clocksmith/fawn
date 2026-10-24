@@ -63,3 +63,8 @@ sampling uses a comparison sampler, saved depth reference and explicit mip zero.
 Keep 2D optional offsets attached to their validated constant IR/DAG identity,
 never a replayed expression or runtime local. Cube variants have no offset.
 Target-native packed coordinates must retain the separately clamped array layer.
+
+Implicit sampling is already fragment/derivative-validated by the shared owner.
+Use the native implicit sample/comparison methods with saved operands and checked
+constant offsets; do not substitute mip zero or recompute gradients on the host.
+Depth returns scalar values; ordinary sampled textures return four components.

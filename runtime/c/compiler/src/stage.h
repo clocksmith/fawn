@@ -29,5 +29,5 @@ InterfaceAttribute *stage_attribute(Source *, uint32_t, uint32_t, uint32_t, bool
 uint32_t stage_parameter(const Source *, NameSpan);
 uint64_t stage_name_bytes(const Source *);
 void stage_reflect(const Source *, DoeCompilerStageInterfaceV7 *, char *, uint32_t);
-bool stage_closure(Source *, uint32_t, SourceReference);
+bool stage_closure(Source *, uint32_t, SourceReference, uint32_t);
 #endif
