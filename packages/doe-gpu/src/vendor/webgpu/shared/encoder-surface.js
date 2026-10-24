@@ -16,7 +16,9 @@ import {
 import { normalizeGpuColor } from './validation.js';
 import {
   shouldRouteDeviceError,
-  reportValidationError,
+  deliverDeviceError,
+  collectDeviceErrors,
+  GPUValidationError,
 } from './full-surface.js';
 
 const UINT32_RANGE = Object.freeze({ min: 0, max: UINT32_MAX });
@@ -95,6 +97,17 @@ function normalizeBindGroup(bindGroup, path) {
 // "invalidate the encoder"): it records nothing, later binding, draw and
 // dispatch commands record nothing, and finish() reports the error. With no
 // error scope or uncapturederror listener the use throws at once instead.
+// finish() generates at most one error and never throws: the first error
+// reported while it ran (package or provider), else the invalid-object use
+// that invalidated the encoder. Unobserved, it is dropped (WebGPU).
+function reportFinishError(device, errors, invalidMessage) {
+  if (errors.length > 0) {
+    deliverDeviceError(device, errors[0].filter, errors[0].error);
+  } else if (invalidMessage != null) {
+    deliverDeviceError(device, 'validation', new GPUValidationError(invalidMessage));
+  }
+}
+
 function invalidUseMessage(path, first, second) {
   const invalid = isInvalidResource(first) ? first : (isInvalidResource(second) ? second : null);
   return invalid === null
@@ -654,28 +667,29 @@ function createEncoderClasses(backend) {
 
     finish(descriptor) {
       this._assertOpen('GPURenderBundleEncoder.finish');
-      if (this._invalidMessage != null) {
-        return this._finishInvalid(descriptor);
-      }
-      const bundle = backend.renderBundleEncoderFinish(
-        this,
-        descriptor === undefined ? undefined : assertObject(descriptor, 'GPURenderBundleEncoder.finish', 'descriptor'),
-        classes,
-      );
-      bundle.label = descriptor?.label ?? '';
+      const device = this._device;
+      const invalid = this._invalidMessage != null;
+      const { result, errors } = collectDeviceErrors(device, () => {
+        if (!invalid) {
+          return backend.renderBundleEncoderFinish(
+            this,
+            descriptor === undefined ? undefined : assertObject(descriptor, 'GPURenderBundleEncoder.finish', 'descriptor'),
+            classes,
+          );
+        }
+        // An invalid encoder's native recording, if any, is finished and dropped.
+        if (!this._invalid) {
+          backend.renderBundleEncoderFinish(this, undefined, classes).destroy();
+        }
+        return null;
+      });
       this._finished = true;
-      return bundle;
-    }
-
-    // finish() on an invalid bundle encoder: a validation error and an
-    // invalid bundle; a native recording, if any, is finished and dropped.
-    _finishInvalid(descriptor) {
-      if (!this._invalid) {
-        backend.renderBundleEncoderFinish(this, undefined, classes).destroy();
+      reportFinishError(device, errors, this._invalidMessage);
+      if (invalid) {
+        return markInvalid(new DoeGPURenderBundle(null, device), descriptor?.label);
       }
-      this._finished = true;
-      reportValidationError(this._device, this._invalidMessage);
-      return markInvalid(new DoeGPURenderBundle(null, this._device), descriptor?.label);
+      result.label = descriptor?.label ?? '';
+      return result;
     }
   }
 
@@ -922,27 +936,19 @@ function createEncoderClasses(backend) {
 
     finish(descriptor) {
       this._assertOpen('GPUCommandEncoder.finish');
-      const state = backend.commandEncoderFinish(this);
-      if (this._invalidMessage != null) {
-        return this._finishInvalid(state, descriptor);
+      const device = this._device;
+      const { result: state, errors } = collectDeviceErrors(device, () => backend.commandEncoderFinish(this));
+      reportFinishError(device, errors, this._invalidMessage);
+      if (this._invalidMessage == null) {
+        const cmdBuf = new classes.DoeGPUCommandBuffer(state, device);
+        cmdBuf.label = descriptor?.label ?? '';
+        return cmdBuf;
       }
-      const cmdBuf = new classes.DoeGPUCommandBuffer(state, this._device);
-      cmdBuf.label = descriptor?.label ?? '';
-      return cmdBuf;
-    }
-
-    // finish() on an invalid encoder: one validation error and an invalid
-    // command buffer. The native recording is dropped. A deferred validation
-    // failure (command t: 99) was already reported by the backend's finish.
-    _finishInvalid(state, descriptor) {
+      // An encoder invalidated by an invalid object drops its native recording.
       if (state?._native != null && typeof backend.commandBufferDestroy === 'function') {
         backend.commandBufferDestroy(state._native);
       }
-      const reported = Array.isArray(state?._commands) && state._commands.some((command) => command?.t === 99);
-      if (!reported) {
-        reportValidationError(this._device, this._invalidMessage);
-      }
-      return markInvalid(new DoeGPUCommandBuffer({ _batched: true, _commands: [] }, this._device), descriptor?.label);
+      return markInvalid(new DoeGPUCommandBuffer({ _batched: true, _commands: [] }, device), descriptor?.label);
     }
   }
 

@@ -259,23 +259,37 @@ napi_value doe_device_set_uncaptured_error_callback(napi_env env, napi_callback_
     if (!device) NAPI_THROW(env, "Invalid device");
 
     DeviceCallbackBinding* old = binding_take(&doe_env_state(env)->uncaptured_bindings, device);
+    ProviderErrorEntry* pending = NULL;
     if (old) {
         pfn_doeNativeDeviceSetUncapturedErrorCallback(device, NULL, NULL, NULL);
+        pending = provider_error_log_take(&old->log);
         release_binding(old);
     }
 
     napi_valuetype cb_type;
     napi_typeof(env, _args[1], &cb_type);
     if (cb_type == napi_null || cb_type == napi_undefined) {
+        provider_error_log_free(pending);
         return NULL;
     }
     if (cb_type != napi_function) {
+        provider_error_log_free(pending);
         NAPI_THROW(env, "deviceSetUncapturedErrorCallback requires a function or null");
     }
 
     DeviceCallbackBinding* binding = (DeviceCallbackBinding*)calloc(1, sizeof(DeviceCallbackBinding));
-    if (!binding) NAPI_THROW(env, "Out of memory");
+    if (!binding) {
+        provider_error_log_free(pending);
+        NAPI_THROW(env, "Out of memory");
+    }
     binding->device = device;
+    /* A replaced binding hands over the errors JS has not taken yet. */
+    for (ProviderErrorEntry* entry = pending; entry;) {
+        ProviderErrorEntry* next = entry->next;
+        entry->next = NULL;
+        provider_error_log_append(&binding->log, entry);
+        entry = next;
+    }
     napi_value resource_name;
     napi_create_string_utf8(env, "doeDeviceUncapturedError", NAPI_AUTO_LENGTH, &resource_name);
     if (napi_create_threadsafe_function(
@@ -289,6 +303,56 @@ napi_value doe_device_set_uncaptured_error_callback(napi_env env, napi_callback_
     pfn_doeNativeDeviceSetUncapturedErrorCallback(device, uncaptured_error_native_callback, binding, NULL);
     napi_value result;
     napi_get_boolean(env, true, &result);
+    return result;
+}
+
+/* Counts provider errors across devices. JS reads it through
+ * providerErrorSequence() without a call: a changed value means some device's
+ * log may hold errors. */
+static _Atomic uint32_t g_provider_error_sequence = 0;
+
+void doe_provider_error_sequence_advance(void) {
+    atomic_fetch_add(&g_provider_error_sequence, 1u);
+}
+
+/* providerErrorSequence() -> a Uint32Array of length 1 over the counter, or
+ * null when the runtime refuses external memory. */
+napi_value doe_provider_error_sequence(napi_env env, napi_callback_info info) {
+    (void)info;
+    napi_value buffer, result;
+    if (napi_create_external_arraybuffer(env, (void*)&g_provider_error_sequence,
+            sizeof(g_provider_error_sequence), NULL, NULL, &buffer) != napi_ok ||
+        napi_create_typedarray(env, napi_uint32_array, 1, buffer, 0, &result) != napi_ok) {
+        napi_get_null(env, &result);
+    }
+    return result;
+}
+
+/* deviceTakeErrors(device) -> [{type, message}] the provider reported since
+ * the last take, in report order; empty when the device has no binding. */
+napi_value doe_device_take_errors(napi_env env, napi_callback_info info) {
+    NAPI_ASSERT_ARGC(env, info, 1);
+    void* device = unwrap_ptr(env, _args[0]);
+    if (!device) NAPI_THROW(env, "Invalid device");
+    ProviderErrorEntry* entries = NULL;
+    for (DeviceCallbackBinding* binding = doe_env_state(env)->uncaptured_bindings; binding; binding = binding->next) {
+        if (binding->device != device) continue;
+        entries = provider_error_log_take(&binding->log);
+        break;
+    }
+    napi_value result;
+    napi_create_array(env, &result);
+    uint32_t index = 0;
+    for (ProviderErrorEntry* entry = entries; entry; entry = entry->next) {
+        napi_value item, type_val, message_val;
+        napi_create_object(env, &item);
+        napi_create_string_utf8(env, error_type_string(entry->type), NAPI_AUTO_LENGTH, &type_val);
+        napi_create_string_utf8(env, entry->message ? entry->message : "", NAPI_AUTO_LENGTH, &message_val);
+        napi_set_named_property(env, item, "type", type_val);
+        napi_set_named_property(env, item, "message", message_val);
+        napi_set_element(env, result, index++, item);
+    }
+    provider_error_log_free(entries);
     return result;
 }
 

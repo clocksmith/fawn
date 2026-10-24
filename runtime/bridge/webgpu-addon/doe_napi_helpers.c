@@ -168,7 +168,33 @@ void binding_finalize(napi_env env, void* finalize_data, void* finalize_hint) {
     if (binding && binding->value_ref) {
         napi_delete_reference(env, binding->value_ref);
     }
+    if (binding) provider_error_log_free(binding->log.head);
     free(binding);
+}
+
+void provider_error_log_append(ProviderErrorLog* log, ProviderErrorEntry* entry) {
+    while (atomic_flag_test_and_set(&log->lock)) {}
+    if (log->tail) log->tail->next = entry;
+    else log->head = entry;
+    log->tail = entry;
+    atomic_flag_clear(&log->lock);
+}
+
+ProviderErrorEntry* provider_error_log_take(ProviderErrorLog* log) {
+    while (atomic_flag_test_and_set(&log->lock)) {}
+    ProviderErrorEntry* entries = log->head;
+    log->head = log->tail = NULL;
+    atomic_flag_clear(&log->lock);
+    return entries;
+}
+
+void provider_error_log_free(ProviderErrorEntry* entry) {
+    while (entry) {
+        ProviderErrorEntry* next = entry->next;
+        free(entry->message);
+        free(entry);
+        entry = next;
+    }
 }
 
 void release_binding(DeviceCallbackBinding* binding) {
@@ -261,48 +287,14 @@ void pop_error_scope_native_callback(uint32_t error_type, WGPUStringView message
     free(request);
 }
 
+/* Wakes JS to take the device's provider error log (see the native callback). */
 void js_call_uncaptured_error(napi_env env, napi_value js_cb, void* context, void* data) {
     (void)context;
-    UncapturedCallbackData* payload = (UncapturedCallbackData*)data;
-    if (!payload) return;
-    if (env != NULL && js_cb != NULL) {
-        napi_value global;
-        napi_value undefined_value;
-        napi_value error_ctor;
-        napi_value message_val;
-        napi_value error_val;
-        napi_value name_val;
-        napi_value event_obj;
-        napi_value type_val;
-        napi_value error_type_val;
-        napi_value args[1];
-
-        napi_get_global(env, &global);
-        napi_get_undefined(env, &undefined_value);
-        napi_get_named_property(env, global, "Error", &error_ctor);
-        napi_create_string_utf8(env, payload->message ? payload->message : "", NAPI_AUTO_LENGTH, &message_val);
-        napi_new_instance(env, error_ctor, 1, &message_val, &error_val);
-        napi_create_string_utf8(env,
-            payload->error_type == 0x00000002 ? "GPUValidationError"
-            : payload->error_type == 0x00000003 ? "GPUOutOfMemoryError"
-            : payload->error_type == 0x00000004 ? "GPUInternalError"
-            : "GPUError",
-            NAPI_AUTO_LENGTH,
-            &name_val);
-        napi_set_named_property(env, error_val, "name", name_val);
-
-        napi_create_object(env, &event_obj);
-        napi_create_string_utf8(env, "uncapturederror", NAPI_AUTO_LENGTH, &type_val);
-        napi_create_string_utf8(env, error_type_string(payload->error_type), NAPI_AUTO_LENGTH, &error_type_val);
-        napi_set_named_property(env, event_obj, "type", type_val);
-        napi_set_named_property(env, event_obj, "error", error_val);
-        napi_set_named_property(env, event_obj, "message", message_val);
-        napi_set_named_property(env, event_obj, "errorType", error_type_val);
-        args[0] = event_obj;
-        napi_call_function(env, undefined_value, js_cb, 1, args, NULL);
-    }
-    if (payload->message) free(payload->message);
-    free(payload);
+    (void)data;
+    if (env == NULL || js_cb == NULL) return;
+    napi_value undefined_value;
+    napi_get_undefined(env, &undefined_value);
+    napi_call_function(env, undefined_value, js_cb, 0, NULL, NULL);
 }
 
 void js_call_lost_callback(napi_env env, napi_value js_cb, void* context, void* data) {
@@ -331,18 +323,22 @@ void js_call_lost_callback(napi_env env, napi_value js_cb, void* context, void* 
     free(payload);
 }
 
+/* Every provider error lands here, in report order: the package keeps no
+ * native error scopes, so JavaScript owns scope routing. The entry joins the
+ * device's log, the global sequence moves (JS reads it without a call to tell
+ * whether anything was reported), and the JS callback is woken to take the
+ * log when nothing else does first. */
 void uncaptured_error_native_callback(uint32_t error_type, WGPUStringView message, void* userdata1, void* userdata2) {
     (void)userdata2;
     DeviceCallbackBinding* binding = (DeviceCallbackBinding*)userdata1;
     if (!binding || !binding->tsfn) return;
-    UncapturedCallbackData* payload = (UncapturedCallbackData*)malloc(sizeof(UncapturedCallbackData));
-    if (!payload) return;
-    payload->error_type = error_type;
-    payload->message = dup_string_view(message);
-    if (napi_call_threadsafe_function(binding->tsfn, payload, napi_tsfn_nonblocking) != napi_ok) {
-        if (payload->message) free(payload->message);
-        free(payload);
-    }
+    ProviderErrorEntry* entry = (ProviderErrorEntry*)calloc(1, sizeof(*entry));
+    if (!entry) return;
+    entry->type = error_type;
+    entry->message = dup_string_view(message);
+    provider_error_log_append(&binding->log, entry);
+    doe_provider_error_sequence_advance();
+    napi_call_threadsafe_function(binding->tsfn, NULL, napi_tsfn_nonblocking);
 }
 
 void lost_native_callback(uint32_t reason, const char* message_ptr, size_t message_len, void* userdata) {

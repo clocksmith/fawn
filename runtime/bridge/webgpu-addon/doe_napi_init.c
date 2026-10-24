@@ -66,7 +66,8 @@ napi_value doe_shader_module_get_compilation_info(napi_env env, napi_callback_in
 
 /* Compute pipeline */
 napi_value doe_create_compute_pipeline(napi_env env, napi_callback_info info);
-napi_value doe_last_provider_error(napi_env env, napi_callback_info info);
+napi_value doe_device_take_errors(napi_env env, napi_callback_info info);
+napi_value doe_provider_error_sequence(napi_env env, napi_callback_info info);
 napi_value doe_compute_pipeline_release(napi_env env, napi_callback_info info);
 napi_value doe_compute_pipeline_get_bind_group_layout(napi_env env, napi_callback_info info);
 
@@ -233,6 +234,8 @@ napi_value doe_module_init(napi_env env, napi_value exports) {
         EXPORT_FN("devicePushErrorScope",                     doe_device_push_error_scope),
         EXPORT_FN("devicePopErrorScope",                      doe_device_pop_error_scope),
         EXPORT_FN("deviceSetUncapturedErrorCallback",         doe_device_set_uncaptured_error_callback),
+        EXPORT_FN("deviceTakeErrors",                         doe_device_take_errors),
+        EXPORT_FN("providerErrorSequence",                    doe_provider_error_sequence),
         EXPORT_FN("deviceRegisterLostCallback",               doe_device_register_lost_callback),
         EXPORT_FN("createBuffer",                             doe_create_buffer),
         EXPORT_FN("bufferRelease",                            doe_buffer_release),
@@ -255,7 +258,6 @@ napi_value doe_module_init(napi_env env, napi_value exports) {
         EXPORT_FN("shaderModuleGetBindingsForEntryPoint",     doe_shader_module_get_bindings_for_entry_point),
         EXPORT_FN("shaderModuleGetCompilationInfo",           doe_shader_module_get_compilation_info),
         EXPORT_FN("createComputePipeline",                    doe_create_compute_pipeline),
-        EXPORT_FN("lastProviderError",                        doe_last_provider_error),
         EXPORT_FN("computePipelineRelease",                   doe_compute_pipeline_release),
         EXPORT_FN("computePipelineGetBindGroupLayout",        doe_compute_pipeline_get_bind_group_layout),
         EXPORT_FN("createBindGroupLayout",                    doe_create_bind_group_layout),

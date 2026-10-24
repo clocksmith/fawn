@@ -224,10 +224,27 @@ function shouldRouteDeviceError(device) {
   }
   const listeners = device._eventListeners;
   const uncapturedListeners = listeners instanceof Map ? listeners.get('uncapturederror') : null;
-  return uncapturedListeners instanceof Set && uncapturedListeners.size > 0;
+  return uncapturedListeners instanceof Map && uncapturedListeners.size > 0;
 }
 
+// Reports an error the package detected. Provider errors reported before it
+// are delivered first, so every scope keeps the first error in call order.
 function captureDeviceError(device, filter, error) {
+  device._drainProviderErrors?.();
+  return deliverDeviceError(device, filter, error);
+}
+
+// Delivers one error to the innermost scope with its filter, else as an
+// uncapturederror event. A lost device discards errors (WebGPU), and while
+// finish() collects its errors they are held for it instead.
+function deliverDeviceError(device, filter, error) {
+  if (device._destroyed || (device._lostInfo ?? null) !== null) {
+    return false;
+  }
+  if (Array.isArray(device._errorCollection)) {
+    device._errorCollection.push({ filter, error });
+    return true;
+  }
   const scopes = Array.isArray(device._errorScopes) ? device._errorScopes : [];
   for (let index = scopes.length - 1; index >= 0; index -= 1) {
     const scope = scopes[index];
@@ -255,6 +272,15 @@ function reportValidationError(device, message) {
     throw new Error(message);
   }
   captureDeviceError(device, 'validation', new GPUValidationError(message));
+}
+
+// Runs run() (an encoder or bundle finish) collecting the errors it reports,
+// package and provider alike, in order: finish() reports at most one.
+function collectDeviceErrors(device, run) {
+  if (typeof device?._collectErrors !== 'function') {
+    return { result: run(), errors: [] };
+  }
+  return device._collectErrors(run);
 }
 
 function gpuErrorFromCreationFailure(filter, error) {
@@ -489,6 +515,9 @@ class GPUPipelineError extends DOMException {
 }
 
 function wrapPipelineError(error) {
+  if (error instanceof TypeError || error instanceof RangeError) {
+    return error;
+  }
   if (error instanceof Error) {
     const message = error.message ?? '';
     const reason = error.reason
@@ -527,13 +556,17 @@ function ensureDeviceEventListeners(device) {
   return device._eventListeners;
 }
 
-function addDeviceEventListener(device, type, listener) {
-  if (typeof listener !== 'function') {
+// EventTarget subset: a listener is a function or an object with handleEvent;
+// the once option removes it before its first call; duplicates are ignored.
+function addDeviceEventListener(device, type, listener, options) {
+  if (listener === null || (typeof listener !== 'function' && typeof listener !== 'object')) {
     return;
   }
   const listeners = ensureDeviceEventListeners(device);
-  const typeListeners = listeners.get(type) ?? new Set();
-  typeListeners.add(listener);
+  const typeListeners = listeners.get(type) ?? new Map();
+  if (!typeListeners.has(listener)) {
+    typeListeners.set(listener, { once: typeof options === 'object' && options !== null && Boolean(options.once) });
+  }
   listeners.set(type, typeListeners);
 }
 
@@ -543,7 +576,7 @@ function removeDeviceEventListener(device, type, listener) {
     return;
   }
   const typeListeners = listeners.get(type);
-  if (!(typeListeners instanceof Set)) {
+  if (!(typeListeners instanceof Map)) {
     return;
   }
   typeListeners.delete(listener);
@@ -558,11 +591,18 @@ function dispatchDeviceEvent(device, type, event) {
     return;
   }
   const typeListeners = listeners.get(type);
-  if (!(typeListeners instanceof Set)) {
+  if (!(typeListeners instanceof Map)) {
     return;
   }
-  for (const listener of [...typeListeners]) {
-    listener.call(device, event);
+  for (const [listener, entry] of [...typeListeners]) {
+    if (entry.once) {
+      removeDeviceEventListener(device, type, listener);
+    }
+    if (typeof listener === 'function') {
+      listener.call(device, event);
+    } else if (typeof listener.handleEvent === 'function') {
+      listener.handleEvent(event);
+    }
   }
 }
 
@@ -605,25 +645,39 @@ function createFullSurfaceClasses({
   // With an error scope or an uncapturederror listener, a creation that fails
   // validation reports exactly one error and returns an invalid object; with
   // neither, it throws as it always has. `create` returns the new object, or
-  // null when the provider rejected the descriptor. The provider's own report
-  // is held in a private scope and re-reported here, so it arrives once even
-  // from a provider that rejects without reporting.
+  // null when the provider rejected the descriptor.
+  //
+  // One ordered owner: every provider error reaches the package's log through
+  // the native uncaptured-error callback (no native error scopes are pushed),
+  // and the package delivers provider and package errors to its own scopes in
+  // the order they happened. The log's sequence is read without a native call,
+  // so a successful creation costs two reads. Errors the provider reported
+  // during the call make the result invalid and are delivered as they are; a
+  // rejection without a report gets one package error.
   function createReportingErrors(device, path, create, makeInvalid, toThrown = passThrough) {
+    const logged = device?._providerErrorLog === true;
+    if (logged) {
+      device._drainProviderErrors();
+    }
+    const mark = logged ? backend.providerErrorMark() : null;
     if (!shouldRouteDeviceError(device)) {
       let created;
       try {
         created = create();
       } catch (error) {
+        if (logged) device._takeProviderErrorsSince(mark);
         throw toThrown(error);
       }
+      const reported = logged ? device._takeProviderErrorsSince(mark) : [];
       if (created !== null) {
+        if (reported.length > 0) markInvalid(created, created.label);
         return created;
       }
-      throw toThrown(providerRejection(path));
+      throw toThrown(reported.length > 0 ? new Error(`${path}: ${reported[0].message}`) : providerRejection(path));
     }
-    let captured;
+    let created;
     try {
-      captured = captureProviderErrors(device, create);
+      created = create();
     } catch (error) {
       if (!isReportableCreationError(error)) {
         throw toThrown(error);
@@ -631,46 +685,50 @@ function createFullSurfaceClasses({
       captureDeviceError(device, 'validation', gpuErrorFromCreationFailure('validation', error));
       return makeInvalid();
     }
-    if (captured.error !== null) {
-      captureDeviceError(device, captured.filter, captured.error);
+    const reported = logged ? device._takeProviderErrorsSince(mark) : [];
+    for (const error of reported) {
+      deliverDeviceError(device, error.type, error);
     }
-    if (captured.value !== null) {
-      return captured.value;
+    if (created !== null) {
+      if (reported.length > 0) markInvalid(created, created.label);
+      return created;
     }
-    if (captured.error === null) {
-      captureDeviceError(device, 'validation', new GPUValidationError(`${path}: the provider rejected the descriptor without reporting an error`));
+    if (logged && reported.length === 0) {
+      deliverDeviceError(device, 'validation', new GPUValidationError(`${path}: the provider rejected the descriptor without reporting an error`));
     }
     return makeInvalid();
   }
 
-  // { value, filter, error }: what create() returned and the typed native
-  // error the provider reported meanwhile, kept from the
-  // caller's scopes. Backends without native error scopes report directly.
-  function captureProviderErrors(device, create) {
-    if (typeof backend.captureProviderErrors !== 'function') {
-      return { value: create(), filter: null, error: null };
-    }
-    return backend.captureProviderErrors(device, create);
-  }
-
   function providerRejection(path) {
-    return typeof backend.providerRejection === 'function'
-      ? backend.providerRejection(path)
-      : new Error(`${path}: the provider rejected the descriptor`);
+    return new Error(`${path}: the provider rejected the descriptor`);
   }
 
   // Creates and throws the provider's error instead of reporting it: where
   // WebGPU throws or rejects (async pipeline creation, and synchronous
   // pipeline creation that no error scope or listener observes).
   function createWithProviderMessage(device, path, create) {
-    const { value, error } = captureProviderErrors(device, create);
-    if (value !== null) {
-      return value;
+    if (device?._providerErrorLog !== true) {
+      const value = create();
+      if (value !== null) return value;
+      throw providerRejection(path);
     }
-    if (error !== null) {
-      throw new Error(`${path}: ${error.message}`);
+    device._drainProviderErrors();
+    const mark = backend.providerErrorMark();
+    let value;
+    try {
+      value = create();
+    } catch (error) {
+      device._takeProviderErrorsSince(mark);
+      throw error;
     }
-    throw providerRejection(path);
+    const reported = device._takeProviderErrorsSince(mark);
+    if (reported.length > 0) {
+      throw new Error(`${path}: ${reported[0].message}`);
+    }
+    if (value === null) {
+      throw providerRejection(path);
+    }
+    return value;
   }
 
   function reportInvalidUse(device, path, resource) {
@@ -1393,11 +1451,12 @@ function createFullSurfaceClasses({
       initResource(this, 'GPUShaderModule', owner);
     }
 
+    // Compilation info stays available for a module the provider rejected.
     async getCompilationInfo() {
-      if (this._invalid) {
+      if (this._native == null && this._invalid) {
         return { messages: [] };
       }
-      const native = assertLiveResource(this, 'GPUShaderModule.getCompilationInfo', 'GPUShaderModule');
+      const native = this._invalid ? this._native : assertLiveResource(this, 'GPUShaderModule.getCompilationInfo', 'GPUShaderModule');
       if (typeof backend.shaderModuleGetCompilationInfo === 'function') {
         return backend.shaderModuleGetCompilationInfo(this, native);
       }
@@ -1510,18 +1569,61 @@ function createFullSurfaceClasses({
       return this._features;
     }
 
-    addEventListener(type, listener) {
-      addDeviceEventListener(this, type, listener);
-      if (type === 'uncapturederror') {
-        backend.deviceUncapturedErrorListenersChanged?.(this);
-      }
+    addEventListener(type, listener, options) {
+      addDeviceEventListener(this, type, listener, options);
     }
 
     removeEventListener(type, listener) {
       removeDeviceEventListener(this, type, listener);
-      if (type === 'uncapturederror') {
-        backend.deviceUncapturedErrorListenersChanged?.(this);
+    }
+
+    // Delivers the provider errors logged since the last take, in order.
+    _drainProviderErrors() {
+      if (this._providerErrorLog !== true || this._native == null) {
+        return;
       }
+      const mark = backend.providerErrorMark();
+      if (mark === this._providerErrorSeen) {
+        return;
+      }
+      this._providerErrorSeen = mark;
+      for (const error of backend.deviceTakeProviderErrors(this)) {
+        deliverDeviceError(this, error.type, error);
+      }
+    }
+
+    // Takes, without delivering, what the provider reported since `mark`
+    // (a providerErrorMark() read right after a drain).
+    _takeProviderErrorsSince(mark) {
+      if (this._native == null) {
+        return [];
+      }
+      const now = backend.providerErrorMark();
+      if (now === mark) {
+        return [];
+      }
+      this._providerErrorSeen = now;
+      return backend.deviceTakeProviderErrors(this);
+    }
+
+    _collectErrors(run) {
+      this._drainProviderErrors();
+      const mark = this._providerErrorLog === true ? backend.providerErrorMark() : null;
+      const outer = this._errorCollection;
+      const collected = [];
+      this._errorCollection = collected;
+      let result;
+      try {
+        result = run();
+      } finally {
+        if (mark !== null) {
+          for (const error of this._takeProviderErrorsSince(mark)) {
+            collected.push({ filter: error.type, error });
+          }
+        }
+        this._errorCollection = outer;
+      }
+      return { result, errors: collected };
     }
 
     get lost() {
@@ -1559,7 +1661,9 @@ function createFullSurfaceClasses({
     pushErrorScope(filter) {
       const native = assertLiveResource(this, 'GPUDevice.pushErrorScope', 'GPUDevice');
       const encodedFilter = normalizeErrorFilter(filter, 'GPUDevice.pushErrorScope');
-      if (typeof backend.devicePushErrorScope === 'function') {
+      if (this._providerErrorLog === true) {
+        this._drainProviderErrors();
+      } else if (typeof backend.devicePushErrorScope === 'function') {
         backend.devicePushErrorScope(this, native, filter, encodedFilter);
       }
       this._errorScopes.push({ filter, error: null });
@@ -1570,6 +1674,12 @@ function createFullSurfaceClasses({
       const native = assertLiveResource(this, 'GPUDevice.popErrorScope', 'GPUDevice');
       if (!Array.isArray(this._errorScopes) || this._errorScopes.length <= 0) {
         return Promise.reject(operationError('GPUDevice.popErrorScope: no active error scope'));
+      }
+      if (this._providerErrorLog === true) {
+        this._drainProviderErrors();
+        const scope = this._errorScopes.pop();
+        this._errorScopeDepth = this._errorScopes.length;
+        return Promise.resolve(scope.error);
       }
       const scope = this._errorScopes.pop();
       this._errorScopeDepth = this._errorScopes.length;
@@ -1636,7 +1746,8 @@ function createFullSurfaceClasses({
         usage: globals.GPUBufferUsage.COPY_SRC | globals.GPUBufferUsage.MAP_WRITE,
         mappedAtCreation,
       };
-      const native = backend.deviceCreateBuffer(this, descriptor);
+      // A lost device gets no stand-in allocation.
+      const native = this._destroyed ? null : backend.deviceCreateBuffer(this, descriptor);
       const buffer = markInvalid(
         new DoeGPUBuffer(native, this._instance, descriptor.size, descriptor.usage, this.queue, this),
         label,
@@ -2167,7 +2278,8 @@ function createFullSurfaceClasses({
 export {
   createFullSurfaceClasses,
   shouldRouteDeviceError,
-  reportValidationError,
+  deliverDeviceError,
+  collectDeviceErrors,
   addDeviceEventListener,
   removeDeviceEventListener,
   dispatchDeviceEvent,

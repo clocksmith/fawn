@@ -34,6 +34,11 @@ apply to this C code; this file adds the addon's own invariants.
   scopes or uncaptured-error callback; JS returns an invalid object, or throws
   when nothing observes errors. The addon never wraps a creation in its own
   error scope, which would hide the error from the caller's scopes.
+- Provider errors have one route: the device's uncaptured-error callback,
+  registered for the device's lifetime, appends each to the device's log
+  ([doe_napi_error_log.h](doe_napi_error_log.h)) and advances the shared
+  sequence. JS takes the log in order (`deviceTakeErrors`) and owns every error
+  scope; the Node package pushes no native scopes.
 
 ## Values and layouts
 
