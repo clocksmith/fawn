@@ -137,7 +137,12 @@ doe_resource_status doe_resource_texture_blit_validate(const void *device,
     doe_resource_image_copy *endpoints[2] = {&result.source, &result.destination};
     for (size_t i = 0; i < 2; i++) {
         doe_resource_image_copy *endpoint = endpoints[i];
-        if (!endpoint->aspect) endpoint->aspect = WGPUTextureAspect_All;
+        /* Every aspect of the format moves: 'all', or the one aspect of a
+         * depth-only or stencil-only format, normalized to 'all'. */
+        unsigned aspects = resource_format_aspects(endpoint->texture->desc.format);
+        if ((endpoint->aspect == WGPUTextureAspect_DepthOnly && aspects == 2) ||
+            (endpoint->aspect == WGPUTextureAspect_StencilOnly && aspects == 4) || !endpoint->aspect)
+            endpoint->aspect = WGPUTextureAspect_All;
         if (endpoint->aspect != WGPUTextureAspect_All) return DOE_RESOURCE_ASPECT;
         doe_resource_texture_copy region = {
             .mip = endpoint->mip, .origin = {endpoint->origin[0], endpoint->origin[1], endpoint->origin[2]},

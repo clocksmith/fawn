@@ -440,7 +440,7 @@ pub fn doeAbiBridgeCopyTextureToTexture(
     copy_size: *const abi_copy.WGPUExtent3D,
 ) callconv(.c) void {
     const cmd_texture = @import("../native/resource/doe_command_texture_native.zig");
-    cmd_texture.doeNativeCommandEncoderCopyTextureToTexture(
+    cmd_texture.copyTextureToTexture(
         encoder,
         source.texture,
         source.mipLevel,
@@ -448,12 +448,14 @@ pub fn doeAbiBridgeCopyTextureToTexture(
         source.origin.x,
         source.origin.y,
         source.origin.z,
+        source.aspect,
         destination.texture,
         destination.mipLevel,
         0,
         destination.origin.x,
         destination.origin.y,
         destination.origin.z,
+        destination.aspect,
         copy_size.width,
         copy_size.height,
         copy_size.depthOrArrayLayers,
