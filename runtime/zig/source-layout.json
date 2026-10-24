@@ -1388,9 +1388,9 @@
       },
       "src/backend/vulkan/vk_resources.zig": {
         "decision": "Keep",
-        "moduleSha256": "1b3a33ca7d3523db51f23a211293ce0dbd0e79b62d451e20233362e6eb3997ce",
-        "reason": "Keep: buffer allocation and resource operations remain backend-private; completed allocation caching now owns entries and accounting through typed admission facts, without a whole-runtime parameter. Remaining allocation, texture and sampler concerns require separate review; MUTABLE_FORMAT images with a VkImageFormatListCreateInfo only for textures whose viewFormats name the srgb pair. Compute buffers allocate the memory-policy backing size, so a zero-size buffer never reaches vkCreateBuffer.",
-        "reviewer": "doe-c-claude-indexed/2026-10-24"
+        "moduleSha256": "0a70b6175ccba4557dc557a4ed23819e31c34378e94382792c67e0e287eb28ee",
+        "reason": "Keep: buffer allocation and resource operations remain backend-private; completed allocation caching now owns entries and accounting through typed admission facts, without a whole-runtime parameter. Remaining allocation, texture and sampler concerns require separate review; MUTABLE_FORMAT images with a VkImageFormatListCreateInfo only for textures whose viewFormats name the srgb pair. Compute buffers allocate the memory-policy backing size, so a zero-size buffer never reaches vkCreateBuffer. A queue texture write reuses a resource with at least the written level's mip count instead of recreating it, so other levels keep their contents.",
+        "reviewer": "doe-c-claude-surface/2026-10-24"
       },
       "src/backend/vulkan/vk_runtime_probe_ops.zig": {
         "decision": "Keep",
@@ -1436,8 +1436,8 @@
       },
       "src/backend/vulkan/vk_texture_commands.zig": {
         "decision": "Keep",
-        "moduleSha256": "cbefb646b311277fdf0e14ebb077d424de369b1b8a2c302ddfc188644ee1ab12",
-        "reason": "Keep: Vulkan texture command capsule; queue writes derive their region from the shared texel copy contract instead of whole-mip, color-only arithmetic; texture-to-texture copies zero-initialize undefined subresources and address array layers separately from 3D depth. Queue texture writes repack rows tightly into staging, so unaligned writeTexture offsets and pitches reach Vulkan.",
+        "moduleSha256": "e1b8f4f93f046d1bfc3529016c4a644c816dca3f14d35fb9894bfa99ab0eb4d4",
+        "reason": "Keep: Vulkan texture command capsule; queue writes derive their region from the shared texel copy contract instead of whole-mip, color-only arithmetic; texture-to-texture copies zero-initialize undefined subresources and address array layers separately from 3D depth. Queue texture writes repack rows tightly into staging, so unaligned writeTexture offsets and pitches reach Vulkan. A copy between subresources of one image keeps it in GENERAL for both sides of vkCmdCopyImage.",
         "reviewer": "doe-c-claude-surface/2026-10-24"
       },
       "src/backend/vulkan/vk_upload.zig": {

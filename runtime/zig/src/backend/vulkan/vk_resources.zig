@@ -661,12 +661,15 @@ pub fn create_destroy_lifecycle_buffer(self: anytype, bytes: u64) !void {
 pub fn ensure_texture_resource(self: anytype, texture: model_resource_types.CopyTextureResource) !*TextureResource {
     if (texture.handle == 0) return error.InvalidArgument;
     if (texture.width == 0 or texture.height == 0) return error.InvalidArgument;
+    // `mip_level` is the written level; the resource needs at least that many
+    // levels. A texture created with its full mip count is never recreated by
+    // a write to one of its levels, which would discard the other levels.
     const mip_levels: u32 = if (texture.mip_level > 0) texture.mip_level + 1 else 1;
     if (self.textures.getPtr(texture.handle)) |existing| {
         if (existing.width == texture.width and
             existing.height == texture.height and
             existing.depth_or_array_layers == normalized_texture_layer_count(texture.depth_or_array_layers) and
-            existing.mip_levels == mip_levels and
+            existing.mip_levels >= mip_levels and
             existing.sample_count == normalized_texture_sample_count(texture.sample_count) and
             existing.dimension == normalized_texture_dimension(texture.dimension) and
             existing.view_dimension == normalized_texture_view_dimension(texture.dimension, texture.view_dimension, texture.depth_or_array_layers) and
