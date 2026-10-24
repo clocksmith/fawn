@@ -37,6 +37,13 @@ const sampledLayout = device.createBindGroupLayout({
 // Each case fails on both providers. The createView (provider) case is left to
 // the provider; createBindGroup and createPipelineLayout also make the invalid
 // object they then use, so each of them reports two errors in total.
+// depthWriteEnabled is required for a format with a depth aspect only.
+const depthPipeline = (format) => ({
+  layout: 'auto',
+  vertex: { module: renderModule, entryPoint: 'vs' },
+  fragment: { module: renderModule, entryPoint: 'fs', targets: [{ format: 'rgba8unorm' }] },
+  depthStencil: { format },
+});
 const failures = [
   ['createBuffer', 'GPUBuffer', () => device.createBuffer({ size: 4, usage: 0 })],
   ['createTexture', 'GPUTexture', () => device.createTexture({
@@ -71,6 +78,7 @@ const failures = [
   ['createRenderPipeline', 'GPURenderPipeline', () => device.createRenderPipeline({
     layout: 'auto', vertex: { module: renderModule, entryPoint: 'vs' },
   })],
+  ['createRenderPipeline depthWriteEnabled', 'GPURenderPipeline', () => device.createRenderPipeline(depthPipeline('depth24plus'))],
   ['createQuerySet', 'GPUQuerySet', () => device.createQuerySet({ type: 'occlusion', count: 5000 })],
   ['createRenderBundleEncoder', 'GPURenderBundleEncoder', () => device.createRenderBundleEncoder({ colorFormats: [] })],
   ['getBindGroupLayout', 'GPUBindGroupLayout', () => device.createComputePipeline({
@@ -99,6 +107,9 @@ for (const [name, label, action] of failures) {
   assert.equal(value._invalid, true, `${name} returns an invalid object`);
 }
 console.log(`ok: ${failures.length} creators report one validation error and return an invalid object`);
+const stencilOnly = await scoped(() => device.createRenderPipeline(depthPipeline('stencil8')));
+assert.equal(stencilOnly.error, null, `a stencil-only format needs no depthWriteEnabled: ${stencilOnly.error?.message}`);
+assert.equal(stencilOnly.value._invalid, false);
 
 // Every later use of an invalid object is a validation error.
 async function invalidObject(action) {
