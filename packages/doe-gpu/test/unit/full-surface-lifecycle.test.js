@@ -59,7 +59,9 @@ async function assertRejectsOperationError(promise) {
   await Promise.all([pending, after]);
   assert.deepEqual(order, ['before', 'after']);
   assert.equal(waits, 1);
-  assert.throws(() => device.queue.submit([]), /destroyed/);
+  // WebGPU: a lost device's queue operations do nothing and never throw.
+  assert.equal(device.queue.submit([]), undefined);
+  assert.equal(await device.popErrorScope(), null);
 }
 
 {

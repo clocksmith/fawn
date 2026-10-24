@@ -79,7 +79,7 @@ try {
     await pending;
     await queue.onSubmittedWorkDone();
     await queue.onSubmittedWorkDone();
-    assert.throws(() => queue.submit([]), /destroyed/);
+    assert.equal(queue.submit([]), undefined, 'a lost device ignores submit');
   } finally {
     adapter.destroy();
   }

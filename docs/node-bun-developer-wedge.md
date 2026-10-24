@@ -266,7 +266,9 @@ fresh processes and overlapping runtime instances, then execute 12 exact
 create/compute/destroy cycles inside one additional process. They record the
 post-warmup RSS span against a frozen 256 MiB diagnostic ceiling. This covers a
 bounded same-process lifecycle and memory envelope, resolves `GPUDevice.lost`
-with the `destroyed` reason, and requires post-destroy operations to fail closed.
+with the `destroyed` reason, and requires post-destroy operations to be inert
+(an encoder finishes into an invalid command buffer without reaching the
+provider, and nothing throws, as WebGPU specifies for a lost device).
 It is not a long-soak leak test or unexpected hardware-loss recovery gate; those
 remain separate promotion obligations.
 

@@ -160,6 +160,7 @@ console.log('ok 5: GPUCommandEncoder debug groups reach the provider');
   device.pushErrorScope('validation');
   device.queue.submit([commandBuffer]);
   const atSubmit = await device.popErrorScope();
+  await new Promise((resolve) => setTimeout(resolve, 20)); // uncapturederror fires from a queued task
   device.onuncapturederror = null;
   assert.equal(uncaptured.length, 1, '6 finish() raised one uncaptured validation error');
   assert(uncaptured[0] instanceof GPUValidationError);

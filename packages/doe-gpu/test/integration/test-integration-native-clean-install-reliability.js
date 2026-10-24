@@ -318,7 +318,7 @@ function runLifecycleTrial(runtime, fixturePath) {
           || sample.samples.some((entry) => entry.deviceDestroyed !== true
             || entry.lostReason !== 'destroyed'
             || entry.postDestroyRejected !== true
-            || !entry.postDestroyError.includes('GPUDevice was destroyed')
+            || entry.postDestroyError !== ''
             || entry.outputSha256 !== expectedOutputSha256)) {
           throw new Error(`same-process lifecycle failed the frozen contract: ${stdoutText}`);
         }
