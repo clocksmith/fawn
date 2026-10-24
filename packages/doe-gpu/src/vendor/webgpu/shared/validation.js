@@ -3,6 +3,7 @@ import { KNOWN_FEATURES } from './capabilities.js';
 import {
   UINT32_MAX,
   failValidation,
+  failType,
   describeResourceLabel,
   assertObject,
   assertArray,
@@ -608,22 +609,24 @@ function normalizeVertexStepMode(value, path, label = 'descriptor.stepMode') {
   return normalizeKnownEnum(value, 'vertex', VERTEX_STEP_MODES, path, label);
 }
 
+// 16-bit normalized formats need texture-formats-tier1.
+const TIER1_TEXTURE_FORMATS = new Set(['r16unorm', 'r16snorm', 'rg16unorm', 'rg16snorm', 'rgba16unorm', 'rgba16snorm']);
+
+// https://gpuweb.github.io/gpuweb/#abstract-opdef-validating-texture-format-required-features:
+// a format whose feature is not enabled throws TypeError (content timeline).
 function normalizeTextureFormat(value, path, label, features = null) {
   const format = normalizeEnumKey(value, path, label);
   if (!KNOWN_TEXTURE_FORMATS.has(format)) {
     failValidation(path, `${label} must be a known GPUTextureFormat`);
   }
-  if (isBCFormat(format) && !hasFeature(features, 'texture-compression-bc')) {
-    failValidation(path, `${label} requires feature "texture-compression-bc"`);
-  }
-  if (isETC2Format(format) && !hasFeature(features, 'texture-compression-etc2')) {
-    failValidation(path, `${label} requires feature "texture-compression-etc2"`);
-  }
-  if (isASTCFormat(format) && !hasFeature(features, 'texture-compression-astc')) {
-    failValidation(path, `${label} requires feature "texture-compression-astc"`);
-  }
-  if (format === DEPTH_STENCIL_FORMAT_DEPTH32FLOAT_STENCIL8 && !hasFeature(features, 'depth32float-stencil8')) {
-    failValidation(path, `${label} requires feature "depth32float-stencil8"`);
+  const required = isBCFormat(format) ? 'texture-compression-bc'
+    : isETC2Format(format) ? 'texture-compression-etc2'
+      : isASTCFormat(format) ? 'texture-compression-astc'
+        : format === DEPTH_STENCIL_FORMAT_DEPTH32FLOAT_STENCIL8 ? 'depth32float-stencil8'
+          : TIER1_TEXTURE_FORMATS.has(format) ? 'texture-formats-tier1'
+            : null;
+  if (required && !hasFeature(features, required)) {
+    failType(path, `${label} requires feature "${required}"`);
   }
   return format;
 }
