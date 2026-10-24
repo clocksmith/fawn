@@ -312,7 +312,7 @@ static inline bool sema_image_call(Source *s, const Expression *node, const Loca
     }
     TypeId texture = IR_VOID, result = IR_VOID;
     for (uint32_t index = 0u; index < node->right; ++index) {
-        if (!sema_expression(s, c->arguments[link].expression, scope, evaluate, emit, out)) return false;
+        if (!sema_expression(s, c->arguments[link].expression, scope, sema_image_evaluate(c, texture, operation, index, evaluate), emit, out)) return false;
         if (index == 0u) {
             texture = out->constant.type;
             if (!type_handle(c, texture) || c->types[texture - 7u].kind != TYPE_TEXTURE)

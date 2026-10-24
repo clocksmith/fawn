@@ -59,6 +59,7 @@ bool sema_swizzle_value(Source *, const Expression *, ExpressionValue *, TypeId,
 bool sema_unary_value(Source *, const Expression *, ExpressionValue *, bool, bool, ExpressionValue *);
 bool sema_builtin_finish(Source *, const Expression *, const NumericBuiltin *, ExpressionValue *, bool, ExpressionValue *);
 TypeId sema_image_result(Source *, const Expression *, const TypeRecord *, ImageOperation);
+bool sema_image_evaluate(const CompilerWorkspace *,TypeId,ImageOperation,uint32_t,bool);
 bool sema_image_argument(Source *, const TypeRecord *, ImageOperation, uint32_t, ExpressionValue *);
 bool sema_image_auxiliaries(Source *, TypeId, ImageOperation);
 bool sema_image_type(Source *, TypeRef, TypeId, TypeId *);

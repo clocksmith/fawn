@@ -31,7 +31,10 @@ int main(void)
     assert(!native_d3d12_texture_descriptor(&desc,&native));
     desc.mip_levels = 1; desc.depth_or_layers = 2;
     assert(!native_d3d12_texture_descriptor(&desc,&native));
-    desc.depth_or_layers = 1; desc.usage |= WGPUTextureUsage_RenderAttachment;
+    desc.depth_or_layers = 1; desc.format=WGPUTextureFormat_RGBA8Unorm;
+    desc.usage |= WGPUTextureUsage_RenderAttachment;
+    assert(native_d3d12_texture_descriptor(&desc,&native) && (native.usage & DOE_DX_TEXTURE_RENDER_ATTACHMENT));
+    desc.format=WGPUTextureFormat_R32Uint;
     assert(!native_d3d12_texture_descriptor(&desc,&native));
     doe_resource_texture_copy copy = {.width=2,.height=3,.depth_or_layers=1,.origin={4,5,0},.aspect=WGPUTextureAspect_All};
     doe_dx_texture_region region = {0};

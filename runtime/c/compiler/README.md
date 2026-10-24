@@ -36,6 +36,13 @@ CPU execution is a separate consumer gate; target compilation alone is not that
 execution evidence. No parser, public ABI, work limits or production selector is
 changed by this builtin addition.
 
+Explicit depth sampling now includes `textureSampleLevel` and
+`textureSampleCompareLevel` for depth 2D/array/cube/cube-array handles, including
+constant offsets where WGSL permits them. The [texture contract](TEXTURES.md#explicit-depth-sampling)
+records exact overloads, comparison direction, target mapping and remaining scope.
+`make depth-sampling-check` checks all public target adapters; target SDK validation
+and public CPU execution remain distinct evidence.
+
 ## Build and decisive checks
 
 From the repository root, ordinary source consumption is:

@@ -3,7 +3,7 @@
 #define DOE_DX_NATIVE_H
 #include "../include/doe_d3d12_mesh.h"
 #include "../include/doe_d3d12_texture_regions.h"
-#include "../include/doe_d3d12_dynamic.h"
+#include "../include/doe_d3d12_render.h"
 #if defined(DOE_DX_REQUIRE_WINDOWS) && !defined(_WIN32)
 #error "The native D3D12 build requires a Windows target and actual Windows SDK."
 #endif
@@ -29,6 +29,22 @@ typedef struct doe_dx_native_resources {
     size_t sampler_count;
 } doe_dx_native_resources;
 
+/* Plain copied layout, not a pipeline/refcount/resource owner. */
+typedef struct doe_dx_binding_plan {
+    size_t binding_count,texture_count,sampler_count;
+    doe_dx_binding_layout bindings[DOE_DX_MAX_BINDINGS];
+    doe_dx_texture_binding_layout textures[DOE_DX_MAX_BINDINGS];
+    doe_dx_texture_contract texture_contracts[DOE_DX_MAX_BINDINGS];
+    doe_dx_sampler_layout samplers[DOE_DX_MAX_DYNAMIC_SAMPLERS];
+} doe_dx_binding_plan;
+void doe_dx_binding_plan_copy(doe_dx_binding_plan *,const doe_dx_dynamic_pipeline_desc *);
+typedef struct doe_dx_native_render_draw {
+    doe_dx_native_pipeline *pipeline;
+    doe_dx_native_resources stages[DOE_DX_RENDER_STAGES];
+    uint32_t vertex_count,instance_count,first_vertex,first_instance;
+    float viewport[6];
+    uint32_t scissor[4];
+} doe_dx_native_render_draw;
 typedef struct doe_dx_native_geometry {
     doe_dx_native_binding vertices[DOE_DX_MAX_VERTEX_BUFFERS];
     doe_dx_native_binding indices;
@@ -77,6 +93,10 @@ void doe_dx_native_texture_blit(doe_dx_native_commands *commands,
     uint32_t destination_x, uint32_t destination_y);
 void doe_dx_native_texture_copy(doe_dx_native_commands *commands,
     doe_dx_native_texture *source, doe_dx_native_texture *destination);
+doe_dx_status doe_dx_native_render_create(doe_dx_native_context *,const doe_dx_render_pipeline_desc *,
+    doe_dx_native_pipeline **,doe_dx_error *);
+doe_dx_status doe_dx_native_render(doe_dx_native_commands *,doe_dx_native_texture *,bool,
+    const float [4],bool,const doe_dx_native_render_draw *,size_t,doe_dx_error *);
 doe_dx_status doe_dx_native_graphics_create(doe_dx_native_context *context,
     const doe_dx_mesh_pipeline_desc *desc, doe_dx_native_pipeline **out, doe_dx_error *error);
 doe_dx_status doe_dx_native_draw(doe_dx_native_commands *commands,

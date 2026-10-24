@@ -29,10 +29,21 @@ struct doe_dx_native_texture {
     D3D12_RESOURCE_DESC description;
 };
 struct doe_dx_native_timestamps { ID3D12QueryHeap *heap; };
+typedef struct doe_dx_windows_render_layout {
+    doe_dx_binding_plan stages[DOE_DX_RENDER_STAGES];
+    uint32_t resource_table[DOE_DX_RENDER_STAGES],sampler_table[DOE_DX_RENDER_STAGES];
+    uint32_t resource_offset[DOE_DX_RENDER_STAGES],sampler_offset[DOE_DX_RENDER_STAGES];
+} doe_dx_windows_render_layout;
+typedef struct doe_dx_resource_set {
+    const doe_dx_binding_layout *buffers;
+    const doe_dx_texture_binding_layout *textures;
+    const doe_dx_native_resources *resources;
+} doe_dx_resource_set;
 struct doe_dx_native_pipeline {
     ID3D12RootSignature *root;
     ID3D12PipelineState *state;
     uint32_t resource_table, sampler_table;
+    doe_dx_windows_render_layout *render;
     doe_dx_vertex_layout vertex_buffers[DOE_DX_MAX_VERTEX_BUFFERS];
     doe_dx_binding_layout bindings[DOE_DX_MAX_BINDINGS];
     doe_dx_texture_binding_layout textures[DOE_DX_MAX_BINDINGS];
@@ -69,6 +80,12 @@ void doe_dx_geometry_transition(doe_dx_native_commands *commands, const doe_dx_n
 void doe_dx_bind_geometry(doe_dx_native_commands *commands, doe_dx_native_pipeline *pipeline,
     const doe_dx_native_geometry *geometry, const doe_dx_mesh_draw_desc *draw);
 DXGI_FORMAT doe_dx_texture_format(doe_dx_format format);
+doe_dx_status doe_dx_prepare_sets(doe_dx_native_commands *,const doe_dx_resource_set *,size_t,
+    doe_dx_descriptor_use **,doe_dx_error *);
+void doe_dx_transition_sets(doe_dx_native_commands *,const doe_dx_resource_set *,size_t,bool,bool);
+doe_dx_status doe_dx_prepare_color_target(doe_dx_native_commands *,doe_dx_native_texture *,
+    doe_dx_descriptor_use **,D3D12_CPU_DESCRIPTOR_HANDLE *,doe_dx_error *);
+void doe_dx_graphics_defaults(D3D12_GRAPHICS_PIPELINE_STATE_DESC *,doe_dx_format);
 doe_dx_status doe_dx_prepare_descriptors(doe_dx_native_commands *commands,
     doe_dx_native_pipeline *pipeline, const doe_dx_native_resources *resources,
     doe_dx_descriptor_use **out, doe_dx_error *error);

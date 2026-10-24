@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: MIT */
 #include "d3d12_indirect.h"
 #include "d3d12_texture.h"
+#include "d3d12_graphics_internal.h"
 
 #if defined(_WIN32)
 static native_failure record_clear(native_command_handle *command, const doe_resource_command *record)
@@ -51,6 +52,15 @@ native_failure native_d3d12_record_commands(native_command_handle *commands, doe
         case DOE_COMMAND_DISPATCH_INDIRECT:
             failure = native_d3d12_dispatch_indirect(commands, record);
             break;
+        case DOE_COMMAND_RENDER: {
+            size_t consumed=0;
+            failure=native_d3d12_render(commands,&records[i],count-i,&consumed);
+            if (failure.status==NATIVE_OK) {
+                if (!consumed || consumed>count-i) return native_failure_status(NATIVE_INVALID_STATE);
+                i+=consumed-1;
+            }
+            break;
+        }
         case DOE_COMMAND_BUFFER_TEXTURE:
         case DOE_COMMAND_COPY_TEXTURE:
             failure = native_d3d12_texture_copy(commands,record);

@@ -142,6 +142,30 @@ class Images(unittest.TestCase):
         helper = 'fn load(x:texture_2d<f32>)->vec4f{return textureLoad(x,vec2i(0),0);}'
         self.compile(sampled + helper + ENTRY + '{let x=load(t);}')
 
+    def test_explicit_depth_sampling_and_comparison(self):
+        for shape, coords, layer in [('2d', 'vec2f(0.5)', ''),
+                                     ('2d_array', 'vec2f(0.5)', ',-1i'),
+                                     ('cube', 'vec3f(1,0,0)', ''),
+                                     ('cube_array', 'vec3f(1,0,0)', ',0xffffffffu')]:
+            source = texture('t', 'texture_depth_' + shape) + texture('s', 'sampler', 1) + \
+                texture('c', 'sampler_comparison', 2) + ENTRY
+            code = self.compile(source + '{let d:f32=textureSampleLevel(t,s,' + coords + layer + ',0u);' +
+                'let p:f32=textureSampleCompareLevel(t,c,' + coords + layer + ',0.5);}')
+            self.assertEqual(sum(op == 88 for op, _ in code), 1)
+            self.assertEqual(sum(op == 90 for op, _ in code), 1)
+            self.assertTrue(any(op == 112 for op, _ in code))
+            if shape in ('2d', '2d_array'):
+                code = self.compile(source + '{let d=textureSampleLevel(t,s,' + coords + layer + ',0i,vec2i(-8,7));' +
+                    'let p=textureSampleCompareLevel(t,c,' + coords + layer + ',0.5,vec2i(7,-8));}')
+                constants = {args[1] for op, args in code if op == 44}
+                for op, args in code:
+                    if op in (88, 90):
+                        self.assertEqual(args[4 if op == 88 else 5], 10)
+                        self.assertIn(args[-1], constants)
+        source = texture('t', 'texture_depth_2d') + texture('c', 'sampler_comparison', 1) + ENTRY
+        self.compile(source + '{let p=textureSampleCompareLevel(t,c,vec2f(0.5),0.5,vec2i(8));}', 'outside')
+        self.compile(source + '{let o=vec2i(0);let p=textureSampleCompareLevel(t,c,vec2f(0.5),0.5,o);}', 'const expression')
+
     def test_retained_image_shader(self):
         root = Path(__file__).resolve().parents[4]
         source = (root / 'bench/kernels/texture_sample_to_storage_64.wgsl').read_text()

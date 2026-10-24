@@ -82,8 +82,10 @@ Implemented over current C IR:
   Inclusive scans combine the exclusive result with the already evaluated input;
   integer signed sum/product operations use unsigned bit-preserving arithmetic.
 - ABI6 sampled/depth/multisampled textures, storage textures and samplers use
-  typed HLSL resource objects. Seven image operations cover guarded texel loads,
-  stores, dimensions/mip/layer/sample counts and explicit-LOD sampling. Integer
+  typed HLSL resource objects. Eight image operations cover guarded texel loads,
+  stores, dimensions/mip/layer/sample counts, explicit-LOD depth/color sampling
+  and explicit mip-zero depth comparison. Matching ordinary/comparison sampler
+  types and checked constant depth offsets retain the shared image contract. Integer
   coordinates, layers, LODs and sample indices are independently guarded before
   native access. LOD is range-checked before its dimensions query; array sampling
   clamps the layer. Handle formals retain declared resource identity, not source
@@ -161,7 +163,8 @@ and [structure interpolation](https://learn.microsoft.com/en-us/windows/win32/di
 ## Unfinished surface
 
 Derivative/implicit-LOD texture sampling, gather,
-comparison sampling, texture offsets, external textures, f16, pointer parameters,
+comparison with derivatives, offsets on remaining non-depth sampling overloads,
+external textures, f16, pointer parameters,
 overrides and remaining retained builtin families remain incomplete. New shared
 atomic IR is lowered through the canonical guarded access owner as described below.
 Subgroup size and invocation inputs use WaveGetLaneCount/WaveGetLaneIndex;
@@ -171,12 +174,12 @@ Unknown/obsolete IR operations and unknown numeric builtin identities fail befor
 output. Authored compute/graphics lowering
 is not retained HLSL/DXIL parity or completion of the larger C migration.
 
-The next retained compute texture gaps are `textureSampleCompareLevel` and
-`textureSampleGrad`: `emit_hlsl_texture.zig` maps them to `SampleCmpLevelZero` and
-`SampleGrad`. Existing witnesses are `runtime/zig/tests/core/hlsl_subsystem_test.zig`
-(the compare-level case) and `runtime/zig/tests/wgsl/emit_spirv_builtin_test.zig`
-(the compare-level and explicit-gradient cases). They require new shared typed
-image operations and semantic admission before target lowering. Gather likewise
+The next retained explicit texture gap is `textureSampleGrad`:
+`emit_hlsl_texture.zig` maps it to `SampleGrad`, and
+`runtime/zig/tests/wgsl/emit_spirv_builtin_test.zig` retains its witness.
+Explicit depth comparison now uses the shared IMAGE_SAMPLE_COMPARE_LEVEL
+operation and SampleCmpLevelZero, including the retained compare-level family.
+Gather likewise
 needs exact component semantics: the retained HLSL helper currently emits
 `GatherRed` without selecting the source component; that behavior must not be
 copied as a generic mapping. No target-only builtin spellings are accepted.

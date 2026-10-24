@@ -2,17 +2,11 @@
 #include "d3d12_binding_internal.h"
 #include "d3d12_texture_desc.h"
 
-native_failure native_d3d12_binding_snapshot(const doe_resource_command *record,native_d3d12_snapshot *out)
+native_failure native_d3d12_binding_values(const native_pipeline *pipeline,
+    const native_d3d12_compute *map,const doe_resource_binding *resolved,native_d3d12_snapshot *out)
 {
 #if defined(_WIN32)
-    native_pipeline *pipeline = doe_resource_pipeline_native(record->value.dispatch.pipeline);
-    const native_d3d12_compute *map = pipeline->d3d12_compute;
-    if (!map) return native_failure_status(NATIVE_INVALID_STATE);
-    doe_resource_binding resolved[NATIVE_MAX_PIPELINE_BINDINGS];
-    doe_resource_status resource = native_resolve_resources(pipeline,
-        doe_resource_pipeline_get_layout(record->value.dispatch.pipeline),record->value.dispatch.groups,
-        record->value.dispatch.dynamic_offsets,resolved);
-    if (resource != DOE_RESOURCE_OK) return native_failure_status(NATIVE_INVALID_ARGUMENT);
+    if (!pipeline || !map || !resolved || !out) return native_failure_status(NATIVE_INVALID_ARGUMENT);
     out->values = (doe_dx_dynamic_resources){.resources={.buffers=out->buffers,.buffer_count=map->buffer_count,
         .textures=out->textures,.texture_count=map->texture_count},.samplers=out->samplers,.sampler_count=map->sampler_count};
     out->metadata_index = map->dispatch_index;
@@ -56,6 +50,26 @@ native_failure native_d3d12_binding_snapshot(const doe_resource_command *record,
             return native_failure_status(NATIVE_INVALID_ARGUMENT);
     }
     return native_failure_status(NATIVE_OK);
+#else
+    (void)pipeline;
+    (void)map;
+    (void)resolved;
+    (void)out;
+    return native_failure_status(NATIVE_UNAVAILABLE);
+#endif
+}
+
+native_failure native_d3d12_binding_snapshot(const doe_resource_command *record,native_d3d12_snapshot *out)
+{
+#if defined(_WIN32)
+    native_pipeline *pipeline=doe_resource_pipeline_native(record->value.dispatch.pipeline);
+    if (!pipeline || !pipeline->d3d12_compute) return native_failure_status(NATIVE_INVALID_STATE);
+    doe_resource_binding resolved[NATIVE_MAX_PIPELINE_BINDINGS];
+    doe_resource_status resource=native_resolve_resources(pipeline,
+        doe_resource_pipeline_get_layout(record->value.dispatch.pipeline),record->value.dispatch.groups,
+        record->value.dispatch.dynamic_offsets,resolved);
+    if (resource!=DOE_RESOURCE_OK) return native_failure_status(NATIVE_INVALID_ARGUMENT);
+    return native_d3d12_binding_values(pipeline,pipeline->d3d12_compute,resolved,out);
 #else
     (void)record;
     (void)out;

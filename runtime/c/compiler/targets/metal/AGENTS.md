@@ -56,3 +56,10 @@ only while its observed value still equals the saved comparison; never replay
 operands. Initialize selected workgroup atomic trees in place before the existing
 barrier; never copy atomic-containing aggregates through by-value helpers. Keep
 SDK source compilation and physical execution evidence distinct.
+
+Explicit depth sampling consumes the common image operation and existing handle
+flags: ordinary sampling uses an integer WGSL LOD and scalar result; comparison
+sampling uses a comparison sampler, saved depth reference and explicit mip zero.
+Keep 2D optional offsets attached to their validated constant IR/DAG identity,
+never a replayed expression or runtime local. Cube variants have no offset.
+Target-native packed coordinates must retain the separately clamped array layer.

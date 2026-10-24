@@ -41,6 +41,9 @@ struct doe_dx_timestamps {
     size_t owner_index;
     uint64_t initialized;
 };
+typedef struct doe_dx_render_layout {
+    doe_dx_binding_plan stages[DOE_DX_RENDER_STAGES];
+} doe_dx_render_layout;
 struct doe_dx_pipeline {
     doe_dx_context *context;
     doe_dx_native_pipeline *native;
@@ -49,6 +52,7 @@ struct doe_dx_pipeline {
     doe_dx_texture_contract texture_contracts[DOE_DX_MAX_BINDINGS];
     doe_dx_sampler_layout samplers[DOE_DX_MAX_DYNAMIC_SAMPLERS];
     bool graphics;
+    doe_dx_render_layout *render; /* Owned plain metadata on this pipeline. */
     doe_dx_format color_format;
     bool depth_enabled;
     size_t vertex_buffer_count;
@@ -99,6 +103,13 @@ typedef struct doe_dx_reservation {
 doe_dx_status doe_dx_reserve_uses(doe_dx_commands *commands,
     doe_dx_reservation needed, doe_dx_error *error);
 
+doe_dx_status doe_dx_validate_layout(const doe_dx_context *,const doe_dx_resource_pipeline_desc *,
+    const doe_dx_dynamic_pipeline_desc *);
+void doe_dx_binding_plan_copy(doe_dx_binding_plan *,const doe_dx_dynamic_pipeline_desc *);
+doe_dx_status doe_dx_prepare_binding_plan(doe_dx_commands *,const doe_dx_binding_plan *,
+    const doe_dx_dynamic_resources *,doe_dx_native_resources *,doe_dx_reservation *,doe_dx_error *);
+doe_dx_status doe_dx_stage_aliases(const doe_dx_binding_plan *,const doe_dx_dynamic_resources *,
+    const doe_dx_binding_plan *,const doe_dx_dynamic_resources *);
 uint32_t doe_dx_vertex_format_size(doe_dx_vertex_format format);
 doe_dx_status doe_dx_validate_mesh(const doe_dx_mesh_pipeline_desc *desc, uint32_t *ends);
 doe_dx_status doe_dx_prepare_geometry(doe_dx_commands *commands, doe_dx_pipeline *pipeline,

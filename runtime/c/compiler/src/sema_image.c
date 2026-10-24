@@ -74,7 +74,7 @@ uint32_t image_builtin_kind(const Source *s, NameSpan name) {
         {"textureLoad", IMAGE_LOAD}, {"textureStore", IMAGE_STORE},
         {"textureDimensions", IMAGE_DIMENSIONS}, {"textureNumLevels", IMAGE_LEVELS},
         {"textureNumLayers", IMAGE_LAYERS}, {"textureNumSamples", IMAGE_SAMPLES},
-        {"textureSampleLevel", IMAGE_SAMPLE_LEVEL}
+        {"textureSampleLevel", IMAGE_SAMPLE_LEVEL}, {"textureSampleCompareLevel", IMAGE_SAMPLE_COMPARE_LEVEL}
     };
     for (size_t i = 0u; i < sizeof(builtins) / sizeof(builtins[0]); ++i)
         if (source_span_is(s, name, builtins[i].name)) {
@@ -114,10 +114,14 @@ TypeId sema_image_result(Source *s, const Expression *node, const TypeRecord *t,
         case IMAGE_SAMPLES:
             if (!multisampled) goto invalid;
             break;
+        case IMAGE_SAMPLE_COMPARE_LEVEL:
+            if ((image.flags & DOE_COMPILER_HANDLE_DEPTH) == 0u) goto invalid;
+            /* fall through */
         case IMAGE_SAMPLE_LEVEL:
-            if (storage || multisampled || t->element != IR_F32 || (image.flags & DOE_COMPILER_HANDLE_DEPTH) != 0u) goto invalid;
+            if (storage || multisampled || t->element != IR_F32) goto invalid;
             arity = 4u + (arrayed ? 1u : 0u);
-            width = 4u;
+            if ((image.flags & DOE_COMPILER_HANDLE_DEPTH) != 0u && !cube && node->right == arity + 1u) ++arity;
+            width = (image.flags & DOE_COMPILER_HANDLE_DEPTH) != 0u ? 1u : 4u;
             scalar = IR_F32;
             break;
     }
@@ -129,27 +133,50 @@ invalid:
     (void)source_error(s, DOE_COMPILER_SEMANTIC_ERROR, node->source_offset, "no matching texture builtin overload");
     return NO_ID;
 }
+/* Offsets are const expressions even in a skipped runtime branch. This query
+ * does not evaluate source or add a recursive semantic frame. */
+bool sema_image_evaluate(const CompilerWorkspace *c, TypeId texture, ImageOperation op, uint32_t index, bool evaluate) {
+    return evaluate || ((op == IMAGE_SAMPLE_LEVEL || op == IMAGE_SAMPLE_COMPARE_LEVEL) && texture >= 7u &&
+        index == 4u + (image_arrayed(c->types[texture - 7u].state.image.dimension) ? 1u : 0u));
+}
 bool sema_image_argument(Source *s, const TypeRecord *texture, ImageOperation op, uint32_t index,
                            ExpressionValue *value) {
     const ImageType image = texture->state.image;
-    if (op == IMAGE_SAMPLE_LEVEL && index == 1u) {
+    const bool sampling = op == IMAGE_SAMPLE_LEVEL || op == IMAGE_SAMPLE_COMPARE_LEVEL;
+    const bool compare = op == IMAGE_SAMPLE_COMPARE_LEVEL;
+    const bool depth = (image.flags & DOE_COMPILER_HANDLE_DEPTH) != 0u;
+    if (sampling && index == 1u) {
         const TypeId type = value->constant.type;
         if (!type_handle(s->compiler, type) || s->compiler->types[type - 7u].kind != TYPE_SAMPLER ||
-            s->compiler->types[type - 7u].state.image.flags != 0u)
-            return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, value->value.source_offset, "sampling requires a non-comparison sampler");
+            s->compiler->types[type - 7u].state.image.flags != (compare ? DOE_COMPILER_HANDLE_COMPARISON : 0u))
+            return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, value->value.source_offset, "sampling sampler kind differs from the texture operation");
         return true;
     }
-    const uint32_t coordinate = op == IMAGE_SAMPLE_LEVEL ? 2u : 1u;
+    const uint32_t coordinate = sampling ? 2u : 1u;
     const bool data = op == IMAGE_STORE && index == 2u + (image_arrayed(image.dimension) ? 1u : 0u);
-    const bool is_coordinate = (op == IMAGE_LOAD || op == IMAGE_STORE || op == IMAGE_SAMPLE_LEVEL) && index == coordinate;
-    const bool level = op == IMAGE_SAMPLE_LEVEL && index == 3u + (image_arrayed(image.dimension) ? 1u : 0u);
-    const uint32_t width = data ? 4u : is_coordinate ? image_coordinate_width(image.dimension) : 1u;
-    TypeId scalar = data ? texture->element : (level || (is_coordinate && op == IMAGE_SAMPLE_LEVEL)) ? IR_F32 : IR_I32;
+    const bool is_coordinate = (op == IMAGE_LOAD || op == IMAGE_STORE || sampling) && index == coordinate;
+    const bool level = sampling && index == 3u + (image_arrayed(image.dimension) ? 1u : 0u);
+    const bool offset = sampling && index == 4u + (image_arrayed(image.dimension) ? 1u : 0u);
+    const uint32_t width = offset ? 2u : data ? 4u : is_coordinate ? image_coordinate_width(image.dimension) : 1u;
+    TypeId scalar = data ? texture->element :
+        ((level && (compare || !depth)) || (is_coordinate && sampling)) ? IR_F32 : IR_I32;
     const TypeId original = type_leaf(s->compiler, value->constant.type);
-    if (scalar == IR_I32 && original == IR_U32) scalar = IR_U32;
+    if (!offset && scalar == IR_I32 && original == IR_U32) scalar = IR_U32;
     TypeId expected = scalar;
     if (width != 1u && !type_intern(s, TYPE_VECTOR, scalar, width, &expected)) return false;
-    return sema_materialize(s, value, expected);
+    if (!sema_materialize(s, value, expected)) return false;
+    if (!offset) return true;
+    if (!value->known || value->runtime || value->overridable)
+        return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, value->value.source_offset, "texture offset requires a const expression");
+    for (uint32_t i = 0u; i < 2u; ++i) {
+        ConstantValue lane;
+        if (!constant_project(s, value->constant, i, &lane)) return false;
+        const uint32_t bits = (uint32_t)lane.bits;
+        if (bits > 7u && bits < UINT32_MAX - 7u)
+            return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, value->value.source_offset, "texture offset component is outside [-8,7]");
+    }
+    value->value.id = 0u;
+    return true;
 }
 bool sema_image_auxiliaries(Source *s, TypeId texture, ImageOperation op) {
     const TypeRecord *t = &s->compiler->types[texture - 7u];
@@ -161,7 +188,7 @@ bool sema_image_auxiliaries(Source *s, TypeId texture, ImageOperation op) {
     if (query != 1u && !type_intern(s, TYPE_VECTOR, IR_U32, query, &ignored)) return false;
     if ((op == IMAGE_LOAD || op == IMAGE_STORE) && width != 1u &&
         !type_intern(s, TYPE_VECTOR, IR_U32, width, &ignored)) return false;
-    if (op == IMAGE_LOAD && !type_intern(s, TYPE_VECTOR, t->element, 4u, &ignored)) return false;
-    return op != IMAGE_SAMPLE_LEVEL || !image_arrayed(dimension) ||
+    if ((op == IMAGE_LOAD || op == IMAGE_SAMPLE_LEVEL) && !type_intern(s, TYPE_VECTOR, t->element, 4u, &ignored)) return false;
+    return (op != IMAGE_SAMPLE_LEVEL && op != IMAGE_SAMPLE_COMPARE_LEVEL) || !image_arrayed(dimension) ||
         type_intern(s, TYPE_VECTOR, IR_F32, width + 1u, &ignored);
 }

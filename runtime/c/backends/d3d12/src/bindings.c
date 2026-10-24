@@ -7,10 +7,10 @@ static bool overlapping(const doe_dx_buffer_binding *a, const doe_dx_buffer_bind
 }
 
 /* Shared graphics/compute resource rules: validation only, no publication. */
-doe_dx_status doe_dx_prepare_dynamic_resources(doe_dx_commands *commands, doe_dx_pipeline *pipeline,
+doe_dx_status doe_dx_prepare_binding_plan(doe_dx_commands *commands,const doe_dx_binding_plan *plan,
     const doe_dx_dynamic_resources *values, doe_dx_native_resources *native,
     doe_dx_reservation *needed, doe_dx_error *error) {
-    if (!pipeline || !values)
+    if (!plan || !values)
         return doe_dx_fail(DOE_DX_INVALID_ARGUMENT, 0, "commands.resources", error);
     const doe_dx_compute_resources *resources = &values->resources;
     doe_dx_status status;
@@ -18,25 +18,21 @@ doe_dx_status doe_dx_prepare_dynamic_resources(doe_dx_commands *commands, doe_dx
     size_t binding_count = resources->buffer_count;
     if ((binding_count && !bindings) || (resources->texture_count && !resources->textures))
         return doe_dx_fail(DOE_DX_INVALID_ARGUMENT, 0, "commands.bindings", error);
-    if (pipeline->context != commands->context)
-        return doe_dx_fail(DOE_DX_DEVICE_MISMATCH, 0, "commands.bindings", error);
-    if (binding_count != pipeline->binding_count || resources->texture_count != pipeline->texture_count)
+    if (binding_count != plan->binding_count || resources->texture_count != plan->texture_count)
         return doe_dx_fail(DOE_DX_INVALID_ARGUMENT, 0, "commands.bindings.bindings", error);
-    if (pipeline->references == UINT32_MAX)
-        return doe_dx_fail(DOE_DX_RANGE, 0, "commands.pipeline_references", error);
-    if (values->sampler_count != pipeline->sampler_count || (values->sampler_count && !values->samplers))
+    if (values->sampler_count != plan->sampler_count || (values->sampler_count && !values->samplers))
         return doe_dx_fail(DOE_DX_INVALID_ARGUMENT,0,"commands.samplers",error);
     for (size_t index = 0; index < values->sampler_count; ++index) {
         status = doe_dx_sampler_validate(&values->samplers[index]);
         if (status != DOE_DX_OK) return doe_dx_fail(status,0,"commands.sampler.values",error);
-        if ((values->samplers[index].compare != DOE_DX_SAMPLER_NO_COMPARE) != pipeline->samplers[index].comparison)
+        if ((values->samplers[index].compare != DOE_DX_SAMPLER_NO_COMPARE) != plan->samplers[index].comparison)
             return doe_dx_fail(DOE_DX_INVALID_ARGUMENT,0,"commands.sampler.comparison",error);
         native->samplers[index] = values->samplers[index];
     }
     native->sampler_count = values->sampler_count;
     native->buffer_count = binding_count;
     native->texture_count = resources->texture_count;
-    *needed = (doe_dx_reservation){.pipelines=1};
+    *needed = (doe_dx_reservation){0};
     for (size_t index = 0; index < binding_count; index++) {
         const doe_dx_buffer_binding *binding = &bindings[index];
         doe_dx_buffer *buffer = binding->buffer;
@@ -46,7 +42,7 @@ doe_dx_status doe_dx_prepare_dynamic_resources(doe_dx_commands *commands, doe_dx
             return doe_dx_fail(DOE_DX_UNSUPPORTED, 0, "commands.bindings.heap", error);
         if (!binding->size || !doe_dx_range(buffer->size, binding->offset, binding->size))
             return doe_dx_fail(DOE_DX_RANGE, 0, "commands.bindings.range", error);
-        const doe_dx_binding_layout *layout = &pipeline->bindings[index];
+        const doe_dx_binding_layout *layout = &plan->bindings[index];
         if (doe_dx_buffer_descriptor_kind(layout) == DOE_DX_DESCRIPTOR_CBV) {
             if (binding->offset % commands->context->caps.limits.uniform_offset_alignment ||
                 binding->size % commands->context->caps.limits.uniform_offset_alignment)
@@ -65,7 +61,7 @@ doe_dx_status doe_dx_prepare_dynamic_resources(doe_dx_commands *commands, doe_dx
             if (bindings[prior].buffer != buffer) continue;
             repeated = true;
             bool writable = doe_dx_buffer_descriptor_kind(layout) == DOE_DX_DESCRIPTOR_UAV;
-            bool other_writable = doe_dx_buffer_descriptor_kind(&pipeline->bindings[prior]) == DOE_DX_DESCRIPTOR_UAV;
+            bool other_writable = doe_dx_buffer_descriptor_kind(&plan->bindings[prior]) == DOE_DX_DESCRIPTOR_UAV;
             if (writable != other_writable || (writable && overlapping(binding, &bindings[prior])))
                 return doe_dx_fail(DOE_DX_UNSUPPORTED, 0, "commands.bindings.alias", error);
         }
@@ -74,8 +70,8 @@ doe_dx_status doe_dx_prepare_dynamic_resources(doe_dx_commands *commands, doe_dx
     }
     for (size_t index = 0; index < resources->texture_count; index++) {
         doe_dx_texture *texture = resources->textures[index];
-        const doe_dx_texture_binding_layout *layout = &pipeline->textures[index];
-        const doe_dx_texture_contract *contract = &pipeline->texture_contracts[index];
+        const doe_dx_texture_binding_layout *layout = &plan->textures[index];
+        const doe_dx_texture_contract *contract = &plan->texture_contracts[index];
         uint32_t usage = contract->storage || layout->access == DOE_DX_READ_WRITE ?
             DOE_DX_TEXTURE_STORAGE : DOE_DX_TEXTURE_SAMPLED;
         status = doe_dx_texture_preflight(commands, texture, usage, true);
@@ -90,13 +86,29 @@ doe_dx_status doe_dx_prepare_dynamic_resources(doe_dx_commands *commands, doe_dx
         for (size_t prior = 0; prior < index; prior++) {
             if (resources->textures[prior] != texture) continue;
             repeated = true;
-            if (layout->access != DOE_DX_READ_ONLY || pipeline->textures[prior].access != DOE_DX_READ_ONLY)
+            if (layout->access != DOE_DX_READ_ONLY || plan->textures[prior].access != DOE_DX_READ_ONLY)
                 return doe_dx_fail(DOE_DX_UNSUPPORTED,0,"commands.bindings.texture_alias",error);
         }
         if (!repeated && !doe_dx_find_texture(commands, texture)) needed->textures++;
         native->textures[index] = texture->native;
     }
     return DOE_DX_OK;
+}
+
+doe_dx_status doe_dx_prepare_dynamic_resources(doe_dx_commands *commands,doe_dx_pipeline *pipeline,
+    const doe_dx_dynamic_resources *values,doe_dx_native_resources *native,
+    doe_dx_reservation *needed,doe_dx_error *error) {
+    if (!pipeline || pipeline->render) return doe_dx_fail(DOE_DX_INVALID_ARGUMENT,0,"commands.pipeline",error);
+    if (pipeline->context != commands->context) return doe_dx_fail(DOE_DX_DEVICE_MISMATCH,0,"commands.pipeline",error);
+    if (pipeline->references == UINT32_MAX) return doe_dx_fail(DOE_DX_RANGE,0,"commands.pipeline_references",error);
+    const doe_dx_dynamic_pipeline_desc desc = {.resources={.buffers={.bindings=pipeline->bindings,
+        .binding_count=pipeline->binding_count},.textures=pipeline->textures,.texture_count=pipeline->texture_count},
+        .texture_contracts=pipeline->texture_contracts,.samplers=pipeline->samplers,.sampler_count=pipeline->sampler_count};
+    doe_dx_binding_plan plan;
+    doe_dx_binding_plan_copy(&plan,&desc);
+    doe_dx_status status = doe_dx_prepare_binding_plan(commands,&plan,values,native,needed,error);
+    if (status == DOE_DX_OK) needed->pipelines=1;
+    return status;
 }
 
 doe_dx_status doe_dx_prepare_resources(doe_dx_commands *commands,doe_dx_pipeline *pipeline,
@@ -116,4 +128,21 @@ void doe_dx_use_resources(doe_dx_commands *commands, doe_dx_pipeline *pipeline,
     if (commands->pipeline_count >= commands->pipeline_capacity) abort();
     pipeline->references++;
     commands->pipelines[commands->pipeline_count++] = pipeline;
+}
+
+/* Cross-stage aliases use the same allocation/range classes as one stage. */
+doe_dx_status doe_dx_stage_aliases(const doe_dx_binding_plan *a,const doe_dx_dynamic_resources *av,
+    const doe_dx_binding_plan *b,const doe_dx_dynamic_resources *bv) {
+    for (size_t i=0;i<a->binding_count;++i) for (size_t j=0;j<b->binding_count;++j) {
+        const doe_dx_buffer_binding *x=&av->resources.buffers[i],*y=&bv->resources.buffers[j];
+        if (x->buffer != y->buffer) continue;
+        bool x_write=doe_dx_buffer_descriptor_kind(&a->bindings[i])==DOE_DX_DESCRIPTOR_UAV;
+        bool y_write=doe_dx_buffer_descriptor_kind(&b->bindings[j])==DOE_DX_DESCRIPTOR_UAV;
+        if (x_write != y_write || (x_write && overlapping(x,y))) return DOE_DX_UNSUPPORTED;
+    }
+    for (size_t i=0;i<a->texture_count;++i) for (size_t j=0;j<b->texture_count;++j)
+        if (av->resources.textures[i]==bv->resources.textures[j] &&
+            (a->textures[i].access!=DOE_DX_READ_ONLY || b->textures[j].access!=DOE_DX_READ_ONLY))
+            return DOE_DX_UNSUPPORTED;
+    return DOE_DX_OK;
 }

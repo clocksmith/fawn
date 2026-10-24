@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: MIT */
 #include "render_internal.h"
 #include "metal_frontend.h"
+#include "d3d12_graphics_internal.h"
 #include <stdlib.h>
 
 static bool vertices(const WGPUVertexState *source, doe_vk_render_pipeline_desc *native,
@@ -130,7 +131,8 @@ WGPURenderPipeline native_create_render_pipeline(native_device *device,
     *error = (native_pipeline_error){WGPUErrorType_Validation,"render descriptor or selected backend unsupported"};
     if (!device || !descriptor || descriptor->nextInChain || descriptor->vertex.nextInChain ||
         (descriptor->fragment && descriptor->fragment->nextInChain) ||
-        (device->backend.kind != WGPUBackendType_Vulkan && device->backend.kind != WGPUBackendType_Metal)) return NULL;
+        (device->backend.kind != WGPUBackendType_Vulkan && device->backend.kind != WGPUBackendType_Metal &&
+         device->backend.kind != WGPUBackendType_D3D12)) return NULL;
     native_device_retain(device);
     native_stage stages[2] = {0};
     const WGPUFragmentState *fragment = descriptor->fragment;
@@ -142,6 +144,8 @@ WGPURenderPipeline native_create_render_pipeline(native_device *device,
             DOE_COMPILER_STAGE_FRAGMENT,fragment->constants,fragment->constantCount,&stages[1],error))) {
         pipeline = device->backend.kind == WGPUBackendType_Metal ?
             native_metal_create_render_pipeline(device,descriptor,stages,count,error) :
+            device->backend.kind==WGPUBackendType_D3D12 ?
+            native_d3d12_create_render_pipeline(device,descriptor,stages,count,error) :
             create_vulkan_render_pipeline(device,descriptor,stages,count,error);
     }
     for (size_t i = 0; i < count; ++i) native_stage_release(&stages[i]);

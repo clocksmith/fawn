@@ -4,8 +4,8 @@
  * texture_2d<f32> over an explicit unfilterable-float layout, stencil as
  * texture_2d<u32> through a StencilOnly view, DepthOnly views of a combined
  * format, texture_depth_cube dimensions, and comparison-sampler binding
- * admission. Comparison sampling builtins are absent from the compiler, so
- * their pass/fail oracle is not part of this client. */
+ * admission. The separate depth_comparison.c client owns the explicit-level
+ * comparison sampling oracle. */
 #include "consumer.h"
 
 enum { WIDTH = 4, HEIGHT = 2, TEXELS = WIDTH * HEIGHT, SLOT = 256, SLOTS = 8 };
@@ -312,6 +312,6 @@ int main(void)
     wgpuRenderPipelineRelease(f.d32_writer);
     wgpuRenderPipelineRelease(f.d24s8_writer);
     consumer_finish(&s);
-    printf("PASS public depth/stencil sampling: rendered depth32float and depth24plus-stencil8 DepthOnly maps via texture_depth_2d (automatic depth layout) and texture_2d<f32> (explicit unfilterable-float), StencilOnly as texture_2d<u32>, two-layer texture_depth_2d_array, texture_depth_cube dimensions, comparison-sampler binding admission, 7 view/binding/creation controls, early releases; exact 48 depth values, 8 stencil values and 2 dimensions (no comparison sampling: compiler lacks the builtins) %s\n",
+    printf("PASS public depth/stencil sampling: rendered depth32float and depth24plus-stencil8 DepthOnly maps via texture_depth_2d (automatic depth layout) and texture_2d<f32> (explicit unfilterable-float), StencilOnly as texture_2d<u32>, two-layer texture_depth_2d_array, texture_depth_cube dimensions, comparison-sampler binding admission, 7 view/binding/creation controls, early releases; exact 48 depth values, 8 stencil values and 2 dimensions (comparison sampling has its own depth-comparison control) %s\n",
         adapter_class_scope());
 }

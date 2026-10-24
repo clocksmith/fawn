@@ -172,14 +172,10 @@ int main(void)
 {
     state s = {0}; consumer_init(&s);
     compute_cases(&s);
-    WGPUAdapterInfo info = WGPU_ADAPTER_INFO_INIT;
-    assert(wgpuAdapterGetInfo(s.adapter,&info) == WGPUStatus_Success);
-    bool graphics = info.backendType != WGPUBackendType_D3D12;
-    wgpuAdapterInfoFreeMembers(info);
-    if (graphics) graphics_cases(&s);
+    graphics_cases(&s);
     consumer_finish(&s);
     printf("PASS public pipeline overrides: module validation/source ownership, selected sibling isolation, "
         "three immutable typed specializations, 3/7/2-element workgroup arrays, skipped supplied default, "
-        "key/value failures and early release; exact26words; graphics=%s %s\n",
-        graphics ? "separate vertex/fragment overrides, exact8pixels+padding" : "D3D12 path uncomposed",adapter_class_scope());
+        "key/value failures and early release; exact26words; separate vertex/fragment overrides, "
+        "exact8pixels+padding %s\n",adapter_class_scope());
 }

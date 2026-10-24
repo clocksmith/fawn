@@ -8,7 +8,7 @@ on:
         required: true
         type: string
       run_public_warp:
-        description: Execute public native compute and compact uniforms on explicit CPU WARP
+        description: Execute selected public native compute and graphics controls on explicit CPU WARP
         required: false
         default: false
         type: boolean
@@ -107,7 +107,7 @@ jobs:
           $env:OUT = Join-Path $env:EVIDENCE_ROOT 'd3d12-sdk'
           New-Item -ItemType Directory -Force $env:OUT | Out-Null
           $owner = Join-Path $env:GITHUB_WORKSPACE 'runtime/c/backends/d3d12'
-          $command = 'call "' + $env:DEVCMD + '" -arch=x64 >nul && call build_windows.cmd && "' + $env:OUT + '\test_windows_caps.exe" && "' + $env:OUT + '\test_windows_texture_regions.exe" && "' + $env:OUT + '\test_windows_sampled.exe"'
+          $command = 'call "' + $env:DEVCMD + '" -arch=x64 >nul && call build_windows.cmd && "' + $env:OUT + '\test_windows_caps.exe" && "' + $env:OUT + '\test_windows_texture_regions.exe" && "' + $env:OUT + '\test_windows_sampled.exe" && "' + $env:OUT + '\test_windows_render.exe"'
           Push-Location $owner
           try {
             & cmd.exe /d /s /c $command 2>&1 | Tee-Object "$env:EVIDENCE_ROOT/d3d12-sdk.log"
@@ -144,7 +144,7 @@ jobs:
           $selectRetained = Join-Path $env:GITHUB_WORKSPACE 'runtime/c/compiler/tests/select_retained.wgsl'
           $selectCases = Join-Path $env:GITHUB_WORKSPACE 'runtime/c/compiler/tests/select_cases.wgsl'
           $fixtureSources = @{ 'atomic_operations.wgsl'=$atomicSource; 'select_retained.wgsl'=$selectRetained; 'select_cases.wgsl'=$selectCases }
-          foreach ($name in @('compute', 'uniform_standard', 'binding_aliases', 'command_resources', 'indirect_dispatch', 'atomics', 'atomic_operations', 'texture_transfers', 'texture_bindings', 'pipeline_overrides', 'select')) {
+          foreach ($name in @('compute', 'uniform_standard', 'binding_aliases', 'command_resources', 'indirect_dispatch', 'atomics', 'atomic_operations', 'texture_transfers', 'texture_bindings', 'pipeline_overrides', 'select', 'd3d12_graphics')) {
             $source = Join-Path $native ('tests/' + $name + '.c')
             $executable = Join-Path $output ($name + '.exe')
             $object = Join-Path $output ($name + '.obj')
@@ -155,7 +155,7 @@ jobs:
             if ($name -eq 'select') { $runCommand += ' "' + $selectRetained + '" "' + $selectCases + '"' }
             $lines += @('if not "%errorlevel%"=="0" exit /b 1', $runCommand, 'if not "%errorlevel%"=="0" exit /b 1')
           }
-          $consumerSources = @('compute.c', 'uniform_standard.c', 'binding_aliases.c', 'command_resources.c', 'indirect_dispatch.c', 'atomics.c', 'atomic_operations.c', 'texture_transfers.c', 'texture_bindings.c', 'pipeline_overrides.c', 'select.c', 'consumer.h', 'adapter_class.h')
+          $consumerSources = @('compute.c', 'uniform_standard.c', 'binding_aliases.c', 'command_resources.c', 'indirect_dispatch.c', 'atomics.c', 'atomic_operations.c', 'texture_transfers.c', 'texture_bindings.c', 'pipeline_overrides.c', 'select.c', 'd3d12_graphics.c', 'consumer.h', 'adapter_class.h')
           $sourceHashes = @{}
           foreach ($name in $consumerSources) {
             $source = Join-Path $native ('tests/' + $name)
