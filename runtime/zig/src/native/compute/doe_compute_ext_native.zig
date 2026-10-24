@@ -325,6 +325,7 @@ pub export fn doeNativeComputePassEnd(raw: ?*anyopaque) callconv(.c) void {
     const pass = cast(DoeComputePass, raw) orelse return;
     if (!recording.requirePass(pass.enc, @intFromPtr(pass))) return;
     defer recording.endPass(pass.enc, @intFromPtr(pass));
+    pass.debug_groups.requireBalanced() catch |err| recording.fail(pass.enc, err);
     const query_set = pass.timestamp_end_query_set orelse return;
     const write_index = pass.timestamp_end_write_index;
     pass.timestamp_end_query_set = null;
@@ -336,7 +337,7 @@ pub export fn doeNativeComputePassEnd(raw: ?*anyopaque) callconv(.c) void {
 }
 
 // ============================================================
-// Debug markers — no-ops in headless runtime; symbols required for API surface completeness.
+// Debug markers: labels are not forwarded to a backend; group balance is validated.
 // ============================================================
 
 pub export fn doeNativeComputePassInsertDebugMarker(
@@ -354,14 +355,15 @@ pub export fn doeNativeComputePassPushDebugGroup(
     _: usize,
 ) callconv(.c) void {
     const object = cast(DoeComputePass, raw) orelse return;
-    _ = recording.requirePass(object.enc, @intFromPtr(object));
+    if (recording.requirePass(object.enc, @intFromPtr(object))) object.debug_groups.push();
 }
 
 pub export fn doeNativeComputePassPopDebugGroup(
     raw: ?*anyopaque,
 ) callconv(.c) void {
     const object = cast(DoeComputePass, raw) orelse return;
-    _ = recording.requirePass(object.enc, @intFromPtr(object));
+    if (!recording.requirePass(object.enc, @intFromPtr(object))) return;
+    object.debug_groups.pop() catch |err| recording.fail(object.enc, err);
 }
 
 pub export fn doeNativeComputePassRelease(raw: ?*anyopaque) callconv(.c) void {

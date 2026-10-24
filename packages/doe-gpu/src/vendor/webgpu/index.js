@@ -1499,18 +1499,21 @@ const nodeEncoderBackend = {
     if (typeof addon.computePassPushDebugGroup !== 'function') {
       throw unsupportedNodeDeviceCapability('GPUComputePassEncoder.pushDebugGroup');
     }
+    materializeLazyComputePass(pass);
     addon.computePassPushDebugGroup(pass._native, label);
   },
   computePassPopDebugGroup(pass) {
     if (typeof addon.computePassPopDebugGroup !== 'function') {
       throw unsupportedNodeDeviceCapability('GPUComputePassEncoder.popDebugGroup');
     }
+    materializeLazyComputePass(pass);
     addon.computePassPopDebugGroup(pass._native);
   },
   computePassInsertDebugMarker(pass, label) {
     if (typeof addon.computePassInsertDebugMarker !== 'function') {
       throw unsupportedNodeDeviceCapability('GPUComputePassEncoder.insertDebugMarker');
     }
+    materializeLazyComputePass(pass);
     addon.computePassInsertDebugMarker(pass._native, label);
   },
   renderPassEnd(pass) {

@@ -63,17 +63,15 @@ pub export fn wgpuCommandBufferSetLabel(a0: abi_core.WGPUCommandBuffer, a1: abi_
 }
 
 pub export fn wgpuCommandEncoderInsertDebugMarker(a0: abi_core.WGPUCommandEncoder, a1: abi_core.WGPUStringView) callconv(.c) void {
-    _ = a0;
-    _ = a1;
+    native.doeNativeCommandEncoderInsertDebugMarker(a0, if (a1.data) |d| d else null, a1.length);
 }
 
 pub export fn wgpuCommandEncoderPopDebugGroup(a0: abi_core.WGPUCommandEncoder) callconv(.c) void {
-    _ = a0;
+    native.doeNativeCommandEncoderPopDebugGroup(a0);
 }
 
 pub export fn wgpuCommandEncoderPushDebugGroup(a0: abi_core.WGPUCommandEncoder, a1: abi_core.WGPUStringView) callconv(.c) void {
-    _ = a0;
-    _ = a1;
+    native.doeNativeCommandEncoderPushDebugGroup(a0, if (a1.data) |d| d else null, a1.length);
 }
 
 pub export fn wgpuCommandEncoderSetLabel(a0: abi_core.WGPUCommandEncoder, a1: abi_core.WGPUStringView) callconv(.c) void {

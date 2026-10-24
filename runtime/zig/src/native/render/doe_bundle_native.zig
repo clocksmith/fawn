@@ -304,6 +304,7 @@ pub export fn doeNativeRenderBundleEncoderFinish(
 ) callconv(.c) ?*anyopaque {
     _ = desc;
     const enc = bundle.cast_bundle_encoder(enc_raw) orelse return null;
+    if (enc.state == .open) enc.debug_groups.requireBalanced() catch |err| failBundle(enc, err);
     switch (enc.state) {
         .failed => |cause| deliverBundleError(enc, cause),
         else => _ = requireBundleOpen(enc),
@@ -376,6 +377,18 @@ test "bundle encoder errors surface at finish, not at the failing command" {
     try std.testing.expectEqual(error_scope.ERROR_TYPE_VALIDATION, device.error_scopes.scopes[0].captured.?.error_type);
 }
 
+test "bundle debug groups must be balanced at finish" {
+    for ([_][2]u32{ .{ 1, 1 }, .{ 1, 0 }, .{ 0, 1 } }) |counts| {
+        const encoder = bundle.make_bundle_encoder(std.testing.allocator, 0, 0, 1, false, false) orelse return error.OutOfMemory;
+        defer doeNativeRenderBundleEncoderRelease(toOpaque(encoder));
+        for (0..counts[0]) |_| doeNativeRenderBundleEncoderPushDebugGroup(toOpaque(encoder), "g", 1);
+        for (0..counts[1]) |_| doeNativeRenderBundleEncoderPopDebugGroup(toOpaque(encoder));
+        const result = doeNativeRenderBundleEncoderFinish(toOpaque(encoder), null).?;
+        defer doeNativeRenderBundleRelease(result);
+        try std.testing.expectEqual(counts[0] != counts[1], bundle.cast_bundle(result).?.error_object);
+    }
+}
+
 test "failed bundle cannot replay into a valid command recording" {
     var failing = std.testing.FailingAllocator.init(std.testing.allocator, .{});
     const encoder = bundle.make_bundle_encoder(failing.allocator(), 0, 0, 1, false, false).?;
@@ -432,14 +445,15 @@ pub export fn doeNativeRenderBundleEncoderPushDebugGroup(
     _: usize,
 ) callconv(.c) void {
     const object = bundle.cast_bundle_encoder(raw) orelse return;
-    _ = requireBundleOpen(object);
+    if (requireBundleOpen(object)) object.debug_groups.push();
 }
 
 pub export fn doeNativeRenderBundleEncoderPopDebugGroup(
     raw: ?*anyopaque,
 ) callconv(.c) void {
     const object = bundle.cast_bundle_encoder(raw) orelse return;
-    _ = requireBundleOpen(object);
+    if (!requireBundleOpen(object)) return;
+    object.debug_groups.pop() catch |err| failBundle(object, err);
 }
 
 // ============================================================

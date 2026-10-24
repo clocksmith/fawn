@@ -3254,9 +3254,9 @@
       },
       "src/dropin/wgpu_dropin_ext_c.zig": {
         "decision": "Keep",
-        "moduleSha256": "4ae940851bc23afebbd3ca76edb69d8753fddfc4ba522873ad52b049eea05712",
-        "reason": "Keep: drop-in C ABI bridge; wgpuQueueWriteTexture forwards the destination aspect and data-layout offset. writeTexture rejects a dataLayout.offset past the data before any copy, including empty copies.",
-        "reviewer": "doe-c-claude/2026-10-24"
+        "moduleSha256": "89207a461ed99230d3b13712cf38ef27aaa322dffe52bc1430ca0e46f0fb5cf5",
+        "reason": "Keep: drop-in C ABI bridge; wgpuQueueWriteTexture forwards the destination aspect and data-layout offset. writeTexture rejects a dataLayout.offset past the data before any copy, including empty copies. Command encoder debug markers forward to the native encoder.",
+        "reviewer": "doe-c-claude-indexed/2026-10-24"
       },
       "src/dropin/wgpu_dropin_lib.zig": {
         "decision": "Keep",
@@ -3518,9 +3518,9 @@
       },
       "src/native/command/doe_encoder_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "171470e9697a48cdac58a968daad0641d99138c0255c0de8370933174051aab0",
-        "reason": "Keep: preserves this native ownership or ABI boundary while separating internal device cleanup leases from application release and enforcing destroyed-device admission; finish reports the first recorded command failure as the encoder's validation error.",
-        "reviewer": "doe-c-claude-surface/2026-10-24"
+        "moduleSha256": "7825990daf93c8c21652536c55cc0512242b67c8bbfed20fc6df5b839f576800",
+        "reason": "Keep: preserves this native ownership or ABI boundary while separating internal device cleanup leases from application release and enforcing destroyed-device admission; finish reports the first recorded command failure as the encoder's validation error. Encoder debug groups are balanced at finish().",
+        "reviewer": "doe-c-claude-indexed/2026-10-24"
       },
       "src/native/command/doe_immediates_external_native.zig": {
         "decision": "Keep",
@@ -3536,8 +3536,8 @@
       },
       "src/native/compute/doe_compute_ext_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "fb4c2253c569a5c34f3e5e14c9b99c8152d43cbc1bf5876f61558c9e9e3c40de",
-        "reason": "Keep: the encoder owns pass identity and recording lifetime; native adapters validate operations against that single state. setBindGroup resolves dynamic offsets; dispatch validates pipeline, workgroup counts and explicit-layout bind groups. Dispatch passes the pipeline's required binding kinds for automatic layouts.",
+        "moduleSha256": "5f7fa45de003d50559b3695b7d2f6b62a3f61cb91a9cac4f4da331f6a29049cf",
+        "reason": "Keep: the encoder owns pass identity and recording lifetime; native adapters validate operations against that single state. setBindGroup resolves dynamic offsets; dispatch validates pipeline, workgroup counts and explicit-layout bind groups. Dispatch passes the pipeline's required binding kinds for automatic layouts. Compute pass debug groups are balanced at end().",
         "reviewer": "doe-c-claude-indexed/2026-10-24"
       },
       "src/native/compute/doe_compute_fast.zig": {
@@ -3644,21 +3644,21 @@
       },
       "src/native/render/doe_bundle_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "4d6a55f4595a28eb5a2db379842c2c7db17eadcffbba59a065f05bb38d3f927b",
-        "reason": "Keep: preserves this native ownership or ABI boundary while separating internal device cleanup leases from application release and enforcing destroyed-device admission. Vulkan bundle replay starts from empty state rather than the pass's. Vulkan executeBundles resets the pass pipeline, bind groups and vertex/index buffers. Bundle setBindGroup validates and records dynamic offsets, records null groups as unbinds, and replay applies the offsets.",
+        "moduleSha256": "7efed3cba71b87061aeae7e2a4511dd7fc9fc5364d094f5a65766d9fdbfb1373",
+        "reason": "Keep: preserves this native ownership or ABI boundary while separating internal device cleanup leases from application release and enforcing destroyed-device admission. Vulkan bundle replay starts from empty state rather than the pass's. Vulkan executeBundles resets the pass pipeline, bind groups and vertex/index buffers. Bundle setBindGroup validates and records dynamic offsets, records null groups as unbinds, and replay applies the offsets. Bundle debug groups are balanced at finish().",
         "reviewer": "doe-c-claude-indexed/2026-10-24"
       },
       "src/native/render/doe_render_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "88066dc3e900630ceb49d0372f07f84332d2f32431236c54b4372f2a4d5f5deb",
-        "reason": "Keep: native attachment admission owns view and pipeline compatibility; command recording preserves typed validation failures before submission. Backend execution and resource retirement retain their existing owners. Render pass setBindGroup resolves dynamic offsets into pass state.",
+        "moduleSha256": "bc52873b8c3adb7bef8e643fffe1eeb8214509ea03a19a0cc998003d5a2d8d2d",
+        "reason": "Keep: native attachment admission owns view and pipeline compatibility; command recording preserves typed validation failures before submission. Backend execution and resource retirement retain their existing owners. Render pass setBindGroup resolves dynamic offsets into pass state. Render pass debug groups are balanced at end().",
         "reviewer": "doe-c-claude-indexed/2026-10-24"
       },
       "src/native/render/doe_render_pass_controls_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "72090a2a8cfc74f48a16d2b6ba56fc28c063f25eecdf7e06677580c300769243",
-        "reason": "Keep: the encoder owns pass identity and recording lifetime; native adapters validate operations against that single state.",
-        "reviewer": "codex-pass-lifecycle/2026-09-06"
+        "moduleSha256": "540d8d86a87165c7a4be3e0cd213e85f6db542d9c730d05cd6fd9df56880f977",
+        "reason": "Keep: the encoder owns pass identity and recording lifetime; native adapters validate operations against that single state. Render pass push/pop track debug group depth.",
+        "reviewer": "doe-c-claude-indexed/2026-10-24"
       },
       "src/native/render/doe_render_pipeline_native.zig": {
         "decision": "Keep",
@@ -3782,8 +3782,8 @@
       },
       "src/native/support/doe_native_object_types.zig": {
         "decision": "Keep",
-        "moduleSha256": "358267c525cb50bfd7876cab6319aa1040699948bbaf04f36029be97df915e76",
-        "reason": "Keep: default-off C error-scope partial owner uses final-address typed storage, cold creation rollback and checked final deinit; original classifier, callbacks and device references remain with their existing owners; textures record an allowed srgb view; samplers carry error_object; MUTABLE_FORMAT images with a VkImageFormatListCreateInfo only for textures whose viewFormats name the srgb pair. Render pipelines keep their multisample mask and alpha-to-coverage. Passes hold per-group dynamic offsets and the cached workgroup limit. Devices hold their buffer offset alignment limits. Device keeps maxImmediateSize. Compute pipelines keep required binding kinds for automatic-layout dispatch checks.",
+        "moduleSha256": "e56e5aa6075549fe9b51c0d52fc8a666a21ec40cfbbd264b380fe73e17831529",
+        "reason": "Keep: default-off C error-scope partial owner uses final-address typed storage, cold creation rollback and checked final deinit; original classifier, callbacks and device references remain with their existing owners; textures record an allowed srgb view; samplers carry error_object; MUTABLE_FORMAT images with a VkImageFormatListCreateInfo only for textures whose viewFormats name the srgb pair. Render pipelines keep their multisample mask and alpha-to-coverage. Passes hold per-group dynamic offsets and the cached workgroup limit. Devices hold their buffer offset alignment limits. Device keeps maxImmediateSize. Compute pipelines keep required binding kinds for automatic-layout dispatch checks. Encoders and passes keep their open debug groups.",
         "reviewer": "doe-c-claude-indexed/2026-10-24"
       },
       "src/native/support/doe_native_runtime_helpers.zig": {
@@ -3986,8 +3986,8 @@
       },
       "src/runtime/diagnostics/error_scope.zig": {
         "decision": "Keep",
-        "moduleSha256": "5b2a3eaebefdc0cf7df49cd6a6dda6cf1d43bbf8b679e440f9ef53cbbc398603",
-        "reason": "Keep: native attachment admission owns view and pipeline compatibility; command recording preserves typed validation failures before submission. Backend execution and resource retirement retain their existing owners. Draw buffer-bound failures are validation errors. Bind group and dispatch recording causes are validation errors. ImmediateDataRange maps to validation.",
+        "moduleSha256": "6fcc64cc157f9622a249feded04f5c5bce474959af059e06ca94f31583728f54",
+        "reason": "Keep: native attachment admission owns view and pipeline compatibility; command recording preserves typed validation failures before submission. Backend execution and resource retirement retain their existing owners. Draw buffer-bound failures are validation errors. Bind group and dispatch recording causes are validation errors. ImmediateDataRange maps to validation. DebugGroupUnbalanced maps to validation.",
         "reviewer": "doe-c-claude-indexed/2026-10-24"
       },
       "src/runtime/env_flags.zig": {
@@ -4112,8 +4112,8 @@
       },
       "src/runtime/render/render_bundle.zig": {
         "decision": "Keep",
-        "moduleSha256": "530585b86d34dd83ab6af5ed3720eb53513b735cd7e5e99fc6c2fba91d2ac057",
-        "reason": "Keep: explicit recording state and owned resources preserve failure and submission ordering at the existing component boundary. Bundle set_bind_group carries per-binding dynamic offsets.",
+        "moduleSha256": "d1824c3ff501013132dad0be1ff6a02a6dc4d68120cfd9e7d41e95c35bbca0e9",
+        "reason": "Keep: explicit recording state and owned resources preserve failure and submission ordering at the existing component boundary. Bundle set_bind_group carries per-binding dynamic offsets. Bundle encoders keep their open debug groups.",
         "reviewer": "doe-c-claude-indexed/2026-10-24"
       },
       "src/runtime/security/wgpu_sandbox_guard.zig": {
@@ -4328,8 +4328,8 @@
       },
       "src/contracts/command_recording.zig": {
         "decision": "Keep",
-        "moduleSha256": "102906c6c85e87d7b305a72bc53a0c27b4b87d26097ef2d5e59df5f93755be37",
-        "reason": "Keep: native attachment admission owns view and pipeline compatibility; command recording preserves typed validation failures before submission. Backend execution and resource retirement retain their existing owners. The unsupported-attachment message no longer lists resolve targets. Names WebGPU draw-time vertex and index buffer failures. Owns the setBindGroup dynamic-offset and dispatch validation causes. Adds ImmediateDataRange failure.",
+        "moduleSha256": "36faad928b11d3b10577c0c4727576c054237edc76ecab917faa0ee24a7e1539",
+        "reason": "Keep: native attachment admission owns view and pipeline compatibility; command recording preserves typed validation failures before submission. Backend execution and resource retirement retain their existing owners. The unsupported-attachment message no longer lists resolve targets. Names WebGPU draw-time vertex and index buffer failures. Owns the setBindGroup dynamic-offset and dispatch validation causes. Adds ImmediateDataRange failure. Adds DebugGroups balance and the DebugGroupUnbalanced failure.",
         "reviewer": "doe-c-claude-indexed/2026-10-24"
       },
       "src/native/command/doe_command_recording.zig": {

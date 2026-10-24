@@ -339,6 +339,7 @@ pub const DoeCommandEncoder = struct {
     device_ref: ?*DoeDevice = null,
     cmds: std.ArrayListUnmanaged(command_types.RecordedCmd) = .{},
     references: std.ArrayListUnmanaged(command_types.CommandReference) = .{},
+    debug_groups: @import("../../contracts/command_recording.zig").DebugGroups = .{},
 };
 
 pub const DoeComputePass = struct {
@@ -350,6 +351,7 @@ pub const DoeComputePass = struct {
     pipeline: ?*DoeComputePipeline = null,
     bind_groups: [4]?*DoeBindGroup = [_]?*DoeBindGroup{null} ** 4,
     dynamic_offsets: [4]shared.BindGroupDynamicOffsets = [_]shared.BindGroupDynamicOffsets{shared.NO_DYNAMIC_OFFSETS} ** 4,
+    debug_groups: @import("../../contracts/command_recording.zig").DebugGroups = .{},
     state_generation: u64 = INITIAL_COMPUTE_PASS_STATE_GENERATION,
     last_dispatch_state_generation: u64 = INVALID_COMPUTE_PASS_STATE_GENERATION,
     last_dispatch_cmd_index: usize = 0,
@@ -532,6 +534,7 @@ pub const DoeRenderPass = struct {
     bind_groups: [shared.MAX_RENDER_BIND_GROUPS]?*DoeBindGroup = [_]?*DoeBindGroup{null} ** shared.MAX_RENDER_BIND_GROUPS,
     dynamic_offsets: [shared.MAX_RENDER_BIND_GROUPS]shared.BindGroupDynamicOffsets =
         [_]shared.BindGroupDynamicOffsets{shared.NO_DYNAMIC_OFFSETS} ** shared.MAX_RENDER_BIND_GROUPS,
+    debug_groups: @import("../../contracts/command_recording.zig").DebugGroups = .{},
     vertex_buffers: [shared.MAX_VERTEX_BUFFERS]?*DoeBuffer = [_]?*DoeBuffer{null} ** shared.MAX_VERTEX_BUFFERS,
     vertex_buffer_offsets: [shared.MAX_VERTEX_BUFFERS]u64 = [_]u64{0} ** shared.MAX_VERTEX_BUFFERS,
     vertex_buffer_sizes: [shared.MAX_VERTEX_BUFFERS]u64 = [_]u64{0} ** shared.MAX_VERTEX_BUFFERS,

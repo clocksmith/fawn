@@ -510,6 +510,7 @@ pub export fn doeNativeRenderPassEnd(raw: ?*anyopaque) callconv(.c) void {
     const pass = cast(DoeRenderPass, raw) orelse return;
     if (!recording.requirePass(pass.enc, @intFromPtr(pass))) return;
     defer recording.endPass(pass.enc, @intFromPtr(pass));
+    pass.debug_groups.requireBalanced() catch |err| recording.fail(pass.enc, err);
     if (pass.enc.dev.backend == .vulkan) {
         const vk_render = @import("../vulkan/vulkan_render_native.zig");
         vk_render.vulkan_render_pass_end(pass);

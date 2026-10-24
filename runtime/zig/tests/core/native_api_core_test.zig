@@ -1403,6 +1403,45 @@ test "setImmediates accepts aligned ranges within maxImmediateSize and invalidat
     try std.testing.expectEqual(@as(u32, 64), limits.maxImmediateSize);
 }
 
+test "debug groups must be balanced on encoders, passes and bundles" {
+    var device = native.DoeDevice{};
+    const label = "group";
+    const cases = [_]struct { push: u32, pop: u32 }{
+        .{ .push = 0, .pop = 0 },
+        .{ .push = 2, .pop = 2 },
+        .{ .push = 1, .pop = 0 },
+        .{ .push = 0, .pop = 1 },
+        .{ .push = 1, .pop = 2 },
+    };
+    for (cases) |case| {
+        const balanced = case.push == case.pop;
+        inline for (.{ "encoder", "compute", "render" }) |kind| {
+            const encoder = native.doeNativeDeviceCreateCommandEncoder(@ptrCast(&device), null) orelse return error.TestUnexpectedResult;
+            defer native.doeNativeCommandEncoderRelease(encoder);
+            if (comptime std.mem.eql(u8, kind, "encoder")) {
+                for (0..case.push) |_| native.doeNativeCommandEncoderPushDebugGroup(encoder, label.ptr, label.len);
+                for (0..case.pop) |_| native.doeNativeCommandEncoderPopDebugGroup(encoder);
+            } else if (comptime std.mem.eql(u8, kind, "compute")) {
+                const pass = native.doeNativeCommandEncoderBeginComputePass(encoder, null) orelse return error.TestUnexpectedResult;
+                defer native.doeNativeComputePassRelease(pass);
+                for (0..case.push) |_| native.doeNativeComputePassPushDebugGroup(pass, label.ptr, label.len);
+                for (0..case.pop) |_| native.doeNativeComputePassPopDebugGroup(pass);
+                native.doeNativeComputePassEnd(pass);
+            } else {
+                const pass = native.doeNativeCommandEncoderBeginRenderPass(encoder, null) orelse return error.TestUnexpectedResult;
+                defer native.doeNativeRenderPassRelease(pass);
+                for (0..case.push) |_| native.doeNativeRenderPassPushDebugGroup(pass, label.ptr, label.len);
+                for (0..case.pop) |_| native.doeNativeRenderPassPopDebugGroup(pass);
+                native.doeNativeRenderPassEnd(pass);
+            }
+            const command_buffer = native.doeNativeCommandEncoderFinish(encoder, null) orelse return error.TestUnexpectedResult;
+            defer native.doeNativeCommandBufferRelease(command_buffer);
+            const finished = @as(*native.DoeCommandBuffer, @ptrCast(@alignCast(command_buffer)));
+            try std.testing.expectEqual(!balanced, finished.error_object);
+        }
+    }
+}
+
 test "doeNativePipelineLayoutRelease: null input is safe" {
     native.doeNativePipelineLayoutRelease(null);
 }
