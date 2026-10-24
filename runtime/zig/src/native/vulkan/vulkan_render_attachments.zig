@@ -30,15 +30,38 @@ fn validateView(device: *objects.DoeDevice, raw: ?*anyopaque, depth: bool) Error
     if ((view.usage & texture_abi.WGPUTextureUsage_RenderAttachment) == 0) return error.RenderAttachmentUsageMissing;
     if (view.swizzled) return error.RenderAttachmentViewSwizzled;
     // A renderable view is 2d, or 2d-array with one layer (the default view of
-    // one layer of a layered texture); the layer count is checked below.
+    // one layer of a layered texture), or a 3d color view whose depthSlice
+    // selects the slice; the layer count is checked below.
+    const three_d = view.dimension == texture_abi.WGPUTextureViewDimension_3D and !depth;
     if (view.dimension != texture_abi.WGPUTextureViewDimension_2D and
-        view.dimension != texture_abi.WGPUTextureViewDimension_2DArray) return error.RenderAttachmentUnsupported;
+        view.dimension != texture_abi.WGPUTextureViewDimension_2DArray and !three_d) return error.RenderAttachmentUnsupported;
     if (view.mip_level_count != 1 or view.array_layer_count != 1 or
         view.aspect != texture_abi.WGPUTextureAspect_All or
         view.base_mip_level >= texture.mip_level_count or view.base_mip_level >= @bitSizeOf(u32))
         return error.RenderAttachmentViewInvalid;
     if (texture_abi.isDepthStencilFormat(view.format) != depth) return error.RenderAttachmentFormatMismatch;
     return view;
+}
+
+const DEPTH_SLICE_UNDEFINED: u32 = std.math.maxInt(u32);
+
+/// https://gpuweb.github.io/gpuweb/#abstract-opdef-gpurenderpasscolorattachment-gpurenderpasscolorattachment-valid-usage:
+/// a 3d view takes a depthSlice below its mip level's depth; any other view
+/// takes none.
+fn validateDepthSlice(view: *const objects.DoeTextureView, depth_slice: u32) Error!void {
+    if (view.dimension != texture_abi.WGPUTextureViewDimension_3D) {
+        if (depth_slice != DEPTH_SLICE_UNDEFINED) return error.RenderAttachmentDepthSliceInvalid;
+        return;
+    }
+    if (depth_slice >= @max(1, view.tex.depth_or_array_layers >> @intCast(view.base_mip_level)))
+        return error.RenderAttachmentDepthSliceInvalid;
+}
+
+/// Two color attachments overlap when they render the same mip level and
+/// layer (or depth slice) of one texture.
+fn overlaps(a: *const objects.DoeTextureView, a_slice: u32, b: *const objects.DoeTextureView, b_slice: u32) bool {
+    return a.tex == b.tex and a.base_mip_level == b.base_mip_level and
+        a.base_array_layer == b.base_array_layer and a_slice == b_slice;
 }
 
 fn extent(view: *const objects.DoeTextureView) Extent {
@@ -119,6 +142,11 @@ pub fn validateDescriptor(device: *objects.DoeDevice, descriptor: ?*const abi.WG
                 continue;
             }
             const color = try validateView(device, attachment.view, false);
+            try validateDepthSlice(color, attachment.depthSlice);
+            for (colors[0..index]) |earlier| {
+                const other = helpers.cast(objects.DoeTextureView, earlier.view) orelse continue;
+                if (overlaps(other, earlier.depthSlice, color, attachment.depthSlice)) return error.RenderAttachmentDepthSliceInvalid;
+            }
             try admitAttachment(&reference, color);
             // A transient color attachment clears and discards.
             if (color.tex.usage & texture_abi.WGPUTextureUsage_TransientAttachment != 0 and
@@ -457,4 +485,39 @@ test "aspectOps requires both ops on a writable aspect and neither otherwise" {
     try std.testing.expectError(error.RenderAttachmentDepthStencilOps, aspectOps(true, LOAD_OP_CLEAR, 0));
     try std.testing.expectError(error.RenderAttachmentDepthStencilOps, aspectOps(false, LOAD_OP_CLEAR, 0));
     try std.testing.expectError(error.RenderAttachmentDepthStencilOps, aspectOps(false, 0, STORE_OP_DISCARD));
+}
+
+test "3d color attachments take a depthSlice within the mip level and do not overlap" {
+    var device = objects.DoeDevice{};
+    var texture = objects.DoeTexture{ .device_ref = &device, .width = 16, .height = 1, .depth_or_array_layers = 10, .mip_level_count = 5 };
+    var view = objects.DoeTextureView{
+        .tex = &texture,
+        .format = texture_abi.WGPUTextureFormat_RGBA8Unorm,
+        .dimension = texture_abi.WGPUTextureViewDimension_3D,
+        .base_mip_level = 1,
+        .mip_level_count = 1,
+        .array_layer_count = 1,
+        .aspect = texture_abi.WGPUTextureAspect_All,
+        .usage = texture_abi.WGPUTextureUsage_RenderAttachment,
+    };
+    try std.testing.expectEqual(&view, try validateView(&device, &view, false));
+    try std.testing.expectError(error.RenderAttachmentUnsupported, validateView(&device, &view, true));
+    // Mip level 1 has depth 5; mip level 4 has depth 1.
+    try validateDepthSlice(&view, 4);
+    try std.testing.expectError(error.RenderAttachmentDepthSliceInvalid, validateDepthSlice(&view, 5));
+    try std.testing.expectError(error.RenderAttachmentDepthSliceInvalid, validateDepthSlice(&view, DEPTH_SLICE_UNDEFINED));
+    view.base_mip_level = 4;
+    try validateDepthSlice(&view, 0);
+    try std.testing.expectError(error.RenderAttachmentDepthSliceInvalid, validateDepthSlice(&view, 1));
+    // Other views take no depthSlice.
+    var flat = view;
+    flat.dimension = texture_abi.WGPUTextureViewDimension_2D;
+    try validateDepthSlice(&flat, DEPTH_SLICE_UNDEFINED);
+    try std.testing.expectError(error.RenderAttachmentDepthSliceInvalid, validateDepthSlice(&flat, 0));
+    // The same slice of the same mip level overlaps; another slice or mip level does not.
+    var other = view;
+    try std.testing.expect(overlaps(&view, 0, &other, 0));
+    try std.testing.expect(!overlaps(&view, 0, &other, 1));
+    other.base_mip_level = 3;
+    try std.testing.expect(!overlaps(&view, 0, &other, 0));
 }

@@ -826,11 +826,11 @@ pub fn create_texture_resource_viewable(
         .viewFormatCount = view_formats.len,
         .pViewFormats = &view_formats,
     };
-    const cube_flags: u32 = if (image_array_layers >= 6 and resolved_dimension == model_gpu_types.WGPUTextureDimension_2D) c.VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT else 0;
+    const shape_flags: u32 = if (image_array_layers >= 6 and resolved_dimension == model_gpu_types.WGPUTextureDimension_2D) c.VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT else if (image_type == c.VK_IMAGE_TYPE_3D and effective_usage & model_gpu_types.WGPUTextureUsage_RenderAttachment != 0) 0x20 else 0; // VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT (1.1) for vk_render create_slice_view
     var image_info = c.VkImageCreateInfo{
         .sType = c.VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
         .pNext = if (mutable and self.image_format_list_supported) @ptrCast(&format_list) else null,
-        .flags = cube_flags | (if (mutable) c.VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT else 0),
+        .flags = shape_flags | (if (mutable) c.VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT else 0),
         .imageType = image_type,
         .format = view_formats[0],
         .extent = .{ .width = width, .height = height, .depth = image_depth },

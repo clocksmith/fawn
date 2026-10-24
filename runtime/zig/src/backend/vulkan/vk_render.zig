@@ -44,6 +44,8 @@ pub const RenderState = struct {
     descriptor_set_count: u32 = 0,
     /// Color slots in order; null for a null (unused) slot.
     color_targets: [MAX_COLOR]?vk_resources.TextureResource = [_]?vk_resources.TextureResource{null} ** MAX_COLOR,
+    /// 2D view of the depth slice a 3d color slot renders, owned by the draw.
+    slice_views: [MAX_COLOR]c.VkImageView = [_]c.VkImageView{VK_NULL_U64} ** MAX_COLOR,
     /// Single-sample image each multisampled color slot resolves into.
     resolve_targets: [MAX_COLOR]?vk_resources.TextureResource = [_]?vk_resources.TextureResource{null} ** MAX_COLOR,
     color_count: u32 = 0,
@@ -115,6 +117,7 @@ pub fn release_render_state(device: c.VkDevice, state: *RenderState) void {
     destroyVkHandle(device, &state.vertex_shader, c.vkDestroyShaderModule);
     destroyVkHandle(device, &state.framebuffer, c.vkDestroyFramebuffer);
     destroyVkHandle(device, &state.render_pass, c.vkDestroyRenderPass);
+    for (&state.slice_views) |*view| destroyVkHandle(device, view, c.vkDestroyImageView);
     if (state.owns_color_target) {
         if (state.color_targets[0]) |target|
             vk_resources.release_texture_resource_with_device(device, target);
@@ -230,7 +233,9 @@ fn ensure_render_target(
             state.color_targets[0] = try create_render_target_texture(self, texture_spec);
             state.owns_color_target = true;
         } else {
-            state.color_targets[index] = try bind_existing_render_target(self, slot.handle, slot.view_handle, width, height, slot.format);
+            var target = try bind_existing_render_target(self, slot.handle, slot.view_handle, width, height, slot.format);
+            if (slot.depth_slice) |depth_slice| target.view = try create_slice_view(self, &state.slice_views[index], target, depth_slice);
+            state.color_targets[index] = target;
         }
         if (slot.resolve_handle != 0) {
             const texture = self.textures.get(slot.resolve_handle) orelse return error.InvalidState;
@@ -305,6 +310,40 @@ fn bind_existing_render_target(
         .usage = texture.usage,
         .layout = texture.layout,
     };
+}
+
+/// A 3d color attachment renders one depth slice through a 2D view of it;
+/// vk_resources creates 3d render-attachment images 2D_ARRAY_COMPATIBLE.
+fn create_slice_view(
+    self: anytype,
+    out: *c.VkImageView,
+    texture: vk_resources.TextureResource,
+    depth_slice: model_render_types.DepthSlice,
+) !c.VkImageView {
+    if (texture.dimension != model_gpu_types.WGPUTextureDimension_3D) return error.InvalidState;
+    var view_info = c.VkImageViewCreateInfo{
+        .sType = c.VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+        .pNext = null,
+        .flags = 0,
+        .image = texture.image,
+        .viewType = c.VK_IMAGE_VIEW_TYPE_2D,
+        .format = try vk_resources.texture_format_to_vk(texture.format),
+        .components = .{
+            .r = c.VK_COMPONENT_SWIZZLE_IDENTITY,
+            .g = c.VK_COMPONENT_SWIZZLE_IDENTITY,
+            .b = c.VK_COMPONENT_SWIZZLE_IDENTITY,
+            .a = c.VK_COMPONENT_SWIZZLE_IDENTITY,
+        },
+        .subresourceRange = .{
+            .aspectMask = c.VK_IMAGE_ASPECT_COLOR_BIT,
+            .baseMipLevel = depth_slice.mip_level,
+            .levelCount = 1,
+            .baseArrayLayer = depth_slice.slice,
+            .layerCount = 1,
+        },
+    };
+    try c.check_vk(c.vkCreateImageView(self.device, &view_info, null, out));
+    return out.*;
 }
 
 fn create_render_target_texture(

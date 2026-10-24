@@ -257,6 +257,7 @@ pub fn zig_error_to_type(err: anyerror) u32 {
         error.RenderAttachmentUnsupported,
         error.RenderBundleIncompatible,
         error.RenderAttachmentDepthStencilOps,
+        error.RenderAttachmentDepthSliceInvalid,
         error.PassQuerySetInvalid,
         error.RenderPipelineIncompatible,
         error.RenderAttachmentColorBytesExceeded,

@@ -537,6 +537,8 @@ pub const RenderPassColorAttachment = struct {
     format: u32 = 0,
     load_op: u32 = 0,
     clear: [4]f64 = .{ 0, 0, 0, 0 },
+    /// WGPU_DEPTH_SLICE_UNDEFINED unless the view is 3d.
+    depth_slice: u32 = std.math.maxInt(u32),
 };
 
 pub const DoeRenderPass = struct {
