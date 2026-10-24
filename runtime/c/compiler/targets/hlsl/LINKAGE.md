@@ -23,6 +23,12 @@ limits before deriving the mask. Zero is the valid position-only projection.
 The optional definition is a target compilation parameter, not a WGSL semantic
 flag, new reflection layout, source rewrite or shader identity substitution.
 
+WGSL entries whose identifiers equal either generated compilation control
+(`DOE_HLSL_ENTRY` or `DOE_HLSL_INTERSTAGE_MASK`) receive distinct private target
+names. The same entry-name owner writes their actual DXC entry metadata. Source
+selection and logical reflection keep the original WGSL names; existing private
+prefix admission prevents another user entry from aliasing a mapped target name.
+
 Both graphics stages use official DXC Shader Model 6.0, HLSL2021 and explicit
 `-pack-prefix-stable`. This policy keeps appended system values from changing the
 placement of the identical user prefix. Canonical sorting alone cannot align a
