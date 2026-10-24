@@ -3,6 +3,7 @@ import { existsSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { globals } from './webgpu-constants.js';
+import { NATIVE_ERROR_FILTERS as ERROR_SCOPE_FILTERS, captureProviderErrorScopes } from './shared/provider-error-scopes.js';
 import { registerNativeProgramProvider } from '../../compute-program-native.js';
 import {
   createDoeRuntime as createDoeRuntimeCli,
@@ -574,12 +575,6 @@ function requireAutoLayoutEntriesFromNative(shaderNative, visibility, path, entr
   }
   return autoLayoutEntriesFromNativeBindings(bindings, visibility);
 }
-
-const ERROR_SCOPE_FILTERS = Object.freeze({
-  validation: 0x00000001,
-  'out-of-memory': 0x00000002,
-  internal: 0x00000003,
-});
 
 // Pops a scope captureProviderErrors pushed: the GPUError it caught, or null
 // when it caught none or the provider could not deliver synchronously.
@@ -2556,24 +2551,15 @@ const fullSurfaceBackend = {
     }
     return error;
   },
-  // Runs create() inside private validation and out-of-memory scopes, so the
-  // provider's error comes back to the caller instead of the user's scopes.
+  // Keep every native creation error out of the caller's scopes until the
+  // common surface routes its original type exactly once.
   captureProviderErrors(device, create) {
     const deviceNative = assertLiveResource(device, 'GPUDevice', 'GPUDevice');
-    addon.devicePushErrorScope(deviceNative, ERROR_SCOPE_FILTERS['out-of-memory']);
-    addon.devicePushErrorScope(deviceNative, ERROR_SCOPE_FILTERS.validation);
-    let value;
-    try {
-      value = create();
-    } catch (error) {
-      popPrivateErrorScope(device, deviceNative);
-      popPrivateErrorScope(device, deviceNative);
-      throw error;
-    }
-    const validation = popPrivateErrorScope(device, deviceNative);
-    const outOfMemory = popPrivateErrorScope(device, deviceNative);
-    const error = validation ?? outOfMemory;
-    return { value, filter: error?.type ?? null, error };
+    return captureProviderErrorScopes(
+      create,
+      filter => addon.devicePushErrorScope(deviceNative, filter),
+      () => popPrivateErrorScope(device, deviceNative),
+    );
   },
   deviceCreateBuffer(device, validated) {
     const nativeDescriptor = validated.size === 0 && libraryFlavor(currentDoeLibraryPath()) === 'doe-dropin'
