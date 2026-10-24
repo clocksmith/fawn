@@ -559,8 +559,16 @@ pub export fn doeNativeTextureCreateView(tex_raw: ?*anyopaque, desc: ?*const abi
         .usage = tex.usage,
     };
     const requested = desc orelse &default_desc;
+    const requested_dimension = if (requested.dimension != 0) requested.dimension else default_texture_view_dimension(tex);
     const resolved_mip_level_count = resolveTextureViewMipLevelCount(tex, requested.baseMipLevel, requested.mipLevelCount) orelse return null;
-    const resolved_array_layer_count = resolveTextureViewArrayLayerCount(tex, requested.baseArrayLayer, requested.arrayLayerCount) orelse return null;
+    // https://gpuweb.github.io/gpuweb/#abstract-opdef-resolving-gputextureviewdescriptor-defaults:
+    // an undefined layer count is one for 1d/2d/3d views and six for cube views.
+    const requested_layers = if (requested.arrayLayerCount == 0 or requested.arrayLayerCount == abi_core.WGPU_ARRAY_LAYER_COUNT_UNDEFINED) switch (requested_dimension) {
+        abi_texture.WGPUTextureViewDimension_1D, abi_texture.WGPUTextureViewDimension_2D, abi_texture.WGPUTextureViewDimension_3D => @as(u32, 1),
+        abi_texture.WGPUTextureViewDimension_Cube => 6,
+        else => requested.arrayLayerCount,
+    } else requested.arrayLayerCount;
+    const resolved_array_layer_count = resolveTextureViewArrayLayerCount(tex, requested.baseArrayLayer, requested_layers) orelse return null;
     var normalized_desc = requested.*;
     normalized_desc.mipLevelCount = resolved_mip_level_count;
     normalized_desc.arrayLayerCount = resolved_array_layer_count;
@@ -578,6 +586,10 @@ pub export fn doeNativeTextureCreateView(tex_raw: ?*anyopaque, desc: ?*const abi
         // https://gpuweb.github.io/gpuweb/#dom-gputexture-createview: the view
         // format must be the texture format or one of its viewFormats.
         if (tex.device_ref) |dev| dev.error_scopes.deliver(error_scope.ERROR_TYPE_VALIDATION, "texture view format is neither the texture format nor one of its viewFormats");
+        return invalidTextureView(tex, d, resolved_format);
+    }
+    if (texture_validation.viewDescriptorMessage(tex, resolved_dimension, d.usage, resolved_array_layer_count)) |message| {
+        if (tex.device_ref) |dev| dev.error_scopes.deliver(error_scope.ERROR_TYPE_VALIDATION, message);
         return invalidTextureView(tex, d, resolved_format);
     }
     const resolved_swizzle = resolveTextureViewSwizzle(d);
