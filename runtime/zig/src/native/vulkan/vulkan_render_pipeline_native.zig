@@ -7,6 +7,7 @@ const runtime_compile = @import("../../compiler/wgsl/runtime/runtime_graphics_tr
 const shared = @import("vulkan_render_shared.zig");
 const error_scope = @import("../../runtime/diagnostics/error_scope.zig");
 const wgsl_bindings = @import("../../compiler/wgsl/pipeline/binding_reflection.zig");
+const wgsl_ir = @import("../../compiler/wgsl/ir/ir.zig");
 const shader_binding_reflection = @import("../shader/shader_binding_reflection.zig");
 
 pub fn vulkan_create_render_pipeline(
@@ -180,42 +181,77 @@ pub fn vulkan_create_render_pipeline(
         dev.error_scopes.deliver(error_scope.ERROR_TYPE_VALIDATION, "render pipeline requires a valid fragment shader");
         return false;
     }
-    retainShaderCode(native_helpers.alloc, pip, vertex, fragment, entryPoint(d.vertex_ep_data, d.vertex_ep_length), if (d.fragment) |frag| entryPoint(frag.entryPoint.data, frag.entryPoint.length) else null) catch |err| {
+    const vertex_entry = entryPoint(d.vertex_ep_data, d.vertex_ep_length);
+    const fragment_entry = if (d.fragment) |frag| entryPoint(frag.entryPoint.data, frag.entryPoint.length) else null;
+    if (!admitStageEntryPoints(pip, vertex, vertex_entry, fragment, fragment_entry)) {
+        dev.error_scopes.deliver(error_scope.ERROR_TYPE_VALIDATION, "render pipeline entry point does not name a vertex or fragment entry point of its shader module");
+        return false;
+    }
+    retainShaderCode(native_helpers.alloc, pip, vertex, fragment, vertex_entry, fragment_entry) catch |err| {
         dev.error_scopes.deliver(error_scope.zig_error_to_type(err), if (err == error.OutOfMemory) "render pipeline could not retain shader code" else "render pipeline requires compiled graphics shader code");
         return false;
     };
 
-    recordRequiredBindingKinds(pip, vertex, pip.vertex_entry_point, fragment, pip.fragment_entry_point);
     pip.mtl_pso = null;
     return true;
 }
 
-/// Records the layout resource kind of every binding the vertex and fragment
-/// entry points use; without a named entry point or WGSL source it records
-/// nothing and draws skip the automatic-layout check.
-fn recordRequiredBindingKinds(
+const StageEntryPoint = enum { checked, unchecked, missing };
+
+/// Each stage's entry point must name a function of that stage in its module;
+/// an omitted name needs exactly one such function
+/// (https://gpuweb.github.io/gpuweb/#abstract-opdef-validating-gpuprogrammablestage).
+/// Also records the layout resource kind of every binding the entry points
+/// use. Returns false for a missing entry point; a module without WGSL source
+/// is not checked, and draws then skip the automatic-layout check.
+fn admitStageEntryPoints(
     pipeline: *shared.DoeRenderPipeline,
     vertex: ?*const shared.DoeShaderModule,
     vertex_entry: ?[]const u8,
     fragment: ?*const shared.DoeShaderModule,
     fragment_entry: ?[]const u8,
-) void {
+) bool {
     @memset(&pipeline.required_binding_kinds, 0);
     pipeline.required_binding_kinds_ready = false;
-    if (!addStageBindingKinds(pipeline, vertex, vertex_entry)) return;
-    if (fragment != null and !addStageBindingKinds(pipeline, fragment, fragment_entry)) return;
-    pipeline.required_binding_kinds_ready = true;
+    var checked = true;
+    switch (stageEntryPoint(pipeline, vertex, vertex_entry, .vertex)) {
+        .missing => return false,
+        .unchecked => checked = false,
+        .checked => {},
+    }
+    if (fragment != null) switch (stageEntryPoint(pipeline, fragment, fragment_entry, .fragment)) {
+        .missing => return false,
+        .unchecked => checked = false,
+        .checked => {},
+    };
+    pipeline.required_binding_kinds_ready = checked;
+    return true;
 }
 
-fn addStageBindingKinds(pipeline: *shared.DoeRenderPipeline, module: ?*const shared.DoeShaderModule, entry: ?[]const u8) bool {
-    const wgsl = (module orelse return false).wgsl_source orelse return false;
+fn stageEntryPoint(pipeline: *shared.DoeRenderPipeline, module: ?*const shared.DoeShaderModule, entry: ?[]const u8, stage: wgsl_ir.ShaderStage) StageEntryPoint {
+    const wgsl = (module orelse return .unchecked).wgsl_source orelse return .unchecked;
+    var module_ir = wgsl_analysis.analyzeToIr(native_helpers.alloc, wgsl) catch return .unchecked;
+    defer module_ir.deinit();
+    const name = entry orelse blk: {
+        var only: ?[]const u8 = null;
+        for (module_ir.functions.items) |function| {
+            if (function.stage != stage) continue;
+            if (only != null) return .missing;
+            only = function.name;
+        }
+        break :blk only orelse return .missing;
+    };
+    const function = for (module_ir.functions.items) |candidate| {
+        if (std.mem.eql(u8, candidate.name, name)) break candidate;
+    } else return .missing;
+    if (function.stage != stage) return .missing;
     var metadata: [native_shared.MAX_SHADER_BINDINGS]wgsl_bindings.BindingMeta = undefined;
-    const count = wgsl_bindings.extractBindingsForEntryPoint(native_helpers.alloc, wgsl, entry orelse return false, &metadata) catch return false;
+    const count = wgsl_bindings.extractEntryPointBindings(native_helpers.alloc, &module_ir, name, &metadata) catch return .unchecked;
     for (metadata[0..count]) |meta| {
         if (meta.group >= native_shared.MAX_RENDER_BIND_GROUPS or meta.binding >= native_shared.MAX_BIND) continue;
         pipeline.required_binding_kinds[meta.group * native_shared.MAX_BIND + meta.binding] = shader_binding_reflection.requiredLayoutKind(meta.kind);
     }
-    return true;
+    return .checked;
 }
 
 fn entryPoint(data: ?[*]const u8, length: usize) ?[]const u8 {
