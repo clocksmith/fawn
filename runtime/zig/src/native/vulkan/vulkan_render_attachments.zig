@@ -8,7 +8,17 @@ const helpers = @import("../support/doe_native_object_helpers.zig");
 const Error = contract.RenderAttachmentError;
 const model_render_types = @import("../../contracts/model/model_render_types.zig");
 const vertex_formats = @import("../../contracts/vertex_format.zig");
+const values = @import("../../contracts/model/model_texture_value_types.zig");
+const feature_abi = @import("../../core/abi/wgpu_feature_base_types.zig");
 const Extent = struct { width: u32, height: u32 };
+
+fn tier1Enabled(device: ?*const objects.DoeDevice) bool {
+    const owner = device orelse return false;
+    for (owner.enabled_features) |feature| {
+        if (feature == feature_abi.WGPUFeatureName_TextureFormatsTier1) return true;
+    }
+    return false;
+}
 
 fn validateView(device: *objects.DoeDevice, raw: ?*anyopaque, depth: bool) Error!*objects.DoeTextureView {
     const view = helpers.cast(objects.DoeTextureView, raw) orelse return error.RenderAttachmentUnavailable;
@@ -42,9 +52,15 @@ fn validatePair(color: *const objects.DoeTextureView, depth: *const objects.DoeT
 
 /// Formats with the "resolve" capability in the WebGPU texture format table
 /// (https://gpuweb.github.io/gpuweb/#plain-color-formats); integer and 32-bit
-/// float formats cannot resolve.
-fn resolvable(format: u32) bool {
+/// float formats cannot resolve. texture-formats-tier1 adds the 8-bit snorm
+/// formats (https://gpuweb.github.io/gpuweb/#texture-formats-tier1); its 16-bit
+/// unorm/snorm formats render and multisample but do not resolve.
+fn resolvable(format: u32, tier1: bool) bool {
     return switch (format) {
+        values.WGPUTextureFormat_R8Snorm,
+        values.WGPUTextureFormat_RG8Snorm,
+        values.WGPUTextureFormat_RGBA8Snorm,
+        => tier1,
         texture_abi.WGPUTextureFormat_R8Unorm,
         texture_abi.WGPUTextureFormat_RG8Unorm,
         texture_abi.WGPUTextureFormat_RGBA8Unorm,
@@ -65,7 +81,8 @@ fn resolvable(format: u32) bool {
 /// attachment's resolvable format and extent.
 fn validateResolve(color: *const objects.DoeTextureView, resolve: *const objects.DoeTextureView) Error!void {
     if (color.tex.sample_count <= 1 or resolve.tex.sample_count > 1) return error.RenderAttachmentSampleMismatch;
-    if (color.format != resolve.format or !resolvable(resolve.format)) return error.RenderAttachmentFormatMismatch;
+    if (color.format != resolve.format or !resolvable(resolve.format, tier1Enabled(resolve.tex.device_ref)))
+        return error.RenderAttachmentFormatMismatch;
     if (!std.meta.eql(extent(color), extent(resolve))) return error.RenderAttachmentExtentMismatch;
 }
 
@@ -299,6 +316,18 @@ test "resolve targets are single-sample views of the multisampled color format a
         resolve.format = format;
         try std.testing.expectError(error.RenderAttachmentFormatMismatch, validateResolve(&color, &resolve));
     }
+    // texture-formats-tier1 makes the 8-bit snorm formats resolvable, not the
+    // 16-bit unorm/snorm ones.
+    color.format = texture_abi.WGPUTextureFormat_RGBA8Snorm;
+    resolve.format = color.format;
+    try std.testing.expectError(error.RenderAttachmentFormatMismatch, validateResolve(&color, &resolve));
+    var tier1 = [_]feature_abi.WGPUFeatureName{feature_abi.WGPUFeatureName_TextureFormatsTier1};
+    device.enabled_features = &tier1;
+    try validateResolve(&color, &resolve);
+    color.format = values.WGPUTextureFormat_RG16Unorm;
+    resolve.format = color.format;
+    try std.testing.expectError(error.RenderAttachmentFormatMismatch, validateResolve(&color, &resolve));
+    device.enabled_features = &.{};
     color.format = base.format;
     resolve.format = base.format;
     single.width = 4;

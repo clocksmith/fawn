@@ -293,10 +293,12 @@ function resolveDoeLibraryPath() {
     workspaceRoot: WORKSPACE_ROOT,
   });
 
+  // Absolute, so the library checked here is the one the loader opens: dlopen
+  // would search the system library path for a bare name instead of cwd.
   const configuredCandidates = [
     process.env.DOE_WEBGPU_LIB,
     process.env.DOE_LIB,
-  ];
+  ].map((path) => (path ? resolve(path) : path));
   const workspaceCandidates = [
     ...workspaceLibraryNames.map((name) => resolve(WORKSPACE_ROOT, 'runtime', 'zig', 'zig-out', 'lib', name)),
     ...workspaceLibraryNames.map((name) => resolve(WORKSPACE_ROOT, 'zig', 'zig-out', 'lib', name)),
@@ -3059,19 +3061,24 @@ export function providerInfo() {
   const buildMetadata = currentDoeBuildMetadata();
   const flavor = libraryFlavor(libraryPath);
   let nativeFastPaths = null;
+  let libraryError = '';
   if (nativeAddon && libraryPath) {
     try {
       ensureLibrary();
-      if (typeof nativeAddon.nativeFastPathInfo === 'function') {
+    } catch (error) {
+      libraryError = error?.message || String(error);
+    }
+    if (!libraryError && typeof nativeAddon.nativeFastPathInfo === 'function') {
+      try {
         nativeFastPaths = nativeAddon.nativeFastPathInfo();
+      } catch {
+        nativeFastPaths = null;
       }
-    } catch {
-      nativeFastPaths = null;
     }
   }
   return buildProviderInfo({
-    loaded: !!nativeAddon && !!libraryPath,
-    loadError: !nativeAddon ? 'native addon not found' : !libraryPath ? 'libwebgpu_doe not found' : '',
+    loaded: !!nativeAddon && !!libraryPath && !libraryError,
+    loadError: !nativeAddon ? 'native addon not found' : !libraryPath ? 'libwebgpu_doe not found' : libraryError,
     defaultCreateArgs: [],
     doeNative: flavor === 'doe-dropin' || flavor === 'doe-c',
     libraryFlavor: flavor,

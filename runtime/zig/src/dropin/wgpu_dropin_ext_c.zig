@@ -190,9 +190,14 @@ pub fn doeAbiBridgeQueueWriteTexture(
 ) callconv(.c) void {
     const cmd_texture = @import("../native/resource/doe_command_texture_native.zig");
     const base: [*]const u8 = if (data) |d| @ptrCast(d) else return;
-    // The layout offset selects the first texel inside `data`; an offset past
-    // the end leaves no bytes, which the copy contract rejects as out of range.
-    const offset: usize = @intCast(@min(data_layout.offset, data_size));
+    // The layout offset selects the first texel inside `data`. An offset past
+    // the end is a validation error even when the copy is empty
+    // (https://gpuweb.github.io/gpuweb/#abstract-opdef-validating-linear-texture-data).
+    if (data_layout.offset > data_size) {
+        cmd_texture.rejectQueueWrite(queue, "writeTexture dataLayout.offset exceeds the data size");
+        return;
+    }
+    const offset: usize = @intCast(data_layout.offset);
     cmd_texture.queueWriteTexture(
         queue,
         destination.texture,

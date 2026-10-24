@@ -98,6 +98,24 @@ function escapeRegexLiteral(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+// https://gpuweb.github.io/gpuweb/#abstract-opdef-resolving-gputextureaspect:
+// the format a single-aspect view of a depth/stencil format has, or null when
+// the format lacks that aspect.
+const DEPTH_ASPECT_FORMATS = Object.freeze({
+  depth16unorm: 'depth16unorm',
+  depth24plus: 'depth24plus',
+  depth32float: 'depth32float',
+  'depth24plus-stencil8': 'depth24plus',
+  'depth32float-stencil8': 'depth32float',
+});
+const STENCIL_FORMATS = new Set(['stencil8', 'depth24plus-stencil8', 'depth32float-stencil8']);
+
+function textureAspectFormat(format, aspect) {
+  if (aspect === 'depth-only') return DEPTH_ASPECT_FORMATS[format] ?? null;
+  if (aspect === 'stencil-only') return STENCIL_FORMATS.has(format) ? 'stencil8' : null;
+  return format;
+}
+
 function normalizeOrigin2DForExternalCopy(origin, path) {
   if (origin === undefined || origin === null) {
     return { x: 0, y: 0 };
@@ -1098,13 +1116,20 @@ function createFullSurfaceClasses({
       const baseMipLevel = assertIntegerInRange(viewDescriptor.baseMipLevel ?? 0, 'GPUTexture.createView', 'descriptor.baseMipLevel', { min: 0, max: UINT32_MAX });
       const baseArrayLayer = assertIntegerInRange(viewDescriptor.baseArrayLayer ?? 0, 'GPUTexture.createView', 'descriptor.baseArrayLayer', { min: 0, max: UINT32_MAX });
       const mipLevelCount = assertIntegerInRange(viewDescriptor.mipLevelCount ?? Math.max(1, this.mipLevelCount - baseMipLevel), 'GPUTexture.createView', 'descriptor.mipLevelCount', { min: 1, max: UINT32_MAX });
-      const defaultArrayLayerCount = this.dimension === '3d'
-        ? 1
-        : Math.max(1, this.depthOrArrayLayers - baseArrayLayer);
+      // https://gpuweb.github.io/gpuweb/#abstract-opdef-resolving-gputextureviewdescriptor-defaults
+      const aspect = viewDescriptor.aspect ?? 'all';
+      const aspectFormat = textureAspectFormat(this.format, aspect);
+      const dimension = viewDescriptor.dimension ?? this.textureBindingViewDimension ??
+        (this.dimension === '2d' && this.depthOrArrayLayers > 1 ? '2d-array' : this.dimension);
+      const defaultArrayLayerCount = dimension === '2d-array' || dimension === 'cube-array'
+        ? Math.max(1, this.depthOrArrayLayers - baseArrayLayer)
+        : (dimension === 'cube' ? 6 : 1);
       const arrayLayerCount = assertIntegerInRange(viewDescriptor.arrayLayerCount ?? defaultArrayLayerCount, 'GPUTexture.createView', 'descriptor.arrayLayerCount', { min: 1, max: UINT32_MAX });
-      const format = viewDescriptor.format ?? this.format;
-      if (format !== this.format && !this.viewFormats.includes(format)) {
-        failValidation('GPUTexture.createView', 'descriptor.format must match texture.format or one of texture.viewFormats');
+      const format = viewDescriptor.format ?? aspectFormat ?? this.format;
+      if (aspect === 'all' ? format !== this.format && !this.viewFormats.includes(format) : format !== aspectFormat) {
+        failValidation('GPUTexture.createView', aspect === 'all'
+          ? 'descriptor.format must match texture.format or one of texture.viewFormats'
+          : `descriptor.format must be the ${aspect} format of ${this.format}`);
       }
       if (viewDescriptor.swizzle !== undefined && (typeof viewDescriptor.swizzle !== 'string' || !/^[rgba01]{4}$/.test(viewDescriptor.swizzle))) {
         failValidation('GPUTexture.createView', 'descriptor.swizzle must be a 4-character string using r, g, b, a, 0, or 1');
@@ -1112,12 +1137,12 @@ function createFullSurfaceClasses({
       const normalizedDescriptor = normalizeTextureViewDescriptor({
         ...viewDescriptor,
         format,
-        dimension: viewDescriptor.dimension ?? this.textureBindingViewDimension ?? this.dimension,
+        dimension,
         baseMipLevel,
         mipLevelCount,
         baseArrayLayer,
         arrayLayerCount,
-        aspect: viewDescriptor.aspect ?? 'all',
+        aspect,
         usage: viewDescriptor.usage ?? this.usage,
       }, this, features, 'GPUTexture.createView');
       const view = backend.textureCreateView(this, texture, normalizedDescriptor);

@@ -195,6 +195,11 @@ pub export fn doeNativeQueueWriteTexture(
     queueWriteTexture(queue_raw, texture_raw, data_ptr, data_len, bytes_per_row, rows_per_image, dst_x, dst_y, dst_z, dst_mip, dst_slice, width, height, depth_or_layers, texture_values.WGPUTextureAspect_All);
 }
 
+/// Reports a queue texture write rejected before any texture work.
+pub fn rejectQueueWrite(queue_raw: ?*anyopaque, message: []const u8) void {
+    if (cast(DoeQueue, queue_raw)) |queue| queue.dev.error_scopes.deliver(@import("../../runtime/diagnostics/error_scope.zig").ERROR_TYPE_VALIDATION, message);
+}
+
 /// `dst_slice` is an extra array-layer base added to `dst_z` on Vulkan; both
 /// public entries pass 0 and carry the layer in `dst_z`.
 pub fn queueWriteTexture(
