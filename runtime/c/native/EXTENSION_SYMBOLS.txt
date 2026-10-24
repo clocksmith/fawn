@@ -11,3 +11,5 @@ doeNativeCopyLastErrorMessage
 doeNativeCopyLastErrorStage
 doeNativeGetLastErrorColumn
 doeNativeGetLastErrorLine
+doeNativeShaderModuleGetBindings
+doeNativeShaderModuleGetBindingsForEntryPoint

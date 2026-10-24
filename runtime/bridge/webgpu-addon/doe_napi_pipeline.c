@@ -222,6 +222,17 @@ napi_value doe_pipeline_adopt_auto_bind_group_layout(napi_env env, napi_callback
     return NULL;
 }
 
+/* pipelineAdoptsAutoBindGroupLayouts(): whether the provider can adopt
+ * reflection-built automatic layouts. Without it the pipeline's own automatic
+ * layout (wgpu*PipelineGetBindGroupLayout) stays authoritative, even when the
+ * provider reflects shader bindings. */
+napi_value doe_pipeline_adopts_auto_bind_group_layouts(napi_env env, napi_callback_info info) {
+    (void)info;
+    napi_value result;
+    napi_get_boolean(env, pfn_doeNativePipelineAdoptAutoBindGroupLayout != NULL, &result);
+    return result;
+}
+
 /* ================================================================
  * Bind Group Layout
  * createBindGroupLayout(device, entries[])

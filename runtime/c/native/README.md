@@ -887,10 +887,25 @@ the whole-module validation and emission `wgpuDeviceCreateShaderModule` runs for
 platform's default target (Metal on Apple, SPIR-V elsewhere) and discards the module.
 A rejection keeps its compiler diagnostic, stage (`parser`, `sema`, `unsupported`,
 `emit`, `native_check`), kind and 1-based position for the calling thread until its
-next check; the copy calls never report diagnostics from other operations.
-`tests/shader_check.c` exercises acceptance, parse and semantic rejection, truncated
-copies and a null source; `test-integration-shader-preflight.js` checks the same
-contract through doe-gpu on every provider.
+next check or binding reflection; the copy calls report no other operation's
+diagnostics. `tests/shader_check.c` exercises acceptance, parse and semantic
+rejection, truncated copies and a null source; `test-integration-shader-preflight.js`
+checks the same contract through doe-gpu on every provider.
+
+## Doe binding-reflection extension
+
+`include/doe_native_reflection.h` declares `doeNativeShaderModuleGetBindings` and
+`doeNativeShaderModuleGetBindingsForEntryPoint`, the retained Zig exports the addon's
+`shaderModuleGetBindings*` resolve, with the same five-field record and value codes
+(listed in `EXTENSION_SYMBOLS.txt`). An entry's bindings are the compiler's resource
+closure from the same `doe_shader_specialize` selection pipeline creation uses; the
+whole module is the union over its declared entries, each (group, binding) once. No
+second WGSL parser or binding table exists. Failure returns `SIZE_MAX` with the
+reflection diagnostic copied through the shader-check calls: an invalid module, an
+unknown entry name, or an entry the compiler cannot specialize without pipeline
+constants. Unlike the retained provider, resources no entry uses are not reported,
+since the compiler reflects per-entry closures only. `tests/shader_reflection.c`
+covers buffers, uniforms, textures, samplers and a write-only storage texture.
 
 ## Doe compute-program extension
 

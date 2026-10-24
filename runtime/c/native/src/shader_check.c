@@ -48,10 +48,17 @@ static const char *failure_kind(const doe_shader_error *error)
     }
 }
 
+void native_check_report(const char *stage, const char *kind, const char *message, uint32_t line, uint32_t column)
+{
+    last_check = (check_diagnostic){0};
+    if (!message) return;
+    last_check = (check_diagnostic){.stage=stage, .kind=kind, .line=line, .column=column};
+    snprintf(last_check.message, sizeof(last_check.message), "%s", message);
+}
+
 static void reject(const char *stage, const char *kind, const char *message)
 {
-    last_check = (check_diagnostic){.stage=stage, .kind=kind};
-    snprintf(last_check.message, sizeof(last_check.message), "%s", message);
+    native_check_report(stage, kind, message, 0, 0);
 }
 
 uint32_t doeNativeCheckShaderSource(const char *source, size_t size)
