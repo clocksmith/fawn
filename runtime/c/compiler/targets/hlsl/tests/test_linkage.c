@@ -98,5 +98,21 @@ void test_linkage(const char *directory) {
     save(directory, "high", text);
     free(text);
     release(fixture);
+    fixture = prepare_graphics("@vertex fn DOE_HLSL_INTERSTAGE_MASK()->@builtin(position) vec4f{return vec4f(0,0,0,1);}"
+        "@vertex fn DOE_HLSL_ENTRY()->@builtin(position) vec4f{return vec4f(0,0,0,1);}");
+    DoeCompilerHlslEntryV11 mapped[2] = {{0}};
+    DoeHlslResult measured;
+    assert(doe_hlsl_emit_metadata(&fixture->source, fixture->module, NO_ID, fixture->scratch,
+        (DoeHlslMetadata){.entries = mapped}, &measured) == DOE_COMPILER_OK);
+    static const char *const actual[] = {"doe_hlsl_projected_entry", "doe_hlsl_bundle_entry"};
+    static const char *const files[] = {"macro_mask", "macro_entry"};
+    for (uint32_t i = 0u; i < 2u; ++i) {
+        assert(mapped[i].entry_index == i && strcmp(mapped[i].name, actual[i]) == 0);
+        text = emit(fixture, i);
+        has(text, actual[i]);
+        save(directory, files[i], text);
+        free(text);
+    }
+    release(fixture);
     puts("HLSL linkage: canonical typed carrier order, logical identities and bounded projection guards passed.");
 }

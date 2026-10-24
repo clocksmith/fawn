@@ -61,12 +61,13 @@ def main() -> int:
             assert completed.returncode == 0, f"{name} failed; see {log}"
         return completed.stdout.decode("utf-8", errors="strict")
 
-    def compile_entry(name: str, entry: str, profile: str, mask: int | None = None) -> str:
+    def compile_entry(name: str, entry: str, profile: str, mask: int | None = None,
+                      actual_entry: str | None = None) -> str:
         code = artifacts / f"{entry}.hlsl"
         inputs[str(code)] = digest(code)
         output = artifacts / f"{name}.dxil"
-        args = [str(tool), "-T", profile, "-E", entry, "-HV", "2021", "-Ges", "-WX", "-Gis",
-                "-pack-prefix-stable"]
+        args = [str(tool), "-T", profile, "-E", actual_entry or entry, "-HV", "2021", "-Ges", "-WX", "-Gis",
+                "-pack-prefix-stable", "-D", "DOE_HLSL_ENTRY=0"]
         if mask is not None:
             args += ["-D", f"DOE_HLSL_INTERSTAGE_MASK={mask}"]
         args += [str(code), "-Fo", str(output)]
@@ -105,6 +106,10 @@ def main() -> int:
             "-Ges", "-WX", "-Gis", "-pack-prefix-stable", "-D", "DOE_HLSL_INTERSTAGE_MASK=0",
             str(artifacts / "high.hlsl"), "-Fo", str(artifacts / "high-projected.dxil")], True)
         assert "projection location exceeds the 32-bit profile" in rejected
+        for source_name, target_name in (("macro_mask", "doe_hlsl_projected_entry"),
+                                         ("macro_entry", "doe_hlsl_bundle_entry")):
+            mapped = compile_entry(source_name, source_name, "vs_6_0", 0, target_name)
+            assert signature(mapped, "Output") == {}
         result["checks"] = checks
         has_completed = True
     finally:

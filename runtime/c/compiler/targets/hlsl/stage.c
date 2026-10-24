@@ -2,6 +2,7 @@
  * Copyright (c) 2026 Doe contributors */
 #include "private.h"
 #include "../closure.h"
+#include <string.h>
 
 static bool reference(HlslEmitter *e, uint32_t first, uint32_t count, uint32_t item) {
     const CompilerWorkspace *c = e->module;
@@ -153,6 +154,22 @@ void hlsl_entry_name(HlslEmitter *e, NameSpan name) {
         name.length > e->source->length - name.offset) {
         hlsl_error(e, "HLSL entry name span is invalid");
         return;
+    }
+    /* Generated compile-time controls must never expand a legal WGSL entry
+     * identifier. Private lowercase prefixes are already rejected by entry_admit,
+     * so these distinct target-only spellings cannot alias another user entry.
+     * This same owner also emits the public actual-entry metadata. */
+    static const struct { const char *source, *target; size_t length; } controls[] = {
+        {DOE_COMPILER_HLSL_INTERSTAGE_MASK_DEFINE, "doe_hlsl_projected_entry",
+            sizeof(DOE_COMPILER_HLSL_INTERSTAGE_MASK_DEFINE) - 1u},
+        {"DOE_HLSL_ENTRY", "doe_hlsl_bundle_entry", sizeof("DOE_HLSL_ENTRY") - 1u}
+    };
+    for (size_t i = 0u; i < sizeof(controls) / sizeof(*controls); ++i) {
+        if (name.length == controls[i].length &&
+            memcmp(e->source->source + name.offset, controls[i].source, name.length) == 0) {
+            hlsl_text(e, controls[i].target);
+            return;
+        }
     }
     for (uint32_t i = 0u; i < name.length; ++i) {
         const char character = e->source->source[name.offset + i];
