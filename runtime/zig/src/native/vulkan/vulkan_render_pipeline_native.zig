@@ -12,6 +12,7 @@ const shader_binding_reflection = @import("../shader/shader_binding_reflection.z
 const compute_bind_groups = @import("../compute/doe_compute_bind_groups.zig");
 const abi_binding = @import("../../core/abi/wgpu_binding_base_types.zig");
 const texture_contract = @import("../../contracts/texture.zig");
+const vertex_format = @import("../../contracts/vertex_format.zig");
 const texture_contract_values = @import("../../contracts/model/model_texture_value_types.zig");
 
 pub fn vulkan_create_render_pipeline(
@@ -203,7 +204,7 @@ pub fn vulkan_create_render_pipeline(
     const fragment_entry = if (d.fragment) |frag| entryPoint(frag.entryPoint.data, frag.entryPoint.length) else null;
     var interface = StageInterface{};
     switch (admitStageEntryPoints(pip, vertex, vertex_entry, fragment, fragment_entry, &interface)) {
-        .admitted => if (pip.required_binding_kinds_ready) if (fragmentInterfaceFailure(pip, &interface)) |message| {
+        .admitted => if (pip.required_binding_kinds_ready) if (fragmentInterfaceFailure(pip, &interface) orelse vertexInterfaceFailure(pip, &interface)) |message| {
             dev.error_scopes.deliver(error_scope.ERROR_TYPE_VALIDATION, message);
             return false;
         },
@@ -259,12 +260,24 @@ const InterfaceValue = struct {
     }
 };
 
-/// The fragment outputs with @location, for the
+/// The vertex inputs and fragment outputs with @location, for the
 /// createRenderPipeline rules that compare them with the descriptor.
 const StageInterface = struct {
     const CAPACITY = 32;
+    vertex_inputs: [CAPACITY]InterfaceValue = undefined,
+    vertex_count: usize = 0,
     fragment_outputs: [CAPACITY]InterfaceValue = undefined,
     fragment_count: usize = 0,
+
+    fn recordVertexInput(self: *StageInterface, module_ir: *const wgsl_ir.Module, ty: wgsl_ir.TypeId, io: ?wgsl_ir.IoAttr) void {
+        switch (module_ir.types.get(ty)) {
+            .struct_ => |id| for (module_ir.structs.items[id].fields.items) |field| self.recordVertexInput(module_ir, field.ty, field.io),
+            else => if (io) |attr| if (attr.location) |location| if (self.vertex_count < CAPACITY) {
+                self.vertex_inputs[self.vertex_count] = InterfaceValue.of(module_ir, location, ty);
+                self.vertex_count += 1;
+            },
+        }
+    }
 
     fn recordFragmentOutputs(self: *StageInterface, module_ir: *const wgsl_ir.Module, ty: wgsl_ir.TypeId, io: ?wgsl_ir.IoAttr) void {
         switch (module_ir.types.get(ty)) {
@@ -287,6 +300,36 @@ fn readsSourceAlpha(factor: u32) bool {
     return switch (factor) {
         0x00000005, 0x00000006, 0x0000000B, 0x00000010, 0x00000011 => true, // src-alpha, one-minus-src-alpha, src-alpha-saturated, src1-alpha, one-minus-src1-alpha
         else => false,
+    };
+}
+
+fn vertexFormatKind(code: u32) ?InterfaceValue.Kind {
+    const format = vertex_format.fromCode(code) catch return null;
+    return switch (format) {
+        .uint8, .uint8x2, .uint8x4, .uint16, .uint16x2, .uint16x4, .uint32, .uint32x2, .uint32x3, .uint32x4 => .uint,
+        .sint8, .sint8x2, .sint8x4, .sint16, .sint16x2, .sint16x4, .sint32, .sint32x2, .sint32x3, .sint32x4 => .sint,
+        .unorm8,
+        .unorm8x2,
+        .unorm8x4,
+        .snorm8,
+        .snorm8x2,
+        .snorm8x4,
+        .unorm16,
+        .unorm16x2,
+        .unorm16x4,
+        .snorm16,
+        .snorm16x2,
+        .snorm16x4,
+        .float16,
+        .float16x2,
+        .float16x4,
+        .float32,
+        .float32x2,
+        .float32x3,
+        .float32x4,
+        .unorm10_10_10_2,
+        .unorm8x4_bgra,
+        => .float,
     };
 }
 
@@ -313,6 +356,18 @@ fn fragmentInterfaceFailure(pip: *const shared.DoeRenderPipeline, interface: *co
         if (output.components < components) return "a fragment output has fewer components than its color target format";
         if (target.blend_enabled and (readsSourceAlpha(target.color_src_factor) or readsSourceAlpha(target.color_dst_factor)) and output.components != 4)
             return "a color blend that reads the source alpha needs a four-component fragment output";
+    }
+    return null;
+}
+
+/// Vertex attributes against shader inputs
+/// (https://gpuweb.github.io/gpuweb/#abstract-opdef-validating-gpuvertexstate):
+/// an attribute the shader reads has a format of the input's scalar type.
+fn vertexInterfaceFailure(pip: *const shared.DoeRenderPipeline, interface: *const StageInterface) ?[]const u8 {
+    for (0..pip.vertex_attribute_count) |index| {
+        const input = StageInterface.find(interface.vertex_inputs[0..interface.vertex_count], pip.vertex_attribute_locations[index]) orelse continue;
+        const kind = vertexFormatKind(pip.vertex_attribute_formats[index]) orelse continue;
+        if (input.kind != kind) return "a vertex attribute's format does not match the scalar type of its shader input";
     }
     return null;
 }
@@ -372,8 +427,9 @@ fn stageEntryPoint(pipeline: *shared.DoeRenderPipeline, module: ?*const shared.D
     } else return .missing;
     if (function.stage != stage) return .missing;
     switch (stage) {
+        .vertex => for (function.params.items) |param| interface.recordVertexInput(&module_ir, param.ty, param.io),
         .fragment => interface.recordFragmentOutputs(&module_ir, function.return_type, function.return_io),
-        .vertex, .compute => {},
+        .compute => {},
     }
     var metadata: [native_shared.MAX_SHADER_BINDINGS]wgsl_bindings.BindingMeta = undefined;
     const count = wgsl_bindings.extractEntryPointBindings(native_helpers.alloc, &module_ir, name, &metadata) catch return .unchecked;
@@ -509,4 +565,23 @@ test "fragment outputs match their color targets' scalar type and components" {
     try std.testing.expect(fragmentInterfaceFailure(&pip, &interface) != null);
     interface.fragment_outputs[0].components = 4;
     try std.testing.expectEqual(@as(?[]const u8, null), fragmentInterfaceFailure(&pip, &interface));
+}
+
+test "vertex attribute formats match the scalar type of their shader inputs" {
+    var pip = shared.DoeRenderPipeline{};
+    pip.vertex_attribute_count = 1;
+    pip.vertex_attribute_locations[0] = 3;
+    pip.vertex_attribute_formats[0] = @intFromEnum(vertex_format.Format.uint8x2);
+    var interface = StageInterface{};
+    interface.vertex_inputs[0] = .{ .location = 3, .kind = .uint, .components = 2 };
+    interface.vertex_count = 1;
+    try std.testing.expectEqual(@as(?[]const u8, null), vertexInterfaceFailure(&pip, &interface));
+    interface.vertex_inputs[0].kind = .sint;
+    try std.testing.expect(vertexInterfaceFailure(&pip, &interface) != null);
+    pip.vertex_attribute_formats[0] = @intFromEnum(vertex_format.Format.unorm8x2);
+    interface.vertex_inputs[0].kind = .float;
+    try std.testing.expectEqual(@as(?[]const u8, null), vertexInterfaceFailure(&pip, &interface));
+    interface.vertex_inputs[0].location = 4; // not read by the shader
+    pip.vertex_attribute_formats[0] = @intFromEnum(vertex_format.Format.sint32);
+    try std.testing.expectEqual(@as(?[]const u8, null), vertexInterfaceFailure(&pip, &interface));
 }
