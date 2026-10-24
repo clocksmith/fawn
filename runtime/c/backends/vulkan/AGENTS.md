@@ -24,7 +24,10 @@ Graphics packets must consume the existing resource render/bundle ordering. A
 pass span clears/loads once, records all admitted draws, then stores once, even
 when empty. Complete admission, leases and barriers before native begin; old
 clear/draw conveniences must use that same recorder. Never invent attachments,
-drop unsupported packets or publish speculative layouts.
+drop unsupported packets or publish speculative layouts. Texture layouts and
+initialization and query state publish when `vkQueueSubmit` accepts a recording
+(queue order), never at recording; a refused submission poisons what it touched,
+and leases stay until the fence proves completion (owner authorized 2026-10-24: async submit A+B, D2, fence-wait completion; futures later; reconfirmed after the section 7 risk review).
 
 Keep viewport convention explicit: retained raw Vulkan defaults remain unchanged;
 unmodified WebGPU Position uses one negative-height viewport transform, never a

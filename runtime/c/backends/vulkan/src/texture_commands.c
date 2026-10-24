@@ -369,10 +369,17 @@ doe_vk_status doe_vk_commands_copy_texture(doe_vk_commands *commands,
     return DOE_VK_OK;
 }
 
+/* Publishes the recording's final layouts and initialization, or poisons the
+ * touched images. Submission publishes once vkQueueSubmit accepts the work:
+ * one queue executes in submission order, so the published state is every
+ * later recording's starting state (owner authorized 2026-10-24: async submit
+ * A+B, D2, fence-wait completion; futures later; reconfirmed after the section 7 risk review). The image leases stay with
+ * the recording until it is proven terminal. */
 void doe_vk_textures_complete(doe_vk_commands *commands, doe_vk_status status) {
     for (doe_vk_texture_use *use = commands->textures; use != NULL; use = use->next) {
         doe_vk_texture *texture = use->texture;
         if (status == DOE_VK_OK) {
+            if (commands->committed) continue;
             texture->layout = use->layout;
             memcpy(texture->initialized, use->initialized, texture->subresource_count);
         } else if (texture->content_status == DOE_VK_OK) texture->content_status = status;

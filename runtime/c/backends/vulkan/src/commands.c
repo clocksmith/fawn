@@ -204,12 +204,22 @@ static doe_vk_status queue_submit(doe_vk_commands *commands, doe_vk_error *error
         .pSignalSemaphores = commands->surface != NULL ? &commands->surface->render_finished : NULL
     };
     commands->state = DOE_VK_SUBMITTED;
+    commands->committed = false;
     doe_vk_status status = doe_vk_result(context, context->vk.vkQueueSubmit(context->queue, 1, &submit, commands->fence), "vkQueueSubmit", error);
-    if (status == DOE_VK_DEVICE_LOST) complete(commands, status, error);
-    else if (status != DOE_VK_OK) {
+    if (status == DOE_VK_DEVICE_LOST) {
+        complete(commands, status, error);
+        return status;
+    }
+    if (status != DOE_VK_OK) {
         commands->state = DOE_VK_UNCERTAIN;
         commands->failure = *error;
     }
+    /* Accepted work publishes its texture and query state now, in queue
+     * order; refused work poisons what it touched. Leases stay until the
+     * fence proves the recording terminal. */
+    doe_vk_textures_complete(commands, status);
+    doe_vk_queries_complete(commands, status);
+    commands->committed = true;
     return status;
 }
 

@@ -100,9 +100,12 @@ enables the optional imageCubeArray feature when offered and reports successful
 enablement as `caps.image_cube_array`; cube-array views then require a
 cube-compatible image and whole cubes, and without the feature they return
 UNSUPPORTED (`tests/texture_contract.c`). Native views retain their image.
-A texture is held by one unresolved command owner to avoid stale recorded layouts.
-Layouts and per-mip/layer initialization are speculative until successful native
-completion; discarded/failed recordings cannot publish them. Undefined subresources
+A texture is held by one recording command owner to avoid stale recorded layouts.
+Layouts and per-mip/layer initialization are speculative until `vkQueueSubmit`
+accepts the recording; one queue executes in submission order, so the accepted
+state is every later recording's start (owner authorized 2026-10-24: async submit A+B, D2, fence-wait completion; futures later; reconfirmed after the section 7 risk review). Discarded, refused or failed
+recordings cannot publish them, and image leases stay with the recording until
+its fence proves it terminal. Undefined subresources
 require a full upload before partial updates or reads. Terminal submission failure
 poisons the image instead of guessing a layout or exposing uncertain output.
 `doe_vk_texture_format_caps` exposes named optimal-tiling capability facts; image
@@ -204,9 +207,10 @@ evidence or physical qualification; separate source-compiler consumers own that 
 `include/doe_vk_queries.h` owns real timestamp pools with retained native reset,
 TOP/BOTTOM write and packed64-bit resolve commands. Queue timestamp width and
 period are queried, not assumed; public feature admission remains upstream. Each
-entry must be reset before a write. One unresolved command owns each pool; its
-availability state publishes only after successful native completion. Terminal
-failure poisons the pool rather than guessing results. A new pool replaces it.
+entry must be reset before a write. One recording command owns each pool; its
+availability state publishes when `vkQueueSubmit` accepts the recording (queue
+order, as for textures). Refused submission or terminal failure poisons the
+pool rather than guessing results. A new pool replaces it.
 
 Resolve splits written runs into native WAIT/64-bit copies and never-written or
 reset runs into native zero fills, avoiding an unissued-query wait. Zero-count

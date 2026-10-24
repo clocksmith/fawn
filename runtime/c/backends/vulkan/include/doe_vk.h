@@ -254,10 +254,10 @@ doe_vk_status doe_vk_commands_release(doe_vk_commands *commands);
  * Copy, fill, direct buffer dispatch and self-contained timestamp queries are
  * admitted: every query index a recording writes or resolves must be reset
  * earlier in the same recording, otherwise seal/submit rejects it. Pool
- * ownership is released at seal and after each completion, and every
- * resubmission re-acquires it (BUSY while another recording owns the pool)
- * after checking pool content health; completion publishes the indices the
- * recording reset or wrote, and failure poisons the pool. Recordings holding
+ * ownership is released at seal and when vkQueueSubmit accepts each run, and
+ * every resubmission re-acquires it (BUSY while another recording owns the
+ * pool) after checking pool content health; the accepted run publishes the
+ * indices the recording reset or wrote, and failure poisons the pool. Recordings holding
  * texture, render or surface state reject at submit.
  * retain adds a holder (one per pending submission); release keeps the existing
  * BUSY rule for in-flight work. drop releases a holder that does not own

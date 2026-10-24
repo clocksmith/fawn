@@ -124,6 +124,40 @@ static void layout_and_initialization_transaction(void) {
     assert(texture.references == 1 && texture.recording_owner == NULL);
 }
 
+/* Accepted submission publishes layout and initialization (queue order makes
+ * them the next recording's start); completion of committed work never
+ * overwrites later state, and a terminal failure still poisons. */
+static void submission_publication(void) {
+    doe_vk_context context = { .references = 1 };
+    doe_vk_texture texture = { .context = &context, .references = 1,
+        .desc = { .dimension = DOE_VK_TEXTURE_2D, .width = 4, .height = 4, .depth_or_layers = 1, .mip_levels = 1 },
+        .subresource_count = 1 };
+    uint8_t initialized[1] = {0};
+    texture.initialized = initialized;
+    doe_vk_commands first = { .context = &context };
+    doe_vk_commands second = { .context = &context };
+    doe_vk_texture_use *use = NULL, *other = NULL;
+    assert(doe_vk_use_texture(&first, &texture, &use) == DOE_VK_OK);
+    use->layout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    use->initialized[0] = 1;
+    doe_vk_textures_complete(&first, DOE_VK_OK); /* What queue_submit does once accepted. */
+    first.committed = true;
+    assert(texture.recording_owner == NULL && texture.layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && initialized[0] == 1);
+    assert(texture.references == 2); /* The in-flight recording keeps its lease. */
+    assert(doe_vk_use_texture(&second, &texture, &other) == DOE_VK_OK);
+    assert(other->layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && other->initialized[0] == 1);
+    other->layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    doe_vk_textures_complete(&second, DOE_VK_OK);
+    second.committed = true;
+    doe_vk_textures_complete(&first, DOE_VK_OK); /* The earlier fence signals later. */
+    assert(texture.layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    doe_vk_textures_complete(&first, DOE_VK_DEVICE_LOST);
+    assert(texture.content_status == DOE_VK_DEVICE_LOST);
+    doe_vk_textures_release(&first);
+    doe_vk_textures_release(&second);
+    assert(texture.references == 1);
+}
+
 /* Cube-array views need the enabled imageCubeArray capability, a cube-compatible
  * image and whole cubes. Rejection precedes any native view creation. */
 static void cube_array_admission(void) {
@@ -265,6 +299,7 @@ int main(void) {
     bounds_and_pitch();
     queue_transfer_granularity();
     layout_and_initialization_transaction();
-    puts("PASS texture last-byte/mip/layer/overflow checks, srgb/unorm view-format pair/creation/view admission with exact native view formats, exact view component swizzles, cube-array feature/compatibility/whole-cube view admission, speculative layout/initialization rollback, concurrent owner exclusion and failed output; sampler anisotropy feature gate, linear-filter rule and device-maximum clamp");
+    submission_publication();
+    puts("PASS texture last-byte/mip/layer/overflow checks, srgb/unorm view-format pair/creation/view admission with exact native view formats, exact view component swizzles, cube-array feature/compatibility/whole-cube view admission, speculative layout/initialization rollback, publication at accepted submission without completion overwrite, concurrent owner exclusion and failed output; sampler anisotropy feature gate, linear-filter rule and device-maximum clamp");
     return 0;
 }

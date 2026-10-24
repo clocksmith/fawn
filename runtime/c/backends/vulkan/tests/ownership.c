@@ -530,10 +530,13 @@ static void reusable_queries(void) {
     for (unsigned run = 1; run <= 3; ++run) {
         states[2] = (uint8_t)(run % 2 ? DOE_VK_QUERY_WRITTEN : DOE_VK_QUERY_RESET); /* Other work between runs. */
         assert(doe_vk_commands_submit(commands, NULL) == DOE_VK_OK && mock.submits == submits + run);
-        assert(pool.recording_owner == commands);
-        assert(doe_vk_commands_wait(commands, 1, NULL) == DOE_VK_OK);
+        /* The accepted run publishes its indices and frees the pool at submission. */
         assert(pool.recording_owner == NULL);
         assert(states[0] == DOE_VK_QUERY_WRITTEN && states[1] == DOE_VK_QUERY_WRITTEN);
+        states[0] = DOE_VK_QUERY_RESET; /* Later queue-ordered work; completion must not overwrite it. */
+        assert(doe_vk_commands_wait(commands, 1, NULL) == DOE_VK_OK);
+        assert(pool.recording_owner == NULL && states[0] == DOE_VK_QUERY_RESET);
+        states[0] = DOE_VK_QUERY_WRITTEN;
         assert(states[2] == (run % 2 ? DOE_VK_QUERY_WRITTEN : DOE_VK_QUERY_RESET)); /* Untouched. */
     }
     /* Unhealthy pool content rejects before any native call. */
@@ -580,6 +583,6 @@ int main(void) {
     reusable_queries();
     puts("PASS host Vulkan boundary rollback, timeout, uncertain submission, device loss, bounds, poisoning");
     puts("PASS reusable recording: one native command buffer resubmitted with fence re-arm, buffer uses dropped between runs, pending-holder BUSY vs program drop, terminal reset/execution failure, one-shot retain rejected");
-    puts("PASS reusable timestamp recording: self-contained reset/write/resolve sealed, pool ownership released at seal and per completion, BUSY under another owner without native submit, three runs publishing only recorded indices, unhealthy pool rejection, failed run poisoning, non-self-contained write/resolve rejected at seal");
+    puts("PASS reusable timestamp recording: self-contained reset/write/resolve sealed, pool ownership released at seal and at each accepted submission (published once, never overwritten by completion), BUSY under another owner without native submit, three runs publishing only recorded indices, unhealthy pool rejection, failed run poisoning, non-self-contained write/resolve rejected at seal");
     return 0;
 }
