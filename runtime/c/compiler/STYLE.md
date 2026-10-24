@@ -35,6 +35,11 @@ preserve argument order (notably `atan2(y,x)`) in constant and target lowering.
 Geometric builtins retain their operand roles: `reflect(incident, normal)` uses
 the supplied normal unchanged, including non-unit or zero normals. Const-stage
 geometry uses the existing typed numeric owner; target mappings stay explicit.
+Ternary geometry keeps its signature-owned argument widths: refraction takes two
+vectors and one scalar of their common leaf type. Preserve the third ordered IR
+operand on every target. Const refraction tests its discriminant before sqrt;
+total internal reflection produces zero without evaluating an invalid branch.
+Face-forward uses a strict negative dot test; zero selects the negated first vector.
 Validate WGSL domains rather than accepting a wider libm domain: a negative
 `pow` base is invalid even when a host integer exponent would produce a finite value.
 Lexer/parser preserve raw literal spans, not floating host values. Const evaluation checks every evaluated intermediate. Skipped short-circuit

@@ -571,3 +571,27 @@ interfaces; its optional output directory emits fresh target artifacts.
 artifact, comparing exact words for operand reversal, non-unit normals and
 effectful storage snapshots. These developer controls do not qualify physical
 execution or close the separate refraction, face-forward and full language gates.
+
+
+## Ternary geometry builtins
+
+`faceForward(normal, incident, reference)` and `refract(incident, normal, eta)`
+use the same signature/materialization and ordered argument owners as the other
+numeric builtins. Refraction's third operand is a scalar of the vectors' common
+floating leaf type; neither geometry path normalizes its inputs. Const evaluation
+uses declared-width dot/arithmetic/sqrt primitives, testing the refraction
+discriminant before square root so total internal reflection returns zero.
+Face-forward negates the first operand when the dot product is zero or positive.
+See the WGSL [face-forward](https://www.w3.org/TR/2026/CRD-WGSL-20261021/#faceforward-builtin)
+and [refraction](https://www.w3.org/TR/2026/CRD-WGSL-20261021/#refract-builtin) contracts.
+
+`make test-geometric` exercises the public SPIR-V/MSL/HLSL interfaces, including
+caller FP/errno state. The resulting `test_geometric` executable accepts an
+optional existing output directory for fresh target artifacts. The separate
+`test-geometric-vulkan` route takes `SOFTWARE_VULKAN_ICD` and `GEOMETRIC_SPIRV`,
+comparing 39 fixed expected words for strict-zero face direction, operand roles,
+negative/half/total-internal eta cases, non-unit normals, once-only argument
+effects and storage snapshots. `test_component_math.py` independently checks
+const vector2/3/4 values, runtime instruction operands, overload rejection and
+shadowing. SDK compilation and CPU Vulkan controls remain developer evidence;
+they do not qualify physical execution or close f16/full-language migration.

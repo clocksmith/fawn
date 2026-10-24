@@ -69,6 +69,50 @@ class ComponentMath(unittest.TestCase):
         self.assertEqual(sum(op == 57 for op,_ in code),1)
         self.assertFalse(any(op == 12 and a[3] == 71 for op,a in code))
 
+    def test_face_forward_and_refraction_constants(self):
+        self.vector_constant('faceForward(vec4(1,-2,3,-4),vec4(0,1,0,0),vec4(0,-2,0,0))',
+                             [0x3f800000,0xc0000000,0x40400000,0xc0800000])
+        self.vector_constant('faceForward(vec4f(1,-2,3,-4),vec4f(1,0,0,0),vec4f(0,1,0,0))',
+                             [0xbf800000,0x40000000,0xc0400000,0x40800000])
+        self.vector_constant('vec4f(refract(vec3(4,1,2),vec3(0,1,0),0.5),1)',
+                             [0x40000000,0xbf800000,0x3f800000,0x3f800000])
+        self.vector_constant('vec4f(refract(vec3f(0,0.5,0),vec3f(0,2,0),0.5f),1)',
+                             [0,0xc0300000,0,0x3f800000])
+        self.vector_constant('vec4f(refract(vec3f(0,1,0),vec3f(4,1,2),0.5f),1)',
+                             [0xc0c00000,0xbf800000,0xc0400000,0x3f800000])
+        self.vector_constant('vec4f(refract(vec2(1,0),vec2(0,1),2),0,1)', [0,0,0,0x3f800000])
+        self.vector_constant('refract(vec4f(3,-4,1,2),vec4f(0,1,0,0),-1.0f)',
+                             [0xc0400000,0xc0800000,0xbf800000,0xc0000000])
+
+    def test_ternary_geometry_overloads_order_and_shadowing(self):
+        for width in range(2,5):
+            typ = f'vec{width}f'
+            for name,arguments,opcode in [('faceForward','data[0],data[1],data[2]',70),
+                                          ('refract','data[0],data[1],0.5f',72)]:
+                code = self.compile(f'@group(0) @binding(0) var<storage,read_write> data:array<{typ}>;'+
+                                    ENTRY+'{data[3]='+name+'('+arguments+');}')
+                self.assertEqual(sum(op == 12 and a[3] == opcode for op,a in code),1)
+        helpers = BUFFER+'fn read()->vec4f{data[0]=data[0]+vec4f(1);return data[0];}'
+        for name,arguments,opcode in [('faceForward','read(),read(),read()',70),
+                                      ('refract','read(),read(),read().x',72)]:
+            code = self.compile(helpers+ENTRY+'{data[1]='+name+'('+arguments+');}')
+            calls = [a[1] for op,a in code if op == 57]
+            invocation = [a[4:7] for op,a in code if op == 12 and a[3] == opcode]
+            self.assertEqual(len(calls),3)
+            self.assertEqual(len(invocation),1)
+            self.assertEqual(invocation[0][:2],tuple(calls[:2]))
+            if name == 'faceForward': self.assertEqual(invocation[0][2],calls[2])
+        for expression in ['faceForward(1.0,2.0,3.0)','faceForward(vec2i(1),vec2i(2),vec2i(3))',
+                           'faceForward(vec2f(1),vec2f(2),vec3f(3))','refract(vec2f(1),vec2f(2),vec2f(0.5))',
+                           'refract(vec2f(1),vec3f(2),0.5)','refract(vec2f(1),vec2f(2),1u)',
+                           'refract(1.0,2.0,0.5)','refract(vec2i(1),vec2i(2),1i)']:
+            self.compile(ENTRY+'{return;let invalid='+expression+';}', 'builtin' if '1u' not in expression else 'type')
+        code = self.compile('fn refract(a:u32,b:u32,c:u32)->u32{return a+b+c;}'
+                            'fn faceForward(a:u32,b:u32,c:u32)->u32{return a+b+c;}'+
+                            ENTRY+'{let a=refract(1u,2u,3u);let b=faceForward(1u,2u,3u);}')
+        self.assertEqual(sum(op == 57 for op,_ in code),2)
+        self.assertFalse(any(op == 12 and a[3] in (70,72) for op,a in code))
+
     def test_all_float_shapes_and_stage_split(self):
         for name, instruction in FLOAT_OPS.items():
             for width in range(1,5):

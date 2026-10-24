@@ -176,6 +176,8 @@ static void builtin_expression(MetalEmitter *e, const IrInstruction *ir) {
         [BUILTIN_NORMALIZE] = "normalize",
         [BUILTIN_CROSS] = "cross",
         [BUILTIN_REFLECT] = "reflect",
+        [BUILTIN_FACE_FORWARD] = "faceforward",
+        [BUILTIN_REFRACT] = "refract",
         [BUILTIN_TRANSPOSE] = "transpose",
         [BUILTIN_DETERMINANT] = "determinant",
         [BUILTIN_MIN] = "min",
@@ -280,6 +282,10 @@ static void builtin_expression(MetalEmitter *e, const IrInstruction *ir) {
     if (builtin->arity > 1u) {
         metal_text(e, ", ");
         metal_value(e, ir->operands.scalar.right);
+    }
+    if (builtin->arity > 2u) {
+        metal_text(e, ", ");
+        metal_value(e, ir->operands.scalar.binding);
     }
     metal_text(e, ")");
 }

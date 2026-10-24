@@ -158,9 +158,12 @@ static bool emit_numeric_builtin(Emitter *e, const IrInstruction *ir) {
         if (builtin->arity == 1u) {
             EMIT(OP_EXT_INST, spirv_target_type(e, ir->type), result, e->math_import,
                  extended, left);
-        } else {
+        } else if (builtin->arity == 2u) {
             EMIT(OP_EXT_INST, spirv_target_type(e, ir->type), result, e->math_import,
                  extended, left, right);
+        } else {
+            EMIT(OP_EXT_INST, spirv_target_type(e, ir->type), result, e->math_import,
+                 extended, left, right, e->values[ir->operands.scalar.binding]);
         }
         return true;
     }
