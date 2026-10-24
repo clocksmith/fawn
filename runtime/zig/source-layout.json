@@ -3242,9 +3242,9 @@
       },
       "src/dropin/wgpu_dropin_ext_a_pipeline.zig": {
         "decision": "Keep",
-        "moduleSha256": "3efb9351176e6d84404be272f8daccc1bfe7472dd3fc64387b12fae9aeff51da",
-        "reason": "Keep: frozen C-instance seam preserves this native owner and default behavior; only selected identity/lease routing and required test-only observations change.",
-        "reviewer": "codex-c-instance-author/2026-10-23"
+        "moduleSha256": "da8500a5b35b383c35d1df4b516359842ced64e5ee6a2ff8e9927053deb560ee",
+        "reason": "Keep: frozen C-instance seam preserves this native owner and default behavior; only selected identity/lease routing and required test-only observations change; async compute creation uses the unreported shader-owner entry so failures reach only the callback.",
+        "reviewer": "doe-c-claude-surface/2026-10-23"
       },
       "src/dropin/wgpu_dropin_ext_b.zig": {
         "decision": "Keep",
@@ -3722,8 +3722,8 @@
       },
       "src/native/shader/doe_shader_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "21890de2293b569d5bd8493e6ee4f129fb9b10b4baba2ea3aa1eef8d5e7c1d14",
-        "reason": "Keep: Shader owner validates and retains WGSL for D3D12; routes compute to bounded native integration; releases D3D12 PSO/root through COM, with existing shader/layout references and diagnostics preserved; a failed module also generates its device validation error.",
+        "moduleSha256": "24be375901aa888c5f4de1f30c46fc7ab14bdd0917b82778b4b647061afebd58",
+        "reason": "Keep: Shader owner validates and retains WGSL for D3D12; routes compute to bounded native integration; releases D3D12 PSO/root through COM. Failed module and synchronous compute pipeline creation generate the device error (OutOfMemory for allocation failure, otherwise validation); async creation reports through its callback only.",
         "reviewer": "doe-c-claude-surface/2026-10-23"
       },
       "src/native/shader/doe_shader_translation_cache.zig": {
