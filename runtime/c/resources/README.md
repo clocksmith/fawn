@@ -19,7 +19,9 @@ an alias of device-free compiled data or a second count for one WebGPU object.
   shader identity, map modes, span and stale-generation admission.
 - `formats.c`, `textures.c`, `texture_copy.c`: named format semantics, immutable
   textures/views/samplers and shared checked block/mip/row/image copy geometry;
-  compressed textures have whole blocks at mip 0; view formats may differ only
+  compressed textures have whole blocks at mip 0; render attachments need a
+  WebGPU-renderable color format, multisampling a format that supports it and
+  a resolve target a resolvable one (`render_targets.c`, the plain color formats table); view formats may differ only
   in srgb-ness (RGBA8, BGRA8, BC1, BC2, BC3, BC7). Copy validation modes:
   WEBGPU (buffer copies), QUEUE (writeTexture: no 256-byte or block alignment of
   bytesPerRow and offset; `row_bytes`/`rows` let the caller repack) and
