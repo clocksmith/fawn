@@ -33,6 +33,7 @@ import {
   KNOWN_FEATURES,
   publishLimits,
   publishFeatures,
+  wgslLanguageFeatureSet,
 } from "./shared/capabilities.js";
 import {
   ALL_BUFFER_USAGE_BITS,
@@ -333,6 +334,7 @@ function openLibrary(path) {
         doeNativeDeviceRegisterLostCallback: { args: [FFIType.ptr, FFIType.ptr, FFIType.ptr], returns: FFIType.void },
         wgpuAdapterRelease:       { args: [FFIType.ptr], returns: FFIType.void },
         wgpuAdapterHasFeature:    { args: [FFIType.ptr, FFIType.u32], returns: FFIType.u32 },
+        wgpuInstanceHasWGSLLanguageFeature: { args: [FFIType.ptr, FFIType.u32], returns: FFIType.u32 },
         wgpuAdapterGetLimits:     { args: [FFIType.ptr, FFIType.ptr], returns: FFIType.u32 },
         wgpuDeviceRelease:        { args: [FFIType.ptr], returns: FFIType.void },
         wgpuDeviceHasFeature:     { args: [FFIType.ptr, FFIType.u32], returns: FFIType.u32 },
@@ -841,6 +843,14 @@ function adapterFeatures(handle) {
             ? (feature) => Number(fn(handle, feature)) !== 0
             : null,
     );
+}
+
+function wgslLanguageFeatures(instance) {
+    const fn = wgpu?.symbols?.wgpuInstanceHasWGSLLanguageFeature;
+    if (typeof fn !== "function") {
+        throw new Error("wgslLanguageFeatures: the provider does not export wgpuInstanceHasWGSLLanguageFeature");
+    }
+    return wgslLanguageFeatureSet((feature) => Number(fn(instance, feature)) !== 0);
 }
 
 function deviceFeatures(handle) {
@@ -4400,6 +4410,7 @@ const fullSurfaceBackend = {
     deviceFeatures,
     adapterLimits,
     adapterFeatures,
+    wgslLanguageFeatures,
     preflightShaderSource,
     preflightShaderSourceOnCreate: false,
     requireAutoLayoutEntriesFromNative,

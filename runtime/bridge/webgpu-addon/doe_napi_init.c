@@ -202,6 +202,7 @@ napi_value doe_render_bundle_release(napi_env env, napi_callback_info info);
 /* Adapter / device capabilities */
 napi_value doe_adapter_get_limits(napi_env env, napi_callback_info info);
 napi_value doe_adapter_has_feature(napi_env env, napi_callback_info info);
+napi_value doe_instance_has_wgsl_language_feature(napi_env env, napi_callback_info info);
 napi_value doe_device_get_limits(napi_env env, napi_callback_info info);
 napi_value doe_device_has_feature(napi_env env, napi_callback_info info);
 napi_value doe_device_get_label(napi_env env, napi_callback_info info);
@@ -370,6 +371,7 @@ napi_value doe_module_init(napi_env env, napi_value exports) {
         EXPORT_FN("renderBundleRelease",                      doe_render_bundle_release),
         EXPORT_FN("adapterGetLimits",                         doe_adapter_get_limits),
         EXPORT_FN("adapterHasFeature",                        doe_adapter_has_feature),
+        EXPORT_FN("instanceHasWGSLLanguageFeature",           doe_instance_has_wgsl_language_feature),
         EXPORT_FN("deviceGetLimits",                          doe_device_get_limits),
         EXPORT_FN("nativeComputeProgramContractVersion",       doe_compute_program_contract_version),
         EXPORT_FN("computeProgramPrepare",                    doe_compute_program_prepare),

@@ -157,6 +157,22 @@ napi_value doe_adapter_has_feature(napi_env env, napi_callback_info info) {
     return ret;
 }
 
+/* Instance-level WGSL language feature query. Both providers export the
+ * webgpu.h procedure; a provider without it throws rather than reporting none. */
+napi_value doe_instance_has_wgsl_language_feature(napi_env env, napi_callback_info info) {
+    NAPI_ASSERT_ARGC(env, info, 2);
+    CHECK_LIB_LOADED(env);
+    if (!pfn_wgpuInstanceHasWGSLLanguageFeature) {
+        NAPI_THROW(env, "instanceHasWGSLLanguageFeature: provider does not export wgpuInstanceHasWGSLLanguageFeature");
+    }
+    WGPUInstance instance = unwrap_ptr(env, _args[0]);
+    uint32_t feature;
+    napi_get_value_uint32(env, _args[1], &feature);
+    napi_value ret;
+    napi_get_boolean(env, pfn_wgpuInstanceHasWGSLLanguageFeature(instance, feature) != 0, &ret);
+    return ret;
+}
+
 /* Returns the preferred swapchain format string for the bound adapter.
  * Falls back to "bgra8unorm" (Metal swapchain default) when the native
  * symbol is absent. */
