@@ -26,6 +26,7 @@ import {
   normalizeRequestDeviceDescriptor,
   normalizeSamplerDescriptor,
   normalizeTextureViewDescriptor,
+  normalizeTextureFormat,
   normalizeTextureDescriptor,
   normalizeTextureDimension,
   normalizeQuerySetDescriptor,
@@ -1343,6 +1344,10 @@ function createFullSurfaceClasses({
         ? Math.max(1, this.depthOrArrayLayers - baseArrayLayer)
         : (dimension === 'cube' ? 6 : 1);
       const arrayLayerCount = assertIntegerInRange(viewDescriptor.arrayLayerCount ?? defaultArrayLayerCount, 'GPUTexture.createView', 'descriptor.arrayLayerCount', { min: 1, max: UINT32_MAX });
+      // A feature-gated view format throws TypeError before any compatibility check.
+      if (viewDescriptor.format !== undefined) {
+        normalizeTextureFormat(viewDescriptor.format, 'GPUTexture.createView', 'descriptor.format', features);
+      }
       const format = viewDescriptor.format ?? aspectFormat ?? this.format;
       if (aspect === 'all' ? format !== this.format && !this.viewFormats.includes(format) : format !== aspectFormat) {
         failValidation('GPUTexture.createView', aspect === 'all'
@@ -2067,6 +2072,13 @@ function createFullSurfaceClasses({
         const bundleDescriptor = assertObject(descriptor, path, 'descriptor');
         assertLiveResource(this, path, 'GPUDevice');
         const colorFormats = assertArray(bundleDescriptor.colorFormats ?? [], path, 'descriptor.colorFormats');
+        // Feature-gated formats throw TypeError (content timeline).
+        colorFormats.forEach((format, index) => {
+          if (format != null) normalizeTextureFormat(format, path, `descriptor.colorFormats[${index}]`, this.features);
+        });
+        if (bundleDescriptor.depthStencilFormat != null) {
+          normalizeTextureFormat(bundleDescriptor.depthStencilFormat, path, 'descriptor.depthStencilFormat', this.features);
+        }
         if (!colorFormats.some((format) => format != null) && bundleDescriptor.depthStencilFormat == null) {
           failValidation(path, 'descriptor needs a non-null color format or a depthStencilFormat');
         }
