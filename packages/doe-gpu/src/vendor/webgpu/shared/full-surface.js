@@ -349,6 +349,17 @@ function isReportableCreationError(error) {
     && error?.code !== 'DOE_UNSUPPORTED';
 }
 
+// The kind of destroyed resource a bind group entry names, or null: a view
+// made after its texture's destroy(), a destroyed GPUTexture, or a destroyed
+// GPUBuffer given directly or as a GPUBufferBinding.
+function destroyedBindingKind(resource) {
+  if (resource?._textureDestroyed === true
+    || (resource?._resourceLabel === 'GPUTexture' && resource._destroyed && !resource._invalid)) return 'texture';
+  const buffer = resource?._resourceLabel === 'GPUBuffer' ? resource : resource?.buffer;
+  if (buffer?._resourceLabel === 'GPUBuffer' && buffer._destroyed && !buffer._invalid) return 'buffer';
+  return null;
+}
+
 function labelOf(descriptor) {
   return typeof descriptor?.label === 'string' ? descriptor.label : '';
 }
@@ -1943,16 +1954,17 @@ function createFullSurfaceClasses({
       return createReportingErrors(this, path, () => {
         const bindGroupDescriptor = assertObject(descriptor, path, 'descriptor');
         const layoutNative = assertLiveResource(bindGroupDescriptor.layout, path, 'GPUBindGroupLayout');
-        // A view made after its texture's destroy() (or a destroyed GPUTexture)
-        // has no native handle; the bind group is still valid (WebGPU) and any
+        // A view made after its texture's destroy(), a destroyed GPUTexture or
+        // a destroyed GPUBuffer has no native handle; the bind group is still
+        // valid (WebGPU validates destroyed resources at submit) and any
         // command buffer that uses it fails at submit.
-        if (Array.isArray(bindGroupDescriptor.entries) && bindGroupDescriptor.entries.some((entry) => {
-          const resource = entry?.resource;
-          return resource?._textureDestroyed === true
-            || (resource?._resourceLabel === 'GPUTexture' && resource._destroyed && !resource._invalid);
-        })) {
+        const destroyedKind = Array.isArray(bindGroupDescriptor.entries)
+          ? bindGroupDescriptor.entries.map((entry) => destroyedBindingKind(entry?.resource)).find((kind) => kind !== null) ?? null
+          : null;
+        if (destroyedKind !== null) {
           const bg = new DoeGPUBindGroup(null, this);
           bg._textureDestroyed = true;
+          bg._destroyedResourceKind = destroyedKind;
           bg.label = bindGroupDescriptor.label ?? '';
           return bg;
         }
