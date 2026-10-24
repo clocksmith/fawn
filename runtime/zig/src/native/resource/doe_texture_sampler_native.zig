@@ -12,6 +12,7 @@ const native_shared = @import("../support/doe_native_shared_types.zig");
 const native_helpers = @import("../support/doe_native_object_helpers.zig");
 const native_exports = @import("../support/doe_native_exports.zig");
 const texture_validation = @import("doe_texture_validation.zig");
+const texture_contract = @import("../../contracts/texture.zig");
 const vulkan_lifetime = @import("../vulkan/vulkan_lifetime.zig");
 const d3d12_formats = resource_ops.d3d12_formats;
 
@@ -563,6 +564,12 @@ pub export fn doeNativeTextureCreateView(tex_raw: ?*anyopaque, desc: ?*const abi
     var normalized_desc = requested.*;
     normalized_desc.mipLevelCount = resolved_mip_level_count;
     normalized_desc.arrayLayerCount = resolved_array_layer_count;
+    // A single-aspect view names its aspect's format (depth24plus for the depth
+    // of depth24plus-stencil8); views keep the texture format internally.
+    if (texture_contract.aspectFormat(tex.format, normalized_desc.aspect)) |aspect_format| {
+        if (normalized_desc.aspect != abi_texture.WGPUTextureAspect_All and normalized_desc.format == aspect_format)
+            normalized_desc.format = tex.format;
+    }
     const d = &normalized_desc;
     const resolved_format = if (d.format != 0) d.format else tex.format;
     const resolved_dimension = if (d.dimension != 0) d.dimension else default_texture_view_dimension(tex);
