@@ -32,8 +32,12 @@ pub const MAX_VERTEX_ATTRIBUTES: usize = 16;
 pub const MAX_RENDER_BIND_ENTRIES: usize = 16;
 pub const RENDER_BINDING_UNSET: u32 = 0xFFFF_FFFF;
 
+/// Undefined with no attributes is an unused (null) vertex buffer slot.
+pub const WGPUVertexStepMode_Undefined: u32 = 0x00000000;
 pub const WGPUVertexStepMode_Vertex: u32 = 0x00000001;
 pub const WGPUVertexStepMode_Instance: u32 = 0x00000002;
+pub const WGPUIndexFormat_Uint16: u32 = 0x00000001;
+pub const WGPUIndexFormat_Uint32: u32 = 0x00000002;
 
 pub const RenderVertexAttribute = struct {
     format: u32 = 0,
