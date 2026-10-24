@@ -1165,9 +1165,6 @@ function createFullSurfaceClasses({
     getBindGroupLayout(index) {
       assertLiveResource(this, 'GPURenderPipeline.getBindGroupLayout', 'GPURenderPipeline');
       assertIntegerInRange(index, 'GPURenderPipeline.getBindGroupLayout', 'index', { min: 0, max: UINT32_MAX });
-      if (this._explicitLayout) {
-        return this._explicitLayout;
-      }
       if (this._cachedLayouts.has(index)) {
         return this._cachedLayouts.get(index);
       }
@@ -1221,9 +1218,6 @@ function createFullSurfaceClasses({
     getBindGroupLayout(index) {
       assertLiveResource(this, 'GPUComputePipeline.getBindGroupLayout', 'GPUComputePipeline');
       assertIntegerInRange(index, 'GPUComputePipeline.getBindGroupLayout', 'index', { min: 0, max: UINT32_MAX });
-      if (this._explicitLayout) {
-        return this._explicitLayout;
-      }
       if (this._cachedLayouts.has(index)) {
         return this._cachedLayouts.get(index);
       }
