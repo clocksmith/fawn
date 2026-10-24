@@ -13,7 +13,7 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { createHash } from 'node:crypto';
-import { dirname, resolve, sep } from 'node:path';
+import { basename, dirname, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 // Repo-relative root of the WGSL compiler source tree whose sha256 the
@@ -196,6 +196,30 @@ function main() {
     process.env.DOE_LIB,
     resolve(workspaceRoot, 'runtime', 'zig', 'zig-out', 'lib', libraryFilename),
   ], `${packageJson.name} shared library`);
+  const binRoot = resolve(targetPackageRoot, 'bin');
+  // A C runtime library (from a runtime/c package stage, DOE_WEBGPU_LIB=<stage>/lib/
+  // libwebgpu_doe_c.*) keeps its own name, travels with its sibling libdoe_compiler
+  // (loaded through $ORIGIN) and records the stage MANIFEST.json instead of Zig
+  // build metadata. The Zig drop-in remains the default when nothing is named.
+  const cLibrary = /(^|[\\/])(lib)?webgpu_doe_c\.(so|dylib|dll)$/.test(libraryPath);
+  if (cLibrary) {
+    const libraryDir = dirname(libraryPath);
+    const extension = libraryPath.slice(libraryPath.lastIndexOf('.'));
+    const compilerPath = resolveExistingPath([
+      resolve(libraryDir, `libdoe_compiler${extension}`),
+      resolve(libraryDir, `doe_compiler${extension}`),
+    ], `${packageJson.name} C compiler library`);
+    const manifestPath = resolveExistingPath([resolve(libraryDir, '..', 'MANIFEST.json')], `${packageJson.name} C stage manifest`);
+    rmSync(binRoot, { recursive: true, force: true });
+    mkdirSync(binRoot, { recursive: true });
+    copyFileSync(addonPath, resolve(binRoot, 'doe_napi.node'));
+    copyFileSync(libraryPath, resolve(binRoot, basename(libraryPath)));
+    copyFileSync(compilerPath, resolve(binRoot, basename(compilerPath)));
+    copyFileSync(manifestPath, resolve(binRoot, 'doe-c-manifest.json'));
+    console.log(`doe-gpu: staged ${packageJson.name} with the C runtime from ${dirname(libraryDir)}`);
+    return;
+  }
+
   const buildMetadataPath = resolveExistingPath([
     process.env.DOE_BUILD_METADATA,
     resolve(workspaceRoot, 'runtime', 'zig', 'zig-out', 'share', 'doe-build-metadata.json'),
@@ -203,7 +227,6 @@ function main() {
 
   const buildMetadata = parseBuildMetadata(buildMetadataPath);
   assertBuildMetadataIsFresh(buildMetadata, workspaceRoot, packageJson.name);
-  const binRoot = resolve(targetPackageRoot, 'bin');
   rmSync(binRoot, { recursive: true, force: true });
   mkdirSync(binRoot, { recursive: true });
 

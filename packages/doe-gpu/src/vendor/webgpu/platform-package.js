@@ -61,6 +61,15 @@ function libraryBasenamesForPlatform(platform = process.platform) {
   return ['libwebgpu_doe.so'];
 }
 
+// Libraries an installed platform package may carry: the Zig drop-in first, then
+// the C runtime (staged from a runtime/c package stage with libdoe_compiler).
+// Only the drop-in names above may use Doe build metadata.
+function packageLibraryBasenamesForPlatform(platform = process.platform) {
+  const c = platform === 'win32' ? ['webgpu_doe_c.dll', 'libwebgpu_doe_c.dll']
+    : platform === 'darwin' ? ['libwebgpu_doe_c.dylib'] : ['libwebgpu_doe_c.so'];
+  return [...libraryBasenamesForPlatform(platform), ...c];
+}
+
 function resolvePlatformPackageAddonPath(options = {}) {
   const packageRoot = resolveInstalledPlatformPackageRoot(options);
   if (!packageRoot) {
@@ -75,7 +84,7 @@ function resolvePlatformPackageLibraryPath(options = {}) {
   if (!packageRoot) {
     return null;
   }
-  for (const basename of libraryBasenamesForPlatform(options.platform ?? process.platform)) {
+  for (const basename of packageLibraryBasenamesForPlatform(options.platform ?? process.platform)) {
     const candidate = resolve(packageRoot, 'bin', basename);
     if (existsSync(candidate)) {
       return candidate;
@@ -88,6 +97,7 @@ export {
   PACKAGE_ROOT,
   WORKSPACE_ROOT,
   libraryBasenamesForPlatform,
+  packageLibraryBasenamesForPlatform,
   isInstalledPackageRoot,
   resolveInstalledPlatformPackageRoot,
   resolvePlatformPackageAddonPath,
