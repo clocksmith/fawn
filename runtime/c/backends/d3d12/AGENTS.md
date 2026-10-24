@@ -47,8 +47,11 @@
   states stay fixed. Descriptor heaps and allocators survive their whole submission.
 - Test host ownership at the private typed native-call link seam, not a simulated
   driver or shader interpreter. Keep actual Windows readback as a separate fixture.
-- Texture formats, whole-subresource copies and immutable views remain an explicit
-  subset. Share checked footprint arithmetic with the common leaf, but keep D3D12
+- Texture formats and immutable views remain an explicit subset. Whole-resource
+  transfers retain their existing API; typed color-region transfers additionally
+  admit initialized DEFAULT memory with real source-state restoration. Partial
+  uploads/blits preserve existing initialization; they never establish full writes.
+  Share checked footprint arithmetic with the common leaf, but keep D3D12
   alignment/format admission here. Never publish readback padding as initialized
   by a texture copy; it must already be initialized or absent.
 - Sampled/storage descriptors and static samplers are pipeline/command-owned, not

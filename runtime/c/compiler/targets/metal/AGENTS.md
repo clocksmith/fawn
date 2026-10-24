@@ -46,3 +46,13 @@ size_index equals its physical buffer slot. Shared helper code uses logical
 ctx.rN_bytes facts set by each entry wrapper, never a global slot assumption.
 Charge all new plan/selection work to existing budgets; no repeated uncharged
 closure scans or additional allocator/work pool is permitted.
+
+
+Atomic access uses the same typed path guards and immutable ordered operands as
+ordinary memory. Form device/threadgroup atomic pointers only inside those guards;
+storage also proves four-byte extent/alignment. Keep native signed/unsigned atomic
+types and relaxed ordering. A weak compare-exchange may retry a spurious failure
+only while its observed value still equals the saved comparison; never replay
+operands. Initialize selected workgroup atomic trees in place before the existing
+barrier; never copy atomic-containing aggregates through by-value helpers. Keep
+SDK source compilation and physical execution evidence distinct.

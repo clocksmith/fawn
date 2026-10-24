@@ -29,6 +29,9 @@ typedef struct mock_state {
     doe_dx_native_texture *transfer_texture, *texture_source, *texture_destination;
     doe_dx_native_buffer *transfer_buffer;
     doe_dx_texture_footprint footprint;
+    doe_dx_texture_region region;
+    uint32_t destination_x, destination_y;
+    size_t texture_blits;
     bool upload;
     doe_dx_resource_pipeline_desc pipeline_desc;
     doe_dx_texture_binding_layout texture_layouts[DOE_DX_MAX_BINDINGS];

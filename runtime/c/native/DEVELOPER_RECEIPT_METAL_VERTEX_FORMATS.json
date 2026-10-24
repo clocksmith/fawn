@@ -1,0 +1,147 @@
+{
+  "kind": "developer-correctness-evidence",
+  "component": "Public C Metal vertex-format fetching and admission",
+  "consumer": "C migration public graphics vertex-format correctness gate; bounded developer evidence, not full Metal qualification.",
+  "source_commit": "34526373fd0296a71e9e2638e279b9f720995254",
+  "source_tree": "2a442d5f61bb2559a5f17c9be5ea68e2f21ca5ec",
+  "source_binding": {
+    "exported_files_verified": 4470,
+    "archive_sha256": "6e977de771d2fb8b31911b257bf1ad6765c1728e8dcafbde2839db15cd577236",
+    "method": "All INPUTS hashes equal immutable Git blobs and retained post-run source bytes; no source drift. Full scoped input hashes/Git blob IDs are retained in the ignored bundle.",
+    "input_manifest_sha256": "15e89109a39c6d461944b81b7050f43e3f6237b1a966f87d2276582d96b2acb9",
+    "consumer_path": "runtime/c/native/tests/vertex_formats.c",
+    "consumer_git_blob": "898edd6c5ac8c692d51328096e576cda247c1b4a",
+    "consumer_sha256": "04d60a91249a358c0007ea5b479bd875bef40417328b9d95d623c7aca6843ed9",
+    "consumer_unchanged_from_host_baseline": true
+  },
+  "build": {
+    "command": [
+      "make",
+      "-C",
+      "runtime/c/native",
+      "-j8",
+      "CC=cc",
+      "CXX=c++",
+      "BUILD=/tmp/doe-c-metal-vertex-ndydf6ab/build",
+      "/tmp/doe-c-metal-vertex-ndydf6ab/build/vertex-formats"
+    ],
+    "exit": 0,
+    "elapsed": 4.408328542020172
+  },
+  "artifacts_sha256": {
+    "build/vertex-formats": "b19b99dc34ca3ed2e56d4778c8e5a339ba84d094b230ae3b1f50ddc2ff0b9d1d",
+    "build/libwebgpu_doe_c.dylib": "0b8f043a8901c0304de042c3a1482bcd77daf232b2785f3427fcdff2e2182b09",
+    "build/libdoe_compiler.dylib": "acbf6dc4f58acf20ec97bd19570ec8abc6f0b16c011a0d263bba6e38bdc09323",
+    "worker.py": "1a1fbc3015aa737ee5e2c159f70babcc5cbbd291b9ce2410c84e16751d4e02db"
+  },
+  "host": {
+    "machine": "Mars",
+    "os": "macOS 26.6.2 build 25G83 arm64",
+    "compiler": "Apple clang 17.0.0 (clang-1700.3.19.1)",
+    "sdk": "26.0",
+    "adapter": "Apple M3",
+    "backend": "Metal",
+    "public_adapter_type": "Unknown",
+    "public_adapter_type_value": 4,
+    "driver_version": "not recorded",
+    "selection": {
+      "DOE_C_TEST_BACKEND": "metal",
+      "DOE_C_TEST_ADAPTER": "physical"
+    }
+  },
+  "physical_control": {
+    "result": {
+      "exit": 0,
+      "timeout": false,
+      "leaf_deadline_seconds": 15,
+      "elapsed_seconds": 0.3577794999582693
+    },
+    "stderr_bytes": 0,
+    "executed_vertex_format_cases": 33,
+    "scope": "Real public WGSL draw/readback for 33 selected packed/integer/normalized/half formats, exact RGBA32 pixels at offset 8 with default component fill; plus pipeline-only valid odd scalar offset, min(4,size) alignment and scalar-kind rejection controls.",
+    "pinned_formats_admitted_by_source": 41,
+    "pinned_formats_not_drawn_by_this_control": [
+      "Float32x2",
+      "Float32x4",
+      "Uint32",
+      "Uint32x3",
+      "Uint32x4",
+      "Sint32",
+      "Sint32x2",
+      "Sint32x3"
+    ],
+    "parent_guardian": {
+      "exit": 0,
+      "timeout": false,
+      "parent_deadline_seconds": 30,
+      "elapsed_seconds": 0.41002229205332696,
+      "cleanup": {}
+    },
+    "cleanup_probe": {
+      "owned_pid": 28491,
+      "exit": -9,
+      "mechanism": "Popen child.kill SIGKILL; direct owned process, no process-group claim"
+    },
+    "cleanup_scope": "Independent parent owns the worker; direct positive-PID SIGKILL is proven only on a harmless CPU probe. No process-group or GPU-timeout termination claim.",
+    "thermal": "Before/after pmset logs contain no recorded thermal/performance warning and no recorded CPU power status."
+  },
+  "separate_host_development": {
+    "base_commit": "3a96b22711dd62b97edee8b96e79ad8555f03cc5",
+    "scope": "Base commit plus exact seven-file overlays, not the whole later physical snapshot. All seven final overlay hashes also equal these files at physical source_commit. Host checks do not establish fetched GPU values.",
+    "first_failure": "New rejection control exposed half4 offset2 incorrectly admitted under native two-byte alignment. Public min(4,canonical-format-size) admission was corrected; no new size table. Both original normal/sanitizer abort logs and first-failure source archive are retained.",
+    "first_normal_exit": -6,
+    "first_sanitizer_exit": -6,
+    "final_normal_exit": 0,
+    "final_ASan_UBSan_LSan_exit": 0,
+    "other_checks": "Private Metal normal/UBSan host controls, actual Apple SDK arm64/x86_64 deployment-macOS13 enum/ABI checks, strict Darwin frontend compilation, and independent read-only review. No device run was part of that host overlay pass.",
+    "records_sha256": {
+      "INPUTS_FIRST_FAILURE.json": "89579d5fb8ae12af2f76950c7844e717d1b661c414d9616734fe86b937c3d27d",
+      "INPUTS_FINAL.json": "5b38d3dbe02c5b03793a103d525eeb6cfb737d0d534520ce1da8e09ebc9c5471",
+      "normal.RESULTS.json": "54d693aa5959e36eed86419fc9f125db637b12c4767d6f5a14cb4ba7a41c6298",
+      "normal.stderr": "973d060639e1188fbd6ccc66fb489e07fb4595daf0d8bb3a1b8eac723183d44d",
+      "sanitizer.RESULTS.json": "f0990e7c7f190825e1ec10d4ca9458390aec17d59be2b53404327751c9aa582f",
+      "sanitizer.stderr": "973d060639e1188fbd6ccc66fb489e07fb4595daf0d8bb3a1b8eac723183d44d",
+      "normal-final.RESULTS.json": "9b938f9bb956dd319550190aa53c591a52f3a594e9b2fe9dda1fffe255586e33",
+      "normal-final.stdout": "bcf4fb3056a60236a7e598583a3f1eb0c0b338dc16876de07dff1b4199f5a71b",
+      "normal-final.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sanitizer-final.RESULTS.json": "2e0a75263c518711b0aedb2645fca7b72f0f2246f8febccc588ee7037f127399",
+      "sanitizer-final.stdout": "bcf4fb3056a60236a7e598583a3f1eb0c0b338dc16876de07dff1b4199f5a71b",
+      "sanitizer-final.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "metal-host.log": "328eb3fca9d08eb80241ba9010f7392905c4d201df330815b6bec1b19a5a3c08",
+      "metal-ubsan.log": "745a50eef1a21a8da7db1e691f055f4f6ffb73449e873cec49398d49a7e6600e",
+      "metal-sdk.log": "33e989f7327dd1151fe26ea98c07fa0d238cf89f1716799a881fa8fe087492e1",
+      "native-syntax.log": "ad4232b8f26d3200e1bf9d9fb2bc1d753bd9060165845b158b44955ee8a0ffe0",
+      "first-failure-source.tar.gz": "d19d0d965ca03ff107029dc482e2591f689995e8f4ea983a07adea1f9d36132e"
+    }
+  },
+  "retention": {
+    "ignored_folder": "bench/out/c-metal-vertex-34526373f/",
+    "ignored_bundle": "bench/out/c-metal-vertex-34526373f-evidence.tar.gz",
+    "bundle_sha256": "b1838f9f11e3f1f3c683d967a7975ec939e75b415b1eae342a25a60df576de1b",
+    "records_sha256": {
+      "INPUTS.json": "15e89109a39c6d461944b81b7050f43e3f6237b1a966f87d2276582d96b2acb9",
+      "ARTIFACTS.json": "41fe07aaad1292d0825078ba18c962807e3943af2bc12e566f0c6b83406abfeb",
+      "BUILD.json": "20c66e3d315c525764cda73ee50768a96f6697a292ca495b22ea87b35c99bdfc",
+      "RESULTS.json": "570f56455ef4787fb6f5d0c8cbee9428e6b86a45ca3e600c2f80d7000f13aee7",
+      "CHILD.json": "4657d5d6555adfd54e3146aa68f76af9923b5014ea571b24a23f189b06b822dc",
+      "GUARDIAN.json": "8fdb18e11748ab1efd39ac0c40b13e370f6ccac50bf410fd6d33b08bf85d9cee",
+      "GUARDIAN_PROBE.json": "be4aadf7cf751bd8223fbd2f13e19cfa041da17d46ab6bbd4abaf0bd522b93fa",
+      "stdout.txt": "27fc9e57bec87b7b396184f03d61e53c6357ae975aabe0ff2e0fc7d50c65e8dd",
+      "stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "thermal-before.txt": "96de6076213225f787270bff80efd2011e0ad142953c37697dc547f77d302892",
+      "thermal-after.txt": "96de6076213225f787270bff80efd2011e0ad142953c37697dc547f77d302892",
+      "host.txt": "cd5d6399b3785b04ceaae75045a9ca9f80f0bbc3526eff9d0c36b170ed1ec348",
+      "sdk.txt": "a4da0c4d93b023ecc32b0fe22f22f2c2d2f255c1b1d17c57b8e9e64a625e7378",
+      "compiler.txt": "76587a601c06a8f5655c042172b2793ee740301c97a1af05988741d649e3441f",
+      "worker.py": "1a1fbc3015aa737ee5e2c159f70babcc5cbbd291b9ce2410c84e16751d4e02db",
+      "build.log": "0368b5d385efdf41bb13263bcfc44ab4dcd7c8acc050126ebc2fed365174c664",
+      "SOURCE_GIT_BLOBS.json": "824e0e20dcd45a26869b0c87c3d107d6b3973e094937cc5b5bf6f0eb51cb2fa2",
+      "VERIFICATION.json": "9a3307bbc8c4bc5e5d80500b24f5e961a9a020f7c711db151f25c652bef186f1",
+      "RETAINED_FILES.json": "fce6f4caabe0553eaef20523ef2146f78c27c60a21f6bace43de7968c69abd1c"
+    }
+  },
+  "limits": [
+    "Only 33 format cases execute here, not all 41 pinned formats or arbitrary values. One named M3 tuple is not a device matrix, graphics-completeness, performance, driver-recovery or production/default qualification.",
+    "No Windows indirect, later compiler/texture source, whole C migration or independent acceptance claim. Earlier Metal receipts retain their original source and scope."
+  ]
+}

@@ -284,6 +284,6 @@ int main(int argc, char **argv) {
     test_entries_and_rejection();
     test_control_and_host_fixture(argc > 1 ? argv[1] : NULL);
     test_aggregate_host_fixture(argc > 2 ? argv[2] : NULL);
-    puts("Metal developer checks passed: real source lowering, layout, entries, workgroups, control, atomic rejection.");
+    puts("Metal developer checks passed: real source lowering, layout, entries, workgroups, control and publication guards.");
     return 0;
 }

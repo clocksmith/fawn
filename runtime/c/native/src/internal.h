@@ -70,7 +70,7 @@ typedef struct native_shader {
 
 typedef struct native_texture {
     native_device *device;
-    union { doe_vk_texture *texture; doe_mtl_texture *metal; };
+    union { doe_vk_texture *texture; doe_mtl_texture *metal; struct doe_dx_texture *d3d12; };
 } native_texture;
 typedef struct native_view {
     native_device *device;
@@ -239,6 +239,8 @@ native_failure native_initialize_texture(native_device *device, doe_vk_texture *
 /* Resource finalizer for a native_texture payload: releases its backend texture
  * under the device mutex, then frees the payload. */
 void native_texture_release(void *userdata, void *handle);
+void native_view_release(void *userdata, void *handle);
+void native_sampler_release(void *userdata, void *handle);
 bool native_compare_operation(WGPUCompareFunction value, uint32_t fallback, uint32_t *out);
 /* features: the device's enabled NATIVE_FEATURE bits; feature formats map only when enabled. */
 bool native_depth_format(uint32_t features, WGPUTextureFormat format, doe_vk_texture_format *out);

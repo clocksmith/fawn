@@ -1,0 +1,218 @@
+{
+  "kind": "developer-correctness-evidence",
+  "component": "Public C native Windows D3D12 compute/buffers",
+  "consumer": "C migration actual Windows SDK/public DLL, CPU WARP and named hardware correctness gates for the four unchanged C consumers below.",
+  "source_commit": "3abeb18d23de379285551fa9918a0ab68cfa9da3",
+  "source_tree": "6997539b0a4cdcc4a475a452dda1ee28b6660b1c",
+  "source_binding": {
+    "native_inputs_verified": 255,
+    "exact_git_bytes": 1,
+    "exact_LF_to_CRLF_checkout_inputs": 254,
+    "method": "Native build input hashes match immutable Git blobs exactly or their exact Windows LF-to-CRLF expansion, with no other change. Public consumers/helpers/workflow are separately Git-blob/SHA256 bound. Exact clean revision is checked by CI; same packaged bytes are rehashed before/after Miles execution.",
+    "retained_record": "bench/out/c-windows-public-3abeb18d2-40057610407/SOURCE_GIT_BINDINGS.json",
+    "record_sha256": "f5e7ce861b1ef45733e36a70f90c45c1dfa08fab32433490e45a93788896b1c9"
+  },
+  "sdk_build": {
+    "target": "x86_64-pc-windows-msvc",
+    "compiler": "C:/Program Files/LLVM/bin/clang-cl.EXE",
+    "compiler_version": "20.1.8",
+    "windows_sdk_version": "10.0.26100.0",
+    "vc_tools_version": "14.51.36231",
+    "official_dxc_release": "1.9.2609.5",
+    "official_dxc_archive_sha256": "ad31b1fc8443175d204f77a611fdb3ef2ec42759bdc2f1167368de24a4a7e7f1",
+    "native_dll_total_exports": 203,
+    "wgpu_exports": 196,
+    "doe_extensions": 7,
+    "export_audit": "Actual DLL names equal canonical WebGPU implementation plus extension inventories; no private exports. These counts do not establish per-backend completeness."
+  },
+  "github": {
+    "run_id": 40057610407,
+    "job_id": 120763952872,
+    "url": "https://github.com/doerun/doe/actions/runs/40057610407/job/120763952872",
+    "conclusion": "success",
+    "artifact_id": 12545592841,
+    "github_reported_zip_sha256": "2609a52562edde2584cfe61d3c7f9230489eb1cd2a3d73ff9a019bcb8846f409",
+    "zip_independently_downloaded_and_hashed": false,
+    "manifest_members_independently_rehashed": 366,
+    "retained_extracted_artifact": "bench/out/c-windows-public-3abeb18d2-40057610407/evidence/c-windows-host-3abeb18d23de379285551fa9918a0ab68cfa9da3-40057610407-1/",
+    "verification_record_sha256": "22001615a3e2a915e91fd9707f148a7f91b637af44f35701e575bc299ad447f2",
+    "primary_job_log": "bench/out/c-windows-public-3abeb18d2-40057610407/github-job-120763952872.log",
+    "primary_job_log_sha256": "efa83a008dac25cf30f8d12fdb11af4475b2c3a04da7ecf40057590dc63b1413",
+    "hash_distinction": "Reported ZIP digest is primary GitHub metadata, not a locally computed ZIP checksum; all 366 extracted manifest members were independently rehashed.",
+    "files_sha256": {
+      "artifacts.json": "2fbd41c55e035447e2f88c6b6c74a26169061f6092ebf7c5a60749592a557155",
+      "native-full/native-scope.json": "20d854dc9eba88a2b27e2120d8c1f768718bd0c40a37aeb906cc2ad0ef9961ec",
+      "native-full/public-warp.cmd": "f9e006385105c49ddaea9d5d008f930dad2db4b8a001e49c44461abd16ff37a6",
+      "native-full/warp-stdout.txt": "5aeb2cab95bfe8fc8d5b318431e3b384850a2ba1c78f8ecfc79b59efcdd48cfa",
+      "native-full/warp-stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "native-full/warp-exit-code.txt": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354",
+      "dxc-adapter.log": "76cd4ff08e43a578ce1ec189bb5663d29cd8b54fcc1cd1b99a5e1aa13155e96f"
+    }
+  },
+  "runtime_and_consumer_sha256": {
+    "webgpu_doe_c.dll": "cb57aa0552ae15aaf4db53a4b8b5cb19711bf2de4f70aa3852f20e0c6e35044d",
+    "doe_compiler.dll": "68e28dc2388a74594ae4fead72509075f891c76589c32f33bc99d0bfc60c5dd3",
+    "dxcompiler.dll": "0689e2fee0a1c9df8662a59680469f24e2a3ad7ce6bbbcc9284f7a83172bfc59",
+    "dxil.dll": "64be2368211d257a038a7d4ea6bb3e24c878eb8d588c7b8414fccf759b69c2ac",
+    "compute.exe": "051bef6a95f09eabd05650e34603f062a3e65c9dba267494e019c5732ef4ef06",
+    "uniform_standard.exe": "411f058361d97223e1ae91b014ec4f3bad82eaba52ac160ab729247986de89d5",
+    "binding_aliases.exe": "e4d1dfc5db564f6e8a863b687b4b3ecba7ac6f67e8d99ab18c1bcd05fb88dc06",
+    "command_resources.exe": "c80af1d0f93f1b64945f4bf3346c259b2e740d853ab65e60d6978933bebda706",
+    "native-scope.json": "20d854dc9eba88a2b27e2120d8c1f768718bd0c40a37aeb906cc2ad0ef9961ec",
+    "dxc-licenses/LICENSE-LLVM.txt": "729615317e28dd03907e46f0fc3b5e88f7853cee61d1a1471d2749335516b46f",
+    "dxc-licenses/LICENSE-MS.txt": "734f72f239fe7b07b4c7203f294c1a7ce27095687278bab7e56d630d7c672963"
+  },
+  "checks": {
+    "compute": "Genuine public compute/readback, OOB guards, dynamic offsets, cross-device rejection, one-shot submit, early releases, callback reentry and map cancellation.",
+    "uniform_standard": "Exact 4/8/12/32/64-byte uniforms, final scalar lane, guarded dynamic signed/unsigned OOB, aggregate/matrix layout, wrong-index/layout controls, requires and early releases.",
+    "binding_aliases": "Uniform+readonly storage and overlapping readonly views on one allocation, sparse bindings, num_workgroups/arrayLength, disjoint writable ranges, canonical overlapping-writable rejection, exact 20 output words and early releases.",
+    "command_resources": "One command performs 33 metadata-bearing dispatches yielding 231; another copies 129 distinct source allocations with early release; exact 130 output words."
+  },
+  "warp": {
+    "result": "All four unchanged public C consumers pass on explicitly selected CPU D3D12 WARP; combined exit 0 and empty stderr.",
+    "adapter": "Microsoft Basic Render Driver",
+    "adapter_type": "CPU",
+    "adapter_type_value": 3,
+    "vendor_id": 5140,
+    "device_id": 140,
+    "selection": {
+      "DOE_C_TEST_BACKEND": "d3d12",
+      "DOE_C_TEST_ADAPTER": "software"
+    },
+    "proof": "native-full/public-warp.cmd, warp-stdout.txt and warp-exit-code.txt in verified CI artifact."
+  },
+  "miles": {
+    "result": "All four identical hosted-build consumer/runtime binaries pass, with inputs unchanged.",
+    "os": "Windows 11 Pro 10.0.22631 x64",
+    "device": "AMD Radeon(TM) Graphics",
+    "adapter_type": "IntegratedGPU",
+    "adapter_type_value": 2,
+    "vendor_id": 4098,
+    "device_id": 5761,
+    "driver_version": "32.0.21030.2001",
+    "selection": {
+      "DOE_C_TEST_BACKEND": "d3d12",
+      "DOE_C_TEST_ADAPTER": "physical"
+    },
+    "leaf_deadline_seconds": 20,
+    "results": {
+      "compute": {
+        "exit": 0,
+        "expired": false,
+        "elapsed_seconds": 0.4512053
+      },
+      "uniform_standard": {
+        "exit": 0,
+        "expired": false,
+        "elapsed_seconds": 1.9116364
+      },
+      "binding_aliases": {
+        "exit": 0,
+        "expired": false,
+        "elapsed_seconds": 0.3653913
+      },
+      "command_resources": {
+        "exit": 0,
+        "expired": false,
+        "elapsed_seconds": 4.3149823
+      }
+    },
+    "parent_guardian": {
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "deadline_ms": 95000,
+      "elapsed_ms": 7820
+    },
+    "cleanup_probe": {
+      "killed": {
+        "code": 0,
+        "text": "SUCCESS: The process with PID 25940 (child process of PID 25696) has been terminated.\r\nSUCCESS: The process with PID 25696 (child process of PID 26004) has been terminated.\r\n",
+        "pid": 25696
+      },
+      "terminal": {
+        "code": 1,
+        "signal": null
+      }
+    },
+    "probe_scope": "Actual parent taskkill /PID /T /F cleanup succeeded on a harmless CPU process tree, not a GPU timeout/recovery exercise. Node 22.23.4 supervises C executables only; no Node WebGPU consumer ran.",
+    "ignored_bundle": "bench/out/c-d3d12-public-miles-3abeb18d2/evidence.zip",
+    "independently_verified_zip_sha256": "aee65582db848d7f0cf6ef8fb289e1bd01d19ef4a93ea86897213b7829324208",
+    "remote_archive_digest_matches": true,
+    "nested_package_sha256": "c2b98ec71cefd1122de09619d3827d77f7b885f32746b57023cbf9837029865d",
+    "nested_package_files_verified_identical_to_CI": 11,
+    "all_non_directory_bundle_members_rehashed": 33,
+    "bundle_manifest_sha256": "6c3165a23c8903e6d7cf773dbcbf9b0fca9bf867580bf9aae434de8463f7fde7",
+    "files_sha256": {
+      "INPUTS.json": "36fae79b3b30dbc28d7ded322709156b08fd62ea4ca5e0d02347bedd9c4b0872",
+      "run-public.cjs": "be7492dee0092c58ac586c1cc26dfe1ea3dd953244e439dbef4d61244df25d5a",
+      "guardian.cjs": "e6606b2962f42a024aa807177e10f532a62a51cefcc0af01efdb4844302b1bf8",
+      "GUARDIAN.json": "040230e09dd5b23d6ade848f2579f663997cfc29003ff0d833bdfe6a61f983a6",
+      "GUARDIAN_PROBE.json": "7e2ac50ae3834478bb47d9a1352810cb2c77fb754eaa7b7139fc35b293346b32",
+      "physical-evidence/OUTCOME.json": "27311899022229060affd952c682a16930ad1a007190e2338d4a16bbb3e5cc10",
+      "physical-evidence/inputs.json": "36fae79b3b30dbc28d7ded322709156b08fd62ea4ca5e0d02347bedd9c4b0872",
+      "physical-evidence/inventory.stdout.txt": "f8ebffc0665449ffe6eaae8527b600df06109d8a56417fd4801b3786ceb6c3e6",
+      "physical-evidence/controller.json": "ee6369b67c35fa936133e73dbe4121e98b659cfff2c7674ea02e7e1c9cf3f723"
+    }
+  },
+  "first_failures": [
+    {
+      "source_commit": "145022e0814a75048a558f071e267770032d3fb8",
+      "run_id": 40054382712,
+      "job_id": 120753998848,
+      "url": "https://github.com/doerun/doe/actions/runs/40054382712/job/120753998848",
+      "failure": "Actual SDK rejected unknown D3D12 shared-memory byte constant; corrected to official register count times sizeof(DWORD).",
+      "retained_log": "bench/out/c-windows-host-145022e08-40054382712/github-job-120753998848.log",
+      "log_sha256": "9ec70d87234ce71b676c502ceab7659d28ebc1d106284d21b23655749b0274d9"
+    },
+    {
+      "source_commit": "19dfbd686374abdc7b8f9b73370431e8c932b8a3",
+      "run_id": 40054678351,
+      "job_id": 120754911793,
+      "url": "https://github.com/doerun/doe/actions/runs/40054678351/job/120754911793",
+      "failure": "Official DXC SDK enum and UUID extension diagnostics blocked strict compilation; no public DLL or runtime pass.",
+      "retained_log": "bench/out/c-windows-host-19dfbd686-40054678351/github-job-120754911793.log",
+      "log_sha256": "6b212e4abaa31877d40a58380f20836d33f12ef11e0427cb0b64eb962aa11740"
+    },
+    {
+      "source_commit": "846c76b1fa3092390a15109ec1518390bb4f8487",
+      "run_id": 40055220396,
+      "job_id": 120756621586,
+      "url": "https://github.com/doerun/doe/actions/runs/40055220396/job/120756621586",
+      "failure": "PowerShell Get-FileHash was unavailable after DXC fixture compile/link and module-version printing; not a CPU execution pass.",
+      "retained_log": "bench/out/c-windows-host-846c76b1f-40055220396/github-job-120756621586.log",
+      "log_sha256": "7321c3aedd4806966db6c4b889e3fe3f57cde37a9e919ba1ebe32f2aec039953"
+    },
+    {
+      "source_commit": "3267992840b78137425b04aec8e82b63bc938c2a",
+      "run_id": 40056613589,
+      "job_id": 120760879830,
+      "url": "https://github.com/doerun/doe/actions/runs/40056613589/job/120760879830",
+      "failure": "DXC CPU assertion failed; negative abort NTSTATUS escaped the old batch if-errorlevel-1 guard, falsely greening that step. Public DLL build separately failed Vulkan enum sign comparison. Neither is a passing runtime result.",
+      "retained_log": "bench/out/c-windows-host-326799284-40056613589/github-job-120760879830.log",
+      "log_sha256": "69072c41dd81d286ba845c6ae125ec7a01fd92708e253adb495e08757bacec31"
+    },
+    {
+      "source_commit": "3a96b22711dd62b97edee8b96e79ad8555f03cc5",
+      "run_id": 40057048808,
+      "job_id": 120762221863,
+      "url": "https://github.com/doerun/doe/actions/runs/40057048808/job/120762221863",
+      "failure": "Public DLL build/export audit and DXC controls passed, but public consumer compilation rejected CRT getenv deprecation; no WARP execution pass.",
+      "retained_log": "bench/out/c-windows-host-3a96b2271-40057048808/github-job-120762221863.log",
+      "log_sha256": "c6db9279278d70cb0f8968df77f7ebe38c4205f23a3b92c6e8bf28d091943c1b"
+    },
+    {
+      "source_commit": "3866648a86ec95242cf7a1f9cacc47a9e1a5a79b",
+      "run_id": 40057243340,
+      "job_id": 120762816487,
+      "url": "https://github.com/doerun/doe/actions/runs/40057243340/job/120762816487",
+      "failure": "Public DLL build/export audit passed; first WARP compute stopped at CreateBindGroup rejection. Corrected D3D12 canonical buffer-only filterability admission before the successful source.",
+      "retained_log": "bench/out/c-windows-host-3866648a8-40057243340/github-job-120762816487.log",
+      "log_sha256": "07a0a05759a7315794f0f242e3b5017653fd4047131aa09bebf9c55103ab274a"
+    }
+  ],
+  "limits": [
+    "Developer correctness for these direct compute/buffer consumers and recorded WARP/Miles tuples only; no performance comparison, device matrix, graphics/textures/presentation, Node/browser/package or complete-migration qualification.",
+    "Later indirect, reflection, Metal or other source changes are not qualified by this source snapshot. Earlier private-backend and host receipts keep their independent scope. Production/default promotion remains unchanged."
+  ]
+}

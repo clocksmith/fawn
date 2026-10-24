@@ -91,6 +91,7 @@ static void emit_module(MetalEmitter *e) {
     metal_zero_helpers(e);
     metal_memory_helpers(e);
     metal_workgroup_helpers(e);
+    metal_workgroup_zero_helpers(e);
     metal_numeric_helpers(e);
     metal_functions(e);
 }

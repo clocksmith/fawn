@@ -116,18 +116,55 @@ static void pipeline_ready(WGPUCreatePipelineAsyncStatus status, WGPUComputePipe
     *(WGPUComputePipeline *)userdata = pipeline;
 }
 
-static void reject_spirv_fallback(state *s)
+static void atomic_pipeline_admission(state *s)
 {
     const char *source = "@group(0) @binding(0) var<storage,read_write> data:array<atomic<u32>>;"
         "@compute @workgroup_size(1) fn main(){atomicStore(&data[0],7u);}";
     WGPUShaderSourceWGSL wgsl = {.chain={.sType=WGPUSType_ShaderSourceWGSL},.code={source,WGPU_STRLEN}};
     WGPUShaderModuleDescriptor descriptor = {.nextInChain=&wgsl.chain};
+    unsigned created = mocks[2].created, released = mocks[2].released, live = mocks[2].live;
     wgpuDevicePushErrorScope(s->device,WGPUErrorFilter_Validation);
     WGPUShaderModule module = wgpuDeviceCreateShaderModule(s->device,&descriptor);
-    pop(s,WGPUErrorType_Validation);
     assert(module);
     native_shader *payload = doe_resource_shader_native((doe_resource_shader *)module);
+    assert(payload->compiled);
+    doe_shader_view view;
+    assert(doe_shader_borrow(payload->compiled,&view) == DOE_SHADER_OK);
+    assert(view.target == DOE_SHADER_METAL && view.text && view.text_size && !view.words && !view.counts.words);
+    assert(view.metal_entry_count == 1 && view.metal_binding_count == 1);
+    static const char operation[] = "atomic_store_explicit(target";
+    bool found = false;
+    for (size_t i = 0; i + sizeof(operation) - 1 <= view.text_size; ++i)
+        if (!memcmp(view.text + i,operation,sizeof(operation) - 1)) found = true;
+    assert(found);
+    WGPUComputePipelineDescriptor compute = WGPU_COMPUTE_PIPELINE_DESCRIPTOR_INIT;
+    compute.compute.module = module;
+    compute.compute.entryPoint = (WGPUStringView){"main",4};
+    WGPUComputePipeline pipeline = wgpuDeviceCreateComputePipeline(s->device,&compute);
+    pop(s,WGPUErrorType_NoError);
+    assert(pipeline && !strcmp(mocks[2].entrypoint,"main"));
+    native_pipeline *native = doe_resource_pipeline_native((doe_resource_pipeline *)pipeline);
+    assert(native->handle.metal && native->metal_compute);
+    assert(mocks[2].created == created + 1 && mocks[2].live == live + 1);
+    wgpuShaderModuleRelease(module); /* Pipeline keeps its required source owners. */
+    wgpuComputePipelineRelease(pipeline);
+    assert(mocks[2].released == released + 1 && mocks[2].live == live);
+
+    /* Wrong atomic destination is still a genuine semantic rejection, never a
+     * fallback to another target or a call into the native pipeline boundary. */
+    wgsl.code = (WGPUStringView){"@group(0) @binding(0) var<storage,read_write> data:array<u32>;"
+        "@compute @workgroup_size(1) fn main(){atomicStore(&data[0],7u);}",WGPU_STRLEN};
+    wgpuDevicePushErrorScope(s->device,WGPUErrorFilter_Validation);
+    module = wgpuDeviceCreateShaderModule(s->device,&descriptor);
+    pop(s,WGPUErrorType_Validation);
+    assert(module);
+    payload = doe_resource_shader_native((doe_resource_shader *)module);
     assert(!payload->compiled && payload->error.diagnostic.message[0]);
+    compute.compute.module = module;
+    wgpuDevicePushErrorScope(s->device,WGPUErrorFilter_Validation);
+    assert(!wgpuDeviceCreateComputePipeline(s->device,&compute));
+    pop(s,WGPUErrorType_Validation);
+    assert(mocks[2].created == created + 1 && mocks[2].live == live);
     wgpuShaderModuleRelease(module);
 }
 
@@ -845,7 +882,7 @@ int main(void)
     native_device *device = (native_device *)s.device;
     assert(device->backend.kind == WGPUBackendType_Metal);
     compute_binding_ledger(&s);
-    reject_spirv_fallback(&s);
+    atomic_pipeline_admission(&s);
     WGPUBuffer source = buffer(&s,16,WGPUBufferUsage_CopySrc|WGPUBufferUsage_CopyDst);
     WGPUBuffer target = buffer(&s,16,WGPUBufferUsage_MapRead|WGPUBufferUsage_CopyDst);
     uint32_t input[4] = {11,23,37,51};

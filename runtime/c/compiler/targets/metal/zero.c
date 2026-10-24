@@ -80,3 +80,58 @@ void metal_zero_helpers(MetalEmitter *e) {
         }
     }
 }
+
+/* Atomic objects are never copied or returned by value. Initialize their
+ * selected threadgroup tree in place, on lane zero before the existing barrier. */
+static bool workgroup_zero_used(MetalEmitter *e, TypeId type) {
+    for (uint32_t i = 0u; i < e->module->workgroup_count && zero_spend(e); ++i)
+        if (metal_selected_workgroup(e, i) && zero_dependency(e, e->module->workgroups[i].type, type)) return true;
+    return false;
+}
+static void workgroup_zero_child(MetalEmitter *e, TypeId type) {
+    if ((type_flags(e->module, type) & TYPE_ATOMIC_CONTENT) != 0u)
+        metal_format(e, "doe_wzero%u(", type);
+    else metal_text(e, "*(");
+}
+static void workgroup_zero_finish(MetalEmitter *e, TypeId type) {
+    if ((type_flags(e->module, type) & TYPE_ATOMIC_CONTENT) != 0u) metal_text(e, ");\n");
+    else {
+        metal_text(e, ") = ");
+        metal_zero(e, type);
+        metal_text(e, ";\n");
+    }
+}
+void metal_workgroup_zero_helpers(MetalEmitter *e) {
+    const CompilerWorkspace *c = e->module;
+    for (unsigned pass = 0u; pass < 2u; ++pass) {
+        for (uint32_t i = 0u; i < c->type_count && !e->failed; ++i) {
+            const TypeRecord *t = &c->types[i];
+            const TypeId type = i + 7u;
+            if ((t->flags & (TYPE_ATOMIC_CONTENT | TYPE_FIXED)) != (TYPE_ATOMIC_CONTENT | TYPE_FIXED) ||
+                !workgroup_zero_used(e, type)) continue;
+            metal_format(e, "inline void doe_wzero%u(threadgroup ", type);
+            metal_type(e, type);
+            metal_text(e, "* p)");
+            if (pass == 0u) { metal_text(e, ";\n"); continue; }
+            metal_text(e, " {\n");
+            if (t->kind == TYPE_ATOMIC)
+                metal_format(e, "    atomic_store_explicit(p, %s(0), memory_order_relaxed);\n",
+                             t->element == IR_I32 ? "int" : "uint");
+            else if (t->kind == TYPE_ARRAY) {
+                metal_format(e, "    for (uint i = 0u; i < %uu; ++i) ", t->count);
+                workgroup_zero_child(e, t->element);
+                metal_text(e, "&((*p)[i])");
+                workgroup_zero_finish(e, t->element);
+            } else if (t->kind == TYPE_STRUCT) {
+                for (uint32_t j = 0u; j < t->count; ++j) {
+                    const TypeId child = type_child(c, type, j);
+                    metal_text(e, "    ");
+                    workgroup_zero_child(e, child);
+                    metal_format(e, "&(p->m%u)", j);
+                    workgroup_zero_finish(e, child);
+                }
+            } else metal_error(e, "Metal atomic workgroup initializer has invalid type");
+            metal_text(e, "}\n");
+        }
+    }
+}

@@ -115,11 +115,123 @@ static void object_path(HlslEmitter *e, const IrInstruction *ir, const HlslPath 
         }
     }
 }
+/* The enclosing access guard proves bounds before this lvalue is formed.
+ * Storage and groupshared atomic<i32/u32> are native uint words. No target
+ * pointer is fabricated, and ordered operands already name immutable IR values. */
+static void atomic_word(HlslEmitter *e, const IrInstruction *ir, const HlslPath *path) {
+    if (ir->operands.access.category == ROOT_RESOURCE)
+        hlsl_format(e, "r%u[offset / 4u]", ir->operands.access.root);
+    else object_path(e, ir, path);
+}
+static void atomic_input(HlslEmitter *e, const IrInstruction *ir, uint32_t index) {
+    hlsl_text(e, "asuint(");
+    hlsl_value(e, e->module->typed_operands[ir->operands.access.value + index]);
+    hlsl_text(e, ")");
+}
+static void atomic_operation(HlslEmitter *e, const IrInstruction *ir, const HlslPath *path, TypeId scalar) {
+    const uint32_t count = ir->opcode == IR_ATOMIC_LOAD ? 0u : ir->opcode == IR_ATOMIC_COMPARE_EXCHANGE ? 2u : 1u;
+    if (ir->operands.access.value > e->module->operand_count ||
+        count > e->module->operand_count - ir->operands.access.value) {
+        hlsl_error(e, "HLSL atomic typed operand range is invalid");
+        return;
+    }
+    hlsl_line(e, "uint old = 0u;");
+    if (scalar == IR_I32 && (ir->opcode == IR_ATOMIC_MIN || ir->opcode == IR_ATOMIC_MAX)) {
+        /* Raw uint storage must not select unsigned min/max. A strong CAS loop
+         * linearizes the signed comparison and preserves the original old word. */
+        hlsl_indent(e);
+        hlsl_text(e, "InterlockedOr(");
+        atomic_word(e, ir, path);
+        hlsl_text(e, ", 0u, old);\n");
+        hlsl_line(e, "[allow_uav_condition] while (true) {");
+        ++e->indent;
+        hlsl_line(e, "uint seen = old;");
+        hlsl_indent(e);
+        hlsl_text(e, "uint desired = asint(seen)");
+        hlsl_text(e, ir->opcode == IR_ATOMIC_MIN ? " < asint(" : " > asint(");
+        atomic_input(e, ir, 0u);
+        hlsl_text(e, ") ? seen : ");
+        atomic_input(e, ir, 0u);
+        hlsl_text(e, ";\n");
+        hlsl_indent(e);
+        hlsl_text(e, "InterlockedCompareExchange(");
+        atomic_word(e, ir, path);
+        hlsl_text(e, ", seen, desired, old);\n");
+        hlsl_line(e, "if (old == seen) break;");
+        --e->indent;
+        hlsl_line(e, "}");
+    } else {
+        const char *operation = NULL;
+        switch ((uint32_t)ir->opcode) {
+            case IR_ATOMIC_LOAD: case IR_ATOMIC_OR: operation = "InterlockedOr"; break;
+            case IR_ATOMIC_STORE: case IR_ATOMIC_EXCHANGE: operation = "InterlockedExchange"; break;
+            case IR_ATOMIC_ADD: case IR_ATOMIC_SUBTRACT: operation = "InterlockedAdd"; break;
+            case IR_ATOMIC_MAX: operation = "InterlockedMax"; break;
+            case IR_ATOMIC_MIN: operation = "InterlockedMin"; break;
+            case IR_ATOMIC_AND: operation = "InterlockedAnd"; break;
+            case IR_ATOMIC_XOR: operation = "InterlockedXor"; break;
+            case IR_ATOMIC_COMPARE_EXCHANGE: operation = "InterlockedCompareExchange"; break;
+            default: hlsl_error(e, "HLSL atomic operation has no native mapping"); return;
+        }
+        hlsl_indent(e);
+        hlsl_format(e, "%s(", operation);
+        atomic_word(e, ir, path);
+        hlsl_text(e, ", ");
+        if (ir->opcode == IR_ATOMIC_LOAD) hlsl_text(e, "0u");
+        else {
+            if (ir->opcode == IR_ATOMIC_SUBTRACT) hlsl_text(e, "0u - ");
+            atomic_input(e, ir, 0u);
+        }
+        if (ir->opcode == IR_ATOMIC_COMPARE_EXCHANGE) {
+            hlsl_text(e, ", ");
+            atomic_input(e, ir, 1u);
+        }
+        hlsl_text(e, ", old);\n");
+    }
+    if (ir->opcode != IR_ATOMIC_STORE) {
+        hlsl_indent(e);
+        hlsl_value(e, ir->result);
+        if (ir->opcode == IR_ATOMIC_COMPARE_EXCHANGE) hlsl_text(e, ".m0");
+        hlsl_text(e, scalar == IR_I32 ? " = asint(old);\n" : " = old;\n");
+        if (ir->opcode == IR_ATOMIC_COMPARE_EXCHANGE) {
+            hlsl_indent(e);
+            hlsl_value(e, ir->result);
+            hlsl_text(e, ".m1 = old == ");
+            atomic_input(e, ir, 0u);
+            hlsl_text(e, ";\n");
+        }
+    }
+}
 void hlsl_access(HlslEmitter *e, const IrInstruction *ir) {
     HlslPath path = {0};
     if (!collect_path(e, ir->operands.access.path, &path)) return;
-    const bool store = ir->opcode == IR_ACCESS_STORE;
+    const bool atomic = atomic_opcode(ir->opcode);
+    const bool store = ir->opcode == IR_ACCESS_STORE || ir->opcode == IR_ATOMIC_STORE;
     const ResourceRecord *resource = resource_root(e, ir);
+    TypeId scalar = IR_VOID;
+    if (atomic) {
+        TypeId type;
+        if (resource != NULL) {
+            if (resource->kind != DOE_COMPILER_STORAGE_BUFFER || resource->access != DOE_COMPILER_READ_WRITE) {
+                hlsl_error(e, "HLSL atomics require writable storage or workgroup memory");
+                return;
+            }
+            type = resource->type;
+        } else if (ir->operands.access.category == ROOT_WORKGROUP &&
+                   ir->operands.access.root < e->module->workgroup_count &&
+                   hlsl_entry_workgroup(e, ir->operands.access.root)) {
+            type = e->module->workgroups[ir->operands.access.root].type;
+        } else {
+            hlsl_error(e, "HLSL atomic root is absent or unsupported");
+            return;
+        }
+        if (path.count) type = e->module->accesses[path.steps[0]].output_type;
+        if (type < 7u || type - 7u >= e->module->type_count || e->module->types[type - 7u].kind != TYPE_ATOMIC ||
+            ((scalar = e->module->types[type - 7u].element) != IR_I32 && scalar != IR_U32)) {
+            hlsl_error(e, "HLSL atomic access does not resolve an i32/u32 atomic");
+            return;
+        }
+    }
     hlsl_line(e, "{");
     ++e->indent;
     if (resource != NULL && !hlsl_entry_resource(e, ir->operands.access.root)) {
@@ -150,11 +262,12 @@ void hlsl_access(HlslEmitter *e, const IrInstruction *ir) {
         if (resource->kind == DOE_COMPILER_STORAGE_BUFFER) {
             hlsl_indent(e);
             hlsl_format(e, "if (offset <= bytes && %" PRIu64 "u <= bytes - offset) {\n",
-                        type_size(e->module, ir->type));
+                        atomic ? UINT64_C(4) : type_size(e->module, ir->type));
             ++e->indent;
         }
         hlsl_indent(e);
-        if (store) {
+        if (atomic) atomic_operation(e, ir, &path, scalar);
+        else if (store) {
             if (resource->kind != DOE_COMPILER_STORAGE_BUFFER || resource->access != DOE_COMPILER_READ_WRITE) {
                 hlsl_error(e, "HLSL store targets a read-only resource");
                 return;
@@ -170,7 +283,8 @@ void hlsl_access(HlslEmitter *e, const IrInstruction *ir) {
             --e->indent;
             hlsl_line(e, "}");
         }
-    } else {
+    } else if (atomic) atomic_operation(e, ir, &path, scalar);
+    else {
         if (store) object_path(e, ir, &path);
         else hlsl_value(e, ir->result);
         hlsl_text(e, " = ");

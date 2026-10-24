@@ -92,6 +92,7 @@
     "stage:prebuilds": "node scripts/stage-prebuilds.js",
     "test": "npm run test:contracts && npm run test:smoke",
     "test:contracts": "node test/run-contracts.js",
+    "test:provider-loader": "node scripts/check-provider-loader.js",
     "check:plan-schema": "node scripts/check-plan-schema-parity.js",
     "sync:program-bundle-schema": "node scripts/sync-program-bundle-schema.js",
     "test:smoke": "node test/smoke/test-smoke-load.js",

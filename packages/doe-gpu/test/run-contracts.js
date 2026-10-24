@@ -27,6 +27,7 @@ const contracts = [
   './unit/transparent-webgpu-observer.test.js',
   './unit/native-device-test-helper.test.js',
   './unit/native-release-candidate-bundle.test.js',
+  './unit/build-addon.test.js',
   './unit/addon-enum-values.test.js',
   './unit/addon-source-size.test.js',
   './unit/js-style.test.js',

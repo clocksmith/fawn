@@ -163,7 +163,7 @@ and [structure interpolation](https://learn.microsoft.com/en-us/windows/win32/di
 Derivative/implicit-LOD texture sampling, gather,
 comparison sampling, texture offsets, external textures, f16, pointer parameters,
 overrides and remaining retained builtin families remain incomplete. New shared
-atomic IR explicitly rejects here until HLSL atomic lowering is implemented.
+atomic IR is lowered through the canonical guarded access owner as described below.
 Subgroup size and invocation inputs use WaveGetLaneCount/WaveGetLaneIndex;
 num_subgroups and subgroup_id explicitly reject because this owner does not
 assume a portable mapping from local invocation order to HLSL wave membership.
@@ -252,3 +252,45 @@ scalar/column constructors, transpose, determinant, zero and padding. A delibera
 same-shaped product reversal must fail. The host shim preserves HLSL aggregate
 zero casts rather than incorrectly calling poisoned C++ default constructors.
 This is emitted-operation evidence, not DXC, DXIL, GPU precision or SDK acceptance.
+
+
+## Atomic operations
+
+All eleven existing WGSL atomic IR operations lower for writable storage and
+workgroup i32/u32 memory. The existing access-path owner checks negative and
+upper indices, runtime-tail length and the four-byte extent before forming a
+native lvalue. Results begin at zero (including compare-exchange's false flag)
+so invalid accesses retain guarded load-zero/store-discard behavior. Source
+operand and index side effects still occur once in their validated IR order.
+
+Storage views and groupshared atomic leaves are native uint words. Add/subtract
+and bitwise operations preserve modular bits; signed results use asint. Signed
+min/max use a strong CAS retry loop with signed comparisons, avoiding unsigned
+ordering from the raw word view. Compare-exchange maps the canonical comparator
+and replacement, returning the observed old word and success equality. A strong
+implementation satisfies WGSL's weak exchange contract. Atomic load uses an
+InterlockedOr with zero and store uses InterlockedExchange. These interlocked
+operations add no independent memory fence; existing workgroup barriers remain
+separate. See Microsoft's [compare-exchange contract](https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/interlockedcompareexchange)
+for native memory and loop-attribute requirements.
+
+The private check covers every signed/unsigned storage/shared operation, nested
+runtime-tail access and malformed operand publication. The former atomic-store
+rejection in the matrix control is now an explicit admission and too-small-output
+control; unrelated pointer and unknown-IR rejection stay intact.
+
+For actual software execution of the emitted target:
+
+```sh
+make atomic-software OUT=/tmp/doe-hlsl-atomic DXC=/absolute/path/to/dxc \
+  SOFTWARE_VULKAN_ICD=/absolute/path/to/lvp_icd.json
+```
+
+This compiles five fresh emitted fixtures to cs_6_0 DXIL, translates their exact
+HLSL bytes to SPIR-V with the same official DXC, validates them, and executes on
+an explicitly selected CPU Vulkan adapter. Fixed expected words check old values,
+wrap, signed min/max, successful/failed exchange, negative/high-index zero results,
+canaries and ordered operands even with an empty runtime tail. DXC's SPIR-V mode
+warns that allow_uav_condition is ignored; DXIL accepts the required attribute.
+These controls do not establish Windows/D3D12 execution, physical execution,
+concurrent forward-progress qualification, or the separate Metal atomic target.

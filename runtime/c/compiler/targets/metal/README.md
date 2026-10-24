@@ -85,8 +85,8 @@ the runtime must dispatch that shape. No native queue/resource behavior changed.
 ## Explicit unfinished surface
 
 Vertex/fragment wrappers use the shared typed stage view and have focused emitted-
-operation controls, not SDK validation. f16, atomic operations and pointer-
-parameter target owners remain unfinished. Shared subgroup admission
+operation controls, not SDK validation. f16 and pointer-parameter target owners
+remain unfinished. Atomic lowering and its separate SDK controls are described below. Shared subgroup admission
 exists, but this Metal owner still explicitly rejects all eleven collective
 arithmetic operations and four used subgroup inputs. Other missing features
 reject at shared admission or the explicit target boundary, never with fake
@@ -177,8 +177,8 @@ from MSL2.3 onward. Ordinary HLSL remains explicitly unsupported for discard.
 finite exact arithmetic/access operations with column-major C++ control types,
 poisoned default matrices, short buffers and padding sentinels. This is not an MSL
 parser, SDK validation, GPU simulator, floating-point accuracy proof or physical
-qualification. Source-level workgroup/fragment mapping and failure-atomic atomic-
-operation rejection have separate focused controls.
+qualification. Source-level workgroup/fragment mapping and atomic lowering have
+separate focused controls.
 
 ## ABI12 entry-specific arguments
 
@@ -207,3 +207,30 @@ workspace requirements and accepted behavior remain explicit and unchanged.
 namespace boundaries, exact size identity, publication/FP failure and bounded
 lookup exhaustion. Host controls erase native attributes/address spaces and do
 not qualify MSL SDK, physical devices or numerical behavior.
+
+
+## Typed atomics
+
+All eleven existing atomic IR operations lower to native MSL device/threadgroup
+`atomic_int` or `atomic_uint` operations with `memory_order_relaxed`. Canonical
+index guards run before address formation; storage accesses additionally prove
+four-byte alignment and extent against the bound runtime-tail size or the fixed
+validated binding minimum. Compare-exchange zero-initializes both result fields
+before guards. Its weak native operation retries only a spurious failure whose
+observed value still equals the once-evaluated comparison, providing permitted
+strong WGSL behavior. No operand or index expression is replayed.
+
+Workgroup atomic trees initialize in place through typed relaxed stores on lane
+zero before the existing threadgroup barrier. Atomic objects and their containing
+aggregates are never copied through by-value zero/load/store helpers. Ordinary
+fields retain their existing typed initialization. Shared parser, access layout,
+IR, binding plan, reflection and semantic admission remain authoritative.
+
+`make atomic-control` checks all signed/unsigned storage/shared operations,
+malformed-span nonpublication and reuse, selected initialization closure, dense
+size metadata and once-only ordered effects. `make atomic-sdk` also compiles eight
+fresh emitted fixtures with Apple's actual `metal -std=metal3.0`, retaining each
+compiler stdout/stderr and command in the chosen output directory. SDK warnings
+remain visible under the native compilation policy; these are compile controls,
+not host shader emulation, device execution, contention/forward-progress proof,
+physical qualification or completion of the migration.

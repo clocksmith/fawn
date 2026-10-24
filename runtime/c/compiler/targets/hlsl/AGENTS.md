@@ -50,3 +50,16 @@ Matrix native rows are WGSL columns, so linear products reverse operands in mul;
 componentwise scalar products do not. Keep indexing, constant DAG children and
 byte-layout column stride on that one representation. The shared matrix fixture
 and wrong-order control protect against accidental target-convention mixing.
+
+Atomic IR uses the same access-path bounds/byte guard as ordinary memory. Never
+form the destination lvalue before every index and the four-byte extent pass.
+Storage and workgroup atomic<i32/u32> use native uint words; reinterpret signed
+results and implement signed min/max with a retrying signed-comparison CAS loop,
+not unsigned native min/max. Compare-exchange initializes both old_value and
+exchanged before guards; strong exchange is a permitted weak implementation.
+Ordered typed operand IDs are snapshots, never replayed source expressions.
+Interlocked operations preserve WGSL relaxed ordering; do not infer a memory
+fence or insert unrelated synchronization. Keep group initialization/barriers
+with the existing workgroup owner. The optional atomic-software route executes
+fresh emitted HLSL through official DXC/SPIR-V on explicit CPU Vulkan; it does
+not establish D3D12 or physical GPU support.

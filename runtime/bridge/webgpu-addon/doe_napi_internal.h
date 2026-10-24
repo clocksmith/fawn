@@ -1,4 +1,4 @@
-/*
+/* SPDX-License-Identifier: MIT
  * doe_napi_internal.h — Shared header for split doe_napi modules.
  *
  * All types, macros, extern declarations, and function prototypes needed
@@ -22,13 +22,11 @@
 
 #ifdef _WIN32
 #include <windows.h>
-#define LIB_OPEN(p)      LoadLibraryA(p)
 #define LIB_SYM(h, n)    ((void*)GetProcAddress((HMODULE)(h), n))
 #define LIB_CLOSE(h)     FreeLibrary((HMODULE)(h))
 #else
 #include <dlfcn.h>
 #include <time.h>
-#define LIB_OPEN(p)      dlopen(p, RTLD_NOW | RTLD_LOCAL)
 #define LIB_SYM(h, n)    dlsym(h, n)
 #define LIB_CLOSE(h)     dlclose(h)
 #endif

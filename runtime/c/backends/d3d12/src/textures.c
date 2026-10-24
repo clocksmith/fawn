@@ -29,7 +29,7 @@ doe_dx_status doe_dx_texture_create(doe_dx_context *context,
             return doe_dx_fail(DOE_DX_UNSUPPORTED, 0, "texture.depth_usage", error);
     } else if (desc->usage & DOE_DX_TEXTURE_DEPTH_ATTACHMENT)
         return doe_dx_fail(DOE_DX_UNSUPPORTED, 0, "texture.depth_format", error);
-    if (desc->width > 16384 || desc->height > 16384 || context->objects == SIZE_MAX)
+    if (desc->width > DOE_DX_MAX_TEXTURE_DIMENSION_2D || desc->height > DOE_DX_MAX_TEXTURE_DIMENSION_2D || context->objects == SIZE_MAX)
         return doe_dx_fail(DOE_DX_RANGE, 0, "texture.extent", error);
     if (context->lost) return doe_dx_fail(DOE_DX_DEVICE_LOST, 0, "texture.create", error);
     doe_dx_texture *texture = calloc(1, sizeof(*texture));
@@ -73,7 +73,7 @@ doe_dx_status doe_dx_texture_layout_2d(const doe_dx_texture_desc *desc,
     doe_dx_texture_layout layout, doe_dx_texture_footprint *out) {
     if (!desc || !out || !desc->width || !desc->height) return DOE_DX_INVALID_ARGUMENT;
     if (!doe_dx_format_valid(desc->format)) return DOE_DX_UNSUPPORTED;
-    if (desc->width > 16384 || desc->height > 16384) return DOE_DX_RANGE;
+    if (desc->width > DOE_DX_MAX_TEXTURE_DIMENSION_2D || desc->height > DOE_DX_MAX_TEXTURE_DIMENSION_2D) return DOE_DX_RANGE;
     if (layout.offset % 512 || layout.row_pitch % 256) return DOE_DX_ALIGNMENT;
     uint32_t row_bytes = desc->width * 4;
     uint32_t pitch = layout.row_pitch ? layout.row_pitch : (row_bytes + 255u) / 256u * 256u;

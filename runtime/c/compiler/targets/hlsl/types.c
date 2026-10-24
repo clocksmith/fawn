@@ -26,7 +26,14 @@ void hlsl_type(HlslEmitter *e, TypeId type) {
         hlsl_handle_type(e, type);
         return;
     }
-    if ((t->flags & TYPE_CONSTRUCTIBLE) == 0u || (t->flags & TYPE_ABSTRACT) != 0u) {
+    /* Atomics are unsigned native words even for WGSL i32. Only the shared
+     * semantic owner may admit uses; this memory representation is not a
+     * constructible/by-value language overload. Signed min/max use CAS below. */
+    if (t->kind == TYPE_ATOMIC && (t->element == IR_I32 || t->element == IR_U32)) {
+        hlsl_text(e, "uint");
+        return;
+    }
+    if ((t->flags & (TYPE_CONSTRUCTIBLE | TYPE_ATOMIC_CONTENT)) == 0u || (t->flags & TYPE_ABSTRACT) != 0u) {
         hlsl_error(e, "HLSL value type must be concrete and constructible");
         return;
     }
@@ -46,7 +53,7 @@ void hlsl_type(HlslEmitter *e, TypeId type) {
         /* Native rows are WGSL columns. Indexing stays direct; linear products
          * reverse their operands in numeric.c, not external memory layout. */
         hlsl_format(e, "float%ux%u", t->count, column->count);
-    } else if (t->kind == TYPE_ARRAY || t->kind == TYPE_STRUCT) {
+    } else if (t->kind == TYPE_ARRAY || t->kind == TYPE_STRUCT || t->kind == TYPE_ATOMIC_RESULT) {
         hlsl_format(e, "DoeT%u", type);
     } else hlsl_error(e, "HLSL type kind has no value representation");
 }
@@ -66,10 +73,12 @@ void hlsl_types(HlslEmitter *e) {
         bool pending = false;
         for (uint32_t i = 0u; i < c->type_count && !e->failed; ++i) {
             const TypeRecord *t = &c->types[i];
-            if ((t->kind != TYPE_STRUCT && t->kind != TYPE_ARRAY) ||
-                (t->flags & TYPE_CONSTRUCTIBLE) == 0u || (t->flags & TYPE_ABSTRACT) != 0u) continue;
+            if ((t->kind != TYPE_STRUCT && t->kind != TYPE_ARRAY && t->kind != TYPE_ATOMIC_RESULT) ||
+                (t->flags & (TYPE_CONSTRUCTIBLE | TYPE_ATOMIC_CONTENT)) == 0u || (t->flags & TYPE_ABSTRACT) != 0u ||
+                ((t->flags & TYPE_ATOMIC_CONTENT) != 0u && (t->flags & TYPE_FIXED) == 0u)) continue;
             unsigned d;
-            if (!target_type_depth(c, &e->closure, i + 7u, &d, &e->traversal_left, &error)) {
+            if (t->kind == TYPE_ATOMIC_RESULT) d = 1u; /* Two canonical scalar children. */
+            else if (!target_type_depth(c, &e->closure, i + 7u, &d, &e->traversal_left, &error)) {
                 hlsl_error(e, error);
                 return;
             }
@@ -83,7 +92,7 @@ void hlsl_types(HlslEmitter *e) {
             } else {
                 for (uint32_t j = 0u; j < t->count; ++j) {
                     hlsl_text(e, "    ");
-                    hlsl_type(e, c->members[t->element + j].type);
+                    hlsl_type(e, type_child(c, i + 7u, j));
                     hlsl_format(e, " m%u;\n", j);
                 }
             }
@@ -110,7 +119,7 @@ void hlsl_constant(HlslEmitter *e, TypeId type, uint64_t bits, bool composite) {
     }
 }
 static void member_suffix(HlslEmitter *e, const TypeRecord *t, uint32_t index) {
-    if (t->kind == TYPE_STRUCT) hlsl_format(e, ".m%u", index);
+    if (t->kind == TYPE_STRUCT || t->kind == TYPE_ATOMIC_RESULT) hlsl_format(e, ".m%u", index);
     else if (t->kind == TYPE_ARRAY) hlsl_format(e, ".elements[%u]", index);
     else if (t->kind == TYPE_VECTOR || t->kind == TYPE_MATRIX) hlsl_format(e, "[%u]", index);
     else hlsl_error(e, "HLSL constructor kind is unsupported");

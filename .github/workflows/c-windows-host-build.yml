@@ -107,7 +107,7 @@ jobs:
           $env:OUT = Join-Path $env:EVIDENCE_ROOT 'd3d12-sdk'
           New-Item -ItemType Directory -Force $env:OUT | Out-Null
           $owner = Join-Path $env:GITHUB_WORKSPACE 'runtime/c/backends/d3d12'
-          $command = 'call "' + $env:DEVCMD + '" -arch=x64 >nul && call build_windows.cmd && "' + $env:OUT + '\test_windows_caps.exe"'
+          $command = 'call "' + $env:DEVCMD + '" -arch=x64 >nul && call build_windows.cmd && "' + $env:OUT + '\test_windows_caps.exe" && "' + $env:OUT + '\test_windows_texture_regions.exe"'
           Push-Location $owner
           try {
             & cmd.exe /d /s /c $command 2>&1 | Tee-Object "$env:EVIDENCE_ROOT/d3d12-sdk.log"
@@ -120,6 +120,7 @@ jobs:
           } finally { Pop-Location }
           if (git status --short) { throw 'SDK controls changed source checkout' }
       - name: Build and audit the actual public native DLL
+        id: native_sdk
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
@@ -139,20 +140,24 @@ jobs:
           $native = Join-Path $env:GITHUB_WORKSPACE 'runtime/c/native'
           $header = Join-Path $env:GITHUB_WORKSPACE 'runtime/zig/vendor/webgpu-headers'
           $lines = @('@echo off', ('call "' + $env:DEVCMD + '" -arch=x64 >nul'), 'if not "%errorlevel%"=="0" exit /b 1', 'set DOE_C_TEST_BACKEND=d3d12', 'set DOE_C_TEST_ADAPTER=software')
-          foreach ($name in @('compute', 'uniform_standard', 'binding_aliases', 'command_resources', 'indirect_dispatch')) {
+          $atomicSource = Join-Path $env:GITHUB_WORKSPACE 'runtime/c/compiler/tests/atomic_operations.wgsl'
+          foreach ($name in @('compute', 'uniform_standard', 'binding_aliases', 'command_resources', 'indirect_dispatch', 'atomics', 'atomic_operations', 'texture_transfers')) {
             $source = Join-Path $native ('tests/' + $name + '.c')
             $executable = Join-Path $output ($name + '.exe')
             $object = Join-Path $output ($name + '.obj')
             $imports = Join-Path $output 'webgpu_doe_c.lib'
             $lines += ('clang-cl --target=x86_64-pc-windows-msvc /nologo /MD /O2 /WX /clang:-std=c11 /clang:-Wall /clang:-Wextra /clang:-Wpedantic /DWGPU_SHARED_LIBRARY /D_CRT_SECURE_NO_WARNINGS /I"' + $header + '" "' + $source + '" /Fo"' + $object + '" /Fe"' + $executable + '" /link "' + $imports + '" /stack:8388608')
-            $lines += @('if not "%errorlevel%"=="0" exit /b 1', ('"' + $executable + '"'), 'if not "%errorlevel%"=="0" exit /b 1')
+            $runCommand = '"' + $executable + '"'
+            if ($name -eq 'atomic_operations') { $runCommand += ' "' + $atomicSource + '"' }
+            $lines += @('if not "%errorlevel%"=="0" exit /b 1', $runCommand, 'if not "%errorlevel%"=="0" exit /b 1')
           }
-          $consumerSources = @('compute.c', 'uniform_standard.c', 'binding_aliases.c', 'command_resources.c', 'indirect_dispatch.c', 'consumer.h', 'adapter_class.h')
+          $consumerSources = @('compute.c', 'uniform_standard.c', 'binding_aliases.c', 'command_resources.c', 'indirect_dispatch.c', 'atomics.c', 'atomic_operations.c', 'texture_transfers.c', 'consumer.h', 'adapter_class.h')
           $sourceHashes = @{}
           foreach ($name in $consumerSources) {
             $source = Join-Path $native ('tests/' + $name)
             $sourceHashes[$name] = (Get-FileHash $source -Algorithm SHA256).Hash.ToLowerInvariant()
           }
+          $sourceHashes['atomic_operations.wgsl'] = (Get-FileHash $atomicSource -Algorithm SHA256).Hash.ToLowerInvariant()
           $sourceHashes | ConvertTo-Json | Set-Content "$output/consumer-source-sha256.json"
           $lines += 'exit /b 0'
           $runner = Join-Path $output 'public-warp.cmd'
@@ -176,7 +181,120 @@ jobs:
             $source = Join-Path $native ('tests/' + $name)
             if ((Get-FileHash $source -Algorithm SHA256).Hash.ToLowerInvariant() -ne $sourceHashes[$name]) { throw "consumer source changed: $name" }
           }
+          if ((Get-FileHash $atomicSource -Algorithm SHA256).Hash.ToLowerInvariant() -ne $sourceHashes['atomic_operations.wgsl']) { throw 'atomic shader source changed' }
           if (git status --short) { throw 'public WARP controls changed source checkout' }
+      - name: Build the Node addon with LLVM and matching official Node inputs
+        id: node_addon
+        if: ${{ !cancelled() && steps.native_sdk.outcome == 'success' }}
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $output = Join-Path $env:EVIDENCE_ROOT 'node-addon'
+          New-Item -ItemType Directory $output | Out-Null
+          $node = (Get-Command node.exe -ErrorAction Stop).Source
+          $version = (& $node -p 'process.versions.node').Trim()
+          if ($LASTEXITCODE -ne 0 -or $version -notmatch '^\d+\.\d+\.\d+$') { throw 'invalid installed Node version' }
+          $arch = (& $node -p 'process.arch').Trim()
+          if ($LASTEXITCODE -ne 0 -or $arch -ne 'x64') { throw 'this SDK control requires actual x64 Node' }
+          $base = "https://nodejs.org/dist/v$version"
+          $manifest = Join-Path $output 'SHASUMS256.txt'
+          Invoke-WebRequest "$base/SHASUMS256.txt" -OutFile $manifest -TimeoutSec 60
+          $sums = @{}
+          foreach ($line in Get-Content $manifest) {
+            if ($line -match '^([a-f0-9]{64})\s+(.+)$') { $sums[$Matches[2]] = $Matches[1] }
+          }
+          $inputs = @()
+          foreach ($name in @("node-v$version-headers.tar.gz", 'win-x64/node.lib')) {
+            if (!$sums.ContainsKey($name)) { throw "official Node manifest lacks $name" }
+            $file = Join-Path $output ([IO.Path]::GetFileName($name))
+            Invoke-WebRequest "$base/$name" -OutFile $file -TimeoutSec 60
+            $hash = (Get-FileHash $file -Algorithm SHA256).Hash.ToLowerInvariant()
+            if ($hash -ne $sums[$name]) { throw "official Node input digest mismatch: $name" }
+            $inputs += @{ url="$base/$name"; path=$file; sha256=$hash }
+          }
+          & tar.exe -xzf (Join-Path $output "node-v$version-headers.tar.gz") -C $output
+          if ($LASTEXITCODE -ne 0) { throw 'Node header extraction failed' }
+          $env:NODE_INCLUDE_DIR = Join-Path $output "node-v$version/include/node"
+          $env:NODE_LIB = Join-Path $output 'node.lib'
+          if (!(Test-Path (Join-Path $env:NODE_INCLUDE_DIR 'node_api.h'))) { throw 'official Node header missing' }
+          @{ executable=$node; version=$version; arch=$arch; executableSha256=(Get-FileHash $node -Algorithm SHA256).Hash; manifestUrl="$base/SHASUMS256.txt"; manifestSha256=(Get-FileHash $manifest -Algorithm SHA256).Hash; inputs=$inputs } |
+            ConvertTo-Json -Depth 5 | Set-Content "$output/node-inputs.json"
+          "NODE_CONTROL_EXE=$node" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          $package = Join-Path $env:GITHUB_WORKSPACE 'packages/doe-gpu'
+          $files = @(Get-ChildItem (Join-Path $package 'src') -Recurse -File)
+          $files += Get-ChildItem (Join-Path $env:GITHUB_WORKSPACE 'runtime/bridge/webgpu-addon') -Recurse -File
+          foreach ($relative in @('package.json', 'binding.gyp', 'scripts/build-addon.js', 'scripts/native-abi-layout.js', 'scripts/check-provider-loader.js', 'examples/first-kernel.js', 'test/integration/test-c-provider-warp.js')) {
+            $files += Get-Item (Join-Path $package $relative)
+          }
+          $files += Get-Item (Join-Path $env:GITHUB_WORKSPACE 'runtime/zig/vendor/webgpu-headers/webgpu.h')
+          $sourceHashes = @{}
+          foreach ($file in $files) { $sourceHashes[$file.FullName] = (Get-FileHash $file.FullName -Algorithm SHA256).Hash.ToLowerInvariant() }
+          $sourceHashes | ConvertTo-Json | Set-Content "$output/declared-source-sha256.json"
+          $env:CC = ''
+          $runner = Join-Path $output 'build-addon.cmd'
+          @('@echo off', ('call "' + $env:DEVCMD + '" -arch=x64 >nul'), 'if not "%errorlevel%"=="0" exit /b 1',
+            'for /f "delims=" %%C in (''where clang.exe'') do if not defined CC set "CC=%%C"', 'if not defined CC exit /b 1',
+            ('echo %CC% > "' + $output + '\clang-path.txt"'), ('"%CC%" --version > "' + $output + '\clang-version.txt"'),
+            'if not "%errorlevel%"=="0" exit /b 1', ('"' + $node + '" scripts\check-provider-loader.js "' + $output + '\loader-control"'),
+            'if not "%errorlevel%"=="0" exit /b 1', ('"' + $node + '" scripts\build-addon.js'), 'exit /b %errorlevel%') |
+            Set-Content $runner -Encoding ascii
+          $stdout = Join-Path $output 'build-stdout.txt'
+          $stderr = Join-Path $output 'build-stderr.txt'
+          $process = Start-Process -FilePath 'cmd.exe' -ArgumentList ('/d /s /c ""' + $runner + '""') -WorkingDirectory $package -RedirectStandardOutput $stdout -RedirectStandardError $stderr -PassThru
+          if (!$process.WaitForExit(120000)) {
+            & taskkill.exe /PID $process.Id /T /F
+            throw 'LLVM Node addon build exceeded its 120-second process-tree deadline'
+          }
+          $process.WaitForExit()
+          $process.Refresh()
+          $process.ExitCode | Set-Content "$output/build-exit-code.txt"
+          Get-Content $stdout
+          Get-Content $stderr
+          if ($process.ExitCode -ne 0) { throw "LLVM Node addon build failed: $($process.ExitCode)" }
+          $clang = (Get-Content "$output/clang-path.txt" -Raw).Trim()
+          @{ path=$clang; sha256=(Get-FileHash $clang -Algorithm SHA256).Hash } | ConvertTo-Json | Set-Content "$output/clang.json"
+          Copy-Item (Join-Path $package 'build/Release/doe_napi.node') $output
+          foreach ($path in $sourceHashes.Keys) {
+            if ((Get-FileHash $path -Algorithm SHA256).Hash.ToLowerInvariant() -ne $sourceHashes[$path]) { throw "addon input source changed: $path" }
+          }
+          if (git status --short) { throw 'addon build changed tracked/unignored source' }
+      - name: Exercise the public Node C-provider first kernel on explicit CPU WARP
+        if: ${{ !cancelled() && inputs.run_public_warp && steps.node_addon.outcome == 'success' }}
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $output = Join-Path $env:EVIDENCE_ROOT 'node-addon'
+          $runtime = Join-Path $output 'runtime'
+          New-Item -ItemType Directory $runtime | Out-Null
+          $native = Join-Path $env:EVIDENCE_ROOT 'native-full'
+          Copy-Item (Join-Path $native '*.dll') $runtime
+          $source = Join-Path $native 'webgpu_doe_c.dll'
+          $env:DOE_WEBGPU_LIB = Join-Path $runtime 'libwebgpu_doe_c.dll'
+          Copy-Item $source $env:DOE_WEBGPU_LIB
+          $sourceHash = (Get-FileHash $source -Algorithm SHA256).Hash
+          if ((Get-FileHash $env:DOE_WEBGPU_LIB -Algorithm SHA256).Hash -ne $sourceHash) { throw 'C provider staging changed bytes' }
+          @{ source=$source; staged=$env:DOE_WEBGPU_LIB; sha256=$sourceHash } | ConvertTo-Json | Set-Content "$output/provider-stage.json"
+          'Node JS CPU-WARP control requested; logs determine outcome. JS observes C path/hash/flavor and actual CPU/name. Numeric backend is supplied separately by same-source native controls. No physical/performance/full-migration qualification.' |
+            Set-Content "$output/WARP_SCOPE.txt"
+          $package = Join-Path $env:GITHUB_WORKSPACE 'packages/doe-gpu'
+          $stdout = Join-Path $output 'warp-stdout.json'
+          $stderr = Join-Path $output 'warp-stderr.txt'
+          $process = Start-Process -FilePath $env:NODE_CONTROL_EXE -ArgumentList 'test/integration/test-c-provider-warp.js' -WorkingDirectory $package -RedirectStandardOutput $stdout -RedirectStandardError $stderr -PassThru
+          if (!$process.WaitForExit(120000)) {
+            & taskkill.exe /PID $process.Id /T /F
+            throw 'Node CPU-WARP control exceeded its 120-second process-tree deadline'
+          }
+          $process.WaitForExit()
+          $process.Refresh()
+          $process.ExitCode | Set-Content "$output/warp-exit-code.txt"
+          Get-Content $stdout
+          Get-Content $stderr
+          if ($process.ExitCode -ne 0) { throw "Node CPU-WARP control failed: $($process.ExitCode)" }
+          $sourceHashes = Get-Content "$output/declared-source-sha256.json" -Raw | ConvertFrom-Json -AsHashtable
+          foreach ($path in $sourceHashes.Keys) {
+            if ((Get-FileHash $path -Algorithm SHA256).Hash.ToLowerInvariant() -ne $sourceHashes[$path]) { throw "Node control input source changed: $path" }
+          }
+          if (git status --short) { throw 'Node control changed tracked/unignored source' }
       - name: Bind retained outputs including first failures
         if: always()
         shell: pwsh

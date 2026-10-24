@@ -2,6 +2,9 @@
 #include "windows_internal.h"
 #ifdef _WIN32
 
+_Static_assert(DOE_DX_MAX_TEXTURE_DIMENSION_2D <= D3D12_REQ_TEXTURE2D_U_OR_V_DIMENSION,
+    "texture implementation ceiling must fit the SDK guaranteed dimension");
+
 DXGI_FORMAT doe_dx_texture_format(doe_dx_format format) {
     switch (format) {
         case DOE_DX_RGBA8_UNORM: return DXGI_FORMAT_R8G8B8A8_UNORM;

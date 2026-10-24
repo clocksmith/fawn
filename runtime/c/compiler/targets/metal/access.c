@@ -123,11 +123,136 @@ static void object_path(MetalEmitter *e, const IrInstruction *ir, const MetalPat
         }
     }
 }
+static TypeId atomic_scalar(MetalEmitter *e, const IrInstruction *ir, const MetalPath *path,
+                            const ResourceRecord *resource) {
+    TypeId type;
+    if (resource != NULL && resource->kind == DOE_COMPILER_STORAGE_BUFFER &&
+        resource->access == DOE_COMPILER_READ_WRITE && metal_selected_resource(e, ir->operands.access.root))
+        type = resource->type;
+    else if (ir->operands.access.category == ROOT_WORKGROUP &&
+             ir->operands.access.root < e->module->workgroup_count &&
+             metal_selected_workgroup(e, ir->operands.access.root))
+        type = e->module->workgroups[ir->operands.access.root].type;
+    else {
+        metal_error(e, "Metal atomics require selected writable storage or workgroup memory");
+        return IR_VOID;
+    }
+    if (path->count) type = e->module->accesses[path->steps[0]].output_type;
+    if (type < 7u || type - 7u >= e->module->type_count || e->module->types[type - 7u].kind != TYPE_ATOMIC ||
+        (e->module->types[type - 7u].element != IR_I32 && e->module->types[type - 7u].element != IR_U32)) {
+        metal_error(e, "Metal atomic path does not resolve an i32/u32 atomic");
+        return IR_VOID;
+    }
+    const uint32_t count = ir->opcode == IR_ATOMIC_LOAD ? 0u : ir->opcode == IR_ATOMIC_COMPARE_EXCHANGE ? 2u : 1u;
+    if (ir->operands.access.value > e->module->operand_count ||
+        count > e->module->operand_count - ir->operands.access.value) {
+        metal_error(e, "Metal atomic typed operand span is invalid");
+        return IR_VOID;
+    }
+    return e->module->types[type - 7u].element;
+}
+static void atomic_input(MetalEmitter *e, const IrInstruction *ir, uint32_t index) {
+    metal_value(e, e->module->typed_operands[ir->operands.access.value + index]);
+}
+static void atomic_operation(MetalEmitter *e, const IrInstruction *ir, const MetalPath *path,
+                             const ResourceRecord *resource, TypeId scalar) {
+    if (resource != NULL) {
+        metal_indent(e);
+        metal_text(e, "ulong offset = ");
+        byte_offset(e, path);
+        metal_text(e, ";\n");
+        metal_indent(e);
+        metal_text(e, "ulong bytes = ");
+        if ((resource->flags & DOE_COMPILER_RESOURCE_RUNTIME_TAIL) != 0u) {
+            if (e->metadata != NULL) metal_format(e, "ulong(ctx.r%u_bytes)", ir->operands.access.root);
+            else {
+                uint32_t slot;
+                if (!metal_resource_slot(e, resource, &slot)) return;
+                metal_format(e, "ulong(ctx.sizes[%u])", slot);
+            }
+        } else metal_format(e, "%" PRIu64 "ul", resource->minimum);
+        metal_text(e, ";\n");
+        metal_line(e, "if (offset % 4ul == 0ul && offset <= bytes && 4ul <= bytes - offset) {");
+        ++e->indent;
+    }
+    metal_indent(e);
+    metal_format(e, "%s atomic_%s* target = ", resource != NULL ? "device" : "threadgroup",
+                 scalar == IR_I32 ? "int" : "uint");
+    if (resource != NULL) metal_format(e, "reinterpret_cast<device atomic_%s*>(ctx.r%u + offset)",
+                                      scalar == IR_I32 ? "int" : "uint", ir->operands.access.root);
+    else {
+        metal_text(e, "&(");
+        object_path(e, ir, path);
+        metal_text(e, ")");
+    }
+    metal_text(e, ";\n");
+    if (ir->opcode == IR_ATOMIC_COMPARE_EXCHANGE) {
+        metal_indent(e);
+        metal_type(e, scalar);
+        metal_text(e, " comparison = ");
+        atomic_input(e, ir, 0u);
+        metal_text(e, ";\n");
+        metal_indent(e);
+        metal_type(e, scalar);
+        metal_text(e, " expected = comparison;\n");
+        /* Metal exposes weak exchange. Retry only a spurious failure whose
+         * observed value still equals comparison, yielding permitted strong
+         * WGSL behavior without reevaluating either ordered operand. */
+        metal_line(e, "do {");
+        ++e->indent;
+        metal_indent(e);
+        metal_value(e, ir->result);
+        metal_text(e, ".m1 = atomic_compare_exchange_weak_explicit(target, &expected, ");
+        atomic_input(e, ir, 1u);
+        metal_text(e, ", memory_order_relaxed, memory_order_relaxed);\n");
+        --e->indent;
+        metal_indent(e);
+        metal_text(e, "} while (!");
+        metal_value(e, ir->result);
+        metal_text(e, ".m1 && expected == comparison);\n");
+        metal_indent(e);
+        metal_value(e, ir->result);
+        metal_text(e, ".m0 = expected;\n");
+    } else {
+        const char *operation = NULL;
+        switch ((uint32_t)ir->opcode) {
+            case IR_ATOMIC_LOAD: operation = "load"; break;
+            case IR_ATOMIC_STORE: operation = "store"; break;
+            case IR_ATOMIC_ADD: operation = "fetch_add"; break;
+            case IR_ATOMIC_SUBTRACT: operation = "fetch_sub"; break;
+            case IR_ATOMIC_MIN: operation = "fetch_min"; break;
+            case IR_ATOMIC_MAX: operation = "fetch_max"; break;
+            case IR_ATOMIC_AND: operation = "fetch_and"; break;
+            case IR_ATOMIC_OR: operation = "fetch_or"; break;
+            case IR_ATOMIC_XOR: operation = "fetch_xor"; break;
+            case IR_ATOMIC_EXCHANGE: operation = "exchange"; break;
+            default: metal_error(e, "Metal atomic opcode has no native mapping"); return;
+        }
+        metal_indent(e);
+        if (ir->opcode != IR_ATOMIC_STORE) {
+            metal_value(e, ir->result);
+            metal_text(e, " = ");
+        }
+        metal_format(e, "atomic_%s_explicit(target", operation);
+        if (ir->opcode != IR_ATOMIC_LOAD) {
+            metal_text(e, ", ");
+            atomic_input(e, ir, 0u);
+        }
+        metal_text(e, ", memory_order_relaxed);\n");
+    }
+    if (resource != NULL) {
+        --e->indent;
+        metal_line(e, "}");
+    }
+}
 void metal_access(MetalEmitter *e, const IrInstruction *ir) {
     MetalPath path = {0};
     if (!collect_path(e, ir->operands.access.path, &path)) return;
-    const bool store = ir->opcode == IR_ACCESS_STORE;
+    const bool atomic = atomic_opcode(ir->opcode);
+    const bool store = ir->opcode == IR_ACCESS_STORE || ir->opcode == IR_ATOMIC_STORE;
     const ResourceRecord *resource = resource_root(e, ir);
+    const TypeId scalar = atomic ? atomic_scalar(e, ir, &path, resource) : IR_VOID;
+    if (e->failed) return;
     if (!store) {
         metal_indent(e);
         metal_value(e, ir->result);
@@ -141,7 +266,8 @@ void metal_access(MetalEmitter *e, const IrInstruction *ir) {
     metal_text(e, ") {\n");
     ++e->indent;
     metal_indent(e);
-    if (resource != NULL) {
+    if (atomic) atomic_operation(e, ir, &path, resource, scalar);
+    else if (resource != NULL) {
         if (store) {
             if (resource->kind != DOE_COMPILER_STORAGE_BUFFER || resource->access != DOE_COMPILER_READ_WRITE) {
                 metal_error(e, "Metal store targets a read-only resource");

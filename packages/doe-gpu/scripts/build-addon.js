@@ -41,39 +41,48 @@ function resolveNodeIncludeDir() {
 
 // The addon resolves N-API symbols from node.exe through Node's import library,
 // which sits beside the cached headers (<version>/<arch>/node.lib).
-function resolveNodeImportLibrary(includeDir) {
-  const library = process.env.NODE_LIB || resolve(includeDir, '..', '..', process.arch, 'node.lib');
+function resolveNodeImportLibrary(includeDir, arch, environment) {
+  const library = environment.NODE_LIB || resolve(includeDir, '..', '..', arch, 'node.lib');
   if (!existsSync(library)) {
     throw new Error(`Unable to locate ${library}. Run \`npx node-gyp install\` or set NODE_LIB.`);
   }
   return library;
 }
 
-function compilerCommand(includeDir) {
+function compilerCommand(includeDir, {
+  platform = process.platform,
+  arch = process.arch,
+  environment = process.env,
+} = {}) {
   const baseArgs = [
     `-DNAPI_VERSION=${NAPI_VERSION}`,
     `-I${includeDir}`,
     '-std=c11',
   ];
-  if (process.platform === 'win32') {
-    // Windows has no system C compiler; use Zig's, which links MSVC import libraries.
-    const prefixArgs = ['cc', '-target', `${process.arch === 'arm64' ? 'aarch64' : 'x86_64'}-windows-gnu`];
+  if (platform === 'win32') {
+    // LLVM's clang driver consumes the actual MSVC/Windows SDK developer
+    // environment. ABI probes and the addon use the same explicit MSVC target.
+    const architectures = { x64: 'x86_64', arm64: 'aarch64', ia32: 'i686' };
+    const targetArch = architectures[arch];
+    if (!targetArch) throw new Error(`Unsupported Windows Node architecture: ${arch}`);
+    const prefixArgs = [`--target=${targetArch}-pc-windows-msvc`, '-fms-runtime-lib=dll'];
     return {
-      compiler: process.env.ZIG || 'zig',
+      compiler: environment.CC || 'clang',
       prefixArgs,
       args: [
         ...prefixArgs,
         '-shared',
         ...baseArgs,
         ...sourceFiles,
-        resolveNodeImportLibrary(includeDir),
+        resolveNodeImportLibrary(includeDir, arch, environment),
         '-o',
         OUTPUT_PATH,
+        `-Wl,/IMPLIB:${resolve(OUTPUT_DIR, 'doe_napi.lib')}`,
       ],
     };
   }
-  const compiler = process.env.CC || 'cc';
-  switch (process.platform) {
+  const compiler = environment.CC || 'cc';
+  switch (platform) {
     case 'darwin':
       return {
         compiler,
@@ -101,7 +110,7 @@ function compilerCommand(includeDir) {
       };
     default:
       throw new Error(
-        `build:addon is not implemented for ${process.platform}; use node-gyp rebuild with packages/doe-gpu/binding.gyp if available.`,
+        `build:addon is not implemented for ${platform}; use node-gyp rebuild with packages/doe-gpu/binding.gyp if available.`,
       );
   }
 }
@@ -122,4 +131,6 @@ function main() {
   console.log(`doe-gpu: built native addon at ${OUTPUT_PATH} (${checkedLayouts} struct layouts match webgpu.h)`);
 }
 
-main();
+export { compilerCommand };
+
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main();

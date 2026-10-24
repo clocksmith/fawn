@@ -421,3 +421,29 @@ OOM/retry and unknown-completion retention after early caller release. Active
 former-budget cases now test genuine reserve failures rather than preserving the
 removed artificial rejection. Historical sealed receipts remain unchanged and do
 not qualify this later source, Windows SDK composition or physical execution.
+
+## Typed color-region transfers
+
+`include/doe_d3d12_texture_regions.h` extends the existing command owner with
+partial single-mip/layer 2D color transfers and blits. Five admitted four-byte
+color formats reuse actual allocation-time format/footprint queries. Depth remains
+excluded from this region API. The legacy whole-resource API remains available.
+
+Region uploads read initialized UPLOAD or DEFAULT buffers. DEFAULT sources make
+real COPY_DEST -> COPY_SOURCE -> COPY_DEST transitions. Region downloads write
+READBACK or DEFAULT buffers; partial/padded destinations must already be
+initialized. Partial uploads and all region blits require initialized destination
+textures, preserving their prior initialization without inferring shader coverage.
+All range, heap, alias and initialized-state checks and command span reserves
+precede native recording and lease publication. Completion remains on the existing
+context/command owner, including unknown work after caller release.
+
+`test_texture_regions.c` exercises pure bounds/output preservation, initialized
+DEFAULT transfer, partial destination obligations, reserve OOM rollback,
+exclusive-use rejection, early releases and unknown-completion retirement at the
+host native-call seam. `test_windows_texture_regions.c` is a separate official-SDK
+CPU call control for actual placed footprints, boxes and source state restoration;
+it creates no adapter/device. Authored SDK controls still require actual SDK
+compile/execution. Neither host controls nor SDK call composition establish GPU
+execution or qualify the public frontend. Public copy/view/sampler orchestration
+and its source-bound execution evidence remain in the native owner.

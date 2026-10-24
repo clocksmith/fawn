@@ -4,6 +4,7 @@
  * against them and the WebGPU defaults. https://gpuweb.github.io/gpuweb/#limits */
 #include "internal.h"
 #include "d3d12_frontend.h"
+#include "../../backends/d3d12/include/doe_d3d12_texture.h"
 #include <stddef.h>
 
 typedef struct limit_field {
@@ -182,10 +183,12 @@ WGPUStatus native_d3d12_limits(const doe_dx_caps *caps, WGPULimits *out)
         !caps->limits.max_buffer_size || !caps->limits.max_descriptors) return WGPUStatus_Error;
     const doe_dx_limits *native = &caps->limits;
     uint64_t buffer = native->max_buffer_size & ~UINT64_C(3);
-    /* Only the composed compute/buffer path is admitted at this checkpoint.
-     * Missing texture/graphics/presentation limits remain zero; neither queried
-     * D3D hardware facts nor a successful DXC compile invent frontend support. */
+    /* Explicit 2D/single-layer implementation envelope, checked against the
+     * actual format/footprint queries at allocation. Sampling/storage bindings,
+     * graphics and presentation remain uncomposed with zero stage limits. */
     *out = (WGPULimits){
+        .maxTextureDimension2D = DOE_DX_MAX_TEXTURE_DIMENSION_2D,
+        .maxTextureArrayLayers = 1,
         .maxBufferSize = buffer,
         .maxBindGroups = DOE_RESOURCE_MAX_GROUPS,
         .maxBindGroupsPlusVertexBuffers = DOE_RESOURCE_MAX_GROUPS,
