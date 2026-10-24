@@ -3,12 +3,13 @@
 // platform package is staged from a runtime/c package stage (DOE_C_STAGE=<stage>),
 // both packages are packed and installed offline into a clean project, and a
 // compute kernel there resolves libwebgpu_doe_c from the installed platform
-// package (no DOE_WEBGPU_LIB) and returns exact results. Skips without
+// package (no DOE_WEBGPU_LIB) and returns exact results; providerInfo() reports
+// the stage manifest's identity for that exact library. Skips without
 // DOE_C_STAGE; the workspace staging and the Zig default are untouched.
 
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -93,6 +94,18 @@ device.destroy();
   assert.ok(report.info.doeLibraryPath.startsWith(join(app, 'node_modules', 'doe-gpu-linux-x64', 'bin')),
     `library comes from the installed platform package: ${report.info.doeLibraryPath}`);
   assert.equal(report.info.loaded, true, report.info.loadError);
+  // Provenance is the stage manifest staged beside the library, bound to its digest.
+  const stageManifest = JSON.parse(readFileSync(resolve(stage, 'MANIFEST.json'), 'utf8'));
+  assert.equal(report.info.buildMetadataSource, 'c-package');
+  assert.equal(report.info.buildMetadataPath, join(dirname(report.info.doeLibraryPath), 'doe-c-manifest.json'));
+  assert.equal(report.info.leanVerifiedBuild, null, 'the C manifest records no Lean-verified build');
+  assert.equal(report.info.proofArtifactSha256, null, 'the C manifest records no proof artifact');
+  assert.deepEqual(report.info.buildIdentity, {
+    sourceCommit: stageManifest.source_commit,
+    sourceTree: stageManifest.source_tree,
+    artifactSha256: stageManifest.artifacts['lib/libwebgpu_doe_c.so'],
+    qualification: stageManifest.qualification,
+  });
   if (report.skipped) {
     console.log(`C package install: installed and loaded; ${report.skipped}`);
   } else {

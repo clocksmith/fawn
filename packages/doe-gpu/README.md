@@ -136,9 +136,24 @@ it does not measure internal scratch or peak GPU memory.
 build metadata. Node and Bun read legacy drop-in build/proof sidecars only for
 the selected drop-in library, using its adjacent or workspace metadata (or an
 explicit `DOE_BUILD_METADATA` sidecar). An external override never inherits the
-package's prebuild metadata. C and delegated libraries currently have no matching
-sidecar contract, so their build/proof fields remain unknown even when package
-metadata is available.
+package's prebuild metadata.
+
+The C runtime (`libraryFlavor: "doe-c"`) reads only its package-stage manifest
+(`runtime/c/tools/build-native-package.py`), never drop-in metadata or
+`DOE_BUILD_METADATA`:
+
+| Library layout | Manifest read | `buildMetadataSource` |
+| --- | --- | --- |
+| Platform package (`bin/libwebgpu_doe_c.*`) | `bin/doe-c-manifest.json` | `c-package` |
+| runtime/c stage (`<stage>/lib/libwebgpu_doe_c.*`) | `<stage>/MANIFEST.json` | `c-stage` |
+
+A manifest counts only when its `artifacts["lib/<library name>"]` digest equals
+the selected library's sha256; otherwise the fields stay unknown (`none`). It
+maps to `buildIdentity` (`sourceCommit` from `source_commit`, `sourceTree` from
+`source_tree`, `artifactSha256` as verified, `qualification`), and leaves
+`leanVerifiedBuild` and `proofArtifactSha256` `null`: the manifest records
+provenance, not a Lean-verified build or a proof artifact. `buildIdentity` is
+`null` for every other library. Delegated libraries have no sidecar contract.
 
 Use the strict provider-v1 API when the application owns provider selection and
 global installation:
