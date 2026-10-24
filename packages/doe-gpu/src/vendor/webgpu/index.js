@@ -616,9 +616,13 @@ function ensureNodeDeviceLostRegistration(device) {
     return false;
   }
   try {
+    // A weak reference: the native binding must not keep the device alive.
+    const deviceRef = new WeakRef(device);
     const registered = addon.deviceRegisterLostCallback(device._native, (lostInfo = {}) => {
+      const lostDevice = deviceRef.deref();
+      if (!lostDevice) return;
       resolveDeviceLost(
-        device,
+        lostDevice,
         lostInfo?.reason ?? 'unknown',
         lostInfo?.message ?? '',
       );
@@ -694,9 +698,21 @@ function installNodeProviderErrorLog(device) {
     || typeof addon?.deviceTakeErrors !== 'function') {
     return;
   }
-  const registered = addon.deviceSetUncapturedErrorCallback(device._native, () => device._drainProviderErrors());
+  // A weak reference: the native binding must not keep the device alive.
+  const deviceRef = new WeakRef(device);
+  const registered = addon.deviceSetUncapturedErrorCallback(device._native, () => deviceRef.deref()?._drainProviderErrors());
   device._providerErrorLog = registered !== false;
 }
+
+// A device collected without destroy() releases its native queue and device
+// (and with it the addon's callback bindings), as WebGPU destroys a device
+// that is garbage collected.
+const deviceReleases = typeof FinalizationRegistry === 'function'
+  ? new FinalizationRegistry(({ device, queue }) => {
+    if (queue) addon.queueRelease(queue);
+    addon.deviceRelease(device);
+  })
+  : null;
 
 function nodeDevicePushErrorScope(filter) {
   assertLiveResource(this, 'GPUDevice.pushErrorScope', 'GPUDevice');
@@ -2762,6 +2778,7 @@ const fullSurfaceBackend = {
     }
   },
   deviceDestroy(native, wrapper) {
+    deviceReleases?.unregister(wrapper);
     destroyResource(wrapper.queue, (queue) => addon.queueRelease(queue));
     addon.deviceRelease(native);
   },
@@ -2786,6 +2803,7 @@ const fullSurfaceBackend = {
     device._adapterInfo = adapter.info;
     installNodeDeviceCallbacks(device);
     installNodeProviderErrorLog(device);
+    deviceReleases?.register(device, { device: native, queue: device.queue?._native ?? null }, device);
     registerNativeProgramProvider(device, {
       contractVersion: addon.nativeComputeProgramContractVersion?.() ?? 0,
       gpuRecorded: addon.computeProgramSupported?.() ?? false,
