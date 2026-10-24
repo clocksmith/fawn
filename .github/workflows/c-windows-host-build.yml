@@ -139,7 +139,7 @@ jobs:
           $native = Join-Path $env:GITHUB_WORKSPACE 'runtime/c/native'
           $header = Join-Path $env:GITHUB_WORKSPACE 'runtime/zig/vendor/webgpu-headers'
           $lines = @('@echo off', ('call "' + $env:DEVCMD + '" -arch=x64 >nul'), 'if not "%errorlevel%"=="0" exit /b 1', 'set DOE_C_TEST_BACKEND=d3d12', 'set DOE_C_TEST_ADAPTER=software')
-          foreach ($name in @('compute', 'uniform_standard', 'binding_aliases', 'command_resources')) {
+          foreach ($name in @('compute', 'uniform_standard', 'binding_aliases', 'command_resources', 'indirect_dispatch')) {
             $source = Join-Path $native ('tests/' + $name + '.c')
             $executable = Join-Path $output ($name + '.exe')
             $object = Join-Path $output ($name + '.obj')
@@ -147,6 +147,13 @@ jobs:
             $lines += ('clang-cl --target=x86_64-pc-windows-msvc /nologo /MD /O2 /WX /clang:-std=c11 /clang:-Wall /clang:-Wextra /clang:-Wpedantic /DWGPU_SHARED_LIBRARY /D_CRT_SECURE_NO_WARNINGS /I"' + $header + '" "' + $source + '" /Fo"' + $object + '" /Fe"' + $executable + '" /link "' + $imports + '" /stack:8388608')
             $lines += @('if not "%errorlevel%"=="0" exit /b 1', ('"' + $executable + '"'), 'if not "%errorlevel%"=="0" exit /b 1')
           }
+          $consumerSources = @('compute.c', 'uniform_standard.c', 'binding_aliases.c', 'command_resources.c', 'indirect_dispatch.c', 'consumer.h', 'adapter_class.h')
+          $sourceHashes = @{}
+          foreach ($name in $consumerSources) {
+            $source = Join-Path $native ('tests/' + $name)
+            $sourceHashes[$name] = (Get-FileHash $source -Algorithm SHA256).Hash.ToLowerInvariant()
+          }
+          $sourceHashes | ConvertTo-Json | Set-Content "$output/consumer-source-sha256.json"
           $lines += 'exit /b 0'
           $runner = Join-Path $output 'public-warp.cmd'
           $lines | Set-Content $runner -Encoding ascii
@@ -165,6 +172,10 @@ jobs:
           Get-Content $stdout
           Get-Content $stderr
           if ($process.ExitCode -ne 0) { throw "public WARP controls failed: $($process.ExitCode)" }
+          foreach ($name in $consumerSources) {
+            $source = Join-Path $native ('tests/' + $name)
+            if ((Get-FileHash $source -Algorithm SHA256).Hash.ToLowerInvariant() -ne $sourceHashes[$name]) { throw "consumer source changed: $name" }
+          }
           if (git status --short) { throw 'public WARP controls changed source checkout' }
       - name: Bind retained outputs including first failures
         if: always()

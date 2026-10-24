@@ -28,7 +28,8 @@ native_failure native_d3d12_record_commands(native_command_handle *commands, doe
 native_failure native_d3d12_dispatch(native_command_handle *commands, const doe_resource_command *record);
 native_failure native_d3d12_compile_compute(const native_stage *stage, doe_dx_shader **out);
 void native_d3d12_compiler_release(doe_dx_shader *shader);
+struct native_d3d12_guard_code;
 native_failure native_d3d12_pipeline_create(native_pipeline *pipeline, const native_stage *stage,
-    const doe_dx_shader *shader);
+    const doe_dx_shader *shader, const struct native_d3d12_guard_code *guard);
 void native_d3d12_pipeline_close(native_pipeline *pipeline);
 #endif

@@ -1,24 +1,16 @@
 /* SPDX-License-Identifier: MIT */
 #include "indirect_internal.h"
-#include <inttypes.h>
-#include <stdio.h>
+#include "../../../common/include/doe_dispatch_guard.h"
 
 doe_vk_status doe_vk_dispatch_validator_source(const uint32_t limits[3],
     char *out, size_t capacity, size_t *out_length) {
-    if (limits == NULL || limits[0] == 0 || limits[1] == 0 || limits[2] == 0 ||
-        out == NULL || out_length == NULL) return DOE_VK_INVALID_ARGUMENT;
-    char source[DOE_VK_INDIRECT_SOURCE_CAPACITY];
-    int length = snprintf(source, sizeof(source),
-        "@group(0) @binding(0) var<storage, read_write> counts: array<u32>;\n"
-        "@compute @workgroup_size(1) fn main() {\n"
-        "    if (counts[0] > %" PRIu32 "u || counts[1] > %" PRIu32 "u || counts[2] > %" PRIu32 "u) {\n"
-        "        counts[0] = 0u;\n        counts[1] = 0u;\n        counts[2] = 0u;\n    }\n}\n",
-        limits[0], limits[1], limits[2]);
-    if (length < 0 || (size_t)length >= sizeof(source)) return DOE_VK_INVALID_STATE;
-    if ((size_t)length >= capacity) return DOE_VK_INVALID_ARGUMENT;
-    memcpy(out, source, (size_t)length + 1);
-    *out_length = (size_t)length;
-    return DOE_VK_OK;
+    switch (doe_dispatch_guard_source(limits,out,capacity,out_length)) {
+    case DOE_DISPATCH_GUARD_SOURCE_OK: return DOE_VK_OK;
+    case DOE_DISPATCH_GUARD_SOURCE_INVALID_ARGUMENT:
+    case DOE_DISPATCH_GUARD_SOURCE_TOO_SMALL: return DOE_VK_INVALID_ARGUMENT;
+    case DOE_DISPATCH_GUARD_SOURCE_FORMAT_ERROR: return DOE_VK_INVALID_STATE;
+    }
+    return DOE_VK_INVALID_STATE;
 }
 
 doe_vk_status doe_vk_dispatch_validator_validate(const doe_vk_caps *caps,

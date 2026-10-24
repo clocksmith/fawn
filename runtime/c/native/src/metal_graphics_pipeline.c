@@ -14,22 +14,51 @@ static void release_graphics(void *userdata, void *handle)
     free(pipeline);
 }
 
-/* Explicit native MTLVertexFormat values; policy/scalar admission remains shared. */
+/* Exact SDK-bound MTLVertexFormat conversion; scalar/layout admission is shared. */
 static bool vertex_format(WGPUVertexFormat format, uint32_t *out)
 {
     switch (format) {
-    case WGPUVertexFormat_Float32: *out = 28; return true;
-    case WGPUVertexFormat_Float32x2: *out = 29; return true;
-    case WGPUVertexFormat_Float32x3: *out = 30; return true;
-    case WGPUVertexFormat_Float32x4: *out = 31; return true;
-    case WGPUVertexFormat_Sint32: *out = 32; return true;
-    case WGPUVertexFormat_Sint32x2: *out = 33; return true;
-    case WGPUVertexFormat_Sint32x3: *out = 34; return true;
-    case WGPUVertexFormat_Sint32x4: *out = 35; return true;
-    case WGPUVertexFormat_Uint32: *out = 36; return true;
-    case WGPUVertexFormat_Uint32x2: *out = 37; return true;
-    case WGPUVertexFormat_Uint32x3: *out = 38; return true;
-    case WGPUVertexFormat_Uint32x4: *out = 39; return true;
+    case WGPUVertexFormat_Uint8: *out = DOE_MTL_VERTEX_UCHAR; return true;
+    case WGPUVertexFormat_Uint8x2: *out = DOE_MTL_VERTEX_UCHAR2; return true;
+    case WGPUVertexFormat_Uint8x4: *out = DOE_MTL_VERTEX_UCHAR4; return true;
+    case WGPUVertexFormat_Sint8: *out = DOE_MTL_VERTEX_CHAR; return true;
+    case WGPUVertexFormat_Sint8x2: *out = DOE_MTL_VERTEX_CHAR2; return true;
+    case WGPUVertexFormat_Sint8x4: *out = DOE_MTL_VERTEX_CHAR4; return true;
+    case WGPUVertexFormat_Unorm8: *out = DOE_MTL_VERTEX_UCHAR_NORMALIZED; return true;
+    case WGPUVertexFormat_Unorm8x2: *out = DOE_MTL_VERTEX_UCHAR2_NORMALIZED; return true;
+    case WGPUVertexFormat_Unorm8x4: *out = DOE_MTL_VERTEX_UCHAR4_NORMALIZED; return true;
+    case WGPUVertexFormat_Snorm8: *out = DOE_MTL_VERTEX_CHAR_NORMALIZED; return true;
+    case WGPUVertexFormat_Snorm8x2: *out = DOE_MTL_VERTEX_CHAR2_NORMALIZED; return true;
+    case WGPUVertexFormat_Snorm8x4: *out = DOE_MTL_VERTEX_CHAR4_NORMALIZED; return true;
+    case WGPUVertexFormat_Uint16: *out = DOE_MTL_VERTEX_USHORT; return true;
+    case WGPUVertexFormat_Uint16x2: *out = DOE_MTL_VERTEX_USHORT2; return true;
+    case WGPUVertexFormat_Uint16x4: *out = DOE_MTL_VERTEX_USHORT4; return true;
+    case WGPUVertexFormat_Sint16: *out = DOE_MTL_VERTEX_SHORT; return true;
+    case WGPUVertexFormat_Sint16x2: *out = DOE_MTL_VERTEX_SHORT2; return true;
+    case WGPUVertexFormat_Sint16x4: *out = DOE_MTL_VERTEX_SHORT4; return true;
+    case WGPUVertexFormat_Unorm16: *out = DOE_MTL_VERTEX_USHORT_NORMALIZED; return true;
+    case WGPUVertexFormat_Unorm16x2: *out = DOE_MTL_VERTEX_USHORT2_NORMALIZED; return true;
+    case WGPUVertexFormat_Unorm16x4: *out = DOE_MTL_VERTEX_USHORT4_NORMALIZED; return true;
+    case WGPUVertexFormat_Snorm16: *out = DOE_MTL_VERTEX_SHORT_NORMALIZED; return true;
+    case WGPUVertexFormat_Snorm16x2: *out = DOE_MTL_VERTEX_SHORT2_NORMALIZED; return true;
+    case WGPUVertexFormat_Snorm16x4: *out = DOE_MTL_VERTEX_SHORT4_NORMALIZED; return true;
+    case WGPUVertexFormat_Float16: *out = DOE_MTL_VERTEX_HALF; return true;
+    case WGPUVertexFormat_Float16x2: *out = DOE_MTL_VERTEX_HALF2; return true;
+    case WGPUVertexFormat_Float16x4: *out = DOE_MTL_VERTEX_HALF4; return true;
+    case WGPUVertexFormat_Float32: *out = DOE_MTL_VERTEX_FLOAT; return true;
+    case WGPUVertexFormat_Float32x2: *out = DOE_MTL_VERTEX_FLOAT2; return true;
+    case WGPUVertexFormat_Float32x3: *out = DOE_MTL_VERTEX_FLOAT3; return true;
+    case WGPUVertexFormat_Float32x4: *out = DOE_MTL_VERTEX_FLOAT4; return true;
+    case WGPUVertexFormat_Sint32: *out = DOE_MTL_VERTEX_INT; return true;
+    case WGPUVertexFormat_Sint32x2: *out = DOE_MTL_VERTEX_INT2; return true;
+    case WGPUVertexFormat_Sint32x3: *out = DOE_MTL_VERTEX_INT3; return true;
+    case WGPUVertexFormat_Sint32x4: *out = DOE_MTL_VERTEX_INT4; return true;
+    case WGPUVertexFormat_Uint32: *out = DOE_MTL_VERTEX_UINT; return true;
+    case WGPUVertexFormat_Uint32x2: *out = DOE_MTL_VERTEX_UINT2; return true;
+    case WGPUVertexFormat_Uint32x3: *out = DOE_MTL_VERTEX_UINT3; return true;
+    case WGPUVertexFormat_Uint32x4: *out = DOE_MTL_VERTEX_UINT4; return true;
+    case WGPUVertexFormat_Unorm10_10_10_2: *out = DOE_MTL_VERTEX_UINT1010102_NORMALIZED; return true;
+    case WGPUVertexFormat_Unorm8x4BGRA: *out = DOE_MTL_VERTEX_UCHAR4_NORMALIZED_BGRA; return true;
     default: return false;
     }
 }
@@ -71,8 +100,11 @@ static bool vertices(native_pipeline *pipeline, const WGPUVertexState *source,
             const WGPUVertexAttribute *attribute = &buffer->attributes[i];
             doe_vk_vertex_format admitted;
             uint32_t scalar, bytes, format;
+            /* Metal's native component alignment may be weaker. Public vertex
+             * offsets use min(4, canonical format bytes), including half/bytes. */
             if (attribute->nextInChain || attribute->shaderLocation >= limits->maxVertexAttributes ||
                 attribute->offset > UINT32_MAX || !native_vertex_format(attribute->format, &admitted, &scalar, &bytes) ||
+                !bytes || attribute->offset % (bytes < 4 ? bytes : 4) != 0 ||
                 !vertex_format(attribute->format, &format) || attribute->offset > UINT32_MAX - bytes ||
                 attribute->offset + bytes > (buffer->arrayStride ? buffer->arrayStride :
                     limits->maxVertexBufferArrayStride)) return false;

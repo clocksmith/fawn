@@ -42,6 +42,7 @@ static const NumericBuiltin numeric_builtins[] = {
     {"distance", BUILTIN_DISTANCE, 2u, BUILTIN_FLOAT_REDUCTION, 67u},
     {"normalize", BUILTIN_NORMALIZE, 1u, BUILTIN_FLOAT_VECTOR, 69u},
     {"cross", BUILTIN_CROSS, 2u, BUILTIN_FLOAT_CROSS, 68u},
+    {"reflect", BUILTIN_REFLECT, 2u, BUILTIN_FLOAT_VECTOR, 71u},
     {"subgroupAdd", BUILTIN_SUBGROUP_ADD, 1u, BUILTIN_SUBGROUP_NUMERIC, 0u},
     {"subgroupMin", BUILTIN_SUBGROUP_MIN, 1u, BUILTIN_SUBGROUP_NUMERIC, 0u},
     {"subgroupMax", BUILTIN_SUBGROUP_MAX, 1u, BUILTIN_SUBGROUP_NUMERIC, 0u},
@@ -200,14 +201,29 @@ static bool geometric_vector(Source *source, uint32_t offset, const NumericBuilt
     ConstantValue lanes[4];
     NumericValue length = {0};
     if (builtin->kind == BUILTIN_NORMALIZE && !length_constant(source, offset, arguments, false, &length)) return false;
+    NumericValue reflection_scale = {0};
+    if (builtin->kind == BUILTIN_REFLECT) {
+        const ConstantValue dot_arguments[2] = {arguments[1], arguments[0]};
+        NumericValue dot, two;
+        const IrType leaf = (IrType)type_leaf(source->compiler, result_type);
+        if (!dot_constant(source, offset, dot_arguments, &dot) ||
+            !numeric_materialize(source, offset, (NumericValue){2u, IR_ABSTRACT_INT}, leaf, &two) ||
+            !numeric_binary(source, offset, EXPRESSION_MULTIPLY, COMPARE_EQUAL, two, dot, &reflection_scale)) return false;
+    }
     for (uint32_t i = 0u; i < width; ++i) {
         NumericValue result;
         if (builtin->kind == BUILTIN_CROSS) {
             if (!cross_lane(source, offset, arguments, i, &result)) return false;
-        } else {
+        } else if (builtin->kind == BUILTIN_NORMALIZE) {
             if (!constant_lane(source, arguments[0], i, &result) ||
                 !numeric_binary(source, offset, EXPRESSION_DIVIDE, COMPARE_EQUAL, result, length, &result)) return false;
-        }
+        } else if (builtin->kind == BUILTIN_REFLECT) {
+            NumericValue incident, normal, correction;
+            if (!constant_lane(source, arguments[0], i, &incident) ||
+                !constant_lane(source, arguments[1], i, &normal) ||
+                !numeric_binary(source, offset, EXPRESSION_MULTIPLY, COMPARE_EQUAL, reflection_scale, normal, &correction) ||
+                !numeric_binary(source, offset, EXPRESSION_SUBTRACT, COMPARE_EQUAL, incident, correction, &result)) return false;
+        } else return source_error(source, DOE_COMPILER_UNSUPPORTED, offset, "geometric builtin has no constant mapping");
         lanes[i] = (ConstantValue){.type = (TypeId)result.type, .bits = result.bits};
     }
     return constant_composite(source, result_type, lanes, width, false, out);

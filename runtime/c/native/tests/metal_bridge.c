@@ -768,6 +768,8 @@ static void reject_metal_fragment_stores(state *s)
     wgpuShaderModuleRelease(module);
 }
 
+#include "metal_vertex_cases.h"
+
 static void graphics_ledger(state *s)
 {
     (void)metal_graphics_pixels; /* Pixel oracle is exercised only on native hardware. */
@@ -904,6 +906,7 @@ int main(void)
     sampled_float_admission(&s);
     reject_metal_fragment_stores(&s);
     graphics_ledger(&s);
+    metal_vertex_formats(&s, &mocks[2]);
     mixed_resource_ledger(&s);
     public_error_detail(&s);
     consumer_finish(&s);

@@ -175,6 +175,7 @@ static void builtin_expression(MetalEmitter *e, const IrInstruction *ir) {
         [BUILTIN_DISTANCE] = "distance",
         [BUILTIN_NORMALIZE] = "normalize",
         [BUILTIN_CROSS] = "cross",
+        [BUILTIN_REFLECT] = "reflect",
         [BUILTIN_TRANSPOSE] = "transpose",
         [BUILTIN_DETERMINANT] = "determinant",
         [BUILTIN_MIN] = "min",

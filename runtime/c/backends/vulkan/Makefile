@@ -8,7 +8,7 @@ CFLAGS ?= -O2 -g
 STRICT = -std=c11 -Wall -Wextra -Werror -Wpedantic
 SOURCES = src/surface.c src/surface_frames.c src/extensions.c src/surface_loader.c src/loader.c src/device_selection.c src/device_features.c src/resources.c src/pipeline.c src/descriptors.c src/commands.c src/textures.c src/image_formats.c src/texture_commands.c src/render_pipeline.c src/render_commands.c src/render_attachments.c src/render_initialization.c src/queries.c src/timestamp.c src/indirect.c src/draw_indirect.c src/render_vertices.c
 OBJECTS = $(patsubst src/%.c,$(OUT)/%.o,$(SOURCES))
-HEADERS = $(wildcard src/*.h include/*.h) $(REPO)/runtime/c/common/include/doe_copy_footprint.h
+HEADERS = $(wildcard src/*.h include/*.h) $(wildcard $(REPO)/runtime/c/common/include/*.h)
 .PHONY: all check abi surface-probe native native-descriptors native-storage native-render native-queries native-texture probe sanitize clean
 all: $(OUT)/libdoe_vk.a
 $(OUT):

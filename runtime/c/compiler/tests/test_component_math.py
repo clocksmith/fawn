@@ -40,6 +40,35 @@ class ComponentMath(unittest.TestCase):
         # AbstractFloat must not be prematurely narrowed before cancellation.
         self.vector_constant('vec4f(floor(16777217.25)-16777216.0)', [0x3f800000]*4)
 
+    def test_reflect_constant_roles_shapes_and_no_normalization(self):
+        self.vector_constant('reflect(vec4f(1,-2,3,-4),vec4f(0,1,0,0))',
+                             [0x3f800000,0x40000000,0x40400000,0xc0800000])
+        self.vector_constant('vec4f(reflect(vec3(1,-2,3),vec3(0,2,0)),1)',
+                             [0x3f800000,0x41600000,0x40400000,0x3f800000])
+        self.vector_constant('vec4f(reflect(vec3f(0,1,0),vec3f(1,-2,3)),1)',
+                             [0x40800000,0xc0e00000,0x41400000,0x3f800000])
+        self.vector_constant('vec4f(reflect(vec2(1,-2),vec2(0)),0,1)',
+                             [0x3f800000,0xc0000000,0,0x3f800000])
+
+    def test_reflect_runtime_overloads_order_and_shadowing(self):
+        for width in range(2,5):
+            typ = f'vec{width}f'
+            code = self.compile(f'@group(0) @binding(0) var<storage,read_write> data:array<{typ}>;'+
+                                ENTRY+'{data[2]=reflect(data[0],data[1]);}')
+            self.assertEqual(sum(op == 12 and a[3] == 71 for op,a in code),1)
+        code = self.compile(BUFFER+'fn read()->vec4f{data[0]=data[0]+vec4f(1);return data[0];}'+
+                            ENTRY+'{data[1]=reflect(read(),read());}')
+        calls = [a[1] for op,a in code if op == 57]
+        reflected = [a[4:6] for op,a in code if op == 12 and a[3] == 71]
+        self.assertEqual(len(calls),2)
+        self.assertEqual(reflected,[tuple(calls)])
+        for expression in ['reflect(1.0,2.0)','reflect(vec2i(1),vec2i(2))',
+                           'reflect(vec2f(1),vec3f(1))','reflect(vec2f(1))']:
+            self.compile(ENTRY+'{return;let invalid='+expression+';}', 'builtin')
+        code = self.compile('fn reflect(a:u32,b:u32)->u32{return a+b;}'+ENTRY+'{let a=reflect(2u,3u);}')
+        self.assertEqual(sum(op == 57 for op,_ in code),1)
+        self.assertFalse(any(op == 12 and a[3] == 71 for op,a in code))
+
     def test_all_float_shapes_and_stage_split(self):
         for name, instruction in FLOAT_OPS.items():
             for width in range(1,5):

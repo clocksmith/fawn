@@ -257,6 +257,16 @@ static doe_mtl_status render_pipeline_create(void *userdata, void *device,
         depth = object_create(mock, MOCK_KIND_DEPTH_STATE);
     }
     mock->render_pipeline_desc = *desc;
+    /* The call's descriptor arrays are borrowed. A later ledger assertion must
+     * inspect an owned snapshot, never a pointer into the constructor stack. */
+    assert(desc->layout_count <= DOE_MTL_BUFFER_SLOTS);
+    assert(desc->attribute_count <= DOE_MTL_VERTEX_ATTRIBUTES);
+    if (desc->layout_count) memcpy(mock->render_layouts, desc->layouts,
+        desc->layout_count * sizeof(*desc->layouts));
+    if (desc->attribute_count) memcpy(mock->render_attributes, desc->attributes,
+        desc->attribute_count * sizeof(*desc->attributes));
+    mock->render_pipeline_desc.layouts = desc->layout_count ? mock->render_layouts : NULL;
+    mock->render_pipeline_desc.attributes = desc->attribute_count ? mock->render_attributes : NULL;
     *out = pipeline;
     *out_depth = depth;
     return doe_mtl_fail(DOE_MTL_OK, "mock render pipeline", error);
