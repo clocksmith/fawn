@@ -97,15 +97,22 @@ WGPUPipelineLayout wgpuDeviceCreatePipelineLayout(WGPUDevice handle,
 void wgpuPipelineLayoutAddRef(WGPUPipelineLayout layout) { doe_resource_pipeline_layout_retain((doe_resource_pipeline_layout *)layout); }
 void wgpuPipelineLayoutRelease(WGPUPipelineLayout layout) { doe_resource_pipeline_layout_release((doe_resource_pipeline_layout *)layout); }
 
-static bool group_filterability(native_device *device, doe_resource_layout *layout,
+static bool group_backend_compatible(native_device *device, doe_resource_layout *layout,
     doe_resource_bind_group *group)
 {
     /* The resource owner has checked canonical format/feature filterability.
      * Vulkan additionally requires the selected device's native format caps. */
     if (device->backend.kind == WGPUBackendType_Metal) return true;
-    if (device->backend.kind != WGPUBackendType_Vulkan) return false;
     size_t entry_count = 0, binding_count = 0;
     const doe_resource_layout_entry *entries = doe_resource_layout_entries(layout, &entry_count);
+    if (device->backend.kind == WGPUBackendType_D3D12) {
+        /* This composed backend executes buffer bindings only. Empty layouts
+         * remain valid; missing image/sampler paths never read a Vulkan payload. */
+        for (size_t i = 0; i < entry_count; ++i)
+            if (entries[i].kind != DOE_BIND_BUFFER) return false;
+        return true;
+    }
+    if (device->backend.kind != WGPUBackendType_Vulkan) return false;
     const doe_resource_binding *bindings = doe_resource_bind_group_bindings(group, &binding_count);
     for (size_t i = 0; i < entry_count; ++i) {
         if (entries[i].kind != DOE_BIND_TEXTURE || entries[i].sample_type != WGPUTextureSampleType_Float) continue;
@@ -172,7 +179,7 @@ WGPUBindGroup wgpuDeviceCreateBindGroup(WGPUDevice handle, const WGPUBindGroupDe
     doe_resource_status status = out_of_memory ? DOE_RESOURCE_OUT_OF_MEMORY : valid ?
         doe_resource_bind_group_create_with_features((doe_resource_layout *)descriptor->layout, bindings,
             descriptor->entryCount, &limits, &features, &group) : DOE_RESOURCE_INVALID_ARGUMENT;
-    if (group && !group_filterability(device, (doe_resource_layout *)descriptor->layout, group)) {
+    if (group && !group_backend_compatible(device, (doe_resource_layout *)descriptor->layout, group)) {
         doe_resource_bind_group_release(group);
         group = NULL;
         status = DOE_RESOURCE_UNSUPPORTED;
