@@ -84,6 +84,13 @@ Preserve explicit zero draw budgets and delegate accounting to resource packets.
 Platform build recipes must keep one export inventory; never make a missing
 platform suite report the success of a narrower host-only substitute.
 
+Native shader semantic policy has one owner, native_shader_semantic_flags.
+Every target's measure/fill and WGSL feature reporting must consume that policy;
+an advertised compiler language capability must have public module, pipeline and
+execution controls. A `requires` directive checks selected support and never
+enables it. Preserve standalone compiler/shader conservative defaults, and do not
+invent a backend feature requirement for compiler-owned raw uniform lowering.
+
 Surfaces enable WSI only through an explicit compatibleSurface adapter; never
 add platforms implicitly or substitute an offscreen image. Present attaches the
 frame to a private command object on the existing pending owner and retires it by

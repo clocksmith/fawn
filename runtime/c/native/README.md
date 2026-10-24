@@ -384,7 +384,7 @@ exact rearrangements of the identity view.
 
 `src/features.c` owns the reported WGSL language features
 (`wgpuInstanceGetWGSLLanguageFeatures`, `wgpuInstanceHasWGSLLanguageFeature`,
-`wgpuSupportedWGSLLanguageFeaturesFreeMembers`) as one fixed switch beside the
+`wgpuSupportedWGSLLanguageFeaturesFreeMembers`) as one switch beside the
 instance capability exports; the accepted instance owner is unchanged. A feature
 is reported only when `tests/wgsl_language_features.c` shows its probe compiles
 through the public shader-module path and creates a real Vulkan compute pipeline
@@ -392,7 +392,11 @@ both without and with `requires <name>;`. Every probe also has a control shader 
 the same shape without the feature that must create a pipeline, so a rejection is
 attributable to the feature. Each unreported probe must be rejected at the module
 or pipeline boundary, so the table cannot silently drift from the compiler. The
-current table reports none; observed on lavapipe and Radeon 8060S/RADV:
+current table reports `uniform_buffer_standard_layout`. Its admission and report
+both use `native_shader_semantic_flags`, which also selects core binding numbers
+for every native shader target. Standalone compiler and shader-owner defaults
+remain conservative. The table records the public pipeline probes; current
+standard-layout execution evidence is software Vulkan, not physical qualification:
 
 | Feature | Without `requires` | With `requires` | First diagnostic |
 | --- | --- | --- | --- |
@@ -400,7 +404,7 @@ current table reports none; observed on lavapipe and Radeon 8060S/RADV:
 | packed_4x8_integer_dot_product | module rejected | module rejected | unsupported type name |
 | unrestricted_pointer_parameters | module rejected | module rejected | only function-address pointer types are currently admitted |
 | pointer_composite_access | module rejected | module rejected | array value has no named member |
-| uniform_buffer_standard_layout | module rejected | module rejected | uniform type violates conservative alignment or spacing |
+| uniform_buffer_standard_layout | pipeline created | pipeline created | none |
 | subgroup_id | pipeline rejected | module rejected | compute shader entry/capability admission failed |
 | texture_and_sampler_let | module rejected | module rejected | local variable type must be concrete and constructible |
 | subgroup_uniformity | pipeline rejected | pipeline rejected | compute shader entry/capability admission failed |
@@ -409,13 +413,25 @@ current table reports none; observed on lavapipe and Radeon 8060S/RADV:
 | immediate_address_space | module rejected | module rejected | unsupported module variable address space |
 | buffer_view | module rejected | module rejected | expected ASCII WGSL identifier |
 
-The compiler's `requires` directive admits only `subgroup_uniformity`, and no device
-here admits `enable subgroups`, so the subgroup features cannot create pipelines.
+The compiler's `requires` directive admits standard uniform layout when the native
+semantic policy selects it, as well as `subgroup_uniformity`. No device here
+admits `enable subgroups`, so the subgroup features cannot create pipelines.
 Read-only/read-write storage textures already compile and create pipelines; that
 feature becomes reportable once the compiler admits its `requires` directive (and an
 executed read/write image check is added). The `buffer_view` probe uses the
 proposal's `buffer<N>`/`bufferView` spelling; it is rejected at parsing.
 An empty list owns no storage (`features` is NULL); NULL instance or output is safe.
+
+`tests/uniform_standard.c` executes compact uniform arrays and nested attributed
+structs, aggregate copies and narrow matrices through the public C path with
+exact 4/8/12/32/64-byte bindings. Dynamic negative, first-invalid and high unsigned
+indices return zero; the final scalar lane of a 12-byte binding is read exactly.
+Well-typed wrong-index and wrong-layout variants produce distinct exact outputs.
+Both plain source and `requires uniform_buffer_standard_layout;` execute;
+`enable uniform_buffer_standard_layout;` and a mixed unsupported requirement are
+rejected. Raw compiler lowering uses baseline backend layouts and needs no Vulkan
+uniformBufferStandardLayout device feature. These focused software controls do
+not transfer physical qualification to this policy change.
 
 `wgpuTextureGetTextureBindingViewDimension` follows core-mode semantics. The pinned
 header requires accepting a `WGPUTextureBindingViewDimension` chain on

@@ -228,6 +228,12 @@ int main(void)
     assert(!wgpuInstanceHasWGSLLanguageFeature(s.instance, (WGPUWGSLLanguageFeatureName)0));
     assert(!wgpuInstanceHasWGSLLanguageFeature(s.instance, WGPUWGSLLanguageFeatureName_Force32));
     assert(!wgpuInstanceHasWGSLLanguageFeature(NULL, WGPUWGSLLanguageFeatureName_PointerCompositeAccess));
+    assert(wgpuInstanceHasWGSLLanguageFeature(s.instance, WGPUWGSLLanguageFeatureName_UniformBufferStandardLayout));
+    diagnostic invalid_directive;
+    assert(run_source(&s, "enable uniform_buffer_standard_layout;", NULL,
+        "@compute @workgroup_size(1) fn main(){}", &invalid_directive) == MODULE_REJECTED);
+    assert(run_source(&s, "requires uniform_buffer_standard_layout,not_a_supported_feature;", NULL,
+        "@compute @workgroup_size(1) fn main(){}", &invalid_directive) == MODULE_REJECTED);
     wgpuSupportedWGSLLanguageFeaturesFreeMembers(reported);
     WGPUSupportedWGSLLanguageFeatures none = WGPU_SUPPORTED_WGSL_LANGUAGE_FEATURES_INIT;
     wgpuInstanceGetWGSLLanguageFeatures(NULL, &none);

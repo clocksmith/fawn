@@ -21,9 +21,10 @@ static void release_shader(void *userdata, void *handle)
 
 uint32_t native_shader_semantic_flags(void)
 {
-    /* Core public binding identities do not imply native slots or a new GPU
-     * capability. Standalone compiler/shader defaults remain conservative. */
-    return DOE_COMPILER_CORE_BINDING_NUMBERS;
+    /* Raw uniform lowering supplies natural WGSL layout on every composed
+     * target without requiring a backend layout extension. This exact policy
+     * also owns language-feature reporting; standalone defaults stay conservative. */
+    return DOE_COMPILER_CORE_BINDING_NUMBERS | DOE_COMPILER_UNIFORM_BUFFER_STANDARD_LAYOUT;
 }
 
 static doe_shader_status compile_target(doe_shader_target target, const char *source, size_t size,

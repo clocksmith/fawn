@@ -33,6 +33,21 @@ The C11 library and CLI use GCC, strict warnings, `-fno-fast-math`,
 subprocess or fallback. Qualified native ABI: Linux x86-64, GCC/G++ 14.2,
 C11/C++17. Other platforms/toolchains need their own qualification.
 
+The Windows x64 DLL build uses an actual SDK developer environment and
+`clang-cl`, retaining the existing Clang x64 floating-point control owner and
+strict arithmetic flags:
+
+```powershell
+python runtime/c/compiler/tools/build_windows.py --out C:\doe-build\compiler
+```
+
+The output must be outside the source owner. The build uses the same source
+inventories and export map, then runs ordinary C/C++ DLL consumers and concurrent
+floating-point restoration controls. It does not build the POSIX CLI or establish
+Windows runtime, target-device or full numerical qualification. The
+[source-bound Windows host workflow](../../../.github/workflows/c-windows-host-build.yml)
+retains first failures and exact artifacts; its existence alone is not a pass.
+
 The focused developer command is `make -C runtime/c/compiler test-module`.
 Its C/C++ ABI checks, all-entry SPIR-V validation and selected-body instruction
 execution are not the independently sealed acceptance suite. It includes the
@@ -55,14 +70,14 @@ counts and explicitly lifted negative cases. Never broadly relax those assertion
 
 ## Native API and caller ownership
 
-The shared library exports exactly thirteen symbols: the five retained compile,
-workspace and job entrypoints, plus `doe_compiler_typed_requirements` and
-`doe_compiler_compile_typed`, plus the two additive
-[ABI5 module operations](include/doe_compiler_module.h), and the two additive
-[ABI6 resource operations](include/doe_compiler_resources.h), and the two additive
-[ABI7 stage operations](include/doe_compiler_stages.h). See [ABI4](include/doe_compiler_typed.h), the
-[frozen numeric semantics](MILESTONE_12.md) and [lowering ledger](MILESTONE_12_LEDGER.md),
-with retained storage ownership.
+The [canonical export map](src/exports.map) owns the standalone public symbols;
+platform build recipes derive their linker lists from it. Retained ABIs 1–7,
+[ABI10 Metal text](include/doe_compiler_text.h),
+[ABI11 HLSL](include/doe_compiler_hlsl.h), and
+[ABI12 Metal bindings](include/doe_compiler_metal.h) share one typed pipeline.
+See [ABI4](include/doe_compiler_typed.h), the
+[frozen numeric semantics](MILESTONE_12.md) and [lowering ledger](MILESTONE_12_LEDGER.md)
+for retained storage ownership.
 
 - ABI1, v2 and job retain their layouts and real capacity/projection limits.
   New valid syntax shares the same parser and semantic implementation; old
