@@ -244,8 +244,8 @@ fn validateDispatch(pass: *DoeComputePass, pip: *const DoeComputePipeline, count
             }
         }
     }
-    const required_kinds = if (pip.vk_required_binding_kinds_ready) &pip.vk_required_binding_kinds else null;
-    compute_bind_groups.validateDispatchBindGroups(pip.layout, required_kinds, pip.auto_layout_id, pass.bind_groups[0..]) catch |err| {
+    const required = if (pip.vk_required_binding_kinds_ready) pip.vk_required_bindings.slice() else null;
+    compute_bind_groups.validateDispatchBindGroups(pip.layout, required, pip.auto_layout_id, pass.bind_groups[0..]) catch |err| {
         recording.fail(pass.enc, err);
         return false;
     };

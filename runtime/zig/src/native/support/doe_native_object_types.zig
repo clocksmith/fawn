@@ -258,10 +258,10 @@ pub const DoeComputePipeline = struct {
     vk_static_pipeline_hash_ready: bool = false,
     vk_flat_buffer_binding_types: [shared.MAX_FLAT_BIND]u32 = [_]u32{0} ** shared.MAX_FLAT_BIND,
     vk_flat_buffer_binding_types_ready: bool = false,
-    /// Layout resource kind (binding.LayoutResourceKind code, 0 = unused) of
-    /// every slot the pipeline's entry point uses; dispatch checks bind groups
-    /// against it when the pipeline has an automatic layout.
-    vk_required_binding_kinds: [shared.MAX_FLAT_BIND]u8 = [_]u8{0} ** shared.MAX_FLAT_BIND,
+    /// Every binding the pipeline's entry point uses; pipeline creation checks
+    /// an explicit layout against it, and dispatch checks bind groups against
+    /// it when the pipeline has an automatic layout.
+    vk_required_bindings: shared.RequiredBindings = .{},
     vk_required_binding_kinds_ready: bool = false,
     vk_prepared_binding_cache_next: u32 = 0,
     vk_prepared_binding_cache_keys: [shared.VULKAN_PREPARED_BINDING_CACHE_CAPACITY]u64 = [_]u64{0} ** shared.VULKAN_PREPARED_BINDING_CACHE_CAPACITY,
@@ -515,14 +515,10 @@ pub const DoeRenderPipeline = struct {
     fragment_wgsl_sha256_ready: bool = false,
     vertex_entry_point: ?[]const u8 = null,
     fragment_entry_point: ?[]const u8 = null,
-    /// Layout resource kind (binding.LayoutResourceKind code, 0 = unused) of
-    /// every slot the vertex and fragment entry points use; draws check bind
+    /// Every binding the vertex and fragment entry points use; pipeline
+    /// creation checks an explicit layout against it, and draws check bind
     /// groups against it when the pipeline has an automatic layout.
-    required_binding_kinds: [shared.MAX_FLAT_BIND]u8 = [_]u8{0} ** shared.MAX_FLAT_BIND,
-    /// WGPUBufferBindingType each buffer binding needs and WGPUShaderStage
-    /// bits of the stages using each slot.
-    required_buffer_types: [shared.MAX_FLAT_BIND]u32 = [_]u32{0} ** shared.MAX_FLAT_BIND,
-    required_stages: [shared.MAX_FLAT_BIND]u8 = [_]u8{0} ** shared.MAX_FLAT_BIND,
+    required_bindings: shared.RequiredBindings = .{},
     required_binding_kinds_ready: bool = false,
 };
 

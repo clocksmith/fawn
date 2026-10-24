@@ -28,6 +28,7 @@ pub const DrawError = error{
     DrawIndexBufferOutOfBounds,
     DrawBindGroupMissing,
     DrawBindGroupIncompatible,
+    DrawBindingUnsupported,
     DrawCountExceeded,
 };
 
@@ -47,6 +48,7 @@ pub const DispatchError = error{
     DispatchWorkgroupCountExceeded,
     DispatchBindGroupMissing,
     DispatchBindGroupIncompatible,
+    DispatchBindingUnsupported,
 };
 
 pub const Failure = RenderAttachmentError || BufferCopyError || DrawError || BindGroupError || DispatchError || @import("texture_copy.zig").Error || error{ OutOfMemory, InvalidState, ImmediateDataUnsupported, ImmediateDataRange, DebugGroupUnbalanced, TextureCopyDeviceMismatch, TextureCopyUsageMissing };
@@ -68,6 +70,7 @@ pub fn message(cause: Failure) []const u8 {
         error.DrawIndexBufferOutOfBounds => "drawIndexed reads past the bound index buffer range",
         error.DrawBindGroupMissing => "draw requires a bind group in every group the pipeline uses",
         error.DrawBindGroupIncompatible => "draw bind group layout is not compatible with the pipeline layout",
+        error.DrawBindingUnsupported => "draw pipeline uses a binding number above 31, which this provider validates but cannot execute",
         error.DrawCountExceeded => "render pass draws exceed its maxDrawCount",
         error.BindGroupIndexOutOfRange => "setBindGroup index must be less than maxBindGroups",
         error.BindGroupDynamicOffsetCount => "setBindGroup dynamic offset count must match the layout's dynamic bindings",
@@ -77,6 +80,7 @@ pub fn message(cause: Failure) []const u8 {
         error.DispatchWorkgroupCountExceeded => "dispatch workgroup count exceeds maxComputeWorkgroupsPerDimension",
         error.DispatchBindGroupMissing => "dispatch requires a bind group in every group the pipeline uses",
         error.DispatchBindGroupIncompatible => "dispatch bind group layout is not compatible with the pipeline layout",
+        error.DispatchBindingUnsupported => "dispatch pipeline uses a binding number above 31, which this provider validates but cannot execute",
         error.OutOfMemory => "GPU command recording could not allocate owned storage",
         error.InvalidState => "GPU command recording requires an open encoder or its active pass",
         error.InvalidArgument => "GPU command recording received an invalid dependency or payload",

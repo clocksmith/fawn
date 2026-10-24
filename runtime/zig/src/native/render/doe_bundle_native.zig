@@ -419,13 +419,13 @@ test "bundle debug groups must be balanced at finish" {
 
 test "render getBindGroupLayout of an automatic layout lists the bindings its entry points use" {
     var pipeline = DoeRenderPipeline{};
-    pipeline.required_binding_kinds[1 * MAX_BIND + 0] = 1;
-    pipeline.required_binding_kinds[1 * MAX_BIND + 3] = 3;
+    try pipeline.required_bindings.record(.{ .group = 1, .binding = 300, .kind = 3 });
+    try pipeline.required_bindings.record(.{ .group = 1, .binding = 0, .kind = 1 });
     const raw = doeNativeRenderPipelineGetBindGroupLayout(toOpaque(&pipeline), 1) orelse return error.TestUnexpectedResult;
     defer bind_group_native.doeNativeBindGroupLayoutRelease(raw);
     const layout = cast(DoeBindGroupLayout, raw).?;
     try std.testing.expectEqual(@as(u32, 2), layout.entry_count);
-    try std.testing.expectEqual(@as(u32, 3), layout.entries.?[1].binding);
+    try std.testing.expectEqual(@as(u32, 300), layout.entries.?[1].binding);
     try std.testing.expectEqual(@as(u32, 3), layout.entries.?[1].resource_kind);
     try std.testing.expect(layout.automatic and layout.auto_layout_id == pipeline.auto_layout_id);
     const empty = doeNativeRenderPipelineGetBindGroupLayout(toOpaque(&pipeline), 0) orelse return error.TestUnexpectedResult;
@@ -475,10 +475,11 @@ pub export fn doeNativeRenderPipelineGetBindGroupLayout(
         return toOpaque(retained);
     }
     if (group_index >= native_shared.MAX_RENDER_BIND_GROUPS) return null;
-    // The entries the vertex and fragment entry points use, by resource kind.
-    const kinds = pip.required_binding_kinds[group_index * MAX_BIND ..][0..MAX_BIND];
+    // The entries the vertex and fragment entry points use, by resource
+    // kind, in binding order.
+    const used = pip.required_bindings.slice();
     var count: usize = 0;
-    for (kinds) |kind| count += @intFromBool(kind != 0);
+    for (used) |use| count += @intFromBool(use.group == group_index);
     const bgl = make(DoeBindGroupLayout) orelse return null;
     bgl.* = .{};
     if (count != 0) {
@@ -487,11 +488,16 @@ pub export fn doeNativeRenderPipelineGetBindGroupLayout(
             return null;
         };
         var next: usize = 0;
-        for (kinds, 0..) |kind, binding| {
-            if (kind == 0) continue;
-            entries[next] = .{ .binding = @intCast(binding), .resource_kind = kind };
+        for (used) |use| {
+            if (use.group != group_index) continue;
+            entries[next] = .{ .binding = use.binding, .resource_kind = use.kind };
             next += 1;
         }
+        std.mem.sort(native_shared.DoeBindGroupLayoutEntry, entries, {}, struct {
+            fn lessThan(_: void, a: native_shared.DoeBindGroupLayoutEntry, b: native_shared.DoeBindGroupLayoutEntry) bool {
+                return a.binding < b.binding;
+            }
+        }.lessThan);
         bgl.entries = entries;
         bgl.entry_count = @intCast(count);
     }
