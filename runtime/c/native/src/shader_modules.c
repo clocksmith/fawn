@@ -27,7 +27,7 @@ uint32_t native_shader_semantic_flags(void)
     return DOE_COMPILER_CORE_BINDING_NUMBERS | DOE_COMPILER_UNIFORM_BUFFER_STANDARD_LAYOUT;
 }
 
-static doe_shader_status compile_target(doe_shader_target target, const char *source, size_t size,
+doe_shader_status native_compile_shader_target(doe_shader_target target, const char *source, size_t size,
     doe_shader **out, doe_shader_error *error)
 {
     /* Capacity is explicit and compiler-owned. Exhaustion fails visibly; no
@@ -52,7 +52,7 @@ static doe_shader_status compile_target(doe_shader_target target, const char *so
 
 doe_shader_status native_compile_shader(const char *source, size_t size, doe_shader **out, doe_shader_error *error)
 {
-    return compile_target(DOE_SHADER_SPIRV,source,size,out,error);
+    return native_compile_shader_target(DOE_SHADER_SPIRV,source,size,out,error);
 }
 
 WGPUShaderModule wgpuDeviceCreateShaderModule(WGPUDevice handle, const WGPUShaderModuleDescriptor *descriptor)
@@ -77,7 +77,7 @@ WGPUShaderModule wgpuDeviceCreateShaderModule(WGPUDevice handle, const WGPUShade
     }
     doe_shader_target target = device->backend.kind == WGPUBackendType_Metal ? DOE_SHADER_METAL :
         device->backend.kind == WGPUBackendType_D3D12 ? DOE_SHADER_HLSL : DOE_SHADER_SPIRV;
-    doe_shader_status status = compile_target(target, source->code.data, size,
+    doe_shader_status status = native_compile_shader_target(target, source->code.data, size,
         &payload->compiled, &payload->error);
     if (status != DOE_SHADER_OK && !payload->error.diagnostic.message[0])
         memcpy(payload->error.diagnostic.message, "C shader compilation failed", sizeof("C shader compilation failed"));

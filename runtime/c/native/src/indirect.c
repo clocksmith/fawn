@@ -78,7 +78,8 @@ void wgpuComputePassEncoderDispatchWorkgroupsIndirect(WGPUComputePassEncoder han
     if (!device) return;
     native_lock(device);
     const bool ended = doe_resource_compute_pass_ended(pass);
-    doe_resource_status status = device->backend.kind == WGPUBackendType_Vulkan ?
+    doe_resource_status status = (device->backend.kind == WGPUBackendType_Vulkan ||
+        device->backend.kind == WGPUBackendType_D3D12) ?
         doe_resource_compute_pass_dispatch_indirect(pass,(doe_resource_buffer *)arguments,offset) :
         doe_resource_compute_pass_invalidate(pass,DOE_RESOURCE_UNSUPPORTED);
     native_unlock(device);

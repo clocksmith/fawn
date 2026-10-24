@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: MIT */
-#include "d3d12_frontend.h"
+#include "d3d12_indirect.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -8,6 +8,7 @@ typedef struct native_d3d12_compute {
     bool uniform[DOE_DX_MAX_BINDINGS];
     size_t count;
     uint32_t dispatch_index;
+    doe_dx_pipeline *guard;
 } native_d3d12_compute;
 
 #if defined(_WIN32)
@@ -77,7 +78,7 @@ static bool stage_bindings(const native_pipeline *pipeline, const native_stage *
 #endif
 
 native_failure native_d3d12_pipeline_create(native_pipeline *pipeline, const native_stage *stage,
-    const doe_dx_shader *shader)
+    const doe_dx_shader *shader, const native_d3d12_guard_code *guard)
 {
 #if defined(_WIN32)
     native_d3d12_compute *map = calloc(1, sizeof(*map));
@@ -95,16 +96,24 @@ native_failure native_d3d12_pipeline_create(native_pipeline *pipeline, const nat
     }
     doe_dx_pipeline_desc descriptor = {.bytecode = code, .bytecode_size = bytes,
         .bindings = bindings, .binding_count = map->count};
-    doe_dx_error error = {0};
-    doe_dx_status status = doe_dx_pipeline_create(pipeline->device->backend.value.d3d12.context,
-        &descriptor, &pipeline->handle.d3d12, &error);
-    if (status == DOE_DX_OK) pipeline->d3d12_compute = map;
-    else free(map);
-    return native_failure_d3d12(status, &error);
+    native_failure failure = native_d3d12_guard_pipeline(pipeline->device,guard,&map->guard);
+    if (failure.status == NATIVE_OK) {
+        doe_dx_error error = {0};
+        doe_dx_status status = doe_dx_pipeline_create(pipeline->device->backend.value.d3d12.context,
+            &descriptor, &pipeline->handle.d3d12, &error);
+        failure = native_failure_d3d12(status,&error);
+    }
+    if (failure.status == NATIVE_OK) pipeline->d3d12_compute = map;
+    else {
+        doe_dx_pipeline_release(map->guard);
+        free(map);
+    }
+    return failure;
 #else
     (void)pipeline;
     (void)stage;
     (void)shader;
+    (void)guard;
     return native_failure_status(NATIVE_UNAVAILABLE);
 #endif
 }
@@ -113,6 +122,8 @@ void native_d3d12_pipeline_close(native_pipeline *pipeline)
 {
 #if defined(_WIN32)
     doe_dx_pipeline_release(pipeline->handle.d3d12);
+    native_d3d12_compute *map = pipeline->d3d12_compute;
+    if (map) doe_dx_pipeline_release(map->guard);
 #endif
     free(pipeline->d3d12_compute);
     pipeline->d3d12_compute = NULL;
@@ -140,22 +151,19 @@ static native_failure dispatch_metadata(native_command_handle *commands, const d
 }
 #endif
 
-native_failure native_d3d12_dispatch(native_command_handle *commands, const doe_resource_command *record)
+native_failure native_d3d12_resolve_bindings(const doe_resource_command *record,
+    doe_dx_buffer_binding bindings[DOE_DX_MAX_BINDINGS], size_t *count,
+    uint32_t *metadata_index, doe_dx_pipeline **guard)
 {
 #if defined(_WIN32)
     native_pipeline *pipeline = doe_resource_pipeline_native(record->value.dispatch.pipeline);
     const native_d3d12_compute *map = pipeline->d3d12_compute;
-    uint32_t maximum = pipeline->device->backend.limits.maxComputeWorkgroupsPerDimension;
-    if (!map || record->value.dispatch.x > maximum || record->value.dispatch.y > maximum ||
-        record->value.dispatch.z > maximum) return native_failure_status(NATIVE_INVALID_ARGUMENT);
+    if (!map) return native_failure_status(NATIVE_INVALID_STATE);
     doe_resource_binding resolved[NATIVE_MAX_PIPELINE_BINDINGS];
     doe_resource_status resource = native_resolve_resources(pipeline,
         doe_resource_pipeline_get_layout(record->value.dispatch.pipeline), record->value.dispatch.groups,
         record->value.dispatch.dynamic_offsets, resolved);
     if (resource != DOE_RESOURCE_OK) return native_failure_status(NATIVE_INVALID_ARGUMENT);
-    if (!record->value.dispatch.x || !record->value.dispatch.y || !record->value.dispatch.z)
-        return native_failure_status(NATIVE_OK);
-    doe_dx_buffer_binding bindings[DOE_DX_MAX_BINDINGS];
     for (size_t i = 0; i < pipeline->binding_count; ++i) {
         size_t index = map->public_indices[i];
         if (index >= pipeline->binding_count || resolved[index].kind != DOE_BIND_BUFFER)
@@ -172,17 +180,46 @@ native_failure native_d3d12_dispatch(native_command_handle *commands, const doe_
             return native_failure_status(NATIVE_INVALID_ARGUMENT);
         bindings[i] = (doe_dx_buffer_binding){native->allocation, offset, size};
     }
+    *count = map->count;
+    *metadata_index = map->dispatch_index;
+    *guard = map->guard;
+    return native_failure_status(NATIVE_OK);
+#else
+    (void)record;
+    (void)bindings;
+    (void)count;
+    (void)metadata_index;
+    (void)guard;
+    return native_failure_status(NATIVE_UNAVAILABLE);
+#endif
+}
+
+native_failure native_d3d12_dispatch(native_command_handle *commands, const doe_resource_command *record)
+{
+#if defined(_WIN32)
+    native_pipeline *pipeline = doe_resource_pipeline_native(record->value.dispatch.pipeline);
+    const native_d3d12_compute *map = pipeline->d3d12_compute;
+    uint32_t maximum = pipeline->device->backend.limits.maxComputeWorkgroupsPerDimension;
+    if (!map || record->value.dispatch.x > maximum || record->value.dispatch.y > maximum ||
+        record->value.dispatch.z > maximum) return native_failure_status(NATIVE_INVALID_ARGUMENT);
+    doe_dx_buffer_binding bindings[DOE_DX_MAX_BINDINGS];
+    size_t count = 0;
+    uint32_t metadata_index = UINT32_MAX;
+    doe_dx_pipeline *guard = NULL;
+    native_failure failure = native_d3d12_resolve_bindings(record,bindings,&count,&metadata_index,&guard);
+    if (failure.status != NATIVE_OK) return failure;
+    if (!record->value.dispatch.x || !record->value.dispatch.y || !record->value.dispatch.z)
+        return native_failure_status(NATIVE_OK);
     doe_dx_buffer *metadata = NULL;
-    native_failure failure = native_failure_status(NATIVE_OK);
-    if (map->dispatch_index != UINT32_MAX) {
+    if (metadata_index != UINT32_MAX) {
         failure = dispatch_metadata(commands, record, &metadata);
         if (failure.status == NATIVE_OK)
-            bindings[map->dispatch_index] = (doe_dx_buffer_binding){metadata, 0, 256};
+            bindings[metadata_index] = (doe_dx_buffer_binding){metadata, 0, 256};
     }
     if (failure.status == NATIVE_OK) {
         doe_dx_error error = {0};
         doe_dx_status status = doe_dx_commands_dispatch(commands->value.d3d12.commands,
-            pipeline->handle.d3d12, bindings, map->count, record->value.dispatch.x,
+            pipeline->handle.d3d12, bindings, count, record->value.dispatch.x,
             record->value.dispatch.y, record->value.dispatch.z, &error);
         failure = native_failure_d3d12(status, &error);
     }

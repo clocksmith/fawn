@@ -552,3 +552,22 @@ runtime-tail size-table identity. ABI10 remains the explicit fixed-slot contract
 opt-in policy, namespace overflow, caller-byte preservation and FP/errno state.
 The emitted helper host control distinguishes conflicting entry mappings without
 claiming native Metal execution. See [the target contract](targets/metal/README.md).
+
+## Reflection direction builtin
+
+`reflect(incident, normal)` now shares the existing floating-vector overload and
+ordered argument owner across constant evaluation and SPIR-V/MSL/HLSL output.
+It accepts admitted vector2/3/4 floating types and preserves the supplied normal;
+there is no implicit normalization. The const path follows the
+[WGSL reflection definition](https://www.w3.org/TR/2026/CRD-WGSL-20261021/#reflect-builtin)
+through existing dot and declared-width numeric operations. Runtime SPIR-V uses
+the registered [GLSL450 Reflect instruction](https://raw.githubusercontent.com/KhronosGroup/SPIRV-Headers/main/include/spirv/unified1/extinst.glsl.std.450.grammar.json);
+MSL/HLSL use their explicit reflection intrinsic mappings.
+
+`test_component_math.py` covers constant values, overload rejection, shadowing and
+ordered runtime arguments. `make test-reflect` composes the public compiler target
+interfaces; its optional output directory emits fresh target artifacts.
+`test-reflect-vulkan` requires an explicit `SOFTWARE_VULKAN_ICD` and `REFLECT_SPIRV`
+artifact, comparing exact words for operand reversal, non-unit normals and
+effectful storage snapshots. These developer controls do not qualify physical
+execution or close the separate refraction, face-forward and full language gates.

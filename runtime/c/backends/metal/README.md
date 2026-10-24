@@ -52,6 +52,13 @@ The intended loader target is 64-bit macOS, x86_64 or arm64. Other OS/architectu
 builds explicitly return `DOE_MTL_UNSUPPORTED`. Missing system libraries/symbols
 return `DOE_MTL_LOADER_UNAVAILABLE`; absent device/limit methods fail explicitly.
 This is an implementation target, not a qualified support tuple.
+Named vertex-format identities are checked against the actual SDK for both
+macOS ABIs. Scalar 8/16-bit/half and BGRA declarations are available from macOS
+10.13; the existing mandatory `maxBufferLength` device query is a macOS 10.14
+API, and SDK controls target macOS 13. This does not establish GPU availability:
+real render-pipeline creation must succeed before publication, preserving its
+native error when a device rejects the descriptor. No format capability is
+inferred from the enum declaration alone.
 
 ## Lifetime and composition
 

@@ -56,6 +56,9 @@ resource-owned pass/bundle snapshots. Preserve the whole pass when lowering to t
 backend, including empty LOAD/CLEAR and ordered occlusion events. Empty vertex
 slots differ from explicit Vertex/Instance slots without attributes. Do not invent
 buffers or drop historical usage; use the resource owner's required-slot rules.
+Metal vertex formats use SDK-bound native identities after shared scalar admission.
+Enforce public offset alignment from canonical format bytes; native component
+alignment alone cannot establish WebGPU admission.
 
 Depth/stencil initialization belongs to the backend's existing per-aspect command
 state. Use real attachment clears before publication and after Discard; never add

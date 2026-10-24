@@ -32,6 +32,9 @@ numeric.c owns locale-free bounded literal parsing, rounding, const arithmetic a
 checked conversions; numeric_math.c owns declared-width component math.
 Multi-argument math uses the same typed signature and ordered operand snapshots;
 preserve argument order (notably `atan2(y,x)`) in constant and target lowering.
+Geometric builtins retain their operand roles: `reflect(incident, normal)` uses
+the supplied normal unchanged, including non-unit or zero normals. Const-stage
+geometry uses the existing typed numeric owner; target mappings stay explicit.
 Validate WGSL domains rather than accepting a wider libm domain: a negative
 `pow` base is invalid even when a host integer exponent would produce a finite value.
 Lexer/parser preserve raw literal spans, not floating host values. Const evaluation checks every evaluated intermediate. Skipped short-circuit

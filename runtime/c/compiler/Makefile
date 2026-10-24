@@ -375,6 +375,17 @@ test-uniform-standard-host: tests/test_uniform_standard_host.cpp
 	$(CONSUMER_BUILD)/test_uniform_standard_host
 
 .PHONY: test-metal-entry-text test-metal-entry-host
+.PHONY: test-reflect test-reflect-vulkan
+$(CONSUMER_BUILD)/test_reflect: tests/test_reflect.c tests/reflect_fixture.h tests/hlsl_fixture.h $(HEADERS) $(SHARED_LIBRARY)
+	mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) $< $(CONSUMER_COMPILER_LINK) -lm -o $@
+test-reflect: $(CONSUMER_BUILD)/test_reflect
+	$(CONSUMER_BUILD)/test_reflect
+$(CONSUMER_BUILD)/test_reflect_vulkan: tests/test_reflect_vulkan.c tests/reflect_fixture.h $(HEADERS) $(SHARED_LIBRARY) $(VULKAN_BUILD)/libdoe_vk.a $(VULKAN_CONSUMER_DEPS)
+	mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) -I../backends/vulkan/include $< $(VULKAN_BUILD)/libdoe_vk.a $(CONSUMER_COMPILER_LINK) -ldl -o $@
+test-reflect-vulkan: require-software-vulkan $(CONSUMER_BUILD)/test_reflect_vulkan
+	VK_ICD_FILENAMES="$(abspath $(SOFTWARE_VULKAN_ICD))" $(CONSUMER_BUILD)/test_reflect_vulkan "$(REFLECT_SPIRV)"
 test-metal-entry-text: $(TEXT_TEST_BUILD)/test_metal12 $(TEXT_TEST_BUILD)/test_metal12_abi
 	$(TEXT_TEST_BUILD)/test_metal12
 	$(TEXT_TEST_BUILD)/test_metal12_abi

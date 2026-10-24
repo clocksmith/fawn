@@ -42,6 +42,8 @@ typedef struct mock_native {
     unsigned uploads, reads, image_copies;
     unsigned views, fail_view_at;
     doe_mtl_render_pipeline_desc render_pipeline_desc;
+    doe_mtl_vertex_layout render_layouts[DOE_MTL_BUFFER_SLOTS];
+    doe_mtl_vertex_attribute render_attributes[DOE_MTL_VERTEX_ATTRIBUTES];
     doe_mtl_native_render_pass render_pass;
     doe_mtl_native_render_draw render_draws[2];
     size_t render_draw_count;

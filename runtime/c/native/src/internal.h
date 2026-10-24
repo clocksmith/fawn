@@ -191,6 +191,8 @@ WGPURenderPipeline native_create_render_pipeline(native_device *device,
 /* The native shader owner selects the shared semantic opt-ins for all targets. */
 uint32_t native_shader_semantic_flags(void);
 doe_shader_status native_compile_shader(const char *source, size_t size, doe_shader **out, doe_shader_error *error);
+doe_shader_status native_compile_shader_target(doe_shader_target target, const char *source,
+    size_t size, doe_shader **out, doe_shader_error *error);
 bool native_shader_capabilities(const doe_shader_view *view, const doe_vk_caps *caps);
 bool native_timestamp_supported(const doe_vk_caps *caps);
 uint32_t native_timestamp_workgroup(const doe_vk_caps *caps);

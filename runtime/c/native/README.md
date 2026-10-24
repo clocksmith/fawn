@@ -33,6 +33,11 @@ per-entry metadata supply exact names, independent resource namespaces, dense
 native slots and runtime size indices. The common Metal binding owner validates
 and lowers those records for compute and graphics; public sparse binding numbers
 never become native slot arithmetic. WGSL meaning stays in the compiler.
+Direct vertex input lowers the pinned scalar/vector integer, normalized, half,
+packed and BGRA formats through SDK-bound Metal identities. Public scalar-kind
+and offset alignment remain independent of Metal's weaker component alignment.
+Host descriptor/rollback controls and SDK checks cover this conversion; per-format
+physical fetch correctness remains the unchanged `vertex-formats` consumer's gate.
 
 Metal's frontend compute envelope remains bounded to 256 total threads, at most
 256 per axis, 65535 groups per axis and conservative 256-byte buffer offsets.
