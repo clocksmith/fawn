@@ -78,7 +78,10 @@ texels), regions start block-aligned and end on whole blocks or at the
 subresource edge, and a block-rounded WebGPU extent is clamped to that edge.
 Texture copies clamp each side to its own edge; when the clamped extents differ
 (a block at one side's edge only) no VkImageCopy region is valid, so the copy
-stages through a command-owned device buffer of whole blocks.
+stages through a command-owned device buffer of whole blocks. One texture
+copies between disjoint subresources (another mip level, or disjoint layers of
+a 2D texture) in `GENERAL` layout, since layouts track the whole image; the
+same subresource on both sides is rejected.
 `tests/image_format_contract.c` checks the gate, block caps and copy regions;
 `tests/block_copy_contract.c` the staged and direct copy packets. The srgb/unorm
 view-format pairs include BC1, BC2, BC3 and BC7.

@@ -273,11 +273,19 @@ doe_vk_status doe_vk_commands_copy_texture(doe_vk_commands *commands,
     if (status != DOE_VK_OK) return status;
     if (source == NULL || destination == NULL || source->context != commands->context ||
         destination->context != commands->context || !(source->desc.usage & DOE_VK_TEXTURE_COPY_SRC) ||
-        !(destination->desc.usage & DOE_VK_TEXTURE_COPY_DST) || source == destination ||
+        !(destination->desc.usage & DOE_VK_TEXTURE_COPY_DST) ||
         !copy_formats_compatible(source->desc.format, destination->desc.format) ||
         source->desc.dimension != destination->desc.dimension ||
         memcmp(source_region.extent, destination_region.extent, sizeof(source_region.extent)) != 0 ||
         doe_vk_samples(source->desc.sample_count) != doe_vk_samples(destination->desc.sample_count))
+        return doe_vk_poison(commands, DOE_VK_INVALID_ARGUMENT);
+    /* One texture copies only between disjoint subresources: another mip, or
+     * disjoint array layers of a 2D texture (WebGPU copyTextureToTexture). */
+    const bool same = source == destination;
+    if (same && source_region.mip == destination_region.mip &&
+        (source->desc.dimension == DOE_VK_TEXTURE_3D ||
+        ((uint64_t)source_region.origin[2] < (uint64_t)destination_region.origin[2] + destination_region.extent[2] &&
+        (uint64_t)destination_region.origin[2] < (uint64_t)source_region.origin[2] + source_region.extent[2])))
         return doe_vk_poison(commands, DOE_VK_INVALID_ARGUMENT);
     /* Multisampled image copies cover the whole single subresource (WebGPU). */
     if (doe_vk_samples(source->desc.sample_count) != 1) {
@@ -330,15 +338,19 @@ doe_vk_status doe_vk_commands_copy_texture(doe_vk_commands *commands,
         volume ? (int32_t)source_region.origin[2] : 0 };
     const VkOffset3D to_offset = { (int32_t)destination_region.origin[0], (int32_t)destination_region.origin[1],
         volume ? (int32_t)destination_region.origin[2] : 0 };
+    /* Layouts track the whole image, so a texture that is both sides of the
+     * copy uses GENERAL, which Vulkan admits for source and destination. */
+    const uint32_t source_layout = same ? VK_IMAGE_LAYOUT_GENERAL : VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+    const uint32_t destination_layout = same ? VK_IMAGE_LAYOUT_GENERAL : VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
     doe_vk_barrier(commands);
-    doe_vk_texture_transition(commands, source_use, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
-    doe_vk_texture_transition(commands, destination_use, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+    doe_vk_texture_transition(commands, source_use, source_layout);
+    if (!same) doe_vk_texture_transition(commands, destination_use, destination_layout);
     if (!staged) {
         const VkImageCopy copy = { .srcSubresource = from, .srcOffset = from_offset, .dstSubresource = to,
             .dstOffset = to_offset,
             .extent = { source_region.extent[0], source_region.extent[1], volume ? source_region.extent[2] : 1 } };
         commands->context->vk.vkCmdCopyImage(commands->command, source->image,
-            VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, destination->image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy);
+            source_layout, destination->image, destination_layout, 1, &copy);
         return DOE_VK_OK;
     }
     /* Both sides cover the same whole blocks; tight block rows in the buffer. */
@@ -350,10 +362,10 @@ doe_vk_status doe_vk_commands_copy_texture(doe_vk_commands *commands,
         .imageExtent = { destination_region.extent[0], destination_region.extent[1],
             volume ? destination_region.extent[2] : 1 } };
     commands->context->vk.vkCmdCopyImageToBuffer(commands->command, source->image,
-        VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, staging->buffer, 1, &out);
+        source_layout, staging->buffer, 1, &out);
     doe_vk_barrier(commands);
     commands->context->vk.vkCmdCopyBufferToImage(commands->command, staging->buffer, destination->image,
-        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &in);
+        destination_layout, 1, &in);
     return DOE_VK_OK;
 }
 

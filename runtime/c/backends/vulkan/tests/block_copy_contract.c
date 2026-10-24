@@ -4,7 +4,8 @@
  * not the other's has no valid VkImageCopy region (each side clamps to its own
  * edge), so it is staged through a device buffer: image-to-buffer with the
  * source extent, then buffer-to-image with the destination extent, over the
- * same whole-block rows. Mocked native calls are packet evidence only. */
+ * same whole-block rows. Disjoint mips of one texture copy in GENERAL layout;
+ * the same mip is rejected. Mocked native calls are packet evidence only. */
 #include "../src/texture_internal.h"
 #include <assert.h>
 #include <stdio.h>
@@ -12,6 +13,7 @@
 static unsigned image_copies, reads, uploads, buffers_created, buffers_destroyed;
 static VkBufferImageCopy last_read, last_upload;
 static VkImageCopy last_copy;
+static uint32_t copy_layouts[2], read_layout, upload_layout;
 static void barrier(VkCommandBuffer command, VkFlags source, VkFlags destination, VkFlags flags,
     uint32_t memory_count, const void *memory, uint32_t buffer_count, const void *buffers,
     uint32_t image_count, const void *images) {
@@ -20,22 +22,26 @@ static void barrier(VkCommandBuffer command, VkFlags source, VkFlags destination
 }
 static void copy_image(VkCommandBuffer command, VkImage source, uint32_t source_layout,
     VkImage destination, uint32_t destination_layout, uint32_t count, const VkImageCopy *copy) {
-    (void)command; (void)source; (void)destination; (void)source_layout; (void)destination_layout;
+    (void)command; (void)source; (void)destination;
     assert(count == 1);
     last_copy = *copy;
+    copy_layouts[0] = source_layout;
+    copy_layouts[1] = destination_layout;
     ++image_copies;
 }
 static void readback(VkCommandBuffer command, VkImage image, uint32_t layout, VkBuffer buffer,
     uint32_t count, const VkBufferImageCopy *copy) {
     (void)command; (void)image;
-    assert(layout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL && count == 1 && buffer == 31);
+    assert(count == 1 && buffer == 31);
+    read_layout = layout;
     last_read = *copy;
     ++reads;
 }
 static void upload(VkCommandBuffer command, VkBuffer buffer, VkImage image, uint32_t layout,
     uint32_t count, const VkBufferImageCopy *copy) {
     (void)command; (void)image;
-    assert(layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && count == 1 && buffer == 31);
+    assert(count == 1 && buffer == 31);
+    upload_layout = layout;
     last_upload = *copy;
     ++uploads;
 }
@@ -103,6 +109,7 @@ int main(void) {
     const doe_vk_texture_region into_wide = {.origin = {4, 0, 0}, .extent = {4, 4, 1}};
     assert(doe_vk_commands_copy_texture(commands, &edge, from_edge, &wide, into_wide) == DOE_VK_OK);
     assert(image_copies == 0 && reads == 1 && uploads == 1 && buffers_created == 1);
+    assert(read_layout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL && upload_layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
     assert(last_read.imageExtent.width == 2 && last_read.imageExtent.height == 4 && last_read.imageOffset.x == 4 &&
         last_read.imageSubresource.mipLevel == 1 && last_read.bufferRowLength == 4 && last_read.bufferImageHeight == 4);
     assert(last_upload.imageExtent.width == 4 && last_upload.imageExtent.height == 4 && last_upload.imageOffset.x == 4 &&
@@ -118,6 +125,7 @@ int main(void) {
     const doe_vk_texture_region whole_block = {.extent = {4, 4, 1}};
     assert(doe_vk_commands_copy_texture(commands, &edge, whole_block, &wide, whole_block) == DOE_VK_OK);
     assert(image_copies == 1 && buffers_created == 2 && last_copy.extent.width == 4);
+    assert(copy_layouts[0] == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL && copy_layouts[1] == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
     const doe_vk_texture_region edge_corner = {.mip = 1, .origin = {4, 4, 0}, .extent = {4, 4, 1}};
     doe_vk_texture other = texture(&context, 12, 2, (uint8_t[2]){1, 1});
     assert(doe_vk_commands_copy_texture(commands, &edge, edge_corner, &other, edge_corner) == DOE_VK_OK);
@@ -128,15 +136,31 @@ int main(void) {
     assert(doe_vk_commands_copy_texture(commands, &edge, edge_corner, &srgb, edge_corner) == DOE_VK_OK);
     assert(doe_vk_commands_copy_texture(commands, &srgb, edge_corner, &edge, edge_corner) == DOE_VK_OK);
     assert(image_copies == 4);
+    /* One texture: mip 0 to mip 1 copies directly in GENERAL layout. */
+    const doe_vk_texture_region mip1_block = {.mip = 1, .extent = {4, 4, 1}};
+    assert(doe_vk_commands_copy_texture(commands, &edge, whole_block, &edge, mip1_block) == DOE_VK_OK);
+    assert(image_copies == 5 && last_copy.srcSubresource.mipLevel == 0 && last_copy.dstSubresource.mipLevel == 1);
+    assert(copy_layouts[0] == VK_IMAGE_LAYOUT_GENERAL && copy_layouts[1] == VK_IMAGE_LAYOUT_GENERAL);
+    /* Mip 1 edge block to a whole mip 0 block stages within the one texture. */
+    assert(doe_vk_commands_copy_texture(commands, &edge, from_edge, &edge, into_wide) == DOE_VK_OK);
+    assert(image_copies == 5 && reads == 3 && uploads == 3 && buffers_created == 3);
+    assert(read_layout == VK_IMAGE_LAYOUT_GENERAL && upload_layout == VK_IMAGE_LAYOUT_GENERAL);
+    assert(last_read.imageSubresource.mipLevel == 1 && last_upload.imageSubresource.mipLevel == 0);
     assert(doe_vk_commands_release(commands) == DOE_VK_OK);
+    /* The same subresource on both sides is rejected. */
+    commands = recording(&context);
+    assert(doe_vk_commands_copy_texture(commands, &edge, whole_block, &edge, whole_block) == DOE_VK_INVALID_ARGUMENT);
+    assert(image_copies == 5 && reads == 3);
+    doe_vk_commands_release(commands);
     doe_vk_texture bc2 = texture(&context, 12, 2, (uint8_t[2]){1, 1});
     bc2.desc.format = DOE_VK_FORMAT_BC2_RGBA_UNORM;
     commands = recording(&context);
     assert(doe_vk_commands_copy_texture(commands, &edge, edge_corner, &bc2, edge_corner) == DOE_VK_INVALID_ARGUMENT);
-    assert(image_copies == 4);
+    assert(image_copies == 5);
     doe_vk_commands_release(commands);
-    assert(buffers_destroyed == 2 && context.references == 1);
+    assert(buffers_destroyed == 3 && context.references == 1);
     puts("PASS block copy staging: edge-to-middle and middle-to-edge BC1 blocks stage through one block of device "
-        "buffer with per-side clamped extents; equal clamped extents copy directly; an srgb pair copies, another format is rejected; host only");
+        "buffer with per-side clamped extents; equal clamped extents copy directly; an srgb pair copies, another format is rejected; "
+        "disjoint mips of one texture copy in GENERAL layout and one subresource is rejected; host only");
     return 0;
 }
