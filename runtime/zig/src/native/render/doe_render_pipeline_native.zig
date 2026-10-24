@@ -10,6 +10,7 @@ const native_helpers = @import("../support/doe_native_object_helpers.zig");
 const error_scope = @import("../../runtime/diagnostics/error_scope.zig");
 const texture_contract = @import("../../contracts/texture.zig");
 const texture_format = @import("../../contracts/texture_format.zig");
+const vertex_format = @import("../../contracts/vertex_format.zig");
 const texture_values = @import("../../contracts/model/model_texture_value_types.zig");
 const abi_feature = @import("../../core/abi/wgpu_feature_base_types.zig");
 const render_bundle = @import("../../runtime/render/render_bundle.zig");
@@ -323,6 +324,25 @@ fn depthStencilFailure(d: *const RenderPipelineDesc) ?[]const u8 {
     return null;
 }
 
+/// Vertex attributes (https://gpuweb.github.io/gpuweb/#abstract-opdef-validating-gpuvertexbufferlayout):
+/// each offset is a multiple of min(4, the format's size). Shader input
+/// types are checked with the shader's reflection by the backend.
+fn vertexAttributesFailure(d: *const RenderPipelineDesc) ?[]const u8 {
+    if (d.vertex.bufferCount == 0) return null;
+    const raw = d.vertex.buffers orelse return "render pipeline vertex buffers are missing";
+    const layouts: [*]const RenderVertexBufferLayout = @ptrCast(@alignCast(raw));
+    for (layouts[0..d.vertex.bufferCount]) |layout| {
+        if (layout.attributeCount == 0) continue;
+        const attributes = layout.attributes orelse return "a vertex buffer layout's attributes are missing";
+        for (attributes[0..layout.attributeCount]) |attribute| {
+            const format = vertex_format.fromCode(attribute.format) catch continue;
+            if (attribute.offset % @min(4, vertex_format.byteSize(format)) != 0)
+                return "a vertex attribute offset must be a multiple of min(4, its format's size)";
+        }
+    }
+    return null;
+}
+
 fn createRenderPipeline(dev_raw: ?*anyopaque, desc_raw: ?*anyopaque) ?*anyopaque {
     const dev = cast(DoeDevice, dev_raw) orelse return null;
     if (!dev.requireAlive()) return null;
@@ -343,7 +363,7 @@ fn createRenderPipeline(dev_raw: ?*anyopaque, desc_raw: ?*anyopaque) ?*anyopaque
         return null;
     }
     if (d.fragment) |fragment| if (!colorTargetsWithinLimit(dev, fragment)) return null;
-    if (fragmentTargetsFailure(dev, d) orelse depthStencilFailure(d)) |message| {
+    if (fragmentTargetsFailure(dev, d) orelse depthStencilFailure(d) orelse vertexAttributesFailure(d)) |message| {
         dev.error_scopes.deliver(error_scope.ERROR_TYPE_VALIDATION, message);
         return null;
     }
@@ -810,4 +830,20 @@ test "a stencil test or stencil write needs a stencil aspect and the format is d
     try std.testing.expectEqual(@as(?[]const u8, null), depthStencilFailure(&desc));
     ds.format = texture_values.WGPUTextureFormat_RGBA8Unorm;
     try std.testing.expect(depthStencilFailure(&desc) != null);
+}
+
+test "vertex attribute offsets are multiples of min(4, the format size)" {
+    var attributes = [_]RenderVertexAttribute{.{ .nextInChain = null, .format = @intFromEnum(vertex_format.Format.uint8x2), .offset = 2, .shaderLocation = 0 }};
+    var layouts = [_]RenderVertexBufferLayout{.{ .nextInChain = null, .stepMode = 0, .arrayStride = 16, .attributeCount = 1, .attributes = &attributes }};
+    var desc = std.mem.zeroes(RenderPipelineDesc);
+    desc.vertex.bufferCount = 1;
+    desc.vertex.buffers = @ptrCast(&layouts);
+    try std.testing.expectEqual(@as(?[]const u8, null), vertexAttributesFailure(&desc));
+    attributes[0].offset = 1;
+    try std.testing.expect(vertexAttributesFailure(&desc) != null);
+    attributes[0].format = @intFromEnum(vertex_format.Format.float32x4);
+    attributes[0].offset = 6;
+    try std.testing.expect(vertexAttributesFailure(&desc) != null);
+    attributes[0].offset = 8;
+    try std.testing.expectEqual(@as(?[]const u8, null), vertexAttributesFailure(&desc));
 }
