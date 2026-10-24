@@ -7,7 +7,7 @@
     "vk_capability_structs.zig": "80d2dc03b7374b5c8d959a6d8ab7d61ac35d792c3e5900e53e25ccf0212316b4",
     "vk_constants.zig": "0d3f62b34b6f363789e0f6b811419207542a24890f029d30b19cc94f01621e4b",
     "vk_functions.zig": "c5526a8d0e3adbfb8b728d69579db9032ce3aacd9d496dff7cff4726320c9658",
-    "vk_formats.zig": "ec953998cab8cab6679c26fd0431d91ab0bc9f006e73f6cbf94db6f089f2880d",
+    "vk_formats.zig": "057ce794bb117105a96d10412c3fe284a7a492d1f18f3a5a25743a98fab57b00",
     "vk_samplers.zig": "d69660a49a4d143b1fddbd59a8140c424f598ff37ce020553ea9f5b15c641caf",
     "vk_feature_caps.zig": "3317a92ff51e84baacc6de5f7fea0063a1ed8e99e8e81493606a170fd8298e41",
     "vk_render_pipeline.zig": "7393b16e534d749969e900db2155b1a6589843e3d7b0db666137ffbcf61ac756",

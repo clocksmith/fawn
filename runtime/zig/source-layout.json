@@ -1310,8 +1310,8 @@
       },
       "src/backend/vulkan/vk_device_caps.zig": {
         "decision": "Keep",
-        "moduleSha256": "a1a59723fcfdc8d2df65cd64228afab1cf2300343306365b51245e9d96da7de0",
-        "reason": "Keep: reachable backend implementation with a distinct named responsibility and no merge, elevation, recomposition, or deletion signal. Reports maxImmediateSize 64, matching the recorded setImmediates range. Per-stage binding limits report the highest tier both per-stage and per-set descriptor counts reach; sliced 3D compression features require their base feature and 3D support.",
+        "moduleSha256": "cea89d534a56a42654f3281480c3f2a67c7a95641927d54dd10248ea4321aaef",
+        "reason": "Keep: reachable backend implementation with a distinct named responsibility and no merge, elevation, recomposition, or deletion signal. Reports maxImmediateSize 64, matching the recorded setImmediates range. Per-stage binding limits report the highest tier both per-stage and per-set descriptor counts reach; sliced 3D compression features require their base feature and 3D support. maxComputeWorkgroupsPerDimension is the smallest of the three Vulkan counts and maxStorageBufferBindingSize is a multiple of 4.",
         "reviewer": "doe-c-claude-coordinator/2026-10-24"
       },
       "src/backend/vulkan/vk_dispatch_indirect.zig": {
@@ -1340,9 +1340,9 @@
       },
       "src/backend/vulkan/vk_formats.zig": {
         "decision": "Keep",
-        "moduleSha256": "ec953998cab8cab6679c26fd0431d91ab0bc9f006e73f6cbf94db6f089f2880d",
-        "reason": "Keep: Vulkan format metadata classifies integer render targets for typed attachment clear values.",
-        "reviewer": "codex-doe-public-render-20260928"
+        "moduleSha256": "057ce794bb117105a96d10412c3fe284a7a492d1f18f3a5a25743a98fab57b00",
+        "reason": "Keep: Vulkan format metadata classifies integer render targets for typed attachment clear values. depth24plus maps to D32_SFLOAT and depth24plus-stencil8 to D32_SFLOAT_S8_UINT, as in C.",
+        "reviewer": "doe-c-claude-coordinator/2026-10-24"
       },
       "src/backend/vulkan/vk_functions.zig": {
         "decision": "Keep",
@@ -3644,9 +3644,9 @@
       },
       "src/native/render/doe_bundle_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "729f0f89b3aba1b652af3ac910a8c4d9dd2825c6b4507e7a24b6c2a27f88f7e4",
-        "reason": "Keep: preserves this native ownership or ABI boundary while separating internal device cleanup leases from application release and enforcing destroyed-device admission. Vulkan bundle replay starts from empty state rather than the pass's. Vulkan executeBundles resets the pass pipeline, bind groups and vertex/index buffers. Bundle setBindGroup validates and records dynamic offsets, records null groups as unbinds, and replay applies the offsets. Bundle debug groups are balanced at finish(). Bundle draws validate the bundle's pipeline and bind groups; draws past maxDrawCount fail. Render getBindGroupLayout returns explicit groups or a pipeline-owned automatic layout. Render getBindGroupLayout of an automatic layout lists the entry points' bindings by resource kind. Render bundle encoders reject color formats over maxColorAttachmentBytesPerSample. Bundles check required bindings at every binding number. Bundle encoders keep every color slot; bundle layout, setPipeline and executeBundles compatibility follow WebGPU and fail at finish. executeBundles adds each Vulkan bundle's bind groups and buffers to the pass usage scope.",
-        "reviewer": "doe-c-claude-indexed/2026-10-24"
+        "moduleSha256": "bb0043e75b0c84f9711a86b750a3fe8cd5765cd97d0570e5fd45cd1b56f7766f",
+        "reason": "Keep: preserves this native ownership or ABI boundary while separating internal device cleanup leases from application release and enforcing destroyed-device admission. Vulkan bundle replay starts from empty state rather than the pass's. Vulkan executeBundles resets the pass pipeline, bind groups and vertex/index buffers. Bundle setBindGroup validates and records dynamic offsets, records null groups as unbinds, and replay applies the offsets. Bundle debug groups are balanced at finish(). Bundle draws validate the bundle's pipeline and bind groups; draws past maxDrawCount fail. Render getBindGroupLayout returns explicit groups or a pipeline-owned automatic layout. Render getBindGroupLayout of an automatic layout lists the entry points' bindings by resource kind. Render bundle encoders reject color formats over maxColorAttachmentBytesPerSample. Bundles check required bindings at every binding number. Bundle encoders keep every color slot; bundle layout, setPipeline and executeBundles compatibility follow WebGPU and fail at finish. executeBundles adds each Vulkan bundle's bind groups and buffers to the pass usage scope. Bundles resolve bindings against the pipeline-built automatic layouts.",
+        "reviewer": "doe-c-claude-coordinator/2026-10-24"
       },
       "src/native/render/doe_render_native.zig": {
         "decision": "Keep",
@@ -3806,8 +3806,8 @@
       },
       "src/native/support/doe_native_shared_types.zig": {
         "decision": "Keep",
-        "moduleSha256": "d3011e18b400b4d4518309ef3ad9eb7d9a0e23173ac20021ab0b87fbd9918f09",
-        "reason": "Keep: reachable native implementation shared by 28 production consumers with no conflicting ownership signal. Declares BindGroupDynamicOffsets. Layout entries keep every WebGPU member for equality. Owns the maxBindingsPerBindGroup constant shared by layout and pipeline checks. Owns the required-binding list type.",
+        "moduleSha256": "5c2adbf2f1fd5f4c048df538970ebbd4b736216dd4107fac92e6bad78e269cbe",
+        "reason": "Keep: reachable native implementation shared by 28 production consumers with no conflicting ownership signal. Declares BindGroupDynamicOffsets. Layout entries keep every WebGPU member for equality. Owns the maxBindingsPerBindGroup constant shared by layout and pipeline checks. Owns the required-binding list type. Carries automatic layout entries with their shader types.",
         "reviewer": "doe-c-claude-coordinator/2026-10-24"
       },
       "src/native/surface/doe_surface_native.zig": {
@@ -3860,9 +3860,9 @@
       },
       "src/native/vulkan/vulkan_render_pipeline_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "2802de13a23b90a5ea3ccaa793bd42b2fe7d52a0e95f9fe16dac780aaddba87c",
-        "reason": "Keep: native attachment admission owns view and pipeline compatibility; command recording preserves typed validation failures before submission. Backend execution and resource retirement retain their existing owners. The multisample mask and alpha-to-coverage reach the pipeline object. Render pipelines record required binding kinds from vertex and fragment entry points. Render pipeline creation rejects vertex or fragment entry points that do not name a function of that stage. Render pipeline creation rejects explicit layouts that lack a binding the entry points use. Render layout check passes buffer types and per-slot stages. Render pipelines reject bindings at or above maxBindingsPerBindGroup and color targets above maxColorAttachmentBytesPerSample. Pipelines record every fragment target and whether a fragment stage exists. Render pipelines and auto layouts include bindings above 31. Checks fragment output and vertex input scalar types and component counts against targets and attribute formats from the stage IR. Vertex outputs and fragment inputs (with inter-stage builtins, point-list and clip_distances) are checked against maxInterStageShaderVariables, and an automatic layout's bindings against the per-stage slot limits.",
-        "reviewer": "doe-c-claude-surface/2026-10-24"
+        "moduleSha256": "dc5132ab78b9b43a424881021991c1a90e7d0955d307e402dbf37ee9f0069184",
+        "reason": "Keep: native attachment admission owns view and pipeline compatibility; command recording preserves typed validation failures before submission. Backend execution and resource retirement retain their existing owners. The multisample mask and alpha-to-coverage reach the pipeline object. Render pipelines record required binding kinds from vertex and fragment entry points. Render pipeline creation rejects vertex or fragment entry points that do not name a function of that stage. Render pipeline creation rejects explicit layouts that lack a binding the entry points use. Render layout check passes buffer types and per-slot stages. Render pipelines reject bindings at or above maxBindingsPerBindGroup and color targets above maxColorAttachmentBytesPerSample. Pipelines record every fragment target and whether a fragment stage exists. Render pipelines and auto layouts include bindings above 31. Checks fragment output and vertex input scalar types and component counts against targets and attribute formats from the stage IR. Vertex outputs and fragment inputs (with inter-stage builtins, point-list and clip_distances) are checked against maxInterStageShaderVariables, and an automatic layout's bindings against the per-stage slot limits. Render pipelines build their own automatic layouts from entry-point shader types (used bindings only).",
+        "reviewer": "doe-c-claude-coordinator/2026-10-24"
       },
       "src/native/vulkan/vulkan_render_shared.zig": {
         "decision": "Keep",
