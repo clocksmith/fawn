@@ -157,7 +157,8 @@ fn map_vulkan_to_wgpu_limits(
         .maxStorageTexturesPerShaderStage = tier_limit(@min(vk_limits.maxPerStageDescriptorStorageImages, vk_limits.maxDescriptorSetStorageImages), &STORAGE_TEXTURE_TIERS),
         .maxUniformBuffersPerShaderStage = tier_limit(@min(vk_limits.maxPerStageDescriptorUniformBuffers, vk_limits.maxDescriptorSetUniformBuffers), &UNIFORM_BUFFER_TIERS),
         .maxUniformBufferBindingSize = @max(vk_limits.maxUniformBufferRange, WEBGPU_MIN_MAX_UNIFORM_BUFFER_BINDING_SIZE),
-        .maxStorageBufferBindingSize = @max(vk_limits.maxStorageBufferRange, WEBGPU_MIN_MAX_STORAGE_BUFFER_BINDING_SIZE),
+        // A storage binding's size is a multiple of 4, so the largest one is too.
+        .maxStorageBufferBindingSize = @max(vk_limits.maxStorageBufferRange & ~@as(u32, 3), WEBGPU_MIN_MAX_STORAGE_BUFFER_BINDING_SIZE),
         .minUniformBufferOffsetAlignment = clamp_alignment(@intCast(vk_limits.minUniformBufferOffsetAlignment), WEBGPU_MAX_MIN_UNIFORM_BUFFER_OFFSET_ALIGNMENT),
         .minStorageBufferOffsetAlignment = clamp_alignment(@intCast(vk_limits.minStorageBufferOffsetAlignment), WEBGPU_MAX_MIN_STORAGE_BUFFER_OFFSET_ALIGNMENT),
         .maxVertexBuffers = @min(WEBGPU_MIN_MAX_VERTEX_BUFFERS, vk_limits.maxVertexInputBindings),
@@ -172,7 +173,8 @@ fn map_vulkan_to_wgpu_limits(
         .maxComputeWorkgroupSizeX = @max(vk_limits.maxComputeWorkGroupSize[0], WEBGPU_MIN_MAX_COMPUTE_WORKGROUP_SIZE_X),
         .maxComputeWorkgroupSizeY = @max(vk_limits.maxComputeWorkGroupSize[1], WEBGPU_MIN_MAX_COMPUTE_WORKGROUP_SIZE_Y),
         .maxComputeWorkgroupSizeZ = @max(vk_limits.maxComputeWorkGroupSize[2], WEBGPU_MIN_MAX_COMPUTE_WORKGROUP_SIZE_Z),
-        .maxComputeWorkgroupsPerDimension = @max(vk_limits.maxComputeWorkGroupCount[0], WEBGPU_MIN_MAX_COMPUTE_WORKGROUPS_PER_DIMENSION),
+        // The WebGPU limit holds in every dimension; Vulkan reports each.
+        .maxComputeWorkgroupsPerDimension = @max(@min(vk_limits.maxComputeWorkGroupCount[0], @min(vk_limits.maxComputeWorkGroupCount[1], vk_limits.maxComputeWorkGroupCount[2])), WEBGPU_MIN_MAX_COMPUTE_WORKGROUPS_PER_DIMENSION),
         // setImmediates ranges validate against the WebGPU default; shader
         // immediates remain unsupported, so layouts with immediateSize reject.
         .maxImmediateSize = 64,
@@ -339,4 +341,14 @@ test "Vulkan per-stage binding limits report the highest reached tier, not the d
     limits = map_vulkan_to_wgpu_limits(vk_limits);
     try std.testing.expectEqual(@as(u32, 8), limits.maxStorageBuffersPerShaderStage);
     try std.testing.expectEqual(@as(u32, 4), limits.maxStorageTexturesPerShaderStage);
+}
+
+test "Vulkan workgroup count and storage binding limits hold in every dimension and at 4-byte granularity" {
+    var vk_limits = std.mem.zeroes(c.VkPhysicalDeviceLimits);
+    // RADV: an x count of 2^32-1 with y and z at 65535.
+    vk_limits.maxComputeWorkGroupCount = .{ 4294967295, 65535, 65535 };
+    vk_limits.maxStorageBufferRange = 4294967295;
+    const limits = map_vulkan_to_wgpu_limits(vk_limits);
+    try std.testing.expectEqual(@as(u32, 65535), limits.maxComputeWorkgroupsPerDimension);
+    try std.testing.expectEqual(@as(u64, 4294967292), limits.maxStorageBufferBindingSize);
 }
