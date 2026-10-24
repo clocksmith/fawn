@@ -114,7 +114,8 @@ typedef struct { uint32_t expression, next; } ArgumentSyntax;
 typedef struct { NameSpan name; TypeRef element; uint32_t count_expression, flags; } GenericSyntax;
 enum { TYPE_VECTOR = 1u, TYPE_ARRAY, TYPE_RUNTIME_ARRAY, TYPE_STRUCT, TYPE_TEXTURE, TYPE_SAMPLER, TYPE_MATRIX, TYPE_ATOMIC, TYPE_ATOMIC_RESULT, TYPE_POINTER };
 enum { TYPE_CONSTRUCTIBLE = 1u, TYPE_HOST = 2u, TYPE_FIXED = 4u, TYPE_TAIL = 8u,
-    TYPE_RESOLVING = 16u, TYPE_RESOLVED = 32u, TYPE_ABSTRACT = 64u, TYPE_UNIFORM = 128u, TYPE_ATOMIC_CONTENT = 256u };
+    TYPE_RESOLVING = 16u, TYPE_RESOLVED = 32u, TYPE_ABSTRACT = 64u, TYPE_UNIFORM = 128u, TYPE_ATOMIC_CONTENT = 256u,
+    TYPE_DEFERRED = 512u };
 typedef struct { uint32_t dimension, format, access, flags; } ImageType;
 typedef struct { uint32_t kind, flags, element, count; NameSpan name;
     union { struct { uint64_t size, alignment, stride; } layout;
@@ -143,7 +144,8 @@ typedef enum {
     IR_SHIFT_LEFT, IR_SHIFT_RIGHT, IR_CONVERT, IR_BITCAST, IR_CALL, IR_BUILTIN,
     IR_COMPOSITE, IR_ACCESS_LOAD, IR_ACCESS_STORE, IR_VALUE_ACCESS, IR_SWIZZLE, IR_WORKGROUP_BARRIER, IR_HANDLE, IR_IMAGE, IR_STAGE_INPUT, IR_ARRAY_LENGTH, IR_DISCARD,
     IR_ATOMIC_LOAD, IR_ATOMIC_STORE, IR_ATOMIC_ADD, IR_ATOMIC_SUBTRACT, IR_ATOMIC_MAX,
-    IR_ATOMIC_MIN, IR_ATOMIC_AND, IR_ATOMIC_OR, IR_ATOMIC_XOR, IR_ATOMIC_EXCHANGE, IR_ATOMIC_COMPARE_EXCHANGE, IR_ADDRESS
+    IR_ATOMIC_MIN, IR_ATOMIC_AND, IR_ATOMIC_OR, IR_ATOMIC_XOR, IR_ATOMIC_EXCHANGE, IR_ATOMIC_COMPARE_EXCHANGE, IR_ADDRESS,
+    IR_DEFERRED_OVERRIDE, IR_SELECT
 } IrOpcode;
 typedef struct { uint32_t id; TypeId type; uint32_t source_offset; } IrValue;
 /* Four words have operation-specific, named meanings. Scalar aliases preserve
@@ -182,7 +184,7 @@ typedef struct {
 } EntryRecord;
 typedef enum { SOURCE_NONE, SOURCE_FUNCTION, SOURCE_BARRIER, SOURCE_RESOURCE,
     SOURCE_WORKGROUP, SOURCE_INPUT, SOURCE_SUBGROUP, SOURCE_IMAGE, SOURCE_DISCARD, SOURCE_ATOMIC, SOURCE_POINTER_LOCAL, SOURCE_POINTER_FORMAL,
-    SOURCE_POINTER_READ, SOURCE_POINTER_WRITE } SourceReferenceKind;
+    SOURCE_POINTER_READ, SOURCE_POINTER_WRITE, SOURCE_OVERRIDE } SourceReferenceKind;
 typedef struct { SourceReferenceKind kind; uint32_t index; } SourceReference;
 typedef struct {
     uint32_t source_bytes, tokens, statements, expressions, physical_expressions, instructions;
@@ -195,9 +197,11 @@ enum { LIMIT_LEGACY = 1u, LIMIT_SINGULAR = 2u, LIMIT_MODULE = 4u };
 enum { MODULE_SUBGROUPS = 1u, MODULE_STANDARD_UNIFORM = 2u, MODULE_CORE_BINDINGS = 4u };
 typedef struct CompilerWorkspace CompilerWorkspace;
 typedef struct StageWorkspace StageWorkspace;
+typedef struct SpecializationContext SpecializationContext;
 typedef struct { const char *source; size_t length; DoeCompilerDiagnostic *diagnostic;
     const CompilerLimits *limits; CompilerWorkspace *compiler;
-    uint32_t *exhausted_pool; size_t *minimum_pool_capacity; StageWorkspace *stages; } Source;
+    uint32_t *exhausted_pool; size_t *minimum_pool_capacity; StageWorkspace *stages;
+    SpecializationContext *specialization; } Source;
 struct CompilerWorkspace {
     CompilerLimits limits;
     union { Token *tokens; IrInstruction *instructions; }; Expression *expressions; Statement *statements; ConstantSyntax *constant_decls;

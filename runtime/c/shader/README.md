@@ -92,8 +92,8 @@ in exact artifact matching. Runtime callers still supply the bound byte lengths;
 this owner does not infer binding sizes from WGSL or duplicate slot allocation.
 
 Metal measurement determines exact text staging space, so creation uses three
-fallible allocation acquisitions: measurement workspace, publication workspace,
-and final artifact. Each is checked independently, failure leaves the caller's
+fallible acquisitions: a measurement/input-snapshot workspace, a private artifact
+that receives those saved inputs, then the publication workspace. Each is checked independently, failure leaves the caller's
 artifact untouched, and retained views remain valid after source/option lifetime
 ends. NONE-selected entryless modules own empty text rather than fake shaders.
 Focused C/C++ and owner ASan/UBSan controls cover these paths and target rejection;
@@ -123,5 +123,42 @@ view is rebuild-required; versioned compiler ABI1–11 records remain unchanged.
 measure bits. The exact saved value is passed to both measure and fill for every
 target and participates in `doe_shader_matches` independently of caller identity
 bytes. Zero preserves standalone conservative defaults. Native shader composition
-chooses core binding identifiers through its single policy owner; it does not yet
-select or advertise standard uniform layout.
+selects semantic policy through its single native owner. Shader ownership itself
+does not advertise backend features.
+
+## Symbolic modules and selected-entry specialization
+
+`doe_shader_create` retains its legacy contract. The separate
+`doe_shader_create_module` validates the whole original source through compiler
+ABI13 with explicit override capacity and NONE selection. It owns source,
+compiler identity, allocator/capacity/policy options and copied override/entry/name
+metadata. `doe_shader_borrow_module` exposes that immutable symbolic metadata;
+ordinary executable borrow rejects module-only handles without touching outputs.
+No executable layouts or default values are fabricated for an unspecialized module.
+
+`doe_shader_specialize` uses the same saved module/options, AUTO or NAME selection
+and typed override key/value rows. Keys and raw double representations are copied
+before both compiler passes. Caller rows are revalidated against their admitted
+copy extent after allocator reentry; source/identity bytes and entry selection
+use one saved input across measurement and publication. The compiler owns key validity, conversions,
+defaults, dependency evaluation and the selected closure; this owner does no source
+substitution. Each separate artifact owns exact code/reflection/value spans and
+retains its immutable source module. Caller module/source/options/value lifetimes
+may end while artifacts remain referenced. Temporary snapshots/workspaces release
+before success publication, and failed replacement preserves existing artifacts.
+
+All targets publish one executable entry at index0 with its declared name/stage;
+resource ordinals and target-specific slots/registers come from the compiler.
+Legacy identity matching deliberately rejects new handle kinds.
+`doe_shader_specialization_matches` conservatively requires the same immutable
+module instance, entry selection and ordered exact key bytes/double bits. Signed
+zero and differently ordered input rows remain distinct; this is not a cache or
+an equivalence claim.
+
+`make test` includes C/C++ ABI13 module/specialization controls for all targets,
+selected workgroup layouts, unused required siblings, ID/default/invalid values,
+source/policy copying, entry stages, allocator-failure rollback and retained
+lifetimes. It also checks errno and four rounding modes. `make sanitize` exercises
+both legacy and specialization ownership; report whether the linked compiler is
+instrumented separately. These controls do not execute shaders or qualify SDKs,
+physical GPUs or the complete native migration.

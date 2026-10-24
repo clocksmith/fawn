@@ -16,9 +16,11 @@ doe_vk_status __wrap_doe_vk_context_create(const doe_vk_options *options, doe_vk
 static void capability_controls(native_device *device, WGPUShaderModule module)
 {
     assert(device->backend.value.vulkan.caps.shader_demote_to_helper_invocation);
-    native_shader *payload = doe_resource_shader_native((doe_resource_shader *)module);
-    doe_shader_view view;
-    assert(doe_shader_borrow(payload->compiled,&view) == DOE_SHADER_OK);
+    native_stage stage = {0};
+    native_pipeline_error error = {0};
+    assert(native_stage_load(device,module,(WGPUStringView){"f",1},
+        DOE_COMPILER_STAGE_FRAGMENT,NULL,0,&stage,&error));
+    doe_shader_view view = stage.view;
     assert(native_shader_capabilities(&view,&device->backend.value.vulkan.caps));
     doe_vk_caps disabled = device->backend.value.vulkan.caps;
     disabled.api_version = UINT32_MAX; /* Version is never an enabling proof. */
@@ -51,6 +53,7 @@ static void capability_controls(native_device *device, WGPUShaderModule module)
     }
     assert(extensions == 1 && capabilities == 1 && native_shader_capabilities(&view,&device->backend.value.vulkan.caps));
     free(words);
+    native_stage_release(&stage);
 }
 int main(void)
 {

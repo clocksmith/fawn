@@ -1,4 +1,10 @@
 src/pipeline.c
+src/override.c
+src/parse_override.c
+src/specialization.c
+src/specialization_compile.c
+src/override_plan.c
+src/override_selection.c
 src/compile_spans.c
 src/compile_metadata.c
 src/compile_text.c
@@ -34,6 +40,7 @@ src/constants.c
 src/sema_declarations.c
 src/sema_expression.c
 src/sema_call.c
+src/sema_select.c
 src/reflection.c
 src/spirv.c
 src/spirv_module.c

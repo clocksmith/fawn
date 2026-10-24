@@ -32,6 +32,9 @@ typedef struct mock_state {
     doe_dx_texture_region region;
     uint32_t destination_x, destination_y;
     size_t texture_blits;
+    doe_dx_sampler_layout dynamic_layouts[DOE_DX_MAX_DYNAMIC_SAMPLERS];
+    doe_dx_sampler_desc dynamic_values[DOE_DX_MAX_DYNAMIC_SAMPLERS];
+    size_t dynamic_sampler_count;
     bool upload;
     doe_dx_resource_pipeline_desc pipeline_desc;
     doe_dx_texture_binding_layout texture_layouts[DOE_DX_MAX_BINDINGS];

@@ -20,8 +20,10 @@ zero initialization; uniform padding never widens logical storage descriptors.
 The authored texture-copy path adds five four-byte color formats in 2D, with one
 mip, layer and sample, real zero initialization and partial GPU transfers that
 preserve public row padding. Immutable views and sampler descriptors use the
-canonical resource owner. Sampling/storage stage limits, graphics and presentation
-remain uncomposed; CoreFeaturesAndLimits is absent.
+canonical resource owner. Sampled/storage compute bindings and runtime sampler
+values now follow compiler-owned resource metadata; their newer SDK/device
+execution has separate evidence. Graphics and presentation remain uncomposed;
+CoreFeaturesAndLimits is absent.
 The [public D3D12 developer receipt](DEVELOPER_RECEIPT_D3D12_PUBLIC.json) binds an
 actual Windows SDK DLL build and four unchanged C consumers to one source, with
 the same binaries passing on CPU WARP and the named Miles GPU. It covers compute,
@@ -68,7 +70,9 @@ masks, unclipped depth, indexed guards, queries, depth/stencil transfers and
 presentation remain explicit missing paths. Compute indirect dispatch now lowers
 through a lazy immutable device guard, GPU-copied private arguments and the actual
 Metal indirect-dispatch selector. Host rejection, rollback, sanitizer and lifetime
-controls pass; physical execution of this new path has its own gate.
+controls pass. The [M3 indirect receipt](DEVELOPER_RECEIPT_METAL_INDIRECT.json)
+binds actual public GPU-generated arguments, bounds suppression, dispatch
+metadata, preserved caller bytes and early releases to its exact source.
 
 [Public Apple graphics evidence](DEVELOPER_RECEIPT_METAL_PUBLIC_GRAPHICS.json)
 binds offscreen pixels, early releases, discard zeros and uploads on one M3.
@@ -90,8 +94,11 @@ and exact exports; absent platform loaders remain explicitly unavailable.
   passes and command buffers alias their typed C resource owners, not wrappers
   with duplicate references. Device-bound shader resources adopt the separately
   shareable immutable `doe_shader` artifact.
-- Shader creation calls the C compiler for the selected backend target. Entry selection uses the actual entry
-  reflection and its static resource closure. Layout checks include reflected
+- Shader creation validates and retains the immutable WGSL module. Pipeline
+  creation selects the declared stage and specializes its constants through the
+  same compiler for the selected backend. The temporary executable has one entry
+  at index zero, its declared name and its static resource closure; it is released
+  outside owner locks after native creation. Layout checks include reflected
   minimum binding sizes, access kind, stage, resource/device identity and native
   limits. The Vulkan capability scanner admits Shader/Matrix, baseline 1D images and
   ImageQuery explicitly. The native context opts into demote when actually available;
@@ -655,6 +662,20 @@ Metal timestamps, surfaces on Metal/Windows/Android, broader public D3D12 paths
 and complete package adoption remain unfinished. Private backend checks do not
 qualify those public integrations; see the current Metal scope and bound Apple
 evidence above.
+
+The D3D12 texture compute bridge now converts selected compiler HLSL resource and
+handle metadata into whole 2D sampled float/uint classes, exact-format storage
+SRV/UAV rows and runtime sampler layouts. The five existing color formats remain
+the constructor envelope; depth, arrays, extra mips/MSAA and public graphics are
+not implied. Read-only storage binds as SRV while retaining logical StorageBinding
+admission; compatible sampled/read-storage aliases use one private allocation
+lease and transition. Sampler values are copied into command-owned sampler heaps.
+`tests/texture_bindings.c` is the focused public execution control for nearest and
+linear sampler replacement, direct/guarded-indirect work, GPU num_workgroups,
+read aliases, writable-alias rejection, pixels, padding and early caller release.
+`check-d3d12-bindings` checks actual public compiler metadata plus malformed copied
+rows without a device. Windows SDK/WARP execution of this newer path requires a
+matching source-bound run; prior transfer/buffer receipts do not qualify it.
 
 ## Reproduce from a coherent checkout
 

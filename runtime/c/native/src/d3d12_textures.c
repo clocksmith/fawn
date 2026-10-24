@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: MIT */
 #include "d3d12_texture.h"
 #include "d3d12_texture_desc.h"
+#include "d3d12_binding_internal.h"
 #include <stdlib.h>
 
 #if defined(_WIN32)
@@ -121,8 +122,9 @@ WGPUSampler native_d3d12_create_sampler(native_device *device,const WGPUSamplerD
 {
     WGPUSamplerDescriptor defaults = WGPU_SAMPLER_DESCRIPTOR_INIT, resolved;
     if (!descriptor) descriptor = &defaults;
+    doe_dx_sampler_desc native;
     doe_resource_status status = doe_resource_sampler_validate(descriptor,&resolved);
-    if (status != DOE_RESOURCE_OK || !native_d3d12_sampler_supported(&resolved)) {
+    if (status != DOE_RESOURCE_OK || !native_d3d12_sampler_descriptor(&resolved,&native)) {
         native_error(device,WGPUErrorType_Validation,"D3D12 sampler settings not composed");
         return NULL;
     }

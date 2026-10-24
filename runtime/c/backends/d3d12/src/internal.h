@@ -45,7 +45,9 @@ struct doe_dx_pipeline {
     doe_dx_context *context;
     doe_dx_native_pipeline *native;
     uint32_t references;
-    size_t binding_count, texture_count;
+    size_t binding_count, texture_count, sampler_count;
+    doe_dx_texture_contract texture_contracts[DOE_DX_MAX_BINDINGS];
+    doe_dx_sampler_layout samplers[DOE_DX_MAX_DYNAMIC_SAMPLERS];
     bool graphics;
     doe_dx_format color_format;
     bool depth_enabled;
@@ -106,6 +108,9 @@ void doe_dx_use_geometry(doe_dx_commands *commands, const doe_dx_mesh_draw_desc 
 doe_dx_status doe_dx_prepare_resources(doe_dx_commands *commands, doe_dx_pipeline *pipeline,
     const doe_dx_compute_resources *resources, doe_dx_native_resources *native,
     doe_dx_reservation *needed, doe_dx_error *error);
+doe_dx_status doe_dx_prepare_dynamic_resources(doe_dx_commands *commands,doe_dx_pipeline *pipeline,
+    const doe_dx_dynamic_resources *values,doe_dx_native_resources *native,
+    doe_dx_reservation *needed,doe_dx_error *error);
 void doe_dx_use_resources(doe_dx_commands *commands, doe_dx_pipeline *pipeline,
     const doe_dx_compute_resources *resources);
 bool doe_dx_range(uint64_t allocation, uint64_t offset, uint64_t size);

@@ -27,6 +27,25 @@ abstract floats at f32, propagate a destination type through an abstract subtree
 or treat explicit conversion as automatic materialization. Overload selection
 precedes conversion, including concrete-only f32 constructor and runtime shift
 rules. Let snapshots are runtime-stage reads; consts retain their numeric stage.
+Override-stage values retain that stage after specialization. Validate every
+module declaration and body before selecting a pipeline closure; do not replace
+source text or invent values/counts to validate uninitialized declarations.
+Unknown override IR and deferred array footprints are validation-only facts;
+every executable target rejects them. API-provided doubles use numeric.c's
+checked override conversion, never constructor saturation/truncation. Replaced
+and unselected initializers are not evaluated during specialization. Keep the
+original module identity separate from each independently owned specialization.
+`select(false_value, true_value, mask)` evaluates all three arguments eagerly,
+once and in source order. Scalar masks broadcast through a typed boolean-vector
+IR splat for vector results, retaining baseline SPIR-V1.3 compatibility. Text
+targets select vector components from saved values; HLSL2021 cannot use a vector
+short-circuit conditional. Vector splats repeat one saved operand rather than
+re-evaluating the source expression. Const selection borrows/projects the existing
+constant DAG, including boolean values; it is not a second arithmetic evaluator.
+Keep argument evaluation in the existing recursive call owner; a builtin's
+typed finishing helper consumes snapshots without re-entering source. Measure
+the complete semantic recursion group when adding a call path: individually
+small frames do not establish the group's unchanged stack ceiling.
 
 numeric.c owns locale-free bounded literal parsing, rounding, const arithmetic and
 checked conversions; numeric_math.c owns declared-width component math.
@@ -185,5 +204,6 @@ before pointer formation, with independent load-zero/store-discard behavior.
 Typed reflection publishes the declared graph/resource closure atomically. Legacy
 projection failure identifies an unrepresentable declaration rather than silently
 omitting it. MEASURE and each output selection still perform full private emission
-and honor the same capacities. Keep the seven-symbol native ABI bounded; no private
+and honor the same capacities. Preserve each frozen version's symbol and record
+contract; new exports require an explicit additive versioned facade. No private
 cross-file helper or test hook becomes a public export.

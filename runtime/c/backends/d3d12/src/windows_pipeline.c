@@ -18,8 +18,8 @@ void doe_dx_native_pipeline_destroy(doe_dx_native_pipeline *pipeline) {
     free(pipeline);
 }
 
-doe_dx_status doe_dx_create_root(doe_dx_native_context *context,
-    const doe_dx_resource_pipeline_desc *desc, doe_dx_native_pipeline *pipeline,
+static doe_dx_status create_root(doe_dx_native_context *context,
+    const doe_dx_resource_pipeline_desc *desc,const doe_dx_dynamic_pipeline_desc *dynamic, doe_dx_native_pipeline *pipeline,
     bool input_assembler, doe_dx_error *error) {
     D3D12_DESCRIPTOR_RANGE ranges[DOE_DX_MAX_BINDINGS] = {0};
     for (size_t index = 0; index < desc->buffers.binding_count; index++) {
@@ -71,15 +71,36 @@ doe_dx_status doe_dx_create_root(doe_dx_native_context *context,
         samplers[index].BorderColor = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
     }
     size_t binding_count = desc->buffers.binding_count + desc->texture_count;
-    D3D12_ROOT_PARAMETER parameter = {0};
-    parameter.ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-    parameter.DescriptorTable.NumDescriptorRanges = (UINT)binding_count;
-    parameter.DescriptorTable.pDescriptorRanges = ranges;
-    parameter.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+    D3D12_ROOT_PARAMETER parameters[2] = {0};
+    UINT table_count = 0;
+    pipeline->resource_table = UINT32_MAX;
+    pipeline->sampler_table = UINT32_MAX;
+    if (binding_count) {
+        pipeline->resource_table = table_count;
+        D3D12_ROOT_PARAMETER *parameter = &parameters[table_count++];
+        parameter->ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+        parameter->DescriptorTable.NumDescriptorRanges = (UINT)binding_count;
+        parameter->DescriptorTable.pDescriptorRanges = ranges;
+        parameter->ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+    }
+    D3D12_DESCRIPTOR_RANGE sampler_ranges[DOE_DX_MAX_DYNAMIC_SAMPLERS] = {0};
+    size_t dynamic_count = dynamic ? dynamic->sampler_count : 0;
+    if (dynamic_count) {
+        pipeline->sampler_table = table_count;
+        for (size_t index = 0; index < dynamic_count; ++index) {
+            sampler_ranges[index] = (D3D12_DESCRIPTOR_RANGE){D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER,1,
+                dynamic->samplers[index].shader_register,dynamic->samplers[index].register_space,(UINT)index};
+        }
+        D3D12_ROOT_PARAMETER *parameter = &parameters[table_count++];
+        parameter->ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+        parameter->DescriptorTable.NumDescriptorRanges = (UINT)dynamic_count;
+        parameter->DescriptorTable.pDescriptorRanges = sampler_ranges;
+        parameter->ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+    }
     D3D12_ROOT_SIGNATURE_DESC root = {0};
     if (input_assembler) root.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
-    root.NumParameters = binding_count ? 1 : 0;
-    root.pParameters = binding_count ? &parameter : NULL;
+    root.NumParameters = table_count;
+    root.pParameters = table_count ? parameters : NULL;
     root.NumStaticSamplers = (UINT)desc->sampler_count;
     root.pStaticSamplers = desc->sampler_count ? samplers : NULL;
     ID3DBlob *blob = NULL;
@@ -101,11 +122,18 @@ fail:
     return doe_dx_hresult(result, operation, error);
 }
 
-doe_dx_status doe_dx_native_pipeline_create(doe_dx_native_context *context,
-    const doe_dx_resource_pipeline_desc *desc, doe_dx_native_pipeline **out, doe_dx_error *error) {
+doe_dx_status doe_dx_create_root(doe_dx_native_context *context,
+    const doe_dx_resource_pipeline_desc *desc,doe_dx_native_pipeline *pipeline,
+    bool input_assembler,doe_dx_error *error) {
+    return create_root(context,desc,NULL,pipeline,input_assembler,error);
+}
+
+static doe_dx_status create_compute(doe_dx_native_context *context,
+    const doe_dx_resource_pipeline_desc *desc,const doe_dx_dynamic_pipeline_desc *dynamic,
+    doe_dx_native_pipeline **out,doe_dx_error *error) {
     doe_dx_native_pipeline *pipeline = calloc(1, sizeof(*pipeline));
     if (!pipeline) return doe_dx_fail(DOE_DX_OUT_OF_MEMORY, 0, "native.pipeline.allocate", error);
-    doe_dx_status status = doe_dx_create_root(context, desc, pipeline, false, error);
+    doe_dx_status status = create_root(context,desc,dynamic,pipeline,false,error);
     if (status == DOE_DX_OK) {
         D3D12_COMPUTE_PIPELINE_STATE_DESC state = {0};
         state.pRootSignature = pipeline->root;
@@ -121,5 +149,13 @@ doe_dx_status doe_dx_native_pipeline_create(doe_dx_native_context *context,
     }
     *out = pipeline;
     return doe_dx_fail(DOE_DX_OK, 0, "native.pipeline.create", error);
+}
+doe_dx_status doe_dx_native_pipeline_create(doe_dx_native_context *context,
+    const doe_dx_resource_pipeline_desc *desc,doe_dx_native_pipeline **out,doe_dx_error *error) {
+    return create_compute(context,desc,NULL,out,error);
+}
+doe_dx_status doe_dx_native_pipeline_create_dynamic(doe_dx_native_context *context,
+    const doe_dx_dynamic_pipeline_desc *desc,doe_dx_native_pipeline **out,doe_dx_error *error) {
+    return create_compute(context,&desc->resources,desc,out,error);
 }
 #endif

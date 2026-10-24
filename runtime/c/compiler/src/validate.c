@@ -76,7 +76,7 @@ static bool lower_local(Source *source,const Syntax *s,const LocalSyntax *local,
     ExpressionValue result={.known=true,.constant.type=annotation,.value={.type=annotation,.source_offset=name.offset}};
     if ((local->flags&LOCAL_INITIALIZED)!=0u) {
         if (!sema_expression(source,local->expression,scope,true,true,&result)) return false;
-        if (constant && result.runtime) return source_error(source,DOE_COMPILER_SEMANTIC_ERROR,name.offset,"const initializer requires a const expression");
+        if (constant && (result.runtime || result.overridable)) return source_error(source,DOE_COMPILER_SEMANTIC_ERROR,name.offset,"const initializer requires a const expression");
         if ((local->flags&LOCAL_ANNOTATED)!=0u) {if (!sema_materialize(source,&result,annotation)) return false;}
         else if (!constant && type_abstract(program,result.constant.type)) {
             TypeId type;

@@ -639,6 +639,9 @@ static bool emit_block(Emitter *e, const IrProgram *program, size_t *cursor,
         if (ir->result != 0u && ir->opcode != IR_CONSTANT) e->values[ir->result] = spirv_reserve_ids(e, 1u);
         const uint32_t result = e->values[ir->result];
         switch (ir->opcode) {
+            case IR_DEFERRED_OVERRIDE:
+                return source_error(e->source, DOE_COMPILER_INPUT_ERROR, ir->source_offset,
+                                    "deferred override reached executable target lowering");
             case IR_ADDRESS:
                 /* A local subobject address is a typed path descriptor. Its
                  * bounds are tested only when dereferenced; baseline calls
@@ -650,6 +653,11 @@ static bool emit_block(Emitter *e, const IrProgram *program, size_t *cursor,
                 break;
             case IR_ARRAY_LENGTH:
                 if (!spirv_runtime_length(e, ir->operands.scalar.binding, result)) return false;
+                break;
+            case IR_SELECT:
+                EMIT(OP_SELECT, spirv_target_type(e, ir->type), result,
+                    e->values[ir->operands.scalar.binding], e->values[ir->operands.scalar.right],
+                    e->values[ir->operands.scalar.left]);
                 break;
             case IR_STAGE_INPUT:
                 EMIT(OP_COPY_OBJECT, spirv_target_type(e, ir->type), result,

@@ -1,0 +1,149 @@
+{
+  "kind": "developer-correctness-evidence",
+  "component": "Public C Metal guarded indirect compute",
+  "consumer": "runtime/c/native/tests/indirect_dispatch.c",
+  "source_commit": "2141af5b003282f5c7fbe7038309e148ee54e640",
+  "source_tree": "b0dd8bf8db716447feb03d6f1a152985eba22164",
+  "source_binding": {
+    "verified_git_blob_and_source_files": 4506,
+    "source_archive_sha256": "e59d97e769ac22cb94e40cadeffb5a62aefde2b093a6604dbafbca47a4ae9f88",
+    "artifacts_verified": 6
+  },
+  "input_manifest_sha256": "28948cff071bab8b8591e327053d1c68088aca728d4e039edbbac4477e19f139",
+  "consumer_sha256": "6685321846df0c609795c4c837b5b0d47ce0c4490a606336a028a0242266ea3a",
+  "host": {
+    "machine": "Mars",
+    "os": "macOS26.6.2build25G83arm64",
+    "compiler": "Appleclang17.0.0",
+    "sdk": "26.0",
+    "adapter": "AppleM3",
+    "backend": "Metal",
+    "public_adapter_type_value": 4,
+    "driver": "not separately reported",
+    "selection": {
+      "DOE_C_TEST_BACKEND": "metal",
+      "DOE_C_TEST_ADAPTER": "physical"
+    }
+  },
+  "build": {
+    "command": [
+      "make",
+      "-C",
+      "runtime/c/native",
+      "-j8",
+      "CC=cc",
+      "CXX=c++",
+      "BUILD=/tmp/doe-c-metal-indirect-device-i23vmz98/build",
+      "/tmp/doe-c-metal-indirect-device-i23vmz98/build/indirect-dispatch"
+    ],
+    "exit": 0,
+    "elapsed": 4.677443458000198
+  },
+  "physical": {
+    "results": [
+      {
+        "name": "indirect-dispatch",
+        "exit": 0,
+        "timeout": false,
+        "leaf_deadline_seconds": 15,
+        "elapsed_seconds": 0.23319508298300207
+      }
+    ],
+    "scope": "Actual public GPU-produced valid/overlimitXYZ/zero/valid argument records; exact4 invocations, num_workgroups metadata, original80argumentbytes/padding, canonical negative admission and earlyrelease. No CPU argument read or caller mutation.",
+    "stderr_bytes": 0,
+    "guardian": {
+      "exit": 0,
+      "timeout": false,
+      "parent_deadline_seconds": 45,
+      "elapsed_seconds": 0.2951269999612123,
+      "killed_owned_direct_children": [],
+      "scope": "owned worker and its direct native test children; no GPU termination claim"
+    },
+    "cleanup_probe": {
+      "exit": -9,
+      "timeout": true,
+      "parent_deadline_seconds": 0.5,
+      "elapsed_seconds": 0.5358670420246199,
+      "killed_owned_direct_children": [
+        46471
+      ],
+      "scope": "owned worker and its direct native test children; no GPU termination claim"
+    },
+    "thermal": "Before/after pmset logs record no thermal/performance warning and no power status."
+  },
+  "artifacts_sha256": {
+    "build/indirect-dispatch": "c508ed83fc69afd073fbaa59eb9b8c4ac442f8bae2f7f2c533080d9bf4519584",
+    "build/libwebgpu_doe_c.dylib": "3c1c2dc9e3710e0c5035f2aa7054604ddf922b2513c344abf04a174f92ec077b",
+    "build/libdoe_compiler.dylib": "90c69e1f7848881bc768b66e2da1782e022de232fa6376460fa5581fee4f4835",
+    "worker.py": "2e3d097f47258f6053dacb4d8197ae4a900bb4766d518f7936407a80e903b8a4",
+    "guardian.py": "e13416dbcb5ce5d33c4116430ae0f23225de49bf2c393119c1f21ce2b5456636",
+    "probe.py": "c8b6389df155556941ebaf2ae640d81c4e4c64ea75f7a598e1c21d8e10f60801"
+  },
+  "separate_host_checks": {
+    "base_commit": "b231dc93f50b0650af81765a16650f3945e2fdbe",
+    "overlay_source_manifest_sha256": "5f9ad8df2e9fc38ce3362323f09928d0e7e6fd80c331cb6560230e693689f9a2",
+    "root_capture": "Jupiter /tmp/doe-c-metal-indirect-global-wcg40vxf",
+    "results": [
+      {
+        "name": "all",
+        "command": [
+          "make",
+          "-C",
+          "runtime/c",
+          "check",
+          "BUILD=/tmp/doe-c-metal-indirect-global-wcg40vxf/build/all"
+        ],
+        "exit": 0,
+        "elapsed": 33.42937621602323
+      },
+      {
+        "name": "metal",
+        "command": [
+          "make",
+          "-C",
+          "runtime/c/backends/metal",
+          "check",
+          "BUILD=/tmp/doe-c-metal-indirect-global-wcg40vxf/build/metal"
+        ],
+        "exit": 0,
+        "elapsed": 3.871244003006723
+      },
+      {
+        "name": "native",
+        "command": [
+          "make",
+          "-C",
+          "runtime/c/native",
+          "check-host-bridge",
+          "BUILD=/tmp/doe-c-metal-indirect-global-wcg40vxf/build/native"
+        ],
+        "exit": 0,
+        "elapsed": 14.942644190043211
+      },
+      {
+        "name": "vulkan-lifetimes",
+        "command": [
+          "make",
+          "-C",
+          "runtime/c",
+          "check-vulkan",
+          "BUILD=/tmp/doe-c-metal-indirect-global-wcg40vxf/build/lifetimes"
+        ],
+        "exit": 0,
+        "elapsed": 10.23387441696832
+      }
+    ],
+    "scope": "Root immutable source capture with exact29-file Metal overlay: all13Cowner build/style/platform/global gates, privateMetalhostcontrols, publicMetalhostbridge and all5CPU Vulkanlifetime clients. Independent source review found no defect. Separate private SDKarm64/x86_64 and GNU fullASan/UBSan/LSan bridge controls pass at their recorded overlay, not physical instrumentation.",
+    "agent_sanitizer_capture": "Jupiter /tmp/doe-metal-indirect-host-RE0utBC8"
+  },
+  "retention": {
+    "ignored_bundle": "bench/out/c-metal-indirect-2141af5b0-evidence.tar.gz",
+    "bundle_sha256": "e004b7c9f42adda9bf162bd4f24d7cc414bd8ae08fce914866f3b4b6c685d4f0",
+    "raw_records": "bench/out/c-metal-indirect-2141af5b0"
+  },
+  "limits": [
+    "One named M3 developer correctness run and host/SDK controls; no independent frozen acceptance, performance, arbitrary shader/resource combinations, GPUtimeout recovery or physical matrix qualification.",
+    "Later shader specialization and D3D12 sampled/storage work are not covered. Retained Zig remains the production default."
+  ],
+  "acceptance_consumer": "C migration public Metal compute indirect correctness gate; not full backend qualification"
+}

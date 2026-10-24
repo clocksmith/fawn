@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: MIT
  * Copyright (c) 2026 Doe contributors */
 #include "compile_internal.h"
+#include "override.h"
 #include <errno.h>
 #include <string.h>
 
@@ -217,16 +218,18 @@ DoeCompilerStatus doe_compiler_module_requirements(uint32_t version,
     *requirements=(DoeCompilerWorkspaceRequirements){bytes,_Alignof(max_align_t)};
     return compiler_return(DOE_COMPILER_OK,saved_errno);
 }
-static DoeCompilerStatus compile_module(const DoeCompilerModuleCapacities *capacities,
+DoeCompilerStatus compiler_compile_module(const DoeCompilerModuleCapacities *capacities,
     void *workspace, size_t workspace_size, const char *source, size_t length,
     const DoeCompilerEntrySelectionV5 *selection, uint32_t flags, const DoeCompilerModuleOutputs *outputs,
     DoeCompilerModuleResult *result, const DoeCompilerResourceOutputs *resource_outputs,
     DoeCompilerResourceResult *resource_result, const DoeCompilerStageCapacities *stage_capacities,
-    const DoeCompilerStageOutputs *stage_outputs, DoeCompilerStageResult *stage_result, uint32_t version) {
+    const DoeCompilerStageOutputs *stage_outputs, DoeCompilerStageResult *stage_result, uint32_t version,
+    SpecializationContext *specialization) {
     const int saved_errno=errno;
     memset(result,0,sizeof(*result));
     Source context={.source=source,.length=length,.diagnostic=&result->diagnostic,
-        .exhausted_pool=&result->exhausted_pool,.minimum_pool_capacity=&result->minimum_pool_capacity};
+        .exhausted_pool=&result->exhausted_pool,.minimum_pool_capacity=&result->minimum_pool_capacity,
+        .specialization=specialization};
     CompilerLimits limits;
     size_t bytes, base = 0u;
     const bool layout = stage_capacities != NULL ? stage_layout(stage_capacities, &limits, &base, &bytes) :
@@ -258,6 +261,7 @@ static DoeCompilerStatus compile_module(const DoeCompilerModuleCapacities *capac
     c->module_flags = ((flags & DOE_COMPILER_UNIFORM_BUFFER_STANDARD_LAYOUT) != 0u ? MODULE_STANDARD_UNIFORM : 0u) |
         ((flags & DOE_COMPILER_CORE_BINDING_NUMBERS) != 0u ? MODULE_CORE_BINDINGS : 0u);
     if (stage_capacities != NULL) stage_bind(&context, workspace, stage_capacities, base);
+    if (specialization != NULL) specialization->stage_base = base;
     DoeCompilerTypedOutputCounts typed;
     uint32_t selected;
     if (!compile_pipeline(&context,c,0u,&typed) || !compiler_select_entry(&context,selection,&selected))
@@ -299,8 +303,8 @@ DoeCompilerStatus doe_compiler_compile_module(uint32_t version,
         (outputs!=NULL?outputs_size!=sizeof(*outputs):outputs_size!=0u))
         return compiler_return(DOE_COMPILER_ABI_MISMATCH,saved_errno);
     if (!compiler_module_records(outputs)) return compiler_return(DOE_COMPILER_ABI_MISMATCH,saved_errno);
-    return compiler_return(compile_module(capacities, workspace, workspace_size, source, length,
-        selection, flags, outputs, result, NULL, NULL, NULL, NULL, NULL, version), saved_errno);
+    return compiler_return(compiler_compile_module(capacities, workspace, workspace_size, source, length,
+        selection, flags, outputs, result, NULL, NULL, NULL, NULL, NULL, version, NULL), saved_errno);
 }
 
 DoeCompilerStatus doe_compiler_resource_requirements(uint32_t version,
@@ -331,8 +335,8 @@ DoeCompilerStatus doe_compiler_compile_resources(uint32_t version,
     if (outputs != NULL && (!compiler_module_records(&outputs->module) || outputs->handle_record_size != sizeof(DoeCompilerHandleV6)))
         return compiler_return(DOE_COMPILER_ABI_MISMATCH, saved_errno);
     memset(result, 0, sizeof(*result));
-    return compiler_return(compile_module(capacities, workspace, workspace_size, source, length,
-        selection, flags, outputs != NULL ? &outputs->module : NULL, &result->module, outputs, result, NULL, NULL, NULL, version), saved_errno);
+    return compiler_return(compiler_compile_module(capacities, workspace, workspace_size, source, length,
+        selection, flags, outputs != NULL ? &outputs->module : NULL, &result->module, outputs, result, NULL, NULL, NULL, version, NULL), saved_errno);
 }
 
 DoeCompilerStatus doe_compiler_stage_requirements(uint32_t version,
@@ -369,8 +373,8 @@ DoeCompilerStatus doe_compiler_compile_stages(uint32_t version,
         result->resources.module.diagnostic.status = DOE_COMPILER_INPUT_ERROR;
         return compiler_return(DOE_COMPILER_INPUT_ERROR, saved_errno);
     }
-    return compiler_return(compile_module(capacities != NULL ? &capacities->module : NULL,
+    return compiler_return(compiler_compile_module(capacities != NULL ? &capacities->module : NULL,
         workspace, workspace_size, source, length, selection, flags,
         outputs != NULL ? &outputs->resources.module : NULL, &result->resources.module,
-        outputs != NULL ? &outputs->resources : NULL, &result->resources, capacities, outputs, result, version), saved_errno);
+        outputs != NULL ? &outputs->resources : NULL, &result->resources, capacities, outputs, result, version, NULL), saved_errno);
 }

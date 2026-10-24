@@ -8,7 +8,7 @@ bool sema_unary_value(Source *s, const Expression *e, ExpressionValue *a, bool e
     if (leaf == IR_VOID || (e->kind == EXPRESSION_NOT && leaf != IR_BOOL) || (e->kind == EXPRESSION_COMPLEMENT && !(leaf == IR_U32 || leaf == IR_I32 || leaf == IR_ABSTRACT_INT)) || (e->kind == EXPRESSION_NEGATE && (leaf == IR_BOOL || leaf == IR_U32)))
         return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, e->source_offset, "unary operator is not defined for this type");
     *out = (ExpressionValue){
-        .runtime = a->runtime, .known = evaluate && a->known, .constant.type = a->constant.type, .value = {.type = a->constant.type, .source_offset = e->source_offset}
+        .runtime = a->runtime, .overridable = a->overridable, .known = evaluate && a->known, .constant.type = a->constant.type, .value = {.type = a->constant.type, .source_offset = e->source_offset}
     };
     if (!a->runtime) {
         if (!out->known) return true;
@@ -62,7 +62,7 @@ bool sema_builtin_finish(Source *source, const Expression *node, const NumericBu
 bool sema_swizzle_value(Source *s, const Expression *node, ExpressionValue *base, TypeId output,
             uint32_t mask, bool evaluate, bool emit, ExpressionValue *out) {
     *out = (ExpressionValue){
-        .runtime = base->runtime, .known = evaluate && base->known, .constant.type = output, .value = {.type = output, .source_offset = node->source_offset}
+        .runtime = base->runtime, .overridable = base->overridable, .known = evaluate && base->known, .constant.type = output, .value = {.type = output, .source_offset = node->source_offset}
     };
     if (!base->runtime) {
         if (!out->known) return true;

@@ -60,7 +60,7 @@ static void deliver_compilation(void *context)
     native_shader *shader = doe_resource_shader_native(value.shader);
     WGPUCompilationMessage message = {0};
     WGPUCompilationInfo info = {0};
-    if (!shader->compiled) {
+    if (!shader->module) {
         const DoeCompilerDiagnostic *diagnostic = &shader->error.diagnostic;
         message = (WGPUCompilationMessage){.message=native_string(diagnostic->message),
             .type=WGPUCompilationMessageType_Error, .lineNum=diagnostic->line,

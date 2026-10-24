@@ -30,7 +30,7 @@ def main() -> None:
     sources = ['runtime/c/common/tests/test_dispatch_guard.c',
                'runtime/c/native/tests/d3d12_indirect_layout.c',
                'runtime/c/native/src/d3d12_indirect_layout.c',
-               'runtime/c/shader/src/shader.c']
+               *sorted(str(path.relative_to(ROOT)) for path in (ROOT/'runtime/c/shader/src').glob('*.c'))]
     inputs = [*sources, 'runtime/c/common/include/doe_dispatch_guard.h',
               'runtime/c/native/src/d3d12_indirect_layout.h', 'runtime/c/shader/include/doe_shader.h']
     inputs += [str(path.relative_to(ROOT)) for path in (ROOT/'runtime/c/compiler/include').glob('*.h')]

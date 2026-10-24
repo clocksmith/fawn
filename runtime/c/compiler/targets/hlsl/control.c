@@ -180,7 +180,7 @@ void hlsl_block(HlslEmitter *e, uint32_t *cursor, unsigned depth, uint32_t loop,
             case IR_COMPARE: case IR_NOT: case IR_LOCAL_LOAD: case IR_NEGATE: case IR_COMPLEMENT:
             case IR_DIVIDE: case IR_REMAINDER: case IR_BIT_AND: case IR_BIT_OR: case IR_BIT_XOR:
             case IR_SHIFT_LEFT: case IR_SHIFT_RIGHT: case IR_CONVERT: case IR_BITCAST: case IR_CALL:
-            case IR_BUILTIN: case IR_COMPOSITE: case IR_SWIZZLE:
+            case IR_BUILTIN: case IR_COMPOSITE: case IR_SWIZZLE: case IR_SELECT:
                 if (ir->result != 0u) {
                     hlsl_value(e, ir->result);
                     hlsl_text(e, " = ");
@@ -197,6 +197,7 @@ void hlsl_block(HlslEmitter *e, uint32_t *cursor, unsigned depth, uint32_t loop,
             case IR_LOOP_BEGIN: case IR_LOOP_TEST: case IR_LOOP_CONTINUING: case IR_END_LOOP:
             case IR_ACCESS_LOAD: case IR_ACCESS_STORE: case IR_VALUE_ACCESS:
             case IR_HANDLE: case IR_IMAGE:
+            case IR_DEFERRED_OVERRIDE:
             case IR_ADDRESS:
             case IR_ATOMIC_LOAD: case IR_ATOMIC_STORE: case IR_ATOMIC_ADD: case IR_ATOMIC_SUBTRACT:
             case IR_ATOMIC_MAX: case IR_ATOMIC_MIN: case IR_ATOMIC_AND: case IR_ATOMIC_OR:

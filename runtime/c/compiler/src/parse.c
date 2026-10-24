@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: MIT
  * Copyright (c) 2026 Doe contributors */
 #include "parse_internal.h"
+#include "override.h"
 #include <string.h>
 
 const Token *parser_peek(const Parser *p) { return &p->tokens->tokens[p->cursor]; }
@@ -105,7 +106,13 @@ static bool workgroup_dimensions(Parser *p, Syntax *s) {
     size_t count = 0u;
     do {
         if (count == 3u) return parser_reject(p, "at most three workgroup dimensions");
+        const uint32_t first_expression = s->expression_count;
         if (!attribute_value(p, s, &s->entries[s->entry_count].state.dimensions[count++])) return false;
+        if (p->source->specialization != NULL) {
+            uint32_t *range = p->source->specialization->entry_expressions + 6u*s->entry_count + 2u*(count - 1u);
+            range[0] = first_expression;
+            range[1] = s->expression_count;
+        }
         if (parser_peek(p)->kind != ',') break;
         ++p->cursor;
     } while (parser_peek(p)->kind != ')');
@@ -178,6 +185,7 @@ static bool generic_reference(Parser *p,Syntax *s,NameSpan name,TypeRef *out) {
     if (!type_reference(p,s,&g->element)) return false;
     if (parser_peek(p)->kind==',') {
         ++p->cursor; ++p->template_count;
+        g->flags = s->expression_count;
         const bool ok=expression(p,s,0u,0u,&g->count_expression);
         --p->template_count; if (!ok) return false;
         if (parser_peek(p)->kind==',') ++p->cursor;
@@ -901,7 +909,12 @@ bool parse_tokens(Source *source,CompilerWorkspace *s) {
             if (!module_directive(&p, parser_spelled(&p, parser_peek(&p), "enable"))) return false;
             continue;
         }
-        if (parser_spelled(&p,parser_peek(&p),"const")) {if (!module_constant(&p,s,first)) return false;}
+        if (source->specialization != NULL && (parser_spelled(&p,parser_peek(&p),"override") ||
+            (parser_peek(&p)->kind == '@' && p.cursor + 1u < s->token_count &&
+             parser_spelled(&p, &s->tokens[p.cursor + 1u], "id")))) {
+            if (!parse_override(&p, s)) return false;
+        }
+        else if (parser_spelled(&p,parser_peek(&p),"const")) {if (!module_constant(&p,s,first)) return false;}
         else if (parser_spelled(&p,parser_peek(&p),"alias")) {if (!module_alias(&p,s)) return false;}
         else if (parser_spelled(&p,parser_peek(&p),"struct")) {if (!struct_declaration(&p,s)) return false;}
         else if (parser_spelled(&p,parser_peek(&p),"var")) {if (!workgroup_declaration(&p,s)) return false;}

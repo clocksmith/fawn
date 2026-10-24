@@ -34,13 +34,3 @@ bool native_d3d12_texture_region(const doe_resource_texture_copy *copy,doe_dx_te
     *out = (doe_dx_texture_region){copy->origin[0],copy->origin[1],copy->width,copy->height};
     return true;
 }
-
-bool native_d3d12_sampler_supported(const WGPUSamplerDescriptor *normalized)
-{
-    /* Every composed view has exactly one mip, so LOD range and mip filter do
-     * not change sampling while minLOD=0. The immutable private sampler subset
-     * has one min/mag filter, no comparison and no anisotropy. */
-    return normalized && normalized->minFilter == normalized->magFilter &&
-        normalized->maxAnisotropy == 1 && normalized->compare == WGPUCompareFunction_Undefined &&
-        normalized->lodMinClamp == 0 && normalized->lodMaxClamp >= 0;
-}

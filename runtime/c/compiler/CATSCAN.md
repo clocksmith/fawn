@@ -17,16 +17,20 @@ The standalone compiler; [initial coverage](MILESTONE_1.md) is historical.
 Caller-owned source and explicitly sized versioned C API outputs produce SPIR-V,
 MSL or HLSL through one typed pipeline. Reflection includes exact entry/binding
 metadata, HLSL namespaces/spaces and native requirements; diagnostics retain source locations.
+[ABI13 specialization](SPECIALIZATION.md) separates symbolic module validation
+from concrete selected-entry emission through the same semantic owner.
 
 ## Invariants
 Unsupported syntax, types and targets reject without fallback.
 Failure publishes no partial output and retains no caller pointers.
 Reflection and behavior derive from validated IR, never source matching.
 Limits reject rather than truncate; checked arithmetic precedes narrowing and access.
+Const, override and runtime stages remain distinct. Deferred facts are not
+executable values/layouts; replaced or unrequired initializers are not evaluated.
 
 ## Acceptance
 Frozen milestone tests, independent instruction execution, target validation,
-sanitizer boundaries and ordinary GCC consumption pass. Full migration additionally
+sanitizer boundaries and ordinary GCC consumption pass. Full migration
 requires retained support-matrix, target-interface and real-adopter gates.
 [MSL](targets/metal/README.md) and [HLSL](targets/hlsl/README.md) developer controls
 never establish independent semantics, SDK/device qualification or production adoption.

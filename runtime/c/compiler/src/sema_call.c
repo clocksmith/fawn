@@ -23,7 +23,7 @@ static bool convert_value(Source *s, ExpressionValue *a, TypeId target, uint32_t
         if (!sema_materialize(s, a, input)) return false;
     }
     *out = (ExpressionValue){
-        .runtime = a->runtime, .known = evaluate && a->known && !a->runtime, .constant.type = target, .value = {.type = target, .source_offset = offset}
+        .runtime = a->runtime, .overridable = a->overridable, .known = evaluate && a->known && !a->runtime, .constant.type = target, .value = {.type = target, .source_offset = offset}
     };
     if (!a->runtime) {
         if (!out->known) return true;
@@ -110,13 +110,14 @@ static bool aggregate_call(Source *s, const Expression *node, const LocalScope *
         };
         return !evaluate || constant_zero(s, target, &out->constant);
     }
-    bool runtime = false;
+    bool runtime = false, overridable = false;
     TypeId common = IR_VOID;
     uint32_t lanes = 0u, link = node->left;
     for (uint32_t i = 0u;i<node->right;++i) {
         ExpressionValue a;
         if (!sema_expression(s, c->arguments[link].expression, scope, false, false, &a)) return false;
         runtime = runtime || a.runtime;
+        overridable = overridable || a.overridable;
         if (kind == TYPE_MATRIX) {
             const uint32_t width = type_vector_width(c, a.constant.type);
             const TypeId leaf = type_leaf(c, a.constant.type);
@@ -167,11 +168,11 @@ static bool aggregate_call(Source *s, const Expression *node, const LocalScope *
         } else if (!type_intern(s, kind, common, n, &target)) return false;
     }
     *out = (ExpressionValue){
-        .runtime = runtime, .known = evaluate && !runtime, .constant.type = target, .value = {.type = target, .source_offset = node->source_offset}
+        .runtime = runtime, .overridable = overridable, .known = evaluate && !runtime, .constant.type = target, .value = {.type = target, .source_offset = node->source_offset}
     };
     uint32_t first = 0u;
     if (runtime && emit && !reserve_operands(s, node->right, node->source_offset, &first)) return false;
-    if (!runtime && evaluate && !constant_reserve(s, target, splat?CONSTANT_REPEAT:CONSTANT_COMPOSITE, n, &out->constant, &first)) return false;
+    if (!runtime && out->known && !constant_reserve(s, target, splat?CONSTANT_REPEAT:CONSTANT_COMPOSITE, n, &out->constant, &first)) return false;
     link = node->left;
     uint32_t lane_index = 0u, column_first = 0u;
     const bool matrix_scalars = kind == TYPE_MATRIX && node->right != n;
@@ -191,7 +192,17 @@ static bool aggregate_call(Source *s, const Expression *node, const LocalScope *
             if (emit) c->typed_operands[first+i] = a.value.id;
         }
         else if (evaluate) {
-            if (!a.known) return source_error(s, DOE_COMPILER_INPUT_ERROR, node->source_offset, "constant constructor lost its value");
+            if (!a.known) {
+                if (!a.overridable)
+                    return source_error(s, DOE_COMPILER_INPUT_ERROR, node->source_offset, "constant constructor lost its value");
+                out->known = false;
+                link = c->arguments[link].next;
+                continue;
+            }
+            if (!out->known) {
+                link = c->arguments[link].next;
+                continue;
+            }
             if (matrix_scalars) {
                 if (i % rows == 0u && !constant_reserve(s, c->types[target - 7u].element,
                     CONSTANT_COMPOSITE, rows, &c->constant_edges[first + i / rows], &column_first)) return false;
@@ -218,7 +229,7 @@ static inline bool sema_builtin_value(Source *source, const Expression *node, co
     CompilerWorkspace *compiler = source->compiler;
     ExpressionValue arguments[3];
     uint32_t link = node->left, width = 0u;
-    bool runtime = builtin_subgroup(builtin), known = evaluate;
+    bool runtime = builtin_subgroup(builtin), known = evaluate, overridable = false;
     TypeId leaf = IR_VOID;
     for (uint32_t i = 0u; i < builtin->arity; ++i) {
         if (!sema_expression(source, compiler->arguments[link].expression, scope,
@@ -227,6 +238,7 @@ static inline bool sema_builtin_value(Source *source, const Expression *node, co
         if (builtin->family == BUILTIN_MATRIX) {
             if (!sema_matrix_result(source, builtin->kind, type, node->source_offset, &leaf)) return false;
             runtime = arguments[0].runtime;
+            overridable = arguments[0].overridable;
             known = known && arguments[0].known;
             break;
         }
@@ -241,6 +253,7 @@ static inline bool sema_builtin_value(Source *source, const Expression *node, co
             width = argument_width;
         } else if (!sema_common_type(source, leaf, argument_leaf, node->source_offset, &leaf)) return false;
         runtime = runtime || arguments[i].runtime;
+        overridable = overridable || arguments[i].overridable;
         known = known && arguments[i].known;
         link = compiler->arguments[link].next;
     }
@@ -265,20 +278,20 @@ static inline bool sema_builtin_value(Source *source, const Expression *node, co
              * Force only unknown const expressions, never an effectful runtime input. */
             link = compiler->arguments[node->left].next;
             for (uint32_t i = 1u; i < 3u; ++i) {
-                if (!arguments[i].known &&
+                if (!arguments[i].known && !arguments[i].overridable &&
                     (!sema_expression(source, compiler->arguments[link].expression, scope,
                                       true, false, &arguments[i]) ||
                      !sema_materialize(source, &arguments[i], operand_type))) return false;
                 link = compiler->arguments[link].next;
             }
-            if (!builtin_clamp_bounds(source, node->source_offset,
+            if (arguments[1].known && arguments[2].known && !builtin_clamp_bounds(source, node->source_offset,
                                       &arguments[1].constant, &arguments[2].constant)) return false;
         }
 
     }
     const TypeId result_type = builtin->family == BUILTIN_MATRIX || builtin_scalar_result(builtin) ? leaf : operand_type;
     *out = (ExpressionValue){
-        .runtime = runtime, .known = known && !runtime, .constant.type = result_type,
+        .runtime = runtime, .overridable = overridable, .known = known && !runtime, .constant.type = result_type,
         .value = {.type = result_type, .source_offset = node->source_offset}
     };
     return sema_builtin_finish(source, node, builtin, arguments, emit, out);
@@ -375,6 +388,21 @@ bool sema_call_value(Source *s, uint32_t id, const LocalScope *scope, bool evalu
     const bool declared_type = sema_find_type_alias(s, name) != NO_ID ||
                                sema_find_struct(s, name) != NO_ID;
     if (!declared_type && sema_module_declared(s, name)) return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, name.offset, "call target resolves to a module value");
+    if (!declared_type && source_span_is(s, name, "select")) {
+        if (statement || node->right != 3u || node->value.call.type.offset != NO_ID)
+            return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, name.offset,
+                                "select requires three arguments and a used result");
+        /* Keep eager argument evaluation in the existing recursive call owner.
+         * The select finisher consumes snapshots and never re-enters source. */
+        ExpressionValue arguments[3];
+        uint32_t link = node->left;
+        for (uint32_t i = 0u; i < 3u; ++i) {
+            if (!sema_expression(s, c->arguments[link].expression, scope,
+                                 evaluate, emit, &arguments[i])) return false;
+            link = c->arguments[link].next;
+        }
+        return sema_select(s, node, arguments, evaluate, emit, out);
+    }
     if (!declared_type && source_span_is(s, name, "arrayLength")) {
         if (statement || node->right != 1u || node->value.call.type.offset != NO_ID)
             return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, name.offset,

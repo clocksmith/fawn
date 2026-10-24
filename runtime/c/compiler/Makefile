@@ -20,7 +20,7 @@ CXXFLAGS = -std=c++17 -fno-exceptions -fno-rtti -O2 -Wall -Wextra -Wpedantic -Wc
 include targets/metal/sources.mk
 include targets/hlsl/sources.mk
 LIB_SOURCES = $(addprefix targets/metal/,$(METAL_SOURCE_NAMES)) $(addprefix targets/hlsl/,$(HLSL_SOURCE_NAMES)) $(shell cat src/sources.txt)
-HEADERS = src/sources.txt include/doe_compiler_metal.h include/doe_compiler_hlsl.h src/numeric_host.h include/doe_compiler_text.h src/compile_internal.h src/text_internal.h $(wildcard targets/metal/*.h targets/hlsl/*.h targets/*.h) include/doe_compiler_stages.h src/stage.h src/parse_internal.h include/doe_compiler_resources.h include/doe_compiler_features.h include/doe_compiler_module.h src/builtin.h src/spirv_decl.h src/spirv_internal.h include/doe_compiler_typed.h src/sema.h src/numeric.h src/internal.h include/doe_compiler.h include/doe_compiler_v2.h include/doe_compiler_job.h src/cli_json.h
+HEADERS = include/doe_compiler_specialization.h src/override.h src/sources.txt include/doe_compiler_metal.h include/doe_compiler_hlsl.h src/numeric_host.h include/doe_compiler_text.h src/compile_internal.h src/text_internal.h $(wildcard targets/metal/*.h targets/hlsl/*.h targets/*.h) include/doe_compiler_stages.h src/stage.h src/parse_internal.h include/doe_compiler_resources.h include/doe_compiler_features.h include/doe_compiler_module.h src/builtin.h src/spirv_decl.h src/spirv_internal.h include/doe_compiler_typed.h src/sema.h src/numeric.h src/internal.h include/doe_compiler.h include/doe_compiler_v2.h include/doe_compiler_job.h src/cli_json.h
 SPIRV_VAL ?= spirv-val
 CLI_FAULT_FLAGS = -Wl,--wrap=write,--wrap=close,--wrap=link,--wrap=mkstemp,--wrap=malloc,--wrap=free,--wrap=doe_compiler_job_requirements
 .PHONY: all test test-cli-modes test-uniform sanitize sanitize-cli sanitize-uniform clean
@@ -411,3 +411,40 @@ test-metal-entry-host: tests/test_metal12_host.cpp
 	mkdir -p $(TEXT_TEST_BUILD)
 	$(CXX) -std=c++17 -O2 -fsanitize=undefined -Wno-attributes -Itargets/metal/tests/host -I"$(METAL_ENTRY_ARTIFACTS)" $< -o $(TEXT_TEST_BUILD)/test_metal12_host
 	$(TEXT_TEST_BUILD)/test_metal12_host
+
+build/test_overrides: $(LIB_SOURCES) tests/test_overrides.c tests/hlsl_fixture.h $(HEADERS) | build/.ready
+	$(CC) $(CFLAGS) $(LIB_SOURCES) tests/test_overrides.c -lm -o $@
+.PHONY: test-overrides
+test-overrides: build/test_overrides
+	build/test_overrides
+
+build/test_specialization: $(LIB_SOURCES) tests/test_specialization.c tests/hlsl_fixture.h $(HEADERS) | build/.ready
+	$(CC) $(CFLAGS) $(LIB_SOURCES) tests/test_specialization.c -lm -o $@
+.PHONY: test-specialization
+test-specialization: build/test_specialization
+	build/test_specialization
+
+build/test_overrides_sanitize: $(LIB_SOURCES) tests/test_overrides.c tests/hlsl_fixture.h $(HEADERS) | build/.ready
+	$(CC) $(CFLAGS) -O1 -g -fno-omit-frame-pointer -fsanitize=address,undefined $(LIB_SOURCES) tests/test_overrides.c -lm -o $@
+build/test_specialization_sanitize: $(LIB_SOURCES) tests/test_specialization.c tests/hlsl_fixture.h $(HEADERS) | build/.ready
+	$(CC) $(CFLAGS) -O1 -g -fno-omit-frame-pointer -fsanitize=address,undefined $(LIB_SOURCES) tests/test_specialization.c -lm -o $@
+.PHONY: sanitize-overrides
+sanitize-overrides: build/test_overrides_sanitize build/test_specialization_sanitize
+	ASAN_OPTIONS=detect_leaks=0:halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1 build/test_overrides_sanitize
+	ASAN_OPTIONS=detect_leaks=0:halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1 build/test_specialization_sanitize
+
+build/cpp_consumer_specialization: tests/cpp_consumer_specialization.cpp include/doe_compiler_specialization.h build/libdoe_compiler.so | build/.ready
+	$(CXX) $(CXXFLAGS) $< -Lbuild -ldoe_compiler -Wl,-rpath,'$$ORIGIN' -lm -o $@
+.PHONY: test-specialization-library
+test-specialization-library: build/cpp_consumer_specialization
+	build/cpp_consumer_specialization
+
+build/test_select: $(LIB_SOURCES) tests/test_select.c tests/hlsl_fixture.h tests/select_retained.wgsl tests/select_cases.wgsl $(HEADERS) | build/.ready
+	$(CC) $(CFLAGS) $(LIB_SOURCES) tests/test_select.c -lm -o $@
+build/test_select_sanitize: $(LIB_SOURCES) tests/test_select.c tests/hlsl_fixture.h tests/select_retained.wgsl tests/select_cases.wgsl $(HEADERS) | build/.ready
+	$(CC) $(CFLAGS) -O1 -g -fno-omit-frame-pointer -fsanitize=address,undefined $(LIB_SOURCES) tests/test_select.c -lm -o $@
+.PHONY: test-select sanitize-select
+test-select: build/test_select
+	build/test_select
+sanitize-select: build/test_select_sanitize
+	ASAN_OPTIONS=detect_leaks=0:halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1 build/test_select_sanitize

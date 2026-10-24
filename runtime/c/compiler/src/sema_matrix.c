@@ -99,7 +99,7 @@ bool sema_matrix_binary(Source *s, ExpressionKind op, ExpressionValue *a, Expres
     if (result.matrix) {
         if (!type_matrix_intern(s, scalar, result.columns, result.rows, &type)) return false;
     } else if (!type_intern(s, TYPE_VECTOR, scalar, result.columns > 1u ? result.columns : result.rows, &type)) return false;
-    *out = (ExpressionValue){.runtime = a->runtime || b->runtime, .known = evaluate && a->known && b->known,
+    *out = (ExpressionValue){.runtime = a->runtime || b->runtime, .overridable = a->overridable || b->overridable, .known = evaluate && a->known && b->known,
         .constant.type = type, .value = {.type = type, .source_offset = offset}};
     if (!out->runtime)
         return !out->known || constant_product(s, offset, op, a, b, left, right, result, &out->constant);

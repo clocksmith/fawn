@@ -13,6 +13,7 @@ typedef struct {
     size_t required_bytes;
     size_t bindings, entries;
 } TextTargetResult;
+bool compiler_text_workspace(uint32_t, const DoeCompilerTextCapacities *, DoeCompilerWorkspaceRequirements *);
 bool compiler_text_metal(Source *, uint32_t selected, DoeTargetScratch,
     DoeCompilerTextBindingV10 *, DoeCompilerTextEntryV10 *, TextTargetResult *);
 bool compiler_text_metal_entry(Source *, uint32_t, DoeTargetScratch,

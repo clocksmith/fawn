@@ -35,6 +35,9 @@ bool numeric_dot_finish(Source *, size_t, const NumericDotAccumulator *, Numeric
 bool numeric_parse_literal(Source *source, NameSpan literal, NumericValue *result);
 bool numeric_materialize(Source *source, size_t offset, NumericValue input,
                          IrType target, NumericValue *result);
+/* API pipeline values reject fractional/out-of-range integers rather than
+ * using WGSL explicit constructors' truncating/saturating conversions. */
+bool numeric_override(Source *, size_t, double, IrType, NumericValue *);
 /* The caller selects constructor overloads and materializes their arguments.
  * Explicit conversion is not an overload-selection or automatic-conversion rule. */
 bool numeric_convert(Source *source, size_t offset, NumericValue input,

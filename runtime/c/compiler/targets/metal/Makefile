@@ -6,7 +6,7 @@ OUT ?= $(DOE_C_TMP)/metal-target
 CFLAGS = -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror
 include sources.mk
 SOURCES = $(METAL_SOURCE_NAMES)
-CORE = $(filter-out ../../src/cli.c ../../src/cli_json.c ../../src/compile_text.c ../../src/text_metal.c ../../src/text_hlsl.c,$(wildcard ../../src/*.c))
+CORE = $(filter-out ../../src/specialization.c ../../src/specialization_compile.c ../../src/cli.c ../../src/cli_json.c ../../src/compile_text.c ../../src/text_metal.c ../../src/text_hlsl.c,$(wildcard ../../src/*.c))
 .PHONY: all check style clean
 all: $(OUT)/test_metal $(OUT)/test_images
 $(OUT)/test_metal: $(SOURCES) metal.h private.h ../ir_view.h ../closure.h ../scratch.h ../stage_view.h ../tests/array_length_source.h ../tests/closure_source.h tests/fixture.h tests/test_metal.c $(CORE) $(wildcard ../../src/*.h)

@@ -8,5 +8,4 @@
  * private allocation; this conversion never fabricates format support. */
 bool native_d3d12_texture_descriptor(const doe_resource_texture_desc *source,doe_dx_texture_desc *out);
 bool native_d3d12_texture_region(const doe_resource_texture_copy *copy,doe_dx_texture_region *out);
-bool native_d3d12_sampler_supported(const WGPUSamplerDescriptor *normalized);
 #endif

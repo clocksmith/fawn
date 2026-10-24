@@ -7,7 +7,7 @@
 typedef struct LoopScope LoopScope;
 struct LoopScope { LoopScope *parent; size_t body_scope_start, body_scope_end; uint32_t first_continue; bool continuing; };
 typedef struct { LocalBinding *values; size_t count, capacity, scope_start, level; LoopScope *loop; } LocalScope;
-typedef struct { IrValue value; union { ConstantValue constant; PointerValue pointer; }; bool runtime, known; } ExpressionValue;
+typedef struct { IrValue value; union { ConstantValue constant; PointerValue pointer; }; bool runtime, known, overridable; } ExpressionValue;
 typedef struct { uint32_t root, path, category; TypeId type; bool writable, addressable; } ValueReference;
 typedef struct { uint64_t used, limit; uint32_t offset; } UniformityBudget;
 #define UNIFORMITY_WORK_LIMIT UINT64_C(67108864)
@@ -24,6 +24,7 @@ bool constant_reserve(Source *,TypeId,uint32_t,uint32_t,ConstantValue *,uint32_t
 bool constant_project(Source *,ConstantValue,uint32_t,ConstantValue *);
 bool constant_materialize(Source *,uint32_t,ConstantValue,TypeId,ConstantValue *);
 bool sema_expression(Source *,uint32_t,const LocalScope *,bool,bool,ExpressionValue *);
+bool sema_select(Source *,const Expression *,ExpressionValue [3],bool,bool,ExpressionValue *);
 bool sema_ensure_value(Source *,ExpressionValue *,bool);
 bool sema_materialize(Source *,ExpressionValue *,TypeId);
 bool sema_type_reference(Source *,TypeRef,const LocalScope *,TypeId *);

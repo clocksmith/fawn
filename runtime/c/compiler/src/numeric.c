@@ -589,6 +589,21 @@ bool numeric_materialize(Source *source, size_t offset, NumericValue input,
     return numeric_error(source, offset, "no feasible automatic scalar conversion");
 }
 
+bool numeric_override(Source *source, size_t offset, double input,
+                      IrType target, NumericValue *result) {
+    const NumericValue value = {double_bits(input), IR_ABSTRACT_FLOAT};
+    if (!finite_value(value))
+        return numeric_error(source, offset, "pipeline override value must be finite");
+    if (target == IR_I32 || target == IR_U32) {
+        const double minimum = target == IR_I32 ? -2147483648.0 : 0.0;
+        const double maximum = target == IR_I32 ? 2147483647.0 : 4294967295.0;
+        if (input < minimum || input > maximum || trunc(input) != input)
+            return numeric_error(source, offset, "pipeline integer override is fractional or out of range");
+    } else if (target != IR_BOOL && target != IR_F32)
+        return numeric_error(source, offset, "pipeline override requires an admitted concrete scalar type");
+    return numeric_convert(source, offset, value, target, result);
+}
+
 bool numeric_bitcast(Source *source, size_t offset, NumericValue input,
                      IrType target, NumericValue *result) {
     if (!(input.type == IR_U32 || input.type == IR_I32 || input.type == IR_F32) ||

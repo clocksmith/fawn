@@ -47,16 +47,14 @@ static bool vertices(const WGPUVertexState *source, doe_vk_render_pipeline_desc 
     return true;
 }
 
-WGPURenderPipeline native_create_render_pipeline(native_device *device,
-    const WGPURenderPipelineDescriptor *descriptor, native_pipeline_error *error)
+static WGPURenderPipeline create_vulkan_render_pipeline(native_device *device,
+    const WGPURenderPipelineDescriptor *descriptor, const native_stage *stages, size_t stage_count,
+    native_pipeline_error *error)
 {
-    if (device && device->backend.kind == WGPUBackendType_Metal)
-        return native_metal_create_render_pipeline(device, descriptor, error);
     *error = (native_pipeline_error){WGPUErrorType_Validation, "render descriptor, stage interface or capability unsupported"};
-    if (!device || device->backend.kind != WGPUBackendType_Vulkan || !descriptor || descriptor->nextInChain || descriptor->vertex.nextInChain ||
-        descriptor->vertex.constantCount) return NULL;
+    if (!device || device->backend.kind != WGPUBackendType_Vulkan || !descriptor || descriptor->nextInChain || descriptor->vertex.nextInChain) return NULL;
     const WGPUFragmentState *fragment = descriptor->fragment;
-    if (fragment && (fragment->nextInChain || fragment->constantCount ||
+    if (fragment && (fragment->nextInChain ||
         (fragment->targetCount && !fragment->targets))) return NULL;
     if (fragment && fragment->targetCount > DOE_RESOURCE_MAX_COLOR_ATTACHMENTS) {
         *error = (native_pipeline_error){WGPUErrorType_Validation, "render pipeline exceeds the color attachment limit"};
@@ -66,12 +64,6 @@ WGPURenderPipeline native_create_render_pipeline(native_device *device,
     for (size_t i = 0; fragment && i < fragment->targetCount; ++i)
         colored |= fragment->targets[i].format != WGPUTextureFormat_Undefined;
     if (!colored && !descriptor->depthStencil) return NULL;
-    native_stage stages[2] = {0};
-    size_t stage_count = fragment ? 2 : 1;
-    if (!native_stage_load(device, descriptor->vertex.module, descriptor->vertex.entryPoint,
-            DOE_COMPILER_STAGE_VERTEX, &stages[0]) ||
-        (fragment && !native_stage_load(device, fragment->module, fragment->entryPoint,
-            DOE_COMPILER_STAGE_FRAGMENT, &stages[1]))) return NULL;
     doe_vk_render_pipeline_desc native = {
         .vertex={stages[0].view.words,stages[0].view.counts.words,stages[0].name}
     };
@@ -131,6 +123,30 @@ WGPURenderPipeline native_create_render_pipeline(native_device *device,
         return NULL;
     }
     return (WGPURenderPipeline)pipeline;
+}
+WGPURenderPipeline native_create_render_pipeline(native_device *device,
+    const WGPURenderPipelineDescriptor *descriptor, native_pipeline_error *error)
+{
+    *error = (native_pipeline_error){WGPUErrorType_Validation,"render descriptor or selected backend unsupported"};
+    if (!device || !descriptor || descriptor->nextInChain || descriptor->vertex.nextInChain ||
+        (descriptor->fragment && descriptor->fragment->nextInChain) ||
+        (device->backend.kind != WGPUBackendType_Vulkan && device->backend.kind != WGPUBackendType_Metal)) return NULL;
+    native_device_retain(device);
+    native_stage stages[2] = {0};
+    const WGPUFragmentState *fragment = descriptor->fragment;
+    size_t count = fragment ? 2 : 1;
+    WGPURenderPipeline pipeline = NULL;
+    if (native_stage_load(device,descriptor->vertex.module,descriptor->vertex.entryPoint,
+        DOE_COMPILER_STAGE_VERTEX,descriptor->vertex.constants,descriptor->vertex.constantCount,&stages[0],error) &&
+        (!fragment || native_stage_load(device,fragment->module,fragment->entryPoint,
+            DOE_COMPILER_STAGE_FRAGMENT,fragment->constants,fragment->constantCount,&stages[1],error))) {
+        pipeline = device->backend.kind == WGPUBackendType_Metal ?
+            native_metal_create_render_pipeline(device,descriptor,stages,count,error) :
+            create_vulkan_render_pipeline(device,descriptor,stages,count,error);
+    }
+    for (size_t i = 0; i < count; ++i) native_stage_release(&stages[i]);
+    native_device_release(device);
+    return pipeline;
 }
 WGPURenderPipeline wgpuDeviceCreateRenderPipeline(WGPUDevice handle, const WGPURenderPipelineDescriptor *descriptor)
 {

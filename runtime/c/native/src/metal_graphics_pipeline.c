@@ -135,17 +135,14 @@ static doe_mtl_stencil_face stencil(doe_vk_stencil_face face)
 }
 
 WGPURenderPipeline native_metal_create_render_pipeline(native_device *device,
-    const WGPURenderPipelineDescriptor *descriptor, native_pipeline_error *error)
+    const WGPURenderPipelineDescriptor *descriptor, const native_stage *stages, size_t stage_count,
+    native_pipeline_error *error)
 {
     *error = (native_pipeline_error){WGPUErrorType_Validation, "Metal render descriptor, reflection or feature unsupported"};
-    if (!descriptor || descriptor->nextInChain || descriptor->vertex.nextInChain || descriptor->vertex.constantCount) return NULL;
+    if (!descriptor || descriptor->nextInChain || descriptor->vertex.nextInChain) return NULL;
     const WGPUFragmentState *fragment = descriptor->fragment;
-    if (fragment && (fragment->nextInChain || fragment->constantCount ||
+    if (fragment && (fragment->nextInChain ||
         fragment->targetCount > DOE_MTL_COLOR_ATTACHMENTS || (fragment->targetCount && !fragment->targets))) return NULL;
-    native_stage stages[2] = {0};
-    size_t stage_count = fragment ? 2 : 1;
-    if (!native_stage_load(device, descriptor->vertex.module, descriptor->vertex.entryPoint, DOE_COMPILER_STAGE_VERTEX, &stages[0]) ||
-        (fragment && !native_stage_load(device, fragment->module, fragment->entryPoint, DOE_COMPILER_STAGE_FRAGMENT, &stages[1]))) return NULL;
     doe_vk_render_pipeline_desc fixed = {0};
     doe_resource_render_pipeline_desc resource = {.samples=descriptor->multisample.count,
         .topology=descriptor->primitive.topology, .strip_index_format=descriptor->primitive.stripIndexFormat,

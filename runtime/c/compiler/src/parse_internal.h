@@ -19,4 +19,5 @@ bool expression(Parser *, Syntax *, unsigned, unsigned, uint32_t *);
 bool type_reference(Parser *, Syntax *, TypeRef *);
 bool parse_interface_attribute(Parser *, Syntax *, uint32_t, uint32_t);
 bool parse_graphics_parameters(Parser *, Syntax *);
+bool parse_override(Parser *, Syntax *);
 #endif

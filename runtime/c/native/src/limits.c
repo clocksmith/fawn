@@ -3,6 +3,7 @@
  * this frontend enforces and executes; device limits resolve requiredLimits
  * against them and the WebGPU defaults. https://gpuweb.github.io/gpuweb/#limits */
 #include "internal.h"
+#include "../../backends/d3d12/include/doe_d3d12_dynamic.h"
 #include "d3d12_frontend.h"
 #include "../../backends/d3d12/include/doe_d3d12_texture.h"
 #include <stddef.h>
@@ -184,8 +185,8 @@ WGPUStatus native_d3d12_limits(const doe_dx_caps *caps, WGPULimits *out)
     const doe_dx_limits *native = &caps->limits;
     uint64_t buffer = native->max_buffer_size & ~UINT64_C(3);
     /* Explicit 2D/single-layer implementation envelope, checked against the
-     * actual format/footprint queries at allocation. Sampling/storage bindings,
-     * graphics and presentation remain uncomposed with zero stage limits. */
+     * actual format/footprint queries at allocation. Graphics and
+     * presentation remain uncomposed; descriptor kind budgets remain coupled. */
     *out = (WGPULimits){
         .maxTextureDimension2D = DOE_DX_MAX_TEXTURE_DIMENSION_2D,
         .maxTextureArrayLayers = 1,
@@ -196,8 +197,14 @@ WGPUStatus native_d3d12_limits(const doe_dx_caps *caps, WGPULimits *out)
         .maxDynamicUniformBuffersPerPipelineLayout = DYNAMIC_UNIFORM,
         .maxDynamicStorageBuffersPerPipelineLayout = DYNAMIC_STORAGE,
         .maxUniformBuffersPerShaderStage = min32(UNIFORM_BUFFERS_PER_STAGE, native->max_cbvs),
+        /* Reserve the real combined UAV budget for every admitted stage
+         * combination, rather than advertising independently incompatible caps. */
         .maxStorageBuffersPerShaderStage = min32(STORAGE_BUFFERS_PER_STAGE,
-            min32(native->max_srvs, native->max_uavs)),
+            min32(native->max_srvs, native->max_uavs > STORAGE_TEXTURES_PER_STAGE ?
+                native->max_uavs - STORAGE_TEXTURES_PER_STAGE : 0)),
+        .maxSampledTexturesPerShaderStage = min32(SAMPLED_PER_STAGE,native->max_srvs),
+        .maxStorageTexturesPerShaderStage = min32(STORAGE_TEXTURES_PER_STAGE,native->max_uavs),
+        .maxSamplersPerShaderStage = DOE_DX_MAX_DYNAMIC_SAMPLERS,
         .maxUniformBufferBindingSize = min64(buffer, native->max_uniform_bytes),
         .maxStorageBufferBindingSize = buffer,
         .minUniformBufferOffsetAlignment = native->uniform_offset_alignment,

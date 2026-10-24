@@ -127,9 +127,12 @@ static void atomic_pipeline_admission(state *s)
     WGPUShaderModule module = wgpuDeviceCreateShaderModule(s->device,&descriptor);
     assert(module);
     native_shader *payload = doe_resource_shader_native((doe_resource_shader *)module);
-    assert(payload->compiled);
-    doe_shader_view view;
-    assert(doe_shader_borrow(payload->compiled,&view) == DOE_SHADER_OK);
+    assert(payload->module);
+    native_stage checked = {0};
+    native_pipeline_error stage_error = {0};
+    assert(native_stage_load((native_device *)s->device,module,(WGPUStringView){"main",4},
+        DOE_COMPILER_STAGE_COMPUTE,NULL,0,&checked,&stage_error));
+    doe_shader_view view = checked.view;
     assert(view.target == DOE_SHADER_METAL && view.text && view.text_size && !view.words && !view.counts.words);
     assert(view.metal_entry_count == 1 && view.metal_binding_count == 1);
     static const char operation[] = "atomic_store_explicit(target";
@@ -137,6 +140,7 @@ static void atomic_pipeline_admission(state *s)
     for (size_t i = 0; i + sizeof(operation) - 1 <= view.text_size; ++i)
         if (!memcmp(view.text + i,operation,sizeof(operation) - 1)) found = true;
     assert(found);
+    native_stage_release(&checked);
     WGPUComputePipelineDescriptor compute = WGPU_COMPUTE_PIPELINE_DESCRIPTOR_INIT;
     compute.compute.module = module;
     compute.compute.entryPoint = (WGPUStringView){"main",4};
@@ -159,7 +163,7 @@ static void atomic_pipeline_admission(state *s)
     pop(s,WGPUErrorType_Validation);
     assert(module);
     payload = doe_resource_shader_native((doe_resource_shader *)module);
-    assert(!payload->compiled && payload->error.diagnostic.message[0]);
+    assert(!payload->module && payload->error.diagnostic.message[0]);
     compute.compute.module = module;
     wgpuDevicePushErrorScope(s->device,WGPUErrorFilter_Validation);
     assert(!wgpuDeviceCreateComputePipeline(s->device,&compute));
@@ -205,9 +209,10 @@ static void compute_binding_ledger(state *s)
         .callback=pipeline_ready,.userdata1=&pipeline};
     assert(wgpuDeviceCreateComputePipelineAsync(s->device,&descriptor,ready).id);
     assert(pipeline && !strcmp(mocks[2].entrypoint,"selected"));
-    native_stage selected;
+    native_stage selected = {0};
+    native_pipeline_error stage_error = {0};
     assert(native_stage_load((native_device *)s->device, module, descriptor.compute.entryPoint,
-        DOE_COMPILER_STAGE_COMPUTE, &selected));
+        DOE_COMPILER_STAGE_COMPUTE,NULL,0,&selected,&stage_error));
     const DoeCompilerMetalEntryV12 *selected_entry = NULL;
     for (size_t i = 0; i < selected.view.metal_entry_count; ++i)
         if (selected.view.metal_entries[i].entry_index == (size_t)(selected.entry - selected.view.entries))
@@ -285,6 +290,7 @@ static void compute_binding_ledger(state *s)
     entry_copy.sizes_slot = selected_entry->sizes_slot;
     entry_copy.sizes_bytes = selected_entry->sizes_bytes;
     assert(native_metal_stage_map_build(native_payload, &altered, DOE_COMPILER_STAGE_COMPUTE, &mapping, &native));
+    native_stage_release(&selected);
     WGPUBuffer input = buffer(s,512,WGPUBufferUsage_Storage);
     WGPUBuffer output = buffer(s,512,WGPUBufferUsage_Storage);
     WGPUBuffer scale = buffer(s,256,WGPUBufferUsage_Uniform);
@@ -338,6 +344,8 @@ typedef struct exact_message {
 
 static void require_message(WGPUStringView message, exact_message *expected)
 {
+    if (message.length != strlen(expected->text) || memcmp(message.data,expected->text,message.length))
+        fprintf(stderr,"expected [%s], received [%.*s]\n",expected->text,(int)message.length,message.data);
     assert(message.length == strlen(expected->text));
     assert(!memcmp(message.data, expected->text, message.length));
     ++expected->calls;
@@ -452,7 +460,7 @@ static void public_error_detail(state *s)
     assert(pipeline.calls == 3);
 
     /* Invalid render construction still delivers validation when callback admission rejects. */
-    exact_message render = {"Metal render descriptor, reflection or feature unsupported", 0};
+    exact_message render = {"pipeline stage requires a shader from this device", 0};
     WGPURenderPipelineDescriptor render_descriptor = {0};
     WGPUCreateRenderPipelineAsyncCallbackInfo render_callback = {.mode = (WGPUCallbackMode)UINT32_MAX};
     WGPUPopErrorScopeCallbackInfo render_scope = {.mode = WGPUCallbackMode_AllowSpontaneous,

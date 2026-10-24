@@ -3,6 +3,7 @@
 #define DOE_SHADER_H
 #include "doe_compiler_hlsl.h"
 #include "doe_compiler_metal.h"
+#include "doe_compiler_specialization.h"
 #include <stdbool.h>
 #ifdef __cplusplus
 extern "C" {
@@ -99,8 +100,39 @@ typedef struct doe_shader_view {
  * unfinished. Different target selections never share artifact identity. */
 doe_shader_status doe_shader_create(const doe_shader_options *options,
     const char *source, size_t source_size, doe_shader **out, doe_shader_error *error);
+/* Module-only handles own symbolic whole-source validation metadata, never
+ * executable code/layouts. options.selection must be NONE. Explicit override
+ * storage is an ABI13 compiler capacity, not a default or hidden allocation. */
+typedef struct doe_shader_module_view {
+    doe_shader_target target;
+    uint32_t semantic_flags;
+    const DoeCompilerOverrideV13 *overrides;
+    size_t override_count;
+    const DoeCompilerModuleEntryV13 *entries;
+    size_t entry_count;
+    const char *names;
+    size_t name_bytes;
+} doe_shader_module_view;
+doe_shader_status doe_shader_create_module(const doe_shader_options *options,
+    size_t override_capacity, const char *source, size_t source_size,
+    doe_shader **out, doe_shader_error *error);
+doe_shader_status doe_shader_borrow_module(const doe_shader *module, doe_shader_module_view *out);
+/* Specialize the immutable saved module/options, with exact key bytes and double
+ * value bits snapshotted before measure/fill. AUTO/NAME produces a separately
+ * owned executable artifact with one entry at index0 and its declared identity.
+ * Failure leaves *out unchanged. Allocator userdata outlives both handles. */
+doe_shader_status doe_shader_specialize(const doe_shader *module,
+    const DoeCompilerEntrySelectionV5 *selection,
+    const DoeCompilerOverrideValueV13 *values, size_t value_count,
+    doe_shader **out, doe_shader_error *error);
+/* Conservative exact identity: same immutable module instance, selection and
+ * ordered key bytes/value representations. No semantic or reordered equivalence. */
+bool doe_shader_specialization_matches(const doe_shader *shader, const doe_shader *module,
+    const DoeCompilerEntrySelectionV5 *selection,
+    const DoeCompilerOverrideValueV13 *values, size_t value_count);
 doe_shader_status doe_shader_retain(doe_shader *shader);
 void doe_shader_release(doe_shader *shader);
+/* Module-only borrow rejects without touching *out. */
 doe_shader_status doe_shader_borrow(const doe_shader *shader, doe_shader_view *out);
 /* Exact byte equality only. This helper does not validate a compiler identity
  * supplied by the caller, hash source or equate different entry selections or
