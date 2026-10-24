@@ -92,17 +92,17 @@ def main() -> None:
     for source in consumers:
         name = source.stem
         executable = out / (name + '.exe')
-        invoke(strict + [str(source), str(import_library),
+        invoke(strict + [str(source),
                          '/Fo' + str(out / (name + '.obj')), '/Fe' + str(executable),
-                         '/link', '/stack:8388608'], out)
+                         '/link', str(import_library), '/stack:8388608'], out)
         arguments = [str(executable)]
         if name == 'native_consumer':
             arguments.append(str(ROOT.parents[2] / 'bench/kernels/package_vector_scale_add.wgsl'))
         invoke(arguments, out)
     invoke([compiler, '/nologo', '/MD', '/O2', '/WX', '/std:c++17',
             '/clang:-fno-exceptions', '/clang:-fno-rtti', str(ROOT / 'tests/cpp_consumer.cpp'),
-            str(import_library), '/Fo' + str(out / 'cpp_consumer.obj'),
-            '/Fe' + str(out / 'cpp_consumer.exe'), '/link', '/stack:8388608'], out)
+            '/Fo' + str(out / 'cpp_consumer.obj'),
+            '/Fe' + str(out / 'cpp_consumer.exe'), '/link', str(import_library), '/stack:8388608'], out)
     invoke([str(out / 'cpp_consumer.exe')], out)
     (out / 'scope.json').write_text(json.dumps({
         'compiler': compiler, 'sources': [str(path.relative_to(ROOT)) for path in sources],
