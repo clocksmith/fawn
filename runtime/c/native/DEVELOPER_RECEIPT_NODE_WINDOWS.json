@@ -1,0 +1,185 @@
+{
+  "kind": "developer-correctness-evidence",
+  "component": "Windows Node public JavaScript C-provider kernel",
+  "consumer": "C migration Windows package/addon native-consumption gate; developer workspace installation, not npm publication or production promotion",
+  "source_commit": "f66ceaa3ff5e8f85117711294ce2a65ed6f61922",
+  "source_tree": "385dc5c888bd0820e07d1a9182f600ab79f5ae4a",
+  "source_binding": {
+    "github_workflow_run": 40063965708,
+    "github_job": 120783188108,
+    "artifact_id": 12548209594,
+    "github_reported_zip_sha256": "7699f5fee5b0a0ffa70527843681697e5868e393a3b02e2ef8694ccccc5bc2ce",
+    "verified_artifact_files": 3147,
+    "verified_native_source_inputs": 269,
+    "verified_addon_and_JS_source_inputs": 113,
+    "addon_and_JS_CRLF_checkout_paths": 112,
+    "method": "SHA256 each unpacked artifact; Git blob exact bytes or exact CRLF checkout expansion for source manifests. Physical package uses immutable Git LF JavaScript with identical compiler/addon/provider artifacts.",
+    "declared_source_manifest_sha256": "9d51bea18835ac0e7a7b1bc2cf4b59ba781f6c9968adba5e5f65b0548accfd6b",
+    "official_node_inputs": {
+      "version": "22.23.4",
+      "manifestSha256": "C90C3F1478FDA8308B22CC1A1B0DC536169196444E67EE8B5C582FD351D02BCE",
+      "executable": "C:\\Program Files\\nodejs\\node.exe",
+      "inputs": [
+        {
+          "url": "https://nodejs.org/dist/v22.23.4/node-v22.23.4-headers.tar.gz",
+          "path": "D:\\a\\_temp\\doe-c-windows-host\\node-addon\\node-v22.23.4-headers.tar.gz",
+          "sha256": "dc4028dc105e27e5295119dd9da076fca71d5216113e097813f0fb30f59241a5"
+        },
+        {
+          "url": "https://nodejs.org/dist/v22.23.4/win-x64/node.lib",
+          "path": "D:\\a\\_temp\\doe-c-windows-host\\node-addon\\node.lib",
+          "sha256": "c243185f2347870cadb637c909bf123fc703dc65dbfa769b17ec45a4b661d782"
+        }
+      ],
+      "executableSha256": "DCCC52DE28D8DF2EE22D2062424F8C563070D95D8AD70C54C4BF01D590DEC14F",
+      "arch": "x64",
+      "manifestUrl": "https://nodejs.org/dist/v22.23.4/SHASUMS256.txt"
+    },
+    "compiler": "LLVMclang20.1.8 actual MSVC Windows SDK environment; explicit MSVC target and DLL CRT only",
+    "abi_checks": "60 exact struct layouts match pinned webgpu.h before addon link; canonical binding.gyp source inventory"
+  },
+  "artifacts_sha256": {
+    "doe_napi.node": "86b5094fb557ddbd4074af4163b09e5817826ef70f4559ac28beea950c474ebd",
+    "runtime/libwebgpu_doe_c.dll": "04d620faa69c7b6644cd35fb5b3a953fb415ecd00289372f73aa8674308806d2",
+    "runtime/doe_compiler.dll": "a1fa83dde2919729dd53572cd5ec8044c9a6c7a0c26d7800387e4f3964ab0492",
+    "runtime/dxcompiler.dll": "0689e2fee0a1c9df8662a59680469f24e2a3ad7ce6bbbcc9284f7a83172bfc59",
+    "runtime/dxil.dll": "64be2368211d257a038a7d4ea6bb3e24c878eb8d588c7b8414fccf759b69c2ac"
+  },
+  "cpu_loader": {
+    "exit": 0,
+    "scope": "Actual Win32 loader with sibling import/Unicode/relative paths, ambient dependency rejection, malformed/oversize/embedded NUL bounds, owned first errors and release; no GPU",
+    "results_sha256": "0b5b10a0deee961acc843da0ba7797e7b87f2813a1c0616930498821ae0192f1"
+  },
+  "cpu_warp": {
+    "exit": 0,
+    "adapter": {
+      "vendor": "",
+      "architecture": "",
+      "device": "Microsoft Basic Render Driver",
+      "description": "",
+      "isFallbackAdapter": true,
+      "subgroupMinSize": 0,
+      "subgroupMaxSize": 0
+    },
+    "kernel": {
+      "kind": "doe-gpu.first-kernel.receipt",
+      "schemaVersion": 1,
+      "runtimeHost": "node",
+      "workload": {
+        "id": "vector-scale-f32",
+        "elementCount": 8,
+        "wgslSha256": "f03b12ba1e7df16b58babac43b326771a30d3e7de9278bfcd3daa8d95faf80b2",
+        "inputSha256": "af7de0621354bafceb193edf0fcf5d421cf21de7146580062fff53c7907f54e5"
+      },
+      "result": {
+        "output": [
+          2,
+          4,
+          6,
+          8,
+          10,
+          12,
+          14,
+          16
+        ],
+        "outputSha256": "9d42cad41af4aaf3ae973e5a48d96f61e4708edc57bf7dd29a497ebd96f506cf",
+        "durationMs": 245.868
+      }
+    },
+    "scope": "Node public JS -> selected C provider -> Microsoft CPU WARP; no physical/performance qualification"
+  },
+  "miles_physical": {
+    "exit": 0,
+    "node": "v22.23.4",
+    "adapter": {
+      "vendor": "",
+      "architecture": "",
+      "device": "AMD Radeon(TM) Graphics",
+      "description": "",
+      "isFallbackAdapter": false,
+      "subgroupMinSize": 0,
+      "subgroupMaxSize": 0
+    },
+    "driver": "32.0.21030.2001",
+    "os": "Windows11Pro10.0.22631x64",
+    "kernel": {
+      "kind": "doe-gpu.first-kernel.receipt",
+      "schemaVersion": 1,
+      "runtimeHost": "node",
+      "workload": {
+        "id": "vector-scale-f32",
+        "elementCount": 8,
+        "wgslSha256": "f03b12ba1e7df16b58babac43b326771a30d3e7de9278bfcd3daa8d95faf80b2",
+        "inputSha256": "af7de0621354bafceb193edf0fcf5d421cf21de7146580062fff53c7907f54e5"
+      },
+      "result": {
+        "output": [
+          2,
+          4,
+          6,
+          8,
+          10,
+          12,
+          14,
+          16
+        ],
+        "outputSha256": "9d42cad41af4aaf3ae973e5a48d96f61e4708edc57bf7dd29a497ebd96f506cf",
+        "durationMs": 231.352
+      }
+    },
+    "cleanup": "Existing first-kernel finally returned after device/adapter destruction",
+    "matching_native_backend": "Same built public compute.exe passed with D3D12 backend4, integrated2, vendor4098/device5761; numeric backend is not independently exposed by JS info.",
+    "results": {
+      "compute": {
+        "code": 0,
+        "signal": null,
+        "expired": false,
+        "elapsed_seconds": 0.4133061,
+        "finished_utc": "2026-10-24T04:56:25.598Z"
+      },
+      "node-first-kernel": {
+        "code": 0,
+        "signal": null,
+        "expired": false,
+        "elapsed_seconds": 0.3225511,
+        "finished_utc": "2026-10-24T04:56:25.923Z"
+      }
+    },
+    "guardian": {
+      "code": 0,
+      "signal": null,
+      "timedOut": false,
+      "deadline_ms": 95000,
+      "elapsed_ms": 2267
+    },
+    "cleanup_probe": {
+      "killed": {
+        "code": 0,
+        "text": "SUCCESS: The process with PID 22656 (child process of PID 3444) has been terminated.\r\nSUCCESS: The process with PID 3444 (child process of PID 10580) has been terminated.\r\n",
+        "pid": 3444
+      },
+      "terminal": {
+        "code": 1,
+        "signal": null
+      }
+    },
+    "scope": "Exact first-kernel shader/input/output unchanged; explicit nonfallback adapter. Isolated AppData artifact folder, no system PATH/repo/default-provider changes."
+  },
+  "first_failure": {
+    "source_commit": "bcaabc372b0d01d5977e670dd610d8b6049b7e4b",
+    "run_id": 40063371890,
+    "scope": "Node CPU loader fixture failed linking mixed static/DLL CRT: __imp_puts and __imp__wassert unresolved. Added explicit static-CRT exclusion consistently with DLL CRT compilation, no warning suppression. Full first log and partial artifacts retained.",
+    "ignored_folder": "bench/out/c-windows-host-bcaabc372-40063371890/"
+  },
+  "retention": {
+    "windows_ignored_folder": "bench/out/c-windows-host-f66ceaa3f-40063965708",
+    "windows_job_log_sha256": "9af8546e69a9cedea0f4b0e766291996543e8be217b0e22518dc3faeac1cffe0",
+    "physical_ignored_folder": "bench/out/c-node-windows-f66ceaa3f-miles",
+    "physical_bundle_sha256": "81dc47f225992e08e18c1712c8fe01c7aa84e30c2e05ab7bd100db2b5312e38c",
+    "physical_input_manifest_sha256": "5b878cea36d8a26fd467fbd16e2f92a0e75a7409e325e4f42bbe6f0307e25b0b"
+  },
+  "limits": [
+    "One source-bound Node22x64 Windows addon/provider and named AMD GPU; not a Windows version/architecture/driver matrix, arbitrary package compatibility, browser use, performance, independent acceptance or release qualification.",
+    "No source/default cutover. Later source needs its own focused checks; retained Zig remains production default."
+  ]
+}

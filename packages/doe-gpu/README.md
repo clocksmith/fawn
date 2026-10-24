@@ -378,7 +378,11 @@ matching official Node headers and `NODE_LIB` with that release/architecture's
 `node.lib`, or use the existing node-gyp header/import-library cache. The build
 retains the `binding.gyp` source inventory and executes the real ABI mirror checks
 against the pinned WebGPU header before linking. Compiler availability alone does
-not establish Windows provider execution or installation support.
+not establish Windows provider execution or installation support. The separate
+[Windows C-provider receipt](../../runtime/c/native/DEVELOPER_RECEIPT_NODE_WINDOWS.json)
+binds one actual LLVM addon build and unchanged public first kernel to WARP and
+Miles's AMD GPU in an isolated developer installation; broader package support
+retains its own gates.
 
 The provider loader rejects embedded NULs and truncated path copies. On Windows
 it converts UTF-8 strictly, resolves a relative path once, and uses explicit

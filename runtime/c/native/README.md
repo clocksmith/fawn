@@ -33,6 +33,10 @@ altering caller arguments. The [later public backend receipt](DEVELOPER_RECEIPT_
 binds eight unchanged C controls to a newer exact source: actual Windows SDK build,
 CPU WARP and the same binaries on Miles. It adds indirect dispatch, all 11 atomic
 operations and texture transfers; it retains the separate Node loader link failure.
+The [Windows Node receipt](DEVELOPER_RECEIPT_NODE_WINDOWS.json) binds its corrected
+LLVM addon build, real Win32 loader controls and unchanged first-kernel result to
+CPU WARP and the same provider/addon on Miles. It is an isolated developer
+installation, with no npm publication, browser or production-default claim.
 
 Vulkan composes compute, images, graphics, queries and Linux presentation within
 the explicit limits and feature checks below. CPU execution receipts prove their
