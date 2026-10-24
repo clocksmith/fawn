@@ -282,6 +282,12 @@ pub fn find_memory_type_index_with_preference(self: anytype, type_bits: u32, req
 fn select_preferred_physical_device(self: anytype, devices: []const VkPhysicalDevice) !PhysicalDeviceSelection {
     var best: ?PhysicalDeviceSelection = null;
     for (devices, 0..) |device, index| {
+        if (self.require_cpu_device) {
+            var properties2 = std.mem.zeroes(c.VkPhysicalDeviceProperties2);
+            properties2.sType = c.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+            c.vkGetPhysicalDeviceProperties2(device, &properties2);
+            if (properties2.properties.deviceType != c.VK_PHYSICAL_DEVICE_TYPE_CPU) continue;
+        }
         const queue = select_queue_family_for_device(self, device) catch |err| switch (err) {
             error.UnsupportedFeature => continue,
             else => return err,

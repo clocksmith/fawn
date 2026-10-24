@@ -67,6 +67,9 @@ pub const NativeVulkanRuntime = struct {
     integer_dot_product_enabled: bool = false,
 
     adapter_ordinal_value: ?u32 = null,
+    /// WebGPU forceFallbackAdapter: only a CPU implementation
+    /// (VK_PHYSICAL_DEVICE_TYPE_CPU) may be selected.
+    require_cpu_device: bool = false,
     queue_family_index: u32 = 0,
     queue_family_index_value_cache: ?u32 = null,
     queue_family_policy: webgpu.QueueFamilyPolicy = .prefer_graphics_compute,

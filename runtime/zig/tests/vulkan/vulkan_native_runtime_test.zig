@@ -12,12 +12,22 @@ const vk = @import("../../src/backend/vulkan/vk_constants.zig");
 const adapter_probe = @import("../../src/backend/vulkan/vk_adapter_probe.zig");
 
 fn probe_with_allocator(allocator: std.mem.Allocator) !void {
-    var probe = try adapter_probe.probe_selected_adapter(allocator, .prefer_graphics_compute);
+    var probe = try adapter_probe.probe_selected_adapter(allocator, .prefer_graphics_compute, false);
     defer probe.deinit(allocator);
 }
 
 test "Vulkan adapter selection preserves allocation failures" {
     try std.testing.checkAllAllocationFailures(std.testing.allocator, probe_with_allocator, .{});
+}
+
+test "Vulkan fallback adapter selection returns only a CPU device" {
+    var probe = adapter_probe.probe_selected_adapter(std.testing.allocator, .prefer_graphics_compute, true) catch |err| switch (err) {
+        // No CPU implementation on this host: the fallback request is unavailable.
+        error.UnsupportedFeature => return error.SkipZigTest,
+        else => return err,
+    };
+    defer probe.deinit(std.testing.allocator);
+    try std.testing.expectEqual(@as(u32, vk.VK_PHYSICAL_DEVICE_TYPE_CPU), probe.identity.device_type);
 }
 
 const REUSE_SHADER =

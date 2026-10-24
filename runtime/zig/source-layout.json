@@ -1256,15 +1256,15 @@
       },
       "src/backend/vulkan/native_runtime.zig": {
         "decision": "Keep",
-        "moduleSha256": "929ac0b957a50e3f169027469512784dbb47fb2849e018950c1c243bd3d288a8",
-        "reason": "Keep: per-device runtime borrows the adapter-selected Vulkan instance while retaining its own VkDevice and queue; runtime teardown never destroys the borrowed instance; MUTABLE_FORMAT images with a VkImageFormatListCreateInfo only for textures whose viewFormats name the srgb pair.",
-        "reviewer": "doe-c-claude-surface/2026-10-23"
+        "moduleSha256": "414ce018a9dcb88f3d3c698d2797a70a9883f5bc2c797e6ffcdd1061e8b8a2db",
+        "reason": "Keep: per-device runtime borrows the adapter-selected Vulkan instance while retaining its own VkDevice and queue; runtime teardown never destroys the borrowed instance; MUTABLE_FORMAT images with a VkImageFormatListCreateInfo only for textures whose viewFormats name the srgb pair. Carries the CPU-only (fallback adapter) selection flag.",
+        "reviewer": "doe-c-claude-surface/2026-10-24"
       },
       "src/backend/vulkan/vk_adapter_probe.zig": {
         "decision": "Keep",
-        "moduleSha256": "67c9dea1ec506d783365c15faed9e919c6e3d6839e35de9b6d27e8ae1f7db6fd",
-        "reason": "Keep: adapter probing owns selected instance, physical device and compact queue metadata through adapter lifetime, with identity-bound capabilities and surface inspection.",
-        "reviewer": "codex-vulkan-selection/2026-10-02"
+        "moduleSha256": "965335242ab62f30797f9954af647a9ae669c60165a00e2603dfe73fe1160261",
+        "reason": "Keep: adapter probing owns selected instance, physical device and compact queue metadata through adapter lifetime, with identity-bound capabilities and surface inspection. The probe takes the fallback (CPU-only) selection.",
+        "reviewer": "doe-c-claude-surface/2026-10-24"
       },
       "src/backend/vulkan/vk_async_dispatch.zig": {
         "decision": "Keep",
@@ -1304,9 +1304,9 @@
       },
       "src/backend/vulkan/vk_device.zig": {
         "decision": "Keep",
-        "moduleSha256": "d557d26de9f5ca21bce7a179850c7584b99e7f6581de2a98877c5b305852e8a7",
-        "reason": "Keep: Vulkan capability/device owner. Integer-dot operation availability and signed/unsigned packed acceleration remain distinct; logical-device admission enables the observed feature and extension only when both are available; MUTABLE_FORMAT images with a VkImageFormatListCreateInfo only for textures whose viewFormats name the srgb pair.",
-        "reviewer": "doe-c-claude-surface/2026-10-23"
+        "moduleSha256": "fc92ef671c6ad141bdfd654e05552bf18211752993862cf8b1e0b901fdb47eb8",
+        "reason": "Keep: Vulkan capability/device owner. Integer-dot operation availability and signed/unsigned packed acceleration remain distinct; logical-device admission enables the observed feature and extension only when both are available; MUTABLE_FORMAT images with a VkImageFormatListCreateInfo only for textures whose viewFormats name the srgb pair. A forceFallbackAdapter probe selects only CPU physical devices.",
+        "reviewer": "doe-c-claude-surface/2026-10-24"
       },
       "src/backend/vulkan/vk_device_caps.zig": {
         "decision": "Keep",
@@ -3584,9 +3584,9 @@
       },
       "src/native/lifecycle/doe_instance_device_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "3dd953f94ce73db207277273d92e3ba39530e603a0a2e0830389ff5875780cb7",
-        "reason": "Keep: default-off C error-scope partial owner uses final-address typed storage, cold creation rollback and checked final deinit; original classifier, callbacks and device references remain with their existing owners.",
-        "reviewer": "codex-c-error-scopes-author/2026-10-23"
+        "moduleSha256": "e48cda253405c169aa047c6dd97aaea0f5bbc9eff45691316e0795d355bb6940",
+        "reason": "Keep: default-off C error-scope partial owner uses final-address typed storage, cold creation rollback and checked final deinit; original classifier, callbacks and device references remain with their existing owners. requestAdapter honors forceFallbackAdapter: a CPU adapter or unavailable.",
+        "reviewer": "doe-c-claude-surface/2026-10-24"
       },
       "src/native/mod.zig": {
         "decision": "Keep",

@@ -52,14 +52,18 @@ pub fn release_selection(allocator: std.mem.Allocator, raw: *anyopaque) void {
     selection.deinit(allocator);
 }
 
+/// `fallback` selects only a CPU device (WebGPU's fallback adapter); with no
+/// CPU device the probe fails with error.UnsupportedFeature.
 pub fn probe_selected_adapter(
     allocator: std.mem.Allocator,
     queue_family_policy: backend_contract.QueueFamilyPolicy,
+    fallback: bool,
 ) !AdapterProbe {
     var probe = native_runtime.NativeVulkanRuntime{
         .allocator = allocator,
         .kernel_root = null,
         .queue_family_policy = queue_family_policy,
+        .require_cpu_device = fallback,
     };
     try vk_device.create_instance(&probe);
     errdefer vk_device.destroy_instance_only(&probe);
