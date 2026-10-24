@@ -931,7 +931,10 @@ function normalizeDepthStencilState(depthStencil, features, path = 'GPUDevice.cr
 }
 
 function normalizeVertexBufferLayouts(layouts, path = 'GPUDevice.createRenderPipeline') {
-  return assertArray(layouts, path, 'descriptor.vertex.buffers').map((layout, layoutIndex) => {
+  // sequence<GPUVertexBufferLayout?>: a null (or sparse-array) slot is an
+  // unused buffer slot and stays null.
+  return Array.from(assertArray(layouts, path, 'descriptor.vertex.buffers'), (layout, layoutIndex) => {
+    if (layout === null || layout === undefined) return null;
     const normalized = assertObject(layout, path, `descriptor.vertex.buffers[${layoutIndex}]`);
     return {
       ...normalized,
