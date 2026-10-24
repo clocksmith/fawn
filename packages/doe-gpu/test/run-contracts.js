@@ -11,6 +11,7 @@ const contracts = [
   './unit/node-webgpu-governed-execution.test.js',
   './unit/node-webgpu-loader.test.js',
   './unit/build-metadata-permission.test.js',
+  './unit/c-build-metadata.test.js',
   './unit/platform-package-root.test.js',
   './unit/node-webgpu-process.test.js',
   './unit/node-webgpu-process-cli.test.js',

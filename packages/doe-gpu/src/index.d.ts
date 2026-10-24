@@ -135,7 +135,17 @@ export interface ProviderInfo {
   buildMetadataPath: string;
   leanVerifiedBuild: boolean | null;
   proofArtifactSha256: string | null;
+  /** C runtime provenance from its verified package-stage manifest; null otherwise. */
+  buildIdentity: ProviderBuildIdentity | null;
   nativeFastPaths: NativeFastPathInfo | null;
+}
+
+export interface ProviderBuildIdentity {
+  sourceCommit: string | null;
+  sourceTree: string | null;
+  /** sha256 of the selected library, equal to the manifest's recorded digest. */
+  artifactSha256: string;
+  qualification: string | null;
 }
 
 export interface DoeRuntimeRunResult {

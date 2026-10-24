@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import { basename, dirname, resolve } from 'node:path';
 import { libraryBasenamesForPlatform } from './platform-package.js';
@@ -82,9 +83,64 @@ function loadMetadataCandidate(metadataPath, parser, source) {
   return parser(parsed, metadataPath, source);
 }
 
+const C_LIBRARY = /^(lib)?webgpu_doe_c\.(so|dylib|dll)$/;
+
+function sha256File(path) {
+  try {
+    return createHash('sha256').update(readFileSync(path)).digest('hex');
+  } catch {
+    return null;
+  }
+}
+
+function stringOrNull(value) {
+  return typeof value === 'string' && value.length > 0 ? value : null;
+}
+
+// The C runtime's sidecar is its package stage MANIFEST.json (runtime/c/tools/
+// build-native-package.py): next to the library as doe-c-manifest.json in the
+// platform package, or the stage root's MANIFEST.json above lib/. A manifest
+// describes the selected library only when its artifacts["lib/<name>"] digest
+// equals that file's sha256. It records provenance, not a Lean-verified build
+// or a proof artifact, so those stay null.
+function loadDoeCManifest(libraryPath) {
+  const libraryDir = dirname(libraryPath);
+  const artifactKey = `lib/${basename(libraryPath)}`;
+  let librarySha256;
+  for (const [metadataPath, source] of [
+    [resolve(libraryDir, 'doe-c-manifest.json'), 'c-package'],
+    [resolve(libraryDir, '..', 'MANIFEST.json'), 'c-stage'],
+  ]) {
+    if (!metadataPathExists(metadataPath)) continue;
+    const manifest = readJsonFile(metadataPath);
+    const recorded = isObject(manifest) && isObject(manifest.artifacts) ? manifest.artifacts[artifactKey] : undefined;
+    if (typeof recorded !== 'string') continue;
+    librarySha256 ??= sha256File(libraryPath);
+    if (librarySha256 === null || recorded !== librarySha256) continue;
+    return {
+      source,
+      path: metadataPath,
+      leanVerifiedBuild: null,
+      proofArtifactSha256: null,
+      identity: {
+        sourceCommit: stringOrNull(manifest.source_commit),
+        sourceTree: stringOrNull(manifest.source_tree),
+        artifactSha256: librarySha256,
+        qualification: stringOrNull(manifest.qualification),
+      },
+    };
+  }
+  return UNKNOWN_DOE_BUILD_METADATA;
+}
+
 export function loadDoeBuildMetadata({ libraryPath = '' } = {}) {
-  // These legacy sidecars describe only the drop-in artifact. A C/delegate
-  // override has no matching metadata contract and must not inherit its proof.
+  // The C runtime has its own manifest contract and never reads drop-in
+  // metadata (including DOE_BUILD_METADATA).
+  if (libraryPath && C_LIBRARY.test(basename(libraryPath))) {
+    return loadDoeCManifest(libraryPath);
+  }
+  // These legacy sidecars describe only the drop-in artifact. A delegate or
+  // unknown override has no matching metadata contract and must not inherit its proof.
   if (!libraryPath || !libraryBasenamesForPlatform().includes(basename(libraryPath))) {
     return UNKNOWN_DOE_BUILD_METADATA;
   }

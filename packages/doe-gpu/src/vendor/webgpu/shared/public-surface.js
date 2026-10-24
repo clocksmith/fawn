@@ -50,6 +50,7 @@ function buildProviderInfo({
   buildMetadataPath,
   leanVerifiedBuild,
   proofArtifactSha256,
+  buildIdentity = null,
   nativeFastPaths = null,
 }) {
   return {
@@ -64,6 +65,7 @@ function buildProviderInfo({
     buildMetadataPath,
     leanVerifiedBuild,
     proofArtifactSha256,
+    buildIdentity,
     nativeFastPaths,
   };
 }

@@ -3085,6 +3085,7 @@ export function providerInfo() {
     buildMetadataPath: buildMetadata.path,
     leanVerifiedBuild: buildMetadata.leanVerifiedBuild,
     proofArtifactSha256: buildMetadata.proofArtifactSha256,
+    buildIdentity: buildMetadata.identity ?? null,
     nativeFastPaths,
   });
 }

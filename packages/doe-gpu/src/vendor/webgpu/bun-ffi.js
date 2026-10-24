@@ -4875,6 +4875,7 @@ export function providerInfo() {
         buildMetadataPath: DOE_BUILD_METADATA.path,
         leanVerifiedBuild: DOE_BUILD_METADATA.leanVerifiedBuild,
         proofArtifactSha256: DOE_BUILD_METADATA.proofArtifactSha256,
+        buildIdentity: DOE_BUILD_METADATA.identity ?? null,
         nativeFastPaths,
     });
 }
