@@ -271,6 +271,7 @@ pub fn zig_error_to_type(err: anyerror) u32 {
         error.DrawBindGroupIncompatible,
         error.DrawBindingUnsupported,
         error.DrawCountExceeded,
+        error.VertexBufferSlotOutOfRange,
         error.BindGroupIndexOutOfRange,
         error.BindGroupDynamicOffsetCount,
         error.BindGroupDynamicOffsetUnaligned,

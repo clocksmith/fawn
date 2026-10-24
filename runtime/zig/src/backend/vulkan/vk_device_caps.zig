@@ -192,9 +192,21 @@ fn buffer_size_from_storage_range(max_storage_buffer_range: u32) u64 {
 /// WebGPU reports the alignment the implementation requires, which must be
 /// at most the spec-defined maximum. Use the Vulkan value when it is within
 /// spec bounds, otherwise fall back to the WebGPU maximum.
+/// WebGPU requires both offset alignment limits to be at least 32 bytes
+/// (https://gpuweb.github.io/gpuweb/#limits); a smaller native alignment is
+/// reported as 32, which every native alignment that is a power of two divides.
+const WEBGPU_MIN_OFFSET_ALIGNMENT: u32 = 32;
+
 fn clamp_alignment(hw_alignment: u32, spec_max: u32) u32 {
     if (hw_alignment == 0) return spec_max;
-    return if (hw_alignment <= spec_max) hw_alignment else spec_max;
+    return @max(WEBGPU_MIN_OFFSET_ALIGNMENT, @min(hw_alignment, spec_max));
+}
+
+test "offset alignment limits are at least 32 and at most the WebGPU default" {
+    try std.testing.expectEqual(@as(u32, 32), clamp_alignment(16, 256));
+    try std.testing.expectEqual(@as(u32, 64), clamp_alignment(64, 256));
+    try std.testing.expectEqual(@as(u32, 256), clamp_alignment(1024, 256));
+    try std.testing.expectEqual(@as(u32, 256), clamp_alignment(0, 256));
 }
 
 /// Check whether the device supports linear filtering on R32Float and RG32Float.

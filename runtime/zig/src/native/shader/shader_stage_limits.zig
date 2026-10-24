@@ -78,6 +78,8 @@ fn declaresWorkgroupVariable(source: []const u8) bool {
 }
 
 fn slotFailure(device: *const native_types.DoeDevice, bindings: []const wgsl_bindings.BindingMeta) ?[]const u8 {
+    for (bindings) |meta| if (meta.group >= device.shape_limits.bind_groups)
+        return "compute pipeline automatic layout uses a bind group index not below maxBindGroups";
     var slots = binding_slot_limits.Counts{};
     for (bindings) |meta| {
         const required = shader_binding_reflection.requiredBinding(meta, @intCast(abi_binding.WGPUShaderStage_Compute));

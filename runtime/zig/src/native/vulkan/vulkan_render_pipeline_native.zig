@@ -229,6 +229,10 @@ pub fn vulkan_create_render_pipeline(
     };
     // An automatic layout holds exactly the bindings the entry points use.
     if (pip.layout == null and pip.required_binding_kinds_ready) {
+        for (pip.required_bindings.slice()) |binding| if (binding.group >= dev.shape_limits.bind_groups) {
+            dev.error_scopes.deliver(error_scope.ERROR_TYPE_VALIDATION, "render pipeline automatic layout uses a bind group index not below maxBindGroups");
+            return false;
+        };
         var slots = binding_slot_limits.Counts{};
         slots.addRequired(pip.required_bindings.slice());
         if (slots.failure(dev.stage_limits)) |limit| {

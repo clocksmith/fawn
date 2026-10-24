@@ -104,6 +104,33 @@ pub const ShaderStageLimits = struct {
     }
 };
 
+/// The device's texture extent, bind group and vertex input limits: WebGPU
+/// defaults unless the device descriptor required more.
+pub const ShapeLimits = struct {
+    texture_dimension_1d: u32 = 8192,
+    texture_dimension_2d: u32 = 8192,
+    texture_dimension_3d: u32 = 2048,
+    texture_array_layers: u32 = 256,
+    bind_groups: u32 = 4,
+    vertex_buffers: u32 = 8,
+    vertex_attributes: u32 = 16,
+    vertex_buffer_array_stride: u32 = 2048,
+
+    pub fn fromRequired(required: anytype) ShapeLimits {
+        const defaults = ShapeLimits{};
+        return .{
+            .texture_dimension_1d = requiredMaximum(defaults.texture_dimension_1d, required.maxTextureDimension1D),
+            .texture_dimension_2d = requiredMaximum(defaults.texture_dimension_2d, required.maxTextureDimension2D),
+            .texture_dimension_3d = requiredMaximum(defaults.texture_dimension_3d, required.maxTextureDimension3D),
+            .texture_array_layers = requiredMaximum(defaults.texture_array_layers, required.maxTextureArrayLayers),
+            .bind_groups = requiredMaximum(defaults.bind_groups, required.maxBindGroups),
+            .vertex_buffers = requiredMaximum(defaults.vertex_buffers, required.maxVertexBuffers),
+            .vertex_attributes = requiredMaximum(defaults.vertex_attributes, required.maxVertexAttributes),
+            .vertex_buffer_array_stride = requiredMaximum(defaults.vertex_buffer_array_stride, required.maxVertexBufferArrayStride),
+        };
+    }
+};
+
 pub const DEFAULT_MAX_INTER_STAGE_SHADER_VARIABLES: u32 = 16;
 pub const DEFAULT_MAX_COMPUTE_WORKGROUP_STORAGE_SIZE: u32 = 16384;
 
@@ -145,6 +172,7 @@ pub const DoeDevice = struct {
     /// The device's binding slot, inter-stage and workgroup storage limits:
     /// WebGPU defaults unless the device descriptor required more.
     stage_limits: ShaderStageLimits = .{},
+    shape_limits: ShapeLimits = .{},
     max_inter_stage_shader_variables: u32 = DEFAULT_MAX_INTER_STAGE_SHADER_VARIABLES,
     max_compute_workgroup_storage_size: u32 = DEFAULT_MAX_COMPUTE_WORKGROUP_STORAGE_SIZE,
     /// setImmediates and pipeline layout immediateSize validate against this;

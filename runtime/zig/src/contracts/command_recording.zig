@@ -36,6 +36,7 @@ pub const DrawError = error{
     DrawBindGroupIncompatible,
     DrawBindingUnsupported,
     DrawCountExceeded,
+    VertexBufferSlotOutOfRange,
 };
 
 /// WebGPU setBindGroup dynamic offsets
@@ -86,6 +87,7 @@ pub fn message(cause: Failure) []const u8 {
         error.DrawBindGroupIncompatible => "draw bind group layout is not compatible with the pipeline layout",
         error.DrawBindingUnsupported => "draw pipeline uses a binding number above 31, which this provider validates but cannot execute",
         error.DrawCountExceeded => "render pass draws exceed its maxDrawCount",
+        error.VertexBufferSlotOutOfRange => "setVertexBuffer slot must be less than maxVertexBuffers",
         error.BindGroupIndexOutOfRange => "setBindGroup index must be less than maxBindGroups",
         error.BindGroupDynamicOffsetCount => "setBindGroup dynamic offset count must match the layout's dynamic bindings",
         error.BindGroupDynamicOffsetUnaligned => "setBindGroup dynamic offsets must meet the minimum buffer offset alignment",
