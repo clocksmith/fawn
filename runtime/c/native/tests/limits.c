@@ -34,6 +34,7 @@ static const limit_row rows[] = {
     ROW32(maxComputeWorkgroupStorageSize, 16384), ROW32(maxComputeInvocationsPerWorkgroup, 256),
     ROW32(maxComputeWorkgroupSizeX, 256), ROW32(maxComputeWorkgroupSizeY, 256),
     ROW32(maxComputeWorkgroupSizeZ, 64), ROW32(maxComputeWorkgroupsPerDimension, 65535),
+    ROW32(maxImmediateSize, 64),
 };
 
 static uint64_t get(const WGPULimits *limits, const limit_row *row)
@@ -128,7 +129,6 @@ static void check_adapter_and_defaults(state *s, WGPULimits *adapter)
     assert(adapter->maxUniformBufferBindingSize % 4 == 0 && adapter->maxStorageBufferBindingSize % 4 == 0);
     assert(adapter->maxStorageBufferBindingSize <= adapter->maxBufferSize);
     assert(adapter->maxUniformBufferBindingSize <= adapter->maxBufferSize);
-    assert(adapter->maxImmediateSize == 0 && device.maxImmediateSize == 0);
 }
 
 static void check_required(state *s, const WGPULimits *adapter)
@@ -446,6 +446,33 @@ static void check_sparse_bindings(state *s)
     wgpuBufferRelease(a);
 }
 
+/* The CTS opens every device with all adapter features and all adapter limits. */
+static void check_every_feature_and_limit(state *s, const WGPULimits *adapter)
+{
+    WGPUSupportedFeatures features = WGPU_SUPPORTED_FEATURES_INIT;
+    wgpuAdapterGetFeatures(s->adapter, &features);
+    assert(features.featureCount);
+    WGPUDeviceDescriptor descriptor = WGPU_DEVICE_DESCRIPTOR_INIT;
+    descriptor.requiredFeatureCount = features.featureCount;
+    descriptor.requiredFeatures = features.features;
+    descriptor.requiredLimits = adapter;
+    request reply = {0};
+    WGPURequestDeviceCallbackInfo callback = {.mode=WGPUCallbackMode_AllowSpontaneous,.callback=requested,.userdata1=&reply};
+    assert(wgpuAdapterRequestDevice(s->adapter, &descriptor, callback).id);
+    assert(reply.status == WGPURequestDeviceStatus_Success && reply.device);
+    WGPUDevice device = reply.device;
+    WGPUSupportedFeatures enabled = WGPU_SUPPORTED_FEATURES_INIT;
+    wgpuDeviceGetFeatures(device, &enabled);
+    assert(enabled.featureCount == features.featureCount);
+    for (size_t i = 0; i < features.featureCount; ++i) assert(wgpuDeviceHasFeature(device, features.features[i]));
+    WGPULimits resolved = WGPU_LIMITS_INIT;
+    assert(wgpuDeviceGetLimits(device, &resolved) == WGPUStatus_Success);
+    for (size_t i = 0; i < sizeof(rows) / sizeof(rows[0]); ++i) assert(get(&resolved, &rows[i]) == get(adapter, &rows[i]));
+    wgpuSupportedFeaturesFreeMembers(enabled);
+    wgpuSupportedFeaturesFreeMembers(features);
+    wgpuDeviceRelease(device);
+}
+
 int main(void)
 {
     setvbuf(stdout, NULL, _IOLBF, 0);
@@ -454,12 +481,13 @@ int main(void)
     WGPULimits adapter;
     check_adapter_and_defaults(&s, &adapter);
     check_required(&s, &adapter);
+    check_every_feature_and_limit(&s, &adapter);
     check_default_validation(&s, &adapter);
     check_dispatch_and_binding_bounds(&s);
     check_sparse_bindings(&s);
     consumer_finish(&s);
     printf("PASS public limits: %zu adapter limits meet the WebGPU defaults, default device limits exact, "
-        "requiredLimits refusal/default/adapter resolution, default-limit validation of dynamic storage, "
+        "requiredLimits refusal/default/adapter resolution, a device with every adapter feature and limit, default-limit validation of dynamic storage, "
         "workgroup size/storage, inter-stage location, buffer size, texture size, dispatch count and binding "
         "number, a sparse 0/17/31/500/999 group with binding-ordered dynamic offsets and an automatic layout; "
         "exact 32 words (shader bindings above 31 await the compiler) %s\n",

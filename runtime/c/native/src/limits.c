@@ -16,8 +16,10 @@ typedef struct limit_field {
 #define LIMIT64(name, value) {offsetof(WGPULimits, name), true, false, value}
 #define ALIGNMENT(name, value) {offsetof(WGPULimits, name), false, true, value}
 
-/* WebGPU core defaults. maxImmediateSize is not a core limit; zero matches
- * the immediates this frontend does not admit. */
+/* WebGPU core defaults (https://gpuweb.github.io/gpuweb/#limits), including
+ * maxImmediateSize 64. Every adapter reports at least these, so a device that
+ * requires every adapter limit (as the CTS does) resolves. setImmediates and
+ * shader immediates remain absent here (compiler); the limit is only reported. */
 static const limit_field fields[] = {
     LIMIT32(maxTextureDimension1D, 8192), LIMIT32(maxTextureDimension2D, 8192),
     LIMIT32(maxTextureDimension3D, 2048), LIMIT32(maxTextureArrayLayers, 256),
@@ -35,7 +37,7 @@ static const limit_field fields[] = {
     LIMIT32(maxComputeWorkgroupStorageSize, 16384), LIMIT32(maxComputeInvocationsPerWorkgroup, 256),
     LIMIT32(maxComputeWorkgroupSizeX, 256), LIMIT32(maxComputeWorkgroupSizeY, 256),
     LIMIT32(maxComputeWorkgroupSizeZ, 64), LIMIT32(maxComputeWorkgroupsPerDimension, 65535),
-    LIMIT32(maxImmediateSize, 0),
+    LIMIT32(maxImmediateSize, 64),
 };
 
 static uint64_t field_get(const WGPULimits *limits, const limit_field *field)
@@ -126,7 +128,8 @@ WGPUStatus native_vulkan_limits(const doe_vk_caps *caps, WGPULimits *out)
         .maxComputeWorkgroupSizeX = min32(caps->max_workgroup_size[0], COMPILER_WORKGROUP_BOUND),
         .maxComputeWorkgroupSizeY = min32(caps->max_workgroup_size[1], COMPILER_WORKGROUP_BOUND),
         .maxComputeWorkgroupSizeZ = min32(caps->max_workgroup_size[2], COMPILER_WORKGROUP_BOUND),
-        .maxComputeWorkgroupsPerDimension = dispatch
+        .maxComputeWorkgroupsPerDimension = dispatch,
+        .maxImmediateSize = 64
     };
     return WGPUStatus_Success;
 }
