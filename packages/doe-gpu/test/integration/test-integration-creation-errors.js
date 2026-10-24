@@ -2,8 +2,8 @@
 // Synchronous creation follows WebGPU error semantics when errors can be
 // observed: with an error scope or an uncapturederror listener, a failed
 // creation reports one validation error and returns an invalid object of the
-// right class, and using that object in another creation or a queue write is
-// itself a validation error. With neither, creation throws as it did before.
+// right class, and every later use of that object is itself a validation
+// error. With neither, creation throws as it did before.
 //
 // Failures come from package validation and from the provider; each provider
 // error is reported exactly once (the C runtime reports it, the Zig drop-in
@@ -109,6 +109,14 @@ const invalidTexture = await invalidObject(() => device.createTexture({
   size: [4, 4], format: 'rgba8unorm', usage: 0,
 }));
 const invalidBuffer = await invalidObject(() => device.createBuffer({ size: 16, usage: 0 }));
+const invalidPipeline = await invalidObject(() => device.createComputePipeline({
+  layout: 'auto', compute: { module: computeModule, entryPoint: 'missing' },
+}));
+const invalidRenderPipeline = await invalidObject(() => device.createRenderPipeline({
+  layout: 'auto', vertex: { module: renderModule, entryPoint: 'vs' },
+}));
+const invalidBundleEncoder = await invalidObject(() => device.createRenderBundleEncoder({ colorFormats: [] }));
+const target = device.createBuffer({ size: 16, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC });
 
 const uses = [
   ['bind group with an invalid view', () => device.createBindGroup({
@@ -116,6 +124,30 @@ const uses = [
   })],
   ['createView on an invalid texture', () => invalidTexture.createView()],
   ['writeBuffer to an invalid buffer', () => device.queue.writeBuffer(invalidBuffer, 0, new Uint32Array(4))],
+  ['copy from an invalid buffer, at finish', () => {
+    const encoder = device.createCommandEncoder();
+    encoder.copyBufferToBuffer(invalidBuffer, 0, target, 0, 16);
+    return encoder.finish();
+  }],
+  ['setPipeline with an invalid pipeline, at finish', () => {
+    const encoder = device.createCommandEncoder();
+    const pass = encoder.beginComputePass();
+    pass.setPipeline(invalidPipeline);
+    pass.dispatchWorkgroups(1);
+    pass.end();
+    return encoder.finish();
+  }],
+  ['render pass with an invalid view, at finish', () => {
+    const encoder = device.createCommandEncoder();
+    const pass = encoder.beginRenderPass({
+      colorAttachments: [{ view: invalidView, loadOp: 'clear', storeOp: 'store' }],
+    });
+    pass.setPipeline(invalidRenderPipeline);
+    pass.draw(3);
+    pass.end();
+    return encoder.finish();
+  }],
+  ['finish of an invalid render bundle encoder', () => invalidBundleEncoder.finish()],
 ];
 for (const [name, action] of uses) {
   const { value, thrown, error } = await scoped(action);
@@ -125,7 +157,14 @@ for (const [name, action] of uses) {
     assert.equal(value._invalid, true, `${name} returns an invalid object`);
   }
 }
-console.log(`ok: ${uses.length} uses of invalid objects are validation errors`);
+const invalidCommands = await invalidObject(() => {
+  const encoder = device.createCommandEncoder();
+  encoder.copyBufferToBuffer(invalidBuffer, 0, target, 0, 16);
+  return encoder.finish();
+});
+const submitted = await scoped(() => device.queue.submit([invalidCommands]));
+assert(submitted.error instanceof GPUValidationError, 'submitting an invalid command buffer is a validation error');
+console.log(`ok: ${uses.length + 1} uses of invalid objects are validation errors`);
 
 // Exactly once: with only an uncapturederror listener, each failed creation
 // dispatches one event, including after asynchronous native deliveries.

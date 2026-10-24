@@ -60,6 +60,14 @@ shader, pipeline, bindings, and commands after completion or failure. Buffers
 supplied by the caller remain caller-owned. Concurrent one-shot calls retain
 their own temporary commands and resources.
 
+While an error scope is pushed or an `uncapturederror` handler or listener is
+registered, a synchronous creation that fails validation reports one
+`GPUValidationError` there and returns an invalid object, as WebGPU specifies.
+Every later use of that object is a validation error; an encoder that used one
+reports at `finish()` and returns an invalid command buffer. With no scope and
+no handler, the creation throws instead. `createComputePipelineAsync` and
+`createRenderPipelineAsync` reject with `GPUPipelineError` and report nothing.
+
 ## Repeated computation
 
 For explicitly declared repeated buffer compute, import
