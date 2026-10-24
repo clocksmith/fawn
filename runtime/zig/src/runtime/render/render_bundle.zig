@@ -42,6 +42,13 @@ pub const MAX_BIND_GROUPS: usize = 4;
 // Maximum bindings per bind group.
 pub const MAX_BINDINGS_PER_GROUP: usize = 16;
 
+// Binding numbers a bind group's dynamic offsets can address.
+pub const MAX_DYNAMIC_OFFSET_BINDINGS: usize = 32;
+
+/// Bytes setBindGroup's dynamic offsets add to each binding number of a group.
+pub const BundleDynamicOffsets = [MAX_DYNAMIC_OFFSET_BINDINGS]u32;
+pub const NO_BUNDLE_DYNAMIC_OFFSETS: BundleDynamicOffsets = [_]u32{0} ** MAX_DYNAMIC_OFFSET_BINDINGS;
+
 // ============================================================
 // Recorded command types
 // ============================================================
@@ -80,6 +87,7 @@ pub const BundleCmd = union(BundleCmdTag) {
         group: u32,
         bg_handle: ?*anyopaque = null,
         bg: BundleBindGroup,
+        dynamic_offsets: BundleDynamicOffsets = NO_BUNDLE_DYNAMIC_OFFSETS,
     },
     set_vertex_buffer: struct {
         slot: u32,
@@ -259,9 +267,9 @@ pub fn replay_bundle_metal(
             },
             .set_bind_group => |bg_cmd| {
                 // Metal buffer indices: group*MAX_BINDINGS_PER_GROUP + binding.
-                for (bg_cmd.bg.entries[0..bg_cmd.bg.count]) |entry| {
+                for (bg_cmd.bg.entries[0..bg_cmd.bg.count], 0..) |entry, binding| {
                     const slot: u32 = bg_cmd.group * MAX_BINDINGS_PER_GROUP;
-                    metal_bridge_render_encoder_set_buffer(encoder, entry.handle, entry.offset, slot);
+                    metal_bridge_render_encoder_set_buffer(encoder, entry.handle, entry.offset + bg_cmd.dynamic_offsets[binding], slot);
                 }
             },
             .set_vertex_buffer => |vb| {

@@ -1,15 +1,11 @@
 #!/usr/bin/env node
 // setBindGroup dynamic offsets reach the provider on compute passes, render
 // passes and render bundles, in both the sequence and the Uint32Array forms:
-// each shader reads the uniform at the offset it was given.
-//
-// Known provider gap: the Zig drop-in's render bundles discard dynamic offsets
-// (runtime/zig/src/native/render/doe_bundle_native.zig
-// doeNativeRenderBundleEncoderSetBindGroup), so its bundles read offset 0. On
-// that provider the bundle draw checks encoding only.
+// each shader reads the uniform at the offset it was given. An unaligned
+// bundle offset invalidates the bundle.
 
 import assert from 'node:assert/strict';
-import { providerInfo, setupGlobals } from '../../src/index.js';
+import { setupGlobals } from '../../src/index.js';
 
 const target = {};
 setupGlobals(target);
@@ -21,10 +17,7 @@ if (!adapter) {
   process.exit(0);
 }
 const device = await adapter.requestDevice();
-const flavor = providerInfo().libraryFlavor;
-const bundlesApplyOffsets = flavor !== 'doe-dropin';
-if (!bundlesApplyOffsets) console.log(`known gap: ${flavor} bundles discard dynamic offsets; checking bundle encoding only`);
-const { GPUBufferUsage, GPUMapMode, GPUShaderStage, GPUTextureUsage } = target;
+const { GPUBufferUsage, GPUMapMode, GPUShaderStage, GPUTextureUsage, GPUValidationError } = target;
 const stride = Math.max(device.limits.minUniformBufferOffsetAlignment, device.limits.minStorageBufferOffsetAlignment);
 
 // Slot k of the uniform buffer holds the value 10 + k in its first word.
@@ -141,8 +134,14 @@ async function readWords(buffer, count) {
   bundleEncoder.draw(3);
   const bundle = bundleEncoder.finish();
   const bundled = await redChannel((pass) => pass.executeBundles([bundle]));
-  if (bundlesApplyOffsets) assert.equal(bundled, 13, 'a render bundle reads the uniform at its dynamic offset');
-  console.log(`ok: render passes apply dynamic offsets; bundles ${bundlesApplyOffsets ? 'apply' : 'encode'} them`);
+  assert.equal(bundled, 13, 'a render bundle reads the uniform at its dynamic offset');
+  device.pushErrorScope('validation');
+  const unaligned = device.createRenderBundleEncoder({ colorFormats: ['rgba8unorm'] });
+  unaligned.setPipeline(pipeline);
+  unaligned.setBindGroup(0, group, [4]);
+  unaligned.finish();
+  assert(await device.popErrorScope() instanceof GPUValidationError, 'an unaligned bundle dynamic offset is a validation error');
+  console.log('ok: render passes and bundles apply dynamic offsets');
 }
 
 assert.throws(() => {
