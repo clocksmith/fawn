@@ -446,6 +446,342 @@ static void check_sparse_bindings(state *s)
     wgpuBufferRelease(a);
 }
 
+/* Limits Vulkan raises above the WebGPU default, each used above the default
+ * on a device that requires the adapter limits, and refused on the default
+ * device: 10 storage buffers and 8 storage textures in one stage, 32 vertex
+ * attributes, and 8 rgba32float targets (128 color bytes per sample). */
+static const char *const storage10 =
+    "@group(0) @binding(0) var<storage, read_write> b0: array<u32>;\n"
+    "@group(0) @binding(1) var<storage, read_write> b1: array<u32>;\n"
+    "@group(0) @binding(2) var<storage, read_write> b2: array<u32>;\n"
+    "@group(0) @binding(3) var<storage, read_write> b3: array<u32>;\n"
+    "@group(0) @binding(4) var<storage, read_write> b4: array<u32>;\n"
+    "@group(0) @binding(5) var<storage, read_write> b5: array<u32>;\n"
+    "@group(0) @binding(6) var<storage, read_write> b6: array<u32>;\n"
+    "@group(0) @binding(7) var<storage, read_write> b7: array<u32>;\n"
+    "@group(0) @binding(8) var<storage, read_write> b8: array<u32>;\n"
+    "@group(0) @binding(9) var<storage, read_write> b9: array<u32>;\n"
+    "@compute @workgroup_size(1) fn main() {\n"
+    "  b0[0] = 1u;\n"
+    "  b1[0] = 2u;\n"
+    "  b2[0] = 3u;\n"
+    "  b3[0] = 4u;\n"
+    "  b4[0] = 5u;\n"
+    "  b5[0] = 6u;\n"
+    "  b6[0] = 7u;\n"
+    "  b7[0] = 8u;\n"
+    "  b8[0] = 9u;\n"
+    "  b9[0] = 10u;\n"
+    "}\n";
+static const char *const storage_textures8 =
+    "@group(0) @binding(0) var t0: texture_storage_2d<r32uint, write>;\n"
+    "@group(0) @binding(1) var t1: texture_storage_2d<r32uint, write>;\n"
+    "@group(0) @binding(2) var t2: texture_storage_2d<r32uint, write>;\n"
+    "@group(0) @binding(3) var t3: texture_storage_2d<r32uint, write>;\n"
+    "@group(0) @binding(4) var t4: texture_storage_2d<r32uint, write>;\n"
+    "@group(0) @binding(5) var t5: texture_storage_2d<r32uint, write>;\n"
+    "@group(0) @binding(6) var t6: texture_storage_2d<r32uint, write>;\n"
+    "@group(0) @binding(7) var t7: texture_storage_2d<r32uint, write>;\n"
+    "@compute @workgroup_size(1) fn main() {\n"
+    "  textureStore(t0, vec2<i32>(0), vec4<u32>(1u));\n"
+    "  textureStore(t1, vec2<i32>(0), vec4<u32>(2u));\n"
+    "  textureStore(t2, vec2<i32>(0), vec4<u32>(3u));\n"
+    "  textureStore(t3, vec2<i32>(0), vec4<u32>(4u));\n"
+    "  textureStore(t4, vec2<i32>(0), vec4<u32>(5u));\n"
+    "  textureStore(t5, vec2<i32>(0), vec4<u32>(6u));\n"
+    "  textureStore(t6, vec2<i32>(0), vec4<u32>(7u));\n"
+    "  textureStore(t7, vec2<i32>(0), vec4<u32>(8u));\n"
+    "}\n";
+static const char *const attributes32 =
+    "struct In {\n"
+    "  @builtin(vertex_index) i: u32,\n"
+    "  @location(0) a0: f32,\n"
+    "  @location(1) a1: f32,\n"
+    "  @location(2) a2: f32,\n"
+    "  @location(3) a3: f32,\n"
+    "  @location(4) a4: f32,\n"
+    "  @location(5) a5: f32,\n"
+    "  @location(6) a6: f32,\n"
+    "  @location(7) a7: f32,\n"
+    "  @location(8) a8: f32,\n"
+    "  @location(9) a9: f32,\n"
+    "  @location(10) a10: f32,\n"
+    "  @location(11) a11: f32,\n"
+    "  @location(12) a12: f32,\n"
+    "  @location(13) a13: f32,\n"
+    "  @location(14) a14: f32,\n"
+    "  @location(15) a15: f32,\n"
+    "  @location(16) a16: f32,\n"
+    "  @location(17) a17: f32,\n"
+    "  @location(18) a18: f32,\n"
+    "  @location(19) a19: f32,\n"
+    "  @location(20) a20: f32,\n"
+    "  @location(21) a21: f32,\n"
+    "  @location(22) a22: f32,\n"
+    "  @location(23) a23: f32,\n"
+    "  @location(24) a24: f32,\n"
+    "  @location(25) a25: f32,\n"
+    "  @location(26) a26: f32,\n"
+    "  @location(27) a27: f32,\n"
+    "  @location(28) a28: f32,\n"
+    "  @location(29) a29: f32,\n"
+    "  @location(30) a30: f32,\n"
+    "  @location(31) a31: f32,\n"
+    "}\n"
+    "struct V { @builtin(position) p: vec4<f32>, @location(0) @interpolate(flat) s: f32 }\n"
+    "@vertex fn vs(v: In) -> V {\n"
+    "  var o: V;\n"
+    "  o.p = vec4<f32>(f32(v.i == 1u) * 4.0 - 1.0, f32(v.i == 2u) * 4.0 - 1.0, 0.0, 1.0);\n"
+    "  o.s = v.a0 + v.a1 + v.a2 + v.a3 + v.a4 + v.a5 + v.a6 + v.a7 + v.a8 + v.a9 + v.a10 + v.a11 + v.a12 + v.a13 + v.a14 + v.a15 + v.a16 + v.a17 + v.a18 + v.a19 + v.a20 + v.a21 + v.a22 + v.a23 + v.a24 + v.a25 + v.a26 + v.a27 + v.a28 + v.a29 + v.a30 + v.a31;\n"
+    "  return o;\n"
+    "}\n"
+    "@fragment fn fs(v: V) -> @location(0) vec4<f32> { return vec4<f32>(v.s, 0.0, 0.0, 1.0); }\n";
+static const char *const color128 =
+    "struct O {\n"
+    "  @location(0) c0: vec4<f32>,\n"
+    "  @location(1) c1: vec4<f32>,\n"
+    "  @location(2) c2: vec4<f32>,\n"
+    "  @location(3) c3: vec4<f32>,\n"
+    "  @location(4) c4: vec4<f32>,\n"
+    "  @location(5) c5: vec4<f32>,\n"
+    "  @location(6) c6: vec4<f32>,\n"
+    "  @location(7) c7: vec4<f32>,\n"
+    "}\n"
+    "@vertex fn vs(@builtin(vertex_index) i: u32) -> @builtin(position) vec4<f32> {\n"
+    "  return vec4<f32>(f32(i == 1u) * 4.0 - 1.0, f32(i == 2u) * 4.0 - 1.0, 0.0, 1.0);\n"
+    "}\n"
+    "@fragment fn fs() -> O {\n"
+    "  var o: O;\n"
+    "  o.c0 = vec4<f32>(1.0);\n"
+    "  o.c1 = vec4<f32>(2.0);\n"
+    "  o.c2 = vec4<f32>(3.0);\n"
+    "  o.c3 = vec4<f32>(4.0);\n"
+    "  o.c4 = vec4<f32>(5.0);\n"
+    "  o.c5 = vec4<f32>(6.0);\n"
+    "  o.c6 = vec4<f32>(7.0);\n"
+    "  o.c7 = vec4<f32>(8.0);\n"
+    "  return o;\n"
+    "}\n";
+
+static void expect_words(state *s, WGPUBuffer readback, size_t size, size_t stride, const uint32_t *expected, size_t count)
+{
+    const unsigned char *bytes = map(s, readback, size);
+    for (size_t i = 0; i < count; ++i) {
+        uint32_t word;
+        memcpy(&word, bytes + i * stride, sizeof(word));
+        assert(word == expected[i]);
+    }
+    wgpuBufferUnmap(readback);
+}
+
+static void raised_storage_buffers(state *s)
+{
+    WGPUComputePipeline compute = try_compute(s, storage10, NULL);
+    assert(compute);
+    WGPUBuffer outputs[10];
+    WGPUBindGroupEntry entries[10];
+    for (uint32_t i = 0; i < 10; ++i) {
+        outputs[i] = buffer(s, 16, WGPUBufferUsage_Storage | WGPUBufferUsage_CopySrc);
+        entries[i] = (WGPUBindGroupEntry){.binding = i, .buffer = outputs[i], .size = 16};
+    }
+    WGPUBindGroup bound = group(s, compute, entries, 10);
+    WGPUBuffer readback = buffer(s, 10 * 256, WGPUBufferUsage_CopyDst | WGPUBufferUsage_MapRead);
+    WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(s->device, NULL);
+    dispatch(encoder, compute, bound);
+    for (uint32_t i = 0; i < 10; ++i) wgpuCommandEncoderCopyBufferToBuffer(encoder, outputs[i], 0, readback, i * 256, 16);
+    submit(s, encoder);
+    const uint32_t expected[10] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+    expect_words(s, readback, 10 * 256, 256, expected, 10);
+    wgpuBufferRelease(readback);
+    wgpuBindGroupRelease(bound);
+    for (uint32_t i = 0; i < 10; ++i) wgpuBufferRelease(outputs[i]);
+    wgpuComputePipelineRelease(compute);
+}
+
+static void raised_storage_textures(state *s)
+{
+    WGPUComputePipeline compute = try_compute(s, storage_textures8, NULL);
+    assert(compute);
+    WGPUTexture textures[8];
+    WGPUTextureView views[8];
+    WGPUBindGroupEntry entries[8];
+    for (uint32_t i = 0; i < 8; ++i) {
+        textures[i] = texture(s, WGPUTextureFormat_R32Uint, WGPUTextureUsage_StorageBinding | WGPUTextureUsage_CopySrc, 1);
+        views[i] = wgpuTextureCreateView(textures[i], NULL);
+        assert(views[i]);
+        entries[i] = (WGPUBindGroupEntry){.binding = i, .textureView = views[i]};
+    }
+    WGPUBindGroup bound = group(s, compute, entries, 8);
+    WGPUBuffer readback = buffer(s, 8 * 512, WGPUBufferUsage_CopyDst | WGPUBufferUsage_MapRead);
+    WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(s->device, NULL);
+    dispatch(encoder, compute, bound);
+    for (uint32_t i = 0; i < 8; ++i) {
+        WGPUTexelCopyTextureInfo source = {.texture = textures[i]};
+        WGPUTexelCopyBufferInfo destination = {.buffer = readback, .layout = {.offset = i * 512, .bytesPerRow = 256, .rowsPerImage = 2}};
+        WGPUExtent3D size = {2, 2, 1};
+        wgpuCommandEncoderCopyTextureToBuffer(encoder, &source, &destination, &size);
+    }
+    submit(s, encoder);
+    const uint32_t expected[8] = {1, 2, 3, 4, 5, 6, 7, 8};
+    expect_words(s, readback, 8 * 512, 512, expected, 8);
+    wgpuBufferRelease(readback);
+    wgpuBindGroupRelease(bound);
+    for (uint32_t i = 0; i < 8; ++i) { wgpuTextureViewRelease(views[i]); wgpuTextureRelease(textures[i]); }
+    wgpuComputePipelineRelease(compute);
+}
+
+/* NULL (with one validation error, checked by the caller) when refused. */
+static WGPURenderPipeline raised_render_pipeline(state *s, const char *code, const WGPUColorTargetState *targets,
+    size_t target_count, const WGPUVertexBufferLayout *vertex_buffer)
+{
+    WGPUShaderModule shader = module(s, code);
+    WGPUFragmentState fragment = WGPU_FRAGMENT_STATE_INIT;
+    fragment.module = shader;
+    fragment.targetCount = target_count;
+    fragment.targets = targets;
+    WGPURenderPipelineDescriptor descriptor = WGPU_RENDER_PIPELINE_DESCRIPTOR_INIT;
+    descriptor.vertex.module = shader;
+    descriptor.vertex.bufferCount = vertex_buffer ? 1 : 0;
+    descriptor.vertex.buffers = vertex_buffer;
+    descriptor.fragment = &fragment;
+    WGPURenderPipeline result = wgpuDeviceCreateRenderPipeline(s->device, &descriptor);
+    wgpuShaderModuleRelease(shader);
+    return result;
+}
+
+static WGPUVertexBufferLayout attribute_layout(WGPUVertexAttribute attributes[32])
+{
+    for (uint32_t i = 0; i < 32; ++i)
+        attributes[i] = (WGPUVertexAttribute){.format = WGPUVertexFormat_Float32, .offset = 4 * i, .shaderLocation = i};
+    return (WGPUVertexBufferLayout){.stepMode = WGPUVertexStepMode_Instance, .arrayStride = 128,
+        .attributeCount = 32, .attributes = attributes};
+}
+
+/* Draws one full-target triangle into `count` 2x2 targets and reads texel 0 of each. */
+static void draw_and_read(state *s, WGPURenderPipeline render, WGPUTextureFormat format, uint32_t count,
+    WGPUBuffer vertices, WGPUBuffer readback)
+{
+    WGPUTexture targets[8];
+    WGPUTextureView views[8];
+    WGPURenderPassColorAttachment colors[8];
+    for (uint32_t i = 0; i < count; ++i) {
+        targets[i] = texture(s, format, WGPUTextureUsage_RenderAttachment | WGPUTextureUsage_CopySrc, 1);
+        views[i] = wgpuTextureCreateView(targets[i], NULL);
+        colors[i] = WGPU_RENDER_PASS_COLOR_ATTACHMENT_INIT;
+        colors[i].view = views[i];
+        colors[i].loadOp = WGPULoadOp_Clear;
+        colors[i].storeOp = WGPUStoreOp_Store;
+    }
+    WGPURenderPassDescriptor pass_descriptor = WGPU_RENDER_PASS_DESCRIPTOR_INIT;
+    pass_descriptor.colorAttachmentCount = count;
+    pass_descriptor.colorAttachments = colors;
+    WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(s->device, NULL);
+    WGPURenderPassEncoder pass = wgpuCommandEncoderBeginRenderPass(encoder, &pass_descriptor);
+    assert(pass);
+    wgpuRenderPassEncoderSetPipeline(pass, render);
+    if (vertices) wgpuRenderPassEncoderSetVertexBuffer(pass, 0, vertices, 0, 128);
+    wgpuRenderPassEncoderDraw(pass, 3, 1, 0, 0);
+    wgpuRenderPassEncoderEnd(pass);
+    wgpuRenderPassEncoderRelease(pass);
+    for (uint32_t i = 0; i < count; ++i) {
+        WGPUTexelCopyTextureInfo source = {.texture = targets[i]};
+        WGPUTexelCopyBufferInfo destination = {.buffer = readback, .layout = {.offset = i * 512, .bytesPerRow = 256, .rowsPerImage = 2}};
+        WGPUExtent3D size = {2, 2, 1};
+        wgpuCommandEncoderCopyTextureToBuffer(encoder, &source, &destination, &size);
+    }
+    submit(s, encoder);
+    for (uint32_t i = 0; i < count; ++i) { wgpuTextureViewRelease(views[i]); wgpuTextureRelease(targets[i]); }
+}
+
+static void raised_vertex_attributes(state *s)
+{
+    WGPUVertexAttribute attributes[32];
+    WGPUVertexBufferLayout layout = attribute_layout(attributes);
+    WGPUColorTargetState target = WGPU_COLOR_TARGET_STATE_INIT;
+    target.format = WGPUTextureFormat_R32Float;
+    WGPURenderPipeline render = raised_render_pipeline(s, attributes32, &target, 1, &layout);
+    assert(render);
+    float values[32];
+    for (uint32_t i = 0; i < 32; ++i) values[i] = (float)(i + 1);
+    WGPUBuffer vertices = buffer(s, 128, WGPUBufferUsage_Vertex | WGPUBufferUsage_CopyDst);
+    wgpuQueueWriteBuffer(s->queue, vertices, 0, values, sizeof(values));
+    WGPUBuffer readback = buffer(s, 512, WGPUBufferUsage_CopyDst | WGPUBufferUsage_MapRead);
+    draw_and_read(s, render, WGPUTextureFormat_R32Float, 1, vertices, readback);
+    const float *texel = map(s, readback, 512);
+    assert(texel[0] == 528.0f); /* 1 + 2 + ... + 32 */
+    wgpuBufferUnmap(readback);
+    wgpuBufferRelease(readback);
+    wgpuBufferRelease(vertices);
+    wgpuRenderPipelineRelease(render);
+}
+
+static void color_targets(WGPUColorTargetState targets[8])
+{
+    for (uint32_t i = 0; i < 8; ++i) {
+        targets[i] = WGPU_COLOR_TARGET_STATE_INIT;
+        targets[i].format = WGPUTextureFormat_RGBA32Float;
+    }
+}
+
+static void raised_color_bytes(state *s)
+{
+    WGPUColorTargetState targets[8];
+    color_targets(targets);
+    WGPURenderPipeline render = raised_render_pipeline(s, color128, targets, 8, NULL);
+    assert(render);
+    WGPUBuffer readback = buffer(s, 8 * 512, WGPUBufferUsage_CopyDst | WGPUBufferUsage_MapRead);
+    draw_and_read(s, render, WGPUTextureFormat_RGBA32Float, 8, NULL, readback);
+    const unsigned char *bytes = map(s, readback, 8 * 512);
+    for (uint32_t i = 0; i < 8; ++i) {
+        float texel[4];
+        memcpy(texel, bytes + i * 512, sizeof(texel));
+        for (int c = 0; c < 4; ++c) assert(texel[c] == (float)(i + 1));
+    }
+    wgpuBufferUnmap(readback);
+    wgpuBufferRelease(readback);
+    wgpuRenderPipelineRelease(render);
+}
+
+static void check_raised_limits(state *s, const WGPULimits *adapter)
+{
+    assert(adapter->maxStorageBuffersPerShaderStage >= 10 && adapter->maxStorageTexturesPerShaderStage >= 8);
+    assert(adapter->maxVertexAttributes >= 32 && adapter->maxColorAttachmentBytesPerSample >= 128);
+    /* The default device refuses each one. */
+    WGPUVertexAttribute attributes[32];
+    WGPUVertexBufferLayout layout = attribute_layout(attributes);
+    WGPUColorTargetState r32 = WGPU_COLOR_TARGET_STATE_INIT, wide[8];
+    r32.format = WGPUTextureFormat_R32Float;
+    color_targets(wide);
+    wgpuDevicePushErrorScope(s->device, WGPUErrorFilter_Validation);
+    assert(!try_compute(s, storage10, NULL));
+    expect_validation(s);
+    wgpuDevicePushErrorScope(s->device, WGPUErrorFilter_Validation);
+    assert(!try_compute(s, storage_textures8, NULL));
+    expect_validation(s);
+    wgpuDevicePushErrorScope(s->device, WGPUErrorFilter_Validation);
+    assert(!raised_render_pipeline(s, attributes32, &r32, 1, &layout));
+    expect_validation(s);
+    wgpuDevicePushErrorScope(s->device, WGPUErrorFilter_Validation);
+    assert(!raised_render_pipeline(s, color128, wide, 8, NULL));
+    expect_validation(s);
+    /* A device requiring the adapter limits executes each with exact readback. */
+    WGPUDevice defaults = s->device, maximal = open_device(s, adapter);
+    WGPUQueue default_queue = s->queue;
+    assert(maximal);
+    s->device = maximal;
+    s->queue = wgpuDeviceGetQueue(maximal);
+    wgpuDevicePushErrorScope(s->device, WGPUErrorFilter_Validation);
+    raised_storage_buffers(s);
+    raised_storage_textures(s);
+    raised_vertex_attributes(s);
+    raised_color_bytes(s);
+    expect_no_error(s);
+    wgpuQueueRelease(s->queue);
+    s->device = defaults;
+    s->queue = default_queue;
+    wgpuDeviceRelease(maximal);
+}
+
 /* The CTS opens every device with all adapter features and all adapter limits. */
 static void check_every_feature_and_limit(state *s, const WGPULimits *adapter)
 {
@@ -485,11 +821,14 @@ int main(void)
     check_default_validation(&s, &adapter);
     check_dispatch_and_binding_bounds(&s);
     check_sparse_bindings(&s);
+    check_raised_limits(&s, &adapter);
     consumer_finish(&s);
     printf("PASS public limits: %zu adapter limits meet the WebGPU defaults, default device limits exact, "
         "requiredLimits refusal/default/adapter resolution, a device with every adapter feature and limit, default-limit validation of dynamic storage, "
         "workgroup size/storage, inter-stage location, buffer size, texture size, dispatch count and binding "
-        "number, a sparse 0/17/31/500/999 group with binding-ordered dynamic offsets and an automatic layout; "
+        "number, a sparse 0/17/31/500/999 group with binding-ordered dynamic offsets and an automatic layout, "
+        "and executions above the default of 10 storage buffers, 8 storage textures, 32 vertex attributes and "
+        "8 rgba32float targets (128 color bytes per sample), each refused on the default device; "
         "exact 32 words %s\n",
         sizeof(rows) / sizeof(rows[0]), adapter_class_scope());
     return 0;

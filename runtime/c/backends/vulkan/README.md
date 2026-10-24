@@ -366,7 +366,7 @@ bound one-allocation buffers by it.
 
 Capabilities expose actual driver vertex binding/attribute counts, stride/offset
 limits and vertex-output/fragment-input component limits. Public admission still
-intersects those facts with this owner's eight-layout/sixteen-attribute bounds;
+intersects those facts with this owner's eight-layout/32-attribute bounds;
 reporting a native limit does not enable an optional shader feature.
 
 `doe_vk_render_draw.override_blend_constant` selects its finite RGBA snapshot.

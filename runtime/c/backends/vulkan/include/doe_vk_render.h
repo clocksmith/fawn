@@ -7,7 +7,7 @@
 extern "C" {
 #endif
 
-enum { DOE_VK_MAX_VERTEX_BUFFERS = 8, DOE_VK_MAX_VERTEX_ATTRIBUTES = 16, DOE_VK_MAX_COLOR_ATTACHMENTS = 8 };
+enum { DOE_VK_MAX_VERTEX_BUFFERS = 8, DOE_VK_MAX_VERTEX_ATTRIBUTES = 32, DOE_VK_MAX_COLOR_ATTACHMENTS = 8 };
 typedef struct doe_vk_shader {
     const uint32_t *words;
     size_t word_count;
