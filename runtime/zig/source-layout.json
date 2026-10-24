@@ -1436,8 +1436,8 @@
       },
       "src/backend/vulkan/vk_texture_commands.zig": {
         "decision": "Keep",
-        "moduleSha256": "ab495857609223264aaba09cd23107b50b9c510de3e3810244c2df886b0e75f5",
-        "reason": "Keep: Vulkan texture command capsule; queue writes derive their region from the shared texel copy contract instead of whole-mip, color-only arithmetic; texture-to-texture copies zero-initialize undefined subresources and address array layers separately from 3D depth.",
+        "moduleSha256": "cbefb646b311277fdf0e14ebb077d424de369b1b8a2c302ddfc188644ee1ab12",
+        "reason": "Keep: Vulkan texture command capsule; queue writes derive their region from the shared texel copy contract instead of whole-mip, color-only arithmetic; texture-to-texture copies zero-initialize undefined subresources and address array layers separately from 3D depth. Queue texture writes repack rows tightly into staging, so unaligned writeTexture offsets and pitches reach Vulkan.",
         "reviewer": "doe-c-claude-surface/2026-10-24"
       },
       "src/backend/vulkan/vk_upload.zig": {
@@ -4352,8 +4352,8 @@
       },
       "src/contracts/texture_copy.zig": {
         "decision": "Keep",
-        "moduleSha256": "49e60665258b1925c85c87841b98d91f4a054eac06d05521f29fe6549cba3265",
-        "reason": "Keep: buffer-texture copies use one neutral region/format contract and preserve validated origins, aspects and resource ownership through native execution; texture-to-texture copies share the WebGPU sample, format, block, whole-subresource and overlap rules. Texture-to-texture aspects must cover the whole format.",
+        "moduleSha256": "53fff109ecb063089df5f94ffa8b8294586dd483bfd18f17cb7eb5d9e5431faf",
+        "reason": "Keep: buffer-texture copies use one neutral region/format contract and preserve validated origins, aspects and resource ownership through native execution; texture-to-texture copies share the WebGPU sample, format, block, whole-subresource and overlap rules. Texture-to-texture aspects must cover the whole format. validateWrite admits writeTexture layouts without texel-aligned offset or pitch.",
         "reviewer": "doe-c-claude-surface/2026-10-24"
       },
       "src/contracts/texture_format_layout.zig": {

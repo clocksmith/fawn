@@ -580,10 +580,10 @@ function createEncoderClasses(backend) {
       const destinationObject = assertObject(destination, 'GPUCommandEncoder.copyBufferToTexture', 'destination');
       const sizeObject = normalizeCopySize(copySize, 'GPUCommandEncoder.copyBufferToTexture');
       assertIntegerInRange(sourceObject.offset ?? 0, 'GPUCommandEncoder.copyBufferToTexture', 'source.offset', NON_NEGATIVE_RANGE);
-      assertIntegerInRange(sizeObject.width, 'GPUCommandEncoder.copyBufferToTexture', 'copySize.width', POSITIVE_UINT32_RANGE);
-      assertIntegerInRange(sizeObject.height, 'GPUCommandEncoder.copyBufferToTexture', 'copySize.height', POSITIVE_UINT32_RANGE);
+      assertIntegerInRange(sizeObject.width, 'GPUCommandEncoder.copyBufferToTexture', 'copySize.width', UINT32_RANGE);
+      assertIntegerInRange(sizeObject.height, 'GPUCommandEncoder.copyBufferToTexture', 'copySize.height', UINT32_RANGE);
       if (sizeObject.depthOrArrayLayers !== undefined) {
-        assertIntegerInRange(sizeObject.depthOrArrayLayers, 'GPUCommandEncoder.copyBufferToTexture', 'copySize.depthOrArrayLayers', POSITIVE_UINT32_RANGE);
+        assertIntegerInRange(sizeObject.depthOrArrayLayers, 'GPUCommandEncoder.copyBufferToTexture', 'copySize.depthOrArrayLayers', UINT32_RANGE);
       }
       backend.commandEncoderCopyBufferToTexture(
         this,
@@ -614,10 +614,10 @@ function createEncoderClasses(backend) {
       const destinationObject = assertObject(destination, 'GPUCommandEncoder.copyTextureToBuffer', 'destination');
       const sizeObject = normalizeCopySize(copySize, 'GPUCommandEncoder.copyTextureToBuffer');
       assertIntegerInRange(destinationObject.offset ?? 0, 'GPUCommandEncoder.copyTextureToBuffer', 'destination.offset', NON_NEGATIVE_RANGE);
-      assertIntegerInRange(sizeObject.width, 'GPUCommandEncoder.copyTextureToBuffer', 'copySize.width', POSITIVE_UINT32_RANGE);
-      assertIntegerInRange(sizeObject.height, 'GPUCommandEncoder.copyTextureToBuffer', 'copySize.height', POSITIVE_UINT32_RANGE);
+      assertIntegerInRange(sizeObject.width, 'GPUCommandEncoder.copyTextureToBuffer', 'copySize.width', UINT32_RANGE);
+      assertIntegerInRange(sizeObject.height, 'GPUCommandEncoder.copyTextureToBuffer', 'copySize.height', UINT32_RANGE);
       if (sizeObject.depthOrArrayLayers !== undefined) {
-        assertIntegerInRange(sizeObject.depthOrArrayLayers, 'GPUCommandEncoder.copyTextureToBuffer', 'copySize.depthOrArrayLayers', POSITIVE_UINT32_RANGE);
+        assertIntegerInRange(sizeObject.depthOrArrayLayers, 'GPUCommandEncoder.copyTextureToBuffer', 'copySize.depthOrArrayLayers', UINT32_RANGE);
       }
       backend.commandEncoderCopyTextureToBuffer(
         this,
