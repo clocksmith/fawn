@@ -451,6 +451,10 @@ pub const DoeSampler = struct {
     backend: backend_contract.NativeBackendKind = .metal,
     mtl: ?*anyopaque = null,
     vk_runtime_ref: ?*anyopaque = null,
+    /// WebGPU [[isComparison]] (a compare function) and [[isFiltering]] (a
+    /// linear min, mag or mipmap filter), checked against sampler bindings.
+    is_comparison: bool = false,
+    is_filtering: bool = false,
 };
 
 pub const DoeRenderPipeline = struct {

@@ -804,13 +804,20 @@ pub export fn doeNativeTextureViewRelease(raw: ?*anyopaque) callconv(.c) void {
 
 pub export fn doeNativeDeviceCreateSampler(dev_raw: ?*anyopaque, desc: ?*const abi_pipeline.WGPUSamplerDescriptor) callconv(.c) ?*anyopaque {
     const raw = createSampler(dev_raw, desc) orelse return null;
-    cast(DoeSampler, raw).?.device_ref = cast(DoeDevice, dev_raw).?;
+    const sampler = cast(DoeSampler, raw).?;
+    sampler.device_ref = cast(DoeDevice, dev_raw).?;
+    if (desc) |d| {
+        sampler.is_comparison = d.compare != COMPARE_UNDEFINED;
+        sampler.is_filtering = d.minFilter == FILTER_LINEAR or d.magFilter == FILTER_LINEAR or d.mipmapFilter == FILTER_LINEAR;
+    }
     native_helpers.object_add_ref(DoeDevice, dev_raw);
     return raw;
 }
 
 /// webgpu.h WGPUFilterMode_Linear and WGPUMipmapFilterMode_Linear.
 const FILTER_LINEAR: u32 = 0x00000002;
+/// webgpu.h WGPUCompareFunction_Undefined: a sampler without a compare function.
+const COMPARE_UNDEFINED: u32 = 0x00000000;
 
 /// https://gpuweb.github.io/gpuweb/#dom-gpudevice-createsampler, matching
 /// runtime/c/resources doe_resource_sampler_validate for clamps and anisotropy.

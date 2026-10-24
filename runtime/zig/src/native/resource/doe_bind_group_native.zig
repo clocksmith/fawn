@@ -17,6 +17,8 @@ const texture_contract = @import("../../contracts/texture.zig");
 const texture_sampler = @import("doe_texture_sampler_native.zig");
 const command_recording = @import("../../contracts/command_recording.zig");
 const error_scope = @import("../../runtime/diagnostics/error_scope.zig");
+const device_caps = @import("../support/doe_device_caps.zig");
+const abi_feature = @import("../../core/abi/wgpu_feature_base_types.zig");
 
 const alloc = native_helpers.alloc;
 const make = native_helpers.make;
@@ -365,7 +367,9 @@ pub export fn doeNativeBindGroupLayoutRelease(raw: ?*anyopaque) callconv(.c) voi
 /// per layout binding (each element of a binding array), no duplicates, no
 /// binding the layout lacks, and exactly one resource of the layout entry's
 /// type. Any binding number below maxBindingsPerBindGroup is checked.
-fn bindGroupEntriesFailure(layout: *const DoeBindGroupLayout, entries: []const abi_pipeline.WGPUBindGroupEntry) ?[]const u8 {
+fn bindGroupEntriesFailure(device: ?*const DoeDevice, layout: *const DoeBindGroupLayout, entries: []const abi_pipeline.WGPUBindGroupEntry) ?[]const u8 {
+    if (device) |owner| if (layout.device) |creator| if (creator != owner)
+        return "createBindGroup: the layout belongs to another device";
     const layout_entries = if (layout.entries) |all| all[0..@min(all.len, layout.entry_count)] else &[_]DoeBindGroupLayoutEntry{};
     var expected: usize = 0;
     for (layout_entries) |entry| expected += @max(entry.binding_array_size, 1);
@@ -389,6 +393,118 @@ fn bindGroupEntriesFailure(layout: *const DoeBindGroupLayout, entries: []const a
             else => true,
         };
         if (!matches) return "createBindGroup: an entry's resource is not of its layout binding's type";
+        if (device) |owner| if (entryResourceFailure(owner, layout_entry, entry)) |message| return message;
+    }
+    return null;
+}
+
+/// webgpu.h WGPUBufferBindingType_Undefined, WGPUSamplerBindingType_Undefined,
+/// WGPUTextureSampleType_Undefined and WGPUTextureViewDimension_Undefined
+/// select the layout entry defaults.
+fn layoutBufferType(entry: DoeBindGroupLayoutEntry) u32 {
+    return if (entry.buffer_binding_type == abi_binding.WGPUBufferBindingType_Undefined) abi_binding.WGPUBufferBindingType_Uniform else entry.buffer_binding_type;
+}
+
+fn layoutViewDimension(entry: DoeBindGroupLayoutEntry) u32 {
+    return if (entry.texture_view_dimension == 0 or entry.texture_view_dimension == abi_texture.WGPUTextureViewDimension_Undefined)
+        abi_texture.WGPUTextureViewDimension_2D
+    else
+        entry.texture_view_dimension;
+}
+
+fn deviceFeature(device: *const DoeDevice, feature: u32) bool {
+    for (device.enabled_features) |enabled| {
+        if (enabled == feature) return true;
+    }
+    return false;
+}
+
+/// The sample types a view can bind as
+/// (https://gpuweb.github.io/gpuweb/#texture-format-caps): depth aspects as
+/// depth or unfilterable-float, stencil as uint, 32-bit floats as
+/// unfilterable-float (float too with float32-filterable), other floats as
+/// float or unfilterable-float, integers as their own type.
+fn sampleTypeCompatible(device: *const DoeDevice, layout_type: u32, view: *const DoeTextureView) bool {
+    const aspect = if (view.aspect != 0) view.aspect else abi_texture.WGPUTextureAspect_All;
+    const format = if (view.format != 0) view.format else view.tex.format;
+    const inferred = texture_contract.inferViewSampleType(format, aspect);
+    const unfilterable = abi_binding.WGPUTextureSampleType_UnfilterableFloat;
+    return switch (inferred) {
+        abi_binding.WGPUTextureSampleType_Depth => layout_type == inferred or layout_type == unfilterable,
+        abi_binding.WGPUTextureSampleType_Float => switch (format) {
+            abi_texture.WGPUTextureFormat_R32Float, abi_texture.WGPUTextureFormat_RG32Float, abi_texture.WGPUTextureFormat_RGBA32Float => layout_type == unfilterable or
+                (layout_type == inferred and deviceFeature(device, abi_feature.WGPUFeatureName_Float32Filterable)),
+            else => layout_type == inferred or layout_type == unfilterable,
+        },
+        else => layout_type == inferred,
+    };
+}
+
+/// The per-entry resource rules of createBindGroup
+/// (https://gpuweb.github.io/gpuweb/#dom-gpudevice-createbindgroup), after the
+/// structural checks: the resource is valid to use with the device and meets
+/// its layout binding's type-specific rules.
+fn entryResourceFailure(device: *const DoeDevice, layout_entry: DoeBindGroupLayoutEntry, entry: abi_pipeline.WGPUBindGroupEntry) ?[]const u8 {
+    switch (layout_entry.resource_kind) {
+        RESOURCE_KIND_BUFFER => {
+            const buffer = cast(DoeBuffer, entry.buffer) orelse return "createBindGroup: a buffer entry needs a valid buffer";
+            if (buffer.error_object) return "createBindGroup: an entry's buffer is invalid";
+            if (buffer.device_ref) |creator| if (creator != device) return "createBindGroup: an entry's buffer belongs to another device";
+            const size = resolve_buffer_binding_size(buffer, entry.offset, entry.size) orelse
+                return "createBindGroup: a buffer binding's offset and size must lie within the buffer";
+            if (size == 0) return "createBindGroup: a buffer binding must not be empty";
+            if (size < layout_entry.buffer_min_binding_size) return "createBindGroup: a buffer binding is smaller than its layout minBindingSize";
+            var limits = std.mem.zeroes(abi_callback.WGPULimits);
+            _ = device_caps.doeNativeDeviceGetLimits(toOpaque(@constCast(device)), &limits);
+            if (layoutBufferType(layout_entry) == abi_binding.WGPUBufferBindingType_Uniform) {
+                if (buffer.usage & abi_core.WGPUBufferUsage_Uniform == 0) return "createBindGroup: a uniform buffer binding needs UNIFORM usage";
+                if (size > limits.maxUniformBufferBindingSize) return "createBindGroup: a uniform buffer binding exceeds maxUniformBufferBindingSize";
+                if (entry.offset % device.buffer_offset_alignment.uniform != 0) return "createBindGroup: a uniform buffer binding offset must be a multiple of minUniformBufferOffsetAlignment";
+            } else {
+                if (buffer.usage & abi_core.WGPUBufferUsage_Storage == 0) return "createBindGroup: a storage buffer binding needs STORAGE usage";
+                if (size > limits.maxStorageBufferBindingSize) return "createBindGroup: a storage buffer binding exceeds maxStorageBufferBindingSize";
+                if (size % 4 != 0) return "createBindGroup: a storage buffer binding size must be a multiple of 4";
+                if (entry.offset % device.buffer_offset_alignment.storage != 0) return "createBindGroup: a storage buffer binding offset must be a multiple of minStorageBufferOffsetAlignment";
+            }
+        },
+        RESOURCE_KIND_SAMPLER => {
+            const sampler = cast(DoeSampler, entry.sampler) orelse return "createBindGroup: a sampler entry needs a valid sampler";
+            if (sampler.error_object) return "createBindGroup: an entry's sampler is invalid";
+            if (sampler.device_ref) |creator| if (creator != device) return "createBindGroup: an entry's sampler belongs to another device";
+            const ok = switch (layout_entry.sampler_binding_type) {
+                abi_binding.WGPUSamplerBindingType_NonFiltering => !sampler.is_filtering and !sampler.is_comparison,
+                abi_binding.WGPUSamplerBindingType_Comparison => sampler.is_comparison,
+                else => !sampler.is_comparison, // filtering, the default
+            };
+            if (!ok) return "createBindGroup: a sampler does not match its layout sampler type";
+        },
+        RESOURCE_KIND_TEXTURE, RESOURCE_KIND_STORAGE_TEXTURE => {
+            const view = cast(DoeTextureView, entry.textureView) orelse return "createBindGroup: a texture entry needs a valid texture view";
+            const texture = view.tex;
+            if (texture.error_object) return "createBindGroup: an entry's texture view is invalid";
+            if (texture.device_ref) |creator| if (creator != device) return "createBindGroup: an entry's texture view belongs to another device";
+            if (layoutViewDimension(layout_entry) != resolve_view_dimension(view)) return "createBindGroup: a texture view's dimension does not match its layout viewDimension";
+            const usage = if (view.usage != 0) view.usage else texture.usage;
+            if (layout_entry.resource_kind == RESOURCE_KIND_TEXTURE) {
+                if (usage & abi_texture.WGPUTextureUsage_TextureBinding == 0) return "createBindGroup: a sampled texture view needs TEXTURE_BINDING usage";
+                // Sample types are defined per aspect: a combined depth-stencil
+                // view must select DepthOnly or StencilOnly to be sampled.
+                const view_aspect = if (view.aspect != 0) view.aspect else abi_texture.WGPUTextureAspect_All;
+                if (view_aspect == abi_texture.WGPUTextureAspect_All and texture_contract.aspectMatches(texture.format, abi_texture.WGPUTextureAspect_DepthOnly) and
+                    texture_contract.aspectMatches(texture.format, abi_texture.WGPUTextureAspect_StencilOnly))
+                    return "createBindGroup: a combined depth-stencil view must select one aspect to bind as a texture";
+                const sample_type = if (layout_entry.texture_sample_type == abi_binding.WGPUTextureSampleType_Undefined) abi_binding.WGPUTextureSampleType_Float else layout_entry.texture_sample_type;
+                if (!sampleTypeCompatible(device, sample_type, view)) return "createBindGroup: a texture view's format cannot bind as its layout sampleType";
+                if (layout_entry.texture_multisampled != (texture.sample_count > 1)) return "createBindGroup: a texture view's sample count does not match its layout multisampled";
+            } else {
+                if (usage & abi_texture.WGPUTextureUsage_StorageBinding == 0) return "createBindGroup: a storage texture view needs STORAGE_BINDING usage";
+                const format = if (view.format != 0) view.format else texture.format;
+                if (format != layout_entry.storage_texture_format) return "createBindGroup: a storage texture view's format does not match its layout format";
+                if (view.mip_level_count != 1) return "createBindGroup: a storage texture view must have one mip level";
+                if (view.swizzled) return "createBindGroup: a swizzled texture view cannot bind as a storage texture";
+            }
+        },
+        else => {},
     }
     return null;
 }
@@ -399,7 +515,7 @@ pub export fn doeNativeDeviceCreateBindGroup(dev_raw: ?*anyopaque, desc: ?*const
     const d = desc orelse return null;
     if (d.entryCount > 0 and d.entries == null) return null;
     if (cast(DoeBindGroupLayout, d.layout)) |bgl| {
-        if (bindGroupEntriesFailure(bgl, if (d.entryCount > 0) d.entries[0..d.entryCount] else &.{})) |message| {
+        if (bindGroupEntriesFailure(owner, bgl, if (d.entryCount > 0) d.entries[0..d.entryCount] else &.{})) |message| {
             owner.error_scopes.deliver(error_scope.ERROR_TYPE_VALIDATION, message);
             return null;
         }
@@ -590,12 +706,16 @@ pub export fn doeNativeDeviceCreateBufferBindGroupFlat4(
         // The fast path's buffer entries meet the same layout checks.
         const flat_bindings = [_]u32{ b0, b1, b2, b3 };
         const flat_buffers = [_]?*anyopaque{ buffer0_raw, buffer1_raw, buffer2_raw, buffer3_raw };
+        const flat_offsets = [_]u64{ offset0, offset1, offset2, offset3 };
         var entries = [_]abi_pipeline.WGPUBindGroupEntry{std.mem.zeroes(abi_pipeline.WGPUBindGroupEntry)} ** FLAT_BUFFER_BIND_GROUP_ENTRY_LIMIT;
-        for (entries[0..entry_count], flat_bindings[0..entry_count], flat_buffers[0..entry_count]) |*entry, binding, buffer| {
+        for (entries[0..entry_count], flat_bindings[0..entry_count], flat_buffers[0..entry_count], flat_offsets[0..entry_count]) |*entry, binding, buffer, offset| {
             entry.binding = binding;
             entry.buffer = @ptrCast(buffer);
+            // The fast path binds each buffer from its offset to its end.
+            entry.offset = offset;
+            entry.size = abi_core.WGPU_WHOLE_SIZE;
         }
-        if (bindGroupEntriesFailure(layout, entries[0..entry_count])) |message| {
+        if (bindGroupEntriesFailure(owner, layout, entries[0..entry_count])) |message| {
             owner.error_scopes.deliver(error_scope.ERROR_TYPE_VALIDATION, message);
             return null;
         }
@@ -625,7 +745,7 @@ pub export fn doeNativeDeviceCreateBufferBindGroupFlat4(
         bg.buffers[binding] = if (is_vulkan) toOpaque(doe_buf) else doe_buf.mtl;
         if (is_vulkan) remember_vulkan_buffer_binding(bg, @intCast(binding), doe_buf);
         bg.offsets[binding] = offsets[i];
-        bg.buffer_sizes[binding] = doe_buf.size;
+        bg.buffer_sizes[binding] = doe_buf.size -| offsets[i];
         retain_buffer(bg, binding, doe_buf);
         if (binding + 1 > bg.count) bg.count = binding + 1;
     }
@@ -964,17 +1084,60 @@ test "bind group entries must match the layout at every binding number" {
     entries[0].buffer = @ptrCast(&buffer);
     entries[1].binding = 900;
     entries[1].sampler = @ptrCast(&sampler);
-    try std.testing.expectEqual(@as(?[]const u8, null), bindGroupEntriesFailure(&layout, &entries));
+    try std.testing.expectEqual(@as(?[]const u8, null), bindGroupEntriesFailure(null, &layout, &entries));
     // Missing entry, unknown binding, duplicate, wrong and doubled resources.
-    try std.testing.expect(bindGroupEntriesFailure(&layout, entries[0..1]) != null);
+    try std.testing.expect(bindGroupEntriesFailure(null, &layout, entries[0..1]) != null);
     entries[1].binding = 901;
-    try std.testing.expect(bindGroupEntriesFailure(&layout, &entries) != null);
+    try std.testing.expect(bindGroupEntriesFailure(null, &layout, &entries) != null);
     entries[1].binding = 40;
-    try std.testing.expect(bindGroupEntriesFailure(&layout, &entries) != null);
+    try std.testing.expect(bindGroupEntriesFailure(null, &layout, &entries) != null);
     entries[1].binding = 900;
     entries[1].sampler = null;
     entries[1].buffer = @ptrCast(&buffer);
-    try std.testing.expect(bindGroupEntriesFailure(&layout, &entries) != null);
+    try std.testing.expect(bindGroupEntriesFailure(null, &layout, &entries) != null);
     entries[1].sampler = @ptrCast(&sampler);
-    try std.testing.expect(bindGroupEntriesFailure(&layout, &entries) != null);
+    try std.testing.expect(bindGroupEntriesFailure(null, &layout, &entries) != null);
+}
+
+test "bind group entries meet their layout binding's resource rules" {
+    var device = DoeDevice{};
+    var other = DoeDevice{};
+    var uniform_entries = [_]DoeBindGroupLayoutEntry{.{ .binding = 0, .resource_kind = RESOURCE_KIND_BUFFER, .buffer_binding_type = abi_binding.WGPUBufferBindingType_Uniform, .buffer_min_binding_size = 16 }};
+    const uniform_layout = DoeBindGroupLayout{ .entry_count = 1, .entries = uniform_entries[0..] };
+    var buffer = DoeBuffer{ .size = 1024, .usage = abi_core.WGPUBufferUsage_Uniform, .device_ref = &device };
+    var entries = [_]abi_pipeline.WGPUBindGroupEntry{std.mem.zeroes(abi_pipeline.WGPUBindGroupEntry)};
+    entries[0].buffer = @ptrCast(&buffer);
+    entries[0].size = abi_core.WGPU_WHOLE_SIZE;
+    try std.testing.expectEqual(@as(?[]const u8, null), bindGroupEntriesFailure(&device, &uniform_layout, &entries));
+    // Usage, offset alignment, empty and below-minBindingSize ranges, device.
+    buffer.usage = abi_core.WGPUBufferUsage_Storage;
+    try std.testing.expect(bindGroupEntriesFailure(&device, &uniform_layout, &entries) != null);
+    buffer.usage = abi_core.WGPUBufferUsage_Uniform;
+    entries[0].offset = 4;
+    try std.testing.expect(bindGroupEntriesFailure(&device, &uniform_layout, &entries) != null);
+    entries[0].offset = 1024;
+    try std.testing.expect(bindGroupEntriesFailure(&device, &uniform_layout, &entries) != null);
+    entries[0].offset = 0;
+    entries[0].size = 8;
+    try std.testing.expect(bindGroupEntriesFailure(&device, &uniform_layout, &entries) != null);
+    entries[0].size = abi_core.WGPU_WHOLE_SIZE;
+    buffer.device_ref = &other;
+    try std.testing.expect(bindGroupEntriesFailure(&device, &uniform_layout, &entries) != null);
+    buffer.device_ref = &device;
+
+    // Sampler binding types against comparison and filtering samplers.
+    var sampler_entries = [_]DoeBindGroupLayoutEntry{.{ .binding = 0, .resource_kind = RESOURCE_KIND_SAMPLER, .sampler_binding_type = abi_binding.WGPUSamplerBindingType_NonFiltering }};
+    const sampler_layout = DoeBindGroupLayout{ .entry_count = 1, .entries = sampler_entries[0..] };
+    var sampler = DoeSampler{ .device_ref = &device };
+    entries[0] = std.mem.zeroes(abi_pipeline.WGPUBindGroupEntry);
+    entries[0].sampler = @ptrCast(&sampler);
+    try std.testing.expectEqual(@as(?[]const u8, null), bindGroupEntriesFailure(&device, &sampler_layout, &entries));
+    sampler.is_filtering = true;
+    try std.testing.expect(bindGroupEntriesFailure(&device, &sampler_layout, &entries) != null);
+    sampler_entries[0].sampler_binding_type = abi_binding.WGPUSamplerBindingType_Filtering;
+    try std.testing.expectEqual(@as(?[]const u8, null), bindGroupEntriesFailure(&device, &sampler_layout, &entries));
+    sampler.is_comparison = true;
+    try std.testing.expect(bindGroupEntriesFailure(&device, &sampler_layout, &entries) != null);
+    sampler_entries[0].sampler_binding_type = abi_binding.WGPUSamplerBindingType_Comparison;
+    try std.testing.expectEqual(@as(?[]const u8, null), bindGroupEntriesFailure(&device, &sampler_layout, &entries));
 }
