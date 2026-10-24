@@ -4,9 +4,9 @@
   "sha256": {
     "vulkan_types.zig": "c3383b635816af941e9d8e882b5dc97643c626bdf3cc1549f4d9d1a4a9363e32",
     "vk_structs.zig": "128ed4443455c18c5d4accd349f2abe786f659b04b3d2b0850fd1a239f908db9",
-    "vk_capability_structs.zig": "1af41c016be269ec93b56c01e21b2afe0e3bb9528ebf108b0a157b37b285c6b4",
-    "vk_constants.zig": "81a39de2ead1636c45d53ffc597d3c567c97c883a11e82c08c80379577ae46f3",
-    "vk_functions.zig": "016f8c73401fa94eff21afd95cb0bed66dcdcef2d782adc38a31c9b6efe6c1a8",
+    "vk_capability_structs.zig": "80d2dc03b7374b5c8d959a6d8ab7d61ac35d792c3e5900e53e25ccf0212316b4",
+    "vk_constants.zig": "0d3f62b34b6f363789e0f6b811419207542a24890f029d30b19cc94f01621e4b",
+    "vk_functions.zig": "c5526a8d0e3adbfb8b728d69579db9032ce3aacd9d496dff7cff4726320c9658",
     "vk_formats.zig": "ec953998cab8cab6679c26fd0431d91ab0bc9f006e73f6cbf94db6f089f2880d",
     "vk_samplers.zig": "d69660a49a4d143b1fddbd59a8140c424f598ff37ce020553ea9f5b15c641caf",
     "vk_feature_caps.zig": "3317a92ff51e84baacc6de5f7fea0063a1ed8e99e8e81493606a170fd8298e41",
@@ -477,28 +477,28 @@
   },
   "retained_functions": {
     "vkCmdDrawIndirect": {
-      "source": "vk_functions.zig:99",
+      "source": "vk_functions.zig:100",
       "signature": "void(VkCommandBuffer,VkBuffer,VkDeviceSize,u32,u32)",
       "usage": "One guarded nonindexed draw per call, stride16; drawIndirectFirstInstance remains disabled.",
       "result": "void",
       "parameters": "VkCommandBuffer, VkBuffer, VkDeviceSize, uint32_t, uint32_t"
     },
     "vkCmdBindIndexBuffer": {
-      "source": "vk_functions.zig:96",
+      "source": "vk_functions.zig:97",
       "signature": "void(VkCommandBuffer,VkBuffer,VkDeviceSize,u32)",
       "result": "void",
       "parameters": "VkCommandBuffer, VkBuffer, VkDeviceSize, uint32_t",
       "usage": "Binds the exact public index buffer offset per draw; the native call carries no size, so the bound range is enforced by direct admission and the GPU guard."
     },
     "vkCmdDrawIndexed": {
-      "source": "vk_functions.zig:98",
+      "source": "vk_functions.zig:99",
       "signature": "void(VkCommandBuffer,u32,u32,u32,i32,u32)",
       "result": "void",
       "parameters": "VkCommandBuffer, uint32_t, uint32_t, uint32_t, int32_t, uint32_t",
       "usage": "Direct indexed draw after exact firstIndex+indexCount range admission; signed base vertex."
     },
     "vkCmdDrawIndexedIndirect": {
-      "source": "vk_functions.zig:100",
+      "source": "vk_functions.zig:101",
       "signature": "void(VkCommandBuffer,VkBuffer,VkDeviceSize,u32,u32)",
       "result": "void",
       "parameters": "VkCommandBuffer, VkBuffer, VkDeviceSize, uint32_t, uint32_t",
@@ -514,11 +514,11 @@
   },
   "retained_constants": {
     "VK_INDEX_TYPE_UINT16": {
-      "source": "vk_constants.zig:542",
+      "source": "vk_constants.zig:544",
       "value": 0
     },
     "VK_INDEX_TYPE_UINT32": {
-      "source": "vk_constants.zig:543",
+      "source": "vk_constants.zig:545",
       "value": 1
     },
     "VK_FORMAT_R8_UNORM": {
