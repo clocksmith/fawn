@@ -55,6 +55,7 @@ void native_backend_close(native_backend *backend);
 native_result native_backend_status(const native_backend *backend);
 WGPUStatus native_backend_info(const native_backend *backend, WGPUAdapterInfo *out);
 WGPUStatus native_vulkan_limits(const doe_vk_caps *caps, WGPULimits *out);
+WGPUStatus native_metal_limits(const doe_mtl_caps *caps, WGPULimits *out);
 native_failure native_failure_status(native_result status);
 native_failure native_failure_vulkan(doe_vk_status status, const doe_vk_error *error);
 native_failure native_failure_metal(doe_mtl_status status, const doe_mtl_error *error);

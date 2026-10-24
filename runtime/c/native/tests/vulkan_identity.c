@@ -6,7 +6,7 @@
  * enumeration/property and logical-device allocation boundaries are modeled.
  * No device execution, public callback or lifetime qualification follows. */
 static unsigned live_contexts, closed_contexts;
-static bool wrong_identity, wrong_class;
+static bool wrong_identity, wrong_class, no_fragment_stores;
 static bool actual_contexts;
 
 doe_vk_status __real_doe_vk_context_create(const doe_vk_options *, doe_vk_context **, doe_vk_error *);
@@ -27,6 +27,7 @@ doe_vk_status __wrap_doe_vk_context_create(const doe_vk_options *options,
         return status;
     }
     value->caps.surface_platforms = options->surface_platforms;
+    value->caps.fragment_stores_and_atomics = !no_fragment_stores;
     if (wrong_identity) ++value->caps.identity.driver_uuid[0];
     if (wrong_class) value->caps.software_adapter = !value->caps.software_adapter;
     *out = value;
@@ -113,7 +114,19 @@ int main(int argc, char **argv)
     assert(memcmp(&unavailable, &saved, sizeof(unavailable)) == 0);
     native_backend_close(&adapter);
     assert(live_contexts == 0);
-    puts("PASS native Vulkan identity bridge: changed order/handles, explicit CPU fallback, missing identity and mismatch rollback");
+    /* A device without fragmentStoresAndAtomics is refused and its context closed. */
+    available = 3;
+    order[0] = 0;
+    order[1] = 1;
+    order[2] = 2;
+    no_fragment_stores = true;
+    closed = closed_contexts;
+    assert(native_backend_open(WGPUBackendType_Vulkan, true, 0, &unavailable) == NATIVE_UNAVAILABLE);
+    assert(memcmp(&unavailable, &saved, sizeof(unavailable)) == 0);
+    assert(live_contexts == 0 && closed_contexts == closed + 1);
+    no_fragment_stores = false;
+    puts("PASS native Vulkan identity bridge: changed order/handles, explicit CPU fallback, missing identity and mismatch rollback, "
+        "refused adapter without fragmentStoresAndAtomics");
     if (argc == 2) {
         actual_contexts = true;
         assert(native_backend_open(WGPUBackendType_Vulkan, true, 0, &adapter) == NATIVE_OK);

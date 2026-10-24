@@ -10,6 +10,9 @@ Each failure names its rule:
   test     Every test source (tests/*.c, *.cpp, *.m) is named by a Makefile, .mk,
            .py or .cmd build script in runtime/c, so no client exists only as
            manual instructions and silently stops compiling.
+  tmp      Makefile/.mk defaults never name a fixed /tmp path: default scratch
+           trees live under $(DOE_C_TMP) from build-root.mk, one per checkout,
+           so clones on one host never mix each other's objects.
   adapter  Native public consumers select adapters only through
            tests/adapter_class.h (no direct forceFallbackAdapter or CPU-type checks);
            tests/backend_selection.c tests fallback semantics themselves.
@@ -99,12 +102,18 @@ def source_failures(root: Path, path: str, is_frozen: bool) -> list[str]:
     return failures
 
 
+FIXED_TMP_DEFAULT = re.compile(r"^\s*(\w+)\s*\?=\s*/tmp/", re.MULTILINE)
+
+
 def makefile_failures(root: Path, path: str) -> list[str]:
     text = (root / path).read_text()
+    failures = [] if path == "runtime/c/build-root.mk" else [  # The root itself.
+        f"tmp: {path}: {name} defaults to a fixed /tmp path; use $(DOE_C_TMP)"
+        for name in FIXED_TMP_DEFAULT.findall(text)]
     if not CFLAGS.search(text):
-        return []
+        return failures
     missing = [flag for flag in STRICT_FLAGS if flag not in text]
-    return [f"flags: {path}: CFLAGS owner lacks {' '.join(missing)}"] if missing else []
+    return failures + ([f"flags: {path}: CFLAGS owner lacks {' '.join(missing)}"] if missing else [])
 
 
 BUILD_SCRIPT_SUFFIXES = {".mk", ".py", ".cmd"}
@@ -126,7 +135,7 @@ def run(root: Path, paths: list[str]) -> tuple[int, list[str]]:
     for path in sources:
         failures.extend(source_failures(root, path, frozen(path, sealed)))
     failures.extend(orphan_tests(root, paths, sealed))
-    for path in (p for p in paths if Path(p).name == "Makefile"):
+    for path in (p for p in paths if Path(p).name == "Makefile" or Path(p).suffix == ".mk"):
         failures.extend(makefile_failures(root, path))
     return len(sources), failures
 

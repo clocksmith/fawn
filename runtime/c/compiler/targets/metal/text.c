@@ -94,9 +94,9 @@ static void emit_module(MetalEmitter *e) {
     metal_numeric_helpers(e);
     metal_functions(e);
 }
-DoeCompilerStatus doe_metal_emit(Source *source, const CompilerWorkspace *module,
+static DoeCompilerStatus emit(Source *source, const CompilerWorkspace *module,
                                  uint32_t selected_entry, DoeTargetScratch scratch, char *output,
-                                 size_t capacity, DoeMetalResult *result) {
+                                 size_t capacity, DoeMetalResult *result, const DoeMetalMetadata *metadata) {
     const int saved_errno = errno;
     if (source == NULL || source->diagnostic == NULL || module == NULL || result == NULL) {
         errno = saved_errno;
@@ -116,7 +116,8 @@ DoeCompilerStatus doe_metal_emit(Source *source, const CompilerWorkspace *module
         errno = saved_errno;
         return DOE_COMPILER_INPUT_ERROR;
     }
-    MetalEmitter measure = {.source = source, .closure = closure, .module = module, .selected_entry = selected_entry};
+    MetalEmitter measure = {.source = source, .closure = closure, .module = module, .selected_entry = selected_entry,
+        .metadata=metadata,.current_entry=NO_ID};
     emit_module(&measure);
     if (measure.failed) {
         errno = saved_errno;
@@ -136,9 +137,20 @@ DoeCompilerStatus doe_metal_emit(Source *source, const CompilerWorkspace *module
         return DOE_COMPILER_OUTPUT_TOO_SMALL;
     }
     MetalEmitter writer = {.source = source, .module = module, .output = output,
-        .capacity = capacity, .selected_entry = selected_entry, .closure = closure};
+        .capacity = capacity, .selected_entry = selected_entry, .closure = closure,
+        .metadata=metadata,.current_entry=NO_ID};
     emit_module(&writer);
     if (!writer.failed) result->written_bytes = writer.position;
     errno = saved_errno;
     return source->diagnostic->status;
+}
+
+DoeCompilerStatus doe_metal_emit(Source *source, const CompilerWorkspace *module, uint32_t selected,
+    DoeTargetScratch scratch, char *output, size_t capacity, DoeMetalResult *result) {
+    return emit(source, module, selected, scratch, output, capacity, result, NULL);
+}
+DoeCompilerStatus doe_metal_emit_dense(Source *source, const CompilerWorkspace *module, uint32_t selected,
+    DoeTargetScratch scratch, const DoeMetalMetadata *metadata, char *output, size_t capacity, DoeMetalResult *result) {
+    if (metadata == NULL) return DOE_COMPILER_INPUT_ERROR;
+    return emit(source, module, selected, scratch, output, capacity, result, metadata);
 }

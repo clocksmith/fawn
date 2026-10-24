@@ -10,6 +10,14 @@ static bool format_feature_enabled(uint32_t features, WGPUTextureFormat format)
     switch (format) {
     case WGPUTextureFormat_Depth32FloatStencil8:
         return (features & NATIVE_FEATURE(WGPUFeatureName_Depth32FloatStencil8)) != 0;
+    case WGPUTextureFormat_BC1RGBAUnorm: case WGPUTextureFormat_BC1RGBAUnormSrgb:
+    case WGPUTextureFormat_BC2RGBAUnorm: case WGPUTextureFormat_BC2RGBAUnormSrgb:
+    case WGPUTextureFormat_BC3RGBAUnorm: case WGPUTextureFormat_BC3RGBAUnormSrgb:
+    case WGPUTextureFormat_BC4RUnorm: case WGPUTextureFormat_BC4RSnorm:
+    case WGPUTextureFormat_BC5RGUnorm: case WGPUTextureFormat_BC5RGSnorm:
+    case WGPUTextureFormat_BC6HRGBUfloat: case WGPUTextureFormat_BC6HRGBFloat:
+    case WGPUTextureFormat_BC7RGBAUnorm: case WGPUTextureFormat_BC7RGBAUnormSrgb:
+        return (features & NATIVE_FEATURE(WGPUFeatureName_TextureCompressionBC)) != 0;
     default: return true;
     }
 }
@@ -56,9 +64,33 @@ bool native_texture_format(uint32_t features, WGPUTextureFormat format, doe_vk_t
     case WGPUTextureFormat_RGBA32Uint: *out = DOE_VK_FORMAT_RGBA32_UINT; break;
     case WGPUTextureFormat_RGBA32Sint: *out = DOE_VK_FORMAT_RGBA32_SINT; break;
     case WGPUTextureFormat_RGBA32Float: *out = DOE_VK_FORMAT_RGBA32_FLOAT; break;
+    case WGPUTextureFormat_RG11B10Ufloat: *out = DOE_VK_FORMAT_RG11B10_UFLOAT; break;
+    case WGPUTextureFormat_BC1RGBAUnorm: *out = DOE_VK_FORMAT_BC1_RGBA_UNORM; break;
+    case WGPUTextureFormat_BC1RGBAUnormSrgb: *out = DOE_VK_FORMAT_BC1_RGBA_SRGB; break;
+    case WGPUTextureFormat_BC2RGBAUnorm: *out = DOE_VK_FORMAT_BC2_RGBA_UNORM; break;
+    case WGPUTextureFormat_BC2RGBAUnormSrgb: *out = DOE_VK_FORMAT_BC2_RGBA_SRGB; break;
+    case WGPUTextureFormat_BC3RGBAUnorm: *out = DOE_VK_FORMAT_BC3_RGBA_UNORM; break;
+    case WGPUTextureFormat_BC3RGBAUnormSrgb: *out = DOE_VK_FORMAT_BC3_RGBA_SRGB; break;
+    case WGPUTextureFormat_BC4RUnorm: *out = DOE_VK_FORMAT_BC4_R_UNORM; break;
+    case WGPUTextureFormat_BC4RSnorm: *out = DOE_VK_FORMAT_BC4_R_SNORM; break;
+    case WGPUTextureFormat_BC5RGUnorm: *out = DOE_VK_FORMAT_BC5_RG_UNORM; break;
+    case WGPUTextureFormat_BC5RGSnorm: *out = DOE_VK_FORMAT_BC5_RG_SNORM; break;
+    case WGPUTextureFormat_BC6HRGBUfloat: *out = DOE_VK_FORMAT_BC6H_RGB_UFLOAT; break;
+    case WGPUTextureFormat_BC6HRGBFloat: *out = DOE_VK_FORMAT_BC6H_RGB_FLOAT; break;
+    case WGPUTextureFormat_BC7RGBAUnorm: *out = DOE_VK_FORMAT_BC7_RGBA_UNORM; break;
+    case WGPUTextureFormat_BC7RGBAUnormSrgb: *out = DOE_VK_FORMAT_BC7_RGBA_SRGB; break;
     default: return native_depth_format(features, format, out);
     }
     return true;
+}
+
+/* Feature-dependent renderability of a mapped color format: rg11b10ufloat is a
+ * core sampled format, renderable (blendable, multisampled, resolvable) only
+ * with rg11b10ufloat-renderable. The backend still checks native support. */
+bool native_color_renderable(uint32_t features, WGPUTextureFormat format)
+{
+    return format != WGPUTextureFormat_RG11B10Ufloat ||
+        (features & NATIVE_FEATURE(WGPUFeatureName_RG11B10UfloatRenderable)) != 0;
 }
 
 bool native_storage_format(uint32_t format, WGPUTextureFormat *out)

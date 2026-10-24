@@ -1,0 +1,5 @@
+Merged limit/render follow-up. Thermal preflight: no thermal or performance warning recorded.
+Selected adapter backend Metal, type 4: Apple M3
+PASS public WGSL triangle, early release, discard initialization and packed uploads (native Metal device: Apple M3; subtype unclassified; developer run, not qualification)
+First merged-source device run exit0; elapsed0.198537s; child5s, guardian20s.
+Source drift after run: none.

@@ -2,6 +2,7 @@
 #ifndef DOE_SHADER_H
 #define DOE_SHADER_H
 #include "doe_compiler_hlsl.h"
+#include "doe_compiler_metal.h"
 #include <stdbool.h>
 #ifdef __cplusplus
 extern "C" {
@@ -34,6 +35,9 @@ typedef struct doe_shader_options {
     size_t compiler_identity_size;
     /* Explicit additional typed stage pools; zero preserves compute-only admission. */
     size_t interface_attributes, stage_interfaces;
+    /* Only compiler semantic bits, never output/measure flags. Zero preserves
+     * conservative standalone defaults. Policy participates in artifact identity. */
+    uint32_t semantic_flags;
 } doe_shader_options;
 typedef struct doe_shader_error {
     doe_shader_status status;
@@ -55,6 +59,12 @@ typedef struct doe_shader_view {
     size_t hlsl_binding_count;
     const DoeCompilerHlslEntryV11 *hlsl_entries;
     size_t hlsl_entry_count;
+    /* ABI12 Metal rows belong to one exact entry, never a global resource map.
+     * Legacy ABI10 target spans remain empty for these owned artifacts. */
+    const DoeCompilerMetalBindingV12 *metal_bindings;
+    size_t metal_binding_count;
+    const DoeCompilerMetalEntryV12 *metal_entries;
+    size_t metal_entry_count;
     DoeCompilerModuleV5 module;
     DoeCompilerModuleOutputCounts counts;
     const uint32_t *words;
@@ -93,8 +103,9 @@ doe_shader_status doe_shader_retain(doe_shader *shader);
 void doe_shader_release(doe_shader *shader);
 doe_shader_status doe_shader_borrow(const doe_shader *shader, doe_shader_view *out);
 /* Exact byte equality only. This helper does not validate a compiler identity
- * supplied by the caller, hash source or equate different entry selections. */
-bool doe_shader_matches(const doe_shader *shader, doe_shader_target target,
+ * supplied by the caller, hash source or equate different entry selections or
+ * semantic flags. Target/semantic policy must match independently of identity bytes. */
+bool doe_shader_matches(const doe_shader *shader, doe_shader_target target, uint32_t semantic_flags,
     const char *source, size_t size,
     const void *identity, size_t identity_size,
     const DoeCompilerEntrySelectionV5 *selection);

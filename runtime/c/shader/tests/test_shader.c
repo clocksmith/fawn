@@ -60,10 +60,10 @@ int main(void)
     assert(entry->workgroup_size[0]==7 && entry->resource_reference_count==1);
     uint32_t index=view.entry_references[entry->first_resource_reference];
     assert(view.resources[index].binding==1);
-    assert(doe_shader_matches(shader,DOE_SHADER_SPIRV,source,strlen(source),options.compiler_identity,17,&options.selection));
-    assert(!doe_shader_matches(shader,DOE_SHADER_SPIRV,source,strlen(source),"developer-build-B",17,&options.selection));
+    assert(doe_shader_matches(shader,DOE_SHADER_SPIRV, options.semantic_flags,source,strlen(source),options.compiler_identity,17,&options.selection));
+    assert(!doe_shader_matches(shader,DOE_SHADER_SPIRV, options.semantic_flags,source,strlen(source),"developer-build-B",17,&options.selection));
     source[0]='!';
-    assert(!doe_shader_matches(shader,DOE_SHADER_SPIRV,source,strlen(source),options.compiler_identity,17,&options.selection));
+    assert(!doe_shader_matches(shader,DOE_SHADER_SPIRV, options.semantic_flags,source,strlen(source),options.compiler_identity,17,&options.selection));
     assert(view.words[0]==0x07230203);
     assert(doe_shader_retain(shader)==DOE_SHADER_OK);
     doe_shader_release(shader);
@@ -158,7 +158,7 @@ int main(void)
         assert(doe_shader_create(&options,text,length,&shader,&error)==DOE_SHADER_OK);
         assert(doe_shader_borrow(shader,&view)==DOE_SHADER_OK);
         assert(view.module.schema_version==DOE_COMPILER_ATOMIC_SCHEMA_VERSION);
-        assert(doe_shader_matches(shader,DOE_SHADER_SPIRV,text,length,options.compiler_identity,17,&options.selection));
+        assert(doe_shader_matches(shader,DOE_SHADER_SPIRV, options.semantic_flags,text,length,options.compiler_identity,17,&options.selection));
         if(source_index<3) {
             assert(view.counts.words==0 && view.counts.entries==0);
         } else {
@@ -219,24 +219,24 @@ int main(void)
     assert(doe_shader_borrow(shader, &view) == DOE_SHADER_OK);
     assert(view.target == DOE_SHADER_METAL && view.target_language_version == 300u);
     assert(view.words == NULL && view.counts.words == 0u && view.text_size != 0u);
-    assert(view.counts.entries == 2u && view.target_entry_count == 1u);
-    assert(view.target_entries[0].entry_index == 1u);
-    assert(strcmp(view.target_entries[0].name, "second") == 0);
-    assert(view.target_entries[0].sizes_slot == 30u && view.target_entries[0].sizes_bytes == 8u);
-    assert(view.target_binding_count == 1u);
-    assert(view.target_bindings[0].resource_index == 1u && view.target_bindings[0].slot == 1u);
-    assert(view.target_bindings[0].table == DOE_COMPILER_TEXT_TABLE_BUFFER);
-    assert(view.target_bindings[0].size_index == 1u);
-    assert(doe_shader_matches(shader, DOE_SHADER_METAL, source, strlen(source),
+    assert(view.counts.entries == 2u && view.metal_entry_count == 1u);
+    assert(view.metal_entries[0].entry_index == 1u);
+    assert(strcmp(view.metal_entries[0].name, "second") == 0);
+    assert(view.metal_entries[0].sizes_slot == 30u && view.metal_entries[0].sizes_bytes == 4u);
+    assert(view.metal_binding_count == 1u);
+    assert(view.metal_bindings[0].resource_index == 1u && view.metal_bindings[0].slot == 0u);
+    assert(view.metal_bindings[0].table == DOE_COMPILER_TEXT_TABLE_BUFFER);
+    assert(view.metal_bindings[0].size_index == 0u);
+    assert(doe_shader_matches(shader, DOE_SHADER_METAL, options.semantic_flags, source, strlen(source),
         options.compiler_identity, options.compiler_identity_size, &options.selection));
-    assert(!doe_shader_matches(shader, DOE_SHADER_SPIRV, source, strlen(source),
+    assert(!doe_shader_matches(shader, DOE_SHADER_SPIRV, options.semantic_flags, source, strlen(source),
         options.compiler_identity, options.compiler_identity_size, &options.selection));
     char first_text_byte = view.text[0];
     source[0] = '!';
     assert(view.text[0] == first_text_byte);
     assert(doe_shader_retain(shader) == DOE_SHADER_OK);
     doe_shader_release(shader);
-    assert(a.live == 1u && view.target_entries[0].sizes_bytes == 8u);
+    assert(a.live == 1u && view.metal_entries[0].sizes_bytes == 4u);
     doe_shader_release(shader);
     assert(a.live == 0u);
     source[0] = '@';
@@ -252,7 +252,7 @@ int main(void)
     assert(doe_shader_create(&options, "", 0u, &shader, &error) == DOE_SHADER_OK);
     assert(doe_shader_borrow(shader, &view) == DOE_SHADER_OK);
     assert(view.target == DOE_SHADER_METAL && view.text == NULL && view.text_size == 0u);
-    assert(view.target_entry_count == 0u && view.target_binding_count == 0u);
+    assert(view.metal_entry_count == 0u && view.metal_binding_count == 0u);
     doe_shader_release(shader);
     assert(a.live == 0u);
     options.target = DOE_SHADER_HLSL;
@@ -276,7 +276,7 @@ int main(void)
     assert(doe_shader_borrow(shader, &view) == DOE_SHADER_OK);
     assert(view.target == DOE_SHADER_HLSL && view.target_language_version == 600);
     assert(!view.words && !view.counts.words && view.text_size && view.counts.entries == 2);
-    assert(!view.target_bindings && !view.target_entries && !view.target_binding_count && !view.target_entry_count);
+    assert(!view.metal_bindings && !view.metal_entries && !view.metal_binding_count && !view.metal_entry_count);
     assert(view.hlsl_binding_count == 2 && view.hlsl_entry_count == 1);
     assert(view.hlsl_bindings[0].register_kind == DOE_COMPILER_HLSL_REGISTER_UAV);
     assert(view.hlsl_bindings[0].shader_register == 9 && view.hlsl_bindings[0].register_space == 2);
@@ -284,9 +284,9 @@ int main(void)
     assert(view.hlsl_entries[0].entry_index == 1 && !strcmp(view.hlsl_entries[0].name, "selected"));
     assert(!view.hlsl_entries[0].flags && view.hlsl_entries[0].dispatch_bytes == 16);
     assert(view.hlsl_entries[0].dispatch_register == 0 && view.hlsl_entries[0].dispatch_space == 7);
-    assert(doe_shader_matches(shader, DOE_SHADER_HLSL, hlsl_source, strlen(hlsl_source),
+    assert(doe_shader_matches(shader, DOE_SHADER_HLSL, options.semantic_flags, hlsl_source, strlen(hlsl_source),
         options.compiler_identity, options.compiler_identity_size, &options.selection));
-    assert(!doe_shader_matches(shader, DOE_SHADER_METAL, hlsl_source, strlen(hlsl_source),
+    assert(!doe_shader_matches(shader, DOE_SHADER_METAL, options.semantic_flags, hlsl_source, strlen(hlsl_source),
         options.compiler_identity, options.compiler_identity_size, &options.selection));
     hlsl_source[0] = '!';
     assert(view.text[0] != '!' && doe_shader_retain(shader) == DOE_SHADER_OK);
@@ -299,6 +299,60 @@ int main(void)
     assert(doe_shader_borrow(shader, &view) == DOE_SHADER_OK && !view.text && !view.hlsl_entry_count);
     doe_shader_release(shader);
     assert(!a.live);
+    /* Same semantic policy reaches measure/fill for every target and is part of
+     * identity even when the caller deliberately supplies identical identity bytes. */
+    const char sparse[] = "@group(3) @binding(999) var<storage,read_write> data:array<u32>;"
+        "@compute @workgroup_size(1) fn main(){data[0]=19u;}";
+    const char compact[] = "@group(3) @binding(999) var<uniform> data:array<u32,2>;"
+        "@group(0) @binding(999) var<storage,read_write> output:array<u32>;"
+        "@compute @workgroup_size(1) fn main(){output[0]=data[1];}";
+    options.selection = (DoeCompilerEntrySelectionV5){.mode=DOE_COMPILER_SELECT_AUTO};
+    for (unsigned target = DOE_SHADER_SPIRV; target <= DOE_SHADER_HLSL; ++target) {
+        options.target = (doe_shader_target)target;
+        options.semantic_flags = 0;
+        a = (allocations){0};
+        shader = sentinel;
+        assert(doe_shader_create(&options, sparse, strlen(sparse), &shader, &error) == DOE_SHADER_COMPILE_FAILED);
+        assert(shader == sentinel && !a.live);
+        options.semantic_flags = DOE_COMPILER_CORE_BINDING_NUMBERS;
+        unsigned acquisitions = target == DOE_SHADER_SPIRV ? 2u : 3u;
+        for (unsigned ordinal = 1; ordinal <= acquisitions; ++ordinal) {
+            a = (allocations){.fail_at=ordinal};
+            assert(doe_shader_create(&options, sparse, strlen(sparse), &shader, &error) == DOE_SHADER_OUT_OF_MEMORY);
+            assert(shader == sentinel && !a.live);
+        }
+        a = (allocations){0};
+        assert(doe_shader_create(&options, sparse, strlen(sparse), &shader, &error) == DOE_SHADER_OK);
+        assert(doe_shader_borrow(shader, &view) == DOE_SHADER_OK);
+        assert(view.resources[0].group == 3 && view.resources[0].binding == 999);
+        assert(doe_shader_matches(shader, options.target, options.semantic_flags,
+            sparse, strlen(sparse), options.compiler_identity, options.compiler_identity_size, &options.selection));
+        assert(!doe_shader_matches(shader, options.target, 0,
+            sparse, strlen(sparse), options.compiler_identity, options.compiler_identity_size, &options.selection));
+        assert(!doe_shader_matches(shader, options.target, options.semantic_flags | DOE_COMPILER_UNIFORM_BUFFER_STANDARD_LAYOUT,
+            sparse, strlen(sparse), options.compiler_identity, options.compiler_identity_size, &options.selection));
+        if (target == DOE_SHADER_METAL) {
+            assert(view.metal_binding_count == 1 && view.metal_bindings[0].slot == 0);
+            assert(!view.target_binding_count && !view.target_entry_count);
+        }
+        doe_shader_release(shader);
+        assert(!a.live);
+        options.semantic_flags |= DOE_COMPILER_UNIFORM_BUFFER_STANDARD_LAYOUT;
+        assert(doe_shader_create(&options, compact, strlen(compact), &shader, &error) == DOE_SHADER_OK);
+        assert(doe_shader_borrow(shader, &view) == DOE_SHADER_OK);
+        assert(view.module.layout_profile == DOE_COMPILER_TYPED_PROFILE_STANDARD_UNIFORM);
+        assert(view.resources[0].minimum_binding_size_bytes == 8 && view.resources[0].address_space_alignment_bytes == 4);
+        doe_shader_release(shader);
+        assert(!a.live);
+        options.semantic_flags = DOE_COMPILER_TEXT_CODE; /* Output bits are not semantic options. */
+        a = (allocations){0};
+        shader = sentinel;
+        assert(doe_shader_create(&options, sparse, strlen(sparse), &shader, &error) == DOE_SHADER_INVALID_ARGUMENT);
+        assert(shader == sentinel && !a.calls);
+        options.semantic_flags = 32;
+        assert(doe_shader_create(&options, sparse, strlen(sparse), &shader, &error) == DOE_SHADER_INVALID_ARGUMENT);
+        assert(shader == sentinel && !a.calls);
+    }
     puts("owned shader: buffer/handle/stage metadata, matrix/library/owned Metal artifacts, identity, allocation rollback, lifetime PASS");
     return 0;
 }

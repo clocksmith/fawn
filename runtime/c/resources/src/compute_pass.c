@@ -108,9 +108,9 @@ doe_resource_status doe_resource_compute_pass_set_group(doe_resource_compute_pas
         pass->offsets.counts[index] = 0;
         return DOE_RESOURCE_OK;
     }
-    doe_resource_binding resolved[DOE_RESOURCE_MAX_BINDINGS];
-    status = doe_resource_bind_group_resolve(group->group, group->dynamic_offsets,
-        group->dynamic_offset_count, resolved, DOE_RESOURCE_MAX_BINDINGS);
+    if (group->dynamic_offset_count > DOE_RESOURCE_MAX_DYNAMIC_OFFSETS)
+        return resource_encoder_fail(pass->encoder, DOE_RESOURCE_LAYOUT);
+    status = resource_group_check(group->group, group->dynamic_offsets, group->dynamic_offset_count);
     if (status != DOE_RESOURCE_OK) return resource_encoder_fail(pass->encoder, status);
     if (group->group->base.config.device.identity != pass->base.config.device.identity)
         return resource_encoder_fail(pass->encoder, DOE_RESOURCE_DEVICE_MISMATCH);
@@ -149,7 +149,25 @@ doe_resource_status doe_resource_compute_pass_dispatch_indirect(doe_resource_com
     return resource_record_dispatch_indirect(pass->encoder, pass->pipeline, groups, count, arguments, offset);
 }
 
+bool doe_resource_compute_pass_ended(const doe_resource_compute_pass *pass)
+{
+    return pass && pass->ended;
+}
+
+static doe_resource_status compute_pass_close(doe_resource_compute_pass *pass);
+/* End closes an open pass even when it or its encoder is invalid. */
 doe_resource_status doe_resource_compute_pass_end(doe_resource_compute_pass *pass)
+{
+    if (!pass) return DOE_RESOURCE_INVALID_ARGUMENT;
+    doe_resource_status status = compute_pass_close(pass);
+    if (!pass->ended) {
+        pass->ended = true;
+        if (pass->encoder->active_pass == pass) pass->encoder->active_pass = NULL;
+    }
+    return status;
+}
+
+static doe_resource_status compute_pass_close(doe_resource_compute_pass *pass)
 {
     doe_resource_status status = active(pass);
     if (status != DOE_RESOURCE_OK) return status;

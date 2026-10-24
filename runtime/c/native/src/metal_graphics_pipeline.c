@@ -46,8 +46,8 @@ static bool vertices(native_pipeline *pipeline, const WGPUVertexState *source,
     bool used[DOE_MTL_BUFFER_SLOTS] = {0};
     if (sizes_slot != UINT32_MAX) used[sizes_slot] = true;
     for (size_t i = 0; i < pipeline->binding_count; ++i)
-        if (pipeline->metal_graphics->tables[0][i] == DOE_COMPILER_TEXT_TABLE_BUFFER)
-            used[pipeline->metal_graphics->slots[0][i]] = true;
+        if (pipeline->metal_graphics->stages[0].tables[i] == DOE_COMPILER_TEXT_TABLE_BUFFER)
+            used[pipeline->metal_graphics->stages[0].slots[i]] = true;
     for (size_t slot = 0; slot < source->bufferCount; ++slot) {
         const WGPUVertexBufferLayout *buffer = &source->buffers[slot];
         bool hole = !buffer->attributeCount && buffer->stepMode == WGPUVertexStepMode_Undefined;
@@ -73,7 +73,9 @@ static bool vertices(native_pipeline *pipeline, const WGPUVertexState *source,
             uint32_t scalar, bytes, format;
             if (attribute->nextInChain || attribute->shaderLocation >= limits->maxVertexAttributes ||
                 attribute->offset > UINT32_MAX || !native_vertex_format(attribute->format, &admitted, &scalar, &bytes) ||
-                !vertex_format(attribute->format, &format) || attribute->offset > UINT32_MAX - bytes) return false;
+                !vertex_format(attribute->format, &format) || attribute->offset > UINT32_MAX - bytes ||
+                attribute->offset + bytes > (buffer->arrayStride ? buffer->arrayStride :
+                    limits->maxVertexBufferArrayStride)) return false;
             for (size_t j = 0; j < native->attribute_count; ++j)
                 if (attributes[j].location == attribute->shaderLocation) return false;
             uint64_t end = attribute->offset + bytes;
@@ -120,7 +122,8 @@ WGPURenderPipeline native_metal_create_render_pipeline(native_device *device,
     if (!native_render_fixed(device->features, descriptor, &fixed) || fixed.unclipped_depth ||
         !native_render_depth(device->features, descriptor->depthStencil, &fixed, &resource) ||
         !native_render_interfaces(stages, stage_count, &descriptor->vertex, fragment,
-            descriptor->multisample.alphaToCoverageEnabled, &interfaces)) return NULL;
+            descriptor->multisample.alphaToCoverageEnabled, fixed.topology == DOE_VK_POINTS,
+            &interfaces, &device->backend.limits)) return NULL;
     doe_mtl_render_pipeline_desc native = {.sample_count=fixed.sample_count,
         .alpha_to_coverage=fixed.alpha_to_coverage, .override_sample_mask=true, .sample_mask=fixed.sample_mask,
         .color_count=resource.color_count};
@@ -168,8 +171,10 @@ WGPURenderPipeline native_metal_create_render_pipeline(native_device *device,
     doe_resource_status status = automatic ? native_automatic_layout(device, stages, stage_count, &layout) : DOE_RESOURCE_OK;
     if (status == DOE_RESOURCE_OK && (!layout || doe_resource_pipeline_layout_device(layout) != device ||
         !native_pipeline_bindings(payload, stages, stage_count, layout) ||
-        !native_metal_stage(payload, &stages[0], 0, &native.vertex) ||
-        (fragment && !native_metal_stage(payload, &stages[1], 1, &native.fragment)) ||
+        !native_metal_stage_map_build(payload, &stages[0], DOE_COMPILER_STAGE_VERTEX,
+            &payload->metal_graphics->stages[0], &native.vertex) ||
+        (fragment && !native_metal_stage_map_build(payload, &stages[1], DOE_COMPILER_STAGE_FRAGMENT,
+            &payload->metal_graphics->stages[1], &native.fragment)) ||
         !vertices(payload, &descriptor->vertex, native.vertex.sizes_slot, &resource, &native, layouts, attributes)))
         status = DOE_RESOURCE_UNSUPPORTED;
     if (status == DOE_RESOURCE_OK && failure.status == NATIVE_OK) {

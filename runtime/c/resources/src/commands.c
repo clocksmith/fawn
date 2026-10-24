@@ -20,6 +20,11 @@ doe_resource_status doe_resource_encoder_invalidate(doe_resource_encoder *encode
     return resource_encoder_fail(encoder, rejection);
 }
 
+bool doe_resource_encoder_ended(const doe_resource_encoder *encoder)
+{
+    return encoder && encoder->finished;
+}
+
 doe_resource_status resource_encoder_open(doe_resource_encoder *encoder)
 {
     if (!encoder) return DOE_RESOURCE_INVALID_ARGUMENT;
@@ -315,6 +320,8 @@ doe_resource_status doe_resource_encoder_finish(doe_resource_encoder *encoder,
 {
     if (!out) return DOE_RESOURCE_INVALID_ARGUMENT;
     doe_resource_status status = resource_encoder_open(encoder);
+    /* Finish ends the encoder whether or not it records a command buffer. */
+    if (encoder) encoder->finished = true;
     if (status != DOE_RESOURCE_OK) return status;
     if (encoder->debug_depth) return resource_encoder_fail(encoder, DOE_RESOURCE_STATE);
     doe_resource_commands *commands = resource_allocate(&encoder->base.config,

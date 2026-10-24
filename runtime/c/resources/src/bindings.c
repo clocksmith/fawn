@@ -1,11 +1,12 @@
 /* SPDX-License-Identifier: MIT */
 #include "internal.h"
+#include <stdlib.h>
 #include <string.h>
 
 static doe_resource_status normalize_entry(const doe_resource_layout_entry *input,
     doe_resource_layout_entry *out)
 {
-    if (input->binding >= DOE_RESOURCE_MAX_BINDINGS) return DOE_RESOURCE_UNSUPPORTED;
+    if (input->binding >= DOE_RESOURCE_MAX_BINDING_NUMBER) return DOE_RESOURCE_RANGE;
     if (input->visibility & ~(WGPUShaderStage_Vertex | WGPUShaderStage_Fragment | WGPUShaderStage_Compute))
         return DOE_RESOURCE_LAYOUT;
     doe_resource_layout_entry result = {0};
@@ -72,33 +73,107 @@ static doe_resource_status normalize_entry(const doe_resource_layout_entry *inpu
     return DOE_RESOURCE_OK;
 }
 
+/* WebGPU binding slot limits, defaults where the config field is zero.
+ * https://gpuweb.github.io/gpuweb/#abstract-opdef-exceeds-the-binding-slot-limits */
+enum { SLOT_SAMPLED, SLOT_SAMPLER, SLOT_STORAGE_BUFFER, SLOT_STORAGE_TEXTURE, SLOT_UNIFORM, SLOT_KINDS };
+typedef struct slot_counts {
+    uint32_t stage[3][SLOT_KINDS];
+    uint32_t dynamic_uniform, dynamic_storage;
+} slot_counts;
+
+static void count_entry(slot_counts *counts, const doe_resource_layout_entry *entry)
+{
+    uint32_t add[SLOT_KINDS] = {0};
+    switch (entry->kind) {
+    case DOE_BIND_BUFFER:
+        if (entry->buffer_type == WGPUBufferBindingType_Uniform) {
+            add[SLOT_UNIFORM] = 1;
+            if (entry->dynamic_offset) ++counts->dynamic_uniform;
+        } else {
+            add[SLOT_STORAGE_BUFFER] = 1;
+            if (entry->dynamic_offset) ++counts->dynamic_storage;
+        }
+        break;
+    case DOE_BIND_SAMPLER: add[SLOT_SAMPLER] = 1; break;
+    case DOE_BIND_TEXTURE: add[SLOT_SAMPLED] = 1; break;
+    case DOE_BIND_STORAGE_TEXTURE: add[SLOT_STORAGE_TEXTURE] = 1; break;
+    case DOE_BIND_EXTERNAL_TEXTURE:
+        add[SLOT_SAMPLED] = 4;
+        add[SLOT_SAMPLER] = 1;
+        add[SLOT_UNIFORM] = 1;
+        break;
+    }
+    const WGPUShaderStage stages[3] = {WGPUShaderStage_Vertex, WGPUShaderStage_Fragment, WGPUShaderStage_Compute};
+    for (size_t stage = 0; stage < 3; stage++)
+        if (entry->visibility & stages[stage])
+            for (size_t kind = 0; kind < SLOT_KINDS; kind++) counts->stage[stage][kind] += add[kind];
+}
+
+static uint32_t limit_or(uint32_t value, uint32_t fallback)
+{
+    return value ? value : fallback;
+}
+
+static doe_resource_status check_slots(const doe_resource_config *config, const slot_counts *counts)
+{
+    const uint32_t limits[SLOT_KINDS] = {
+        limit_or(config->slot_limits.max_sampled_textures, 16), limit_or(config->slot_limits.max_samplers, 16),
+        limit_or(config->slot_limits.max_storage_buffers, 8), limit_or(config->slot_limits.max_storage_textures, 4),
+        limit_or(config->slot_limits.max_uniform_buffers, 12)};
+    for (size_t stage = 0; stage < 3; stage++)
+        for (size_t kind = 0; kind < SLOT_KINDS; kind++)
+            if (counts->stage[stage][kind] > limits[kind]) return DOE_RESOURCE_RANGE;
+    if (counts->dynamic_uniform > limit_or(config->slot_limits.max_dynamic_uniform_buffers, 8) ||
+        counts->dynamic_storage > limit_or(config->slot_limits.max_dynamic_storage_buffers, 4))
+        return DOE_RESOURCE_RANGE;
+    return DOE_RESOURCE_OK;
+}
+
+static size_t layout_size(size_t count)
+{
+    return sizeof(doe_resource_layout) + count * sizeof(doe_resource_layout_entry);
+}
+
 doe_resource_status doe_resource_layout_create(const doe_resource_config *config,
     const doe_resource_layout_entry *entries, size_t count, bool automatic,
     doe_resource_layout **out)
 {
     if (!out || !resource_config_valid(config) || (count && !entries)) return DOE_RESOURCE_INVALID_ARGUMENT;
     if (!config->device.alive(config->device.identity)) return DOE_RESOURCE_UNAVAILABLE;
-    if (count > DOE_RESOURCE_MAX_BINDINGS) return DOE_RESOURCE_UNSUPPORTED;
-    doe_resource_layout_entry sorted[DOE_RESOURCE_MAX_BINDINGS];
+    /* Distinct binding numbers below the bound also bound the entry count. */
+    if (count > DOE_RESOURCE_MAX_BINDING_NUMBER) return DOE_RESOURCE_RANGE;
+    /* Validate before allocating so a rejected descriptor allocates nothing. */
+    slot_counts counts = {0};
     for (size_t i = 0; i < count; i++) {
         doe_resource_layout_entry entry;
         doe_resource_status status = normalize_entry(&entries[i], &entry);
         if (status != DOE_RESOURCE_OK) return status;
-        size_t position = i;
         for (size_t j = 0; j < i; j++)
-            if (sorted[j].binding == entry.binding) return DOE_RESOURCE_LAYOUT;
+            if (entries[j].binding == entry.binding) return DOE_RESOURCE_LAYOUT;
+        count_entry(&counts, &entry);
+    }
+    doe_resource_status status = check_slots(config, &counts);
+    if (status != DOE_RESOURCE_OK) return status;
+    if (counts.dynamic_uniform + counts.dynamic_storage > DOE_RESOURCE_MAX_DYNAMIC_OFFSETS)
+        return DOE_RESOURCE_UNSUPPORTED;
+    doe_resource_layout *layout = resource_allocate(config, layout_size(count), _Alignof(doe_resource_layout));
+    if (!layout) return DOE_RESOURCE_OUT_OF_MEMORY;
+    /* Ascending binding order: insertion sort of the already validated entries. */
+    doe_resource_layout_entry *sorted = layout->entries;
+    for (size_t i = 0; i < count; i++) {
+        doe_resource_layout_entry entry;
+        if (normalize_entry(&entries[i], &entry) != DOE_RESOURCE_OK) abort(); /* Validated above. */
+        size_t position = i;
         while (position && sorted[position - 1].binding > entry.binding) {
             sorted[position] = sorted[position - 1];
             position--;
         }
         sorted[position] = entry;
     }
-    doe_resource_layout *layout = resource_allocate(config, sizeof(*layout), _Alignof(doe_resource_layout));
-    if (!layout) return DOE_RESOURCE_OUT_OF_MEMORY;
     layout->count = count;
+    layout->dynamic_count = counts.dynamic_uniform + counts.dynamic_storage;
     layout->automatic = automatic;
     layout->automatic_claimed = false;
-    if (count) memcpy(layout->entries, sorted, count * sizeof(*sorted));
     resource_init(&layout->base, config, (doe_resource_native){0});
     *out = layout;
     return DOE_RESOURCE_OK;
@@ -112,7 +187,7 @@ void doe_resource_layout_retain(doe_resource_layout *layout)
 void doe_resource_layout_release(doe_resource_layout *layout)
 {
     if (layout && resource_last_reference(&layout->base))
-        resource_finalize(&layout->base, sizeof(*layout), _Alignof(doe_resource_layout));
+        resource_finalize(&layout->base, layout_size(layout->count), _Alignof(doe_resource_layout));
 }
 
 bool doe_resource_layout_compatible(const doe_resource_layout *a, const doe_resource_layout *b)
@@ -148,10 +223,15 @@ doe_resource_status doe_resource_pipeline_layout_create(const doe_resource_confi
     if (!out || !resource_config_valid(config) || (count && !groups)) return DOE_RESOURCE_INVALID_ARGUMENT;
     if (!config->device.alive(config->device.identity)) return DOE_RESOURCE_UNAVAILABLE;
     if (immediate_size || count > DOE_RESOURCE_MAX_GROUPS) return DOE_RESOURCE_UNSUPPORTED;
+    if (count > limit_or(config->slot_limits.max_bind_groups, 4)) return DOE_RESOURCE_RANGE;
+    slot_counts counts = {0};
     for (size_t i = 0; i < count; i++) {
         if (!groups[i]) continue;
         if (groups[i]->base.config.device.identity != config->device.identity) return DOE_RESOURCE_DEVICE_MISMATCH;
+        for (size_t j = 0; j < groups[i]->count; j++) count_entry(&counts, &groups[i]->entries[j]);
     }
+    doe_resource_status status = check_slots(config, &counts);
+    if (status != DOE_RESOURCE_OK) return status;
     doe_resource_pipeline_layout *layout = resource_allocate(config, sizeof(*layout), _Alignof(doe_resource_pipeline_layout));
     if (!layout) return DOE_RESOURCE_OUT_OF_MEMORY;
     layout->count = count;
@@ -274,6 +354,24 @@ static void release_binding(const doe_resource_binding *binding)
     else doe_resource_view_release(binding->resource.view);
 }
 
+/* The unique descriptor entry for a layout binding number. */
+static doe_resource_status find_binding(uint32_t binding, const doe_resource_binding *bindings, size_t count,
+    const doe_resource_binding **out)
+{
+    *out = NULL;
+    for (size_t j = 0; j < count; j++) {
+        if (bindings[j].binding != binding) continue;
+        if (*out) return DOE_RESOURCE_LAYOUT;
+        *out = &bindings[j];
+    }
+    return *out ? DOE_RESOURCE_OK : DOE_RESOURCE_LAYOUT;
+}
+
+static size_t group_size(size_t count)
+{
+    return sizeof(doe_resource_bind_group) + count * sizeof(doe_resource_binding);
+}
+
 doe_resource_status doe_resource_bind_group_create(doe_resource_layout *layout,
     const doe_resource_binding *bindings, size_t count,
     const doe_resource_binding_limits *limits, doe_resource_bind_group **out)
@@ -290,28 +388,31 @@ doe_resource_status doe_resource_bind_group_create_with_features(doe_resource_la
     doe_resource_binding_features enabled = features ? *features : (doe_resource_binding_features){0};
     if (!resource_alive(&layout->base)) return DOE_RESOURCE_UNAVAILABLE;
     if (count != layout->count) return DOE_RESOURCE_LAYOUT;
-    doe_resource_binding ordered[DOE_RESOURCE_MAX_BINDINGS];
+    /* Validate before allocating so a rejected descriptor allocates nothing;
+     * the second pass repeats the same pure checks into the group storage. */
     for (size_t i = 0; i < count; i++) {
-        const doe_resource_binding *found = NULL;
-        for (size_t j = 0; j < count; j++) {
-            if (bindings[j].binding != layout->entries[i].binding) continue;
-            if (found) return DOE_RESOURCE_LAYOUT;
-            found = &bindings[j];
-        }
-        if (!found) return DOE_RESOURCE_LAYOUT;
-        doe_resource_status status = validate_binding(layout, &layout->entries[i], found, limits, &enabled, &ordered[i]);
+        const doe_resource_binding *found;
+        doe_resource_status status = find_binding(layout->entries[i].binding, bindings, count, &found);
+        doe_resource_binding checked;
+        if (status == DOE_RESOURCE_OK)
+            status = validate_binding(layout, &layout->entries[i], found, limits, &enabled, &checked);
         if (status != DOE_RESOURCE_OK) return status;
     }
-    doe_resource_bind_group *group = resource_allocate(&layout->base.config, sizeof(*group), _Alignof(doe_resource_bind_group));
+    doe_resource_bind_group *group = resource_allocate(&layout->base.config, group_size(count),
+        _Alignof(doe_resource_bind_group));
     if (!group) return DOE_RESOURCE_OUT_OF_MEMORY;
+    for (size_t i = 0; i < count; i++) {
+        const doe_resource_binding *found;
+        if (find_binding(layout->entries[i].binding, bindings, count, &found) != DOE_RESOURCE_OK ||
+            validate_binding(layout, &layout->entries[i], found, limits, &enabled, &group->bindings[i]) !=
+                DOE_RESOURCE_OK)
+            abort(); /* Validated above with identical inputs. */
+    }
     group->count = count;
     group->layout = layout;
     group->limits = *limits;
     group->features = enabled;
-    for (size_t i = 0; i < count; i++) {
-        group->bindings[i] = ordered[i];
-        retain_binding(&ordered[i]);
-    }
+    for (size_t i = 0; i < count; i++) retain_binding(&group->bindings[i]);
     doe_resource_layout_retain(layout);
     resource_init(&group->base, &layout->base.config, (doe_resource_native){0});
     *out = group;
@@ -328,7 +429,7 @@ void doe_resource_bind_group_release(doe_resource_bind_group *group)
     if (!group || !resource_last_reference(&group->base)) return;
     for (size_t i = 0; i < group->count; i++) release_binding(&group->bindings[i]);
     doe_resource_layout_release(group->layout);
-    resource_finalize(&group->base, sizeof(*group), _Alignof(doe_resource_bind_group));
+    resource_finalize(&group->base, group_size(group->count), _Alignof(doe_resource_bind_group));
 }
 
 const doe_resource_binding *doe_resource_bind_group_bindings(const doe_resource_bind_group *group,
@@ -354,33 +455,99 @@ doe_resource_status resource_group_validate(const doe_resource_bind_group *group
     return DOE_RESOURCE_OK;
 }
 
+/* Binding index with its dynamic offset applied and revalidated. */
+static doe_resource_status resolve_index(const doe_resource_bind_group *group, const uint32_t *offsets,
+    size_t offset_count, size_t index, size_t *next_dynamic, doe_resource_binding *out)
+{
+    doe_resource_binding resolved = group->bindings[index];
+    const doe_resource_layout_entry *entry = &group->layout->entries[index];
+    if (entry->kind == DOE_BIND_BUFFER && entry->dynamic_offset) {
+        if (*next_dynamic == offset_count) return DOE_RESOURCE_LAYOUT;
+        uint64_t dynamic = offsets[(*next_dynamic)++];
+        uint64_t alignment = entry->buffer_type == WGPUBufferBindingType_Uniform ?
+            group->limits.uniform_alignment : group->limits.storage_alignment;
+        if (!alignment || dynamic % alignment) return DOE_RESOURCE_ALIGNMENT;
+        if (resolved.resource.buffer.offset > UINT64_MAX - dynamic) return DOE_RESOURCE_OVERFLOW;
+        resolved.resource.buffer.offset += dynamic;
+        doe_resource_binding checked;
+        doe_resource_status status = validate_binding(group->layout, entry, &resolved, &group->limits,
+            &group->features, &checked);
+        if (status != DOE_RESOURCE_OK) return status;
+    }
+    *out = resolved;
+    return DOE_RESOURCE_OK;
+}
+
+doe_resource_status resource_group_check(const doe_resource_bind_group *group,
+    const uint32_t *offsets, size_t offset_count)
+{
+    if (!group || (offset_count && !offsets)) return DOE_RESOURCE_INVALID_ARGUMENT;
+    doe_resource_status status = resource_group_validate(group);
+    if (status != DOE_RESOURCE_OK) return status;
+    if (offset_count != group->layout->dynamic_count) return DOE_RESOURCE_LAYOUT;
+    size_t next = 0;
+    for (size_t i = 0; i < group->count; i++) {
+        doe_resource_binding resolved;
+        status = resolve_index(group, offsets, offset_count, i, &next, &resolved);
+        if (status != DOE_RESOURCE_OK) return status;
+    }
+    return DOE_RESOURCE_OK;
+}
+
+doe_resource_status doe_resource_bind_group_check(const doe_resource_bind_group *group,
+    const uint32_t *offsets, size_t offset_count)
+{
+    return resource_group_check(group, offsets, offset_count);
+}
+
+doe_resource_status resource_group_resolve_at(const doe_resource_bind_group *group, const uint32_t *offsets,
+    size_t offset_count, size_t index, size_t *next_dynamic, doe_resource_binding *out)
+{
+    return resolve_index(group, offsets, offset_count, index, next_dynamic, out);
+}
+
 doe_resource_status doe_resource_bind_group_resolve(const doe_resource_bind_group *group,
     const uint32_t *offsets, size_t offset_count, doe_resource_binding *out, size_t capacity)
 {
     if (!group || (group->count && !out) || (offset_count && !offsets)) return DOE_RESOURCE_INVALID_ARGUMENT;
     if (capacity < group->count) return DOE_RESOURCE_RANGE;
-    doe_resource_status status = resource_group_validate(group);
+    /* Check everything first so the output stays unchanged on failure. */
+    doe_resource_status status = resource_group_check(group, offsets, offset_count);
     if (status != DOE_RESOURCE_OK) return status;
-    doe_resource_binding resolved[DOE_RESOURCE_MAX_BINDINGS];
     size_t next = 0;
     for (size_t i = 0; i < group->count; i++) {
-        resolved[i] = group->bindings[i];
-        const doe_resource_layout_entry *entry = &group->layout->entries[i];
-        if (entry->kind != DOE_BIND_BUFFER || !entry->dynamic_offset) continue;
-        if (next == offset_count) return DOE_RESOURCE_LAYOUT;
-        uint64_t dynamic = offsets[next++];
-        uint64_t alignment = entry->buffer_type == WGPUBufferBindingType_Uniform ?
-            group->limits.uniform_alignment : group->limits.storage_alignment;
-        if (!alignment || dynamic % alignment) return DOE_RESOURCE_ALIGNMENT;
-        if (resolved[i].resource.buffer.offset > UINT64_MAX - dynamic) return DOE_RESOURCE_OVERFLOW;
-        resolved[i].resource.buffer.offset += dynamic;
-        doe_resource_binding checked;
-        status = validate_binding(group->layout, entry, &resolved[i], &group->limits, &group->features, &checked);
-        if (status != DOE_RESOURCE_OK) return status;
+        status = resolve_index(group, offsets, offset_count, i, &next, &out[i]);
+        if (status != DOE_RESOURCE_OK) abort(); /* Checked above with identical inputs. */
     }
-    if (next != offset_count) return DOE_RESOURCE_LAYOUT;
-    if (group->count) memcpy(out, resolved, group->count * sizeof(*out));
     return DOE_RESOURCE_OK;
+}
+
+doe_resource_status doe_resource_bind_group_resolve_binding(const doe_resource_bind_group *group,
+    const uint32_t *offsets, size_t offset_count, uint32_t binding, doe_resource_binding *out)
+{
+    if (!group || !out || (offset_count && !offsets)) return DOE_RESOURCE_INVALID_ARGUMENT;
+    if (!resource_alive(&group->base)) return DOE_RESOURCE_UNAVAILABLE;
+    if (offset_count != group->layout->dynamic_count) return DOE_RESOURCE_LAYOUT;
+    size_t low = 0, high = group->count;
+    while (low < high) {
+        size_t middle = low + (high - low) / 2;
+        if (group->layout->entries[middle].binding < binding) low = middle + 1;
+        else high = middle;
+    }
+    if (low == group->count || group->layout->entries[low].binding != binding) return DOE_RESOURCE_LAYOUT;
+    size_t next = 0;
+    for (size_t i = 0; i < low; i++) {
+        const doe_resource_layout_entry *entry = &group->layout->entries[i];
+        if (entry->kind == DOE_BIND_BUFFER && entry->dynamic_offset) next++;
+    }
+    doe_resource_binding checked;
+    doe_resource_status status = validate_binding(group->layout, &group->layout->entries[low],
+        &group->bindings[low], &group->limits, &group->features, &checked);
+    if (status != DOE_RESOURCE_OK) return status;
+    if (checked.kind == DOE_BIND_BUFFER &&
+        (checked.resource.buffer.buffer->mapped || checked.resource.buffer.buffer->map_pending))
+        return DOE_RESOURCE_STATE;
+    return resolve_index(group, offsets, offset_count, low, &next, out);
 }
 
 doe_resource_status doe_resource_pipeline_create(const doe_resource_config *config,

@@ -11,6 +11,7 @@ import {
 import { tmpdir } from 'node:os';
 import { dirname, resolve } from 'node:path';
 import { spawn, spawnSync } from 'node:child_process';
+import { createServer } from 'node:net';
 import { fileURLToPath } from 'node:url';
 import {
   DOE_PROOF_PROCESS_ARTIFACT_SCHEMA,
@@ -34,7 +35,11 @@ function run(...args) {
   });
 }
 
-function runAsync(args, signalDelayMs) {
+// SIGTERM goes out once the governed app connects back (it is running, so the
+// CLI has installed its handler); a fixed delay raced Node startup under load.
+const READY_DEADLINE_MS = 60_000;
+
+function runAsync(args, readyServer) {
   return new Promise((resolveRun) => {
     const child = spawn(process.execPath, [bin, ...args], {
       cwd: scratch,
@@ -46,8 +51,17 @@ function runAsync(args, signalDelayMs) {
     child.stderr.setEncoding('utf8');
     child.stdout.on('data', (chunk) => { stdout += chunk; });
     child.stderr.on('data', (chunk) => { stderr += chunk; });
-    setTimeout(() => child.kill('SIGTERM'), signalDelayMs);
-    child.on('close', (status, signal) => resolveRun({ status, signal, stdout, stderr }));
+    const terminate = () => child.kill('SIGTERM');
+    const deadline = setTimeout(terminate, READY_DEADLINE_MS);
+    readyServer.once('connection', (socket) => {
+      socket.destroy();
+      clearTimeout(deadline);
+      terminate();
+    });
+    child.on('close', (status, signal) => {
+      clearTimeout(deadline);
+      resolveRun({ status, signal, stdout, stderr });
+    });
   });
 }
 
@@ -208,12 +222,18 @@ try {
   const abortArtifactPath = resolve(scratch, 'abort-artifact.json');
   const abortContract = structuredClone(contract);
   abortContract.provider.sha256 = fileDigest(provider);
-  abortContract.process.environment.values = { DOE_TEST_PROCESS_MODE: 'hang' };
+  const readyServer = createServer();
+  await new Promise((resolveListen) => readyServer.listen(0, '127.0.0.1', resolveListen));
+  abortContract.process.environment.values = {
+    DOE_TEST_PROCESS_MODE: 'hang',
+    DOE_TEST_READY_PORT: String(readyServer.address().port),
+  };
   writeFileSync(abortContractPath, `${JSON.stringify(abortContract, null, 2)}\n`);
   const aborted = await runAsync(
     ['run', abortContractPath, '--out', abortArtifactPath],
-    100,
+    readyServer,
   );
+  readyServer.close();
   assert.equal(aborted.status, 1, aborted.stderr);
   assert.equal(existsSync(abortArtifactPath), true);
   const abortArtifact = JSON.parse(readFileSync(abortArtifactPath, 'utf8'));

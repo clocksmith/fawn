@@ -98,6 +98,10 @@ typedef struct native_stage {
     char name[64];
 } native_stage;
 
+/* Distinct resources one pipeline references: at most two stages, each within
+ * the per-stage binding limits native_supported_limits reports (limits.c). */
+enum { NATIVE_MAX_PIPELINE_BINDINGS = 128 };
+
 typedef struct native_binding {
     uint32_t group, binding;
     doe_resource_binding_kind kind;
@@ -110,9 +114,9 @@ typedef struct native_pipeline {
     struct native_metal_graphics *metal_graphics;
     size_t binding_count;
     size_t vertex_count;
-    uint32_t metal_slots[DOE_RESOURCE_MAX_GROUPS * DOE_RESOURCE_MAX_BINDINGS];
-    native_binding bindings[DOE_RESOURCE_MAX_GROUPS * DOE_RESOURCE_MAX_BINDINGS];
-    uint64_t minimum_sizes[DOE_RESOURCE_MAX_GROUPS * DOE_RESOURCE_MAX_BINDINGS];
+    struct native_metal_stage_map *metal_compute;
+    native_binding bindings[NATIVE_MAX_PIPELINE_BINDINGS];
+    uint64_t minimum_sizes[NATIVE_MAX_PIPELINE_BINDINGS];
 } native_pipeline;
 
 void *native_allocate(void *state, const void *vtable, size_t size, size_t alignment);
@@ -130,6 +134,11 @@ doe_vk_status native_device_status(native_device *device);
 void native_lock(native_device *device);
 void native_unlock(native_device *device);
 void native_error(native_device *device, WGPUErrorType type, const char *message);
+/* The WebGPU encoding rule: a rejected encoder or pass command only invalidates
+ * the encoder, and Finish reports that once; a command on an encoder or pass
+ * that was already ended (sampled under the device lock before the call) is
+ * reported at the call. */
+void native_encoding_error(native_device *device, bool ended, doe_resource_status status, const char *message);
 WGPUErrorType native_resource_error(doe_resource_status status);
 WGPUErrorType native_backend_error(doe_vk_status status);
 WGPUErrorType native_label_error(doe_label_status status);
@@ -141,6 +150,8 @@ WGPUFuture native_callback(doe_instance *instance, WGPUCallbackMode mode,
     doe_callback_copy_context copy, doe_callback_deliver_context deliver);
 
 WGPUStatus native_limits(const native_backend *backend, WGPULimits *out);
+/* requestDevice limit resolution (limits.c); false rejects the request. */
+bool native_resolve_limits(const WGPULimits *supported, const WGPULimits *required, WGPULimits *out);
 void native_buffer_release(void *userdata, void *handle);
 native_result native_buffer_read(native_buffer *buffer, uint64_t offset, void *bytes, size_t size);
 native_result native_buffer_write(native_buffer *buffer, uint64_t offset, const void *bytes, size_t size);
@@ -165,6 +176,8 @@ doe_vk_status native_record_render(doe_vk_commands *commands,
     const doe_resource_command *records, size_t count, size_t *consumed);
 WGPURenderPipeline native_create_render_pipeline(native_device *device,
     const WGPURenderPipelineDescriptor *descriptor, native_pipeline_error *error);
+/* The native shader owner selects the shared semantic opt-ins for all targets. */
+uint32_t native_shader_semantic_flags(void);
 doe_shader_status native_compile_shader(const char *source, size_t size, doe_shader **out, doe_shader_error *error);
 bool native_shader_capabilities(const doe_shader_view *view, const doe_vk_caps *caps);
 bool native_timestamp_supported(const doe_vk_caps *caps);
@@ -216,6 +229,7 @@ bool native_compare_operation(WGPUCompareFunction value, uint32_t fallback, uint
 /* features: the device's enabled NATIVE_FEATURE bits; feature formats map only when enabled. */
 bool native_depth_format(uint32_t features, WGPUTextureFormat format, doe_vk_texture_format *out);
 bool native_texture_format(uint32_t features, WGPUTextureFormat format, doe_vk_texture_format *out);
+bool native_color_renderable(uint32_t features, WGPUTextureFormat format);
 /* Resource-normalized copy aspect to native aspect bits; Undefined is rejected
  * because the resource owner always resolves a concrete aspect first. */
 bool native_texture_aspect(WGPUTextureAspect aspect, doe_vk_texture_aspect *out);

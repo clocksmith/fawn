@@ -28,7 +28,7 @@ int main(void) {
             .depth_or_layers = 1, .mip_levels = 1, .usage = DOE_VK_TEXTURE_STORAGE }
     };
     doe_vk_texture_view view = { .texture = &texture, .references = 1, .aspects = 1, .format = DOE_VK_FORMAT_RGBA8_UNORM,
-        .desc = { DOE_VK_VIEW_2D, 0, 1, 0, 1, DOE_VK_ASPECT_ALL, 0} };
+        .desc = { DOE_VK_VIEW_2D, 0, 1, 0, 1, DOE_VK_ASPECT_ALL, 0, {0}} };
     binding = (doe_vk_binding_resource){ .kind = DOE_VK_BINDING_STORAGE_TEXTURE, .value.view = &view };
     commands = recording(&context);
     assert(doe_vk_commands_dispatch_resources(&commands, &pipeline, &binding, 1, 1, 1, 1) == DOE_VK_INVALID_STATE);

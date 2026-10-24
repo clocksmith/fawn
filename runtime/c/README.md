@@ -74,13 +74,14 @@ missing implementation throws rather than doing nothing. Binding reflection is
 optional: without it the pipeline's own auto layout is used. The package reports
 this provider as `libraryFlavor: "doe-c"`.
 
-On 2026-10-24 on Jupiter (Radeon 8060S, RADV, Node 22.22.1) the staged package at
-91972c24d passed first-kernel 16/16 and 20 of the package's 32 node integration
-tests. The remaining failures need reusable compute programs and GPU recording in
-C, the Doe binding-reflection extension, compiler coverage, depth copies, or are
-packaging-harness artifacts (a packed tarball's own prebuilt addon, and a permission
-sandbox that denies an out-of-package library path). This is not npm packaging, a
-published prebuild, or release evidence.
+On 2026-10-23 on Jupiter (Radeon 8060S, RADV, Node 22.22.1), with the package
+staged at 2cd557c9f, `npm run test:integration` (node runtime, 33 entrypoints)
+passed 29. The four failures need compiler coverage (`var<private>`, builtin calls
+in const initializers, zero-iteration loops, `unpack4xU8`, identifier admission);
+native-reflection also tests the Zig-only Doe binding-reflection extension. The
+installed-package tests skip under a `DOE_WEBGPU_LIB` override, since they check
+the platform package's own library. This is not npm packaging, a published
+prebuild, or release evidence.
 
 [Apple public compute evidence](DEVELOPER_RECEIPT_NODE_METAL.json) records the
 unchanged Node first-kernel example through staged C source `00bbd786d` and real

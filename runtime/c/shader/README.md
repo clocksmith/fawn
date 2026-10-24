@@ -13,7 +13,7 @@ clone/deinit and entry-binding responsibility of the retained
 [TranslationInfo owner](../../zig/src/compiler/wgsl/runtime/runtime_translation_info.zig),
 without pretending that standalone reflection supplies its dispatch/texture
 preconditions or complete production cache semantics. Metal slots and per-entry
-size-buffer facts are now retained directly from compiler ABI10, not recomputed.
+size-buffer facts are retained directly from compiler ABI12, not recomputed.
 
 The caller supplies explicit compiler capacities and allocator hooks. Additional
 interface-attribute and stage-interface capacities are explicit options; zero
@@ -84,8 +84,8 @@ their referenced scalar type and non-constructible flag; they are not ordinary
 scalar values. Buffer layout remains the compiler owner’s result. Both acquisition
 faults and retained-view lifetime are checked for atomic-containing modules.
 
-Explicit `DOE_SHADER_METAL` artifacts select ABI10 and own the exact emitted MSL,
-selected entry names, sparse buffer/texture/sampler slots and per-entry size-buffer
+Explicit `DOE_SHADER_METAL` artifacts select ABI12 and own the exact emitted MSL,
+selected entry names, dense per-entry buffer/texture/sampler slots and size-buffer
 metadata in the same reference-counted allocation as whole-module reflection.
 There is no SPIR-V intermediate or target fallback. Target identity participates
 in exact artifact matching. Runtime callers still supply the bound byte lengths;
@@ -108,3 +108,20 @@ HLSL, and HLSL spans stay empty for the other targets. The same measured text
 allocation path, three acquisition failures, target-aware identity comparison and
 retained-view lifetime apply. No native frontend re-parses HLSL or WGSL; no DXC,
 Windows SDK, GPU execution or D3D12 public integration is established here.
+
+## Entry-specific Metal and semantic policy
+
+`DOE_SHADER_METAL` now consumes additive compiler ABI12 and retains separate
+`metal_bindings`/`metal_entries` spans. Each entry identifies its exact row range,
+so a resource shared by entry closures can have different dense slots. Legacy
+ABI10 `target_bindings`/`target_entries` remain empty for these artifacts; no
+record reinterpretation or runtime slot inference occurs. This static-library
+view is rebuild-required; versioned compiler ABI1–11 records remain unchanged.
+
+`doe_shader_options.semantic_flags` accepts only named compiler semantic bits
+(currently standard uniform layout and core binding identifiers), never output or
+measure bits. The exact saved value is passed to both measure and fill for every
+target and participates in `doe_shader_matches` independently of caller identity
+bytes. Zero preserves standalone conservative defaults. Native shader composition
+chooses core binding identifiers through its single policy owner; it does not yet
+select or advertise standard uniform layout.

@@ -547,7 +547,26 @@ doe_resource_status doe_resource_render_pass_end_occlusion(doe_resource_render_p
     return DOE_RESOURCE_OK;
 }
 
+bool doe_resource_render_pass_ended(const doe_resource_render_pass *pass)
+{
+    return pass && pass->ended;
+}
+
+static doe_resource_status render_pass_close(doe_resource_render_pass *pass);
+/* End closes an open pass even when it or its encoder is invalid; only the
+ * recorded effects require a valid pass. */
 doe_resource_status doe_resource_render_pass_end(doe_resource_render_pass *pass)
+{
+    if (!pass) return DOE_RESOURCE_INVALID_ARGUMENT;
+    doe_resource_status status = render_pass_close(pass);
+    if (!pass->ended) {
+        pass->ended = true;
+        if (pass->encoder->active_pass == pass) pass->encoder->active_pass = NULL;
+    }
+    return status;
+}
+
+static doe_resource_status render_pass_close(doe_resource_render_pass *pass)
 {
     doe_resource_status status = resource_render_pass_active(pass);
     if (status != DOE_RESOURCE_OK) return status;

@@ -23,6 +23,9 @@ extern "C" {
  * Unset preserves conservative uniform admission. `requires` checks this bit;
  * it never enables the feature. Natural type/member layouts remain unchanged. */
 #define DOE_COMPILER_UNIFORM_BUFFER_STANDARD_LAYOUT 8u
+/* Core WebGPU binding numbers0..999, independent of native argument slots and
+ * resource/work capacities. Unset keeps the earlier0..31 compiler admission. */
+#define DOE_COMPILER_CORE_BINDING_NUMBERS 16u
 
 #define DOE_COMPILER_TYPE_SCALAR 1u
 #define DOE_COMPILER_TYPE_VECTOR 2u

@@ -16,6 +16,7 @@ static void record_copy(WGPUCommandEncoder handle, const WGPUTexelCopyBufferInfo
     native_device *device = doe_resource_encoder_device(encoder);
     if (!device) return;
     native_lock(device);
+    const bool ended = doe_resource_encoder_ended(encoder);
     doe_resource_status status;
     if (!buffer || !texture || !size) status = doe_resource_encoder_invalidate(encoder, DOE_RESOURCE_INVALID_ARGUMENT);
     else {
@@ -24,9 +25,7 @@ static void record_copy(WGPUCommandEncoder handle, const WGPUTexelCopyBufferInfo
             (doe_resource_texture *)texture->texture, &copy, direction, DOE_RESOURCE_COPY_WEBGPU);
     }
     native_unlock(device);
-    /* A rejected copy invalidates the encoder; WebGPU reports that validation
-     * error once, at Finish, not at the encoding call. */
-    (void)status;
+    native_encoding_error(device, ended, status, "buffer/texture copy");
 }
 void wgpuCommandEncoderCopyBufferToTexture(WGPUCommandEncoder encoder,
     const WGPUTexelCopyBufferInfo *source, const WGPUTexelCopyTextureInfo *destination, const WGPUExtent3D *size)
@@ -45,6 +44,7 @@ void wgpuCommandEncoderCopyTextureToTexture(WGPUCommandEncoder handle,
     native_device *device = doe_resource_encoder_device(encoder);
     if (!device) return;
     native_lock(device);
+    const bool ended = doe_resource_encoder_ended(encoder);
     doe_resource_status status;
     if (!source || !destination || !size) status = doe_resource_encoder_invalidate(encoder, DOE_RESOURCE_INVALID_ARGUMENT);
     else {
@@ -57,7 +57,7 @@ void wgpuCommandEncoderCopyTextureToTexture(WGPUCommandEncoder handle,
         status = doe_resource_encoder_blit_texture(encoder, &copy, DOE_RESOURCE_COPY_WEBGPU);
     }
     native_unlock(device);
-    (void)status; /* Reported once at Finish, as for buffer/texture copies. */
+    native_encoding_error(device, ended, status, "texture copy");
 }
 
 void wgpuQueueWriteTexture(WGPUQueue handle, const WGPUTexelCopyTextureInfo *destination,

@@ -1,0 +1,47 @@
+C migration Metal mixed resources: first frozen-source developer runs.
+
+{
+  "mixed": {
+    "source_tree": "53bc72c64cd15ef86a85d00dd2248fdd8f076693",
+    "client": "mixed-resources",
+    "exit_code": 0,
+    "elapsed_seconds": 0.40786074998322874,
+    "child_deadline_seconds": 5,
+    "outer_guardian_seconds": 20,
+    "thermal_preflight": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded\n",
+    "output": "Selected adapter backend Metal, type 4: Apple M3\nPASS sparse group3/binding999 uniform, storage buffer, sampled/storage texture and sampler, exact GPU outputs and early releases (native Metal device: Apple M3; subtype unclassified; developer run, not qualification)\n",
+    "source_manifest_sha256": "65feabf2f1c33995de12cd5e6ca39994b70f5dad346efc9bc3ea0291c475cc94",
+    "binary_sha256": "362584734d103ddf1008d233b06022442407ad548ff5314997607c711e07bf44",
+    "native_sha256": "9b3a2a719715359fa48222751ff8736d3a9a81a6549f2665c1d7e850cf56992b",
+    "compiler_sha256": "376f85d435ab82fad586b67a17a003f66a4dab0982d44996232a62eafaad853d",
+    "source_drift_after_run": []
+  },
+  "offscreen": {
+    "source_tree": "53bc72c64cd15ef86a85d00dd2248fdd8f076693",
+    "client": "offscreen-triangle",
+    "exit_code": 0,
+    "elapsed_seconds": 0.0621197500731796,
+    "child_deadline_seconds": 5,
+    "outer_guardian_seconds": 20,
+    "thermal_preflight": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded\n",
+    "output": "Selected adapter backend Metal, type 4: Apple M3\nPASS public WGSL triangle, early release, discard initialization and packed uploads (native Metal device: Apple M3; subtype unclassified; developer run, not qualification)\n",
+    "source_manifest_sha256": "65feabf2f1c33995de12cd5e6ca39994b70f5dad346efc9bc3ea0291c475cc94",
+    "binary_sha256": "58728cfbb13335b22ee696c9fe3918dc6e008cf3ed8b094b5f551bd231402244",
+    "native_sha256": "9b3a2a719715359fa48222751ff8736d3a9a81a6549f2665c1d7e850cf56992b",
+    "compiler_sha256": "376f85d435ab82fad586b67a17a003f66a4dab0982d44996232a62eafaad853d",
+    "source_drift_after_run": []
+  },
+  "node": {
+    "exit_code": 0,
+    "elapsed_seconds": 0.1708112919004634,
+    "child_deadline_seconds": 5,
+    "outer_guardian_seconds": 20,
+    "node": "/Users/xyz/.nvm/versions/node/v22.20.0/bin/node",
+    "node_version": "v22.20.0",
+    "thermal_preflight": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded\n",
+    "stdout": "{\"phase\":\"selected C provider\",\"selected\":{\"module\":\"doe-gpu\",\"loaded\":true,\"loadError\":\"\",\"defaultCreateArgs\":[],\"doeNative\":true,\"libraryFlavor\":\"doe-c\",\"doeLibraryPath\":\"/tmp/doe-c-metal-dense-final-build-20261023/libwebgpu_doe_c.dylib\",\"buildMetadataSource\":\"none\",\"buildMetadataPath\":\"\",\"leanVerifiedBuild\":null,\"proofArtifactSha256\":null,\"nativeFastPaths\":{\"appleFastPathCompiled\":true,\"queueFlush\":false,\"queueFlushBreakdown\":false,\"queueWriteBufferBatch\":false,\"queueWriteBufferBatchDataPtrs\":false,\"computeDispatchFlush\":false,\"computeDispatchFlushBreakdown\":false,\"computeDispatchBatchFlush\":false,\"computeDispatchBatchCopyFlush\":false,\"computeDispatchBatchCopyFlushBreakdown\":false,\"computePrewarmDispatchBindings\":false,\"bufferMapReadCopyUnmap\":false}}}\n{\"scope\":\"bounded unchanged public Node first-kernel against frozen C producer\",\"node\":\"22.20.0\",\"adapterInfo\":{\"vendor\":\"\",\"architecture\":\"\",\"device\":\"Apple M3\",\"description\":\"\",\"isFallbackAdapter\":false,\"subgroupMinSize\":0,\"subgroupMaxSize\":0},\"backendEvidence\":\"Node info omits backendType; frozen Darwin C default selects Metal without fallback; same producer C public consumers independently reported Metal\",\"receipt\":{\"kind\":\"doe-gpu.first-kernel.receipt\",\"schemaVersion\":1,\"runtimeHost\":\"node\",\"provider\":{\"module\":\"doe-gpu\",\"loaded\":true,\"loadError\":\"\",\"defaultCreateArgs\":[],\"doeNative\":true,\"libraryFlavor\":\"doe-c\",\"doeLibraryPath\":\"/tmp/doe-c-metal-dense-final-build-20261023/libwebgpu_doe_c.dylib\",\"buildMetadataSource\":\"none\",\"buildMetadataPath\":\"\",\"leanVerifiedBuild\":null,\"proofArtifactSha256\":null,\"nativeFastPaths\":{\"appleFastPathCompiled\":true,\"queueFlush\":false,\"queueFlushBreakdown\":false,\"queueWriteBufferBatch\":false,\"queueWriteBufferBatchDataPtrs\":false,\"computeDispatchFlush\":false,\"computeDispatchFlushBreakdown\":false,\"computeDispatchBatchFlush\":false,\"computeDispatchBatchCopyFlush\":false,\"computeDispatchBatchCopyFlushBreakdown\":false,\"computePrewarmDispatchBindings\":false,\"bufferMapReadCopyUnmap\":false}},\"workload\":{\"id\":\"vector-scale-f32\",\"elementCount\":8,\"wgslSha256\":\"f03b12ba1e7df16b58babac43b326771a30d3e7de9278bfcd3daa8d95faf80b2\",\"inputSha256\":\"af7de0621354bafceb193edf0fcf5d421cf21de7146580062fff53c7907f54e5\"},\"result\":{\"output\":[2,4,6,8,10,12,14,16],\"outputSha256\":\"9d42cad41af4aaf3ae973e5a48d96f61e4708edc57bf7dd29a497ebd96f506cf\",\"durationMs\":129.946}}}\n",
+    "stderr": "",
+    "source_manifest_sha256": "0b3a151a715fa81cae540019dab50de9889b8bf97a93dd8fff9f6c4d21e04e0b",
+    "source_drift_after_run": []
+  }
+}

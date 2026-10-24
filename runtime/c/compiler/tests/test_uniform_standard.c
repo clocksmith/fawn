@@ -122,7 +122,7 @@ static void invalid_cases(void *workspace, size_t bytes, HlslFixture *storage, u
     DoeCompilerStageResult result;
     assert(uniform_compile(workspace, bytes, uniform_cases[0].source, 8, storage, words, &result) == DOE_COMPILER_INPUT_ERROR);
     assert(uniform_compile(workspace, bytes, uniform_cases[0].source, 12, storage, words, &result) == DOE_COMPILER_INPUT_ERROR);
-    assert(uniform_compile(workspace, bytes, uniform_cases[0].source, 27, storage, words, &result) == DOE_COMPILER_INPUT_ERROR);
+    assert(uniform_compile(workspace, bytes, uniform_cases[0].source, 43, storage, words, &result) == DOE_COMPILER_INPUT_ERROR);
     free(before);
 }
 static void typed_adapter(void) {

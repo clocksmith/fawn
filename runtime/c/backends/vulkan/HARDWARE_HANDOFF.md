@@ -3,9 +3,10 @@
 This is a tiny C-only smoke candidate, not production selection or full parity.
 Hardware execution remains unrun in the cloud. The existing software-ICD result
 is explicitly separate. Run only in the isolated folder authorized by the user.
-Do not replace installed libraries or alter ICD files. All physical runs are
-currently paused pending explicit safe-reassembly/cooling confirmation; this
-handoff is preparatory only. Keep cloud/software checks separate.
+Do not replace installed libraries or alter ICD files. On 2026-10-23 the owner
+confirmed safe reassembly and cooling of Miles and Suby, lifting the earlier
+hold on physical runs. That is not run authority; this handoff remains
+preparatory. Keep cloud/software checks separate.
 
 ## Dependencies and source
 

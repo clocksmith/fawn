@@ -250,7 +250,11 @@ int main(void)
 
     value.lost=0;
     value.expect_device_failure=true;
+    /* A required limit better than the adapter's fails creation. */
+    WGPULimits adapter_limits=WGPU_LIMITS_INIT;
+    assert(wgpuAdapterGetLimits(value.adapter,&adapter_limits)==WGPUStatus_Success);
     WGPULimits unsupported=WGPU_LIMITS_INIT;
+    unsupported.maxBindGroups=adapter_limits.maxBindGroups+1;
     WGPUDeviceDescriptor failure=WGPU_DEVICE_DESCRIPTOR_INIT;
     failure.requiredLimits=&unsupported;
     failure.deviceLostCallbackInfo=(WGPUDeviceLostCallbackInfo){.mode=WGPUCallbackMode_AllowProcessEvents,.callback=loss_reply,.userdata1=&value};

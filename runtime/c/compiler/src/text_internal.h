@@ -5,6 +5,7 @@
 #include "compile_internal.h"
 #include "../include/doe_compiler_text.h"
 #include "../include/doe_compiler_hlsl.h"
+#include "../include/doe_compiler_metal.h"
 #include "../targets/metal/metal.h"
 #include "../targets/hlsl/hlsl.h"
 
@@ -14,6 +15,8 @@ typedef struct {
 } TextTargetResult;
 bool compiler_text_metal(Source *, uint32_t selected, DoeTargetScratch,
     DoeCompilerTextBindingV10 *, DoeCompilerTextEntryV10 *, TextTargetResult *);
+bool compiler_text_metal_entry(Source *, uint32_t, DoeTargetScratch,
+    DoeCompilerMetalBindingV12 *, DoeCompilerMetalEntryV12 *, TextTargetResult *);
 bool compiler_text_hlsl(Source *, uint32_t selected, DoeTargetScratch,
     DoeCompilerHlslBindingV11 *, DoeCompilerHlslEntryV11 *, TextTargetResult *);
 #endif

@@ -67,9 +67,20 @@ The retained production owners remain authoritative for those behaviors.
 ## Texture transactions
 
 `include/doe_vk_texture.h` uses named native format values, never WebGPU numeric
-casts. Twenty-three uncompressed color formats plus four attachment-only depth/stencil formats
-are admitted when native format support exists. Compressed formats, multisampling,
-swizzles remain outside this increment. Format reinterpretation is limited to the
+casts. Twenty-four uncompressed color formats (including rg11b10ufloat) plus four attachment-only depth/stencil formats
+are admitted when native format support exists. The fourteen BC formats (4x4
+blocks of 8 or 16 bytes) exist for a context only with enabled
+textureCompressionBC (`caps.texture_compression_bc`); `doe_vk_format_caps` then
+reports `block_extent` 4, and `volume` reports sampled+transfer 3D images (for
+sliced 3D). Buffer copies of block formats count block columns and rows
+(`rows_per_image` is in block rows; native row length and image height are
+texels), regions start block-aligned and end on whole blocks or at the
+subresource edge, and a block-rounded WebGPU extent is clamped to that edge.
+`tests/image_format_contract.c` checks the gate, block caps and copy regions.
+`doe_vk_texture_view_desc.swizzle` names each channel's native VkComponentSwizzle
+source (zero is identity); a swizzled view is sampled-only, so color/depth
+attachments and storage bindings reject it (`tests/texture_contract.c`,
+`tests/render_contract.c`). Format reinterpretation is limited to the
 srgb/unorm pairs RGBA8 and BGRA8: `doe_vk_texture_desc.view_formats` naming the
 pair creates a MUTABLE_FORMAT image chained with `VkImageFormatListCreateInfo`
 (image format first; official Vulkan-Headers v1.3.290 declaration and constants
@@ -237,7 +248,7 @@ make sanitize
 make probe
 ```
 
-Outputs default to `/tmp/doe-c-vulkan`. The sanitizer recipe disables only leak
+Outputs default to `$(DOE_C_TMP)/vulkan`, a per-checkout root from [build-root.mk](../../build-root.mk). The sanitizer recipe disables only leak
 scanning because this hosted environment uses ptrace, which LSan rejects. ASan
 and UBSan remain enabled. Explicit acquisition/release assertions still execute.
 Run leak scanning separately in a supported environment before qualification.
@@ -329,6 +340,10 @@ not the native backend archive. Use an explicit existing software selector for
 software evidence; this is neither physical nor complete matrix qualification.
 
 ### Graphics limits and dynamic blend constants
+
+`caps.max_memory_allocation_size` is VkPhysicalDeviceMaintenance3Properties
+maxMemoryAllocationSize (Vulkan 1.1 core), queried after selection; consumers
+bound one-allocation buffers by it.
 
 Capabilities expose actual driver vertex binding/attribute counts, stride/offset
 limits and vertex-output/fragment-input component limits. Public admission still

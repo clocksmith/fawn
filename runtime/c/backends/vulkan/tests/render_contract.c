@@ -48,7 +48,7 @@ int main(void) {
         .subresource_count = 1, .initialized = &initialized,
         .desc = {.dimension = DOE_VK_TEXTURE_2D, .format = DOE_VK_FORMAT_RGBA8_UNORM,
             .width = 8, .height = 8, .depth_or_layers = 1, .mip_levels = 1, .usage = DOE_VK_TEXTURE_COLOR_ATTACHMENT} };
-    doe_vk_texture_view view = { .texture = &texture, .references = 1, .aspects = 1, .format = DOE_VK_FORMAT_RGBA8_UNORM, .desc = {DOE_VK_VIEW_2D, 0, 1, 0, 1, DOE_VK_ASPECT_ALL, 0} };
+    doe_vk_texture_view view = { .texture = &texture, .references = 1, .aspects = 1, .format = DOE_VK_FORMAT_RGBA8_UNORM, .desc = {DOE_VK_VIEW_2D, 0, 1, 0, 1, DOE_VK_ASPECT_ALL, 0, {0}} };
     doe_vk_pipeline pipeline = {.context = &context, .references = 1, .graphics = true,
         .color_count = 1, .color_formats = {DOE_VK_FORMAT_RGBA8_UNORM}, .vertex_count = 1};
     pipeline.vertices[0] = (doe_vk_vertex_layout){16, false};
@@ -128,6 +128,12 @@ int main(void) {
     commands = recording(&context);
     initialized = 0;
     const doe_vk_clear_color clear = {.float32 = {0, 0, 0, 1}};
+    /* A swizzled view is sampled-only: attachment use rejects before native work. */
+    view.desc.swizzle[0] = DOE_VK_SWIZZLE_B;
+    assert(doe_vk_commands_clear_color(&commands, &view, clear) == DOE_VK_INVALID_ARGUMENT);
+    assert(commands.renders == NULL && commands.textures == NULL && view.references == 1);
+    view.desc.swizzle[0] = DOE_VK_SWIZZLE_IDENTITY;
+    commands = recording(&context);
     assert(doe_vk_commands_clear_color(&commands, &view, clear) == DOE_VK_OUT_OF_MEMORY);
     assert(commands.renders != NULL && commands.renders->pass == 17 && commands.renders->framebuffer == 0);
     assert(view.references == 2 && texture.references == 2 && texture.recording_owner == &commands);
@@ -139,6 +145,6 @@ int main(void) {
     commands = recording(&context);
     assert(doe_vk_commands_clear_color(&commands, &view, clear) == DOE_VK_UNSUPPORTED);
     assert(commands.renders == NULL && commands.textures == NULL);
-    puts("PASS explicit raw/WebGPU viewport, negative/outside-attachment origins, zero extents, physical bounds, version/enum rejection and untouched output, render vertex last-byte, NaN viewport, scissor/count overflow, compute/graphics kind mismatch, graphics-family admission and framebuffer rollback without initialized-output publication");
+    puts("PASS explicit raw/WebGPU viewport, negative/outside-attachment origins, zero extents, physical bounds, version/enum rejection and untouched output, render vertex last-byte, NaN viewport, scissor/count overflow, compute/graphics kind mismatch, graphics-family admission, swizzled-view attachment rejection and framebuffer rollback without initialized-output publication");
     return 0;
 }

@@ -4,17 +4,19 @@
 #include <stdlib.h>
 
 static bool vertices(const WGPUVertexState *source, doe_vk_render_pipeline_desc *native,
-    doe_resource_render_pipeline_desc *resource, const doe_vk_caps *caps, doe_vk_vertex_layout layouts[DOE_VK_MAX_VERTEX_BUFFERS],
+    doe_resource_render_pipeline_desc *resource, const WGPULimits *limits, doe_vk_vertex_layout layouts[DOE_VK_MAX_VERTEX_BUFFERS],
     doe_vk_vertex_attribute attributes[DOE_VK_MAX_VERTEX_ATTRIBUTES])
 {
-    if (source->bufferCount > DOE_VK_MAX_VERTEX_BUFFERS || (source->bufferCount && !source->buffers)) return false;
+    /* https://gpuweb.github.io/gpuweb/#abstract-opdef-validating-gpuvertexstate */
+    if (source->bufferCount > DOE_VK_MAX_VERTEX_BUFFERS || source->bufferCount > limits->maxVertexBuffers ||
+        (source->bufferCount && !source->buffers)) return false;
     native->vertex_buffer_count = resource->vertex_count = source->bufferCount;
     native->vertex_buffers = layouts;
     native->attributes = attributes;
     for (size_t slot = 0; slot < source->bufferCount; ++slot) {
         const WGPUVertexBufferLayout *buffer = &source->buffers[slot];
         bool hole = !buffer->attributeCount && buffer->stepMode == WGPUVertexStepMode_Undefined;
-        if (buffer->nextInChain || (!hole && buffer->arrayStride > UINT32_MAX) ||
+        if (buffer->nextInChain || (!hole && buffer->arrayStride > limits->maxVertexBufferArrayStride) ||
             buffer->attributeCount > DOE_VK_MAX_VERTEX_ATTRIBUTES - native->attribute_count ||
             (buffer->attributeCount && !buffer->attributes)) return false;
         WGPUVertexStepMode step = buffer->stepMode;
@@ -29,9 +31,11 @@ static bool vertices(const WGPUVertexState *source, doe_vk_render_pipeline_desc 
             uint32_t scalar, bytes;
             if (attribute->nextInChain || attribute->offset > UINT32_MAX ||
                 attribute->shaderLocation >= DOE_VK_MAX_VERTEX_ATTRIBUTES ||
-                attribute->shaderLocation >= caps->max_vertex_input_attributes ||
+                attribute->shaderLocation >= limits->maxVertexAttributes ||
                 !native_vertex_format(attribute->format, &format, &scalar, &bytes) ||
-                attribute->offset > UINT32_MAX - bytes) return false;
+                attribute->offset > UINT32_MAX - bytes ||
+                attribute->offset + bytes > (buffer->arrayStride ? buffer->arrayStride :
+                    limits->maxVertexBufferArrayStride)) return false;
             for (size_t j = 0; j < native->attribute_count; ++j)
                 if (attributes[j].location == attribute->shaderLocation) return false;
             uint64_t end = attribute->offset + bytes;
@@ -82,8 +86,10 @@ WGPURenderPipeline native_create_render_pipeline(native_device *device,
         device->backend.value.vulkan.caps.max_fragment_input_components};
     if (!native_render_fixed(device->features, descriptor, &native) ||
         !native_render_depth(device->features, descriptor->depthStencil, &native, &resource) ||
-        !vertices(&descriptor->vertex, &native, &resource, &device->backend.value.vulkan.caps, layouts, attributes) ||
-        !native_render_interfaces(stages, stage_count, &descriptor->vertex, fragment, descriptor->multisample.alphaToCoverageEnabled, &interface_limits)) return NULL;
+        !vertices(&descriptor->vertex, &native, &resource, &device->backend.limits, layouts, attributes) ||
+        !native_render_interfaces(stages, stage_count, &descriptor->vertex, fragment,
+            descriptor->multisample.alphaToCoverageEnabled, descriptor->primitive.topology == WGPUPrimitiveTopology_PointList,
+            &interface_limits, &device->backend.limits)) return NULL;
     native_pipeline *payload = calloc(1, sizeof(*payload));
     if (!payload) { *error = (native_pipeline_error){WGPUErrorType_OutOfMemory,"render pipeline payload allocation failed"}; return NULL; }
     payload->device = device;
@@ -97,7 +103,7 @@ WGPURenderPipeline native_create_render_pipeline(native_device *device,
     if (status == DOE_RESOURCE_OK && (!layout || doe_resource_pipeline_layout_device(layout) != device ||
         !native_pipeline_bindings(payload, stages, stage_count, layout))) status = DOE_RESOURCE_LAYOUT;
     if (status == DOE_RESOURCE_OK && backend == DOE_VK_OK) {
-        doe_vk_binding_layout native_bindings[DOE_RESOURCE_MAX_GROUPS * DOE_RESOURCE_MAX_BINDINGS];
+        doe_vk_binding_layout native_bindings[NATIVE_MAX_PIPELINE_BINDINGS];
         if (!native_vulkan_binding_layout(payload,native_bindings)) abort();
         native.bindings = native_bindings;
         native.binding_count = payload->binding_count;

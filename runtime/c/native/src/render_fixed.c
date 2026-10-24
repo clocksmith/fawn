@@ -92,6 +92,7 @@ bool native_render_fixed(uint32_t features, const WGPURenderPipelineDescriptor *
             continue;
         }
         if (color->writeMask & ~WGPUColorWriteMask_All || !native_texture_format(features, color->format, &slot->format) ||
+            !native_color_renderable(features, color->format) ||
             native_depth_format(features, color->format, &slot->format)) return false;
         /* 32-bit float targets are blendable only with float32-blendable; the
          * backend separately requires the native blend format feature. */

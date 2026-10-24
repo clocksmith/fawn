@@ -37,7 +37,8 @@ static bool target_output(const native_stage *fragment, const WGPUColorTargetSta
 }
 
 bool native_render_interfaces(const native_stage stages[2], size_t stage_count, const WGPUVertexState *vertex,
-    const WGPUFragmentState *fragment, bool alpha_to_coverage, const native_graphics_limits *caps)
+    const WGPUFragmentState *fragment, bool alpha_to_coverage, bool point_list,
+    const native_graphics_limits *caps, const WGPULimits *limits)
 {
     const native_stage *fragment_stage = stage_count == 2 ? &stages[1] : NULL;
     size_t targets = fragment ? fragment->targetCount : 0;
@@ -52,10 +53,17 @@ bool native_render_interfaces(const native_stage stages[2], size_t stage_count, 
         const native_stage *stage = &stages[s];
         size_t entry_index = (size_t)(stage->entry - stage->view.entries);
         uint32_t components = 0;
+        /* https://gpuweb.github.io/gpuweb/#abstract-opdef-validating-inter-stage-interfaces:
+         * user-defined inter-stage variables, less one slot for point-list
+         * vertex output and one per fragment front_facing input. */
+        uint32_t variables = 0, variable_budget = limits->maxInterStageShaderVariables;
+        if (s == 0 && point_list && variable_budget) --variable_budget;
         for (size_t i = 0; i < stage->view.interface_count; ++i) {
             const DoeCompilerStageInterfaceV7 *item = &stage->view.interfaces[i];
             if (item->entry_index != entry_index) continue;
             if (item->builtin) {
+                if (s == 1 && item->direction == DOE_COMPILER_INTERFACE_INPUT &&
+                    item->builtin == DOE_COMPILER_BUILTIN_FRONT_FACING && variable_budget) --variable_budget;
                 if (s == 1 && (item->builtin == DOE_COMPILER_BUILTIN_FRAG_DEPTH ||
                     item->builtin == DOE_COMPILER_BUILTIN_SAMPLE_INDEX || item->builtin == DOE_COMPILER_BUILTIN_SAMPLE_MASK))
                     return false; /* Fragment depth outputs and sample-rate builtins remain unsupported. */
@@ -77,9 +85,8 @@ bool native_render_interfaces(const native_stage stages[2], size_t stage_count, 
             } else if (s == 1 && item->direction == DOE_COMPILER_INTERFACE_OUTPUT) {
                 continue; /* Targeted outputs are checked above; untargeted ones are ignored. */
             } else {
-                uint32_t max_components = caps->max_vertex_output_components < caps->max_fragment_input_components ?
-                    caps->max_vertex_output_components : caps->max_fragment_input_components;
-                if (item->location >= max_components / 4) return false;
+                if (item->location >= limits->maxInterStageShaderVariables) return false;
+                ++variables;
                 if (components > UINT32_MAX - item->lane_count) return false;
                 components += item->lane_count;
                 if (s == 1) {
@@ -89,6 +96,9 @@ bool native_render_interfaces(const native_stage stages[2], size_t stage_count, 
                 }
             }
         }
+        if (variables > variable_budget) return false;
+        /* Native component capacity stays a backstop; the reported limit is
+         * derived from it (limits.c), so admitted shaders fit. */
         if (components > (s ? caps->max_fragment_input_components : caps->max_vertex_output_components)) return false;
     }
     return true;

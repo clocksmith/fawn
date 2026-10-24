@@ -111,9 +111,12 @@ never pass) without a display. Never hard-code forceFallbackAdapter or a CPU lab
 Adapter selection is by class, and device contexts reopen the adapter's hardware
 by UUID; never select or recreate by enumeration ordinal.
 
-Metal render conversion consumes each selected compiler entry's own MSL binding
-metadata; vertex and fragment namespaces can differ even for the same public
-binding. Allocate vertex-fetch slots around the selected vertex resource/size
+Metal compute and render conversion share the selected-entry ABI12 mapping and
+one typed resource-snapshot helper. Sparse public group/binding numbers never
+become native slots. Validate each row's entry/resource/table/slot identity and
+per-entry span; legacy ABI10 rows are not interchangeable. Vertex and fragment
+namespaces can differ even for the same public binding. The native buffer-size
+table uses the compiler's actual buffer slot; never invent another size index. Allocate vertex-fetch slots around the selected vertex resource/size
 slots, preserving canonical empty vertex slots. Whole passes lower once through
 the existing backend attachment owner, including empty clear/load and discard.
 Never publish a public texture until its real initialization completes; unknown

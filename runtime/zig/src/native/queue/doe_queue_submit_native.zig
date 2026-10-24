@@ -6,15 +6,14 @@ const native_helpers = @import("../support/doe_native_object_helpers.zig");
 const copy_ops = @import("doe_queue_copy_native.zig");
 const lifecycle = @import("doe_queue_lifecycle.zig");
 const shared = @import("doe_queue_submit_shared.zig");
-const d3d12_submit = @import("doe_queue_submit_d3d12.zig");
-const metal_submit = @import("doe_queue_submit_metal.zig");
-const vulkan_submit = @import("doe_queue_submit_vulkan.zig");
+const backend_submit = @import("doe_queue_submit_backend.zig");
 const compute_program = @import("../compute/doe_compute_program_native.zig");
 const availability = @import("doe_submission_validation.zig");
 
 comptime {
     _ = &compute_program.doeNativeComputeProgramSupported;
     _ = &compute_program.doeNativeComputeProgramPrepare;
+    _ = &compute_program.doeNativeComputeProgramPrepareHostReplay;
     _ = &compute_program.doeNativeComputeProgramSubmit;
     _ = &compute_program.doeNativeComputeProgramRelease;
 }
@@ -45,15 +44,7 @@ pub export fn doeNativeQueueSubmit(
         return;
     };
     if (!q.dev.requireAlive()) return;
-    if (q.dev.backend == .vulkan) {
-        vulkan_submit.submit_vulkan_commands(q, count, cmd_bufs);
-        return;
-    }
-    if (q.dev.backend == .d3d12) {
-        d3d12_submit.submit_d3d12_commands(q, count, cmd_bufs);
-        return;
-    }
-    metal_submit.submit_metal_commands(q, count, cmd_bufs);
+    backend_submit.submitBackend(q, count, cmd_bufs);
 }
 
 pub export fn doeNativeQueueFlush(q_raw: ?*anyopaque) callconv(.c) void {

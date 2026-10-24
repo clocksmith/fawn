@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import importlib.util
 import subprocess
 import unittest
 
@@ -21,10 +22,12 @@ def defined_exports(binary: Path) -> set[str]:
 
 class TestPublicExports(unittest.TestCase):
     def test_library_has_only_versioned_api_function(self) -> None:
+        spec = importlib.util.spec_from_file_location("compiler_exports", ROOT / "tools/export_symbols.py")
+        assert spec and spec.loader
+        exports = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(exports)
         self.assertEqual(defined_exports(ROOT / "build/libdoe_compiler.so"),
-                         {"doe_compiler_compile", "doe_compiler_compile_v2",
-                          "doe_compiler_workspace_requirements", "doe_compiler_job_requirements",
-                          "doe_compiler_compile_job"})
+                         set(exports.symbols((ROOT / "src/exports.map").read_text())))
 
     def test_library_has_no_allocator_dependency(self) -> None:
         run = subprocess.run(["nm", "-D", "--undefined-only", str(ROOT / "build/libdoe_compiler.so")],

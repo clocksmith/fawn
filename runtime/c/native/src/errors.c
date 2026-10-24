@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: MIT */
 #include "internal.h"
+#include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 
@@ -52,4 +53,12 @@ WGPUFuture wgpuDevicePopErrorScope(WGPUDevice handle, WGPUPopErrorScopeCallbackI
         sizeof(delivery), _Alignof(error_delivery), copy_error, deliver_error);
     native_device_release(device);
     return future;
+}
+
+void native_encoding_error(native_device *device, bool ended, doe_resource_status status, const char *message)
+{
+    if (!ended || status == DOE_RESOURCE_OK) return;
+    char text[256];
+    snprintf(text, sizeof(text), "%s: the encoder or pass already ended", message);
+    native_error(device, native_resource_error(status), text);
 }

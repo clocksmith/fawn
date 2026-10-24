@@ -4,7 +4,7 @@ const contracts = [
   './unit/browser-compiler.test.js',
   './unit/compute-program.test.js',
   './unit/live-simulation.test.js',
-  './unit/test-live-simulation-terminal.js',
+  './unit/live-simulation-terminal.test.js',
   './unit/node-process-requests.test.js',
   './unit/browser-runtime-identity.test.js',
   './unit/node-webgpu-provider-v1.test.js',
@@ -29,6 +29,7 @@ const contracts = [
   './unit/native-release-candidate-bundle.test.js',
   './unit/addon-enum-values.test.js',
   './unit/addon-source-size.test.js',
+  './unit/js-style.test.js',
 ];
 
 for (const contract of contracts) {
