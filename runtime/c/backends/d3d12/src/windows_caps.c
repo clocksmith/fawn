@@ -105,7 +105,7 @@ doe_dx_status doe_dx_query_caps(doe_dx_native_context *context, doe_dx_caps *out
     limits->max_compute_size[2] = D3D12_CS_THREAD_GROUP_MAX_Z;
     for (size_t axis = 0; axis < 3; ++axis)
         limits->max_dispatch_groups[axis] = D3D12_CS_DISPATCH_MAX_THREAD_GROUPS_PER_DIMENSION;
-    limits->max_compute_shared_bytes = D3D12_CS_TGSM_BYTES_MINIMUM_SUPPORT;
+    limits->max_compute_shared_bytes = D3D12_CS_TGSM_REGISTER_COUNT * (uint32_t)sizeof(DWORD);
     limits->uniform_offset_alignment = D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT;
     limits->max_uniform_bytes = D3D12_REQ_CONSTANT_BUFFER_ELEMENT_COUNT * 16u;
     status = buffer_bound(context, &caps, error);
