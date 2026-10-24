@@ -52,16 +52,13 @@ static doe_dx_status render_root(doe_dx_native_context *context,
             const doe_dx_texture_binding_layout *texture=buffer ? NULL : &plan->textures[i-plan->binding_count];
             doe_dx_descriptor_kind kind=buffer ? doe_dx_buffer_descriptor_kind(binding) :
                 texture->access==DOE_DX_READ_ONLY ? DOE_DX_DESCRIPTOR_SRV : DOE_DX_DESCRIPTOR_UAV;
-            D3D12_DESCRIPTOR_RANGE_TYPE type;
-            switch (kind) {
-            case DOE_DX_DESCRIPTOR_CBV: type=D3D12_DESCRIPTOR_RANGE_TYPE_CBV; break;
-            case DOE_DX_DESCRIPTOR_SRV: type=D3D12_DESCRIPTOR_RANGE_TYPE_SRV; break;
-            case DOE_DX_DESCRIPTOR_UAV: type=D3D12_DESCRIPTOR_RANGE_TYPE_UAV; break;
-            case DOE_DX_DESCRIPTOR_INVALID: return doe_dx_fail(DOE_DX_INVALID_ARGUMENT,0,"render.root.kind",error);
-            }
-            resources[resource_count++]=(D3D12_DESCRIPTOR_RANGE){type,1,
-                buffer ? binding->shader_register : texture->shader_register,
-                buffer ? binding->register_space : texture->register_space,(UINT)i};
+            D3D12_DESCRIPTOR_RANGE range={.NumDescriptors=1,
+                .BaseShaderRegister=buffer ? binding->shader_register : texture->shader_register,
+                .RegisterSpace=buffer ? binding->register_space : texture->register_space,
+                .OffsetInDescriptorsFromTableStart=(UINT)i};
+            if (!doe_dx_descriptor_range_type(kind,&range.RangeType))
+                return doe_dx_fail(DOE_DX_INVALID_ARGUMENT,0,"render.root.kind",error);
+            resources[resource_count++]=range;
         }
         D3D12_SHADER_VISIBILITY visibility=stage==0 ? D3D12_SHADER_VISIBILITY_VERTEX : D3D12_SHADER_VISIBILITY_PIXEL;
         if (resource_count!=first) {

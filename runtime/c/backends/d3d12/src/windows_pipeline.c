@@ -2,6 +2,17 @@
 #include "windows_internal.h"
 #ifdef _WIN32
 
+bool doe_dx_descriptor_range_type(doe_dx_descriptor_kind kind,D3D12_DESCRIPTOR_RANGE_TYPE *out)
+{
+    switch (kind) {
+    case DOE_DX_DESCRIPTOR_CBV: *out=D3D12_DESCRIPTOR_RANGE_TYPE_CBV; return true;
+    case DOE_DX_DESCRIPTOR_SRV: *out=D3D12_DESCRIPTOR_RANGE_TYPE_SRV; return true;
+    case DOE_DX_DESCRIPTOR_UAV: *out=D3D12_DESCRIPTOR_RANGE_TYPE_UAV; return true;
+    case DOE_DX_DESCRIPTOR_INVALID: return false;
+    }
+    return false;
+}
+
 static D3D12_TEXTURE_ADDRESS_MODE address_mode(doe_dx_address address) {
     switch (address) {
         case DOE_DX_CLAMP: return D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
@@ -26,19 +37,8 @@ static doe_dx_status create_root(doe_dx_native_context *context,
     for (size_t index = 0; index < desc->buffers.binding_count; index++) {
         const doe_dx_binding_layout *binding = &desc->buffers.bindings[index];
         doe_dx_descriptor_kind kind = doe_dx_buffer_descriptor_kind(binding);
-        switch (kind) {
-            case DOE_DX_DESCRIPTOR_CBV:
-                ranges[index].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
-                break;
-            case DOE_DX_DESCRIPTOR_SRV:
-                ranges[index].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-                break;
-            case DOE_DX_DESCRIPTOR_UAV:
-                ranges[index].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
-                break;
-            case DOE_DX_DESCRIPTOR_INVALID:
-                return doe_dx_fail(DOE_DX_INVALID_ARGUMENT, 0, "native.root.binding_kind", error);
-        }
+        if (!doe_dx_descriptor_range_type(kind,&ranges[index].RangeType))
+            return doe_dx_fail(DOE_DX_INVALID_ARGUMENT, 0, "native.root.binding_kind", error);
         ranges[index].NumDescriptors = 1;
         ranges[index].BaseShaderRegister = binding->shader_register;
         ranges[index].RegisterSpace = binding->register_space;

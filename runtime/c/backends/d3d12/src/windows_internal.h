@@ -86,6 +86,7 @@ void doe_dx_transition_sets(doe_dx_native_commands *,const doe_dx_resource_set *
 doe_dx_status doe_dx_prepare_color_target(doe_dx_native_commands *,doe_dx_native_texture *,
     doe_dx_descriptor_use **,D3D12_CPU_DESCRIPTOR_HANDLE *,doe_dx_error *);
 void doe_dx_graphics_defaults(D3D12_GRAPHICS_PIPELINE_STATE_DESC *,doe_dx_format);
+bool doe_dx_descriptor_range_type(doe_dx_descriptor_kind,D3D12_DESCRIPTOR_RANGE_TYPE *);
 doe_dx_status doe_dx_prepare_descriptors(doe_dx_native_commands *commands,
     doe_dx_native_pipeline *pipeline, const doe_dx_native_resources *resources,
     doe_dx_descriptor_use **out, doe_dx_error *error);
