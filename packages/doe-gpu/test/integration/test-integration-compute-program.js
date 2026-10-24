@@ -54,7 +54,7 @@ try {
   try {
     assert.throws(() => secondDevice.createComputePipeline({ layout: 'auto',
       compute: { module: firstShader, entryPoint: 'main' } }),
-    (error) => error.reason === 'validation' && /shader created by this device/.test(error.message));
+    (error) => error.reason === 'validation' && /shader (created by|from) this device/.test(error.message));
     firstDevice.destroy();
     await firstProgram.close();
     await assert.rejects(firstShader.getCompilationInfo(), /GPUDevice was destroyed/);
