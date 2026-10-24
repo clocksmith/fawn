@@ -24,6 +24,26 @@ pub fn requiredLayoutKind(kind: wgsl_bindings.BindingKind) u8 {
     return @intCast(binding_contract.layoutResourceKindCode(layout_kind));
 }
 
+/// The first binding number at or above maxBindingsPerBindGroup that the
+/// named compute entry point (or the module's only compute entry point when
+/// unnamed) uses, from the module's cached Vulkan entry-point reflection.
+/// Null when every used binding is admitted or the module has no reflection.
+pub fn computeEntryBindingOverLimit(sm: *const DoeShaderModule, entry_point: ?[]const u8) ?u32 {
+    const entries = sm.vk_entry_point_bindings;
+    const selected = if (entry_point) |name| for (entries) |entry| {
+        if (std.mem.eql(u8, entry.name, name)) break entry;
+    } else return null else if (entries.len == 1) entries[0] else return null;
+    return bindingOverLimit(selected.bindings);
+}
+
+/// The first binding number at or above maxBindingsPerBindGroup in `bindings`.
+pub fn bindingOverLimit(bindings: []const wgsl_bindings.BindingMeta) ?u32 {
+    for (bindings) |meta| {
+        if (meta.binding >= native_shared.MAX_BINDINGS_PER_BIND_GROUP) return meta.binding;
+    }
+    return null;
+}
+
 pub fn ensureShaderBindings(sm: *DoeShaderModule) wgsl_analysis.TranslateError!void {
     return ensureShaderBindingsWithAllocator(alloc, sm);
 }

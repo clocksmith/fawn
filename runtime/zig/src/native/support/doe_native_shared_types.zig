@@ -10,6 +10,11 @@ pub const NativeVulkanRuntime = if (has_vulkan) backend_lifecycle.NativeVulkanRu
 pub const NativeD3D12Runtime = backend_lifecycle.NativeD3D12Runtime;
 
 pub const MAX_BIND: usize = 32;
+/// WebGPU maxBindingsPerBindGroup on every Doe device: maximum-class limits
+/// never drop below the default, and adapters report exactly the default.
+/// A binding number at or above it is a validation error in a bind group
+/// layout and in a pipeline whose entry points use it.
+pub const MAX_BINDINGS_PER_BIND_GROUP: u32 = 1000;
 pub const MAX_RENDER_BIND_GROUPS: usize = 4;
 pub const MAX_COMPUTE_BIND_GROUPS: usize = 4;
 pub const MAX_FLAT_BIND: usize = MAX_BIND * MAX_COMPUTE_BIND_GROUPS;

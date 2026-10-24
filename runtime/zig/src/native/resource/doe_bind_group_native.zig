@@ -16,6 +16,7 @@ const model_render_types = @import("../../contracts/model/model_render_types.zig
 const texture_contract = @import("../../contracts/texture.zig");
 const texture_sampler = @import("doe_texture_sampler_native.zig");
 const command_recording = @import("../../contracts/command_recording.zig");
+const error_scope = @import("../../runtime/diagnostics/error_scope.zig");
 
 const alloc = native_helpers.alloc;
 const make = native_helpers.make;
@@ -295,6 +296,12 @@ pub export fn doeNativeDeviceCreateBindGroupLayout(dev_raw: ?*anyopaque, desc: ?
     if (d.entryCount > 0 and d.entries == null) {
         return null;
     }
+    if (d.entryCount > 0) for (d.entries[0..d.entryCount]) |entry| {
+        if (entry.binding < native_shared.MAX_BINDINGS_PER_BIND_GROUP) continue;
+        var buf: [160]u8 = undefined;
+        owner.error_scopes.deliver(error_scope.ERROR_TYPE_VALIDATION, std.fmt.bufPrint(&buf, "createBindGroupLayout: entry binding {d} is not below maxBindingsPerBindGroup ({d})", .{ entry.binding, native_shared.MAX_BINDINGS_PER_BIND_GROUP }) catch "createBindGroupLayout: entry binding exceeds maxBindingsPerBindGroup");
+        return null;
+    };
     const bgl = make(DoeBindGroupLayout) orelse return null;
     var stored_entries: ?[]DoeBindGroupLayoutEntry = null;
     if (d.entryCount > 0) {
@@ -855,4 +862,35 @@ test "createPipelineLayout rejects another device's layouts and too many dynamic
     descriptor.bindGroupLayouts = @ptrCast(&layouts);
     try std.testing.expect(doeNativeDeviceCreatePipelineLayout(toOpaque(&device), &descriptor) == null);
     try std.testing.expectEqual(@as(u32, 1), foreign.ref_count);
+}
+
+test "a bind group layout entry binding at maxBindingsPerBindGroup is a validation error" {
+    var device = DoeDevice{};
+    const Capture = struct {
+        kind: u32 = error_scope.ERROR_TYPE_NO_ERROR,
+        fn receive(kind: u32, _: @import("../../core/abi/wgpu_handle_types.zig").WGPUStringView, userdata: ?*anyopaque, _: ?*anyopaque) callconv(.c) void {
+            const self: *@This() = @ptrCast(@alignCast(userdata.?));
+            self.kind = kind;
+        }
+    };
+    var entry = layout_entry_for_kind_test();
+    entry.buffer.type = abi_binding.WGPUBufferBindingType_Storage;
+    var desc = std.mem.zeroes(abi_pipeline.WGPUBindGroupLayoutDescriptor);
+    desc.entryCount = 1;
+    desc.entries = @ptrCast(&entry);
+
+    entry.binding = native_shared.MAX_BINDINGS_PER_BIND_GROUP - 1;
+    device.error_scopes.push(error_scope.FILTER_VALIDATION);
+    const admitted = doeNativeDeviceCreateBindGroupLayout(toOpaque(&device), &desc) orelse return error.TestUnexpectedResult;
+    doeNativeBindGroupLayoutRelease(admitted);
+    var capture = Capture{};
+    try std.testing.expect(device.error_scopes.pop(.{ .callback = Capture.receive, .userdata1 = &capture }));
+    try std.testing.expectEqual(error_scope.ERROR_TYPE_NO_ERROR, capture.kind);
+
+    entry.binding = native_shared.MAX_BINDINGS_PER_BIND_GROUP;
+    device.error_scopes.push(error_scope.FILTER_VALIDATION);
+    try std.testing.expect(doeNativeDeviceCreateBindGroupLayout(toOpaque(&device), &desc) == null);
+    capture = .{};
+    try std.testing.expect(device.error_scopes.pop(.{ .callback = Capture.receive, .userdata1 = &capture }));
+    try std.testing.expectEqual(error_scope.ERROR_TYPE_VALIDATION, capture.kind);
 }
