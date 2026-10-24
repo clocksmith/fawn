@@ -15,6 +15,7 @@ typedef struct state {
     WGPUDevice device;
     WGPUQueue queue;
     unsigned errors, mapped, validation_errors;
+    WGPUErrorType last_error; /* Type of the latest uncaptured error. */
 } state;
 static inline void adapter_reply(WGPURequestAdapterStatus status, WGPUAdapter adapter,
     WGPUStringView message, void *userdata, void *unused)
@@ -33,8 +34,9 @@ static inline void device_reply(WGPURequestDeviceStatus status, WGPUDevice devic
 static inline void error_reply(WGPUDevice const *device, WGPUErrorType type, WGPUStringView message,
     void *userdata, void *unused)
 {
-    (void)device; (void)type; (void)unused;
+    (void)device; (void)unused;
     ++((state *)userdata)->errors;
+    ((state *)userdata)->last_error = type;
     fprintf(stderr, "native error: %.*s\n", (int)message.length, message.data);
 }
 /* Requests a device with exactly these optional features (count may be 0). */

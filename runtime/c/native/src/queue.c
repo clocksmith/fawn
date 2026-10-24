@@ -375,15 +375,17 @@ void wgpuQueueSubmit(WGPUQueue handle, size_t count, const WGPUCommandBuffer *ha
         for (size_t j = 0; j < i; ++j)
             if (handles[i] == handles[j]) failure = native_failure_status(NATIVE_INVALID_ARGUMENT);
     }
+    /* Submission validity (including single use) is decided before any native
+     * recording, so an invalid buffer never initializes or records backend work. */
     doe_resource_status resource_status = DOE_RESOURCE_OK;
-    if (failure.status == NATIVE_OK) failure = native_command_create(&device->backend, &pending->native);
-    for (size_t i = 0; failure.status == NATIVE_OK && i < count; ++i)
-        failure = native_record_resource_commands(&pending->native, pending->resources[i]);
     for (size_t i = 0; failure.status == NATIVE_OK && i < count; ++i) {
         resource_status = doe_resource_commands_begin_submit(pending->resources[i]);
         if (resource_status != DOE_RESOURCE_OK) failure = native_failure_status(NATIVE_INVALID_ARGUMENT);
         else ++pending->count;
     }
+    if (failure.status == NATIVE_OK) failure = native_command_create(&device->backend, &pending->native);
+    for (size_t i = 0; failure.status == NATIVE_OK && i < count; ++i)
+        failure = native_record_resource_commands(&pending->native, pending->resources[i]);
     if (failure.status == NATIVE_OK) {
         /* Recovery preserves the original submission failure; successful release
          * is the backend's proof of terminal or never-dispatched ownership. */
@@ -391,12 +393,10 @@ void wgpuQueueSubmit(WGPUQueue handle, size_t count, const WGPUCommandBuffer *ha
     } else {
         if (native_command_release(&pending->native) != NATIVE_OK) abort();
         settle_resources(pending, false);
-        /* WebGPU: a submit that fails validation invalidates every command
-         * buffer it names (this device's), not only those before the first
-         * rejection. Backend OOM/internal failures keep them resubmittable. */
-        const WGPUErrorType type = resource_status != DOE_RESOURCE_OK ?
-            native_resource_error(resource_status) : native_result_error(failure.status);
-        for (size_t i = 0; type == WGPUErrorType_Validation && i < count; ++i)
+        /* A command buffer is single-use: any failed submit (validation or a
+         * backend OOM/internal failure) consumes every command buffer it names
+         * on this device, so a resubmission is a validation error. */
+        for (size_t i = 0; i < count; ++i)
             if (doe_resource_commands_device((doe_resource_commands *)handles[i]) == device)
                 doe_resource_commands_invalidate((doe_resource_commands *)handles[i]);
     }
