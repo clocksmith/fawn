@@ -3530,15 +3530,15 @@
       },
       "src/native/compute/doe_compute_bind_groups.zig": {
         "decision": "Keep",
-        "moduleSha256": "6de75136c6aab268d5947f511edb614b6b09fd4e9283b6aea0becba292d6ba3b",
-        "reason": "Keep: reachable native implementation with private behavior tests and no merge, elevation, recomposition, or deletion signal. Applies dynamic offsets to flattened bindings and checks explicit-layout bind groups at dispatch. Dispatch validation also checks automatic-layout bindings by required resource kind. Pipeline bind group validation is shared by dispatch and draws. Automatic-layout pipelines accept only groups from their own layouts; group equivalence includes the exclusive pipeline. pipelineLayoutAdmitsBindings checks entry-point bindings against an explicit pipeline layout. Explicit-layout binding check also compares stage visibility and buffer type.",
-        "reviewer": "doe-c-claude-indexed/2026-10-24"
+        "moduleSha256": "79073ae0deb2bb5da7ccf3f2de317f7eb3f20fd63aa0f95aa66c3e498e747bdb",
+        "reason": "Keep: reachable native implementation with private behavior tests and no merge, elevation, recomposition, or deletion signal. Applies dynamic offsets to flattened bindings and checks explicit-layout bind groups at dispatch. Dispatch validation also checks automatic-layout bindings by required resource kind. Pipeline bind group validation is shared by dispatch and draws. Automatic-layout pipelines accept only groups from their own layouts; group equivalence includes the exclusive pipeline. pipelineLayoutAdmitsBindings checks entry-point bindings against an explicit pipeline layout. Explicit-layout binding check also compares stage visibility and buffer type. Dispatch checks use the pipeline binding list at every binding number.",
+        "reviewer": "doe-c-claude-coordinator/2026-10-24"
       },
       "src/native/compute/doe_compute_ext_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "cc9bc631c148dba173ff685515aa1038e5716c08defefbd187395baf1512e221",
-        "reason": "Keep: the encoder owns pass identity and recording lifetime; native adapters validate operations against that single state. setBindGroup resolves dynamic offsets; dispatch validates pipeline, workgroup counts and explicit-layout bind groups. Dispatch passes the pipeline's required binding kinds for automatic layouts. Compute pass debug groups are balanced at end(). Compute getBindGroupLayout layouts belong to the pipeline's automatic layout; dispatch passes its identity.",
-        "reviewer": "doe-c-claude-indexed/2026-10-24"
+        "moduleSha256": "e1acf914eb54f37f560ac821dd519e154589de175b6ea037ec658a234b42f9f1",
+        "reason": "Keep: the encoder owns pass identity and recording lifetime; native adapters validate operations against that single state. setBindGroup resolves dynamic offsets; dispatch validates pipeline, workgroup counts and explicit-layout bind groups. Dispatch passes the pipeline's required binding kinds for automatic layouts. Compute pass debug groups are balanced at end(). Compute getBindGroupLayout layouts belong to the pipeline's automatic layout; dispatch passes its identity. Dispatches pass the full required-binding list; bindings above the execution slot table fail explicitly.",
+        "reviewer": "doe-c-claude-coordinator/2026-10-24"
       },
       "src/native/compute/doe_compute_fast.zig": {
         "decision": "Keep",
@@ -3644,9 +3644,9 @@
       },
       "src/native/render/doe_bundle_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "5a4c4244b6efcba8d5199b961ec35e490071c255d7bdf69c1afbbe904147599c",
-        "reason": "Keep: preserves this native ownership or ABI boundary while separating internal device cleanup leases from application release and enforcing destroyed-device admission. Vulkan bundle replay starts from empty state rather than the pass's. Vulkan executeBundles resets the pass pipeline, bind groups and vertex/index buffers. Bundle setBindGroup validates and records dynamic offsets, records null groups as unbinds, and replay applies the offsets. Bundle debug groups are balanced at finish(). Bundle draws validate the bundle's pipeline and bind groups; draws past maxDrawCount fail. Render getBindGroupLayout returns explicit groups or a pipeline-owned automatic layout. Render getBindGroupLayout of an automatic layout lists the entry points' bindings by resource kind. Render bundle encoders reject color formats over maxColorAttachmentBytesPerSample.",
-        "reviewer": "doe-c-claude-indexed/2026-10-24"
+        "moduleSha256": "089c4db72f96646eb281f9274e87bb85339728d93e6470261a894a8482ad7fb6",
+        "reason": "Keep: preserves this native ownership or ABI boundary while separating internal device cleanup leases from application release and enforcing destroyed-device admission. Vulkan bundle replay starts from empty state rather than the pass's. Vulkan executeBundles resets the pass pipeline, bind groups and vertex/index buffers. Bundle setBindGroup validates and records dynamic offsets, records null groups as unbinds, and replay applies the offsets. Bundle debug groups are balanced at finish(). Bundle draws validate the bundle's pipeline and bind groups; draws past maxDrawCount fail. Render getBindGroupLayout returns explicit groups or a pipeline-owned automatic layout. Render getBindGroupLayout of an automatic layout lists the entry points' bindings by resource kind. Render bundle encoders reject color formats over maxColorAttachmentBytesPerSample. Bundles check required bindings at every binding number.",
+        "reviewer": "doe-c-claude-coordinator/2026-10-24"
       },
       "src/native/render/doe_render_native.zig": {
         "decision": "Keep",
@@ -3674,8 +3674,8 @@
       },
       "src/native/resource/doe_bind_group_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "a107520023e0d2c10f0bf6ddaa439699dc5fb4829d16feab18e54a994389a3f7",
-        "reason": "Keep: preserves this native ownership or ABI boundary while separating internal device cleanup leases from application release and enforcing destroyed-device admission; float and depth formats also bind as unfilterable-float; invalid samplers are rejected like invalid buffers and views. Texture binding sample types follow the view aspect, so stencil-only views bind as uint. Owns dynamic-offset resolution; null pipeline-layout entries become owned empty groups. Layout entries keep visibility, minBindingSize, sampler type and storage format. Automatic-layout identity and doeNativePipelineAdoptAutoBindGroupLayout. createPipelineLayout validates immediateSize limits, layout devices and dynamic buffer limits; layouts record their device. Bind group layout entries at or above maxBindingsPerBindGroup are validation errors; pipelines and bundle encoders check color attachment bytes per sample.",
+        "moduleSha256": "bf1c0d5ec6d24295adb2670785b71945b777011772471bd585b545d902e32b1c",
+        "reason": "Keep: preserves this native ownership or ABI boundary while separating internal device cleanup leases from application release and enforcing destroyed-device admission; float and depth formats also bind as unfilterable-float; invalid samplers are rejected like invalid buffers and views. Texture binding sample types follow the view aspect, so stencil-only views bind as uint. Owns dynamic-offset resolution; null pipeline-layout entries become owned empty groups. Layout entries keep visibility, minBindingSize, sampler type and storage format. Automatic-layout identity and doeNativePipelineAdoptAutoBindGroupLayout. createPipelineLayout validates immediateSize limits, layout devices and dynamic buffer limits; layouts record their device. Bind group layout entries at or above maxBindingsPerBindGroup are validation errors; pipelines and bundle encoders check color attachment bytes per sample. createBindGroup and the flat-buffer path check entries against the layout at every binding number.",
         "reviewer": "doe-c-claude-coordinator/2026-10-24"
       },
       "src/native/resource/doe_buffer_ops_native.zig": {
@@ -3704,9 +3704,9 @@
       },
       "src/native/resource/doe_texture_sampler_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "3deb910b14b80875432afe9c672046a9ae91d30dfe6c67b31d9367fff223d8b1",
-        "reason": "Keep: preserves this native ownership or ABI boundary while separating internal device cleanup leases from application release and enforcing destroyed-device admission; invalid sampler clamps/anisotropy and view formats generate validation errors with invalid objects; MUTABLE_FORMAT images with a VkImageFormatListCreateInfo only for textures whose viewFormats name the srgb pair. A single-aspect view naming its aspect format is admitted and keeps the texture format internally.",
-        "reviewer": "doe-c-claude/2026-10-24"
+        "moduleSha256": "116cb0d7df5d7ac863fac0ad3ac0c100305ab9b6b7099e8801c867bb980e8723",
+        "reason": "Keep: preserves this native ownership or ABI boundary while separating internal device cleanup leases from application release and enforcing destroyed-device admission; invalid sampler clamps/anisotropy and view formats generate validation errors with invalid objects; MUTABLE_FORMAT images with a VkImageFormatListCreateInfo only for textures whose viewFormats name the srgb pair. A single-aspect view naming its aspect format is admitted and keeps the texture format internally. Texture views record a non-identity swizzle.",
+        "reviewer": "doe-c-claude-coordinator/2026-10-24"
       },
       "src/native/resource/doe_texture_validation.zig": {
         "decision": "Keep",
@@ -3722,8 +3722,8 @@
       },
       "src/native/shader/doe_shader_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "1548fadb01df963a0390a795eaa263ebcf3991481fcb5cb273f469fbad11453a",
-        "reason": "Keep: Shader owner validates and retains WGSL for D3D12; routes compute to bounded native integration; releases D3D12 PSO/root through COM. Failed module and synchronous compute pipeline creation generate the device error (OutOfMemory for allocation failure, otherwise validation); async creation reports through its callback only. Compute pipeline creation rejects explicit layouts that lack a binding the entry point uses. Compute layout check passes buffer types and compute visibility. Compute pipelines reject entry points that use a binding at or above maxBindingsPerBindGroup.",
+        "moduleSha256": "a85125813b1da369f76c8c0241b83cb824af3ec267e4c6d919c501b4919d901e",
+        "reason": "Keep: Shader owner validates and retains WGSL for D3D12; routes compute to bounded native integration; releases D3D12 PSO/root through COM. Failed module and synchronous compute pipeline creation generate the device error (OutOfMemory for allocation failure, otherwise validation); async creation reports through its callback only. Compute pipeline creation rejects explicit layouts that lack a binding the entry point uses. Compute layout check passes buffer types and compute visibility. Compute pipelines reject entry points that use a binding at or above maxBindingsPerBindGroup. Compute pipelines record every used binding for layout checks.",
         "reviewer": "doe-c-claude-coordinator/2026-10-24"
       },
       "src/native/shader/doe_shader_translation_cache.zig": {
@@ -3734,8 +3734,8 @@
       },
       "src/native/shader/shader_binding_reflection.zig": {
         "decision": "Keep",
-        "moduleSha256": "f07fef3c2fc7f2eab1a00b47ce3849deca3b6c2f0b0c75f0494d107b4fc250f4",
-        "reason": "Keep: one owner publishes binding metadata or typed failure and interprets native buffer binding types. Owns requiredLayoutKind for compute and render pipelines. Reports the first entry-point binding at or above maxBindingsPerBindGroup.",
+        "moduleSha256": "78017021a1a875d383dc6800e0ab3d30959e2e4ea8f9de05a34b6861a198459f",
+        "reason": "Keep: one owner publishes binding metadata or typed failure and interprets native buffer binding types. Owns requiredLayoutKind for compute and render pipelines. Reports the first entry-point binding at or above maxBindingsPerBindGroup. Builds required-binding records with stage visibility for any binding number.",
         "reviewer": "doe-c-claude-coordinator/2026-10-24"
       },
       "src/native/support/doe_adapter_info_native.zig": {
@@ -3782,9 +3782,9 @@
       },
       "src/native/support/doe_native_object_types.zig": {
         "decision": "Keep",
-        "moduleSha256": "658990ddbf83ee8c8ea1b5996e8b1e4aba123ade854909e11bdee3e09ec1e6ac",
-        "reason": "Keep: default-off C error-scope partial owner uses final-address typed storage, cold creation rollback and checked final deinit; original classifier, callbacks and device references remain with their existing owners; textures record an allowed srgb view; samplers carry error_object; MUTABLE_FORMAT images with a VkImageFormatListCreateInfo only for textures whose viewFormats name the srgb pair. Render pipelines keep their multisample mask and alpha-to-coverage. Passes hold per-group dynamic offsets and the cached workgroup limit. Devices hold their buffer offset alignment limits. Device keeps maxImmediateSize. Compute pipelines keep required binding kinds for automatic-layout dispatch checks. Encoders and passes keep their open debug groups. Render pipelines keep required binding kinds. Layouts and pipelines keep automatic-layout identity. Devices keep dynamic buffer limits; layouts keep their device; render pipelines keep binding buffer types and stages. Devices keep maxColorAttachmentBytesPerSample. Render passes and pipelines keep per-slot color attachments and targets.",
-        "reviewer": "doe-c-claude-surface/2026-10-24"
+        "moduleSha256": "28b7d93be35f67c53ceb619b9088cb4cccc71716219bc57e8c79753623a903da",
+        "reason": "Keep: default-off C error-scope partial owner uses final-address typed storage, cold creation rollback and checked final deinit; original classifier, callbacks and device references remain with their existing owners; textures record an allowed srgb view; samplers carry error_object; MUTABLE_FORMAT images with a VkImageFormatListCreateInfo only for textures whose viewFormats name the srgb pair. Render pipelines keep their multisample mask and alpha-to-coverage. Passes hold per-group dynamic offsets and the cached workgroup limit. Devices hold their buffer offset alignment limits. Device keeps maxImmediateSize. Compute pipelines keep required binding kinds for automatic-layout dispatch checks. Encoders and passes keep their open debug groups. Render pipelines keep required binding kinds. Layouts and pipelines keep automatic-layout identity. Devices keep dynamic buffer limits; layouts keep their device; render pipelines keep binding buffer types and stages. Devices keep maxColorAttachmentBytesPerSample. Render passes and pipelines keep per-slot color attachments and targets. Pipelines keep a required-binding list instead of a 32-slot table; views keep their swizzle flag.",
+        "reviewer": "doe-c-claude-coordinator/2026-10-24"
       },
       "src/native/support/doe_native_runtime_helpers.zig": {
         "decision": "Keep",
@@ -3794,8 +3794,8 @@
       },
       "src/native/support/doe_native_shared_types.zig": {
         "decision": "Keep",
-        "moduleSha256": "e84f321a6fa5e1ac1ca40a87c441d47eb6eef5f202aadf4f0163fffade7fb76c",
-        "reason": "Keep: reachable native implementation shared by 28 production consumers with no conflicting ownership signal. Declares BindGroupDynamicOffsets. Layout entries keep every WebGPU member for equality. Owns the maxBindingsPerBindGroup constant shared by layout and pipeline checks.",
+        "moduleSha256": "d3011e18b400b4d4518309ef3ad9eb7d9a0e23173ac20021ab0b87fbd9918f09",
+        "reason": "Keep: reachable native implementation shared by 28 production consumers with no conflicting ownership signal. Declares BindGroupDynamicOffsets. Layout entries keep every WebGPU member for equality. Owns the maxBindingsPerBindGroup constant shared by layout and pipeline checks. Owns the required-binding list type.",
         "reviewer": "doe-c-claude-coordinator/2026-10-24"
       },
       "src/native/surface/doe_surface_native.zig": {
@@ -3812,9 +3812,9 @@
       },
       "src/native/vulkan/vulkan_compute_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "1f2961dbbf689d995a1b26f02e33d84d86346aca8994622f5ee46462c511106f",
-        "reason": "Keep: Vulkan pipeline preparation consumes translation-owned binding metadata and preserves specialized-override metadata from the same analyzed IR. Recorded Vulkan bindings receive dynamic offsets with a recomputed descriptor hash. Indirect dispatch replay guards its arguments before preparing the application dispatch. Pipeline creation records required binding kinds from entry-point bindings. Uses the shared requiredLayoutKind from shader binding reflection.",
-        "reviewer": "doe-c-claude-indexed/2026-10-24"
+        "moduleSha256": "3b278843a3c21b725f714ce96a82fe9b471db8a9bdfa6d54b904ff4f31e99930",
+        "reason": "Keep: Vulkan pipeline preparation consumes translation-owned binding metadata and preserves specialized-override metadata from the same analyzed IR. Recorded Vulkan bindings receive dynamic offsets with a recomputed descriptor hash. Indirect dispatch replay guards its arguments before preparing the application dispatch. Pipeline creation records required binding kinds from entry-point bindings. Uses the shared requiredLayoutKind from shader binding reflection. Vulkan compute rejects bindings above its 32-slot execution table at finish instead of skipping them.",
+        "reviewer": "doe-c-claude-coordinator/2026-10-24"
       },
       "src/native/vulkan/vulkan_feature_cache.zig": {
         "decision": "Keep",
@@ -3848,9 +3848,9 @@
       },
       "src/native/vulkan/vulkan_render_pipeline_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "c10c32ee3973aadb42f5a8001dc206a4985c12f498dfa25de22aebddb152c4ba",
-        "reason": "Keep: native attachment admission owns view and pipeline compatibility; command recording preserves typed validation failures before submission. Backend execution and resource retirement retain their existing owners. The multisample mask and alpha-to-coverage reach the pipeline object. Render pipelines record required binding kinds from vertex and fragment entry points. Render pipeline creation rejects vertex or fragment entry points that do not name a function of that stage. Render pipeline creation rejects explicit layouts that lack a binding the entry points use. Render layout check passes buffer types and per-slot stages. Render pipelines reject bindings at or above maxBindingsPerBindGroup and color targets above maxColorAttachmentBytesPerSample. Pipelines record every fragment target and whether a fragment stage exists.",
-        "reviewer": "doe-c-claude-surface/2026-10-24"
+        "moduleSha256": "3d2ef0355269bfa63fff3ddc45fd4e80ffc259a4a7d545dd077714823a79b156",
+        "reason": "Keep: native attachment admission owns view and pipeline compatibility; command recording preserves typed validation failures before submission. Backend execution and resource retirement retain their existing owners. The multisample mask and alpha-to-coverage reach the pipeline object. Render pipelines record required binding kinds from vertex and fragment entry points. Render pipeline creation rejects vertex or fragment entry points that do not name a function of that stage. Render pipeline creation rejects explicit layouts that lack a binding the entry points use. Render layout check passes buffer types and per-slot stages. Render pipelines reject bindings at or above maxBindingsPerBindGroup and color targets above maxColorAttachmentBytesPerSample. Pipelines record every fragment target and whether a fragment stage exists. Render pipelines and auto layouts include bindings above 31.",
+        "reviewer": "doe-c-claude-coordinator/2026-10-24"
       },
       "src/native/vulkan/vulkan_render_shared.zig": {
         "decision": "Keep",
@@ -3986,9 +3986,9 @@
       },
       "src/runtime/diagnostics/error_scope.zig": {
         "decision": "Keep",
-        "moduleSha256": "1276c7ec82e5f0df72d7bdba2a2ea7534bf4e5dd9e00cc013a2100dd08c12353",
-        "reason": "Keep: native attachment admission owns view and pipeline compatibility; command recording preserves typed validation failures before submission. Backend execution and resource retirement retain their existing owners. Draw buffer-bound failures are validation errors. Bind group and dispatch recording causes are validation errors. ImmediateDataRange maps to validation. DebugGroupUnbalanced maps to validation. Draw bind group and maxDrawCount failures map to validation. The color attachment bytes-per-sample failure is a validation error.",
-        "reviewer": "doe-c-claude-surface/2026-10-24"
+        "moduleSha256": "02029e8b4cbd0286bdd83846ea748c12b158e7f51aeb3245bad12acd27933e58",
+        "reason": "Keep: native attachment admission owns view and pipeline compatibility; command recording preserves typed validation failures before submission. Backend execution and resource retirement retain their existing owners. Draw buffer-bound failures are validation errors. Bind group and dispatch recording causes are validation errors. ImmediateDataRange maps to validation. DebugGroupUnbalanced maps to validation. Draw bind group and maxDrawCount failures map to validation. The color attachment bytes-per-sample failure is a validation error. Adds the message for bindings the execution path cannot run.",
+        "reviewer": "doe-c-claude-coordinator/2026-10-24"
       },
       "src/runtime/env_flags.zig": {
         "decision": "Keep",
@@ -4328,9 +4328,9 @@
       },
       "src/contracts/command_recording.zig": {
         "decision": "Keep",
-        "moduleSha256": "ab684375447d6dd4ee4c97995bcb422870cb11180884f847d863d29449a6ef86",
-        "reason": "Keep: native attachment admission owns view and pipeline compatibility; command recording preserves typed validation failures before submission. Backend execution and resource retirement retain their existing owners. The unsupported-attachment message no longer lists resolve targets. Names WebGPU draw-time vertex and index buffer failures. Owns the setBindGroup dynamic-offset and dispatch validation causes. Adds ImmediateDataRange failure. Adds DebugGroups balance and the DebugGroupUnbalanced failure. Adds draw bind group and maxDrawCount failures. The unsupported-attachment message states the eight-slot limit. Names the color attachment bytes-per-sample failure.",
-        "reviewer": "doe-c-claude-surface/2026-10-24"
+        "moduleSha256": "2f37ae8b98cb1f44f83967a455b4263b6763b194c63191ed068461176e772e88",
+        "reason": "Keep: native attachment admission owns view and pipeline compatibility; command recording preserves typed validation failures before submission. Backend execution and resource retirement retain their existing owners. The unsupported-attachment message no longer lists resolve targets. Names WebGPU draw-time vertex and index buffer failures. Owns the setBindGroup dynamic-offset and dispatch validation causes. Adds ImmediateDataRange failure. Adds DebugGroups balance and the DebugGroupUnbalanced failure. Adds draw bind group and maxDrawCount failures. The unsupported-attachment message states the eight-slot limit. Names the color attachment bytes-per-sample failure. Render passes reject swizzled attachment views.",
+        "reviewer": "doe-c-claude-coordinator/2026-10-24"
       },
       "src/native/command/doe_command_recording.zig": {
         "decision": "Keep",
@@ -4412,9 +4412,9 @@
       },
       "src/native/vulkan/vulkan_render_attachments.zig": {
         "decision": "Keep",
-        "moduleSha256": "1587e84236ab4ddd166c34c04f2a4159c986866005db920b5927e553cfcaf8fb",
-        "reason": "Keep: native attachment admission owns view and pipeline compatibility; command recording preserves typed validation failures before submission. Backend execution and resource retirement retain their existing owners. Admits a resolve target that is a single-sample view of the multisampled color format and extent. Validates draw reads against bound vertex and index buffer ranges. Resolve targets need a resolvable format. Single-layer 2d-array views are renderable attachments. texture-formats-tier1 adds the 8-bit snorm resolve formats. Attachment admission covers up to eight color slots, null slots and depth-only passes, matching pipeline targets slot by slot. beginRenderPass checks color attachment bytes per sample against the WebGPU byte cost table.",
-        "reviewer": "doe-c-claude-surface/2026-10-24"
+        "moduleSha256": "ffe4be93a5c4bce24d5824c422a550dd4130438497aa95ae6e7a1d23e48f783c",
+        "reason": "Keep: native attachment admission owns view and pipeline compatibility; command recording preserves typed validation failures before submission. Backend execution and resource retirement retain their existing owners. Admits a resolve target that is a single-sample view of the multisampled color format and extent. Validates draw reads against bound vertex and index buffer ranges. Resolve targets need a resolvable format. Single-layer 2d-array views are renderable attachments. texture-formats-tier1 adds the 8-bit snorm resolve formats. Attachment admission covers up to eight color slots, null slots and depth-only passes, matching pipeline targets slot by slot. beginRenderPass checks color attachment bytes per sample against the WebGPU byte cost table. Swizzled views are rejected as color, resolve and depth-stencil attachments.",
+        "reviewer": "doe-c-claude-coordinator/2026-10-24"
       },
       "src/backend/vulkan/vk_surface_sync.zig": {
         "decision": "Keep",
