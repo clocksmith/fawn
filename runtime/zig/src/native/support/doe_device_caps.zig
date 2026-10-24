@@ -4,6 +4,7 @@
 // Limits are queried from the hardware at runtime where possible, then cached.
 // Static fallbacks apply on non-Metal targets or when hardware query fails.
 
+const std = @import("std");
 const builtin = @import("builtin");
 const has_vulkan = (builtin.os.tag == .linux);
 const abi_callback = @import("../../core/abi/wgpu_callback_descriptor_types.zig");
@@ -229,12 +230,12 @@ fn is_vulkan_feature_supported(
         FEATURE_TEXTURE_COMPRESSION_BC => if (hw_caps) |hc| hc.has_texture_compression_bc else true,
         FEATURE_TEXTURE_COMPRESSION_ETC2 => if (hw_caps) |hc| hc.has_texture_compression_etc2 else true,
         FEATURE_TEXTURE_COMPRESSION_ASTC => if (hw_caps) |hc| hc.has_texture_compression_astc else true,
+        FEATURE_TEXTURE_COMPRESSION_BC_SLICED_3D => if (hw_caps) |hc| hc.has_texture_compression_bc_sliced_3d else true,
+        FEATURE_TEXTURE_COMPRESSION_ASTC_SLICED_3D => if (hw_caps) |hc| hc.has_texture_compression_astc_sliced_3d else true,
         FEATURE_INDIRECT_FIRST_INSTANCE => if (hw_caps) |hc| hc.has_draw_indirect_first_instance else true,
         FEATURE_FLOAT32_FILTERABLE => if (hw_caps) |hc| hc.has_float32_filterable else true,
         FEATURE_TIMESTAMP_QUERY => if (hw_caps) |hc| hc.has_timestamp_query else true,
         // Features that remain unconditional on Vulkan.
-        FEATURE_TEXTURE_COMPRESSION_BC_SLICED_3D,
-        FEATURE_TEXTURE_COMPRESSION_ASTC_SLICED_3D,
         FEATURE_BGRA8UNORM_STORAGE,
         FEATURE_RG11B10UFLOAT_RENDERABLE,
         FEATURE_CLIP_DISTANCES,
@@ -387,4 +388,16 @@ pub export fn doeNativeDeviceSubgroupSize(raw: ?*anyopaque) callconv(.c) u32 {
     // Metal SIMD-group size is 32 on all Apple Silicon variants known at time
     // of writing.  Report 0 when Metal is unavailable (non-macOS).
     return if (BRIDGE_AVAILABLE) METAL_SIMD_GROUP_SIZE else 0;
+}
+
+test "Vulkan sliced 3D compression features follow their queried support, not an unconditional grant" {
+    if (comptime !has_vulkan) return error.SkipZigTest;
+    var hw = std.mem.zeroes(vk_device_caps.VulkanDeviceCaps);
+    hw.has_texture_compression_bc = true;
+    hw.has_texture_compression_bc_sliced_3d = true;
+    try std.testing.expect(is_vulkan_feature_supported(FEATURE_TEXTURE_COMPRESSION_BC_SLICED_3D, null, hw));
+    try std.testing.expect(!is_vulkan_feature_supported(FEATURE_TEXTURE_COMPRESSION_ASTC, null, hw));
+    try std.testing.expect(!is_vulkan_feature_supported(FEATURE_TEXTURE_COMPRESSION_ASTC_SLICED_3D, null, hw));
+    hw.has_texture_compression_bc_sliced_3d = false;
+    try std.testing.expect(!is_vulkan_feature_supported(FEATURE_TEXTURE_COMPRESSION_BC_SLICED_3D, null, hw));
 }
