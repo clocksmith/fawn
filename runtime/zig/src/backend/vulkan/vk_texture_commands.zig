@@ -341,8 +341,14 @@ pub fn texture_copy(self: anytype, args: struct {
     const dst_prev = if (dst.layout == c.VK_IMAGE_LAYOUT_UNDEFINED and src.image != dst.image)
         try record_zero_initialization(self, dst, &dst_zero)
     else if (src.image == dst.image) src_prev else dst.layout;
-    vk_resources.transition_texture_layout(self.primary_command_buffer, src.*, src_prev, c.VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, vk_resources.texture_transition_source(src_prev).src_access_mask, c.VK_ACCESS_TRANSFER_READ_BIT, vk_resources.texture_transition_source(src_prev).src_stage, c.VK_PIPELINE_STAGE_TRANSFER_BIT);
-    vk_resources.transition_texture_layout(self.primary_command_buffer, dst.*, dst_prev, c.VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, vk_resources.texture_transition_source(dst_prev).src_access_mask, c.VK_ACCESS_TRANSFER_WRITE_BIT, vk_resources.texture_transition_source(dst_prev).src_stage, c.VK_PIPELINE_STAGE_TRANSFER_BIT);
+    // Layouts cover the whole image, so a copy between subresources of one
+    // texture keeps it in GENERAL, which Vulkan admits for both sides.
+    const same = src.image == dst.image;
+    const src_layout: u32 = if (same) c.VK_IMAGE_LAYOUT_GENERAL else c.VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+    const dst_layout: u32 = if (same) c.VK_IMAGE_LAYOUT_GENERAL else c.VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    const src_access: u32 = if (same) c.VK_ACCESS_TRANSFER_READ_BIT | c.VK_ACCESS_TRANSFER_WRITE_BIT else c.VK_ACCESS_TRANSFER_READ_BIT;
+    vk_resources.transition_texture_layout(self.primary_command_buffer, src.*, src_prev, src_layout, vk_resources.texture_transition_source(src_prev).src_access_mask, src_access, vk_resources.texture_transition_source(src_prev).src_stage, c.VK_PIPELINE_STAGE_TRANSFER_BIT);
+    if (!same) vk_resources.transition_texture_layout(self.primary_command_buffer, dst.*, dst_prev, dst_layout, vk_resources.texture_transition_source(dst_prev).src_access_mask, c.VK_ACCESS_TRANSFER_WRITE_BIT, vk_resources.texture_transition_source(dst_prev).src_stage, c.VK_PIPELINE_STAGE_TRANSFER_BIT);
     const layers = if (args.depth_or_layers > 0) args.depth_or_layers else 1;
     // WebGPU origin.z and depthOrArrayLayers are array layers for 1D/2D
     // textures and depth slices for 3D textures.
@@ -355,9 +361,9 @@ pub fn texture_copy(self: anytype, args: struct {
         .dstOffset = .{ .x = @intCast(args.dst_x), .y = @intCast(args.dst_y), .z = if (dst_3d) @intCast(args.dst_z) else 0 },
         .extent = .{ .width = args.width, .height = args.height, .depth = if (src_3d or dst_3d) layers else 1 },
     };
-    c.vkCmdCopyImage(self.primary_command_buffer, src.image, c.VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dst.image, c.VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, @ptrCast(&region));
-    vk_resources.transition_texture_layout(self.primary_command_buffer, src.*, c.VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, c.VK_IMAGE_LAYOUT_GENERAL, c.VK_ACCESS_TRANSFER_READ_BIT, c.VK_ACCESS_SHADER_READ_BIT | c.VK_ACCESS_SHADER_WRITE_BIT, c.VK_PIPELINE_STAGE_TRANSFER_BIT, c.VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-    vk_resources.transition_texture_layout(self.primary_command_buffer, dst.*, c.VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, c.VK_IMAGE_LAYOUT_GENERAL, c.VK_ACCESS_TRANSFER_WRITE_BIT, c.VK_ACCESS_SHADER_READ_BIT | c.VK_ACCESS_SHADER_WRITE_BIT, c.VK_PIPELINE_STAGE_TRANSFER_BIT, c.VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+    c.vkCmdCopyImage(self.primary_command_buffer, src.image, src_layout, dst.image, dst_layout, 1, @ptrCast(&region));
+    vk_resources.transition_texture_layout(self.primary_command_buffer, src.*, src_layout, c.VK_IMAGE_LAYOUT_GENERAL, src_access, c.VK_ACCESS_SHADER_READ_BIT | c.VK_ACCESS_SHADER_WRITE_BIT, c.VK_PIPELINE_STAGE_TRANSFER_BIT, c.VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+    if (!same) vk_resources.transition_texture_layout(self.primary_command_buffer, dst.*, dst_layout, c.VK_IMAGE_LAYOUT_GENERAL, c.VK_ACCESS_TRANSFER_WRITE_BIT, c.VK_ACCESS_SHADER_READ_BIT | c.VK_ACCESS_SHADER_WRITE_BIT, c.VK_PIPELINE_STAGE_TRANSFER_BIT, c.VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
     try c.check_vk(c.vkEndCommandBuffer(self.primary_command_buffer));
     try submit_and_wait_timeline(self);
     vk_resources.mark_texture_image_layout(self, src.image, c.VK_IMAGE_LAYOUT_GENERAL);
