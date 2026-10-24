@@ -3,6 +3,7 @@
 
 const std = @import("std");
 const error_scope = @import("../../runtime/diagnostics/error_scope.zig");
+const texture_contract = @import("../../contracts/texture.zig");
 const abi_texture = @import("../../core/abi/wgpu_texture_base_types.zig");
 const native_types = @import("../support/doe_native_object_types.zig");
 const native_shared = @import("../support/doe_native_shared_types.zig");
@@ -41,6 +42,15 @@ pub export fn doeNativeDeviceCreateRenderBundleEncoder(
     const dev = cast(DoeDevice, dev_raw) orelse return null;
     if (!dev.requireAlive()) return null;
     const d = desc orelse return null;
+    // https://gpuweb.github.io/gpuweb/#abstract-opdef-validating-gpurenderpasslayout:
+    // the color formats' bytes per sample stay within the device limit.
+    if (d.colorFormatCount != 0) {
+        const bytes = texture_contract.colorAttachmentBytesPerSample(d.colorFormats[0..d.colorFormatCount]);
+        if (bytes != null and bytes.? > dev.max_color_attachment_bytes_per_sample) {
+            dev.error_scopes.deliver(error_scope.ERROR_TYPE_VALIDATION, "render bundle color formats exceed maxColorAttachmentBytesPerSample");
+            return null;
+        }
+    }
 
     const color_fmt: abi_texture.WGPUTextureFormat = if (d.colorFormatCount > 0)
         d.colorFormats[0]

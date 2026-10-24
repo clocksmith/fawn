@@ -2918,9 +2918,9 @@
       },
       "src/contracts/texture.zig": {
         "decision": "Keep",
-        "moduleSha256": "1b17aaefb7b55cdb399a0836bb74a6328beec2e984002954106250aef0b5df6c",
-        "reason": "Keep: reachable neutral contract owner at src/contracts/texture.zig. aspectFormat resolves the single-aspect view format (depth24plus, depth32float or stencil8 for combined formats). A view's stencil aspect samples as uint and its depth aspect as depth.",
-        "reviewer": "doe-c-claude-surface/2026-10-24"
+        "moduleSha256": "3a04ec600a534d14e24886178cbbba1ddfb2a008c2a4797f8927c3c73d41ab84",
+        "reason": "Keep: reachable neutral contract owner at src/contracts/texture.zig. aspectFormat resolves the single-aspect view format (depth24plus, depth32float or stencil8 for combined formats). A view's stencil aspect samples as uint and its depth aspect as depth. Render target byte cost and color attachment bytes per sample.",
+        "reviewer": "doe-c-claude-indexed/2026-10-24"
       },
       "src/contracts/texture_format.zig": {
         "decision": "Keep",
@@ -3644,8 +3644,8 @@
       },
       "src/native/render/doe_bundle_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "602db5d19e5ca2b520a807e02ce0da33f5e624c4766b1da4e1143afd7e5f479d",
-        "reason": "Keep: preserves this native ownership or ABI boundary while separating internal device cleanup leases from application release and enforcing destroyed-device admission. Vulkan bundle replay starts from empty state rather than the pass's. Vulkan executeBundles resets the pass pipeline, bind groups and vertex/index buffers. Bundle setBindGroup validates and records dynamic offsets, records null groups as unbinds, and replay applies the offsets. Bundle debug groups are balanced at finish(). Bundle draws validate the bundle's pipeline and bind groups; draws past maxDrawCount fail. Render getBindGroupLayout returns explicit groups or a pipeline-owned automatic layout. Render getBindGroupLayout of an automatic layout lists the entry points' bindings by resource kind.",
+        "moduleSha256": "5a4c4244b6efcba8d5199b961ec35e490071c255d7bdf69c1afbbe904147599c",
+        "reason": "Keep: preserves this native ownership or ABI boundary while separating internal device cleanup leases from application release and enforcing destroyed-device admission. Vulkan bundle replay starts from empty state rather than the pass's. Vulkan executeBundles resets the pass pipeline, bind groups and vertex/index buffers. Bundle setBindGroup validates and records dynamic offsets, records null groups as unbinds, and replay applies the offsets. Bundle debug groups are balanced at finish(). Bundle draws validate the bundle's pipeline and bind groups; draws past maxDrawCount fail. Render getBindGroupLayout returns explicit groups or a pipeline-owned automatic layout. Render getBindGroupLayout of an automatic layout lists the entry points' bindings by resource kind. Render bundle encoders reject color formats over maxColorAttachmentBytesPerSample.",
         "reviewer": "doe-c-claude-indexed/2026-10-24"
       },
       "src/native/render/doe_render_native.zig": {
@@ -3662,9 +3662,9 @@
       },
       "src/native/render/doe_render_pipeline_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "c501eaa1653809c7ce9a2804b6e9c8528ffcb98b2ad27e1e1029eebb30dad870",
-        "reason": "Keep: preserves this native ownership or ABI boundary while separating internal device cleanup leases from application release and enforcing destroyed-device admission. Alpha-to-coverage on a single-sample pipeline is a validation error.",
-        "reviewer": "doe-c-claude-surface/2026-10-24"
+        "moduleSha256": "6b54cece6f6f77963370097d676d658140ff96fc564b334574d0352fd8bc4b5a",
+        "reason": "Keep: preserves this native ownership or ABI boundary while separating internal device cleanup leases from application release and enforcing destroyed-device admission. Alpha-to-coverage on a single-sample pipeline is a validation error. Render pipelines reject color targets over maxColorAttachmentBytesPerSample.",
+        "reviewer": "doe-c-claude-indexed/2026-10-24"
       },
       "src/native/render/doe_render_state_native.zig": {
         "decision": "Keep",
@@ -3746,8 +3746,8 @@
       },
       "src/native/support/doe_device_caps.zig": {
         "decision": "Keep",
-        "moduleSha256": "48912ebca7eaeb37aea77a09c9b0479d31c67c2bcb85d04d6d7082ed2495fe47",
-        "reason": "Keep: native capability publication owns backend dispatch; Metal limits use the owning adapter/device handle. No boundary or ownership change. Device limits report the device's buffer offset alignments. Device limits report the device maxImmediateSize. Device limits report the device's dynamic buffer limits.",
+        "moduleSha256": "8b0a89b500dd0c3078a181f14a82fe39a6b3d2955a365b78c3fb835582f169c4",
+        "reason": "Keep: native capability publication owns backend dispatch; Metal limits use the owning adapter/device handle. No boundary or ownership change. Device limits report the device's buffer offset alignments. Device limits report the device maxImmediateSize. Device limits report the device's dynamic buffer limits. Device limits report the device's maxColorAttachmentBytesPerSample.",
         "reviewer": "doe-c-claude-indexed/2026-10-24"
       },
       "src/native/support/doe_future_ids.zig": {
@@ -3782,8 +3782,8 @@
       },
       "src/native/support/doe_native_object_types.zig": {
         "decision": "Keep",
-        "moduleSha256": "965354d746fb405f4654459762925caa1d1063786ea2bece8f2f8131404a69fd",
-        "reason": "Keep: default-off C error-scope partial owner uses final-address typed storage, cold creation rollback and checked final deinit; original classifier, callbacks and device references remain with their existing owners; textures record an allowed srgb view; samplers carry error_object; MUTABLE_FORMAT images with a VkImageFormatListCreateInfo only for textures whose viewFormats name the srgb pair. Render pipelines keep their multisample mask and alpha-to-coverage. Passes hold per-group dynamic offsets and the cached workgroup limit. Devices hold their buffer offset alignment limits. Device keeps maxImmediateSize. Compute pipelines keep required binding kinds for automatic-layout dispatch checks. Encoders and passes keep their open debug groups. Render pipelines keep required binding kinds. Layouts and pipelines keep automatic-layout identity. Devices keep dynamic buffer limits; layouts keep their device; render pipelines keep binding buffer types and stages.",
+        "moduleSha256": "3f4eb0ff3e95d7950316b26ce29ff6adb997036be17361265e0901127d70f5b6",
+        "reason": "Keep: default-off C error-scope partial owner uses final-address typed storage, cold creation rollback and checked final deinit; original classifier, callbacks and device references remain with their existing owners; textures record an allowed srgb view; samplers carry error_object; MUTABLE_FORMAT images with a VkImageFormatListCreateInfo only for textures whose viewFormats name the srgb pair. Render pipelines keep their multisample mask and alpha-to-coverage. Passes hold per-group dynamic offsets and the cached workgroup limit. Devices hold their buffer offset alignment limits. Device keeps maxImmediateSize. Compute pipelines keep required binding kinds for automatic-layout dispatch checks. Encoders and passes keep their open debug groups. Render pipelines keep required binding kinds. Layouts and pipelines keep automatic-layout identity. Devices keep dynamic buffer limits; layouts keep their device; render pipelines keep binding buffer types and stages. Devices keep maxColorAttachmentBytesPerSample.",
         "reviewer": "doe-c-claude-indexed/2026-10-24"
       },
       "src/native/support/doe_native_runtime_helpers.zig": {

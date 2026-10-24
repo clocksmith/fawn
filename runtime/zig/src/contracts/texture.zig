@@ -3,6 +3,59 @@
 const binding = @import("model/model_binding_value_types.zig");
 const texture = @import("model/model_texture_value_types.zig");
 
+/// A color target format's render target pixel byte cost and component
+/// alignment (https://gpuweb.github.io/gpuweb/#plain-color-formats).
+pub const RenderTargetCost = struct { cost: u32, alignment: u32 };
+
+/// Null for a format that is not a color render target.
+pub fn renderTargetCost(format: texture.WGPUTextureFormat) ?RenderTargetCost {
+    return switch (format) {
+        texture.WGPUTextureFormat_R8Unorm, texture.WGPUTextureFormat_R8Uint, texture.WGPUTextureFormat_R8Sint => .{ .cost = 1, .alignment = 1 },
+        texture.WGPUTextureFormat_RG8Unorm, texture.WGPUTextureFormat_RG8Uint, texture.WGPUTextureFormat_RG8Sint => .{ .cost = 2, .alignment = 1 },
+        texture.WGPUTextureFormat_RGBA8Uint, texture.WGPUTextureFormat_RGBA8Sint => .{ .cost = 4, .alignment = 1 },
+        texture.WGPUTextureFormat_RGBA8Unorm,
+        texture.WGPUTextureFormat_RGBA8UnormSrgb,
+        texture.WGPUTextureFormat_BGRA8Unorm,
+        texture.WGPUTextureFormat_BGRA8UnormSrgb,
+        => .{ .cost = 8, .alignment = 1 },
+        texture.WGPUTextureFormat_R16Uint, texture.WGPUTextureFormat_R16Sint, texture.WGPUTextureFormat_R16Float => .{ .cost = 2, .alignment = 2 },
+        texture.WGPUTextureFormat_RG16Uint, texture.WGPUTextureFormat_RG16Sint, texture.WGPUTextureFormat_RG16Float => .{ .cost = 4, .alignment = 2 },
+        texture.WGPUTextureFormat_RGBA16Uint, texture.WGPUTextureFormat_RGBA16Sint, texture.WGPUTextureFormat_RGBA16Float => .{ .cost = 8, .alignment = 2 },
+        texture.WGPUTextureFormat_R32Uint, texture.WGPUTextureFormat_R32Sint, texture.WGPUTextureFormat_R32Float => .{ .cost = 4, .alignment = 4 },
+        texture.WGPUTextureFormat_RG32Uint,
+        texture.WGPUTextureFormat_RG32Sint,
+        texture.WGPUTextureFormat_RG32Float,
+        texture.WGPUTextureFormat_RGB10A2Uint,
+        texture.WGPUTextureFormat_RGB10A2Unorm,
+        texture.WGPUTextureFormat_RG11B10Ufloat,
+        => .{ .cost = 8, .alignment = 4 },
+        texture.WGPUTextureFormat_RGBA32Uint, texture.WGPUTextureFormat_RGBA32Sint, texture.WGPUTextureFormat_RGBA32Float => .{ .cost = 16, .alignment = 4 },
+        else => null,
+    };
+}
+
+/// Color attachment bytes per sample of a list of color formats, skipping
+/// undefined slots: each target is aligned to its component alignment, then
+/// adds its byte cost
+/// (https://gpuweb.github.io/gpuweb/#abstract-opdef-calculating-color-attachment-bytes-per-sample).
+/// Null when a format is not a color render target.
+pub fn colorAttachmentBytesPerSample(formats: []const texture.WGPUTextureFormat) ?u32 {
+    var total: u32 = 0;
+    for (formats) |format| {
+        if (format == texture.WGPUTextureFormat_Undefined) continue;
+        const target = renderTargetCost(format) orelse return null;
+        total = (total + target.alignment - 1) / target.alignment * target.alignment + target.cost;
+    }
+    return total;
+}
+
+test "colorAttachmentBytesPerSample aligns each target before adding its cost" {
+    const formats = [_]texture.WGPUTextureFormat{ texture.WGPUTextureFormat_R8Unorm, texture.WGPUTextureFormat_RGBA32Uint, texture.WGPUTextureFormat_Undefined, texture.WGPUTextureFormat_RG16Uint };
+    // r8unorm at 0 (1 byte), rgba32uint aligned to 4 (4..20), rg16uint at 20 (20..24).
+    try @import("std").testing.expectEqual(@as(?u32, 24), colorAttachmentBytesPerSample(&formats));
+    try @import("std").testing.expectEqual(@as(?u32, null), colorAttachmentBytesPerSample(&.{texture.WGPUTextureFormat_Depth32Float}));
+}
+
 /// The sample type of a view: its stencil aspect (a stencil-only view, or a
 /// stencil8 texture) samples as uint, a depth-only view as depth, and any other
 /// view as its format does
