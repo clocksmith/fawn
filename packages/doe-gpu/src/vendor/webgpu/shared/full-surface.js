@@ -411,7 +411,8 @@ function resolveFastBufferBindingResource(resource, path, index) {
   }
   if ('_native' in resource) {
     const label = describeResourceLabel(resource);
-    if (label === 'GPUSampler' || label === 'GPUTextureView' || label === 'GPUExternalTexture') {
+    // Only a GPUBuffer is a buffer binding; a GPUTexture binds its default view.
+    if (label !== 'GPUBuffer') {
       return null;
     }
     return {

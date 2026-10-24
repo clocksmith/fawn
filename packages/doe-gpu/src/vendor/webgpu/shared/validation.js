@@ -1039,6 +1039,12 @@ function assertBindGroupResource(resource, path) {
     if (describeResourceLabel(resource) === 'GPUExternalTexture') {
       return { externalTexture: assertLiveResource(resource, path, 'GPUExternalTexture') };
     }
+    // GPUBindingResource admits a GPUTexture, which stands for its default view
+    // (https://gpuweb.github.io/gpuweb/#typedefdef-gpubindingresource).
+    if (describeResourceLabel(resource) === 'GPUTexture') {
+      assertLiveResource(resource, path, 'GPUTexture');
+      return { textureView: assertLiveResource(resource.createView(), path, 'GPUTextureView') };
+    }
     return {
       buffer: assertLiveResource(resource, path, 'GPUBuffer'),
       offset: 0,
