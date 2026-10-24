@@ -462,14 +462,22 @@ test "bundle debug groups must be balanced at finish" {
 
 test "render getBindGroupLayout of an automatic layout lists the bindings its entry points use" {
     var pipeline = DoeRenderPipeline{};
-    try pipeline.required_bindings.record(.{ .group = 1, .binding = 300, .kind = 3 });
-    try pipeline.required_bindings.record(.{ .group = 1, .binding = 0, .kind = 1 });
+    try std.testing.expect(doeNativeRenderPipelineGetBindGroupLayout(toOpaque(&pipeline), 1) == null); // no reflection
+    pipeline.required_binding_kinds_ready = true;
+    try pipeline.required_bindings.record(.{ .group = 1, .binding = 300, .kind = 3, .stages = 2, .sample_type = 3, .view_dimension = 2 });
+    try pipeline.required_bindings.record(.{ .group = 1, .binding = 0, .kind = 1, .stages = 1, .buffer_type = 2, .min_binding_size = 16 });
     const raw = doeNativeRenderPipelineGetBindGroupLayout(toOpaque(&pipeline), 1) orelse return error.TestUnexpectedResult;
     defer bind_group_native.doeNativeBindGroupLayoutRelease(raw);
     const layout = cast(DoeBindGroupLayout, raw).?;
     try std.testing.expectEqual(@as(u32, 2), layout.entry_count);
     try std.testing.expectEqual(@as(u32, 300), layout.entries.?[1].binding);
     try std.testing.expectEqual(@as(u32, 3), layout.entries.?[1].resource_kind);
+    // The default layout carries the members the shader types imply.
+    try std.testing.expectEqual(@as(u32, 3), layout.entries.?[1].texture_sample_type);
+    try std.testing.expectEqual(@as(u32, 2), layout.entries.?[1].texture_view_dimension);
+    try std.testing.expectEqual(@as(u64, 2), layout.entries.?[1].visibility);
+    try std.testing.expectEqual(@as(u32, 2), layout.entries.?[0].buffer_binding_type);
+    try std.testing.expectEqual(@as(u64, 16), layout.entries.?[0].buffer_min_binding_size);
     try std.testing.expect(layout.automatic and layout.auto_layout_id == pipeline.auto_layout_id);
     const empty = doeNativeRenderPipelineGetBindGroupLayout(toOpaque(&pipeline), 0) orelse return error.TestUnexpectedResult;
     defer bind_group_native.doeNativeBindGroupLayoutRelease(empty);
@@ -500,11 +508,40 @@ test "failed bundle cannot replay into a valid command recording" {
 // ============================================================
 // Render pipeline: getBindGroupLayout
 // An explicit layout returns its group's layout. An automatic layout returns
-// a layout owned by the pipeline with the bindings its entry points use, by
-// resource kind only (as compute pipelines do); doe-gpu instead builds
-// complete layouts from reflection and adopts them
-// (doeNativePipelineAdoptAutoBindGroupLayout).
+// a layout owned by the pipeline with the entries the default pipeline layout
+// gives the bindings its entry points use. A backend that records no shader
+// reflection returns null; doe-gpu then builds the layout from reflection and
+// adopts it (doeNativePipelineAdoptAutoBindGroupLayout).
 // ============================================================
+
+fn defaultLayoutEntry(use: native_shared.RequiredBinding) native_shared.DoeBindGroupLayoutEntry {
+    var entry = native_shared.DoeBindGroupLayoutEntry{ .binding = use.binding, .resource_kind = use.kind, .visibility = use.stages };
+    switch (use.kind) {
+        binding_kind_buffer => {
+            entry.buffer_binding_type = use.buffer_type;
+            entry.buffer_min_binding_size = use.min_binding_size;
+        },
+        binding_kind_sampler => entry.sampler_binding_type = use.sampler_type,
+        binding_kind_texture => {
+            entry.texture_sample_type = use.sample_type;
+            entry.texture_view_dimension = use.view_dimension;
+            entry.texture_multisampled = use.multisampled;
+        },
+        binding_kind_storage_texture => {
+            // Layout entries keep a storage texture's access in texture_sample_type.
+            entry.texture_sample_type = use.storage_access;
+            entry.texture_view_dimension = use.view_dimension;
+            entry.storage_texture_format = use.storage_format;
+        },
+        else => {},
+    }
+    return entry;
+}
+
+const binding_kind_buffer: u32 = @import("../../contracts/binding.zig").layoutResourceKindCode(.buffer);
+const binding_kind_sampler: u32 = @import("../../contracts/binding.zig").layoutResourceKindCode(.sampler);
+const binding_kind_texture: u32 = @import("../../contracts/binding.zig").layoutResourceKindCode(.texture);
+const binding_kind_storage_texture: u32 = @import("../../contracts/binding.zig").layoutResourceKindCode(.storage_texture);
 
 pub export fn doeNativeRenderPipelineGetBindGroupLayout(
     pip_raw: ?*anyopaque,
@@ -518,13 +555,17 @@ pub export fn doeNativeRenderPipelineGetBindGroupLayout(
         return toOpaque(retained);
     }
     if (group_index >= native_shared.MAX_RENDER_BIND_GROUPS) return null;
-    // The entries the vertex and fragment entry points use, by resource
-    // kind, in binding order.
+    // Without shader reflection (a backend that does not record it) there is
+    // no default layout to report; the caller derives one.
+    if (!pip.required_binding_kinds_ready) return null;
+    // The default layout (https://gpuweb.github.io/gpuweb/#default-pipeline-layout):
+    // the entries the vertex and fragment entry points use, in binding order,
+    // with the members their shader types imply.
     const used = pip.required_bindings.slice();
     var count: usize = 0;
     for (used) |use| count += @intFromBool(use.group == group_index);
     const bgl = make(DoeBindGroupLayout) orelse return null;
-    bgl.* = .{};
+    bgl.* = .{ .device = pip.device_ref };
     if (count != 0) {
         const entries = alloc.alloc(native_shared.DoeBindGroupLayoutEntry, count) catch {
             alloc.destroy(bgl);
@@ -533,7 +574,7 @@ pub export fn doeNativeRenderPipelineGetBindGroupLayout(
         var next: usize = 0;
         for (used) |use| {
             if (use.group != group_index) continue;
-            entries[next] = .{ .binding = use.binding, .resource_kind = use.kind };
+            entries[next] = defaultLayoutEntry(use);
             next += 1;
         }
         std.mem.sort(native_shared.DoeBindGroupLayoutEntry, entries, {}, struct {

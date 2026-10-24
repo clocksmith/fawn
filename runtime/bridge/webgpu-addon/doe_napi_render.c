@@ -327,7 +327,9 @@ napi_value doe_render_pipeline_get_bind_group_layout(napi_env env, napi_callback
     if (pfn_doeNativeRenderPipelineGetBindGroupLayout) layout = pfn_doeNativeRenderPipelineGetBindGroupLayout(pipeline, index);
     else if (pfn_wgpuRenderPipelineGetBindGroupLayout) layout = pfn_wgpuRenderPipelineGetBindGroupLayout(pipeline, index);
     else NAPI_THROW(env, "renderPipelineGetBindGroupLayout not available");
-    if (!layout) NAPI_THROW(env, "renderPipelineGetBindGroupLayout failed");
+    /* null: the provider reports no automatic layout for this group (a Doe
+     * backend without shader reflection); the caller derives one. */
+    if (!layout) NAPI_RETURN_PROVIDER_REJECTED(env);
     return wrap_ptr(env, layout);
 }
 

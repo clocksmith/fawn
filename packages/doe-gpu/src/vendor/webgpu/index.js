@@ -2520,10 +2520,10 @@ const fullSurfaceBackend = {
     if (typeof addon.renderPipelineGetBindGroupLayout !== 'function') {
       throw unsupportedNodeDeviceCapability('GPURenderPipeline.getBindGroupLayout');
     }
-    return new classes.DoeGPUBindGroupLayout(
-      addon.renderPipelineGetBindGroupLayout(pipeline._native, index),
-      pipeline,
-    );
+    // null: the provider reports no automatic layout for this group; the
+    // caller derives one from reflection.
+    const native = addon.renderPipelineGetBindGroupLayout(pipeline._native, index);
+    return native == null ? null : new classes.DoeGPUBindGroupLayout(native, pipeline);
   },
   deviceCreateRenderBundleEncoder(device, descriptor, encoderClasses) {
     const colorFormats = Array.isArray(descriptor.colorFormats) ? descriptor.colorFormats : [];
