@@ -26,6 +26,7 @@ fn validateView(device: *objects.DoeDevice, raw: ?*anyopaque, depth: bool) Error
     if (texture.isUnavailable()) return error.RenderAttachmentUnavailable;
     if (texture.device_ref != device) return error.RenderAttachmentDeviceMismatch;
     if ((view.usage & texture_abi.WGPUTextureUsage_RenderAttachment) == 0) return error.RenderAttachmentUsageMissing;
+    if (view.swizzled) return error.RenderAttachmentViewSwizzled;
     // A renderable view is 2d, or 2d-array with one layer (the default view of
     // one layer of a layered texture); the layer count is checked below.
     if (view.dimension != texture_abi.WGPUTextureViewDimension_2D and
@@ -415,6 +416,10 @@ test "attachment admission rejects unavailable foreign nonrenderable and broad v
     view.usage = texture_abi.WGPUTextureUsage_TextureBinding;
     try std.testing.expectError(error.RenderAttachmentUsageMissing, validateView(&device, &view, false));
     view.usage = texture_abi.WGPUTextureUsage_RenderAttachment;
+    view.swizzled = true;
+    try std.testing.expectError(error.RenderAttachmentViewSwizzled, validateView(&device, &view, false));
+    try std.testing.expectError(error.RenderAttachmentViewSwizzled, validateView(&device, &view, true));
+    view.swizzled = false;
     view.mip_level_count = 2;
     try std.testing.expectError(error.RenderAttachmentViewInvalid, validateView(&device, &view, false));
     view.mip_level_count = 1;

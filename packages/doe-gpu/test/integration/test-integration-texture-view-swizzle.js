@@ -3,7 +3,7 @@
 // WGPUTextureComponentSwizzleDescriptor and changes what a sampled view returns.
 
 import assert from 'node:assert/strict';
-import { providerInfo, setupGlobals } from '../../src/index.js';
+import { setupGlobals } from '../../src/index.js';
 
 setupGlobals();
 const adapter = await navigator.gpu.requestAdapter();
@@ -73,23 +73,40 @@ for (const invalid of ['rgbA', 'rgb', 'rgba01', 'ｒｇｂａ', 1234, true, null
 }
 assert.equal(await validationError(device, () => texture.createView({ swizzle: 1111 })), false);
 
-// A swizzled view of an attachment texture is created; using it as a color
-// attachment is the validation error, reported when the encoder finishes.
-const target = device.createTexture({ size: [1, 1], format: 'rgba8unorm',
-  usage: T.RENDER_ATTACHMENT | T.TEXTURE_BINDING });
-let swizzled;
-assert.equal(await validationError(device, () => { swizzled = target.createView({ swizzle: 'bgra' }); }), false);
-const attachmentRejected = await validationError(device, () => {
-  const encoder = device.createCommandEncoder();
-  const pass = encoder.beginRenderPass({ colorAttachments: [{ view: swizzled, loadOp: 'clear', storeOp: 'store' }] });
-  pass.end();
-  encoder.finish();
-});
-const flavor = providerInfo().libraryFlavor;
-if (flavor === 'doe-dropin') {
-  console.log(`known gap: ${flavor} encodes a swizzled color attachment without a validation error`);
-} else {
-  assert.equal(attachmentRejected, true);
+// A swizzled view is created whatever its usage; using it as a color
+// attachment, resolve target or depth-stencil attachment is the validation
+// error reported when the encoder finishes, and as a storage binding when the
+// bind group is created. The identity swizzle is no restriction.
+const usage = T.RENDER_ATTACHMENT | T.TEXTURE_BINDING;
+const color = device.createTexture({ size: [1, 1], format: 'rgba8unorm', usage: usage | T.STORAGE_BINDING });
+const msaa = device.createTexture({ size: [1, 1], format: 'rgba8unorm', usage: T.RENDER_ATTACHMENT, sampleCount: 4 });
+const depth = device.createTexture({ size: [1, 1], format: 'depth32float', usage });
+const plainColor = device.createTexture({ size: [1, 1], format: 'rgba8unorm', usage: T.RENDER_ATTACHMENT }).createView();
+function view(texture, swizzle) {
+  let created;
+  return validationError(device, () => { created = texture.createView({ swizzle }); }).then((failed) => {
+    assert.equal(failed, false, `createView swizzle ${swizzle}`);
+    return created;
+  });
 }
-console.log('ok: invalid swizzles throw TypeError; a swizzled view is created with attachment usage');
+function renderPass(descriptor) {
+  return validationError(device, () => {
+    const encoder = device.createCommandEncoder();
+    encoder.beginRenderPass(descriptor).end();
+    encoder.finish();
+  });
+}
+const colorAttachment = (target, resolveTarget) => ({ view: target, resolveTarget, loadOp: 'clear', storeOp: 'store' });
+const depthAttachment = (target) => ({ view: target, depthLoadOp: 'clear', depthStoreOp: 'store', depthClearValue: 1 });
+for (const [swizzle, rejected] of [['bgra', true], ['rgba', false]]) {
+  assert.equal(await renderPass({ colorAttachments: [colorAttachment(await view(color, swizzle))] }), rejected, `color attachment ${swizzle}`);
+  assert.equal(await renderPass({ colorAttachments: [colorAttachment(msaa.createView(), await view(color, swizzle))] }), rejected, `resolve target ${swizzle}`);
+  assert.equal(await renderPass({ colorAttachments: [colorAttachment(plainColor)],
+    depthStencilAttachment: depthAttachment(await view(depth, swizzle === 'rgba' ? 'rgba' : 'rrr1')) }), rejected, `depth attachment ${swizzle}`);
+  const storageLayout = device.createBindGroupLayout({ entries: [{ binding: 0, visibility: GPUShaderStage.COMPUTE,
+    storageTexture: { access: 'write-only', format: 'rgba8unorm' } }] });
+  const storageView = await view(color, swizzle);
+  assert.equal(await validationError(device, () => device.createBindGroup({ layout: storageLayout, entries: [{ binding: 0, resource: storageView }] })), rejected, `storage binding ${swizzle}`);
+}
+console.log('ok: invalid swizzles throw TypeError; swizzled attachments, resolve targets, depth attachments and storage bindings are validation errors');
 device.destroy();
