@@ -389,3 +389,10 @@ Zig's raw command parser also rejects that kind; their active consumers use
 normalized `planPath` through the plan executor. Parser admission is distinct
 from execution: for example `copy_protocol` has a row pitch of 8 that the public
 WebGPU path correctly rejects (the native Zig CLI marks copies unsupported).
+
+
+Metal builds emit `doe_c_metal` or `dawn_c_metal`, distinct from the retained
+`dawn_direct_metal` plan-executor identity. The bench routes
+`doe_c_direct_metal`, `doe_c_direct_plan_metal`, `dawn_c_direct_metal` and
+`dawn_c_direct_plan_metal` select C binaries at their declared command/plan
+boundaries; provider classification comes from `config/doe-runtime-providers.json`.

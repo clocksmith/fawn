@@ -20,7 +20,7 @@ TOGGLE_REGISTRY = ../../../config/quirk-toggle-registry.json
 RUNTIME = src/execute.c src/kernel.c src/texture.c src/render.c src/map.c src/diagnostics.c src/diagnostics_lifecycle.c src/surface.c $(SURFACE_HOST)
 ifeq ($(shell uname -s),Darwin)
 SURFACE_HOST = $(BUILD)/surface_metal.o
-DAWN_BACKEND_ID = dawn_direct_metal
+DAWN_BACKEND_ID = dawn_c_metal
 LDLIBS += -framework AppKit -framework QuartzCore
 $(BUILD)/surface_metal.o: src/surface_metal.m src/surface_platform.h | $(BUILD)
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
