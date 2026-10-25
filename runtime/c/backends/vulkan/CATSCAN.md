@@ -25,7 +25,7 @@ Execute admitted native Vulkan work through an independently usable C owner whil
 ## Invariants
 
 - Unknown completion retains every resource; timeout is not completion.
-- Texture and query state publishes when `vkQueueSubmit` accepts a recording (queue order); a refused submission poisons what it touched (owner authorized 2026-10-24: async submit A+B, D2, fence-wait completion; futures later; reconfirmed after the section 7 risk review).
+- State publishes at accepted `vkQueueSubmit`; refusal poisons it (owner-authorized 2026-10-24).
 - No interpreter, silent backend substitution or production default change.
 - Pinned ABI verification, software execution and physical qualification remain distinct.
 - Caller serialization and ownership transfer remain explicit.
