@@ -494,11 +494,35 @@ int main(int argc, char **argv)
         release_input(&stream, &plan, plan_kernel_root);
         return written ? 0 : 1;
     }
+    /* Validate inputs before opening any output. Replay may name the same file
+     * as trace-jsonl (or an alias of it); opening output first destroys input. */
+    char message[256] = "";
+    doe_quirk_set quirks = {.mode = o.quirk_mode};
+    if (!load_cli_quirks(&o, &quirks, message, sizeof(message))) {
+        fprintf(stderr, "doe-c-runtime: quirks: %s\n", message);
+        release_input(&stream, &plan, plan_kernel_root);
+        return 2;
+    }
+    if (o.replay) {
+        size_t replay_size = 0;
+        char *replay_text = read_file(o.replay, &replay_size);
+        if (!replay_text) snprintf(message, sizeof(message), "cannot read");
+        bool valid = replay_text && cli_validate_replay(replay_text, replay_size, MODULE_NAME, &stream,
+            o.command_repeat, &quirks, message, sizeof(message));
+        free(replay_text);
+        if (!valid) {
+            fprintf(stderr, "doe-c-runtime: replay %s: %s\n", o.replay, message);
+            doe_quirks_free(&quirks);
+            release_input(&stream, &plan, plan_kernel_root);
+            return 1;
+        }
+    }
     doe_ns_policy ns_policy = {0};
     char *ns_policy_text = NULL;
     bool ns_loaded = false;
     int refused = load_numeric_policy(&o, &stream, &ns_policy, &ns_policy_text, &ns_loaded);
     if (refused) {
+        doe_quirks_free(&quirks);
         if (ns_loaded) doe_ns_policy_free(&ns_policy);
         free(ns_policy_text);
         release_input(&stream, &plan, plan_kernel_root);
@@ -507,6 +531,7 @@ int main(int argc, char **argv)
     doe_ns_recorder ns = {0};
     bool ns_enabled = o.execute && ns_loaded && o.trace_meta;
     if (ns_enabled && !doe_ns_recorder_open(&ns, &ns_policy, o.trace_meta)) {
+        doe_quirks_free(&quirks);
         fprintf(stderr, "doe-c-runtime: out of memory\n");
         doe_ns_policy_free(&ns_policy);
         free(ns_policy_text);
@@ -516,15 +541,11 @@ int main(int argc, char **argv)
     uint64_t command_count = (uint64_t)stream.count * o.command_repeat;
     FILE *rows = o.trace_jsonl ? doe_host_fopen(o.trace_jsonl, "wb") : NULL;
     if (o.trace_jsonl && !rows) {
+        doe_quirks_free(&quirks);
+        doe_ns_recorder_free(&ns);
+        if (ns_loaded) doe_ns_policy_free(&ns_policy);
+        free(ns_policy_text);
         fprintf(stderr, "doe-c-runtime: cannot write %s\n", o.trace_jsonl);
-        release_input(&stream, &plan, plan_kernel_root);
-        return 2;
-    }
-    char message[256] = "";
-    doe_quirk_set quirks = {.mode = o.quirk_mode};
-    if (!load_cli_quirks(&o, &quirks, message, sizeof(message))) {
-        fprintf(stderr, "doe-c-runtime: quirks: %s\n", message);
-        if (rows) fclose(rows);
         release_input(&stream, &plan, plan_kernel_root);
         return 2;
     }
@@ -533,6 +554,9 @@ int main(int argc, char **argv)
     const char *operator_anchor = o.plan ? NULL : o.trace_meta ? o.trace_meta : o.trace_jsonl;
     doe_operator_recorder operators = {0};
     if (operator_anchor && !doe_operator_recorder_open(&operators, operator_anchor)) {
+        doe_ns_recorder_free(&ns);
+        if (ns_loaded) doe_ns_policy_free(&ns_policy);
+        free(ns_policy_text);
         fprintf(stderr, "doe-c-runtime: out of memory\n");
         if (rows) fclose(rows);
         doe_quirks_free(&quirks);
@@ -540,21 +564,11 @@ int main(int argc, char **argv)
         return 1;
     }
     uint64_t init_start = doe_runtime_monotonic_ns();
-    bool replay_ok = true;
-    if (o.replay) {
-        size_t replay_size = 0;
-        char *replay_text = read_file(o.replay, &replay_size);
-        if (!replay_text) snprintf(message, sizeof(message), "cannot read");
-        replay_ok = replay_text && cli_validate_replay(replay_text, replay_size, MODULE_NAME, &stream, o.command_repeat,
-            &quirks, message, sizeof(message));
-        free(replay_text);
-        if (!replay_ok) fprintf(stderr, "doe-c-runtime: replay %s: %s\n", o.replay, message);
-    }
-    doe_runtime *runtime = o.execute && replay_ok ? doe_runtime_open(&o.runtime, message, sizeof(message)) : NULL;
+    doe_runtime *runtime = o.execute ? doe_runtime_open(&o.runtime, message, sizeof(message)) : NULL;
     t.executor_init_ns = o.execute ? doe_runtime_monotonic_ns() - init_start : 0;
     int status = 0;
-    if (!replay_ok || (o.execute && !runtime)) {
-        if (replay_ok) fprintf(stderr, "doe-c-runtime: %s\n", message);
+    if (o.execute && !runtime) {
+        fprintf(stderr, "doe-c-runtime: %s\n", message);
         status = 1;
     }
     /* Kernel pipelines compile before the command loop, outside execution timing;
