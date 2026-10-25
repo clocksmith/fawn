@@ -69,6 +69,13 @@ struct doe_runtime {
     bool has_last_kernel;
     doe_command last_kernel;
     WGPUBuffer indirect_args; /* 16 bytes, Indirect | CopyDst */
+    /* A reusable MapRead | CopyDst or MapWrite | CopySrc map_async buffer. */
+    WGPUBuffer map_buffer;
+    uint64_t map_size;
+    bool map_write;
+    /* Callback storage outlives a failed wait, through instance release. */
+    bool map_done;
+    WGPUMapAsyncStatus map_status;
     /* The first uncaptured device error since the last command check. */
     bool uncaptured;
     char uncaptured_message[256];
@@ -104,6 +111,7 @@ WGPUTextureFormat runtime_webgpu_format(doe_texture_format format);
  * and *source are the caller's to free. NULL when no candidate is readable. */
 char *runtime_resolve_kernel(const doe_runtime *runtime, const char *kernel, char **source, size_t *size);
 bool runtime_execute_render(doe_runtime *runtime, const doe_command *command, doe_trace_execution *execution);
+bool runtime_execute_map(doe_runtime *runtime, const doe_command *command, doe_trace_execution *execution);
 bool runtime_execute_sampler(doe_runtime *runtime, const doe_command *command, doe_trace_execution *execution);
 void runtime_release_render(doe_runtime *runtime);
 bool runtime_execute_kernel(doe_runtime *runtime, const doe_command *command, doe_trace_execution *execution);

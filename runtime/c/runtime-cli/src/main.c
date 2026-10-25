@@ -91,7 +91,7 @@ static void usage(FILE *out)
           "bindings), copies in every direction, texture_write, texture_query, texture_destroy (2D\n"
           "uncompressed color textures and their mip levels), render_draw, render_pass, draw_indirect and\n"
           "draw_indexed_indirect (the default proxy pipeline),\n"
-          "sampler_create and sampler_destroy. kernel_dispatch semantic fields and captures write operator\n"
+          "sampler_create, sampler_destroy and map_async. kernel_dispatch semantic fields and captures write operator\n"
           "records; with a trace meta, decode.final_logits dispatches are evaluated for numeric stability and\n"
           "other numeric stability capture plans are refused.\n"
           "Every other command, field or argument is rejected. --adapter is this runtime's own;\n"

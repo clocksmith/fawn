@@ -16,7 +16,7 @@ CORE = src/json.c src/stream.c src/stream_texture.c src/stream_render.c src/trac
 CORE_HEADERS = src/json.h src/stream.h src/stream_internal.h src/trace.h src/sha256.h src/quirks.h \
   src/operators.h src/numeric_policy.h src/numeric_stability.h src/plan.h
 TOGGLE_REGISTRY = ../../../config/quirk-toggle-registry.json
-RUNTIME = src/execute.c src/kernel.c src/texture.c src/render.c
+RUNTIME = src/execute.c src/kernel.c src/texture.c src/render.c src/map.c
 RUNTIME_HEADERS = src/execute.h src/runtime_internal.h ../../zig/vendor/webgpu-headers/webgpu.h \
   ../native/include/doe_native_adapter.h
 .PHONY: all bench-bin bench-bin-dawn check check-dawn check-host dawn native
@@ -66,6 +66,13 @@ $(BUILD)/test_numeric: tests/test_numeric.c $(CORE) $(CORE_HEADERS) | $(BUILD)
 	$(CC) $(CPPFLAGS) $(CFLAGS) tests/test_numeric.c $(CORE) -lm -o $@
 $(BUILD)/test_trace: tests/test_trace.c $(CORE) $(CORE_HEADERS) | $(BUILD)
 	$(CC) $(CPPFLAGS) $(CFLAGS) tests/test_trace.c $(CORE) -lm -o $@
+$(BUILD)/test_map: tests/test_map.c $(CORE) $(RUNTIME) $(CORE_HEADERS) $(RUNTIME_HEADERS) $(NATIVE_LIBRARY) | $(BUILD)
+	$(CC) $(CPPFLAGS) $(CFLAGS) tests/test_map.c $(CORE) $(RUNTIME) -L'$(abspath $(NATIVE_BUILD))' \
+	  -l:$(NATIVE_LIBRARY_NAME) '-Wl,-rpath,$(abspath $(NATIVE_BUILD))' -lm -o $@
+$(BUILD)/test_texture_cleanup: tests/test_texture_cleanup.c $(CORE) $(RUNTIME) $(CORE_HEADERS) $(RUNTIME_HEADERS) $(NATIVE_LIBRARY) | $(BUILD)
+	$(CC) $(CPPFLAGS) $(CFLAGS) tests/test_texture_cleanup.c $(CORE) $(RUNTIME) -L'$(abspath $(NATIVE_BUILD))' \
+	  -l:$(NATIVE_LIBRARY_NAME) '-Wl,-rpath,$(abspath $(NATIVE_BUILD))' -lm \
+	  -Wl,--wrap=wgpuTextureCreateView,--wrap=wgpuTextureViewRelease,--wrap=wgpuDeviceCreateBuffer -o $@
 # Host-only: parsing, rejection, the trace hash chain and SHA-256; no device.
 check-host: $(BUILD)/test_json $(BUILD)/test_stream $(BUILD)/test_trace $(BUILD)/test_sha256 $(BUILD)/test_quirks \
   $(BUILD)/test_numeric
@@ -77,5 +84,7 @@ check-host: $(BUILD)/test_json $(BUILD)/test_stream $(BUILD)/test_trace $(BUILD)
 	$(BUILD)/test_numeric ../../.. '$(BUILD)'
 # Executes example streams on the selected Vulkan adapter (a CPU ICD such as
 # lavapipe by default) and checks the artifacts with pipeline/trace/replay.py.
-check: check-host $(BUILD)/doe-c-runtime
+check: check-host $(BUILD)/doe-c-runtime $(BUILD)/test_map $(BUILD)/test_texture_cleanup
+	$(BUILD)/test_map
+	$(BUILD)/test_texture_cleanup ../../../bench/kernels
 	$(PYTHON) tests/test_cli.py --binary '$(BUILD)/doe-c-runtime' --work '$(BUILD)/cli-work'

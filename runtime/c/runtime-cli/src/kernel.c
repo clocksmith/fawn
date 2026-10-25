@@ -283,13 +283,13 @@ static bool create_groups(doe_runtime *runtime, const pipeline_entry *pipeline, 
     WGPUTextureView views[MAX_GROUP_BINDINGS];
     for (uint32_t g = 0; g < pipeline->group_count; g++) {
         size_t used = 0, view_count = 0;
-        bool views_ok = true;
+        bool entries_ok = true;
         for (size_t i = 0; i < count && used < MAX_GROUP_BINDINGS; i++) {
             const doe_kernel_binding *binding = &bindings[i];
             if (binding->group != g) continue;
             if (binding->resource != DOE_RESOURCE_BUFFER) {
                 WGPUTextureView view = binding_view(runtime, binding, execution);
-                if (!view) { views_ok = false; break; }
+                if (!view) { entries_ok = false; break; }
                 views[view_count++] = view;
                 WGPUBindGroupEntry entry = WGPU_BIND_GROUP_ENTRY_INIT;
                 entry.binding = binding->binding;
@@ -299,13 +299,17 @@ static bool create_groups(doe_runtime *runtime, const pipeline_entry *pipeline, 
             }
             buffer_entry *buffer = runtime_find_buffer(runtime, binding->handle);
             if (!buffer) {
-                if (binding->buffer_size == UINT64_MAX)
-                    return runtime_fail(execution, "kernel_binding_size", "binding %u.%u names new buffer %llu without buffer_size",
+                if (binding->buffer_size == UINT64_MAX) {
+                    entries_ok = runtime_fail(execution, "kernel_binding_size", "binding %u.%u names new buffer %llu without buffer_size",
                         g, binding->binding, (unsigned long long)binding->handle);
-                if (binding->buffer_offset > UINT64_MAX - binding->buffer_size)
-                    return runtime_fail(execution, "kernel_binding_size", "binding %u.%u range overflows", g, binding->binding);
+                    break;
+                }
+                if (binding->buffer_offset > UINT64_MAX - binding->buffer_size) {
+                    entries_ok = runtime_fail(execution, "kernel_binding_size", "binding %u.%u range overflows", g, binding->binding);
+                    break;
+                }
                 buffer = runtime_create_buffer(runtime, binding->handle, binding->buffer_offset + binding->buffer_size, execution);
-                if (!buffer) return false;
+                if (!buffer) { entries_ok = false; break; }
             }
             WGPUBindGroupEntry entry = WGPU_BIND_GROUP_ENTRY_INIT;
             entry.binding = binding->binding;
@@ -318,9 +322,9 @@ static bool create_groups(doe_runtime *runtime, const pipeline_entry *pipeline, 
         descriptor.layout = pipeline->groups[g];
         descriptor.entryCount = used;
         descriptor.entries = entries;
-        groups[g] = views_ok ? wgpuDeviceCreateBindGroup(runtime->device, &descriptor) : NULL;
+        groups[g] = entries_ok ? wgpuDeviceCreateBindGroup(runtime->device, &descriptor) : NULL;
         for (size_t v = 0; v < view_count; v++) wgpuTextureViewRelease(views[v]);
-        if (!views_ok) return false;
+        if (!entries_ok) return false;
         if (!groups[g]) return runtime_fail(execution, "kernel_bind_group_failed", "bind group %u was not created", g);
     }
     return true;

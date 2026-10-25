@@ -26,7 +26,8 @@ typedef enum doe_command_kind {
     DOE_COMMAND_DISPATCH,         /* dispatch, dispatch_workgroups, dispatch_invocations */
     DOE_COMMAND_DISPATCH_INDIRECT,
     DOE_COMMAND_DRAW_INDIRECT,        /* render_draw recorded as one indirect draw per draw */
-    DOE_COMMAND_DRAW_INDEXED_INDIRECT /* the indexed form */
+    DOE_COMMAND_DRAW_INDEXED_INDIRECT, /* the indexed form */
+    DOE_COMMAND_MAP_ASYNC             /* flat kind aliases or nested map_async */
 } doe_command_kind;
 
 /* The kinds whose payload is doe_render_draw. */
@@ -158,6 +159,7 @@ typedef struct doe_command {
     const char *label;
     union {
         struct { uint64_t bytes, align_bytes; } upload;
+        struct { uint64_t bytes; bool write; } map;
         struct {
             uint64_t handle, offset, buffer_size;
             uint32_t *words;

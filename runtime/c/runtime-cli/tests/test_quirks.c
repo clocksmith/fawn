@@ -66,6 +66,7 @@ int main(int argc, char **argv)
     assert(d.score == 68 && d.matched_count == 1 && !strcmp(d.scope, "driver_toggle") && !strcmp(d.action, "use_temporary_buffer"));
     assert(!strcmp(d.verification, "lean_preferred") && !strcmp(d.proof, "guarded") && !d.requires_lean && !d.blocking && !d.toggle);
     assert(!doe_quirks_decide(&set, DOE_COMMAND_COPY).temporary_buffer); /* trace mode applies nothing */
+    assert(doe_quirks_decide(&set, DOE_COMMAND_MAP_ASYNC).score == 68);
     doe_quirks_free(&set);
     assert(load(text, DOE_QUIRK_ACTIVE, &p, &set, message));
     d = doe_quirks_decide(&set, DOE_COMMAND_COPY);
@@ -91,6 +92,7 @@ int main(int argc, char **argv)
     assert(load(list, DOE_QUIRK_TRACE, &p, &set, message));
     assert(doe_quirks_decide(&set, DOE_COMMAND_COPY).score == 126 && doe_quirks_decide(&set, DOE_COMMAND_UPLOAD).score == 121);
     assert(!doe_quirks_decide(&set, DOE_COMMAND_KERNEL_DISPATCH).matched_id); /* memory scope skips dispatches */
+    assert(!doe_quirks_decide(&set, DOE_COMMAND_MAP_ASYNC).matched_id); /* retained map scope admits only driver toggles */
     doe_quirks_free(&set);
     /* Ties: same score and proof level, then priority, then the smaller id wins; both count. */
     quirk(a, sizeof(a), "b.toggle", "driver_toggle", "intel", "", "{\"kind\":\"toggle\",\"params\":{\"toggle\":\"use_dxc\"}}",
