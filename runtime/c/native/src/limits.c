@@ -131,8 +131,12 @@ WGPUStatus native_vulkan_limits(const doe_vk_caps *caps, WGPULimits *out)
         .maxInterStageShaderVariables = min32(caps->max_vertex_output_components,
             caps->max_fragment_input_components) / 4,
         .maxBindingsPerBindGroup = DOE_RESOURCE_MAX_BINDING_NUMBER,
-        .maxDynamicUniformBuffersPerPipelineLayout = DYNAMIC_UNIFORM,
-        .maxDynamicStorageBuffersPerPipelineLayout = DYNAMIC_STORAGE,
+        /* A layout with every dynamic buffer the limit admits, all visible to
+         * one stage, must also fit that stage's per-stage buffer limit. */
+        .maxDynamicUniformBuffersPerPipelineLayout = min32(DYNAMIC_UNIFORM,
+            min32(caps->max_uniform_buffers_per_stage, UNIFORM_BUFFERS_PER_STAGE)),
+        .maxDynamicStorageBuffersPerPipelineLayout = min32(DYNAMIC_STORAGE,
+            min32(caps->max_storage_buffers_per_stage, VK_STORAGE_BUFFERS_PER_STAGE)),
         .maxStorageBuffersPerShaderStage = min32(caps->max_storage_buffers_per_stage, VK_STORAGE_BUFFERS_PER_STAGE),
         .maxUniformBuffersPerShaderStage = min32(caps->max_uniform_buffers_per_stage, UNIFORM_BUFFERS_PER_STAGE),
         .maxSampledTexturesPerShaderStage = min32(caps->max_sampled_textures_per_stage, SAMPLED_PER_STAGE),
