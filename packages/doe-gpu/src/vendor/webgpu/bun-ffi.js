@@ -266,25 +266,25 @@ const WGPU_RENDER_PASS_DEPTH_STENCIL_ATTACHMENT_SIZE = 48;
 // ---------------------------------------------------------------------------
 
 function resolveDoeLibraryPath() {
-    const packagedLibraryPath = resolvePlatformPackageLibraryPath({
-        requireFn: require,
-        workspaceRoot: WORKSPACE_ROOT,
-    });
-    const libraryNames = cLibraryBasenamesForPlatform();
     // Absolute, so the library checked here is the one dlopen opens.
     const configuredCandidates = [
         process.env.DOE_WEBGPU_LIB,
         process.env.DOE_LIB,
     ].map((path) => (path ? resolve(path) : path));
+    // An explicit override is that provider or nothing (see index.js).
+    const configured = configuredCandidates.find(Boolean);
+    if (configured) return existsSync(configured) ? configured : null;
+    const packagedLibraryPath = resolvePlatformPackageLibraryPath({
+        requireFn: require,
+        workspaceRoot: WORKSPACE_ROOT,
+    });
+    const libraryNames = cLibraryBasenamesForPlatform();
     const workspaceCandidates = cWorkspaceLibraryCandidates(WORKSPACE_ROOT);
     const packagedCandidates = [
         packagedLibraryPath,
         ...libraryNames.map((name) => resolve(PACKAGE_ROOT, "prebuilds", `${process.platform}-${process.arch}`, name)),
     ];
     const cwdCandidates = cWorkspaceLibraryCandidates(process.cwd());
-    // An explicit override is that provider or nothing (see index.js).
-    const configured = configuredCandidates.find(Boolean);
-    if (configured) return existsSync(configured) ? configured : null;
     const candidates = [
         ...(isInstalledPackageRoot(PACKAGE_ROOT)
             ? [...packagedCandidates, ...workspaceCandidates]
