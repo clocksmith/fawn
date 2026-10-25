@@ -526,8 +526,10 @@ napi_value native_direct_buffer_get_mapped_range(napi_env env, napi_callback_inf
     if (argc >= 1 && argv[0]) napi_get_value_int64(env, argv[0], &offset);
     if (argc >= 2 && argv[1]) napi_get_value_int64(env, argv[1], &size);
     const uint64_t get_mapped_range_started_ns = monotonic_now_ns();
-    void* data = pfn_wgpuBufferGetMappedRange(buffer, (size_t)offset, (size_t)size);
-    if (!data) data = (void*)pfn_wgpuBufferGetConstMappedRange(buffer, (size_t)offset, (size_t)size);
+    /* A READ mapping does not admit the mutable native getter. */
+    void* data = buffer_cache && buffer_cache->map_mode == DOE_GPU_MAP_WRITE
+        ? pfn_wgpuBufferGetMappedRange(buffer, (size_t)offset, (size_t)size)
+        : (void*)pfn_wgpuBufferGetConstMappedRange(buffer, (size_t)offset, (size_t)size);
     if (!data) NAPI_THROW(env, "getMappedRange returned NULL");
     if (buffer_cache &&
         buffer_cache->mapped_range_ref &&
@@ -568,8 +570,7 @@ napi_value native_direct_buffer_read_copy(napi_env env, napi_callback_info info)
     int64_t size = buffer_cache ? (int64_t)buffer_cache->size : (int64_t)get_double_prop(env, this_arg, "size");
     if (argc >= 1 && argv[0]) napi_get_value_int64(env, argv[0], &offset);
     if (argc >= 2 && argv[1]) napi_get_value_int64(env, argv[1], &size);
-    void* data = pfn_wgpuBufferGetMappedRange(buffer, (size_t)offset, (size_t)size);
-    if (!data) data = (void*)pfn_wgpuBufferGetConstMappedRange(buffer, (size_t)offset, (size_t)size);
+    const void* data = pfn_wgpuBufferGetConstMappedRange(buffer, (size_t)offset, (size_t)size);
     if (!data) NAPI_THROW(env, "bufferReadCopy getMappedRange returned NULL");
     void* copy = NULL;
     napi_value array_buffer;
@@ -694,8 +695,7 @@ napi_value native_direct_buffer_map_read_copy_unmap(napi_env env, napi_callback_
 
     /* copy mapped data into a V8-owned ArrayBuffer */
     const uint64_t copy_started_ns = monotonic_now_ns();
-    void* data = pfn_wgpuBufferGetMappedRange(buffer, (size_t)offset, (size_t)size);
-    if (!data) data = (void*)pfn_wgpuBufferGetConstMappedRange(buffer, (size_t)offset, (size_t)size);
+    const void* data = pfn_wgpuBufferGetConstMappedRange(buffer, (size_t)offset, (size_t)size);
     if (!data) {
         pfn_wgpuBufferUnmap(buffer);
         NAPI_THROW(env, "mapReadCopyUnmap: getMappedRange returned NULL");
