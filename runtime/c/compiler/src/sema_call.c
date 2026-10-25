@@ -246,7 +246,7 @@ static inline bool sema_builtin_value(Source *source, const Expression *node, co
         const uint32_t argument_width = type_vector_width(compiler, type);
         if (argument_leaf == IR_VOID ||
             (builtin->family == BUILTIN_BOOLEAN_REDUCTION ? argument_leaf != IR_BOOL : argument_leaf == IR_BOOL) ||
-            (i != 0u && argument_width != builtin_argument_width(builtin, i, width)))
+            (i != 0u && argument_width != builtin_argument_width(builtin, i, width, argument_width)))
             return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, node->source_offset,
                                 builtin->family == BUILTIN_BOOLEAN_REDUCTION ? "logical builtin requires a boolean scalar or vector" :
                                 "numeric builtin arguments require matching scalar or vector shapes");
@@ -277,7 +277,7 @@ static inline bool sema_builtin_value(Source *source, const Expression *node, co
         if (width != 1u && !type_intern(source, TYPE_VECTOR, leaf, width, &operand_type)) return false;
         for (uint32_t i = 0u; i < builtin->arity; ++i)
             if (!sema_materialize(source, &arguments[i],
-                builtin_argument_width(builtin, i, width) == 1u ? leaf : operand_type)) return false;
+                builtin_argument_width(builtin, i, width, type_vector_width(compiler, arguments[i].constant.type)) == 1u ? leaf : operand_type)) return false;
 
         if (builtin->kind == BUILTIN_CLAMP && !arguments[1].runtime && !arguments[2].runtime) {
             /* A skipped constant bound still has mandatory creation-time meaning.

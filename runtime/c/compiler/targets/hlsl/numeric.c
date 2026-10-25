@@ -139,7 +139,7 @@ static void subgroup_expression(HlslEmitter *e, const IrInstruction *ir, Numeric
             inclusive = true;
             product = true;
             break;
-        case BUILTIN_COUNT_ONE_BITS: case BUILTIN_UNPACK4X_U8:
+        case BUILTIN_MIX: case BUILTIN_COUNT_ONE_BITS: case BUILTIN_UNPACK4X_U8:
         case BUILTIN_ABS: case BUILTIN_SIGN: case BUILTIN_FLOOR: case BUILTIN_ROUND:
         case BUILTIN_TRUNC: case BUILTIN_FRACT: case BUILTIN_SIN: case BUILTIN_COS:
         case BUILTIN_TAN: case BUILTIN_ASIN: case BUILTIN_ACOS: case BUILTIN_ATAN:
@@ -343,6 +343,7 @@ static void builtin_expression(HlslEmitter *e, const IrInstruction *ir) {
         case BUILTIN_DISTANCE: intrinsic = "distance"; break;
         case BUILTIN_NORMALIZE: intrinsic = "normalize"; break;
         case BUILTIN_CROSS: intrinsic = "cross"; break;
+        case BUILTIN_MIX: intrinsic = "lerp"; break;
         case BUILTIN_REFLECT: intrinsic = "reflect"; break;
         case BUILTIN_FACE_FORWARD: intrinsic = "faceforward"; break;
         case BUILTIN_REFRACT: intrinsic = "refract"; break;

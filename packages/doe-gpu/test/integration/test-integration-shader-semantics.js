@@ -38,6 +38,24 @@ const POINTER_EXPECTED = [2, 4, 9, 19, 22, 4, 5, 10, 30, 33,
   6, 6, 11, 21, 24, 8, 7, 12, 32, 35];
 const CASES = [
   {
+    label: 'mix preserves constant and runtime scalar/vector factors and ordered effects',
+    code: `const CONSTANT: vec2f = mix(vec2f(2.0, 4.0), vec2f(6.0, 8.0), 0.25);
+      @group(0) @binding(0) var<storage, read_write> data: array<u32>;
+      var<private> calls: u32;
+      fn next() -> f32 { calls++; return f32(calls) * 2.0; }
+      @compute @workgroup_size(1) fn main() {
+        let scalar = mix(next(), next(), next());
+        let vector = mix(vec2f(2.0, 4.0), vec2f(6.0, 12.0), vec2f(0.25, 0.75));
+        let factor = 0.5;
+        let broadcast = mix(vec2f(2.0, 4.0), vec2f(6.0, 12.0), factor);
+        data[0] = u32(CONSTANT.x); data[1] = u32(CONSTANT.y);
+        data[2] = u32(scalar); data[3] = calls;
+        data[4] = u32(vector.x); data[5] = u32(vector.y);
+        data[6] = u32(broadcast.x); data[7] = u32(broadcast.y);
+      }`,
+    expected: [3, 5, 14, 3, 3, 10, 4, 8],
+  },
+  {
     label: 'private aggregate initializers remain invocation-local beside shared storage',
     code: `const INITIAL: u32 = 13u;
       struct PrivateState { values: array<u32, 2>, flag: bool }
@@ -222,6 +240,9 @@ const CASES = [
 
 async function runIdentifierAdmissionCase() {
   for (const declaration of [
+    'const value = mix(1u, 2u, 0u);',
+    'const value = mix(vec3f(1.0), vec3f(2.0), vec2f(0.5));',
+    'const value = mix(1.0, 2.0, true);',
     'var<private> value: atomic<u32>;',
     'override N: u32 = 1u; var<private> value: u32 = N;',
     'var<private> first: u32; var<private> second: u32 = first;',

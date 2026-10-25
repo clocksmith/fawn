@@ -3,7 +3,16 @@
 #include <cassert>
 #include <cstdio>
 #include "metal_stdlib"
-namespace metal { inline float rsqrt(float x) { return 1.0f / std::sqrt(x); } }
+namespace metal {
+inline float rsqrt(float x) { return 1.0f / std::sqrt(x); }
+inline float mix(float x, float y, float a) { return x * (1.0f - a) + y * a; }
+template<unsigned N> host_vector<float, N> mix(const host_vector<float, N>& x,
+        const host_vector<float, N>& y, const host_vector<float, N>& a) {
+    host_vector<float, N> result;
+    for (unsigned i = 0; i < N; ++i) result[i] = mix(x[i], y[i], a[i]);
+    return result;
+}
+}
 #include "component_math.metal"
 #include "../../../tests/component_math_source.h"
 int main() {

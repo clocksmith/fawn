@@ -51,6 +51,13 @@ bool sema_builtin_finish(Source *source, const Expression *node, const NumericBu
         if (!sema_ensure_value(source, &arguments[i], emit)) return false;
         if (emit) compiler->typed_operands[first + i] = arguments[i].value.id;
     }
+    /* FMix and both text targets consume matching vector operands. Reuse the
+     * third saved operand slot for a scalar factor splat; never replay source. */
+    if (emit && builtin->kind == BUILTIN_MIX && out->constant.type >= 7u &&
+        arguments[2].constant.type < 7u &&
+        !sema_emit(source, true, (IrInstruction){.opcode = IR_COMPOSITE,
+            .type = out->constant.type, .source_offset = node->source_offset,
+            .operands.composite = {first + 2u, 1u, 2u, 0u}}, &arguments[2].value)) return false;
     return sema_emit(source, emit, (IrInstruction){
         .opcode = IR_BUILTIN, .type = out->constant.type, .source_offset = node->source_offset,
         .operands.scalar = {arguments[0].value.id,

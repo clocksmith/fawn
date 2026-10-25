@@ -91,7 +91,7 @@ bool numeric_builtin(Source *source, size_t offset, const NumericBuiltin *signat
         return numeric_error(source, offset, "invalid scalar builtin identity");
     const NumericBuiltinKind kind = signature->kind;
     const IrType type = arguments[0].type;
-    if (!floating_type(type) && (signature->family == BUILTIN_COMPONENT_FLOAT || !integer_type(type)))
+    if (!floating_type(type) && ((signature->family == BUILTIN_COMPONENT_FLOAT || signature->family == BUILTIN_FLOAT_MIX) || !integer_type(type)))
         return numeric_error(source, offset, "scalar builtin operand type is not supported");
     for (uint32_t i = 0u; i < signature->arity; ++i) {
         if (arguments[i].type != type)
@@ -100,6 +100,14 @@ bool numeric_builtin(Source *source, size_t offset, const NumericBuiltin *signat
             return numeric_error(source, offset, "scalar builtin operand is a nonfinite evaluated constant");
     }
     switch (kind) {
+        case BUILTIN_MIX: {
+            NumericValue one, remainder, left, right;
+            return numeric_convert(source, offset, (NumericValue){1u, IR_ABSTRACT_INT}, type, &one) &&
+                numeric_binary(source, offset, EXPRESSION_SUBTRACT, COMPARE_EQUAL, one, arguments[2], &remainder) &&
+                numeric_binary(source, offset, EXPRESSION_MULTIPLY, COMPARE_EQUAL, arguments[0], remainder, &left) &&
+                numeric_binary(source, offset, EXPRESSION_MULTIPLY, COMPARE_EQUAL, arguments[1], arguments[2], &right) &&
+                numeric_binary(source, offset, EXPRESSION_ADD, COMPARE_EQUAL, left, right, result);
+        }
         case BUILTIN_COUNT_ONE_BITS: {
             if (type != IR_I32 && type != IR_U32)
                 return numeric_error(source, offset, "countOneBits requires a concrete integer");
