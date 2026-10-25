@@ -174,10 +174,17 @@ int main(void)
     for (uint32_t i = 0; i < 64; ++i) assert(actual[i] == input[i]*3u+7u);
     wgpuDevicePushErrorScope(device, WGPUErrorFilter_Validation);
     assert(!wgpuBufferGetMappedRange(readback, 0, sizeof(input)));
-    WGPUPopErrorScopeCallbackInfo pop = {.mode=WGPUCallbackMode_WaitAnyOnly,.callback=error_callback,.userdata1=&result};
+    assert(!wgpuBufferGetConstMappedRange(readback, 4, 4));
+    assert(!wgpuBufferGetConstMappedRange(readback, 0, sizeof(input) + 4));
+    assert(wgpuBufferGetConstMappedRange(readback, 0, sizeof(input)) == actual);
+    wgpuBufferUnmap(readback);
+    /* ONNX probes this getter before choosing its staging upload path. */
+    assert(!wgpuBufferGetMappedRange(readback, 0, WGPU_WHOLE_MAP_SIZE));
+    assert(!wgpuBufferGetConstMappedRange(readback, 0, WGPU_WHOLE_MAP_SIZE));
+    WGPUPopErrorScopeCallbackInfo pop = {.mode=WGPUCallbackMode_WaitAnyOnly,.callback=empty_scope_callback,.userdata1=&result};
     wait_ready(instance, wgpuDevicePopErrorScope(device, pop));
     assert(result.errors == 1);
-    wgpuBufferUnmap(readback);
+    pop.callback = error_callback;
     future = wgpuBufferMapAsync(readback, WGPUMapMode_Read, 0, sizeof(input), map);
     wgpuBufferUnmap(readback);
     wait_ready(instance, future);
