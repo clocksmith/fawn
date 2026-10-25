@@ -19,7 +19,7 @@ Pinned WebGPU ABI and existing owner contracts apply.
 Instance requirements use the owner's [capability amendment](../instance/CAPABILITIES.md).
 
 ## Invariants
-The tagged device/pending owner selects without fallback and reads only
+The device/pending owner selects without fallback, reading only
 its payload. Reflection never substitutes for dispatch analysis.
 Unknown work retains resources. Vulkan queues return at acceptance, settle oldest
 first, and zero-initialize textures before queue-ordered access (authorized 2026-10-24).
@@ -37,10 +37,10 @@ Depth transfers and raster state preserve shared admission.
 Provider code stays resident; foreign callbacks run outside locks.
 
 ## Acceptance
-[Owner checks](Makefile) exercise public behavior, rejection, first errors,
-rollback and terminal cleanup.
+[Owner checks](Makefile) exercise behavior, rejection, errors,
+rollback and cleanup.
 - Evidence: [Source-bound records](README.md) distinguish
-host controls, native execution and unqualified paths. 
+host controls, native execution and unqualified paths.
 
 ## Non-goals
 Parallel resource engines, synthetic completion or default cutover.

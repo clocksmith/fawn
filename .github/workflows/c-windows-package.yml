@@ -7,6 +7,12 @@ on:
       - '.github/workflows/c-windows-package.yml'
       - 'runtime/c/tools/build-native-package.py'
       - 'runtime/c/native/tests/audit-exports.py'
+      - 'runtime/c/runtime-cli/tools/build_windows.py'
+      - 'runtime/c/runtime-cli/sources.mk'
+      - 'runtime/c/runtime-cli/src/**'
+      - 'runtime/c/runtime-cli/tests/test_windows_cli.py'
+      - 'runtime/c/modules/sources.mk'
+      - 'runtime/c/modules/src/**'
   workflow_dispatch:
     inputs:
       exact_revision:
@@ -69,6 +75,20 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "Windows package check failed: $LASTEXITCODE" }
           if (!(Test-Path "$stage/MANIFEST.json")) { throw 'package completion marker missing' }
           if (git status --short) { throw 'package changed source checkout' }
+      - name: Build and consume Windows CLI and modules without a device
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $env:PYTHONDONTWRITEBYTECODE = '1'
+          $script = Join-Path $env:GITHUB_WORKSPACE 'runtime/c/runtime-cli/tools/build_windows.py'
+          $native = Join-Path $env:EVIDENCE_ROOT 'build/objects'
+          $output = Join-Path $env:EVIDENCE_ROOT 'cli'
+          $command = 'call "' + $env:DEVCMD + '" -arch=x64 >nul && python "' + $script + '" --out "' + $output + '" --native-dir "' + $native + '"'
+          $command | Set-Content "$env:EVIDENCE_ROOT/cli-command.txt"
+          & cmd.exe /d /s /c $command 2>&1 | Tee-Object "$env:EVIDENCE_ROOT/cli.log"
+          if ($LASTEXITCODE -ne 0) { throw "Windows CLI check failed: $LASTEXITCODE" }
+          if (!(Test-Path "$output/cli-scope.json")) { throw 'CLI completion marker missing' }
+          if (git status --short) { throw 'CLI build changed source checkout' }
       - name: Retain source-bound outputs and first failures
         if: always()
         uses: actions/upload-artifact@v7
@@ -77,6 +97,11 @@ jobs:
           path: |
             ${{ runner.temp }}/doe-c-windows-package/package.log
             ${{ runner.temp }}/doe-c-windows-package/command.txt
+            ${{ runner.temp }}/doe-c-windows-package/cli.log
+            ${{ runner.temp }}/doe-c-windows-package/cli-command.txt
+            ${{ runner.temp }}/doe-c-windows-package/cli/*.json
+            ${{ runner.temp }}/doe-c-windows-package/cli/*.exe
+            ${{ runner.temp }}/doe-c-windows-package/cli/*.dll
             ${{ runner.temp }}/doe-c-windows-package/dxc-archive.sha256
             ${{ runner.temp }}/doe-c-windows-package/build/*.log
             ${{ runner.temp }}/doe-c-windows-package/build/SOURCE_INPUTS.json
