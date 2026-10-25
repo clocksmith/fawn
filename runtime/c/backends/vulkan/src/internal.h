@@ -84,6 +84,11 @@ typedef struct doe_vk_dispatch_use {
     struct doe_vk_texture_view *views[DOE_VK_MAX_BINDINGS];
     struct doe_vk_sampler *samplers[DOE_VK_MAX_BINDINGS];
     struct doe_vk_dispatch_use *next;
+    /* Buffer-only uses keep their exact bindings so the next identical use in
+     * the same recording reuses these descriptor sets. */
+    bool buffers_only;
+    uint32_t buffer_count;
+    doe_vk_buffer_binding buffers[];
 } doe_vk_dispatch_use;
 typedef enum doe_vk_command_state {
     DOE_VK_RECORDING,
