@@ -17,27 +17,14 @@ import subprocess
 import tempfile
 
 from export_symbols import symbols
+from source_inventory import compiler_sources
 
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
 def source_paths() -> list[Path]:
-    paths = ROOT.joinpath('src/sources.txt').read_text().split()
-    for target, variable in [('metal', 'METAL_SOURCE_NAMES'), ('hlsl', 'HLSL_SOURCE_NAMES')]:
-        text = ROOT.joinpath('targets', target, 'sources.mk').read_text()
-        lines = [line for line in text.splitlines() if line and not line.startswith('#')]
-        if len(lines) != 1 or not lines[0].startswith(variable + ' = '):
-            raise ValueError(f'unsupported {target} source inventory')
-        paths.extend('targets/' + target + '/' + name for name in lines[0].split(' = ', 1)[1].split())
-    if len(paths) != len(set(paths)):
-        raise ValueError('duplicate compiler source')
-    for path in paths:
-        if not re.fullmatch(r'(src|targets/(metal|hlsl))/[a-z0-9_]+\.c', path):
-            raise ValueError(f'invalid compiler source path: {path}')
-        if not ROOT.joinpath(path).is_file():
-            raise FileNotFoundError(path)
-    return [ROOT / path for path in paths]
+    return compiler_sources(ROOT)
 
 
 def invoke(command: list[str], directory: Path) -> None:

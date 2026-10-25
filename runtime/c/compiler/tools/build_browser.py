@@ -14,6 +14,8 @@ import os
 from pathlib import Path
 import subprocess
 
+from source_inventory import compiler_sources
+
 COMPILER = Path(__file__).resolve().parents[1]
 ROOT = COMPILER.parents[2]
 ADAPTERS = ["src/rewrite.c", "browser/job.c", "browser/wasm.c"]
@@ -21,13 +23,7 @@ EXPORTS = ["source_limit", "reserve_source", "compile", "output_length", "releas
 
 
 def source_files() -> list[Path]:
-    sources = (COMPILER / "src/sources.txt").read_text().splitlines()
-    for target in ("metal", "hlsl"):
-        manifest = COMPILER / "targets" / target / "sources.mk"
-        names = next(line.split("=", 1)[1].split() for line in manifest.read_text().splitlines()
-                     if line.startswith(target.upper() + "_SOURCE_NAMES ="))
-        sources.extend(f"targets/{target}/{name}" for name in names)
-    return [COMPILER / path for path in sources + ADAPTERS]
+    return compiler_sources(COMPILER) + [COMPILER / path for path in ADAPTERS]
 
 
 def main() -> None:
@@ -94,7 +90,7 @@ def main() -> None:
     inputs.update(COMPILER.glob("targets/*.h"))
     inputs.update(COMPILER.glob("targets/*/*.h"))
     inputs.update(COMPILER.glob("targets/*/sources.mk"))
-    inputs.update([Path(__file__).resolve(), COMPILER / "src/sources.txt", ROOT / "config/toolchains.json"])
+    inputs.update([Path(__file__).resolve(), COMPILER / "tools/source_inventory.py", COMPILER / "src/sources.txt", ROOT / "config/toolchains.json"])
     source_hash = hashlib.sha256()
     for path in sorted(inputs):
         source_hash.update(str(path.relative_to(ROOT)).encode() + b"\0")
