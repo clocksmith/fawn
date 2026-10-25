@@ -175,7 +175,19 @@ doe_vk_status doe_vk_commands_dispatch(doe_vk_commands *commands,
     return DOE_VK_OK;
 }
 
+/* A lost device does not prove submitted work finished, and resources it
+ * references must not be freed before it has (Vulkan valid usage for every
+ * destroy/free). The first lost completion therefore waits for the queue,
+ * which a lost device answers in finite time, before any lease is dropped.
+ * Callers serialize on the context, so the queue is externally synchronized. */
+static void drain_lost(doe_vk_context *context) {
+    if (context->lost_drained || context->queue == NULL || context->vk.vkQueueWaitIdle == NULL) return;
+    context->lost_drained = true;
+    (void)context->vk.vkQueueWaitIdle(context->queue);
+}
+
 static void complete(doe_vk_commands *commands, doe_vk_status status, const doe_vk_error *error) {
+    if (status == DOE_VK_DEVICE_LOST) drain_lost(commands->context);
     if (status != DOE_VK_OK) {
         if (commands->failure.status == DOE_VK_OK)
             commands->failure = error && error->status == status ? *error :

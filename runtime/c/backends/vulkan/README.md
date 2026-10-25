@@ -54,7 +54,9 @@ return to its context's bounded spares (8) only when its fence proved completion
 `vkQueueSubmit`; the pool is reset and the fence unsignaled first. Submitted,
 uncertain, failed, reusable and presentation recordings, a failed reset and a
 lost context destroy them, and the device's release destroys the spares
-(`tests/command_spares.c`).
+(`tests/command_spares.c`). A lost device does not prove submitted work finished:
+the first completion observed as lost waits once for the queue (which a lost
+device answers in finite time) before any lease or native object is released.
 A compute pipeline is immutable and fully determined by its SPIR-V words, entry
 point and binding layout, so `doe_vk_pipeline_create` returns the existing pipeline
 for an identical input (exact comparison, never a hash alone). The context also

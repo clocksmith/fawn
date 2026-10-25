@@ -18,6 +18,7 @@ enum { DOE_VK_COMMAND_SPARES = 8 };
 struct doe_vk_context {
     uint32_t references;
     bool lost;
+    bool lost_drained; /* The queue was waited on once after loss; see commands.c. */
     void *library;
     doe_vk_functions vk;
     VkInstance instance;

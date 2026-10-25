@@ -7,7 +7,7 @@
  * after their recording is proven terminal or was never submitted. */
 static struct {
     unsigned pools_created, pools_destroyed, pool_resets, buffers_allocated;
-    unsigned fences_created, fences_destroyed, fence_resets, begins, submits;
+    unsigned fences_created, fences_destroyed, fence_resets, begins, submits, idles;
     VkResult submit_result, fence_status, reset_result;
     uint64_t next_handle;
 } mock;
@@ -81,6 +81,7 @@ static VkResult fence_status(VkDevice device, VkFence fence) {
 }
 static VkResult idle(VkQueue queue) {
     (void)queue;
+    ++mock.idles;
     return 0;
 }
 
@@ -158,11 +159,25 @@ int main(void) {
     assert(ctx.command_spare_count == DOE_VK_COMMAND_SPARES - 2 && mock.pools_destroyed == destroyed + 3);
     ctx.lost = false;
 
+    /* Loss does not prove submitted work finished: the first lost completion
+     * waits for the queue before any lease is dropped, then destroys rather
+     * than recycles; later lost completions do not wait again. */
+    ctx.queue = (VkQueue)(uintptr_t)0x51;
+    doe_vk_commands *first = recording(&ctx), *second = recording(&ctx);
+    assert(doe_vk_commands_submit(first, NULL) == DOE_VK_OK && doe_vk_commands_submit(second, NULL) == DOE_VK_OK);
+    const unsigned idles = mock.idles, spares = ctx.command_spare_count;
+    ctx.lost = true;
+    assert(doe_vk_commands_poll(first, NULL) == DOE_VK_DEVICE_LOST && mock.idles == idles + 1);
+    assert(doe_vk_commands_release(second) == DOE_VK_OK && mock.idles == idles + 1);
+    assert(doe_vk_commands_release(first) == DOE_VK_OK && ctx.command_spare_count == spares);
+    ctx.lost = false;
+    ctx.lost_drained = false;
+
     /* Device teardown destroys every spare. */
     doe_vk_command_spares_clear(&ctx);
     assert(ctx.command_spare_count == 0 && ctx.references == 1);
     assert(mock.pools_destroyed == mock.pools_created && mock.fences_destroyed == mock.fences_created);
     assert(mock.buffers_allocated == mock.pools_created);
-    puts("PASS command pools and fences become spares only after proven-terminal or never-submitted recordings; bounded, reset and destroyed with the device");
+    puts("PASS command pools and fences become spares only after proven-terminal or never-submitted recordings; bounded, reset and destroyed with the device; a lost device drains its queue once before release");
     return 0;
 }
