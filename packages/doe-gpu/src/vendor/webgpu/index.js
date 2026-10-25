@@ -33,6 +33,8 @@ import {
   validatePositiveInteger,
   assertLiveResource,
   destroyResource,
+  releaseWhenCollected,
+  forgetCollectedRelease,
 } from './shared/resource-lifecycle.js';
 import {
   publishLimits,
@@ -812,6 +814,8 @@ function ensureNodeCommandEncoderNative(encoder) {
     return;
   }
   encoder._native = addon.createCommandEncoder(assertLiveResource(encoder._device, 'GPUCommandEncoder', 'GPUDevice'), encoder.label || undefined);
+  // An encoder dropped unfinished releases its native; finish() takes it over.
+  releaseWhenCollected(encoder, encoder._native, (native) => addon.commandEncoderRelease(native));
   materializeNodeCommandEncoderCommands(encoder);
 }
 
@@ -1565,6 +1569,10 @@ const nodeEncoderBackend = {
   },
   renderPassEnd(pass) {
     addon.renderPassEnd(pass._native);
+    // An ended pass records nothing more (the surface checks _ended first), so
+    // its native is released, as a compute pass's is.
+    addon.renderPassRelease(pass._native);
+    pass._native = null;
     pass._ended = true;
     if (pass._encoder._activePass === pass) {
       pass._encoder._activePass = null;
@@ -1654,6 +1662,9 @@ const nodeEncoderBackend = {
   },
   renderBundleEncoderFinish(enc, _descriptor, classes) {
     const bundle = addon.renderBundleEncoderFinish(enc._native);
+    // A finished encoder records nothing more; its native is released (Bun too).
+    addon.renderBundleEncoderRelease(enc._native);
+    enc._native = null;
     enc._ended = true;
     return new classes.DoeGPURenderBundle(bundle, enc._encoder ?? enc);
   },
@@ -1919,6 +1930,7 @@ const nodeEncoderBackend = {
       return { _native: nativeCommandBuffer, _batched: false, _commands: commands };
     }
     const cmd = addon.commandEncoderFinish(encoder._native);
+    forgetCollectedRelease(encoder);
     addon.commandEncoderRelease(encoder._native);
     encoder._native = null;
     if (encoder._deferredError != null) {
@@ -2146,6 +2158,14 @@ const fullSurfaceBackend = {
   bindGroupLayoutRelease(native) { addon.bindGroupLayoutRelease(native); },
   bindGroupRelease(native) { addon.bindGroupRelease(native); },
   pipelineLayoutRelease(native) { addon.pipelineLayoutRelease(native); },
+  // Collected-object releases (resource-lifecycle releaseWhenCollected): the
+  // wrapper's native reference only, never destroy().
+  bufferRelease(native) { addon.bufferRelease(native); },
+  textureRelease(native) { addon.textureRelease(native); },
+  textureViewRelease(native) { addon.textureViewRelease(native); },
+  samplerRelease(native) { addon.samplerRelease(native); },
+  renderPipelineRelease(native) { addon.renderPipelineRelease(native); },
+  commandEncoderRelease(native) { addon.commandEncoderRelease(native); },
   initQueueState(queue) {
     queue._submittedSerial = 0;
     queue._completedSerial = 0;
