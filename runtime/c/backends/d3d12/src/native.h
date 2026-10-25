@@ -44,6 +44,9 @@ typedef struct doe_dx_native_render_depth {
     float value;
 } doe_dx_native_render_depth;
 typedef struct doe_dx_native_render_draw {
+    doe_dx_native_timestamps *query;
+    uint32_t query_index;
+    bool query_begin;
     doe_dx_native_pipeline *pipeline;
     doe_dx_native_resources stages[DOE_DX_RENDER_STAGES];
     doe_dx_native_binding vertices[DOE_DX_MAX_VERTEX_BUFFERS];
@@ -113,7 +116,7 @@ doe_dx_status doe_dx_native_draw(doe_dx_native_commands *commands,
     doe_dx_native_pipeline *pipeline, const doe_dx_native_resources *resources,
     doe_dx_native_texture *color, const doe_dx_native_geometry *geometry,
     const doe_dx_mesh_draw_desc *draw, doe_dx_error *error);
-doe_dx_status doe_dx_native_timestamps_create(doe_dx_native_context *context, uint32_t count,
+doe_dx_status doe_dx_native_timestamps_create(doe_dx_native_context *context, doe_dx_query_kind kind,uint32_t count,
     doe_dx_native_timestamps **out, doe_dx_error *error);
 void doe_dx_native_timestamps_destroy(doe_dx_native_timestamps *timestamps);
 doe_dx_status doe_dx_native_timestamp_frequency(doe_dx_native_context *context,

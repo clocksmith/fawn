@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: MIT */
 #include "d3d12_indirect.h"
+#include "d3d12_queries.h"
 #include "d3d12_texture.h"
 #include "d3d12_graphics_internal.h"
 
@@ -51,6 +52,10 @@ native_failure native_d3d12_record_commands(native_command_handle *commands, doe
             break;
         case DOE_COMMAND_DISPATCH_INDIRECT:
             failure = native_d3d12_dispatch_indirect(commands, record);
+            break;
+        case DOE_COMMAND_WRITE_TIMESTAMP:
+        case DOE_COMMAND_RESOLVE_QUERY:
+            failure=native_d3d12_record_query(commands,record);
             break;
         case DOE_COMMAND_RENDER: {
             size_t consumed=0;

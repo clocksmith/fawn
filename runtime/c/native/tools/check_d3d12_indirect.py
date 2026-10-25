@@ -36,7 +36,8 @@ def main() -> None:
                     'runtime/c/native/src/d3d12_stage_bindings.c',
                     *sources[3:]]
     inputs = [*sources, *draw_sources, 'runtime/c/common/include/doe_draw_guard.h',
-              'runtime/c/native/src/d3d12_draw_guard.h', 'runtime/c/common/include/doe_dispatch_guard.h',
+              'runtime/c/native/src/d3d12_draw_guard.h',
+              'runtime/c/common/include/doe_timestamp.h','runtime/c/common/include/doe_timestamp_kernel.h', 'runtime/c/common/include/doe_dispatch_guard.h',
               'runtime/c/native/src/d3d12_indirect_layout.h', 'runtime/c/shader/include/doe_shader.h']
     inputs += [str(path.relative_to(ROOT)) for path in (ROOT/'runtime/c/compiler/include').glob('*.h')]
     hashes = {name: hashlib.sha256((ROOT/name).read_bytes()).hexdigest() for name in inputs}

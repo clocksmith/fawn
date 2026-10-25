@@ -47,6 +47,14 @@ static doe_dx_status prepare_indirect(doe_dx_commands *commands,const doe_dx_ren
 static doe_dx_status prepare_draw(doe_dx_commands *commands,const doe_dx_render_draw *draw,
     doe_dx_texture *color,doe_dx_texture *depth,doe_dx_native_render_draw *out,doe_dx_reservation *needed,doe_dx_error *error)
 {
+    if (draw->query) {
+        if (draw->pipeline || draw->indirect || draw->indices || draw->vertex_buffer_count)
+            return doe_dx_fail(DOE_DX_INVALID_ARGUMENT,0,"render.query_event",error);
+        doe_dx_status status=doe_dx_render_query_preflight(commands,draw->query,draw->query_index,needed);
+        if (status!=DOE_DX_OK) return doe_dx_fail(status,0,"render.query",error);
+        out->query=draw->query->native; out->query_index=draw->query_index; out->query_begin=draw->query_begin;
+        return DOE_DX_OK;
+    }
     doe_dx_pipeline *pipeline=draw->pipeline;
     if (!pipeline || !pipeline->render || pipeline->context!=commands->context ||
         pipeline->color_format!=color->desc.format || pipeline->depth_enabled!=(depth!=NULL))
@@ -124,12 +132,24 @@ doe_dx_status doe_dx_commands_render(doe_dx_commands *commands,
     doe_dx_reservation needed={.textures=doe_dx_find_texture(commands,pass->color) ? 0u : 1u,
         .pipelines=pass->draw_count};
     if (pass->depth && !doe_dx_find_texture(commands,pass->depth)) ++needed.textures;
-    for (size_t i=0;status==DOE_DX_OK && i<pass->draw_count;++i)
-        status=prepare_draw(commands,&pass->draws[i],pass->color,pass->depth,&draws[i],&needed,error);
+    doe_dx_queries *active_query=NULL;
+    uint32_t active_index=0;
+    for (size_t i=0;status==DOE_DX_OK && i<pass->draw_count;++i) {
+        const doe_dx_render_draw *draw=&pass->draws[i];
+        if (draw->query) {
+            if (draw->query_begin ? active_query!=NULL : active_query!=draw->query || active_index!=draw->query_index) {
+                status=doe_dx_fail(DOE_DX_INVALID_ARGUMENT,0,"render.query_balance",error); break;
+            }
+            active_query=draw->query_begin ? draw->query : NULL;
+            active_index=draw->query_index;
+        }
+        status=prepare_draw(commands,draw,pass->color,pass->depth,&draws[i],&needed,error);
+    }
+    if (status==DOE_DX_OK && active_query) status=doe_dx_fail(DOE_DX_INVALID_ARGUMENT,0,"render.query_unclosed",error);
     if (status==DOE_DX_OK) status=doe_dx_reserve_uses(commands,needed,error);
     size_t retained=0;
     while (status==DOE_DX_OK && retained<pass->draw_count) {
-        status=doe_dx_pipeline_retain(pass->draws[retained].pipeline);
+        status=pass->draws[retained].query ? DOE_DX_OK : doe_dx_pipeline_retain(pass->draws[retained].pipeline);
         if (status==DOE_DX_OK) ++retained;
         else status=doe_dx_fail(status,0,"render.pipeline.retain",error);
     }
@@ -150,6 +170,10 @@ doe_dx_status doe_dx_commands_render(doe_dx_commands *commands,
     if (status==DOE_DX_OK) {
         for (size_t i=0;i<pass->draw_count;++i) {
             const doe_dx_render_draw *draw=&pass->draws[i];
+            if (draw->query) {
+                doe_dx_use_render_query(commands,draw->query,draw->query_index,!draw->query_begin);
+                continue;
+            }
             for (size_t stage=0;stage<DOE_DX_RENDER_STAGES;++stage) {
                 const doe_dx_compute_resources *values=&draw->stages[stage].resources;
                 for (size_t j=0;j<values->buffer_count;++j) doe_dx_use_buffer(commands,values->buffers[j].buffer);

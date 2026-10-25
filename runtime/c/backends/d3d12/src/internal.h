@@ -38,8 +38,10 @@ struct doe_dx_timestamps {
     doe_dx_native_timestamps *native;
     doe_dx_commands *owner;
     uint32_t references, count;
+    doe_dx_query_kind kind;
     size_t owner_index;
-    uint64_t initialized;
+    uint64_t initialized; /* Legacy first 64 slots retain their representation. */
+    uint64_t initialized_upper[DOE_DX_MAX_QUERIES/64-1];
 };
 typedef struct doe_dx_render_layout {
     doe_dx_topology topology;
@@ -74,7 +76,8 @@ typedef struct doe_dx_texture_use {
 } doe_dx_texture_use;
 typedef struct doe_dx_timestamp_use {
     doe_dx_timestamps *timestamps;
-    uint64_t initialized;
+    uint64_t initialized; /* Legacy first 64 slots retain their representation. */
+    uint64_t initialized_upper[DOE_DX_MAX_QUERIES/64-1];
 } doe_dx_timestamp_use;
 typedef enum doe_dx_command_state {
     DOE_DX_RECORDING, DOE_DX_POISONED, DOE_DX_SUBMITTED, DOE_DX_COMPLETE, DOE_DX_FAILED
@@ -113,6 +116,8 @@ doe_dx_status doe_dx_prepare_binding_plan(doe_dx_commands *,const doe_dx_binding
     const doe_dx_dynamic_resources *,doe_dx_native_resources *,doe_dx_reservation *,doe_dx_error *);
 doe_dx_status doe_dx_stage_aliases(const doe_dx_binding_plan *,const doe_dx_dynamic_resources *,
     const doe_dx_binding_plan *,const doe_dx_dynamic_resources *);
+doe_dx_status doe_dx_render_query_preflight(doe_dx_commands *,doe_dx_queries *,uint32_t,doe_dx_reservation *);
+void doe_dx_use_render_query(doe_dx_commands *,doe_dx_queries *,uint32_t,bool);
 doe_dx_status doe_dx_validate_render_vertices(const doe_dx_render_pipeline_desc *,uint32_t *);
 doe_dx_status doe_dx_prepare_render_vertices(doe_dx_commands *,doe_dx_pipeline *,const doe_dx_render_draw *,
     doe_dx_native_render_draw *,doe_dx_reservation *,doe_dx_error *);

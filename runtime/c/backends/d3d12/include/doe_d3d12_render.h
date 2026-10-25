@@ -47,6 +47,10 @@ typedef struct doe_dx_render_pipeline_desc {
     size_t attribute_count;
 } doe_dx_render_pipeline_desc;
 typedef struct doe_dx_render_draw {
+    /* Query events have no pipeline/draw resources; begin/end must balance. */
+    doe_dx_queries *query;
+    uint32_t query_index;
+    bool query_begin;
     doe_dx_pipeline *pipeline;
     doe_dx_dynamic_resources stages[DOE_DX_RENDER_STAGES];
     uint32_t vertex_count, instance_count, first_vertex, first_instance;

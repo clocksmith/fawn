@@ -558,3 +558,27 @@ HLSL and verifies compiler-owned register/stride/access metadata and failure
 nonpublication. This newer checkpoint has **not** yet had SDK compilation, DXC
 execution, GPU guard execution, indexed pixels or WARP/physical-device validation.
 Earlier source-bound SDK receipts do not qualify it.
+
+### Public query source checkpoint
+
+The additive query API extends the existing timestamp heap/use owner to 4096
+slots and occlusion heaps. The original 1..64 timestamp constructor, raw-tick
+READBACK API and its tests retain their behavior. Upper availability words are
+published only by the same observed-completion path; canceled/failed commands
+never publish speculative writes. Occlusion begin/end events balance inside the
+whole-pass sequence, including zero-draw scopes, and retain the same query owner.
+
+The actual direct queue's timestamp frequency is queried during context creation.
+The native adapter advertises timestamp-query only with that fact and SM6 support;
+a requested device compiles the unchanged common timestamp kernel before
+publication. Query resolve writes available raw results to DEFAULT scratch, keeps
+unavailable slots genuinely zero, normalizes timestamps on the GPU, then copies
+the exact requested range into the user's buffer. User results never map or use
+host timing. The same storage-kernel compiler/reflection owner serves timestamp
+normalization and draw guards; there is no second shader engine.
+
+Portable tests cover slot4095, speculative/publication/cancellation bitmap state,
+DEFAULT resolution, occlusion event balance and early release. Real C-compiler
+HLSL reflection controls include the common timestamp kernel. These changes await
+fresh SDK compilation and actual DXC/query execution; they do not inherit earlier
+source-bound SDK or hardware qualification.

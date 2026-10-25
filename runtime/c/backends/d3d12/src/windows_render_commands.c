@@ -111,6 +111,7 @@ doe_dx_status doe_dx_native_render(doe_dx_native_commands *commands,doe_dx_nativ
     }
     for (size_t i=0;i<count;++i) {
         const doe_dx_native_render_draw *draw=&draws[i];
+        if (draw->query) continue;
         if (draw->indirect.buffer) {
             status=prepare_draw_signature(commands->context,draw->indices.buffer!=NULL,error);
             if (status!=DOE_DX_OK) goto fail;
@@ -139,8 +140,13 @@ doe_dx_status doe_dx_native_render(doe_dx_native_commands *commands,doe_dx_nativ
     if (depth && depth->clear)
         ID3D12GraphicsCommandList_ClearDepthStencilView(list,depth_handle,D3D12_CLEAR_FLAG_DEPTH,depth->value,0,0,NULL);
     if (clear) ID3D12GraphicsCommandList_ClearRenderTargetView(list,target,clear_color,0,NULL);
-    for (size_t i=0;i<count;++i)
-        if (draws[i].indirect.buffer || (draws[i].vertex_count && draws[i].instance_count)) draw_packet(commands,&draws[i],bindings[i]);
+    for (size_t i=0;i<count;++i) {
+        const doe_dx_native_render_draw *draw=&draws[i];
+        if (draw->query) {
+            if (draw->query_begin) ID3D12GraphicsCommandList_BeginQuery(list,draw->query->heap,D3D12_QUERY_TYPE_OCCLUSION,draw->query_index);
+            else ID3D12GraphicsCommandList_EndQuery(list,draw->query->heap,D3D12_QUERY_TYPE_OCCLUSION,draw->query_index);
+        } else if (draw->indirect.buffer || (draw->vertex_count && draw->instance_count)) draw_packet(commands,draw,bindings[i]);
+    }
     if (discard) {
         const float zero[4]={0};
         /* Eager real initialization preserves WebGPU's later zero observation

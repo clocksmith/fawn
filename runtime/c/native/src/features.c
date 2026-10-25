@@ -45,7 +45,9 @@ static bool depth_stencil(const doe_vk_format_caps *caps)
  * descriptor fields checks the enabled set, never these adapter facts. */
 uint32_t native_adapter_features(const native_backend *backend)
 {
-    if (backend->kind == WGPUBackendType_D3D12) return 0;
+    if (backend->kind == WGPUBackendType_D3D12)
+        return backend->value.d3d12.caps.timestamp_frequency && backend->value.d3d12.caps.shader_model>=0x60 ?
+            NATIVE_FEATURE(WGPUFeatureName_TimestampQuery) : 0;
     if (backend->kind == WGPUBackendType_Metal) {
         const doe_mtl_caps *caps = &backend->value.metal.caps;
         return NATIVE_FEATURE(WGPUFeatureName_CoreFeaturesAndLimits) |

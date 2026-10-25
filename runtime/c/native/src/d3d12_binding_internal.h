@@ -37,6 +37,8 @@ native_failure native_d3d12_binding_values(const native_pipeline *,const native_
 /* Requires the canonical resource owner's normalized sampler descriptor. The
  * private backend separately admits native descriptor values when recording. */
 bool native_d3d12_sampler_descriptor(const WGPUSamplerDescriptor *normalized,doe_dx_sampler_desc *out);
+/* Known internal storage kernels use this same reflected register/type owner. */
+bool native_d3d12_storage_kernel_layout(const doe_shader_view *,uint32_t,size_t,doe_dx_binding_layout [3]);
 /* Resolve canonical command-owned snapshots under existing device serialization.
  * No resource or sampler reference count is created here. */
 native_failure native_d3d12_binding_snapshot(const doe_resource_command *record,native_d3d12_snapshot *out);

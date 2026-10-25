@@ -417,13 +417,14 @@ doe_dx_status doe_dx_native_draw(doe_dx_native_commands *commands,
     return DOE_DX_OK;
 }
 
-doe_dx_status doe_dx_native_timestamps_create(doe_dx_native_context *context, uint32_t count,
+doe_dx_status doe_dx_native_timestamps_create(doe_dx_native_context *context, doe_dx_query_kind kind,uint32_t count,
     doe_dx_native_timestamps **out, doe_dx_error *error) {
-    assert(context && count && count <= 64);
+    assert(context && count && count <= DOE_DX_MAX_QUERIES);
     doe_dx_status status = outcome(MOCK_TIMESTAMPS, error);
     if (status != DOE_DX_OK) return status;
     *out = calloc(1, sizeof(**out));
     assert(*out);
+    (void)kind;
     mock.timestamps++;
     return DOE_DX_OK;
 }
@@ -491,6 +492,7 @@ doe_dx_status doe_dx_native_render(doe_dx_native_commands *commands,doe_dx_nativ
     if (status!=DOE_DX_OK) return status;
     record_texture(commands,color);
     for (size_t i=0;i<count;++i) {
+        if (draws[i].query) { record_timestamps(commands,draws[i].query); continue; }
         for (size_t stage=0;stage<DOE_DX_RENDER_STAGES;++stage)
             record_resources(commands,draws[i].pipeline,&draws[i].stages[stage]);
         for (size_t slot=0;slot<draws[i].vertex_buffer_count;++slot)
