@@ -76,6 +76,8 @@ void native_failure_format(const native_failure *failure, const char *fallback,
 native_failure native_command_create(const native_backend *backend, native_command_handle *out);
 native_failure native_command_submit(native_command_handle *commands);
 native_failure native_command_wait(native_command_handle *commands);
+/* A Vulkan submission the queue accepted and nobody has observed terminal. */
+bool native_command_in_flight(const native_command_handle *commands);
 native_failure native_command_poll(native_command_handle *commands);
 native_failure native_command_recover(native_command_handle *commands);
 native_result native_command_release(native_command_handle *commands);

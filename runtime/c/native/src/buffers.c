@@ -274,7 +274,7 @@ WGPUFuture wgpuBufferMapAsync(WGPUBuffer handle, WGPUMapMode mode,
         delivery.bytes = malloc(delivery.size ? delivery.size : 1);
         native_buffer *payload = doe_resource_buffer_native(buffer);
         if (delivery.bytes) {
-            failure = native_settle_pending(device).failure;
+            failure = native_settle_for_buffer(device, payload);
             consumed_failure = failure;
             if (failure.status == NATIVE_OK)
                 failure = native_buffer_read(payload, offset, delivery.bytes, delivery.size);
@@ -314,11 +314,9 @@ void wgpuQueueWriteBuffer(WGPUQueue handle, WGPUBuffer buffer_handle,
     doe_resource_status status = doe_resource_buffer_write_validate(buffer, device, offset, size);
     native_failure failure = native_failure_status(NATIVE_INVALID_ARGUMENT);
     if (status == DOE_RESOURCE_OK && (bytes || !size)) {
-        failure = native_settle_pending(device).failure;
-        if (failure.status == NATIVE_OK) {
-            native_buffer *payload = doe_resource_buffer_native(buffer);
-            failure = native_buffer_write(payload, offset, bytes, size);
-        }
+        native_buffer *payload = doe_resource_buffer_native(buffer);
+        failure = native_settle_for_buffer(device, payload);
+        if (failure.status == NATIVE_OK) failure = native_buffer_write(payload, offset, bytes, size);
     }
     native_unlock(device);
     if (status != DOE_RESOURCE_OK || failure.status != NATIVE_OK) {

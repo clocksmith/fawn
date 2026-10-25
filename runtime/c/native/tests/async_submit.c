@@ -19,7 +19,7 @@
 #include <time.h>
 
 enum { TRACKED = 2 };
-static atomic_bool arm, hold, refused_held;
+static atomic_bool arm, hold, refused_held, later_held, first_unobserved;
 static atomic_uint later_blocks;
 static atomic_uint armed_slot, waits;
 static _Atomic(doe_vk_commands *) tracked[TRACKED];
@@ -62,7 +62,17 @@ static doe_vk_status observed(doe_vk_commands *commands, doe_vk_status actual, d
 }
 doe_vk_status __wrap_doe_vk_commands_poll(doe_vk_commands *commands, doe_vk_error *error)
 {
+    /* Withheld before the real poll, so the record stays accepted, unobserved. */
+    if (atomic_load(&later_held) && commands == atomic_load(&tracked[1])) return DOE_VK_PENDING;
+    if (atomic_load(&first_unobserved) && commands == atomic_load(&tracked[0])) return DOE_VK_PENDING;
     return observed(commands, __real_doe_vk_commands_poll(commands, error), error);
+}
+static atomic_uint recovers; /* Counts native vkQueueWaitIdle calls. */
+static VkResult (*real_idle)(VkQueue);
+static VkResult counted_idle(VkQueue queue)
+{
+    atomic_fetch_add(&recovers, 1);
+    return real_idle(queue);
 }
 doe_vk_status __wrap_doe_vk_commands_recover(doe_vk_commands *commands, doe_vk_error *error)
 {
@@ -357,10 +367,18 @@ static void refused_submission_does_not_strand_later_work(void)
     assert(wgpuDevicePopErrorScope(s.device, popped).id);
     assert(atomic_load(&tracked[0]) && linked(device)); /* Unresolved: still linked with its leases. */
     atomic_store(&later_blocks, 0);
+    atomic_store(&later_held, true);
     track(1, DOE_VK_OK);
     wgpuQueueSubmit(s.queue, 1, &commands[1]);
     doe_vk_commands *later = atomic_load(&tracked[1]);
     assert(later);
+    /* The worker passes over the refused record and waits on the later fence. */
+    for (unsigned i = 0; i < 500 && !atomic_load(&later_blocks); ++i) {
+        struct timespec delay = {.tv_sec = 0, .tv_nsec = 10000000};
+        while (nanosleep(&delay, &delay) && errno == EINTR) {}
+    }
+    assert(atomic_load(&later_blocks) >= 1);
+    atomic_store(&later_held, false);
     bool retired = false;
     for (unsigned i = 0; i < 500 && !retired; ++i) {
         native_lock(device);
@@ -373,7 +391,7 @@ static void refused_submission_does_not_strand_later_work(void)
             while (nanosleep(&delay, &delay) && errno == EINTR) {}
         }
     }
-    assert(retired && atomic_load(&later_blocks) >= 1 && linked(device));
+    assert(retired && linked(device));
     atomic_store(&refused_held, false);
     native_lock(device);
     (void)native_settle_pending(device); /* Recovery resolves the refused record. */
@@ -389,6 +407,58 @@ static void refused_submission_does_not_strand_later_work(void)
     consumer_finish(&s);
 }
 
+/* Host access waits only for work that uses the buffer (phase C):
+ * a write or map of an unrelated buffer neither waits nor observes running
+ * work; a write to a buffer an in-flight copy reads waits for that copy
+ * first; work done waits each record's own fence, never queue idle. */
+static void targeted_host_access(void)
+{
+    state s = {0};
+    consumer_init(&s);
+    native_device *device = (native_device *)s.device;
+    doe_vk_context *context = device->backend.value.vulkan.context;
+    real_idle = context->vk.vkQueueWaitIdle;
+    context->vk.vkQueueWaitIdle = counted_idle;
+    const uint32_t before[4] = {1, 2, 3, 4}, after[4] = {9, 8, 7, 6};
+    WGPUBuffer source = buffer(&s, sizeof(before), WGPUBufferUsage_CopySrc | WGPUBufferUsage_CopyDst);
+    WGPUBuffer destination = buffer(&s, sizeof(before), WGPUBufferUsage_CopyDst | WGPUBufferUsage_MapRead);
+    WGPUBuffer unrelated = buffer(&s, sizeof(before), WGPUBufferUsage_CopyDst | WGPUBufferUsage_MapRead);
+    wgpuQueueWriteBuffer(s.queue, source, 0, before, sizeof(before));
+    wgpuQueueWriteBuffer(s.queue, unrelated, 0, after, sizeof(after));
+    WGPUCommandBuffer commands = copy_commands(&s, source, destination, sizeof(before));
+    track(0, DOE_VK_OK);
+    atomic_store(&hold, true);
+    atomic_store(&first_unobserved, true); /* Its buffer uses stay counted until a wait. */
+    wgpuQueueSubmit(s.queue, 1, &commands);
+    atomic_store(&waits, 0);
+    atomic_store(&recovers, 0);
+    wgpuQueueWriteBuffer(s.queue, unrelated, 0, after, sizeof(after));
+    assert(!memcmp(map(&s, unrelated, sizeof(after)), after, sizeof(after)));
+    wgpuBufferUnmap(unrelated);
+    assert(atomic_load(&waits) == 0 && atomic_load(&recovers) == 0 && linked(device) && !s.errors);
+    /* The copy reads source: writing source waits for it, so the copy saw the old bytes. */
+    wgpuQueueWriteBuffer(s.queue, source, 0, after, sizeof(after));
+    assert(atomic_load(&waits) >= 1 && atomic_load(&recovers) == 0 && !s.errors);
+    atomic_store(&first_unobserved, false);
+    atomic_store(&hold, false);
+    atomic_store(&recovers, 0);
+    work_done(&s);
+    assert(!linked(device) && atomic_load(&recovers) == 0);
+    assert(!memcmp(map(&s, destination, sizeof(before)), before, sizeof(before)));
+    wgpuBufferUnmap(destination);
+    WGPUCommandBuffer again = copy_commands(&s, source, destination, sizeof(after));
+    wgpuQueueSubmit(s.queue, 1, &again);
+    assert(!memcmp(map(&s, destination, sizeof(after)), after, sizeof(after)));
+    wgpuBufferUnmap(destination);
+    assert(atomic_load(&recovers) == 0);
+    wgpuCommandBufferRelease(commands);
+    wgpuCommandBufferRelease(again);
+    wgpuBufferRelease(source);
+    wgpuBufferRelease(destination);
+    wgpuBufferRelease(unrelated);
+    consumer_finish(&s);
+}
+
 int main(void)
 {
     leases_until_completion();
@@ -396,6 +466,7 @@ int main(void)
     map_and_work_done_order();
     loss_with_work_in_flight();
     refused_submission_does_not_strand_later_work();
-    printf("PASS async submit: no fence wait at Vulkan submit, released handles keep leases until completion, oldest-first settlement keeps the first error once, map/work-done callbacks in request order over completed work, loss with work in flight retires it as failed, a refused unresolved submission does not strand later work the worker retires by fence %s\n",
+    targeted_host_access();
+    printf("PASS async submit: no fence wait at Vulkan submit, released handles keep leases until completion, oldest-first settlement keeps the first error once, map/work-done callbacks in request order over completed work, loss with work in flight retires it as failed, a refused unresolved submission does not strand later work the worker retires by fence, host access waits only for work using its buffer and work done never waits for queue idle %s\n",
         adapter_class_scope());
 }

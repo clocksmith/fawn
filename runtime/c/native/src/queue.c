@@ -164,7 +164,10 @@ static native_queue_settlement settle_pending(native_device *device, bool poll)
             cursor = &pending->next;
             continue;
         }
+        /* Blocking settlement waits each accepted submission's own fence and
+         * recovers (queue idle) only a refused or uncertain one. */
         native_failure failure = poll ? native_command_poll(&pending->native) :
+            native_command_in_flight(&pending->native) ? native_command_wait(&pending->native) :
             native_command_recover(&pending->native);
         if (poll && failure.status == NATIVE_PENDING) {
             result.complete = false;
@@ -222,6 +225,36 @@ native_queue_settlement native_poll_pending(native_device *device)
 native_queue_settlement native_settle_routine(native_device *device)
 {
     return consume_settlement(device, device->backend.kind == WGPUBackendType_Vulkan);
+}
+
+/* Host access to one buffer (owner authorized 2026-10-24: async submit A+B, D2, fence-wait completion; futures later; reconfirmed after the section 7 risk review): on Vulkan, wait oldest first only
+ * while a submission still uses the buffer; other running work is polled,
+ * not waited for. The first failure observed is returned once. */
+native_failure native_settle_for_buffer(native_device *device, const native_buffer *buffer)
+{
+    if (device->backend.kind != WGPUBackendType_Vulkan) return native_settle_pending(device).failure;
+    native_failure first = native_poll_pending(device).failure;
+    while (doe_vk_buffer_busy(buffer->handle.vulkan)) {
+        native_pending *oldest = device->pending;
+        while (oldest && oldest->kind == NATIVE_PENDING_SURFACE) oldest = oldest->next;
+        if (!oldest) break;
+        if (!native_command_in_flight(&oldest->native)) {
+            native_failure recovered = native_settle_pending(device).failure;
+            if (first.status == NATIVE_OK) first = recovered;
+            break;
+        }
+        (void)native_command_wait(&oldest->native); /* Completion is observed by the settle below. */
+        native_failure settled = native_poll_pending(device).failure;
+        if (first.status == NATIVE_OK) first = settled;
+        if (!doe_vk_buffer_busy(buffer->handle.vulkan)) break;
+        for (native_pending *linked = device->pending; linked; linked = linked->next) {
+            if (linked != oldest) continue;
+            /* Its fence signalled but completion stays unknown. */
+            device->queue_failed = true;
+            return first.status == NATIVE_OK ? native_failure_status(NATIVE_PENDING) : first;
+        }
+    }
+    return first;
 }
 
 /* Appends, keeping the list in submission order. */

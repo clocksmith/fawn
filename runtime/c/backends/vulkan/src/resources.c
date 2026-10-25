@@ -159,6 +159,10 @@ void doe_vk_buffer_release(doe_vk_buffer *buffer) {
     doe_vk_context_release(context);
 }
 
+bool doe_vk_buffer_busy(const doe_vk_buffer *buffer) {
+    return buffer != NULL && buffer->recorded_uses != 0;
+}
+
 uint64_t doe_vk_buffer_size(const doe_vk_buffer *buffer) {
     return buffer != NULL ? buffer->size : 0;
 }
