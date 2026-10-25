@@ -1,9 +1,10 @@
 {
   "schemaVersion": 1,
-  "registryVersion": "2026-10-25-zig-and-c-runtime-clis-v1",
+  "registryVersion": "2026-10-25-zig-and-c-runtime-clis-v2",
   "providers": [
     {
       "providerId": "doe-zig-runtime",
+      "productId": "doe",
       "runtimeImplementation": "zig",
       "binaryName": "doe-zig-runtime",
       "backendSelection": "backend-runtime-policy",
@@ -15,6 +16,7 @@
     },
     {
       "providerId": "doe-c-runtime",
+      "productId": "doe-c",
       "runtimeImplementation": "c",
       "binaryName": "doe-c-runtime",
       "backendSelection": "fixed",

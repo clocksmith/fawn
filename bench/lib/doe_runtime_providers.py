@@ -22,6 +22,7 @@ REGISTRY_PATH = Path("config/doe-runtime-providers.json")
 @dataclass(frozen=True)
 class DoeRuntimeProvider:
     provider_id: str
+    product_id: str
     runtime_implementation: str
     binary_name: str
     backend_selection: str
@@ -35,6 +36,7 @@ def load_providers(root: Path = REPO_ROOT) -> tuple[DoeRuntimeProvider, ...]:
     providers = tuple(
         DoeRuntimeProvider(
             provider_id=entry["providerId"],
+            product_id=entry["productId"],
             runtime_implementation=entry["runtimeImplementation"],
             binary_name=entry["binaryName"],
             backend_selection=entry["backendSelection"],
@@ -46,6 +48,7 @@ def load_providers(root: Path = REPO_ROOT) -> tuple[DoeRuntimeProvider, ...]:
     )
     for label, values in (
         ("providerId", [p.provider_id for p in providers]),
+        ("productId", [p.product_id for p in providers]),
         ("binaryName", [p.binary_name for p in providers]),
         ("executionBackend", [b for p in providers for b, _ in p.execution_backends]),
     ):
@@ -68,6 +71,11 @@ def provider_for_execution_backend(execution_backend: str) -> DoeRuntimeProvider
         if any(b == execution_backend for b, _ in provider.execution_backends):
             return provider
     return None
+
+
+def doe_product_ids() -> frozenset[str]:
+    """Bench products that run a Doe runtime CLI and take the Doe workload role."""
+    return frozenset(p.product_id for p in load_providers())
 
 
 def runtime_binary_names() -> frozenset[str]:

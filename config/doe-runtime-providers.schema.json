@@ -14,9 +14,14 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["providerId", "runtimeImplementation", "binaryName", "backendSelection", "executionBackends"],
+        "required": ["providerId", "productId", "runtimeImplementation", "binaryName", "backendSelection", "executionBackends"],
         "properties": {
           "providerId": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+          "productId": {
+            "description": "The bench run product id of this provider; its runs take the workload contract's Doe (baseline) role.",
+            "type": "string",
+            "pattern": "^[a-z0-9-]+$"
+          },
           "runtimeImplementation": { "type": "string", "enum": ["zig", "c"] },
           "binaryName": { "type": "string", "pattern": "^[a-z0-9-]+$" },
           "backendSelection": { "type": "string", "enum": ["backend-runtime-policy", "fixed"] },
