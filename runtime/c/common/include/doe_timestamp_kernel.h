@@ -3,7 +3,7 @@
 #define DOE_TIMESTAMP_KERNEL_H
 /* Verbatim retained WGSL body; provenance and byte identity are checked by
  * backends/vulkan/tools/check_timestamp_source.py. This is the sole runtime kernel copy. */
-static const char doe_timestamp_kernel[] =
+static const char doe_timestamp_kernel_prefix[] =
     "// Exact f32-period multiplication using base-2^16 limbs; no shaderInt64 required.\n"
     "@group(0) @binding(0) var<storage, read_write> timestamps: array<vec2<u32>>;\n"
     "\n"
@@ -22,7 +22,8 @@ static const char doe_timestamp_kernel[] =
     "@compute @workgroup_size(WORKGROUP_SIZE)\n"
     "fn main(@builtin(global_invocation_id) id: vec3<u32>) {\n"
     "  if (id.x >= arrayLength(&timestamps)) { return; }\n"
-    "  let ticks = timestamps[id.x] & vec2<u32>(MASK_LOW, MASK_HIGH);\n"
+    "  let ticks = timestamps[id.x] & vec2<u32>(MASK_LOW, MASK_HIGH);\n";
+static const char doe_timestamp_kernel_suffix[] =
     "  let digits = array<u32, 4>(ticks.x & 65535u, ticks.x >> 16u,\n"
     "    ticks.y & 65535u, ticks.y >> 16u);\n"
     "  let multiplier = array<u32, 2>(MANTISSA & 65535u, MANTISSA >> 16u);\n"

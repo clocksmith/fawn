@@ -240,6 +240,7 @@ void native_device_release(void *identity)
     native_loss_bind(device->loss, NULL);
     native_loss_release(device->loss);
     doe_vk_timestamp_normalizer_release(device->timestamp_normalizer);
+    doe_mtl_pipeline_release(device->metal_timestamp_pipeline);
     native_indirect_guards_release(device);
     doe_mtl_dispatch_guard_release(device->metal_dispatch_guard);
     doe_mtl_draw_guard_release(device->metal_draw_guard);
@@ -297,7 +298,10 @@ static native_device *create_device(native_adapter *adapter, const WGPUDeviceDes
      * the adapter's; every frontend check reads the resolved device limits. */
     device->backend.limits = limits;
     device->features = features;
-    if ((features & NATIVE_FEATURE(WGPUFeatureName_TimestampQuery)) && native_timestamp_initialize(device) != DOE_VK_OK) {
+    if ((features & NATIVE_FEATURE(WGPUFeatureName_TimestampQuery)) &&
+        (device->backend.kind == WGPUBackendType_Metal ?
+            native_metal_timestamp_initialize(device).status != NATIVE_OK :
+            native_timestamp_initialize(device) != DOE_VK_OK)) {
         native_backend_close(&device->backend);
         goto failed_errors;
     }
@@ -330,6 +334,7 @@ static native_device *create_device(native_adapter *adapter, const WGPUDeviceDes
     if (result.status != DOE_ERROR_SCOPE_OK) abort();
     if (!native_pending_progress_start(device)) {
         doe_vk_timestamp_normalizer_release(device->timestamp_normalizer);
+        doe_mtl_pipeline_release(device->metal_timestamp_pipeline);
         native_backend_close(&device->backend);
         doe_instance_release(device->instance);
         goto failed_errors;

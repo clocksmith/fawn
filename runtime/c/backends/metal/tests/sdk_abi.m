@@ -157,3 +157,12 @@ void doe_mtl_sdk_timestamp_ordering(id<MTLDevice> device, id<MTLCommandBuffer> c
     [command encodeWaitForEvent:event value:(uint64_t)1];
     [event release];
 }
+
+void doe_mtl_sdk_stage_timestamp(id<MTLDevice> device, id<MTLCommandBuffer> command) {
+    MTLTimestamp cpu = 0, gpu = 0;
+    [device sampleTimestamps:&cpu gpuTimestamp:&gpu];
+    MTLBlitPassDescriptor *desc = [MTLBlitPassDescriptor blitPassDescriptor];
+    desc.sampleBufferAttachments[0].startOfEncoderSampleIndex = 1;
+    desc.sampleBufferAttachments[0].endOfEncoderSampleIndex = MTLCounterDontSample;
+    (void)[command blitCommandEncoderWithDescriptor:desc];
+}

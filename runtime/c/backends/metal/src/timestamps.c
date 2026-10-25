@@ -182,3 +182,47 @@ doe_mtl_status doe_mtl_commands_resolve_timestamps(doe_mtl_commands *commands,
         buffer_use->initialized = true;
     return doe_mtl_native_record_result(commands, status, &detail, error);
 }
+
+doe_mtl_status doe_mtl_timestamps_available(doe_mtl_commands *commands,
+    doe_mtl_timestamps *timestamps, uint32_t index, bool *out) {
+    if (out == NULL) return DOE_MTL_INVALID_ARGUMENT;
+    doe_mtl_status status = doe_mtl_recording(commands, NULL);
+    if (status != DOE_MTL_OK) return status;
+    status = doe_mtl_timestamps_preflight(commands, timestamps, index, false);
+    if (status != DOE_MTL_OK && status != DOE_MTL_UNINITIALIZED) return status;
+    *out = status == DOE_MTL_OK;
+    return DOE_MTL_OK;
+}
+
+doe_mtl_status doe_mtl_commands_ordered_timestamp(doe_mtl_commands *commands,
+    doe_mtl_timestamps *timestamps, uint32_t index, doe_mtl_error *error) {
+    doe_mtl_status status = doe_mtl_recording(commands, error);
+    if (status != DOE_MTL_OK) return status;
+    doe_mtl_native *native = &commands->context->native;
+    bool stage = commands->context->caps.timestamp_stage;
+    if ((!stage && !commands->context->caps.timestamp_blit) || native->timestamp_boundary == NULL)
+        return doe_mtl_poison(commands, DOE_MTL_UNSUPPORTED, "stage timestamp", error);
+    doe_mtl_timestamp_use *query_use = NULL;
+    /* Every boundary first orders all preceding GPU work. Rewriting an index
+     * after an earlier resolve therefore preserves that resolve's snapshot. */
+    status = doe_mtl_timestamps_preflight(commands, timestamps, index, false);
+    if (status == DOE_MTL_UNINITIALIZED) status = DOE_MTL_OK;
+    if (status == DOE_MTL_OK) status = doe_mtl_use_timestamps(commands, timestamps, &query_use);
+    if (status != DOE_MTL_OK) return doe_mtl_poison(commands, status, "timestamp sample", error);
+    if (query_use->resolve_value == UINT64_MAX)
+        return doe_mtl_poison(commands, DOE_MTL_RANGE, "timestamp ordering sequence", error);
+    doe_mtl_buffer *scratch = NULL;
+    doe_mtl_buffer_use *buffer_use = NULL;
+    doe_mtl_error detail = {0};
+    if (stage) status = doe_mtl_buffer_create(commands->context, 4, DOE_MTL_PRIVATE, &scratch, &detail);
+    if (status == DOE_MTL_OK && stage) status = doe_mtl_use_buffer(commands, scratch, &buffer_use);
+    if (status == DOE_MTL_OK) status = native->timestamp_boundary(native->userdata, commands->native,
+        timestamps->native, index, stage, scratch ? scratch->native : NULL, &query_use->resolve_event, ++query_use->resolve_value, &detail);
+    doe_mtl_buffer_release(scratch);
+    if (status == DOE_MTL_OK) {
+        query_use->available[index] = true;
+        query_use->written[index] = true;
+        if (buffer_use) buffer_use->initialized = true;
+    }
+    return doe_mtl_native_record_result(commands, status, &detail, error);
+}

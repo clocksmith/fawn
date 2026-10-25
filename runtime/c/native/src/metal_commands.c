@@ -89,6 +89,7 @@ native_failure native_metal_record_commands(doe_mtl_commands *commands, doe_reso
                     copy->destination.origin[2],copy->width,copy->height,copy->depth_or_layers}, &error);
             break;
         }
+        case DOE_COMMAND_WRITE_TIMESTAMP:
         case DOE_COMMAND_RESOLVE_QUERY:
             failure = native_metal_record_query(commands, record);
             break;

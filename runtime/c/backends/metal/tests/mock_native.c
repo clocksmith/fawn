@@ -78,6 +78,7 @@ static doe_mtl_status device_create(void *userdata, void **out,
     result.max_visibility_offset = 65528;
     result.counting_visibility = true;
     result.timestamp_stage = true;
+    result.timestamp_period_ns = 1.0f;
     result.timestamp_blit = true;
     strcpy(result.device_name, "test call ledger, not a GPU");
     *out = object_create(mock, MOCK_KIND_DEVICE);
@@ -334,6 +335,13 @@ static doe_mtl_status timestamp(void *userdata, void *command, void *buffer,
     mock->timestamp_pair = (doe_mtl_native_timestamps){buffer, index, index};
     return doe_mtl_fail(DOE_MTL_OK, "mock timestamp", error);
 }
+static doe_mtl_status timestamp_boundary(void *userdata, void *command, void *buffer,
+    uint32_t index, bool stage, void *scratch, void **event, uint64_t value, doe_mtl_error *error) {
+    mock_native *mock = userdata;
+    assert((stage == (scratch != NULL)) && value != 0);
+    if (*event == NULL) *event = object_create(mock, MOCK_KIND_EVENT);
+    return timestamp(userdata, command, buffer, index, error);
+}
 static doe_mtl_status resolve_timestamps(void *userdata, void *command, void *buffer,
     uint32_t first, uint32_t count, void *destination, size_t offset,
     void **event, uint64_t value, doe_mtl_error *error) {
@@ -402,6 +410,7 @@ doe_mtl_native mock_driver(mock_native *mock) {
     native.render = render;
     native.timestamps = timestamps_create;
     native.timestamp = timestamp;
+    native.timestamp_boundary = timestamp_boundary;
     native.resolve_timestamps = resolve_timestamps;
     native.commit = commit;
     native.observe = observe;

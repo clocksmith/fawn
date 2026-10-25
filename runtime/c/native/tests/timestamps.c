@@ -1,8 +1,12 @@
 /* SPDX-License-Identifier: MIT
  * Public timestamp path, with independent native raw-query observation only in
  * this test. Production conversion remains entirely in the GPU command stream. */
+#define _POSIX_C_SOURCE 200809L
 #include "../src/internal.h"
+#include <time.h>
+#include <inttypes.h>
 #include "consumer.h"
+#include "../../common/include/doe_timestamp.h"
 
 static uint64_t expected_ns(uint64_t ticks, float period, uint32_t valid_bits)
 {
@@ -23,7 +27,7 @@ static uint64_t expected_ns(uint64_t ticks, float period, uint32_t valid_bits)
     }
     return result;
 }
-static void read_raw(native_device *device, doe_vk_query_pool *pool, uint64_t values[4])
+static void read_raw_vulkan(native_device *device, doe_vk_query_pool *pool, uint64_t values[4])
 {
     doe_vk_buffer *buffer = NULL;
     doe_vk_commands *commands = NULL;
@@ -36,6 +40,34 @@ static void read_raw(native_device *device, doe_vk_query_pool *pool, uint64_t va
     assert(doe_vk_buffer_read(buffer,0,values,32) == DOE_VK_OK);
     assert(doe_vk_commands_release(commands) == DOE_VK_OK);
     doe_vk_buffer_release(buffer);
+    native_unlock(device);
+}
+static void read_raw_metal(native_device *device, doe_mtl_timestamps *timestamps, uint64_t values[4])
+{
+    doe_mtl_buffer *buffer = NULL;
+    doe_mtl_commands *commands = NULL;
+    native_lock(device);
+    assert(doe_mtl_buffer_create(device->backend.value.metal.context, 32, DOE_MTL_SHARED, &buffer, NULL) == DOE_MTL_OK);
+    assert(doe_mtl_commands_create(device->backend.value.metal.context, &commands, NULL) == DOE_MTL_OK);
+    /* Three actual samples; index3 is deliberately unwritten. Strict private
+     * resolve refuses unavailable indices, independently of public zero policy. */
+    assert(doe_mtl_commands_resolve_timestamps(commands, timestamps, 0, 3, buffer, 0, NULL) == DOE_MTL_OK);
+    assert(doe_mtl_commands_submit(commands, NULL) == DOE_MTL_OK);
+    struct timespec start, now, pause = {0,1000000};
+    assert(clock_gettime(CLOCK_MONOTONIC, &start) == 0);
+    doe_mtl_status status;
+    while ((status = doe_mtl_commands_poll(commands, NULL)) == DOE_MTL_PENDING || status == DOE_MTL_COMPLETION_UNKNOWN) {
+        assert(clock_gettime(CLOCK_MONOTONIC, &now) == 0);
+        if (now.tv_sec - start.tv_sec >= 5) {
+            fputs("raw timestamp deadline; command leases retained\n", stderr);
+            exit(3);
+        }
+        (void)nanosleep(&pause, NULL);
+    }
+    assert(status == DOE_MTL_OK);
+    assert(doe_mtl_buffer_read(buffer, 0, values, 32) == DOE_MTL_OK);
+    assert(doe_mtl_commands_release(commands) == DOE_MTL_OK);
+    doe_mtl_buffer_release(buffer);
     native_unlock(device);
 }
 static WGPUQuerySet query_set(state *s, uint32_t count)
@@ -102,8 +134,10 @@ static void actual_queries(state *s)
     assert(set);
     native_device *device = (native_device *)s->device;
     native_queries *payload = doe_resource_query_set_native((doe_resource_query_set *)set);
-    doe_vk_query_pool *raw_pool = payload->pool;
-    assert(doe_vk_query_pool_retain(raw_pool) == DOE_VK_OK);
+    native_queries raw_query = *payload;
+    bool metal = device->backend.kind == WGPUBackendType_Metal;
+    if (metal) assert(doe_mtl_timestamps_retain(raw_query.metal_timestamps) == DOE_MTL_OK);
+    else assert(doe_vk_query_pool_retain(raw_query.pool) == DOE_VK_OK);
     WGPUBuffer output = buffer(s,512,WGPUBufferUsage_QueryResolve|WGPUBufferUsage_CopySrc|WGPUBufferUsage_CopyDst);
     uint64_t sentinel[64];
     for (size_t i = 0; i < 64; ++i) sentinel[i] = UINT64_MAX;
@@ -134,15 +168,103 @@ static void actual_queries(state *s)
     wgpuBufferRelease(output);
     submit(s,encoder);
     uint64_t raw[4];
-    read_raw(device,raw_pool,raw);
-    doe_vk_query_pool_release(raw_pool);
+    if (metal) {
+        read_raw_metal(device, raw_query.metal_timestamps, raw);
+        doe_mtl_timestamps_release(raw_query.metal_timestamps);
+    } else {
+        read_raw_vulkan(device, raw_query.pool, raw);
+        doe_vk_query_pool_release(raw_query.pool);
+    }
+    float period = metal ? device->backend.value.metal.caps.timestamp_period_ns :
+        device->backend.value.vulkan.caps.timestamp_period_ns;
+    uint32_t valid_bits = metal ? 64 : device->backend.value.vulkan.caps.timestamp_valid_bits;
     const uint64_t *values = map(s,readback,56);
     for (size_t i = 0; i < 4; ++i)
-        assert(values[i] == expected_ns(raw[i],device->backend.value.vulkan.caps.timestamp_period_ns,device->backend.value.vulkan.caps.timestamp_valid_bits));
+        assert(values[i] == expected_ns(raw[i],period,valid_bits));
     assert(raw[0] && raw[1] && raw[2] && !raw[3]);
+    assert(values[0] <= values[1] && values[1] <= values[2]);
+    printf("calibrated ns/tick=%.9g raw=%" PRIu64 ",%" PRIu64 ",%" PRIu64 "\n", (double)period,raw[0],raw[1],raw[2]);
     assert(values[4] == values[2] && values[5] == 0 && values[6] == UINT64_MAX);
     wgpuBufferUnmap(readback);
     wgpuBufferRelease(readback);
+}
+static void normalization_values(state *s)
+{
+    const uint64_t input[] = {0,1,2,3,UINT32_MAX,UINT64_C(0x10000000000001),
+        UINT64_C(0x8000000000000000),UINT64_MAX};
+    char source[DOE_TIMESTAMP_SOURCE_CAPACITY];
+    size_t length = 0;
+    assert(doe_timestamp_source_mode(2.5f, 64, 64, true, source, sizeof(source), &length) == DOE_TIMESTAMP_SOURCE_OK);
+    WGPUComputePipeline compute = pipeline(s, source);
+    WGPUBuffer data = buffer(s, sizeof(input), WGPUBufferUsage_Storage | WGPUBufferUsage_CopyDst | WGPUBufferUsage_CopySrc);
+    WGPUBuffer readback = buffer(s, sizeof(input), WGPUBufferUsage_MapRead | WGPUBufferUsage_CopyDst);
+    wgpuQueueWriteBuffer(s->queue, data, 0, input, sizeof(input));
+    WGPUBindGroupEntry entry = {.binding=0,.buffer=data,.size=sizeof(input)};
+    WGPUBindGroup bind = group(s, compute, &entry, 1);
+    WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(s->device, NULL);
+    dispatch(encoder, compute, bind);
+    wgpuCommandEncoderCopyBufferToBuffer(encoder, data, 0, readback, 0, sizeof(input));
+    wgpuBindGroupRelease(bind);
+    wgpuComputePipelineRelease(compute);
+    wgpuBufferRelease(data);
+    submit(s, encoder);
+    const uint64_t *actual = map(s, readback, sizeof(input));
+    for (size_t i = 0; i < sizeof(input) / sizeof(input[0]); ++i)
+        assert(actual[i] == (input[i] == UINT64_MAX ? UINT64_MAX : expected_ns(input[i], 2.5f, 64)));
+    wgpuBufferUnmap(readback);
+    wgpuBufferRelease(readback);
+}
+static void render_and_reuse(state *s)
+{
+    WGPUQuerySet set = query_set(s, 2);
+    WGPUTexture image = texture(s, WGPUTextureFormat_RGBA8Unorm, WGPUTextureUsage_RenderAttachment, 1);
+    WGPUTextureView view = wgpuTextureCreateView(image, NULL);
+    WGPUBuffer result = buffer(s, 16, WGPUBufferUsage_QueryResolve | WGPUBufferUsage_CopySrc);
+    WGPUBuffer readback = buffer(s, 16, WGPUBufferUsage_CopyDst | WGPUBufferUsage_MapRead);
+    uint64_t previous[2] = {0};
+    for (unsigned iteration = 0; iteration < 3; ++iteration) {
+        WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(s->device, NULL);
+        WGPUPassTimestampWrites writes = WGPU_PASS_TIMESTAMP_WRITES_INIT;
+        writes.querySet = set;
+        if (iteration != 1) writes.beginningOfPassWriteIndex = 0;
+        if (iteration != 2) writes.endOfPassWriteIndex = 1;
+        if (iteration == 2) {
+            WGPUComputePassDescriptor desc = {.timestampWrites=&writes};
+            WGPUComputePassEncoder pass = wgpuCommandEncoderBeginComputePass(encoder, &desc);
+            wgpuComputePassEncoderEnd(pass);
+            wgpuComputePassEncoderRelease(pass);
+        } else {
+            WGPURenderPassColorAttachment color = WGPU_RENDER_PASS_COLOR_ATTACHMENT_INIT;
+            color.view = view; color.loadOp = WGPULoadOp_Clear; color.storeOp = WGPUStoreOp_Store;
+            color.clearValue = (WGPUColor){0,1,0,1};
+            WGPURenderPassDescriptor desc = {.colorAttachmentCount=1,.colorAttachments=&color,.timestampWrites=&writes};
+            WGPURenderPassEncoder pass = wgpuCommandEncoderBeginRenderPass(encoder, &desc);
+            wgpuRenderPassEncoderEnd(pass);
+            wgpuRenderPassEncoderRelease(pass);
+        }
+        wgpuCommandEncoderResolveQuerySet(encoder, set, 0, 2, result, 0);
+        wgpuCommandEncoderCopyBufferToBuffer(encoder, result, 0, readback, 0, 16);
+        submit(s, encoder);
+        const uint64_t *values = map(s, readback, 16);
+        assert(values[0] && values[1]);
+        if (iteration == 0) assert(values[1] >= values[0]);
+        if (iteration == 1) assert(values[0] == previous[0] && values[1] > previous[1]);
+        if (iteration == 2) assert(values[0] > previous[1] && values[1] == previous[1]);
+        memcpy(previous, values, sizeof(previous));
+        wgpuBufferUnmap(readback);
+    }
+    WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(s->device, NULL);
+    for (unsigned i = 0; i < 2; ++i) {
+        wgpuCommandEncoderWriteTimestamp(encoder, set, 0);
+        wgpuCommandEncoderResolveQuerySet(encoder, set, 0, 1, result, 0);
+        wgpuCommandEncoderCopyBufferToBuffer(encoder, result, 0, readback, (uint64_t)i * 8, 8);
+    }
+    submit(s, encoder);
+    const uint64_t *snapshots = map(s, readback, 16);
+    assert(snapshots[0] > previous[0] && snapshots[1] > snapshots[0]);
+    wgpuBufferUnmap(readback);
+    wgpuBufferRelease(readback); wgpuBufferRelease(result);
+    wgpuTextureViewRelease(view); wgpuTextureRelease(image); wgpuQuerySetRelease(set);
 }
 int main(void)
 {
@@ -190,10 +312,12 @@ int main(void)
     s.queue = wgpuDeviceGetQueue(s.device);
     invalid_ranges(&s);
     actual_queries(&s);
+    normalization_values(&s);
+    render_and_reuse(&s);
     assert(!s.errors && s.validation_errors == 6);
     wgpuQueueRelease(s.queue);
     wgpuDeviceRelease(s.device);
     wgpuAdapterRelease(s.adapter);
     wgpuInstanceRelease(s.instance);
-    printf("PASS public timestamps: requested feature, zero/max/range/destroy admission, real pass/command writes, exact GPU nanoseconds, same-batch copy, scratch reuse and early query release %s\n", adapter_class_scope());
+    printf("PASS public timestamps: requested feature, zero/max/range/destroy admission, real pass/command writes, exact GPU nanoseconds, same-batch copy, error-sentinel normalization, render/empty passes, one-sided writes, same-recording/cross-submit reuse and early query release %s\n", adapter_class_scope());
 }

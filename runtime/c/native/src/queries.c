@@ -38,8 +38,10 @@ static void release_queries(void *userdata, void *handle)
     (void)userdata;
     native_queries *payload = handle;
     native_lock(payload->device);
-    if (payload->device->backend.kind == WGPUBackendType_Metal)
+    if (payload->device->backend.kind == WGPUBackendType_Metal) {
         doe_mtl_buffer_release(payload->metal_results);
+        doe_mtl_timestamps_release(payload->metal_timestamps);
+    }
     else doe_vk_query_pool_release(payload->pool);
     native_unlock(payload->device);
     free(payload);
@@ -70,8 +72,10 @@ WGPUQuerySet wgpuDeviceCreateQuerySet(WGPUDevice handle, const WGPUQuerySetDescr
     if (failure.status == NATIVE_OK && descriptor->count) {
         if (device->backend.kind == WGPUBackendType_Metal) {
             doe_mtl_error detail = {0};
-            if (descriptor->type != WGPUQueryType_Occlusion ||
-                (uint64_t)(descriptor->count - 1) * 8 > device->backend.value.metal.caps.max_visibility_offset)
+            if (descriptor->type == WGPUQueryType_Timestamp)
+                failure = native_failure_metal(doe_mtl_timestamps_create(device->backend.value.metal.context,
+                    descriptor->count, &payload->metal_timestamps, &detail), &detail);
+            else if ((uint64_t)(descriptor->count - 1) * 8 > device->backend.value.metal.caps.max_visibility_offset)
                 failure = native_failure_status(NATIVE_UNSUPPORTED);
             else failure = native_failure_metal(doe_mtl_buffer_create(device->backend.value.metal.context,
                 (uint64_t)descriptor->count * 8, DOE_MTL_SHARED, &payload->metal_results, &detail), &detail);
@@ -160,23 +164,4 @@ doe_vk_status native_record_query(doe_vk_commands *commands, const doe_resource_
     return doe_vk_commands_resolve_queries_ns(commands, payload->pool,
         record->value.resolve.first, record->value.resolve.count,
         payload->device->timestamp_normalizer, destination->handle.vulkan, record->value.resolve.offset);
-}
-
-/* Resolve the real Metal visibility buffer through its ordinary command lease.
- * Shared creation initializes unavailable results to zero; query writes and
- * selected-index resets remain GPU commands, never host-authored query hits. */
-native_failure native_metal_record_query(doe_mtl_commands *commands, const doe_resource_command *record)
-{
-    if (record->kind != DOE_COMMAND_RESOLVE_QUERY ||
-        doe_resource_query_set_type(record->value.resolve.set) != WGPUQueryType_Occlusion)
-        return native_failure_status(NATIVE_UNSUPPORTED);
-    if (!record->value.resolve.count) return native_failure_status(NATIVE_OK);
-    native_queries *queries = doe_resource_query_set_native(record->value.resolve.set);
-    native_buffer *destination = doe_resource_buffer_native(record->value.resolve.destination);
-    if (!queries || !queries->metal_results || !destination) return native_failure_status(NATIVE_INVALID_ARGUMENT);
-    doe_mtl_error detail = {0};
-    doe_mtl_status status = doe_mtl_commands_copy(commands, queries->metal_results,
-        (uint64_t)record->value.resolve.first * 8, destination->handle.metal, record->value.resolve.offset,
-        (uint64_t)record->value.resolve.count * 8, &detail);
-    return native_failure_metal(status, &detail);
 }

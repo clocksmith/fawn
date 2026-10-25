@@ -88,7 +88,11 @@ occlusion query sets now use the existing Metal visibility buffer and command
 leases, resetting only indices begun in each pass. Empty/unavailable results are
 zero and untouched indices survive later passes. CAMetalLayer presentation uses
 real drawable textures with retained generations. Partial sample masks, unclipped
-depth, timestamp queries and depth/stencil transfers remain explicit missing paths. Compute indirect dispatch now lowers
+depth and depth/stencil transfers remain explicit missing paths. Public timestamp
+queries use paired native CPU/GPU clock calibration, real ordered counter samples
+and shared integer-limb GPU nanosecond conversion. Unavailable results are zero,
+native error sentinels survive conversion, and same-recording rewrites preserve
+earlier resolve snapshots. Compute indirect dispatch now lowers
 through a lazy immutable device guard, GPU-copied private arguments and the actual
 Metal indirect-dispatch selector. Host rejection, rollback, sanitizer and lifetime
 controls pass. The [M3 indirect receipt](DEVELOPER_RECEIPT_METAL_INDIRECT.json)
@@ -783,7 +787,7 @@ callback mode, not a claimed background compiler. No blanket success stubs or
 fallback provider resolution exist. The public advertised limits
 cover the implemented compute/image/graphics path only and do not claim the WebGPU
 Core feature level is complete; adapter/device creation remains experimental.
-Metal timestamps, surfaces on Metal/Windows/Android, broader public D3D12 paths
+Surfaces on Windows/Android, broader public D3D12 paths
 and complete package adoption remain unfinished. Private backend checks do not
 qualify those public integrations; see the current Metal scope and bound Apple
 evidence above.
