@@ -53,6 +53,18 @@ try {
   const packaged = loadDoeBuildMetadata({ libraryPath: packageLibrary });
   assert.equal(packaged.source, 'c-package');
   assert.equal(packaged.identity.sourceTree, null, 'a non-string field is unknown, not coerced');
+  assert.equal(packaged.leanVerifiedBuild, null, 'no lean_proof record means unknown');
+
+  // The packaging tool's lean_proof record carries its real values.
+  write(resolve(root, 'package/bin/doe-c-manifest.json'),
+    manifest(digest, { lean_proof: { leanVerifiedBuild: false, proofArtifactSha256: null } }));
+  const recordedLean = loadDoeBuildMetadata({ libraryPath: packageLibrary });
+  assert.equal(recordedLean.leanVerifiedBuild, false);
+  assert.equal(recordedLean.proofArtifactSha256, null);
+  write(resolve(root, 'package/bin/doe-c-manifest.json'),
+    manifest(digest, { lean_proof: { leanVerifiedBuild: 'yes', proofArtifactSha256: 7 } }));
+  assert.equal(loadDoeBuildMetadata({ libraryPath: packageLibrary }).leanVerifiedBuild, null,
+    'a non-boolean value is unknown, not coerced');
 
   // A manifest for other bytes, or without the artifact, describes nothing.
   write(resolve(root, 'package/bin/doe-c-manifest.json'), manifest('0'.repeat(64)));

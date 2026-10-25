@@ -150,9 +150,11 @@ The C runtime (`libraryFlavor: "doe-c"`) reads only its package-stage manifest
 A manifest counts only when its `artifacts["lib/<library name>"]` digest equals
 the selected library's sha256; otherwise the fields stay unknown (`none`). It
 maps to `buildIdentity` (`sourceCommit` from `source_commit`, `sourceTree` from
-`source_tree`, `artifactSha256` as verified, `qualification`), and leaves
-`leanVerifiedBuild` and `proofArtifactSha256` `null`: the manifest records
-provenance, not a Lean-verified build or a proof artifact. `buildIdentity` is
+`source_tree`, `artifactSha256` as verified, `qualification`). `leanVerifiedBuild`
+and `proofArtifactSha256` come from the manifest's `lean_proof` record, which the
+packaging tool derives from the Lean inputs `runtime/zig/build.zig` reads: today
+`false` and `null`, because no C build step embeds or validates the proof
+artifact. A manifest without that record leaves both `null`. `buildIdentity` is
 `null` for every other library. Delegated libraries have no sidecar contract.
 
 Use the strict provider-v1 API when the application owns provider selection and

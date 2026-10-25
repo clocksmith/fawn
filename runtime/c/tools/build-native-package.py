@@ -25,6 +25,40 @@ def digest(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def lean_proof_record(source: Path) -> dict[str, object]:
+    """Lean proof provenance of the captured tree, from the inputs
+    runtime/zig/build.zig reads for verification/lean_proof.zig, hashed the same
+    way. No C build step embeds or validates the proof artifact and no C code
+    consults Lean proofs, so the build is not Lean-verified and records no proof
+    artifact digest (doe-zig-runtime's default -Dlean-verified=false is the same)."""
+    lean_root = source / "pipeline/lean/Doe"
+    tree = hashlib.sha256()
+    for path in sorted(lean_root.rglob("*.lean"), key=lambda p: str(p.relative_to(lean_root)).encode()):
+        if not path.is_file():
+            continue
+        tree.update(f"pipeline/lean/Doe/{path.relative_to(lean_root)}".encode())
+        tree.update(b"\n")
+        tree.update(path.read_bytes())
+        tree.update(b"\n")
+    version = json.loads((source / "config/toolchains.json").read_text(encoding="utf-8"))["toolchains"]["lean"]["version"]
+    provenance = {
+        "leanToolchainRef": "leanprover/lean4:" + (version if version.startswith("v") else "v" + version),
+        "extractProgramSha256": digest(lean_root / "Extract.lean"),
+        "leanSourceTreeSha256": tree.hexdigest(),
+        "generatedComparabilityContractSha256": digest(lean_root / "Generated/ComparabilityContract.lean"),
+        "proofPatternSpecSha256": digest(source / "config/lean-proof-patterns.json"),
+    }
+    artifact = source / "pipeline/lean/artifacts/proven-conditions.json"
+    recorded = json.loads(artifact.read_text(encoding="utf-8")).get("provenance", {}) if artifact.is_file() else {}
+    return {
+        "leanVerifiedBuild": False,
+        "proofArtifactSha256": None,
+        "provenance": provenance,
+        # Whether the tree's proof artifact was extracted from these exact inputs.
+        "proofArtifactProvenanceMatches": bool(recorded) and all(recorded.get(k) == v for k, v in provenance.items()),
+    }
+
+
 def execute(arguments: list[str], log: Path, cwd: Path | None = None) -> None:
     with log.open("wb") as output:
         subprocess.run(arguments, cwd=cwd, stdout=output, stderr=subprocess.STDOUT, check=True)
@@ -89,10 +123,13 @@ def build_package(repo: Path, revision: str, build: Path, destination: Path,
     source.mkdir()
     archive = build / "source.tar"
     with archive.open("wb") as output:
-        # The compute-program schema supplies the native program contract version.
+        # The compute-program schema supplies the native program contract version;
+        # the Lean inputs supply the manifest's lean_proof record.
         subprocess.run(["git", "archive", "--format=tar", commit, "runtime/c",
                         "runtime/zig/vendor/webgpu-headers", "runtime/zig/vendor/spirv-headers/LICENSE", "LICENSE",
-                        "config/compute-program.schema.json"],
+                        "config/compute-program.schema.json", "config/toolchains.json",
+                        "config/lean-proof-patterns.json", "pipeline/lean/Doe",
+                        "pipeline/lean/artifacts/proven-conditions.json"],
                        cwd=repo, stdout=output, check=True)
     with tarfile.open(archive) as bundle:
         bundle.extractall(source, filter="data")
@@ -159,6 +196,7 @@ def build_package(repo: Path, revision: str, build: Path, destination: Path,
         "cc": captured([cc, "--version"]).splitlines()[0],
         "cxx": captured([cxx, "--version"]).splitlines()[0],
         "host": platform.platform(), "artifacts": artifacts,
+        "lean_proof": lean_proof_record(source),
         "loader_records": loader_records,
         "checks": ["native C-only source build", "moved C++ consumer with no library-path override",
                    "exact exported procedure inventory and addresses"],
