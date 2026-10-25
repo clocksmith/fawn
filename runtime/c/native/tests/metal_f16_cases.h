@@ -3,6 +3,22 @@
 #define DOE_NATIVE_TEST_METAL_F16_CASES_H
 #include "shader_fixture.h"
 
+static void metal_f16_capabilities(void)
+{
+    uint32_t words[] = {0x07230203,0x00010300,0,1,0,0x00020011,1,0x00020011,9,
+        0x00020011,4433,0x00020011,4434};
+    doe_shader_view view = {.words=words,.counts={.words=sizeof(words)/sizeof(words[0])}};
+    doe_vk_caps caps = {0};
+    assert(!native_shader_capabilities(&view, &caps));
+    caps.shader_f16 = true;
+    assert(native_shader_capabilities(&view, &caps));
+    words[12] = 4436; /* Stage half IO is not enabled by the buffer feature. */
+    assert(!native_shader_capabilities(&view, &caps));
+    words[12] = 4434;
+    words[8] = 10; /* Float64 is not implied by Float16. */
+    assert(!native_shader_capabilities(&view, &caps));
+}
+
 static void metal_f16_disabled(state *s)
 {
     assert(!wgpuDeviceHasFeature(s->device, WGPUFeatureName_ShaderF16));
@@ -49,6 +65,7 @@ static void metal_f16_compact_storage(state *s, mock_native *mock)
 
 static void metal_f16_consumer(state *s, mock_native *mock)
 {
+    metal_f16_capabilities();
     assert(wgpuDeviceHasFeature(s->device, WGPUFeatureName_ShaderF16));
     char *code = native_test_shader("../../../bench/inference-pipeline/kernels/matmul_logits_forward_f16accum.wgsl");
     WGPUComputePipeline compute = pipeline(s, code);
