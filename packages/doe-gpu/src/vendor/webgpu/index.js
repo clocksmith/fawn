@@ -3280,7 +3280,10 @@ export function packagePipelineCacheFlush(queue = null) {
  *
  * - This is package/runtime orchestration, not the in-process WebGPU device path.
  */
-export const createDoeRuntime = createDoeRuntimeCli;
+export function createDoeRuntime(options = {}) {
+  // The runtime CLI follows the provider this package selected (doe-c selects doe-c-runtime).
+  return createDoeRuntimeCli({ providerLibraryPath: currentDoeLibraryPath() ?? undefined, ...options });
+}
 
 /**
  * Run the Dawn-vs-Doe compare harness from the full package surface.

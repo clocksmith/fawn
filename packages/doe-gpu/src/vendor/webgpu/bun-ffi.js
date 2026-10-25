@@ -4,7 +4,7 @@ import { dlopen, FFIType, JSCallback, ptr as bunPtr, toArrayBuffer } from "bun:f
 import { existsSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { createDoeRuntime, runDawnVsDoeCompare } from "./runtime-cli.js";
+import { createDoeRuntime as createDoeRuntimeCli, runDawnVsDoeCompare } from "./runtime-cli.js";
 import { loadDoeBuildMetadata } from "./build-metadata.js";
 import {
     PACKAGE_ROOT,
@@ -4964,6 +4964,11 @@ export function prewarmPreparedDispatches(queue, dispatchCommands) {
             bindGroupCounts,
         )) || 0,
     };
+}
+
+// The runtime CLI follows the provider this module selected (doe-c selects doe-c-runtime).
+function createDoeRuntime(options = {}) {
+    return createDoeRuntimeCli({ providerLibraryPath: DOE_LIB_PATH ?? undefined, ...options });
 }
 
 export { createDoeRuntime, runDawnVsDoeCompare };

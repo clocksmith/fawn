@@ -155,6 +155,8 @@ export interface DoeRuntimeRunResult {
   stderr: string;
   signal: string | null;
   command: string[];
+  /** The runtime CLI that ran: "zig" (doe-zig-runtime) or "c" (doe-c-runtime). */
+  runtimeImplementation?: 'zig' | 'c';
 }
 
 export interface DoeRuntimeBenchResult extends DoeRuntimeRunResult {
@@ -216,6 +218,9 @@ export interface DoeRuntimeOrdinaryExecutionResult
 export interface DoeRuntime {
   binPath: string;
   libPath: string | null;
+  runtimeImplementation: 'zig' | 'c';
+  /** "explicit-option" or "provider-<libraryFlavor>". */
+  runtimeSelectionReason: string;
   moduleRunnerPath: string | null;
   runRaw(args: string[], spawnOptions?: Record<string, unknown>): DoeRuntimeRunResult;
   runBench(options: DoeRuntimeBenchOptions): DoeRuntimeBenchResult;
@@ -302,6 +307,10 @@ export function nativePipelineCacheInfo(queue: GPUQueue): NativePipelineCacheInf
 export function packagePipelineCacheFlush(queue?: GPUQueue | null): boolean;
 export const fastPathStats: FastPathStats | undefined;
 export function createDoeRuntime(options?: {
+  /** The runtime CLI implementation; defaults to the selected provider's (doe-c selects "c"). */
+  runtime?: 'zig' | 'c';
+  /** The provider library whose flavor selects the runtime; defaults to the package's selected provider. */
+  providerLibraryPath?: string;
   binPath?: string;
   libPath?: string;
   moduleRunnerPath?: string;
