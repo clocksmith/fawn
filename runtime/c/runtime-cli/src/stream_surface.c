@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: MIT */
 #include "stream_internal.h"
 #include <string.h>
-#include <strings.h>
+#include "host_io.h"
 
 static bool surface_number(const doe_json_value *object, const char *a, const char *b, const char *c,
     uint32_t *out, size_t index, doe_stream_error *error)
@@ -51,22 +51,22 @@ bool stream_parse_surface(const doe_json_value *object, doe_command *command, si
     const char *const alphas[] = {"auto", "opaque", "premultiplied", "unpremultiplied", "inherit"};
     surface->alpha_mode = 0;
     if (alpha) {
-        while (surface->alpha_mode < 5 && strcasecmp(alpha, alphas[surface->alpha_mode])) surface->alpha_mode++;
+        while (surface->alpha_mode < 5 && doe_host_casecmp(alpha, alphas[surface->alpha_mode])) surface->alpha_mode++;
         if (surface->alpha_mode == 5) return stream_reject(error, index, "unknown surface alpha mode");
     }
     surface->present_mode = 1;
     if (present) {
-        if (!strcasecmp(present, "fifo")) surface->present_mode = 1;
-        else if (!strcasecmp(present, "fifo-relaxed") || !strcasecmp(present, "fifo_relaxed")) surface->present_mode = 2;
-        else if (!strcasecmp(present, "immediate")) surface->present_mode = 3;
-        else if (!strcasecmp(present, "mailbox")) surface->present_mode = 4;
+        if (!doe_host_casecmp(present, "fifo")) surface->present_mode = 1;
+        else if (!doe_host_casecmp(present, "fifo-relaxed") || !doe_host_casecmp(present, "fifo_relaxed")) surface->present_mode = 2;
+        else if (!doe_host_casecmp(present, "immediate")) surface->present_mode = 3;
+        else if (!doe_host_casecmp(present, "mailbox")) surface->present_mode = 4;
         else return stream_reject(error, index, "unknown surface present mode");
     }
     uint64_t latency;
     if (!stream_read_u64(object, "desired_maximum_frame_latency", "desiredMaximumFrameLatency", UINT32_MAX, false, 2,
         &latency, index, error)) return false;
     /* These retained canvas hints have no representation in pinned webgpu.h. */
-    if ((tone && strcasecmp(tone, "standard")) || latency != 2)
+    if ((tone && doe_host_casecmp(tone, "standard")) || latency != 2)
         return stream_reject(error, index, "public WebGPU surfaces support standard tone mapping and default frame latency only");
     return true;
 }

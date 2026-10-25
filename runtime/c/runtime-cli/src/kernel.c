@@ -7,20 +7,24 @@
 #include "sha256.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include "host_io.h"
 #include <string.h>
-#include <sys/stat.h>
 
 static char *read_source(const char *path, size_t *size)
 {
-    struct stat status;
-    if (stat(path, &status) != 0 || !S_ISREG(status.st_mode)) return NULL;
-    if (status.st_size <= 0 || (unsigned long long)status.st_size > MAX_KERNEL_SOURCE_BYTES) return NULL;
-    FILE *file = fopen(path, "rb");
+    if (!doe_host_regular_file(path)) return NULL;
+    FILE *file = doe_host_fopen(path, "rb");
     if (!file) return NULL;
-    char *text = malloc((size_t)status.st_size + 1);
-    size_t read = text ? fread(text, 1, (size_t)status.st_size, file) : 0;
-    fclose(file);
-    if (!text || read != (size_t)status.st_size) {
+    long length = fseek(file, 0, SEEK_END) == 0 ? ftell(file) : -1;
+    if (length <= 0 || (unsigned long)length > MAX_KERNEL_SOURCE_BYTES || fseek(file, 0, SEEK_SET)) {
+        fclose(file);
+        return NULL;
+    }
+    char *text = malloc((size_t)length + 1);
+    size_t read = text ? fread(text, 1, (size_t)length, file) : 0;
+    bool ok = !ferror(file);
+    if (fclose(file)) ok = false;
+    if (!text || !ok || read != (size_t)length) {
         free(text);
         return NULL;
     }
@@ -42,7 +46,7 @@ static char *join(const char *root, const char *name, const char *suffix)
 char *runtime_resolve_kernel(const doe_runtime *runtime, const char *kernel, char **source, size_t *size)
 {
     char *candidates[3] = {0};
-    candidates[0] = strdup(kernel);
+    candidates[0] = doe_host_strdup(kernel);
     const char *root = runtime->options.kernel_root;
     if (root) {
         candidates[1] = join(root, kernel, "");
@@ -206,7 +210,7 @@ static pipeline_entry *prepare_pipeline(doe_runtime *runtime, const doe_command 
         runtime->pipelines = grown;
         runtime->pipeline_capacity = capacity;
     }
-    pipeline_entry entry = {.source_path = path, .entry_point = strdup(command->as.dispatch.entry_point)};
+    pipeline_entry entry = {.source_path = path, .entry_point = doe_host_strdup(command->as.dispatch.entry_point)};
     if (count) entry.signature = malloc(count * sizeof(*bindings));
     if (!entry.entry_point || (count && !entry.signature)) {
         free(source);

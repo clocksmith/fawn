@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: MIT */
 #include "numeric_policy.h"
+#include "host_io.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -33,8 +34,7 @@ bool doe_ns_semantic_complete(const doe_command *command)
 
 static const char *basename_of(const char *path)
 {
-    const char *slash = strrchr(path, '/');
-    return slash ? slash + 1 : path;
+    return doe_host_basename(path);
 }
 
 const doe_json_value *doe_ns_auto_detect(const doe_ns_policy *policy, const doe_command *command)

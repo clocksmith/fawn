@@ -1,15 +1,13 @@
 /* SPDX-License-Identifier: MIT */
 #include "module.h"
-#include <errno.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/stat.h>
 
 enum { INPUT_LIMIT = 16 * 1024 * 1024 };
 
 static char *read_input(const char *path, size_t *length)
 {
-    FILE *file = fopen(path, "rb");
+    FILE *file = doe_host_fopen(path, "rb");
     if (!file) return NULL;
     char *bytes = malloc(INPUT_LIMIT + 1);
     if (!bytes) { fclose(file); return NULL; }
@@ -22,18 +20,8 @@ static char *read_input(const char *path, size_t *length)
 
 bool module_write_file(const char *path, const char *bytes, size_t length)
 {
-    char *parent = strdup(path);
-    if (!parent) return false;
-    bool ok = true;
-    for (char *cursor = parent + (*parent == '/' ? 1 : 0); *cursor; cursor++) {
-        if (*cursor != '/') continue;
-        *cursor = 0;
-        if (mkdir(parent, 0777) && errno != EEXIST) ok = false;
-        *cursor = '/';
-        if (!ok) break;
-    }
-    free(parent);
-    FILE *file = ok ? fopen(path, "wb") : NULL;
+    bool ok = doe_host_make_parent_directories(path);
+    FILE *file = ok ? doe_host_fopen(path, "wb") : NULL;
     if (!file) return false;
     ok = fwrite(bytes, 1, length, file) == length && fputc('\n', file) != EOF;
     if (fclose(file)) ok = false;
@@ -43,10 +31,11 @@ bool module_write_file(const char *path, const char *bytes, size_t length)
 static bool normalize(const doe_json_value *value, const module_shape *shape, doe_json_document *document,
     char **bytes, size_t *length)
 {
-    FILE *stream = open_memstream(bytes, length);
+    doe_host_output output;
+    FILE *stream = doe_host_output_open(&output);
     if (!stream) return false;
     bool ok = module_normalize(stream, value, shape);
-    if (fclose(stream)) ok = false;
+    if (!doe_host_output_close(&output, bytes, length)) ok = false;
     doe_json_error error;
     return ok && doe_json_parse(*bytes, *length, document, &error) == DOE_JSON_OK;
 }
@@ -56,11 +45,12 @@ static bool policy_hash(const char *text, size_t length, const char *path, char 
     if (!path) { module_hash(text, length, digest); return true; }
     char *bytes = NULL;
     size_t size = 0;
-    FILE *stream = open_memstream(&bytes, &size);
+    doe_host_output output;
+    FILE *stream = doe_host_output_open(&output);
     if (!stream) return false;
     bool ok = fputs("{\"policyRegistryPath\":", stream) >= 0 && module_string(stream, path, strlen(path)) &&
         fputs(",\"registry\":", stream) >= 0 && fwrite(text, 1, length, stream) == length && fputc('}', stream) != EOF;
-    if (fclose(stream)) ok = false;
+    if (!doe_host_output_close(&output, &bytes, &size)) ok = false;
     if (ok) module_hash(bytes, size, digest);
     free(bytes);
     return ok;
@@ -78,14 +68,15 @@ static bool execute(const module_contract *contract, const doe_json_value *reque
     }
     char *bytes = NULL;
     size_t length = 0;
-    FILE *stream = open_memstream(&bytes, &length);
+    doe_host_output output;
+    FILE *stream = doe_host_output_open(&output);
     if (!stream) return false;
     bool ok = fprintf(stream, "{\"schemaVersion\":1,\"moduleId\":\"%s\",\"artifactKind\":\"result\"", contract->id) >= 0;
     if (ok) ok = contract->kind == MODULE_NUMERIC ?
         module_numeric(stream, request, policy_text, policy_size, policy_path, error, error_capacity) :
         module_model(stream, contract, request, policy, request_hash);
     ok = fputc('}', stream) != EOF && ok;
-    if (fclose(stream)) ok = false;
+    if (!doe_host_output_close(&output, &bytes, &length)) ok = false;
     if (ok) {
         char result_hash[65];
         module_hash(bytes, length, result_hash);

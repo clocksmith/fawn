@@ -8,10 +8,8 @@ CFLAGS ?= -O2 -g
 CFLAGS += -std=c11 -Wall -Wextra -Wpedantic -Werror -fno-fast-math -ffp-contract=off
 CLI = ../runtime-cli/src
 # The policy, routing, numeric JSON and SHA owners are shared host C code.
-SOURCES = src/main.c src/codec.c src/contracts.c src/models.c src/numeric.c \
-  $(CLI)/json.c $(CLI)/sha256.c $(CLI)/numeric_policy.c $(CLI)/numeric_stability.c $(CLI)/trace.c \
-  $(CLI)/operators.c $(CLI)/stream.c $(CLI)/stream_texture.c $(CLI)/stream_render.c \
-  $(CLI)/stream_diagnostics.c $(CLI)/stream_surface.c $(CLI)/quirks.c $(BUILD)/quirk_toggles.c
+include sources.mk
+SOURCES = $(MODULE_SOURCES) $(BUILD)/quirk_toggles.c
 HEADERS = src/module.h $(wildcard $(CLI)/*.h)
 .PHONY: all check check-package bench-bin
 all: $(BUILD)/doe-c-module-runner

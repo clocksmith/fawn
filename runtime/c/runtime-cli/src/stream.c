@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <strings.h>
+#include "host_io.h"
 
 typedef struct kind_name {
     const char *name;
@@ -272,14 +272,14 @@ static bool parse_texture_binding(const doe_json_value *object, const char *kind
     for (const char *const *name = buffer_only; *name; name++)
         if (doe_json_member_value(object, *name))
             return stream_reject(error, index, "bindings[%zu] texture binding has buffer field \"%s\"", position, *name);
-    out->resource = !strcasecmp(kind, "texture") ? DOE_RESOURCE_TEXTURE : DOE_RESOURCE_STORAGE_TEXTURE;
+    out->resource = !doe_host_casecmp(kind, "texture") ? DOE_RESOURCE_TEXTURE : DOE_RESOURCE_STORAGE_TEXTURE;
     out->buffer_size = UINT64_MAX; /* Zig's WGPUWholeSize default for non-buffer bindings. */
     const char *dimension = NULL, *sample = NULL, *access = NULL, *format = NULL;
     if (!stream_read_string(object, "texture_view_dimension", "textureViewDimension", &dimension, index, error) ||
         !stream_read_string(object, "texture_sample_type", "textureSampleType", &sample, index, error) ||
         !stream_read_string(object, "storage_access", "storageAccess", &access, index, error) ||
         !stream_read_string(object, "texture_format", "textureFormat", &format, index, error)) return false;
-    if (dimension && strcasecmp(dimension, "2d"))
+    if (dimension && doe_host_casecmp(dimension, "2d"))
         return stream_reject(error, index, "bindings[%zu] view dimension \"%s\" is not implemented (2d only)", position, dimension);
     out->has_format = format != NULL;
     if (format && !stream_texture_format(format, &out->format))
@@ -291,7 +291,7 @@ static bool parse_texture_binding(const doe_json_value *object, const char *kind
         out->sample_type = 2; /* An absent sample type is Undefined in Zig, which webgpu.h defaults to float. */
         bool known = !sample;
         for (size_t i = 0; sample && i < sizeof(samples) / sizeof(samples[0]); i++)
-            if (!strcasecmp(sample, samples[i].name)) { out->sample_type = samples[i].value; known = true; }
+            if (!doe_host_casecmp(sample, samples[i].name)) { out->sample_type = samples[i].value; known = true; }
         if (!known) return stream_reject(error, index, "bindings[%zu] texture_sample_type \"%s\" is not known", position, sample);
     } else {
         if (sample) return stream_reject(error, index, "bindings[%zu] a storage texture has no texture_sample_type", position);
@@ -301,7 +301,7 @@ static bool parse_texture_binding(const doe_json_value *object, const char *kind
         out->storage_access = 2;
         bool known = !access;
         for (size_t i = 0; access && i < sizeof(accesses) / sizeof(accesses[0]); i++)
-            if (!strcasecmp(access, accesses[i].name)) { out->storage_access = accesses[i].value; known = true; }
+            if (!doe_host_casecmp(access, accesses[i].name)) { out->storage_access = accesses[i].value; known = true; }
         if (!known) return stream_reject(error, index, "bindings[%zu] storage_access \"%s\" is not known", position, access);
     }
     return true;
@@ -335,11 +335,11 @@ static bool parse_binding(const doe_json_value *object, doe_kernel_binding *out,
     if (!kind) kind = kind_camel;
     const char *visibility = NULL;
     if (!stream_read_string(object, "visibility", NULL, &visibility, index, error)) return false;
-    if (visibility && strcasecmp(visibility, "compute") != 0)
+    if (visibility && doe_host_casecmp(visibility, "compute") != 0)
         return stream_reject(error, index, "bindings[%zu] visibility must be \"compute\"", position);
-    if (kind && (!strcasecmp(kind, "texture") || !strcasecmp(kind, "storage_texture")))
+    if (kind && (!doe_host_casecmp(kind, "texture") || !doe_host_casecmp(kind, "storage_texture")))
         return parse_texture_binding(object, kind, out, index, position, error);
-    if (kind && strcasecmp(kind, "buffer") != 0)
+    if (kind && doe_host_casecmp(kind, "buffer") != 0)
         return stream_reject(error, index, "bindings[%zu] kind \"%s\" is not implemented by doe-c-runtime (buffer, texture, "
             "storage_texture)", position, kind);
     static const char *const texture_only[] = {"texture_sample_type", "textureSampleType", "texture_view_dimension",
@@ -351,9 +351,9 @@ static bool parse_binding(const doe_json_value *object, doe_kernel_binding *out,
     const char *type = NULL;
     if (!stream_read_string(object, "buffer_type", "bufferType", &type, index, error)) return false;
     if (!type) return stream_reject(error, index, "bindings[%zu] needs \"buffer_type\" (uniform, readonly or storage)", position);
-    if (strcasecmp(type, "uniform") == 0) out->buffer_type = DOE_BINDING_UNIFORM;
-    else if (strcasecmp(type, "storage") == 0) out->buffer_type = DOE_BINDING_STORAGE;
-    else if (strcasecmp(type, "readonly") == 0 || strcasecmp(type, "read_only_storage") == 0) out->buffer_type = DOE_BINDING_READ_ONLY_STORAGE;
+    if (doe_host_casecmp(type, "uniform") == 0) out->buffer_type = DOE_BINDING_UNIFORM;
+    else if (doe_host_casecmp(type, "storage") == 0) out->buffer_type = DOE_BINDING_STORAGE;
+    else if (doe_host_casecmp(type, "readonly") == 0 || doe_host_casecmp(type, "read_only_storage") == 0) out->buffer_type = DOE_BINDING_READ_ONLY_STORAGE;
     else return stream_reject(error, index, "bindings[%zu] buffer_type \"%s\" is not uniform, readonly or storage", position, type);
     if (!stream_read_u64(object, "buffer_offset", "bufferOffset", UINT64_MAX, false, 0, &out->buffer_offset, index, error)) return false;
     return stream_read_u64(object, "buffer_size", "bufferSize", UINT64_MAX, false, UINT64_MAX, &out->buffer_size, index, error);
@@ -441,9 +441,9 @@ static bool parse_kernel_dispatch(const doe_json_value *object, doe_command *com
             &command->as.dispatch.warmup, index, error)) return false;
     const char *synchronization = NULL;
     if (!stream_read_string(object, "repeatSynchronization", "repeat_synchronization", &synchronization, index, error)) return false;
-    if (synchronization && strcasecmp(synchronization, "dependent") && strcasecmp(synchronization, "independent"))
+    if (synchronization && doe_host_casecmp(synchronization, "dependent") && doe_host_casecmp(synchronization, "independent"))
         return stream_reject(error, index, "repeatSynchronization \"%s\" is not dependent or independent", synchronization);
-    command->as.dispatch.repeat_independent = synchronization && !strcasecmp(synchronization, "independent");
+    command->as.dispatch.repeat_independent = synchronization && !doe_host_casecmp(synchronization, "independent");
     bool ambiguous = false;
     const doe_json_value *initialize = stream_either(object, "initialize_buffers_on_create", "initializeBuffersOnCreate", &ambiguous);
     if (ambiguous || (initialize && initialize->kind != DOE_JSON_BOOL))
@@ -535,7 +535,7 @@ static bool parse_command(const doe_json_value *object, doe_command *command, si
     }
     if (!name) return stream_reject(error, index, "command has no \"kind\"");
     for (size_t i = 0; i < sizeof(KINDS) / sizeof(KINDS[0]); i++) {
-        if (strcasecmp(name, KINDS[i].name) != 0) continue;
+        if (doe_host_casecmp(name, KINDS[i].name) != 0) continue;
         command->kind = KINDS[i].kind;
         command->label = doe_command_tag(command->kind);
         switch (command->kind) {

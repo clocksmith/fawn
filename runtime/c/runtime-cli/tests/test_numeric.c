@@ -10,7 +10,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "host_io.h"
+#ifdef _WIN32
+#include <process.h>
+#define getpid _getpid
+#else
 #include <unistd.h>
+#endif
 
 static char *slurp(const char *path, size_t *size)
 {
@@ -31,8 +37,9 @@ static void spelled(double value, const char *expected)
 {
     char *bytes = NULL;
     size_t length = 0;
-    FILE *out = open_memstream(&bytes, &length);
-    assert(out && doe_ns_write_f64(out, value) && fclose(out) == 0);
+    doe_host_output output;
+    FILE *out = doe_host_output_open(&output);
+    assert(out && doe_ns_write_f64(out, value) && doe_host_output_close(&output, &bytes, &length));
     if (strcmp(bytes, expected)) fprintf(stderr, "%.17g -> %s, expected %s\n", value, bytes, expected);
     assert(!strcmp(bytes, expected));
     free(bytes);
@@ -145,7 +152,7 @@ static void route(const char *root, const char *work, const char *profile_id, co
         assert(recorder.receipt_count == 2);
     }
     assert(recorder.rewrite_count == (rewrite ? 1u : 0u) && recorder.stop_count == (stop ? 1u : 0u));
-    char *receipt_path = strdup(recorder.receipt_path);
+    char *receipt_path = doe_host_strdup(recorder.receipt_path);
     doe_ns_recorder_free(&recorder);
     char *receipts = slurp(receipt_path, &size);
     assert(strstr(receipts, "\"fired\":true") && strstr(receipts, decision));

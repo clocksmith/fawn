@@ -5,6 +5,7 @@
 #include <inttypes.h>
 #include <math.h>
 #include <stdlib.h>
+#include "host_io.h"
 #include <string.h>
 
 #define RECEIPT_SUFFIX ".numeric-stability.jsonl"
@@ -50,9 +51,9 @@ bool doe_ns_write_f64(FILE *out, double value)
     return ok;
 }
 
-static bool hash_stream(FILE *stream, char **bytes, size_t *length, char out[65])
+static bool hash_stream(doe_host_output *output, char **bytes, size_t *length, char out[65])
 {
-    bool ok = fclose(stream) == 0;
+    bool ok = doe_host_output_close(output, bytes, length);
     if (ok) {
         uint8_t digest[32];
         doe_sha256(*bytes, *length, digest);
@@ -66,12 +67,13 @@ bool doe_ns_digest(const double *values, size_t count, char out[65])
 {
     char *bytes = NULL;
     size_t length = 0;
-    FILE *stream = open_memstream(&bytes, &length);
+    doe_host_output output;
+    FILE *stream = doe_host_output_open(&output);
     if (!stream) return false;
     bool ok = fputc('[', stream) != EOF;
     for (size_t i = 0; ok && i < count; i++) ok = (!i || fputc(',', stream) != EOF) && doe_ns_write_f64(stream, values[i]);
     ok = fputc(']', stream) != EOF && ok;
-    return hash_stream(stream, &bytes, &length, out) && ok;
+    return hash_stream(&output, &bytes, &length, out) && ok;
 }
 
 /* The Zig KernelBinding fields stableHashJson sees: buffer bindings with
@@ -81,7 +83,8 @@ bool doe_ns_layout_fingerprint(const doe_command *command, char out[65])
 {
     char *bytes = NULL;
     size_t length = 0;
-    FILE *stream = open_memstream(&bytes, &length);
+    doe_host_output output;
+    FILE *stream = doe_host_output_open(&output);
     if (!stream) return false;
     static const unsigned types[] = {[DOE_BINDING_UNIFORM] = 2, [DOE_BINDING_STORAGE] = 3, [DOE_BINDING_READ_ONLY_STORAGE] = 4};
     bool ok = fputc('[', stream) != EOF;
@@ -95,7 +98,7 @@ bool doe_ns_layout_fingerprint(const doe_command *command, char out[65])
                 b->resource == DOE_RESOURCE_BUFFER ? types[b->buffer_type] : 1u) >= 0;
     }
     ok = fputc(']', stream) != EOF && ok;
-    return hash_stream(stream, &bytes, &length, out) && ok;
+    return hash_stream(&output, &bytes, &length, out) && ok;
 }
 
 static bool write_string_or_null(FILE *out, const char *text)
@@ -238,10 +241,9 @@ static bool write_receipt(FILE *out, const doe_ns_recorder *r, const doe_ns_eval
             fputs(",\"referenceLogit\":", out) >= 0 && doe_ns_write_f64(out, c->reference) && fputc('}', out) != EOF;
     }
     const char *kernel = e->command->as.dispatch.kernel;
-    const char *slash = strrchr(kernel, '/');
     ok = ok && fputc(']', out) != EOF && write_key(out, "executionIdentity", true) && fputc('{', out) != EOF &&
         write_key(out, "kernelPath", false) && doe_trace_write_string(out, kernel) &&
-        write_field(out, "kernelBasename", slash ? slash + 1 : kernel) && write_field(out, "layoutFingerprint", e->layout_fingerprint) &&
+        write_field(out, "kernelBasename", doe_host_basename(kernel)) && write_field(out, "layoutFingerprint", e->layout_fingerprint) &&
         write_field(out, "compiledPlanHash", e->command->semantic.execution_plan_hash) && write_field(out, "backend", id->backend) &&
         fputs(",\"backendLane\":null,\"adapterOrdinal\":null,\"queueFamilyIndex\":null,\"presentCapable\":null", out) >= 0 &&
         write_field(out, "profileVendor", id->vendor) && write_field(out, "profileApi", id->api) &&
@@ -335,7 +337,7 @@ bool doe_ns_recorder_open(doe_ns_recorder *recorder, const doe_ns_policy *policy
 static bool open_receipts(doe_ns_recorder *r, char *message, size_t message_size)
 {
     if (r->receipts) return true;
-    r->receipts = fopen(r->receipt_path, "wb");
+    r->receipts = doe_host_fopen(r->receipt_path, "wb");
     if (!r->receipts) snprintf(message, message_size, "cannot write %s", r->receipt_path);
     return r->receipts != NULL;
 }
@@ -608,8 +610,7 @@ static bool record_decode_boundary(doe_ns_recorder *r, const doe_ns_io *io, cons
 static bool is_sample_dispatch(const doe_command *command)
 {
     const char *kernel = command->as.dispatch.kernel;
-    const char *slash = strrchr(kernel, '/');
-    if (strcmp(slash ? slash + 1 : kernel, "sample.wgsl")) return false;
+    if (strcmp(doe_host_basename(kernel), "sample.wgsl")) return false;
     const doe_semantic *s = &command->semantic;
     return s->op_id ? !strcmp(s->op_id, "decode.sample_token") : s->phase && !strcmp(s->phase, "sample_token");
 }

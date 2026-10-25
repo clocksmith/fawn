@@ -8,10 +8,10 @@
 // namespace's runtime helpers use the factory the package surface passes.
 
 import assert from 'node:assert/strict';
-import { chmodSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { chmodSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { createDoeRuntime } from '../../src/vendor/webgpu/runtime-cli.js';
+import { createDoeRuntime, resolveDoeBinaryPath, resolveDoeModuleRunnerPath } from '../../src/vendor/webgpu/runtime-cli.js';
 import { createDoeNamespace } from '../../src/vendor/doe-namespace.js';
 
 const directory = mkdtempSync(join(tmpdir(), 'doe-runtime-selection-'));
@@ -89,6 +89,28 @@ try {
     assert.throws(() => createDoeRuntime({ runtime: 'c', binPath: join(directory, 'missing', 'doe-c-runtime') }),
       /configured runtime binary does not exist/);
     assert.throws(() => createDoeRuntime({ runtime: 'rust' }), /must be "zig" or "c"/);
+  });
+  withEnv({}, () => {
+    // Discovery control only: these files are never executed as Windows code.
+    const platform = Object.getOwnPropertyDescriptor(process, 'platform');
+    const cwd = process.cwd();
+    const runtimeDir = join(directory, 'runtime/c/runtime-cli/bin');
+    const modulesDir = join(directory, 'runtime/c/modules/bin');
+    mkdirSync(runtimeDir, { recursive: true });
+    mkdirSync(modulesDir, { recursive: true });
+    writeFileSync(join(runtimeDir, 'doe-c-runtime.exe'), 'Windows executable path control');
+    writeFileSync(join(runtimeDir, 'doe-c-runtime'), 'other-host path must not win');
+    writeFileSync(join(modulesDir, 'doe-c-module-runner.exe'), 'Windows module path control');
+    try {
+      Object.defineProperty(process, 'platform', { ...platform, value: 'win32' });
+      process.chdir(directory);
+      assert.equal(resolveDoeBinaryPath(undefined, 'c'), join(runtimeDir, 'doe-c-runtime.exe'));
+      assert.equal(resolveDoeModuleRunnerPath(undefined, { implementation: 'c' }), join(modulesDir, 'doe-c-module-runner.exe'));
+      assert.throws(() => resolveDoeBinaryPath(join(directory, 'missing.exe'), 'c'), /configured runtime binary does not exist/);
+    } finally {
+      Object.defineProperty(process, 'platform', platform);
+      process.chdir(cwd);
+    }
   });
   const factoryCalls = [];
   const gpu = createDoeNamespace({

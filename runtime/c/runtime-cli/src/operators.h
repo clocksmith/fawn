@@ -8,6 +8,7 @@
 #ifndef DOE_RUNTIME_OPERATORS_H
 #define DOE_RUNTIME_OPERATORS_H
 #include "stream.h"
+#include "host_io.h"
 #include "trace.h"
 #include <stdbool.h>
 #include <stddef.h>
@@ -17,7 +18,7 @@
 typedef struct doe_operator_recorder {
     char *anchor;
     char *manifest_path;
-    FILE *manifest; /* In-memory manifest bytes, written and hashed at finish. */
+    doe_host_output manifest; /* Private output bytes, published and hashed at finish. */
     char *manifest_bytes;
     size_t manifest_size;
     uint64_t row_count, capture_count, repro_count;

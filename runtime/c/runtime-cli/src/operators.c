@@ -32,9 +32,9 @@ bool doe_operator_recorder_open(doe_operator_recorder *recorder, const char *anc
     *recorder = (doe_operator_recorder){0};
     recorder->anchor = concat(anchor, "");
     recorder->manifest_path = concat(anchor, ".operators.json");
-    recorder->manifest = open_memstream(&recorder->manifest_bytes, &recorder->manifest_size);
-    if (!recorder->anchor || !recorder->manifest_path || !recorder->manifest ||
-        fputs(MANIFEST_PREFIX, recorder->manifest) < 0) {
+    doe_host_output_open(&recorder->manifest);
+    if (!recorder->anchor || !recorder->manifest_path || !recorder->manifest.file ||
+        fputs(MANIFEST_PREFIX, recorder->manifest.file) < 0) {
         doe_operator_recorder_free(recorder);
         return false;
     }
@@ -95,7 +95,7 @@ static bool write_command_head(FILE *out, const doe_operator_input *in)
 
 static bool write_file(const char *path, const void *data, size_t size)
 {
-    FILE *out = fopen(path, "wb");
+    FILE *out = doe_host_fopen(path, "wb");
     if (!out) return false;
     bool ok = fwrite(data, 1, size, out) == size;
     return fclose(out) == 0 && ok;
@@ -105,7 +105,7 @@ static bool write_file(const char *path, const void *data, size_t size)
  * doe-zig-runtime's printNormalizedCommand output plus its appended extras. */
 static bool write_repro_commands(const char *path, const doe_command *command)
 {
-    FILE *out = fopen(path, "wb");
+    FILE *out = doe_host_fopen(path, "wb");
     if (!out) return false;
     const doe_semantic *s = &command->semantic;
     bool ok = fputs("[\n{\"seq\":0,\"kind\":", out) >= 0 && doe_trace_write_string(out, command->label);
@@ -122,7 +122,7 @@ static bool write_repro_commands(const char *path, const doe_command *command)
 
 static bool write_repro_meta(const char *path, const char *commands_path, const doe_operator_input *in)
 {
-    FILE *out = fopen(path, "wb");
+    FILE *out = doe_host_fopen(path, "wb");
     if (!out) return false;
     bool ok = fputs("{\"schemaVersion\":1,\"reproMode\":\"structural_same_device_backend\",\"bitwise\":false,"
         "\"commandsPath\":", out) >= 0 && doe_trace_write_string(out, commands_path) && write_command_head(out, in) &&
@@ -160,7 +160,7 @@ bool doe_operator_record(doe_operator_recorder *recorder, const doe_operator_inp
     }
     if (ok && !write_repro_commands(commands_path, in->command)) ok = fail_path(message, message_size, commands_path);
     if (ok && !write_repro_meta(meta_path, commands_path, in)) ok = fail_path(message, message_size, meta_path);
-    FILE *out = recorder->manifest;
+    FILE *out = recorder->manifest.file;
     if (ok) {
         ok = (!recorder->row_count || fputs(",\n", out) >= 0) &&
             fprintf(out, "{\"schemaVersion\":1,\"sourceIndex\":%" PRIu64, in->source_index) >= 0 &&
@@ -202,10 +202,9 @@ bool doe_operator_record(doe_operator_recorder *recorder, const doe_operator_inp
 
 bool doe_operator_recorder_finish(doe_operator_recorder *recorder)
 {
-    if (!recorder->manifest) return false;
-    bool ok = fputs(MANIFEST_SUFFIX, recorder->manifest) >= 0;
-    ok = fclose(recorder->manifest) == 0 && ok;
-    recorder->manifest = NULL;
+    if (!recorder->manifest.file) return false;
+    bool ok = fputs(MANIFEST_SUFFIX, recorder->manifest.file) >= 0;
+    ok = doe_host_output_close(&recorder->manifest, &recorder->manifest_bytes, &recorder->manifest_size) && ok;
     if (!ok || !recorder->manifest_bytes) return false;
     uint8_t digest[32];
     doe_sha256(recorder->manifest_bytes, recorder->manifest_size, digest);
@@ -215,7 +214,7 @@ bool doe_operator_recorder_finish(doe_operator_recorder *recorder)
 
 void doe_operator_recorder_free(doe_operator_recorder *recorder)
 {
-    if (recorder->manifest) fclose(recorder->manifest);
+    doe_host_output_discard(&recorder->manifest);
     free(recorder->manifest_bytes);
     free(recorder->anchor);
     free(recorder->manifest_path);

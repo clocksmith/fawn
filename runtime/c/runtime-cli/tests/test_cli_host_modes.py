@@ -9,7 +9,7 @@ import os
 from pathlib import Path
 import subprocess
 
-from test_cli import REPO, check_schemas, replay_passes
+REPO = Path(__file__).resolve().parents[4]
 
 
 def check_normalized(binary, work, env):
@@ -42,6 +42,7 @@ def check_normalized(binary, work, env):
 
 
 def main():
+    from test_cli import check_schemas, replay_passes
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--binary', type=Path, required=True, help='Actual runtime executable')
     parser.add_argument('--no-device', type=Path, required=True, help='Instance-boundary interposer')

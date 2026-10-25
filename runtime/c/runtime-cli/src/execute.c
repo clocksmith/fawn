@@ -3,19 +3,19 @@
 #include "doe_native_adapter.h" /* doeNativeAdapterGetPciIdentity: the driver version webgpu.h does not report. */
 /* Weak: another webgpu.h provider (Dawn) has no Doe extension; the driver
  * version is then 0, unreported. */
+#ifndef _WIN32
 #pragma weak doeNativeAdapterGetPciIdentity
+#endif
 #include <errno.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
+#include "host_io.h"
 
 uint64_t doe_runtime_monotonic_ns(void)
 {
-    struct timespec now;
-    clock_gettime(CLOCK_MONOTONIC, &now);
-    return (uint64_t)now.tv_sec * UINT64_C(1000000000) + (uint64_t)now.tv_nsec;
+    return doe_host_monotonic_ns();
 }
 
 void runtime_copy_view(char *out, size_t size, WGPUStringView view)
@@ -89,15 +89,16 @@ bool runtime_wait_future(doe_runtime *runtime, WGPUFuture future)
         WGPUWaitStatus status = wgpuInstanceWaitAny(runtime->instance, 1, &wait, 0);
         if (status == WGPUWaitStatus_Success && wait.completed) return true;
         if (status != WGPUWaitStatus_TimedOut || doe_runtime_monotonic_ns() > deadline) return false;
-        struct timespec pause = {.tv_sec = 0, .tv_nsec = 20000};
-        nanosleep(&pause, NULL);
+        doe_host_pause_ns(20000);
     }
 }
 
 static WGPUAdapter request_adapter(doe_runtime *runtime, bool fallback, char *message, size_t message_size)
 {
     WGPURequestAdapterOptions options = WGPU_REQUEST_ADAPTER_OPTIONS_INIT;
-#ifdef __APPLE__
+#ifdef _WIN32
+    options.backendType = WGPUBackendType_D3D12;
+#elif defined(__APPLE__)
     options.backendType = WGPUBackendType_Metal;
 #else
     options.backendType = WGPUBackendType_Vulkan;
@@ -127,7 +128,11 @@ static void record_adapter(doe_runtime *runtime)
     runtime_copy_view(runtime->info.description, sizeof(runtime->info.description), info.description);
     runtime->info.vendor_id = info.vendorID;
     runtime->info.device_id = info.deviceID;
+#if defined(_WIN32) && !defined(DOE_RUNTIME_DAWN)
+    doeNativeAdapterGetPciIdentity(runtime->adapter, NULL, NULL, &runtime->info.driver_version);
+#elif !defined(_WIN32)
     if (doeNativeAdapterGetPciIdentity) doeNativeAdapterGetPciIdentity(runtime->adapter, NULL, NULL, &runtime->info.driver_version);
+#endif
     switch (info.adapterType) {
     case WGPUAdapterType_DiscreteGPU: runtime->info.adapter_type = "discrete_gpu"; break;
     case WGPUAdapterType_IntegratedGPU: runtime->info.adapter_type = "integrated_gpu"; break;

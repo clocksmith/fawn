@@ -8,7 +8,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
-#include <strings.h>
+#include "host_io.h"
 
 enum { DEFAULT_TARGET_EXTENT = 64 };
 
@@ -63,7 +63,7 @@ static bool read_mode(const doe_json_value *object, const char *a, const char *b
     *out = false;
     if (!value) return true;
     for (size_t i = 0; accepted[i]; i++) {
-        if (strcasecmp(value, accepted[i])) continue;
+        if (doe_host_casecmp(value, accepted[i])) continue;
         *out = i >= second_mode;
         return true;
     }
@@ -81,8 +81,8 @@ static bool parse_indices(const doe_json_value *object, doe_render_draw *draw, b
     draw->indexed = kind_indexed || has_count || data;
     const char *format = NULL;
     if (!stream_read_string(object, "index_format", "indexFormat", &format, index, error)) return false;
-    if (format && strcasecmp(format, "uint16") && strcasecmp(format, "u16") && strcasecmp(format, "uint32") &&
-        strcasecmp(format, "u32"))
+    if (format && doe_host_casecmp(format, "uint16") && doe_host_casecmp(format, "u16") && doe_host_casecmp(format, "uint32") &&
+        doe_host_casecmp(format, "u32"))
         return stream_reject(error, index, "\"index_format\" \"%s\" is not uint16 or uint32", format);
     if (!read_u32(object, "first_index", "firstIndex", NULL, 0, &draw->first_index, index, error)) return false;
     uint64_t magnitude = 0;
@@ -110,7 +110,7 @@ static bool parse_indices(const doe_json_value *object, doe_render_draw *draw, b
         if (value > UINT16_MAX) needs_32 = true;
     }
     /* An undeclared format is uint16 unless an index needs 32 bits. */
-    draw->index_uint32 = format ? (strcasecmp(format, "uint32") == 0 || strcasecmp(format, "u32") == 0) : needs_32;
+    draw->index_uint32 = format ? (doe_host_casecmp(format, "uint32") == 0 || doe_host_casecmp(format, "u32") == 0) : needs_32;
     if (!draw->index_uint32 && needs_32) return stream_reject(error, index, "an index exceeds the uint16 index format");
     if (!has_count) draw->index_count = (uint32_t)data->count;
     if (draw->index_count == 0) return stream_reject(error, index, "\"index_count\" must be nonzero");
@@ -194,7 +194,7 @@ bool stream_parse_render(const doe_json_value *object, const char *name, doe_com
         if (!read_float(object, blend_names[i][0], blend_names[i][1], &present, 0, &draw->blend[i], index, error)) return false;
         if (present) draw->has_blend_constant = true;
     }
-    bool kind_indexed = strcasecmp(name, "draw_indexed") == 0 || strcasecmp(name, "draw_indexed_indirect") == 0;
+    bool kind_indexed = doe_host_casecmp(name, "draw_indexed") == 0 || doe_host_casecmp(name, "draw_indexed_indirect") == 0;
     return parse_indices(object, draw, kind_indexed, index, error);
 }
 
@@ -224,7 +224,7 @@ static bool read_enum(const doe_json_value *object, const char *a, const char *b
     if (!stream_read_string(object, a, b, &value, index, error)) return false;
     *out = fallback;
     if (!value) return true;
-    for (const enum_name *n = names; n->name; n++) if (strcasecmp(value, n->name) == 0) { *out = n->value; return true; }
+    for (const enum_name *n = names; n->name; n++) if (doe_host_casecmp(value, n->name) == 0) { *out = n->value; return true; }
     return stream_reject(error, index, "\"%s\" \"%s\" is not a doe-zig-runtime value", a, value);
 }
 

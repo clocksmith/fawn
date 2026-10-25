@@ -2,7 +2,7 @@
  * Public WebGPU completion strategies and final deferred drain. Callback storage
  * remains runtime-owned through instance destruction, including a timed-out wait. */
 #include "runtime_internal.h"
-#include <time.h>
+#include "host_io.h"
 
 static void work_done(WGPUQueueWorkDoneStatus status, WGPUStringView message, void *userdata1, void *userdata2)
 {
@@ -36,8 +36,7 @@ bool runtime_wait_queue(doe_runtime *runtime, doe_trace_execution *execution)
         }
         if (runtime->queue_done) break;
         if (doe_runtime_monotonic_ns() - start >= bound) { valid = false; break; }
-        struct timespec pause = {.tv_nsec = 20000};
-        nanosleep(&pause, NULL);
+        doe_host_pause_ns(20000);
     }
     if (!valid || !runtime->queue_done) {
         runtime->queue_wait_failed = true;

@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <strings.h>
+#include "host_io.h"
 static bool parse_u64(const char *text, uint64_t *out);
 
 static int parse_readback(const char *value, options *out)
@@ -148,7 +148,9 @@ int parse_options(int argc, char **argv, options *out)
     }
     if (out->backend_lane) {
 #ifdef DOE_RUNTIME_DAWN
-#ifdef __APPLE__
+#ifdef _WIN32
+        const char *lane = "d3d12_dawn_release";
+#elif defined(__APPLE__)
         const char *lane = "metal_dawn_release";
 #else
         const char *lane = "vulkan_dawn_release";
@@ -157,10 +159,10 @@ int parse_options(int argc, char **argv, options *out)
         size_t length = strlen(out->backend_lane);
         if (length >= sizeof(normalized)) return reject_argument("--backend-lane", "lane name is too long");
         for (size_t i = 0; i <= length; i++) normalized[i] = out->backend_lane[i] == '-' ? '_' : out->backend_lane[i];
-#ifndef __APPLE__
-        if (!strcasecmp(normalized, "vulkan_dawn_directional")) strcpy(normalized, "vulkan_dawn_release");
+#if !defined(__APPLE__) && !defined(_WIN32)
+        if (!doe_host_casecmp(normalized, "vulkan_dawn_directional")) strcpy(normalized, "vulkan_dawn_release");
 #endif
-        if (strcasecmp(normalized, lane)) return reject_argument("--backend-lane", "does not match this compiled Dawn provider");
+        if (doe_host_casecmp(normalized, lane)) return reject_argument("--backend-lane", "does not match this compiled Dawn provider");
         out->backend_lane = lane;
         out->runtime.public_webgpu_renderer = true;
 #else
@@ -192,7 +194,7 @@ int parse_options(int argc, char **argv, options *out)
         static const char *const apis[] = {"vulkan", "metal", "d3d12", "webgpu"};
         const char *canonical = NULL;
         for (size_t i = 0; i < sizeof(apis) / sizeof(*apis); i++)
-            if (!strcasecmp(out->api, apis[i])) canonical = apis[i];
+            if (!doe_host_casecmp(out->api, apis[i])) canonical = apis[i];
         if (!canonical) return reject_argument("--api", "must be vulkan, metal, d3d12 or webgpu");
         out->api = canonical;
     }

@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <strings.h>
+#include "host_io.h"
 
 enum { TEXTURE_USAGE_COPY_DST = 2, TEXTURE_USAGE_TEXTURE_BINDING = 4 };
 
@@ -52,7 +52,7 @@ static bool read_format(const doe_json_value *object, const char *a, const char 
 bool stream_texture_format(const char *name, doe_texture_format *out)
 {
     for (size_t i = 0; i < sizeof(FORMATS) / sizeof(FORMATS[0]); i++) {
-        if (strcasecmp(name, FORMATS[i].name) == 0) { *out = FORMATS[i].format; return true; }
+        if (doe_host_casecmp(name, FORMATS[i].name) == 0) { *out = FORMATS[i].format; return true; }
     }
     return false;
 }
@@ -77,7 +77,7 @@ static bool require_string(const doe_json_value *object, const char *a, const ch
 {
     const char *value = NULL;
     if (!stream_read_string(object, a, b, &value, index, error)) return false;
-    if (value && strcasecmp(value, only) != 0)
+    if (value && doe_host_casecmp(value, only) != 0)
         return stream_reject(error, index, "\"%s\" \"%s\" is not implemented by doe-c-runtime (only \"%s\")", a, value, only);
     return true;
 }
@@ -143,7 +143,7 @@ static bool parse_side(const doe_json_value *object, const char *side, bool text
     const char *kind = NULL;
     n = side_field(side, "kind", "Kind");
     if (!stream_read_string(object, n.snake, n.camel, &kind, index, error)) return false;
-    if (kind && strcasecmp(kind, texture ? "texture" : "buffer") != 0)
+    if (kind && doe_host_casecmp(kind, texture ? "texture" : "buffer") != 0)
         return stream_reject(error, index, "\"%s\" \"%s\" contradicts the copy direction", n.snake, kind);
     bool present = false;
     n = side_field(side, "bytes_per_row", "BytesPerRow");
@@ -212,17 +212,17 @@ bool stream_parse_copy(const doe_json_value *object, const char *name, doe_comma
     doe_copy_direction d = DOE_COPY_BUFFER_TO_BUFFER;
     const char *from = direction ? direction : name;
     if (direction) {
-        if (!strcasecmp(from, "buffer_to_buffer")) d = DOE_COPY_BUFFER_TO_BUFFER;
-        else if (!strcasecmp(from, "buffer_to_texture")) d = DOE_COPY_BUFFER_TO_TEXTURE;
-        else if (!strcasecmp(from, "texture_to_buffer")) d = DOE_COPY_TEXTURE_TO_BUFFER;
-        else if (!strcasecmp(from, "texture_to_texture")) d = DOE_COPY_TEXTURE_TO_TEXTURE;
+        if (!doe_host_casecmp(from, "buffer_to_buffer")) d = DOE_COPY_BUFFER_TO_BUFFER;
+        else if (!doe_host_casecmp(from, "buffer_to_texture")) d = DOE_COPY_BUFFER_TO_TEXTURE;
+        else if (!doe_host_casecmp(from, "texture_to_buffer")) d = DOE_COPY_TEXTURE_TO_BUFFER;
+        else if (!doe_host_casecmp(from, "texture_to_texture")) d = DOE_COPY_TEXTURE_TO_TEXTURE;
         else return stream_reject(error, index, "copy \"direction\" \"%s\" is not a copy direction", direction);
-    } else if (!strcasecmp(from, "copy_buffer_to_texture") || !strcasecmp(from, "copy_texture") ||
-        !strcasecmp(from, "copyBufferToTexture")) {
+    } else if (!doe_host_casecmp(from, "copy_buffer_to_texture") || !doe_host_casecmp(from, "copy_texture") ||
+        !doe_host_casecmp(from, "copyBufferToTexture")) {
         d = DOE_COPY_BUFFER_TO_TEXTURE;
-    } else if (!strcasecmp(from, "copy_texture_to_buffer") || !strcasecmp(from, "copyTextureToBuffer")) {
+    } else if (!doe_host_casecmp(from, "copy_texture_to_buffer") || !doe_host_casecmp(from, "copyTextureToBuffer")) {
         d = DOE_COPY_TEXTURE_TO_BUFFER;
-    } else if (!strcasecmp(from, "copy_texture_to_texture")) {
+    } else if (!doe_host_casecmp(from, "copy_texture_to_texture")) {
         d = DOE_COPY_TEXTURE_TO_TEXTURE;
     }
     command->as.copy.direction = d;
@@ -307,9 +307,9 @@ bool stream_parse_texture_query(const doe_json_value *object, doe_command *comma
     if (!stream_read_string(object, "dimension", NULL, &dimension, index, error) ||
         !stream_read_string(object, "view_dimension", "viewDimension", &view, index, error)) return false;
     q->has_dimension = dimension != NULL;
-    q->dimension_2d = dimension && strcasecmp(dimension, "2d") == 0;
+    q->dimension_2d = dimension && doe_host_casecmp(dimension, "2d") == 0;
     q->has_view_dimension = view != NULL;
-    q->view_dimension = !view ? 0 : !strcasecmp(view, "2d") ? 0 : !strcasecmp(view, "2d-array") ? 1 : 2;
+    q->view_dimension = !view ? 0 : !doe_host_casecmp(view, "2d") ? 0 : !doe_host_casecmp(view, "2d-array") ? 1 : 2;
     return true;
 }
 

@@ -19,6 +19,7 @@
 #include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include "host_io.h"
 #include <string.h>
 #include <time.h>
 
@@ -36,7 +37,7 @@ typedef struct totals {
 
 static char *read_file(const char *path, size_t *size)
 {
-    FILE *file = fopen(path, "rb");
+    FILE *file = doe_host_fopen(path, "rb");
     if (!file) return NULL;
     char *text = NULL;
     size_t length = 0, capacity = 0;
@@ -64,7 +65,7 @@ static bool load_cli_quirks(const options *options, doe_quirk_set *quirks, char 
     *quirks = (doe_quirk_set){.mode = options->quirk_mode};
     if (options->quirk_mode == DOE_QUIRK_OFF) return true;
     size_t size = 0;
-    char *text = options->quirks ? read_file(options->quirks, &size) : strdup(cli_default_quirks());
+    char *text = options->quirks ? read_file(options->quirks, &size) : doe_host_strdup(cli_default_quirks());
     if (!text) {
         snprintf(message, capacity, "cannot read %s", options->quirks ? options->quirks : "<embedded>");
         return false;
@@ -77,9 +78,7 @@ static bool load_cli_quirks(const options *options, doe_quirk_set *quirks, char 
 
 static uint64_t realtime_ns(void)
 {
-    struct timespec now;
-    clock_gettime(CLOCK_REALTIME, &now);
-    return (uint64_t)now.tv_sec * UINT64_C(1000000000) + (uint64_t)now.tv_nsec;
+    return doe_host_realtime_ns();
 }
 
 static bool write_optional(FILE *out, const char *key, const char *value, bool comma)
@@ -99,7 +98,8 @@ static bool write_shader_receipts(FILE *out, const doe_runtime *runtime, const d
 {
     char *bytes = NULL;
     size_t length = 0;
-    FILE *list = open_memstream(&bytes, &length);
+    doe_host_output output;
+    FILE *list = doe_host_output_open(&output);
     if (!list) return false;
     bool ok = fputc('[', list) != EOF, any = false, render = false, kernel_seen = false, noop_written = false;
     for (size_t i = 0; ok && i < stream->count; i++) {
@@ -173,7 +173,7 @@ static bool write_shader_receipts(FILE *out, const doe_runtime *runtime, const d
         any = true;
     }
     ok = fputc(']', list) != EOF && ok;
-    ok = fclose(list) == 0 && ok;
+    ok = doe_host_output_close(&output, &bytes, &length) && ok;
     /* An empty list when nothing compiles, so two runtimes that compile no
      * shader still agree on the receipt hash. */
     if (ok) {
@@ -192,7 +192,7 @@ static bool write_meta(const char *path, const options *o, const totals *t, uint
     const doe_runtime_adapter *adapter, const doe_operator_recorder *operators, const char *plan_sha256,
     const doe_runtime *runtime, const doe_stream *stream, const doe_ns_recorder *numeric)
 {
-    FILE *out = fopen(path, "wb");
+    FILE *out = doe_host_fopen(path, "wb");
     if (!out) return false;
     uint64_t seq_max = t->rows ? t->rows - 1 : 0;
     bool ok = fprintf(out, "{\"traceVersion\":1,\"module\":\"" MODULE_NAME "\",\"seqMax\":%" PRIu64 ",\"rowCount\":%" PRIu64
@@ -429,7 +429,7 @@ int main(int argc, char **argv)
     uint64_t read_start = doe_runtime_monotonic_ns();
     size_t size = 0;
     const char *input = o.plan ? o.plan : o.commands;
-    char *text = input ? read_file(input, &size) : strdup(cli_default_commands());
+    char *text = input ? read_file(input, &size) : doe_host_strdup(cli_default_commands());
     if (!input) { input = "<embedded>"; size = text ? strlen(text) : 0; }
     if (!text) { fprintf(stderr, "doe-c-runtime: cannot read %s\n", input); return 2; }
     uint64_t parse_start = doe_runtime_monotonic_ns();
@@ -517,7 +517,7 @@ int main(int argc, char **argv)
         return 1;
     }
     uint64_t command_count = (uint64_t)stream.count * o.command_repeat;
-    FILE *rows = o.trace_jsonl ? fopen(o.trace_jsonl, "wb") : NULL;
+    FILE *rows = o.trace_jsonl ? doe_host_fopen(o.trace_jsonl, "wb") : NULL;
     if (o.trace_jsonl && !rows) {
         fprintf(stderr, "doe-c-runtime: cannot write %s\n", o.trace_jsonl);
         release_input(&stream, &plan, plan_kernel_root);
@@ -705,7 +705,7 @@ int main(int argc, char **argv)
             status = 1;
             break;
         }
-        FILE *out = fopen(o.readback_paths[i], "wb");
+        FILE *out = doe_host_fopen(o.readback_paths[i], "wb");
         bool written = out && fwrite(data, 1, size, out) == size;
         if (out && fclose(out) != 0) written = false;
         free(data);
