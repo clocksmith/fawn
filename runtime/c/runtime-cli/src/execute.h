@@ -43,6 +43,11 @@ bool doe_runtime_execute(doe_runtime *runtime, const doe_command *command, doe_t
  * false when the oracle could not run (a digest mismatch is the caller's). */
 bool doe_runtime_validate_oracle(doe_runtime *runtime, const doe_command *command, const doe_output_oracle *oracle,
     char actual_sha256[65], doe_trace_execution *execution);
+/* Compiles and caches a kernel_dispatch command's pipeline before the timed
+ * command loop, as doe-zig-runtime's kernel prewarm does; other kinds do
+ * nothing. False with the reason in `execution`; the command then reports the
+ * same failure when it runs. */
+bool doe_runtime_prewarm_kernel(doe_runtime *runtime, const doe_command *command, doe_trace_execution *execution);
 /* Reads the whole buffer of a stream handle into a new allocation the caller
  * frees; false when the handle has no buffer or the readback failed. */
 bool doe_runtime_read_buffer(doe_runtime *runtime, uint64_t handle, uint8_t **data, size_t *size,

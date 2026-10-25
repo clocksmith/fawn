@@ -363,3 +363,10 @@ bool runtime_validate_oracle(doe_runtime *runtime, const doe_command *command, c
     bool scopes_ok = runtime_pop_scopes(runtime, execution);
     return ok && scopes_ok;
 }
+
+bool doe_runtime_prewarm_kernel(doe_runtime *runtime, const doe_command *command, doe_trace_execution *execution)
+{
+    *execution = (doe_trace_execution){.ok = true};
+    if (command->kind != DOE_COMMAND_KERNEL_DISPATCH) return true;
+    return prepare_pipeline(runtime, command, execution) != NULL;
+}
