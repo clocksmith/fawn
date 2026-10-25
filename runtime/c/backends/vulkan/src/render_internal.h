@@ -26,14 +26,21 @@ typedef struct doe_vk_render_layout {
     doe_vk_texture_format colors[DOE_VK_MAX_COLOR_ATTACHMENTS];
     doe_vk_texture_format depth_stencil;
     uint32_t samples;
+    /* The depth/stencil attachment is also sampled in the pass (read-only
+     * aspects or another subresource): it stays in GENERAL, the layout its
+     * descriptors use, rather than DEPTH_STENCIL_ATTACHMENT_OPTIMAL. */
+    bool depth_stencil_sampled;
 } doe_vk_render_layout;
 /* NULL colors/desc builds the pipeline-compatible pass (LOAD/STORE, no resolve). */
 doe_vk_status doe_vk_render_pass_create(doe_vk_context *context, const doe_vk_render_layout *layout,
     const doe_vk_render_colors *colors, const doe_vk_render_pass_desc *desc, VkRenderPass *out, doe_vk_error *error);
 doe_vk_status doe_vk_render_attachments_validate(doe_vk_commands *commands,
     const doe_vk_render_pass_desc *desc, const doe_vk_render_colors *colors, uint32_t *width, uint32_t *height);
+/* depth_stencil_sampled: a draw samples the depth/stencil attachment's texture
+ * (doe_vk_render_layout). */
 doe_vk_status doe_vk_render_attachments_prepare(doe_vk_commands *commands, const doe_vk_render_pass_desc *desc,
-    const doe_vk_render_colors *colors, uint32_t width, uint32_t height, doe_vk_render_use **out);
+    const doe_vk_render_colors *colors, uint32_t width, uint32_t height, bool depth_stencil_sampled,
+    doe_vk_render_use **out);
 void doe_vk_render_attachments_begin(doe_vk_commands *commands, const doe_vk_render_use *use,
     const doe_vk_render_pass_desc *desc, const doe_vk_render_colors *colors, uint32_t width, uint32_t height);
 bool doe_vk_render_stencil_writes(const doe_vk_render_pipeline_desc *desc);

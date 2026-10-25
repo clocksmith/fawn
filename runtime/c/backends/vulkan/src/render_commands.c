@@ -51,6 +51,7 @@ typedef struct prepared_draw {
     uint32_t index_limit;
     VkBuffer index_buffer;
     VkBuffer indirect;
+    bool samples_depth_stencil; /* Samples the depth/stencil attachment's texture. */
 } prepared_draw;
 
 /* Vulkan render-pass compatibility: equal per-slot formats, where missing
@@ -74,6 +75,28 @@ static bool attached(const doe_vk_render_pass_desc *desc, const doe_vk_render_co
             (slot->resolve_target != NULL && slot->resolve_target->texture == texture)) return true;
     }
     return false;
+}
+
+static bool attached_color(const doe_vk_render_colors *colors, const doe_vk_texture *texture) {
+    for (uint32_t i = 0; i < colors->count; ++i) {
+        const doe_vk_color_attachment *slot = &colors->slots[i];
+        if ((slot->view != NULL && slot->view->texture == texture) ||
+            (slot->resolve_target != NULL && slot->resolve_target->texture == texture)) return true;
+    }
+    return false;
+}
+
+static bool same_subresource(const doe_vk_texture_view *a, const doe_vk_texture_view *b) {
+    return a->desc.base_mip < b->desc.base_mip + b->desc.mip_count && b->desc.base_mip < a->desc.base_mip + a->desc.mip_count &&
+        a->desc.base_layer < b->desc.base_layer + b->desc.layer_count && b->desc.base_layer < a->desc.base_layer + a->desc.layer_count;
+}
+
+/* Aspects the pass never writes: read-only ones and those the format lacks. */
+static uint32_t read_only_aspects(const doe_vk_render_pass_desc *desc) {
+    uint32_t present = doe_vk_format_aspects(desc->depth_stencil->texture->desc.format);
+    uint32_t read_only = (desc->depth_read_only ? VK_IMAGE_ASPECT_DEPTH_BIT : 0) |
+        (desc->stencil_read_only ? VK_IMAGE_ASPECT_STENCIL_BIT : 0);
+    return read_only | ~present;
 }
 
 static doe_vk_status validate_pass_draw(doe_vk_commands *commands, const doe_vk_render_pass_desc *desc,
@@ -128,10 +151,19 @@ static doe_vk_status validate_pass_draw(doe_vk_commands *commands, const doe_vk_
             return DOE_VK_INVALID_ARGUMENT;
     }
     for (size_t i = 0; i < draw->binding_count; ++i) {
-        if ((draw->bindings[i].kind == DOE_VK_BINDING_SAMPLED_TEXTURE ||
-            draw->bindings[i].kind == DOE_VK_BINDING_STORAGE_TEXTURE) &&
-            draw->bindings[i].value.view != NULL && attached(desc, colors, draw->bindings[i].value.view->texture))
-            return DOE_VK_UNSUPPORTED;
+        const doe_vk_texture_view *view = draw->bindings[i].value.view;
+        if ((draw->bindings[i].kind != DOE_VK_BINDING_SAMPLED_TEXTURE &&
+            draw->bindings[i].kind != DOE_VK_BINDING_STORAGE_TEXTURE) ||
+            view == NULL || !attached(desc, colors, view->texture)) continue;
+        /* Sampling the depth/stencil attachment's texture: another subresource,
+         * or aspects the pass only reads (WebGPU read-only depth/stencil). */
+        if (draw->bindings[i].kind == DOE_VK_BINDING_SAMPLED_TEXTURE && desc->depth_stencil != NULL &&
+            view->texture == desc->depth_stencil->texture && !attached_color(colors, view->texture) &&
+            (!same_subresource(view, desc->depth_stencil) || (view->aspects & ~read_only_aspects(desc)) == 0)) {
+            prepared->samples_depth_stencil = true;
+            continue;
+        }
+        return DOE_VK_UNSUPPORTED;
     }
     prepared->scissor = (VkRect2D){
         .offset = {(int32_t)draw->draw.scissor[0], (int32_t)draw->draw.scissor[1]},
@@ -273,8 +305,11 @@ doe_vk_status doe_vk_commands_render_pass_full(doe_vk_commands *commands,
             limits, indexed, &prepared[i].indirect);
         if (status != DOE_VK_OK) goto failed;
     }
+    bool depth_stencil_sampled = false;
+    for (size_t i = 0; i < count; ++i)
+        if (ops[i].kind == DOE_VK_RENDER_DRAW && prepared[i].samples_depth_stencil) depth_stencil_sampled = true;
     doe_vk_render_use *use = NULL;
-    status = doe_vk_render_attachments_prepare(commands, desc, &colors, width, height, &use);
+    status = doe_vk_render_attachments_prepare(commands, desc, &colors, width, height, depth_stencil_sampled, &use);
     if (status != DOE_VK_OK) goto failed;
     doe_vk_render_attachments_begin(commands, use, desc, &colors, width, height);
     uint32_t active_index = 0;
