@@ -490,6 +490,57 @@ def check_plan(binary: Path, work: Path) -> None:
         check(result.returncode == 2 and needle in result.stderr, f"plan refusal {needle}: {result.returncode} {result.stderr}")
 
 
+# doe-zig-runtime (built from runtime/zig at 58774d6ec, --quirk-mode off, lavapipe,
+# 2026-10-25) final hashes for the dispatch-kind examples.
+ZIG_GRID_FINAL_HASH = {
+    "dispatch_workgroups": "0xe6d78ebc17d3da6d",
+    "compute_dispatch_grid": "0x3434a831b3b22290",
+    "compute_dispatch_indirect_large_args": "0x494a4b5ca202e42f",
+    "compute_dispatch_indirect_live_args": "0xbce8ce3404bdbd0a",
+    "compute_dispatch_indirect_single": "0x494a4b5ca202e42f",
+    "compute_dispatch_workgroups_2d_sweep": "0xf5e355dd2c88bf9e",
+    "compute_dispatch_workgroups_3d_sweep": "0xf5e355dd2c88bf9e",
+    "compute_dispatch_workgroups_indirect_pipeline_switch": "0xbce8ce3404bdbd0a",
+}
+# Same build: a workgroup_atomic kernel_dispatch then dispatch, dispatch_indirect
+# and dispatch_workgroups grids, which reuse its pipeline and bindings.
+ZIG_REUSE_HASHES = ["0xd00d567969d44b72", "0xf71d1cfca5a2a1bb", "0xf4fec1b2356ed0cb", "0x4994e83c5b07eee"]
+
+
+def check_grid(binary: Path, work: Path) -> None:
+    for name, final_hash in ZIG_GRID_FINAL_HASH.items():
+        code, stderr, meta, rows = run(binary, work, name, "--quirk-mode", "off")
+        check(code == 0 and meta["hash"] == final_hash and all(r["executionStatus"] == "ok" for r in rows)
+              and meta["executionDispatchCount"] == len(rows) - sum(r["command"] == "barrier" for r in rows),
+              f"{name}: exit {code}, hash {meta.get('hash')} != {final_hash}: {stderr}")
+        check(replay_passes(work, name), f"{name} artifacts fail replay")
+    base = json.loads((EXAMPLES / "workgroup_atomic_commands.json").read_text())[0]
+    base.pop("output_oracle")
+    stream = [{**base, "repeat": 1, "warmup_dispatch_count": 0}, {"kind": "dispatch", "x": 1024},
+              {"kind": "dispatch_indirect", "workgroupCount": [1024, 1, 1]},
+              {"kind": "dispatch_workgroups", "x": 1024, "y": 1, "z": 1}]
+    commands = work / "grid_reuse_commands.json"
+    commands.write_text(json.dumps(stream))
+    code, stderr, _, rows = run(binary, work, "grid_reuse", "--quirk-mode", "off", "--readback-buffer",
+                                f"5001={work / 'grid_reuse.bin'}", commands=commands)
+    check(code == 0 and [r["hash"] for r in rows] == ZIG_REUSE_HASHES
+          and (work / "grid_reuse.bin").read_bytes() == recurrence.expected_output(dispatch_count=4),
+          f"grids reuse the last kernel pipeline and bindings: {stderr}")
+    # Independent repeats record the same dispatches (webgpu.h has no barrier
+    # control): the result equals the dependent stream's.
+    rmsnorm = json.loads((EXAMPLES / "rmsnorm_tree_commands.json").read_text())
+    outputs = []
+    for sync in ("dependent", "independent"):
+        rmsnorm[1]["repeatSynchronization"] = sync
+        path = work / f"rmsnorm_{sync}_commands.json"
+        path.write_text(json.dumps(rmsnorm))
+        code, stderr, meta, _ = run(binary, work, f"rmsnorm_{sync}", "--readback-buffer", f"6004={work / f'rmsnorm_{sync}.bin'}",
+                                    commands=path)
+        check(code == 0 and meta["hash"] == ZIG_FINAL_HASH["rmsnorm_tree"], f"rmsnorm {sync}: {stderr}")
+        outputs.append((work / f"rmsnorm_{sync}.bin").read_bytes())
+    check(outputs[0] == outputs[1], "independent repeats produce the dependent result")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--binary", required=True, type=Path)
@@ -563,13 +614,18 @@ def main() -> int:
     for extra, needle in rejected:
         code, stderr, _, _ = run(args.binary, args.work, "rmsnorm_tree", *extra)
         check(code == 2 and needle in stderr, f"{extra}: exit {code}: {stderr}")
-    code, stderr, _, _ = run(args.binary, args.work, "dispatch", commands=EXAMPLES / "dispatch_workgroups_commands.json")
-    check(code == 2 and "not implemented" in stderr, f"dispatch stream: exit {code}: {stderr}")
+    pipelined = json.loads((EXAMPLES / "rmsnorm_tree_commands.json").read_text())
+    pipelined[1]["repeatSynchronization"] = "pipelined"
+    path = args.work / "pipelined_commands.json"
+    path.write_text(json.dumps(pipelined))
+    code, stderr, _, _ = run(args.binary, args.work, "pipelined", commands=path)
+    check(code == 2 and "dependent or independent" in stderr, f"unknown repeatSynchronization: exit {code}: {stderr}")
 
     check_copies(args.binary, args.work)
     check_render(args.binary, args.work)
     check_quirks(args.binary, args.work)
     check_semantic(args.binary, args.work)
+    check_grid(args.binary, args.work)
     check_plan(args.binary, args.work)
 
     print(f"PASS {args.module}: 3 example streams with doe-zig-runtime hash chains, replay-valid artifacts, "
@@ -577,7 +633,8 @@ def main() -> int:
           f"{len(ZIG_COPY_FINAL_HASH)} copy streams, a copy/texture roundtrip read back against host bytes, 4 copy "
           f"failures, {len(ZIG_RENDER_FINAL_HASH)} render streams, scissored and indexed draws read back against the "
           f"proxy and clear colors, a missing render target, {len(ZIG_QUIRK_FINAL_HASH)} quirk-matched streams, active "
-          f"staging read back against host bytes, 2 quirk refusals, semantic rows with operator records, repro "
+          f"staging read back against host bytes, 2 quirk refusals, {len(ZIG_GRID_FINAL_HASH)} dispatch-kind streams "
+          f"and a pipeline-reusing grid stream read back against the host oracle, independent repeats, semantic rows with operator records, repro "
           f"bundles and host-checked captures, greedy and sampled numeric stability receipts equal to "
           f"doe-zig-runtime's Radeon receipts, an execution profile route and 3 numeric stability refusals, plan rows chained like "
           f"doe-plan-executor's with host-checked loads and dispatches and 5 plan refusals on "

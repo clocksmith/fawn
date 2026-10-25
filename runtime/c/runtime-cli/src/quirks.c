@@ -10,7 +10,7 @@
 typedef enum bucket_kind {
     BUCKET_UPLOAD, BUCKET_COPY, BUCKET_BARRIER, BUCKET_KERNEL_DISPATCH, BUCKET_RENDER_DRAW,
     BUCKET_SAMPLER_CREATE, BUCKET_SAMPLER_DESTROY, BUCKET_TEXTURE_WRITE, BUCKET_TEXTURE_QUERY,
-    BUCKET_TEXTURE_DESTROY, BUCKET_COUNT
+    BUCKET_TEXTURE_DESTROY, BUCKET_DISPATCH, BUCKET_COUNT
 } bucket_kind;
 _Static_assert((int)BUCKET_COUNT <= (int)DOE_QUIRK_BUCKETS, "bucket storage");
 
@@ -107,7 +107,8 @@ static bool supports(doe_quirk_scope scope, bucket_kind kind)
     switch (scope) {
     case DOE_SCOPE_ALIGNMENT: return kind == BUCKET_UPLOAD || kind == BUCKET_COPY;
     case DOE_SCOPE_LAYOUT: return kind != BUCKET_UPLOAD && kind != BUCKET_BARRIER;
-    case DOE_SCOPE_BARRIER: return kind == BUCKET_BARRIER || kind == BUCKET_KERNEL_DISPATCH || kind == BUCKET_RENDER_DRAW;
+    case DOE_SCOPE_BARRIER:
+        return kind == BUCKET_BARRIER || kind == BUCKET_KERNEL_DISPATCH || kind == BUCKET_RENDER_DRAW || kind == BUCKET_DISPATCH;
     case DOE_SCOPE_DRIVER_TOGGLE: return true;
     case DOE_SCOPE_MEMORY:
         return kind == BUCKET_COPY || kind == BUCKET_UPLOAD || kind == BUCKET_TEXTURE_WRITE || kind == BUCKET_TEXTURE_QUERY ||
@@ -152,6 +153,10 @@ static uint32_t score(const doe_quirk *q, bucket_kind kind, const doe_profile *p
     case BUCKET_TEXTURE_DESTROY:
         if (q->scope == DOE_SCOPE_MEMORY) s += 6;
         if (q->scope == DOE_SCOPE_LAYOUT) s += 2;
+        break;
+    case BUCKET_DISPATCH:
+        if (q->scope == DOE_SCOPE_LAYOUT) s += 4;
+        if (q->scope == DOE_SCOPE_BARRIER) s += 6;
         break;
     case BUCKET_COUNT: break;
     }
@@ -350,6 +355,8 @@ static bucket_kind bucket_of(doe_command_kind kind)
     case DOE_COMMAND_TEXTURE_WRITE: return BUCKET_TEXTURE_WRITE;
     case DOE_COMMAND_TEXTURE_QUERY: return BUCKET_TEXTURE_QUERY;
     case DOE_COMMAND_TEXTURE_DESTROY: return BUCKET_TEXTURE_DESTROY;
+    case DOE_COMMAND_DISPATCH:
+    case DOE_COMMAND_DISPATCH_INDIRECT: return BUCKET_DISPATCH;
     }
     return BUCKET_COUNT;
 }

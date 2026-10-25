@@ -111,8 +111,9 @@ static bool write_repro_commands(const char *path, const doe_command *command)
     if (ok && command->kind == DOE_COMMAND_KERNEL_DISPATCH) {
         ok = fputs(",\"kernel\":", out) >= 0 && doe_trace_write_string(out, command->as.dispatch.kernel) &&
             fprintf(out, ",\"x\":%" PRIu32 ",\"y\":%" PRIu32 ",\"z\":%" PRIu32 ",\"repeat\":%" PRIu64
-                ",\"repeatSynchronization\":\"dependent\"", command->as.dispatch.x, command->as.dispatch.y,
-                command->as.dispatch.z, command->as.dispatch.repeat) >= 0;
+                ",\"repeatSynchronization\":\"%s\"", command->as.dispatch.x, command->as.dispatch.y,
+                command->as.dispatch.z, command->as.dispatch.repeat,
+                command->as.dispatch.repeat_independent ? "independent" : "dependent") >= 0;
     }
     ok = ok && doe_trace_write_semantic(out, s);
     if (ok && s->has_capture)

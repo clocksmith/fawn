@@ -162,6 +162,16 @@ doe_runtime *doe_runtime_open(const doe_runtime_options *options, char *message,
     }
     record_adapter(runtime);
     WGPUDeviceDescriptor descriptor = WGPU_DEVICE_DESCRIPTOR_INIT;
+    /* Buffer size limits at the adapter's maxima, as doe-zig-runtime's native
+     * lane allocates and binds against device capabilities (the 256 MiB
+     * matrix-vector weights exceed WebGPU's 128 MiB default binding limit).
+     * Every other limit stays at the WebGPU default. */
+    WGPULimits adapter_limits = WGPU_LIMITS_INIT, required = WGPU_LIMITS_INIT;
+    if (wgpuAdapterGetLimits(runtime->adapter, &adapter_limits) == WGPUStatus_Success) {
+        required.maxStorageBufferBindingSize = adapter_limits.maxStorageBufferBindingSize;
+        required.maxBufferSize = adapter_limits.maxBufferSize;
+        descriptor.requiredLimits = &required;
+    }
     descriptor.uncapturedErrorCallbackInfo = (WGPUUncapturedErrorCallbackInfo){.callback = uncaptured_error,
         .userdata1 = runtime};
     request_reply reply = {0};
@@ -199,6 +209,7 @@ void doe_runtime_close(doe_runtime *runtime)
     runtime_release_textures(runtime);
     for (size_t i = 0; i < runtime->buffer_count; i++) wgpuBufferRelease(runtime->buffers[i].buffer);
     free(runtime->buffers);
+    if (runtime->indirect_args) wgpuBufferRelease(runtime->indirect_args);
     if (runtime->queue) wgpuQueueRelease(runtime->queue);
     if (runtime->device) wgpuDeviceRelease(runtime->device);
     if (runtime->adapter) wgpuAdapterRelease(runtime->adapter);
@@ -423,7 +434,15 @@ bool doe_runtime_execute(doe_runtime *runtime, const doe_command *command, doe_t
     case DOE_COMMAND_UPLOAD: ok = execute_upload(runtime, command, execution); break;
     case DOE_COMMAND_BUFFER_WRITE: ok = execute_buffer_write(runtime, command, execution); break;
     case DOE_COMMAND_BARRIER: ok = execute_barrier(runtime, execution); break;
-    case DOE_COMMAND_KERNEL_DISPATCH: ok = runtime_execute_kernel(runtime, command, execution); break;
+    case DOE_COMMAND_KERNEL_DISPATCH:
+        ok = runtime_execute_kernel(runtime, command, execution);
+        if (ok) {
+            runtime->has_last_kernel = true;
+            runtime->last_kernel = *command;
+        }
+        break;
+    case DOE_COMMAND_DISPATCH:
+    case DOE_COMMAND_DISPATCH_INDIRECT: ok = runtime_execute_grid(runtime, command, execution); break;
     case DOE_COMMAND_COPY: ok = runtime_execute_copy(runtime, command, execution); break;
     case DOE_COMMAND_TEXTURE_WRITE:
     case DOE_COMMAND_TEXTURE_QUERY:
@@ -448,6 +467,8 @@ bool doe_runtime_execute(doe_runtime *runtime, const doe_command *command, doe_t
             [DOE_COMMAND_RENDER_PASS] = "render_pass_timing_cpu_wall_clock_comparability_directional",
             [DOE_COMMAND_SAMPLER_CREATE] = "sampler_create_timing_cpu_wall_clock_comparability_directional",
             [DOE_COMMAND_SAMPLER_DESTROY] = "sampler_destroy_timing_cpu_wall_clock_comparability_directional",
+            [DOE_COMMAND_DISPATCH] = "dispatch_timing_cpu_wall_clock_comparability_directional",
+            [DOE_COMMAND_DISPATCH_INDIRECT] = "dispatch_indirect_timing_cpu_wall_clock_comparability_directional",
         };
         execution->ok = true;
         execution->status_code = codes[command->kind];

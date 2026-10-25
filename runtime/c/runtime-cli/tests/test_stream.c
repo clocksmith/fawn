@@ -87,6 +87,16 @@ int main(int argc, char **argv)
     assert(!strcmp(snake_semantic->execution_plan_hash, "p") && snake_semantic->has_capture);
     assert(snake_semantic->capture_handle == 9 && snake_semantic->capture_offset == 4 && snake_semantic->capture_size == 8);
     doe_stream_free(&stream);
+    /* dispatch kinds under every alias; independent repeats. */
+    const char *grid = "[{\"kind\":\"dispatch_workgroups\",\"x\":16,\"y\":4},{\"kind\":\"dispatch_indirect\","
+        "\"workgroupCount\":[2,3,4]},{\"kind\":\"dispatch_invocations\"},{\"kind\":\"kernel_dispatch\",\"kernel\":\"k\","
+        "\"repeatSynchronization\":\"independent\"}]";
+    assert(doe_stream_parse(grid, strlen(grid), &stream, &semantic_error) && stream.count == 4);
+    assert(stream.commands[0].kind == DOE_COMMAND_DISPATCH && !strcmp(stream.commands[0].label, "dispatch"));
+    assert(stream.commands[0].as.grid.x == 16 && stream.commands[0].as.grid.y == 4 && stream.commands[0].as.grid.z == 1);
+    assert(stream.commands[1].kind == DOE_COMMAND_DISPATCH_INDIRECT && stream.commands[1].as.grid.z == 4);
+    assert(stream.commands[2].as.grid.x == 1 && stream.commands[3].as.dispatch.repeat_independent);
+    doe_stream_free(&stream);
     parse_file(argv[1], "p0_resource_lifecycle_commands.json", &stream);
     assert(stream.count == 5 && stream.commands[3].kind == DOE_COMMAND_BARRIER);
     assert(stream.commands[3].as.barrier.dependency_count == 64);
@@ -165,7 +175,10 @@ int main(int argc, char **argv)
     rejects("[{\"kind\":\"buffer_write\",\"handle\":1,\"offset\":2,\"data\":[1]}]", 0, "offset");
     rejects("[{\"kind\":\"kernel_dispatch\",\"x\":1}]", 0, "kernel");
     rejects("[{\"kind\":\"kernel_dispatch\",\"kernel\":\"k\",\"x\":0}]", 0, "nonzero");
-    rejects("[{\"kind\":\"kernel_dispatch\",\"kernel\":\"k\",\"repeatSynchronization\":\"independent\"}]", 0, "independent");
+    rejects("[{\"kind\":\"kernel_dispatch\",\"kernel\":\"k\",\"repeatSynchronization\":\"pipelined\"}]", 0, "pipelined");
+    rejects("[{\"kind\":\"dispatch\",\"x\":0}]", 0, "nonzero");
+    rejects("[{\"kind\":\"dispatch_indirect\",\"workgroupCount\":[1,2]}]", 0, "three counts");
+    rejects("[{\"kind\":\"dispatch\",\"kernel\":\"k\"}]", 0, "\"kernel\"");
     rejects("[{\"kind\":\"kernel_dispatch\",\"kernel\":\"k\",\"semanticOpId\":\"a\",\"semantic_op_id\":\"b\"}]", 0, "both");
     rejects("[{\"kind\":\"kernel_dispatch\",\"kernel\":\"k\",\"semanticTokenIndex\":4294967296}]", 0, "semantic_token_index");
     rejects("[{\"kind\":\"kernel_dispatch\",\"kernel\":\"k\",\"semanticOpId\":\"op\",\"captureBufferHandle\":1}]", 0, "both");
@@ -205,7 +218,7 @@ int main(int argc, char **argv)
     rejects("[{\"kind\":\"render_draw\",\"drawCount\":1,\"targetFormat\":\"depth24plus\"}]", 0, "target format");
     rejects("[{\"kind\":\"sampler_create\",\"handle\":1,\"magFilter\":\"cubic\"}]", 0, "mag_filter");
     rejects("[{\"kind\":\"sampler_create\",\"handle\":1,\"maxAnisotropy\":0}]", 0, "max_anisotropy");
-    puts("runtime-cli stream: nine example streams, semantic fields, aliases, copy, texture, render and sampler kinds and 46 visible "
+    puts("runtime-cli stream: nine example streams, semantic fields, aliases, copy, texture, render and sampler kinds, dispatch kinds and 49 visible "
         "rejections (host only)");
     return 0;
 }
