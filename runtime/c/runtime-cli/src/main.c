@@ -188,10 +188,12 @@ static bool write_meta(const char *path, const options *o, const totals *t, uint
         "\"hash\":\"0x%" PRIx64 "\",\"previousHash\":\"0x%" PRIx64 "\",\"outputOracleCount\":%" PRIu64
         ",\"outputOracleMatchedCount\":%" PRIu64 ",\"outputOracleFailedCount\":%" PRIu64
         ",\"executionBackend\":\"" BACKEND_ID "\",\"backendId\":\"" BACKEND_ID "\","
-        "\"fallbackUsed\":false,\"queueSyncMode\":\"per-command\",\"quirkMode\":\"off\"",
+        "\"backendSelectionReason\":\"fixed_backend\",\"fallbackUsed\":false,\"queueSyncMode\":\"per-command\","
+        "\"quirkMode\":\"off\",\"uploadBufferUsage\":\"%s\",\"uploadSubmitEvery\":%" PRIu64,
         seq_max, t->rows, command_count, t->rows, t->successes, t->errors, t->total_ns, t->setup_ns, t->encode_ns,
         t->submit_wait_ns, t->dispatches, t->submits, t->input_read_ns, t->input_parse_ns, t->executor_init_ns,
-        t->hash, t->previous, t->oracles, t->oracles_matched, t->oracles_failed) >= 0;
+        t->hash, t->previous, t->oracles, t->oracles_matched, t->oracles_failed,
+        o->runtime.upload_copy_src ? "copy-dst-copy-src" : "copy-dst", o->runtime.upload_submit_every) >= 0;
     if (ok && t->oracles) {
         ok = write_optional(out, "outputOracleKind", "sha256_exact_v1", true) &&
             write_optional(out, "outputOracleReferenceId", t->oracle_reference, true) &&

@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from bench.lib import doe_runtime_providers
+
 
 def backend_telemetry_failures(
     *,
@@ -47,10 +49,18 @@ def backend_telemetry_failures(
             failures.append(
                 f"{workload_id}: sample {sample_idx} missing backendSelectionReason"
             )
+        # A fixed-backend runtime CLI (config/doe-runtime-providers.json) has no
+        # lane policy to hash; every other backend must name the policy it used.
         selection_policy_hash = trace_meta.get("selectionPolicyHash")
-        if not isinstance(selection_policy_hash, str) or not selection_policy_hash:
+        policy_required = doe_runtime_providers.requires_selection_policy(str(backend_id or ""))
+        if policy_required and (not isinstance(selection_policy_hash, str) or not selection_policy_hash):
             failures.append(
                 f"{workload_id}: sample {sample_idx} missing selectionPolicyHash"
+            )
+        elif not policy_required and selection_policy_hash is not None:
+            failures.append(
+                f"{workload_id}: sample {sample_idx} fixed-backend {backend_id} "
+                "must not report a selectionPolicyHash"
             )
         fallback_used = trace_meta.get("fallbackUsed")
         if not isinstance(fallback_used, bool):

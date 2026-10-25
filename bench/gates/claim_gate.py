@@ -28,6 +28,7 @@ from bench.gates.claim_speed_policy import (
     expected_positive_percentiles_for_mode,
 )
 from bench.lib import compare_claim_artifacts as artifacts_mod
+from bench.lib import doe_runtime_providers
 from bench.lib import report_conformance
 from native_compare_modules.config_support import (
     load_benchmark_methodology_policy,
@@ -35,6 +36,8 @@ from native_compare_modules.config_support import (
 )
 
 
+# Doe-side execution: every registered runtime CLI backend plus legacy names.
+_DOE_EXECUTION_BACKENDS = doe_runtime_providers.native_execution_backends() | {"webgpu-ffi", "native"}
 VALID_COMPARISON_STATUSES = {"comparable", "diagnostic"}
 VALID_CLAIM_STATUSES = {"claimable", "diagnostic"}
 VALID_CLAIMABILITY_MODES = {"local", "release"}
@@ -229,11 +232,11 @@ def workload_is_dawn_vs_doe(workload: dict[str, Any]) -> bool:
     )
     baseline_doe = any(
         backend in baseline_backends
-        for backend in ("doe_metal", "doe_vulkan", "doe_d3d12", "webgpu-ffi", "native")
+        for backend in _DOE_EXECUTION_BACKENDS
     )
     comparison_doe = any(
         backend in comparison_backends
-        for backend in ("doe_metal", "doe_vulkan", "doe_d3d12", "webgpu-ffi", "native")
+        for backend in _DOE_EXECUTION_BACKENDS
     )
     return (baseline_dawn and comparison_doe) or (baseline_doe and comparison_dawn)
 

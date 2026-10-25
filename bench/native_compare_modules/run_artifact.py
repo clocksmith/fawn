@@ -10,6 +10,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from bench.lib import doe_runtime_providers
 from bench.lib import metal_pipeline_cache_manifest as metal_cache_manifest
 from native_compare_modules import reporting as reporting_mod
 from native_compare_modules import timing_selection as timing_selection_mod
@@ -330,6 +331,11 @@ def _runtime_identity(
         ).strip(),
         "providerName": provider_name,
     }
+    # Name the runtime implementation behind a Doe runtime CLI trace so a
+    # comparison never conflates the Zig and C runtimes.
+    doe_provider = doe_runtime_providers.provider_for_execution_backend(payload["executionBackend"])
+    if doe_provider is not None:
+        payload["runtimeImplementation"] = doe_provider.runtime_implementation
     native_delegate = _native_delegate_identity(
         executor_id=executor_id,
         execution_backend=str(trace_meta.get("executionBackend", "")).strip(),

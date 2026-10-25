@@ -43,10 +43,31 @@ is rejected with exit 2 before device work.
 Rows follow the trace v1 FNV hash chain (seed `0x9e3779b97f4a7c15`); for the
 three streams in `make check` the row hashes equal those `doe-zig-runtime`
 (db0979828) wrote. The meta carries the Zig meta fields plus an `adapter` object
-naming the executing adapter, with `module` `doe-c-runtime` and
-`executionBackend`/`backendId` `doe_c_vulkan`. Bench comparability gates that
-require `doe_vulkan` therefore do not admit these artifacts, and templates that
-pass `--quirks` must add `--quirk-mode off`.
+naming the executing adapter, with `module` `doe-c-runtime`,
+`executionBackend`/`backendId` `doe_c_vulkan`, `backendSelectionReason`
+`fixed_backend` and no `selectionPolicyHash` (there is no lane policy), plus the
+applied `uploadBufferUsage` and `uploadSubmitEvery`.
+
+## Bench comparisons
+
+[`config/doe-runtime-providers.json`](../../../config/doe-runtime-providers.json)
+registers this CLI as its own Doe provider (`runtimeImplementation` `c`), so the
+compare and claim gates treat its traces as Doe execution while run receipts and
+compare reports keep `doe_c_vulkan` and `runtimeImplementation` distinct from
+the Zig runtime. `make bench-bin` installs the gitignored
+`bin/doe-c-runtime` that the `doe_c_direct_vulkan` executor runs:
+
+```bash
+make -C runtime/c/runtime-cli bench-bin
+python3 bench/cli.py run --product doe-c --executor-id doe_c_direct_vulkan \
+  --workloads bench/workloads/workloads.amd.vulkan.smoke.json --workload-id compute_workgroup_atomic_1024
+```
+
+The executor passes `--quirk-mode off`, so workload quirks are not applied.
+Workloads outside the admitted input (upload-domain `deferred` sync, render,
+textures) fail the run rather than being skipped. The Dawn-versus-Doe strict
+Vulkan shader-artifact obligation applies to C traces too; the CLI writes no
+shader artifact manifest, so that obligation fails for them.
 
 ## Recorded runs
 

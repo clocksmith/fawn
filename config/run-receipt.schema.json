@@ -234,6 +234,11 @@
         "executionBackend": {
           "type": "string"
         },
+        "runtimeImplementation": {
+          "description": "Implementation of the Doe runtime CLI that wrote the trace, from config/doe-runtime-providers.json; absent for non-Doe executors.",
+          "type": "string",
+          "enum": ["zig", "c"]
+        },
         "providerId": {
           "type": "string"
         },

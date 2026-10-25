@@ -8,6 +8,7 @@ import re
 from pathlib import Path
 from typing import Any
 
+from bench.lib import doe_runtime_providers
 from native_compare_modules.config_support import (
     Workload,
     KNOWN_GPU_BACKENDS,
@@ -146,7 +147,7 @@ def infer_command_shape_dispatch_count(
 
 
 def template_uses_doe_runtime(template: str) -> bool:
-    return "doe-zig-runtime" in template
+    return doe_runtime_providers.template_uses_doe_runtime(template)
 
 
 def template_uses_plan_boundary(template: str) -> bool:

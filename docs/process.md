@@ -867,6 +867,11 @@ checks its changed behavior requires; uncollected measurements stay unclaimed.
 - Domain thresholds, ABI values, retry counts, sizes, and timing policy live in
   named constants or versioned config, with one source of truth.
 - Generated guides and views are checked against their canonical registries.
+- Doe runtime CLI identity (Zig or C implementation, binary name, the
+  `executionBackend` values each writes and whether it selects backends through
+  lane policy) comes from `config/doe-runtime-providers.json`; bench gates read
+  it rather than listing backends, and never relabel one runtime's trace as
+  the other's.
 - Implementation peer identities and native provider membership come from
   `config/implementation-peers.json`. The schema gate checks its references and
   generated documentation; comparison profiles and evidence retain their own

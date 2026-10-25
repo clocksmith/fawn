@@ -7,6 +7,7 @@ import time
 from pathlib import Path
 from typing import Any
 
+from bench.lib import doe_runtime_providers
 from bench.lib import output_paths
 from native_compare_modules.compilation_runner import (
     run_compilation_product_workload,
@@ -176,7 +177,7 @@ def run_product_bundle(
                 ignore_first_ops=run_config.ignore_first_ops,
                 upload_buffer_usage=run_config.upload_buffer_usage,
                 upload_submit_every=run_config.upload_submit_every,
-                inject_upload_runtime_flags="doe-zig-runtime" in template,
+                inject_upload_runtime_flags=doe_runtime_providers.template_uses_doe_runtime(template),
                 required_timing_class=required_timing_class,
                 comparability_mode=comparability_mode,
                 benchmark_policy=benchmark_policy,

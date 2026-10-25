@@ -5,6 +5,7 @@ from __future__ import annotations
 import statistics
 from typing import Any
 
+from bench.lib import doe_runtime_providers
 from native_compare_modules.comparability import (
     NATIVE_EXECUTION_OPERATION_TIMING_SOURCES,
     OBLIGATION_SCHEMA_VERSION,
@@ -860,10 +861,7 @@ def compare_assessment(
             "doe_node_native_direct",
             "bun_webgpu_package",
             "doe_bun_package",
-            "doe_metal",
-            "doe_vulkan",
-            "doe_d3d12",
-        }:
+        } and execution_backend not in doe_runtime_providers.native_execution_backends():
             continue
         execution_dispatch = safe_int(trace_meta.get("executionDispatchCount"), default=0)
         execution_success = safe_int(trace_meta.get("executionSuccessCount"), default=0)

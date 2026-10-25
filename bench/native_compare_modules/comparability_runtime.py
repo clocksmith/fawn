@@ -8,6 +8,7 @@ import statistics
 from pathlib import Path
 from typing import Any
 
+from bench.lib import doe_runtime_providers
 from bench.lib.hash_utils import file_sha256
 from native_compare_modules.comparability import (
     _PHASE_ASYMMETRY_THRESHOLD,
@@ -33,10 +34,9 @@ _PACKAGE_EXECUTION_BACKENDS = frozenset({
     "bun_webgpu_package",
     "doe_bun_package",
 })
-_NATIVE_VULKAN_EXECUTION_BACKENDS = frozenset({
-    "doe_vulkan",
-    "dawn_delegate",
-})
+# Doe Vulkan backends of every runtime CLI (config/doe-runtime-providers.json).
+_DOE_VULKAN_EXECUTION_BACKENDS = doe_runtime_providers.native_execution_backends_for_api("vulkan")
+_NATIVE_VULKAN_EXECUTION_BACKENDS = _DOE_VULKAN_EXECUTION_BACKENDS | frozenset({"dawn_delegate"})
 _DEFAULT_COMPARE_KERNEL_ROOT = REPO_ROOT / "bench" / "kernels"
 _PACKAGE_SUBMIT_SCOPE_BUCKETS: tuple[tuple[str, tuple[str, ...]], ...] = (
     (
@@ -582,7 +582,7 @@ def _shader_manifest_receipts(
         trace_meta = sample.get("traceMeta", {})
         if not isinstance(trace_meta, dict):
             trace_meta = {}
-        if str(trace_meta.get("executionBackend", "")) != "doe_vulkan":
+        if str(trace_meta.get("executionBackend", "")) not in _DOE_VULKAN_EXECUTION_BACKENDS:
             continue
         summary_path = str(trace_meta.get("shaderArtifactManifestPath", "")).strip()
         if summary_path:
@@ -622,7 +622,7 @@ def _shader_manifest_receipts(
                 continue
             if not isinstance(row, dict) or row.get("command") != "kernel_dispatch":
                 continue
-            if str(row.get("executionBackend", "")) != "doe_vulkan":
+            if str(row.get("executionBackend", "")) not in _DOE_VULKAN_EXECUTION_BACKENDS:
                 continue
             manifest_path = str(
                 row.get("executionShaderArtifactManifestPath", "")
@@ -674,7 +674,7 @@ def assess_native_shader_artifact_equivalence(
     artifact_failures: list[dict[str, str]] = []
     doe_samples = (
         left_command_samples
-        if "doe_vulkan" in left_execution_backends
+        if left_execution_backends & _DOE_VULKAN_EXECUTION_BACKENDS
         else right_command_samples
     )
     manifest_path_set, trace_receipt_failures = _shader_manifest_receipts(doe_samples)

@@ -22,6 +22,7 @@ for _path_entry in (str(REPO_ROOT), str(BENCH_ROOT)):
     if _path_entry not in sys.path:
         sys.path.insert(0, _path_entry)
 
+from bench.lib import doe_runtime_providers
 from bench.lib.bench_utils import load_json_object
 
 REPLAY_SCRIPT = REPO_ROOT / "pipeline" / "trace" / "replay.py"
@@ -290,12 +291,10 @@ def main() -> int:
                 if isinstance(meta_payload, dict):
                     module_name = str(meta_payload.get("module", ""))
                     execution_backend = str(meta_payload.get("executionBackend", ""))
-                    if module_name.startswith(DOE_MODULE_PREFIX) and execution_backend in {
-                        "dawn_delegate",
-                        "doe_metal",
-                        "doe_vulkan",
-                        "doe_d3d12",
-                    }:
+                    if module_name.startswith(DOE_MODULE_PREFIX) and (
+                        execution_backend == "dawn_delegate"
+                        or execution_backend in doe_runtime_providers.native_execution_backends()
+                    ):
                         backend_id = meta_payload.get("backendId")
                         if not isinstance(backend_id, str) or not backend_id:
                             failures.append(
