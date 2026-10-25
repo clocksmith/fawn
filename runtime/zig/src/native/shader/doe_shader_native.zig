@@ -833,7 +833,7 @@ fn doeNativeDeviceCreateComputePipelineOwned(dev_raw: ?*anyopaque, desc: ?*const
     else
         entries[0..0];
 
-    if (shader_stage_limits.computeLimitFailure(alloc, dev, sm, stringViewSlice(d.compute.entryPoint), override_slice, d.layout == null)) |message| {
+    if (shader_stage_limits.computeLimitFailure(alloc, dev, sm, stringViewSlice(d.compute.entryPoint), override_slice, cast(DoePipelineLayout, d.layout))) |message| {
         diagnostic.set_last_error_stage_name("native_compile");
         diagnostic.set_last_error_kind("DeviceLimitExceeded");
         diagnostic.set_last_error(message);
