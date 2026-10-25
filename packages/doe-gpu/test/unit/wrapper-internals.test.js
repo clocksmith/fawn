@@ -85,4 +85,42 @@ function sourceFiles(directory) {
   assert.deepEqual(internals, [], 'its queue enumerates no internal fields');
 }
 
+{
+  const firstPrototype = {};
+  const secondPrototype = {};
+  let mapState = 'custom';
+  Object.defineProperty(secondPrototype, '_mapState', {
+    get() { return mapState; },
+    set(value) { mapState = value; },
+    configurable: true,
+  });
+  const originalMapState = Object.getOwnPropertyDescriptor(secondPrototype, '_mapState');
+  hideInternalFields(firstPrototype);
+  hideInternalFields(secondPrototype);
+  assert.deepEqual(Object.getOwnPropertyDescriptor(secondPrototype, '_mapState'), originalMapState);
+  const first = Object.create(firstPrototype);
+  const second = Object.create(secondPrototype);
+  first._native = { id: 1 };
+  second._native = { id: 2 };
+  assert.notEqual(first._native, second._native, 'descriptor reuse never shares receiver state');
+  assert.deepEqual(Object.keys(first), []);
+  assert.deepEqual(Object.keys(second), []);
+  delete first._native;
+  assert.equal(first._native, undefined);
+  first._native = { id: 3 };
+  assert.equal(second._native.id, 2);
+  assert.equal(Object.getOwnPropertyDescriptor(first, '_native').enumerable, false);
+  second._mapState = 'changed';
+  assert.equal(mapState, 'changed', 'existing prototype accessors retain their behavior');
+  const frozen = Object.freeze(Object.create(firstPrototype));
+  assert.throws(() => { frozen._native = {}; }, TypeError);
+  assert.equal(second._native.id, 2);
+  const customPrototype = {};
+  hideInternalFields(customPrototype, new Set(['customInternal']));
+  const custom = Object.create(customPrototype);
+  custom.customInternal = 7;
+  assert.equal(custom.customInternal, 7);
+  assert.deepEqual(Object.keys(custom), [], 'custom iterable names retain original behavior');
+}
+
 console.log('ok: wrapper internals are listed and non-enumerable');

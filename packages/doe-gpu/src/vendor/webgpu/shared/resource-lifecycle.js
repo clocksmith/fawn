@@ -34,21 +34,31 @@ const WRAPPER_INTERNAL_FIELDS = Object.freeze([
   '_writeBatchScratch',
 ]);
 
+let wrapperInternalDescriptors = null;
+
+function internalFieldDescriptor(name) {
+  return {
+    configurable: true,
+    enumerable: false,
+    get() { return undefined; },
+    set(value) {
+      Object.defineProperty(this, name, {
+        value, writable: true, configurable: true, enumerable: false,
+      });
+    },
+  };
+}
+
 function hideInternalFields(prototype, names = WRAPPER_INTERNAL_FIELDS) {
+  // Default accessors capture only their field name, not a wrapper or native
+  // resource. Build them once instead of allocating a set for every class.
+  const descriptors = names === WRAPPER_INTERNAL_FIELDS
+    ? (wrapperInternalDescriptors ??= names.map(internalFieldDescriptor)) : null;
+  let index = 0;
   for (const name of names) {
+    const descriptor = descriptors?.[index++];
     if (Object.prototype.hasOwnProperty.call(prototype, name)) continue;
-    Object.defineProperty(prototype, name, {
-      configurable: true,
-      enumerable: false,
-      get() {
-        return undefined;
-      },
-      set(value) {
-        Object.defineProperty(this, name, {
-          value, writable: true, configurable: true, enumerable: false,
-        });
-      },
-    });
+    Object.defineProperty(prototype, name, descriptor ?? internalFieldDescriptor(name));
   }
   return prototype;
 }

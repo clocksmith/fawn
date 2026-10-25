@@ -1,0 +1,2247 @@
+{
+  "baselineSourceSha256": "365975baf3b69baa931314479a1708a0985f0ef05f8f870e73cae9f728cc27be",
+  "candidateSourceSha256": "9bfcdc6991ae19af9faa40f2ff486d8f0d7d107a23052524021e88241eac7dd1",
+  "baselineExit": 0,
+  "candidateExit": 0,
+  "schemaVersion": 1,
+  "classification": "diagnostic-not-claimable",
+  "consumer": "Acceptance of shared wrapper descriptor construction optimization, not C-over-Dawn superiority",
+  "baselineCommit": "69e7a5c4e1430908829ce5a171f469ffb1521a00",
+  "sourceFile": "packages/doe-gpu/src/vendor/webgpu/shared/resource-lifecycle.js",
+  "controls": "Same CPU ICD, provider hashes, exact plans, 16 samples plus one warmup, forced mapAsync-host-copy and GNU time as campaign receipt. Serial blocks baseline C then Dawn then candidate C. Not randomized.",
+  "rows": [
+    {
+      "round": "dawn-descriptor-candidate-cost",
+      "product": "dawn",
+      "rawReceiptSha256": "6ec835dd003be7ccc528840e4acbc828ab92ff312824f737d994480ec4abc9b7",
+      "workload": "package_buffer_upload_readback_exact_1mb",
+      "measurements": [
+        {
+          "runIndex": 1,
+          "initNs": 45129087,
+          "operationHostMs": 3.309685,
+          "processWallMs": 186.41156499506906,
+          "processCpuMs": 205.264,
+          "maximumIndividualChildRssKiB": 99444,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "77ddbb33d6d9ea7633eb24d312009bd35f6cffc0e716e09a9cb6a6ee4e367f01"
+          ]
+        },
+        {
+          "runIndex": 2,
+          "initNs": 46358160,
+          "operationHostMs": 3.221984,
+          "processWallMs": 211.96062500530388,
+          "processCpuMs": 226.85000000000005,
+          "maximumIndividualChildRssKiB": 99512,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "77ddbb33d6d9ea7633eb24d312009bd35f6cffc0e716e09a9cb6a6ee4e367f01"
+          ]
+        },
+        {
+          "runIndex": 3,
+          "initNs": 44737239,
+          "operationHostMs": 3.297428,
+          "processWallMs": 193.1538650096627,
+          "processCpuMs": 213.53299999999996,
+          "maximumIndividualChildRssKiB": 99920,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "77ddbb33d6d9ea7633eb24d312009bd35f6cffc0e716e09a9cb6a6ee4e367f01"
+          ]
+        },
+        {
+          "runIndex": 4,
+          "initNs": 52304845,
+          "operationHostMs": 3.630969,
+          "processWallMs": 224.11938798904885,
+          "processCpuMs": 241.846,
+          "maximumIndividualChildRssKiB": 99640,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "77ddbb33d6d9ea7633eb24d312009bd35f6cffc0e716e09a9cb6a6ee4e367f01"
+          ]
+        },
+        {
+          "runIndex": 5,
+          "initNs": 45998160,
+          "operationHostMs": 3.684039,
+          "processWallMs": 201.14078199549112,
+          "processCpuMs": 220.03400000000005,
+          "maximumIndividualChildRssKiB": 99368,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "77ddbb33d6d9ea7633eb24d312009bd35f6cffc0e716e09a9cb6a6ee4e367f01"
+          ]
+        },
+        {
+          "runIndex": 6,
+          "initNs": 43975783,
+          "operationHostMs": 3.661836,
+          "processWallMs": 191.17979099974036,
+          "processCpuMs": 214.94199999999998,
+          "maximumIndividualChildRssKiB": 99576,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "77ddbb33d6d9ea7633eb24d312009bd35f6cffc0e716e09a9cb6a6ee4e367f01"
+          ]
+        },
+        {
+          "runIndex": 7,
+          "initNs": 50513372,
+          "operationHostMs": 3.616598,
+          "processWallMs": 200.9718830086058,
+          "processCpuMs": 212.639,
+          "maximumIndividualChildRssKiB": 99428,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "77ddbb33d6d9ea7633eb24d312009bd35f6cffc0e716e09a9cb6a6ee4e367f01"
+          ]
+        },
+        {
+          "runIndex": 8,
+          "initNs": 52204399,
+          "operationHostMs": 3.865952,
+          "processWallMs": 203.39964899176266,
+          "processCpuMs": 222.3219999999997,
+          "maximumIndividualChildRssKiB": 99724,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "77ddbb33d6d9ea7633eb24d312009bd35f6cffc0e716e09a9cb6a6ee4e367f01"
+          ]
+        },
+        {
+          "runIndex": 9,
+          "initNs": 47070937,
+          "operationHostMs": 3.503367,
+          "processWallMs": 198.97589800530113,
+          "processCpuMs": 222.56800000000032,
+          "maximumIndividualChildRssKiB": 99212,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "77ddbb33d6d9ea7633eb24d312009bd35f6cffc0e716e09a9cb6a6ee4e367f01"
+          ]
+        },
+        {
+          "runIndex": 10,
+          "initNs": 46309267,
+          "operationHostMs": 3.439149,
+          "processWallMs": 198.86437499371823,
+          "processCpuMs": 219.18399999999983,
+          "maximumIndividualChildRssKiB": 99600,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "77ddbb33d6d9ea7633eb24d312009bd35f6cffc0e716e09a9cb6a6ee4e367f01"
+          ]
+        },
+        {
+          "runIndex": 11,
+          "initNs": 48140229,
+          "operationHostMs": 4.19738,
+          "processWallMs": 203.3474140043836,
+          "processCpuMs": 224.49999999999991,
+          "maximumIndividualChildRssKiB": 99636,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "77ddbb33d6d9ea7633eb24d312009bd35f6cffc0e716e09a9cb6a6ee4e367f01"
+          ]
+        },
+        {
+          "runIndex": 12,
+          "initNs": 48228583,
+          "operationHostMs": 4.284423,
+          "processWallMs": 219.30568700190634,
+          "processCpuMs": 230.93399999999997,
+          "maximumIndividualChildRssKiB": 99692,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "77ddbb33d6d9ea7633eb24d312009bd35f6cffc0e716e09a9cb6a6ee4e367f01"
+          ]
+        },
+        {
+          "runIndex": 13,
+          "initNs": 50754756,
+          "operationHostMs": 3.791721,
+          "processWallMs": 225.19921700586565,
+          "processCpuMs": 241.17000000000033,
+          "maximumIndividualChildRssKiB": 99244,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "77ddbb33d6d9ea7633eb24d312009bd35f6cffc0e716e09a9cb6a6ee4e367f01"
+          ]
+        },
+        {
+          "runIndex": 14,
+          "initNs": 43874027,
+          "operationHostMs": 3.11883,
+          "processWallMs": 220.99457000149414,
+          "processCpuMs": 239.94999999999987,
+          "maximumIndividualChildRssKiB": 99396,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "77ddbb33d6d9ea7633eb24d312009bd35f6cffc0e716e09a9cb6a6ee4e367f01"
+          ]
+        },
+        {
+          "runIndex": 15,
+          "initNs": 47572066,
+          "operationHostMs": 3.807576,
+          "processWallMs": 223.19985101057682,
+          "processCpuMs": 236.14600000000019,
+          "maximumIndividualChildRssKiB": 98900,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "77ddbb33d6d9ea7633eb24d312009bd35f6cffc0e716e09a9cb6a6ee4e367f01"
+          ]
+        },
+        {
+          "runIndex": 16,
+          "initNs": 45453796,
+          "operationHostMs": 3.260151,
+          "processWallMs": 199.25479700032156,
+          "processCpuMs": 217.5349999999998,
+          "maximumIndividualChildRssKiB": 99380,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "77ddbb33d6d9ea7633eb24d312009bd35f6cffc0e716e09a9cb6a6ee4e367f01"
+          ]
+        }
+      ]
+    },
+    {
+      "round": "dawn-descriptor-candidate-cost",
+      "product": "dawn",
+      "rawReceiptSha256": "dd95028e34a6d3183337e8d514a7651b93ff27db02c79dbd89a694b428a7bd51",
+      "workload": "package_pipeline_creation_8kernels",
+      "measurements": [
+        {
+          "runIndex": 1,
+          "initNs": 45961203,
+          "operationHostMs": 68.116608,
+          "processWallMs": 265.9373579954263,
+          "processCpuMs": 372.4129999999999,
+          "maximumIndividualChildRssKiB": 125476,
+          "successCount": 10,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "8b4b2444e57aed8c2d05a1293255da1b048c63224317d4666230760935fa4a18"
+          ]
+        },
+        {
+          "runIndex": 2,
+          "initNs": 49467154,
+          "operationHostMs": 70.837129,
+          "processWallMs": 268.7651640007971,
+          "processCpuMs": 379.10600000000017,
+          "maximumIndividualChildRssKiB": 125772,
+          "successCount": 10,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "8b4b2444e57aed8c2d05a1293255da1b048c63224317d4666230760935fa4a18"
+          ]
+        },
+        {
+          "runIndex": 3,
+          "initNs": 47845971,
+          "operationHostMs": 79.302435,
+          "processWallMs": 283.02981599699706,
+          "processCpuMs": 402.05700000000013,
+          "maximumIndividualChildRssKiB": 125796,
+          "successCount": 10,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "8b4b2444e57aed8c2d05a1293255da1b048c63224317d4666230760935fa4a18"
+          ]
+        },
+        {
+          "runIndex": 4,
+          "initNs": 44496020,
+          "operationHostMs": 69.696403,
+          "processWallMs": 271.4111779932864,
+          "processCpuMs": 377.6679999999999,
+          "maximumIndividualChildRssKiB": 125116,
+          "successCount": 10,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "8b4b2444e57aed8c2d05a1293255da1b048c63224317d4666230760935fa4a18"
+          ]
+        },
+        {
+          "runIndex": 5,
+          "initNs": 46218721,
+          "operationHostMs": 73.487973,
+          "processWallMs": 279.39837500161957,
+          "processCpuMs": 388.24799999999993,
+          "maximumIndividualChildRssKiB": 125576,
+          "successCount": 10,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "8b4b2444e57aed8c2d05a1293255da1b048c63224317d4666230760935fa4a18"
+          ]
+        },
+        {
+          "runIndex": 6,
+          "initNs": 48875141,
+          "operationHostMs": 74.426203,
+          "processWallMs": 285.36981300567277,
+          "processCpuMs": 382.7159999999994,
+          "maximumIndividualChildRssKiB": 125420,
+          "successCount": 10,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "8b4b2444e57aed8c2d05a1293255da1b048c63224317d4666230760935fa4a18"
+          ]
+        },
+        {
+          "runIndex": 7,
+          "initNs": 51891094,
+          "operationHostMs": 86.173024,
+          "processWallMs": 298.91106599825434,
+          "processCpuMs": 416.5670000000006,
+          "maximumIndividualChildRssKiB": 126644,
+          "successCount": 10,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "8b4b2444e57aed8c2d05a1293255da1b048c63224317d4666230760935fa4a18"
+          ]
+        },
+        {
+          "runIndex": 8,
+          "initNs": 47040301,
+          "operationHostMs": 74.262146,
+          "processWallMs": 286.11350999563,
+          "processCpuMs": 401.15999999999997,
+          "maximumIndividualChildRssKiB": 125204,
+          "successCount": 10,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "8b4b2444e57aed8c2d05a1293255da1b048c63224317d4666230760935fa4a18"
+          ]
+        },
+        {
+          "runIndex": 9,
+          "initNs": 45166775,
+          "operationHostMs": 68.318679,
+          "processWallMs": 264.1574980079895,
+          "processCpuMs": 364.00399999999956,
+          "maximumIndividualChildRssKiB": 126052,
+          "successCount": 10,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "8b4b2444e57aed8c2d05a1293255da1b048c63224317d4666230760935fa4a18"
+          ]
+        },
+        {
+          "runIndex": 10,
+          "initNs": 47889513,
+          "operationHostMs": 84.501482,
+          "processWallMs": 279.79937801137567,
+          "processCpuMs": 391.66000000000076,
+          "maximumIndividualChildRssKiB": 124348,
+          "successCount": 10,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "8b4b2444e57aed8c2d05a1293255da1b048c63224317d4666230760935fa4a18"
+          ]
+        },
+        {
+          "runIndex": 11,
+          "initNs": 45448403,
+          "operationHostMs": 84.807509,
+          "processWallMs": 284.4078069902025,
+          "processCpuMs": 396.5110000000003,
+          "maximumIndividualChildRssKiB": 124664,
+          "successCount": 10,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "8b4b2444e57aed8c2d05a1293255da1b048c63224317d4666230760935fa4a18"
+          ]
+        },
+        {
+          "runIndex": 12,
+          "initNs": 45908926,
+          "operationHostMs": 65.380404,
+          "processWallMs": 264.9126620090101,
+          "processCpuMs": 355.66799999999967,
+          "maximumIndividualChildRssKiB": 125532,
+          "successCount": 10,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "8b4b2444e57aed8c2d05a1293255da1b048c63224317d4666230760935fa4a18"
+          ]
+        },
+        {
+          "runIndex": 13,
+          "initNs": 56663528,
+          "operationHostMs": 73.732618,
+          "processWallMs": 313.333704994875,
+          "processCpuMs": 429.6559999999996,
+          "maximumIndividualChildRssKiB": 125996,
+          "successCount": 10,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "8b4b2444e57aed8c2d05a1293255da1b048c63224317d4666230760935fa4a18"
+          ]
+        },
+        {
+          "runIndex": 14,
+          "initNs": 48842470,
+          "operationHostMs": 64.798159,
+          "processWallMs": 282.1296759939287,
+          "processCpuMs": 378.2029999999992,
+          "maximumIndividualChildRssKiB": 125124,
+          "successCount": 10,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "8b4b2444e57aed8c2d05a1293255da1b048c63224317d4666230760935fa4a18"
+          ]
+        },
+        {
+          "runIndex": 15,
+          "initNs": 55537225,
+          "operationHostMs": 71.136636,
+          "processWallMs": 285.2186849922873,
+          "processCpuMs": 381.51800000000156,
+          "maximumIndividualChildRssKiB": 125372,
+          "successCount": 10,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "8b4b2444e57aed8c2d05a1293255da1b048c63224317d4666230760935fa4a18"
+          ]
+        },
+        {
+          "runIndex": 16,
+          "initNs": 52616114,
+          "operationHostMs": 75.945097,
+          "processWallMs": 295.0071300001582,
+          "processCpuMs": 392.06699999999904,
+          "maximumIndividualChildRssKiB": 124372,
+          "successCount": 10,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "8b4b2444e57aed8c2d05a1293255da1b048c63224317d4666230760935fa4a18"
+          ]
+        }
+      ]
+    },
+    {
+      "round": "dawn-descriptor-candidate-cost",
+      "product": "dawn",
+      "rawReceiptSha256": "d9b79d3f70d48fc4f6b35f16ac9fba02b4ef40c79f564b6afd27fa73056bfad7",
+      "workload": "package_queue_submit_completion",
+      "measurements": [
+        {
+          "runIndex": 1,
+          "initNs": 47578279,
+          "operationHostMs": 14.360316,
+          "processWallMs": 223.63158300868236,
+          "processCpuMs": 243.04899999999918,
+          "maximumIndividualChildRssKiB": 110444,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "67abdd721024f0ff4e0b3f4c2fc13bc5bad42d0b7851d456d88d203d15aaa450"
+          ]
+        },
+        {
+          "runIndex": 2,
+          "initNs": 45598611,
+          "operationHostMs": 14.97537,
+          "processWallMs": 203.24256000458263,
+          "processCpuMs": 240.05500000000168,
+          "maximumIndividualChildRssKiB": 110764,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "67abdd721024f0ff4e0b3f4c2fc13bc5bad42d0b7851d456d88d203d15aaa450"
+          ]
+        },
+        {
+          "runIndex": 3,
+          "initNs": 47672354,
+          "operationHostMs": 15.109543,
+          "processWallMs": 226.70133200881537,
+          "processCpuMs": 262.4579999999987,
+          "maximumIndividualChildRssKiB": 110784,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "67abdd721024f0ff4e0b3f4c2fc13bc5bad42d0b7851d456d88d203d15aaa450"
+          ]
+        },
+        {
+          "runIndex": 4,
+          "initNs": 47628628,
+          "operationHostMs": 14.13797,
+          "processWallMs": 219.1123200027505,
+          "processCpuMs": 241.29800000000046,
+          "maximumIndividualChildRssKiB": 110732,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "67abdd721024f0ff4e0b3f4c2fc13bc5bad42d0b7851d456d88d203d15aaa450"
+          ]
+        },
+        {
+          "runIndex": 5,
+          "initNs": 42606504,
+          "operationHostMs": 16.198747,
+          "processWallMs": 212.97364300698973,
+          "processCpuMs": 244.7189999999999,
+          "maximumIndividualChildRssKiB": 112444,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "67abdd721024f0ff4e0b3f4c2fc13bc5bad42d0b7851d456d88d203d15aaa450"
+          ]
+        },
+        {
+          "runIndex": 6,
+          "initNs": 49373951,
+          "operationHostMs": 14.640618,
+          "processWallMs": 204.36142200196628,
+          "processCpuMs": 237.9610000000003,
+          "maximumIndividualChildRssKiB": 110640,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "67abdd721024f0ff4e0b3f4c2fc13bc5bad42d0b7851d456d88d203d15aaa450"
+          ]
+        },
+        {
+          "runIndex": 7,
+          "initNs": 48690404,
+          "operationHostMs": 14.612125,
+          "processWallMs": 226.12537200620864,
+          "processCpuMs": 251.79200000000003,
+          "maximumIndividualChildRssKiB": 112332,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "67abdd721024f0ff4e0b3f4c2fc13bc5bad42d0b7851d456d88d203d15aaa450"
+          ]
+        },
+        {
+          "runIndex": 8,
+          "initNs": 44336895,
+          "operationHostMs": 23.351251,
+          "processWallMs": 218.9597000106005,
+          "processCpuMs": 254.41400000000058,
+          "maximumIndividualChildRssKiB": 111272,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "67abdd721024f0ff4e0b3f4c2fc13bc5bad42d0b7851d456d88d203d15aaa450"
+          ]
+        },
+        {
+          "runIndex": 9,
+          "initNs": 47854898,
+          "operationHostMs": 18.642361,
+          "processWallMs": 227.09829300583806,
+          "processCpuMs": 257.8989999999983,
+          "maximumIndividualChildRssKiB": 111852,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "67abdd721024f0ff4e0b3f4c2fc13bc5bad42d0b7851d456d88d203d15aaa450"
+          ]
+        },
+        {
+          "runIndex": 10,
+          "initNs": 43497805,
+          "operationHostMs": 17.132022,
+          "processWallMs": 218.30553699692246,
+          "processCpuMs": 237.09100000000126,
+          "maximumIndividualChildRssKiB": 112060,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "67abdd721024f0ff4e0b3f4c2fc13bc5bad42d0b7851d456d88d203d15aaa450"
+          ]
+        },
+        {
+          "runIndex": 11,
+          "initNs": 45342672,
+          "operationHostMs": 13.155606,
+          "processWallMs": 219.7782409930369,
+          "processCpuMs": 235.92799999999949,
+          "maximumIndividualChildRssKiB": 111348,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "67abdd721024f0ff4e0b3f4c2fc13bc5bad42d0b7851d456d88d203d15aaa450"
+          ]
+        },
+        {
+          "runIndex": 12,
+          "initNs": 46822181,
+          "operationHostMs": 14.080484,
+          "processWallMs": 210.59626899659634,
+          "processCpuMs": 241.37500000000145,
+          "maximumIndividualChildRssKiB": 110680,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "67abdd721024f0ff4e0b3f4c2fc13bc5bad42d0b7851d456d88d203d15aaa450"
+          ]
+        },
+        {
+          "runIndex": 13,
+          "initNs": 45106651,
+          "operationHostMs": 18.548941,
+          "processWallMs": 223.43153199472,
+          "processCpuMs": 262.31899999999797,
+          "maximumIndividualChildRssKiB": 110308,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "67abdd721024f0ff4e0b3f4c2fc13bc5bad42d0b7851d456d88d203d15aaa450"
+          ]
+        },
+        {
+          "runIndex": 14,
+          "initNs": 49809015,
+          "operationHostMs": 19.534189,
+          "processWallMs": 230.76887699426152,
+          "processCpuMs": 271.211000000001,
+          "maximumIndividualChildRssKiB": 110612,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "67abdd721024f0ff4e0b3f4c2fc13bc5bad42d0b7851d456d88d203d15aaa450"
+          ]
+        },
+        {
+          "runIndex": 15,
+          "initNs": 47385923,
+          "operationHostMs": 17.221755,
+          "processWallMs": 210.4507750045741,
+          "processCpuMs": 241.77499999999873,
+          "maximumIndividualChildRssKiB": 111624,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "67abdd721024f0ff4e0b3f4c2fc13bc5bad42d0b7851d456d88d203d15aaa450"
+          ]
+        },
+        {
+          "runIndex": 16,
+          "initNs": 44983507,
+          "operationHostMs": 14.143007,
+          "processWallMs": 199.51977499295026,
+          "processCpuMs": 231.27300000000162,
+          "maximumIndividualChildRssKiB": 111712,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "67abdd721024f0ff4e0b3f4c2fc13bc5bad42d0b7851d456d88d203d15aaa450"
+          ]
+        }
+      ]
+    },
+    {
+      "round": "doe-descriptor-baseline-cost",
+      "product": "doe",
+      "rawReceiptSha256": "039ec4cb413249276741023312c0c4dbcd8a29c6293207134003fc369deab349",
+      "workload": "package_buffer_upload_readback_exact_1mb",
+      "measurements": [
+        {
+          "runIndex": 1,
+          "initNs": 70723411,
+          "operationHostMs": 6.779971,
+          "processWallMs": 239.23700500745326,
+          "processCpuMs": 256.06299999999993,
+          "maximumIndividualChildRssKiB": 101220,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "77ddbb33d6d9ea7633eb24d312009bd35f6cffc0e716e09a9cb6a6ee4e367f01"
+          ]
+        },
+        {
+          "runIndex": 2,
+          "initNs": 76476475,
+          "operationHostMs": 5.992278,
+          "processWallMs": 247.39018200489227,
+          "processCpuMs": 267.4839999999999,
+          "maximumIndividualChildRssKiB": 101056,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "77ddbb33d6d9ea7633eb24d312009bd35f6cffc0e716e09a9cb6a6ee4e367f01"
+          ]
+        },
+        {
+          "runIndex": 3,
+          "initNs": 71634401,
+          "operationHostMs": 6.850207,
+          "processWallMs": 239.5506959874183,
+          "processCpuMs": 258.45099999999996,
+          "maximumIndividualChildRssKiB": 100804,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "77ddbb33d6d9ea7633eb24d312009bd35f6cffc0e716e09a9cb6a6ee4e367f01"
+          ]
+        },
+        {
+          "runIndex": 4,
+          "initNs": 65321130,
+          "operationHostMs": 5.980481,
+          "processWallMs": 224.8523199959891,
+          "processCpuMs": 251.64700000000016,
+          "maximumIndividualChildRssKiB": 101072,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "77ddbb33d6d9ea7633eb24d312009bd35f6cffc0e716e09a9cb6a6ee4e367f01"
+          ]
+        },
+        {
+          "runIndex": 5,
+          "initNs": 89298236,
+          "operationHostMs": 6.894755,
+          "processWallMs": 273.6715620121686,
+          "processCpuMs": 291.6590000000001,
+          "maximumIndividualChildRssKiB": 100828,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "77ddbb33d6d9ea7633eb24d312009bd35f6cffc0e716e09a9cb6a6ee4e367f01"
+          ]
+        },
+        {
+          "runIndex": 6,
+          "initNs": 73838764,
+          "operationHostMs": 9.283527,
+          "processWallMs": 264.4367729953956,
+          "processCpuMs": 284.8199999999998,
+          "maximumIndividualChildRssKiB": 101504,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "77ddbb33d6d9ea7633eb24d312009bd35f6cffc0e716e09a9cb6a6ee4e367f01"
+          ]
+        },
+        {
+          "runIndex": 7,
+          "initNs": 75206807,
+          "operationHostMs": 5.889394,
+          "processWallMs": 259.87341300060507,
+          "processCpuMs": 272.84,
+          "maximumIndividualChildRssKiB": 100896,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "77ddbb33d6d9ea7633eb24d312009bd35f6cffc0e716e09a9cb6a6ee4e367f01"
+          ]
+        },
+        {
+          "runIndex": 8,
+          "initNs": 90561727,
+          "operationHostMs": 6.786434,
+          "processWallMs": 280.762941998546,
+          "processCpuMs": 298.1210000000001,
+          "maximumIndividualChildRssKiB": 103392,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "77ddbb33d6d9ea7633eb24d312009bd35f6cffc0e716e09a9cb6a6ee4e367f01"
+          ]
+        },
+        {
+          "runIndex": 9,
+          "initNs": 86175971,
+          "operationHostMs": 6.962858,
+          "processWallMs": 273.67932299966924,
+          "processCpuMs": 296.5,
+          "maximumIndividualChildRssKiB": 100896,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "77ddbb33d6d9ea7633eb24d312009bd35f6cffc0e716e09a9cb6a6ee4e367f01"
+          ]
+        },
+        {
+          "runIndex": 10,
+          "initNs": 76091276,
+          "operationHostMs": 6.205689,
+          "processWallMs": 272.21486599592026,
+          "processCpuMs": 299.9369999999999,
+          "maximumIndividualChildRssKiB": 103232,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "77ddbb33d6d9ea7633eb24d312009bd35f6cffc0e716e09a9cb6a6ee4e367f01"
+          ]
+        },
+        {
+          "runIndex": 11,
+          "initNs": 70621488,
+          "operationHostMs": 6.104808,
+          "processWallMs": 245.786560990382,
+          "processCpuMs": 262.03900000000016,
+          "maximumIndividualChildRssKiB": 100760,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "77ddbb33d6d9ea7633eb24d312009bd35f6cffc0e716e09a9cb6a6ee4e367f01"
+          ]
+        },
+        {
+          "runIndex": 12,
+          "initNs": 75544178,
+          "operationHostMs": 5.773139,
+          "processWallMs": 239.11004500405397,
+          "processCpuMs": 244.73900000000003,
+          "maximumIndividualChildRssKiB": 101408,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "77ddbb33d6d9ea7633eb24d312009bd35f6cffc0e716e09a9cb6a6ee4e367f01"
+          ]
+        },
+        {
+          "runIndex": 13,
+          "initNs": 72173376,
+          "operationHostMs": 6.153992,
+          "processWallMs": 258.9433060056763,
+          "processCpuMs": 268.929,
+          "maximumIndividualChildRssKiB": 100992,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "77ddbb33d6d9ea7633eb24d312009bd35f6cffc0e716e09a9cb6a6ee4e367f01"
+          ]
+        },
+        {
+          "runIndex": 14,
+          "initNs": 73389039,
+          "operationHostMs": 5.563772,
+          "processWallMs": 245.1262440008577,
+          "processCpuMs": 270.467,
+          "maximumIndividualChildRssKiB": 100812,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "77ddbb33d6d9ea7633eb24d312009bd35f6cffc0e716e09a9cb6a6ee4e367f01"
+          ]
+        },
+        {
+          "runIndex": 15,
+          "initNs": 68796584,
+          "operationHostMs": 5.384425,
+          "processWallMs": 231.09977200510912,
+          "processCpuMs": 252.50400000000008,
+          "maximumIndividualChildRssKiB": 101428,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "77ddbb33d6d9ea7633eb24d312009bd35f6cffc0e716e09a9cb6a6ee4e367f01"
+          ]
+        },
+        {
+          "runIndex": 16,
+          "initNs": 72688454,
+          "operationHostMs": 5.803022,
+          "processWallMs": 247.13524800608866,
+          "processCpuMs": 265.69299999999976,
+          "maximumIndividualChildRssKiB": 101596,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "77ddbb33d6d9ea7633eb24d312009bd35f6cffc0e716e09a9cb6a6ee4e367f01"
+          ]
+        }
+      ]
+    },
+    {
+      "round": "doe-descriptor-baseline-cost",
+      "product": "doe",
+      "rawReceiptSha256": "d16fd63b2f3c43713e685e61106112146382baa54a48c5f7890af1883485e315",
+      "workload": "package_pipeline_creation_8kernels",
+      "measurements": [
+        {
+          "runIndex": 1,
+          "initNs": 67069509,
+          "operationHostMs": 86.045434,
+          "processWallMs": 308.43740700220224,
+          "processCpuMs": 336.9230000000005,
+          "maximumIndividualChildRssKiB": 108840,
+          "successCount": 10,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "8b4b2444e57aed8c2d05a1293255da1b048c63224317d4666230760935fa4a18"
+          ]
+        },
+        {
+          "runIndex": 2,
+          "initNs": 79132013,
+          "operationHostMs": 85.425003,
+          "processWallMs": 332.6570530043682,
+          "processCpuMs": 348.2010000000004,
+          "maximumIndividualChildRssKiB": 108520,
+          "successCount": 10,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "8b4b2444e57aed8c2d05a1293255da1b048c63224317d4666230760935fa4a18"
+          ]
+        },
+        {
+          "runIndex": 3,
+          "initNs": 77514715,
+          "operationHostMs": 132.247102,
+          "processWallMs": 387.25620800687466,
+          "processCpuMs": 404.07499999999976,
+          "maximumIndividualChildRssKiB": 109096,
+          "successCount": 10,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "8b4b2444e57aed8c2d05a1293255da1b048c63224317d4666230760935fa4a18"
+          ]
+        },
+        {
+          "runIndex": 4,
+          "initNs": 82018947,
+          "operationHostMs": 95.178636,
+          "processWallMs": 348.44370499195065,
+          "processCpuMs": 378.85499999999973,
+          "maximumIndividualChildRssKiB": 108320,
+          "successCount": 10,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "8b4b2444e57aed8c2d05a1293255da1b048c63224317d4666230760935fa4a18"
+          ]
+        },
+        {
+          "runIndex": 5,
+          "initNs": 76061622,
+          "operationHostMs": 99.522883,
+          "processWallMs": 341.25954000046477,
+          "processCpuMs": 359.986000000001,
+          "maximumIndividualChildRssKiB": 108780,
+          "successCount": 10,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "8b4b2444e57aed8c2d05a1293255da1b048c63224317d4666230760935fa4a18"
+          ]
+        },
+        {
+          "runIndex": 6,
+          "initNs": 64981175,
+          "operationHostMs": 85.66869,
+          "processWallMs": 308.93845899845473,
+          "processCpuMs": 338.14799999999855,
+          "maximumIndividualChildRssKiB": 109008,
+          "successCount": 10,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "8b4b2444e57aed8c2d05a1293255da1b048c63224317d4666230760935fa4a18"
+          ]
+        },
+        {
+          "runIndex": 7,
+          "initNs": 77517264,
+          "operationHostMs": 113.531809,
+          "processWallMs": 375.88685100490693,
+          "processCpuMs": 399.8360000000005,
+          "maximumIndividualChildRssKiB": 108304,
+          "successCount": 10,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "8b4b2444e57aed8c2d05a1293255da1b048c63224317d4666230760935fa4a18"
+          ]
+        },
+        {
+          "runIndex": 8,
+          "initNs": 77070529,
+          "operationHostMs": 104.909996,
+          "processWallMs": 346.38422800344415,
+          "processCpuMs": 366.0270000000008,
+          "maximumIndividualChildRssKiB": 108372,
+          "successCount": 10,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "8b4b2444e57aed8c2d05a1293255da1b048c63224317d4666230760935fa4a18"
+          ]
+        },
+        {
+          "runIndex": 9,
+          "initNs": 72439084,
+          "operationHostMs": 104.003546,
+          "processWallMs": 347.47052600141615,
+          "processCpuMs": 364.95099999999957,
+          "maximumIndividualChildRssKiB": 108832,
+          "successCount": 10,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "8b4b2444e57aed8c2d05a1293255da1b048c63224317d4666230760935fa4a18"
+          ]
+        },
+        {
+          "runIndex": 10,
+          "initNs": 65366232,
+          "operationHostMs": 88.803256,
+          "processWallMs": 304.5568200031994,
+          "processCpuMs": 330.0940000000008,
+          "maximumIndividualChildRssKiB": 108480,
+          "successCount": 10,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "8b4b2444e57aed8c2d05a1293255da1b048c63224317d4666230760935fa4a18"
+          ]
+        },
+        {
+          "runIndex": 11,
+          "initNs": 75741888,
+          "operationHostMs": 107.608142,
+          "processWallMs": 340.80971298681106,
+          "processCpuMs": 362.9899999999999,
+          "maximumIndividualChildRssKiB": 108748,
+          "successCount": 10,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "8b4b2444e57aed8c2d05a1293255da1b048c63224317d4666230760935fa4a18"
+          ]
+        },
+        {
+          "runIndex": 12,
+          "initNs": 72755413,
+          "operationHostMs": 84.750662,
+          "processWallMs": 312.40808400616515,
+          "processCpuMs": 331.821999999999,
+          "maximumIndividualChildRssKiB": 108412,
+          "successCount": 10,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "8b4b2444e57aed8c2d05a1293255da1b048c63224317d4666230760935fa4a18"
+          ]
+        },
+        {
+          "runIndex": 13,
+          "initNs": 65355188,
+          "operationHostMs": 93.154744,
+          "processWallMs": 321.05521800986025,
+          "processCpuMs": 336.0680000000009,
+          "maximumIndividualChildRssKiB": 108500,
+          "successCount": 10,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "8b4b2444e57aed8c2d05a1293255da1b048c63224317d4666230760935fa4a18"
+          ]
+        },
+        {
+          "runIndex": 14,
+          "initNs": 67651321,
+          "operationHostMs": 90.846277,
+          "processWallMs": 320.88992999342736,
+          "processCpuMs": 334.1529999999988,
+          "maximumIndividualChildRssKiB": 108480,
+          "successCount": 10,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "8b4b2444e57aed8c2d05a1293255da1b048c63224317d4666230760935fa4a18"
+          ]
+        },
+        {
+          "runIndex": 15,
+          "initNs": 73520510,
+          "operationHostMs": 96.634396,
+          "processWallMs": 340.66943200014066,
+          "processCpuMs": 368.38000000000017,
+          "maximumIndividualChildRssKiB": 108592,
+          "successCount": 10,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "8b4b2444e57aed8c2d05a1293255da1b048c63224317d4666230760935fa4a18"
+          ]
+        },
+        {
+          "runIndex": 16,
+          "initNs": 82254785,
+          "operationHostMs": 92.80334,
+          "processWallMs": 353.3911510021426,
+          "processCpuMs": 368.00999999999993,
+          "maximumIndividualChildRssKiB": 108672,
+          "successCount": 10,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "8b4b2444e57aed8c2d05a1293255da1b048c63224317d4666230760935fa4a18"
+          ]
+        }
+      ]
+    },
+    {
+      "round": "doe-descriptor-baseline-cost",
+      "product": "doe",
+      "rawReceiptSha256": "d65decc493a87eb9e26ebe3fee58f1ba7e68f9b368ce8b2abe9b5ea427d1e475",
+      "workload": "package_queue_submit_completion",
+      "measurements": [
+        {
+          "runIndex": 1,
+          "initNs": 87638820,
+          "operationHostMs": 22.995861,
+          "processWallMs": 287.8647710022051,
+          "processCpuMs": 314.62600000000054,
+          "maximumIndividualChildRssKiB": 106960,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "67abdd721024f0ff4e0b3f4c2fc13bc5bad42d0b7851d456d88d203d15aaa450"
+          ]
+        },
+        {
+          "runIndex": 2,
+          "initNs": 80687785,
+          "operationHostMs": 23.634231,
+          "processWallMs": 300.75213000236545,
+          "processCpuMs": 324.3919999999996,
+          "maximumIndividualChildRssKiB": 106180,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "67abdd721024f0ff4e0b3f4c2fc13bc5bad42d0b7851d456d88d203d15aaa450"
+          ]
+        },
+        {
+          "runIndex": 3,
+          "initNs": 84360100,
+          "operationHostMs": 26.924017,
+          "processWallMs": 284.9584719951963,
+          "processCpuMs": 304.7959999999996,
+          "maximumIndividualChildRssKiB": 103720,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "67abdd721024f0ff4e0b3f4c2fc13bc5bad42d0b7851d456d88d203d15aaa450"
+          ]
+        },
+        {
+          "runIndex": 4,
+          "initNs": 80968802,
+          "operationHostMs": 18.825391,
+          "processWallMs": 272.71929099515546,
+          "processCpuMs": 297.30099999999914,
+          "maximumIndividualChildRssKiB": 106520,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "67abdd721024f0ff4e0b3f4c2fc13bc5bad42d0b7851d456d88d203d15aaa450"
+          ]
+        },
+        {
+          "runIndex": 5,
+          "initNs": 102293887,
+          "operationHostMs": 20.501393,
+          "processWallMs": 305.97271300212014,
+          "processCpuMs": 321.65200000000027,
+          "maximumIndividualChildRssKiB": 103576,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "67abdd721024f0ff4e0b3f4c2fc13bc5bad42d0b7851d456d88d203d15aaa450"
+          ]
+        },
+        {
+          "runIndex": 6,
+          "initNs": 70490900,
+          "operationHostMs": 18.675156,
+          "processWallMs": 247.44508499861695,
+          "processCpuMs": 270.5130000000011,
+          "maximumIndividualChildRssKiB": 106980,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "67abdd721024f0ff4e0b3f4c2fc13bc5bad42d0b7851d456d88d203d15aaa450"
+          ]
+        },
+        {
+          "runIndex": 7,
+          "initNs": 78306720,
+          "operationHostMs": 22.512267,
+          "processWallMs": 273.8110329955816,
+          "processCpuMs": 289.19899999999996,
+          "maximumIndividualChildRssKiB": 106428,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "67abdd721024f0ff4e0b3f4c2fc13bc5bad42d0b7851d456d88d203d15aaa450"
+          ]
+        },
+        {
+          "runIndex": 8,
+          "initNs": 74181588,
+          "operationHostMs": 17.461884,
+          "processWallMs": 247.3413179977797,
+          "processCpuMs": 276.75299999999936,
+          "maximumIndividualChildRssKiB": 106592,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "67abdd721024f0ff4e0b3f4c2fc13bc5bad42d0b7851d456d88d203d15aaa450"
+          ]
+        },
+        {
+          "runIndex": 9,
+          "initNs": 87999761,
+          "operationHostMs": 23.993351,
+          "processWallMs": 282.47010499762837,
+          "processCpuMs": 298.4939999999998,
+          "maximumIndividualChildRssKiB": 106876,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "67abdd721024f0ff4e0b3f4c2fc13bc5bad42d0b7851d456d88d203d15aaa450"
+          ]
+        },
+        {
+          "runIndex": 10,
+          "initNs": 65232959,
+          "operationHostMs": 25.939267,
+          "processWallMs": 280.13580599508714,
+          "processCpuMs": 279.6200000000013,
+          "maximumIndividualChildRssKiB": 106424,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "67abdd721024f0ff4e0b3f4c2fc13bc5bad42d0b7851d456d88d203d15aaa450"
+          ]
+        },
+        {
+          "runIndex": 11,
+          "initNs": 70238325,
+          "operationHostMs": 21.283759,
+          "processWallMs": 259.1990899964003,
+          "processCpuMs": 280.524999999999,
+          "maximumIndividualChildRssKiB": 106656,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "67abdd721024f0ff4e0b3f4c2fc13bc5bad42d0b7851d456d88d203d15aaa450"
+          ]
+        },
+        {
+          "runIndex": 12,
+          "initNs": 69633235,
+          "operationHostMs": 19.772011,
+          "processWallMs": 244.0426889952505,
+          "processCpuMs": 267.5280000000004,
+          "maximumIndividualChildRssKiB": 106684,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "67abdd721024f0ff4e0b3f4c2fc13bc5bad42d0b7851d456d88d203d15aaa450"
+          ]
+        },
+        {
+          "runIndex": 13,
+          "initNs": 64731030,
+          "operationHostMs": 20.11522,
+          "processWallMs": 243.79413000133354,
+          "processCpuMs": 258.5809999999995,
+          "maximumIndividualChildRssKiB": 103792,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "67abdd721024f0ff4e0b3f4c2fc13bc5bad42d0b7851d456d88d203d15aaa450"
+          ]
+        },
+        {
+          "runIndex": 14,
+          "initNs": 66746190,
+          "operationHostMs": 17.314547,
+          "processWallMs": 243.61689400393516,
+          "processCpuMs": 258.3769999999994,
+          "maximumIndividualChildRssKiB": 104292,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "67abdd721024f0ff4e0b3f4c2fc13bc5bad42d0b7851d456d88d203d15aaa450"
+          ]
+        },
+        {
+          "runIndex": 15,
+          "initNs": 67712994,
+          "operationHostMs": 17.326398,
+          "processWallMs": 254.02282300638035,
+          "processCpuMs": 269.44000000000125,
+          "maximumIndividualChildRssKiB": 106692,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "67abdd721024f0ff4e0b3f4c2fc13bc5bad42d0b7851d456d88d203d15aaa450"
+          ]
+        },
+        {
+          "runIndex": 16,
+          "initNs": 65122093,
+          "operationHostMs": 19.589773,
+          "processWallMs": 231.57636300311424,
+          "processCpuMs": 251.15500000000068,
+          "maximumIndividualChildRssKiB": 106508,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "67abdd721024f0ff4e0b3f4c2fc13bc5bad42d0b7851d456d88d203d15aaa450"
+          ]
+        }
+      ]
+    },
+    {
+      "round": "doe-descriptor-candidate-cost",
+      "product": "doe",
+      "rawReceiptSha256": "f6c7e0a293dc116be938fb30776ce295ce9f2a01d2e2a9d540f06882beeb0006",
+      "workload": "package_buffer_upload_readback_exact_1mb",
+      "measurements": [
+        {
+          "runIndex": 1,
+          "initNs": 68605800,
+          "operationHostMs": 5.588772,
+          "processWallMs": 243.51399899751414,
+          "processCpuMs": 260.731,
+          "maximumIndividualChildRssKiB": 101004,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "77ddbb33d6d9ea7633eb24d312009bd35f6cffc0e716e09a9cb6a6ee4e367f01"
+          ]
+        },
+        {
+          "runIndex": 2,
+          "initNs": 74560196,
+          "operationHostMs": 5.891446,
+          "processWallMs": 240.53598899627104,
+          "processCpuMs": 253.19599999999997,
+          "maximumIndividualChildRssKiB": 101028,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "77ddbb33d6d9ea7633eb24d312009bd35f6cffc0e716e09a9cb6a6ee4e367f01"
+          ]
+        },
+        {
+          "runIndex": 3,
+          "initNs": 70132114,
+          "operationHostMs": 5.518525,
+          "processWallMs": 228.54314600408543,
+          "processCpuMs": 249.38599999999988,
+          "maximumIndividualChildRssKiB": 100444,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "77ddbb33d6d9ea7633eb24d312009bd35f6cffc0e716e09a9cb6a6ee4e367f01"
+          ]
+        },
+        {
+          "runIndex": 4,
+          "initNs": 72903379,
+          "operationHostMs": 5.309951,
+          "processWallMs": 223.312538000755,
+          "processCpuMs": 238.94800000000015,
+          "maximumIndividualChildRssKiB": 100844,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "77ddbb33d6d9ea7633eb24d312009bd35f6cffc0e716e09a9cb6a6ee4e367f01"
+          ]
+        },
+        {
+          "runIndex": 5,
+          "initNs": 66185323,
+          "operationHostMs": 6.36684,
+          "processWallMs": 223.18886200082488,
+          "processCpuMs": 239.63,
+          "maximumIndividualChildRssKiB": 100772,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "77ddbb33d6d9ea7633eb24d312009bd35f6cffc0e716e09a9cb6a6ee4e367f01"
+          ]
+        },
+        {
+          "runIndex": 6,
+          "initNs": 68237065,
+          "operationHostMs": 5.930263,
+          "processWallMs": 218.696665004245,
+          "processCpuMs": 239.1700000000001,
+          "maximumIndividualChildRssKiB": 100760,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "77ddbb33d6d9ea7633eb24d312009bd35f6cffc0e716e09a9cb6a6ee4e367f01"
+          ]
+        },
+        {
+          "runIndex": 7,
+          "initNs": 64741782,
+          "operationHostMs": 5.44866,
+          "processWallMs": 230.82311800681055,
+          "processCpuMs": 244.7379999999999,
+          "maximumIndividualChildRssKiB": 100804,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "77ddbb33d6d9ea7633eb24d312009bd35f6cffc0e716e09a9cb6a6ee4e367f01"
+          ]
+        },
+        {
+          "runIndex": 8,
+          "initNs": 63054481,
+          "operationHostMs": 5.763994,
+          "processWallMs": 215.04746499704197,
+          "processCpuMs": 238.8110000000001,
+          "maximumIndividualChildRssKiB": 100508,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "77ddbb33d6d9ea7633eb24d312009bd35f6cffc0e716e09a9cb6a6ee4e367f01"
+          ]
+        },
+        {
+          "runIndex": 9,
+          "initNs": 62682672,
+          "operationHostMs": 5.955934,
+          "processWallMs": 218.6454120092094,
+          "processCpuMs": 232.68999999999983,
+          "maximumIndividualChildRssKiB": 101012,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "77ddbb33d6d9ea7633eb24d312009bd35f6cffc0e716e09a9cb6a6ee4e367f01"
+          ]
+        },
+        {
+          "runIndex": 10,
+          "initNs": 67438736,
+          "operationHostMs": 5.233636,
+          "processWallMs": 218.92986600869335,
+          "processCpuMs": 237.41100000000026,
+          "maximumIndividualChildRssKiB": 100840,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "77ddbb33d6d9ea7633eb24d312009bd35f6cffc0e716e09a9cb6a6ee4e367f01"
+          ]
+        },
+        {
+          "runIndex": 11,
+          "initNs": 75590269,
+          "operationHostMs": 5.875532,
+          "processWallMs": 243.3738379913848,
+          "processCpuMs": 253.99099999999964,
+          "maximumIndividualChildRssKiB": 100520,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "77ddbb33d6d9ea7633eb24d312009bd35f6cffc0e716e09a9cb6a6ee4e367f01"
+          ]
+        },
+        {
+          "runIndex": 12,
+          "initNs": 70532201,
+          "operationHostMs": 5.965527,
+          "processWallMs": 228.7931920000119,
+          "processCpuMs": 251.98600000000005,
+          "maximumIndividualChildRssKiB": 101076,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "77ddbb33d6d9ea7633eb24d312009bd35f6cffc0e716e09a9cb6a6ee4e367f01"
+          ]
+        },
+        {
+          "runIndex": 13,
+          "initNs": 67484285,
+          "operationHostMs": 5.791706,
+          "processWallMs": 227.77811500418466,
+          "processCpuMs": 249.38800000000018,
+          "maximumIndividualChildRssKiB": 100432,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "77ddbb33d6d9ea7633eb24d312009bd35f6cffc0e716e09a9cb6a6ee4e367f01"
+          ]
+        },
+        {
+          "runIndex": 14,
+          "initNs": 69062837,
+          "operationHostMs": 5.644584,
+          "processWallMs": 244.15168800624087,
+          "processCpuMs": 263.5010000000002,
+          "maximumIndividualChildRssKiB": 100568,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "77ddbb33d6d9ea7633eb24d312009bd35f6cffc0e716e09a9cb6a6ee4e367f01"
+          ]
+        },
+        {
+          "runIndex": 15,
+          "initNs": 65643557,
+          "operationHostMs": 6.114032,
+          "processWallMs": 220.23648901085835,
+          "processCpuMs": 239.0759999999994,
+          "maximumIndividualChildRssKiB": 100584,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "77ddbb33d6d9ea7633eb24d312009bd35f6cffc0e716e09a9cb6a6ee4e367f01"
+          ]
+        },
+        {
+          "runIndex": 16,
+          "initNs": 64227309,
+          "operationHostMs": 5.504594,
+          "processWallMs": 233.5340330027975,
+          "processCpuMs": 246.59900000000067,
+          "maximumIndividualChildRssKiB": 101072,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "77ddbb33d6d9ea7633eb24d312009bd35f6cffc0e716e09a9cb6a6ee4e367f01"
+          ]
+        }
+      ]
+    },
+    {
+      "round": "doe-descriptor-candidate-cost",
+      "product": "doe",
+      "rawReceiptSha256": "26da00bf4609fdf56596188d781725d7f23759b1f2e8c32b8ef821aef884b08c",
+      "workload": "package_pipeline_creation_8kernels",
+      "measurements": [
+        {
+          "runIndex": 1,
+          "initNs": 73954581,
+          "operationHostMs": 99.549973,
+          "processWallMs": 328.47701500577386,
+          "processCpuMs": 354.32599999999945,
+          "maximumIndividualChildRssKiB": 108972,
+          "successCount": 10,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "8b4b2444e57aed8c2d05a1293255da1b048c63224317d4666230760935fa4a18"
+          ]
+        },
+        {
+          "runIndex": 2,
+          "initNs": 60745776,
+          "operationHostMs": 86.271911,
+          "processWallMs": 304.1297549934825,
+          "processCpuMs": 320.35200000000066,
+          "maximumIndividualChildRssKiB": 108744,
+          "successCount": 10,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "8b4b2444e57aed8c2d05a1293255da1b048c63224317d4666230760935fa4a18"
+          ]
+        },
+        {
+          "runIndex": 3,
+          "initNs": 66143927,
+          "operationHostMs": 85.613233,
+          "processWallMs": 299.9248300038744,
+          "processCpuMs": 318.6909999999994,
+          "maximumIndividualChildRssKiB": 108332,
+          "successCount": 10,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "8b4b2444e57aed8c2d05a1293255da1b048c63224317d4666230760935fa4a18"
+          ]
+        },
+        {
+          "runIndex": 4,
+          "initNs": 65613489,
+          "operationHostMs": 93.550406,
+          "processWallMs": 306.0960410075495,
+          "processCpuMs": 332.63900000000126,
+          "maximumIndividualChildRssKiB": 108648,
+          "successCount": 10,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "8b4b2444e57aed8c2d05a1293255da1b048c63224317d4666230760935fa4a18"
+          ]
+        },
+        {
+          "runIndex": 5,
+          "initNs": 66674529,
+          "operationHostMs": 82.131418,
+          "processWallMs": 304.45290300121997,
+          "processCpuMs": 324.7279999999986,
+          "maximumIndividualChildRssKiB": 108276,
+          "successCount": 10,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "8b4b2444e57aed8c2d05a1293255da1b048c63224317d4666230760935fa4a18"
+          ]
+        },
+        {
+          "runIndex": 6,
+          "initNs": 66474488,
+          "operationHostMs": 80.495842,
+          "processWallMs": 304.90887199994177,
+          "processCpuMs": 326.99800000000147,
+          "maximumIndividualChildRssKiB": 108340,
+          "successCount": 10,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "8b4b2444e57aed8c2d05a1293255da1b048c63224317d4666230760935fa4a18"
+          ]
+        },
+        {
+          "runIndex": 7,
+          "initNs": 62515923,
+          "operationHostMs": 83.410751,
+          "processWallMs": 306.36023500119336,
+          "processCpuMs": 324.7549999999988,
+          "maximumIndividualChildRssKiB": 108552,
+          "successCount": 10,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "8b4b2444e57aed8c2d05a1293255da1b048c63224317d4666230760935fa4a18"
+          ]
+        },
+        {
+          "runIndex": 8,
+          "initNs": 63288794,
+          "operationHostMs": 83.697782,
+          "processWallMs": 299.9416700040456,
+          "processCpuMs": 321.288,
+          "maximumIndividualChildRssKiB": 108700,
+          "successCount": 10,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "8b4b2444e57aed8c2d05a1293255da1b048c63224317d4666230760935fa4a18"
+          ]
+        },
+        {
+          "runIndex": 9,
+          "initNs": 63096911,
+          "operationHostMs": 85.364668,
+          "processWallMs": 299.65941100090276,
+          "processCpuMs": 326.4540000000009,
+          "maximumIndividualChildRssKiB": 108784,
+          "successCount": 10,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "8b4b2444e57aed8c2d05a1293255da1b048c63224317d4666230760935fa4a18"
+          ]
+        },
+        {
+          "runIndex": 10,
+          "initNs": 68630845,
+          "operationHostMs": 83.204595,
+          "processWallMs": 312.10130400722846,
+          "processCpuMs": 326.6549999999997,
+          "maximumIndividualChildRssKiB": 108452,
+          "successCount": 10,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "8b4b2444e57aed8c2d05a1293255da1b048c63224317d4666230760935fa4a18"
+          ]
+        },
+        {
+          "runIndex": 11,
+          "initNs": 62584386,
+          "operationHostMs": 86.836237,
+          "processWallMs": 300.37748100585304,
+          "processCpuMs": 317.2149999999991,
+          "maximumIndividualChildRssKiB": 108696,
+          "successCount": 10,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "8b4b2444e57aed8c2d05a1293255da1b048c63224317d4666230760935fa4a18"
+          ]
+        },
+        {
+          "runIndex": 12,
+          "initNs": 63392820,
+          "operationHostMs": 85.965361,
+          "processWallMs": 299.7488160035573,
+          "processCpuMs": 323.20499999999976,
+          "maximumIndividualChildRssKiB": 108676,
+          "successCount": 10,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "8b4b2444e57aed8c2d05a1293255da1b048c63224317d4666230760935fa4a18"
+          ]
+        },
+        {
+          "runIndex": 13,
+          "initNs": 68429762,
+          "operationHostMs": 83.603965,
+          "processWallMs": 300.2347209985601,
+          "processCpuMs": 320.83200000000113,
+          "maximumIndividualChildRssKiB": 108448,
+          "successCount": 10,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "8b4b2444e57aed8c2d05a1293255da1b048c63224317d4666230760935fa4a18"
+          ]
+        },
+        {
+          "runIndex": 14,
+          "initNs": 65587885,
+          "operationHostMs": 81.660479,
+          "processWallMs": 304.7519459942123,
+          "processCpuMs": 327.1189999999997,
+          "maximumIndividualChildRssKiB": 108736,
+          "successCount": 10,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "8b4b2444e57aed8c2d05a1293255da1b048c63224317d4666230760935fa4a18"
+          ]
+        },
+        {
+          "runIndex": 15,
+          "initNs": 68335215,
+          "operationHostMs": 84.344253,
+          "processWallMs": 326.4848849939881,
+          "processCpuMs": 352.26100000000037,
+          "maximumIndividualChildRssKiB": 108728,
+          "successCount": 10,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "8b4b2444e57aed8c2d05a1293255da1b048c63224317d4666230760935fa4a18"
+          ]
+        },
+        {
+          "runIndex": 16,
+          "initNs": 68890634,
+          "operationHostMs": 85.781918,
+          "processWallMs": 312.01586600218434,
+          "processCpuMs": 327.52600000000064,
+          "maximumIndividualChildRssKiB": 108268,
+          "successCount": 10,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "8b4b2444e57aed8c2d05a1293255da1b048c63224317d4666230760935fa4a18"
+          ]
+        }
+      ]
+    },
+    {
+      "round": "doe-descriptor-candidate-cost",
+      "product": "doe",
+      "rawReceiptSha256": "735db142405fd3d66a452aab7c395ef54e7258ec5cf7b432cd2c7d6281554dee",
+      "workload": "package_queue_submit_completion",
+      "measurements": [
+        {
+          "runIndex": 1,
+          "initNs": 74824459,
+          "operationHostMs": 22.545589,
+          "processWallMs": 252.72215199947823,
+          "processCpuMs": 272.7000000000004,
+          "maximumIndividualChildRssKiB": 103516,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "67abdd721024f0ff4e0b3f4c2fc13bc5bad42d0b7851d456d88d203d15aaa450"
+          ]
+        },
+        {
+          "runIndex": 2,
+          "initNs": 64357230,
+          "operationHostMs": 17.216771,
+          "processWallMs": 231.1468140105717,
+          "processCpuMs": 252.41499999999917,
+          "maximumIndividualChildRssKiB": 103668,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "67abdd721024f0ff4e0b3f4c2fc13bc5bad42d0b7851d456d88d203d15aaa450"
+          ]
+        },
+        {
+          "runIndex": 3,
+          "initNs": 59893205,
+          "operationHostMs": 18.399439,
+          "processWallMs": 218.75962500052992,
+          "processCpuMs": 237.8549999999997,
+          "maximumIndividualChildRssKiB": 103492,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "67abdd721024f0ff4e0b3f4c2fc13bc5bad42d0b7851d456d88d203d15aaa450"
+          ]
+        },
+        {
+          "runIndex": 4,
+          "initNs": 67115581,
+          "operationHostMs": 17.720657,
+          "processWallMs": 227.033675997518,
+          "processCpuMs": 249.7130000000016,
+          "maximumIndividualChildRssKiB": 103308,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "67abdd721024f0ff4e0b3f4c2fc13bc5bad42d0b7851d456d88d203d15aaa450"
+          ]
+        },
+        {
+          "runIndex": 5,
+          "initNs": 66849321,
+          "operationHostMs": 19.710999,
+          "processWallMs": 238.89147699810565,
+          "processCpuMs": 257.7309999999997,
+          "maximumIndividualChildRssKiB": 103788,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "67abdd721024f0ff4e0b3f4c2fc13bc5bad42d0b7851d456d88d203d15aaa450"
+          ]
+        },
+        {
+          "runIndex": 6,
+          "initNs": 68993400,
+          "operationHostMs": 17.845464,
+          "processWallMs": 239.11691599641927,
+          "processCpuMs": 258.01599999999956,
+          "maximumIndividualChildRssKiB": 103660,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "67abdd721024f0ff4e0b3f4c2fc13bc5bad42d0b7851d456d88d203d15aaa450"
+          ]
+        },
+        {
+          "runIndex": 7,
+          "initNs": 66300847,
+          "operationHostMs": 21.899919,
+          "processWallMs": 245.01934200816322,
+          "processCpuMs": 261.25299999999817,
+          "maximumIndividualChildRssKiB": 103856,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "67abdd721024f0ff4e0b3f4c2fc13bc5bad42d0b7851d456d88d203d15aaa450"
+          ]
+        },
+        {
+          "runIndex": 8,
+          "initNs": 64978485,
+          "operationHostMs": 17.987518,
+          "processWallMs": 239.2319589998806,
+          "processCpuMs": 252.22600000000205,
+          "maximumIndividualChildRssKiB": 103808,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "67abdd721024f0ff4e0b3f4c2fc13bc5bad42d0b7851d456d88d203d15aaa450"
+          ]
+        },
+        {
+          "runIndex": 9,
+          "initNs": 70515937,
+          "operationHostMs": 19.441451,
+          "processWallMs": 241.9798930059187,
+          "processCpuMs": 260.55799999999783,
+          "maximumIndividualChildRssKiB": 103424,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "67abdd721024f0ff4e0b3f4c2fc13bc5bad42d0b7851d456d88d203d15aaa450"
+          ]
+        },
+        {
+          "runIndex": 10,
+          "initNs": 75741618,
+          "operationHostMs": 18.393579,
+          "processWallMs": 261.93122399854474,
+          "processCpuMs": 276.1640000000014,
+          "maximumIndividualChildRssKiB": 103488,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "67abdd721024f0ff4e0b3f4c2fc13bc5bad42d0b7851d456d88d203d15aaa450"
+          ]
+        },
+        {
+          "runIndex": 11,
+          "initNs": 69266380,
+          "operationHostMs": 20.192681,
+          "processWallMs": 259.7181129967794,
+          "processCpuMs": 273.6440000000009,
+          "maximumIndividualChildRssKiB": 103588,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "67abdd721024f0ff4e0b3f4c2fc13bc5bad42d0b7851d456d88d203d15aaa450"
+          ]
+        },
+        {
+          "runIndex": 12,
+          "initNs": 62756545,
+          "operationHostMs": 17.808021,
+          "processWallMs": 238.74306200013962,
+          "processCpuMs": 254.73399999999913,
+          "maximumIndividualChildRssKiB": 103324,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "67abdd721024f0ff4e0b3f4c2fc13bc5bad42d0b7851d456d88d203d15aaa450"
+          ]
+        },
+        {
+          "runIndex": 13,
+          "initNs": 65626159,
+          "operationHostMs": 17.994111,
+          "processWallMs": 246.7898139875615,
+          "processCpuMs": 258.5720000000009,
+          "maximumIndividualChildRssKiB": 103568,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "67abdd721024f0ff4e0b3f4c2fc13bc5bad42d0b7851d456d88d203d15aaa450"
+          ]
+        },
+        {
+          "runIndex": 14,
+          "initNs": 64428940,
+          "operationHostMs": 18.559168,
+          "processWallMs": 238.92046698892955,
+          "processCpuMs": 258.9480000000002,
+          "maximumIndividualChildRssKiB": 103524,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "67abdd721024f0ff4e0b3f4c2fc13bc5bad42d0b7851d456d88d203d15aaa450"
+          ]
+        },
+        {
+          "runIndex": 15,
+          "initNs": 62240030,
+          "operationHostMs": 18.288672,
+          "processWallMs": 227.7362790046027,
+          "processCpuMs": 250.25799999999876,
+          "maximumIndividualChildRssKiB": 103200,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "67abdd721024f0ff4e0b3f4c2fc13bc5bad42d0b7851d456d88d203d15aaa450"
+          ]
+        },
+        {
+          "runIndex": 16,
+          "initNs": 69414362,
+          "operationHostMs": 18.40162,
+          "processWallMs": 252.24829599028453,
+          "processCpuMs": 281.2619999999999,
+          "maximumIndividualChildRssKiB": 103296,
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captureSha256": [
+            "67abdd721024f0ff4e0b3f4c2fc13bc5bad42d0b7851d456d88d203d15aaa450"
+          ]
+        }
+      ]
+    }
+  ],
+  "timedSampleCount": 144
+}
