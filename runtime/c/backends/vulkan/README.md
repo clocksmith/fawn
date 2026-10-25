@@ -680,6 +680,10 @@ Unknown acquire/present completion retains native obligations. Teardown returns
 BUSY rather than spinning or freeing them. Known failed present enqueue OOM permits
 retry, while other enqueued/uncertain errors retain the fence and original status.
 An acquired, quiescent image can be discarded with actual ReleaseSwapchainImagesEXT.
+If the swapchain refuses that release with surface loss or out-of-date, ownership
+of the image still ends: later acquisition reports that status without a native
+call, and only unconfiguration (which may destroy a swapchain with acquired images)
+or teardown remain.
 Borrowed platform connections/windows must outlive all this ownership.
 `surface_retire_frame` preserves configuration for the normal queue/present loop,
 including the original failed-present status after proven retirement.

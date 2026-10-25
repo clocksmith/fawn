@@ -275,6 +275,18 @@ int main(void) {
     unsigned acquisition_count = acquires;
     assert(doe_vk_surface_retire(surface, 0, &error) == DOE_VK_OK && surface->swapchain == 0);
     assert(doe_vk_surface_retire(surface, 0, &error) == DOE_VK_OK && acquires == acquisition_count);
+    /* A refused image release on a lost surface ends ownership: later
+     * acquisition reports the loss without the native call, teardown works. */
+    assert(doe_vk_surface_configure(surface, &config, &error) == DOE_VK_OK);
+    acquire_result = 0;
+    assert(doe_vk_surface_acquire(surface, 0, &texture, &suboptimal, &error) == DOE_VK_OK);
+    release_result = -1000000000; /* VK_ERROR_SURFACE_LOST_KHR */
+    assert(doe_vk_surface_discard(surface, &error) == DOE_VK_SURFACE_LOST && !surface->acquired);
+    release_result = 0;
+    acquisition_count = acquires;
+    assert(doe_vk_surface_acquire(surface, 0, &texture, &suboptimal, &error) == DOE_VK_SURFACE_LOST);
+    assert(acquires == acquisition_count && !texture->external_alive);
+    assert(doe_vk_surface_retire(surface, 0, &error) == DOE_VK_OK && surface->swapchain == 0);
     assert(doe_vk_surface_configure(surface, &config, &error) == DOE_VK_OK);
     acquire_result = 0;
     assert(doe_vk_surface_acquire(surface, 0, &texture, &suboptimal, &error) == DOE_VK_OK);
@@ -299,8 +311,8 @@ int main(void) {
     assert(doe_vk_surface_retire(surface, 0, &error) == DOE_VK_NATIVE_FAILURE && acquires == acquisition_count + 1);
     context.lost = true;
     assert(doe_vk_surface_release(surface) == DOE_VK_OK);
-    assert(context.references == 1 && swapchain_destroys == 3 && surface_destroys == 2);
-    assert(presents == 3 && releases == 2 && destroyed_fences > 0);
-    puts("PASS WSI fault-only native boundaries: exact queue/platform/mode admission, acquire retry and output preservation, existing submit signals semaphore, present OOM retry, separate unknown retirement, stale image and caller leases, real discard entrypoint, canonical retirement never acquires a fresh image, terminal device loss; no window-system execution claim");
+    assert(context.references == 1 && swapchain_destroys == 4 && surface_destroys == 2);
+    assert(presents == 3 && releases == 3 && destroyed_fences > 0);
+    puts("PASS WSI fault-only native boundaries: exact queue/platform/mode admission, acquire retry and output preservation, existing submit signals semaphore, present OOM retry, separate unknown retirement, stale image and caller leases, real discard entrypoint, refused release on surface loss, canonical retirement never acquires a fresh image, terminal device loss; no window-system execution claim");
     return 0;
 }

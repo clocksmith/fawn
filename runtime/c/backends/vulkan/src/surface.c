@@ -33,6 +33,7 @@ doe_vk_status doe_vk_surface_unconfigure(doe_vk_surface *surface, doe_vk_error *
     surface->swapchain = 0;
     surface->image_count = 0;
     surface->acquired = surface->acquire_pending = surface->present_pending = false;
+    surface->swapchain_status = DOE_VK_OK;
     return doe_vk_fail(DOE_VK_OK, "surface unconfigured", error);
 }
 

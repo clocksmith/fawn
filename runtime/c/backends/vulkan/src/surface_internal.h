@@ -22,6 +22,9 @@ struct doe_vk_surface {
     VkSemaphore render_finished;
     bool acquire_pending, acquired, present_pending, acquire_suboptimal;
     bool uncertain_acquire;
+    /* OK, or the surface loss/out-of-date status with which the swapchain
+     * refused to release an image: only reconfiguration or teardown remain. */
+    doe_vk_status swapchain_status;
     doe_vk_status present_status;
     VkResult present_native_result;
 };

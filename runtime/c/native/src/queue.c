@@ -410,8 +410,10 @@ native_presentation native_submit_present(native_device *device, doe_vk_commands
     native_presentation result = {.presentation = {.status = NATIVE_INVALID_STATE}};
     native_pending *pending = calloc(1, sizeof(*pending));
     if (!pending) {
-        /* Unsubmitted commands detach their present lease on release. */
+        /* Unsubmitted commands detach their present lease on release; the
+         * acquired image is then discarded, never left owned. */
         if (doe_vk_commands_release(commands) != DOE_VK_OK) abort();
+        (void)doe_vk_surface_retire_frame(surface, NATIVE_SURFACE_TIMEOUT_NS, NULL);
         result.submission = native_failure_status(NATIVE_OUT_OF_MEMORY);
         return result;
     }
@@ -437,6 +439,10 @@ native_presentation native_submit_present(native_device *device, doe_vk_commands
     doe_vk_status retired = doe_vk_surface_retire_frame(surface, NATIVE_SURFACE_TIMEOUT_NS, &detail);
     if (result.presentation.status == NATIVE_OK) result.presentation = native_failure_vulkan(retired, &detail);
     native_queue_settlement settled = native_settle_pending(device);
+    /* A present that was never enqueued (refused submission or preparation)
+     * could not discard its image while those commands were unsettled. Poll
+     * once more without waiting: the image is discarded, not left owned. */
+    (void)doe_vk_surface_retire_frame(surface, 0, NULL);
     result.submission = failure.status == NATIVE_OK ? settled.failure : failure;
     return result;
 }

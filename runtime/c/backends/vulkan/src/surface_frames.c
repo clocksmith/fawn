@@ -49,6 +49,8 @@ doe_vk_status doe_vk_surface_acquire(doe_vk_surface *surface, uint64_t timeout_n
     doe_vk_context *context = surface->context;
     if (context->lost) return doe_vk_fail(DOE_VK_DEVICE_LOST, "acquire context", error);
     if (surface->swapchain == 0) return doe_vk_fail(DOE_VK_INVALID_STATE, "surface not configured", error);
+    if (surface->swapchain_status != DOE_VK_OK)
+        return doe_vk_fail(surface->swapchain_status, "swapchain refused an image release", error);
     if (surface->acquired || surface->present_pending || surface->commands != NULL)
         return doe_vk_fail(DOE_VK_BUSY, "surface frame still owned", error);
     if (!surface->acquire_pending) {
@@ -208,6 +210,15 @@ doe_vk_status doe_vk_surface_discard(doe_vk_surface *surface, doe_vk_error *erro
         .swapchain = surface->swapchain, .imageIndexCount = 1, .pImageIndices = &surface->image_index};
     doe_vk_status status = doe_vk_result(context, context->vk.vkReleaseSwapchainImagesEXT(context->device, &release),
         "vkReleaseSwapchainImagesEXT", error);
+    if (status == DOE_VK_SURFACE_LOST || status == DOE_VK_SURFACE_OUTDATED) {
+        /* The image is never used again; the swapchain may only be destroyed
+         * (acquired images do not prevent that), so ownership ends here. */
+        surface->swapchain_status = status;
+        surface->acquired = false;
+        surface->texture->external_alive = false;
+        doe_vk_surface_sync_destroy(surface);
+        return status;
+    }
     if (status != DOE_VK_OK) return status;
     surface->acquired = false;
     surface->texture->external_alive = false;
