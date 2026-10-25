@@ -57,6 +57,7 @@ static doe_vk_status load_functions(doe_vk_context *context, doe_vk_error *error
     _Static_assert(sizeof(context->vk.vkGetDeviceQueue) == sizeof(void *), "vkGetDeviceQueue POSIX pointer size");
     _Static_assert(sizeof(context->vk.vkCreateCommandPool) == sizeof(void *), "vkCreateCommandPool POSIX pointer size");
     _Static_assert(sizeof(context->vk.vkDestroyCommandPool) == sizeof(void *), "vkDestroyCommandPool POSIX pointer size");
+    _Static_assert(sizeof(context->vk.vkResetCommandPool) == sizeof(void *), "vkResetCommandPool POSIX pointer size");
     _Static_assert(sizeof(context->vk.vkAllocateCommandBuffers) == sizeof(void *), "vkAllocateCommandBuffers POSIX pointer size");
     _Static_assert(sizeof(context->vk.vkFreeCommandBuffers) == sizeof(void *), "vkFreeCommandBuffers POSIX pointer size");
     _Static_assert(sizeof(context->vk.vkCreateFence) == sizeof(void *), "vkCreateFence POSIX pointer size");
@@ -150,6 +151,7 @@ static doe_vk_status load_functions(doe_vk_context *context, doe_vk_error *error
         { "vkGetDeviceQueue", &context->vk.vkGetDeviceQueue, sizeof(context->vk.vkGetDeviceQueue) },
         { "vkCreateCommandPool", &context->vk.vkCreateCommandPool, sizeof(context->vk.vkCreateCommandPool) },
         { "vkDestroyCommandPool", &context->vk.vkDestroyCommandPool, sizeof(context->vk.vkDestroyCommandPool) },
+        { "vkResetCommandPool", &context->vk.vkResetCommandPool, sizeof(context->vk.vkResetCommandPool) },
         { "vkAllocateCommandBuffers", &context->vk.vkAllocateCommandBuffers, sizeof(context->vk.vkAllocateCommandBuffers) },
         { "vkFreeCommandBuffers", &context->vk.vkFreeCommandBuffers, sizeof(context->vk.vkFreeCommandBuffers) },
         { "vkCreateFence", &context->vk.vkCreateFence, sizeof(context->vk.vkCreateFence) },
@@ -411,6 +413,7 @@ void doe_vk_context_release(doe_vk_context *context) {
     /* Every recording/submission/resource owns a reference, so no native work
      * can exist here. Unknown submissions cannot be released. */
     doe_vk_pipeline_cache_clear(context);
+    doe_vk_command_spares_clear(context);
     if (context->device != NULL) context->vk.vkDestroyDevice(context->device, NULL);
     if (context->instance != NULL) context->vk.vkDestroyInstance(context->instance, NULL);
     if (context->library != NULL) {

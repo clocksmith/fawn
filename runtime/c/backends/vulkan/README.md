@@ -49,6 +49,12 @@ command retirement. A compute dispatch that binds the same pipeline to the same
 exact buffer ranges as the latest use in its recording reuses that use's
 descriptor sets and still records its own barrier, binds and dispatch; image and
 sampler bindings and draws always get their own (`tests/descriptor_reuse.c`).
+A one-shot recording takes a spare command pool and fence when one exists; they
+return to its context's bounded spares (8) only when its fence proved completion or it never reached
+`vkQueueSubmit`; the pool is reset and the fence unsignaled first. Submitted,
+uncertain, failed, reusable and presentation recordings, a failed reset and a
+lost context destroy them, and the device's release destroys the spares
+(`tests/command_spares.c`).
 A compute pipeline is immutable and fully determined by its SPIR-V words, entry
 point and binding layout, so `doe_vk_pipeline_create` returns the existing pipeline
 for an identical input (exact comparison, never a hash alone). The context also

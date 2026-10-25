@@ -67,23 +67,32 @@ static doe_vk_status create_commands(doe_vk_context *context, bool reusable,
     commands->uses_active = true;
     commands->reusable = reusable;
     commands->references = 1;
-    const VkCommandPoolCreateInfo pool = {
-        .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
-        .flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT,
-        .queueFamilyIndex = context->caps.queue_family
-    };
-    status = doe_vk_result(context, context->vk.vkCreateCommandPool(context->device, &pool, NULL, &commands->pool), "vkCreateCommandPool", error);
-    if (status != DOE_VK_OK) goto failed;
-    const VkCommandBufferAllocateInfo allocate = {
-        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
-        .commandPool = commands->pool,
-        .commandBufferCount = 1
-    };
-    status = doe_vk_result(context, context->vk.vkAllocateCommandBuffers(context->device, &allocate, &commands->command), "vkAllocateCommandBuffers", error);
-    if (status != DOE_VK_OK) goto failed;
-    const VkFenceCreateInfo fence = { .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO };
-    status = doe_vk_result(context, context->vk.vkCreateFence(context->device, &fence, NULL, &commands->fence), "vkCreateFence", error);
-    if (status != DOE_VK_OK) goto failed;
+    /* One-shot recordings take a spare; reusable program recordings, which
+     * live for the program, always create their own. */
+    if (!reusable && context->command_spare_count != 0) {
+        const struct doe_vk_command_spare spare = context->command_spares[--context->command_spare_count];
+        commands->pool = spare.pool;
+        commands->command = spare.command;
+        commands->fence = spare.fence;
+    } else {
+        const VkCommandPoolCreateInfo pool = {
+            .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
+            .flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT,
+            .queueFamilyIndex = context->caps.queue_family
+        };
+        status = doe_vk_result(context, context->vk.vkCreateCommandPool(context->device, &pool, NULL, &commands->pool), "vkCreateCommandPool", error);
+        if (status != DOE_VK_OK) goto failed;
+        const VkCommandBufferAllocateInfo allocate = {
+            .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+            .commandPool = commands->pool,
+            .commandBufferCount = 1
+        };
+        status = doe_vk_result(context, context->vk.vkAllocateCommandBuffers(context->device, &allocate, &commands->command), "vkAllocateCommandBuffers", error);
+        if (status != DOE_VK_OK) goto failed;
+        const VkFenceCreateInfo fence = { .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO };
+        status = doe_vk_result(context, context->vk.vkCreateFence(context->device, &fence, NULL, &commands->fence), "vkCreateFence", error);
+        if (status != DOE_VK_OK) goto failed;
+    }
     const VkCommandBufferBeginInfo begin = {
         .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
         .flags = reusable ? 0 : VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT
@@ -390,6 +399,36 @@ doe_vk_status doe_vk_commands_recover(doe_vk_commands *commands, doe_vk_error *e
     return status;
 }
 
+/* A command pool and fence return to the context's spares only when nothing
+ * can still use them: the recording's fence proved completion (COMPLETE), or
+ * it was never handed to vkQueueSubmit (RECORDING or POISONED). Submitted,
+ * uncertain, failed, reusable and presentation recordings and a lost context
+ * destroy them instead. The pool is reset (its one buffer returns to the
+ * initial state) and the fence unsignaled before it becomes a spare. */
+static bool recycle(doe_vk_commands *commands) {
+    doe_vk_context *context = commands->context;
+    const bool terminal = commands->state == DOE_VK_COMPLETE ||
+        commands->state == DOE_VK_RECORDING || commands->state == DOE_VK_POISONED;
+    if (!terminal || commands->reusable || commands->surface != NULL || context->lost ||
+        commands->pool == 0 || commands->command == NULL || commands->fence == 0 ||
+        context->vk.vkResetCommandPool == NULL || context->vk.vkResetFences == NULL ||
+        context->command_spare_count == DOE_VK_COMMAND_SPARES) return false;
+    if (context->vk.vkResetCommandPool(context->device, commands->pool, 0) != 0) return false;
+    if (commands->state == DOE_VK_COMPLETE &&
+        context->vk.vkResetFences(context->device, 1, &commands->fence) != 0) return false;
+    context->command_spares[context->command_spare_count++] =
+        (struct doe_vk_command_spare){commands->pool, commands->command, commands->fence};
+    return true;
+}
+
+void doe_vk_command_spares_clear(doe_vk_context *context) {
+    while (context->command_spare_count != 0) {
+        const struct doe_vk_command_spare spare = context->command_spares[--context->command_spare_count];
+        context->vk.vkDestroyCommandPool(context->device, spare.pool, NULL);
+        context->vk.vkDestroyFence(context->device, spare.fence, NULL);
+    }
+}
+
 doe_vk_status doe_vk_commands_release(doe_vk_commands *commands) {
     if (commands == NULL) return DOE_VK_OK;
     if (commands->state == DOE_VK_SUBMITTED || commands->state == DOE_VK_UNCERTAIN) {
@@ -403,8 +442,10 @@ doe_vk_status doe_vk_commands_release(doe_vk_commands *commands) {
     doe_vk_status surface_status = doe_vk_surface_commands_release(commands);
     if (surface_status != DOE_VK_OK) return surface_status;
     doe_vk_context *context = commands->context;
-    if (commands->pool != 0) context->vk.vkDestroyCommandPool(context->device, commands->pool, NULL);
-    if (commands->fence != 0) context->vk.vkDestroyFence(context->device, commands->fence, NULL);
+    if (!recycle(commands)) {
+        if (commands->pool != 0) context->vk.vkDestroyCommandPool(context->device, commands->pool, NULL);
+        if (commands->fence != 0) context->vk.vkDestroyFence(context->device, commands->fence, NULL);
+    }
     while (commands->dispatches != NULL) {
         doe_vk_dispatch_use *use = commands->dispatches;
         commands->dispatches = use->next;
