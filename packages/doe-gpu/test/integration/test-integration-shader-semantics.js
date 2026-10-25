@@ -38,6 +38,23 @@ const POINTER_EXPECTED = [2, 4, 9, 19, 22, 4, 5, 10, 30, 33,
   6, 6, 11, 21, 24, 8, 7, 12, 32, 35];
 const CASES = [
   {
+    label: 'uniform workgroup loads snapshot aggregate and atomic values before following writes',
+    code: `@group(0) @binding(0) var<storage, read_write> data: array<u32>;
+      var<workgroup> values: array<vec2u, 2>;
+      var<workgroup> atom: atomic<u32>;
+      @compute @workgroup_size(4) fn main(@builtin(local_invocation_index) lane: u32) {
+        if (lane == 0u) { values[1] = vec2u(7u, 11u); atomicStore(&atom, 13u); }
+        let pair = workgroupUniformLoad(&values[1]);
+        if (lane == 0u) { values[1] = vec2u(99u); }
+        let number = workgroupUniformLoad(&atom);
+        if (lane == 0u) { atomicStore(&atom, 101u); }
+        if (pair.x == 7u && number == 13u) { workgroupBarrier(); }
+        data[lane * 3u] = pair.x; data[lane * 3u + 1u] = pair.y;
+        data[lane * 3u + 2u] = number;
+      }`,
+    expected: [7, 11, 13, 7, 11, 13, 7, 11, 13, 7, 11, 13],
+  },
+  {
     label: 'texture barrier publishes neighboring texels within each workgroup', texture: 'storage',
     code: `@group(0) @binding(0) var image: texture_storage_2d<r32uint, read_write>;
       @group(1) @binding(0) var<storage, read_write> data: array<u32>;

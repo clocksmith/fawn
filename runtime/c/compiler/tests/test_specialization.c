@@ -143,6 +143,10 @@ int main(int argc, char **argv) {
         }
         free(logical_words);
         free(logical_storage);
+        const char *uniform_load="var<workgroup> value:vec2u;var<workgroup> atom:atomic<u32>;"
+            "@compute @workgroup_size(4) fn main(){let x=workgroupUniformLoad(&value);"
+            "let y=workgroupUniformLoad(&atom);if(x.x+y>0u){workgroupBarrier();}}";
+        expect(target,uniform_load,"main",NULL,0u,true);
         const char *barriers="fn publish(){storageBarrier();textureBarrier();}"
             "@compute @workgroup_size(4) fn main(){publish();workgroupBarrier();}";
         expect(target,barriers,"main",NULL,0u,true);
