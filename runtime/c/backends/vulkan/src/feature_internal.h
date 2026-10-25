@@ -4,6 +4,9 @@
 #include "internal.h"
 typedef struct doe_vk_feature_selection {
     VkPhysicalDeviceFeatures base;
+    VkPhysicalDeviceShaderFloat16Int8Features float16;
+    VkPhysicalDevice16BitStorageFeatures storage16;
+    bool shader_f16;
     VkPhysicalDeviceShaderDemoteToHelperInvocationFeatures demote;
     const uint8_t *extension;
     VkPhysicalDeviceSwapchainMaintenance1FeaturesEXT swapchain;

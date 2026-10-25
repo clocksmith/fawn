@@ -25,7 +25,7 @@ doe_vk_status doe_vk_texture_aspects(const doe_vk_texture *texture, doe_vk_textu
 }
 
 static bool block_compressed(doe_vk_texture_format format) {
-    return format >= DOE_VK_FORMAT_BC1_RGBA_UNORM && format <= DOE_VK_FORMAT_BC7_RGBA_SRGB;
+    return format >= DOE_VK_FORMAT_BC1_RGBA_UNORM && format <= DOE_VK_FORMAT_ASTC_12x12_SRGB;
 }
 _Static_assert((int)DOE_VK_FORMAT_RG11B10_UFLOAT == (int)VK_FORMAT_B10G11R11_UFLOAT_PACK32, "rg11b10");
 _Static_assert((int)DOE_VK_FORMAT_R8_SNORM == (int)VK_FORMAT_R8_SNORM, "r8snorm");
@@ -56,13 +56,58 @@ _Static_assert((int)DOE_VK_FORMAT_BC6H_RGB_FLOAT == (int)VK_FORMAT_BC6H_SFLOAT_B
 _Static_assert((int)DOE_VK_FORMAT_BC7_RGBA_UNORM == (int)VK_FORMAT_BC7_UNORM_BLOCK, "bc7");
 _Static_assert((int)DOE_VK_FORMAT_BC7_RGBA_SRGB == (int)VK_FORMAT_BC7_SRGB_BLOCK, "bc7 srgb");
 
-uint32_t doe_vk_format_block_extent(doe_vk_texture_format format) {
+uint32_t doe_vk_format_block_extent(doe_vk_texture_format format, uint32_t axis) {
+    if (format >= DOE_VK_FORMAT_ASTC_4x4_UNORM && format <= DOE_VK_FORMAT_ASTC_12x12_SRGB) {
+        static const uint8_t extents[][2] = {
+            {4,4}, {5,4}, {5,5}, {6,5}, {6,6}, {8,5}, {8,6},
+            {8,8}, {10,5}, {10,6}, {10,8}, {10,10}, {12,10}, {12,12}
+        };
+        return axis < 2 ? extents[((unsigned)format - DOE_VK_FORMAT_ASTC_4x4_UNORM) / 2][axis] : 1;
+    }
     return block_compressed(format) ? 4 : 1;
 }
 
 /* Bytes of one texel block (one texel for uncompressed formats). */
 static uint32_t texel_bytes(doe_vk_texture_format format) {
     switch (format) {
+        case DOE_VK_FORMAT_ETC2_RGB8_UNORM: return 8;
+        case DOE_VK_FORMAT_ETC2_RGB8_SRGB: return 8;
+        case DOE_VK_FORMAT_ETC2_RGB8A1_UNORM: return 8;
+        case DOE_VK_FORMAT_ETC2_RGB8A1_SRGB: return 8;
+        case DOE_VK_FORMAT_ETC2_RGBA8_UNORM: return 16;
+        case DOE_VK_FORMAT_ETC2_RGBA8_SRGB: return 16;
+        case DOE_VK_FORMAT_EAC_R11_UNORM: return 8;
+        case DOE_VK_FORMAT_EAC_R11_SNORM: return 8;
+        case DOE_VK_FORMAT_EAC_RG11_UNORM: return 16;
+        case DOE_VK_FORMAT_EAC_RG11_SNORM: return 16;
+        case DOE_VK_FORMAT_ASTC_4x4_UNORM: return 16;
+        case DOE_VK_FORMAT_ASTC_4x4_SRGB: return 16;
+        case DOE_VK_FORMAT_ASTC_5x4_UNORM: return 16;
+        case DOE_VK_FORMAT_ASTC_5x4_SRGB: return 16;
+        case DOE_VK_FORMAT_ASTC_5x5_UNORM: return 16;
+        case DOE_VK_FORMAT_ASTC_5x5_SRGB: return 16;
+        case DOE_VK_FORMAT_ASTC_6x5_UNORM: return 16;
+        case DOE_VK_FORMAT_ASTC_6x5_SRGB: return 16;
+        case DOE_VK_FORMAT_ASTC_6x6_UNORM: return 16;
+        case DOE_VK_FORMAT_ASTC_6x6_SRGB: return 16;
+        case DOE_VK_FORMAT_ASTC_8x5_UNORM: return 16;
+        case DOE_VK_FORMAT_ASTC_8x5_SRGB: return 16;
+        case DOE_VK_FORMAT_ASTC_8x6_UNORM: return 16;
+        case DOE_VK_FORMAT_ASTC_8x6_SRGB: return 16;
+        case DOE_VK_FORMAT_ASTC_8x8_UNORM: return 16;
+        case DOE_VK_FORMAT_ASTC_8x8_SRGB: return 16;
+        case DOE_VK_FORMAT_ASTC_10x5_UNORM: return 16;
+        case DOE_VK_FORMAT_ASTC_10x5_SRGB: return 16;
+        case DOE_VK_FORMAT_ASTC_10x6_UNORM: return 16;
+        case DOE_VK_FORMAT_ASTC_10x6_SRGB: return 16;
+        case DOE_VK_FORMAT_ASTC_10x8_UNORM: return 16;
+        case DOE_VK_FORMAT_ASTC_10x8_SRGB: return 16;
+        case DOE_VK_FORMAT_ASTC_10x10_UNORM: return 16;
+        case DOE_VK_FORMAT_ASTC_10x10_SRGB: return 16;
+        case DOE_VK_FORMAT_ASTC_12x10_UNORM: return 16;
+        case DOE_VK_FORMAT_ASTC_12x10_SRGB: return 16;
+        case DOE_VK_FORMAT_ASTC_12x12_UNORM: return 16;
+        case DOE_VK_FORMAT_ASTC_12x12_SRGB: return 16;
         case DOE_VK_FORMAT_BC1_RGBA_UNORM:
         case DOE_VK_FORMAT_BC1_RGBA_SRGB:
         case DOE_VK_FORMAT_BC4_R_UNORM:
@@ -130,13 +175,19 @@ doe_vk_status doe_vk_texture_format_caps(doe_vk_context *context,
     uint32_t bytes = texel_bytes(format);
     if (bytes == 0) return DOE_VK_UNSUPPORTED;
     /* BC formats exist for this context only with textureCompressionBC enabled. */
-    if (block_compressed(format) && !context->caps.texture_compression_bc) return DOE_VK_UNSUPPORTED;
+    if (format >= DOE_VK_FORMAT_BC1_RGBA_UNORM && format <= DOE_VK_FORMAT_BC7_RGBA_SRGB &&
+        !context->caps.texture_compression_bc) return DOE_VK_UNSUPPORTED;
+    if (format >= DOE_VK_FORMAT_ETC2_RGB8_UNORM && format <= DOE_VK_FORMAT_EAC_RG11_SNORM &&
+        !context->caps.texture_compression_etc2) return DOE_VK_UNSUPPORTED;
+    if (format >= DOE_VK_FORMAT_ASTC_4x4_UNORM && format <= DOE_VK_FORMAT_ASTC_12x12_SRGB &&
+        !context->caps.texture_compression_astc) return DOE_VK_UNSUPPORTED;
     VkFormatProperties properties = {0};
     context->vk.vkGetPhysicalDeviceFormatProperties(context->physical, (uint32_t)format, &properties);
     uint32_t flags = properties.optimalTilingFeatures;
     doe_vk_format_caps caps = {
         .texel_bytes = bytes,
-        .block_extent = doe_vk_format_block_extent(format),
+        .block_width = doe_vk_format_block_extent(format, 0),
+        .block_height = doe_vk_format_block_extent(format, 1),
         .sampled = (flags & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT) != 0,
         .storage = (flags & VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT) != 0,
         .color_attachment = (flags & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT) != 0,

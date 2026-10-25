@@ -23,6 +23,24 @@ doe_vk_status doe_vk_prepare_features(doe_vk_context *context, const doe_vk_opti
     if (!features.features.robustBufferAccess)
         return doe_vk_fail(DOE_VK_UNSUPPORTED, "robustBufferAccess required", error);
     doe_vk_feature_selection selection = {.base = {.robustBufferAccess = 1}};
+    /* The selected device is Vulkan 1.2. Arithmetic and interface storage
+     * capabilities are independent: never expose half arithmetic alone as the
+     * complete WebGPU shader-f16 feature. */
+    VkPhysicalDevice16BitStorageFeatures storage16 = {
+        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_16BIT_STORAGE_FEATURES};
+    VkPhysicalDeviceShaderFloat16Int8Features float16 = {
+        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_FLOAT16_INT8_FEATURES, .pNext = &storage16};
+    VkPhysicalDeviceFeatures2 half_query = {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2,
+        .pNext = &float16};
+    context->vk.vkGetPhysicalDeviceFeatures2(context->physical, &half_query);
+    if (float16.shaderFloat16 && storage16.storageBuffer16BitAccess &&
+        storage16.uniformAndStorageBuffer16BitAccess) {
+        selection.float16 = (VkPhysicalDeviceShaderFloat16Int8Features){
+            .sType = float16.sType, .shaderFloat16 = 1};
+        selection.storage16 = (VkPhysicalDevice16BitStorageFeatures){.sType = storage16.sType,
+            .storageBuffer16BitAccess = 1, .uniformAndStorageBuffer16BitAccess = 1};
+        selection.shader_f16 = true;
+    }
     /* Optional full uint32 index range; uint32 index draws reject without it. */
     if (features.features.fullDrawIndexUint32) selection.base.fullDrawIndexUint32 = 1;
     /* Optional cube-array views; rejected when the device does not offer them. */
@@ -40,6 +58,8 @@ doe_vk_status doe_vk_prepare_features(doe_vk_context *context, const doe_vk_opti
     if (features.features.depthClamp) selection.base.depthClamp = 1;
     /* Optional BC block compression (WebGPU texture-compression-bc). */
     if (features.features.textureCompressionBC) selection.base.textureCompressionBC = 1;
+    if (features.features.textureCompressionETC2) selection.base.textureCompressionETC2 = 1;
+    if (features.features.textureCompressionASTC_LDR) selection.base.textureCompressionASTC_LDR = 1;
     /* Optional per-sample shading (WebGPU core sample_index and sample interpolation). */
     if (features.features.sampleRateShading) selection.base.sampleRateShading = 1;
     /* Optional clamped depth bias (WebGPU depthBiasClamp). */

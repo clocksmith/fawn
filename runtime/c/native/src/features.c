@@ -49,11 +49,15 @@ uint32_t native_adapter_features(const native_backend *backend)
     if (backend->kind == WGPUBackendType_Metal) {
         const doe_mtl_caps *caps = &backend->value.metal.caps;
         return NATIVE_FEATURE(WGPUFeatureName_CoreFeaturesAndLimits) |
+            NATIVE_FEATURE(WGPUFeatureName_ShaderF16) |
             NATIVE_FEATURE(WGPUFeatureName_DepthClipControl) |
             NATIVE_FEATURE(WGPUFeatureName_IndirectFirstInstance) |
             NATIVE_FEATURE(WGPUFeatureName_Depth32FloatStencil8) |
             (caps->bc_texture_compression ? NATIVE_FEATURE(WGPUFeatureName_TextureCompressionBC) |
                 NATIVE_FEATURE(WGPUFeatureName_TextureCompressionBCSliced3D) : 0) |
+            (caps->etc2_texture_compression ? NATIVE_FEATURE(WGPUFeatureName_TextureCompressionETC2) : 0) |
+            (caps->astc_texture_compression ? NATIVE_FEATURE(WGPUFeatureName_TextureCompressionASTC) |
+                (caps->astc_sliced_3d ? NATIVE_FEATURE(WGPUFeatureName_TextureCompressionASTCSliced3D) : 0) : 0) |
             (caps->float32_filterable ? NATIVE_FEATURE(WGPUFeatureName_Float32Filterable) : 0) |
             (caps->float32_blendable ? NATIVE_FEATURE(WGPUFeatureName_Float32Blendable) : 0) |
             (caps->rg11b10_renderable && caps->store_and_resolve ? NATIVE_FEATURE(WGPUFeatureName_RG11B10UfloatRenderable) : 0) |
@@ -73,7 +77,55 @@ uint32_t native_adapter_features(const native_backend *backend)
         DOE_VK_FORMAT_BC3_RGBA_SRGB, DOE_VK_FORMAT_BC4_R_UNORM, DOE_VK_FORMAT_BC4_R_SNORM,
         DOE_VK_FORMAT_BC5_RG_UNORM, DOE_VK_FORMAT_BC5_RG_SNORM, DOE_VK_FORMAT_BC6H_RGB_UFLOAT,
         DOE_VK_FORMAT_BC6H_RGB_FLOAT, DOE_VK_FORMAT_BC7_RGBA_UNORM, DOE_VK_FORMAT_BC7_RGBA_SRGB};
+    static const doe_vk_texture_format etc2[] = {
+        DOE_VK_FORMAT_ETC2_RGB8_UNORM,
+        DOE_VK_FORMAT_ETC2_RGB8_SRGB,
+        DOE_VK_FORMAT_ETC2_RGB8A1_UNORM,
+        DOE_VK_FORMAT_ETC2_RGB8A1_SRGB,
+        DOE_VK_FORMAT_ETC2_RGBA8_UNORM,
+        DOE_VK_FORMAT_ETC2_RGBA8_SRGB,
+        DOE_VK_FORMAT_EAC_R11_UNORM,
+        DOE_VK_FORMAT_EAC_R11_SNORM,
+        DOE_VK_FORMAT_EAC_RG11_UNORM,
+        DOE_VK_FORMAT_EAC_RG11_SNORM};
+    static const doe_vk_texture_format astc[] = {
+        DOE_VK_FORMAT_ASTC_4x4_UNORM,
+        DOE_VK_FORMAT_ASTC_4x4_SRGB,
+        DOE_VK_FORMAT_ASTC_5x4_UNORM,
+        DOE_VK_FORMAT_ASTC_5x4_SRGB,
+        DOE_VK_FORMAT_ASTC_5x5_UNORM,
+        DOE_VK_FORMAT_ASTC_5x5_SRGB,
+        DOE_VK_FORMAT_ASTC_6x5_UNORM,
+        DOE_VK_FORMAT_ASTC_6x5_SRGB,
+        DOE_VK_FORMAT_ASTC_6x6_UNORM,
+        DOE_VK_FORMAT_ASTC_6x6_SRGB,
+        DOE_VK_FORMAT_ASTC_8x5_UNORM,
+        DOE_VK_FORMAT_ASTC_8x5_SRGB,
+        DOE_VK_FORMAT_ASTC_8x6_UNORM,
+        DOE_VK_FORMAT_ASTC_8x6_SRGB,
+        DOE_VK_FORMAT_ASTC_8x8_UNORM,
+        DOE_VK_FORMAT_ASTC_8x8_SRGB,
+        DOE_VK_FORMAT_ASTC_10x5_UNORM,
+        DOE_VK_FORMAT_ASTC_10x5_SRGB,
+        DOE_VK_FORMAT_ASTC_10x6_UNORM,
+        DOE_VK_FORMAT_ASTC_10x6_SRGB,
+        DOE_VK_FORMAT_ASTC_10x8_UNORM,
+        DOE_VK_FORMAT_ASTC_10x8_SRGB,
+        DOE_VK_FORMAT_ASTC_10x10_UNORM,
+        DOE_VK_FORMAT_ASTC_10x10_SRGB,
+        DOE_VK_FORMAT_ASTC_12x10_UNORM,
+        DOE_VK_FORMAT_ASTC_12x10_SRGB,
+        DOE_VK_FORMAT_ASTC_12x12_UNORM,
+        DOE_VK_FORMAT_ASTC_12x12_SRGB};
     uint32_t features = NATIVE_FEATURE(WGPUFeatureName_CoreFeaturesAndLimits);
+    if (caps->shader_f16) features |= NATIVE_FEATURE(WGPUFeatureName_ShaderF16);
+    if (caps->texture_compression_etc2 && formats_offer(context, etc2, sizeof(etc2) / sizeof(etc2[0]), block_sampled))
+        features |= NATIVE_FEATURE(WGPUFeatureName_TextureCompressionETC2);
+    if (caps->texture_compression_astc && formats_offer(context, astc, sizeof(astc) / sizeof(astc[0]), block_sampled)) {
+        features |= NATIVE_FEATURE(WGPUFeatureName_TextureCompressionASTC);
+        if (formats_offer(context, astc, sizeof(astc) / sizeof(astc[0]), block_volume))
+            features |= NATIVE_FEATURE(WGPUFeatureName_TextureCompressionASTCSliced3D);
+    }
     if (native_timestamp_supported(caps)) features |= NATIVE_FEATURE(WGPUFeatureName_TimestampQuery);
     if (formats_offer(context, float32, 3, filterable)) features |= NATIVE_FEATURE(WGPUFeatureName_Float32Filterable);
     if (formats_offer(context, float32, 3, blendable)) features |= NATIVE_FEATURE(WGPUFeatureName_Float32Blendable);

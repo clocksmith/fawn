@@ -95,7 +95,10 @@ recording drops speculative initialization; only native success publishes it.
 Texture error poisons the allocation, which must be replaced. The owner does not
 infer complete storage writes from shader text or dispatch dimensions.
 
-Texture staging row pitches are conservatively 256-byte aligned. Region origins
+Texture staging row pitches are conservatively 256-byte aligned at admission.
+Pitches beyond Metal's native format-scaled maximum lower to individual block
+rows with tight block-byte-aligned native strides; offsets retain all original
+row/image padding and the checked final-row footprint. Region origins
 and interior extents respect format blocks; final edge blocks may be partial.
 Array copies advance buffer image strides but pass zero native bytesPerImage for
 each 2D slice, while volume copies pass the 3D stride. Padding is neither copied
@@ -126,7 +129,12 @@ views for its selected mip/layers. Missing aspects clear to zero while initializ
 companions LOAD/STORE; temporary views join the ordinary command leases, and only
 terminal success publishes their speculative initialization. X formats never
 become render attachments.
-BC transfers admit block-rounded mip extents and sliced 3D through the existing
+BC, ETC2/EAC and all fourteen ASTC LDR block shapes (linear/sRGB) use the same
+transfer and lifetime owners. ETC2/EAC and ASTC require the selected device's
+Apple2 family support; sliced ASTC 3D additionally requires Apple3. No CPU decode
+or shader substitution is used. The new enum identities have source provenance
+and SDK assertions; host checks do not establish Apple SDK or physical support.
+BC/ASTC transfers admit block-rounded mip extents and sliced 3D through the existing
 texture owner. Buffer/image native calls clamp only their edge texel extents;
 buffer layouts and texture/texture copies retain whole physical blocks. Array
 image strides and 3D depth coordinates remain distinct.

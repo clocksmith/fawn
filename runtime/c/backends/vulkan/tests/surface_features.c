@@ -26,6 +26,7 @@ static void features(VkPhysicalDevice device, VkPhysicalDeviceFeatures2 *info) {
     if (info->pNext == NULL) return;
     VkStructureType type;
     memcpy(&type, info->pNext, sizeof(type));
+    if (type == VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_FLOAT16_INT8_FEATURES) return;
     if (type == VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DEMOTE_TO_HELPER_INVOCATION_FEATURES) {
         VkPhysicalDeviceShaderDemoteToHelperInvocationFeatures *demote = info->pNext;
         demote->shaderDemoteToHelperInvocation = 1;

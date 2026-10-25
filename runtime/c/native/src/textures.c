@@ -32,6 +32,16 @@ WGPUTexture wgpuDeviceCreateTexture(WGPUDevice handle, const WGPUTextureDescript
         native_error(device, WGPUErrorType_Validation, "3D BC textures need texture-compression-bc-sliced-3d");
         return NULL;
     }
+    if (descriptor && descriptor->dimension == WGPUTextureDimension_3D) {
+        bool etc2 = descriptor->format >= WGPUTextureFormat_ETC2RGB8Unorm &&
+            descriptor->format <= WGPUTextureFormat_EACRG11Snorm;
+        bool astc = descriptor->format >= WGPUTextureFormat_ASTC4x4Unorm &&
+            descriptor->format <= WGPUTextureFormat_ASTC12x12UnormSrgb;
+        if (etc2 || (astc && !native_feature_enabled(device, WGPUFeatureName_TextureCompressionASTCSliced3D))) {
+            native_error(device, WGPUErrorType_Validation, "compressed 3D texture format or sliced-3d feature unsupported");
+            return NULL;
+        }
+    }
     if (device->backend.kind == WGPUBackendType_Metal) return native_metal_create_texture(device, descriptor);
     if (device->backend.kind == WGPUBackendType_D3D12) return native_d3d12_create_texture(device, descriptor);
     if (device->backend.kind != WGPUBackendType_Vulkan) {

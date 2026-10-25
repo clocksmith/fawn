@@ -22,9 +22,9 @@ static doe_vk_status record_initialization(native_device *device, doe_vk_command
         return status;
     }
     /* Zero staging holds mip 0's texel blocks (whole 4x4 blocks for BC). */
-    const uint64_t block = caps->block_extent ? caps->block_extent : 1;
-    uint64_t size = (desc->width + block - 1) / block;
-    const uint64_t rows = (desc->height + block - 1) / block;
+    const uint64_t block_width = caps->block_width, block_height = caps->block_height;
+    uint64_t size = (desc->width + block_width - 1) / block_width;
+    const uint64_t rows = (desc->height + block_height - 1) / block_height;
     if (size > SIZE_MAX / rows) return DOE_VK_OUT_OF_MEMORY;
     size *= rows;
     if (size > SIZE_MAX / desc->depth_or_layers) return DOE_VK_OUT_OF_MEMORY;

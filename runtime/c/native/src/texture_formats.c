@@ -18,6 +18,46 @@ static bool format_feature_enabled(uint32_t features, WGPUTextureFormat format)
     case WGPUTextureFormat_BC6HRGBUfloat: case WGPUTextureFormat_BC6HRGBFloat:
     case WGPUTextureFormat_BC7RGBAUnorm: case WGPUTextureFormat_BC7RGBAUnormSrgb:
         return (features & NATIVE_FEATURE(WGPUFeatureName_TextureCompressionBC)) != 0;
+    case WGPUTextureFormat_ETC2RGB8Unorm:
+    case WGPUTextureFormat_ETC2RGB8UnormSrgb:
+    case WGPUTextureFormat_ETC2RGB8A1Unorm:
+    case WGPUTextureFormat_ETC2RGB8A1UnormSrgb:
+    case WGPUTextureFormat_ETC2RGBA8Unorm:
+    case WGPUTextureFormat_ETC2RGBA8UnormSrgb:
+    case WGPUTextureFormat_EACR11Unorm:
+    case WGPUTextureFormat_EACR11Snorm:
+    case WGPUTextureFormat_EACRG11Unorm:
+    case WGPUTextureFormat_EACRG11Snorm:
+        return (features & NATIVE_FEATURE(WGPUFeatureName_TextureCompressionETC2)) != 0;
+    case WGPUTextureFormat_ASTC4x4Unorm:
+    case WGPUTextureFormat_ASTC4x4UnormSrgb:
+    case WGPUTextureFormat_ASTC5x4Unorm:
+    case WGPUTextureFormat_ASTC5x4UnormSrgb:
+    case WGPUTextureFormat_ASTC5x5Unorm:
+    case WGPUTextureFormat_ASTC5x5UnormSrgb:
+    case WGPUTextureFormat_ASTC6x5Unorm:
+    case WGPUTextureFormat_ASTC6x5UnormSrgb:
+    case WGPUTextureFormat_ASTC6x6Unorm:
+    case WGPUTextureFormat_ASTC6x6UnormSrgb:
+    case WGPUTextureFormat_ASTC8x5Unorm:
+    case WGPUTextureFormat_ASTC8x5UnormSrgb:
+    case WGPUTextureFormat_ASTC8x6Unorm:
+    case WGPUTextureFormat_ASTC8x6UnormSrgb:
+    case WGPUTextureFormat_ASTC8x8Unorm:
+    case WGPUTextureFormat_ASTC8x8UnormSrgb:
+    case WGPUTextureFormat_ASTC10x5Unorm:
+    case WGPUTextureFormat_ASTC10x5UnormSrgb:
+    case WGPUTextureFormat_ASTC10x6Unorm:
+    case WGPUTextureFormat_ASTC10x6UnormSrgb:
+    case WGPUTextureFormat_ASTC10x8Unorm:
+    case WGPUTextureFormat_ASTC10x8UnormSrgb:
+    case WGPUTextureFormat_ASTC10x10Unorm:
+    case WGPUTextureFormat_ASTC10x10UnormSrgb:
+    case WGPUTextureFormat_ASTC12x10Unorm:
+    case WGPUTextureFormat_ASTC12x10UnormSrgb:
+    case WGPUTextureFormat_ASTC12x12Unorm:
+    case WGPUTextureFormat_ASTC12x12UnormSrgb:
+        return (features & NATIVE_FEATURE(WGPUFeatureName_TextureCompressionASTC)) != 0;
     default: return true;
     }
 }
@@ -92,6 +132,44 @@ bool native_texture_format(uint32_t features, WGPUTextureFormat format, doe_vk_t
     case WGPUTextureFormat_BC6HRGBFloat: *out = DOE_VK_FORMAT_BC6H_RGB_FLOAT; break;
     case WGPUTextureFormat_BC7RGBAUnorm: *out = DOE_VK_FORMAT_BC7_RGBA_UNORM; break;
     case WGPUTextureFormat_BC7RGBAUnormSrgb: *out = DOE_VK_FORMAT_BC7_RGBA_SRGB; break;
+    case WGPUTextureFormat_ETC2RGB8Unorm: *out = DOE_VK_FORMAT_ETC2_RGB8_UNORM; break;
+    case WGPUTextureFormat_ETC2RGB8UnormSrgb: *out = DOE_VK_FORMAT_ETC2_RGB8_SRGB; break;
+    case WGPUTextureFormat_ETC2RGB8A1Unorm: *out = DOE_VK_FORMAT_ETC2_RGB8A1_UNORM; break;
+    case WGPUTextureFormat_ETC2RGB8A1UnormSrgb: *out = DOE_VK_FORMAT_ETC2_RGB8A1_SRGB; break;
+    case WGPUTextureFormat_ETC2RGBA8Unorm: *out = DOE_VK_FORMAT_ETC2_RGBA8_UNORM; break;
+    case WGPUTextureFormat_ETC2RGBA8UnormSrgb: *out = DOE_VK_FORMAT_ETC2_RGBA8_SRGB; break;
+    case WGPUTextureFormat_EACR11Unorm: *out = DOE_VK_FORMAT_EAC_R11_UNORM; break;
+    case WGPUTextureFormat_EACR11Snorm: *out = DOE_VK_FORMAT_EAC_R11_SNORM; break;
+    case WGPUTextureFormat_EACRG11Unorm: *out = DOE_VK_FORMAT_EAC_RG11_UNORM; break;
+    case WGPUTextureFormat_EACRG11Snorm: *out = DOE_VK_FORMAT_EAC_RG11_SNORM; break;
+    case WGPUTextureFormat_ASTC4x4Unorm: *out = DOE_VK_FORMAT_ASTC_4x4_UNORM; break;
+    case WGPUTextureFormat_ASTC4x4UnormSrgb: *out = DOE_VK_FORMAT_ASTC_4x4_SRGB; break;
+    case WGPUTextureFormat_ASTC5x4Unorm: *out = DOE_VK_FORMAT_ASTC_5x4_UNORM; break;
+    case WGPUTextureFormat_ASTC5x4UnormSrgb: *out = DOE_VK_FORMAT_ASTC_5x4_SRGB; break;
+    case WGPUTextureFormat_ASTC5x5Unorm: *out = DOE_VK_FORMAT_ASTC_5x5_UNORM; break;
+    case WGPUTextureFormat_ASTC5x5UnormSrgb: *out = DOE_VK_FORMAT_ASTC_5x5_SRGB; break;
+    case WGPUTextureFormat_ASTC6x5Unorm: *out = DOE_VK_FORMAT_ASTC_6x5_UNORM; break;
+    case WGPUTextureFormat_ASTC6x5UnormSrgb: *out = DOE_VK_FORMAT_ASTC_6x5_SRGB; break;
+    case WGPUTextureFormat_ASTC6x6Unorm: *out = DOE_VK_FORMAT_ASTC_6x6_UNORM; break;
+    case WGPUTextureFormat_ASTC6x6UnormSrgb: *out = DOE_VK_FORMAT_ASTC_6x6_SRGB; break;
+    case WGPUTextureFormat_ASTC8x5Unorm: *out = DOE_VK_FORMAT_ASTC_8x5_UNORM; break;
+    case WGPUTextureFormat_ASTC8x5UnormSrgb: *out = DOE_VK_FORMAT_ASTC_8x5_SRGB; break;
+    case WGPUTextureFormat_ASTC8x6Unorm: *out = DOE_VK_FORMAT_ASTC_8x6_UNORM; break;
+    case WGPUTextureFormat_ASTC8x6UnormSrgb: *out = DOE_VK_FORMAT_ASTC_8x6_SRGB; break;
+    case WGPUTextureFormat_ASTC8x8Unorm: *out = DOE_VK_FORMAT_ASTC_8x8_UNORM; break;
+    case WGPUTextureFormat_ASTC8x8UnormSrgb: *out = DOE_VK_FORMAT_ASTC_8x8_SRGB; break;
+    case WGPUTextureFormat_ASTC10x5Unorm: *out = DOE_VK_FORMAT_ASTC_10x5_UNORM; break;
+    case WGPUTextureFormat_ASTC10x5UnormSrgb: *out = DOE_VK_FORMAT_ASTC_10x5_SRGB; break;
+    case WGPUTextureFormat_ASTC10x6Unorm: *out = DOE_VK_FORMAT_ASTC_10x6_UNORM; break;
+    case WGPUTextureFormat_ASTC10x6UnormSrgb: *out = DOE_VK_FORMAT_ASTC_10x6_SRGB; break;
+    case WGPUTextureFormat_ASTC10x8Unorm: *out = DOE_VK_FORMAT_ASTC_10x8_UNORM; break;
+    case WGPUTextureFormat_ASTC10x8UnormSrgb: *out = DOE_VK_FORMAT_ASTC_10x8_SRGB; break;
+    case WGPUTextureFormat_ASTC10x10Unorm: *out = DOE_VK_FORMAT_ASTC_10x10_UNORM; break;
+    case WGPUTextureFormat_ASTC10x10UnormSrgb: *out = DOE_VK_FORMAT_ASTC_10x10_SRGB; break;
+    case WGPUTextureFormat_ASTC12x10Unorm: *out = DOE_VK_FORMAT_ASTC_12x10_UNORM; break;
+    case WGPUTextureFormat_ASTC12x10UnormSrgb: *out = DOE_VK_FORMAT_ASTC_12x10_SRGB; break;
+    case WGPUTextureFormat_ASTC12x12Unorm: *out = DOE_VK_FORMAT_ASTC_12x12_UNORM; break;
+    case WGPUTextureFormat_ASTC12x12UnormSrgb: *out = DOE_VK_FORMAT_ASTC_12x12_SRGB; break;
     default: return native_depth_format(features, format, out);
     }
     return true;

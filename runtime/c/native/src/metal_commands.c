@@ -25,13 +25,14 @@ static native_failure transfer(doe_mtl_commands *commands, const doe_resource_co
     native_texture *texture = doe_resource_texture_native(record->value.texture.texture);
     doe_mtl_error error = {0};
     doe_mtl_status status = initialize(commands, texture, &error);
+    if (status != DOE_MTL_OK) return native_failure_metal(status, &error);
     doe_mtl_texture_region region = {copy->mip, copy->origin[0], copy->origin[1], copy->origin[2],
         copy->width, copy->height, copy->depth_or_layers};
     uint32_t pitch = record->value.texture.region.pitch;
     if (pitch % 256) {
         /* Only one row/image has no native stride obligation. The backend
          * checks its true copied tail, not imaginary trailing row padding. */
-        if (copy->height != 1 || copy->depth_or_layers != 1) return native_failure_status(NATIVE_UNSUPPORTED);
+        if (record->value.texture.region.rows != 1 || copy->depth_or_layers != 1) return native_failure_status(NATIVE_UNSUPPORTED);
         pitch = 0;
     }
     doe_mtl_texture_buffer_layout layout = {copy->offset, pitch, record->value.texture.region.image_rows};

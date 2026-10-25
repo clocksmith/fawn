@@ -97,6 +97,7 @@ typedef struct doe_vk_caps {
     uint64_t storage_offset_alignment;
     uint64_t uniform_offset_alignment;
     bool robust_buffer_access;
+    bool shader_f16; /* Enabled arithmetic and 16-bit storage/uniform buffers. */
     bool software_adapter;
     uint32_t max_workgroup_storage_size;
     uint32_t max_bind_groups;
@@ -157,6 +158,7 @@ typedef struct doe_vk_caps {
     bool depth_clamp;
     /* Enabled textureCompressionBC: BC formats report format caps only then. */
     bool texture_compression_bc;
+    bool texture_compression_etc2, texture_compression_astc;
     /* Enabled sampleRateShading: fragment shaders may read sample_index and use
      * per-sample interpolation (SPIR-V SampleRateShading). */
     bool sample_rate_shading;

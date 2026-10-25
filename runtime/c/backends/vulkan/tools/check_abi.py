@@ -68,7 +68,7 @@ def main():
                    for member, spelling in declaration["fields"]]
         types[name] = type(name, (ctypes.Structure,), {"_fields_": members})
         fields[name] = members
-    lines = ['#include "vk_abi_functions.h"', '#include "vk_abi_constants.h"']
+    lines = ['#include "vk_abi_functions.h"', '#include "vk_abi_constants.h"', '#include "../include/doe_vk_texture.h"']
     if "vkCmdSetBlendConstants" in manifest.get("official_functions", {}):
         lines.extend([
             'void doe_vk_abi_blend_signature(doe_vk_functions *functions) {',

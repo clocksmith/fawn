@@ -55,8 +55,8 @@ doe_vk_status doe_vk_attachment_samples(doe_vk_context *context,
     doe_vk_texture_format format, uint32_t *out);
 /* Initialization bytes are per-aspect masks (color1, depth2, stencil4). */
 uint32_t doe_vk_format_aspects(doe_vk_texture_format format);
-/* Texel width/height of one block: 4 for BC formats, else 1. */
-uint32_t doe_vk_format_block_extent(doe_vk_texture_format format);
+/* Texel block extent by axis (x=0, y=1); ASTC need not be square. */
+uint32_t doe_vk_format_block_extent(doe_vk_texture_format format, uint32_t axis);
 /* Any non-identity channel: such a view is sampled-only. */
 bool doe_vk_texture_view_swizzled(const doe_vk_texture_view *view);
 bool doe_vk_texture_view_swizzled_desc(const doe_vk_texture_view_desc *desc);

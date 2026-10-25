@@ -245,4 +245,20 @@ typedef struct VkPhysicalDeviceMaintenance5FeaturesKHR {
     void *pNext;
     uint32_t maintenance5;
 } VkPhysicalDeviceMaintenance5FeaturesKHR;
+/* Core 1.1/1.2 feature records, verified against Vulkan-Headers v1.3.290;
+ * field provenance and LP64 checks are bound in ABI_PROVENANCE.json. */
+typedef struct VkPhysicalDeviceShaderFloat16Int8Features {
+    VkStructureType sType;
+    void *pNext;
+    VkBool32 shaderFloat16;
+    VkBool32 shaderInt8;
+} VkPhysicalDeviceShaderFloat16Int8Features;
+typedef struct VkPhysicalDevice16BitStorageFeatures {
+    VkStructureType sType;
+    void *pNext;
+    VkBool32 storageBuffer16BitAccess;
+    VkBool32 uniformAndStorageBuffer16BitAccess;
+    VkBool32 storagePushConstant16;
+    VkBool32 storageInputOutput16;
+} VkPhysicalDevice16BitStorageFeatures;
 #endif

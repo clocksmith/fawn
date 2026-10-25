@@ -247,5 +247,13 @@
     "Timestamp set discovery requires the exact timestamp-only set, not any set containing a named timestamp counter.",
     "GPU resolve uses the existing buffer/command lifetime owner; no deferred CPU memcpy or Mach-timebase normalization is silently substituted.",
     "Unsupported blit sampling is an explicit failure, not the retained void bridge silent return. True GPU-generated indirect admission remains unfinished; no host-only surrogate public API was introduced."
-  ]
+  ],
+  "compressed_formats": {
+    "source": "https://developer.apple.com/metal/cpp/files/metal-cpp_macOS15_iOS18.zip",
+    "header": "Metal/MTLPixelFormat.hpp",
+    "sha256": "0afa4d866272f0c468db58a7397f3d0469d64f6d6984a40a908b227ae515f60d",
+    "feature_source": "https://developer.apple.com/metal/Metal-Feature-Set-Tables.pdf",
+    "verified_utc": "2026-10-25",
+    "scope": "EAC/ETC and ASTC LDR enum identities; actual SDK compilation remains separate"
+  }
 }

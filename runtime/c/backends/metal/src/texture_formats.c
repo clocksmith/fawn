@@ -64,6 +64,120 @@ doe_mtl_status doe_mtl_texture_format_info(doe_mtl_format format, doe_mtl_format
     case DOE_MTL_BC7_RGBA:
         info.compressed = true;
         break;
+    case DOE_MTL_ETC2_RGB8_UNORM:
+        *out = (doe_mtl_format_info){4,4,8,true,false,false,false};
+        return DOE_MTL_OK;
+    case DOE_MTL_ETC2_RGB8_SRGB:
+        *out = (doe_mtl_format_info){4,4,8,true,true,false,false};
+        return DOE_MTL_OK;
+    case DOE_MTL_ETC2_RGB8A1_UNORM:
+        *out = (doe_mtl_format_info){4,4,8,true,false,false,false};
+        return DOE_MTL_OK;
+    case DOE_MTL_ETC2_RGB8A1_SRGB:
+        *out = (doe_mtl_format_info){4,4,8,true,true,false,false};
+        return DOE_MTL_OK;
+    case DOE_MTL_ETC2_RGBA8_UNORM:
+        *out = (doe_mtl_format_info){4,4,16,true,false,false,false};
+        return DOE_MTL_OK;
+    case DOE_MTL_ETC2_RGBA8_SRGB:
+        *out = (doe_mtl_format_info){4,4,16,true,true,false,false};
+        return DOE_MTL_OK;
+    case DOE_MTL_EAC_R11_UNORM:
+        *out = (doe_mtl_format_info){4,4,8,true,false,false,false};
+        return DOE_MTL_OK;
+    case DOE_MTL_EAC_R11_SNORM:
+        *out = (doe_mtl_format_info){4,4,8,true,false,false,false};
+        return DOE_MTL_OK;
+    case DOE_MTL_EAC_RG11_UNORM:
+        *out = (doe_mtl_format_info){4,4,16,true,false,false,false};
+        return DOE_MTL_OK;
+    case DOE_MTL_EAC_RG11_SNORM:
+        *out = (doe_mtl_format_info){4,4,16,true,false,false,false};
+        return DOE_MTL_OK;
+    case DOE_MTL_ASTC_4x4_UNORM:
+        *out = (doe_mtl_format_info){4,4,16,true,false,false,false};
+        return DOE_MTL_OK;
+    case DOE_MTL_ASTC_4x4_SRGB:
+        *out = (doe_mtl_format_info){4,4,16,true,true,false,false};
+        return DOE_MTL_OK;
+    case DOE_MTL_ASTC_5x4_UNORM:
+        *out = (doe_mtl_format_info){5,4,16,true,false,false,false};
+        return DOE_MTL_OK;
+    case DOE_MTL_ASTC_5x4_SRGB:
+        *out = (doe_mtl_format_info){5,4,16,true,true,false,false};
+        return DOE_MTL_OK;
+    case DOE_MTL_ASTC_5x5_UNORM:
+        *out = (doe_mtl_format_info){5,5,16,true,false,false,false};
+        return DOE_MTL_OK;
+    case DOE_MTL_ASTC_5x5_SRGB:
+        *out = (doe_mtl_format_info){5,5,16,true,true,false,false};
+        return DOE_MTL_OK;
+    case DOE_MTL_ASTC_6x5_UNORM:
+        *out = (doe_mtl_format_info){6,5,16,true,false,false,false};
+        return DOE_MTL_OK;
+    case DOE_MTL_ASTC_6x5_SRGB:
+        *out = (doe_mtl_format_info){6,5,16,true,true,false,false};
+        return DOE_MTL_OK;
+    case DOE_MTL_ASTC_6x6_UNORM:
+        *out = (doe_mtl_format_info){6,6,16,true,false,false,false};
+        return DOE_MTL_OK;
+    case DOE_MTL_ASTC_6x6_SRGB:
+        *out = (doe_mtl_format_info){6,6,16,true,true,false,false};
+        return DOE_MTL_OK;
+    case DOE_MTL_ASTC_8x5_UNORM:
+        *out = (doe_mtl_format_info){8,5,16,true,false,false,false};
+        return DOE_MTL_OK;
+    case DOE_MTL_ASTC_8x5_SRGB:
+        *out = (doe_mtl_format_info){8,5,16,true,true,false,false};
+        return DOE_MTL_OK;
+    case DOE_MTL_ASTC_8x6_UNORM:
+        *out = (doe_mtl_format_info){8,6,16,true,false,false,false};
+        return DOE_MTL_OK;
+    case DOE_MTL_ASTC_8x6_SRGB:
+        *out = (doe_mtl_format_info){8,6,16,true,true,false,false};
+        return DOE_MTL_OK;
+    case DOE_MTL_ASTC_8x8_UNORM:
+        *out = (doe_mtl_format_info){8,8,16,true,false,false,false};
+        return DOE_MTL_OK;
+    case DOE_MTL_ASTC_8x8_SRGB:
+        *out = (doe_mtl_format_info){8,8,16,true,true,false,false};
+        return DOE_MTL_OK;
+    case DOE_MTL_ASTC_10x5_UNORM:
+        *out = (doe_mtl_format_info){10,5,16,true,false,false,false};
+        return DOE_MTL_OK;
+    case DOE_MTL_ASTC_10x5_SRGB:
+        *out = (doe_mtl_format_info){10,5,16,true,true,false,false};
+        return DOE_MTL_OK;
+    case DOE_MTL_ASTC_10x6_UNORM:
+        *out = (doe_mtl_format_info){10,6,16,true,false,false,false};
+        return DOE_MTL_OK;
+    case DOE_MTL_ASTC_10x6_SRGB:
+        *out = (doe_mtl_format_info){10,6,16,true,true,false,false};
+        return DOE_MTL_OK;
+    case DOE_MTL_ASTC_10x8_UNORM:
+        *out = (doe_mtl_format_info){10,8,16,true,false,false,false};
+        return DOE_MTL_OK;
+    case DOE_MTL_ASTC_10x8_SRGB:
+        *out = (doe_mtl_format_info){10,8,16,true,true,false,false};
+        return DOE_MTL_OK;
+    case DOE_MTL_ASTC_10x10_UNORM:
+        *out = (doe_mtl_format_info){10,10,16,true,false,false,false};
+        return DOE_MTL_OK;
+    case DOE_MTL_ASTC_10x10_SRGB:
+        *out = (doe_mtl_format_info){10,10,16,true,true,false,false};
+        return DOE_MTL_OK;
+    case DOE_MTL_ASTC_12x10_UNORM:
+        *out = (doe_mtl_format_info){12,10,16,true,false,false,false};
+        return DOE_MTL_OK;
+    case DOE_MTL_ASTC_12x10_SRGB:
+        *out = (doe_mtl_format_info){12,10,16,true,true,false,false};
+        return DOE_MTL_OK;
+    case DOE_MTL_ASTC_12x12_UNORM:
+        *out = (doe_mtl_format_info){12,12,16,true,false,false,false};
+        return DOE_MTL_OK;
+    case DOE_MTL_ASTC_12x12_SRGB:
+        *out = (doe_mtl_format_info){12,12,16,true,true,false,false};
+        return DOE_MTL_OK;
     default: return DOE_MTL_UNSUPPORTED;
     }
     if (info.compressed) {
@@ -85,6 +199,40 @@ bool doe_mtl_format_compatible(doe_mtl_format a, doe_mtl_format b) {
         a = b;
         b = temporary;
     }
+    if ((a == DOE_MTL_ETC2_RGB8_UNORM && b == DOE_MTL_ETC2_RGB8_SRGB) ||
+        (b == DOE_MTL_ETC2_RGB8_UNORM && a == DOE_MTL_ETC2_RGB8_SRGB)) return true;
+    if ((a == DOE_MTL_ETC2_RGB8A1_UNORM && b == DOE_MTL_ETC2_RGB8A1_SRGB) ||
+        (b == DOE_MTL_ETC2_RGB8A1_UNORM && a == DOE_MTL_ETC2_RGB8A1_SRGB)) return true;
+    if ((a == DOE_MTL_ETC2_RGBA8_UNORM && b == DOE_MTL_ETC2_RGBA8_SRGB) ||
+        (b == DOE_MTL_ETC2_RGBA8_UNORM && a == DOE_MTL_ETC2_RGBA8_SRGB)) return true;
+    if ((a == DOE_MTL_ASTC_4x4_UNORM && b == DOE_MTL_ASTC_4x4_SRGB) ||
+        (b == DOE_MTL_ASTC_4x4_UNORM && a == DOE_MTL_ASTC_4x4_SRGB)) return true;
+    if ((a == DOE_MTL_ASTC_5x4_UNORM && b == DOE_MTL_ASTC_5x4_SRGB) ||
+        (b == DOE_MTL_ASTC_5x4_UNORM && a == DOE_MTL_ASTC_5x4_SRGB)) return true;
+    if ((a == DOE_MTL_ASTC_5x5_UNORM && b == DOE_MTL_ASTC_5x5_SRGB) ||
+        (b == DOE_MTL_ASTC_5x5_UNORM && a == DOE_MTL_ASTC_5x5_SRGB)) return true;
+    if ((a == DOE_MTL_ASTC_6x5_UNORM && b == DOE_MTL_ASTC_6x5_SRGB) ||
+        (b == DOE_MTL_ASTC_6x5_UNORM && a == DOE_MTL_ASTC_6x5_SRGB)) return true;
+    if ((a == DOE_MTL_ASTC_6x6_UNORM && b == DOE_MTL_ASTC_6x6_SRGB) ||
+        (b == DOE_MTL_ASTC_6x6_UNORM && a == DOE_MTL_ASTC_6x6_SRGB)) return true;
+    if ((a == DOE_MTL_ASTC_8x5_UNORM && b == DOE_MTL_ASTC_8x5_SRGB) ||
+        (b == DOE_MTL_ASTC_8x5_UNORM && a == DOE_MTL_ASTC_8x5_SRGB)) return true;
+    if ((a == DOE_MTL_ASTC_8x6_UNORM && b == DOE_MTL_ASTC_8x6_SRGB) ||
+        (b == DOE_MTL_ASTC_8x6_UNORM && a == DOE_MTL_ASTC_8x6_SRGB)) return true;
+    if ((a == DOE_MTL_ASTC_8x8_UNORM && b == DOE_MTL_ASTC_8x8_SRGB) ||
+        (b == DOE_MTL_ASTC_8x8_UNORM && a == DOE_MTL_ASTC_8x8_SRGB)) return true;
+    if ((a == DOE_MTL_ASTC_10x5_UNORM && b == DOE_MTL_ASTC_10x5_SRGB) ||
+        (b == DOE_MTL_ASTC_10x5_UNORM && a == DOE_MTL_ASTC_10x5_SRGB)) return true;
+    if ((a == DOE_MTL_ASTC_10x6_UNORM && b == DOE_MTL_ASTC_10x6_SRGB) ||
+        (b == DOE_MTL_ASTC_10x6_UNORM && a == DOE_MTL_ASTC_10x6_SRGB)) return true;
+    if ((a == DOE_MTL_ASTC_10x8_UNORM && b == DOE_MTL_ASTC_10x8_SRGB) ||
+        (b == DOE_MTL_ASTC_10x8_UNORM && a == DOE_MTL_ASTC_10x8_SRGB)) return true;
+    if ((a == DOE_MTL_ASTC_10x10_UNORM && b == DOE_MTL_ASTC_10x10_SRGB) ||
+        (b == DOE_MTL_ASTC_10x10_UNORM && a == DOE_MTL_ASTC_10x10_SRGB)) return true;
+    if ((a == DOE_MTL_ASTC_12x10_UNORM && b == DOE_MTL_ASTC_12x10_SRGB) ||
+        (b == DOE_MTL_ASTC_12x10_UNORM && a == DOE_MTL_ASTC_12x10_SRGB)) return true;
+    if ((a == DOE_MTL_ASTC_12x12_UNORM && b == DOE_MTL_ASTC_12x12_SRGB) ||
+        (b == DOE_MTL_ASTC_12x12_UNORM && a == DOE_MTL_ASTC_12x12_SRGB)) return true;
     return (a == DOE_MTL_RGBA8_UNORM && b == DOE_MTL_RGBA8_SRGB) ||
         (a == DOE_MTL_BGRA8_UNORM && b == DOE_MTL_BGRA8_SRGB) ||
         (a == DOE_MTL_BC1_RGBA && b == DOE_MTL_BC1_RGBA_SRGB) ||

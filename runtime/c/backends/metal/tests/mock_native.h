@@ -14,6 +14,7 @@ typedef struct mock_native {
     mock_operation fail;
     doe_mtl_status pipeline_failure;
     uint64_t buffer_limit;
+    bool etc2, astc, astc_sliced_3d;
     unsigned pipeline_calls, fail_pipeline_at, render_sequence;
     unsigned live;
     unsigned created;

@@ -81,6 +81,10 @@ void doe_mtl_objc_image_caps(doe_mtl_objc *r, void *device, doe_mtl_caps *caps) 
             r->family_call(device, r->supports_family, 2002);
         caps->float32_blendable = color_formats;
         caps->rg11b10_renderable = color_formats && (caps->sample_count_mask & 5) == 5;
+        /* Apple feature tables: EAC/ETC and ASTC LDR start at Apple2. */
+        caps->etc2_texture_compression = r->family_call(device, r->supports_family, 1002) != 0;
+        caps->astc_texture_compression = caps->etc2_texture_compression;
+        caps->astc_sliced_3d = r->family_call(device, r->supports_family, 1003) != 0;
         caps->separate_depth_stencil = r->family_call(device, r->supports_family, 1002) != 0;
         caps->depth_resolve = r->family_call(device, r->supports_family, 1003) ||
             r->family_call(device, r->supports_family, 2002);
