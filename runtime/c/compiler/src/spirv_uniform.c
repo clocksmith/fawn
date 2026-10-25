@@ -59,9 +59,6 @@ bool spirv_uniform_plan(Emitter *e, ResourceRecord *r, bool *raw) {
     *raw = (type_flags(e->program, r->type) & TYPE_UNIFORM) == 0u;
     if (!*raw && !contains_narrow(e, r->type, raw)) return false;
     if (!*raw) return true;
-    if ((r->minimum & 3u) != 0u)
-        return source_error(e->source, DOE_COMPILER_UNSUPPORTED, r->source_offset,
-            "compact uniform half-word tail requires a 16-bit physical tail lowering");
     if (r->minimum > UINT32_MAX)
         return source_error(e->source, DOE_COMPILER_UNSUPPORTED, r->source_offset,
             "physical uniform byte offsets exceed the u32 target format");
@@ -88,6 +85,8 @@ bool spirv_uniform_plan(Emitter *e, ResourceRecord *r, bool *raw) {
     pointer->payload = structure;
     r->reserved = pointer->id;
     (void)spirv_pointer_type(e, IR_U32, 2u);
+    if ((r->minimum & 3u) != 0u) (void)spirv_pointer_type(e, IR_F16, 2u);
+    (void)spirv_unsigned_constant(e, (uint32_t)r->minimum & ~3u);
     (void)spirv_unsigned_constant(e, 0u);
     (void)spirv_unsigned_constant(e, 1u);
     (void)spirv_unsigned_constant(e, 2u);
@@ -104,15 +103,26 @@ bool spirv_uniform_annotations(Emitter *e, const TargetDeclaration *d) {
     if (d->payload >= 16u && d->storage != 0u) {
         EMIT(OP_MEMBER_DECORATE, d->id, 1u, 35u, (uint32_t)d->payload / 16u * 16u);
     }
+    if ((d->payload & 3u) != 0u) {
+        const uint32_t member = (d->payload >= 16u ? 1u : 0u) + (d->storage != 0u ? 1u : 0u);
+        if (member != 0u) { EMIT(OP_MEMBER_DECORATE, d->id, member, 35u, (uint32_t)d->payload & ~3u); }
+    }
     return true;
 }
 bool spirv_uniform_declaration(Emitter *e, const TargetDeclaration *d) {
     if (d->kind == DECL_RAW_VECTOR) { EMIT(OP_TYPE_VECTOR, d->id, ID_U32, d->count); }
     else {
-        if (d->payload < 16u) { EMIT(OP_TYPE_STRUCT, d->id, d->storage); return true; }
-        EMIT(OP_TYPE_ARRAY, d->id + 1u, d->first, d->count);
-        if (d->storage == 0u) { EMIT(OP_TYPE_STRUCT, d->id, d->id + 1u); }
-        else { EMIT(OP_TYPE_STRUCT, d->id, d->id + 1u, d->storage); }
+        uint32_t members[3], count = 0u;
+        if (d->payload >= 16u) {
+            EMIT(OP_TYPE_ARRAY, d->id + 1u, d->first, d->count);
+            members[count++] = d->id + 1u;
+        }
+        if (d->storage != 0u) members[count++] = d->storage;
+        if ((d->payload & 3u) != 0u) members[count++] = ID_F16;
+        uint32_t *words;
+        if (!spirv_instruction_space(e, OP_TYPE_STRUCT, count + 1u, &words)) return false;
+        words[0] = d->id;
+        for (uint32_t i = 0u; i < count; ++i) words[i + 1u] = members[i];
     }
     return true;
 }
@@ -172,7 +182,7 @@ bool spirv_uniform_access_plan(Emitter *e, const IrInstruction *ir) {
     while (next_leaf(e, &type, &offset, &found) && found) (void)spirv_unsigned_constant(e, offset);
     return !e->failed;
 }
-static bool raw_lane(Emitter *e, const ResourceRecord *r, uint32_t offset, uint32_t *out) {
+static bool raw_word(Emitter *e, const ResourceRecord *r, uint32_t offset, uint32_t *out) {
     if (r->minimum < 16u) {
         const uint32_t pointer = spirv_reserve_ids(e, 1u), value = spirv_reserve_ids(e, 1u);
         if (r->minimum == 4u) { EMIT(OP_ACCESS_CHAIN, spirv_pointer_type(e, IR_U32, 2u), pointer, r->target, ID_ZERO_U32); }
@@ -220,6 +230,47 @@ static bool raw_lane(Emitter *e, const ResourceRecord *r, uint32_t offset, uint3
         EMIT(OP_PHI, ID_U32, *out, loaded, prefix_label, tail_value, tail_label);
         e->current_label = merge;
     }
+    return true;
+}
+/* The final half is a physical 16-bit member, never a speculative u32 load
+ * outside the binding. Synthesize its absent upper lane only after loading it. */
+static bool raw_half_tail(Emitter *e, const ResourceRecord *r, uint32_t *out) {
+    const TargetDeclaration *d = raw_descriptor(e, r->type);
+    const uint32_t member = (d->payload >= 16u ? 1u : 0u) + (d->storage != 0u ? 1u : 0u);
+    const uint32_t pointer = spirv_reserve_ids(e, 1u), half = spirv_reserve_ids(e, 1u);
+    const uint32_t pair = spirv_reserve_ids(e, 1u);
+    *out = spirv_reserve_ids(e, 1u);
+    EMIT(OP_ACCESS_CHAIN, spirv_pointer_type(e, IR_F16, 2u), pointer, r->target,
+        spirv_unsigned_constant(e, member));
+    EMIT(OP_LOAD, ID_F16, half, pointer);
+    EMIT(OP_COMPOSITE_CONSTRUCT, ID_VEC2_F16, pair, half, ID_ZERO_F16);
+    EMIT(OP_BITCAST, ID_U32, *out, pair);
+    return true;
+}
+static bool raw_lane(Emitter *e, const ResourceRecord *r, uint32_t offset, uint32_t *out) {
+    if ((r->minimum & 3u) == 0u) return raw_word(e, r, offset, out);
+    if (r->minimum == 2u) return raw_half_tail(e, r, out);
+    const uint32_t condition = spirv_reserve_ids(e, 1u), body = spirv_reserve_ids(e, 1u);
+    const uint32_t tail = spirv_reserve_ids(e, 1u), merge = spirv_reserve_ids(e, 1u);
+    EMIT(OP_ULESS_THAN, ID_BOOL, condition, offset,
+        spirv_unsigned_constant(e, (uint32_t)r->minimum & ~3u));
+    EMIT(OP_SELECTION_MERGE, merge, 0u);
+    EMIT(OP_BRANCH_CONDITIONAL, condition, body, tail);
+    EMIT(OP_LABEL, body);
+    e->current_label = body;
+    ResourceRecord words = *r;
+    words.minimum &= ~UINT64_C(3);
+    uint32_t word_value, half_value;
+    if (!raw_word(e, &words, offset, &word_value)) return false;
+    const uint32_t predecessor = e->current_label;
+    EMIT(OP_BRANCH, merge);
+    EMIT(OP_LABEL, tail);
+    if (!raw_half_tail(e, r, &half_value)) return false;
+    EMIT(OP_BRANCH, merge);
+    EMIT(OP_LABEL, merge);
+    *out = spirv_reserve_ids(e, 1u);
+    EMIT(OP_PHI, ID_U32, *out, word_value, predecessor, half_value, tail);
+    e->current_label = merge;
     return true;
 }
 bool spirv_uniform_load(Emitter *e, const IrInstruction *ir, uint32_t result) {

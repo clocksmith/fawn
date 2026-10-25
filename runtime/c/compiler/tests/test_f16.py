@@ -38,12 +38,21 @@ data[0].c=mat2x2h(vec2h(1.0h,2.0h),vec2h(3.0h,4.0h));} """
 @compute @workgroup_size(1) fn main(){out[0]=data.a[1][0]+data.b;}"""
     with tempfile.TemporaryDirectory(prefix="doe-f16-") as temporary:
         directory = Path(temporary)
+        subprocess.run([str(Path(CLI).with_name("test_f16")), str(directory)], check=True)
+        for tail in sorted(directory.glob("tail*.spv")):
+            subprocess.run([VALIDATOR, "--target-env", "vulkan1.1", str(tail)], check=True)
         builtins = """enable f16;
 @group(0) @binding(0) var<storage,read_write> a:array<vec2h>;
 @compute @workgroup_size(1) fn main(){let x=a[0];
 a[1]=smoothstep(vec2h(2h),vec2h(0h),x)+saturate(x);
 a[2]=vec2h(dot(x,x),length(x)); a[3]=normalize(x); }"""
-        sources = [p.read_text() for p in consumers] + [layout, uniform, builtins]
+        bitcasts = """enable f16;
+@group(0) @binding(0) var<storage,read_write> a:array<vec2u>;
+@compute @workgroup_size(1) fn main(){let h=bitcast<vec4h>(a[0]);
+a[1]=bitcast<vec2u>(h); let f=bitcast<vec2f>(h);
+a[2]=bitcast<vec2u>(bitcast<vec4h>(f));
+let s=bitcast<i32>(h.xy); a[3]=vec2u(bitcast<u32>(bitcast<vec2h>(s)),0u);}"""
+        sources = [p.read_text() for p in consumers] + [layout, uniform, builtins, bitcasts]
         for i, source in enumerate(sources):
             for target in ("spirv", "msl", "hlsl"):
                 run(source, target, directory, f"case{i}-{target}")
@@ -65,9 +74,25 @@ a[2]=vec2h(dot(x,x),length(x)); a[3]=normalize(x); }"""
                 cursor += length
             expected = int.from_bytes(struct.pack("<e", float(value)), "little")
             assert expected in constants, (value, expected, constants)
+        for i, (low, high) in enumerate((("1.0", "-2.0"), ("-0.0", "0.000000059604644775390625"))):
+            expected = int.from_bytes(struct.pack("<ee", float(low), float(high)), "little")
+            source = f"enable f16; @group(0) @binding(0) var<storage,read_write> a:array<u32>; @compute @workgroup_size(1) fn main(){{a[0]=bitcast<u32>(vec2h({low}h,{high}h));}}"
+            output = run(source, "spirv", directory, f"bitcast-constant{i}")
+            words = struct.unpack("<" + "I" * (output.stat().st_size // 4), output.read_bytes())
+            cursor, values = 5, []
+            while cursor < len(words):
+                length, opcode = words[cursor] >> 16, words[cursor] & 0xffff
+                if opcode == 43 and length == 4:
+                    values.append(words[cursor + 3])
+                cursor += length
+            assert expected in values, (expected, values)
         for i, bad in enumerate(("@compute @workgroup_size(1) fn main(){let x=1h;}",
                 "@compute @workgroup_size(1) fn main(){var x:f16;}",
-                "enable f16; @compute @workgroup_size(1) fn main(){let x=65520h;}")):
+                "enable f16; @compute @workgroup_size(1) fn main(){let x=65520h;}",
+                "enable f16; @compute @workgroup_size(1) fn main(){let x=bitcast<vec2h>(0x7c00u);}",
+                "enable f16; @compute @workgroup_size(1) fn main(){let x=bitcast<f16>(1u);}",
+                "enable f16; @compute @workgroup_size(1) fn main(){let x=bitcast<u32>(vec3h(1h));}",
+                "enable f16; @compute @workgroup_size(1) fn main(){let x=bitcast<mat2x2h>(mat2x2h());}")):
             path = directory / f"bad{i}.wgsl"
             path.write_text(bad)
             output = directory / f"bad{i}.spv"

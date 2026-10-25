@@ -10,13 +10,64 @@ static bool reserve_operands(Source *s, uint32_t count, uint32_t offset, uint32_
     c->operand_count+=count;
     return true;
 }
+/* Half/word bitcasts change lane count but preserve total bit width. The
+ * first half occupies the low bits, independently of the compiler host ABI. */
+static bool half_bitcast(Source *s, ExpressionValue *a, TypeId target, uint32_t offset,
+    bool evaluate, bool emit, ExpressionValue *out) {
+    CompilerWorkspace *c = s->compiler;
+    const uint32_t count = type_vector_width(c, target);
+    const uint32_t input_count = type_vector_width(c, a->constant.type);
+    const TypeId leaf = type_leaf(c, target);
+    TypeId original = type_leaf(c, a->constant.type);
+    if (type_abstract(c, a->constant.type)) {
+        TypeId input = original == IR_ABSTRACT_INT ? IR_I32 : IR_F32;
+        if (input_count != 1u && !type_intern(s, TYPE_VECTOR, input, input_count, &input)) return false;
+        if (!sema_materialize(s, a, input)) return false;
+        original = type_leaf(c, input);
+    }
+    const bool input_numeric = original == IR_I32 || original == IR_U32 || original == IR_F32 || original == IR_F16;
+    const bool output_numeric = leaf == IR_I32 || leaf == IR_U32 || leaf == IR_F32 || leaf == IR_F16;
+    if (!input_numeric || !output_numeric ||
+        (a->constant.type >= IR_PRIMITIVE_COUNT && c->types[a->constant.type - IR_PRIMITIVE_COUNT].kind != TYPE_VECTOR) ||
+        (target >= IR_PRIMITIVE_COUNT && c->types[target - IR_PRIMITIVE_COUNT].kind != TYPE_VECTOR) ||
+        input_count * (original == IR_F16 ? 16u : 32u) != count * (leaf == IR_F16 ? 16u : 32u))
+        return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, offset, "bitcast requires equal-width numeric scalar or vector shapes");
+    if (target == a->constant.type) { *out = *a; return true; }
+    *out = (ExpressionValue){.runtime = a->runtime, .overridable = a->overridable,
+        .known = evaluate && a->known && !a->runtime, .constant.type = target,
+        .value = {.type = target, .source_offset = offset}};
+    if (!a->runtime) {
+        if (!out->known) return true;
+        uint32_t words[2] = {0u, 0u};
+        for (uint32_t i = 0u; i < input_count; ++i) {
+            ConstantValue value = a->constant;
+            if (input_count != 1u && !constant_project(s, value, i, &value)) return false;
+            if (original == IR_F16) words[i / 2u] |= (uint32_t)value.bits << ((i % 2u) * 16u);
+            else words[i] = (uint32_t)value.bits;
+        }
+        ConstantValue lanes[4];
+        for (uint32_t i = 0u; i < count; ++i) {
+            NumericValue value;
+            if (leaf == IR_F16) {
+                const uint32_t bits = (words[i / 2u] >> ((i % 2u) * 16u)) & 65535u;
+                if (!numeric_bitcast(s, offset, (NumericValue){bits, IR_F16}, IR_F16, &value)) return false;
+            } else if (!numeric_bitcast(s, offset, (NumericValue){words[i], IR_U32}, (IrType)leaf, &value)) return false;
+            lanes[i] = (ConstantValue){.type = leaf, .bits = value.bits};
+        }
+        if (count == 1u) { out->constant = lanes[0]; return true; }
+        return constant_composite(s, target, lanes, count, false, &out->constant);
+    }
+    if (!sema_ensure_value(s, a, emit)) return false;
+    return sema_emit(s, emit, (IrInstruction){.opcode = IR_BITCAST, .type = target,
+        .source_offset = offset, .operands.scalar = {.left = a->value.id,
+        .binding = a->constant.type}}, &out->value);
+}
 static bool convert_value(Source *s, ExpressionValue *a, TypeId target, uint32_t offset, bool bitcast, bool evaluate, bool emit, ExpressionValue *out) {
     CompilerWorkspace *c = s->compiler;
     const uint32_t n = type_vector_width(c, target);
     const TypeId leaf = type_leaf(c, target), original = type_leaf(c, a->constant.type);
-    if (bitcast && target == a->constant.type && leaf == IR_F16) { *out = *a; return true; }
-    if (bitcast && (leaf == IR_F16 || original == IR_F16) && target != a->constant.type)
-        return source_error(s, DOE_COMPILER_UNSUPPORTED, offset, "f16 bitcast shape conversion is not implemented");
+    if (bitcast && (leaf == IR_F16 || original == IR_F16))
+        return half_bitcast(s, a, target, offset, evaluate, emit, out);
     if (type_vector_width(c, a->constant.type) != n || leaf == IR_VOID || (leaf>IR_F32 && leaf != IR_F16) || original == IR_VOID || (a->constant.type >= IR_PRIMITIVE_COUNT && c->types[a->constant.type-IR_PRIMITIVE_COUNT].kind != TYPE_VECTOR) || (bitcast && (leaf == IR_BOOL || original == IR_BOOL)))
         return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, offset, "no matching scalar or vector conversion");
     if (type_abstract(c, a->constant.type) && (leaf == IR_F32 || bitcast)) {

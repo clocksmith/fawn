@@ -413,6 +413,29 @@ static void select_expression(HlslEmitter *e, const IrInstruction *ir) {
     }
     if (width > 1u) hlsl_text(e, ")");
 }
+static void half_bitcast(HlslEmitter *e, const IrInstruction *ir) {
+    const TypeId leaf = type_leaf(e->module, ir->type);
+    const uint32_t width = type_vector_width(e->module, ir->type);
+    if (width > 1u) { hlsl_type(e, ir->type); hlsl_text(e, "("); }
+    for (uint32_t i = 0u; i < width; ++i) {
+        if (i != 0u) hlsl_text(e, ", ");
+        if (leaf == IR_F16) {
+            hlsl_text(e, "asfloat16(uint16_t(asuint(");
+            component(e, ir->operands.scalar.left, i / 2u);
+            hlsl_format(e, ") >> %uu))", (i % 2u) * 16u);
+        } else {
+            if (leaf == IR_I32) hlsl_text(e, "asint(");
+            else if (leaf == IR_F32) hlsl_text(e, "asfloat(");
+            hlsl_text(e, "(uint(asuint16(");
+            component(e, ir->operands.scalar.left, i * 2u);
+            hlsl_text(e, ")) | (uint(asuint16(");
+            component(e, ir->operands.scalar.left, i * 2u + 1u);
+            hlsl_text(e, ")) << 16u))");
+            if (leaf != IR_U32) hlsl_text(e, ")");
+        }
+    }
+    if (width > 1u) hlsl_text(e, ")");
+}
 void hlsl_expression(HlslEmitter *e, const IrInstruction *ir) {
     switch (ir->opcode) {
         case IR_SELECT:
@@ -430,6 +453,10 @@ void hlsl_expression(HlslEmitter *e, const IrInstruction *ir) {
             break;
         case IR_BITCAST: {
             const TypeId leaf = type_leaf(e->module, ir->type);
+            if (leaf == IR_F16 || type_leaf(e->module, ir->operands.scalar.binding) == IR_F16) {
+                half_bitcast(e, ir);
+                break;
+            }
             if (leaf != IR_I32 && leaf != IR_U32 && (leaf != IR_F32 && leaf != IR_F16)) {
                 hlsl_error(e, "HLSL bitcast destination has no bit-preserving intrinsic");
                 break;
