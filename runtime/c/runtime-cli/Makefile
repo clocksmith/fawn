@@ -17,7 +17,7 @@ CORE = src/json.c src/stream.c src/stream_texture.c src/stream_render.c src/stre
 CORE_HEADERS = src/json.h src/stream.h src/stream_internal.h src/trace.h src/sha256.h src/quirks.h \
   src/operators.h src/numeric_policy.h src/numeric_stability.h src/plan.h
 TOGGLE_REGISTRY = ../../../config/quirk-toggle-registry.json
-RUNTIME = src/cli_options.c src/cli_inputs.c src/execute.c src/queue.c src/kernel.c src/texture.c src/render.c src/map.c src/diagnostics.c src/diagnostics_lifecycle.c src/surface.c $(SURFACE_HOST)
+RUNTIME = src/cli_options.c src/cli_inputs.c src/cli_output.c src/execute.c src/queue.c src/kernel.c src/texture.c src/render.c src/map.c src/diagnostics.c src/diagnostics_lifecycle.c src/surface.c $(SURFACE_HOST)
 ifeq ($(shell uname -s),Darwin)
 CPPFLAGS += -D_DARWIN_C_SOURCE
 SURFACE_HOST = $(BUILD)/surface_metal.o
@@ -32,7 +32,7 @@ DAWN_SURFACE_CPPFLAGS = -DDOE_SURFACE_XLIB
 DAWN_SURFACE_LIBS = -lX11-xcb -lX11
 LDLIBS += -lxcb
 endif
-RUNTIME_HEADERS = src/cli_options.h src/cli_inputs.h src/surface_platform.h src/execute.h src/runtime_internal.h ../../zig/vendor/webgpu-headers/webgpu.h \
+RUNTIME_HEADERS = src/cli_options.h src/cli_inputs.h src/cli_output.h src/surface_platform.h src/execute.h src/runtime_internal.h ../../zig/vendor/webgpu-headers/webgpu.h \
   ../native/include/doe_native_adapter.h
 .PHONY: all bench-bin bench-bin-dawn check check-dawn check-host dawn native
 all: $(BUILD)/doe-c-runtime

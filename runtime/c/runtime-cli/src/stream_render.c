@@ -54,14 +54,19 @@ static bool read_float(const doe_json_value *object, const char *a, const char *
     return true;
 }
 
-/* A mode string, checked against doe-zig-runtime's accepted spellings. */
+/* Select one of two modes while preserving the accepted retained aliases. */
 static bool read_mode(const doe_json_value *object, const char *a, const char *b, const char *const *accepted,
-    size_t index, doe_stream_error *error)
+    size_t second_mode, bool *out, size_t index, doe_stream_error *error)
 {
     const char *value = NULL;
     if (!stream_read_string(object, a, b, &value, index, error)) return false;
+    *out = false;
     if (!value) return true;
-    for (const char *const *name = accepted; *name; name++) if (strcasecmp(value, *name) == 0) return true;
+    for (size_t i = 0; accepted[i]; i++) {
+        if (strcasecmp(value, accepted[i])) continue;
+        *out = i >= second_mode;
+        return true;
+    }
     return stream_reject(error, index, "\"%s\" \"%s\" is not a doe-zig-runtime value", a, value);
 }
 
@@ -131,9 +136,8 @@ bool stream_parse_render(const doe_json_value *object, const char *name, doe_com
         return false;
     if (!draw->draw_count || !draw->vertex_count || !draw->instance_count || !draw->target_width || !draw->target_height)
         return stream_reject(error, index, "render counts and target extents must be nonzero");
-    if (!stream_read_u64(object, "target_handle", "targetHandle", UINT64_MAX, false, 0, &draw->target_handle, index, error))
+    if (!stream_read_u64(object, "target_handle", "targetHandle", UINT64_MAX, false, DOE_RENDER_SCRATCH_HANDLE, &draw->target_handle, index, error))
         return false;
-    if (draw->target_handle == UINT64_C(0xFFFFFFFFFFFFFFFE)) draw->target_handle = 0; /* doe-zig-runtime's default handle */
     const char *format = NULL;
     if (!stream_read_string(object, "target_format", "targetFormat", &format, index, error)) return false;
     draw->target_format = DOE_FORMAT_RGBA8_UNORM;
@@ -143,17 +147,26 @@ bool stream_parse_render(const doe_json_value *object, const char *name, doe_com
     static const char *const bind_group_modes[] = {"no-change", "no_change", "redundant", NULL};
     static const char *const encode_modes[] = {"render-bundle", "render_bundle", "bundle", "render-pass", "render_pass",
         "pass", NULL};
-    if (!read_mode(object, "pipeline_mode", "pipelineMode", pipeline_modes, index, error) ||
-        !read_mode(object, "bind_group_mode", "bindGroupMode", bind_group_modes, index, error) ||
-        !read_mode(object, "encode_mode", "encodeMode", encode_modes, index, error)) return false;
+    if (!read_mode(object, "pipeline_mode", "pipelineMode", pipeline_modes, 1, &draw->redundant_pipeline, index, error) ||
+        !read_mode(object, "bind_group_mode", "bindGroupMode", bind_group_modes, 2, &draw->redundant_bind_group, index, error) ||
+        !read_mode(object, "encode_mode", "encodeMode", encode_modes, 3, &draw->render_pass, index, error)) return false;
     bool ambiguous = false;
     const doe_json_value *offsets = stream_either(object, "bind_group_dynamic_offsets", "bindGroupDynamicOffsets", &ambiguous);
     if (ambiguous || (offsets && offsets->kind != DOE_JSON_ARRAY))
         return stream_reject(error, index, "\"bind_group_dynamic_offsets\" must be one array");
+    draw->has_dynamic_offsets = offsets != NULL;
+    draw->dynamic_offset_count = offsets ? offsets->count : 0;
+    if (draw->dynamic_offset_count > SIZE_MAX / sizeof(*draw->dynamic_offsets))
+        return stream_reject(error, index, "too many dynamic offsets");
+    if (draw->dynamic_offset_count) {
+        draw->dynamic_offsets = malloc(draw->dynamic_offset_count * sizeof(*draw->dynamic_offsets));
+        if (!draw->dynamic_offsets) return stream_reject(error, index, "out of memory");
+    }
     for (size_t i = 0; offsets && i < offsets->count; i++) {
         uint64_t offset;
         if (!doe_json_as_u64(offsets->items[i], UINT32_MAX, &offset))
             return stream_reject(error, index, "\"bind_group_dynamic_offsets\"[%zu] must be an integer", i);
+        draw->dynamic_offsets[i] = (uint32_t)offset;
     }
     double value[6];
     if (!read_float(object, "viewport_x", "viewportX", NULL, 0, &value[0], index, error) ||

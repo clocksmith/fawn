@@ -6,6 +6,7 @@
 #include "execute.h"
 #include "cli_options.h"
 #include "cli_inputs.h"
+#include "cli_output.h"
 #include "numeric_policy.h"
 #include "numeric_stability.h"
 #include "operators.h"
@@ -56,6 +57,22 @@ static char *read_file(const char *path, size_t *size)
     if (failed) { free(text); return NULL; }
     *size = length;
     return text;
+}
+
+static bool load_cli_quirks(const options *options, doe_quirk_set *quirks, char *message, size_t capacity)
+{
+    *quirks = (doe_quirk_set){.mode = options->quirk_mode};
+    if (options->quirk_mode == DOE_QUIRK_OFF) return true;
+    size_t size = 0;
+    char *text = options->quirks ? read_file(options->quirks, &size) : strdup(cli_default_quirks());
+    if (!text) {
+        snprintf(message, capacity, "cannot read %s", options->quirks ? options->quirks : "<embedded>");
+        return false;
+    }
+    if (!options->quirks) size = strlen(text);
+    bool ok = doe_quirks_load(text, size, options->quirk_mode, &options->profile, quirks, message, capacity);
+    free(text);
+    return ok;
 }
 
 static uint64_t realtime_ns(void)
@@ -431,6 +448,34 @@ int main(int argc, char **argv)
         }
     }
     if (stream.count > UINT64_MAX / o.command_repeat) { release_input(&stream, &plan, plan_kernel_root); fputs("doe-c-runtime: --command-repeat overflows\n", stderr); return 2; }
+    if (o.emit_normalized) {
+        doe_quirk_set quirks;
+        char message[256] = "";
+        bool ready = load_cli_quirks(&o, &quirks, message, sizeof(message));
+        if (ready && o.replay) {
+            size_t size = 0;
+            char *text = read_file(o.replay, &size);
+            if (!text) snprintf(message, sizeof(message), "cannot read replay %s", o.replay);
+            ready = text && cli_validate_replay(text, size, MODULE_NAME, &stream, o.command_repeat, &quirks,
+                message, sizeof(message));
+            free(text);
+        }
+        doe_quirks_free(&quirks);
+        if (!ready) {
+            fprintf(stderr, "doe-c-runtime: %s\n", message);
+            release_input(&stream, &plan, plan_kernel_root);
+            return 2;
+        }
+        bool written = true;
+        uint64_t seq = 0;
+        for (uint64_t pass = 0; written && pass < o.command_repeat; pass++)
+            for (size_t i = 0; written && i < stream.count; i++)
+                written = cli_write_normalized(stdout, seq++, &stream.commands[i]);
+        if (fflush(stdout)) written = false;
+        if (!written) fputs("doe-c-runtime: cannot write normalized commands\n", stderr);
+        release_input(&stream, &plan, plan_kernel_root);
+        return written ? 0 : 1;
+    }
     doe_ns_policy ns_policy = {0};
     char *ns_policy_text = NULL;
     bool ns_loaded = false;
@@ -459,19 +504,11 @@ int main(int argc, char **argv)
     }
     char message[256] = "";
     doe_quirk_set quirks = {.mode = o.quirk_mode};
-    if (o.quirk_mode != DOE_QUIRK_OFF) {
-        size_t quirks_size = 0;
-        char *quirks_text = o.quirks ? read_file(o.quirks, &quirks_size) : strdup(cli_default_quirks());
-        if (!o.quirks && quirks_text) quirks_size = strlen(quirks_text);
-        bool loaded = quirks_text && doe_quirks_load(quirks_text, quirks_size, o.quirk_mode, &o.profile, &quirks, message,
-            sizeof(message));
-        free(quirks_text);
-        if (!loaded) {
-            fprintf(stderr, "doe-c-runtime: --quirks %s: %s\n", o.quirks ? o.quirks : "<embedded>", quirks_text ? message : "cannot read");
-            if (rows) fclose(rows);
-            release_input(&stream, &plan, plan_kernel_root);
-            return 2;
-        }
+    if (!load_cli_quirks(&o, &quirks, message, sizeof(message))) {
+        fprintf(stderr, "doe-c-runtime: quirks: %s\n", message);
+        if (rows) fclose(rows);
+        release_input(&stream, &plan, plan_kernel_root);
+        return 2;
     }
     /* doe-zig-runtime anchors operator records at the trace meta, else the trace JSONL. */
     /* doe-plan-executor writes no operator records. */

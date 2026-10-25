@@ -3,12 +3,42 @@
 """Trace-only defaults and replay preflight through the actual CLI; no device calls."""
 import argparse
 from copy import deepcopy
+import hashlib
 import json
 import os
 from pathlib import Path
 import subprocess
 
 from test_cli import REPO, check_schemas, replay_passes
+
+
+def check_normalized(binary, work, env):
+    retained = json.loads(Path(__file__).with_name('normalized_retained.json').read_text())
+    for path, digest in retained['sourceHashes'].items():
+        assert hashlib.sha256((REPO / path).read_bytes()).hexdigest() == digest, path + ' retained source drift'
+    commands = work / 'normalized.commands.json'
+    commands.write_text(json.dumps(retained['commands']))
+    rows = work / 'normalized.untouched.jsonl'
+    meta = work / 'normalized.untouched.meta.json'
+    rows.write_text('row sentinel')
+    meta.write_text('meta sentinel')
+    flags = ['--emit-normalized', '--commands', str(commands), '--trace-jsonl', str(rows), '--trace-meta', str(meta)]
+    # Normalization is host-only even when execute is requested, and creates no trace artifacts.
+    result = subprocess.run([str(binary), *flags, '--execute', '--backend', 'native', '--command-repeat', '2'],
+                            cwd=REPO, env=env, capture_output=True, text=True, timeout=10)
+    assert result.returncode == 0, result.stderr
+    actual = [json.loads(line) for line in result.stdout.splitlines()]
+    expected = retained['expected'] + [{**row, 'seq': row['seq'] + len(retained['expected'])} for row in retained['expected']]
+    assert actual == expected, [(a, b) for a, b in zip(actual, expected) if a != b][:1]
+    assert rows.read_text() == 'row sentinel' and meta.read_text() == 'meta sentinel'
+    for extra in [ ['--validate-output-oracles'], ['--readback-buffer', '1=unused'], ['--quirks', str(work/'missing.quirks')] ]:
+        result = subprocess.run([str(binary), *flags, *extra], cwd=REPO, env=env, capture_output=True, text=True, timeout=10)
+        assert result.returncode == 2 and not result.stdout, (extra, result.returncode, result.stderr)
+    kernel = 'quoted"kernel\\name\n.wgsl'
+    commands.write_text(json.dumps([dict(kind='kernel_dispatch', kernel=kernel, x=7, y=3, z=2)]))
+    result = subprocess.run([str(binary), '--emit-normalized', '--commands', str(commands)],
+                            cwd=REPO, env=env, capture_output=True, text=True, timeout=10)
+    assert result.returncode == 0 and json.loads(result.stdout)['kernel'] == kernel
 
 
 def main():
@@ -18,6 +48,7 @@ def main():
     parser.add_argument('--work', type=Path, required=True, help='Artifact directory')
     args = parser.parse_args(); args.work.mkdir(parents=True, exist_ok=True)
     env = dict(os.environ, LD_PRELOAD=str(args.no_device.resolve()))
+    check_normalized(args.binary, args.work, env)
     def run(name, *flags, expected=0):
         meta = args.work / (name + '.meta.json'); rows = args.work / (name + '.jsonl')
         result = subprocess.run([str(args.binary), '--trace-jsonl', str(rows), '--trace-meta', str(meta), *flags],
@@ -61,7 +92,7 @@ def main():
     assert record['capture']['errorCode'] == 'capture_requires_native_execution'
     run('native-control', '--commands', str(REPO/'examples/p0_resource_lifecycle_commands.json'),
         '--execute', '--backend', 'native', '--quirk-mode', 'off', expected=99)
-    print('PASS host traces, embedded source hashes, semantic artifacts and replay refusal before native instance creation')
+    print('PASS host traces, embedded source hashes, 40 retained normalized commands, semantic artifacts and replay refusal before native instance creation')
 
 
 if __name__ == '__main__':

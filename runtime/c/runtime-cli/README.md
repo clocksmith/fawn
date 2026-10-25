@@ -32,6 +32,15 @@ extra or changed rows fail. Semantic host captures are explicitly unsupported.
 `check-host-modes` interposes the actual instance ABI to prove those paths do
 not open a device, with an executing control that proves the interposer works.
 
+`--emit-normalized` writes retained command records to stdout before execution or
+quirk application, including aliases, render modes and dynamic offsets. It
+leaves trace paths untouched even with `--execute`; output oracles and readbacks
+are incompatible. The writer shares dispatch formatting with semantic repro
+bundles. Forty source-bound retained records exercise every admitted command
+family, source f32 spelling and repeated sequences under the no-device guard.
+Buffer-write data uses valid JSON arrays; the retained Zig printer used invalid
+slice debug braces. Quoted kernel paths are JSON escaped.
+
 ## Admitted input
 
 - Commands: `upload` (`buffer_upload`), `buffer_write` (`write_buffer`,

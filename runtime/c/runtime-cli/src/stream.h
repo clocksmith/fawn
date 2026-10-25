@@ -70,6 +70,8 @@ typedef enum doe_diagnostic_mode {
     DOE_DIAG_LIFECYCLE, DOE_DIAG_PIXEL_LOCAL, DOE_DIAG_FULL
 } doe_diagnostic_mode;
 
+const char *doe_diagnostic_mode_name(doe_diagnostic_mode mode);
+
 typedef struct doe_diagnostics {
     doe_diagnostic_mode mode;
     doe_texture_format format;
@@ -133,6 +135,7 @@ typedef struct doe_texture_query {
 
 /* render_draw and render_pass: `draw_count` draws of the default fullscreen
  * proxy pipeline into one color target, as doe-zig-runtime's native lane. */
+#define DOE_RENDER_SCRATCH_HANDLE UINT64_C(0xFFFFFFFFFFFFFFFE)
 typedef struct doe_render_draw {
     uint32_t draw_count, vertex_count, instance_count, first_vertex, first_instance;
     bool indexed, index_uint32;
@@ -140,9 +143,13 @@ typedef struct doe_render_draw {
     size_t index_data_count;
     uint32_t index_count, first_index;
     int32_t base_vertex;
-    uint64_t target_handle; /* 0: a scratch target created for the command. */
+    uint64_t target_handle; /* DOE_RENDER_SCRATCH_HANDLE or 0: command-local target. */
     uint32_t target_width, target_height;
     doe_texture_format target_format;
+    bool redundant_pipeline, redundant_bind_group, render_pass;
+    bool has_dynamic_offsets;
+    uint32_t *dynamic_offsets; /* Owned; presence preserves an explicit empty array. */
+    size_t dynamic_offset_count;
     bool has_viewport_width, has_viewport_height, has_scissor_width, has_scissor_height;
     bool has_blend_constant, has_stencil_reference;
     float viewport_x, viewport_y, viewport_width, viewport_height, viewport_min_depth, viewport_max_depth;

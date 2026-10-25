@@ -503,7 +503,10 @@ static void free_command(doe_command *command)
     if (command->kind == DOE_COMMAND_BUFFER_WRITE) free(command->as.buffer_write.words);
     if (command->kind == DOE_COMMAND_KERNEL_DISPATCH) free(command->as.dispatch.bindings);
     if (command->kind == DOE_COMMAND_TEXTURE_WRITE) free(command->as.texture_write.data);
-    if (doe_command_is_render(command->kind)) free(command->as.render.indices);
+    if (doe_command_is_render(command->kind)) {
+        free(command->as.render.indices);
+        free(command->as.render.dynamic_offsets);
+    }
 }
 
 void doe_stream_free(doe_stream *stream)

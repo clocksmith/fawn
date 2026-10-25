@@ -162,7 +162,7 @@ bool runtime_execute_render(doe_runtime *runtime, const doe_command *command, do
     WGPURenderPipeline pipeline = render_pipeline(runtime, draw->target_format, execution);
     bool ok = pipeline != NULL;
     WGPUTexture scratch = NULL, target = NULL;
-    if (ok && draw->target_handle) {
+    if (ok && draw->target_handle && draw->target_handle != DOE_RENDER_SCRATCH_HANDLE) {
         texture_entry *entry = runtime_find_texture(runtime, draw->target_handle);
         if (!entry) ok = runtime_fail(execution, "render_target_missing", "render target texture %llu does not exist",
             (unsigned long long)draw->target_handle);
