@@ -55,3 +55,5 @@ src/spirv_bits.c
 
 src/numeric_half.c
 src/sampling.c
+src/sema_decompose.c
+src/numeric_decompose.c

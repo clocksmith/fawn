@@ -535,3 +535,7 @@ build/test_sampling: $(LIB_SOURCES) tests/test_sampling.c tests/hlsl_fixture.h $
 	$(CC) $(CFLAGS) $(LIB_SOURCES) tests/test_sampling.c -lm -o $@
 test-sampling: build/test_sampling
 	build/test_sampling
+
+.PHONY: test-decompose
+test-decompose: build/doe-compiler-c
+	DOE_COMPILER_CLI="$(CURDIR)/build/doe-compiler-c" SPIRV_VAL="$(SPIRV_VAL)" python3 tests/test_decompose.py

@@ -55,7 +55,7 @@ void hlsl_type(HlslEmitter *e, TypeId type) {
          * reverse their operands in numeric.c, not external memory layout. */
         if (column->element == IR_F16) hlsl_format(e, "matrix<float16_t, %u, %u>", t->count, column->count);
         else hlsl_format(e, "float%ux%u", t->count, column->count);
-    } else if (t->kind == TYPE_ARRAY || t->kind == TYPE_STRUCT || t->kind == TYPE_ATOMIC_RESULT) {
+    } else if (t->kind == TYPE_ARRAY || t->kind == TYPE_STRUCT || (t->kind == TYPE_ATOMIC_RESULT || t->kind == TYPE_FREXP_RESULT || t->kind == TYPE_MODF_RESULT)) {
         hlsl_format(e, "DoeT%u", type);
     } else hlsl_error(e, "HLSL type kind has no value representation");
 }
@@ -75,7 +75,7 @@ void hlsl_types(HlslEmitter *e) {
         bool pending = false;
         for (uint32_t i = 0u; i < c->type_count && !e->failed; ++i) {
             const TypeRecord *t = &c->types[i];
-            if ((t->kind != TYPE_STRUCT && t->kind != TYPE_ARRAY && t->kind != TYPE_ATOMIC_RESULT) ||
+            if ((t->kind != TYPE_STRUCT && t->kind != TYPE_ARRAY && t->kind != TYPE_ATOMIC_RESULT && t->kind != TYPE_FREXP_RESULT && t->kind != TYPE_MODF_RESULT) ||
                 (t->flags & (TYPE_CONSTRUCTIBLE | TYPE_ATOMIC_CONTENT)) == 0u || (t->flags & TYPE_ABSTRACT) != 0u ||
                 ((t->flags & TYPE_ATOMIC_CONTENT) != 0u && (t->flags & TYPE_FIXED) == 0u)) continue;
             unsigned d;
@@ -122,7 +122,7 @@ void hlsl_constant(HlslEmitter *e, TypeId type, uint64_t bits, bool composite) {
     }
 }
 static void member_suffix(HlslEmitter *e, const TypeRecord *t, uint32_t index) {
-    if (t->kind == TYPE_STRUCT || t->kind == TYPE_ATOMIC_RESULT) hlsl_format(e, ".m%u", index);
+    if (t->kind == TYPE_STRUCT || (t->kind == TYPE_ATOMIC_RESULT || t->kind == TYPE_FREXP_RESULT || t->kind == TYPE_MODF_RESULT)) hlsl_format(e, ".m%u", index);
     else if (t->kind == TYPE_ARRAY) hlsl_format(e, ".elements[%u]", index);
     else if (t->kind == TYPE_VECTOR || t->kind == TYPE_MATRIX) hlsl_format(e, "[%u]", index);
     else hlsl_error(e, "HLSL constructor kind is unsupported");

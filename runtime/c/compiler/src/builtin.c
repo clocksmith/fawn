@@ -3,6 +3,9 @@
 #include "sema.h"
 
 static const NumericBuiltin numeric_builtins[] = {
+    {"frexp", BUILTIN_FREXP, 1u, BUILTIN_DECOMPOSE, 52u},
+    {"modf", BUILTIN_MODF, 1u, BUILTIN_DECOMPOSE, 36u},
+    {"ldexp", BUILTIN_LDEXP, 2u, BUILTIN_EXPONENT, 53u},
     {"extractBits", BUILTIN_EXTRACT_BITS, 3u, BUILTIN_BITFIELD, 0u},
     {"insertBits", BUILTIN_INSERT_BITS, 4u, BUILTIN_BITFIELD, 0u},
     {"fma", BUILTIN_FMA, 3u, BUILTIN_COMPONENT_FLOAT, 50u},
@@ -338,6 +341,8 @@ static bool boolean_constant(Source *source, const NumericBuiltin *builtin, Cons
 }
 bool builtin_constant(Source *source, uint32_t offset, const NumericBuiltin *builtin,
                       const ConstantValue *arguments, TypeId result_type, ConstantValue *out) {
+    if (builtin->family == BUILTIN_DECOMPOSE || builtin->family == BUILTIN_EXPONENT)
+        return decompose_constant(source, offset, builtin->kind, arguments, result_type, out);
     if (builtin->family == BUILTIN_PACKED_INTEGER)
         return packed_constant(source, builtin->kind, arguments, result_type, out);
     if (builtin->family == BUILTIN_BOOLEAN_REDUCTION)

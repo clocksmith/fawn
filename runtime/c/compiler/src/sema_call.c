@@ -280,6 +280,8 @@ static bool aggregate_call(Source *s, const Expression *node, const LocalScope *
 static inline bool sema_builtin_value(Source *source, const Expression *node, const LocalScope *scope,
                         const NumericBuiltin *builtin, bool evaluate, bool emit,
                         ExpressionValue *out) {
+    if (builtin->family == BUILTIN_DECOMPOSE || builtin->family == BUILTIN_EXPONENT)
+        return sema_decompose_call(source, node, scope, builtin, evaluate, emit, out);
     CompilerWorkspace *compiler = source->compiler;
     ExpressionValue arguments[4];
     const bool bitfield = builtin->family == BUILTIN_BITFIELD;

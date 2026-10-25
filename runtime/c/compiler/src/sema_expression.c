@@ -267,7 +267,13 @@ static bool postfix_value(Source *s, const Expression *node, const LocalScope *s
         const NameSpan member = node->value.member.member;
         if (input<IR_PRIMITIVE_COUNT) return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, member.offset, "scalar value has no member");
         const TypeRecord *type = &c->types[input-IR_PRIMITIVE_COUNT];
-        if (type->kind == TYPE_ATOMIC_RESULT) {
+        if (type->kind == TYPE_FREXP_RESULT || type->kind == TYPE_MODF_RESULT) {
+            if (source_span_is(s, member, "fract")) index = 0u;
+            else if (source_span_is(s, member, type->kind == TYPE_FREXP_RESULT ? "exp" : "whole")) index = 1u;
+            else return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, member.offset, "unknown floating decomposition result member");
+            output = type_child(c, input, index);
+        }
+        else if (type->kind == TYPE_ATOMIC_RESULT) {
             if (source_span_is(s, member, "old_value")) index = 0u;
             else if (source_span_is(s, member, "exchanged")) index = 1u;
             else return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, member.offset, "unknown atomic compare-exchange result member");

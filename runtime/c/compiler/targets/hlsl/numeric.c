@@ -3,7 +3,35 @@
 #include "private.h"
 #include "../../src/builtin.h"
 
+static void wide_float(HlslEmitter *e, uint32_t width) {
+    if (width == 1u) hlsl_text(e, "float");
+    else hlsl_format(e, "float%u", width);
+}
+static void decomposition_helpers(HlslEmitter *e) {
+    const CompilerWorkspace *c = e->module;
+    for (uint32_t i = 0u; i < c->type_count; ++i) {
+        const TypeRecord *t = &c->types[i];
+        if ((t->kind != TYPE_FREXP_RESULT && t->kind != TYPE_MODF_RESULT) ||
+            (t->flags & TYPE_ABSTRACT) != 0u) continue;
+        const uint32_t width = type_vector_width(c, t->element);
+        hlsl_type(e, i + IR_PRIMITIVE_COUNT);
+        hlsl_format(e, " doe_decompose%u(", i + IR_PRIMITIVE_COUNT);
+        hlsl_type(e, t->element);
+        hlsl_text(e, " value) { ");
+        hlsl_type(e, i + IR_PRIMITIVE_COUNT);
+        hlsl_text(e, " result; ");
+        wide_float(e, width);
+        hlsl_text(e, " second; result.m0 = ");
+        hlsl_type(e, t->element);
+        hlsl_format(e, "(%s(", t->kind == TYPE_FREXP_RESULT ? "frexp" : "modf");
+        wide_float(e, width);
+        hlsl_text(e, "(value), second)); result.m1 = ");
+        hlsl_type(e, t->state.result.second);
+        hlsl_text(e, "(second); return result; }\n");
+    }
+}
 void hlsl_numeric_helpers(HlslEmitter *e) {
+    decomposition_helpers(e);
     hlsl_text(e,
         "inline uint doe_div(uint a, uint b) { return a / (b == 0u ? 1u : b); }\n"
         "inline uint doe_rem(uint a, uint b) { return b == 0u ? 0u : a % (b == 0u ? 1u : b); }\n"
@@ -143,6 +171,7 @@ static void subgroup_expression(HlslEmitter *e, const IrInstruction *ir, Numeric
         case BUILTIN_MIX: case BUILTIN_COUNT_ONE_BITS:
         case BUILTIN_REVERSE_BITS: case BUILTIN_COUNT_LEADING_ZEROS: case BUILTIN_COUNT_TRAILING_ZEROS:
         case BUILTIN_FIRST_LEADING_BIT: case BUILTIN_FIRST_TRAILING_BIT: case BUILTIN_UNPACK4X_U8:
+        case BUILTIN_FREXP: case BUILTIN_MODF: case BUILTIN_LDEXP:
         case BUILTIN_EXTRACT_BITS: case BUILTIN_INSERT_BITS:
         case BUILTIN_PACK4X_I8: case BUILTIN_PACK4X_U8: case BUILTIN_PACK4X_I8_CLAMP:
         case BUILTIN_PACK4X_U8_CLAMP: case BUILTIN_UNPACK4X_I8:
@@ -243,6 +272,12 @@ static void builtin_expression(HlslEmitter *e, const IrInstruction *ir) {
         hlsl_error(e, "Hlsl builtin identity has no registered semantics");
         return;
     }
+    if (builtin->family == BUILTIN_DECOMPOSE) {
+        hlsl_format(e, "doe_decompose%u(", ir->type);
+        hlsl_value(e, ir->operands.scalar.left);
+        hlsl_text(e, ")");
+        return;
+    }
     if (builtin->family == BUILTIN_COMPONENT_INTEGER) {
         integer_builtin(e, ir, builtin->kind);
         return;
@@ -326,6 +361,7 @@ static void builtin_expression(HlslEmitter *e, const IrInstruction *ir) {
     }
     const char *intrinsic = NULL;
     switch (builtin->kind) {
+        case BUILTIN_LDEXP: intrinsic = "ldexp"; break;
         case BUILTIN_FLOOR: intrinsic = "floor"; break;
         case BUILTIN_ROUND: intrinsic = "round"; break;
         case BUILTIN_TRUNC: intrinsic = "trunc"; break;
@@ -366,6 +402,7 @@ static void builtin_expression(HlslEmitter *e, const IrInstruction *ir) {
         case BUILTIN_COUNT_ONE_BITS:
         case BUILTIN_REVERSE_BITS: case BUILTIN_COUNT_LEADING_ZEROS: case BUILTIN_COUNT_TRAILING_ZEROS:
         case BUILTIN_FIRST_LEADING_BIT: case BUILTIN_FIRST_TRAILING_BIT: case BUILTIN_UNPACK4X_U8:
+        case BUILTIN_FREXP: case BUILTIN_MODF:
         case BUILTIN_EXTRACT_BITS: case BUILTIN_INSERT_BITS:
         case BUILTIN_PACK4X_I8: case BUILTIN_PACK4X_U8: case BUILTIN_PACK4X_I8_CLAMP:
         case BUILTIN_PACK4X_U8_CLAMP: case BUILTIN_UNPACK4X_I8:

@@ -172,3 +172,29 @@ DoeCompilerStatus doe_compiler_validate_module(uint32_t version,
     errno = saved_errno;
     return result->diagnostic.status;
 }
+
+bool sampling_layout(uint32_t target, const DoeCompilerSamplingCapacitiesV16 *caps,
+    size_t *base, DoeCompilerWorkspaceRequirements *requirements) {
+    size_t specialization_base;
+    if (caps == NULL || caps->sampling_pairs >= UINT32_MAX ||
+        !specialization_layout(target, &caps->specialization, &specialization_base, requirements)) return false;
+    const size_t alignment = _Alignof(DoeCompilerSamplingPairV16);
+    const size_t padding = (alignment - requirements->size_bytes % alignment) % alignment;
+    if (requirements->size_bytes > SIZE_MAX - padding) return false;
+    *base = requirements->size_bytes + padding;
+    if (caps->sampling_pairs > (SIZE_MAX - *base) / sizeof(DoeCompilerSamplingPairV16)) return false;
+    requirements->size_bytes = *base + caps->sampling_pairs * sizeof(DoeCompilerSamplingPairV16);
+    return true;
+}
+DoeCompilerStatus doe_compiler_sampling_requirements(uint32_t version, uint32_t target,
+    const DoeCompilerSamplingCapacitiesV16 *caps, size_t capacities_size,
+    DoeCompilerWorkspaceRequirements *requirements, size_t requirements_size) {
+    if (requirements == NULL) return DOE_COMPILER_INPUT_ERROR;
+    if (version != DOE_COMPILER_SAMPLING_ABI_VERSION || capacities_size != sizeof(*caps) ||
+        requirements_size != sizeof(*requirements)) return DOE_COMPILER_ABI_MISMATCH;
+    DoeCompilerWorkspaceRequirements result;
+    size_t base;
+    if (!sampling_layout(target, caps, &base, &result)) return DOE_COMPILER_INPUT_ERROR;
+    *requirements = result;
+    return DOE_COMPILER_OK;
+}

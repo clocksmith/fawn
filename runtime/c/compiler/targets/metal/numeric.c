@@ -3,7 +3,24 @@
 #include "private.h"
 #include "../../src/builtin.h"
 
+static void decomposition_helpers(MetalEmitter *e) {
+    const CompilerWorkspace *c = e->module;
+    for (uint32_t i = 0u; i < c->type_count; ++i) {
+        const TypeRecord *t = &c->types[i];
+        if ((t->kind != TYPE_FREXP_RESULT && t->kind != TYPE_MODF_RESULT) ||
+            (t->flags & TYPE_ABSTRACT) != 0u) continue;
+        metal_text(e, "inline ");
+        metal_type(e, i + IR_PRIMITIVE_COUNT);
+        metal_format(e, " doe_decompose%u(", i + IR_PRIMITIVE_COUNT);
+        metal_type(e, t->element);
+        metal_text(e, " value) { ");
+        metal_type(e, i + IR_PRIMITIVE_COUNT);
+        metal_format(e, " result; result.m0 = %s(value, result.m1); return result; }\n",
+            t->kind == TYPE_FREXP_RESULT ? "frexp" : "modf");
+    }
+}
 void metal_numeric_helpers(MetalEmitter *e) {
+    decomposition_helpers(e);
     metal_text(e,
         "inline uint doe_div(uint a, uint b) { return a / (b == 0u ? 1u : b); }\n"
         "inline uint doe_rem(uint a, uint b) { return b == 0u ? 0u : a % b; }\n"
@@ -194,6 +211,12 @@ static void builtin_expression(MetalEmitter *e, const IrInstruction *ir) {
         metal_error(e, "Metal builtin identity has no registered semantics");
         return;
     }
+    if (builtin->family == BUILTIN_DECOMPOSE) {
+        metal_format(e, "doe_decompose%u(", ir->type);
+        metal_value(e, ir->operands.scalar.left);
+        metal_text(e, ")");
+        return;
+    }
     if (builtin->family == BUILTIN_COMPONENT_INTEGER) {
         integer_builtin(e, ir, builtin->kind);
         return;
@@ -213,6 +236,7 @@ static void builtin_expression(MetalEmitter *e, const IrInstruction *ir) {
     /* A source builtin registry is not a target support table. New shared
      * operations must never become unchecked MSL names by default. */
     static const char *const names[] = {
+        [BUILTIN_LDEXP] = "ldexp",
         [BUILTIN_FMA] = "fma",
         [BUILTIN_STEP] = "step",
         [BUILTIN_CEIL] = "ceil",
