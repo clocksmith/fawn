@@ -28,6 +28,8 @@ import {
   assertLiveResource,
   destroyResource,
   validatePositiveInteger,
+  releaseWhenCollected,
+  forgetCollectedRelease,
 } from "./shared/resource-lifecycle.js";
 import {
   KNOWN_FEATURES,
@@ -3032,6 +3034,8 @@ function ensureBunCommandEncoderNative(encoder) {
     if (encoder._native) return;
     encoder._native = wgpu.symbols.wgpuDeviceCreateCommandEncoder(
         assertLiveResource(encoder._device, "GPUCommandEncoder", "GPUDevice"), null);
+    // An encoder dropped unfinished releases its native; finish() takes it over.
+    releaseWhenCollected(encoder, encoder._native, (native) => wgpu.symbols.wgpuCommandEncoderRelease(native));
     for (const cmd of encoder._commands) {
         if (cmd.t === 0) {
             const pass = wgpu.symbols.wgpuCommandEncoderBeginComputePass(encoder._native, null);
@@ -3443,6 +3447,9 @@ const bunEncoderBackend = {
     },
     renderPassEnd(pass) {
         wgpu.symbols.wgpuRenderPassEncoderEnd(assertLiveResource(pass, "GPURenderPassEncoder.end", "GPURenderPassEncoder"));
+        // An ended pass records nothing more, so its native is released (Node too).
+        wgpu.symbols.wgpuRenderPassEncoderRelease(pass._native);
+        pass._native = null;
         pass._ended = true;
         if (pass._encoder._activePass === pass) {
             pass._encoder._activePass = null;
@@ -3740,6 +3747,7 @@ const bunEncoderBackend = {
         encoder._finished = true;
         if (encoder._native) {
             const cmd = wgpu.symbols.wgpuCommandEncoderFinish(encoder._native, null);
+            forgetCollectedRelease(encoder);
             wgpu.symbols.wgpuCommandEncoderRelease(encoder._native);
             encoder._native = null;
             return { _native: cmd, _batched: false };
@@ -3953,6 +3961,14 @@ const fullSurfaceBackend = {
     bindGroupLayoutRelease(native) { wgpu.symbols.wgpuBindGroupLayoutRelease(native); },
     bindGroupRelease(native) { wgpu.symbols.wgpuBindGroupRelease(native); },
     pipelineLayoutRelease(native) { wgpu.symbols.wgpuPipelineLayoutRelease(native); },
+    // Collected-object releases (resource-lifecycle releaseWhenCollected): the
+    // wrapper's native reference only, never destroy().
+    bufferRelease(native) { wgpu.symbols.wgpuBufferRelease(native); },
+    textureRelease(native) { wgpu.symbols.wgpuTextureRelease(native); },
+    textureViewRelease(native) { wgpu.symbols.wgpuTextureViewRelease(native); },
+    samplerRelease(native) { wgpu.symbols.wgpuSamplerRelease(native); },
+    renderPipelineRelease(native) { wgpu.symbols.wgpuRenderPipelineRelease(native); },
+    commandEncoderRelease(native) { wgpu.symbols.wgpuCommandEncoderRelease(native); },
     initQueueState(queue) {
         queue._pendingSubmissions = 0;
         queue._submitBreakdownNs = zeroQueueSubmitBreakdown();

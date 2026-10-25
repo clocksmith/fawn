@@ -15,6 +15,7 @@ import {
   assertOptionalIntegerInRange,
   assertLiveResource,
   destroyResource,
+  releaseWhenCollected,
   normalizeOrigin3D,
   normalizeExtent3D,
 } from './resource-lifecycle.js';
@@ -981,11 +982,28 @@ function createFullSurfaceClasses({
       this.size = size;
       this.usage = usage;
       this.label = '';
-      this._mapState = 'unmapped';
+      // Map state lives in a cell the collected-buffer release also reads.
+      this._mapCell = { state: 'unmapped' };
       initResource(this, 'GPUBuffer', owner);
       if (backend.initBufferState) {
         backend.initBufferState(this);
       }
+      if (typeof backend.bufferRelease === 'function') {
+        const mapCell = this._mapCell;
+        releaseWhenCollected(this, native, (handle) => {
+          // A buffer collected while mapped keeps its native: a mapped range
+          // may still view its memory.
+          if (mapCell.state !== 'mapped') backend.bufferRelease(handle);
+        });
+      }
+    }
+
+    get _mapState() {
+      return this._mapCell.state;
+    }
+
+    set _mapState(state) {
+      this._mapCell.state = state;
     }
 
     get mapState() {
@@ -1391,6 +1409,9 @@ function createFullSurfaceClasses({
       if (backend.initTextureState) {
         backend.initTextureState(this);
       }
+      // A texture collected without destroy() drops its native reference; a
+      // canvas owns the native of its current texture.
+      if (!this._externallyOwned) releaseWhenCollected(this, native, backend.textureRelease);
     }
 
     createView(descriptor) {
@@ -1456,10 +1477,14 @@ function createFullSurfaceClasses({
       const tv = new DoeGPUTextureView(view, this);
       tv._dimension = dimension;
       if (destroyed) tv._textureDestroyed = true;
-      if (!this._childViews) {
-        this._childViews = new Set();
+      // A canvas texture invalidates its views when the frame ends; other
+      // textures hold no reference to their views, which stay collectable.
+      if (this._externallyOwned) {
+        if (!this._childViews) {
+          this._childViews = new Set();
+        }
+        this._childViews.add(tv);
       }
-      this._childViews.add(tv);
       tv.label = normalizedDescriptor.label ?? '';
       return tv;
     }
@@ -1469,11 +1494,16 @@ function createFullSurfaceClasses({
     }
   }
 
+  // Views, samplers, render pipelines, shader modules and query sets have no
+  // (or a non-releasing) destroy(): a collected one drops its native reference.
+  // Native owners retain what they record or bind, so a collected object never
+  // frees state a bind group, pass or command buffer still uses.
   class DoeGPUTextureView {
     constructor(native, owner) {
       this._native = native;
       this.label = '';
       initResource(this, 'GPUTextureView', owner);
+      releaseWhenCollected(this, native, backend.textureViewRelease);
     }
   }
 
@@ -1482,6 +1512,7 @@ function createFullSurfaceClasses({
       this._native = native;
       this.label = '';
       initResource(this, 'GPUSampler', owner);
+      releaseWhenCollected(this, native, backend.samplerRelease);
     }
   }
 
@@ -1510,6 +1541,7 @@ function createFullSurfaceClasses({
       this._cachedLayouts = new Map();
       this.label = '';
       initResource(this, 'GPURenderPipeline', owner);
+      releaseWhenCollected(this, native, backend.renderPipelineRelease);
     }
 
     getBindGroupLayout(index) {
@@ -1545,6 +1577,7 @@ function createFullSurfaceClasses({
       this._code = code;
       this.label = '';
       initResource(this, 'GPUShaderModule', owner);
+      releaseWhenCollected(this, native, backend.shaderModuleDestroy);
     }
 
     // Compilation info stays available for a module the provider rejected.
@@ -1623,6 +1656,8 @@ function createFullSurfaceClasses({
       this.count = count;
       this.label = '';
       initResource(this, 'GPUQuerySet', owner);
+      // No query-set release export exists; destroy() also releases.
+      releaseWhenCollected(this, native, backend.querySetDestroy);
     }
 
     destroy() {

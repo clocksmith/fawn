@@ -24,12 +24,42 @@ function describeResourceLabel(value, fallback = 'resource') {
   return value?._resourceLabel ?? fallback;
 }
 
+// A collected object releases the native reference it owns, as WebGPU drops an
+// object that becomes unreachable. The held value never references the object.
+// destroyResource() and forgetCollectedRelease() unregister it first, so a
+// native is released exactly once.
+const COLLECTED_RELEASES = typeof FinalizationRegistry === 'function'
+  ? new FinalizationRegistry(({ native, release }) => {
+    try {
+      release(native);
+    } catch {
+      // A finalizer has no caller to report to; the provider already rejected
+      // or released the native.
+    }
+  })
+  : null;
+
+// Registers `release(native)` to run when `target` is collected; a null native
+// or missing release registers nothing. Re-registering replaces the record.
+function releaseWhenCollected(target, native, release) {
+  if (!COLLECTED_RELEASES || native == null || typeof release !== 'function') return;
+  COLLECTED_RELEASES.unregister(target);
+  COLLECTED_RELEASES.register(target, { native, release }, target);
+}
+
+function forgetCollectedRelease(target) {
+  COLLECTED_RELEASES?.unregister(target);
+}
+
 function initResource(target, label, owner = null, release = null) {
   target._resourceLabel = label;
   target._resourceOwner = owner;
   target._destroyed = false;
   target._invalid = false;
-  if (release) RESOURCE_RELEASES.set(target, release);
+  if (release) {
+    RESOURCE_RELEASES.set(target, release);
+    releaseWhenCollected(target, target._native, release);
+  }
   return target;
 }
 
@@ -135,6 +165,7 @@ function destroyResource(resource, release) {
   if (resource._destroyed || resource._native == null) {
     return;
   }
+  forgetCollectedRelease(resource);
   release(resource._native);
   resource._native = null;
   resource._destroyed = true;
@@ -184,6 +215,8 @@ export {
   assertLiveResource,
   destroyResource,
   releaseOwnedResource,
+  releaseWhenCollected,
+  forgetCollectedRelease,
   normalizeOrigin3D,
   normalizeExtent3D,
 };

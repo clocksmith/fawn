@@ -10,6 +10,7 @@ import {
   assertIntegerInRange,
   assertLiveResource,
   destroyResource,
+  releaseWhenCollected,
   normalizeOrigin3D,
   normalizeExtent3D,
 } from './resource-lifecycle.js';
@@ -176,6 +177,16 @@ function destroyedTextureUse(encoder, path, resources) {
 // True when a command that names `first`/`second` must record nothing: the
 // device is lost (every command is inert), an object is invalid, or a texture
 // is destroyed.
+// Lazily batched commands name only natives (compute pipelines, bind groups,
+// buffers). The encoder, then its command buffer, keeps their objects
+// reachable so a collected object's release cannot run before the commands
+// reach the provider, which retains what it records.
+function retainCommandObjects(encoder, first, second = null) {
+  const retained = encoder._commandObjects ??= new Set();
+  if (first != null) retained.add(first);
+  if (second != null) retained.add(second);
+}
+
 function encoderSkipsUse(encoder, path, first = null, second = null) {
   if (isDeviceLost(encoder._device)) {
     return true;
@@ -329,6 +340,7 @@ function createEncoderClasses(backend) {
     setPipeline(pipeline) {
       if (this._assertOpen('GPUComputePassEncoder.setPipeline')) return;
       if (passSkipsCommand(this, this._encoder, 'GPUComputePassEncoder.setPipeline', pipeline)) return;
+      retainCommandObjects(this._encoder, pipeline);
       backend.computePassSetPipeline(
         this,
         assertLiveResource(pipeline, 'GPUComputePassEncoder.setPipeline', 'GPUComputePipeline'),
@@ -347,6 +359,7 @@ function createEncoderClasses(backend) {
         dynamicOffsetsDataLength,
       );
       if (passSkipsCommand(this, this._encoder, path, bindGroup)) return;
+      retainCommandObjects(this._encoder, bindGroup);
       backend.computePassSetBindGroup(this, index, normalizeBindGroup(bindGroup, path), offsets);
     }
 
@@ -376,6 +389,7 @@ function createEncoderClasses(backend) {
       assertIntegerInRange(y, 'GPUComputePassEncoder._dispatchBound', 'y', UINT32_RANGE);
       assertIntegerInRange(z, 'GPUComputePassEncoder._dispatchBound', 'z', UINT32_RANGE);
       if (passSkipsCommand(this, this._encoder, 'GPUComputePassEncoder._dispatchBound', pipeline, bindGroup)) return;
+      retainCommandObjects(this._encoder, pipeline, bindGroup);
       backend.computePassDispatchBound(
         this,
         assertLiveResource(pipeline, 'GPUComputePassEncoder._dispatchBound', 'GPUComputePipeline'),
@@ -639,6 +653,9 @@ function createEncoderClasses(backend) {
       this._native = native;
       this.label = '';
       initResource(this, 'GPURenderBundle', owner);
+      // A collected bundle drops its native reference; a pass that executed it
+      // retains it natively.
+      releaseWhenCollected(this, native, backend.renderBundleDestroy);
     }
 
     destroy() {
@@ -929,6 +946,7 @@ function createEncoderClasses(backend) {
       const dstNative = assertLiveResource(dst, 'GPUCommandEncoder.copyBufferToBuffer', 'GPUBuffer');
       const size = explicitSize === undefined ? Math.max(0, srcBuffer.size - srcOffset) : explicitSize;
       assertIntegerInRange(size, 'GPUCommandEncoder.copyBufferToBuffer', 'size', NON_NEGATIVE_RANGE);
+      retainCommandObjects(this, srcBuffer, dst);
       backend.commandEncoderCopyBufferToBuffer(
         this,
         srcNative,
@@ -1119,6 +1137,8 @@ function createEncoderClasses(backend) {
       reportFinishError(device, errors, this._invalidMessage);
       if (this._invalidMessage == null && errors.length === 0) {
         const cmdBuf = new classes.DoeGPUCommandBuffer(state, device);
+        cmdBuf._commandObjects = this._commandObjects ?? null;
+        this._commandObjects = null;
         cmdBuf.label = descriptor?.label ?? '';
         if (this._submitError != null) cmdBuf._submitError = this._submitError;
         return cmdBuf;
