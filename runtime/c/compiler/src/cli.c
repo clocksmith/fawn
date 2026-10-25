@@ -3,6 +3,7 @@
 #define _POSIX_C_SOURCE 200809L
 #include "cli_json.h"
 #include "cli_text.h"
+#include "cli_specialization.h"
 #include "../include/doe_compiler_job.h"
 #include "../include/doe_compiler_stages.h"
 #include <errno.h>
@@ -47,15 +48,25 @@ int main(int argc, char **argv) {
     if (argc == 2 && strcmp(argv[1], "--help") == 0) {
         printf("%s --shader-path INPUT %s [--target spirv|msl|hlsl]\n", program,
             emitter ? "[--out OUTPUT]" : "--out OUTPUT [--reflection JSON | --reflection-v2 JSON]");
+        puts("SPIR-V: [--mode default|vulkan-compute-runtime] [--overrides NAME=VALUE,...]");
         return 0;
     }
     const char *input = NULL, *output = NULL, *reflection = NULL, *reflection_v2 = NULL;
     const char *target_name = NULL;
+    const char *mode = NULL;
+    CliOverrides overrides = {0};
     for (int i = 1; i < argc; i += 2) {
         if (i + 1 >= argc || strcmp(argv[i + 1], "--shader-path") == 0 ||
             strcmp(argv[i + 1], "--out") == 0 || strcmp(argv[i + 1], "--reflection") == 0 ||
-            strcmp(argv[i + 1], "--reflection-v2") == 0 || strcmp(argv[i + 1], "--target") == 0) {
-            fprintf(stderr, "each option requires a path\n"); return 2;
+            strcmp(argv[i + 1], "--reflection-v2") == 0 || strcmp(argv[i + 1], "--target") == 0 ||
+            strcmp(argv[i + 1], "--mode") == 0 || strcmp(argv[i + 1], "--overrides") == 0) {
+            fprintf(stderr, "each option requires a value\n"); return 2;
+        }
+        if (strcmp(argv[i], "--overrides") == 0) {
+            if (!cli_parse_overrides(argv[i + 1], &overrides)) {
+                fprintf(stderr, "invalid, duplicate or excessive override values\n"); return 2;
+            }
+            continue;
         }
         const char **slot = NULL;
         if (strcmp(argv[i], "--shader-path") == 0) slot = &input;
@@ -63,6 +74,7 @@ int main(int argc, char **argv) {
         else if (strcmp(argv[i], "--reflection") == 0) slot = &reflection;
         else if (strcmp(argv[i], "--reflection-v2") == 0) slot = &reflection_v2;
         else if (strcmp(argv[i], "--target") == 0) slot = &target_name;
+        else if (strcmp(argv[i], "--mode") == 0) slot = &mode;
         if (slot == NULL || *slot != NULL) { fprintf(stderr, "unknown or duplicate option: %s\n", argv[i]); return 2; }
         *slot = argv[i + 1];
     }
@@ -71,6 +83,16 @@ int main(int argc, char **argv) {
         return 2;
     }
     if (target_name == NULL) target_name = default_target;
+    const bool specialized = mode != NULL && strcmp(mode, "vulkan-compute-runtime") == 0;
+    if (mode != NULL && !specialized && strcmp(mode, "default") != 0) {
+        fprintf(stderr, "unknown compiler mode: %s\n", mode); return 2;
+    }
+    if ((mode != NULL && strcmp(target_name, "spirv") != 0) ||
+        (overrides.count != 0u && !specialized) ||
+        (specialized && (reflection != NULL || reflection_v2 != NULL))) {
+        fprintf(stderr, "runtime overrides require SPIR-V runtime mode without legacy reflection\n");
+        return 2;
+    }
     uint32_t text_target = 0u;
     if (target_name != NULL && strcmp(target_name, "spirv") != 0) {
         if (strcmp(target_name, "msl") == 0) text_target = DOE_COMPILER_TARGET_METAL;
@@ -140,6 +162,18 @@ int main(int argc, char **argv) {
     const DoeCompilerEntrySelectionV5 selection = {.mode = DOE_COMPILER_SELECT_NONE};
     size_t word_count = 0u;
     size_t word_capacity = 0u;
+    if (specialized) {
+        DoeCompilerDiagnostic specialization_diagnostic;
+        if (!cli_compile_specialized(&stages, source, length, &overrides,
+                &binary, &binary_length, &specialization_diagnostic)) {
+            fprintf(stderr, "%s:%u:%u: category=%u offset=%zu: %s\n", input,
+                specialization_diagnostic.line, specialization_diagnostic.column,
+                (unsigned)specialization_diagnostic.status, specialization_diagnostic.offset,
+                specialization_diagnostic.message);
+            goto cleanup;
+        }
+        goto publish;
+    }
     if (text_target != 0u) {
         DoeCompilerDiagnostic text_diagnostic;
         if (!cli_compile_text(text_target, &stages, source, length, &binary,
@@ -244,7 +278,7 @@ publish:
             cli_json_v2(&result_v2->reflection, json, json_capacity, &json_length);
         if (!serialized) { fprintf(stderr, "reflection exceeds buffer\n"); goto cleanup; }
     }
-    if (text_target == 0u) {
+    if (text_target == 0u && !specialized) {
         if (word_count > word_capacity || word_count > SIZE_MAX / 4u) {
             fprintf(stderr, "binary word count exceeds capacity\n"); goto cleanup;
         }

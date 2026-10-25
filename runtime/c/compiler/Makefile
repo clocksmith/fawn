@@ -22,7 +22,7 @@ CXXFLAGS = -std=c++17 -fno-exceptions -fno-rtti -O2 -Wall -Wextra -Wpedantic -Wc
 include targets/metal/sources.mk
 include targets/hlsl/sources.mk
 LIB_SOURCES = $(addprefix targets/metal/,$(METAL_SOURCE_NAMES)) $(addprefix targets/hlsl/,$(HLSL_SOURCE_NAMES)) $(shell cat src/sources.txt)
-HEADERS = include/doe_compiler_module_specialization.h include/doe_compiler_specialization.h src/override.h src/sources.txt include/doe_compiler_metal.h include/doe_compiler_hlsl.h src/numeric_host.h include/doe_compiler_text.h src/compile_internal.h src/text_internal.h $(wildcard targets/metal/*.h targets/hlsl/*.h targets/*.h) include/doe_compiler_stages.h src/stage.h src/parse_internal.h include/doe_compiler_resources.h include/doe_compiler_features.h include/doe_compiler_module.h src/builtin.h src/spirv_decl.h src/spirv_internal.h include/doe_compiler_typed.h src/sema.h src/numeric.h src/internal.h include/doe_compiler.h include/doe_compiler_v2.h include/doe_compiler_job.h src/cli_json.h src/cli_text.h
+HEADERS = include/doe_compiler_module_specialization.h include/doe_compiler_specialization.h src/override.h src/sources.txt include/doe_compiler_metal.h include/doe_compiler_hlsl.h src/numeric_host.h include/doe_compiler_text.h src/compile_internal.h src/text_internal.h $(wildcard targets/metal/*.h targets/hlsl/*.h targets/*.h) include/doe_compiler_stages.h src/stage.h src/parse_internal.h include/doe_compiler_resources.h include/doe_compiler_features.h include/doe_compiler_module.h src/builtin.h src/spirv_decl.h src/spirv_internal.h include/doe_compiler_typed.h src/sema.h src/numeric.h src/internal.h include/doe_compiler.h include/doe_compiler_v2.h include/doe_compiler_job.h src/cli_json.h src/cli_text.h src/cli_specialization.h
 SPIRV_VAL ?= spirv-val
 CLI_FAULT_FLAGS = -Wl,--wrap=write,--wrap=close,--wrap=link,--wrap=mkstemp,--wrap=malloc,--wrap=free,--wrap=doe_compiler_job_requirements,--wrap=doe_compiler_stage_requirements
 .PHONY: all test test-cli-modes test-uniform sanitize sanitize-cli sanitize-uniform clean
@@ -38,10 +38,10 @@ test-array-length: all build/test_array_length_api
 build/.ready:
 	mkdir -p build/tmp build/logs
 	touch $@
-build/doe-compiler-c: $(LIB_SOURCES) src/cli.c src/cli_json.c src/cli_text.c $(HEADERS) | build/.ready
-	$(CC) $(CFLAGS) $(LIB_SOURCES) src/cli.c src/cli_json.c src/cli_text.c -lm -o $@
-build/test_cli_faults: $(LIB_SOURCES) src/cli.c src/cli_json.c src/cli_text.c tests/cli_io_faults.c $(HEADERS) | build/.ready
-	$(CC) $(CFLAGS) $(LIB_SOURCES) src/cli.c src/cli_json.c src/cli_text.c tests/cli_io_faults.c $(CLI_FAULT_FLAGS) -lm -o $@
+build/doe-compiler-c: $(LIB_SOURCES) src/cli.c src/cli_json.c src/cli_text.c src/cli_specialization.c $(HEADERS) | build/.ready
+	$(CC) $(CFLAGS) $(LIB_SOURCES) src/cli.c src/cli_json.c src/cli_text.c src/cli_specialization.c -lm -o $@
+build/test_cli_faults: $(LIB_SOURCES) src/cli.c src/cli_json.c src/cli_text.c src/cli_specialization.c tests/cli_io_faults.c $(HEADERS) | build/.ready
+	$(CC) $(CFLAGS) $(LIB_SOURCES) src/cli.c src/cli_json.c src/cli_text.c src/cli_specialization.c tests/cli_io_faults.c $(CLI_FAULT_FLAGS) -lm -o $@
 test-cli-modes: all build/test_cli_faults
 	cd ../../.. && SPIRV_VAL="$(SPIRV_VAL)" python3 -m unittest runtime.c.compiler.tests.test_cli_modes
 .PHONY: test-emit-targets
@@ -100,8 +100,8 @@ sanitize: | build/.ready
 	$(CC) $(CFLAGS) -O1 -g -fno-omit-frame-pointer -fsanitize=address,undefined -pthread $(LIB_SOURCES) tests/test_expression_api.c -lm -lm -o build/test_expression_api_sanitize
 	ASAN_OPTIONS=detect_leaks=0:halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1 build/test_expression_api_sanitize
 sanitize-cli: | build/.ready
-	$(CC) $(CFLAGS) -O1 -g -fno-omit-frame-pointer -fsanitize=address,undefined $(LIB_SOURCES) src/cli.c src/cli_json.c src/cli_text.c -lm -o build/doe-compiler-c-sanitize
-	$(CC) $(CFLAGS) -O1 -g -fno-omit-frame-pointer -fsanitize=address,undefined $(LIB_SOURCES) src/cli.c src/cli_json.c src/cli_text.c tests/cli_io_faults.c $(CLI_FAULT_FLAGS) -lm -o build/test_cli_faults_sanitize
+	$(CC) $(CFLAGS) -O1 -g -fno-omit-frame-pointer -fsanitize=address,undefined $(LIB_SOURCES) src/cli.c src/cli_json.c src/cli_text.c src/cli_specialization.c -lm -o build/doe-compiler-c-sanitize
+	$(CC) $(CFLAGS) -O1 -g -fno-omit-frame-pointer -fsanitize=address,undefined $(LIB_SOURCES) src/cli.c src/cli_json.c src/cli_text.c src/cli_specialization.c tests/cli_io_faults.c $(CLI_FAULT_FLAGS) -lm -o build/test_cli_faults_sanitize
 	cd ../../.. && ASAN_OPTIONS=detect_leaks=0:halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1 DOE_COMPILER_CLI="$(CURDIR)/build/doe-compiler-c-sanitize" DOE_COMPILER_FAULT_CLI="$(CURDIR)/build/test_cli_faults_sanitize" SPIRV_VAL="$(SPIRV_VAL)" python3 -m unittest runtime.c.compiler.tests.test_cli_modes
 clean:
 	rm -rf build
@@ -157,7 +157,7 @@ sanitize-compute: | build/.ready
 	$(CC) $(CFLAGS) -O1 -g -fno-omit-frame-pointer -fsanitize=address,undefined -pthread $(LIB_SOURCES) tests/test_compute_api.c -lm -o build/test_compute_api_sanitize
 	ASAN_OPTIONS=detect_leaks=0:halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1 build/test_compute_api_sanitize
 
-	$(CC) $(CFLAGS) -O1 -g -fno-omit-frame-pointer -fsanitize=address,undefined $(LIB_SOURCES) src/cli.c src/cli_json.c src/cli_text.c -lm -o build/doe-compiler-c-compute-sanitize
+	$(CC) $(CFLAGS) -O1 -g -fno-omit-frame-pointer -fsanitize=address,undefined $(LIB_SOURCES) src/cli.c src/cli_json.c src/cli_text.c src/cli_specialization.c -lm -o build/doe-compiler-c-compute-sanitize
 	cd ../../.. && ASAN_OPTIONS=detect_leaks=0:halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1 DOE_COMPILER_CLI="$(CURDIR)/build/doe-compiler-c-compute-sanitize" SPIRV_VAL="$(SPIRV_VAL)" python3 -m unittest runtime.c.compiler.tests.test_compute
 
 .PHONY: test-job sanitize-job
@@ -193,7 +193,7 @@ test-functions: all build/test_function_api
 	build/test_function_api
 	SPIRV_VAL="$(SPIRV_VAL)" python3 tests/test_functions.py
 sanitize-functions: | build/.ready
-	$(CC) $(CFLAGS) -O1 -g -fno-omit-frame-pointer -fsanitize=address,undefined $(LIB_SOURCES) src/cli.c src/cli_json.c src/cli_text.c -lm -o build/doe-compiler-c-functions-sanitize
+	$(CC) $(CFLAGS) -O1 -g -fno-omit-frame-pointer -fsanitize=address,undefined $(LIB_SOURCES) src/cli.c src/cli_json.c src/cli_text.c src/cli_specialization.c -lm -o build/doe-compiler-c-functions-sanitize
 	ASAN_OPTIONS=detect_leaks=0:halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1 DOE_COMPILER_CLI="$(CURDIR)/build/doe-compiler-c-functions-sanitize" SPIRV_VAL="$(SPIRV_VAL)" python3 tests/test_functions.py
 
 # Current owner-focused developer checks. Historical aggregate targets and
