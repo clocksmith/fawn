@@ -155,7 +155,11 @@ and exact exports; absent platform loaders remain explicitly unavailable.
   usage (owner authorized 2026-10-24: async submit A+B, D2, fence-wait completion; futures later; reconfirmed after the section 7 risk review). On Vulkan, texture creation records the initialization into one
   device-owned batch that the next queue submission or compute-program replay
   submits ahead of its own work, without waiting; every access to texture
-  contents is such a submission. A failed batch recording poisons every texture
+  contents is such a submission. The batch is also submitted once it holds 64
+  textures and at any texture destroy(), since it retains each texture and its
+  staging until it runs; destroy() then frees the image and memory when the
+  texture's last command use retires, while views keep only their own native
+  views. A failed batch recording poisons every texture
   it held, and final release discards a batch that was never submitted. Borrowed
   surface frames keep their own waited initialization before publication. The
   batch and other private initialization use the same pending-submission owner

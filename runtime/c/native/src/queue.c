@@ -379,6 +379,7 @@ native_failure native_flush_initialization(native_device *device)
     doe_vk_commands *batch = device->init_batch;
     if (!batch) return native_failure_status(NATIVE_OK);
     device->init_batch = NULL;
+    device->init_batch_textures = 0;
     native_pending *pending = calloc(1, sizeof(*pending));
     if (!pending) {
         doe_vk_commands_abandon(batch, DOE_VK_OUT_OF_MEMORY);

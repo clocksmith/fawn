@@ -186,6 +186,15 @@ void wgpuTextureDestroy(WGPUTexture handle)
      * last release (BUSY). */
     native_texture *payload = doe_resource_texture_native(texture);
     if (device->backend.kind == WGPUBackendType_Vulkan && payload) {
+        /* A texture still in the unsubmitted initialization batch would keep
+         * its memory until the next submission: submit the batch now, without
+         * waiting, so that use retires with the queue's work. */
+        native_failure flushed = native_flush_initialization(device);
+        if (flushed.status != NATIVE_OK) {
+            char message[NATIVE_FAILURE_MESSAGE_CAPACITY];
+            native_failure_format(&flushed, "texture initialization submission at destroy failed", message);
+            native_error(device, native_result_error(flushed.status), message);
+        }
         native_progress_pending(device);
         doe_vk_status evicted = doe_vk_texture_evict(payload->texture);
         if (evicted != DOE_VK_OK && evicted != DOE_VK_BUSY) abort();
