@@ -36,15 +36,17 @@ static void release_lost_buffer(void *userdata, void *handle)
 
 static WGPUStringView no_label(void) { return (WGPUStringView){NULL, 0}; }
 
-WGPUBuffer native_lost_buffer(native_device *device, const WGPUBufferDescriptor *descriptor)
+static WGPUBuffer invalid_buffer(native_device *device, const WGPUBufferDescriptor *descriptor, bool explicit_error)
 {
     native_buffer *payload = calloc(1, sizeof(*payload));
     if (!payload) return NULL;
     payload->device = device;
     const doe_resource_buffer_desc desc = {descriptor ? descriptor->size : 0, descriptor ? descriptor->usage : 0, false};
     native_lock(device);
-    doe_resource_buffer *buffer = doe_resource_buffer_lost(&device->resources, &desc,
-        (doe_resource_native){payload, NULL, release_lost_buffer});
+    doe_resource_native native = {payload, NULL, release_lost_buffer};
+    doe_resource_buffer *buffer = explicit_error ?
+        doe_resource_buffer_error(&device->resources, &desc, native) :
+        doe_resource_buffer_lost(&device->resources, &desc, native);
     native_unlock(device);
     if (!buffer) {
         free(payload);
@@ -54,7 +56,16 @@ WGPUBuffer native_lost_buffer(native_device *device, const WGPUBufferDescriptor 
     return (WGPUBuffer)buffer;
 }
 
-WGPUTexture native_lost_texture(native_device *device, const WGPUTextureDescriptor *descriptor)
+WGPUBuffer native_lost_buffer(native_device *device, const WGPUBufferDescriptor *descriptor)
+{
+    return invalid_buffer(device, descriptor, false);
+}
+WGPUBuffer wgpuDeviceCreateErrorBuffer(WGPUDevice handle, const WGPUBufferDescriptor *descriptor)
+{
+    return handle ? invalid_buffer((native_device *)handle, descriptor, true) : NULL;
+}
+
+static WGPUTexture invalid_texture(native_device *device, const WGPUTextureDescriptor *descriptor, bool explicit_error)
 {
     doe_resource_texture_desc desc = {0};
     if (descriptor) desc = (doe_resource_texture_desc){
@@ -62,7 +73,20 @@ WGPUTexture native_lost_texture(native_device *device, const WGPUTextureDescript
         .format=descriptor->format, .width=descriptor->size.width, .height=descriptor->size.height,
         .depth_or_layers=descriptor->size.depthOrArrayLayers, .mip_levels=descriptor->mipLevelCount,
         .samples=descriptor->sampleCount, .usage=descriptor->usage};
-    LOST_WITH(device, doe_resource_texture_lost(&device->resources, &desc), descriptor ? descriptor->label : no_label());
+    LOST_WITH(device, explicit_error ? doe_resource_texture_error(&device->resources, &desc) :
+        doe_resource_texture_lost(&device->resources, &desc), descriptor ? descriptor->label : no_label());
+}
+
+WGPUTexture native_lost_texture(native_device *device, const WGPUTextureDescriptor *descriptor)
+{
+    return invalid_texture(device, descriptor, false);
+}
+WGPUTexture wgpuDeviceCreateErrorTexture(WGPUDevice handle, const WGPUTextureDescriptor *descriptor)
+{
+    WGPUTextureDescriptor fallback = WGPU_TEXTURE_DESCRIPTOR_INIT;
+    fallback.size = (WGPUExtent3D){1,1,1};
+    fallback.format = WGPUTextureFormat_RGBA8Unorm;
+    return handle ? invalid_texture((native_device *)handle, descriptor ? descriptor : &fallback, true) : NULL;
 }
 
 WGPUTextureView native_lost_view(native_device *device, doe_resource_texture *texture, const WGPUTextureViewDescriptor *descriptor)

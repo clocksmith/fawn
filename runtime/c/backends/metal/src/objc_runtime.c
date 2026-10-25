@@ -310,6 +310,11 @@ static doe_mtl_status open_apple_runtime(doe_mtl_native *out, doe_mtl_error *err
     native.close = close_runtime;
     native.release = doe_mtl_objc_release;
     native.external_texture = doe_mtl_objc_external_import;
+    native.shared_surface = doe_mtl_objc_shared_surface;
+    native.shared_surface_release = doe_mtl_objc_shared_surface_release;
+    native.shared_texture = doe_mtl_objc_shared_texture;
+    native.shared_event_retain = doe_mtl_objc_shared_event_retain;
+    native.shared_event_wait = doe_mtl_objc_shared_event_wait;
     native.surface_supported = doe_mtl_objc_surface_supported;
     native.surface_configure = doe_mtl_objc_surface_configure;
     native.surface_acquire = doe_mtl_objc_surface_acquire;

@@ -48,7 +48,7 @@ $(BUILD)/owners/%.o: ../%.c $(HEADERS) Makefile platform.mk
 	$(CC) $(CPPFLAGS) $(CFLAGS) -fvisibility=hidden -c $< -o $@
 $(NATIVE_LIBRARY): $(OBJECTS) $(COMPILER_LIBRARY) $(NATIVE_EXPORTS) | $(BUILD)
 	$(CC) $(CFLAGS) $(NATIVE_SHARED_FLAGS) $(OBJECTS) $(COMPILER_LINK) $(PLATFORM_LIBS) -o $@
-$(BUILD)/native.exports: EXPORTED_SYMBOLS.txt EXTENSION_SYMBOLS.txt | $(BUILD)
+$(BUILD)/native.exports: EXPORTED_SYMBOLS.txt EXTENSION_SYMBOLS.txt LEGACY_SYMBOLS.txt SHARED_MEMORY_SYMBOLS.txt | $(BUILD)
 	cat $^ | sed 's/^/_/' > $@.tmp
 	mv $@.tmp $@
 $(BUILD)/backend-selection: tests/backend_selection.c tests/consumer.h tests/adapter_class.h $(NATIVE_LIBRARY)
@@ -373,7 +373,7 @@ else
 check:
 	@echo "The SwiftShader/fault-injection suite requires Linux; use check-portable for host ABI checks." >&2
 	@exit 2
-GNU_ONLY_TESTS = metal-device-policy d3d12-device-policy map-oom fault-sweep metal-bridge demote failures recovery indirect-compute pending-progress vulkan-identity surface-progress program-prepare
+GNU_ONLY_TESTS = shared-memory metal-device-policy d3d12-device-policy map-oom fault-sweep metal-bridge demote failures recovery indirect-compute pending-progress vulkan-identity surface-progress program-prepare
 $(addprefix $(BUILD)/,$(GNU_ONLY_TESTS)): | unavailable-gnu-tests
 .PHONY: unavailable-gnu-tests
 unavailable-gnu-tests:
@@ -547,3 +547,21 @@ check-optional-formats: $(BUILD)/optional-formats
 	$(BUILD)/optional-formats
 check: check-optional-formats
 PHYSICAL_CLIENTS += optional-formats
+
+$(BUILD)/legacy-api: tests/legacy_api.c tests/consumer.h tests/adapter_class.h include/doe_native_legacy.h $(NATIVE_LIBRARY)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
+.PHONY: check-legacy-api check-browser-procedures
+check-legacy-api: $(BUILD)/legacy-api
+	$(BUILD)/legacy-api
+check-browser-procedures: $(NATIVE_LIBRARY)
+	python3 tests/browser_required_procedures.py $(NATIVE_LIBRARY)
+check: check-legacy-api check-browser-procedures
+PHYSICAL_CLIENTS += legacy-api
+
+$(BUILD)/shared-memory: tests/shared_memory.c tests/consumer.h tests/adapter_class.h $(OBJECTS) $(COMPILER_LIBRARY) | $(BUILD)
+	$(CC) $(CPPFLAGS) $(CFLAGS) tests/shared_memory.c ../backends/metal/tests/mock_native.c $(OBJECTS) $(COMPILER_LINK) $(PLATFORM_LIBS) \
+	  -Wl,--wrap=doe_mtl_context_create -Wl,--wrap=doe_mtl_context_device -Wl,--wrap=doe_mtl_commands_wait -o $@
+.PHONY: check-shared-memory
+check-shared-memory: $(BUILD)/shared-memory
+	$(BUILD)/shared-memory
+check: check-shared-memory

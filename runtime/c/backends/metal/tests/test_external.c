@@ -24,7 +24,7 @@ static doe_mtl_status import(void *userdata, void *device, doe_mtl_external_sour
         result.desc[i] = (doe_mtl_texture_desc){.type=DOE_MTL_TEXTURE_2D,
             .format=i ? DOE_MTL_RG8_UNORM : DOE_MTL_R8_UNORM,
             .width=i ? 4 : 8,.height=i ? 2 : 4,.depth_or_layers=1,.mip_levels=1,
-            .sample_count=1,.usage=DOE_MTL_TEXTURE_SAMPLED};
+            .sample_count=1,.usage=DOE_MTL_TEXTURE_SAMPLED | DOE_MTL_TEXTURE_COPY_SRC};
         doe_mtl_status status = test->base.texture(userdata, device, &result.desc[i], &result.planes[i], error);
         if (status != DOE_MTL_OK) {
             for (uint32_t j = 0; j < i; ++j) test->base.release(userdata, result.planes[j]);

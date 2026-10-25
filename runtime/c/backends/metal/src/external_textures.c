@@ -2,16 +2,18 @@
 #include "texture_internal.h"
 #include "doe_metal_external.h"
 
-static doe_mtl_status adopt_plane(doe_mtl_context *context,
+doe_mtl_status doe_mtl_texture_adopt_external(doe_mtl_context *context,
     const doe_mtl_texture_desc *desc, void *native, doe_mtl_texture **out,
     doe_mtl_error *error)
 {
     if (!native || desc->type != DOE_MTL_TEXTURE_2D || !desc->width || !desc->height ||
         desc->width > context->caps.max_texture_2d || desc->height > context->caps.max_texture_2d ||
         desc->depth_or_layers != 1 || desc->mip_levels != 1 || desc->sample_count != 1 ||
-        desc->usage != DOE_MTL_TEXTURE_SAMPLED || desc->allow_format_views)
+        !desc->usage || (desc->usage & ~(uint32_t)(DOE_MTL_TEXTURE_SAMPLED |
+            DOE_MTL_TEXTURE_RENDER_TARGET | DOE_MTL_TEXTURE_COPY_SRC | DOE_MTL_TEXTURE_COPY_DST)))
         return doe_mtl_fail(DOE_MTL_INVALID_ARGUMENT, "external plane shape", error);
     if (desc->format != DOE_MTL_RGBA8_UNORM && desc->format != DOE_MTL_BGRA8_UNORM &&
+        desc->format != DOE_MTL_RGBA8_SRGB && desc->format != DOE_MTL_BGRA8_SRGB &&
         desc->format != DOE_MTL_R8_UNORM && desc->format != DOE_MTL_RG8_UNORM)
         return doe_mtl_fail(DOE_MTL_UNSUPPORTED, "external plane format", error);
     doe_mtl_texture *texture = calloc(1, sizeof(*texture));
@@ -59,7 +61,10 @@ doe_mtl_status doe_mtl_external_texture_import(doe_mtl_context *context,
     if (!imported.count || imported.count > 2)
         status = doe_mtl_fail(DOE_MTL_UNSUPPORTED, "external texture plane count", error);
     for (uint32_t i = 0; status == DOE_MTL_OK && i < imported.count; ++i) {
-        status = adopt_plane(context, &imported.desc[i], imported.planes[i], &result.planes[i], error);
+        if (imported.desc[i].usage != (DOE_MTL_TEXTURE_SAMPLED | DOE_MTL_TEXTURE_COPY_SRC) ||
+            imported.desc[i].allow_format_views)
+            status = doe_mtl_fail(DOE_MTL_INVALID_ARGUMENT, "external plane usage", error);
+        else status = doe_mtl_texture_adopt_external(context, &imported.desc[i], imported.planes[i], &result.planes[i], error);
         if (status == DOE_MTL_OK) {
             imported.planes[i] = NULL;
             ++result.count;

@@ -25,6 +25,13 @@ def digest(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def copy_symbol_inventories(owner: Path, destination: Path) -> None:
+    """Preserve separate pinned, Doe, legacy and shared-memory ABI inventories."""
+    for name in ("EXPORTED_SYMBOLS.txt", "EXTENSION_SYMBOLS.txt",
+                 "LEGACY_SYMBOLS.txt", "SHARED_MEMORY_SYMBOLS.txt"):
+        shutil.copy2(owner / name, destination / name)
+
+
 def lean_proof_record(source: Path) -> dict[str, object]:
     """Lean proof provenance of the captured tree, from the inputs
     runtime/zig/build.zig reads for verification/lean_proof.zig, hashed the same
@@ -228,8 +235,7 @@ def build_package(repo: Path, revision: str, build: Path, destination: Path,
     shutil.copy2(source / "LICENSE", candidate / "licenses/Doe.txt")
     shutil.copy2(source / "runtime/zig/vendor/spirv-headers/LICENSE",
                  candidate / "licenses/Khronos-SPIRV-Headers.txt")
-    shutil.copy2(owner / "EXPORTED_SYMBOLS.txt", candidate / "EXPORTED_SYMBOLS.txt")
-    shutil.copy2(owner / "EXTENSION_SYMBOLS.txt", candidate / "EXTENSION_SYMBOLS.txt")
+    copy_symbol_inventories(owner, candidate)
     shutil.copy2(owner / "tests/procedures.cpp", candidate / "procedures.cpp")
     consumer_runpath = "@executable_path/../lib" if system == "Darwin" else "$ORIGIN/../lib"
     consumer_name = "procedures.exe" if system == "Windows" else "procedures"

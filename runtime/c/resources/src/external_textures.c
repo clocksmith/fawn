@@ -70,3 +70,8 @@ doe_resource_view *doe_resource_external_texture_plane(const doe_resource_extern
 {
     return texture && plane < texture->plane_count ? texture->planes[plane] : NULL;
 }
+
+bool doe_resource_external_texture_available(const doe_resource_external_texture *texture)
+{
+    return resource_external_available(texture);
+}

@@ -43,6 +43,9 @@ typedef struct doe_mtl_sampler_use {
 } doe_mtl_sampler_use;
 
 enum { DOE_MTL_ASPECT_COLOR = 1, DOE_MTL_ASPECT_DEPTH = 2, DOE_MTL_ASPECT_STENCIL = 4 };
+/* Adopts native +1 only on success; external producer contents are initialized. */
+doe_mtl_status doe_mtl_texture_adopt_external(doe_mtl_context *context,
+    const doe_mtl_texture_desc *desc, void *native, doe_mtl_texture **out, doe_mtl_error *error);
 uint8_t doe_mtl_format_aspects(doe_mtl_format format);
 bool doe_mtl_samples_supported(const doe_mtl_caps *caps, uint32_t samples);
 bool doe_mtl_texture_aspect_initialized(const doe_mtl_commands *commands,

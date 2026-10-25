@@ -41,7 +41,7 @@ static doe_mtl_status inspect_source(doe_mtl_objc_external *external,
             format == PIXEL_RGBA ? DOE_MTL_RGBA8_UNORM : DOE_MTL_BGRA8_UNORM;
         result->desc[i] = (doe_mtl_texture_desc){.type=DOE_MTL_TEXTURE_2D,
             .format=native_format,.width=(uint32_t)width,.height=(uint32_t)height,
-            .depth_or_layers=1,.mip_levels=1,.sample_count=1,.usage=DOE_MTL_TEXTURE_SAMPLED};
+            .depth_or_layers=1,.mip_levels=1,.sample_count=1,.usage=DOE_MTL_TEXTURE_SAMPLED | DOE_MTL_TEXTURE_COPY_SRC};
     }
     return DOE_MTL_OK;
 }
@@ -65,28 +65,9 @@ doe_mtl_status doe_mtl_objc_external_import(void *userdata, void *device,
     void *pool = doe_mtl_objc_pool(runtime);
     if (!pool) return doe_mtl_fail(DOE_MTL_NATIVE_FAILURE, "external texture autorelease pool", error);
     for (uint32_t i = 0; i < result.count; ++i) {
-        void *descriptor = doe_mtl_objc_object(runtime, runtime->texture_class, runtime->new_object);
-        if (!descriptor) {
-            status = doe_mtl_fail(DOE_MTL_OUT_OF_MEMORY, "external texture descriptor", error);
-            break;
-        }
-        const doe_mtl_texture_desc *desc = &result.desc[i];
-        runtime->set_size_call(descriptor, runtime->set_type, DOE_MTL_TEXTURE_2D);
-        runtime->set_size_call(descriptor, runtime->set_format, (size_t)desc->format);
-        runtime->set_size_call(descriptor, runtime->set_width, desc->width);
-        runtime->set_size_call(descriptor, runtime->set_height, desc->height);
-        runtime->set_size_call(descriptor, runtime->set_depth, 1);
-        runtime->set_size_call(descriptor, runtime->set_layers, 1);
-        runtime->set_size_call(descriptor, runtime->set_mips, 1);
-        runtime->set_size_call(descriptor, runtime->set_samples, 1);
-        runtime->set_size_call(descriptor, runtime->set_storage, 0); /* MTLStorageModeShared */
-        runtime->set_size_call(descriptor, runtime->set_usage, 1); /* MTLTextureUsageShaderRead */
-        result.planes[i] = external->texture_call(device, external->new_texture, descriptor, surface, i);
-        doe_mtl_objc_void(runtime, descriptor, runtime->release);
-        if (!result.planes[i]) {
-            status = doe_mtl_fail(DOE_MTL_NATIVE_FAILURE, "newTextureWithDescriptor:iosurface:plane:", error);
-            break;
-        }
+        status = doe_mtl_objc_import_plane(runtime, device, surface, i,
+            &result.desc[i], &result.planes[i], error);
+        if (status != DOE_MTL_OK) break;
     }
     if (status != DOE_MTL_OK) {
         for (uint32_t i = 0; i < result.count; ++i)
@@ -96,4 +77,35 @@ doe_mtl_status doe_mtl_objc_external_import(void *userdata, void *device,
     if (status != DOE_MTL_OK) return status;
     *out = result;
     return doe_mtl_fail(DOE_MTL_OK, "external texture import", error);
+}
+
+/* Same descriptor/native-identity operation for sampled external planes and
+ * renderable shared IOSurfaces. Callers own inspection and the autorelease pool. */
+doe_mtl_status doe_mtl_objc_import_plane(doe_mtl_objc *runtime, void *device,
+    void *surface, size_t plane, const doe_mtl_texture_desc *desc, void **out,
+    doe_mtl_error *error)
+{
+    void *descriptor = doe_mtl_objc_object(runtime, runtime->texture_class, runtime->new_object);
+    if (!descriptor) return doe_mtl_fail(DOE_MTL_OUT_OF_MEMORY, "external texture descriptor", error);
+    runtime->set_size_call(descriptor, runtime->set_type, DOE_MTL_TEXTURE_2D);
+    runtime->set_size_call(descriptor, runtime->set_format, (size_t)desc->format);
+    runtime->set_size_call(descriptor, runtime->set_width, desc->width);
+    runtime->set_size_call(descriptor, runtime->set_height, desc->height);
+    runtime->set_size_call(descriptor, runtime->set_depth, 1);
+    runtime->set_size_call(descriptor, runtime->set_layers, 1);
+    runtime->set_size_call(descriptor, runtime->set_mips, 1);
+    runtime->set_size_call(descriptor, runtime->set_samples, 1);
+    runtime->set_size_call(descriptor, runtime->set_storage, 0); /* MTLStorageModeShared */
+    size_t usage = 0;
+    if (desc->usage & DOE_MTL_TEXTURE_SAMPLED) usage |= 1; /* MTLTextureUsageShaderRead */
+    if (desc->usage & DOE_MTL_TEXTURE_RENDER_TARGET) usage |= 4;
+    if (desc->allow_format_views) usage |= 16;
+    runtime->set_size_call(descriptor, runtime->set_usage, usage);
+    void *texture = runtime->external.texture_call(device, runtime->external.new_texture,
+        descriptor, surface, plane);
+    doe_mtl_objc_void(runtime, descriptor, runtime->release);
+    if (!texture) return doe_mtl_fail(DOE_MTL_NATIVE_FAILURE,
+        "newTextureWithDescriptor:iosurface:plane:", error);
+    *out = texture;
+    return doe_mtl_fail(DOE_MTL_OK, "external plane import", error);
 }

@@ -52,3 +52,8 @@ HWND/DXGI composition uses the same native pending submission and resource textu
 owners as other backends. Exact backbuffer identity survives early public release;
 no surface teardown or resize forces outstanding frame/view leases away. Actual
 Windows SDK compilation and window/device execution are separate evidence gates.
+
+Retained non-pinned public entrypoints use separately inventoried legacy headers.
+They preserve typed callback signatures, retained getter leases, invalid-resource
+identity and truthful rejecting contracts. Browser-copy adapters lower through the
+ordinary command owner; color conversion is not inferred from a successful copy.

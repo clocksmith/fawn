@@ -2,10 +2,62 @@
  * Explicit inventory of implemented public entrypoints. This table does not
  * manufacture missing API symbols or resolve through another provider. */
 #include "internal.h"
+#include "doe_native_shared_memory.h"
 #include <string.h>
 
 typedef struct native_procedure { const char *name; WGPUProc procedure; } native_procedure;
 static const native_procedure procedures[] = {
+    {"wgpuDeviceImportSharedBufferMemory", (WGPUProc)wgpuDeviceImportSharedBufferMemory},
+    {"wgpuDeviceImportSharedFence", (WGPUProc)wgpuDeviceImportSharedFence},
+    {"wgpuDeviceImportSharedTextureMemory", (WGPUProc)wgpuDeviceImportSharedTextureMemory},
+    {"wgpuSharedBufferMemoryAddRef", (WGPUProc)wgpuSharedBufferMemoryAddRef},
+    {"wgpuSharedBufferMemoryBeginAccess", (WGPUProc)wgpuSharedBufferMemoryBeginAccess},
+    {"wgpuSharedBufferMemoryCreateBuffer", (WGPUProc)wgpuSharedBufferMemoryCreateBuffer},
+    {"wgpuSharedBufferMemoryEndAccess", (WGPUProc)wgpuSharedBufferMemoryEndAccess},
+    {"wgpuSharedBufferMemoryEndAccessStateFreeMembers", (WGPUProc)wgpuSharedBufferMemoryEndAccessStateFreeMembers},
+    {"wgpuSharedBufferMemoryGetProperties", (WGPUProc)wgpuSharedBufferMemoryGetProperties},
+    {"wgpuSharedBufferMemoryIsDeviceLost", (WGPUProc)wgpuSharedBufferMemoryIsDeviceLost},
+    {"wgpuSharedBufferMemoryRelease", (WGPUProc)wgpuSharedBufferMemoryRelease},
+    {"wgpuSharedBufferMemorySetLabel", (WGPUProc)wgpuSharedBufferMemorySetLabel},
+    {"wgpuSharedFenceAddRef", (WGPUProc)wgpuSharedFenceAddRef},
+    {"wgpuSharedFenceExportInfo", (WGPUProc)wgpuSharedFenceExportInfo},
+    {"wgpuSharedFenceRelease", (WGPUProc)wgpuSharedFenceRelease},
+    {"wgpuSharedFenceSetLabel", (WGPUProc)wgpuSharedFenceSetLabel},
+    {"wgpuSharedTextureMemoryAddRef", (WGPUProc)wgpuSharedTextureMemoryAddRef},
+    {"wgpuSharedTextureMemoryBeginAccess", (WGPUProc)wgpuSharedTextureMemoryBeginAccess},
+    {"wgpuSharedTextureMemoryCreateTexture", (WGPUProc)wgpuSharedTextureMemoryCreateTexture},
+    {"wgpuSharedTextureMemoryEndAccess", (WGPUProc)wgpuSharedTextureMemoryEndAccess},
+    {"wgpuSharedTextureMemoryEndAccessStateFreeMembers", (WGPUProc)wgpuSharedTextureMemoryEndAccessStateFreeMembers},
+    {"wgpuSharedTextureMemoryGetProperties", (WGPUProc)wgpuSharedTextureMemoryGetProperties},
+    {"wgpuSharedTextureMemoryIsDeviceLost", (WGPUProc)wgpuSharedTextureMemoryIsDeviceLost},
+    {"wgpuSharedTextureMemoryRelease", (WGPUProc)wgpuSharedTextureMemoryRelease},
+    {"wgpuSharedTextureMemorySetLabel", (WGPUProc)wgpuSharedTextureMemorySetLabel},
+
+    {"wgpuAdapterGetFormatCapabilities", (WGPUProc)wgpuAdapterGetFormatCapabilities},
+    {"wgpuAdapterPropertiesMemoryHeapsFreeMembers", (WGPUProc)wgpuAdapterPropertiesMemoryHeapsFreeMembers},
+    {"wgpuAdapterPropertiesSubgroupMatrixConfigsFreeMembers", (WGPUProc)wgpuAdapterPropertiesSubgroupMatrixConfigsFreeMembers},
+    {"wgpuCommandEncoderWriteBuffer", (WGPUProc)wgpuCommandEncoderWriteBuffer},
+    {"wgpuComputePassEncoderWriteTimestamp", (WGPUProc)wgpuComputePassEncoderWriteTimestamp},
+    {"wgpuDawnDrmFormatCapabilitiesFreeMembers", (WGPUProc)wgpuDawnDrmFormatCapabilitiesFreeMembers},
+    {"wgpuDeviceCreateErrorBuffer", (WGPUProc)wgpuDeviceCreateErrorBuffer},
+    {"wgpuDeviceCreateErrorTexture", (WGPUProc)wgpuDeviceCreateErrorTexture},
+    {"wgpuDeviceValidateTextureDescriptor", (WGPUProc)wgpuDeviceValidateTextureDescriptor},
+    {"wgpuQueueCopyExternalImageToTexture", (WGPUProc)wgpuQueueCopyExternalImageToTexture},
+    {"wgpuQueueCopyExternalTextureForBrowser", (WGPUProc)wgpuQueueCopyExternalTextureForBrowser},
+    {"wgpuQueueCopyTextureForBrowser", (WGPUProc)wgpuQueueCopyTextureForBrowser},
+    {"wgpuRenderPassEncoderWriteTimestamp", (WGPUProc)wgpuRenderPassEncoderWriteTimestamp},
+
+    {"wgpuAdapterCreateDevice", (WGPUProc)wgpuAdapterCreateDevice},
+    {"wgpuAdapterGetInstance", (WGPUProc)wgpuAdapterGetInstance},
+    {"wgpuDeviceCreateExternalTexture", (WGPUProc)wgpuDeviceCreateExternalTexture},
+    {"wgpuDeviceGetAdapter", (WGPUProc)wgpuDeviceGetAdapter},
+    {"wgpuDeviceSetDeviceLostCallback", (WGPUProc)wgpuDeviceSetDeviceLostCallback},
+    {"wgpuDeviceSetUncapturedErrorCallback", (WGPUProc)wgpuDeviceSetUncapturedErrorCallback},
+    {"wgpuDeviceTick", (WGPUProc)wgpuDeviceTick},
+    {"wgpuExternalTextureDestroy", (WGPUProc)wgpuExternalTextureDestroy},
+    {"wgpuExternalTextureExpire", (WGPUProc)wgpuExternalTextureExpire},
+    {"wgpuExternalTextureRefresh", (WGPUProc)wgpuExternalTextureRefresh},
+
     {"wgpuAdapterAddRef", (WGPUProc)wgpuAdapterAddRef},
     {"wgpuAdapterGetFeatures", (WGPUProc)wgpuAdapterGetFeatures},
     {"wgpuAdapterGetInfo", (WGPUProc)wgpuAdapterGetInfo},

@@ -43,6 +43,11 @@ void doe_mtl_objc_load_external(doe_mtl_objc *runtime, doe_objc_message message)
         !external_symbol(pixel, "CVPixelBufferGetHeightOfPlane", &external->pixel_plane_height, sizeof(external->pixel_plane_height)) ||
         !external_symbol(pixel, "CVPixelBufferGetPixelFormatType", &external->pixel_format, sizeof(external->pixel_format)))
         goto unavailable;
+    /* Foundation already retains its CoreFoundation dependency while this
+     * runtime is live; the exact CFTypeRef signatures remain separate from id. */
+    if (!external_symbol(runtime->foundation_library, "CFRetain", &external->cf_retain, sizeof(external->cf_retain)) ||
+        !external_symbol(runtime->foundation_library, "CFRelease", &external->cf_release, sizeof(external->cf_release)))
+        goto unavailable;
     external->new_texture = runtime->selector("newTextureWithDescriptor:iosurface:plane:");
     external->texture_call = (doe_objc_external_texture_call)message;
     if (external->new_texture && external->texture_call) return;

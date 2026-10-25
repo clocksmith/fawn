@@ -23,7 +23,7 @@ struct doe_resource_buffer {
 struct doe_resource_texture {
     resource_base base;
     doe_resource_texture_desc desc;
-    bool destroyed;
+    bool destroyed, error_object;
     WGPUTextureFormat view_formats[2];
 };
 struct doe_resource_view {

@@ -50,6 +50,7 @@ struct doe_mtl_commands {
     void *native;
     doe_mtl_command_state state;
     uint64_t timeline_value;
+    void *shared_signal_event; /* +1 until this recording is discarded or terminal. */
     doe_mtl_error failure;
     doe_mtl_texture *present_texture; /* Borrowed through the ordinary texture use. */
     doe_mtl_buffer_use *buffers;

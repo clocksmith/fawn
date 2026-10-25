@@ -306,6 +306,8 @@ doe_mtl_status doe_mtl_commands_release(doe_mtl_commands *commands) {
     if (commands->native != NULL)
         context->native.release(context->native.userdata, commands->native);
     retire_uses(commands, false, false);
+    if (commands->shared_signal_event)
+        context->native.release(context->native.userdata, commands->shared_signal_event);
     free(commands);
     doe_mtl_context_release(context);
     return DOE_MTL_OK;

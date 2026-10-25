@@ -7,6 +7,8 @@ typedef void *(*doe_objc_external_texture_call)(void *, void *, void *, void *, 
 typedef struct doe_mtl_objc_external {
     void *iosurface_library, *corevideo_library;
     void *new_texture;
+    const void *(*cf_retain)(const void *);
+    void (*cf_release)(const void *);
     doe_objc_external_texture_call texture_call;
     size_t (*surface_planes)(void *);
     size_t (*surface_width)(void *);
