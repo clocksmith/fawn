@@ -21,7 +21,7 @@
 enum { TRACKED = 2 };
 static atomic_bool arm, hold, refused_held, later_held, first_unobserved;
 static atomic_uint later_blocks;
-static atomic_uint armed_slot, waits;
+static atomic_uint armed_slot, waits, submits;
 static _Atomic(doe_vk_commands *) tracked[TRACKED];
 static _Atomic(doe_vk_status) injected[TRACKED];
 static _Atomic(void *) observed_buffer;
@@ -40,6 +40,7 @@ doe_vk_status __real_doe_vk_commands_release(doe_vk_commands *);
 doe_vk_status __wrap_doe_vk_commands_submit(doe_vk_commands *commands, doe_vk_error *error)
 {
     if (atomic_exchange(&arm, false)) atomic_store(&tracked[atomic_load(&armed_slot)], commands);
+    atomic_fetch_add(&submits, 1);
     return __real_doe_vk_commands_submit(commands, error);
 }
 doe_vk_status __wrap_doe_vk_commands_wait(doe_vk_commands *commands, uint64_t timeout, doe_vk_error *error)
@@ -459,6 +460,73 @@ static void targeted_host_access(void)
     consumer_finish(&s);
 }
 
+static WGPUTexture zero_texture(state *s, WGPUTextureFormat format, WGPUTextureUsage usage)
+{
+    WGPUTextureDescriptor descriptor = WGPU_TEXTURE_DESCRIPTOR_INIT;
+    descriptor.format = format;
+    descriptor.usage = usage;
+    descriptor.size = (WGPUExtent3D){4, 4, 1};
+    WGPUTexture texture = wgpuDeviceCreateTexture(s->device, &descriptor);
+    assert(texture);
+    return texture;
+}
+
+/* New textures record zero initialization into one device batch (D2): no
+ * submission until the next queue submission, which runs the batch first,
+ * so the first use already sees zeros. Upload (copy-dst), color attachment
+ * clear and depth attachment clear paths are covered, plus discarding an
+ * unsubmitted batch at final release. */
+static void zero_initialization_before_first_use(void)
+{
+    state s = {0};
+    consumer_init(&s);
+    atomic_store(&submits, 0);
+    WGPUTexture upload = zero_texture(&s, WGPUTextureFormat_RGBA8Unorm, WGPUTextureUsage_CopyDst | WGPUTextureUsage_CopySrc);
+    WGPUTexture color = zero_texture(&s, WGPUTextureFormat_RGBA8Unorm, WGPUTextureUsage_RenderAttachment | WGPUTextureUsage_CopySrc);
+    WGPUTexture depth = zero_texture(&s, WGPUTextureFormat_Depth32Float, WGPUTextureUsage_RenderAttachment | WGPUTextureUsage_CopySrc);
+    WGPUTexture unused = zero_texture(&s, WGPUTextureFormat_RGBA8Unorm, WGPUTextureUsage_CopyDst);
+    wgpuTextureRelease(unused); /* Released before its batch ever runs. */
+    assert(atomic_load(&submits) == 0);
+    enum { ROW = 256, BYTES = ROW * 4 };
+    WGPUBuffer out[3];
+    for (int i = 0; i < 3; ++i) out[i] = buffer(&s, BYTES, WGPUBufferUsage_CopyDst | WGPUBufferUsage_MapRead);
+    WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(s.device, NULL);
+    WGPUTextureView view = wgpuTextureCreateView(color, NULL);
+    WGPURenderPassColorAttachment attachment = WGPU_RENDER_PASS_COLOR_ATTACHMENT_INIT;
+    attachment.view = view;
+    attachment.loadOp = WGPULoadOp_Load; /* Reads the initialized contents. */
+    attachment.storeOp = WGPUStoreOp_Store;
+    WGPURenderPassDescriptor pass_desc = WGPU_RENDER_PASS_DESCRIPTOR_INIT;
+    pass_desc.colorAttachmentCount = 1;
+    pass_desc.colorAttachments = &attachment;
+    WGPURenderPassEncoder pass = wgpuCommandEncoderBeginRenderPass(encoder, &pass_desc);
+    wgpuRenderPassEncoderEnd(pass);
+    wgpuRenderPassEncoderRelease(pass);
+    WGPUTexture sources[3] = {upload, color, depth};
+    for (int i = 0; i < 3; ++i) {
+        WGPUTexelCopyTextureInfo from = {.texture = sources[i],
+            .aspect = i == 2 ? WGPUTextureAspect_DepthOnly : WGPUTextureAspect_All};
+        WGPUTexelCopyBufferInfo to = {.buffer = out[i], .layout = {.bytesPerRow = ROW, .rowsPerImage = 4}};
+        WGPUExtent3D extent = {4, 4, 1};
+        wgpuCommandEncoderCopyTextureToBuffer(encoder, &from, &to, &extent);
+    }
+    submit(&s, encoder);
+    assert(atomic_load(&submits) == 2); /* The initialization batch, then the work. */
+    for (int i = 0; i < 3; ++i) {
+        const unsigned char *bytes = map(&s, out[i], BYTES);
+        for (int row = 0; row < 4; ++row)
+            for (int b = 0; b < 16; ++b) assert(bytes[row * ROW + b] == 0);
+        wgpuBufferUnmap(out[i]);
+        wgpuBufferRelease(out[i]);
+    }
+    wgpuTextureViewRelease(view);
+    for (int i = 0; i < 3; ++i) wgpuTextureRelease(sources[i]);
+    WGPUTexture pending = zero_texture(&s, WGPUTextureFormat_RGBA8Unorm, WGPUTextureUsage_CopyDst);
+    wgpuTextureRelease(pending);
+    consumer_finish(&s); /* Final release discards the never-submitted batch. */
+    assert(atomic_load(&submits) == 2);
+}
+
 int main(void)
 {
     leases_until_completion();
@@ -467,6 +535,7 @@ int main(void)
     loss_with_work_in_flight();
     refused_submission_does_not_strand_later_work();
     targeted_host_access();
-    printf("PASS async submit: no fence wait at Vulkan submit, released handles keep leases until completion, oldest-first settlement keeps the first error once, map/work-done callbacks in request order over completed work, loss with work in flight retires it as failed, a refused unresolved submission does not strand later work the worker retires by fence, host access waits only for work using its buffer and work done never waits for queue idle %s\n",
+    zero_initialization_before_first_use();
+    printf("PASS async submit: no fence wait at Vulkan submit, released handles keep leases until completion, oldest-first settlement keeps the first error once, map/work-done callbacks in request order over completed work, loss with work in flight retires it as failed, a refused unresolved submission does not strand later work the worker retires by fence, host access waits only for work using its buffer and work done never waits for queue idle, batched zero initialization runs before first use with no submission of its own %s\n",
         adapter_class_scope());
 }

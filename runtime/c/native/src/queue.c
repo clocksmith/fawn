@@ -373,6 +373,24 @@ native_failure native_submit_backend_commands(native_device *device, native_comm
     return submit_pending(device, pending, true);
 }
 
+native_failure native_flush_initialization(native_device *device)
+{
+    doe_vk_commands *batch = device->init_batch;
+    if (!batch) return native_failure_status(NATIVE_OK);
+    device->init_batch = NULL;
+    native_pending *pending = calloc(1, sizeof(*pending));
+    if (!pending) {
+        doe_vk_commands_abandon(batch, DOE_VK_OUT_OF_MEMORY);
+        if (doe_vk_commands_release(batch) != DOE_VK_OK) abort();
+        return native_failure_status(NATIVE_OUT_OF_MEMORY);
+    }
+    pending->device = device;
+    native_device_retain(device);
+    pending->native = (native_command_handle){.kind=WGPUBackendType_Vulkan,.value.vulkan=batch};
+    /* Queue order puts it before the caller's recording; it does not wait. */
+    return submit_pending(device, pending, false);
+}
+
 native_failure native_submit_commands(native_device *device, doe_vk_commands *commands)
 {
     native_command_handle native = {.kind=WGPUBackendType_Vulkan,.value.vulkan=commands};
@@ -467,6 +485,7 @@ void wgpuQueueSubmit(WGPUQueue handle, size_t count, const WGPUCommandBuffer *ha
         if (resource_status != DOE_RESOURCE_OK) failure = native_failure_status(NATIVE_INVALID_ARGUMENT);
         else ++pending->count;
     }
+    if (failure.status == NATIVE_OK) failure = native_flush_initialization(device);
     if (failure.status == NATIVE_OK) failure = native_command_create(&device->backend, &pending->native);
     for (size_t i = 0; failure.status == NATIVE_OK && i < count; ++i)
         failure = native_record_resource_commands(&pending->native, pending->resources[i]);

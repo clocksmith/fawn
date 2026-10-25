@@ -151,9 +151,15 @@ and exact exports; absent platform loaders remain explicitly unavailable.
   writable maps write back on unmap. No CPU compute emulation is used.
 - Public textures/views/samplers alias the same resource owner. Images are fully
   zero-initialized at every mip/layer through actual native uploads or attachment
-  clears before publication, including images without public CopyDst usage. Private native
-  initialization commands use the same pending-submission owner and an explicit
-  submission device lease. Packed queue writes and 256-byte-aligned public command
+  clears before any queue-ordered access, including images without public CopyDst
+  usage (owner authorized 2026-10-24: async submit A+B, D2, fence-wait completion; futures later; reconfirmed after the section 7 risk review). On Vulkan, texture creation records the initialization into one
+  device-owned batch that the next queue submission or compute-program replay
+  submits ahead of its own work, without waiting; every access to texture
+  contents is such a submission. A failed batch recording poisons every texture
+  it held, and final release discards a batch that was never submitted. Borrowed
+  surface frames keep their own waited initialization before publication. The
+  batch and other private initialization use the same pending-submission owner
+  and an explicit submission device lease. Packed queue writes and 256-byte-aligned public command
   copies retain their distinct canonical validation. Native views/samplers remain
   alive through the recorded resource and backend obligations.
 - On Vulkan, QueueSubmit returns once `vkQueueSubmit` accepts the work (owner authorized 2026-10-24: async submit A+B, D2, fence-wait completion; futures later; reconfirmed after the section 7 risk review).

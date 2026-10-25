@@ -425,6 +425,13 @@ doe_vk_status doe_vk_commands_release(doe_vk_commands *commands) {
     return DOE_VK_OK;
 }
 
+void doe_vk_commands_abandon(doe_vk_commands *commands, doe_vk_status status) {
+    if (commands == NULL || status == DOE_VK_OK) return;
+    if (commands->state != DOE_VK_RECORDING && commands->state != DOE_VK_POISONED) return;
+    doe_vk_textures_complete(commands, status); /* Not committed: poisons and frees ownership. */
+    (void)doe_vk_poison(commands, status);
+}
+
 doe_vk_status doe_vk_commands_hold(doe_vk_commands *commands) {
     if (commands == NULL) return DOE_VK_INVALID_ARGUMENT;
     if (commands->references == UINT32_MAX) return DOE_VK_OUT_OF_MEMORY;

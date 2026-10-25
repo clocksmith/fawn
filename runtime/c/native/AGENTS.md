@@ -183,6 +183,9 @@ slots, preserving canonical empty vertex slots. Whole passes lower once through
 the existing backend attachment owner, including empty clear/load and discard.
 Never publish a public texture until its real initialization completes; unknown
 initialization retains the private allocation on the existing pending owner.
+On Vulkan, texture zero initialization is queue-ordered before any access
+instead: it records into one device batch that the next submission flushes
+first, and a failed batch poisons its textures (owner authorized 2026-10-24: async submit A+B, D2, fence-wait completion; futures later; reconfirmed after the section 7 risk review).
 Depth/stencil transfers, indirect/indexed render guards and sample-mask support
 must be admitted by their actual composed path, not inferred from another backend.
 

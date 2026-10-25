@@ -197,6 +197,7 @@ void native_device_release(void *identity)
     /* Pending resource submissions hold device leases, so finalization cannot
      * race or discard an unresolved backend obligation. */
     if (device->pending) abort();
+    native_release_initialization(device);
     native_pending_progress_destroy(device);
     if (doe_error_scope_deinit(device->errors).status != DOE_ERROR_SCOPE_OK) abort();
     free(device->error_storage);

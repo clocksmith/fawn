@@ -156,7 +156,8 @@ uint32_t doeNativeComputeProgramSubmit(void *handle)
             failure = native_failure_status(native_from_vulkan(doe_vk_commands_retain(program->recording)));
             native = (native_command_handle){.kind=WGPUBackendType_Vulkan,.value.vulkan=program->recording};
         } else {
-            failure = native_command_create(&device->backend, &native);
+            failure = native_flush_initialization(device);
+            if (failure.status == NATIVE_OK) failure = native_command_create(&device->backend, &native);
             if (failure.status == NATIVE_OK) failure = native_record_resource_commands(&native, program->commands);
             if (failure.status != NATIVE_OK && native_command_release(&native) != NATIVE_OK) abort();
         }

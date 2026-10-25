@@ -56,6 +56,9 @@ typedef struct native_device {
     doe_vk_draw_validator *draw_validator;
     native_pending *pending;
     native_failure retired_failure;
+    /* Vulkan: unsubmitted zero initialization of newly created textures,
+     * flushed ahead of the next recording that may touch them. */
+    doe_vk_commands *init_batch;
 } native_device;
 
 /* Native payloads have no independent reference count. Their resource owner
@@ -255,6 +258,14 @@ void native_pending_progress_destroy(native_device *device);
 /* Caller holds device mutex. Always adopts commands, including failed/unknown
  * completion. A private initialization submission has its own device lease. */
 native_failure native_submit_commands(native_device *device, doe_vk_commands *commands);
+/* Caller holds device mutex. Batched public texture initialization (Vulkan):
+ * queue records into device->init_batch; flush submits it, without waiting,
+ * before any recording that may touch those textures; release discards an
+ * unsubmitted batch at final device release. */
+native_failure native_queue_texture_initialization(native_device *device, doe_vk_texture *texture,
+    const doe_vk_texture_desc *desc, const doe_vk_format_caps *caps);
+native_failure native_flush_initialization(native_device *device);
+void native_release_initialization(native_device *device);
 /* Caller holds the device mutex and one ordinary device lease. Always adopts
  * the tagged command object, including allocation failure/unknown completion. */
 native_failure native_submit_backend_commands(native_device *device, native_command_handle commands);

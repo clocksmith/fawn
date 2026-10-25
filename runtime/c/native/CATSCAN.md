@@ -21,6 +21,9 @@ error-scope, resource, shader and backend contracts apply.
 ## Invariants
 One tagged device/pending owner selects the backend without fallback or migration.
 Read only the selected payload. Reflection never substitutes for dispatch analysis.
+Vulkan textures are zero-initialized before any queue-ordered access through
+one batched private submission (owner authorized 2026-10-24: async submit A+B, D2,
+fence-wait completion; futures later; reconfirmed after the section 7 risk review).
 Unknown work retains resource leases and progress. Vulkan submission returns
 at queue acceptance; running work is not failure and settles oldest first (owner authorized 2026-10-24: async submit A+B, D2, fence-wait completion; futures later; reconfirmed after the section 7 risk review). Surface acquisition/discard
 uncertainty uses reserved records on the same pending list; presentation requires
