@@ -46,6 +46,7 @@ static const NumericBuiltin numeric_builtins[] = {
     {"distance", BUILTIN_DISTANCE, 2u, BUILTIN_FLOAT_REDUCTION, 67u},
     {"normalize", BUILTIN_NORMALIZE, 1u, BUILTIN_FLOAT_VECTOR, 69u},
     {"cross", BUILTIN_CROSS, 2u, BUILTIN_FLOAT_CROSS, 68u},
+    {"mix", BUILTIN_MIX, 3u, BUILTIN_FLOAT_MIX, 46u},
     {"reflect", BUILTIN_REFLECT, 2u, BUILTIN_FLOAT_VECTOR, 71u},
     {"faceForward", BUILTIN_FACE_FORWARD, 3u, BUILTIN_FLOAT_VECTOR, 70u},
     {"refract", BUILTIN_REFRACT, 3u, BUILTIN_FLOAT_REFRACT, 72u},
@@ -83,7 +84,7 @@ uint32_t builtin_extended_instruction(const NumericBuiltin *builtin, TypeId leaf
 bool builtin_floating(const NumericBuiltin *builtin) {
     return builtin->family == BUILTIN_COMPONENT_FLOAT || builtin->family == BUILTIN_FLOAT_REDUCTION ||
         builtin->family == BUILTIN_FLOAT_VECTOR || builtin->family == BUILTIN_FLOAT_CROSS ||
-        builtin->family == BUILTIN_FLOAT_REFRACT;
+        builtin->family == BUILTIN_FLOAT_REFRACT || builtin->family == BUILTIN_FLOAT_MIX;
 }
 
 bool builtin_subgroup(const NumericBuiltin *builtin) {
@@ -110,8 +111,11 @@ bool builtin_shape(const NumericBuiltin *builtin, uint32_t width) {
     return width >= 1u && width <= 4u;
 }
 
-uint32_t builtin_argument_width(const NumericBuiltin *builtin, uint32_t argument, uint32_t vector_width) {
-    return builtin->family == BUILTIN_FLOAT_REFRACT && argument == 2u ? 1u : vector_width;
+uint32_t builtin_argument_width(const NumericBuiltin *builtin, uint32_t argument,
+                                uint32_t vector_width, uint32_t actual_width) {
+    if (argument == 2u && (builtin->family == BUILTIN_FLOAT_REFRACT ||
+        (builtin->family == BUILTIN_FLOAT_MIX && actual_width == 1u))) return 1u;
+    return vector_width;
 }
 
 /* Projection borrows an existing compact constant DAG. Only the completed
@@ -320,7 +324,7 @@ bool builtin_constant(Source *source, uint32_t offset, const NumericBuiltin *bui
     if (builtin->family == BUILTIN_MATRIX)
         return matrix_constant(source, offset, builtin->kind, arguments[0], result_type, out);
     if (builtin->family == BUILTIN_COMPONENT_NUMERIC || builtin->family == BUILTIN_COMPONENT_FLOAT ||
-        builtin->family == BUILTIN_COMPONENT_INTEGER)
+        builtin->family == BUILTIN_COMPONENT_INTEGER || builtin->family == BUILTIN_FLOAT_MIX)
         return component_constant(source, offset, builtin, arguments, result_type, out);
     if (builtin->family == BUILTIN_FLOAT_VECTOR || builtin->family == BUILTIN_FLOAT_CROSS ||
         builtin->family == BUILTIN_FLOAT_REFRACT)

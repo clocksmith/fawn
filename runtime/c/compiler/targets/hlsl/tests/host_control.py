@@ -218,7 +218,10 @@ for name, main in (("control", scalar), ("aggregate", aggregate), ("effects", ef
         # C++ round differs from HLSL round. Map only this documented intrinsic;
         # WGSL/IR interpretation is still the real emitted operation sequence.
         text = re.sub(r"\bround\(", "std::nearbyint(", text)
-        extra = "float rsqrt(float x) { return 1.0f / std::sqrt(x); }\n"
+        extra = '#include "../../metal/tests/host/vector_control.h"\nusing metal::float2;\n'
+        extra += "float rsqrt(float x) { return 1.0f / std::sqrt(x); }\n"
+        extra += "float lerp(float x,float y,float a) { return x*(1.0f-a)+y*a; }\n"
+        extra += "float2 lerp(float2 x,float2 y,float2 a) { return float2(lerp(x[0],y[0],a[0]),lerp(x[1],y[1],a[1])); }\n"
         extra += "float degrees(float x) { return x * 57.29577951308232f; }\n"
         extra += "float radians(float x) { return x * 0.017453292519943295f; }\n"
     path.write_text(prelude + extra + text + main)

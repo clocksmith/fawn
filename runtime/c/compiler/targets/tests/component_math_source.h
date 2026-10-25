@@ -32,7 +32,9 @@ static const char component_math_source[] =
     "data[23]=bitcast<u32>(atan2(half-half,half+other));"
     "data[24]=bitcast<u32>(pow(exponent(),exponent()));"
     "data[25]=bitcast<u32>(atan2(axis(),axis()));"
-    "data[26]=privateNext();data[27]=privateNext();data[28]=privateState.values[1];}"
+    "data[26]=u32(mix(f32(privateNext()),14.0f,0.5f));"
+    "data[27]=u32(mix(vec2f(f32(privateNext())),vec2f(15.0f),0.5f).x);"
+    "data[28]=u32(mix(vec2f(f32(privateState.values[1])),vec2f(14.0f),vec2f(0.0f,0.5f)).y);}"
     ;
 /* Exact, independently written exercised values. Transcendentals use only
  * exact elementary inputs here; no universal accuracy claim follows. */
@@ -41,6 +43,6 @@ static const uint32_t component_math_expected[] = {
     0x40800000u, 0x80000000u, 0xbf800000u, 0u, 0u, 0x3e800000u,
     0x3f800000u, 0x80000000u, 0x3f800000u, 0x40000000u, 0x40400000u,
     0x3f000000u, 0xffffffffu, 1u, 0xffffffffu, 0u, 0u,
-    0x41100000u, 0u, 0x41000000u, 0u, 10u, 11u, 10u
+    0x41100000u, 0u, 0x41000000u, 0u, 12u, 13u, 12u
 };
 #endif
