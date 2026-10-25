@@ -22,7 +22,7 @@ const wasmPath = provider === 'c' ? resolve(cPath.stdout.trim()) : resolve(zigRo
 const built = provider === 'c'
   ? spawnSync(process.env.PYTHON ?? 'python3', ['tools/build_browser.py', '--output', wasmPath],
     { cwd: resolve(root, 'runtime/c/compiler'), stdio: 'inherit' })
-  : spawnSync(process.env.ZIG ?? 'c',
+  : spawnSync(process.env.ZIG ?? 'zig',
     ['build', 'browser-wasm', 'emit-wgsl', '-Doptimize=ReleaseFast', '--summary', 'all'],
     { cwd: zigRoot, stdio: 'inherit' });
 if (built.status !== 0) process.exit(built.status ?? 1);

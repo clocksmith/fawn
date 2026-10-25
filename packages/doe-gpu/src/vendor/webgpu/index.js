@@ -348,7 +348,7 @@ function currentDoeBuildMetadata() {
 function unavailableLibraryError() {
   const detail = doeLibraryOverrideMissing
     ? `doe-gpu: the selected provider ${doeLibraryOverrideMissing} does not exist (DOE_WEBGPU_LIB/DOE_LIB); an explicit override never falls back to another library.`
-    : 'doe-gpu: libwebgpu_doe not found. Install the matching doe-gpu optional platform package, or build it with `cd runtime/zig && zig build dropin`, or set DOE_WEBGPU_LIB.';
+    : 'doe-gpu: libwebgpu_doe not found. Install the matching doe-gpu optional platform package, or build the C provider with `python3 runtime/c/tools/build-native-package.py --ref HEAD --build <build> --destination <stage>` and set DOE_C_STAGE, or set DOE_WEBGPU_LIB.';
   return attachProviderAvailability(
     new Error(detail),
     providerAvailabilityFailure({ reason: 'runtime_library_unavailable', stage: 'native.ensureLibrary', detail }),
