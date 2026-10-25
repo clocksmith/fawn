@@ -13,9 +13,9 @@ quirk data or bench comparability policy.
 
 ## Scope
 `upload`, `buffer_write`, `barrier`, WGSL `kernel_dispatch` with buffer
-bindings, copies, 2D texture write, query and destroy, proxy-pipeline render
-draws and samplers over `libwebgpu_doe_c`. [Coverage](README.md) lists
-admitted and rejected inputs.
+bindings and semantic records, copies, 2D textures, proxy-pipeline draws and
+samplers over `libwebgpu_doe_c`. [Coverage](README.md) lists admitted and
+rejected inputs.
 
 ## Contracts
 `pipeline/trace/replay.py` artifact shape, the trace v1 hash chain, the
@@ -36,9 +36,9 @@ chains with doe-zig-runtime rows.
 runs are not GPU, performance or bench-comparability evidence.
 
 ## Non-goals
-Quirk actions without a C path, surface or indirect commands, custom render
-pipelines, mipmapped or multisampled textures, GPU timestamps, deferred queue
-sync or default CLI replacement.
+Numeric stability evaluation, quirk actions without a C path, surface or
+indirect commands, custom render pipelines, mipmapped or multisampled textures,
+GPU timestamps, deferred queue sync or default CLI replacement.
 
 ## Freedom
 Internal parsing, resource caching and encoding may vary within these boundaries.

@@ -67,6 +67,26 @@ int main(int argc, char **argv)
     assert(dispatch->as.dispatch.bindings[3].buffer_type == DOE_BINDING_STORAGE);
     assert(dispatch->as.dispatch.bindings[3].handle == 6004 && dispatch->as.dispatch.bindings[3].buffer_size == 524288);
     doe_stream_free(&stream);
+    /* Semantic identity in both spellings, as doe-zig-runtime's command_stream.zig reads it. */
+    parse_file(argv[1], "numeric-stability-decode-greedy.commands.json", &stream);
+    assert(stream.count == 6);
+    const doe_semantic *logits = &stream.commands[3].semantic;
+    assert(!strcmp(logits->op_id, "decode.final_logits") && !strcmp(logits->stage, "decode_demo"));
+    assert(!strcmp(logits->phase, "final_logits") && logits->has_token_index && logits->token_index == 0);
+    assert(!logits->has_layer_index && !logits->execution_plan_hash && !logits->has_capture);
+    assert(doe_semantic_present(logits) && !doe_semantic_present(&stream.commands[0].semantic));
+    doe_stream_free(&stream);
+    const char *snake = "[{\"kind\":\"kernel_dispatch\",\"kernel\":\"k\",\"semantic_op_id\":\"op\","
+        "\"semantic_layer_index\":7,\"semantic_execution_plan_hash\":\"p\",\"capture_buffer_handle\":9,"
+        "\"capture_offset\":4,\"capture_size\":8}]";
+    doe_stream_error semantic_error;
+    assert(doe_stream_parse(snake, strlen(snake), &stream, &semantic_error));
+    const doe_semantic *snake_semantic = &stream.commands[0].semantic;
+    assert(!strcmp(snake_semantic->op_id, "op") && !snake_semantic->stage && !snake_semantic->has_token_index);
+    assert(snake_semantic->has_layer_index && snake_semantic->layer_index == 7);
+    assert(!strcmp(snake_semantic->execution_plan_hash, "p") && snake_semantic->has_capture);
+    assert(snake_semantic->capture_handle == 9 && snake_semantic->capture_offset == 4 && snake_semantic->capture_size == 8);
+    doe_stream_free(&stream);
     parse_file(argv[1], "p0_resource_lifecycle_commands.json", &stream);
     assert(stream.count == 5 && stream.commands[3].kind == DOE_COMMAND_BARRIER);
     assert(stream.commands[3].as.barrier.dependency_count == 64);
@@ -146,7 +166,16 @@ int main(int argc, char **argv)
     rejects("[{\"kind\":\"kernel_dispatch\",\"x\":1}]", 0, "kernel");
     rejects("[{\"kind\":\"kernel_dispatch\",\"kernel\":\"k\",\"x\":0}]", 0, "nonzero");
     rejects("[{\"kind\":\"kernel_dispatch\",\"kernel\":\"k\",\"repeatSynchronization\":\"independent\"}]", 0, "independent");
-    rejects("[{\"kind\":\"kernel_dispatch\",\"kernel\":\"k\",\"semanticOpId\":\"op\"}]", 0, "semanticOpId");
+    rejects("[{\"kind\":\"kernel_dispatch\",\"kernel\":\"k\",\"semanticOpId\":\"a\",\"semantic_op_id\":\"b\"}]", 0, "both");
+    rejects("[{\"kind\":\"kernel_dispatch\",\"kernel\":\"k\",\"semanticTokenIndex\":4294967296}]", 0, "semantic_token_index");
+    rejects("[{\"kind\":\"kernel_dispatch\",\"kernel\":\"k\",\"semanticOpId\":\"op\",\"captureBufferHandle\":1}]", 0, "both");
+    rejects("[{\"kind\":\"kernel_dispatch\",\"kernel\":\"k\",\"semanticOpId\":\"op\",\"captureBufferHandle\":1,"
+        "\"captureSize\":0}]", 0, "nonzero");
+    rejects("[{\"kind\":\"kernel_dispatch\",\"kernel\":\"k\",\"captureBufferHandle\":1,\"captureSize\":4}]", 0,
+        "semantic operation");
+    rejects("[{\"kind\":\"kernel_dispatch\",\"kernel\":\"k\",\"semanticOpId\":\"op\",\"numericStability\":{}}]", 0,
+        "numericStability");
+    rejects("[{\"kind\":\"buffer_write\",\"handle\":1,\"data\":[1],\"semanticOpId\":\"op\"}]", 0, "semanticOpId");
     rejects("[{\"kind\":\"kernel_dispatch\",\"kernel\":\"k\",\"bindings\":[{\"binding\":0,\"kind\":\"texture\","
         "\"resource_handle\":1}]}]", 0, "buffers only");
     rejects("[{\"kind\":\"kernel_dispatch\",\"kernel\":\"k\",\"bindings\":[{\"binding\":0,\"resource_handle\":1}]}]",
@@ -176,7 +205,7 @@ int main(int argc, char **argv)
     rejects("[{\"kind\":\"render_draw\",\"drawCount\":1,\"targetFormat\":\"depth24plus\"}]", 0, "target format");
     rejects("[{\"kind\":\"sampler_create\",\"handle\":1,\"magFilter\":\"cubic\"}]", 0, "mag_filter");
     rejects("[{\"kind\":\"sampler_create\",\"handle\":1,\"maxAnisotropy\":0}]", 0, "max_anisotropy");
-    puts("runtime-cli stream: eight example streams, aliases, copy, texture, render and sampler kinds and 40 visible "
+    puts("runtime-cli stream: nine example streams, semantic fields, aliases, copy, texture, render and sampler kinds and 46 visible "
         "rejections (host only)");
     return 0;
 }

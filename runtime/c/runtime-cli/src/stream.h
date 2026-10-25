@@ -113,6 +113,19 @@ typedef struct doe_sampler_desc {
     uint16_t max_anisotropy;
 } doe_sampler_desc;
 
+/* Semantic operation identity on a kernel_dispatch (doe-zig-runtime's
+ * contracts/semantic.zig SemanticContext) and its optional buffer capture.
+ * Strings are document-owned; NULL is absent. */
+typedef struct doe_semantic {
+    const char *op_id, *stage, *phase, *execution_plan_hash;
+    bool has_token_index, has_layer_index;
+    uint32_t token_index, layer_index;
+    /* Bytes [capture_offset, capture_offset + capture_size) of the capture
+     * buffer after the command, written next to the operator record. */
+    bool has_capture;
+    uint64_t capture_handle, capture_offset, capture_size;
+} doe_semantic;
+
 typedef struct doe_command {
     doe_command_kind kind;
     /* The trace row's "command" label: the normalized kind name, as
@@ -160,6 +173,7 @@ typedef struct doe_command {
         doe_sampler_desc sampler;
         struct { uint64_t handle; } sampler_destroy;
     } as;
+    doe_semantic semantic; /* kernel_dispatch only; all absent elsewhere. */
 } doe_command;
 
 typedef struct doe_stream {
@@ -189,6 +203,9 @@ typedef struct doe_output_oracle {
 /* Reads a kernel_dispatch output_oracle; false with a reason for every
  * schema, kind, scope or initialization this runtime does not implement. */
 bool doe_output_oracle_parse(const doe_json_value *value, doe_output_oracle *out, char *message, size_t message_size);
+
+/* True when any semantic identity field is present (a capture alone is not one). */
+bool doe_semantic_present(const doe_semantic *semantic);
 
 /* The normalized kind tag the trace hashes ("buffer_write" for "write_buffer"). */
 const char *doe_command_tag(doe_command_kind kind);

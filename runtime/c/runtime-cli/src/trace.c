@@ -32,10 +32,19 @@ static uint64_t hash_string(uint64_t value, const char *text)
 static const doe_quirk_decision NO_DECISION = {.scope = "none", .safety = "none", .verification = "none",
     .proof = "none", .action = "none"};
 
+/* A present index hashes as its u64 little-endian bytes, an absent one as one zero byte. */
+static uint64_t hash_optional_u32(uint64_t value, bool present, uint32_t input)
+{
+    return present ? hash_u64(value, input) : hash_byte(value, 0);
+}
+
+static const doe_semantic NO_SEMANTIC = {0};
+
 uint64_t doe_trace_payload_hash(uint64_t previous, uint64_t seq, const char *label, const char *tag,
-    const char *kernel, const doe_quirk_decision *decision)
+    const char *kernel, const doe_quirk_decision *decision, const doe_semantic *semantic)
 {
     const doe_quirk_decision *d = decision ? decision : &NO_DECISION;
+    const doe_semantic *s = semantic ? semantic : &NO_SEMANTIC;
     uint64_t next = hash_u64(previous, seq);
     next = hash_string(next, label);
     next = hash_string(next, tag);
@@ -47,12 +56,12 @@ uint64_t doe_trace_payload_hash(uint64_t previous, uint64_t seq, const char *lab
     next = hash_string(next, d->verification);
     next = hash_string(next, d->proof);
     next = hash_string(next, d->action);
-    next = hash_string(next, NULL); /* semantic op id */
-    next = hash_string(next, NULL); /* semantic stage */
-    next = hash_string(next, NULL); /* semantic phase */
-    next = hash_byte(next, 0);      /* token index (absent) */
-    next = hash_byte(next, 0);      /* layer index (absent) */
-    next = hash_string(next, NULL); /* execution plan hash */
+    next = hash_string(next, s->op_id);
+    next = hash_string(next, s->stage);
+    next = hash_string(next, s->phase);
+    next = hash_optional_u32(next, s->has_token_index, s->token_index);
+    next = hash_optional_u32(next, s->has_layer_index, s->layer_index);
+    next = hash_string(next, s->execution_plan_hash);
     next = hash_u64(next, d->score);
     next = hash_u64(next, d->matched_count);
     next = hash_byte(next, d->requires_lean ? 1 : 0);
@@ -80,6 +89,21 @@ bool doe_trace_write_string(FILE *out, const char *text)
     return fputc('"', out) != EOF;
 }
 
+static bool write_semantic_string(FILE *out, const char *key, const char *value)
+{
+    return !value || (fprintf(out, ",\"%s\":", key) >= 0 && doe_trace_write_string(out, value));
+}
+
+bool doe_trace_write_semantic(FILE *out, const doe_semantic *semantic)
+{
+    return write_semantic_string(out, "semanticOpId", semantic->op_id) &&
+        write_semantic_string(out, "semanticStage", semantic->stage) &&
+        write_semantic_string(out, "semanticPhase", semantic->phase) &&
+        (!semantic->has_token_index || fprintf(out, ",\"semanticTokenIndex\":%" PRIu32, semantic->token_index) >= 0) &&
+        (!semantic->has_layer_index || fprintf(out, ",\"semanticLayerIndex\":%" PRIu32, semantic->layer_index) >= 0) &&
+        write_semantic_string(out, "semanticExecutionPlanHash", semantic->execution_plan_hash);
+}
+
 bool doe_trace_write_row(FILE *out, const doe_trace_identity *identity, uint64_t seq, uint64_t timestamp_ns,
     uint64_t hash, uint64_t previous, const doe_command *command, const doe_quirk_decision *decision,
     const doe_trace_execution *execution)
@@ -93,6 +117,7 @@ bool doe_trace_write_row(FILE *out, const doe_trace_identity *identity, uint64_t
     if (ok && command->kind == DOE_COMMAND_KERNEL_DISPATCH) {
         ok = fputs(",\"kernel\":", out) >= 0 && doe_trace_write_string(out, command->as.dispatch.kernel);
     }
+    ok = ok && doe_trace_write_semantic(out, &command->semantic);
     ok = ok && fputs(",\"matched\":", out) >= 0 && (d->matched_id ? doe_trace_write_string(out, d->matched_id) : fputs("null", out) >= 0);
     ok = ok && fputs(",\"scope\":", out) >= 0 && doe_trace_write_string(out, d->scope);
     ok = ok && fputs(",\"safetyClass\":", out) >= 0 && doe_trace_write_string(out, d->safety);
