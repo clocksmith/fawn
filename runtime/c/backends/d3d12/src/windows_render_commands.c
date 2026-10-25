@@ -50,9 +50,10 @@ static void draw_packet(doe_dx_native_commands *commands,const doe_dx_native_ren
     const D3D12_VIEWPORT viewport={v[0],v[1],v[2],v[3],v[4],v[5]};
     const uint32_t *s=draw->scissor;
     const D3D12_RECT scissor={(LONG)s[0],(LONG)s[1],(LONG)(s[0]+s[2]),(LONG)(s[1]+s[3])};
+    ID3D12GraphicsCommandList_OMSetBlendFactor(list,draw->blend_constant);
     ID3D12GraphicsCommandList_RSSetViewports(list,1,&viewport);
     ID3D12GraphicsCommandList_RSSetScissorRects(list,1,&scissor);
-    ID3D12GraphicsCommandList_IASetPrimitiveTopology(list,D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    ID3D12GraphicsCommandList_IASetPrimitiveTopology(list,draw->pipeline->render->topology);
     doe_dx_bind_vertex_views(commands,draw->pipeline,draw->vertices,draw->vertex_buffer_count);
     ID3D12GraphicsCommandList_DrawInstanced(list,draw->vertex_count,draw->instance_count,
         draw->first_vertex,draw->first_instance);
@@ -60,7 +61,8 @@ static void draw_packet(doe_dx_native_commands *commands,const doe_dx_native_ren
 }
 
 doe_dx_status doe_dx_native_render(doe_dx_native_commands *commands,doe_dx_native_texture *color,
-    bool clear,const float clear_color[4],bool discard,const doe_dx_native_render_draw *draws,
+    bool clear,const float clear_color[4],bool discard,const doe_dx_native_render_depth *depth,
+    const doe_dx_native_render_draw *draws,
     size_t count,doe_dx_error *error)
 {
     doe_dx_descriptor_use **bindings=count ? calloc(count,sizeof(*bindings)) : NULL;
@@ -69,6 +71,13 @@ doe_dx_status doe_dx_native_render(doe_dx_native_commands *commands,doe_dx_nativ
     D3D12_CPU_DESCRIPTOR_HANDLE target={0};
     doe_dx_status status=doe_dx_prepare_color_target(commands,color,&head,&target,error);
     if (status!=DOE_DX_OK) { free(bindings); return status; }
+    D3D12_CPU_DESCRIPTOR_HANDLE depth_handle={0};
+    if (depth) {
+        doe_dx_descriptor_use *dsv=NULL;
+        status=doe_dx_prepare_depth_target(commands,depth->texture,&dsv,&depth_handle,error);
+        if (status!=DOE_DX_OK) goto fail;
+        dsv->next=head; head=dsv;
+    }
     for (size_t i=0;i<count;++i) {
         const doe_dx_native_render_draw *draw=&draws[i];
         if (!draw->vertex_count || !draw->instance_count) continue;
@@ -91,7 +100,10 @@ doe_dx_status doe_dx_native_render(doe_dx_native_commands *commands,doe_dx_nativ
     commands->descriptors=head;
     ID3D12GraphicsCommandList *list=commands->list;
     doe_dx_transition(list,color->resource,D3D12_RESOURCE_STATE_COPY_DEST,D3D12_RESOURCE_STATE_RENDER_TARGET);
-    ID3D12GraphicsCommandList_OMSetRenderTargets(list,1,&target,FALSE,NULL);
+    if (depth) doe_dx_transition(list,depth->texture->resource,D3D12_RESOURCE_STATE_COPY_DEST,D3D12_RESOURCE_STATE_DEPTH_WRITE);
+    ID3D12GraphicsCommandList_OMSetRenderTargets(list,1,&target,FALSE,depth ? &depth_handle : NULL);
+    if (depth && depth->clear)
+        ID3D12GraphicsCommandList_ClearDepthStencilView(list,depth_handle,D3D12_CLEAR_FLAG_DEPTH,depth->value,0,0,NULL);
     if (clear) ID3D12GraphicsCommandList_ClearRenderTargetView(list,target,clear_color,0,NULL);
     for (size_t i=0;i<count;++i)
         if (draws[i].vertex_count && draws[i].instance_count) draw_packet(commands,&draws[i],bindings[i]);
@@ -100,6 +112,11 @@ doe_dx_status doe_dx_native_render(doe_dx_native_commands *commands,doe_dx_nativ
         /* Eager real initialization preserves WebGPU's later zero observation
          * without a frontend availability bit or a second lazy-init owner. */
         ID3D12GraphicsCommandList_ClearRenderTargetView(list,target,zero,0,NULL);
+    }
+    if (depth) {
+        if (depth->discard)
+            ID3D12GraphicsCommandList_ClearDepthStencilView(list,depth_handle,D3D12_CLEAR_FLAG_DEPTH,0,0,0,NULL);
+        doe_dx_transition(list,depth->texture->resource,D3D12_RESOURCE_STATE_DEPTH_WRITE,D3D12_RESOURCE_STATE_COPY_DEST);
     }
     doe_dx_transition(list,color->resource,D3D12_RESOURCE_STATE_RENDER_TARGET,D3D12_RESOURCE_STATE_COPY_DEST);
     free(bindings);

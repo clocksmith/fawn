@@ -474,6 +474,7 @@ void doe_dx_native_resolve_timestamps(doe_dx_native_commands *commands,
 doe_dx_status doe_dx_native_render_create(doe_dx_native_context *context,
     const doe_dx_render_pipeline_desc *desc,doe_dx_native_pipeline **out,doe_dx_error *error) {
     assert(context && desc);
+    mock.last_render_pipeline=*desc;
     doe_dx_status status=outcome(MOCK_GRAPHICS,error);
     if (status!=DOE_DX_OK) return status;
     *out=calloc(1,sizeof(**out));
@@ -482,7 +483,8 @@ doe_dx_status doe_dx_native_render_create(doe_dx_native_context *context,
     return DOE_DX_OK;
 }
 doe_dx_status doe_dx_native_render(doe_dx_native_commands *commands,doe_dx_native_texture *color,
-    bool clear,const float clear_color[4],bool discard,const doe_dx_native_render_draw *draws,
+    bool clear,const float clear_color[4],bool discard,const doe_dx_native_render_depth *depth,
+    const doe_dx_native_render_draw *draws,
     size_t count,doe_dx_error *error) {
     (void)clear_color;
     doe_dx_status status=outcome(MOCK_DRAW,error);
@@ -495,6 +497,11 @@ doe_dx_status doe_dx_native_render(doe_dx_native_commands *commands,doe_dx_nativ
             if (draws[i].vertices[slot].buffer) record_buffer(commands,draws[i].vertices[slot].buffer);
         mock.last_render_draw=draws[i];
     }
+    if (depth) {
+        assert(depth->texture);
+        record_texture(commands,depth->texture);
+        mock.render_depth=*depth;
+    } else mock.render_depth=(doe_dx_native_render_depth){0};
     mock.render_passes++;
     mock.render_draws+=count;
     mock.render_clear=clear;

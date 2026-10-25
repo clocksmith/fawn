@@ -40,6 +40,8 @@ typedef struct mock_state {
     doe_dx_texture_binding_layout texture_layouts[DOE_DX_MAX_BINDINGS];
     doe_dx_static_sampler samplers[DOE_DX_MAX_STATIC_SAMPLERS];
     size_t render_passes, render_draws;
+    doe_dx_render_pipeline_desc last_render_pipeline;
+    doe_dx_native_render_depth render_depth;
     bool render_clear,render_discard;
     doe_dx_native_render_draw last_render_draw;
     size_t draws, timestamp_writes, timestamp_resolves;

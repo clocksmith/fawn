@@ -58,6 +58,91 @@ static void aliases(void)
     assert(doe_dx_context_destroy(context)==DOE_DX_OK);
     mock_reset();
 }
+static void depth_pass(void)
+{
+    doe_dx_context *context=NULL;
+    assert(doe_dx_context_create(&(doe_dx_options){0},&context,NULL)==DOE_DX_OK);
+    doe_dx_texture *color=NULL,*depth=NULL;
+    assert(doe_dx_texture_create(context,&(doe_dx_texture_desc){4,4,DOE_DX_RGBA8_UNORM,
+        DOE_DX_TEXTURE_RENDER_ATTACHMENT},&color,NULL)==DOE_DX_OK);
+    assert(doe_dx_texture_create(context,&(doe_dx_texture_desc){4,4,DOE_DX_D32_FLOAT,
+        DOE_DX_TEXTURE_DEPTH_ATTACHMENT},&depth,NULL)==DOE_DX_OK);
+    doe_dx_commands *commands=NULL;
+    assert(doe_dx_commands_create(context,&commands,NULL)==DOE_DX_OK);
+    doe_dx_render_pass pass={.color=color,.depth=depth};
+    mock.failure=MOCK_DRAW;
+    assert(doe_dx_commands_render(commands,&pass,NULL)!=DOE_DX_OK);
+    assert(!commands->texture_count && !color->initialized && !depth->initialized);
+    mock.failure=MOCK_NONE;
+    assert(doe_dx_commands_render(commands,&pass,NULL)==DOE_DX_OK);
+    assert(commands->texture_count==2 && mock.render_depth.texture==depth->native &&
+        mock.render_depth.clear && mock.render_depth.value==0 && !mock.render_depth.discard);
+    assert(!depth->initialized && doe_dx_find_texture(commands,depth)->initialized);
+    assert(doe_dx_commands_render(commands,&pass,NULL)==DOE_DX_OK);
+    assert(!mock.render_depth.clear && commands->texture_count==2);
+    pass.clear_depth=true; pass.depth_clear=0.75f; pass.discard_depth=true;
+    assert(doe_dx_commands_render(commands,&pass,NULL)==DOE_DX_OK);
+    assert(mock.render_depth.clear && mock.render_depth.value==0.75f && mock.render_depth.discard);
+    size_t before=mock.render_passes;
+    pass.depth_clear=2;
+    assert(doe_dx_commands_render(commands,&pass,NULL)==DOE_DX_INVALID_ARGUMENT && mock.render_passes==before);
+    pass.depth=NULL;
+    assert(doe_dx_commands_render(commands,&pass,NULL)==DOE_DX_INVALID_ARGUMENT && mock.render_passes==before);
+    doe_dx_texture_release(color); doe_dx_texture_release(depth);
+    assert(mock.textures==2);
+    doe_dx_commands_release(commands);
+    assert(!mock.textures && !mock.commands && doe_dx_context_destroy(context)==DOE_DX_OK);
+    mock_reset();
+}
+static void fixed_state(void)
+{
+    doe_dx_context *context=NULL;
+    assert(doe_dx_context_create(&(doe_dx_options){0},&context,NULL)==DOE_DX_OK);
+    unsigned char code=1;
+    doe_dx_render_pipeline_desc desc={.color_format=DOE_DX_RGBA8_UNORM,.masks_explicit=true};
+    for (size_t i=0;i<2;++i) desc.stages[i].resources.buffers=(doe_dx_pipeline_desc){&code,1,NULL,0};
+    const doe_dx_topology topologies[]={DOE_DX_TRIANGLES,DOE_DX_TRIANGLE_STRIP,DOE_DX_LINES,DOE_DX_LINE_STRIP,DOE_DX_POINTS};
+    const doe_dx_cull culls[]={DOE_DX_CULL_NONE,DOE_DX_CULL_FRONT,DOE_DX_CULL_BACK};
+    for (size_t i=0;i<sizeof(topologies)/sizeof(*topologies);++i) {
+        for (size_t j=0;j<sizeof(culls)/sizeof(*culls);++j) {
+            desc.topology=topologies[i]; desc.cull=culls[j];
+            doe_dx_pipeline *pipeline=NULL;
+            assert(doe_dx_pipeline_create_render(context,&desc,&pipeline,NULL)==DOE_DX_OK);
+            assert(mock.last_render_pipeline.topology==topologies[i] && mock.last_render_pipeline.cull==culls[j]);
+            assert(mock.last_render_pipeline.masks_explicit && !mock.last_render_pipeline.sample_mask &&
+                !mock.last_render_pipeline.color_write_mask);
+            doe_dx_pipeline_release(pipeline);
+        }
+    }
+    doe_dx_pipeline *pipeline=NULL;
+    desc.blend_enabled=true;
+    for (uint32_t factor=0;factor<=14;++factor) {
+        desc.color_blend=(doe_dx_blend_component){factor,1,0};
+        desc.alpha_blend=(doe_dx_blend_component){1,factor,0};
+        doe_dx_status expected=(factor==12 || factor==13) ? DOE_DX_INVALID_ARGUMENT : DOE_DX_OK;
+        assert(doe_dx_pipeline_create_render(context,&desc,&pipeline,NULL)==expected);
+        if (expected==DOE_DX_OK) {
+            assert(mock.last_render_pipeline.blend_enabled && mock.last_render_pipeline.color_blend.source==factor &&
+                mock.last_render_pipeline.alpha_blend.destination==factor);
+            doe_dx_pipeline_release(pipeline); pipeline=NULL;
+        } else assert(!pipeline);
+    }
+    for (uint32_t operation=0;operation<=5;++operation) {
+        desc.color_blend=desc.alpha_blend=(doe_dx_blend_component){1,1,operation};
+        assert(doe_dx_pipeline_create_render(context,&desc,&pipeline,NULL)==
+            (operation<=4 ? DOE_DX_OK : DOE_DX_INVALID_ARGUMENT));
+        if (pipeline) { doe_dx_pipeline_release(pipeline); pipeline=NULL; }
+    }
+    desc.blend_enabled=false;
+    desc.color_write_mask=16;
+    assert(doe_dx_pipeline_create_render(context,&desc,&pipeline,NULL)==DOE_DX_INVALID_ARGUMENT && !pipeline);
+    desc.color_write_mask=15; desc.cull=(doe_dx_cull)99;
+    assert(doe_dx_pipeline_create_render(context,&desc,&pipeline,NULL)==DOE_DX_INVALID_ARGUMENT && !pipeline);
+    desc.cull=DOE_DX_CULL_NONE; desc.topology=(doe_dx_topology)99;
+    assert(doe_dx_pipeline_create_render(context,&desc,&pipeline,NULL)==DOE_DX_INVALID_ARGUMENT && !pipeline);
+    assert(!mock.pipelines && doe_dx_context_destroy(context)==DOE_DX_OK);
+    mock_reset();
+}
 int main(void)
 {
     doe_dx_context *context=NULL;
@@ -158,6 +243,8 @@ int main(void)
     assert(doe_dx_context_destroy(context)==DOE_DX_OK);
     mock_reset();
     aliases();
+    fixed_state();
+    depth_pass();
     puts("PASS D3D12 render owner: independent stage128/32 layouts, empty/zero draws, real-init requests, sampler snapshots, OOM/native rollback and unknown early-release leases; no SDK/GPU");
     return 0;
 }

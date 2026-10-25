@@ -66,7 +66,7 @@ doe_dx_status doe_dx_prepare_color_target(doe_dx_native_commands *commands, doe_
     return DOE_DX_OK;
 }
 
-static doe_dx_status prepare_depth(doe_dx_native_commands *commands, doe_dx_native_texture *depth,
+doe_dx_status doe_dx_prepare_depth_target(doe_dx_native_commands *commands, doe_dx_native_texture *depth,
     doe_dx_descriptor_use **out, D3D12_CPU_DESCRIPTOR_HANDLE *handle, doe_dx_error *error) {
     doe_dx_descriptor_use *use = calloc(1, sizeof(*use));
     if (!use) return doe_dx_fail(DOE_DX_OUT_OF_MEMORY, 0, "dsv.allocate", error);
@@ -98,7 +98,7 @@ doe_dx_status doe_dx_native_draw(doe_dx_native_commands *commands,
     doe_dx_status status = doe_dx_prepare_color_target(commands, color, &rtv, &target, error);
     if (status != DOE_DX_OK) return status;
     if (geometry->depth) {
-        status = prepare_depth(commands, geometry->depth, &dsv, &depth, error);
+        status = doe_dx_prepare_depth_target(commands, geometry->depth, &dsv, &depth, error);
         if (status != DOE_DX_OK) goto fail;
     }
     if (resources->buffer_count + resources->texture_count + resources->sampler_count) {

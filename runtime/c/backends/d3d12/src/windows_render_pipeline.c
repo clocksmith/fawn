@@ -32,6 +32,37 @@ void doe_dx_graphics_defaults(D3D12_GRAPHICS_PIPELINE_STATE_DESC *state,doe_dx_f
     state->SampleDesc.Count=1;
 }
 
+static D3D12_BLEND blend_factor(uint32_t factor,bool alpha)
+{
+    switch (factor) {
+    case 0: return D3D12_BLEND_ZERO;
+    case 1: return D3D12_BLEND_ONE;
+    case 2: return alpha ? D3D12_BLEND_SRC_ALPHA : D3D12_BLEND_SRC_COLOR;
+    case 3: return alpha ? D3D12_BLEND_INV_SRC_ALPHA : D3D12_BLEND_INV_SRC_COLOR;
+    case 4: return alpha ? D3D12_BLEND_DEST_ALPHA : D3D12_BLEND_DEST_COLOR;
+    case 5: return alpha ? D3D12_BLEND_INV_DEST_ALPHA : D3D12_BLEND_INV_DEST_COLOR;
+    case 6: return D3D12_BLEND_SRC_ALPHA;
+    case 7: return D3D12_BLEND_INV_SRC_ALPHA;
+    case 8: return D3D12_BLEND_DEST_ALPHA;
+    case 9: return D3D12_BLEND_INV_DEST_ALPHA;
+    case 10: return D3D12_BLEND_BLEND_FACTOR;
+    case 11: return D3D12_BLEND_INV_BLEND_FACTOR;
+    case 14: return alpha ? D3D12_BLEND_ONE : D3D12_BLEND_SRC_ALPHA_SAT;
+    }
+    return D3D12_BLEND_ZERO; /* Private owner rejected every other code. */
+}
+static D3D12_BLEND_OP blend_operation(uint32_t operation)
+{
+    switch (operation) {
+    case 0: return D3D12_BLEND_OP_ADD;
+    case 1: return D3D12_BLEND_OP_SUBTRACT;
+    case 2: return D3D12_BLEND_OP_REV_SUBTRACT;
+    case 3: return D3D12_BLEND_OP_MIN;
+    case 4: return D3D12_BLEND_OP_MAX;
+    }
+    return D3D12_BLEND_OP_ADD; /* Private owner rejected every other code. */
+}
+
 static doe_dx_status render_root(doe_dx_native_context *context,
     const doe_dx_render_pipeline_desc *desc,doe_dx_native_pipeline *pipeline,doe_dx_error *error)
 {
@@ -112,7 +143,50 @@ doe_dx_status doe_dx_native_render_create(doe_dx_native_context *context,
         state.VS=(D3D12_SHADER_BYTECODE){desc->stages[0].resources.buffers.bytecode,desc->stages[0].resources.buffers.bytecode_size};
         state.PS=(D3D12_SHADER_BYTECODE){desc->stages[1].resources.buffers.bytecode,desc->stages[1].resources.buffers.bytecode_size};
         doe_dx_graphics_defaults(&state,desc->color_format);
+        switch (desc->topology) {
+        case DOE_DX_TRIANGLES:
+            pipeline->render->topology=D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST; break;
+        case DOE_DX_TRIANGLE_STRIP:
+            pipeline->render->topology=D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP; break;
+        case DOE_DX_LINES:
+            state.PrimitiveTopologyType=D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE;
+            pipeline->render->topology=D3D_PRIMITIVE_TOPOLOGY_LINELIST; break;
+        case DOE_DX_LINE_STRIP:
+            state.PrimitiveTopologyType=D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE;
+            pipeline->render->topology=D3D_PRIMITIVE_TOPOLOGY_LINESTRIP; break;
+        case DOE_DX_POINTS:
+            state.PrimitiveTopologyType=D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT;
+            pipeline->render->topology=D3D_PRIMITIVE_TOPOLOGY_POINTLIST; break;
+        }
+        if (desc->depth_enabled) {
+            state.DepthStencilState.DepthEnable=TRUE;
+            state.DepthStencilState.DepthWriteMask=desc->depth_write ? D3D12_DEPTH_WRITE_MASK_ALL : D3D12_DEPTH_WRITE_MASK_ZERO;
+            state.DepthStencilState.DepthFunc=doe_dx_depth_compare(desc->depth_compare);
+            state.DSVFormat=DXGI_FORMAT_D32_FLOAT;
+            state.RasterizerState.DepthBias=desc->depth_bias;
+            state.RasterizerState.SlopeScaledDepthBias=desc->depth_bias_slope;
+            state.RasterizerState.DepthBiasClamp=desc->depth_bias_clamp;
+        }
         state.RasterizerState.FrontCounterClockwise=desc->front_counter_clockwise;
+        switch (desc->cull) {
+        case DOE_DX_CULL_NONE: state.RasterizerState.CullMode=D3D12_CULL_MODE_NONE; break;
+        case DOE_DX_CULL_FRONT: state.RasterizerState.CullMode=D3D12_CULL_MODE_FRONT; break;
+        case DOE_DX_CULL_BACK: state.RasterizerState.CullMode=D3D12_CULL_MODE_BACK; break;
+        }
+        if (desc->masks_explicit) {
+            state.SampleMask=desc->sample_mask;
+            state.BlendState.RenderTarget[0].RenderTargetWriteMask=(UINT8)desc->color_write_mask;
+        }
+        if (desc->blend_enabled) {
+            D3D12_RENDER_TARGET_BLEND_DESC *blend=&state.BlendState.RenderTarget[0];
+            blend->BlendEnable=TRUE;
+            blend->SrcBlend=blend_factor(desc->color_blend.source,false);
+            blend->DestBlend=blend_factor(desc->color_blend.destination,false);
+            blend->BlendOp=blend_operation(desc->color_blend.operation);
+            blend->SrcBlendAlpha=blend_factor(desc->alpha_blend.source,true);
+            blend->DestBlendAlpha=blend_factor(desc->alpha_blend.destination,true);
+            blend->BlendOpAlpha=blend_operation(desc->alpha_blend.operation);
+        }
         state.InputLayout=(D3D12_INPUT_LAYOUT_DESC){desc->attribute_count ? attributes : NULL,(UINT)desc->attribute_count};
         HRESULT result=ID3D12Device_CreateGraphicsPipelineState(context->device,&state,
             &IID_ID3D12PipelineState,(void **)&pipeline->state);

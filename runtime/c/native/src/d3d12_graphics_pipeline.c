@@ -8,7 +8,7 @@ static bool descriptor(const native_device *device,const WGPURenderPipelineDescr
 {
     const WGPUFragmentState *fragment=source->fragment;
     if (!fragment || count!=2 || fragment->targetCount!=1 || !fragment->targets ||
-        source->depthStencil || source->primitive.stripIndexFormat!=WGPUIndexFormat_Undefined) return false;
+        (source->depthStencil && source->depthStencil->format!=WGPUTextureFormat_Depth32Float) || source->primitive.stripIndexFormat!=WGPUIndexFormat_Undefined) return false;
     const WGPUColorTargetState *color=&fragment->targets[0];
     if (color->format==WGPUTextureFormat_RGBA8Unorm) out->color_format=DOE_DX_RGBA8_UNORM;
     else if (color->format==WGPUTextureFormat_BGRA8Unorm) out->color_format=DOE_DX_BGRA8_UNORM;
@@ -18,13 +18,43 @@ static bool descriptor(const native_device *device,const WGPURenderPipelineDescr
      * constants are asserted by the private Windows graphics source; this is
      * a native interface guarantee, not a queried adapter capability. */
     const native_graphics_limits interfaces={128,128,false};
-    if (!native_render_fixed(device->features,source,&fixed) || fixed.topology!=DOE_VK_TRIANGLES ||
-        fixed.cull_mask || fixed.unclipped_depth || fixed.sample_count!=1 || fixed.alpha_to_coverage ||
-        fixed.sample_mask!=UINT32_MAX || color->blend || color->writeMask!=WGPUColorWriteMask_All ||
-        !native_render_interfaces(stages,count,&source->vertex,fragment,false,false,&interfaces,&device->backend.limits) ||
-        !native_render_fragment_depth(stages,count,NULL)) return false;
+    if (!native_render_fixed(device->features,source,&fixed) ||
+        fixed.unclipped_depth || fixed.sample_count!=1 || fixed.alpha_to_coverage ||
+        !native_render_interfaces(stages,count,&source->vertex,fragment,false,fixed.topology==DOE_VK_POINTS,&interfaces,&device->backend.limits) ||
+        !native_render_depth(device->features,source->depthStencil,&fixed,resource) ||
+        !native_render_fragment_depth(stages,count,source->depthStencil)) return false;
+    switch (fixed.topology) {
+    case DOE_VK_TRIANGLES: out->topology=DOE_DX_TRIANGLES; break;
+    case DOE_VK_TRIANGLE_STRIP: out->topology=DOE_DX_TRIANGLE_STRIP; break;
+    case DOE_VK_LINES: out->topology=DOE_DX_LINES; break;
+    case DOE_VK_LINE_STRIP: out->topology=DOE_DX_LINE_STRIP; break;
+    case DOE_VK_POINTS: out->topology=DOE_DX_POINTS; break;
+    }
     out->front_counter_clockwise=!fixed.clockwise_front;
-    resource->color_count=1; resource->samples=1; resource->topology=WGPUPrimitiveTopology_TriangleList;
+    switch (fixed.cull_mask) {
+    case 0: out->cull=DOE_DX_CULL_NONE; break;
+    case 1: out->cull=DOE_DX_CULL_FRONT; break;
+    case 2: out->cull=DOE_DX_CULL_BACK; break;
+    default: return false;
+    }
+    if (color->writeMask & ~WGPUColorWriteMask_All) return false;
+    out->depth_enabled=source->depthStencil!=NULL;
+    out->depth_write=fixed.depth_write;
+    out->depth_compare=(doe_dx_compare)fixed.depth_compare;
+    out->depth_bias=fixed.depth_bias;
+    out->depth_bias_slope=fixed.depth_bias_slope_scale;
+    out->depth_bias_clamp=fixed.depth_bias_clamp;
+    const doe_vk_color_target *target=&fixed.color_targets[0];
+    out->blend_enabled=target->blend_enabled;
+    out->color_blend=(doe_dx_blend_component){target->color_source_factor,
+        target->color_destination_factor,target->color_operation};
+    out->alpha_blend=(doe_dx_blend_component){target->alpha_source_factor,
+        target->alpha_destination_factor,target->alpha_operation};
+    out->masks_explicit=true;
+    out->sample_mask=fixed.sample_mask;
+    out->color_write_mask=(uint32_t)color->writeMask;
+    resource->color_count=1; resource->samples=1; resource->topology=source->primitive.topology == WGPUPrimitiveTopology_Undefined ?
+        WGPUPrimitiveTopology_TriangleList : source->primitive.topology;
     resource->color_formats[0]=color->format;
     return true;
 }
