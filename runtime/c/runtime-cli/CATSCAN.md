@@ -36,7 +36,7 @@ Zig rows.
 runs are not GPU, performance or comparability evidence.
 
 ## Non-goals
-Numeric stability plans beyond decode logits, unappliable quirk actions,
+RMSNorm/attention capture plans, explicit numeric annotations, unappliable quirks,
 custom render pipelines, multisampled
 textures, GPU timestamps or default CLI replacement.
 

@@ -395,13 +395,14 @@ static float read_f32(const uint8_t *bytes, size_t length, size_t word)
 
 /* runtime_plan.zig buildAutoDecodeFinalLogitsObservation and
  * runtime_eval.zig evaluateMatmulObservation: uniform (rows, cols), weights
- * binding 1, hidden binding 2, logits binding 3. */
-static bool evaluate_decode_final_logits(const doe_ns_io *io, doe_ns_evaluation *e, char *message, size_t message_size)
+ * binding 1, hidden binding 2, logits binding 3. Ordinary matmul swaps
+ * weights/hidden bindings while retaining the same evaluation order. */
+static bool evaluate_matmul(const doe_ns_io *io, doe_ns_evaluation *e, bool decode, char *message, size_t message_size)
 {
     const doe_command *command = e->command;
     const doe_kernel_binding *uniform, *weights, *hidden, *logits;
-    if (!binding_of(command, 0, &uniform, message, message_size) || !binding_of(command, 1, &weights, message, message_size) ||
-        !binding_of(command, 2, &hidden, message, message_size) || !binding_of(command, 3, &logits, message, message_size))
+    if (!binding_of(command, 0, &uniform, message, message_size) || !binding_of(command, decode ? 1 : 2, &weights, message, message_size) ||
+        !binding_of(command, decode ? 2 : 1, &hidden, message, message_size) || !binding_of(command, 3, &logits, message, message_size))
         return false;
     uint8_t *bytes = NULL;
     size_t length = 0;
@@ -630,13 +631,13 @@ bool doe_ns_record(doe_ns_recorder *r, const doe_ns_io *io, const doe_ns_identit
     const doe_json_value *profile = doe_ns_auto_detect(r->policy, command);
     if (!profile) return true;
     const char *plan = doe_ns_string(profile, "capturePlanId");
-    if (!plan || strcmp(plan, DOE_NS_DECODE_FINAL_LOGITS_PLAN)) {
+    if (!doe_ns_capture_plan_supported(plan)) {
         snprintf(message, message_size, "numeric stability capture plan %.100s is not implemented", plan ? plan : "(none)");
         return false;
     }
     doe_ns_evaluation e = {.profile = profile, .command = command,
         .routing_policy_id = doe_ns_string(r->policy->execution_profile, "routingPolicyId")};
-    bool ok = evaluate_decode_final_logits(io, &e, message, message_size) && doe_ns_decide(r->policy, &e, message, message_size);
+    bool ok = evaluate_matmul(io, &e, !strcmp(plan, DOE_NS_DECODE_FINAL_LOGITS_PLAN), message, message_size) && doe_ns_decide(r->policy, &e, message, message_size);
     bool rewrite = ok && !strcmp(e.committed_mode, "stable");
     if (rewrite) {
         uint32_t *words = malloc(e.candidate_count * sizeof(uint32_t));

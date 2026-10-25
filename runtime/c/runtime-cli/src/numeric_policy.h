@@ -12,8 +12,8 @@
 #include <stddef.h>
 
 #define DOE_NUMERIC_STABILITY_DEFAULT_POLICY "config/numeric-stability-policy.json"
-/* The one capture plan this runtime evaluates (runtime_plan.zig
- * MATMUL_DECODE_CAPTURE_PLAN_ID); dispatches matching any other plan are refused. */
+/* Retained runtime_plan.zig capture plans. */
+#define DOE_NS_MATMUL_LOGITS_PLAN "matmul-logits-bindings-v1"
 #define DOE_NS_DECODE_FINAL_LOGITS_PLAN "decode-final-logits-matmul-gemv-bindings-v1"
 
 typedef struct doe_ns_policy {
@@ -39,4 +39,5 @@ const doe_json_value *doe_ns_auto_detect(const doe_ns_policy *policy, const doe_
 
 /* True when a kernel_dispatch carries the op id, stage and phase evaluation needs. */
 bool doe_ns_semantic_complete(const doe_command *command);
+bool doe_ns_capture_plan_supported(const char *plan);
 #endif

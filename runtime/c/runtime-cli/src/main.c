@@ -299,7 +299,7 @@ static int load_numeric_policy(const options *o, const doe_stream *stream, doe_n
     for (size_t i = 0; o->execute && o->trace_meta && i < stream->count; i++) {
         const doe_json_value *profile = doe_ns_auto_detect(policy, &stream->commands[i]);
         const char *plan = doe_ns_string(profile, "capturePlanId");
-        if (profile && (!plan || strcmp(plan, DOE_NS_DECODE_FINAL_LOGITS_PLAN))) {
+        if (profile && !doe_ns_capture_plan_supported(plan)) {
             fprintf(stderr, "doe-c-runtime: %s: command %zu: numeric stability evaluation (%s, capture plan %s) is not "
                 "implemented by doe-c-runtime; doe-zig-runtime evaluates it when a trace meta is written\n", o->commands, i,
                 doe_ns_string(profile, "profileId"), plan ? plan : "(none)");
