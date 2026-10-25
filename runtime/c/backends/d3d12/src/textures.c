@@ -56,8 +56,9 @@ doe_dx_status doe_dx_texture_create_shape(doe_dx_context *context,const doe_dx_t
         return doe_dx_fail(DOE_DX_INVALID_ARGUMENT, 0, "texture.create", error);
     if (shape->dimension<1 || shape->dimension>3 || !shape->depth_or_layers || !shape->mip_levels ||
         shape->mip_levels>15 || (shape->dimension==1 && (desc->height!=1 || shape->depth_or_layers!=1)) ||
-        (shape->dimension==3 && (desc->width>2048 || desc->height>2048 || shape->depth_or_layers>2048)) ||
-        (shape->dimension==2 && shape->depth_or_layers>2048) ||
+        (shape->dimension==3 && (desc->width>DOE_DX_MAX_TEXTURE_DIMENSION_3D || desc->height>DOE_DX_MAX_TEXTURE_DIMENSION_3D ||
+            shape->depth_or_layers>DOE_DX_MAX_TEXTURE_DIMENSION_3D)) ||
+        (shape->dimension==2 && shape->depth_or_layers>DOE_DX_MAX_TEXTURE_ARRAY_LAYERS) ||
         (samples>1 && (shape->dimension!=2 || shape->mip_levels!=1 || shape->depth_or_layers!=1)))
         return doe_dx_fail(DOE_DX_RANGE,0,"texture.shape",error);
     uint32_t maximum=desc->width>desc->height ? desc->width : desc->height;
@@ -112,6 +113,7 @@ void doe_dx_texture_release(doe_dx_texture *texture) {
     if (texture->references) return;
     doe_dx_native_texture_destroy(texture->native);
     texture->context->objects--;
+    if (texture->surface) doe_dx_surface_texture_release(texture->surface,texture);
     free(texture);
 }
 
@@ -159,6 +161,7 @@ doe_dx_texture_use *doe_dx_find_texture(doe_dx_commands *commands, doe_dx_textur
 doe_dx_status doe_dx_texture_preflight(doe_dx_commands *commands,
     doe_dx_texture *texture, uint32_t usage, bool readable) {
     if (!texture) return DOE_DX_INVALID_ARGUMENT;
+    if (!doe_dx_surface_texture_recordable(texture)) return DOE_DX_INVALID_STATE;
     if (texture->context != commands->context) return DOE_DX_DEVICE_MISMATCH;
     if (texture->owner && texture->owner != commands) return DOE_DX_BUSY;
     if ((texture->desc.usage & usage) != usage) return DOE_DX_UNSUPPORTED;
@@ -173,6 +176,7 @@ void doe_dx_use_texture(doe_dx_commands *commands, doe_dx_texture *texture) {
     if (commands->texture_count >= commands->texture_capacity) abort();
     texture->owner_index = commands->texture_count;
     doe_dx_texture_use *use = &commands->textures[commands->texture_count++];
+    use->surface_acquire = false;
     use->texture = texture;
     use->initialized = texture->initialized;
     texture->owner = commands;

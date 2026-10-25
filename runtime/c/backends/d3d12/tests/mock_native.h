@@ -13,6 +13,13 @@ typedef enum mock_failure {
 typedef struct mock_state {
     mock_failure failure;
     size_t opens;
+    size_t surfaces,presents,surface_transitions,present_execute_count,present_signal_count;
+    uint32_t surface_index;
+    bool fail_present,surface_acquire_transition;
+    doe_dx_texture_view_desc render_view;
+    uint32_t render_depth_slice;
+    uint32_t immediate_words[16];
+    uint32_t logical_size_count,logical_size_indices[DOE_DX_MAX_BINDINGS];
     doe_dx_options open_options;
     bool override_caps;
     doe_dx_caps reported_caps;

@@ -123,6 +123,7 @@ typedef struct doe_vk_caps {
     uint64_t storage_offset_alignment;
     uint64_t uniform_offset_alignment;
     bool robust_buffer_access;
+    bool variable_pointers_storage, variable_pointers; /* Optional queried/enabled core1.1 features. */
     bool storage_push_constant16; /* Queried and enabled, independent of buffer f16. */
     bool shader_f16; /* Enabled arithmetic and 16-bit storage/uniform buffers. */
     bool software_adapter;

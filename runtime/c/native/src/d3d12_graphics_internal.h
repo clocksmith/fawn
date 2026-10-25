@@ -5,6 +5,8 @@
 #include "../../backends/d3d12/include/doe_d3d12_render.h"
 #include "render_internal.h"
 
+native_graphics_limits native_d3d12_interface_limits(void);
+
 typedef struct native_d3d12_graphics {
     native_d3d12_compute stages[DOE_DX_RENDER_STAGES];
     size_t stage_count;

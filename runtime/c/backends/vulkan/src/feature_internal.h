@@ -8,6 +8,7 @@ typedef struct doe_vk_feature_selection {
     VkPhysicalDeviceShaderFloat16Int8Features float16;
     VkPhysicalDevice16BitStorageFeatures storage16;
     bool shader_f16;
+    VkPhysicalDeviceVariablePointersFeatures pointers;
     VkPhysicalDeviceShaderSubgroupExtendedTypesFeatures subgroup_extended;
     VkPhysicalDeviceSubgroupSizeControlFeatures subgroup;
     VkPhysicalDeviceShaderDemoteToHelperInvocationFeatures demote;

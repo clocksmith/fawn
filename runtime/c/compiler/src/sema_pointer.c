@@ -5,20 +5,6 @@
 
 enum { POINTER_READ = 1u, POINTER_WRITE = 2u };
 
-bool sema_pointer_argument(Source *s, uint32_t expression, const ExpressionValue *value) {
-    const CompilerWorkspace *c = s->compiler;
-    const PointerValue pointer = value->pointer;
-    const TypeId root = pointer.category == ROOT_POINTER ?
-        c->types[c->formals[pointer.root].type.resolved.type - IR_PRIMITIVE_COUNT].element :
-        c->locals[pointer.root].type;
-    /* A proper subobject cannot have its containing finite, acyclic type.
-     * This identity check also applies during non-emitting overload visits. */
-    if (c->types[pointer.type - IR_PRIMITIVE_COUNT].element != root)
-        return source_error(s, DOE_COMPILER_UNSUPPORTED, c->expressions[expression].source_offset,
-            "subobject pointer arguments require unrestricted_pointer_parameters");
-    return true;
-}
-
 static bool charge(Source *s, uint64_t *used, uint64_t count) {
     if (count > UNIFORMITY_WORK_LIMIT - *used)
         return source_error(s, DOE_COMPILER_UNSUPPORTED, s->length, "pointer effect analysis work limit exceeded");

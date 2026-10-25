@@ -120,6 +120,8 @@ $(BUILD)/demote: tests/demote.c tests/consumer.h tests/adapter_class.h $(OBJECTS
 	$(CC) $(CPPFLAGS) $(CFLAGS) tests/demote.c $(OBJECTS) $(COMPILER_LINK) $(PLATFORM_LIBS) -Wl,--wrap=doe_vk_context_create -o $@
 $(BUILD)/graphics-admission: tests/graphics_admission.c tests/consumer.h tests/adapter_class.h $(NATIVE_LIBRARY)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
+$(BUILD)/half-interfaces: tests/half_interfaces.c tests/consumer.h tests/adapter_class.h $(NATIVE_LIBRARY)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
 $(BUILD)/graphics: tests/graphics.c tests/consumer.h tests/adapter_class.h $(NATIVE_LIBRARY)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
 $(BUILD)/textures: tests/textures.c tests/consumer.h tests/adapter_class.h $(NATIVE_LIBRARY)
@@ -371,7 +373,7 @@ else
 check:
 	@echo "The SwiftShader/fault-injection suite requires Linux; use check-portable for host ABI checks." >&2
 	@exit 2
-GNU_ONLY_TESTS = map-oom fault-sweep metal-bridge demote failures recovery indirect-compute pending-progress vulkan-identity surface-progress program-prepare
+GNU_ONLY_TESTS = metal-device-policy d3d12-device-policy map-oom fault-sweep metal-bridge demote failures recovery indirect-compute pending-progress vulkan-identity surface-progress program-prepare
 $(addprefix $(BUILD)/,$(GNU_ONLY_TESTS)): | unavailable-gnu-tests
 .PHONY: unavailable-gnu-tests
 unavailable-gnu-tests:
@@ -493,3 +495,23 @@ $(BUILD)/immediates: tests/immediates.c tests/consumer.h tests/adapter_class.h $
 .PHONY: check-immediates
 check-immediates: $(BUILD)/immediates
 	$(BUILD)/immediates
+
+$(BUILD)/metal-device-policy: tests/metal_device_policy.c tests/consumer.h tests/adapter_class.h ../backends/metal/tests/mock_native.c ../backends/metal/tests/mock_native.h $(OBJECTS) $(COMPILER_LIBRARY) | $(BUILD)
+	$(CC) $(CPPFLAGS) $(CFLAGS) tests/metal_device_policy.c ../backends/metal/tests/mock_native.c $(OBJECTS) $(COMPILER_LINK) $(PLATFORM_LIBS) \
+	  -Wl,--wrap=doe_mtl_context_create -Wl,--wrap=doe_mtl_context_device -Wl,--wrap=doe_mtl_commands_wait -o $@
+.PHONY: check-metal-device-policy
+check-metal-device-policy: $(BUILD)/metal-device-policy
+	$(BUILD)/metal-device-policy
+
+$(BUILD)/d3d12-device-policy: tests/d3d12_device_policy.c $(OBJECTS) $(COMPILER_LIBRARY) | $(BUILD)
+	$(CC) $(CPPFLAGS) $(CFLAGS) tests/d3d12_device_policy.c $(OBJECTS) $(COMPILER_LINK) $(PLATFORM_LIBS) \
+	  -Wl,--wrap=native_d3d12_reopen -o $@
+.PHONY: check-d3d12-device-policy
+check-d3d12-device-policy: $(BUILD)/d3d12-device-policy
+	$(BUILD)/d3d12-device-policy
+
+$(BUILD)/capability-admission: tests/capability_admission.c $(OBJECTS) $(COMPILER_LIBRARY) | $(BUILD)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< $(OBJECTS) $(COMPILER_LINK) $(PLATFORM_LIBS) -o $@
+.PHONY: check-capability-admission
+check-capability-admission: $(BUILD)/capability-admission
+	$(BUILD)/capability-admission

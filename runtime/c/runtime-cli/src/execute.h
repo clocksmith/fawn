@@ -47,7 +47,7 @@ typedef struct doe_runtime_adapter {
 
 typedef struct doe_runtime doe_runtime;
 bool doe_runtime_load_device_policy(const char *lane_name, DoeNativeDevicePolicy *policy,
-    char *message, size_t capacity, char source_hash[65]);
+    char *message, size_t capacity, char source_hash[65], WGPUBackendType *backend_type);
 
 /* NULL on failure, with the reason in message. */
 doe_runtime *doe_runtime_open(const doe_runtime_options *options, char *message, size_t message_size);

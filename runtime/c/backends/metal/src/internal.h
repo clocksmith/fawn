@@ -11,6 +11,8 @@ struct doe_mtl_context {
     doe_mtl_native native;
     void *device;
     void *queue;
+    void *timeline;
+    uint64_t timeline_next;
     doe_mtl_caps caps;
 };
 struct doe_mtl_buffer {
@@ -47,6 +49,7 @@ struct doe_mtl_commands {
     doe_mtl_context *context;
     void *native;
     doe_mtl_command_state state;
+    uint64_t timeline_value;
     doe_mtl_error failure;
     doe_mtl_texture *present_texture; /* Borrowed through the ordinary texture use. */
     doe_mtl_buffer_use *buffers;

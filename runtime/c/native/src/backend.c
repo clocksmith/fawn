@@ -63,11 +63,30 @@ native_result native_backend_device(const native_backend *adapter, native_backen
 native_result native_backend_device_policy(const native_backend *adapter, const DoeNativeDevicePolicy *policy,
     native_backend *out)
 {
-    if (policy && (adapter->kind != WGPUBackendType_Vulkan || policy->queue_selection > 2 ||
+    if (policy && ((adapter->kind != WGPUBackendType_Vulkan && adapter->kind != WGPUBackendType_Metal && adapter->kind != WGPUBackendType_D3D12) || policy->queue_selection > 2 ||
         policy->synchronization > 1 || policy->upload_policy > DOE_NATIVE_UPLOAD_ALLOW_MAPPED || policy->subgroup_policy > 3 ||
         policy->reserved[0] || policy->reserved[1] || policy->reserved[2] || policy->reserved[3]))
         return NATIVE_UNSUPPORTED;
-    if (adapter->kind == WGPUBackendType_D3D12) return native_d3d12_reopen(adapter, out);
+    if (policy && adapter->kind == WGPUBackendType_Metal &&
+        (policy->queue_selection == DOE_NATIVE_QUEUE_REQUIRE_COMPUTE_ONLY ||
+         policy->synchronization != DOE_NATIVE_SYNC_PREFER_TIMELINE || policy->subgroup_policy))
+        return NATIVE_UNSUPPORTED;
+    if (adapter->kind == WGPUBackendType_D3D12) {
+        /* Existing direct queue is graphics+compute; its one monotonic native
+         * fence is a timeline, not a reusable fence pool. All public writes
+         * already stage through UPLOAD -> DEFAULT on the ordinary command owner. */
+        if (policy && (policy->queue_selection == DOE_NATIVE_QUEUE_REQUIRE_COMPUTE_ONLY ||
+            policy->synchronization != DOE_NATIVE_SYNC_PREFER_TIMELINE ||
+            policy->upload_policy == DOE_NATIVE_UPLOAD_ALLOW_MAPPED || policy->subgroup_policy))
+            return NATIVE_UNSUPPORTED;
+        native_backend result = {0};
+        native_result status = native_d3d12_reopen(adapter, &result);
+        if (status == NATIVE_OK) {
+            result.upload_policy = policy ? policy->upload_policy : DOE_NATIVE_UPLOAD_DEFAULT;
+            *out = result;
+        }
+        return status;
+    }
     native_backend result = {.kind=adapter->kind};
     native_result status;
     if (adapter->kind == WGPUBackendType_Vulkan) {
@@ -102,6 +121,10 @@ native_result native_backend_device_policy(const native_backend *adapter, const 
          * identity. A changed system default is unavailable, never a fallback. */
         if (status == NATIVE_OK && doe_mtl_context_device(result.value.metal.context) !=
                 doe_mtl_context_device(adapter->value.metal.context)) status = NATIVE_UNAVAILABLE;
+        if (status == NATIVE_OK && policy) {
+            result.upload_policy = policy->upload_policy;
+            status = native_from_metal(doe_mtl_context_prefer_timeline(result.value.metal.context, NULL));
+        }
         if (status == NATIVE_OK)
             status = native_from_metal(doe_mtl_context_caps(result.value.metal.context, &result.value.metal.caps));
         if (status == NATIVE_OK && native_metal_limits(&result.value.metal.caps,

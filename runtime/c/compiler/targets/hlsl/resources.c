@@ -18,6 +18,13 @@ void hlsl_register(HlslEmitter *e, uint32_t index, uint32_t kind, uint32_t strid
     if (e->metadata.bindings != NULL)
         e->metadata.bindings[index] = (DoeCompilerHlslBindingV11){index, kind, r->binding, r->group, stride};
 }
+/* Half-containing storage uses true byte-addressed native accesses. In
+ * particular, a final half never reads or rewrites its adjacent padding. */
+bool hlsl_raw_storage(const CompilerWorkspace *c, uint32_t resource) {
+    return resource < c->resource_count &&
+        c->resources[resource].kind == DOE_COMPILER_STORAGE_BUFFER &&
+        (type_flags(c,c->resources[resource].type) & TYPE_F16_CONTENT) != 0u;
+}
 static bool memory_type(const CompilerWorkspace *c, TypeId type) {
     return ((type >= IR_I32 && type <= IR_F32) || type == IR_F16) ||
         (type >= IR_PRIMITIVE_COUNT && (c->types[type - IR_PRIMITIVE_COUNT].flags & (TYPE_HOST | TYPE_FIXED | TYPE_ABSTRACT)) ==
@@ -37,28 +44,34 @@ static void signature(HlslEmitter *e, uint32_t resource, TypeId type, bool store
 static void word(HlslEmitter *e, uint32_t resource, bool uniform, uint32_t lane) {
     if (uniform) hlsl_format(e, "r%u_data[(offset + %uu) / 16u][((offset + %uu) / 4u) %% 4u]",
                             resource, lane * 4u, lane * 4u);
+    else if (hlsl_raw_storage(e->module,resource))
+        hlsl_format(e,"r%u.Load(offset + %uu)",resource,lane*4u);
     else hlsl_format(e, "r%u[(offset + %uu) / 4u]", resource, lane * 4u);
 }
-/* A word-backed resource packs two binary16 lanes. Atomic masked writes retain
- * the adjacent half even when different invocations store neighboring elements. */
+/* Constant-buffer carriers are padded by the native binding owner. Storage
+ * half accesses, unlike CBV carriers, are individually two-byte native ops. */
 static void half_lane(HlslEmitter *e, uint32_t resource, bool uniform,
                       uint32_t lane, uint32_t width, bool store) {
-    hlsl_format(e, "    { uint byte = offset + %uu; uint shift = (byte & 2u) * 8u;\n", lane * 2u);
-    if (store) {
-        hlsl_text(e, "      uint bits = (f32tof16(float(value");
-        if (width != 1u) hlsl_format(e, "[%u]", lane);
-        hlsl_text(e, ")) & 0xffffu) << shift;\n");
-        hlsl_format(e, "      uint old = r%u[byte / 4u]; uint seen;\n", resource);
-        hlsl_format(e, "      for (;;) { InterlockedCompareExchange(r%u[byte / 4u], old, (old & ~(0xffffu << shift)) | bits, seen); if (seen == old) break; old = seen; }\n", resource);
-    } else {
-        hlsl_text(e, "      value");
-        if (width != 1u) hlsl_format(e, "[%u]", lane);
-        hlsl_text(e, " = float16_t(f16tof32((");
-        if (uniform) hlsl_format(e, "r%u_data[byte / 16u][(byte / 4u) %% 4u]", resource);
-        else hlsl_format(e, "r%u[byte / 4u]", resource);
-        hlsl_text(e, " >> shift) & 0xffffu));\n");
+    if (!uniform) {
+        if (!hlsl_raw_storage(e->module,resource)) {
+            hlsl_error(e,"HLSL half storage requires byte-addressed representation"); return;
+        }
+        e->uses_native16 = true;
+        if (store) {
+            hlsl_format(e,"    r%u.Store<float16_t>(offset + %uu, value",resource,lane*2u);
+            if (width != 1u) hlsl_format(e,"[%u]",lane);
+            hlsl_text(e,");\n");
+        } else {
+            hlsl_text(e,"    value");
+            if (width != 1u) hlsl_format(e,"[%u]",lane);
+            hlsl_format(e," = r%u.Load<float16_t>(offset + %uu);\n",resource,lane*2u);
+        }
+        return;
     }
-    hlsl_text(e, "    }\n");
+    hlsl_format(e,"    { uint byte = offset + %uu; uint shift = (byte & 2u) * 8u;\n",lane*2u);
+    hlsl_text(e,"      value");
+    if (width != 1u) hlsl_format(e,"[%u]",lane);
+    hlsl_format(e," = float16_t(f16tof32((r%u_data[byte / 16u][(byte / 4u) %% 4u] >> shift) & 0xffffu));\n    }\n",resource);
 }
 static void body(HlslEmitter *e, uint32_t resource, TypeId type, bool store) {
     const CompilerWorkspace *c = e->module;
@@ -82,12 +95,14 @@ static void body(HlslEmitter *e, uint32_t resource, TypeId type, bool store) {
                 continue;
             }
             hlsl_text(e, "    ");
-            if (store) word(e, resource, false, lane);
+            if (store && hlsl_raw_storage(c,resource))
+                hlsl_format(e,"r%u.Store(offset + %uu, ",resource,lane*4u);
+            else if (store) word(e, resource, false, lane);
             else {
                 hlsl_text(e, "value");
                 if (width != 1u) hlsl_format(e, "[%u]", lane);
             }
-            hlsl_text(e, " = ");
+            if (!store || !hlsl_raw_storage(c,resource)) hlsl_text(e, " = ");
             if (store) {
                 hlsl_text(e, "asuint(value");
                 if (width != 1u) hlsl_format(e, "[%u]", lane);
@@ -97,6 +112,7 @@ static void body(HlslEmitter *e, uint32_t resource, TypeId type, bool store) {
                 word(e, resource, uniform, lane);
                 hlsl_text(e, ")");
             }
+            if (store && hlsl_raw_storage(c,resource)) hlsl_text(e,")");
             hlsl_text(e, ";\n");
         }
     } else if (t->kind == TYPE_ARRAY || t->kind == TYPE_MATRIX) {
@@ -144,12 +160,20 @@ static void declare_resource(HlslEmitter *e, uint32_t index) {
     } else if (r->kind == DOE_COMPILER_STORAGE_BUFFER &&
                (r->access == DOE_COMPILER_READ || r->access == DOE_COMPILER_READ_WRITE)) {
         const bool writable = r->access == DOE_COMPILER_READ_WRITE;
-        hlsl_format(e, "%sStructuredBuffer<uint> r%u : ", writable ? "RW" : "", index);
-        hlsl_register(e, index, writable ? DOE_COMPILER_HLSL_REGISTER_UAV : DOE_COMPILER_HLSL_REGISTER_SRV, 4u);
-        hlsl_text(e, ";\n");
-        hlsl_format(e, "uint doe_r%u_bytes() {\n    uint count, stride;\n", index);
-        hlsl_format(e, "    r%u.GetDimensions(count, stride);\n", index);
-        hlsl_text(e, "    return stride == 4u && count <= 0x3fffffffu ? count * 4u : 0u;\n}\n");
+        if (hlsl_raw_storage(e->module,index)) {
+            e->uses_raw_storage = true;
+            e->uses_native16 = true;
+            hlsl_format(e,"%sByteAddressBuffer r%u : ",writable ? "RW" : "",index);
+            hlsl_register(e,index,writable ? DOE_COMPILER_HLSL_REGISTER_UAV : DOE_COMPILER_HLSL_REGISTER_SRV,0u);
+            hlsl_format(e,";\nuint doe_r%u_bytes() { return doe_storage_sizes[%uu][%uu]; }\n",index,index/4u,index%4u);
+        } else {
+            hlsl_format(e, "%sStructuredBuffer<uint> r%u : ", writable ? "RW" : "", index);
+            hlsl_register(e, index, writable ? DOE_COMPILER_HLSL_REGISTER_UAV : DOE_COMPILER_HLSL_REGISTER_SRV, 4u);
+            hlsl_text(e, ";\n");
+            hlsl_format(e, "uint doe_r%u_bytes() {\n    uint count, stride;\n", index);
+            hlsl_format(e, "    r%u.GetDimensions(count, stride);\n", index);
+            hlsl_text(e, "    return stride == 4u && count <= 0x3fffffffu ? count * 4u : 0u;\n}\n");
+        }
     } else hlsl_error(e, "HLSL resource kind or access has no implementation");
 }
 static void immediate_resource(HlslEmitter *e) {
@@ -176,6 +200,17 @@ static void immediate_resource(HlslEmitter *e) {
 void hlsl_resources(HlslEmitter *e) {
     immediate_resource(e);
     const CompilerWorkspace *c = e->module;
+    bool raw = false;
+    for (uint32_t i = 0u; i < c->resource_count; ++i)
+        if (hlsl_entry_resource(e,i) && hlsl_raw_storage(c,i)) raw = true;
+    if (raw) {
+        if (c->resource_count > 16384u) {
+            hlsl_error(e,"HLSL logical storage-size table exceeds 64 KiB CBV capacity"); return;
+        }
+        hlsl_format(e,"cbuffer DoeStorageSizes : register(b%u, space%u) { uint4 doe_storage_sizes[%u]; };\n",
+            DOE_COMPILER_HLSL_STORAGE_SIZES_REGISTER,DOE_COMPILER_HLSL_STORAGE_SIZES_SPACE,
+            (c->resource_count+3u)/4u);
+    }
     for (uint32_t resource = 0u; resource < c->resource_count && !e->failed; ++resource) {
         if (!hlsl_entry_resource(e, resource)) continue;
         if (type_handle(c, c->resources[resource].type)) {

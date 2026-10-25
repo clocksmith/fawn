@@ -21,17 +21,19 @@ static void write_set(ID3D12Device *device,const doe_dx_resource_set *set,
             view.Format = DXGI_FORMAT_UNKNOWN;
             view.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
             view.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-            view.Buffer.FirstElement = binding->offset / layout->stride;
-            view.Buffer.NumElements = (UINT)(binding->size / layout->stride);
+            view.Buffer.FirstElement = binding->offset / (layout->stride ? layout->stride : 4u);
+            view.Buffer.NumElements = (UINT)(layout->stride ? binding->size / layout->stride : (binding->size+3)/4);
             view.Buffer.StructureByteStride = layout->stride;
+            if (layout->view==DOE_DX_RAW) { view.Format=DXGI_FORMAT_R32_TYPELESS; view.Buffer.Flags=D3D12_BUFFER_SRV_FLAG_RAW; }
             ID3D12Device_CreateShaderResourceView(device, binding->buffer->resource, &view, handle);
         } else {
             D3D12_UNORDERED_ACCESS_VIEW_DESC view = {0};
             view.Format = DXGI_FORMAT_UNKNOWN;
             view.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
-            view.Buffer.FirstElement = binding->offset / layout->stride;
-            view.Buffer.NumElements = (UINT)(binding->size / layout->stride);
+            view.Buffer.FirstElement = binding->offset / (layout->stride ? layout->stride : 4u);
+            view.Buffer.NumElements = (UINT)(layout->stride ? binding->size / layout->stride : (binding->size+3)/4);
             view.Buffer.StructureByteStride = layout->stride;
+            if (layout->view==DOE_DX_RAW) { view.Format=DXGI_FORMAT_R32_TYPELESS; view.Buffer.Flags=D3D12_BUFFER_UAV_FLAG_RAW; }
             ID3D12Device_CreateUnorderedAccessView(device, binding->buffer->resource,
                 NULL, &view, handle);
         }
@@ -109,6 +111,8 @@ doe_dx_status doe_dx_prepare_sets(doe_dx_native_commands *commands,
     UINT sampler_stride=ID3D12Device_GetDescriptorHandleIncrementSize(device,D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
     for (size_t i=0;i<count;++i) {
         const doe_dx_native_resources *values=sets[i].resources;
+        doe_dx_status status=doe_dx_prepare_storage_sizes(commands,values,&use->storage_sizes[i],error);
+        if (status!=DOE_DX_OK) { doe_dx_release_descriptors(use); return status; }
         write_set(device,&sets[i],handle,samplers);
         handle.ptr+=(values->buffer_count+values->texture_count)*resource_stride;
         samplers.ptr+=values->sampler_count*sampler_stride;

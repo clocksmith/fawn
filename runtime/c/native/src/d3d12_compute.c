@@ -11,7 +11,8 @@ native_failure native_d3d12_pipeline_create(native_pipeline *pipeline, const nat
     native_d3d12_compute *map = calloc(1, sizeof(*map));
     if (!map) return native_failure_status(NATIVE_OUT_OF_MEMORY);
     native_d3d12_layout layout;
-    if (!native_d3d12_stage_bindings(pipeline,stage,&layout,map)) {
+    if (!native_d3d12_stage_bindings(pipeline,stage,&layout,map) ||
+        !native_d3d12_capabilities(map,&pipeline->device->backend.value.d3d12.caps)) {
         free(map);
         return native_failure_status(NATIVE_UNSUPPORTED);
     }
@@ -23,7 +24,9 @@ native_failure native_d3d12_pipeline_create(native_pipeline *pipeline, const nat
     }
     doe_dx_dynamic_pipeline_desc descriptor = {.resources={.buffers={.bytecode=code,.bytecode_size=bytes,
         .bindings=layout.buffers,.binding_count=map->buffer_count},.textures=layout.textures,.texture_count=map->texture_count},
-        .texture_contracts=layout.contracts,.samplers=layout.samplers,.sampler_count=map->sampler_count};
+        .texture_contracts=layout.contracts,.samplers=layout.samplers,.sampler_count=map->sampler_count,
+        .immediate_bytes=pipeline->immediate_bytes,.immediate_required_bytes=pipeline->immediate_required_bytes,
+        .logical_size_count=map->logical_size_count,.logical_size_indices=map->logical_size_indices};
     native_failure failure = native_d3d12_guard_pipeline(pipeline->device,guard,&map->guard);
     if (failure.status == NATIVE_OK) {
         doe_dx_error error = {0};

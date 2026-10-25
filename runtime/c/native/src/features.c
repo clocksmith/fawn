@@ -58,9 +58,14 @@ uint32_t native_adapter_features(const native_backend *backend)
         const doe_dx_caps *caps = &backend->value.d3d12.caps;
         uint32_t features = caps->timestamp_frequency && caps->shader_model >= 0x60 ?
             NATIVE_FEATURE(WGPUFeatureName_TimestampQuery) : 0;
+        if (caps->native_16bit_shader_ops && caps->shader_model >= 0x62)
+            features |= NATIVE_FEATURE(WGPUFeatureName_ShaderF16);
         if (caps->wave_ops && caps->shader_model >= 0x60 && caps->wave_lane_count_min >= 4 &&
             caps->wave_lane_count_max <= 128 && caps->wave_lane_count_min <= caps->wave_lane_count_max)
             features |= NATIVE_FEATURE(WGPUFeatureName_Subgroups);
+        if (caps->texture_compression_bc) features |= NATIVE_FEATURE(WGPUFeatureName_TextureCompressionBC);
+        if (caps->depth32float_stencil8) features |= NATIVE_FEATURE(WGPUFeatureName_Depth32FloatStencil8);
+        if (caps->feature_level >= 0xb000) features |= NATIVE_FEATURE(WGPUFeatureName_DepthClipControl);
         return features;
     }
     if (backend->kind == WGPUBackendType_Metal) {
@@ -260,14 +265,15 @@ static bool wgsl_feature_reported(WGPUWGSLLanguageFeatureName feature)
         return (native_shader_semantic_flags() & DOE_COMPILER_UNIFORM_BUFFER_STANDARD_LAYOUT) != 0;
     case WGPUWGSLLanguageFeatureName_Packed4x8IntegerDotProduct:
         return true; /* Shared typed integer lowering; no native packed intrinsic required. */
-    case WGPUWGSLLanguageFeatureName_UnrestrictedPointerParameters: /* Function pointers only. */
-    case WGPUWGSLLanguageFeatureName_PointerCompositeAccess: /* No member access through pointers. */
+    case WGPUWGSLLanguageFeatureName_PointerCompositeAccess:
+    case WGPUWGSLLanguageFeatureName_TextureAndSamplerLet:
+    case WGPUWGSLLanguageFeatureName_ImmediateAddressSpace:
+        return true; /* Canonical references/aliases and all three native immediate transports. */
+    case WGPUWGSLLanguageFeatureName_UnrestrictedPointerParameters: /* General address-space lowering pending. */
     case WGPUWGSLLanguageFeatureName_SubgroupId: /* Global language exposure pending complete target composition. */
-    case WGPUWGSLLanguageFeatureName_TextureAndSamplerLet: /* Handle-typed lets rejected. */
     case WGPUWGSLLanguageFeatureName_SubgroupUniformity: /* Uniformity language contract not yet admitted. */
     case WGPUWGSLLanguageFeatureName_TextureFormatsTier1: /* Extended storage formats rejected. */
     case WGPUWGSLLanguageFeatureName_LinearIndexing: /* Linear index builtins rejected. */
-    case WGPUWGSLLanguageFeatureName_ImmediateAddressSpace: /* D3D12 root-constant composition pending. */
     case WGPUWGSLLanguageFeatureName_BufferView: /* Untyped buffers rejected. */
         return false;
     case WGPUWGSLLanguageFeatureName_Force32:

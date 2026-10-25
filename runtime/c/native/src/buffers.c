@@ -330,6 +330,30 @@ WGPUFuture wgpuBufferMapAsync(WGPUBuffer handle, WGPUMapMode mode,
 
 /* Queue-write staging uses the ordinary command and pending owners. Both
  * buffers are held by the recorded copy, including uncertain submissions. */
+static native_failure staged_metal_write(native_buffer *destination, uint64_t offset,
+    const void *bytes, size_t size)
+{
+    if (!size) return native_failure_status(NATIVE_OK);
+    native_device *device = destination->device;
+    doe_mtl_buffer *staging = NULL;
+    native_command_handle commands = {0};
+    doe_mtl_error error = {0};
+    doe_mtl_status status = doe_mtl_buffer_create(device->backend.value.metal.context,
+        size, DOE_MTL_SHARED, &staging, &error);
+    if (status == DOE_MTL_OK) status = doe_mtl_buffer_write(staging, 0, bytes, size);
+    native_failure failure = native_failure_metal(status, &error);
+    if (failure.status == NATIVE_OK) failure = native_command_create(&device->backend, &commands);
+    if (failure.status == NATIVE_OK) {
+        status = doe_mtl_commands_copy(commands.value.metal, staging, 0,
+            destination->handle.metal, offset, size, &error);
+        failure = native_failure_metal(status, &error);
+    }
+    doe_mtl_buffer_release(staging);
+    if (failure.status == NATIVE_OK) return native_submit_backend_commands(device, commands);
+    if (commands.value.metal && native_command_release(&commands) != NATIVE_OK) abort();
+    return failure;
+}
+
 static native_failure staged_queue_write(native_buffer *destination, uint64_t offset,
     const void *bytes, size_t size)
 {
@@ -365,9 +389,13 @@ void wgpuQueueWriteBuffer(WGPUQueue handle, WGPUBuffer buffer_handle,
     if (status == DOE_RESOURCE_OK && (bytes || !size)) {
         native_buffer *payload = doe_resource_buffer_native(buffer);
         failure = native_settle_for_buffer(device, payload);
-        if (failure.status == NATIVE_OK) failure = device->backend.kind == WGPUBackendType_Vulkan &&
-            device->backend.upload_policy == DOE_NATIVE_UPLOAD_STAGED_COPY ?
-            staged_queue_write(payload, offset, bytes, size) : native_buffer_write(payload, offset, bytes, size);
+        if (failure.status == NATIVE_OK) {
+            if (device->backend.upload_policy == DOE_NATIVE_UPLOAD_STAGED_COPY && device->backend.kind == WGPUBackendType_Vulkan)
+                failure = staged_queue_write(payload, offset, bytes, size);
+            else if (device->backend.upload_policy == DOE_NATIVE_UPLOAD_STAGED_COPY && device->backend.kind == WGPUBackendType_Metal)
+                failure = staged_metal_write(payload, offset, bytes, size);
+            else failure = native_buffer_write(payload, offset, bytes, size);
+        }
     }
     native_unlock(device);
     if (status != DOE_RESOURCE_OK || failure.status != NATIVE_OK) {

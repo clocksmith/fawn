@@ -1,0 +1,50 @@
+/* SPDX-License-Identifier: MIT
+ * Pure feature-composition control; this does not query or emulate a device. */
+#include "../src/internal.h"
+#include <assert.h>
+#include <stdio.h>
+
+static void pointer_features(void)
+{
+    uint32_t words[] = {0x07230203,0x00010300,0,1,0,0x00020011,1,0x00020011,4441};
+    doe_shader_view view = {.words=words,.counts={.words=sizeof(words)/sizeof(words[0])}};
+    doe_vk_caps caps = {0};
+    assert(!native_shader_capabilities(&view, &caps));
+    caps.variable_pointers_storage = true;
+    assert(native_shader_capabilities(&view, &caps));
+    words[8] = 4442;
+    assert(!native_shader_capabilities(&view, &caps));
+    caps.variable_pointers = true;
+    assert(native_shader_capabilities(&view, &caps));
+    words[8] = 4436; /* Variable pointers never enable 16-bit stage storage. */
+    assert(!native_shader_capabilities(&view, &caps));
+}
+
+static void d3d_features(void)
+{
+    native_backend backend = {.kind=WGPUBackendType_D3D12};
+    doe_dx_caps *caps = &backend.value.d3d12.caps;
+    const uint32_t half = NATIVE_FEATURE(WGPUFeatureName_ShaderF16);
+    assert(!(native_adapter_features(&backend) & half));
+    caps->shader_model = 0x62;
+    assert(!(native_adapter_features(&backend) & half));
+    caps->native_16bit_shader_ops = true;
+    assert(native_adapter_features(&backend) & half);
+    caps->shader_model = 0x61;
+    assert(!(native_adapter_features(&backend) & half));
+    const uint32_t formats = NATIVE_FEATURE(WGPUFeatureName_TextureCompressionBC) |
+        NATIVE_FEATURE(WGPUFeatureName_Depth32FloatStencil8);
+    assert(!(native_adapter_features(&backend) & formats));
+    caps->texture_compression_bc = true;
+    assert((native_adapter_features(&backend) & formats) == NATIVE_FEATURE(WGPUFeatureName_TextureCompressionBC));
+    caps->depth32float_stencil8 = true;
+    assert((native_adapter_features(&backend) & formats) == formats);
+}
+
+int main(void)
+{
+    pointer_features();
+    d3d_features();
+    puts("PASS independent pointer capability gates and queried D3D12 half/format feature composition; host only");
+    return 0;
+}

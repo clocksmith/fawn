@@ -66,8 +66,20 @@ static void projection(const native_stage *fragment,const native_stage *vertex)
     assert(!native_d3d12_interstage_mask(&sparse,&mask) && mask==0);
 }
 
+static void fragment_builtin_metadata(void)
+{
+    doe_shader *shader=compile("struct Out{@location(0) color:vec4f,@builtin(frag_depth) depth:f32,@builtin(sample_mask) mask:u32}"
+        "@fragment fn main(@builtin(sample_index) index:u32,@builtin(sample_mask) mask:u32)->Out{"
+        "return Out(vec4f(f32(index)),0.5,mask);}");
+    doe_shader_view view; assert(doe_shader_borrow(shader,&view)==DOE_SHADER_OK);
+    assert(strstr(view.text,"SV_Depth") && strstr(view.text,"SV_Coverage") && strstr(view.text,"SV_SampleIndex"));
+    native_graphics_limits limits=native_d3d12_interface_limits();
+    assert(limits.fragment_builtins);
+    doe_shader_release(shader);
+}
 int main(void)
 {
+    fragment_builtin_metadata();
     const char *vertex="@group(0) @binding(2) var<uniform> a:vec4f;"
         "@group(1) @binding(7) var<uniform> common_params:vec4f;"
         "struct Out{@builtin(position) position:vec4f,@location(0) @interpolate(flat) value:f32}"

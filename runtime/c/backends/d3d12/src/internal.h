@@ -2,6 +2,7 @@
 #ifndef DOE_DX_INTERNAL_H
 #define DOE_DX_INTERNAL_H
 #include "native.h"
+#include "../include/doe_d3d12_surface.h"
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
@@ -25,6 +26,9 @@ struct doe_dx_buffer {
     bool initialized;
 };
 struct doe_dx_texture {
+    doe_dx_surface *surface;
+    uint32_t surface_index;
+    bool surface_copy_dest;
     doe_dx_context *context;
     doe_dx_native_texture *native;
     doe_dx_commands *owner;
@@ -57,6 +61,9 @@ typedef struct doe_dx_render_layout {
     doe_dx_binding_plan stages[DOE_DX_RENDER_STAGES];
 } doe_dx_render_layout;
 struct doe_dx_pipeline {
+    uint32_t immediate_bytes;
+    uint64_t immediate_required_bytes;
+    uint32_t logical_size_count,logical_size_indices[DOE_DX_MAX_BINDINGS];
     doe_dx_context *context;
     doe_dx_native_pipeline *native;
     uint32_t references;
@@ -78,6 +85,7 @@ typedef struct doe_dx_buffer_use {
     bool initialized; /* Speculative until completion. */
 } doe_dx_buffer_use;
 typedef struct doe_dx_texture_use {
+    bool surface_acquire;
     doe_dx_texture *texture;
     bool initialized;
 } doe_dx_texture_use;
@@ -90,6 +98,9 @@ typedef enum doe_dx_command_state {
     DOE_DX_RECORDING, DOE_DX_POISONED, DOE_DX_SUBMITTED, DOE_DX_COMPLETE, DOE_DX_FAILED
 } doe_dx_command_state;
 struct doe_dx_commands {
+    doe_dx_surface *present_surface;
+    doe_dx_error present_failure;
+    bool present_discard;
     doe_dx_context *context;
     doe_dx_native_commands *native;
     doe_dx_command_state state;
@@ -109,6 +120,11 @@ struct doe_dx_commands {
     doe_dx_commands *next;
 };
 
+void doe_dx_surface_acquisition_complete(doe_dx_texture *);
+void doe_dx_surface_texture_release(doe_dx_surface *,doe_dx_texture *);
+bool doe_dx_surface_texture_recordable(const doe_dx_texture *);
+doe_dx_status doe_dx_surface_execute_present(doe_dx_commands *,doe_dx_error *);
+void doe_dx_surface_retire_present(doe_dx_commands *,bool submitted,bool success);
 typedef struct doe_dx_reservation {
     size_t buffers, textures, timestamps, pipelines;
 } doe_dx_reservation;

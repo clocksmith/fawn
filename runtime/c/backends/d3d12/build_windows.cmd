@@ -6,6 +6,8 @@ if "%OUT%"=="" set "OUT=%TEMP%\doe-c-d3d12"
 if not exist "%OUT%" mkdir "%OUT%"
 if not "%errorlevel%"=="0" exit /b 1
 cl /nologo /std:c11 /W4 /WX /Iinclude /DDOE_DX_REQUIRE_WINDOWS /c ^
+    src\surfaces.c src\windows_surface.c src\windows_storage_sizes.c ^
+    src\pipeline_cache.c src\texture_initialize.c src\texture_subresources.c src\texture_views.c src\windows_cache.c src\windows_cache_key.c src\windows_texture_initialize.c src\windows_texture_subresources.c src\windows_texture_views.c ^
     src\command_storage.c src\context.c src\resources.c src\commands.c ^
     src\compute.c src\pipeline.c src\textures.c ^
     src\texture_transfer.c src\texture_regions.c src\render_pipeline.c src\render_commands.c src\render_vertices.c src\samplers.c src\bindings.c src\graphics.c ^
@@ -16,6 +18,8 @@ cl /nologo /std:c11 /W4 /WX /Iinclude /DDOE_DX_REQUIRE_WINDOWS /c ^
     /Fo"%OUT%\\"
 if not "%errorlevel%"=="0" exit /b 1
 lib /nologo /OUT:"%OUT%\doe_d3d12.lib" ^
+    "%OUT%\surfaces.obj" "%OUT%\windows_surface.obj" "%OUT%\windows_storage_sizes.obj" ^
+    "%OUT%\pipeline_cache.obj" "%OUT%\texture_initialize.obj" "%OUT%\texture_subresources.obj" "%OUT%\texture_views.obj" "%OUT%\windows_cache.obj" "%OUT%\windows_cache_key.obj" "%OUT%\windows_texture_initialize.obj" "%OUT%\windows_texture_subresources.obj" "%OUT%\windows_texture_views.obj" ^
     "%OUT%\command_storage.obj" "%OUT%\context.obj" "%OUT%\resources.obj" "%OUT%\commands.obj" ^
     "%OUT%\compute.obj" "%OUT%\pipeline.obj" "%OUT%\textures.obj" ^
     "%OUT%\texture_transfer.obj" "%OUT%\texture_regions.obj" "%OUT%\render_pipeline.obj" "%OUT%\render_commands.obj" "%OUT%\render_vertices.obj" "%OUT%\samplers.obj" "%OUT%\bindings.obj" "%OUT%\graphics.obj" ^
@@ -25,24 +29,24 @@ lib /nologo /OUT:"%OUT%\doe_d3d12.lib" ^
     "%OUT%\vertex_layout.obj" "%OUT%\geometry.obj" "%OUT%\windows_geometry.obj"
 if not "%errorlevel%"=="0" exit /b 1
 cl /nologo /std:c11 /W4 /WX /D_CRT_SECURE_NO_WARNINGS /Iinclude ^
-    tests\native_compute.c "%OUT%\doe_d3d12.lib" d3d12.lib dxgi.lib dxguid.lib ^
+    tests\native_compute.c "%OUT%\doe_d3d12.lib" d3d12.lib dxgi.lib dxguid.lib user32.lib ^
     /Fo"%OUT%\native_compute.obj" /Fe"%OUT%\native_compute.exe"
 if not "%errorlevel%"=="0" exit /b 1
 cl /nologo /std:c11 /W4 /WX /D_CRT_SECURE_NO_WARNINGS /Iinclude ^
-    tests\native_texture.c "%OUT%\doe_d3d12.lib" d3d12.lib dxgi.lib dxguid.lib ^
+    tests\native_texture.c "%OUT%\doe_d3d12.lib" d3d12.lib dxgi.lib dxguid.lib user32.lib ^
     /Fo"%OUT%\native_texture.obj" /Fe"%OUT%\native_texture.exe"
 if not "%errorlevel%"=="0" exit /b 1
 cl /nologo /std:c11 /W4 /WX /D_CRT_SECURE_NO_WARNINGS /Iinclude ^
-    tests\native_graphics.c "%OUT%\doe_d3d12.lib" d3d12.lib dxgi.lib dxguid.lib ^
+    tests\native_graphics.c "%OUT%\doe_d3d12.lib" d3d12.lib dxgi.lib dxguid.lib user32.lib ^
     /Fo"%OUT%\native_graphics.obj" /Fe"%OUT%\native_graphics.exe"
 if not "%errorlevel%"=="0" exit /b 1
 cl /nologo /std:c11 /W4 /WX /D_CRT_SECURE_NO_WARNINGS /Iinclude ^
-    tests\native_mesh.c "%OUT%\doe_d3d12.lib" d3d12.lib dxgi.lib dxguid.lib ^
+    tests\native_mesh.c "%OUT%\doe_d3d12.lib" d3d12.lib dxgi.lib dxguid.lib user32.lib ^
     /Fo"%OUT%\native_mesh.obj" /Fe"%OUT%\native_mesh.exe"
 if not "%errorlevel%"=="0" exit /b 1
 rem SDK-typed CPU call controls; root workflow runs this explicitly, never a GPU.
 cl /nologo /std:c11 /W4 /WX /Iinclude ^
-    tests\test_windows_caps.c "%OUT%\doe_d3d12.lib" d3d12.lib dxgi.lib dxguid.lib ^
+    tests\test_windows_caps.c "%OUT%\doe_d3d12.lib" d3d12.lib dxgi.lib dxguid.lib user32.lib ^
     /Fo"%OUT%\test_windows_caps.obj" /Fe"%OUT%\test_windows_caps.exe"
 if not "%errorlevel%"=="0" exit /b 1
 rem Actual SDK CPU region call control; never a device.
@@ -52,12 +56,17 @@ cl /nologo /std:c11 /W4 /WX /Iinclude ^
 if not "%errorlevel%"=="0" exit /b 1
 rem Official SDK CPU descriptor/root serialization only; never a device.
 cl /nologo /std:c11 /W4 /WX /Iinclude ^
-    tests\test_windows_sampled.c "%OUT%\doe_d3d12.lib" d3d12.lib dxgi.lib dxguid.lib ^
+    tests\test_windows_sampled.c "%OUT%\doe_d3d12.lib" d3d12.lib dxgi.lib dxguid.lib user32.lib ^
     /Fo"%OUT%\test_windows_sampled.obj" /Fe"%OUT%\test_windows_sampled.exe"
 if not "%errorlevel%"=="0" exit /b 1
 rem New whole-pass/stage roots and packed descriptor CPU control; no device.
 cl /nologo /std:c11 /W4 /WX /Iinclude ^
-    tests\test_windows_render.c "%OUT%\doe_d3d12.lib" d3d12.lib dxgi.lib dxguid.lib ^
+    tests\test_windows_render.c "%OUT%\doe_d3d12.lib" d3d12.lib dxgi.lib dxguid.lib user32.lib ^
     /Fo"%OUT%\test_windows_render.obj" /Fe"%OUT%\test_windows_render.exe"
+if not "%errorlevel%"=="0" exit /b 1
+rem Canonical PSO key values using real SDK declarations, build only.
+cl /nologo /std:c11 /W4 /WX /Iinclude ^
+    tests\test_windows_cache.c "%OUT%\doe_d3d12.lib" d3d12.lib dxgi.lib dxguid.lib user32.lib ^
+    /Fo"%OUT%\test_windows_cache.obj" /Fe"%OUT%\test_windows_cache.exe"
 if not "%errorlevel%"=="0" exit /b 1
 exit /b 0

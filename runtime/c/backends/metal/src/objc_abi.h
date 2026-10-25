@@ -9,6 +9,9 @@
  * objc_msgSend is always cast to the exact selected method signature.
  * x86_64 uses objc_msgSend_stret for a returned three-word MTLSize; arm64
  * uses the ordinary dispatcher. No opaque guessed-size SDK structures. */
+doe_mtl_status doe_mtl_objc_timeline_create(void *, void *, void **, doe_mtl_error *);
+doe_mtl_status doe_mtl_objc_timeline_signal(void *, void *, void *, uint64_t, doe_mtl_error *);
+uint64_t doe_mtl_objc_timeline_value(void *, void *);
 typedef struct doe_mtl_size { size_t width, height, depth; } doe_mtl_size;
 typedef struct doe_mtl_origin { size_t x, y, z; } doe_mtl_origin;
 typedef struct doe_mtl_swizzle_abi { uint8_t red, green, blue, alpha; } doe_mtl_swizzle_abi;

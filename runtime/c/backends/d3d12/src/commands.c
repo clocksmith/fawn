@@ -32,7 +32,10 @@ static void release_resources(doe_dx_commands *commands, bool publish) {
     for (size_t index = 0; index < commands->texture_count; index++) {
         doe_dx_texture_use *use = &commands->textures[index];
         use->texture->owner = NULL;
-        if (publish) use->texture->initialized = use->initialized;
+        if (publish) {
+            use->texture->initialized = use->initialized;
+            if (use->surface_acquire) doe_dx_surface_acquisition_complete(use->texture);
+        }
         doe_dx_texture_release(use->texture);
     }
     commands->texture_count = 0;
@@ -53,6 +56,7 @@ static void release_resources(doe_dx_commands *commands, bool publish) {
 
 void doe_dx_commands_dispose(doe_dx_commands *commands) {
     doe_dx_native_commands_destroy(commands->native);
+    doe_dx_surface_retire_present(commands,false,false);
     release_resources(commands, false);
     commands->context->objects--;
     free(commands->buffers);
@@ -63,10 +67,13 @@ void doe_dx_commands_dispose(doe_dx_commands *commands) {
 }
 
 void doe_dx_commands_settle(doe_dx_commands *commands, bool lost, const doe_dx_error *error) {
-    commands->state = lost ? DOE_DX_FAILED : DOE_DX_COMPLETE;
-    if (lost && error) commands->failure = *error;
+    bool present_failed=commands->present_failure.status!=DOE_DX_OK;
+    commands->state = lost || present_failed ? DOE_DX_FAILED : DOE_DX_COMPLETE;
+    if (present_failed) commands->failure=commands->present_failure;
+    else if (lost && error) commands->failure = *error;
     doe_dx_native_commands_destroy(commands->native);
     commands->native = NULL;
+    doe_dx_surface_retire_present(commands,true,!lost&&!present_failed);
     release_resources(commands, !lost);
 }
 
@@ -118,9 +125,9 @@ void doe_dx_use_buffer(doe_dx_commands *commands, doe_dx_buffer *buffer) {
     buffer->references++; /* Preflight checked overflow and capacity. */
 }
 
-doe_dx_status doe_dx_commands_copy(doe_dx_commands *commands,
+static doe_dx_status copy_bytes(doe_dx_commands *commands,
     doe_dx_buffer *source, uint64_t source_offset, doe_dx_buffer *destination,
-    uint64_t destination_offset, uint64_t size, doe_dx_error *error) {
+    uint64_t destination_offset, uint64_t size, bool aligned,doe_dx_error *error) {
     doe_dx_status status = doe_dx_recording(commands, error);
     if (status != DOE_DX_OK) return status;
     status = doe_dx_buffer_preflight(commands, source, true);
@@ -133,7 +140,7 @@ doe_dx_status doe_dx_commands_copy(doe_dx_commands *commands,
     if (!doe_dx_range(source->size, source_offset, size) ||
         !doe_dx_range(destination->size, destination_offset, size))
         return doe_dx_fail(DOE_DX_RANGE, 0, "commands.copy", error);
-    if ((source_offset | destination_offset | size) & 3)
+    if (aligned && ((source_offset | destination_offset | size) & 3))
         return doe_dx_fail(DOE_DX_ALIGNMENT, 0, "commands.copy", error);
     size_t added = (doe_dx_find_buffer(commands, source) ? 0u : 1u) +
         (doe_dx_find_buffer(commands, destination) ? 0u : 1u);
@@ -146,6 +153,17 @@ doe_dx_status doe_dx_commands_copy(doe_dx_commands *commands,
     if (!destination_offset && size == destination->size)
         doe_dx_find_buffer(commands, destination)->initialized = true;
     return doe_dx_fail(DOE_DX_OK, 0, "commands.copy", error);
+}
+
+doe_dx_status doe_dx_commands_copy(doe_dx_commands *commands,doe_dx_buffer *source,uint64_t from,
+    doe_dx_buffer *destination,uint64_t to,uint64_t size,doe_dx_error *error)
+{
+    return copy_bytes(commands,source,from,destination,to,size,true,error);
+}
+doe_dx_status doe_dx_commands_copy_bytes(doe_dx_commands *commands,doe_dx_buffer *source,uint64_t from,
+    doe_dx_buffer *destination,uint64_t to,uint64_t size,doe_dx_error *error)
+{
+    return copy_bytes(commands,source,from,destination,to,size,false,error);
 }
 
 doe_dx_status doe_dx_commands_submit(doe_dx_commands *commands, doe_dx_error *error) {
@@ -170,17 +188,32 @@ doe_dx_status doe_dx_commands_submit(doe_dx_commands *commands, doe_dx_error *er
     context->pending = commands;
     context->next_fence++;
     doe_dx_native_execute(context->native, commands->native);
+    doe_dx_error presentation={0};
+    doe_dx_status presented=doe_dx_surface_execute_present(commands,&presentation);
+    if (presented!=DOE_DX_OK) {
+        presentation.status=presented;
+        commands->present_failure=presentation;
+    }
     status = doe_dx_native_signal(context->native, context->next_fence, &detail);
     if (status == DOE_DX_OK) {
         commands->fence = context->next_fence;
+        if (presented!=DOE_DX_OK) {
+            if (presented==DOE_DX_DEVICE_LOST) doe_dx_context_lose(context,&presentation);
+            if (error) *error=presentation;
+            return presented;
+        }
         return doe_dx_fail(DOE_DX_OK, 0, "commands.submit", error);
     }
     if (status == DOE_DX_DEVICE_LOST) {
+        doe_dx_error first=presented!=DOE_DX_OK ? presentation : detail;
         doe_dx_context_lose(context, &detail);
-        if (error) *error = detail;
-        return status;
+        if (error) *error = first;
+        return first.status;
     }
-    return doe_dx_fail(DOE_DX_COMPLETION_UNKNOWN, detail.native_code, detail.operation, error);
+    if (commands->present_surface && commands->present_failure.status==DOE_DX_OK)
+        commands->present_failure=detail;
+    const doe_dx_error *first=commands->present_failure.status!=DOE_DX_OK ? &commands->present_failure : &detail;
+    return doe_dx_fail(DOE_DX_COMPLETION_UNKNOWN, first->native_code, first->operation, error);
 }
 
 doe_dx_status doe_dx_commands_result(const doe_dx_commands *commands, doe_dx_error *error) {

@@ -108,7 +108,7 @@ static uint32_t interface_type(MetalEmitter *e, uint32_t index, const StageEntry
         const StageInterface *leaf = &e->source->stages->interfaces[entry->interface_first + i];
         if (leaf->direction != direction || (direction == DOE_COMPILER_INTERFACE_INPUT && leaf->location == NO_ID)) continue;
         metal_text(e, "    ");
-        metal_type(e, leaf->type);
+        metal_type(e, type_leaf(e->module,leaf->type) == IR_F16 ? leaf->target_type : leaf->type);
         metal_format(e, " field%u", i);
         attributes(e, leaf, vertex);
         metal_text(e, ";\n");
@@ -154,7 +154,7 @@ void metal_graphics_wrapper(MetalEmitter *e, uint32_t index) {
         const StageInterface *leaf = &e->source->stages->interfaces[entry->interface_first + i];
         if (leaf->direction != DOE_COMPILER_INTERFACE_INPUT || leaf->location != NO_ID) continue;
         if (comma) metal_text(e, ", ");
-        metal_type(e, leaf->type);
+        metal_type(e, type_leaf(e->module,leaf->type) == IR_F16 ? leaf->target_type : leaf->type);
         metal_format(e, " builtin%u", i);
         attributes(e, leaf, vertex);
         comma = true;
@@ -168,7 +168,11 @@ void metal_graphics_wrapper(MetalEmitter *e, uint32_t index) {
         if (leaf->direction != DOE_COMPILER_INTERFACE_INPUT) continue;
         metal_format(e, "    ctx.stage%u", leaf->formal);
         if (leaf->member != NO_ID) metal_format(e, ".m%u", leaf->member);
-        metal_format(e, " = %s%u;\n", leaf->location == NO_ID ? "builtin" : "input.field", i);
+        metal_text(e," = ");
+        const bool half = type_leaf(e->module,leaf->type) == IR_F16;
+        if (half) { metal_type(e,leaf->type); metal_text(e,"("); }
+        metal_format(e,"%s%u",leaf->location == NO_ID ? "builtin" : "input.field",i);
+        metal_text(e,half ? ");\n" : ";\n");
     }
     metal_text(e, "    ");
     if (f->result_type != IR_VOID) {

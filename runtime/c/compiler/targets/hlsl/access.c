@@ -125,6 +125,16 @@ static void atomic_word(HlslEmitter *e, const IrInstruction *ir, const HlslPath 
         hlsl_format(e, "r%u[offset / 4u]", ir->operands.access.root);
     else object_path(e, ir, path);
 }
+static void atomic_begin(HlslEmitter *e, const IrInstruction *ir,
+                         const HlslPath *path, const char *operation) {
+    if (ir->operands.access.category == ROOT_RESOURCE &&
+        hlsl_raw_storage(e->module,ir->operands.access.root))
+        hlsl_format(e,"r%u.%s(offset",ir->operands.access.root,operation);
+    else {
+        hlsl_format(e,"%s(",operation);
+        atomic_word(e,ir,path);
+    }
+}
 static void atomic_input(HlslEmitter *e, const IrInstruction *ir, uint32_t index) {
     hlsl_text(e, "asuint(");
     hlsl_value(e, e->module->typed_operands[ir->operands.access.value + index]);
@@ -142,8 +152,7 @@ static void atomic_operation(HlslEmitter *e, const IrInstruction *ir, const Hlsl
         /* Raw uint storage must not select unsigned min/max. A strong CAS loop
          * linearizes the signed comparison and preserves the original old word. */
         hlsl_indent(e);
-        hlsl_text(e, "InterlockedOr(");
-        atomic_word(e, ir, path);
+        atomic_begin(e,ir,path,"InterlockedOr");
         hlsl_text(e, ", 0u, old);\n");
         hlsl_line(e, "[allow_uav_condition] while (true) {");
         ++e->indent;
@@ -156,8 +165,7 @@ static void atomic_operation(HlslEmitter *e, const IrInstruction *ir, const Hlsl
         atomic_input(e, ir, 0u);
         hlsl_text(e, ";\n");
         hlsl_indent(e);
-        hlsl_text(e, "InterlockedCompareExchange(");
-        atomic_word(e, ir, path);
+        atomic_begin(e,ir,path,"InterlockedCompareExchange");
         hlsl_text(e, ", seen, desired, old);\n");
         hlsl_line(e, "if (old == seen) break;");
         --e->indent;
@@ -176,8 +184,7 @@ static void atomic_operation(HlslEmitter *e, const IrInstruction *ir, const Hlsl
             default: hlsl_error(e, "HLSL atomic operation has no native mapping"); return;
         }
         hlsl_indent(e);
-        hlsl_format(e, "%s(", operation);
-        atomic_word(e, ir, path);
+        atomic_begin(e,ir,path,operation);
         hlsl_text(e, ", ");
         if (ir->opcode == IR_ATOMIC_LOAD) hlsl_text(e, "0u");
         else {

@@ -43,12 +43,18 @@ typedef struct doe_dx_dynamic_pipeline_desc {
     const doe_dx_texture_contract *texture_contracts;
     const doe_dx_sampler_layout *samplers;
     size_t sampler_count;
+    uint32_t immediate_bytes; /* Aligned extent, at most64 bytes, b1 space7. */
+    uint64_t immediate_required_bytes;
+    uint32_t logical_size_count; /* Canonical resource_count, b2 space7; max16384. */
+    const uint32_t *logical_size_indices; /* One canonical index per buffer; raw rows consume it. */
 } doe_dx_dynamic_pipeline_desc;
 typedef struct doe_dx_dynamic_resources {
     const doe_dx_texture_view_desc *texture_views; /* NULL: legacy whole2D rows. */
     doe_dx_compute_resources resources;
     const doe_dx_sampler_desc *samplers; /* Pipeline runtime-sampler order. */
     size_t sampler_count;
+    uint32_t immediate_words[16];
+    uint64_t immediate_initialized_bytes;
 } doe_dx_dynamic_resources;
 /* Portable validation of normalized immutable sampler values. */
 doe_dx_status doe_dx_sampler_validate(const doe_dx_sampler_desc *sampler);

@@ -10,8 +10,40 @@ static doe_dx_texture *texture(doe_dx_context *context,uint32_t usage)
     assert(doe_dx_texture_create(context,&desc,&result,NULL) == DOE_DX_OK);
     return result;
 }
+static void disjoint_storage_views(void)
+{
+    mock_reset(); doe_dx_context *context=NULL;
+    assert(doe_dx_context_create(NULL,&context,NULL)==DOE_DX_OK);
+    doe_dx_texture_shape shape={.image={4,4,DOE_DX_RGBA8_UNORM,DOE_DX_TEXTURE_SAMPLED|DOE_DX_TEXTURE_STORAGE},
+        .dimension=2,.depth_or_layers=2,.mip_levels=2,.samples=1};
+    doe_dx_texture *texture=NULL;
+    assert(doe_dx_texture_create_shape(context,&shape,&texture,NULL)==DOE_DX_OK);
+    unsigned char code=1;
+    doe_dx_texture_binding_layout images[2]={{.format=DOE_DX_RGBA8_UNORM,.access=DOE_DX_READ_ONLY},
+        {.shader_register=1,.format=DOE_DX_RGBA8_UNORM,.access=DOE_DX_READ_WRITE}};
+    doe_dx_texture_contract contracts[2]={{.sample_class=DOE_DX_SAMPLE_FLOAT,.dimension=2},
+        {.sample_class=DOE_DX_SAMPLE_EXACT,.storage=true,.dimension=2}};
+    doe_dx_dynamic_pipeline_desc desc={.resources={.buffers={&code,1,NULL,0},.textures=images,.texture_count=2},
+        .texture_contracts=contracts};
+    doe_dx_pipeline *pipeline=NULL;
+    assert(doe_dx_pipeline_create_dynamic(context,&desc,&pipeline,NULL)==DOE_DX_OK);
+    doe_dx_commands *commands=NULL; assert(doe_dx_commands_create(context,&commands,NULL)==DOE_DX_OK);
+    assert(doe_dx_commands_initialize_texture(commands,texture,NULL)==DOE_DX_OK);
+    doe_dx_texture *textures[2]={texture,texture};
+    doe_dx_texture_view_desc views[2]={{.format=DOE_DX_RGBA8_UNORM,.dimension=2,.mip_count=1,.layer_count=1},
+        {.format=DOE_DX_RGBA8_UNORM,.dimension=2,.mip_count=1,.layer_count=1,.base_layer=1}};
+    doe_dx_dynamic_resources values={.resources={.textures=textures,.texture_count=2},.texture_views=views};
+    assert(doe_dx_commands_dispatch_dynamic(commands,pipeline,&values,1,1,1,NULL)==DOE_DX_OK && commands->texture_count==1);
+    views[1].base_layer=0;
+    assert(doe_dx_commands_dispatch_dynamic(commands,pipeline,&values,1,1,1,NULL)==DOE_DX_UNSUPPORTED);
+    views[1].base_mip=1;
+    assert(doe_dx_commands_dispatch_dynamic(commands,pipeline,&values,1,1,1,NULL)==DOE_DX_OK);
+    doe_dx_texture_release(texture); doe_dx_pipeline_release(pipeline); doe_dx_commands_release(commands);
+    assert(doe_dx_context_destroy(context)==DOE_DX_OK); mock_reset();
+}
 int main(void)
 {
+    disjoint_storage_views();
     mock_reset();
     doe_dx_context *context = NULL;
     assert(doe_dx_context_create(NULL,&context,NULL) == DOE_DX_OK);

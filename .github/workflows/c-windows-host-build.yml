@@ -107,7 +107,7 @@ jobs:
           $env:OUT = Join-Path $env:EVIDENCE_ROOT 'd3d12-sdk'
           New-Item -ItemType Directory -Force $env:OUT | Out-Null
           $owner = Join-Path $env:GITHUB_WORKSPACE 'runtime/c/backends/d3d12'
-          $command = 'call "' + $env:DEVCMD + '" -arch=x64 >nul && call build_windows.cmd && "' + $env:OUT + '\test_windows_caps.exe" && "' + $env:OUT + '\test_windows_texture_regions.exe" && "' + $env:OUT + '\test_windows_sampled.exe" && "' + $env:OUT + '\test_windows_render.exe"'
+          $command = 'call "' + $env:DEVCMD + '" -arch=x64 >nul && call build_windows.cmd && "' + $env:OUT + '\test_windows_caps.exe" && "' + $env:OUT + '\test_windows_texture_regions.exe" && "' + $env:OUT + '\test_windows_sampled.exe" && "' + $env:OUT + '\test_windows_render.exe" && "' + $env:OUT + '\test_windows_cache.exe"'
           Push-Location $owner
           try {
             & cmd.exe /d /s /c $command 2>&1 | Tee-Object "$env:EVIDENCE_ROOT/d3d12-sdk.log"

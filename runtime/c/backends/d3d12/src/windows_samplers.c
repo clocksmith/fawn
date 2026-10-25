@@ -49,6 +49,7 @@ void doe_dx_sampler_native(const doe_dx_sampler_desc *sampler,D3D12_SAMPLER_DESC
 void doe_dx_release_descriptors(doe_dx_descriptor_use *use)
 {
     if (!use) return;
+    for (size_t i=0;i<DOE_DX_RENDER_STAGES;++i) if (use->storage_sizes[i]) doe_dx_native_buffer_destroy(use->storage_sizes[i]);
     if (use->heap) ID3D12DescriptorHeap_Release(use->heap);
     if (use->sampler_heap) ID3D12DescriptorHeap_Release(use->sampler_heap);
     free(use);

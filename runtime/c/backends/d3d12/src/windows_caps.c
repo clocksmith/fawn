@@ -44,8 +44,60 @@ static doe_dx_status buffer_bound(doe_dx_native_context *context, doe_dx_caps *c
     return DOE_DX_OK;
 }
 
+static doe_dx_status format_support(ID3D12Device *device,DXGI_FORMAT format,UINT required,
+    bool *supported,doe_dx_error *error)
+{
+    D3D12_FEATURE_DATA_FORMAT_SUPPORT row={0}; row.Format=format;
+    HRESULT hr=ID3D12Device_CheckFeatureSupport(device,D3D12_FEATURE_FORMAT_SUPPORT,&row,sizeof(row));
+    if (hr==E_INVALIDARG) { *supported=false; return DOE_DX_OK; }
+    if (FAILED(hr)) return doe_dx_hresult(hr,"CheckFeatureSupport.FORMAT_SUPPORT.caps",error);
+    *supported=((UINT)row.Support1&required)==required;
+    return DOE_DX_OK;
+}
+static doe_dx_status optional_formats(ID3D12Device *device,doe_dx_caps *caps,doe_dx_error *error)
+{
+    static const DXGI_FORMAT bc[]={DXGI_FORMAT_BC1_UNORM,DXGI_FORMAT_BC1_UNORM_SRGB,
+        DXGI_FORMAT_BC2_UNORM,DXGI_FORMAT_BC2_UNORM_SRGB,DXGI_FORMAT_BC3_UNORM,DXGI_FORMAT_BC3_UNORM_SRGB,
+        DXGI_FORMAT_BC4_UNORM,DXGI_FORMAT_BC4_SNORM,DXGI_FORMAT_BC5_UNORM,DXGI_FORMAT_BC5_SNORM,
+        DXGI_FORMAT_BC6H_UF16,DXGI_FORMAT_BC6H_SF16,DXGI_FORMAT_BC7_UNORM,DXGI_FORMAT_BC7_UNORM_SRGB};
+    caps->texture_compression_bc=true;
+    for (size_t i=0;i<sizeof(bc)/sizeof(bc[0]);++i) {
+        bool supported=false;
+        doe_dx_status status=format_support(device,bc[i],
+            D3D12_FORMAT_SUPPORT1_TEXTURE2D|D3D12_FORMAT_SUPPORT1_SHADER_SAMPLE,&supported,error);
+        if (status!=DOE_DX_OK) return status;
+        caps->texture_compression_bc=caps->texture_compression_bc&&supported;
+    }
+    const DXGI_FORMAT formats[]={DXGI_FORMAT_D32_FLOAT_S8X24_UINT,
+        DXGI_FORMAT_R32_FLOAT_X8X24_TYPELESS,DXGI_FORMAT_X32_TYPELESS_G8X24_UINT};
+    const UINT required[]={D3D12_FORMAT_SUPPORT1_TEXTURE2D|D3D12_FORMAT_SUPPORT1_DEPTH_STENCIL|
+            D3D12_FORMAT_SUPPORT1_MULTISAMPLE_RENDERTARGET,
+        D3D12_FORMAT_SUPPORT1_TEXTURE2D|D3D12_FORMAT_SUPPORT1_SHADER_LOAD|
+            D3D12_FORMAT_SUPPORT1_SHADER_SAMPLE|D3D12_FORMAT_SUPPORT1_SHADER_SAMPLE_COMPARISON,
+        D3D12_FORMAT_SUPPORT1_TEXTURE2D|D3D12_FORMAT_SUPPORT1_SHADER_LOAD};
+    caps->depth32float_stencil8=true;
+    for (size_t i=0;i<3;++i) {
+        bool supported=false;
+        doe_dx_status status=format_support(device,formats[i],required[i],&supported,error);
+        if (status!=DOE_DX_OK) return status;
+        caps->depth32float_stencil8=caps->depth32float_stencil8&&supported;
+    }
+    if (caps->depth32float_stencil8) {
+        D3D12_FEATURE_DATA_MULTISAMPLE_QUALITY_LEVELS samples={0};
+        samples.Format=DXGI_FORMAT_D32_FLOAT_S8X24_UINT; samples.SampleCount=4;
+        HRESULT hr=ID3D12Device_CheckFeatureSupport(device,D3D12_FEATURE_MULTISAMPLE_QUALITY_LEVELS,&samples,sizeof(samples));
+        if (hr==E_INVALIDARG) caps->depth32float_stencil8=false;
+        else if (FAILED(hr)) return doe_dx_hresult(hr,"CheckFeatureSupport.MULTISAMPLE_QUALITY_LEVELS.caps",error);
+        else caps->depth32float_stencil8=samples.NumQualityLevels!=0;
+    }
+    return DOE_DX_OK;
+}
+
 doe_dx_status doe_dx_query_caps(doe_dx_native_context *context, doe_dx_caps *out, doe_dx_error *error) {
     doe_dx_caps caps = *out;
+    caps.wave_ops=false; caps.native_16bit_shader_ops=false;
+    caps.wave_lane_count_min=0; caps.wave_lane_count_max=0;
+    caps.texture_compression_bc=false; caps.depth32float_stencil8=false;
     const D3D_FEATURE_LEVEL requested[] = {
         D3D_FEATURE_LEVEL_12_1, D3D_FEATURE_LEVEL_12_0, D3D_FEATURE_LEVEL_11_1, D3D_FEATURE_LEVEL_11_0
     };
@@ -104,6 +156,8 @@ doe_dx_status doe_dx_query_caps(doe_dx_native_context *context, doe_dx_caps *out
     optional=ID3D12Device_CheckFeatureSupport(context->device,D3D12_FEATURE_D3D12_OPTIONS4,&native16,sizeof(native16));
     if (optional!=E_INVALIDARG && FAILED(optional)) return doe_dx_hresult(optional,"CheckFeatureSupport.OPTIONS4",error);
     if (SUCCEEDED(optional)) caps.native_16bit_shader_ops=native16.Native16BitShaderOpsSupported!=FALSE;
+    status=optional_formats(context->device,&caps,error);
+    if (status!=DOE_DX_OK) return status;
     doe_dx_limits *limits = &caps.limits;
     limits->max_descriptors = DOE_DX_MAX_BINDINGS;
     limits->max_static_samplers = DOE_DX_MAX_STATIC_SAMPLERS;

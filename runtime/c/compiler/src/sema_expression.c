@@ -149,10 +149,13 @@ static bool name_value(Source *s,NameSpan name,const LocalScope *scope,bool emit
     ValueIdentity identity;
     return sema_value_identity(s,scope,name,NULL,&identity) && capture_identity(s,scope,slot,identity,name.offset) && identity_value(s,name,scope,identity,emit,out);
 }
-static bool root_reference(Source *s,NameSpan name,const LocalScope *scope,bool emit,ValueReference *ref,ExpressionValue *value,bool *reference,SourceReference *slot) {
+static bool root_reference(Source *s,NameSpan name,const LocalScope *scope,bool emit,ValueReference *ref,ExpressionValue *value,bool *reference,SourceReference *slot, bool pointer_origin) {
     CompilerWorkspace *c=s->compiler; ValueIdentity identity;
     *reference=false;
-    if (!sema_value_identity(s,scope,name,NULL,&identity) || !capture_identity(s,scope,slot,identity,name.offset)) return false;
+    if (!sema_value_identity(s,scope,name,NULL,&identity)) return false;
+    const bool pointer = (identity.kind == IDENTITY_LOCAL && type_pointer(c,scope->values[identity.index].type)) ||
+        (identity.kind == IDENTITY_FORMAL && type_pointer(c,c->formals[identity.index].type.resolved.type));
+    if ((pointer_origin || !pointer) && !capture_identity(s,scope,slot,identity,name.offset)) return false;
     if (identity.kind==IDENTITY_LOCAL) {
         const LocalBinding *local=&scope->values[identity.index];
         if ((local->flags&LOCAL_MUTABLE)!=0u) {
@@ -212,10 +215,10 @@ static inline bool dereference(Source *s, const Expression *node, const LocalSco
 }
 static bool access_base(Source *s, const Expression *node, const LocalScope *scope, bool evaluate, bool emit, ValueReference *ref, ExpressionValue *value, bool *reference, SourceReference *slot) {
     CompilerWorkspace *c = s->compiler;
-    if (node->left == NO_ID) return root_reference(s, node->kind == EXPRESSION_MEMBER?node->value.member.object:node->value.reference.storage, scope, emit, ref, value, reference, slot);
+    if (node->left == NO_ID) return root_reference(s, node->kind == EXPRESSION_MEMBER?node->value.member.object:node->value.reference.storage, scope, emit, ref, value, reference, slot, false);
     const Expression *base = &c->expressions[node->left];
     if (base->kind == EXPRESSION_MEMBER || base->kind == EXPRESSION_LOAD) return postfix_value(s, base, scope, evaluate, emit, ref, value, reference, &c->expression_references[node->left]);
-    if (base->kind == EXPRESSION_NAME) return root_reference(s, base->value.name, scope, emit, ref, value, reference, &c->expression_references[node->left]);
+    if (base->kind == EXPRESSION_NAME) return root_reference(s, base->value.name, scope, emit, ref, value, reference, &c->expression_references[node->left], true);
     if (base->kind == EXPRESSION_DEREFERENCE) {
         *reference = true;
         return dereference(s, base, scope, evaluate, emit, ref);
@@ -262,6 +265,14 @@ static bool postfix_value(Source *s, const Expression *node, const LocalScope *s
         }
     }
     if (!access_base(s, node, scope, evaluate, emit, ref, &base, &is_ref, slot)) return false;
+    /* Pointer-composite access is the same reference path as an explicit
+     * dereference; retain root identity, once-only indices and robust guards. */
+    if (!is_ref && type_pointer(c,base.constant.type)) {
+        const PointerValue pointer = base.pointer;
+        *ref = (ValueReference){pointer.root,pointer.path,pointer.category,
+            c->types[pointer.type-IR_PRIMITIVE_COUNT].element,true,true};
+        is_ref = true;
+    }
     TypeId input = is_ref?ref->type:base.constant.type, output = IR_VOID;
     uint32_t kind = ACCESS_MEMBER, index = 0u;
     if (node->kind == EXPRESSION_MEMBER) {
@@ -369,7 +380,7 @@ static inline bool reference_expression(Source *s, uint32_t id, const LocalScope
     bool reference = false;
     if (node->kind == EXPRESSION_NAME) {
         if (!root_reference(s, node->value.name, scope, emit, out, &ignored, &reference,
-                            &c->expression_references[id])) return false;
+                            &c->expression_references[id], true)) return false;
     } else if (node->kind == EXPRESSION_MEMBER || node->kind == EXPRESSION_LOAD) {
         if (!postfix_value(s, node, scope, evaluate, emit, out, &ignored, &reference,
                            &c->expression_references[id])) return false;
@@ -393,7 +404,7 @@ bool sema_assignment_reference(Source *s, const Assignment *a, const LocalScope 
     if (a->kind == TARGET_ROOT) {
         ExpressionValue ignored;
         bool reference;
-        if (!root_reference(s, a->root, scope, true, out, &ignored, &reference, slot)) return false;
+        if (!root_reference(s, a->root, scope, true, out, &ignored, &reference, slot, true)) return false;
         if (!reference || !out->writable) return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, a->root.offset, "assignment target is not writable");
         return true;
     }
@@ -412,6 +423,7 @@ bool sema_assignment_reference(Source *s, const Assignment *a, const LocalScope 
     bool reference;
     if (!postfix_value(s, &e, scope, true, true, out, &ignored, &reference, slot)) return false;
     if (!reference || !out->writable) return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, a->root.offset, "assignment target is not writable or is a multi-component swizzle");
+    if (out->category == ROOT_POINTER) return reference_effect(s,slot,*out,true,a->root.offset);
     const SourceReferenceKind kind=out->category==ROOT_RESOURCE?SOURCE_RESOURCE:
         out->category==ROOT_WORKGROUP?SOURCE_WORKGROUP:SOURCE_NONE;
     return source_reference_record(s,slot,kind,kind==SOURCE_NONE?0u:out->root,a->root.offset);

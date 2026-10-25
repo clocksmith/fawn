@@ -20,7 +20,8 @@ typedef struct DoeNativeDevicePolicy {
 } DoeNativeDevicePolicy;
 /* Per-request value snapshot. Uses the ordinary request-device callback/loss
  * delivery owner; does not mutate adapter state or select another physical device.
- * Currently Vulkan only. Invalid/unsupported requests report failed creation. */
+ * Vulkan, Metal and D3D12 policies are backend-specific; unsupported combinations fail
+ * creation rather than selecting another backend or mutating the adapter. */
 DOE_NATIVE_EXTENSION WGPUFuture doeNativeAdapterRequestDeviceWithPolicy(WGPUAdapter adapter,
     const WGPUDeviceDescriptor *descriptor, WGPURequestDeviceCallbackInfo callback,
     uint32_t version, const DoeNativeDevicePolicy *policy, size_t policy_size);

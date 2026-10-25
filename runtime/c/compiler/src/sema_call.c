@@ -123,7 +123,6 @@ static bool user_call(Source *s, uint32_t id, const LocalScope *scope, uint32_t 
     for (uint32_t i = 0u;i<node->right;++i) {
         ExpressionValue a;
         if (!sema_expression(s, c->arguments[link].expression, scope, evaluate, emit, &a) || !sema_materialize(s, &a, c->formals[f->formal_start+i].type.resolved.type) || !sema_ensure_value(s, &a, emit)) return false;
-        if (type_pointer(c, a.constant.type) && !sema_pointer_argument(s, c->arguments[link].expression, &a)) return false;
         if (emit) c->typed_operands[first+i] = a.value.id;
         link = c->arguments[link].next;
     }

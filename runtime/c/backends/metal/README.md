@@ -413,3 +413,23 @@ Primary native contracts:
 - [Apple binary archive workflow](https://developer.apple.com/documentation/metal/creating-binary-archives-from-device-built-pipeline-state-objects?language=objc)
 - [Archive serialization](https://developer.apple.com/documentation/metal/mtlbinaryarchive/serialize%28to%3A%29?language=objc)
 - [Compute descriptor construction](https://developer.apple.com/documentation/metal/mtldevice/makecomputepipelinestate%28descriptor%3Aoptions%3Areflection%3A%29?language=objc)
+
+
+### Explicit queue timeline preference
+
+Before publishing a per-device context, `doe_mtl_context_prefer_timeline` may
+create an owned `MTLSharedEvent`. Unsupported event APIs retain ordinary command
+completion; allocation/native errors remain failures. Submissions encode a
+monotonic bounded `encodeSignalEvent:value:` after all encoders and before the
+existing commit. The same command/context leases retain the event. Completion
+requires its signal value and ordinary terminal command status: an event alone
+cannot hide an NSError, release a drawable early, or retire uncertain resources.
+No event wait spins, callback queue or alternate command engine is introduced.
+Defaults do not request events. Counters cannot wrap or submit after exhaustion.
+
+This uses Apple's [shared-event signal value](https://developer.apple.com/documentation/metal/mtlsharedevent/signaledvalue)
+and [GPU/CPU event ordering](https://developer.apple.com/documentation/metal/synchronizing-events-between-a-gpu-and-the-cpu)
+contracts and the existing timestamp owner's typed event-call ABI. `check-timeline`
+checks native call arguments, terminal-error authority, missing signal proof,
+overflow-before-commit and retained ownership. These are host-call controls, not
+an Apple SDK build, physical-Metal execution, performance or cutover claim.

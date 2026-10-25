@@ -68,7 +68,7 @@ static native_failure compile_stage(const native_stage *stage,const uint32_t *in
         entry = &view->hlsl_entries[i];
     }
     if (!entry || entry->stage != stage->entry->stage ||
-        (entry->flags & ~(DOE_COMPILER_HLSL_ENTRY_NATIVE16 | DOE_COMPILER_HLSL_ENTRY_WAVES | DOE_COMPILER_HLSL_ENTRY_WAVE_COUNTER | DOE_COMPILER_HLSL_ENTRY_ARRAY_VIEWS)) ||
+        (entry->flags & ~(DOE_COMPILER_HLSL_ENTRY_NATIVE16 | DOE_COMPILER_HLSL_ENTRY_RAW_STORAGE | DOE_COMPILER_HLSL_ENTRY_WAVES | DOE_COMPILER_HLSL_ENTRY_WAVE_COUNTER | DOE_COMPILER_HLSL_ENTRY_ARRAY_VIEWS)) ||
         !memchr(entry->name, 0, sizeof(entry->name))) return native_failure_status(NATIVE_UNSUPPORTED);
     doe_dx_shader_stage target;
     switch (entry->stage) {

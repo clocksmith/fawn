@@ -312,6 +312,76 @@ static void multiple_targets_stencil(void)
     mock_reset();
 }
 
+static void read_only_depth_sampling(void)
+{
+    doe_dx_context *context=NULL;
+    assert(doe_dx_context_create(NULL,&context,NULL)==DOE_DX_OK);
+    unsigned char code=1;
+    doe_dx_texture_binding_layout image={.shader_register=0,.format=DOE_DX_D32_FLOAT,.access=DOE_DX_READ_ONLY};
+    doe_dx_texture_contract contract={.sample_class=DOE_DX_SAMPLE_DEPTH,.dimension=2};
+    doe_dx_render_pipeline_desc desc={.fragment_absent=true,.color_absent=true,.depth_enabled=true,
+        .depth_compare=DOE_DX_ALWAYS};
+    desc.stages[0]=(doe_dx_dynamic_pipeline_desc){.resources={.buffers={&code,1,NULL,0},.textures=&image,.texture_count=1},
+        .texture_contracts=&contract};
+    doe_dx_pipeline *pipeline=NULL;
+    assert(doe_dx_pipeline_create_render(context,&desc,&pipeline,NULL)==DOE_DX_OK);
+    doe_dx_texture *depth=NULL;
+    assert(doe_dx_texture_create(context,&(doe_dx_texture_desc){4,4,DOE_DX_D32_FLOAT,
+        DOE_DX_TEXTURE_DEPTH_ATTACHMENT|DOE_DX_TEXTURE_SAMPLED},&depth,NULL)==DOE_DX_OK);
+    doe_dx_commands *commands=NULL;
+    assert(doe_dx_commands_create(context,&commands,NULL)==DOE_DX_OK);
+    doe_dx_render_draw packet=draw(pipeline);
+    doe_dx_texture_view_desc view={.format=DOE_DX_D32_FLOAT,.dimension=2,.mip_count=1,.layer_count=1,.aspect=1};
+    packet.stages[0]=(doe_dx_dynamic_resources){.resources={.textures=&depth,.texture_count=1},.texture_views=&view};
+    doe_dx_render_pass pass={.depth=depth,.depth_read_only=true,.draws=&packet,.draw_count=1};
+    assert(doe_dx_commands_render(commands,&pass,NULL)==DOE_DX_UNINITIALIZED);
+    assert(doe_dx_commands_initialize_texture(commands,depth,NULL)==DOE_DX_OK);
+    assert(doe_dx_commands_render(commands,&pass,NULL)==DOE_DX_OK);
+    assert(mock.last_render_draw.attachment_depth==depth->native && mock.render_depth.depth_read_only);
+    pass.depth_read_only=false;
+    assert(doe_dx_commands_render(commands,&pass,NULL)==DOE_DX_INVALID_ARGUMENT);
+    doe_dx_texture_release(depth); doe_dx_pipeline_release(pipeline); doe_dx_commands_release(commands);
+    assert(doe_dx_context_destroy(context)==DOE_DX_OK);
+    mock_reset();
+}
+static void selected_attachment_views(void)
+{
+    doe_dx_context *context=NULL;
+    assert(doe_dx_context_create(NULL,&context,NULL)==DOE_DX_OK);
+    doe_dx_texture_shape shape={.image={8,8,DOE_DX_RGBA8_UNORM,DOE_DX_TEXTURE_RENDER_ATTACHMENT},
+        .dimension=2,.depth_or_layers=2,.mip_levels=2,.samples=1};
+    doe_dx_texture *texture=NULL;
+    assert(doe_dx_texture_create_shape(context,&shape,&texture,NULL)==DOE_DX_OK);
+    doe_dx_commands *commands=NULL;
+    assert(doe_dx_commands_create(context,&commands,NULL)==DOE_DX_OK);
+    doe_dx_render_color color={.texture=texture,.clear=true,
+        .view={.format=DOE_DX_RGBA8_UNORM,.dimension=2,.base_mip=1,.mip_count=1,.base_layer=1,.layer_count=1}};
+    doe_dx_render_pass pass={.colors_explicit=true,.colors=&color,.color_count=1};
+    assert(doe_dx_commands_render(commands,&pass,NULL)==DOE_DX_UNINITIALIZED && !mock.render_passes);
+    assert(doe_dx_commands_initialize_texture(commands,texture,NULL)==DOE_DX_OK);
+    assert(doe_dx_commands_render(commands,&pass,NULL)==DOE_DX_OK);
+    assert(mock.render_view.base_mip==1 && mock.render_view.base_layer==1);
+    doe_dx_render_color layers[2]={color,color}; layers[1].view.base_layer=0;
+    doe_dx_render_pass multiple={.colors_explicit=true,.colors=layers,.color_count=2};
+    assert(doe_dx_commands_render(commands,&multiple,NULL)==DOE_DX_OK && commands->texture_count==1);
+    layers[1].view.base_layer=1;
+    assert(doe_dx_commands_render(commands,&multiple,NULL)==DOE_DX_INVALID_ARGUMENT);
+    color.view.base_mip=2;
+    assert(doe_dx_commands_render(commands,&pass,NULL)==DOE_DX_RANGE && mock.render_passes==2);
+    doe_dx_texture_release(texture); doe_dx_commands_release(commands);
+    shape.dimension=3; shape.depth_or_layers=4;
+    assert(doe_dx_texture_create_shape(context,&shape,&texture,NULL)==DOE_DX_OK);
+    assert(doe_dx_commands_create(context,&commands,NULL)==DOE_DX_OK);
+    assert(doe_dx_commands_initialize_texture(commands,texture,NULL)==DOE_DX_OK);
+    color.texture=texture; color.view=(doe_dx_texture_view_desc){.format=DOE_DX_RGBA8_UNORM,
+        .dimension=6,.base_mip=1,.mip_count=1,.layer_count=1}; color.depth_slice=1;
+    assert(doe_dx_commands_render(commands,&pass,NULL)==DOE_DX_OK && mock.render_depth_slice==1);
+    color.depth_slice=2;
+    assert(doe_dx_commands_render(commands,&pass,NULL)==DOE_DX_RANGE);
+    doe_dx_texture_release(texture); doe_dx_commands_release(commands);
+    assert(doe_dx_context_destroy(context)==DOE_DX_OK);
+    mock_reset();
+}
 int main(void)
 {
     doe_dx_context *context=NULL;
@@ -417,6 +487,8 @@ int main(void)
     depth_only_pass();
     multisample_pass();
     multiple_targets_stencil();
+    selected_attachment_views();
+    read_only_depth_sampling();
     indirect_pass();
     puts("PASS D3D12 render owner: independent stage128/32 layouts, empty/zero draws, real-init requests, sampler snapshots, OOM/native rollback and unknown early-release leases; no SDK/GPU");
     return 0;

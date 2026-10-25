@@ -12,7 +12,7 @@ static bool leaf_shape(const CompilerWorkspace *c, TypeId type, TypeId *scalar, 
         *scalar = record->element;
         *lanes = record->count;
     }
-    return *scalar >= IR_BOOL && *scalar <= IR_F32;
+    return (*scalar >= IR_BOOL && *scalar <= IR_F32) || *scalar == IR_F16;
 }
 static TypeId attribute_type(const CompilerWorkspace *c, const InterfaceAttribute *attribute) {
     if (attribute->owner == STAGE_ATTRIBUTE_MEMBER) return c->members[attribute->index].type;
@@ -87,7 +87,7 @@ static bool append_leaf(Source *source, StageInterface leaf, const InterfaceAttr
     if (interpolated) {
         leaf.interpolation = attribute->interpolation;
         leaf.sampling = attribute->sampling;
-        if (type_leaf(c, leaf.type) != IR_F32 && leaf.interpolation != DOE_COMPILER_INTERPOLATION_FLAT)
+        if (type_leaf(c, leaf.type) != IR_F32 && type_leaf(c,leaf.type) != IR_F16 && leaf.interpolation != DOE_COMPILER_INTERPOLATION_FLAT)
             return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, attribute->offset, "integer interstage IO requires explicit flat interpolation");
         if (leaf.interpolation == 0u) {
             leaf.interpolation = DOE_COMPILER_INTERPOLATION_PERSPECTIVE;
@@ -96,6 +96,13 @@ static bool append_leaf(Source *source, StageInterface leaf, const InterfaceAttr
     } else if ((attribute->flags & STAGE_HAS_INTERPOLATION) != 0u)
         return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, attribute->offset, "interpolation requires vertex output or fragment input");
     leaf.target_type = leaf.type;
+    /* Native stage carriers are f32; WGSL values and reflection stay f16.
+     * No optional 16-bit Input/Output storage capability is required. */
+    if (type_leaf(c,leaf.type) == IR_F16) {
+        leaf.target_type = IR_F32;
+        const uint32_t lanes = type_vector_width(c,leaf.type);
+        if (lanes > 1u && !type_intern(source,TYPE_VECTOR,IR_F32,lanes,&leaf.target_type)) return false;
+    }
     if (leaf.builtin == DOE_COMPILER_BUILTIN_SAMPLE_MASK &&
         !type_intern(source, TYPE_ARRAY, IR_U32, 1u, &leaf.target_type)) return false;
     StageEntry *entry = &stages->entries[leaf.entry];

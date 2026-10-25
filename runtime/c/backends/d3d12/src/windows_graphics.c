@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: MIT */
 #include "windows_internal.h"
+#include "windows_cache.h"
 #ifdef _WIN32
 
 doe_dx_status doe_dx_native_graphics_create(doe_dx_native_context *context,
@@ -32,9 +33,7 @@ doe_dx_status doe_dx_native_graphics_create(doe_dx_native_context *context,
     state.DepthStencilState.FrontFace.StencilPassOp = D3D12_STENCIL_OP_KEEP;
     state.DepthStencilState.FrontFace.StencilFunc = D3D12_COMPARISON_FUNC_ALWAYS;
     state.DepthStencilState.BackFace = state.DepthStencilState.FrontFace;
-    HRESULT result = ID3D12Device_CreateGraphicsPipelineState(context->device, &state,
-        &IID_ID3D12PipelineState, (void **)&pipeline->state);
-    status = doe_dx_hresult(result, "ID3D12Device.CreateGraphicsPipelineState", error);
+    status=doe_dx_cached_graphics(context,&state,pipeline->root_digest,&pipeline->state,error);
     if (status != DOE_DX_OK) goto fail;
     *out = pipeline;
     return doe_dx_fail(DOE_DX_OK, 0, "native.graphics.create", error);
@@ -43,7 +42,8 @@ fail:
     return status;
 }
 
-doe_dx_status doe_dx_prepare_color_target(doe_dx_native_commands *commands, doe_dx_native_texture *color,
+doe_dx_status doe_dx_prepare_color_view(doe_dx_native_commands *commands, doe_dx_native_texture *color,
+    const doe_dx_texture_view_desc *span,uint32_t slice,
     doe_dx_descriptor_use **out, D3D12_CPU_DESCRIPTOR_HANDLE *handle, doe_dx_error *error) {
     doe_dx_descriptor_use *use = calloc(1, sizeof(*use));
     if (!use) return doe_dx_fail(DOE_DX_OUT_OF_MEMORY, 0, "rtv.allocate", error);
@@ -61,12 +61,27 @@ doe_dx_status doe_dx_prepare_color_target(doe_dx_native_commands *commands, doe_
     D3D12_RENDER_TARGET_VIEW_DESC view = {0};
     view.Format = color ? doe_dx_texture_format(color->format) : DXGI_FORMAT_R8G8B8A8_UNORM;
     view.ViewDimension = color && color->description.SampleDesc.Count>1 ? D3D12_RTV_DIMENSION_TEXTURE2DMS : D3D12_RTV_DIMENSION_TEXTURE2D;
+    if (span && color) {
+        view.Format=doe_dx_texture_format(span->format);
+        if (color->description.SampleDesc.Count>1) view.ViewDimension=D3D12_RTV_DIMENSION_TEXTURE2DMS;
+        else if (span->dimension==1) {
+            view.ViewDimension=D3D12_RTV_DIMENSION_TEXTURE1D; view.Texture1D.MipSlice=span->base_mip;
+        } else if (span->dimension==6) {
+            view.ViewDimension=D3D12_RTV_DIMENSION_TEXTURE3D; view.Texture3D.MipSlice=span->base_mip;
+            view.Texture3D.FirstWSlice=slice; view.Texture3D.WSize=1;
+        } else {
+            view.ViewDimension=D3D12_RTV_DIMENSION_TEXTURE2DARRAY;
+            view.Texture2DArray.MipSlice=span->base_mip;
+            view.Texture2DArray.FirstArraySlice=span->base_layer; view.Texture2DArray.ArraySize=1;
+        }
+    }
     ID3D12Device_CreateRenderTargetView(device, color ? color->resource : NULL, &view, *handle);
     *out = use;
     return DOE_DX_OK;
 }
 
-doe_dx_status doe_dx_prepare_depth_target(doe_dx_native_commands *commands, doe_dx_native_texture *depth,
+doe_dx_status doe_dx_prepare_depth_view(doe_dx_native_commands *commands, doe_dx_native_texture *depth,
+    const doe_dx_texture_view_desc *span,bool depth_read_only,bool stencil_read_only,
     doe_dx_descriptor_use **out, D3D12_CPU_DESCRIPTOR_HANDLE *handle, doe_dx_error *error) {
     doe_dx_descriptor_use *use = calloc(1, sizeof(*use));
     if (!use) return doe_dx_fail(DOE_DX_OUT_OF_MEMORY, 0, "dsv.allocate", error);
@@ -83,9 +98,33 @@ doe_dx_status doe_dx_prepare_depth_target(doe_dx_native_commands *commands, doe_
     D3D12_DEPTH_STENCIL_VIEW_DESC view = {0};
     view.Format = doe_dx_texture_format(depth->format);
     view.ViewDimension = depth->description.SampleDesc.Count>1 ? D3D12_DSV_DIMENSION_TEXTURE2DMS : D3D12_DSV_DIMENSION_TEXTURE2D;
+    if (span) {
+        view.Format=doe_dx_texture_format(span->format);
+        if (depth->description.SampleDesc.Count>1) view.ViewDimension=D3D12_DSV_DIMENSION_TEXTURE2DMS;
+        else if (span->dimension==1) {
+            view.ViewDimension=D3D12_DSV_DIMENSION_TEXTURE1D; view.Texture1D.MipSlice=span->base_mip;
+        } else {
+            view.ViewDimension=D3D12_DSV_DIMENSION_TEXTURE2DARRAY;
+            view.Texture2DArray.MipSlice=span->base_mip;
+            view.Texture2DArray.FirstArraySlice=span->base_layer; view.Texture2DArray.ArraySize=1;
+        }
+    }
+    if (depth_read_only) view.Flags|=D3D12_DSV_FLAG_READ_ONLY_DEPTH;
+    if (stencil_read_only && doe_dx_format_stencil(depth->format)) view.Flags|=D3D12_DSV_FLAG_READ_ONLY_STENCIL;
     ID3D12Device_CreateDepthStencilView(commands->context->device, depth->resource, &view, *handle);
     *out = use;
     return DOE_DX_OK;
+}
+
+doe_dx_status doe_dx_prepare_color_target(doe_dx_native_commands *commands,doe_dx_native_texture *color,
+    doe_dx_descriptor_use **out,D3D12_CPU_DESCRIPTOR_HANDLE *handle,doe_dx_error *error)
+{
+    return doe_dx_prepare_color_view(commands,color,NULL,0,out,handle,error);
+}
+doe_dx_status doe_dx_prepare_depth_target(doe_dx_native_commands *commands,doe_dx_native_texture *depth,
+    doe_dx_descriptor_use **out,D3D12_CPU_DESCRIPTOR_HANDLE *handle,doe_dx_error *error)
+{
+    return doe_dx_prepare_depth_view(commands,depth,NULL,false,false,out,handle,error);
 }
 
 doe_dx_status doe_dx_native_draw(doe_dx_native_commands *commands,

@@ -8,7 +8,10 @@ extern "C" {
 
 typedef struct doe_dx_texture doe_dx_texture;
 /* Explicit implementation ceiling, checked against the real Windows SDK. */
-enum { DOE_DX_MAX_TEXTURE_DIMENSION_2D = 16384 };
+/* FL11+ resource bounds; actual format/allocation support is still queried.
+ * https://learn.microsoft.com/en-us/windows/win32/direct3d12/constants */
+enum { DOE_DX_MAX_TEXTURE_DIMENSION_1D = 16384, DOE_DX_MAX_TEXTURE_DIMENSION_2D = 16384,
+    DOE_DX_MAX_TEXTURE_DIMENSION_3D = 2048, DOE_DX_MAX_TEXTURE_ARRAY_LAYERS = 2048 };
 /* Backend formats, not WebGPU enum values. All admitted formats have 4-byte
  * texels; actual SDK format support is checked during native allocation. */
 typedef enum doe_dx_format {

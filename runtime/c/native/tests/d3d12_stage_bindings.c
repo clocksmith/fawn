@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: MIT
  * Actual public compiler metadata and copied-row rejection; no SDK/device. */
 #include "../src/d3d12_binding_internal.h"
+#include "doe_compiler_hlsl.h"
 #include <assert.h>
 #include <stdalign.h>
 #include <stdio.h>
@@ -54,6 +55,35 @@ static void samplers(void)
     doe_dx_sampler_desc saved=desc;
     input.addressModeV=WGPUAddressMode_Undefined;
     assert(!native_d3d12_sampler_descriptor(&input,&desc) && !memcmp(&saved,&desc,sizeof(desc)));
+}
+static void raw_half_metadata(const doe_shader_options *options)
+{
+    const char *source="enable f16; @group(0) @binding(0) var<uniform> input:vec4u;"
+        "@group(1) @binding(3) var<storage,read_write> output:array<f16>;"
+        "@compute @workgroup_size(1) fn main(){output[0]=f16(input.x);}";
+    doe_shader *shader=NULL; doe_shader_error error={0};
+    doe_shader_status status=doe_shader_create(options,source,strlen(source),&shader,&error);
+    if (status!=DOE_SHADER_OK) fprintf(stderr,"raw compile %d: %s\n",(int)status,error.diagnostic.message);
+    assert(status==DOE_SHADER_OK);
+    doe_shader_view view; assert(doe_shader_borrow(shader,&view)==DOE_SHADER_OK);
+    native_pipeline pipeline={.binding_count=2,.bindings={
+        {.group=0,.binding=0,.kind=DOE_BIND_BUFFER,.buffer_type=WGPUBufferBindingType_Uniform},
+        {.group=1,.binding=3,.kind=DOE_BIND_BUFFER,.buffer_type=WGPUBufferBindingType_Storage}}};
+    native_stage stage={.view=view,.entry=&view.entries[0]};
+    native_d3d12_layout layout; native_d3d12_compute map;
+    assert(native_d3d12_stage_bindings(&pipeline,&stage,&layout,&map));
+    assert(map.buffer_count==2 && map.logical_size_count==view.counts.resources && map.logical_size_count==2);
+    assert(layout.buffers[0].view==DOE_DX_UNIFORM && layout.buffers[1].view==DOE_DX_RAW && !layout.buffers[1].stride);
+    assert(map.logical_size_indices[1]==1 && (map.entry_flags & DOE_COMPILER_HLSL_ENTRY_NATIVE16) &&
+        (map.entry_flags & DOE_COMPILER_HLSL_ENTRY_RAW_STORAGE));
+    assert(strstr(view.text,"Store<float16_t>") && strstr(view.text,"register(b2, space7)"));
+    doe_dx_caps caps={.shader_model=0x62,.native_16bit_shader_ops=true};
+    assert(native_d3d12_capabilities(&map,&caps));
+    caps.native_16bit_shader_ops=false; assert(!native_d3d12_capabilities(&map,&caps));
+    caps.native_16bit_shader_ops=true; caps.shader_model=0x60; assert(!native_d3d12_capabilities(&map,&caps));
+    DoeCompilerHlslEntryV11 row=view.hlsl_entries[0]; row.flags&=~DOE_COMPILER_HLSL_ENTRY_RAW_STORAGE;
+    stage.view.hlsl_entries=&row; reject(&pipeline,&stage);
+    doe_shader_release(shader);
 }
 int main(int argc,char **argv)
 {
@@ -117,7 +147,11 @@ int main(int argc,char **argv)
     size_t readonly_handle=SIZE_MAX;
     for(size_t i=0;i<4;++i) if(view.resources[handles[i].resource_index].group==1) readonly_handle=i;
     assert(readonly_handle!=SIZE_MAX);
-    handles[readonly_handle].view_dimension=DOE_COMPILER_VIEW_3D; reject(&pipeline,&stage);
+    /* Historical 2D-only admission rejected 3D here. The real immutable-view
+     * owner now supports it; preserve rejection with a genuinely invalid enum. */
+    handles[readonly_handle].view_dimension=DOE_COMPILER_VIEW_3D;
+    assert(native_d3d12_stage_bindings(&pipeline,&stage,&layout,&map));
+    handles[readonly_handle].view_dimension=UINT32_MAX; reject(&pipeline,&stage);
     memcpy(handles,view.handles,sizeof(handles)); handles[readonly_handle].sample_scalar=DOE_COMPILER_LEAF_F32;
     reject(&pipeline,&stage);
     stage.view=view;
@@ -129,6 +163,7 @@ int main(int argc,char **argv)
     stage.view=view; stage.entry=&selected; reject(&pipeline,&stage);
     stage.entry=&view.entries[0];
     pipeline.bindings[4].buffer_type=WGPUBufferBindingType_ReadOnlyStorage; reject(&pipeline,&stage);
+    raw_half_metadata(&options);
     samplers();
     doe_shader_release(shader);
     puts("PASS D3D12 selected compiler binding/sampler conversion: actual HLSL, read-storage SRV, dynamic samplers, row/span rejection and untouched outputs; no SDK/GPU");

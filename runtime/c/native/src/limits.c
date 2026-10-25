@@ -6,6 +6,7 @@
 #include "../../backends/d3d12/include/doe_d3d12_dynamic.h"
 #include "../../backends/d3d12/include/doe_d3d12_mesh.h"
 #include "d3d12_frontend.h"
+#include "../../backends/d3d12/include/doe_d3d12_render.h"
 #include "../../backends/d3d12/include/doe_d3d12_texture.h"
 #include <stddef.h>
 
@@ -199,22 +200,23 @@ WGPUStatus native_metal_limits(const doe_mtl_caps *caps, WGPULimits *out)
 WGPUStatus native_d3d12_limits(const doe_dx_caps *caps, WGPULimits *out)
 {
     if (!caps || !out || out->nextInChain || !caps->limits.uniform_offset_alignment ||
-        !caps->limits.max_buffer_size || !caps->limits.max_descriptors) return WGPUStatus_Error;
+        !caps->limits.max_buffer_size || !caps->limits.max_descriptors || caps->feature_level < 0xb000) return WGPUStatus_Error;
     const doe_dx_limits *native = &caps->limits;
     uint64_t buffer = native->max_buffer_size & ~UINT64_C(3);
-    /* Explicit 2D/single-layer implementation envelope, checked against the
-     * actual format/footprint queries at allocation. Procedural graphics uses
-     * one color attachment; presentation/indexed/depth/MSAA remain uncomposed. */
+    /* FL11+ dimensions share the backend allocation envelope. Each format,
+     * footprint and sample count still passes actual native support queries. */
     *out = (WGPULimits){
+        .maxTextureDimension1D = DOE_DX_MAX_TEXTURE_DIMENSION_1D,
         .maxTextureDimension2D = DOE_DX_MAX_TEXTURE_DIMENSION_2D,
-        .maxTextureArrayLayers = 1,
-        /* Single-color direct vertex/instance graphics envelope. These chosen
+        .maxTextureDimension3D = DOE_DX_MAX_TEXTURE_DIMENSION_3D,
+        .maxTextureArrayLayers = DOE_DX_MAX_TEXTURE_ARRAY_LAYERS,
+        /* Indexed/direct vertex/instance graphics envelope. These chosen
          * input bounds match the private8-slot/16-attribute owner and checked
          * 2048-byte strides; SDK input-format support is queried per pipeline.
          * Stage descriptors pack128/32; compute keeps its existing64/16. */
         /* WebGPU's UNORM render-target cost is8, independently of its4-byte
          * texture storage. The canonical resource owner enforces that cost. */
-        .maxColorAttachments=1,.maxColorAttachmentBytesPerSample=8,.maxInterStageShaderVariables=16,
+        .maxColorAttachments=DOE_DX_MAX_COLOR_TARGETS,.maxColorAttachmentBytesPerSample=32,.maxInterStageShaderVariables=16,
         .maxBufferSize = buffer,
         .maxBindGroups = DOE_RESOURCE_MAX_GROUPS,
         .maxBindGroupsPlusVertexBuffers = GROUP_VERTEX_BUDGET,

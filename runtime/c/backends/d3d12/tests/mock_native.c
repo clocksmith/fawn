@@ -23,7 +23,7 @@ struct doe_dx_native_commands {
 mock_state mock;
 
 void mock_reset(void) {
-    assert(!mock.contexts && !mock.buffers && !mock.pipelines && !mock.commands && !mock.textures && !mock.timestamps);
+    assert(!mock.surfaces && !mock.contexts && !mock.buffers && !mock.pipelines && !mock.commands && !mock.textures && !mock.timestamps);
     assert(!mock.allocations);
     memset(&mock, 0, sizeof(mock));
     mock.frequency = UINT64_C(1000000);
@@ -255,6 +255,9 @@ static void record_resources(doe_dx_native_commands *commands,
     }
     mock.binding_count = resources->buffer_count;
     mock.texture_count = resources->texture_count;
+    memcpy(mock.immediate_words,resources->immediate_words,sizeof(mock.immediate_words));
+    mock.logical_size_count=resources->logical_size_count;
+    memcpy(mock.logical_size_indices,resources->logical_size_indices,sizeof(mock.logical_size_indices));
     mock.dynamic_sampler_count = resources->sampler_count;
     for (size_t i = 0; i < resources->sampler_count; ++i) mock.dynamic_values[i] = resources->samplers[i];
 }
@@ -521,6 +524,7 @@ doe_dx_status doe_dx_native_render_targets(doe_dx_native_commands *commands,
         record_texture(commands,depth->texture);
         mock.render_depth=*depth;
     } else mock.render_depth=(doe_dx_native_render_depth){0};
+    if (color_count) { mock.render_view=colors[0].view; mock.render_depth_slice=colors[0].depth_slice; }
     mock.render_passes++;
     mock.render_draws+=count;
     mock.render_clear=color_count && colors[0].clear;

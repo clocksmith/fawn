@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: MIT */
 #include "windows_internal.h"
+#include "windows_cache.h"
 #ifdef _WIN32
 
 bool doe_dx_descriptor_range_type(doe_dx_descriptor_kind kind,D3D12_DESCRIPTOR_RANGE_TYPE *out)
@@ -72,7 +73,7 @@ static doe_dx_status create_root(doe_dx_native_context *context,
         samplers[index].BorderColor = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
     }
     size_t binding_count = desc->buffers.binding_count + desc->texture_count;
-    D3D12_ROOT_PARAMETER parameters[2] = {0};
+    D3D12_ROOT_PARAMETER parameters[4] = {0};
     UINT table_count = 0;
     pipeline->resource_table = UINT32_MAX;
     pipeline->sampler_table = UINT32_MAX;
@@ -98,6 +99,23 @@ static doe_dx_status create_root(doe_dx_native_context *context,
         parameter->DescriptorTable.pDescriptorRanges = sampler_ranges;
         parameter->ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
     }
+    pipeline->immediate_root=UINT32_MAX;
+    if (dynamic && dynamic->immediate_bytes) {
+        pipeline->immediate_root=table_count;
+        pipeline->immediate_words=dynamic->immediate_bytes/4;
+        D3D12_ROOT_PARAMETER *parameter=&parameters[table_count++];
+        parameter->ParameterType=D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
+        parameter->ShaderVisibility=D3D12_SHADER_VISIBILITY_ALL;
+        parameter->Constants=(D3D12_ROOT_CONSTANTS){1,7,pipeline->immediate_words};
+    }
+    pipeline->storage_sizes_root=UINT32_MAX;
+    if (dynamic && dynamic->logical_size_count) {
+        pipeline->storage_sizes_root=table_count;
+        D3D12_ROOT_PARAMETER *parameter=&parameters[table_count++];
+        parameter->ParameterType=D3D12_ROOT_PARAMETER_TYPE_CBV;
+        parameter->ShaderVisibility=D3D12_SHADER_VISIBILITY_ALL;
+        parameter->Descriptor=(D3D12_ROOT_DESCRIPTOR){2,7};
+    }
     D3D12_ROOT_SIGNATURE_DESC root = {0};
     if (input_assembler) root.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
     root.NumParameters = table_count;
@@ -111,6 +129,7 @@ static doe_dx_status create_root(doe_dx_native_context *context,
         &blob, &diagnostic);
     if (diagnostic) ID3D10Blob_Release(diagnostic);
     if (FAILED(result)) goto fail;
+    doe_dx_cache_root_key(ID3D10Blob_GetBufferPointer(blob),ID3D10Blob_GetBufferSize(blob),pipeline->root_digest);
     operation = "ID3D12Device.CreateRootSignature";
     result = ID3D12Device_CreateRootSignature(context->device, 0,
         ID3D10Blob_GetBufferPointer(blob), ID3D10Blob_GetBufferSize(blob),
@@ -140,9 +159,7 @@ static doe_dx_status create_compute(doe_dx_native_context *context,
         state.pRootSignature = pipeline->root;
         state.CS.pShaderBytecode = desc->buffers.bytecode;
         state.CS.BytecodeLength = desc->buffers.bytecode_size;
-        HRESULT result = ID3D12Device_CreateComputePipelineState(context->device, &state,
-            &IID_ID3D12PipelineState, (void **)&pipeline->state);
-        status = doe_dx_hresult(result, "ID3D12Device.CreateComputePipelineState", error);
+        status=doe_dx_cached_compute(context,&state,pipeline->root_digest,&pipeline->state,error);
     }
     if (status != DOE_DX_OK) {
         doe_dx_native_pipeline_destroy(pipeline);

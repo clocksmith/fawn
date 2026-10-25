@@ -19,12 +19,14 @@ void test_readonly_images(const char *path)
         "output_values[id.x]=read_value+vec4u(textureDimensions(input_image),0u,0u);}";
     Fixture *f = prepare(source);
     char *text = emit(f,0);
-    has(text,"Texture2D<uint> r1 : register(t3, space1)");
-    has(text,"RWTexture2D<uint> r2 : register(u5, space2)");
-    has(text,".GetDimensions(0u, image_x, image_y, image_levels)");
-    has(text,".Load(int3(");
+    /* Target representation now uses one-layer native array views; WGSL and
+     * binding/access oracles remain unchanged. */
+    has(text,"Texture2DArray<uint> r1 : register(t3, space1)");
+    has(text,"RWTexture2DArray<uint> r2 : register(u5, space2)");
+    has(text,".GetDimensions(0u, image_x, image_y, image_layers, image_levels)");
+    has(text,".Load(int4(");
     has(text,", 0u))");
-    assert(strstr(text,"RWTexture2D<uint> r1") == NULL);
+    assert(strstr(text,"RWTexture2DArray<uint> r1") == NULL);
     DoeCompilerHlslBindingV11 bindings[4] = {0};
     DoeCompilerHlslEntryV11 entries[1] = {0};
     DoeHlslResult result;

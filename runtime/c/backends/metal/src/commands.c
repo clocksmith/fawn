@@ -223,6 +223,17 @@ doe_mtl_status doe_mtl_commands_submit(doe_mtl_commands *commands, doe_mtl_error
     doe_mtl_native *native;
     if (status != DOE_MTL_OK) return status;
     native = &commands->context->native;
+    if (commands->context->timeline) {
+        if (commands->context->timeline_next == UINT64_MAX)
+            return doe_mtl_poison(commands, DOE_MTL_RANGE, "timeline counter exhausted", error);
+        uint64_t value = commands->context->timeline_next + 1;
+        doe_mtl_error detail = {0};
+        status = native->timeline_signal(native->userdata, commands->native,
+            commands->context->timeline, value, &detail);
+        if (status != DOE_MTL_OK) return doe_mtl_native_record_result(commands, status, &detail, error);
+        commands->timeline_value = value;
+        commands->context->timeline_next = value;
+    }
     commands->state = DOE_MTL_SUBMITTED;
     native->commit(native->userdata, commands->native);
     return doe_mtl_fail(DOE_MTL_OK, "command commit", error);
@@ -247,6 +258,11 @@ static doe_mtl_status observe(doe_mtl_commands *commands, bool wait,
     status = commands->present_texture ? native->surface_observe(native->userdata, commands->native,
         commands->present_texture->drawable, wait, &native_error) :
         native->observe(native->userdata, commands->native, wait, &native_error);
+    if (status == 4 && commands->timeline_value &&
+        native->timeline_value(native->userdata, commands->context->timeline) < commands->timeline_value)
+        return doe_mtl_fail(DOE_MTL_COMPLETION_UNKNOWN, "timeline completion proof", error);
+    /* A signaled event alone cannot discard a command's terminal NSError or
+     * presentation lease: ordinary terminal observation remains authoritative. */
     if (status == 4) {
         if (commands->present_texture) {
             native->release(native->userdata, commands->present_texture->drawable);

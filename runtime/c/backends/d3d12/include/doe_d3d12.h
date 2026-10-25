@@ -87,6 +87,7 @@ typedef struct doe_dx_caps {
     uint32_t gpu_va_bits_per_resource, gpu_va_bits_per_process;
     uint32_t shader_model; /* Queried up to SM6_2; 0 means query unavailable. */
     bool wave_ops, native_16bit_shader_ops;
+    bool texture_compression_bc, depth32float_stencil8; /* Complete queried format contracts. */
     uint32_t wave_lane_count_min, wave_lane_count_max; /* Actual OPTIONS1 facts. */
     uint64_t timestamp_frequency; /* Actual direct-queue ticks per second, never a default. */
     doe_dx_limits limits;
@@ -126,11 +127,11 @@ doe_dx_status doe_dx_buffer_read(doe_dx_buffer *buffer, uint64_t offset,
 
 enum { DOE_DX_MAX_BINDINGS = 64, DOE_DX_MAX_STATIC_SAMPLERS = 16 };
 typedef enum doe_dx_binding_access { DOE_DX_READ_ONLY, DOE_DX_READ_WRITE } doe_dx_binding_access;
-typedef enum doe_dx_buffer_view { DOE_DX_STRUCTURED, DOE_DX_UNIFORM } doe_dx_buffer_view;
+typedef enum doe_dx_buffer_view { DOE_DX_STRUCTURED, DOE_DX_UNIFORM, DOE_DX_RAW } doe_dx_buffer_view;
 typedef struct doe_dx_binding_layout {
     uint32_t shader_register;
     uint32_t register_space;
-    uint32_t stride; /* STRUCTURED: multiple of 4, 4..2048. UNIFORM: exactly 0. */
+    uint32_t stride; /* STRUCTURED: multiple of 4, 4..2048. UNIFORM/RAW: exactly 0. */
     doe_dx_binding_access access;
     doe_dx_buffer_view view; /* UNIFORM is read-only and uses HLSL b-registers. */
 } doe_dx_binding_layout;
@@ -160,6 +161,10 @@ doe_dx_status doe_dx_commands_create(doe_dx_context *context,
 /* Single caller ownership. Release discards unsubmitted commands. Submitted
  * commands remain owned by the context even after this caller release. */
 void doe_dx_commands_release(doe_dx_commands *commands);
+/* Native CopyBufferRegion byte granularity for occupied texture block rows.
+ * Public WebGPU buffer-copy alignment remains in its canonical admission owner. */
+doe_dx_status doe_dx_commands_copy_bytes(doe_dx_commands *,doe_dx_buffer *,uint64_t,
+    doe_dx_buffer *,uint64_t,uint64_t,doe_dx_error *);
 doe_dx_status doe_dx_commands_copy(doe_dx_commands *commands,
     doe_dx_buffer *source, uint64_t source_offset, doe_dx_buffer *destination,
     uint64_t destination_offset, uint64_t size, doe_dx_error *error);

@@ -379,6 +379,10 @@ doe_vk_status doe_vk_context_create(const doe_vk_options *options,
         features.subgroup_extended.pNext = feature_chain;
         feature_chain = &features.subgroup_extended;
     }
+    if (features.pointers.variablePointersStorageBuffer) {
+        features.pointers.pNext = feature_chain;
+        feature_chain = &features.pointers;
+    }
     if (features.shader_f16) {
         features.storage16.pNext = feature_chain;
         features.float16.pNext = &features.storage16;

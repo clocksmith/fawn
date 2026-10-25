@@ -8,6 +8,7 @@ typedef struct native_d3d12_compute {
     size_t buffer_indices[DOE_DX_MAX_BINDINGS], texture_indices[DOE_DX_MAX_BINDINGS];
     size_t sampler_indices[DOE_DX_MAX_DYNAMIC_SAMPLERS];
     bool uniform[DOE_DX_MAX_BINDINGS];
+    uint32_t logical_size_indices[DOE_DX_MAX_BINDINGS],logical_size_count,entry_flags;
     size_t buffer_count, texture_count, sampler_count;
     uint32_t dispatch_index;
     doe_dx_pipeline *guard;
@@ -29,6 +30,7 @@ typedef struct native_d3d12_snapshot {
 } native_d3d12_snapshot;
 /* Typed selected-entry conversion; outputs untouched on failed row/span checks.
  * No shader parsing, source interpretation, native calls or ownership changes. */
+bool native_d3d12_capabilities(const native_d3d12_compute *,const doe_dx_caps *);
 bool native_d3d12_stage_bindings(const native_pipeline *pipeline,const native_stage *stage,
     native_d3d12_layout *out,native_d3d12_compute *map);
 bool native_d3d12_stage_bindings_for(const native_pipeline *,const native_stage *,uint32_t,

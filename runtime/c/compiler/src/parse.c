@@ -915,6 +915,11 @@ static bool module_directive(Parser *p, bool enable) {
         else if (!enable && parser_spelled(p, extension, "immediate_address_space")) {
             /* Shared module roots and all native targets implement immediate data. */
         }
+        else if (!enable && (parser_spelled(p, extension, "texture_and_sampler_let") ||
+                 parser_spelled(p, extension, "pointer_composite_access") ||
+                 parser_spelled(p, extension, "subgroup_id"))) {
+            /* Shared SSA aliases, reference paths and native target contracts. */
+        }
         else if (!enable && parser_spelled(p, extension, "packed_4x8_integer_dot_product")) {
             /* Portable typed integer lowering provides the complete packed family. */
         }

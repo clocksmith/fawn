@@ -94,7 +94,11 @@ static bool load_leaf(Emitter *e, const StageInterface *leaf, uint32_t result) {
         pointer = spirv_reserve_ids(e, 1u);
         EMIT(OP_ACCESS_CHAIN, spirv_pointer_type(e, IR_U32, 1u), pointer, leaf->target, spirv_unsigned_constant(e, 0u));
     }
-    EMIT(OP_LOAD, spirv_target_type(e, leaf->type), result, pointer);
+    if (type_leaf(e->program,leaf->type) == IR_F16) {
+        const uint32_t carrier = spirv_reserve_ids(e,1u);
+        EMIT(OP_LOAD,spirv_target_type(e,leaf->target_type),carrier,pointer);
+        EMIT(OP_FCONVERT,spirv_target_type(e,leaf->type),result,carrier);
+    } else { EMIT(OP_LOAD, spirv_target_type(e, leaf->type), result, pointer); }
     return true;
 }
 bool spirv_stage_inputs(Emitter *e, uint32_t index) {
@@ -140,6 +144,11 @@ bool spirv_stage_return(Emitter *e, const IrInstruction *instruction) {
         if (leaf->builtin == DOE_COMPILER_BUILTIN_SAMPLE_MASK) {
             pointer = spirv_reserve_ids(e, 1u);
             EMIT(OP_ACCESS_CHAIN, spirv_pointer_type(e, IR_U32, 3u), pointer, leaf->target, spirv_unsigned_constant(e, 0u));
+        }
+        if (type_leaf(e->program,leaf->type) == IR_F16) {
+            const uint32_t carrier = spirv_reserve_ids(e,1u);
+            EMIT(OP_FCONVERT,spirv_target_type(e,leaf->target_type),carrier,value);
+            value = carrier;
         }
         EMIT(OP_STORE, pointer, value);
     }

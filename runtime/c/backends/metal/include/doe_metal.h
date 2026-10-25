@@ -61,11 +61,15 @@ typedef struct doe_mtl_caps {
     bool depth_resolve, stencil_resolve, store_and_resolve, multisample_array;
     uint32_t max_visibility_offset;
     bool counting_visibility;
+    bool timeline_enabled; /* Real per-context shared event, explicitly requested. */
     bool timestamp_stage, timestamp_blit;
     float timestamp_period_ns; /* Paired CPU(ns)/GPU clock calibration; zero means unavailable. */
 } doe_mtl_caps;
 
 doe_mtl_status doe_mtl_context_create(doe_mtl_context **out, doe_mtl_error *error);
+/* Before publishing resources: prefer a real shared-event timeline when supported.
+ * No API/selector support keeps ordinary command completion; native errors fail. */
+doe_mtl_status doe_mtl_context_prefer_timeline(doe_mtl_context *context, doe_mtl_error *error);
 doe_mtl_status doe_mtl_context_retain(doe_mtl_context *context);
 void doe_mtl_context_release(doe_mtl_context *context);
 doe_mtl_status doe_mtl_context_caps(const doe_mtl_context *context, doe_mtl_caps *out);

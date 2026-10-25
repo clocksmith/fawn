@@ -91,6 +91,19 @@ doe_vk_status doe_vk_prepare_features(doe_vk_context *context, const doe_vk_opti
         selection.subgroup_extended = extended;
         context->caps.subgroup_extended_types = true;
     }
+    /* The backend requires Vulkan1.2. Core promotion does not imply optional
+     * feature support: query and explicitly enable only the returned features. */
+    VkPhysicalDeviceVariablePointersFeatures pointers = {
+        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VARIABLE_POINTERS_FEATURES};
+    VkPhysicalDeviceFeatures2 pointers_query = {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2,
+        .pNext = &pointers};
+    context->vk.vkGetPhysicalDeviceFeatures2(context->physical, &pointers_query);
+    if (pointers.variablePointersStorageBuffer) {
+        selection.pointers = pointers;
+        selection.pointers.variablePointers = pointers.variablePointers ? 1u : 0u;
+        context->caps.variable_pointers_storage = true;
+        context->caps.variable_pointers = pointers.variablePointers != 0;
+    }
     /* Optional full uint32 index range; uint32 index draws reject without it. */
     if (features.features.fullDrawIndexUint32) selection.base.fullDrawIndexUint32 = 1;
     /* Optional cube-array views; rejected when the device does not offer them. */

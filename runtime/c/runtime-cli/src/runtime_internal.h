@@ -73,6 +73,7 @@ struct public_render_state;
 struct doe_runtime {
     doe_runtime_options options;
     DoeNativeDevicePolicy device_policy;
+    WGPUBackendType policy_backend;
     char device_policy_hash[65];
     uint32_t observed_sync_bits;
     bool timestamps_enabled;
