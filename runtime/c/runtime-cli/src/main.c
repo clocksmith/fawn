@@ -6,6 +6,7 @@
 #include "execute.h"
 #include "numeric_gate.h"
 #include "operators.h"
+#include "plan.h"
 #include "quirks.h"
 #include "stream.h"
 #include "trace.h"
@@ -22,6 +23,7 @@ enum { MAX_READBACKS = 8 };
 
 typedef struct options {
     const char *commands, *kernel_root, *trace_jsonl, *trace_meta, *quirks, *numeric_policy;
+    const char *plan, *workload; /* Plan mode: doe-plan-executor's --plan and --workload. */
     const char *vendor, *api, *family, *driver;
     bool execute, trace_stdout, validate_oracles;
     doe_quirk_mode quirk_mode;
@@ -72,6 +74,9 @@ static void usage(FILE *out)
           "  [--validate-output-oracles]  (schema 1 sha256_exact_v1 isolated-dispatch oracles)\n"
           "  [--readback-buffer HANDLE=PATH]...  (final buffer bytes after a successful run; at most 8)\n"
           "  [--numeric-stability-policy <path>]  (consulted only to refuse what doe-zig-runtime would evaluate)\n"
+          "doe-c-runtime --plan <plan.json> --workload <id> --trace-jsonl <path> --trace-meta <path>\n"
+          "  [--kernel-root <path>] [profile, upload and --readback-buffer arguments as above]\n"
+          "  (plan mode, as doe-plan-executor: buffer_write, buffer_load and kernel_dispatch plan steps)\n"
           "Commands: upload, buffer_write, barrier, kernel_dispatch (WGSL kernels, buffer bindings),\n"
           "copies in every direction, texture_write, texture_query, texture_destroy (2D single-mip\n"
           "uncompressed color textures), render_draw and render_pass (the default proxy pipeline),\n"
@@ -110,6 +115,8 @@ static int parse_options(int argc, char **argv, options *out)
 #define TAKE(field) do { if (!value) return reject_argument(flag, "needs a value"); out->field = value; i++; } while (0)
         if (!strcmp(flag, "--help") || !strcmp(flag, "-h")) { usage(stdout); return 1; }
         else if (!strcmp(flag, "--commands")) TAKE(commands);
+        else if (!strcmp(flag, "--plan")) TAKE(plan);
+        else if (!strcmp(flag, "--workload")) TAKE(workload);
         else if (!strcmp(flag, "--kernel-root")) TAKE(runtime.kernel_root);
         else if (!strcmp(flag, "--trace-jsonl")) TAKE(trace_jsonl);
         else if (!strcmp(flag, "--trace-meta")) TAKE(trace_meta);
@@ -160,7 +167,22 @@ static int parse_options(int argc, char **argv, options *out)
         }
 #undef TAKE
     }
-    if (!out->commands) return reject_argument("--commands", "is required (no embedded sample stream)");
+    if (out->plan) {
+        /* doe-plan-executor always executes and writes both artifacts; it has no
+         * quirks, repeats, oracles or numeric stability policy. */
+        if (out->commands) return reject_argument("--plan", "excludes --commands");
+        if (!out->workload || !out->trace_jsonl || !out->trace_meta)
+            return reject_argument("--plan", "needs --workload, --trace-jsonl and --trace-meta");
+        if (out->quirks || quirk_mode || out->command_repeat != 1 || out->validate_oracles || out->numeric_policy ||
+            out->trace_stdout)
+            return reject_argument("--plan", "takes no --quirks, --quirk-mode, --command-repeat, oracle, numeric "
+                "stability or --trace arguments");
+        out->execute = true;
+        quirk_mode = "off";
+    } else if (out->workload) {
+        return reject_argument("--workload", "needs --plan");
+    }
+    if (!out->commands && !out->plan) return reject_argument("--commands", "is required (no embedded sample stream)");
     if (!out->execute) return reject_argument("--execute", "is required (trace-only mode is not implemented)");
     if (out->api && strcmp(out->api, "vulkan")) return reject_argument("--api", "only vulkan is implemented");
     /* doe-zig-runtime's defaults: trace mode and an intel/vulkan/gen12/31.0.101 profile. */
@@ -216,7 +238,7 @@ static bool write_optional(FILE *out, const char *key, const char *value, bool c
 }
 
 static bool write_meta(const char *path, const options *o, const totals *t, uint64_t command_count,
-    const doe_runtime_adapter *adapter, const doe_operator_recorder *operators)
+    const doe_runtime_adapter *adapter, const doe_operator_recorder *operators, const char *plan_sha256)
 {
     FILE *out = fopen(path, "wb");
     if (!out) return false;
@@ -242,6 +264,10 @@ static bool write_meta(const char *path, const options *o, const totals *t, uint
         t->kernel_prewarm_ns, t->semantic_tracing ? "true" : "false", operators ? operators->row_count : 0,
         operators ? operators->capture_count : 0, operators ? operators->repro_count : 0,
         t->hash, t->previous, t->oracles, t->oracles_matched, t->oracles_failed) >= 0;
+    /* doe-plan-executor names the plan and its planSha256 as the host plan artifact. */
+    if (ok && o->plan)
+        ok = write_optional(out, "hostPlanArtifactPath", o->plan, true) &&
+            write_optional(out, "hostPlanArtifactHash", plan_sha256, true);
     /* doe-zig-runtime names the operator manifest only when it holds records. */
     if (ok && operators && operators->row_count)
         ok = write_optional(out, "operatorRecordManifestPath", operators->manifest_path, true) &&
@@ -282,7 +308,8 @@ static bool write_meta(const char *path, const options *o, const totals *t, uint
  * explicit policy is read and checked even without a trace meta. */
 static int check_numeric_stability(const options *o, const doe_stream *stream)
 {
-    if (!o->numeric_policy && !(o->trace_meta && doe_numeric_gate_needed(stream))) return 0;
+    /* doe-plan-executor evaluates no numeric stability. */
+    if (o->plan || (!o->numeric_policy && !(o->trace_meta && doe_numeric_gate_needed(stream)))) return 0;
     const char *path = o->numeric_policy ? o->numeric_policy : DOE_NUMERIC_STABILITY_DEFAULT_POLICY;
     size_t size = 0;
     char *text = read_file(path, &size);
@@ -334,6 +361,14 @@ static void take_capture(doe_runtime *runtime, const doe_semantic *semantic, doe
     capture->size = (size_t)semantic->capture_size;
 }
 
+/* Frees the commands, then the plan step ids and kernel root they point to. */
+static void release_input(doe_stream *stream, doe_plan *plan, char *plan_kernel_root)
+{
+    doe_stream_free(stream);
+    doe_plan_free(plan);
+    free(plan_kernel_root);
+}
+
 int main(int argc, char **argv)
 {
     options o;
@@ -342,28 +377,53 @@ int main(int argc, char **argv)
     totals t = {.hash = DOE_TRACE_HASH_SEED, .previous = DOE_TRACE_HASH_SEED};
     uint64_t read_start = doe_runtime_monotonic_ns();
     size_t size = 0;
-    char *text = read_file(o.commands, &size);
-    if (!text) { fprintf(stderr, "doe-c-runtime: cannot read %s\n", o.commands); return 2; }
+    const char *input = o.plan ? o.plan : o.commands;
+    char *text = read_file(input, &size);
+    if (!text) { fprintf(stderr, "doe-c-runtime: cannot read %s\n", input); return 2; }
     uint64_t parse_start = doe_runtime_monotonic_ns();
     doe_stream stream;
     doe_stream_error stream_error;
-    bool stream_ok = doe_stream_parse(text, size, &stream, &stream_error);
+    doe_plan plan = {0};
+    char *asset_root = o.plan ? doe_plan_asset_root() : NULL;
+    bool stream_ok = o.plan ? asset_root && doe_plan_parse(text, size, asset_root, &plan, &stream_error) :
+        doe_stream_parse(text, size, &stream, &stream_error);
     free(text);
+    free(asset_root);
     t.input_read_ns = parse_start - read_start;
     t.input_parse_ns = doe_runtime_monotonic_ns() - parse_start;
     if (!stream_ok) {
-        if (stream_error.command_index == SIZE_MAX) fprintf(stderr, "doe-c-runtime: %s: %s\n", o.commands, stream_error.message);
-        else fprintf(stderr, "doe-c-runtime: %s: command %zu: %s\n", o.commands, stream_error.command_index, stream_error.message);
+        if (o.plan && !asset_root) snprintf(stream_error.message, sizeof(stream_error.message), "out of memory");
+        if (stream_error.command_index == SIZE_MAX) fprintf(stderr, "doe-c-runtime: %s: %s\n", input, stream_error.message);
+        else fprintf(stderr, "doe-c-runtime: %s: command %zu: %s\n", input, stream_error.command_index, stream_error.message);
         return 2;
     }
-    if (stream.count > UINT64_MAX / o.command_repeat) { doe_stream_free(&stream); return reject_argument("--command-repeat", "overflows"); }
+    char *plan_kernel_root = NULL;
+    if (o.plan) {
+        stream = plan.stream; /* The stream owns the lowered commands; plan keeps its metadata. */
+        plan.stream = (doe_stream){0};
+        if (strcmp(plan.workload_id, o.workload)) {
+            fprintf(stderr, "doe-c-runtime: %s: plan workloadId %s is not --workload %s\n", input, plan.workload_id, o.workload);
+            doe_stream_free(&stream);
+            doe_plan_free(&plan);
+            return 2;
+        }
+        if (plan.superseded_count)
+            fprintf(stderr, "doe-c-runtime: %s: %zu kernel_dispatch steps (first: command %zu) carry semantic, capture or "
+                "output_oracle fields of the compatibility stream; the plan step identity replaces them, as in "
+                "doe-plan-executor\n", input, plan.superseded_count, plan.first_superseded);
+        if (!o.runtime.kernel_root) {
+            plan_kernel_root = doe_plan_kernel_root(plan.ir_path);
+            o.runtime.kernel_root = plan_kernel_root;
+        }
+    }
+    if (stream.count > UINT64_MAX / o.command_repeat) { release_input(&stream, &plan, plan_kernel_root); return reject_argument("--command-repeat", "overflows"); }
     int refused = check_numeric_stability(&o, &stream);
-    if (refused) { doe_stream_free(&stream); return refused; }
+    if (refused) { release_input(&stream, &plan, plan_kernel_root); return refused; }
     uint64_t command_count = (uint64_t)stream.count * o.command_repeat;
     FILE *rows = o.trace_jsonl ? fopen(o.trace_jsonl, "wb") : NULL;
     if (o.trace_jsonl && !rows) {
         fprintf(stderr, "doe-c-runtime: cannot write %s\n", o.trace_jsonl);
-        doe_stream_free(&stream);
+        release_input(&stream, &plan, plan_kernel_root);
         return 2;
     }
     char message[256] = "";
@@ -378,18 +438,19 @@ int main(int argc, char **argv)
         if (!loaded) {
             fprintf(stderr, "doe-c-runtime: --quirks %s: %s\n", o.quirks, quirks_text ? message : "cannot read");
             if (rows) fclose(rows);
-            doe_stream_free(&stream);
+            release_input(&stream, &plan, plan_kernel_root);
             return 2;
         }
     }
     /* doe-zig-runtime anchors operator records at the trace meta, else the trace JSONL. */
-    const char *operator_anchor = o.trace_meta ? o.trace_meta : o.trace_jsonl;
+    /* doe-plan-executor writes no operator records. */
+    const char *operator_anchor = o.plan ? NULL : o.trace_meta ? o.trace_meta : o.trace_jsonl;
     doe_operator_recorder operators = {0};
     if (operator_anchor && !doe_operator_recorder_open(&operators, operator_anchor)) {
         fprintf(stderr, "doe-c-runtime: out of memory\n");
         if (rows) fclose(rows);
         doe_quirks_free(&quirks);
-        doe_stream_free(&stream);
+        release_input(&stream, &plan, plan_kernel_root);
         return 1;
     }
     uint64_t init_start = doe_runtime_monotonic_ns();
@@ -400,14 +461,15 @@ int main(int argc, char **argv)
         fprintf(stderr, "doe-c-runtime: %s\n", message);
         status = 1;
     }
-    /* Kernel pipelines compile before the command loop, outside execution timing. */
+    /* Kernel pipelines compile before the command loop, outside execution timing;
+     * doe-plan-executor compiles them inside the plan rows instead. */
     uint64_t prewarm_start = doe_runtime_monotonic_ns();
-    for (size_t i = 0; runtime && status == 0 && i < stream.count; i++) {
+    for (size_t i = 0; runtime && status == 0 && !o.plan && i < stream.count; i++) {
         doe_trace_execution prewarm;
         if (!doe_runtime_prewarm_kernel(runtime, &stream.commands[i], &prewarm))
             fprintf(stderr, "doe-c-runtime: warning: kernel prewarm of command %zu: %s: %s\n", i, prewarm.status_code, prewarm.message);
     }
-    t.kernel_prewarm_ns = doe_runtime_monotonic_ns() - prewarm_start;
+    t.kernel_prewarm_ns = o.plan ? 0 : doe_runtime_monotonic_ns() - prewarm_start;
     const doe_trace_identity identity = {.module = MODULE_NAME, .backend_id = BACKEND_ID};
     for (uint64_t pass = 0; runtime && status == 0 && pass < o.command_repeat; pass++) {
         for (size_t i = 0; i < stream.count && status == 0; i++) {
@@ -426,7 +488,8 @@ int main(int argc, char **argv)
                 command->kind == DOE_COMMAND_KERNEL_DISPATCH ? command->as.dispatch.kernel : NULL, &decision,
                 &command->semantic);
             uint64_t now = realtime_ns();
-            if (rows && !doe_trace_write_row(rows, &identity, seq, now, hash, t.hash, command, &decision, &execution)) status = 1;
+            if (rows && !(o.plan ? doe_trace_write_plan_row(rows, &identity, seq, now, hash, t.hash, command, &execution) :
+                    doe_trace_write_row(rows, &identity, seq, now, hash, t.hash, command, &decision, &execution))) status = 1;
             if (o.trace_stdout && !doe_trace_write_row(stdout, &identity, seq, now, hash, t.hash, command, &decision, &execution))
                 status = 1;
             if (operator_anchor && doe_semantic_present(&command->semantic)) {
@@ -522,13 +585,13 @@ int main(int argc, char **argv)
         status = 1;
     }
     if (o.trace_meta && !write_meta(o.trace_meta, &o, &t, command_count, runtime ? doe_runtime_adapter_info(runtime) : NULL,
-            &operators)) {
+            &operators, o.plan ? plan.plan_sha256 : NULL)) {
         fprintf(stderr, "doe-c-runtime: cannot write %s\n", o.trace_meta);
         status = 1;
     }
     doe_operator_recorder_free(&operators);
     doe_runtime_close(runtime);
     doe_quirks_free(&quirks);
-    doe_stream_free(&stream);
+    release_input(&stream, &plan, plan_kernel_root);
     return status;
 }

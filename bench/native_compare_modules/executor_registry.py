@@ -173,6 +173,20 @@ _REGISTRY: dict[str, ExecutorSpec] = {
         ),
         execution_boundary="commands",
     ),
+    # doe-c-runtime's plan mode lowers the same normalized plans as
+    # doe-plan-executor (rows chain identically) and executes them through the
+    # C runtime; its traces carry executionBackend doe_c_vulkan.
+    "doe_c_direct_plan_vulkan": ExecutorSpec(
+        executor_id="doe_c_direct_plan_vulkan",
+        command_template=(
+            "runtime/c/runtime-cli/bin/doe-c-runtime --plan {plan} "
+            "--trace-jsonl {trace_jsonl} --trace-meta {trace_meta} --workload {workload} "
+            "--vendor {vendor} --api {api} --family {family} --driver {driver} "
+            "--queue-sync-mode {queue_sync_mode} --upload-buffer-usage {upload_buffer_usage} "
+            "--upload-submit-every {upload_submit_every} --gpu-timestamp-mode off {extra_args}"
+        ),
+        execution_boundary="plan",
+    ),
     "doe_direct_d3d12": ExecutorSpec(
         executor_id="doe_direct_d3d12",
         command_template=_DOE_RUNTIME_PREFIX.replace(

@@ -9,13 +9,16 @@ and oracle mismatches fail with a nonzero exit. The adapter that ran is printed 
 trace meta; a CPU (fallback) adapter is not GPU evidence. Semantic dispatches
 write operator records, repro bundles and captures equal to doe-zig-runtime's
 outside the execution fields, with captures checked against the host oracle;
-a dispatch doe-zig-runtime would evaluate for numeric stability is refused."""
+a dispatch doe-zig-runtime would evaluate for numeric stability is refused.
+Plan mode rows chain like doe-plan-executor's and its loads and dispatches
+read back as the host computes them."""
 
 from __future__ import annotations
 
 import argparse
 import hashlib
 import json
+import os
 import struct
 import subprocess
 import sys
@@ -349,6 +352,80 @@ def check_semantic(binary: Path, work: Path) -> None:
     check(code == 2 and "cannot read" in stderr, f"missing numeric stability policy: {code} {stderr}")
 
 
+# doe-plan-executor --dry-run (built from 977122f33's runtime/zig, 2026-10-25)
+# rows for plan_document(); the payload hash does not depend on execution.
+ZIG_PLAN_HASHES = ["0xa404173999673bb2", "0xfcb2c70c64d42c35", "0x2b6f0590e0ed85bb", "0x12f929dc81210bb3"]
+
+
+def plan_document() -> dict:
+    """A buffer_write, a buffer_load from the asset cache and two workgroup_atomic
+    dispatches, the second carrying compatibility-stream fields the plan supersedes."""
+    atomic = {"kind": "kernel_dispatch", "kernel": "workgroup_atomic.wgsl", "x": 1024, "y": 1, "z": 1,
+              "initialize_buffers_on_create": True,
+              "bindings": [{"binding": 0, "group": 0, "kind": "buffer", "buffer_type": "storage",
+                            "resource_handle": 5001, "buffer_size": 1048576, "visibility": "compute"}]}
+    commands = [
+        {"kind": "buffer_write", "handle": 7000, "bufferSize": 16, "data": [1, 2, 3, 4]},
+        {"kind": "buffer_load", "handle": 7001, "offset": 0, "bufferSize": 64, "byteLength": 64,
+         "cacheNamespace": "c_parity", "cacheKey": "words16", "assetKey": "c_parity.words16",
+         "generator": "splitmix64_f32_nonzero_v1", "seed": 7, "scale": 1.0},
+        atomic,
+        dict(atomic, semanticOpId="ignored.by.plan", captureBufferHandle=5001, captureSize=16),
+    ]
+    return {"schemaVersion": 1, "planKind": "c_parity", "workloadId": "c_plan_parity",
+            "irPath": "bench/ir/c-plan-parity-missing.json", "irScenario": "c_plan_parity",
+            "description": "C plan-mode parity", "planPath": "c_plan_parity.plan.json",
+            "commandsPath": "c_plan_parity_commands.json", "commandCount": 4, "bufferWriteCount": 1,
+            "bufferLoadCount": 1, "dispatchCount": 2, "sourceIrSha256": "0" * 64,
+            "compatibilityCommandsSha256": "1" * 64, "commands": commands, "planSha256": "ab" * 32}
+
+
+def run_plan(binary: Path, work: Path, plan: dict, *extra: str, workload: str = "c_plan_parity"):
+    path = work / "plan.json"
+    path.write_text(json.dumps(plan))
+    jsonl, meta = work / "plan.jsonl", work / "plan.meta.json"
+    for stale in (jsonl, meta):
+        if stale.exists():
+            stale.unlink()
+    env = {**os.environ, "DOE_BENCH_ASSET_CACHE_DIR": str(work / "assets")}
+    result = subprocess.run([str(binary), "--plan", str(path), "--workload", workload, "--trace-jsonl", str(jsonl),
+                             "--trace-meta", str(meta), "--kernel-root", str(KERNELS), *extra],
+                            capture_output=True, text=True, timeout=900, cwd=REPO, env=env)
+    rows = [json.loads(line) for line in jsonl.read_text().splitlines()] if jsonl.exists() else []
+    return result, json.loads(meta.read_text()) if meta.exists() else {}, rows
+
+
+def check_plan(binary: Path, work: Path) -> None:
+    asset = bytes((i * 37 + 11) % 256 for i in range(64))
+    (work / "assets" / "c_parity").mkdir(parents=True, exist_ok=True)
+    (work / "assets" / "c_parity" / "words16.bin").write_bytes(asset)
+    readbacks = ["--readback-buffer", f"7001={work / 'plan_7001.bin'}", "--readback-buffer", f"5001={work / 'plan_5001.bin'}"]
+    result, meta, rows = run_plan(binary, work, plan_document(), *readbacks)
+    check(result.returncode == 0 and [row["hash"] for row in rows] == ZIG_PLAN_HASHES, f"plan rows: {result.stderr}")
+    check([row["opCode"] for row in rows] == ["buffer_write", "buffer_load", "kernel_dispatch", "kernel_dispatch"]
+          and rows[1]["semanticOpId"] == "step-000001" and rows[3]["semanticOpId"] == "step-000003"
+          and all(row["semanticStage"] == "runtime_plan" and row["semanticExecutionPlanHash"] == "ab" * 32 for row in rows)
+          and "matched" not in rows[0] and all(row["executionStatus"] == "ok" for row in rows), "plan row layout")
+    check(meta["hostPlanArtifactHash"] == "ab" * 32 and meta["hostPlanArtifactPath"] == str(work / "plan.json")
+          and meta["quirkMode"] == "off" and meta["hostKernelPrewarmTotalNs"] == 0 and meta["semanticOpRowCount"] == 0
+          and not (work / "plan.meta.json.operators.json").exists(), "plan meta")
+    check("1 kernel_dispatch steps (first: command 3)" in result.stderr, "superseded compatibility fields are reported")
+    check((work / "plan_7001.bin").read_bytes() == asset
+          and (work / "plan_5001.bin").read_bytes() == recurrence.expected_output(dispatch_count=2),
+          "plan load and dispatches read back as computed on the host")
+    refusals = [
+        (plan_document(), ("--quirks", str(EXAMPLES / "quirks" / "intel_gen12_temp_buffer.json")), "c_plan_parity", "takes no"),
+        (plan_document(), (), "another_workload", "is not --workload"),
+        ({**plan_document(), "dispatchCount": 3}, (), "c_plan_parity", "does not equal"),
+        ({**plan_document(), "extra": 1}, (), "c_plan_parity", "\"extra\""),
+        ({**plan_document(), "commands": [{**plan_document()["commands"][1], "cacheKey": "missing"}],
+          "commandCount": 1, "bufferWriteCount": 0, "dispatchCount": 0}, (), "c_plan_parity", "cannot be read"),
+    ]
+    for plan, extra, workload, needle in refusals:
+        result, _, _ = run_plan(binary, work, plan, *extra, workload=workload)
+        check(result.returncode == 2 and needle in result.stderr, f"plan refusal {needle}: {result.returncode} {result.stderr}")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--binary", required=True, type=Path)
@@ -422,6 +499,7 @@ def main() -> int:
     check_render(args.binary, args.work)
     check_quirks(args.binary, args.work)
     check_semantic(args.binary, args.work)
+    check_plan(args.binary, args.work)
 
     print(f"PASS doe-c-runtime: 3 example streams with doe-zig-runtime hash chains, replay-valid artifacts, "
           f"an independent oracle match, alias labels, command repeat, an oracle mismatch, 7 rejections, "
@@ -429,7 +507,8 @@ def main() -> int:
           f"failures, {len(ZIG_RENDER_FINAL_HASH)} render streams, scissored and indexed draws read back against the "
           f"proxy and clear colors, a missing render target, {len(ZIG_QUIRK_FINAL_HASH)} quirk-matched streams, active "
           f"staging read back against host bytes, 2 quirk refusals, semantic rows with operator records, repro "
-          f"bundles and host-checked captures, and 2 numeric stability refusals on "
+          f"bundles and host-checked captures, 2 numeric stability refusals, plan rows chained like "
+          f"doe-plan-executor's with host-checked loads and dispatches and 5 plan refusals on "
           f"{adapter.get('device')} ({adapter.get('adapterType')}, {adapter.get('backend')})")
     return 0
 

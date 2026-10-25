@@ -148,6 +148,28 @@ C compiler instead (workgroup_atomic: C SPIR-V `ee68b9ed...`, checked-in
 `066ee154...`) and exposes neither SPIR-V module input nor its executed SPIR-V,
 so a truthful manifest could not satisfy the obligation.
 
+## Plan mode
+
+`--plan PLAN --workload ID --trace-jsonl ROWS --trace-meta META` runs a direct
+execution plan (`bench/plans/generated/*.plan.json`) as doe-plan-executor
+(`runtime/zig/src/plan`) lowers it: `buffer_write`, `buffer_load` (the
+`<cacheNamespace>/<cacheKey>.bin` asset of exactly `byteLength` bytes under
+`DOE_BENCH_ASSET_CACHE_DIR`, else `~/.cache/doe/bench_synthetic_assets`;
+`bench/tools/materialize_plan_assets.py` writes them) and `kernel_dispatch`
+with buffer bindings. The plan's counts must match its commands and its
+`workloadId` the `--workload`. Every row carries the plan step identity
+(`semanticOpId` `step-NNNNNN`, stage `runtime_plan`, the command kind as phase,
+`planSha256` as execution plan hash) in doe-plan-executor's row layout (`opCode`
+is the command label, no quirk fields), and the meta adds `hostPlanArtifactPath`
+and `hostPlanArtifactHash` (the plan's `planSha256`) with `quirkMode` `off`.
+Kernels resolve under `--kernel-root`, else the IR's `shared.kernelRoot`, else
+`bench/inference-pipeline/kernels`, and compile inside the rows (no prewarm),
+as doe-plan-executor does. A dispatch's compatibility-stream `semantic*`,
+`capture*` and `output_oracle` fields are replaced by the plan identity, as in
+doe-plan-executor, and reported on stderr. Quirk, repeat, oracle, numeric
+stability and `--trace` arguments are rejected; `--readback-buffer` is admitted.
+No operator records are written. Unknown plan fields and kinds are rejected.
+
 ## Bench comparisons
 
 [`config/doe-runtime-providers.json`](../../../config/doe-runtime-providers.json)
@@ -164,7 +186,9 @@ python3 bench/cli.py run --product doe-c --executor-id doe_c_direct_vulkan \
 ```
 
 The executor passes the workload's `--quirks` in the default trace mode, so its
-rows carry the same quirk decisions as doe-zig-runtime's.
+rows carry the same quirk decisions as doe-zig-runtime's. `doe_c_direct_plan_vulkan`
+runs plan mode at the plan boundary with doe-plan-executor's arguments (no
+backend lane); like doe-plan-executor it gets no strict oracle preflight.
 Workloads outside the admitted input (upload-domain `deferred` sync, render,
 textures) fail the run rather than being skipped. The Dawn-versus-Doe strict
 Vulkan shader-artifact obligation applies to C traces too; the CLI writes no
@@ -197,5 +221,14 @@ stream is refused with a trace meta and, without one, its rows equal
 doe-zig-runtime's trace-only rows. The numeric stability evaluation itself has no
 lavapipe reference: doe-zig-runtime crashes inside llvmpipe executing
 `bench/inference-pipeline/kernels/matmul-gemv.spv`, with or without semantic
-fields. A CPU adapter run is not GPU evidence, a performance result
+fields. Plan mode (base 8cdc66317, 2026-10-25): rows for
+`inference_gemma3_270m_decode_1tok` (37) and
+`inference_gemma3_270m_prefill_64tok_decode_64tok` (1583) have hashes equal to
+doe-plan-executor `--dry-run` rows (the hash does not depend on execution) and
+every row executes (18 and 1170 dispatches). doe-plan-executor SIGSEGVs inside
+llvmpipe's libLLVM executing `inference_gemma3_270m_decode_1tok`, so execution
+results are not compared with Zig. `make check` runs a small plan whose load and dispatches read
+back as the host computes them, and `bench/cli.py run --product doe-c
+--executor-id doe_c_direct_plan_vulkan` completes the prefill/decode workload.
+A CPU adapter run is not GPU evidence, a performance result
 or bench comparability, and no physical adapter has run this CLI.

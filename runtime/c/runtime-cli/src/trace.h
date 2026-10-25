@@ -39,6 +39,12 @@ bool doe_trace_write_row(FILE *out, const doe_trace_identity *identity, uint64_t
     uint64_t hash, uint64_t previous, const doe_command *command, const doe_quirk_decision *decision,
     const doe_trace_execution *execution);
 
+/* Writes one plan row as doe-plan-executor does (trace_jsonl_emit.zig
+ * writePlanTraceRow): opCode is the command label and there are no quirk
+ * decision fields. */
+bool doe_trace_write_plan_row(FILE *out, const doe_trace_identity *identity, uint64_t seq, uint64_t timestamp_ns,
+    uint64_t hash, uint64_t previous, const doe_command *command, const doe_trace_execution *execution);
+
 /* Writes a JSON string literal with the required escapes. */
 bool doe_trace_write_string(FILE *out, const char *text);
 /* Writes ,"semanticOpId":... for each present semantic field, in
