@@ -2,8 +2,11 @@
  * Adapter info strings: vendor from the PCI/Khronos vendor ID (lowercase, empty
  * when unknown), no architecture family, and the driver's device name as both
  * device and description; adapter and device report the same. Without the
- * "subgroups" feature the subgroup sizes are the spec defaults 4 and 128. */
+ * "subgroups" feature the subgroup sizes are the spec defaults 4 and 128. The
+ * doeNativeAdapterGetPciIdentity extension reports the same vendor and device
+ * IDs, a Vulkan driver version, and zeros for a NULL adapter. */
 #include "consumer.h"
+#include "doe_native_adapter.h"
 #include <ctype.h>
 
 static bool same(WGPUStringView a, WGPUStringView b)
@@ -47,8 +50,16 @@ int main(void)
             device.subgroupMinSize == 4 && device.subgroupMaxSize == 128);
     assert(same(adapter.vendor, device.vendor) && same(adapter.description, device.description) &&
         adapter.vendorID == device.vendorID && adapter.deviceID == device.deviceID);
-    printf("PASS adapter info vendor \"%.*s\", description \"%.*s\" %s\n", (int)adapter.vendor.length,
-        adapter.vendor.data, (int)adapter.description.length, adapter.description.data, adapter_class_scope());
+    uint32_t vendor_id = 1, device_id = 1, driver_version = 1;
+    doeNativeAdapterGetPciIdentity(NULL, &vendor_id, &device_id, &driver_version);
+    assert(vendor_id == 0 && device_id == 0 && driver_version == 0);
+    doeNativeAdapterGetPciIdentity(s.adapter, &vendor_id, &device_id, &driver_version);
+    assert(vendor_id == adapter.vendorID && device_id == adapter.deviceID);
+    if (adapter.backendType == WGPUBackendType_Vulkan) assert(driver_version != 0);
+    doeNativeAdapterGetPciIdentity(s.adapter, NULL, NULL, NULL); /* NULL outputs are skipped */
+    printf("PASS adapter info vendor \"%.*s\", description \"%.*s\", PCI 0x%x:0x%x driver 0x%x %s\n",
+        (int)adapter.vendor.length, adapter.vendor.data, (int)adapter.description.length, adapter.description.data,
+        vendor_id, device_id, driver_version, adapter_class_scope());
     wgpuAdapterInfoFreeMembers(adapter);
     wgpuAdapterInfoFreeMembers(device);
     consumer_finish(&s);

@@ -937,6 +937,19 @@ yet observed, never a guaranteed state after submit. `tests/queue_sync_info.c`
 withholds fence observation at the real poll boundary to check the bit while work
 is unobserved and its clearing by work done and by host access to a used buffer.
 
+## Doe adapter PCI identity extension
+
+`include/doe_native_adapter.h` declares `doeNativeAdapterGetPciIdentity`, the
+retained Zig export the addon resolves for `GPUAdapter.info` `vendorID`,
+`deviceID` and `driverVersion` (listed in `EXTENSION_SYMBOLS.txt`). Vulkan reports
+`VkPhysicalDeviceProperties` vendorID, deviceID and the raw driverVersion; D3D12
+reports its vendor and device IDs and driver version 0 (not recorded); Metal and a
+NULL adapter report 0 for every field. Without the extension the addon still
+reports the standard `WGPUAdapterInfo` IDs and omits `driverVersion`.
+`tests/adapter_info.c` checks the IDs against `wgpuAdapterGetInfo`, a nonzero
+Vulkan driver version and zeros for NULL; doe-gpu's
+`test-integration-adapter-pci-identity.js` compares all three with `vulkaninfo`.
+
 ## Doe fused compute command extension
 
 `include/doe_native_commands.h` declares
