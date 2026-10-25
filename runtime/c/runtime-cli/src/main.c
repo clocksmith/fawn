@@ -17,8 +17,16 @@
 #include <string.h>
 #include <time.h>
 
-#define MODULE_NAME "doe-c-runtime"
-#define BACKEND_ID "doe_c_vulkan"
+/* The trace identity names the webgpu.h provider this binary links: the C
+ * library by default, Dawn for the dawn-c-runtime build. */
+#ifndef DOE_RUNTIME_MODULE
+#define DOE_RUNTIME_MODULE "doe-c-runtime"
+#endif
+#ifndef DOE_RUNTIME_BACKEND_ID
+#define DOE_RUNTIME_BACKEND_ID "doe_c_vulkan"
+#endif
+#define MODULE_NAME DOE_RUNTIME_MODULE
+#define BACKEND_ID DOE_RUNTIME_BACKEND_ID
 enum { MAX_READBACKS = 8 };
 
 typedef struct options {

@@ -14,7 +14,8 @@ quirk data or bench comparability policy.
 ## Scope
 `upload`, `buffer_write`, `barrier`, WGSL `kernel_dispatch` with buffer
 bindings and semantic records, copies, 2D textures, proxy-pipeline draws,
-samplers and doe-plan-executor plans over `libwebgpu_doe_c`.
+samplers and doe-plan-executor plans over `libwebgpu_doe_c`, or over Dawn as
+`dawn-c-runtime`.
 [Coverage](README.md) lists admitted and rejected inputs.
 
 ## Contracts
@@ -41,4 +42,4 @@ indirect commands, custom render pipelines, mipmapped or multisampled textures,
 GPU timestamps, deferred queue sync or default CLI replacement.
 
 ## Freedom
-Internal parsing, resource caching and encoding may vary.
+Internal parsing, caching and encoding may vary.
