@@ -1,6 +1,6 @@
 # CATSCAN: C Metal backend
 
-Parent: [Experimental C migration](../../CATSCAN.md)
+Parent: [C migration](../../CATSCAN.md)
 
 ## Target
 Execute Metal with resource/completion obligations.
@@ -16,31 +16,28 @@ ABI/tests.
 ## Contracts
 MSL and workgroup/slot facts enter the
 [compute boundary](include/doe_metal.h); stage/render facts enter the
-[graphics boundary](include/doe_metal_render.h). Outputs: native statuses and completion-backed buffer access. Device dimensions and GPU family bound workgroups; pipelines independently
-check maxTotalThreadsPerThreadgroup. Indirect compute copies GPU arguments
-to scratch and executes the shared bounds guard,
+[graphics boundary](include/doe_metal_render.h). Outputs: statuses and completion-backed buffer access. Device dimensions and GPU family bound workgroups; pipelines independently
+check maxTotalThreadsPerThreadgroup. Indirect compute guards GPU arguments in scratch,
 under [invariants](../../../../INTENT.md).
-Presentation borrows CAMetalLayer, retaining drawables through the texture/command
-owner. presentDrawable schedules presentation; GPU completion permits caller-lease
+Presentation borrows CAMetalLayer; texture/command leases retain drawables. presentDrawable schedules presentation; GPU completion permits caller-lease
 release under Apple's contract, without claiming displayed timestamps.
-Indexed/indirect [draws](include/doe_metal_draw_guard.h) use the shared GPU normalizer/scan and existing command owner.
+Indexed/indirect [draws](include/doe_metal_draw_guard.h) use the GPU normalizer/scan and command owner.
 
 ## Invariants
 Timestamp resolves require native sample publication.
-Pending/unknown work retains every resource obligation; failed work never authorizes
-successful readback. No interpreter, backend substitution, Zig delegation or
-production-selection change. Host, SDK and physical evidence remain distinct. Native handles are borrowed; callers serialize.
+Pending/unknown work retains resources; failed work never permits successful readback. No interpreter, backend substitution, Zig delegation or
+production-selection change. Host, SDK and physical evidence remain distinct. Callers serialize borrowed handles.
 Stencil initialization uses parent-format attachments and the speculative aspect
-owner, preserving companions. Aspect transfers use the same bits and native
-component-copy options, publishing only after completion. Per-draw depth clip/clamp
+owner, preserving companions. Aspect transfers use those bits and native
+component-copy options, published after completion. Per-draw depth clip/clamp
 mode and bias use native encoder state.
 
 ## Acceptance
-[Focused checks](Makefile) exercise native arguments, rollback, ownership and
+[Checks](Makefile) exercise native arguments, rollback, ownership and
 completion.
-- Evidence: [Timestamp records](DEVELOPER_RECEIPT_TIMESTAMPS.json) bind host scope;
-[graphics prerequisites](DEVELOPER_RECEIPT_GRAPHICS_PREREQUISITES.json) bind initialization, empty raster controls and bounded Apple execution.
-Presentation/SDK/parity require separate evidence.
+- Evidence: [Timestamps](DEVELOPER_RECEIPT_TIMESTAMPS.json) bind host scope;
+[Graphics](DEVELOPER_RECEIPT_GRAPHICS_PREREQUISITES.json) bind initialization, empty raster controls and Apple execution.
+SDK/parity require evidence.
 
 ## Non-goals
 WebGPU policy, duplicate lifetimes or compile-only qualification.
