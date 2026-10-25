@@ -173,11 +173,20 @@ doe_runtime *doe_runtime_open(const doe_runtime_options *options, char *message,
     WGPUDeviceDescriptor descriptor = WGPU_DEVICE_DESCRIPTOR_INIT;
     /* The stream compiler may consume unchanged shaders with enable f16.
      * Request the real adapter feature; unavailable devices still reject f16. */
-    WGPUFeatureName feature = WGPUFeatureName_ShaderF16;
-    if (wgpuAdapterHasFeature(runtime->adapter, feature)) {
-        descriptor.requiredFeatures = &feature;
-        descriptor.requiredFeatureCount = 1;
+    WGPUFeatureName features[2];
+    size_t feature_count = 0;
+    if (wgpuAdapterHasFeature(runtime->adapter, WGPUFeatureName_ShaderF16))
+        features[feature_count++] = WGPUFeatureName_ShaderF16;
+    runtime->timestamps_enabled = options->timestamp_mode != DOE_TIMESTAMP_OFF && !options->defer_queue_sync &&
+        wgpuAdapterHasFeature(runtime->adapter, WGPUFeatureName_TimestampQuery);
+    if (options->timestamp_mode == DOE_TIMESTAMP_REQUIRE && !runtime->timestamps_enabled) {
+        snprintf(message, message_size, "GPU timestamps require adapter timestamp-query and per-command synchronization");
+        doe_runtime_close(runtime);
+        return NULL;
     }
+    if (runtime->timestamps_enabled) features[feature_count++] = WGPUFeatureName_TimestampQuery;
+    descriptor.requiredFeatures = features;
+    descriptor.requiredFeatureCount = feature_count;
     /* Buffer size limits at the adapter's maxima, as doe-zig-runtime's native
      * lane allocates and binds against device capabilities (the 256 MiB
      * matrix-vector weights exceed WebGPU's 128 MiB default binding limit).

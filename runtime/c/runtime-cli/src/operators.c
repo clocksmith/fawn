@@ -50,8 +50,8 @@ static bool write_profile(FILE *out, const doe_operator_input *in)
     return ok && fputs(",\"driver\":", out) >= 0 && doe_trace_write_string(out, in->driver) && fputc('}', out) != EOF;
 }
 
-/* The execution object: this runtime takes no GPU timestamps and reports no
- * lane, policy, shader artifact or queue family fields. */
+/* The execution object carries measured pass timestamps; lane, policy, shader
+ * artifact and queue-family fields remain absent until explicitly selected. */
 static bool write_execution(FILE *out, const doe_operator_input *in)
 {
     const doe_trace_execution *e = in->execution;
@@ -60,9 +60,10 @@ static bool write_execution(FILE *out, const doe_operator_input *in)
         fprintf(out, ",\"status\":\"%s\",\"statusCode\":", e->ok ? "ok" : "error") >= 0 &&
         doe_trace_write_string(out, e->message);
     return ok && fprintf(out, ",\"timings\":{\"durationNs\":%" PRIu64 ",\"setupNs\":%" PRIu64 ",\"encodeNs\":%" PRIu64
-        ",\"submitWaitNs\":%" PRIu64 ",\"dispatchCount\":%" PRIu64 ",\"gpuTimestampNs\":0,\"gpuTimestampAttempted\":false,"
-        "\"gpuTimestampValid\":false}}", e->duration_ns, e->setup_ns, e->encode_ns, e->submit_wait_ns,
-        e->dispatch_count) >= 0;
+        ",\"submitWaitNs\":%" PRIu64 ",\"dispatchCount\":%" PRIu64 ",\"gpuTimestampNs\":%" PRIu64 ",\"gpuTimestampAttempted\":%s,"
+        "\"gpuTimestampValid\":%s}}", e->duration_ns, e->setup_ns, e->encode_ns, e->submit_wait_ns,
+        e->dispatch_count, e->gpu_timestamp_ns, e->gpu_timestamp_attempted ? "true" : "false",
+        e->gpu_timestamp_valid ? "true" : "false") >= 0;
 }
 
 /* Semantic identity exists only on kernel_dispatch commands here. */

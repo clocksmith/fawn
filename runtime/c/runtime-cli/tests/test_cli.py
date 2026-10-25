@@ -666,6 +666,38 @@ def check_mapping(binary: Path, work: Path) -> None:
     code, stderr, _, rows = run(binary, work, "map_modes", commands=commands)
     check(code == 0 and len(rows) == 12, f"map mode/size changes: {stderr}")
 
+def timestamp_modes(binary: Path, work: Path) -> None:
+    """Real pass timestamps or an explicit unavailable contract, never CPU timing."""
+    # Bounded timing-control fixture, not a changed output oracle.
+    dispatch = json.loads((EXAMPLES / "workgroup_atomic_commands.json").read_text())[0]
+    dispatch.update(x=1, repeat=1, warmup_dispatch_count=0)
+    dispatch.pop("output_oracle")
+    dispatch["bindings"][0]["buffer_size"] = 1024
+    small = work / "timestamp-small.commands.json"
+    small.write_text(json.dumps([dispatch]))
+    code, stderr, meta, rows = run(binary, work, "timestamp-small", "--gpu-timestamp-mode", "off", commands=small)
+    check(code == 0, f"timestamp off: {stderr}")
+    check(meta["executionGpuTimestampAttemptedCount"] == 0 and
+          all(not row["executionGpuTimestampValid"] for row in rows), "off attempted timestamps")
+    code, stderr, meta, _ = run(binary, work, "timestamp-small", "--gpu-timestamp-mode", "auto",
+                                 "--queue-sync-mode", "deferred", commands=small)
+    check(code == 0 and meta["executionGpuTimestampAttemptedCount"] == 0, f"deferred auto: {stderr}")
+    code, stderr, _, _ = run(binary, work, "timestamp-small", "--gpu-timestamp-mode", "require",
+                             "--queue-sync-mode", "deferred", commands=small)
+    check(code == 1 and "per-command synchronization" in stderr, f"deferred require: {stderr}")
+    for name in ("timestamp-small", "draw_call_proxy"):
+        code, stderr, meta, rows = run(binary, work, name, "--gpu-timestamp-mode", "require",
+                                      commands=small if name == "timestamp-small" else None)
+        if code == 1 and "require adapter timestamp-query" in stderr:
+            continue  # An unsupported adapter is not a measured timing pass.
+        check(code == 0, f"timestamp require {name}: {stderr}")
+        valid = [row for row in rows if row["executionGpuTimestampValid"]]
+        check(len(valid) == meta["executionGpuTimestampValidCount"] == 1, f"{name} measured count")
+        check(meta["executionGpuTimestampAttemptedCount"] == 1 and
+              meta["executionGpuTimestampTotalNs"] == sum(row["executionGpuTimestampNs"] for row in valid),
+              f"{name} measured totals")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--binary", required=True, type=Path)
@@ -677,6 +709,7 @@ def main() -> int:
     EXPECTED_BACKEND["id"] = args.backend_id
     args.work.mkdir(parents=True, exist_ok=True)
 
+    timestamp_modes(args.binary, args.work)
     adapter = None
     for name, final_hash in ZIG_FINAL_HASH.items():
         code, stderr, meta, rows = run(args.binary, args.work, name, "--validate-output-oracles")
@@ -733,7 +766,7 @@ def main() -> int:
         (["--quirk-mode", "on"], "off, trace or active"),
         (["--driver", "31.x"], "major[.minor[.patch]]"),
         (["--queue-sync-mode", "invalid"], "per-command or deferred"),
-        (["--gpu-timestamp-mode", "require"], "GPU timestamps"),
+        (["--gpu-timestamp-mode", "invalid"], "off, auto or require"),
     ]
     for extra, needle in rejected:
         code, stderr, _, _ = run(args.binary, args.work, "rmsnorm_tree", *extra)

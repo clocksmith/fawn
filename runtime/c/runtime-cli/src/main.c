@@ -25,6 +25,7 @@
 
 typedef struct totals {
     uint64_t rows, successes, errors;
+    uint64_t gpu_timestamp_ns, gpu_timestamp_attempted, gpu_timestamp_valid;
     uint64_t total_ns, setup_ns, encode_ns, submit_wait_ns, dispatches, submits;
     uint64_t input_read_ns, input_parse_ns, executor_init_ns, kernel_prewarm_ns;
     uint64_t hash, previous;
@@ -204,7 +205,7 @@ static bool write_meta(const char *path, const options *o, const totals *t, uint
         ",\"executionDispatchCount\":%" PRIu64 ",\"executionSubmitCount\":%" PRIu64 ",\"hostInputReadTotalNs\":%" PRIu64
         ",\"hostInputParseTotalNs\":%" PRIu64 ",\"hostExecutorInitTotalNs\":%" PRIu64
         ",\"hostUploadPrewarmTotalNs\":0,\"hostKernelPrewarmTotalNs\":%" PRIu64
-        ",\"executionGpuTimestampTotalNs\":0,\"executionGpuTimestampAttemptedCount\":0,\"executionGpuTimestampValidCount\":0,"
+        ",\"executionGpuTimestampTotalNs\":%" PRIu64 ",\"executionGpuTimestampAttemptedCount\":%" PRIu64 ",\"executionGpuTimestampValidCount\":%" PRIu64 ","
         "\"semanticTracingEnabled\":%s,\"semanticOpRowCount\":%" PRIu64 ",\"semanticCaptureCount\":%" PRIu64
         ",\"semanticReproCount\":%" PRIu64 ","
         "\"hash\":\"0x%" PRIx64 "\",\"previousHash\":\"0x%" PRIx64 "\",\"outputOracleCount\":%" PRIu64
@@ -212,7 +213,7 @@ static bool write_meta(const char *path, const options *o, const totals *t, uint
         seq_max, t->rows, command_count, t->matched, t->blocking, t->requires_lean, t->lean_required,
         o->execute ? t->rows : 0, t->successes, t->errors, t->skipped, t->total_ns, t->setup_ns, t->encode_ns,
         t->submit_wait_ns, t->dispatches, t->submits, t->input_read_ns, t->input_parse_ns, t->executor_init_ns,
-        t->kernel_prewarm_ns, t->semantic_tracing ? "true" : "false", operators ? operators->row_count : 0,
+        t->kernel_prewarm_ns, t->gpu_timestamp_ns, t->gpu_timestamp_attempted, t->gpu_timestamp_valid, t->semantic_tracing ? "true" : "false", operators ? operators->row_count : 0,
         operators ? operators->capture_count : 0, operators ? operators->repro_count : 0,
         t->hash, t->previous, t->oracles, t->oracles_matched, t->oracles_failed) >= 0;
     if (ok && o->execute) ok = fputs(",\"executionBackend\":\"" BACKEND_ID "\",\"backendId\":\"" BACKEND_ID "\","
@@ -633,6 +634,9 @@ int main(int argc, char **argv)
             t.submit_wait_ns += execution.submit_wait_ns;
             t.dispatches += execution.dispatch_count;
             t.submits += execution.submit_count;
+            t.gpu_timestamp_ns += execution.gpu_timestamp_ns;
+            t.gpu_timestamp_attempted += execution.gpu_timestamp_attempted;
+            t.gpu_timestamp_valid += execution.gpu_timestamp_valid;
             /* doe-zig-runtime evaluates after a successful command; a stop route skips the rest. */
             if (ok && ns_enabled) {
                 char ns_message[512];
