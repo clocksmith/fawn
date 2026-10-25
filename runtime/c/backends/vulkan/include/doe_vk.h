@@ -58,6 +58,12 @@ typedef enum doe_vk_adapter_selection {
     DOE_VK_SELECT_HARDWARE_ELSE_SOFTWARE
 } doe_vk_adapter_selection;
 
+typedef enum doe_vk_queue_selection {
+    DOE_VK_QUEUE_LEGACY = 0, /* Existing compute-only preference; graphics flag remains authoritative. */
+    DOE_VK_QUEUE_PREFER_GRAPHICS_COMPUTE,
+    DOE_VK_QUEUE_REQUIRE_COMPUTE_ONLY
+} doe_vk_queue_selection;
+
 typedef struct doe_vk_options {
     uint32_t adapter_ordinal; /* Used only by exact ORDINAL selection. */
     bool allow_cpu_adapter; /* False by default; software is never GPU evidence. */
@@ -76,6 +82,10 @@ typedef struct doe_vk_options {
      * surface queries: no VkDevice or queue is created, the reported caps are
      * those a device context would enable, and doe_vk_context_alive is false. */
     bool adapter_only;
+    /* Explicit runtime-lane policy; zero preserves every existing caller.
+     * REQUIRE_COMPUTE_ONLY never substitutes a graphics family and cannot
+     * coexist with require_graphics_queue or a surface platform. */
+    doe_vk_queue_selection queue_selection;
 } doe_vk_options;
 
 typedef struct doe_vk_caps {
