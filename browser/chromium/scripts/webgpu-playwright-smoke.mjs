@@ -5,6 +5,7 @@ import http from "node:http";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, extname, resolve } from "node:path";
 import process from "node:process";
+import { cWorkspaceLibraryCandidates } from "../../../packages/doe-gpu/src/vendor/webgpu/platform-package.js";
 import { fileURLToPath } from "node:url";
 import {
   loadRuntimeSelectorPolicy,
@@ -71,26 +72,11 @@ function defaultChromePath() {
 }
 
 function defaultDoeLibPath() {
-  const preferredExt = process.platform === "darwin" ? "dylib" : process.platform === "win32" ? "dll" : "so";
-  const envDoeLib = process.env.FAWN_DOE_LIB;
-  const candidates = [
-    envDoeLib,
-    resolve(ROOT, `runtime/zig/zig-out/lib/libwebgpu_doe_full.${preferredExt}`),
-    resolve(ROOT, "runtime/zig/zig-out/lib/libwebgpu_doe_full.so"),
-    resolve(ROOT, "runtime/zig/zig-out/lib/libwebgpu_doe_full.dylib"),
-    resolve(ROOT, "runtime/zig/zig-out/lib/libwebgpu_doe_full.dll"),
-    resolve(ROOT, `runtime/zig/zig-out/lib/libwebgpu_doe.${preferredExt}`),
-    resolve(ROOT, "runtime/zig/zig-out/lib/libwebgpu_doe.so"),
-    resolve(ROOT, "runtime/zig/zig-out/lib/libwebgpu_doe.dylib"),
-    resolve(ROOT, "runtime/zig/zig-out/lib/libwebgpu_doe.dll"),
-  ].filter((value) => typeof value === "string" && value.length > 0);
-
-  for (const candidate of candidates) {
-    if (existsSync(candidate)) {
-      return candidate;
-    }
-  }
-  return candidates[0];
+  // Explicit selections never fall back, even if the path does not exist.
+  // Retained legacy providers require this explicit path; discovery is C-only.
+  if (process.env.FAWN_DOE_LIB) return process.env.FAWN_DOE_LIB;
+  const candidates = cWorkspaceLibraryCandidates(ROOT);
+  return candidates.find((candidate) => existsSync(candidate)) ?? candidates[0];
 }
 
 const DEFAULT_CHROME = defaultChromePath();
