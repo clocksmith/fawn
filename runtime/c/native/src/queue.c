@@ -275,6 +275,11 @@ void native_progress_pending(native_device *device)
     (void)settle_pending(device, true);
 }
 
+void native_drain_pending(native_device *device)
+{
+    (void)settle_pending(device, false);
+}
+
 void native_surface_retirement_arm(native_surface *surface)
 {
     native_pending *pending = surface->retirement;
