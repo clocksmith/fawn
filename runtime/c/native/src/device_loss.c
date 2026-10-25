@@ -134,3 +134,18 @@ WGPUFuture wgpuDeviceGetLostFuture(WGPUDevice handle)
     native_device *device = (native_device *)handle;
     return device ? device->loss->future : (WGPUFuture){0};
 }
+
+void wgpuDeviceSetDeviceLostCallback(WGPUDevice handle, WGPUDeviceLostCallback callback,
+    void *userdata1, void *userdata2)
+{
+    native_device *device = (native_device *)handle;
+    if (!device) return;
+    native_loss *loss = device->loss;
+    lock_loss(loss);
+    if (!loss->reason) {
+        loss->callback.callback = callback;
+        loss->callback.userdata1 = userdata1;
+        loss->callback.userdata2 = userdata2;
+    }
+    unlock_loss(loss);
+}

@@ -20,17 +20,22 @@ void native_texture_release(void *userdata, void *handle)
     free(payload);
 }
 
-WGPUTexture wgpuDeviceCreateTexture(WGPUDevice handle, const WGPUTextureDescriptor *descriptor)
+/* Pure public descriptor admission, shared by validation and creation. Native
+ * allocation capabilities/failures remain backend construction obligations. */
+static bool texture_descriptor_valid(native_device *device, const WGPUTextureDescriptor *descriptor)
 {
-    native_device *device = (native_device *)handle;
-    if (!device) return NULL;
-    if (native_device_dead(device)) return native_lost_texture(device, descriptor);
+    const WGPUChainedStruct *chain = descriptor ? descriptor->nextInChain : NULL;
+    if (!descriptor || (chain && (chain->sType != WGPUSType_TextureBindingViewDimension || chain->next)) ||
+        (descriptor->viewFormatCount && !descriptor->viewFormats)) {
+        native_error(device, WGPUErrorType_Validation, "texture descriptor missing or unsupported");
+        return false;
+    }
     /* 3D BC textures need texture-compression-bc-sliced-3d as well. */
     if (descriptor && descriptor->dimension == WGPUTextureDimension_3D &&
         descriptor->format >= WGPUTextureFormat_BC1RGBAUnorm && descriptor->format <= WGPUTextureFormat_BC7RGBAUnormSrgb &&
         !native_feature_enabled(device, WGPUFeatureName_TextureCompressionBCSliced3D)) {
         native_error(device, WGPUErrorType_Validation, "3D BC textures need texture-compression-bc-sliced-3d");
-        return NULL;
+        return false;
     }
     if (descriptor && descriptor->dimension == WGPUTextureDimension_3D) {
         bool etc2 = descriptor->format >= WGPUTextureFormat_ETC2RGB8Unorm &&
@@ -39,9 +44,43 @@ WGPUTexture wgpuDeviceCreateTexture(WGPUDevice handle, const WGPUTextureDescript
             descriptor->format <= WGPUTextureFormat_ASTC12x12UnormSrgb;
         if (etc2 || (astc && !native_feature_enabled(device, WGPUFeatureName_TextureCompressionASTCSliced3D))) {
             native_error(device, WGPUErrorType_Validation, "compressed 3D texture format or sliced-3d feature unsupported");
-            return NULL;
+            return false;
         }
     }
+    doe_resource_texture_desc desc = {
+        .dimension=descriptor->dimension ? descriptor->dimension : WGPUTextureDimension_2D,
+        .format=descriptor->format,.width=descriptor->size.width,.height=descriptor->size.height,
+        .depth_or_layers=descriptor->size.depthOrArrayLayers,.mip_levels=descriptor->mipLevelCount,
+        .samples=descriptor->sampleCount,.usage=descriptor->usage,
+        .view_formats=descriptor->viewFormats,.view_format_count=descriptor->viewFormatCount};
+    doe_resource_texture_limits limits = {device->backend.limits.maxTextureDimension1D,
+        device->backend.limits.maxTextureDimension2D,device->backend.limits.maxTextureDimension3D,
+        device->backend.limits.maxTextureArrayLayers};
+    bool valid = doe_resource_texture_validate_with_features(&desc, &limits,
+        device->resources.format_features) == DOE_RESOURCE_OK &&
+        native_format_feature_enabled(device->features, desc.format);
+    for (size_t i = 0; valid && i < desc.view_format_count; ++i)
+        valid = native_format_feature_enabled(device->features, desc.view_formats[i]);
+    doe_vk_texture_format unused;
+    bool depth = native_depth_format(device->features, desc.format, &unused);
+    if (valid && (desc.usage & WGPUTextureUsage_RenderAttachment) && !depth)
+        valid = native_color_renderable(device->features, desc.format);
+    if (!valid) native_error(device, WGPUErrorType_Validation, "texture shape, usage or optional format unsupported");
+    return valid;
+}
+
+void wgpuDeviceValidateTextureDescriptor(WGPUDevice handle, const WGPUTextureDescriptor *descriptor)
+{
+    native_device *device = (native_device *)handle;
+    if (device && !native_device_dead(device)) (void)texture_descriptor_valid(device, descriptor);
+}
+
+WGPUTexture wgpuDeviceCreateTexture(WGPUDevice handle, const WGPUTextureDescriptor *descriptor)
+{
+    native_device *device = (native_device *)handle;
+    if (!device) return NULL;
+    if (native_device_dead(device)) return native_lost_texture(device, descriptor);
+    if (!texture_descriptor_valid(device, descriptor)) return NULL;
     if (device->backend.kind == WGPUBackendType_Metal) return native_metal_create_texture(device, descriptor);
     if (device->backend.kind == WGPUBackendType_D3D12) return native_d3d12_create_texture(device, descriptor);
     if (device->backend.kind != WGPUBackendType_Vulkan) {

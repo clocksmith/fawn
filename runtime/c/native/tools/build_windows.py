@@ -56,7 +56,7 @@ def source_paths(owners: list[Path]) -> list[Path]:
 
 def export_names() -> list[str]:
     names = []
-    for inventory in ['EXPORTED_SYMBOLS.txt', 'EXTENSION_SYMBOLS.txt']:
+    for inventory in ['EXPORTED_SYMBOLS.txt', 'EXTENSION_SYMBOLS.txt', 'LEGACY_SYMBOLS.txt', 'SHARED_MEMORY_SYMBOLS.txt']:
         names.extend(ROOT.joinpath(inventory).read_text(encoding="utf-8").splitlines())
     if not names or len(set(names)) != len(names) or any(
             re.fullmatch(r'[A-Za-z_][A-Za-z_0-9]*', name) is None for name in names):
@@ -206,7 +206,7 @@ def main() -> int:
         headers.extend(sorted(owner.joinpath('include').glob('*.inc')))
         headers.extend(sorted(owner.joinpath('src').glob('*.h')))
     inputs = [*sources, *headers, ROOT / 'sources.mk', ROOT / 'EXPORTED_SYMBOLS.txt',
-              ROOT / 'EXTENSION_SYMBOLS.txt', Path(__file__).resolve(), schema, loader_test,
+              ROOT / 'EXTENSION_SYMBOLS.txt', ROOT / 'LEGACY_SYMBOLS.txt', ROOT / 'SHARED_MEMORY_SYMBOLS.txt', Path(__file__).resolve(), schema, loader_test,
               shader_adapter, window_source, window_host, ROOT / 'tests/surface_consumer.h',
               ROOT / 'tests/consumer.h', ROOT / 'tests/adapter_class.h',
               C_ROOT / 'runtime-cli/src/surface_platform.h', REPO / 'runtime/zig/vendor/webgpu-headers/webgpu.h']

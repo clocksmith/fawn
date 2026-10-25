@@ -19,7 +19,8 @@ typedef struct doe_mtl_external_planes {
  * while a returned texture or command lease survives. Packed RGBA/BGRA and
  * two-plane 8-bit 420v/420f are admitted; no color conversion is implied.
  * On success each plane is an ordinary +1 texture, already initialized by its
- * external producer, and uses the ordinary command/pending lifetime. On failure
+ * external producer, admits sampling and copy-source blits, and uses the ordinary
+ * command/pending lifetime. On failure
  * out is untouched and all privately imported native handles are released.
  * The native texture retains its IOSurface; source is borrowed only for import. */
 doe_mtl_status doe_mtl_external_texture_import(doe_mtl_context *context,

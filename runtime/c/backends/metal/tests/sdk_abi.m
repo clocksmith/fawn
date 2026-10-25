@@ -237,3 +237,17 @@ void doe_mtl_sdk_external_calls(id<MTLDevice> device, MTLTextureDescriptor *desc
     (void)format;
     (void)surface;
 }
+
+_Static_assert(__builtin_types_compatible_p(__typeof__(((doe_mtl_objc_external *)0)->cf_retain),
+    __typeof__(&CFRetain)), "CFRetain exact CFTypeRef signature");
+_Static_assert(__builtin_types_compatible_p(__typeof__(((doe_mtl_objc_external *)0)->cf_release),
+    __typeof__(&CFRelease)), "CFRelease exact CFTypeRef signature");
+void doe_mtl_sdk_shared_calls(id<MTLDevice> device, id<MTLCommandBuffer> commands,
+    id<MTLSharedEvent> event, IOSurfaceRef surface) {
+    uint64_t value = event.signaledValue;
+    id<MTLSharedEvent> created = [device newSharedEvent];
+    [commands encodeSignalEvent:event value:value + 1];
+    CFTypeRef retained = CFRetain(surface);
+    CFRelease(retained);
+    (void)created;
+}

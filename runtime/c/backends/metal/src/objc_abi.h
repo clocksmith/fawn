@@ -17,6 +17,13 @@ void doe_mtl_objc_load_external(struct doe_mtl_objc *runtime, void (*message)(vo
 void doe_mtl_objc_close_external(struct doe_mtl_objc *runtime);
 doe_mtl_status doe_mtl_objc_external_import(void *, void *, doe_mtl_external_source, void *,
     doe_mtl_native_external *, doe_mtl_error *);
+doe_mtl_status doe_mtl_objc_import_plane(struct doe_mtl_objc *, void *, void *, size_t,
+    const doe_mtl_texture_desc *, void **, doe_mtl_error *);
+doe_mtl_status doe_mtl_objc_shared_surface(void *, void *, void **, uint32_t *, uint32_t *, doe_mtl_error *);
+void doe_mtl_objc_shared_surface_release(void *, void *);
+doe_mtl_status doe_mtl_objc_shared_texture(void *, void *, void *, const doe_mtl_texture_desc *, void **, doe_mtl_error *);
+doe_mtl_status doe_mtl_objc_shared_event_retain(void *, void *, void **, doe_mtl_error *);
+doe_mtl_status doe_mtl_objc_shared_event_wait(void *, void *, uint64_t, doe_mtl_error *);
 typedef struct doe_mtl_size { size_t width, height, depth; } doe_mtl_size;
 typedef struct doe_mtl_origin { size_t x, y, z; } doe_mtl_origin;
 typedef struct doe_mtl_swizzle_abi { uint8_t red, green, blue, alpha; } doe_mtl_swizzle_abi;

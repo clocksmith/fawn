@@ -13,7 +13,7 @@ static doe_mtl_status external_import_ledger(void *userdata, void *native_device
     for (uint32_t i = 0; i < 2; ++i) {
         result.desc[i] = (doe_mtl_texture_desc){.type=DOE_MTL_TEXTURE_2D,
             .format=i ? DOE_MTL_RG8_UNORM : DOE_MTL_R8_UNORM,.width=2,.height=2,
-            .depth_or_layers=1,.mip_levels=1,.sample_count=1,.usage=DOE_MTL_TEXTURE_SAMPLED};
+            .depth_or_layers=1,.mip_levels=1,.sample_count=1,.usage=DOE_MTL_TEXTURE_SAMPLED | DOE_MTL_TEXTURE_COPY_SRC};
         doe_mtl_status status = external_drivers[index].texture(userdata, native_device,
             &result.desc[i], &result.planes[i], error);
         if (status != DOE_MTL_OK) {

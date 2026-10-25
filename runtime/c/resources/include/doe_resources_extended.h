@@ -52,6 +52,7 @@ void doe_resource_external_texture_retain(doe_resource_external_texture *texture
 void doe_resource_external_texture_release(doe_resource_external_texture *texture);
 void doe_resource_external_texture_expire(doe_resource_external_texture *texture);
 doe_resource_status doe_resource_external_texture_refresh(doe_resource_external_texture *texture);
+bool doe_resource_external_texture_available(const doe_resource_external_texture *texture);
 /* Borrows retained planes, even when expired, for diagnostics only. */
 doe_resource_view *doe_resource_external_texture_plane(const doe_resource_external_texture *texture,
     size_t plane);
@@ -275,6 +276,11 @@ doe_resource_status doe_resource_render_pass_execute_bundles(doe_resource_render
  * mappedAtCreation. */
 doe_resource_shader *doe_resource_shader_lost(const doe_resource_config *config);
 /* native, which may be empty, is frontend bookkeeping released with the buffer. */
+/* Explicit invalid objects retain getters/leases but never admit native use. */
+doe_resource_buffer *doe_resource_buffer_error(const doe_resource_config *config,
+    const doe_resource_buffer_desc *desc, doe_resource_native native);
+doe_resource_texture *doe_resource_texture_error(const doe_resource_config *config,
+    const doe_resource_texture_desc *desc);
 doe_resource_buffer *doe_resource_buffer_lost(const doe_resource_config *config, const doe_resource_buffer_desc *desc,
     doe_resource_native native);
 doe_resource_texture *doe_resource_texture_lost(const doe_resource_config *config, const doe_resource_texture_desc *desc);

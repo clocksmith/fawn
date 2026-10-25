@@ -19,6 +19,37 @@ static void *lost_object(const doe_resource_config *config, size_t size, size_t 
     if (!object) return NULL; \
     resource_init(&object->base, config, (doe_resource_native){0})
 
+/* Explicit invalid resources on a live device use the same storage/lifetime
+ * representation; destroyed is irreversible and admits no native use. */
+doe_resource_buffer *doe_resource_buffer_error(const doe_resource_config *config,
+    const doe_resource_buffer_desc *desc, doe_resource_native native)
+{
+    if (!resource_config_valid(config)) return NULL;
+    doe_resource_buffer *object = resource_allocate(config, sizeof(*object), _Alignof(doe_resource_buffer));
+    if (!object) return NULL;
+    memset(object, 0, sizeof(*object));
+    resource_init(&object->base, config, native);
+    if (desc) object->desc = *desc;
+    object->desc.mapped_at_creation = false;
+    object->destroyed = true;
+    return object;
+}
+doe_resource_texture *doe_resource_texture_error(const doe_resource_config *config,
+    const doe_resource_texture_desc *desc)
+{
+    if (!resource_config_valid(config)) return NULL;
+    doe_resource_texture *object = resource_allocate(config, sizeof(*object), _Alignof(doe_resource_texture));
+    if (!object) return NULL;
+    memset(object, 0, sizeof(*object));
+    resource_init(&object->base, config, (doe_resource_native){0});
+    if (desc) object->desc = *desc;
+    object->desc.view_format_count = 0;
+    object->desc.view_formats = object->view_formats;
+    object->destroyed = true;
+    object->error_object = true;
+    return object;
+}
+
 doe_resource_shader *doe_resource_shader_lost(const doe_resource_config *config)
 {
     LOST(shader, config);

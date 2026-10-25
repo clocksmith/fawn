@@ -175,7 +175,14 @@ static void uncaptured_error(uint32_t type, WGPUStringView message,
 {
     (void)userdata2;
     native_device *device = userdata1;
+    native_lock(device);
     WGPUUncapturedErrorCallbackInfo callback = device->uncaptured;
+    DoeLegacyUncapturedErrorCallback legacy = device->legacy_uncaptured;
+    native_unlock(device);
+    if (legacy) {
+        legacy(type, message, callback.userdata1, callback.userdata2);
+        return;
+    }
     if (callback.callback) {
         WGPUDevice handle = (WGPUDevice)device;
         callback.callback(&handle, (WGPUErrorType)type, message, callback.userdata1, callback.userdata2);
@@ -247,6 +254,7 @@ void native_device_release(void *identity)
     doe_mtl_dispatch_guard_release(device->metal_dispatch_guard);
     doe_mtl_draw_guard_release(device->metal_draw_guard);
     native_backend_close(&device->backend);
+    wgpuAdapterRelease((WGPUAdapter)device->adapter);
     doe_instance *instance = device->instance;
     if (doe_mutex_destroy(&device->mutex).status != DOE_HOST_OK) abort();
     free(device);
@@ -347,6 +355,8 @@ static native_device *create_device(native_adapter *adapter, const WGPUDeviceDes
         doe_instance_release(device->instance);
         goto failed_errors;
     }
+    device->adapter = adapter;
+    wgpuAdapterAddRef((WGPUAdapter)adapter);
     native_loss_bind(loss, device);
     return device;
 failed_errors:
@@ -358,6 +368,23 @@ failed_mutex:
     if (doe_mutex_destroy(&device->mutex).status != DOE_HOST_OK) abort();
     free(device);
     return NULL;
+}
+
+WGPUDevice wgpuAdapterCreateDevice(WGPUAdapter handle, const WGPUDeviceDescriptor *descriptor)
+{
+    native_adapter *adapter = (native_adapter *)handle;
+    if (!adapter) return NULL;
+    wgpuAdapterAddRef(handle);
+    WGPUDeviceLostCallbackInfo callback = descriptor ? descriptor->deviceLostCallbackInfo :
+        (WGPUDeviceLostCallbackInfo){0};
+    native_loss *loss = native_loss_create(adapter->instance, callback);
+    native_device *device = loss ? create_device(adapter, descriptor, loss, NULL) : NULL;
+    if (loss && !device) {
+        native_loss_complete(loss, WGPUDeviceLostReason_FailedCreation, "device initialization failed");
+        native_loss_release(loss);
+    }
+    wgpuAdapterRelease(handle);
+    return (WGPUDevice)device;
 }
 
 typedef struct device_delivery {

@@ -44,14 +44,14 @@ static doe_resource_status adopt_plane(native_device *device, doe_mtl_texture **
     view_payload->device = device;
     doe_resource_texture_desc description = {.dimension=WGPUTextureDimension_2D,.format=format,
         .width=desc->width,.height=desc->height,.depth_or_layers=1,.mip_levels=1,.samples=1,
-        .usage=WGPUTextureUsage_TextureBinding};
+        .usage=WGPUTextureUsage_TextureBinding | WGPUTextureUsage_CopySrc};
     doe_resource_texture_limits limits = {device->backend.limits.maxTextureDimension1D,
         device->backend.limits.maxTextureDimension2D,device->backend.limits.maxTextureDimension3D,
         device->backend.limits.maxTextureArrayLayers};
     doe_resource_texture *texture = NULL;
     doe_resource_view *view = NULL;
     doe_resource_view_desc view_desc = {.format=format,.dimension=WGPUTextureViewDimension_2D,
-        .mip_count=1,.layer_count=1,.aspect=WGPUTextureAspect_All,.usage=WGPUTextureUsage_TextureBinding};
+        .mip_count=1,.layer_count=1,.aspect=WGPUTextureAspect_All,.usage=WGPUTextureUsage_TextureBinding | WGPUTextureUsage_CopySrc};
     doe_mtl_texture_view_desc native_desc = {.type=DOE_MTL_TEXTURE_2D,.format=desc->format,
         .mip_count=1,.layer_count=1,.red=DOE_MTL_SWIZZLE_RED,.green=DOE_MTL_SWIZZLE_GREEN,
         .blue=DOE_MTL_SWIZZLE_BLUE,.alpha=DOE_MTL_SWIZZLE_ALPHA};

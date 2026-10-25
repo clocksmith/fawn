@@ -44,13 +44,21 @@ def main() -> None:
     extensions = set((owner / "EXTENSION_SYMBOLS.txt").read_text().splitlines())
     header_text = "".join(path.read_text() for path in sorted((owner / "include").glob("doe_native_*.h")))
     extension_declared = set(re.findall(r"DOE_NATIVE_EXTENSION[^;]*?\b(doe\w+)\(", header_text))
+    legacy = set((owner / "LEGACY_SYMBOLS.txt").read_text().splitlines())
+    shared = set((owner / "SHARED_MEMORY_SYMBOLS.txt").read_text().splitlines())
+    if legacy & shared:
+        raise RuntimeError("duplicate legacy/shared ABI inventory")
+    legacy |= shared
+    legacy_declared = set(re.findall(r"DOE_LEGACY_API[^;]*?\b(wgpu\w+)\(", header_text))
+    if legacy != legacy_declared or legacy & (declared | extensions):
+        raise RuntimeError("legacy ABI inventory must be explicit, declared and disjoint")
     procedures = set(re.findall(r'\{"(wgpu\w+)", \(WGPUProc\)\1\}',
                                 (owner / "src/procedures.c").read_text()))
     exported = native_exports(args.library, args.platform)
-    if (exported != inventory | extensions or procedures != inventory or not inventory <= declared
+    if (exported != inventory | extensions | legacy or procedures != inventory | legacy or not inventory <= declared
             or extensions & declared or extensions != extension_declared):
-        raise RuntimeError(f"export inventory mismatch: exports={sorted(exported ^ (inventory | extensions))}, "
-                           f"procedures={sorted(procedures ^ inventory)}, "
+        raise RuntimeError(f"export inventory mismatch: exports={sorted(exported ^ (inventory | extensions | legacy))}, "
+                           f"procedures={sorted(procedures ^ (inventory | legacy))}, "
                            f"unpinned={sorted(inventory - declared)}, "
                            f"extensions={sorted(extensions ^ extension_declared)}")
     if args.runtime:
@@ -61,14 +69,14 @@ def main() -> None:
         lookup = library.wgpuGetProcAddress
         lookup.argtypes = [StringView]
         lookup.restype = ctypes.c_void_p
-        for name in declared | extensions:
+        for name in declared | extensions | legacy:
             address = lookup(StringView(name.encode(), len(name)))
-            expected = ctypes.cast(getattr(library, name), ctypes.c_void_p).value if name in inventory else None
+            expected = ctypes.cast(getattr(library, name), ctypes.c_void_p).value if name in inventory | legacy else None
             if address != expected:
                 raise RuntimeError(f"incorrect procedure address for {name}")
         print("PASS every implemented procedure address matches; every unprovided name returns NULL")
     print(f"PASS exact exports: {len(exported & declared)} implemented, "
-          f"{len(declared - exported)} pinned unprovided, {len(extensions)} listed Doe extensions, "
+          f"{len(declared - exported)} pinned unprovided, {len(legacy)} legacy ABI, {len(extensions)} listed Doe extensions, "
           "no private exports")
 
 

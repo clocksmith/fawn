@@ -1541,3 +1541,42 @@ format-properties requirements. Missing query facts keep it absent. The device
 never gains implicit Core when the adapter does not offer it. Windows SDK and
 physical-device qualification remain separate from the portable composition
 controls and strict host builds.
+
+### Retained legacy ABI boundary
+
+The [shared Metal memory/fence boundary](SHARED_MEMORY.md) documents native-handle
+ownership, producer synchronization and retained initialization-policy limits.
+
+`include/doe_native_legacy.h` and `LEGACY_SYMBOLS.txt` describe additive retained
+Doe entrypoints, separately from the pinned WebGPU header. The procedure table,
+platform exports and export audit use the explicit inventory; no fallback provider
+resolves these names. The legacy uncaptured callback takes **no device argument**,
+unlike the pinned descriptor callback. Getters return retained handles. DeviceTick
+performs nonblocking progress and returns false, not a completion verdict.
+
+`wgpuCommandEncoderWriteBuffer` preserves the retained immediate **mapped** write;
+it does not record a queue command. Both legacy pass WriteTimestamp entrypoints
+preserve the retained locked-parent rejection. Actual pass timestamps use descriptor
+`timestampWrites`; exposing the rejecting aliases does not advertise arbitrary
+in-pass timestamp support. The unadvertised Dawn format-capability query rejects
+without touching output; its default-empty free-member helpers remain local.
+
+Browser texture-copy adapters implement byte copies and flipY through ordinary
+commands. External copies use plane zero with the view's mip/layer bounds, retain
+real texture storage through submission, and reject expired/wrong-device objects.
+They do not perform YUV, alpha or color-space conversion; conversion requests now
+fail explicitly rather than copying pixels while implying conversion. This is a
+correctness restriction relative to retained Zig's ignored conversion fields.
+Imported Metal external planes admit real CopySrc blits. These source contracts
+and CPU Vulkan controls do not qualify physical Metal or an actual Fawn browser.
+
+The retained native public-symbol reconciliation is finite: 241 exported `wgpu*`
+names plus 25 additional explicit lookup names = 266. The C inventories provide 250
+(202 pinned + 23 legacy + 25 shared-memory compatibility names). The remaining 16
+are not implemented retained native features: resource-table creation, seven
+resource-table methods and three pass/bundle setters (11); two multi-draw calls;
+pixel-local-storage barrier; texel-buffer-view AddRef; and the no-op logging setter.
+The first 15 resolve only through foreign delegation or fail, with no Doe native
+owner; logging does nothing. None is advertised as implemented C support, and no
+success stub is added for symbol-count equality. Positive capabilities, rejecting
+compatibility contracts and actual physical execution remain distinct evidence.

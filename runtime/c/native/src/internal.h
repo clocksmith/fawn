@@ -20,6 +20,7 @@
 #include "doe_vk_render.h"
 #include "doe_vk_indirect.h"
 #include "doe_error_scopes.h"
+#include "doe_native_legacy.h"
 #include <stdatomic.h>
 #include <stdbool.h>
 
@@ -36,6 +37,7 @@ typedef struct native_device {
     atomic_uint references;
     atomic_uint external_references;
     native_loss *loss;
+    native_adapter *adapter; /* Original adapter identity, retained by the device. */
     doe_mutex mutex;
     doe_condition pending_changed;
     doe_thread pending_thread;
@@ -49,6 +51,7 @@ typedef struct native_device {
     doe_error_scope_stack *errors;
     void *error_storage;
     WGPUUncapturedErrorCallbackInfo uncaptured;
+    DoeLegacyUncapturedErrorCallback legacy_uncaptured;
     bool destroyed;
     bool queue_failed;
     uint32_t features; /* Enabled WebGPU features, NATIVE_FEATURE bits. */
@@ -86,6 +89,7 @@ typedef struct native_texture {
     native_device *device;
     union { doe_vk_texture *texture; doe_mtl_texture *metal; struct doe_dx_texture *d3d12; };
     struct native_surface *surface; /* Borrowed frame payload owns one surface lease. */
+    struct native_shared_texture_memory *shared_memory; /* Import finalizer owns its lease. */
 } native_texture;
 typedef struct native_view {
     native_device *device;

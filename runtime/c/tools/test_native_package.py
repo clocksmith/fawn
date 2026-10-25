@@ -28,6 +28,24 @@ class LeanProofRecordTests(unittest.TestCase):
 
 
 class PackagePreflightTests(unittest.TestCase):
+    def test_all_abi_inventories_preserved(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            owner, destination = root / "owner", root / "package"
+            owner.mkdir()
+            destination.mkdir()
+            names = ("EXPORTED_SYMBOLS.txt", "EXTENSION_SYMBOLS.txt",
+                     "LEGACY_SYMBOLS.txt", "SHARED_MEMORY_SYMBOLS.txt")
+            for index, name in enumerate(names):
+                (owner / name).write_text(f"owned_symbol_{index}\n", encoding="utf-8")
+            PACKAGE.copy_symbol_inventories(owner, destination)
+            self.assertEqual({path.name for path in destination.iterdir()}, set(names))
+            for name in names:
+                self.assertEqual((owner / name).read_bytes(), (destination / name).read_bytes())
+            (owner / names[-1]).unlink()
+            with self.assertRaises(FileNotFoundError):
+                PACKAGE.copy_symbol_inventories(owner, destination)
+
     def test_python_build_helpers_leave_captured_inputs_immutable(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
