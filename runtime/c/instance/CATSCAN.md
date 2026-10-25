@@ -4,16 +4,16 @@ Parent: [Experimental C migration](../CATSCAN.md)
 
 ## Target
 
-Own native instance allocation, identity, references, completion queue lifetime and final cleanup through an explicit C boundary.
+Own instance allocation, identity, references, completion queue lifetime and cleanup.
 
 ## Authority
 
-- Owns the selected instance's sole allocation/count and accepted queue storage.
+- Owns the instance's sole allocation/count and queue storage.
 - Does not own device/backend execution, typed callback resources, external-texture registry policy or production selection.
 
 ## Scope
 
-- Includes the independently usable C owner and default-off retained native seam specified by the frozen contract.
+- Includes the C owner, default-off retained seam and authorized [capability amendment](CAPABILITIES.md).
 
 ## Contracts
 
@@ -28,6 +28,7 @@ Own native instance allocation, identity, references, completion queue lifetime 
 - Failed or uncertain synchronization cleanup never authorizes freeing live storage.
 - Default Zig, historical evidence and separately qualified owner selections remain available.
 - CPU error/unconfigured-surface evidence never qualifies device success or GPU execution.
+- Capability reporting, descriptor admission and bounded timed waits agree under the amendment.
 
 ## Acceptance
 

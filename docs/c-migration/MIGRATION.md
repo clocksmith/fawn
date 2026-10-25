@@ -42,6 +42,12 @@ bytecode validation, and simulated completion never inherit that qualification.
 
 ## Current implementation workflow
 
+The 2026-10-25 owner-authorized [instance capability amendment](../../runtime/c/instance/CAPABILITIES.md)
+admits the timed-wait and multiple-device requirements used by ONNX consumers.
+The public two-device copy/readback and finite-wait client passes on Apple M3
+Metal and CPU Vulkan. This closes the descriptor admission gap; it does not
+close the ONNX application, backend qualification or production-switch gates.
+
 The requested workflow is broad, disjoint subsystem implementation in parallel,
 with review and focused compile/behavior checks as code changes. Exhaustive
 integrated qualification follows authoring, not every small port. This changes

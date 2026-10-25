@@ -152,11 +152,12 @@ int main(int argc, char **argv)
     fprintf(stderr, "consumer: capabilities\n");
     memset(&features, 0x71, sizeof(features));
     get_features(&features);
-    assert(features.featureCount == 0 && features.features == NULL);
+    assert(features.featureCount == 2 && features.features != NULL);
     memset(&limits, 0x71, sizeof(limits));
     assert(get_limits(&limits) == WGPUStatus_Success);
-    assert(limits.nextInChain == NULL && limits.timedWaitAnyMaxCount == 0);
-    assert(!has_feature(WGPUInstanceFeatureName_TimedWaitAny));
+    assert(limits.nextInChain == NULL && limits.timedWaitAnyMaxCount == 64);
+    assert(has_feature(WGPUInstanceFeatureName_TimedWaitAny));
+    assert(has_feature(WGPUInstanceFeatureName_MultipleDevicesPerAdapter));
     assert(!has_feature((WGPUInstanceFeatureName)UINT32_MAX));
     free_features(features);
     assert(dlclose(library) == 0);

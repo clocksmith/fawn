@@ -17,6 +17,7 @@ Missing backend paths reject explicitly, never fabricate success.
 ## Contracts
 Pinned `runtime/zig/vendor/webgpu-headers/webgpu.h` and instance, callback,
 error-scope, resource, shader and backend contracts apply.
+Instance requirements use the owner's [capability amendment](../instance/CAPABILITIES.md).
 
 ## Invariants
 One tagged device/pending owner selects the backend without fallback or migration.
@@ -38,7 +39,7 @@ host controls, native execution and unqualified paths. Developer results never
 establish independent, physical-matrix or performance qualification.
 
 ## Non-goals
-Parallel resource engines, synthetic completion, complete graphics or default cutover.
+Parallel resource engines, synthetic completion or default cutover.
 
 ## Freedom
-Internal algorithms may vary within these boundaries.
+Internal algorithms may vary.

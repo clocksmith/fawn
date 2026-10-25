@@ -10,7 +10,9 @@ WGPUWaitStatus doe_instance_wait_any(doe_instance *instance, size_t count,
     doe_future_status status;
     size_t size;
     if (count == 0) return WGPUWaitStatus_Success;
-    if (instance == NULL) return WGPUWaitStatus_Error;
+    if (instance == NULL || infos == NULL) return WGPUWaitStatus_Error;
+    if (timeout_ns && count > doe_instance_limits().timedWaitAnyMaxCount)
+        return WGPUWaitStatus_Error;
     if (count > SIZE_MAX / sizeof(*copied) || count > SIZE_MAX / sizeof(*infos))
         return WGPUWaitStatus_Error;
     doe_instance_retain(instance);

@@ -3,8 +3,7 @@
 Parent: [Experimental C migration](../../CATSCAN.md)
 
 ## Target
-Execute admitted Metal operations through plain C while preserving resource
-and completion obligations.
+Execute admitted Metal operations in C, preserving resource and completion obligations.
 
 ## Authority
 Own native loading, device/queue/resource/pipeline lifetimes, compute/render,
@@ -12,7 +11,7 @@ resolves, visibility/timestamps, transfers, submission and retirement. Exclude W
 meaning, public validation, provider selection and qualification.
 
 ## Scope
-Private backend ABI, native adapter and focused tests in this directory.
+Backend ABI, adapter and focused tests.
 
 ## Contracts
 Validated MSL and explicit compiler workgroup/slot facts enter the
@@ -41,7 +40,7 @@ qualifying public presentation. SDK verification, native execution and complete
 retained-consumer parity retain separate gates.
 
 ## Non-goals
-WebGPU policy, another lifetime authority or compilation promoted to hardware qualification.
+WebGPU policy, duplicate lifetime authority or compile-only hardware qualification.
 
 ## Freedom
-Internal algorithms may vary within these boundaries.
+Algorithms may vary within these boundaries.
