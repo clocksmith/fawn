@@ -29,26 +29,34 @@ static uint64_t hash_string(uint64_t value, const char *text)
     return text ? hash_bytes(value, text, strlen(text)) : hash_byte(value, 0);
 }
 
+static const doe_quirk_decision NO_DECISION = {.scope = "none", .safety = "none", .verification = "none",
+    .proof = "none", .action = "none"};
+
 uint64_t doe_trace_payload_hash(uint64_t previous, uint64_t seq, const char *label, const char *tag,
-    const char *kernel)
+    const char *kernel, const doe_quirk_decision *decision)
 {
+    const doe_quirk_decision *d = decision ? decision : &NO_DECISION;
     uint64_t next = hash_u64(previous, seq);
     next = hash_string(next, label);
     next = hash_string(next, tag);
     next = hash_string(next, kernel);
-    next = hash_string(next, NULL); /* matched quirk id */
-    next = hash_string(next, NULL); /* applied toggle */
-    for (int i = 0; i < 5; i++) next = hash_string(next, "none"); /* scope, safety, verification, proof, action */
+    next = hash_string(next, d->matched_id);
+    next = hash_string(next, d->toggle);
+    next = hash_string(next, d->scope);
+    next = hash_string(next, d->safety);
+    next = hash_string(next, d->verification);
+    next = hash_string(next, d->proof);
+    next = hash_string(next, d->action);
     next = hash_string(next, NULL); /* semantic op id */
     next = hash_string(next, NULL); /* semantic stage */
     next = hash_string(next, NULL); /* semantic phase */
     next = hash_byte(next, 0);      /* token index (absent) */
     next = hash_byte(next, 0);      /* layer index (absent) */
     next = hash_string(next, NULL); /* execution plan hash */
-    next = hash_u64(next, 0);       /* score */
-    next = hash_u64(next, 0);       /* matched count */
-    next = hash_byte(next, 0);      /* requires lean */
-    next = hash_byte(next, 0);      /* blocking */
+    next = hash_u64(next, d->score);
+    next = hash_u64(next, d->matched_count);
+    next = hash_byte(next, d->requires_lean ? 1 : 0);
+    next = hash_byte(next, d->blocking ? 1 : 0);
     return next;
 }
 
@@ -73,8 +81,10 @@ bool doe_trace_write_string(FILE *out, const char *text)
 }
 
 bool doe_trace_write_row(FILE *out, const doe_trace_identity *identity, uint64_t seq, uint64_t timestamp_ns,
-    uint64_t hash, uint64_t previous, const doe_command *command, const doe_trace_execution *execution)
+    uint64_t hash, uint64_t previous, const doe_command *command, const doe_quirk_decision *decision,
+    const doe_trace_execution *execution)
 {
+    const doe_quirk_decision *d = decision ? decision : &NO_DECISION;
     bool ok = fprintf(out, "{\"traceVersion\":1,\"module\":") >= 0 && doe_trace_write_string(out, identity->module);
     ok = ok && fprintf(out, ",\"opCode\":\"dispatch\",\"seq\":%" PRIu64 ",\"timestampMonoNs\":%" PRIu64
         ",\"hash\":\"0x%" PRIx64 "\",\"previousHash\":\"0x%" PRIx64 "\",\"command\":",
@@ -83,9 +93,16 @@ bool doe_trace_write_row(FILE *out, const doe_trace_identity *identity, uint64_t
     if (ok && command->kind == DOE_COMMAND_KERNEL_DISPATCH) {
         ok = fputs(",\"kernel\":", out) >= 0 && doe_trace_write_string(out, command->as.dispatch.kernel);
     }
-    ok = ok && fputs(",\"matched\":null,\"scope\":\"none\",\"safetyClass\":\"none\",\"verificationMode\":\"none\","
-        "\"proofLevel\":\"none\",\"requiresLean\":false,\"blocking\":false,\"score\":0,\"matched_count\":0,"
-        "\"action\":\"none\",\"toggle\":\"none\",\"executionBackend\":", out) >= 0;
+    ok = ok && fputs(",\"matched\":", out) >= 0 && (d->matched_id ? doe_trace_write_string(out, d->matched_id) : fputs("null", out) >= 0);
+    ok = ok && fputs(",\"scope\":", out) >= 0 && doe_trace_write_string(out, d->scope);
+    ok = ok && fputs(",\"safetyClass\":", out) >= 0 && doe_trace_write_string(out, d->safety);
+    ok = ok && fputs(",\"verificationMode\":", out) >= 0 && doe_trace_write_string(out, d->verification);
+    ok = ok && fputs(",\"proofLevel\":", out) >= 0 && doe_trace_write_string(out, d->proof);
+    ok = ok && fprintf(out, ",\"requiresLean\":%s,\"blocking\":%s,\"score\":%" PRIu64 ",\"matched_count\":%" PRIu64 ",\"action\":",
+        d->requires_lean ? "true" : "false", d->blocking ? "true" : "false", d->score, d->matched_count) >= 0;
+    ok = ok && doe_trace_write_string(out, d->action) && fputs(",\"toggle\":", out) >= 0 &&
+        doe_trace_write_string(out, d->toggle ? d->toggle : "none");
+    ok = ok && fputs(",\"executionBackend\":", out) >= 0;
     ok = ok && doe_trace_write_string(out, identity->backend_id) && fputs(",\"backendId\":", out) >= 0 &&
         doe_trace_write_string(out, identity->backend_id);
     ok = ok && fprintf(out, ",\"executionStatus\":\"%s\",\"executionStatusCode\":", execution->ok ? "ok" : "error") >= 0;

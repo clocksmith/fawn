@@ -54,7 +54,8 @@ class DoeRuntimeProvidersTests(unittest.TestCase):
     def test_binary_detection_covers_both_clis(self) -> None:
         c_template = resolve_executor_command_template("doe_c_direct_vulkan")
         self.assertIn("runtime/c/runtime-cli/bin/doe-c-runtime", c_template)
-        self.assertIn("--quirk-mode off", c_template)
+        self.assertIn("--quirks {quirks}", c_template)
+        self.assertNotIn("--quirk-mode", c_template)
         self.assertTrue(doe_runtime_providers.template_uses_doe_runtime(c_template))
         zig_template = resolve_executor_command_template("doe_direct_vulkan")
         self.assertTrue(doe_runtime_providers.template_uses_doe_runtime(zig_template))

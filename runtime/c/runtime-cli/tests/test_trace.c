@@ -21,7 +21,7 @@ static void chain(const vector *rows, size_t count)
 {
     uint64_t previous = DOE_TRACE_HASH_SEED;
     for (size_t seq = 0; seq < count; seq++) {
-        uint64_t hash = doe_trace_payload_hash(previous, seq, rows[seq].label, rows[seq].label, rows[seq].kernel);
+        uint64_t hash = doe_trace_payload_hash(previous, seq, rows[seq].label, rows[seq].label, rows[seq].kernel, NULL);
         if (hash != rows[seq].hash) {
             fprintf(stderr, "row %zu (%s): 0x%llx, expected 0x%llx\n", seq, rows[seq].label,
                 (unsigned long long)hash, (unsigned long long)rows[seq].hash);
@@ -55,10 +55,10 @@ int main(void)
         {"upload", NULL, UINT64_C(0x7ac9433e64554c12)},
     };
     chain(aliases, 2);
-    assert(doe_trace_payload_hash(DOE_TRACE_HASH_SEED, 0, "write_buffer", "buffer_write", NULL) != aliases[0].hash);
+    assert(doe_trace_payload_hash(DOE_TRACE_HASH_SEED, 0, "write_buffer", "buffer_write", NULL, NULL) != aliases[0].hash);
     /* An absent kernel differs from an empty one. */
-    assert(doe_trace_payload_hash(DOE_TRACE_HASH_SEED, 0, "kernel_dispatch", "kernel_dispatch", NULL) !=
-        doe_trace_payload_hash(DOE_TRACE_HASH_SEED, 0, "kernel_dispatch", "kernel_dispatch", ""));
+    assert(doe_trace_payload_hash(DOE_TRACE_HASH_SEED, 0, "kernel_dispatch", "kernel_dispatch", NULL, NULL) !=
+        doe_trace_payload_hash(DOE_TRACE_HASH_SEED, 0, "kernel_dispatch", "kernel_dispatch", "", NULL));
     puts("runtime-cli trace: hash chain equals doe-zig-runtime rows for three example streams and alias labels (host only)");
     return 0;
 }

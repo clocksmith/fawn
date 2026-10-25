@@ -4,6 +4,7 @@
  * doe-zig-runtime; every argument or value this runtime does not implement is
  * rejected before any device work. */
 #include "execute.h"
+#include "quirks.h"
 #include "stream.h"
 #include "trace.h"
 #include <errno.h>
@@ -21,6 +22,8 @@ typedef struct options {
     const char *commands, *kernel_root, *trace_jsonl, *trace_meta, *quirks;
     const char *vendor, *api, *family, *driver;
     bool execute, trace_stdout, validate_oracles;
+    doe_quirk_mode quirk_mode;
+    doe_profile profile; /* The quirk matching profile, with doe-zig-runtime's defaults. */
     uint64_t command_repeat;
     doe_runtime_options runtime;
     /* --readback-buffer HANDLE=PATH: final buffer contents written after a successful run. */
@@ -50,6 +53,7 @@ typedef struct totals {
     uint64_t input_read_ns, input_parse_ns, executor_init_ns;
     uint64_t hash, previous;
     uint64_t oracles, oracles_matched, oracles_failed;
+    uint64_t matched, blocking, requires_lean, lean_required;
     char oracle_expected[65], oracle_actual[65];
     const char *oracle_reference;
 } totals;
@@ -59,7 +63,7 @@ static void usage(FILE *out)
     fputs("doe-c-runtime --commands <path> --execute [--backend native] [--kernel-root <path>]\n"
           "  [--trace] [--trace-jsonl <path>] [--trace-meta <path>] [--command-repeat N]\n"
           "  [--vendor X] [--api vulkan] [--family X] [--driver X.Y.Z]\n"
-          "  [--quirks <path> --quirk-mode off] [--queue-sync-mode per-command]\n"
+          "  [--quirks <path>] [--quirk-mode off|trace|active] [--queue-sync-mode per-command]\n"
           "  [--upload-buffer-usage copy-dst-copy-src|copy-dst] [--upload-submit-every N]\n"
           "  [--gpu-timestamp-mode off|auto] [--adapter auto|physical|software]\n"
           "  [--validate-output-oracles]  (schema 1 sha256_exact_v1 isolated-dispatch oracles)\n"
@@ -153,9 +157,17 @@ static int parse_options(int argc, char **argv, options *out)
     if (!out->commands) return reject_argument("--commands", "is required (no embedded sample stream)");
     if (!out->execute) return reject_argument("--execute", "is required (trace-only mode is not implemented)");
     if (out->api && strcmp(out->api, "vulkan")) return reject_argument("--api", "only vulkan is implemented");
-    if (quirk_mode && strcmp(quirk_mode, "off")) return reject_argument("--quirk-mode", "only off is implemented");
-    if (out->quirks && !quirk_mode)
-        return reject_argument("--quirks", "quirk matching is not implemented; pass --quirk-mode off to run without quirks");
+    /* doe-zig-runtime's defaults: trace mode and an intel/vulkan/gen12/31.0.101 profile. */
+    out->quirk_mode = DOE_QUIRK_TRACE;
+    if (quirk_mode && !strcmp(quirk_mode, "off")) out->quirk_mode = DOE_QUIRK_OFF;
+    else if (quirk_mode && !strcmp(quirk_mode, "active")) out->quirk_mode = DOE_QUIRK_ACTIVE;
+    else if (quirk_mode && strcmp(quirk_mode, "trace")) return reject_argument("--quirk-mode", "must be off, trace or active");
+    if (!out->vendor) out->vendor = "intel";
+    if (!out->api) out->api = "vulkan";
+    if (!out->family) out->family = "gen12";
+    if (!out->driver) out->driver = "31.0.101";
+    out->profile = (doe_profile){.vendor = out->vendor, .api = out->api, .family = out->family};
+    if (!doe_semver_parse(out->driver, out->profile.driver)) return reject_argument("--driver", "must be major[.minor[.patch]]");
     return 0;
 }
 
@@ -204,7 +216,8 @@ static bool write_meta(const char *path, const options *o, const totals *t, uint
     if (!out) return false;
     uint64_t seq_max = t->rows ? t->rows - 1 : 0;
     bool ok = fprintf(out, "{\"traceVersion\":1,\"module\":\"" MODULE_NAME "\",\"seqMax\":%" PRIu64 ",\"rowCount\":%" PRIu64
-        ",\"commandCount\":%" PRIu64 ",\"matchedCount\":0,\"blockingCount\":0,\"requiresLeanCount\":0,\"leanRequiredCount\":0,"
+        ",\"commandCount\":%" PRIu64 ",\"matchedCount\":%" PRIu64 ",\"blockingCount\":%" PRIu64 ",\"requiresLeanCount\":%" PRIu64
+        ",\"leanRequiredCount\":%" PRIu64 ","
         "\"executionRowCount\":%" PRIu64 ",\"executionSuccessCount\":%" PRIu64 ",\"executionErrorCount\":%" PRIu64
         ",\"executionSkippedCount\":0,\"executionUnsupportedCount\":0,\"executionTotalNs\":%" PRIu64
         ",\"executionSetupTotalNs\":%" PRIu64 ",\"executionEncodeTotalNs\":%" PRIu64 ",\"executionSubmitWaitTotalNs\":%" PRIu64
@@ -216,10 +229,11 @@ static bool write_meta(const char *path, const options *o, const totals *t, uint
         ",\"outputOracleMatchedCount\":%" PRIu64 ",\"outputOracleFailedCount\":%" PRIu64
         ",\"executionBackend\":\"" BACKEND_ID "\",\"backendId\":\"" BACKEND_ID "\","
         "\"backendSelectionReason\":\"fixed_backend\",\"fallbackUsed\":false,\"queueSyncMode\":\"per-command\","
-        "\"quirkMode\":\"off\",\"uploadBufferUsage\":\"%s\",\"uploadSubmitEvery\":%" PRIu64,
-        seq_max, t->rows, command_count, t->rows, t->successes, t->errors, t->total_ns, t->setup_ns, t->encode_ns,
+        "\"quirkMode\":\"%s\",\"uploadBufferUsage\":\"%s\",\"uploadSubmitEvery\":%" PRIu64,
+        seq_max, t->rows, command_count, t->matched, t->blocking, t->requires_lean, t->lean_required, t->rows, t->successes, t->errors, t->total_ns, t->setup_ns, t->encode_ns,
         t->submit_wait_ns, t->dispatches, t->submits, t->input_read_ns, t->input_parse_ns, t->executor_init_ns,
         t->hash, t->previous, t->oracles, t->oracles_matched, t->oracles_failed,
+        o->quirk_mode == DOE_QUIRK_OFF ? "off" : o->quirk_mode == DOE_QUIRK_ACTIVE ? "active" : "trace",
         o->runtime.upload_copy_src ? "copy-dst-copy-src" : "copy-dst", o->runtime.upload_submit_every) >= 0;
     if (ok && t->oracles) {
         ok = write_optional(out, "outputOracleKind", "sha256_exact_v1", true) &&
@@ -273,6 +287,21 @@ int main(int argc, char **argv)
         return 2;
     }
     char message[256] = "";
+    /* Without --quirks no quirk is loaded; doe-zig-runtime would load its embedded sample quirk. */
+    doe_quirk_set quirks = {.mode = o.quirk_mode};
+    if (o.quirks && o.quirk_mode != DOE_QUIRK_OFF) {
+        size_t quirks_size = 0;
+        char *quirks_text = read_file(o.quirks, &quirks_size);
+        bool loaded = quirks_text && doe_quirks_load(quirks_text, quirks_size, o.quirk_mode, &o.profile, &quirks, message,
+            sizeof(message));
+        free(quirks_text);
+        if (!loaded) {
+            fprintf(stderr, "doe-c-runtime: --quirks %s: %s\n", o.quirks, quirks_text ? message : "cannot read");
+            if (rows) fclose(rows);
+            doe_stream_free(&stream);
+            return 2;
+        }
+    }
     uint64_t init_start = doe_runtime_monotonic_ns();
     doe_runtime *runtime = doe_runtime_open(&o.runtime, message, sizeof(message));
     t.executor_init_ns = doe_runtime_monotonic_ns() - init_start;
@@ -285,14 +314,27 @@ int main(int argc, char **argv)
     for (uint64_t pass = 0; runtime && status == 0 && pass < o.command_repeat; pass++) {
         for (size_t i = 0; i < stream.count && status == 0; i++) {
             const doe_command *command = &stream.commands[i];
+            const doe_quirk_decision decision = doe_quirks_decide(&quirks, command->kind);
+            doe_command applied = *command;
+            if (decision.temporary_buffer) {
+                applied.as.copy.temporary_buffer = true;
+                applied.as.copy.temporary_buffer_alignment = decision.temporary_buffer_alignment;
+            }
             doe_trace_execution execution;
-            bool ok = doe_runtime_execute(runtime, command, &execution);
+            bool ok = doe_runtime_execute(runtime, &applied, &execution);
             uint64_t seq = t.rows;
             uint64_t hash = doe_trace_payload_hash(t.hash, seq, command->label, doe_command_tag(command->kind),
-                command->kind == DOE_COMMAND_KERNEL_DISPATCH ? command->as.dispatch.kernel : NULL);
+                command->kind == DOE_COMMAND_KERNEL_DISPATCH ? command->as.dispatch.kernel : NULL, &decision);
             uint64_t now = realtime_ns();
-            if (rows && !doe_trace_write_row(rows, &identity, seq, now, hash, t.hash, command, &execution)) status = 1;
-            if (o.trace_stdout && !doe_trace_write_row(stdout, &identity, seq, now, hash, t.hash, command, &execution)) status = 1;
+            if (rows && !doe_trace_write_row(rows, &identity, seq, now, hash, t.hash, command, &decision, &execution)) status = 1;
+            if (o.trace_stdout && !doe_trace_write_row(stdout, &identity, seq, now, hash, t.hash, command, &decision, &execution))
+                status = 1;
+            if (decision.matched_id) {
+                t.matched++;
+                if (!strcmp(decision.verification, "lean_required")) t.lean_required++;
+            }
+            if (decision.requires_lean) t.requires_lean++;
+            if (decision.blocking) t.blocking++;
             t.previous = t.hash;
             t.hash = hash;
             t.rows++;
@@ -365,6 +407,7 @@ int main(int argc, char **argv)
         status = 1;
     }
     doe_runtime_close(runtime);
+    doe_quirks_free(&quirks);
     doe_stream_free(&stream);
     return status;
 }
