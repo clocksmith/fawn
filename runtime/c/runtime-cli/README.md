@@ -21,6 +21,24 @@ $(BUILD)/doe-c-runtime --commands examples/rmsnorm_tree_commands.json --execute 
   --backend native --kernel-root bench/kernels --trace-jsonl out.jsonl --trace-meta out.meta.json
 ```
 
+On an actual x64 Windows SDK developer prompt, the owner builder consumes the
+native owner's audited DLL output and produces `doe-c-runtime.exe` and
+`doe-c-module-runner.exe` with their DLL dependencies:
+
+```text
+python runtime/c/runtime-cli/tools/build_windows.py --out <fresh-output> --native-dir <native-build-output>
+```
+
+The canonical source inventories are shared with Make. Windows uses D3D12 adapter
+selection and trace identity, wide arguments and UTF-8 file paths, a real HWND
+surface host, and shared byte-preserving output ownership for CLI and modules.
+The builder runs host parser/hash/numeric controls, source-bound module fixtures,
+and normalization/Unicode/replay controls. Its receipt binds source, tools and
+producer DLL bytes; those checks do not execute a device or window. Actual SDK
+compilation and D3D12 execution require their own successful run, separately
+from Linux memory/file-output controls. Set `DOE_BIN` and `DOE_MODULE_RUNNER` to
+the produced executables; automatic package discovery uses `.exe` on Windows.
+
 With no trace paths, `--trace` or `--replay`, stdout shows the quirk decision
 and normalized command details. Execution timing is shown only for real execution.
 

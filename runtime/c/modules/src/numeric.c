@@ -111,19 +111,20 @@ static bool trace_meta(const char *path, const doe_json_value *r, const doe_ns_p
     const char *head = "{\"traceVersion\":1,\"module\":\"doe_numeric_stability\",\"seqMax\":0,\"rowCount\":0";
     char *bytes = NULL;
     size_t length = 0;
-    FILE *stream = open_memstream(&bytes, &length);
+    doe_host_output output;
+    FILE *stream = doe_host_output_open(&output);
     if (!stream) return false;
     bool ok = fputs(head, stream) >= 0 && fputs(",\"numericStability\":", stream) >= 0 && summary(stream, r, p, e) && fputc('}', stream) != EOF;
-    if (fclose(stream)) ok = false;
+    if (!doe_host_output_close(&output, &bytes, &length)) ok = false;
     char digest[65];
     if (ok) module_hash(bytes, length, digest);
     free(bytes);
     bytes = NULL;
-    stream = open_memstream(&bytes, &length);
+    stream = doe_host_output_open(&output);
     if (!stream) return false;
     ok = ok && fputs(head, stream) >= 0 && fprintf(stream, ",\"hash\":\"sha256:%s\",\"previousHash\":\"sha256:%064u\",\"numericStability\":",
         digest, 0u) >= 0 && summary(stream, r, p, e) && fputc('}', stream) != EOF;
-    if (fclose(stream)) ok = false;
+    if (!doe_host_output_close(&output, &bytes, &length)) ok = false;
     if (ok) ok = module_write_file(path, bytes, length);
     free(bytes);
     return ok;
@@ -144,9 +145,7 @@ static bool valid_request(const doe_json_value *r)
 
 static uint64_t clock_ns(void)
 {
-    struct timespec now;
-    if (clock_gettime(CLOCK_MONOTONIC, &now)) return 0;
-    return (uint64_t)now.tv_sec * UINT64_C(1000000000) + (uint64_t)now.tv_nsec;
+    return doe_host_monotonic_ns();
 }
 
 bool module_numeric(FILE *out, const doe_json_value *r, const char *policy_text, size_t policy_size,
@@ -207,11 +206,12 @@ bool module_numeric(FILE *out, const doe_json_value *r, const char *policy_text,
     }
     char *receipt_bytes = NULL;
     size_t receipt_length = 0;
-    FILE *stream = ok ? open_memstream(&receipt_bytes, &receipt_length) : NULL;
+    doe_host_output output;
+    FILE *stream = ok ? doe_host_output_open(&output) : NULL;
     if (!stream) ok = false;
     if (stream) {
         ok = receipt(stream, r, &policy, &e);
-        if (fclose(stream)) ok = false;
+        if (!doe_host_output_close(&output, &receipt_bytes, &receipt_length)) ok = false;
     }
     const doe_json_value *receipt_path = module_get(r, "receiptPath"), *meta_path = module_get(r, "traceMetaPath");
     if (ok && receipt_path && receipt_path->kind == DOE_JSON_STRING)

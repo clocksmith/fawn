@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <strings.h>
+#include "host_io.h"
 
 /* doe-zig-runtime's buckets for the kinds this runtime executes: buffer_write
  * shares upload's, render_pass shares render_draw's. */
@@ -30,19 +30,19 @@ static const char *const STAGING_TOGGLES[] = {"use_temporary_buffer_in_texture_t
 doe_toggle_effect doe_toggle_effect_of(const char *name)
 {
     for (size_t i = 0; i < DOE_TOGGLE_REGISTRY_COUNT; i++)
-        if (!strcasecmp(name, DOE_TOGGLE_REGISTRY[i].name)) return DOE_TOGGLE_REGISTRY[i].effect;
+        if (!doe_host_casecmp(name, DOE_TOGGLE_REGISTRY[i].name)) return DOE_TOGGLE_REGISTRY[i].effect;
     return DOE_TOGGLE_UNHANDLED;
 }
 
 static bool is_staging_toggle(const char *name)
 {
-    for (const char *const *known = STAGING_TOGGLES; *known; known++) if (!strcasecmp(name, *known)) return true;
+    for (const char *const *known = STAGING_TOGGLES; *known; known++) if (!doe_host_casecmp(name, *known)) return true;
     return false;
 }
 
 static int lookup(const char *const *names, const char *value)
 {
-    for (int i = 0; names[i]; i++) if (!strcasecmp(names[i], value)) return i;
+    for (int i = 0; names[i]; i++) if (!doe_host_casecmp(names[i], value)) return i;
     return -1;
 }
 
@@ -180,7 +180,7 @@ static bool better(const doe_quirk *a, uint32_t a_score, const doe_quirk *b, uin
 
 static bool matches_profile(const doe_quirk *q, const doe_profile *profile)
 {
-    if (strcasecmp(profile->vendor, q->vendor) || strcasecmp(profile->api, q->api)) return false;
+    if (doe_host_casecmp(profile->vendor, q->vendor) || doe_host_casecmp(profile->api, q->api)) return false;
     if (q->family && (!profile->family || strcmp(q->family, profile->family))) return false;
     return !q->driver_range || matches_driver_range(profile->driver, q->driver_range);
 }

@@ -11,13 +11,12 @@ NATIVE_LIBRARY = $(NATIVE_BUILD)/$(NATIVE_LIBRARY_NAME)
 CPPFLAGS += -D_POSIX_C_SOURCE=200809L -Isrc -I../../zig/vendor/webgpu-headers -I../native/include
 CFLAGS ?= -O2 -g
 CFLAGS += -std=c11 -Wall -Wextra -Wpedantic -Werror -pthread
-CORE = src/json.c src/stream.c src/stream_texture.c src/stream_render.c src/stream_diagnostics.c src/stream_surface.c src/trace.c src/sha256.c src/quirks.c \
-  src/operators.c src/numeric_policy.c src/numeric_stability.c src/plan.c \
-  $(BUILD)/quirk_toggles.c
-CORE_HEADERS = src/json.h src/stream.h src/stream_internal.h src/trace.h src/sha256.h src/quirks.h \
+include sources.mk
+CORE = $(CLI_CORE) $(BUILD)/quirk_toggles.c
+CORE_HEADERS = src/host_io.h src/json.h src/stream.h src/stream_internal.h src/trace.h src/sha256.h src/quirks.h \
   src/operators.h src/numeric_policy.h src/numeric_stability.h src/plan.h
 TOGGLE_REGISTRY = ../../../config/quirk-toggle-registry.json
-RUNTIME = src/cli_options.c src/cli_inputs.c src/cli_output.c src/execute.c src/queue.c src/kernel.c src/texture.c src/render.c src/render_public.c src/render_public_resources.c src/map.c src/diagnostics.c src/diagnostics_lifecycle.c src/surface.c $(SURFACE_HOST)
+RUNTIME = $(CLI_RUNTIME) $(SURFACE_HOST)
 ifeq ($(shell uname -s),Darwin)
 CPPFLAGS += -D_DARWIN_C_SOURCE
 SURFACE_HOST = $(BUILD)/surface_metal.o
@@ -150,3 +149,12 @@ check-public-render: $(BUILD)/test_public_render_dawn $(BUILD)/dawn-c-runtime $(
 	$(BUILD)/test_public_render_dawn
 	$(PYTHON) tests/test_cli_public_render.py --binary '$(BUILD)/dawn-c-runtime' --native '$(BUILD)/doe-c-runtime' \
 	  --work '$(BUILD)/public-render-work'
+
+$(BUILD)/test_host_io: tests/test_host_io.c src/host_io.c src/host_io.h | $(BUILD)
+	$(CC) $(CPPFLAGS) $(CFLAGS) tests/test_host_io.c src/host_io.c -o $@
+$(BUILD)/test_host_io_file: tests/test_host_io.c src/host_io.c src/host_io.h | $(BUILD)
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DDOE_HOST_FILE_OUTPUT tests/test_host_io.c src/host_io.c -o $@
+check-host-io: $(BUILD)/test_host_io $(BUILD)/test_host_io_file
+	$(BUILD)/test_host_io
+	$(BUILD)/test_host_io_file
+check-host: check-host-io

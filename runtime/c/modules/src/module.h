@@ -4,6 +4,7 @@
 #ifndef DOE_C_MODULE_H
 #define DOE_C_MODULE_H
 #include "json.h"
+#include "host_io.h"
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>

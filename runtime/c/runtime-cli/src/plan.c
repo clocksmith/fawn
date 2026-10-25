@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <strings.h>
+#include "host_io.h"
 
 #define DEFAULT_KERNEL_ROOT "bench/inference-pipeline/kernels"
 
@@ -23,7 +23,7 @@ char *doe_plan_asset_root(void)
 /* At most limit + 1 bytes, so a longer file reads as longer than `limit`. */
 static char *read_all(const char *path, size_t limit, size_t *size)
 {
-    FILE *file = fopen(path, "rb");
+    FILE *file = doe_host_fopen(path, "rb");
     if (!file) return NULL;
     char *bytes = malloc(limit + 1);
     size_t length = bytes ? fread(bytes, 1, limit + 1, file) : 0;
@@ -161,16 +161,16 @@ static bool lower_binding(const doe_json_value *object, doe_kernel_binding *out,
         !read_u64_of(object, "buffer_size", "bufferSize", NULL, true, 0, &out->buffer_size, index, error) ||
         !read_string_of(object, "buffer_type", "bufferType", NULL, true, &type, index, error) ||
         !read_string_of(object, "visibility", NULL, NULL, false, &visibility, index, error)) return false;
-    if (strcasecmp(kind, "buffer")) return stream_reject(error, index, "bindings[%zu] kind \"%s\" is not a buffer", position, kind);
+    if (doe_host_casecmp(kind, "buffer")) return stream_reject(error, index, "bindings[%zu] kind \"%s\" is not a buffer", position, kind);
     if (binding > UINT32_MAX || group > UINT32_MAX) return stream_reject(error, index, "bindings[%zu] index exceeds u32", position);
-    if (visibility && strcasecmp(visibility, "compute"))
+    if (visibility && doe_host_casecmp(visibility, "compute"))
         return stream_reject(error, index, "bindings[%zu] visibility must be \"compute\"", position);
     out->binding = (uint32_t)binding;
     out->group = (uint32_t)group;
-    if (!strcasecmp(type, "uniform")) out->buffer_type = DOE_BINDING_UNIFORM;
-    else if (!strcasecmp(type, "storage")) out->buffer_type = DOE_BINDING_STORAGE;
-    else if (!strcasecmp(type, "readonly") || !strcasecmp(type, "read_only_storage") ||
-        !strcasecmp(type, "read-only-storage") || !strcasecmp(type, "readonly_storage"))
+    if (!doe_host_casecmp(type, "uniform")) out->buffer_type = DOE_BINDING_UNIFORM;
+    else if (!doe_host_casecmp(type, "storage")) out->buffer_type = DOE_BINDING_STORAGE;
+    else if (!doe_host_casecmp(type, "readonly") || !doe_host_casecmp(type, "read_only_storage") ||
+        !doe_host_casecmp(type, "read-only-storage") || !doe_host_casecmp(type, "readonly_storage"))
         out->buffer_type = DOE_BINDING_READ_ONLY_STORAGE;
     else return stream_reject(error, index, "bindings[%zu] buffer_type \"%s\" is not uniform, storage or readonly", position, type);
     return true;
@@ -278,17 +278,17 @@ static bool parse_root(const doe_json_value *root, const char *asset_root, doe_p
         if (!read_string_of(object, "kind", NULL, NULL, true, &kind, i, error)) return false;
         bool superseded = false;
         bool ok;
-        if (!strcasecmp(kind, "buffer_write") || !strcasecmp(kind, "write_buffer") || !strcasecmp(kind, "queue_write_buffer")) {
+        if (!doe_host_casecmp(kind, "buffer_write") || !doe_host_casecmp(kind, "write_buffer") || !doe_host_casecmp(kind, "queue_write_buffer")) {
             command->kind = DOE_COMMAND_BUFFER_WRITE;
             command->label = "buffer_write";
             ok = lower_buffer_write(object, command, i, error);
             writes++;
-        } else if (!strcasecmp(kind, "buffer_load")) {
+        } else if (!doe_host_casecmp(kind, "buffer_load")) {
             command->kind = DOE_COMMAND_BUFFER_WRITE; /* Executed and hashed as a buffer write. */
             command->label = "buffer_load";
             ok = lower_buffer_load(object, asset_root, command, i, error);
             loads++;
-        } else if (!strcasecmp(kind, "kernel_dispatch")) {
+        } else if (!doe_host_casecmp(kind, "kernel_dispatch")) {
             command->kind = DOE_COMMAND_KERNEL_DISPATCH;
             command->label = "kernel_dispatch";
             ok = lower_kernel_dispatch(object, command, i, &superseded, error);
@@ -347,7 +347,7 @@ char *doe_plan_kernel_root(const char *ir_path)
             doe_json_member_value(shared, "kernelRoot") : NULL;
         if (value && value->kind == DOE_JSON_STRING) root = value->string;
     }
-    char *out = strdup(root ? root : DEFAULT_KERNEL_ROOT);
+    char *out = doe_host_strdup(root ? root : DEFAULT_KERNEL_ROOT);
     doe_json_free(&document);
     free(text);
     return out;

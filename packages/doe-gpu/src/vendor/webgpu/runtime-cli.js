@@ -198,8 +198,8 @@ export function resolveDoeBinaryPath(explicitPath, implementation = "zig") {
         return configured;
     }
     const resolved = firstExistingPath([
-        resolve(process.cwd(), cli.path),
-        resolve(REPO_ROOT, cli.path),
+        resolve(process.cwd(), cli.path + (process.platform === "win32" ? ".exe" : "")),
+        resolve(REPO_ROOT, cli.path + (process.platform === "win32" ? ".exe" : "")),
     ]);
     if (!resolved) {
         throw new Error(
@@ -227,8 +227,9 @@ export function resolveDoeLibraryPath(explicitPath) {
 
 export function resolveDoeModuleRunnerPath(explicitPath, { required = true, implementation = "zig" } = {}) {
     const binary = implementation === "c" ? "doe-c-module-runner" : "module-core-runner";
+    const executable = binary + (process.platform === "win32" ? ".exe" : "");
     const relativePath = implementation === "c"
-        ? `runtime/c/modules/bin/${binary}` : `runtime/zig/zig-out/bin/${binary}`;
+        ? `runtime/c/modules/bin/${executable}` : `runtime/zig/zig-out/bin/${executable}`;
     const configured = explicitPath ?? process.env.DOE_MODULE_RUNNER ?? null;
     if (configured) {
         const name = basename(configured).replace(/\.exe$/u, "");

@@ -48,3 +48,8 @@ The existing module gate accepts `--runtime c` (builds the C owner) or an explic
 `--runner` with `--runtime c`. Its ten promoted fixture cases pass schema, repeated
 execution, expected behavior and hash checks. The gate's omitted root now resolves
 the repository root instead of the `bench/` directory.
+
+The [Windows CLI builder](../runtime-cli/README.md) also builds this runner from
+the canonical `sources.mk` inventory and runs the same retained host fixtures.
+Its shared output owner preserves artifact bytes across memory-backed POSIX
+streams and Windows temporary streams; Windows arguments and paths use UTF-8.

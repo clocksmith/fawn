@@ -8,7 +8,12 @@
 #ifndef DOE_RUNTIME_MODULE
 #define DOE_RUNTIME_MODULE "doe-c-runtime"
 #endif
-#ifdef __APPLE__
+#ifdef _WIN32
+#define DOE_RUNTIME_API "d3d12"
+#ifndef DOE_RUNTIME_BACKEND_ID
+#define DOE_RUNTIME_BACKEND_ID "doe_c_d3d12"
+#endif
+#elif defined(__APPLE__)
 #define DOE_RUNTIME_API "metal"
 #ifndef DOE_RUNTIME_BACKEND_ID
 #define DOE_RUNTIME_BACKEND_ID "doe_c_metal"

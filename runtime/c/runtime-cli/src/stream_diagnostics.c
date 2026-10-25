@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: MIT */
 #include "stream_internal.h"
 #include <string.h>
-#include <strings.h>
+#include "host_io.h"
 
 static const char *const modes[] = {"pipeline_async", "capability_introspection", "resource_table_immediates",
     "lifecycle_refcount", "pixel_local_storage", "full"};
@@ -25,13 +25,13 @@ bool stream_parse_diagnostics(const doe_json_value *object, doe_command *command
         if (strlen(mode) >= sizeof(normalized)) return stream_reject(error, index, "diagnostic mode is too long");
         for (size_t i = 0; i <= strlen(mode); i++) normalized[i] = mode[i] == '-' ? '_' : mode[i];
         size_t i = 0;
-        while (i < sizeof(modes) / sizeof(modes[0]) && strcasecmp(normalized, modes[i])) i++;
+        while (i < sizeof(modes) / sizeof(modes[0]) && doe_host_casecmp(normalized, modes[i])) i++;
         if (i == sizeof(modes) / sizeof(modes[0])) return stream_reject(error, index, "unknown diagnostic mode %s", mode);
         command->as.diagnostics.mode = (doe_diagnostic_mode)i;
     }
-    command->as.diagnostics.emulate = policy && (!strcasecmp(policy, "emulate") ||
-        !strcasecmp(policy, "emulate_when_unavailable") || !strcasecmp(policy, "emulate-when-unavailable"));
-    if (policy && strcasecmp(policy, "strict") && !command->as.diagnostics.emulate)
+    command->as.diagnostics.emulate = policy && (!doe_host_casecmp(policy, "emulate") ||
+        !doe_host_casecmp(policy, "emulate_when_unavailable") || !doe_host_casecmp(policy, "emulate-when-unavailable"));
+    if (policy && doe_host_casecmp(policy, "strict") && !command->as.diagnostics.emulate)
         return stream_reject(error, index, "unknown diagnostic feature policy %s", policy);
     uint64_t iterations;
     if (!stream_read_u64(object, "iterations", "repeat", UINT32_MAX, false, 1, &iterations, index, error)) return false;
