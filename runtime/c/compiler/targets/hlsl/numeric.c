@@ -139,7 +139,9 @@ static void subgroup_expression(HlslEmitter *e, const IrInstruction *ir, Numeric
             inclusive = true;
             product = true;
             break;
-        case BUILTIN_MIX: case BUILTIN_COUNT_ONE_BITS: case BUILTIN_UNPACK4X_U8:
+        case BUILTIN_MIX: case BUILTIN_COUNT_ONE_BITS:
+        case BUILTIN_REVERSE_BITS: case BUILTIN_COUNT_LEADING_ZEROS: case BUILTIN_COUNT_TRAILING_ZEROS:
+        case BUILTIN_FIRST_LEADING_BIT: case BUILTIN_FIRST_TRAILING_BIT: case BUILTIN_UNPACK4X_U8:
         case BUILTIN_PACK4X_I8: case BUILTIN_PACK4X_U8: case BUILTIN_PACK4X_I8_CLAMP:
         case BUILTIN_PACK4X_U8_CLAMP: case BUILTIN_UNPACK4X_I8:
         case BUILTIN_DOT4_I8_PACKED: case BUILTIN_DOT4_U8_PACKED:
@@ -215,17 +217,32 @@ static void unary_component(HlslEmitter *e, const IrInstruction *ir, NumericBuil
     }
     if (width != 1u) hlsl_text(e, ")");
 }
+static void integer_builtin(HlslEmitter *e, const IrInstruction *ir, NumericBuiltinKind kind) {
+    if (kind == BUILTIN_REVERSE_BITS && type_leaf(e->module, ir->type) == IR_I32) hlsl_text(e, "asint");
+    else hlsl_type(e, ir->type);
+    hlsl_text(e, "(");
+    if (kind == BUILTIN_COUNT_LEADING_ZEROS) hlsl_text(e, "31u - ");
+    if (kind == BUILTIN_COUNT_TRAILING_ZEROS) hlsl_text(e, "min(");
+    const char *name = kind == BUILTIN_COUNT_ONE_BITS ? "countbits" : kind == BUILTIN_REVERSE_BITS ? "reversebits" :
+        kind == BUILTIN_FIRST_TRAILING_BIT || kind == BUILTIN_COUNT_TRAILING_ZEROS ? "firstbitlow" : "firstbithigh";
+    hlsl_format(e, "%s(", name);
+    const bool unsigned_input = kind == BUILTIN_COUNT_LEADING_ZEROS || kind == BUILTIN_COUNT_TRAILING_ZEROS ||
+        kind == BUILTIN_REVERSE_BITS;
+    if (unsigned_input) hlsl_text(e, "asuint(");
+    hlsl_value(e, ir->operands.scalar.left);
+    if (unsigned_input) hlsl_text(e, ")");
+    hlsl_text(e, ")");
+    if (kind == BUILTIN_COUNT_TRAILING_ZEROS) hlsl_text(e, ", 32u)");
+    hlsl_text(e, ")");
+}
 static void builtin_expression(HlslEmitter *e, const IrInstruction *ir) {
     const NumericBuiltin *builtin = builtin_kind((NumericBuiltinKind)ir->operands.scalar.literal);
     if (builtin == NULL) {
         hlsl_error(e, "Hlsl builtin identity has no registered semantics");
         return;
     }
-    if (builtin->kind == BUILTIN_COUNT_ONE_BITS) {
-        hlsl_type(e, ir->type);
-        hlsl_text(e, "(countbits(");
-        hlsl_value(e, ir->operands.scalar.left);
-        hlsl_text(e, "))");
+    if (builtin->family == BUILTIN_COMPONENT_INTEGER) {
+        integer_builtin(e, ir, builtin->kind);
         return;
     }
     if (builtin->family == BUILTIN_BOOLEAN_REDUCTION) {
@@ -341,7 +358,9 @@ static void builtin_expression(HlslEmitter *e, const IrInstruction *ir) {
         case BUILTIN_REFRACT: intrinsic = "refract"; break;
         case BUILTIN_TRANSPOSE: intrinsic = "transpose"; break;
         case BUILTIN_DETERMINANT: intrinsic = "determinant"; break;
-        case BUILTIN_COUNT_ONE_BITS: case BUILTIN_UNPACK4X_U8:
+        case BUILTIN_COUNT_ONE_BITS:
+        case BUILTIN_REVERSE_BITS: case BUILTIN_COUNT_LEADING_ZEROS: case BUILTIN_COUNT_TRAILING_ZEROS:
+        case BUILTIN_FIRST_LEADING_BIT: case BUILTIN_FIRST_TRAILING_BIT: case BUILTIN_UNPACK4X_U8:
         case BUILTIN_PACK4X_I8: case BUILTIN_PACK4X_U8: case BUILTIN_PACK4X_I8_CLAMP:
         case BUILTIN_PACK4X_U8_CLAMP: case BUILTIN_UNPACK4X_I8:
         case BUILTIN_DOT4_I8_PACKED: case BUILTIN_DOT4_U8_PACKED:

@@ -108,14 +108,11 @@ bool numeric_builtin(Source *source, size_t offset, const NumericBuiltin *signat
                 numeric_binary(source, offset, EXPRESSION_MULTIPLY, COMPARE_EQUAL, arguments[1], arguments[2], &right) &&
                 numeric_binary(source, offset, EXPRESSION_ADD, COMPARE_EQUAL, left, right, result);
         }
-        case BUILTIN_COUNT_ONE_BITS: {
-            if (type != IR_I32 && type != IR_U32)
-                return numeric_error(source, offset, "countOneBits requires a concrete integer");
-            uint32_t bits = (uint32_t)arguments[0].bits, count = 0u;
-            while (bits != 0u) { bits &= bits - 1u; ++count; }
-            *result = (NumericValue){count, type};
+        case BUILTIN_COUNT_ONE_BITS:
+        case BUILTIN_REVERSE_BITS: case BUILTIN_COUNT_LEADING_ZEROS: case BUILTIN_COUNT_TRAILING_ZEROS:
+        case BUILTIN_FIRST_LEADING_BIT: case BUILTIN_FIRST_TRAILING_BIT:
+            *result = (NumericValue){numeric_integer_bits(kind, (uint32_t)arguments[0].bits, type == IR_I32), type};
             return true;
-        }
         case BUILTIN_MIN:
             *result = numeric_minimum(arguments[0], arguments[1]);
             return true;

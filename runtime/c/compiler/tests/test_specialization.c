@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: MIT */
 #include "hlsl_fixture.h"
 #include "packed_integer_fixture.h"
+#include "integer_bits_fixture.h"
 #include "../include/doe_compiler_specialization.h"
 #include <assert.h>
 #include <errno.h>
@@ -234,7 +235,16 @@ int main(int argc, char **argv) {
             artifact(directory,"packed.spv",words,result.stages.resources.module.published.words*sizeof(*words));
         else artifact(directory,target==DOE_COMPILER_TARGET_METAL?"packed.metal":"packed.hlsl",
             storage->text,result.published_text_bytes);
+        expect(target,integer_bits_module,"main",NULL,0u,true);
+        assert(compile(target,integer_bits_module,"main",NULL,0u,storage,words,&result,false)==DOE_COMPILER_OK);
+        if (target==DOE_COMPILER_TARGET_SPIRV)
+            artifact(directory,"bits.spv",words,result.stages.resources.module.published.words*sizeof(*words));
+        else artifact(directory,target==DOE_COMPILER_TARGET_METAL?"bits.metal":"bits.hlsl",
+            storage->text,result.published_text_bytes);
         const char *invalid[]={
+            "@compute @workgroup_size(1) fn main(){_=reverseBits(1.0);}",
+            "@compute @workgroup_size(1) fn main(){_=countLeadingZeros(vec2<bool>(true));}",
+            "@compute @workgroup_size(1) fn main(){_=firstTrailingBit(1u,2u);}",
             "@compute @workgroup_size(1) fn main(){_=pack4xI8(vec4u(1));}",
             "@compute @workgroup_size(1) fn main(){_=pack4xU8(vec3u(1));}",
             "@compute @workgroup_size(1) fn main(){_=pack4xU8Clamp(vec4i(1));}",
@@ -246,6 +256,7 @@ int main(int argc, char **argv) {
             expect(target,invalid[i],"main",NULL,0u,false);
     }
     artifact(directory,"packed.wgsl",packed_integer_module,strlen(packed_integer_module));
+    artifact(directory,"bits.wgsl",integer_bits_module,strlen(integer_bits_module));
     free(words);
     free(storage);
     puts("selected override specialization target controls passed");

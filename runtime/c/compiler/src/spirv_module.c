@@ -445,6 +445,12 @@ bool spirv_plan_module(Emitter *e) {
         } else if (ir->opcode == IR_BUILTIN) {
             const NumericBuiltin *builtin = builtin_kind((NumericBuiltinKind)ir->operands.scalar.literal);
             if (builtin == NULL) return spirv_emit_error(e, ir->source_offset, "invalid numeric builtin identity");
+            if (builtin->kind == BUILTIN_COUNT_LEADING_ZEROS || builtin->kind == BUILTIN_COUNT_TRAILING_ZEROS) {
+                const TypeId leaf = type_leaf(c, ir->type);
+                (void)spirv_constant_value(e, (ConstantValue){.type = leaf,
+                    .bits = builtin->kind == BUILTIN_COUNT_LEADING_ZEROS ? 31u : 32u});
+                if (builtin->kind == BUILTIN_COUNT_TRAILING_ZEROS) (void)spirv_zero_constant(e, leaf);
+            }
             if (builtin_subgroup(builtin)) {
                 e->subgroup_capabilities |= 1u;
                 (void)use_constant(e, ID_THREE_U32);

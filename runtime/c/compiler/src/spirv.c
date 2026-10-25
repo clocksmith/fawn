@@ -149,10 +149,8 @@ static bool emit_numeric_builtin(Emitter *e, const IrInstruction *ir) {
     const TypeId operand_type = spirv_value_type(e->program, ir->operands.scalar.left);
     const TypeId leaf = type_leaf(e->program, operand_type);
     if (builtin_subgroup(builtin)) return spirv_subgroup_builtin(e, ir, builtin, leaf);
-    if (builtin->kind == BUILTIN_COUNT_ONE_BITS) {
-        EMIT(OP_BIT_COUNT, spirv_target_type(e, ir->type), result, left);
-        return true;
-    }
+    if (builtin->family == BUILTIN_COMPONENT_INTEGER)
+        return spirv_integer_builtin(e, ir, builtin);
     if (builtin->family == BUILTIN_BOOLEAN_REDUCTION) {
         if (leaf != IR_BOOL || ir->type != IR_BOOL ||
             (builtin->kind != BUILTIN_ALL && builtin->kind != BUILTIN_ANY))

@@ -3,6 +3,12 @@
 #include "sema.h"
 
 static const NumericBuiltin numeric_builtins[] = {
+    {"reverseBits", BUILTIN_REVERSE_BITS, 1u, BUILTIN_COMPONENT_INTEGER, 0u},
+    {"countLeadingZeros", BUILTIN_COUNT_LEADING_ZEROS, 1u, BUILTIN_COMPONENT_INTEGER, 75u},
+    {"countTrailingZeros", BUILTIN_COUNT_TRAILING_ZEROS, 1u, BUILTIN_COMPONENT_INTEGER, 73u},
+    {"firstLeadingBit", BUILTIN_FIRST_LEADING_BIT, 1u, BUILTIN_COMPONENT_INTEGER, 75u},
+    {"firstTrailingBit", BUILTIN_FIRST_TRAILING_BIT, 1u, BUILTIN_COMPONENT_INTEGER, 73u},
+
     {"countOneBits", BUILTIN_COUNT_ONE_BITS, 1u, BUILTIN_COMPONENT_INTEGER, 0u},
     {"unpack4xU8", BUILTIN_UNPACK4X_U8, 1u, BUILTIN_PACKED_INTEGER, 0u},
     {"pack4xI8", BUILTIN_PACK4X_I8, 1u, BUILTIN_PACKED_INTEGER, 0u},
@@ -83,6 +89,7 @@ const NumericBuiltin *builtin_kind(NumericBuiltinKind kind) {
 }
 
 uint32_t builtin_extended_instruction(const NumericBuiltin *builtin, TypeId leaf) {
+    if (builtin->kind == BUILTIN_FIRST_LEADING_BIT) return leaf == IR_I32 ? 74u : 75u;
     if (builtin->kind == BUILTIN_ABS) return leaf == IR_F32 ? 4u : leaf == IR_I32 ? 5u : 0u;
     if (builtin->kind == BUILTIN_SIGN) return leaf == IR_F32 ? 6u : leaf == IR_I32 ? 7u : 0u;
     return builtin->extended_instruction;
