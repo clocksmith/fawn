@@ -5,6 +5,7 @@ import {
   failUnsupported,
   describeResourceLabel,
   initResource,
+  hideInternalFields,
   markInvalid,
   isInvalidResource,
   assertObject,
@@ -2030,10 +2031,14 @@ function createFullSurfaceClasses({
         descriptor?.size,
         Boolean(descriptor?.mappedAtCreation),
         hostMapping,
+        descriptor?.usage,
       ));
     }
 
-    _createErrorScopeFallbackBuffer(label = '', requestedSize = 4, mappedAtCreation = false, hostMapping = null) {
+    // An invalid buffer reports the size and usage it was created with
+    // (GPUBuffer reflection); its stand-in allocation has its own.
+    _createErrorScopeFallbackBuffer(label = '', requestedSize = 4, mappedAtCreation = false, hostMapping = null,
+      requestedUsage = undefined) {
       const fallbackSize = Number.isSafeInteger(requestedSize)
         && requestedSize >= 0
         && requestedSize <= (this.limits?.maxBufferSize ?? WEBGPU_DEFAULT_LIMITS.maxBufferSize)
@@ -2047,8 +2052,11 @@ function createFullSurfaceClasses({
       };
       // A lost device gets no stand-in allocation.
       const native = this._destroyed ? null : backend.deviceCreateBuffer(this, descriptor);
+      const reportedUsage = Number.isInteger(requestedUsage) && requestedUsage >= 0 && requestedUsage <= UINT32_MAX
+        ? requestedUsage
+        : descriptor.usage;
       const buffer = markInvalid(
-        new DoeGPUBuffer(native, this._instance, descriptor.size, descriptor.usage, this.queue, this),
+        new DoeGPUBuffer(native, this._instance, descriptor.size, reportedUsage, this.queue, this),
         label,
       );
       buffer._creationValidationError = true;
@@ -2634,6 +2642,11 @@ function createFullSurfaceClasses({
     DoeGPUCompilationMessage,
     DoeGPU,
   };
+  // The info interfaces carry frozen provider fields and no internals.
+  const infoInterfaces = new Set([DoeGPUAdapterInfo, DoeGPUCompilationInfo, DoeGPUCompilationMessage]);
+  for (const Wrapper of Object.values(classes)) {
+    if (!infoInterfaces.has(Wrapper)) hideInternalFields(Wrapper.prototype);
+  }
   return classes;
 }
 

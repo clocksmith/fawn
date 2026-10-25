@@ -1,5 +1,6 @@
 import * as full from './index.js';
 import { createDoeNamespace } from '../doe-namespace.js';
+import { hideInternalFields } from './shared/resource-lifecycle.js';
 
 function unwrap(value) {
   return value && typeof value === 'object' && '_raw' in value ? value._raw : value;
@@ -109,25 +110,34 @@ export class DoeComputeGPUBuffer {
   }
 }
 
+// Compute-surface facades keep the full-surface object they forward to in a
+// non-enumerable `_raw` (wrapper internals stay out of enumeration).
+function withRaw(raw, facade = {}) {
+  return Object.defineProperty(facade, '_raw', {
+    value: raw, writable: true, configurable: true, enumerable: false,
+  });
+}
+
+hideInternalFields(DoeComputeGPUBuffer.prototype, ['_raw']);
+
 function wrapBuffer(raw) {
   return new DoeComputeGPUBuffer(raw);
 }
 
 function wrapBindGroupLayout(raw) {
-  return { _raw: raw };
+  return withRaw(raw);
 }
 
 function wrapBindGroup(raw) {
-  return { _raw: raw };
+  return withRaw(raw);
 }
 
 function wrapPipelineLayout(raw) {
-  return { _raw: raw };
+  return withRaw(raw);
 }
 
 function wrapComputePipeline(raw) {
-  return {
-    _raw: raw,
+  return withRaw(raw, {
     /**
      * Return the bind-group layout for a given group index.
      *
@@ -146,12 +156,11 @@ function wrapComputePipeline(raw) {
     getBindGroupLayout(index) {
       return wrapBindGroupLayout(raw.getBindGroupLayout(index));
     },
-  };
+  });
 }
 
 function wrapComputePass(raw) {
-  return {
-    _raw: raw,
+  return withRaw(raw, {
     /**
      * Set the compute pipeline used by later dispatch calls.
      *
@@ -261,12 +270,11 @@ function wrapComputePass(raw) {
     end() {
       return raw.end();
     },
-  };
+  });
 }
 
 function wrapCommandEncoder(raw) {
-  return {
-    _raw: raw,
+  return withRaw(raw, {
     /**
      * Begin a compute pass on the compute facade.
      *
@@ -373,12 +381,11 @@ function wrapCommandEncoder(raw) {
     finish() {
       return raw.finish();
     },
-  };
+  });
 }
 
 function wrapQueue(raw) {
-  return {
-    _raw: raw,
+  return withRaw(raw, {
     /**
      * Submit command buffers to the queue.
      *
@@ -431,12 +438,11 @@ function wrapQueue(raw) {
         return raw.onSubmittedWorkDone();
       }
     },
-  };
+  });
 }
 
 function wrapQuerySet(raw) {
-  return {
-    _raw: raw,
+  return withRaw(raw, {
     /**
      * Release the wrapped query set.
      *
@@ -454,12 +460,11 @@ function wrapQuerySet(raw) {
     destroy() {
       return raw.destroy();
     },
-  };
+  });
 }
 
 function wrapDevice(raw) {
-  return {
-    _raw: raw,
+  return withRaw(raw, {
     queue: wrapQueue(raw.queue),
     limits: raw.limits,
     features: raw.features,
@@ -719,12 +724,11 @@ function wrapDevice(raw) {
     destroy() {
       return raw.destroy();
     },
-  };
+  });
 }
 
 function wrapAdapter(raw) {
-  return {
-    _raw: raw,
+  return withRaw(raw, {
     features: raw.features,
     limits: raw.limits,
     /**
@@ -774,12 +778,11 @@ function wrapAdapter(raw) {
     destroy() {
       return raw.destroy();
     },
-  };
+  });
 }
 
 function wrapGpu(raw) {
-  return {
-    _raw: raw,
+  return withRaw(raw, {
     get wgslLanguageFeatures() {
       return raw.wgslLanguageFeatures;
     },
@@ -802,7 +805,7 @@ function wrapGpu(raw) {
       const adapter = await raw.requestAdapter(options);
       return adapter === null ? null : wrapAdapter(adapter);
     },
-  };
+  });
 }
 
 /**
