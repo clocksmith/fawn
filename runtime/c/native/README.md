@@ -444,6 +444,21 @@ window; the retry completes the retained acquisition. Resize produced
 SuccessSuboptimal on both drivers; explicit reconfiguration then rendered at the new
 size. Outdated/Lost mapping is host-tested by the backend owner, not observed here.
 
+`check-present` also runs `tests/surface_faults.c` (XCB, override-redirect
+windows): configure, getCurrentTexture, present and unconfigure, with a resize
+and the window destroyed between acquire and present, then `wgpuDeviceDestroy`
+between acquire and present. Every C-owner host allocation (GNU `--wrap`) and
+every result-returning WSI/queue Vulkan call through the device table fails in
+turn; each frame-changing failure must be reported. Injected loss first lets
+the healthy driver finish its accepted work and presents, so the driver state
+matches a real loss. Frames after window loss are counted apart, since whether the X server
+still accepts them varies. A concurrency phase presents with resizes beside two
+compute threads on one device and a thread running its own sessions.
+`check-present-sanitizers` runs it under ASan+UBSan (leaks) and TSan.
+Unconfigure and release wait for accepted work still using the frame, so the
+native swapchain never outlives a window the caller destroys next; only
+unknown completion stays armed for the progress worker.
+
 ## Optional device features
 
 `src/features.c` is the one owner of optional WebGPU device features. The adapter
