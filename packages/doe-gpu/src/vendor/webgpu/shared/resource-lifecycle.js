@@ -2,6 +2,57 @@ const MAX_SAFE_U64 = Number.MAX_SAFE_INTEGER;
 const UINT32_MAX = 0xFFFF_FFFF;
 const RESOURCE_RELEASES = new WeakMap();
 
+// === Wrapper internals ===
+// WebGPU interfaces expose only their attributes, so a wrapper's internal state
+// (underscore fields, STYLE.md) must not be enumerable. Each wrapper prototype
+// carries one accessor per name below: the first assignment defines a
+// non-enumerable own data field, after which reads and writes are plain field
+// accesses. test/unit/wrapper-internals.test.js keeps this list complete.
+const WRAPPER_INTERNAL_FIELDS = Object.freeze([
+  '__doe_readback_breakdown_ns', '_activePass', '_adapter', '_adapterInfo',
+  '_autoLayoutEntriesByGroup', '_batched', '_bindGroupDirty', '_bindGroupOffsets',
+  '_bindGroupPtrScratch', '_bindGroups', '_cachedLayouts', '_canvas', '_childViews', '_code',
+  '_commandObjects', '_commands', '_completedSerial', '_configuration', '_consumed',
+  '_creationValidationError', '_currentTexture', '_deferredError', '_descriptor', '_destroyed',
+  '_destroyedResourceKind', '_device', '_dimension', '_dispatchBatchScratch',
+  '_dispatchFlushBreakdown', '_doeLastBindGroup0', '_emptyBindGroupPtrArray', '_encoder',
+  '_ended', '_errorCollection', '_errorScopeDepth', '_errorScopes', '_eventListeners',
+  '_explicitLayout', '_externallyOwned', '_features', '_finalizerToken', '_finished',
+  '_flushDeferredCopyNs', '_flushDeferredResolveNs', '_flushWaitCompletedNs',
+  '_groupsSinceDispatch', '_immediates', '_indexBuffer', '_info', '_instance', '_invalid',
+  '_invalidMessage', '_lazy', '_limits', '_lost', '_lostCallback', '_lostDeviceMapping',
+  '_lostInfo', '_lostRegistrationAttempted', '_lostSupported', '_mapCell', '_mapMode',
+  '_mapReadCopyUnmapNs', '_mapState', '_mappedBuffers', '_mappedRange', '_mappedRef',
+  '_mappedWriteRanges', '_native', '_nativeCanvasContexts', '_nativeCanvasRelease',
+  '_onuncapturederror', '_onuncapturederrorListener', '_open', '_openPass', '_ownedResources',
+  '_pass', '_pendingMap', '_pendingSubmissions', '_pipeline', '_pipelineDirty',
+  '_providerErrorEntries', '_providerErrorLog', '_providerErrorSeen', '_queue',
+  '_releaseCallbacks', '_requestOptions', '_resolveLost', '_resourceLabel', '_resourceOwner',
+  '_returnedRanges', '_singleBindGroupPtrArray', '_singleSubmitPtrArray', '_submitBreakdownNs',
+  '_submitError', '_submitPtrScratch', '_submitted', '_submittedSerial', '_submittedWorkDone',
+  '_textureDestroyed', '_uncapturedErrorCallback', '_vertexBuffers', '_wgslLanguageFeatures',
+  '_writeBatchScratch',
+]);
+
+function hideInternalFields(prototype, names = WRAPPER_INTERNAL_FIELDS) {
+  for (const name of names) {
+    if (Object.prototype.hasOwnProperty.call(prototype, name)) continue;
+    Object.defineProperty(prototype, name, {
+      configurable: true,
+      enumerable: false,
+      get() {
+        return undefined;
+      },
+      set(value) {
+        Object.defineProperty(this, name, {
+          value, writable: true, configurable: true, enumerable: false,
+        });
+      },
+    });
+  }
+  return prototype;
+}
+
 function failValidation(path, message) {
   throw new Error(`${path}: ${message}`);
 }
@@ -195,6 +246,8 @@ function normalizeExtent3D(extent, path, label) {
 }
 
 export {
+  WRAPPER_INTERNAL_FIELDS,
+  hideInternalFields,
   MAX_SAFE_U64,
   UINT32_MAX,
   failValidation,

@@ -1,6 +1,7 @@
 import {
   failValidation,
   initResource,
+  hideInternalFields,
   assertObject,
   assertLiveResource,
   destroyResource,
@@ -152,6 +153,8 @@ function createBrowserSurfaceClasses({ canvasBackend, fullClasses }) {
     }
   }
 
+  hideInternalFields(DoeGPUCanvasContext.prototype);
+  hideInternalFields(DoeGPUExternalTexture.prototype);
   return Object.assign(fullClasses, {
     DoeGPUCanvasContext,
     DoeGPUExternalTexture,

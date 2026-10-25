@@ -3,6 +3,7 @@ import {
   failValidation,
   describeResourceLabel,
   initResource,
+  hideInternalFields,
   markInvalid,
   isInvalidResource,
   assertObject,
@@ -1234,6 +1235,7 @@ function createEncoderClasses(backend) {
     DoeGPUCommandBuffer,
     DoeGPUCommandEncoder,
   };
+  for (const Wrapper of Object.values(classes)) hideInternalFields(Wrapper.prototype);
   return classes;
 }
 
