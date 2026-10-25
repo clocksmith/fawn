@@ -231,7 +231,9 @@ void doe_vk_pipeline_release(doe_vk_pipeline *pipeline) {
     if (pipeline == NULL || --pipeline->references != 0) return;
     doe_vk_context *context = pipeline->context;
     unlink_compute(context, pipeline);
-    if (pipeline->spirv == NULL || context->lost) {
+    /* Only a completely created compute pipeline is retained; a failed creation
+     * (no native pipeline) and a lost context destroy now. */
+    if (pipeline->spirv == NULL || pipeline->pipeline == 0 || context->lost) {
         destroy_objects(context, pipeline);
         doe_vk_context_release(context);
         return;

@@ -60,8 +60,10 @@ point and binding layout, so `doe_vk_pipeline_create` returns the existing pipel
 for an identical input (exact comparison, never a hash alone). The context also
 keeps the `DOE_VK_RETAINED_PIPELINES` most recently released compute pipelines,
 which hold no context reference; the oldest is destroyed beyond that bound and the
-rest with the device. A lost context destroys at release instead.
-`tests/pipeline_sharing.c` checks sharing, the bound and complete teardown.
+rest with the device. A failed creation (no native pipeline) and a lost context
+destroy at release instead.
+`tests/pipeline_sharing.c` checks sharing, the bound, failed creation and complete
+teardown.
 Host accesses are blocked while commands may use a buffer. Successful fence
 completion unlocks host access. Pending/uncertain command release returns `BUSY`
 and does not consume the handle. A timed-out waiter must retain and settle it.

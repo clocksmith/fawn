@@ -10,6 +10,7 @@ static struct {
     unsigned layouts_created, layouts_destroyed;
     unsigned sets_created, sets_destroyed;
     unsigned modules_created, modules_destroyed;
+    bool fail_pipelines;
     uint64_t next_handle;
 } mock;
 
@@ -53,6 +54,7 @@ static VkResult create_pipelines(VkDevice device, VkPipelineCache cache, uint32_
     const VkComputePipelineCreateInfo *info, const VkAllocationCallbacks *allocator, VkPipeline *out) {
     (void)device; (void)cache; (void)info; (void)allocator;
     assert(count == 1);
+    if (mock.fail_pipelines) return -2; /* VK_ERROR_OUT_OF_DEVICE_MEMORY */
     ++mock.pipelines_created;
     *out = ++mock.next_handle;
     return 0;
@@ -142,6 +144,22 @@ int main(void) {
     assert(mock.pipelines_created == created);
     doe_vk_pipeline_release(create(ctx, 1, "main", storage, 2)); /* Evicted earlier. */
     assert(mock.pipelines_created == created + 1 && mock.pipelines_destroyed == 6);
+
+    /* A failed creation is never shared or retained: the same input asks the
+     * driver again. */
+    {
+        uint32_t words[6];
+        shader(words, 900);
+        doe_vk_pipeline *failed = NULL;
+        mock.fail_pipelines = true;
+        const unsigned retained = ctx->retained_pipelines, references = ctx->references;
+        assert(doe_vk_pipeline_create(ctx, words, 6, "main", storage, 2, &failed, NULL) != DOE_VK_OK && !failed);
+        assert(ctx->retained_pipelines == retained && ctx->references == references);
+        mock.fail_pipelines = false;
+        const unsigned before = mock.pipelines_created;
+        doe_vk_pipeline_release(create(ctx, 900, "main", storage, 2));
+        assert(mock.pipelines_created == before + 1);
+    }
 
     /* A live pipeline keeps the context; the final context release destroys
      * every retained pipeline with it, so nothing native leaks. */
