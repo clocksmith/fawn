@@ -1,38 +1,19 @@
 /* SPDX-License-Identifier: MIT */
 #include "timestamp_internal.h"
-#include "timestamp_shader.h"
+#include "../../../common/include/doe_timestamp.h"
 #include <float.h>
 #include <inttypes.h>
 #include <math.h>
 #include <stdio.h>
 
-_Static_assert(sizeof(float) == sizeof(uint32_t), "timestamp period is binary32");
-_Static_assert(FLT_RADIX == 2 && FLT_MANT_DIG == 24 && FLT_MAX_EXP == 128 &&
-    FLT_MIN_EXP == -125, "timestamp period requires IEEE binary32 parameters");
-
 doe_vk_status doe_vk_timestamp_shader_source(float period_ns, uint32_t valid_bits,
     uint32_t workgroup_size, char *out, size_t capacity, size_t *out_length) {
-    if (!isfinite(period_ns) || period_ns <= 0 || valid_bits == 0 || valid_bits > 64 ||
-        workgroup_size == 0 || out == NULL || out_length == NULL)
-        return DOE_VK_INVALID_ARGUMENT;
-    uint32_t bits;
-    memcpy(&bits, &period_ns, sizeof(bits));
-    uint32_t exponent = (bits >> 23) & 255;
-    uint32_t mantissa = (bits & UINT32_C(0x7fffff)) | (exponent == 0 ? 0 : UINT32_C(1) << 23);
-    int32_t shift = exponent == 0 ? -149 : (int32_t)exponent - 150;
-    uint64_t mask = UINT64_MAX >> (64 - valid_bits);
-    char source[DOE_VK_TIMESTAMP_SOURCE_CAPACITY];
-    int length = snprintf(source, sizeof(source),
-        "const MANTISSA = %" PRIu32 "u;\nconst PERIOD_SHIFT = %" PRId32 "i;\n"
-        "const MASK_LOW = %" PRIu32 "u;\nconst MASK_HIGH = %" PRIu32 "u;\n"
-        "const WORKGROUP_SIZE = %" PRIu32 "u;\n%s",
-        mantissa, shift, (uint32_t)mask, (uint32_t)(mask >> 32), workgroup_size,
-        doe_vk_timestamp_kernel);
-    if (length < 0 || (size_t)length >= sizeof(source)) return DOE_VK_INVALID_STATE;
-    if ((size_t)length >= capacity) return DOE_VK_INVALID_ARGUMENT;
-    memcpy(out, source, (size_t)length + 1);
-    *out_length = (size_t)length;
-    return DOE_VK_OK;
+    switch (doe_timestamp_source(period_ns, valid_bits, workgroup_size, out, capacity, out_length)) {
+    case DOE_TIMESTAMP_SOURCE_OK: return DOE_VK_OK;
+    case DOE_TIMESTAMP_SOURCE_INVALID: return DOE_VK_INVALID_ARGUMENT;
+    case DOE_TIMESTAMP_SOURCE_OVERFLOW: return DOE_VK_INVALID_STATE;
+    }
+    return DOE_VK_INVALID_STATE;
 }
 
 doe_vk_status doe_vk_timestamp_normalizer_validate(const doe_vk_caps *caps,
