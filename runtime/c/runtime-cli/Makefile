@@ -11,8 +11,10 @@ CPPFLAGS += -D_POSIX_C_SOURCE=200809L -Isrc -I../../zig/vendor/webgpu-headers
 CFLAGS ?= -O2 -g
 CFLAGS += -std=c11 -Wall -Wextra -Wpedantic -Werror -pthread
 CORE = src/json.c src/stream.c src/stream_texture.c src/stream_render.c src/trace.c src/sha256.c src/quirks.c \
+  src/operators.c src/numeric_gate.c \
   $(BUILD)/quirk_toggles.c
-CORE_HEADERS = src/json.h src/stream.h src/stream_internal.h src/trace.h src/sha256.h src/quirks.h
+CORE_HEADERS = src/json.h src/stream.h src/stream_internal.h src/trace.h src/sha256.h src/quirks.h \
+  src/operators.h src/numeric_gate.h
 TOGGLE_REGISTRY = ../../../config/quirk-toggle-registry.json
 RUNTIME = src/execute.c src/kernel.c src/texture.c src/render.c
 RUNTIME_HEADERS = src/execute.h src/runtime_internal.h ../../zig/vendor/webgpu-headers/webgpu.h

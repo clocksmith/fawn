@@ -238,14 +238,70 @@ static bool parse_binding(const doe_json_value *object, doe_kernel_binding *out,
     return stream_read_u64(object, "buffer_size", "bufferSize", UINT64_MAX, false, UINT64_MAX, &out->buffer_size, index, error);
 }
 
+bool doe_semantic_present(const doe_semantic *semantic)
+{
+    return semantic->op_id || semantic->stage || semantic->phase || semantic->execution_plan_hash ||
+        semantic->has_token_index || semantic->has_layer_index;
+}
+
+static bool parse_optional_u32(const doe_json_value *object, const char *a, const char *b, bool *has, uint32_t *out,
+    size_t index, doe_stream_error *error)
+{
+    bool ambiguous = false;
+    *has = stream_either(object, a, b, &ambiguous) != NULL;
+    uint64_t value = 0;
+    if (!stream_read_u64(object, a, b, UINT32_MAX, false, 0, &value, index, error)) return false;
+    *out = (uint32_t)value;
+    return true;
+}
+
+/* doe-zig-runtime's semantic metadata (command_stream.zig): snake_case and
+ * camelCase spellings, one of each pair. A capture names a handle and a nonzero
+ * size together and belongs to a semantic operation; doe-zig-runtime drops a
+ * partial or unattached capture, which this runtime rejects instead. */
+static bool parse_semantic(const doe_json_value *object, doe_semantic *out, size_t index, doe_stream_error *error)
+{
+    if (!stream_read_string(object, "semantic_op_id", "semanticOpId", &out->op_id, index, error) ||
+        !stream_read_string(object, "semantic_stage", "semanticStage", &out->stage, index, error) ||
+        !stream_read_string(object, "semantic_phase", "semanticPhase", &out->phase, index, error) ||
+        !stream_read_string(object, "semantic_execution_plan_hash", "semanticExecutionPlanHash",
+            &out->execution_plan_hash, index, error) ||
+        !parse_optional_u32(object, "semantic_token_index", "semanticTokenIndex", &out->has_token_index,
+            &out->token_index, index, error) ||
+        !parse_optional_u32(object, "semantic_layer_index", "semanticLayerIndex", &out->has_layer_index,
+            &out->layer_index, index, error)) return false;
+    bool ambiguous = false;
+    bool has_handle = stream_either(object, "capture_buffer_handle", "captureBufferHandle", &ambiguous) != NULL;
+    bool has_size = stream_either(object, "capture_size", "captureSize", &ambiguous) != NULL;
+    bool has_offset = stream_either(object, "capture_offset", "captureOffset", &ambiguous) != NULL;
+    if (!has_handle && !has_size && !has_offset) return true;
+    if (!has_handle || !has_size)
+        return stream_reject(error, index, "a capture needs both \"captureBufferHandle\" and \"captureSize\"");
+    if (!stream_read_u64(object, "capture_buffer_handle", "captureBufferHandle", UINT64_MAX, true, 0,
+            &out->capture_handle, index, error) ||
+        !stream_read_u64(object, "capture_offset", "captureOffset", UINT64_MAX, false, 0, &out->capture_offset, index,
+            error) ||
+        !stream_read_u64(object, "capture_size", "captureSize", UINT64_MAX, true, 0, &out->capture_size, index, error))
+        return false;
+    if (out->capture_size == 0) return stream_reject(error, index, "\"captureSize\" must be nonzero");
+    if (!doe_semantic_present(out)) return stream_reject(error, index, "a capture needs a semantic operation field");
+    out->has_capture = true;
+    return true;
+}
+
 static bool parse_kernel_dispatch(const doe_json_value *object, doe_command *command, size_t index,
     doe_stream_error *error)
 {
     static const char *const allowed[] = {"kind", "command", "command_kind", "kernel", "kernel_name", "entry_point",
         "entryPoint", "x", "y", "z", "repeat", "repeatSynchronization", "repeat_synchronization",
         "warmup_dispatch_count", "warmupDispatchCount", "initialize_buffers_on_create", "initializeBuffersOnCreate",
-        "output_oracle", "outputOracle", "bindings", NULL};
+        "output_oracle", "outputOracle", "bindings", "semantic_op_id", "semanticOpId", "semantic_stage",
+        "semanticStage", "semantic_phase", "semanticPhase", "semantic_token_index", "semanticTokenIndex",
+        "semantic_layer_index", "semanticLayerIndex", "semantic_execution_plan_hash", "semanticExecutionPlanHash",
+        "capture_buffer_handle", "captureBufferHandle", "capture_offset", "captureOffset", "capture_size",
+        "captureSize", NULL};
     if (!stream_only_members(object, allowed, index, "kernel_dispatch", error)) return false;
+    if (!parse_semantic(object, &command->semantic, index, error)) return false;
     if (!stream_read_string(object, "kernel", "kernel_name", &command->as.dispatch.kernel, index, error)) return false;
     if (!command->as.dispatch.kernel) return stream_reject(error, index, "kernel_dispatch requires a kernel string");
     if (!stream_read_string(object, "entry_point", "entryPoint", &command->as.dispatch.entry_point, index, error)) return false;

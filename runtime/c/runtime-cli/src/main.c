@@ -4,6 +4,8 @@
  * doe-zig-runtime; every argument or value this runtime does not implement is
  * rejected before any device work. */
 #include "execute.h"
+#include "numeric_gate.h"
+#include "operators.h"
 #include "quirks.h"
 #include "stream.h"
 #include "trace.h"
@@ -19,7 +21,7 @@
 enum { MAX_READBACKS = 8 };
 
 typedef struct options {
-    const char *commands, *kernel_root, *trace_jsonl, *trace_meta, *quirks;
+    const char *commands, *kernel_root, *trace_jsonl, *trace_meta, *quirks, *numeric_policy;
     const char *vendor, *api, *family, *driver;
     bool execute, trace_stdout, validate_oracles;
     doe_quirk_mode quirk_mode;
@@ -54,6 +56,7 @@ typedef struct totals {
     uint64_t hash, previous;
     uint64_t oracles, oracles_matched, oracles_failed;
     uint64_t matched, blocking, requires_lean, lean_required;
+    bool semantic_tracing;
     char oracle_expected[65], oracle_actual[65];
     const char *oracle_reference;
 } totals;
@@ -68,10 +71,12 @@ static void usage(FILE *out)
           "  [--gpu-timestamp-mode off|auto] [--adapter auto|physical|software]\n"
           "  [--validate-output-oracles]  (schema 1 sha256_exact_v1 isolated-dispatch oracles)\n"
           "  [--readback-buffer HANDLE=PATH]...  (final buffer bytes after a successful run; at most 8)\n"
+          "  [--numeric-stability-policy <path>]  (consulted only to refuse what doe-zig-runtime would evaluate)\n"
           "Commands: upload, buffer_write, barrier, kernel_dispatch (WGSL kernels, buffer bindings),\n"
           "copies in every direction, texture_write, texture_query, texture_destroy (2D single-mip\n"
           "uncompressed color textures), render_draw and render_pass (the default proxy pipeline),\n"
-          "sampler_create and sampler_destroy.\n"
+          "sampler_create and sampler_destroy. kernel_dispatch semantic fields and captures write operator\n"
+          "records; a dispatch doe-zig-runtime would evaluate for numeric stability is refused.\n"
           "Every other command, field or argument is rejected. --adapter is this runtime's own;\n"
           "auto takes a nonfallback adapter, else the fallback (CPU) adapter, and the trace meta\n"
           "records which one ran.\n", out);
@@ -109,6 +114,7 @@ static int parse_options(int argc, char **argv, options *out)
         else if (!strcmp(flag, "--trace-jsonl")) TAKE(trace_jsonl);
         else if (!strcmp(flag, "--trace-meta")) TAKE(trace_meta);
         else if (!strcmp(flag, "--quirks")) TAKE(quirks);
+        else if (!strcmp(flag, "--numeric-stability-policy")) TAKE(numeric_policy);
         else if (!strcmp(flag, "--vendor")) TAKE(vendor);
         else if (!strcmp(flag, "--api")) TAKE(api);
         else if (!strcmp(flag, "--family")) TAKE(family);
@@ -210,7 +216,7 @@ static bool write_optional(FILE *out, const char *key, const char *value, bool c
 }
 
 static bool write_meta(const char *path, const options *o, const totals *t, uint64_t command_count,
-    const doe_runtime_adapter *adapter)
+    const doe_runtime_adapter *adapter, const doe_operator_recorder *operators)
 {
     FILE *out = fopen(path, "wb");
     if (!out) return false;
@@ -225,18 +231,25 @@ static bool write_meta(const char *path, const options *o, const totals *t, uint
         ",\"hostInputParseTotalNs\":%" PRIu64 ",\"hostExecutorInitTotalNs\":%" PRIu64
         ",\"hostUploadPrewarmTotalNs\":0,\"hostKernelPrewarmTotalNs\":%" PRIu64
         ",\"executionGpuTimestampTotalNs\":0,\"executionGpuTimestampAttemptedCount\":0,\"executionGpuTimestampValidCount\":0,"
-        "\"semanticTracingEnabled\":false,\"semanticOpRowCount\":0,\"semanticCaptureCount\":0,\"semanticReproCount\":0,"
+        "\"semanticTracingEnabled\":%s,\"semanticOpRowCount\":%" PRIu64 ",\"semanticCaptureCount\":%" PRIu64
+        ",\"semanticReproCount\":%" PRIu64 ","
         "\"hash\":\"0x%" PRIx64 "\",\"previousHash\":\"0x%" PRIx64 "\",\"outputOracleCount\":%" PRIu64
         ",\"outputOracleMatchedCount\":%" PRIu64 ",\"outputOracleFailedCount\":%" PRIu64
         ",\"executionBackend\":\"" BACKEND_ID "\",\"backendId\":\"" BACKEND_ID "\","
-        "\"backendSelectionReason\":\"fixed_backend\",\"fallbackUsed\":false,\"queueSyncMode\":\"per-command\","
-        "\"quirkMode\":\"%s\",\"uploadBufferUsage\":\"%s\",\"uploadSubmitEvery\":%" PRIu64
-        /* No persistent pipeline cache exists in this runtime. */
-        ",\"pipelineCache\":{\"state\":\"disabled\",\"reason\":\"platform-unsupported\",\"warmupCount\":0,\"warmupNs\":0}",
+        "\"backendSelectionReason\":\"fixed_backend\",\"fallbackUsed\":false",
         seq_max, t->rows, command_count, t->matched, t->blocking, t->requires_lean, t->lean_required, t->rows, t->successes, t->errors, t->total_ns, t->setup_ns, t->encode_ns,
         t->submit_wait_ns, t->dispatches, t->submits, t->input_read_ns, t->input_parse_ns, t->executor_init_ns,
-        t->kernel_prewarm_ns,
-        t->hash, t->previous, t->oracles, t->oracles_matched, t->oracles_failed,
+        t->kernel_prewarm_ns, t->semantic_tracing ? "true" : "false", operators ? operators->row_count : 0,
+        operators ? operators->capture_count : 0, operators ? operators->repro_count : 0,
+        t->hash, t->previous, t->oracles, t->oracles_matched, t->oracles_failed) >= 0;
+    /* doe-zig-runtime names the operator manifest only when it holds records. */
+    if (ok && operators && operators->row_count)
+        ok = write_optional(out, "operatorRecordManifestPath", operators->manifest_path, true) &&
+            write_optional(out, "operatorRecordManifestHash", operators->manifest_sha256, true);
+    ok = ok && fprintf(out, ",\"queueSyncMode\":\"per-command\",\"quirkMode\":\"%s\",\"uploadBufferUsage\":\"%s\""
+        ",\"uploadSubmitEvery\":%" PRIu64
+        /* No persistent pipeline cache exists in this runtime. */
+        ",\"pipelineCache\":{\"state\":\"disabled\",\"reason\":\"platform-unsupported\",\"warmupCount\":0,\"warmupNs\":0}",
         o->quirk_mode == DOE_QUIRK_OFF ? "off" : o->quirk_mode == DOE_QUIRK_ACTIVE ? "active" : "trace",
         o->runtime.upload_copy_src ? "copy-dst-copy-src" : "copy-dst", o->runtime.upload_submit_every) >= 0;
     if (ok && t->oracles) {
@@ -264,21 +277,61 @@ static bool write_meta(const char *path, const options *o, const totals *t, uint
     return ok;
 }
 
-/* <meta>.operators.json, the operator record manifest doe-zig-runtime writes
- * next to its meta: records exist only for semantic operations, which this
- * runtime rejects, so the manifest is always the empty list. */
-static bool write_operator_manifest(const char *meta_path)
+/* Refuses, before device work, a stream doe-zig-runtime would evaluate for
+ * numeric stability: it loads the policy whenever it writes a trace meta. An
+ * explicit policy is read and checked even without a trace meta. */
+static int check_numeric_stability(const options *o, const doe_stream *stream)
 {
-    size_t length = strlen(meta_path);
-    char *path = malloc(length + sizeof(".operators.json"));
-    if (!path) return false;
-    memcpy(path, meta_path, length);
-    memcpy(path + length, ".operators.json", sizeof(".operators.json"));
-    FILE *out = fopen(path, "wb");
-    free(path);
-    if (!out) return false;
-    bool ok = fputs("[]\n", out) >= 0;
-    return fclose(out) == 0 && ok;
+    if (!o->numeric_policy && !(o->trace_meta && doe_numeric_gate_needed(stream))) return 0;
+    const char *path = o->numeric_policy ? o->numeric_policy : DOE_NUMERIC_STABILITY_DEFAULT_POLICY;
+    size_t size = 0;
+    char *text = read_file(path, &size);
+    if (!text) {
+        fprintf(stderr, "doe-c-runtime: numeric stability policy %s: cannot read (needed to find the semantic "
+            "operations doe-zig-runtime would evaluate)\n", path);
+        return 2;
+    }
+    size_t index = 0;
+    char profile[128] = "", message[256] = "";
+    doe_numeric_gate_result result = doe_numeric_gate_check(text, size, stream, &index, profile, sizeof(profile),
+        message, sizeof(message));
+    free(text);
+    if (result == DOE_NUMERIC_GATE_INVALID) {
+        fprintf(stderr, "doe-c-runtime: numeric stability policy %s: %s\n", path, message);
+        return 2;
+    }
+    if (result == DOE_NUMERIC_GATE_OBSERVED && o->trace_meta) {
+        fprintf(stderr, "doe-c-runtime: %s: command %zu: numeric stability evaluation (%s) is not implemented by "
+            "doe-c-runtime; doe-zig-runtime evaluates it when a trace meta is written\n", o->commands, index, profile);
+        return 2;
+    }
+    return 0;
+}
+
+/* The capture a semantic command requested, read after it ran; failures are
+ * recorded in the operator record, as doe-zig-runtime does, not fatal. */
+static void take_capture(doe_runtime *runtime, const doe_semantic *semantic, doe_operator_capture *capture,
+    uint8_t **owned)
+{
+    *capture = (doe_operator_capture){0};
+    *owned = NULL;
+    uint8_t *data = NULL;
+    size_t size = 0;
+    doe_trace_execution execution;
+    if (!doe_runtime_read_buffer(runtime, semantic->capture_handle, &data, &size, &execution)) {
+        /* doe-zig-runtime reports an unknown handle as InvalidArgument. */
+        capture->error_code = strcmp(execution.status_code, "readback_missing") ? execution.status_code : "InvalidArgument";
+        return;
+    }
+    if (semantic->capture_offset > size || semantic->capture_size > size - semantic->capture_offset) {
+        free(data);
+        capture->error_code = "InvalidArgument";
+        return;
+    }
+    *owned = data;
+    capture->ok = true;
+    capture->data = data + semantic->capture_offset;
+    capture->size = (size_t)semantic->capture_size;
 }
 
 int main(int argc, char **argv)
@@ -304,6 +357,8 @@ int main(int argc, char **argv)
         return 2;
     }
     if (stream.count > UINT64_MAX / o.command_repeat) { doe_stream_free(&stream); return reject_argument("--command-repeat", "overflows"); }
+    int refused = check_numeric_stability(&o, &stream);
+    if (refused) { doe_stream_free(&stream); return refused; }
     uint64_t command_count = (uint64_t)stream.count * o.command_repeat;
     FILE *rows = o.trace_jsonl ? fopen(o.trace_jsonl, "wb") : NULL;
     if (o.trace_jsonl && !rows) {
@@ -327,6 +382,16 @@ int main(int argc, char **argv)
             return 2;
         }
     }
+    /* doe-zig-runtime anchors operator records at the trace meta, else the trace JSONL. */
+    const char *operator_anchor = o.trace_meta ? o.trace_meta : o.trace_jsonl;
+    doe_operator_recorder operators = {0};
+    if (operator_anchor && !doe_operator_recorder_open(&operators, operator_anchor)) {
+        fprintf(stderr, "doe-c-runtime: out of memory\n");
+        if (rows) fclose(rows);
+        doe_quirks_free(&quirks);
+        doe_stream_free(&stream);
+        return 1;
+    }
     uint64_t init_start = doe_runtime_monotonic_ns();
     doe_runtime *runtime = doe_runtime_open(&o.runtime, message, sizeof(message));
     t.executor_init_ns = doe_runtime_monotonic_ns() - init_start;
@@ -348,6 +413,7 @@ int main(int argc, char **argv)
         for (size_t i = 0; i < stream.count && status == 0; i++) {
             const doe_command *command = &stream.commands[i];
             const doe_quirk_decision decision = doe_quirks_decide(&quirks, command->kind);
+            if (doe_semantic_present(&command->semantic)) t.semantic_tracing = true;
             doe_command applied = *command;
             if (decision.temporary_buffer) {
                 applied.as.copy.temporary_buffer = true;
@@ -357,11 +423,27 @@ int main(int argc, char **argv)
             bool ok = doe_runtime_execute(runtime, &applied, &execution);
             uint64_t seq = t.rows;
             uint64_t hash = doe_trace_payload_hash(t.hash, seq, command->label, doe_command_tag(command->kind),
-                command->kind == DOE_COMMAND_KERNEL_DISPATCH ? command->as.dispatch.kernel : NULL, &decision);
+                command->kind == DOE_COMMAND_KERNEL_DISPATCH ? command->as.dispatch.kernel : NULL, &decision,
+                &command->semantic);
             uint64_t now = realtime_ns();
             if (rows && !doe_trace_write_row(rows, &identity, seq, now, hash, t.hash, command, &decision, &execution)) status = 1;
             if (o.trace_stdout && !doe_trace_write_row(stdout, &identity, seq, now, hash, t.hash, command, &decision, &execution))
                 status = 1;
+            if (operator_anchor && doe_semantic_present(&command->semantic)) {
+                doe_operator_capture capture;
+                uint8_t *capture_data = NULL;
+                if (command->semantic.has_capture) take_capture(runtime, &command->semantic, &capture, &capture_data);
+                const doe_operator_input input = {.source_index = seq, .command = command, .execution = &execution,
+                    .backend_id = BACKEND_ID, .vendor = o.vendor, .api = o.api, .family = o.family, .driver = o.driver,
+                    .hash = hash, .previous = t.hash, .trace_meta_path = o.trace_meta,
+                    .capture = command->semantic.has_capture ? &capture : NULL};
+                char record_message[512];
+                if (!doe_operator_record(&operators, &input, record_message, sizeof(record_message))) {
+                    fprintf(stderr, "doe-c-runtime: %s\n", record_message);
+                    status = 1;
+                }
+                free(capture_data);
+            }
             if (decision.matched_id) {
                 t.matched++;
                 if (!strcmp(decision.verification, "lean_required")) t.lean_required++;
@@ -435,14 +517,16 @@ int main(int argc, char **argv)
         }
     }
     if (rows && fclose(rows) != 0) status = 1;
-    if (o.trace_meta && !write_meta(o.trace_meta, &o, &t, command_count, runtime ? doe_runtime_adapter_info(runtime) : NULL)) {
+    if (operator_anchor && !doe_operator_recorder_finish(&operators)) {
+        fprintf(stderr, "doe-c-runtime: cannot write %s\n", operators.manifest_path);
+        status = 1;
+    }
+    if (o.trace_meta && !write_meta(o.trace_meta, &o, &t, command_count, runtime ? doe_runtime_adapter_info(runtime) : NULL,
+            &operators)) {
         fprintf(stderr, "doe-c-runtime: cannot write %s\n", o.trace_meta);
         status = 1;
     }
-    if (o.trace_meta && !write_operator_manifest(o.trace_meta)) {
-        fprintf(stderr, "doe-c-runtime: cannot write %s.operators.json\n", o.trace_meta);
-        status = 1;
-    }
+    doe_operator_recorder_free(&operators);
     doe_runtime_close(runtime);
     doe_quirks_free(&quirks);
     doe_stream_free(&stream);

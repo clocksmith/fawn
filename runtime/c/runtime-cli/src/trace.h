@@ -2,9 +2,9 @@
  * Runtime trace artifacts in the doe-zig-runtime trace v1 format
  * (runtime/zig/src/runtime/trace/trace.zig, checked by pipeline/trace/replay.py):
  * one JSON row per executed command, chained by a 64-bit FNV-1a-style payload
- * hash seeded with 0x9e3779b97f4a7c15, plus a run-summary meta object. With no
- * quirk matched and no semantic op, the payload hash is identical to the Zig
- * runtime's for the same sequence, label, kind and kernel. */
+ * hash seeded with 0x9e3779b97f4a7c15, plus a run-summary meta object. The
+ * payload hash covers the sequence, label, kind, kernel, quirk decision and
+ * semantic identity in doe-zig-runtime's order and byte encoding. */
 #ifndef DOE_RUNTIME_TRACE_H
 #define DOE_RUNTIME_TRACE_H
 #include "quirks.h"
@@ -15,10 +15,10 @@
 
 #define DOE_TRACE_HASH_SEED UINT64_C(0x9e3779b97f4a7c15)
 
-/* The row hash for a command and its quirk decision (NULL: none matched); no
- * semantic op is hashed. */
+/* The row hash for a command, its quirk decision (NULL: none matched) and its
+ * semantic identity (NULL: none). */
 uint64_t doe_trace_payload_hash(uint64_t previous, uint64_t seq, const char *label, const char *tag,
-    const char *kernel, const doe_quirk_decision *decision);
+    const char *kernel, const doe_quirk_decision *decision, const doe_semantic *semantic);
 
 typedef struct doe_trace_execution {
     bool ok;
@@ -41,4 +41,7 @@ bool doe_trace_write_row(FILE *out, const doe_trace_identity *identity, uint64_t
 
 /* Writes a JSON string literal with the required escapes. */
 bool doe_trace_write_string(FILE *out, const char *text);
+/* Writes ,"semanticOpId":... for each present semantic field, in
+ * doe-zig-runtime's order (op id, stage, phase, token, layer, plan hash). */
+bool doe_trace_write_semantic(FILE *out, const doe_semantic *semantic);
 #endif

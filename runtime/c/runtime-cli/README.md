@@ -54,6 +54,30 @@ $(BUILD)/doe-c-runtime --commands examples/rmsnorm_tree_commands.json --execute 
   `sampler_create` (`create_sampler`) and `sampler_destroy` (`destroy_sampler`)
   create and release samplers keyed by handle.
 - Kernels resolve as given, then under `--kernel-root`, then with `.wgsl`.
+- Semantic identity on `kernel_dispatch` (`src/operators.c`), as
+  doe-zig-runtime's `contracts/semantic.zig` reads it: `semanticOpId`,
+  `semanticStage`, `semanticPhase`, `semanticTokenIndex`, `semanticLayerIndex`
+  and `semanticExecutionPlanHash` (or their snake_case spellings, one of each
+  pair) go into the row and its hash in Zig's order and encoding. With a trace
+  meta or JSONL, each such command gets an operator record in
+  `<anchor>.operators.json` (anchor: the meta path, else the JSONL path) and a
+  structural repro bundle `<anchor>.opNNNN.repro.{commands,meta}.json`; a
+  capture (`captureBufferHandle`, `captureSize`, optional `captureOffset`)
+  writes those buffer bytes after the command to `<anchor>.opNNNN.capture.bin`,
+  and an out-of-range or unknown capture is recorded as `InvalidArgument`
+  without failing the run. The record's `execution` object is this CLI's (no
+  lane, GPU timestamp or queue family fields) and `shaderArtifacts` is empty.
+  doe-zig-runtime drops a partial capture or one without semantic identity; this
+  CLI rejects both.
+- Numeric stability: doe-zig-runtime evaluates (re-executes, compares with a CPU
+  reference and may reroute) every dispatch whose op id, stage, phase and kernel
+  basename match an enabled auto-detect profile of
+  `config/numeric-stability-policy.json` (or `--numeric-stability-policy`)
+  whenever it writes a trace meta. This CLI does not implement that evaluation:
+  with a trace meta it reads the policy and refuses such a stream with exit 2
+  (for example `examples/numeric-stability-decode-greedy.commands.json`, whose
+  `decode.final_logits` dispatch matches); without a trace meta nothing is
+  evaluated by either runtime and the stream runs.
 - `output_oracle` schema 1, `sha256_exact_v1`, `zero_fill_v1` initialization:
   with `--validate-output-oracles` the command runs again on isolated
   zero-filled buffers and the read-back target's SHA-256 must equal
@@ -84,8 +108,9 @@ $(BUILD)/doe-c-runtime --commands examples/rmsnorm_tree_commands.json --execute 
 
 Every other command kind (indirect draws, surfaces, dispatch, dispatch-indirect,
 `map_async`, `async_diagnostics` and the rest), field, texture dimension, mip level, sample count, aspect, format, oracle
-scope, `repeatSynchronization` value, `semanticOpId` and argument is rejected
-with exit 2 before device work.
+scope, `repeatSynchronization` value, semantic field on another kind, explicit
+`numericStability` annotation, `--numeric-stability-execution-profile` and
+argument is rejected with exit 2 before device work.
 
 doe-zig-runtime's native Vulkan lane reports every copy `unsupported` and
 continues; this CLI executes them. The row hash chain covers command identity,
@@ -107,8 +132,14 @@ applied `uploadBufferUsage` and `uploadSubmitEvery`, `hostKernelPrewarmTotalNs`
 doe-zig-runtime prewarms them), `pipelineCache` `disabled`/`platform-unsupported`
 (no persistent pipeline cache exists here), and for schema 1 oracles
 `outputOracleReferenceClass` `independent_v1` with zero tolerance counts. The
-operator record manifest `<meta>.operators.json` is the empty list: records exist
-only for semantic operations, which this CLI rejects.
+semantic counts (`semanticTracingEnabled`, `semanticOpRowCount`,
+`semanticCaptureCount`, `semanticReproCount`) and, when records exist,
+`operatorRecordManifestPath` and its SHA-256 `operatorRecordManifestHash` follow
+doe-zig-runtime; the manifest bytes use its layout (`[\n`, records joined by
+`,\n`, `\n]\n`), so an empty manifest is `[\n\n]\n`. No `numericStability`
+summary is written because no evaluation runs. The meta's `adapter`,
+`uploadBufferUsage` and `uploadSubmitEvery` fields are not in
+`config/trace-meta.schema.json`, which forbids additional properties.
 
 No shader artifact manifest is written. The strict Dawn-versus-Doe obligation
 requires the executed SPIR-V to equal the checked-in `bench/kernels/<name>.spv`,
@@ -155,5 +186,16 @@ read-back handle. With render and sampler commands, six render example streams
 (direct, indexed, state-bound, viewport/scissor, sampler/texture/render and
 upload/render) match doe-zig-runtime's hash chains, a scissored draw and an
 indexed draw read back as the proxy color inside the scissor and the clear color
-outside, and a missing render target fails. A CPU adapter run is not GPU evidence, a performance result
+outside, and a missing render target fails. With semantic identity (base
+977122f33, 2026-10-25), a workgroup_atomic stream carrying every semantic field
+has row hashes equal to doe-zig-runtime's executed rows, operator records equal
+to its records outside `execution` and `shaderArtifacts` (checked against
+`config/operator-execution-record.schema.json`), repro command files equal byte
+for byte, and captures equal to its captures and to the
+`bench/oracles/workgroup_recurrence_u32_v1.py` host reference; the greedy decode
+stream is refused with a trace meta and, without one, its rows equal
+doe-zig-runtime's trace-only rows. The numeric stability evaluation itself has no
+lavapipe reference: doe-zig-runtime crashes inside llvmpipe executing
+`bench/inference-pipeline/kernels/matmul-gemv.spv`, with or without semantic
+fields. A CPU adapter run is not GPU evidence, a performance result
 or bench comparability, and no physical adapter has run this CLI.

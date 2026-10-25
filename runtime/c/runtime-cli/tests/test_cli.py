@@ -6,11 +6,15 @@ doe-zig-runtime rows for the same streams, an output oracle matches its
 independent reference digest, copies and texture writes reproduce bytes
 computed independently on the host, and unsupported arguments, commands, layouts
 and oracle mismatches fail with a nonzero exit. The adapter that ran is printed from the
-trace meta; a CPU (fallback) adapter is not GPU evidence."""
+trace meta; a CPU (fallback) adapter is not GPU evidence. Semantic dispatches
+write operator records, repro bundles and captures equal to doe-zig-runtime's
+outside the execution fields, with captures checked against the host oracle;
+a dispatch doe-zig-runtime would evaluate for numeric stability is refused."""
 
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import struct
 import subprocess
@@ -21,6 +25,8 @@ REPO = Path(__file__).resolve().parents[4]
 EXAMPLES = REPO / "examples"
 KERNELS = REPO / "bench" / "kernels"
 REPLAY = REPO / "pipeline" / "trace" / "replay.py"
+sys.path.insert(0, str(REPO / "bench" / "oracles"))
+import workgroup_recurrence_u32_v1 as recurrence  # noqa: E402  (independent CPU reference)
 
 # Final row hashes doe-zig-runtime wrote for these streams (db0979828, lavapipe).
 ZIG_FINAL_HASH = {
@@ -251,6 +257,98 @@ def check_render(binary: Path, work: Path) -> None:
     check(code == 1 and "render_target_missing" in stderr, f"missing render target: exit {code}: {stderr}")
 
 
+# doe-zig-runtime (built from 977122f33's runtime/zig, --quirk-mode off, lavapipe,
+# 2026-10-25) rows for semantic_stream(); its operator records, repro bundles and
+# captures are the reference for the structure checked below.
+ZIG_SEMANTIC_HASHES = ["0x3eb0c370aa46f5f9", "0x4124865a91c3cc65", "0x39032e82e4daa181", "0xf48294d320b4db17",
+                       "0xeaf883dd6c6b0c40", "0x7c3076098b52e104"]
+# doe-zig-runtime trace-only rows (no --execute) for numeric-stability-decode-greedy.
+ZIG_GREEDY_HASHES = ["0x3eb0c370aa46f5f9", "0x92f65df8db1ad54a", "0xe545cdbfbc0063fa", "0x66766d878bdd7db",
+                     "0xf570349e8eb94e1b", "0xf79bde625797c784"]
+
+
+def semantic_stream() -> list:
+    """workgroup_atomic dispatches with every semantic field in both spellings,
+    in-range captures, one without stage or phase, one without semantic identity
+    and an out-of-range capture."""
+    base = json.loads((EXAMPLES / "workgroup_atomic_commands.json").read_text())[0]
+    base.pop("output_oracle")
+    base["warmup_dispatch_count"] = 0
+
+    def dispatch(repeat: int, **fields: object) -> dict:
+        return {**base, "repeat": repeat, **fields}
+
+    only = {"semanticOpId": "test.only_op"}
+    return [
+        {"kind": "buffer_write", "handle": 7000, "bufferSize": 16, "data": [1, 2, 3, 4]},
+        dispatch(4, semanticOpId="test.atomic_accumulate", semanticStage="c_parity", semanticPhase="accumulate",
+                 semanticTokenIndex=3, semanticLayerIndex=1, semanticExecutionPlanHash='plan-"q"-1',
+                 captureBufferHandle=5001, captureOffset=64, captureSize=256),
+        dispatch(2, semantic_op_id="test.atomic_again", semantic_stage="c_parity", semantic_phase="again",
+                 semantic_token_index=0, capture_buffer_handle=5001, capture_size=16),
+        dispatch(1, **only),
+        dispatch(1),
+        dispatch(1, **only, captureBufferHandle=5001, captureOffset=1048570, captureSize=16),
+    ]
+
+
+def check_semantic(binary: Path, work: Path) -> None:
+    commands = work / "semantic_commands.json"
+    commands.write_text(json.dumps(semantic_stream()))
+    code, stderr, meta, rows = run(binary, work, "semantic", "--quirk-mode", "off", commands=commands)
+    check(code == 0 and [row["hash"] for row in rows] == ZIG_SEMANTIC_HASHES, f"semantic rows: exit {code}: {stderr}")
+    check(replay_passes(work, "semantic"), "semantic artifacts fail replay")
+    check(rows[1]["semanticLayerIndex"] == 1 and rows[1]["semanticExecutionPlanHash"] == 'plan-"q"-1'
+          and list(rows[1])[9:15] == ["semanticOpId", "semanticStage", "semanticPhase", "semanticTokenIndex",
+                                      "semanticLayerIndex", "semanticExecutionPlanHash"]
+          and not any(key.startswith("semantic") for key in rows[4]), "semantic row fields and order")
+    anchor = work / "semantic.meta.json"
+    manifest = Path(f"{anchor}.operators.json")
+    check(meta["semanticTracingEnabled"] is True and meta["semanticOpRowCount"] == 4 and meta["semanticCaptureCount"] == 2
+          and meta["semanticReproCount"] == 4 and meta["operatorRecordManifestPath"] == str(manifest)
+          and meta["operatorRecordManifestHash"] == hashlib.sha256(manifest.read_bytes()).hexdigest(), "semantic meta")
+    records = json.loads(manifest.read_text())
+    check([r["sourceIndex"] for r in records] == [1, 2, 3, 5]
+          and [r["trace"]["hash"] for r in records] == [ZIG_SEMANTIC_HASHES[i] for i in (1, 2, 3, 5)]
+          and all(r["trace"]["traceMetaPath"] == str(anchor) and r["shaderArtifacts"] == {} for r in records)
+          and records[0]["commandShape"] == {"dispatchGeometry": {"x": 1024, "y": 1, "z": 1}, "repeat": 4,
+                                             "bindingCount": 1, "bindingBufferBytes": 1048576}
+          and records[2]["capture"] is None
+          and records[3]["capture"] == {"bufferHandle": 5001, "offset": 1048570, "size": 16, "status": "error",
+                                        "errorCode": "InvalidArgument"}, "operator records")
+    # Captures hold the buffer after the dispatches so far, computed on the host.
+    for record, dispatches, start, size in ((records[0], 4, 64, 256), (records[1], 6, 0, 16)):
+        data = Path(record["capture"]["path"]).read_bytes()
+        check(data == recurrence.expected_output(dispatch_count=dispatches)[start:start + size]
+              and record["capture"]["sha256"] == hashlib.sha256(data).hexdigest(), f"capture {record['sourceIndex']}")
+    repro = Path(records[0]["repro"]["commandsPath"]).read_text()
+    check(repro == '[\n{"seq":0,"kind":"kernel_dispatch","kernel":"workgroup_atomic.wgsl","x":1024,"y":1,"z":1,"repeat":4,'
+          '"repeatSynchronization":"dependent","semanticOpId":"test.atomic_accumulate","semanticStage":"c_parity",'
+          '"semanticPhase":"accumulate","semanticTokenIndex":3,"semanticLayerIndex":1,'
+          '"semanticExecutionPlanHash":"plan-\\"q\\"-1","captureBufferHandle":5001,"captureOffset":64,"captureSize":256}\n]\n',
+          "repro commands bytes equal doe-zig-runtime's")
+    repro_meta = json.loads(Path(records[0]["repro"]["metaPath"]).read_text())
+    check(repro_meta["commandsPath"] == records[0]["repro"]["commandsPath"] and repro_meta["bitwise"] is False
+          and repro_meta["commandShape"] == records[0]["commandShape"], "repro meta")
+    # doe-zig-runtime evaluates decode.final_logits on matmul-gemv.wgsl for numeric
+    # stability when it writes a trace meta; this runtime refuses that stream.
+    greedy = EXAMPLES / "numeric-stability-decode-greedy.commands.json"
+    code, stderr, _, _ = run(binary, work, "greedy", "--quirk-mode", "off", commands=greedy)
+    check(code == 2 and "command 3: numeric stability evaluation" in stderr, f"numeric stability refusal: {code} {stderr}")
+    # Without a trace meta nothing is evaluated: the rows chain like doe-zig-runtime's
+    # and records anchor at the trace JSONL.
+    jsonl = work / "greedy_rows.jsonl"
+    result = subprocess.run([str(binary), "--commands", str(greedy), "--execute", "--quirk-mode", "off",
+                             "--trace-jsonl", str(jsonl)], capture_output=True, text=True, timeout=900, cwd=REPO)
+    greedy_records = json.loads(Path(f"{jsonl}.operators.json").read_text())
+    check(result.returncode == 0 and [json.loads(line)["hash"] for line in jsonl.read_text().splitlines()] == ZIG_GREEDY_HASHES
+          and [r["semanticOpId"] for r in greedy_records] == ["decode.final_logits", "decode.sample_token"]
+          and all("traceMetaPath" not in r["trace"] for r in greedy_records), f"greedy rows: {result.stderr}")
+    code, stderr, _, _ = run(binary, work, "greedy", "--numeric-stability-policy", str(work / "missing-policy.json"),
+                             commands=greedy)
+    check(code == 2 and "cannot read" in stderr, f"missing numeric stability policy: {code} {stderr}")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--binary", required=True, type=Path)
@@ -312,6 +410,7 @@ def main() -> int:
         (["--queue-sync-mode", "deferred"], "per-command"),
         (["--replay", "x"], "not implemented"),
         (["--gpu-timestamp-mode", "require"], "GPU timestamps"),
+        (["--numeric-stability-execution-profile", "x"], "not implemented"),
     ]
     for extra, needle in rejected:
         code, stderr, _, _ = run(args.binary, args.work, "rmsnorm_tree", *extra)
@@ -322,13 +421,15 @@ def main() -> int:
     check_copies(args.binary, args.work)
     check_render(args.binary, args.work)
     check_quirks(args.binary, args.work)
+    check_semantic(args.binary, args.work)
 
     print(f"PASS doe-c-runtime: 3 example streams with doe-zig-runtime hash chains, replay-valid artifacts, "
-          f"an independent oracle match, alias labels, command repeat, an oracle mismatch, 6 rejections, "
+          f"an independent oracle match, alias labels, command repeat, an oracle mismatch, 7 rejections, "
           f"{len(ZIG_COPY_FINAL_HASH)} copy streams, a copy/texture roundtrip read back against host bytes, 4 copy "
           f"failures, {len(ZIG_RENDER_FINAL_HASH)} render streams, scissored and indexed draws read back against the "
           f"proxy and clear colors, a missing render target, {len(ZIG_QUIRK_FINAL_HASH)} quirk-matched streams, active "
-          f"staging read back against host bytes and 2 quirk refusals on "
+          f"staging read back against host bytes, 2 quirk refusals, semantic rows with operator records, repro "
+          f"bundles and host-checked captures, and 2 numeric stability refusals on "
           f"{adapter.get('device')} ({adapter.get('adapterType')}, {adapter.get('backend')})")
     return 0
 
