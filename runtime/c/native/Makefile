@@ -170,7 +170,7 @@ $(BUILD)/fused-commands: tests/fused_commands.c tests/consumer.h tests/adapter_c
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
 $(BUILD)/shader-check: tests/shader_check.c include/doe_native_shader_check.h $(NATIVE_LIBRARY)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
-$(BUILD)/adapter-info: tests/adapter_info.c tests/consumer.h tests/adapter_class.h $(NATIVE_LIBRARY)
+$(BUILD)/adapter-info: tests/adapter_info.c tests/consumer.h tests/adapter_class.h include/doe_native_adapter.h $(NATIVE_LIBRARY)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
 $(BUILD)/shader-reflection: tests/shader_reflection.c tests/consumer.h tests/adapter_class.h include/doe_native_reflection.h include/doe_native_shader_check.h $(NATIVE_LIBRARY)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@

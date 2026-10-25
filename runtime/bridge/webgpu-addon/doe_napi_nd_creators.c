@@ -203,6 +203,23 @@ static napi_value native_direct_adapter_get_info(napi_env env, napi_callback_inf
         napi_set_named_property(env, obj, "subgroupMinSize", v_sg_min);
         napi_set_named_property(env, obj, "subgroupMaxSize", v_sg_max);
 
+        /* PCI identity for providers without the Doe info block: the standard
+         * IDs, or the Doe extension when exported, which also reports the
+         * driver's version. driverVersion stays absent without it. */
+        uint32_t vendor_id = info_view.vendorID, device_id = info_view.deviceID, driver_version = 0;
+        if (pfn_doeNativeAdapterGetPciIdentity)
+            pfn_doeNativeAdapterGetPciIdentity(adapter, &vendor_id, &device_id, &driver_version);
+        napi_value v_vendor_id, v_device_id;
+        napi_create_uint32(env, vendor_id, &v_vendor_id);
+        napi_create_uint32(env, device_id, &v_device_id);
+        napi_set_named_property(env, obj, "vendorID", v_vendor_id);
+        napi_set_named_property(env, obj, "deviceID", v_device_id);
+        if (pfn_doeNativeAdapterGetPciIdentity) {
+            napi_value v_driver_version;
+            napi_create_uint32(env, driver_version, &v_driver_version);
+            napi_set_named_property(env, obj, "driverVersion", v_driver_version);
+        }
+
         if (pfn_wgpuAdapterInfoFreeMembers) {
             pfn_wgpuAdapterInfoFreeMembers(info_view);
         }

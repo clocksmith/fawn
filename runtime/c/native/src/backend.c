@@ -1,5 +1,7 @@
 /* SPDX-License-Identifier: MIT */
 #include "backend.h"
+#include "doe_native_adapter.h"
+#include "internal.h"
 #include "d3d12_frontend.h"
 #include <stdlib.h>
 #include <string.h>
@@ -129,6 +131,25 @@ static const char *vendor_name(uint32_t id)
     case 0x10005: return "mesa";
     default: return "";
     }
+}
+
+void doeNativeAdapterGetPciIdentity(WGPUAdapter adapter, uint32_t *vendor_id, uint32_t *device_id,
+    uint32_t *driver_version)
+{
+    uint32_t vendor = 0, device = 0, driver = 0;
+    const native_backend *backend = adapter ? &((const native_adapter *)adapter)->backend : NULL;
+    if (backend && backend->kind == WGPUBackendType_Vulkan) {
+        const doe_vk_caps *caps = &backend->value.vulkan.caps;
+        vendor = caps->vendor_id;
+        device = caps->device_id;
+        driver = caps->driver_version;
+    } else if (backend && backend->kind == WGPUBackendType_D3D12) {
+        vendor = backend->value.d3d12.caps.vendor_id;
+        device = backend->value.d3d12.caps.device_id;
+    }
+    if (vendor_id) *vendor_id = vendor;
+    if (device_id) *device_id = device;
+    if (driver_version) *driver_version = driver;
 }
 
 WGPUStatus native_backend_info(const native_backend *backend, WGPUAdapterInfo *out)
