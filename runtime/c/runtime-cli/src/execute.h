@@ -23,6 +23,8 @@ typedef enum doe_timestamp_mode { DOE_TIMESTAMP_AUTO, DOE_TIMESTAMP_OFF, DOE_TIM
 
 typedef struct doe_runtime_options {
     doe_timestamp_mode timestamp_mode;
+    bool no_pipeline_cache;
+    const char *pipeline_cache_dir; /* Explicit path; no implicit persistence or directory creation. */
     doe_adapter_class adapter;
     doe_queue_wait queue_wait;
     uint64_t queue_wait_timeout_ns; /* 0: runtime default bound. */
@@ -73,6 +75,9 @@ const char *doe_runtime_diagnostic_source(bool compute);
 bool doe_runtime_used_diagnostic_source(const doe_runtime *runtime, bool compute);
 /* Completes outstanding queue work; elapsed time belongs to the final trace row. */
 bool doe_runtime_flush(doe_runtime *runtime, doe_trace_execution *execution);
+/* Optional archive I/O never overwrites a command's first error. */
+void doe_runtime_flush_pipeline_cache(doe_runtime *runtime);
+bool doe_runtime_write_pipeline_cache(FILE *out, const doe_runtime *runtime);
 void doe_runtime_close(doe_runtime *runtime);
 uint64_t doe_runtime_monotonic_ns(void);
 #endif

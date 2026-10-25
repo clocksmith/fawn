@@ -383,3 +383,33 @@ Texture swizzle capability currently follows the published Apple2 or Mac2 family
 ([Apple capabilities table](https://developer.apple.com/metal/capabilities/)).
 Nonidentity backend views reject without that capability; identity views remain
 valid. Host controls cover the capability and descriptor paths, not GPU pixels.
+
+### Explicit persistent pipeline archives
+
+`doe_metal_cache.h` configures an optional `MTLBinaryArchive` on the existing
+context. A nonempty directory explicitly opts into native directory creation and
+`doe_pipeline_archive_v1.metallib`; no default path or environment mutation is
+introduced. Missing, incompatible or corrupt archives fall back to an empty
+archive. Configuration failure preserves the previously owned archive. Disabling
+releases it without writing; explicit flush and context teardown serialize dirty
+archives, with teardown failures remaining best effort.
+
+Both compute and render constructors attach the archive to the **actual native
+pipeline descriptor**, including the newly compiled functions and complete render
+state. Metal performs compatibility matching; there is no entry-name-only shader
+cache. Source-library compilation is not skipped. Archive pipeline failures retry
+the ordinary native constructor, and optional addition failures do not invalidate
+a successfully created pipeline. Reported counters describe load/add/serialization
+operations, not cache hits or performance improvements.
+
+`test_objc_archive` and `test_objc_render_pipeline` cover typed selector arguments,
+load/miss/replacement, descriptor attachment, same-descriptor render fallback,
+changed-source compilation, copied errors and reference cleanup. These host
+controls do not qualify filesystem persistence, Apple SDK ABI, physical hardware,
+or binary cache hits. The native public extension is documented in
+`../../native/include/doe_native_pipeline_cache.h`.
+
+Primary native contracts:
+- [Apple binary archive workflow](https://developer.apple.com/documentation/metal/creating-binary-archives-from-device-built-pipeline-state-objects?language=objc)
+- [Archive serialization](https://developer.apple.com/documentation/metal/mtlbinaryarchive/serialize%28to%3A%29?language=objc)
+- [Compute descriptor construction](https://developer.apple.com/documentation/metal/mtldevice/makecomputepipelinestate%28descriptor%3Aoptions%3Areflection%3A%29?language=objc)

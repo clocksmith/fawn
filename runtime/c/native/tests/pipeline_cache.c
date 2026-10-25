@@ -1,0 +1,12 @@
+/* SPDX-License-Identifier: MIT */
+#include "consumer.h"
+#include "pipeline_cache_cases.h"
+int main(void)
+{
+    state s = {0};
+    consumer_init(&s);
+    pipeline_cache_admission(&s, false);
+    consumer_finish(&s);
+    puts("PASS native optional pipeline cache ABI/output validation, explicit unsupported backend and disable without WebGPU error callbacks; no archive reuse claim");
+    return 0;
+}

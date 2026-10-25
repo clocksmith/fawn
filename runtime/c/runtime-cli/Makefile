@@ -32,7 +32,7 @@ DAWN_SURFACE_LIBS = -lX11-xcb -lX11
 LDLIBS += -lxcb
 endif
 RUNTIME_HEADERS = src/cli_options.h src/cli_inputs.h src/cli_output.h src/render_public.h src/surface_platform.h src/execute.h src/runtime_internal.h ../../zig/vendor/webgpu-headers/webgpu.h \
-  ../native/include/doe_native_adapter.h
+  ../native/include/doe_native_adapter.h ../native/include/doe_native_pipeline_cache.h
 .PHONY: all bench-bin bench-bin-dawn check check-dawn check-host dawn native
 all: $(BUILD)/doe-c-runtime
 $(BUILD):

@@ -2,6 +2,7 @@
 #ifndef DOE_MTL_NATIVE_H
 #define DOE_MTL_NATIVE_H
 #include "../include/doe_metal.h"
+#include "../include/doe_metal_cache.h"
 #include "../include/doe_metal_texture.h"
 #include "../include/doe_metal_render.h"
 #include "../include/doe_metal_query.h"
@@ -123,6 +124,9 @@ typedef struct doe_mtl_native {
     doe_mtl_status (*resolve_timestamps)(void *userdata, void *command, void *timestamps,
         uint32_t first, uint32_t count, void *destination, size_t offset,
         void **event, uint64_t value, doe_mtl_error *error);
+    doe_mtl_status (*pipeline_cache)(void *, void *, const char *, size_t, doe_mtl_error *);
+    doe_mtl_status (*pipeline_cache_flush)(void *, doe_mtl_error *);
+    void (*pipeline_cache_stats)(void *, doe_mtl_pipeline_cache_stats *);
     void (*commit)(void *userdata, void *command);
     /* Returns native MTLCommandBufferStatus. Terminal NSError operation/code/text
      * are copied before its autorelease pool drains; no borrowed string escapes. */
