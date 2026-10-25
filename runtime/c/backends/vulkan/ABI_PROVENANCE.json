@@ -510,6 +510,13 @@
       "result": "VkResult",
       "parameters": "VkDevice, uint32_t, const VkFence *",
       "usage": "Re-arms a reusable compute-program recording's own fence before each resubmission, after proven completion."
+    },
+    "vkResetCommandPool": {
+      "source": "vk_functions.zig:18",
+      "signature": "VkResult(VkDevice,VkCommandPool,VkFlags)",
+      "result": "VkResult",
+      "parameters": "VkDevice, VkCommandPool, VkFlags",
+      "usage": "Resets a recycled per-submission command pool, flags 0, only after its recording is proven terminal or was never submitted."
     }
   },
   "retained_constants": {

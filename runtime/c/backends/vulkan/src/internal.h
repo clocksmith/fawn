@@ -14,6 +14,7 @@ doe_vk_status doe_vk_load_symbol(void *library, const char *name,
     void *destination, size_t destination_size, doe_vk_error *error);
 
 enum { DOE_VK_MAX_GROUPS = 4, DOE_VK_MAX_BINDINGS = 128 };
+enum { DOE_VK_COMMAND_SPARES = 8 };
 struct doe_vk_context {
     uint32_t references;
     bool lost;
@@ -31,10 +32,20 @@ struct doe_vk_context {
      * ones and up to DOE_VK_RETAINED_PIPELINES released ones; see pipeline.c. */
     struct doe_vk_pipeline *compute_pipelines;
     uint32_t retained_pipelines;
+    /* Reset command pools (one primary buffer each) and unsignaled fences of
+     * recordings that were proven terminal or never submitted; see commands.c. */
+    struct doe_vk_command_spare {
+        VkCommandPool pool;
+        VkCommandBuffer command;
+        VkFence fence;
+    } command_spares[DOE_VK_COMMAND_SPARES];
+    uint32_t command_spare_count;
 };
 enum { DOE_VK_RETAINED_PIPELINES = 32 };
 /* Destroys released compute pipelines; the context is releasing its device. */
 void doe_vk_pipeline_cache_clear(doe_vk_context *context);
+/* Destroys spare command pools and fences; the context is releasing its device. */
+void doe_vk_command_spares_clear(doe_vk_context *context);
 struct doe_vk_buffer {
     doe_vk_context *context;
     uint32_t references;
