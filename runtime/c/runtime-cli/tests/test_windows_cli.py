@@ -20,6 +20,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--binary', type=Path, required=True)
     parser.add_argument('--work', type=Path, required=True)
+    parser.add_argument('--provider', choices=['native', 'dawn'], default='native')
     args = parser.parse_args()
     work = args.work / 'Unicode-\u03bb-\u96ea'
     work.mkdir(parents=True, exist_ok=True)
@@ -45,7 +46,9 @@ def main() -> int:
     assert result.returncode == 1, result.stderr
     for lane in ['metal_dawn_release', 'vulkan_dawn_release', 'd3d12_dawn_release']:
         result = subprocess.run([str(args.binary), '--backend-lane', lane], cwd=REPO, capture_output=True, timeout=10)
-        assert result.returncode == 2, 'native provider must refuse Dawn delegation: ' + lane
+        expected = 0 if args.provider == 'dawn' and lane == 'd3d12_dawn_release' else 2
+        assert result.returncode == expected, 'provider lane mismatch: ' + lane
+    assert metadata['module'] == ('dawn-c-runtime' if args.provider == 'dawn' else 'doe-c-runtime')
     print('PASS actual Windows CLI host normalization, Unicode argv/artifacts, D3D12 profile and replay/provider refusal')
     return 0
 

@@ -367,6 +367,23 @@ runs its plan mode at the plan boundary; the provider registry lists it
 with productRole `dawn`, so its traces are Dawn execution in every gate and
 never Doe, and stay distinct from the Zig runtime's `dawn_delegate`.
 
+On Windows, `tools/build_windows.py --provider dawn --dawn-dll <actual DLL>
+--dawn-import <matching MSVC .lib> --out <fresh directory>` builds the same
+CLI with `dawn_direct_d3d12` identity. Additional DLL dependencies are explicit
+repeatable `--dawn-runtime` inputs; native provider substitution is not permitted.
+The manual `c-windows-dawn-producer` workflow builds official Dawn revision
+`f99976772eb1e7ae4ccb49cbdeb1b7b6ad32a244`, whose DEPS pins the exact repository
+WebGPU header. It verifies fetched dependency revisions, header SHA-256 and all
+989 pinned enum/record-layout observations against Dawn's generated header before
+linking, then runs host and relocation controls. Its two-job build has a 45-minute
+workflow limit. This route is authored; an actual passing producer receipt is
+required before claiming Windows Dawn build/ABI/loader acceptance. It performs
+no adapter/device/GPU execution.
+
+`make check-numeric-consumers` runs bounded unchanged RMSNorm→half-matmul and
+attention shaders through the actual provider, checking exact readbacks and
+numeric receipts. It requires ShaderF16; CPU ICD results remain software execution.
+
 ## Bench comparisons
 
 [`config/doe-runtime-providers.json`](../../../config/doe-runtime-providers.json)

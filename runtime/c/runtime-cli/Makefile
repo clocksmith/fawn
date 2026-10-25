@@ -92,6 +92,7 @@ $(BUILD)/test_texture_cleanup: tests/test_texture_cleanup.c $(CORE) $(RUNTIME) $
 # Host-only: parsing, rejection, the trace hash chain and SHA-256; no device.
 check-host: $(BUILD)/test_json $(BUILD)/test_stream $(BUILD)/test_trace $(BUILD)/test_sha256 $(BUILD)/test_quirks \
   $(BUILD)/test_numeric
+	$(PYTHON) tests/test_dawn_producer.py
 	$(BUILD)/test_json
 	$(BUILD)/test_stream ../../../examples
 	$(BUILD)/test_trace
@@ -159,3 +160,9 @@ check-host-io: $(BUILD)/test_host_io $(BUILD)/test_host_io_file
 	$(BUILD)/test_host_io
 	$(BUILD)/test_host_io_file
 check-host: check-host-io
+
+.PHONY: check-numeric-consumers
+# Actual unchanged f16 matmul/RMSNorm/attention. Requires shader-f16; CPU ICD
+# evidence remains software execution, never physical GPU qualification.
+check-numeric-consumers: all
+	$(PYTHON) tests/test_numeric_consumers.py --binary '$(abspath $(BUILD)/doe-c-runtime)' --work '$(abspath $(BUILD)/numeric-consumers)'
