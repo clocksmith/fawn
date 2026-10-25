@@ -1,0 +1,322 @@
+/* SPDX-License-Identifier: MIT
+ * doe-c-runtime: executes a runtime command stream through the C WebGPU runtime
+ * and writes doe-zig-runtime trace v1 artifacts. Arguments follow
+ * doe-zig-runtime; every argument or value this runtime does not implement is
+ * rejected before any device work. */
+#include "execute.h"
+#include "stream.h"
+#include "trace.h"
+#include <errno.h>
+#include <inttypes.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+
+#define MODULE_NAME "doe-c-runtime"
+#define BACKEND_ID "doe_c_vulkan"
+
+typedef struct options {
+    const char *commands, *kernel_root, *trace_jsonl, *trace_meta, *quirks;
+    const char *vendor, *api, *family, *driver;
+    bool execute, trace_stdout, validate_oracles;
+    uint64_t command_repeat;
+    doe_runtime_options runtime;
+} options;
+
+typedef struct totals {
+    uint64_t rows, successes, errors;
+    uint64_t total_ns, setup_ns, encode_ns, submit_wait_ns, dispatches, submits;
+    uint64_t input_read_ns, input_parse_ns, executor_init_ns;
+    uint64_t hash, previous;
+    uint64_t oracles, oracles_matched, oracles_failed;
+    char oracle_expected[65], oracle_actual[65];
+    const char *oracle_reference;
+} totals;
+
+static void usage(FILE *out)
+{
+    fputs("doe-c-runtime --commands <path> --execute [--backend native] [--kernel-root <path>]\n"
+          "  [--trace] [--trace-jsonl <path>] [--trace-meta <path>] [--command-repeat N]\n"
+          "  [--vendor X] [--api vulkan] [--family X] [--driver X.Y.Z]\n"
+          "  [--quirks <path> --quirk-mode off] [--queue-sync-mode per-command]\n"
+          "  [--upload-buffer-usage copy-dst-copy-src|copy-dst] [--upload-submit-every N]\n"
+          "  [--gpu-timestamp-mode off|auto] [--adapter auto|physical|software]\n"
+          "  [--validate-output-oracles]  (schema 1 sha256_exact_v1 isolated-dispatch oracles)\n"
+          "Commands: upload, buffer_write, barrier, kernel_dispatch (WGSL kernels, buffer bindings).\n"
+          "Every other command, field or argument is rejected. --adapter is this runtime's own;\n"
+          "auto takes a nonfallback adapter, else the fallback (CPU) adapter, and the trace meta\n"
+          "records which one ran.\n", out);
+}
+
+static bool parse_u64(const char *text, uint64_t *out)
+{
+    if (!text || !*text || *text == '-') return false;
+    errno = 0;
+    char *end = NULL;
+    unsigned long long value = strtoull(text, &end, 10);
+    if (errno || *end) return false;
+    *out = value;
+    return true;
+}
+
+static int reject_argument(const char *argument, const char *why)
+{
+    fprintf(stderr, "doe-c-runtime: %s: %s\n", argument, why);
+    return 2;
+}
+
+static int parse_options(int argc, char **argv, options *out)
+{
+    *out = (options){.command_repeat = 1, .runtime = {.adapter = DOE_ADAPTER_AUTO, .upload_copy_src = true,
+        .upload_submit_every = 1}};
+    const char *quirk_mode = NULL;
+    for (int i = 1; i < argc; i++) {
+        const char *flag = argv[i];
+        const char *value = i + 1 < argc ? argv[i + 1] : NULL;
+#define TAKE(field) do { if (!value) return reject_argument(flag, "needs a value"); out->field = value; i++; } while (0)
+        if (!strcmp(flag, "--help") || !strcmp(flag, "-h")) { usage(stdout); return 1; }
+        else if (!strcmp(flag, "--commands")) TAKE(commands);
+        else if (!strcmp(flag, "--kernel-root")) TAKE(runtime.kernel_root);
+        else if (!strcmp(flag, "--trace-jsonl")) TAKE(trace_jsonl);
+        else if (!strcmp(flag, "--trace-meta")) TAKE(trace_meta);
+        else if (!strcmp(flag, "--quirks")) TAKE(quirks);
+        else if (!strcmp(flag, "--vendor")) TAKE(vendor);
+        else if (!strcmp(flag, "--api")) TAKE(api);
+        else if (!strcmp(flag, "--family")) TAKE(family);
+        else if (!strcmp(flag, "--driver")) TAKE(driver);
+        else if (!strcmp(flag, "--execute")) out->execute = true;
+        else if (!strcmp(flag, "--trace")) out->trace_stdout = true;
+        else if (!strcmp(flag, "--validate-output-oracles")) out->validate_oracles = true;
+        else if (!strcmp(flag, "--quirk-mode")) { if (!value) return reject_argument(flag, "needs a value"); quirk_mode = value; i++; }
+        else if (!strcmp(flag, "--backend")) {
+            if (!value || strcmp(value, "native")) return reject_argument(flag, "only \"native\" execution is implemented");
+            i++;
+        } else if (!strcmp(flag, "--queue-sync-mode")) {
+            if (!value || strcmp(value, "per-command")) return reject_argument(flag, "only \"per-command\" is implemented");
+            i++;
+        } else if (!strcmp(flag, "--upload-buffer-usage")) {
+            if (value && !strcmp(value, "copy-dst-copy-src")) out->runtime.upload_copy_src = true;
+            else if (value && !strcmp(value, "copy-dst")) out->runtime.upload_copy_src = false;
+            else return reject_argument(flag, "must be copy-dst-copy-src or copy-dst");
+            i++;
+        } else if (!strcmp(flag, "--upload-submit-every")) {
+            if (!parse_u64(value, &out->runtime.upload_submit_every) || !out->runtime.upload_submit_every)
+                return reject_argument(flag, "must be a positive integer");
+            i++;
+        } else if (!strcmp(flag, "--command-repeat")) {
+            if (!parse_u64(value, &out->command_repeat) || !out->command_repeat) return reject_argument(flag, "must be a positive integer");
+            i++;
+        } else if (!strcmp(flag, "--gpu-timestamp-mode")) {
+            /* auto records no GPU timestamps when none are taken, which is every run here. */
+            if (!value || (strcmp(value, "off") && strcmp(value, "auto")))
+                return reject_argument(flag, "GPU timestamps are not implemented; use off or auto");
+            i++;
+        } else if (!strcmp(flag, "--adapter")) {
+            if (value && !strcmp(value, "auto")) out->runtime.adapter = DOE_ADAPTER_AUTO;
+            else if (value && !strcmp(value, "physical")) out->runtime.adapter = DOE_ADAPTER_PHYSICAL;
+            else if (value && !strcmp(value, "software")) out->runtime.adapter = DOE_ADAPTER_SOFTWARE;
+            else return reject_argument(flag, "must be auto, physical or software");
+            i++;
+        } else {
+            return reject_argument(flag, "is not implemented by doe-c-runtime");
+        }
+#undef TAKE
+    }
+    if (!out->commands) return reject_argument("--commands", "is required (no embedded sample stream)");
+    if (!out->execute) return reject_argument("--execute", "is required (trace-only mode is not implemented)");
+    if (out->api && strcmp(out->api, "vulkan")) return reject_argument("--api", "only vulkan is implemented");
+    if (quirk_mode && strcmp(quirk_mode, "off")) return reject_argument("--quirk-mode", "only off is implemented");
+    if (out->quirks && !quirk_mode)
+        return reject_argument("--quirks", "quirk matching is not implemented; pass --quirk-mode off to run without quirks");
+    return 0;
+}
+
+static char *read_file(const char *path, size_t *size)
+{
+    FILE *file = fopen(path, "rb");
+    if (!file) return NULL;
+    char *text = NULL;
+    size_t length = 0, capacity = 0;
+    for (;;) {
+        if (length == capacity) {
+            size_t grown_capacity = capacity ? capacity * 2 : 65536;
+            char *grown = realloc(text, grown_capacity);
+            if (!grown) { free(text); fclose(file); return NULL; }
+            text = grown;
+            capacity = grown_capacity;
+        }
+        size_t read = fread(text + length, 1, capacity - length, file);
+        length += read;
+        if (read == 0) break;
+    }
+    bool failed = ferror(file);
+    fclose(file);
+    if (failed) { free(text); return NULL; }
+    *size = length;
+    return text;
+}
+
+static uint64_t realtime_ns(void)
+{
+    struct timespec now;
+    clock_gettime(CLOCK_REALTIME, &now);
+    return (uint64_t)now.tv_sec * UINT64_C(1000000000) + (uint64_t)now.tv_nsec;
+}
+
+static bool write_optional(FILE *out, const char *key, const char *value, bool comma)
+{
+    if (fprintf(out, "%s\"%s\":", comma ? "," : "", key) < 0) return false;
+    return value ? doe_trace_write_string(out, value) : fputs("null", out) >= 0;
+}
+
+static bool write_meta(const char *path, const options *o, const totals *t, uint64_t command_count,
+    const doe_runtime_adapter *adapter)
+{
+    FILE *out = fopen(path, "wb");
+    if (!out) return false;
+    uint64_t seq_max = t->rows ? t->rows - 1 : 0;
+    bool ok = fprintf(out, "{\"traceVersion\":1,\"module\":\"" MODULE_NAME "\",\"seqMax\":%" PRIu64 ",\"rowCount\":%" PRIu64
+        ",\"commandCount\":%" PRIu64 ",\"matchedCount\":0,\"blockingCount\":0,\"requiresLeanCount\":0,\"leanRequiredCount\":0,"
+        "\"executionRowCount\":%" PRIu64 ",\"executionSuccessCount\":%" PRIu64 ",\"executionErrorCount\":%" PRIu64
+        ",\"executionSkippedCount\":0,\"executionUnsupportedCount\":0,\"executionTotalNs\":%" PRIu64
+        ",\"executionSetupTotalNs\":%" PRIu64 ",\"executionEncodeTotalNs\":%" PRIu64 ",\"executionSubmitWaitTotalNs\":%" PRIu64
+        ",\"executionDispatchCount\":%" PRIu64 ",\"executionSubmitCount\":%" PRIu64 ",\"hostInputReadTotalNs\":%" PRIu64
+        ",\"hostInputParseTotalNs\":%" PRIu64 ",\"hostExecutorInitTotalNs\":%" PRIu64
+        ",\"executionGpuTimestampTotalNs\":0,\"executionGpuTimestampAttemptedCount\":0,\"executionGpuTimestampValidCount\":0,"
+        "\"semanticTracingEnabled\":false,\"semanticOpRowCount\":0,\"semanticCaptureCount\":0,\"semanticReproCount\":0,"
+        "\"hash\":\"0x%" PRIx64 "\",\"previousHash\":\"0x%" PRIx64 "\",\"outputOracleCount\":%" PRIu64
+        ",\"outputOracleMatchedCount\":%" PRIu64 ",\"outputOracleFailedCount\":%" PRIu64
+        ",\"executionBackend\":\"" BACKEND_ID "\",\"backendId\":\"" BACKEND_ID "\","
+        "\"fallbackUsed\":false,\"queueSyncMode\":\"per-command\",\"quirkMode\":\"off\"",
+        seq_max, t->rows, command_count, t->rows, t->successes, t->errors, t->total_ns, t->setup_ns, t->encode_ns,
+        t->submit_wait_ns, t->dispatches, t->submits, t->input_read_ns, t->input_parse_ns, t->executor_init_ns,
+        t->hash, t->previous, t->oracles, t->oracles_matched, t->oracles_failed) >= 0;
+    if (ok && t->oracles) {
+        ok = write_optional(out, "outputOracleKind", "sha256_exact_v1", true) &&
+            write_optional(out, "outputOracleReferenceId", t->oracle_reference, true) &&
+            write_optional(out, "outputOracleExpectedSha256", t->oracle_expected, true) &&
+            write_optional(out, "outputOracleActualSha256", t->oracle_actual[0] ? t->oracle_actual : NULL, true);
+    }
+    ok = ok && fputs(",\"profile\":{", out) >= 0;
+    ok = ok && write_optional(out, "vendor", o->vendor, false) && write_optional(out, "api", o->api ? o->api : "vulkan", true) &&
+        write_optional(out, "deviceFamily", o->family, true) && write_optional(out, "driver", o->driver, true);
+    ok = ok && fputs("},\"adapter\":{", out) >= 0;
+    if (adapter) {
+        ok = ok && write_optional(out, "vendor", adapter->vendor, false) && write_optional(out, "architecture", adapter->architecture, true) &&
+            write_optional(out, "device", adapter->device, true) && write_optional(out, "description", adapter->description, true) &&
+            write_optional(out, "adapterType", adapter->adapter_type, true) && write_optional(out, "backend", adapter->backend, true) &&
+            fprintf(out, ",\"vendorId\":%u,\"deviceId\":%u", adapter->vendor_id, adapter->device_id) >= 0;
+    }
+    ok = ok && fputs("}}\n", out) >= 0;
+    if (fclose(out) != 0) ok = false;
+    return ok;
+}
+
+int main(int argc, char **argv)
+{
+    options o;
+    int parsed = parse_options(argc, argv, &o);
+    if (parsed) return parsed == 1 ? 0 : parsed;
+    totals t = {.hash = DOE_TRACE_HASH_SEED, .previous = DOE_TRACE_HASH_SEED};
+    uint64_t read_start = doe_runtime_monotonic_ns();
+    size_t size = 0;
+    char *text = read_file(o.commands, &size);
+    if (!text) { fprintf(stderr, "doe-c-runtime: cannot read %s\n", o.commands); return 2; }
+    uint64_t parse_start = doe_runtime_monotonic_ns();
+    doe_stream stream;
+    doe_stream_error stream_error;
+    bool stream_ok = doe_stream_parse(text, size, &stream, &stream_error);
+    free(text);
+    t.input_read_ns = parse_start - read_start;
+    t.input_parse_ns = doe_runtime_monotonic_ns() - parse_start;
+    if (!stream_ok) {
+        if (stream_error.command_index == SIZE_MAX) fprintf(stderr, "doe-c-runtime: %s: %s\n", o.commands, stream_error.message);
+        else fprintf(stderr, "doe-c-runtime: %s: command %zu: %s\n", o.commands, stream_error.command_index, stream_error.message);
+        return 2;
+    }
+    if (stream.count > UINT64_MAX / o.command_repeat) { doe_stream_free(&stream); return reject_argument("--command-repeat", "overflows"); }
+    uint64_t command_count = (uint64_t)stream.count * o.command_repeat;
+    FILE *rows = o.trace_jsonl ? fopen(o.trace_jsonl, "wb") : NULL;
+    if (o.trace_jsonl && !rows) {
+        fprintf(stderr, "doe-c-runtime: cannot write %s\n", o.trace_jsonl);
+        doe_stream_free(&stream);
+        return 2;
+    }
+    char message[256] = "";
+    uint64_t init_start = doe_runtime_monotonic_ns();
+    doe_runtime *runtime = doe_runtime_open(&o.runtime, message, sizeof(message));
+    t.executor_init_ns = doe_runtime_monotonic_ns() - init_start;
+    int status = 0;
+    if (!runtime) {
+        fprintf(stderr, "doe-c-runtime: %s\n", message);
+        status = 1;
+    }
+    const doe_trace_identity identity = {.module = MODULE_NAME, .backend_id = BACKEND_ID};
+    for (uint64_t pass = 0; runtime && status == 0 && pass < o.command_repeat; pass++) {
+        for (size_t i = 0; i < stream.count && status == 0; i++) {
+            const doe_command *command = &stream.commands[i];
+            doe_trace_execution execution;
+            bool ok = doe_runtime_execute(runtime, command, &execution);
+            uint64_t seq = t.rows;
+            uint64_t hash = doe_trace_payload_hash(t.hash, seq, command->label, doe_command_tag(command->kind),
+                command->kind == DOE_COMMAND_KERNEL_DISPATCH ? command->as.dispatch.kernel : NULL);
+            uint64_t now = realtime_ns();
+            if (rows && !doe_trace_write_row(rows, &identity, seq, now, hash, t.hash, command, &execution)) status = 1;
+            if (o.trace_stdout && !doe_trace_write_row(stdout, &identity, seq, now, hash, t.hash, command, &execution)) status = 1;
+            t.previous = t.hash;
+            t.hash = hash;
+            t.rows++;
+            t.total_ns += execution.duration_ns;
+            t.setup_ns += execution.setup_ns;
+            t.encode_ns += execution.encode_ns;
+            t.submit_wait_ns += execution.submit_wait_ns;
+            t.dispatches += execution.dispatch_count;
+            t.submits += execution.submit_count;
+            if (ok) t.successes++;
+            else {
+                t.errors++;
+                fprintf(stderr, "doe-c-runtime: command %zu (%s): %s: %s\n", i, command->label,
+                    execution.status_code, execution.message);
+                status = 1;
+            }
+        }
+    }
+    for (size_t i = 0; runtime && status == 0 && o.validate_oracles && i < stream.count; i++) {
+        const doe_command *command = &stream.commands[i];
+        if (command->kind != DOE_COMMAND_KERNEL_DISPATCH || !command->as.dispatch.oracle) continue;
+        doe_output_oracle oracle;
+        char reason[256];
+        t.oracles++;
+        if (!doe_output_oracle_parse(command->as.dispatch.oracle, &oracle, reason, sizeof(reason))) {
+            fprintf(stderr, "doe-c-runtime: command %zu output_oracle: %s\n", i, reason);
+            t.oracles_failed++;
+            status = 1;
+            continue;
+        }
+        memcpy(t.oracle_expected, oracle.expected_sha256, sizeof(t.oracle_expected));
+        t.oracle_reference = oracle.reference_id;
+        t.oracle_actual[0] = '\0';
+        doe_trace_execution execution;
+        if (!doe_runtime_validate_oracle(runtime, command, &oracle, t.oracle_actual, &execution)) {
+            fprintf(stderr, "doe-c-runtime: command %zu output_oracle: %s: %s\n", i, execution.status_code, execution.message);
+            t.oracles_failed++;
+            status = 1;
+        } else if (strcmp(t.oracle_actual, oracle.expected_sha256)) {
+            fprintf(stderr, "doe-c-runtime: command %zu output_oracle mismatch: expected %s, read back %s\n", i,
+                oracle.expected_sha256, t.oracle_actual);
+            t.oracles_failed++;
+            status = 1;
+        } else {
+            t.oracles_matched++;
+        }
+    }
+    if (rows && fclose(rows) != 0) status = 1;
+    if (o.trace_meta && !write_meta(o.trace_meta, &o, &t, command_count, runtime ? doe_runtime_adapter_info(runtime) : NULL)) {
+        fprintf(stderr, "doe-c-runtime: cannot write %s\n", o.trace_meta);
+        status = 1;
+    }
+    doe_runtime_close(runtime);
+    doe_stream_free(&stream);
+    return status;
+}
