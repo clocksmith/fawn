@@ -82,7 +82,7 @@ texture-use owner; no frontend availability bit is added. All native heaps/views
 prepare before recording. Ordinary command/pending leases retain every dependency
 through unknown completion. This is a checkpoint toward retained graphics parity,
 not a narrower final acceptance target. Eight MRT slots, broader color formats,
-stencil, depth-only passes, MSAA and public fragment UAV writes remain concrete
+stencil, MSAA and public fragment UAV writes remain concrete
 migration work. Guarded indexed/indirect source composition is described below;
 its device qualification remains open. The retained
 [all-format consumer](../../native/tests/vertex_formats.c) additionally needs
@@ -582,3 +582,20 @@ DEFAULT resolution, occlusion event balance and early release. Real C-compiler
 HLSL reflection controls include the common timestamp kernel. These changes await
 fresh SDK compilation and actual DXC/query execution; they do not inherit earlier
 source-bound SDK or hardware qualification.
+
+### Explicit fragment absence and depth-only source checkpoint
+
+Depth-only D32 passes now carry no color target, and vertex-only pipelines carry
+explicit `fragment_absent` / `color_absent` flags. An empty fragment description
+without the absence flag is still invalid; supplied fragment rows with the flag
+are rejected. The native bridge compiles only the selected stages, uses an empty
+interstage projection for a missing fragment, and keeps a genuinely absent PS in
+the SDK PSO. No synthesized fragment shader is substituted. Fragment-present,
+color-absent depth shaders remain distinct from vertex-only pipelines.
+
+Depth-only viewport/scissor bounds use the depth extent. Empty draws and passes
+still execute depth clear/load/discard, with the same DSV preparation and ordinary
+texture/pipeline leases. Portable tests exercise explicit absence, contradictory
+rows, missing-stage rejection, depth-only draws and discard; actual-compiler map
+controls cover a single selected vertex stage. SDK PSO controls have new absent-PS
+and zero-RTV assertions but have not been executed for this source checkpoint.

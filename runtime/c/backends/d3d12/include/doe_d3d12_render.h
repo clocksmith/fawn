@@ -24,6 +24,7 @@ typedef struct doe_dx_blend_component { uint32_t source, destination, operation;
 typedef struct doe_dx_render_pipeline_desc {
     doe_dx_dynamic_pipeline_desc stages[DOE_DX_RENDER_STAGES];
     doe_dx_format color_format; /* One RGBA8/BGRA8 UNORM target, sample 1. */
+    bool color_absent, fragment_absent; /* Explicit absence, never inferred from empty stage data. */
     bool front_counter_clockwise;
     doe_dx_cull cull;
     doe_dx_topology topology;

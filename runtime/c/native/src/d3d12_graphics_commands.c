@@ -5,10 +5,11 @@
 #if defined(_WIN32)
 static bool same_targets(const doe_resource_render_targets *a,const doe_resource_render_targets *b)
 {
-    return a->color_count==1 && b->color_count==1 && a->depth_stencil==b->depth_stencil &&
-        a->occlusion_queries==b->occlusion_queries && a->colors[0].view==b->colors[0].view &&
+    if (a->color_count>1 || a->color_count!=b->color_count || a->depth_stencil!=b->depth_stencil ||
+        a->occlusion_queries!=b->occlusion_queries) return false;
+    return !a->color_count || (a->colors[0].view==b->colors[0].view &&
         !a->colors[0].resolve_target && !b->colors[0].resolve_target &&
-        !a->colors[0].has_depth_slice && !b->colors[0].has_depth_slice;
+        !a->colors[0].has_depth_slice && !b->colors[0].has_depth_slice);
 }
 static native_failure prepare_draw(const doe_resource_render_packet *packet,
     doe_dx_render_draw *out,native_d3d12_graphics_snapshot *storage)
@@ -21,7 +22,7 @@ static native_failure prepare_draw(const doe_resource_render_packet *packet,
         packet->groups,&packet->offsets,resolved)!=DOE_RESOURCE_OK) return native_failure_status(NATIVE_INVALID_ARGUMENT);
     *out=(doe_dx_render_draw){.pipeline=pipeline->handle.d3d12,.vertex_count=packet->count,
         .instance_count=packet->instances,.first_vertex=packet->first,.first_instance=packet->first_instance};
-    for (size_t stage=0;stage<DOE_DX_RENDER_STAGES;++stage) {
+    for (size_t stage=0;stage<pipeline->d3d12_graphics->stage_count;++stage) {
         native_failure failure=native_d3d12_binding_values(pipeline,&pipeline->d3d12_graphics->stages[stage],
             resolved,&storage->stages[stage]);
         if (failure.status!=NATIVE_OK) return failure;
@@ -79,16 +80,21 @@ native_failure native_d3d12_render(native_command_handle *commands,
         if (packet->last_in_pass) return native_failure_status(NATIVE_INVALID_ARGUMENT);
     }
     if (!end) return native_failure_status(NATIVE_INVALID_ARGUMENT);
-    const doe_resource_color_attachment *attachment=&begin->targets.colors[0];
-    native_view *view=doe_resource_view_native(attachment->view);
-    doe_resource_texture *texture=doe_resource_view_texture(attachment->view);
-    const doe_resource_view_desc *span=doe_resource_view_description(attachment->view);
-    const doe_resource_texture_desc *desc=doe_resource_texture_description(texture);
-    native_texture *target=doe_resource_texture_native(texture);
-    if (!view || !span || !desc || !target || !target->d3d12 || span->format!=desc->format ||
-        span->dimension!=WGPUTextureViewDimension_2D || span->aspect!=WGPUTextureAspect_All ||
-        span->base_mip || span->mip_count!=1 || span->base_layer || span->layer_count!=1)
-        return native_failure_status(NATIVE_UNSUPPORTED);
+    const doe_resource_color_attachment *attachment=begin->targets.color_count && begin->targets.colors[0].view ?
+        &begin->targets.colors[0] : NULL;
+    const doe_resource_view_desc *span=NULL;
+    native_texture *target=NULL;
+    if (attachment) {
+        native_view *view=doe_resource_view_native(attachment->view);
+        doe_resource_texture *texture=doe_resource_view_texture(attachment->view);
+        span=doe_resource_view_description(attachment->view);
+        const doe_resource_texture_desc *desc=doe_resource_texture_description(texture);
+        target=doe_resource_texture_native(texture);
+        if (!view || !span || !desc || !target || !target->d3d12 || span->format!=desc->format ||
+            span->dimension!=WGPUTextureViewDimension_2D || span->aspect!=WGPUTextureAspect_All ||
+            span->base_mip || span->mip_count!=1 || span->base_layer || span->layer_count!=1)
+            return native_failure_status(NATIVE_UNSUPPORTED);
+    } else if (!begin->targets.depth_stencil) return native_failure_status(NATIVE_INVALID_ARGUMENT);
     size_t draws_count=end-1;
     if (draws_count>SIZE_MAX/sizeof(native_d3d12_graphics_snapshot) || draws_count>SIZE_MAX/sizeof(doe_dx_render_draw))
         return native_failure_status(NATIVE_OUT_OF_MEMORY);
@@ -108,7 +114,7 @@ native_failure native_d3d12_render(native_command_handle *commands,
         failure=prepare_draw(packet,&draws[i],&storage[i]);
         if (failure.status==NATIVE_OK) failure=native_d3d12_draw_prepare(commands,packet,&draws[i],&storage[i]);
     }
-    doe_dx_render_pass pass={.color=target->d3d12,.draws=draws,.draw_count=draws_count};
+    doe_dx_render_pass pass={.color=target ? target->d3d12 : NULL,.draws=draws,.draw_count=draws_count};
     if (failure.status==NATIVE_OK && begin->targets.depth_stencil) {
         doe_resource_view *depth_view=begin->targets.depth_stencil;
         const doe_resource_view_desc *depth_span=doe_resource_view_description(depth_view);
@@ -130,7 +136,7 @@ native_failure native_d3d12_render(native_command_handle *commands,
                 failure=native_failure_status(NATIVE_INVALID_ARGUMENT);
         }
     }
-    if (failure.status==NATIVE_OK) {
+    if (failure.status==NATIVE_OK && attachment) {
         if (attachment->load==WGPULoadOp_Clear) {
             doe_vk_clear_color clear;
             if (!native_render_clear(span->format,attachment->clear,&clear)) failure=native_failure_status(NATIVE_INVALID_ARGUMENT);

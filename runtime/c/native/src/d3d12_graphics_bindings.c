@@ -23,13 +23,13 @@ bool native_d3d12_interstage_mask(const native_stage *stage,uint32_t *out)
     return true;
 }
 
-bool native_d3d12_graphics_maps(const native_pipeline *pipeline,const native_stage stages[2],
+bool native_d3d12_graphics_maps_count(const native_pipeline *pipeline,const native_stage *stages,size_t count,
     native_d3d12_layout out[2],native_d3d12_graphics *maps)
 {
-    if (!pipeline || !stages || !out || !maps || pipeline->binding_count>NATIVE_MAX_PIPELINE_BINDINGS) return false;
-    native_d3d12_graphics result={0};
-    native_d3d12_layout layouts[2];
-    for (size_t stage=0;stage<DOE_DX_RENDER_STAGES;++stage) {
+    if (!pipeline || !stages || !out || !maps || (count!=1 && count!=2) || pipeline->binding_count>NATIVE_MAX_PIPELINE_BINDINGS) return false;
+    native_d3d12_graphics result={.stage_count=count};
+    native_d3d12_layout layouts[2]={0};
+    for (size_t stage=0;stage<count;++stage) {
         const doe_shader_view *view=&stages[stage].view;
         const DoeCompilerEntryV5 *entry=stages[stage].entry;
         if (!entry || (view->counts.entry_references && !view->entry_references) ||
@@ -64,4 +64,10 @@ bool native_d3d12_graphics_maps(const native_pipeline *pipeline,const native_sta
     memcpy(out,layouts,sizeof(layouts));
     *maps=result;
     return true;
+}
+
+bool native_d3d12_graphics_maps(const native_pipeline *pipeline,const native_stage stages[2],
+    native_d3d12_layout out[2],native_d3d12_graphics *maps)
+{
+    return native_d3d12_graphics_maps_count(pipeline,stages,2,out,maps);
 }

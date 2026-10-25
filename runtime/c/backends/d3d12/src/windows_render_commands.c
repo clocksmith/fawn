@@ -100,7 +100,7 @@ doe_dx_status doe_dx_native_render(doe_dx_native_commands *commands,doe_dx_nativ
     if (count && !bindings) return doe_dx_fail(DOE_DX_OUT_OF_MEMORY,0,"render.descriptor_indices",error);
     doe_dx_descriptor_use *head=NULL;
     D3D12_CPU_DESCRIPTOR_HANDLE target={0};
-    doe_dx_status status=doe_dx_prepare_color_target(commands,color,&head,&target,error);
+    doe_dx_status status=color ? doe_dx_prepare_color_target(commands,color,&head,&target,error) : DOE_DX_OK;
     if (status!=DOE_DX_OK) { free(bindings); return status; }
     D3D12_CPU_DESCRIPTOR_HANDLE depth_handle={0};
     if (depth) {
@@ -134,9 +134,9 @@ doe_dx_status doe_dx_native_render(doe_dx_native_commands *commands,doe_dx_nativ
     tail->next=commands->descriptors;
     commands->descriptors=head;
     ID3D12GraphicsCommandList *list=commands->list;
-    doe_dx_transition(list,color->resource,D3D12_RESOURCE_STATE_COPY_DEST,D3D12_RESOURCE_STATE_RENDER_TARGET);
+    if (color) doe_dx_transition(list,color->resource,D3D12_RESOURCE_STATE_COPY_DEST,D3D12_RESOURCE_STATE_RENDER_TARGET);
     if (depth) doe_dx_transition(list,depth->texture->resource,D3D12_RESOURCE_STATE_COPY_DEST,D3D12_RESOURCE_STATE_DEPTH_WRITE);
-    ID3D12GraphicsCommandList_OMSetRenderTargets(list,1,&target,FALSE,depth ? &depth_handle : NULL);
+    ID3D12GraphicsCommandList_OMSetRenderTargets(list,color ? 1u : 0u,color ? &target : NULL,FALSE,depth ? &depth_handle : NULL);
     if (depth && depth->clear)
         ID3D12GraphicsCommandList_ClearDepthStencilView(list,depth_handle,D3D12_CLEAR_FLAG_DEPTH,depth->value,0,0,NULL);
     if (clear) ID3D12GraphicsCommandList_ClearRenderTargetView(list,target,clear_color,0,NULL);
@@ -158,7 +158,7 @@ doe_dx_status doe_dx_native_render(doe_dx_native_commands *commands,doe_dx_nativ
             ID3D12GraphicsCommandList_ClearDepthStencilView(list,depth_handle,D3D12_CLEAR_FLAG_DEPTH,0,0,0,NULL);
         doe_dx_transition(list,depth->texture->resource,D3D12_RESOURCE_STATE_DEPTH_WRITE,D3D12_RESOURCE_STATE_COPY_DEST);
     }
-    doe_dx_transition(list,color->resource,D3D12_RESOURCE_STATE_RENDER_TARGET,D3D12_RESOURCE_STATE_COPY_DEST);
+    if (color) doe_dx_transition(list,color->resource,D3D12_RESOURCE_STATE_RENDER_TARGET,D3D12_RESOURCE_STATE_COPY_DEST);
     free(bindings);
     return doe_dx_fail(DOE_DX_OK,0,"render.native.pass",error);
 fail:

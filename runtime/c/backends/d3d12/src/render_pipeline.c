@@ -29,7 +29,8 @@ doe_dx_status doe_dx_pipeline_create_render(doe_dx_context *context,
 {
     if (!context || !desc || !out) return doe_dx_fail(DOE_DX_INVALID_ARGUMENT,0,"render.pipeline",error);
     if (context->lost) return doe_dx_fail(DOE_DX_DEVICE_LOST,0,"render.pipeline",error);
-    if (desc->color_format!=DOE_DX_RGBA8_UNORM && desc->color_format!=DOE_DX_BGRA8_UNORM)
+    if ((!desc->color_absent && desc->color_format!=DOE_DX_RGBA8_UNORM && desc->color_format!=DOE_DX_BGRA8_UNORM) ||
+        (desc->color_absent && !desc->depth_enabled) || (desc->fragment_absent && !desc->color_absent))
         return doe_dx_fail(DOE_DX_UNSUPPORTED,0,"render.color_format",error);
     if (desc->strip_indexed && ((desc->topology!=DOE_DX_TRIANGLE_STRIP && desc->topology!=DOE_DX_LINE_STRIP) ||
         (desc->strip_index_format!=DOE_DX_INDEX_UINT16 && desc->strip_index_format!=DOE_DX_INDEX_UINT32)))
@@ -49,7 +50,15 @@ doe_dx_status doe_dx_pipeline_create_render(doe_dx_context *context,
         return doe_dx_fail(DOE_DX_INVALID_ARGUMENT,0,"render.cull",error);
     if (desc->masks_explicit && (desc->color_write_mask & ~UINT32_C(15)))
         return doe_dx_fail(DOE_DX_INVALID_ARGUMENT,0,"render.color_write_mask",error);
-    for (size_t i=0;i<DOE_DX_RENDER_STAGES;++i) {
+    if (desc->fragment_absent) {
+        const doe_dx_dynamic_pipeline_desc *stage=&desc->stages[1];
+        if (stage->resources.buffers.bytecode || stage->resources.buffers.bytecode_size ||
+            stage->resources.buffers.bindings || stage->resources.buffers.binding_count ||
+            stage->resources.textures || stage->resources.texture_count || stage->resources.samplers ||
+            stage->resources.sampler_count || stage->texture_contracts || stage->samplers || stage->sampler_count)
+            return doe_dx_fail(DOE_DX_INVALID_ARGUMENT,0,"render.fragment_absence",error);
+    }
+    for (size_t i=0;i<(desc->fragment_absent ? 1u : DOE_DX_RENDER_STAGES);++i) {
         if (desc->stages[i].resources.sampler_count)
             return doe_dx_fail(DOE_DX_UNSUPPORTED,0,"render.static_samplers",error);
         doe_dx_status status=doe_dx_validate_layout(context,&desc->stages[i].resources,&desc->stages[i]);
@@ -83,6 +92,8 @@ doe_dx_status doe_dx_pipeline_create_render(doe_dx_context *context,
     memcpy(pipeline->vertex_ends,ends,sizeof(ends));
     pipeline->color_format=desc->color_format;
     pipeline->depth_enabled=desc->depth_enabled;
+    pipeline->render->color_absent=desc->color_absent;
+    pipeline->render->fragment_absent=desc->fragment_absent;
     pipeline->render->topology=desc->topology;
     pipeline->render->strip_indexed=desc->strip_indexed;
     pipeline->render->strip_index_format=desc->strip_index_format;

@@ -44,6 +44,7 @@ struct doe_dx_timestamps {
     uint64_t initialized_upper[DOE_DX_MAX_QUERIES/64-1];
 };
 typedef struct doe_dx_render_layout {
+    bool color_absent, fragment_absent;
     doe_dx_topology topology;
     bool strip_indexed;
     doe_dx_index_format strip_index_format;

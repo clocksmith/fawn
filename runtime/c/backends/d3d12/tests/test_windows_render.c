@@ -14,7 +14,7 @@ typedef struct cpu_device {
     cpu_state state;
     UINT heap_calls,fail_heap,srvs,samplers,rtvs,format_queries;
     DXGI_FORMAT expected_vertex;
-    bool deny_vertex, expected_blend;
+    bool deny_vertex, expected_blend, expected_fragment_absent, expected_depth;
     D3D12_CULL_MODE expected_cull;
     UINT expected_sample_mask;
     UINT8 expected_write_mask;
@@ -71,10 +71,10 @@ static HRESULT STDMETHODCALLTYPE create_root(ID3D12Device *raw,UINT node,const v
     ID3D12RootSignatureDeserializer *decoded=NULL;
     assert(SUCCEEDED(D3D12CreateRootSignatureDeserializer(bytes,size,&IID_ID3D12RootSignatureDeserializer,(void **)&decoded)));
     const D3D12_ROOT_SIGNATURE_DESC *root=ID3D12RootSignatureDeserializer_GetRootSignatureDesc(decoded);
-    assert(root->NumParameters==4 && !root->NumStaticSamplers);
+    assert(root->NumParameters==(device->expected_fragment_absent ? 2u : 4u) && !root->NumStaticSamplers);
     assert(root->Flags==(device->expected_vertex ? D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT :
         D3D12_ROOT_SIGNATURE_FLAG_NONE));
-    for (UINT table=0;table<4;++table) {
+    for (UINT table=0;table<root->NumParameters;++table) {
         const D3D12_ROOT_PARAMETER *parameter=&root->pParameters[table];
         assert(parameter->ShaderVisibility==(table<2 ? D3D12_SHADER_VISIBILITY_VERTEX : D3D12_SHADER_VISIBILITY_PIXEL));
         assert(parameter->ParameterType==D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE);
@@ -99,7 +99,7 @@ static HRESULT STDMETHODCALLTYPE create_state(ID3D12Device *raw,const D3D12_GRAP
 {
     (void)id;
     cpu_device *device=(cpu_device *)raw;
-    assert(desc->pRootSignature==&device->root.iface && desc->VS.BytecodeLength==1 && desc->PS.BytecodeLength==1);
+    assert(desc->pRootSignature==&device->root.iface && desc->VS.BytecodeLength==1 && desc->PS.BytecodeLength==(device->expected_fragment_absent ? 0u : 1u));
     assert(desc->RasterizerState.FrontCounterClockwise && desc->RasterizerState.CullMode==device->expected_cull);
     assert(desc->BlendState.RenderTarget[0].BlendEnable==device->expected_blend);
     if (device->expected_blend) {
@@ -111,8 +111,11 @@ static HRESULT STDMETHODCALLTYPE create_state(ID3D12Device *raw,const D3D12_GRAP
     assert(desc->SampleMask==device->expected_sample_mask &&
         desc->BlendState.RenderTarget[0].RenderTargetWriteMask==device->expected_write_mask &&
         desc->PrimitiveTopologyType==device->expected_topology);
-    assert(!desc->DepthStencilState.DepthEnable && desc->SampleDesc.Count==1 &&
-        desc->NumRenderTargets==1 && desc->RTVFormats[0]==DXGI_FORMAT_R8G8B8A8_UNORM);
+    assert(desc->DepthStencilState.DepthEnable==device->expected_depth && desc->SampleDesc.Count==1 &&
+        desc->NumRenderTargets==(device->expected_fragment_absent ? 0u : 1u) &&
+        desc->RTVFormats[0]==(device->expected_fragment_absent ? DXGI_FORMAT_UNKNOWN : DXGI_FORMAT_R8G8B8A8_UNORM));
+    if (device->expected_depth) assert(desc->DSVFormat==DXGI_FORMAT_D32_FLOAT &&
+        desc->DepthStencilState.DepthWriteMask==D3D12_DEPTH_WRITE_MASK_ALL && desc->DepthStencilState.DepthFunc==D3D12_COMPARISON_FUNC_LESS);
     if (device->expected_vertex) {
         assert(desc->InputLayout.NumElements==1);
         const D3D12_INPUT_ELEMENT_DESC *attribute=desc->InputLayout.pInputElementDescs;
@@ -413,6 +416,13 @@ int main(void)
     assert(pipeline->render->topology==D3D_PRIMITIVE_TOPOLOGY_LINESTRIP);
     doe_dx_native_pipeline_destroy(pipeline);
     assert(!device.root.refs && !device.state.refs);
+    desc.color_absent=true; desc.fragment_absent=true; desc.depth_enabled=true; desc.depth_write=true;
+    desc.depth_compare=DOE_DX_LESS; desc.blend_enabled=false;
+    desc.stages[1]=(doe_dx_dynamic_pipeline_desc){0};
+    device.expected_fragment_absent=true; device.expected_depth=true; device.expected_blend=false;
+    assert(doe_dx_native_render_create(&context,&desc,&pipeline,NULL)==DOE_DX_OK);
+    assert(pipeline->render->resource_table[1]==UINT32_MAX && pipeline->render->sampler_table[1]==UINT32_MAX);
+    doe_dx_native_pipeline_destroy(pipeline);
     puts("PASS SDK CPU render: 41 queried vertex formats and negative IA support,  disjoint stage register visibility,128/32 packed descriptors,4tables/2heaps, OOM before recording, clear/discard/native draws and cleanup; no device/GPU");
     return 0;
 }
