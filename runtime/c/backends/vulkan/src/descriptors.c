@@ -110,12 +110,44 @@ static doe_vk_status descriptor_pool(doe_vk_commands *commands,
         &allocate, sets), "vkAllocateDescriptorSets", NULL);
 }
 
+static bool buffers_only(const doe_vk_binding_resource *bindings, size_t count) {
+    for (size_t i = 0; i < count; ++i)
+        if (bindings[i].kind != DOE_VK_BINDING_UNIFORM && bindings[i].kind != DOE_VK_BINDING_STORAGE) return false;
+    return true;
+}
+
+/* The latest use of this recording binds the same compute pipeline to the
+ * same exact buffer ranges: its descriptor sets already hold these
+ * descriptors, and its buffers are already recorded uses. Images are excluded
+ * because their layouts may change between uses; draws keep one use each. */
+static bool same_buffer_use(const doe_vk_dispatch_use *use, const doe_vk_pipeline *pipeline,
+    const doe_vk_binding_resource *bindings, size_t count) {
+    if (use == NULL || pipeline->graphics || !use->buffers_only || use->pipeline != pipeline ||
+        use->buffer_count != count) return false;
+    for (size_t i = 0; i < count; ++i) {
+        const doe_vk_buffer_binding *a = &use->buffers[i], *b = &bindings[i].value.buffer;
+        if (a->buffer != b->buffer || a->offset != b->offset || a->size != b->size) return false;
+    }
+    return true;
+}
+
 doe_vk_status doe_vk_prepare_resources(doe_vk_commands *commands,
     doe_vk_pipeline *pipeline, const doe_vk_binding_resource *bindings, size_t count, doe_vk_dispatch_use **out) {
     doe_vk_status status = validate_resources(commands, pipeline, bindings, count);
     if (status != DOE_VK_OK) return doe_vk_poison(commands, status);
-    doe_vk_dispatch_use *use = calloc(1, sizeof(*use));
+    const bool only_buffers = buffers_only(bindings, count);
+    if (only_buffers && same_buffer_use(commands->dispatches, pipeline, bindings, count)) {
+        doe_vk_barrier(commands);
+        *out = commands->dispatches;
+        return DOE_VK_OK;
+    }
+    doe_vk_dispatch_use *use = calloc(1, sizeof(*use) + (only_buffers ? count : 0) * sizeof(doe_vk_buffer_binding));
     if (use == NULL) return doe_vk_poison(commands, DOE_VK_OUT_OF_MEMORY);
+    use->buffers_only = only_buffers;
+    if (only_buffers) {
+        use->buffer_count = (uint32_t)count;
+        for (size_t i = 0; i < count; ++i) use->buffers[i] = bindings[i].value.buffer;
+    }
     status = doe_vk_pipeline_retain(pipeline);
     if (status != DOE_VK_OK) {
         free(use);

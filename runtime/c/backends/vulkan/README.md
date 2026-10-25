@@ -45,7 +45,10 @@ it never recognizes shader source patterns or executes a CPU shader interpreter.
 Read `include/doe_vk.h`. A context and all its objects require caller serialization.
 Resources retain their creating context. Recording retains exact buffers and
 pipelines, image views and samplers; descriptor pools belong to each dispatch until
-command retirement.
+command retirement. A compute dispatch that binds the same pipeline to the same
+exact buffer ranges as the latest use in its recording reuses that use's
+descriptor sets and still records its own barrier, binds and dispatch; image and
+sampler bindings and draws always get their own (`tests/descriptor_reuse.c`).
 A compute pipeline is immutable and fully determined by its SPIR-V words, entry
 point and binding layout, so `doe_vk_pipeline_create` returns the existing pipeline
 for an identical input (exact comparison, never a hash alone). The context also
