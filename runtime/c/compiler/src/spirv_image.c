@@ -39,6 +39,12 @@ bool spirv_image_plan(Emitter *e, const IrInstruction *ir) {
     if (ir->type != IR_VOID && spirv_zero_constant(e, ir->type) == 0u) return false;
     (void)spirv_zero_constant(e, IR_I32);
     if (sampling) (void)spirv_zero_constant(e, IR_F32);
+    if (ir->operands.composite.kind == IMAGE_SAMPLE_BIAS) {
+        if (e->math_import == 0u) e->math_import = spirv_reserve_ids(e, 1u);
+        /* Exact f32 encodings of the WGSL bias clamp endpoints -16 and 15.99. */
+        (void)spirv_constant_value(e, (ConstantValue){IR_F32, 0u, 0xc1800000u});
+        (void)spirv_constant_value(e, (ConstantValue){IR_F32, 0u, 0x417fd70au});
+    }
     (void)spirv_unsigned_constant(e, 0u);
     (void)spirv_unsigned_constant(e, 1u);
     e->constants_used |= UINT32_C(1) << ID_TRUE;
@@ -232,7 +238,20 @@ static bool sample(Emitter *e, const IrInstruction *ir, const TypeRecord *textur
     }
     const uint32_t result = depth && !compare ? spirv_reserve_ids(e, 1u) : e->values[ir->result];
     const uint32_t type = depth && !compare ? spirv_target_type(e, vector_type(e, IR_F32, 4u)) : spirv_target_type(e, ir->type);
-    if (implicit) {
+    if (operation == IMAGE_SAMPLE_GRAD) {
+        if (offset) { EMIT(OP_IMAGE_SAMPLE_EXPLICIT_LOD, type, result, sampled, coordinate, 12u,
+            e->values[operands[last]], e->values[operands[last + 1u]], e->values[operands[arity]]); }
+        else { EMIT(OP_IMAGE_SAMPLE_EXPLICIT_LOD, type, result, sampled, coordinate, 4u,
+            e->values[operands[last]], e->values[operands[last + 1u]]); }
+    } else if (operation == IMAGE_SAMPLE_BIAS) {
+        const uint32_t minimum = spirv_constant_value(e, (ConstantValue){IR_F32, 0u, 0xc1800000u});
+        const uint32_t maximum = spirv_constant_value(e, (ConstantValue){IR_F32, 0u, 0x417fd70au});
+        const uint32_t bias = spirv_reserve_ids(e, 1u);
+        EMIT(OP_EXT_INST, ID_F32, bias, e->math_import, 43u, e->values[operands[last]], minimum, maximum);
+        if (offset) { EMIT(OP_IMAGE_SAMPLE_IMPLICIT_LOD, type, result, sampled, coordinate, 9u,
+            bias, e->values[operands[arity]]); }
+        else { EMIT(OP_IMAGE_SAMPLE_IMPLICIT_LOD, type, result, sampled, coordinate, 1u, bias); }
+    } else if (implicit) {
         if (compare) {
             if (offset) { EMIT(OP_IMAGE_SAMPLE_DREF_IMPLICIT_LOD, type, result, sampled, coordinate,
                 e->values[operands[last]], 8u, e->values[operands[arity]]); }

@@ -174,7 +174,7 @@ typedef struct { TypeId type; uint32_t category, root, path; } PointerValue;
 typedef struct { NameSpan name; uint32_t value; TypeId type;
     union { ConstantValue constant_value; PointerValue pointer_value; };
     uint32_t local_id, declaration_offset, flags, level; } LocalBinding;
-typedef enum { IMAGE_LOAD, IMAGE_STORE, IMAGE_DIMENSIONS, IMAGE_LEVELS, IMAGE_LAYERS, IMAGE_SAMPLES, IMAGE_SAMPLE_LEVEL, IMAGE_SAMPLE_COMPARE_LEVEL, IMAGE_SAMPLE, IMAGE_SAMPLE_COMPARE } ImageOperation;
+typedef enum { IMAGE_LOAD, IMAGE_STORE, IMAGE_DIMENSIONS, IMAGE_LEVELS, IMAGE_LAYERS, IMAGE_SAMPLES, IMAGE_SAMPLE_LEVEL, IMAGE_SAMPLE_COMPARE_LEVEL, IMAGE_SAMPLE, IMAGE_SAMPLE_COMPARE, IMAGE_SAMPLE_GRAD, IMAGE_SAMPLE_BIAS } ImageOperation;
 enum { ROOT_LOCAL, ROOT_RESOURCE, ROOT_VALUE, ROOT_INPUT, ROOT_WORKGROUP, ROOT_POINTER };
 typedef struct { uint32_t kind, id; TypeId type; uint32_t storage, first, count; uint64_t payload; } TargetDeclaration;
 typedef struct { uint32_t kind, object, cursor, parent; } WalkItem;

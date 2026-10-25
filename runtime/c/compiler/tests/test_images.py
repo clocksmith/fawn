@@ -81,6 +81,43 @@ class Images(unittest.TestCase):
                 self.assertTrue(any(op == 112 for op, _ in code))
                 self.assertTrue(any(op == 169 for op, _ in code))
 
+    def test_gradients_bias_and_color_level_offsets(self):
+        fragment = '@fragment fn main()->@location(0) vec4f'
+        for shape, width, layer in [('2d', 2, ''), ('2d_array', 2, ',-1i'),
+                                    ('3d', 3, ''), ('cube', 3, ''), ('cube_array', 3, ',3u')]:
+            prefix = texture('t', f'texture_{shape}<f32>') + texture('s', 'sampler', 1)
+            coords = f'vec{width}f(0.5)'
+            offsets = ['', f',vec{width}i(-1)'] if shape not in ('cube', 'cube_array') else ['']
+            for offset in offsets:
+                for builtin, operands, opcode, mask in [
+                    ('Grad', f',{coords},{coords}', 88, 4), ('Bias', ',32.0f', 87, 1),
+                    ('Level', ',0.0f', 88, 2),
+                ]:
+                    with self.subTest(shape=shape, builtin=builtin, offset=offset):
+                        code = self.compile(prefix + fragment + '{return textureSample' + builtin +
+                            '(t,s,' + coords + layer + operands + offset + ');}')
+                        sample = [args for op, args in code if op == opcode]
+                        self.assertEqual(len(sample), 1)
+                        self.assertEqual(sample[0][4], mask | (8 if offset else 0))
+                        if builtin == 'Bias':
+                            clamp = [args for op, args in code if op == 12 and args[3] == 43]
+                            self.assertEqual(len(clamp), 1)
+                            constants = {args[1]: args[2] for op, args in code if op == 43}
+                            self.assertEqual(constants[clamp[0][-2]], 0xc1800000)
+                            self.assertEqual(constants[clamp[0][-1]], 0x417fd70a)
+        prefix = texture('t', 'texture_2d<f32>') + texture('s', 'sampler', 1)
+        for body, error in [
+            ('return textureSampleGrad(t,s,vec2f(0),vec3f(0),vec2f(0));', 'conversion'),
+            ('return textureSampleGrad(t,s,vec2f(0),vec2f(0));', 'no matching'),
+            ('return textureSampleBias(t,s,vec2f(0),vec2f(0));', 'conversion'),
+            ('return textureSampleGrad(t,s,vec2f(0),vec2f(0),vec2f(0),vec2i(8));', 'outside'),
+            ('var offset=vec2i(0);return textureSampleBias(t,s,vec2f(0),0.0,offset);', 'const expression'),
+        ]:
+            self.compile(prefix + fragment + '{' + body + '}', error)
+        for shape, coords in [('1d<f32>', '0.0f'), ('depth_2d', 'vec2f(0)')]:
+            prefix = texture('t', 'texture_' + shape) + texture('s', 'sampler', 1)
+            self.compile(prefix + fragment + '{return textureSampleBias(t,s,' + coords + ',0.0f);}', 'no matching')
+
     def test_depth_multisample_and_canonical_targets(self):
         for name, layer, multi in [('2d', '', False), ('2d_array', ',1', False), ('multisampled_2d', '', True)]:
             self.compile(texture('t', 'texture_depth_' + name) + ENTRY +
