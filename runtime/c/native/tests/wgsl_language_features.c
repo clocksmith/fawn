@@ -229,6 +229,7 @@ int main(void)
     assert(!wgpuInstanceHasWGSLLanguageFeature(s.instance, WGPUWGSLLanguageFeatureName_Force32));
     assert(!wgpuInstanceHasWGSLLanguageFeature(NULL, WGPUWGSLLanguageFeatureName_PointerCompositeAccess));
     assert(wgpuInstanceHasWGSLLanguageFeature(s.instance, WGPUWGSLLanguageFeatureName_UniformBufferStandardLayout));
+    assert(wgpuInstanceHasWGSLLanguageFeature(s.instance, WGPUWGSLLanguageFeatureName_Packed4x8IntegerDotProduct));
     diagnostic invalid_directive;
     assert(run_source(&s, "enable uniform_buffer_standard_layout;", NULL,
         "@compute @workgroup_size(1) fn main(){}", &invalid_directive) == MODULE_REJECTED);
