@@ -152,6 +152,9 @@ bool override_plan(Source *s) {
     SpecializationContext *context = s->specialization;
     CompilerWorkspace *c = s->compiler;
     if (!compiler_select_entry(s, context->selection, &context->selected) || !supplied_values(s)) return false;
+    if (context->metal_pipeline && context->selected != NO_ID &&
+        (c->functions[c->entries[context->selected].function].flags & FUNCTION_FRAGMENT) == 0u)
+        return source_error(s, DOE_COMPILER_INPUT_ERROR, 0u, "Metal pipeline specialization requires a fragment entry");
     if (c->entry_count == 0u || (!context->all_entries && context->selected == NO_ID))
         return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, 0u, "specialization requires a shader entry");
     memset(context->functions, 0, (size_t)c->function_count * sizeof(*context->functions));

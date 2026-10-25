@@ -40,9 +40,14 @@ static DoeCompilerStatus specialization_requirements(const doe_shader *module,
 static DoeCompilerStatus specialize(const doe_shader *module, const DoeCompilerTextCapacities *target,
     void *workspace, size_t workspace_size, const DoeCompilerEntrySelectionV5 *selection,
     const DoeCompilerOverrideValueV13 *values, size_t count, uint32_t flags,
+    const DoeCompilerMetalPipelineOptionsV15 *pipeline,
     const DoeCompilerSpecializationOutputs *outputs, DoeCompilerTextResult *result)
 {
     const DoeCompilerSpecializationCapacities capacities = {*target,module->override_capacity};
+    if (pipeline) return doe_compiler_specialize_metal_pipeline(DOE_COMPILER_METAL_PIPELINE_ABI_VERSION,
+        pipeline,sizeof(*pipeline),&capacities,sizeof(capacities),workspace,workspace_size,module->source,module->source_size,
+        selection,sizeof(*selection),values,count,sizeof(*values),flags,outputs,outputs ? sizeof(*outputs) : 0,
+        result,sizeof(*result));
     return doe_compiler_specialize(DOE_COMPILER_SPECIALIZATION_ABI_VERSION,(uint32_t)module->options.target,
         &capacities,sizeof(capacities),workspace,workspace_size,module->source,module->source_size,
         selection,sizeof(*selection),values,count,sizeof(*values),flags,outputs,outputs ? sizeof(*outputs) : 0,
@@ -52,15 +57,20 @@ static DoeCompilerStatus specialize(const doe_shader *module, const DoeCompilerT
 doe_shader_status doe_shader_create(const doe_shader_options *options,
     const char *source, size_t source_size, doe_shader **out, doe_shader_error *error)
 {
-    return shader_compile(options,source,source_size,NULL,NULL,0,out,error);
+    return shader_compile(options,source,source_size,NULL,NULL,0,NULL,out,error);
 }
 
 doe_shader_status shader_compile(const doe_shader_options *options,
     const char *source, size_t source_size, const doe_shader *module,
-    const DoeCompilerOverrideValueV13 *values, size_t value_count, doe_shader **out, doe_shader_error *error)
+    const DoeCompilerOverrideValueV13 *values, size_t value_count,
+    const DoeCompilerMetalPipelineOptionsV15 *pipeline, doe_shader **out, doe_shader_error *error)
 {
     if (!shader_options_valid(options) || !out || (!source && source_size))
         return shader_fail(error, DOE_SHADER_INVALID_ARGUMENT, DOE_COMPILER_INPUT_ERROR, NULL);
+    if (pipeline && (!module || options->target != DOE_SHADER_METAL))
+        return shader_fail(error,DOE_SHADER_INVALID_ARGUMENT,DOE_COMPILER_INPUT_ERROR,NULL);
+    const DoeCompilerMetalPipelineOptionsV15 policy = {pipeline ? pipeline->sample_mask : UINT32_MAX};
+    const DoeCompilerMetalPipelineOptionsV15 *saved_pipeline = pipeline ? &policy : NULL;
     doe_shader_options saved = *options;
     if (saved.selection.name_length > 63 ||
         (!saved.selection.name && saved.selection.name_length))
@@ -97,7 +107,7 @@ doe_shader_status shader_compile(const doe_shader_options *options,
     if (module) {
         status = specialize(module,&text_capacities,workspace,requirements.size_bytes,&saved.selection,
             values,value_count,DOE_COMPILER_TEXT_CODE | DOE_COMPILER_TEXT_REFLECTION |
-            DOE_COMPILER_TEXT_MEASURE | saved.semantic_flags,NULL,&text_result);
+            DOE_COMPILER_TEXT_MEASURE | saved.semantic_flags,saved_pipeline,NULL,&text_result);
         result = text_result.stages;
     } else if (textual) {
         status = compile_text(saved.target, &text_capacities, workspace, requirements.size_bytes,
@@ -220,7 +230,7 @@ doe_shader_status shader_compile(const doe_shader_options *options,
             else outputs.hlsl = hlsl_outputs;
             status = specialize(module,&text_capacities,workspace,requirements.size_bytes,&saved.selection,
                 shader->values,value_count,DOE_COMPILER_TEXT_CODE | DOE_COMPILER_TEXT_REFLECTION | saved.semantic_flags,
-                &outputs,&text_result);
+                saved_pipeline,&outputs,&text_result);
         } else status = compile_text(saved.target, &text_capacities, workspace, requirements.size_bytes,
             shader->source, source_size, &saved.selection, DOE_COMPILER_TEXT_CODE |
             DOE_COMPILER_TEXT_REFLECTION | saved.semantic_flags, &text_outputs, &hlsl_outputs, &text_result);
@@ -229,7 +239,7 @@ doe_shader_status shader_compile(const doe_shader_options *options,
         const DoeCompilerSpecializationOutputs outputs = {.spirv=shader->outputs};
         status = specialize(module,&text_capacities,workspace,requirements.size_bytes,&saved.selection,
             shader->values,value_count,DOE_COMPILER_TEXT_CODE | DOE_COMPILER_TEXT_REFLECTION | saved.semantic_flags,
-            &outputs,&text_result);
+            saved_pipeline,&outputs,&text_result);
         result = text_result.stages;
     } else {
         status = doe_compiler_compile_stages(DOE_COMPILER_ATOMIC_ABI_VERSION,
@@ -241,6 +251,7 @@ doe_shader_status shader_compile(const doe_shader_options *options,
     if (status == DOE_COMPILER_OK) {
         shader->view = (doe_shader_view) {
             .target = saved.target, .target_language_version = text_result.language_version,
+            .metal_sample_mask = policy.sample_mask,
             .text = target_text, .text_size = text_result.published_text_bytes,
             .metal_bindings = text_outputs.bindings,
             .metal_binding_count = saved.target == DOE_SHADER_METAL ? text_result.published_bindings : 0,

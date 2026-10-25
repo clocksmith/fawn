@@ -45,16 +45,19 @@ static doe_shader_status snapshot_values(const doe_shader *module,
     return DOE_SHADER_OK;
 }
 
-doe_shader_status doe_shader_specialize(const doe_shader *module,
+static doe_shader_status specialize(const doe_shader *module,
     const DoeCompilerEntrySelectionV5 *selection,
     const DoeCompilerOverrideValueV13 *values, size_t value_count,
-    doe_shader **out, doe_shader_error *error)
+    const DoeCompilerMetalPipelineOptionsV15 *pipeline, doe_shader **out, doe_shader_error *error)
 {
     if (!module || module->kind != SHADER_MODULE || !selection || !out || selection->reserved ||
         (selection->mode != DOE_COMPILER_SELECT_AUTO && selection->mode != DOE_COMPILER_SELECT_NAME) ||
         selection->name_length > 63 || (!selection->name && selection->name_length) ||
         (selection->mode == DOE_COMPILER_SELECT_AUTO && (selection->name || selection->name_length)))
         return shader_fail(error,DOE_SHADER_INVALID_ARGUMENT,DOE_COMPILER_INPUT_ERROR,NULL);
+    if (pipeline && module->options.target != DOE_SHADER_METAL)
+        return shader_fail(error,DOE_SHADER_INVALID_ARGUMENT,DOE_COMPILER_INPUT_ERROR,NULL);
+    const DoeCompilerMetalPipelineOptionsV15 policy = {pipeline ? pipeline->sample_mask : UINT32_MAX};
     doe_shader_options options = module->options;
     char name[64] = {0};
     if (selection->name_length) memcpy(name,selection->name,selection->name_length);
@@ -67,7 +70,7 @@ doe_shader_status doe_shader_specialize(const doe_shader *module,
     status = snapshot_values(module,values,value_count,&snapshot,&bytes);
     doe_shader *result = NULL;
     if (status == DOE_SHADER_OK)
-        status = shader_compile(&options,module->source,module->source_size,module,snapshot,value_count,&result,error);
+        status = shader_compile(&options,module->source,module->source_size,module,snapshot,value_count,pipeline ? &policy : NULL,&result,error);
     else (void)shader_fail(error,status,DOE_COMPILER_OK,NULL);
     if (snapshot) module->allocator.deallocate(module->allocator.userdata,snapshot,bytes,alignof(DoeCompilerOverrideValueV13));
     doe_shader_release((doe_shader *)module);
@@ -75,7 +78,7 @@ doe_shader_status doe_shader_specialize(const doe_shader *module,
     return status;
 }
 
-bool doe_shader_specialization_matches(const doe_shader *shader, const doe_shader *module,
+static bool specialization_matches(const doe_shader *shader, const doe_shader *module,
     const DoeCompilerEntrySelectionV5 *selection,
     const DoeCompilerOverrideValueV13 *values, size_t value_count)
 {
@@ -92,4 +95,34 @@ bool doe_shader_specialization_matches(const doe_shader *shader, const doe_shade
             memcmp(&values[i].value,&saved->value,sizeof(saved->value))) return false;
     }
     return true;
+}
+
+doe_shader_status doe_shader_specialize(const doe_shader *module,
+    const DoeCompilerEntrySelectionV5 *selection,
+    const DoeCompilerOverrideValueV13 *values, size_t count, doe_shader **out, doe_shader_error *error)
+{
+    return specialize(module,selection,values,count,NULL,out,error);
+}
+doe_shader_status doe_shader_specialize_metal_pipeline(const doe_shader *module,
+    const DoeCompilerEntrySelectionV5 *selection,
+    const DoeCompilerOverrideValueV13 *values, size_t count,
+    const DoeCompilerMetalPipelineOptionsV15 *options, doe_shader **out, doe_shader_error *error)
+{
+    if (!options) return shader_fail(error,DOE_SHADER_INVALID_ARGUMENT,DOE_COMPILER_INPUT_ERROR,NULL);
+    return specialize(module,selection,values,count,options,out,error);
+}
+bool doe_shader_specialization_matches(const doe_shader *shader, const doe_shader *module,
+    const DoeCompilerEntrySelectionV5 *selection,
+    const DoeCompilerOverrideValueV13 *values, size_t count)
+{
+    return shader && shader->view.metal_sample_mask == UINT32_MAX &&
+        specialization_matches(shader,module,selection,values,count);
+}
+bool doe_shader_metal_pipeline_matches(const doe_shader *shader, const doe_shader *module,
+    const DoeCompilerEntrySelectionV5 *selection,
+    const DoeCompilerOverrideValueV13 *values, size_t count, const DoeCompilerMetalPipelineOptionsV15 *options)
+{
+    return options && shader && shader->view.target == DOE_SHADER_METAL &&
+        shader->view.metal_sample_mask == options->sample_mask &&
+        specialization_matches(shader,module,selection,values,count);
 }

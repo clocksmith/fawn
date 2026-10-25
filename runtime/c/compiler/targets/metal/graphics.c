@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: MIT
  * Metal graphics attributes over the one shared typed stage interface. */
 #include "private.h"
+#include "../../src/override.h"
 #include "../stage_view.h"
 
 static const StageEntry *stage_entry(MetalEmitter *e, uint32_t index) {
@@ -78,6 +79,18 @@ static void attributes(MetalEmitter *e, const StageInterface *leaf, bool vertex)
 }
 /* Vertex builtins are individual parameters, not vertex attribute-buffer fields.
  * Using the same rule for fragments leaves stage_in solely for location inputs. */
+static uint32_t sample_mask(const MetalEmitter *e) {
+    return e->source->specialization != NULL ? e->source->specialization->metal_sample_mask : UINT32_MAX;
+}
+static bool generated_mask(MetalEmitter *e, const StageEntry *entry, bool vertex) {
+    if (vertex || sample_mask(e) == UINT32_MAX) return false;
+    for (uint32_t i = 0u; i < entry->interface_count; ++i) {
+        const StageInterface *leaf = &e->source->stages->interfaces[entry->interface_first + i];
+        if (leaf->direction == DOE_COMPILER_INTERFACE_OUTPUT && leaf->builtin == DOE_COMPILER_BUILTIN_SAMPLE_MASK)
+            return false;
+    }
+    return true;
+}
 static uint32_t interface_type(MetalEmitter *e, uint32_t index, const StageEntry *entry,
         uint32_t direction, bool vertex) {
     uint32_t count = 0u;
@@ -85,6 +98,8 @@ static uint32_t interface_type(MetalEmitter *e, uint32_t index, const StageEntry
         const StageInterface *leaf = &e->source->stages->interfaces[entry->interface_first + i];
         if (leaf->direction == direction && (direction == DOE_COMPILER_INTERFACE_OUTPUT || leaf->location != NO_ID)) ++count;
     }
+    const bool coverage = direction == DOE_COMPILER_INTERFACE_OUTPUT && generated_mask(e, entry, vertex);
+    if (coverage) ++count;
     if (count == 0u) return 0u;
     metal_format(e, "struct DoeStage%u_%u {\n", index, direction);
     for (uint32_t i = 0u; i < entry->interface_count; ++i) {
@@ -96,6 +111,7 @@ static uint32_t interface_type(MetalEmitter *e, uint32_t index, const StageEntry
         attributes(e, leaf, vertex);
         metal_text(e, ";\n");
     }
+    if (coverage) metal_text(e, "    uint fixed_sample_mask [[sample_mask]];\n");
     metal_text(e, "};\n");
     return count;
 }
@@ -167,8 +183,12 @@ void metal_graphics_wrapper(MetalEmitter *e, uint32_t index) {
             if (leaf->direction != DOE_COMPILER_INTERFACE_OUTPUT) continue;
             metal_format(e, "    output.field%u = value", i);
             if (leaf->member != NO_ID) metal_format(e, ".m%u", leaf->member);
+            if (!vertex && leaf->builtin == DOE_COMPILER_BUILTIN_SAMPLE_MASK && sample_mask(e) != UINT32_MAX)
+                metal_format(e, " & 0x%08xu", sample_mask(e));
             metal_text(e, ";\n");
         }
+        if (generated_mask(e, entry, vertex))
+            metal_format(e, "    output.fixed_sample_mask = 0x%08xu;\n", sample_mask(e));
         metal_text(e, "    return output;\n");
     }
     e->indent = 0u;

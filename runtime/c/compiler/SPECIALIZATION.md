@@ -92,3 +92,22 @@ SPIR-V/MSL/HLSL for external validators and consumers. Host, validator and SDK
 checks do not establish GPU semantics, native pipeline adoption or numerical
 qualification. Public native end-to-end consumers remain a separate integration
 gate; old shader artifacts cannot substitute for a new specialized artifact.
+
+## Typed Metal fragment policy (ABI15)
+
+`doe_compiler_metal_pipeline.h` adds selected-fragment specialization with an
+exact-sized `uint32_t sample_mask` option. It reuses ABI13 Metal workspace and
+output layouts, selection, overrides and publication rules. Other stages reject.
+The typed MSL wrapper calls the original fragment first, then intersects its
+sample-mask output with the fixed mask, or adds a target coverage field when the
+WGSL interface has none. Zero preserves shader effects; UINT32_MAX emits the
+existing wrapper unchanged. Public reflection remains the source interface.
+
+The shader owner snapshots this policy before allocator callbacks and includes
+all mask bits in artifact identity. Native Metal uses it only for an existing
+fragment stage; absent fragment stages stay absent and unsupported partial masks
+there still reject. No source rewriting or synthetic public shader is introduced.
+`test-metal-pipeline` checks measure/fill, coverage mappings, unchanged reflection,
+default output, stage rejection and FP state. The public `sample-mask` native
+fixture checks resolved pixels and atomic side effects with finite readback waits;
+SDK acceptance and a device run are separate from qualification.

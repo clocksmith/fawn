@@ -64,9 +64,9 @@ static bool constant_values(const WGPUConstantEntry *constants, size_t count,
     return true;
 }
 
-bool native_stage_load(native_device *device, WGPUShaderModule module, WGPUStringView name,
+static bool stage_load(native_device *device, WGPUShaderModule module, WGPUStringView name,
     uint32_t stage, const WGPUConstantEntry *constants, size_t count,
-    native_stage *out, native_pipeline_error *error)
+    const DoeCompilerMetalPipelineOptionsV15 *pipeline, native_stage *out, native_pipeline_error *error)
 {
     if (!device || !module || doe_resource_shader_device((doe_resource_shader *)module) != device)
         return reject(error,WGPUErrorType_Validation,"pipeline stage requires a shader from this device");
@@ -92,8 +92,9 @@ bool native_stage_load(native_device *device, WGPUShaderModule module, WGPUStrin
         DoeCompilerEntrySelectionV5 selection = {.mode=DOE_COMPILER_SELECT_NAME,
             .name=result.name,.name_length=strlen(result.name)};
         doe_shader_error detail = {0};
-        const doe_shader_status status = doe_shader_specialize(payload->module,&selection,
-            values,count,&result.compiled,&detail);
+        const doe_shader_status status = pipeline ?
+            doe_shader_specialize_metal_pipeline(payload->module,&selection,values,count,pipeline,&result.compiled,&detail) :
+            doe_shader_specialize(payload->module,&selection,values,count,&result.compiled,&detail);
         if (status != DOE_SHADER_OK)
             valid = reject(error,status == DOE_SHADER_OUT_OF_MEMORY ? WGPUErrorType_OutOfMemory :
                 WGPUErrorType_Validation,detail.diagnostic.message[0] ? detail.diagnostic.message :
@@ -124,6 +125,21 @@ bool native_stage_load(native_device *device, WGPUShaderModule module, WGPUStrin
         stage == DOE_COMPILER_STAGE_VERTEX ? WGPUShaderStage_Vertex : WGPUShaderStage_Fragment;
     *out = result;
     return true;
+}
+
+bool native_stage_load(native_device *device, WGPUShaderModule module, WGPUStringView name,
+    uint32_t stage, const WGPUConstantEntry *constants, size_t count,
+    native_stage *out, native_pipeline_error *error)
+{
+    return stage_load(device,module,name,stage,constants,count,NULL,out,error);
+}
+bool native_fragment_load(native_device *device, const WGPUFragmentState *fragment, uint32_t sample_mask,
+    native_stage *out, native_pipeline_error *error)
+{
+    const DoeCompilerMetalPipelineOptionsV15 options = {sample_mask};
+    return stage_load(device,fragment->module,fragment->entryPoint,DOE_COMPILER_STAGE_FRAGMENT,
+        fragment->constants,fragment->constantCount,
+        device->backend.kind == WGPUBackendType_Metal ? &options : NULL,out,error);
 }
 
 void native_stage_release(native_stage *stage)

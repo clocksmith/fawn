@@ -4,6 +4,7 @@
 #include "doe_compiler_hlsl.h"
 #include "doe_compiler_metal.h"
 #include "doe_compiler_specialization.h"
+#include "doe_compiler_metal_pipeline.h"
 #include <stdbool.h>
 #ifdef __cplusplus
 extern "C" {
@@ -48,6 +49,7 @@ typedef struct doe_shader_error {
 typedef struct doe_shader_view {
     doe_shader_target target;
     uint32_t target_language_version;
+    uint32_t metal_sample_mask; /* UINT32_MAX for ordinary artifacts; ABI15 fragment coverage otherwise. */
     const char *text; /* Exact owned bytes, not NUL terminated; NULL for SPIR-V. */
     size_t text_size;
     const DoeCompilerTextBindingV10 *target_bindings;
@@ -130,6 +132,17 @@ doe_shader_status doe_shader_specialize(const doe_shader *module,
 bool doe_shader_specialization_matches(const doe_shader *shader, const doe_shader *module,
     const DoeCompilerEntrySelectionV5 *selection,
     const DoeCompilerOverrideValueV13 *values, size_t value_count);
+/* Metal fragment pipeline policy is snapshotted before allocator callbacks and
+ * participates in exact artifact identity. Ordinary matching accepts only the
+ * UINT32_MAX policy; the explicit matcher includes all 32 mask bits. */
+doe_shader_status doe_shader_specialize_metal_pipeline(const doe_shader *module,
+    const DoeCompilerEntrySelectionV5 *selection,
+    const DoeCompilerOverrideValueV13 *values, size_t value_count,
+    const DoeCompilerMetalPipelineOptionsV15 *, doe_shader **out, doe_shader_error *error);
+bool doe_shader_metal_pipeline_matches(const doe_shader *shader, const doe_shader *module,
+    const DoeCompilerEntrySelectionV5 *selection,
+    const DoeCompilerOverrideValueV13 *values, size_t value_count,
+    const DoeCompilerMetalPipelineOptionsV15 *);
 doe_shader_status doe_shader_retain(doe_shader *shader);
 void doe_shader_release(doe_shader *shader);
 /* Module-only borrow rejects without touching *out. */

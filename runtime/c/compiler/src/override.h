@@ -3,6 +3,7 @@
 #define DOE_COMPILER_OVERRIDE_H
 #include "sema.h"
 #include "../include/doe_compiler_module_specialization.h"
+#include "../include/doe_compiler_metal_pipeline.h"
 enum { DECLARATION_OVERRIDE = 32u, DECLARATION_KNOWN = 64u };
 #define OVERRIDE_NO_INITIALIZER (UINT32_MAX - 1u)
 typedef struct {
@@ -19,7 +20,8 @@ struct SpecializationContext {
     unsigned char *workgroups;
     uint32_t *entry_expressions;
     uint32_t selected;
-    bool specializing, all_entries;
+    bool specializing, all_entries, metal_pipeline;
+    uint32_t metal_sample_mask;
     const DoeCompilerSpecializationCapacities *capacities;
     const DoeCompilerEntrySelectionV5 *selection;
     size_t stage_base;
