@@ -57,7 +57,8 @@ static doe_dx_status prepare_draw(doe_dx_commands *commands,const doe_dx_render_
     }
     doe_dx_pipeline *pipeline=draw->pipeline;
     if (!pipeline || !pipeline->render || pipeline->context!=commands->context ||
-        pipeline->color_format!=color->desc.format || pipeline->depth_enabled!=(depth!=NULL))
+        pipeline->render->color_absent!=(color==NULL) || (color && pipeline->color_format!=color->desc.format) ||
+        pipeline->depth_enabled!=(depth!=NULL))
         return doe_dx_fail(DOE_DX_INVALID_ARGUMENT,0,"render.draw.pipeline",error);
     if (!draw->indirect && ((draw->vertex_count && draw->vertex_count-1>UINT32_MAX-draw->first_vertex) ||
         (draw->instance_count && draw->instance_count-1>UINT32_MAX-draw->first_instance)))
@@ -66,13 +67,14 @@ static doe_dx_status prepare_draw(doe_dx_commands *commands,const doe_dx_render_
         return doe_dx_fail(DOE_DX_INVALID_ARGUMENT,0,"render.blend_constant.finite",error);
     for (size_t i=0;i<6;++i) if (!isfinite(draw->viewport[i]))
         return doe_dx_fail(DOE_DX_INVALID_ARGUMENT,0,"render.viewport.finite",error);
+    const doe_dx_texture *extent=color ? color : depth;
     const float *v=draw->viewport;
-    if (v[0]<0 || v[1]<0 || v[2]<0 || v[3]<0 || v[0]+v[2]>(float)color->desc.width ||
-        v[1]+v[3]>(float)color->desc.height || v[4]<0 || v[5]>1 || v[4]>v[5])
+    if (v[0]<0 || v[1]<0 || v[2]<0 || v[3]<0 || v[0]+v[2]>(float)extent->desc.width ||
+        v[1]+v[3]>(float)extent->desc.height || v[4]<0 || v[5]>1 || v[4]>v[5])
         return doe_dx_fail(DOE_DX_UNSUPPORTED,0,"render.viewport.bounds",error);
     const uint32_t *s=draw->scissor;
-    if (s[0]>color->desc.width || s[2]>color->desc.width-s[0] ||
-        s[1]>color->desc.height || s[3]>color->desc.height-s[1])
+    if (s[0]>extent->desc.width || s[2]>extent->desc.width-s[0] ||
+        s[1]>extent->desc.height || s[3]>extent->desc.height-s[1])
         return doe_dx_fail(DOE_DX_RANGE,0,"render.scissor",error);
     for (size_t stage=0;stage<DOE_DX_RENDER_STAGES;++stage) {
         doe_dx_reservation extra;
@@ -111,17 +113,20 @@ doe_dx_status doe_dx_commands_render(doe_dx_commands *commands,
     if (!pass || (pass->draw_count && !pass->draws) ||
         pass->draw_count>SIZE_MAX/sizeof(doe_dx_native_render_draw))
         return doe_dx_fail(DOE_DX_INVALID_ARGUMENT,0,"render.pass",error);
-    status=doe_dx_texture_preflight(commands,pass->color,DOE_DX_TEXTURE_RENDER_ATTACHMENT,false);
-    if (status!=DOE_DX_OK) return doe_dx_fail(status,0,"render.attachment",error);
-    if (pass->color->desc.format!=DOE_DX_RGBA8_UNORM && pass->color->desc.format!=DOE_DX_BGRA8_UNORM)
-        return doe_dx_fail(DOE_DX_UNSUPPORTED,0,"render.attachment_format",error);
-    for (size_t i=0;pass->clear && i<4;++i) if (!isfinite(pass->clear_color[i]))
-        return doe_dx_fail(DOE_DX_INVALID_ARGUMENT,0,"render.clear",error);
+    if (!pass->color && !pass->depth) return doe_dx_fail(DOE_DX_INVALID_ARGUMENT,0,"render.attachments_absent",error);
+    if (pass->color) {
+        status=doe_dx_texture_preflight(commands,pass->color,DOE_DX_TEXTURE_RENDER_ATTACHMENT,false);
+        if (status!=DOE_DX_OK) return doe_dx_fail(status,0,"render.attachment",error);
+        if (pass->color->desc.format!=DOE_DX_RGBA8_UNORM && pass->color->desc.format!=DOE_DX_BGRA8_UNORM)
+            return doe_dx_fail(DOE_DX_UNSUPPORTED,0,"render.attachment_format",error);
+        for (size_t i=0;pass->clear && i<4;++i) if (!isfinite(pass->clear_color[i]))
+            return doe_dx_fail(DOE_DX_INVALID_ARGUMENT,0,"render.clear",error);
+    } else if (pass->clear || pass->discard) return doe_dx_fail(DOE_DX_INVALID_ARGUMENT,0,"render.color_absent",error);
     if (pass->depth) {
         status=doe_dx_texture_preflight(commands,pass->depth,DOE_DX_TEXTURE_DEPTH_ATTACHMENT,false);
         if (status!=DOE_DX_OK) return doe_dx_fail(status,0,"render.depth",error);
         if (pass->depth==pass->color || pass->depth->desc.format!=DOE_DX_D32_FLOAT ||
-            pass->depth->desc.width!=pass->color->desc.width || pass->depth->desc.height!=pass->color->desc.height)
+            (pass->color && (pass->depth->desc.width!=pass->color->desc.width || pass->depth->desc.height!=pass->color->desc.height)))
             return doe_dx_fail(DOE_DX_INVALID_ARGUMENT,0,"render.depth.shape",error);
         if (pass->clear_depth && (!isfinite(pass->depth_clear) || pass->depth_clear<0 || pass->depth_clear>1))
             return doe_dx_fail(DOE_DX_INVALID_ARGUMENT,0,"render.depth.clear",error);
@@ -129,7 +134,7 @@ doe_dx_status doe_dx_commands_render(doe_dx_commands *commands,
         return doe_dx_fail(DOE_DX_INVALID_ARGUMENT,0,"render.depth.absent",error);
     doe_dx_native_render_draw *draws=pass->draw_count ? calloc(pass->draw_count,sizeof(*draws)) : NULL;
     if (pass->draw_count && !draws) return doe_dx_fail(DOE_DX_OUT_OF_MEMORY,0,"render.draws.allocate",error);
-    doe_dx_reservation needed={.textures=doe_dx_find_texture(commands,pass->color) ? 0u : 1u,
+    doe_dx_reservation needed={.textures=pass->color && !doe_dx_find_texture(commands,pass->color) ? 1u : 0u,
         .pipelines=pass->draw_count};
     if (pass->depth && !doe_dx_find_texture(commands,pass->depth)) ++needed.textures;
     doe_dx_queries *active_query=NULL;
@@ -155,7 +160,7 @@ doe_dx_status doe_dx_commands_render(doe_dx_commands *commands,
     }
     if (status==DOE_DX_OK) {
         const doe_dx_texture_use *use=doe_dx_find_texture(commands,pass->color);
-        bool initialized=use ? use->initialized : pass->color->initialized;
+        bool initialized=use ? use->initialized : !pass->color || pass->color->initialized;
         doe_dx_native_render_depth depth={0};
         if (pass->depth) {
             const doe_dx_texture_use *depth_use=doe_dx_find_texture(commands,pass->depth);
@@ -164,7 +169,7 @@ doe_dx_status doe_dx_commands_render(doe_dx_commands *commands,
                 pass->discard_depth,pass->clear_depth ? pass->depth_clear : 0};
         }
         const float zero[4]={0};
-        status=doe_dx_native_render(commands->native,pass->color->native,pass->clear || !initialized,
+        status=doe_dx_native_render(commands->native,pass->color ? pass->color->native : NULL,pass->clear || !initialized,
             pass->clear ? pass->clear_color : zero,pass->discard,pass->depth ? &depth : NULL,draws,pass->draw_count,error);
     }
     if (status==DOE_DX_OK) {
@@ -189,8 +194,10 @@ doe_dx_status doe_dx_commands_render(doe_dx_commands *commands,
             doe_dx_use_texture(commands,pass->depth);
             doe_dx_find_texture(commands,pass->depth)->initialized=true;
         }
-        doe_dx_use_texture(commands,pass->color);
-        doe_dx_find_texture(commands,pass->color)->initialized=true;
+        if (pass->color) {
+            doe_dx_use_texture(commands,pass->color);
+            doe_dx_find_texture(commands,pass->color)->initialized=true;
+        }
     } else for (size_t i=0;i<retained;++i) doe_dx_pipeline_release(pass->draws[i].pipeline);
     free(draws);
     return status==DOE_DX_OK ? doe_dx_fail(status,0,"render.pass",error) :

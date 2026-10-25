@@ -113,6 +113,12 @@ int main(void)
     native_stage swapped[2]={stages[1],stages[0]};
     assert(!native_d3d12_graphics_maps(&pipeline,swapped,layouts,&maps));
     assert(!memcmp(&maps,&before,sizeof(maps)));
+    assert(native_d3d12_graphics_maps_count(&pipeline,stages,1,layouts,&maps));
+    assert(maps.stage_count==1 && maps.stages[0].buffer_count==2 && !maps.stages[1].buffer_count &&
+        !maps.stages[1].texture_count && !maps.stages[1].sampler_count && !maps.draw_normalize && !maps.index_scan);
+    before=maps; memcpy(prior,layouts,sizeof(prior));
+    assert(!native_d3d12_graphics_maps_count(&pipeline,stages,0,layouts,&maps) &&
+        !memcmp(&maps,&before,sizeof(maps)) && !memcmp(layouts,prior,sizeof(layouts)));
     doe_shader_release(shaders[0]);
     doe_shader_release(shaders[1]);
     puts("PASS D3D12 independent VS/PS module ordinals, differing selected subsets, canonical shared binding, sampler/texture rows and untouched rejection; actual compiler only, no SDK/GPU");

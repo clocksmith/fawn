@@ -7,6 +7,7 @@
 
 typedef struct native_d3d12_graphics {
     native_d3d12_compute stages[DOE_DX_RENDER_STAGES];
+    size_t stage_count;
     doe_dx_pipeline *draw_normalize, *index_scan; /* Existing pipeline retirement owner. */
 } native_d3d12_graphics;
 typedef struct native_d3d12_graphics_snapshot {
@@ -17,6 +18,8 @@ typedef struct native_d3d12_graphics_snapshot {
 /* Maps independently compiled stage identities into one canonical public binding
  * list. Module-local resource ordinals never become cross-stage identities. */
 bool native_d3d12_graphics_maps(const native_pipeline *,const native_stage [2],
+    native_d3d12_layout [2],native_d3d12_graphics *);
+bool native_d3d12_graphics_maps_count(const native_pipeline *,const native_stage *,size_t,
     native_d3d12_layout [2],native_d3d12_graphics *);
 /* Called after shared stage-interface validation; source reflection is unchanged. */
 bool native_d3d12_interstage_mask(const native_stage *,uint32_t *);

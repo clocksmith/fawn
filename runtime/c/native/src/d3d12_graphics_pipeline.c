@@ -7,12 +7,18 @@ static bool descriptor(const native_device *device,const WGPURenderPipelineDescr
     const native_stage *stages,size_t count,doe_dx_render_pipeline_desc *out,doe_resource_render_pipeline_desc *resource)
 {
     const WGPUFragmentState *fragment=source->fragment;
-    if (!fragment || count!=2 || fragment->targetCount!=1 || !fragment->targets ||
+    if (count!=(fragment ? 2u : 1u) || (fragment && (fragment->targetCount>1 ||
+        (fragment->targetCount && !fragment->targets))) ||
         (source->depthStencil && source->depthStencil->format!=WGPUTextureFormat_Depth32Float)) return false;
-    const WGPUColorTargetState *color=&fragment->targets[0];
-    if (color->format==WGPUTextureFormat_RGBA8Unorm) out->color_format=DOE_DX_RGBA8_UNORM;
-    else if (color->format==WGPUTextureFormat_BGRA8Unorm) out->color_format=DOE_DX_BGRA8_UNORM;
-    else return false;
+    const WGPUColorTargetState *color=fragment && fragment->targetCount ? &fragment->targets[0] : NULL;
+    out->fragment_absent=fragment==NULL;
+    out->color_absent=!color || color->format==WGPUTextureFormat_Undefined;
+    if (!out->color_absent) {
+        if (color->format==WGPUTextureFormat_RGBA8Unorm) out->color_format=DOE_DX_RGBA8_UNORM;
+        else if (color->format==WGPUTextureFormat_BGRA8Unorm) out->color_format=DOE_DX_BGRA8_UNORM;
+        else return false;
+    }
+    if (out->color_absent && !source->depthStencil) return false;
     doe_vk_render_pipeline_desc fixed={0};
     /* Direct3D guarantees32 four-component VS outputs/PS inputs. The actual SDK
      * constants are asserted by the private Windows graphics source; this is
@@ -45,7 +51,7 @@ static bool descriptor(const native_device *device,const WGPURenderPipelineDescr
     case 2: out->cull=DOE_DX_CULL_BACK; break;
     default: return false;
     }
-    if (color->writeMask & ~WGPUColorWriteMask_All) return false;
+    if (color && (color->writeMask & ~WGPUColorWriteMask_All)) return false;
     out->depth_enabled=source->depthStencil!=NULL;
     out->depth_write=fixed.depth_write;
     out->depth_compare=(doe_dx_compare)fixed.depth_compare;
@@ -60,10 +66,10 @@ static bool descriptor(const native_device *device,const WGPURenderPipelineDescr
         target->alpha_destination_factor,target->alpha_operation};
     out->masks_explicit=true;
     out->sample_mask=fixed.sample_mask;
-    out->color_write_mask=(uint32_t)color->writeMask;
-    resource->color_count=1; resource->samples=1; resource->topology=source->primitive.topology == WGPUPrimitiveTopology_Undefined ?
+    out->color_write_mask=color ? (uint32_t)color->writeMask : 0;
+    resource->color_count=fragment ? (uint32_t)fragment->targetCount : 0; resource->samples=1; resource->topology=source->primitive.topology == WGPUPrimitiveTopology_Undefined ?
         WGPUPrimitiveTopology_TriangleList : source->primitive.topology;
-    resource->color_formats[0]=color->format;
+    if (color) resource->color_formats[0]=color->format;
     return true;
 }
 #endif
@@ -82,14 +88,14 @@ WGPURenderPipeline native_d3d12_create_render_pipeline(native_device *device,
     if (!native_d3d12_graphics_vertices(&source->vertex,device,&desc,&resource,vertices,attributes) ||
         !descriptor(device,source,stages,count,&desc,&resource)) return NULL;
     uint32_t interstage_mask=0;
-    if (!native_d3d12_interstage_mask(&stages[1],&interstage_mask)) {
+    if (count==2 && !native_d3d12_interstage_mask(&stages[1],&interstage_mask)) {
         *error=(native_pipeline_error){WGPUErrorType_Validation,"D3D12 fragment input projection unsupported"};
         return NULL;
     }
     doe_dx_shader *compiled[2]={0};
     native_failure failure=native_failure_status(NATIVE_OK);
     failure=native_d3d12_compile_vertex(&stages[0],interstage_mask,&compiled[0]);
-    if (failure.status==NATIVE_OK) failure=native_d3d12_compile_stage(&stages[1],&compiled[1]);
+    if (failure.status==NATIVE_OK && count==2) failure=native_d3d12_compile_stage(&stages[1],&compiled[1]);
     native_d3d12_kernel_code *guards[2]={0};
     if (failure.status==NATIVE_OK) failure=native_d3d12_draw_compile(false,&guards[0]);
     if (failure.status==NATIVE_OK) failure=native_d3d12_draw_compile(true,&guards[1]);
@@ -114,9 +120,9 @@ WGPURenderPipeline native_d3d12_create_render_pipeline(native_device *device,
             status=DOE_RESOURCE_LAYOUT;
         native_d3d12_layout layouts[2];
         if (status==DOE_RESOURCE_OK && failure.status==NATIVE_OK &&
-            !native_d3d12_graphics_maps(payload,stages,layouts,payload->d3d12_graphics)) status=DOE_RESOURCE_UNSUPPORTED;
+            !native_d3d12_graphics_maps_count(payload,stages,count,layouts,payload->d3d12_graphics)) status=DOE_RESOURCE_UNSUPPORTED;
         if (status==DOE_RESOURCE_OK && failure.status==NATIVE_OK) {
-            for (size_t i=0;i<2;++i) {
+            for (size_t i=0;i<count;++i) {
                 const native_d3d12_compute *map=&payload->d3d12_graphics->stages[i];
                 size_t bytes=0;
                 const uint8_t *code=doe_dx_shader_bytes(compiled[i],&bytes);

@@ -143,6 +143,7 @@ doe_dx_status doe_dx_native_render_create(doe_dx_native_context *context,
         state.VS=(D3D12_SHADER_BYTECODE){desc->stages[0].resources.buffers.bytecode,desc->stages[0].resources.buffers.bytecode_size};
         state.PS=(D3D12_SHADER_BYTECODE){desc->stages[1].resources.buffers.bytecode,desc->stages[1].resources.buffers.bytecode_size};
         doe_dx_graphics_defaults(&state,desc->color_format);
+        if (desc->color_absent) { state.NumRenderTargets=0; state.RTVFormats[0]=DXGI_FORMAT_UNKNOWN; }
         switch (desc->topology) {
         case DOE_DX_TRIANGLES:
             pipeline->render->topology=D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST; break;

@@ -490,7 +490,7 @@ doe_dx_status doe_dx_native_render(doe_dx_native_commands *commands,doe_dx_nativ
     (void)clear_color;
     doe_dx_status status=outcome(MOCK_DRAW,error);
     if (status!=DOE_DX_OK) return status;
-    record_texture(commands,color);
+    if (color) record_texture(commands,color);
     for (size_t i=0;i<count;++i) {
         if (draws[i].query) { record_timestamps(commands,draws[i].query); continue; }
         for (size_t stage=0;stage<DOE_DX_RENDER_STAGES;++stage)

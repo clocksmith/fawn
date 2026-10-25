@@ -106,6 +106,40 @@ static void indirect_pass(void)
     assert(!mock.buffers && !mock.pipelines && !mock.textures && doe_dx_context_destroy(context)==DOE_DX_OK);
     mock_reset();
 }
+static void depth_only_pass(void)
+{
+    doe_dx_context *context=NULL;
+    assert(doe_dx_context_create(&(doe_dx_options){0},&context,NULL)==DOE_DX_OK);
+    unsigned char code=1;
+    doe_dx_render_pipeline_desc desc={.fragment_absent=true,.color_absent=true,.depth_enabled=true,
+        .depth_write=true,.depth_compare=DOE_DX_LESS};
+    desc.stages[0].resources.buffers=(doe_dx_pipeline_desc){&code,1,NULL,0};
+    doe_dx_pipeline *pipeline=NULL;
+    desc.stages[1].resources.buffers.bytecode=&code;
+    assert(doe_dx_pipeline_create_render(context,&desc,&pipeline,NULL)==DOE_DX_INVALID_ARGUMENT && !pipeline);
+    desc.stages[1]=(doe_dx_dynamic_pipeline_desc){0};
+    desc.fragment_absent=false;
+    assert(doe_dx_pipeline_create_render(context,&desc,&pipeline,NULL)!=DOE_DX_OK && !pipeline);
+    desc.fragment_absent=true;
+    assert(doe_dx_pipeline_create_render(context,&desc,&pipeline,NULL)==DOE_DX_OK);
+    assert(mock.last_render_pipeline.fragment_absent && mock.last_render_pipeline.color_absent);
+    doe_dx_texture *depth=NULL;
+    assert(doe_dx_texture_create(context,&(doe_dx_texture_desc){4,4,DOE_DX_D32_FLOAT,
+        DOE_DX_TEXTURE_DEPTH_ATTACHMENT},&depth,NULL)==DOE_DX_OK);
+    doe_dx_commands *commands=NULL;
+    assert(doe_dx_commands_create(context,&commands,NULL)==DOE_DX_OK);
+    doe_dx_render_draw packet=draw(pipeline);
+    doe_dx_render_pass pass={.depth=depth,.clear_depth=true,.depth_clear=1,.draws=&packet,.draw_count=1};
+    assert(doe_dx_commands_render(commands,&pass,NULL)==DOE_DX_OK);
+    assert(commands->texture_count==1 && mock.render_depth.texture==depth->native && mock.render_depth.value==1);
+    pass.draws=NULL; pass.draw_count=0; pass.clear_depth=false; pass.discard_depth=true;
+    assert(doe_dx_commands_render(commands,&pass,NULL)==DOE_DX_OK && mock.render_depth.discard);
+    pass.clear=true;
+    assert(doe_dx_commands_render(commands,&pass,NULL)==DOE_DX_INVALID_ARGUMENT);
+    doe_dx_texture_release(depth); doe_dx_pipeline_release(pipeline); doe_dx_commands_release(commands);
+    assert(!mock.textures && !mock.pipelines && doe_dx_context_destroy(context)==DOE_DX_OK);
+    mock_reset();
+}
 static void depth_pass(void)
 {
     doe_dx_context *context=NULL;
@@ -293,6 +327,7 @@ int main(void)
     aliases();
     fixed_state();
     depth_pass();
+    depth_only_pass();
     indirect_pass();
     puts("PASS D3D12 render owner: independent stage128/32 layouts, empty/zero draws, real-init requests, sampler snapshots, OOM/native rollback and unknown early-release leases; no SDK/GPU");
     return 0;
