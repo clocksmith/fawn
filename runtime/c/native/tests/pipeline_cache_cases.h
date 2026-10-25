@@ -10,12 +10,14 @@ static void pipeline_cache_admission(state *s, bool metal_mock)
         DOE_NATIVE_PIPELINE_CACHE_INVALID_ARGUMENT && !memcmp(&info, &saved, sizeof(info)));
     assert(doeNativeDevicePipelineCacheInfo(s->device, DOE_NATIVE_PIPELINE_CACHE_ABI_VERSION,
         &info, sizeof(info)-1) == DOE_NATIVE_PIPELINE_CACHE_INVALID_ARGUMENT && !memcmp(&info, &saved, sizeof(info)));
-    assert(doeNativeDeviceConfigurePipelineCache(s->device, DOE_NATIVE_PIPELINE_CACHE_ABI_VERSION,
-        "cache", 5, &info, sizeof(info)) == DOE_NATIVE_PIPELINE_CACHE_UNSUPPORTED);
-    assert(info.status == DOE_NATIVE_PIPELINE_CACHE_UNSUPPORTED && !info.enabled && info.message[0]);
+    if (metal_mock) { /* This injected Metal adapter deliberately has no archive callbacks. */
+        assert(doeNativeDeviceConfigurePipelineCache(s->device, DOE_NATIVE_PIPELINE_CACHE_ABI_VERSION,
+            "cache", 5, &info, sizeof(info)) == DOE_NATIVE_PIPELINE_CACHE_UNSUPPORTED);
+        assert(info.status == DOE_NATIVE_PIPELINE_CACHE_UNSUPPORTED && !info.enabled && info.message[0]);
+    }
     assert(doeNativeDeviceConfigurePipelineCache(s->device, DOE_NATIVE_PIPELINE_CACHE_ABI_VERSION,
         NULL, 0, &info, sizeof(info)) == DOE_NATIVE_PIPELINE_CACHE_OK && !info.enabled);
-    uint32_t expected = metal_mock ? DOE_NATIVE_PIPELINE_CACHE_OK : DOE_NATIVE_PIPELINE_CACHE_UNSUPPORTED;
+    uint32_t expected = DOE_NATIVE_PIPELINE_CACHE_OK;
     assert(doeNativeDevicePipelineCacheInfo(s->device, DOE_NATIVE_PIPELINE_CACHE_ABI_VERSION,
         &info, sizeof(info)) == expected && !info.enabled && !info.additions && !info.serializations);
     assert(doeNativeDeviceFlushPipelineCache(s->device, DOE_NATIVE_PIPELINE_CACHE_ABI_VERSION,

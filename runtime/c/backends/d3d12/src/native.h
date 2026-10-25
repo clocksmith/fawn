@@ -24,6 +24,7 @@ typedef struct doe_dx_native_binding {
 typedef struct doe_dx_native_resources {
     doe_dx_native_binding buffers[DOE_DX_MAX_BINDINGS];
     doe_dx_native_texture *textures[DOE_DX_MAX_BINDINGS];
+    doe_dx_texture_view_desc texture_views[DOE_DX_MAX_BINDINGS];
     size_t buffer_count, texture_count;
     doe_dx_sampler_desc samplers[DOE_DX_MAX_DYNAMIC_SAMPLERS];
     size_t sampler_count;
@@ -38,10 +39,27 @@ typedef struct doe_dx_binding_plan {
     doe_dx_sampler_layout samplers[DOE_DX_MAX_DYNAMIC_SAMPLERS];
 } doe_dx_binding_plan;
 void doe_dx_binding_plan_copy(doe_dx_binding_plan *,const doe_dx_dynamic_pipeline_desc *);
+typedef struct doe_dx_format_info { uint32_t bytes,block_width,block_height,kind; } doe_dx_format_info;
+bool doe_dx_format_properties(doe_dx_format,doe_dx_format_info *);
+bool doe_dx_format_compatible(doe_dx_format,doe_dx_format);
+bool doe_dx_format_renderable(doe_dx_format);
+bool doe_dx_format_exact_clear(doe_dx_format);
+bool doe_dx_format_depth(doe_dx_format);
+bool doe_dx_format_stencil(doe_dx_format);
+/* Normalizes only the legacy additive shape; semantic validation stays in owner. */
+uint32_t doe_dx_render_target_count(const doe_dx_render_pipeline_desc *);
+doe_dx_render_target doe_dx_render_target_at(const doe_dx_render_pipeline_desc *,uint32_t);
+typedef struct doe_dx_native_render_color {
+    doe_dx_native_texture *texture,*resolve;
+    bool clear,discard;
+    float value[4];
+} doe_dx_native_render_color;
 typedef struct doe_dx_native_render_depth {
     doe_dx_native_texture *texture;
     bool clear, discard;
     float value;
+    bool clear_stencil, discard_stencil;
+    uint32_t stencil;
 } doe_dx_native_render_depth;
 typedef struct doe_dx_native_render_draw {
     doe_dx_native_timestamps *query;
@@ -54,6 +72,7 @@ typedef struct doe_dx_native_render_draw {
     doe_dx_index_format index_format;
     size_t vertex_buffer_count;
     uint32_t vertex_count,instance_count,first_vertex,first_instance;
+    uint32_t stencil_reference;
     float blend_constant[4];
     float viewport[6];
     uint32_t scissor[4];
@@ -93,11 +112,17 @@ doe_dx_status doe_dx_native_pipeline_create_dynamic(doe_dx_native_context *conte
 doe_dx_status doe_dx_texture_layout_2d(const doe_dx_texture_desc *desc,
     doe_dx_texture_layout layout, doe_dx_texture_footprint *out);
 doe_dx_status doe_dx_native_texture_create(doe_dx_native_context *context,
-    const doe_dx_texture_desc *desc, doe_dx_native_texture **out, doe_dx_error *error);
+    const doe_dx_texture_shape *shape, doe_dx_native_texture **out, doe_dx_error *error);
+uint64_t doe_dx_native_texture_upload_bytes(const doe_dx_native_texture *);
+doe_dx_status doe_dx_native_texture_initialize(doe_dx_native_commands *,doe_dx_native_texture *,doe_dx_native_buffer *,doe_dx_error *);
 void doe_dx_native_texture_destroy(doe_dx_native_texture *texture);
 void doe_dx_native_texture_transfer(doe_dx_native_commands *commands,
     doe_dx_native_buffer *buffer, doe_dx_native_texture *texture,
     const doe_dx_texture_footprint *footprint, bool upload);
+void doe_dx_native_texture_region_transfer_ex(doe_dx_native_commands *,doe_dx_native_buffer *,doe_dx_native_texture *,
+    const doe_dx_texture_footprint *,doe_dx_texture_region_ex,bool);
+void doe_dx_native_texture_blit_ex(doe_dx_native_commands *,doe_dx_native_texture *,doe_dx_texture_region_ex,
+    doe_dx_native_texture *,doe_dx_texture_region_ex);
 void doe_dx_native_texture_region_transfer(doe_dx_native_commands *commands,
     doe_dx_native_buffer *buffer, doe_dx_native_texture *texture,
     const doe_dx_texture_footprint *footprint, doe_dx_texture_region region, bool upload);
@@ -108,6 +133,10 @@ void doe_dx_native_texture_copy(doe_dx_native_commands *commands,
     doe_dx_native_texture *source, doe_dx_native_texture *destination);
 doe_dx_status doe_dx_native_render_create(doe_dx_native_context *,const doe_dx_render_pipeline_desc *,
     doe_dx_native_pipeline **,doe_dx_error *);
+doe_dx_status doe_dx_native_render_targets(doe_dx_native_commands *,const doe_dx_native_render_color *,uint32_t,
+    const doe_dx_native_render_depth *,const doe_dx_native_render_draw *,size_t,doe_dx_error *);
+doe_dx_status doe_dx_native_render_resolve(doe_dx_native_commands *,doe_dx_native_texture *,doe_dx_native_texture *,bool,
+    const float [4],bool,const doe_dx_native_render_depth *,const doe_dx_native_render_draw *,size_t,doe_dx_error *);
 doe_dx_status doe_dx_native_render(doe_dx_native_commands *,doe_dx_native_texture *,bool,
     const float [4],bool,const doe_dx_native_render_depth *,const doe_dx_native_render_draw *,size_t,doe_dx_error *);
 doe_dx_status doe_dx_native_graphics_create(doe_dx_native_context *context,

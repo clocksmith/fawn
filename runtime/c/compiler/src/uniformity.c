@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: MIT
  * Copyright (c) 2026 Doe contributors */
 #include "sema.h"
+#include "stage.h"
 #include <string.h>
 
 /* One Boolean sensitivity run represents reachability from one distinguished
@@ -103,7 +104,18 @@ static bool name_bit(Uniformity *a,NameSpan name,uint32_t cf,uint32_t *out) {
                 a->compiler->resources[identity.index].access==DOE_COMPILER_READ_WRITE) *out=varying(a);
             return true;
         case IDENTITY_STAGE_INPUT:
-        case IDENTITY_WORKGROUP: *out=varying(a); return true;
+            if (a->source->stages != NULL) {
+                for (uint32_t i = 0u; i < a->source->stages->interface_count; ++i) {
+                    if (!charge(a,1u)) return false;
+                    const StageInterface *leaf = &a->source->stages->interfaces[i];
+                    if (leaf->formal == identity.index && leaf->member == NO_ID &&
+                        leaf->builtin == DOE_COMPILER_BUILTIN_SUBGROUP_SIZE) return true;
+                }
+            }
+            *out=varying(a); return true;
+        case IDENTITY_WORKGROUP:
+            if (a->compiler->workgroups[identity.index].state.resolved.address_space != MODULE_IMMEDIATE) *out=varying(a);
+            return true;
         case IDENTITY_NONE: break;
     }
     return source_error(a->source,DOE_COMPILER_INPUT_ERROR,name.offset,"validated uniformity value identity is missing");
@@ -117,7 +129,8 @@ static bool call_bit(Uniformity *a,uint32_t id,uint32_t cf,uint32_t *out) {
     *out=cf;
     if (reference.kind == SOURCE_ATOMIC) *out |= varying(a);
     if (reference.kind == SOURCE_IMAGE && (reference.index & SOURCE_IMAGE_VARYING) != 0u) *out |= varying(a);
-    if (reference.kind == SOURCE_IMAGE && (reference.index & SOURCE_IMAGE_DERIVATIVE) != 0u &&
+    if ((reference.kind == SOURCE_DERIVATIVE ||
+        (reference.kind == SOURCE_IMAGE && (reference.index & SOURCE_IMAGE_DERIVATIVE) != 0u)) &&
         !a->subgroup && !require_uniform(a,cf,e->source_offset)) return false;
     if (reference.kind==SOURCE_BARRIER) {
         if (!a->subgroup && !require_uniform(a,cf,e->source_offset)) return false;
@@ -131,7 +144,7 @@ static bool call_bit(Uniformity *a,uint32_t id,uint32_t cf,uint32_t *out) {
     const NumericBuiltin *collective = reference.kind == SOURCE_SUBGROUP ?
         builtin_kind((NumericBuiltinKind)reference.index) : NULL;
     if (collective != NULL) {
-        if (a->subgroup && !require_uniform(a, cf, e->source_offset)) return false;
+        if ((a->subgroup || collective->kind >= BUILTIN_QUAD_BROADCAST) && !require_uniform(a, cf, e->source_offset)) return false;
         if (!a->subgroup || !builtin_subgroup_uniform(collective)) *out |= varying(a);
     }
     const FunctionRecord *function=callee==0u?NULL:&a->compiler->functions[callee-1u];
@@ -147,7 +160,12 @@ static bool call_bit(Uniformity *a,uint32_t id,uint32_t cf,uint32_t *out) {
         const ArgumentSyntax arg=a->compiler->arguments[link];
         uint32_t bit;
         if (!expression_bit(a,arg.expression,cf,&bit)) return false;
-        if (function==NULL) *out|=bit;
+        if (collective != NULL && a->subgroup && i == 1u &&
+            (collective->kind == BUILTIN_SUBGROUP_SHUFFLE_XOR || collective->kind == BUILTIN_SUBGROUP_SHUFFLE_UP ||
+             collective->kind == BUILTIN_SUBGROUP_SHUFFLE_DOWN) && !require_uniform(a, bit, e->source_offset)) return false;
+        if (function==NULL) {
+            if (!(collective != NULL && a->subgroup && builtin_subgroup_uniform(collective))) *out|=bit;
+        }
         else {
             if (!charge(a,1u)) return false;
             const uint32_t summary=a->formal_summary[function->formal_start+i];
@@ -460,7 +478,8 @@ bool uniformity_analyze(Source *source,uint64_t limit,uint64_t *used) {
     bool barrier=false, subgroup=false;
     for (uint32_t i=0u;i<c->expression_count;++i) {
         const SourceReference reference=c->expression_references[i];
-        barrier=barrier || reference.kind==SOURCE_BARRIER ||
+        barrier=barrier || reference.kind==SOURCE_BARRIER || reference.kind==SOURCE_DERIVATIVE ||
+            (reference.kind == SOURCE_SUBGROUP && reference.index >= (uint32_t)BUILTIN_QUAD_BROADCAST) ||
             (reference.kind==SOURCE_IMAGE && (reference.index & SOURCE_IMAGE_DERIVATIVE)!=0u);
         subgroup=subgroup || c->expression_references[i].kind==SOURCE_SUBGROUP;
     }

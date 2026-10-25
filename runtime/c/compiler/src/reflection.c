@@ -56,9 +56,9 @@ bool reflect_prepare(Source *s, CompilerWorkspace *c, DoeCompilerTypedOutputCoun
     uint32_t workgroup_index = 0u;
     if (module) for (uint32_t i=0u;i<c->workgroup_count;++i) {
         /* Target IDs are dead after emission/planning. Reuse that field for
-         * the compact public workgroup index; private roots are not reflected. */
+         * the compact public workgroup index; private and immediate roots are not reflected. */
         c->workgroups[i].target = NO_ID;
-        if (c->workgroups[i].state.resolved.address_space == MODULE_PRIVATE) continue;
+        if (c->workgroups[i].state.resolved.address_space != MODULE_WORKGROUP) continue;
         c->workgroups[i].target = workgroup_index++;
         names+=(uint64_t)c->workgroups[i].name.length+1u;
         if (!discover(s,c->workgroups[i].type,&counts->types)) return false;
@@ -208,7 +208,7 @@ void reflect_module(const Source *s, const CompilerWorkspace *c, const DoeCompil
         out->first_workgroup_reference = reference_cursor;
         for (uint32_t j = 0u; j < entry->state.resolved.workgroup_count; ++j) {
             const WorkgroupRoot *root = &c->workgroups[c->entry_references[entry->state.resolved.workgroup_first + j]];
-            if (root->state.resolved.address_space == MODULE_PRIVATE) continue;
+            if (root->state.resolved.address_space != MODULE_WORKGROUP) continue;
             o->entry_references[reference_cursor++] = root->target;
             ++out->workgroup_reference_count;
         }
@@ -219,7 +219,7 @@ void reflect_module(const Source *s, const CompilerWorkspace *c, const DoeCompil
     publish_tables(s,c,&tables,&cursor);
     for (uint32_t i=0u;i<c->workgroup_count;++i) {
         const WorkgroupRoot *root=&c->workgroups[i];
-        if (root->state.resolved.address_space == MODULE_PRIVATE) continue;
+        if (root->state.resolved.address_space != MODULE_WORKGROUP) continue;
         DoeCompilerWorkgroupV5 *out=&o->workgroups[root->target];
         memset(out,0,sizeof(*out));
         out->name=publish_name(s,root->name,o->names,&cursor);

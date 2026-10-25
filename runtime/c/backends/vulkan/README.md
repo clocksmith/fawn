@@ -706,3 +706,59 @@ present-fence retirement, maintenance1 discard and swapchain teardown on those t
 drivers, not what the compositor displayed, OUTDATED/LOST observation on a real
 swapchain (host-tested only) or physical hardware qualification. Mesa Wayland
 reports 64 surface formats, so the explicit format capacity is 128.
+
+### Per-device queue synchronization policy
+
+`doe_vk_options.sync_selection` explicitly selects the existing proven-terminal
+fence tuple pool, or prefers core1.2 timeline semaphores when the physical feature
+is available. Timeline mode queries the actual pending-value limit and loads the
+core procedures, enables the feature on the selected device, and uses one owned
+monotonic semaphore on the existing queue. The existing command owner signals,
+polls and waits its recorded value; it remains responsible for first failure,
+unknown completion, resource leases and recovery. Mixed presentation submits
+signal the binary render-finished semaphore in the same submission. Counter
+exhaustion and pending-distance overflow fail before native submission. Timeline
+submissions pass a null native fence; dormant pool fences cannot be reset while
+pending. Fence mode preserves the existing pool without another queue engine.
+
+`check-timeline` is a typed host contract (including uncertain first-error and
+limit controls). Public native device-policy controls additionally exercise both
+modes and staged uploads on explicit CPU Vulkan. Neither qualifies a physical
+GPU, native window presentation, or timing improvement.
+
+### Explicit driver pipeline-cache persistence
+
+`doe_vk_cache.h` configures the real driver `VkPipelineCache`, passed to the
+existing compute and graphics constructors. It does not replace in-memory exact
+pipeline sharing, parse shader text, or cache WGSL by name. No directory is used
+unless explicitly requested. The file `doe-vulkan-v1.cache` contains a bounded
+(maximum32MiB) native driver blob, an exact device/driver UUID and driver-version
+envelope, and a shared SHA256 corruption check. The native version1 header must
+also match vendor ID, device ID and `pipelineCacheUUID`. Missing, malformed or
+incompatible files create an empty cache. Native allocation/device-loss errors
+remain errors; pipeline creation failures are never retried with altered inputs.
+
+Serialization uses an exclusively created adjacent temporary file, complete
+write/flush and file sync, then atomic replacement. Failed serialization retains
+the previous file and dirty state. Explicit disable does not write; context
+teardown attempts best-effort flush before destroying the cache/device. Counters
+record driver load, pipeline creation and serialization operations, not binary
+hits. Header-only driver blobs are valid and do not imply compiled-code reuse.
+
+`check-driver-cache` exercises actual temporary files with typed native calls:
+identity/checksum rejection, prior-file preservation on driver failure, and owned
+replacement. Two explicit CPU llvmpipe CLI runs additionally serialized/reloaded
+a native header-only blob while executing unchanged f16 matmul. These controls
+are not physical-GPU, Windows filesystem, native-window or performance evidence.
+
+### Immediate data
+
+The additive compute constructor and graphics descriptor accept an aligned,
+bounded push-constant extent. The existing pipeline-layout owner validates the
+actual device limit and exact shader-stage visibility; the extent participates in
+the existing compute sharing key. `doe_vk_commands_set_immediates` records actual
+`vkCmdPushConstants` and retains its pipeline through the existing dispatch lease
+list. Graphics draws push their own immutable packet snapshot after binding.
+Zero extent creates no range or command. Wrong sizes, foreign contexts and invalid
+stage ranges fail before recording. `check-immediates` is a typed-call control;
+physical-device qualification is separate.

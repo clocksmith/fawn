@@ -160,3 +160,18 @@ void doe_mtl_images_retire(doe_mtl_commands *commands, bool completed, bool succ
         free(use);
     }
 }
+
+/* This is data, not a buffer allocation: setBytes copies it into native encoder
+ * storage. No user pointer or temporary allocation survives the recording call. */
+doe_mtl_status doe_mtl_immediates_preflight(doe_mtl_immediate_binding binding,
+    uint32_t sizes_slot, doe_mtl_native_resources *native)
+{
+    if (!binding.size) return DOE_MTL_OK;
+    if (!binding.bytes || binding.size > sizeof(native->immediate_words) || binding.size % 4 ||
+        binding.slot >= DOE_MTL_BUFFER_SLOTS || binding.slot == sizes_slot ||
+        native->buffers[binding.slot].buffer) return DOE_MTL_INVALID_ARGUMENT;
+    memcpy(native->immediate_words, binding.bytes, binding.size);
+    native->immediate_size = binding.size;
+    native->immediate_slot = binding.slot;
+    return DOE_MTL_OK;
+}

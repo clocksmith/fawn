@@ -87,6 +87,42 @@ static doe_dx_shader_error invalid(doe_dx_shader_options *options, doe_dx_status
     return error;
 }
 
+static void native16_requirements(doe_dx_shader_options options)
+{
+    static const char half_source[] =
+        "RWStructuredBuffer<uint> output : register(u0);"
+        "[numthreads(1,1,1)] void main() {"
+        "float16_t a = float16_t(1.5); float16_t b = a + float16_t(2.0);"
+        "output[0] = asuint(float(b)); }";
+    options.source = half_source;
+    options.source_size = sizeof(half_source) - 1;
+    options.entry = "main";
+    options.stage = DOE_DX_SHADER_COMPUTE;
+    doe_dx_shader_requirements required = {620, DOE_DX_SHADER_NATIVE16, {0, 0}};
+    doe_dx_shader_error error;
+    doe_dx_shader *shader = NULL;
+    assert(doe_dx_shader_compile_required(&options, NULL, &required, &shader, &error) == DOE_DX_OK);
+    size_t size = 0;
+    const uint8_t *bytes = doe_dx_shader_bytes(shader, &size);
+    assert(bytes && size > 32 && !memcmp(bytes, "DXBC", 4));
+    doe_dx_shader_release(shader);
+    doe_dx_shader *sentinel = (doe_dx_shader *)(void *)&error;
+    shader = sentinel;
+    required.shader_model = 600;
+    assert(doe_dx_shader_compile_required(&options, NULL, &required, &shader, &error) == DOE_DX_INVALID_ARGUMENT);
+    assert(shader == sentinel && !strcmp(error.operation, "DXC.options"));
+    required.shader_model = 620;
+    required.flags = 2;
+    assert(doe_dx_shader_compile_required(&options, NULL, &required, &shader, &error) == DOE_DX_INVALID_ARGUMENT);
+    assert(shader == sentinel);
+    required.flags = DOE_DX_SHADER_NATIVE16;
+    required.reserved[1] = 1;
+    assert(doe_dx_shader_compile_required(&options, NULL, &required, &shader, &error) == DOE_DX_INVALID_ARGUMENT);
+    assert(shader == sentinel);
+    assert(doe_dx_shader_compile_required(&options, NULL, NULL, &shader, &error) == DOE_DX_INVALID_ARGUMENT);
+    assert(shader == sentinel);
+}
+
 int main(int argc, char **argv)
 {
     assert(argc == 3); /* Absolute compiler DLL and an existing include file. */
@@ -94,6 +130,7 @@ int main(int argc, char **argv)
         .source_size=sizeof(compute)-1, .entry="main", .stage=DOE_DX_SHADER_COMPUTE};
     FILE *include = fopen(argv[2], "rb");
     assert(include && fclose(include) == 0);
+    native16_requirements(options);
     valid(&options, compute, DOE_DX_SHADER_COMPUTE);
     valid(&options, vertex, DOE_DX_SHADER_VERTEX);
     valid(&options, fragment, DOE_DX_SHADER_FRAGMENT);

@@ -66,7 +66,7 @@ bool sema_builtin_finish(Source *source, const Expression *node, const NumericBu
             .operands.composite = {first + 2u, 1u, 2u, 0u}}, &arguments[2].value)) return false;
     return sema_emit(source, emit, (IrInstruction){
         .opcode = IR_BUILTIN, .type = out->constant.type, .source_offset = node->source_offset,
-        .operands.scalar = {arguments[0].value.id,
+        .operands.scalar = {builtin->arity != 0u ? arguments[0].value.id : 0u,
             builtin->arity > 1u ? arguments[1].value.id : 0u,
             builtin->arity > 2u ? arguments[2].value.id : 0u, (uint32_t)builtin->kind}
     }, &out->value);

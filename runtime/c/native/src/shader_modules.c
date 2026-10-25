@@ -24,7 +24,7 @@ uint32_t native_shader_semantic_flags(void)
     /* Raw uniform lowering supplies natural WGSL layout on every composed
      * target without requiring a backend layout extension. This exact policy
      * also owns language-feature reporting; standalone defaults stay conservative. */
-    return DOE_COMPILER_CORE_BINDING_NUMBERS | DOE_COMPILER_UNIFORM_BUFFER_STANDARD_LAYOUT | DOE_COMPILER_DISABLE_F16;
+    return DOE_COMPILER_CORE_BINDING_NUMBERS | DOE_COMPILER_UNIFORM_BUFFER_STANDARD_LAYOUT | DOE_COMPILER_DISABLE_F16 | DOE_COMPILER_DISABLE_SUBGROUPS;
 }
 
 static doe_shader_options shader_options(doe_shader_target target)
@@ -96,6 +96,8 @@ static WGPUShaderModule create_shader_module(native_device *device, const WGPUSh
     doe_shader_options options = shader_options(target);
     if (native_feature_enabled(device, WGPUFeatureName_ShaderF16))
         options.semantic_flags &= ~DOE_COMPILER_DISABLE_F16;
+    if (native_feature_enabled(device, WGPUFeatureName_Subgroups))
+        options.semantic_flags &= ~DOE_COMPILER_DISABLE_SUBGROUPS;
     doe_shader_status status = doe_shader_create_module(&options,options.capacities.typed.expressions,
         source->code.data,size,&payload->module,&payload->error);
     if (status != DOE_SHADER_OK && !payload->error.diagnostic.message[0])

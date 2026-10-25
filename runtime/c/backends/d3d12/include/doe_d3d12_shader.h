@@ -29,6 +29,14 @@ typedef struct doe_dx_shader_options {
 typedef struct doe_dx_shader_projection {
     uint32_t interstage_mask, reserved;
 } doe_dx_shader_projection;
+/* Additive target requirements. Existing compile APIs remain SM6.0. Native16
+ * requires SM6.2 and the actual DXC 16-bit-types switch; no implicit promotion. */
+enum { DOE_DX_SHADER_NATIVE16 = 1u };
+typedef struct doe_dx_shader_requirements {
+    uint32_t shader_model; /* Exactly 600 or 620. */
+    uint32_t flags; /* DOE_DX_SHADER_NATIVE16 only; unknown bits reject. */
+    uint32_t reserved[2];
+} doe_dx_shader_requirements;
 enum { DOE_DX_SHADER_MESSAGE_CAPACITY = 1024 };
 typedef struct doe_dx_shader_error {
     doe_dx_status status;
@@ -55,6 +63,11 @@ doe_dx_status doe_dx_shader_compile(const doe_dx_shader_options *options,
  * wrong stage/reserved fields reject before DXC and leave *out unchanged. */
 doe_dx_status doe_dx_shader_compile_projected(const doe_dx_shader_options *options,
     const doe_dx_shader_projection *projection,doe_dx_shader **out,doe_dx_shader_error *error);
+/* requirements is required; projection is optional (vertex only when present).
+ * All other ownership, diagnostics and host-state rules are compile's rules. */
+doe_dx_status doe_dx_shader_compile_required(const doe_dx_shader_options *options,
+    const doe_dx_shader_projection *projection, const doe_dx_shader_requirements *requirements,
+    doe_dx_shader **out, doe_dx_shader_error *error);
 /* NULL shader returns NULL and size zero. Otherwise immutable bytes are borrowed
  * while the caller owns this object; native PSO creation copies those bytes. */
 const uint8_t *doe_dx_shader_bytes(const doe_dx_shader *shader, size_t *size);

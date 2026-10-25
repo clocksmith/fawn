@@ -59,9 +59,9 @@ doe_dx_status doe_dx_prepare_color_target(doe_dx_native_commands *commands, doe_
     }
     use->heap->lpVtbl->GetCPUDescriptorHandleForHeapStart(use->heap, handle);
     D3D12_RENDER_TARGET_VIEW_DESC view = {0};
-    view.Format = color->description.Format;
-    view.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
-    ID3D12Device_CreateRenderTargetView(device, color->resource, &view, *handle);
+    view.Format = color ? doe_dx_texture_format(color->format) : DXGI_FORMAT_R8G8B8A8_UNORM;
+    view.ViewDimension = color && color->description.SampleDesc.Count>1 ? D3D12_RTV_DIMENSION_TEXTURE2DMS : D3D12_RTV_DIMENSION_TEXTURE2D;
+    ID3D12Device_CreateRenderTargetView(device, color ? color->resource : NULL, &view, *handle);
     *out = use;
     return DOE_DX_OK;
 }
@@ -81,8 +81,8 @@ doe_dx_status doe_dx_prepare_depth_target(doe_dx_native_commands *commands, doe_
     }
     use->heap->lpVtbl->GetCPUDescriptorHandleForHeapStart(use->heap, handle);
     D3D12_DEPTH_STENCIL_VIEW_DESC view = {0};
-    view.Format = DXGI_FORMAT_D32_FLOAT;
-    view.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+    view.Format = doe_dx_texture_format(depth->format);
+    view.ViewDimension = depth->description.SampleDesc.Count>1 ? D3D12_DSV_DIMENSION_TEXTURE2DMS : D3D12_DSV_DIMENSION_TEXTURE2D;
     ID3D12Device_CreateDepthStencilView(commands->context->device, depth->resource, &view, *handle);
     *out = use;
     return DOE_DX_OK;

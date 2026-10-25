@@ -21,6 +21,7 @@ static void decomposition_helpers(MetalEmitter *e) {
 }
 void metal_numeric_helpers(MetalEmitter *e) {
     decomposition_helpers(e);
+    metal_float_pack_helpers(e);
     metal_text(e,
         "inline uint doe_div(uint a, uint b) { return a / (b == 0u ? 1u : b); }\n"
         "inline uint doe_rem(uint a, uint b) { return b == 0u ? 0u : a % b; }\n"
@@ -209,6 +210,21 @@ static void builtin_expression(MetalEmitter *e, const IrInstruction *ir) {
     const NumericBuiltin *builtin = builtin_kind((NumericBuiltinKind)ir->operands.scalar.literal);
     if (builtin == NULL) {
         metal_error(e, "Metal builtin identity has no registered semantics");
+        return;
+    }
+    if (builtin_subgroup(builtin)) {
+        metal_subgroup(e, ir, builtin->kind);
+        return;
+    }
+    if (builtin->family == BUILTIN_DERIVATIVE) {
+        const uint32_t axis = ((uint32_t)builtin->kind - (uint32_t)BUILTIN_DPDX) % 3u;
+        metal_text(e, axis == 0u ? "dfdx(" : axis == 1u ? "dfdy(" : "fwidth(");
+        metal_value(e, ir->operands.scalar.left);
+        metal_text(e, ")");
+        return;
+    }
+    if (builtin->family == BUILTIN_FLOAT_PACK) {
+        metal_float_pack_expression(e, ir, builtin->kind);
         return;
     }
     if (builtin->family == BUILTIN_DECOMPOSE) {
@@ -428,13 +444,13 @@ void metal_expression(MetalEmitter *e, const IrInstruction *ir) {
                 metal_error(e, "Metal builtin input identity is invalid");
                 break;
             }
-            if ((unsigned)e->module->entry_inputs[ir->operands.scalar.binding].kind > INPUT_LOCAL_INDEX) {
+            if ((unsigned)e->module->entry_inputs[ir->operands.scalar.binding].kind > INPUT_SUBGROUP_ID) {
                 metal_error(e, "Metal builtin input has no implemented lowering");
                 break;
             }
             metal_format(e, "ctx.input%u", (unsigned)e->module->entry_inputs[ir->operands.scalar.binding].kind);
             if (ir->operands.scalar.literal != NO_ID &&
-                e->module->entry_inputs[ir->operands.scalar.binding].kind != INPUT_LOCAL_INDEX)
+                !input_scalar(e->module->entry_inputs[ir->operands.scalar.binding].kind))
                 metal_format(e, "[%u]", ir->operands.scalar.literal);
             break;
         case IR_SWIZZLE:

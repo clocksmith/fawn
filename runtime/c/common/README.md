@@ -19,3 +19,9 @@ The source builder publishes neither text nor length on failure.
 `../native/tools/check_d3d12_indirect.py` additionally compiles the real source
 through the public C HLSL facade and checks typed binding/entry metadata. Those
 are CPU source/metadata controls, not SDK or GPU execution evidence.
+
+`include/doe_sha256.h` is the shared immutable SHA-256 byte-digest leaf, moved
+without algorithm changes from the runtime CLI. CLI trace/output digests retain
+the same public wrappers and independent tests. Vulkan cache files use this leaf
+to reject corrupted opaque driver payloads before loading; it is not a new shader
+cache, authenticity mechanism, or device ownership layer.

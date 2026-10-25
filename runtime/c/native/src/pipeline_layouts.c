@@ -1,6 +1,39 @@
 /* SPDX-License-Identifier: MIT */
 #include "internal.h"
 
+/* ABI17 owns exact byte accessibility; native code never reconstructs WGSL layout. */
+static bool immediate_requirements(const native_stage *stages, size_t count,
+    uint32_t *bytes, uint64_t *mask, uint32_t *visibility)
+{
+    *bytes = 0;
+    *mask = 0;
+    *visibility = 0;
+    for (size_t s = 0; s < count; ++s) {
+        const doe_shader_view *view = &stages[s].view;
+        if (!view->translation_complete || !view->entries || !stages[s].entry ||
+            (view->translation_entry_count && !view->translation_entries)) return false;
+        size_t index = 0;
+        while (index < view->counts.entries && &view->entries[index] != stages[s].entry) ++index;
+        if (index == view->counts.entries) return false;
+        const DoeCompilerTranslationEntryV17 *found = NULL;
+        for (size_t i = 0; i < view->translation_entry_count; ++i) {
+            const DoeCompilerTranslationEntryV17 *row = &view->translation_entries[i];
+            if (row->entry_index != index) continue;
+            if (found || row->flags || row->reserved || row->immediate_bytes > 64) return false;
+            found = row;
+        }
+        if (!found) return false;
+        uint64_t allowed = found->immediate_bytes == 64 ? UINT64_MAX :
+            ((UINT64_C(1) << found->immediate_bytes) - 1u);
+        if (found->immediate_accessible_bytes_low64 & ~allowed) return false;
+        uint32_t aligned = (found->immediate_bytes + 3u) & ~3u;
+        if (aligned > *bytes) *bytes = aligned;
+        *mask |= found->immediate_accessible_bytes_low64;
+        if (found->immediate_bytes) *visibility |= stages[s].visibility;
+    }
+    return true;
+}
+
 /* Immutable compiler pairs describe actual sample/gather calls, including
  * helper formal substitution. Resource identities are local to each stage. */
 static bool sampling_complete(const native_stage *stages, size_t count)
@@ -135,6 +168,10 @@ static bool merge_entry(doe_resource_layout_entry *actual, const doe_resource_la
 doe_resource_status native_automatic_layout(native_device *device,
     const native_stage *stages, size_t stage_count, doe_resource_pipeline_layout **out)
 {
+    uint32_t immediate_bytes, immediate_visibility;
+    uint64_t immediate_mask;
+    if (!immediate_requirements(stages, stage_count, &immediate_bytes, &immediate_mask, &immediate_visibility))
+        return DOE_RESOURCE_UNSUPPORTED;
     /* One group holds at most every resource the pipeline references. */
     doe_resource_layout_entry entries[DOE_RESOURCE_MAX_GROUPS][NATIVE_MAX_PIPELINE_BINDINGS];
     size_t counts[DOE_RESOURCE_MAX_GROUPS] = {0};
@@ -169,7 +206,7 @@ doe_resource_status native_automatic_layout(native_device *device,
         status = doe_resource_layout_create(&device->resources, entries[i], counts[i], true, &groups[i]);
         if (status != DOE_RESOURCE_OK) goto finished;
     }
-    status = doe_resource_pipeline_layout_create(&device->resources, groups, group_count, 0, out);
+    status = doe_resource_pipeline_layout_create(&device->resources, groups, group_count, immediate_bytes, out);
 finished:
     for (size_t i = 0; i < group_count; ++i) doe_resource_layout_release(groups[i]);
     return status;
@@ -207,6 +244,9 @@ bool native_pipeline_bindings(native_pipeline *payload, const native_stage *stag
     size_t stage_count, doe_resource_pipeline_layout *layout)
 {
     if (!sampling_complete(stages, stage_count)) return false;
+    if (!immediate_requirements(stages, stage_count, &payload->immediate_bytes,
+            &payload->immediate_required_bytes, &payload->immediate_stages) || payload->immediate_bytes >
+            doe_resource_pipeline_layout_immediate_size(layout)) return false;
     for (size_t stage_index = 0; stage_index < stage_count; ++stage_index) {
         const native_stage *stage = &stages[stage_index];
         const doe_shader_view *view = &stage->view;

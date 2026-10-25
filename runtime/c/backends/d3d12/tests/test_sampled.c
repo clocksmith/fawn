@@ -27,8 +27,8 @@ int main(void)
         {0,0,DOE_DX_RGBA8_UNORM,DOE_DX_READ_ONLY},
         {1,0,DOE_DX_R32_UINT,DOE_DX_READ_ONLY},
         {2,0,DOE_DX_R32_UINT,DOE_DX_READ_WRITE}};
-    doe_dx_texture_contract contracts[3] = {{DOE_DX_SAMPLE_UINT,false},
-        {DOE_DX_SAMPLE_EXACT,true},{DOE_DX_SAMPLE_EXACT,true}};
+    doe_dx_texture_contract contracts[3] = {{.sample_class=DOE_DX_SAMPLE_UINT},
+        {.sample_class=DOE_DX_SAMPLE_EXACT,.storage=true},{.sample_class=DOE_DX_SAMPLE_EXACT,.storage=true}};
     doe_dx_sampler_layout sampler_layout = {7,3,false};
     doe_dx_dynamic_pipeline_desc desc = {.resources={.buffers={&bytecode,1,NULL,0},
         .textures=textures,.texture_count=3},.texture_contracts=contracts,.samplers=&sampler_layout,.sampler_count=1};
@@ -86,7 +86,7 @@ int main(void)
     contracts[0].storage = true;
     assert(doe_dx_pipeline_create_dynamic(context,&desc,&untouched,NULL) == DOE_DX_INVALID_ARGUMENT);
     assert(untouched == (doe_dx_pipeline *)(uintptr_t)1);
-    contracts[0] = (doe_dx_texture_contract){DOE_DX_SAMPLE_UINT,false};
+    contracts[0] = (doe_dx_texture_contract){.sample_class=DOE_DX_SAMPLE_UINT};
     desc.sampler_count = DOE_DX_MAX_DYNAMIC_SAMPLERS + 1;
     assert(doe_dx_pipeline_create_dynamic(context,&desc,&untouched,NULL) == DOE_DX_RANGE);
     doe_dx_pipeline_release(pipeline);

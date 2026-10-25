@@ -63,6 +63,13 @@ void doe_mtl_objc_image_caps(doe_mtl_objc *r, void *device, doe_mtl_caps *caps) 
     /* Conservative published family limits. Unrecognized older devices keep
      * buffer compute, but have no admitted image dimensions rather than guesses. */
     if (r->responds_call(device, r->responds, r->supports_family)) {
+        /* Native SIMD reductions start at Apple7, later than permutations.
+         * Keep non-Apple GPUs unavailable pending their exact operation/quirk
+         * admission. Apple family membership, not device-name guessing, binds
+         * the documented 32-lane family range; this is not a measured PSO width.
+         * https://developer.apple.com/metal/Metal-Feature-Set-Tables.pdf */
+        caps->subgroups = r->family_call(device, r->supports_family, 1007) != 0;
+        if (caps->subgroups) caps->subgroup_min_size = caps->subgroup_max_size = 32;
         /* Apple Metal Feature Set Tables: Apple2/3 512, Apple4+ and Mac1/2
          * 1024 total threads. Per-axis device properties are not a product
          * limit; each actual PSO maxTotalThreadsPerThreadgroup is still checked.

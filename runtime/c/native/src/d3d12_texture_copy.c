@@ -34,7 +34,7 @@ static native_failure buffer_texture(native_command_handle *commands,const doe_r
             (doe_dx_texture_layout){0},texture->d3d12,region,false,&error);
     /* Canonical rows and ranges have already been admitted. Only occupied bytes
      * move; public pitch/offset/padding are never widened to native placement. */
-    for (uint32_t row = 0; status == DOE_DX_OK && row < copy->height; ++row) {
+    for (uint32_t row = 0; status == DOE_DX_OK && row < public->rows; ++row) {
         uint64_t public_offset = copy->offset + (uint64_t)row * public->pitch;
         uint64_t native_offset = (uint64_t)row * footprint.row_pitch;
         status = upload ? doe_dx_commands_copy(commands->value.d3d12.commands,

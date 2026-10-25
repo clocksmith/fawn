@@ -7,27 +7,17 @@
 #if defined(_WIN32)
 static native_failure initialize(native_device *device,doe_dx_texture *texture)
 {
-    doe_dx_texture_footprint footprint;
-    doe_dx_status status = doe_dx_texture_copy_footprint(texture,(doe_dx_texture_layout){0},&footprint);
-    if (status != DOE_DX_OK) return native_failure_d3d12(status,NULL);
-    if (footprint.span > native_allocation_bound(device)) return native_failure_status(NATIVE_OUT_OF_MEMORY);
-    native_command_handle commands = {0};
-    native_failure failure = native_command_create(&device->backend,&commands);
-    if (failure.status != NATIVE_OK) return failure;
-    doe_dx_buffer *zero = NULL;
-    doe_dx_error detail = {0};
-    status = doe_dx_buffer_create(commands.value.d3d12.context,footprint.span,DOE_DX_UPLOAD,&zero,&detail);
-    if (status == DOE_DX_OK)
-        status = doe_dx_commands_upload_texture(commands.value.d3d12.commands,zero,
-            (doe_dx_texture_layout){0},texture,&detail);
-    failure = native_failure_d3d12(status,&detail);
-    if (failure.status == NATIVE_OK) failure = native_submit_backend_commands(device,commands);
-    else if (native_command_release(&commands) != NATIVE_OK) abort();
-    /* The submitted command owns both allocations independently of this lease.
-     * Unknown completion keeps that command and its existing pending device. */
-    doe_dx_buffer_release(zero);
+    native_command_handle commands={0};
+    native_failure failure=native_command_create(&device->backend,&commands);
+    if (failure.status!=NATIVE_OK) return failure;
+    doe_dx_error detail={0};
+    doe_dx_status status=doe_dx_commands_initialize_texture(commands.value.d3d12.commands,texture,&detail);
+    failure=native_failure_d3d12(status,&detail);
+    if (failure.status==NATIVE_OK) failure=native_submit_backend_commands(device,commands);
+    else if (native_command_release(&commands)!=NATIVE_OK) abort();
     return failure;
 }
+
 #endif
 
 WGPUTexture native_d3d12_create_texture(native_device *device,const WGPUTextureDescriptor *descriptor)
@@ -62,7 +52,10 @@ WGPUTexture native_d3d12_create_texture(native_device *device,const WGPUTextureD
 #if defined(_WIN32)
     if (failure.status == NATIVE_OK) {
         doe_dx_error detail = {0};
-        doe_dx_status created = doe_dx_texture_create(device->backend.value.d3d12.context,&native,&payload->d3d12,&detail);
+        doe_dx_texture_shape shape={.image=native,.dimension=desc.dimension==WGPUTextureDimension_1D ? 1u :
+            desc.dimension==WGPUTextureDimension_3D ? 3u : 2u,.depth_or_layers=desc.depth_or_layers,
+            .mip_levels=desc.mip_levels,.samples=desc.samples};
+        doe_dx_status created = doe_dx_texture_create_shape(device->backend.value.d3d12.context,&shape,&payload->d3d12,&detail);
         failure = native_failure_d3d12(created,&detail);
     }
     if (failure.status == NATIVE_OK) failure = initialize(device,payload->d3d12);
@@ -98,15 +91,21 @@ WGPUTextureView native_d3d12_create_view(doe_resource_texture *texture,const WGP
     native_lock(device);
     doe_resource_status status = descriptor->nextInChain ? DOE_RESOURCE_UNSUPPORTED :
         !desc.mip_count || !desc.layer_count ? DOE_RESOURCE_RANGE : doe_resource_view_validate(texture,&desc,&resolved);
-    if (status == DOE_RESOURCE_OK && (resolved.dimension != WGPUTextureViewDimension_2D ||
-        resolved.format != doe_resource_texture_description(texture)->format || resolved.aspect != WGPUTextureAspect_All ||
-        resolved.base_mip || resolved.mip_count != 1 || resolved.base_layer || resolved.layer_count != 1))
-        status = DOE_RESOURCE_UNSUPPORTED;
+    doe_dx_texture_view_desc native;
+    if (status==DOE_RESOURCE_OK && !native_d3d12_view_descriptor(&resolved,doe_resource_texture_description(texture),&native))
+        status=DOE_RESOURCE_UNSUPPORTED;
+#if defined(_WIN32)
+    if (status==DOE_RESOURCE_OK) {
+        native_texture *parent=doe_resource_texture_native(texture);
+        doe_dx_texture_view_desc checked;
+        if (!parent || doe_dx_texture_view_validate(parent->d3d12,&native,&checked)!=DOE_DX_OK) status=DOE_RESOURCE_UNSUPPORTED;
+    }
+#endif
     native_view *payload = status == DOE_RESOURCE_OK ? calloc(1,sizeof(*payload)) : NULL;
     doe_resource_view *view = NULL;
     if (payload) {
         payload->device = device;
-        /* This whole-resource immutable view is the canonical parent span.
+        /* This immutable view keeps the canonical selected parent span.
          * D3D descriptors are later command-owned; no borrowed COM view escapes. */
         status = doe_resource_view_create(texture,&resolved,(doe_resource_native){payload,NULL,native_view_release},&view);
     } else if (status == DOE_RESOURCE_OK) status = DOE_RESOURCE_OUT_OF_MEMORY;

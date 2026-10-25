@@ -331,6 +331,10 @@ doe_resource_status doe_resource_bind_group_resolve_binding(const doe_resource_b
 doe_resource_status doe_resource_pipeline_create(const doe_resource_config *config,
     doe_resource_pipeline_layout *layout, doe_resource_native native,
     const uint32_t workgroup[3], doe_resource_pipeline **out);
+/* Set before publishing a new pipeline, like binding minimum requirements.
+ * The byte mask excludes compiler-declared padding and must fit its layout. */
+doe_resource_status doe_resource_pipeline_require_immediates(doe_resource_pipeline *pipeline, uint64_t mask);
+uint32_t doe_resource_pipeline_layout_immediate_size(const doe_resource_pipeline_layout *layout);
 /* A buffer binding the pipeline's shader requires at least `size` bytes of.
  * Each dispatch checks the bound buffer binding against it (WebGPU's minimum
  * buffer binding size, needed when the layout's minBindingSize is 0). */
@@ -421,6 +425,11 @@ typedef enum doe_resource_command_kind {
     DOE_COMMAND_RESOLVE_QUERY, DOE_COMMAND_BEGIN_OCCLUSION, DOE_COMMAND_RENDER,
     DOE_COMMAND_DISPATCH_INDIRECT, DOE_COMMAND_COPY_TEXTURE, DOE_COMMAND_END_OCCLUSION
 } doe_resource_command_kind;
+enum { DOE_RESOURCE_MAX_IMMEDIATE_BYTES = 64 };
+typedef struct doe_resource_immediate_state {
+    uint32_t words[DOE_RESOURCE_MAX_IMMEDIATE_BYTES / 4];
+    uint64_t initialized_bytes;
+} doe_resource_immediate_state;
 typedef struct doe_resource_command {
     doe_resource_command_kind kind;
     union {
@@ -450,6 +459,7 @@ typedef struct doe_resource_command {
             doe_resource_buffer *indirect;
             uint64_t indirect_offset;
             uint32_t x, y, z;
+            doe_resource_immediate_state immediates;
         } dispatch;
     } value;
 } doe_resource_command;
@@ -591,6 +601,8 @@ doe_resource_compute_pass *doe_resource_compute_pass_rejected(doe_resource_encod
 doe_resource_status doe_resource_compute_pass_set_pipeline(doe_resource_compute_pass *pass,
     doe_resource_pipeline *pipeline);
 /* NULL descriptor, or NULL group with no dynamic offsets, unbinds the slot. */
+doe_resource_status doe_resource_compute_pass_set_immediates(doe_resource_compute_pass *pass,
+    uint32_t offset, const void *data, size_t size);
 doe_resource_status doe_resource_compute_pass_set_group(doe_resource_compute_pass *pass,
     uint32_t index, const doe_resource_dispatch_group *group);
 doe_resource_status doe_resource_compute_pass_dispatch(doe_resource_compute_pass *pass,

@@ -71,13 +71,17 @@ static void context_type(MetalEmitter *e) {
     }
     for (uint32_t i = 0u; i < e->module->workgroup_count; ++i) {
         if (!metal_selected_workgroup(e, i)) continue;
+        if (e->module->workgroups[i].state.resolved.address_space == MODULE_IMMEDIATE) {
+            metal_format(e,"    constant uchar* w%u;\n",i);
+            continue;
+        }
         metal_text(e, e->module->workgroups[i].state.resolved.address_space == MODULE_PRIVATE ? "    thread " : "    threadgroup ");
         metal_type(e, e->module->workgroups[i].type);
         metal_format(e, "* w%u;\n", i);
     }
     metal_text(e, "    constant uint* sizes;\n");
-    for (unsigned i = 0u; i <= INPUT_LOCAL_INDEX; ++i) {
-        metal_format(e, "    %s input%u;\n", i == INPUT_LOCAL_INDEX ? "uint" : "uint3", i);
+    for (unsigned i = 0u; i <= INPUT_SUBGROUP_ID; ++i) {
+        metal_format(e, "    %s input%u;\n", input_scalar((InputKind)i) ? "uint" : "uint3", i);
     }
     metal_graphics_context(e);
     metal_text(e, "};\n");
@@ -170,7 +174,7 @@ static bool entry_admit(MetalEmitter *e, const EntryRecord *entry) {
         return false;
     }
     e->offset = c->functions[entry->function].name.offset;
-    const uint32_t supported_inputs = (1u << (INPUT_LOCAL_INDEX + 1u)) - 1u;
+    const uint32_t supported_inputs = (1u << (INPUT_SUBGROUP_ID + 1u)) - 1u;
     if ((entry->source_input_mask & ~supported_inputs) != 0u) {
         metal_error(e, "Metal builtin input has no implemented lowering");
         return false;
@@ -196,6 +200,9 @@ static bool entry_admit(MetalEmitter *e, const EntryRecord *entry) {
         const ResourceRecord *r = &c->resources[i];
         uint32_t slot;
         if (!metal_resource_slot(e, r, &slot)) return false;
+        if (!type_handle(c,r->type) && target_immediate_root(c,entry) != NO_ID && slot == DOE_COMPILER_METAL_IMMEDIATE_SLOT) {
+            metal_error(e,"Metal buffer binding collides with immediate data slot29"); return false;
+        }
         for (uint32_t j = 0u; j < i; ++j) {
             if (metal_entry_resource(c, entry, j) && c->resources[j].group == r->group &&
                 c->resources[j].binding == r->binding) {
@@ -214,6 +221,11 @@ void metal_resource_parameters(MetalEmitter *e, const EntryRecord *entry, bool *
         metal_resource_parameter(e, i, true);
         *comma = true;
     }
+    if (target_immediate_root(c,entry) != NO_ID) {
+        if (*comma) metal_text(e,", ");
+        metal_format(e,"constant uchar* doe_immediate [[buffer(%u)]]",DOE_COMPILER_METAL_IMMEDIATE_SLOT);
+        *comma = true;
+    }
     if (metal_entry_sizes(c, entry)) {
         e->needs_sizes = true;
         if (*comma) metal_text(e, ", ");
@@ -224,6 +236,8 @@ void metal_resource_parameters(MetalEmitter *e, const EntryRecord *entry, bool *
 void metal_resource_context(MetalEmitter *e, const EntryRecord *entry) {
     const CompilerWorkspace *c = e->module;
     metal_line(e, "DoeContext ctx{};");
+    const uint32_t immediate = target_immediate_root(c,entry);
+    if (immediate != NO_ID) metal_format(e,"    ctx.w%u = doe_immediate;\n",immediate);
     for (uint32_t i = 0u; i < c->resource_count; ++i) {
         if (metal_entry_resource(c, entry, i) && !type_handle(c, c->resources[i].type)) {
             metal_indent(e);
@@ -240,7 +254,8 @@ void metal_resource_context(MetalEmitter *e, const EntryRecord *entry) {
 }
 static void entry_wrapper(MetalEmitter *e, uint32_t index) {
     static const char *const attributes[] = {"thread_position_in_grid", "thread_position_in_threadgroup",
-        "threadgroup_position_in_grid", "threadgroups_per_grid", "thread_index_in_threadgroup"};
+        "threadgroup_position_in_grid", "threadgroups_per_grid", "thread_index_in_threadgroup",
+        "threads_per_simdgroup", "thread_index_in_simdgroup", "simdgroups_per_threadgroup", "simdgroup_index_in_threadgroup"};
     const CompilerWorkspace *c = e->module;
     const EntryRecord *entry = &c->entries[index];
     e->current_entry = index;
@@ -258,24 +273,24 @@ static void entry_wrapper(MetalEmitter *e, uint32_t index) {
     metal_format(e, "\")]] kernel void doe_entry%u(", index);
     bool comma = false;
     metal_resource_parameters(e, entry, &comma);
-    for (unsigned i = 0u; i <= INPUT_LOCAL_INDEX; ++i) {
+    for (unsigned i = 0u; i <= INPUT_SUBGROUP_ID; ++i) {
         if ((input_mask & (1u << i)) == 0u) continue;
         if (comma) metal_text(e, ", ");
-        metal_format(e, "%s input%u [[%s]]", i == INPUT_LOCAL_INDEX ? "uint" : "uint3", i, attributes[i]);
+        metal_format(e, "%s input%u [[%s]]", input_scalar((InputKind)i) ? "uint" : "uint3", i, attributes[i]);
         comma = true;
     }
     metal_text(e, ") {\n");
     e->indent = 1u;
     metal_resource_context(e, entry);
     metal_private_initialization(e, entry);
-    for (unsigned i = 0u; i <= INPUT_LOCAL_INDEX; ++i) {
+    for (unsigned i = 0u; i <= INPUT_SUBGROUP_ID; ++i) {
         if ((input_mask & (1u << i)) != 0u) {
             metal_indent(e);
             metal_format(e, "ctx.input%u = input%u;\n", i, i);
         }
     }
     for (uint32_t i = 0u; i < c->workgroup_count; ++i) {
-        if (!metal_entry_workgroup(c, entry, i) || c->workgroups[i].state.resolved.address_space == MODULE_PRIVATE) continue;
+        if (!metal_entry_workgroup(c, entry, i) || c->workgroups[i].state.resolved.address_space != MODULE_WORKGROUP) continue;
         metal_indent(e);
         metal_text(e, "threadgroup ");
         metal_type(e, c->workgroups[i].type);

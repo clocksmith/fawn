@@ -191,6 +191,7 @@ def main() -> int:
                      set(C_ROOT.joinpath('common/include').glob('*.h')))
     for owner in owners:
         headers.extend(sorted(owner.joinpath('include').glob('*.h')))
+        headers.extend(sorted(owner.joinpath('include').glob('*.inc')))
         headers.extend(sorted(owner.joinpath('src').glob('*.h')))
     inputs = [*sources, *headers, ROOT / 'sources.mk', ROOT / 'EXPORTED_SYMBOLS.txt',
               ROOT / 'EXTENSION_SYMBOLS.txt', Path(__file__).resolve(), schema, loader_test,

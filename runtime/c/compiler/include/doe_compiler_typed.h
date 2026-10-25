@@ -28,6 +28,7 @@ extern "C" {
 #define DOE_COMPILER_CORE_BINDING_NUMBERS 16u
 /* Device consumers disable the extension unless shader-f16 was requested. */
 #define DOE_COMPILER_DISABLE_F16 32u
+#define DOE_COMPILER_DISABLE_SUBGROUPS 64u
 
 #define DOE_COMPILER_TYPE_SCALAR 1u
 #define DOE_COMPILER_TYPE_VECTOR 2u

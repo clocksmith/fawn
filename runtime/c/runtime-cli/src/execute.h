@@ -6,6 +6,7 @@
 #ifndef DOE_RUNTIME_EXECUTE_H
 #define DOE_RUNTIME_EXECUTE_H
 #include "stream.h"
+#include "doe_native_device_policy.h"
 #include "trace.h"
 #include <stdbool.h>
 #include <stddef.h>
@@ -22,6 +23,7 @@ typedef enum doe_queue_wait { DOE_WAIT_PROCESS_EVENTS, DOE_WAIT_ANY } doe_queue_
 typedef enum doe_timestamp_mode { DOE_TIMESTAMP_AUTO, DOE_TIMESTAMP_OFF, DOE_TIMESTAMP_REQUIRE } doe_timestamp_mode;
 
 typedef struct doe_runtime_options {
+    const char *backend_lane;
     doe_timestamp_mode timestamp_mode;
     bool no_pipeline_cache;
     const char *pipeline_cache_dir; /* Explicit path; no implicit persistence or directory creation. */
@@ -44,6 +46,8 @@ typedef struct doe_runtime_adapter {
 } doe_runtime_adapter;
 
 typedef struct doe_runtime doe_runtime;
+bool doe_runtime_load_device_policy(const char *lane_name, DoeNativeDevicePolicy *policy,
+    char *message, size_t capacity, char source_hash[65]);
 
 /* NULL on failure, with the reason in message. */
 doe_runtime *doe_runtime_open(const doe_runtime_options *options, char *message, size_t message_size);
@@ -78,6 +82,7 @@ bool doe_runtime_flush(doe_runtime *runtime, doe_trace_execution *execution);
 /* Optional archive I/O never overwrites a command's first error. */
 void doe_runtime_flush_pipeline_cache(doe_runtime *runtime);
 bool doe_runtime_write_pipeline_cache(FILE *out, const doe_runtime *runtime);
+bool doe_runtime_write_device_policy(FILE *out, const doe_runtime *runtime);
 void doe_runtime_close(doe_runtime *runtime);
 uint64_t doe_runtime_monotonic_ns(void);
 #endif

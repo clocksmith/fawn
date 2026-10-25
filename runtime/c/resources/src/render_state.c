@@ -128,6 +128,8 @@ doe_resource_status resource_render_draw_validate(const doe_resource_render_pack
     const doe_resource_render_pipeline *pipeline = packet->pipeline;
     status = validate_pipeline(pipeline, device, signature);
     if (status != DOE_RESOURCE_OK) return status;
+    if ((packet->immediates.initialized_bytes & pipeline->desc.immediate_required_bytes) !=
+        pipeline->desc.immediate_required_bytes) return DOE_RESOURCE_STATE;
     doe_resource_dispatch_group groups[DOE_RESOURCE_MAX_GROUPS];
     for (size_t i = 0; i < pipeline->layout->count; i++)
         groups[i] = (doe_resource_dispatch_group){packet->groups[i], packet->offsets.values[i], packet->offsets.counts[i]};
@@ -166,4 +168,18 @@ void resource_render_clear_bindings(doe_resource_render_packet *state)
     /* Move attachment/query ownership back into state; release only bindings. */
     old.targets = (doe_resource_render_targets){0};
     resource_render_packet_release(&old);
+}
+
+doe_resource_status resource_immediates_update(const doe_resource_config *config,
+    doe_resource_immediate_state *state, uint32_t offset, const void *data, size_t size)
+{
+    uint32_t limit = config->max_immediate_size ? config->max_immediate_size : 64;
+    if ((!data && size) || offset % 4 || size % 4 || offset > 64 || size > 64 - offset ||
+        offset > limit || size > limit - offset) return DOE_RESOURCE_RANGE;
+    if (size) {
+        memcpy((unsigned char *)state->words + offset, data, size);
+        uint64_t mask = size == 64 ? UINT64_MAX : (UINT64_C(1) << size) - 1;
+        state->initialized_bytes |= mask << offset;
+    }
+    return DOE_RESOURCE_OK;
 }

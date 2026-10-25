@@ -53,6 +53,7 @@ typedef struct doe_mtl_compute_dispatch {
      * Empty dispatch still emits the encoder if timestamps are requested. */
     doe_mtl_timestamps *timestamps;
     uint32_t timestamp_begin, timestamp_end;
+    doe_mtl_immediate_binding immediates;
 } doe_mtl_compute_dispatch;
 doe_mtl_status doe_mtl_commands_compute(doe_mtl_commands *commands,
     const doe_mtl_compute_dispatch *dispatch, doe_mtl_error *error);

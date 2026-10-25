@@ -279,6 +279,7 @@ static bool workgroup_declaration(Parser *p, Syntax *s) {
     if (parser_peek(p)->kind == '<') {
         ++p->cursor;
         if (parser_spelled(p, parser_peek(p), "workgroup")) root.type = MODULE_WORKGROUP;
+        else if (parser_spelled(p, parser_peek(p), "immediate")) root.type = MODULE_IMMEDIATE;
         else if (!parser_spelled(p, parser_peek(p), "private"))
             return source_error(p->source, DOE_COMPILER_UNSUPPORTED, offset, "unsupported module variable address space");
         ++p->cursor;
@@ -293,9 +294,9 @@ static bool workgroup_declaration(Parser *p, Syntax *s) {
         if (!type_reference(p, s, &root.state.annotation)) return false;
     }
     if (parser_peek(p)->kind == '=') {
-        if (root.type == MODULE_WORKGROUP)
+        if (root.type == MODULE_WORKGROUP || root.type == MODULE_IMMEDIATE)
             return source_error(p->source, DOE_COMPILER_SEMANTIC_ERROR, parser_peek(p)->offset,
-                                "workgroup variables cannot have an initializer");
+                                "workgroup and immediate variables cannot have an initializer");
         ++p->cursor;
         if (!expression(p, s, 0u, 0u, &root.target)) return false;
     }
@@ -896,8 +897,11 @@ static bool module_directive(Parser *p, bool enable) {
     do {
         const Token *extension = parser_peek(p);
         if (extension->kind != TOKEN_WORD) return parser_reject(p, "extension name");
-        if (enable && parser_spelled(p, extension, "subgroups"))
+        if (enable && parser_spelled(p, extension, "subgroups")) {
+            if ((p->tokens->module_flags & MODULE_DISABLE_SUBGROUPS) != 0u)
+                return source_error(p->source, DOE_COMPILER_UNSUPPORTED, extension->offset, "subgroups are not enabled by the compiler consumer");
             p->tokens->module_flags |= MODULE_SUBGROUPS;
+        }
         else if (enable && parser_spelled(p, extension, "f16")) {
             if ((p->tokens->module_flags & MODULE_DISABLE_F16) != 0u)
                 return source_error(p->source, DOE_COMPILER_UNSUPPORTED, extension->offset,
@@ -907,6 +911,9 @@ static bool module_directive(Parser *p, bool enable) {
         else if (!enable && parser_spelled(p, extension, "uniform_buffer_standard_layout") &&
                  (p->tokens->module_flags & MODULE_STANDARD_UNIFORM) != 0u) {
             /* A language requirement checks caller-selected implementation support. */
+        }
+        else if (!enable && parser_spelled(p, extension, "immediate_address_space")) {
+            /* Shared module roots and all native targets implement immediate data. */
         }
         else if (!enable && parser_spelled(p, extension, "packed_4x8_integer_dot_product")) {
             /* Portable typed integer lowering provides the complete packed family. */

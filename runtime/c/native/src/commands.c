@@ -163,12 +163,6 @@ WGPUCommandBuffer wgpuCommandEncoderFinish(WGPUCommandEncoder handle, const WGPU
 void wgpuCommandBufferAddRef(WGPUCommandBuffer commands) { doe_resource_commands_retain((doe_resource_commands *)commands); }
 void wgpuCommandBufferRelease(WGPUCommandBuffer commands) { doe_resource_commands_release((doe_resource_commands *)commands); }
 
-bool native_immediates_valid(const native_device *device, uint32_t offset, const void *data, size_t size)
-{
-    /* https://gpuweb.github.io/gpuweb/#dom-gpubindingcommandsmixin-setimmediates */
-    const uint64_t limit = device->backend.limits.maxImmediateSize;
-    return (data || !size) && offset % 4 == 0 && size % 4 == 0 && offset <= limit && size <= limit - offset;
-}
 void wgpuComputePassEncoderSetImmediates(WGPUComputePassEncoder handle, uint32_t offset, void const *data, size_t size)
 {
     doe_resource_compute_pass *pass = (doe_resource_compute_pass *)handle;
@@ -176,9 +170,7 @@ void wgpuComputePassEncoderSetImmediates(WGPUComputePassEncoder handle, uint32_t
     if (!device) return;
     native_lock(device);
     const bool ended = doe_resource_compute_pass_ended(pass);
-    doe_resource_status status = DOE_RESOURCE_OK;
-    if (ended || !native_immediates_valid(device, offset, data, size))
-        status = doe_resource_compute_pass_invalidate(pass, DOE_RESOURCE_RANGE);
+    doe_resource_status status = doe_resource_compute_pass_set_immediates(pass, offset, data, size);
     native_unlock(device);
     native_encoding_error(device, ended, status, "compute immediates failed");
 }

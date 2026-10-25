@@ -92,7 +92,7 @@ static void object_path(HlslEmitter *e, const IrInstruction *ir, const HlslPath 
             hlsl_format(e, "l%u", root);
             break;
         case ROOT_POINTER:
-            hlsl_error(e, "HLSL pointer dereference is not implemented");
+            hlsl_format(e, "v%u", e->module->limits.instructions + 1u + root);
             break;
         case ROOT_VALUE: hlsl_value(e, root); break;
         case ROOT_WORKGROUP:
@@ -285,6 +285,13 @@ void hlsl_access(HlslEmitter *e, const IrInstruction *ir) {
             --e->indent;
             hlsl_line(e, "}");
         }
+    } else if (ir->operands.access.category == ROOT_WORKGROUP &&
+        e->module->workgroups[ir->operands.access.root].state.resolved.address_space == MODULE_IMMEDIATE) {
+        if (store) { hlsl_error(e,"immediate data cannot be written"); return; }
+        hlsl_value(e,ir->result);
+        hlsl_format(e," = doe_r%u_load%u(",e->module->resource_count + ir->operands.access.root,ir->type);
+        byte_offset(e,&path);
+        hlsl_text(e,");\n");
     } else if (atomic) atomic_operation(e, ir, &path, scalar);
     else {
         if (store) object_path(e, ir, &path);

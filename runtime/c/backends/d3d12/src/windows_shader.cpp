@@ -126,6 +126,7 @@ static bool absolute_path(const wchar_t *path)
 
 static doe_dx_status compile_shader(const doe_dx_shader_options *options,
     const doe_dx_shader_projection *projection,bool require_projection,
+    const doe_dx_shader_requirements *requirements,
     doe_dx_shader **out,doe_dx_shader_error *error)
 {
     wchar_t entry[64];
@@ -136,11 +137,19 @@ static doe_dx_status compile_shader(const doe_dx_shader_options *options,
     if ((require_projection && !projection) || (projection &&
         (projection->reserved || options->stage!=DOE_DX_SHADER_VERTEX)))
         return reject(error,"projection requires a vertex stage and zero reserved fields");
+    const doe_dx_shader_requirements legacy = {600, 0, {0, 0}};
+    if (!requirements) requirements = &legacy;
+    if ((requirements->shader_model != 600 && requirements->shader_model != 620) ||
+        (requirements->flags & ~DOE_DX_SHADER_NATIVE16) || requirements->reserved[0] ||
+        requirements->reserved[1] ||
+        ((requirements->flags & DOE_DX_SHADER_NATIVE16) && requirements->shader_model != 620))
+        return reject(error, "invalid or inconsistent DXC shader requirements");
+    const bool model62 = requirements->shader_model == 620;
     const wchar_t *profile;
     switch (options->stage) {
-    case DOE_DX_SHADER_COMPUTE: profile = L"cs_6_0"; break;
-    case DOE_DX_SHADER_VERTEX: profile = L"vs_6_0"; break;
-    case DOE_DX_SHADER_FRAGMENT: profile = L"ps_6_0"; break;
+    case DOE_DX_SHADER_COMPUTE: profile = model62 ? L"cs_6_2" : L"cs_6_0"; break;
+    case DOE_DX_SHADER_VERTEX: profile = model62 ? L"vs_6_2" : L"vs_6_0"; break;
+    case DOE_DX_SHADER_FRAGMENT: profile = model62 ? L"ps_6_2" : L"ps_6_0"; break;
     default: return reject(error, "unsupported DXC shader stage");
     }
     compile_state state = {};
@@ -172,6 +181,7 @@ static doe_dx_status compile_shader(const doe_dx_shader_options *options,
     const wchar_t *arguments[16] = {L"-T", profile, L"-E", entry, L"-HV", L"2021",
         DXC_ARG_ENABLE_STRICTNESS, DXC_ARG_WARNINGS_ARE_ERRORS, DXC_ARG_IEEE_STRICTNESS};
     UINT32 count = 9;
+    if (requirements->flags & DOE_DX_SHADER_NATIVE16) arguments[count++]=L"-enable-16bit-types";
     /* Verified pinned DXC spelling. Appended signature elements must not move
      * the shared prefix; compute has no graphics signature policy. */
     if (options->stage!=DOE_DX_SHADER_COMPUTE) arguments[count++]=L"-pack-prefix-stable";
@@ -228,6 +238,7 @@ static doe_dx_status compile_shader(const doe_dx_shader_options *options,
 
 static doe_dx_status shader_compile(const doe_dx_shader_options *options,
     const doe_dx_shader_projection *projection,bool require_projection,
+    const doe_dx_shader_requirements *requirements,
     doe_dx_shader **out,doe_dx_shader_error *error)
 {
     DWORD saved_error = GetLastError();
@@ -240,7 +251,7 @@ static doe_dx_status shader_compile(const doe_dx_shader_options *options,
     if (std::fegetenv(&saved_environment)) {
         status = report(&failure, DOE_DX_NATIVE_FAILURE, 0, "fegetenv(DXC)", "cannot save FP environment", 26);
     } else {
-        status = compile_shader(options,projection,require_projection,out ? &shader : nullptr,&failure);
+        status = compile_shader(options,projection,require_projection,requirements,out ? &shader : nullptr,&failure);
         if (std::fesetenv(&saved_environment)) {
             doe_dx_shader_release(shader);
             shader = nullptr;
@@ -260,13 +271,23 @@ static doe_dx_status shader_compile(const doe_dx_shader_options *options,
 doe_dx_status doe_dx_shader_compile(const doe_dx_shader_options *options,
     doe_dx_shader **out,doe_dx_shader_error *error)
 {
-    return shader_compile(options,nullptr,false,out,error);
+    return shader_compile(options,nullptr,false,nullptr,out,error);
 }
 
 doe_dx_status doe_dx_shader_compile_projected(const doe_dx_shader_options *options,
     const doe_dx_shader_projection *projection,doe_dx_shader **out,doe_dx_shader_error *error)
 {
-    return shader_compile(options,projection,true,out,error);
+    return shader_compile(options,projection,true,nullptr,out,error);
+}
+
+doe_dx_status doe_dx_shader_compile_required(const doe_dx_shader_options *options,
+    const doe_dx_shader_projection *projection, const doe_dx_shader_requirements *requirements,
+    doe_dx_shader **out, doe_dx_shader_error *error)
+{
+    /* A null required record is invalid, not a request for the legacy defaults.
+     * Route rejection through the same host-state preservation owner. */
+    const doe_dx_shader_requirements invalid = {};
+    return shader_compile(options,projection,false,requirements ? requirements : &invalid,out,error);
 }
 
 const uint8_t *doe_dx_shader_bytes(const doe_dx_shader *shader, size_t *size)

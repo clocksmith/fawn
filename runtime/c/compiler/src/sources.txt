@@ -57,3 +57,8 @@ src/numeric_half.c
 src/sampling.c
 src/sema_decompose.c
 src/numeric_decompose.c
+src/numeric_float_pack.c
+src/sema_float_pack.c
+src/spirv_float_pack.c
+src/sema_subgroup.c
+src/translation.c

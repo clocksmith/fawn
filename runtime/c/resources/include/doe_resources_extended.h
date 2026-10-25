@@ -79,6 +79,7 @@ typedef struct doe_resource_render_pipeline_desc {
     doe_resource_vertex_layout vertices[DOE_RESOURCE_MAX_VERTEX_BUFFERS];
     WGPUPrimitiveTopology topology; /* Undefined defaults to TriangleList. */
     WGPUIndexFormat strip_index_format; /* Only meaningful for strip topologies. */
+    uint64_t immediate_required_bytes;
     uint32_t color_count; /* Fragment target slots; Undefined entries are unused. */
     WGPUTextureFormat color_formats[DOE_RESOURCE_MAX_COLOR_ATTACHMENTS];
 } doe_resource_render_pipeline_desc;
@@ -143,6 +144,7 @@ typedef struct doe_resource_render_packet {
     doe_resource_buffer *indirect;
     uint64_t indirect_offset;
     doe_resource_render_state state;
+    doe_resource_immediate_state immediates;
     /* Each pass has explicit begin/end boundary-only packets bracketing query
      * events and draw packets. Load/clear only at first, store only at last. */
     bool boundary_only, first_in_pass, last_in_pass, indexed, occlusion_active;
@@ -183,6 +185,8 @@ void doe_resource_render_pass_retain(doe_resource_render_pass *pass);
 void doe_resource_render_pass_release(doe_resource_render_pass *pass);
 doe_resource_status doe_resource_render_pass_set_pipeline(doe_resource_render_pass *pass,
     doe_resource_render_pipeline *pipeline);
+doe_resource_status doe_resource_render_pass_set_immediates(doe_resource_render_pass *pass,
+    uint32_t offset, const void *data, size_t size);
 doe_resource_status doe_resource_render_pass_set_group(doe_resource_render_pass *pass,
     uint32_t index, const doe_resource_dispatch_group *group);
 /* NULL unbinds only with offset0 and size0/UINT64_MAX; historical usage remains. */
@@ -227,6 +231,8 @@ void doe_resource_bundle_encoder_retain(doe_resource_bundle_encoder *encoder);
 void doe_resource_bundle_encoder_release(doe_resource_bundle_encoder *encoder);
 doe_resource_status doe_resource_bundle_encoder_set_pipeline(doe_resource_bundle_encoder *encoder,
     doe_resource_render_pipeline *pipeline);
+doe_resource_status doe_resource_bundle_encoder_set_immediates(doe_resource_bundle_encoder *encoder,
+    uint32_t offset, const void *data, size_t size);
 doe_resource_status doe_resource_bundle_encoder_set_group(doe_resource_bundle_encoder *encoder,
     uint32_t index, const doe_resource_dispatch_group *group);
 doe_resource_status doe_resource_bundle_encoder_set_vertex(doe_resource_bundle_encoder *encoder,

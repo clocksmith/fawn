@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: MIT */
 #include "../src/internal.h"
+#include "../src/vk_abi_subgroup.h"
 #include <assert.h>
 #include <stdio.h>
 
@@ -11,6 +12,7 @@ static struct {
     unsigned sets_created, sets_destroyed;
     unsigned modules_created, modules_destroyed;
     bool fail_pipelines;
+    uint32_t expected_subgroup;
     uint64_t next_handle;
 } mock;
 
@@ -54,6 +56,11 @@ static VkResult create_pipelines(VkDevice device, VkPipelineCache cache, uint32_
     const VkComputePipelineCreateInfo *info, const VkAllocationCallbacks *allocator, VkPipeline *out) {
     (void)device; (void)cache; (void)info; (void)allocator;
     assert(count == 1);
+    const VkPipelineShaderStageRequiredSubgroupSizeCreateInfo *subgroup = info->stage.pNext;
+    if (mock.expected_subgroup) {
+        assert(subgroup && subgroup->sType == VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_REQUIRED_SUBGROUP_SIZE_CREATE_INFO);
+        assert(subgroup->requiredSubgroupSize == mock.expected_subgroup && !subgroup->pNext);
+    } else assert(!subgroup);
     if (mock.fail_pipelines) return -2; /* VK_ERROR_OUT_OF_DEVICE_MEMORY */
     ++mock.pipelines_created;
     *out = ++mock.next_handle;
@@ -102,7 +109,31 @@ static doe_vk_pipeline *create(doe_vk_context *ctx, uint32_t variant, const char
     return pipeline;
 }
 
+static void subgroup_identity(void) {
+    doe_vk_context *ctx = context();
+    uint32_t words[6]; shader(words, 1);
+    doe_vk_pipeline *default_pipeline = create(ctx, 1, "main", NULL, 0), *sized = NULL, *same = NULL;
+    assert(doe_vk_pipeline_create_with_subgroup(ctx, words, 6, "main", NULL, 0, 32, &sized, NULL) == DOE_VK_UNSUPPORTED);
+    assert(!sized);
+    ctx->caps.subgroup_size_control = true;
+    ctx->caps.subgroup_required_stages = 32;
+    ctx->caps.subgroup_min_size = 4; ctx->caps.subgroup_max_size = 64;
+    mock.expected_subgroup = 32;
+    assert(doe_vk_pipeline_create_with_subgroup(ctx, words, 6, "main", NULL, 0, 32, &sized, NULL) == DOE_VK_OK);
+    assert(sized != default_pipeline && mock.pipelines_created == 2);
+    assert(doe_vk_pipeline_create_with_subgroup(ctx, words, 6, "main", NULL, 0, 32, &same, NULL) == DOE_VK_OK);
+    assert(same == sized && mock.pipelines_created == 2);
+    doe_vk_pipeline *untouched = default_pipeline;
+    assert(doe_vk_pipeline_create_with_subgroup(ctx, words, 6, "main", NULL, 0, 3, &untouched, NULL) == DOE_VK_UNSUPPORTED);
+    assert(untouched == default_pipeline);
+    doe_vk_pipeline_release(same); doe_vk_pipeline_release(sized); doe_vk_pipeline_release(default_pipeline);
+    doe_vk_context_release(ctx);
+    assert(mock.pipelines_destroyed == mock.pipelines_created);
+    memset(&mock, 0, sizeof(mock));
+}
+
 int main(void) {
+    subgroup_identity();
     const doe_vk_binding_layout storage[2] = {{0, 0, DOE_VK_BINDING_STORAGE}, {0, 1, DOE_VK_BINDING_STORAGE}};
     const doe_vk_binding_layout uniform[2] = {{0, 0, DOE_VK_BINDING_UNIFORM}, {0, 1, DOE_VK_BINDING_STORAGE}};
     doe_vk_context *ctx = context();

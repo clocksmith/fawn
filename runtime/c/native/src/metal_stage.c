@@ -34,6 +34,9 @@ bool native_metal_stage_map_build(const native_pipeline *pipeline, const native_
         else if (binding->table != DOE_COMPILER_TEXT_TABLE_BUFFER) return false;
     }
     *map = (native_metal_stage_map){0};
+    for (size_t i = 0; i < view->translation_entry_count; ++i)
+        if (view->translation_entries[i].entry_index == selected)
+            map->immediate_bytes = (view->translation_entries[i].immediate_bytes + 3u) & ~3u;
     uint32_t buffers = 0, required_sizes_bytes = 0;
     for (size_t i = 0; i < stage->entry->resource_reference_count; ++i) {
         uint32_t resource_index = view->entry_references[stage->entry->first_resource_reference + i];
@@ -64,7 +67,8 @@ bool native_metal_stage_map_build(const native_pipeline *pipeline, const native_
         uint32_t prefix = table == DOE_COMPILER_TEXT_TABLE_BUFFER ? entry->buffer_count :
             table == DOE_COMPILER_TEXT_TABLE_TEXTURE ? texture_count : sampler_count;
         if (!target || target->table != table || target->slot >= limit || target->slot >= prefix ||
-            (table == DOE_COMPILER_TEXT_TABLE_BUFFER && target->slot == entry->sizes_slot)) return false;
+            (table == DOE_COMPILER_TEXT_TABLE_BUFFER && (target->slot == entry->sizes_slot ||
+                (map->immediate_bytes && target->slot == DOE_COMPILER_METAL_IMMEDIATE_SLOT)))) return false;
         /* Reflection owns runtime-tail identity; the selected compiler row
          * must agree exactly. The private size table uses the physical buffer
          * slot, never a logical binding number or another packed index. */

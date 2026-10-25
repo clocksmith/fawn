@@ -38,6 +38,8 @@ static doe_vk_status prepare_draw(doe_vk_commands *commands, const doe_resource_
             packet->vertices[i].offset,packet->vertices[i].size};
     }
     *draw = (doe_vk_render_pass_draw){.pipeline=pipeline->handle.vulkan,
+        .immediate_bytes=pipeline->immediate_bytes,
+        .immediates=pipeline->immediate_bytes ? packet->immediates.words : NULL,
         .bindings=bindings,.binding_count=pipeline->binding_count,
         .vertices=vertices,.vertex_buffer_count=pipeline->vertex_count,
         .draw={.vertex_count=packet->count,.instance_count=packet->instances,.first_vertex=packet->first,

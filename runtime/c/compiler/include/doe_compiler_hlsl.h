@@ -13,6 +13,12 @@ extern "C" {
 #define DOE_COMPILER_HLSL_REGISTER_UAV 3u
 #define DOE_COMPILER_HLSL_REGISTER_SAMPLER 4u
 #define DOE_COMPILER_HLSL_ENTRY_WAVES 1u
+/* Requirements of the emitted entry, not device feature availability. */
+#define DOE_COMPILER_HLSL_ENTRY_NATIVE16 2u
+#define DOE_COMPILER_HLSL_ENTRY_RAW_STORAGE 4u
+#define DOE_COMPILER_HLSL_ENTRY_WAVE_COUNTER 8u
+#define DOE_COMPILER_HLSL_ENTRY_ARRAY_VIEWS 16u
+#define DOE_COMPILER_HLSL_WAVE_COUNTER_BYTES 4u
 
 /* Optional DXC producer projection for a validated native VS/PS pair. The
  * compiler-generated VS carrier keeps only user-output locations whose bits
@@ -37,7 +43,8 @@ typedef struct {
  * when compiling a NONE-selection bundle; NAME/AUTO output needs no define.
  * name is the actual DXC entry. dispatch_register/space are NONE and bytes zero
  * when unused; otherwise they identify a uint3 group-count CBV plus uint padding.
- * flags declare native requirements, currently wave intrinsics. They are not
+ * flags declare native requirements; WAVE_COUNTER adds WAVE_COUNTER_BYTES to
+ * shared entry workgroup_storage_bytes for target resource admission. They are not
  * claims of device support. Resource membership uses shared entry_references. */
 typedef struct {
     uint32_t entry_index, stage, flags;

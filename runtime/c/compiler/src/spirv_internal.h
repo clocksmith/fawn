@@ -19,7 +19,7 @@ enum {
     OP_IMAGE_QUERY_SIZE_LOD = 103, OP_IMAGE_QUERY_SIZE = 104, OP_IMAGE_QUERY_LEVELS = 106, OP_IMAGE_QUERY_SAMPLES = 107,
     OP_COMPOSITE_CONSTRUCT = 80, OP_COMPOSITE_EXTRACT = 81, OP_COMPOSITE_INSERT = 82, OP_COPY_OBJECT = 83, OP_TRANSPOSE = 84,
     OP_CONVERT_F_TO_U = 109, OP_CONVERT_F_TO_S = 110, OP_CONVERT_S_TO_F = 111, OP_CONVERT_U_TO_F = 112,
-    OP_FCONVERT = 115, OP_BITCAST = 124, OP_SNEGATE = 126, OP_FNEGATE = 127, OP_IADD = 128, OP_FADD = 129,
+    OP_FCONVERT = 115, OP_QUANTIZE_TO_F16 = 116, OP_BITCAST = 124, OP_SNEGATE = 126, OP_FNEGATE = 127, OP_IADD = 128, OP_FADD = 129,
     OP_ISUB = 130, OP_FSUB = 131, OP_IMUL = 132, OP_FMUL = 133,
     OP_UDIV = 134, OP_SDIV = 135, OP_FDIV = 136, OP_UMOD = 137, OP_SREM = 138, OP_FREM = 140,
     OP_MATRIX_TIMES_SCALAR = 143, OP_VECTOR_TIMES_MATRIX = 144, OP_MATRIX_TIMES_VECTOR = 145,
@@ -57,7 +57,7 @@ typedef struct {
     uint32_t *values;
     uint32_t local_base, local_start, local_pointers[4][IR_PRIMITIVE_COUNT], math_import;
     uint32_t barrier_semantics, subgroup_capabilities, image_capabilities;
-    bool sample_rate_shading, demote_to_helper;
+    bool sample_rate_shading, demote_to_helper, derivative_control;
     size_t function_end;
     uint32_t constants_used;
     bool failed;
@@ -112,4 +112,6 @@ bool spirv_subgroup_builtin(Emitter *, const IrInstruction *, const NumericBuilt
     if (!spirv_instruction(e, opcode, arguments, sizeof(arguments) / sizeof(arguments[0]))) return false; \
 } while (0)
 bool spirv_integer_builtin(Emitter *, const IrInstruction *, const NumericBuiltin *);
+bool spirv_float_pack_plan(Emitter *, const NumericBuiltin *);
+bool spirv_float_pack(Emitter *, const IrInstruction *, const NumericBuiltin *);
 #endif

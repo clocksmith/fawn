@@ -188,9 +188,7 @@ void wgpuRenderBundleEncoderSetImmediates(WGPURenderBundleEncoder handle, uint32
     if (!device) return;
     native_lock(device);
     const bool ended = doe_resource_bundle_encoder_ended(encoder);
-    doe_resource_status status = DOE_RESOURCE_OK;
-    if (ended || !native_immediates_valid(device, offset, data, size))
-        status = doe_resource_bundle_encoder_invalidate(encoder, DOE_RESOURCE_RANGE);
+    doe_resource_status status = doe_resource_bundle_encoder_set_immediates(encoder, offset, data, size);
     native_unlock(device);
     native_encoding_error(device, ended, status, "bundle immediates failed");
 }

@@ -3,6 +3,8 @@
 
 doe_vk_status doe_vk_validate_queue_policy(const doe_vk_options *options, doe_vk_error *error) {
     if (!options) return doe_vk_fail(DOE_VK_INVALID_ARGUMENT, "queue policy arguments", error);
+    if (options->sync_selection != DOE_VK_SYNC_FENCE_POOL && options->sync_selection != DOE_VK_SYNC_PREFER_TIMELINE)
+        return doe_vk_fail(DOE_VK_INVALID_ARGUMENT, "unknown synchronization policy", error);
     switch (options->queue_selection) {
         case DOE_VK_QUEUE_LEGACY:
         case DOE_VK_QUEUE_PREFER_GRAPHICS_COMPUTE: return DOE_VK_OK;

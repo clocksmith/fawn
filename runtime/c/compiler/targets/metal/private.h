@@ -4,6 +4,8 @@
 #define DOE_METAL_PRIVATE_H
 #include "metal.h"
 #include "../closure.h"
+#include "../ir_view.h"
+#include "../../include/doe_compiler_translation.h"
 typedef struct {
     Source *source;
     TargetClosure closure;
@@ -35,6 +37,7 @@ void metal_workgroup_helpers(MetalEmitter *);
 void metal_numeric_helpers(MetalEmitter *);
 void metal_expression(MetalEmitter *, const IrInstruction *);
 void metal_array_length(MetalEmitter *, const IrInstruction *);
+void metal_address(MetalEmitter *, const IrInstruction *);
 void metal_access(MetalEmitter *, const IrInstruction *);
 void metal_private_initialization(MetalEmitter *, const EntryRecord *);
 void metal_functions(MetalEmitter *);
@@ -62,4 +65,7 @@ void metal_block(MetalEmitter *, uint32_t *, unsigned, uint32_t, bool);
 bool metal_entry_resource(const CompilerWorkspace *, const EntryRecord *, uint32_t);
 bool metal_entry_workgroup(const CompilerWorkspace *, const EntryRecord *, uint32_t);
 bool metal_entry_sizes(const CompilerWorkspace *, const EntryRecord *);
+void metal_float_pack_helpers(MetalEmitter *);
+void metal_float_pack_expression(MetalEmitter *, const IrInstruction *, NumericBuiltinKind);
+void metal_subgroup(MetalEmitter *, const IrInstruction *, NumericBuiltinKind);
 #endif

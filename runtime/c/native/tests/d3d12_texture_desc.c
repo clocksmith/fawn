@@ -13,10 +13,20 @@ int main(void)
     assert(native.width == 3 && native.height == 2 && native.format == DOE_DX_RGBA8_UNORM &&
         native.usage == (DOE_DX_TEXTURE_COPY_SRC|DOE_DX_TEXTURE_COPY_DST|DOE_DX_TEXTURE_SAMPLED));
     doe_dx_texture_desc saved = native;
-    const WGPUTextureFormat absent[] = {WGPUTextureFormat_RGBA8UnormSrgb,WGPUTextureFormat_Depth32Float,
-        WGPUTextureFormat_RGBA16Float,WGPUTextureFormat_BC1RGBAUnorm};
-    for (size_t i = 0; i < sizeof(absent)/sizeof(*absent); ++i) {
-        desc.format = absent[i];
+    /* The initial subset rejected sRGB, RGBA16Float and BC1 here. Their real
+     * native-format/block-layout composition now makes them positive mappings;
+     * this is an admission extension control, not a changed pixel oracle. */
+    const WGPUTextureFormat added[] = {WGPUTextureFormat_RGBA8UnormSrgb,WGPUTextureFormat_RGBA16Float,
+        WGPUTextureFormat_BC1RGBAUnorm,WGPUTextureFormat_Depth32Float};
+    for (size_t i=0;i<sizeof(added)/sizeof(*added);++i) {
+        desc.format=added[i];
+        assert(native_d3d12_texture_descriptor(&desc,&native));
+    }
+    native=saved;
+    const WGPUTextureFormat absent[] = {WGPUTextureFormat_ETC2RGB8Unorm,
+        WGPUTextureFormat_ASTC4x4Unorm};
+    for (size_t i=0;i<sizeof(absent)/sizeof(*absent);++i) {
+        desc.format=absent[i];
         assert(!native_d3d12_texture_descriptor(&desc,&native) && !memcmp(&native,&saved,sizeof(saved)));
     }
     const WGPUTextureFormat formats[] = {WGPUTextureFormat_RGBA8Uint,WGPUTextureFormat_R32Float,
@@ -27,19 +37,23 @@ int main(void)
     }
     desc.samples = 4;
     assert(!native_d3d12_texture_descriptor(&desc,&native));
+    /* Shape constructor now validates actual mip/layer extents independently. */
     desc.samples = 1; desc.mip_levels = 2;
-    assert(!native_d3d12_texture_descriptor(&desc,&native));
+    assert(native_d3d12_texture_descriptor(&desc,&native));
     desc.mip_levels = 1; desc.depth_or_layers = 2;
-    assert(!native_d3d12_texture_descriptor(&desc,&native));
+    assert(native_d3d12_texture_descriptor(&desc,&native));
     desc.depth_or_layers = 1; desc.format=WGPUTextureFormat_RGBA8Unorm;
     desc.usage |= WGPUTextureUsage_RenderAttachment;
     assert(native_d3d12_texture_descriptor(&desc,&native) && (native.usage & DOE_DX_TEXTURE_RENDER_ATTACHMENT));
     desc.format=WGPUTextureFormat_R32Uint;
-    assert(!native_d3d12_texture_descriptor(&desc,&native));
+    assert(native_d3d12_texture_descriptor(&desc,&native) && native.format==DOE_DX_R32_UINT);
     desc.format=WGPUTextureFormat_Depth32Float;
     desc.usage=WGPUTextureUsage_RenderAttachment;
     assert(native_d3d12_texture_descriptor(&desc,&native) && native.format==DOE_DX_D32_FLOAT &&
         native.usage==(DOE_DX_TEXTURE_DEPTH_ATTACHMENT|DOE_DX_TEXTURE_COPY_DST));
+    desc.samples=4;
+    assert(native_d3d12_texture_descriptor(&desc,&native));
+    desc.samples=1;
     doe_resource_texture_copy copy = {.width=2,.height=3,.depth_or_layers=1,.origin={4,5,0},.aspect=WGPUTextureAspect_All};
     doe_dx_texture_region region = {0};
     assert(native_d3d12_texture_region(&copy,&region) && region.x == 4 && region.y == 5 && region.height == 3);

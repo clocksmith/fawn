@@ -7,6 +7,6 @@ int main(void)
     consumer_init(&s);
     pipeline_cache_admission(&s, false);
     consumer_finish(&s);
-    puts("PASS native optional pipeline cache ABI/output validation, explicit unsupported backend and disable without WebGPU error callbacks; no archive reuse claim");
+    puts("PASS native optional pipeline cache ABI/output validation, disabled Vulkan cache state and argument validation without WebGPU error callbacks; persistence covered separately");
     return 0;
 }

@@ -8,7 +8,7 @@ typedef struct {
     ImageOperation operation;
     uint32_t texture, sampler, coordinates, layer, level, sample, data, reference, offset, gradient_x, gradient_y, bias, component;
     uint32_t width;
-    bool storage, multisampled, arrayed, depth;
+    bool storage, multisampled, arrayed, native_arrayed, depth;
 } HlslImage;
 static bool decode(HlslEmitter *e, const IrInstruction *ir, HlslImage *image) {
     const CompilerWorkspace *c = e->module;
@@ -29,6 +29,11 @@ static bool decode(HlslEmitter *e, const IrInstruction *ir, HlslImage *image) {
     image->multisampled = (t.flags & DOE_COMPILER_HANDLE_MULTISAMPLED) != 0u;
     image->depth = (t.flags & DOE_COMPILER_HANDLE_DEPTH) != 0u;
     image->arrayed = image_arrayed(t.dimension);
+    /* SDK views of one selected array layer/cube need native array resource
+     * kinds. Canonical WGSL arity/reflection remain unchanged; only the target
+     * coordinate receives the implicit relative layer/cube zero. */
+    image->native_arrayed=image->arrayed || (!image->multisampled && t.dimension==DOE_COMPILER_VIEW_2D) ||
+        t.dimension==DOE_COMPILER_VIEW_CUBE;
     image->width = image_coordinate_width(t.dimension);
     if (hlsl_value_type(e, image->texture) != type) {
         hlsl_error(e, "HLSL image operand differs from its declared texture type");
@@ -127,7 +132,7 @@ static void dimensions(HlslEmitter *e, const HlslImage *image, bool selected_lev
     hlsl_text(e, "image_x");
     if (dimension_width(image) >= 2u) hlsl_text(e, ", image_y");
     if (dimension_width(image) == 3u) hlsl_text(e, ", image_z");
-    if (image->arrayed) hlsl_text(e, ", image_layers");
+    if (image->native_arrayed) hlsl_text(e, ", image_layers");
     if (image->multisampled) hlsl_text(e, ", image_samples");
     else if (!hlsl_image_uav(image->type)) hlsl_text(e, ", image_levels");
     hlsl_text(e, ");\n");
@@ -151,7 +156,7 @@ static void bounded_index(HlslEmitter *e, uint32_t value, uint32_t lane, const c
     hlsl_format(e, ") < %s", limit);
 }
 static void texel_coordinates(HlslEmitter *e, const HlslImage *image, bool sampled) {
-    const uint32_t width = image->width + (image->arrayed ? 1u : 0u) +
+    const uint32_t width = image->width + (image->native_arrayed ? 1u : 0u) +
         (sampled && !image->multisampled ? 1u : 0u);
     hlsl_text(e, sampled ? "int" : "uint");
     if (width != 1u) hlsl_format(e, "%u", width);
@@ -160,7 +165,7 @@ static void texel_coordinates(HlslEmitter *e, const HlslImage *image, bool sampl
     if (image->arrayed) {
         hlsl_text(e, ", ");
         hlsl_value(e, image->layer);
-    }
+    } else if (image->native_arrayed) hlsl_text(e, ", 0u");
     if (sampled && !image->multisampled) {
         hlsl_text(e, ", ");
         if (image->storage) hlsl_text(e, "0u");
@@ -279,9 +284,10 @@ static void sample_level(HlslEmitter *e, const IrInstruction *ir, const HlslImag
         (image->reference != NO_ID ? ".SampleCmpLevelZero(" : ".SampleLevel("));
     hlsl_value(e, image->sampler);
     hlsl_text(e, ", ");
-    if (image->arrayed) hlsl_format(e, "float%u(", image->width + 1u);
+    if (image->native_arrayed) hlsl_format(e, "float%u(", image->width + 1u);
     hlsl_value(e, image->coordinates);
     if (image->arrayed) hlsl_text(e, ", float(image_layer))");
+    else if (image->native_arrayed) hlsl_text(e, ", 0.0f)");
     if (image->gradient_x != NO_ID) {
         hlsl_text(e, ", ");
         hlsl_value(e, image->gradient_x);

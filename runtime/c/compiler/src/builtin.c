@@ -3,6 +3,40 @@
 #include "sema.h"
 
 static const NumericBuiltin numeric_builtins[] = {
+    {"pack4x8snorm", BUILTIN_PACK4X8_SNORM, 1u, BUILTIN_FLOAT_PACK, 0u},
+    {"pack4x8unorm", BUILTIN_PACK4X8_UNORM, 1u, BUILTIN_FLOAT_PACK, 0u},
+    {"pack2x16snorm", BUILTIN_PACK2X16_SNORM, 1u, BUILTIN_FLOAT_PACK, 0u},
+    {"pack2x16unorm", BUILTIN_PACK2X16_UNORM, 1u, BUILTIN_FLOAT_PACK, 0u},
+    {"pack2x16float", BUILTIN_PACK2X16_FLOAT, 1u, BUILTIN_FLOAT_PACK, 58u},
+    {"unpack4x8snorm", BUILTIN_UNPACK4X8_SNORM, 1u, BUILTIN_FLOAT_PACK, 63u},
+    {"unpack4x8unorm", BUILTIN_UNPACK4X8_UNORM, 1u, BUILTIN_FLOAT_PACK, 64u},
+    {"unpack2x16snorm", BUILTIN_UNPACK2X16_SNORM, 1u, BUILTIN_FLOAT_PACK, 60u},
+    {"unpack2x16unorm", BUILTIN_UNPACK2X16_UNORM, 1u, BUILTIN_FLOAT_PACK, 61u},
+    {"unpack2x16float", BUILTIN_UNPACK2X16_FLOAT, 1u, BUILTIN_FLOAT_PACK, 62u},
+    {"quantizeToF16", BUILTIN_QUANTIZE_F16, 1u, BUILTIN_FLOAT_PACK, 0u},
+    {"dpdx", BUILTIN_DPDX, 1u, BUILTIN_DERIVATIVE, 0u},
+    {"dpdy", BUILTIN_DPDY, 1u, BUILTIN_DERIVATIVE, 0u},
+    {"fwidth", BUILTIN_FWIDTH, 1u, BUILTIN_DERIVATIVE, 0u},
+    {"dpdxFine", BUILTIN_DPDX_FINE, 1u, BUILTIN_DERIVATIVE, 0u},
+    {"dpdyFine", BUILTIN_DPDY_FINE, 1u, BUILTIN_DERIVATIVE, 0u},
+    {"fwidthFine", BUILTIN_FWIDTH_FINE, 1u, BUILTIN_DERIVATIVE, 0u},
+    {"dpdxCoarse", BUILTIN_DPDX_COARSE, 1u, BUILTIN_DERIVATIVE, 0u},
+    {"dpdyCoarse", BUILTIN_DPDY_COARSE, 1u, BUILTIN_DERIVATIVE, 0u},
+    {"fwidthCoarse", BUILTIN_FWIDTH_COARSE, 1u, BUILTIN_DERIVATIVE, 0u},
+    {"subgroupAll", BUILTIN_SUBGROUP_ALL, 1u, BUILTIN_SUBGROUP_EXCHANGE, 0u},
+    {"subgroupAny", BUILTIN_SUBGROUP_ANY, 1u, BUILTIN_SUBGROUP_EXCHANGE, 0u},
+    {"subgroupBallot", BUILTIN_SUBGROUP_BALLOT, 1u, BUILTIN_SUBGROUP_EXCHANGE, 0u},
+    {"subgroupElect", BUILTIN_SUBGROUP_ELECT, 0u, BUILTIN_SUBGROUP_EXCHANGE, 0u},
+    {"subgroupBroadcast", BUILTIN_SUBGROUP_BROADCAST, 2u, BUILTIN_SUBGROUP_EXCHANGE, 0u},
+    {"subgroupBroadcastFirst", BUILTIN_SUBGROUP_BROADCAST_FIRST, 1u, BUILTIN_SUBGROUP_EXCHANGE, 0u},
+    {"subgroupShuffle", BUILTIN_SUBGROUP_SHUFFLE, 2u, BUILTIN_SUBGROUP_EXCHANGE, 0u},
+    {"subgroupShuffleXor", BUILTIN_SUBGROUP_SHUFFLE_XOR, 2u, BUILTIN_SUBGROUP_EXCHANGE, 0u},
+    {"subgroupShuffleUp", BUILTIN_SUBGROUP_SHUFFLE_UP, 2u, BUILTIN_SUBGROUP_EXCHANGE, 0u},
+    {"subgroupShuffleDown", BUILTIN_SUBGROUP_SHUFFLE_DOWN, 2u, BUILTIN_SUBGROUP_EXCHANGE, 0u},
+    {"quadBroadcast", BUILTIN_QUAD_BROADCAST, 2u, BUILTIN_SUBGROUP_EXCHANGE, 0u},
+    {"quadSwapDiagonal", BUILTIN_QUAD_SWAP_DIAGONAL, 1u, BUILTIN_SUBGROUP_EXCHANGE, 0u},
+    {"quadSwapX", BUILTIN_QUAD_SWAP_X, 1u, BUILTIN_SUBGROUP_EXCHANGE, 0u},
+    {"quadSwapY", BUILTIN_QUAD_SWAP_Y, 1u, BUILTIN_SUBGROUP_EXCHANGE, 0u},
     {"frexp", BUILTIN_FREXP, 1u, BUILTIN_DECOMPOSE, 52u},
     {"modf", BUILTIN_MODF, 1u, BUILTIN_DECOMPOSE, 36u},
     {"ldexp", BUILTIN_LDEXP, 2u, BUILTIN_EXPONENT, 53u},
@@ -105,17 +139,21 @@ uint32_t builtin_extended_instruction(const NumericBuiltin *builtin, TypeId leaf
 }
 
 bool builtin_floating(const NumericBuiltin *builtin) {
-    return builtin->family == BUILTIN_COMPONENT_FLOAT || builtin->family == BUILTIN_FLOAT_REDUCTION ||
+    return builtin->family == BUILTIN_DERIVATIVE || builtin->family == BUILTIN_COMPONENT_FLOAT || builtin->family == BUILTIN_FLOAT_REDUCTION ||
         builtin->family == BUILTIN_FLOAT_VECTOR || builtin->family == BUILTIN_FLOAT_CROSS ||
         builtin->family == BUILTIN_FLOAT_REFRACT || builtin->family == BUILTIN_FLOAT_MIX;
 }
 
 bool builtin_subgroup(const NumericBuiltin *builtin) {
     return builtin != NULL && (builtin->family == BUILTIN_SUBGROUP_NUMERIC ||
-        builtin->family == BUILTIN_SUBGROUP_INTEGER);
+        builtin->family == BUILTIN_SUBGROUP_INTEGER || builtin->family == BUILTIN_SUBGROUP_EXCHANGE);
 }
 
 bool builtin_subgroup_uniform(const NumericBuiltin *builtin) {
+    if (builtin != NULL && builtin->family == BUILTIN_SUBGROUP_EXCHANGE)
+        return builtin->kind == BUILTIN_SUBGROUP_ALL || builtin->kind == BUILTIN_SUBGROUP_ANY ||
+            builtin->kind == BUILTIN_SUBGROUP_BALLOT || builtin->kind == BUILTIN_SUBGROUP_BROADCAST ||
+            builtin->kind == BUILTIN_SUBGROUP_BROADCAST_FIRST;
     return builtin_subgroup(builtin) && builtin->kind != BUILTIN_SUBGROUP_EXCLUSIVE_ADD &&
         builtin->kind != BUILTIN_SUBGROUP_INCLUSIVE_ADD && builtin->kind != BUILTIN_SUBGROUP_EXCLUSIVE_MUL &&
         builtin->kind != BUILTIN_SUBGROUP_INCLUSIVE_MUL;
@@ -341,6 +379,8 @@ static bool boolean_constant(Source *source, const NumericBuiltin *builtin, Cons
 }
 bool builtin_constant(Source *source, uint32_t offset, const NumericBuiltin *builtin,
                       const ConstantValue *arguments, TypeId result_type, ConstantValue *out) {
+    if (builtin->family == BUILTIN_FLOAT_PACK)
+        return float_pack_constant(source, offset, builtin->kind, arguments[0], result_type, out);
     if (builtin->family == BUILTIN_DECOMPOSE || builtin->family == BUILTIN_EXPONENT)
         return decompose_constant(source, offset, builtin->kind, arguments, result_type, out);
     if (builtin->family == BUILTIN_PACKED_INTEGER)

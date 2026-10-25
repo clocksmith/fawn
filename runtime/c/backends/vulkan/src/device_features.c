@@ -9,6 +9,18 @@ doe_vk_status doe_vk_prepare_features(doe_vk_context *context, const doe_vk_opti
     doe_vk_feature_selection *out, doe_vk_error *error) {
     if (context == NULL || options == NULL || out == NULL)
         return doe_vk_fail(DOE_VK_INVALID_ARGUMENT, "device feature selection", error);
+    if (options->subgroup_selection < DOE_VK_SUBGROUP_LEGACY ||
+        options->subgroup_selection > DOE_VK_SUBGROUP_SUPPRESS_MEMORY256_OR_SINGLE)
+        return doe_vk_fail(DOE_VK_INVALID_ARGUMENT, "subgroup policy", error);
+    VkPhysicalDeviceSubgroupProperties subgroup = {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBGROUP_PROPERTIES};
+    VkPhysicalDeviceProperties2 subgroup_query = {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2,
+        .pNext = &subgroup};
+    context->vk.vkGetPhysicalDeviceProperties2(context->physical, &subgroup_query);
+    context->caps.subgroup_size = subgroup.subgroupSize;
+    context->caps.subgroup_min_size = context->caps.subgroup_max_size = subgroup.subgroupSize;
+    context->caps.subgroup_stages = subgroup.supportedStages;
+    context->caps.subgroup_operations = subgroup.supportedOperations;
+    context->caps.subgroup_quad_all_stages = subgroup.quadOperationsInAllStages != 0;
     bool available = false;
     if (options->enable_shader_demote_if_supported) {
         doe_vk_status status = doe_vk_extensions_present(context, true, (const uint8_t *const[]){demote_extension}, 1, &available, error);
@@ -23,6 +35,33 @@ doe_vk_status doe_vk_prepare_features(doe_vk_context *context, const doe_vk_opti
     if (!features.features.robustBufferAccess)
         return doe_vk_fail(DOE_VK_UNSUPPORTED, "robustBufferAccess required", error);
     doe_vk_feature_selection selection = {.base = {.robustBufferAccess = 1}};
+    if (options->subgroup_selection != DOE_VK_SUBGROUP_LEGACY) {
+        const uint8_t *name = (const uint8_t *)"VK_EXT_subgroup_size_control";
+        bool present = false;
+        doe_vk_status status = doe_vk_extensions_present(context, true, &name, 1, &present, error);
+        if (status != DOE_VK_OK) return status;
+        if (present) {
+            VkPhysicalDeviceSubgroupSizeControlFeatures control = {
+                .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBGROUP_SIZE_CONTROL_FEATURES};
+            VkPhysicalDeviceFeatures2 query = {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2,
+                .pNext = &control};
+            context->vk.vkGetPhysicalDeviceFeatures2(context->physical, &query);
+            VkPhysicalDeviceSubgroupSizeControlProperties limits = {
+                .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBGROUP_SIZE_CONTROL_PROPERTIES};
+            VkPhysicalDeviceProperties2 properties = {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2,
+                .pNext = &limits};
+            context->vk.vkGetPhysicalDeviceProperties2(context->physical, &properties);
+            if (control.subgroupSizeControl) {
+                selection.subgroup = (VkPhysicalDeviceSubgroupSizeControlFeatures){
+                    .sType = control.sType, .subgroupSizeControl = 1};
+                context->caps.subgroup_size_control = true;
+                context->caps.subgroup_min_size = limits.minSubgroupSize;
+                context->caps.subgroup_max_size = limits.maxSubgroupSize;
+                context->caps.subgroup_required_stages = limits.requiredSubgroupSizeStages;
+                context->caps.max_compute_workgroup_subgroups = limits.maxComputeWorkgroupSubgroups;
+            }
+        }
+    }
     /* The selected device is Vulkan 1.2. Arithmetic and buffer storage
      * capabilities are independent: never expose half arithmetic alone as the
      * admitted shader-f16 buffer contract. */
@@ -38,8 +77,19 @@ doe_vk_status doe_vk_prepare_features(doe_vk_context *context, const doe_vk_opti
         selection.float16 = (VkPhysicalDeviceShaderFloat16Int8Features){
             .sType = float16.sType, .shaderFloat16 = 1};
         selection.storage16 = (VkPhysicalDevice16BitStorageFeatures){.sType = storage16.sType,
-            .storageBuffer16BitAccess = 1, .uniformAndStorageBuffer16BitAccess = 1};
+            .storageBuffer16BitAccess = 1, .uniformAndStorageBuffer16BitAccess = 1,
+            .storagePushConstant16 = storage16.storagePushConstant16};
+        context->caps.storage_push_constant16 = storage16.storagePushConstant16 != 0;
         selection.shader_f16 = true;
+    }
+    VkPhysicalDeviceShaderSubgroupExtendedTypesFeatures extended = {
+        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_SUBGROUP_EXTENDED_TYPES_FEATURES};
+    VkPhysicalDeviceFeatures2 extended_query = {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2,
+        .pNext = &extended};
+    context->vk.vkGetPhysicalDeviceFeatures2(context->physical, &extended_query);
+    if (extended.shaderSubgroupExtendedTypes) {
+        selection.subgroup_extended = extended;
+        context->caps.subgroup_extended_types = true;
     }
     /* Optional full uint32 index range; uint32 index draws reject without it. */
     if (features.features.fullDrawIndexUint32) selection.base.fullDrawIndexUint32 = 1;

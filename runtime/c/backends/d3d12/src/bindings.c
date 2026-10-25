@@ -76,12 +76,26 @@ doe_dx_status doe_dx_prepare_binding_plan(doe_dx_commands *commands,const doe_dx
             DOE_DX_TEXTURE_STORAGE : DOE_DX_TEXTURE_SAMPLED;
         status = doe_dx_texture_preflight(commands, texture, usage, true);
         if (status != DOE_DX_OK) return doe_dx_fail(status, 0, "commands.bindings.texture", error);
-        bool matches = contract->sample_class == DOE_DX_SAMPLE_EXACT ? texture->desc.format == layout->format :
-            contract->sample_class == DOE_DX_SAMPLE_FLOAT ?
-                (texture->desc.format == DOE_DX_RGBA8_UNORM || texture->desc.format == DOE_DX_BGRA8_UNORM ||
-                 texture->desc.format == DOE_DX_R32_FLOAT) :
-                (texture->desc.format == DOE_DX_RGBA8_UINT || texture->desc.format == DOE_DX_R32_UINT);
+        doe_dx_texture_view_desc view;
+        status=doe_dx_texture_view_validate(texture,values->texture_views ? &values->texture_views[index] : NULL,&view);
+        if (status!=DOE_DX_OK) return doe_dx_fail(status,0,"commands.bindings.texture_view",error);
+        if (view.dimension!=(contract->dimension ? contract->dimension : 2u) ||
+            ((contract->storage || layout->access==DOE_DX_READ_WRITE) && view.mip_count!=1))
+            return doe_dx_fail(DOE_DX_INVALID_ARGUMENT,0,"commands.bindings.texture_dimension",error);
+        bool multisampled=contract->sample_class==DOE_DX_SAMPLE_FLOAT_MS || contract->sample_class==DOE_DX_SAMPLE_UINT_MS ||
+            contract->sample_class==DOE_DX_SAMPLE_SINT_MS || contract->sample_class==DOE_DX_SAMPLE_DEPTH_MS;
+        if (multisampled!=(texture->samples>1))
+            return doe_dx_fail(DOE_DX_INVALID_ARGUMENT,0,"commands.bindings.texture_samples",error);
+        doe_dx_format_info info;
+        if (!doe_dx_format_properties(view.format,&info)) return doe_dx_fail(DOE_DX_UNSUPPORTED,0,"commands.texture_format",error);
+        if (view.aspect==2) info.kind=2;
+        bool matches = contract->sample_class == DOE_DX_SAMPLE_EXACT ? view.format == layout->format :
+            (contract->sample_class == DOE_DX_SAMPLE_FLOAT || contract->sample_class == DOE_DX_SAMPLE_FLOAT_MS) ? info.kind==1 :
+            (contract->sample_class == DOE_DX_SAMPLE_UINT || contract->sample_class == DOE_DX_SAMPLE_UINT_MS) ? info.kind==2 :
+            (contract->sample_class == DOE_DX_SAMPLE_SINT || contract->sample_class == DOE_DX_SAMPLE_SINT_MS) ? info.kind==3 : info.kind>=4;
         if (!matches) return doe_dx_fail(DOE_DX_INVALID_ARGUMENT,0,"commands.bindings.texture_format_class",error);
+        native->texture_views[index]=view;
+        if (!values->texture_views && !contract->dimension) native->texture_views[index].dimension=0;
         bool repeated = false;
         for (size_t prior = 0; prior < index; prior++) {
             if (resources->textures[prior] != texture) continue;

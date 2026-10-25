@@ -2,6 +2,66 @@
 #include "windows_internal.h"
 #ifdef _WIN32
 
+typedef struct exact_clear_view {
+    ID3D12DescriptorHeap *heap;
+    D3D12_GPU_DESCRIPTOR_HANDLE gpu;
+    D3D12_CPU_DESCRIPTOR_HANDLE cpu;
+} exact_clear_view;
+static doe_dx_status prepare_exact_clear(doe_dx_native_commands *commands,doe_dx_native_texture *texture,
+    doe_dx_descriptor_use **head,exact_clear_view *out,doe_dx_error *error)
+{
+    doe_dx_descriptor_use *gpu=calloc(1,sizeof(*gpu)),*cpu=calloc(1,sizeof(*cpu));
+    if (!gpu || !cpu) { free(gpu); free(cpu); return doe_dx_fail(DOE_DX_OUT_OF_MEMORY,0,"render.integer_clear.allocate",error); }
+    D3D12_DESCRIPTOR_HEAP_DESC heap={0};
+    heap.Type=D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV; heap.NumDescriptors=1;
+    heap.Flags=D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+    ID3D12Device *device=commands->context->device;
+    HRESULT result=ID3D12Device_CreateDescriptorHeap(device,&heap,&IID_ID3D12DescriptorHeap,(void **)&gpu->heap);
+    if (SUCCEEDED(result)) {
+        heap.Flags=D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+        result=ID3D12Device_CreateDescriptorHeap(device,&heap,&IID_ID3D12DescriptorHeap,(void **)&cpu->heap);
+    }
+    if (FAILED(result)) {
+        doe_dx_release_descriptors(gpu); doe_dx_release_descriptors(cpu);
+        return doe_dx_hresult(result,"CreateDescriptorHeap.integer_clear",error);
+    }
+    D3D12_CPU_DESCRIPTOR_HANDLE visible={0};
+    gpu->heap->lpVtbl->GetCPUDescriptorHandleForHeapStart(gpu->heap,&visible);
+    gpu->heap->lpVtbl->GetGPUDescriptorHandleForHeapStart(gpu->heap,&out->gpu);
+    cpu->heap->lpVtbl->GetCPUDescriptorHandleForHeapStart(cpu->heap,&out->cpu);
+    D3D12_UNORDERED_ACCESS_VIEW_DESC view={0};
+    view.Format=doe_dx_texture_format(texture->format); view.ViewDimension=D3D12_UAV_DIMENSION_TEXTURE2D;
+    ID3D12Device_CreateUnorderedAccessView(device,texture->resource,NULL,&view,visible);
+    ID3D12Device_CreateUnorderedAccessView(device,texture->resource,NULL,&view,out->cpu);
+    out->heap=gpu->heap;
+    cpu->next=*head; gpu->next=cpu; *head=gpu;
+    return DOE_DX_OK;
+}
+static void clear_color(ID3D12GraphicsCommandList *list,doe_dx_native_texture *texture,
+    D3D12_CPU_DESCRIPTOR_HANDLE target,const exact_clear_view *exact,const float value[4])
+{
+    if (exact->heap) {
+        UINT values[4]; memcpy(values,value,sizeof(values));
+        doe_dx_transition(list,texture->resource,D3D12_RESOURCE_STATE_RENDER_TARGET,D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+        ID3D12GraphicsCommandList_SetDescriptorHeaps(list,1,&exact->heap);
+        ID3D12GraphicsCommandList_ClearUnorderedAccessViewUint(list,exact->gpu,exact->cpu,texture->resource,values,0,NULL);
+        doe_dx_transition(list,texture->resource,D3D12_RESOURCE_STATE_UNORDERED_ACCESS,D3D12_RESOURCE_STATE_RENDER_TARGET);
+        return;
+    }
+    doe_dx_format_info info;
+    bool known=doe_dx_format_properties(texture->format,&info);
+    float converted[4];
+    if (known && (info.kind==2 || info.kind==3)) {
+        uint32_t unsigned_values[4]; int32_t signed_values[4];
+        memcpy(unsigned_values,value,sizeof(unsigned_values)); memcpy(signed_values,value,sizeof(signed_values));
+        /* Every in-range <=16-bit component is exactly representable in f32;
+         * out-of-range inputs are clamped by the native format conversion. */
+        for (size_t i=0;i<4;++i) converted[i]=info.kind==2 ? (float)unsigned_values[i] : (float)signed_values[i];
+        value=converted;
+    }
+    ID3D12GraphicsCommandList_ClearRenderTargetView(list,target,value,0,NULL);
+}
+
 static void resource_sets(const doe_dx_native_render_draw *draw,doe_dx_resource_set sets[DOE_DX_RENDER_STAGES])
 {
     for (size_t stage=0;stage<DOE_DX_RENDER_STAGES;++stage) {
@@ -50,6 +110,7 @@ static void draw_packet(doe_dx_native_commands *commands,const doe_dx_native_ren
     const D3D12_VIEWPORT viewport={v[0],v[1],v[2],v[3],v[4],v[5]};
     const uint32_t *s=draw->scissor;
     const D3D12_RECT scissor={(LONG)s[0],(LONG)s[1],(LONG)(s[0]+s[2]),(LONG)(s[1]+s[3])};
+    if (draw->pipeline->render->stencil_test) ID3D12GraphicsCommandList_OMSetStencilRef(list,draw->stencil_reference);
     ID3D12GraphicsCommandList_OMSetBlendFactor(list,draw->blend_constant);
     ID3D12GraphicsCommandList_RSSetViewports(list,1,&viewport);
     ID3D12GraphicsCommandList_RSSetScissorRects(list,1,&scissor);
@@ -93,15 +154,41 @@ static doe_dx_status prepare_draw_signature(doe_dx_native_context *context,bool 
 
 doe_dx_status doe_dx_native_render(doe_dx_native_commands *commands,doe_dx_native_texture *color,
     bool clear,const float clear_color[4],bool discard,const doe_dx_native_render_depth *depth,
+    const doe_dx_native_render_draw *draws,size_t count,doe_dx_error *error) {
+    return doe_dx_native_render_resolve(commands,color,NULL,clear,clear_color,discard,depth,draws,count,error);
+}
+doe_dx_status doe_dx_native_render_resolve(doe_dx_native_commands *commands,doe_dx_native_texture *color,
+    doe_dx_native_texture *resolve,bool clear,const float clear_color[4],bool discard,const doe_dx_native_render_depth *depth,
     const doe_dx_native_render_draw *draws,
     size_t count,doe_dx_error *error)
+{
+    doe_dx_native_render_color target={.texture=color,.resolve=resolve,.clear=clear,.discard=discard};
+    memcpy(target.value,clear_color,sizeof(target.value));
+    return doe_dx_native_render_targets(commands,&target,color ? 1u : 0u,depth,draws,count,error);
+}
+doe_dx_status doe_dx_native_render_targets(doe_dx_native_commands *commands,
+    const doe_dx_native_render_color *colors,uint32_t color_count,const doe_dx_native_render_depth *depth,
+    const doe_dx_native_render_draw *draws,size_t count,doe_dx_error *error)
 {
     doe_dx_descriptor_use **bindings=count ? calloc(count,sizeof(*bindings)) : NULL;
     if (count && !bindings) return doe_dx_fail(DOE_DX_OUT_OF_MEMORY,0,"render.descriptor_indices",error);
     doe_dx_descriptor_use *head=NULL;
-    D3D12_CPU_DESCRIPTOR_HANDLE target={0};
-    doe_dx_status status=color ? doe_dx_prepare_color_target(commands,color,&head,&target,error) : DOE_DX_OK;
-    if (status!=DOE_DX_OK) { free(bindings); return status; }
+    D3D12_CPU_DESCRIPTOR_HANDLE targets[DOE_DX_MAX_COLOR_TARGETS]={0};
+    exact_clear_view clears[DOE_DX_MAX_COLOR_TARGETS]={0};
+    doe_dx_status status=DOE_DX_OK;
+    for (uint32_t i=0;i<color_count;++i) {
+        doe_dx_descriptor_use *rtv=NULL;
+        status=doe_dx_prepare_color_target(commands,colors[i].texture,&rtv,&targets[i],error);
+        if (status!=DOE_DX_OK) goto fail;
+        rtv->next=head; head=rtv;
+        if (colors[i].resolve && !colors[i].texture->resolve_supported) {
+            status=doe_dx_fail(DOE_DX_UNSUPPORTED,0,"render.native_resolve_format",error); goto fail;
+        }
+        if (colors[i].texture && (colors[i].clear || colors[i].discard) && doe_dx_format_exact_clear(colors[i].texture->format)) {
+            status=prepare_exact_clear(commands,colors[i].texture,&head,&clears[i],error);
+            if (status!=DOE_DX_OK) goto fail;
+        }
+    }
     D3D12_CPU_DESCRIPTOR_HANDLE depth_handle={0};
     if (depth) {
         doe_dx_descriptor_use *dsv=NULL;
@@ -134,12 +221,17 @@ doe_dx_status doe_dx_native_render(doe_dx_native_commands *commands,doe_dx_nativ
     tail->next=commands->descriptors;
     commands->descriptors=head;
     ID3D12GraphicsCommandList *list=commands->list;
-    if (color) doe_dx_transition(list,color->resource,D3D12_RESOURCE_STATE_COPY_DEST,D3D12_RESOURCE_STATE_RENDER_TARGET);
+    for (uint32_t i=0;i<color_count;++i) if (colors[i].texture)
+        doe_dx_transition(list,colors[i].texture->resource,D3D12_RESOURCE_STATE_COPY_DEST,D3D12_RESOURCE_STATE_RENDER_TARGET);
     if (depth) doe_dx_transition(list,depth->texture->resource,D3D12_RESOURCE_STATE_COPY_DEST,D3D12_RESOURCE_STATE_DEPTH_WRITE);
-    ID3D12GraphicsCommandList_OMSetRenderTargets(list,color ? 1u : 0u,color ? &target : NULL,FALSE,depth ? &depth_handle : NULL);
-    if (depth && depth->clear)
-        ID3D12GraphicsCommandList_ClearDepthStencilView(list,depth_handle,D3D12_CLEAR_FLAG_DEPTH,depth->value,0,0,NULL);
-    if (clear) ID3D12GraphicsCommandList_ClearRenderTargetView(list,target,clear_color,0,NULL);
+    ID3D12GraphicsCommandList_OMSetRenderTargets(list,color_count,color_count ? targets : NULL,FALSE,depth ? &depth_handle : NULL);
+    if (depth && (depth->clear || depth->clear_stencil)) {
+        D3D12_CLEAR_FLAGS flags=(D3D12_CLEAR_FLAGS)((depth->clear ? D3D12_CLEAR_FLAG_DEPTH : 0) |
+            (depth->clear_stencil ? D3D12_CLEAR_FLAG_STENCIL : 0));
+        ID3D12GraphicsCommandList_ClearDepthStencilView(list,depth_handle,flags,depth->value,(UINT8)depth->stencil,0,NULL);
+    }
+    for (uint32_t i=0;i<color_count;++i) if (colors[i].texture && colors[i].clear)
+        clear_color(list,colors[i].texture,targets[i],&clears[i],colors[i].value);
     for (size_t i=0;i<count;++i) {
         const doe_dx_native_render_draw *draw=&draws[i];
         if (draw->query) {
@@ -147,18 +239,30 @@ doe_dx_status doe_dx_native_render(doe_dx_native_commands *commands,doe_dx_nativ
             else ID3D12GraphicsCommandList_EndQuery(list,draw->query->heap,D3D12_QUERY_TYPE_OCCLUSION,draw->query_index);
         } else if (draw->indirect.buffer || (draw->vertex_count && draw->instance_count)) draw_packet(commands,draw,bindings[i]);
     }
-    if (discard) {
-        const float zero[4]={0};
-        /* Eager real initialization preserves WebGPU's later zero observation
-         * without a frontend availability bit or a second lazy-init owner. */
-        ID3D12GraphicsCommandList_ClearRenderTargetView(list,target,zero,0,NULL);
+    for (uint32_t i=0;i<color_count;++i) {
+        const doe_dx_native_render_color *color=&colors[i];
+        if (!color->texture) continue;
+        if (color->resolve) {
+            doe_dx_transition(list,color->texture->resource,D3D12_RESOURCE_STATE_RENDER_TARGET,D3D12_RESOURCE_STATE_RESOLVE_SOURCE);
+            doe_dx_transition(list,color->resolve->resource,D3D12_RESOURCE_STATE_COPY_DEST,D3D12_RESOURCE_STATE_RESOLVE_DEST);
+            ID3D12GraphicsCommandList_ResolveSubresource(list,color->resolve->resource,0,color->texture->resource,0,doe_dx_texture_format(color->texture->format));
+            doe_dx_transition(list,color->resolve->resource,D3D12_RESOURCE_STATE_RESOLVE_DEST,D3D12_RESOURCE_STATE_COPY_DEST);
+            doe_dx_transition(list,color->texture->resource,D3D12_RESOURCE_STATE_RESOLVE_SOURCE,D3D12_RESOURCE_STATE_RENDER_TARGET);
+        }
+        if (color->discard) {
+            const float zero[4]={0};
+            clear_color(list,color->texture,targets[i],&clears[i],zero);
+        }
+        doe_dx_transition(list,color->texture->resource,D3D12_RESOURCE_STATE_RENDER_TARGET,D3D12_RESOURCE_STATE_COPY_DEST);
     }
     if (depth) {
-        if (depth->discard)
-            ID3D12GraphicsCommandList_ClearDepthStencilView(list,depth_handle,D3D12_CLEAR_FLAG_DEPTH,0,0,0,NULL);
+        if (depth->discard || depth->discard_stencil) {
+            D3D12_CLEAR_FLAGS flags=(D3D12_CLEAR_FLAGS)((depth->discard ? D3D12_CLEAR_FLAG_DEPTH : 0) |
+                (depth->discard_stencil ? D3D12_CLEAR_FLAG_STENCIL : 0));
+            ID3D12GraphicsCommandList_ClearDepthStencilView(list,depth_handle,flags,0,0,0,NULL);
+        }
         doe_dx_transition(list,depth->texture->resource,D3D12_RESOURCE_STATE_DEPTH_WRITE,D3D12_RESOURCE_STATE_COPY_DEST);
     }
-    if (color) doe_dx_transition(list,color->resource,D3D12_RESOURCE_STATE_RENDER_TARGET,D3D12_RESOURCE_STATE_COPY_DEST);
     free(bindings);
     return doe_dx_fail(DOE_DX_OK,0,"render.native.pass",error);
 fail:

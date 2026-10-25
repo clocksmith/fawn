@@ -2,6 +2,7 @@
 #ifndef DOE_VK_INTERNAL_H
 #define DOE_VK_INTERNAL_H
 #include "../include/doe_vk.h"
+#include "../include/doe_vk_cache.h"
 #include "../include/doe_vk_render.h"
 #include "vk_abi_functions.h"
 #include "vk_abi_constants.h"
@@ -9,6 +10,10 @@
 #include <string.h>
 #include <limits.h>
 
+doe_vk_status doe_vk_timeline_prepare(doe_vk_context *context, const doe_vk_options *options,
+    VkPhysicalDeviceTimelineSemaphoreFeatures *feature, doe_vk_error *error);
+doe_vk_status doe_vk_timeline_create(doe_vk_context *context, doe_vk_error *error);
+VkResult doe_vk_command_wait_raw(const doe_vk_commands *commands, uint64_t timeout_ns, bool poll);
 doe_vk_status doe_vk_validate_queue_policy(const doe_vk_options *options, doe_vk_error *error);
 doe_vk_status doe_vk_select_queue(const VkQueueFamilyProperties *queues, uint32_t count,
     const doe_vk_options *options, uint32_t *out, doe_vk_error *error);
@@ -28,6 +33,8 @@ struct doe_vk_context {
     VkPhysicalDevice physical;
     VkDevice device;
     VkQueue queue;
+    VkSemaphore timeline;
+    uint64_t timeline_value, timeline_max_difference;
     VkExtent3D transfer_granularity;
     doe_vk_caps caps;
     VkPhysicalDeviceProperties properties;
@@ -36,6 +43,9 @@ struct doe_vk_context {
      * ones and up to DOE_VK_RETAINED_PIPELINES released ones; see pipeline.c. */
     struct doe_vk_pipeline *compute_pipelines;
     uint32_t retained_pipelines;
+    VkPipelineCache driver_cache;
+    char *driver_cache_path;
+    doe_vk_pipeline_cache_stats driver_cache_stats;
     /* Reset command pools (one primary buffer each) and unsignaled fences of
      * recordings that were proven terminal or never submitted; see commands.c. */
     struct doe_vk_command_spare {
@@ -48,6 +58,9 @@ struct doe_vk_context {
 enum { DOE_VK_RETAINED_PIPELINES = 32 };
 /* Destroys released compute pipelines; the context is releasing its device. */
 void doe_vk_pipeline_cache_clear(doe_vk_context *context);
+void doe_vk_driver_cache_clear(doe_vk_context *context);
+void doe_vk_driver_cache_record(doe_vk_context *context, bool success);
+void doe_vk_push_immediates(doe_vk_commands *commands, doe_vk_pipeline *pipeline, const void *bytes);
 /* Destroys spare command pools and fences; the context is releasing its device. */
 void doe_vk_command_spares_clear(doe_vk_context *context);
 struct doe_vk_buffer {
@@ -65,6 +78,7 @@ struct doe_vk_pipeline {
     doe_vk_context *context;
     uint32_t references;
     bool graphics;
+    uint32_t immediate_bytes, immediate_stages;
     VkRenderPass render_pass;
     uint32_t color_count; /* Slots, including unused zero formats. */
     doe_vk_texture_format color_formats[DOE_VK_MAX_COLOR_ATTACHMENTS];
@@ -86,6 +100,7 @@ struct doe_vk_pipeline {
     uint32_t *spirv;
     size_t word_count;
     char *entrypoint;
+    uint32_t required_subgroup_size;
     struct doe_vk_pipeline *next_compute;
 };
 typedef struct doe_vk_buffer_use {
@@ -130,6 +145,7 @@ struct doe_vk_commands {
     VkCommandPool pool;
     VkCommandBuffer command;
     VkFence fence;
+    uint64_t timeline_value;
     doe_vk_buffer_use *buffers;
     doe_vk_dispatch_use *dispatches;
     struct doe_vk_render_use *renders;

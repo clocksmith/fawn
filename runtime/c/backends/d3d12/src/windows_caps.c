@@ -80,14 +80,30 @@ doe_dx_status doe_dx_query_caps(doe_dx_native_context *context, doe_dx_caps *out
     caps.resource_heap_tier = (uint32_t)options.ResourceHeapTier;
     caps.gpu_va_bits_per_resource = addresses.MaxGPUVirtualAddressBitsPerResource;
     caps.gpu_va_bits_per_process = addresses.MaxGPUVirtualAddressBitsPerProcess;
-    D3D12_FEATURE_DATA_SHADER_MODEL shader = {D3D_SHADER_MODEL_6_0};
+    D3D12_FEATURE_DATA_SHADER_MODEL shader = {D3D_SHADER_MODEL_6_2};
     HRESULT shader_result = ID3D12Device_CheckFeatureSupport(context->device,
         D3D12_FEATURE_SHADER_MODEL, &shader, sizeof(shader));
+    if (shader_result==E_INVALIDARG) {
+        shader.HighestShaderModel=D3D_SHADER_MODEL_6_0;
+        shader_result=ID3D12Device_CheckFeatureSupport(context->device,D3D12_FEATURE_SHADER_MODEL,&shader,sizeof(shader));
+    }
     /* Older D3D12 runtimes predate this query. Preserve DXBC use, but expose
      * unknown rather than fabricating SM6 eligibility for a DXC consumer. */
     if (shader_result == E_INVALIDARG) caps.shader_model = 0;
     else if (FAILED(shader_result)) return doe_dx_hresult(shader_result, "CheckFeatureSupport.SHADER_MODEL", error);
     else caps.shader_model = (uint32_t)shader.HighestShaderModel;
+    D3D12_FEATURE_DATA_D3D12_OPTIONS1 waves={0};
+    HRESULT optional=ID3D12Device_CheckFeatureSupport(context->device,D3D12_FEATURE_D3D12_OPTIONS1,&waves,sizeof(waves));
+    if (optional!=E_INVALIDARG && FAILED(optional)) return doe_dx_hresult(optional,"CheckFeatureSupport.OPTIONS1",error);
+    if (SUCCEEDED(optional) && waves.WaveOps) {
+        if (!waves.WaveLaneCountMin || waves.WaveLaneCountMin>waves.WaveLaneCountMax)
+            return doe_dx_fail(DOE_DX_UNSUPPORTED,0,"caps.wave_lanes",error);
+        caps.wave_ops=true; caps.wave_lane_count_min=waves.WaveLaneCountMin; caps.wave_lane_count_max=waves.WaveLaneCountMax;
+    }
+    D3D12_FEATURE_DATA_D3D12_OPTIONS4 native16={0};
+    optional=ID3D12Device_CheckFeatureSupport(context->device,D3D12_FEATURE_D3D12_OPTIONS4,&native16,sizeof(native16));
+    if (optional!=E_INVALIDARG && FAILED(optional)) return doe_dx_hresult(optional,"CheckFeatureSupport.OPTIONS4",error);
+    if (SUCCEEDED(optional)) caps.native_16bit_shader_ops=native16.Native16BitShaderOpsSupported!=FALSE;
     doe_dx_limits *limits = &caps.limits;
     limits->max_descriptors = DOE_DX_MAX_BINDINGS;
     limits->max_static_samplers = DOE_DX_MAX_STATIC_SAMPLERS;

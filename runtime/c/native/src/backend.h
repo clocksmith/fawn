@@ -2,6 +2,7 @@
 #ifndef DOE_NATIVE_BACKEND_H
 #define DOE_NATIVE_BACKEND_H
 #include "webgpu.h"
+#include "doe_native_device_policy.h"
 #include "doe_vk.h"
 #include "doe_metal.h"
 #include "../../backends/d3d12/include/doe_d3d12.h"
@@ -27,6 +28,7 @@ typedef struct native_failure {
 } native_failure;
 typedef struct native_backend {
     WGPUBackendType kind;
+    uint32_t upload_policy; /* Per-device queue-write mechanism, not adapter mutation. */
     WGPULimits limits; /* Public limits: real facts plus explicit frontend admission bounds. */
     union {
         struct { doe_vk_context *context; doe_vk_caps caps; doe_vk_options options; } vulkan;
@@ -60,6 +62,7 @@ WGPUErrorType native_result_error(native_result status);
 native_result native_backend_open(WGPUBackendType kind, bool fallback, uint32_t surface_platforms,
     native_backend *out);
 native_result native_backend_device(const native_backend *adapter, native_backend *out);
+native_result native_backend_device_policy(const native_backend *adapter, const DoeNativeDevicePolicy *policy, native_backend *out);
 void native_backend_close(native_backend *backend);
 native_result native_backend_status(const native_backend *backend);
 WGPUStatus native_backend_info(const native_backend *backend, WGPUAdapterInfo *out);

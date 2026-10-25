@@ -556,3 +556,20 @@ on the native C Vulkan path with a software llvmpipe CPU adapter. Inputs
 fast logits `[0,.25]`, stable/reference `[1,.25]`, and preferred-stable device
 readback `[1,.25]`. This is software-Vulkan execution, not physical GPU
 qualification. The runtime requests ShaderF16 only when the adapter advertises it.
+
+Native `--backend-lane` reads the canonical `config/backend-runtime-policy.json`
+from the current workspace and maps only implemented policies into the typed
+per-device request extension. Vulkan lanes now select queue family, actual
+fence/timeline synchronization, staged or mapped queue writes, and subgroup-size
+policy. An unknown policy/backend fails rather than becoming a default. Strict
+lanes do not use automatic hardware-to-software adapter fallback; explicit
+`--adapter software` remains software evidence. Trace `nativeDevicePolicy` binds
+the exact policy file SHA256, requested values and observed queue-sync bits.
+Metal/D3D12 native lane policies remain explicitly unsupported here until their
+own concrete mechanisms are composed; selecting a name does not qualify them.
+
+`--pipeline-cache-dir` now also selects Vulkan driver-native persistence through
+the same optional native extension. Trace load/creation/serialization counters
+are actual operations, not cache-hit claims. `--no-pipeline-cache` still overrides
+an explicit directory, and absent configuration creates no persistent cache.
+D3D12 persistent pipeline libraries are not yet implemented.

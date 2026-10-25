@@ -52,6 +52,8 @@ typedef struct doe_mtl_caps {
     uint32_t max_texture_1d, max_texture_2d, max_texture_3d, max_texture_layers;
     bool bc_texture_compression;
     bool texture_swizzle;
+    bool subgroups; /* Conservative Apple7+ complete native SIMD/quad operation envelope. */
+    uint32_t subgroup_min_size, subgroup_max_size;
     bool etc2_texture_compression, astc_texture_compression, astc_sliced_3d;
     bool float32_filterable, float32_blendable, rg11b10_renderable;
     uint32_t sample_count_mask; /* Bit log2(count), native queried counts 1..16. */
@@ -106,6 +108,12 @@ doe_mtl_status doe_mtl_pipeline_create(doe_mtl_context *context,
 doe_mtl_status doe_mtl_pipeline_retain(doe_mtl_pipeline *pipeline);
 void doe_mtl_pipeline_release(doe_mtl_pipeline *pipeline);
 void *doe_mtl_pipeline_native(const doe_mtl_pipeline *pipeline);
+
+/* Borrowed only during recording; backend snapshots bytes before native encoding. */
+typedef struct doe_mtl_immediate_binding {
+    const void *bytes;
+    uint32_t size, slot;
+} doe_mtl_immediate_binding;
 
 typedef struct doe_mtl_buffer_binding {
     uint32_t slot;

@@ -57,7 +57,8 @@ doe_dx_status doe_dx_commands_copy_texture(doe_dx_commands *commands,
     if (status != DOE_DX_OK) return doe_dx_fail(status, 0, "texture.copy", error);
     if (source == destination) return doe_dx_fail(DOE_DX_INVALID_ARGUMENT, 0, "texture.copy.alias", error);
     if (source->desc.width != destination->desc.width || source->desc.height != destination->desc.height ||
-        source->desc.format != destination->desc.format)
+        source->desc.format != destination->desc.format || source->samples != destination->samples || source->shape.dimension!=destination->shape.dimension ||
+        source->shape.depth_or_layers!=destination->shape.depth_or_layers || source->shape.mip_levels!=destination->shape.mip_levels)
         return doe_dx_fail(DOE_DX_UNSUPPORTED, 0, "texture.copy.shape", error);
     doe_dx_reservation needed = {.textures=(doe_dx_find_texture(commands, source) ? 0u : 1u) +
         (doe_dx_find_texture(commands, destination) ? 0u : 1u)};

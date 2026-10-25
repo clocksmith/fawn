@@ -66,7 +66,11 @@ static void graphics_construction(void) {
     assert(doe_dx_pipeline_create_graphics(context, &desc, &out, NULL) == DOE_DX_INVALID_ARGUMENT && !out);
     doe_dx_texture_desc texture_desc = {64, 2, DOE_DX_R32_FLOAT, DOE_DX_TEXTURE_RENDER_ATTACHMENT};
     doe_dx_texture *texture = NULL;
-    assert(doe_dx_texture_create(context, &texture_desc, &texture, NULL) == DOE_DX_UNSUPPORTED && !texture);
+    /* Historical subset rejected R32Float render textures. The shared format
+     * owner now constructs them; legacy graphics pipeline restrictions above
+     * remain independent. This is admission coverage, not a pixel oracle. */
+    assert(doe_dx_texture_create(context, &texture_desc, &texture, NULL) == DOE_DX_OK && texture);
+    doe_dx_texture_release(texture);
     close_context(context);
 }
 

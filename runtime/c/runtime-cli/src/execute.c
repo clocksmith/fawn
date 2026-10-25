@@ -152,6 +152,12 @@ doe_runtime *doe_runtime_open(const doe_runtime_options *options, char *message,
         return NULL;
     }
     runtime->options = *options;
+    DoeNativeDevicePolicy policy = {0};
+    if (options->backend_lane && !doe_runtime_load_device_policy(options->backend_lane, &policy, message, message_size, runtime->device_policy_hash)) {
+        free(runtime);
+        return NULL;
+    }
+    if (options->backend_lane && options->adapter == DOE_ADAPTER_AUTO) runtime->options.adapter = DOE_ADAPTER_PHYSICAL;
     runtime->info.adapter_type = "unknown";
     runtime->info.backend = "unknown";
     runtime->instance = wgpuCreateInstance(NULL);
@@ -161,8 +167,8 @@ doe_runtime *doe_runtime_open(const doe_runtime_options *options, char *message,
         return NULL;
     }
     char reason[256] = "";
-    if (options->adapter != DOE_ADAPTER_SOFTWARE) runtime->adapter = request_adapter(runtime, false, reason, sizeof(reason));
-    if (!runtime->adapter && options->adapter != DOE_ADAPTER_PHYSICAL)
+    if (runtime->options.adapter != DOE_ADAPTER_SOFTWARE) runtime->adapter = request_adapter(runtime, false, reason, sizeof(reason));
+    if (!runtime->adapter && runtime->options.adapter != DOE_ADAPTER_PHYSICAL)
         runtime->adapter = request_adapter(runtime, true, reason, sizeof(reason));
     if (!runtime->adapter) {
         snprintf(message, message_size, "%.250s", reason);
@@ -202,14 +208,26 @@ doe_runtime *doe_runtime_open(const doe_runtime_options *options, char *message,
     request_reply reply = {0};
     WGPURequestDeviceCallbackInfo callback = {.mode = WGPUCallbackMode_WaitAnyOnly, .callback = device_reply,
         .userdata1 = &reply};
-    if (!runtime_wait_future(runtime, wgpuAdapterRequestDevice(runtime->adapter, &descriptor, callback)) ||
+#ifdef DOE_RUNTIME_DAWN
+    WGPUFuture device_future = wgpuAdapterRequestDevice(runtime->adapter, &descriptor, callback);
+#else
+    WGPUFuture device_future = options->backend_lane ?
+        doeNativeAdapterRequestDeviceWithPolicy(runtime->adapter, &descriptor, callback,
+            DOE_NATIVE_DEVICE_POLICY_ABI_VERSION, &policy, sizeof(policy)) :
+        wgpuAdapterRequestDevice(runtime->adapter, &descriptor, callback);
+#endif
+    if (!runtime_wait_future(runtime, device_future) ||
         reply.status != (int)WGPURequestDeviceStatus_Success || !reply.object) {
         snprintf(message, message_size, "device request failed: %.200s", reply.message);
         doe_runtime_close(runtime);
         return NULL;
     }
+    runtime->device_policy = policy;
     runtime->device = reply.object;
     runtime->queue = wgpuDeviceGetQueue(runtime->device);
+#ifndef DOE_RUNTIME_DAWN
+    runtime->observed_sync_bits = doeNativeQueueSyncInfo(runtime->queue);
+#endif
     runtime_pipeline_cache_open(runtime);
     return runtime;
 }

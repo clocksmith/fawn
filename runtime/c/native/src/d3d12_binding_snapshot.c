@@ -7,7 +7,7 @@ native_failure native_d3d12_binding_values(const native_pipeline *pipeline,
 {
 #if defined(_WIN32)
     if (!pipeline || !map || !resolved || !out) return native_failure_status(NATIVE_INVALID_ARGUMENT);
-    out->values = (doe_dx_dynamic_resources){.resources={.buffers=out->buffers,.buffer_count=map->buffer_count,
+    out->values = (doe_dx_dynamic_resources){.texture_views=out->texture_views,.resources={.buffers=out->buffers,.buffer_count=map->buffer_count,
         .textures=out->textures,.texture_count=map->texture_count},.samplers=out->samplers,.sampler_count=map->sampler_count};
     out->metadata_index = map->dispatch_index;
     out->guard = map->guard;
@@ -36,9 +36,8 @@ native_failure native_d3d12_binding_values(const native_pipeline *pipeline,
         const doe_resource_view_desc *span = doe_resource_view_description(view);
         doe_resource_texture *texture = doe_resource_view_texture(view);
         const doe_resource_texture_desc *desc = doe_resource_texture_description(texture);
-        if (!span || !desc || span->dimension != WGPUTextureViewDimension_2D || span->format != desc->format ||
-            span->aspect != WGPUTextureAspect_All || span->base_mip || span->mip_count != 1 ||
-            span->base_layer || span->layer_count != 1) return native_failure_status(NATIVE_UNSUPPORTED);
+        if (!native_d3d12_view_descriptor(span,desc,&out->texture_views[i]))
+            return native_failure_status(NATIVE_UNSUPPORTED);
         native_texture *native = doe_resource_texture_native(texture);
         if (!native || !native->d3d12) return native_failure_status(NATIVE_INVALID_STATE);
         out->textures[i] = native->d3d12;

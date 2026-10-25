@@ -79,7 +79,7 @@ bool sema_pointer_aliases(Source *s) {
             if (reference.kind == SOURCE_POINTER_READ) effects[reference.index] |= POINTER_READ;
             if (reference.kind == SOURCE_POINTER_LOCAL || reference.kind == SOURCE_POINTER_FORMAL ||
                 reference.kind == SOURCE_POINTER_READ) function->flags |= FUNCTION_POINTER_USE;
-            if (reference.kind == SOURCE_BARRIER || reference.kind == SOURCE_SUBGROUP)
+            if (reference.kind == SOURCE_BARRIER || reference.kind == SOURCE_SUBGROUP || reference.kind == SOURCE_DERIVATIVE)
                 function->flags |= FUNCTION_COLLECTIVE_USE;
         }
         for (uint32_t i = function->statement_start; i < function->statement_end; ++i) {

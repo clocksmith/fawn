@@ -11,13 +11,15 @@ extern "C" {
  * failed preflight. The existing context serialization/retirement contract holds. */
 enum { DOE_DX_MAX_DYNAMIC_SAMPLERS = 16 };
 typedef enum doe_dx_sample_class {
-    DOE_DX_SAMPLE_EXACT = 0, DOE_DX_SAMPLE_FLOAT, DOE_DX_SAMPLE_UINT
+    DOE_DX_SAMPLE_EXACT = 0, DOE_DX_SAMPLE_FLOAT, DOE_DX_SAMPLE_UINT,
+    DOE_DX_SAMPLE_FLOAT_MS, DOE_DX_SAMPLE_UINT_MS, DOE_DX_SAMPLE_SINT, DOE_DX_SAMPLE_SINT_MS, DOE_DX_SAMPLE_DEPTH, DOE_DX_SAMPLE_DEPTH_MS
 } doe_dx_sample_class;
 typedef struct doe_dx_texture_contract {
     doe_dx_sample_class sample_class; /* EXACT uses the legacy format field. */
     /* Logical storage usage, including READ_ONLY native SRV declarations. This
      * never grants public sampled usage or changes native descriptor access. */
     bool storage;
+    uint32_t dimension; /* 0 retains the legacy 2D contract. */
 } doe_dx_texture_contract;
 typedef struct doe_dx_sampler_layout {
     uint32_t shader_register, register_space;
@@ -43,6 +45,7 @@ typedef struct doe_dx_dynamic_pipeline_desc {
     size_t sampler_count;
 } doe_dx_dynamic_pipeline_desc;
 typedef struct doe_dx_dynamic_resources {
+    const doe_dx_texture_view_desc *texture_views; /* NULL: legacy whole2D rows. */
     doe_dx_compute_resources resources;
     const doe_dx_sampler_desc *samplers; /* Pipeline runtime-sampler order. */
     size_t sampler_count;

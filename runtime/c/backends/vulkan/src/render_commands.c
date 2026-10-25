@@ -103,6 +103,9 @@ static doe_vk_status validate_pass_draw(doe_vk_commands *commands, const doe_vk_
     const doe_vk_render_colors *colors, const doe_vk_render_pass_draw *draw, uint32_t width, uint32_t height,
     prepared_draw *prepared) {
     doe_vk_pipeline *pipeline = draw->pipeline;
+    if (!pipeline || draw->immediate_bytes != pipeline->immediate_bytes ||
+        (draw->immediate_bytes && (!draw->immediates || !commands->context->vk.vkCmdPushConstants)))
+        return DOE_VK_INVALID_ARGUMENT;
     doe_vk_texture_view *target = desc->depth_stencil;
     for (uint32_t i = colors->count; i > 0; --i) if (colors->slots[i - 1].view != NULL) target = colors->slots[i - 1].view;
     if (pipeline == NULL || !pipeline->graphics || pipeline->context != commands->context ||
@@ -198,6 +201,7 @@ static void record_draw(doe_vk_commands *commands, const doe_vk_render_pass_draw
     const prepared_draw *prepared) {
     doe_vk_context *context = commands->context;
     doe_vk_bind_prepared_resources(commands, prepared->bindings);
+    doe_vk_push_immediates(commands, draw->pipeline, draw->immediates);
     const float *blend = draw->draw.override_blend_constant ?
         draw->draw.blend_constant : draw->pipeline->blend_constant;
     context->vk.vkCmdSetBlendConstants(commands->command, blend);

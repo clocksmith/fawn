@@ -253,7 +253,7 @@ void native_device_release(void *identity)
     doe_instance_release(instance);
 }
 
-static native_device *create_device(native_adapter *adapter, const WGPUDeviceDescriptor *descriptor, native_loss *loss)
+static native_device *create_device(native_adapter *adapter, const WGPUDeviceDescriptor *descriptor, native_loss *loss, const DoeNativeDevicePolicy *policy)
 {
     uint32_t features = 0;
     if (!native_requested_features(&adapter->backend, descriptor, &features)) return NULL;
@@ -295,7 +295,7 @@ static native_device *create_device(native_adapter *adapter, const WGPUDeviceDes
                 (const unsigned char *)descriptor->defaultQueue.label.data, queue_size) != DOE_LABEL_OK)
             goto failed_errors;
     }
-    if (native_backend_device(&adapter->backend, &device->backend) != NATIVE_OK) goto failed_errors;
+    if (native_backend_device_policy(&adapter->backend, policy, &device->backend) != NATIVE_OK) goto failed_errors;
     /* The device context reopens the adapter's own hardware, so its facts match
      * the adapter's; every frontend check reads the resolved device limits. */
     device->backend.limits = limits;
@@ -377,8 +377,9 @@ static void deliver_device(void *context)
     else wgpuDeviceRelease((WGPUDevice)value.device);
 }
 
-WGPUFuture wgpuAdapterRequestDevice(WGPUAdapter handle,
-    const WGPUDeviceDescriptor *descriptor, WGPURequestDeviceCallbackInfo callback)
+static WGPUFuture request_device(WGPUAdapter handle,
+    const WGPUDeviceDescriptor *descriptor, WGPURequestDeviceCallbackInfo callback,
+    const DoeNativeDevicePolicy *policy, bool valid_policy)
 {
     native_adapter *adapter = (native_adapter *)handle;
     if (!adapter || callback.nextInChain) return (WGPUFuture){0};
@@ -386,7 +387,7 @@ WGPUFuture wgpuAdapterRequestDevice(WGPUAdapter handle,
     WGPUDeviceLostCallbackInfo lost = descriptor ? descriptor->deviceLostCallbackInfo :
         (WGPUDeviceLostCallbackInfo){0};
     native_loss *loss = native_loss_create(adapter->instance, lost);
-    device_delivery delivery = {callback, loss ? create_device(adapter, descriptor, loss) : NULL};
+    device_delivery delivery = {callback, loss && valid_policy ? create_device(adapter, descriptor, loss, policy) : NULL};
     if (loss && !delivery.device) {
         native_loss_complete(loss, WGPUDeviceLostReason_FailedCreation, "device initialization failed");
         native_loss_release(loss);
@@ -449,4 +450,20 @@ WGPUStatus wgpuAdapterGetLimits(WGPUAdapter adapter, WGPULimits *out)
 WGPUStatus wgpuDeviceGetLimits(WGPUDevice device, WGPULimits *out)
 {
     return device ? native_limits(&((native_device *)device)->backend, out) : WGPUStatus_Error;
+}
+
+WGPUFuture wgpuAdapterRequestDevice(WGPUAdapter handle,
+    const WGPUDeviceDescriptor *descriptor, WGPURequestDeviceCallbackInfo callback)
+{
+    return request_device(handle, descriptor, callback, NULL, true);
+}
+
+WGPUFuture doeNativeAdapterRequestDeviceWithPolicy(WGPUAdapter adapter,
+    const WGPUDeviceDescriptor *descriptor, WGPURequestDeviceCallbackInfo callback,
+    uint32_t version, const DoeNativeDevicePolicy *policy, size_t policy_size)
+{
+    bool valid = version == DOE_NATIVE_DEVICE_POLICY_ABI_VERSION && policy && policy_size == sizeof(*policy);
+    DoeNativeDevicePolicy snapshot = {0};
+    if (valid) snapshot = *policy;
+    return request_device(adapter, descriptor, callback, &snapshot, valid);
 }

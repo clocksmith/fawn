@@ -21,6 +21,7 @@ typedef struct native_d3d12_layout {
 typedef struct native_d3d12_snapshot {
     doe_dx_buffer_binding buffers[DOE_DX_MAX_BINDINGS];
     doe_dx_texture *textures[DOE_DX_MAX_BINDINGS];
+    doe_dx_texture_view_desc texture_views[DOE_DX_MAX_BINDINGS];
     doe_dx_sampler_desc samplers[DOE_DX_MAX_DYNAMIC_SAMPLERS];
     doe_dx_dynamic_resources values; /* Borrows the arrays in this record. */
     uint32_t metadata_index;

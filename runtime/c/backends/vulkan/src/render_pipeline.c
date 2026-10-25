@@ -195,6 +195,8 @@ doe_vk_status doe_vk_render_pipeline_create(doe_vk_context *context,
     pipeline->context = context;
     pipeline->references = 1;
     pipeline->graphics = true;
+    pipeline->immediate_bytes = desc->immediate_bytes;
+    pipeline->immediate_stages = desc->immediate_stages;
     memcpy(pipeline->blend_constant, desc->blend_constant, sizeof(pipeline->blend_constant));
     pipeline->color_count = targets.count;
     doe_vk_render_layout layout = {.color_count = targets.count, .depth_stencil = desc->depth_stencil_format,
@@ -293,8 +295,9 @@ doe_vk_status doe_vk_render_pipeline_create(doe_vk_context *context,
         .pDynamicState = &dynamic, .layout = pipeline->layout, .renderPass = pipeline->render_pass,
         .basePipelineIndex = -1
     };
-    status = doe_vk_result(context, context->vk.vkCreateGraphicsPipelines(context->device, 0, 1,
+    status = doe_vk_result(context, context->vk.vkCreateGraphicsPipelines(context->device, context->driver_cache, 1,
         &create, NULL, &pipeline->pipeline), "vkCreateGraphicsPipelines", error);
+    doe_vk_driver_cache_record(context, status == DOE_VK_OK);
     if (status != DOE_VK_OK) goto failed;
     context->vk.vkDestroyShaderModule(context->device, vertex, NULL);
     if (fragment != 0) context->vk.vkDestroyShaderModule(context->device, fragment, NULL);

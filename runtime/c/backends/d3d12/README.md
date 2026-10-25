@@ -599,3 +599,40 @@ texture/pipeline leases. Portable tests exercise explicit absence, contradictory
 rows, missing-stage rejection, depth-only draws and discard; actual-compiler map
 controls cover a single selected vertex stage. SDK PSO controls have new absent-PS
 and zero-RTV assertions but have not been executed for this source checkpoint.
+
+### Multisample source composition
+
+The additive sample-count texture constructor admits sample4 attachments after
+real format and quality-level queries. Whole-pass PSOs carry sample count, sample
+mask and alpha-to-coverage; RTV/DSV/SRV dimensions reflect the immutable sample
+contract. Resolve executes before discard with source/destination transitions and
+existing command texture leases. Buffer transfers reject MSAA; equal-sample whole
+texture copies use the existing whole-resource operation. Native frontend zero
+initialization is a real clear pass, not an invented initialization bit.
+
+Portable controls cover sample mismatch, resolve initialization, whole copy and
+unknown-completion retention. These controls do not qualify actual SDK linkage,
+DXC compilation or D3D12 rendering of this new source. MRT, stencil and broader
+subresource/format/view work remains separate.
+
+### MRT, stencil, formats and immutable views: source checkpoint
+
+The whole-pass owner now composes eight target slots (including absent slots),
+independent blends, stencil faces/masks/reference, typed depth formats and exact
+32-bit integer clears through real UAV descriptors. A shared format table drives
+public mappings, block footprints and SDK formats. Immutable texture shape and
+view owners cover mip/layer ranges, 1D/2D/3D, array/cube views and depth/stencil
+planes. Initialization clears or uploads every actual SDK subresource; it does
+not mark uninitialized slices ready. HLSL target metadata explicitly distinguishes
+the array-view representation from legacy Texture2D bytecode.
+
+Extended backend region operations have concrete per-subresource SDK copies.
+The public native copy frontend still deliberately rejects non-base/multi-image
+regions in this checkpoint; selected render attachment views, same-slice scratch
+copies, and read-only depth sampling remain integration work. Nonzero immediates
+are rejected until real b1 root constants are forwarded. Raw half storage, HWND
+presentation, device policy and persistent PSO caching are not completed here.
+
+Internal admission/text-output assertions were extended for these new source
+contracts, not substituted for frozen consumer pixel oracles. Portable builds
+and controls are not Windows SDK, DXC or physical-GPU qualification.

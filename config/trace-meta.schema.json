@@ -93,6 +93,18 @@
     "backendId": { "type": "string" },
     "backendSelectionReason": { "type": "string" },
     "backendLane": { "type": "string" },
+    "nativeDevicePolicy": {
+      "type": "object", "additionalProperties": false,
+      "required": ["sourceSha256", "queueSelection", "synchronization", "uploadPolicy", "subgroupPolicy", "observedQueueSyncBits"],
+      "properties": {
+        "sourceSha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "queueSelection": { "type": "integer", "minimum": 0, "maximum": 2 },
+        "synchronization": { "type": "integer", "minimum": 0, "maximum": 1 },
+        "uploadPolicy": { "type": "integer", "minimum": 0, "maximum": 2 },
+        "subgroupPolicy": { "type": "integer", "minimum": 0, "maximum": 3 },
+        "observedQueueSyncBits": { "type": "integer", "minimum": 0, "maximum": 15 }
+      }
+    },
     "adapterOrdinal": { "type": "integer", "minimum": 0 },
     "adapterName": { "type": ["string", "null"] },
     "vendorId": { "type": ["string", "null"] },

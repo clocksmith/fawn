@@ -215,18 +215,47 @@ static bool reusable_admissible(const doe_vk_commands *commands) {
         commands->renders == NULL && commands->surface == NULL;
 }
 
+static doe_vk_status refuse_submit(doe_vk_commands *commands, doe_vk_status status,
+    const char *operation, doe_vk_error *error) {
+    if (operation) doe_vk_fail(status, operation, error);
+    complete(commands, status, error);
+    return status;
+}
+
 static doe_vk_status queue_submit(doe_vk_commands *commands, doe_vk_error *error) {
     doe_vk_context *context = commands->context;
+    uint64_t values[2] = {0, 0};
+    VkSemaphore signals[2] = {0, 0};
+    uint32_t signal_count = 0;
+    if (context->timeline) {
+        if (context->timeline_value == UINT64_MAX)
+            return refuse_submit(commands, DOE_VK_INVALID_STATE, "timeline semaphore counter exhausted", error);
+        uint64_t completed = 0;
+        doe_vk_status queried = doe_vk_result(context, context->vk.vkGetSemaphoreCounterValue(context->device,
+            context->timeline, &completed), "vkGetSemaphoreCounterValue(submit)", error);
+        if (queried != DOE_VK_OK) return refuse_submit(commands, queried, NULL, error);
+        uint64_t next = context->timeline_value + 1;
+        if (completed > next || next - completed > context->timeline_max_difference)
+            return refuse_submit(commands, DOE_VK_BUSY, "timeline semaphore pending value limit", error);
+        commands->timeline_value = next;
+        context->timeline_value = next; /* Never reuse a value after uncertain native acceptance. */
+        signals[signal_count] = context->timeline;
+        values[signal_count++] = next;
+    }
+    if (commands->surface) signals[signal_count++] = commands->surface->render_finished;
+    const VkTimelineSemaphoreSubmitInfo timeline = {.sType=DOE_VK_TIMELINE_SUBMIT,
+        .signalSemaphoreValueCount=signal_count,.pSignalSemaphoreValues=values};
     const VkSubmitInfo submit = {
         .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+        .pNext = context->timeline ? &timeline : NULL,
         .commandBufferCount = 1,
         .pCommandBuffers = &commands->command,
-        .signalSemaphoreCount = commands->surface != NULL ? 1 : 0,
-        .pSignalSemaphores = commands->surface != NULL ? &commands->surface->render_finished : NULL
+        .signalSemaphoreCount = signal_count,
+        .pSignalSemaphores = signal_count ? signals : NULL
     };
     commands->state = DOE_VK_SUBMITTED;
     commands->committed = false;
-    doe_vk_status status = doe_vk_result(context, context->vk.vkQueueSubmit(context->queue, 1, &submit, commands->fence), "vkQueueSubmit", error);
+    doe_vk_status status = doe_vk_result(context, context->vk.vkQueueSubmit(context->queue, 1, &submit, context->timeline ? 0 : commands->fence), "vkQueueSubmit", error);
     if (status == DOE_VK_DEVICE_LOST) {
         complete(commands, status, error);
         return status;
@@ -359,8 +388,8 @@ doe_vk_status doe_vk_commands_wait(doe_vk_commands *commands,
     doe_vk_status status = completion_state(commands, error);
     if (status != DOE_VK_PENDING) return status;
     doe_vk_context *context = commands->context;
-    status = doe_vk_result(context, context->vk.vkWaitForFences(context->device, 1,
-        &commands->fence, 1, timeout_ns), "vkWaitForFences", error);
+    status = doe_vk_result(context, doe_vk_command_wait_raw(commands, timeout_ns, false),
+        context->timeline ? "vkWaitSemaphores" : "vkWaitForFences", error);
     if (status == DOE_VK_OK) {
         if (commands->state == DOE_VK_UNCERTAIN) status = commands->failure.status;
         complete(commands, status, error);
@@ -379,7 +408,8 @@ doe_vk_status doe_vk_commands_poll(doe_vk_commands *commands, doe_vk_error *erro
     doe_vk_status status = completion_state(commands, error);
     if (status != DOE_VK_PENDING) return status;
     doe_vk_context *context = commands->context;
-    status = doe_vk_result(context, context->vk.vkGetFenceStatus(context->device, commands->fence), "vkGetFenceStatus", error);
+    status = doe_vk_result(context, doe_vk_command_wait_raw(commands, 0, true),
+        context->timeline ? "vkGetSemaphoreCounterValue" : "vkGetFenceStatus", error);
     if (status == DOE_VK_OK) {
         if (commands->state == DOE_VK_UNCERTAIN) status = commands->failure.status;
         complete(commands, status, error);
@@ -515,8 +545,7 @@ bool doe_vk_commands_in_flight(const doe_vk_commands *commands) {
  * call it without the context's serialization; it never marks loss. */
 doe_vk_status doe_vk_commands_block(const doe_vk_commands *commands, uint64_t timeout_ns) {
     if (commands == NULL || commands->fence == 0) return DOE_VK_INVALID_ARGUMENT;
-    const doe_vk_context *context = commands->context;
-    VkResult result = context->vk.vkWaitForFences(context->device, 1, &commands->fence, 1, timeout_ns);
+    VkResult result = doe_vk_command_wait_raw(commands, timeout_ns, false);
     return result == 0 ? DOE_VK_OK : result == 2 /* VK_TIMEOUT */ ? DOE_VK_TIMEOUT : DOE_VK_NATIVE_FAILURE;
 }
 

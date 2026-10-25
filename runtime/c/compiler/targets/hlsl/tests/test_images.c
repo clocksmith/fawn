@@ -6,6 +6,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+/* Target representation extension: canonical 2D/cube handles use native arrays
+ * so SDK views retain selected base layers. WGSL/readback inputs are unchanged. */
 static void sampled_helpers(void) {
     const char *source = "@group(0) @binding(0) var image:texture_2d<f32>;"
         "@group(0) @binding(1) var sampling:sampler;"
@@ -18,18 +20,18 @@ static void sampled_helpers(void) {
         "output[2]=vec4f(f32(dims.x),f32(dims.y),f32(textureNumLevels(image)),0);}";
     Fixture *f = prepare(source);
     char *text = emit(f, 0u);
-    has(text, "Texture2D<float4> r0 : register(t0, space0)");
+    has(text, "Texture2DArray<float4> r0 : register(t0, space0)");
     has(text, "SamplerState r1 : register(s1, space0)");
-    has(text, "Texture2D<float4> v");
+    has(text, "Texture2DArray<float4> v");
     has(text, "SamplerState v");
-    has(text, ".GetDimensions(0u, image_x, image_y, image_levels)");
+    has(text, ".GetDimensions(0u, image_x, image_y, image_layers, image_levels)");
     has(text, ".GetDimensions(uint(");
-    has(text, ".Load(int3(");
+    has(text, ".Load(int4(");
     has(text, ".SampleLevel(");
     has(text, ") < image_levels");
     has(text, ") < image_x");
     has(text, ") < image_y");
-    assert(strstr(text, "Texture2D<float4> v1 =") == NULL);
+    assert(strstr(text, "Texture2DArray<float4> v1 =") == NULL);
     for (uint32_t i = 0u; i < f->module->instruction_count; ++i) {
         if (f->module->instructions[i].opcode != IR_IMAGE) continue;
         f->module->instructions[i].operands.composite.kind = UINT32_MAX;
@@ -113,7 +115,7 @@ static void storage_formats(void) {
         assert(length > 0 && (size_t)length < sizeof(source));
         Fixture *f = prepare(source);
         char *text = emit(f, 0u);
-        assert(snprintf(expected, sizeof(expected), "RWTexture2D<%s> r0", cases[i].native) > 0);
+        assert(snprintf(expected, sizeof(expected), "RWTexture2DArray<%s> r0", cases[i].native) > 0);
         has(text, expected);
         free(text);
         release(f);
@@ -163,8 +165,8 @@ static void entry_handle_identity(void) {
     Fixture *f = prepare(source);
     char *first = emit(f, 0u), *second = emit(f, 1u);
     has(first, "Texture1D<uint4> r0 : register(t3, space2)");
-    has(second, "Texture2D<uint4> r1 : register(t3, space2)");
-    assert(strstr(first, "Texture2D<") == NULL);
+    has(second, "Texture2DArray<uint4> r1 : register(t3, space2)");
+    assert(strstr(first, "Texture2DArray<") == NULL);
     assert(strstr(second, "Texture1D<") == NULL);
     has(first, "(ctx, r0)");
     free(first);

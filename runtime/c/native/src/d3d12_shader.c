@@ -67,7 +67,8 @@ static native_failure compile_stage(const native_stage *stage,const uint32_t *in
         if (entry) return native_failure_status(NATIVE_INVALID_ARGUMENT);
         entry = &view->hlsl_entries[i];
     }
-    if (!entry || entry->stage != stage->entry->stage || entry->flags ||
+    if (!entry || entry->stage != stage->entry->stage ||
+        (entry->flags & ~(DOE_COMPILER_HLSL_ENTRY_NATIVE16 | DOE_COMPILER_HLSL_ENTRY_WAVES | DOE_COMPILER_HLSL_ENTRY_WAVE_COUNTER | DOE_COMPILER_HLSL_ENTRY_ARRAY_VIEWS)) ||
         !memchr(entry->name, 0, sizeof(entry->name))) return native_failure_status(NATIVE_UNSUPPORTED);
     doe_dx_shader_stage target;
     switch (entry->stage) {
@@ -84,8 +85,11 @@ static native_failure compile_stage(const native_stage *stage,const uint32_t *in
         .stage = target, .has_entry_index = true, .entry_index = entry->entry_index};
     doe_dx_shader_error error = {0};
     const doe_dx_shader_projection projection={.interstage_mask=interstage_mask ? *interstage_mask : 0};
-    doe_dx_status status = interstage_mask ? doe_dx_shader_compile_projected(&options,&projection,out,&error) :
-        doe_dx_shader_compile(&options,out,&error);
+    const bool native16 = (entry->flags & DOE_COMPILER_HLSL_ENTRY_NATIVE16) != 0;
+    const doe_dx_shader_requirements requirements = {.shader_model = native16 ? 620u : 600u,
+        .flags = native16 ? DOE_DX_SHADER_NATIVE16 : 0u};
+    doe_dx_status status = doe_dx_shader_compile_required(&options,
+        interstage_mask ? &projection : NULL, &requirements, out, &error);
     doe_dx_error native = {status, error.native_code, error.operation};
     failure = native_failure_d3d12(status, &native);
     /* These exact target bytes/options were produced by the provider after

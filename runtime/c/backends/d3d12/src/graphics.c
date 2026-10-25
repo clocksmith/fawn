@@ -21,7 +21,7 @@ doe_dx_status doe_dx_commands_draw_mesh(doe_dx_commands *commands, doe_dx_pipeli
     }
     status = doe_dx_texture_preflight(commands, draw->color, DOE_DX_TEXTURE_RENDER_ATTACHMENT, !draw->clear);
     if (status != DOE_DX_OK) return doe_dx_fail(status, 0, "commands.draw.attachment", error);
-    if (draw->color->desc.format != pipeline->color_format)
+    if (draw->color->samples!=1 || draw->color->desc.format != pipeline->color_format)
         return doe_dx_fail(DOE_DX_INVALID_ARGUMENT, 0, "commands.draw.format", error);
     doe_dx_native_resources native = {0};
     doe_dx_reservation needed = {0};

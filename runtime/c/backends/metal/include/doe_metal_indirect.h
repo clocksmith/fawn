@@ -31,6 +31,7 @@ typedef struct doe_mtl_indirect_dispatch {
     size_t sampler_count;
     doe_mtl_buffer *arguments;
     uint64_t argument_offset;
+    doe_mtl_immediate_binding immediates;
 } doe_mtl_indirect_dispatch;
 /* GPU-copy exactly 12 argument bytes, run the bound guard on private scratch,
  * then dispatch from that scratch. No host read or caller-buffer mutation.

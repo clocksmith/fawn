@@ -21,15 +21,35 @@ typedef enum doe_dx_cull { DOE_DX_CULL_NONE, DOE_DX_CULL_FRONT, DOE_DX_CULL_BACK
  * constant/inverse=10/11, source-alpha-saturated=14. Operations add,
  * subtract, reverse-subtract, minimum, maximum are 0..4. */
 typedef struct doe_dx_blend_component { uint32_t source, destination, operation; } doe_dx_blend_component;
+enum { DOE_DX_MAX_COLOR_TARGETS=8 };
+typedef struct doe_dx_render_target {
+    doe_dx_format format;
+    bool absent, blend_enabled;
+    uint32_t write_mask;
+    doe_dx_blend_component color_blend, alpha_blend;
+} doe_dx_render_target;
+typedef struct doe_dx_stencil_face {
+    uint32_t fail, depth_fail, pass; /* Keep,zero,replace,inc-clamp,dec-clamp,invert,inc-wrap,dec-wrap. */
+    doe_dx_compare compare;
+} doe_dx_stencil_face;
 typedef struct doe_dx_render_pipeline_desc {
     doe_dx_dynamic_pipeline_desc stages[DOE_DX_RENDER_STAGES];
-    doe_dx_format color_format; /* One RGBA8/BGRA8 UNORM target, sample 1. */
+    doe_dx_format color_format; /* One RGBA8/BGRA8 UNORM target. */
+    uint32_t samples; /* 0 preserves legacy sample1, otherwise1 or4. */
+    bool alpha_to_coverage;
     bool color_absent, fragment_absent; /* Explicit absence, never inferred from empty stage data. */
+    bool targets_explicit;
+    uint32_t target_count;
+    doe_dx_render_target targets[DOE_DX_MAX_COLOR_TARGETS];
     bool front_counter_clockwise;
     doe_dx_cull cull;
     doe_dx_topology topology;
     bool strip_indexed;
     doe_dx_index_format strip_index_format;
+    bool depth_state_explicit, depth_test, stencil_test, unclipped_depth;
+    doe_dx_format depth_format;
+    doe_dx_stencil_face stencil_front, stencil_back;
+    uint32_t stencil_read_mask, stencil_write_mask;
     bool depth_enabled, depth_write; /* Optional D32_FLOAT attachment. */
     doe_dx_compare depth_compare;
     int32_t depth_bias;
@@ -61,15 +81,27 @@ typedef struct doe_dx_render_draw {
     const doe_dx_buffer_binding *indirect;
     const doe_dx_buffer_binding *indices; /* Only with indirect; bounded IA view. */
     doe_dx_index_format index_format;
+    uint32_t stencil_reference;
     float blend_constant[4];
     float viewport[6]; /* x/y/w/h/minDepth/maxDepth, finite, within target. */
     uint32_t scissor[4]; /* x/y/w/h, within target; empty is permitted. */
     const doe_dx_buffer_binding *vertices; /* Exactly pipeline slot order. */
     size_t vertex_buffer_count;
 } doe_dx_render_draw;
+typedef struct doe_dx_render_color {
+    doe_dx_texture *texture, *resolve;
+    bool clear, discard;
+    float value[4];
+} doe_dx_render_color;
 typedef struct doe_dx_render_pass {
+    bool colors_explicit;
+    uint32_t color_count;
+    const doe_dx_render_color *colors;
     doe_dx_texture *color;
+    doe_dx_texture *resolve; /* Optional matching sample1 target for sample4 color. */
     doe_dx_texture *depth;
+    bool clear_stencil, discard_stencil, depth_read_only, stencil_read_only;
+    uint32_t stencil_clear;
     bool clear_depth, discard_depth;
     float depth_clear;
     bool clear; /* LOAD otherwise; an uninitialized LOAD really clears zero. */
@@ -79,7 +111,7 @@ typedef struct doe_dx_render_pass {
     size_t draw_count; /* Zero draws still execute attachment operations. */
 } doe_dx_render_pass;
 /* Constructors copy typed declarations. No borrowed shader/DXC data survives.
- * Stencil and MSAA are not yet composed.
+ * Stencil and multiple color targets are not yet composed.
  * These are explicit initial composition gaps, not the final migration target. */
 doe_dx_status doe_dx_pipeline_create_render(doe_dx_context *context,
     const doe_dx_render_pipeline_desc *desc,doe_dx_pipeline **out,doe_dx_error *error);

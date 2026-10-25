@@ -74,6 +74,8 @@ static bool vertices(native_pipeline *pipeline, const WGPUVertexState *source,
     resource->vertex_count = pipeline->vertex_count = source->bufferCount;
     bool used[DOE_MTL_BUFFER_SLOTS] = {0};
     if (sizes_slot != UINT32_MAX) used[sizes_slot] = true;
+    if (pipeline->metal_graphics->stages[0].immediate_bytes)
+        used[DOE_COMPILER_METAL_IMMEDIATE_SLOT] = true;
     for (size_t i = 0; i < pipeline->binding_count; ++i)
         if (pipeline->metal_graphics->stages[0].tables[i] == DOE_COMPILER_TEXT_TABLE_BUFFER)
             used[pipeline->metal_graphics->stages[0].slots[i]] = true;
@@ -213,6 +215,7 @@ WGPURenderPipeline native_metal_create_render_pipeline(native_device *device,
             &payload->metal_graphics->stages[1], &native.fragment)) ||
         !vertices(payload, &descriptor->vertex, native.vertex.sizes_slot, &resource, &native, layouts, attributes)))
         status = DOE_RESOURCE_UNSUPPORTED;
+    resource.immediate_required_bytes = payload->immediate_required_bytes;
     if (status == DOE_RESOURCE_OK && failure.status == NATIVE_OK) {
         doe_mtl_error detail = {0};
         doe_mtl_status created = doe_mtl_render_pipeline_create(device->backend.value.metal.context,

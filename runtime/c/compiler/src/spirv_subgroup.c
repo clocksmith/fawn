@@ -6,6 +6,22 @@
  * workgroup-sized replacement. Execution scope is the constant Subgroup=3. */
 bool spirv_subgroup_builtin(Emitter *e, const IrInstruction *ir,
                             const NumericBuiltin *builtin, TypeId leaf) {
+    if (builtin->kind >= BUILTIN_QUAD_BROADCAST && builtin->kind <= BUILTIN_QUAD_SWAP_Y) {
+        const uint32_t operand = builtin->kind == BUILTIN_QUAD_BROADCAST ? e->values[ir->operands.scalar.right] :
+            spirv_unsigned_constant(e, builtin->kind == BUILTIN_QUAD_SWAP_DIAGONAL ? 2u : builtin->kind == BUILTIN_QUAD_SWAP_X ? 0u : 1u);
+        EMIT(builtin->kind == BUILTIN_QUAD_BROADCAST ? 365u : 366u, spirv_target_type(e,ir->type), e->values[ir->result],
+            ID_THREE_U32,e->values[ir->operands.scalar.left],operand);
+        return true;
+    }
+    if (builtin->family == BUILTIN_SUBGROUP_EXCHANGE) {
+        static const uint32_t operations[] = {334u,335u,339u,333u,337u,338u,345u,346u,347u,348u};
+        const uint32_t opcode = operations[(uint32_t)builtin->kind - (uint32_t)BUILTIN_SUBGROUP_ALL];
+        const uint32_t type = spirv_target_type(e,ir->type), result = e->values[ir->result];
+        if (builtin->arity == 0u) { EMIT(opcode,type,result,ID_THREE_U32); }
+        else if (builtin->arity == 1u) { EMIT(opcode,type,result,ID_THREE_U32,e->values[ir->operands.scalar.left]); }
+        else { EMIT(opcode,type,result,ID_THREE_U32,e->values[ir->operands.scalar.left],e->values[ir->operands.scalar.right]); }
+        return true;
+    }
     uint32_t opcode = 0u, operation = 0u;
     switch (builtin->kind) {
         case BUILTIN_SUBGROUP_ADD:
@@ -31,6 +47,40 @@ bool spirv_subgroup_builtin(Emitter *e, const IrInstruction *ir,
         case BUILTIN_MIX: case BUILTIN_COUNT_ONE_BITS:
         case BUILTIN_REVERSE_BITS: case BUILTIN_COUNT_LEADING_ZEROS: case BUILTIN_COUNT_TRAILING_ZEROS:
         case BUILTIN_FIRST_LEADING_BIT: case BUILTIN_FIRST_TRAILING_BIT: case BUILTIN_UNPACK4X_U8:
+        case BUILTIN_PACK4X8_SNORM:
+        case BUILTIN_PACK4X8_UNORM:
+        case BUILTIN_PACK2X16_SNORM:
+        case BUILTIN_PACK2X16_UNORM:
+        case BUILTIN_PACK2X16_FLOAT:
+        case BUILTIN_UNPACK4X8_SNORM:
+        case BUILTIN_UNPACK4X8_UNORM:
+        case BUILTIN_UNPACK2X16_SNORM:
+        case BUILTIN_UNPACK2X16_UNORM:
+        case BUILTIN_UNPACK2X16_FLOAT:
+        case BUILTIN_QUANTIZE_F16:
+        case BUILTIN_DPDX:
+        case BUILTIN_DPDY:
+        case BUILTIN_FWIDTH:
+        case BUILTIN_DPDX_FINE:
+        case BUILTIN_DPDY_FINE:
+        case BUILTIN_FWIDTH_FINE:
+        case BUILTIN_DPDX_COARSE:
+        case BUILTIN_DPDY_COARSE:
+        case BUILTIN_FWIDTH_COARSE:
+        case BUILTIN_SUBGROUP_ALL:
+        case BUILTIN_SUBGROUP_ANY:
+        case BUILTIN_SUBGROUP_BALLOT:
+        case BUILTIN_SUBGROUP_ELECT:
+        case BUILTIN_SUBGROUP_BROADCAST:
+        case BUILTIN_SUBGROUP_BROADCAST_FIRST:
+        case BUILTIN_SUBGROUP_SHUFFLE:
+        case BUILTIN_SUBGROUP_SHUFFLE_XOR:
+        case BUILTIN_SUBGROUP_SHUFFLE_UP:
+        case BUILTIN_SUBGROUP_SHUFFLE_DOWN:
+        case BUILTIN_QUAD_BROADCAST:
+        case BUILTIN_QUAD_SWAP_DIAGONAL:
+        case BUILTIN_QUAD_SWAP_X:
+        case BUILTIN_QUAD_SWAP_Y:
         case BUILTIN_FREXP: case BUILTIN_MODF: case BUILTIN_LDEXP:
         case BUILTIN_EXTRACT_BITS: case BUILTIN_INSERT_BITS:
         case BUILTIN_PACK4X_I8: case BUILTIN_PACK4X_U8: case BUILTIN_PACK4X_I8_CLAMP:

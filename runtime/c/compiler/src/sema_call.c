@@ -280,6 +280,10 @@ static bool aggregate_call(Source *s, const Expression *node, const LocalScope *
 static inline bool sema_builtin_value(Source *source, const Expression *node, const LocalScope *scope,
                         const NumericBuiltin *builtin, bool evaluate, bool emit,
                         ExpressionValue *out) {
+    if (builtin->family == BUILTIN_SUBGROUP_EXCHANGE)
+        return sema_subgroup_call(source, node, scope, builtin, evaluate, emit, out);
+    if (builtin->family == BUILTIN_FLOAT_PACK)
+        return sema_float_pack_call(source, node, scope, builtin, evaluate, emit, out);
     if (builtin->family == BUILTIN_DECOMPOSE || builtin->family == BUILTIN_EXPONENT)
         return sema_decompose_call(source, node, scope, builtin, evaluate, emit, out);
     CompilerWorkspace *compiler = source->compiler;
@@ -287,7 +291,7 @@ static inline bool sema_builtin_value(Source *source, const Expression *node, co
     const bool bitfield = builtin->family == BUILTIN_BITFIELD;
     const uint32_t data_count = bitfield ? builtin->arity - 2u : builtin->arity;
     uint32_t link = node->left, width = 0u, bounds_link = NO_ID;
-    bool runtime = builtin_subgroup(builtin), known = evaluate, overridable = false;
+    bool runtime = builtin_subgroup(builtin) || builtin->family == BUILTIN_DERIVATIVE, known = evaluate, overridable = false;
     TypeId leaf = IR_VOID;
     for (uint32_t i = 0u; i < builtin->arity; ++i) {
         if (!sema_expression(source, compiler->arguments[link].expression, scope,
@@ -337,6 +341,10 @@ static inline bool sema_builtin_value(Source *source, const Expression *node, co
             (builtin_floating(builtin) && leaf != IR_F16 && leaf != IR_F32 && leaf != IR_ABSTRACT_FLOAT))
             return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, node->source_offset,
                                 "no matching numeric builtin overload");
+        if (builtin->family == BUILTIN_DERIVATIVE) {
+            if (leaf == IR_ABSTRACT_FLOAT) leaf = IR_F32;
+            if (leaf != IR_F32) return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, node->source_offset, "derivatives require f32 scalar or vector operands");
+        }
         if (runtime && !sema_default_type(source, leaf, node->source_offset, &leaf)) return false;
         operand_type = leaf;
         if (width != 1u && !type_intern(source, TYPE_VECTOR, leaf, width, &operand_type)) return false;
@@ -576,6 +584,11 @@ bool sema_call_value(Source *s, uint32_t id, const LocalScope *scope, bool evalu
         if (statement || node->value.call.type.offset != NO_ID || node->right != builtin->arity)
             return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, node->source_offset,
                                 "numeric builtin requires its exact arguments and a used result");
+        if (builtin->family == BUILTIN_DERIVATIVE) {
+            if (c->current_function == NO_ID) return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, node->source_offset, "derivatives require a runtime function");
+            if (!source_reference_record(s, &c->expression_references[id], SOURCE_DERIVATIVE,
+                (uint32_t)builtin->kind, node->source_offset)) return false;
+        }
         if (builtin_subgroup(builtin)) {
             if ((c->module_flags & MODULE_SUBGROUPS) == 0u || c->current_function == NO_ID)
                 return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, node->source_offset,

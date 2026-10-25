@@ -22,6 +22,7 @@ typedef struct doe_mtl_native_resources {
     doe_mtl_native_binding buffers[DOE_MTL_BUFFER_SLOTS];
     void *textures[DOE_MTL_TEXTURE_SLOTS];
     void *samplers[DOE_MTL_SAMPLER_SLOTS];
+    uint32_t immediate_words[16], immediate_size, immediate_slot;
     uint32_t texture_count, sampler_count; /* Highest occupied slot plus one. */
 } doe_mtl_native_resources;
 typedef struct doe_mtl_native_texture_copy {

@@ -245,6 +245,12 @@ static void views_and_caps(void) {
     memset(&caps, 0, sizeof(caps)); f.family = 1005;
     doe_mtl_objc_image_caps(&f.runtime, &f.device, &caps);
     assert(caps.stencil_resolve && caps.max_threads_per_workgroup == 1024);
+    memset(&caps, 0, sizeof(caps)); f.family = 1006;
+    doe_mtl_objc_image_caps(&f.runtime, &f.device, &caps);
+    assert(!caps.subgroups && !caps.subgroup_min_size && !caps.subgroup_max_size);
+    memset(&caps, 0, sizeof(caps)); f.family = 1007;
+    doe_mtl_objc_image_caps(&f.runtime, &f.device, &caps);
+    assert(caps.subgroups && caps.subgroup_min_size == 32 && caps.subgroup_max_size == 32);
     memset(&caps, 0, sizeof(caps)); f.no_family = true;
     doe_mtl_objc_image_caps(&f.runtime, &f.device, &caps);
     assert(!caps.float32_filterable && !caps.float32_blendable && !caps.rg11b10_renderable);

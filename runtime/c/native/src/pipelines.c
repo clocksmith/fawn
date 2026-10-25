@@ -32,6 +32,20 @@ static bool extension_name(const uint32_t *words, size_t count, const char *name
 
 /* Target capability admission, not source validation. The compiler owns valid
  * words. Demote is admitted only after actual extension/feature enablement. */
+static bool subgroup_capability(const doe_shader_view *view, const doe_vk_caps *caps, uint32_t capability)
+{
+    if (capability < 61 || capability > 68) return false;
+    uint32_t operation = UINT32_C(1) << (capability - 61);
+    if (!(caps->subgroup_operations & operation)) return false;
+    for (size_t i = 0; i < view->counts.entries; ++i) {
+        uint32_t stage = view->entries[i].stage == DOE_COMPILER_STAGE_COMPUTE ? 32u :
+            view->entries[i].stage == DOE_COMPILER_STAGE_FRAGMENT ? 16u : 0u;
+        if (!stage || !(caps->subgroup_stages & stage) ||
+            (capability == 68 && stage != 16 && !caps->subgroup_quad_all_stages)) return false;
+    }
+    return view->counts.entries != 0;
+}
+
 bool native_shader_capabilities(const doe_shader_view *view, const doe_vk_caps *caps)
 {
     if (!view || !caps || view->counts.words < 5 || view->words[1] > UINT32_C(0x00010300)) return false;
@@ -42,8 +56,10 @@ bool native_shader_capabilities(const doe_shader_view *view, const doe_vk_caps *
         if (opcode == 17) {
             if (length != 2) return false;
             uint32_t capability = view->words[at + 1];
-            if (capability != 0 && capability != 1 && capability != 43 && capability != 44 && capability != 50 &&
+            if (capability != 0 && capability != 1 && capability != 43 && capability != 44 && capability != 50 && capability != 51 &&
                 !((capability == 9 || capability == 4433 || capability == 4434) && caps->shader_f16) &&
+                !(capability == 4435 && caps->storage_push_constant16) &&
+                !subgroup_capability(view, caps, capability) &&
                 !(capability == 45 && caps->image_cube_array) &&
                 !(capability == 49 && caps->storage_image_extended_formats) &&
                 !(capability == 35 && caps->sample_rate_shading) &&
@@ -61,6 +77,25 @@ static void pipeline_failure(native_pipeline_error *error, WGPUErrorType type, c
     error->type = type;
     native_failure failure = native_failure_status(NATIVE_FAILURE);
     native_failure_format(&failure, message, error->message);
+}
+
+/* The compiler owns entry geometry and workgroup allocation. No source/SPIR-V
+ * replay is needed to select the explicitly requested runtime optimization. */
+static uint32_t required_subgroup(const native_backend *backend, const DoeCompilerEntryV5 *entry)
+{
+    const doe_vk_caps *caps = &backend->value.vulkan.caps;
+    doe_vk_subgroup_selection policy = backend->value.vulkan.options.subgroup_selection;
+    if (policy == DOE_VK_SUBGROUP_LEGACY || !caps->subgroup_size_control ||
+        !(caps->subgroup_required_stages & 32u) || caps->subgroup_min_size > 32 ||
+        caps->subgroup_max_size < 32) return 0;
+    if (policy >= DOE_VK_SUBGROUP_SUPPRESS_MEMORY256 && entry->workgroup_size[0] >= 256 &&
+        entry->workgroup_storage_bytes) return 0;
+    if (policy == DOE_VK_SUBGROUP_SUPPRESS_MEMORY256_OR_SINGLE &&
+        entry->workgroup_size[0] == 1 && entry->workgroup_size[1] == 1 && entry->workgroup_size[2] == 1) return 0;
+    uint64_t invocations = (uint64_t)entry->workgroup_size[0] * entry->workgroup_size[1] * entry->workgroup_size[2];
+    if (!caps->max_compute_workgroup_subgroups ||
+        (invocations + 31) / 32 > caps->max_compute_workgroup_subgroups) return 0;
+    return 32;
 }
 
 static WGPUComputePipeline create_compute_pipeline(native_device *device,
@@ -90,6 +125,20 @@ static WGPUComputePipeline create_compute_pipeline(native_device *device,
         invocations *= entry->workgroup_size[i];
     }
     bool d3d12 = device->backend.kind == WGPUBackendType_D3D12;
+    if (d3d12) {
+        size_t selected_index = (size_t)(entry - view->entries);
+        for (size_t i = 0; i < view->hlsl_entry_count; ++i) {
+            const DoeCompilerHlslEntryV11 *target = &view->hlsl_entries[i];
+            if (target->entry_index != selected_index || !(target->flags & DOE_COMPILER_HLSL_ENTRY_WAVE_COUNTER)) continue;
+            uint64_t limit = device->backend.limits.maxComputeWorkgroupStorageSize;
+            if (limit < DOE_COMPILER_HLSL_WAVE_COUNTER_BYTES ||
+                entry->workgroup_storage_bytes > limit - DOE_COMPILER_HLSL_WAVE_COUNTER_BYTES) {
+                pipeline_failure(error, WGPUErrorType_Validation,
+                    "subgroup counter plus declared workgroup storage exceeds device limit");
+                return NULL;
+            }
+        }
+    }
     doe_dx_shader *compiled = NULL;
     native_d3d12_guard_code *guard = NULL;
     if (d3d12) {
@@ -129,8 +178,8 @@ static WGPUComputePipeline create_compute_pipeline(native_device *device,
             if (!native_vulkan_binding_layout(payload,native_bindings)) backend_failure = native_failure_status(NATIVE_UNSUPPORTED);
             else {
                 doe_vk_error detail = {0};
-                doe_vk_status status = doe_vk_pipeline_create(device->backend.value.vulkan.context,
-                    view->words, view->counts.words, stage.name, native_bindings, payload->binding_count,
+                doe_vk_status status = doe_vk_pipeline_create_with_immediates(device->backend.value.vulkan.context,
+                    view->words, view->counts.words, stage.name, native_bindings, payload->binding_count, required_subgroup(&device->backend, entry), payload->immediate_bytes,
                     &payload->handle.vulkan, &detail);
                 backend_failure = native_failure_vulkan(status, &detail);
             }
@@ -150,6 +199,8 @@ static WGPUComputePipeline create_compute_pipeline(native_device *device,
                     minimums[minimum_count++] = (doe_resource_binding_minimum){payload->bindings[i].group,
                         payload->bindings[i].binding, payload->minimum_sizes[i]};
             resource_status = doe_resource_pipeline_require_minimums(pipeline, minimums, minimum_count);
+            if (resource_status == DOE_RESOURCE_OK)
+                resource_status = doe_resource_pipeline_require_immediates(pipeline, payload->immediate_required_bytes);
         }
     }
     if (automatic) doe_resource_pipeline_layout_release(layout);

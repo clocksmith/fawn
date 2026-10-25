@@ -1323,3 +1323,22 @@ ABI12 provides separate per-entry resource rows and runtime-tail size indices;
 compute and graphics consume one selected-entry map and typed snapshot owner.
 `metal-bridge` additionally rejects forged entry/table/slot/tail-size metadata and
 checks native failure delivery, unknown completion and final resource retirement.
+
+`doe_native_device_policy.h` provides a versioned per-request policy extension.
+It shares ordinary request-device callbacks and loss/lifetime handling, reopens
+only the selected adapter's device/driver UUID pair, and never mutates the adapter
+or process defaults. Vulkan queue selection, fence/timeline synchronization and
+queue-write upload mechanisms are explicit. Staged queue writes record a real
+copy from a private host buffer and submit through the existing pending owner;
+unknown completion retains those leases. Subgroup-size decisions remain with
+selected-entry reflection and the backend's exact pipeline cache key. Unsupported
+values/backend tuples fail device creation. `doeNativeQueueSyncInfo` reports the
+actual synchronization mode; the default fence pool was already present before
+its previously missing reporting bit was corrected.
+
+The same optional pipeline-cache extension now routes Vulkan to its real driver
+`VkPipelineCache` owner as well as Metal to `MTLBinaryArchive`. Vulkan supports
+explicit bounded persistence/reload with exact driver/device identity and a
+corruption checksum; D3D12 persistence remains unsupported. Counters describe
+native operations only. Cache failures do not issue WebGPU error callbacks or
+replace a command's first error, and disabling never writes a cache file.

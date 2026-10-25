@@ -218,6 +218,40 @@ bool numeric_builtin(Source *source, size_t offset, const NumericBuiltin *signat
         case BUILTIN_RADIANS:
             break;
         case BUILTIN_UNPACK4X_U8:
+        case BUILTIN_PACK4X8_SNORM:
+        case BUILTIN_PACK4X8_UNORM:
+        case BUILTIN_PACK2X16_SNORM:
+        case BUILTIN_PACK2X16_UNORM:
+        case BUILTIN_PACK2X16_FLOAT:
+        case BUILTIN_UNPACK4X8_SNORM:
+        case BUILTIN_UNPACK4X8_UNORM:
+        case BUILTIN_UNPACK2X16_SNORM:
+        case BUILTIN_UNPACK2X16_UNORM:
+        case BUILTIN_UNPACK2X16_FLOAT:
+        case BUILTIN_QUANTIZE_F16:
+        case BUILTIN_DPDX:
+        case BUILTIN_DPDY:
+        case BUILTIN_FWIDTH:
+        case BUILTIN_DPDX_FINE:
+        case BUILTIN_DPDY_FINE:
+        case BUILTIN_FWIDTH_FINE:
+        case BUILTIN_DPDX_COARSE:
+        case BUILTIN_DPDY_COARSE:
+        case BUILTIN_FWIDTH_COARSE:
+        case BUILTIN_SUBGROUP_ALL:
+        case BUILTIN_SUBGROUP_ANY:
+        case BUILTIN_SUBGROUP_BALLOT:
+        case BUILTIN_SUBGROUP_ELECT:
+        case BUILTIN_SUBGROUP_BROADCAST:
+        case BUILTIN_SUBGROUP_BROADCAST_FIRST:
+        case BUILTIN_SUBGROUP_SHUFFLE:
+        case BUILTIN_SUBGROUP_SHUFFLE_XOR:
+        case BUILTIN_SUBGROUP_SHUFFLE_UP:
+        case BUILTIN_SUBGROUP_SHUFFLE_DOWN:
+        case BUILTIN_QUAD_BROADCAST:
+        case BUILTIN_QUAD_SWAP_DIAGONAL:
+        case BUILTIN_QUAD_SWAP_X:
+        case BUILTIN_QUAD_SWAP_Y:
         case BUILTIN_FREXP: case BUILTIN_MODF: case BUILTIN_LDEXP:
         case BUILTIN_EXTRACT_BITS: case BUILTIN_INSERT_BITS:
         case BUILTIN_PACK4X_I8: case BUILTIN_PACK4X_U8: case BUILTIN_PACK4X_I8_CLAMP:

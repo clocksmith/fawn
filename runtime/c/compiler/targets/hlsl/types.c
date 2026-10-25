@@ -12,6 +12,7 @@ static const TypeRecord *aggregate(HlslEmitter *e, TypeId type) {
 }
 void hlsl_type(HlslEmitter *e, TypeId type) {
     static const char *const scalars[] = {"void", "bool", "int", "uint", "float", "", "", "float16_t"};
+    if (type == IR_F16) e->uses_native16 = true;
     if (type <= IR_F32 || type == IR_F16) {
         hlsl_text(e, scalars[type]);
         return;
@@ -19,7 +20,7 @@ void hlsl_type(HlslEmitter *e, TypeId type) {
     const TypeRecord *t = aggregate(e, type);
     if (t == NULL) return;
     if (t->kind == TYPE_POINTER) {
-        hlsl_error(e, "HLSL function pointers are not implemented");
+        hlsl_type(e, t->element);
         return;
     }
     if (t->kind == TYPE_TEXTURE || t->kind == TYPE_SAMPLER) {
@@ -42,6 +43,7 @@ void hlsl_type(HlslEmitter *e, TypeId type) {
             hlsl_error(e, "HLSL vector shape is invalid");
             return;
         }
+        if (t->element == IR_F16) e->uses_native16 = true;
         if (t->element == IR_F16) hlsl_format(e, "vector<float16_t, %u>", t->count);
         else hlsl_format(e, "%s%u", scalars[t->element], t->count);
     } else if (t->kind == TYPE_MATRIX) {
@@ -53,6 +55,7 @@ void hlsl_type(HlslEmitter *e, TypeId type) {
         }
         /* Native rows are WGSL columns. Indexing stays direct; linear products
          * reverse their operands in numeric.c, not external memory layout. */
+        if (column->element == IR_F16) e->uses_native16 = true;
         if (column->element == IR_F16) hlsl_format(e, "matrix<float16_t, %u, %u>", t->count, column->count);
         else hlsl_format(e, "float%ux%u", t->count, column->count);
     } else if (t->kind == TYPE_ARRAY || t->kind == TYPE_STRUCT || (t->kind == TYPE_ATOMIC_RESULT || t->kind == TYPE_FREXP_RESULT || t->kind == TYPE_MODF_RESULT)) {
@@ -116,7 +119,7 @@ void hlsl_constant(HlslEmitter *e, TypeId type, uint64_t bits, bool composite) {
         case IR_BOOL: hlsl_text(e, bits == 0u ? "false" : "true"); break;
         case IR_U32: hlsl_format(e, "0x%08" PRIx32 "u", (uint32_t)bits); break;
         case IR_I32: hlsl_format(e, "asint(0x%08" PRIx32 "u)", (uint32_t)bits); break;
-        case IR_F16: hlsl_format(e, "float16_t(f16tof32(0x%04" PRIx32 "u))", (uint32_t)bits); break;
+        case IR_F16: e->uses_native16 = true; hlsl_format(e, "float16_t(f16tof32(0x%04" PRIx32 "u))", (uint32_t)bits); break;
         case IR_F32: hlsl_format(e, "asfloat(0x%08" PRIx32 "u)", (uint32_t)bits); break;
         default: hlsl_error(e, "HLSL scalar constant type is unsupported"); break;
     }

@@ -100,6 +100,15 @@ doe_resource_status doe_resource_compute_pass_set_pipeline(doe_resource_compute_
     return DOE_RESOURCE_OK;
 }
 
+doe_resource_status doe_resource_compute_pass_set_immediates(doe_resource_compute_pass *pass,
+    uint32_t offset, const void *data, size_t size)
+{
+    doe_resource_status status = active(pass);
+    if (status != DOE_RESOURCE_OK) return status;
+    return resource_encoder_fail(pass->encoder,
+        resource_immediates_update(&pass->base.config, &pass->immediates, offset, data, size));
+}
+
 doe_resource_status doe_resource_compute_pass_set_group(doe_resource_compute_pass *pass,
     uint32_t index, const doe_resource_dispatch_group *group)
 {
@@ -135,11 +144,15 @@ doe_resource_status doe_resource_compute_pass_dispatch(doe_resource_compute_pass
     doe_resource_status status = active(pass);
     if (status != DOE_RESOURCE_OK) return status;
     if (!pass->pipeline) return resource_encoder_fail(pass->encoder, DOE_RESOURCE_STATE);
+    if ((pass->immediates.initialized_bytes & pass->pipeline->immediate_required_bytes) !=
+        pass->pipeline->immediate_required_bytes) return resource_encoder_fail(pass->encoder, DOE_RESOURCE_STATE);
     size_t count = pass->pipeline->layout->count;
     doe_resource_dispatch_group groups[DOE_RESOURCE_MAX_GROUPS];
     for (size_t i = 0; i < count; i++)
         groups[i] = (doe_resource_dispatch_group){pass->groups[i], pass->offsets.values[i], pass->offsets.counts[i]};
-    return resource_record_dispatch(pass->encoder, pass->pipeline, groups, count, x, y, z);
+    status = resource_record_dispatch(pass->encoder, pass->pipeline, groups, count, x, y, z);
+    if (status == DOE_RESOURCE_OK) pass->encoder->commands[pass->encoder->count - 1].value.dispatch.immediates = pass->immediates;
+    return status;
 }
 
 doe_resource_status doe_resource_compute_pass_dispatch_indirect(doe_resource_compute_pass *pass,
@@ -148,11 +161,15 @@ doe_resource_status doe_resource_compute_pass_dispatch_indirect(doe_resource_com
     doe_resource_status status = active(pass);
     if (status != DOE_RESOURCE_OK) return status;
     if (!pass->pipeline) return resource_encoder_fail(pass->encoder, DOE_RESOURCE_STATE);
+    if ((pass->immediates.initialized_bytes & pass->pipeline->immediate_required_bytes) !=
+        pass->pipeline->immediate_required_bytes) return resource_encoder_fail(pass->encoder, DOE_RESOURCE_STATE);
     size_t count = pass->pipeline->layout->count;
     doe_resource_dispatch_group groups[DOE_RESOURCE_MAX_GROUPS];
     for (size_t i = 0; i < count; i++)
         groups[i] = (doe_resource_dispatch_group){pass->groups[i], pass->offsets.values[i], pass->offsets.counts[i]};
-    return resource_record_dispatch_indirect(pass->encoder, pass->pipeline, groups, count, arguments, offset);
+    status = resource_record_dispatch_indirect(pass->encoder, pass->pipeline, groups, count, arguments, offset);
+    if (status == DOE_RESOURCE_OK) pass->encoder->commands[pass->encoder->count - 1].value.dispatch.immediates = pass->immediates;
+    return status;
 }
 
 bool doe_resource_compute_pass_ended(const doe_resource_compute_pass *pass)

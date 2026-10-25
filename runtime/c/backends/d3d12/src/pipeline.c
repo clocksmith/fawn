@@ -59,13 +59,14 @@ doe_dx_status doe_dx_validate_layout(const doe_dx_context *context, const doe_dx
         const doe_dx_texture_binding_layout *binding = &desc->textures[index];
         doe_dx_texture_contract contract = dynamic && dynamic->texture_contracts ?
             dynamic->texture_contracts[index] : (doe_dx_texture_contract){0};
-        if (contract.sample_class == DOE_DX_SAMPLE_EXACT && binding->format == DOE_DX_D32_FLOAT)
+        if (contract.sample_class == DOE_DX_SAMPLE_EXACT && doe_dx_format_depth(binding->format))
             return DOE_DX_UNSUPPORTED;
-        if (contract.sample_class < DOE_DX_SAMPLE_EXACT || contract.sample_class > DOE_DX_SAMPLE_UINT ||
+        if (contract.sample_class < DOE_DX_SAMPLE_EXACT || contract.sample_class > DOE_DX_SAMPLE_DEPTH_MS ||
             ((binding->access != DOE_DX_READ_ONLY || contract.storage) && contract.sample_class != DOE_DX_SAMPLE_EXACT) ||
             (contract.sample_class == DOE_DX_SAMPLE_EXACT && !doe_dx_format_valid(binding->format)) ||
             (binding->access != DOE_DX_READ_ONLY && binding->access != DOE_DX_READ_WRITE))
             return DOE_DX_INVALID_ARGUMENT;
+        if (contract.dimension>6) return DOE_DX_INVALID_ARGUMENT;
         if (binding->access == DOE_DX_READ_ONLY) ++srvs;
         else ++uavs;
         for (size_t prior = 0; prior < index; prior++) {

@@ -2,11 +2,14 @@
 #ifndef DOE_VK_FEATURE_INTERNAL_H
 #define DOE_VK_FEATURE_INTERNAL_H
 #include "internal.h"
+#include "vk_abi_subgroup.h"
 typedef struct doe_vk_feature_selection {
     VkPhysicalDeviceFeatures base;
     VkPhysicalDeviceShaderFloat16Int8Features float16;
     VkPhysicalDevice16BitStorageFeatures storage16;
     bool shader_f16;
+    VkPhysicalDeviceShaderSubgroupExtendedTypesFeatures subgroup_extended;
+    VkPhysicalDeviceSubgroupSizeControlFeatures subgroup;
     VkPhysicalDeviceShaderDemoteToHelperInvocationFeatures demote;
     const uint8_t *extension;
     VkPhysicalDeviceSwapchainMaintenance1FeaturesEXT swapchain;

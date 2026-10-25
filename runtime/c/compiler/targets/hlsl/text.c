@@ -59,6 +59,19 @@ TypeId hlsl_value_type(HlslEmitter *e, uint32_t id) {
 void hlsl_value(HlslEmitter *e, uint32_t id) {
     (void)hlsl_value_type(e, id);
     if (id != 0u && id <= e->module->instruction_count &&
+        e->module->instructions[id - 1u].opcode == IR_ADDRESS) {
+        const IrInstruction *ir = &e->module->instructions[id - 1u];
+        if (ir->operands.access.path != NO_ID) {
+            hlsl_error(e,"HLSL pointer call requires a validated whole-root reference");
+            return;
+        }
+        if (ir->operands.access.category == ROOT_LOCAL) hlsl_format(e,"l%u",ir->operands.access.root);
+        else if (ir->operands.access.category == ROOT_POINTER)
+            hlsl_format(e,"v%u",e->module->limits.instructions + 1u + ir->operands.access.root);
+        else hlsl_error(e,"HLSL pointer reference has an invalid address space");
+        return;
+    }
+    if (id != 0u && id <= e->module->instruction_count &&
         e->module->instructions[id - 1u].opcode == IR_HANDLE) {
         const IrInstruction *ir = &e->module->instructions[id - 1u];
         hlsl_handle(e, ir);
@@ -69,6 +82,9 @@ static void emit_entry(HlslEmitter *e, uint32_t entry) {
     const bool previous_dispatch = e->needs_dispatch, previous_subgroups = e->uses_subgroups;
     e->needs_dispatch = false;
     e->uses_subgroups = false;
+    e->uses_native16 = false;
+    e->uses_wave_counter = false;
+    e->uses_array_views = false;
     e->entry = entry;
     e->traversal_left = 4096u * ((uint64_t)e->module->type_count +
         e->module->member_count + e->module->instruction_count + 1u);
@@ -87,7 +103,10 @@ static void emit_entry(HlslEmitter *e, uint32_t entry) {
         const FunctionRecord *function = &e->module->functions[e->module->entries[entry].function];
         DoeCompilerHlslEntryV11 *record = &e->metadata.entries[entry];
         *record = (DoeCompilerHlslEntryV11){.entry_index=entry,.stage=stage_kind(function),
-            .flags=e->uses_subgroups ? DOE_COMPILER_HLSL_ENTRY_WAVES : 0u,
+            .flags=(e->uses_subgroups ? DOE_COMPILER_HLSL_ENTRY_WAVES : 0u) |
+                (e->uses_native16 ? DOE_COMPILER_HLSL_ENTRY_NATIVE16 : 0u) |
+                (e->uses_wave_counter ? DOE_COMPILER_HLSL_ENTRY_WAVE_COUNTER : 0u) |
+                (e->uses_array_views ? DOE_COMPILER_HLSL_ENTRY_ARRAY_VIEWS : 0u),
             .dispatch_register=e->needs_dispatch ? DOE_HLSL_DISPATCH_SLOT : NO_ID,
             .dispatch_space=e->needs_dispatch ? DOE_HLSL_DISPATCH_SPACE : NO_ID,
             .dispatch_bytes=e->needs_dispatch ? 16u : 0u};
@@ -100,7 +119,7 @@ static void emit_entry(HlslEmitter *e, uint32_t entry) {
     e->uses_subgroups = previous_subgroups || e->uses_subgroups;
 }
 static void emit_module(HlslEmitter *e) {
-    hlsl_text(e, "// Experimental Doe typed-IR HLSL target, Shader Model 6.0.\n");
+    hlsl_text(e, "// Experimental Doe typed-IR HLSL target, Shader Model 6.0 baseline; entry flags carry additional requirements.\n");
     if (e->selected_entry != NO_ID) {
         emit_entry(e, e->selected_entry);
         return;

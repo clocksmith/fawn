@@ -29,7 +29,7 @@ void native_d3d12_write_texture(native_device *device,const WGPUTexelCopyTexture
     /* Canonical recording below checks usage/availability even for zero writes. */
     uint64_t pitch = ((uint64_t)admitted.row_bytes + 255) & ~UINT64_C(255);
     bool nonempty = copy.width && copy.height && copy.depth_or_layers;
-    uint64_t bytes = nonempty ? pitch * copy.height : 0;
+    uint64_t bytes = nonempty ? pitch * admitted.rows : 0;
     uint64_t bound = native_allocation_bound(device);
     if (copy.depth_or_layers > 1 || copy.mip || copy.origin[2] || pitch > UINT32_MAX ||
         bytes > SIZE_MAX || bytes > bound) {
@@ -50,7 +50,7 @@ void native_d3d12_write_texture(native_device *device,const WGPUTexelCopyTexture
         return;
     }
     const unsigned char *source = data;
-    for (uint32_t row = 0; nonempty && row < copy.height; ++row)
+    for (uint32_t row = 0; nonempty && row < admitted.rows; ++row)
         memcpy(packed + (uint64_t)row * pitch,
             source + copy.offset + (uint64_t)row * admitted.pitch,admitted.row_bytes);
     WGPUBufferDescriptor descriptor = {.size=allocation,.usage=WGPUBufferUsage_CopySrc|WGPUBufferUsage_CopyDst};
@@ -65,7 +65,7 @@ void native_d3d12_write_texture(native_device *device,const WGPUTexelCopyTexture
         status = written.status == NATIVE_OK ? doe_resource_encoder_create(&device->resources,&encoder) : DOE_RESOURCE_STATE;
         copy.offset = 0;
         copy.bytes_per_row = (uint32_t)pitch;
-        copy.rows_per_image = copy.height;
+        copy.rows_per_image = admitted.rows;
         copy.aspect = admitted.aspect;
         if (status == DOE_RESOURCE_OK)
             status = doe_resource_encoder_copy_texture(encoder,(doe_resource_buffer *)staging,texture,

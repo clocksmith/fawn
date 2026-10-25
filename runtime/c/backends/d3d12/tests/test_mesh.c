@@ -253,7 +253,11 @@ static void depth_usage_and_copy(void) {
     doe_dx_texture *depth = NULL;
     assert(doe_dx_texture_create(context, &desc, &depth, NULL) == DOE_DX_UNSUPPORTED && !depth);
     desc.usage |= DOE_DX_TEXTURE_DEPTH_ATTACHMENT | DOE_DX_TEXTURE_SAMPLED;
-    assert(doe_dx_texture_create(context, &desc, &depth, NULL) == DOE_DX_UNSUPPORTED && !depth);
+    /* Sampled depth is now backed by a typeless allocation and typed SRV.
+     * Extend the historical admission subset without changing transfer oracles. */
+    assert(doe_dx_texture_create(context, &desc, &depth, NULL) == DOE_DX_OK && depth);
+    doe_dx_texture_release(depth);
+    depth = NULL;
     desc.usage = DOE_DX_TEXTURE_DEPTH_ATTACHMENT | DOE_DX_TEXTURE_COPY_SRC | DOE_DX_TEXTURE_COPY_DST;
     assert(doe_dx_texture_create(context, &desc, &depth, NULL) == DOE_DX_OK);
     doe_dx_texture_footprint footprint = {0};
