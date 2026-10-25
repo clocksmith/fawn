@@ -139,7 +139,11 @@ same speculative bits as ordinary rendering, so Discard, abandonment, unknown
 completion and terminal failure keep their existing ownership/publication rules.
 
 Sample counts are queried with supportsTextureSampleCount. Published GPU-family
-facts conservatively gate arrays, combined store/resolve, separate depth/stencil,
+facts conservatively gate float32 blending and RG11B10 rendering, while
+[supports32BitFloatFiltering](https://developer.apple.com/documentation/metal/mtldevice/supports32bitfloatfiltering)
+is queried independently. Native format facts do not bypass frontend feature
+enablement or required store/resolve composition. Family facts also gate arrays,
+combined store/resolve, separate depth/stencil,
 depth resolve, stencil resolve and counting visibility. Depth24Stencil8 uses its
 native property gate and is never assumed on Apple silicon. These gates are not
 per-format hardware qualification; native/frontend format admission still applies.

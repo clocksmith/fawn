@@ -15,7 +15,7 @@ typedef struct fixture {
     int pool, texture_class, sampler_class, descriptor, device, texture, sampler, view, command, encoder, buffer, pipeline;
     unsigned pools, drains, releases, ends, property_count, transfer_count, dispatches;
     unsigned buffer_sets, texture_sets, sampler_sets;
-    bool no_pool, no_descriptor, no_result, no_encoder, no_view, no_family;
+    bool no_pool, no_descriptor, no_result, no_encoder, no_view, no_family, float_filter;
     intptr_t family;
     property properties[16];
     transfer transfers[4];
@@ -90,6 +90,10 @@ static doe_objc_bool family(void *object, void *sel, intptr_t v) {
         (v >= 1002 && v <= 1010 && active->family >= v && active->family <= 1010));
 }
 static doe_objc_bool boolean(void *object, void *sel) {
+    if (named(sel, "supports32BitFloatFiltering")) {
+        assert(object == &active->device);
+        return (doe_objc_bool)active->float_filter;
+    }
     assert(object == &active->device && (named(sel, "supportsBCTextureCompression") ||
         named(sel, "isDepth24Stencil8PixelFormatSupported")));
     return 1;
@@ -222,12 +226,14 @@ static void views_and_caps(void) {
     assert(f.layers.location == 6 && f.layers.length == 6 && f.swizzle.red == 4 && f.swizzle.alpha == 1);
     f.no_view = true; out = &f.buffer;
     assert(doe_mtl_objc_view(&f.runtime, &f.texture, &vd, &out, NULL) == DOE_MTL_UNSUPPORTED && out == &f.buffer);
-    f.family = 2002; doe_mtl_objc_image_caps(&f.runtime, &f.device, &caps);
+    f.family = 2002; f.float_filter = true; doe_mtl_objc_image_caps(&f.runtime, &f.device, &caps);
     assert(caps.max_texture_2d == 16384 && caps.max_texture_3d == 2048 && caps.bc_texture_compression);
+    assert(caps.float32_filterable && caps.float32_blendable && caps.rg11b10_renderable);
     assert(caps.sample_count_mask == 5 && caps.depth24_stencil8 && caps.multisample_array && caps.store_and_resolve);
     assert(!caps.separate_depth_stencil && caps.max_threads_per_workgroup == 1024);
-    memset(&caps, 0, sizeof(caps)); f.family = 1002;
+    memset(&caps, 0, sizeof(caps)); f.family = 1002; f.float_filter = false;
     doe_mtl_objc_image_caps(&f.runtime, &f.device, &caps);
+    assert(!caps.float32_filterable && caps.float32_blendable && caps.rg11b10_renderable);
     assert(caps.max_texture_2d == 8192 && caps.max_texture_layers == 2048 && caps.max_threads_per_workgroup == 512);
     memset(&caps, 0, sizeof(caps)); f.family = 1003;
     doe_mtl_objc_image_caps(&f.runtime, &f.device, &caps);
@@ -238,6 +244,7 @@ static void views_and_caps(void) {
     assert(caps.stencil_resolve && caps.max_threads_per_workgroup == 1024);
     memset(&caps, 0, sizeof(caps)); f.no_family = true;
     doe_mtl_objc_image_caps(&f.runtime, &f.device, &caps);
+    assert(!caps.float32_filterable && !caps.float32_blendable && !caps.rg11b10_renderable);
     assert(caps.max_texture_2d == 0 && !caps.bc_texture_compression && !caps.max_threads_per_workgroup);
     assert(f.pools == f.drains);
 }
