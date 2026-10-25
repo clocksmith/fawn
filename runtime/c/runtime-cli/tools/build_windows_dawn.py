@@ -98,6 +98,43 @@ def verify_header_bytes(header: Path, expected: str, out: Path) -> None:
         raise ValueError('fetched upstream WebGPU header hash mismatch (see header-integrity.json)')
 
 
+def artifact_query(path: Path) -> None:
+    """Ask CMake for this target's actual outputs after upstream overrides."""
+    path.write_text('file(GENERATE OUTPUT "${CMAKE_BINARY_DIR}/doe-dawn-artifacts.txt"\n'
+                    '  CONTENT "$<TARGET_FILE:webgpu_dawn>\\n'
+                    '$<TARGET_LINKER_FILE:webgpu_dawn>\\n")\n', encoding='utf-8')
+
+
+def stage_artifacts(build: Path, products: Path) -> dict[str, dict[str, str]]:
+    """Stage only the named target's DLL and import library, failing closed."""
+    manifest = build / 'doe-dawn-artifacts.txt'
+    paths = manifest.read_text(encoding='utf-8').splitlines()
+    if len(paths) != 2:
+        raise ValueError('invalid Dawn target artifact manifest')
+    selected = []
+    for value, name in zip(paths, ['webgpu_dawn.dll', 'webgpu_dawn.lib']):
+        path = Path(value)
+        if not path.is_absolute():
+            raise ValueError('Dawn target artifact must be absolute')
+        path = path.resolve()
+        if not any(path.is_relative_to(root.resolve()) for root in [build, products]):
+            raise ValueError('Dawn target artifact escapes build outputs')
+        if path.name != name or not path.is_file():
+            raise ValueError('actual Dawn target DLL/import library missing or misnamed')
+        selected.append(path)
+    products.mkdir(parents=True, exist_ok=True)
+    evidence = {}
+    for path in selected:
+        destination = products / path.name
+        if path != destination.resolve():
+            shutil.copy2(path, destination)
+        if digest(destination) != digest(path):
+            raise ValueError('staged Dawn artifact hash mismatch')
+        evidence[path.name] = {'target_path': path.relative_to(build.parent).as_posix(),
+                               'sha256': digest(destination)}
+    return evidence
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--out', type=Path, required=True)
@@ -121,7 +158,10 @@ def main() -> int:
     header = REPO / policy['path']
     if digest(header) != policy['sha256'] or '@' + policy['commit'] not in (source / 'DEPS').read_text():
         raise ValueError('Dawn DEPS does not match the exact pinned WebGPU ABI')
+    query = out / 'target-artifacts.cmake'
+    artifact_query(query)
     configure = ['cmake', '-S', str(source), '-B', str(build), '-G', 'Ninja',
+                 '-DCMAKE_PROJECT_TOP_LEVEL_INCLUDES=' + str(query),
                  '-DCMAKE_BUILD_TYPE=Release', '-DBUILD_SHARED_LIBS=OFF', '-DDAWN_BUILD_MONOLITHIC_LIBRARY=SHARED',
                  '-DDAWN_FETCH_DEPENDENCIES=ON', '-DDAWN_BUILD_TESTS=OFF', '-DTINT_BUILD_TESTS=OFF',
                  '-DDAWN_BUILD_SAMPLES=OFF', '-DDAWN_BUILD_BENCHMARKS=OFF', '-DTINT_BUILD_BENCHMARKS=OFF',
@@ -151,9 +191,8 @@ def main() -> int:
         results.append(value)
     if results[0] != results[1]:
         raise ValueError('generated Dawn ABI differs from pinned enum/record layout')
+    artifacts = stage_artifacts(build, products)
     dll, imports = products / 'webgpu_dawn.dll', products / 'webgpu_dawn.lib'
-    if not dll.is_file() or not imports.is_file():
-        raise ValueError('actual Dawn DLL/import library missing')
     for relative in dependencies:
         owner = source if relative == '.' else source / relative
         destination = products / 'licenses' / ('dawn' if relative == '.' else relative)
@@ -179,6 +218,8 @@ def main() -> int:
         'source': DAWN_URL, 'revision': DAWN_REVISION, 'dependency_revisions': dependencies,
         'deps_sha256': digest(source / 'DEPS'), 'header_sha256': digest(header),
         'generated_header_sha256': digest(build / 'gen/include/dawn/webgpu.h'),
+        'target_artifacts': artifacts,
+        'target_manifest_sha256': digest(build / 'doe-dawn-artifacts.txt'),
         'configuration': configure, 'cache_sha256': digest(build / 'CMakeCache.txt'),
         'toolchain': capture(['clang-cl', '--version'], out),
         'products_sha256': {path.name: digest(path) for path in products.iterdir() if path.is_file()},
