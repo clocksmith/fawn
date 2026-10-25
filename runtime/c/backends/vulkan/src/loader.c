@@ -400,6 +400,7 @@ void doe_vk_context_release(doe_vk_context *context) {
     if (--context->references != 0) return;
     /* Every recording/submission/resource owns a reference, so no native work
      * can exist here. Unknown submissions cannot be released. */
+    doe_vk_pipeline_cache_clear(context);
     if (context->device != NULL) context->vk.vkDestroyDevice(context->device, NULL);
     if (context->instance != NULL) context->vk.vkDestroyInstance(context->instance, NULL);
     if (context->library != NULL) {

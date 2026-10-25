@@ -42,6 +42,13 @@ Read `include/doe_vk.h`. A context and all its objects require caller serializat
 Resources retain their creating context. Recording retains exact buffers and
 pipelines, image views and samplers; descriptor pools belong to each dispatch until
 command retirement.
+A compute pipeline is immutable and fully determined by its SPIR-V words, entry
+point and binding layout, so `doe_vk_pipeline_create` returns the existing pipeline
+for an identical input (exact comparison, never a hash alone). The context also
+keeps the `DOE_VK_RETAINED_PIPELINES` most recently released compute pipelines,
+which hold no context reference; the oldest is destroyed beyond that bound and the
+rest with the device. A lost context destroys at release instead.
+`tests/pipeline_sharing.c` checks sharing, the bound and complete teardown.
 Host accesses are blocked while commands may use a buffer. Successful fence
 completion unlocks host access. Pending/uncertain command release returns `BUSY`
 and does not consume the handle. A timed-out waiter must retain and settle it.

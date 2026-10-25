@@ -27,7 +27,14 @@ struct doe_vk_context {
     doe_vk_caps caps;
     VkPhysicalDeviceProperties properties;
     VkPhysicalDeviceMemoryProperties memory;
+    /* Compute pipelines by exact creation input, most recent first: live
+     * ones and up to DOE_VK_RETAINED_PIPELINES released ones; see pipeline.c. */
+    struct doe_vk_pipeline *compute_pipelines;
+    uint32_t retained_pipelines;
 };
+enum { DOE_VK_RETAINED_PIPELINES = 32 };
+/* Destroys released compute pipelines; the context is releasing its device. */
+void doe_vk_pipeline_cache_clear(doe_vk_context *context);
 struct doe_vk_buffer {
     doe_vk_context *context;
     uint32_t references;
@@ -59,6 +66,12 @@ struct doe_vk_pipeline {
     VkDescriptorSetLayout sets[DOE_VK_MAX_GROUPS];
     VkPipelineLayout layout;
     VkPipeline pipeline;
+    /* Compute only: the exact creation input this pipeline shares under, and
+     * its link in the context's live compute pipelines. */
+    uint32_t *spirv;
+    size_t word_count;
+    char *entrypoint;
+    struct doe_vk_pipeline *next_compute;
 };
 typedef struct doe_vk_buffer_use {
     doe_vk_buffer *buffer;
