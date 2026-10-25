@@ -6,6 +6,8 @@
 #define VK_ABI_STRUCTS_H
 #include "vk_abi_types.h"
 
+typedef struct VkPushConstantRange { VkFlags stageFlags; uint32_t offset, size; } VkPushConstantRange;
+
 typedef struct VkApplicationInfo VkApplicationInfo;
 typedef struct VkInstanceCreateInfo VkInstanceCreateInfo;
 typedef struct VkDeviceQueueCreateInfo VkDeviceQueueCreateInfo;

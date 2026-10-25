@@ -117,6 +117,7 @@ typedef struct doe_mtl_render_bindings {
     size_t texture_count;
     const doe_mtl_sampler_binding *samplers;
     size_t sampler_count;
+    doe_mtl_immediate_binding immediates;
 } doe_mtl_render_bindings;
 typedef struct doe_mtl_viewport { double x, y, width, height, min_depth, max_depth; } doe_mtl_viewport;
 typedef struct doe_mtl_scissor { uint32_t x, y, width, height; } doe_mtl_scissor;

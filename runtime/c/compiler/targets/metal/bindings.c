@@ -68,7 +68,8 @@ bool metal_dense_plan(MetalEmitter *e, DoeMetalMetadata *metadata) {
                 }
             }
             uint32_t *count = &counts[table - 1u];
-            const uint32_t limit = table == DOE_COMPILER_TEXT_TABLE_BUFFER ? DOE_METAL_SIZES_SLOT :
+            const uint32_t limit = table == DOE_COMPILER_TEXT_TABLE_BUFFER ?
+                (target_immediate_root(c,entry) != NO_ID ? DOE_COMPILER_METAL_IMMEDIATE_SLOT : DOE_METAL_SIZES_SLOT) :
                 table == DOE_COMPILER_TEXT_TABLE_TEXTURE ? DOE_METAL_TEXTURE_SLOTS : DOE_METAL_SAMPLER_SLOTS;
             if (*count == limit) { metal_error(e, "Metal entry exceeds its native argument namespace capacity"); return false; }
             uint32_t slot = (*count)++;

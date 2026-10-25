@@ -66,6 +66,10 @@ static native_failure prepare_draw(doe_mtl_commands *commands, const doe_resourc
     }
     draw->vertex = storage->stages[0].bindings;
     draw->fragment = storage->stages[1].bindings;
+    draw->vertex.immediates = (doe_mtl_immediate_binding){packet->immediates.words,
+        graphics->stages[0].immediate_bytes,DOE_COMPILER_METAL_IMMEDIATE_SLOT};
+    draw->fragment.immediates = (doe_mtl_immediate_binding){packet->immediates.words,
+        graphics->stages[1].immediate_bytes,DOE_COMPILER_METAL_IMMEDIATE_SLOT};
     for (size_t i = 0; i < pipeline->vertex_count; ++i) {
         uint32_t slot = graphics->vertex_slots[i];
         if (slot == UINT32_MAX) continue;

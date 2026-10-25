@@ -63,7 +63,7 @@ static void half_lane(HlslEmitter *e, uint32_t resource, bool uniform,
 static void body(HlslEmitter *e, uint32_t resource, TypeId type, bool store) {
     const CompilerWorkspace *c = e->module;
     const TypeRecord *t = type >= IR_PRIMITIVE_COUNT ? &c->types[type - IR_PRIMITIVE_COUNT] : NULL;
-    const bool uniform = c->resources[resource].kind == DOE_COMPILER_UNIFORM_BUFFER;
+    const bool uniform = resource >= c->resource_count || c->resources[resource].kind == DOE_COMPILER_UNIFORM_BUFFER;
     signature(e, resource, type, store);
     hlsl_text(e, " {\n");
     if (!store) {
@@ -152,7 +152,29 @@ static void declare_resource(HlslEmitter *e, uint32_t index) {
         hlsl_text(e, "    return stride == 4u && count <= 0x3fffffffu ? count * 4u : 0u;\n}\n");
     } else hlsl_error(e, "HLSL resource kind or access has no implementation");
 }
+static void immediate_resource(HlslEmitter *e) {
+    const CompilerWorkspace *c = e->module;
+    const uint32_t root = target_immediate_root(c,&c->entries[e->entry]);
+    if (root == NO_ID) return;
+    const uint64_t bytes = type_size(c,c->workgroups[root].type);
+    if (bytes > 65536u) { hlsl_error(e,"HLSL immediate block exceeds CBV capacity"); return; }
+    const uint32_t key = c->resource_count + root;
+    hlsl_format(e,"cbuffer DoeImmediate : register(b%u, space%u) { uint4 r%u_data[%u]; };\n",
+        DOE_COMPILER_HLSL_IMMEDIATE_REGISTER,DOE_COMPILER_HLSL_IMMEDIATE_SPACE,key,(uint32_t)((bytes+15u)/16u));
+    for (unsigned pass = 0u; pass < 2u; ++pass) {
+        for (TypeId type = IR_I32; type < IR_PRIMITIVE_COUNT+c->type_count && !e->failed; ++type) {
+            if (!memory_type(c,type)) continue;
+            const char *error = NULL;
+            const bool used = target_access_helper_used(c,&e->closure,ROOT_WORKGROUP,root,type,false,&e->traversal_left,&error);
+            if (error != NULL) { hlsl_error(e,error); return; }
+            if (!used) continue;
+            if (pass == 0u) { signature(e,key,type,false); hlsl_text(e,";\n"); }
+            else body(e,key,type,false);
+        }
+    }
+}
 void hlsl_resources(HlslEmitter *e) {
+    immediate_resource(e);
     const CompilerWorkspace *c = e->module;
     for (uint32_t resource = 0u; resource < c->resource_count && !e->failed; ++resource) {
         if (!hlsl_entry_resource(e, resource)) continue;

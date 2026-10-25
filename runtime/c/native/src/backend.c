@@ -57,6 +57,16 @@ native_result native_backend_open(WGPUBackendType kind, bool fallback, uint32_t 
 
 native_result native_backend_device(const native_backend *adapter, native_backend *out)
 {
+    return native_backend_device_policy(adapter, NULL, out);
+}
+
+native_result native_backend_device_policy(const native_backend *adapter, const DoeNativeDevicePolicy *policy,
+    native_backend *out)
+{
+    if (policy && (adapter->kind != WGPUBackendType_Vulkan || policy->queue_selection > 2 ||
+        policy->synchronization > 1 || policy->upload_policy > DOE_NATIVE_UPLOAD_ALLOW_MAPPED || policy->subgroup_policy > 3 ||
+        policy->reserved[0] || policy->reserved[1] || policy->reserved[2] || policy->reserved[3]))
+        return NATIVE_UNSUPPORTED;
     if (adapter->kind == WGPUBackendType_D3D12) return native_d3d12_reopen(adapter, out);
     native_backend result = {.kind=adapter->kind};
     native_result status;
@@ -66,6 +76,14 @@ native_result native_backend_device(const native_backend *adapter, native_backen
         result.value.vulkan.options = adapter->value.vulkan.options;
         result.value.vulkan.options.adapter_selection = DOE_VK_SELECT_IDENTITY;
         result.value.vulkan.options.adapter_only = false;
+        if (policy) {
+            result.upload_policy = policy->upload_policy;
+            result.value.vulkan.options.queue_selection = (doe_vk_queue_selection)policy->queue_selection;
+            result.value.vulkan.options.sync_selection = (doe_vk_sync_selection)policy->synchronization;
+            result.value.vulkan.options.subgroup_selection = (doe_vk_subgroup_selection)policy->subgroup_policy;
+            if (policy->queue_selection == DOE_NATIVE_QUEUE_REQUIRE_COMPUTE_ONLY)
+                result.value.vulkan.options.require_graphics_queue = false;
+        }
         result.value.vulkan.options.required_identity = adapter->value.vulkan.caps.identity;
         status = native_from_vulkan(doe_vk_context_create(&result.value.vulkan.options,
             &result.value.vulkan.context, NULL));
@@ -157,22 +175,35 @@ WGPUStatus native_backend_info(const native_backend *backend, WGPUAdapterInfo *o
 {
     if (!out || out->nextInChain) return WGPUStatus_Error;
     const char *name;
-    /* No C backend offers "subgroups", so GPUAdapterInfo takes the spec's
-     * defaults (4 and 128), not the driver's sizes; real sizes belong with that
-     * feature once a backend offers it. */
+    /* Without the requested feature, retain WebGPU default range. */
     WGPUAdapterInfo result = {.backendType=backend->kind,.adapterType=WGPUAdapterType_Unknown,
         .subgroupMinSize=4,.subgroupMaxSize=128};
     if (backend->kind == WGPUBackendType_Vulkan) {
         const doe_vk_caps *caps = &backend->value.vulkan.caps;
+        if (native_vulkan_subgroups_supported(caps)) {
+            result.subgroupMinSize = caps->subgroup_min_size;
+            result.subgroupMaxSize = caps->subgroup_max_size;
+        }
         name = caps->device_name;
         result.vendorID = caps->vendor_id;
         result.deviceID = caps->device_id;
         if (caps->software_adapter) result.adapterType = WGPUAdapterType_CPU;
         else if (caps->device_type == 1) result.adapterType = WGPUAdapterType_IntegratedGPU;
         else if (caps->device_type == 2) result.adapterType = WGPUAdapterType_DiscreteGPU;
-    } else if (backend->kind == WGPUBackendType_Metal) name = backend->value.metal.caps.device_name;
+    } else if (backend->kind == WGPUBackendType_Metal) {
+        const doe_mtl_caps *caps = &backend->value.metal.caps;
+        name = caps->device_name;
+        if (caps->subgroups) {
+            result.subgroupMinSize = caps->subgroup_min_size;
+            result.subgroupMaxSize = caps->subgroup_max_size;
+        }
+    }
     else if (backend->kind == WGPUBackendType_D3D12) {
         const doe_dx_caps *caps = &backend->value.d3d12.caps;
+        if (native_adapter_features(backend) & NATIVE_FEATURE(WGPUFeatureName_Subgroups)) {
+            result.subgroupMinSize = caps->wave_lane_count_min;
+            result.subgroupMaxSize = caps->wave_lane_count_max;
+        }
         name = caps->name;
         result.vendorID = caps->vendor_id;
         result.deviceID = caps->device_id;

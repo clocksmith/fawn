@@ -20,7 +20,7 @@ typedef struct DoeNativePipelineCacheInfo {
     int64_t native_code;
     char message[256];
 } DoeNativePipelineCacheInfo;
-/* Optional backend-owned binary archive, currently Metal only. NULL/0 disables
+/* Optional backend-owned binary archive, Metal binary archive or Vulkan driver cache. NULL/0 disables
  * it without writing. No environment-variable mutation or default directory is
  * introduced. Source libraries still compile; native descriptors select exact
  * device binaries. Counters are archive operations, not inferred cache hits.

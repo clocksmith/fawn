@@ -29,7 +29,7 @@ uint32_t type_flags(const CompilerWorkspace *c, TypeId id) {
     if (id >= IR_PRIMITIVE_COUNT) return c->types[id-IR_PRIMITIVE_COUNT].flags;
     if (id == IR_VOID) return TYPE_RESOLVED;
     if (id == IR_ABSTRACT_INT || id == IR_ABSTRACT_FLOAT) return TYPE_CONSTRUCTIBLE|TYPE_ABSTRACT|TYPE_RESOLVED;
-    return TYPE_CONSTRUCTIBLE|TYPE_FIXED|TYPE_RESOLVED|(id == IR_BOOL?0u:TYPE_HOST|TYPE_UNIFORM);
+    return (id == IR_F16 ? TYPE_F16_CONTENT : 0u)|TYPE_CONSTRUCTIBLE|TYPE_FIXED|TYPE_RESOLVED|(id == IR_BOOL?0u:TYPE_HOST|TYPE_UNIFORM);
 }
 bool type_abstract(const CompilerWorkspace *c, TypeId id) {
     return (type_flags(c, id)&TYPE_ABSTRACT) != 0u;
@@ -109,6 +109,7 @@ bool type_intern(Source *s, uint32_t kind, TypeId element, uint32_t count, TypeI
         return source_pool_error(s, DOE_COMPILER_POOL_TYPES, (size_t)c->type_count+1u, s->length, "type capacity exceeded");
     TypeRecord t = {.kind = kind, .element = element, .count = count, .flags = TYPE_RESOLVED, .target = NO_ID, .aux = NO_ID};
     const uint32_t flags = type_flags(c, element);
+    t.flags |= flags & TYPE_F16_CONTENT;
     if (!type_constructible(c, element) && (flags & TYPE_ATOMIC_CONTENT) == 0u)
         return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, s->length, "aggregate element must be constructible or contain atomics");
     if (kind == TYPE_FREXP_RESULT || kind == TYPE_MODF_RESULT) {
@@ -147,6 +148,7 @@ bool type_intern(Source *s, uint32_t kind, TypeId element, uint32_t count, TypeI
     }
     else {
         t.flags|=flags&(TYPE_HOST|TYPE_ABSTRACT|TYPE_ATOMIC_CONTENT);
+        if (kind == TYPE_ARRAY || kind == TYPE_RUNTIME_ARRAY) t.flags |= TYPE_ARRAY_CONTENT;
         t.state.layout.alignment = type_alignment(c, element);
         if (!round_up(s, type_size(c, element), t.state.layout.alignment, 0u, &t.state.layout.stride)) return false;
         if (kind == TYPE_ARRAY || kind == TYPE_MATRIX) {
@@ -202,7 +204,7 @@ bool type_layout_struct(Source *s, TypeId id) {
         if (alignment<m->alignment) alignment = m->alignment;
         if ((child_flags&TYPE_HOST) == 0u) flags&=~(uint32_t)TYPE_HOST;
         if ((child_flags&TYPE_CONSTRUCTIBLE) == 0u) flags&=~(uint32_t)TYPE_CONSTRUCTIBLE;
-        flags |= child_flags & TYPE_ATOMIC_CONTENT;
+        flags |= child_flags & (TYPE_ATOMIC_CONTENT | TYPE_ARRAY_CONTENT | TYPE_F16_CONTENT);
         if ((child_flags&TYPE_UNIFORM) == 0u || m->offset%required_alignment(c, m->type) != 0u) flags&=~(uint32_t)TYPE_UNIFORM;
         if (tail) {
             flags&=~(uint32_t)(TYPE_CONSTRUCTIBLE|TYPE_FIXED|TYPE_UNIFORM);

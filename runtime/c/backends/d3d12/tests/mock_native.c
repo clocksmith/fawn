@@ -323,8 +323,8 @@ doe_dx_status doe_dx_native_wait(doe_dx_native_context *context, uint64_t value,
 }
 
 doe_dx_status doe_dx_native_texture_create(doe_dx_native_context *context,
-    const doe_dx_texture_desc *desc, doe_dx_native_texture **out, doe_dx_error *error) {
-    assert(context && desc->width && desc->height);
+    const doe_dx_texture_shape *shape, doe_dx_native_texture **out, doe_dx_error *error) {
+    assert(context && shape->image.width && shape->image.height && (shape->samples==1 || shape->samples==4));
     doe_dx_status status = outcome(MOCK_TEXTURE, error);
     if (status != DOE_DX_OK) return status;
     *out = calloc(1, sizeof(**out));
@@ -485,12 +485,27 @@ doe_dx_status doe_dx_native_render_create(doe_dx_native_context *context,
 }
 doe_dx_status doe_dx_native_render(doe_dx_native_commands *commands,doe_dx_native_texture *color,
     bool clear,const float clear_color[4],bool discard,const doe_dx_native_render_depth *depth,
+    const doe_dx_native_render_draw *draws,size_t count,doe_dx_error *error) {
+    return doe_dx_native_render_resolve(commands,color,NULL,clear,clear_color,discard,depth,draws,count,error);
+}
+doe_dx_status doe_dx_native_render_resolve(doe_dx_native_commands *commands,doe_dx_native_texture *color,
+    doe_dx_native_texture *resolve,bool clear,const float clear_color[4],bool discard,const doe_dx_native_render_depth *depth,
     const doe_dx_native_render_draw *draws,
     size_t count,doe_dx_error *error) {
-    (void)clear_color;
+    doe_dx_native_render_color target={.texture=color,.resolve=resolve,.clear=clear,.discard=discard};
+    memcpy(target.value,clear_color,sizeof(target.value));
+    return doe_dx_native_render_targets(commands,&target,color ? 1u : 0u,depth,draws,count,error);
+}
+doe_dx_status doe_dx_native_render_targets(doe_dx_native_commands *commands,
+    const doe_dx_native_render_color *colors,uint32_t color_count,const doe_dx_native_render_depth *depth,
+    const doe_dx_native_render_draw *draws,size_t count,doe_dx_error *error)
+{
     doe_dx_status status=outcome(MOCK_DRAW,error);
     if (status!=DOE_DX_OK) return status;
-    if (color) record_texture(commands,color);
+    for (uint32_t i=0;i<color_count;++i) {
+        if (colors[i].texture) record_texture(commands,colors[i].texture);
+        if (colors[i].resolve) record_texture(commands,colors[i].resolve);
+    }
     for (size_t i=0;i<count;++i) {
         if (draws[i].query) { record_timestamps(commands,draws[i].query); continue; }
         for (size_t stage=0;stage<DOE_DX_RENDER_STAGES;++stage)
@@ -508,7 +523,26 @@ doe_dx_status doe_dx_native_render(doe_dx_native_commands *commands,doe_dx_nativ
     } else mock.render_depth=(doe_dx_native_render_depth){0};
     mock.render_passes++;
     mock.render_draws+=count;
-    mock.render_clear=clear;
-    mock.render_discard=discard;
+    mock.render_clear=color_count && colors[0].clear;
+    mock.render_discard=color_count && colors[0].discard;
     return DOE_DX_OK;
+}
+
+uint64_t doe_dx_native_texture_upload_bytes(const doe_dx_native_texture *texture) { assert(texture); return 0; }
+doe_dx_status doe_dx_native_texture_initialize(doe_dx_native_commands *commands,doe_dx_native_texture *texture,
+    doe_dx_native_buffer *zero,doe_dx_error *error) {
+    doe_dx_status status=outcome(MOCK_DRAW,error);
+    if (status!=DOE_DX_OK) return status;
+    record_texture(commands,texture);
+    if (zero) record_buffer(commands,zero);
+    return DOE_DX_OK;
+}
+
+void doe_dx_native_texture_region_transfer_ex(doe_dx_native_commands *commands,doe_dx_native_buffer *buffer,
+    doe_dx_native_texture *texture,const doe_dx_texture_footprint *footprint,doe_dx_texture_region_ex region,bool upload) {
+    doe_dx_native_texture_region_transfer(commands,buffer,texture,footprint,region.rect,upload);
+}
+void doe_dx_native_texture_blit_ex(doe_dx_native_commands *commands,doe_dx_native_texture *source,
+    doe_dx_texture_region_ex from,doe_dx_native_texture *destination,doe_dx_texture_region_ex to) {
+    doe_dx_native_texture_blit(commands,source,from.rect,destination,to.rect.x,to.rect.y);
 }

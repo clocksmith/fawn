@@ -15,7 +15,7 @@ bool compiler_metadata_prepare(Source *source, DoeCompilerTypedOutputCounts *typ
     typed->name_bytes += (size_t)stage_names;
     if ((flags & DOE_COMPILER_MODULE_WORDS) != 0u) metadata->counts.words = typed->words;
     if ((flags & DOE_COMPILER_MODULE_REFLECTION) == 0u) return true;
-    if (!sampling_prepare(source)) return false;
+    if (!sampling_prepare(source) || !translation_prepare(source)) return false;
     metadata->sampling = sampling_context(source);
     metadata->interfaces = source->stages != NULL ? source->stages->interface_count : 0u;
     metadata->handles = handles ? reflect_handle_count(c) : 0u;
@@ -40,7 +40,9 @@ bool compiler_metadata_prepare(Source *source, DoeCompilerTypedOutputCounts *typ
 bool compiler_metadata_fits(const CompilerMetadata *metadata, const DoeCompilerModuleOutputs *outputs,
     const DoeCompilerResourceOutputs *resources, const DoeCompilerStageOutputs *stages) {
     const DoeCompilerModuleOutputCounts *counts = &metadata->counts;
-    return (metadata->sampling == NULL || metadata->sampling->outputs->pair_capacity >= metadata->sampling->count) &&
+    return (metadata->sampling == NULL || metadata->sampling->translation == NULL ||
+        metadata->sampling->translation->outputs->entry_capacity >= metadata->sampling->translation->count) &&
+        (metadata->sampling == NULL || metadata->sampling->outputs->pair_capacity >= metadata->sampling->count) &&
         (stages == NULL || stages->interface_capacity >= metadata->interfaces) &&
         (resources == NULL || resources->handle_capacity >= metadata->handles) &&
         outputs->word_capacity >= counts->words && outputs->type_capacity >= counts->types &&
@@ -56,6 +58,11 @@ void compiler_metadata_publish(Source *source, const CompilerMetadata *metadata,
     if (metadata->sampling != NULL && metadata->sampling->count != 0u)
         memcpy(metadata->sampling->outputs->pairs, metadata->sampling->staging,
             metadata->sampling->count * sizeof(*metadata->sampling->staging));
+    if (metadata->sampling != NULL && metadata->sampling->translation != NULL) {
+        const TranslationContext *translation = metadata->sampling->translation;
+        if (translation->count != 0u) memcpy(translation->outputs->entries,translation->staging,
+            translation->count * sizeof(*translation->staging));
+    }
     reflect_module(source, source->compiler, outputs, selected, &result->module);
     if (resource_result != NULL) {
         reflect_handles(source->compiler, resources->handles);

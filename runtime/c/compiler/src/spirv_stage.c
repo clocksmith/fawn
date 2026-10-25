@@ -15,6 +15,8 @@ static uint32_t builtin_decoration(const StageInterface *leaf) {
         case DOE_COMPILER_BUILTIN_FRAG_DEPTH: return 22u;
         case DOE_COMPILER_BUILTIN_SAMPLE_INDEX: return 18u;
         case DOE_COMPILER_BUILTIN_SAMPLE_MASK: return 20u;
+        case DOE_COMPILER_BUILTIN_SUBGROUP_SIZE: return 36u;
+        case DOE_COMPILER_BUILTIN_SUBGROUP_INVOCATION_ID: return 41u;
         default: return NO_ID;
     }
 }
@@ -32,6 +34,7 @@ bool spirv_stage_plan(Emitter *e) {
     StageWorkspace *stages = e->source->stages;
     for (uint32_t i = 0u; i < stages->interface_count; ++i) {
         StageInterface *leaf = &stages->interfaces[i];
+        if (leaf->builtin == DOE_COMPILER_BUILTIN_SUBGROUP_SIZE || leaf->builtin == DOE_COMPILER_BUILTIN_SUBGROUP_INVOCATION_ID) e->subgroup_capabilities |= 2u;
         leaf->target = spirv_reserve_ids(e, 1u);
         if (spirv_pointer_type(e, leaf->target_type, storage_class(leaf)) == 0u) return false;
         if (leaf->builtin == DOE_COMPILER_BUILTIN_SAMPLE_MASK) {
@@ -53,7 +56,8 @@ bool spirv_stage_annotations(Emitter *e) {
         if (leaf->interpolation == DOE_COMPILER_INTERPOLATION_FLAT ||
             (leaf->direction == DOE_COMPILER_INTERFACE_INPUT &&
              (leaf->builtin == DOE_COMPILER_BUILTIN_SAMPLE_INDEX || leaf->builtin == DOE_COMPILER_BUILTIN_SAMPLE_MASK ||
-              leaf->builtin == DOE_COMPILER_BUILTIN_FRONT_FACING))) { EMIT(OP_DECORATE, leaf->target, 14u); }
+              leaf->builtin == DOE_COMPILER_BUILTIN_FRONT_FACING || leaf->builtin == DOE_COMPILER_BUILTIN_SUBGROUP_SIZE ||
+              leaf->builtin == DOE_COMPILER_BUILTIN_SUBGROUP_INVOCATION_ID))) { EMIT(OP_DECORATE, leaf->target, 14u); }
         if (leaf->interpolation == DOE_COMPILER_INTERPOLATION_LINEAR) { EMIT(OP_DECORATE, leaf->target, 13u); }
         if (leaf->sampling == DOE_COMPILER_SAMPLING_CENTROID) { EMIT(OP_DECORATE, leaf->target, 16u); }
         if (leaf->sampling == DOE_COMPILER_SAMPLING_SAMPLE) { EMIT(OP_DECORATE, leaf->target, 17u); }

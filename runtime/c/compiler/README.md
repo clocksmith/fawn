@@ -731,3 +731,6 @@ per-entry texture/sampler pairs to specialization without changing frozen record
 
 [Floating decomposition](DECOMPOSITION.md) covers the shared `frexp`, `modf` and
 `ldexp` semantics and focused target/constant controls.
+
+[ABI17 translation metadata and native builtins](TRANSLATION.md) describes
+immediate-data layout, reserved target bindings and focused developer checks.

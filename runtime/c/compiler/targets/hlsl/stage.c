@@ -39,6 +39,7 @@ static void signature(HlslEmitter *e, uint32_t index) {
         for (uint32_t i = 0u; i < f->formal_count; ++i) {
             const uint32_t formal = f->formal_start + i;
             hlsl_text(e, ", ");
+            if (type_pointer(c, c->formals[formal].type.resolved.type)) hlsl_text(e, "inout ");
             hlsl_type(e, c->formals[formal].type.resolved.type);
             hlsl_format(e, " v%u", c->limits.instructions + 1u + formal);
         }
@@ -65,7 +66,7 @@ static void function_body(HlslEmitter *e, uint32_t index) {
     }
     for (uint32_t i = f->instruction_start; i < f->instruction_end; ++i) {
         const IrInstruction *ir = &c->instructions[i];
-        if (ir->result == 0u || ir->opcode == IR_HANDLE) continue;
+        if (ir->result == 0u || ir->opcode == IR_HANDLE || ir->opcode == IR_ADDRESS) continue;
         if (ir->result != i + 1u) {
             hlsl_error(e, "HLSL value identity differs from its IR slot");
             return;
@@ -131,11 +132,10 @@ static bool entry_admit(HlslEmitter *e) {
         hlsl_error(e, "HLSL workgroup storage exceeds 32 KiB");
         return false;
     }
-    for (uint32_t i = 0u; i < entry->input_count; ++i) {
-        if (c->entry_inputs[entry->input_first + i].kind > INPUT_SUBGROUP_INVOCATION) {
-            hlsl_error(e, "HLSL subgroup input has no implemented mapping");
-            return false;
-        }
+    const bool group_waves = (entry->source_input_mask & ((1u << INPUT_NUM_SUBGROUPS) | (1u << INPUT_SUBGROUP_ID))) != 0u;
+    if (group_waves && entry->state.resolved.workgroup_storage_bytes > 32768u - DOE_COMPILER_HLSL_WAVE_COUNTER_BYTES) {
+        hlsl_error(e, "HLSL wave enumeration requires four additional shared bytes");
+        return false;
     }
     for (uint32_t i = 0u; i < c->resource_count; ++i) {
         if (!hlsl_entry_resource(e, i)) continue;
@@ -188,7 +188,8 @@ static void entry_wrapper(HlslEmitter *e) {
     const CompilerWorkspace *c = e->module;
     const EntryRecord *entry = &c->entries[e->entry];
     uint32_t mask = entry->source_input_mask;
-    if (entry->state.resolved.workgroup_storage_bytes != 0u) mask |= 1u << INPUT_LOCAL_INDEX;
+    const bool group_waves = (mask & ((1u << INPUT_NUM_SUBGROUPS) | (1u << INPUT_SUBGROUP_ID))) != 0u;
+    if (entry->state.resolved.workgroup_storage_bytes != 0u || group_waves) mask |= 1u << INPUT_LOCAL_INDEX;
     hlsl_format(e, "[numthreads(%u, %u, %u)]\nvoid ", entry->state.resolved.workgroup_size[0],
                 entry->state.resolved.workgroup_size[1], entry->state.resolved.workgroup_size[2]);
     hlsl_entry_name(e, c->functions[entry->function].name);
@@ -213,6 +214,17 @@ static void entry_wrapper(HlslEmitter *e) {
             hlsl_format(e, "ctx.input%u = %s();\n", i,
                         i == INPUT_SUBGROUP_SIZE ? "WaveGetLaneCount" : "WaveGetLaneIndex");
         } else hlsl_format(e, "ctx.input%u = input%u;\n", i, i);
+    }
+    if (group_waves) {
+        e->uses_wave_counter = true;
+        e->uses_subgroups = true;
+        hlsl_line(e, "if (input4 == 0u) doe_wave_count = 0u;");
+        hlsl_line(e, "GroupMemoryBarrierWithGroupSync();");
+        hlsl_line(e, "uint doe_wave_id = 0u;");
+        hlsl_line(e, "if (WaveIsFirstLane()) InterlockedAdd(doe_wave_count, 1u, doe_wave_id);");
+        hlsl_format(e, "    ctx.input%u = WaveReadLaneFirst(doe_wave_id);\n", INPUT_SUBGROUP_ID);
+        hlsl_line(e, "GroupMemoryBarrierWithGroupSync();");
+        hlsl_format(e, "    ctx.input%u = doe_wave_count;\n", INPUT_NUM_SUBGROUPS);
     }
     if (entry->state.resolved.workgroup_storage_bytes != 0u) {
         hlsl_line(e, "if (input4 == 0u) {");
@@ -256,8 +268,10 @@ void hlsl_functions(HlslEmitter *e) {
             "    uint3 doe_num_workgroups;\n    uint _doe_num_workgroups_pad;\n};\n",
             DOE_HLSL_DISPATCH_SLOT, DOE_HLSL_DISPATCH_SPACE);
     }
+    if ((entry->source_input_mask & ((1u << INPUT_NUM_SUBGROUPS) | (1u << INPUT_SUBGROUP_ID))) != 0u)
+        hlsl_text(e, "groupshared uint doe_wave_count;\n");
     hlsl_text(e, "struct DoeContext {\n");
-    for (unsigned i = 0u; i <= INPUT_SUBGROUP_INVOCATION; ++i)
+    for (unsigned i = 0u; i <= INPUT_SUBGROUP_ID; ++i)
         hlsl_format(e, "    %s input%u;\n", input_scalar((InputKind)i) ? "uint" : "uint3", i);
     for (uint32_t i = 0u; i < c->workgroup_count; ++i) {
         if (!hlsl_entry_workgroup(e, i) || c->workgroups[i].state.resolved.address_space != MODULE_PRIVATE) continue;

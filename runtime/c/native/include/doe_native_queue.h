@@ -20,8 +20,8 @@ extern "C" {
 /* Queue synchronization state bits; 0 for a NULL queue or a non-Vulkan device. */
 enum {
     DOE_NATIVE_QUEUE_SYNC_BACKEND_VULKAN = 1u << 0,
-    DOE_NATIVE_QUEUE_SYNC_TIMELINE_SEMAPHORE = 1u << 1, /* Never set: one fence per submission. */
-    DOE_NATIVE_QUEUE_SYNC_FENCE_POOL = 1u << 2,         /* Never set: fences are not pooled. */
+    DOE_NATIVE_QUEUE_SYNC_TIMELINE_SEMAPHORE = 1u << 1, /* Actual enabled timeline mode. */
+    DOE_NATIVE_QUEUE_SYNC_FENCE_POOL = 1u << 2,         /* Proven-terminal tuples reused by command owner. */
     /* A submitted command record whose completion or failure has not yet been
      * observed by a public wait or the pending progress worker. */
     DOE_NATIVE_QUEUE_SYNC_DEFERRED_SUBMISSIONS = 1u << 3,

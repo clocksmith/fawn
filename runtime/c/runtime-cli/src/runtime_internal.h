@@ -72,6 +72,9 @@ void runtime_pipeline_cache_open(doe_runtime *runtime);
 struct public_render_state;
 struct doe_runtime {
     doe_runtime_options options;
+    DoeNativeDevicePolicy device_policy;
+    char device_policy_hash[65];
+    uint32_t observed_sync_bits;
     bool timestamps_enabled;
     DoeNativePipelineCacheInfo pipeline_cache;
     const char *pipeline_cache_reason;

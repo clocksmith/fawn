@@ -36,6 +36,8 @@ static bool attribute_valid(Source *source, const LocalScope *scope, InterfaceAt
         if (attribute->location_expression == NO_ID)
             return source_error(source, DOE_COMPILER_UNSUPPORTED, attribute->offset, "location exceeds interface metadata format");
     } else {
+        if (attribute->builtin >= DOE_COMPILER_BUILTIN_SUBGROUP_SIZE && (source->compiler->module_flags & MODULE_SUBGROUPS) == 0u)
+            return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, attribute->offset, "subgroup stage inputs require enable subgroups");
         const bool valid = attribute->builtin == DOE_COMPILER_BUILTIN_POSITION ? scalar == IR_F32 && lanes == 4u :
             attribute->builtin == DOE_COMPILER_BUILTIN_FRONT_FACING ? scalar == IR_BOOL && lanes == 1u :
             attribute->builtin == DOE_COMPILER_BUILTIN_FRAG_DEPTH ? scalar == IR_F32 && lanes == 1u :
@@ -64,7 +66,8 @@ static bool builtin_stage(uint32_t stage, uint32_t direction, uint32_t builtin) 
             builtin == DOE_COMPILER_BUILTIN_POSITION;
     return direction == DOE_COMPILER_INTERFACE_INPUT ?
         builtin == DOE_COMPILER_BUILTIN_POSITION || builtin == DOE_COMPILER_BUILTIN_FRONT_FACING ||
-        builtin == DOE_COMPILER_BUILTIN_SAMPLE_INDEX || builtin == DOE_COMPILER_BUILTIN_SAMPLE_MASK :
+        builtin == DOE_COMPILER_BUILTIN_SAMPLE_INDEX || builtin == DOE_COMPILER_BUILTIN_SAMPLE_MASK ||
+        builtin == DOE_COMPILER_BUILTIN_SUBGROUP_SIZE || builtin == DOE_COMPILER_BUILTIN_SUBGROUP_INVOCATION_ID :
         builtin == DOE_COMPILER_BUILTIN_FRAG_DEPTH || builtin == DOE_COMPILER_BUILTIN_SAMPLE_MASK;
 }
 static bool append_leaf(Source *source, StageInterface leaf, const InterfaceAttribute *attribute) {

@@ -74,7 +74,11 @@ typedef enum {
     BUILTIN_UNPACK4X_I8, BUILTIN_DOT4_I8_PACKED, BUILTIN_DOT4_U8_PACKED,
     BUILTIN_REVERSE_BITS, BUILTIN_COUNT_LEADING_ZEROS, BUILTIN_COUNT_TRAILING_ZEROS, BUILTIN_FIRST_LEADING_BIT, BUILTIN_FIRST_TRAILING_BIT,
     BUILTIN_FMA, BUILTIN_STEP, BUILTIN_SMOOTHSTEP, BUILTIN_SATURATE,
-    BUILTIN_EXTRACT_BITS, BUILTIN_INSERT_BITS, BUILTIN_FREXP, BUILTIN_MODF, BUILTIN_LDEXP
+    BUILTIN_EXTRACT_BITS, BUILTIN_INSERT_BITS, BUILTIN_FREXP, BUILTIN_MODF, BUILTIN_LDEXP,
+    BUILTIN_PACK4X8_SNORM, BUILTIN_PACK4X8_UNORM, BUILTIN_PACK2X16_SNORM, BUILTIN_PACK2X16_UNORM, BUILTIN_PACK2X16_FLOAT, BUILTIN_UNPACK4X8_SNORM, BUILTIN_UNPACK4X8_UNORM, BUILTIN_UNPACK2X16_SNORM, BUILTIN_UNPACK2X16_UNORM, BUILTIN_UNPACK2X16_FLOAT, BUILTIN_QUANTIZE_F16,
+    BUILTIN_DPDX, BUILTIN_DPDY, BUILTIN_FWIDTH, BUILTIN_DPDX_FINE, BUILTIN_DPDY_FINE, BUILTIN_FWIDTH_FINE, BUILTIN_DPDX_COARSE, BUILTIN_DPDY_COARSE, BUILTIN_FWIDTH_COARSE,
+    BUILTIN_SUBGROUP_ALL, BUILTIN_SUBGROUP_ANY, BUILTIN_SUBGROUP_BALLOT, BUILTIN_SUBGROUP_ELECT, BUILTIN_SUBGROUP_BROADCAST, BUILTIN_SUBGROUP_BROADCAST_FIRST, BUILTIN_SUBGROUP_SHUFFLE, BUILTIN_SUBGROUP_SHUFFLE_XOR, BUILTIN_SUBGROUP_SHUFFLE_UP, BUILTIN_SUBGROUP_SHUFFLE_DOWN,
+    BUILTIN_QUAD_BROADCAST, BUILTIN_QUAD_SWAP_DIAGONAL, BUILTIN_QUAD_SWAP_X, BUILTIN_QUAD_SWAP_Y
 } NumericBuiltinKind;
 typedef struct { uint64_t bits; IrType type; } NumericValue;
 typedef struct { TypeId type; uint32_t flags; uint64_t bits; } ConstantValue;
@@ -123,7 +127,7 @@ typedef struct { NameSpan name; TypeRef element; uint32_t count_expression, flag
 enum { TYPE_VECTOR = 1u, TYPE_ARRAY, TYPE_RUNTIME_ARRAY, TYPE_STRUCT, TYPE_TEXTURE, TYPE_SAMPLER, TYPE_MATRIX, TYPE_ATOMIC, TYPE_ATOMIC_RESULT, TYPE_POINTER, TYPE_FREXP_RESULT, TYPE_MODF_RESULT };
 enum { TYPE_CONSTRUCTIBLE = 1u, TYPE_HOST = 2u, TYPE_FIXED = 4u, TYPE_TAIL = 8u,
     TYPE_RESOLVING = 16u, TYPE_RESOLVED = 32u, TYPE_ABSTRACT = 64u, TYPE_UNIFORM = 128u, TYPE_ATOMIC_CONTENT = 256u,
-    TYPE_DEFERRED = 512u };
+    TYPE_DEFERRED = 512u, TYPE_ARRAY_CONTENT = 1024u, TYPE_F16_CONTENT = 2048u };
 typedef struct { uint32_t dimension, format, access, flags; } ImageType;
 typedef struct { uint32_t kind, flags, element, count; NameSpan name;
     union { struct { uint64_t size, alignment, stride; } layout;
@@ -137,11 +141,13 @@ typedef struct { NameSpan name; TypeRef annotation;
     uint32_t group_expression, binding_expression, group, binding, kind, access; TypeId type; uint32_t flags;
     uint64_t minimum, alignment, required_alignment, tail_offset, tail_stride;
     TypeId tail_type; uint32_t target, source_offset, reserved; } ResourceRecord;
-enum { MODULE_WORKGROUP = 4u, MODULE_PRIVATE = 6u }; /* SPIR-V storage classes. */
+enum { MODULE_WORKGROUP = 4u, MODULE_PRIVATE = 6u, MODULE_IMMEDIATE = 9u }; /* SPIR-V storage classes. */
 /* Module memory roots share the existing bounded pool. During parse, type holds
  * the address space and target the initializer expression; resolution consumes
  * both before target becomes an emitted ID. After emission it holds the compact
- * public workgroup index. Annotation storage dies at semantic resolution. */
+ * public workgroup index. Annotation storage dies at semantic resolution.
+ * An immediate root has no initializer; SPIR-V target planning reuses that
+ * otherwise dead initializer word for its wrapper pointer type ID. */
 typedef struct { NameSpan name;
     union { TypeRef annotation; struct { uint32_t initializer, address_space; } resolved; } state;
     TypeId type; uint32_t target;
@@ -201,7 +207,7 @@ typedef struct {
     } state;
 } EntryRecord;
 typedef enum { SOURCE_NONE, SOURCE_FUNCTION, SOURCE_BARRIER, SOURCE_RESOURCE,
-    SOURCE_WORKGROUP, SOURCE_INPUT, SOURCE_SUBGROUP, SOURCE_IMAGE, SOURCE_DISCARD, SOURCE_ATOMIC, SOURCE_POINTER_LOCAL, SOURCE_POINTER_FORMAL,
+    SOURCE_DERIVATIVE, SOURCE_WORKGROUP, SOURCE_INPUT, SOURCE_SUBGROUP, SOURCE_IMAGE, SOURCE_DISCARD, SOURCE_ATOMIC, SOURCE_POINTER_LOCAL, SOURCE_POINTER_FORMAL,
     SOURCE_POINTER_READ, SOURCE_POINTER_WRITE, SOURCE_OVERRIDE } SourceReferenceKind;
 typedef struct { SourceReferenceKind kind; uint32_t index; } SourceReference;
 typedef struct {
@@ -212,7 +218,7 @@ typedef struct {
     uint32_t entries, entry_inputs, entry_references;
 } CompilerLimits;
 enum { LIMIT_LEGACY = 1u, LIMIT_SINGULAR = 2u, LIMIT_MODULE = 4u };
-enum { MODULE_SUBGROUPS = 1u, MODULE_STANDARD_UNIFORM = 2u, MODULE_CORE_BINDINGS = 4u, MODULE_F16 = 8u, MODULE_DISABLE_F16 = 16u };
+enum { MODULE_SUBGROUPS = 1u, MODULE_STANDARD_UNIFORM = 2u, MODULE_CORE_BINDINGS = 4u, MODULE_F16 = 8u, MODULE_DISABLE_F16 = 16u, MODULE_DISABLE_SUBGROUPS = 32u };
 typedef struct CompilerWorkspace CompilerWorkspace;
 typedef struct StageWorkspace StageWorkspace;
 typedef struct SpecializationContext SpecializationContext;

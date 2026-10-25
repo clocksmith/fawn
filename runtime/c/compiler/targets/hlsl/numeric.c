@@ -32,6 +32,7 @@ static void decomposition_helpers(HlslEmitter *e) {
 }
 void hlsl_numeric_helpers(HlslEmitter *e) {
     decomposition_helpers(e);
+    hlsl_float_pack_helpers(e);
     hlsl_text(e,
         "inline uint doe_div(uint a, uint b) { return a / (b == 0u ? 1u : b); }\n"
         "inline uint doe_rem(uint a, uint b) { return b == 0u ? 0u : a % (b == 0u ? 1u : b); }\n"
@@ -171,6 +172,40 @@ static void subgroup_expression(HlslEmitter *e, const IrInstruction *ir, Numeric
         case BUILTIN_MIX: case BUILTIN_COUNT_ONE_BITS:
         case BUILTIN_REVERSE_BITS: case BUILTIN_COUNT_LEADING_ZEROS: case BUILTIN_COUNT_TRAILING_ZEROS:
         case BUILTIN_FIRST_LEADING_BIT: case BUILTIN_FIRST_TRAILING_BIT: case BUILTIN_UNPACK4X_U8:
+        case BUILTIN_PACK4X8_SNORM:
+        case BUILTIN_PACK4X8_UNORM:
+        case BUILTIN_PACK2X16_SNORM:
+        case BUILTIN_PACK2X16_UNORM:
+        case BUILTIN_PACK2X16_FLOAT:
+        case BUILTIN_UNPACK4X8_SNORM:
+        case BUILTIN_UNPACK4X8_UNORM:
+        case BUILTIN_UNPACK2X16_SNORM:
+        case BUILTIN_UNPACK2X16_UNORM:
+        case BUILTIN_UNPACK2X16_FLOAT:
+        case BUILTIN_QUANTIZE_F16:
+        case BUILTIN_DPDX:
+        case BUILTIN_DPDY:
+        case BUILTIN_FWIDTH:
+        case BUILTIN_DPDX_FINE:
+        case BUILTIN_DPDY_FINE:
+        case BUILTIN_FWIDTH_FINE:
+        case BUILTIN_DPDX_COARSE:
+        case BUILTIN_DPDY_COARSE:
+        case BUILTIN_FWIDTH_COARSE:
+        case BUILTIN_SUBGROUP_ALL:
+        case BUILTIN_SUBGROUP_ANY:
+        case BUILTIN_SUBGROUP_BALLOT:
+        case BUILTIN_SUBGROUP_ELECT:
+        case BUILTIN_SUBGROUP_BROADCAST:
+        case BUILTIN_SUBGROUP_BROADCAST_FIRST:
+        case BUILTIN_SUBGROUP_SHUFFLE:
+        case BUILTIN_SUBGROUP_SHUFFLE_XOR:
+        case BUILTIN_SUBGROUP_SHUFFLE_UP:
+        case BUILTIN_SUBGROUP_SHUFFLE_DOWN:
+        case BUILTIN_QUAD_BROADCAST:
+        case BUILTIN_QUAD_SWAP_DIAGONAL:
+        case BUILTIN_QUAD_SWAP_X:
+        case BUILTIN_QUAD_SWAP_Y:
         case BUILTIN_FREXP: case BUILTIN_MODF: case BUILTIN_LDEXP:
         case BUILTIN_EXTRACT_BITS: case BUILTIN_INSERT_BITS:
         case BUILTIN_PACK4X_I8: case BUILTIN_PACK4X_U8: case BUILTIN_PACK4X_I8_CLAMP:
@@ -270,6 +305,30 @@ static void builtin_expression(HlslEmitter *e, const IrInstruction *ir) {
     const NumericBuiltin *builtin = builtin_kind((NumericBuiltinKind)ir->operands.scalar.literal);
     if (builtin == NULL) {
         hlsl_error(e, "Hlsl builtin identity has no registered semantics");
+        return;
+    }
+    if (builtin->family == BUILTIN_SUBGROUP_EXCHANGE) {
+        hlsl_subgroup(e, ir, builtin->kind);
+        return;
+    }
+    if (builtin->family == BUILTIN_DERIVATIVE) {
+        const uint32_t operation = (uint32_t)builtin->kind - (uint32_t)BUILTIN_DPDX;
+        const char *suffix = operation < 3u ? "" : operation < 6u ? "_fine" : "_coarse";
+        if (operation % 3u == 2u) {
+            hlsl_format(e, "(abs(ddx%s(", suffix);
+            hlsl_value(e, ir->operands.scalar.left);
+            hlsl_format(e, ")) + abs(ddy%s(", suffix);
+            hlsl_value(e, ir->operands.scalar.left);
+            hlsl_text(e, ")))" );
+        } else {
+            hlsl_format(e, "%s%s(", operation % 3u == 0u ? "ddx" : "ddy", suffix);
+            hlsl_value(e, ir->operands.scalar.left);
+            hlsl_text(e, ")");
+        }
+        return;
+    }
+    if (builtin->family == BUILTIN_FLOAT_PACK) {
+        hlsl_float_pack_expression(e, ir, builtin->kind);
         return;
     }
     if (builtin->family == BUILTIN_DECOMPOSE) {
@@ -402,6 +461,40 @@ static void builtin_expression(HlslEmitter *e, const IrInstruction *ir) {
         case BUILTIN_COUNT_ONE_BITS:
         case BUILTIN_REVERSE_BITS: case BUILTIN_COUNT_LEADING_ZEROS: case BUILTIN_COUNT_TRAILING_ZEROS:
         case BUILTIN_FIRST_LEADING_BIT: case BUILTIN_FIRST_TRAILING_BIT: case BUILTIN_UNPACK4X_U8:
+        case BUILTIN_PACK4X8_SNORM:
+        case BUILTIN_PACK4X8_UNORM:
+        case BUILTIN_PACK2X16_SNORM:
+        case BUILTIN_PACK2X16_UNORM:
+        case BUILTIN_PACK2X16_FLOAT:
+        case BUILTIN_UNPACK4X8_SNORM:
+        case BUILTIN_UNPACK4X8_UNORM:
+        case BUILTIN_UNPACK2X16_SNORM:
+        case BUILTIN_UNPACK2X16_UNORM:
+        case BUILTIN_UNPACK2X16_FLOAT:
+        case BUILTIN_QUANTIZE_F16:
+        case BUILTIN_DPDX:
+        case BUILTIN_DPDY:
+        case BUILTIN_FWIDTH:
+        case BUILTIN_DPDX_FINE:
+        case BUILTIN_DPDY_FINE:
+        case BUILTIN_FWIDTH_FINE:
+        case BUILTIN_DPDX_COARSE:
+        case BUILTIN_DPDY_COARSE:
+        case BUILTIN_FWIDTH_COARSE:
+        case BUILTIN_SUBGROUP_ALL:
+        case BUILTIN_SUBGROUP_ANY:
+        case BUILTIN_SUBGROUP_BALLOT:
+        case BUILTIN_SUBGROUP_ELECT:
+        case BUILTIN_SUBGROUP_BROADCAST:
+        case BUILTIN_SUBGROUP_BROADCAST_FIRST:
+        case BUILTIN_SUBGROUP_SHUFFLE:
+        case BUILTIN_SUBGROUP_SHUFFLE_XOR:
+        case BUILTIN_SUBGROUP_SHUFFLE_UP:
+        case BUILTIN_SUBGROUP_SHUFFLE_DOWN:
+        case BUILTIN_QUAD_BROADCAST:
+        case BUILTIN_QUAD_SWAP_DIAGONAL:
+        case BUILTIN_QUAD_SWAP_X:
+        case BUILTIN_QUAD_SWAP_Y:
         case BUILTIN_FREXP: case BUILTIN_MODF:
         case BUILTIN_EXTRACT_BITS: case BUILTIN_INSERT_BITS:
         case BUILTIN_PACK4X_I8: case BUILTIN_PACK4X_U8: case BUILTIN_PACK4X_I8_CLAMP:

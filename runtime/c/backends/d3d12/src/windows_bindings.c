@@ -41,16 +41,12 @@ static void write_set(ID3D12Device *device,const doe_dx_resource_set *set,
         const doe_dx_texture_binding_layout *layout = &set->textures[index];
         doe_dx_native_texture *texture = resources->textures[index];
         if (layout->access == DOE_DX_READ_ONLY) {
-            D3D12_SHADER_RESOURCE_VIEW_DESC view = {0};
-            view.Format = texture->description.Format;
-            view.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-            view.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-            view.Texture2D.MipLevels = 1;
+            D3D12_SHADER_RESOURCE_VIEW_DESC view;
+            doe_dx_texture_srv(texture,&resources->texture_views[index],&view);
             ID3D12Device_CreateShaderResourceView(device, texture->resource, &view, handle);
         } else {
-            D3D12_UNORDERED_ACCESS_VIEW_DESC view = {0};
-            view.Format = texture->description.Format;
-            view.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
+            D3D12_UNORDERED_ACCESS_VIEW_DESC view;
+            doe_dx_texture_uav(texture,&resources->texture_views[index],&view);
             ID3D12Device_CreateUnorderedAccessView(device, texture->resource, NULL, &view, handle);
         }
         handle.ptr += increment;

@@ -85,6 +85,7 @@ typedef struct doe_vk_color_target {
     uint32_t alpha_source_factor, alpha_destination_factor, alpha_operation;
 } doe_vk_color_target;
 typedef struct doe_vk_render_pipeline_desc {
+    uint32_t immediate_bytes, immediate_stages; /* Exact push range and Vulkan stage flags1/16. */
     doe_vk_shader vertex, fragment;
     doe_vk_texture_format color_format;
     doe_vk_topology topology;
@@ -189,6 +190,8 @@ typedef struct doe_vk_render_indices {
     int32_t base_vertex;
 } doe_vk_render_indices;
 typedef struct doe_vk_render_pass_draw {
+    const void *immediates; /* Consumed during this call, never retained. */
+    uint32_t immediate_bytes;
     doe_vk_pipeline *pipeline;
     const doe_vk_binding_resource *bindings;
     size_t binding_count;

@@ -32,6 +32,8 @@ static const ResourceRecord *resource_root(MetalEmitter *e, const IrInstruction 
 }
 static void bounds(MetalEmitter *e, const IrInstruction *ir, const MetalPath *path) {
     metal_text(e, "true");
+    if (ir->operands.access.category == ROOT_POINTER)
+        metal_format(e, " && v%u != nullptr", e->module->limits.instructions + 1u + ir->operands.access.root);
     for (uint32_t i = path->count; i != 0u && !e->failed; --i) {
         const AccessStep *step = &e->module->accesses[path->steps[i - 1u]];
         if (step->kind == ACCESS_MEMBER || step->kind == ACCESS_COMPONENT) continue;
@@ -103,7 +105,7 @@ static void object_path(MetalEmitter *e, const IrInstruction *ir, const MetalPat
             metal_format(e, "l%u", root);
             break;
         case ROOT_POINTER:
-            metal_error(e, "METAL pointer dereference is not implemented");
+            metal_format(e, "(*v%u)", e->module->limits.instructions + 1u + root);
             break;
         case ROOT_VALUE: metal_value(e, root); break;
         case ROOT_WORKGROUP:
@@ -245,6 +247,26 @@ static void atomic_operation(MetalEmitter *e, const IrInstruction *ir, const Met
         metal_line(e, "}");
     }
 }
+void metal_address(MetalEmitter *e, const IrInstruction *ir) {
+    MetalPath path;
+    if (!collect_path(e, ir->operands.access.path, &path)) return;
+    metal_indent(e);
+    metal_value(e, ir->result);
+    metal_text(e, " = nullptr;\n");
+    metal_indent(e);
+    metal_text(e, "if (");
+    bounds(e, ir, &path);
+    metal_text(e, ") {\n");
+    ++e->indent;
+    metal_indent(e);
+    metal_value(e, ir->result);
+    metal_text(e, " = &(");
+    object_path(e, ir, &path);
+    metal_text(e, ");\n");
+    --e->indent;
+    metal_line(e, "}");
+}
+
 void metal_access(MetalEmitter *e, const IrInstruction *ir) {
     MetalPath path = {0};
     if (!collect_path(e, ir->operands.access.path, &path)) return;
@@ -267,6 +289,14 @@ void metal_access(MetalEmitter *e, const IrInstruction *ir) {
     ++e->indent;
     metal_indent(e);
     if (atomic) atomic_operation(e, ir, &path, resource, scalar);
+    else if (ir->operands.access.category == ROOT_WORKGROUP &&
+        e->module->workgroups[ir->operands.access.root].state.resolved.address_space == MODULE_IMMEDIATE) {
+        if (store) { metal_error(e,"immediate data cannot be written"); return; }
+        metal_value(e,ir->result);
+        metal_format(e," = doe_uniform%u(ctx.w%u + (",ir->type,ir->operands.access.root);
+        byte_offset(e,&path);
+        metal_text(e,"));\n");
+    }
     else if (resource != NULL) {
         if (store) {
             if (resource->kind != DOE_COMPILER_STORAGE_BUFFER || resource->access != DOE_COMPILER_READ_WRITE) {

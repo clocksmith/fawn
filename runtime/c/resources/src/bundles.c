@@ -112,6 +112,15 @@ doe_resource_status doe_resource_bundle_encoder_set_pipeline(doe_resource_bundle
     return complete_operation(encoder, status);
 }
 
+doe_resource_status doe_resource_bundle_encoder_set_immediates(doe_resource_bundle_encoder *encoder,
+    uint32_t offset, const void *data, size_t size)
+{
+    doe_resource_status status = admit_operation(encoder);
+    if (status != DOE_RESOURCE_OK) return status;
+    return complete_operation(encoder,
+        resource_immediates_update(&encoder->base.config, &encoder->state.immediates, offset, data, size));
+}
+
 doe_resource_status doe_resource_bundle_encoder_set_group(doe_resource_bundle_encoder *encoder,
     uint32_t index, const doe_resource_dispatch_group *group)
 {

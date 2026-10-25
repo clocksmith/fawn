@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: MIT */
 #include "d3d12_draw_guard.h"
+#include "d3d12_texture_desc.h"
 #include <stdlib.h>
 
 #if defined(_WIN32)
@@ -7,16 +8,22 @@ static bool descriptor(const native_device *device,const WGPURenderPipelineDescr
     const native_stage *stages,size_t count,doe_dx_render_pipeline_desc *out,doe_resource_render_pipeline_desc *resource)
 {
     const WGPUFragmentState *fragment=source->fragment;
-    if (count!=(fragment ? 2u : 1u) || (fragment && (fragment->targetCount>1 ||
+    if (count!=(fragment ? 2u : 1u) || (fragment && (fragment->targetCount>DOE_DX_MAX_COLOR_TARGETS ||
         (fragment->targetCount && !fragment->targets))) ||
-        (source->depthStencil && source->depthStencil->format!=WGPUTextureFormat_Depth32Float)) return false;
-    const WGPUColorTargetState *color=fragment && fragment->targetCount ? &fragment->targets[0] : NULL;
+        (source->depthStencil && !native_d3d12_format(source->depthStencil->format,&out->depth_format))) return false;
     out->fragment_absent=fragment==NULL;
-    out->color_absent=!color || color->format==WGPUTextureFormat_Undefined;
-    if (!out->color_absent) {
-        if (color->format==WGPUTextureFormat_RGBA8Unorm) out->color_format=DOE_DX_RGBA8_UNORM;
-        else if (color->format==WGPUTextureFormat_BGRA8Unorm) out->color_format=DOE_DX_BGRA8_UNORM;
-        else return false;
+    out->targets_explicit=true;
+    out->target_count=fragment ? (uint32_t)fragment->targetCount : 0;
+    out->color_absent=true;
+    for (uint32_t i=0;i<out->target_count;++i) {
+        const WGPUColorTargetState *color=&fragment->targets[i];
+        doe_dx_render_target *target=&out->targets[i];
+        target->absent=color->format==WGPUTextureFormat_Undefined;
+        if (target->absent) continue;
+        out->color_absent=false;
+        if (!native_d3d12_format(color->format,&target->format)) return false;
+        if (color->writeMask & ~WGPUColorWriteMask_All) return false;
+        target->write_mask=(uint32_t)color->writeMask;
     }
     if (out->color_absent && !source->depthStencil) return false;
     doe_vk_render_pipeline_desc fixed={0};
@@ -25,8 +32,8 @@ static bool descriptor(const native_device *device,const WGPURenderPipelineDescr
      * a native interface guarantee, not a queried adapter capability. */
     const native_graphics_limits interfaces={128,128,false};
     if (!native_render_fixed(device->features,source,&fixed) ||
-        fixed.unclipped_depth || fixed.sample_count!=1 || fixed.alpha_to_coverage ||
-        !native_render_interfaces(stages,count,&source->vertex,fragment,false,fixed.topology==DOE_VK_POINTS,&interfaces,&device->backend.limits) ||
+        (fixed.sample_count!=1 && fixed.sample_count!=4) ||
+        !native_render_interfaces(stages,count,&source->vertex,fragment,fixed.alpha_to_coverage,fixed.topology==DOE_VK_POINTS,&interfaces,&device->backend.limits) ||
         !native_render_depth(device->features,source->depthStencil,&fixed,resource) ||
         !native_render_fragment_depth(stages,count,source->depthStencil)) return false;
     switch (fixed.topology) {
@@ -51,25 +58,38 @@ static bool descriptor(const native_device *device,const WGPURenderPipelineDescr
     case 2: out->cull=DOE_DX_CULL_BACK; break;
     default: return false;
     }
-    if (color && (color->writeMask & ~WGPUColorWriteMask_All)) return false;
     out->depth_enabled=source->depthStencil!=NULL;
+    out->depth_state_explicit=true;
+    out->depth_test=fixed.depth_test;
+    out->stencil_test=fixed.stencil_test;
+    out->unclipped_depth=fixed.unclipped_depth;
+    out->stencil_read_mask=fixed.stencil_read_mask;
+    out->stencil_write_mask=fixed.stencil_write_mask;
+    out->stencil_front=(doe_dx_stencil_face){fixed.stencil_front.fail_operation,fixed.stencil_front.depth_fail_operation,
+        fixed.stencil_front.pass_operation,(doe_dx_compare)fixed.stencil_front.compare_operation};
+    out->stencil_back=(doe_dx_stencil_face){fixed.stencil_back.fail_operation,fixed.stencil_back.depth_fail_operation,
+        fixed.stencil_back.pass_operation,(doe_dx_compare)fixed.stencil_back.compare_operation};
     out->depth_write=fixed.depth_write;
     out->depth_compare=(doe_dx_compare)fixed.depth_compare;
     out->depth_bias=fixed.depth_bias;
     out->depth_bias_slope=fixed.depth_bias_slope_scale;
     out->depth_bias_clamp=fixed.depth_bias_clamp;
-    const doe_vk_color_target *target=&fixed.color_targets[0];
-    out->blend_enabled=target->blend_enabled;
-    out->color_blend=(doe_dx_blend_component){target->color_source_factor,
-        target->color_destination_factor,target->color_operation};
-    out->alpha_blend=(doe_dx_blend_component){target->alpha_source_factor,
-        target->alpha_destination_factor,target->alpha_operation};
+    for (uint32_t i=0;i<out->target_count;++i) {
+        const doe_vk_color_target *source_target=&fixed.color_targets[i];
+        doe_dx_render_target *target=&out->targets[i];
+        target->blend_enabled=source_target->blend_enabled;
+        target->color_blend=(doe_dx_blend_component){source_target->color_source_factor,
+            source_target->color_destination_factor,source_target->color_operation};
+        target->alpha_blend=(doe_dx_blend_component){source_target->alpha_source_factor,
+            source_target->alpha_destination_factor,source_target->alpha_operation};
+        resource->color_formats[i]=fragment->targets[i].format;
+    }
+    out->samples=fixed.sample_count;
+    out->alpha_to_coverage=fixed.alpha_to_coverage;
     out->masks_explicit=true;
     out->sample_mask=fixed.sample_mask;
-    out->color_write_mask=color ? (uint32_t)color->writeMask : 0;
-    resource->color_count=fragment ? (uint32_t)fragment->targetCount : 0; resource->samples=1; resource->topology=source->primitive.topology == WGPUPrimitiveTopology_Undefined ?
+    resource->color_count=fragment ? (uint32_t)fragment->targetCount : 0; resource->samples=fixed.sample_count; resource->topology=source->primitive.topology == WGPUPrimitiveTopology_Undefined ?
         WGPUPrimitiveTopology_TriangleList : source->primitive.topology;
-    if (color) resource->color_formats[0]=color->format;
     return true;
 }
 #endif
@@ -118,6 +138,7 @@ WGPURenderPipeline native_d3d12_create_render_pipeline(native_device *device,
         if (status==DOE_RESOURCE_OK && failure.status==NATIVE_OK && (!layout ||
             doe_resource_pipeline_layout_device(layout)!=device || !native_pipeline_bindings(payload,stages,count,layout)))
             status=DOE_RESOURCE_LAYOUT;
+        resource.immediate_required_bytes=payload->immediate_required_bytes;
         native_d3d12_layout layouts[2];
         if (status==DOE_RESOURCE_OK && failure.status==NATIVE_OK &&
             !native_d3d12_graphics_maps_count(payload,stages,count,layouts,payload->d3d12_graphics)) status=DOE_RESOURCE_UNSUPPORTED;

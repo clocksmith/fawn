@@ -145,7 +145,7 @@ DoeCompilerStatus doe_compiler_validate_module(uint32_t version,
     bool valid = specialization_layout(DOE_COMPILER_TARGET_SPIRV, caps, &base, &requirements) &&
         workspace != NULL && workspace_size >= requirements.size_bytes &&
         (uintptr_t)workspace % requirements.alignment_bytes == 0u &&
-        (flags & ~(DOE_COMPILER_CORE_BINDING_NUMBERS | DOE_COMPILER_UNIFORM_BUFFER_STANDARD_LAYOUT | DOE_COMPILER_DISABLE_F16)) == 0u;
+        (flags & ~(DOE_COMPILER_CORE_BINDING_NUMBERS | DOE_COMPILER_UNIFORM_BUFFER_STANDARD_LAYOUT | DOE_COMPILER_DISABLE_F16 | DOE_COMPILER_DISABLE_SUBGROUPS)) == 0u;
     if (valid && outputs != NULL)
         valid = compiler_valid_span(outputs->overrides, outputs->override_capacity, sizeof(DoeCompilerOverrideV13),
                     _Alignof(DoeCompilerOverrideV13), true) &&
@@ -162,7 +162,8 @@ DoeCompilerStatus doe_compiler_validate_module(uint32_t version,
         compiler_job_bind(c, workspace, &limits);
         c->module_flags = ((flags & DOE_COMPILER_UNIFORM_BUFFER_STANDARD_LAYOUT) != 0u ? MODULE_STANDARD_UNIFORM : 0u) |
             ((flags & DOE_COMPILER_CORE_BINDING_NUMBERS) != 0u ? MODULE_CORE_BINDINGS : 0u) |
-        ((flags & DOE_COMPILER_DISABLE_F16) != 0u ? MODULE_DISABLE_F16 : 0u);
+        ((flags & DOE_COMPILER_DISABLE_F16) != 0u ? MODULE_DISABLE_F16 : 0u) |
+        ((flags & DOE_COMPILER_DISABLE_SUBGROUPS) != 0u ? MODULE_DISABLE_SUBGROUPS : 0u);
         stage_bind(&s, workspace, &caps->target.stages, stage_base);
         NumericEnvironment environment;
         const bool analyzed = compiler_analyze(&s, c, &environment) && validation_metadata(&s, outputs, result);
@@ -195,6 +196,34 @@ DoeCompilerStatus doe_compiler_sampling_requirements(uint32_t version, uint32_t 
     DoeCompilerWorkspaceRequirements result;
     size_t base;
     if (!sampling_layout(target, caps, &base, &result)) return DOE_COMPILER_INPUT_ERROR;
+    *requirements = result;
+    return DOE_COMPILER_OK;
+}
+
+
+bool translation_layout(uint32_t target, const DoeCompilerTranslationCapacitiesV17 *caps,
+    size_t *base, DoeCompilerWorkspaceRequirements *requirements) {
+    size_t sampling_base;
+    if (caps == NULL || caps->translation_entries >= UINT32_MAX ||
+        !sampling_layout(target, &caps->sampling, &sampling_base, requirements)) return false;
+    const size_t alignment = _Alignof(DoeCompilerTranslationEntryV17);
+    const size_t padding = (alignment - requirements->size_bytes % alignment) % alignment;
+    if (requirements->size_bytes > SIZE_MAX - padding) return false;
+    *base = requirements->size_bytes + padding;
+    if (caps->translation_entries > (SIZE_MAX - *base) / sizeof(DoeCompilerTranslationEntryV17)) return false;
+    requirements->size_bytes = *base + caps->translation_entries * sizeof(DoeCompilerTranslationEntryV17);
+    if (requirements->alignment_bytes < alignment) requirements->alignment_bytes = alignment;
+    return true;
+}
+DoeCompilerStatus doe_compiler_translation_requirements(uint32_t version, uint32_t target,
+    const DoeCompilerTranslationCapacitiesV17 *caps, size_t capacities_size,
+    DoeCompilerWorkspaceRequirements *requirements, size_t requirements_size) {
+    if (requirements == NULL) return DOE_COMPILER_INPUT_ERROR;
+    if (version != DOE_COMPILER_TRANSLATION_ABI_VERSION || capacities_size != sizeof(*caps) ||
+        requirements_size != sizeof(*requirements)) return DOE_COMPILER_ABI_MISMATCH;
+    DoeCompilerWorkspaceRequirements result;
+    size_t base;
+    if (!translation_layout(target, caps, &base, &result)) return DOE_COMPILER_INPUT_ERROR;
     *requirements = result;
     return DOE_COMPILER_OK;
 }

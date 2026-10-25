@@ -56,9 +56,12 @@ void hlsl_handle_type(HlslEmitter *e, TypeId type) {
     const char *dimension = NULL;
     switch (image.dimension) {
         case DOE_COMPILER_VIEW_1D: dimension = "1D"; break;
-        case DOE_COMPILER_VIEW_2D: dimension = multisampled ? "2DMS" : "2D"; break;
+        case DOE_COMPILER_VIEW_2D:
+            dimension = multisampled ? "2DMS" : "2DArray";
+            if (!multisampled) e->uses_array_views=true;
+            break;
         case DOE_COMPILER_VIEW_2D_ARRAY: dimension = "2DArray"; break;
-        case DOE_COMPILER_VIEW_CUBE: dimension = "Cube"; break;
+        case DOE_COMPILER_VIEW_CUBE: dimension = "CubeArray"; e->uses_array_views=true; break;
         case DOE_COMPILER_VIEW_CUBE_ARRAY: dimension = "CubeArray"; break;
         case DOE_COMPILER_VIEW_3D: dimension = "3D"; break;
         default: hlsl_error(e, "HLSL texture dimension is unsupported"); return;

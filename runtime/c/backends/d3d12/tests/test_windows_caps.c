@@ -52,10 +52,12 @@ static HRESULT STDMETHODCALLTYPE check_feature(ID3D12Device *raw, D3D12_FEATURE 
         assert(size == sizeof(D3D12_FEATURE_DATA_SHADER_MODEL));
         if (FAILED(device->shader_result)) return device->shader_result;
         D3D12_FEATURE_DATA_SHADER_MODEL *shader = data;
-        assert(shader->HighestShaderModel == D3D_SHADER_MODEL_6_0);
+        assert(shader->HighestShaderModel == D3D_SHADER_MODEL_6_0 || shader->HighestShaderModel == D3D_SHADER_MODEL_6_2);
         shader->HighestShaderModel = D3D_SHADER_MODEL_6_0;
         break;
     }
+    case D3D12_FEATURE_D3D12_OPTIONS1:
+    case D3D12_FEATURE_D3D12_OPTIONS4: return E_INVALIDARG;
     default: assert(false); return E_INVALIDARG;
     }
     return S_OK;

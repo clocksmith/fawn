@@ -6,7 +6,7 @@ OUT ?= $(DOE_C_TMP)/vulkan
 REPO ?= ../../../..
 CFLAGS ?= -O2 -g
 STRICT = -std=c11 -Wall -Wextra -Werror -Wpedantic
-SOURCES = src/surface.c src/surface_frames.c src/extensions.c src/surface_loader.c src/loader.c src/device_selection.c src/device_features.c src/resources.c src/pipeline.c src/descriptors.c src/commands.c src/textures.c src/image_formats.c src/texture_commands.c src/render_pipeline.c src/render_commands.c src/render_attachments.c src/render_initialization.c src/queries.c src/timestamp.c src/indirect.c src/draw_indirect.c src/render_vertices.c
+SOURCES = src/immediates.c src/driver_cache.c src/cache_file.c src/timeline.c src/surface.c src/surface_frames.c src/extensions.c src/surface_loader.c src/loader.c src/device_selection.c src/device_features.c src/resources.c src/pipeline.c src/descriptors.c src/commands.c src/textures.c src/image_formats.c src/texture_commands.c src/render_pipeline.c src/render_commands.c src/render_attachments.c src/render_initialization.c src/queries.c src/timestamp.c src/indirect.c src/draw_indirect.c src/render_vertices.c
 OBJECTS = $(patsubst src/%.c,$(OUT)/%.o,$(SOURCES))
 HEADERS = $(wildcard src/*.h include/*.h) $(wildcard $(REPO)/runtime/c/common/include/*.h)
 .PHONY: all check abi surface-probe native native-descriptors native-storage native-render native-queries native-texture probe sanitize clean
@@ -205,3 +205,24 @@ $(OUT)/native_matrix: tests/native_matrix.c $(OUT)/libdoe_vk.a $(COMPILER_LIBRAR
 .PHONY: native-matrix
 native-matrix: $(OUT)/native_matrix
 	$(OUT)/native_matrix tests/matrix_tail.wgsl $(NATIVE_ARGS)
+
+$(OUT)/timeline_contract: tests/timeline_contract.c $(OUT)/libdoe_vk.a
+	$(CC) $(CFLAGS) $(STRICT) $< $(OUT)/libdoe_vk.a -ldl -o $@
+.PHONY: check-timeline
+check-timeline: $(OUT)/timeline_contract
+	$(OUT)/timeline_contract
+check: check-timeline
+
+$(OUT)/driver_cache_contract: tests/driver_cache_contract.c $(OUT)/libdoe_vk.a
+	$(CC) $(CFLAGS) $(STRICT) $< $(OUT)/libdoe_vk.a -ldl -o $@
+.PHONY: check-driver-cache
+check-driver-cache: $(OUT)/driver_cache_contract
+	$(OUT)/driver_cache_contract
+check: check-driver-cache
+
+$(OUT)/immediate_contract: tests/immediate_contract.c $(OUT)/libdoe_vk.a
+	$(CC) $(CFLAGS) $(STRICT) $< $(OUT)/libdoe_vk.a -ldl -o $@
+.PHONY: check-immediates
+check-immediates: $(OUT)/immediate_contract
+	$(OUT)/immediate_contract
+check: check-immediates

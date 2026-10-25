@@ -163,7 +163,8 @@ static bool root_reference(Source *s,NameSpan name,const LocalScope *scope,bool 
         const ResourceRecord *r=&c->resources[identity.index];
         *ref=(ValueReference){identity.index,NO_ID,ROOT_RESOURCE,r->type,r->access==DOE_COMPILER_READ_WRITE && !type_handle(c, r->type),true}; *reference=true; return true;
     } else if (identity.kind==IDENTITY_WORKGROUP) {
-        *ref=(ValueReference){identity.index,NO_ID,ROOT_WORKGROUP,c->workgroups[identity.index].type,true,true}; *reference=true; return true;
+        *ref=(ValueReference){identity.index,NO_ID,ROOT_WORKGROUP,c->workgroups[identity.index].type,
+            c->workgroups[identity.index].state.resolved.address_space != MODULE_IMMEDIATE,true}; *reference=true; return true;
     }
     return identity_value(s,name,scope,identity,emit,value);
 }

@@ -236,6 +236,7 @@ static bool write_meta(const char *path, const options *o, const totals *t, uint
         o->runtime.queue_wait == DOE_WAIT_PROCESS_EVENTS ? "process-events" : "wait-any",
         o->quirk_mode == DOE_QUIRK_OFF ? "off" : o->quirk_mode == DOE_QUIRK_ACTIVE ? "active" : "trace") >= 0;
     ok = ok && doe_runtime_write_pipeline_cache(out, runtime);
+    ok = ok && doe_runtime_write_device_policy(out, runtime);
     if (ok && t->oracles) {
         ok = write_optional(out, "outputOracleKind", "sha256_exact_v1", true) &&
             write_optional(out, "outputOracleReferenceId", t->oracle_reference, true) &&

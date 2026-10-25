@@ -5,6 +5,14 @@
 #define DOE_TARGET_IR_VIEW_H
 #include "../src/internal.h"
 
+static inline uint32_t target_immediate_root(const CompilerWorkspace *c, const EntryRecord *entry) {
+    for (uint32_t i = 0u; i < entry->state.resolved.workgroup_count; ++i) {
+        const uint32_t root = c->entry_references[entry->state.resolved.workgroup_first+i];
+        if (c->workgroups[root].state.resolved.address_space == MODULE_IMMEDIATE) return root;
+    }
+    return NO_ID;
+}
+
 static inline bool target_value_type(const CompilerWorkspace *c, uint32_t id, TypeId *type) {
     if (id > c->limits.instructions) {
         const uint32_t formal = id - c->limits.instructions - 1u;

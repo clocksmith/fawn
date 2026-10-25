@@ -47,6 +47,7 @@ struct doe_resource_layout {
 };
 struct doe_resource_pipeline_layout {
     resource_base base;
+    uint32_t immediate_size;
     size_t count;
     doe_resource_layout *groups[DOE_RESOURCE_MAX_GROUPS];
     doe_resource_layout *empty; /* Lazily materialized owner for absent/trailing getters. */
@@ -63,6 +64,7 @@ struct doe_resource_pipeline {
     resource_base base;
     doe_resource_pipeline_layout *layout;
     uint32_t workgroup[3];
+    uint64_t immediate_required_bytes;
     doe_resource_binding_minimum *minimums;
     size_t minimum_count;
 };
@@ -97,6 +99,7 @@ struct doe_resource_commands {
 
 struct doe_resource_compute_pass {
     resource_base base;
+    doe_resource_immediate_state immediates;
     doe_resource_encoder *encoder;
     doe_resource_pipeline *pipeline;
     doe_resource_bind_group *groups[DOE_RESOURCE_MAX_GROUPS];
@@ -164,6 +167,8 @@ struct doe_resource_render_pass {
     bool ended;
 };
 
+doe_resource_status resource_immediates_update(const doe_resource_config *config,
+    doe_resource_immediate_state *state, uint32_t offset, const void *data, size_t size);
 void resource_pipeline_layout_claim(doe_resource_pipeline_layout *layout);
 doe_resource_status resource_shader_bindings_validate(const doe_resource_pipeline_layout *layout,
     const doe_resource_dispatch_group *groups, size_t group_count,

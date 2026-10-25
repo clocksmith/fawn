@@ -416,9 +416,26 @@ static void completion_controls(void) {
     assert(fixture.waits == 2);
 }
 
+static void immediate_controls(void) {
+    call_fixture fixture;
+    fixture_init(&fixture);
+    doe_mtl_native_resources resources = {0};
+    resources.immediate_words[0] = 0x12345678u;
+    resources.immediate_words[3] = 0xabcdef01u;
+    resources.immediate_size = 16;
+    resources.immediate_slot = 29;
+    assert(doe_mtl_objc_dispatch(&fixture.runtime, &fixture.command, &fixture.pipeline,
+        &resources, UINT32_MAX, (doe_mtl_dimensions){1,1,1},
+        (doe_mtl_dimensions){1,1,1}, 1, NULL, NULL) == DOE_MTL_OK);
+    assert(fixture.bytes_sets == 1 && fixture.bytes_slot == 29 && fixture.bytes_length == 16);
+    assert(fixture.sizes[0] == 0x12345678u && fixture.sizes[3] == 0xabcdef01u);
+    assert(fixture.dispatches == 1 && fixture.pools == fixture.drains);
+}
+
 int main(void) {
     pipeline_controls();
     encoding_controls();
+    immediate_controls();
     indirect_controls();
     completion_controls();
     puts("Metal typed-call controls: pipeline cleanup, exact dispatch/copy/fill and completion passed; no SDK/GPU");

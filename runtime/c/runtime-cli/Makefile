@@ -13,7 +13,7 @@ CFLAGS ?= -O2 -g
 CFLAGS += -std=c11 -Wall -Wextra -Wpedantic -Werror -pthread -ffp-contract=off
 include sources.mk
 CORE = $(CLI_CORE) $(BUILD)/quirk_toggles.c
-CORE_HEADERS = src/host_io.h src/json.h src/stream.h src/stream_internal.h src/trace.h src/sha256.h src/quirks.h \
+CORE_HEADERS = ../common/include/doe_sha256.h src/host_io.h src/json.h src/stream.h src/stream_internal.h src/trace.h src/sha256.h src/quirks.h \
   src/operators.h src/numeric_policy.h src/numeric_stability.h src/numeric_eval.h src/numeric_annotation.h src/plan.h
 TOGGLE_REGISTRY = ../../../config/quirk-toggle-registry.json
 RUNTIME = $(CLI_RUNTIME) $(SURFACE_HOST)
@@ -32,7 +32,7 @@ DAWN_SURFACE_LIBS = -lX11-xcb -lX11
 LDLIBS += -lxcb
 endif
 RUNTIME_HEADERS = src/cli_options.h src/cli_inputs.h src/cli_output.h src/render_public.h src/surface_platform.h src/execute.h src/runtime_internal.h ../../zig/vendor/webgpu-headers/webgpu.h \
-  ../native/include/doe_native_adapter.h ../native/include/doe_native_pipeline_cache.h
+  ../native/include/doe_native_adapter.h ../native/include/doe_native_pipeline_cache.h ../native/include/doe_native_device_policy.h
 .PHONY: all bench-bin bench-bin-dawn check check-dawn check-host dawn native
 all: $(BUILD)/doe-c-runtime
 $(BUILD):
@@ -74,7 +74,7 @@ $(BUILD)/test_json: tests/test_json.c src/json.c src/json.h | $(BUILD)
 	$(CC) $(CPPFLAGS) $(CFLAGS) tests/test_json.c src/json.c $(LDLIBS) -lm -o $@
 $(BUILD)/test_stream: tests/test_stream.c $(CORE) $(CORE_HEADERS) | $(BUILD)
 	$(CC) $(CPPFLAGS) $(CFLAGS) tests/test_stream.c $(CORE) $(LDLIBS) -lm -o $@
-$(BUILD)/test_sha256: tests/test_sha256.c src/sha256.c src/sha256.h | $(BUILD)
+$(BUILD)/test_sha256: tests/test_sha256.c src/sha256.c src/sha256.h ../common/include/doe_sha256.h | $(BUILD)
 	$(CC) $(CPPFLAGS) $(CFLAGS) tests/test_sha256.c src/sha256.c -o $@
 $(BUILD)/test_quirks: tests/test_quirks.c $(CORE) $(CORE_HEADERS) | $(BUILD)
 	$(CC) $(CPPFLAGS) $(CFLAGS) tests/test_quirks.c $(CORE) $(LDLIBS) -lm -o $@
@@ -166,3 +166,10 @@ check-host: check-host-io
 # evidence remains software execution, never physical GPU qualification.
 check-numeric-consumers: all
 	$(PYTHON) tests/test_numeric_consumers.py --binary '$(abspath $(BUILD)/doe-c-runtime)' --work '$(abspath $(BUILD)/numeric-consumers)'
+
+$(BUILD)/test-device-policy: tests/test_device_policy.c src/device_policy.c src/json.c src/host_io.c src/sha256.c $(RUNTIME_HEADERS) | $(BUILD)
+	$(CC) $(CPPFLAGS) $(CFLAGS) tests/test_device_policy.c src/device_policy.c src/json.c src/host_io.c src/sha256.c -o $@
+.PHONY: check-device-policy
+check-device-policy: $(BUILD)/test-device-policy
+	cd ../../.. && $(abspath $(BUILD))/test-device-policy
+check: check-device-policy

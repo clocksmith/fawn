@@ -279,6 +279,8 @@ doe_resource_status doe_resource_encoder_dispatch_groups(doe_resource_encoder *e
 {
     doe_resource_status status = resource_encoder_open(encoder);
     if (status != DOE_RESOURCE_OK) return status;
+    if (pipeline && pipeline->immediate_required_bytes)
+        return resource_encoder_fail(encoder, DOE_RESOURCE_LAYOUT);
     return resource_record_dispatch(encoder, pipeline, groups, group_count, x, y, z);
 }
 

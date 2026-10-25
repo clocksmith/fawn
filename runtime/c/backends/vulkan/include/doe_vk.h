@@ -64,6 +64,15 @@ typedef enum doe_vk_queue_selection {
     DOE_VK_QUEUE_REQUIRE_COMPUTE_ONLY
 } doe_vk_queue_selection;
 
+typedef enum doe_vk_sync_selection {
+    DOE_VK_SYNC_FENCE_POOL = 0,
+    DOE_VK_SYNC_PREFER_TIMELINE
+} doe_vk_sync_selection;
+
+typedef enum doe_vk_subgroup_selection {
+    DOE_VK_SUBGROUP_LEGACY = 0, DOE_VK_SUBGROUP_FIXED32_IF_SUPPORTED = 1,
+    DOE_VK_SUBGROUP_SUPPRESS_MEMORY256 = 2, DOE_VK_SUBGROUP_SUPPRESS_MEMORY256_OR_SINGLE = 3
+} doe_vk_subgroup_selection;
 typedef struct doe_vk_options {
     uint32_t adapter_ordinal; /* Used only by exact ORDINAL selection. */
     bool allow_cpu_adapter; /* False by default; software is never GPU evidence. */
@@ -86,6 +95,8 @@ typedef struct doe_vk_options {
      * REQUIRE_COMPUTE_ONLY never substitutes a graphics family and cannot
      * coexist with require_graphics_queue or a surface platform. */
     doe_vk_queue_selection queue_selection;
+    doe_vk_sync_selection sync_selection;
+    doe_vk_subgroup_selection subgroup_selection;
 } doe_vk_options;
 
 typedef struct doe_vk_caps {
@@ -97,6 +108,11 @@ typedef struct doe_vk_caps {
     uint32_t adapter_ordinal; /* Actual enumeration index of the selected device. */
     uint32_t queue_family;
     uint32_t queue_flags;
+    bool timeline_enabled; /* Actual enabled queue synchronization, not only feature availability. */
+    uint32_t subgroup_size, subgroup_stages, subgroup_operations;
+    uint32_t subgroup_min_size, subgroup_max_size, subgroup_required_stages;
+    uint32_t max_compute_workgroup_subgroups;
+    bool subgroup_size_control, subgroup_extended_types, subgroup_quad_all_stages;
     uint32_t timestamp_valid_bits;
     char device_name[256];
     uint32_t max_workgroup_count[3];
@@ -107,6 +123,7 @@ typedef struct doe_vk_caps {
     uint64_t storage_offset_alignment;
     uint64_t uniform_offset_alignment;
     bool robust_buffer_access;
+    bool storage_push_constant16; /* Queried and enabled, independent of buffer f16. */
     bool shader_f16; /* Enabled arithmetic and 16-bit storage/uniform buffers. */
     bool software_adapter;
     uint32_t max_workgroup_storage_size;
@@ -240,6 +257,19 @@ doe_vk_status doe_vk_pipeline_create(doe_vk_context *context,
     const uint32_t *spirv, size_t word_count, const char *entrypoint,
     const doe_vk_binding_layout *layout, size_t binding_count,
     doe_vk_pipeline **out, doe_vk_error *error);
+/* Explicit size is compiler/frontend policy, never inferred by the backend.
+ * Zero preserves native default. Nonzero requires enabled subgroup size control. */
+doe_vk_status doe_vk_pipeline_create_with_subgroup(doe_vk_context *context,
+    const uint32_t *spirv, size_t word_count, const char *entrypoint,
+    const doe_vk_binding_layout *layout, size_t binding_count, uint32_t required_subgroup_size,
+    doe_vk_pipeline **out, doe_vk_error *error);
+/* Exact 4-byte-aligned push extent, at most64 bytes, participates in pipeline identity. */
+doe_vk_status doe_vk_pipeline_create_with_immediates(doe_vk_context *context,
+    const uint32_t *spirv, size_t word_count, const char *entrypoint,
+    const doe_vk_binding_layout *layout, size_t binding_count, uint32_t required_subgroup_size,
+    uint32_t immediate_bytes, doe_vk_pipeline **out, doe_vk_error *error);
+doe_vk_status doe_vk_commands_set_immediates(doe_vk_commands *commands,
+    doe_vk_pipeline *pipeline, const void *bytes, uint32_t size);
 doe_vk_status doe_vk_pipeline_retain(doe_vk_pipeline *pipeline);
 void doe_vk_pipeline_release(doe_vk_pipeline *pipeline);
 

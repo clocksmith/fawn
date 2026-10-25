@@ -7,6 +7,22 @@ int main(void)
     mock_reset();
     doe_dx_context *context = NULL;
     assert(doe_dx_context_create(NULL,&context,NULL) == DOE_DX_OK);
+    /* Additive subresource layout admits exactly one buffer-copy plane. */
+    doe_dx_texture_desc combined_desc={4,3,DOE_DX_D32_FLOAT_S8_UINT,
+        DOE_DX_TEXTURE_DEPTH_ATTACHMENT|DOE_DX_TEXTURE_COPY_SRC|DOE_DX_TEXTURE_COPY_DST};
+    doe_dx_texture *combined=NULL;
+    assert(doe_dx_texture_create(context,&combined_desc,&combined,NULL)==DOE_DX_OK);
+    doe_dx_texture_region_ex plane={.rect={0,0,4,3}};
+    doe_dx_texture_footprint plane_layout={.span=123},kept_plane=plane_layout;
+    assert(doe_dx_texture_region_layout(combined,plane,(doe_dx_texture_layout){0},&plane_layout)==DOE_DX_INVALID_ARGUMENT);
+    assert(!memcmp(&plane_layout,&kept_plane,sizeof(plane_layout)));
+    plane.aspect=1;
+    assert(doe_dx_texture_region_layout(combined,plane,(doe_dx_texture_layout){0},&plane_layout)==DOE_DX_OK);
+    assert(plane_layout.row_bytes==16 && plane_layout.rows==3);
+    plane.aspect=2;
+    assert(doe_dx_texture_region_layout(combined,plane,(doe_dx_texture_layout){0},&plane_layout)==DOE_DX_OK);
+    assert(plane_layout.row_bytes==4 && plane_layout.rows==3);
+    doe_dx_texture_release(combined);
     doe_dx_texture_desc desc = {4,3,DOE_DX_RGBA8_UINT,DOE_DX_TEXTURE_COPY_SRC|DOE_DX_TEXTURE_COPY_DST};
     doe_dx_texture *source = NULL, *destination = NULL;
     assert(doe_dx_texture_create(context,&desc,&source,NULL) == DOE_DX_OK);

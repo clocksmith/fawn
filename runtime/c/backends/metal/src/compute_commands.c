@@ -57,6 +57,8 @@ doe_mtl_status doe_mtl_commands_compute(doe_mtl_commands *commands,
     if (status == DOE_MTL_OK)
         status = doe_mtl_image_bindings_preflight(commands, textures, texture_count,
             samplers, sampler_count, &resources);
+    if (status == DOE_MTL_OK)
+        status = doe_mtl_immediates_preflight(dispatch->immediates, pipeline->sizes_slot, &resources);
     if (status != DOE_MTL_OK) return doe_mtl_poison(commands, status, "dispatch binding", error);
     empty = groups.x == 0 || groups.y == 0 || groups.z == 0 || repeat == 0;
     if (dispatch->timestamps != NULL) {
@@ -107,7 +109,7 @@ doe_mtl_status doe_mtl_commands_dispatch_resources(doe_mtl_commands *commands,
     const doe_mtl_sampler_binding *samplers, size_t sampler_count,
     doe_mtl_dimensions groups, uint32_t repeat, doe_mtl_error *error) {
     const doe_mtl_compute_dispatch dispatch = {pipeline, bindings, count, textures,
-        texture_count, samplers, sampler_count, groups, repeat, NULL, 0, 0};
+        texture_count, samplers, sampler_count, groups, repeat, NULL, 0, 0, {0}};
     return doe_mtl_commands_compute(commands, &dispatch, error);
 }
 

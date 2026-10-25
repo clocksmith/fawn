@@ -178,6 +178,9 @@ doe_resource_status doe_resource_render_pipeline_create(const doe_resource_confi
         return DOE_RESOURCE_INVALID_ARGUMENT;
     if (!config->device.alive(config->device.identity)) return DOE_RESOURCE_UNAVAILABLE;
     if (layout->base.config.device.identity != config->device.identity) return DOE_RESOURCE_DEVICE_MISMATCH;
+    const uint64_t allowed = layout->immediate_size >= 64 ? UINT64_MAX :
+        ((UINT64_C(1) << layout->immediate_size) - 1u);
+    if (desc->immediate_required_bytes & ~allowed) return DOE_RESOURCE_LAYOUT;
     doe_resource_render_pipeline_desc normalized = *desc;
     doe_resource_status status = resource_color_formats_normalize(desc->color_format, desc->color_count,
         desc->color_formats, &normalized.color_count, normalized.color_formats);
@@ -361,6 +364,15 @@ doe_resource_status doe_resource_render_pass_set_pipeline(doe_resource_render_pa
     doe_resource_render_bundle_desc signature = resource_render_targets_layout(&pass->state.targets);
     status = resource_render_set_pipeline(pass->base.config.device.identity, &pass->state, &signature, pipeline);
     return resource_encoder_fail(pass->encoder, status);
+}
+
+doe_resource_status doe_resource_render_pass_set_immediates(doe_resource_render_pass *pass,
+    uint32_t offset, const void *data, size_t size)
+{
+    doe_resource_status status = resource_render_pass_active(pass);
+    if (status != DOE_RESOURCE_OK) return status;
+    return resource_encoder_fail(pass->encoder,
+        resource_immediates_update(&pass->base.config, &pass->state.immediates, offset, data, size));
 }
 
 doe_resource_status doe_resource_render_pass_set_group(doe_resource_render_pass *pass,

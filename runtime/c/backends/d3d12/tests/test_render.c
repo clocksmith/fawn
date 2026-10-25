@@ -225,6 +225,93 @@ static void fixed_state(void)
     assert(!mock.pipelines && doe_dx_context_destroy(context)==DOE_DX_OK);
     mock_reset();
 }
+static void multisample_pass(void)
+{
+    mock_reset();
+    doe_dx_context *context=NULL;
+    assert(doe_dx_context_create(&(doe_dx_options){0},&context,NULL)==DOE_DX_OK);
+    doe_dx_texture *color=NULL,*resolved=NULL,*copy=NULL;
+    doe_dx_texture_desc image={4,4,DOE_DX_RGBA8_UNORM,
+        DOE_DX_TEXTURE_RENDER_ATTACHMENT|DOE_DX_TEXTURE_COPY_SRC|DOE_DX_TEXTURE_COPY_DST};
+    assert(doe_dx_texture_create_samples(context,&image,4,&color,NULL)==DOE_DX_OK);
+    assert(doe_dx_texture_create_samples(context,&image,4,&copy,NULL)==DOE_DX_OK);
+    assert(doe_dx_texture_create(context,&image,&resolved,NULL)==DOE_DX_OK);
+    assert(doe_dx_texture_samples(color)==4 && doe_dx_texture_samples(resolved)==1);
+    doe_dx_texture_footprint footprint;
+    assert(doe_dx_texture_copy_footprint(color,(doe_dx_texture_layout){0},&footprint)==DOE_DX_UNSUPPORTED);
+    doe_dx_commands *commands=NULL;
+    assert(doe_dx_commands_create(context,&commands,NULL)==DOE_DX_OK);
+    doe_dx_render_pass pass={.color=color,.resolve=resolved,.discard=true};
+    assert(doe_dx_commands_render(commands,&pass,NULL)==DOE_DX_OK);
+    assert(doe_dx_find_texture(commands,resolved)->initialized && !resolved->initialized);
+    assert(doe_dx_commands_copy_texture(commands,color,copy,NULL)==DOE_DX_OK);
+    assert(doe_dx_commands_copy_texture(commands,color,resolved,NULL)==DOE_DX_UNSUPPORTED);
+    pass.resolve=copy;
+    assert(doe_dx_commands_render(commands,&pass,NULL)==DOE_DX_INVALID_ARGUMENT);
+    pass.resolve=resolved;
+    unsigned char code=1;
+    doe_dx_render_pipeline_desc desc={.color_format=DOE_DX_RGBA8_UNORM,.samples=4,.alpha_to_coverage=true};
+    for (size_t i=0;i<2;++i) desc.stages[i].resources.buffers=(doe_dx_pipeline_desc){&code,1,NULL,0};
+    doe_dx_pipeline *pipeline=NULL;
+    assert(doe_dx_pipeline_create_render(context,&desc,&pipeline,NULL)==DOE_DX_OK);
+    doe_dx_render_draw packet=draw(pipeline);
+    pass.draws=&packet; pass.draw_count=1;
+    assert(doe_dx_commands_render(commands,&pass,NULL)==DOE_DX_OK);
+    pass.color=resolved; pass.resolve=NULL;
+    assert(doe_dx_commands_render(commands,&pass,NULL)==DOE_DX_INVALID_ARGUMENT);
+    doe_dx_pipeline_release(pipeline);
+    doe_dx_texture_release(color); doe_dx_texture_release(copy); doe_dx_texture_release(resolved);
+    mock.failure=MOCK_SIGNAL;
+    assert(doe_dx_commands_submit(commands,NULL)==DOE_DX_COMPLETION_UNKNOWN);
+    doe_dx_commands_release(commands);
+    assert(mock.textures==3 && mock.pipelines==1);
+    mock.failure=MOCK_NONE; mock.completed=1;
+    assert(doe_dx_context_poll(context,0,NULL)==DOE_DX_OK);
+    assert(doe_dx_context_destroy(context)==DOE_DX_OK);
+    mock_reset();
+}
+
+static void multiple_targets_stencil(void)
+{
+    mock_reset();
+    doe_dx_context *context=NULL;
+    assert(doe_dx_context_create(&(doe_dx_options){0},&context,NULL)==DOE_DX_OK);
+    doe_dx_texture *textures[3]={0};
+    doe_dx_texture_desc desc={4,4,DOE_DX_RGBA8_UNORM,DOE_DX_TEXTURE_RENDER_ATTACHMENT};
+    for (size_t i=0;i<2;++i) assert(doe_dx_texture_create(context,&desc,&textures[i],NULL)==DOE_DX_OK);
+    desc.format=DOE_DX_D24_UNORM_S8_UINT; desc.usage=DOE_DX_TEXTURE_DEPTH_ATTACHMENT;
+    assert(doe_dx_texture_create(context,&desc,&textures[2],NULL)==DOE_DX_OK);
+    unsigned char code=1;
+    doe_dx_render_pipeline_desc graphics={.targets_explicit=true,.target_count=3,.depth_enabled=true,
+        .depth_state_explicit=true,.depth_format=DOE_DX_D24_UNORM_S8_UINT,.depth_test=true,.depth_compare=DOE_DX_ALWAYS,
+        .stencil_test=true,.stencil_read_mask=255,.stencil_write_mask=255,
+        .stencil_front={.pass=2,.compare=DOE_DX_ALWAYS},.stencil_back={.compare=DOE_DX_ALWAYS}};
+    graphics.targets[0]=(doe_dx_render_target){.format=DOE_DX_RGBA8_UNORM,.write_mask=15};
+    graphics.targets[1].absent=true;
+    graphics.targets[2]=graphics.targets[0];
+    for (size_t i=0;i<2;++i) graphics.stages[i].resources.buffers=(doe_dx_pipeline_desc){&code,1,NULL,0};
+    doe_dx_pipeline *pipeline=NULL;
+    assert(doe_dx_pipeline_create_render(context,&graphics,&pipeline,NULL)==DOE_DX_OK);
+    doe_dx_render_draw packet=draw(pipeline); packet.stencil_reference=17;
+    doe_dx_render_color colors[3]={{.texture=textures[0],.clear=true},{0},{.texture=textures[1],.discard=true}};
+    doe_dx_render_pass pass={.colors_explicit=true,.colors=colors,.color_count=3,.depth=textures[2],
+        .clear_stencil=true,.stencil_clear=300,.discard_stencil=true,.draws=&packet,.draw_count=1};
+    doe_dx_commands *commands=NULL;
+    assert(doe_dx_commands_create(context,&commands,NULL)==DOE_DX_OK);
+    assert(doe_dx_commands_render(commands,&pass,NULL)==DOE_DX_OK);
+    assert(commands->texture_count==3 && mock.render_depth.stencil==44 && mock.render_depth.clear_stencil &&
+        mock.render_depth.discard_stencil && mock.last_render_draw.stencil_reference==17);
+    colors[2].texture=textures[0];
+    assert(doe_dx_commands_render(commands,&pass,NULL)==DOE_DX_INVALID_ARGUMENT);
+    colors[2].texture=textures[1]; pass.clear_stencil=false; pass.discard_stencil=false; pass.stencil_read_only=true;
+    assert(doe_dx_commands_render(commands,&pass,NULL)==DOE_DX_INVALID_ARGUMENT);
+    doe_dx_commands_release(commands);
+    for (size_t i=0;i<3;++i) doe_dx_texture_release(textures[i]);
+    doe_dx_pipeline_release(pipeline);
+    assert(doe_dx_context_destroy(context)==DOE_DX_OK);
+    mock_reset();
+}
+
 int main(void)
 {
     doe_dx_context *context=NULL;
@@ -328,6 +415,8 @@ int main(void)
     fixed_state();
     depth_pass();
     depth_only_pass();
+    multisample_pass();
+    multiple_targets_stencil();
     indirect_pass();
     puts("PASS D3D12 render owner: independent stage128/32 layouts, empty/zero draws, real-init requests, sampler snapshots, OOM/native rollback and unknown early-release leases; no SDK/GPU");
     return 0;

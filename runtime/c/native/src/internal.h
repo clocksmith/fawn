@@ -133,6 +133,8 @@ typedef struct native_pipeline {
     } handle;
     struct native_metal_graphics *metal_graphics;
     size_t binding_count;
+    uint32_t immediate_bytes, immediate_stages;
+    uint64_t immediate_required_bytes;
     size_t vertex_count;
     struct native_metal_stage_map *metal_compute;
     struct native_d3d12_compute *d3d12_compute;
@@ -161,11 +163,6 @@ void native_error(native_device *device, WGPUErrorType type, const char *message
  * that was already ended (sampled under the device lock before the call) is
  * reported at the call. */
 void native_encoding_error(native_device *device, bool ended, doe_resource_status status, const char *message);
-/* setImmediates range: 4-byte aligned offset and size within maxImmediateSize.
- * No shader declares immediates yet (pipeline layouts accept an immediateSize
- * but no pipeline reads it), so a valid call records nothing a draw or
- * dispatch could read. */
-bool native_immediates_valid(const native_device *device, uint32_t offset, const void *data, size_t size);
 WGPUErrorType native_resource_error(doe_resource_status status);
 WGPUErrorType native_backend_error(doe_vk_status status);
 WGPUErrorType native_label_error(doe_label_status status);
@@ -259,6 +256,7 @@ doe_vk_status native_draw_guard_initialize(native_device *device);
 void native_indirect_guards_release(native_device *device);
 /* Optional WebGPU features as bits of their pinned WGPUFeatureName values. */
 #define NATIVE_FEATURE(name) (UINT32_C(1) << (uint32_t)(name))
+bool native_vulkan_subgroups_supported(const doe_vk_caps *caps);
 uint32_t native_adapter_features(const native_backend *backend);
 bool native_requested_features(const native_backend *backend, const WGPUDeviceDescriptor *descriptor, uint32_t *enabled);
 bool native_feature_enabled(const native_device *device, WGPUFeatureName feature);

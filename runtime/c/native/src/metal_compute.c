@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: MIT */
 #include "metal_binding_internal.h"
+#include "doe_metal_query.h"
 #include <stdlib.h>
 
 native_failure native_metal_pipeline_create(native_pipeline *pipeline, const native_stage *stage)
@@ -37,8 +38,12 @@ native_failure native_metal_dispatch(doe_mtl_commands *commands, const doe_resou
     doe_mtl_dimensions groups = {record->value.dispatch.x, record->value.dispatch.y, record->value.dispatch.z};
     const doe_mtl_render_bindings *bindings = &snapshot.bindings;
     doe_mtl_error error = {0};
-    doe_mtl_status native_status = doe_mtl_commands_dispatch_resources(commands, pipeline->handle.metal,
-        bindings->buffers, bindings->buffer_count, bindings->textures, bindings->texture_count,
-        bindings->samplers, bindings->sampler_count, groups, 1, &error);
+    const doe_mtl_compute_dispatch dispatch = {.pipeline=pipeline->handle.metal,
+        .buffers=bindings->buffers,.buffer_count=bindings->buffer_count,
+        .textures=bindings->textures,.texture_count=bindings->texture_count,
+        .samplers=bindings->samplers,.sampler_count=bindings->sampler_count,
+        .groups=groups,.repeat=1,.immediates={record->value.dispatch.immediates.words,
+            pipeline->metal_compute->immediate_bytes,DOE_COMPILER_METAL_IMMEDIATE_SLOT}};
+    doe_mtl_status native_status = doe_mtl_commands_compute(commands, &dispatch, &error);
     return native_failure_metal(native_status, &error);
 }

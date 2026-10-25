@@ -44,6 +44,7 @@ doe_vk_status doe_vk_load_symbol(void *library, const char *name,
 }
 
 static doe_vk_status load_functions(doe_vk_context *context, doe_vk_error *error) {
+    _Static_assert(sizeof(context->vk.vkCmdPushConstants) == sizeof(void *), "vkCmdPushConstants pointer size");
     _Static_assert(sizeof(context->vk.vkCreateInstance) == sizeof(void *), "vkCreateInstance POSIX pointer size");
     _Static_assert(sizeof(context->vk.vkDestroyInstance) == sizeof(void *), "vkDestroyInstance POSIX pointer size");
     _Static_assert(sizeof(context->vk.vkEnumeratePhysicalDevices) == sizeof(void *), "vkEnumeratePhysicalDevices POSIX pointer size");
@@ -138,6 +139,7 @@ static doe_vk_status load_functions(doe_vk_context *context, doe_vk_error *error
         void *destination;
         size_t destination_size;
     } symbols[] = {
+        { "vkCmdPushConstants", &context->vk.vkCmdPushConstants, sizeof(context->vk.vkCmdPushConstants) },
         { "vkCreateInstance", &context->vk.vkCreateInstance, sizeof(context->vk.vkCreateInstance) },
         { "vkDestroyInstance", &context->vk.vkDestroyInstance, sizeof(context->vk.vkDestroyInstance) },
         { "vkEnumeratePhysicalDevices", &context->vk.vkEnumeratePhysicalDevices, sizeof(context->vk.vkEnumeratePhysicalDevices) },
@@ -339,6 +341,9 @@ doe_vk_status doe_vk_context_create(const doe_vk_options *options,
     doe_vk_feature_selection features;
     status = doe_vk_prepare_features(context, options, &features, error);
     if (status != DOE_VK_OK) goto failed;
+    VkPhysicalDeviceTimelineSemaphoreFeatures timeline;
+    status = doe_vk_timeline_prepare(context, options, &timeline, error);
+    if (status != DOE_VK_OK) goto failed;
     if (options->adapter_only) {
         record_caps(context, options, &features);
         *out = context;
@@ -351,11 +356,12 @@ doe_vk_status doe_vk_context_create(const doe_vk_options *options,
         .queueCount = 1,
         .pQueuePriorities = &priority
     };
-    const uint8_t *device_extensions[5];
+    const uint8_t *device_extensions[6];
     uint32_t extension_count = 0;
-    void *feature_chain = NULL;
+    void *feature_chain = timeline.timelineSemaphore ? &timeline : NULL;
     if (features.extension != NULL) {
         device_extensions[extension_count++] = features.extension;
+        features.demote.pNext = feature_chain;
         feature_chain = &features.demote;
     }
     if (features.maintenance5_enabled) {
@@ -363,6 +369,15 @@ doe_vk_status doe_vk_context_create(const doe_vk_options *options,
         device_extensions[extension_count++] = (const uint8_t *)"VK_KHR_maintenance5";
         features.maintenance5.pNext = feature_chain;
         feature_chain = &features.maintenance5;
+    }
+    if (features.subgroup.subgroupSizeControl) {
+        device_extensions[extension_count++] = (const uint8_t *)"VK_EXT_subgroup_size_control";
+        features.subgroup.pNext = feature_chain;
+        feature_chain = &features.subgroup;
+    }
+    if (features.subgroup_extended.shaderSubgroupExtendedTypes) {
+        features.subgroup_extended.pNext = feature_chain;
+        feature_chain = &features.subgroup_extended;
     }
     if (features.shader_f16) {
         features.storage16.pNext = feature_chain;
@@ -393,6 +408,10 @@ doe_vk_status doe_vk_context_create(const doe_vk_options *options,
         status = doe_vk_fail(DOE_VK_NATIVE_FAILURE, "vkGetDeviceQueue", error);
         goto failed;
     }
+    if (timeline.timelineSemaphore) {
+        status = doe_vk_timeline_create(context, error);
+        if (status != DOE_VK_OK) goto failed;
+    }
     record_caps(context, options, &features);
     *out = context;
     return doe_vk_fail(DOE_VK_OK, "context ready", error);
@@ -414,7 +433,10 @@ void doe_vk_context_release(doe_vk_context *context) {
     /* Every recording/submission/resource owns a reference, so no native work
      * can exist here. Unknown submissions cannot be released. */
     doe_vk_pipeline_cache_clear(context);
+    (void)doe_vk_context_pipeline_cache_flush(context, NULL);
+    doe_vk_driver_cache_clear(context);
     doe_vk_command_spares_clear(context);
+    if (context->timeline) context->vk.vkDestroySemaphore(context->device, context->timeline, NULL);
     if (context->device != NULL) context->vk.vkDestroyDevice(context->device, NULL);
     if (context->instance != NULL) context->vk.vkDestroyInstance(context->instance, NULL);
     if (context->library != NULL) {

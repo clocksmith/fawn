@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: MIT
  * Doe queue synchronization state extension on software Vulkan: the queue
- * reports Vulkan, never a timeline semaphore or fence pool, and deferred
+ * reports Vulkan and its existing fence pool, never a timeline semaphore, and deferred
  * submissions exactly while an accepted submission's completion is
  * unobserved. A GNU wrapper at the real fence poll withholds that
  * observation, so the deferred state is deterministic rather than a race with
@@ -49,7 +49,7 @@ int main(void)
         puts("queue sync info: non-Vulkan queue reports no Vulkan state");
         return 0;
     }
-    const uint32_t settled = DOE_NATIVE_QUEUE_SYNC_BACKEND_VULKAN;
+    const uint32_t settled = DOE_NATIVE_QUEUE_SYNC_BACKEND_VULKAN | DOE_NATIVE_QUEUE_SYNC_FENCE_POOL;
     const uint32_t deferred = settled | DOE_NATIVE_QUEUE_SYNC_DEFERRED_SUBMISSIONS;
     assert(doeNativeQueueSyncInfo(s.queue) == settled);
     uint32_t input[WORDS];

@@ -9,6 +9,7 @@
 typedef struct native_metal_stage_map {
     uint32_t tables[NATIVE_MAX_PIPELINE_BINDINGS];
     uint32_t slots[NATIVE_MAX_PIPELINE_BINDINGS];
+    uint32_t immediate_bytes;
 } native_metal_stage_map;
 
 /* Call-borrowed conversion storage, not a resource/recording/lease owner. The

@@ -116,7 +116,9 @@ native_failure native_metal_dispatch_indirect(doe_mtl_commands *commands,
         .buffers=bindings->buffers,.buffer_count=bindings->buffer_count,
         .textures=bindings->textures,.texture_count=bindings->texture_count,
         .samplers=bindings->samplers,.sampler_count=bindings->sampler_count,
-        .arguments=arguments->handle.metal,.argument_offset=record->value.dispatch.indirect_offset};
+        .arguments=arguments->handle.metal,.argument_offset=record->value.dispatch.indirect_offset,
+        .immediates={record->value.dispatch.immediates.words,pipeline->metal_compute->immediate_bytes,
+            DOE_COMPILER_METAL_IMMEDIATE_SLOT}};
     doe_mtl_error error = {0};
     doe_mtl_status result = doe_mtl_commands_dispatch_indirect(commands,&dispatch,&error);
     return native_failure_metal(result,&error);

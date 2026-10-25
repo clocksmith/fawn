@@ -43,15 +43,31 @@ static bool depth_stencil(const doe_vk_format_caps *caps)
  * format features for every named format, or the device feature the context
  * enabled at creation (see doe_vk_caps). Admission of each feature's formats and
  * descriptor fields checks the enabled set, never these adapter facts. */
+bool native_vulkan_subgroups_supported(const doe_vk_caps *caps)
+{
+    /* WGSL's admitted compute/fragment operator set needs every corresponding
+     * native class, including compute quads and half operations when f16 is offered. */
+    return caps && caps->subgroup_size >= 4 && caps->subgroup_size <= 128 &&
+        !(caps->subgroup_size & (caps->subgroup_size - 1)) &&
+        (caps->subgroup_stages & 48u) == 48u && (caps->subgroup_operations & 191u) == 191u &&
+        caps->subgroup_quad_all_stages && (!caps->shader_f16 || caps->subgroup_extended_types);
+}
 uint32_t native_adapter_features(const native_backend *backend)
 {
-    if (backend->kind == WGPUBackendType_D3D12)
-        return backend->value.d3d12.caps.timestamp_frequency && backend->value.d3d12.caps.shader_model>=0x60 ?
+    if (backend->kind == WGPUBackendType_D3D12) {
+        const doe_dx_caps *caps = &backend->value.d3d12.caps;
+        uint32_t features = caps->timestamp_frequency && caps->shader_model >= 0x60 ?
             NATIVE_FEATURE(WGPUFeatureName_TimestampQuery) : 0;
+        if (caps->wave_ops && caps->shader_model >= 0x60 && caps->wave_lane_count_min >= 4 &&
+            caps->wave_lane_count_max <= 128 && caps->wave_lane_count_min <= caps->wave_lane_count_max)
+            features |= NATIVE_FEATURE(WGPUFeatureName_Subgroups);
+        return features;
+    }
     if (backend->kind == WGPUBackendType_Metal) {
         const doe_mtl_caps *caps = &backend->value.metal.caps;
         return NATIVE_FEATURE(WGPUFeatureName_CoreFeaturesAndLimits) |
             NATIVE_FEATURE(WGPUFeatureName_ShaderF16) |
+            (caps->subgroups ? NATIVE_FEATURE(WGPUFeatureName_Subgroups) : 0) |
             (caps->texture_swizzle ? NATIVE_FEATURE(WGPUFeatureName_TextureComponentSwizzle) : 0) |
             NATIVE_FEATURE(WGPUFeatureName_DepthClipControl) |
             NATIVE_FEATURE(WGPUFeatureName_IndirectFirstInstance) |
@@ -121,6 +137,7 @@ uint32_t native_adapter_features(const native_backend *backend)
         DOE_VK_FORMAT_ASTC_12x12_UNORM,
         DOE_VK_FORMAT_ASTC_12x12_SRGB};
     uint32_t features = NATIVE_FEATURE(WGPUFeatureName_CoreFeaturesAndLimits);
+    if (native_vulkan_subgroups_supported(caps)) features |= NATIVE_FEATURE(WGPUFeatureName_Subgroups);
     if (caps->shader_f16) features |= NATIVE_FEATURE(WGPUFeatureName_ShaderF16);
     if (caps->texture_compression_etc2 && formats_offer(context, etc2, sizeof(etc2) / sizeof(etc2[0]), block_sampled))
         features |= NATIVE_FEATURE(WGPUFeatureName_TextureCompressionETC2);
@@ -245,12 +262,12 @@ static bool wgsl_feature_reported(WGPUWGSLLanguageFeatureName feature)
         return true; /* Shared typed integer lowering; no native packed intrinsic required. */
     case WGPUWGSLLanguageFeatureName_UnrestrictedPointerParameters: /* Function pointers only. */
     case WGPUWGSLLanguageFeatureName_PointerCompositeAccess: /* No member access through pointers. */
-    case WGPUWGSLLanguageFeatureName_SubgroupId: /* No device admits subgroups. */
+    case WGPUWGSLLanguageFeatureName_SubgroupId: /* Global language exposure pending complete target composition. */
     case WGPUWGSLLanguageFeatureName_TextureAndSamplerLet: /* Handle-typed lets rejected. */
-    case WGPUWGSLLanguageFeatureName_SubgroupUniformity: /* No device admits subgroups. */
+    case WGPUWGSLLanguageFeatureName_SubgroupUniformity: /* Uniformity language contract not yet admitted. */
     case WGPUWGSLLanguageFeatureName_TextureFormatsTier1: /* Extended storage formats rejected. */
     case WGPUWGSLLanguageFeatureName_LinearIndexing: /* Linear index builtins rejected. */
-    case WGPUWGSLLanguageFeatureName_ImmediateAddressSpace: /* Immediates rejected. */
+    case WGPUWGSLLanguageFeatureName_ImmediateAddressSpace: /* D3D12 root-constant composition pending. */
     case WGPUWGSLLanguageFeatureName_BufferView: /* Untyped buffers rejected. */
         return false;
     case WGPUWGSLLanguageFeatureName_Force32:

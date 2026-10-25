@@ -9,8 +9,20 @@
 #include "vk_abi_images.h"
 #include "vk_abi_render.h"
 #include "vk_abi_surface.h"
+#include "vk_abi_timeline.h"
+
+typedef struct VkPipelineCacheCreateInfo {
+    VkStructureType sType; const void *pNext; VkFlags flags;
+    size_t initialDataSize; const void *pInitialData;
+} VkPipelineCacheCreateInfo;
 
 typedef struct doe_vk_functions {
+    void (*vkCmdPushConstants)(VkCommandBuffer, VkPipelineLayout, VkFlags, uint32_t, uint32_t, const void *);
+    VkResult (*vkCreatePipelineCache)(VkDevice, const VkPipelineCacheCreateInfo *, const VkAllocationCallbacks *, VkPipelineCache *);
+    void (*vkDestroyPipelineCache)(VkDevice, VkPipelineCache, const VkAllocationCallbacks *);
+    VkResult (*vkGetPipelineCacheData)(VkDevice, VkPipelineCache, size_t *, void *);
+    VkResult (*vkWaitSemaphores)(VkDevice, const VkSemaphoreWaitInfo *, uint64_t);
+    VkResult (*vkGetSemaphoreCounterValue)(VkDevice, VkSemaphore, uint64_t *);
     doe_vk_proc (*vkGetInstanceProcAddr)(VkInstance, const char *);
     doe_vk_proc (*vkGetDeviceProcAddr)(VkDevice, const char *);
     VkResult (*vkEnumerateInstanceExtensionProperties)(const uint8_t *, uint32_t *, VkExtensionProperties *);

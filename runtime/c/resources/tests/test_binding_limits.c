@@ -159,6 +159,60 @@ static void test_immediate_size(void)
     empty(&f);
 }
 
+/* Immediate data is captured at each dispatch, not borrowed until submission. */
+static void test_immediate_snapshots(void)
+{
+    fixture f = fresh();
+    doe_resource_config c = config(&f);
+    native_token token = {0};
+    doe_resource_pipeline_layout *layout;
+    doe_resource_pipeline *pipeline;
+    uint32_t workgroup[3] = {1,1,1};
+    assert(doe_resource_pipeline_layout_create(&c,NULL,0,32,&layout) == DOE_RESOURCE_OK);
+    assert(doe_resource_pipeline_create(&c,layout,(doe_resource_native){&token,&f,native_release},
+        workgroup,&pipeline) == DOE_RESOURCE_OK);
+    assert(doe_resource_pipeline_require_immediates(pipeline,UINT64_C(0xf000f)) == DOE_RESOURCE_OK);
+    assert(doe_resource_pipeline_require_immediates(pipeline,UINT64_C(1)<<40) == DOE_RESOURCE_LAYOUT);
+    for (unsigned missing = 0; missing < 2; ++missing) {
+        doe_resource_encoder *encoder;
+        doe_resource_compute_pass *pass;
+        assert(doe_resource_encoder_create(&c,&encoder) == DOE_RESOURCE_OK);
+        assert(doe_resource_encoder_begin_compute(encoder,&pass) == DOE_RESOURCE_OK);
+        assert(doe_resource_compute_pass_set_pipeline(pass,pipeline) == DOE_RESOURCE_OK);
+        uint32_t value = 17;
+        assert(doe_resource_compute_pass_set_immediates(pass,0,&value,4) == DOE_RESOURCE_OK);
+        if (missing) {
+            assert(doe_resource_compute_pass_dispatch(pass,1,1,1) == DOE_RESOURCE_STATE);
+            assert(doe_resource_compute_pass_end(pass) != DOE_RESOURCE_OK);
+        } else {
+            value = 31;
+            assert(doe_resource_compute_pass_set_immediates(pass,16,&value,4) == DOE_RESOURCE_OK);
+            assert(doe_resource_compute_pass_dispatch(pass,1,1,1) == DOE_RESOURCE_OK);
+            value = 99;
+            assert(doe_resource_compute_pass_set_immediates(pass,0,&value,4) == DOE_RESOURCE_OK);
+            assert(doe_resource_compute_pass_dispatch(pass,1,1,1) == DOE_RESOURCE_OK);
+            assert(doe_resource_compute_pass_end(pass) == DOE_RESOURCE_OK);
+            doe_resource_commands *commands;
+            assert(doe_resource_encoder_finish(encoder,&commands) == DOE_RESOURCE_OK);
+            size_t count;
+            const doe_resource_command *records = doe_resource_commands_borrow(commands,&count);
+            assert(count == 2);
+            assert(records[0].value.dispatch.immediates.words[0] == 17);
+            assert(records[1].value.dispatch.immediates.words[0] == 99);
+            assert(records[0].value.dispatch.immediates.words[4] == 31);
+            assert(records[0].value.dispatch.immediates.words[1] == 0);
+            assert(records[0].value.dispatch.immediates.initialized_bytes == UINT64_C(0xf000f));
+            doe_resource_commands_release(commands);
+        }
+        doe_resource_compute_pass_release(pass);
+        doe_resource_encoder_release(encoder);
+    }
+    doe_resource_pipeline_release(pipeline);
+    doe_resource_pipeline_layout_release(layout);
+    assert(token.releases == 1);
+    empty(&f);
+}
+
 static void test_full_group(void)
 {
     /* maxBindingsPerBindGroup entries in one group, with usage collected
@@ -215,7 +269,8 @@ int main(void)
     test_slot_limits();
     test_pipeline_layout_totals();
     test_immediate_size();
+    test_immediate_snapshots();
     test_full_group();
-    puts("binding limit owner: 6 host suites passed; no native execution claimed");
+    puts("binding limit owner: 7 host suites passed; no native execution claimed");
     return 0;
 }

@@ -243,9 +243,7 @@ doe_resource_status doe_resource_pipeline_layout_create(const doe_resource_confi
     if (!out || !resource_config_valid(config) || (count && !groups)) return DOE_RESOURCE_INVALID_ARGUMENT;
     if (!config->device.alive(config->device.identity)) return DOE_RESOURCE_UNAVAILABLE;
     if (count > DOE_RESOURCE_MAX_GROUPS) return DOE_RESOURCE_UNSUPPORTED;
-    /* WebGPU createPipelineLayout: immediateSize is a multiple of 4 within
-     * maxImmediateSize. No shader declares immediates yet, so an accepted
-     * size needs no push-constant range and nothing reads it. */
+    /* The layout owns its exact immediate span, independent of group bindings. */
     if (immediate_size % 4 || immediate_size > limit_or(config->max_immediate_size, 64)) return DOE_RESOURCE_RANGE;
     if (count > limit_or(config->slot_limits.max_bind_groups, 4)) return DOE_RESOURCE_RANGE;
     slot_counts counts = {0};
@@ -260,6 +258,7 @@ doe_resource_status doe_resource_pipeline_layout_create(const doe_resource_confi
     if (!layout) return DOE_RESOURCE_OUT_OF_MEMORY;
     layout->count = count;
     layout->empty = NULL;
+    layout->immediate_size = immediate_size;
     for (size_t i = 0; i < count; i++) {
         layout->groups[i] = groups[i];
         if (!doe_resource_pipeline_layout_group_required(layout, i)) layout->groups[i] = NULL;
@@ -611,6 +610,7 @@ doe_resource_status doe_resource_pipeline_create(const doe_resource_config *conf
     memcpy(pipeline->workgroup, workgroup, sizeof(pipeline->workgroup));
     pipeline->minimums = NULL;
     pipeline->minimum_count = 0;
+    pipeline->immediate_required_bytes = 0;
     resource_pipeline_layout_claim(layout);
     doe_resource_pipeline_layout_retain(layout);
     resource_init(&pipeline->base, config, native);
@@ -682,4 +682,17 @@ void doe_resource_pipeline_release(doe_resource_pipeline *pipeline)
 void *doe_resource_pipeline_native(const doe_resource_pipeline *pipeline)
 {
     return pipeline ? pipeline->base.native.handle : NULL;
+}
+
+uint32_t doe_resource_pipeline_layout_immediate_size(const doe_resource_pipeline_layout *layout)
+{
+    return layout ? layout->immediate_size : 0;
+}
+doe_resource_status doe_resource_pipeline_require_immediates(doe_resource_pipeline *pipeline, uint64_t mask)
+{
+    if (!pipeline) return DOE_RESOURCE_INVALID_ARGUMENT;
+    uint32_t size = pipeline->layout->immediate_size;
+    if (size < 64 && (mask >> size)) return DOE_RESOURCE_LAYOUT;
+    pipeline->immediate_required_bytes = mask;
+    return DOE_RESOURCE_OK;
 }

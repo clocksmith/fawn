@@ -30,7 +30,7 @@ static void usage(FILE *out)
           "  [--upload-buffer-usage copy-dst-copy-src|copy-dst] [--upload-submit-every N]\n"
           "  [--no-pipeline-cache] [--pipeline-cache-dir <explicit directory>]\n"
           "  [--gpu-timestamp-mode off|auto|require] [--adapter auto|physical|software]\n"
-          "  [--backend-lane <compiled Dawn delegate lane>]\n"
+          "  [--backend-lane <canonical implemented device/delegate lane>]\n"
           "  [--validate-output-oracles]  (schema 1 sha256_exact_v1 isolated-dispatch oracles)\n"
           "  [--readback-buffer HANDLE=PATH]...  (final buffer bytes after a successful run; at most 8)\n"
           "  [--numeric-stability-policy <path>] [--numeric-stability-execution-profile <id>]\n"
@@ -174,7 +174,7 @@ int parse_options(int argc, char **argv, options *out)
         out->backend_lane = lane;
         out->runtime.public_webgpu_renderer = true;
 #else
-        return reject_argument("--backend-lane", "native lane configuration is not implemented by this provider");
+        out->runtime.backend_lane = out->backend_lane;
 #endif
     }
     if (out->plan) {

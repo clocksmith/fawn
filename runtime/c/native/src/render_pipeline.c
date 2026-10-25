@@ -97,11 +97,15 @@ static WGPURenderPipeline create_vulkan_render_pipeline(native_device *device,
     doe_resource_status status = automatic ? native_automatic_layout(device, stages, stage_count, &layout) : DOE_RESOURCE_OK;
     if (status == DOE_RESOURCE_OK && (!layout || doe_resource_pipeline_layout_device(layout) != device ||
         !native_pipeline_bindings(payload, stages, stage_count, layout))) status = DOE_RESOURCE_LAYOUT;
+    resource.immediate_required_bytes = payload->immediate_required_bytes;
     if (status == DOE_RESOURCE_OK && backend == DOE_VK_OK) {
         doe_vk_binding_layout native_bindings[NATIVE_MAX_PIPELINE_BINDINGS];
         if (!native_vulkan_binding_layout(payload,native_bindings)) abort();
         native.bindings = native_bindings;
         native.binding_count = payload->binding_count;
+        native.immediate_bytes = payload->immediate_bytes;
+        native.immediate_stages = ((payload->immediate_stages & WGPUShaderStage_Vertex) ? 1u : 0u) |
+            ((payload->immediate_stages & WGPUShaderStage_Fragment) ? 16u : 0u);
         backend = doe_vk_render_pipeline_create(device->backend.value.vulkan.context, &native, &payload->handle.vulkan, NULL);
         if (backend == DOE_VK_OK) status = doe_resource_render_pipeline_create(&device->resources, layout, &resource,
             (doe_resource_native){payload,NULL,native_pipeline_release}, &pipeline);

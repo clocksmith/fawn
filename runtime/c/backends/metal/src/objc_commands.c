@@ -67,6 +67,9 @@ static void bind_compute(doe_mtl_objc *runtime, void *encoder, void *pipeline,
         runtime->bind_bytes_call(encoder, runtime->set_bytes,
             sizes, ((size_t)sizes_slot + 1) * sizeof(uint32_t), sizes_slot);
     }
+    if (resources->immediate_size)
+        runtime->bind_bytes_call(encoder, runtime->set_bytes, resources->immediate_words,
+            resources->immediate_size, resources->immediate_slot);
     for (i = 0; i < resources->texture_count; ++i)
         runtime->bind_image_call(encoder, runtime->set_texture, resources->textures[i], i);
     for (i = 0; i < resources->sampler_count; ++i)

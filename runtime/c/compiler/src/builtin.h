@@ -8,7 +8,7 @@ typedef enum {
     BUILTIN_COMPONENT_NUMERIC, BUILTIN_COMPONENT_FLOAT, BUILTIN_NUMERIC_REDUCTION,
     BUILTIN_FLOAT_REDUCTION, BUILTIN_FLOAT_VECTOR, BUILTIN_FLOAT_CROSS, BUILTIN_FLOAT_REFRACT,
     BUILTIN_SUBGROUP_NUMERIC, BUILTIN_SUBGROUP_INTEGER, BUILTIN_MATRIX, BUILTIN_BOOLEAN_REDUCTION,
-    BUILTIN_COMPONENT_INTEGER, BUILTIN_PACKED_INTEGER, BUILTIN_FLOAT_MIX, BUILTIN_BITFIELD, BUILTIN_DECOMPOSE, BUILTIN_EXPONENT
+    BUILTIN_COMPONENT_INTEGER, BUILTIN_PACKED_INTEGER, BUILTIN_FLOAT_MIX, BUILTIN_BITFIELD, BUILTIN_DECOMPOSE, BUILTIN_EXPONENT, BUILTIN_FLOAT_PACK, BUILTIN_DERIVATIVE, BUILTIN_SUBGROUP_EXCHANGE
 } BuiltinFamily;
 
 /* This read-only signature owns shape, stage-independent arity and target
@@ -35,6 +35,10 @@ bool builtin_scalar_result(const NumericBuiltin *);
 bool builtin_shape(const NumericBuiltin *, uint32_t);
 uint32_t builtin_argument_width(const NumericBuiltin *, uint32_t argument, uint32_t vector_width, uint32_t actual_width);
 bool matrix_constant(Source *, uint32_t, NumericBuiltinKind, ConstantValue, TypeId, ConstantValue *);
+bool float_pack_constant(Source *, uint32_t, NumericBuiltinKind, ConstantValue, TypeId, ConstantValue *);
+bool float_pack_unpack(NumericBuiltinKind);
+uint32_t float_pack_width(NumericBuiltinKind);
+bool float_pack_signed(NumericBuiltinKind);
 bool decompose_constant(Source *, uint32_t, NumericBuiltinKind, const ConstantValue *, TypeId, ConstantValue *);
 bool builtin_constant(Source *, uint32_t, const NumericBuiltin *,
                       const ConstantValue *, TypeId, ConstantValue *);

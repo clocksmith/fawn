@@ -29,6 +29,8 @@ struct doe_dx_texture {
     doe_dx_native_texture *native;
     doe_dx_commands *owner;
     doe_dx_texture_desc desc;
+    doe_dx_texture_shape shape;
+    uint32_t samples;
     uint32_t references;
     size_t owner_index;
     bool initialized;
@@ -45,6 +47,10 @@ struct doe_dx_timestamps {
 };
 typedef struct doe_dx_render_layout {
     bool color_absent, fragment_absent;
+    uint32_t samples, target_count;
+    doe_dx_format depth_format;
+    bool depth_write, stencil_write;
+    doe_dx_render_target targets[DOE_DX_MAX_COLOR_TARGETS];
     doe_dx_topology topology;
     bool strip_indexed;
     doe_dx_index_format strip_index_format;

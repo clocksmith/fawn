@@ -158,7 +158,7 @@ DoeCompilerStatus doe_compiler_typed_requirements(uint32_t version, const DoeCom
 }
 static bool typed_spans(Source *s, uint32_t flags, const DoeCompilerTypedOutputs *o) {
     const bool measure = (flags&DOE_COMPILER_TYPED_MEASURE) != 0u, words = (flags&DOE_COMPILER_TYPED_WORDS) != 0u, reflection = (flags&DOE_COMPILER_TYPED_REFLECTION) != 0u;
-    if ((flags & 3u) == 0u || (flags & ~(7u | DOE_COMPILER_UNIFORM_BUFFER_STANDARD_LAYOUT | DOE_COMPILER_CORE_BINDING_NUMBERS | DOE_COMPILER_DISABLE_F16)) != 0u || (measure != (o == NULL)))
+    if ((flags & 3u) == 0u || (flags & ~(7u | DOE_COMPILER_UNIFORM_BUFFER_STANDARD_LAYOUT | DOE_COMPILER_CORE_BINDING_NUMBERS | DOE_COMPILER_DISABLE_F16 | DOE_COMPILER_DISABLE_SUBGROUPS)) != 0u || (measure != (o == NULL)))
         return source_error(s, DOE_COMPILER_INPUT_ERROR, 0u, "invalid output flags or measure descriptor");
     if (measure) return true;
     if (!compiler_valid_span(o->words, o->word_capacity, sizeof(*o->words), _Alignof(uint32_t), words) || !compiler_valid_span(o->types, o->type_capacity, sizeof(*o->types), _Alignof(DoeCompilerTypeV4), reflection) || !compiler_valid_span(o->members, o->member_capacity, sizeof(*o->members), _Alignof(DoeCompilerMemberV4), reflection) || !compiler_valid_span(o->resources, o->resource_capacity, sizeof(*o->resources), _Alignof(DoeCompilerResourceV4), reflection) || !compiler_valid_span(o->names, o->name_capacity, 1u, 1u, reflection))
@@ -187,7 +187,8 @@ DoeCompilerStatus doe_compiler_compile_typed(uint32_t version, const DoeCompiler
     compiler_job_bind(c, workspace, &limits);
     c->module_flags = ((flags & DOE_COMPILER_UNIFORM_BUFFER_STANDARD_LAYOUT) != 0u ? MODULE_STANDARD_UNIFORM : 0u) |
         ((flags & DOE_COMPILER_CORE_BINDING_NUMBERS) != 0u ? MODULE_CORE_BINDINGS : 0u) |
-        ((flags & DOE_COMPILER_DISABLE_F16) != 0u ? MODULE_DISABLE_F16 : 0u);
+        ((flags & DOE_COMPILER_DISABLE_F16) != 0u ? MODULE_DISABLE_F16 : 0u) |
+        ((flags & DOE_COMPILER_DISABLE_SUBGROUPS) != 0u ? MODULE_DISABLE_SUBGROUPS : 0u);
     DoeCompilerTypedOutputCounts counts;
     if (!compile_pipeline(&context, c, (flags&DOE_COMPILER_TYPED_REFLECTION)!=0u?3u:0u, &counts)) return compiler_return(result->diagnostic.status, saved_errno);
     if ((flags&DOE_COMPILER_TYPED_WORDS) == 0u) counts.words = 0u;
@@ -261,7 +262,8 @@ DoeCompilerStatus compiler_compile_module(const DoeCompilerModuleCapacities *cap
     compiler_job_bind(c,workspace,&limits);
     c->module_flags = ((flags & DOE_COMPILER_UNIFORM_BUFFER_STANDARD_LAYOUT) != 0u ? MODULE_STANDARD_UNIFORM : 0u) |
         ((flags & DOE_COMPILER_CORE_BINDING_NUMBERS) != 0u ? MODULE_CORE_BINDINGS : 0u) |
-        ((flags & DOE_COMPILER_DISABLE_F16) != 0u ? MODULE_DISABLE_F16 : 0u);
+        ((flags & DOE_COMPILER_DISABLE_F16) != 0u ? MODULE_DISABLE_F16 : 0u) |
+        ((flags & DOE_COMPILER_DISABLE_SUBGROUPS) != 0u ? MODULE_DISABLE_SUBGROUPS : 0u);
     if (stage_capacities != NULL) stage_bind(&context, workspace, stage_capacities, base);
     if (specialization != NULL) specialization->stage_base = base;
     DoeCompilerTypedOutputCounts typed;

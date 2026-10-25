@@ -14,6 +14,9 @@ static void stage_bindings(doe_mtl_objc *r, void *encoder, const doe_mtl_native_
     if (sizes_slot != UINT32_MAX)
         r->bind_bytes_call(encoder, vertex ? g->set_vertex_bytes : g->set_fragment_bytes,
             sizes, ((size_t)sizes_slot + 1) * sizeof(uint32_t), sizes_slot);
+    if (resources->immediate_size)
+        r->bind_bytes_call(encoder, vertex ? g->set_vertex_bytes : g->set_fragment_bytes,
+            resources->immediate_words, resources->immediate_size, resources->immediate_slot);
     /* Each draw is an explicit binding snapshot. Clear absent slots, including
      * high slots left by the previous draw in this same native encoder. */
     for (i = 0; i < DOE_MTL_TEXTURE_SLOTS; ++i)

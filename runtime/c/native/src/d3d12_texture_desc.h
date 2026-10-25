@@ -6,6 +6,8 @@
 /* Call after canonical validation; this maps only composed native shapes/uses.
  * Outputs are unchanged on rejection. Actual device format queries occur during
  * private allocation; this conversion never fabricates format support. */
+bool native_d3d12_view_descriptor(const doe_resource_view_desc *,const doe_resource_texture_desc *,doe_dx_texture_view_desc *);
+bool native_d3d12_format(WGPUTextureFormat,doe_dx_format *);
 bool native_d3d12_texture_descriptor(const doe_resource_texture_desc *source,doe_dx_texture_desc *out);
 bool native_d3d12_texture_region(const doe_resource_texture_copy *copy,doe_dx_texture_region *out);
 #endif

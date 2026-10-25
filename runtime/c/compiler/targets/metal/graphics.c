@@ -52,6 +52,8 @@ static const char *builtin(uint32_t value) {
         case DOE_COMPILER_BUILTIN_FRAG_DEPTH: return "depth(any)";
         case DOE_COMPILER_BUILTIN_SAMPLE_INDEX: return "sample_id";
         case DOE_COMPILER_BUILTIN_SAMPLE_MASK: return "sample_mask";
+        case DOE_COMPILER_BUILTIN_SUBGROUP_SIZE: return "threads_per_simdgroup";
+        case DOE_COMPILER_BUILTIN_SUBGROUP_INVOCATION_ID: return "thread_index_in_simdgroup";
         default: return NULL;
     }
 }

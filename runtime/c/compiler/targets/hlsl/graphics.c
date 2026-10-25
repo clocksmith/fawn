@@ -107,7 +107,7 @@ static uint32_t interface_type(HlslEmitter *e, const StageEntry *entry, uint32_t
     const StageInterface *leaves = e->source->stages->interfaces + entry->interface_first;
     uint32_t count = 0u;
     for (uint32_t i = 0u; i < entry->interface_count; ++i)
-        if (leaves[i].direction == direction) ++count;
+        if (leaves[i].direction == direction && leaves[i].builtin < DOE_COMPILER_BUILTIN_SUBGROUP_SIZE) ++count;
     if (count == 0u) return 0u;
     hlsl_format(e, "struct DoeStage%u {\n", direction);
     uint32_t previous = NO_ID;
@@ -119,7 +119,7 @@ static uint32_t interface_type(HlslEmitter *e, const StageEntry *entry, uint32_t
                 return count;
             }
             --e->traversal_left;
-            if (leaves[i].direction != direction ||
+            if (leaves[i].builtin >= DOE_COMPILER_BUILTIN_SUBGROUP_SIZE || leaves[i].direction != direction ||
                 (previous != NO_ID && !interface_before(&leaves[previous], &leaves[i]))) continue;
             if (next == NO_ID || interface_before(&leaves[i], &leaves[next])) next = i;
         }
@@ -157,7 +157,10 @@ void hlsl_graphics_wrapper(HlslEmitter *e) {
         if (leaf->direction != DOE_COMPILER_INTERFACE_INPUT) continue;
         hlsl_format(e, "    ctx.stage%u", leaf->formal);
         if (leaf->member != NO_ID) hlsl_format(e, ".m%u", leaf->member);
-        hlsl_format(e, " = input.field%u;\n", i);
+        if (leaf->builtin == DOE_COMPILER_BUILTIN_SUBGROUP_SIZE || leaf->builtin == DOE_COMPILER_BUILTIN_SUBGROUP_INVOCATION_ID) {
+            e->uses_subgroups = true;
+            hlsl_format(e, " = %s();\n", leaf->builtin == DOE_COMPILER_BUILTIN_SUBGROUP_SIZE ? "WaveGetLaneCount" : "WaveGetLaneIndex");
+        } else hlsl_format(e, " = input.field%u;\n", i);
     }
     hlsl_text(e, "    ");
     if (function->result_type != IR_VOID) {

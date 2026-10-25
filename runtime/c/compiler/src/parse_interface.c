@@ -4,7 +4,7 @@
 
 static uint32_t builtin_name(const Parser *p) {
     static const char *const names[] = {"position", "vertex_index", "instance_index",
-        "front_facing", "frag_depth", "sample_index", "sample_mask"};
+        "front_facing", "frag_depth", "sample_index", "sample_mask", "subgroup_size", "subgroup_invocation_id"};
     for (uint32_t i = 0u; i < sizeof(names) / sizeof(names[0]); ++i)
         if (parser_spelled(p, parser_peek(p), names[i])) return i + 1u;
     return 0u;

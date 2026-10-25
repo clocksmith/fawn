@@ -65,7 +65,7 @@ doe_dx_status doe_dx_prepare_geometry(doe_dx_commands *commands, doe_dx_pipeline
         if (!doe_dx_find_buffer(commands, binding->buffer)) needed->buffers++;
     }
     if (mesh->depth) {
-        if (mesh->depth == draw->color || mesh->depth->desc.format != DOE_DX_D32_FLOAT ||
+        if (mesh->depth->samples!=1 || mesh->depth == draw->color || mesh->depth->desc.format != DOE_DX_D32_FLOAT ||
             mesh->depth->desc.width != draw->color->desc.width || mesh->depth->desc.height != draw->color->desc.height)
             return doe_dx_fail(DOE_DX_INVALID_ARGUMENT, 0, "draw.depth_shape", error);
         if (mesh->clear_depth && (!isfinite(mesh->depth_clear) || mesh->depth_clear < 0 || mesh->depth_clear > 1))

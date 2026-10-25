@@ -108,10 +108,11 @@ bool stage_closure(Source *source, uint32_t function, SourceReference reference,
     if (reference.kind == SOURCE_DISCARD && (entry->flags & FUNCTION_FRAGMENT) == 0u)
         return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, reference.index,
             "discard is restricted to fragment entry call graphs");
-    if (reference.kind == SOURCE_IMAGE && (reference.index & SOURCE_IMAGE_DERIVATIVE) != 0u &&
+    if ((reference.kind == SOURCE_DERIVATIVE ||
+        (reference.kind == SOURCE_IMAGE && (reference.index & SOURCE_IMAGE_DERIVATIVE) != 0u)) &&
         (entry->flags & FUNCTION_FRAGMENT) == 0u)
         return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, offset,
-            "implicit texture sampling is restricted to fragment entry call graphs");
+            "derivatives and implicit texture sampling are restricted to fragment entry call graphs");
     if (!stage_graphics(entry)) return true;
     if ((reference.kind == SOURCE_WORKGROUP &&
          source->compiler->workgroups[reference.index].state.resolved.address_space == MODULE_WORKGROUP) ||

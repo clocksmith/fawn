@@ -13,6 +13,9 @@ static doe_vk_status record_dispatch(doe_vk_commands *commands, const doe_resour
         doe_resource_pipeline_get_layout(record->value.dispatch.pipeline), record->value.dispatch.groups,
         record->value.dispatch.dynamic_offsets, bindings);
     if (status != DOE_VK_OK) return status;
+    status = doe_vk_commands_set_immediates(commands, pipeline->handle.vulkan,
+        record->value.dispatch.immediates.words, pipeline->immediate_bytes);
+    if (status != DOE_VK_OK) return status;
     if (record->kind == DOE_COMMAND_DISPATCH_INDIRECT) {
         status = native_dispatch_guard_initialize(pipeline->device);
         if (status != DOE_VK_OK) return status;
@@ -577,7 +580,9 @@ uint32_t doeNativeQueueSyncInfo(WGPUQueue handle)
 {
     native_device *device = (native_device *)handle;
     if (!device || device->backend.kind != WGPUBackendType_Vulkan) return 0;
-    uint32_t bits = DOE_NATIVE_QUEUE_SYNC_BACKEND_VULKAN;
+    uint32_t bits = DOE_NATIVE_QUEUE_SYNC_BACKEND_VULKAN |
+        (device->backend.value.vulkan.caps.timeline_enabled ? DOE_NATIVE_QUEUE_SYNC_TIMELINE_SEMAPHORE :
+         DOE_NATIVE_QUEUE_SYNC_FENCE_POOL);
     native_lock(device);
     /* A command record leaves the pending list once its completion or failure
      * has been observed; surface records are presentation cleanup, not work. */

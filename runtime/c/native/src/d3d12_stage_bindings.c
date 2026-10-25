@@ -14,19 +14,33 @@ static const DoeCompilerHandleV6 *handle(const doe_shader_view *view,uint32_t in
 static bool storage_format(uint32_t value,doe_dx_format *out,uint32_t *scalar)
 {
     switch (value) {
-    case DOE_COMPILER_FORMAT_RGBA8UNORM: *out=DOE_DX_RGBA8_UNORM; *scalar=DOE_COMPILER_LEAF_F32; return true;
-    case DOE_COMPILER_FORMAT_RGBA8UINT: *out=DOE_DX_RGBA8_UINT; *scalar=DOE_COMPILER_LEAF_U32; return true;
     case DOE_COMPILER_FORMAT_R32FLOAT: *out=DOE_DX_R32_FLOAT; *scalar=DOE_COMPILER_LEAF_F32; return true;
     case DOE_COMPILER_FORMAT_R32UINT: *out=DOE_DX_R32_UINT; *scalar=DOE_COMPILER_LEAF_U32; return true;
+    case DOE_COMPILER_FORMAT_R32SINT: *out=DOE_DX_R32_SINT; *scalar=DOE_COMPILER_LEAF_I32; return true;
+    case DOE_COMPILER_FORMAT_RGBA8UNORM: *out=DOE_DX_RGBA8_UNORM; *scalar=DOE_COMPILER_LEAF_F32; return true;
+    case DOE_COMPILER_FORMAT_RGBA8SNORM: *out=DOE_DX_RGBA8_SNORM; *scalar=DOE_COMPILER_LEAF_F32; return true;
+    case DOE_COMPILER_FORMAT_RGBA8UINT: *out=DOE_DX_RGBA8_UINT; *scalar=DOE_COMPILER_LEAF_U32; return true;
+    case DOE_COMPILER_FORMAT_RGBA8SINT: *out=DOE_DX_RGBA8_SINT; *scalar=DOE_COMPILER_LEAF_I32; return true;
+    case DOE_COMPILER_FORMAT_RGBA16UINT: *out=DOE_DX_RGBA16_UINT; *scalar=DOE_COMPILER_LEAF_U32; return true;
+    case DOE_COMPILER_FORMAT_RGBA16SINT: *out=DOE_DX_RGBA16_SINT; *scalar=DOE_COMPILER_LEAF_I32; return true;
+    case DOE_COMPILER_FORMAT_RGBA16FLOAT: *out=DOE_DX_RGBA16_FLOAT; *scalar=DOE_COMPILER_LEAF_F32; return true;
+    case DOE_COMPILER_FORMAT_RG32UINT: *out=DOE_DX_RG32_UINT; *scalar=DOE_COMPILER_LEAF_U32; return true;
+    case DOE_COMPILER_FORMAT_RG32SINT: *out=DOE_DX_RG32_SINT; *scalar=DOE_COMPILER_LEAF_I32; return true;
+    case DOE_COMPILER_FORMAT_RG32FLOAT: *out=DOE_DX_RG32_FLOAT; *scalar=DOE_COMPILER_LEAF_F32; return true;
+    case DOE_COMPILER_FORMAT_RGBA32UINT: *out=DOE_DX_RGBA32_UINT; *scalar=DOE_COMPILER_LEAF_U32; return true;
+    case DOE_COMPILER_FORMAT_RGBA32SINT: *out=DOE_DX_RGBA32_SINT; *scalar=DOE_COMPILER_LEAF_I32; return true;
+    case DOE_COMPILER_FORMAT_RGBA32FLOAT: *out=DOE_DX_RGBA32_FLOAT; *scalar=DOE_COMPILER_LEAF_F32; return true;
     default: return false;
     }
 }
 static bool texture(const DoeCompilerResourceV4 *resource,const DoeCompilerHandleV6 *typed,
     const DoeCompilerHlslBindingV11 *target,doe_dx_texture_binding_layout *out,doe_dx_texture_contract *contract)
 {
-    if (!typed || typed->view_dimension != DOE_COMPILER_VIEW_2D || typed->flags || target->stride) return false;
+    if (!typed || (typed->view_dimension<DOE_COMPILER_VIEW_1D || typed->view_dimension>DOE_COMPILER_VIEW_3D) ||
+        (typed->flags & ~(DOE_COMPILER_HANDLE_MULTISAMPLED|DOE_COMPILER_HANDLE_DEPTH)) || target->stride) return false;
     *out = (doe_dx_texture_binding_layout){.shader_register=target->shader_register,.register_space=target->register_space};
     if (resource->kind == DOE_COMPILER_STORAGE_TEXTURE) {
+        if (typed->flags) return false;
         uint32_t scalar = 0;
         if (!storage_format(typed->storage_format,&out->format,&scalar) || typed->sample_scalar != scalar) return false;
         if (resource->access == DOE_COMPILER_READ) out->access = DOE_DX_READ_ONLY;
@@ -39,8 +53,17 @@ static bool texture(const DoeCompilerResourceV4 *resource,const DoeCompilerHandl
         out->access = DOE_DX_READ_ONLY;
         if (typed->sample_scalar == DOE_COMPILER_LEAF_F32) contract->sample_class=DOE_DX_SAMPLE_FLOAT;
         else if (typed->sample_scalar == DOE_COMPILER_LEAF_U32) contract->sample_class=DOE_DX_SAMPLE_UINT;
+        else if (typed->sample_scalar == DOE_COMPILER_LEAF_I32) contract->sample_class=DOE_DX_SAMPLE_SINT;
         else return false;
+        if (typed->flags & DOE_COMPILER_HANDLE_MULTISAMPLED)
+            contract->sample_class=typed->sample_scalar==DOE_COMPILER_LEAF_F32 ? DOE_DX_SAMPLE_FLOAT_MS :
+                typed->sample_scalar==DOE_COMPILER_LEAF_U32 ? DOE_DX_SAMPLE_UINT_MS : DOE_DX_SAMPLE_SINT_MS;
     } else return false;
+    contract->dimension=typed->view_dimension;
+    if (typed->flags & DOE_COMPILER_HANDLE_DEPTH) {
+        if (resource->kind!=DOE_COMPILER_SAMPLED_TEXTURE || typed->sample_scalar!=DOE_COMPILER_LEAF_F32) return false;
+        contract->sample_class=(typed->flags & DOE_COMPILER_HANDLE_MULTISAMPLED) ? DOE_DX_SAMPLE_DEPTH_MS : DOE_DX_SAMPLE_DEPTH;
+    }
     return target->register_kind == (out->access == DOE_DX_READ_ONLY ?
         DOE_COMPILER_HLSL_REGISTER_SRV : DOE_COMPILER_HLSL_REGISTER_UAV);
 }
@@ -48,7 +71,7 @@ static bool texture(const DoeCompilerResourceV4 *resource,const DoeCompilerHandl
 bool native_d3d12_stage_bindings_for(const native_pipeline *pipeline,const native_stage *stage,
     uint32_t expected_stage,native_d3d12_layout *out,native_d3d12_compute *map)
 {
-    if (!pipeline || !stage || !out || !map ||
+    if (!pipeline || !stage || !out || !map || pipeline->immediate_bytes ||
         (expected_stage!=DOE_COMPILER_STAGE_COMPUTE && expected_stage!=DOE_COMPILER_STAGE_VERTEX &&
          expected_stage!=DOE_COMPILER_STAGE_FRAGMENT)) return false;
     const doe_shader_view *view = &stage->view;
@@ -65,6 +88,7 @@ bool native_d3d12_stage_bindings_for(const native_pipeline *pipeline,const nativ
         entry->first_resource_reference > view->counts.entry_references ||
         entry->resource_reference_count > view->counts.entry_references - entry->first_resource_reference ||
         entry->resource_reference_count != pipeline->binding_count) return false;
+    bool array_views=false;
     native_d3d12_layout layout = {0};
     native_d3d12_compute result = {.dispatch_index=UINT32_MAX};
     for (size_t i = 0; i < pipeline->binding_count; ++i) {
@@ -110,6 +134,9 @@ bool native_d3d12_stage_bindings_for(const native_pipeline *pipeline,const nativ
                 (public->kind == DOE_BIND_TEXTURE) != (resource->kind == DOE_COMPILER_SAMPLED_TEXTURE)) return false;
             size_t slot = result.texture_count++;
             if (!texture(resource,handle(view,index),target,&layout.textures[slot],&layout.contracts[slot])) return false;
+            const DoeCompilerHandleV6 *typed=handle(view,index);
+            if (typed && ((typed->view_dimension==DOE_COMPILER_VIEW_2D && !(typed->flags & DOE_COMPILER_HANDLE_MULTISAMPLED)) ||
+                typed->view_dimension==DOE_COMPILER_VIEW_CUBE)) array_views=true;
             result.texture_indices[slot] = i;
         } else if (public->kind == DOE_BIND_SAMPLER) {
             const DoeCompilerHandleV6 *typed = handle(view,index);
@@ -128,7 +155,8 @@ bool native_d3d12_stage_bindings_for(const native_pipeline *pipeline,const nativ
         if (native) return false;
         native = &view->hlsl_entries[i];
     }
-    if (!native || native->stage != expected_stage || native->flags) return false;
+    if (!native || native->stage != expected_stage || (native->flags & ~DOE_COMPILER_HLSL_ENTRY_ARRAY_VIEWS) ||
+        (array_views && !(native->flags & DOE_COMPILER_HLSL_ENTRY_ARRAY_VIEWS))) return false;
     if (expected_stage != DOE_COMPILER_STAGE_COMPUTE && native->dispatch_bytes) return false;
     if (!native->dispatch_bytes) {
         if (native->dispatch_register != UINT32_MAX || native->dispatch_space != UINT32_MAX) return false;

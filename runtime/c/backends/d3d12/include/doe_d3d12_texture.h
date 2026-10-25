@@ -12,8 +12,9 @@ enum { DOE_DX_MAX_TEXTURE_DIMENSION_2D = 16384 };
 /* Backend formats, not WebGPU enum values. All admitted formats have 4-byte
  * texels; actual SDK format support is checked during native allocation. */
 typedef enum doe_dx_format {
-    DOE_DX_RGBA8_UNORM, DOE_DX_RGBA8_UINT, DOE_DX_R32_FLOAT, DOE_DX_R32_UINT,
-    DOE_DX_BGRA8_UNORM, DOE_DX_D32_FLOAT
+#define DOE_DX_FORMAT(name,public,sdk,bytes,block,kind) DOE_DX_##name,
+#include "doe_d3d12_formats.inc"
+#undef DOE_DX_FORMAT
 } doe_dx_format;
 enum {
     DOE_DX_TEXTURE_COPY_SRC = 1, DOE_DX_TEXTURE_COPY_DST = 2,
@@ -26,13 +27,34 @@ typedef struct doe_dx_texture_desc {
     doe_dx_format format;
     uint32_t usage;
 } doe_dx_texture_desc;
+typedef struct doe_dx_texture_view_desc {
+    doe_dx_format format;
+    uint32_t dimension; /* 1D=1,2D=2,2DArray=3,Cube=4,CubeArray=5,3D=6. */
+    uint32_t base_mip,mip_count,base_layer,layer_count;
+    uint32_t aspect; /* All=0,depth=1,stencil=2. */
+} doe_dx_texture_view_desc;
+doe_dx_status doe_dx_texture_view_validate(const doe_dx_texture *,const doe_dx_texture_view_desc *,doe_dx_texture_view_desc *);
+typedef struct doe_dx_texture_shape {
+    doe_dx_texture_desc image;
+    uint32_t dimension; /* 1,2,3; immutable resource dimension, not view kind. */
+    uint32_t depth_or_layers,mip_levels,samples;
+} doe_dx_texture_shape;
+doe_dx_status doe_dx_texture_create_shape(doe_dx_context *,const doe_dx_texture_shape *,doe_dx_texture **,doe_dx_error *);
+doe_dx_status doe_dx_texture_shape_description(const doe_dx_texture *,doe_dx_texture_shape *);
 /* Explicit subset: 2D, one mip, one layer, one sample, immutable same-format
- * whole-resource views. No compressed, sRGB, multisample or reinterpretation.
+ * whole-resource views. The additive samples constructor admits sample4 render/depth attachments;
+ * no compressed, sRGB or reinterpretation yet.
  * D32_FLOAT requires depth attachment usage and permits only full copy usages
  * in addition; it cannot be a sampled/storage binding.
  * A full upload/copy initializes the texture; dispatch never implies full writes. */
 doe_dx_status doe_dx_texture_create(doe_dx_context *context,
     const doe_dx_texture_desc *desc, doe_dx_texture **out, doe_dx_error *error);
+/* Additive sample contract; old constructor remains exactly single-sample. */
+doe_dx_status doe_dx_texture_create_samples(doe_dx_context *,const doe_dx_texture_desc *,
+    uint32_t samples,doe_dx_texture **,doe_dx_error *);
+uint32_t doe_dx_texture_samples(const doe_dx_texture *);
+/* Real whole-allocation zeroing, including every mip/layer/sample and aspect. */
+doe_dx_status doe_dx_commands_initialize_texture(doe_dx_commands *,doe_dx_texture *,doe_dx_error *);
 doe_dx_status doe_dx_texture_retain(doe_dx_texture *texture);
 void doe_dx_texture_release(doe_dx_texture *texture);
 doe_dx_status doe_dx_texture_description(const doe_dx_texture *texture, doe_dx_texture_desc *out);

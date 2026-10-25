@@ -607,6 +607,11 @@ bool sema_resolve_declarations(Source *s, LocalScope *scope) {
             c->constant_edges[c->edge_count++] = value.constant;
         }
         const uint32_t flags = type_flags(c, root->type);
+        if (address == MODULE_IMMEDIATE &&
+            ((flags & (TYPE_HOST | TYPE_CONSTRUCTIBLE | TYPE_FIXED)) != (TYPE_HOST | TYPE_CONSTRUCTIBLE | TYPE_FIXED) ||
+             (flags & (TYPE_ARRAY_CONTENT | TYPE_ATOMIC_CONTENT)) != 0u || type_size(c,root->type) > UINT32_MAX))
+            return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, root->name.offset,
+                "immediate data requires a fixed host-shareable constructible type without arrays");
         if ((flags & TYPE_DEFERRED) != 0u && s->specialization != NULL) continue;
         if ((flags & TYPE_FIXED) == 0u || (flags & TYPE_ABSTRACT) != 0u ||
             (address == MODULE_PRIVATE ? (flags & TYPE_CONSTRUCTIBLE) == 0u :

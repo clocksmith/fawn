@@ -61,6 +61,8 @@ doe_mtl_status doe_mtl_commands_dispatch_indirect(doe_mtl_commands *commands,
     if (status == DOE_MTL_OK)
         status = doe_mtl_image_bindings_preflight(commands, dispatch->textures, dispatch->texture_count,
             dispatch->samplers, dispatch->sampler_count, &resources);
+    if (status == DOE_MTL_OK)
+        status = doe_mtl_immediates_preflight(dispatch->immediates, pipeline->sizes_slot, &resources);
     if (status != DOE_MTL_OK) return doe_mtl_poison(commands, status, "indirect dispatch arguments", error);
     status = doe_mtl_use_compute_pipeline(commands, pipeline);
     for (size_t i = 0; status == DOE_MTL_OK && i < dispatch->buffer_count; ++i) {

@@ -80,7 +80,7 @@ static bool closure_reference(Source *s, EntryRecord *entry, SourceReference ref
                     "entry interface contains a sibling input identity");
             entry->source_input_mask|=1u<<c->entry_inputs[ref.index].kind;
             break;
-        case SOURCE_NONE: case SOURCE_FUNCTION: case SOURCE_BARRIER: case SOURCE_SUBGROUP: case SOURCE_IMAGE: case SOURCE_DISCARD: case SOURCE_ATOMIC: case SOURCE_POINTER_LOCAL: case SOURCE_POINTER_FORMAL:
+        case SOURCE_DERIVATIVE: case SOURCE_NONE: case SOURCE_FUNCTION: case SOURCE_BARRIER: case SOURCE_SUBGROUP: case SOURCE_IMAGE: case SOURCE_DISCARD: case SOURCE_ATOMIC: case SOURCE_POINTER_LOCAL: case SOURCE_POINTER_FORMAL:
         case SOURCE_POINTER_READ: case SOURCE_POINTER_WRITE: case SOURCE_OVERRIDE: break;
     }
     return true;
@@ -151,7 +151,15 @@ static bool publish_closure(Source *s, EntryRecord *entry, ClosureWork *work,
         if (marks[(size_t)c->resource_count+i]==0u) continue;
         if (!append_reference(s,entry,i)) return false;
         ++entry->state.resolved.workgroup_count;
-        if (c->workgroups[i].state.resolved.address_space == MODULE_PRIVATE) continue;
+        if (c->workgroups[i].state.resolved.address_space == MODULE_IMMEDIATE) {
+            for (uint32_t j = 0u; j < i; ++j) {
+                if (!closure_charge(s,work,1u)) return false;
+                if (marks[(size_t)c->resource_count+j] != 0u && c->workgroups[j].state.resolved.address_space == MODULE_IMMEDIATE)
+                    return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, c->workgroups[i].name.offset,
+                        "one entry may statically access at most one immediate data variable");
+            }
+        }
+        if (c->workgroups[i].state.resolved.address_space != MODULE_WORKGROUP) continue;
         const TypeId type=c->workgroups[i].type;
         const uint64_t size=type_size(c,type), alignment=type_alignment(c,type);
         const uint64_t remainder=size%alignment, padding=remainder==0u?0u:alignment-remainder;

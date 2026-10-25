@@ -10,6 +10,7 @@ void metal_zero(MetalEmitter *e, TypeId type) {
     }
     if (type >= IR_PRIMITIVE_COUNT) {
         const TypeRecord *t = &e->module->types[type - IR_PRIMITIVE_COUNT];
+        if (t->kind == TYPE_POINTER) { metal_text(e, "nullptr"); return; }
         if (t->kind == TYPE_ARRAY || t->kind == TYPE_STRUCT) {
             metal_format(e, "doe_zero%u()", type);
             return;

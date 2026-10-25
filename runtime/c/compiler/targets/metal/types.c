@@ -24,7 +24,9 @@ static void type_name(MetalEmitter *e, TypeId type, unsigned depth) {
     const TypeRecord *t = aggregate(e, type);
     if (t == NULL) return;
     if (t->kind == TYPE_POINTER) {
-        metal_error(e, "METAL function pointers are not implemented");
+        metal_text(e, "thread ");
+        metal_type(e, t->element);
+        metal_text(e, "*");
         return;
     }
     if (t->kind == TYPE_TEXTURE || t->kind == TYPE_SAMPLER) {
@@ -231,6 +233,13 @@ static bool memory_helper_used(MetalEmitter *e, TypeId type, unsigned mode) {
         const bool used = target_access_helper_used(c, &e->closure, ROOT_RESOURCE,
             i, type, mode == 2u, &e->traversal_left, &error);
         if (error != NULL) { metal_error(e, error); return false; }
+        if (used) return true;
+    }
+    if (mode == 1u) for (uint32_t i = 0u; i < c->workgroup_count; ++i) {
+        if (c->workgroups[i].state.resolved.address_space != MODULE_IMMEDIATE) continue;
+        const char *error = NULL;
+        const bool used = target_access_helper_used(c,&e->closure,ROOT_WORKGROUP,i,type,false,&e->traversal_left,&error);
+        if (error != NULL) { metal_error(e,error); return false; }
         if (used) return true;
     }
     return false;

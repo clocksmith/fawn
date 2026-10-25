@@ -196,7 +196,8 @@ int main(void)
     list.iface.lpVtbl = &list_methods;
     doe_dx_native_commands commands = {.context=&context,.list=&list.iface};
     ID3D12Resource source_resource = {0}, destination_resource = {0};
-    doe_dx_native_texture source = {.resource=&source_resource}, writable = {.resource=&destination_resource};
+    doe_dx_native_texture source = {.resource=&source_resource,.format=DOE_DX_R32_UINT},
+        writable = {.resource=&destination_resource,.format=DOE_DX_R32_UINT};
     source.description.Format = writable.description.Format = DXGI_FORMAT_R32_UINT;
     doe_dx_native_resources values = {.textures={&source,&source,&writable},.texture_count=3,.sampler_count=2};
     values.samplers[0] = (doe_dx_sampler_desc){.min_filter=DOE_DX_LINEAR,.mag_filter=DOE_DX_NEAREST,

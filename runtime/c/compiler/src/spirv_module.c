@@ -401,6 +401,18 @@ bool spirv_plan_module(Emitter *e) {
     }
     for (uint32_t i = 0u; i < c->workgroup_count; ++i) {
         WorkgroupRoot *root = &c->workgroups[i];
+        if (root->state.resolved.address_space == MODULE_IMMEDIATE) {
+            (void)use_constant(e, ID_ZERO_U32);
+            TargetDeclaration *wrapper = spirv_append_declaration(e, DECL_WRAPPER, root->type);
+            if (wrapper == NULL) return false;
+            const uint32_t wrapper_id = wrapper->id;
+            TargetDeclaration *pointer = spirv_append_declaration(e, DECL_POINTER, NO_ID);
+            if (pointer == NULL) return false;
+            pointer->storage = MODULE_IMMEDIATE; pointer->payload = wrapper_id;
+            root->state.resolved.initializer = pointer->id;
+            root->target = spirv_reserve_ids(e,1u);
+            continue;
+        }
         if (!spirv_workgroup_plan(e, root->type)) return false;
         if (spirv_pointer_type(e, root->type, root->state.resolved.address_space) == 0u ||
             spirv_workgroup_zero(e, root->type) == 0u) return false;
@@ -447,6 +459,8 @@ bool spirv_plan_module(Emitter *e) {
         } else if (ir->opcode == IR_BUILTIN) {
             const NumericBuiltin *builtin = builtin_kind((NumericBuiltinKind)ir->operands.scalar.literal);
             if (builtin == NULL) return spirv_emit_error(e, ir->source_offset, "invalid numeric builtin identity");
+            if (builtin->family == BUILTIN_DERIVATIVE && builtin->kind >= BUILTIN_DPDX_FINE) e->derivative_control = true;
+            if (builtin->family == BUILTIN_FLOAT_PACK && !spirv_float_pack_plan(e, builtin)) return false;
             if (builtin->kind == BUILTIN_COUNT_LEADING_ZEROS || builtin->kind == BUILTIN_COUNT_TRAILING_ZEROS) {
                 const TypeId leaf = type_leaf(c, ir->type);
                 (void)spirv_constant_value(e, (ConstantValue){.type = leaf,
@@ -454,7 +468,17 @@ bool spirv_plan_module(Emitter *e) {
                 if (builtin->kind == BUILTIN_COUNT_TRAILING_ZEROS) (void)spirv_zero_constant(e, leaf);
             }
             if (builtin_subgroup(builtin)) {
-                e->subgroup_capabilities |= 1u;
+                if (builtin->kind >= BUILTIN_QUAD_BROADCAST && builtin->kind <= BUILTIN_QUAD_SWAP_Y) {
+                    e->subgroup_capabilities |= 64u;
+                    (void)spirv_unsigned_constant(e,0u); (void)spirv_unsigned_constant(e,1u); (void)spirv_unsigned_constant(e,2u);
+                }
+                else if (builtin->family != BUILTIN_SUBGROUP_EXCHANGE) e->subgroup_capabilities |= 1u;
+                else if (builtin->kind == BUILTIN_SUBGROUP_ALL || builtin->kind == BUILTIN_SUBGROUP_ANY) e->subgroup_capabilities |= 4u;
+                else if (builtin->kind == BUILTIN_SUBGROUP_BALLOT || builtin->kind == BUILTIN_SUBGROUP_BROADCAST ||
+                    builtin->kind == BUILTIN_SUBGROUP_BROADCAST_FIRST) e->subgroup_capabilities |= 8u;
+                else if (builtin->kind == BUILTIN_SUBGROUP_SHUFFLE || builtin->kind == BUILTIN_SUBGROUP_SHUFFLE_XOR) e->subgroup_capabilities |= 16u;
+                else if (builtin->kind == BUILTIN_SUBGROUP_SHUFFLE_UP || builtin->kind == BUILTIN_SUBGROUP_SHUFFLE_DOWN) e->subgroup_capabilities |= 32u;
+                else e->subgroup_capabilities |= 2u;
                 (void)use_constant(e, ID_THREE_U32);
             }
             if (builtin_extended_instruction(builtin, type_leaf(c, ir->type)) != 0u && e->math_import == 0u)
@@ -467,7 +491,7 @@ bool spirv_plan_module(Emitter *e) {
             if (ir->opcode != IR_VALUE_ACCESS || ir->operands.access.value != NO_ID)
                 if (spirv_pointer_type(e, ir->type, storage) == 0u) return false;
             if (ir->opcode != IR_ACCESS_STORE && spirv_zero_constant(e, ir->type) == 0u) return false;
-            if (category == ROOT_WORKGROUP && spirv_workgroup_zero(e, ir->type) == 0u) return false;
+            if (category == ROOT_WORKGROUP && storage != MODULE_IMMEDIATE && spirv_workgroup_zero(e, ir->type) == 0u) return false;
         }
     }
     return !e->failed;
@@ -648,6 +672,13 @@ bool spirv_module_declarations(Emitter *e) {
         EMIT(OP_CAPABILITY, 4433u); /* StorageBuffer16BitAccess. */
         EMIT(OP_CAPABILITY, 4434u); /* UniformAndStorageBuffer16BitAccess. */
     }
+    for (uint32_t i = 0u; i < c->workgroup_count; ++i) {
+        if (c->workgroups[i].state.resolved.address_space == MODULE_IMMEDIATE &&
+            (type_flags(c,c->workgroups[i].type) & TYPE_F16_CONTENT) != 0u) {
+            EMIT(OP_CAPABILITY,4435u); break; /* StoragePushConstant16. */
+        }
+    }
+    if (e->derivative_control) { EMIT(OP_CAPABILITY, 51u); }
     if (e->sample_rate_shading) { EMIT(OP_CAPABILITY, 35u); }
     if ((e->image_capabilities & 1u) != 0u) { EMIT(OP_CAPABILITY, 50u); }
     if ((e->image_capabilities & 2u) != 0u) { EMIT(OP_CAPABILITY, 43u); }
@@ -657,6 +688,11 @@ bool spirv_module_declarations(Emitter *e) {
     if (e->subgroup_capabilities != 0u) {
         EMIT(OP_CAPABILITY, 61u); /* GroupNonUniform, SPIR-V 1.3. */
         if ((e->subgroup_capabilities & 1u) != 0u) { EMIT(OP_CAPABILITY, 63u); }
+        if ((e->subgroup_capabilities & 4u) != 0u) { EMIT(OP_CAPABILITY, 62u); }
+        if ((e->subgroup_capabilities & 8u) != 0u) { EMIT(OP_CAPABILITY, 64u); }
+        if ((e->subgroup_capabilities & 16u) != 0u) { EMIT(OP_CAPABILITY, 65u); }
+        if ((e->subgroup_capabilities & 32u) != 0u) { EMIT(OP_CAPABILITY, 66u); }
+        if ((e->subgroup_capabilities & 64u) != 0u) { EMIT(OP_CAPABILITY, 68u); }
     }
     if (e->demote_to_helper) {
         EMIT(OP_CAPABILITY, 5379u);
@@ -726,7 +762,7 @@ bool spirv_module_declarations(Emitter *e) {
     }
     for (uint32_t i = 0u; i < c->workgroup_count; ++i) {
         const WorkgroupRoot *root = &c->workgroups[i];
-        EMIT(OP_VARIABLE, spirv_pointer_type(e, root->type, root->state.resolved.address_space),
+        EMIT(OP_VARIABLE, root->state.resolved.address_space == MODULE_IMMEDIATE ? root->state.resolved.initializer : spirv_pointer_type(e, root->type, root->state.resolved.address_space),
              root->target, root->state.resolved.address_space);
     }
     for (uint32_t i=0u;i<c->entry_input_count;++i)

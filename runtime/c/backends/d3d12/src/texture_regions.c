@@ -11,9 +11,14 @@ doe_dx_status doe_dx_texture_region_footprint(const doe_dx_texture_desc *texture
     doe_dx_texture_region region, doe_dx_texture_layout layout, doe_dx_texture_footprint *out)
 {
     if (!texture || !out || !region.width || !region.height) return DOE_DX_INVALID_ARGUMENT;
-    if (!doe_dx_format_valid(texture->format) || texture->format == DOE_DX_D32_FLOAT) return DOE_DX_UNSUPPORTED;
+    if (!doe_dx_format_valid(texture->format) || doe_dx_format_depth(texture->format)) return DOE_DX_UNSUPPORTED;
     if (region.x > texture->width || region.width > texture->width - region.x ||
         region.y > texture->height || region.height > texture->height - region.y) return DOE_DX_RANGE;
+    doe_dx_format_info info;
+    if (!doe_dx_format_properties(texture->format,&info)) return DOE_DX_UNSUPPORTED;
+    if (region.x%info.block_width || region.y%info.block_height ||
+        (region.width%info.block_width && region.x+region.width!=texture->width) ||
+        (region.height%info.block_height && region.y+region.height!=texture->height)) return DOE_DX_ALIGNMENT;
     doe_dx_texture_desc span = *texture;
     span.width = region.width;
     span.height = region.height;
@@ -33,6 +38,7 @@ doe_dx_status doe_dx_commands_texture_region(doe_dx_commands *commands,
     if (status != DOE_DX_OK) return doe_dx_fail(status,0,"texture.region.resources",error);
     if (buffer->memory != DOE_DX_DEFAULT && buffer->memory != (upload ? DOE_DX_UPLOAD : DOE_DX_READBACK))
         return doe_dx_fail(DOE_DX_UNSUPPORTED,0,"texture.region.heap",error);
+    if (texture->samples!=1) return doe_dx_fail(DOE_DX_UNSUPPORTED,0,"texture.region.samples",error);
     doe_dx_texture_footprint footprint;
     status = doe_dx_texture_region_footprint(&texture->desc,region,layout,&footprint);
     if (status != DOE_DX_OK) return doe_dx_fail(status,0,"texture.region.layout",error);
@@ -68,6 +74,11 @@ doe_dx_status doe_dx_commands_blit_texture(doe_dx_commands *commands,
     if (status == DOE_DX_OK)
         status = doe_dx_texture_preflight(commands,destination,DOE_DX_TEXTURE_COPY_DST,true);
     if (status != DOE_DX_OK) return doe_dx_fail(status,0,"texture.blit.resources",error);
+    if (source->samples>1 || destination->samples>1) {
+        if (!whole(&source->desc,from) || destination_x || destination_y)
+            return doe_dx_fail(DOE_DX_UNSUPPORTED,0,"texture.blit.multisample_region",error);
+        return doe_dx_commands_copy_texture(commands,source,destination,error);
+    }
     if (source == destination || source->desc.format != destination->desc.format)
         return doe_dx_fail(DOE_DX_UNSUPPORTED,0,"texture.blit.alias_format",error);
     doe_dx_texture_footprint checked;

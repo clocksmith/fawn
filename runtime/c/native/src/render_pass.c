@@ -293,9 +293,7 @@ void wgpuRenderPassEncoderSetImmediates(WGPURenderPassEncoder handle, uint32_t o
     if (!device) return;
     native_lock(device);
     const bool ended = doe_resource_render_pass_ended(pass);
-    doe_resource_status status = DOE_RESOURCE_OK;
-    if (ended || !native_immediates_valid(device, offset, data, size))
-        status = doe_resource_render_pass_invalidate(pass, DOE_RESOURCE_RANGE);
+    doe_resource_status status = doe_resource_render_pass_set_immediates(pass, offset, data, size);
     native_unlock(device);
     native_encoding_error(device, ended, status, "render immediates failed");
 }

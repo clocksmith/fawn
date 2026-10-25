@@ -155,8 +155,13 @@ static bool emit_numeric_builtin(Emitter *e, const IrInstruction *ir) {
     const uint32_t result = e->values[ir->result];
     const uint32_t left = e->values[ir->operands.scalar.left];
     const uint32_t right = builtin->arity > 1u ? e->values[ir->operands.scalar.right] : 0u;
-    const TypeId operand_type = spirv_value_type(e->program, ir->operands.scalar.left);
+    const TypeId operand_type = builtin->arity != 0u ? spirv_value_type(e->program, ir->operands.scalar.left) : IR_BOOL;
     const TypeId leaf = type_leaf(e->program, operand_type);
+    if (builtin->family == BUILTIN_DERIVATIVE) {
+        EMIT(207u + (uint32_t)builtin->kind - (uint32_t)BUILTIN_DPDX, spirv_target_type(e, ir->type), result, left);
+        return true;
+    }
+    if (builtin->family == BUILTIN_FLOAT_PACK) return spirv_float_pack(e, ir, builtin);
     if (builtin_subgroup(builtin)) return spirv_subgroup_builtin(e, ir, builtin, leaf);
     if (builtin->family == BUILTIN_COMPONENT_INTEGER)
         return spirv_integer_builtin(e, ir, builtin);
@@ -395,7 +400,7 @@ static bool emit_pointer_access(Emitter *e, const IrInstruction *ir) {
     const TypeId pointer_type = atomic ? atomic_element(c, ir) : ir->type;
     const ResourceRecord *resource = category == ROOT_RESOURCE ? &c->resources[root] : NULL;
     const uint32_t storage = resource != NULL ? spirv_resource_storage(resource) : category == ROOT_WORKGROUP ? c->workgroups[root].state.resolved.address_space : 7u;
-    const bool wrapped = resource != NULL && spirv_wrapped_resource(c, resource);
+    const bool wrapped = (resource != NULL && spirv_wrapped_resource(c, resource)) || storage == MODULE_IMMEDIATE;
     const uint32_t local = category == ROOT_VALUE ? ir->operands.access.value : root;
     const uint32_t base = resource != NULL ? resource->target : category == ROOT_WORKGROUP ? c->workgroups[root].target :
         category == ROOT_POINTER ? e->values[c->limits.instructions + 1u + root] : e->local_base + (local - e->local_start);
@@ -429,7 +434,7 @@ static bool emit_pointer_access(Emitter *e, const IrInstruction *ir) {
         if (atomic) {
             if (!spirv_atomic_operation(e, ir, pointer, loaded)) return false;
         }
-        else if (category == ROOT_WORKGROUP &&
+        else if (category == ROOT_WORKGROUP && storage != MODULE_IMMEDIATE &&
                  spirv_workgroup_type(e, ir->type) != spirv_target_type(e, ir->type)) {
             const uint32_t converted = spirv_reserve_ids(e, 1u);
             if (store) {

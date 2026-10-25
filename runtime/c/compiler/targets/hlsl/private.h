@@ -4,6 +4,8 @@
 #define DOE_HLSL_PRIVATE_H
 #include "hlsl.h"
 #include "../closure.h"
+#include "../ir_view.h"
+#include "../../include/doe_compiler_translation.h"
 typedef struct {
     Source *source;
     TargetClosure closure;
@@ -13,7 +15,7 @@ typedef struct {
     uint64_t traversal_left;
     uint32_t selected_entry, entry, function_end, offset;
     unsigned indent;
-    bool failed, needs_dispatch, uses_subgroups;
+    bool failed, needs_dispatch, uses_subgroups, uses_native16, uses_wave_counter, uses_array_views;
     DoeHlslMetadata metadata;
 } HlslEmitter;
 void hlsl_text(HlslEmitter *, const char *);
@@ -52,4 +54,7 @@ void hlsl_block(HlslEmitter *, uint32_t *, unsigned, uint32_t, bool);
 bool hlsl_entry_resource(HlslEmitter *, uint32_t);
 bool hlsl_entry_workgroup(HlslEmitter *, uint32_t);
 bool hlsl_function_used(HlslEmitter *, uint32_t);
+void hlsl_float_pack_helpers(HlslEmitter *);
+void hlsl_float_pack_expression(HlslEmitter *, const IrInstruction *, NumericBuiltinKind);
+void hlsl_subgroup(HlslEmitter *, const IrInstruction *, NumericBuiltinKind);
 #endif

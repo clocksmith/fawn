@@ -28,9 +28,15 @@ struct doe_dx_native_buffer {
 struct doe_dx_native_texture {
     ID3D12Resource *resource;
     D3D12_RESOURCE_DESC description;
+    doe_dx_format format;
+    bool resolve_supported;
+    D3D12_PLACED_SUBRESOURCE_FOOTPRINT *footprints;
+    uint32_t footprint_count;
+    uint64_t upload_bytes;
 };
 struct doe_dx_native_timestamps { ID3D12QueryHeap *heap; D3D12_QUERY_TYPE kind; };
 typedef struct doe_dx_windows_render_layout {
+    bool stencil_test;
     D3D_PRIMITIVE_TOPOLOGY topology;
     doe_dx_binding_plan stages[DOE_DX_RENDER_STAGES];
     uint32_t resource_table[DOE_DX_RENDER_STAGES],sampler_table[DOE_DX_RENDER_STAGES];
@@ -63,6 +69,10 @@ struct doe_dx_native_commands {
 };
 doe_dx_status doe_dx_open_adapter(IDXGIFactory4 *factory, const doe_dx_options *options,
     IDXGIAdapter1 **out, doe_dx_caps *caps, doe_dx_error *error);
+DXGI_FORMAT doe_dx_texture_resource_format(doe_dx_format);
+void doe_dx_texture_srv(const doe_dx_native_texture *,const doe_dx_texture_view_desc *,D3D12_SHADER_RESOURCE_VIEW_DESC *);
+void doe_dx_texture_uav(const doe_dx_native_texture *,const doe_dx_texture_view_desc *,D3D12_UNORDERED_ACCESS_VIEW_DESC *);
+doe_dx_status doe_dx_texture_native_footprints(doe_dx_native_context *,doe_dx_native_texture *,doe_dx_error *);
 doe_dx_status doe_dx_query_caps(doe_dx_native_context *context, doe_dx_caps *out, doe_dx_error *error);
 doe_dx_status doe_dx_hresult(HRESULT result, const char *operation, doe_dx_error *error);
 doe_dx_status doe_dx_create_root(doe_dx_native_context *context,

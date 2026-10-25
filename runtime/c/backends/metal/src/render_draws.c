@@ -22,6 +22,8 @@ static doe_mtl_status bindings_check(doe_mtl_commands *commands, const doe_mtl_r
     status = doe_mtl_image_bindings_preflight(commands, bindings->textures, bindings->texture_count,
         bindings->samplers, bindings->sampler_count, native);
     if (status != DOE_MTL_OK) return status;
+    status = doe_mtl_immediates_preflight(bindings->immediates, sizes_slot, native);
+    if (status != DOE_MTL_OK) return status;
     for (i = 0; i < bindings->texture_count; ++i)
         if (attachment_alias(pass, bindings->textures[i].view->texture)) return DOE_MTL_INVALID_ARGUMENT;
     return DOE_MTL_OK;

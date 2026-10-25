@@ -442,9 +442,40 @@ static void sampling_pairs(void)
     }
 }
 
+static void immediate_metadata(void)
+{
+    static const char code[] = "requires immediate_address_space;"
+        "struct P {index:u32,value:vec4u} var<immediate> p:P;"
+        "@group(0)@binding(0)var<storage,read_write> out:array<u32>;"
+        "@compute @workgroup_size(1)fn chosen(){out[p.index]=p.value.x;}";
+    for (unsigned target = 0; target < 3; ++target) {
+        allocation_state state = {0};
+        doe_shader_options opts = options(&state,(doe_shader_target)target);
+        doe_shader *module = NULL, *artifact = NULL;
+        doe_shader_error error = {0};
+        assert(doe_shader_create_module(&opts,8,code,sizeof(code)-1,&module,&error) == DOE_SHADER_OK);
+        DoeCompilerEntrySelectionV5 selected = {.mode=DOE_COMPILER_SELECT_NAME,.name="chosen",.name_length=6};
+        assert(doe_shader_specialize(module,&selected,NULL,0,&artifact,&error) == DOE_SHADER_OK);
+        doe_shader_release(module);
+        doe_shader_view view;
+        assert(doe_shader_borrow(artifact,&view) == DOE_SHADER_OK);
+        assert(view.counts.workgroups == 0 && view.counts.entries == 1 && view.counts.resources == 1);
+        assert(view.entries[0].stage == DOE_COMPILER_STAGE_COMPUTE);
+        assert(view.entries[0].name.length == 6 &&
+            !memcmp(view.names+view.entries[0].name.offset,"chosen",6));
+        assert(view.translation_complete && view.translation_entry_count == 1);
+        assert(view.translation_entries[0].entry_index == 0 && view.translation_entries[0].immediate_bytes == 32);
+        assert(view.translation_entries[0].immediate_accessible_bytes_low64 == UINT64_C(0xffff000f));
+        assert(!view.entries[0].workgroup_reference_count && !view.entries[0].workgroup_storage_bytes);
+        doe_shader_release(artifact);
+        assert(!state.live);
+    }
+}
+
 int main(void)
 {
     sampling_pairs();
+    immediate_metadata();
     metal_pipeline();
     allocator_reentry();
     int original = fegetround();

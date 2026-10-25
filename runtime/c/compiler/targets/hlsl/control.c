@@ -118,6 +118,7 @@ void hlsl_block(HlslEmitter *e, uint32_t *cursor, unsigned depth, uint32_t loop,
             continue;
         }
         ++*cursor;
+        if (ir->opcode == IR_ADDRESS) continue;
         if (ir->opcode == IR_ACCESS_LOAD || ir->opcode == IR_ACCESS_STORE || ir->opcode == IR_VALUE_ACCESS ||
             atomic_opcode(ir->opcode)) {
             hlsl_access(e, ir);

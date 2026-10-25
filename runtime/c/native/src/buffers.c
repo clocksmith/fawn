@@ -328,6 +328,31 @@ WGPUFuture wgpuBufferMapAsync(WGPUBuffer handle, WGPUMapMode mode,
     return future;
 }
 
+/* Queue-write staging uses the ordinary command and pending owners. Both
+ * buffers are held by the recorded copy, including uncertain submissions. */
+static native_failure staged_queue_write(native_buffer *destination, uint64_t offset,
+    const void *bytes, size_t size)
+{
+    if (!size) return native_failure_status(NATIVE_OK);
+    native_device *device = destination->device;
+    doe_vk_context *context = device->backend.value.vulkan.context;
+    doe_vk_buffer *staging = NULL;
+    doe_vk_commands *commands = NULL;
+    doe_vk_error error = {0};
+    doe_vk_status status = doe_vk_buffer_create(context, size, DOE_VK_BUFFER_COPY_SRC,
+        DOE_VK_MEMORY_HOST, &staging, &error);
+    if (status == DOE_VK_OK) status = doe_vk_buffer_write(staging, 0, bytes, size);
+    if (status == DOE_VK_OK) status = doe_vk_commands_create(context, &commands, &error);
+    if (status == DOE_VK_OK) status = doe_vk_commands_copy(commands, staging, 0,
+        destination->handle.vulkan, offset, size);
+    doe_vk_buffer_release(staging);
+    if (status != DOE_VK_OK) {
+        if (commands && doe_vk_commands_release(commands) != DOE_VK_OK) abort();
+        return native_failure_vulkan(status, &error);
+    }
+    return native_submit_commands(device, commands); /* Always adopts, even on failure. */
+}
+
 void wgpuQueueWriteBuffer(WGPUQueue handle, WGPUBuffer buffer_handle,
     uint64_t offset, const void *bytes, size_t size)
 {
@@ -340,7 +365,9 @@ void wgpuQueueWriteBuffer(WGPUQueue handle, WGPUBuffer buffer_handle,
     if (status == DOE_RESOURCE_OK && (bytes || !size)) {
         native_buffer *payload = doe_resource_buffer_native(buffer);
         failure = native_settle_for_buffer(device, payload);
-        if (failure.status == NATIVE_OK) failure = native_buffer_write(payload, offset, bytes, size);
+        if (failure.status == NATIVE_OK) failure = device->backend.kind == WGPUBackendType_Vulkan &&
+            device->backend.upload_policy == DOE_NATIVE_UPLOAD_STAGED_COPY ?
+            staged_queue_write(payload, offset, bytes, size) : native_buffer_write(payload, offset, bytes, size);
     }
     native_unlock(device);
     if (status != DOE_RESOURCE_OK || failure.status != NATIVE_OK) {
