@@ -1,0 +1,2094 @@
+{
+  "reference": "Zig 0.15.2 ReleaseSafe module-core-runner built from retained source; host-only models/calculation",
+  "sourceSha256": {
+    "runtime/zig/src/full/modules/services/compute_services.zig": "44833f669a1a87cf4aa9b1e078afd8d98dd9a7a3f1d82b734e34aca6414b25e5",
+    "runtime/zig/src/full/modules/services/resource_scheduler.zig": "939aed4253b237c5a19bf71c4d9fe9b4d5005e94e610d73bfeab93ceb3f51ac8",
+    "runtime/zig/src/full/modules/rendering/effects_pipeline.zig": "57aad4b93182d146677ba340d2bd4547b1b7453cbe9a15bd62ee6f9002977947",
+    "runtime/zig/src/full/modules/rendering/path_engine.zig": "2bbddf3a021c7240bdccce8d6d11f5d591507af9f73d527f07a7f0c146a93c2c",
+    "runtime/zig/src/full/modules/rendering/sdf_renderer.zig": "07a253103eba356f6811af8fb22fa404ad6ccb5dcd397bc2b4b3e7286b51ed95",
+    "runtime/zig/src/cli/module_runner_cli.zig": "84b5b3e52db9e9f65dc0ca491c68b19f094c289a04366aee3ede52578aa820e2",
+    "runtime/zig/src/contracts/artifact.zig": "77932d4f9c1efc749cdb3f5326b102f5fc3474e4ad091156b4ee4d0501c9cf1b",
+    "runtime/zig/src/runtime/numeric_stability/policy.zig": "c96d43a8ceb424a61fc5c3ac16c7f0bbeb19e6a247005a7030ee2916532450f1",
+    "runtime/zig/src/runtime/numeric_stability/trace_meta.zig": "0182079deff043040f14326887fc60be7bcda45bfe8cf9865102821e053a27da",
+    "runtime/zig/src/runtime/numeric_stability/service/numeric_stability.zig": "898323022083ea942c0f92faf8d32035c7d47668f0c3502b5c4090383209c923",
+    "runtime/zig/src/runtime/numeric_stability/service/numeric_stability_eval.zig": "421b9138de0303f060b2eb31d4725861a590b49e187b01a0485ec756ad0d37df",
+    "runtime/zig/src/runtime/numeric_stability/service/numeric_stability_io.zig": "f0dfeca11d7d0bcb771a5d90d6d2919b8728de86943b6fa00e0b769f3d04d05e",
+    "runtime/zig/src/runtime/numeric_stability/service/numeric_stability_types.zig": "96193c7896922ef0cf54b6cd131d0143a862e9d5203c136c4e007b7f72374820"
+  },
+  "cases": {
+    "fawn-compute-services": {
+      "schemaVersion": 1,
+      "moduleId": "fawn_compute_services",
+      "artifactKind": "result",
+      "serviceResult": {
+        "status": "ok"
+      },
+      "executionStats": {
+        "dispatchCount": 128,
+        "bytesMoved": 20480
+      },
+      "timingStats": {
+        "setupNs": 6600,
+        "encodeNs": 5256,
+        "submitNs": 3128,
+        "dispatchNs": 4384
+      },
+      "failureDetails": {
+        "code": "none"
+      },
+      "traceLink": {
+        "moduleIdentity": "fawn_compute_services",
+        "requestHash": "52938d5cd4fa236ea33543a91a2a713845ed476fff8e6ad1f30f480eb8a5e858",
+        "policyHash": "bfdd3ee582524625db1641062d562c12393c9359cd8f9e230f9f2a4d04eb28b3",
+        "resultHash": "3f86d5eddc4762893cb63649c787bb10863f7cb1d6ecce8ad10c62a6b1cd490c"
+      }
+    },
+    "fawn-compute-services-edge": {
+      "schemaVersion": 1,
+      "moduleId": "fawn_compute_services",
+      "artifactKind": "result",
+      "serviceResult": {
+        "status": "fallback"
+      },
+      "executionStats": {
+        "dispatchCount": 1,
+        "bytesMoved": 16777217
+      },
+      "timingStats": {
+        "setupNs": 6300,
+        "encodeNs": 5002,
+        "submitNs": 3001,
+        "dispatchNs": 4003
+      },
+      "failureDetails": {
+        "code": "input_contract_invalid"
+      },
+      "traceLink": {
+        "moduleIdentity": "fawn_compute_services",
+        "requestHash": "ee0ca334c55a27cb4c5aec8b9f5ebf10682dfd63841ecee4f2d6ea581db7deeb",
+        "policyHash": "bfdd3ee582524625db1641062d562c12393c9359cd8f9e230f9f2a4d04eb28b3",
+        "resultHash": "7fe3a8d106e12fe4c6ec51f92e9a277ecb27c153905b70fdbf2e3b1ef1fcec27"
+      }
+    },
+    "fawn-effects-pipeline": {
+      "schemaVersion": 1,
+      "moduleId": "fawn_effects_pipeline",
+      "artifactKind": "result",
+      "outputArtifact": {
+        "artifactId": "effects://0577d2a27e5edf08"
+      },
+      "executionStats": {
+        "nodeCount": 2,
+        "passCount": 2,
+        "temporaryBytes": 4194304
+      },
+      "timingStats": {
+        "setupNs": 8800,
+        "encodeNs": 8400,
+        "submitWaitNs": 4000
+      },
+      "fallbackStats": {
+        "fallbackCount": 0,
+        "fallbackReasonHistogram": {
+          "effect_op_unsupported": 0,
+          "color_space_mode_unsupported": 0,
+          "intermediate_budget_exceeded": 0,
+          "runtime_unavailable": 0,
+          "runtime_execute_failed": 0
+        }
+      },
+      "traceLink": {
+        "moduleIdentity": "fawn_effects_pipeline",
+        "requestHash": "0577d2a27e5edf084fb849f5e70cb91385c72dfaaf83a910e2a57e80d58e285d",
+        "policyHash": "7ef1796f6a1b787789ffc0eba96375283f502d576c48e9e0a23b952721f09e50",
+        "resultHash": "3310e505e0f3b1148437f61f984e44804d22de3ccc463159679f8224ef856e8d"
+      }
+    },
+    "fawn-effects-pipeline-edge": {
+      "schemaVersion": 1,
+      "moduleId": "fawn_effects_pipeline",
+      "artifactKind": "result",
+      "outputArtifact": {
+        "artifactId": "effects://b99eb3bb3c999260"
+      },
+      "executionStats": {
+        "nodeCount": 1,
+        "passCount": 0,
+        "temporaryBytes": 524288
+      },
+      "timingStats": {
+        "setupNs": 8400,
+        "encodeNs": 7700,
+        "submitWaitNs": 3500
+      },
+      "fallbackStats": {
+        "fallbackCount": 1,
+        "fallbackReasonHistogram": {
+          "effect_op_unsupported": 1,
+          "color_space_mode_unsupported": 0,
+          "intermediate_budget_exceeded": 0,
+          "runtime_unavailable": 0,
+          "runtime_execute_failed": 0
+        }
+      },
+      "traceLink": {
+        "moduleIdentity": "fawn_effects_pipeline",
+        "requestHash": "b99eb3bb3c999260f536129e9faa42ada333ac95b4c4c7988270070ba90d1838",
+        "policyHash": "7ef1796f6a1b787789ffc0eba96375283f502d576c48e9e0a23b952721f09e50",
+        "resultHash": "279ab86014dfb117b9c3186e08c82a5949d382d40c7004b5e427725688f58956"
+      }
+    },
+    "fawn-path-engine": {
+      "schemaVersion": 1,
+      "moduleId": "fawn_path_engine",
+      "artifactKind": "result",
+      "geometryStats": {
+        "segmentCount": 4,
+        "tessellatedPrimitiveCount": 8
+      },
+      "rasterStats": {
+        "passCount": 1,
+        "drawCallCount": 2
+      },
+      "fallbackStats": {
+        "fallbackCount": 0,
+        "fallbackReasonHistogram": {
+          "join_mode_unsupported": 0,
+          "dash_pattern_unsupported": 0,
+          "geometry_pathological": 0,
+          "resource_budget_exceeded": 0,
+          "runtime_unavailable": 0,
+          "runtime_execute_failed": 0
+        }
+      },
+      "traceLink": {
+        "moduleIdentity": "fawn_path_engine",
+        "requestHash": "15755ef4313287496f28f0c709eb29cb995eb23f23987fbfa4dd1f19a0f4649a",
+        "policyHash": "8661b14fdb3ce2d72632429b6b27d214201331ad2d38728682cf6daac8436f37",
+        "resultHash": "23368b751e8887ad071b3af19c2793a995fd0dfa3833fe2a294e146f453298a8"
+      }
+    },
+    "fawn-path-engine-edge": {
+      "schemaVersion": 1,
+      "moduleId": "fawn_path_engine",
+      "artifactKind": "result",
+      "geometryStats": {
+        "segmentCount": 4,
+        "tessellatedPrimitiveCount": 8
+      },
+      "rasterStats": {
+        "passCount": 0,
+        "drawCallCount": 0
+      },
+      "fallbackStats": {
+        "fallbackCount": 1,
+        "fallbackReasonHistogram": {
+          "join_mode_unsupported": 0,
+          "dash_pattern_unsupported": 1,
+          "geometry_pathological": 0,
+          "resource_budget_exceeded": 0,
+          "runtime_unavailable": 0,
+          "runtime_execute_failed": 0
+        }
+      },
+      "traceLink": {
+        "moduleIdentity": "fawn_path_engine",
+        "requestHash": "3ace56ed9fce7297de089232e109a8f4bd9651caf94a59978845d0cba4e9cc54",
+        "policyHash": "8661b14fdb3ce2d72632429b6b27d214201331ad2d38728682cf6daac8436f37",
+        "resultHash": "c2779e42bb97430c7381c26faf9b1444f833069f03090df60a2428b1b6e83fb7"
+      }
+    },
+    "fawn-resource-scheduler": {
+      "schemaVersion": 1,
+      "moduleId": "fawn_resource_scheduler",
+      "artifactKind": "result",
+      "allocationResult": [
+        {
+          "resourceId": "res_0",
+          "disposition": "reused",
+          "bytesGranted": 1048576
+        },
+        {
+          "resourceId": "res_1",
+          "disposition": "allocated",
+          "bytesGranted": 2097152
+        },
+        {
+          "resourceId": "res_2",
+          "disposition": "reused",
+          "bytesGranted": 524288
+        }
+      ],
+      "poolStats": {
+        "hitCount": 2,
+        "missCount": 1,
+        "evictionCount": 0,
+        "highWaterBytes": 3670016
+      },
+      "submitStats": {
+        "submitCount": 1,
+        "cadenceModeUsed": "deferred"
+      },
+      "fallbackStats": {
+        "fallbackCount": 0,
+        "fallbackReasonHistogram": {
+          "cadence_policy_invalid": 0,
+          "profile_policy_missing": 0,
+          "determinism_guard_triggered": 0,
+          "pool_limit_exceeded": 0,
+          "resource_create_failed": 0
+        }
+      },
+      "traceLink": {
+        "moduleIdentity": "fawn_resource_scheduler",
+        "requestHash": "b2afc313438d6d574cb2cc8223515d7b58f2903569fbd6ce8a5deab70dc4a64c",
+        "policyHash": "f517c6115491fdc8904a133cb00b91d501e46537906b2ae9bb3ad62264d216aa",
+        "resultHash": "fdbc2634a04b8cdfd73e02e834f08f4db9f3133c8d872436a1c50b5972df2973"
+      }
+    },
+    "fawn-resource-scheduler-edge": {
+      "schemaVersion": 1,
+      "moduleId": "fawn_resource_scheduler",
+      "artifactKind": "result",
+      "allocationResult": [
+        {
+          "resourceId": "res_0",
+          "disposition": "reused",
+          "bytesGranted": 4096
+        }
+      ],
+      "poolStats": {
+        "hitCount": 1,
+        "missCount": 0,
+        "evictionCount": 0,
+        "highWaterBytes": 4096
+      },
+      "submitStats": {
+        "submitCount": 1,
+        "cadenceModeUsed": "per_draw"
+      },
+      "fallbackStats": {
+        "fallbackCount": 1,
+        "fallbackReasonHistogram": {
+          "cadence_policy_invalid": 1,
+          "profile_policy_missing": 0,
+          "determinism_guard_triggered": 0,
+          "pool_limit_exceeded": 0,
+          "resource_create_failed": 0
+        }
+      },
+      "traceLink": {
+        "moduleIdentity": "fawn_resource_scheduler",
+        "requestHash": "fc1f6bbdd1edf29350573ea385cb44ea471410c312103b8997a36356d17a0ce4",
+        "policyHash": "f517c6115491fdc8904a133cb00b91d501e46537906b2ae9bb3ad62264d216aa",
+        "resultHash": "969ae1141f9b7a808e175a9f6c541d4bea04f533eefe770551fb8a2713511446"
+      }
+    },
+    "fawn-2d-sdf-renderer": {
+      "schemaVersion": 1,
+      "moduleId": "fawn_2d_sdf_renderer",
+      "artifactKind": "result",
+      "renderArtifact": {
+        "artifactId": "sdf://02d9d40ebb0652ae"
+      },
+      "renderStats": {
+        "drawCallCount": 3,
+        "atlasHitCount": 4,
+        "atlasMissCount": 0,
+        "passCount": 1
+      },
+      "timingStats": {
+        "setupNs": 10320,
+        "encodeNs": 5360,
+        "submitWaitNs": 2500
+      },
+      "qualityStats": {
+        "fallbackCount": 0,
+        "fallbackReasonHistogram": {
+          "unsupported_blend_mode": 0,
+          "unsupported_clip_mode": 0,
+          "required_capability_missing": 0,
+          "path_complexity_exceeded": 0,
+          "resource_budget_exceeded": 0,
+          "runtime_unavailable": 0,
+          "runtime_execute_failed": 0
+        }
+      },
+      "traceLink": {
+        "moduleIdentity": "fawn_2d_sdf_renderer",
+        "requestHash": "02d9d40ebb0652aed1a32827b63fc9339d25a105ca1ae51e7ceb3e7e0b3c6546",
+        "policyHash": "4d012b7e41cd217725c9be54a73aa9356b62121b369aa721495129b01b825213",
+        "resultHash": "dd548e821b9cdeb06333b78d50bc07f51ec0094f845d6a73b6660646234fcd67"
+      }
+    },
+    "fawn-2d-sdf-renderer-edge": {
+      "schemaVersion": 1,
+      "moduleId": "fawn_2d_sdf_renderer",
+      "artifactKind": "result",
+      "renderArtifact": {
+        "artifactId": "sdf://841e897b7ee3e29a"
+      },
+      "renderStats": {
+        "drawCallCount": 0,
+        "atlasHitCount": 2,
+        "atlasMissCount": 0,
+        "passCount": 0
+      },
+      "timingStats": {
+        "setupNs": 10190,
+        "encodeNs": 5360,
+        "submitWaitNs": 6000
+      },
+      "qualityStats": {
+        "fallbackCount": 1,
+        "fallbackReasonHistogram": {
+          "unsupported_blend_mode": 0,
+          "unsupported_clip_mode": 0,
+          "required_capability_missing": 1,
+          "path_complexity_exceeded": 0,
+          "resource_budget_exceeded": 0,
+          "runtime_unavailable": 0,
+          "runtime_execute_failed": 0
+        }
+      },
+      "traceLink": {
+        "moduleIdentity": "fawn_2d_sdf_renderer",
+        "requestHash": "841e897b7ee3e29a840d55e68e0a2012b4ecb85b8ef0bc56d1f5cca850b9d433",
+        "policyHash": "4d012b7e41cd217725c9be54a73aa9356b62121b369aa721495129b01b825213",
+        "resultHash": "9e522e0061f9210e96964b2d24c32b75d3acf787a0df20adab903d26e2d190a2"
+      }
+    },
+    "unknown-service": {
+      "schemaVersion": 1,
+      "moduleId": "fawn_compute_services",
+      "artifactKind": "result",
+      "serviceResult": {
+        "status": "error"
+      },
+      "executionStats": {
+        "dispatchCount": 128,
+        "bytesMoved": 20480
+      },
+      "timingStats": {
+        "setupNs": 6600,
+        "encodeNs": 5256,
+        "submitNs": 3128,
+        "dispatchNs": 4384
+      },
+      "failureDetails": {
+        "code": "service_id_unknown"
+      },
+      "traceLink": {
+        "moduleIdentity": "fawn_compute_services",
+        "requestHash": "1d021a5b6db3949b099bf90deaeae285d576a19cbee6033b06a164a71b2034a5",
+        "policyHash": "bfdd3ee582524625db1641062d562c12393c9359cd8f9e230f9f2a4d04eb28b3",
+        "resultHash": "347b503edbb69c1690e56d8ea72f9967696869db8103b0303822d0aa4263d7a9"
+      }
+    },
+    "unknown-kernel": {
+      "schemaVersion": 1,
+      "moduleId": "fawn_compute_services",
+      "artifactKind": "result",
+      "serviceResult": {
+        "status": "error"
+      },
+      "executionStats": {
+        "dispatchCount": 128,
+        "bytesMoved": 20480
+      },
+      "timingStats": {
+        "setupNs": 6600,
+        "encodeNs": 5256,
+        "submitNs": 3128,
+        "dispatchNs": 4384
+      },
+      "failureDetails": {
+        "code": "kernel_id_unknown"
+      },
+      "traceLink": {
+        "moduleIdentity": "fawn_compute_services",
+        "requestHash": "e5fa9cb4930bf8477838a5502475832d8ae2c902c78d34f230b2165185230206",
+        "policyHash": "bfdd3ee582524625db1641062d562c12393c9359cd8f9e230f9f2a4d04eb28b3",
+        "resultHash": "92c71e4d7c0399a5b4dcd999f09bf0c79f809ed9df4822b88509172e5f06d169"
+      }
+    },
+    "dispatch-limit": {
+      "schemaVersion": 1,
+      "moduleId": "fawn_compute_services",
+      "artifactKind": "result",
+      "serviceResult": {
+        "status": "fallback"
+      },
+      "executionStats": {
+        "dispatchCount": 128,
+        "bytesMoved": 20480
+      },
+      "timingStats": {
+        "setupNs": 6600,
+        "encodeNs": 5256,
+        "submitNs": 3128,
+        "dispatchNs": 4384
+      },
+      "failureDetails": {
+        "code": "dispatch_contract_invalid"
+      },
+      "traceLink": {
+        "moduleIdentity": "fawn_compute_services",
+        "requestHash": "52938d5cd4fa236ea33543a91a2a713845ed476fff8e6ad1f30f480eb8a5e858",
+        "policyHash": "263b8629462659370e30f889608c256dab5515b26c0c18662ae8c9c4eeae8691",
+        "resultHash": "b22036e21c4bb9b9618712adf91ed1bd6a78bfa18ac0ca51b08db48d9e26cda8"
+      }
+    },
+    "failure-precedence": {
+      "schemaVersion": 1,
+      "moduleId": "fawn_compute_services",
+      "artifactKind": "result",
+      "serviceResult": {
+        "status": "fallback"
+      },
+      "executionStats": {
+        "dispatchCount": 128,
+        "bytesMoved": 20480
+      },
+      "timingStats": {
+        "setupNs": 6600,
+        "encodeNs": 5256,
+        "submitNs": 3128,
+        "dispatchNs": 4384
+      },
+      "failureDetails": {
+        "code": "input_contract_invalid"
+      },
+      "traceLink": {
+        "moduleIdentity": "fawn_compute_services",
+        "requestHash": "1d021a5b6db3949b099bf90deaeae285d576a19cbee6033b06a164a71b2034a5",
+        "policyHash": "b2df454dda1700fe4c95bd1c7469af699c7b116905f0bbaf7b6ab6046f657333",
+        "resultHash": "29390ab848987df2a01c6026f24cddaeb61d20418edecc569dc5c0469d0c1ab1"
+      }
+    },
+    "uint64-exact": {
+      "schemaVersion": 1,
+      "moduleId": "fawn_compute_services",
+      "artifactKind": "result",
+      "serviceResult": {
+        "status": "fallback"
+      },
+      "executionStats": {
+        "dispatchCount": 128,
+        "bytesMoved": 9007199254757377
+      },
+      "timingStats": {
+        "setupNs": 6600,
+        "encodeNs": 5256,
+        "submitNs": 3128,
+        "dispatchNs": 4384
+      },
+      "failureDetails": {
+        "code": "input_contract_invalid"
+      },
+      "traceLink": {
+        "moduleIdentity": "fawn_compute_services",
+        "requestHash": "449176e4deab0371161506714dfe6dfbb507b4ceb3841a256f7f0779b85c5c40",
+        "policyHash": "bfdd3ee582524625db1641062d562c12393c9359cd8f9e230f9f2a4d04eb28b3",
+        "resultHash": "bf11899abf4bc4d39d685f6316ac617dbcef4204186951c87e3a2f82afeefa1e"
+      }
+    },
+    "string-escapes": {
+      "schemaVersion": 1,
+      "moduleId": "fawn_compute_services",
+      "artifactKind": "result",
+      "serviceResult": {
+        "status": "ok"
+      },
+      "executionStats": {
+        "dispatchCount": 128,
+        "bytesMoved": 20480
+      },
+      "timingStats": {
+        "setupNs": 6600,
+        "encodeNs": 5256,
+        "submitNs": 3128,
+        "dispatchNs": 4384
+      },
+      "failureDetails": {
+        "code": "none"
+      },
+      "traceLink": {
+        "moduleIdentity": "fawn_compute_services",
+        "requestHash": "0e2d3f3c0cb42a9ca2e00cd929d683cc886d5cf1a6ac41efd7b5f8eb274e38e2",
+        "policyHash": "bfdd3ee582524625db1641062d562c12393c9359cd8f9e230f9f2a4d04eb28b3",
+        "resultHash": "3f86d5eddc4762893cb63649c787bb10863f7cb1d6ecce8ad10c62a6b1cd490c"
+      }
+    },
+    "integer-coercion": {
+      "schemaVersion": 1,
+      "moduleId": "fawn_compute_services",
+      "artifactKind": "result",
+      "serviceResult": {
+        "status": "ok"
+      },
+      "executionStats": {
+        "dispatchCount": 20,
+        "bytesMoved": 20480
+      },
+      "timingStats": {
+        "setupNs": 6600,
+        "encodeNs": 5040,
+        "submitNs": 3020,
+        "dispatchNs": 4060
+      },
+      "failureDetails": {
+        "code": "none"
+      },
+      "traceLink": {
+        "moduleIdentity": "fawn_compute_services",
+        "requestHash": "466d56d1e50c7b8840d621e99852030e0595102d1f40f61dc22266416e8d7e1c",
+        "policyHash": "bfdd3ee582524625db1641062d562c12393c9359cd8f9e230f9f2a4d04eb28b3",
+        "resultHash": "816c008525656f191734bf5153973dc4ac321f6c3ac4b33ad26ae673d1b46c9e"
+      }
+    },
+    "effect-empty": {
+      "schemaVersion": 1,
+      "moduleId": "fawn_effects_pipeline",
+      "artifactKind": "result",
+      "outputArtifact": {
+        "artifactId": "effects://9cdbb3c7424dee7d"
+      },
+      "executionStats": {
+        "nodeCount": 0,
+        "passCount": 1,
+        "temporaryBytes": 0
+      },
+      "timingStats": {
+        "setupNs": 8000,
+        "encodeNs": 7700,
+        "submitWaitNs": 3500
+      },
+      "fallbackStats": {
+        "fallbackCount": 0,
+        "fallbackReasonHistogram": {
+          "effect_op_unsupported": 0,
+          "color_space_mode_unsupported": 0,
+          "intermediate_budget_exceeded": 0,
+          "runtime_unavailable": 0,
+          "runtime_execute_failed": 0
+        }
+      },
+      "traceLink": {
+        "moduleIdentity": "fawn_effects_pipeline",
+        "requestHash": "9cdbb3c7424dee7d5ebafe903882b79ff23adbe6db8476b6e19ad74bd30547d5",
+        "policyHash": "7ef1796f6a1b787789ffc0eba96375283f502d576c48e9e0a23b952721f09e50",
+        "resultHash": "bc3adc6999693f43161c0d581d17c6bec1eaed633fdec43eeb7173e32d037537"
+      }
+    },
+    "effect-default": {
+      "schemaVersion": 1,
+      "moduleId": "fawn_effects_pipeline",
+      "artifactKind": "result",
+      "outputArtifact": {
+        "artifactId": "effects://e4702ba3a8cf2a0c"
+      },
+      "executionStats": {
+        "nodeCount": 2,
+        "passCount": 2,
+        "temporaryBytes": 4194304
+      },
+      "timingStats": {
+        "setupNs": 8800,
+        "encodeNs": 8400,
+        "submitWaitNs": 4000
+      },
+      "fallbackStats": {
+        "fallbackCount": 0,
+        "fallbackReasonHistogram": {
+          "effect_op_unsupported": 0,
+          "color_space_mode_unsupported": 0,
+          "intermediate_budget_exceeded": 0,
+          "runtime_unavailable": 0,
+          "runtime_execute_failed": 0
+        }
+      },
+      "traceLink": {
+        "moduleIdentity": "fawn_effects_pipeline",
+        "requestHash": "e4702ba3a8cf2a0c1c9f764c95e29f71b5f25d2089f0d0c295236fe13b878056",
+        "policyHash": "7ef1796f6a1b787789ffc0eba96375283f502d576c48e9e0a23b952721f09e50",
+        "resultHash": "936fe790e5dde824ed0db7d67c64a3225324ab0b136fb1780bd91789fede09e6"
+      }
+    },
+    "effect-all-failures": {
+      "schemaVersion": 1,
+      "moduleId": "fawn_effects_pipeline",
+      "artifactKind": "result",
+      "outputArtifact": {
+        "artifactId": "effects://0577d2a27e5edf08"
+      },
+      "executionStats": {
+        "nodeCount": 2,
+        "passCount": 0,
+        "temporaryBytes": 4194304
+      },
+      "timingStats": {
+        "setupNs": 8800,
+        "encodeNs": 8400,
+        "submitWaitNs": 4000
+      },
+      "fallbackStats": {
+        "fallbackCount": 4,
+        "fallbackReasonHistogram": {
+          "effect_op_unsupported": 2,
+          "color_space_mode_unsupported": 1,
+          "intermediate_budget_exceeded": 1,
+          "runtime_unavailable": 0,
+          "runtime_execute_failed": 0
+        }
+      },
+      "traceLink": {
+        "moduleIdentity": "fawn_effects_pipeline",
+        "requestHash": "0577d2a27e5edf084fb849f5e70cb91385c72dfaaf83a910e2a57e80d58e285d",
+        "policyHash": "94170a6bb3ebc37b23b99068d447be99650c82abdbe398df2f64de9890325cf0",
+        "resultHash": "9589823c7fc9e8614f55dc67019638c98e242ce30a1bce942053cfbcc4a37656"
+      }
+    },
+    "path-empty": {
+      "schemaVersion": 1,
+      "moduleId": "fawn_path_engine",
+      "artifactKind": "result",
+      "geometryStats": {
+        "segmentCount": 0,
+        "tessellatedPrimitiveCount": 0
+      },
+      "rasterStats": {
+        "passCount": 1,
+        "drawCallCount": 1
+      },
+      "fallbackStats": {
+        "fallbackCount": 0,
+        "fallbackReasonHistogram": {
+          "join_mode_unsupported": 0,
+          "dash_pattern_unsupported": 0,
+          "geometry_pathological": 0,
+          "resource_budget_exceeded": 0,
+          "runtime_unavailable": 0,
+          "runtime_execute_failed": 0
+        }
+      },
+      "traceLink": {
+        "moduleIdentity": "fawn_path_engine",
+        "requestHash": "76ab6dff854d8e3c3ce054a7437a4b771fe06e0cf03de334738cd25b3ad68853",
+        "policyHash": "8661b14fdb3ce2d72632429b6b27d214201331ad2d38728682cf6daac8436f37",
+        "resultHash": "74f711a954014727f34d0e39f20080fb1397523b96485a07f2fabd445364e917"
+      }
+    },
+    "float-coercion": {
+      "schemaVersion": 1,
+      "moduleId": "fawn_path_engine",
+      "artifactKind": "result",
+      "geometryStats": {
+        "segmentCount": 4,
+        "tessellatedPrimitiveCount": 8
+      },
+      "rasterStats": {
+        "passCount": 1,
+        "drawCallCount": 2
+      },
+      "fallbackStats": {
+        "fallbackCount": 0,
+        "fallbackReasonHistogram": {
+          "join_mode_unsupported": 0,
+          "dash_pattern_unsupported": 0,
+          "geometry_pathological": 0,
+          "resource_budget_exceeded": 0,
+          "runtime_unavailable": 0,
+          "runtime_execute_failed": 0
+        }
+      },
+      "traceLink": {
+        "moduleIdentity": "fawn_path_engine",
+        "requestHash": "dea9a49f462dad02037084bf19e99e526d1d6916a96881cf6448eed965488c93",
+        "policyHash": "8661b14fdb3ce2d72632429b6b27d214201331ad2d38728682cf6daac8436f37",
+        "resultHash": "23368b751e8887ad071b3af19c2793a995fd0dfa3833fe2a294e146f453298a8"
+      }
+    },
+    "path-all-failures": {
+      "schemaVersion": 1,
+      "moduleId": "fawn_path_engine",
+      "artifactKind": "result",
+      "geometryStats": {
+        "segmentCount": 4,
+        "tessellatedPrimitiveCount": 8
+      },
+      "rasterStats": {
+        "passCount": 0,
+        "drawCallCount": 0
+      },
+      "fallbackStats": {
+        "fallbackCount": 4,
+        "fallbackReasonHistogram": {
+          "join_mode_unsupported": 1,
+          "dash_pattern_unsupported": 1,
+          "geometry_pathological": 1,
+          "resource_budget_exceeded": 1,
+          "runtime_unavailable": 0,
+          "runtime_execute_failed": 0
+        }
+      },
+      "traceLink": {
+        "moduleIdentity": "fawn_path_engine",
+        "requestHash": "6822b92d79d339032c7d1c8f5498a9d60a8819a56c0f841536c8716625a69602",
+        "policyHash": "1314b52c1b554525edda3553f4f81946de34159bf63e15b98e2348915c142cd5",
+        "resultHash": "65868323d86862bf7a0de55ee41f10c58419c5db0826f1f7cedd7115d157c0c2"
+      }
+    },
+    "pool-empty": {
+      "schemaVersion": 1,
+      "moduleId": "fawn_resource_scheduler",
+      "artifactKind": "result",
+      "allocationResult": [],
+      "poolStats": {
+        "hitCount": 0,
+        "missCount": 0,
+        "evictionCount": 0,
+        "highWaterBytes": 0
+      },
+      "submitStats": {
+        "submitCount": 1,
+        "cadenceModeUsed": "deferred"
+      },
+      "fallbackStats": {
+        "fallbackCount": 0,
+        "fallbackReasonHistogram": {
+          "cadence_policy_invalid": 0,
+          "profile_policy_missing": 0,
+          "determinism_guard_triggered": 0,
+          "pool_limit_exceeded": 0,
+          "resource_create_failed": 0
+        }
+      },
+      "traceLink": {
+        "moduleIdentity": "fawn_resource_scheduler",
+        "requestHash": "89a8595ff106ac56e8a788fefd400dde3d7d6be0c8ecfb293fa4e9aee0756851",
+        "policyHash": "f517c6115491fdc8904a133cb00b91d501e46537906b2ae9bb3ad62264d216aa",
+        "resultHash": "8c13ec3bdcb6bd12972fb409358a2d18e247ae9b756e09d6ee0187b0cba3cb08"
+      }
+    },
+    "pool-truncate": {
+      "schemaVersion": 1,
+      "moduleId": "fawn_resource_scheduler",
+      "artifactKind": "result",
+      "allocationResult": [
+        {
+          "resourceId": "res_0",
+          "disposition": "fallback",
+          "bytesGranted": 5
+        },
+        {
+          "resourceId": "res_1",
+          "disposition": "fallback",
+          "bytesGranted": 0
+        },
+        {
+          "resourceId": "res_2",
+          "disposition": "fallback",
+          "bytesGranted": 0
+        }
+      ],
+      "poolStats": {
+        "hitCount": 2,
+        "missCount": 1,
+        "evictionCount": 2,
+        "highWaterBytes": 5
+      },
+      "submitStats": {
+        "submitCount": 1,
+        "cadenceModeUsed": "deferred"
+      },
+      "fallbackStats": {
+        "fallbackCount": 5,
+        "fallbackReasonHistogram": {
+          "cadence_policy_invalid": 0,
+          "profile_policy_missing": 0,
+          "determinism_guard_triggered": 1,
+          "pool_limit_exceeded": 4,
+          "resource_create_failed": 0
+        }
+      },
+      "traceLink": {
+        "moduleIdentity": "fawn_resource_scheduler",
+        "requestHash": "8e89bfce737c75a088eb5898b25b95fbc0d6bb0d1b6ee267e43ad6e62ded571a",
+        "policyHash": "0f2704f709a6b423c7573d787f9d589818b92ab94b62a44646b069e3a3ae16de",
+        "resultHash": "89ca9048e3f9656b0958b5f1c0ec87c11c2a0ae2d81e5bbfc02ece05e31e84ca"
+      }
+    },
+    "sdf-defaults": {
+      "schemaVersion": 1,
+      "moduleId": "fawn_2d_sdf_renderer",
+      "artifactKind": "result",
+      "renderArtifact": {
+        "artifactId": "sdf://7174c4927d843c9d"
+      },
+      "renderStats": {
+        "drawCallCount": 3,
+        "atlasHitCount": 4,
+        "atlasMissCount": 0,
+        "passCount": 1
+      },
+      "timingStats": {
+        "setupNs": 10320,
+        "encodeNs": 5360,
+        "submitWaitNs": 2500
+      },
+      "qualityStats": {
+        "fallbackCount": 0,
+        "fallbackReasonHistogram": {
+          "unsupported_blend_mode": 0,
+          "unsupported_clip_mode": 0,
+          "required_capability_missing": 0,
+          "path_complexity_exceeded": 0,
+          "resource_budget_exceeded": 0,
+          "runtime_unavailable": 0,
+          "runtime_execute_failed": 0
+        }
+      },
+      "traceLink": {
+        "moduleIdentity": "fawn_2d_sdf_renderer",
+        "requestHash": "7174c4927d843c9de7cfee4ba4c706af662a917b14f81139e3b5f0f592196025",
+        "policyHash": "4d012b7e41cd217725c9be54a73aa9356b62121b369aa721495129b01b825213",
+        "resultHash": "2ddf6c0d920556082433b36d4f18cfef9aba681db97052cc60c1c5ee54000ff9"
+      }
+    },
+    "sdf-all-failures": {
+      "schemaVersion": 1,
+      "moduleId": "fawn_2d_sdf_renderer",
+      "artifactKind": "result",
+      "renderArtifact": {
+        "artifactId": "sdf://02d9d40ebb0652ae"
+      },
+      "renderStats": {
+        "drawCallCount": 0,
+        "atlasHitCount": 0,
+        "atlasMissCount": 4,
+        "passCount": 0
+      },
+      "timingStats": {
+        "setupNs": 10320,
+        "encodeNs": 5360,
+        "submitWaitNs": 2500
+      },
+      "qualityStats": {
+        "fallbackCount": 5,
+        "fallbackReasonHistogram": {
+          "unsupported_blend_mode": 1,
+          "unsupported_clip_mode": 1,
+          "required_capability_missing": 1,
+          "path_complexity_exceeded": 1,
+          "resource_budget_exceeded": 1,
+          "runtime_unavailable": 0,
+          "runtime_execute_failed": 0
+        }
+      },
+      "traceLink": {
+        "moduleIdentity": "fawn_2d_sdf_renderer",
+        "requestHash": "02d9d40ebb0652aed1a32827b63fc9339d25a105ca1ae51e7ceb3e7e0b3c6546",
+        "policyHash": "fca8520ddba6e4f3f40a51929cd15f0f89f674f68990ff58c4c4780aa2e47069",
+        "resultHash": "8290b571abe299355e5917243ce73d1f5c40ce76d3e57eba3a102dfaa26762e1"
+      }
+    },
+    "numeric-divergence": {
+      "schemaVersion": 1,
+      "moduleId": "doe_numeric_stability",
+      "artifactKind": "result",
+      "serviceId": "matmul_logits_slice",
+      "serviceResult": {
+        "status": "ok"
+      },
+      "executionStats": {
+        "dispatchCount": 0,
+        "bytesMoved": 72,
+        "candidateCount": 2
+      },
+      "timingStats": {
+        "setupNs": 0,
+        "encodeNs": 0,
+        "submitNs": 0,
+        "dispatchNs": null
+      },
+      "failureDetails": {
+        "code": "none"
+      },
+      "routeDecision": "prefer-stable",
+      "selectedToken": 817,
+      "receiptPath": null,
+      "traceMetaPath": null,
+      "receipt": {
+        "schemaVersion": 1,
+        "mode": "numeric-stability",
+        "operatorFamily": "lm-head-slice",
+        "semanticOpId": "matmul.logits",
+        "semanticStage": "lm_head_slice",
+        "semanticPhase": "logits",
+        "policyRegistryPath": "config/numeric-stability-policy.json",
+        "policyRegistryVersion": "2026-03-29-execution-profiles-v1",
+        "routeTaxonomyVersion": "numeric-stability-routes-v1",
+        "proofArtifactPath": "pipeline/lean/artifacts/proven-conditions.json",
+        "triggerPolicyId": "numeric-instability/selected-token-disagreement-with-reference-improvement-v1",
+        "routingPolicyId": "numeric-stability/prefer-stable-on-selected-token-disagreement-v1",
+        "fastPolicyId": "lm-head-slice/forward-f16accum-v1",
+        "stablePolicyId": "lm-head-slice/forward-serial-v1",
+        "referencePolicyId": "lm-head-slice/cpu-f64-serial-v1",
+        "candidates": [
+          {
+            "tokenId": 817,
+            "label": "go",
+            "fastLogit": 0,
+            "stableLogit": 0.009765625,
+            "referenceLogit": 0.010000000000218279
+          },
+          {
+            "tokenId": 4721,
+            "label": "stop",
+            "fastLogit": 0.0010004043579101562,
+            "stableLogit": 0.0010000000474974513,
+            "referenceLogit": 0.001
+          }
+        ],
+        "executionIdentity": null,
+        "firstDivergence": {
+          "semanticOpId": "matmul.logits",
+          "semanticStage": "lm_head_slice",
+          "semanticPhase": "logits",
+          "fastDigest": "bec1097c420aec610d12f38cef7aa93697248cfc4a5f3210ab8e4d6f9c8b186d",
+          "stableDigest": "51df3b86a668143fb35298edd7f44512257901bdf04bb8799b54a0166681197d"
+        },
+        "decodeBoundary": null,
+        "selectedToken": {
+          "fast": 4721,
+          "stable": 817,
+          "reference": 817,
+          "fastMatchesReference": false,
+          "stableMatchesReference": true
+        },
+        "trigger": {
+          "fired": true,
+          "checks": {
+            "firstDivergencePresent": true,
+            "sensitiveOperatorMatched": true,
+            "selectedTokenDisagreement": true,
+            "stableMatchesExactReference": true,
+            "fastMissesExactReference": true
+          },
+          "proofLinks": [
+            {
+              "theorem": "selectedTokenReferenceImprovementTriggered_iff_all_checks",
+              "module": "Doe.Core.NumericStabilityPolicy",
+              "category": "lean_verified",
+              "relation": "numeric-stability-trigger-all-checks",
+              "artifactPath": "pipeline/lean/artifacts/proven-conditions.json"
+            }
+          ]
+        },
+        "route": {
+          "decision": "prefer-stable",
+          "selectionMode": "stable",
+          "committedResultMode": "stable",
+          "downstreamAction": "continue",
+          "effectApplied": false,
+          "selectedPolicyId": "lm-head-slice/forward-serial-v1",
+          "selectedToken": 817,
+          "proofLinks": [
+            {
+              "theorem": "routeDecisionForTrigger_prefers_triggered_decision_when_true",
+              "module": "Doe.Core.NumericStabilityPolicy",
+              "category": "lean_verified",
+              "relation": "numeric-stability-route-triggered",
+              "artifactPath": "pipeline/lean/artifacts/proven-conditions.json"
+            },
+            {
+              "theorem": "routeDecisionForTrigger_prefers_fallback_decision_when_false",
+              "module": "Doe.Core.NumericStabilityPolicy",
+              "category": "lean_verified",
+              "relation": "numeric-stability-route-fallback",
+              "artifactPath": "pipeline/lean/artifacts/proven-conditions.json"
+            }
+          ],
+          "selectionProofLinks": [
+            {
+              "theorem": "selectedValueForRoute_preferStable_returns_stable",
+              "module": "Doe.Core.NumericStabilityPolicy",
+              "category": "lean_verified",
+              "relation": "numeric-stability-route-select-stable",
+              "artifactPath": "pipeline/lean/artifacts/proven-conditions.json"
+            }
+          ]
+        }
+      },
+      "traceLink": {
+        "moduleIdentity": "doe_numeric_stability",
+        "requestHash": "ed875dff816011b75d0b06c4db98b9c62dbcac2cea8a29c8c86d63ae88f2dc84",
+        "policyHash": "9fab9e01a9bf98124f1e6301465e3cc909922ed449c4f54371c44ebd3a410b78",
+        "resultHash": null
+      }
+    },
+    "numeric-tie": {
+      "schemaVersion": 1,
+      "moduleId": "doe_numeric_stability",
+      "artifactKind": "result",
+      "serviceId": "matmul_logits_slice",
+      "serviceResult": {
+        "status": "ok"
+      },
+      "executionStats": {
+        "dispatchCount": 0,
+        "bytesMoved": 24,
+        "candidateCount": 2
+      },
+      "timingStats": {
+        "setupNs": 0,
+        "encodeNs": 0,
+        "submitNs": 0,
+        "dispatchNs": null
+      },
+      "failureDetails": {
+        "code": "none"
+      },
+      "routeDecision": "accept-fast",
+      "selectedToken": 10,
+      "receiptPath": null,
+      "traceMetaPath": null,
+      "receipt": {
+        "schemaVersion": 1,
+        "mode": "numeric-stability",
+        "operatorFamily": "lm-head-slice",
+        "semanticOpId": "matmul.logits",
+        "semanticStage": "lm_head_slice",
+        "semanticPhase": "logits",
+        "policyRegistryPath": "config/numeric-stability-policy.json",
+        "policyRegistryVersion": "2026-03-29-execution-profiles-v1",
+        "routeTaxonomyVersion": "numeric-stability-routes-v1",
+        "proofArtifactPath": "pipeline/lean/artifacts/proven-conditions.json",
+        "triggerPolicyId": "numeric-instability/selected-token-disagreement-with-reference-improvement-v1",
+        "routingPolicyId": "numeric-stability/prefer-stable-on-selected-token-disagreement-v1",
+        "fastPolicyId": "lm-head-slice/forward-f16accum-v1",
+        "stablePolicyId": "lm-head-slice/forward-serial-v1",
+        "referencePolicyId": "lm-head-slice/cpu-f64-serial-v1",
+        "candidates": [
+          {
+            "tokenId": 10,
+            "label": null,
+            "fastLogit": 1,
+            "stableLogit": 1,
+            "referenceLogit": 1
+          },
+          {
+            "tokenId": 11,
+            "label": null,
+            "fastLogit": 1,
+            "stableLogit": 1,
+            "referenceLogit": 1
+          }
+        ],
+        "executionIdentity": null,
+        "firstDivergence": null,
+        "decodeBoundary": null,
+        "selectedToken": {
+          "fast": 10,
+          "stable": 10,
+          "reference": 10,
+          "fastMatchesReference": true,
+          "stableMatchesReference": true
+        },
+        "trigger": {
+          "fired": false,
+          "checks": {
+            "firstDivergencePresent": false,
+            "sensitiveOperatorMatched": false,
+            "selectedTokenDisagreement": false,
+            "stableMatchesExactReference": true,
+            "fastMissesExactReference": false
+          },
+          "proofLinks": [
+            {
+              "theorem": "selectedTokenReferenceImprovementTriggered_iff_all_checks",
+              "module": "Doe.Core.NumericStabilityPolicy",
+              "category": "lean_verified",
+              "relation": "numeric-stability-trigger-all-checks",
+              "artifactPath": "pipeline/lean/artifacts/proven-conditions.json"
+            }
+          ]
+        },
+        "route": {
+          "decision": "accept-fast",
+          "selectionMode": "fast",
+          "committedResultMode": "fast",
+          "downstreamAction": "continue",
+          "effectApplied": false,
+          "selectedPolicyId": "lm-head-slice/forward-f16accum-v1",
+          "selectedToken": 10,
+          "proofLinks": [
+            {
+              "theorem": "routeDecisionForTrigger_prefers_triggered_decision_when_true",
+              "module": "Doe.Core.NumericStabilityPolicy",
+              "category": "lean_verified",
+              "relation": "numeric-stability-route-triggered",
+              "artifactPath": "pipeline/lean/artifacts/proven-conditions.json"
+            },
+            {
+              "theorem": "routeDecisionForTrigger_prefers_fallback_decision_when_false",
+              "module": "Doe.Core.NumericStabilityPolicy",
+              "category": "lean_verified",
+              "relation": "numeric-stability-route-fallback",
+              "artifactPath": "pipeline/lean/artifacts/proven-conditions.json"
+            }
+          ],
+          "selectionProofLinks": [
+            {
+              "theorem": "selectedValueForRoute_acceptFast_returns_fast",
+              "module": "Doe.Core.NumericStabilityPolicy",
+              "category": "lean_verified",
+              "relation": "numeric-stability-route-select-fast",
+              "artifactPath": "pipeline/lean/artifacts/proven-conditions.json"
+            }
+          ]
+        }
+      },
+      "traceLink": {
+        "moduleIdentity": "doe_numeric_stability",
+        "requestHash": "ce7d4e7a9877784928dfb0142925c56531dc6064b8bdf3a2341595ec25e9091d",
+        "policyHash": "9fab9e01a9bf98124f1e6301465e3cc909922ed449c4f54371c44ebd3a410b78",
+        "resultHash": null
+      }
+    },
+    "numeric-half-rounding": {
+      "schemaVersion": 1,
+      "moduleId": "doe_numeric_stability",
+      "artifactKind": "result",
+      "serviceId": "matmul_logits_slice",
+      "serviceResult": {
+        "status": "ok"
+      },
+      "executionStats": {
+        "dispatchCount": 0,
+        "bytesMoved": 72,
+        "candidateCount": 2
+      },
+      "timingStats": {
+        "setupNs": 0,
+        "encodeNs": 0,
+        "submitNs": 0,
+        "dispatchNs": null
+      },
+      "failureDetails": {
+        "code": "none"
+      },
+      "routeDecision": "accept-fast",
+      "selectedToken": 11,
+      "receiptPath": null,
+      "traceMetaPath": null,
+      "receipt": {
+        "schemaVersion": 1,
+        "mode": "numeric-stability",
+        "operatorFamily": "lm-head-slice",
+        "semanticOpId": "matmul.logits",
+        "semanticStage": "lm_head_slice",
+        "semanticPhase": "logits",
+        "policyRegistryPath": "config/numeric-stability-policy.json",
+        "policyRegistryVersion": "2026-03-29-execution-profiles-v1",
+        "routeTaxonomyVersion": "numeric-stability-routes-v1",
+        "proofArtifactPath": "pipeline/lean/artifacts/proven-conditions.json",
+        "triggerPolicyId": "numeric-instability/selected-token-disagreement-with-reference-improvement-v1",
+        "routingPolicyId": "numeric-stability/prefer-stable-on-selected-token-disagreement-v1",
+        "fastPolicyId": "lm-head-slice/forward-f16accum-v1",
+        "stablePolicyId": "lm-head-slice/forward-serial-v1",
+        "referencePolicyId": "lm-head-slice/cpu-f64-serial-v1",
+        "candidates": [
+          {
+            "tokenId": 10,
+            "label": null,
+            "fastLogit": 0,
+            "stableLogit": 0.00048828125,
+            "referenceLogit": 0.0004883110523223877
+          },
+          {
+            "tokenId": 11,
+            "label": null,
+            "fastLogit": 0.001953125,
+            "stableLogit": 0.0014649629592895508,
+            "referenceLogit": 0.001464933156967163
+          }
+        ],
+        "executionIdentity": null,
+        "firstDivergence": {
+          "semanticOpId": "matmul.logits",
+          "semanticStage": "lm_head_slice",
+          "semanticPhase": "logits",
+          "fastDigest": "bdc89cb37228d113474acd1c8e3a732f4460226373c3090f259c4f768574bcdd",
+          "stableDigest": "a586d16aa6c87b8ad12eaf2251457a6d233b0da9218d337412e5410b356aa793"
+        },
+        "decodeBoundary": null,
+        "selectedToken": {
+          "fast": 11,
+          "stable": 11,
+          "reference": 11,
+          "fastMatchesReference": true,
+          "stableMatchesReference": true
+        },
+        "trigger": {
+          "fired": false,
+          "checks": {
+            "firstDivergencePresent": true,
+            "sensitiveOperatorMatched": true,
+            "selectedTokenDisagreement": false,
+            "stableMatchesExactReference": true,
+            "fastMissesExactReference": false
+          },
+          "proofLinks": [
+            {
+              "theorem": "selectedTokenReferenceImprovementTriggered_iff_all_checks",
+              "module": "Doe.Core.NumericStabilityPolicy",
+              "category": "lean_verified",
+              "relation": "numeric-stability-trigger-all-checks",
+              "artifactPath": "pipeline/lean/artifacts/proven-conditions.json"
+            }
+          ]
+        },
+        "route": {
+          "decision": "accept-fast",
+          "selectionMode": "fast",
+          "committedResultMode": "fast",
+          "downstreamAction": "continue",
+          "effectApplied": false,
+          "selectedPolicyId": "lm-head-slice/forward-f16accum-v1",
+          "selectedToken": 11,
+          "proofLinks": [
+            {
+              "theorem": "routeDecisionForTrigger_prefers_triggered_decision_when_true",
+              "module": "Doe.Core.NumericStabilityPolicy",
+              "category": "lean_verified",
+              "relation": "numeric-stability-route-triggered",
+              "artifactPath": "pipeline/lean/artifacts/proven-conditions.json"
+            },
+            {
+              "theorem": "routeDecisionForTrigger_prefers_fallback_decision_when_false",
+              "module": "Doe.Core.NumericStabilityPolicy",
+              "category": "lean_verified",
+              "relation": "numeric-stability-route-fallback",
+              "artifactPath": "pipeline/lean/artifacts/proven-conditions.json"
+            }
+          ],
+          "selectionProofLinks": [
+            {
+              "theorem": "selectedValueForRoute_acceptFast_returns_fast",
+              "module": "Doe.Core.NumericStabilityPolicy",
+              "category": "lean_verified",
+              "relation": "numeric-stability-route-select-fast",
+              "artifactPath": "pipeline/lean/artifacts/proven-conditions.json"
+            }
+          ]
+        }
+      },
+      "traceLink": {
+        "moduleIdentity": "doe_numeric_stability",
+        "requestHash": "4dabf9816f1241f3b763b9056e907a835a27d30352cbfdedf172cb7451947314",
+        "policyHash": "9fab9e01a9bf98124f1e6301465e3cc909922ed449c4f54371c44ebd3a410b78",
+        "resultHash": null
+      }
+    },
+    "numeric-f32-cancellation": {
+      "schemaVersion": 1,
+      "moduleId": "doe_numeric_stability",
+      "artifactKind": "result",
+      "serviceId": "matmul_logits_slice",
+      "serviceResult": {
+        "status": "ok"
+      },
+      "executionStats": {
+        "dispatchCount": 0,
+        "bytesMoved": 72,
+        "candidateCount": 2
+      },
+      "timingStats": {
+        "setupNs": 0,
+        "encodeNs": 0,
+        "submitNs": 0,
+        "dispatchNs": null
+      },
+      "failureDetails": {
+        "code": "none"
+      },
+      "routeDecision": "accept-fast",
+      "selectedToken": 10,
+      "receiptPath": null,
+      "traceMetaPath": null,
+      "receipt": {
+        "schemaVersion": 1,
+        "mode": "numeric-stability",
+        "operatorFamily": "lm-head-slice",
+        "semanticOpId": "matmul.logits",
+        "semanticStage": "lm_head_slice",
+        "semanticPhase": "logits",
+        "policyRegistryPath": "config/numeric-stability-policy.json",
+        "policyRegistryVersion": "2026-03-29-execution-profiles-v1",
+        "routeTaxonomyVersion": "numeric-stability-routes-v1",
+        "proofArtifactPath": "pipeline/lean/artifacts/proven-conditions.json",
+        "triggerPolicyId": "numeric-instability/selected-token-disagreement-with-reference-improvement-v1",
+        "routingPolicyId": "numeric-stability/prefer-stable-on-selected-token-disagreement-v1",
+        "fastPolicyId": "lm-head-slice/forward-f16accum-v1",
+        "stablePolicyId": "lm-head-slice/forward-serial-v1",
+        "referencePolicyId": "lm-head-slice/cpu-f64-serial-v1",
+        "candidates": [
+          {
+            "tokenId": 10,
+            "label": null,
+            "fastLogit": 0,
+            "stableLogit": 0,
+            "referenceLogit": 2.9802322387695312e-08
+          },
+          {
+            "tokenId": 11,
+            "label": null,
+            "fastLogit": 0,
+            "stableLogit": 1.4901161193847656e-08,
+            "referenceLogit": 1.4901161193847656e-08
+          }
+        ],
+        "executionIdentity": null,
+        "firstDivergence": {
+          "semanticOpId": "matmul.logits",
+          "semanticStage": "lm_head_slice",
+          "semanticPhase": "logits",
+          "fastDigest": "3d5812abc84c11768aa73a732c85d75dbed439188f5bb3239e9b762ea31d9862",
+          "stableDigest": "4c0f09b0f4555a325cf59d3d9bf6585407fde050d548949e264b78404870eac7"
+        },
+        "decodeBoundary": null,
+        "selectedToken": {
+          "fast": 10,
+          "stable": 11,
+          "reference": 10,
+          "fastMatchesReference": true,
+          "stableMatchesReference": false
+        },
+        "trigger": {
+          "fired": false,
+          "checks": {
+            "firstDivergencePresent": true,
+            "sensitiveOperatorMatched": true,
+            "selectedTokenDisagreement": true,
+            "stableMatchesExactReference": false,
+            "fastMissesExactReference": false
+          },
+          "proofLinks": [
+            {
+              "theorem": "selectedTokenReferenceImprovementTriggered_iff_all_checks",
+              "module": "Doe.Core.NumericStabilityPolicy",
+              "category": "lean_verified",
+              "relation": "numeric-stability-trigger-all-checks",
+              "artifactPath": "pipeline/lean/artifacts/proven-conditions.json"
+            }
+          ]
+        },
+        "route": {
+          "decision": "accept-fast",
+          "selectionMode": "fast",
+          "committedResultMode": "fast",
+          "downstreamAction": "continue",
+          "effectApplied": false,
+          "selectedPolicyId": "lm-head-slice/forward-f16accum-v1",
+          "selectedToken": 10,
+          "proofLinks": [
+            {
+              "theorem": "routeDecisionForTrigger_prefers_triggered_decision_when_true",
+              "module": "Doe.Core.NumericStabilityPolicy",
+              "category": "lean_verified",
+              "relation": "numeric-stability-route-triggered",
+              "artifactPath": "pipeline/lean/artifacts/proven-conditions.json"
+            },
+            {
+              "theorem": "routeDecisionForTrigger_prefers_fallback_decision_when_false",
+              "module": "Doe.Core.NumericStabilityPolicy",
+              "category": "lean_verified",
+              "relation": "numeric-stability-route-fallback",
+              "artifactPath": "pipeline/lean/artifacts/proven-conditions.json"
+            }
+          ],
+          "selectionProofLinks": [
+            {
+              "theorem": "selectedValueForRoute_acceptFast_returns_fast",
+              "module": "Doe.Core.NumericStabilityPolicy",
+              "category": "lean_verified",
+              "relation": "numeric-stability-route-select-fast",
+              "artifactPath": "pipeline/lean/artifacts/proven-conditions.json"
+            }
+          ]
+        }
+      },
+      "traceLink": {
+        "moduleIdentity": "doe_numeric_stability",
+        "requestHash": "7c3752e020cec136dfe1d70619da1d72fe7a6cc235e3803539d00ac95d911af5",
+        "policyHash": "9fab9e01a9bf98124f1e6301465e3cc909922ed449c4f54371c44ebd3a410b78",
+        "resultHash": null
+      }
+    },
+    "numeric-bias": {
+      "schemaVersion": 1,
+      "moduleId": "doe_numeric_stability",
+      "artifactKind": "result",
+      "serviceId": "matmul_logits_slice",
+      "serviceResult": {
+        "status": "ok"
+      },
+      "executionStats": {
+        "dispatchCount": 0,
+        "bytesMoved": 32,
+        "candidateCount": 2
+      },
+      "timingStats": {
+        "setupNs": 0,
+        "encodeNs": 0,
+        "submitNs": 0,
+        "dispatchNs": null
+      },
+      "failureDetails": {
+        "code": "none"
+      },
+      "routeDecision": "accept-fast",
+      "selectedToken": 11,
+      "receiptPath": null,
+      "traceMetaPath": null,
+      "receipt": {
+        "schemaVersion": 1,
+        "mode": "numeric-stability",
+        "operatorFamily": "lm-head-slice",
+        "semanticOpId": "matmul.logits",
+        "semanticStage": "lm_head_slice",
+        "semanticPhase": "logits",
+        "policyRegistryPath": "config/numeric-stability-policy.json",
+        "policyRegistryVersion": "2026-03-29-execution-profiles-v1",
+        "routeTaxonomyVersion": "numeric-stability-routes-v1",
+        "proofArtifactPath": "pipeline/lean/artifacts/proven-conditions.json",
+        "triggerPolicyId": "numeric-instability/selected-token-disagreement-with-reference-improvement-v1",
+        "routingPolicyId": "numeric-stability/prefer-stable-on-selected-token-disagreement-v1",
+        "fastPolicyId": "lm-head-slice/forward-f16accum-v1",
+        "stablePolicyId": "lm-head-slice/forward-serial-v1",
+        "referencePolicyId": "lm-head-slice/cpu-f64-serial-v1",
+        "candidates": [
+          {
+            "tokenId": 10,
+            "label": null,
+            "fastLogit": 0.5,
+            "stableLogit": 0.5,
+            "referenceLogit": 0.5
+          },
+          {
+            "tokenId": 11,
+            "label": null,
+            "fastLogit": 0.75,
+            "stableLogit": 0.75,
+            "referenceLogit": 0.75
+          }
+        ],
+        "executionIdentity": null,
+        "firstDivergence": null,
+        "decodeBoundary": null,
+        "selectedToken": {
+          "fast": 11,
+          "stable": 11,
+          "reference": 11,
+          "fastMatchesReference": true,
+          "stableMatchesReference": true
+        },
+        "trigger": {
+          "fired": false,
+          "checks": {
+            "firstDivergencePresent": false,
+            "sensitiveOperatorMatched": false,
+            "selectedTokenDisagreement": false,
+            "stableMatchesExactReference": true,
+            "fastMissesExactReference": false
+          },
+          "proofLinks": [
+            {
+              "theorem": "selectedTokenReferenceImprovementTriggered_iff_all_checks",
+              "module": "Doe.Core.NumericStabilityPolicy",
+              "category": "lean_verified",
+              "relation": "numeric-stability-trigger-all-checks",
+              "artifactPath": "pipeline/lean/artifacts/proven-conditions.json"
+            }
+          ]
+        },
+        "route": {
+          "decision": "accept-fast",
+          "selectionMode": "fast",
+          "committedResultMode": "fast",
+          "downstreamAction": "continue",
+          "effectApplied": false,
+          "selectedPolicyId": "lm-head-slice/forward-f16accum-v1",
+          "selectedToken": 11,
+          "proofLinks": [
+            {
+              "theorem": "routeDecisionForTrigger_prefers_triggered_decision_when_true",
+              "module": "Doe.Core.NumericStabilityPolicy",
+              "category": "lean_verified",
+              "relation": "numeric-stability-route-triggered",
+              "artifactPath": "pipeline/lean/artifacts/proven-conditions.json"
+            },
+            {
+              "theorem": "routeDecisionForTrigger_prefers_fallback_decision_when_false",
+              "module": "Doe.Core.NumericStabilityPolicy",
+              "category": "lean_verified",
+              "relation": "numeric-stability-route-fallback",
+              "artifactPath": "pipeline/lean/artifacts/proven-conditions.json"
+            }
+          ],
+          "selectionProofLinks": [
+            {
+              "theorem": "selectedValueForRoute_acceptFast_returns_fast",
+              "module": "Doe.Core.NumericStabilityPolicy",
+              "category": "lean_verified",
+              "relation": "numeric-stability-route-select-fast",
+              "artifactPath": "pipeline/lean/artifacts/proven-conditions.json"
+            }
+          ]
+        }
+      },
+      "traceLink": {
+        "moduleIdentity": "doe_numeric_stability",
+        "requestHash": "4b04063642d173cb3aabd3cfb1e5567db060a0771cfa88629640c2ade2a3b395",
+        "policyHash": "9fab9e01a9bf98124f1e6301465e3cc909922ed449c4f54371c44ebd3a410b78",
+        "resultHash": null
+      }
+    },
+    "numeric-negative-zero": {
+      "schemaVersion": 1,
+      "moduleId": "doe_numeric_stability",
+      "artifactKind": "result",
+      "serviceId": "matmul_logits_slice",
+      "serviceResult": {
+        "status": "ok"
+      },
+      "executionStats": {
+        "dispatchCount": 0,
+        "bytesMoved": 24,
+        "candidateCount": 2
+      },
+      "timingStats": {
+        "setupNs": 0,
+        "encodeNs": 0,
+        "submitNs": 0,
+        "dispatchNs": null
+      },
+      "failureDetails": {
+        "code": "none"
+      },
+      "routeDecision": "accept-fast",
+      "selectedToken": 10,
+      "receiptPath": null,
+      "traceMetaPath": null,
+      "receipt": {
+        "schemaVersion": 1,
+        "mode": "numeric-stability",
+        "operatorFamily": "lm-head-slice",
+        "semanticOpId": "matmul.logits",
+        "semanticStage": "lm_head_slice",
+        "semanticPhase": "logits",
+        "policyRegistryPath": "config/numeric-stability-policy.json",
+        "policyRegistryVersion": "2026-03-29-execution-profiles-v1",
+        "routeTaxonomyVersion": "numeric-stability-routes-v1",
+        "proofArtifactPath": "pipeline/lean/artifacts/proven-conditions.json",
+        "triggerPolicyId": "numeric-instability/selected-token-disagreement-with-reference-improvement-v1",
+        "routingPolicyId": "numeric-stability/prefer-stable-on-selected-token-disagreement-v1",
+        "fastPolicyId": "lm-head-slice/forward-f16accum-v1",
+        "stablePolicyId": "lm-head-slice/forward-serial-v1",
+        "referencePolicyId": "lm-head-slice/cpu-f64-serial-v1",
+        "candidates": [
+          {
+            "tokenId": 10,
+            "label": null,
+            "fastLogit": 0,
+            "stableLogit": 0,
+            "referenceLogit": 0
+          },
+          {
+            "tokenId": 11,
+            "label": null,
+            "fastLogit": 0,
+            "stableLogit": 0,
+            "referenceLogit": 0
+          }
+        ],
+        "executionIdentity": null,
+        "firstDivergence": null,
+        "decodeBoundary": null,
+        "selectedToken": {
+          "fast": 10,
+          "stable": 10,
+          "reference": 10,
+          "fastMatchesReference": true,
+          "stableMatchesReference": true
+        },
+        "trigger": {
+          "fired": false,
+          "checks": {
+            "firstDivergencePresent": false,
+            "sensitiveOperatorMatched": false,
+            "selectedTokenDisagreement": false,
+            "stableMatchesExactReference": true,
+            "fastMissesExactReference": false
+          },
+          "proofLinks": [
+            {
+              "theorem": "selectedTokenReferenceImprovementTriggered_iff_all_checks",
+              "module": "Doe.Core.NumericStabilityPolicy",
+              "category": "lean_verified",
+              "relation": "numeric-stability-trigger-all-checks",
+              "artifactPath": "pipeline/lean/artifacts/proven-conditions.json"
+            }
+          ]
+        },
+        "route": {
+          "decision": "accept-fast",
+          "selectionMode": "fast",
+          "committedResultMode": "fast",
+          "downstreamAction": "continue",
+          "effectApplied": false,
+          "selectedPolicyId": "lm-head-slice/forward-f16accum-v1",
+          "selectedToken": 10,
+          "proofLinks": [
+            {
+              "theorem": "routeDecisionForTrigger_prefers_triggered_decision_when_true",
+              "module": "Doe.Core.NumericStabilityPolicy",
+              "category": "lean_verified",
+              "relation": "numeric-stability-route-triggered",
+              "artifactPath": "pipeline/lean/artifacts/proven-conditions.json"
+            },
+            {
+              "theorem": "routeDecisionForTrigger_prefers_fallback_decision_when_false",
+              "module": "Doe.Core.NumericStabilityPolicy",
+              "category": "lean_verified",
+              "relation": "numeric-stability-route-fallback",
+              "artifactPath": "pipeline/lean/artifacts/proven-conditions.json"
+            }
+          ],
+          "selectionProofLinks": [
+            {
+              "theorem": "selectedValueForRoute_acceptFast_returns_fast",
+              "module": "Doe.Core.NumericStabilityPolicy",
+              "category": "lean_verified",
+              "relation": "numeric-stability-route-select-fast",
+              "artifactPath": "pipeline/lean/artifacts/proven-conditions.json"
+            }
+          ]
+        }
+      },
+      "traceLink": {
+        "moduleIdentity": "doe_numeric_stability",
+        "requestHash": "0b3a3926fbf1a26fd50a4a62acd49a777a297980da82d94c1cae414fa1dcf534",
+        "policyHash": "9fab9e01a9bf98124f1e6301465e3cc909922ed449c4f54371c44ebd3a410b78",
+        "resultHash": null
+      }
+    },
+    "numeric-route-prefer-stable-on-selected-token-disagreement-v1": {
+      "schemaVersion": 1,
+      "moduleId": "doe_numeric_stability",
+      "artifactKind": "result",
+      "serviceId": "matmul_logits_slice",
+      "serviceResult": {
+        "status": "ok"
+      },
+      "executionStats": {
+        "dispatchCount": 0,
+        "bytesMoved": 72,
+        "candidateCount": 2
+      },
+      "timingStats": {
+        "setupNs": 0,
+        "encodeNs": 0,
+        "submitNs": 0,
+        "dispatchNs": null
+      },
+      "failureDetails": {
+        "code": "none"
+      },
+      "routeDecision": "prefer-stable",
+      "selectedToken": 817,
+      "receiptPath": null,
+      "traceMetaPath": null,
+      "receipt": {
+        "schemaVersion": 1,
+        "mode": "numeric-stability",
+        "operatorFamily": "lm-head-slice",
+        "semanticOpId": "matmul.logits",
+        "semanticStage": "lm_head_slice",
+        "semanticPhase": "logits",
+        "policyRegistryPath": "config/numeric-stability-policy.json",
+        "policyRegistryVersion": "2026-03-29-execution-profiles-v1",
+        "routeTaxonomyVersion": "numeric-stability-routes-v1",
+        "proofArtifactPath": "pipeline/lean/artifacts/proven-conditions.json",
+        "triggerPolicyId": "numeric-instability/selected-token-disagreement-with-reference-improvement-v1",
+        "routingPolicyId": "numeric-stability/prefer-stable-on-selected-token-disagreement-v1",
+        "fastPolicyId": "lm-head-slice/forward-f16accum-v1",
+        "stablePolicyId": "lm-head-slice/forward-serial-v1",
+        "referencePolicyId": "lm-head-slice/cpu-f64-serial-v1",
+        "candidates": [
+          {
+            "tokenId": 817,
+            "label": "go",
+            "fastLogit": 0,
+            "stableLogit": 0.009765625,
+            "referenceLogit": 0.010000000000218279
+          },
+          {
+            "tokenId": 4721,
+            "label": "stop",
+            "fastLogit": 0.0010004043579101562,
+            "stableLogit": 0.0010000000474974513,
+            "referenceLogit": 0.001
+          }
+        ],
+        "executionIdentity": null,
+        "firstDivergence": {
+          "semanticOpId": "matmul.logits",
+          "semanticStage": "lm_head_slice",
+          "semanticPhase": "logits",
+          "fastDigest": "bec1097c420aec610d12f38cef7aa93697248cfc4a5f3210ab8e4d6f9c8b186d",
+          "stableDigest": "51df3b86a668143fb35298edd7f44512257901bdf04bb8799b54a0166681197d"
+        },
+        "decodeBoundary": null,
+        "selectedToken": {
+          "fast": 4721,
+          "stable": 817,
+          "reference": 817,
+          "fastMatchesReference": false,
+          "stableMatchesReference": true
+        },
+        "trigger": {
+          "fired": true,
+          "checks": {
+            "firstDivergencePresent": true,
+            "sensitiveOperatorMatched": true,
+            "selectedTokenDisagreement": true,
+            "stableMatchesExactReference": true,
+            "fastMissesExactReference": true
+          },
+          "proofLinks": [
+            {
+              "theorem": "selectedTokenReferenceImprovementTriggered_iff_all_checks",
+              "module": "Doe.Core.NumericStabilityPolicy",
+              "category": "lean_verified",
+              "relation": "numeric-stability-trigger-all-checks",
+              "artifactPath": "pipeline/lean/artifacts/proven-conditions.json"
+            }
+          ]
+        },
+        "route": {
+          "decision": "prefer-stable",
+          "selectionMode": "stable",
+          "committedResultMode": "stable",
+          "downstreamAction": "continue",
+          "effectApplied": false,
+          "selectedPolicyId": "lm-head-slice/forward-serial-v1",
+          "selectedToken": 817,
+          "proofLinks": [
+            {
+              "theorem": "routeDecisionForTrigger_prefers_triggered_decision_when_true",
+              "module": "Doe.Core.NumericStabilityPolicy",
+              "category": "lean_verified",
+              "relation": "numeric-stability-route-triggered",
+              "artifactPath": "pipeline/lean/artifacts/proven-conditions.json"
+            },
+            {
+              "theorem": "routeDecisionForTrigger_prefers_fallback_decision_when_false",
+              "module": "Doe.Core.NumericStabilityPolicy",
+              "category": "lean_verified",
+              "relation": "numeric-stability-route-fallback",
+              "artifactPath": "pipeline/lean/artifacts/proven-conditions.json"
+            }
+          ],
+          "selectionProofLinks": [
+            {
+              "theorem": "selectedValueForRoute_preferStable_returns_stable",
+              "module": "Doe.Core.NumericStabilityPolicy",
+              "category": "lean_verified",
+              "relation": "numeric-stability-route-select-stable",
+              "artifactPath": "pipeline/lean/artifacts/proven-conditions.json"
+            }
+          ]
+        }
+      },
+      "traceLink": {
+        "moduleIdentity": "doe_numeric_stability",
+        "requestHash": "ed875dff816011b75d0b06c4db98b9c62dbcac2cea8a29c8c86d63ae88f2dc84",
+        "policyHash": "9fab9e01a9bf98124f1e6301465e3cc909922ed449c4f54371c44ebd3a410b78",
+        "resultHash": null
+      }
+    },
+    "numeric-route-abstain-on-selected-token-disagreement-v1": {
+      "schemaVersion": 1,
+      "moduleId": "doe_numeric_stability",
+      "artifactKind": "result",
+      "serviceId": "matmul_logits_slice",
+      "serviceResult": {
+        "status": "ok"
+      },
+      "executionStats": {
+        "dispatchCount": 0,
+        "bytesMoved": 72,
+        "candidateCount": 2
+      },
+      "timingStats": {
+        "setupNs": 0,
+        "encodeNs": 0,
+        "submitNs": 0,
+        "dispatchNs": null
+      },
+      "failureDetails": {
+        "code": "none"
+      },
+      "routeDecision": "abstain",
+      "selectedToken": null,
+      "receiptPath": null,
+      "traceMetaPath": null,
+      "receipt": {
+        "schemaVersion": 1,
+        "mode": "numeric-stability",
+        "operatorFamily": "lm-head-slice",
+        "semanticOpId": "matmul.logits",
+        "semanticStage": "lm_head_slice",
+        "semanticPhase": "logits",
+        "policyRegistryPath": "config/numeric-stability-policy.json",
+        "policyRegistryVersion": "2026-03-29-execution-profiles-v1",
+        "routeTaxonomyVersion": "numeric-stability-routes-v1",
+        "proofArtifactPath": "pipeline/lean/artifacts/proven-conditions.json",
+        "triggerPolicyId": "numeric-instability/selected-token-disagreement-with-reference-improvement-v1",
+        "routingPolicyId": "numeric-stability/abstain-on-selected-token-disagreement-v1",
+        "fastPolicyId": "lm-head-slice/forward-f16accum-v1",
+        "stablePolicyId": "lm-head-slice/forward-serial-v1",
+        "referencePolicyId": "lm-head-slice/cpu-f64-serial-v1",
+        "candidates": [
+          {
+            "tokenId": 817,
+            "label": "go",
+            "fastLogit": 0,
+            "stableLogit": 0.009765625,
+            "referenceLogit": 0.010000000000218279
+          },
+          {
+            "tokenId": 4721,
+            "label": "stop",
+            "fastLogit": 0.0010004043579101562,
+            "stableLogit": 0.0010000000474974513,
+            "referenceLogit": 0.001
+          }
+        ],
+        "executionIdentity": null,
+        "firstDivergence": {
+          "semanticOpId": "matmul.logits",
+          "semanticStage": "lm_head_slice",
+          "semanticPhase": "logits",
+          "fastDigest": "bec1097c420aec610d12f38cef7aa93697248cfc4a5f3210ab8e4d6f9c8b186d",
+          "stableDigest": "51df3b86a668143fb35298edd7f44512257901bdf04bb8799b54a0166681197d"
+        },
+        "decodeBoundary": null,
+        "selectedToken": {
+          "fast": 4721,
+          "stable": 817,
+          "reference": 817,
+          "fastMatchesReference": false,
+          "stableMatchesReference": true
+        },
+        "trigger": {
+          "fired": true,
+          "checks": {
+            "firstDivergencePresent": true,
+            "sensitiveOperatorMatched": true,
+            "selectedTokenDisagreement": true,
+            "stableMatchesExactReference": true,
+            "fastMissesExactReference": true
+          },
+          "proofLinks": [
+            {
+              "theorem": "selectedTokenReferenceImprovementTriggered_iff_all_checks",
+              "module": "Doe.Core.NumericStabilityPolicy",
+              "category": "lean_verified",
+              "relation": "numeric-stability-trigger-all-checks",
+              "artifactPath": "pipeline/lean/artifacts/proven-conditions.json"
+            }
+          ]
+        },
+        "route": {
+          "decision": "abstain",
+          "selectionMode": "none",
+          "committedResultMode": "none",
+          "downstreamAction": "stop",
+          "effectApplied": false,
+          "selectedPolicyId": null,
+          "selectedToken": null,
+          "proofLinks": [
+            {
+              "theorem": "routeDecisionForTrigger_prefers_triggered_decision_when_true",
+              "module": "Doe.Core.NumericStabilityPolicy",
+              "category": "lean_verified",
+              "relation": "numeric-stability-route-triggered",
+              "artifactPath": "pipeline/lean/artifacts/proven-conditions.json"
+            },
+            {
+              "theorem": "routeDecisionForTrigger_prefers_fallback_decision_when_false",
+              "module": "Doe.Core.NumericStabilityPolicy",
+              "category": "lean_verified",
+              "relation": "numeric-stability-route-fallback",
+              "artifactPath": "pipeline/lean/artifacts/proven-conditions.json"
+            }
+          ],
+          "selectionProofLinks": [
+            {
+              "theorem": "selectedValueForRoute_abstain_returns_none",
+              "module": "Doe.Core.NumericStabilityPolicy",
+              "category": "lean_verified",
+              "relation": "numeric-stability-route-select-none",
+              "artifactPath": "pipeline/lean/artifacts/proven-conditions.json"
+            }
+          ]
+        }
+      },
+      "traceLink": {
+        "moduleIdentity": "doe_numeric_stability",
+        "requestHash": "b6ce8132718440f8a9667a36ed75ec412896e31a59c46df4288ffc065eb14fd4",
+        "policyHash": "9fab9e01a9bf98124f1e6301465e3cc909922ed449c4f54371c44ebd3a410b78",
+        "resultHash": null
+      }
+    },
+    "numeric-route-accept-fast-on-selected-token-disagreement-v1": {
+      "schemaVersion": 1,
+      "moduleId": "doe_numeric_stability",
+      "artifactKind": "result",
+      "serviceId": "matmul_logits_slice",
+      "serviceResult": {
+        "status": "ok"
+      },
+      "executionStats": {
+        "dispatchCount": 0,
+        "bytesMoved": 72,
+        "candidateCount": 2
+      },
+      "timingStats": {
+        "setupNs": 0,
+        "encodeNs": 0,
+        "submitNs": 0,
+        "dispatchNs": null
+      },
+      "failureDetails": {
+        "code": "none"
+      },
+      "routeDecision": "accept-fast",
+      "selectedToken": 4721,
+      "receiptPath": null,
+      "traceMetaPath": null,
+      "receipt": {
+        "schemaVersion": 1,
+        "mode": "numeric-stability",
+        "operatorFamily": "lm-head-slice",
+        "semanticOpId": "matmul.logits",
+        "semanticStage": "lm_head_slice",
+        "semanticPhase": "logits",
+        "policyRegistryPath": "config/numeric-stability-policy.json",
+        "policyRegistryVersion": "2026-03-29-execution-profiles-v1",
+        "routeTaxonomyVersion": "numeric-stability-routes-v1",
+        "proofArtifactPath": "pipeline/lean/artifacts/proven-conditions.json",
+        "triggerPolicyId": "numeric-instability/selected-token-disagreement-with-reference-improvement-v1",
+        "routingPolicyId": "numeric-stability/accept-fast-on-selected-token-disagreement-v1",
+        "fastPolicyId": "lm-head-slice/forward-f16accum-v1",
+        "stablePolicyId": "lm-head-slice/forward-serial-v1",
+        "referencePolicyId": "lm-head-slice/cpu-f64-serial-v1",
+        "candidates": [
+          {
+            "tokenId": 817,
+            "label": "go",
+            "fastLogit": 0,
+            "stableLogit": 0.009765625,
+            "referenceLogit": 0.010000000000218279
+          },
+          {
+            "tokenId": 4721,
+            "label": "stop",
+            "fastLogit": 0.0010004043579101562,
+            "stableLogit": 0.0010000000474974513,
+            "referenceLogit": 0.001
+          }
+        ],
+        "executionIdentity": null,
+        "firstDivergence": {
+          "semanticOpId": "matmul.logits",
+          "semanticStage": "lm_head_slice",
+          "semanticPhase": "logits",
+          "fastDigest": "bec1097c420aec610d12f38cef7aa93697248cfc4a5f3210ab8e4d6f9c8b186d",
+          "stableDigest": "51df3b86a668143fb35298edd7f44512257901bdf04bb8799b54a0166681197d"
+        },
+        "decodeBoundary": null,
+        "selectedToken": {
+          "fast": 4721,
+          "stable": 817,
+          "reference": 817,
+          "fastMatchesReference": false,
+          "stableMatchesReference": true
+        },
+        "trigger": {
+          "fired": true,
+          "checks": {
+            "firstDivergencePresent": true,
+            "sensitiveOperatorMatched": true,
+            "selectedTokenDisagreement": true,
+            "stableMatchesExactReference": true,
+            "fastMissesExactReference": true
+          },
+          "proofLinks": [
+            {
+              "theorem": "selectedTokenReferenceImprovementTriggered_iff_all_checks",
+              "module": "Doe.Core.NumericStabilityPolicy",
+              "category": "lean_verified",
+              "relation": "numeric-stability-trigger-all-checks",
+              "artifactPath": "pipeline/lean/artifacts/proven-conditions.json"
+            }
+          ]
+        },
+        "route": {
+          "decision": "accept-fast",
+          "selectionMode": "fast",
+          "committedResultMode": "fast",
+          "downstreamAction": "continue",
+          "effectApplied": false,
+          "selectedPolicyId": "lm-head-slice/forward-f16accum-v1",
+          "selectedToken": 4721,
+          "proofLinks": [
+            {
+              "theorem": "routeDecisionForTrigger_prefers_triggered_decision_when_true",
+              "module": "Doe.Core.NumericStabilityPolicy",
+              "category": "lean_verified",
+              "relation": "numeric-stability-route-triggered",
+              "artifactPath": "pipeline/lean/artifacts/proven-conditions.json"
+            },
+            {
+              "theorem": "routeDecisionForTrigger_prefers_fallback_decision_when_false",
+              "module": "Doe.Core.NumericStabilityPolicy",
+              "category": "lean_verified",
+              "relation": "numeric-stability-route-fallback",
+              "artifactPath": "pipeline/lean/artifacts/proven-conditions.json"
+            }
+          ],
+          "selectionProofLinks": [
+            {
+              "theorem": "selectedValueForRoute_acceptFast_returns_fast",
+              "module": "Doe.Core.NumericStabilityPolicy",
+              "category": "lean_verified",
+              "relation": "numeric-stability-route-select-fast",
+              "artifactPath": "pipeline/lean/artifacts/proven-conditions.json"
+            }
+          ]
+        }
+      },
+      "traceLink": {
+        "moduleIdentity": "doe_numeric_stability",
+        "requestHash": "f3800a7f385a180d3d0b908553133a8c3cf8443cef42493260d7ee075aa8570d",
+        "policyHash": "9fab9e01a9bf98124f1e6301465e3cc909922ed449c4f54371c44ebd3a410b78",
+        "resultHash": null
+      }
+    }
+  }
+}

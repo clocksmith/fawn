@@ -27,7 +27,8 @@ check-build:
 		$(MAKE) --no-print-directory -C $$owner BUILD='$(BUILD)'/$$owner OUT='$(BUILD)'/$$owner all; \
 	done
 	$(MAKE) --no-print-directory -C runtime-cli BUILD='$(abspath $(BUILD))'/runtime-cli NATIVE_BUILD='$(abspath $(BUILD))'/native all
-	@echo "C owner build: $(words $(OWNERS)) owners and the runtime-cli consumer built into $(BUILD)"
+	$(MAKE) --no-print-directory -C modules BUILD='$(abspath $(BUILD))'/modules all
+	@echo "C owner build: $(words $(OWNERS)) owners, runtime-cli and modules built into $(BUILD)"
 # The compiler owner builds into its gitignored compiler/build regardless of BUILD.
 check-globals: check-build
 	$(PYTHON) tools/check_globals.py '$(BUILD)' compiler/build

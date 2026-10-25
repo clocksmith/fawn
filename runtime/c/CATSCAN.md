@@ -14,6 +14,7 @@ Develop independently usable C compiler and runtime owners incrementally while p
 ## Scope
 
 - Includes the staged C migration; the compiler child owns source meaning and target artifacts.
+- The [modules owner](modules/CATSCAN.md) preserves host policy models and numeric service contracts.
 
 ## Contracts
 
