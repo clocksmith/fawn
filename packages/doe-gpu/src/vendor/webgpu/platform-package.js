@@ -1,3 +1,4 @@
+import { spawnSync } from 'node:child_process';
 import { createRequire } from 'node:module';
 import { existsSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
@@ -61,13 +62,26 @@ function libraryBasenamesForPlatform(platform = process.platform) {
   return ['libwebgpu_doe.so'];
 }
 
-// Libraries an installed platform package may carry: the Zig drop-in first, then
-// the C runtime (staged from a runtime/c package stage with libdoe_compiler).
-// Only the drop-in names above may use Doe build metadata.
-function packageLibraryBasenamesForPlatform(platform = process.platform) {
-  const c = platform === 'win32' ? ['webgpu_doe_c.dll', 'libwebgpu_doe_c.dll']
+// Default discovery is C-only. An explicit provider path still admits retained
+// legacy packages, but merely finding an old Zig artifact never selects it.
+function cLibraryBasenamesForPlatform(platform = process.platform) {
+  return platform === 'win32' ? ['webgpu_doe_c.dll', 'libwebgpu_doe_c.dll']
     : platform === 'darwin' ? ['libwebgpu_doe_c.dylib'] : ['libwebgpu_doe_c.so'];
-  return [...libraryBasenamesForPlatform(platform), ...c];
+}
+function packageLibraryBasenamesForPlatform(platform = process.platform) {
+  return cLibraryBasenamesForPlatform(platform);
+}
+function cWorkspaceLibraryCandidates(root, platform = process.platform) {
+  let stage = process.env.DOE_C_STAGE ? resolve(process.env.DOE_C_STAGE) : null;
+  if (!stage) {
+    const revision = spawnSync('git', ['rev-parse', '--verify', 'HEAD'], {
+      cwd: root, encoding: 'utf8', timeout: 5000,
+    });
+    if (revision.status !== 0 || !/^[0-9a-f]{40}$/u.test(revision.stdout.trim())) return [];
+    stage = resolve(root, '.cache/doe-c-packages', revision.stdout.trim());
+  }
+  return cLibraryBasenamesForPlatform(platform).map((name) =>
+    resolve(stage, platform === 'win32' ? 'bin' : 'lib', name));
 }
 
 function resolvePlatformPackageAddonPath(options = {}) {
@@ -97,6 +111,8 @@ export {
   PACKAGE_ROOT,
   WORKSPACE_ROOT,
   libraryBasenamesForPlatform,
+  cLibraryBasenamesForPlatform,
+  cWorkspaceLibraryCandidates,
   packageLibraryBasenamesForPlatform,
   isInstalledPackageRoot,
   resolveInstalledPlatformPackageRoot,

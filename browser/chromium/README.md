@@ -83,3 +83,20 @@ compatibility, a promoted release, or a general performance claim.
 Archived Track B module designs remain historical references only. New work
 requires measured benefits that justify its compatibility and maintenance costs,
 plus explicit selection under GOALS.md and the milestone manifest.
+
+### C-only Doe artifact selection
+
+`lane-paths.sh`, `refresh-doe-app.sh` and `patch-chromium-app-doe.sh` now select
+`.cache/doe-c-packages/<HEAD>/lib/libwebgpu_doe_c.<host-extension>` by default,
+with `DOE_C_STAGE` selecting a completed alternative C stage. Refresh invokes
+`runtime/c/tools/build-native-package.py` on committed HEAD with C/C++ tools;
+existing stage directories are not overwritten (`--skip-build` reuses an
+explicitly prepared stage). The C compiler shared library must remain beside the
+runtime. Explicit `--doe-lib`/`FAWN_DOE_LIB` overrides remain visible and do not
+cause fallback. The compatibility `--optimize` spelling accepts `ReleaseFast`
+only; the C package owner controls its actual release flags.
+
+No Zig compiler or Zig runtime is used on this default path. Historical vendored
+header paths are provenance inputs, not a Zig build dependency. This selection
+change and host syntax checks do not qualify Chromium integration or Metal GPU
+execution; browser acceptance remains separately required.

@@ -10,7 +10,7 @@ usage() {
 Usage:
   ./scripts/refresh-doe-app.sh [--app PATH] [--doe-lib PATH] [--optimize MODE] [--skip-build]
 
-Rebuilds the full Doe drop-in library and reapplies the Chromium.app/Fawn.app
+Builds the committed C-only Doe package and reapplies the Chromium.app/Fawn.app
 wrapper so direct macOS launches use the latest Doe runtime by default.
 EOF
 }
@@ -41,7 +41,7 @@ resolve_default_app_bundle() {
 
 APP_PATH=""
 DOE_LIB_OVERRIDE=""
-OPTIMIZE_MODE="ReleaseFast"
+OPTIMIZE_MODE="ReleaseFast" # Retained CLI spelling; the package owner selects release C flags.
 SKIP_BUILD=0
 
 while [[ $# -gt 0 ]]; do
@@ -92,10 +92,19 @@ if [[ "$(fawn_host_os)" != "darwin" ]]; then
 fi
 
 if [[ "${SKIP_BUILD}" -eq 0 ]]; then
-  (
-    cd "${FAWN_REPO_ROOT}/runtime/zig"
-    zig build dropin-full "-Doptimize=${OPTIMIZE_MODE}"
-  )
+  if [[ "${OPTIMIZE_MODE}" != ReleaseFast ]]; then
+    echo "C package owner supports ReleaseFast only; use --skip-build for an explicit custom build" >&2
+    exit 2
+  fi
+  stage="$(fawn_c_stage_root)"
+  if [[ -e "${stage}" ]]; then
+    echo "C stage already exists: ${stage}; use --skip-build or a fresh DOE_C_STAGE" >&2
+    exit 2
+  fi
+  build_root="$(mktemp -d "${TMPDIR:-/tmp}/fawn-c-build.XXXXXX")"
+  "${PYTHON:-python3}" "${FAWN_REPO_ROOT}/runtime/c/tools/build-native-package.py" \
+    --repo "${FAWN_REPO_ROOT}" --ref HEAD --build "${build_root}/build" \
+    --destination "${stage}" --cc "${CC:-cc}" --cxx "${CXX:-c++}"
 fi
 
 DOE_LIB="$(fawn_resolve_doe_lib "${DOE_LIB_OVERRIDE}")"

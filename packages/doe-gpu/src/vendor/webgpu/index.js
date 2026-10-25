@@ -14,7 +14,8 @@ import {
   PACKAGE_ROOT,
   WORKSPACE_ROOT,
   isInstalledPackageRoot,
-  libraryBasenamesForPlatform,
+  cLibraryBasenamesForPlatform,
+    cWorkspaceLibraryCandidates,
   resolvePlatformPackageAddonPath,
   resolvePlatformPackageLibraryPath,
 } from './platform-package.js';
@@ -258,12 +259,7 @@ function loadAddon() {
     requireFn: require,
     workspaceRoot: WORKSPACE_ROOT,
   });
-  const workspaceCandidates = [
-    resolve(PACKAGE_ROOT, 'build', 'Release', 'doe_napi.node'),
-    resolve(PACKAGE_ROOT, 'build', 'Debug', 'doe_napi.node'),
-    resolve(__dirname, '..', 'build', 'Release', 'doe_napi.node'),
-    resolve(__dirname, '..', 'build', 'Debug', 'doe_napi.node'),
-  ];
+  const workspaceCandidates = cWorkspaceLibraryCandidates(WORKSPACE_ROOT);
   const packagedCandidates = [
     packagedAddonPath,
     resolve(PACKAGE_ROOT, 'prebuilds', `${process.platform}-${process.arch}`, 'doe_napi.node'),
@@ -289,7 +285,7 @@ function currentAddon() {
 }
 
 function resolveDoeLibraryPath() {
-  const workspaceLibraryNames = libraryBasenamesForPlatform();
+  const workspaceLibraryNames = cLibraryBasenamesForPlatform();
   const packagedLibraryPath = resolvePlatformPackageLibraryPath({
     requireFn: require,
     workspaceRoot: WORKSPACE_ROOT,
@@ -309,10 +305,7 @@ function resolveDoeLibraryPath() {
     packagedLibraryPath,
     ...workspaceLibraryNames.map((name) => resolve(PACKAGE_ROOT, 'prebuilds', `${process.platform}-${process.arch}`, name)),
   ];
-  const cwdCandidates = [
-    ...workspaceLibraryNames.map((name) => resolve(process.cwd(), 'runtime', 'zig', 'zig-out', 'lib', name)),
-    ...workspaceLibraryNames.map((name) => resolve(process.cwd(), 'zig', 'zig-out', 'lib', name)),
-  ];
+  const cwdCandidates = cWorkspaceLibraryCandidates(process.cwd());
   // An explicit provider override is that provider or nothing: a missing file
   // never falls through to another library, which would misattribute every
   // result to a provider the caller did not select.

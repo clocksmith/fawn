@@ -26,18 +26,23 @@ fawn_doe_lib_extension() {
   esac
 }
 
+fawn_c_stage_root() {
+  if [[ -n "${DOE_C_STAGE:-}" ]]; then
+    printf '%s\n' "${DOE_C_STAGE}"
+  else
+    printf '%s/.cache/doe-c-packages/%s\n' "${FAWN_REPO_ROOT}" "$(git -C "${FAWN_REPO_ROOT}" rev-parse --verify HEAD)"
+  fi
+}
+
 fawn_default_doe_lib_candidates() {
-  local extension
+  local extension stage
   extension="$(fawn_doe_lib_extension)"
-  printf "%s\n" \
-    "${FAWN_REPO_ROOT}/runtime/zig/zig-out/lib/libwebgpu_doe_full.${extension}" \
-    "${FAWN_REPO_ROOT}/runtime/zig/zig-out/lib/libwebgpu_doe_full.so" \
-    "${FAWN_REPO_ROOT}/runtime/zig/zig-out/lib/libwebgpu_doe_full.dylib" \
-    "${FAWN_REPO_ROOT}/runtime/zig/zig-out/lib/libwebgpu_doe_full.dll" \
-    "${FAWN_REPO_ROOT}/runtime/zig/zig-out/lib/libwebgpu_doe.${extension}" \
-    "${FAWN_REPO_ROOT}/runtime/zig/zig-out/lib/libwebgpu_doe.so" \
-    "${FAWN_REPO_ROOT}/runtime/zig/zig-out/lib/libwebgpu_doe.dylib" \
-    "${FAWN_REPO_ROOT}/runtime/zig/zig-out/lib/libwebgpu_doe.dll"
+  stage="$(fawn_c_stage_root)"
+  if [[ "${extension}" == dll ]]; then
+    printf '%s/bin/webgpu_doe_c.dll\n' "${stage}"
+  else
+    printf '%s/lib/libwebgpu_doe_c.%s\n' "${stage}" "${extension}"
+  fi
 }
 
 fawn_default_chrome_candidates() {

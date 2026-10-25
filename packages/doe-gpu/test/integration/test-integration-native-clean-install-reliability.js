@@ -36,8 +36,8 @@ const platformPackageName = new Map([
   ['darwin-arm64', 'doe-gpu-darwin-arm64'],
 ]).get(`${process.platform}-${process.arch}`);
 const platformLibraryName = new Map([
-  ['linux-x64', 'libwebgpu_doe.so'],
-  ['darwin-arm64', 'libwebgpu_doe.dylib'],
+  ['linux-x64', 'libwebgpu_doe_c.so'],
+  ['darwin-arm64', 'libwebgpu_doe_c.dylib'],
 ]).get(`${process.platform}-${process.arch}`);
 if (!platformPackageName && requireNative) {
   throw new Error(`no native reliability contract for ${process.platform}-${process.arch}`);

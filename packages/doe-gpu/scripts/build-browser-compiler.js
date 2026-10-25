@@ -8,15 +8,12 @@ import { fileURLToPath } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 const zigRoot = resolve(root, 'runtime/zig');
-const provider = process.argv.find((arg) => arg.startsWith('--provider='))?.slice(11) ?? 'zig';
+const provider = process.argv.find((arg) => arg.startsWith('--provider='))?.slice(11) ?? 'c';
 const outputDirectory = process.argv.find((arg) => arg.startsWith('--output-dir='))?.slice(13);
 if (!['zig', 'c'].includes(provider) || process.argv.slice(2).some((arg) =>
   !arg.startsWith('--provider=') && !arg.startsWith('--output-dir='))) {
   throw new Error('usage: build-browser-compiler.js [--provider=zig|c] [--output-dir=PATH]');
 }
-// C remains an explicitly selected artifact until migration cutover. Requiring
-// a separate staging destination prevents changing the shipped default by accident.
-if (provider === 'c' && !outputDirectory) throw new Error('C staging requires --output-dir=PATH');
 const cRoot = resolve(root, 'runtime/c/compiler');
 const cPath = provider === 'c' ? spawnSync('make', ['--no-print-directory', '-s', 'browser-wasm-path'],
   { cwd: cRoot, encoding: 'utf8' }) : null;
@@ -25,7 +22,7 @@ const wasmPath = provider === 'c' ? resolve(cPath.stdout.trim()) : resolve(zigRo
 const built = provider === 'c'
   ? spawnSync(process.env.PYTHON ?? 'python3', ['tools/build_browser.py', '--output', wasmPath],
     { cwd: resolve(root, 'runtime/c/compiler'), stdio: 'inherit' })
-  : spawnSync(process.env.ZIG ?? 'zig',
+  : spawnSync(process.env.ZIG ?? 'c',
     ['build', 'browser-wasm', 'emit-wgsl', '-Doptimize=ReleaseFast', '--summary', 'all'],
     { cwd: zigRoot, stdio: 'inherit' });
 if (built.status !== 0) process.exit(built.status ?? 1);

@@ -2,15 +2,9 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
-LANE_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
-FAWN_PROJECT_ROOT="${FAWN_REPO_ROOT:-${REPO_ROOT}}"
-if [[ ! -d "${FAWN_PROJECT_ROOT}/zig" ]]; then
-  ALT_ROOT="$(cd "${FAWN_PROJECT_ROOT}/.." && pwd)"
-  if [[ -d "${ALT_ROOT}/zig" ]]; then
-    FAWN_PROJECT_ROOT="${ALT_ROOT}"
-  fi
-fi
+# shellcheck disable=SC1091
+source "${SCRIPT_DIR}/lane-paths.sh"
+LANE_ROOT="${FAWN_CHROMIUM_LANE_DIR}"
 
 usage() {
   cat <<'EOF'
@@ -30,16 +24,7 @@ EOF
 }
 
 fawn_default_doe_lib() {
-  local ext="dylib"
-  printf "%s\n" \
-    "${FAWN_PROJECT_ROOT}/runtime/zig/zig-out/lib/libwebgpu_doe_full.${ext}" \
-    "${FAWN_PROJECT_ROOT}/runtime/zig/zig-out/lib/libwebgpu_doe_full.so" \
-    "${FAWN_PROJECT_ROOT}/runtime/zig/zig-out/lib/libwebgpu_doe_full.dylib" \
-    "${FAWN_PROJECT_ROOT}/runtime/zig/zig-out/lib/libwebgpu_doe_full.dll" \
-    "${FAWN_PROJECT_ROOT}/runtime/zig/zig-out/lib/libwebgpu_doe.${ext}" \
-    "${FAWN_PROJECT_ROOT}/runtime/zig/zig-out/lib/libwebgpu_doe.so" \
-    "${FAWN_PROJECT_ROOT}/runtime/zig/zig-out/lib/libwebgpu_doe.dylib" \
-    "${FAWN_PROJECT_ROOT}/runtime/zig/zig-out/lib/libwebgpu_doe.dll"
+  fawn_default_doe_lib_candidates
 }
 
 fawn_default_doe_icon_path() {
@@ -169,6 +154,14 @@ fi
 
 if [[ -z "${DOE_LIB}" || ! -f "${DOE_LIB}" ]]; then
   echo "missing libwebgpu_doe path; set --doe-lib or FAWN_DOE_LIB" >&2
+  exit 1
+fi
+
+# The C runtime is a two-library deployment; fail before mutating the app if
+# its compiler sibling is absent. Explicit legacy library overrides remain valid.
+if [[ "$(basename "${DOE_LIB}")" == libwebgpu_doe_c.dylib ]] && \
+   [[ ! -f "$(dirname "${DOE_LIB}")/libdoe_compiler.dylib" ]]; then
+  echo "missing C compiler sibling beside ${DOE_LIB}" >&2
   exit 1
 fi
 
