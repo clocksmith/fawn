@@ -146,6 +146,8 @@ $(BUILD)/async-submit: tests/async_submit.c tests/consumer.h tests/adapter_class
 	  -Wl,--wrap=doe_vk_commands_block -o $@
 $(BUILD)/queue-sync-info: tests/queue_sync_info.c tests/consumer.h tests/adapter_class.h include/doe_native_queue.h $(OBJECTS) $(COMPILER_LIBRARY) | $(BUILD)
 	$(CC) $(CPPFLAGS) $(CFLAGS) tests/queue_sync_info.c $(OBJECTS) $(COMPILER_LINK) $(PLATFORM_LIBS) -Wl,--wrap=doe_vk_commands_poll -o $@
+$(BUILD)/fault-sweep: tests/fault_sweep.c tests/consumer.h tests/adapter_class.h $(OBJECTS) $(COMPILER_LIBRARY) | $(BUILD)
+	$(CC) $(CPPFLAGS) $(CFLAGS) tests/fault_sweep.c $(OBJECTS) $(COMPILER_LINK) $(PLATFORM_LIBS) -Wl,--wrap=malloc -Wl,--wrap=calloc -o $@
 $(BUILD)/pending-progress: tests/pending_progress.c tests/consumer.h tests/adapter_class.h $(OBJECTS) $(COMPILER_LIBRARY) | $(BUILD)
 	$(CC) $(CPPFLAGS) $(CFLAGS) tests/pending_progress.c $(OBJECTS) $(COMPILER_LINK) $(PLATFORM_LIBS) \
 	  -Wl,--wrap=pthread_create -Wl,--wrap=native_backend_close -Wl,--wrap=native_buffer_close \
@@ -167,6 +169,8 @@ $(BUILD)/vertex-formats: tests/vertex_formats.c tests/consumer.h tests/adapter_c
 $(BUILD)/compute-programs: tests/compute_programs.c tests/consumer.h tests/adapter_class.h include/doe_native_programs.h $(NATIVE_LIBRARY)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
 $(BUILD)/fused-commands: tests/fused_commands.c tests/consumer.h tests/adapter_class.h include/doe_native_commands.h $(NATIVE_LIBRARY)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
+$(BUILD)/concurrency: tests/concurrency.c tests/consumer.h tests/adapter_class.h $(NATIVE_LIBRARY)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
 $(BUILD)/shader-check: tests/shader_check.c include/doe_native_shader_check.h $(NATIVE_LIBRARY)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
@@ -199,7 +203,7 @@ $(BUILD)/lifecycle: tests/lifecycle.c tests/adapter_class.h $(OBJECTS) $(COMPILE
 $(BUILD)/procedures-cxx: tests/procedures.cpp $(NATIVE_LIBRARY)
 	$(CXX) $(CPPFLAGS) -std=c++17 -Wall -Wextra -Wpedantic -Werror $(SANITIZE) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
 ifeq ($(SHARED_PLATFORM),Linux)
-check: $(BUILD)/draw-guard $(BUILD)/implicit-sampling $(BUILD)/d3d12-graphics check-d3d12-graphics-layout $(BUILD)/depth-comparison $(BUILD)/all-any $(BUILD)/select $(BUILD)/pipeline-overrides check-d3d12-bindings $(BUILD)/texture-bindings $(BUILD)/atomic-operations $(BUILD)/d3d12-texture-desc $(BUILD)/texture-transfers check-d3d12-indirect-layout $(BUILD)/indirect-dispatch $(BUILD)/map-oom $(BUILD)/command-resources $(BUILD)/binding-aliases $(BUILD)/mixed-resources $(BUILD)/offscreen-triangle check-provider-pin $(BUILD)/backend-failure $(BUILD)/vulkan-identity $(BUILD)/draw-budget $(BUILD)/indirect-render $(BUILD)/indexed-render $(BUILD)/depth-sampling $(BUILD)/cube-array $(BUILD)/view-formats $(BUILD)/point-list $(BUILD)/color-discard $(BUILD)/msaa-sampling $(BUILD)/format-features $(BUILD)/draw-features $(BUILD)/copy-layouts $(BUILD)/bc-compression $(BUILD)/component-swizzle $(BUILD)/encoder-errors $(BUILD)/core-formats $(BUILD)/indirect-compute check-build-dependencies check-host-bridge $(BUILD)/atomics $(BUILD)/debug $(BUILD)/msaa $(BUILD)/depth $(BUILD)/demote $(BUILD)/graphics-admission $(BUILD)/empty-shader $(BUILD)/graphics $(BUILD)/compute $(BUILD)/procedures-cxx $(BUILD)/lifecycle $(BUILD)/textures $(BUILD)/admission $(BUILD)/failures $(BUILD)/timestamps $(BUILD)/recovery $(BUILD)/pending-progress $(BUILD)/barrier-coverage $(BUILD)/async-submit $(BUILD)/queue-sync-info $(BUILD)/depth-copies $(BUILD)/uniform-standard $(BUILD)/wgsl-language-features $(BUILD)/texture-binding-view-dimension $(BUILD)/compute-programs $(BUILD)/fused-commands $(BUILD)/shader-check $(BUILD)/shader-reflection $(BUILD)/adapter-info $(BUILD)/program-prepare $(BUILD)/vertex-formats $(BUILD)/mrt $(BUILD)/anisotropy $(BUILD)/storage-textures $(BUILD)/limits $(BUILD)/large-write $(BUILD)/slice-render
+check: $(BUILD)/draw-guard $(BUILD)/implicit-sampling $(BUILD)/d3d12-graphics check-d3d12-graphics-layout $(BUILD)/depth-comparison $(BUILD)/all-any $(BUILD)/select $(BUILD)/pipeline-overrides check-d3d12-bindings $(BUILD)/texture-bindings $(BUILD)/atomic-operations $(BUILD)/d3d12-texture-desc $(BUILD)/texture-transfers check-d3d12-indirect-layout $(BUILD)/indirect-dispatch $(BUILD)/map-oom $(BUILD)/command-resources $(BUILD)/binding-aliases $(BUILD)/mixed-resources $(BUILD)/offscreen-triangle check-provider-pin $(BUILD)/backend-failure $(BUILD)/vulkan-identity $(BUILD)/draw-budget $(BUILD)/indirect-render $(BUILD)/indexed-render $(BUILD)/depth-sampling $(BUILD)/cube-array $(BUILD)/view-formats $(BUILD)/point-list $(BUILD)/color-discard $(BUILD)/msaa-sampling $(BUILD)/format-features $(BUILD)/draw-features $(BUILD)/copy-layouts $(BUILD)/bc-compression $(BUILD)/component-swizzle $(BUILD)/encoder-errors $(BUILD)/core-formats $(BUILD)/indirect-compute check-build-dependencies check-host-bridge $(BUILD)/atomics $(BUILD)/debug $(BUILD)/msaa $(BUILD)/depth $(BUILD)/demote $(BUILD)/graphics-admission $(BUILD)/empty-shader $(BUILD)/graphics $(BUILD)/compute $(BUILD)/procedures-cxx $(BUILD)/lifecycle $(BUILD)/textures $(BUILD)/admission $(BUILD)/failures $(BUILD)/timestamps $(BUILD)/recovery $(BUILD)/pending-progress $(BUILD)/barrier-coverage $(BUILD)/async-submit $(BUILD)/queue-sync-info $(BUILD)/fault-sweep $(BUILD)/concurrency $(BUILD)/depth-copies $(BUILD)/uniform-standard $(BUILD)/wgsl-language-features $(BUILD)/texture-binding-view-dimension $(BUILD)/compute-programs $(BUILD)/fused-commands $(BUILD)/shader-check $(BUILD)/shader-reflection $(BUILD)/adapter-info $(BUILD)/program-prepare $(BUILD)/vertex-formats $(BUILD)/mrt $(BUILD)/anisotropy $(BUILD)/storage-textures $(BUILD)/limits $(BUILD)/large-write $(BUILD)/slice-render
 	$(BUILD)/map-oom
 	$(BUILD)/binding-aliases
 	$(BUILD)/command-resources
@@ -255,6 +259,8 @@ check: $(BUILD)/draw-guard $(BUILD)/implicit-sampling $(BUILD)/d3d12-graphics ch
 	$(BUILD)/barrier-coverage
 	$(BUILD)/async-submit
 	$(BUILD)/queue-sync-info
+	$(BUILD)/fault-sweep
+	$(BUILD)/concurrency
 	$(BUILD)/vulkan-identity
 	$(BUILD)/backend-failure
 	$(BUILD)/uniform-standard
@@ -274,6 +280,19 @@ check: $(BUILD)/draw-guard $(BUILD)/implicit-sampling $(BUILD)/d3d12-graphics ch
 	$(BUILD)/large-write
 	$(BUILD)/slice-render
 	python3 tests/audit-exports.py $(NATIVE_LIBRARY) $(if $(SANITIZE),,--runtime)
+# Stage-4 robustness under sanitizers: concurrency under TSan and ASan, the
+# fault sweep under ASan with leak detection. Separate sanitized builds of the
+# library; not part of `check`.
+SANITIZER_BUILD = $(abspath $(BUILD))/sanitizers
+.PHONY: check-sanitizers
+check-sanitizers:
+	$(MAKE) --no-print-directory BUILD='$(SANITIZER_BUILD)/address' SANITIZE='-fsanitize=address,undefined -fno-omit-frame-pointer' \
+	  '$(SANITIZER_BUILD)/address/concurrency' '$(SANITIZER_BUILD)/address/fault-sweep'
+	ASAN_OPTIONS=detect_leaks=1:halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1 '$(SANITIZER_BUILD)/address/concurrency'
+	ASAN_OPTIONS=detect_leaks=1:halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1 '$(SANITIZER_BUILD)/address/fault-sweep'
+	$(MAKE) --no-print-directory BUILD='$(SANITIZER_BUILD)/thread' SANITIZE='-fsanitize=thread -fno-omit-frame-pointer' \
+	  '$(SANITIZER_BUILD)/thread/concurrency'
+	TSAN_OPTIONS=halt_on_error=1 '$(SANITIZER_BUILD)/thread/concurrency'
 # The same public clients on a nonfallback GPU adapter (DOE_C_TEST_ADAPTER=physical).
 # Developer evidence on the printed adapter/driver only, not qualification. Uses the
 # system ICDs: unset VK_ICD_FILENAMES. Never run on a host under a physical hold.
@@ -306,7 +325,7 @@ else
 check:
 	@echo "The SwiftShader/fault-injection suite requires Linux; use check-portable for host ABI checks." >&2
 	@exit 2
-GNU_ONLY_TESTS = map-oom metal-bridge demote failures recovery indirect-compute pending-progress vulkan-identity surface-progress program-prepare
+GNU_ONLY_TESTS = map-oom fault-sweep metal-bridge demote failures recovery indirect-compute pending-progress vulkan-identity surface-progress program-prepare
 $(addprefix $(BUILD)/,$(GNU_ONLY_TESTS)): | unavailable-gnu-tests
 .PHONY: unavailable-gnu-tests
 unavailable-gnu-tests:
@@ -332,7 +351,7 @@ check-empty-module: $(BUILD)/empty-shader
 clean:
 	rm -f $(BUILD)/d3d12-graphics-vertices $(BUILD)/d3d12-vertex-inputs $(BUILD)/draw-guard $(BUILD)/implicit-sampling $(BUILD)/d3d12-graphics-limits $(BUILD)/d3d12-graphics-layout $(BUILD)/d3d12-graphics $(BUILD)/depth-comparison $(BUILD)/all-any $(BUILD)/select $(BUILD)/pipeline-overrides $(BUILD)/texture-bindings $(BUILD)/command-resources $(BUILD)/indirect-dispatch $(BUILD)/texture-transfers $(BUILD)/d3d12-texture-desc $(BUILD)/atomic-operations
 	rm -f $(OBJECTS)
-	rm -f $(BUILD)/map-oom $(BUILD)/binding-aliases $(BUILD)/native.exports $(BUILD)/native.exports.tmp $(BUILD)/draw-budget $(BUILD)/indirect-render $(BUILD)/indexed-render $(BUILD)/depth-sampling $(BUILD)/cube-array $(BUILD)/view-formats $(BUILD)/point-list $(BUILD)/color-discard $(BUILD)/msaa-sampling $(BUILD)/format-features $(BUILD)/draw-features $(BUILD)/copy-layouts $(BUILD)/bc-compression $(BUILD)/component-swizzle $(BUILD)/encoder-errors $(BUILD)/core-formats $(BUILD)/indirect-compute $(BUILD)/backend-selection $(BUILD)/metal-bridge $(BUILD)/atomics $(BUILD)/debug $(BUILD)/msaa $(BUILD)/depth $(BUILD)/demote $(BUILD)/graphics-admission $(BUILD)/graphics $(BUILD)/empty-shader $(NATIVE_LIBRARY) $(BUILD)/libdoe_compiler.$(SHARED_SUFFIX) $(BUILD)/compute $(BUILD)/procedures-cxx $(BUILD)/lifecycle $(BUILD)/textures $(BUILD)/admission $(BUILD)/failures $(BUILD)/timestamps $(BUILD)/recovery $(BUILD)/pending-progress $(BUILD)/vulkan-identity $(BUILD)/provider-pin $(BUILD)/provider-pin-fixture.$(SHARED_SUFFIX) $(BUILD)/backend-failure $(BUILD)/depth-copies $(BUILD)/surface-present $(BUILD)/surface-platforms $(BUILD)/uniform-standard $(BUILD)/wgsl-language-features $(BUILD)/texture-binding-view-dimension $(BUILD)/mrt $(BUILD)/anisotropy $(BUILD)/storage-textures $(BUILD)/compute-programs $(BUILD)/fused-commands $(BUILD)/shader-check $(BUILD)/shader-reflection $(BUILD)/adapter-info $(BUILD)/program-prepare $(BUILD)/surface-progress $(BUILD)/limits $(BUILD)/large-write $(BUILD)/slice-render $(BUILD)/mixed-resources $(BUILD)/offscreen-triangle
+	rm -f $(BUILD)/map-oom $(BUILD)/fault-sweep $(BUILD)/concurrency $(BUILD)/binding-aliases $(BUILD)/native.exports $(BUILD)/native.exports.tmp $(BUILD)/draw-budget $(BUILD)/indirect-render $(BUILD)/indexed-render $(BUILD)/depth-sampling $(BUILD)/cube-array $(BUILD)/view-formats $(BUILD)/point-list $(BUILD)/color-discard $(BUILD)/msaa-sampling $(BUILD)/format-features $(BUILD)/draw-features $(BUILD)/copy-layouts $(BUILD)/bc-compression $(BUILD)/component-swizzle $(BUILD)/encoder-errors $(BUILD)/core-formats $(BUILD)/indirect-compute $(BUILD)/backend-selection $(BUILD)/metal-bridge $(BUILD)/atomics $(BUILD)/debug $(BUILD)/msaa $(BUILD)/depth $(BUILD)/demote $(BUILD)/graphics-admission $(BUILD)/graphics $(BUILD)/empty-shader $(NATIVE_LIBRARY) $(BUILD)/libdoe_compiler.$(SHARED_SUFFIX) $(BUILD)/compute $(BUILD)/procedures-cxx $(BUILD)/lifecycle $(BUILD)/textures $(BUILD)/admission $(BUILD)/failures $(BUILD)/timestamps $(BUILD)/recovery $(BUILD)/pending-progress $(BUILD)/vulkan-identity $(BUILD)/provider-pin $(BUILD)/provider-pin-fixture.$(SHARED_SUFFIX) $(BUILD)/backend-failure $(BUILD)/depth-copies $(BUILD)/surface-present $(BUILD)/surface-platforms $(BUILD)/uniform-standard $(BUILD)/wgsl-language-features $(BUILD)/texture-binding-view-dimension $(BUILD)/mrt $(BUILD)/anisotropy $(BUILD)/storage-textures $(BUILD)/compute-programs $(BUILD)/fused-commands $(BUILD)/shader-check $(BUILD)/shader-reflection $(BUILD)/adapter-info $(BUILD)/program-prepare $(BUILD)/surface-progress $(BUILD)/limits $(BUILD)/large-write $(BUILD)/slice-render $(BUILD)/mixed-resources $(BUILD)/offscreen-triangle
 
 $(BUILD)/offscreen-triangle: tests/offscreen_triangle.c tests/metal_graphics_cases.h tests/consumer.h tests/adapter_class.h $(NATIVE_LIBRARY)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@

@@ -1165,6 +1165,33 @@ public synchronous and deferred messages; `tests/pending_progress.c` checks a
 background Vulkan detail is observed once. These are developer correctness
 controls, separate from physical failure/recovery qualification.
 
+Stage-4 robustness controls on software Vulkan:
+- `tests/fault_sweep.c` runs one complete workload twice per fresh device. The
+  workload covers a zero-initialized texture through the init batch, buffers, a
+  queue write, a shader, a pipeline, a bind group, a dispatch, copies,
+  submission with immediate caller release, work done and a map; the second
+  round reuses the retained pipeline and spare command pool. Each case fails one
+  thing in turn:
+  - every host allocation of the C owners (GNU `--wrap` of malloc/calloc);
+  - every result-returning Vulkan call, through the device context's function
+    table. Creation and allocation calls report out-of-memory, `vkQueueSubmit`
+    refuses, and fence, wait and idle calls report device loss while the real
+    queue may still be running.
+
+  Every case must settle without a crash or hang. Every map completes, a
+  successful map is exact, every admitted work-done future is delivered, and a
+  result-changing or refused-callback failure is reported. Device release
+  reclaims everything; the leak half runs under ASan.
+- `tests/concurrency.c` runs work from several threads. Four threads on one
+  device and two on their own devices create, record, submit, map and release
+  (half immediately after submit), with fresh and shared pipelines and init-batch
+  textures. A poller thread meanwhile requests work done and processes events.
+  Then three threads keep copying and mapping while another thread destroys the
+  device: maps settle, one loss callback runs.
+- `make check-sanitizers` builds sanitized libraries and runs both tests. It runs
+  the concurrency test under TSan and under ASan+UBSan, and the fault sweep under
+  ASan+UBSan with leak detection. It is separate from `check`.
+
 The Metal frontend now composes real initialized textures/views/samplers, color
 copies and packed QueueWriteTexture uploads, compiler-reflected vertex/fragment
 pipelines and direct, indexed and GPU-guarded indirect whole passes. Vertex and
