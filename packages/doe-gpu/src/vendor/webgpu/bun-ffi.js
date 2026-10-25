@@ -2661,11 +2661,9 @@ function dispatchBunDeviceEvent(device, event) {
     if (!event || typeof event !== "object") {
         return;
     }
+    // onuncapturederror is one of the listeners (setUncapturedErrorAttribute).
     if (typeof event.type === "string") {
         dispatchDeviceEvent(device, event.type, event);
-    }
-    if (event.type === "uncapturederror" && typeof device._onuncapturederror === "function") {
-        device._onuncapturederror.call(device, event);
     }
 }
 

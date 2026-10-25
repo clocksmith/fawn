@@ -160,17 +160,22 @@ function encoderEnded(device, message) {
   return true;
 }
 
-// A texture destroyed before this command, or a view created after its
-// texture was destroyed, has no native handle. WebGPU still encodes the
-// command and rejects the submission, so the encoder records nothing for it
-// and its command buffer fails at submit (queue.submit reports the error).
-function destroyedTextureUse(encoder, path, resources) {
+const DESTROYED_RESOURCE_KINDS = { GPUTexture: 'texture', GPUBuffer: 'buffer', GPUQuerySet: 'query set' };
+
+// A texture, buffer or query set destroyed before this command, or a view
+// created after its texture was destroyed, has no native handle. WebGPU still
+// encodes the command and rejects the submission
+// (https://gpuweb.github.io/gpuweb/#dom-gpuqueue-submit), so the encoder
+// records nothing for it and its command buffer fails at submit
+// (queue.submit reports the error).
+function destroyedResourceUse(encoder, path, resources) {
   const destroyed = resources.find((resource) => resource != null && (resource._textureDestroyed === true
-    || (resource._resourceLabel === 'GPUTexture' && resource._destroyed && !resource._invalid)));
+    || (DESTROYED_RESOURCE_KINDS[resource._resourceLabel] !== undefined && resource._destroyed && !resource._invalid)));
   if (destroyed === undefined) {
     return false;
   }
-  encoder._submitError ??= `${path}: ${describeResourceLabel(destroyed)} names a destroyed ${destroyed._destroyedResourceKind ?? 'texture'}`;
+  const kind = destroyed._destroyedResourceKind ?? DESTROYED_RESOURCE_KINDS[destroyed._resourceLabel] ?? 'texture';
+  encoder._submitError ??= `${path}: ${describeResourceLabel(destroyed)} names a destroyed ${kind}`;
   return true;
 }
 
@@ -187,16 +192,39 @@ function retainCommandObjects(encoder, first, second = null) {
   if (second != null) retained.add(second);
 }
 
+// The GPUDevice that created an object, following resource owners (a view's
+// texture, a texture's device), or null when the chain names none.
+function objectDevice(object) {
+  let current = object;
+  for (let depth = 0; current != null && typeof current === 'object' && depth < 4; depth += 1) {
+    if (current._resourceLabel === 'GPUDevice') return current;
+    current = current._resourceOwner;
+  }
+  return null;
+}
+
+// An object of another device makes the command invalid ("valid to use
+// with"); lazily recorded commands may never reach the provider's own check.
+function deviceMismatchMessage(encoder, path, first, second) {
+  for (const object of [first, second]) {
+    const device = objectDevice(object);
+    if (device !== null && encoder._device != null && device !== encoder._device) {
+      return `${path}: ${describeResourceLabel(object)} belongs to a different device`;
+    }
+  }
+  return null;
+}
+
 function encoderSkipsUse(encoder, path, first = null, second = null) {
   if (isDeviceLost(encoder._device)) {
     return true;
   }
-  const message = invalidUseMessage(path, first, second);
+  const message = invalidUseMessage(path, first, second) ?? deviceMismatchMessage(encoder, path, first, second);
   if (message !== null) {
     invalidateEncoder(encoder, message);
     return true;
   }
-  return destroyedTextureUse(encoder, path, [first, second]);
+  return destroyedResourceUse(encoder, path, [first, second]);
 }
 
 // True when a binding, draw or dispatch command must record nothing: its pass
@@ -211,6 +239,35 @@ function passSkipsCommand(pass, encoder, path, first = null, second = null) {
   }
   return pass._invalid || encoder._invalidMessage != null || encoder._submitError != null
     || encoderSkipsUse(encoder, path, first, second);
+}
+
+// setBindGroup with index >= maxBindGroups invalidates the encoder
+// (https://gpuweb.github.io/gpuweb/#dom-gpubindingcommandsmixin-setbindgroup).
+// Checked here because a bind group naming a destroyed resource records
+// nothing, so the provider never sees the index.
+function bindGroupIndexInvalid(pass, encoder, path, index) {
+  if (pass._invalid || (pass === encoder && encoder._finished === true) || isDeviceLost(encoder._device)) return false;
+  const max = encoder._device?.limits?.maxBindGroups;
+  if (!Number.isInteger(max) || index < max) return false;
+  invalidateEncoder(encoder, `${path}: index ${index} must be less than device.limits.maxBindGroups (${max})`);
+  return true;
+}
+
+const INDIRECT_USAGE = 0x0100;
+
+// An indirect command's buffer range and usage, checked here for the same
+// reason as the bind group index: a destroyed buffer records nothing
+// (https://gpuweb.github.io/gpuweb/#dom-gpucomputepassencoder-dispatchworkgroupsindirect).
+function indirectUseInvalid(pass, encoder, path, buffer, offset, bytes) {
+  if (pass._invalid || (pass === encoder && encoder._finished === true) || isDeviceLost(encoder._device)) return false;
+  if (buffer?._resourceLabel !== 'GPUBuffer' || buffer._invalid || !Number.isInteger(buffer.size)) return false;
+  const message = (buffer.usage & INDIRECT_USAGE) === 0 ? 'indirectBuffer usage does not include INDIRECT'
+    : offset % 4 !== 0 ? `indirectOffset ${offset} must be a multiple of 4`
+      : offset + bytes > buffer.size ? `indirect range ${offset}+${bytes} exceeds buffer size ${buffer.size}`
+        : null;
+  if (message === null) return false;
+  invalidateEncoder(encoder, `${path}: ${message}`);
+  return true;
 }
 
 // A pass or bundle encoder that records nothing: it has no native pass, or
@@ -358,6 +415,7 @@ function createEncoderClasses(backend) {
         dynamicOffsetsDataStart,
         dynamicOffsetsDataLength,
       );
+      if (bindGroupIndexInvalid(this, this._encoder, path, index)) return;
       if (passSkipsCommand(this, this._encoder, path, bindGroup)) return;
       retainCommandObjects(this._encoder, bindGroup);
       backend.computePassSetBindGroup(this, index, normalizeBindGroup(bindGroup, path), offsets);
@@ -405,6 +463,7 @@ function createEncoderClasses(backend) {
     dispatchWorkgroupsIndirect(indirectBuffer, indirectOffset = 0) {
       if (this._assertOpen('GPUComputePassEncoder.dispatchWorkgroupsIndirect')) return;
       assertIntegerInRange(indirectOffset, 'GPUComputePassEncoder.dispatchWorkgroupsIndirect', 'indirectOffset', NON_NEGATIVE_RANGE);
+      if (indirectUseInvalid(this, this._encoder, 'GPUComputePassEncoder.dispatchWorkgroupsIndirect', indirectBuffer, indirectOffset, 12)) return;
       if (passSkipsCommand(this, this._encoder, 'GPUComputePassEncoder.dispatchWorkgroupsIndirect', indirectBuffer)) return;
       backend.computePassDispatchWorkgroupsIndirect(
         this,
@@ -480,6 +539,7 @@ function createEncoderClasses(backend) {
         dynamicOffsetsDataStart,
         dynamicOffsetsDataLength,
       );
+      if (bindGroupIndexInvalid(this, this._encoder, path, index)) return;
       if (passSkipsCommand(this, this._encoder, path, bindGroup)) return;
       backend.renderPassSetBindGroup(this, index, normalizeBindGroup(bindGroup, path), offsets);
     }
@@ -551,6 +611,7 @@ function createEncoderClasses(backend) {
     drawIndirect(indirectBuffer, indirectOffset = 0) {
       if (this._assertOpen('GPURenderPassEncoder.drawIndirect')) return;
       assertIntegerInRange(indirectOffset, 'GPURenderPassEncoder.drawIndirect', 'indirectOffset', NON_NEGATIVE_RANGE);
+      if (indirectUseInvalid(this, this._encoder, 'GPURenderPassEncoder.drawIndirect', indirectBuffer, indirectOffset, 16)) return;
       if (passSkipsCommand(this, this._encoder, 'GPURenderPassEncoder.drawIndirect', indirectBuffer)) return;
       backend.renderPassDrawIndirect(
         this,
@@ -562,6 +623,7 @@ function createEncoderClasses(backend) {
     drawIndexedIndirect(indirectBuffer, indirectOffset = 0) {
       if (this._assertOpen('GPURenderPassEncoder.drawIndexedIndirect')) return;
       assertIntegerInRange(indirectOffset, 'GPURenderPassEncoder.drawIndexedIndirect', 'indirectOffset', NON_NEGATIVE_RANGE);
+      if (indirectUseInvalid(this, this._encoder, 'GPURenderPassEncoder.drawIndexedIndirect', indirectBuffer, indirectOffset, 20)) return;
       if (passSkipsCommand(this, this._encoder, 'GPURenderPassEncoder.drawIndexedIndirect', indirectBuffer)) return;
       backend.renderPassDrawIndexedIndirect(
         this,
@@ -577,13 +639,13 @@ function createEncoderClasses(backend) {
     }
 
     setScissorRect(x, y, width, height) {
-      if (this._assertOpen('GPURenderPassEncoder.setScissorRect')) return;
-      assertIntegerInRange(x, 'GPURenderPassEncoder.setScissorRect', 'x', UINT32_RANGE);
-      assertIntegerInRange(y, 'GPURenderPassEncoder.setScissorRect', 'y', UINT32_RANGE);
-      assertIntegerInRange(width, 'GPURenderPassEncoder.setScissorRect', 'width', UINT32_RANGE);
-      assertIntegerInRange(height, 'GPURenderPassEncoder.setScissorRect', 'height', UINT32_RANGE);
+      const path = 'GPURenderPassEncoder.setScissorRect';
+      // GPUIntegerCoordinate is [EnforceRange] unsigned long: argument
+      // conversion throws TypeError before the method runs.
+      const rect = [x, y, width, height].map((value, index) => enforceRange(value, path, ['x', 'y', 'width', 'height'][index], UINT32_MAX));
+      if (this._assertOpen(path)) return;
       if (passInert(this)) return;
-      backend.renderPassSetScissorRect(this, x, y, width, height);
+      backend.renderPassSetScissorRect(this, ...rect);
     }
 
     setBlendConstant(color) {
@@ -703,6 +765,7 @@ function createEncoderClasses(backend) {
         dynamicOffsetsDataStart,
         dynamicOffsetsDataLength,
       );
+      if (bindGroupIndexInvalid(this, this, path, index)) return;
       if (passSkipsCommand(this, this, path, bindGroup)) return;
       backend.renderBundleEncoderSetBindGroup(this, index, normalizeBindGroup(bindGroup, path), offsets);
     }
@@ -774,6 +837,7 @@ function createEncoderClasses(backend) {
     drawIndirect(indirectBuffer, indirectOffset = 0) {
       this._assertOpen('GPURenderBundleEncoder.drawIndirect');
       assertIntegerInRange(indirectOffset, 'GPURenderBundleEncoder.drawIndirect', 'indirectOffset', NON_NEGATIVE_RANGE);
+      if (indirectUseInvalid(this, this, 'GPURenderBundleEncoder.drawIndirect', indirectBuffer, indirectOffset, 16)) return;
       if (passSkipsCommand(this, this, 'GPURenderBundleEncoder.drawIndirect', indirectBuffer)) return;
       backend.renderBundleEncoderDrawIndirect(
         this,
@@ -785,6 +849,7 @@ function createEncoderClasses(backend) {
     drawIndexedIndirect(indirectBuffer, indirectOffset = 0) {
       this._assertOpen('GPURenderBundleEncoder.drawIndexedIndirect');
       assertIntegerInRange(indirectOffset, 'GPURenderBundleEncoder.drawIndexedIndirect', 'indirectOffset', NON_NEGATIVE_RANGE);
+      if (indirectUseInvalid(this, this, 'GPURenderBundleEncoder.drawIndexedIndirect', indirectBuffer, indirectOffset, 20)) return;
       if (passSkipsCommand(this, this, 'GPURenderBundleEncoder.drawIndexedIndirect', indirectBuffer)) return;
       backend.renderBundleEncoderDrawIndexedIndirect(
         this,
@@ -899,9 +964,14 @@ function createEncoderClasses(backend) {
 
     beginComputePass(descriptor) {
       const path = 'GPUCommandEncoder.beginComputePass';
-      if (this._assertOpen(path) || encoderSkipsUse(this, path, descriptor?.timestampWrites?.querySet)) {
+      // An encoder that fails "validate the encoder state" returns a pass that
+      // is already ended, so its end() is a validation error
+      // (https://gpuweb.github.io/gpuweb/#dom-gpucommandencoder-begincomputepass).
+      const stateInvalid = this._assertOpen(path);
+      if (stateInvalid || encoderSkipsUse(this, path, descriptor?.timestampWrites?.querySet)) {
         const invalidPass = new DoeGPUComputePassEncoder(null, this);
         invalidPass._invalid = true;
+        if (stateInvalid) invalidPass._ended = true;
         invalidPass.label = descriptor?.label ?? '';
         return invalidPass;
       }
@@ -916,12 +986,14 @@ function createEncoderClasses(backend) {
       const named = renderPassDescriptorObjects(passDescriptor);
       // A GPUTexture attachment stands for its default view; an invalid one
       // must not reach createView, which would report a second error.
-      if (this._assertOpen('GPUCommandEncoder.beginRenderPass')
+      const stateInvalid = this._assertOpen('GPUCommandEncoder.beginRenderPass');
+      if (stateInvalid
         || encoderSkipsUse(this, 'GPUCommandEncoder.beginRenderPass', named.find(isInvalidResource))
-        || destroyedTextureUse(this, 'GPUCommandEncoder.beginRenderPass', named)
+        || destroyedResourceUse(this, 'GPUCommandEncoder.beginRenderPass', named)
         || renderPassDescriptorInvalid(this, passDescriptor)) {
         const invalidPass = new DoeGPURenderPassEncoder(null, this);
         invalidPass._invalid = true;
+        if (stateInvalid) invalidPass._ended = true;
         invalidPass.label = passDescriptor.label ?? '';
         return invalidPass;
       }
@@ -1089,7 +1161,8 @@ function createEncoderClasses(backend) {
       assertIntegerInRange(firstQuery, 'GPUCommandEncoder.resolveQuerySet', 'firstQuery', UINT32_RANGE);
       assertIntegerInRange(queryCount, 'GPUCommandEncoder.resolveQuerySet', 'queryCount', POSITIVE_UINT32_RANGE);
       if (firstQuery + queryCount > querySet.count) {
-        failValidation('GPUCommandEncoder.resolveQuerySet', `firstQuery ${firstQuery} + queryCount ${queryCount} exceeds querySet count ${querySet.count}`);
+        invalidateEncoder(this, `GPUCommandEncoder.resolveQuerySet: firstQuery ${firstQuery} + queryCount ${queryCount} exceeds querySet count ${querySet.count}`);
+        return;
       }
       const destinationNative = assertLiveResource(destination, 'GPUCommandEncoder.resolveQuerySet', 'GPUBuffer');
       assertIntegerInRange(destinationOffset, 'GPUCommandEncoder.resolveQuerySet', 'destinationOffset', NON_NEGATIVE_RANGE);

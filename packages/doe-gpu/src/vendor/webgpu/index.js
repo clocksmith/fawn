@@ -66,6 +66,7 @@ import {
 import {
   createFullSurfaceClasses,
   dispatchDeviceEvent,
+  setUncapturedErrorAttribute,
   resolveDeviceLost,
   GPUError,
   GPUPipelineError,
@@ -681,20 +682,6 @@ function installNodeDeviceCallbacks(device) {
     };
   Object.defineProperties(device, {
     lost: lostDescriptor,
-    adapterInfo: {
-      configurable: true,
-      enumerable: true,
-      get() {
-        return this._adapterInfo ?? Object.freeze({
-          vendor: '',
-          architecture: '',
-          device: '',
-          description: '',
-          subgroupMinSize: 0,
-          subgroupMaxSize: 0,
-        });
-      },
-    },
     onuncapturederror: {
       configurable: true,
       enumerable: true,
@@ -705,7 +692,7 @@ function installNodeDeviceCallbacks(device) {
         if (handler !== null && handler !== undefined && typeof handler !== 'function') {
           failValidation('GPUDevice.onuncapturederror', 'handler must be a function or null');
         }
-        this._onuncapturederror = handler ?? null;
+        setUncapturedErrorAttribute(this, handler);
       },
     },
   });
@@ -2854,7 +2841,6 @@ const fullSurfaceBackend = {
       device.queue.label = descriptor?.defaultQueue?.label ?? '';
     }
     device._adapter = adapter;
-    device._adapterInfo = adapter.info;
     installNodeDeviceCallbacks(device);
     installNodeProviderErrorLog(device);
     deviceReleases?.register(device, { device: native, queue: device.queue?._native ?? null }, device);

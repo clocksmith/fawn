@@ -60,20 +60,20 @@ function validateWriteBufferInput(data, dataOffset, size, path) {
   const byteSource = ArrayBuffer.isView(data)
     ? new Uint8Array(data.buffer, data.byteOffset, data.byteLength)
     : new Uint8Array(data);
-  if (dataOffset === 0 && size === undefined) {
-    return byteSource;
-  }
+  // https://gpuweb.github.io/gpuweb/#dom-gpuqueue-writebuffer: offsets and
+  // sizes count elements of a TypedArray and bytes otherwise; a range outside
+  // the data is an OperationError.
   const elementSize = ArrayBuffer.isView(data) && typeof data.BYTES_PER_ELEMENT === 'number'
     ? data.BYTES_PER_ELEMENT
     : 1;
-  const start = dataOffset * elementSize;
-  const end = size !== undefined
-    ? start + size * elementSize
-    : byteSource.byteLength;
-  if (end > byteSource.byteLength) {
-    failValidation(path, `data range ${dataOffset}+${size ?? ((byteSource.byteLength - start) / elementSize)} exceeds source byteLength ${byteSource.byteLength}`);
+  const dataSize = byteSource.byteLength / elementSize;
+  const contentsSize = size ?? dataSize - dataOffset;
+  if (contentsSize < 0 || dataOffset + contentsSize > dataSize) {
+    throw operationError(`${path}: data range ${dataOffset}+${contentsSize} exceeds the data size ${dataSize}`);
   }
-  return byteSource.subarray(start, end);
+  const start = dataOffset * elementSize;
+  const end = start + contentsSize * elementSize;
+  return dataOffset === 0 && end === byteSource.byteLength ? byteSource : byteSource.subarray(start, end);
 }
 
 function fastDefaultWriteBufferView(data, dataOffset, size) {
@@ -285,9 +285,6 @@ function deliverDeviceError(device, filter, error) {
 function queueUncapturedError(device, error) {
   const fire = () => {
     const event = new GPUUncapturedErrorEvent('uncapturederror', { error });
-    if (typeof device._onuncapturederror === 'function') {
-      invokeListener(device, device._onuncapturederror, event);
-    }
     dispatchDeviceEvent(device, 'uncapturederror', event);
   };
   if (typeof setImmediate === 'function') {
@@ -359,6 +356,29 @@ function destroyedBindingKind(resource) {
   const buffer = resource?._resourceLabel === 'GPUBuffer' ? resource : resource?.buffer;
   if (buffer?._resourceLabel === 'GPUBuffer' && buffer._destroyed && !buffer._invalid) return 'buffer';
   return null;
+}
+
+// GPUProgrammableStage.constants is record<USVString, GPUPipelineConstantValue>
+// and GPUPipelineConstantValue is a (restricted) double: a value that is not
+// a finite number after ToNumber is a TypeError (WebIDL).
+function normalizePipelineConstants(constants, path, label) {
+  if (constants === undefined || constants === null) return null;
+  if (typeof constants !== 'object' && typeof constants !== 'function') {
+    throw new TypeError(`${path}: ${label} must be a record of numbers`);
+  }
+  const normalized = {};
+  for (const key of Object.keys(constants)) {
+    const value = constants[key];
+    if (typeof value === 'bigint' || typeof value === 'symbol') {
+      throw new TypeError(`${path}: ${label}.${key} must be a number`);
+    }
+    const number = Number(value);
+    if (!Number.isFinite(number)) {
+      throw new TypeError(`${path}: ${label}.${key} must be a finite number`);
+    }
+    normalized[key] = number;
+  }
+  return normalized;
 }
 
 function labelOf(descriptor) {
@@ -573,6 +593,23 @@ function addDeviceEventListener(device, type, listener, options) {
   listeners.set(type, typeListeners);
 }
 
+// GPUDevice.onuncapturederror is an event handler attribute: setting it
+// adds one listener (at that point in the listener order) that calls the
+// current handler, changing it keeps that listener, and null removes it
+// (https://html.spec.whatwg.org/#event-handler-attributes).
+function setUncapturedErrorAttribute(device, handler) {
+  const previous = device._onuncapturederror;
+  device._onuncapturederror = handler ?? null;
+  device._onuncapturederrorListener ??= (event) => {
+    if (typeof device._onuncapturederror === 'function') device._onuncapturederror.call(device, event);
+  };
+  if (typeof handler === 'function' && typeof previous !== 'function') {
+    addDeviceEventListener(device, 'uncapturederror', device._onuncapturederrorListener);
+  } else if (typeof handler !== 'function') {
+    removeDeviceEventListener(device, 'uncapturederror', device._onuncapturederrorListener);
+  }
+}
+
 function removeDeviceEventListener(device, type, listener) {
   const listeners = device._eventListeners;
   if (!(listeners instanceof Map)) {
@@ -603,6 +640,30 @@ function dispatchDeviceEvent(device, type, event) {
     }
     invokeListener(device, listener, event);
   }
+}
+
+// GPUAdapterInfo, GPUCompilationInfo and GPUCompilationMessage are interfaces
+// with no constructor: the package's objects carry their prototypes so
+// `instanceof` holds, and keep the provider's fields as frozen own properties.
+class DoeGPUAdapterInfo {}
+class DoeGPUCompilationInfo {}
+class DoeGPUCompilationMessage {}
+
+function interfaceObject(Interface, fields) {
+  return Object.freeze(Object.assign(Object.create(Interface.prototype), fields));
+}
+
+// GPUAdapter.info and GPUDevice.adapterInfo are each [SameObject], and are
+// different objects from one another.
+function adapterInfoObject(fields) {
+  return interfaceObject(DoeGPUAdapterInfo, fields ?? EMPTY_ADAPTER_INFO);
+}
+
+function compilationInfoObject(info) {
+  const messages = Array.isArray(info?.messages) ? info.messages : [];
+  return interfaceObject(DoeGPUCompilationInfo, {
+    messages: Object.freeze(messages.map((message) => interfaceObject(DoeGPUCompilationMessage, message))),
+  });
 }
 
 const EMPTY_ADAPTER_INFO = Object.freeze({
@@ -924,7 +985,7 @@ function createFullSurfaceClasses({
     return {
       fragmentModule,
       fragmentEntryPoint: inferShaderEntryPoint(fragment.module, fragment.entryPoint, 'fragment', path, 'descriptor.fragment.entryPoint'),
-      fragmentConstants: fragment.constants ?? null,
+      fragmentConstants: normalizePipelineConstants(fragment.constants, path, 'descriptor.fragment.constants'),
       fragmentTargets: targets,
       fragmentTarget: targets.find(Boolean) ?? null,
     };
@@ -1016,73 +1077,132 @@ function createFullSurfaceClasses({
       return this._mapState ?? 'unmapped';
     }
 
-    async mapAsync(mode, offset = 0, size = Math.max(0, this.size - offset)) {
+    // https://gpuweb.github.io/gpuweb/#dom-gpubuffer-mapasync: a buffer already
+    // mapped or with a pending map rejects at once; every other invalid call
+    // generates a validation error and rejects after the device timeline. Both
+    // reject with OperationError; cancellation (unmap, destroy) with AbortError.
+    async mapAsync(mode, offset = 0, size) {
+      const path = 'GPUBuffer.mapAsync';
       if (isDeviceLost(this._resourceOwner)) {
-        throw abortError('GPUBuffer.mapAsync: the device is lost');
+        throw abortError(`${path}: the device is lost`);
       }
-      const native = bufferMappingNative(this, 'GPUBuffer.mapAsync');
-      assertIntegerInRange(mode, 'GPUBuffer.mapAsync', 'mode', { min: 0, max: UINT32_MAX });
-      assertIntegerInRange(offset, 'GPUBuffer.mapAsync', 'offset', { min: 0 });
-      assertIntegerInRange(size, 'GPUBuffer.mapAsync', 'size', { min: 0 });
-      if (offset + size > this.size) {
-        failValidation('GPUBuffer.mapAsync', `mapped range ${offset}+${size} exceeds buffer size ${this.size}`);
-      }
-      const rejectValidationAsync = (message, finalState) => {
-        const error = new GPUValidationError(`GPUBuffer.mapAsync: ${message}`);
-        captureDeviceError(this._resourceOwner, 'validation', error);
-        return Promise.resolve().then(() => {
-          this._mapState = finalState;
-          throw error;
-        });
+      assertIntegerInRange(mode, path, 'mode', { min: 0, max: UINT32_MAX });
+      assertIntegerInRange(offset, path, 'offset', { min: 0 });
+      const rangeSize = size === undefined ? Math.max(0, this.size - offset) : size;
+      assertIntegerInRange(rangeSize, path, 'size', { min: 0 });
+      const invalid = (message) => {
+        captureDeviceError(this._resourceOwner, 'validation', new GPUValidationError(`${path}: ${message}`));
+        return operationError(`${path}: ${message}`);
       };
       if (this._mapState === 'mapped' || this._mapState === 'pending') {
-        return rejectValidationAsync('buffer is already mapped or mapping is pending', this._mapState);
+        throw invalid('buffer is already mapped or mapping is pending');
       }
+      const message = this._creationValidationError ? 'buffer was created as a validation-error fallback object'
+        : this._destroyed ? 'buffer was destroyed'
+          : mode !== globals.GPUMapMode.READ && mode !== globals.GPUMapMode.WRITE ? 'mode must be GPUMapMode.READ or GPUMapMode.WRITE'
+            : (this.usage & (mode === globals.GPUMapMode.READ ? globals.GPUBufferUsage.MAP_READ : globals.GPUBufferUsage.MAP_WRITE)) === 0
+              ? `buffer usage does not include ${mode === globals.GPUMapMode.READ ? 'MAP_READ' : 'MAP_WRITE'}`
+              : offset % 8 !== 0 ? 'offset must be a multiple of 8'
+                : rangeSize % 4 !== 0 ? 'size must be a multiple of 4'
+                  : offset + rangeSize > this.size ? `mapped range ${offset}+${rangeSize} exceeds buffer size ${this.size}`
+                    : null;
+      // The pending request is identified by its own token, so a request that
+      // unmap or destroy cancelled never settles a later request's state.
+      const request = {};
+      this._pendingMap = request;
       this._mapState = 'pending';
-      try {
-        if (this._creationValidationError) {
-          return rejectValidationAsync('buffer was created as a validation-error fallback object', 'unmapped');
-        }
-        if (mode === globals.GPUMapMode.READ) {
-          if ((this.usage & globals.GPUBufferUsage.MAP_READ) === 0) {
-            return rejectValidationAsync('buffer usage does not include MAP_READ', 'unmapped');
-          }
-        } else if (mode === globals.GPUMapMode.WRITE) {
-          if ((this.usage & globals.GPUBufferUsage.MAP_WRITE) === 0) {
-            return rejectValidationAsync('buffer usage does not include MAP_WRITE', 'unmapped');
-          }
-        } else {
-          return rejectValidationAsync('mode must be GPUMapMode.READ or GPUMapMode.WRITE', 'unmapped');
-        }
-        await backend.bufferMapAsync(this, native, mode, offset, size);
-        if (this._destroyed || this._mapState !== 'pending' || isDeviceLost(this._resourceOwner)) {
+      const cancelled = () => this._pendingMap !== request || this._destroyed || isDeviceLost(this._resourceOwner);
+      const settle = () => {
+        if (this._pendingMap === request) {
+          this._pendingMap = null;
           this._mapState = 'unmapped';
-          throw abortError('GPUBuffer.mapAsync: mapping was cancelled before it resolved');
         }
-        this._mapState = 'mapped';
+      };
+      if (message !== null) {
+        const error = invalid(message);
+        await Promise.resolve();
+        const aborted = this._pendingMap !== request;
+        settle();
+        throw aborted ? abortError(`${path}: mapping was cancelled before it resolved`) : error;
+      }
+      const native = bufferMappingNative(this, path);
+      try {
+        await backend.bufferMapAsync(this, native, mode, offset, rangeSize);
       } catch (error) {
-        this._mapState = 'unmapped';
+        settle();
         throw error;
+      }
+      if (cancelled()) {
+        settle();
+        throw abortError(`${path}: mapping was cancelled before it resolved`);
+      }
+      this._pendingMap = null;
+      this._mapState = 'mapped';
+      this._mappedRange = { offset, size: rangeSize };
+      this._returnedRanges = [];
+    }
+
+    // The device holds a weak reference to each buffer with returned ranges,
+    // so GPUDevice.destroy() detaches them before the mapping memory goes.
+    _recordReturnedRange(offset, size, data) {
+      (this._returnedRanges ??= []).push({ offset, size, data });
+      const device = this._resourceOwner;
+      if (device && !this._mappedRef && typeof WeakRef === 'function') {
+        this._mappedRef = new WeakRef(this);
+        (device._mappedBuffers ??= new Set()).add(this._mappedRef);
       }
     }
 
-    getMappedRange(offset = 0, size = Math.max(0, this.size - offset)) {
+    // Unmap and destroy cancel a pending map and detach every ArrayBuffer
+    // getMappedRange returned (https://gpuweb.github.io/gpuweb/#abstract-opdef-unmap).
+    _endMapping() {
+      this._pendingMap = null;
+      this._mappedRange = null;
+      if (this._mappedRef) {
+        this._resourceOwner?._mappedBuffers?.delete(this._mappedRef);
+        this._mappedRef = null;
+      }
+      for (const range of this._returnedRanges ?? []) {
+        if (range.data instanceof ArrayBuffer && !range.data.detached) range.data.transfer(0);
+      }
+      this._returnedRanges = [];
+    }
+
+    // https://gpuweb.github.io/gpuweb/#dom-gpubuffer-getmappedrange: an
+    // OperationError unless the buffer is mapped and the range is aligned,
+    // inside the mapped range and disjoint from every range already returned.
+    getMappedRange(offset = 0, size) {
+      const path = 'GPUBuffer.getMappedRange';
+      assertIntegerInRange(offset, path, 'offset', { min: 0 });
+      const rangeSize = size === undefined ? Math.max(0, this.size - offset) : size;
+      assertIntegerInRange(rangeSize, path, 'size', { min: 0 });
       const hostMapping = lostDeviceMapping(this);
       if (hostMapping !== null) {
-        assertIntegerInRange(offset, 'GPUBuffer.getMappedRange', 'offset', { min: 0 });
-        assertIntegerInRange(size, 'GPUBuffer.getMappedRange', 'size', { min: 0 });
-        if (offset + size > this.size) {
-          failValidation('GPUBuffer.getMappedRange', `mapped range ${offset}+${size} exceeds buffer size ${this.size}`);
+        if (offset + rangeSize > this.size) {
+          throw operationError(`${path}: mapped range ${offset}+${rangeSize} exceeds buffer size ${this.size}`);
         }
-        return hostMapping.slice(offset, offset + size);
+        const data = hostMapping.slice(offset, offset + rangeSize);
+        this._recordReturnedRange(offset, rangeSize, data);
+        return data;
       }
-      const native = bufferMappingNative(this, 'GPUBuffer.getMappedRange');
-      assertIntegerInRange(offset, 'GPUBuffer.getMappedRange', 'offset', { min: 0 });
-      assertIntegerInRange(size, 'GPUBuffer.getMappedRange', 'size', { min: 0 });
-      if (offset + size > this.size) {
-        failValidation('GPUBuffer.getMappedRange', `mapped range ${offset}+${size} exceeds buffer size ${this.size}`);
+      if (this._destroyed) throw operationError(`${path}: buffer was destroyed`);
+      if (this._mapState !== 'mapped') throw operationError(`${path}: buffer is not mapped`);
+      const mapped = this._mappedRange ?? { offset: 0, size: this.size };
+      if (offset % 8 !== 0) throw operationError(`${path}: offset must be a multiple of 8`);
+      if (rangeSize % 4 !== 0) throw operationError(`${path}: size must be a multiple of 4`);
+      if (offset < mapped.offset || offset + rangeSize > mapped.offset + mapped.size) {
+        throw operationError(`${path}: range ${offset}+${rangeSize} is outside the mapped range ${mapped.offset}+${mapped.size}`);
       }
-      return backend.bufferGetMappedRange(this, native, offset, size);
+      const returned = this._returnedRanges ?? (this._returnedRanges = []);
+      for (const range of returned) {
+        if (offset < range.offset + range.size && range.offset < offset + rangeSize) {
+          throw operationError(`${path}: range ${offset}+${rangeSize} overlaps a range already returned`);
+        }
+      }
+      const native = bufferMappingNative(this, path);
+      const data = backend.bufferGetMappedRange(this, native, offset, rangeSize);
+      this._recordReturnedRange(offset, rangeSize, data);
+      return data;
     }
 
     _readCopy(offset = 0, size = Math.max(0, this.size - offset)) {
@@ -1142,17 +1262,21 @@ function createFullSurfaceClasses({
     }
 
     unmap() {
+      const hostMapped = this._lostDeviceMapping != null;
       this._lostDeviceMapping = null;
-      if (this._destroyed || this._native == null || isDeviceLost(this._resourceOwner)) {
+      if (hostMapped || this._destroyed || this._native == null || isDeviceLost(this._resourceOwner)) {
+        this._endMapping();
         this._mapState = 'unmapped';
         return;
       }
       backend.bufferUnmap(bufferMappingNative(this, 'GPUBuffer.unmap'), this);
+      this._endMapping();
       this._mapState = 'unmapped';
     }
 
     destroy() {
       destroyResource(this, (native) => backend.bufferDestroy(native, this));
+      this._endMapping();
       this._mapState = 'unmapped';
     }
   }
@@ -1217,13 +1341,22 @@ function createFullSurfaceClasses({
       // A command buffer that names a destroyed texture fails here (WebGPU
       // validates destroyed resources at submit).
       const destroyedUse = buffers.find((buffer) => buffer?._submitError != null);
-      if (invalid !== undefined || destroyedUse !== undefined) {
+      // A submitted command buffer is invalid, and one submit names each
+      // command buffer once (https://gpuweb.github.io/gpuweb/#dom-gpuqueue-submit).
+      const resubmitted = buffers.findIndex((buffer) => buffer?._submitted === true);
+      const foreign = buffers.findIndex((buffer) => buffer?._resourceOwner?._resourceLabel === 'GPUDevice'
+        && buffer._resourceOwner !== this._device);
+      const duplicated = new Set(buffers).size !== buffers.length;
+      if (invalid !== undefined || destroyedUse !== undefined || resubmitted >= 0 || duplicated || foreign >= 0) {
         // A failed submit still consumes every command buffer it names.
         for (const buffer of buffers) {
-          buffer.destroy?.();
-          buffer._submitted = true;
+          if (buffer?._submitted !== true) buffer?.destroy?.();
+          if (buffer && typeof buffer === 'object') buffer._submitted = true;
         }
         if (invalid !== undefined) reportInvalidUse(this._device, 'GPUQueue.submit', invalid);
+        else if (resubmitted >= 0) reportValidationError(this._device, `GPUQueue.submit: commandBuffers[${resubmitted}] was already submitted`);
+        else if (duplicated) reportValidationError(this._device, 'GPUQueue.submit: commandBuffers names a command buffer more than once');
+        else if (foreign >= 0) reportValidationError(this._device, `GPUQueue.submit: commandBuffers[${foreign}] belongs to a different device`);
         else reportValidationError(this._device, `GPUQueue.submit: ${destroyedUse._submitError}`);
         return;
       }
@@ -1239,10 +1372,18 @@ function createFullSurfaceClasses({
         reportInvalidUse(this._device, 'GPUQueue.writeBuffer', buffer);
         return;
       }
-      const bufferNative = assertLiveResource(buffer, 'GPUQueue.writeBuffer', 'GPUBuffer');
       assertIntegerInRange(bufferOffset, 'GPUQueue.writeBuffer', 'bufferOffset', { min: 0 });
       const view = fastDefaultWriteBufferView(data, dataOffset, size)
         ?? validateWriteBufferInput(data, dataOffset, size, 'GPUQueue.writeBuffer');
+      // The written byte size is a multiple of 4 (content timeline).
+      if (view.byteLength % 4 !== 0) {
+        throw operationError(`GPUQueue.writeBuffer: data byte size ${view.byteLength} must be a multiple of 4`);
+      }
+      if (buffer?._resourceLabel === 'GPUBuffer' && buffer._destroyed) {
+        reportValidationError(this._device, 'GPUQueue.writeBuffer: buffer was destroyed');
+        return;
+      }
+      const bufferNative = assertLiveResource(buffer, 'GPUQueue.writeBuffer', 'GPUBuffer');
       if (bufferOffset + view.byteLength > buffer.size) {
         // A device-timeline validation error: reported, or thrown unobserved.
         reportValidationError(this._device, `GPUQueue.writeBuffer: write range ${bufferOffset}+${view.byteLength} exceeds buffer size ${buffer.size}`);
@@ -1528,7 +1669,13 @@ function createFullSurfaceClasses({
       if (index >= maxBindGroups) {
         failValidation(path, `index ${index} is not below device.limits.maxBindGroups (${maxBindGroups})`);
       }
-      return pipeline._getBindGroupLayoutOrNull(index);
+      // Each call returns a new JS object (with its own label and expandos)
+      // for the pipeline's one layout; it inherits that layout's native.
+      const layout = pipeline._getBindGroupLayoutOrNull(index);
+      if (layout === null || typeof layout !== 'object') return layout;
+      const wrapper = Object.create(layout);
+      wrapper.label = layout.label ?? '';
+      return wrapper;
     }, () => markInvalid(new DoeGPUBindGroupLayout(null, device)));
   }
 
@@ -1583,13 +1730,13 @@ function createFullSurfaceClasses({
     // Compilation info stays available for a module the provider rejected.
     async getCompilationInfo() {
       if (this._native == null && this._invalid) {
-        return { messages: [] };
+        return compilationInfoObject(null);
       }
       const native = this._invalid ? this._native : assertLiveResource(this, 'GPUShaderModule.getCompilationInfo', 'GPUShaderModule');
       if (typeof backend.shaderModuleGetCompilationInfo === 'function') {
-        return backend.shaderModuleGetCompilationInfo(this, native);
+        return compilationInfoObject(await backend.shaderModuleGetCompilationInfo(this, native));
       }
-      return { messages: [] };
+      return compilationInfoObject(null);
     }
 
     destroy() {
@@ -1771,15 +1918,15 @@ function createFullSurfaceClasses({
         return this._adapterInfo;
       }
       if (this._adapter?.info) {
-        this._adapterInfo = this._adapter.info;
+        this._adapterInfo = adapterInfoObject({ ...this._adapter.info });
         return this._adapterInfo;
       }
       if (typeof backend.deviceGetAdapterInfo === 'function') {
         const native = assertLiveResource(this, 'GPUDevice.adapterInfo', 'GPUDevice');
-        this._adapterInfo = backend.deviceGetAdapterInfo(this, native);
+        this._adapterInfo = adapterInfoObject(backend.deviceGetAdapterInfo(this, native));
         return this._adapterInfo;
       }
-      this._adapterInfo = EMPTY_ADAPTER_INFO;
+      this._adapterInfo = adapterInfoObject(EMPTY_ADAPTER_INFO);
       return this._adapterInfo;
     }
 
@@ -1843,7 +1990,7 @@ function createFullSurfaceClasses({
       if (handler !== null && handler !== undefined && typeof handler !== 'function') {
         failValidation('GPUDevice.onuncapturederror', 'handler must be a function or null');
       }
-      this._onuncapturederror = handler ?? null;
+      setUncapturedErrorAttribute(this, handler);
       if (!this._destroyed && typeof backend.deviceSetOnUncapturedError === 'function') {
         const native = assertLiveResource(this, 'GPUDevice.onuncapturederror', 'GPUDevice');
         backend.deviceSetOnUncapturedError(this, native, handler ?? null);
@@ -1853,6 +2000,15 @@ function createFullSurfaceClasses({
 
     createBuffer(descriptor) {
       const path = 'GPUDevice.createBuffer';
+      // A mapping larger than maxBufferSize is host memory of the requested
+      // size, allocated on the content timeline before validation: an
+      // allocation the engine cannot make throws RangeError
+      // (https://gpuweb.github.io/gpuweb/#dom-gpudevice-createbuffer).
+      const requestedSize = descriptor?.size;
+      const hostMapping = descriptor?.mappedAtCreation === true && Number.isSafeInteger(requestedSize)
+        && requestedSize > (this.limits?.maxBufferSize ?? WEBGPU_DEFAULT_LIMITS.maxBufferSize)
+        ? new ArrayBuffer(requestedSize)
+        : null;
       return createReportingErrors(this, path, () => {
         const validated = assertBufferDescriptor(descriptor, path);
         if (validated.size > (this.limits?.maxBufferSize ?? WEBGPU_DEFAULT_LIMITS.maxBufferSize)) {
@@ -1873,10 +2029,11 @@ function createFullSurfaceClasses({
         labelOf(descriptor),
         descriptor?.size,
         Boolean(descriptor?.mappedAtCreation),
+        hostMapping,
       ));
     }
 
-    _createErrorScopeFallbackBuffer(label = '', requestedSize = 4, mappedAtCreation = false) {
+    _createErrorScopeFallbackBuffer(label = '', requestedSize = 4, mappedAtCreation = false, hostMapping = null) {
       const fallbackSize = Number.isSafeInteger(requestedSize)
         && requestedSize >= 0
         && requestedSize <= (this.limits?.maxBufferSize ?? WEBGPU_DEFAULT_LIMITS.maxBufferSize)
@@ -1886,7 +2043,7 @@ function createFullSurfaceClasses({
         label,
         size: fallbackSize,
         usage: globals.GPUBufferUsage.COPY_SRC | globals.GPUBufferUsage.MAP_WRITE,
-        mappedAtCreation,
+        mappedAtCreation: mappedAtCreation && hostMapping === null,
       };
       // A lost device gets no stand-in allocation.
       const native = this._destroyed ? null : backend.deviceCreateBuffer(this, descriptor);
@@ -1895,7 +2052,10 @@ function createFullSurfaceClasses({
         label,
       );
       buffer._creationValidationError = true;
-      if (native !== null && mappedAtCreation && typeof backend.bufferMarkMappedAtCreation === 'function') {
+      if (hostMapping !== null) {
+        buffer._lostDeviceMapping = hostMapping;
+        buffer._mapState = 'mapped';
+      } else if (native !== null && mappedAtCreation && typeof backend.bufferMarkMappedAtCreation === 'function') {
         backend.bufferMarkMappedAtCreation(buffer);
         buffer._mapState = 'mapped';
       } else if (native === null && mappedAtCreation) {
@@ -1949,7 +2109,7 @@ function createFullSurfaceClasses({
       const autoLayoutEntriesByGroup = layout
         ? null
         : backend.requireAutoLayoutEntriesFromNative(shader, globals.GPUShaderStage.COMPUTE, path, entryPoint);
-      const constants = compute.constants ?? null;
+      const constants = normalizePipelineConstants(compute.constants, path, 'descriptor.compute.constants');
       const label = pipelineDescriptor.label || undefined;
       const layoutNative = layout?._native ?? null;
       return {
@@ -2161,7 +2321,7 @@ function createFullSurfaceClasses({
         vertexModule,
         vertexEntryPoint: inferShaderEntryPoint(vertex.module, vertex.entryPoint, 'vertex', path, 'descriptor.vertex.entryPoint'),
         vertexBuffers,
-        vertexConstants: vertex.constants ?? null,
+        vertexConstants: normalizePipelineConstants(vertex.constants, path, 'descriptor.vertex.constants'),
         ...fragmentStage,
         primitive: normalizePrimitiveState(renderDescriptor.primitive ?? null, path),
         depthStencil: normalizeDepthStencilState(renderDescriptor.depthStencil ?? null, this.features, path),
@@ -2321,6 +2481,15 @@ function createFullSurfaceClasses({
       // Errors generated before destroy() are still delivered.
       this._drainProviderErrors();
       resolveDeviceLost(this, 'destroyed', 'GPUDevice.destroy() was called');
+      // Destroying the device destroys, and so unmaps, every buffer.
+      for (const ref of this._mappedBuffers ?? []) {
+        const buffer = ref.deref();
+        if (buffer === undefined) continue;
+        buffer._lostDeviceMapping = null;
+        buffer._endMapping();
+        buffer._mapState = 'unmapped';
+      }
+      this._mappedBuffers?.clear();
       destroyResource(this, (native) => backend.deviceDestroy(native, this));
     }
   }
@@ -2365,18 +2534,9 @@ function createFullSurfaceClasses({
       if (this._info !== null) {
         return this._info;
       }
-      if (typeof backend.adapterGetInfo === 'function') {
-        this._info = backend.adapterGetInfo(this, this._native);
-        return this._info;
-      }
-      this._info = Object.freeze({
-        vendor: '',
-        architecture: '',
-        device: '',
-        description: '',
-        subgroupMinSize: 0,
-        subgroupMaxSize: 0,
-      });
+      this._info = adapterInfoObject(typeof backend.adapterGetInfo === 'function'
+        ? backend.adapterGetInfo(this, this._native)
+        : EMPTY_ADAPTER_INFO);
       return this._info;
     }
 
@@ -2469,6 +2629,9 @@ function createFullSurfaceClasses({
     DoeGPUQuerySet,
     DoeGPUDevice,
     DoeGPUAdapter,
+    DoeGPUAdapterInfo,
+    DoeGPUCompilationInfo,
+    DoeGPUCompilationMessage,
     DoeGPU,
   };
   return classes;
@@ -2481,6 +2644,7 @@ export {
   deliverDeviceError,
   collectDeviceErrors,
   addDeviceEventListener,
+  setUncapturedErrorAttribute,
   removeDeviceEventListener,
   dispatchDeviceEvent,
   operationError,
