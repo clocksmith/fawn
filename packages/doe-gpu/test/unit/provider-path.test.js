@@ -30,6 +30,13 @@ try {
   assert.equal(missing.loaded, false);
   assert.equal(missing.doeLibraryPath, '');
   assert.match(missing.loadError, /selected provider .*missing\/libwebgpu_doe_c\.so does not exist/);
+  const failure = JSON.parse(execFileSync(process.execPath, ['--input-type=module', '-e',
+    `const { create } = await import(${JSON.stringify(entry)});
+     try { create(); throw new Error('unexpected provider creation'); }
+     catch (error) { process.stdout.write(JSON.stringify({ message: error.message, reason: error.providerFailureReason })); }`],
+  { cwd: directory, env: { ...process.env, DOE_WEBGPU_LIB: 'missing/libwebgpu_doe_c.so' }, encoding: 'utf8' }));
+  assert.match(failure.message, /selected provider .*missing\/libwebgpu_doe_c\.so does not exist/);
+  assert.equal(failure.reason, 'runtime_library_unavailable', 'explicit selection fails before addon discovery');
 } finally {
   rmSync(directory, { recursive: true, force: true });
 }

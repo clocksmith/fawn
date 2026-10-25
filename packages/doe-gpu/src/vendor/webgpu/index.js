@@ -352,8 +352,22 @@ function currentDoeBuildMetadata() {
   return doeBuildMetadata;
 }
 
+function unavailableLibraryError() {
+  const detail = doeLibraryOverrideMissing
+    ? `doe-gpu: the selected provider ${doeLibraryOverrideMissing} does not exist (DOE_WEBGPU_LIB/DOE_LIB); an explicit override never falls back to another library.`
+    : 'doe-gpu: libwebgpu_doe not found. Install the matching doe-gpu optional platform package, or build it with `cd runtime/zig && zig build dropin`, or set DOE_WEBGPU_LIB.';
+  return attachProviderAvailability(
+    new Error(detail),
+    providerAvailabilityFailure({ reason: 'runtime_library_unavailable', stage: 'native.ensureLibrary', detail }),
+  );
+}
+
 function ensureLibrary() {
   if (libraryLoaded) return;
+  const libraryPath = currentDoeLibraryPath();
+  // An explicit selection is validated before looking for an addon, including
+  // clean checkouts where neither native component has been built.
+  if (doeLibraryOverrideMissing) throw unavailableLibraryError();
   const nativeAddon = currentAddon();
   if (!nativeAddon) {
     const detail = (
@@ -368,20 +382,7 @@ function ensureLibrary() {
       }),
     );
   }
-  const libraryPath = currentDoeLibraryPath();
-  if (!libraryPath) {
-    const detail = doeLibraryOverrideMissing
-      ? `doe-gpu: the selected provider ${doeLibraryOverrideMissing} (DOE_WEBGPU_LIB/DOE_LIB) does not exist; an explicit override never falls back to another library.`
-      : 'doe-gpu: libwebgpu_doe not found. Install the matching doe-gpu optional platform package, or build it with `cd runtime/zig && zig build dropin`, or set DOE_WEBGPU_LIB.';
-    throw attachProviderAvailability(
-      new Error(detail),
-      providerAvailabilityFailure({
-        reason: 'runtime_library_unavailable',
-        stage: 'native.ensureLibrary',
-        detail,
-      }),
-    );
-  }
+  if (!libraryPath) throw unavailableLibraryError();
   nativeAddon.loadLibrary(libraryPath);
   if (
     !packagePipelineCacheExitHookRegistered
@@ -3065,8 +3066,8 @@ export async function requestDevice(options = {}) {
  * - `loaded: false` is still diagnostically useful before attempting `requestDevice()`.
  */
 export function providerInfo() {
-  const nativeAddon = currentAddon();
   const libraryPath = currentDoeLibraryPath();
+  const nativeAddon = doeLibraryOverrideMissing ? null : currentAddon();
   const buildMetadata = currentDoeBuildMetadata();
   const flavor = libraryFlavor(libraryPath);
   let nativeFastPaths = null;
@@ -3087,8 +3088,8 @@ export function providerInfo() {
   }
   return buildProviderInfo({
     loaded: !!nativeAddon && !!libraryPath && !libraryError,
-    loadError: !nativeAddon ? 'native addon not found' : !libraryPath
-      ? (doeLibraryOverrideMissing ? `selected provider ${doeLibraryOverrideMissing} does not exist` : 'libwebgpu_doe not found')
+    loadError: doeLibraryOverrideMissing ? unavailableLibraryError().message : !nativeAddon ? 'native addon not found' : !libraryPath
+      ? 'libwebgpu_doe not found'
       : libraryError,
     defaultCreateArgs: [],
     doeNative: flavor === 'doe-dropin' || flavor === 'doe-c',
