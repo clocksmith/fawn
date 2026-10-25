@@ -132,9 +132,13 @@ native_pending *native_surface_unconfigure_locked(native_surface *surface)
     native_lock(device);
     native_surface_drop_current(surface);
     /* Retire only existing work. Unconfigure has no error delivery, so preserve
-     * the first cached terminal failure for the next public observer. */
+     * the first cached terminal failure for the next public observer. Accepted
+     * work that still uses the frame is waited for here: deferring the native
+     * swapchain past this call would outlive a window the caller may destroy
+     * next. Only unknown completion stays armed. */
+    native_drain_pending(device);
     (void)doe_vk_surface_retire_frame(surface->vulkan, NATIVE_SURFACE_TIMEOUT_NS, NULL);
-    native_progress_pending(device);
+    native_progress_pending(device); /* Commands held BUSY by that frame. */
     native_pending *ready = NULL;
     if (pending->armed) {
         ready = native_surface_retirement_take(device, pending);

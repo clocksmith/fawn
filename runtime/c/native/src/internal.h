@@ -277,6 +277,9 @@ native_failure native_record_resource_commands(native_command_handle *native, do
 native_failure native_submit_program(native_device *device, native_command_handle native,
     doe_resource_commands *commands);
 void native_progress_pending(native_device *device);
+/* Caller holds the device mutex. Blocking settlement that, like progress,
+ * leaves the first terminal failure for the next public observer. */
+void native_drain_pending(native_device *device);
 /* Prepared before device publication: progress shares the existing pending list
  * and owns one ordinary device lease until all callers and work retire. */
 bool native_pending_progress_start(native_device *device);
