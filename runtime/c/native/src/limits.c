@@ -66,6 +66,9 @@ static bool better(const limit_field *field, uint64_t a, uint64_t b)
 
 static uint32_t min32(uint32_t a, uint32_t b) { return a < b ? a : b; }
 static uint64_t min64(uint64_t a, uint64_t b) { return a < b ? a : b; }
+static uint32_t max32(uint32_t a, uint32_t b) { return a > b ? a : b; }
+/* WebGPU requires the buffer offset alignment limits to be at least 32. */
+enum { MIN_OFFSET_ALIGNMENT = 32 };
 
 /* Per-stage binding counts this frontend's pipeline storage holds for two
  * stages; Vulkan's own per-stage descriptor limits are larger on both
@@ -139,8 +142,10 @@ WGPUStatus native_vulkan_limits(const doe_vk_caps *caps, WGPULimits *out)
         /* Binding sizes are multiples of 4 (WebGPU requires it of the limit). */
         .maxUniformBufferBindingSize = min64(caps->max_uniform_buffer_range, buffer_size) & ~(uint64_t)3,
         .maxStorageBufferBindingSize = min64(caps->max_storage_buffer_range, buffer_size) & ~(uint64_t)3,
-        .minUniformBufferOffsetAlignment = (uint32_t)caps->uniform_offset_alignment,
-        .minStorageBufferOffsetAlignment = (uint32_t)caps->storage_offset_alignment,
+        /* At least 32, as WebGPU requires; any power of two at or above the
+         * device's is valid (RADV reports 4, lavapipe 16). */
+        .minUniformBufferOffsetAlignment = max32((uint32_t)caps->uniform_offset_alignment, MIN_OFFSET_ALIGNMENT),
+        .minStorageBufferOffsetAlignment = max32((uint32_t)caps->storage_offset_alignment, MIN_OFFSET_ALIGNMENT),
         .maxBufferSize = buffer_size,
         .maxComputeInvocationsPerWorkgroup = min32(caps->max_workgroup_invocations, COMPILER_WORKGROUP_BOUND),
         .maxComputeWorkgroupSizeX = min32(caps->max_workgroup_size[0], COMPILER_WORKGROUP_BOUND),
