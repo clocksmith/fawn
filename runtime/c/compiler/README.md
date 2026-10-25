@@ -113,7 +113,9 @@ measures and fills through the same whole-module validation and target owner;
 diagnostics keep original source locations. HLSL bundles select a source-order entry
 with DXC `-DDOE_HLSL_ENTRY=0` (or the desired index) and its declared entry name.
 Entryless text modules emit no text;
-SPIR-V output requires an executable entry. The current CLI input limit is 64 KiB.
+SPIR-V output requires an executable entry. The CLI accepts up to 2 MiB of source, matching the retained offline emitters.
+Legacy ABI1 reflection retains its 64 KiB library admission limit; typed CLI paths
+use caller-sized source storage. Other declared compiler pool limits still apply.
 Legacy reflection modes require SPIR-V. Runtime override CLI arguments, DXIL,
 CSL and TSIR delivery remain separate retained-consumer work; this adapter does
 not substitute for native SDK validation or device execution.

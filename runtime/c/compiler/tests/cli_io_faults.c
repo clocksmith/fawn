@@ -79,8 +79,9 @@ DoeCompilerStatus __real_doe_compiler_job_requirements(uint32_t version,
 DoeCompilerStatus __wrap_doe_compiler_job_requirements(uint32_t version,
     const DoeCompilerJobCapacities *capacities, size_t capacities_size,
     DoeCompilerWorkspaceRequirements *requirements, size_t size);
-enum { TRACKED_ALLOCATIONS = 5 };
+enum { TRACKED_ALLOCATIONS = 6 };
 static void *allocations[TRACKED_ALLOCATIONS];
+static int requirements_failed;
 static void allocation_cleanup(void) {
     for (size_t i = 0; i < TRACKED_ALLOCATIONS; ++i) assert(allocations[i] == NULL);
 }
@@ -88,7 +89,7 @@ void *__wrap_malloc(size_t size) {
     static unsigned calls;
     if (calls++ == 0u) assert(atexit(allocation_cleanup) == 0);
     /* A failed requirements query must never be followed by allocation. */
-    assert(!selected("query", 1u));
+    assert(!requirements_failed);
     if (selected("malloc", calls)) { errno = ENOMEM; return NULL; }
     void *pointer = __real_malloc(size);
     if (pointer != NULL) {
@@ -109,7 +110,10 @@ void __wrap_free(void *pointer) {
 DoeCompilerStatus __wrap_doe_compiler_job_requirements(uint32_t version,
     const DoeCompilerJobCapacities *capacities, size_t capacities_size,
     DoeCompilerWorkspaceRequirements *requirements, size_t size) {
-    if (selected("query", 1u)) return DOE_COMPILER_ABI_MISMATCH;
+    if (selected("query", 1u)) {
+        requirements_failed = 1;
+        return DOE_COMPILER_ABI_MISMATCH;
+    }
     return __real_doe_compiler_job_requirements(version, capacities, capacities_size, requirements, size);
 }
 DoeCompilerStatus __real_doe_compiler_stage_requirements(uint32_t version,
@@ -121,6 +125,9 @@ DoeCompilerStatus __wrap_doe_compiler_stage_requirements(uint32_t version,
 DoeCompilerStatus __wrap_doe_compiler_stage_requirements(uint32_t version,
     const DoeCompilerStageCapacities *capacities, size_t capacities_size,
     DoeCompilerWorkspaceRequirements *requirements, size_t size) {
-    if (selected("query", 1u)) return DOE_COMPILER_ABI_MISMATCH;
+    if (selected("query", 1u)) {
+        requirements_failed = 1;
+        return DOE_COMPILER_ABI_MISMATCH;
+    }
     return __real_doe_compiler_stage_requirements(version, capacities, capacities_size, requirements, size);
 }
