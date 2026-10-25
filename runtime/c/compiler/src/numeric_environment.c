@@ -69,6 +69,13 @@ static bool machine_restore(const NumericEnvironment *environment) {
     arm_set_status(environment->saved_fpsr);
     return arm_control() == environment->saved_fpcr && arm_status() == environment->saved_fpsr;
 }
+#elif defined(__wasm__)
+/* WebAssembly fixes rounding to nearest/ties-even, preserves subnormals and
+ * has no floating-point exception flags or configurable control registers.
+ * The arithmetic probes below still run; WASI libc's fenv is the fixed owner. */
+static bool machine_save(NumericEnvironment *environment) { (void)environment; return true; }
+static bool machine_normalize(void) { return true; }
+static bool machine_restore(const NumericEnvironment *environment) { (void)environment; return true; }
 #else
 static bool machine_save(NumericEnvironment *environment) { (void)environment; return false; }
 static bool machine_normalize(void) { return false; }

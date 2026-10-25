@@ -19,6 +19,8 @@ self.onmessage = async ({ data }) => {
       const acquired = await acquireCompilerBytes(data.artifact);
       const started = performance.now();
       const { instance } = await WebAssembly.instantiate(acquired.bytes, {});
+      // C's reactor initializes once; the retained Zig artifact has no initializer.
+      instance.exports._initialize?.();
       compiler = instance.exports;
       self.postMessage({ id, value: {
         ...acquired.timings,

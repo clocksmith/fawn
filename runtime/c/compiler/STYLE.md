@@ -13,6 +13,11 @@ records current implementation choices, not expanded qualification claims.
 - Preserve original source offsets. Private source spans borrow caller bytes only
   for the call; published IR/reflection names are copied. Token storage dies at
   parse return before fixed union storage becomes IR/target scratch.
+- Expression depth storage becomes resolved semantic type storage after parsing.
+  Record types at the existing expression completion point without adding a
+  recursive wrapper. WGSL source rewriting consumes these types, then re-lexes
+  with the canonical lexer in dead IR storage to verify exact edit boundaries.
+  It preserves untouched bytes and never infers semantics from source patterns.
 - No library allocation, retained pointer, mutable global or hidden second
   workspace. CLI allocations/file descriptors have visible ownership and cleanup.
   Only owned temporary/published artifacts may be removed after failure.
@@ -73,6 +78,12 @@ Save/hold/normalize caller rounding, precision, traps, exception flags and nativ
 subnormal modes; restore before publication on both success and failure. Use the frozen strict FP build flags and qualified IEEE host,
 with no contraction/reassociation or process-global locale changes. A failed
 restore is a specific host error, not a claim of successful state preservation.
+WebAssembly has fixed nearest/ties-even arithmetic, gradual underflow and no
+mutable exception flags. Its explicit numeric host owner still runs the same
+runtime arithmetic probes; it does not impersonate native floating-point state.
+The browser adapter owns allocations and four per-instance job slots. The core
+compiler retains caller-owned storage and no mutable global state. Link a WASI
+reactor, initialize once, reject every host import, and cap memory at 64 MiB.
 
 Typed IR uses concrete scalar and aggregate TypeIds; abstract constants stay in
 the typed constant owner until materialization. Keep safe-operation guards in the

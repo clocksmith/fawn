@@ -59,12 +59,58 @@ Regression routes are the compiler's numeric tests and the public native
 `compute`, `map-oom` and `instance-devices` clients. The retained Zig ONNX
 consumer also passes after restoring reflected types in automatic compute layouts.
 
-The [C runtime CLI](../../runtime/c/runtime-cli/README.md) now admits texture
-bindings, mip copies, indirect draws and buffer mapping. Its parser accepts
-72 of the 84 AMD Vulkan workload streams; the remaining ten diagnostics and
-two surface streams are rejected. `check` and `check-dawn` exercise matching
-artifacts and independent readbacks on CPU Vulkan; parser admission is not
-physical execution or performance qualification.
+The [C runtime CLI](../../runtime/c/runtime-cli/README.md) implements all 27
+retained command kinds, including asynchronous diagnostics and real windowed
+surface lifecycles. Its parser admits all 84 AMD Vulkan workload rows (81 unique
+paths). Separately, 91 of 98 tracked example files parse; seven `buffer_load`
+files enter through the normalized plan consumer instead. `check` and
+`check-dawn` exercise matching artifacts and independent readbacks on CPU
+Vulkan. Parser admission does not establish execution of every stream: the
+retained `copy_protocol` stream has an invalid tight row pitch and rejects.
+ProcessEvents/WaitAny strategies, finite wait bounds, deferred queue completion,
+final draining and delayed callback ownership have focused consumer checks.
+
+The three formerly failing Node integration files (`compute-program`,
+`native-reflection`, `shader-semantics`) now pass against the integrated C
+library on CPU Vulkan. The compiler supports invocation-private module storage,
+`countOneBits`, `unpack4xU8` and `mix` through its shared typed target pipeline.
+Private roots retain per-invocation initialization and helper mutation without
+appearing as shared workgroup storage in reflection. Native post-loss invalid
+objects pass CPU Vulkan and Apple M3 checks; Windows remains unverified.
+Retained Vulkan surface generations and terminal cleanup pass focused CPU and
+Radeon handoff/reconfiguration checks. These are scoped developer proofs.
+
+The [C browser/offline WGSL adapter](../../runtime/c/compiler/README.md#browser-and-offline-wgsl-delivery)
+builds without Zig. Its import-free Wasm artifact passes the existing package
+interface tests and the unchanged particle application in Chrome 146 on Radeon
+8060S: offline and worker output match the independent CPU oracle, all three
+modes execute matched work, and lifecycle/cache/boundary controls pass. The
+observed optimized mode is slower in that run; no performance benefit is claimed.
+The browser owns GPU execution. This does not qualify the native C GPU backend
+or complete broader WGSL coverage. The shipped browser artifact remains Zig
+until the separately governed default switch.
+
+### Open completion checklist
+
+The lists below name known remaining work, not an exhaustive feature denominator
+or a percentage-complete claim. A command, API export or passing test is not an
+interchangeable unit of migration completion.
+
+- Compiler: gather/gradient/bias image builtins; remaining memory barriers and
+  workgroup-uniform loads; immediate storage; workgroup dimension/storage limits;
+  TranslationInfo and retained compiler consumers; TSIR/CSL and the declared
+  DXIL routes. Broader browser shader admission follows the same compiler gaps.
+- Metal: native layer presentation, public query recording/resolve, partial
+  sample masks/unclipped depth, and depth/stencil transfers.
+- D3D12: native window presentation, public query recording/resolve, indexed and
+  indirect whole-pass graphics, broader texture shapes/formats, and physical
+  verification of current lifetime behavior.
+- CLI and consumers: native backend-lane policy controls, required GPU timing,
+  persistent pipeline cache, remaining argument/render/texture contracts,
+  `runModule`, and platform package/helper routes.
+- Delivery and qualification: C-only builds for every retained consumer and
+  platform package; required independent and physical qualification; the audited
+  source-size target and final production switch. Zig remains the default.
 
 The requested workflow is broad, disjoint subsystem implementation in parallel,
 with review and focused compile/behavior checks as code changes. Exhaustive

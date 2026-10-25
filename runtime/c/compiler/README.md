@@ -56,6 +56,44 @@ records exact admission, eager operand semantics and the unchanged retained and
 literal-oracle fixtures. `make all-any-check sanitize-all-any` checks the public
 target adapters and failure/state boundaries; actual execution remains separate.
 
+## Browser and offline WGSL delivery
+
+The C source rewriter uses the same parser, semantic types and numeric owner.
+It preserves original WGSL and rewrites only admitted scalar `u32`
+identifier/member division or remainder by an explicit power-of-two literal.
+Disabled optimization still validates the module and preserves every source byte.
+The adapter owns allocation; the compiler core retains caller-owned storage.
+
+```sh
+make -C runtime/c/compiler test-browser
+runtime/c/compiler/build/doe-emit-wgsl-c input.wgsl output.wgsl
+WASI_SDK_PATH=/path/to/wasi-sdk-34.0-x86_64-linux \
+  make -C runtime/c/compiler test-browser-wasm
+```
+
+The optional C browser build uses the archive pinned in
+[`config/toolchains.json`](../../../config/toolchains.json), including its
+SHA-256 and byte count. Extract that verified archive and set `WASI_SDK_PATH`;
+builds do not download dependencies. The Wasm reactor has zero host imports,
+a 64 KiB source limit and a 64 MiB memory ceiling. Initialize its `_initialize`
+export once before using the existing worker ABI. The package worker handles
+both this reactor and the retained Zig artifact. The build emits a source/hash
+manifest, audits the four adapter-owned job slots, and carries runtime notices.
+
+Stage an explicit C package artifact without changing the shipped default:
+
+```sh
+WASI_SDK_PATH=/path/to/sdk node packages/doe-gpu/scripts/build-browser-compiler.js \
+  --provider=c --output-dir=/path/to/package-stage
+```
+
+The staging directory contains `assets/`, trusted metadata under `src/`, and
+`BROWSER_COMPILER_NOTICES.txt`; serve these with the package modules and example.
+`DOE_BROWSER_COMPILER_WASM` selects this artifact for the existing package unit
+test. `DOE_WGSL_EMITTER` selects the C offline executable for the existing browser
+acceptance harness. Source admission and worker checks do not establish GPU
+execution; the browser remains the GPU provider for this delivery path.
+
 ## Build and decisive checks
 
 From the repository root, ordinary source consumption is:

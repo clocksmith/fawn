@@ -18,6 +18,17 @@
         }
       }
     },
+    "wasiSdk": {
+      "version": "34.0",
+      "channel": "stable",
+      "archives": {
+        "x86_64-linux": {
+          "url": "https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-34/wasi-sdk-34.0-x86_64-linux.tar.gz",
+          "sha256": "b761e3a0721dbae9c09a0059e5fdb2bf917d1b4a8a7b430fb3b5aafb0984b2c4",
+          "sizeBytes": 192383077
+        }
+      }
+    },
     "shaderMetal": {
       "version": "xcrun-32023.x",
       "channel": "stable",
