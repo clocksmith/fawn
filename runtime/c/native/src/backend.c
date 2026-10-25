@@ -12,12 +12,17 @@ native_result native_backend_open(WGPUBackendType kind, bool fallback, uint32_t 
     native_backend result = {.kind=kind};
     native_result status;
     if (kind == WGPUBackendType_Vulkan) {
-        /* First device of the requested class (CPU only for fallback), never
-         * enumeration ordinal 0 filtered afterwards. */
-        result.value.vulkan.options = (doe_vk_options){.allow_cpu_adapter=fallback,
+        /* First device of the requested class, never enumeration ordinal 0
+         * filtered afterwards: CPU only for fallback; otherwise the first
+         * non-CPU device, else the CPU device WebGPU may answer a default
+         * request with, from one instance and enumeration. */
+        result.value.vulkan.options = (doe_vk_options){.allow_cpu_adapter=true,
             .require_graphics_queue=true,.enable_shader_demote_if_supported=true,
             .surface_platforms=surface_platforms,
-            .adapter_selection=fallback ? DOE_VK_SELECT_SOFTWARE : DOE_VK_SELECT_HARDWARE};
+            .adapter_selection=fallback ? DOE_VK_SELECT_SOFTWARE : DOE_VK_SELECT_HARDWARE_ELSE_SOFTWARE,
+            /* An adapter answers capability and surface queries; each device
+             * opens its own native device below. */
+            .adapter_only=true};
         status = native_from_vulkan(doe_vk_context_create(&result.value.vulkan.options,
             &result.value.vulkan.context, NULL));
         if (status == NATIVE_OK)
@@ -57,6 +62,7 @@ native_result native_backend_device(const native_backend *adapter, native_backen
          * device/driver UUID pair, so reordered or replaced devices cannot substitute. */
         result.value.vulkan.options = adapter->value.vulkan.options;
         result.value.vulkan.options.adapter_selection = DOE_VK_SELECT_IDENTITY;
+        result.value.vulkan.options.adapter_only = false;
         result.value.vulkan.options.required_identity = adapter->value.vulkan.caps.identity;
         status = native_from_vulkan(doe_vk_context_create(&result.value.vulkan.options,
             &result.value.vulkan.context, NULL));

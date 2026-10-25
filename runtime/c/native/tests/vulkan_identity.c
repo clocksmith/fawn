@@ -63,7 +63,9 @@ int main(int argc, char **argv)
     order[1] = 0;
     order[2] = 1;
     assert(native_backend_open(WGPUBackendType_Vulkan, false, DOE_VK_SURFACE_XCB, &adapter) == NATIVE_OK);
-    assert(adapter.value.vulkan.options.adapter_selection == DOE_VK_SELECT_HARDWARE);
+    assert(adapter.value.vulkan.options.adapter_selection == DOE_VK_SELECT_HARDWARE_ELSE_SOFTWARE);
+    assert(adapter.value.vulkan.options.allow_cpu_adapter && adapter.value.vulkan.options.adapter_only);
+    assert(!adapter.value.vulkan.caps.software_adapter && adapter.value.vulkan.caps.adapter_ordinal == 1);
     assert(adapter.value.vulkan.options.surface_platforms == DOE_VK_SURFACE_XCB);
     doe_vk_adapter_identity selected = adapter.value.vulkan.caps.identity;
     generation = 1;
@@ -72,6 +74,7 @@ int main(int argc, char **argv)
     order[2] = 2;
     assert(native_backend_device(&adapter, &device) == NATIVE_OK);
     assert(device.value.vulkan.options.adapter_selection == DOE_VK_SELECT_IDENTITY);
+    assert(!device.value.vulkan.options.adapter_only);
     assert(device.value.vulkan.options.surface_platforms == DOE_VK_SURFACE_XCB);
     assert(device.value.vulkan.caps.adapter_ordinal == 1);
     assert(memcmp(&device.value.vulkan.caps.identity, &selected, sizeof(selected)) == 0);
@@ -125,8 +128,19 @@ int main(int argc, char **argv)
     assert(memcmp(&unavailable, &saved, sizeof(unavailable)) == 0);
     assert(live_contexts == 0 && closed_contexts == closed + 1);
     no_fragment_stores = false;
+    /* A default request on a host whose only device is a CPU implementation
+     * selects it from the one adapter context, without a failed attempt. */
+    available = 1;
+    order[0] = 2;
+    closed = closed_contexts;
+    assert(native_backend_open(WGPUBackendType_Vulkan, false, 0, &adapter) == NATIVE_OK);
+    assert(adapter.value.vulkan.caps.software_adapter && closed_contexts == closed && live_contexts == 1);
+    native_backend_close(&adapter);
+    assert(live_contexts == 0);
+    available = 3;
+    order[0] = 0;
     puts("PASS native Vulkan identity bridge: changed order/handles, explicit CPU fallback, missing identity and mismatch rollback, "
-        "refused adapter without fragmentStoresAndAtomics");
+        "refused adapter without fragmentStoresAndAtomics, default CPU-only selection in one adapter-only context");
     if (argc == 2) {
         actual_contexts = true;
         assert(native_backend_open(WGPUBackendType_Vulkan, true, 0, &adapter) == NATIVE_OK);

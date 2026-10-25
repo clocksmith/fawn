@@ -94,7 +94,8 @@ WGPUFuture wgpuInstanceRequestAdapter(WGPUInstance handle,
         native_result status = native_backend_open(kind, force_fallback, native_surface_platform(compatible), &backend);
         /* WebGPU may answer a default request with the fallback adapter; on
          * Vulkan a host whose only device is a CPU implementation (lavapipe)
-         * gets it, reported as the fallback adapter, instead of nothing. */
+         * gets it from the default open, reported as the fallback adapter,
+         * and a non-CPU device that fails admission retries with the CPU one. */
         if ((status == NATIVE_UNAVAILABLE || status == NATIVE_UNSUPPORTED) && !force_fallback &&
             kind == WGPUBackendType_Vulkan)
             status = native_backend_open(kind, true, native_surface_platform(compatible), &backend);

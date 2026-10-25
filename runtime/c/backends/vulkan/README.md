@@ -9,10 +9,14 @@ The texture owner adds uncompressed color images, retained views/samplers and
 mip/layer-aware padded transfers across 1D/2D/3D images.
 It is not wired into the production provider. It is not full Vulkan/WebGPU parity.
 
-Adapter selection has four explicit modes: the existing exact ordinal (the zero
+Adapter selection has five explicit modes: the existing exact ordinal (the zero
 default), first CPU device when software is explicitly requested and permitted,
-first non-CPU device for a hardware request, or one exact device/driver UUID-pair
-match. Native device creation uses the
+first non-CPU device for a hardware request, the first non-CPU device else the
+first CPU device (two class passes over one enumeration, CPU permission required),
+or one exact device/driver UUID-pair match. `adapter_only` stops a context at the
+selected physical device for capability and surface queries: no `VkDevice` or
+queue, the caps a device context would enable, and `doe_vk_context_alive` false.
+Native device creation uses the
 adapter's copied UUID identity, so changing enumeration order or instance-local
 handles cannot choose another device. Missing or duplicate identity matches
 reject; no ordinal or hardware substitute is attempted. UUID properties come

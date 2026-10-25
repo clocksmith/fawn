@@ -266,6 +266,27 @@ static doe_vk_status choose_queue(doe_vk_context *context, const doe_vk_options 
     return selected == UINT32_MAX ? doe_vk_fail(DOE_VK_UNSUPPORTED, "compute queue unavailable", error) : DOE_VK_OK;
 }
 
+static void record_caps(doe_vk_context *context, const doe_vk_options *options,
+    const doe_vk_feature_selection *features) {
+    context->caps.surface_platforms = options->surface_platforms;
+    context->caps.robust_buffer_access = true;
+    context->caps.shader_demote_to_helper_invocation = features->extension != NULL;
+    context->caps.maintenance5 = features->maintenance5_enabled;
+    context->caps.full_draw_index_uint32 = features->base.fullDrawIndexUint32 != 0;
+    context->caps.image_cube_array = features->base.imageCubeArray != 0;
+    context->caps.independent_blend = features->base.independentBlend != 0;
+    context->caps.sampler_anisotropy = features->base.samplerAnisotropy != 0;
+    context->caps.storage_image_extended_formats = features->base.shaderStorageImageExtendedFormats != 0;
+    context->caps.fragment_stores_and_atomics = features->base.fragmentStoresAndAtomics != 0;
+    context->caps.draw_indirect_first_instance = features->base.drawIndirectFirstInstance != 0;
+    context->caps.depth_clamp = features->base.depthClamp != 0;
+    context->caps.texture_compression_bc = features->base.textureCompressionBC != 0;
+    context->caps.sample_rate_shading = features->base.sampleRateShading != 0;
+    context->caps.depth_bias_clamp = features->base.depthBiasClamp != 0;
+    context->caps.max_sampler_anisotropy = context->caps.sampler_anisotropy ?
+        context->properties.limits.maxSamplerAnisotropy : 0.0f;
+}
+
 doe_vk_status doe_vk_context_create(const doe_vk_options *options,
                                     doe_vk_context **out, doe_vk_error *error) {
     if (out == NULL) return doe_vk_fail(DOE_VK_INVALID_ARGUMENT, "context output", error);
@@ -320,6 +341,11 @@ doe_vk_status doe_vk_context_create(const doe_vk_options *options,
     doe_vk_feature_selection features;
     status = doe_vk_prepare_features(context, options, &features, error);
     if (status != DOE_VK_OK) goto failed;
+    if (options->adapter_only) {
+        record_caps(context, options, &features);
+        *out = context;
+        return doe_vk_fail(DOE_VK_OK, "adapter context ready", error);
+    }
     float priority = 1.0f;
     const VkDeviceQueueCreateInfo queue = {
         .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
@@ -364,23 +390,7 @@ doe_vk_status doe_vk_context_create(const doe_vk_options *options,
         status = doe_vk_fail(DOE_VK_NATIVE_FAILURE, "vkGetDeviceQueue", error);
         goto failed;
     }
-    context->caps.surface_platforms = options->surface_platforms;
-    context->caps.robust_buffer_access = true;
-    context->caps.shader_demote_to_helper_invocation = features.extension != NULL;
-    context->caps.maintenance5 = features.maintenance5_enabled;
-    context->caps.full_draw_index_uint32 = features.base.fullDrawIndexUint32 != 0;
-    context->caps.image_cube_array = features.base.imageCubeArray != 0;
-    context->caps.independent_blend = features.base.independentBlend != 0;
-    context->caps.sampler_anisotropy = features.base.samplerAnisotropy != 0;
-    context->caps.storage_image_extended_formats = features.base.shaderStorageImageExtendedFormats != 0;
-    context->caps.fragment_stores_and_atomics = features.base.fragmentStoresAndAtomics != 0;
-    context->caps.draw_indirect_first_instance = features.base.drawIndirectFirstInstance != 0;
-    context->caps.depth_clamp = features.base.depthClamp != 0;
-    context->caps.texture_compression_bc = features.base.textureCompressionBC != 0;
-    context->caps.sample_rate_shading = features.base.sampleRateShading != 0;
-    context->caps.depth_bias_clamp = features.base.depthBiasClamp != 0;
-    context->caps.max_sampler_anisotropy = context->caps.sampler_anisotropy ?
-        context->properties.limits.maxSamplerAnisotropy : 0.0f;
+    record_caps(context, options, &features);
     *out = context;
     return doe_vk_fail(DOE_VK_OK, "context ready", error);
 failed:
