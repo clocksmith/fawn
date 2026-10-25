@@ -285,8 +285,10 @@ function resolveDoeLibraryPath() {
         ...libraryNames.map((name) => resolve(process.cwd(), "runtime", "zig", "zig-out", "lib", name)),
         ...libraryNames.map((name) => resolve(process.cwd(), "zig", "zig-out", "lib", name)),
     ];
+    // An explicit override is that provider or nothing (see index.js).
+    const configured = configuredCandidates.find(Boolean);
+    if (configured) return existsSync(configured) ? configured : null;
     const candidates = [
-        ...configuredCandidates,
         ...(isInstalledPackageRoot(PACKAGE_ROOT)
             ? [...packagedCandidates, ...workspaceCandidates]
             : [...workspaceCandidates, ...packagedCandidates]),

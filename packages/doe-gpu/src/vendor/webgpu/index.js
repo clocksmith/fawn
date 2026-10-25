@@ -186,6 +186,7 @@ const WEBGPU_GLOBALS = Object.freeze({
 
 let addon;
 let doeLibraryPath;
+let doeLibraryOverrideMissing = null;
 let doeBuildMetadata;
 let libraryLoaded = false;
 let packagePipelineCacheExitHookRegistered = false;
@@ -309,8 +310,16 @@ function resolveDoeLibraryPath() {
     ...workspaceLibraryNames.map((name) => resolve(process.cwd(), 'runtime', 'zig', 'zig-out', 'lib', name)),
     ...workspaceLibraryNames.map((name) => resolve(process.cwd(), 'zig', 'zig-out', 'lib', name)),
   ];
+  // An explicit provider override is that provider or nothing: a missing file
+  // never falls through to another library, which would misattribute every
+  // result to a provider the caller did not select.
+  const configured = configuredCandidates.find(Boolean);
+  if (configured) {
+    if (existsSync(configured)) return configured;
+    doeLibraryOverrideMissing = configured;
+    return null;
+  }
   const candidates = [
-    ...configuredCandidates,
     ...(isInstalledPackageRoot(PACKAGE_ROOT)
       ? [...packagedCandidates, ...workspaceCandidates]
       : [...workspaceCandidates, ...packagedCandidates]),
@@ -358,9 +367,9 @@ function ensureLibrary() {
   }
   const libraryPath = currentDoeLibraryPath();
   if (!libraryPath) {
-    const detail = (
-      'doe-gpu: libwebgpu_doe not found. Install the matching doe-gpu optional platform package, or build it with `cd runtime/zig && zig build dropin`, or set DOE_WEBGPU_LIB.'
-    );
+    const detail = doeLibraryOverrideMissing
+      ? `doe-gpu: the selected provider ${doeLibraryOverrideMissing} (DOE_WEBGPU_LIB/DOE_LIB) does not exist; an explicit override never falls back to another library.`
+      : 'doe-gpu: libwebgpu_doe not found. Install the matching doe-gpu optional platform package, or build it with `cd runtime/zig && zig build dropin`, or set DOE_WEBGPU_LIB.';
     throw attachProviderAvailability(
       new Error(detail),
       providerAvailabilityFailure({
@@ -3072,7 +3081,9 @@ export function providerInfo() {
   }
   return buildProviderInfo({
     loaded: !!nativeAddon && !!libraryPath && !libraryError,
-    loadError: !nativeAddon ? 'native addon not found' : !libraryPath ? 'libwebgpu_doe not found' : libraryError,
+    loadError: !nativeAddon ? 'native addon not found' : !libraryPath
+      ? (doeLibraryOverrideMissing ? `selected provider ${doeLibraryOverrideMissing} does not exist` : 'libwebgpu_doe not found')
+      : libraryError,
     defaultCreateArgs: [],
     doeNative: flavor === 'doe-dropin' || flavor === 'doe-c',
     libraryFlavor: flavor,
