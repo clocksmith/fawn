@@ -358,10 +358,10 @@ static bool rational_float(Source *source, size_t offset, LiteralInteger numerat
         return literal_capacity(source, offset);
     const bool remainder = big_width(&numerator) != 0u;
     const uint64_t one = UINT64_C(1) << (precision - 1u);
-    if (exponent == maximum && significand == one * 2u - 1u && remainder)
-        return numeric_error(source, offset, "floating-point literal is outside its finite range");
     if (exact && remainder)
         return numeric_error(source, offset, "hexadecimal f32 literal is not exactly representable");
+    /* Values above MAX may still round to MAX; test overflow after rounding
+     * and its significand carry, not merely from a nonzero remainder. */
     comparison = denominator;
     big_subtract(&comparison, &numerator);
     const int halfway = big_compare(&numerator, &comparison);

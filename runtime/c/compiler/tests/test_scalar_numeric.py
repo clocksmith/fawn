@@ -41,6 +41,15 @@ class ScalarTests(unittest.TestCase):
             self.check('out[0]=bitcast<u32>(4294967295);',[4294967295],fixed=fixed)
             self.check('out[0]=A;',[17],prefix='const A:u32=B+1;const B=16;',fixed=fixed)
             self.check('let x=0x1.000001p0; const y=0x1.000001p0; let z:f32=y; out[0]=bitcast<u32>(x);out[1]=bitcast<u32>(z);',[0x3f800000]*2,fixed=fixed)
+    def test_decimal_finite_boundary(self):
+        for fixed in (False, True):
+            # Exact ONNX MaxPool initializer; sign belongs to unary evaluation.
+            self.check('var value=-3.4028234663852886e+38f;out[0]=bitcast<u32>(value);'
+                       'out[1]=bitcast<u32>(3.4028235677973366163e38f);',
+                       [0xff7fffff, 0x7f7fffff], fixed=fixed)
+            for literal in ('3.4028235677973366164e38f', '-3.4028235677973366164e38f',
+                            '0x1.fffffe1p127f'):
+                self.compile(HEADER + 'out[0]=bitcast<u32>(' + literal + ');}', 4, fixed)
     def test_runtime_integer(self):
         self.check('let x=out[0];let z=out[1];out[2]=x/z;out[3]=x%z;out[4]=x<<z;out[5]=x>>z;',[0x87654321,0,0x87654321,0,0x87654321,0x87654321], [0x87654321,0,99,99,99,99])
         self.check('let x=bitcast<i32>(out[0]);let y=bitcast<i32>(out[1]);out[2]=bitcast<u32>(x/y);out[3]=bitcast<u32>(x%y);out[4]=bitcast<u32>(x>>(32u-1u));',[0x80000000,0xffffffff,0x80000000,0,0xffffffff],[0x80000000,0xffffffff,0,0,0])
