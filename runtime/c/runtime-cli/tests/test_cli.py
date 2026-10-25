@@ -11,7 +11,9 @@ row and meta validates against config/trace.schema.json and
 config/trace-meta.schema.json. Semantic dispatches
 write operator records, repro bundles and captures equal to doe-zig-runtime's
 outside the execution fields, with captures checked against the host oracle;
-a dispatch doe-zig-runtime would evaluate for numeric stability is refused.
+decode.final_logits dispatches are evaluated for numeric stability with
+receipts equal to doe-zig-runtime's Radeon receipts outside executionIdentity,
+and other capture plans are refused.
 Plan mode rows chain like doe-plan-executor's and its loads and dispatches
 read back as the host computes them."""
 
@@ -23,6 +25,7 @@ import json
 
 import jsonschema
 import os
+import re
 import struct
 import subprocess
 import sys
@@ -317,6 +320,46 @@ def semantic_stream() -> list:
     ]
 
 
+# doe-zig-runtime receipts for the decode examples (Radeon RX via radeon_icd.json,
+# guarded, HEAD 71574e529, doe-zig-runtime sha256 7d72a24a13a6..., 2026-10-25).
+ZIG_RECEIPTS = Path(__file__).resolve().parent / "fixtures"
+IDENTITY = re.compile(r'"executionIdentity":\{[^}]*\}')
+EXPECTED_BACKEND = {"id": "doe_c_vulkan"}  # --backend-id
+
+
+def check_numeric_stability(binary: Path, work: Path) -> None:
+    for stream in ("greedy", "sampled"):
+        commands = EXAMPLES / f"numeric-stability-decode-{stream}.commands.json"
+        code, stderr, meta, _ = run(binary, work, f"ns_{stream}", "--quirk-mode", "off", commands=commands)
+        receipts = Path(f"{work / f'ns_{stream}.meta.json'}.numeric-stability.jsonl").read_text()
+        expected = (ZIG_RECEIPTS / f"zig-radeon-numeric-stability-{stream}.jsonl").read_text()
+        # Byte-equal outside the execution identity (backend, lane, adapter fields differ by runtime).
+        check(code == 0 and IDENTITY.sub("X", receipts) == IDENTITY.sub("X", expected), f"{stream} receipts: {stderr}")
+        identity = json.loads(receipts.splitlines()[0])["executionIdentity"]
+        check(identity["backend"] == EXPECTED_BACKEND["id"] and identity["layoutFingerprint"]
+              == "e4d7cc2e5ddc5ba5494a469f66c0a853b78a7b2ba5bdaa862de16fd41d184644", f"{stream} execution identity")
+        summary = meta["numericStability"]
+        check(summary["receiptCount"] == 2 and summary["decisionCounts"]["accept-fast"] == 2
+              and summary["autoDetectCount"] == 1 and summary["executionProfileId"]
+              == "numeric-stability/default-ordinary-execution-v1", f"{stream} numeric stability summary")
+    greedy = EXAMPLES / "numeric-stability-decode-greedy.commands.json"
+    code, stderr, _, _ = run(binary, work, "ns_observe", "--quirk-mode", "off", "--numeric-stability-execution-profile",
+                             "numeric-stability/observe-only-ordinary-execution-v1", commands=greedy)
+    first = json.loads(Path(f"{work / 'ns_observe.meta.json'}.numeric-stability.jsonl").read_text().splitlines()[0])
+    check(code == 0 and first["routingPolicyId"] == "numeric-stability/accept-fast-on-selected-token-disagreement-v1",
+          f"execution profile routing: {stderr}")
+    code, stderr, _, _ = run(binary, work, "ns_bad_profile", "--numeric-stability-execution-profile", "missing",
+                             commands=greedy)
+    check(code == 2 and "not an ordinary-execution profile" in stderr, f"unknown execution profile: {code} {stderr}")
+    # A capture plan this runtime does not evaluate (rmsnorm-output) is refused before device work.
+    rmsnorm = json.loads((EXAMPLES / "rmsnorm_tree_commands.json").read_text())
+    rmsnorm[1].update(semanticOpId="rmsnorm.output", semanticStage="decode", semanticPhase="normalized_hidden")
+    path = work / "ns_rmsnorm_commands.json"
+    path.write_text(json.dumps(rmsnorm))
+    code, stderr, _, _ = run(binary, work, "ns_rmsnorm", commands=path)
+    check(code == 2 and "rmsnorm-output-bindings-v1" in stderr, f"unevaluated capture plan: {code} {stderr}")
+
+
 def check_semantic(binary: Path, work: Path) -> None:
     commands = work / "semantic_commands.json"
     commands.write_text(json.dumps(semantic_stream()))
@@ -355,11 +398,8 @@ def check_semantic(binary: Path, work: Path) -> None:
     repro_meta = json.loads(Path(records[0]["repro"]["metaPath"]).read_text())
     check(repro_meta["commandsPath"] == records[0]["repro"]["commandsPath"] and repro_meta["bitwise"] is False
           and repro_meta["commandShape"] == records[0]["commandShape"], "repro meta")
-    # doe-zig-runtime evaluates decode.final_logits on matmul-gemv.wgsl for numeric
-    # stability when it writes a trace meta; this runtime refuses that stream.
+    check_numeric_stability(binary, work)
     greedy = EXAMPLES / "numeric-stability-decode-greedy.commands.json"
-    code, stderr, _, _ = run(binary, work, "greedy", "--quirk-mode", "off", commands=greedy)
-    check(code == 2 and "command 3: numeric stability evaluation" in stderr, f"numeric stability refusal: {code} {stderr}")
     # Without a trace meta nothing is evaluated: the rows chain like doe-zig-runtime's
     # and records anchor at the trace JSONL.
     jsonl = work / "greedy_rows.jsonl"
@@ -458,6 +498,7 @@ def main() -> int:
     parser.add_argument("--module", default="doe-c-runtime")
     parser.add_argument("--backend-id", default="doe_c_vulkan")
     args = parser.parse_args()
+    EXPECTED_BACKEND["id"] = args.backend_id
     args.work.mkdir(parents=True, exist_ok=True)
 
     adapter = None
@@ -518,7 +559,6 @@ def main() -> int:
         (["--queue-sync-mode", "deferred"], "per-command"),
         (["--replay", "x"], "not implemented"),
         (["--gpu-timestamp-mode", "require"], "GPU timestamps"),
-        (["--numeric-stability-execution-profile", "x"], "not implemented"),
     ]
     for extra, needle in rejected:
         code, stderr, _, _ = run(args.binary, args.work, "rmsnorm_tree", *extra)
@@ -533,12 +573,13 @@ def main() -> int:
     check_plan(args.binary, args.work)
 
     print(f"PASS {args.module}: 3 example streams with doe-zig-runtime hash chains, replay-valid artifacts, "
-          f"an independent oracle match, alias labels, command repeat, an oracle mismatch, 7 rejections, "
+          f"an independent oracle match, alias labels, command repeat, an oracle mismatch, 6 rejections, "
           f"{len(ZIG_COPY_FINAL_HASH)} copy streams, a copy/texture roundtrip read back against host bytes, 4 copy "
           f"failures, {len(ZIG_RENDER_FINAL_HASH)} render streams, scissored and indexed draws read back against the "
           f"proxy and clear colors, a missing render target, {len(ZIG_QUIRK_FINAL_HASH)} quirk-matched streams, active "
           f"staging read back against host bytes, 2 quirk refusals, semantic rows with operator records, repro "
-          f"bundles and host-checked captures, 2 numeric stability refusals, plan rows chained like "
+          f"bundles and host-checked captures, greedy and sampled numeric stability receipts equal to "
+          f"doe-zig-runtime's Radeon receipts, an execution profile route and 3 numeric stability refusals, plan rows chained like "
           f"doe-plan-executor's with host-checked loads and dispatches and 5 plan refusals on "
           f"{adapter.get('device')} ({adapter.get('adapterType')}, {adapter.get('backendType')}); every trace row and "
           f"meta validates against config/trace.schema.json and config/trace-meta.schema.json")

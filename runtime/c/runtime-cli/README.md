@@ -69,15 +69,29 @@ $(BUILD)/doe-c-runtime --commands examples/rmsnorm_tree_commands.json --execute 
   lane, GPU timestamp or queue family fields) and `shaderArtifacts` is empty.
   doe-zig-runtime drops a partial capture or one without semantic identity; this
   CLI rejects both.
-- Numeric stability: doe-zig-runtime evaluates (re-executes, compares with a CPU
-  reference and may reroute) every dispatch whose op id, stage, phase and kernel
-  basename match an enabled auto-detect profile of
-  `config/numeric-stability-policy.json` (or `--numeric-stability-policy`)
-  whenever it writes a trace meta. This CLI does not implement that evaluation:
-  with a trace meta it reads the policy and refuses such a stream with exit 2
-  (for example `examples/numeric-stability-decode-greedy.commands.json`, whose
-  `decode.final_logits` dispatch matches); without a trace meta nothing is
-  evaluated by either runtime and the stream runs.
+- Numeric stability (`src/numeric_stability.c`, `src/numeric_policy.c`), as
+  doe-zig-runtime's `runtime/numeric_stability` Recorder evaluates ordinary
+  execution whenever it writes a trace meta: a dispatch whose op id, stage,
+  phase and kernel basename match an enabled auto-detect profile of
+  `config/numeric-stability-policy.json` (or `--numeric-stability-policy`) is
+  evaluated after it runs. For the `decode-final-logits-matmul-gemv-bindings-v1`
+  capture plan the fast (GPU) logits are read back and compared with serial f32
+  (stable) and f64 (reference) evaluations of its weights and hidden state; the
+  trigger policy, the routing policy of the execution profile
+  (`--numeric-stability-execution-profile`, default the registry's) and the route
+  metadata pick accept-fast, prefer-stable (the stable logits are written over
+  the fast ones) or abstain (the rest of the stream is skipped and counted in
+  `executionSkippedCount`). The next `decode.sample_token` dispatch on
+  `sample.wgsl` reading those logits is replayed as a decode boundary (greedy or
+  sampled CDF, top-k, top-p; a sampled token is replayed on the host and written
+  back, as doe-zig-runtime does). Receipts go to
+  `<meta>.numeric-stability.jsonl` and the meta gains `numericStability`, both
+  in doe-zig-runtime's format. The receipt `executionIdentity` carries this
+  CLI's backend and profile; lane, adapter ordinal, queue family and selection
+  policy are null. A dispatch matching any other capture plan (matmul.logits,
+  rmsnorm, attention) is refused with exit 2 before device work, and explicit
+  `numericStability` annotations stay rejected. Without a trace meta nothing is
+  evaluated by either runtime.
 - `output_oracle` schema 1, `sha256_exact_v1`, `zero_fill_v1` initialization:
   with `--validate-output-oracles` the command runs again on isolated
   zero-filled buffers and the read-back target's SHA-256 must equal
@@ -109,8 +123,8 @@ $(BUILD)/doe-c-runtime --commands examples/rmsnorm_tree_commands.json --execute 
 Every other command kind (indirect draws, surfaces, dispatch, dispatch-indirect,
 `map_async`, `async_diagnostics` and the rest), field, texture dimension, mip level, sample count, aspect, format, oracle
 scope, `repeatSynchronization` value, semantic field on another kind, explicit
-`numericStability` annotation, `--numeric-stability-execution-profile` and
-argument is rejected with exit 2 before device work.
+`numericStability` annotation and argument is rejected with exit 2 before
+device work.
 
 doe-zig-runtime's native Vulkan lane reports every copy `unsupported` and
 continues; this CLI executes them. The row hash chain covers command identity,
@@ -140,8 +154,8 @@ semantic counts (`semanticTracingEnabled`, `semanticOpRowCount`,
 `semanticCaptureCount`, `semanticReproCount`) and, when records exist,
 `operatorRecordManifestPath` and its SHA-256 `operatorRecordManifestHash` follow
 doe-zig-runtime; the manifest bytes use its layout (`[\n`, records joined by
-`,\n`, `\n]\n`), so an empty manifest is `[\n\n]\n`. No `numericStability`
-summary is written because no evaluation runs. `shaderSourceReceipts` lists
+`,\n`, `\n]\n`), so an empty manifest is `[\n\n]\n`. `numericStability`
+appears when a receipt was written. `shaderSourceReceipts` lists
 every shader the stream compiles (kernel_dispatch kernels in first-use order,
 then the render proxy's modules) with its resolved path, entry point, byte
 length and SHA-256, and `shaderSourceReceiptsHash` is the SHA-256 of that
@@ -245,12 +259,16 @@ has row hashes equal to doe-zig-runtime's executed rows, operator records equal
 to its records outside `execution` and `shaderArtifacts` (checked against
 `config/operator-execution-record.schema.json`), repro command files equal byte
 for byte, and captures equal to its captures and to the
-`bench/oracles/workgroup_recurrence_u32_v1.py` host reference; the greedy decode
-stream is refused with a trace meta and, without one, its rows equal
-doe-zig-runtime's trace-only rows. The numeric stability evaluation itself has no
-lavapipe reference: doe-zig-runtime crashes inside llvmpipe executing
-`bench/inference-pipeline/kernels/matmul-gemv.spv`, with or without semantic
-fields. Plan mode (base 8cdc66317, 2026-10-25): rows for
+`bench/oracles/workgroup_recurrence_u32_v1.py` host reference; without a trace
+meta the greedy decode stream's rows equal doe-zig-runtime's trace-only rows.
+Numeric stability (2026-10-25): doe-zig-runtime crashes inside llvmpipe executing
+`bench/inference-pipeline/kernels/matmul-gemv.spv`, so its reference receipts
+come from a guarded Radeon run (`tests/fixtures/zig-radeon-numeric-stability-*.jsonl`,
+HEAD 71574e529). On lavapipe the greedy and sampled receipts of `doe-c-runtime`
+and `dawn-c-runtime` are byte-equal to them outside `executionIdentity`
+(candidates, digests, layout fingerprint, trigger, route, decode boundary), and
+the summaries are equal; host tests cover the prefer-stable rewrite, abstain stop
+and accept-fast routes. Plan mode (base 8cdc66317, 2026-10-25): rows for
 `inference_gemma3_270m_decode_1tok` (37) and
 `inference_gemma3_270m_prefill_64tok_decode_64tok` (1583) have hashes equal to
 doe-plan-executor `--dry-run` rows (the hash does not depend on execution) and
