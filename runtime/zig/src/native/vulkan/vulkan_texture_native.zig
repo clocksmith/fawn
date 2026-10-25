@@ -36,6 +36,12 @@ pub fn vulkan_create_texture(dev: *shared.DoeDevice, tex: *shared.DoeTexture, de
         shared.vk_resources.release_texture_resource(rt, result.value_ptr.*);
     }
     result.value_ptr.* = tex_resource;
+    // A new texture reads as zero (WebGPU) even in reused memory.
+    rt.texture_zero_initialize(handle) catch |err| {
+        if (rt.textures.fetchRemove(handle)) |entry| shared.vk_resources.release_texture_resource(rt, entry.value);
+        shared.deliverInternalError(dev, "doe_vulkan_render_native: texture zero initialization failed: {s}", .{@errorName(err)});
+        return false;
+    };
 
     tex.vk_id = handle;
     tex.vk_runtime_ref = @ptrCast(rt);
@@ -54,8 +60,9 @@ pub fn vulkan_destroy_texture(tex: *shared.DoeTexture) void {
     if (rt.textures.fetchRemove(tex.vk_id)) |entry| {
         shared.vk_resources.release_texture_resource(rt, entry.value);
     }
+    // The runtime stays: views of a destroyed texture release their image
+    // views through it.
     tex.vk_id = 0;
-    tex.vk_runtime_ref = null;
 }
 
 pub fn vulkan_create_texture_view(tex: *shared.DoeTexture, tv: *shared.DoeTextureView, desc: *const abi_pipeline.WGPUTextureViewDescriptor, swizzle_r: u32, swizzle_g: u32, swizzle_b: u32, swizzle_a: u32) bool {

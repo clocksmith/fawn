@@ -1002,6 +1002,9 @@ pub const NativeVulkanRuntime = struct {
     pub fn texture_write(self: *NativeVulkanRuntime, cmd_arg: model_texture_types.TextureWriteCommand) !void {
         return vk_texture_commands.texture_write(self, cmd_arg);
     }
+    pub fn texture_zero_initialize(self: *NativeVulkanRuntime, handle: u64) !void {
+        return vk_texture_commands.texture_zero_initialize(self, handle);
+    }
     pub fn texture_copy(self: *NativeVulkanRuntime, args: anytype) !void {
         return vk_texture_commands.texture_copy(self, .{ .src_handle = args.src_handle, .src_mip = args.src_mip, .src_x = args.src_x, .src_y = args.src_y, .src_z = args.src_z, .dst_handle = args.dst_handle, .dst_mip = args.dst_mip, .dst_x = args.dst_x, .dst_y = args.dst_y, .dst_z = args.dst_z, .width = args.width, .height = args.height, .depth_or_layers = args.depth_or_layers });
     }
