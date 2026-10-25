@@ -87,8 +87,10 @@ offsets. Resolved device limits bound graphics and resource admission. Public
 occlusion query sets now use the existing Metal visibility buffer and command
 leases, resetting only indices begun in each pass. Empty/unavailable results are
 zero and untouched indices survive later passes. CAMetalLayer presentation uses
-real drawable textures with retained generations. Partial sample masks, unclipped
-depth and depth/stencil transfers remain explicit missing paths. Public timestamp
+real drawable textures with retained generations. Depth/stencil transfers and
+fixed depth bias/clamp use native Metal operations. Fragment depth/sample builtins
+and DepthClipControl compose through canonical admission. Partial fixed sample
+masks remain an explicit missing path. Public timestamp
 queries use paired native CPU/GPU clock calibration, real ordered counter samples
 and shared integer-limb GPU nanosecond conversion. Unavailable results are zero,
 native error sentinels survive conversion, and same-recording rewrites preserve
@@ -1258,8 +1260,9 @@ compiler-provided binding tables; vertex-fetch slots avoid shader buffer/size
 slots. Shared public fixed/depth/interface admission is converted explicitly to
 Metal without synthetic Vulkan capabilities. Depth/stencil transfers consume
 resource-normalized aspect layouts, retaining forbidden depth uploads and opaque
-Plus-depth readback validation. Partial sample masks and unclipped depth reject
-explicitly.
+Plus-depth readback validation. Depth bias, unclipped depth and fragment
+depth/sample builtins retain shared validation and native per-draw state. Partial
+fixed sample masks reject explicitly.
 Texture initialization, discard recovery and public submissions share the same
 backend aspect state and tagged pending owner. An initialization that becomes
 unknown does not publish a public texture and cannot drop its private allocation.

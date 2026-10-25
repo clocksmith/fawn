@@ -135,6 +135,7 @@ typedef struct doe_mtl_render_draw {
     uint32_t winding, cull; /* Native clockwise=0/counterclockwise=1; none/front/back=0/1/2. */
     float blend_constant[4];
     float depth_bias, depth_slope, depth_clamp;
+    bool unclipped_depth; /* Native depth clamp; false restores clipping for the next draw. */
     uint32_t stencil_reference;
     uint32_t visibility_mode; /* Native disabled=0, boolean=1, counting=2. */
     uint64_t visibility_offset; /* 8-byte aligned; each offset occupies one contiguous run. */

@@ -147,13 +147,13 @@ WGPURenderPipeline native_metal_create_render_pipeline(native_device *device,
     doe_resource_render_pipeline_desc resource = {.samples=descriptor->multisample.count,
         .topology=descriptor->primitive.topology, .strip_index_format=descriptor->primitive.stripIndexFormat,
         .color_count=fragment ? (uint32_t)fragment->targetCount : 0};
-    native_graphics_limits interfaces = {60,60,false}; /* Metal admission of fragment builtins is unverified. */
-    if (!native_render_fixed(device->features, descriptor, &fixed) || fixed.unclipped_depth ||
+    native_graphics_limits interfaces = {60,60,true};
+    if (!native_render_fixed(device->features, descriptor, &fixed) ||
         !native_render_depth(device->features, descriptor->depthStencil, &fixed, &resource) ||
-        fixed.depth_bias || fixed.depth_bias_slope_scale != 0 || fixed.depth_bias_clamp != 0 ||
         !native_render_interfaces(stages, stage_count, &descriptor->vertex, fragment,
             descriptor->multisample.alphaToCoverageEnabled, fixed.topology == DOE_VK_POINTS,
-            &interfaces, &device->backend.limits)) return NULL;
+            &interfaces, &device->backend.limits) ||
+        !native_render_fragment_depth(stages, stage_count, descriptor->depthStencil)) return NULL;
     doe_mtl_render_pipeline_desc native = {.sample_count=fixed.sample_count,
         .alpha_to_coverage=fixed.alpha_to_coverage, .override_sample_mask=true, .sample_mask=fixed.sample_mask,
         .color_count=resource.color_count};
@@ -191,6 +191,10 @@ WGPURenderPipeline native_metal_create_render_pipeline(native_device *device,
         fixed.topology == DOE_VK_LINE_STRIP ? 2 : fixed.topology == DOE_VK_TRIANGLES ? 3 : 4;
     payload->metal_graphics->winding = fixed.clockwise_front ? 0 : 1;
     payload->metal_graphics->cull = fixed.cull_mask;
+    payload->metal_graphics->depth_bias = (float)fixed.depth_bias;
+    payload->metal_graphics->depth_slope = fixed.depth_bias_slope_scale;
+    payload->metal_graphics->depth_clamp = fixed.depth_bias_clamp;
+    payload->metal_graphics->unclipped_depth = fixed.unclipped_depth;
     doe_resource_pipeline_layout *layout = (doe_resource_pipeline_layout *)descriptor->layout;
     bool automatic = !layout;
     doe_resource_render_pipeline *pipeline = NULL;

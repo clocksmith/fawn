@@ -35,7 +35,8 @@ native/resource owner to adopt, not a replacement WebGPU API or reference author
   vertex layouts, per-target blending/write masks and depth/stencil state.
 - Whole render passes with color/depth/stencil attachments, native load/clear/store,
   indexed/nonindexed and instanced direct draws, viewport/scissor, cull/winding,
-  blend constants, depth bias and stencil reference. Clear-only passes are real
+  blend constants, depth bias/clamp, depth clip/clamp mode and stencil reference.
+  Each draw restores its own depth mode. Clear-only passes are real
   native encodes. Pure and combined depth/stencil formats, sample-count-matched
   pipelines, native resolve/store-resolve and depth/stencil resolve filters are
   admitted with runtime capability gates. X24/X32 stencil views are view-only.

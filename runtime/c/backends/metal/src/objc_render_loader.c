@@ -93,6 +93,7 @@ bool doe_mtl_objc_load_render(doe_mtl_objc *r, doe_objc_message message) {
     g->set_cull = r->selector("setCullMode:");
     g->set_blend_color = r->selector("setBlendColorRed:green:blue:alpha:");
     g->set_depth_bias = r->selector("setDepthBias:slopeScale:clamp:");
+    g->set_depth_clip = r->selector("setDepthClipMode:");
     g->set_stencil_reference = r->selector("setStencilReferenceValue:");
     g->draw_primitives = r->selector("drawPrimitives:vertexStart:vertexCount:instanceCount:baseInstance:");
     g->draw_indexed_primitives = r->selector("drawIndexedPrimitives:indexCount:indexType:indexBuffer:indexBufferOffset:instanceCount:baseVertex:baseInstance:");
@@ -121,7 +122,7 @@ bool doe_mtl_objc_load_render(doe_mtl_objc *r, doe_objc_message message) {
         g->set_fragment_bytes != NULL && g->set_vertex_texture != NULL && g->set_fragment_texture != NULL &&
         g->set_vertex_sampler != NULL && g->set_fragment_sampler != NULL && g->set_viewport != NULL &&
         g->set_scissor != NULL && g->set_winding != NULL && g->set_cull != NULL && g->set_blend_color != NULL &&
-        g->set_depth_bias != NULL && g->set_stencil_reference != NULL &&
+        g->set_depth_bias != NULL && g->set_depth_clip != NULL && g->set_stencil_reference != NULL &&
         g->draw_primitives != NULL && g->draw_indexed_primitives != NULL &&
         g->draw_primitives_indirect != NULL && g->draw_indexed_primitives_indirect != NULL;
 }

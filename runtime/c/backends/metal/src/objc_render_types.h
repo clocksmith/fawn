@@ -52,6 +52,6 @@ typedef struct doe_mtl_objc_graphics {
     void *set_viewport, *set_scissor, *set_winding, *set_cull, *set_blend_color, *set_depth_bias, *set_stencil_reference;
     void *draw_primitives, *draw_indexed_primitives;
     void *draw_primitives_indirect, *draw_indexed_primitives_indirect;
-    void *set_visibility_buffer, *set_visibility;
+    void *set_visibility_buffer, *set_visibility, *set_depth_clip;
 } doe_mtl_objc_graphics;
 #endif

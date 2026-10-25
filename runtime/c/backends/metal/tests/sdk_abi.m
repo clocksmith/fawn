@@ -127,6 +127,8 @@ void doe_mtl_sdk_calls(id<MTLComputeCommandEncoder> compute,
         threadsPerThreadgroup:(MTLSize){1, 1, 1}];
     [render setViewport:(MTLViewport){0, 0, 1, 1, 0, 1}];
     [render setScissorRect:(MTLScissorRect){0, 0, 1, 1}];
+    [render setDepthClipMode:MTLDepthClipModeClamp];
+    [render setDepthBias:1.0f slopeScale:2.0f clamp:3.0f];
     [render drawIndexedPrimitives:MTLPrimitiveTypeTriangle indexCount:3
         indexType:MTLIndexTypeUInt32 indexBuffer:buffer indexBufferOffset:0
         instanceCount:1 baseVertex:(NSInteger)-1 baseInstance:0];
@@ -169,3 +171,5 @@ void doe_mtl_sdk_stage_timestamp(id<MTLDevice> device, id<MTLCommandBuffer> comm
 
 _Static_assert(MTLBlitOptionDepthFromDepthStencil == 1, "native depth blit option");
 _Static_assert(MTLBlitOptionStencilFromDepthStencil == 2, "native stencil blit option");
+
+_Static_assert(MTLDepthClipModeClip == 0 && MTLDepthClipModeClamp == 1, "native depth clip mode");

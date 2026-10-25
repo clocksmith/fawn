@@ -44,6 +44,7 @@ void doe_mtl_objc_render_encode_draw(doe_mtl_objc *r, void *encoder,
     g->scissor(encoder, g->set_scissor, scissor);
     r->set_size_call(encoder, g->set_winding, v->winding);
     r->set_size_call(encoder, g->set_cull, v->cull);
+    r->set_size_call(encoder, g->set_depth_clip, v->unclipped_depth ? 1 : 0);
     g->blend_color(encoder, g->set_blend_color, v->blend_constant[0], v->blend_constant[1], v->blend_constant[2], v->blend_constant[3]);
     g->depth_bias(encoder, g->set_depth_bias, v->depth_bias, v->depth_slope, v->depth_clamp);
     g->set_u32(encoder, g->set_stencil_reference, v->stencil_reference);

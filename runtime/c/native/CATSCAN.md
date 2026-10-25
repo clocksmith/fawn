@@ -12,7 +12,7 @@ callbacks, compilation, execution and production selection.
 ## Scope
 WebGPU and presentation.
 [Coverage](README.md) separates Vulkan, Metal and Windows D3D12 composition.
-Missing backend paths reject.
+Missing paths reject.
 
 ## Contracts
 Pinned WebGPU ABI and existing owner contracts apply.
@@ -33,7 +33,7 @@ Metal occlusion resolves real visibility buffers under command leases; passes re
 only begun indices, preserving other results.
 Metal timestamps use calibrated GPU nanosecond conversion; ordered writes preserve
 prior resolves, unavailable samples become zero, and native errors remain sentinels.
-Depth/stencil copies preserve canonical aspects and initialization.
+Depth transfers and raster state preserve shared admission.
 Provider code stays resident; foreign callbacks run outside locks.
 
 ## Acceptance
