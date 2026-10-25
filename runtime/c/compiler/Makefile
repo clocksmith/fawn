@@ -445,7 +445,7 @@ build/test_overrides: $(LIB_SOURCES) tests/test_overrides.c tests/hlsl_fixture.h
 test-overrides: build/test_overrides
 	build/test_overrides
 
-build/test_specialization: $(LIB_SOURCES) tests/test_specialization.c tests/hlsl_fixture.h tests/packed_integer_fixture.h tests/integer_bits_fixture.h tests/float_math_fixture.h $(HEADERS) | build/.ready
+build/test_specialization: $(LIB_SOURCES) tests/test_specialization.c tests/hlsl_fixture.h tests/packed_integer_fixture.h tests/integer_bits_fixture.h tests/float_math_fixture.h tests/bitfield_fixture.h $(HEADERS) | build/.ready
 	$(CC) $(CFLAGS) $(LIB_SOURCES) tests/test_specialization.c -lm -o $@
 .PHONY: test-specialization
 test-specialization: build/test_specialization
@@ -453,7 +453,7 @@ test-specialization: build/test_specialization
 
 build/test_overrides_sanitize: $(LIB_SOURCES) tests/test_overrides.c tests/hlsl_fixture.h $(HEADERS) | build/.ready
 	$(CC) $(CFLAGS) -O1 -g -fno-omit-frame-pointer -fsanitize=address,undefined $(LIB_SOURCES) tests/test_overrides.c -lm -o $@
-build/test_specialization_sanitize: $(LIB_SOURCES) tests/test_specialization.c tests/hlsl_fixture.h tests/packed_integer_fixture.h tests/integer_bits_fixture.h tests/float_math_fixture.h $(HEADERS) | build/.ready
+build/test_specialization_sanitize: $(LIB_SOURCES) tests/test_specialization.c tests/hlsl_fixture.h tests/packed_integer_fixture.h tests/integer_bits_fixture.h tests/float_math_fixture.h tests/bitfield_fixture.h $(HEADERS) | build/.ready
 	$(CC) $(CFLAGS) -O1 -g -fno-omit-frame-pointer -fsanitize=address,undefined $(LIB_SOURCES) tests/test_specialization.c -lm -o $@
 .PHONY: sanitize-overrides
 sanitize-overrides: build/test_overrides_sanitize build/test_specialization_sanitize

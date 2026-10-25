@@ -3,6 +3,8 @@
 #include "sema.h"
 
 static const NumericBuiltin numeric_builtins[] = {
+    {"extractBits", BUILTIN_EXTRACT_BITS, 3u, BUILTIN_BITFIELD, 0u},
+    {"insertBits", BUILTIN_INSERT_BITS, 4u, BUILTIN_BITFIELD, 0u},
     {"fma", BUILTIN_FMA, 3u, BUILTIN_COMPONENT_FLOAT, 50u},
     {"step", BUILTIN_STEP, 2u, BUILTIN_COMPONENT_FLOAT, 48u},
     {"smoothstep", BUILTIN_SMOOTHSTEP, 3u, BUILTIN_COMPONENT_FLOAT, 0u},

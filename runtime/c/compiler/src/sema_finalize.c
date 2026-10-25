@@ -28,6 +28,8 @@ bool sema_unary_value(Source *s, const Expression *e, ExpressionValue *a, bool e
 bool sema_builtin_finish(Source *source, const Expression *node, const NumericBuiltin *builtin,
                           ExpressionValue *arguments, bool emit, ExpressionValue *out) {
     CompilerWorkspace *compiler = source->compiler;
+    if (builtin->family == BUILTIN_BITFIELD)
+        return sema_bitfield_finish(source, node, builtin, arguments, emit, out);
     if (!out->runtime) {
         if (!out->known) return true;
         const ConstantValue values[3] = {

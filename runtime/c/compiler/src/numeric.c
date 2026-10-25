@@ -205,6 +205,7 @@ bool numeric_builtin(Source *source, size_t offset, const NumericBuiltin *signat
         case BUILTIN_RADIANS:
             break;
         case BUILTIN_UNPACK4X_U8:
+        case BUILTIN_EXTRACT_BITS: case BUILTIN_INSERT_BITS:
         case BUILTIN_PACK4X_I8: case BUILTIN_PACK4X_U8: case BUILTIN_PACK4X_I8_CLAMP:
         case BUILTIN_PACK4X_U8_CLAMP: case BUILTIN_UNPACK4X_I8:
         case BUILTIN_DOT4_I8_PACKED: case BUILTIN_DOT4_U8_PACKED:
