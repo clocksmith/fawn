@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: MIT */
 #include "runtime_internal.h"
+#include "doe_native_adapter.h" /* doeNativeAdapterGetPciIdentity: the driver version webgpu.h does not report. */
 #include <errno.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -119,6 +120,7 @@ static void record_adapter(doe_runtime *runtime)
     runtime_copy_view(runtime->info.description, sizeof(runtime->info.description), info.description);
     runtime->info.vendor_id = info.vendorID;
     runtime->info.device_id = info.deviceID;
+    doeNativeAdapterGetPciIdentity(runtime->adapter, NULL, NULL, &runtime->info.driver_version);
     switch (info.adapterType) {
     case WGPUAdapterType_DiscreteGPU: runtime->info.adapter_type = "discrete_gpu"; break;
     case WGPUAdapterType_IntegratedGPU: runtime->info.adapter_type = "integrated_gpu"; break;

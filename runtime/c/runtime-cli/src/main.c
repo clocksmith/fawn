@@ -272,12 +272,13 @@ static bool write_meta(const char *path, const options *o, const totals *t, uint
     if (ok && operators && operators->row_count)
         ok = write_optional(out, "operatorRecordManifestPath", operators->manifest_path, true) &&
             write_optional(out, "operatorRecordManifestHash", operators->manifest_sha256, true);
-    ok = ok && fprintf(out, ",\"queueSyncMode\":\"per-command\",\"quirkMode\":\"%s\",\"uploadBufferUsage\":\"%s\""
-        ",\"uploadSubmitEvery\":%" PRIu64
+    /* The upload arguments are recorded by the caller, as for doe-zig-runtime,
+     * whose meta has no upload fields; the bench reads a meta uploadSubmitEvery
+     * as an upload normalization input. */
+    ok = ok && fprintf(out, ",\"queueSyncMode\":\"per-command\",\"quirkMode\":\"%s\""
         /* No persistent pipeline cache exists in this runtime. */
         ",\"pipelineCache\":{\"state\":\"disabled\",\"reason\":\"platform-unsupported\",\"warmupCount\":0,\"warmupNs\":0}",
-        o->quirk_mode == DOE_QUIRK_OFF ? "off" : o->quirk_mode == DOE_QUIRK_ACTIVE ? "active" : "trace",
-        o->runtime.upload_copy_src ? "copy-dst-copy-src" : "copy-dst", o->runtime.upload_submit_every) >= 0;
+        o->quirk_mode == DOE_QUIRK_OFF ? "off" : o->quirk_mode == DOE_QUIRK_ACTIVE ? "active" : "trace") >= 0;
     if (ok && t->oracles) {
         ok = write_optional(out, "outputOracleKind", "sha256_exact_v1", true) &&
             write_optional(out, "outputOracleReferenceId", t->oracle_reference, true) &&
@@ -291,14 +292,21 @@ static bool write_meta(const char *path, const options *o, const totals *t, uint
     ok = ok && fputs(",\"profile\":{", out) >= 0;
     ok = ok && write_optional(out, "vendor", o->vendor, false) && write_optional(out, "api", o->api ? o->api : "vulkan", true) &&
         write_optional(out, "deviceFamily", o->family, true) && write_optional(out, "driver", o->driver, true);
-    ok = ok && fputs("},\"adapter\":{", out) >= 0;
+    /* adapterInfo in the package traces' field names (docs/workload-system.md),
+     * which bench run receipts read as hostIdentity.adapter; null when no
+     * adapter opened. */
+    ok = ok && fputs("},\"adapterInfo\":", out) >= 0;
     if (adapter) {
-        ok = ok && write_optional(out, "vendor", adapter->vendor, false) && write_optional(out, "architecture", adapter->architecture, true) &&
+        ok = ok && fputc('{', out) != EOF && write_optional(out, "vendor", adapter->vendor, false) &&
+            write_optional(out, "architecture", adapter->architecture, true) &&
             write_optional(out, "device", adapter->device, true) && write_optional(out, "description", adapter->description, true) &&
-            write_optional(out, "adapterType", adapter->adapter_type, true) && write_optional(out, "backend", adapter->backend, true) &&
-            fprintf(out, ",\"vendorId\":%u,\"deviceId\":%u", adapter->vendor_id, adapter->device_id) >= 0;
+            write_optional(out, "backendType", adapter->backend, true) && write_optional(out, "adapterType", adapter->adapter_type, true) &&
+            fprintf(out, ",\"vendorID\":%u,\"deviceID\":%u,\"driverVersion\":%u}", adapter->vendor_id, adapter->device_id,
+                adapter->driver_version) >= 0;
+    } else {
+        ok = ok && fputs("null", out) >= 0;
     }
-    ok = ok && fputs("}}\n", out) >= 0;
+    ok = ok && fputs("}\n", out) >= 0;
     if (fclose(out) != 0) ok = false;
     return ok;
 }

@@ -27,6 +27,7 @@ typedef struct doe_runtime_options {
 typedef struct doe_runtime_adapter {
     char vendor[128], architecture[128], device[256], description[256];
     uint32_t vendor_id, device_id;
+    uint32_t driver_version; /* The driver's raw version (Vulkan driverVersion), 0 when not reported. */
     const char *adapter_type; /* "discrete_gpu", "integrated_gpu", "cpu" or "unknown" */
     const char *backend;      /* "vulkan", "metal", "d3d12" or "unknown" */
 } doe_runtime_adapter;
