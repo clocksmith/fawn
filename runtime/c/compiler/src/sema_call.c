@@ -386,6 +386,38 @@ static inline bool sema_atomic_call(Source *source, const Expression *node, cons
         result == IR_VOID ? NULL : &out->value);
 }
 
+static inline bool workgroup_uniform_load(Source *s, const Expression *node, const LocalScope *scope,
+                                          bool evaluate, bool emit, ExpressionValue *out) {
+    CompilerWorkspace *c = s->compiler;
+    ValueReference reference;
+    if (!sema_address_reference(s, c->arguments[node->left].expression, scope, evaluate, emit, &reference)) return false;
+    if (reference.category != ROOT_WORKGROUP ||
+        c->workgroups[reference.root].state.resolved.address_space != MODULE_WORKGROUP)
+        return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, node->source_offset,
+            "workgroupUniformLoad requires a workgroup address");
+    const bool atomic = reference.type >= 7u && c->types[reference.type - 7u].kind == TYPE_ATOMIC;
+    if (!atomic && !type_constructible(c, reference.type))
+        return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, node->source_offset,
+            "workgroupUniformLoad requires a constructible or atomic store type");
+    if (!source_reference_record(s, &c->expression_references[(size_t)(node - c->expressions)],
+                                  SOURCE_BARRIER, 0u, node->source_offset)) return false;
+    if (!sema_emit(s, emit, (IrInstruction){.opcode = IR_WORKGROUP_BARRIER,
+        .source_offset = node->source_offset}, NULL)) return false;
+    if (atomic) {
+        const TypeId type = c->types[reference.type - 7u].element;
+        *out = (ExpressionValue){.runtime = true, .constant.type = type,
+            .value = {.type = type, .source_offset = node->source_offset}};
+        if (!sema_emit(s, emit, (IrInstruction){.opcode = IR_ATOMIC_LOAD, .type = type,
+            .source_offset = node->source_offset,
+            .operands.access = {.root = reference.root, .path = reference.path, .category = ROOT_WORKGROUP}},
+            &out->value)) return false;
+    } else if (!sema_reference_load(s, reference, node->source_offset, emit, out)) return false;
+    /* The trailing barrier keeps a faster invocation's following writes from
+     * racing another invocation's load of the same uniform address. */
+    return sema_emit(s, emit, (IrInstruction){.opcode = IR_WORKGROUP_BARRIER,
+        .source_offset = node->source_offset}, NULL);
+}
+
 bool sema_call_value(Source *s, uint32_t id, const LocalScope *scope, bool evaluate, bool emit, bool statement, ExpressionValue *out) {
     CompilerWorkspace *c = s->compiler;
     const Expression *node = &c->expressions[id];
@@ -428,8 +460,12 @@ bool sema_call_value(Source *s, uint32_t id, const LocalScope *scope, bool evalu
             .operands.scalar.literal=source_span_is(s,name,"storageBarrier") ? BARRIER_STORAGE :
                 source_span_is(s,name,"textureBarrier") ? BARRIER_TEXTURE : BARRIER_WORKGROUP},NULL);
     }
-    if (!declared_type && source_span_is(s,name,"workgroupUniformLoad"))
-        return source_error(s,DOE_COMPILER_UNSUPPORTED,name.offset,"synchronization builtin is outside the workgroup barrier owner");
+    if (!declared_type && source_span_is(s,name,"workgroupUniformLoad")) {
+        if (statement || node->right != 1u || node->value.call.type.offset != NO_ID || c->current_function == NO_ID)
+            return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, name.offset,
+                "workgroupUniformLoad requires one address and a used result in a runtime function");
+        return workgroup_uniform_load(s, node, scope, evaluate, emit, out);
+    }
     if (name.length >= sizeof(((Name *)0)->text))
         return source_error(s, DOE_COMPILER_UNSUPPORTED, name.offset, "identifier length exceeds supported capacity");
     const uint32_t atomic = !declared_type ? atomic_builtin_kind(s, name) : NO_ID;

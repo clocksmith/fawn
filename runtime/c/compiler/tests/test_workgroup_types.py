@@ -42,6 +42,22 @@ class WorkgroupTypes(unittest.TestCase):
             self.compile('@compute @workgroup_size(1) fn main(){' + builtin + '(1u);}', 'no arguments')
             self.compile('@compute @workgroup_size(1) fn main(){let x=' + builtin + '();}', 'no result')
 
+    def test_workgroup_uniform_load_address_and_result(self):
+        code = self.compile('var<workgroup> values:array<vec2u,2>;'
+            '@compute @workgroup_size(4) fn main(){let value=workgroupUniformLoad(&values[1]);'
+            'if(value.x>0u){workgroupBarrier();}values[1]=vec2u(1);}')
+        self.assertEqual(sum(op == 224 for op, _ in code), 4)  # initialization, before/after load, conditional
+        self.compile('var<workgroup> value:atomic<u32>;'
+            '@compute @workgroup_size(4) fn main(){let v=workgroupUniformLoad(&value);'
+            'if(v>0u){workgroupBarrier();}}')
+        for declaration, address, error in [
+            ('var<workgroup> values:array<u32,4>;', '&values[i]', 'uniform'),
+            ('var<private> value:u32;', '&value', 'workgroup address'),
+            ('var<workgroup> values:array<atomic<u32>,2>;', '&values', 'constructible'),
+        ]:
+            self.compile(declaration + '@compute @workgroup_size(4) fn main('
+                '@builtin(local_invocation_index) i:u32){let x=workgroupUniformLoad(' + address + ');}', error)
+
     def test_device_independent_workgroup_dimensions(self):
         for dimensions in [(512, 1, 1), (16, 32, 2), (4294967295, 1, 1)]:
             code = self.compile('@compute @workgroup_size(' + ','.join(str(v) + 'u' for v in dimensions) +

@@ -119,8 +119,15 @@ static bool call_bit(Uniformity *a,uint32_t id,uint32_t cf,uint32_t *out) {
     if (reference.kind == SOURCE_IMAGE && (reference.index & SOURCE_IMAGE_VARYING) != 0u) *out |= varying(a);
     if (reference.kind == SOURCE_IMAGE && (reference.index & SOURCE_IMAGE_DERIVATIVE) != 0u &&
         !a->subgroup && !require_uniform(a,cf,e->source_offset)) return false;
-    if (reference.kind==SOURCE_BARRIER)
-        return a->subgroup || require_uniform(a,cf,e->source_offset);
+    if (reference.kind==SOURCE_BARRIER) {
+        if (!a->subgroup && !require_uniform(a,cf,e->source_offset)) return false;
+        if (e->right != 0u) {
+            uint32_t address;
+            if (!expression_bit(a,a->compiler->arguments[e->left].expression,cf,&address)) return false;
+            if (!a->subgroup && !require_uniform(a,address,e->source_offset)) return false;
+        }
+        return true;
+    }
     const NumericBuiltin *collective = reference.kind == SOURCE_SUBGROUP ?
         builtin_kind((NumericBuiltinKind)reference.index) : NULL;
     if (collective != NULL) {
