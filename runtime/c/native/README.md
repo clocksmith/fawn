@@ -85,6 +85,11 @@ optional features still reject through shared admission. The retained draw and
 format feature consumers exercise these paths on M3; the format consumer's other
 three optional features remain unoffered, not implicitly qualified. RG11B10Ufloat
 is admitted for core sampling independently of optional rendering.
+Metal's named format projection also includes the thirteen core snorm/integer/
+packed formats exercised by `core-formats`. Initialization asks the resource
+validator whether a private attachment clear is legal; other shapes use real
+zero staging bounded by native allocation capacity, not public maxBufferSize.
+This preserves non-renderable sampled formats without adding public usage rights.
 
 Metal's workgroup envelope follows the selected device dimensions and known GPU
 family total; each pipeline also checks its actual maxTotalThreadsPerThreadgroup.

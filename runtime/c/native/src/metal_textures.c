@@ -31,10 +31,10 @@ native_failure native_metal_initialize_texture(native_device *device, native_tex
         }
         if (bounded) {
             bytes *= desc->depth_or_layers;
-            bounded = bytes <= device->backend.limits.maxBufferSize;
+            bounded = bytes <= native_allocation_bound(device);
         }
         if (!bounded) {
-            failure = native_failure_status(NATIVE_UNSUPPORTED);
+            failure = native_failure_status(NATIVE_OUT_OF_MEMORY);
         } else {
             status = doe_mtl_buffer_create(device->backend.value.metal.context, bytes, DOE_MTL_SHARED, &zero, &detail);
             for (uint32_t mip = 0; status == DOE_MTL_OK && mip < desc->mip_levels; ++mip) {
@@ -105,10 +105,13 @@ WGPUTexture native_metal_create_texture(native_device *device, const WGPUTexture
     if (desc.usage & WGPUTextureUsage_CopyDst) native.usage |= DOE_MTL_TEXTURE_COPY_DST;
     if (desc.usage & WGPUTextureUsage_TextureBinding) native.usage |= DOE_MTL_TEXTURE_SAMPLED;
     if (desc.usage & WGPUTextureUsage_StorageBinding) native.usage |= DOE_MTL_TEXTURE_STORAGE;
-    /* Initialization usage is private, never permission in the resource owner.
-     * Two-dimensional allocations use the canonical aspect clear; 1D/3D use a
-     * real initialized staging upload rather than CPU-mapped private storage. */
-    if (desc.dimension == WGPUTextureDimension_2D) native.usage |= DOE_MTL_TEXTURE_RENDER_TARGET;
+    /* Ask the canonical format/shape owner whether a private attachment clear is
+     * legal; do not invent a second renderability table. Non-attachment formats
+     * initialize by staging instead. This adds no public usage permission. */
+    doe_resource_texture_desc clearing = desc;
+    clearing.usage = WGPUTextureUsage_RenderAttachment;
+    if (doe_resource_texture_validate(&clearing, &limits) == DOE_RESOURCE_OK)
+        native.usage |= DOE_MTL_TEXTURE_RENDER_TARGET;
     else native.usage |= DOE_MTL_TEXTURE_COPY_DST;
     native_texture *payload = calloc(1, sizeof(*payload));
     if (!payload) { native_error(device, WGPUErrorType_OutOfMemory, "Metal texture payload allocation failed"); return NULL; }
