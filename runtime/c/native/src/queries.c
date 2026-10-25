@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: MIT */
-#include "internal.h"
+#include "metal_frontend.h"
 #include <stdlib.h>
 
 /* Called before device publication or under its serialized queue mutex. The
@@ -38,7 +38,9 @@ static void release_queries(void *userdata, void *handle)
     (void)userdata;
     native_queries *payload = handle;
     native_lock(payload->device);
-    doe_vk_query_pool_release(payload->pool);
+    if (payload->device->backend.kind == WGPUBackendType_Metal)
+        doe_mtl_buffer_release(payload->metal_results);
+    else doe_vk_query_pool_release(payload->pool);
     native_unlock(payload->device);
     free(payload);
 }
@@ -47,7 +49,7 @@ WGPUQuerySet wgpuDeviceCreateQuerySet(WGPUDevice handle, const WGPUQuerySetDescr
     native_device *device = (native_device *)handle;
     if (!device) return NULL;
     if (native_device_dead(device)) return native_lost_query_set(device, descriptor);
-    if (device->backend.kind != WGPUBackendType_Vulkan) {
+    if (device->backend.kind != WGPUBackendType_Vulkan && device->backend.kind != WGPUBackendType_Metal) {
         native_error(device, WGPUErrorType_Validation, "operation not yet composed for selected backend");
         return NULL;
     }
@@ -64,19 +66,33 @@ WGPUQuerySet wgpuDeviceCreateQuerySet(WGPUDevice handle, const WGPUQuerySetDescr
     payload->device = device;
     doe_resource_query_set *set = NULL;
     native_lock(device);
-    doe_vk_status backend = native_device_status(device);
-    if (backend == DOE_VK_OK && descriptor->count)
-        backend = descriptor->type == WGPUQueryType_Occlusion ?
-            doe_vk_occlusion_pool_create(device->backend.value.vulkan.context, descriptor->count, &payload->pool, NULL) :
-            doe_vk_query_pool_create(device->backend.value.vulkan.context, descriptor->count, &payload->pool, NULL);
-    if (backend == DOE_VK_OK)
+    native_failure failure = native_failure_status(native_device_result(device));
+    if (failure.status == NATIVE_OK && descriptor->count) {
+        if (device->backend.kind == WGPUBackendType_Metal) {
+            doe_mtl_error detail = {0};
+            if (descriptor->type != WGPUQueryType_Occlusion ||
+                (uint64_t)(descriptor->count - 1) * 8 > device->backend.value.metal.caps.max_visibility_offset)
+                failure = native_failure_status(NATIVE_UNSUPPORTED);
+            else failure = native_failure_metal(doe_mtl_buffer_create(device->backend.value.metal.context,
+                (uint64_t)descriptor->count * 8, DOE_MTL_SHARED, &payload->metal_results, &detail), &detail);
+        } else {
+            doe_vk_status backend = descriptor->type == WGPUQueryType_Occlusion ?
+                doe_vk_occlusion_pool_create(device->backend.value.vulkan.context, descriptor->count, &payload->pool, NULL) :
+                doe_vk_query_pool_create(device->backend.value.vulkan.context, descriptor->count, &payload->pool, NULL);
+            failure = native_failure_status(native_from_vulkan(backend));
+        }
+    }
+    if (failure.status == NATIVE_OK)
         status = doe_resource_query_set_create(&device->resources, descriptor->type, descriptor->count,
             (doe_resource_native){payload, NULL, release_queries}, &set);
     native_unlock(device);
     if (!set) {
         release_queries(NULL, payload);
-        native_error(device, backend != DOE_VK_OK ? native_backend_error(backend) : native_resource_error(status),
-            "query set creation failed");
+        if (failure.status != NATIVE_OK) {
+            char message[NATIVE_FAILURE_MESSAGE_CAPACITY];
+            native_failure_format(&failure, "query set creation failed", message);
+            native_error(device, native_result_error(failure.status), message);
+        } else native_error(device, native_resource_error(status), "query set creation failed");
     } else native_label(device, set, descriptor->label);
     return (WGPUQuerySet)set;
 }
@@ -144,4 +160,23 @@ doe_vk_status native_record_query(doe_vk_commands *commands, const doe_resource_
     return doe_vk_commands_resolve_queries_ns(commands, payload->pool,
         record->value.resolve.first, record->value.resolve.count,
         payload->device->timestamp_normalizer, destination->handle.vulkan, record->value.resolve.offset);
+}
+
+/* Resolve the real Metal visibility buffer through its ordinary command lease.
+ * Shared creation initializes unavailable results to zero; query writes and
+ * selected-index resets remain GPU commands, never host-authored query hits. */
+native_failure native_metal_record_query(doe_mtl_commands *commands, const doe_resource_command *record)
+{
+    if (record->kind != DOE_COMMAND_RESOLVE_QUERY ||
+        doe_resource_query_set_type(record->value.resolve.set) != WGPUQueryType_Occlusion)
+        return native_failure_status(NATIVE_UNSUPPORTED);
+    if (!record->value.resolve.count) return native_failure_status(NATIVE_OK);
+    native_queries *queries = doe_resource_query_set_native(record->value.resolve.set);
+    native_buffer *destination = doe_resource_buffer_native(record->value.resolve.destination);
+    if (!queries || !queries->metal_results || !destination) return native_failure_status(NATIVE_INVALID_ARGUMENT);
+    doe_mtl_error detail = {0};
+    doe_mtl_status status = doe_mtl_commands_copy(commands, queries->metal_results,
+        (uint64_t)record->value.resolve.first * 8, destination->handle.metal, record->value.resolve.offset,
+        (uint64_t)record->value.resolve.count * 8, &detail);
+    return native_failure_metal(status, &detail);
 }

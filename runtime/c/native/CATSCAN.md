@@ -20,19 +20,19 @@ error-scope, resource, shader and backend contracts apply.
 Instance requirements use the owner's [capability amendment](../instance/CAPABILITIES.md).
 
 ## Invariants
-One tagged device/pending owner selects backend without fallback.
-Read only the selected payload. Reflection never substitutes for dispatch analysis.
-Unknown work retains resources. Vulkan submit returns at
-queue acceptance, settles oldest first, and zero-initializes textures before
-queue-ordered access (owner-authorized 2026-10-24). Surface acquisition/discard
-uncertainty uses reserved records on the same pending list; Vulkan presentation
-requires its own frame fence. Metal registers presentation with the scheduled handler, retaining drawables through
-GPU completion under Apple's release-after-registration contract. Display timestamps
-do not govern retirement. Cleanup records do not redefine command WorkDone.
-Cleanup preserves surface-before-device locking and undelivered errors.
-Invalid configuration preserves surfaces; replacement retains old frames/views
-on the existing retirement owner.
-Provider code remains resident through cleanup; foreign callbacks run outside locks.
+One tagged device/pending owner selects backend without fallback and reads only
+its payload. Reflection never substitutes for dispatch analysis.
+Unknown work retains resources. Vulkan queues return at acceptance, settle oldest
+first, and zero-initialize textures before queue-ordered access (authorized 2026-10-24).
+Surface uncertainty uses the same pending list; Vulkan presentation requires frame
+fences. Metal registers presentation with the scheduled handler, retaining drawables
+through GPU completion under Apple's release-after-registration contract.
+Display timestamps never govern retirement; cleanup never redefines WorkDone.
+Cleanup preserves surface-before-device locking and errors. Invalid configuration
+preserves surfaces; replacement retains frames/views on the existing retirement owner.
+Metal occlusion resolves real visibility buffers under command leases; passes reset
+only begun indices, preserving other results.
+Provider code stays resident; foreign callbacks run outside locks.
 
 ## Acceptance
 [Owner checks](Makefile) exercise public behavior, rejection, first errors,

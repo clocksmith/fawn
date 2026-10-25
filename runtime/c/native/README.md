@@ -79,12 +79,16 @@ The same later receipt binds both public atomic consumers to actual M3 execution
 including the unchanged retained all-operations WGSL and its exact readback oracle.
 It does not establish atomic contention or forward-progress qualification.
 
-Metal's frontend compute envelope remains bounded to 256 total threads, at most
-256 per axis, 65535 groups per axis and conservative 256-byte buffer offsets.
-Actual buffer, threadgroup-memory and per-pipeline limits constrain it further.
-Resolved device limits bound graphics and resource admission. Partial sample
-masks, unclipped depth, queries, depth/stencil transfers and
-presentation remain explicit missing paths. Compute indirect dispatch now lowers
+Metal's workgroup envelope follows the selected device dimensions and known GPU
+family total; each pipeline also checks its actual maxTotalThreadsPerThreadgroup.
+Default devices retain 256 invocations; requiredLimits can request higher reported
+limits. Dispatch remains 65535 groups per axis with conservative 256-byte buffer
+offsets. Resolved device limits bound graphics and resource admission. Public
+occlusion query sets now use the existing Metal visibility buffer and command
+leases, resetting only indices begun in each pass. Empty/unavailable results are
+zero and untouched indices survive later passes. CAMetalLayer presentation uses
+real drawable textures with retained generations. Partial sample masks, unclipped
+depth, timestamp queries and depth/stencil transfers remain explicit missing paths. Compute indirect dispatch now lowers
 through a lazy immutable device guard, GPU-copied private arguments and the actual
 Metal indirect-dispatch selector. Host rejection, rollback, sanitizer and lifetime
 controls pass. The [M3 indirect receipt](DEVELOPER_RECEIPT_METAL_INDIRECT.json)
@@ -631,7 +635,7 @@ pipeline still checks its actual maxTotalThreadsPerThreadgroup. The default
 device keeps 256 invocations unless requiredLimits raises it.
 `tests/workgroups.c` checks default rejection, raised limits and exact execution
 at 256/512/1024 invocations when advertised. Bind groups (groups 0..3) and binding
-numbers (0..999) stay at the C compiler's bounds; maxImmediateSize stays64 (no
+numbers (0..999) stay at the C compiler's bounds; maxImmediateSize stays 64 (no
 compiler immediates). The native shader policy selects core binding numbers
 (`native_shader_semantic_flags`), so shaders reference bindings 0..999 in groups
 0..3; the compiler's standalone default stays 0..31.

@@ -137,11 +137,11 @@ static void create(WGPUDevice device, objects *o, bool lost)
     WGPUBindGroupDescriptor group = {.layout = o->layout, .entryCount = 1, .entries = &entry};
     o->group = wgpuDeviceCreateBindGroup(device, &group);
     WGPUQuerySetDescriptor queries = {.type = WGPUQueryType_Occlusion, .count = 4};
-    if (lost || adapter_class_backend() == WGPUBackendType_Vulkan)
+    if (lost || adapter_class_backend() != WGPUBackendType_D3D12)
         o->queries = wgpuDeviceCreateQuerySet(device, &queries);
     assert(o->buffer && o->mappable && o->texture && o->view && o->sampler && o->compute && o->render &&
         o->layout && o->pipeline_layout && o->group);
-    assert(!lost || o->queries);
+    assert(o->queries || (!lost && adapter_class_backend() == WGPUBackendType_D3D12));
 }
 
 /* Every recording, submission and queue operation over the objects. */

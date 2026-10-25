@@ -91,7 +91,7 @@ typedef struct native_sampler {
 
 typedef struct native_queries {
     native_device *device;
-    doe_vk_query_pool *pool;
+    union { doe_vk_query_pool *pool; doe_mtl_buffer *metal_results; };
 } native_queries;
 
 typedef struct native_pipeline_error {
