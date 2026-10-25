@@ -370,6 +370,33 @@ pub fn texture_copy(self: anytype, args: struct {
     vk_resources.mark_texture_image_layout(self, dst.image, c.VK_IMAGE_LAYOUT_GENERAL);
 }
 
+/// Zeroes every subresource of a texture that was never written, so it reads
+/// as WebGPU's zero contents whatever its memory last held: destroy() frees
+/// memory at once, and the next allocation may reuse it. Leaves the texture in
+/// the layout the zeroing used.
+pub fn texture_zero_initialize(self: anytype, handle: u64) !void {
+    const texture = self.textures.getPtr(handle) orelse return error.InvalidState;
+    if (texture.layout != c.VK_IMAGE_LAYOUT_UNDEFINED) return;
+    if (self.has_deferred_submissions or self.pending_uploads.items.len > 0) {
+        _ = try self.flush_queue();
+    }
+    try vk_device.ensure_submission_state(self);
+    try c.check_vk(c.vkResetCommandPool(self.device, self.command_pool, 0));
+    var begin_info = c.VkCommandBufferBeginInfo{
+        .sType = c.VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+        .pNext = null,
+        .flags = c.VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
+        .pInheritanceInfo = null,
+    };
+    try c.check_vk(c.vkBeginCommandBuffer(self.primary_command_buffer, &begin_info));
+    var staging: ?vk_resources.ComputeBuffer = null;
+    defer if (staging) |buffer| vk_resources.destroy_host_visible_buffer(self, buffer);
+    const layout = try record_zero_initialization(self, texture, &staging);
+    try c.check_vk(c.vkEndCommandBuffer(self.primary_command_buffer));
+    try submit_and_wait_timeline(self);
+    vk_resources.mark_texture_image_layout(self, texture.image, layout);
+}
+
 pub fn texture_query(self: anytype, cmd_arg: model_texture_types.TextureQueryCommand) !void {
     const texture = self.textures.get(cmd_arg.handle) orelse return error.InvalidState;
     if (cmd_arg.expected_width) |width| if (texture.width != width) return error.InvalidState;

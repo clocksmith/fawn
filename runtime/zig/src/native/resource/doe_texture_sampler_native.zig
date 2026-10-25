@@ -752,8 +752,15 @@ pub export fn doeNativeTextureCreateView(tex_raw: ?*anyopaque, desc: ?*const abi
 
 pub export fn doeNativeTextureDestroy(raw: ?*anyopaque) callconv(.c) void {
     const texture = cast(DoeTexture, raw) orelse return;
-    // Views and submitted commands retain the allocation until their last release.
     texture.destroyed = true;
+    // WebGPU destroy() frees the allocation at once, views or not: once queued
+    // work finishes the Vulkan image and memory go, and later uses of the
+    // texture or its views fail validation (isUnavailable). Views keep their
+    // own image views until their last release.
+    if (texture.vk_id != 0) {
+        vulkan_lifetime.flushBeforeDestroy(texture.vk_runtime_ref);
+        @import("../vulkan/vulkan_render_native.zig").vulkan_destroy_texture(texture);
+    }
 }
 
 pub export fn doeNativeTextureRelease(raw: ?*anyopaque) callconv(.c) void {
@@ -769,7 +776,9 @@ pub export fn doeNativeTextureRelease(raw: ?*anyopaque) callconv(.c) void {
             alloc.destroy(t);
             return;
         }
-        if (t.vk_id != 0) {
+        // A Vulkan texture keeps its runtime past destroy(), which already
+        // freed its image.
+        if (t.vk_runtime_ref != null) {
             vulkan_lifetime.flushBeforeDestroy(t.vk_runtime_ref);
             const vk_render = @import("../vulkan/vulkan_render_native.zig");
             vk_render.vulkan_destroy_texture(t);
@@ -794,7 +803,8 @@ pub export fn doeNativeTextureViewRelease(raw: ?*anyopaque) callconv(.c) void {
             native_exports.doeNativeTextureRelease(toOpaque(texture));
             return;
         }
-        if (tv.tex.vk_id != 0) {
+        // The view's image view outlives a destroy() of its texture.
+        if (tv.tex.vk_runtime_ref != null) {
             vulkan_lifetime.flushBeforeDestroy(tv.tex.vk_runtime_ref);
             const vk_render = @import("../vulkan/vulkan_render_native.zig");
             vk_render.vulkan_destroy_texture_view(tv);
