@@ -113,6 +113,14 @@ class DoeRuntimeProvidersTests(unittest.TestCase):
         # The runner treats it as a runtime CLI (oracle preflight, upload flags).
         self.assertTrue(doe_runtime_providers.template_uses_doe_runtime(template))
 
+    def test_dawn_direct_plan_vulkan_runs_dawn_c_runtime_plan_mode(self) -> None:
+        template = resolve_executor_command_template("dawn_direct_plan_vulkan")
+        self.assertEqual(resolve_executor_boundary("dawn_direct_plan_vulkan"), "plan")
+        self.assertIn("runtime/c/runtime-cli/bin/dawn-c-runtime --plan {plan}", template)
+        self.assertIn("--workload {workload}", template)
+        self.assertNotIn("doe-plan-executor", template)
+        self.assertNotIn("--backend-lane", template)
+
     def test_dawn_direct_vulkan_against_c_is_dawn_vs_doe_and_distinct_from_delegate(self) -> None:
         dawn = {"executionBackend": "dawn_direct_vulkan", "backendId": "dawn_direct_vulkan"}
         workload = {"baseline": side(C_META), "comparison": side(dawn)}

@@ -206,6 +206,20 @@ _REGISTRY: dict[str, ExecutorSpec] = {
         ),
         execution_boundary="plan",
     ),
+    # dawn-c-runtime's plan mode: the same normalized plans over Dawn, so the
+    # plan-boundary C-vs-Dawn compare needs no Zig (traces: dawn_direct_vulkan).
+    "dawn_direct_plan_vulkan": ExecutorSpec(
+        executor_id="dawn_direct_plan_vulkan",
+        command_template=(
+            "env LD_LIBRARY_PATH=bench/vendor/dawn/out/Release:$LD_LIBRARY_PATH "
+            "runtime/c/runtime-cli/bin/dawn-c-runtime --plan {plan} "
+            "--trace-jsonl {trace_jsonl} --trace-meta {trace_meta} --workload {workload} "
+            "--vendor {vendor} --api {api} --family {family} --driver {driver} "
+            "--queue-sync-mode {queue_sync_mode} --upload-buffer-usage {upload_buffer_usage} "
+            "--upload-submit-every {upload_submit_every} --gpu-timestamp-mode off {extra_args}"
+        ),
+        execution_boundary="plan",
+    ),
     "doe_direct_d3d12": ExecutorSpec(
         executor_id="doe_direct_d3d12",
         command_template=_DOE_RUNTIME_PREFIX.replace(
