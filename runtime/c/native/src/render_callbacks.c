@@ -36,11 +36,15 @@ WGPUFuture wgpuDeviceCreateRenderPipelineAsync(WGPUDevice handle,
         .status=pipeline ? WGPUCreatePipelineAsyncStatus_Success :
             error.type == WGPUErrorType_Validation ? WGPUCreatePipelineAsyncStatus_ValidationError : WGPUCreatePipelineAsyncStatus_InternalError};
     if (!pipeline) memcpy(delivery.message, error.message, sizeof(delivery.message));
-    WGPUFuture future = native_callback(device->instance,callback.mode,&delivery,
-        sizeof(delivery),_Alignof(render_delivery),copy_render,deliver_render);
+    doe_callback_status admitted;
+    WGPUFuture future = native_callback_admit(device->instance,callback.mode,&delivery,
+        sizeof(delivery),_Alignof(render_delivery),copy_render,deliver_render, &admitted);
     if (!future.id) {
         if (!pipeline) native_error(device, error.type, error.message);
-        else wgpuRenderPipelineRelease(pipeline);
+        else {
+            wgpuRenderPipelineRelease(pipeline);
+            native_callback_refused(device, admitted);
+        }
     }
     native_device_release(device);
     return future;

@@ -115,6 +115,10 @@ and exact exports; absent platform loaders remain explicitly unavailable.
   accepted C callback payloads and leases. Device-loss obligations outlive device
   storage without retaining a device cycle; last external release clears the weak
   callback handle before destruction. Explicit destruction completes loss once.
+  A device-scoped callback (map, work done, error scope pop, compilation info,
+  async pipeline) that the callback owner refuses for lack of memory returns a
+  zero future and, unless the operation already reports its own error, reports
+  OutOfMemory to the device, so the callback is never lost silently.
 - Adapters/devices have their sole native references here. Queue handles retain
   their device. Public buffers, shaders, layouts, groups, pipelines, encoders,
   passes and command buffers alias their typed C resource owners, not wrappers

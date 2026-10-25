@@ -49,8 +49,10 @@ WGPUFuture wgpuDevicePopErrorScope(WGPUDevice handle, WGPUPopErrorScopeCallbackI
         .type=WGPUErrorType_NoError};
     doe_error_scope_result result = doe_error_scope_pop(device->errors, capture_error, &delivery, NULL);
     if (result.status != DOE_ERROR_SCOPE_OK) delivery.status = WGPUPopErrorScopeStatus_Error;
-    WGPUFuture future = native_callback(device->instance, callback.mode, &delivery,
-        sizeof(delivery), _Alignof(error_delivery), copy_error, deliver_error);
+    doe_callback_status admitted;
+    WGPUFuture future = native_callback_admit(device->instance, callback.mode, &delivery,
+        sizeof(delivery), _Alignof(error_delivery), copy_error, deliver_error, &admitted);
+    if (!future.id) native_callback_refused(device, admitted);
     native_device_release(device);
     return future;
 }

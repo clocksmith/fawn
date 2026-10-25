@@ -66,9 +66,9 @@ bool native_string_size(WGPUStringView view, size_t *size)
     return true;
 }
 
-WGPUFuture native_callback(doe_instance *instance, WGPUCallbackMode mode,
+WGPUFuture native_callback_admit(doe_instance *instance, WGPUCallbackMode mode,
     void *context, size_t size, size_t alignment,
-    doe_callback_copy_context copy, doe_callback_deliver_context deliver)
+    doe_callback_copy_context copy, doe_callback_deliver_context deliver, doe_callback_status *out)
 {
     doe_instance_queue_lease lease = doe_instance_borrow_queue(instance);
     doe_callback_owner owner = {lease.queue, lease.userdata, lease.retain, lease.release};
@@ -85,12 +85,27 @@ WGPUFuture native_callback(doe_instance *instance, WGPUCallbackMode mode,
     };
     WGPUFuture future = {0};
     doe_callback_status status = doe_callback_ready(&request, &future.id);
+    *out = status;
     if (status != DOE_CALLBACK_OK) {
         /* Admission failed before transfer. The API-specific caller still owns
          * context cleanup; zero is an invalid future, never synthetic success. */
         return (WGPUFuture){0};
     }
     return future;
+}
+
+WGPUFuture native_callback(doe_instance *instance, WGPUCallbackMode mode,
+    void *context, size_t size, size_t alignment,
+    doe_callback_copy_context copy, doe_callback_deliver_context deliver)
+{
+    doe_callback_status status;
+    return native_callback_admit(instance, mode, context, size, alignment, copy, deliver, &status);
+}
+
+void native_callback_refused(native_device *device, doe_callback_status status)
+{
+    if (status == DOE_CALLBACK_OUT_OF_MEMORY)
+        native_error(device, WGPUErrorType_OutOfMemory, "callback admission failed for lack of memory; the callback will not run");
 }
 
 void native_error(native_device *device, WGPUErrorType type, const char *message)

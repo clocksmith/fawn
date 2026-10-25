@@ -287,8 +287,9 @@ WGPUFuture wgpuBufferMapAsync(WGPUBuffer handle, WGPUMapMode mode,
     }
     native_unlock(device);
     native_failure_format(&failure, "buffer map failed or aborted", delivery.message);
-    WGPUFuture future = native_callback(device->instance, callback.mode, &delivery,
-        sizeof(delivery), _Alignof(map_delivery), copy_map, deliver_map);
+    doe_callback_status admitted;
+    WGPUFuture future = native_callback_admit(device->instance, callback.mode, &delivery,
+        sizeof(delivery), _Alignof(map_delivery), copy_map, deliver_map, &admitted);
     if (!future.id) {
         native_lock(device);
         if (delivery.began)
@@ -299,6 +300,7 @@ WGPUFuture wgpuBufferMapAsync(WGPUBuffer handle, WGPUMapMode mode,
          * still protects device storage while this consumed error is reported. */
         if (consumed_failure.status != NATIVE_OK)
             native_error(device, native_result_error(consumed_failure.status), delivery.message);
+        else native_callback_refused(device, admitted);
         doe_resource_buffer_release(buffer);
     }
     return future;
