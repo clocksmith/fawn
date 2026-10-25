@@ -302,7 +302,9 @@ int main(void)
         (WGPUProc)wgpuRenderPassEncoderDrawIndexed);
     assert(wgpuGetProcAddress((WGPUStringView){"wgpuRenderPassEncoderSetImmediates", WGPU_STRLEN}) ==
         (WGPUProc)wgpuRenderPassEncoderSetImmediates);
-    assert(!wgpuGetProcAddress((WGPUStringView){"wgpuExternalTextureSetLabel", WGPU_STRLEN})); /* pinned, unprovided */
+    /* The retained external-texture lifecycle is now provided, not a stub. */
+    assert(wgpuGetProcAddress((WGPUStringView){"wgpuExternalTextureSetLabel", WGPU_STRLEN}) ==
+        (WGPUProc)wgpuExternalTextureSetLabel);
     assert(!wgpuGetProcAddress((WGPUStringView){"doe_vk_context_create", WGPU_STRLEN}));
     /* Invalid mapping reports to the active scope at the call, independently
      * of when its WaitAnyOnly callback is delivered; a later valid map works. */

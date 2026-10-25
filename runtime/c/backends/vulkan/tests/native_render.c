@@ -165,8 +165,10 @@ int main(int argc, char **argv) {
     doe_vk_render_draw draw = { .vertex_count = 3, .instance_count = 1,
         .viewport = {0, 0, 8, 8, 0, 1}, .scissor = {0, 0, 4, 8} };
     doe_vk_render_pass_draw pass_draws[2] = {
-        {pipeline, &binding, 1, vertex_binding, 2, draw, NULL},
-        {pipeline, &binding, 1, vertex_binding, 2, draw, NULL}
+        {.pipeline=pipeline,.bindings=&binding,.binding_count=1,
+            .vertices=vertex_binding,.vertex_buffer_count=2,.draw=draw,.indirect=NULL},
+        {.pipeline=pipeline,.bindings=&binding,.binding_count=1,
+            .vertices=vertex_binding,.vertex_buffer_count=2,.draw=draw,.indirect=NULL}
     };
     pass_draws[1].draw.scissor[0] = 4;
     pass_draws[1].draw.scissor[3] = 4;
@@ -308,8 +310,9 @@ int main(int argc, char **argv) {
     const doe_vk_render_pass_desc depth_only_pass = {.depth_stencil = depth_view,
         .clear_depth = true, .clear_stencil = true, .depth_clear_value = 1, .stencil_clear_value = 7};
     doe_vk_render_pass_op depth_only_op = {.kind = DOE_VK_RENDER_DRAW,
-        .value.draw = {depth_only_pipeline, &binding, 1, vertex_binding, 2,
-            {.vertex_count = 3, .instance_count = 1, .viewport = {0, 0, 8, 8, 0.25f, 0.25f},
+        .value.draw = {.pipeline=depth_only_pipeline,.bindings=&binding,.binding_count=1,
+            .vertices=vertex_binding,.vertex_buffer_count=2,
+            .draw={.vertex_count = 3, .instance_count = 1, .viewport = {0, 0, 8, 8, 0.25f, 0.25f},
                 .scissor = {0, 0, 8, 8}}}};
     require(doe_vk_commands_render_pass_full(commands, &depth_only_pass, NULL, &depth_only_op, 1), "actual depth-only vertex draw");
     const doe_vk_render_pass_desc observe_depth = {.color = view, .clear_color = &blue,

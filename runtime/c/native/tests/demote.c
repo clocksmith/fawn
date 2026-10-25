@@ -45,8 +45,10 @@ static void capability_controls(native_device *device, WGPUShaderModule module)
         }
         if (opcode == 17 && words[at+1] == 5379) {
             ++capabilities;
-            words[at+1] = 2;
-            assert(!native_shader_capabilities(&view,&device->backend.value.vulkan.caps));
+            words[at+1] = 2; /* Geometry now supports retained primitive_index. */
+            doe_vk_caps no_geometry=device->backend.value.vulkan.caps;
+            no_geometry.geometry_shader=false;
+            assert(!native_shader_capabilities(&view,&no_geometry));
             words[at+1] = 5379;
         }
         at += length;
