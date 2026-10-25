@@ -89,6 +89,16 @@ def main():
     meta, _ = run('metal-profile', '--api', 'MeTaL')
     assert meta['profile']['api'] == 'metal'
     run('bad-api', '--api', 'made-up', expected=2)
+    # Native-provider lanes are validated before either tracing or device work.
+    # This is also the unchanged Windows host contract's provider refusal gate.
+    for lane in ['metal_dawn_release', 'vulkan_dawn_release', 'd3d12_dawn_release',
+                 'METAL-DAWN-RELEASE', 'missing']:
+        for mode, flags in [('trace', []), ('execute', ['--execute']),
+                            ('normalized', ['--emit-normalized'])]:
+            run('refuse-'+lane+'-'+mode, '--backend-lane', lane, *flags, expected=2)
+    for lane in ['metal_doe_release', 'vulkan_doe_release', 'd3d12_doe_release']:
+        meta, _ = run('native-lane-'+lane, '--backend-lane', lane)
+        assert meta['backendLane'] == lane
     missing = run('missing-replay', '--replay', str(args.work / 'missing.jsonl'), expected=1)
     assert 'cannot read' in missing.stderr
     for field, value in [('seq', 3), ('module', 'other-runtime'), ('opCode', 'buffer_write'), ('command', 'upload'),

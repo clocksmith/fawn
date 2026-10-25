@@ -174,6 +174,14 @@ int parse_options(int argc, char **argv, options *out)
         out->backend_lane = lane;
         out->runtime.public_webgpu_renderer = true;
 #else
+        /* Validate the canonical provider/policy contract even for host-only
+         * traces. Execution resolves it again before opening the device; an
+         * unexecuted trace must not silently accept a foreign Dawn lane. */
+        DoeNativeDevicePolicy policy;
+        char message[256];
+        if (!doe_runtime_load_device_policy(out->backend_lane, &policy,
+                message, sizeof(message), NULL, NULL))
+            return reject_argument("--backend-lane", message);
         out->runtime.backend_lane = out->backend_lane;
 #endif
     }
