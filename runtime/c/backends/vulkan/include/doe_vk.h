@@ -54,7 +54,8 @@ typedef enum doe_vk_adapter_selection {
     DOE_VK_SELECT_ORDINAL = 0,
     DOE_VK_SELECT_SOFTWARE,
     DOE_VK_SELECT_IDENTITY,
-    DOE_VK_SELECT_HARDWARE
+    DOE_VK_SELECT_HARDWARE,
+    DOE_VK_SELECT_HARDWARE_ELSE_SOFTWARE
 } doe_vk_adapter_selection;
 
 typedef struct doe_vk_options {
@@ -65,10 +66,16 @@ typedef struct doe_vk_options {
     uint32_t surface_platforms; /* Zero disables WSI; exact required platform bits. */
     /* Zero keeps exact ordinal admission. SOFTWARE explicitly selects the first
      * CPU device and requires allow_cpu_adapter; HARDWARE selects the first
-     * non-CPU device; IDENTITY requires one unique UUID-pair match. Failure
-     * never substitutes an ordinal or another selection mode. */
+     * non-CPU device; HARDWARE_ELSE_SOFTWARE selects the first non-CPU device,
+     * else the first CPU device, and requires allow_cpu_adapter; IDENTITY
+     * requires one unique UUID-pair match. Failure never substitutes an ordinal
+     * or another selection mode. */
     doe_vk_adapter_selection adapter_selection;
     doe_vk_adapter_identity required_identity; /* Owned value, no borrowed pointer. */
+    /* Instance and selected physical device only, for adapter capability and
+     * surface queries: no VkDevice or queue is created, the reported caps are
+     * those a device context would enable, and doe_vk_context_alive is false. */
+    bool adapter_only;
 } doe_vk_options;
 
 typedef struct doe_vk_caps {

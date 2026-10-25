@@ -7,6 +7,7 @@ static bool valid_selection(const doe_vk_options *options, doe_vk_error *error) 
         case DOE_VK_SELECT_HARDWARE:
         case DOE_VK_SELECT_IDENTITY: return true;
         case DOE_VK_SELECT_SOFTWARE:
+        case DOE_VK_SELECT_HARDWARE_ELSE_SOFTWARE:
             if (options->allow_cpu_adapter) return true;
             (void)doe_vk_fail(DOE_VK_INVALID_ARGUMENT, "software selection requires CPU permission", error);
             return false;
@@ -15,10 +16,11 @@ static bool valid_selection(const doe_vk_options *options, doe_vk_error *error) 
     return false;
 }
 
-static bool matches(const doe_vk_options *options, uint32_t ordinal,
+static bool matches(const doe_vk_options *options, doe_vk_adapter_selection mode, uint32_t ordinal,
                     const VkPhysicalDeviceProperties *properties,
                     const doe_vk_adapter_identity *identity) {
-    switch (options->adapter_selection) {
+    switch (mode) {
+        case DOE_VK_SELECT_HARDWARE_ELSE_SOFTWARE: return false; /* Resolved to one class per pass. */
         case DOE_VK_SELECT_ORDINAL: return ordinal == options->adapter_ordinal;
         case DOE_VK_SELECT_SOFTWARE: return properties->deviceType == 4u;
         case DOE_VK_SELECT_HARDWARE: return properties->deviceType != 4u;
@@ -54,29 +56,37 @@ doe_vk_status doe_vk_choose_device(doe_vk_context *context,
     VkPhysicalDeviceProperties properties = {0};
     doe_vk_adapter_identity identity = {0};
     uint32_t selected_ordinal = 0;
-    for (uint32_t i = 0; i < count; ++i) {
-        if (options->adapter_selection == DOE_VK_SELECT_ORDINAL && i != options->adapter_ordinal) continue;
-        if (devices[i] == NULL) {
-            free(devices);
-            return doe_vk_fail(DOE_VK_NATIVE_FAILURE, "invalid physical device handle", error);
+    /* HARDWARE_ELSE_SOFTWARE is the HARDWARE class, then the SOFTWARE class
+     * when no non-CPU device exists: two explicit class passes over one
+     * enumeration, never an ordinal. */
+    const bool both = options->adapter_selection == DOE_VK_SELECT_HARDWARE_ELSE_SOFTWARE;
+    for (uint32_t pass = 0; pass < (both ? 2u : 1u) && selected == NULL; ++pass) {
+        const doe_vk_adapter_selection mode = !both ? options->adapter_selection :
+            pass == 0 ? DOE_VK_SELECT_HARDWARE : DOE_VK_SELECT_SOFTWARE;
+        for (uint32_t i = 0; i < count; ++i) {
+            if (options->adapter_selection == DOE_VK_SELECT_ORDINAL && i != options->adapter_ordinal) continue;
+            if (devices[i] == NULL) {
+                free(devices);
+                return doe_vk_fail(DOE_VK_NATIVE_FAILURE, "invalid physical device handle", error);
+            }
+            VkPhysicalDeviceIDProperties ids = {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ID_PROPERTIES};
+            VkPhysicalDeviceProperties2 candidate = {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2,
+                                                    .pNext = &ids};
+            context->vk.vkGetPhysicalDeviceProperties2(devices[i], &candidate);
+            doe_vk_adapter_identity observed;
+            memcpy(observed.device_uuid, ids.deviceUUID, sizeof(observed.device_uuid));
+            memcpy(observed.driver_uuid, ids.driverUUID, sizeof(observed.driver_uuid));
+            if (!matches(options, mode, i, &candidate.properties, &observed)) continue;
+            if (selected != NULL) {
+                free(devices);
+                return doe_vk_fail(DOE_VK_UNSUPPORTED, "ambiguous adapter identity", error);
+            }
+            selected = devices[i];
+            properties = candidate.properties;
+            identity = observed;
+            selected_ordinal = i;
+            if (options->adapter_selection != DOE_VK_SELECT_IDENTITY) break;
         }
-        VkPhysicalDeviceIDProperties ids = {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ID_PROPERTIES};
-        VkPhysicalDeviceProperties2 candidate = {.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2,
-                                                .pNext = &ids};
-        context->vk.vkGetPhysicalDeviceProperties2(devices[i], &candidate);
-        doe_vk_adapter_identity observed;
-        memcpy(observed.device_uuid, ids.deviceUUID, sizeof(observed.device_uuid));
-        memcpy(observed.driver_uuid, ids.driverUUID, sizeof(observed.driver_uuid));
-        if (!matches(options, i, &candidate.properties, &observed)) continue;
-        if (selected != NULL) {
-            free(devices);
-            return doe_vk_fail(DOE_VK_UNSUPPORTED, "ambiguous adapter identity", error);
-        }
-        selected = devices[i];
-        properties = candidate.properties;
-        identity = observed;
-        selected_ordinal = i;
-        if (options->adapter_selection != DOE_VK_SELECT_IDENTITY) break;
     }
     free(devices);
     if (selected == NULL)

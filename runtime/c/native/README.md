@@ -356,7 +356,10 @@ owner (`backends/vulkan/include/doe_vk_surface.h`). Design decisions:
   reject any compatibleSurface.
 - The native `doe_vk_surface` is created at Configure on the configured device's
   own context (adapter contexts only host short-lived capability probes, serialized
-  by an adapter mutex). Configure first unconfigures any previous configuration.
+  by an adapter mutex). An adapter's Vulkan context is adapter-only (instance and
+  physical device, no `VkDevice`); a default request selects the first non-CPU
+  device, else the CPU device, from that one context, and retries with the CPU
+  device only when a non-CPU device fails admission. Configure first unconfigures any previous configuration.
 - Capabilities advertise RenderAttachment|CopySrc|CopyDst (the exercised subset),
   the SRGB-nonlinear BGRA8/RGBA8 (sRGB or unorm) formats the surface reports, the
   native present modes (Fifo always required) and alpha modes with Inherit first,
