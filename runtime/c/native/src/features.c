@@ -172,7 +172,8 @@ static bool wgsl_feature_reported(WGPUWGSLLanguageFeatureName feature)
         return false; /* Usage compiles and pipelines; `requires` is rejected. */
     case WGPUWGSLLanguageFeatureName_UniformBufferStandardLayout:
         return (native_shader_semantic_flags() & DOE_COMPILER_UNIFORM_BUFFER_STANDARD_LAYOUT) != 0;
-    case WGPUWGSLLanguageFeatureName_Packed4x8IntegerDotProduct: /* Builtins unknown. */
+    case WGPUWGSLLanguageFeatureName_Packed4x8IntegerDotProduct:
+        return true; /* Shared typed integer lowering; no native packed intrinsic required. */
     case WGPUWGSLLanguageFeatureName_UnrestrictedPointerParameters: /* Function pointers only. */
     case WGPUWGSLLanguageFeatureName_PointerCompositeAccess: /* No member access through pointers. */
     case WGPUWGSLLanguageFeatureName_SubgroupId: /* No device admits subgroups. */
