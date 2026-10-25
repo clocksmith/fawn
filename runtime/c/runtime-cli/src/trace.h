@@ -7,6 +7,7 @@
  * runtime's for the same sequence, label, kind and kernel. */
 #ifndef DOE_RUNTIME_TRACE_H
 #define DOE_RUNTIME_TRACE_H
+#include "quirks.h"
 #include "stream.h"
 #include <stdbool.h>
 #include <stdint.h>
@@ -14,9 +15,10 @@
 
 #define DOE_TRACE_HASH_SEED UINT64_C(0x9e3779b97f4a7c15)
 
-/* The row hash for a command without a matched quirk, toggle or semantic op. */
+/* The row hash for a command and its quirk decision (NULL: none matched); no
+ * semantic op is hashed. */
 uint64_t doe_trace_payload_hash(uint64_t previous, uint64_t seq, const char *label, const char *tag,
-    const char *kernel);
+    const char *kernel, const doe_quirk_decision *decision);
 
 typedef struct doe_trace_execution {
     bool ok;
@@ -34,7 +36,8 @@ typedef struct doe_trace_identity {
 /* Writes one row (no trailing newline handling beyond one '\n'). Returns false
  * on a write failure. */
 bool doe_trace_write_row(FILE *out, const doe_trace_identity *identity, uint64_t seq, uint64_t timestamp_ns,
-    uint64_t hash, uint64_t previous, const doe_command *command, const doe_trace_execution *execution);
+    uint64_t hash, uint64_t previous, const doe_command *command, const doe_quirk_decision *decision,
+    const doe_trace_execution *execution);
 
 /* Writes a JSON string literal with the required escapes. */
 bool doe_trace_write_string(FILE *out, const char *text);

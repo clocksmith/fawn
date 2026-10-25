@@ -160,12 +160,12 @@ _REGISTRY: dict[str, ExecutorSpec] = {
     ),
     # The C runtime CLI (runtime/c/runtime-cli) is its own provider: its traces
     # carry executionBackend doe_c_vulkan and are never relabeled as Zig. It
-    # does not apply quirks, so the template passes --quirk-mode off.
+    # matches quirks in doe-zig-runtime's default trace mode.
     "doe_c_direct_vulkan": ExecutorSpec(
         executor_id="doe_c_direct_vulkan",
         command_template=(
             "runtime/c/runtime-cli/bin/doe-c-runtime --commands {commands} --quirks {quirks} "
-            "--quirk-mode off --vendor {vendor} --api {api} --family {family} --driver {driver} "
+            "--vendor {vendor} --api {api} --family {family} --driver {driver} "
             "--backend native --execute --trace --queue-sync-mode {queue_sync_mode} "
             "--upload-buffer-usage {upload_buffer_usage} --upload-submit-every {upload_submit_every} "
             "--trace-jsonl {trace_jsonl} --trace-meta {trace_meta} --gpu-timestamp-mode off "

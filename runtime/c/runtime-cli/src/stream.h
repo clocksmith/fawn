@@ -142,6 +142,10 @@ typedef struct doe_command {
             doe_copy_direction direction;
             doe_copy_side src, dst;
             uint64_t bytes;
+            /* Set by an active-mode quirk: buffer-to-texture and texture-to-texture
+             * copies go through a staging buffer of this alignment. */
+            bool temporary_buffer;
+            uint32_t temporary_buffer_alignment;
         } copy;
         struct {
             doe_texture_desc texture;

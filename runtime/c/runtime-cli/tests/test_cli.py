@@ -110,8 +110,9 @@ def roundtrip_stream() -> tuple[list, dict[int, bytes]]:
          "dst_handle": 501, "dst_offset": 512},
         {"kind": "copy_buffer_to_texture", "bytes": 4096, "src_handle": 500, "dst_handle": 600, **side("dst"),
          "dst_bytes_per_row": 256, "dst_rows_per_image": 16},
-        {"kind": "copy_texture_to_texture", "bytes": 4096, "src_handle": 600, **side("src"), "dst_handle": 601,
-         **side("dst")},
+        # Row pitches matter only when a quirk stages the copy through a buffer.
+        {"kind": "copy_texture_to_texture", "bytes": 4096, "src_handle": 600, **side("src"), "src_bytes_per_row": 256,
+         "src_rows_per_image": 16, "dst_handle": 601, **side("dst"), "dst_bytes_per_row": 256, "dst_rows_per_image": 16},
         {"kind": "copy_texture_to_buffer", "bytes": 4096, "src_handle": 601, **side("src"), "dst_handle": 502,
          "dst_bytes_per_row": 256, "dst_rows_per_image": 16},
         {"kind": "texture_write", "textureHandle": 602, "width": 2, "height": 2, "format": "rgba8unorm",
@@ -181,6 +182,49 @@ def check_copies(binary: Path, work: Path) -> None:
     check(code == 1 and "texture_query_mismatch" in stderr, f"query mismatch: exit {code}: {stderr}")
     code, stderr, _, _ = run(binary, work, "roundtrip", "--readback-buffer", f"999={work / 'missing.bin'}", commands=commands)
     check(code == 1 and "readback_missing" in stderr, f"missing readback: exit {code}: {stderr}")
+
+
+# doe-zig-runtime (same build, default trace mode and profile, lavapipe) final
+# hashes with these quirk files: the rows carry the matched quirk, its score and
+# fields, so equal chains mean equal decisions.
+ZIG_QUIRK_FINAL_HASH = {
+    ("draw_call_proxy", "intel_gen12_temp_buffer.json", ()): "0x2d0cbb3f22a29608",
+    ("texture_sampler_write_query_destroy", "intel_gen12_temp_buffer_list.json", ()): "0x5f84e816f6ce4176",
+    ("p0_resource_lifecycle", "mined_toggle_sample.json", ("--vendor", "amd")): "0x8d15b26a038385dc",
+}
+ZIG_QUIRK_ROUNDTRIP_FINAL_HASH = "0xb30af1036450c428"  # copy roundtrip, intel_gen12_temp_buffer.json
+
+
+def check_quirks(binary: Path, work: Path) -> None:
+    for (name, quirks, extra), final_hash in ZIG_QUIRK_FINAL_HASH.items():
+        code, stderr, meta, rows = run(binary, work, name, "--quirks", str(EXAMPLES / "quirks" / quirks), *extra)
+        check(code == 0 and meta["hash"] == final_hash and meta["quirkMode"] == "trace" and meta["matchedCount"] == len(rows),
+              f"{name} with {quirks}: exit {code}, hash {meta.get('hash')} != {final_hash}: {stderr}")
+        check(replay_passes(work, name), f"{name} with {quirks}: artifacts fail replay")
+    # Active mode stages buffer-to-texture and texture-to-texture copies through a
+    # temporary buffer; the read-back bytes are unchanged and the chain still equals Zig's.
+    stream, expected = roundtrip_stream()
+    commands = work / "roundtrip_commands.json"
+    commands.write_text(json.dumps(stream))
+    readbacks = [arg for handle in expected for arg in ("--readback-buffer", f"{handle}={work / f'staged_{handle}.bin'}")]
+    code, stderr, meta, rows = run(binary, work, "staged", "--quirks", str(EXAMPLES / "quirks" / "intel_gen12_temp_buffer.json"),
+                                   "--quirk-mode", "active", *readbacks, commands=commands)
+    check(code == 0 and meta["hash"] == ZIG_QUIRK_ROUNDTRIP_FINAL_HASH and meta["quirkMode"] == "active",
+          f"active staging: exit {code} hash {meta.get('hash')}: {stderr}")
+    check(rows[2]["action"] == "use_temporary_buffer", "the staged copy row names its action")
+    for handle, data in expected.items():
+        check((work / f"staged_{handle}.bin").read_bytes() == data, f"staged buffer {handle} differs from the host reference")
+    # An action this runtime cannot apply is refused in active mode, never ignored.
+    unappliable = json.loads((EXAMPLES / "quirks" / "intel_gen12_temp_buffer.json").read_text())
+    unappliable["action"] = {"kind": "use_temporary_render_texture", "params": {"minMipLevel": 2}}
+    path = work / "render_texture_quirk.json"
+    path.write_text(json.dumps(unappliable))
+    code, stderr, _, _ = run(binary, work, "draw_call_proxy", "--quirks", str(path), "--quirk-mode", "active")
+    check(code == 2 and "cannot be applied" in stderr, f"unappliable quirk: exit {code}: {stderr}")
+    unappliable["action"] = {"kind": "rewrite"}
+    path.write_text(json.dumps(unappliable))
+    code, stderr, _, _ = run(binary, work, "draw_call_proxy", "--quirks", str(path))
+    check(code == 2 and "not supported" in stderr, f"unknown quirk action: exit {code}: {stderr}")
 
 
 def check_render(binary: Path, work: Path) -> None:
@@ -257,7 +301,8 @@ def main() -> int:
 
     # Unsupported input fails before device work with exit code 2.
     rejected = [
-        (["--quirks", str(EXAMPLES / "quirks" / "amd_radv_noop_list.json")], "quirk matching"),
+        (["--quirk-mode", "on"], "off, trace or active"),
+        (["--driver", "31.x"], "major[.minor[.patch]]"),
         (["--queue-sync-mode", "deferred"], "per-command"),
         (["--replay", "x"], "not implemented"),
         (["--gpu-timestamp-mode", "require"], "GPU timestamps"),
@@ -270,12 +315,14 @@ def main() -> int:
 
     check_copies(args.binary, args.work)
     check_render(args.binary, args.work)
+    check_quirks(args.binary, args.work)
 
     print(f"PASS doe-c-runtime: 3 example streams with doe-zig-runtime hash chains, replay-valid artifacts, "
-          f"an independent oracle match, alias labels, command repeat, an oracle mismatch, 5 rejections, "
+          f"an independent oracle match, alias labels, command repeat, an oracle mismatch, 6 rejections, "
           f"{len(ZIG_COPY_FINAL_HASH)} copy streams, a copy/texture roundtrip read back against host bytes, 4 copy "
           f"failures, {len(ZIG_RENDER_FINAL_HASH)} render streams, scissored and indexed draws read back against the "
-          f"proxy and clear colors and a missing render target on "
+          f"proxy and clear colors, a missing render target, {len(ZIG_QUIRK_FINAL_HASH)} quirk-matched streams, active "
+          f"staging read back against host bytes and 2 quirk refusals on "
           f"{adapter.get('device')} ({adapter.get('adapterType')}, {adapter.get('backend')})")
     return 0
 

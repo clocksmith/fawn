@@ -7,15 +7,15 @@ Execute admitted runtime command streams through the C native library and write
 doe-zig-runtime-compatible trace artifacts.
 
 ## Authority
-Own command-stream parsing, CLI arguments, trace rows/meta and output-oracle
-digests, not WebGPU semantics, shader meaning, backend execution, quirks or
-bench comparability policy.
+Own command-stream parsing, quirk matching, CLI arguments, trace rows/meta and
+output-oracle digests, not WebGPU semantics, shader meaning, backend execution,
+quirk data or bench comparability policy.
 
 ## Scope
 `upload`, `buffer_write`, `barrier`, WGSL `kernel_dispatch` with buffer
 bindings, copies, 2D texture write, query and destroy, proxy-pipeline render
-draws and samplers over public `webgpu.h` and `libwebgpu_doe_c`. [Coverage](README.md) lists accepted arguments and
-rejected inputs.
+draws and samplers over `libwebgpu_doe_c`. [Coverage](README.md) lists
+admitted and rejected inputs.
 
 ## Contracts
 `pipeline/trace/replay.py` artifact shape, the trace v1 hash chain, the
@@ -36,9 +36,9 @@ chains with doe-zig-runtime rows.
 runs are not GPU, performance or bench-comparability evidence.
 
 ## Non-goals
-Quirk matching, surface or indirect commands, custom render pipelines,
-mipmapped or multisampled textures, GPU timestamps, deferred queue synchronization or
-default CLI replacement.
+Quirk actions without a C path, surface or indirect commands, custom render
+pipelines, mipmapped or multisampled textures, GPU timestamps, deferred queue
+sync or default CLI replacement.
 
 ## Freedom
 Internal parsing, resource caching and encoding may vary within these boundaries.

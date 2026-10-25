@@ -61,8 +61,23 @@ $(BUILD)/doe-c-runtime --commands examples/rmsnorm_tree_commands.json --execute 
 - `--readback-buffer HANDLE=PATH` (up to 8) writes a buffer's final bytes after
   a successful run, so a test can compare them with bytes computed without the
   GPU.
-- Arguments as listed by `--help`. `--quirks` needs `--quirk-mode off`;
-  `--queue-sync-mode` admits only `per-command`; `--gpu-timestamp-mode` admits
+- Quirks (`src/quirks.c`), as doe-zig-runtime's quirk owner does them: a schema 2
+  quirk file (`--quirks`: an array, `[]`, or one object), the matching profile
+  `--vendor`/`--api`/`--family`/`--driver` with the Zig defaults
+  intel/vulkan/gen12/31.0.101, the same per-command-kind best-quirk score and tie
+  rules, and the decision fields (`matched`, scope, class, mode, level, action,
+  toggle, score, `matched_count`, `requiresLean`, `blocking`) in each row and its
+  hash. Toggle effects come from `config/quirk-toggle-registry.json`, generated
+  into the build. `--quirk-mode trace` (the default) records decisions;
+  `active` also applies them: `use_temporary_buffer` and the behavioral staging
+  toggles route buffer-to-texture and texture-to-texture copies through a staging
+  buffer. In active mode a quirk file with an action this CLI cannot apply
+  (`use_temporary_render_texture`, the Metal render-texture toggle) is refused
+  with exit 2. Without `--quirks` no quirk is loaded; doe-zig-runtime loads its
+  embedded sample quirk instead, so default runs without a quirks file differ.
+  No Lean-verified build exists for C, so `lean_required` quirks without a proven
+  level are counted as blocking, as in a Zig build without Lean.
+- Arguments as listed by `--help`. `--queue-sync-mode` admits only `per-command`; `--gpu-timestamp-mode` admits
   `off` and `auto` (no timestamps are recorded); `--api` admits only `vulkan`.
   `--adapter auto|physical|software` is this CLI's own: `auto` takes a
   nonfallback adapter, else the fallback (CPU) adapter.
@@ -104,7 +119,8 @@ python3 bench/cli.py run --product doe-c --executor-id doe_c_direct_vulkan \
   --workloads bench/workloads/workloads.amd.vulkan.smoke.json --workload-id compute_workgroup_atomic_1024
 ```
 
-The executor passes `--quirk-mode off`, so workload quirks are not applied.
+The executor passes the workload's `--quirks` in the default trace mode, so its
+rows carry the same quirk decisions as doe-zig-runtime's.
 Workloads outside the admitted input (upload-domain `deferred` sync, render,
 textures) fail the run rather than being skipped. The Dawn-versus-Doe strict
 Vulkan shader-artifact obligation applies to C traces too; the CLI writes no

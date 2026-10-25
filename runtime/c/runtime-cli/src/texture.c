@@ -5,7 +5,10 @@
  * created zero-filled, a resource too small or of another shape is replaced
  * (losing its contents), and each command is one submission waited to
  * completion. Buffer-side layouts fall back to the other side's bytes per row
- * and rows per image as that path does. */
+ * and rows per image as that path does. An active-mode quirk's temporary
+ * buffer routes buffer-to-texture and texture-to-texture copies through a
+ * staging buffer of the command's bytes rounded up to its alignment, as that
+ * path's uses_temporary_buffer branches do. */
 #include "runtime_internal.h"
 #include <stdlib.h>
 #include <string.h>
@@ -151,9 +154,47 @@ bool runtime_execute_copy(doe_runtime *runtime, const doe_command *command, doe_
         ok = (src_texture = ensure_texture(runtime, &src->texture, execution)) && (dst_texture = ensure_texture(runtime, &dst->texture, execution));
         break;
     }
+    WGPUBuffer staging = NULL;
+    bool staged = command->as.copy.temporary_buffer && (command->as.copy.direction == DOE_COPY_BUFFER_TO_TEXTURE ||
+        command->as.copy.direction == DOE_COPY_TEXTURE_TO_TEXTURE);
+    if (ok && staged) {
+        uint64_t alignment = command->as.copy.temporary_buffer_alignment ? command->as.copy.temporary_buffer_alignment : 1;
+        if (bytes > UINT64_MAX - (alignment - 1)) ok = runtime_fail(execution, "copy_range_invalid", "staging size overflows");
+        WGPUBufferDescriptor descriptor = WGPU_BUFFER_DESCRIPTOR_INIT;
+        descriptor.size = ok ? (bytes + alignment - 1) / alignment * alignment : 0;
+        descriptor.usage = WGPUBufferUsage_CopySrc | WGPUBufferUsage_CopyDst;
+        if (ok && !(staging = wgpuDeviceCreateBuffer(runtime->device, &descriptor)))
+            ok = runtime_fail(execution, "copy_staging_failed", "the staging buffer was not created");
+    }
     uint64_t setup_end = doe_runtime_monotonic_ns();
     uint64_t encode_end = setup_end;
-    if (ok) {
+    if (ok && staged) {
+        WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(runtime->device, NULL);
+        WGPUTexelCopyBufferInfo through = WGPU_TEXEL_COPY_BUFFER_INFO_INIT;
+        through.buffer = staging;
+        WGPUTexelCopyTextureInfo destination = texture_info(dst_texture);
+        if (command->as.copy.direction == DOE_COPY_BUFFER_TO_TEXTURE) {
+            wgpuCommandEncoderCopyBufferToBuffer(encoder, src_buffer, src->offset, staging, 0, bytes);
+            through.layout.bytesPerRow = layout_value(src->bytes_per_row, dst->bytes_per_row);
+            through.layout.rowsPerImage = layout_value(src->rows_per_image, dst->rows_per_image);
+            WGPUExtent3D extent = extent_of(&dst->texture);
+            wgpuCommandEncoderCopyBufferToTexture(encoder, &through, &destination, &extent);
+        } else {
+            WGPUTexelCopyTextureInfo source = texture_info(src_texture);
+            WGPUExtent3D src_extent = extent_of(&src->texture), dst_extent = extent_of(&dst->texture);
+            through.layout.bytesPerRow = layout_value(src->bytes_per_row, dst->bytes_per_row);
+            through.layout.rowsPerImage = layout_value(src->rows_per_image, dst->rows_per_image);
+            wgpuCommandEncoderCopyTextureToBuffer(encoder, &source, &through, &src_extent);
+            through.layout.bytesPerRow = layout_value(dst->bytes_per_row, src->bytes_per_row);
+            through.layout.rowsPerImage = layout_value(dst->rows_per_image, src->rows_per_image);
+            wgpuCommandEncoderCopyBufferToTexture(encoder, &through, &destination, &dst_extent);
+        }
+        WGPUCommandBuffer commands = wgpuCommandEncoderFinish(encoder, NULL);
+        wgpuCommandEncoderRelease(encoder);
+        encode_end = doe_runtime_monotonic_ns();
+        ok = runtime_submit_and_wait(runtime, commands, execution);
+        execution->submit_count = 1;
+    } else if (ok) {
         WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(runtime->device, NULL);
         WGPUTexelCopyBufferInfo buffer;
         WGPUTexelCopyTextureInfo source, destination;
@@ -188,6 +229,7 @@ bool runtime_execute_copy(doe_runtime *runtime, const doe_command *command, doe_
         execution->submit_count = 1;
     }
     uint64_t end = doe_runtime_monotonic_ns();
+    if (staging) wgpuBufferRelease(staging);
     if (!runtime_pop_scopes(runtime, execution)) ok = false;
     execution->setup_ns = setup_end - start;
     execution->encode_ns = encode_end - setup_end;
