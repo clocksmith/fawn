@@ -154,13 +154,16 @@ int main(void)
     WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(s.device, NULL);
     WGPUTexelCopyTextureInfo stale_source = {.texture=kept.texture};
     WGPUTexelCopyBufferInfo stale_destination = {.buffer=stale,.layout={.bytesPerRow=256,.rowsPerImage=1}};
-    push_validation(&s); /* The presented frame is destroyed: recording rejects it. */
+    /* The presented frame is destroyed. As for any destroyed texture
+     * (WebGPU), the copy still encodes and submission reports it. */
     wgpuCommandEncoderCopyTextureToBuffer(encoder, &stale_source, &stale_destination, &(WGPUExtent3D){1, 1, 1});
     WGPUCommandBuffer rejected = wgpuCommandEncoderFinish(encoder, NULL);
-    expect_validation(&s);
-    assert(rejected); /* WebGPU invalid command buffer */
-    wgpuCommandBufferRelease(rejected);
+    assert(rejected);
     wgpuCommandEncoderRelease(encoder);
+    push_validation(&s);
+    wgpuQueueSubmit(s.queue, 1, &rejected);
+    expect_validation(&s);
+    wgpuCommandBufferRelease(rejected);
     push_validation(&s);
     WGPUSurfaceTexture blocked = acquire(surface);
     expect_validation(&s);
