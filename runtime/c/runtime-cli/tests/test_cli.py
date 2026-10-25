@@ -69,6 +69,11 @@ def main() -> int:
         check(meta["hash"] == final_hash, f"{name} final hash {meta['hash']} != doe-zig-runtime {final_hash}")
         check(all(row["executionStatus"] == "ok" for row in rows), f"{name} has a failed row")
         check(meta["executionSuccessCount"] == len(rows) == meta["commandCount"], f"{name} counts")
+        # Bench comparability reads these; a fixed backend has no lane policy hash.
+        check(meta["backendId"] == meta["executionBackend"] == "doe_c_vulkan" and meta["fallbackUsed"] is False
+              and meta["backendSelectionReason"] == "fixed_backend" and "selectionPolicyHash" not in meta
+              and meta["uploadBufferUsage"] == "copy-dst-copy-src" and meta["uploadSubmitEvery"] == 1,
+              f"{name} backend and upload meta")
         adapter = meta["adapter"]
     rmsnorm = json.loads((args.work / "rmsnorm_tree.meta.json").read_text())
     check(rmsnorm["executionDispatchCount"] == 100 and rmsnorm["executionSubmitCount"] == 2, "rmsnorm dispatch/submit counts")

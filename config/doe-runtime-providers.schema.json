@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Doe runtime CLI providers",
+  "description": "Which Doe runtime CLI produced a native trace: binary name, runtime implementation, and the executionBackend values it writes. Each executionBackend belongs to exactly one provider, so a comparison names the runtime behind every trace. backendSelection is backend-runtime-policy when the CLI selects its backend through config/backend-runtime-policy.json lanes (its trace meta carries selectionPolicyHash) and fixed when the CLI has a single backend and no lane policy.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "registryVersion", "providers"],
+  "properties": {
+    "schemaVersion": { "type": "integer", "const": 1 },
+    "registryVersion": { "type": "string", "minLength": 1 },
+    "providers": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["providerId", "runtimeImplementation", "binaryName", "backendSelection", "executionBackends"],
+        "properties": {
+          "providerId": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+          "runtimeImplementation": { "type": "string", "enum": ["zig", "c"] },
+          "binaryName": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+          "backendSelection": { "type": "string", "enum": ["backend-runtime-policy", "fixed"] },
+          "executionBackends": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["executionBackend", "api"],
+              "properties": {
+                "executionBackend": { "type": "string", "pattern": "^[a-z0-9_]+$" },
+                "api": { "type": "string", "enum": ["vulkan", "metal", "d3d12"] }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

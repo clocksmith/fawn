@@ -206,6 +206,10 @@
       "data": "config/vulkan-submission-evaluation.json"
     },
     {
+      "schema": "config/doe-runtime-providers.schema.json",
+      "data": "config/doe-runtime-providers.json"
+    },
+    {
       "schema": "config/implementation-peers.schema.json",
       "data": "config/implementation-peers.json"
     },

@@ -11,6 +11,7 @@ import re
 from pathlib import Path
 from typing import Any
 
+from bench.lib import doe_runtime_providers
 from bench.lib import synthetic_assets as synthetic_assets_mod
 from bench.lib.hash_utils import file_sha256
 from native_compare_modules import compilation_runner as compilation_runner_mod
@@ -435,7 +436,7 @@ def command_for(
     }
     resolved = template.format(**ctx)
     command = shlex.split(resolved)
-    is_doe_runtime = any(part.endswith("doe-zig-runtime") for part in command)
+    is_doe_runtime = doe_runtime_providers.runtime_index(command) is not None
     if is_doe_runtime and "--trace-jsonl" in command and "--trace" in command:
         command = [part for part in command if part != "--trace"]
     return command
@@ -644,7 +645,7 @@ def run_workload(
     emit_shell: bool,
 ) -> dict[str, Any]:
     out_dir.mkdir(parents=True, exist_ok=True)
-    is_doe_runtime = "doe-zig-runtime" in template
+    is_doe_runtime = doe_runtime_providers.template_uses_doe_runtime(template)
     use_structural_command_repeat = (
         is_doe_runtime
         and command_repeat > 1
@@ -680,7 +681,7 @@ def run_workload(
     effective_extra_args = list(workload.extra_args)
     if use_structural_command_repeat:
         effective_extra_args.extend(["--command-repeat", str(command_repeat)])
-    if inject_upload_runtime_flags and workload.domain == "upload" and "doe-zig-runtime" in template:
+    if inject_upload_runtime_flags and workload.domain == "upload" and is_doe_runtime:
         effective_extra_args.extend(
             [
                 "--upload-buffer-usage",

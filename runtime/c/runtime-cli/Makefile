@@ -14,7 +14,7 @@ CORE = src/json.c src/stream.c src/trace.c src/sha256.c
 CORE_HEADERS = src/json.h src/stream.h src/trace.h src/sha256.h
 RUNTIME = src/execute.c src/kernel.c
 RUNTIME_HEADERS = src/execute.h src/runtime_internal.h ../../zig/vendor/webgpu-headers/webgpu.h
-.PHONY: all check check-host native
+.PHONY: all bench-bin check check-host native
 all: $(BUILD)/doe-c-runtime
 $(BUILD):
 	mkdir -p $@
@@ -25,6 +25,11 @@ $(NATIVE_LIBRARY): native
 $(BUILD)/doe-c-runtime: src/main.c $(CORE) $(RUNTIME) $(CORE_HEADERS) $(RUNTIME_HEADERS) $(NATIVE_LIBRARY) | $(BUILD)
 	$(CC) $(CPPFLAGS) $(CFLAGS) src/main.c $(CORE) $(RUNTIME) -L'$(abspath $(NATIVE_BUILD))' \
 	  -l:$(NATIVE_LIBRARY_NAME) '-Wl,-rpath,$(abspath $(NATIVE_BUILD))' -lm -o $@
+# The bench executor doe_c_direct_vulkan runs bin/doe-c-runtime (gitignored);
+# the copy keeps its rpath to $(NATIVE_BUILD), which must stay in place.
+bench-bin: $(BUILD)/doe-c-runtime
+	mkdir -p bin
+	cp '$(BUILD)/doe-c-runtime' bin/doe-c-runtime
 $(BUILD)/test_json: tests/test_json.c src/json.c src/json.h | $(BUILD)
 	$(CC) $(CPPFLAGS) $(CFLAGS) tests/test_json.c src/json.c -lm -o $@
 $(BUILD)/test_stream: tests/test_stream.c $(CORE) $(CORE_HEADERS) | $(BUILD)

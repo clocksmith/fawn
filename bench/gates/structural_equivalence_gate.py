@@ -18,9 +18,12 @@ import json
 from pathlib import Path
 from typing import Any
 
+from bench.lib import doe_runtime_providers
 from bench.lib import report_conformance
 
 
+# Doe-side execution: every registered runtime CLI backend plus legacy names.
+_DOE_EXECUTION_BACKENDS = doe_runtime_providers.native_execution_backends() | {"webgpu-ffi", "native"}
 _PHASE_ASYMMETRY_THRESHOLD = 0.10
 _MAX_PLAUSIBLE_THROUGHPUT_BYTES_PER_SEC = 500_000_000_000
 
@@ -293,11 +296,11 @@ def workload_is_dawn_vs_doe(workload: dict[str, Any]) -> bool:
     right_dawn = "dawn_delegate" in right_backends or "dawn-perf-tests" in right_backends
     left_doe = any(
         backend in left_backends
-        for backend in ("doe_metal", "doe_vulkan", "doe_d3d12", "webgpu-ffi", "native")
+        for backend in _DOE_EXECUTION_BACKENDS
     )
     right_doe = any(
         backend in right_backends
-        for backend in ("doe_metal", "doe_vulkan", "doe_d3d12", "webgpu-ffi", "native")
+        for backend in _DOE_EXECUTION_BACKENDS
     )
     return (left_dawn and right_doe) or (left_doe and right_dawn)
 

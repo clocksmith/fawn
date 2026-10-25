@@ -6,6 +6,7 @@ import statistics
 from typing import Any
 from typing import Callable
 
+from bench.lib import doe_runtime_providers
 from native_compare_modules.reporting import safe_float, safe_int
 from native_compare_modules.timing_selection import canonical_timing_source
 
@@ -40,10 +41,8 @@ _PACKAGE_EXECUTION_BACKENDS = frozenset({
     "deno_webgpu_package",
     "doe_deno_package",
 })
-_DOE_EXECUTION_BACKENDS = frozenset({
-    "doe_metal",
-    "doe_vulkan",
-    "doe_d3d12",
+# Native Doe runtime CLI backends come from config/doe-runtime-providers.json.
+_DOE_EXECUTION_BACKENDS = doe_runtime_providers.native_execution_backends() | frozenset({
     "doe_node_webgpu",
     "doe_node_native_direct",
     "doe_bun_package",
