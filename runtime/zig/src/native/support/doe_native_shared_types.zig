@@ -61,6 +61,9 @@ pub const RequiredBinding = struct {
     storage_format: u32 = 0,
     storage_access: u32 = 0,
     min_binding_size: u64 = 0,
+    /// The members above, and buffer_type's storage access, come from the
+    /// shader's IR types; explicit layouts are then checked against them.
+    described: bool = false,
 };
 
 /// The bindings a pipeline's entry points use: one record per (group,

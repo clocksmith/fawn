@@ -13,8 +13,7 @@ const compute_bind_groups = @import("../compute/doe_compute_bind_groups.zig");
 const abi_binding = @import("../../core/abi/wgpu_binding_base_types.zig");
 const texture_contract = @import("../../contracts/texture.zig");
 const vertex_format = @import("../../contracts/vertex_format.zig");
-const ir_query = @import("../../compiler/wgsl/ir/ir_query.zig");
-const abi_texture_dims = @import("../../core/abi/wgpu_texture_base_types.zig");
+const shader_binding_types = @import("../shader/shader_binding_types.zig");
 const texture_contract_values = @import("../../contracts/model/model_texture_value_types.zig");
 const binding_slot_limits = @import("../resource/doe_binding_slot_limits.zig");
 
@@ -445,146 +444,6 @@ fn vertexInterfaceFailure(pip: *const shared.DoeRenderPipeline, interface: *cons
     return null;
 }
 
-const MAX_FILTERED_GLOBALS = 256;
-
-/// Builtins that sample a texture through a (non-comparison) sampler.
-fn filteringBuiltin(name: []const u8) bool {
-    const names = [_][]const u8{ "textureSample", "textureSampleBias", "textureSampleGrad", "textureSampleLevel", "textureGather", "textureSampleBaseClampToEdge" };
-    for (names) |candidate| if (std.mem.eql(u8, candidate, name)) return true;
-    return false;
-}
-
-/// Marks the texture globals that the entry point (and the functions it
-/// calls) samples through a sampler; the default layout makes those f32
-/// textures "float" and the others "unfilterable-float".
-fn markFilteredTextures(module_ir: *const wgsl_ir.Module, entry: wgsl_ir.FunctionId, filtered: *[MAX_FILTERED_GLOBALS]bool) void {
-    var visited = [_]bool{false} ** 256;
-    var pending: [256]wgsl_ir.FunctionId = undefined;
-    var pending_len: usize = 0;
-    if (entry >= visited.len) return;
-    visited[entry] = true;
-    pending[0] = entry;
-    pending_len = 1;
-    while (pending_len > 0) {
-        pending_len -= 1;
-        const function = &module_ir.functions.items[pending[pending_len]];
-        for (function.exprs.items) |expr| switch (expr.data) {
-            .call => |call| {
-                const args = function.expr_args.items[call.args.start..][0..call.args.len];
-                if (call.kind == .builtin and filteringBuiltin(call.name)) {
-                    for (args) |arg| if (ir_query.findGlobalBase(function, arg)) |global| {
-                        if (global < filtered.len) filtered[global] = true;
-                    };
-                } else if (call.kind == .user) {
-                    for (module_ir.functions.items, 0..) |candidate, index| {
-                        if (!std.mem.eql(u8, candidate.name, call.name)) continue;
-                        if (index < visited.len and !visited[index] and pending_len < pending.len) {
-                            visited[index] = true;
-                            pending[pending_len] = @intCast(index);
-                            pending_len += 1;
-                        }
-                    }
-                }
-            },
-            else => {},
-        };
-    }
-}
-
-fn scalarSampleType(module_ir: *const wgsl_ir.Module, ty: wgsl_ir.TypeId, filtered: bool) u32 {
-    return switch (module_ir.types.get(ty)) {
-        .scalar => |scalar| switch (scalar) {
-            .i32 => abi_binding.WGPUTextureSampleType_Sint,
-            .u32 => abi_binding.WGPUTextureSampleType_Uint,
-            else => if (filtered) abi_binding.WGPUTextureSampleType_Float else abi_binding.WGPUTextureSampleType_UnfilterableFloat,
-        },
-        else => abi_binding.WGPUTextureSampleType_UnfilterableFloat,
-    };
-}
-
-fn storageFormat(format: wgsl_ir.TextureFormat) u32 {
-    return switch (format) {
-        .rgba8unorm => texture_contract_values.WGPUTextureFormat_RGBA8Unorm,
-        .rgba8snorm => texture_contract_values.WGPUTextureFormat_RGBA8Snorm,
-        .rgba8uint => texture_contract_values.WGPUTextureFormat_RGBA8Uint,
-        .rgba8sint => texture_contract_values.WGPUTextureFormat_RGBA8Sint,
-        .rgba16uint => texture_contract_values.WGPUTextureFormat_RGBA16Uint,
-        .rgba16sint => texture_contract_values.WGPUTextureFormat_RGBA16Sint,
-        .rgba16float => texture_contract_values.WGPUTextureFormat_RGBA16Float,
-        .r32uint => texture_contract_values.WGPUTextureFormat_R32Uint,
-        .r32sint => texture_contract_values.WGPUTextureFormat_R32Sint,
-        .r32float => texture_contract_values.WGPUTextureFormat_R32Float,
-        .rg32uint => texture_contract_values.WGPUTextureFormat_RG32Uint,
-        .rg32sint => texture_contract_values.WGPUTextureFormat_RG32Sint,
-        .rg32float => texture_contract_values.WGPUTextureFormat_RG32Float,
-        .rgba32uint => texture_contract_values.WGPUTextureFormat_RGBA32Uint,
-        .rgba32sint => texture_contract_values.WGPUTextureFormat_RGBA32Sint,
-        .rgba32float => texture_contract_values.WGPUTextureFormat_RGBA32Float,
-    };
-}
-
-/// The default bind group layout members for a binding, from its global's
-/// IR type (https://gpuweb.github.io/gpuweb/#default-pipeline-layout).
-/// Returns false when the binding has no IR global to describe it.
-fn describeDefaultLayout(module_ir: *const wgsl_ir.Module, meta: wgsl_bindings.BindingMeta, filtered: *const [MAX_FILTERED_GLOBALS]bool, use: *native_shared.RequiredBinding) bool {
-    use.min_binding_size = meta.min_binding_size;
-    const index = for (module_ir.globals.items, 0..) |global, i| {
-        const point = global.binding orelse continue;
-        if (point.group == meta.group and point.binding == meta.binding) break i;
-    } else return false;
-    const is_filtered = index < filtered.len and filtered[index];
-    const T = abi_texture_dims;
-    switch (module_ir.types.get(module_ir.globals.items[index].ty)) {
-        .sampler => use.sampler_type = abi_binding.WGPUSamplerBindingType_Filtering,
-        .sampler_comparison => use.sampler_type = abi_binding.WGPUSamplerBindingType_Comparison,
-        .texture_1d => |sample| {
-            use.sample_type = scalarSampleType(module_ir, sample, is_filtered);
-            use.view_dimension = T.WGPUTextureViewDimension_1D;
-        },
-        .texture_2d => |sample| {
-            use.sample_type = scalarSampleType(module_ir, sample, is_filtered);
-            use.view_dimension = T.WGPUTextureViewDimension_2D;
-        },
-        .texture_2d_array => |sample| {
-            use.sample_type = scalarSampleType(module_ir, sample, is_filtered);
-            use.view_dimension = T.WGPUTextureViewDimension_2DArray;
-        },
-        .texture_cube => |sample| {
-            use.sample_type = scalarSampleType(module_ir, sample, is_filtered);
-            use.view_dimension = T.WGPUTextureViewDimension_Cube;
-        },
-        .texture_3d => |sample| {
-            use.sample_type = scalarSampleType(module_ir, sample, is_filtered);
-            use.view_dimension = T.WGPUTextureViewDimension_3D;
-        },
-        .texture_multisampled_2d => |sample| {
-            // Multisampled textures are never filtered.
-            use.sample_type = scalarSampleType(module_ir, sample, false);
-            use.view_dimension = T.WGPUTextureViewDimension_2D;
-            use.multisampled = true;
-        },
-        .texture_depth_2d => {
-            use.sample_type = abi_binding.WGPUTextureSampleType_Depth;
-            use.view_dimension = T.WGPUTextureViewDimension_2D;
-        },
-        .texture_depth_cube => {
-            use.sample_type = abi_binding.WGPUTextureSampleType_Depth;
-            use.view_dimension = T.WGPUTextureViewDimension_Cube;
-        },
-        .storage_texture_2d => |storage| {
-            use.storage_format = storageFormat(storage.format);
-            use.storage_access = switch (storage.access) {
-                .read => abi_binding.WGPUStorageTextureAccess_ReadOnly,
-                .write => abi_binding.WGPUStorageTextureAccess_WriteOnly,
-                .read_write => abi_binding.WGPUStorageTextureAccess_ReadWrite,
-            };
-            use.view_dimension = T.WGPUTextureViewDimension_2D;
-        },
-        else => {},
-    }
-    return true;
-}
-
 const StageEntryPoint = enum { checked, unchecked, missing, binding_over_limit };
 const StageAdmission = enum { admitted, missing, binding_over_limit };
 
@@ -661,12 +520,12 @@ fn stageEntryPoint(pipeline: *shared.DoeRenderPipeline, module: ?*const shared.D
     const function_id = for (module_ir.functions.items, 0..) |candidate, index| {
         if (std.mem.eql(u8, candidate.name, name)) break index;
     } else return .missing;
-    var filtered = [_]bool{false} ** MAX_FILTERED_GLOBALS;
-    markFilteredTextures(&module_ir, @intCast(function_id), &filtered);
+    var filtered = [_]bool{false} ** shader_binding_types.MAX_FILTERED_GLOBALS;
+    shader_binding_types.markFilteredTextures(&module_ir, @intCast(function_id), &filtered);
     for (metadata[0..count]) |meta| {
         var use = shader_binding_reflection.requiredBinding(meta, stage_bit);
         // A binding the IR cannot describe leaves the default layout to the caller.
-        if (!describeDefaultLayout(&module_ir, meta, &filtered, &use)) return .unchecked;
+        if (!shader_binding_types.describeDefaultLayout(&module_ir, meta, &filtered, &use)) return .unchecked;
         pipeline.required_bindings.record(use) catch return .unchecked;
     }
     return .checked;

@@ -183,10 +183,48 @@ pub fn pipelineLayoutAdmitsBindings(layout: *const native_types.DoePipelineLayou
             // Reflection reports a storage variable with the default access
             // (var<storage>, which is read) as read_write, so a read-only
             // storage layout entry also serves a "storage" requirement.
-            const default_access_gap = required_type == abi_binding.WGPUBufferBindingType_Storage and
+            const default_access_gap = !use.described and required_type == abi_binding.WGPUBufferBindingType_Storage and
                 declared == abi_binding.WGPUBufferBindingType_ReadOnlyStorage;
             if (declared != required_type and !default_access_gap) return false;
         }
+        if (use.described and !entryAdmitsShaderType(entry, use)) return false;
+    }
+    return true;
+}
+
+/// "validating shader binding" for the members the shader's IR types fix
+/// (https://gpuweb.github.io/gpuweb/#abstract-opdef-validating-shader-binding):
+/// sampler comparison, texture multisampling, view dimension and sample type,
+/// and storage texture view dimension, format and access. Undefined layout
+/// members take their WebGPU defaults.
+fn entryAdmitsShaderType(entry: native_shared.DoeBindGroupLayoutEntry, use: native_shared.RequiredBinding) bool {
+    const T = @import("../../core/abi/wgpu_texture_base_types.zig");
+    const B = abi_binding;
+    const dimension = if (entry.texture_view_dimension == T.WGPUTextureViewDimension_Undefined) T.WGPUTextureViewDimension_2D else entry.texture_view_dimension;
+    if (use.kind == binding_contract.layoutResourceKindCode(.sampler)) {
+        return (entry.sampler_binding_type == B.WGPUSamplerBindingType_Comparison) == (use.sampler_type == B.WGPUSamplerBindingType_Comparison);
+    }
+    if (use.kind == binding_contract.layoutResourceKindCode(.texture)) {
+        if (entry.resource_kind != binding_contract.layoutResourceKindCode(.texture)) return true;
+        if (entry.texture_multisampled != use.multisampled or dimension != use.view_dimension) return false;
+        const layout_sample = if (entry.texture_sample_type == B.WGPUTextureSampleType_Undefined) B.WGPUTextureSampleType_Float else entry.texture_sample_type;
+        const shader_float = use.sample_type == B.WGPUTextureSampleType_Float or use.sample_type == B.WGPUTextureSampleType_UnfilterableFloat;
+        return switch (layout_sample) {
+            B.WGPUTextureSampleType_Float, B.WGPUTextureSampleType_UnfilterableFloat => shader_float,
+            B.WGPUTextureSampleType_Sint, B.WGPUTextureSampleType_Uint => use.sample_type == layout_sample,
+            // texture_1d and texture_3d are not depth-compatible.
+            B.WGPUTextureSampleType_Depth => use.sample_type == B.WGPUTextureSampleType_Depth or
+                (shader_float and dimension != T.WGPUTextureViewDimension_1D and dimension != T.WGPUTextureViewDimension_3D),
+            else => false,
+        };
+    }
+    if (use.kind == binding_contract.layoutResourceKindCode(.storage_texture)) {
+        // Storage texture layout entries keep their access in texture_sample_type.
+        const access = if (entry.texture_sample_type == B.WGPUStorageTextureAccess_Undefined) B.WGPUStorageTextureAccess_WriteOnly else entry.texture_sample_type;
+        // A read-write entry also serves a write-only shader texture.
+        const access_admits = access == use.storage_access or
+            (access == B.WGPUStorageTextureAccess_ReadWrite and use.storage_access == B.WGPUStorageTextureAccess_WriteOnly);
+        return dimension == use.view_dimension and entry.storage_texture_format == use.storage_format and access_admits;
     }
     return true;
 }
@@ -390,4 +428,35 @@ test "collectFlatResources preserves separate flattened texture and sampler slot
     try std.testing.expectEqual(@as(u32, 18), resources.sampler_count);
     try std.testing.expectEqual(@as(?*anyopaque, @ptrFromInt(0x1000)), resources.textures[16]);
     try std.testing.expectEqual(@as(?*anyopaque, @ptrFromInt(0x2000)), resources.samplers[17]);
+}
+
+test "explicit layout entries admit only the shader types WebGPU pairs with them" {
+    const T = @import("../../core/abi/wgpu_texture_base_types.zig");
+    const B = abi_binding;
+    const texture_kind: u8 = @intCast(binding_contract.layoutResourceKindCode(.texture));
+    const float_2d = native_shared.RequiredBinding{ .group = 0, .binding = 0, .kind = texture_kind, .sample_type = B.WGPUTextureSampleType_UnfilterableFloat, .view_dimension = T.WGPUTextureViewDimension_2D, .described = true };
+    var entry = native_shared.DoeBindGroupLayoutEntry{ .resource_kind = texture_kind, .texture_sample_type = B.WGPUTextureSampleType_Float, .texture_view_dimension = T.WGPUTextureViewDimension_2D };
+    try std.testing.expect(entryAdmitsShaderType(entry, float_2d));
+    entry.texture_sample_type = B.WGPUTextureSampleType_Depth;
+    try std.testing.expect(entryAdmitsShaderType(entry, float_2d));
+    entry.texture_sample_type = B.WGPUTextureSampleType_Uint;
+    try std.testing.expect(!entryAdmitsShaderType(entry, float_2d));
+    entry.texture_sample_type = B.WGPUTextureSampleType_Float;
+    entry.texture_view_dimension = T.WGPUTextureViewDimension_2DArray;
+    try std.testing.expect(!entryAdmitsShaderType(entry, float_2d));
+    entry.texture_view_dimension = T.WGPUTextureViewDimension_Undefined;
+    entry.texture_multisampled = true;
+    try std.testing.expect(!entryAdmitsShaderType(entry, float_2d));
+
+    const storage_kind: u8 = @intCast(binding_contract.layoutResourceKindCode(.storage_texture));
+    const r32_write = native_shared.RequiredBinding{ .group = 0, .binding = 0, .kind = storage_kind, .storage_format = 0x1B, .storage_access = B.WGPUStorageTextureAccess_WriteOnly, .view_dimension = T.WGPUTextureViewDimension_2D, .described = true };
+    var storage = native_shared.DoeBindGroupLayoutEntry{ .resource_kind = storage_kind, .texture_sample_type = B.WGPUStorageTextureAccess_ReadWrite, .storage_texture_format = 0x1B };
+    try std.testing.expect(entryAdmitsShaderType(storage, r32_write));
+    storage.texture_sample_type = B.WGPUStorageTextureAccess_ReadOnly;
+    try std.testing.expect(!entryAdmitsShaderType(storage, r32_write));
+
+    const sampler_kind: u8 = @intCast(binding_contract.layoutResourceKindCode(.sampler));
+    const comparison = native_shared.RequiredBinding{ .group = 0, .binding = 0, .kind = sampler_kind, .sampler_type = B.WGPUSamplerBindingType_Comparison, .described = true };
+    try std.testing.expect(!entryAdmitsShaderType(.{ .resource_kind = sampler_kind, .sampler_binding_type = B.WGPUSamplerBindingType_Filtering }, comparison));
+    try std.testing.expect(entryAdmitsShaderType(.{ .resource_kind = sampler_kind, .sampler_binding_type = B.WGPUSamplerBindingType_Comparison }, comparison));
 }

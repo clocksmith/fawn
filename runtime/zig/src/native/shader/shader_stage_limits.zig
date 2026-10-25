@@ -14,6 +14,8 @@ const native_types = @import("../support/doe_native_object_types.zig");
 const native_shared = @import("../support/doe_native_shared_types.zig");
 const shader_binding_reflection = @import("shader_binding_reflection.zig");
 const binding_slot_limits = @import("../resource/doe_binding_slot_limits.zig");
+const shader_binding_types = @import("shader_binding_types.zig");
+const compute_bind_groups = @import("../compute/doe_compute_bind_groups.zig");
 
 /// Marks the globals `function_id` and its user callees reference.
 fn markUsedGlobals(module_ir: *const wgsl_ir.Module, function_id: usize, visited: []bool, globals: []bool) void {
@@ -100,30 +102,55 @@ fn cachedEntryBindings(sm: *const native_types.DoeShaderModule, entry: ?[]const 
     return if (entries.len == 1) entries[0].bindings else null;
 }
 
-/// The device limit the compute entry point exceeds, as a validation message,
-/// or null. An automatic layout's bindings come from the module's cached
-/// Vulkan reflection when it has one; the stage IR is analyzed only for
-/// workgroup variables or uncached bindings. A module without retained WGSL,
-/// or one the stage IR cannot analyze, is left to the backend's own checks.
+/// Whether the explicit `layout` admits the IR types of every binding the
+/// entry point uses ("validating shader binding"); true when a binding's
+/// type has no IR description.
+fn explicitLayoutAdmits(allocator: std.mem.Allocator, module_ir: *const wgsl_ir.Module, function_id: usize, layout: *const native_types.DoePipelineLayout) bool {
+    var metadata: [native_shared.MAX_SHADER_BINDINGS]wgsl_bindings.BindingMeta = undefined;
+    const count = wgsl_bindings.extractEntryPointBindings(allocator, module_ir, module_ir.functions.items[function_id].name, &metadata) catch return true;
+    var filtered = [_]bool{false} ** shader_binding_types.MAX_FILTERED_GLOBALS;
+    shader_binding_types.markFilteredTextures(module_ir, @intCast(function_id), &filtered);
+    var bindings = native_shared.RequiredBindings{};
+    for (metadata[0..count]) |meta| {
+        var use = shader_binding_reflection.requiredBinding(meta, @intCast(abi_binding.WGPUShaderStage_Compute));
+        if (!shader_binding_types.describeDefaultLayout(module_ir, meta, &filtered, &use)) return true;
+        bindings.record(use) catch return true;
+    }
+    return compute_bind_groups.pipelineLayoutAdmitsBindings(layout, bindings.slice());
+}
+
+/// The device limit the compute entry point exceeds, or the explicit layout
+/// binding type it does not match, as a validation message, or null. An
+/// automatic layout's bindings come from the module's cached Vulkan
+/// reflection when it has one; the stage IR is analyzed for an explicit
+/// layout, for workgroup variables or for uncached bindings. A module without
+/// retained WGSL, or one the stage IR cannot analyze, is left to the
+/// backend's own checks.
 pub fn computeLimitFailure(
     allocator: std.mem.Allocator,
     device: *const native_types.DoeDevice,
     sm: *const native_types.DoeShaderModule,
     entry: ?[]const u8,
     overrides: []const wgsl_ir.OverrideEntry,
-    automatic_layout: bool,
+    layout: ?*const native_types.DoePipelineLayout,
 ) ?[]const u8 {
+    const automatic_layout = layout == null;
     const cached = if (automatic_layout) cachedEntryBindings(sm, entry) else null;
     if (cached) |bindings| if (slotFailure(device, bindings)) |message| return message;
     const source = sm.wgsl_source orelse return null;
     const needs_bindings = automatic_layout and cached == null;
-    if (!needs_bindings and !declaresWorkgroupVariable(source)) return null;
+    if (!needs_bindings and layout == null and !declaresWorkgroupVariable(source)) return null;
     var module_ir = wgsl_analysis.analyzeToIrWithConfigAndOverrides(allocator, source, wgsl_analysis.default_translation_robustness_config(), overrides) catch return null;
     defer module_ir.deinit();
     const function_id = computeEntry(&module_ir, entry) orelse return null;
     const storage = workgroupStorageSize(allocator, &module_ir, function_id) catch return null;
     if (storage > device.max_compute_workgroup_storage_size)
         return "compute entry point workgroup storage exceeds maxComputeWorkgroupStorageSize";
+    if (layout) |explicit| {
+        if (!explicitLayoutAdmits(allocator, &module_ir, function_id, explicit))
+            return "compute pipeline layout's binding types do not match the entry point's bindings";
+        return null;
+    }
     if (!needs_bindings) return null;
     var metadata: [native_shared.MAX_SHADER_BINDINGS]wgsl_bindings.BindingMeta = undefined;
     const count = wgsl_bindings.extractEntryPointBindings(allocator, &module_ir, module_ir.functions.items[function_id].name, &metadata) catch return null;
@@ -134,7 +161,7 @@ fn storageFor(source: []const u8, limit: u32) !?[]const u8 {
     var device = native_types.DoeDevice{};
     device.max_compute_workgroup_storage_size = limit;
     const sm = native_types.DoeShaderModule{ .wgsl_source = source };
-    return computeLimitFailure(std.testing.allocator, &device, &sm, null, &.{}, true);
+    return computeLimitFailure(std.testing.allocator, &device, &sm, null, &.{}, null);
 }
 
 test "workgroup storage counts each used variable rounded up to 16 bytes" {
@@ -159,10 +186,13 @@ test "an automatic compute layout counts the entry point's bindings per stage" {
     ;
     var device = native_types.DoeDevice{};
     const sm = native_types.DoeShaderModule{ .wgsl_source = source };
-    try std.testing.expectEqual(@as(?[]const u8, null), computeLimitFailure(std.testing.allocator, &device, &sm, "main", &.{}, true));
+    try std.testing.expectEqual(@as(?[]const u8, null), computeLimitFailure(std.testing.allocator, &device, &sm, "main", &.{}, null));
     device.stage_limits.uniform_buffers = 1;
-    try std.testing.expectEqualStrings("compute pipeline automatic layout exceeds maxUniformBuffersPerShaderStage", computeLimitFailure(std.testing.allocator, &device, &sm, "main", &.{}, true).?);
-    try std.testing.expectEqual(@as(?[]const u8, null), computeLimitFailure(std.testing.allocator, &device, &sm, "main", &.{}, false));
+    try std.testing.expectEqualStrings("compute pipeline automatic layout exceeds maxUniformBuffersPerShaderStage", computeLimitFailure(std.testing.allocator, &device, &sm, "main", &.{}, null).?);
+    // An explicit layout is checked against the binding types instead; this
+    // empty one lacks the bindings.
+    var empty = native_types.DoePipelineLayout{};
+    try std.testing.expect(computeLimitFailure(std.testing.allocator, &device, &sm, "main", &.{}, &empty) != null);
 }
 
 test "only a workgroup template argument marks a workgroup variable" {

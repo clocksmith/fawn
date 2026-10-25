@@ -3530,9 +3530,9 @@
       },
       "src/native/compute/doe_compute_bind_groups.zig": {
         "decision": "Keep",
-        "moduleSha256": "79073ae0deb2bb5da7ccf3f2de317f7eb3f20fd63aa0f95aa66c3e498e747bdb",
-        "reason": "Keep: reachable native implementation with private behavior tests and no merge, elevation, recomposition, or deletion signal. Applies dynamic offsets to flattened bindings and checks explicit-layout bind groups at dispatch. Dispatch validation also checks automatic-layout bindings by required resource kind. Pipeline bind group validation is shared by dispatch and draws. Automatic-layout pipelines accept only groups from their own layouts; group equivalence includes the exclusive pipeline. pipelineLayoutAdmitsBindings checks entry-point bindings against an explicit pipeline layout. Explicit-layout binding check also compares stage visibility and buffer type. Dispatch checks use the pipeline binding list at every binding number.",
-        "reviewer": "doe-c-claude-coordinator/2026-10-24"
+        "moduleSha256": "6e8ef8fddddba08628e4a5747dc9c9f4fe107c76b3e214244cf7e22414bae9e5",
+        "reason": "Keep: reachable native implementation with private behavior tests and no merge, elevation, recomposition, or deletion signal. Applies dynamic offsets to flattened bindings and checks explicit-layout bind groups at dispatch. Dispatch validation also checks automatic-layout bindings by required resource kind. Pipeline bind group validation is shared by dispatch and draws. Automatic-layout pipelines accept only groups from their own layouts; group equivalence includes the exclusive pipeline. pipelineLayoutAdmitsBindings checks entry-point bindings against an explicit pipeline layout. Explicit-layout binding check also compares stage visibility and buffer type. Dispatch checks use the pipeline binding list at every binding number. Explicit layouts are checked against described binding types: sampler comparison, texture multisampling, view dimension and sample type, storage texture dimension, format and access, and storage buffer access.",
+        "reviewer": "doe-c-claude-surface/2026-10-24"
       },
       "src/native/compute/doe_compute_ext_native.zig": {
         "decision": "Keep",
@@ -3728,8 +3728,8 @@
       },
       "src/native/shader/doe_shader_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "e4e97540111f4ea42c2f029d9adc4399d2ea7701e8e12b92401d4168c0077e55",
-        "reason": "Keep: Shader owner validates and retains WGSL for D3D12; routes compute to bounded native integration; releases D3D12 PSO/root through COM. Failed module and synchronous compute pipeline creation generate the device error (OutOfMemory for allocation failure, otherwise validation); async creation reports through its callback only. Compute pipeline creation rejects explicit layouts that lack a binding the entry point uses. Compute layout check passes buffer types and compute visibility. Compute pipelines reject entry points that use a binding at or above maxBindingsPerBindGroup. Compute pipelines record every used binding for layout checks. Compute pipeline creation checks workgroup storage and automatic-layout binding slots against the device limits.",
+        "moduleSha256": "a472184a4260ace64550a50d1e82a5a2e09e8868cafc708725c72d1d506eaefb",
+        "reason": "Keep: Shader owner validates and retains WGSL for D3D12; routes compute to bounded native integration; releases D3D12 PSO/root through COM. Failed module and synchronous compute pipeline creation generate the device error (OutOfMemory for allocation failure, otherwise validation); async creation reports through its callback only. Compute pipeline creation rejects explicit layouts that lack a binding the entry point uses. Compute layout check passes buffer types and compute visibility. Compute pipelines reject entry points that use a binding at or above maxBindingsPerBindGroup. Compute pipelines record every used binding for layout checks. Compute pipeline creation checks workgroup storage and automatic-layout binding slots against the device limits. Compute pipeline creation passes its explicit layout to the stage IR checks.",
         "reviewer": "doe-c-claude-surface/2026-10-24"
       },
       "src/native/shader/doe_shader_translation_cache.zig": {
@@ -3744,10 +3744,16 @@
         "reason": "Keep: one owner publishes binding metadata or typed failure and interprets native buffer binding types. Owns requiredLayoutKind for compute and render pipelines. Reports the first entry-point binding at or above maxBindingsPerBindGroup. Builds required-binding records with stage visibility for any binding number.",
         "reviewer": "doe-c-claude-coordinator/2026-10-24"
       },
+      "src/native/shader/shader_binding_types.zig": {
+        "decision": "Keep",
+        "moduleSha256": "82c27c87f471e1effda2aeb071d25adefb33a81409daca7ee0a03a0f58407d3f",
+        "reason": "Keep: one owner derives the bind group layout members a binding's IR type fixes (sampler type, sample type with filtering use, view dimension, multisampling, storage format and access, storage buffer access) for default layouts and explicit-layout checks of render and compute pipelines.",
+        "reviewer": "doe-c-claude-surface/2026-10-24"
+      },
       "src/native/shader/shader_stage_limits.zig": {
         "decision": "Keep",
-        "moduleSha256": "1999a76fe93b19e0af62ec327f62f76749e8e630f112969bdf737af450d4ab06",
-        "reason": "Keep: compute pipeline device-limit checks from the stage IR: workgroup storage the entry point uses against maxComputeWorkgroupStorageSize, and an automatic layout's binding slots from cached entry reflection or the IR. Automatic compute layouts reject bind group indices at or above maxBindGroups.",
+        "moduleSha256": "06dbf0fed2b96a56ba1c74918f98e517804fa474ed2fb7134757f4b12a1a83d9",
+        "reason": "Keep: compute pipeline device-limit checks from the stage IR: workgroup storage the entry point uses against maxComputeWorkgroupStorageSize, and an automatic layout's binding slots from cached entry reflection or the IR. Automatic compute layouts reject bind group indices at or above maxBindGroups. Explicit compute layouts are checked against the entry point's IR binding types.",
         "reviewer": "doe-c-claude-surface/2026-10-24"
       },
       "src/native/support/doe_adapter_info_native.zig": {
@@ -3806,9 +3812,9 @@
       },
       "src/native/support/doe_native_shared_types.zig": {
         "decision": "Keep",
-        "moduleSha256": "5c2adbf2f1fd5f4c048df538970ebbd4b736216dd4107fac92e6bad78e269cbe",
-        "reason": "Keep: reachable native implementation shared by 28 production consumers with no conflicting ownership signal. Declares BindGroupDynamicOffsets. Layout entries keep every WebGPU member for equality. Owns the maxBindingsPerBindGroup constant shared by layout and pipeline checks. Owns the required-binding list type. Carries automatic layout entries with their shader types.",
-        "reviewer": "doe-c-claude-coordinator/2026-10-24"
+        "moduleSha256": "ac818167dd580dfa904fa4eadbe2023ae0356b47ed613822255665271307c8d3",
+        "reason": "Keep: reachable native implementation shared by 28 production consumers with no conflicting ownership signal. Declares BindGroupDynamicOffsets. Layout entries keep every WebGPU member for equality. Owns the maxBindingsPerBindGroup constant shared by layout and pipeline checks. Owns the required-binding list type. Carries automatic layout entries with their shader types. Required bindings record whether their members come from IR types.",
+        "reviewer": "doe-c-claude-surface/2026-10-24"
       },
       "src/native/surface/doe_surface_native.zig": {
         "decision": "Keep",
@@ -3860,8 +3866,8 @@
       },
       "src/native/vulkan/vulkan_render_pipeline_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "47ae410edb912354436e7aad70d60039cac551e1a9c4d6f08bbf2c678fa353fa",
-        "reason": "Keep: native attachment admission owns view and pipeline compatibility; command recording preserves typed validation failures before submission. Backend execution and resource retirement retain their existing owners. The multisample mask and alpha-to-coverage reach the pipeline object. Render pipelines record required binding kinds from vertex and fragment entry points. Render pipeline creation rejects vertex or fragment entry points that do not name a function of that stage. Render pipeline creation rejects explicit layouts that lack a binding the entry points use. Render layout check passes buffer types and per-slot stages. Render pipelines reject bindings at or above maxBindingsPerBindGroup and color targets above maxColorAttachmentBytesPerSample. Pipelines record every fragment target and whether a fragment stage exists. Render pipelines and auto layouts include bindings above 31. Checks fragment output and vertex input scalar types and component counts against targets and attribute formats from the stage IR. Vertex outputs and fragment inputs (with inter-stage builtins, point-list and clip_distances) are checked against maxInterStageShaderVariables, and an automatic layout's bindings against the per-stage slot limits. Render pipelines build their own automatic layouts from entry-point shader types (used bindings only). Automatic render layouts reject bind group indices at or above maxBindGroups.",
+        "moduleSha256": "a7d4173e8efb804b0158ccdbaadda0523523ebccad04dfe9aa4565be6373ed93",
+        "reason": "Keep: native attachment admission owns view and pipeline compatibility; command recording preserves typed validation failures before submission. Backend execution and resource retirement retain their existing owners. The multisample mask and alpha-to-coverage reach the pipeline object. Render pipelines record required binding kinds from vertex and fragment entry points. Render pipeline creation rejects vertex or fragment entry points that do not name a function of that stage. Render pipeline creation rejects explicit layouts that lack a binding the entry points use. Render layout check passes buffer types and per-slot stages. Render pipelines reject bindings at or above maxBindingsPerBindGroup and color targets above maxColorAttachmentBytesPerSample. Pipelines record every fragment target and whether a fragment stage exists. Render pipelines and auto layouts include bindings above 31. Checks fragment output and vertex input scalar types and component counts against targets and attribute formats from the stage IR. Vertex outputs and fragment inputs (with inter-stage builtins, point-list and clip_distances) are checked against maxInterStageShaderVariables, and an automatic layout's bindings against the per-stage slot limits. Render pipelines build their own automatic layouts from entry-point shader types (used bindings only). Automatic render layouts reject bind group indices at or above maxBindGroups. Binding type description moved to shader_binding_types.zig.",
         "reviewer": "doe-c-claude-surface/2026-10-24"
       },
       "src/native/vulkan/vulkan_render_shared.zig": {
