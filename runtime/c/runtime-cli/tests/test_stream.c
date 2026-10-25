@@ -76,6 +76,36 @@ int main(int argc, char **argv)
     assert(stream.count == 1 && stream.commands[0].as.dispatch.repeat == 100);
     doe_stream_free(&stream);
 
+    /* Copy directions come from the kind name, layouts and defaults as doe-zig-runtime parses them. */
+    parse_file(argv[1], "copy_texture_to_buffer_padded_commands.json", &stream);
+    const doe_command *copy = &stream.commands[0];
+    assert(copy->kind == DOE_COMMAND_COPY && copy->as.copy.direction == DOE_COPY_TEXTURE_TO_BUFFER);
+    assert(!strcmp(copy->label, "copy_buffer_to_texture") && copy->as.copy.bytes == 4096);
+    assert(copy->as.copy.src.texture.width == 32 && copy->as.copy.src.texture.format == DOE_FORMAT_RGBA8_UNORM);
+    assert(copy->as.copy.src.texture.usage == 6 && copy->as.copy.dst.bytes_per_row == 256 && copy->as.copy.src.bytes_per_row == 128);
+    doe_stream_free(&stream);
+    parse_file(argv[1], "copy_buffer_to_buffer_overlap_commands.json", &stream);
+    assert(stream.commands[0].as.copy.direction == DOE_COPY_BUFFER_TO_BUFFER);
+    assert(stream.commands[0].as.copy.src.offset == 1024 && stream.commands[0].as.copy.dst.offset == 2048);
+    doe_stream_free(&stream);
+    const char *textures = "[{\"kind\":\"texture_copy\",\"bytes\":4,\"src_handle\":1,\"dst_handle\":2},"
+        "{\"kind\":\"copy_buffer_to_buffer\",\"direction\":\"texture_to_texture\",\"bytes\":4,\"src_handle\":3,\"dst_handle\":4},"
+        "{\"kind\":\"write_texture\",\"handle\":5,\"data\":[1,2,3,255]},"
+        "{\"kind\":\"query_texture\",\"textureHandle\":5,\"viewDimension\":\"2d-array\",\"usage\":6},"
+        "{\"kind\":\"destroy_texture\",\"targetHandle\":5}]";
+    assert(doe_stream_parse(textures, strlen(textures), &stream, &(doe_stream_error){0}));
+    assert(stream.commands[0].as.copy.direction == DOE_COPY_BUFFER_TO_BUFFER); /* texture_copy is buffer_to_buffer */
+    assert(stream.commands[1].as.copy.direction == DOE_COPY_TEXTURE_TO_TEXTURE);
+    assert(stream.commands[1].as.copy.src.texture.format == DOE_FORMAT_R8_UNORM && stream.commands[1].as.copy.src.texture.width == 1);
+    const doe_command *write = &stream.commands[2];
+    assert(write->kind == DOE_COMMAND_TEXTURE_WRITE && !strcmp(write->label, "texture_write"));
+    assert(write->as.texture_write.texture.format == DOE_FORMAT_RGBA8_UNORM && write->as.texture_write.texture.usage == 6);
+    assert(write->as.texture_write.data_size == 4 && write->as.texture_write.data[3] == 255);
+    const doe_texture_query *query = &stream.commands[3].as.texture_query;
+    assert(query->handle == 5 && query->has_view_dimension && query->view_dimension == 1 && query->has_usage && !query->has_width);
+    assert(stream.commands[4].kind == DOE_COMMAND_TEXTURE_DESTROY && stream.commands[4].as.texture_destroy.handle == 5);
+    doe_stream_free(&stream);
+
     /* Aliases label rows with the normalized kind; kinds compare case-insensitively like the Zig parser. */
     const char *alias = "{\"commands\":[{\"command\":\"Write_Buffer\",\"handle\":1,\"data\":[7]}]}";
     assert(doe_stream_parse(alias, strlen(alias), &stream, &(doe_stream_error){0}));
@@ -106,6 +136,18 @@ int main(int argc, char **argv)
         "\"buffer_type\":\"storage\"},{\"binding\":0,\"resource_handle\":2,\"buffer_type\":\"storage\"}]}]", 0, "repeat group");
     rejects("[{\"kind\":\"kernel_dispatch\",\"kernel\":\"k\",\"bindings\":[{\"binding\":0,\"resource_handle\":1,"
         "\"buffer_type\":\"storage\",\"visibility\":\"fragment\"}]}]", 0, "compute");
-    puts("runtime-cli stream: three example streams, aliases and 19 visible rejections (host only)");
+    rejects("[{\"kind\":\"copy_buffer_to_buffer\",\"src_handle\":1,\"dst_handle\":2}]", 0, "\"bytes\" is required");
+    rejects("[{\"kind\":\"copy_buffer_to_buffer\",\"bytes\":4,\"src_handle\":1,\"dst_handle\":2,\"direction\":\"up\"}]", 0, "direction");
+    rejects("[{\"kind\":\"copy_buffer_to_buffer\",\"bytes\":4,\"src_handle\":1,\"dst_handle\":2,\"src_width\":4}]", 0, "buffer side");
+    rejects("[{\"kind\":\"copy_texture_to_texture\",\"bytes\":4,\"src_handle\":1,\"dst_handle\":2,\"dst_mip_level\":1}]", 0, "mip_level");
+    rejects("[{\"kind\":\"copy_texture_to_texture\",\"bytes\":4,\"src_handle\":1,\"dst_handle\":2,\"src_format\":\"bc1-rgba-unorm\"}]", 0, "format");
+    rejects("[{\"kind\":\"copy_texture_to_buffer\",\"bytes\":4,\"src_handle\":1,\"dst_handle\":2,\"src_kind\":\"buffer\"}]", 0, "contradicts");
+    rejects("[{\"kind\":\"copy_buffer_to_texture\",\"bytes\":4,\"src_handle\":1,\"dst_handle\":2,\"dst_offset\":4}]", 0, "texture side");
+    rejects("[{\"kind\":\"texture_write\",\"handle\":1,\"bytes_per_row\":8}]", 0, "\"bytes_per_row\"");
+    rejects("[{\"kind\":\"texture_write\",\"handle\":1,\"dimension\":\"3d\"}]", 0, "dimension");
+    rejects("[{\"kind\":\"texture_write\",\"handle\":1,\"data\":[256]}]", 0, "[0, 255]");
+    rejects("[{\"kind\":\"texture_write\",\"handle\":0}]", 0, "nonzero integer texture handle");
+    rejects("[{\"kind\":\"texture_query\",\"handle\":1,\"textureHandle\":1}]", 0, "more than once");
+    puts("runtime-cli stream: five example streams, aliases, copy and texture kinds and 31 visible rejections (host only)");
     return 0;
 }

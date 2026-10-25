@@ -23,20 +23,42 @@ $(BUILD)/doe-c-runtime --commands examples/rmsnorm_tree_commands.json --execute 
   `queue_write_buffer`), `barrier`, and `kernel_dispatch` with WGSL kernels,
   buffer bindings (`uniform`, `readonly`/`read_only_storage`, `storage`) and
   `repeatSynchronization` `dependent`. Each kind has a field allowlist.
+- Copies in every direction under every doe-zig-runtime alias
+  (`copy_buffer_to_buffer`, `copy_buffer_to_texture`, `copy_texture_to_buffer`,
+  `copy_texture_to_texture`, `buffer_copy`, `texture_copy`, ... or an explicit
+  `direction`), `texture_write` (`write_texture`, `queue_write_texture`),
+  `texture_query` (`query_texture`) and `texture_destroy` (`destroy_texture`),
+  for 2D single-mip single-sample textures in `r8unorm`, `rg8unorm`,
+  `rgba8unorm`, `rgba8unorm-srgb`, `bgra8unorm`, `r32uint`, `r32float`,
+  `rgba16float` and `rgba32float`. Resources follow doe-zig-runtime's WebGPU
+  command path: a missing copy source is created zero-filled, a buffer too small
+  or a texture of another shape is replaced (its contents are lost), an undefined
+  copy format is `r8unorm`, and a buffer side's missing row pitch falls back to
+  the texture side's. Textures also carry CopySrc|CopyDst so writes and copies
+  keep their contents. WebGPU validates layouts: a row pitch that is not a
+  multiple of 256 fails the copy with exit 1.
 - Kernels resolve as given, then under `--kernel-root`, then with `.wgsl`.
 - `output_oracle` schema 1, `sha256_exact_v1`, `zero_fill_v1` initialization:
   with `--validate-output-oracles` the command runs again on isolated
   zero-filled buffers and the read-back target's SHA-256 must equal
   `expected_sha256`; a mismatch exits 1.
+- `--readback-buffer HANDLE=PATH` (up to 8) writes a buffer's final bytes after
+  a successful run, so a test can compare them with bytes computed without the
+  GPU.
 - Arguments as listed by `--help`. `--quirks` needs `--quirk-mode off`;
   `--queue-sync-mode` admits only `per-command`; `--gpu-timestamp-mode` admits
   `off` and `auto` (no timestamps are recorded); `--api` admits only `vulkan`.
   `--adapter auto|physical|software` is this CLI's own: `auto` takes a
   nonfallback adapter, else the fallback (CPU) adapter.
 
-Every other command kind (render, texture, copy, dispatch-indirect and the rest),
-field, oracle scope, `repeatSynchronization` value, `semanticOpId` and argument
-is rejected with exit 2 before device work.
+Every other command kind (render, sampler, surface, dispatch-indirect and the
+rest), field, texture dimension, mip level, sample count, aspect, format, oracle
+scope, `repeatSynchronization` value, `semanticOpId` and argument is rejected
+with exit 2 before device work.
+
+doe-zig-runtime's native Vulkan lane reports every copy `unsupported` and
+continues; this CLI executes them. The row hash chain covers command identity,
+so the chains still equal, but `executionStatus` differs on copy rows.
 
 ## Trace artifacts
 
@@ -76,5 +98,10 @@ shader artifact manifest, so that obligation fails for them.
 `workgroup_atomic` exit 0, pass `pipeline/trace/replay.py`, match the
 doe-zig-runtime hash chains, and the `workgroup_atomic` oracle matches its
 expected digest; `--command-repeat 2`, an oracle mismatch and five rejections
-behave as specified. A CPU adapter run is not GPU evidence, a performance
-result or bench comparability, and no physical adapter has run this CLI.
+behave as specified. The same run on source 0c056f1de plus the copy and texture
+commands executes five copy example streams and a roundtrip of copies in every
+direction and a texture write whose three read-back buffers equal bytes computed
+on the host, with hash chains equal to doe-zig-runtime's, and rejects or fails
+an invalid row pitch, a mip-level copy, a mismatched query and a missing
+read-back handle. A CPU adapter run is not GPU evidence, a performance result
+or bench comparability, and no physical adapter has run this CLI.
