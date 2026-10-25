@@ -49,6 +49,9 @@ small frames do not establish the group's unchanged stack ceiling.
 
 numeric.c owns locale-free bounded literal parsing, rounding, const arithmetic and
 checked conversions; numeric_math.c owns declared-width component math.
+Check literal overflow after rounding and significand carry: a decimal slightly
+above the largest finite value may round to it. Concrete hexadecimal literals
+retain their separate exact-representation requirement.
 Multi-argument math uses the same typed signature and ordered operand snapshots;
 preserve argument order (notably `atan2(y,x)`) in constant and target lowering.
 Geometric builtins retain their operand roles: `reflect(incident, normal)` uses

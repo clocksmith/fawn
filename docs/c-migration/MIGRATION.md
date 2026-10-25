@@ -45,8 +45,26 @@ bytecode validation, and simulated completion never inherit that qualification.
 The 2026-10-25 owner-authorized [instance capability amendment](../../runtime/c/instance/CAPABILITIES.md)
 admits the timed-wait and multiple-device requirements used by ONNX consumers.
 The public two-device copy/readback and finite-wait client passes on Apple M3
-Metal and CPU Vulkan. This closes the descriptor admission gap; it does not
-close the ONNX application, backend qualification or production-switch gates.
+Metal, Radeon Vulkan and CPU Vulkan. This closes the descriptor admission gap;
+backend qualification and production-switch gates remain open.
+
+The unchanged six-job ONNX consumer now passes on the Radeon with the C native
+library: callbacks, lifecycle, two application runs, native-disabled rejection
+and corrupted-oracle rejection. Corrections preserve finite-boundary literal
+rounding, map validation/loss delivery and synchronous mapped-range rejection.
+The applications execute 123 WebGPU operators with 149 dispatch calls each;
+cleanup checks pass. This is focused developer evidence, not full stage-5 or
+physical-backend qualification. The C runs do not produce the Zig journal.
+Regression routes are the compiler's numeric tests and the public native
+`compute`, `map-oom` and `instance-devices` clients. The retained Zig ONNX
+consumer also passes after restoring reflected types in automatic compute layouts.
+
+The [C runtime CLI](../../runtime/c/runtime-cli/README.md) now admits texture
+bindings, mip copies, indirect draws and buffer mapping. Its parser accepts
+72 of the 84 AMD Vulkan workload streams; the remaining ten diagnostics and
+two surface streams are rejected. `check` and `check-dawn` exercise matching
+artifacts and independent readbacks on CPU Vulkan; parser admission is not
+physical execution or performance qualification.
 
 The requested workflow is broad, disjoint subsystem implementation in parallel,
 with review and focused compile/behavior checks as code changes. Exhaustive
