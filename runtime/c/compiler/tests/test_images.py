@@ -118,6 +118,31 @@ class Images(unittest.TestCase):
             prefix = texture('t', 'texture_' + shape) + texture('s', 'sampler', 1)
             self.compile(prefix + fragment + '{return textureSampleBias(t,s,' + coords + ',0.0f);}', 'no matching')
 
+    def test_texture_gather_component_comparison_and_offsets(self):
+        for shape, coords, layer in [('2d', 'vec2f(0.5)', ''), ('2d_array', 'vec2f(0.5)', ',-1i'),
+                                     ('cube', 'vec3f(1,0,0)', ''), ('cube_array', 'vec3f(1,0,0)', ',3u')]:
+            for scalar in ['f32', 'i32', 'u32', 'depth']:
+                prefix = texture('t', f'texture_{shape}<{scalar}>' if scalar != 'depth' else 'texture_depth_' + shape)
+                prefix += texture('s', 'sampler' if scalar != 'depth' else 'sampler_comparison', 1)
+                offsets = ['', ',vec2i(-8,7)'] if shape in ('2d', '2d_array') else ['']
+                for offset in offsets:
+                    call = ('textureGather(2u,t,s,' + coords + layer + offset if scalar != 'depth' else
+                            'textureGatherCompare(t,s,' + coords + layer + ',0.5' + offset) + ')'
+                    code = self.compile(prefix + ENTRY + '{let value=' + call + ';}')
+                    gathered = [a for op, a in code if op == (96 if scalar != 'depth' else 97)]
+                    self.assertEqual(len(gathered), 1)
+                    if scalar != 'depth':
+                        constants = {a[1]: a[2] for op, a in code if op == 43}
+                        self.assertEqual(constants[gathered[0][4]], 2)
+                    if offset:
+                        self.assertEqual(gathered[0][5], 8)
+        prefix = texture('t', 'texture_2d<f32>') + texture('s', 'sampler', 1)
+        for args in ['', '0u', '0u,t', '0u,t,s']:
+            self.compile(prefix + ENTRY + '{let value=textureGather(' + args + ');}', 'context')
+        for component in ['4u', '-1i', 'lane']:
+            self.compile(prefix + '@compute @workgroup_size(4) fn main(@builtin(local_invocation_index) lane:u32){'
+                'let value=textureGather(' + component + ',t,s,vec2f(0.5));}', 'const integer')
+
     def test_depth_multisample_and_canonical_targets(self):
         for name, layer, multi in [('2d', '', False), ('2d_array', ',1', False), ('multisampled_2d', '', True)]:
             self.compile(texture('t', 'texture_depth_' + name) + ENTRY +

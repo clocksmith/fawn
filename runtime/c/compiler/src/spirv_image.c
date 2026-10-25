@@ -229,6 +229,14 @@ static bool sample(Emitter *e, const IrInstruction *ir, const TypeRecord *textur
     const uint32_t last = 3u + (image_arrayed(texture->state.image.dimension) ? 1u : 0u);
     const uint32_t arity = image_sample_arity(texture->state.image, operation);
     const bool offset = ir->operands.composite.count == arity + 1u;
+    if (operation == IMAGE_GATHER || operation == IMAGE_GATHER_COMPARE) {
+        const uint32_t opcode = operation == IMAGE_GATHER ? OP_IMAGE_GATHER : OP_IMAGE_DREF_GATHER;
+        if (offset) { EMIT(opcode, spirv_target_type(e, ir->type), e->values[ir->result], sampled, coordinate,
+            e->values[operands[last]], 8u, e->values[operands[arity]]); }
+        else { EMIT(opcode, spirv_target_type(e, ir->type), e->values[ir->result], sampled, coordinate,
+            e->values[operands[last]]); }
+        return !e->failed;
+    }
     uint32_t lod = implicit || compare ? spirv_zero_constant(e, IR_F32) : e->values[operands[last]];
     if (depth && !compare && !implicit) {
         lod = spirv_reserve_ids(e, 1u);

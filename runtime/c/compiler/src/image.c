@@ -16,10 +16,11 @@ bool image_arrayed(uint32_t dimension) {
 bool image_sampling(ImageOperation operation) {
     return operation == IMAGE_SAMPLE_LEVEL || operation == IMAGE_SAMPLE_COMPARE_LEVEL ||
         operation == IMAGE_SAMPLE || operation == IMAGE_SAMPLE_COMPARE ||
-        operation == IMAGE_SAMPLE_GRAD || operation == IMAGE_SAMPLE_BIAS;
+        operation == IMAGE_SAMPLE_GRAD || operation == IMAGE_SAMPLE_BIAS ||
+        operation == IMAGE_GATHER || operation == IMAGE_GATHER_COMPARE;
 }
 bool image_comparison(ImageOperation operation) {
-    return operation == IMAGE_SAMPLE_COMPARE_LEVEL || operation == IMAGE_SAMPLE_COMPARE;
+    return operation == IMAGE_SAMPLE_COMPARE_LEVEL || operation == IMAGE_SAMPLE_COMPARE || operation == IMAGE_GATHER_COMPARE;
 }
 bool image_implicit(ImageOperation operation) {
     return operation == IMAGE_SAMPLE || operation == IMAGE_SAMPLE_COMPARE || operation == IMAGE_SAMPLE_BIAS;

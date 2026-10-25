@@ -1,11 +1,12 @@
 /* SPDX-License-Identifier: MIT
  * Copyright (c) 2026 Doe contributors */
 #include "private.h"
+#include "../ir_view.h"
 
 typedef struct {
     const TypeRecord *type;
     ImageOperation operation;
-    uint32_t texture, sampler, coordinates, layer, level, sample, data, reference, offset, gradient_x, gradient_y, bias;
+    uint32_t texture, sampler, coordinates, layer, level, sample, data, reference, offset, gradient_x, gradient_y, bias, component;
     uint32_t width;
     bool storage, multisampled, arrayed, depth;
 } HlslImage;
@@ -22,7 +23,7 @@ static bool decode(HlslEmitter *e, const IrInstruction *ir, HlslImage *image) {
     *image = (HlslImage){.type = &c->types[type - 7u],
         .operation = (ImageOperation)ir->operands.composite.kind, .texture = arguments[0],
         .sampler = NO_ID, .coordinates = NO_ID, .layer = NO_ID,
-        .level = NO_ID, .sample = NO_ID, .data = NO_ID, .reference = NO_ID, .offset = NO_ID, .gradient_x = NO_ID, .gradient_y = NO_ID, .bias = NO_ID};
+        .level = NO_ID, .sample = NO_ID, .data = NO_ID, .reference = NO_ID, .offset = NO_ID, .gradient_x = NO_ID, .gradient_y = NO_ID, .bias = NO_ID, .component = NO_ID};
     const ImageType t = image->type->state.image;
     image->storage = t.format != 0u;
     image->multisampled = (t.flags & DOE_COMPILER_HANDLE_MULTISAMPLED) != 0u;
@@ -39,6 +40,7 @@ static bool decode(HlslEmitter *e, const IrInstruction *ir, HlslImage *image) {
         case IMAGE_STORE: expected = 3u + (image->arrayed ? 1u : 0u); break;
         case IMAGE_DIMENSIONS: expected = !image->storage && !image->multisampled && count == 2u ? 2u : 1u; break;
         case IMAGE_LEVELS: case IMAGE_LAYERS: case IMAGE_SAMPLES: break;
+        case IMAGE_GATHER: case IMAGE_GATHER_COMPARE:
         case IMAGE_SAMPLE_GRAD: case IMAGE_SAMPLE_BIAS:
         case IMAGE_SAMPLE: case IMAGE_SAMPLE_COMPARE: case IMAGE_SAMPLE_LEVEL: case IMAGE_SAMPLE_COMPARE_LEVEL:
             expected = image_sample_arity(t, image->operation);
@@ -63,7 +65,12 @@ static bool decode(HlslEmitter *e, const IrInstruction *ir, HlslImage *image) {
         image->coordinates = arguments[2];
         if (image->arrayed) image->layer = arguments[3];
         const uint32_t last = 3u + (image->arrayed ? 1u : 0u);
-        if (image->operation == IMAGE_SAMPLE_GRAD) {
+        if (image->operation == IMAGE_GATHER) {
+            if (!target_gather_component(c, arguments[last], &image->component)) {
+                hlsl_error(e, "texture gather component has no constant integer identity");
+                return false;
+            }
+        } else if (image->operation == IMAGE_SAMPLE_GRAD) {
             image->gradient_x = arguments[last];
             image->gradient_y = arguments[last + 1u];
         } else if (image->operation == IMAGE_SAMPLE_BIAS) image->bias = arguments[last];
@@ -83,10 +90,16 @@ static bool decode(HlslEmitter *e, const IrInstruction *ir, HlslImage *image) {
         hlsl_error(e, "HLSL image query is not defined for this texture type");
         return false;
     }
+    if ((image->operation == IMAGE_GATHER || image->operation == IMAGE_GATHER_COMPARE) &&
+        (t.dimension == DOE_COMPILER_VIEW_1D || t.dimension == DOE_COMPILER_VIEW_3D ||
+         image->depth != (image->operation == IMAGE_GATHER_COMPARE))) {
+        hlsl_error(e, "texture gather operation has an invalid shape or depth type");
+        return false;
+    }
     if ((image->operation == IMAGE_STORE && (!image->storage || t.access == DOE_COMPILER_READ)) ||
         (image->operation == IMAGE_LOAD && image->storage && t.access == DOE_COMPILER_WRITE) ||
         ((image_sampling(image->operation)) &&
-         (image->storage || image->multisampled || image->type->element != IR_F32 ||
+         (image->storage || image->multisampled || (image->operation != IMAGE_GATHER && image->type->element != IR_F32) ||
           (image_comparison(image->operation) && !image->depth) ||
           ((image->operation == IMAGE_SAMPLE_GRAD || image->operation == IMAGE_SAMPLE_BIAS) &&
            (image->depth || t.dimension == DOE_COMPILER_VIEW_1D))))) {
@@ -256,7 +269,11 @@ static void sample_level(HlslEmitter *e, const IrInstruction *ir, const HlslImag
     hlsl_value(e, ir->result);
     hlsl_text(e, " = ");
     hlsl_value(e, image->texture);
-    hlsl_text(e, image->operation == IMAGE_SAMPLE_GRAD ? ".SampleGrad(" :
+    if (image->component != NO_ID) {
+        static const char *const methods[] = {".GatherRed(", ".GatherGreen(", ".GatherBlue(", ".GatherAlpha("};
+        hlsl_text(e, methods[image->component]);
+    } else if (image->operation == IMAGE_GATHER_COMPARE) hlsl_text(e, ".GatherCmp(");
+    else hlsl_text(e, image->operation == IMAGE_SAMPLE_GRAD ? ".SampleGrad(" :
         image->operation == IMAGE_SAMPLE_BIAS ? ".SampleBias(" : image_implicit(image->operation) ?
         (image->reference != NO_ID ? ".SampleCmp(" : ".Sample(") :
         (image->reference != NO_ID ? ".SampleCmpLevelZero(" : ".SampleLevel("));
@@ -321,7 +338,8 @@ static void query_result(HlslEmitter *e, const IrInstruction *ir, const HlslImag
         case IMAGE_LEVELS: hlsl_text(e, "image_levels"); break;
         case IMAGE_LAYERS: hlsl_text(e, "image_layers"); break;
         case IMAGE_SAMPLES: hlsl_text(e, "image_samples"); break;
-        case IMAGE_LOAD: case IMAGE_STORE: case IMAGE_SAMPLE_GRAD: case IMAGE_SAMPLE_BIAS:
+        case IMAGE_LOAD: case IMAGE_STORE: case IMAGE_GATHER: case IMAGE_GATHER_COMPARE:
+        case IMAGE_SAMPLE_GRAD: case IMAGE_SAMPLE_BIAS:
         case IMAGE_SAMPLE: case IMAGE_SAMPLE_COMPARE: case IMAGE_SAMPLE_LEVEL: case IMAGE_SAMPLE_COMPARE_LEVEL:
         default: hlsl_error(e, "HLSL image query has no lowering"); break;
     }
@@ -357,6 +375,7 @@ void hlsl_image(HlslEmitter *e, const IrInstruction *ir) {
     }
     switch (image.operation) {
         case IMAGE_LOAD: case IMAGE_STORE: texel(e, ir, &image); break;
+        case IMAGE_GATHER: case IMAGE_GATHER_COMPARE:
         case IMAGE_SAMPLE_GRAD: case IMAGE_SAMPLE_BIAS:
         case IMAGE_SAMPLE: case IMAGE_SAMPLE_COMPARE: case IMAGE_SAMPLE_LEVEL: case IMAGE_SAMPLE_COMPARE_LEVEL: sample_level(e, ir, &image); break;
         case IMAGE_DIMENSIONS: case IMAGE_LEVELS: case IMAGE_LAYERS: case IMAGE_SAMPLES:

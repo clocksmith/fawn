@@ -7,7 +7,10 @@
 typedef struct LoopScope LoopScope;
 struct LoopScope { LoopScope *parent; size_t body_scope_start, body_scope_end; uint32_t first_continue; bool continuing; };
 typedef struct { LocalBinding *values; size_t count, capacity, scope_start, level; LoopScope *loop; } LocalScope;
-typedef struct { IrValue value; union { ConstantValue constant; PointerValue pointer; }; bool runtime, known, overridable; } ExpressionValue;
+/* Stage flags occupy IrValue's alignment gap before the eight-byte constant
+ * payload. This private semantic temporary stays 32 bytes on 32/64-bit hosts. */
+typedef struct { IrValue value; bool runtime, known, overridable; union { ConstantValue constant; PointerValue pointer; }; } ExpressionValue;
+_Static_assert(sizeof(ExpressionValue) == 32u, "semantic temporary layout");
 typedef struct { uint32_t root, path, category; TypeId type; bool writable, addressable; } ValueReference;
 typedef struct { uint64_t used, limit; uint32_t offset; } UniformityBudget;
 #define UNIFORMITY_WORK_LIMIT UINT64_C(67108864)
@@ -58,6 +61,8 @@ bool sema_finish_lanes(Source *, TypeId, ConstantValue[4], uint32_t, ConstantVal
 bool sema_swizzle_value(Source *, const Expression *, ExpressionValue *, TypeId, uint32_t, bool, bool, ExpressionValue *);
 bool sema_unary_value(Source *, const Expression *, ExpressionValue *, bool, bool, ExpressionValue *);
 bool sema_builtin_finish(Source *, const Expression *, const NumericBuiltin *, ExpressionValue *, bool, ExpressionValue *);
+bool sema_image_component(Source *, ExpressionValue *);
+bool sema_image_finish(Source *, const Expression *, TypeId, TypeId, ImageOperation, uint32_t, bool, ExpressionValue *);
 TypeId sema_image_result(Source *, const Expression *, const TypeRecord *, ImageOperation);
 bool sema_image_evaluate(const CompilerWorkspace *,TypeId,ImageOperation,uint32_t,bool);
 bool sema_image_argument(Source *, const TypeRecord *, ImageOperation, uint32_t, ExpressionValue *);

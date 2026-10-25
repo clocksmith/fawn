@@ -38,6 +38,19 @@ const POINTER_EXPECTED = [2, 4, 9, 19, 22, 4, 5, 10, 30, 33,
   6, 6, 11, 21, 24, 8, 7, 12, 32, 35];
 const CASES = [
   {
+    label: 'texture gather preserves selected components and four-texel order', texture: 'gather',
+    code: `@group(0) @binding(0) var image: texture_2d<f32>;
+      @group(0) @binding(1) var sampleState: sampler;
+      @group(1) @binding(0) var<storage, read_write> data: array<u32>;
+      @compute @workgroup_size(1) fn main() {
+        let red = vec4u(round(textureGather(0u, image, sampleState, vec2f(0.5)) * 255.0));
+        let blue = vec4u(round(textureGather(2u, image, sampleState, vec2f(0.5)) * 255.0));
+        data[0] = red.x; data[1] = red.y; data[2] = red.z; data[3] = red.w;
+        data[4] = blue.x; data[5] = blue.y; data[6] = blue.z; data[7] = blue.w;
+      }`,
+    expected: [3, 4, 2, 1, 30, 40, 20, 10],
+  },
+  {
     label: 'uniform workgroup loads snapshot aggregate and atomic values before following writes',
     code: `@group(0) @binding(0) var<storage, read_write> data: array<u32>;
       var<workgroup> values: array<vec2u, 2>;
@@ -343,12 +356,16 @@ async function runCase({ label, code, entryPoint = 'main', dispatch = 1, expecte
     size, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
   });
   const inputTexture = texture ? device.createTexture({
-    size: [8, 4], format: texture === 'storage' ? 'r32uint' : 'rgba8unorm',
-    usage: texture === 'storage' ? GPUTextureUsage.STORAGE_BINDING : GPUTextureUsage.TEXTURE_BINDING,
+    size: texture === 'gather' ? [2, 2] : [8, 4], format: texture === 'storage' ? 'r32uint' : 'rgba8unorm',
+    usage: texture === 'storage' ? GPUTextureUsage.STORAGE_BINDING
+      : GPUTextureUsage.TEXTURE_BINDING | (texture === 'gather' ? GPUTextureUsage.COPY_DST : 0),
   }) : null;
   const resources = [];
   try {
     device.queue.writeBuffer(output, 0, new Uint32Array(expected.length).fill(5));
+    if (texture === 'gather') device.queue.writeTexture({ texture: inputTexture },
+      new Uint8Array([1, 5, 10, 255, 2, 6, 20, 255, 3, 7, 30, 255, 4, 8, 40, 255]),
+      { bytesPerRow: 8 }, [2, 2]);
     const module = device.createShaderModule({ code });
     resources.push(module);
     const pipeline = device.createComputePipeline({
@@ -369,9 +386,13 @@ async function runCase({ label, code, entryPoint = 'main', dispatch = 1, expecte
     if (inputTexture) {
       const view = inputTexture.createView();
       const textureLayout = pipeline.getBindGroupLayout(0);
-      const textureBindings = device.createBindGroup({
-        layout: textureLayout, entries: [{ binding: 0, resource: view }],
-      });
+      const textureEntries = [{ binding: 0, resource: view }];
+      if (texture === 'gather') {
+        const sampler = device.createSampler();
+        resources.push(sampler);
+        textureEntries.push({ binding: 1, resource: sampler });
+      }
+      const textureBindings = device.createBindGroup({ layout: textureLayout, entries: textureEntries });
       resources.push(view, textureLayout, textureBindings);
       releaseOwnedResource(textureLayout);
       pass.setBindGroup(0, textureBindings);
