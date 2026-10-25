@@ -38,7 +38,7 @@ runs are not GPU, performance or comparability evidence.
 
 ## Non-goals
 Numeric stability plans beyond decode logits, unappliable quirk actions,
-surface commands, indirect draws, custom render pipelines, multisampled
+surface commands, indirect-buffer draws, custom render pipelines, multisampled
 textures, GPU timestamps, deferred queue sync or default CLI replacement.
 
 ## Freedom

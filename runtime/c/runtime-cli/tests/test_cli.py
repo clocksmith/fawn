@@ -66,6 +66,17 @@ ZIG_RENDER_FINAL_HASH = {
     "uniform_buffer_update_writebuffer_partial_single": "0x427ca82f073f3b6c",
 }
 ZIG_RENDER_ROUNDTRIP_FINAL_HASH = "0x2f3624a9819ae816"
+# doe-zig-runtime (runtime/zig at 58774d6ec, --quirk-mode off, lavapipe,
+# 2026-10-25) final hashes for the indirect draw streams; its native lane draws
+# them directly, so these pin the trace rows, and the readback the indirect work.
+ZIG_INDIRECT_FINAL_HASH = {
+    "render_draw_indexed_indirect_u16": "0xcfe7bd0ae6523e4b",
+    "render_draw_indexed_indirect_u32": "0xcfe7bd0ae6523e4b",
+    "render_draw_indirect_legacy_equivalent": "0x605acc7728ffdc97",
+    "p0_render_multidraw": "0x605acc7728ffdc97",
+    "p0_render_multidraw_indexed": "0xcfe7bd0ae6523e4b",
+}
+ZIG_INDIRECT_ROUNDTRIP_FINAL_HASH = "0x98ece877a3290582"
 PROXY_COLOR = (64, 128, 191, 255)  # draw_call_proxy_fragment.wgsl (0.25, 0.5, 0.75, 1) in rgba8unorm
 CLEAR_COLOR = (0, 0, 0, 255)
 
@@ -93,6 +104,15 @@ def render_roundtrip_stream() -> tuple[list, dict[int, tuple[int, int, int, int]
         readback(702, 703),
     ]
     return stream, {701: (2, 1, 8, 4), 703: (0, 0, 16, 16)}
+
+
+def indirect_roundtrip_stream() -> tuple[list, dict[int, tuple[int, int, int, int]]]:
+    """render_roundtrip_stream()'s targets drawn by draw_indirect and
+    draw_indexed_indirect, whose proxy texels come only from argument records."""
+    stream, scissors = render_roundtrip_stream()
+    stream[1] = {**stream[1], "kind": "draw_indirect"}
+    stream[4] = {**stream[4], "kind": "draw_indexed_indirect", "indexFormat": "uint16"}
+    return stream, scissors
 
 
 def pixels_match(data: bytes, scissor: tuple[int, int, int, int]) -> bool:
@@ -341,6 +361,25 @@ def check_render(binary: Path, work: Path) -> None:
           f"render roundtrip: exit {code} hash {meta.get('hash')}: {stderr}")
     for handle, scissor in scissors.items():
         check(pixels_match((work / f"render_{handle}.bin").read_bytes(), scissor), f"render target {handle} pixels")
+    for name, final_hash in ZIG_INDIRECT_FINAL_HASH.items():
+        code, stderr, meta, rows = run(binary, work, name)
+        draws = json.loads((EXAMPLES / f"{name}_commands.json").read_text())[0]["drawCount"]
+        check(code == 0 and meta["hash"] == final_hash and rows[0]["executionDispatchCount"] == draws,
+              f"{name}: exit {code}, hash {meta.get('hash')} != {final_hash}: {stderr}")
+    stream, scissors = indirect_roundtrip_stream()
+    commands = work / "indirect_roundtrip_commands.json"
+    commands.write_text(json.dumps(stream))
+    readbacks = [arg for handle in scissors for arg in ("--readback-buffer", f"{handle}={work / f'indirect_{handle}.bin'}")]
+    code, stderr, meta, _ = run(binary, work, "indirect_roundtrip", *readbacks, commands=commands)
+    check(code == 0 and meta["hash"] == ZIG_INDIRECT_ROUNDTRIP_FINAL_HASH,
+          f"indirect roundtrip: exit {code} hash {meta.get('hash')}: {stderr}")
+    for handle, scissor in scissors.items():
+        check(pixels_match((work / f"indirect_{handle}.bin").read_bytes(), scissor), f"indirect target {handle} pixels")
+    first_instance = work / "indirect_first_instance_commands.json"
+    scratch_target = {key: value for key, value in stream[1].items() if key != "targetHandle"}
+    first_instance.write_text(json.dumps([{**scratch_target, "firstInstance": 1}]))
+    code, stderr, _, _ = run(binary, work, "indirect_first_instance", commands=first_instance)
+    check(code == 1 and "render_indirect_first_instance" in stderr, f"indirect first instance: exit {code}: {stderr}")
     missing = work / "render_missing_commands.json"
     missing.write_text(json.dumps([{**stream[1], "targetHandle": 799}]))
     code, stderr, _, _ = run(binary, work, "render_missing", commands=missing)
@@ -694,8 +733,9 @@ def main() -> int:
           f"an independent oracle match, alias labels, command repeat, an oracle mismatch, 6 rejections, "
           f"{len(ZIG_COPY_FINAL_HASH)} copy streams, a copy/texture roundtrip read back against host bytes, "
           f"a sampled-texture stream and 2 mip-level copy streams with doe-zig-runtime hashes, 4 copy "
-          f"failures, {len(ZIG_RENDER_FINAL_HASH)} render streams, scissored and indexed draws read back against the "
-          f"proxy and clear colors, a missing render target, {len(ZIG_QUIRK_FINAL_HASH)} quirk-matched streams, active "
+          f"failures, {len(ZIG_RENDER_FINAL_HASH)} render streams, scissored and indexed draws, "
+          f"{len(ZIG_INDIRECT_FINAL_HASH)} indirect draw streams and scissored and indexed indirect draws read back against the "
+          f"proxy and clear colors, an indirect first-instance refusal, a missing render target, {len(ZIG_QUIRK_FINAL_HASH)} quirk-matched streams, active "
           f"staging read back against host bytes, 2 quirk refusals, {len(ZIG_GRID_FINAL_HASH)} dispatch-kind streams "
           f"and a pipeline-reusing grid stream read back against the host oracle, independent repeats, semantic rows with operator records, repro "
           f"bundles and host-checked captures, greedy and sampled numeric stability receipts equal to "

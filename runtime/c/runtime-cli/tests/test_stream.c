@@ -148,6 +148,15 @@ int main(int argc, char **argv)
     assert(!state->indexed && state->has_scissor_width && state->scissor_width == 64 && state->has_stencil_reference);
     assert(state->has_viewport_width && state->viewport_max_depth == 1.0f && state->has_blend_constant);
     doe_stream_free(&stream);
+    parse_file(argv[1], "render_draw_indexed_indirect_u32_commands.json", &stream);
+    const doe_render_draw *indirect = &stream.commands[0].as.render;
+    assert(stream.commands[0].kind == DOE_COMMAND_DRAW_INDEXED_INDIRECT && !strcmp(stream.commands[0].label, "draw_indexed_indirect"));
+    assert(indirect->indexed && indirect->index_uint32 && indirect->index_count == 3 && indirect->draw_count == 500);
+    doe_stream_free(&stream);
+    parse_file(argv[1], "p0_render_multidraw_commands.json", &stream);
+    assert(stream.commands[0].kind == DOE_COMMAND_DRAW_INDIRECT && !stream.commands[0].as.render.indexed);
+    assert(stream.commands[0].as.render.draw_count == 2000 && doe_command_is_render(stream.commands[0].kind));
+    doe_stream_free(&stream);
     parse_file(argv[1], "texture_sampler_write_query_destroy_commands.json", &stream);
     const doe_sampler_desc *sampler = &stream.commands[0].as.sampler;
     assert(stream.commands[0].kind == DOE_COMMAND_SAMPLER_CREATE && sampler->handle == 9100 && sampler->mag_filter == 2);
@@ -164,7 +173,7 @@ int main(int argc, char **argv)
 
     rejects("{}", SIZE_MAX, "array");
     rejects("[1", SIZE_MAX, "syntax");
-    rejects("[{\"kind\":\"draw_indirect\"}]", 0, "not implemented");
+    rejects("[{\"kind\":\"draw_mesh_tasks\"}]", 0, "not implemented");
     rejects("[{\"kind\":\"upload\",\"bytes\":4},{\"kind\":\"map_async\",\"bytes\":4}]", 1, "map_async");
     rejects("[{\"kind\":\"upload\",\"bytes\":4,\"extra\":1}]", 0, "\"extra\"");
     rejects("[{\"kind\":\"upload\"}]", 0, "\"bytes\" is required");
@@ -221,11 +230,13 @@ int main(int argc, char **argv)
     rejects("[{\"kind\":\"render_pass\",\"drawCount\":1,\"viewportMinDepth\":0.5,\"viewportMaxDepth\":0.25}]", 0, "depths");
     rejects("[{\"kind\":\"draw_indexed\",\"drawCount\":1,\"indexData\":[0,1],\"indexCount\":3}]", 0, "exceeds");
     rejects("[{\"kind\":\"draw_indexed\",\"drawCount\":1}]", 0, "index_data");
+    rejects("[{\"kind\":\"draw_indexed_indirect\",\"drawCount\":1}]", 0, "index_data");
+    rejects("[{\"kind\":\"draw_indirect\",\"drawCount\":1,\"indirectOffset\":0}]", 0, "indirectOffset");
     rejects("[{\"kind\":\"render_draw\",\"drawCount\":1,\"indirectBufferHandle\":5}]", 0, "\"indirectBufferHandle\"");
     rejects("[{\"kind\":\"render_draw\",\"drawCount\":1,\"targetFormat\":\"depth24plus\"}]", 0, "target format");
     rejects("[{\"kind\":\"sampler_create\",\"handle\":1,\"magFilter\":\"cubic\"}]", 0, "mag_filter");
     rejects("[{\"kind\":\"sampler_create\",\"handle\":1,\"maxAnisotropy\":0}]", 0, "max_anisotropy");
-    puts("runtime-cli stream: nine example streams, semantic fields, aliases, copy, texture, render and sampler kinds, dispatch kinds and 52 visible "
+    puts("runtime-cli stream: eleven example streams, semantic fields, aliases, copy, texture, render, indirect draw and sampler kinds, dispatch kinds and 54 visible "
         "rejections (host only)");
     return 0;
 }

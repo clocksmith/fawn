@@ -87,9 +87,10 @@ static void usage(FILE *out)
           "doe-c-runtime --plan <plan.json> --workload <id> --trace-jsonl <path> --trace-meta <path>\n"
           "  [--kernel-root <path>] [profile, upload and --readback-buffer arguments as above]\n"
           "  (plan mode, as doe-plan-executor: buffer_write, buffer_load and kernel_dispatch plan steps)\n"
-          "Commands: upload, buffer_write, barrier, kernel_dispatch (WGSL kernels, buffer bindings),\n"
-          "copies in every direction, texture_write, texture_query, texture_destroy (2D single-mip\n"
-          "uncompressed color textures), render_draw and render_pass (the default proxy pipeline),\n"
+          "Commands: upload, buffer_write, barrier, kernel_dispatch (WGSL kernels, buffer and 2D texture\n"
+          "bindings), copies in every direction, texture_write, texture_query, texture_destroy (2D\n"
+          "uncompressed color textures and their mip levels), render_draw, render_pass, draw_indirect and\n"
+          "draw_indexed_indirect (the default proxy pipeline),\n"
           "sampler_create and sampler_destroy. kernel_dispatch semantic fields and captures write operator\n"
           "records; with a trace meta, decode.final_logits dispatches are evaluated for numeric stability and\n"
           "other numeric stability capture plans are refused.\n"
@@ -266,7 +267,7 @@ static bool write_shader_receipts(FILE *out, const doe_runtime *runtime, const d
     bool ok = fputc('[', list) != EOF, any = false, render = false, kernel_seen = false, noop_written = false;
     for (size_t i = 0; ok && i < stream->count; i++) {
         const doe_command *command = &stream->commands[i];
-        if (command->kind == DOE_COMMAND_RENDER_DRAW || command->kind == DOE_COMMAND_RENDER_PASS) render = true;
+        if (doe_command_is_render(command->kind)) render = true;
         bool grid = command->kind == DOE_COMMAND_DISPATCH || command->kind == DOE_COMMAND_DISPATCH_INDIRECT;
         if (grid && !kernel_seen && !noop_written) {
             char *path = NULL, sha[65];
