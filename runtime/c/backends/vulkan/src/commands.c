@@ -441,6 +441,18 @@ void doe_vk_command_spares_clear(doe_vk_context *context) {
     }
 }
 
+/* Returns the pool and fence to the spares (or destroys them) and frees the
+ * shell once no reference or fence holder remains. */
+static void finish(doe_vk_commands *commands) {
+    doe_vk_context *context = commands->context;
+    if (!recycle(commands)) {
+        if (commands->pool != 0) context->vk.vkDestroyCommandPool(context->device, commands->pool, NULL);
+        if (commands->fence != 0) context->vk.vkDestroyFence(context->device, commands->fence, NULL);
+    }
+    free(commands);
+    doe_vk_context_release(context);
+}
+
 doe_vk_status doe_vk_commands_release(doe_vk_commands *commands) {
     if (commands == NULL) return DOE_VK_OK;
     if (commands->state == DOE_VK_SUBMITTED || commands->state == DOE_VK_UNCERTAIN) {
@@ -454,10 +466,8 @@ doe_vk_status doe_vk_commands_release(doe_vk_commands *commands) {
     doe_vk_status surface_status = doe_vk_surface_commands_release(commands);
     if (surface_status != DOE_VK_OK) return surface_status;
     doe_vk_context *context = commands->context;
-    if (!recycle(commands)) {
-        if (commands->pool != 0) context->vk.vkDestroyCommandPool(context->device, commands->pool, NULL);
-        if (commands->fence != 0) context->vk.vkDestroyFence(context->device, commands->fence, NULL);
-    }
+    /* The work is terminal: every resource lease ends with the last reference,
+     * even while a fence holder still waits, so owners see them released. */
     while (commands->dispatches != NULL) {
         doe_vk_dispatch_use *use = commands->dispatches;
         commands->dispatches = use->next;
@@ -473,8 +483,8 @@ doe_vk_status doe_vk_commands_release(doe_vk_commands *commands) {
         doe_vk_buffer_release(use->buffer);
         free(use);
     }
-    free(commands);
-    doe_vk_context_release(context);
+    commands->references = 0;
+    if (commands->fence_holders == 0) finish(commands);
     return DOE_VK_OK;
 }
 
@@ -486,10 +496,15 @@ void doe_vk_commands_abandon(doe_vk_commands *commands, doe_vk_status status) {
 }
 
 doe_vk_status doe_vk_commands_hold(doe_vk_commands *commands) {
-    if (commands == NULL) return DOE_VK_INVALID_ARGUMENT;
-    if (commands->references == UINT32_MAX) return DOE_VK_OUT_OF_MEMORY;
-    ++commands->references;
+    if (commands == NULL || commands->references == 0) return DOE_VK_INVALID_ARGUMENT;
+    if (commands->fence_holders == UINT32_MAX) return DOE_VK_OUT_OF_MEMORY;
+    ++commands->fence_holders;
     return DOE_VK_OK;
+}
+
+void doe_vk_commands_unhold(doe_vk_commands *commands) {
+    if (commands == NULL || commands->fence_holders == 0) abort();
+    if (--commands->fence_holders == 0 && commands->references == 0) finish(commands);
 }
 
 bool doe_vk_commands_in_flight(const doe_vk_commands *commands) {

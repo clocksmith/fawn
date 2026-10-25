@@ -116,6 +116,9 @@ struct doe_vk_commands {
     doe_vk_command_state state;
     bool reusable;
     uint32_t references; /* Holders: creator plus each pending reusable submission. */
+    /* Fence-only waiters (hold/unhold). They keep the fence, pool and struct,
+     * never the recorded uses, which the last reference releases at once. */
+    uint32_t fence_holders;
     doe_vk_error failure;
     bool uses_active;
     /* The queue accepted (or refused) the latest submission: its texture and
