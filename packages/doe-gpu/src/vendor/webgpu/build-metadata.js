@@ -101,8 +101,9 @@ function stringOrNull(value) {
 // build-native-package.py): next to the library as doe-c-manifest.json in the
 // platform package, or the stage root's MANIFEST.json above lib/. A manifest
 // describes the selected library only when its artifacts["lib/<name>"] digest
-// equals that file's sha256. It records provenance, not a Lean-verified build
-// or a proof artifact, so those stay null.
+// equals that file's sha256. Its lean_proof record (from the same Lean inputs
+// runtime/zig/build.zig reads) states whether the build is Lean-verified and its
+// proof artifact digest; a manifest without that record leaves both null.
 function loadDoeCManifest(libraryPath) {
   const libraryDir = dirname(libraryPath);
   const artifactKey = `lib/${basename(libraryPath)}`;
@@ -117,11 +118,12 @@ function loadDoeCManifest(libraryPath) {
     if (typeof recorded !== 'string') continue;
     librarySha256 ??= sha256File(libraryPath);
     if (librarySha256 === null || recorded !== librarySha256) continue;
+    const lean = isObject(manifest.lean_proof) ? manifest.lean_proof : {};
     return {
       source,
       path: metadataPath,
-      leanVerifiedBuild: null,
-      proofArtifactSha256: null,
+      leanVerifiedBuild: typeof lean.leanVerifiedBuild === 'boolean' ? lean.leanVerifiedBuild : null,
+      proofArtifactSha256: stringOrNull(lean.proofArtifactSha256),
       identity: {
         sourceCommit: stringOrNull(manifest.source_commit),
         sourceTree: stringOrNull(manifest.source_tree),

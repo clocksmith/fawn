@@ -15,6 +15,17 @@ PACKAGE = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(PACKAGE)
 
 
+class LeanProofRecordTests(unittest.TestCase):
+    def test_records_zig_provenance_and_no_lean_verified_build(self) -> None:
+        # The repository tree hashes to the provenance its proof artifact records.
+        record = PACKAGE.lean_proof_record(Path(__file__).resolve().parents[3])
+        self.assertIs(record["leanVerifiedBuild"], False)
+        self.assertIsNone(record["proofArtifactSha256"])
+        self.assertTrue(record["proofArtifactProvenanceMatches"])
+        self.assertRegex(record["provenance"]["leanSourceTreeSha256"], r"^[0-9a-f]{64}$")
+        self.assertTrue(str(record["provenance"]["leanToolchainRef"]).startswith("leanprover/lean4:v"))
+
+
 class PackagePreflightTests(unittest.TestCase):
     def test_existing_paths_preserved(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
