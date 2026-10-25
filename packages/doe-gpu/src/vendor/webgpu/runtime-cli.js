@@ -157,7 +157,7 @@ function implementationOfBinary(path) {
  * fallback: an explicit `runtime` option ("zig" or "c") wins; otherwise the
  * selected provider library decides (a doe-c provider from
  * `providerLibraryPath`, `libPath`, DOE_WEBGPU_LIB or DOE_LIB selects
- * doe-c-runtime, any other the Zig CLI). A
+ * doe-c-runtime; absent selection also defaults to C). An explicit legacy provider selects Zig. A
  * configured binary (binPath, DOE_BIN, FAWN_DOE_BIN) named for the other
  * implementation is refused rather than run against the wrong provider.
  */
@@ -178,7 +178,7 @@ export function selectDoeRuntimeImplementation(options = {}) {
     const providerPath = options.providerLibraryPath ?? options.libPath ?? process.env.DOE_WEBGPU_LIB ??
         process.env.DOE_LIB ?? null;
     const flavor = providerPath ? libraryFlavor(providerPath) : "default";
-    const implementation = flavor === "doe-c" ? "c" : "zig";
+    const implementation = flavor === "doe-c" || flavor === "default" ? "c" : "zig";
     if (binaryImplementation && binaryImplementation !== implementation) {
         throw new Error(
             `createDoeRuntime: the selected provider (${flavor}) needs ${RUNTIME_CLIS[implementation].binary}, ` +
@@ -188,7 +188,7 @@ export function selectDoeRuntimeImplementation(options = {}) {
     return { implementation, reason: `provider-${flavor}` };
 }
 
-export function resolveDoeBinaryPath(explicitPath, implementation = "zig") {
+export function resolveDoeBinaryPath(explicitPath, implementation = "c") {
     const cli = RUNTIME_CLIS[implementation];
     if (!cli) throw new Error(`resolveDoeBinaryPath: unknown runtime implementation ${JSON.stringify(implementation)}.`);
     const configured = explicitPath ?? process.env.DOE_BIN ?? process.env.FAWN_DOE_BIN ?? null;
@@ -225,7 +225,7 @@ export function resolveDoeLibraryPath(explicitPath) {
     ]);
 }
 
-export function resolveDoeModuleRunnerPath(explicitPath, { required = true, implementation = "zig" } = {}) {
+export function resolveDoeModuleRunnerPath(explicitPath, { required = true, implementation = "c" } = {}) {
     const binary = implementation === "c" ? "doe-c-module-runner" : "module-core-runner";
     const executable = binary + (process.platform === "win32" ? ".exe" : "");
     const relativePath = implementation === "c"

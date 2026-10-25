@@ -544,3 +544,22 @@ claims that lack their own evidence.
 
 Legacy `@simulatte/webgpu` and `@simulatte/webgpu-doe` names are migration
 history. The package is licensed under Apache-2.0.
+
+### Native source staging without Zig
+
+Native rebuild/staging scripts now default to the committed C package built by
+`runtime/c/tools/build-native-package.py`. The default stage is
+`.cache/doe-c-packages/<HEAD>`; `DOE_C_STAGE` selects another completed stage.
+The builder requires a fresh destination and uses C/C++ tools (Windows additionally
+requires `DXC_ROOT` and optionally `CLANG_CL`). Commit source changes before
+rebuilding: staging checks the canonical manifest's source inventory and file
+hashes plus both runtime/compiler artifact digests, not a Zig compiler hash.
+C libraries retain their `_c` identity and travel with their compiler sibling and
+`doe-c-manifest.json`. Explicit legacy library overrides remain supported; there
+is no automatic fallback to a stale Zig build. These are staging defaults, not
+new platform, browser or physical-GPU qualification claims.
+
+`npm run build:browser-compiler` also defaults to the C browser compiler owner;
+`--provider=zig` is an explicit compatibility choice. Browser acceptance uses
+`runtime/c/compiler/build/doe-emit-wgsl-c` (build it with
+`make -C runtime/c/compiler test-browser`), or `DOE_WGSL_EMITTER` explicitly.

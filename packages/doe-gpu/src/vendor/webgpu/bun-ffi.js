@@ -9,7 +9,8 @@ import { loadDoeBuildMetadata } from "./build-metadata.js";
 import {
     PACKAGE_ROOT,
     WORKSPACE_ROOT,
-    libraryBasenamesForPlatform,
+    cLibraryBasenamesForPlatform,
+    cWorkspaceLibraryCandidates,
     resolvePlatformPackageLibraryPath,
     isInstalledPackageRoot,
 } from "./platform-package.js";
@@ -269,24 +270,18 @@ function resolveDoeLibraryPath() {
         requireFn: require,
         workspaceRoot: WORKSPACE_ROOT,
     });
-    const libraryNames = libraryBasenamesForPlatform();
+    const libraryNames = cLibraryBasenamesForPlatform();
     // Absolute, so the library checked here is the one dlopen opens.
     const configuredCandidates = [
         process.env.DOE_WEBGPU_LIB,
         process.env.DOE_LIB,
     ].map((path) => (path ? resolve(path) : path));
-    const workspaceCandidates = [
-        ...libraryNames.map((name) => resolve(WORKSPACE_ROOT, "runtime", "zig", "zig-out", "lib", name)),
-        ...libraryNames.map((name) => resolve(WORKSPACE_ROOT, "zig", "zig-out", "lib", name)),
-    ];
+    const workspaceCandidates = cWorkspaceLibraryCandidates(WORKSPACE_ROOT);
     const packagedCandidates = [
         packagedLibraryPath,
         ...libraryNames.map((name) => resolve(PACKAGE_ROOT, "prebuilds", `${process.platform}-${process.arch}`, name)),
     ];
-    const cwdCandidates = [
-        ...libraryNames.map((name) => resolve(process.cwd(), "runtime", "zig", "zig-out", "lib", name)),
-        ...libraryNames.map((name) => resolve(process.cwd(), "zig", "zig-out", "lib", name)),
-    ];
+    const cwdCandidates = cWorkspaceLibraryCandidates(process.cwd());
     // An explicit override is that provider or nothing (see index.js).
     const configured = configuredCandidates.find(Boolean);
     if (configured) return existsSync(configured) ? configured : null;

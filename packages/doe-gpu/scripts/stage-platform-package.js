@@ -12,8 +12,9 @@ import {
   statSync,
   writeFileSync,
 } from 'node:fs';
+import { cStageRoot, cLibraryName, cRuntimeDirectory, cStageFiles } from './c-native-stage.js';
 import { createHash } from 'node:crypto';
-import { basename, dirname, resolve, sep } from 'node:path';
+import { dirname, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 // Repo-relative root of the WGSL compiler source tree whose sha256 the
@@ -154,6 +155,11 @@ function currentHostTag() {
 }
 
 function main() {
+  for (const name of ['DOE_WEBGPU_LIB', 'DOE_LIB', 'DOE_NAPI_ADDON', 'DOE_BUILD_METADATA']) {
+    if (process.env[name] && !existsSync(process.env[name])) {
+      throw new Error(`doe-gpu: explicit ${name} does not exist: ${process.env[name]}`);
+    }
+  }
   const targetPackageRoot = process.cwd();
   const packageJsonPath = resolve(targetPackageRoot, 'package.json');
   if (!existsSync(packageJsonPath)) {
@@ -176,9 +182,7 @@ function main() {
 
   if (
     targetHostTag !== expectedCurrentHost
-    && !process.env.DOE_NAPI_ADDON
-    && !process.env.DOE_WEBGPU_LIB
-    && !process.env.DOE_LIB
+    && (!process.env.DOE_NAPI_ADDON || (!process.env.DOE_WEBGPU_LIB && !process.env.DOE_LIB))
   ) {
     throw new Error(
       `doe-gpu: ${packageJson.name} targets ${targetHostTag}, but the current host is ${expectedCurrentHost}. ` +
@@ -194,27 +198,25 @@ function main() {
   const libraryPath = resolveExistingPath([
     process.env.DOE_WEBGPU_LIB,
     process.env.DOE_LIB,
-    resolve(workspaceRoot, 'runtime', 'zig', 'zig-out', 'lib', libraryFilename),
+    resolve(cStageRoot(workspaceRoot), cRuntimeDirectory(targetPlatform), cLibraryName(targetPlatform)),
   ], `${packageJson.name} shared library`);
   const binRoot = resolve(targetPackageRoot, 'bin');
   // A C runtime library (from a runtime/c package stage, DOE_WEBGPU_LIB=<stage>/lib/
   // libwebgpu_doe_c.*) keeps its own name, travels with its sibling libdoe_compiler
   // (loaded through $ORIGIN) and records the stage MANIFEST.json instead of Zig
-  // build metadata. The Zig drop-in remains the default when nothing is named.
+  // build metadata. The C stage is the default; a Zig artifact must be explicitly named.
   const cLibrary = /(^|[\\/])(lib)?webgpu_doe_c\.(so|dylib|dll)$/.test(libraryPath);
   if (cLibrary) {
     const libraryDir = dirname(libraryPath);
-    const extension = libraryPath.slice(libraryPath.lastIndexOf('.'));
-    const compilerPath = resolveExistingPath([
-      resolve(libraryDir, `libdoe_compiler${extension}`),
-      resolve(libraryDir, `doe_compiler${extension}`),
-    ], `${packageJson.name} C compiler library`);
-    const manifestPath = resolveExistingPath([resolve(libraryDir, '..', 'MANIFEST.json')], `${packageJson.name} C stage manifest`);
+    const { files, manifestPath } = cStageFiles(libraryPath, workspaceRoot);
     rmSync(binRoot, { recursive: true, force: true });
     mkdirSync(binRoot, { recursive: true });
     copyFileSync(addonPath, resolve(binRoot, 'doe_napi.node'));
-    copyFileSync(libraryPath, resolve(binRoot, basename(libraryPath)));
-    copyFileSync(compilerPath, resolve(binRoot, basename(compilerPath)));
+    for (const file of files) {
+      const target = resolve(binRoot, file.target);
+      mkdirSync(dirname(target), { recursive: true });
+      copyFileSync(file.source, target);
+    }
     copyFileSync(manifestPath, resolve(binRoot, 'doe-c-manifest.json'));
     console.log(`doe-gpu: staged ${packageJson.name} with the C runtime from ${dirname(libraryDir)}`);
     return;

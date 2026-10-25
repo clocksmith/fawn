@@ -28,8 +28,8 @@ if (!platformPackageName) {
 
 const platformPackageRoot = resolve(packagesRoot, platformPackageName);
 const platformLibraryName = process.platform === 'darwin'
-  ? 'libwebgpu_doe.dylib'
-  : 'libwebgpu_doe.so';
+  ? 'libwebgpu_doe_c.dylib'
+  : 'libwebgpu_doe_c.so';
 if (!existsSync(resolve(platformPackageRoot, 'bin', platformLibraryName))) {
   console.log(`installed native resolution: skipped unstaged ${platformPackageName}`);
   process.exit(0);

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // createDoeRuntime selects its runtime CLI without fallback: an explicit
 // `runtime` option wins, otherwise a doe-c provider selects doe-c-runtime and
-// any other provider the Zig CLI; a configured binary for the other
+// an explicit legacy provider the Zig CLI; absent provider defaults C. A binary for the other
 // implementation, a missing configured binary and an unknown runtime are
 // refused. Every run result names the implementation that ran. Module runs
 // select the same implementation without fallback, and the Doe
@@ -55,8 +55,12 @@ try {
     assert.equal(runtime.runtimeSelectionReason, 'provider-doe-dropin');
     assert.equal(runtime.runRaw([]).runtimeImplementation, 'zig');
   });
-  withEnv({ DOE_BIN: zig }, () => {
+  withEnv({ DOE_BIN: c }, () => {
     assert.equal(createDoeRuntime().runtimeSelectionReason, 'provider-default');
+    assert.equal(createDoeRuntime().runtimeImplementation, 'c');
+  });
+  withEnv({ DOE_BIN: zig }, () => {
+    assert.throws(() => createDoeRuntime(), /needs doe-c-runtime/);
   });
   withEnv({ DOE_WEBGPU_LIB: zigLibrary }, () => {
     const runtime = createDoeRuntime({ runtime: 'c', binPath: c });

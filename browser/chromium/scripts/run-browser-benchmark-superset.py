@@ -62,27 +62,17 @@ def host_doe_lib_extension() -> str:
 
 
 def default_doe_lib() -> Path:
-    preferred_ext = host_doe_lib_extension()
-    candidates: list[Path] = []
-    env_doe_lib = os.getenv("FAWN_DOE_LIB")
-    if env_doe_lib:
-        candidates.append(Path(env_doe_lib))
-    candidates.extend(
-        [
-            REPO_ROOT / f"runtime/zig/zig-out/lib/libwebgpu_doe_full.{preferred_ext}",
-            REPO_ROOT / "runtime/zig/zig-out/lib/libwebgpu_doe_full.so",
-            REPO_ROOT / "runtime/zig/zig-out/lib/libwebgpu_doe_full.dylib",
-            REPO_ROOT / "runtime/zig/zig-out/lib/libwebgpu_doe_full.dll",
-            REPO_ROOT / f"runtime/zig/zig-out/lib/libwebgpu_doe.{preferred_ext}",
-            REPO_ROOT / "runtime/zig/zig-out/lib/libwebgpu_doe.so",
-            REPO_ROOT / "runtime/zig/zig-out/lib/libwebgpu_doe.dylib",
-            REPO_ROOT / "runtime/zig/zig-out/lib/libwebgpu_doe.dll",
-        ]
+    """Use the same C-only launcher resolver; explicit compatibility stays explicit."""
+    result = subprocess.run(
+        ["bash", "-c", 'source "$1"; fawn_resolve_doe_lib', "fawn-library",
+         str(REPO_ROOT / "browser/chromium/scripts/lane-paths.sh")],
+        check=True, capture_output=True, text=True, timeout=15,
     )
-    for candidate in candidates:
-        if candidate.exists():
-            return candidate
-    return candidates[0]
+    path = result.stdout.strip()
+    if not path or "\n" in path:
+        raise ValueError("Fawn library resolver returned an invalid path")
+    return Path(path)
+
 
 
 def default_chrome_binary() -> Path:

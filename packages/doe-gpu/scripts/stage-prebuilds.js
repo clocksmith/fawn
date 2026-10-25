@@ -10,6 +10,7 @@ import {
   rmSync,
   writeFileSync,
 } from 'node:fs';
+import { cStageRoot, cLibraryName, cRuntimeDirectory, cStageFiles } from './c-native-stage.js';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -81,16 +82,31 @@ function copyRequiredFile(sourcePath, targetPath, label) {
 }
 
 function main() {
+  for (const name of ['DOE_WEBGPU_LIB', 'DOE_LIB', 'DOE_NAPI_ADDON', 'DOE_BUILD_METADATA']) {
+    if (process.env[name] && !existsSync(process.env[name])) {
+      throw new Error(`doe-gpu: explicit ${name} does not exist: ${process.env[name]}`);
+    }
+  }
   const libraryExt = resolveLibraryExtension();
   const libraryPath = resolveExistingPath([
     process.env.DOE_WEBGPU_LIB,
     process.env.DOE_LIB,
-    resolve(WORKSPACE_ROOT, 'runtime', 'zig', 'zig-out', 'lib', `libwebgpu_doe.${libraryExt}`),
+    resolve(cStageRoot(WORKSPACE_ROOT), cRuntimeDirectory(), cLibraryName()),
   ], 'Doe shared library');
   const addonPath = resolveExistingPath([
+    process.env.DOE_NAPI_ADDON,
     resolve(PACKAGE_ROOT, 'build', 'Release', 'doe_napi.node'),
     resolve(PACKAGE_ROOT, 'src', 'vendor', 'build', 'Release', 'doe_napi.node'),
   ], 'Doe N-API addon');
+  if (/(^|[\\/])(lib)?webgpu_doe_c\.(so|dylib|dll)$/.test(libraryPath)) {
+    const { files, manifestPath } = cStageFiles(libraryPath, WORKSPACE_ROOT);
+    rmSync(PREBUILD_ROOT, { recursive: true, force: true });
+    mkdirSync(PREBUILD_ROOT, { recursive: true });
+    copyRequiredFile(addonPath, resolve(PREBUILD_ROOT, 'doe_napi.node'), 'native addon');
+    for (const file of files) copyRequiredFile(file.source, resolve(PREBUILD_ROOT, file.target), 'C package dependency');
+    copyRequiredFile(manifestPath, resolve(PREBUILD_ROOT, 'doe-c-manifest.json'), 'C manifest');
+    return;
+  }
   const metadataPath = resolveExistingPath([
     process.env.DOE_BUILD_METADATA,
     resolve(WORKSPACE_ROOT, 'runtime', 'zig', 'zig-out', 'share', 'doe-build-metadata.json'),

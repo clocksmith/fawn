@@ -16,7 +16,7 @@ const { chromium } = await import(process.env.DOE_PLAYWRIGHT_MODULE ?? 'playwrig
 await mkdir(output, { recursive: true });
 const source = resolve(packageRoot, 'examples/browser-compiler/particles.wgsl');
 const offlinePath = resolve(output, 'particles.optimized.wgsl');
-const emitted = spawnSync(process.env.DOE_WGSL_EMITTER ?? resolve(root, 'runtime/zig/zig-out/bin/doe-emit-wgsl'),
+const emitted = spawnSync(process.env.DOE_WGSL_EMITTER ?? resolve(root, 'runtime/c/compiler/build/doe-emit-wgsl-c'),
   [source, offlinePath], { encoding: 'utf8' });
 assert.equal(emitted.status, 0, emitted.stderr);
 const offline = await readFile(offlinePath, 'utf8');

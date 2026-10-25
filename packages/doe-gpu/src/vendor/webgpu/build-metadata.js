@@ -106,7 +106,7 @@ function stringOrNull(value) {
 // proof artifact digest; a manifest without that record leaves both null.
 function loadDoeCManifest(libraryPath) {
   const libraryDir = dirname(libraryPath);
-  const artifactKey = `lib/${basename(libraryPath)}`;
+  const artifactKey = `${libraryPath.endsWith('.dll') ? 'bin' : 'lib'}/${basename(libraryPath)}`;
   let librarySha256;
   for (const [metadataPath, source] of [
     [resolve(libraryDir, 'doe-c-manifest.json'), 'c-package'],

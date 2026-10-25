@@ -99,7 +99,7 @@ import {
       writeFileSync(path.join(platformRoot, 'bin', stagedName), content);
     }
     writeAddonSourceStamp(path.join(packageRoot, 'build', 'Release'), packageRoot, workspace);
-    const options = { platformPackageRoot: platformRoot, packageRoot, workspaceRoot: workspace, libraryFilename: 'libwebgpu_doe.so' };
+    const options = { platformPackageRoot: platformRoot, packageRoot, workspaceRoot: workspace, libraryFilename: 'libwebgpu_doe.so', provider: 'zig' };
     assert.deepEqual(stagedPlatformProblems(options), [], 'fresh staging has no problems');
 
     writeFileSync(path.join(zigOut, 'lib', 'libwebgpu_doe.so'), 'library v2');
