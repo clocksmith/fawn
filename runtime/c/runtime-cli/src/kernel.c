@@ -88,7 +88,9 @@ static bool same_signature(const pipeline_entry *entry, const doe_kernel_binding
     if (entry->signature_count != count) return false;
     for (size_t i = 0; i < count; i++) {
         const doe_kernel_binding *a = &entry->signature[i], *b = &bindings[i];
-        if (a->group != b->group || a->binding != b->binding || a->buffer_type != b->buffer_type) return false;
+        if (a->group != b->group || a->binding != b->binding || a->resource != b->resource || a->buffer_type != b->buffer_type ||
+            a->sample_type != b->sample_type || a->storage_access != b->storage_access || a->has_format != b->has_format ||
+            (a->has_format && a->format != b->format)) return false;
     }
     return true;
 }
@@ -139,7 +141,16 @@ static bool build_pipeline(doe_runtime *runtime, pipeline_entry *entry, const ch
             WGPUBindGroupLayoutEntry layout_entry = WGPU_BIND_GROUP_LAYOUT_ENTRY_INIT;
             layout_entry.binding = bindings[i].binding;
             layout_entry.visibility = WGPUShaderStage_Compute;
-            layout_entry.buffer.type = binding_type(bindings[i].buffer_type);
+            if (bindings[i].resource == DOE_RESOURCE_TEXTURE) {
+                layout_entry.texture.sampleType = (WGPUTextureSampleType)bindings[i].sample_type;
+                layout_entry.texture.viewDimension = WGPUTextureViewDimension_2D;
+            } else if (bindings[i].resource == DOE_RESOURCE_STORAGE_TEXTURE) {
+                layout_entry.storageTexture.access = (WGPUStorageTextureAccess)bindings[i].storage_access;
+                layout_entry.storageTexture.format = runtime_webgpu_format(bindings[i].format);
+                layout_entry.storageTexture.viewDimension = WGPUTextureViewDimension_2D;
+            } else {
+                layout_entry.buffer.type = binding_type(bindings[i].buffer_type);
+            }
             layout_entries[used++] = layout_entry;
         }
         WGPUBindGroupLayoutDescriptor layout = WGPU_BIND_GROUP_LAYOUT_DESCRIPTOR_INIT;
@@ -245,17 +256,47 @@ static WGPUCommandBuffer encode(doe_runtime *runtime, const pipeline_entry *pipe
     return encode_dispatches(runtime, pipeline, groups, command, count, NULL);
 }
 
+/* A 2D view of the binding's texture (created or replaced as Zig's
+ * getOrCreateTextureFromBinding does), in the binding's or the texture's format. */
+static WGPUTextureView binding_view(doe_runtime *runtime, const doe_kernel_binding *binding, doe_trace_execution *execution)
+{
+    WGPUTextureUsage usage = binding->resource == DOE_RESOURCE_TEXTURE ? WGPUTextureUsage_TextureBinding :
+        WGPUTextureUsage_StorageBinding;
+    doe_texture_format view_format;
+    WGPUTexture texture = runtime_binding_texture(runtime, binding->handle, usage, binding->has_format, binding->format,
+        &view_format, execution);
+    if (!texture) return NULL;
+    WGPUTextureViewDescriptor descriptor = WGPU_TEXTURE_VIEW_DESCRIPTOR_INIT;
+    descriptor.format = runtime_webgpu_format(view_format);
+    descriptor.dimension = WGPUTextureViewDimension_2D;
+    WGPUTextureView view = wgpuTextureCreateView(texture, &descriptor);
+    if (!view) runtime_fail(execution, "kernel_texture_view_failed", "texture %llu view was not created", (unsigned long long)binding->handle);
+    return view;
+}
+
 static bool create_groups(doe_runtime *runtime, const pipeline_entry *pipeline, const doe_command *command,
     WGPUBindGroup *groups, doe_trace_execution *execution)
 {
     const doe_kernel_binding *bindings = command->as.dispatch.bindings;
     size_t count = command->as.dispatch.binding_count;
     WGPUBindGroupEntry entries[MAX_GROUP_BINDINGS];
+    WGPUTextureView views[MAX_GROUP_BINDINGS];
     for (uint32_t g = 0; g < pipeline->group_count; g++) {
-        size_t used = 0;
+        size_t used = 0, view_count = 0;
+        bool views_ok = true;
         for (size_t i = 0; i < count && used < MAX_GROUP_BINDINGS; i++) {
             const doe_kernel_binding *binding = &bindings[i];
             if (binding->group != g) continue;
+            if (binding->resource != DOE_RESOURCE_BUFFER) {
+                WGPUTextureView view = binding_view(runtime, binding, execution);
+                if (!view) { views_ok = false; break; }
+                views[view_count++] = view;
+                WGPUBindGroupEntry entry = WGPU_BIND_GROUP_ENTRY_INIT;
+                entry.binding = binding->binding;
+                entry.textureView = view;
+                entries[used++] = entry;
+                continue;
+            }
             buffer_entry *buffer = runtime_find_buffer(runtime, binding->handle);
             if (!buffer) {
                 if (binding->buffer_size == UINT64_MAX)
@@ -277,7 +318,9 @@ static bool create_groups(doe_runtime *runtime, const pipeline_entry *pipeline, 
         descriptor.layout = pipeline->groups[g];
         descriptor.entryCount = used;
         descriptor.entries = entries;
-        groups[g] = wgpuDeviceCreateBindGroup(runtime->device, &descriptor);
+        groups[g] = views_ok ? wgpuDeviceCreateBindGroup(runtime->device, &descriptor) : NULL;
+        for (size_t v = 0; v < view_count; v++) wgpuTextureViewRelease(views[v]);
+        if (!views_ok) return false;
         if (!groups[g]) return runtime_fail(execution, "kernel_bind_group_failed", "bind group %u was not created", g);
     }
     return true;
@@ -372,6 +415,9 @@ bool runtime_validate_oracle(doe_runtime *runtime, const doe_command *command, c
         if (binding->group == oracle->group && binding->binding == oracle->binding) target = binding;
     }
     if (!target) return runtime_fail(execution, "output_oracle_binding_missing", "the oracle binding %u.%u is not bound", oracle->group, oracle->binding);
+    for (size_t i = 0; i < command->as.dispatch.binding_count; i++)
+        if (command->as.dispatch.bindings[i].resource != DOE_RESOURCE_BUFFER)
+            return runtime_fail(execution, "output_oracle_texture_bindings", "isolated oracles over texture bindings are not implemented");
     if (target->buffer_size == UINT64_MAX || target->buffer_size == 0 || target->buffer_size % 4 != 0)
         return runtime_fail(execution, "output_oracle_buffer_size", "the oracle binding needs an explicit buffer_size multiple of 4");
     pipeline_entry *pipeline = prepare_pipeline(runtime, command, execution);

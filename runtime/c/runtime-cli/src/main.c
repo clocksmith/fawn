@@ -313,7 +313,9 @@ static bool write_shader_receipts(FILE *out, const doe_runtime *runtime, const d
     }
     ok = fputc(']', list) != EOF && ok;
     ok = fclose(list) == 0 && ok;
-    if (ok && any) {
+    /* An empty list when nothing compiles, so two runtimes that compile no
+     * shader still agree on the receipt hash. */
+    if (ok) {
         uint8_t digest[32];
         char hash[65];
         doe_sha256(bytes, length, digest);

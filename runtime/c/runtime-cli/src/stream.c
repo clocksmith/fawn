@@ -203,12 +203,59 @@ static bool parse_barrier(const doe_json_value *object, doe_command *command, si
         &command->as.barrier.dependency_count, index, error);
 }
 
+/* command_parse_helpers.zig parseTextureSampleType / parseStorageTextureAccess,
+ * for 2D views (the only view dimension admitted). */
+static bool parse_texture_binding(const doe_json_value *object, const char *kind, doe_kernel_binding *out, size_t index,
+    size_t position, doe_stream_error *error)
+{
+    static const char *const buffer_only[] = {"buffer_offset", "bufferOffset", "buffer_size", "bufferSize", "buffer_type",
+        "bufferType", NULL};
+    for (const char *const *name = buffer_only; *name; name++)
+        if (doe_json_member_value(object, *name))
+            return stream_reject(error, index, "bindings[%zu] texture binding has buffer field \"%s\"", position, *name);
+    out->resource = !strcasecmp(kind, "texture") ? DOE_RESOURCE_TEXTURE : DOE_RESOURCE_STORAGE_TEXTURE;
+    out->buffer_size = UINT64_MAX; /* Zig's WGPUWholeSize default for non-buffer bindings. */
+    const char *dimension = NULL, *sample = NULL, *access = NULL, *format = NULL;
+    if (!stream_read_string(object, "texture_view_dimension", "textureViewDimension", &dimension, index, error) ||
+        !stream_read_string(object, "texture_sample_type", "textureSampleType", &sample, index, error) ||
+        !stream_read_string(object, "storage_access", "storageAccess", &access, index, error) ||
+        !stream_read_string(object, "texture_format", "textureFormat", &format, index, error)) return false;
+    if (dimension && strcasecmp(dimension, "2d"))
+        return stream_reject(error, index, "bindings[%zu] view dimension \"%s\" is not implemented (2d only)", position, dimension);
+    out->has_format = format != NULL;
+    if (format && !stream_texture_format(format, &out->format))
+        return stream_reject(error, index, "bindings[%zu] texture format \"%s\" is not implemented by doe-c-runtime", position, format);
+    if (out->resource == DOE_RESOURCE_TEXTURE) {
+        if (access) return stream_reject(error, index, "bindings[%zu] a sampled texture has no storage_access", position);
+        static const struct { const char *name; uint32_t value; } samples[] = {{"float", 2}, {"unfilterable-float", 3},
+            {"unfilterable_float", 3}, {"depth", 4}, {"sint", 5}, {"uint", 6}};
+        out->sample_type = 2; /* An absent sample type is Undefined in Zig, which webgpu.h defaults to float. */
+        bool known = !sample;
+        for (size_t i = 0; sample && i < sizeof(samples) / sizeof(samples[0]); i++)
+            if (!strcasecmp(sample, samples[i].name)) { out->sample_type = samples[i].value; known = true; }
+        if (!known) return stream_reject(error, index, "bindings[%zu] texture_sample_type \"%s\" is not known", position, sample);
+    } else {
+        if (sample) return stream_reject(error, index, "bindings[%zu] a storage texture has no texture_sample_type", position);
+        if (!format) return stream_reject(error, index, "bindings[%zu] a storage texture needs texture_format", position);
+        static const struct { const char *name; uint32_t value; } accesses[] = {{"write_only", 2}, {"write-only", 2},
+            {"read_only", 3}, {"read-only", 3}, {"read_write", 4}, {"read-write", 4}};
+        out->storage_access = 2;
+        bool known = !access;
+        for (size_t i = 0; access && i < sizeof(accesses) / sizeof(accesses[0]); i++)
+            if (!strcasecmp(access, accesses[i].name)) { out->storage_access = accesses[i].value; known = true; }
+        if (!known) return stream_reject(error, index, "bindings[%zu] storage_access \"%s\" is not known", position, access);
+    }
+    return true;
+}
+
 static bool parse_binding(const doe_json_value *object, doe_kernel_binding *out, size_t index, size_t position,
     doe_stream_error *error)
 {
     static const char *const allowed[] = {"binding", "group", "group_index", "groupIndex", "kind", "resource_kind",
         "resourceKind", "handle", "resource_handle", "resourceHandle", "visibility", "buffer_offset", "bufferOffset",
-        "buffer_size", "bufferSize", "buffer_type", "bufferType", NULL};
+        "buffer_size", "bufferSize", "buffer_type", "bufferType", "texture_sample_type", "textureSampleType",
+        "texture_view_dimension", "textureViewDimension", "storage_access", "storageAccess", "texture_format",
+        "textureFormat", NULL};
     if (object->kind != DOE_JSON_OBJECT) return stream_reject(error, index, "bindings[%zu] must be an object", position);
     if (!stream_only_members(object, allowed, index, "kernel_dispatch binding", error)) return false;
     uint64_t value;
@@ -227,12 +274,21 @@ static bool parse_binding(const doe_json_value *object, doe_kernel_binding *out,
     if (!stream_read_string(object, "resourceKind", NULL, &kind_camel, index, error)) return false;
     if (kind && kind_camel) return stream_reject(error, index, "bindings[%zu] names its kind more than once", position);
     if (!kind) kind = kind_camel;
-    if (kind && strcasecmp(kind, "buffer") != 0)
-        return stream_reject(error, index, "bindings[%zu] kind \"%s\" is not implemented by doe-c-runtime (buffers only)", position, kind);
     const char *visibility = NULL;
     if (!stream_read_string(object, "visibility", NULL, &visibility, index, error)) return false;
     if (visibility && strcasecmp(visibility, "compute") != 0)
         return stream_reject(error, index, "bindings[%zu] visibility must be \"compute\"", position);
+    if (kind && (!strcasecmp(kind, "texture") || !strcasecmp(kind, "storage_texture")))
+        return parse_texture_binding(object, kind, out, index, position, error);
+    if (kind && strcasecmp(kind, "buffer") != 0)
+        return stream_reject(error, index, "bindings[%zu] kind \"%s\" is not implemented by doe-c-runtime (buffer, texture, "
+            "storage_texture)", position, kind);
+    static const char *const texture_only[] = {"texture_sample_type", "textureSampleType", "texture_view_dimension",
+        "textureViewDimension", "storage_access", "storageAccess", "texture_format", "textureFormat", NULL};
+    for (const char *const *name = texture_only; *name; name++)
+        if (doe_json_member_value(object, *name))
+            return stream_reject(error, index, "bindings[%zu] buffer binding has texture field \"%s\"", position, *name);
+    out->resource = DOE_RESOURCE_BUFFER;
     const char *type = NULL;
     if (!stream_read_string(object, "buffer_type", "bufferType", &type, index, error)) return false;
     if (!type) return stream_reject(error, index, "bindings[%zu] needs \"buffer_type\" (uniform, readonly or storage)", position);

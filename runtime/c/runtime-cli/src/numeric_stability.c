@@ -88,11 +88,11 @@ bool doe_ns_layout_fingerprint(const doe_command *command, char out[65])
     for (size_t i = 0; ok && i < command->as.dispatch.binding_count; i++) {
         const doe_kernel_binding *b = &command->as.dispatch.bindings[i];
         ok = (!i || fputc(',', stream) != EOF) &&
-            fprintf(stream, "{\"binding\":%" PRIu32 ",\"group\":%" PRIu32 ",\"resourceKind\":0,\"visibility\":4,"
+            fprintf(stream, "{\"binding\":%" PRIu32 ",\"group\":%" PRIu32 ",\"resourceKind\":%d,\"visibility\":4,"
                 "\"bufferOffset\":%" PRIu64 ",\"bufferSize\":%" PRIu64 ",\"bufferType\":%u,\"textureSampleType\":1,"
                 "\"textureViewDimension\":0,\"storageTextureAccess\":1,\"textureAspect\":0,\"textureFormat\":0,"
-                "\"textureMultisampled\":false}", b->binding, b->group, b->buffer_offset, b->buffer_size,
-                types[b->buffer_type]) >= 0;
+                "\"textureMultisampled\":false}", b->binding, b->group, (int)b->resource, b->buffer_offset, b->buffer_size,
+                b->resource == DOE_RESOURCE_BUFFER ? types[b->buffer_type] : 1u) >= 0;
     }
     ok = fputc(']', stream) != EOF && ok;
     return hash_stream(stream, &bytes, &length, out) && ok;

@@ -24,7 +24,13 @@ $(BUILD)/doe-c-runtime --commands examples/rmsnorm_tree_commands.json --execute 
 
 - Commands: `upload` (`buffer_upload`), `buffer_write` (`write_buffer`,
   `queue_write_buffer`), `barrier`, and `kernel_dispatch` with WGSL kernels,
-  buffer bindings (`uniform`, `readonly`/`read_only_storage`, `storage`) and
+  buffer bindings (`uniform`, `readonly`/`read_only_storage`, `storage`), 2D
+  `texture` bindings (`texture_sample_type` float, unfilterable-float, depth,
+  sint or uint) and 2D `storage_texture` bindings (`storage_access`
+  write_only, read_only or read_write, with a `texture_format`), whose texture
+  is the handle's when its usage covers the binding and its format matches, else
+  one of the same shape (1x1 when missing) with the union of usages replaces it,
+  as doe-zig-runtime's `getOrCreateTextureFromBinding` does, and
   `repeatSynchronization` `dependent` or `independent` (the repeats do not read
   each other's results; doe-zig-runtime then drops its Vulkan barriers, while
   webgpu.h has no barrier control, so this CLI records the same ordered
@@ -43,9 +49,14 @@ $(BUILD)/doe-c-runtime --commands examples/rmsnorm_tree_commands.json --execute 
   `copy_texture_to_texture`, `buffer_copy`, `texture_copy`, ... or an explicit
   `direction`), `texture_write` (`write_texture`, `queue_write_texture`),
   `texture_query` (`query_texture`) and `texture_destroy` (`destroy_texture`),
-  for 2D single-mip single-sample textures in `r8unorm`, `rg8unorm`,
+  for 2D single-sample textures in `r8unorm`, `rg8unorm`,
   `rgba8unorm`, `rgba8unorm-srgb`, `bgra8unorm`, `r32uint`, `r32float`,
-  `rgba16float` and `rgba32float`. Resources follow doe-zig-runtime's WebGPU
+  `rgba16float` and `rgba32float`. A copy side may name a `mip_level`: the
+  texture is created with at least that many levels plus one (a texture with
+  fewer is replaced) and the copy uses that level's extent. doe-zig-runtime's
+  WebGPU path creates single-level textures and copies the full extent, so it
+  cannot copy a level above 0; its native lane reports these copies
+  unsupported. Resources follow doe-zig-runtime's WebGPU
   command path: a missing copy source is created zero-filled, a buffer too small
   or a texture of another shape is replaced (its contents are lost), an undefined
   copy format is `r8unorm`, and a buffer side's missing row pitch falls back to
@@ -133,7 +144,7 @@ $(BUILD)/doe-c-runtime --commands examples/rmsnorm_tree_commands.json --execute 
   nonfallback adapter, else the fallback (CPU) adapter.
 
 Every other command kind (indirect draws, surfaces,
-`map_async`, `async_diagnostics` and the rest), field, texture dimension, mip level, sample count, aspect, format, oracle
+`map_async`, `async_diagnostics` and the rest), field, texture dimension, sample count, aspect, format, oracle
 scope, `repeatSynchronization` value, semantic field on another kind, explicit
 `numericStability` annotation and argument is rejected with exit 2 before
 device work.

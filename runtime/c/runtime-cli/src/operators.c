@@ -76,7 +76,7 @@ static bool write_command_shape(FILE *out, const doe_command *command)
         uint64_t bytes = 0;
         for (size_t i = 0; i < binding_count; i++) {
             uint64_t size = bindings[i].buffer_size;
-            if (size == UINT64_MAX) continue; /* The whole buffer: no declared size. */
+            if (bindings[i].resource != DOE_RESOURCE_BUFFER || size == UINT64_MAX) continue; /* Whole or not a buffer. */
             bytes = bytes > UINT64_MAX - size ? UINT64_MAX : bytes + size;
         }
         ok = fprintf(out, ",\"bindingCount\":%zu,\"bindingBufferBytes\":%" PRIu64, binding_count, bytes) >= 0;

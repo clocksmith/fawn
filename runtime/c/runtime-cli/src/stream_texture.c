@@ -1,8 +1,9 @@
 /* SPDX-License-Identifier: MIT
  * Copy and texture command parsing, following doe-zig-runtime's
  * command_parse_copy.zig and command_json_extra.zig field names and defaults.
- * Only 2D, single-mip, single-sample uncompressed color textures are admitted;
- * other dimensions, mips, sample counts, aspects and formats are rejected. */
+ * Only 2D, single-sample uncompressed color textures are admitted; copies may
+ * name a mip level; other dimensions, sample counts, aspects and formats are
+ * rejected. */
 #include "stream_internal.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -187,7 +188,13 @@ static bool parse_side(const doe_json_value *object, const char *side, bool text
     n = side_field(side, "view_dimension", "ViewDimension");
     if (!require_string(object, n.snake, n.camel, t->depth > 1 ? "2d-array" : "2d", index, error)) return false;
     n = side_field(side, "mip_level", "MipLevel");
-    if (!require_u32(object, n.snake, n.camel, 0, 0, index, error)) return false;
+    if (!read_u32_of(object, n.snake, n.camel, NULL, &present, &out->mip_level, index, error)) return false;
+    uint32_t largest = t->width > t->height ? t->width : t->height, levels = 1;
+    while (largest >>= 1) levels++;
+    if (out->mip_level >= levels)
+        return stream_reject(error, index, "\"%s\" %u is beyond the %ux%u texture's %u levels", n.snake, out->mip_level,
+            t->width, t->height, levels);
+    t->mip_levels = out->mip_level + 1;
     n = side_field(side, "sample_count", "SampleCount");
     if (!require_u32(object, n.snake, n.camel, 1, 0, index, error)) return false;
     n = side_field(side, "aspect", "Aspect");
