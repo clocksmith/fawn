@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import ast
 import json
+import hashlib
 import os
 from pathlib import Path
 import re
@@ -71,6 +72,32 @@ def abi_probe(header: str) -> str:
     return '#include <stddef.h>\n#include <stdio.h>\n#include ABI_HEADER\nint main(void) {\n' + '\n'.join(statements) + '\nreturn 0;\n}\n'
 
 
+
+def deterministic_git_checkout() -> None:
+    """Scope byte-preserving checkout rules to this producer and its children."""
+    count = int(os.environ.get('GIT_CONFIG_COUNT', '0'))
+    for key, value in [('core.autocrlf', 'false'), ('core.eol', 'lf')]:
+        os.environ[f'GIT_CONFIG_KEY_{count}'] = key
+        os.environ[f'GIT_CONFIG_VALUE_{count}'] = value
+        count += 1
+    os.environ['GIT_CONFIG_COUNT'] = str(count)
+
+
+def verify_header_bytes(header: Path, expected: str, out: Path) -> None:
+    raw = header.read_bytes()
+    blob = subprocess.run(['git', 'show', 'HEAD:webgpu.h'], cwd=header.parent,
+                          capture_output=True, check=True, timeout=30).stdout
+    def describe(data: bytes) -> dict:
+        return {'sha256': hashlib.sha256(data).hexdigest(), 'bytes': len(data),
+                'lf': data.count(b'\n'), 'crlf': data.count(b'\r\n')}
+    evidence = {'expectedSha256': expected, 'checkout': describe(raw), 'gitBlob': describe(blob),
+                'revision': capture(['git', 'rev-parse', 'HEAD'], header.parent)}
+    (out / 'header-integrity.json').write_text(json.dumps(evidence, indent=2) + '\n')
+    print(json.dumps({'headerIntegrity': evidence}), flush=True)
+    if evidence['checkout']['sha256'] != expected or evidence['gitBlob']['sha256'] != expected:
+        raise ValueError('fetched upstream WebGPU header hash mismatch (see header-integrity.json)')
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--out', type=Path, required=True)
@@ -83,6 +110,7 @@ def main() -> int:
     out.mkdir(parents=True, exist_ok=True)
     source, build, products = out / 'source', out / 'build', out / 'products'
     source.mkdir()
+    deterministic_git_checkout()
     invoke(['git', 'init', str(source)], out)
     invoke(['git', 'remote', 'add', 'origin', DAWN_URL], source)
     invoke(['git', 'fetch', '--depth=1', 'origin', DAWN_REVISION], source, 300)
@@ -105,8 +133,7 @@ def main() -> int:
     invoke(configure, out, 600)
     dependencies = dependency_revisions(source)
     upstream_header = source / 'third_party/webgpu-headers/src/webgpu.h'
-    if digest(upstream_header) != policy['sha256']:
-        raise ValueError('fetched upstream WebGPU header hash mismatch')
+    verify_header_bytes(upstream_header, policy['sha256'], out)
     invoke(['cmake', '--build', str(build), '--target', 'webgpu_dawn', '--parallel', '2'], out, 1800)
     probe = out / 'abi-probe.c'
     probe.write_text(abi_probe(header.read_text()), encoding='utf-8')

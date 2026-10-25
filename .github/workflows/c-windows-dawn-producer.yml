@@ -54,6 +54,7 @@ jobs:
           if-no-files-found: error
           path: |
             ${{ runner.temp }}/doe-c-windows-dawn.log
+            ${{ runner.temp }}/doe-c-windows-dawn/header-integrity.json
             ${{ runner.temp }}/doe-c-windows-dawn/dawn-producer.json
             ${{ runner.temp }}/doe-c-windows-dawn/abi-*.txt
             ${{ runner.temp }}/doe-c-windows-dawn/products/*.dll
