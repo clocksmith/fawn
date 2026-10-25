@@ -66,7 +66,8 @@ static void usage(FILE *out)
           "  [--readback-buffer HANDLE=PATH]...  (final buffer bytes after a successful run; at most 8)\n"
           "Commands: upload, buffer_write, barrier, kernel_dispatch (WGSL kernels, buffer bindings),\n"
           "copies in every direction, texture_write, texture_query, texture_destroy (2D single-mip\n"
-          "uncompressed color textures).\n"
+          "uncompressed color textures), render_draw and render_pass (the default proxy pipeline),\n"
+          "sampler_create and sampler_destroy.\n"
           "Every other command, field or argument is rejected. --adapter is this runtime's own;\n"
           "auto takes a nonfallback adapter, else the fallback (CPU) adapter, and the trace meta\n"
           "records which one ran.\n", out);

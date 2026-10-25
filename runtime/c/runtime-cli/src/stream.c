@@ -37,6 +37,15 @@ static const kind_name KINDS[] = {
     {"query_texture", DOE_COMMAND_TEXTURE_QUERY},
     {"texture_destroy", DOE_COMMAND_TEXTURE_DESTROY},
     {"destroy_texture", DOE_COMMAND_TEXTURE_DESTROY},
+    {"render_draw", DOE_COMMAND_RENDER_DRAW},
+    {"draw", DOE_COMMAND_RENDER_DRAW},
+    {"draw_call", DOE_COMMAND_RENDER_DRAW},
+    {"draw_indexed", DOE_COMMAND_RENDER_DRAW},
+    {"render_pass", DOE_COMMAND_RENDER_PASS},
+    {"sampler_create", DOE_COMMAND_SAMPLER_CREATE},
+    {"create_sampler", DOE_COMMAND_SAMPLER_CREATE},
+    {"sampler_destroy", DOE_COMMAND_SAMPLER_DESTROY},
+    {"destroy_sampler", DOE_COMMAND_SAMPLER_DESTROY},
 };
 
 const char *doe_command_tag(doe_command_kind kind)
@@ -50,6 +59,10 @@ const char *doe_command_tag(doe_command_kind kind)
     case DOE_COMMAND_TEXTURE_WRITE: return "texture_write";
     case DOE_COMMAND_TEXTURE_QUERY: return "texture_query";
     case DOE_COMMAND_TEXTURE_DESTROY: return "texture_destroy";
+    case DOE_COMMAND_RENDER_DRAW: return "render_draw";
+    case DOE_COMMAND_RENDER_PASS: return "render_pass";
+    case DOE_COMMAND_SAMPLER_CREATE: return "sampler_create";
+    case DOE_COMMAND_SAMPLER_DESTROY: return "sampler_destroy";
     }
     return "unknown";
 }
@@ -284,6 +297,7 @@ static void free_command(doe_command *command)
     if (command->kind == DOE_COMMAND_BUFFER_WRITE) free(command->as.buffer_write.words);
     if (command->kind == DOE_COMMAND_KERNEL_DISPATCH) free(command->as.dispatch.bindings);
     if (command->kind == DOE_COMMAND_TEXTURE_WRITE) free(command->as.texture_write.data);
+    if (command->kind == DOE_COMMAND_RENDER_DRAW || command->kind == DOE_COMMAND_RENDER_PASS) free(command->as.render.indices);
 }
 
 void doe_stream_free(doe_stream *stream)
@@ -320,6 +334,10 @@ static bool parse_command(const doe_json_value *object, doe_command *command, si
         case DOE_COMMAND_TEXTURE_WRITE: return stream_parse_texture_write(object, command, index, error);
         case DOE_COMMAND_TEXTURE_QUERY: return stream_parse_texture_query(object, command, index, error);
         case DOE_COMMAND_TEXTURE_DESTROY: return stream_parse_texture_destroy(object, command, index, error);
+        case DOE_COMMAND_RENDER_DRAW:
+        case DOE_COMMAND_RENDER_PASS: return stream_parse_render(object, name, command, index, error);
+        case DOE_COMMAND_SAMPLER_CREATE: return stream_parse_sampler(object, command, index, error);
+        case DOE_COMMAND_SAMPLER_DESTROY: return stream_parse_sampler_destroy(object, command, index, error);
         }
     }
     return stream_reject(error, index, "command kind \"%s\" is not implemented by doe-c-runtime", name);

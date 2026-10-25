@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-static WGPUTextureFormat webgpu_format(doe_texture_format format)
+WGPUTextureFormat runtime_webgpu_format(doe_texture_format format)
 {
     switch (format) {
     case DOE_FORMAT_R8_UNORM: return WGPUTextureFormat_R8Unorm;
@@ -26,7 +26,7 @@ static WGPUTextureFormat webgpu_format(doe_texture_format format)
     return WGPUTextureFormat_Undefined;
 }
 
-static texture_entry *find_texture(doe_runtime *runtime, uint64_t handle)
+texture_entry *runtime_find_texture(doe_runtime *runtime, uint64_t handle)
 {
     for (size_t i = 0; i < runtime->texture_count; i++) if (runtime->textures[i].declared.handle == handle) return &runtime->textures[i];
     return NULL;
@@ -52,7 +52,7 @@ void runtime_release_textures(doe_runtime *runtime)
 static WGPUTexture ensure_texture(doe_runtime *runtime, const doe_texture_desc *desc, doe_trace_execution *execution)
 {
     WGPUTextureUsage usage = (WGPUTextureUsage)desc->usage | WGPUTextureUsage_CopySrc | WGPUTextureUsage_CopyDst;
-    texture_entry *existing = find_texture(runtime, desc->handle);
+    texture_entry *existing = runtime_find_texture(runtime, desc->handle);
     if (existing && existing->declared.width == desc->width && existing->declared.height == desc->height &&
         existing->declared.depth == desc->depth && existing->declared.format == desc->format &&
         (existing->usage & usage) == usage) {
@@ -73,7 +73,7 @@ static WGPUTexture ensure_texture(doe_runtime *runtime, const doe_texture_desc *
     descriptor.usage = usage;
     descriptor.dimension = WGPUTextureDimension_2D;
     descriptor.size = (WGPUExtent3D){.width = desc->width, .height = desc->height, .depthOrArrayLayers = desc->depth};
-    descriptor.format = webgpu_format(desc->format);
+    descriptor.format = runtime_webgpu_format(desc->format);
     WGPUTexture texture = wgpuDeviceCreateTexture(runtime->device, &descriptor);
     if (!texture) {
         runtime_fail(execution, "texture_create_failed", "texture %llu was not created", (unsigned long long)desc->handle);
@@ -226,7 +226,7 @@ static bool texture_write(doe_runtime *runtime, const doe_command *command, doe_
 static bool texture_query(doe_runtime *runtime, const doe_command *command, doe_trace_execution *execution)
 {
     const doe_texture_query *q = &command->as.texture_query;
-    texture_entry *entry = find_texture(runtime, q->handle);
+    texture_entry *entry = runtime_find_texture(runtime, q->handle);
     if (!entry) return runtime_fail(execution, "texture_query_mismatch", "texture %llu does not exist", (unsigned long long)q->handle);
     const doe_texture_desc *t = &entry->declared;
     const char *field = q->has_width && q->width != t->width ? "width" :
@@ -247,7 +247,7 @@ bool runtime_execute_texture(doe_runtime *runtime, const doe_command *command, d
     if (command->kind == DOE_COMMAND_TEXTURE_WRITE) return texture_write(runtime, command, execution);
     if (command->kind == DOE_COMMAND_TEXTURE_QUERY) return texture_query(runtime, command, execution);
     /* A texture that was never created is not an error, as in doe-zig-runtime. */
-    texture_entry *entry = find_texture(runtime, command->as.texture_destroy.handle);
+    texture_entry *entry = runtime_find_texture(runtime, command->as.texture_destroy.handle);
     if (entry) remove_texture(runtime, entry);
     return true;
 }

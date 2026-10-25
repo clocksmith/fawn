@@ -190,6 +190,7 @@ void doe_runtime_close(doe_runtime *runtime)
         free(entry->signature);
     }
     free(runtime->pipelines);
+    runtime_release_render(runtime);
     runtime_release_textures(runtime);
     for (size_t i = 0; i < runtime->buffer_count; i++) wgpuBufferRelease(runtime->buffers[i].buffer);
     free(runtime->buffers);
@@ -422,6 +423,10 @@ bool doe_runtime_execute(doe_runtime *runtime, const doe_command *command, doe_t
     case DOE_COMMAND_TEXTURE_WRITE:
     case DOE_COMMAND_TEXTURE_QUERY:
     case DOE_COMMAND_TEXTURE_DESTROY: ok = runtime_execute_texture(runtime, command, execution); break;
+    case DOE_COMMAND_RENDER_DRAW:
+    case DOE_COMMAND_RENDER_PASS: ok = runtime_execute_render(runtime, command, execution); break;
+    case DOE_COMMAND_SAMPLER_CREATE:
+    case DOE_COMMAND_SAMPLER_DESTROY: ok = runtime_execute_sampler(runtime, command, execution); break;
     }
     execution->duration_ns = doe_runtime_monotonic_ns() - start;
     if (ok) {
@@ -434,6 +439,10 @@ bool doe_runtime_execute(doe_runtime *runtime, const doe_command *command, doe_t
             [DOE_COMMAND_TEXTURE_WRITE] = "texture_write_timing_cpu_wall_clock_comparability_directional",
             [DOE_COMMAND_TEXTURE_QUERY] = "texture_query_timing_cpu_wall_clock_comparability_directional",
             [DOE_COMMAND_TEXTURE_DESTROY] = "texture_destroy_timing_cpu_wall_clock_comparability_directional",
+            [DOE_COMMAND_RENDER_DRAW] = "render_draw_timing_cpu_wall_clock_comparability_directional",
+            [DOE_COMMAND_RENDER_PASS] = "render_pass_timing_cpu_wall_clock_comparability_directional",
+            [DOE_COMMAND_SAMPLER_CREATE] = "sampler_create_timing_cpu_wall_clock_comparability_directional",
+            [DOE_COMMAND_SAMPLER_DESTROY] = "sampler_destroy_timing_cpu_wall_clock_comparability_directional",
         };
         execution->ok = true;
         execution->status_code = codes[command->kind];

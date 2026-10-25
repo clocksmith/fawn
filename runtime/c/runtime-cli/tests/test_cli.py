@@ -39,6 +39,58 @@ ZIG_COPY_FINAL_HASH = {
     "copy_texture_to_texture_stress": "0x56fc0e97e927c76a",
 }
 ZIG_ROUNDTRIP_FINAL_HASH = "0x58730f9067dc7873"
+# doe-zig-runtime (same build, --quirk-mode off, lavapipe) final hashes for
+# render streams, which its native Vulkan lane executes.
+ZIG_RENDER_FINAL_HASH = {
+    "draw_call_proxy": "0x509d940f0c58349f",
+    "draw_call_indexed_proxy": "0x509d940f0c58349f",
+    "draw_call_state_bindings": "0x509d940f0c58349f",
+    "render_pass_dynamic_viewport_scissor": "0xfdc0c9aab552cb39",
+    "texture_sampler_write_query_destroy": "0xe5677bd4a524aa50",
+    "uniform_buffer_update_writebuffer_partial_single": "0x427ca82f073f3b6c",
+}
+ZIG_RENDER_ROUNDTRIP_FINAL_HASH = "0x2f3624a9819ae816"
+PROXY_COLOR = (64, 128, 191, 255)  # draw_call_proxy_fragment.wgsl (0.25, 0.5, 0.75, 1) in rgba8unorm
+CLEAR_COLOR = (0, 0, 0, 255)
+
+
+def render_roundtrip_stream() -> tuple[list, dict[int, tuple[int, int, int, int]]]:
+    """Proxy draws into named 16x16 targets, one scissored to x 2..9, y 1..4
+    from the top and one indexed and unscissored, each copied to a buffer."""
+    def target(handle: int) -> dict:
+        return {"kind": "texture_write", "textureHandle": handle, "width": 16, "height": 16, "format": "rgba8unorm",
+                "usage": 23}
+
+    def readback(src: int, dst: int) -> dict:
+        return {"kind": "copy_texture_to_buffer", "bytes": 4096, "src_handle": src, "src_width": 16, "src_height": 16,
+                "src_format": "rgba8unorm", "src_usage": 23, "dst_handle": dst, "dst_bytes_per_row": 256,
+                "dst_rows_per_image": 16}
+
+    stream = [
+        target(700),
+        {"kind": "render_draw", "drawCount": 3, "targetHandle": 700, "targetWidth": 16, "targetHeight": 16,
+         "targetFormat": "rgba8unorm", "scissorX": 2, "scissorY": 1, "scissorWidth": 8, "scissorHeight": 4},
+        readback(700, 701),
+        target(702),
+        {"kind": "draw_indexed", "drawCount": 2, "indexData": [0, 1, 2], "indexFormat": "uint32", "targetHandle": 702,
+         "targetWidth": 16, "targetHeight": 16, "targetFormat": "rgba8unorm", "encodeMode": "render-pass"},
+        readback(702, 703),
+    ]
+    return stream, {701: (2, 1, 8, 4), 703: (0, 0, 16, 16)}
+
+
+def pixels_match(data: bytes, scissor: tuple[int, int, int, int]) -> bool:
+    """Every texel is the proxy color inside the scissor and the clear color
+    outside; channels may differ by one unit of unorm rounding."""
+    x0, y0, width, height = scissor
+    for y in range(16):
+        for x in range(16):
+            texel = data[y * 256 + x * 4:y * 256 + x * 4 + 4]
+            inside = x0 <= x < x0 + width and y0 <= y < y0 + height
+            expected = PROXY_COLOR if inside else CLEAR_COLOR
+            if any(abs(a - b) > 1 for a, b in zip(texel, expected)):
+                return False
+    return True
 
 
 def roundtrip_stream() -> tuple[list, dict[int, bytes]]:
@@ -131,6 +183,30 @@ def check_copies(binary: Path, work: Path) -> None:
     check(code == 1 and "readback_missing" in stderr, f"missing readback: exit {code}: {stderr}")
 
 
+def check_render(binary: Path, work: Path) -> None:
+    for name, final_hash in ZIG_RENDER_FINAL_HASH.items():
+        code, stderr, meta, rows = run(binary, work, name)
+        check(code == 0 and meta["hash"] == final_hash and all(r["executionStatus"] == "ok" for r in rows),
+              f"{name}: exit {code}, hash {meta.get('hash')} != {final_hash}: {stderr}")
+        check(replay_passes(work, name), f"{name} artifacts fail replay")
+    proxy = json.loads((EXAMPLES / "draw_call_proxy_commands.json").read_text())[0]
+    _, _, meta, rows = run(binary, work, "draw_call_proxy")
+    check(rows[0]["executionDispatchCount"] == proxy["drawCount"], "render dispatch count is the draw count")
+    stream, scissors = render_roundtrip_stream()
+    commands = work / "render_roundtrip_commands.json"
+    commands.write_text(json.dumps(stream))
+    readbacks = [arg for handle in scissors for arg in ("--readback-buffer", f"{handle}={work / f'render_{handle}.bin'}")]
+    code, stderr, meta, _ = run(binary, work, "render_roundtrip", *readbacks, commands=commands)
+    check(code == 0 and meta["hash"] == ZIG_RENDER_ROUNDTRIP_FINAL_HASH,
+          f"render roundtrip: exit {code} hash {meta.get('hash')}: {stderr}")
+    for handle, scissor in scissors.items():
+        check(pixels_match((work / f"render_{handle}.bin").read_bytes(), scissor), f"render target {handle} pixels")
+    missing = work / "render_missing_commands.json"
+    missing.write_text(json.dumps([{**stream[1], "targetHandle": 799}]))
+    code, stderr, _, _ = run(binary, work, "render_missing", commands=missing)
+    check(code == 1 and "render_target_missing" in stderr, f"missing render target: exit {code}: {stderr}")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--binary", required=True, type=Path)
@@ -193,11 +269,13 @@ def main() -> int:
     check(code == 2 and "not implemented" in stderr, f"dispatch stream: exit {code}: {stderr}")
 
     check_copies(args.binary, args.work)
+    check_render(args.binary, args.work)
 
     print(f"PASS doe-c-runtime: 3 example streams with doe-zig-runtime hash chains, replay-valid artifacts, "
           f"an independent oracle match, alias labels, command repeat, an oracle mismatch, 5 rejections, "
-          f"{len(ZIG_COPY_FINAL_HASH)} copy streams, a copy/texture roundtrip read back against host bytes and 4 copy "
-          f"failures on "
+          f"{len(ZIG_COPY_FINAL_HASH)} copy streams, a copy/texture roundtrip read back against host bytes, 4 copy "
+          f"failures, {len(ZIG_RENDER_FINAL_HASH)} render streams, scissored and indexed draws read back against the "
+          f"proxy and clear colors and a missing render target on "
           f"{adapter.get('device')} ({adapter.get('adapterType')}, {adapter.get('backend')})")
     return 0
 

@@ -28,4 +28,11 @@ bool stream_parse_texture_query(const doe_json_value *object, doe_command *comma
     doe_stream_error *error);
 bool stream_parse_texture_destroy(const doe_json_value *object, doe_command *command, size_t index,
     doe_stream_error *error);
+bool stream_parse_render(const doe_json_value *object, const char *name, doe_command *command, size_t index,
+    doe_stream_error *error);
+bool stream_parse_sampler(const doe_json_value *object, doe_command *command, size_t index, doe_stream_error *error);
+bool stream_parse_sampler_destroy(const doe_json_value *object, doe_command *command, size_t index,
+    doe_stream_error *error);
+/* The texture format named `name`, or false. */
+bool stream_texture_format(const char *name, doe_texture_format *out);
 #endif
