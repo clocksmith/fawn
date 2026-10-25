@@ -1676,9 +1676,9 @@
       },
       "src/compiler/mod.zig": {
         "decision": "Keep",
-        "moduleSha256": "4f0356300a67292564fa22a2ae908afaf0e77acdb68d4973c0fe886e783ed99b",
-        "reason": "Keep: the compiler facade exposes named WGSL emitter and browser ABI owners; it contains no transformation, allocation or host policy. Both native emission and Worker compilation consume the same emitter.",
-        "reviewer": "codex-browser-wgsl/2026-10-04"
+        "moduleSha256": "11a036abf7468d2007da515c9492982cbdf9581d89f89587e26a7a39b5d1704c",
+        "reason": "Keep: the compiler facade exposes named WGSL emitter and browser ABI owners; it contains no transformation, allocation or host policy. Both native emission and Worker compilation consume the same emitter. Owner-authorized CSL quarantine retains native responsibility and gates only optional CSL access; original sources and provenance remain preserved.",
+        "reviewer": "codex-csl-quarantine/2026-10-25"
       },
       "src/compiler/targets/mod.zig": {
         "decision": "Keep",
@@ -1754,9 +1754,9 @@
       },
       "src/compiler/tsir/emit_kernel_body.zig": {
         "decision": "Keep",
-        "moduleSha256": "a35164f9b790f5f63d08fb2a74c7de0a1d8de26eeb7aac0732c97a41ae1cbe54",
-        "reason": "Keep: primary TSIR kernel-body orchestration; independent operation families already live in named sibling modules.",
-        "reviewer": "codex-recomposition-review/2026-08-08"
+        "moduleSha256": "c4146970b94f63c93e58649da75c8fd54815797f8f29b625d5ab3c3222cfff7d",
+        "reason": "Keep: primary TSIR kernel-body orchestration; independent operation families already live in named sibling modules. Owner-authorized CSL quarantine retains native responsibility and gates only optional CSL access; original sources and provenance remain preserved.",
+        "reviewer": "codex-csl-quarantine/2026-10-25"
       },
       "src/compiler/tsir/emit_kernel_body_attention.zig": {
         "decision": "Keep",
@@ -1874,9 +1874,9 @@
       },
       "src/compiler/tsir/mod.zig": {
         "decision": "Keep",
-        "moduleSha256": "f9a24b1f15c72a9a740cc4df330d29a50c261f4b29d63f3c69cbfce1765fd56d",
-        "reason": "Keep: reachable compiler implementation with a distinct named responsibility and no merge, elevation, recomposition, or deletion signal.",
-        "reviewer": "codex-recomposition-review/2026-08-08"
+        "moduleSha256": "5cff0c9080d07fe7568d1a49531808b263289b743a6e66838cf9e639d80d56f0",
+        "reason": "Keep: reachable compiler implementation with a distinct named responsibility and no merge, elevation, recomposition, or deletion signal. Owner-authorized CSL quarantine retains native responsibility and gates only optional CSL access; original sources and provenance remain preserved.",
+        "reviewer": "codex-csl-quarantine/2026-10-25"
       },
       "src/compiler/tsir/planner.zig": {
         "decision": "Keep",
@@ -1934,9 +1934,9 @@
       },
       "src/compiler/tsir/tools/tsir_bootstrap_manifest_inputs.zig": {
         "decision": "Keep",
-        "moduleSha256": "1680fc0e929389a03b356f696d25601bc1fd59fa1704483ba32da2c8324879ff",
-        "reason": "Keep: executable process root at src/compiler/tsir/tools/tsir_bootstrap_manifest_inputs.zig.",
-        "reviewer": "codex-recomposition-review/2026-08-08"
+        "moduleSha256": "cd1dcf1b6565798c9e25a658b711c02b1d555d7471d9253c57b965a98df978a1",
+        "reason": "Keep: executable process root at src/compiler/tsir/tools/tsir_bootstrap_manifest_inputs.zig. Owner-authorized CSL quarantine retains native responsibility and gates only optional CSL access; original sources and provenance remain preserved.",
+        "reviewer": "codex-csl-quarantine/2026-10-25"
       },
       "src/compiler/tsir/tools/tsir_bootstrap_oracle.zig": {
         "decision": "Keep",
@@ -2534,9 +2534,9 @@
       },
       "src/compiler/wgsl/mod.zig": {
         "decision": "Keep",
-        "moduleSha256": "144dd739b734b3feb58587e9b3d01b09c35994e7a03662b73f4733defe03ca8f",
-        "reason": "Keep: public WGSL compiler API, phase orchestration, diagnostics, and compatibility boundary; implementation phases remain in narrow modules.",
-        "reviewer": "codex-recomposition-review/2026-08-08"
+        "moduleSha256": "6418b6e1cf24d362298daed8ed95e16507565db45a2674fd936a9c3f4550d688",
+        "reason": "Keep: public WGSL compiler API, phase orchestration, diagnostics, and compatibility boundary; implementation phases remain in narrow modules. Owner-authorized CSL quarantine retains native responsibility and gates only optional CSL access; original sources and provenance remain preserved.",
+        "reviewer": "codex-csl-quarantine/2026-10-25"
       },
       "src/compiler/wgsl/pipeline/analysis.zig": {
         "decision": "Keep",

@@ -10,7 +10,7 @@ pub fn wgsl() type {
     return @import("wgsl/mod.zig");
 }
 
-pub const wgsl_csl = struct {
+pub const wgsl_csl = if (@import("build_options").enable_csl) struct {
     pub fn hostCompileSource() type {
         return @import("wgsl/emit/csl/emit_csl_host_compile_source.zig");
     }
@@ -22,7 +22,7 @@ pub const wgsl_csl = struct {
     pub fn spec() type {
         return @import("wgsl/emit/csl/csl_spec.zig");
     }
-};
+} else struct {};
 
 pub const wgsl_frontend = struct {
     pub fn lexer() type {

@@ -2,6 +2,10 @@
   "schemaVersion": 2,
   "targets": [
     {
+      "schema": "config/csl-quarantine.schema.json",
+      "data": "config/csl-quarantine.json"
+    },
+    {
       "schema": "config/wgsl-packed-integer-controls.schema.json",
       "data": "reports/maintenance/20261011-wgsl-packed-integers/doe.json"
     },

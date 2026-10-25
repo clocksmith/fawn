@@ -38,7 +38,6 @@ SEMANTIC_BUILD_STEPS = (
     "doe-runtime",
     "dropin",
     "emit-ir-digest",
-    "emit-csl",
     "emit-hlsl",
     "emit-msl",
     "emit-spirv",
@@ -80,6 +79,9 @@ def _semantic_build_commands(
     zig: Path,
     cache: Path,
     prefix: Path,
+    *,
+    include_csl: bool = False,
+    supports_csl_option: bool = True,
 ) -> list[list[str]]:
     """Build semantic tools in fixed, independently diagnosable steps."""
 
@@ -88,6 +90,7 @@ def _semantic_build_commands(
             str(zig),
             "build",
             step,
+            *(["-Denable-csl=true"] if include_csl and supports_csl_option else []),
             "-Doptimize=ReleaseSafe",
             "-j1",
             "--seed",
@@ -99,7 +102,7 @@ def _semantic_build_commands(
             "--prefix",
             str(prefix),
         ]
-        for step in SEMANTIC_BUILD_STEPS
+        for step in (*SEMANTIC_BUILD_STEPS, *(("emit-csl",) if include_csl else ()))
     ]
 
 
@@ -343,7 +346,7 @@ def _exported_symbols(path: Path) -> bytes:
     )
 
 
-def capture(root: Path, git_ref: str, destination: Path) -> dict[str, Any]:
+def capture(root: Path, git_ref: str, destination: Path, *, include_csl: bool = False) -> dict[str, Any]:
     """Build and run semantic fixtures from one isolated Git snapshot."""
 
     capture_tool_sha256 = sha256_file(Path(__file__))
@@ -382,7 +385,11 @@ def capture(root: Path, git_ref: str, destination: Path) -> dict[str, Any]:
             }
         cache = temporary_root / "cache"
         prefix = temporary_root / "prefix"
-        for build_command in _semantic_build_commands(zig, cache, prefix):
+        build_commands = _semantic_build_commands(
+            zig, cache, prefix, include_csl=include_csl,
+            supports_csl_option='"enable-csl"' in (snapshot / "build.zig").read_text(encoding="utf-8"),
+        )
+        for build_command in build_commands:
             _run(build_command, snapshot)
         binary_root = prefix / "bin"
         runtime = binary_root / "doe-zig-runtime"
@@ -450,11 +457,12 @@ def capture(root: Path, git_ref: str, destination: Path) -> dict[str, Any]:
         ):
             raise RuntimeError("WGSL IR digest tool emitted a non-canonical digest")
         emitter_specs = {
-            "wgsl-output.csl": "doe-emit-csl",
             "wgsl-output.hlsl": "doe-emit-hlsl",
             "wgsl-output.msl": "doe-emit-msl",
             "wgsl-output.spv": "doe-emit-spirv",
         }
+        if include_csl:
+            emitter_specs["wgsl-output.csl"] = "doe-emit-csl"
         for output_name, executable_name in emitter_specs.items():
             executable = binary_root / executable_name
             result = _run(
@@ -592,7 +600,8 @@ def capture(root: Path, git_ref: str, destination: Path) -> dict[str, Any]:
             "build": {
                 "optimize": "ReleaseSafe",
                 "strategy": "ordered-independent-steps",
-                "steps": list(SEMANTIC_BUILD_STEPS),
+                "steps": [command[2] for command in build_commands],
+                "includeQuarantinedCsl": include_csl,
             },
             "captureToolSha256": capture_tool_sha256,
             "commandNormalization": {
@@ -706,6 +715,8 @@ def parse_args() -> argparse.Namespace:
 
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, default=ROOT, help="runtime/zig root")
+    parser.add_argument("--include-csl", action="store_true",
+                        help="explicitly include quarantined CSL in this new capture (preserves old receipts)")
     source = parser.add_mutually_exclusive_group()
     source.add_argument("--git-ref", default="HEAD", help="Git snapshot to capture")
     source.add_argument(
@@ -736,6 +747,7 @@ def main() -> int:
                 args.root.resolve(),
                 "WORKTREE" if args.worktree else args.git_ref,
                 staging,
+                include_csl=args.include_csl,
             )
             (staging / "manifest.json").write_text(
                 canonical_json(manifest),

@@ -1,5 +1,9 @@
 # Doe ↔ Cerebras
 
+**Optional quarantine:** CSL code is preserved outside default builds and native
+Zig-to-C parity. See [the opt-in boundary](csl-quarantine.md).
+
+
 Index for the Doppler → Doe → Cerebras lane: current status, source locations,
 hardware runbook, bundle pointer, and claim scope.
 

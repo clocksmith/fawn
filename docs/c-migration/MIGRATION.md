@@ -2,6 +2,10 @@
 
 ## Scope and present state
 
+CSL and dedicated Cerebras tooling are [quarantined optional components](../csl-quarantine.md),
+not active native Zig-to-C parity requirements. Their retained source and sealed
+baseline inventory remain intact; no native test or qualification gate is waived.
+
 This records the immutable inventory and the explicitly requested C migration.
 C is selected; this is not mechanical translation or a completed rewrite. The
 initial isolation branch preserved the retained implementation while owners were

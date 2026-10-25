@@ -84,7 +84,6 @@ class ArchitectureReportTests(unittest.TestCase):
                 "doe-runtime",
                 "dropin",
                 "emit-ir-digest",
-                "emit-csl",
                 "emit-hlsl",
                 "emit-msl",
                 "emit-spirv",
@@ -94,6 +93,17 @@ class ArchitectureReportTests(unittest.TestCase):
         self.assertTrue(
             all(command.count("build") == 1 for command in commands)
         )
+
+    def test_semantic_csl_capture_requires_explicit_scope(self) -> None:
+        paths = (Path("zig"), Path("cache"), Path("prefix"))
+        native = _semantic_build_commands(*paths)
+        self.assertNotIn("emit-csl", [command[2] for command in native])
+        optional = _semantic_build_commands(*paths, include_csl=True)
+        self.assertEqual(optional[-1][2], "emit-csl")
+        self.assertTrue(all("-Denable-csl=true" in command for command in optional))
+        historical = _semantic_build_commands(*paths, include_csl=True, supports_csl_option=False)
+        self.assertEqual(historical[-1][2], "emit-csl")
+        self.assertTrue(all("-Denable-csl=true" not in command for command in historical))
 
     def test_cochange_history_head_ignores_report_only_commits(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:

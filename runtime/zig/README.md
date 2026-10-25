@@ -1,5 +1,9 @@
 # Doe Zig runtime
 
+CSL tools/tests are [quarantined and explicitly opt-in](../../docs/csl-quarantine.md);
+ordinary builds and native parity do not include them.
+
+
 `runtime/zig/` owns the native runtime, WebGPU ABI, WGSL compiler, backend
 implementations, TSIR lowering, and native tools. Public JavaScript behavior is
 exposed through `packages/doe-gpu/`; benchmark and claim orchestration remains

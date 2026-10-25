@@ -15,6 +15,11 @@ Represent semantic kernels and target realizations explicitly enough for determi
 
 - Includes files beneath this directory except child-chartered components, which narrow this authority.
 
+CSL is an owner-authorized optional quarantine, excluded from default native
+Zig-to-C parity and installation. Original sources and historical evidence stay
+intact; explicit `-Denable-csl=true` and dedicated targets restore access.
+The repository `config/csl-quarantine.json` owns the exact boundary.
+
 ## Contracts
 
 Inputs:
