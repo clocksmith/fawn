@@ -19,9 +19,18 @@ bool compiler_metadata_prepare(Source *source, DoeCompilerTypedOutputCounts *typ
     metadata->counts.types = typed->types;
     metadata->counts.members = typed->members;
     metadata->counts.resources = typed->resources;
-    metadata->counts.workgroups = c->workgroup_count;
+    for (uint32_t i = 0u; i < c->workgroup_count; ++i)
+        if (c->workgroups[i].state.resolved.address_space == MODULE_WORKGROUP) ++metadata->counts.workgroups;
     metadata->counts.entries = c->entry_count;
-    metadata->counts.entry_references = c->entry_reference_count;
+    for (uint32_t i = 0u; i < c->entry_count; ++i) {
+        const EntryRecord *entry = &c->entries[i];
+        metadata->counts.entry_references += entry->state.resolved.resource_count;
+        for (uint32_t j = 0u; j < entry->state.resolved.workgroup_count; ++j) {
+            const uint32_t root = c->entry_references[entry->state.resolved.workgroup_first + j];
+            if (c->workgroups[root].state.resolved.address_space == MODULE_WORKGROUP)
+                ++metadata->counts.entry_references;
+        }
+    }
     metadata->counts.name_bytes = typed->name_bytes;
     return true;
 }

@@ -293,7 +293,7 @@ static void workgroup_body(MetalEmitter *e, TypeId type, bool store) {
 static bool workgroup_helper_used(MetalEmitter *e, TypeId type, bool store) {
     const CompilerWorkspace *c = e->module;
     for (uint32_t i = 0u; i < c->workgroup_count; ++i) {
-        if (!metal_selected_workgroup(e, i)) continue;
+        if (!metal_selected_workgroup(e, i) || c->workgroups[i].state.resolved.address_space != MODULE_WORKGROUP) continue;
         const char *error = NULL;
         /* Cooperative zeroing stores each whole root before the first barrier. */
         bool used = store && target_memory_dependency(c, &e->closure, c->workgroups[i].type,

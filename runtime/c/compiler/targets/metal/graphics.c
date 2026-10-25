@@ -144,6 +144,7 @@ void metal_graphics_wrapper(MetalEmitter *e, uint32_t index) {
     metal_text(e, ") {\n");
     e->indent = 1u;
     metal_resource_context(e, root);
+    metal_private_initialization(e, root);
     for (uint32_t i = 0u; i < entry->interface_count; ++i) {
         const StageInterface *leaf = &e->source->stages->interfaces[entry->interface_first + i];
         if (leaf->direction != DOE_COMPILER_INTERFACE_INPUT) continue;

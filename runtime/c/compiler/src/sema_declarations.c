@@ -578,13 +578,36 @@ bool sema_resolve_declarations(Source *s, LocalScope *scope) {
                 maximum_binding == 31u ? "storage requires group 0..3 and binding 0..31" :
                 "resource requires group 0..3 and binding 0..999");
     }
-    for (uint32_t i=0u;i<c->workgroup_count;++i) {
-        WorkgroupRoot *root=&c->workgroups[i];
-        if (!sema_type_reference(s,root->annotation,scope,&root->type)) return false;
-        const uint32_t flags=type_flags(c,root->type);
+    for (uint32_t i = 0u; i < c->workgroup_count; ++i) {
+        WorkgroupRoot *root = &c->workgroups[i];
+        const uint32_t address = root->type, initializer = root->target;
+        const TypeRef annotation = root->state.annotation;
+        root->type = IR_VOID;
+        if (annotation.offset != NO_ID && !sema_type_reference(s, annotation, scope, &root->type)) return false;
+        root->state.resolved.address_space = address;
+        root->state.resolved.initializer = NO_ID;
+        root->target = 0u;
+        if (initializer != NO_ID) {
+            ExpressionValue value;
+            if (!sema_expression(s, initializer, scope, true, false, &value)) return false;
+            if (value.runtime || value.overridable || !value.known)
+                return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, root->name.offset,
+                                    "private variable initializer requires a const expression");
+            if (root->type == IR_VOID && !sema_default_type(s, value.constant.type, root->name.offset, &root->type)) return false;
+            if (!sema_materialize(s, &value, root->type)) return false;
+            if (c->edge_count == c->limits.edges)
+                return source_pool_error(s, DOE_COMPILER_POOL_CONSTANT_EDGES, (size_t)c->edge_count + 1u,
+                                         root->name.offset, "module initializer edge capacity exceeded");
+            root->state.resolved.initializer = c->edge_count;
+            c->constant_edges[c->edge_count++] = value.constant;
+        }
+        const uint32_t flags = type_flags(c, root->type);
         if ((flags & TYPE_DEFERRED) != 0u && s->specialization != NULL) continue;
-        if ((flags & TYPE_FIXED) == 0u || (flags & (TYPE_CONSTRUCTIBLE | TYPE_ATOMIC_CONTENT)) == 0u || (flags & TYPE_ABSTRACT) != 0u)
-            return source_error(s,DOE_COMPILER_SEMANTIC_ERROR,root->name.offset,"workgroup type must be concrete, fixed-footprint and constructible or contain atomics");
+        if ((flags & TYPE_FIXED) == 0u || (flags & TYPE_ABSTRACT) != 0u ||
+            (address == MODULE_PRIVATE ? (flags & TYPE_CONSTRUCTIBLE) == 0u :
+             (flags & (TYPE_CONSTRUCTIBLE | TYPE_ATOMIC_CONTENT)) == 0u))
+            return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, root->name.offset,
+                                "module variable requires a concrete fixed type valid for its address space");
     }
     for (uint32_t e=0u;e<c->entry_count;++e) {
     const EntryRecord *entry=&c->entries[e];

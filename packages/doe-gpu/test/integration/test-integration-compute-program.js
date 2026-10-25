@@ -178,14 +178,14 @@ try {
   }
   console.log('ok: multi-step compute pipeline with scratch buffers passes across execution modes');
   for (const [code, kind] of [
-    ['// source line one\nnot valid WGSL', 'UnexpectedToken'],
-    ['@compute @workgroup_size(1) fn main() {\n let value: u32 = missing_value;\n}', 'UnknownIdentifier'],
-    ['@vertex fn main() -> @builtin(position) vec4f {\n return missing_value;\n}', 'UnknownIdentifier'],
+    ['// source line one\nnot valid WGSL', /UnexpectedToken|expected fn; unsupported or malformed WGSL subset/],
+    ['@compute @workgroup_size(1) fn main() {\n let value: u32 = missing_value;\n}', /UnknownIdentifier|name does not resolve to an available value/],
+    ['@vertex fn main() -> @builtin(position) vec4f {\n return missing_value;\n}', /UnknownIdentifier|name does not resolve to an available value/],
   ]) {
     const bad = device.createShaderModule({ code });
     const info = await bad.getCompilationInfo();
     const diagnostic = info.messages.find((message) => message.type === 'error');
-    assert(diagnostic?.message.includes(kind));
+    assert(diagnostic && kind.test(diagnostic.message));
     assert.equal(diagnostic.lineNum, 2);
     assert(diagnostic.linePos > 0);
     const good = device.createShaderModule({ code: '@compute @workgroup_size(1) fn main() {}' });

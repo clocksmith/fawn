@@ -36,6 +36,7 @@ void metal_numeric_helpers(MetalEmitter *);
 void metal_expression(MetalEmitter *, const IrInstruction *);
 void metal_array_length(MetalEmitter *, const IrInstruction *);
 void metal_access(MetalEmitter *, const IrInstruction *);
+void metal_private_initialization(MetalEmitter *, const EntryRecord *);
 void metal_functions(MetalEmitter *);
 void metal_graphics_context(MetalEmitter *);
 void metal_graphics_wrapper(MetalEmitter *, uint32_t);

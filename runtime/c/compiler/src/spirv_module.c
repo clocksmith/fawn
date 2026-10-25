@@ -142,7 +142,7 @@ uint32_t spirv_pointer_type(Emitter *e, TypeId type, uint32_t storage) {
     TargetDeclaration *d = spirv_append_declaration(e, DECL_POINTER, type);
     if (d == NULL) return 0u;
     d->storage = storage;
-    d->payload = storage == 4u ? spirv_workgroup_type(e, type) : spirv_target_type(e, type);
+    d->payload = (storage == MODULE_WORKGROUP || storage == MODULE_PRIVATE) ? spirv_workgroup_type(e, type) : spirv_target_type(e, type);
     return d->id;
 }
 uint32_t spirv_zero_constant(Emitter *e, TypeId type) {
@@ -277,6 +277,11 @@ static bool plan_constant(Emitter *e, uint32_t object) {
     }
     return !e->failed;
 }
+uint32_t spirv_constant_value(Emitter *e, ConstantValue value) {
+    if ((value.flags & CONSTANT_AGGREGATE) == 0u) return leaf_constant(e, value);
+    if (!plan_constant(e, (uint32_t)value.bits)) return 0u;
+    return e->program->constants[value.bits].target;
+}
 uint32_t spirv_sampled_type(Emitter *e, TypeId type) {
     TypeRecord *t = &e->program->types[type - 7u];
     if (t->aux != 0u) return t->aux;
@@ -366,7 +371,7 @@ bool spirv_plan_module(Emitter *e) {
     }
     for (uint32_t j=0u;j<c->entry_count;++j) {
         EntryRecord *entry=&c->entries[j];
-        if (entry->state.resolved.workgroup_count==0u) continue;
+        if (entry->state.resolved.workgroup_storage_bytes==0u) continue;
         for (uint32_t i=entry->input_first;i<entry->input_first+entry->input_count;++i)
             if (c->entry_inputs[i].kind==INPUT_LOCAL_INDEX)
                 entry->state.resolved.local_index_target=c->entry_inputs[i].target;
@@ -395,7 +400,10 @@ bool spirv_plan_module(Emitter *e) {
     for (uint32_t i = 0u; i < c->workgroup_count; ++i) {
         WorkgroupRoot *root = &c->workgroups[i];
         if (!spirv_workgroup_plan(e, root->type)) return false;
-        if (spirv_pointer_type(e, root->type, 4u) == 0u || spirv_workgroup_zero(e, root->type) == 0u) return false;
+        if (spirv_pointer_type(e, root->type, root->state.resolved.address_space) == 0u ||
+            spirv_workgroup_zero(e, root->type) == 0u) return false;
+        if (root->state.resolved.initializer != NO_ID &&
+            spirv_constant_value(e, c->constant_edges[root->state.resolved.initializer]) == 0u) return false;
         root->target = spirv_reserve_ids(e, 1u);
     }
     for (uint32_t i = 0u; i < c->local_count; ++i)
@@ -447,7 +455,7 @@ bool spirv_plan_module(Emitter *e) {
             if (!spirv_uniform_access_plan(e, ir)) return false;
             const uint32_t category = ir->operands.access.category;
             const uint32_t storage = category == ROOT_RESOURCE ? spirv_resource_storage(&c->resources[ir->operands.access.root]) :
-                category == ROOT_WORKGROUP ? 4u : 7u;
+                category == ROOT_WORKGROUP ? c->workgroups[ir->operands.access.root].state.resolved.address_space : 7u;
             if (ir->opcode != IR_VALUE_ACCESS || ir->operands.access.value != NO_ID)
                 if (spirv_pointer_type(e, ir->type, storage) == 0u) return false;
             if (ir->opcode != IR_ACCESS_STORE && spirv_zero_constant(e, ir->type) == 0u) return false;
@@ -699,7 +707,8 @@ bool spirv_module_declarations(Emitter *e) {
     }
     for (uint32_t i = 0u; i < c->workgroup_count; ++i) {
         const WorkgroupRoot *root = &c->workgroups[i];
-        EMIT(OP_VARIABLE, spirv_pointer_type(e, root->type, 4u), root->target, 4u);
+        EMIT(OP_VARIABLE, spirv_pointer_type(e, root->type, root->state.resolved.address_space),
+             root->target, root->state.resolved.address_space);
     }
     for (uint32_t i=0u;i<c->entry_input_count;++i)
         EMIT(OP_VARIABLE,input_scalar(c->entry_inputs[i].kind)?ID_PTR_INPUT_U32:ID_PTR_INPUT,c->entry_inputs[i].target,1u);

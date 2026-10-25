@@ -475,3 +475,9 @@ test-select: build/test_select
 	build/test_select
 sanitize-select: build/test_select_sanitize
 	ASAN_OPTIONS=detect_leaks=0:halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1 build/test_select_sanitize
+
+.PHONY: test-private-module
+build/test_private_module: tests/test_private_module.c build/libdoe_compiler.so $(HEADERS) | build/.ready
+	$(CC) $(CFLAGS) tests/test_private_module.c -Lbuild -ldoe_compiler -Wl,-rpath,'$$ORIGIN' -lm -o $@
+test-private-module: build/test_private_module
+	build/test_private_module

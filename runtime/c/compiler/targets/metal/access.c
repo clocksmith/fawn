@@ -286,7 +286,8 @@ void metal_access(MetalEmitter *e, const IrInstruction *ir) {
             metal_value(e, ir->operands.access.value);
         }
         metal_text(e, ");\n");
-    } else if (ir->operands.access.category == ROOT_WORKGROUP) {
+    } else if (ir->operands.access.category == ROOT_WORKGROUP &&
+               e->module->workgroups[ir->operands.access.root].state.resolved.address_space == MODULE_WORKGROUP) {
         if (store) metal_format(e, "doe_wstore%u(&(", ir->type);
         else {
             metal_value(e, ir->result);

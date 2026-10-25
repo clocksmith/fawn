@@ -41,6 +41,24 @@ bool metal_selected_workgroup(MetalEmitter *e, uint32_t workgroup) {
     }
     return false;
 }
+void metal_private_initialization(MetalEmitter *e, const EntryRecord *entry) {
+    const CompilerWorkspace *c = e->module;
+    for (uint32_t i = 0u; i < c->workgroup_count; ++i) {
+        const WorkgroupRoot *root = &c->workgroups[i];
+        if (!metal_entry_workgroup(c, entry, i) || root->state.resolved.address_space != MODULE_PRIVATE) continue;
+        metal_indent(e);
+        metal_type(e, root->type);
+        metal_format(e, " w%u = ", i);
+        if (root->state.resolved.initializer == NO_ID) metal_zero(e, root->type);
+        else {
+            const ConstantValue value = c->constant_edges[root->state.resolved.initializer];
+            metal_constant(e, value.type, value.bits, (value.flags & CONSTANT_AGGREGATE) != 0u, 0u);
+        }
+        metal_text(e, ";\n");
+        metal_indent(e);
+        metal_format(e, "ctx.w%u = &w%u;\n", i, i);
+    }
+}
 static void context_type(MetalEmitter *e) {
     metal_text(e, "struct DoeContext {\n");
     for (uint32_t i = 0u; i < e->module->resource_count; ++i) {
@@ -53,7 +71,7 @@ static void context_type(MetalEmitter *e) {
     }
     for (uint32_t i = 0u; i < e->module->workgroup_count; ++i) {
         if (!metal_selected_workgroup(e, i)) continue;
-        metal_text(e, "    threadgroup ");
+        metal_text(e, e->module->workgroups[i].state.resolved.address_space == MODULE_PRIVATE ? "    thread " : "    threadgroup ");
         metal_type(e, e->module->workgroups[i].type);
         metal_format(e, "* w%u;\n", i);
     }
@@ -234,7 +252,7 @@ static void entry_wrapper(MetalEmitter *e, uint32_t index) {
     const bool sizes = metal_entry_sizes(c, entry);
     e->needs_sizes = e->needs_sizes || sizes;
     uint32_t input_mask = entry->source_input_mask;
-    if (entry->state.resolved.workgroup_count != 0u) input_mask |= 1u << INPUT_LOCAL_INDEX;
+    if (entry->state.resolved.workgroup_storage_bytes != 0u) input_mask |= 1u << INPUT_LOCAL_INDEX;
     metal_text(e, "[[host_name(\"");
     metal_entry_name(e, c->functions[entry->function].name);
     metal_format(e, "\")]] kernel void doe_entry%u(", index);
@@ -249,6 +267,7 @@ static void entry_wrapper(MetalEmitter *e, uint32_t index) {
     metal_text(e, ") {\n");
     e->indent = 1u;
     metal_resource_context(e, entry);
+    metal_private_initialization(e, entry);
     for (unsigned i = 0u; i <= INPUT_LOCAL_INDEX; ++i) {
         if ((input_mask & (1u << i)) != 0u) {
             metal_indent(e);
@@ -256,7 +275,7 @@ static void entry_wrapper(MetalEmitter *e, uint32_t index) {
         }
     }
     for (uint32_t i = 0u; i < c->workgroup_count; ++i) {
-        if (!metal_entry_workgroup(c, entry, i)) continue;
+        if (!metal_entry_workgroup(c, entry, i) || c->workgroups[i].state.resolved.address_space == MODULE_PRIVATE) continue;
         metal_indent(e);
         metal_text(e, "threadgroup ");
         metal_type(e, c->workgroups[i].type);
@@ -264,11 +283,11 @@ static void entry_wrapper(MetalEmitter *e, uint32_t index) {
         metal_indent(e);
         metal_format(e, "ctx.w%u = &w%u;\n", i, i);
     }
-    if (entry->state.resolved.workgroup_count != 0u) {
+    if (entry->state.resolved.workgroup_storage_bytes != 0u) {
         metal_line(e, "if (input4 == 0u) {");
         ++e->indent;
         for (uint32_t i = 0u; i < c->workgroup_count; ++i) {
-            if (!metal_entry_workgroup(c, entry, i)) continue;
+            if (!metal_entry_workgroup(c, entry, i) || c->workgroups[i].state.resolved.address_space != MODULE_WORKGROUP) continue;
             metal_indent(e);
             const TypeId type = c->workgroups[i].type;
             if ((type_flags(c, type) & TYPE_ATOMIC_CONTENT) != 0u)

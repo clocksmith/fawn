@@ -27,6 +27,29 @@ def words(code):
 class WorkgroupTypes(unittest.TestCase):
     compile = test_stages.Stages.compile
 
+    def test_private_storage_in_graphics_has_no_shared_barrier_or_hidden_lane(self):
+        code = self.compile('''struct State { values:array<vec4f,2> }
+            var<private> state=State(array<vec4f,2>(vec4f(0.0),vec4f(1.0)));
+            fn value()->vec4f{state.values[1].x+=1.0;return state.values[1];}
+            @vertex fn vertex()->@builtin(position) vec4f{return value();}
+            @fragment fn fragment()->@location(0) vec4f{return value();}
+        ''')
+        types = {a[0]: (op, a[1:]) for op, a in code if 19 <= op <= 33}
+        roots = [types[a[0]][1][1] for op, a in code if op == 59 and a[2] == 6]
+        self.assertEqual(len(roots), 1)
+        self.assertFalse(any(op == 224 for op, _ in code))
+        self.assertFalse(any(op == 71 and a[1:] == (11, 29) for op, a in code))
+        decorated = {a[0] for op, a in code if op in (71, 72)}
+        pending, seen = roots[:], set()
+        while pending:
+            typ = pending.pop()
+            if typ in seen:
+                continue
+            seen.add(typ)
+            op, operands = types[typ]
+            self.assertNotIn(typ, decorated)
+            pending.extend(operands if op == 30 else [operands[0]] if op in (23, 24, 28) else [])
+
     def test_shared_source_type_has_separate_undecorated_workgroup_graph(self):
         code = self.compile('''
             struct Record { tag:u32, values:array<vec2u,2> }
