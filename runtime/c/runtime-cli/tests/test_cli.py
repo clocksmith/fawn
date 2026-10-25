@@ -454,6 +454,9 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--binary", required=True, type=Path)
     parser.add_argument("--work", required=True, type=Path)
+    # dawn-c-runtime (the same sources over Dawn's webgpu.h) names Dawn as its backend.
+    parser.add_argument("--module", default="doe-c-runtime")
+    parser.add_argument("--backend-id", default="doe_c_vulkan")
     args = parser.parse_args()
     args.work.mkdir(parents=True, exist_ok=True)
 
@@ -466,7 +469,9 @@ def main() -> int:
         check(all(row["executionStatus"] == "ok" for row in rows), f"{name} has a failed row")
         check(meta["executionSuccessCount"] == len(rows) == meta["commandCount"], f"{name} counts")
         # Bench comparability reads these; a fixed backend has no lane policy hash.
-        check(meta["backendId"] == meta["executionBackend"] == "doe_c_vulkan" and meta["fallbackUsed"] is False
+        check(meta["module"] == args.module and all(row["module"] == args.module for row in rows),
+              f"{name} module identity")
+        check(meta["backendId"] == meta["executionBackend"] == args.backend_id and meta["fallbackUsed"] is False
               and meta["backendSelectionReason"] == "fixed_backend" and "selectionPolicyHash" not in meta
               and "uploadBufferUsage" not in meta and "uploadSubmitEvery" not in meta,
               f"{name} backend meta (no upload fields, as doe-zig-runtime)")
@@ -527,7 +532,7 @@ def main() -> int:
     check_semantic(args.binary, args.work)
     check_plan(args.binary, args.work)
 
-    print(f"PASS doe-c-runtime: 3 example streams with doe-zig-runtime hash chains, replay-valid artifacts, "
+    print(f"PASS {args.module}: 3 example streams with doe-zig-runtime hash chains, replay-valid artifacts, "
           f"an independent oracle match, alias labels, command repeat, an oracle mismatch, 7 rejections, "
           f"{len(ZIG_COPY_FINAL_HASH)} copy streams, a copy/texture roundtrip read back against host bytes, 4 copy "
           f"failures, {len(ZIG_RENDER_FINAL_HASH)} render streams, scissored and indexed draws read back against the "

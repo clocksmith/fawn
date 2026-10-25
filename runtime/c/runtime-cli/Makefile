@@ -19,7 +19,7 @@ TOGGLE_REGISTRY = ../../../config/quirk-toggle-registry.json
 RUNTIME = src/execute.c src/kernel.c src/texture.c src/render.c
 RUNTIME_HEADERS = src/execute.h src/runtime_internal.h ../../zig/vendor/webgpu-headers/webgpu.h \
   ../native/include/doe_native_adapter.h
-.PHONY: all bench-bin check check-host native
+.PHONY: all bench-bin check check-dawn check-host dawn native
 all: $(BUILD)/doe-c-runtime
 $(BUILD):
 	mkdir -p $@
@@ -33,6 +33,18 @@ $(NATIVE_LIBRARY): native
 $(BUILD)/doe-c-runtime: src/main.c $(CORE) $(RUNTIME) $(CORE_HEADERS) $(RUNTIME_HEADERS) $(NATIVE_LIBRARY) | $(BUILD)
 	$(CC) $(CPPFLAGS) $(CFLAGS) src/main.c $(CORE) $(RUNTIME) -L'$(abspath $(NATIVE_BUILD))' \
 	  -l:$(NATIVE_LIBRARY_NAME) '-Wl,-rpath,$(abspath $(NATIVE_BUILD))' -lm -o $@
+# The same sources over Dawn's webgpu.h library (built by the bench vendor
+# tree, not here): dawn-c-runtime writes executionBackend dawn_direct_vulkan.
+DAWN_LIBRARY ?= $(abspath ../../../bench/vendor/dawn/out/Release/libwebgpu_dawn.so)
+$(BUILD)/dawn-c-runtime: src/main.c $(CORE) $(RUNTIME) $(CORE_HEADERS) $(RUNTIME_HEADERS) | $(BUILD)
+	@test -f '$(DAWN_LIBRARY)' || { echo "dawn-c-runtime: DAWN_LIBRARY $(DAWN_LIBRARY) does not exist" >&2; exit 2; }
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DDOE_RUNTIME_MODULE='"dawn-c-runtime"' -DDOE_RUNTIME_BACKEND_ID='"dawn_direct_vulkan"' \
+	  src/main.c $(CORE) $(RUNTIME) '$(DAWN_LIBRARY)' '-Wl,-rpath,$(dir $(DAWN_LIBRARY))' -lm -o $@
+dawn: $(BUILD)/dawn-c-runtime
+# The whole CLI suite over Dawn: the same host references and Zig hash chains.
+check-dawn: check-host $(BUILD)/dawn-c-runtime
+	$(PYTHON) tests/test_cli.py --binary '$(BUILD)/dawn-c-runtime' --work '$(BUILD)/dawn-cli-work' \
+	  --module dawn-c-runtime --backend-id dawn_direct_vulkan
 # The bench executor doe_c_direct_vulkan runs bin/doe-c-runtime (gitignored);
 # the copy keeps its rpath to $(NATIVE_BUILD), which must stay in place.
 bench-bin: $(BUILD)/doe-c-runtime

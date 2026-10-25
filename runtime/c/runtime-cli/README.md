@@ -177,6 +177,20 @@ doe-plan-executor, and reported on stderr. Quirk, repeat, oracle, numeric
 stability and `--trace` arguments are rejected; `--readback-buffer` is admitted.
 No operator records are written. Unknown plan fields and kinds are rejected.
 
+## Over Dawn (`dawn-c-runtime`)
+
+The CLI uses only `webgpu.h` plus one optional Doe extension
+(`doeNativeAdapterGetPciIdentity`, weak; driverVersion is 0 without it), so the
+same sources link against Dawn's `libwebgpu_dawn`: `make dawn
+DAWN_LIBRARY=<path>` (default `bench/vendor/dawn/out/Release/libwebgpu_dawn.so`)
+builds `$(BUILD)/dawn-c-runtime`, whose rows and meta name module
+`dawn-c-runtime` and executionBackend `dawn_direct_vulkan`. It is the C program
+over plain `webgpu.h` that the stage-6 dispositions name for
+`webgpu-plan-executor` and the Dawn-delegate lane. `make check-dawn` runs the
+whole CLI suite (host references, Zig hash chains, plan mode, schemas) over Dawn.
+The bench executors, registry identity and comparability rules for a
+`dawn_direct_vulkan` trace are not wired; that is bench policy.
+
 ## Bench comparisons
 
 [`config/doe-runtime-providers.json`](../../../config/doe-runtime-providers.json)
@@ -237,5 +251,10 @@ llvmpipe's libLLVM executing `inference_gemma3_270m_decode_1tok`, so execution
 results are not compared with Zig. `make check` runs a small plan whose load and dispatches read
 back as the host computes them, and `bench/cli.py run --product doe-c
 --executor-id doe_c_direct_plan_vulkan` completes the prefill/decode workload.
-A CPU adapter run is not GPU evidence, a performance result
+Over Dawn (base fba5980ac + this owner; Dawn library in
+`bench/vendor/dawn/out/Release`, vendor checkout d04f88359, built 2026-10-15;
+lavapipe): `make check-dawn` passes; the
+prefill/decode plan runs all 1583 rows and its final logits (buffer 2227, 4096
+f32) and token (buffer 2228, 1664) are bit-identical to `doe-c-runtime` over
+`libwebgpu_doe_c`. A CPU adapter run is not GPU evidence, a performance result
 or bench comparability, and no physical adapter has run this CLI.
