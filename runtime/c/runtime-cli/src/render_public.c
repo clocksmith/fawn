@@ -116,6 +116,8 @@ bool runtime_execute_public_render(doe_runtime *runtime, const doe_command *comm
     uint32_t stride = 0;
     WGPUBuffer arguments = ok && indirect ? runtime_render_arguments(runtime, draw, &stride, execution) : NULL;
     if (ok && indirect && !arguments) ok = false;
+    runtime_timestamp timestamp = {0};
+    if (ok) ok = runtime_timestamp_begin(runtime, &timestamp, execution);
     uint64_t setup_end = doe_runtime_monotonic_ns(), encode_end = setup_end;
     WGPURenderBundle bundle = ok && !draw->render_pass ? encode_bundle(runtime, draw, pipeline, indices,
         index_size, arguments, stride, dynamic_offset) : NULL;
@@ -134,6 +136,7 @@ bool runtime_execute_public_render(doe_runtime *runtime, const doe_command *comm
         depth_attachment.stencilLoadOp = WGPULoadOp_Clear;
         depth_attachment.stencilStoreOp = WGPUStoreOp_Store;
         WGPURenderPassDescriptor descriptor = WGPU_RENDER_PASS_DESCRIPTOR_INIT;
+        if (timestamp.query) descriptor.timestampWrites = &timestamp.writes;
         descriptor.colorAttachmentCount = 1;
         descriptor.colorAttachments = &color;
         descriptor.depthStencilAttachment = &depth_attachment;
@@ -159,7 +162,8 @@ bool runtime_execute_public_render(doe_runtime *runtime, const doe_command *comm
             wgpuRenderPassEncoderEnd(pass);
             wgpuRenderPassEncoderRelease(pass);
             if (temporary) runtime_render_copy_back(encoder, temporary, target, draw);
-            WGPUCommandBuffer commands = wgpuCommandEncoderFinish(encoder, NULL);
+            runtime_timestamp_resolve(&timestamp, encoder);
+        WGPUCommandBuffer commands = wgpuCommandEncoderFinish(encoder, NULL);
             encode_end = doe_runtime_monotonic_ns();
             ok = runtime_submit(runtime, commands, execution);
             execution->submit_count = 1;
@@ -167,6 +171,7 @@ bool runtime_execute_public_render(doe_runtime *runtime, const doe_command *comm
         } else ok = runtime_fail(execution, "render_public_pass_failed", "public render pass creation failed");
         if (encoder) wgpuCommandEncoderRelease(encoder);
     }
+    ok = runtime_timestamp_finish(runtime, &timestamp, ok, execution);
     uint64_t end = doe_runtime_monotonic_ns();
     if (bundle) wgpuRenderBundleRelease(bundle);
     if (arguments) wgpuBufferRelease(arguments);

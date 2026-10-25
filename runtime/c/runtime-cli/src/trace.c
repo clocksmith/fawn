@@ -116,10 +116,11 @@ static bool write_execution(FILE *out, const doe_trace_identity *identity, const
         doe_trace_write_string(out, execution->message);
     return ok && fprintf(out, ",\"executionDurationNs\":%" PRIu64 ",\"executionSetupNs\":%" PRIu64
         ",\"executionEncodeNs\":%" PRIu64 ",\"executionSubmitWaitNs\":%" PRIu64 ",\"executionDispatchCount\":%" PRIu64
-        ",\"executionSubmitCount\":%" PRIu64 ",\"executionGpuTimestampNs\":0,\"executionGpuTimestampAttempted\":false,"
-        "\"executionGpuTimestampValid\":false}\n",
+        ",\"executionSubmitCount\":%" PRIu64 ",\"executionGpuTimestampNs\":%" PRIu64 ",\"executionGpuTimestampAttempted\":%s,"
+        "\"executionGpuTimestampValid\":%s}\n",
         execution->duration_ns, execution->setup_ns, execution->encode_ns, execution->submit_wait_ns,
-        execution->dispatch_count, execution->submit_count) >= 0;
+        execution->dispatch_count, execution->submit_count, execution->gpu_timestamp_ns,
+        execution->gpu_timestamp_attempted ? "true" : "false", execution->gpu_timestamp_valid ? "true" : "false") >= 0;
 }
 
 bool doe_trace_write_row(FILE *out, const doe_trace_identity *identity, uint64_t seq, uint64_t timestamp_ns,

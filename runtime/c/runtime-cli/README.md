@@ -237,13 +237,19 @@ slice debug braces. Quoted kernel paths are JSON escaped.
   wait; timeout is failure, and its callback storage lives through instance
   destruction. Barriers and host readbacks always complete their required work.
   Partial upload batches also drain before exit; `--gpu-timestamp-mode` admits
-  `off` and `auto` (no timestamps are recorded); `--api` matches the platform build (`vulkan` on Linux, `metal` on Darwin).
+  `off`, `auto` (default), and `require`. Compute and render passes use real
+  WebGPU timestamp queries and normalized nanosecond readback, excluding warmups
+  and isolated output oracles. Auto skips unavailable adapters and deferred queue
+  mode; require rejects either condition rather than changing synchronization.
+  Query allocation, resolve or readback errors fail the command, not fake a valid
+  sample. Timestamp readback adds host overhead but the reported GPU interval is
+  strictly pass beginning-to-end; `--api` matches the platform build (`vulkan` on Linux, `metal` on Darwin).
   `--adapter auto|physical|software` is this CLI's own: `auto` takes a
   nonfallback adapter, else the fallback (CPU) adapter.
 
 Every other command kind or field, texture dimension, sample count, aspect, format, oracle
 scope, `repeatSynchronization` value, semantic field on another kind, explicit
-`numericStability` annotation and argument is rejected with exit 2 before
+`numericStability` annotation outside the admitted schema and argument is rejected with exit 2 before
 device work.
 
 doe-zig-runtime's native Vulkan lane reports every copy `unsupported` and

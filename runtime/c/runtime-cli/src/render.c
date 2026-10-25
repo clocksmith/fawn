@@ -210,6 +210,8 @@ bool runtime_execute_render(doe_runtime *runtime, const doe_command *command, do
     uint32_t stride = 0;
     WGPUBuffer arguments = ok && indirect ? runtime_render_arguments(runtime, draw, &stride, execution) : NULL;
     if (indirect && !arguments) ok = false;
+    runtime_timestamp timestamp = {0};
+    if (ok) ok = runtime_timestamp_begin(runtime, &timestamp, execution);
     uint64_t setup_end = doe_runtime_monotonic_ns();
     uint64_t encode_end = setup_end;
     if (ok) {
@@ -219,6 +221,7 @@ bool runtime_execute_render(doe_runtime *runtime, const doe_command *command, do
         color.storeOp = WGPUStoreOp_Store;
         color.clearValue = (WGPUColor){0, 0, 0, 1};
         WGPURenderPassDescriptor pass_descriptor = WGPU_RENDER_PASS_DESCRIPTOR_INIT;
+        if (timestamp.query) pass_descriptor.timestampWrites = &timestamp.writes;
         pass_descriptor.colorAttachmentCount = 1;
         pass_descriptor.colorAttachments = &color;
         WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(runtime->device, NULL);
@@ -255,6 +258,7 @@ bool runtime_execute_render(doe_runtime *runtime, const doe_command *command, do
         wgpuRenderPassEncoderEnd(pass);
         wgpuRenderPassEncoderRelease(pass);
         if (temporary) runtime_render_copy_back(encoder, temporary, target, draw);
+        runtime_timestamp_resolve(&timestamp, encoder);
         WGPUCommandBuffer commands = wgpuCommandEncoderFinish(encoder, NULL);
         wgpuCommandEncoderRelease(encoder);
         encode_end = doe_runtime_monotonic_ns();
@@ -262,6 +266,7 @@ bool runtime_execute_render(doe_runtime *runtime, const doe_command *command, do
         execution->submit_count = 1;
         execution->dispatch_count = draw->draw_count;
     }
+    ok = runtime_timestamp_finish(runtime, &timestamp, ok, execution);
     uint64_t end = doe_runtime_monotonic_ns();
     if (arguments) {
         wgpuBufferDestroy(arguments);

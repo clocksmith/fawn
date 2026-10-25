@@ -235,11 +235,13 @@ static pipeline_entry *prepare_pipeline(doe_runtime *runtime, const doe_command 
  * are recorded the same way: webgpu.h has no barrier control, so the provider
  * orders them as it orders any dispatches in a pass. */
 static WGPUCommandBuffer encode_dispatches(doe_runtime *runtime, const pipeline_entry *pipeline, WGPUBindGroup *groups,
-    const doe_command *command, uint64_t count, WGPUBuffer indirect)
+    const doe_command *command, uint64_t count, WGPUBuffer indirect, const runtime_timestamp *timestamp)
 {
     WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(runtime->device, NULL);
     if (!encoder) return NULL;
-    WGPUComputePassEncoder pass = wgpuCommandEncoderBeginComputePass(encoder, NULL);
+    WGPUComputePassDescriptor descriptor = WGPU_COMPUTE_PASS_DESCRIPTOR_INIT;
+    if (timestamp && timestamp->query) descriptor.timestampWrites = &timestamp->writes;
+    WGPUComputePassEncoder pass = wgpuCommandEncoderBeginComputePass(encoder, &descriptor);
     if (pass) {
         wgpuComputePassEncoderSetPipeline(pass, pipeline->pipeline);
         for (uint32_t g = 0; g < pipeline->group_count; g++) wgpuComputePassEncoderSetBindGroup(pass, g, groups[g], 0, NULL);
@@ -249,6 +251,7 @@ static WGPUCommandBuffer encode_dispatches(doe_runtime *runtime, const pipeline_
         wgpuComputePassEncoderEnd(pass);
         wgpuComputePassEncoderRelease(pass);
     }
+    if (timestamp) runtime_timestamp_resolve(timestamp, encoder);
     WGPUCommandBuffer commands = wgpuCommandEncoderFinish(encoder, NULL);
     wgpuCommandEncoderRelease(encoder);
     return commands;
@@ -257,7 +260,7 @@ static WGPUCommandBuffer encode_dispatches(doe_runtime *runtime, const pipeline_
 static WGPUCommandBuffer encode(doe_runtime *runtime, const pipeline_entry *pipeline, WGPUBindGroup *groups,
     const doe_command *command, uint64_t count)
 {
-    return encode_dispatches(runtime, pipeline, groups, command, count, NULL);
+    return encode_dispatches(runtime, pipeline, groups, command, count, NULL, NULL);
 }
 
 /* A 2D view of the binding's texture (created or replaced as Zig's
@@ -392,15 +395,18 @@ static bool execute_pipeline(doe_runtime *runtime, const doe_command *command, W
         ok = runtime_submit(runtime, encode(runtime, pipeline, groups, command, command->as.dispatch.warmup), execution);
         if (ok && runtime->options.defer_queue_sync) ok = runtime_wait_queue(runtime, execution);
     }
+    runtime_timestamp timestamp = {0};
+    if (ok) ok = runtime_timestamp_begin(runtime, &timestamp, execution);
     uint64_t setup_end = doe_runtime_monotonic_ns();
     WGPUCommandBuffer commands = ok ?
-        encode_dispatches(runtime, pipeline, groups, command, command->as.dispatch.repeat, indirect) : NULL;
+        encode_dispatches(runtime, pipeline, groups, command, command->as.dispatch.repeat, indirect, &timestamp) : NULL;
     uint64_t encode_end = doe_runtime_monotonic_ns();
     if (ok) {
         ok = runtime_submit(runtime, commands, execution);
         execution->submit_count = 1;
         execution->dispatch_count = command->as.dispatch.repeat;
     }
+    ok = runtime_timestamp_finish(runtime, &timestamp, ok, execution);
     uint64_t end = doe_runtime_monotonic_ns();
     for (uint32_t g = 0; g < MAX_GROUPS; g++) if (groups[g]) wgpuBindGroupRelease(groups[g]);
     bool scopes_ok = runtime_pop_scopes(runtime, execution);

@@ -19,7 +19,10 @@ typedef enum doe_adapter_class {
 
 typedef enum doe_queue_wait { DOE_WAIT_PROCESS_EVENTS, DOE_WAIT_ANY } doe_queue_wait;
 
+typedef enum doe_timestamp_mode { DOE_TIMESTAMP_AUTO, DOE_TIMESTAMP_OFF, DOE_TIMESTAMP_REQUIRE } doe_timestamp_mode;
+
 typedef struct doe_runtime_options {
+    doe_timestamp_mode timestamp_mode;
     doe_adapter_class adapter;
     doe_queue_wait queue_wait;
     uint64_t queue_wait_timeout_ns; /* 0: runtime default bound. */

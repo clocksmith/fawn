@@ -93,6 +93,20 @@ int main(void)
     /* An absent kernel differs from an empty one. */
     assert(doe_trace_payload_hash(DOE_TRACE_HASH_SEED, 0, "kernel_dispatch", "kernel_dispatch", NULL, NULL, NULL) !=
         doe_trace_payload_hash(DOE_TRACE_HASH_SEED, 0, "kernel_dispatch", "kernel_dispatch", "", NULL, NULL));
+    FILE *record = tmpfile();
+    assert(record);
+    const doe_trace_identity identity = {.module = "host-test", .backend_id = "host-test"};
+    const doe_command command = {.kind = DOE_COMMAND_BARRIER, .label = "barrier"};
+    const doe_trace_execution execution = {.ok = true, .status_code = "ok", .gpu_timestamp_ns = 12345,
+        .gpu_timestamp_attempted = true, .gpu_timestamp_valid = true};
+    assert(doe_trace_write_row(record, &identity, 0, 0, 0, 0, &command, NULL, &execution));
+    rewind(record);
+    char serialized[2048] = {0};
+    assert(fread(serialized, 1, sizeof(serialized) - 1, record) > 0);
+    assert(strstr(serialized, "\"executionGpuTimestampNs\":12345"));
+    assert(strstr(serialized, "\"executionGpuTimestampAttempted\":true"));
+    assert(strstr(serialized, "\"executionGpuTimestampValid\":true"));
+    assert(fclose(record) == 0);
     puts("runtime-cli trace: hash chain equals doe-zig-runtime rows for three example streams, alias labels and two "
         "semantic streams (host only)");
     return 0;

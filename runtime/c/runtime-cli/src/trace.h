@@ -26,6 +26,8 @@ typedef struct doe_trace_execution {
     char message[256];
     uint64_t duration_ns, setup_ns, encode_ns, submit_wait_ns;
     uint64_t dispatch_count, submit_count;
+    uint64_t gpu_timestamp_ns;
+    bool gpu_timestamp_attempted, gpu_timestamp_valid;
 } doe_trace_execution;
 
 typedef struct doe_trace_identity {

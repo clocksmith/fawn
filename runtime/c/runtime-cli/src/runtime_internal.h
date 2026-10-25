@@ -56,9 +56,20 @@ typedef struct surface_entry {
     bool configured;
 } surface_entry;
 
+typedef struct runtime_timestamp {
+    WGPUQuerySet query;
+    WGPUBuffer resolved;
+    WGPUPassTimestampWrites writes;
+} runtime_timestamp;
+
+bool runtime_timestamp_begin(doe_runtime *runtime, runtime_timestamp *timestamp, doe_trace_execution *execution);
+void runtime_timestamp_resolve(const runtime_timestamp *timestamp, WGPUCommandEncoder encoder);
+bool runtime_timestamp_finish(doe_runtime *runtime, runtime_timestamp *timestamp, bool ok, doe_trace_execution *execution);
+
 struct public_render_state;
 struct doe_runtime {
     doe_runtime_options options;
+    bool timestamps_enabled;
     WGPUInstance instance;
     WGPUAdapter adapter;
     WGPUDevice device;

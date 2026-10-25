@@ -28,7 +28,7 @@ static void usage(FILE *out)
           "  [--quirks <path>] [--quirk-mode off|trace|active] [--queue-sync-mode per-command|deferred]\n"
           "  [--queue-wait-mode process-events|wait-any] [--webgpu-ffi-queue-wait-timeout-ns N]\n"
           "  [--upload-buffer-usage copy-dst-copy-src|copy-dst] [--upload-submit-every N]\n"
-          "  [--gpu-timestamp-mode off|auto] [--adapter auto|physical|software]\n"
+          "  [--gpu-timestamp-mode off|auto|require] [--adapter auto|physical|software]\n"
           "  [--backend-lane <compiled Dawn delegate lane>]\n"
           "  [--validate-output-oracles]  (schema 1 sha256_exact_v1 isolated-dispatch oracles)\n"
           "  [--readback-buffer HANDLE=PATH]...  (final buffer bytes after a successful run; at most 8)\n"
@@ -131,9 +131,10 @@ int parse_options(int argc, char **argv, options *out)
             if (!parse_u64(value, &out->command_repeat) || !out->command_repeat) return reject_argument(flag, "must be a positive integer");
             i++;
         } else if (!strcmp(flag, "--gpu-timestamp-mode")) {
-            /* auto records no GPU timestamps when none are taken, which is every run here. */
-            if (!value || (strcmp(value, "off") && strcmp(value, "auto")))
-                return reject_argument(flag, "GPU timestamps are not implemented; use off or auto");
+            if (value && !strcmp(value, "off")) out->runtime.timestamp_mode = DOE_TIMESTAMP_OFF;
+            else if (value && !strcmp(value, "auto")) out->runtime.timestamp_mode = DOE_TIMESTAMP_AUTO;
+            else if (value && !strcmp(value, "require")) out->runtime.timestamp_mode = DOE_TIMESTAMP_REQUIRE;
+            else return reject_argument(flag, "must be off, auto or require");
             i++;
         } else if (!strcmp(flag, "--adapter")) {
             if (value && !strcmp(value, "auto")) out->runtime.adapter = DOE_ADAPTER_AUTO;
