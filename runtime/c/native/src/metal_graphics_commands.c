@@ -26,6 +26,8 @@ static native_failure prepare_draw(doe_mtl_commands *commands, const doe_resourc
         .viewport={packet->state.viewport[0],packet->state.viewport[1],packet->state.viewport[2],
             packet->state.viewport[3],packet->state.viewport[4],packet->state.viewport[5]},
         .scissor={packet->state.scissor[0],packet->state.scissor[1],packet->state.scissor[2],packet->state.scissor[3]},
+        .depth_bias=graphics->depth_bias, .depth_slope=graphics->depth_slope,
+        .depth_clamp=graphics->depth_clamp, .unclipped_depth=graphics->unclipped_depth,
         .stencil_reference=packet->state.stencil_reference,
         .visibility_mode=packet->occlusion_active ? 1u : 0u,
         .visibility_offset=packet->occlusion_active ? (uint64_t)packet->occlusion_index * 8 : 0};

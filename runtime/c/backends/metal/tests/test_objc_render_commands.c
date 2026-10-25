@@ -23,7 +23,7 @@ typedef struct fixture {
     doe_mtl_viewport viewport;
     doe_mtl_scissor_abi scissor;
     float blend[4], bias[3];
-    size_t winding, cull, topology, first_vertex, count, instances, first_instance, index_type, index_offset;
+    size_t depth_clip, depth_clip_values[16], depth_clip_count, winding, cull, topology, first_vertex, count, instances, first_instance, index_type, index_offset;
     intptr_t base_vertex;
     void *vertex_textures[DOE_MTL_TEXTURE_SLOTS], *fragment_textures[DOE_MTL_TEXTURE_SLOTS];
     void *vertex_samplers[DOE_MTL_SAMPLER_SLOTS], *fragment_samplers[DOE_MTL_SAMPLER_SLOTS];
@@ -79,7 +79,12 @@ static void set_object(void *object, void *sel, void *value) {
 static void set_size(void *object, void *sel, size_t value) {
     token *t = object;
     if (object == &active->encoder) {
-        if (named(sel, "setFrontFacingWinding:")) active->winding = value;
+        if (named(sel, "setDepthClipMode:")) {
+            assert(active->depth_clip_count < 16);
+            active->depth_clip_values[active->depth_clip_count++] = value;
+            active->depth_clip = value;
+        }
+        else if (named(sel, "setFrontFacingWinding:")) active->winding = value;
         else { assert(named(sel, "setCullMode:")); active->cull = value; }
     } else {
         assert(t->index < 10);
@@ -215,7 +220,7 @@ static void encoding(void) {
     draws[0].vertex.buffers[4] = (doe_mtl_native_binding){&f.buffer, 12, 20};
     draws[0].vertex.textures[127] = &f.texture; draws[0].fragment.samplers[15] = &f.sampler;
     draws[0].values = (doe_mtl_render_draw){.topology = 4, .count = 5, .instance_count = 3, .first_vertex = 7, .first_instance = 2,
-        .viewport_enabled = true, .viewport = {1, 2, 10, 11, 0.1, 0.9}, .scissor_enabled = true, .scissor = {3, 4, 8, 9}};
+        .unclipped_depth = true, .viewport_enabled = true, .viewport = {1, 2, 10, 11, 0.1, 0.9}, .scissor_enabled = true, .scissor = {3, 4, 8, 9}};
     draws[1].pipeline = &f.pipeline; draws[1].vertex_sizes_slot = UINT32_MAX; draws[1].fragment_sizes_slot = UINT32_MAX;
     draws[1].index_buffer = &f.index_buffer; draws[1].index_offset = 24;
     draws[1].values = (doe_mtl_render_draw){.topology = 3, .count = 6, .instance_count = 4,
@@ -228,6 +233,7 @@ static void encoding(void) {
     assert(f.buffer_sets[0] == 62 && f.texture_sets[0] == 256 && f.sampler_sets[1] == 32);
     assert(f.bytes_sets[0] == 1 && f.sizes[0][4] == 20 && f.sizes[0][3] == 0);
     assert(f.viewport.width == 64 && f.viewport.min_depth == 0 && f.scissor.width == 64 && f.scissor.height == 32);
+    assert(f.depth_clip_count == 2 && f.depth_clip_values[0] == 1 && f.depth_clip_values[1] == 0 && f.depth_clip == 0);
     assert(f.blend[2] == 0.75f && f.bias[0] == -2 && f.winding == 1 && f.cull == 2 && f.stencil_reference == 255);
     assert(f.begins == 1 && f.ends == 1 && f.releases == 1 && f.pools == f.drains);
 }
