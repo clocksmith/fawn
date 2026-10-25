@@ -970,6 +970,7 @@ export async function requestDevice(options = {}) {
  */
 export const doe = createDoeNamespace({
   requestDevice,
+  createDoeRuntime: full.createDoeRuntime,
 });
 
 /**

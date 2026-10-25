@@ -657,6 +657,8 @@ export declare function createDoeNamespace<
   TRequestDeviceOptions = unknown,
 >(options?: {
   requestDevice?: (options?: TRequestDeviceOptions) => Promise<TDevice> | TDevice;
+  /** The surface's runtime factory; runtime helpers run the CLI it selects for the surface's provider. */
+  createDoeRuntime?: (options?: Record<string, unknown>) => unknown;
 }): DoeNamespace<TDevice, TBoundDoe, TRequestDeviceOptions>;
 
 export declare const doe: DoeNamespace<unknown, BoundDoeNamespace<unknown, unknown, DoeBindingSet, DoeKernel<unknown, DoeBindingSet, DoeComputeBatch<any, unknown, DoeBindingSet>, DoeComputePass<any, unknown, DoeBindingSet>>, DoeComputeBatch<any, unknown, DoeBindingSet>, DoeComputePass<any, unknown, DoeBindingSet>, DoeCommandEncoder<any, unknown, DoeBindingSet, DoeComputePass<any, unknown, DoeBindingSet>>>>;

@@ -32,6 +32,7 @@ export const createGpuNamespace = createDoeNamespace;
 
 export const gpu = createDoeNamespace({
   requestDevice,
+  createDoeRuntime,
 });
 
 export {

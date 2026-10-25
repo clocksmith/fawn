@@ -27,6 +27,7 @@ import { createDoeNamespace } from '../doe-namespace.js';
  */
 export const doe = createDoeNamespace({
   requestDevice: full.requestDevice,
+  createDoeRuntime: full.createDoeRuntime,
 });
 
 export * from './index.js';
