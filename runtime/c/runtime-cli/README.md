@@ -39,6 +39,15 @@ compilation and D3D12 execution require their own successful run, separately
 from Linux memory/file-output controls. Set `DOE_BIN` and `DOE_MODULE_RUNNER` to
 the produced executables; automatic package discovery uses `.exe` on Windows.
 
+Optional `--pipeline-cache-dir <directory>` configures the native Metal binary
+archive owner before pipeline creation; `--no-pipeline-cache` wins over that
+option. No directory or disk persistence is selected implicitly. Vulkan, D3D12
+and Dawn report unsupported rather than substituting a different cache. Optional
+archive errors do not replace the command's first device error. Trace metadata
+reports actual load/add/serialization attempts and failures, never inferred hits
+or skipped MSL compilation; flush happens before final metadata. Source controls
+and mocked native archive operations are not physical Metal persistence evidence.
+
 With no trace paths, `--trace` or `--replay`, stdout shows the quirk decision
 and normalized command details. Execution timing is shown only for real execution.
 

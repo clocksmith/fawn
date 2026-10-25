@@ -167,6 +167,8 @@ static void *buffer_contents(void *userdata, void *buffer) {
 static void close_runtime(void *userdata) {
     doe_mtl_objc *runtime = userdata;
     if (runtime == NULL) return;
+    (void)doe_mtl_objc_archive_flush(runtime, NULL);
+    doe_mtl_objc_archive_clear(runtime);
     if (runtime->metal_library != NULL) dlclose(runtime->metal_library);
     if (runtime->foundation_library != NULL) dlclose(runtime->foundation_library);
     if (runtime->objc_library != NULL) dlclose(runtime->objc_library);
@@ -301,6 +303,7 @@ static doe_mtl_status open_apple_runtime(doe_mtl_native *out, doe_mtl_error *err
     if (!load_selectors(runtime) || !doe_mtl_objc_load_image_selectors(runtime) ||
         !doe_mtl_objc_load_render(runtime, message)) goto unavailable;
     doe_mtl_objc_load_queries(runtime, message);
+    doe_mtl_objc_load_archives(runtime, message);
     native.userdata = runtime;
     native.close = close_runtime;
     native.release = doe_mtl_objc_release;
@@ -314,6 +317,9 @@ static doe_mtl_status open_apple_runtime(doe_mtl_native *out, doe_mtl_error *err
     native.buffer = create_buffer;
     native.contents = buffer_contents;
     native.pipeline = doe_mtl_objc_pipeline;
+    native.pipeline_cache = doe_mtl_objc_archive_configure;
+    native.pipeline_cache_flush = doe_mtl_objc_archive_flush;
+    native.pipeline_cache_stats = doe_mtl_objc_archive_stats;
     native.command = doe_mtl_objc_command;
     native.copy = doe_mtl_objc_copy;
     native.fill = doe_mtl_objc_fill;

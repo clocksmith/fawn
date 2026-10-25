@@ -14,7 +14,9 @@ typedef struct fixture {
     unsigned object_count, setting_count, pools, drains, libraries, functions, strings, stage;
     unsigned fail_library, fail_function;
     const char *fail_class, *fail_selector;
-    bool fail_pipeline, fail_depth;
+    bool fail_pipeline, fail_depth, fail_cached;
+    unsigned pipeline_calls, archive_adds;
+    void *archive_descriptor;
 } fixture;
 static fixture *active;
 static bool named(void *selector, const char *name) { return strcmp(selector, name) == 0; }
@@ -78,6 +80,10 @@ static void *library(void *receiver, void *sel, void *source, void *options, voi
 static void *named_call(void *receiver, void *sel, void *argument) {
     object *value = receiver;
     assert(argument != NULL);
+    if (named(sel, "arrayWithObject:")) {
+        assert(argument == &active->device);
+        return make_object("archive-array", false);
+    }
     if (named(sel, "newFunctionWithName:")) {
         assert(strcmp(value->kind, "library") == 0);
         active->functions++;
@@ -89,8 +95,21 @@ static void *named_call(void *receiver, void *sel, void *argument) {
 }
 static void *pipeline(void *receiver, void *sel, void *descriptor, void **error) {
     assert(receiver == &active->device && named(sel, "newRenderPipelineStateWithDescriptor:error:") && descriptor != NULL);
+    active->pipeline_calls++;
+    if (active->fail_cached && active->pipeline_calls == 1) { *error = &active->error; return NULL; }
     if (active->fail_pipeline) { *error = &active->error; return NULL; }
     return make_object("pipeline", true);
+}
+static doe_objc_bool responds(void *receiver, void *sel, void *query) {
+    assert(receiver && named(sel, "respondsToSelector:") && named(query, "setBinaryArchives:"));
+    return 1;
+}
+static doe_objc_bool archive_add(void *receiver, void *sel, void *descriptor, void **error) {
+    (void)error;
+    assert(receiver == &active->device && named(sel, "addRenderPipelineFunctionsWithDescriptor:error:"));
+    active->archive_adds++;
+    active->archive_descriptor = descriptor;
+    return 1;
 }
 static void *indexed(void *receiver, void *sel, size_t index) {
     object *array = receiver, *item;
@@ -207,8 +226,38 @@ static void failures(void) {
         assert_closed(&f);
     }
 }
+static void cached_construction(void) {
+    unsigned fallback;
+    for (fallback = 0; fallback < 2; ++fallback) {
+        fixture f;
+        doe_mtl_vertex_layout layout = {5, 24, 2};
+        doe_mtl_vertex_attribute attribute = {7, 5, 8, 31};
+        doe_mtl_render_pipeline_desc desc = descriptor(&layout, &attribute);
+        void *out = NULL, *depth = NULL;
+        unsigned i, attached = 0, cleared = 0;
+        initialize(&f);
+        f.fail_cached = fallback != 0;
+        f.runtime.responds = selector("respondsToSelector:");
+        f.runtime.responds_call = responds;
+        f.runtime.archives.archive = &f.device;
+        f.runtime.archives.array_class = &f.device;
+        f.runtime.archives.array_with_object = selector("arrayWithObject:");
+        f.runtime.archives.set_archives = selector("setBinaryArchives:");
+        f.runtime.archives.add_render = selector("addRenderPipelineFunctionsWithDescriptor:error:");
+        f.runtime.archives.error_call = archive_add;
+        assert(doe_mtl_objc_render_pipeline(&f.runtime, &f.device, &desc, &out, &depth, NULL) == DOE_MTL_OK);
+        assert(f.libraries == 2 && f.functions == 2 && f.pipeline_calls == 1 + fallback);
+        assert(f.archive_adds == 1 && f.runtime.archives.stats.additions == 1 && f.runtime.archives.stats.dirty);
+        for (i = 0; i < f.setting_count; ++i) if (named((void *)f.settings[i].selector, "setBinaryArchives:")) {
+            assert(f.settings[i].receiver == f.archive_descriptor);
+            if (f.settings[i].object_value) attached++; else cleared++;
+        }
+        assert(attached == 1 && cleared == fallback);
+        void_call(out, f.runtime.release); void_call(depth, f.runtime.release); assert_closed(&f);
+    }
+}
 int main(void) {
-    construction(); failures();
+    construction(); failures(); cached_construction();
     puts("Metal typed render pipeline controls: exact stage/descriptor/depth/stencil fields and eight failure paths passed; no SDK/GPU");
     return 0;
 }

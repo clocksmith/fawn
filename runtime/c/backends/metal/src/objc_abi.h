@@ -22,6 +22,7 @@ typedef signed char doe_objc_bool;
 #endif
 #include "objc_render_types.h"
 #include "objc_query_types.h"
+#include "objc_archive_types.h"
 typedef doe_objc_bool (*doe_objc_responds_call)(void *, void *, void *);
 typedef void *(*doe_objc_object_call)(void *, void *);
 typedef void (*doe_objc_void_call)(void *, void *);
@@ -63,6 +64,7 @@ typedef void (*doe_objc_copy_image_call)(void *, void *, void *, size_t, size_t,
 typedef struct doe_mtl_objc {
     doe_mtl_objc_graphics graphics;
     doe_mtl_objc_queries queries;
+    doe_mtl_objc_archives archives;
     void *objc_library;
     void *foundation_library;
     void *metal_library;
@@ -152,6 +154,13 @@ typedef struct doe_mtl_objc {
     void *error;
 } doe_mtl_objc;
 
+void doe_mtl_objc_load_archives(doe_mtl_objc *, doe_objc_message);
+doe_mtl_status doe_mtl_objc_archive_configure(void *, void *, const char *, size_t, doe_mtl_error *);
+doe_mtl_status doe_mtl_objc_archive_flush(void *, doe_mtl_error *);
+void doe_mtl_objc_archive_stats(void *, doe_mtl_pipeline_cache_stats *);
+void doe_mtl_objc_archive_clear(doe_mtl_objc *);
+bool doe_mtl_objc_archive_attach(doe_mtl_objc *, void *);
+void doe_mtl_objc_archive_add(doe_mtl_objc *, void *, bool);
 void *doe_mtl_objc_object(doe_mtl_objc *runtime, void *object, void *selector);
 bool doe_mtl_objc_surface_supported(void *userdata, void *layer);
 doe_mtl_status doe_mtl_objc_surface_configure(void *userdata, void *device, void *layer,

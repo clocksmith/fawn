@@ -231,11 +231,11 @@ static bool write_meta(const char *path, const options *o, const totals *t, uint
      * whose meta has no upload fields; the bench reads a meta uploadSubmitEvery
      * as an upload normalization input. */
     ok = ok && fprintf(out, ",\"queueSyncMode\":\"%s\",\"queueWaitMode\":\"%s\",\"quirkMode\":\"%s\""
-        /* No persistent pipeline cache exists in this runtime. */
-        ",\"pipelineCache\":{\"state\":\"disabled\",\"reason\":\"platform-unsupported\",\"warmupCount\":0,\"warmupNs\":0}",
+        ,
         o->runtime.defer_queue_sync ? "deferred" : "per-command",
         o->runtime.queue_wait == DOE_WAIT_PROCESS_EVENTS ? "process-events" : "wait-any",
         o->quirk_mode == DOE_QUIRK_OFF ? "off" : o->quirk_mode == DOE_QUIRK_ACTIVE ? "active" : "trace") >= 0;
+    ok = ok && doe_runtime_write_pipeline_cache(out, runtime);
     if (ok && t->oracles) {
         ok = write_optional(out, "outputOracleKind", "sha256_exact_v1", true) &&
             write_optional(out, "outputOracleReferenceId", t->oracle_reference, true) &&
@@ -732,6 +732,7 @@ int main(int argc, char **argv)
         fprintf(stderr, "doe-c-runtime: cannot write %s\n", operators.manifest_path);
         status = 1;
     }
+    if (runtime) doe_runtime_flush_pipeline_cache(runtime);
     if (o.trace_meta && !write_meta(o.trace_meta, &o, &t, command_count, runtime ? doe_runtime_adapter_info(runtime) : NULL,
             &operators, o.plan ? plan.plan_sha256 : NULL, runtime, &stream, ns_enabled ? &ns : NULL)) {
         fprintf(stderr, "doe-c-runtime: cannot write %s\n", o.trace_meta);

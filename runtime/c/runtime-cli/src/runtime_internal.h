@@ -6,6 +6,7 @@
 #include "execute.h"
 #include "webgpu.h"
 #include "surface_platform.h"
+#include "doe_native_pipeline_cache.h"
 #include <stddef.h>
 
 enum { MAX_GROUPS = 4, MAX_GROUP_BINDINGS = 64, MAX_KERNEL_SOURCE_BYTES = 16 * 1024 * 1024 };
@@ -66,10 +67,15 @@ bool runtime_timestamp_begin(doe_runtime *runtime, runtime_timestamp *timestamp,
 void runtime_timestamp_resolve(const runtime_timestamp *timestamp, WGPUCommandEncoder encoder);
 bool runtime_timestamp_finish(doe_runtime *runtime, runtime_timestamp *timestamp, bool ok, doe_trace_execution *execution);
 
+void runtime_pipeline_cache_open(doe_runtime *runtime);
+
 struct public_render_state;
 struct doe_runtime {
     doe_runtime_options options;
     bool timestamps_enabled;
+    DoeNativePipelineCacheInfo pipeline_cache;
+    const char *pipeline_cache_reason;
+    uint64_t pipeline_cache_flush_ns;
     WGPUInstance instance;
     WGPUAdapter adapter;
     WGPUDevice device;

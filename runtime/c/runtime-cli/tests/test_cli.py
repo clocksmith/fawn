@@ -675,6 +675,15 @@ def timestamp_modes(binary: Path, work: Path) -> None:
     dispatch["bindings"][0]["buffer_size"] = 1024
     small = work / "timestamp-small.commands.json"
     small.write_text(json.dumps([dispatch]))
+    cache_path = work / "must-not-create-cache"
+    for extra, reason in [(["--pipeline-cache-dir", str(cache_path)], "platform-unsupported"),
+                          (["--pipeline-cache-dir", str(cache_path), "--no-pipeline-cache"], "cli-flag")]:
+        code, stderr, meta, _ = run(binary, work, "cache-control", *extra, commands=small)
+        check(code == 0 and meta["pipelineCache"]["state"] == "disabled" and
+              meta["pipelineCache"]["reason"] == reason, f"optional Vulkan cache: {stderr}")
+        check(not cache_path.exists(), "unsupported or disabled cache created a directory")
+        check(meta["pipelineCache"]["additions"] == meta["pipelineCache"]["serializations"] == 0,
+              "unsupported cache reported archive work")
     code, stderr, meta, rows = run(binary, work, "timestamp-small", "--gpu-timestamp-mode", "off", commands=small)
     check(code == 0, f"timestamp off: {stderr}")
     check(meta["executionGpuTimestampAttemptedCount"] == 0 and
@@ -767,6 +776,7 @@ def main() -> int:
         (["--driver", "31.x"], "major[.minor[.patch]]"),
         (["--queue-sync-mode", "invalid"], "per-command or deferred"),
         (["--gpu-timestamp-mode", "invalid"], "off, auto or require"),
+        (["--pipeline-cache-dir", ""], "nonempty explicit directory"),
     ]
     for extra, needle in rejected:
         code, stderr, _, _ = run(args.binary, args.work, "rmsnorm_tree", *extra)

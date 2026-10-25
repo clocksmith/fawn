@@ -82,7 +82,13 @@ doe_mtl_status doe_mtl_objc_render_pipeline(void *userdata, void *device,
     if (!colors(r, descriptor, desc)) goto descriptor_failure;
     if ((desc->layout_count != 0 || desc->attribute_count != 0) && !vertex_layout(r, descriptor, desc))
         goto descriptor_failure;
+    bool archived = doe_mtl_objc_archive_attach(r, descriptor);
     pipeline = r->pipeline_call(device, g->new_pipeline, descriptor, &native_error);
+    if (!pipeline && archived) {
+        r->set_object_call(descriptor, r->archives.set_archives, NULL);
+        native_error = NULL;
+        pipeline = r->pipeline_call(device, g->new_pipeline, descriptor, &native_error);
+    }
     if (pipeline == NULL) {
         status = doe_mtl_objc_error(r, native_error, "newRenderPipelineStateWithDescriptor:error:", error);
         goto cleanup;
@@ -94,6 +100,7 @@ doe_mtl_status doe_mtl_objc_render_pipeline(void *userdata, void *device,
             goto cleanup;
         }
     }
+    if (archived) doe_mtl_objc_archive_add(r, descriptor, false);
     *out = pipeline;
     *out_depth = depth;
     pipeline = NULL;

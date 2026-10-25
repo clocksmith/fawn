@@ -28,6 +28,7 @@ static void usage(FILE *out)
           "  [--quirks <path>] [--quirk-mode off|trace|active] [--queue-sync-mode per-command|deferred]\n"
           "  [--queue-wait-mode process-events|wait-any] [--webgpu-ffi-queue-wait-timeout-ns N]\n"
           "  [--upload-buffer-usage copy-dst-copy-src|copy-dst] [--upload-submit-every N]\n"
+          "  [--no-pipeline-cache] [--pipeline-cache-dir <explicit directory>]\n"
           "  [--gpu-timestamp-mode off|auto|require] [--adapter auto|physical|software]\n"
           "  [--backend-lane <compiled Dawn delegate lane>]\n"
           "  [--validate-output-oracles]  (schema 1 sha256_exact_v1 isolated-dispatch oracles)\n"
@@ -129,6 +130,12 @@ int parse_options(int argc, char **argv, options *out)
             i++;
         } else if (!strcmp(flag, "--command-repeat")) {
             if (!parse_u64(value, &out->command_repeat) || !out->command_repeat) return reject_argument(flag, "must be a positive integer");
+            i++;
+        } else if (!strcmp(flag, "--no-pipeline-cache")) {
+            out->runtime.no_pipeline_cache = true;
+        } else if (!strcmp(flag, "--pipeline-cache-dir")) {
+            if (!value || !*value) return reject_argument(flag, "needs a nonempty explicit directory");
+            out->runtime.pipeline_cache_dir = value;
             i++;
         } else if (!strcmp(flag, "--gpu-timestamp-mode")) {
             if (value && !strcmp(value, "off")) out->runtime.timestamp_mode = DOE_TIMESTAMP_OFF;

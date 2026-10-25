@@ -210,6 +210,7 @@ doe_runtime *doe_runtime_open(const doe_runtime_options *options, char *message,
     }
     runtime->device = reply.object;
     runtime->queue = wgpuDeviceGetQueue(runtime->device);
+    runtime_pipeline_cache_open(runtime);
     return runtime;
 }
 
