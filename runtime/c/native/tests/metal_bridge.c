@@ -626,6 +626,15 @@ static void queue_upload_admission(state *s)
     wgpuDevicePushErrorScope(s->device, WGPUErrorFilter_Validation);
     assert(!wgpuDeviceCreateBuffer(s->device, &public_buffer));
     pop(s, WGPUErrorType_Validation);
+    /* A non-attachment texture's private zero staging also uses the actual
+     * native allocation cap, independently of this smaller public buffer limit. */
+    WGPUTextureDescriptor sampled = descriptor;
+    sampled.format = WGPUTextureFormat_RGB9E5Ufloat;
+    sampled.usage = WGPUTextureUsage_TextureBinding;
+    WGPUTexture sampled_image = wgpuDeviceCreateTexture(s->device, &sampled);
+    assert(sampled_image);
+    wgpuTextureRelease(sampled_image);
+    assert(mocks[2].live == live && !s->errors);
     const unsigned char data[12] = {0xa5,0x5a,0xf0,17,31,63,127,0xc3,192,128,64,8};
     WGPUTexelCopyTextureInfo destination = {.texture=image};
     WGPUTexelCopyBufferLayout layout = {.offset=3,.bytesPerRow=5,.rowsPerImage=2};
