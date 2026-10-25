@@ -109,6 +109,26 @@ Expected output:
 - smoke runner: `runtime/zig/zig-out/bin/doe-ort-ep-smoke`
 - session smoke runner: `runtime/zig/zig-out/bin/doe-ort-ep-session-smoke`
 
+C/Make build (no `zig build`, no Zig anchors; the Zig build above is unchanged):
+
+```sh
+make -C runtime/bridge/onnxruntime-ep all     # BUILD=<dir>, default ./build
+make -C runtime/bridge/onnxruntime-ep check   # ORT_LIB=<host libonnxruntime.so>
+```
+
+It compiles the same C++20 sources with the system C++ compiler into
+`libonnxruntime_doe_ep.so`, `doe-ort-ep-smoke`, `doe-ort-ep-session-smoke` and
+`ort-incumbent-session-smoke`; `src/smoke_main.c` is the process entry the Zig
+anchors provide in `zig build`. The EP's kernels run on the CPU and it links no
+WebGPU library, so there is nothing to link from `libwebgpu_doe_c` (or
+`libwebgpu_doe`). Its C-linkage exports equal
+`runtime/zig/reports/recomposition/semantic-fixtures/abi/libonnxruntime_doe_ep.so.symbols.txt`;
+C++ symbols differ only by standard library ABI (libstdc++ here, Zig's bundled
+libc++ there). `make check` runs the factory smoke and all 14 session smoke cases
+against the host ONNX Runtime (Ubuntu's 1.23.2 here). The incumbent smoke needs
+an ONNX Runtime built with the WebGPU execution provider; the distribution
+build has only the CPU, DNNL and XNNPACK providers and rejects `WebGPU`.
+
 Smoke:
 
 ```sh
