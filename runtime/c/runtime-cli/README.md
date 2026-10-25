@@ -123,11 +123,15 @@ that field.
 
 Rows follow the trace v1 FNV hash chain (seed `0x9e3779b97f4a7c15`); for the
 three streams in `make check` the row hashes equal those `doe-zig-runtime`
-(db0979828) wrote. The meta carries the Zig meta fields plus an `adapter` object
-naming the executing adapter, with `module` `doe-c-runtime`,
+(db0979828) wrote. The meta carries the Zig meta fields plus `adapterInfo`
+naming the executing adapter in the package traces' field names (`vendor`,
+`architecture`, `device`, `description`, `backendType`, `adapterType`,
+`vendorID`, `deviceID` and `driverVersion`, the last from
+`doeNativeAdapterGetPciIdentity`), which bench run receipts read as
+`hostIdentity.adapter`, with `module` `doe-c-runtime`,
 `executionBackend`/`backendId` `doe_c_vulkan`, `backendSelectionReason`
-`fixed_backend` and no `selectionPolicyHash` (there is no lane policy), plus the
-applied `uploadBufferUsage` and `uploadSubmitEvery`, `hostKernelPrewarmTotalNs`
+`fixed_backend` and no `selectionPolicyHash` (there is no lane policy), plus
+`hostKernelPrewarmTotalNs`
 (kernel pipelines compile before the command loop, outside execution timing, as
 doe-zig-runtime prewarms them), `pipelineCache` `disabled`/`platform-unsupported`
 (no persistent pipeline cache exists here), and for schema 1 oracles
@@ -137,9 +141,12 @@ semantic counts (`semanticTracingEnabled`, `semanticOpRowCount`,
 `operatorRecordManifestPath` and its SHA-256 `operatorRecordManifestHash` follow
 doe-zig-runtime; the manifest bytes use its layout (`[\n`, records joined by
 `,\n`, `\n]\n`), so an empty manifest is `[\n\n]\n`. No `numericStability`
-summary is written because no evaluation runs. The meta's `adapter`,
-`uploadBufferUsage` and `uploadSubmitEvery` fields are not in
-`config/trace-meta.schema.json`, which forbids additional properties.
+summary is written because no evaluation runs. Like doe-zig-runtime, the meta
+carries no upload arguments: the bench records them per sample, and a meta
+`uploadSubmitEvery` would change its upload normalization for this CLI only.
+`make check` validates every row and meta against `config/trace.schema.json`
+and `config/trace-meta.schema.json`, and the schema gate checks the retained
+`examples/doe-c-runtime-*.sample.json` rows and metas.
 
 No shader artifact manifest is written. The strict Dawn-versus-Doe obligation
 requires the executed SPIR-V to equal the checked-in `bench/kernels/<name>.spv`,

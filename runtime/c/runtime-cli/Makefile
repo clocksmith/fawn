@@ -7,7 +7,7 @@ BUILD ?= $(DOE_C_TMP)/runtime-cli
 NATIVE_BUILD ?= $(BUILD)/native
 NATIVE_LIBRARY_NAME := $(shell $(MAKE) --no-print-directory -s -C ../native native-library-name)
 NATIVE_LIBRARY = $(NATIVE_BUILD)/$(NATIVE_LIBRARY_NAME)
-CPPFLAGS += -D_POSIX_C_SOURCE=200809L -Isrc -I../../zig/vendor/webgpu-headers
+CPPFLAGS += -D_POSIX_C_SOURCE=200809L -Isrc -I../../zig/vendor/webgpu-headers -I../native/include
 CFLAGS ?= -O2 -g
 CFLAGS += -std=c11 -Wall -Wextra -Wpedantic -Werror -pthread
 CORE = src/json.c src/stream.c src/stream_texture.c src/stream_render.c src/trace.c src/sha256.c src/quirks.c \
@@ -17,7 +17,8 @@ CORE_HEADERS = src/json.h src/stream.h src/stream_internal.h src/trace.h src/sha
   src/operators.h src/numeric_gate.h src/plan.h
 TOGGLE_REGISTRY = ../../../config/quirk-toggle-registry.json
 RUNTIME = src/execute.c src/kernel.c src/texture.c src/render.c
-RUNTIME_HEADERS = src/execute.h src/runtime_internal.h ../../zig/vendor/webgpu-headers/webgpu.h
+RUNTIME_HEADERS = src/execute.h src/runtime_internal.h ../../zig/vendor/webgpu-headers/webgpu.h \
+  ../native/include/doe_native_adapter.h
 .PHONY: all bench-bin check check-host native
 all: $(BUILD)/doe-c-runtime
 $(BUILD):

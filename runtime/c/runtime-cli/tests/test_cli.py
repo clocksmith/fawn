@@ -6,7 +6,9 @@ doe-zig-runtime rows for the same streams, an output oracle matches its
 independent reference digest, copies and texture writes reproduce bytes
 computed independently on the host, and unsupported arguments, commands, layouts
 and oracle mismatches fail with a nonzero exit. The adapter that ran is printed from the
-trace meta; a CPU (fallback) adapter is not GPU evidence. Semantic dispatches
+trace meta's adapterInfo; a CPU (fallback) adapter is not GPU evidence. Every
+row and meta validates against config/trace.schema.json and
+config/trace-meta.schema.json. Semantic dispatches
 write operator records, repro bundles and captures equal to doe-zig-runtime's
 outside the execution fields, with captures checked against the host oracle;
 a dispatch doe-zig-runtime would evaluate for numeric stability is refused.
@@ -18,6 +20,8 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+
+import jsonschema
 import os
 import struct
 import subprocess
@@ -151,6 +155,7 @@ def run(binary: Path, work: Path, name: str, *extra: str, commands: Path | None 
     result = subprocess.run(argv, capture_output=True, text=True, timeout=900, cwd=REPO)
     meta_doc = json.loads(meta.read_text()) if meta.exists() else {}
     rows = [json.loads(line) for line in jsonl.read_text().splitlines() if line.strip()] if jsonl.exists() else []
+    check_schemas(name, meta_doc, rows)
     return result.returncode, result.stderr, meta_doc, rows
 
 
@@ -158,6 +163,23 @@ def replay_passes(work: Path, name: str) -> bool:
     result = subprocess.run([sys.executable, str(REPLAY), "--trace-jsonl", str(work / f"{name}.jsonl"),
                              "--trace-meta", str(work / f"{name}.meta.json")], capture_output=True, text=True)
     return result.returncode == 0 and result.stdout.strip() == "PASS"
+
+
+def _validator(name: str):
+    schema = json.loads((REPO / "config" / name).read_text())
+    return jsonschema.validators.validator_for(schema)(schema)
+
+
+ROW_SCHEMA = _validator("trace.schema.json")
+META_SCHEMA = _validator("trace-meta.schema.json")
+
+
+def check_schemas(label: str, meta: dict, rows: list) -> None:
+    """The bench-facing trace contracts hold for every artifact this CLI writes."""
+    errors = [f"meta: {e.message}" for e in META_SCHEMA.iter_errors(meta)] if meta else []
+    for row in rows:
+        errors += [f"row {row.get('seq')}: {e.message}" for e in ROW_SCHEMA.iter_errors(row)]
+    check(not errors, f"{label} violates the trace schemas: {errors[:3]}")
 
 
 def check(condition: bool, message: str) -> None:
@@ -392,7 +414,9 @@ def run_plan(binary: Path, work: Path, plan: dict, *extra: str, workload: str = 
                              "--trace-meta", str(meta), "--kernel-root", str(KERNELS), *extra],
                             capture_output=True, text=True, timeout=900, cwd=REPO, env=env)
     rows = [json.loads(line) for line in jsonl.read_text().splitlines()] if jsonl.exists() else []
-    return result, json.loads(meta.read_text()) if meta.exists() else {}, rows
+    meta_doc = json.loads(meta.read_text()) if meta.exists() else {}
+    check_schemas(f"plan {workload}", meta_doc, rows)
+    return result, meta_doc, rows
 
 
 def check_plan(binary: Path, work: Path) -> None:
@@ -444,9 +468,11 @@ def main() -> int:
         # Bench comparability reads these; a fixed backend has no lane policy hash.
         check(meta["backendId"] == meta["executionBackend"] == "doe_c_vulkan" and meta["fallbackUsed"] is False
               and meta["backendSelectionReason"] == "fixed_backend" and "selectionPolicyHash" not in meta
-              and meta["uploadBufferUsage"] == "copy-dst-copy-src" and meta["uploadSubmitEvery"] == 1,
-              f"{name} backend and upload meta")
-        adapter = meta["adapter"]
+              and "uploadBufferUsage" not in meta and "uploadSubmitEvery" not in meta,
+              f"{name} backend meta (no upload fields, as doe-zig-runtime)")
+        adapter = meta["adapterInfo"]
+        check(adapter["vendorID"] > 0 and isinstance(adapter["driverVersion"], int) and adapter["device"],
+              f"{name} adapterInfo names the executing adapter")
     rmsnorm = json.loads((args.work / "rmsnorm_tree.meta.json").read_text())
     check(rmsnorm["executionDispatchCount"] == 100 and rmsnorm["executionSubmitCount"] == 2, "rmsnorm dispatch/submit counts")
     # Meta fields the bench reads, as doe-zig-runtime writes them: kernel prewarm
@@ -509,7 +535,8 @@ def main() -> int:
           f"staging read back against host bytes, 2 quirk refusals, semantic rows with operator records, repro "
           f"bundles and host-checked captures, 2 numeric stability refusals, plan rows chained like "
           f"doe-plan-executor's with host-checked loads and dispatches and 5 plan refusals on "
-          f"{adapter.get('device')} ({adapter.get('adapterType')}, {adapter.get('backend')})")
+          f"{adapter.get('device')} ({adapter.get('adapterType')}, {adapter.get('backendType')}); every trace row and "
+          f"meta validates against config/trace.schema.json and config/trace-meta.schema.json")
     return 0
 
 

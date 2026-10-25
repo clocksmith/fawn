@@ -106,6 +106,22 @@
       "data": "reports/benchmarks/amd-vulkan/20261005-onnx-vulkan-campaign/trace-meta.json"
     },
     {
+      "schema": "config/trace-meta.schema.json",
+      "data": "examples/doe-c-runtime-trace-meta.sample.json"
+    },
+    {
+      "schema": "config/trace-meta.schema.json",
+      "data": "examples/doe-c-runtime-plan-trace-meta.sample.json"
+    },
+    {
+      "schema": "config/trace.schema.json",
+      "data": "examples/doe-c-runtime-semantic-trace-row.sample.json"
+    },
+    {
+      "schema": "config/trace.schema.json",
+      "data": "examples/doe-c-runtime-plan-trace-row.sample.json"
+    },
+    {
       "schema": "config/onnx-vulkan-evidence.schema.json",
       "data": "reports/benchmarks/amd-vulkan/20261005-onnx-vulkan-campaign/raw/doppler-offline-final/delivery.json"
     },
