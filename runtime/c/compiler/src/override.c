@@ -156,9 +156,9 @@ bool override_workgroup_size(Source *s, EntryRecord *entry, const LocalScope *sc
                                 "workgroup dimension must be positive");
         dimensions[i] = (uint32_t)value->constant.bits;
         if (s->specialization->specializing) {
-            if (dimensions[i] > 256u || dimensions[i] > 256u / product)
+            if (dimensions[i] > UINT32_MAX / product)
                 return source_error(s, DOE_COMPILER_UNSUPPORTED, value->value.source_offset,
-                                    "workgroup dimensions and product must be between 1 and 256");
+                                    "workgroup dimension product must fit u32");
             product *= dimensions[i];
         }
     }

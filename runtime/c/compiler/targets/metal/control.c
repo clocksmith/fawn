@@ -137,7 +137,12 @@ void metal_block(MetalEmitter *e, uint32_t *cursor, unsigned depth, uint32_t loo
                 metal_text(e, "discard_fragment();\n");
                 break;
             case IR_WORKGROUP_BARRIER:
-                metal_text(e, "threadgroup_barrier(mem_flags::mem_threadgroup);\n");
+                switch ((BarrierMemory)ir->operands.scalar.literal) {
+                    case BARRIER_WORKGROUP: metal_text(e, "threadgroup_barrier(mem_flags::mem_threadgroup);\n"); break;
+                    case BARRIER_STORAGE: metal_text(e, "threadgroup_barrier(mem_flags::mem_device);\n"); break;
+                    case BARRIER_TEXTURE: metal_text(e, "threadgroup_barrier(mem_flags::mem_texture);\n"); break;
+                    default: metal_error(e, "invalid barrier memory class"); return;
+                }
                 break;
             case IR_LOCAL_STORE:
                 metal_format(e, "l%u = ", ir->operands.scalar.binding);

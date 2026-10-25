@@ -143,9 +143,17 @@ int main(int argc, char **argv) {
         }
         free(logical_words);
         free(logical_storage);
+        const char *barriers="fn publish(){storageBarrier();textureBarrier();}"
+            "@compute @workgroup_size(4) fn main(){publish();workgroupBarrier();}";
+        expect(target,barriers,"main",NULL,0u,true);
+        const char *divergent="@compute @workgroup_size(4) fn main(@builtin(local_invocation_index) i:u32){"
+            "if(i>0u){storageBarrier();}}";
+        expect(target,divergent,"main",NULL,0u,false);
         const char *limits="override n:u32; @compute @workgroup_size(n,2) fn main(){}";
-        const DoeCompilerOverrideValueV13 too_big={"n",1u,129.0};
+        const DoeCompilerOverrideValueV13 wider={"n",1u,512.0};
+        const DoeCompilerOverrideValueV13 too_big={"n",1u,2147483648.0};
         const DoeCompilerOverrideValueV13 zero={"n",1u,0.0};
+        expect(target,limits,"main",&wider,1u,true);
         expect(target,limits,"main",&too_big,1u,false);
         expect(target,limits,"main",&zero,1u,false);
         const char *clamp="override lower=0u; override upper=1u;"

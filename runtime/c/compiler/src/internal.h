@@ -145,6 +145,7 @@ typedef struct { uint32_t kind; TypeId type; uint32_t first, count;
     uint64_t payload; uint32_t target, converted_from; } ConstantRecord;
 enum { ACCESS_MEMBER, ACCESS_INDEX_U32, ACCESS_INDEX_I32, ACCESS_COMPONENT };
 typedef struct { uint32_t parent, source_offset; TypeId input_type, output_type; uint32_t kind, index; } AccessStep;
+typedef enum { BARRIER_WORKGROUP, BARRIER_STORAGE, BARRIER_TEXTURE } BarrierMemory;
 typedef enum {
     IR_INPUT, IR_ROBUST_LOAD, IR_UNIFORM_LOAD, IR_CONSTANT, IR_ADD, IR_SUBTRACT,
     IR_MULTIPLY, IR_MAX, IR_COMPARE, IR_ROBUST_STORE, IR_IF, IR_ELSE, IR_END_IF, IR_RETURN,

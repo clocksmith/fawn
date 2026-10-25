@@ -38,6 +38,34 @@ const POINTER_EXPECTED = [2, 4, 9, 19, 22, 4, 5, 10, 30, 33,
   6, 6, 11, 21, 24, 8, 7, 12, 32, 35];
 const CASES = [
   {
+    label: 'texture barrier publishes neighboring texels within each workgroup', texture: 'storage',
+    code: `@group(0) @binding(0) var image: texture_storage_2d<r32uint, read_write>;
+      @group(1) @binding(0) var<storage, read_write> data: array<u32>;
+      @compute @workgroup_size(4) fn main(@builtin(local_invocation_index) lane: u32,
+                                         @builtin(workgroup_id) group: vec3u) {
+        let base = group.x * 4u;
+        textureStore(image, vec2u(base + lane, 0u), vec4u(30u + base + lane));
+        textureBarrier();
+        data[base + lane] = textureLoad(image, vec2u(base + ((lane + 1u) % 4u), 0u)).x;
+      }`,
+    dispatch: 2,
+    expected: [31, 32, 33, 30, 35, 36, 37, 34],
+  },
+  {
+    label: 'storage barrier publishes neighboring invocation writes within each workgroup',
+    code: `@group(0) @binding(0) var<storage, read_write> data: array<u32>;
+      fn publish() { storageBarrier(); }
+      @compute @workgroup_size(4) fn main(@builtin(local_invocation_index) lane: u32,
+                                         @builtin(workgroup_id) group: vec3u) {
+        let base = group.x * 8u;
+        data[base + lane] = 20u + group.x * 4u + lane;
+        publish();
+        data[base + 4u + lane] = data[base + ((lane + 1u) % 4u)];
+      }`,
+    dispatch: 2,
+    expected: [20, 21, 22, 23, 21, 22, 23, 20, 24, 25, 26, 27, 25, 26, 27, 24],
+  },
+  {
     label: 'mix preserves constant and runtime scalar/vector factors and ordered effects',
     code: `const CONSTANT: vec2f = mix(vec2f(2.0, 4.0), vec2f(6.0, 8.0), 0.25);
       @group(0) @binding(0) var<storage, read_write> data: array<u32>;
@@ -298,7 +326,8 @@ async function runCase({ label, code, entryPoint = 'main', dispatch = 1, expecte
     size, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
   });
   const inputTexture = texture ? device.createTexture({
-    size: [8, 4], format: 'rgba8unorm', usage: GPUTextureUsage.TEXTURE_BINDING,
+    size: [8, 4], format: texture === 'storage' ? 'r32uint' : 'rgba8unorm',
+    usage: texture === 'storage' ? GPUTextureUsage.STORAGE_BINDING : GPUTextureUsage.TEXTURE_BINDING,
   }) : null;
   const resources = [];
   try {

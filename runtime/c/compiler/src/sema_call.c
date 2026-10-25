@@ -418,15 +418,17 @@ bool sema_call_value(Source *s, uint32_t id, const LocalScope *scope, bool evalu
                 "arrayLength requires one runtime array pointer and a used result");
         return sema_array_length(s, id, scope, emit, out);
     }
-    if (!declared_type && source_span_is(s,name,"workgroupBarrier")) {
+    if (!declared_type && (source_span_is(s,name,"workgroupBarrier") ||
+        source_span_is(s,name,"storageBarrier") || source_span_is(s,name,"textureBarrier"))) {
         if (!statement || node->right!=0u || node->value.call.type.offset!=NO_ID || c->current_function==NO_ID)
-            return source_error(s,DOE_COMPILER_SEMANTIC_ERROR,name.offset,"workgroupBarrier requires no arguments and no result");
+            return source_error(s,DOE_COMPILER_SEMANTIC_ERROR,name.offset,"barrier requires no arguments and no result");
         if (!source_reference_record(s,&c->expression_references[id],SOURCE_BARRIER,0u,node->source_offset)) return false;
         *out=(ExpressionValue){.runtime=true,.constant.type=IR_VOID,.value={.type=IR_VOID,.source_offset=name.offset}};
-        return sema_emit(s,emit,(IrInstruction){.opcode=IR_WORKGROUP_BARRIER,.source_offset=name.offset},NULL);
+        return sema_emit(s,emit,(IrInstruction){.opcode=IR_WORKGROUP_BARRIER,.source_offset=name.offset,
+            .operands.scalar.literal=source_span_is(s,name,"storageBarrier") ? BARRIER_STORAGE :
+                source_span_is(s,name,"textureBarrier") ? BARRIER_TEXTURE : BARRIER_WORKGROUP},NULL);
     }
-    if (!declared_type && (source_span_is(s,name,"storageBarrier") || source_span_is(s,name,"workgroupUniformLoad") ||
-        source_span_is(s,name,"textureBarrier")))
+    if (!declared_type && source_span_is(s,name,"workgroupUniformLoad"))
         return source_error(s,DOE_COMPILER_UNSUPPORTED,name.offset,"synchronization builtin is outside the workgroup barrier owner");
     if (name.length >= sizeof(((Name *)0)->text))
         return source_error(s, DOE_COMPILER_UNSUPPORTED, name.offset, "identifier length exceeds supported capacity");

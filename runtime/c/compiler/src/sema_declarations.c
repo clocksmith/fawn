@@ -562,8 +562,8 @@ bool sema_resolve_declarations(Source *s, LocalScope *scope) {
             const Integer *v=&entry->state.dimensions[i];
             dimensions[i]=v->value;
             if (v->expression!=NO_ID && !integer_attribute(s,v->expression,scope,false,&dimensions[i])) return false;
-            if (dimensions[i]==0u || dimensions[i]>256u || dimensions[i]>256u/product)
-                return source_error(s,DOE_COMPILER_UNSUPPORTED,v->offset,"workgroup dimensions and product must be between 1 and 256");
+            if (dimensions[i]==0u || dimensions[i]>UINT32_MAX/product)
+                return source_error(s,DOE_COMPILER_UNSUPPORTED,v->offset,"workgroup dimensions must be positive and their product must fit u32");
             product*=dimensions[i];
         }
         memset(&entry->state,0,sizeof(entry->state));
