@@ -14,7 +14,6 @@ typedef struct {
     uint16_t saved_x87_control;
 #elif defined(__aarch64__) || defined(__arm64__)
     uint64_t saved_fpcr, saved_fpsr;
-uint32_t numeric_integer_bits(NumericBuiltinKind, uint32_t, bool);
 #endif
     bool active;
 } NumericEnvironment;
