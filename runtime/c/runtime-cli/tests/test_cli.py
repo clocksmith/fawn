@@ -29,6 +29,7 @@ import re
 import struct
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[4]
@@ -675,15 +676,38 @@ def timestamp_modes(binary: Path, work: Path) -> None:
     dispatch["bindings"][0]["buffer_size"] = 1024
     small = work / "timestamp-small.commands.json"
     small.write_text(json.dumps([dispatch]))
-    cache_path = work / "must-not-create-cache"
-    for extra, reason in [(["--pipeline-cache-dir", str(cache_path)], "platform-unsupported"),
-                          (["--pipeline-cache-dir", str(cache_path), "--no-pipeline-cache"], "cli-flag")]:
-        code, stderr, meta, _ = run(binary, work, "cache-control", *extra, commands=small)
-        check(code == 0 and meta["pipelineCache"]["state"] == "disabled" and
-              meta["pipelineCache"]["reason"] == reason, f"optional Vulkan cache: {stderr}")
-        check(not cache_path.exists(), "unsupported or disabled cache created a directory")
-        check(meta["pipelineCache"]["additions"] == meta["pipelineCache"]["serializations"] == 0,
-              "unsupported cache reported archive work")
+    # The former platform-unsupported expectation predates the real Vulkan
+    # cache owner. This is an admission/persistence control, not a changed
+    # numerical/output oracle: inspect native bytes and a second process load.
+    with tempfile.TemporaryDirectory(prefix="cache-control-", dir=work) as temporary:
+        cache_path = Path(temporary) / "cache"
+        code, stderr, meta, _ = run(binary, work, "cache-control", "--pipeline-cache-dir",
+                                   str(cache_path), "--no-pipeline-cache", commands=small)
+        cache = meta["pipelineCache"]
+        check(code == 0 and cache["state"] == "disabled" and cache["reason"] == "cli-flag",
+              f"disabled Vulkan cache: {stderr}")
+        check(not cache_path.exists() and cache["additions"] == cache["serializations"] == 0,
+              "explicitly disabled cache created files or reported work")
+        code, stderr, meta, _ = run(binary, work, "cache-control", "--pipeline-cache-dir",
+                                   str(cache_path), commands=small)
+        cache = meta["pipelineCache"]
+        if EXPECTED_BACKEND["id"] == "doe_c_vulkan":
+            check(code == 0 and cache["state"] == "enabled" and cache["nativeStatus"] == 0 and
+                  cache["additions"] > 0 and cache["serializations"] == 1 and
+                  cache["additionFailures"] == cache["serializationFailures"] == 0,
+                  f"native Vulkan cache publication: {stderr}")
+            artifact = cache_path / "doe-vulkan-v1.cache"
+            payload = artifact.read_bytes()
+            check(payload[:8] == b"DOEPC001" and len(payload) > 96,
+                  "cache lacks native owner envelope/payload")
+            code, stderr, meta, _ = run(binary, work, "cache-reload", "--pipeline-cache-dir",
+                                       str(cache_path), commands=small)
+            check(code == 0 and meta["pipelineCache"]["loadSuccesses"] == 1,
+                  f"native Vulkan cache reload: {stderr}")
+        else:
+            check(code == 0 and cache["state"] == "disabled" and
+                  cache["reason"] == "non-doe-backend" and not cache_path.exists(),
+                  f"foreign provider must not call Doe cache extensions: {stderr}")
     code, stderr, meta, rows = run(binary, work, "timestamp-small", "--gpu-timestamp-mode", "off", commands=small)
     check(code == 0, f"timestamp off: {stderr}")
     check(meta["executionGpuTimestampAttemptedCount"] == 0 and

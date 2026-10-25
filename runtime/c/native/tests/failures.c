@@ -13,14 +13,17 @@ doe_vk_status __wrap_doe_vk_buffer_create(doe_vk_context *context, uint64_t size
     if (injected_buffer_status != DOE_VK_OK) return injected_buffer_status;
     return __real_doe_vk_buffer_create(context,size,usage,memory,out,error);
 }
-doe_vk_status __real_doe_vk_pipeline_create(doe_vk_context *, const uint32_t *, size_t,
-    const char *, const doe_vk_binding_layout *, size_t, doe_vk_pipeline **, doe_vk_error *);
-doe_vk_status __wrap_doe_vk_pipeline_create(doe_vk_context *context, const uint32_t *words, size_t count,
-    const char *entry, const doe_vk_binding_layout *bindings, size_t binding_count,
-    doe_vk_pipeline **out, doe_vk_error *error)
+/* Follow the actual compute creation boundary, including newly composed
+ * subgroup/immediate fields; the old convenience wrapper is no longer called. */
+doe_vk_status __real_doe_vk_pipeline_create_with_immediates(doe_vk_context *,const uint32_t *,size_t,
+    const char *,const doe_vk_binding_layout *,size_t,uint32_t,uint32_t,doe_vk_pipeline **,doe_vk_error *);
+doe_vk_status __wrap_doe_vk_pipeline_create_with_immediates(doe_vk_context *context,const uint32_t *words,size_t count,
+    const char *entry,const doe_vk_binding_layout *bindings,size_t binding_count,uint32_t subgroup,
+    uint32_t immediate_bytes,doe_vk_pipeline **out,doe_vk_error *error)
 {
     if (injected_pipeline_status != DOE_VK_OK) return injected_pipeline_status;
-    return __real_doe_vk_pipeline_create(context,words,count,entry,bindings,binding_count,out,error);
+    return __real_doe_vk_pipeline_create_with_immediates(context,words,count,entry,bindings,binding_count,
+        subgroup,immediate_bytes,out,error);
 }
 doe_vk_status __real_doe_vk_render_pipeline_create(doe_vk_context *,
     const doe_vk_render_pipeline_desc *, doe_vk_pipeline **, doe_vk_error *);
