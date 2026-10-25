@@ -177,6 +177,19 @@ void wgpuTextureDestroy(WGPUTexture handle)
     if (!device) return;
     native_lock(device);
     doe_resource_texture_destroy(texture);
+    /* WebGPU destroy() frees the texture's memory once work using it is done,
+     * even while views exist; later uses fail validation (destroyed) and backend
+     * recording (evicted). Progress retires finished work without consuming its
+     * first failure, which a later public operation reports; the backend then
+     * frees at once or when the texture's last command use retires (unknown
+     * completion keeps that use). A borrowed (surface) image stays until the
+     * last release (BUSY). */
+    native_texture *payload = doe_resource_texture_native(texture);
+    if (device->backend.kind == WGPUBackendType_Vulkan && payload) {
+        native_progress_pending(device);
+        doe_vk_status evicted = doe_vk_texture_evict(payload->texture);
+        if (evicted != DOE_VK_OK && evicted != DOE_VK_BUSY) abort();
+    }
     native_unlock(device);
 }
 void wgpuTextureSetLabel(WGPUTexture texture, WGPUStringView label)

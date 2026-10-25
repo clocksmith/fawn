@@ -14,6 +14,9 @@ struct doe_vk_texture {
     doe_vk_status content_status;
     doe_vk_commands *recording_owner;
     bool borrowed_image, external_alive;
+    bool evicted; /* destroy() freed image and memory (doe_vk_texture_evict). */
+    bool evict_requested; /* destroy() while command uses remained: evict at the last. */
+    uint32_t command_uses; /* Commands holding a use (recording, queued or running). */
     doe_vk_commands *external_owner; /* Prepared presentation seals this frame. */
     VkImage image;
     VkDeviceMemory memory;
@@ -63,6 +66,9 @@ bool doe_vk_texture_view_is_slice(const doe_vk_texture_view *view);
 /* One aspect-selection owner for views and transfers: ALL resolves to every
  * format aspect; DEPTH/STENCIL must be present in the format. */
 doe_vk_status doe_vk_texture_aspects(const doe_vk_texture *texture, doe_vk_texture_aspect aspect, uint32_t *out);
+/* A command use ended (doe_vk_textures_release): the last one completes a
+ * requested eviction. Before the texture reference it held is dropped. */
+void doe_vk_texture_use_released(doe_vk_texture *texture);
 doe_vk_status doe_vk_use_texture(doe_vk_commands *commands, doe_vk_texture *texture,
     doe_vk_texture_use **out);
 void doe_vk_texture_transition(doe_vk_commands *commands, doe_vk_texture_use *use,

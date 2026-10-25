@@ -134,6 +134,7 @@ doe_vk_status doe_vk_use_texture(doe_vk_commands *commands, doe_vk_texture *text
     doe_vk_texture_use **out) {
     if (texture == NULL || texture->context != commands->context) return DOE_VK_INVALID_ARGUMENT;
     if (texture->borrowed_image && !texture->external_alive) return DOE_VK_INVALID_STATE;
+    if (texture->evicted) return DOE_VK_INVALID_STATE;
     if (texture->external_owner != NULL && texture->external_owner != commands) return DOE_VK_BUSY;
     if (texture->content_status != DOE_VK_OK) return texture->content_status;
     if (texture->recording_owner != NULL && texture->recording_owner != commands) return DOE_VK_BUSY;
@@ -156,6 +157,13 @@ doe_vk_status doe_vk_use_texture(doe_vk_commands *commands, doe_vk_texture *text
         free(use);
         return status;
     }
+    if (texture->command_uses == UINT32_MAX) {
+        doe_vk_texture_release(texture);
+        free(use->initialized);
+        free(use);
+        return DOE_VK_OUT_OF_MEMORY;
+    }
+    ++texture->command_uses;
     use->texture = texture;
     use->layout = texture->layout;
     memcpy(use->initialized, texture->initialized, texture->subresource_count);
@@ -392,6 +400,7 @@ void doe_vk_textures_release(doe_vk_commands *commands) {
         doe_vk_texture_use *use = commands->textures;
         commands->textures = use->next;
         if (use->texture->recording_owner == commands) use->texture->recording_owner = NULL;
+        doe_vk_texture_use_released(use->texture);
         doe_vk_texture_release(use->texture);
         free(use->initialized);
         free(use);
