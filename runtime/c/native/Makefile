@@ -206,7 +206,14 @@ $(BUILD)/lifecycle: tests/lifecycle.c tests/adapter_class.h $(OBJECTS) $(COMPILE
 	$(CC) $(CPPFLAGS) $(CFLAGS) tests/lifecycle.c $(OBJECTS) $(COMPILER_LINK) $(PLATFORM_LIBS) -o $@
 $(BUILD)/procedures-cxx: tests/procedures.cpp $(NATIVE_LIBRARY)
 	$(CXX) $(CPPFLAGS) -std=c++17 -Wall -Wextra -Wpedantic -Werror $(SANITIZE) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
+$(BUILD)/instance-devices: tests/instance_devices.c tests/adapter_class.h $(NATIVE_LIBRARY)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
+.PHONY: check-instance-devices
+check-instance-devices: $(BUILD)/instance-devices $(BUILD)/procedures-cxx
+	$(BUILD)/procedures-cxx
+	$(BUILD)/instance-devices
 ifeq ($(SHARED_PLATFORM),Linux)
+check: check-instance-devices
 check: $(BUILD)/draw-guard $(BUILD)/implicit-sampling $(BUILD)/d3d12-graphics check-d3d12-graphics-layout $(BUILD)/depth-comparison $(BUILD)/all-any $(BUILD)/select $(BUILD)/pipeline-overrides check-d3d12-bindings $(BUILD)/texture-bindings $(BUILD)/atomic-operations $(BUILD)/d3d12-texture-desc $(BUILD)/texture-transfers check-d3d12-indirect-layout $(BUILD)/indirect-dispatch $(BUILD)/map-oom $(BUILD)/command-resources $(BUILD)/binding-aliases $(BUILD)/mixed-resources $(BUILD)/offscreen-triangle check-provider-pin $(BUILD)/backend-failure $(BUILD)/vulkan-identity $(BUILD)/draw-budget $(BUILD)/indirect-render $(BUILD)/indexed-render $(BUILD)/depth-sampling $(BUILD)/readonly-depth-sampling $(BUILD)/cube-array $(BUILD)/view-formats $(BUILD)/point-list $(BUILD)/color-discard $(BUILD)/msaa-sampling $(BUILD)/format-features $(BUILD)/draw-features $(BUILD)/copy-layouts $(BUILD)/bc-compression $(BUILD)/component-swizzle $(BUILD)/encoder-errors $(BUILD)/core-formats $(BUILD)/indirect-compute check-build-dependencies check-host-bridge $(BUILD)/atomics $(BUILD)/debug $(BUILD)/msaa $(BUILD)/depth $(BUILD)/demote $(BUILD)/graphics-admission $(BUILD)/empty-shader $(BUILD)/graphics $(BUILD)/compute $(BUILD)/procedures-cxx $(BUILD)/lifecycle $(BUILD)/textures $(BUILD)/admission $(BUILD)/failures $(BUILD)/timestamps $(BUILD)/recovery $(BUILD)/pending-progress $(BUILD)/barrier-coverage $(BUILD)/async-submit $(BUILD)/queue-sync-info $(BUILD)/fault-sweep $(BUILD)/concurrency $(BUILD)/lost-objects $(BUILD)/depth-copies $(BUILD)/uniform-standard $(BUILD)/wgsl-language-features $(BUILD)/texture-binding-view-dimension $(BUILD)/compute-programs $(BUILD)/fused-commands $(BUILD)/shader-check $(BUILD)/shader-reflection $(BUILD)/adapter-info $(BUILD)/program-prepare $(BUILD)/vertex-formats $(BUILD)/mrt $(BUILD)/anisotropy $(BUILD)/storage-textures $(BUILD)/limits $(BUILD)/large-write $(BUILD)/slice-render
 	$(BUILD)/map-oom
 	$(BUILD)/binding-aliases
@@ -304,7 +311,7 @@ check-sanitizers:
 # Developer evidence on the printed adapter/driver only, not qualification. Uses the
 # system ICDs: unset VK_ICD_FILENAMES. Never run on a host under a physical hold.
 PHYSICAL_CLIENTS = draw-guard implicit-sampling d3d12-graphics d3d12-vertex-inputs depth-comparison all-any select pipeline-overrides texture-bindings atomic-operations texture-transfers indirect-dispatch map-oom command-resources binding-aliases mixed-resources offscreen-triangle draw-budget indirect-render indexed-render depth-copies depth-sampling readonly-depth-sampling cube-array view-formats point-list color-discard msaa-sampling format-features draw-features copy-layouts bc-compression component-swizzle encoder-errors core-formats indirect-compute atomics debug msaa depth \
-	demote graphics-admission empty-shader graphics compute lifecycle textures admission \
+	demote graphics-admission empty-shader graphics compute lifecycle instance-devices textures admission \
 	failures timestamps recovery uniform-standard wgsl-language-features texture-binding-view-dimension compute-programs fused-commands program-prepare vertex-formats mrt anisotropy storage-textures limits large-write slice-render
 # Real-window presentation (XCB on a reachable X server, e.g. Xwayland); not part
 # of headless `check`. Exit 77 means skipped (no display), never a pass.

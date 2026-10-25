@@ -2,8 +2,50 @@
 #include "webgpu.h"
 #include <cassert>
 #include <cstdio>
+
+static void instance_requirements()
+{
+    WGPUInstanceFeatureName required[] = {WGPUInstanceFeatureName_TimedWaitAny,
+        WGPUInstanceFeatureName_MultipleDevicesPerAdapter};
+    WGPUInstanceLimits limits = WGPU_INSTANCE_LIMITS_INIT;
+    limits.timedWaitAnyMaxCount = 64;
+    WGPUInstanceDescriptor descriptor = WGPU_INSTANCE_DESCRIPTOR_INIT;
+    descriptor.requiredFeatureCount = 2;
+    descriptor.requiredFeatures = required;
+    descriptor.requiredLimits = &limits;
+    WGPUInstance instance = wgpuCreateInstance(&descriptor);
+    assert(instance);
+    WGPUFutureWaitInfo untouched = {{0}, 17};
+    assert(wgpuInstanceWaitAny(instance, 65, &untouched, 1) == WGPUWaitStatus_Error);
+    assert(untouched.completed == 17);
+    assert(wgpuInstanceWaitAny(instance, 1, nullptr, 1) == WGPUWaitStatus_Error);
+    wgpuInstanceRelease(instance);
+    limits.timedWaitAnyMaxCount = 65;
+    assert(!wgpuCreateInstance(&descriptor));
+    limits.timedWaitAnyMaxCount = 0;
+    WGPUChainedStruct chain = {};
+    limits.nextInChain = &chain;
+    assert(!wgpuCreateInstance(&descriptor));
+    limits.nextInChain = nullptr;
+    descriptor.requiredFeatures = nullptr;
+    assert(!wgpuCreateInstance(&descriptor));
+    descriptor.requiredFeatures = required;
+    required[1] = WGPUInstanceFeatureName_ShaderSourceSPIRV;
+    assert(!wgpuCreateInstance(&descriptor));
+    required[1] = WGPUInstanceFeatureName_Force32;
+    assert(!wgpuCreateInstance(&descriptor));
+    descriptor.requiredFeatureCount = 0;
+    descriptor.nextInChain = &chain;
+    assert(!wgpuCreateInstance(&descriptor));
+    descriptor.nextInChain = nullptr;
+    instance = wgpuCreateInstance(&descriptor);
+    assert(instance);
+    wgpuInstanceRelease(instance);
+}
+
 int main()
 {
+    instance_requirements();
     WGPUStringView name = {"wgpuCreateInstance", WGPU_STRLEN};
     auto create = reinterpret_cast<WGPUProcCreateInstance>(wgpuGetProcAddress(name));
     assert(create);
@@ -42,11 +84,14 @@ int main()
     assert(instance_features && instance_limits && has_instance_feature && free_instance_features);
     WGPUSupportedInstanceFeatures features = WGPU_SUPPORTED_INSTANCE_FEATURES_INIT;
     instance_features(&features);
-    assert(!features.featureCount && !features.features);
+    assert(features.featureCount == 2 && features.features);
+    for (size_t i = 0; i < features.featureCount; ++i)
+        assert(has_instance_feature(features.features[i]));
     free_instance_features(features);
     WGPUInstanceLimits limits = WGPU_INSTANCE_LIMITS_INIT;
-    assert(instance_limits(&limits) == WGPUStatus_Success && !limits.timedWaitAnyMaxCount);
-    assert(!has_instance_feature(WGPUInstanceFeatureName_TimedWaitAny));
+    assert(instance_limits(&limits) == WGPUStatus_Success && limits.timedWaitAnyMaxCount == 64);
+    assert(has_instance_feature(WGPUInstanceFeatureName_TimedWaitAny));
+    assert(has_instance_feature(WGPUInstanceFeatureName_MultipleDevicesPerAdapter));
     assert(!has_instance_feature(WGPUInstanceFeatureName_ShaderSourceSPIRV));
     assert(instance_limits(nullptr) == WGPUStatus_Error);
     WGPUChainedStruct chain = {};

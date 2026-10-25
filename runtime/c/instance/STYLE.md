@@ -1,6 +1,6 @@
 # Native instance C implementation style
 
-Follow the frozen contract, repository native adapter subset and explicit
+Follow the original contract and [capability amendment](CAPABILITIES.md), repository native adapter subset and explicit
 [future-owner style](../futures/STYLE.md).
 
 - Keep allocation/reference ownership in typed C state. The public instance is

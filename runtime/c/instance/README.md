@@ -1,5 +1,10 @@
 # Experimental C native-instance owner
 
+The owner-authorized [capability amendment](CAPABILITIES.md) advertises timed
+waits and multiple devices per adapter after focused C Metal and Vulkan checks.
+It supersedes the original empty capability result; historical seals and their
+independent tests remain bound to the original source.
+
 This experimentally selected owner passes independent Linux x86-64 ReleaseFast
 CPU/host acceptance against the [frozen ownership contract](CONTRACT.md) and
 [opaque C header](include/doe_instance.h). See [results](RESULTS.md) and the

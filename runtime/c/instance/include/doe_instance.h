@@ -118,9 +118,10 @@ WGPUWaitStatus doe_instance_wait_any(doe_instance *instance, size_t count,
  * retained global registry. Every explicit recursive pump gets its own fresh
  * issuance boundary; outer-pump deferral does not suppress nested delivery. */
 void doe_instance_process_events(doe_instance *instance);
-/* Conservative unchanged capability contract: empty/NULL features, all feature
- * queries false, limits nextInChain=NULL and timedWaitAnyMaxCount=0. Native
- * GetInstanceLimits returns Success1. FreeMembers is always a no-op. */
+/* TimedWaitAny (at most 64 records for timeout > 0) and multiple devices per
+ * adapter. Feature storage is immutable and process-lifetime; FreeMembers is a
+ * no-op. Other features are unsupported. See CAPABILITIES.md for the authorized
+ * amendment to the original sealed contract and its verification scope. */
 WGPUSupportedInstanceFeatures doe_instance_features(void);
 WGPUInstanceLimits doe_instance_limits(void);
 WGPUBool doe_instance_has_feature(WGPUInstanceFeatureName feature);

@@ -117,17 +117,24 @@ static void test_delivery(unsigned mode)
     doe_instance_retain(instance);
     assert(doe_future_new_id(view.queue, &id) == DOE_FUTURE_OK);
     assert(doe_future_register(view.queue, event->completion, id) == DOE_FUTURE_OK);
+    if (mode == 1) {
+        WGPUFutureWaitInfo pending = {{id}, 7};
+        assert(doe_instance_wait_any(instance, 1, &pending, 1000000) == WGPUWaitStatus_TimedOut);
+        assert(!pending.completed && !seen.callbacks);
+    }
     view.retain(view.userdata); /* Standalone direct readiness has its own lease. */
     assert(doe_future_mark_ready(event->completion) == DOE_FUTURE_OK);
     view.release(view.userdata);
     if (mode == 1) {
-        WGPUFutureWaitInfo infos[2] = {{{id}, 7}, {{id}, 9}};
+        WGPUFutureWaitInfo infos[64];
+        assert(doe_instance_limits().timedWaitAnyMaxCount == 64);
+        for (size_t i = 0; i < 64; ++i) infos[i] = (WGPUFutureWaitInfo){{id}, 7};
         assert(seen.callbacks == 0);
         doe_instance_process_events(instance);
         assert(seen.callbacks == 0);
-        assert(doe_instance_wait_any(instance, 2, infos, 0) == WGPUWaitStatus_Success);
-        assert(infos[0].completed == 1 && infos[1].completed == 1);
-        assert(seen.wait.allocations == 1 && seen.wait.frees == 1);
+        assert(doe_instance_wait_any(instance, 64, infos, 1000000000) == WGPUWaitStatus_Success);
+        for (size_t i = 0; i < 64; ++i) assert(infos[i].completed == 1);
+        assert(seen.wait.allocations == 2 && seen.wait.frees == 2);
     } else if (mode == 2) {
         assert(seen.callbacks == 0);
         doe_instance_process_events(instance);
@@ -158,6 +165,8 @@ int main(void)
     assert(doe_instance_wait_any(NULL, 0, NULL, UINT64_MAX) == WGPUWaitStatus_Success);
     assert(doe_instance_wait_any(NULL, 1, &info, 0) == WGPUWaitStatus_Error);
     assert(doe_instance_wait_any(instance, SIZE_MAX, &info, 0) == WGPUWaitStatus_Error);
+    assert(doe_instance_wait_any(instance, 65, &info, 1) == WGPUWaitStatus_Error);
+    assert(doe_instance_wait_any(instance, 1, NULL, 1) == WGPUWaitStatus_Error);
     assert(info.completed == 71);
     seen.wait.fail = 1;
     assert(doe_instance_wait_any(instance, 1, &info, 0) == WGPUWaitStatus_Error);
@@ -173,8 +182,14 @@ int main(void)
     seen.guard = 0;
     doe_instance_release(instance);
     assert(seen.removed == 1 && seen.object.frees == 1);
-    assert(doe_instance_features().featureCount == 0 && doe_instance_features().features == NULL);
-    assert(doe_instance_limits().nextInChain == NULL && doe_instance_limits().timedWaitAnyMaxCount == 0);
+    WGPUSupportedInstanceFeatures features = doe_instance_features();
+    assert(features.featureCount == 2 && features.features != NULL);
+    for (size_t i = 0; i < features.featureCount; ++i)
+        assert(doe_instance_has_feature(features.features[i]));
+    assert(doe_instance_has_feature(WGPUInstanceFeatureName_TimedWaitAny));
+    assert(doe_instance_has_feature(WGPUInstanceFeatureName_MultipleDevicesPerAdapter));
+    assert(!doe_instance_has_feature(WGPUInstanceFeatureName_ShaderSourceSPIRV));
+    assert(doe_instance_limits().nextInChain == NULL && doe_instance_limits().timedWaitAnyMaxCount == 64);
     assert(!doe_instance_has_feature((WGPUInstanceFeatureName)UINT32_MAX));
     doe_instance_features_free_members(doe_instance_features());
     doe_instance_retain(NULL);

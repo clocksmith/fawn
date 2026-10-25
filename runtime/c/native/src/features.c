@@ -140,8 +140,7 @@ WGPUBool wgpuDeviceHasFeature(WGPUDevice handle, WGPUFeatureName feature)
 }
 void wgpuSupportedFeaturesFreeMembers(WGPUSupportedFeatures features) { free((void *)features.features); }
 
-/* These are the accepted instance owner's conservative capability results,
- * not claims that every operation exercised experimentally is advertised. */
+/* Capability admission and reporting share the instance owner's contract. */
 void wgpuGetInstanceFeatures(WGPUSupportedInstanceFeatures *features)
 {
     if (features) *features = doe_instance_features();

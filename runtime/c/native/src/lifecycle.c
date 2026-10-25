@@ -5,8 +5,15 @@
 
 WGPUInstance wgpuCreateInstance(const WGPUInstanceDescriptor *descriptor)
 {
-    if (descriptor && (descriptor->nextInChain || descriptor->requiredFeatureCount ||
-            descriptor->requiredLimits)) return NULL;
+    if (descriptor) {
+        if (descriptor->nextInChain ||
+                (descriptor->requiredFeatureCount && !descriptor->requiredFeatures)) return NULL;
+        for (size_t i = 0; i < descriptor->requiredFeatureCount; ++i)
+            if (!doe_instance_has_feature(descriptor->requiredFeatures[i])) return NULL;
+        if (descriptor->requiredLimits && (descriptor->requiredLimits->nextInChain ||
+                descriptor->requiredLimits->timedWaitAnyMaxCount >
+                    doe_instance_limits().timedWaitAnyMaxCount)) return NULL;
+    }
     doe_instance_config config = {
         .abi_version = DOE_INSTANCE_ABI_VERSION,
         .object_allocator = {NULL, NULL, native_allocate, native_deallocate},

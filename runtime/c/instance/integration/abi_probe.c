@@ -29,8 +29,8 @@ int main(void)
     assert(DOE_INSTANCE_OK == 0 && DOE_INSTANCE_INVALID_ARGUMENT == 1 && DOE_INSTANCE_UNSUPPORTED_VERSION == 2);
     assert(DOE_INSTANCE_OUT_OF_MEMORY == 3 && DOE_INSTANCE_LAYOUT_OVERFLOW == 4 && DOE_INSTANCE_QUEUE_INITIALIZATION == 5);
     assert(WGPUWaitStatus_Success == 1 && WGPUWaitStatus_TimedOut == 2 && WGPUWaitStatus_Error == 3);
-    assert(doe_instance_features().featureCount == 0 && doe_instance_features().features == NULL);
-    assert(doe_instance_limits().nextInChain == NULL && doe_instance_limits().timedWaitAnyMaxCount == 0);
+    assert(doe_instance_features().featureCount == 2 && doe_instance_features().features != NULL);
+    assert(doe_instance_limits().nextInChain == NULL && doe_instance_limits().timedWaitAnyMaxCount == 64);
     assert(doe_instance_wait_any(NULL, 0, NULL, UINT64_MAX) == WGPUWaitStatus_Success);
     puts("instance ABI C calls: passed");
     return 0;
