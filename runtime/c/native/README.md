@@ -361,15 +361,19 @@ owner (`backends/vulkan/include/doe_vk_surface.h`). Design decisions:
   Platform handles are borrowed and must outlive the surface and its frames. The
   instance-level surface stores only those handles and its label (own label store);
   it does not change the accepted C instance.
-- WSI enablement is explicit: `compatibleSurface` in `wgpuInstanceRequestAdapter`
-  opens the adapter's Vulkan context with exactly that surface's platform bit and
-  the backend's complete WSI/maintenance1 chain, then creates and releases a probe
+- WSI enablement: `compatibleSurface` in `wgpuInstanceRequestAdapter` opens the
+  adapter's Vulkan context with exactly that surface's platform bit and the
+  backend's complete WSI/maintenance1 chain, then creates and releases a probe
   native surface to prove the selected queue can present to that window. Missing
-  support is `Unavailable`, never a fallback adapter or headless image. Devices
-  inherit the adapter's options, so their contexts carry the same WSI chain.
-  `GetCapabilities` returns `WGPUStatus_Error` for an adapter not opened with that
-  platform; `Configure` with such a device is a Validation error. Metal adapters
-  reject any compatibleSurface.
+  support is `Unavailable`, never a fallback adapter or headless image. A default
+  request (no compatibleSurface) enables all three Linux platforms with the same
+  chain when the loader and device provide them, and opens without WSI when they
+  do not; a non-CPU device without WSI still precedes the CPU fallback. webgpu.h
+  lets any adapter that can present configure a surface; compatibleSurface only
+  narrows selection. Devices inherit the adapter's options, so their contexts
+  carry the same WSI chain. `GetCapabilities` returns `WGPUStatus_Error` for an
+  adapter opened without that platform; `Configure` with such a device is a
+  Validation error. Metal adapters reject any compatibleSurface.
 - The native `doe_vk_surface` is created at Configure on the configured device's
   own context (adapter contexts only host short-lived capability probes, serialized
   by an adapter mutex). An adapter's Vulkan context is adapter-only (instance and

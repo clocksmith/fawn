@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: MIT
- * Public-ABI presentation to a real XCB window: compatibleSurface adapter,
+ * Public-ABI presentation to a real XCB window: compatibleSurface adapter (and
+ * a default adapter, which presents too),
  * capabilities, configure, acquire, render, same-submission readback, present,
  * resize/reconfigure, unconfigure, early releases and error cases. Needs a
  * reachable X server (DISPLAY); exits 77 (skip, never a pass) without one. */
@@ -70,17 +71,20 @@ static void resize_window(window *w, uint32_t width, uint32_t height)
     settle_window(w);
 }
 
-/* A device whose adapter lacked compatibleSurface has no WSI: explicit errors. */
-static void incompatible_device(state *s, WGPUSurface surface, WGPUTextureFormat format, const window *w)
+/* An adapter requested without compatibleSurface presents too (webgpu.h:
+ * compatibleSurface only narrows selection): capabilities, configure and one
+ * acquired frame, then the surface is unconfigured for the main device. */
+static void default_adapter_device(state *s, WGPUSurface surface, WGPUTextureFormat format, const window *w)
 {
     state other = {.instance=s->instance};
     request_adapter(&other, NULL);
-    WGPUSurfaceCapabilities caps = WGPU_SURFACE_CAPABILITIES_INIT;
-    assert(wgpuSurfaceGetCapabilities(surface, other.adapter, &caps) == WGPUStatus_Error);
-    push_validation(&other);
+    assert(choose_format(surface, other.adapter) == format);
     configure(&other, surface, format, w->width, w->height);
-    expect_validation(&other);
-    assert(acquire(surface).status == WGPUSurfaceGetCurrentTextureStatus_Error);
+    WGPUSurfaceTexture frame = acquire(surface);
+    assert((frame.status == WGPUSurfaceGetCurrentTextureStatus_SuccessOptimal ||
+        frame.status == WGPUSurfaceGetCurrentTextureStatus_SuccessSuboptimal) && frame.texture);
+    wgpuTextureRelease(frame.texture);
+    wgpuSurfaceUnconfigure(surface);
     wgpuQueueRelease(other.queue);
     wgpuDeviceRelease(other.device);
     wgpuAdapterRelease(other.adapter);
@@ -138,7 +142,7 @@ int main(void)
     configure(&s, surface, format, w.width + 7, w.height);
     expect_validation(&s);
     assert(acquire(surface).status == WGPUSurfaceGetCurrentTextureStatus_Error);
-    incompatible_device(&s, surface, format, &w);
+    default_adapter_device(&s, surface, format, &w);
 
     configure(&s, surface, format, w.width, w.height);
     assert(wgpuSurfacePresent(surface) == WGPUStatus_Error); /* Present without acquire. */
@@ -222,7 +226,7 @@ int main(void)
     wgpuRenderPipelineRelease(pipeline);
     consumer_finish(&s);
     xcb_disconnect(w.connection);
-    printf("PASS public surface presentation: XCB window %ux%u after resize (%s), compatibleSurface adapter, "
+    printf("PASS public surface presentation: XCB window %ux%u after resize (%s), compatibleSurface adapter, default adapter presents, "
         "capabilities, %u verified frames with zero-init/asymmetric pixels/same-submission readback before present, "
         "stale-frame and lease rejection, reconfigure, reconfigure at a new size after a present burst, deferred unconfigure, early releases and configure/acquire/present "
         "negatives; %u retried Timeout statuses %s\n", w.width, w.height, observed, FRAMES + 6, timeouts,

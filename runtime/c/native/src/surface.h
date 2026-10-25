@@ -81,6 +81,9 @@ void native_surface_retirement_finish_locked(native_pending *pending);
 void native_surface_retirement_release(native_pending *pending);
 /* Exact DOE_VK_SURFACE_* bit of a live public surface; 0 for NULL. */
 uint32_t native_surface_platform(WGPUSurface surface);
+/* Every Linux WSI platform this build composes, enabled on a default Vulkan
+ * adapter when its loader and device provide them; 0 on other builds. */
+uint32_t native_surface_default_platforms(void);
 /* Creates and releases a probe surface on an adapter context built with this
  * surface's platform: proves the selected queue can present to the window. */
 native_result native_surface_compatible(WGPUSurface surface, const native_backend *adapter);
