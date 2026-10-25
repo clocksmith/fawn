@@ -6,6 +6,7 @@ from __future__ import annotations
 import importlib.util
 from pathlib import Path
 import tempfile
+import sys
 import unittest
 from unittest.mock import patch
 
@@ -27,6 +28,18 @@ class LeanProofRecordTests(unittest.TestCase):
 
 
 class PackagePreflightTests(unittest.TestCase):
+    def test_python_build_helpers_leave_captured_inputs_immutable(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "source"
+            source.mkdir()
+            (source / "inventory.py").write_text("names = ['actual_owner']\n", encoding="utf-8")
+            (source / "build.py").write_text("import inventory\nprint(inventory.names)\n", encoding="utf-8")
+            before = {p.name: p.read_bytes() for p in source.iterdir()}
+            PACKAGE.execute([sys.executable, str(source / "build.py")], root / "build.log")
+            self.assertEqual({p.name: p.read_bytes() for p in source.iterdir()}, before)
+            self.assertIn("actual_owner", (root / "build.log").read_text())
+
     def test_existing_paths_preserved(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
