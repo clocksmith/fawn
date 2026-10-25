@@ -50,14 +50,21 @@ static void sample_resolve_lifetime(void) {
     assert(doe_mtl_timestamps_create(context, 4, &timestamps, NULL) == DOE_MTL_OK);
     assert(doe_mtl_buffer_create(context, 32, DOE_MTL_SHARED, &buffer, NULL) == DOE_MTL_OK);
     commands = command(context);
-    assert(doe_mtl_commands_timestamp(commands, timestamps, 2, NULL) == DOE_MTL_OK);
+    bool available = true;
+    assert(doe_mtl_timestamps_available(commands, timestamps, 2, &available) == DOE_MTL_OK && !available);
+    assert(doe_mtl_commands_ordered_timestamp(commands, timestamps, 2, NULL) == DOE_MTL_OK);
+    assert(doe_mtl_timestamps_available(commands, timestamps, 2, &available) == DOE_MTL_OK && available);
     assert(mock.timestamp_pair.buffer == timestamps->native && mock.timestamp_pair.begin == 2);
     assert(!timestamps->available[2] && timestamps->owner == commands && timestamps->references == 2);
     assert(doe_mtl_commands_resolve_timestamps(commands, timestamps, 2, 1, buffer, 16, NULL) == DOE_MTL_OK);
-    assert(commands->timestamps->resolve_event != NULL && commands->timestamps->resolve_value == 1);
+    assert(commands->timestamps->resolve_event != NULL && commands->timestamps->resolve_value == 2);
     assert(mock.last_source == timestamps->native && mock.last_destination == buffer->native);
     assert(mock.last_source_offset == 2 && mock.last_length == 1 && mock.last_destination_offset == 16);
     assert(doe_mtl_buffer_read(buffer, 16, &output, 8) == DOE_MTL_BUSY && output == 0xdeadbeef);
+    context->caps.timestamp_stage = false; /* Ordered blit path uses the same lease. */
+    assert(doe_mtl_commands_ordered_timestamp(commands, timestamps, 2, NULL) == DOE_MTL_OK);
+    assert(doe_mtl_commands_resolve_timestamps(commands, timestamps, 2, 1, buffer, 16, NULL) == DOE_MTL_OK);
+    assert(commands->timestamps->resolve_value == 4);
     competing = command(context);
     assert(doe_mtl_commands_timestamp(competing, timestamps, 1, NULL) == DOE_MTL_BUSY);
     assert(doe_mtl_commands_release(competing) == DOE_MTL_OK);

@@ -12,9 +12,11 @@ struct fixture {
         counters, counter, counter_name, common_set, common_counter, samples,
         command, encoder, destination, compute_class, compute_descriptor, attachments, attachment,
         error, description, event;
-    unsigned tokens[32];
+    unsigned tokens[36];
     unsigned pools, drains, releases, ends, samples_called, resolves, compute_encoders, signals, waits, events;
     uint64_t event_value;
+    unsigned clock_samples, fills;
+    bool stopped_clock;
     bool wrong_set, wrong_counter, extra_counter, stage, blit, fail_pool, fail_descriptor,
         fail_buffer, fail_encoder, missing_selector, fail_attachment, fail_event;
     size_t count, storage, sample_index, resolve_first, resolve_count, destination_offset, begin, end;
@@ -122,6 +124,19 @@ static void sample_call(void *receiver, void *selector, void *buffer, size_t ind
     f->samples_called++;
     f->sample_index = index;
 }
+static void clocks_call(void *receiver, void *selector, uint64_t *cpu, uint64_t *gpu) {
+    fixture *f = owner(receiver);
+    assert(receiver == &f->device && selector == f->runtime.queries.sample_clocks);
+    *cpu = UINT64_C(900000000000) + f->clock_samples * 2500;
+    *gpu = UINT64_C(123456000000) + (f->stopped_clock ? 0 : f->clock_samples * 1000);
+    ++f->clock_samples;
+}
+static void fill_call(void *receiver, void *selector, void *buffer, doe_mtl_range_abi range, uint8_t value) {
+    fixture *f = owner(receiver);
+    assert(receiver == &f->encoder && selector == f->runtime.fill_buffer && buffer == &f->destination);
+    assert(range.location == 0 && range.length == 4 && value == 0);
+    f->fills++;
+}
 static void event_call(void *receiver, void *selector, void *event, uint64_t value) {
     fixture *f = owner(receiver);
     assert(receiver == &f->command && event == &f->event && value != 0);
@@ -144,7 +159,7 @@ static void resolve_call(void *receiver, void *selector, void *buffer, doe_mtl_r
 }
 static void *compute_call(void *receiver, void *selector, void *descriptor) {
     fixture *f = owner(receiver);
-    assert(receiver == &f->command && selector == f->runtime.queries.compute_encoder && descriptor == &f->compute_descriptor);
+    assert(receiver == &f->command && (selector == f->runtime.queries.compute_encoder || selector == f->runtime.queries.blit_encoder) && descriptor == &f->compute_descriptor);
     f->compute_encoders++;
     return f->fail_encoder ? NULL : &f->encoder;
 }
@@ -161,6 +176,7 @@ static void init(fixture *f) {
     r->pool_class = &f->pool_class;
     q->descriptor_class = &f->descriptor_class;
     q->compute_pass_class = &f->compute_class;
+    q->blit_pass_class = &f->compute_class;
     q->common_timestamp_set = &f->common_set;
     q->common_timestamp = &f->common_counter;
     r->new_object = &f->tokens[0];
@@ -195,6 +211,11 @@ static void init(fixture *f) {
     q->signal_event = &f->tokens[29];
     q->wait_event = &f->tokens[30];
     q->event = event_call;
+    q->clocks = clocks_call;
+    q->sample_clocks = &f->tokens[31];
+    q->blit_encoder = &f->tokens[32];
+    r->fill_buffer = &f->tokens[33];
+    r->fill_call = fill_call;
     r->object_call = object_call;
     r->void_call = void_call;
     r->size_call = size_call;
@@ -225,6 +246,7 @@ static void discovery_and_creation(void) {
         assert(caps.timestamp_stage == (scenario == 0 || scenario == 4 || scenario == 5));
         assert(caps.timestamp_blit == (scenario == 0));
         if (scenario == 0) {
+            assert(caps.timestamp_period_ns == 2.5f && f.clock_samples == 2);
             assert(doe_mtl_objc_timestamps(&f.runtime, &f.device, 19, &out, &error) == DOE_MTL_OK);
             assert(out == &f.samples && f.count == 19 && f.storage == 0 && f.releases == 1);
         } else {
@@ -269,6 +291,15 @@ static void encoding_and_cleanup(void) {
     assert(doe_mtl_objc_resolve_timestamps(&f.runtime, &f.command, &f.samples,
         0, 1, &f.destination, 0, &event, 2, NULL) == DOE_MTL_OK);
     assert(f.events == 2 && f.signals == 2 && f.waits == 2 && f.event_value == 2);
+    assert(doe_mtl_objc_timestamp_boundary(&f.runtime, &f.command, &f.samples, 7, true,
+        &f.destination, &event, 3, NULL) == DOE_MTL_OK);
+    assert(f.begin == 7 && f.end == SIZE_MAX && f.fills == 1 && f.event_value == 3);
+    assert(doe_mtl_objc_timestamp_boundary(&f.runtime, &f.command, &f.samples, 8, false,
+        NULL, &event, 4, NULL) == DOE_MTL_OK);
+    assert(f.samples_called == 1 && f.sample_index == 8 && f.fills == 1 && f.event_value == 4);
+    doe_mtl_caps caps = {0}; f.stopped_clock = true; f.stage = true;
+    doe_mtl_objc_query_caps(&f.runtime, &f.device, &caps);
+    assert(caps.timestamp_stage && caps.timestamp_period_ns == 0);
 }
 int main(void) {
     discovery_and_creation();

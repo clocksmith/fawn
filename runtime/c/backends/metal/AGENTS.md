@@ -37,7 +37,9 @@ access rules. Timestamp samples share that completion owner too: distinguish sta
 and blit capabilities, never resolve unwritten samples, and preserve native error
 values instead of fabricating time or assuming Mach clock units. Order GPU resolves
 after native counter publication with a shared-event signal/wait; the event belongs
-to the existing timestamp command lease and survives unknown completion. Reset/aggregation and public query-set policy remain upstream.
+to the existing timestamp command lease and survives unknown completion. Explicitly
+ordered standalone boundaries may overwrite a prior sample after preceding GPU
+work; strict timed-encoder/raw primitives retain their original admission. Reset/aggregation and public query-set policy remain upstream.
 
 Portable call-ledger tests are not a Metal emulator, SDK check or physical run.
 On an Apple toolchain, run `make sdk-abi` after native ABI record/signature changes;

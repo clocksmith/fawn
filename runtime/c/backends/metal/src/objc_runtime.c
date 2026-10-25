@@ -329,6 +329,7 @@ static doe_mtl_status open_apple_runtime(doe_mtl_native *out, doe_mtl_error *err
     native.render = doe_mtl_objc_render;
     native.timestamps = doe_mtl_objc_timestamps;
     native.timestamp = doe_mtl_objc_timestamp;
+    native.timestamp_boundary = doe_mtl_objc_timestamp_boundary;
     native.resolve_timestamps = doe_mtl_objc_resolve_timestamps;
     native.commit = doe_mtl_objc_commit;
     native.observe = doe_mtl_objc_observe;

@@ -43,7 +43,8 @@ native/resource owner to adopt, not a replacement WebGPU API or reference author
   retained buffer; contiguous query runs, offsets and capability limits are
   validated without another query-set or result-aggregation authority.
 - Native timestamp-only counter-set discovery and owned sample buffers, explicit
-  blit-boundary sampling, compute-stage begin/end pairs and GPU resolves into
+  blit-boundary sampling, ordered standalone stage/blit writes, compute-stage
+  begin/end pairs and GPU resolves into
   ordinary buffers. Actual runtime sampling capabilities gate each path. A timed
   empty dispatch still creates a real encoder, never manufactured timestamps.
 - One-shot submit, nonblocking poll, explicitly blocking native wait, terminal
@@ -174,19 +175,22 @@ Subsequent observations preserve the record even if the native error changes.
 
 Timestamp indices share the same speculative/completion owner. Resolve requires
 all selected samples to have been encoded or previously completed; no unwritten
-sample becomes zero. Each index can be written once per recording and reused
-only after the prior recording settles. GPU failure poisons the sample buffer;
-replacement is required. This conservative rule also rejects same-index reuse in
-later passes of one recording; the public resource API can admit that reuse, so
-full query composition must prepare distinct native slots or establish a native
-reuse contract. Likewise, public unwritten-query zero-fill is not performed here.
+sample becomes zero. Strict sampling writes an index once per recording. The explicit ordered
+boundary first signals and waits for a native shared event, permitting later
+passes to overwrite the index while preserving earlier GPU resolve snapshots.
+Its stage path uses a leased four-byte native blit so the encoder executes.
+GPU failure poisons the sample buffer. Public unwritten-query zero-fill remains
+upstream, using this owner's canonical availability observation.
 The explicit capacity4096 is an owner allocation bound,
 not a discovered hardware maximum; native creation can reject smaller requests.
 The timestamp-only counter set is checked by its exported native name and exact
 single-counter layout. Resolve produces native uint64 CounterResultTimestamp
 records; UINT64_MAX denotes Metal CounterErrorValue. No CPU values, nanosecond
 normalization, Mach-timebase assumptions or successful timing claims are invented.
-Counter-value validity and public query availability remain upstream obligations.
+Paired sampleTimestamps CPU values are nanoseconds; their delta divided by the
+GPU clock delta supplies the measured binary32 period. Zero/nonmonotonic baselines
+do not expose a period. The public frontend compiles the shared integer-limb
+conversion and keeps native CounterErrorValue unchanged.
 
 ## Concrete native composition prerequisites
 

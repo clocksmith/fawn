@@ -8,7 +8,8 @@ extern "C" {
 
 /* Native timestamp storage, not the public query-set/availability authority.
  * The same command completion owner leases this object. A sample is written at
- * most once per recording; a later settled recording may overwrite it. */
+ * most once by strict operations per recording; the explicitly ordered boundary
+ * below supports overwrite after all preceding work. Settled recordings may reuse it. */
 typedef struct doe_mtl_timestamps doe_mtl_timestamps;
 enum { DOE_MTL_TIMESTAMP_CAPACITY = 4096 };
 doe_mtl_status doe_mtl_timestamps_create(doe_mtl_context *context, uint32_t count,
@@ -18,6 +19,17 @@ void doe_mtl_timestamps_release(doe_mtl_timestamps *timestamps);
 /* Requires actual blit-boundary sampling support, not just stage sampling. */
 doe_mtl_status doe_mtl_commands_timestamp(doe_mtl_commands *commands,
     doe_mtl_timestamps *timestamps, uint32_t index, doe_mtl_error *error);
+/* Ordered standalone boundary using actual stage or blit sampling. The native
+ * event precedes sampling, so same-recording index reuse preserves earlier
+ * resolves. On stage devices a leased four-byte blit makes the encoder execute;
+ * the recorded value is a native counter, never that scratch value. */
+doe_mtl_status doe_mtl_commands_ordered_timestamp(doe_mtl_commands *commands,
+    doe_mtl_timestamps *timestamps, uint32_t index, doe_mtl_error *error);
+/* Availability belongs to the same speculative command snapshot. This query
+ * does not publish or invent values; upstream public query policy can zero
+ * unavailable samples explicitly while strict raw resolve remains strict. */
+doe_mtl_status doe_mtl_timestamps_available(doe_mtl_commands *commands,
+    doe_mtl_timestamps *timestamps, uint32_t index, bool *out);
 /* Native CounterResultTimestamp records, uint64_t each, with no fabricated
  * values or assumed Mach-time conversion. UINT64_MAX is Metal CounterErrorValue.
  * Successful GPU completion does not prove every counter value is valid.

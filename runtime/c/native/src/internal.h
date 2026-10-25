@@ -5,6 +5,7 @@
 #include "webgpu.h"
 #include "backend.h"
 #include "doe_metal_render.h"
+#include "doe_metal_query.h"
 #include "doe_metal_indirect.h"
 #include "doe_instance.h"
 #include "doe_callbacks.h"
@@ -50,6 +51,8 @@ typedef struct native_device {
     bool queue_failed;
     uint32_t features; /* Enabled WebGPU features, NATIVE_FEATURE bits. */
     doe_vk_timestamp_normalizer *timestamp_normalizer;
+    doe_mtl_pipeline *metal_timestamp_pipeline;
+    uint32_t metal_timestamp_slot;
     doe_vk_dispatch_validator *dispatch_validator;
     doe_mtl_dispatch_guard *metal_dispatch_guard;
     doe_mtl_draw_guard *metal_draw_guard;
@@ -92,6 +95,7 @@ typedef struct native_sampler {
 typedef struct native_queries {
     native_device *device;
     union { doe_vk_query_pool *pool; doe_mtl_buffer *metal_results; };
+    doe_mtl_timestamps *metal_timestamps;
 } native_queries;
 
 typedef struct native_pipeline_error {
@@ -244,6 +248,8 @@ bool native_shader_capabilities(const doe_shader_view *view, const doe_vk_caps *
 bool native_timestamp_supported(const doe_vk_caps *caps);
 uint32_t native_timestamp_workgroup(const doe_vk_caps *caps);
 doe_vk_status native_timestamp_initialize(native_device *device);
+native_failure native_metal_timestamp_initialize(native_device *device);
+bool native_metal_timestamp_supported(const doe_mtl_caps *caps);
 doe_vk_status native_dispatch_guard_initialize(native_device *device);
 doe_vk_status native_draw_guard_initialize(native_device *device);
 void native_indirect_guards_release(native_device *device);

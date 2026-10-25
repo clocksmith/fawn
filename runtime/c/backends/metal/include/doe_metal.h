@@ -57,6 +57,7 @@ typedef struct doe_mtl_caps {
     uint32_t max_visibility_offset;
     bool counting_visibility;
     bool timestamp_stage, timestamp_blit;
+    float timestamp_period_ns; /* Paired CPU(ns)/GPU clock calibration; zero means unavailable. */
 } doe_mtl_caps;
 
 doe_mtl_status doe_mtl_context_create(doe_mtl_context **out, doe_mtl_error *error);
