@@ -60,8 +60,16 @@ def lean_proof_record(source: Path) -> dict[str, object]:
 
 
 def execute(arguments: list[str], log: Path, cwd: Path | None = None) -> None:
-    with log.open("wb") as output:
-        subprocess.run(arguments, cwd=cwd, stdout=output, stderr=subprocess.STDOUT, check=True)
+    try:
+        with log.open("wb") as output:
+            subprocess.run(arguments, cwd=cwd, stdout=output, stderr=subprocess.STDOUT, check=True)
+    except subprocess.CalledProcessError:
+        # Preserve the full log, but expose a bounded diagnostic in hosted jobs.
+        with log.open("rb") as output:
+            output.seek(max(0, log.stat().st_size - 16384))
+            tail = output.read().decode("utf-8", errors="replace")
+        print(f"Failed child log: {log}\n" + "\n".join(tail.splitlines()[-30:]), flush=True)
+        raise
 
 
 def captured(arguments: list[str], cwd: Path | None = None) -> str:
@@ -161,6 +169,9 @@ def build_package(repo: Path, revision: str, build: Path, destination: Path,
         # the Lean inputs supply the manifest's lean_proof record.
         subprocess.run(["git", "archive", "--format=tar", commit, "runtime/c",
                         "runtime/zig/vendor/webgpu-headers", "runtime/zig/vendor/spirv-headers/LICENSE", "LICENSE",
+                        # The Windows compiler builder executes its ordinary
+                        # native consumer against this retained shader fixture.
+                        "bench/inference-pipeline/kernels/residual.wgsl",
                         "config/compute-program.schema.json", "config/toolchains.json",
                         "config/lean-proof-patterns.json", "pipeline/lean/Doe",
                         "pipeline/lean/artifacts/proven-conditions.json"],
