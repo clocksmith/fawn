@@ -377,7 +377,7 @@ committed contracts keep those dispatch rows directional, and the three
 `compute_matvec_32768x2048_*` rows bind 256 MiB, beyond lavapipe's 128 MiB
 `maxStorageBufferRange`, so they fail on lavapipe in both CLIs. A CPU
 adapter run is not GPU evidence, a performance result
-or bench comparability, and no physical adapter has run this CLI.
+or bench comparability; the physical surface check below is separate.
 
 The 2026-10-25 mapping continuation exercises eight mapping example streams,
 repeated maps and mode/size changes through both C and Dawn on llvmpipe
@@ -403,3 +403,13 @@ Metal builds emit `doe_c_metal` or `dawn_c_metal`, distinct from the retained
 `doe_c_direct_metal`, `doe_c_direct_plan_metal`, `dawn_c_direct_metal` and
 `dawn_c_direct_plan_metal` select C binaries at their declared command/plan
 boundaries; provider classification comes from `config/doe-runtime-providers.json`.
+
+The 2026-10-25 focused macOS 26.6.2 (25G83) check compiled/linked the entire C
+CLI with Clang and exercised the actual Apple M3/Metal adapter: retained handle
+300 and 41001 surface fixtures, BGRA presentation, 64x64 to 96x48 resize, missing
+handle rejection and double-acquire rejection. The native Metal owner fixed a
+presentation retirement error exposed by the resize consumer. CAMetalLayer's
+advertised BGRA formats are honored; the retained default RGBA format correctly
+fails on that platform. This is focused physical execution, not broad hardware
+qualification or a performance result. The Darwin build enables the Darwin SDK
+feature definitions required by AppKit alongside the POSIX API definitions.
