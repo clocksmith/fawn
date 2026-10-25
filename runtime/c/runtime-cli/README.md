@@ -471,6 +471,10 @@ Metal builds emit `doe_c_metal` or `dawn_c_metal`, distinct from the retained
 `doe_c_direct_metal`, `doe_c_direct_plan_metal`, `dawn_c_direct_metal` and
 `dawn_c_direct_plan_metal` select C binaries at their declared command/plan
 boundaries; provider classification comes from `config/doe-runtime-providers.json`.
+Windows C routes `doe_c_direct_d3d12` and `doe_c_direct_plan_d3d12` select
+`doe-c-runtime.exe` with identity `doe_c_d3d12`; no backend-policy selection or
+comparability is inferred. Stage the SDK builder output together with its DLLs
+in this owner's ignored `bin/` directory to use these explicit routes.
 
 The 2026-10-25 focused macOS 26.6.2 (25G83) check compiled/linked the entire C
 CLI with Clang and exercised the actual Apple M3/Metal adapter: retained handle

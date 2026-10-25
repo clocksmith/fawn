@@ -113,7 +113,10 @@ def provider_for_binary(token: str) -> DoeRuntimeProvider | None:
 
     Every role counts: dawn-c-runtime is the same runtime CLI, so the runner's
     runtime-CLI handling (oracle preflight, upload flags) applies to it too."""
-    name = Path(token).name
+    # Windows receipt paths must also resolve when gates inspect them on POSIX.
+    name = token.replace("\\", "/").rsplit("/", 1)[-1]
+    if name.lower().endswith(".exe"):
+        name = name[:-4].lower()
     for provider in load_providers():
         if provider.binary_name == name:
             return provider

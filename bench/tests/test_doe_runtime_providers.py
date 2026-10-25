@@ -75,6 +75,21 @@ class DoeRuntimeProvidersTests(unittest.TestCase):
         self.assertTrue(claim_gate.workload_is_dawn_vs_doe(comparison))
         self.assertTrue(structural_equivalence_gate.workload_is_dawn_vs_doe(comparison))
 
+    def test_windows_c_routes_keep_provider_identity_and_boundary(self) -> None:
+        provider = doe_runtime_providers.provider_for_execution_backend("doe_c_d3d12")
+        self.assertEqual((provider.runtime_implementation, provider.product_role), ("c", "doe"))
+        self.assertFalse(doe_runtime_providers.requires_selection_policy("doe_c_d3d12"))
+        for executor, boundary in (("doe_c_direct_d3d12", "commands"), ("doe_c_direct_plan_d3d12", "plan")):
+            template = resolve_executor_command_template(executor)
+            self.assertEqual(resolve_executor_boundary(executor), boundary)
+            self.assertEqual(doe_runtime_providers.runtime_index(template.split()), 0)
+            self.assertIn(f"doe-c-runtime.exe --{boundary}", template)
+            self.assertNotIn("--backend-lane", template)
+        for binary in ("C:/Doe/bin/doe-c-runtime.exe", r"C:\Doe\bin\DOE-C-RUNTIME.EXE"):
+            self.assertEqual(doe_runtime_providers.provider_for_binary(binary), provider)
+        self.assertIsNone(doe_runtime_providers.provider_for_binary("doe-c-runtime.exe.backup"))
+        self.assertFalse(doe_runtime_providers.template_uses_doe_runtime("node unrelated.exe"))
+
     def test_binary_detection_covers_both_clis(self) -> None:
         c_template = resolve_executor_command_template("doe_c_direct_vulkan")
         self.assertIn("runtime/c/runtime-cli/bin/doe-c-runtime", c_template)
@@ -125,7 +140,7 @@ class DoeRuntimeProvidersTests(unittest.TestCase):
         self.assertFalse(compare_assessment_helpers.uses_doe_execution({"dawn_direct_vulkan"}))
         self.assertFalse(doe_runtime_providers.requires_selection_policy("dawn_direct_vulkan"))
         self.assertEqual(
-            doe_runtime_providers.wgsl_source_execution_backends(), frozenset({"doe_c_vulkan", "doe_c_metal", "dawn_direct_vulkan", "dawn_c_metal"})
+            doe_runtime_providers.wgsl_source_execution_backends(), frozenset({"doe_c_vulkan", "doe_c_metal", "doe_c_d3d12", "dawn_direct_vulkan", "dawn_c_metal"})
         )
 
     def test_dawn_direct_vulkan_executor_runs_dawn_c_runtime(self) -> None:
