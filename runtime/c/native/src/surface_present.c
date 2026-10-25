@@ -167,6 +167,7 @@ WGPUStatus wgpuSurfacePresent(WGPUSurface handle)
     native_lock(device);
     native_presentation result = {.submission = native_failure_status(native_device_result(device)),
         .presentation = {.status = NATIVE_INVALID_STATE}};
+    if (result.submission.status == NATIVE_OK) result.submission = native_flush_initialization(device);
     if (result.submission.status == NATIVE_OK) result.submission = native_settle_pending(device).failure;
     doe_vk_commands *commands = NULL;
     doe_vk_error detail = {0};

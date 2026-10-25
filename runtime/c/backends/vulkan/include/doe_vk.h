@@ -278,6 +278,10 @@ doe_vk_status doe_vk_commands_drop(doe_vk_commands *commands);
  * submission the queue accepted and has not yet been observed terminal.
  * block may run unserialized while held: it waits up to timeout_ns for the
  * fence and changes no state; poll or wait (serialized) observes completion. */
+/* Discards an unsubmitted recording's work: every texture it touched is
+ * poisoned with status (its recorded initialization will never run), then
+ * the recording is poisoned; release frees it. */
+void doe_vk_commands_abandon(doe_vk_commands *commands, doe_vk_status status);
 doe_vk_status doe_vk_commands_hold(doe_vk_commands *commands);
 bool doe_vk_commands_in_flight(const doe_vk_commands *commands);
 doe_vk_status doe_vk_commands_block(const doe_vk_commands *commands, uint64_t timeout_ns);

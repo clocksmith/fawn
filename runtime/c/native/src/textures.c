@@ -148,7 +148,7 @@ WGPUTexture wgpuDeviceCreateTexture(WGPUDevice handle, const WGPUTextureDescript
         failure = native_failure_vulkan(status, &error);
     }
     if (status == DOE_VK_OK) {
-        failure = native_initialize_texture(device, payload->texture, &native, &caps);
+        failure = native_queue_texture_initialization(device, payload->texture, &native, &caps);
         status = native_to_vulkan(failure.status);
     }
 
