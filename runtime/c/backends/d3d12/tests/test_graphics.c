@@ -315,6 +315,60 @@ static void device_kind_and_close_failure(void) {
     close_context(context);
 }
 
+static void public_query_capacity(void)
+{
+    doe_dx_context *context=open_context();
+    doe_dx_queries *heap=NULL;
+    assert(doe_dx_queries_create(context,DOE_DX_QUERY_TIMESTAMP,DOE_DX_MAX_QUERIES+1,&heap,NULL)==DOE_DX_RANGE && !heap);
+    assert(doe_dx_queries_create(context,DOE_DX_QUERY_TIMESTAMP,DOE_DX_MAX_QUERIES,&heap,NULL)==DOE_DX_OK);
+    doe_dx_commands *work=commands(context);
+    doe_dx_buffer *destination=buffer(context,8,DOE_DX_DEFAULT);
+    bool available=true;
+    assert(doe_dx_queries_available(work,heap,4095,&available)==DOE_DX_OK && !available);
+    assert(doe_dx_commands_timestamp(work,heap,4095,NULL)==DOE_DX_OK);
+    assert(doe_dx_queries_available(work,heap,4095,&available)==DOE_DX_OK && available);
+    assert(doe_dx_commands_resolve_queries(work,heap,4095,1,destination,0,NULL)==DOE_DX_OK);
+    assert(!heap->initialized_upper[62] && !destination->initialized);
+    assert(doe_dx_commands_submit(work,NULL)==DOE_DX_OK);
+    doe_dx_commands_release(work); mock.completed=1;
+    assert(doe_dx_context_poll(context,0,NULL)==DOE_DX_OK && destination->initialized &&
+        heap->initialized_upper[62]==(UINT64_C(1)<<63));
+    work=commands(context);
+    assert(doe_dx_queries_available(work,heap,4095,&available)==DOE_DX_OK && available);
+    assert(doe_dx_queries_available(work,heap,64,&available)==DOE_DX_OK && !available);
+    assert(doe_dx_commands_timestamp(work,heap,64,NULL)==DOE_DX_OK);
+    doe_dx_commands_release(work);
+    assert(!heap->initialized_upper[0]);
+    doe_dx_timestamps_release(heap); doe_dx_buffer_release(destination);
+    close_context(context);
+}
+static void occlusion_events(void)
+{
+    doe_dx_context *context=open_context();
+    doe_dx_queries *heap=NULL;
+    assert(doe_dx_queries_create(context,DOE_DX_QUERY_OCCLUSION,128,&heap,NULL)==DOE_DX_OK);
+    doe_dx_commands *work=commands(context);
+    doe_dx_texture *color=image(context,DOE_DX_TEXTURE_RENDER_ATTACHMENT);
+    doe_dx_render_draw events[2]={{.query=heap,.query_index=127,.query_begin=true},
+        {.query=heap,.query_index=127}};
+    doe_dx_render_pass pass={.color=color,.draws=events,.draw_count=1};
+    assert(doe_dx_commands_render(work,&pass,NULL)==DOE_DX_INVALID_ARGUMENT);
+    assert(!work->timestamp_count && !work->texture_count && !mock.render_passes);
+    pass.draw_count=2; events[1].query_index=126;
+    assert(doe_dx_commands_render(work,&pass,NULL)==DOE_DX_INVALID_ARGUMENT);
+    events[1].query_index=127;
+    assert(doe_dx_commands_render(work,&pass,NULL)==DOE_DX_OK);
+    bool available=false;
+    assert(doe_dx_queries_available(work,heap,127,&available)==DOE_DX_OK && available);
+    assert(!heap->initialized_upper[0] && work->timestamp_count==1);
+    assert(doe_dx_commands_timestamp(work,heap,0,NULL)==DOE_DX_INVALID_ARGUMENT);
+    doe_dx_buffer *destination=buffer(context,8,DOE_DX_DEFAULT);
+    assert(doe_dx_commands_resolve_queries(work,heap,127,1,destination,0,NULL)==DOE_DX_OK);
+    doe_dx_timestamps_release(heap); doe_dx_texture_release(color); doe_dx_buffer_release(destination);
+    doe_dx_commands_release(work);
+    assert(!mock.timestamps && !mock.textures && !mock.buffers);
+    close_context(context);
+}
 int main(void) {
     mock_reset();
     graphics_construction();
@@ -326,6 +380,8 @@ int main(void) {
     timestamp_unknown_and_loss();
     composed_budgets();
     device_kind_and_close_failure();
+    public_query_capacity();
+    occlusion_events();
     puts("D3D12 C graphics/timestamps: 9 groups passed (no SDK or GPU execution)");
     return 0;
 }

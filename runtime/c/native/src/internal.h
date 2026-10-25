@@ -52,6 +52,7 @@ typedef struct native_device {
     uint32_t features; /* Enabled WebGPU features, NATIVE_FEATURE bits. */
     doe_vk_timestamp_normalizer *timestamp_normalizer;
     doe_mtl_pipeline *metal_timestamp_pipeline;
+    doe_dx_pipeline *d3d12_timestamp_pipeline;
     uint32_t metal_timestamp_slot;
     doe_vk_dispatch_validator *dispatch_validator;
     doe_mtl_dispatch_guard *metal_dispatch_guard;
@@ -96,6 +97,7 @@ typedef struct native_queries {
     native_device *device;
     union { doe_vk_query_pool *pool; doe_mtl_buffer *metal_results; };
     doe_mtl_timestamps *metal_timestamps;
+    struct doe_dx_timestamps *d3d12_queries;
 } native_queries;
 
 typedef struct native_pipeline_error {

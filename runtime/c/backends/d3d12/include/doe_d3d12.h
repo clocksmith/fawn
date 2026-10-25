@@ -86,6 +86,7 @@ typedef struct doe_dx_caps {
     uint32_t resource_binding_tier, resource_heap_tier;
     uint32_t gpu_va_bits_per_resource, gpu_va_bits_per_process;
     uint32_t shader_model; /* Queried up to SM6_0; 0 means query unavailable. */
+    uint64_t timestamp_frequency; /* Actual direct-queue ticks per second, never a default. */
     doe_dx_limits limits;
 } doe_dx_caps;
 

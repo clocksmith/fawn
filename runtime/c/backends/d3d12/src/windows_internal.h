@@ -29,7 +29,7 @@ struct doe_dx_native_texture {
     ID3D12Resource *resource;
     D3D12_RESOURCE_DESC description;
 };
-struct doe_dx_native_timestamps { ID3D12QueryHeap *heap; };
+struct doe_dx_native_timestamps { ID3D12QueryHeap *heap; D3D12_QUERY_TYPE kind; };
 typedef struct doe_dx_windows_render_layout {
     D3D_PRIMITIVE_TOPOLOGY topology;
     doe_dx_binding_plan stages[DOE_DX_RENDER_STAGES];

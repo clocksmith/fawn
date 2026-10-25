@@ -90,7 +90,7 @@ WGPURenderPipeline native_d3d12_create_render_pipeline(native_device *device,
     native_failure failure=native_failure_status(NATIVE_OK);
     failure=native_d3d12_compile_vertex(&stages[0],interstage_mask,&compiled[0]);
     if (failure.status==NATIVE_OK) failure=native_d3d12_compile_stage(&stages[1],&compiled[1]);
-    native_d3d12_draw_code *guards[2]={0};
+    native_d3d12_kernel_code *guards[2]={0};
     if (failure.status==NATIVE_OK) failure=native_d3d12_draw_compile(false,&guards[0]);
     if (failure.status==NATIVE_OK) failure=native_d3d12_draw_compile(true,&guards[1]);
     native_pipeline *payload=NULL;
@@ -127,8 +127,8 @@ WGPURenderPipeline native_d3d12_create_render_pipeline(native_device *device,
             doe_dx_error detail={0};
             doe_dx_status created=doe_dx_pipeline_create_render(device->backend.value.d3d12.context,&desc,&payload->handle.d3d12,&detail);
             failure=native_failure_d3d12(created,&detail);
-            if (failure.status==NATIVE_OK) failure=native_d3d12_draw_pipeline(device,guards[0],&payload->d3d12_graphics->draw_normalize);
-            if (failure.status==NATIVE_OK) failure=native_d3d12_draw_pipeline(device,guards[1],&payload->d3d12_graphics->index_scan);
+            if (failure.status==NATIVE_OK) failure=native_d3d12_kernel_pipeline(device,guards[0],&payload->d3d12_graphics->draw_normalize);
+            if (failure.status==NATIVE_OK) failure=native_d3d12_kernel_pipeline(device,guards[1],&payload->d3d12_graphics->index_scan);
             if (failure.status==NATIVE_OK) status=doe_resource_render_pipeline_create(&device->resources,layout,&resource,
                 (doe_resource_native){payload,NULL,native_pipeline_release},&pipeline);
         }
@@ -141,7 +141,7 @@ WGPURenderPipeline native_d3d12_create_render_pipeline(native_device *device,
     }
     for (size_t i=0;i<2;++i) {
         native_d3d12_compiler_release(compiled[i]);
-        native_d3d12_draw_code_release(guards[i]);
+        native_d3d12_kernel_code_release(guards[i]);
     }
     if (!pipeline) {
         if (payload) {

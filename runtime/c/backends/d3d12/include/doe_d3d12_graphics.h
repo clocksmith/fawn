@@ -36,6 +36,16 @@ doe_dx_status doe_dx_commands_draw(doe_dx_commands *commands, doe_dx_pipeline *p
  * buffers/textures. Writes become initialized only on successful completion.
  * No callbacks, implicit submission, frequency fallback or integer conversion. */
 typedef struct doe_dx_timestamps doe_dx_timestamps;
+/* Additive public-sized query heaps share the original timestamp owner. */
+typedef doe_dx_timestamps doe_dx_queries;
+typedef enum doe_dx_query_kind { DOE_DX_QUERY_TIMESTAMP, DOE_DX_QUERY_OCCLUSION } doe_dx_query_kind;
+enum { DOE_DX_MAX_QUERIES = 4096 };
+doe_dx_status doe_dx_queries_create(doe_dx_context *,doe_dx_query_kind,uint32_t,doe_dx_queries **,doe_dx_error *);
+doe_dx_status doe_dx_queries_available(doe_dx_commands *,doe_dx_queries *,uint32_t,bool *);
+/* Raw available results into initialized DEFAULT or READBACK destination bytes.
+ * Normalization and unavailable-slot zeroing belong to the native frontend. */
+doe_dx_status doe_dx_commands_resolve_queries(doe_dx_commands *,doe_dx_queries *,uint32_t,uint32_t,
+    doe_dx_buffer *,uint64_t,doe_dx_error *);
 doe_dx_status doe_dx_timestamps_create(doe_dx_context *context, uint32_t count,
     doe_dx_timestamps **out, doe_dx_error *error);
 doe_dx_status doe_dx_timestamps_retain(doe_dx_timestamps *timestamps);

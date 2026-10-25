@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: MIT */
 #include "metal_frontend.h"
+#include "d3d12_queries.h"
 #include <stdlib.h>
 
 /* Called before device publication or under its serialized queue mutex. The
@@ -42,6 +43,7 @@ static void release_queries(void *userdata, void *handle)
         doe_mtl_buffer_release(payload->metal_results);
         doe_mtl_timestamps_release(payload->metal_timestamps);
     }
+    else if (payload->device->backend.kind==WGPUBackendType_D3D12) native_d3d12_queries_release(payload->d3d12_queries);
     else doe_vk_query_pool_release(payload->pool);
     native_unlock(payload->device);
     free(payload);
@@ -51,7 +53,8 @@ WGPUQuerySet wgpuDeviceCreateQuerySet(WGPUDevice handle, const WGPUQuerySetDescr
     native_device *device = (native_device *)handle;
     if (!device) return NULL;
     if (native_device_dead(device)) return native_lost_query_set(device, descriptor);
-    if (device->backend.kind != WGPUBackendType_Vulkan && device->backend.kind != WGPUBackendType_Metal) {
+    if (device->backend.kind != WGPUBackendType_Vulkan && device->backend.kind != WGPUBackendType_Metal &&
+        device->backend.kind != WGPUBackendType_D3D12) {
         native_error(device, WGPUErrorType_Validation, "operation not yet composed for selected backend");
         return NULL;
     }
@@ -79,6 +82,8 @@ WGPUQuerySet wgpuDeviceCreateQuerySet(WGPUDevice handle, const WGPUQuerySetDescr
                 failure = native_failure_status(NATIVE_UNSUPPORTED);
             else failure = native_failure_metal(doe_mtl_buffer_create(device->backend.value.metal.context,
                 (uint64_t)descriptor->count * 8, DOE_MTL_SHARED, &payload->metal_results, &detail), &detail);
+        } else if (device->backend.kind==WGPUBackendType_D3D12) {
+            failure=native_d3d12_queries_create(device,descriptor->type,descriptor->count,&payload->d3d12_queries);
         } else {
             doe_vk_status backend = descriptor->type == WGPUQueryType_Occlusion ?
                 doe_vk_occlusion_pool_create(device->backend.value.vulkan.context, descriptor->count, &payload->pool, NULL) :

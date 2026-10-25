@@ -6,15 +6,13 @@
 static bool same_targets(const doe_resource_render_targets *a,const doe_resource_render_targets *b)
 {
     return a->color_count==1 && b->color_count==1 && a->depth_stencil==b->depth_stencil &&
-        !a->occlusion_queries && !b->occlusion_queries && a->colors[0].view==b->colors[0].view &&
+        a->occlusion_queries==b->occlusion_queries && a->colors[0].view==b->colors[0].view &&
         !a->colors[0].resolve_target && !b->colors[0].resolve_target &&
         !a->colors[0].has_depth_slice && !b->colors[0].has_depth_slice;
 }
 static native_failure prepare_draw(const doe_resource_render_packet *packet,
     doe_dx_render_draw *out,native_d3d12_graphics_snapshot *storage)
 {
-    if (packet->occlusion_active)
-        return native_failure_status(NATIVE_UNSUPPORTED);
     native_pipeline *pipeline=doe_resource_render_pipeline_native(packet->pipeline);
     if (!pipeline || !pipeline->d3d12_graphics )
         return native_failure_status(NATIVE_INVALID_ARGUMENT);
@@ -65,6 +63,10 @@ native_failure native_d3d12_render(native_command_handle *commands,
         !same_targets(&begin->targets,&begin->targets)) return native_failure_status(NATIVE_UNSUPPORTED);
     size_t end=0;
     for (size_t i=1;i<count;++i) {
+        if (records[i].kind==DOE_COMMAND_BEGIN_OCCLUSION || records[i].kind==DOE_COMMAND_END_OCCLUSION) {
+            if (records[i].value.timestamp.set!=begin->targets.occlusion_queries) return native_failure_status(NATIVE_INVALID_ARGUMENT);
+            continue;
+        }
         if (records[i].kind!=DOE_COMMAND_RENDER) return native_failure_status(NATIVE_UNSUPPORTED);
         const doe_resource_render_packet *packet=doe_resource_render_record_borrow(records[i].value.render);
         if (!packet || packet->first_in_pass || !same_targets(&begin->targets,&packet->targets))
@@ -94,7 +96,15 @@ native_failure native_d3d12_render(native_command_handle *commands,
     doe_dx_render_draw *draws=draws_count ? calloc(draws_count,sizeof(*draws)) : NULL;
     native_failure failure=native_failure_status(draws_count && (!storage || !draws) ? NATIVE_OUT_OF_MEMORY : NATIVE_OK);
     for (size_t i=0;failure.status==NATIVE_OK && i<draws_count;++i) {
-        const doe_resource_render_packet *packet=doe_resource_render_record_borrow(records[i+1].value.render);
+        const doe_resource_command *record=&records[i+1];
+        if (record->kind==DOE_COMMAND_BEGIN_OCCLUSION || record->kind==DOE_COMMAND_END_OCCLUSION) {
+            native_queries *queries=doe_resource_query_set_native(record->value.timestamp.set);
+            if (!queries || !queries->d3d12_queries) { failure=native_failure_status(NATIVE_INVALID_ARGUMENT); break; }
+            draws[i].query=queries->d3d12_queries; draws[i].query_index=record->value.timestamp.index;
+            draws[i].query_begin=record->kind==DOE_COMMAND_BEGIN_OCCLUSION;
+            continue;
+        }
+        const doe_resource_render_packet *packet=doe_resource_render_record_borrow(record->value.render);
         failure=prepare_draw(packet,&draws[i],&storage[i]);
         if (failure.status==NATIVE_OK) failure=native_d3d12_draw_prepare(commands,packet,&draws[i],&storage[i]);
     }

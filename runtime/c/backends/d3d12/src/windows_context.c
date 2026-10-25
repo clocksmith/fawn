@@ -61,6 +61,8 @@ doe_dx_status doe_dx_native_open(const doe_dx_options *options,
         &IID_ID3D12Fence, (void **)&context->fence);
     if (FAILED(result)) goto fail;
     doe_dx_status caps_status = doe_dx_query_caps(context, &found, error);
+    if (caps_status==DOE_DX_OK)
+        caps_status=doe_dx_native_timestamp_frequency(context,&found.timestamp_frequency,error);
     if (caps_status != DOE_DX_OK) {
         IDXGIAdapter1_Release(adapter);
         IDXGIFactory4_Release(factory);

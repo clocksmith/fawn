@@ -39,7 +39,10 @@ static void release_resources(doe_dx_commands *commands, bool publish) {
     for (size_t index = 0; index < commands->timestamp_count; index++) {
         doe_dx_timestamp_use *use = &commands->timestamps[index];
         use->timestamps->owner = NULL;
-        if (publish) use->timestamps->initialized = use->initialized;
+        if (publish) {
+            use->timestamps->initialized = use->initialized;
+            memcpy(use->timestamps->initialized_upper,use->initialized_upper,sizeof(use->initialized_upper));
+        }
         doe_dx_timestamps_release(use->timestamps);
     }
     commands->timestamp_count = 0;

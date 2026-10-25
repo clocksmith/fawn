@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: MIT */
 #include "surface.h"
+#include "d3d12_queries.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -241,6 +242,7 @@ void native_device_release(void *identity)
     native_loss_release(device->loss);
     doe_vk_timestamp_normalizer_release(device->timestamp_normalizer);
     doe_mtl_pipeline_release(device->metal_timestamp_pipeline);
+    native_d3d12_timestamp_close(device);
     native_indirect_guards_release(device);
     doe_mtl_dispatch_guard_release(device->metal_dispatch_guard);
     doe_mtl_draw_guard_release(device->metal_draw_guard);
@@ -299,7 +301,9 @@ static native_device *create_device(native_adapter *adapter, const WGPUDeviceDes
     device->backend.limits = limits;
     device->features = features;
     if ((features & NATIVE_FEATURE(WGPUFeatureName_TimestampQuery)) &&
-        (device->backend.kind == WGPUBackendType_Metal ?
+        (device->backend.kind == WGPUBackendType_D3D12 ?
+            native_d3d12_timestamp_initialize(device).status != NATIVE_OK :
+        device->backend.kind == WGPUBackendType_Metal ?
             native_metal_timestamp_initialize(device).status != NATIVE_OK :
             native_timestamp_initialize(device) != DOE_VK_OK)) {
         native_backend_close(&device->backend);
@@ -335,6 +339,7 @@ static native_device *create_device(native_adapter *adapter, const WGPUDeviceDes
     if (!native_pending_progress_start(device)) {
         doe_vk_timestamp_normalizer_release(device->timestamp_normalizer);
         doe_mtl_pipeline_release(device->metal_timestamp_pipeline);
+        native_d3d12_timestamp_close(device);
         native_backend_close(&device->backend);
         doe_instance_release(device->instance);
         goto failed_errors;

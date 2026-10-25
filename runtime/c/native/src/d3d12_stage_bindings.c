@@ -150,3 +150,27 @@ bool native_d3d12_stage_bindings(const native_pipeline *pipeline,const native_st
 {
     return native_d3d12_stage_bindings_for(pipeline,stage,DOE_COMPILER_STAGE_COMPUTE,out,map);
 }
+
+bool native_d3d12_storage_kernel_layout(const doe_shader_view *view,uint32_t workgroup,size_t count,doe_dx_binding_layout out[3])
+{
+    if (!view || !out || !count || count>3 || !workgroup || view->counts.entries!=1 || !view->entries || view->counts.resources!=count || !view->resources)
+        return false;
+    const DoeCompilerEntryV5 *entry=&view->entries[0];
+    if (entry->workgroup_storage_bytes || entry->workgroup_size[0]!=workgroup ||
+        entry->workgroup_size[1]!=1 || entry->workgroup_size[2]!=1) return false;
+    native_pipeline expected={.binding_count=count};
+    for (size_t i=0;i<count;++i) {
+        expected.bindings[i]=(native_binding){.group=0,.binding=(uint32_t)i,.kind=DOE_BIND_BUFFER,
+            .buffer_type=i ? WGPUBufferBindingType_ReadOnlyStorage : WGPUBufferBindingType_Storage};
+    }
+    native_stage stage={.view=*view,.entry=entry,.visibility=WGPUShaderStage_Compute};
+    native_d3d12_layout layout;
+    native_d3d12_compute map;
+    if (!native_d3d12_stage_bindings(&expected,&stage,&layout,&map) || map.buffer_count!=count ||
+        map.texture_count || map.sampler_count || map.dispatch_index!=UINT32_MAX) return false;
+    for (size_t i=0;i<count;++i) {
+        if (map.buffer_indices[i]!=i || map.uniform[i]) return false;
+    }
+    memcpy(out,layout.buffers,count*sizeof(*out));
+    return true;
+}
