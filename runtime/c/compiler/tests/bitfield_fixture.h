@@ -1,0 +1,38 @@
+/* SPDX-License-Identifier: MIT */
+#ifndef DOE_TEST_BITFIELD_FIXTURE_H
+#define DOE_TEST_BITFIELD_FIXTURE_H
+static const char bitfield_module[] =
+    "@group(0) @binding(0) var<storage,read_write> data:array<u32>;"
+    "fn mark(tag:u32,value:u32)->u32{data[40]=data[40]*10u+tag;return value;}"
+    "@compute @workgroup_size(1) fn main(){"
+    "var u=0xf0f00f0fu;var s=bitcast<i32>(u);var o=4u;var n=8u;"
+    "data[0]=extractBits(u,o,n);data[1]=bitcast<u32>(extractBits(s,o,n));"
+    "data[2]=bitcast<u32>(extractBits(s,28u,4u));"
+    "data[3]=extractBits(u,0u,32u);data[4]=bitcast<u32>(extractBits(s,0u,32u));"
+    "data[5]=extractBits(u,32u,0u);data[6]=bitcast<u32>(extractBits(s,32u,0u));"
+    "o=33u;n=32u;data[7]=extractBits(u,o,n);"
+    "o=31u;n=0xffffffffu;data[8]=extractBits(u,o,n);data[9]=bitcast<u32>(extractBits(s,o,n));"
+    "o=0xffffffffu;data[10]=extractBits(u,o,n);"
+    "data[11]=insertBits(u,0xa5u,4u,8u);data[12]=insertBits(u,0x12345678u,0u,32u);"
+    "data[13]=insertBits(u,0u,32u,0u);data[14]=insertBits(u,0u,o,n);"
+    "o=31u;data[15]=insertBits(0u,3u,o,n);"
+    "var sv=vec4i(-2147483648,-1,2147483647,8);"
+    "let x=extractBits(sv,0u,4u);data[16]=bitcast<u32>(x.x);data[17]=bitcast<u32>(x.y);"
+    "data[18]=bitcast<u32>(x.z);data[19]=bitcast<u32>(x.w);"
+    "var uv=vec4u(0u,0xffffffffu,0x80000000u,0x12345678u);"
+    "let y=insertBits(uv,vec4u(1u,0u,3u,0xaau),8u,8u);"
+    "data[20]=y.x;data[21]=y.y;data[22]=y.z;data[23]=y.w;"
+    "sv=vec4i(0,-1,-2147483648,2147483647);"
+    "let z=insertBits(sv,vec4i(-1,0,127,-128),24u,8u);"
+    "data[24]=bitcast<u32>(z.x);data[25]=bitcast<u32>(z.y);"
+    "data[26]=bitcast<u32>(z.z);data[27]=bitcast<u32>(z.w);"
+    "const a=extractBits(0xfcu,0,8);const b=extractBits(0xfci,0,8);"
+    "const c=insertBits(0u,0xffffffffu,0,32);const d=insertBits(-1i,0i,16,16);"
+    "const e=extractBits(vec2i(-1,8),0,4);const f=insertBits(vec2u(0,255),vec2u(255,0),0,8);"
+    "data[28]=a;data[29]=bitcast<u32>(b);data[30]=c;data[31]=bitcast<u32>(d);"
+    "data[32]=bitcast<u32>(e.x);data[33]=bitcast<u32>(e.y);data[34]=f.x;data[35]=f.y;"
+    "data[40]=0u;data[36]=insertBits(mark(1u,0x12345678u),mark(2u,0xabu),mark(3u,8u),mark(4u,8u));"
+    "data[37]=data[40];data[40]=0u;data[38]=extractBits(mark(1u,0x12345678u),mark(2u,8u),mark(3u,8u));"
+    "data[39]=data[40];"
+    "}";
+#endif

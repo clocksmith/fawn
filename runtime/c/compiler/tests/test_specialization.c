@@ -3,6 +3,7 @@
 #include "packed_integer_fixture.h"
 #include "integer_bits_fixture.h"
 #include "float_math_fixture.h"
+#include "bitfield_fixture.h"
 #include "../include/doe_compiler_module_specialization.h"
 #include <assert.h>
 #include <errno.h>
@@ -291,6 +292,33 @@ int main(int argc, char **argv) {
         expect(target, override_edges, "main", &edge, 1u, true);
         edge.value = 1.0;
         expect(target, override_edges, "main", &edge, 1u, false);
+    }
+    artifact(directory,"bitfield.wgsl",bitfield_module,strlen(bitfield_module));
+    for (uint32_t target=0u;target<3u;++target) {
+        expect(target,bitfield_module,"main",NULL,0u,true);
+        DoeCompilerTextResult result;
+        assert(compile(target,bitfield_module,"main",NULL,0u,storage,words,&result,false) == DOE_COMPILER_OK);
+        if (target == DOE_COMPILER_TARGET_SPIRV)
+            artifact(directory,"bitfield.spv",words,result.stages.resources.module.published.words*sizeof(*words));
+        else artifact(directory,target == DOE_COMPILER_TARGET_METAL ? "bitfield.metal" : "bitfield.hlsl",
+            storage->text,result.published_text_bytes);
+        const char *invalid[]={
+            "@compute @workgroup_size(1) fn main(){_=extractBits(1.0,0u,1u);}",
+            "@compute @workgroup_size(1) fn main(){_=extractBits(1u,0i,1u);}",
+            "@compute @workgroup_size(1) fn main(){_=extractBits(vec2u(1),vec2u(0),1u);}",
+            "@compute @workgroup_size(1) fn main(){_=insertBits(1u,1i,0u,1u);}",
+            "@compute @workgroup_size(1) fn main(){_=insertBits(vec2u(1),1u,0u,1u);}",
+            "@compute @workgroup_size(1) fn main(){_=insertBits(1u,1u,0u);}",
+            "@compute @workgroup_size(1) fn main(){var x=1u;_=extractBits(x,31u,2u);}",
+            "@compute @workgroup_size(1) fn main(){var x=1u;_=insertBits(x,x,0xffffffffu,1u);}",
+            "@compute @workgroup_size(1) fn main(){if(false){var x=1u;_=extractBits(x,33u,0u);}}"
+        };
+        for (size_t i=0u;i<sizeof(invalid)/sizeof(*invalid);++i) expect(target,invalid[i],"main",NULL,0u,false);
+        const char *deferred="override offset:u32;@compute @workgroup_size(1) fn main(){var x=1u;_=extractBits(x,offset,1u);}";
+        DoeCompilerOverrideValueV13 offset={"offset",6u,31.0};
+        expect(target,deferred,"main",&offset,1u,true);
+        offset.value=32.0;
+        expect(target,deferred,"main",&offset,1u,false);
     }
     const char *bundle = "override n:u32;override m:u32;override tint:f32;override unused:u32;"
         "var<workgroup> dead:array<u32,unused>;var<workgroup> left:array<u32,n>;"

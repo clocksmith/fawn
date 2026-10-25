@@ -473,3 +473,9 @@ $(BUILD)/d3d12-vertex-inputs: tests/d3d12_vertex_inputs.c tests/d3d12_vertex_cas
 
 $(BUILD)/sample-mask: tests/sample_mask.c tests/consumer.h tests/adapter_class.h $(NATIVE_LIBRARY)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
+
+$(BUILD)/bitfield: tests/bitfield.c tests/consumer.h tests/adapter_class.h ../compiler/tests/bitfield_fixture.h $(NATIVE_LIBRARY)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
+.PHONY: check-bitfield
+check-bitfield: $(BUILD)/bitfield
+	$(BUILD)/bitfield

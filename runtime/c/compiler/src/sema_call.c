@@ -227,8 +227,10 @@ static inline bool sema_builtin_value(Source *source, const Expression *node, co
                         const NumericBuiltin *builtin, bool evaluate, bool emit,
                         ExpressionValue *out) {
     CompilerWorkspace *compiler = source->compiler;
-    ExpressionValue arguments[3];
-    uint32_t link = node->left, width = 0u;
+    ExpressionValue arguments[4];
+    const bool bitfield = builtin->family == BUILTIN_BITFIELD;
+    const uint32_t data_count = bitfield ? builtin->arity - 2u : builtin->arity;
+    uint32_t link = node->left, width = 0u, bounds_link = NO_ID;
     bool runtime = builtin_subgroup(builtin), known = evaluate, overridable = false;
     TypeId leaf = IR_VOID;
     for (uint32_t i = 0u; i < builtin->arity; ++i) {
@@ -242,18 +244,23 @@ static inline bool sema_builtin_value(Source *source, const Expression *node, co
             known = known && arguments[0].known;
             break;
         }
-        const TypeId argument_leaf = type_leaf(compiler, type);
-        const uint32_t argument_width = type_vector_width(compiler, type);
-        if (argument_leaf == IR_VOID ||
-            (builtin->family == BUILTIN_BOOLEAN_REDUCTION ? argument_leaf != IR_BOOL : argument_leaf == IR_BOOL) ||
-            (i != 0u && argument_width != builtin_argument_width(builtin, i, width, argument_width)))
-            return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, node->source_offset,
-                                builtin->family == BUILTIN_BOOLEAN_REDUCTION ? "logical builtin requires a boolean scalar or vector" :
-                                "numeric builtin arguments require matching scalar or vector shapes");
-        if (i == 0u) {
-            leaf = argument_leaf;
-            width = argument_width;
-        } else if (!sema_common_type(source, leaf, argument_leaf, node->source_offset, &leaf)) return false;
+        if (bitfield && i >= data_count) {
+            if (i == data_count) bounds_link = link;
+            if (!sema_materialize(source, &arguments[i], IR_U32)) return false;
+        } else {
+            const TypeId argument_leaf = type_leaf(compiler, type);
+            const uint32_t argument_width = type_vector_width(compiler, type);
+            if (argument_leaf == IR_VOID ||
+                (builtin->family == BUILTIN_BOOLEAN_REDUCTION ? argument_leaf != IR_BOOL : argument_leaf == IR_BOOL) ||
+                (i != 0u && argument_width != builtin_argument_width(builtin, i, width, argument_width)))
+                return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, node->source_offset,
+                                    builtin->family == BUILTIN_BOOLEAN_REDUCTION ? "logical builtin requires a boolean scalar or vector" :
+                                    "numeric builtin arguments require matching scalar or vector shapes");
+            if (i == 0u) {
+                leaf = argument_leaf;
+                width = argument_width;
+            } else if (!sema_common_type(source, leaf, argument_leaf, node->source_offset, &leaf)) return false;
+        }
         runtime = runtime || arguments[i].runtime;
         overridable = overridable || arguments[i].overridable;
         known = known && arguments[i].known;
@@ -262,12 +269,12 @@ static inline bool sema_builtin_value(Source *source, const Expression *node, co
     TypeId operand_type = leaf;
     if (builtin->family != BUILTIN_MATRIX) {
         if (builtin_floating(builtin) && leaf == IR_ABSTRACT_INT) leaf = IR_ABSTRACT_FLOAT;
-        if (builtin->family == BUILTIN_COMPONENT_INTEGER && leaf == IR_ABSTRACT_INT) leaf = IR_I32;
+        if ((builtin->family == BUILTIN_COMPONENT_INTEGER || bitfield) && leaf == IR_ABSTRACT_INT) leaf = IR_I32;
         if (builtin->family == BUILTIN_PACKED_INTEGER && leaf == IR_ABSTRACT_INT)
             leaf = packed_pack(builtin->kind) && packed_signed(builtin->kind) ? IR_I32 : IR_U32;
         if (!builtin_shape(builtin, width) ||
             (builtin->kind == BUILTIN_SIGN && leaf == IR_U32) ||
-            (builtin->family == BUILTIN_COMPONENT_INTEGER && leaf != IR_I32 && leaf != IR_U32) ||
+            ((builtin->family == BUILTIN_COMPONENT_INTEGER || bitfield) && leaf != IR_I32 && leaf != IR_U32) ||
             (builtin->family == BUILTIN_PACKED_INTEGER &&
              leaf != (packed_pack(builtin->kind) && packed_signed(builtin->kind) ? IR_I32 : IR_U32)) ||
             (builtin->family == BUILTIN_SUBGROUP_INTEGER && leaf != IR_I32 && leaf != IR_U32 && leaf != IR_ABSTRACT_INT) ||
@@ -277,9 +284,24 @@ static inline bool sema_builtin_value(Source *source, const Expression *node, co
         if (runtime && !sema_default_type(source, leaf, node->source_offset, &leaf)) return false;
         operand_type = leaf;
         if (width != 1u && !type_intern(source, TYPE_VECTOR, leaf, width, &operand_type)) return false;
-        for (uint32_t i = 0u; i < builtin->arity; ++i)
+        for (uint32_t i = 0u; i < data_count; ++i)
             if (!sema_materialize(source, &arguments[i],
                 builtin_argument_width(builtin, i, width, type_vector_width(compiler, arguments[i].constant.type)) == 1u ? leaf : operand_type)) return false;
+
+        if (bitfield && !arguments[data_count].runtime && !arguments[data_count + 1u].runtime) {
+            link = bounds_link;
+            for (uint32_t i = data_count; i < builtin->arity; ++i) {
+                if (!arguments[i].known && !arguments[i].overridable &&
+                    (!sema_expression(source, compiler->arguments[link].expression, scope,
+                                      true, false, &arguments[i]) ||
+                     !sema_materialize(source, &arguments[i], IR_U32))) return false;
+                link = compiler->arguments[link].next;
+            }
+            if (arguments[data_count].known && arguments[data_count + 1u].known &&
+                arguments[data_count].constant.bits + arguments[data_count + 1u].constant.bits > 32u)
+                return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, node->source_offset,
+                                    "bitfield offset plus count exceeds 32 bits");
+        }
 
         const uint32_t bound_start = builtin->kind == BUILTIN_SMOOTHSTEP ? 0u : 1u;
         if ((builtin->kind == BUILTIN_CLAMP || builtin->kind == BUILTIN_SMOOTHSTEP) &&

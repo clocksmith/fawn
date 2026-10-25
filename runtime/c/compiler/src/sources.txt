@@ -49,5 +49,6 @@ src/compile.c
 src/storage.c
 src/sema_packed.c
 src/sema_interpolation.c
+src/sema_bitfield.c
 src/numeric_bits.c
 src/spirv_bits.c
