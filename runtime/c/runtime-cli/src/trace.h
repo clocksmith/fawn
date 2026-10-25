@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: MIT
  * Runtime trace artifacts in the doe-zig-runtime trace v1 format
  * (runtime/zig/src/runtime/trace/trace.zig, checked by pipeline/trace/replay.py):
- * one JSON row per executed command, chained by a 64-bit FNV-1a-style payload
+ * one JSON row per command, chained by a 64-bit FNV-1a-style payload
  * hash seeded with 0x9e3779b97f4a7c15, plus a run-summary meta object. The
  * payload hash covers the sequence, label, kind, kernel, quirk decision and
  * semantic identity in doe-zig-runtime's order and byte encoding. */
@@ -34,7 +34,8 @@ typedef struct doe_trace_identity {
 } doe_trace_identity;
 
 /* Writes one row (no trailing newline handling beyond one '\n'). Returns false
- * on a write failure. */
+ * on a write failure. A NULL execution writes a host-only row with no native
+ * execution fields. */
 bool doe_trace_write_row(FILE *out, const doe_trace_identity *identity, uint64_t seq, uint64_t timestamp_ns,
     uint64_t hash, uint64_t previous, const doe_command *command, const doe_quirk_decision *decision,
     const doe_trace_execution *execution);

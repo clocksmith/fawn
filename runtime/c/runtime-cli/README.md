@@ -21,6 +21,17 @@ $(BUILD)/doe-c-runtime --commands examples/rmsnorm_tree_commands.json --execute 
   --backend native --kernel-root bench/kernels --trace-jsonl out.jsonl --trace-meta out.meta.json
 ```
 
+Without `--execute`, the same parser and quirk engine produce host-only traces:
+no instance, adapter or device is created, row execution fields are absent and
+meta execution counters are zero. `--backend trace` selects this mode explicitly;
+`--execute --backend trace` is rejected. Omitting `--commands` or `--quirks`
+selects the retained embedded samples. `--quirk-mode off` disables quirks.
+`--replay <jsonl>` validates every row's module, opcode, sequence, command,
+kernel and hash chain, including repeats, before device creation. Missing,
+extra or changed rows fail. Semantic host captures are explicitly unsupported.
+`check-host-modes` interposes the actual instance ABI to prove those paths do
+not open a device, with an executing control that proves the interposer works.
+
 ## Admitted input
 
 - Commands: `upload` (`buffer_upload`), `buffer_write` (`write_buffer`,
@@ -207,7 +218,8 @@ that field.
 
 Rows follow the trace v1 FNV hash chain (seed `0x9e3779b97f4a7c15`); for the
 three streams in `make check` the row hashes equal those `doe-zig-runtime`
-(db0979828) wrote. The meta carries the Zig meta fields plus `adapterInfo`
+(retained runtime/zig source at 796b98338, fresh host trace on 2026-10-25)
+wrote with the default embedded quirk. The execution meta carries the Zig meta fields plus `adapterInfo`
 naming the executing adapter in the package traces' field names (`vendor`,
 `architecture`, `device`, `description`, `backendType`, `adapterType`,
 `vendorID`, `deviceID` and `driverVersion`, the last from

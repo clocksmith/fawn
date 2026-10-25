@@ -107,6 +107,7 @@ bool doe_trace_write_semantic(FILE *out, const doe_semantic *semantic)
 /* The execution fields that end every row, then the row's closing brace. */
 static bool write_execution(FILE *out, const doe_trace_identity *identity, const doe_trace_execution *execution)
 {
+    if (!execution) return fputs("}\n", out) >= 0;
     bool ok = fputs(",\"executionBackend\":", out) >= 0;
     ok = ok && doe_trace_write_string(out, identity->backend_id) && fputs(",\"backendId\":", out) >= 0 &&
         doe_trace_write_string(out, identity->backend_id);

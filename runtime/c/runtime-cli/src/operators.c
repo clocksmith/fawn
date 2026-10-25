@@ -54,6 +54,7 @@ static bool write_profile(FILE *out, const doe_operator_input *in)
 static bool write_execution(FILE *out, const doe_operator_input *in)
 {
     const doe_trace_execution *e = in->execution;
+    if (!e) return fputs(",\"execution\":null", out) >= 0;
     bool ok = fputs(",\"execution\":{\"backend\":", out) >= 0 && doe_trace_write_string(out, in->backend_id) &&
         fprintf(out, ",\"status\":\"%s\",\"statusCode\":", e->ok ? "ok" : "error") >= 0 &&
         doe_trace_write_string(out, e->message);
@@ -178,7 +179,8 @@ bool doe_operator_record(doe_operator_recorder *recorder, const doe_operator_inp
         if (ok && !s->has_capture) ok = fputs("null", out) >= 0;
         else if (ok) {
             ok = fprintf(out, "{\"bufferHandle\":%" PRIu64 ",\"offset\":%" PRIu64 ",\"size\":%" PRIu64 ",\"status\":\"%s\"",
-                s->capture_handle, s->capture_offset, s->capture_size, capture->ok ? "ok" : "error") >= 0;
+                s->capture_handle, s->capture_offset, s->capture_size,
+                capture->ok ? "ok" : !in->execution ? "unsupported" : "error") >= 0;
             if (ok && capture->ok)
                 ok = fputs(",\"path\":", out) >= 0 && doe_trace_write_string(out, capture_path) &&
                     fprintf(out, ",\"sha256\":\"%s\"", capture_sha256) >= 0;

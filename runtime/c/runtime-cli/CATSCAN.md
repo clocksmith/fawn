@@ -3,12 +3,12 @@
 Parent: [C migration](../CATSCAN.md)
 
 ## Target
-Execute admitted runtime command streams through the C native library and write
+Parse and replay host traces, execute admitted runtime command streams through the C native library and write
 doe-zig-runtime-compatible trace artifacts.
 
 ## Authority
 Own command-stream parsing, quirk matching, CLI arguments, trace rows/meta and
-output-oracle digests, not WebGPU semantics, shader meaning, backend execution,
+embedded sample inputs and output-oracle digests, not WebGPU semantics, shader meaning, backend execution,
 quirk data or bench comparability policy.
 
 ## Scope
@@ -25,6 +25,7 @@ command-stream examples and schema 1 output oracles apply.
 
 ## Invariants
 Unknown commands, fields and arguments reject before device work with exit 2.
+Host-only traces create no device and claim no execution. Replay mismatches fail before device work.
 No input is silently ignored, emulated or reported as success. Commands preserve the first device error; deferred work drains before successful completion. Oracles run on
 isolated zero-filled buffers; a digest mismatch fails the run. The meta names
 the executing adapter, so CPU runs stay identifiable.
