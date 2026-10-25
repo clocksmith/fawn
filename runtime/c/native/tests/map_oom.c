@@ -89,6 +89,15 @@ static void map_reply(WGPUMapAsyncStatus status, WGPUStringView message, void *u
     assert(status == WGPUMapAsyncStatus_Success && ++test->maps == 1);
 }
 
+static void map_validation_reply(WGPUPopErrorScopeStatus status, WGPUErrorType type,
+    WGPUStringView message, void *userdata, void *unused)
+{
+    (void)unused;
+    assert(status == WGPUPopErrorScopeStatus_Success && type == WGPUErrorType_Validation);
+    assert(message.data && message.length);
+    ++*(unsigned *)userdata;
+}
+
 int main(void)
 {
     setbuf(stdout, NULL);
@@ -127,7 +136,26 @@ int main(void)
     wgpuBufferUnmap(test.buffer);
     assert(wgpuBufferGetMapState(test.buffer) == WGPUBufferMapState_Unmapped);
 
+    /* A validation failure remains observable when admission itself runs out
+     * of memory. No mapping token was created, and the first error stays
+     * Validation rather than being replaced by callback-allocation OOM. */
+    unsigned validations = 0;
+    wgpuDevicePushErrorScope(s->device, WGPUErrorFilter_Validation);
     allocation_count = 0;
+    record_allocations = true;
+    reject_allocations = true;
+    WGPUFuture invalid = wgpuBufferMapAsync(test.buffer, WGPUMapMode_Write, 4, 16, callback);
+    record_allocations = false;
+    reject_allocations = false;
+    assert(!invalid.id && failure_count == 1 && allocation_count == 1);
+    assert(allocation_sizes[0] == callback_bytes && test.maps == 1 && test.errors == 0);
+    WGPUPopErrorScopeCallbackInfo pop = {.mode=WGPUCallbackMode_AllowSpontaneous,
+        .callback=map_validation_reply,.userdata1=&validations};
+    assert(wgpuDevicePopErrorScope(s->device, pop).id && validations == 1);
+    assert(wgpuBufferGetMapState(test.buffer) == WGPUBufferMapState_Unmapped);
+
+    allocation_count = 0;
+    failure_count = 0;
     record_allocations = true;
     reject_allocations = true;
     WGPUFuture rejected = wgpuBufferMapAsync(test.buffer, WGPUMapMode_Write, 0, MAP_BYTES, callback);

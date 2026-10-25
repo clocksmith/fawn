@@ -263,11 +263,19 @@ WGPUFuture wgpuBufferMapAsync(WGPUBuffer handle, WGPUMapMode mode,
     doe_resource_buffer_retain(buffer);
     map_delivery delivery = {.callback = callback, .buffer = buffer, .offset = offset,
         .status = WGPUMapAsyncStatus_Error};
-    native_failure failure = native_failure_status(NATIVE_FAILURE);
+    native_failure failure = native_failure_status(NATIVE_INVALID_ARGUMENT);
     native_failure consumed_failure = native_failure_status(NATIVE_OK);
     native_lock(device);
     uint64_t requested = size == WGPU_WHOLE_MAP_SIZE ? UINT64_MAX : size;
-    doe_resource_status status = doe_resource_buffer_map_begin(buffer, mode, offset, requested, &delivery.generation);
+    const native_result device_status = native_device_result(device);
+    doe_resource_status status = device_status == NATIVE_OK ?
+        doe_resource_buffer_map_begin(buffer, mode, offset, requested, &delivery.generation) :
+        DOE_RESOURCE_UNAVAILABLE;
+    const bool rejected = device_status == NATIVE_OK && status != DOE_RESOURCE_OK;
+    if (device_status != NATIVE_OK) {
+        delivery.status = WGPUMapAsyncStatus_Aborted;
+        failure = native_failure_status(device_status);
+    }
     if (status == DOE_RESOURCE_OK) {
         delivery.began = true;
         const doe_resource_buffer_desc *desc = doe_resource_buffer_description(buffer);
@@ -281,6 +289,8 @@ WGPUFuture wgpuBufferMapAsync(WGPUBuffer handle, WGPUMapMode mode,
                 failure = native_buffer_read(payload, offset, delivery.bytes, delivery.size);
             if (failure.status != NATIVE_OK) consumed_failure = failure;
             if (failure.status == NATIVE_OK) delivery.status = WGPUMapAsyncStatus_Success;
+            else if (native_device_result(device) != NATIVE_OK)
+                delivery.status = WGPUMapAsyncStatus_Aborted;
         } else {
             failure = native_failure_status(NATIVE_OUT_OF_MEMORY);
             consumed_failure = failure;
@@ -288,6 +298,11 @@ WGPUFuture wgpuBufferMapAsync(WGPUBuffer handle, WGPUMapMode mode,
     }
     native_unlock(device);
     native_failure_format(&failure, "buffer map failed or aborted", delivery.message);
+    /* Invalid arguments generate a device error independently of callback
+     * delivery. Publish before admission: a spontaneous callback may pop its
+     * error scope or release all public handles. This buffer lease protects the
+     * device through reporting and then transfers to the callback owner. */
+    if (rejected) native_error(device, native_resource_error(status), delivery.message);
     doe_callback_status admitted;
     WGPUFuture future = native_callback_admit(device->instance, callback.mode, &delivery,
         sizeof(delivery), _Alignof(map_delivery), copy_map, deliver_map, &admitted);
@@ -301,7 +316,7 @@ WGPUFuture wgpuBufferMapAsync(WGPUBuffer handle, WGPUMapMode mode,
          * still protects device storage while this consumed error is reported. */
         if (consumed_failure.status != NATIVE_OK)
             native_error(device, native_result_error(consumed_failure.status), delivery.message);
-        else native_callback_refused(device, admitted);
+        else if (!rejected) native_callback_refused(device, admitted);
         doe_resource_buffer_release(buffer);
     }
     return future;
