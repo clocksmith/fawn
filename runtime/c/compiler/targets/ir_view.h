@@ -17,6 +17,16 @@ static inline bool target_value_type(const CompilerWorkspace *c, uint32_t id, Ty
     return true;
 }
 
+static inline bool target_gather_component(const CompilerWorkspace *c, uint32_t id, uint32_t *component) {
+    if (id == 0u || id > c->instruction_count) return false;
+    const IrInstruction *value = &c->instructions[id - 1u];
+    if (value->result != id || value->opcode != IR_CONSTANT ||
+        (value->type != IR_I32 && value->type != IR_U32) || value->operands.scalar.left != 0u ||
+        value->operands.scalar.literal > 3u) return false;
+    *component = value->operands.scalar.literal;
+    return true;
+}
+
 static inline const char *target_access_path(const CompilerWorkspace *c, uint32_t path,
                                              uint32_t *steps, uint32_t capacity, uint32_t *count) {
     *count = 0u;

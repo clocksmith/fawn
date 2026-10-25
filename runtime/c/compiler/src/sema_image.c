@@ -76,7 +76,8 @@ uint32_t image_builtin_kind(const Source *s, NameSpan name) {
         {"textureNumLayers", IMAGE_LAYERS}, {"textureNumSamples", IMAGE_SAMPLES},
         {"textureSampleLevel", IMAGE_SAMPLE_LEVEL}, {"textureSampleCompareLevel", IMAGE_SAMPLE_COMPARE_LEVEL},
         {"textureSample", IMAGE_SAMPLE}, {"textureSampleCompare", IMAGE_SAMPLE_COMPARE},
-        {"textureSampleGrad", IMAGE_SAMPLE_GRAD}, {"textureSampleBias", IMAGE_SAMPLE_BIAS}
+        {"textureSampleGrad", IMAGE_SAMPLE_GRAD}, {"textureSampleBias", IMAGE_SAMPLE_BIAS},
+        {"textureGather", IMAGE_GATHER}, {"textureGatherCompare", IMAGE_GATHER_COMPARE}
     };
     for (size_t i = 0u; i < sizeof(builtins) / sizeof(builtins[0]); ++i)
         if (source_span_is(s, name, builtins[i].name)) {
@@ -116,6 +117,14 @@ TypeId sema_image_result(Source *s, const Expression *node, const TypeRecord *t,
         case IMAGE_SAMPLES:
             if (!multisampled) goto invalid;
             break;
+        case IMAGE_GATHER: case IMAGE_GATHER_COMPARE:
+            if (storage || multisampled || image.dimension == DOE_COMPILER_VIEW_1D || image.dimension == DOE_COMPILER_VIEW_3D ||
+                ((image.flags & DOE_COMPILER_HANDLE_DEPTH) != 0u) != (op == IMAGE_GATHER_COMPARE)) goto invalid;
+            arity = image_sample_arity(image, op);
+            if (image_offset_width(image, op) != 0u && node->right == arity + 1u) ++arity;
+            width = 4u;
+            scalar = t->element;
+            break;
         case IMAGE_SAMPLE_COMPARE: case IMAGE_SAMPLE_COMPARE_LEVEL:
             if ((image.flags & DOE_COMPILER_HANDLE_DEPTH) == 0u) goto invalid;
             /* fall through */
@@ -138,6 +147,15 @@ TypeId sema_image_result(Source *s, const Expression *node, const TypeRecord *t,
 invalid:
     (void)source_error(s, DOE_COMPILER_SEMANTIC_ERROR, node->source_offset, "no matching texture builtin overload");
     return NO_ID;
+}
+bool sema_image_component(Source *s, ExpressionValue *value) {
+    const TypeId type = value->constant.type == IR_U32 ? IR_U32 : IR_I32;
+    if (!sema_materialize(s, value, type)) return false;
+    if (!value->known || value->runtime || value->overridable || value->constant.bits > 3u)
+        return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, value->value.source_offset,
+            "texture gather component requires a const integer in [0,3]");
+    value->value.id = 0u;
+    return true;
 }
 /* Offsets are const expressions even in a skipped runtime branch. This query
  * does not evaluate source or add a recursive semantic frame. */
@@ -199,4 +217,19 @@ bool sema_image_auxiliaries(Source *s, TypeId texture, ImageOperation op) {
     if ((op == IMAGE_LOAD || (image_sampling(op) && !image_comparison(op))) && !type_intern(s, TYPE_VECTOR, t->element, 4u, &ignored)) return false;
     return !image_sampling(op) || !image_arrayed(dimension) ||
         type_intern(s, TYPE_VECTOR, IR_F32, width + 1u, &ignored);
+}
+
+bool sema_image_finish(Source *s, const Expression *node, TypeId texture, TypeId result,
+                       ImageOperation operation, uint32_t first, bool emit, ExpressionValue *out) {
+    CompilerWorkspace *c = s->compiler;
+    if (!sema_image_auxiliaries(s, texture, operation)) return false;
+    const uint32_t varying = image_implicit(operation) ? SOURCE_IMAGE_VARYING | SOURCE_IMAGE_DERIVATIVE :
+        operation == IMAGE_LOAD && c->types[texture - 7u].state.image.access == DOE_COMPILER_READ_WRITE ? SOURCE_IMAGE_VARYING : 0u;
+    if (!source_reference_record(s, &c->expression_references[(size_t)(node - c->expressions)], SOURCE_IMAGE,
+                                 (uint32_t)operation | varying, node->source_offset)) return false;
+    *out = (ExpressionValue){.runtime = true, .constant.type = result,
+        .value = {.type = result, .source_offset = node->source_offset}};
+    return sema_emit(s, emit, (IrInstruction){.opcode = IR_IMAGE, .type = result,
+        .source_offset = node->source_offset, .operands.composite = {first, node->right, (uint32_t)operation, texture}},
+        result == IR_VOID ? NULL : &out->value);
 }

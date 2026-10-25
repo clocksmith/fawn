@@ -1,11 +1,12 @@
 /* SPDX-License-Identifier: MIT
  * Copyright (c) 2026 Doe contributors */
 #include "private.h"
+#include "../ir_view.h"
 
 typedef struct {
     const TypeRecord *type;
     ImageOperation operation;
-    uint32_t texture, coordinates, layer, level, sample, sampler, data, reference, offset, gradient_x, gradient_y, bias, width;
+    uint32_t texture, coordinates, layer, level, sample, sampler, data, reference, offset, gradient_x, gradient_y, bias, component, width;
     bool storage, multisampled, arrayed, cube, one_dimensional, depth;
 } MetalImage;
 
@@ -30,7 +31,7 @@ static bool decode(MetalEmitter *e, const IrInstruction *ir, MetalImage *image) 
     const ImageType shape = t->state.image;
     *image = (MetalImage){.type = t, .operation = (ImageOperation)ir->operands.composite.kind,
         .texture = args[0], .coordinates = NO_ID, .layer = NO_ID, .level = NO_ID,
-        .sample = NO_ID, .sampler = NO_ID, .data = NO_ID, .reference = NO_ID, .offset = NO_ID, .gradient_x = NO_ID, .gradient_y = NO_ID, .bias = NO_ID,
+        .sample = NO_ID, .sampler = NO_ID, .data = NO_ID, .reference = NO_ID, .offset = NO_ID, .gradient_x = NO_ID, .gradient_y = NO_ID, .bias = NO_ID, .component = NO_ID,
         .width = image_coordinate_width(shape.dimension), .storage = shape.format != 0u,
         .depth = (shape.flags & DOE_COMPILER_HANDLE_DEPTH) != 0u,
         .multisampled = (shape.flags & DOE_COMPILER_HANDLE_MULTISAMPLED) != 0u,
@@ -46,6 +47,7 @@ static bool decode(MetalEmitter *e, const IrInstruction *ir, MetalImage *image) 
         case IMAGE_STORE: expected = 3u + (image->arrayed ? 1u : 0u); break;
         case IMAGE_DIMENSIONS: expected = !image->storage && !image->multisampled && count == 2u ? 2u : 1u; break;
         case IMAGE_LEVELS: case IMAGE_LAYERS: case IMAGE_SAMPLES: break;
+        case IMAGE_GATHER: case IMAGE_GATHER_COMPARE:
         case IMAGE_SAMPLE_GRAD: case IMAGE_SAMPLE_BIAS:
         case IMAGE_SAMPLE: case IMAGE_SAMPLE_COMPARE: case IMAGE_SAMPLE_LEVEL: case IMAGE_SAMPLE_COMPARE_LEVEL:
             expected = image_sample_arity(shape, image->operation);
@@ -61,10 +63,16 @@ static bool decode(MetalEmitter *e, const IrInstruction *ir, MetalImage *image) 
     const TypeId result_scalar = image->operation == IMAGE_STORE ? IR_VOID :
         image->operation == IMAGE_LOAD || image_sampling(image->operation) ? t->element : IR_U32;
     const uint32_t result_width = image->operation == IMAGE_DIMENSIONS ? (image->cube ? 2u : image->width) :
-        (image->operation == IMAGE_LOAD || image_sampling(image->operation)) && !image->depth ? 4u : 1u;
+        (image->operation == IMAGE_LOAD || image_sampling(image->operation)) && (!image->depth || image->operation == IMAGE_GATHER_COMPARE) ? 4u : 1u;
     if (type_leaf(c, ir->type) != result_scalar || type_vector_width(c, ir->type) != result_width ||
         (image->operation == IMAGE_STORE ? ir->result != 0u : ir->result == 0u)) {
         metal_error(e, "Metal image result differs from its typed operation");
+        return false;
+    }
+    if ((image->operation == IMAGE_GATHER || image->operation == IMAGE_GATHER_COMPARE) &&
+        (shape.dimension == DOE_COMPILER_VIEW_1D || shape.dimension == DOE_COMPILER_VIEW_3D ||
+         image->depth != (image->operation == IMAGE_GATHER_COMPARE))) {
+        metal_error(e, "texture gather operation has an invalid shape or depth type");
         return false;
     }
     if ((texel && image->cube) ||
@@ -74,7 +82,7 @@ static bool decode(MetalEmitter *e, const IrInstruction *ir, MetalImage *image) 
         (image->operation == IMAGE_LAYERS && !image->arrayed) ||
         (image->operation == IMAGE_SAMPLES && !image->multisampled) ||
         ((image_sampling(image->operation)) &&
-         (image->storage || image->multisampled || t->element != IR_F32 ||
+         (image->storage || image->multisampled || (image->operation != IMAGE_GATHER && t->element != IR_F32) ||
           (image_comparison(image->operation) && !image->depth) ||
           ((image->operation == IMAGE_SAMPLE_GRAD || image->operation == IMAGE_SAMPLE_BIAS) &&
            (image->depth || image->one_dimensional))))) {
@@ -94,7 +102,12 @@ static bool decode(MetalEmitter *e, const IrInstruction *ir, MetalImage *image) 
         image->coordinates = args[2];
         if (image->arrayed) image->layer = args[3];
         const uint32_t last = 3u + (image->arrayed ? 1u : 0u);
-        if (image->operation == IMAGE_SAMPLE_GRAD) {
+        if (image->operation == IMAGE_GATHER) {
+            if (!target_gather_component(c, args[last], &image->component)) {
+                metal_error(e, "texture gather component has no constant integer identity");
+                return false;
+            }
+        } else if (image->operation == IMAGE_SAMPLE_GRAD) {
             image->gradient_x = args[last];
             image->gradient_y = args[last + 1u];
         } else if (image->operation == IMAGE_SAMPLE_BIAS) image->bias = args[last];
@@ -233,7 +246,9 @@ static void sample_level(MetalEmitter *e, const IrInstruction *ir, const MetalIm
     }
     assign_result(e, ir);
     metal_value(e, image->texture);
-    metal_text(e, image->reference != NO_ID ? ".sample_compare(" : ".sample(");
+    metal_text(e, image->operation == IMAGE_GATHER ? ".gather(" :
+        image->operation == IMAGE_GATHER_COMPARE ? ".gather_compare(" :
+        image->reference != NO_ID ? ".sample_compare(" : ".sample(");
     metal_value(e, image->sampler);
     metal_text(e, ", ");
     metal_value(e, image->coordinates);
@@ -254,7 +269,8 @@ static void sample_level(MetalEmitter *e, const IrInstruction *ir, const MetalIm
         metal_text(e, ", bias(clamp(");
         metal_value(e, image->bias);
         metal_text(e, ", -16.0f, 15.99f))");
-    } else if (!image->one_dimensional && !image_implicit(image->operation)) {
+    } else if (image->operation != IMAGE_GATHER && image->operation != IMAGE_GATHER_COMPARE &&
+        !image->one_dimensional && !image_implicit(image->operation)) {
         if (image->reference != NO_ID) metal_text(e, ", level(0.0f)");
         else {
             metal_text(e, ", level(float(");
@@ -277,6 +293,10 @@ static void sample_level(MetalEmitter *e, const IrInstruction *ir, const MetalIm
         }
         metal_text(e, ", ");
         metal_constant(e, offset->type, offset->operands.scalar.binding, true, 0u);
+    }
+    if (image->component != NO_ID) {
+        if (!image->cube && image->offset == NO_ID) metal_text(e, ", int2(0)");
+        metal_format(e, ", component::%c", "xyzw"[image->component]);
     }
     metal_text(e, ");\n");
     if (image->arrayed) {
@@ -310,6 +330,7 @@ void metal_image(MetalEmitter *e, const IrInstruction *ir) {
     }
     switch (image.operation) {
         case IMAGE_LOAD: case IMAGE_STORE: texel(e, ir, &image); break;
+        case IMAGE_GATHER: case IMAGE_GATHER_COMPARE:
         case IMAGE_SAMPLE_GRAD: case IMAGE_SAMPLE_BIAS:
         case IMAGE_SAMPLE: case IMAGE_SAMPLE_COMPARE: case IMAGE_SAMPLE_LEVEL: case IMAGE_SAMPLE_COMPARE_LEVEL: sample_level(e, ir, &image); break;
         case IMAGE_DIMENSIONS:

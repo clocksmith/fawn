@@ -29,6 +29,19 @@ int main(void) {
     assert(!target_value_type(&c, 4u, &type) && type == IR_I32);
     instructions[0].result = 2u;
     assert(!target_value_type(&c, 1u, &type) && type == IR_I32);
+    uint32_t component = 99u;
+    assert(!target_gather_component(&c, 0u, &component));
+    instructions[0] = (IrInstruction){.result = 1u, .opcode = IR_CONSTANT, .type = IR_U32,
+        .operands.scalar.literal = 2u};
+    assert(target_gather_component(&c, 1u, &component) && component == 2u);
+    instructions[0].operands.scalar.literal = 4u;
+    assert(!target_gather_component(&c, 1u, &component) && component == 2u);
+    instructions[0].operands.scalar.literal = 1u;
+    instructions[0].type = IR_F32;
+    assert(!target_gather_component(&c, 1u, &component));
+    instructions[0].type = IR_U32;
+    instructions[0].operands.scalar.left = 1u;
+    assert(!target_gather_component(&c, 1u, &component));
     uint32_t path[2] = {99u, 99u}, count = 99u;
     assert(target_access_path(&c, 1u, path, 2u, &count) == NULL);
     assert(count == 2u && path[0] == 1u && path[1] == 0u);

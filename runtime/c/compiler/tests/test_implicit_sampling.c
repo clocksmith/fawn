@@ -179,6 +179,28 @@ int main(int argc, char **argv) {
     expect("@group(0) @binding(0) var t:texture_2d<f32>;@group(0) @binding(1) var s:sampler;"
         "@compute @workgroup_size(1) fn main(){let x=textureSampleBias(t,s,vec2f(0.5),0.0);}",
         false,NULL,NULL,NULL);
+    for (uint32_t i = 1u; i < 6u; ++i) {
+        if (i == 3u) continue;
+        const char *coordinates = i < 3u ? "vec2f(0.5)" : "vec3f(1,0,0)";
+        const char *layer = i == 2u || i == 5u ? ",-1i" : "";
+        const char *offset = i < 3u ? ",vec2i(-8,7)" : "";
+        for (uint32_t kind = 0u; kind < 4u; ++kind) {
+            const char *scalar = kind == 0u ? "f32" : kind == 1u ? "i32" : "u32";
+            char source[4096], type[64], call[256], name[64];
+            if (kind == 3u) {
+                assert(snprintf(type,sizeof(type),"texture_depth_%s",shapes[i]) > 0);
+                assert(snprintf(call,sizeof(call),"textureGatherCompare(t,s,%s%s,0.5%s)",coordinates,layer,offset) > 0);
+            } else {
+                assert(snprintf(type,sizeof(type),"texture_%s<%s>",shapes[i],scalar) > 0);
+                assert(snprintf(call,sizeof(call),"textureGather(2u,t,s,%s%s%s)",coordinates,layer,offset) > 0);
+            }
+            assert(snprintf(source,sizeof(source),"@group(0) @binding(0) var t:%s;"
+                "@group(0) @binding(1) var s:%s;@compute @workgroup_size(1) fn main(){let value=%s;}",
+                type,kind == 3u ? "sampler_comparison" : "sampler",call) > 0);
+            assert(snprintf(name,sizeof(name),"gather_%u_%s",kind,shapes[i]) > 0);
+            expect(source,true,directory,name,NULL);
+        }
+    }
     expect("fn textureSample(x:u32)->u32{return x;}@compute @workgroup_size(1) fn main(){let x=textureSample(7u);}",
         true,NULL,NULL,NULL);
     expect("alias textureSample=u32;@compute @workgroup_size(1) fn main(){let x=textureSample(7u);}",

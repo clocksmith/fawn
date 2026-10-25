@@ -308,18 +308,30 @@ static inline bool sema_builtin_value(Source *source, const Expression *node, co
 static inline bool sema_image_call(Source *s, const Expression *node, const LocalScope *scope, bool evaluate, bool emit,
                      ImageOperation operation, ExpressionValue *out) {
     CompilerWorkspace *c = s->compiler;
-    if (c->current_function == NO_ID || node->value.call.type.offset != NO_ID || node->right == 0u)
+    if (c->current_function == NO_ID || node->value.call.type.offset != NO_ID ||
+        node->right < (operation == IMAGE_GATHER || operation == IMAGE_GATHER_COMPARE ? 4u : 1u))
         return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, node->source_offset, "texture builtin has invalid stage or result context");
     uint32_t link = node->left, first = 0u;
+    if (operation == IMAGE_GATHER) {
+        if (!sema_expression(s, c->arguments[link].expression, scope, true, emit, out) ||
+            !sema_image_component(s, out) || !sema_ensure_value(s, out, emit)) return false;
+        link = c->arguments[link].next;
+    }
     if (emit) {
         if (node->right > c->limits.operands - c->operand_count)
             return source_pool_error(s, DOE_COMPILER_POOL_IR_OPERANDS, (size_t)c->operand_count + node->right,
                 node->source_offset, "texture operand capacity exceeded");
         first = c->operand_count;
         c->operand_count += node->right;
+        if (operation == IMAGE_GATHER) c->typed_operands[first] = out->value.id;
     }
     TypeId texture = IR_VOID, result = IR_VOID;
-    for (uint32_t index = 0u; index < node->right; ++index) {
+    /* Source gather starts with a component. Typed images keep texture first;
+     * move the saved component after coordinates/layer once the shape is known. */
+    for (uint32_t argument = operation == IMAGE_GATHER ? 1u : 0u; argument < node->right; ++argument) {
+        uint32_t index = argument - (operation == IMAGE_GATHER ? 1u : 0u);
+        if (operation == IMAGE_GATHER && texture != IR_VOID &&
+            index == image_sample_arity(c->types[texture - 7u].state.image, operation) - 1u) ++index;
         if (!sema_expression(s, c->arguments[link].expression, scope, sema_image_evaluate(c, texture, operation, index, evaluate), emit, out)) return false;
         if (index == 0u) {
             texture = out->constant.type;
@@ -327,21 +339,14 @@ static inline bool sema_image_call(Source *s, const Expression *node, const Loca
                 return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, node->source_offset, "texture builtin requires a texture handle");
             result = sema_image_result(s, node, &c->types[texture - 7u], operation);
             if (result == NO_ID) return false;
+            if (emit && operation == IMAGE_GATHER)
+                c->typed_operands[first + image_sample_arity(c->types[texture - 7u].state.image, operation) - 1u] = c->typed_operands[first];
         } else if (!sema_image_argument(s, &c->types[texture - 7u], operation, index, out)) return false;
         if (!sema_ensure_value(s, out, emit)) return false;
         if (emit) c->typed_operands[first + index] = out->value.id;
         link = c->arguments[link].next;
     }
-    if (!sema_image_auxiliaries(s, texture, operation)) return false;
-    const uint32_t varying = image_implicit(operation) ? SOURCE_IMAGE_VARYING | SOURCE_IMAGE_DERIVATIVE :
-        operation == IMAGE_LOAD && c->types[texture - 7u].state.image.access == DOE_COMPILER_READ_WRITE ? SOURCE_IMAGE_VARYING : 0u;
-    if (!source_reference_record(s, &c->expression_references[(size_t)(node - c->expressions)], SOURCE_IMAGE,
-                                 (uint32_t)operation | varying, node->source_offset)) return false;
-    *out = (ExpressionValue){.runtime = true, .constant.type = result,
-        .value = {.type = result, .source_offset = node->source_offset}};
-    return sema_emit(s, emit, (IrInstruction){.opcode = IR_IMAGE, .type = result,
-        .source_offset = node->source_offset, .operands.composite = {first, node->right, (uint32_t)operation, texture}},
-        result == IR_VOID ? NULL : &out->value);
+    return sema_image_finish(s, node, texture, result, operation, first, emit, out);
 }
 
 /* The address is resolved before value arguments. access.value indexes the
