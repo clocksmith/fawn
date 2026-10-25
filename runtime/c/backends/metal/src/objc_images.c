@@ -60,6 +60,16 @@ void doe_mtl_objc_image_caps(doe_mtl_objc *r, void *device, doe_mtl_caps *caps) 
     /* Conservative published family limits. Unrecognized older devices keep
      * buffer compute, but have no admitted image dimensions rather than guesses. */
     if (r->responds_call(device, r->responds, r->supports_family)) {
+        /* Apple Metal Feature Set Tables: Apple2/3 512, Apple4+ and Mac1/2
+         * 1024 total threads. Per-axis device properties are not a product
+         * limit; each actual PSO maxTotalThreadsPerThreadgroup is still checked.
+         * https://developer.apple.com/metal/Metal-Feature-Set-Tables.pdf */
+        if (r->family_call(device, r->supports_family, 2001) ||
+            r->family_call(device, r->supports_family, 2002) ||
+            r->family_call(device, r->supports_family, 1004)) caps->max_threads_per_workgroup = 1024;
+        else if (r->family_call(device, r->supports_family, 1001) ||
+            r->family_call(device, r->supports_family, 1002) ||
+            r->family_call(device, r->supports_family, 1003)) caps->max_threads_per_workgroup = 512;
         caps->separate_depth_stencil = r->family_call(device, r->supports_family, 1002) != 0;
         caps->depth_resolve = r->family_call(device, r->supports_family, 1003) ||
             r->family_call(device, r->supports_family, 2002);

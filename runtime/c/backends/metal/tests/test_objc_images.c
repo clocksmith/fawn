@@ -225,20 +225,20 @@ static void views_and_caps(void) {
     f.family = 2002; doe_mtl_objc_image_caps(&f.runtime, &f.device, &caps);
     assert(caps.max_texture_2d == 16384 && caps.max_texture_3d == 2048 && caps.bc_texture_compression);
     assert(caps.sample_count_mask == 5 && caps.depth24_stencil8 && caps.multisample_array && caps.store_and_resolve);
-    assert(!caps.separate_depth_stencil);
+    assert(!caps.separate_depth_stencil && caps.max_threads_per_workgroup == 1024);
     memset(&caps, 0, sizeof(caps)); f.family = 1002;
     doe_mtl_objc_image_caps(&f.runtime, &f.device, &caps);
-    assert(caps.max_texture_2d == 8192 && caps.max_texture_layers == 2048);
+    assert(caps.max_texture_2d == 8192 && caps.max_texture_layers == 2048 && caps.max_threads_per_workgroup == 512);
     memset(&caps, 0, sizeof(caps)); f.family = 1003;
     doe_mtl_objc_image_caps(&f.runtime, &f.device, &caps);
-    assert(caps.separate_depth_stencil && caps.depth_resolve && !caps.stencil_resolve);
+    assert(caps.separate_depth_stencil && caps.depth_resolve && !caps.stencil_resolve && caps.max_threads_per_workgroup == 512);
     assert(caps.counting_visibility && caps.max_visibility_offset == 65528 && !caps.multisample_array);
     memset(&caps, 0, sizeof(caps)); f.family = 1005;
     doe_mtl_objc_image_caps(&f.runtime, &f.device, &caps);
-    assert(caps.stencil_resolve);
+    assert(caps.stencil_resolve && caps.max_threads_per_workgroup == 1024);
     memset(&caps, 0, sizeof(caps)); f.no_family = true;
     doe_mtl_objc_image_caps(&f.runtime, &f.device, &caps);
-    assert(caps.max_texture_2d == 0 && !caps.bc_texture_compression);
+    assert(caps.max_texture_2d == 0 && !caps.bc_texture_compression && !caps.max_threads_per_workgroup);
     assert(f.pools == f.drains);
 }
 static void transfers(void) {

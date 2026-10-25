@@ -92,10 +92,6 @@ _Static_assert(2 * (SAMPLED_PER_STAGE + SAMPLERS_PER_STAGE + VK_STORAGE_BUFFERS_
  * no per-sample color byte limit, so every combination of the admitted slots
  * fits: the slot count is the only bound. */
 enum { MAX_COLOR_TARGET_BYTES = 16 };
-/* The C compiler admits workgroup dimensions and their product only up to 256
- * (runtime/c/compiler/src/sema_declarations.c); larger Vulkan values would be
- * reported but never compile. */
-enum { COMPILER_WORKGROUP_BOUND = 256 };
 /* Dynamic offsets are applied by the resource owner; one bind group holds at
  * most DOE_RESOURCE_MAX_DYNAMIC_OFFSETS of them. */
 enum { DYNAMIC_UNIFORM = 16, DYNAMIC_STORAGE = 16 };
@@ -151,10 +147,10 @@ WGPUStatus native_vulkan_limits(const doe_vk_caps *caps, WGPULimits *out)
         .minUniformBufferOffsetAlignment = max32((uint32_t)caps->uniform_offset_alignment, MIN_OFFSET_ALIGNMENT),
         .minStorageBufferOffsetAlignment = max32((uint32_t)caps->storage_offset_alignment, MIN_OFFSET_ALIGNMENT),
         .maxBufferSize = buffer_size,
-        .maxComputeInvocationsPerWorkgroup = min32(caps->max_workgroup_invocations, COMPILER_WORKGROUP_BOUND),
-        .maxComputeWorkgroupSizeX = min32(caps->max_workgroup_size[0], COMPILER_WORKGROUP_BOUND),
-        .maxComputeWorkgroupSizeY = min32(caps->max_workgroup_size[1], COMPILER_WORKGROUP_BOUND),
-        .maxComputeWorkgroupSizeZ = min32(caps->max_workgroup_size[2], COMPILER_WORKGROUP_BOUND),
+        .maxComputeInvocationsPerWorkgroup = caps->max_workgroup_invocations,
+        .maxComputeWorkgroupSizeX = caps->max_workgroup_size[0],
+        .maxComputeWorkgroupSizeY = caps->max_workgroup_size[1],
+        .maxComputeWorkgroupSizeZ = caps->max_workgroup_size[2],
         .maxComputeWorkgroupsPerDimension = dispatch,
         .maxImmediateSize = 64
     };
@@ -163,7 +159,7 @@ WGPUStatus native_vulkan_limits(const doe_vk_caps *caps, WGPULimits *out)
 
 WGPUStatus native_metal_limits(const doe_mtl_caps *caps, WGPULimits *out)
 {
-    if (!out || out->nextInChain) return WGPUStatus_Error;
+    if (!caps || !out || out->nextInChain || !caps->max_threads_per_workgroup) return WGPUStatus_Error;
     /* Frontend admission envelope, not queried hardware guarantees. Real per-
      * pipeline maxTotalThreadsPerThreadgroup remains checked by the backend.
      * 256-byte offsets are an explicit conservative subset across Metal families. */
@@ -171,8 +167,8 @@ WGPUStatus native_metal_limits(const doe_mtl_caps *caps, WGPULimits *out)
         caps->max_buffer_length : UINT32_MAX) & ~(uint64_t)3;
     uint32_t dimensions[3];
     for (size_t i = 0; i < 3; ++i)
-        dimensions[i] = caps->max_threads_per_dimension[i] < 256 ?
-            (uint32_t)caps->max_threads_per_dimension[i] : 256;
+        dimensions[i] = caps->max_threads_per_dimension[i] > UINT32_MAX ?
+            UINT32_MAX : (uint32_t)caps->max_threads_per_dimension[i];
     *out = (WGPULimits){.maxBufferSize=caps->max_buffer_length,
         .maxBindGroups=4,.maxBindGroupsPlusVertexBuffers=GROUP_VERTEX_BUDGET,
         .maxBindingsPerBindGroup=DOE_RESOURCE_MAX_BINDING_NUMBER,
@@ -194,7 +190,7 @@ WGPUStatus native_metal_limits(const doe_mtl_caps *caps, WGPULimits *out)
         .minUniformBufferOffsetAlignment=256,.minStorageBufferOffsetAlignment=256,
         .maxComputeWorkgroupStorageSize=caps->max_threadgroup_memory_length > UINT32_MAX ?
             UINT32_MAX : (uint32_t)caps->max_threadgroup_memory_length,
-        .maxComputeInvocationsPerWorkgroup=256,.maxComputeWorkgroupSizeX=dimensions[0],
+        .maxComputeInvocationsPerWorkgroup=caps->max_threads_per_workgroup,.maxComputeWorkgroupSizeX=dimensions[0],
         .maxComputeWorkgroupSizeY=dimensions[1],.maxComputeWorkgroupSizeZ=dimensions[2],
         .maxComputeWorkgroupsPerDimension=65535,.maxImmediateSize=64};
     return WGPUStatus_Success;
@@ -241,10 +237,10 @@ WGPUStatus native_d3d12_limits(const doe_dx_caps *caps, WGPULimits *out)
         .minUniformBufferOffsetAlignment = native->uniform_offset_alignment,
         .minStorageBufferOffsetAlignment = 256,
         .maxComputeWorkgroupStorageSize = native->max_compute_shared_bytes,
-        .maxComputeInvocationsPerWorkgroup = min32(COMPILER_WORKGROUP_BOUND, native->max_compute_threads),
-        .maxComputeWorkgroupSizeX = min32(COMPILER_WORKGROUP_BOUND, native->max_compute_size[0]),
-        .maxComputeWorkgroupSizeY = min32(COMPILER_WORKGROUP_BOUND, native->max_compute_size[1]),
-        .maxComputeWorkgroupSizeZ = min32(COMPILER_WORKGROUP_BOUND, native->max_compute_size[2]),
+        .maxComputeInvocationsPerWorkgroup = native->max_compute_threads,
+        .maxComputeWorkgroupSizeX = native->max_compute_size[0],
+        .maxComputeWorkgroupSizeY = native->max_compute_size[1],
+        .maxComputeWorkgroupSizeZ = native->max_compute_size[2],
         .maxComputeWorkgroupsPerDimension = min32(native->max_dispatch_groups[0],
             min32(native->max_dispatch_groups[1], native->max_dispatch_groups[2]))
     };

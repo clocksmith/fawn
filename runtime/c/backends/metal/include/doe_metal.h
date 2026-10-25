@@ -47,6 +47,7 @@ typedef struct doe_mtl_caps {
     uint64_t max_buffer_length;
     uint64_t max_threadgroup_memory_length;
     uint64_t max_threads_per_dimension[3];
+    uint32_t max_threads_per_workgroup; /* Queried family envelope; PSO total checked separately. */
     char device_name[256];
     uint32_t max_texture_1d, max_texture_2d, max_texture_3d, max_texture_layers;
     bool bc_texture_compression;
