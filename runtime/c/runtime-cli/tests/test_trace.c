@@ -2,7 +2,9 @@
  * The trace payload hash chain against rows doe-zig-runtime wrote for the same
  * example streams (examples/p0_resource_lifecycle_commands.json,
  * rmsnorm_tree_commands.json, workgroup_atomic_commands.json; doe-zig-runtime
- * built from db0979828, run on lavapipe 2026-10-25). Wrong field order, a
+ * built from db0979828, run on lavapipe 2026-10-25), plus an alias stream
+ * [write_buffer, buffer_upload] (doe-zig-runtime from the same build, --quirk-mode
+ * off, 2026-10-25). Wrong field order, a
  * missing "none" field or a hashed toggle string changes every value. */
 #include "trace.h"
 #include <assert.h>
@@ -46,12 +48,17 @@ int main(void)
     chain(rmsnorm, 2);
     const vector atomic[] = {{"kernel_dispatch", "workgroup_atomic.wgsl", UINT64_C(0xd00d567969d44b72)}};
     chain(atomic, 1);
-    /* An alias label hashes as written while the kind tag is normalized. */
-    assert(doe_trace_payload_hash(DOE_TRACE_HASH_SEED, 0, "write_buffer", "buffer_write", NULL) !=
-        doe_trace_payload_hash(DOE_TRACE_HASH_SEED, 0, "buffer_write", "buffer_write", NULL));
+    /* doe-zig-runtime labels alias kinds with the normalized name: its rows for
+     * [write_buffer, buffer_upload] hash as buffer_write, upload. */
+    const vector aliases[] = {
+        {"buffer_write", NULL, UINT64_C(0x3eb0c370aa46f5f9)},
+        {"upload", NULL, UINT64_C(0x7ac9433e64554c12)},
+    };
+    chain(aliases, 2);
+    assert(doe_trace_payload_hash(DOE_TRACE_HASH_SEED, 0, "write_buffer", "buffer_write", NULL) != aliases[0].hash);
     /* An absent kernel differs from an empty one. */
     assert(doe_trace_payload_hash(DOE_TRACE_HASH_SEED, 0, "kernel_dispatch", "kernel_dispatch", NULL) !=
         doe_trace_payload_hash(DOE_TRACE_HASH_SEED, 0, "kernel_dispatch", "kernel_dispatch", ""));
-    puts("runtime-cli trace: hash chain equals doe-zig-runtime rows for three example streams (host only)");
+    puts("runtime-cli trace: hash chain equals doe-zig-runtime rows for three example streams and alias labels (host only)");
     return 0;
 }
