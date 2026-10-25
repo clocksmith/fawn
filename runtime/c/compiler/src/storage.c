@@ -66,7 +66,7 @@ static bool workspace_layout(const CompilerLimits *l, WorkspaceLayout *p) {
         frames>SIZE_MAX/6u ||
         !reserve_array(&uniform_end,frames*6u,(size_t)l->statements+1u,1u,&ignored) ||
         !reserve_array(&uniform_end,0u,1u,_Alignof(ConstantValue),&ignored) ||
-        !reserve_array(&cursor,(size_t)l->types+7u,sizeof(uint32_t),_Alignof(uint32_t),&p->reflection) ||
+        !reserve_array(&cursor,(size_t)l->types+IR_PRIMITIVE_COUNT,sizeof(uint32_t),_Alignof(uint32_t),&p->reflection) ||
         !reserve_array(&cursor,l->targets,sizeof(TargetDeclaration),_Alignof(TargetDeclaration),&p->targets) ||
         !reserve_array(&cursor,l->traversal,sizeof(WalkItem),_Alignof(WalkItem),&p->walk) ||
         !reserve_array(&cursor,l->words,sizeof(uint32_t),_Alignof(uint32_t),&p->words)) return false;
@@ -79,7 +79,7 @@ static bool workspace_layout(const CompilerLimits *l, WorkspaceLayout *p) {
     return true;
 }
 static bool limits_fit(const CompilerLimits *l) {
-    return l->types <= UINT32_MAX-7u && l->expressions < UINT32_MAX && l->tokens < UINT32_MAX &&
+    return l->types <= UINT32_MAX-IR_PRIMITIVE_COUNT && l->expressions < UINT32_MAX && l->tokens < UINT32_MAX &&
         (uint64_t)l->statements+1u+l->accesses < UINT32_MAX &&
         (uint64_t)l->instructions+l->tokens/4u+1u < UINT32_MAX;
 }
@@ -110,7 +110,7 @@ static bool typed_limits(const DoeCompilerTypedCapacities *c, CompilerLimits *l)
     if (c == NULL || c->reserved != 0u || c->expression_depth == 0u || c->expression_depth > 64u ||
         c->control_depth == 0u || c->control_depth > 32u || c->type_syntax_depth == 0u || c->type_syntax_depth > 64u ||
         c->source_bytes >= UINT32_MAX || c->tokens >= UINT32_MAX || c->statements >= UINT32_MAX ||
-        c->expressions >= UINT32_MAX || c->types > UINT32_MAX-7u || c->members >= UINT32_MAX ||
+        c->expressions >= UINT32_MAX || c->types > UINT32_MAX-IR_PRIMITIVE_COUNT || c->members >= UINT32_MAX ||
         c->resources >= UINT32_MAX || c->access_steps >= UINT32_MAX || c->constants >= UINT32_MAX ||
         c->constant_edges >= UINT32_MAX || c->ir_instructions >= UINT32_MAX || c->ir_operands >= UINT32_MAX ||
         c->target_declarations >= UINT32_MAX || c->traversal_items >= UINT32_MAX) return false;

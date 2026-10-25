@@ -26,6 +26,8 @@ extern "C" {
 /* Core WebGPU binding numbers0..999, independent of native argument slots and
  * resource/work capacities. Unset keeps the earlier0..31 compiler admission. */
 #define DOE_COMPILER_CORE_BINDING_NUMBERS 16u
+/* Device consumers disable the extension unless shader-f16 was requested. */
+#define DOE_COMPILER_DISABLE_F16 32u
 
 #define DOE_COMPILER_TYPE_SCALAR 1u
 #define DOE_COMPILER_TYPE_VECTOR 2u
@@ -36,6 +38,7 @@ extern "C" {
 #define DOE_COMPILER_LEAF_I32 2u
 #define DOE_COMPILER_LEAF_U32 3u
 #define DOE_COMPILER_LEAF_F32 4u
+#define DOE_COMPILER_LEAF_F16 7u
 #define DOE_COMPILER_TYPE_CONSTRUCTIBLE 1u
 #define DOE_COMPILER_TYPE_HOST_SHAREABLE 2u
 #define DOE_COMPILER_TYPE_FIXED_SIZE 4u

@@ -13,8 +13,8 @@ static bool discover(Source *s, TypeId root, size_t *count) {
     for (;;) {
         bool seen = c->reflection_map[current] != NO_ID;
         if (!seen) c->reflection_map[current] = (uint32_t)(*count)++;
-        if (current >= 7u) {
-            TypeRecord *t = &c->types[current-7u];
+        if (current >= IR_PRIMITIVE_COUNT) {
+            TypeRecord *t = &c->types[current-IR_PRIMITIVE_COUNT];
             if (t->kind == TYPE_STRUCT) {
                 seen = t->aux != 0u;
                 t->aux = 1u;
@@ -35,7 +35,7 @@ static bool discover(Source *s, TypeId root, size_t *count) {
 }
 bool reflect_prepare(Source *s, CompilerWorkspace *c, DoeCompilerTypedOutputCounts *counts) {
     *counts = (DoeCompilerTypedOutputCounts){.words = c->word_count, .resources = c->resource_count};
-    for (uint32_t i = 0u;i<c->type_count+7u;++i) c->reflection_map[i] = NO_ID;
+    for (uint32_t i = 0u;i<c->type_count+IR_PRIMITIVE_COUNT;++i) c->reflection_map[i] = NO_ID;
     uint64_t names=0u;
     const bool module=(c->limits.flags&LIMIT_MODULE)!=0u;
     const uint32_t entries=module?c->entry_count:1u;
@@ -43,12 +43,12 @@ bool reflect_prepare(Source *s, CompilerWorkspace *c, DoeCompilerTypedOutputCoun
     for (uint32_t i = 0u;i<c->type_count;++i) if (c->types[i].kind == TYPE_STRUCT) {
             TypeRecord *t = &c->types[i];
             t->aux = 0u;
-            c->reflection_map[i+7u] = (uint32_t)counts->types++;
+            c->reflection_map[i+IR_PRIMITIVE_COUNT] = (uint32_t)counts->types++;
             counts->members+=t->count;
             names+=(uint64_t)t->name.length+1u;
             for (uint32_t j = 0u;j<t->count;++j) names+=(uint64_t)c->members[t->element+j].name.length+1u;
         }
-    for (uint32_t i = 0u;i<c->type_count;++i) if (c->types[i].kind == TYPE_STRUCT && !discover(s, i+7u, &counts->types)) return false;
+    for (uint32_t i = 0u;i<c->type_count;++i) if (c->types[i].kind == TYPE_STRUCT && !discover(s, i+IR_PRIMITIVE_COUNT, &counts->types)) return false;
     for (uint32_t i = 0u;i<c->resource_count;++i) {
         names+=(uint64_t)c->resources[i].name.length+1u;
         if (!type_handle(c, c->resources[i].type) && !discover(s, c->resources[i].type, &counts->types)) return false;
@@ -70,10 +70,10 @@ bool reflect_prepare(Source *s, CompilerWorkspace *c, DoeCompilerTypedOutputCoun
 bool reflect_version_admit(Source *s, uint32_t version) {
     const CompilerWorkspace *c = s->compiler;
     for (uint32_t i = 0u; i < c->type_count; ++i)
-        if (version < DOE_COMPILER_MATRIX_ABI_VERSION && c->types[i].kind == TYPE_MATRIX && c->reflection_map[i + 7u] != NO_ID)
+        if (version < DOE_COMPILER_MATRIX_ABI_VERSION && c->types[i].kind == TYPE_MATRIX && c->reflection_map[i + IR_PRIMITIVE_COUNT] != NO_ID)
             return source_error(s, DOE_COMPILER_UNSUPPORTED, c->types[i].name.offset,
                 "matrix reflection requires explicit ABI8");
-        else if (version < DOE_COMPILER_ATOMIC_ABI_VERSION && c->types[i].kind == TYPE_ATOMIC && c->reflection_map[i + 7u] != NO_ID)
+        else if (version < DOE_COMPILER_ATOMIC_ABI_VERSION && c->types[i].kind == TYPE_ATOMIC && c->reflection_map[i + IR_PRIMITIVE_COUNT] != NO_ID)
             return source_error(s, DOE_COMPILER_UNSUPPORTED, c->types[i].name.offset,
                 "atomic reflection requires explicit ABI9");
     return true;
@@ -88,7 +88,7 @@ static DoeCompilerNameV4 publish_name(const Source *s, NameSpan name, char *name
 }
 static void publish_tables(const Source *s, const CompilerWorkspace *c, const DoeCompilerTypedOutputs *o, uint32_t *name_cursor) {
     uint32_t cursor=*name_cursor, member=0u;
-    for (uint32_t id = 1u;id<c->type_count+7u;++id) {
+    for (uint32_t id = 1u;id<c->type_count+IR_PRIMITIVE_COUNT;++id) {
         const uint32_t index = c->reflection_map[id];
         if (index == NO_ID) continue;
         DoeCompilerTypeV4 *out = &o->types[index];
@@ -97,12 +97,12 @@ static void publish_tables(const Source *s, const CompilerWorkspace *c, const Do
         out->flags = type_flags(c, id)&(TYPE_CONSTRUCTIBLE|TYPE_HOST|TYPE_FIXED|TYPE_TAIL);
         out->size_bytes = (out->flags&TYPE_FIXED) != 0u?type_size(c, id):0u;
         out->alignment_bytes = type_alignment(c, id);
-        if (id<7u) {
+        if (id<IR_PRIMITIVE_COUNT) {
             out->kind = DOE_COMPILER_TYPE_SCALAR;
             out->scalar_kind = id;
             continue;
         }
-        const TypeRecord *t = &c->types[id-7u];
+        const TypeRecord *t = &c->types[id-IR_PRIMITIVE_COUNT];
         if (t->kind == TYPE_STRUCT) {
             out->kind = DOE_COMPILER_TYPE_STRUCT;
             out->name = publish_name(s, t->name, o->names, &cursor);
@@ -238,8 +238,8 @@ static bool flat_struct(const CompilerWorkspace *c, const TypeRecord *t) {
     return true;
 }
 static bool old_resource(const CompilerWorkspace *c, const ResourceRecord *r, bool v2) {
-    if (r->type<7u || r->minimum>UINT32_MAX || r->alignment>UINT32_MAX || r->required_alignment>UINT32_MAX) return false;
-    const TypeRecord *t = &c->types[r->type-7u];
+    if (r->type<IR_PRIMITIVE_COUNT || r->minimum>UINT32_MAX || r->alignment>UINT32_MAX || r->required_alignment>UINT32_MAX) return false;
+    const TypeRecord *t = &c->types[r->type-IR_PRIMITIVE_COUNT];
     if (r->kind == DOE_COMPILER_UNIFORM_BUFFER) return v2 && t->kind == TYPE_STRUCT && flat_struct(c, t);
     return t->kind == TYPE_RUNTIME_ARRAY && (t->element == IR_U32 || t->element == IR_F32);
 }
@@ -285,7 +285,7 @@ void reflect_program(const Source *s, const CompilerWorkspace *c, DoeCompilerRef
         copy_name(s, r->name, b->name);
         b->group = r->group;
         b->binding = r->binding;
-        b->scalar = old_scalar(c->types[r->type-7u].element);
+        b->scalar = old_scalar(c->types[r->type-IR_PRIMITIVE_COUNT].element);
         b->access = (DoeCompilerAccess)r->access;
         b->element_stride = 4u;
         b->runtime_sized = 1u;
@@ -327,13 +327,13 @@ void reflect_program_v2(const Source *s, const CompilerWorkspace *c, DoeCompiler
         b->type_alignment_bytes = (uint32_t)r->alignment;
         b->address_space_alignment_bytes = (uint32_t)r->required_alignment;
         if (r->kind == DOE_COMPILER_STORAGE_BUFFER) {
-            b->scalar = (uint32_t)old_scalar(c->types[r->type-7u].element);
+            b->scalar = (uint32_t)old_scalar(c->types[r->type-IR_PRIMITIVE_COUNT].element);
             b->element_stride = 4u;
             b->runtime_sized = 1u;
         }
         else {
             uint32_t index = 0u;
-            for (uint32_t j = 0u;j<r->type-7u;++j) if (c->types[j].kind == TYPE_STRUCT) ++index;
+            for (uint32_t j = 0u;j<r->type-IR_PRIMITIVE_COUNT;++j) if (c->types[j].kind == TYPE_STRUCT) ++index;
             b->struct_index = index;
         }
     }

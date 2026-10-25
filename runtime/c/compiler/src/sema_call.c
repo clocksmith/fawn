@@ -14,7 +14,10 @@ static bool convert_value(Source *s, ExpressionValue *a, TypeId target, uint32_t
     CompilerWorkspace *c = s->compiler;
     const uint32_t n = type_vector_width(c, target);
     const TypeId leaf = type_leaf(c, target), original = type_leaf(c, a->constant.type);
-    if (type_vector_width(c, a->constant.type) != n || leaf == IR_VOID || leaf>IR_F32 || original == IR_VOID || (a->constant.type >= 7u && c->types[a->constant.type-7u].kind != TYPE_VECTOR) || (bitcast && (leaf == IR_BOOL || original == IR_BOOL)))
+    if (bitcast && target == a->constant.type && leaf == IR_F16) { *out = *a; return true; }
+    if (bitcast && (leaf == IR_F16 || original == IR_F16) && target != a->constant.type)
+        return source_error(s, DOE_COMPILER_UNSUPPORTED, offset, "f16 bitcast shape conversion is not implemented");
+    if (type_vector_width(c, a->constant.type) != n || leaf == IR_VOID || (leaf>IR_F32 && leaf != IR_F16) || original == IR_VOID || (a->constant.type >= IR_PRIMITIVE_COUNT && c->types[a->constant.type-IR_PRIMITIVE_COUNT].kind != TYPE_VECTOR) || (bitcast && (leaf == IR_BOOL || original == IR_BOOL)))
         return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, offset, "no matching scalar or vector conversion");
     if (type_abstract(c, a->constant.type) && (leaf == IR_F32 || bitcast)) {
         TypeId input = original == IR_ABSTRACT_INT?IR_I32:IR_F32;
@@ -82,16 +85,16 @@ static bool user_call(Source *s, uint32_t id, const LocalScope *scope, uint32_t 
  * committed overload's operands exactly once in source order. */
 static bool aggregate_call(Source *s, const Expression *node, const LocalScope *scope, TypeId target, uint32_t inferred, bool evaluate, bool emit, ExpressionValue *out) {
     CompilerWorkspace *c = s->compiler;
-    uint32_t kind = inferred == 1u?TYPE_VECTOR:inferred == 2u?TYPE_ARRAY:inferred == 3u?TYPE_MATRIX:c->types[target-7u].kind;
-    uint32_t n = (inferred == 1u || inferred == 3u)?(uint32_t)(s->source[node->value.call.callee.offset+3u]-'0'):inferred == 2u?node->right:c->types[target-7u].count;
+    uint32_t kind = inferred == 1u?TYPE_VECTOR:inferred == 2u?TYPE_ARRAY:inferred == 3u?TYPE_MATRIX:c->types[target-IR_PRIMITIVE_COUNT].kind;
+    uint32_t n = (inferred == 1u || inferred == 3u)?(uint32_t)(s->source[node->value.call.callee.offset+3u]-'0'):inferred == 2u?node->right:c->types[target-IR_PRIMITIVE_COUNT].count;
     const uint32_t rows = kind == TYPE_MATRIX ? (inferred == 3u ?
         (uint32_t)(s->source[node->value.call.callee.offset + 5u] - '0') :
-        type_vector_width(c, c->types[target - 7u].element)) : 0u;
+        type_vector_width(c, c->types[target - IR_PRIMITIVE_COUNT].element)) : 0u;
     if (kind == TYPE_MATRIX && node->right == 1u) {
         ExpressionValue a;
         if (!sema_expression(s, c->arguments[node->left].expression, scope, evaluate, emit, &a)) return false;
-        if (!type_matrix(c, a.constant.type) || c->types[a.constant.type - 7u].count != n ||
-            type_vector_width(c, c->types[a.constant.type - 7u].element) != rows)
+        if (!type_matrix(c, a.constant.type) || c->types[a.constant.type - IR_PRIMITIVE_COUNT].count != n ||
+            type_vector_width(c, c->types[a.constant.type - IR_PRIMITIVE_COUNT].element) != rows)
             return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, node->source_offset, "matrix conversion requires identical dimensions");
         if (inferred == 3u) target = a.constant.type;
         if (!sema_materialize(s, &a, target)) return false;
@@ -122,13 +125,13 @@ static bool aggregate_call(Source *s, const Expression *node, const LocalScope *
             const uint32_t width = type_vector_width(c, a.constant.type);
             const TypeId leaf = type_leaf(c, a.constant.type);
             if ((node->right != n && node->right != n * rows) || width != (node->right == n ? rows : 1u) ||
-                (leaf != IR_F32 && leaf != IR_ABSTRACT_FLOAT && leaf != IR_ABSTRACT_INT))
+                (leaf != IR_F16 && leaf != IR_F32 && leaf != IR_ABSTRACT_FLOAT && leaf != IR_ABSTRACT_INT))
                 return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, node->source_offset, "matrix constructor requires whole floating-point columns or scalar elements");
             if (i == 0u) common = leaf;
             else if (!sema_common_type(s, common, leaf, node->source_offset, &common)) return false;
         }
         else if (kind == TYPE_VECTOR) {
-            if (a.constant.type >= 7u && c->types[a.constant.type-7u].kind != TYPE_VECTOR)
+            if (a.constant.type >= IR_PRIMITIVE_COUNT && c->types[a.constant.type-IR_PRIMITIVE_COUNT].kind != TYPE_VECTOR)
                 return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, node->source_offset, "vector pieces must be scalar or vector");
             const uint32_t part = type_vector_width(c, a.constant.type);
             if (part>n || lanes>n-part) return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, node->source_offset, "vector constructor lane count mismatch");
@@ -180,7 +183,7 @@ static bool aggregate_call(Source *s, const Expression *node, const LocalScope *
         ExpressionValue a;
         TypeId expected = type_child(c, target, i);
         if (!sema_expression(s, c->arguments[link].expression, scope, evaluate, emit && runtime, &a)) return false;
-        if (matrix_scalars) expected = type_leaf(c, c->types[target - 7u].element);
+        if (matrix_scalars) expected = type_leaf(c, c->types[target - IR_PRIMITIVE_COUNT].element);
         if (kind == TYPE_VECTOR) {
             expected = type_leaf(c, target);
             const uint32_t part = type_vector_width(c, a.constant.type);
@@ -204,7 +207,7 @@ static bool aggregate_call(Source *s, const Expression *node, const LocalScope *
                 continue;
             }
             if (matrix_scalars) {
-                if (i % rows == 0u && !constant_reserve(s, c->types[target - 7u].element,
+                if (i % rows == 0u && !constant_reserve(s, c->types[target - IR_PRIMITIVE_COUNT].element,
                     CONSTANT_COMPOSITE, rows, &c->constant_edges[first + i / rows], &column_first)) return false;
                 c->constant_edges[column_first + i % rows] = a.constant;
             }
@@ -278,7 +281,7 @@ static inline bool sema_builtin_value(Source *source, const Expression *node, co
             (builtin->family == BUILTIN_PACKED_INTEGER &&
              leaf != (packed_pack(builtin->kind) && packed_signed(builtin->kind) ? IR_I32 : IR_U32)) ||
             (builtin->family == BUILTIN_SUBGROUP_INTEGER && leaf != IR_I32 && leaf != IR_U32 && leaf != IR_ABSTRACT_INT) ||
-            (builtin_floating(builtin) && leaf != IR_F32 && leaf != IR_ABSTRACT_FLOAT))
+            (builtin_floating(builtin) && leaf != IR_F16 && leaf != IR_F32 && leaf != IR_ABSTRACT_FLOAT))
             return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, node->source_offset,
                                 "no matching numeric builtin overload");
         if (runtime && !sema_default_type(source, leaf, node->source_offset, &leaf)) return false;
@@ -361,17 +364,17 @@ static inline bool sema_image_call(Source *s, const Expression *node, const Loca
     for (uint32_t argument = operation == IMAGE_GATHER ? 1u : 0u; argument < node->right; ++argument) {
         uint32_t index = argument - (operation == IMAGE_GATHER ? 1u : 0u);
         if (operation == IMAGE_GATHER && texture != IR_VOID &&
-            index == image_sample_arity(c->types[texture - 7u].state.image, operation) - 1u) ++index;
+            index == image_sample_arity(c->types[texture - IR_PRIMITIVE_COUNT].state.image, operation) - 1u) ++index;
         if (!sema_expression(s, c->arguments[link].expression, scope, sema_image_evaluate(c, texture, operation, index, evaluate), emit, out)) return false;
         if (index == 0u) {
             texture = out->constant.type;
-            if (!type_handle(c, texture) || c->types[texture - 7u].kind != TYPE_TEXTURE)
+            if (!type_handle(c, texture) || c->types[texture - IR_PRIMITIVE_COUNT].kind != TYPE_TEXTURE)
                 return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, node->source_offset, "texture builtin requires a texture handle");
-            result = sema_image_result(s, node, &c->types[texture - 7u], operation);
+            result = sema_image_result(s, node, &c->types[texture - IR_PRIMITIVE_COUNT], operation);
             if (result == NO_ID) return false;
             if (emit && operation == IMAGE_GATHER)
-                c->typed_operands[first + image_sample_arity(c->types[texture - 7u].state.image, operation) - 1u] = c->typed_operands[first];
-        } else if (!sema_image_argument(s, &c->types[texture - 7u], operation, index, out)) return false;
+                c->typed_operands[first + image_sample_arity(c->types[texture - IR_PRIMITIVE_COUNT].state.image, operation) - 1u] = c->typed_operands[first];
+        } else if (!sema_image_argument(s, &c->types[texture - IR_PRIMITIVE_COUNT], operation, index, out)) return false;
         if (!sema_ensure_value(s, out, emit)) return false;
         if (emit) c->typed_operands[first + index] = out->value.id;
         link = c->arguments[link].next;
@@ -393,10 +396,10 @@ static inline bool sema_atomic_call(Source *source, const Expression *node, cons
     uint32_t link = node->left;
     if (!sema_address_reference(source, c->arguments[link].expression, scope, evaluate, emit, &reference)) return false;
     if (!reference.writable || (reference.category != ROOT_RESOURCE && reference.category != ROOT_WORKGROUP) ||
-        reference.type < 7u || c->types[reference.type - 7u].kind != TYPE_ATOMIC)
+        reference.type < IR_PRIMITIVE_COUNT || c->types[reference.type - IR_PRIMITIVE_COUNT].kind != TYPE_ATOMIC)
         return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, node->source_offset,
             "atomic builtin requires a writable storage or workgroup atomic address");
-    const TypeId scalar = c->types[reference.type - 7u].element;
+    const TypeId scalar = c->types[reference.type - IR_PRIMITIVE_COUNT].element;
     const uint32_t first = c->operand_count;
     if (emit) {
         if (arity - 1u > c->limits.operands - first)
@@ -430,7 +433,7 @@ static inline bool workgroup_uniform_load(Source *s, const Expression *node, con
         c->workgroups[reference.root].state.resolved.address_space != MODULE_WORKGROUP)
         return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, node->source_offset,
             "workgroupUniformLoad requires a workgroup address");
-    const bool atomic = reference.type >= 7u && c->types[reference.type - 7u].kind == TYPE_ATOMIC;
+    const bool atomic = reference.type >= IR_PRIMITIVE_COUNT && c->types[reference.type - IR_PRIMITIVE_COUNT].kind == TYPE_ATOMIC;
     if (!atomic && !type_constructible(c, reference.type))
         return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, node->source_offset,
             "workgroupUniformLoad requires a constructible or atomic store type");
@@ -439,7 +442,7 @@ static inline bool workgroup_uniform_load(Source *s, const Expression *node, con
     if (!sema_emit(s, emit, (IrInstruction){.opcode = IR_WORKGROUP_BARRIER,
         .source_offset = node->source_offset}, NULL)) return false;
     if (atomic) {
-        const TypeId type = c->types[reference.type - 7u].element;
+        const TypeId type = c->types[reference.type - IR_PRIMITIVE_COUNT].element;
         *out = (ExpressionValue){.runtime = true, .constant.type = type,
             .value = {.type = type, .source_offset = node->source_offset}};
         if (!sema_emit(s, emit, (IrInstruction){.opcode = IR_ATOMIC_LOAD, .type = type,
@@ -553,7 +556,7 @@ bool sema_call_value(Source *s, uint32_t id, const LocalScope *scope, bool evalu
         if (name.length == 6u && type_matrix_name(s, name, &columns, &rows)) inferred = 3u;
         else if (!sema_type_reference(s, (TypeRef){name.offset, NO_ID}, scope, &target)) return false;
     }
-    if (!bitcast && (inferred != 0u || target >= 7u)) return aggregate_call(s, node, scope, target, inferred, evaluate, emit, out);
+    if (!bitcast && (inferred != 0u || target >= IR_PRIMITIVE_COUNT)) return aggregate_call(s, node, scope, target, inferred, evaluate, emit, out);
     if (node->right>1u) return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, name.offset, "scalar constructor accepts zero or one argument");
     if (node->right == 0u) {
         *out = (ExpressionValue){

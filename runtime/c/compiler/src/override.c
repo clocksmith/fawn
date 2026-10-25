@@ -112,14 +112,14 @@ bool override_array_type(Source *s, TypeId element, uint32_t syntax, TypeId *out
     for (uint32_t i = 0u; i < c->type_count; ++i) {
         const TypeRecord *type = &c->types[i];
         if ((type->flags & TYPE_DEFERRED) != 0u && type->element == element && type->aux == syntax) {
-            *out = i + 7u;
+            *out = i + IR_PRIMITIVE_COUNT;
             return true;
         }
     }
     if (c->type_count == c->limits.types)
         return source_pool_error(s, DOE_COMPILER_POOL_TYPES, (size_t)c->type_count + 1u,
             c->expressions[expression].source_offset, "deferred array type capacity exceeded");
-    *out = c->type_count + 7u;
+    *out = c->type_count + IR_PRIMITIVE_COUNT;
     c->types[c->type_count++] = (TypeRecord){.kind = TYPE_ARRAY,
         .flags = TYPE_RESOLVED | TYPE_DEFERRED | (type_flags(c, element) & TYPE_ATOMIC_CONTENT),
         .element = element, .count = NO_ID, .aux = syntax,

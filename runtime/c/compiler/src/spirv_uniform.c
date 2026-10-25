@@ -19,11 +19,11 @@ bool spirv_uniform_raw(const Emitter *e, const ResourceRecord *r) {
 static bool contains_narrow(Emitter *e, TypeId type, bool *found) {
     CompilerWorkspace *c = e->program;
     *found = false;
-    if (type < 7u) return true;
+    if (type < IR_PRIMITIVE_COUNT) return true;
     if (!spirv_push_walk(e, WALK_TYPE, type)) return false;
     while (c->walk_count != 0u) {
         WalkItem *w = &c->walk[c->walk_count - 1u];
-        const TypeRecord *t = &c->types[w->object - 7u];
+        const TypeRecord *t = &c->types[w->object - IR_PRIMITIVE_COUNT];
         if (t->kind == TYPE_MATRIX && type_vector_width(c, t->element) == 2u) {
             *found = true;
             c->walk_count = 0u;
@@ -35,7 +35,7 @@ static bool contains_narrow(Emitter *e, TypeId type, bool *found) {
             continue;
         }
         const TypeId child = type_child(c, w->object, w->cursor++);
-        if (child >= 7u && !spirv_push_walk(e, WALK_TYPE, child)) return false;
+        if (child >= IR_PRIMITIVE_COUNT && !spirv_push_walk(e, WALK_TYPE, child)) return false;
     }
     return true;
 }
@@ -59,6 +59,9 @@ bool spirv_uniform_plan(Emitter *e, ResourceRecord *r, bool *raw) {
     *raw = (type_flags(e->program, r->type) & TYPE_UNIFORM) == 0u;
     if (!*raw && !contains_narrow(e, r->type, raw)) return false;
     if (!*raw) return true;
+    if ((r->minimum & 3u) != 0u)
+        return source_error(e->source, DOE_COMPILER_UNSUPPORTED, r->source_offset,
+            "compact uniform half-word tail requires a 16-bit physical tail lowering");
     if (r->minimum > UINT32_MAX)
         return source_error(e->source, DOE_COMPILER_UNSUPPORTED, r->source_offset,
             "physical uniform byte offsets exceed the u32 target format");
@@ -114,9 +117,9 @@ bool spirv_uniform_declaration(Emitter *e, const TargetDeclaration *d) {
     return true;
 }
 static uint32_t child_offset(const CompilerWorkspace *c, TypeId type, uint32_t index) {
-    const TypeRecord *t = &c->types[type - 7u];
+    const TypeRecord *t = &c->types[type - IR_PRIMITIVE_COUNT];
     if (t->kind == TYPE_STRUCT) return (uint32_t)c->members[t->element + index].offset;
-    return index * (t->kind == TYPE_VECTOR ? 4u : (uint32_t)t->state.layout.stride);
+    return index * (t->kind == TYPE_VECTOR ? (uint32_t)type_size(c, t->element) : (uint32_t)t->state.layout.stride);
 }
 /* The same bounded leaf traversal supplies planning constants and emitted loads.
  * WalkItem.parent is the source-relative byte offset, not another storage pool. */
@@ -129,7 +132,7 @@ static bool next_leaf(Emitter *e, TypeId *type, uint32_t *offset, bool *found) {
     *found = false;
     while (c->walk_count != 0u) {
         WalkItem *w = &c->walk[c->walk_count - 1u];
-        if (w->object < 7u) {
+        if (w->object < IR_PRIMITIVE_COUNT) {
             if (w->cursor++ == 0u) {
                 *type = w->object;
                 *offset = w->parent;
@@ -159,7 +162,7 @@ bool spirv_uniform_access_plan(Emitter *e, const IrInstruction *ir) {
     for (uint32_t path = ir->operands.access.path; path != NO_ID; path = c->accesses[path].parent) {
         const AccessStep *a = &c->accesses[path];
         const uint32_t amount = a->kind == ACCESS_MEMBER ? child_offset(c, a->input_type, a->index) :
-            a->kind == ACCESS_COMPONENT ? a->index * 4u : child_offset(c, a->input_type, 1u);
+            a->kind == ACCESS_COMPONENT ? a->index * (uint32_t)type_size(c, type_leaf(c, a->input_type)) : child_offset(c, a->input_type, 1u);
         (void)spirv_unsigned_constant(e, amount);
     }
     if (!begin_leaves(e, ir->type)) return false;
@@ -248,12 +251,20 @@ bool spirv_uniform_load(Emitter *e, const IrInstruction *ir, uint32_t result) {
             EMIT(OP_IADD, ID_U32, address, base, spirv_unsigned_constant(e, offset));
         }
         if (!raw_lane(e, r, address, &value)) return false;
-        if (type != IR_U32) {
+        if (type == IR_F16) {
+            const uint32_t pair = spirv_reserve_ids(e, 1u), low = spirv_reserve_ids(e, 1u);
+            const uint32_t lane = spirv_reserve_ids(e, 1u), half = spirv_reserve_ids(e, 1u);
+            EMIT(OP_BITCAST, ID_VEC2_F16, pair, value);
+            EMIT(OP_BIT_AND, ID_U32, low, address, ID_TWO_U32);
+            EMIT(OP_SHIFT_RIGHT_LOGICAL, ID_U32, lane, low, ID_ONE_U32);
+            EMIT(OP_VECTOR_EXTRACT_DYNAMIC, ID_F16, half, pair, lane);
+            value = half;
+        } else if (type != IR_U32) {
             const uint32_t converted = spirv_reserve_ids(e, 1u);
             EMIT(OP_BITCAST, spirv_scalar_type(type), converted, value);
             value = converted;
         }
-        if (ir->type < 7u) composite = value;
+        if (ir->type < IR_PRIMITIVE_COUNT) composite = value;
         else {
             const uint32_t inserted = spirv_reserve_ids(e, 1u);
             uint32_t *words;

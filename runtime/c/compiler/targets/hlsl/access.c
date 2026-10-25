@@ -16,11 +16,11 @@ static bool collect_path(HlslEmitter *e, uint32_t path, HlslPath *out) {
     return error == NULL;
 }
 static const TypeRecord *path_input(HlslEmitter *e, const AccessStep *step) {
-    if (step->input_type < 7u || step->input_type - 7u >= e->module->type_count) {
+    if (step->input_type < IR_PRIMITIVE_COUNT || step->input_type - IR_PRIMITIVE_COUNT >= e->module->type_count) {
         hlsl_error(e, "Hlsl access requires an aggregate input type");
         return NULL;
     }
-    return &e->module->types[step->input_type - 7u];
+    return &e->module->types[step->input_type - IR_PRIMITIVE_COUNT];
 }
 static const ResourceRecord *resource_root(HlslEmitter *e, const IrInstruction *ir) {
     if (ir->operands.access.category != ROOT_RESOURCE) return NULL;
@@ -75,9 +75,9 @@ static void byte_offset(HlslEmitter *e, const HlslPath *path) {
             }
             hlsl_format(e, " + %" PRIu64 "u", e->module->members[input->element + step->index].offset);
         } else if (step->kind == ACCESS_COMPONENT) {
-            hlsl_format(e, " + %uu", step->index * 4u);
+            hlsl_format(e, " + %uu", step->index * (uint32_t)type_size(e->module, input->element));
         } else {
-            const uint64_t stride = input->kind == TYPE_VECTOR ? 4u : input->state.layout.stride;
+            const uint64_t stride = input->kind == TYPE_VECTOR ? type_size(e->module, input->element) : input->state.layout.stride;
             hlsl_text(e, " + uint(");
             hlsl_value(e, step->index);
             hlsl_format(e, ") * %" PRIu64 "u", stride);
@@ -228,8 +228,8 @@ void hlsl_access(HlslEmitter *e, const IrInstruction *ir) {
             return;
         }
         if (path.count) type = e->module->accesses[path.steps[0]].output_type;
-        if (type < 7u || type - 7u >= e->module->type_count || e->module->types[type - 7u].kind != TYPE_ATOMIC ||
-            ((scalar = e->module->types[type - 7u].element) != IR_I32 && scalar != IR_U32)) {
+        if (type < IR_PRIMITIVE_COUNT || type - IR_PRIMITIVE_COUNT >= e->module->type_count || e->module->types[type - IR_PRIMITIVE_COUNT].kind != TYPE_ATOMIC ||
+            ((scalar = e->module->types[type - IR_PRIMITIVE_COUNT].element) != IR_I32 && scalar != IR_U32)) {
             hlsl_error(e, "HLSL atomic access does not resolve an i32/u32 atomic");
             return;
         }

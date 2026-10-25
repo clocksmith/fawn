@@ -17,14 +17,14 @@ static void shared_dags(void) {
         ir[2u * (i - 1u)].operands.scalar.binding = i - 1u;
         ir[2u * (i - 1u) + 1u].operands.scalar.binding = i - 1u;
         types[i - 1u] = (TypeRecord){.kind = TYPE_STRUCT, .element = 2u * (i - 1u), .count = 2u};
-        const TypeId child = i == 1u ? IR_U32 : i + 5u;
+        const TypeId child = i == 1u ? IR_U32 : i + IR_PRIMITIVE_COUNT - 2u;
         members[2u * (i - 1u)].type = child;
         members[2u * (i - 1u) + 1u].type = child;
     }
     CompilerWorkspace c = {.functions = functions, .function_count = 27u,
         .instructions = ir, .instruction_count = 50u, .entries = &entry, .entry_count = 1u,
         .types = types, .type_count = 25u, .members = members, .member_count = 50u};
-    unsigned char bytes[59];
+    unsigned char bytes[27u + 25u + IR_PRIMITIVE_COUNT];
     TargetClosure closure;
     assert(target_closure_bind(&c, (DoeTargetScratch){bytes, sizeof(bytes)}, &closure));
     uint64_t work = 1000u;
@@ -32,14 +32,14 @@ static void shared_dags(void) {
     assert(target_closure_build(&c, 0u, &closure, &work, &error) && error == NULL);
     assert(work >= 800u && target_function_used(&closure, 0u));
     assert(!target_function_used(&closure, 26u));
-    assert(!target_memory_dependency(&c, &closure, 31u, IR_F32, &work, &error) && error == NULL);
+    assert(!target_memory_dependency(&c, &closure, 24u + IR_PRIMITIVE_COUNT, IR_F32, &work, &error) && error == NULL);
     assert(work >= 600u && target_function_used(&closure, 0u));
     assert(target_type_order_begin(&closure, &work, &error));
     unsigned type_depth;
-    assert(target_type_depth(&c, &closure, 31u, &type_depth, &work, &error));
+    assert(target_type_depth(&c, &closure, 24u + IR_PRIMITIVE_COUNT, &type_depth, &work, &error));
     assert(type_depth == 25u && work >= 400u);
     const uint64_t before_cached = work;
-    assert(target_type_depth(&c, &closure, 31u, &type_depth, &work, &error));
+    assert(target_type_depth(&c, &closure, 24u + IR_PRIMITIVE_COUNT, &type_depth, &work, &error));
     assert(work == before_cached && target_function_used(&closure, 0u));
     /* Retained function closure survives a separate completed-type walk. */
     ir[0].operands.scalar.binding = 25u;
@@ -53,14 +53,14 @@ static void shared_dags(void) {
 }
 int main(void) {
     shared_dags();
-    IrInstruction ir[2] = {{.opcode = IR_CALL}, {.opcode = IR_ACCESS_STORE, .type = 7u}};
+    IrInstruction ir[2] = {{.opcode = IR_CALL}, {.opcode = IR_ACCESS_STORE, .type = IR_PRIMITIVE_COUNT}};
     ir[0].operands.scalar.binding = 1u;
     ir[1].operands.access.category = ROOT_RESOURCE;
     ir[1].operands.access.root = 0u;
     FunctionRecord functions[3] = {{.instruction_start = 0u, .instruction_end = 1u},
         {.instruction_start = 1u, .instruction_end = 2u}, {.instruction_start = 2u, .instruction_end = 2u}};
     EntryRecord entry = {.function = 0u};
-    TypeRecord types[2] = {{.kind = TYPE_ARRAY, .element = 8u, .count = 2u},
+    TypeRecord types[2] = {{.kind = TYPE_ARRAY, .element = IR_PRIMITIVE_COUNT + 1u, .count = 2u},
         {.kind = TYPE_STRUCT, .element = 0u, .count = 2u}};
     MemberRecord members[2] = {{.type = IR_U32}, {.type = IR_F32}};
     CompilerWorkspace c = {.instructions = ir, .instruction_count = 2u,
@@ -78,15 +78,15 @@ int main(void) {
     assert(target_access_helper_used(&c, &closure, ROOT_RESOURCE, 0u, IR_F32, true, &work, &error));
     assert(!target_access_helper_used(&c, &closure, ROOT_RESOURCE, 0u, IR_F32, false, &work, &error));
     assert(!target_access_helper_used(&c, &closure, ROOT_RESOURCE, 1u, IR_F32, true, &work, &error));
-    assert(!target_memory_dependency(&c, &closure, 7u, IR_I32, &work, &error) && error == NULL);
+    assert(!target_memory_dependency(&c, &closure, IR_PRIMITIVE_COUNT, IR_I32, &work, &error) && error == NULL);
     types[1].kind = TYPE_VECTOR;
     types[1].element = IR_F32;
     types[1].count = 4u;
-    assert(!target_memory_dependency(&c, &closure, 7u, IR_F32, &work, &error) && error == NULL);
-    assert(target_memory_dependency(&c, &closure, 7u, 8u, &work, &error));
+    assert(!target_memory_dependency(&c, &closure, IR_PRIMITIVE_COUNT, IR_F32, &work, &error) && error == NULL);
+    assert(target_memory_dependency(&c, &closure, IR_PRIMITIVE_COUNT, IR_PRIMITIVE_COUNT + 1u, &work, &error));
     types[1].kind = TYPE_ARRAY;
-    types[1].element = 7u;
-    assert(!target_memory_dependency(&c, &closure, 7u, IR_F32, &work, &error) && error != NULL);
+    types[1].element = IR_PRIMITIVE_COUNT;
+    assert(!target_memory_dependency(&c, &closure, IR_PRIMITIVE_COUNT, IR_F32, &work, &error) && error != NULL);
     error = NULL;
     ir[0].operands.scalar.binding = 0u;
     assert(!target_closure_build(&c, 0u, &closure, &work, &error) && error != NULL);

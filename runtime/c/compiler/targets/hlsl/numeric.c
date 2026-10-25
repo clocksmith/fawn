@@ -30,7 +30,7 @@ static void component(HlslEmitter *e, uint32_t value, uint32_t lane) {
     if (type_vector_width(e->module, type) != 1u) hlsl_format(e, "[%u]", lane);
 }
 static void scalar_conversion(HlslEmitter *e, TypeId from, TypeId to, uint32_t value, uint32_t lane) {
-    if (from == IR_F32 && (to == IR_I32 || to == IR_U32)) {
+    if ((from == IR_F32 || from == IR_F16) && (to == IR_I32 || to == IR_U32)) {
         hlsl_text(e, to == IR_I32 ? "doe_i32(" : "doe_u32(");
     } else if ((from == IR_I32 && to == IR_U32) || (from == IR_U32 && to == IR_I32)) {
         hlsl_text(e, to == IR_I32 ? "asint(" : "asuint(");
@@ -60,12 +60,12 @@ static void scalar_operation(HlslEmitter *e, const IrInstruction *ir, uint32_t l
         return;
     }
     if (ir->opcode == IR_DIVIDE || ir->opcode == IR_REMAINDER) {
-        if (leaf != IR_F32) {
+        if ((leaf != IR_F32 && leaf != IR_F16)) {
             hlsl_text(e, ir->opcode == IR_DIVIDE ? "doe_div(" : "doe_rem(");
         } else if (ir->opcode == IR_REMAINDER) hlsl_text(e, "fmod(");
         else hlsl_text(e, "(");
         component(e, left, lane);
-        hlsl_text(e, leaf == IR_F32 && ir->opcode == IR_DIVIDE ? " / " : ", ");
+        hlsl_text(e, (leaf == IR_F32 || leaf == IR_F16) && ir->opcode == IR_DIVIDE ? " / " : ", ");
         component(e, right, lane);
         hlsl_text(e, ")");
         return;
@@ -200,9 +200,9 @@ static void unary_component(HlslEmitter *e, const IrInstruction *ir, NumericBuil
         } else if (kind == BUILTIN_SIGN) {
             hlsl_text(e, "(");
             component(e, ir->operands.scalar.left, lane);
-            hlsl_text(e, leaf == IR_F32 ? " > 0.0f ? 1.0f : (" : " > 0 ? 1 : (");
+            hlsl_text(e, (leaf == IR_F32 || leaf == IR_F16) ? " > 0.0f ? 1.0f : (" : " > 0 ? 1 : (");
             component(e, ir->operands.scalar.left, lane);
-            hlsl_text(e, leaf == IR_F32 ? " < 0.0f ? -1.0f : 0.0f))" : " < 0 ? -1 : 0))");
+            hlsl_text(e, (leaf == IR_F32 || leaf == IR_F16) ? " < 0.0f ? -1.0f : 0.0f))" : " < 0 ? -1 : 0))");
         } else if (leaf == IR_I32) {
             hlsl_text(e, "(");
             component(e, ir->operands.scalar.left, lane);
@@ -212,9 +212,9 @@ static void unary_component(HlslEmitter *e, const IrInstruction *ir, NumericBuil
             component(e, ir->operands.scalar.left, lane);
             hlsl_text(e, ")");
         } else {
-            if (leaf == IR_F32) hlsl_text(e, "abs(");
+            if ((leaf == IR_F32 || leaf == IR_F16)) hlsl_text(e, "abs(");
             component(e, ir->operands.scalar.left, lane);
-            if (leaf == IR_F32) hlsl_text(e, ")");
+            if ((leaf == IR_F32 || leaf == IR_F16)) hlsl_text(e, ")");
         }
     }
     if (width != 1u) hlsl_text(e, ")");
@@ -269,7 +269,7 @@ static void builtin_expression(HlslEmitter *e, const IrInstruction *ir) {
     }
     const TypeId operand_type = hlsl_value_type(e, ir->operands.scalar.left);
     const TypeId leaf = type_leaf(e->module, operand_type);
-    if (builtin->kind == BUILTIN_DOT && leaf != IR_F32) {
+    if (builtin->kind == BUILTIN_DOT && (leaf != IR_F32 && leaf != IR_F16)) {
         const uint32_t width = type_vector_width(e->module, operand_type);
         if (leaf == IR_I32) hlsl_text(e, "asint(");
         hlsl_text(e, "(");
@@ -430,7 +430,7 @@ void hlsl_expression(HlslEmitter *e, const IrInstruction *ir) {
             break;
         case IR_BITCAST: {
             const TypeId leaf = type_leaf(e->module, ir->type);
-            if (leaf != IR_I32 && leaf != IR_U32 && leaf != IR_F32) {
+            if (leaf != IR_I32 && leaf != IR_U32 && (leaf != IR_F32 && leaf != IR_F16)) {
                 hlsl_error(e, "HLSL bitcast destination has no bit-preserving intrinsic");
                 break;
             }

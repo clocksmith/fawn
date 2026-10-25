@@ -4,7 +4,7 @@
 #include <string.h>
 
 bool type_handle(const CompilerWorkspace *c, TypeId type) {
-    return type >= 7u && (c->types[type - 7u].kind == TYPE_TEXTURE || c->types[type - 7u].kind == TYPE_SAMPLER);
+    return type >= IR_PRIMITIVE_COUNT && (c->types[type - IR_PRIMITIVE_COUNT].kind == TYPE_TEXTURE || c->types[type - IR_PRIMITIVE_COUNT].kind == TYPE_SAMPLER);
 }
 bool type_image_named(const Source *s, NameSpan name) {
     return source_span_is(s, name, "sampler") || source_span_is(s, name, "sampler_comparison") ||
@@ -45,7 +45,7 @@ bool type_image_intern(Source *s, uint32_t kind, TypeId scalar, ImageType image,
         if (t->kind == kind && t->element == scalar &&
             t->state.image.dimension == image.dimension && t->state.image.format == image.format &&
             t->state.image.access == image.access && t->state.image.flags == image.flags) {
-            *out = i + 7u;
+            *out = i + IR_PRIMITIVE_COUNT;
             return true;
         }
     }
@@ -53,7 +53,7 @@ bool type_image_intern(Source *s, uint32_t kind, TypeId scalar, ImageType image,
         return source_pool_error(s, DOE_COMPILER_POOL_TYPES, (size_t)c->type_count + 1u, s->length, "handle type capacity exceeded");
     const TypeRecord t = {.kind = kind, .flags = TYPE_RESOLVED, .element = scalar,
         .state.image = image, .target = NO_ID, .aux = NO_ID};
-    *out = c->type_count + 7u;
+    *out = c->type_count + IR_PRIMITIVE_COUNT;
     c->types[c->type_count++] = t;
     return true;
 }
@@ -93,7 +93,7 @@ void reflect_handles(const CompilerWorkspace *c, DoeCompilerHandleV6 *handles) {
     for (uint32_t i = 0u; i < c->resource_count; ++i) {
         const TypeId type = c->resources[i].type;
         if (!type_handle(c, type)) continue;
-        const TypeRecord *t = &c->types[type - 7u];
+        const TypeRecord *t = &c->types[type - IR_PRIMITIVE_COUNT];
         DoeCompilerHandleV6 *out = &handles[count++];
         memset(out, 0, sizeof(*out));
         out->resource_index = i;

@@ -27,7 +27,7 @@ static inline bool target_closure_bind(const CompilerWorkspace *c, DoeTargetScra
     if (!doe_target_scratch_bytes(c, &bytes) || scratch.data == NULL ||
         scratch.capacity < bytes) return false;
     *closure = (TargetClosure){scratch.data, scratch.data + c->function_count,
-        c->function_count, c->type_count + 7u};
+        c->function_count, c->type_count + IR_PRIMITIVE_COUNT};
     return true;
 }
 static inline bool target_closure_build(const CompilerWorkspace *c, uint32_t selected,
@@ -106,7 +106,7 @@ static inline bool target_memory_dependency(const CompilerWorkspace *c, TargetCl
         if (!target_spend(work, error)) return false;
         const TypeId type = frames[depth].type;
         if (type == wanted) return true;
-        const TypeRecord *t = type >= 7u ? &c->types[type - 7u] : NULL;
+        const TypeRecord *t = type >= IR_PRIMITIVE_COUNT ? &c->types[type - IR_PRIMITIVE_COUNT] : NULL;
         const uint32_t children = t != NULL && t->kind == TYPE_STRUCT ? t->count :
             t != NULL && (t->kind == TYPE_ARRAY || t->kind == TYPE_MATRIX) ? 1u : 0u;
         if (t != NULL && t->kind == TYPE_STRUCT &&
@@ -168,7 +168,7 @@ static inline bool target_type_depth(const CompilerWorkspace *c, TargetClosure *
     for (;;) {
         if (!target_spend(work, error)) return false;
         const TypeId type = frames[depth].type;
-        const TypeRecord *t = type >= 7u ? &c->types[type - 7u] : NULL;
+        const TypeRecord *t = type >= IR_PRIMITIVE_COUNT ? &c->types[type - IR_PRIMITIVE_COUNT] : NULL;
         const bool sequential = t != NULL &&
             (t->kind == TYPE_ARRAY || t->kind == TYPE_RUNTIME_ARRAY || t->kind == TYPE_MATRIX);
         const bool structure = t != NULL && t->kind == TYPE_STRUCT;

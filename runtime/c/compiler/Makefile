@@ -176,8 +176,8 @@ build/cpp_consumer_job: tests/cpp_consumer_job.cpp include/doe_compiler_job.h bu
 .PHONY: test-scalar sanitize-scalar
 build/test_scalar_api: $(LIB_SOURCES) tests/test_scalar_api.c $(HEADERS) | build/.ready
 	$(CC) $(CFLAGS) $(LIB_SOURCES) tests/test_scalar_api.c -Wl,--wrap=malloc,--wrap=calloc,--wrap=realloc,--wrap=free -lm -o $@
-build/test_numeric_values: src/numeric.c src/numeric_math.c src/numeric_environment.c tests/test_numeric_values.c $(HEADERS) | build/.ready
-	$(CC) $(CFLAGS) -pthread src/numeric.c src/numeric_math.c src/numeric_environment.c tests/test_numeric_values.c -lm -o $@
+build/test_numeric_values: src/numeric.c src/numeric_half.c src/numeric_bits.c src/numeric_math.c src/numeric_environment.c tests/test_numeric_values.c $(HEADERS) | build/.ready
+	$(CC) $(CFLAGS) -pthread src/numeric.c src/numeric_half.c src/numeric_bits.c src/numeric_math.c src/numeric_environment.c tests/test_numeric_values.c -lm -o $@
 test-scalar: all build/test_scalar_api build/test_numeric_values
 	build/test_scalar_api
 	build/test_numeric_values
@@ -199,8 +199,8 @@ sanitize-functions: | build/.ready
 # Current owner-focused developer checks. Historical aggregate targets and
 # independently sealed acceptance remain separate and unchanged.
 .PHONY: test-numeric-builtins
-build/test_m12_numeric: src/numeric.c src/numeric_math.c src/numeric_environment.c tests/test_m12_numeric.c $(HEADERS) | build/.ready
-	$(CC) $(CFLAGS) src/numeric.c src/numeric_math.c src/numeric_environment.c tests/test_m12_numeric.c -lm -o $@
+build/test_m12_numeric: src/numeric.c src/numeric_half.c src/numeric_bits.c src/numeric_math.c src/numeric_environment.c tests/test_m12_numeric.c $(HEADERS) | build/.ready
+	$(CC) $(CFLAGS) src/numeric.c src/numeric_half.c src/numeric_bits.c src/numeric_math.c src/numeric_environment.c tests/test_m12_numeric.c -lm -o $@
 test-numeric-builtins: all build/test_m12_numeric build/test_m12_api
 	build/test_m12_numeric
 	build/test_m12_api
@@ -522,3 +522,10 @@ build/test_metal_pipeline: tests/test_metal_pipeline.c tests/metal12_fixture.h t
 	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) $< $(abspath $(SHARED_LIBRARY)) -Wl,-rpath,$(abspath $(dir $(SHARED_LIBRARY))) -lm -o $@
 test-metal-pipeline: build/test_metal_pipeline
 	build/test_metal_pipeline $(METAL_PIPELINE_ARTIFACTS)
+
+.PHONY: test-f16
+build/test_f16: $(LIB_SOURCES) tests/test_f16.c $(HEADERS) | build/.ready
+	$(CC) $(CFLAGS) $(LIB_SOURCES) tests/test_f16.c -lm -o $@
+test-f16: build/doe-compiler-c build/test_f16
+	build/test_f16
+	DOE_COMPILER_CLI="$(CURDIR)/build/doe-compiler-c" SPIRV_VAL="$(SPIRV_VAL)" python3 tests/test_f16.py

@@ -29,7 +29,7 @@ static bool append(size_t *cursor, size_t count, size_t width, size_t alignment,
 }
 static bool text_layout(uint32_t target, const DoeCompilerTextCapacities *caps, CompilerLimits *limits, TextLayout *layout, bool dense_metal) {
     if (caps == NULL || !stage_layout(&caps->stages, limits, &layout->stage_base, &layout->total)) return false;
-    const uint64_t closure = (uint64_t)limits->tokens / 6u + limits->types + 7u;
+    const uint64_t closure = (uint64_t)limits->tokens / 6u + limits->types + IR_PRIMITIVE_COUNT;
     if (closure > SIZE_MAX) return false;
     layout->closure_bytes = (size_t)closure;
     const bool hlsl = target == DOE_COMPILER_TARGET_HLSL;
@@ -81,7 +81,7 @@ static bool text_spans(Source *s, uint32_t target, uint32_t flags, const TextOut
     const bool measure = (flags & DOE_COMPILER_TEXT_MEASURE) != 0u;
     const bool code = (flags & DOE_COMPILER_TEXT_CODE) != 0u;
     const bool reflection = (flags & DOE_COMPILER_TEXT_REFLECTION) != 0u;
-    if ((flags & 3u) == 0u || (flags & ~(7u | DOE_COMPILER_UNIFORM_BUFFER_STANDARD_LAYOUT | DOE_COMPILER_CORE_BINDING_NUMBERS)) != 0u ||
+    if ((flags & 3u) == 0u || (flags & ~(7u | DOE_COMPILER_UNIFORM_BUFFER_STANDARD_LAYOUT | DOE_COMPILER_CORE_BINDING_NUMBERS | DOE_COMPILER_DISABLE_F16)) != 0u ||
         measure != (outputs == NULL))
         return source_error(s, DOE_COMPILER_INPUT_ERROR, 0u, "invalid text output flags or measure descriptor");
     if (measure) return true;
@@ -209,7 +209,8 @@ static DoeCompilerStatus compile_text(uint32_t target,
     CompilerWorkspace *c = workspace;
     compiler_job_bind(c, workspace, &limits);
     c->module_flags = ((flags & DOE_COMPILER_UNIFORM_BUFFER_STANDARD_LAYOUT) != 0u ? MODULE_STANDARD_UNIFORM : 0u) |
-        ((flags & DOE_COMPILER_CORE_BINDING_NUMBERS) != 0u ? MODULE_CORE_BINDINGS : 0u);
+        ((flags & DOE_COMPILER_CORE_BINDING_NUMBERS) != 0u ? MODULE_CORE_BINDINGS : 0u) |
+        ((flags & DOE_COMPILER_DISABLE_F16) != 0u ? MODULE_DISABLE_F16 : 0u);
     stage_bind(&context, workspace, &capacities->stages, layout.stage_base);
     if (specialization != NULL) specialization->stage_base = layout.stage_base;
     NumericEnvironment environment;

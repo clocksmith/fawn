@@ -10,7 +10,7 @@
 
 #define NO_ID UINT32_MAX
 /* Primitive logical identities are not entries in the aggregate type pool. */
-typedef enum { IR_VOID, IR_BOOL, IR_I32, IR_U32, IR_F32, IR_ABSTRACT_INT, IR_ABSTRACT_FLOAT } IrType;
+typedef enum { IR_VOID, IR_BOOL, IR_I32, IR_U32, IR_F32, IR_ABSTRACT_INT, IR_ABSTRACT_FLOAT, IR_F16, IR_PRIMITIVE_COUNT } IrType;
 typedef uint32_t TypeId;
 typedef enum {
     TOKEN_END = 256, TOKEN_WORD, TOKEN_NUMBER, TOKEN_DECIMAL,
@@ -211,7 +211,7 @@ typedef struct {
     uint32_t entries, entry_inputs, entry_references;
 } CompilerLimits;
 enum { LIMIT_LEGACY = 1u, LIMIT_SINGULAR = 2u, LIMIT_MODULE = 4u };
-enum { MODULE_SUBGROUPS = 1u, MODULE_STANDARD_UNIFORM = 2u, MODULE_CORE_BINDINGS = 4u };
+enum { MODULE_SUBGROUPS = 1u, MODULE_STANDARD_UNIFORM = 2u, MODULE_CORE_BINDINGS = 4u, MODULE_F16 = 8u, MODULE_DISABLE_F16 = 16u };
 typedef struct CompilerWorkspace CompilerWorkspace;
 typedef struct StageWorkspace StageWorkspace;
 typedef struct SpecializationContext SpecializationContext;
@@ -252,7 +252,7 @@ typedef struct {
     union { Token tokens[2049]; struct {
         IrInstruction instructions[385]; IrLocal locals[354]; LocalBinding scope[17];
         uint32_t values[898], typed_operands[320]; unsigned char statement_behaviors[16];
-        union { struct { uint32_t reflection_map[39];
+        union { struct { uint32_t reflection_map[32 + IR_PRIMITIVE_COUNT];
             TargetDeclaration targets[464]; WalkItem walk[97]; uint32_t words[4096];
         } target; struct {
             SourceReference expression_references[337], statement_references[16];

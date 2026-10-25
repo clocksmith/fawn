@@ -21,13 +21,13 @@ static bool decode(MetalEmitter *e, const IrInstruction *ir, MetalImage *image) 
     const CompilerWorkspace *c = e->module;
     const TypeId type = ir->operands.composite.reserved;
     const uint32_t first = ir->operands.composite.first, count = ir->operands.composite.count;
-    if (type < 7u || type - 7u >= c->type_count || c->types[type - 7u].kind != TYPE_TEXTURE ||
+    if (type < IR_PRIMITIVE_COUNT || type - IR_PRIMITIVE_COUNT >= c->type_count || c->types[type - IR_PRIMITIVE_COUNT].kind != TYPE_TEXTURE ||
         count == 0u || first > c->operand_count || count > c->operand_count - first) {
         metal_error(e, "Metal image type or operand range is invalid");
         return false;
     }
     const uint32_t *args = c->typed_operands + first;
-    const TypeRecord *t = &c->types[type - 7u];
+    const TypeRecord *t = &c->types[type - IR_PRIMITIVE_COUNT];
     const ImageType shape = t->state.image;
     *image = (MetalImage){.type = t, .operation = (ImageOperation)ir->operands.composite.kind,
         .texture = args[0], .coordinates = NO_ID, .layer = NO_ID, .level = NO_ID,
@@ -117,8 +117,8 @@ static bool decode(MetalEmitter *e, const IrInstruction *ir, MetalImage *image) 
         if (count == arity + 1u) image->offset = args[arity];
         const TypeId sampler = metal_value_type(e, image->sampler);
         const TypeId coordinates = metal_value_type(e, image->coordinates);
-        if (sampler < 7u || sampler - 7u >= c->type_count || c->types[sampler - 7u].kind != TYPE_SAMPLER ||
-            c->types[sampler - 7u].state.image.flags !=
+        if (sampler < IR_PRIMITIVE_COUNT || sampler - IR_PRIMITIVE_COUNT >= c->type_count || c->types[sampler - IR_PRIMITIVE_COUNT].kind != TYPE_SAMPLER ||
+            c->types[sampler - IR_PRIMITIVE_COUNT].state.image.flags !=
                 (image_comparison(image->operation) ? DOE_COMPILER_HANDLE_COMPARISON : 0u) || type_leaf(c, coordinates) != IR_F32 ||
             type_vector_width(c, coordinates) != image->width ||
             (image->reference != NO_ID && metal_value_type(e, image->reference) != IR_F32) ||

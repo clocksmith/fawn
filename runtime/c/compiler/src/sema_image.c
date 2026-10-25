@@ -160,8 +160,8 @@ bool sema_image_component(Source *s, ExpressionValue *value) {
 /* Offsets are const expressions even in a skipped runtime branch. This query
  * does not evaluate source or add a recursive semantic frame. */
 bool sema_image_evaluate(const CompilerWorkspace *c, TypeId texture, ImageOperation op, uint32_t index, bool evaluate) {
-    return evaluate || (image_sampling(op) && texture >= 7u &&
-        index == image_sample_arity(c->types[texture - 7u].state.image, op));
+    return evaluate || (image_sampling(op) && texture >= IR_PRIMITIVE_COUNT &&
+        index == image_sample_arity(c->types[texture - IR_PRIMITIVE_COUNT].state.image, op));
 }
 bool sema_image_argument(Source *s, const TypeRecord *texture, ImageOperation op, uint32_t index,
                            ExpressionValue *value) {
@@ -171,8 +171,8 @@ bool sema_image_argument(Source *s, const TypeRecord *texture, ImageOperation op
     const bool depth = (image.flags & DOE_COMPILER_HANDLE_DEPTH) != 0u;
     if (sampling && index == 1u) {
         const TypeId type = value->constant.type;
-        if (!type_handle(s->compiler, type) || s->compiler->types[type - 7u].kind != TYPE_SAMPLER ||
-            s->compiler->types[type - 7u].state.image.flags != (compare ? DOE_COMPILER_HANDLE_COMPARISON : 0u))
+        if (!type_handle(s->compiler, type) || s->compiler->types[type - IR_PRIMITIVE_COUNT].kind != TYPE_SAMPLER ||
+            s->compiler->types[type - IR_PRIMITIVE_COUNT].state.image.flags != (compare ? DOE_COMPILER_HANDLE_COMPARISON : 0u))
             return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, value->value.source_offset, "sampling sampler kind differs from the texture operation");
         return true;
     }
@@ -205,7 +205,7 @@ bool sema_image_argument(Source *s, const TypeRecord *texture, ImageOperation op
     return true;
 }
 bool sema_image_auxiliaries(Source *s, TypeId texture, ImageOperation op) {
-    const TypeRecord *t = &s->compiler->types[texture - 7u];
+    const TypeRecord *t = &s->compiler->types[texture - IR_PRIMITIVE_COUNT];
     const uint32_t dimension = t->state.image.dimension;
     const uint32_t width = image_coordinate_width(dimension);
     const bool cube = dimension == DOE_COMPILER_VIEW_CUBE || dimension == DOE_COMPILER_VIEW_CUBE_ARRAY;
@@ -224,7 +224,7 @@ bool sema_image_finish(Source *s, const Expression *node, TypeId texture, TypeId
     CompilerWorkspace *c = s->compiler;
     if (!sema_image_auxiliaries(s, texture, operation)) return false;
     const uint32_t varying = image_implicit(operation) ? SOURCE_IMAGE_VARYING | SOURCE_IMAGE_DERIVATIVE :
-        operation == IMAGE_LOAD && c->types[texture - 7u].state.image.access == DOE_COMPILER_READ_WRITE ? SOURCE_IMAGE_VARYING : 0u;
+        operation == IMAGE_LOAD && c->types[texture - IR_PRIMITIVE_COUNT].state.image.access == DOE_COMPILER_READ_WRITE ? SOURCE_IMAGE_VARYING : 0u;
     if (!source_reference_record(s, &c->expression_references[(size_t)(node - c->expressions)], SOURCE_IMAGE,
                                  (uint32_t)operation | varying, node->source_offset)) return false;
     *out = (ExpressionValue){.runtime = true, .constant.type = result,

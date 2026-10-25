@@ -30,7 +30,7 @@ static void component(MetalEmitter *e, uint32_t value, uint32_t lane) {
     if (type_vector_width(e->module, type) != 1u) metal_format(e, "[%u]", lane);
 }
 static void scalar_conversion(MetalEmitter *e, TypeId from, TypeId to, uint32_t value, uint32_t lane) {
-    if (from == IR_F32 && (to == IR_I32 || to == IR_U32)) {
+    if ((from == IR_F32 || from == IR_F16) && (to == IR_I32 || to == IR_U32)) {
         metal_text(e, to == IR_I32 ? "doe_i32(" : "doe_u32(");
     } else if ((from == IR_I32 && to == IR_U32) || (from == IR_U32 && to == IR_I32)) {
         metal_text(e, to == IR_I32 ? "as_type<int>(" : "as_type<uint>(");
@@ -60,12 +60,12 @@ static void scalar_operation(MetalEmitter *e, const IrInstruction *ir, uint32_t 
         return;
     }
     if (ir->opcode == IR_DIVIDE || ir->opcode == IR_REMAINDER) {
-        if (leaf != IR_F32) {
+        if ((leaf != IR_F32 && leaf != IR_F16)) {
             metal_text(e, ir->opcode == IR_DIVIDE ? "doe_div(" : "doe_rem(");
         } else if (ir->opcode == IR_REMAINDER) metal_text(e, "fmod(");
         else metal_text(e, "(");
         component(e, left, lane);
-        metal_text(e, leaf == IR_F32 && ir->opcode == IR_DIVIDE ? " / " : ", ");
+        metal_text(e, (leaf == IR_F32 || leaf == IR_F16) && ir->opcode == IR_DIVIDE ? " / " : ", ");
         component(e, right, lane);
         metal_text(e, ")");
         return;
@@ -138,9 +138,9 @@ static void unary_component(MetalEmitter *e, const IrInstruction *ir, NumericBui
         } else if (kind == BUILTIN_SIGN) {
             metal_text(e, "(");
             component(e, ir->operands.scalar.left, lane);
-            metal_text(e, leaf == IR_F32 ? " > 0.0f ? 1.0f : (" : " > 0 ? 1 : (");
+            metal_text(e, (leaf == IR_F32 || leaf == IR_F16) ? " > 0.0f ? 1.0f : (" : " > 0 ? 1 : (");
             component(e, ir->operands.scalar.left, lane);
-            metal_text(e, leaf == IR_F32 ? " < 0.0f ? -1.0f : 0.0f))" : " < 0 ? -1 : 0))");
+            metal_text(e, (leaf == IR_F32 || leaf == IR_F16) ? " < 0.0f ? -1.0f : 0.0f))" : " < 0 ? -1 : 0))");
         } else if (leaf == IR_I32) {
             metal_text(e, "(");
             component(e, ir->operands.scalar.left, lane);
@@ -150,9 +150,9 @@ static void unary_component(MetalEmitter *e, const IrInstruction *ir, NumericBui
             component(e, ir->operands.scalar.left, lane);
             metal_text(e, ")");
         } else {
-            if (leaf == IR_F32) metal_text(e, "fabs(");
+            if ((leaf == IR_F32 || leaf == IR_F16)) metal_text(e, "fabs(");
             component(e, ir->operands.scalar.left, lane);
-            if (leaf == IR_F32) metal_text(e, ")");
+            if ((leaf == IR_F32 || leaf == IR_F16)) metal_text(e, ")");
         }
     }
     if (width != 1u) metal_text(e, ")");
@@ -272,7 +272,7 @@ static void builtin_expression(MetalEmitter *e, const IrInstruction *ir) {
     }
     const TypeId operand_type = metal_value_type(e, ir->operands.scalar.left);
     const TypeId leaf = type_leaf(e->module, operand_type);
-    if (builtin->kind == BUILTIN_DOT && leaf != IR_F32) {
+    if (builtin->kind == BUILTIN_DOT && (leaf != IR_F32 && leaf != IR_F16)) {
         const uint32_t width = type_vector_width(e->module, operand_type);
         if (leaf == IR_I32) metal_text(e, "as_type<int>(");
         metal_text(e, "(");

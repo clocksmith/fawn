@@ -7,8 +7,8 @@
  * byte layout, but emit undecorated aggregate target types for Workgroup memory.
  * Vectors/matrices/scalars have no such decorations and retain their target ID. */
 static bool separate_type(const CompilerWorkspace *c, TypeId type) {
-    return type >= 7u && (c->types[type - 7u].kind == TYPE_ARRAY ||
-                         c->types[type - 7u].kind == TYPE_STRUCT);
+    return type >= IR_PRIMITIVE_COUNT && (c->types[type - IR_PRIMITIVE_COUNT].kind == TYPE_ARRAY ||
+                         c->types[type - IR_PRIMITIVE_COUNT].kind == TYPE_STRUCT);
 }
 static const TargetDeclaration *workgroup_declaration(const Emitter *e, TypeId type,
                                                      SpirvDeclarationKind kind) {
@@ -29,7 +29,7 @@ bool spirv_workgroup_plan(Emitter *e, TypeId type) {
     if (!spirv_push_walk(e, WALK_TYPE, type)) return false;
     while (c->walk_count != 0u) {
         WalkItem *w = &c->walk[c->walk_count - 1u];
-        const TypeRecord *t = &c->types[w->object - 7u];
+        const TypeRecord *t = &c->types[w->object - IR_PRIMITIVE_COUNT];
         /* An array has one type dependency regardless of its element count. */
         const uint32_t count = t->kind == TYPE_STRUCT ? t->count : 1u;
         if (w->cursor < count) {
@@ -47,7 +47,7 @@ bool spirv_workgroup_plan(Emitter *e, TypeId type) {
     return !e->failed;
 }
 uint32_t spirv_workgroup_zero(Emitter *e, TypeId type) {
-    if (!separate_type(e->program, type) && type >= 7u) return spirv_zero_constant(e, type);
+    if (!separate_type(e->program, type) && type >= IR_PRIMITIVE_COUNT) return spirv_zero_constant(e, type);
     const TargetDeclaration *existing = workgroup_declaration(e, type, DECL_WORKGROUP_ZERO);
     if (existing != NULL) return existing->id;
     TargetDeclaration *d = spirv_append_declaration(e, DECL_WORKGROUP_ZERO, type);

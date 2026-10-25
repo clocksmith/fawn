@@ -4,15 +4,15 @@
 #include <inttypes.h>
 
 static const TypeRecord *aggregate(HlslEmitter *e, TypeId type) {
-    if (type < 7u || type - 7u >= e->module->type_count) {
+    if (type < IR_PRIMITIVE_COUNT || type - IR_PRIMITIVE_COUNT >= e->module->type_count) {
         hlsl_error(e, "HLSL aggregate type identity is invalid");
         return NULL;
     }
-    return &e->module->types[type - 7u];
+    return &e->module->types[type - IR_PRIMITIVE_COUNT];
 }
 void hlsl_type(HlslEmitter *e, TypeId type) {
-    static const char *const scalars[] = {"void", "bool", "int", "uint", "float"};
-    if (type <= IR_F32) {
+    static const char *const scalars[] = {"void", "bool", "int", "uint", "float", "", "", "float16_t"};
+    if (type <= IR_F32 || type == IR_F16) {
         hlsl_text(e, scalars[type]);
         return;
     }
@@ -38,21 +38,23 @@ void hlsl_type(HlslEmitter *e, TypeId type) {
         return;
     }
     if (t->kind == TYPE_VECTOR) {
-        if (t->element < IR_BOOL || t->element > IR_F32 || t->count < 2u || t->count > 4u) {
+        if (t->element < IR_BOOL || (t->element > IR_F32 && t->element != IR_F16) || t->count < 2u || t->count > 4u) {
             hlsl_error(e, "HLSL vector shape is invalid");
             return;
         }
-        hlsl_format(e, "%s%u", scalars[t->element], t->count);
+        if (t->element == IR_F16) hlsl_format(e, "vector<float16_t, %u>", t->count);
+        else hlsl_format(e, "%s%u", scalars[t->element], t->count);
     } else if (t->kind == TYPE_MATRIX) {
         const TypeRecord *column = aggregate(e, t->element);
-        if (column == NULL || column->kind != TYPE_VECTOR || column->element != IR_F32 ||
+        if (column == NULL || column->kind != TYPE_VECTOR || (column->element != IR_F32 && column->element != IR_F16) ||
             t->count < 2u || t->count > 4u || column->count < 2u || column->count > 4u) {
             hlsl_error(e, "HLSL matrix shape is invalid");
             return;
         }
         /* Native rows are WGSL columns. Indexing stays direct; linear products
          * reverse their operands in numeric.c, not external memory layout. */
-        hlsl_format(e, "float%ux%u", t->count, column->count);
+        if (column->element == IR_F16) hlsl_format(e, "matrix<float16_t, %u, %u>", t->count, column->count);
+        else hlsl_format(e, "float%ux%u", t->count, column->count);
     } else if (t->kind == TYPE_ARRAY || t->kind == TYPE_STRUCT || t->kind == TYPE_ATOMIC_RESULT) {
         hlsl_format(e, "DoeT%u", type);
     } else hlsl_error(e, "HLSL type kind has no value representation");
@@ -78,13 +80,13 @@ void hlsl_types(HlslEmitter *e) {
                 ((t->flags & TYPE_ATOMIC_CONTENT) != 0u && (t->flags & TYPE_FIXED) == 0u)) continue;
             unsigned d;
             if (t->kind == TYPE_ATOMIC_RESULT) d = 1u; /* Two canonical scalar children. */
-            else if (!target_type_depth(c, &e->closure, i + 7u, &d, &e->traversal_left, &error)) {
+            else if (!target_type_depth(c, &e->closure, i + IR_PRIMITIVE_COUNT, &d, &e->traversal_left, &error)) {
                 hlsl_error(e, error);
                 return;
             }
             if (d > depth) pending = true;
             if (d != depth) continue;
-            hlsl_format(e, "struct DoeT%u {\n", i + 7u);
+            hlsl_format(e, "struct DoeT%u {\n", i + IR_PRIMITIVE_COUNT);
             if (t->kind == TYPE_ARRAY) {
                 hlsl_text(e, "    ");
                 hlsl_type(e, t->element);
@@ -92,7 +94,7 @@ void hlsl_types(HlslEmitter *e) {
             } else {
                 for (uint32_t j = 0u; j < t->count; ++j) {
                     hlsl_text(e, "    ");
-                    hlsl_type(e, type_child(c, i + 7u, j));
+                    hlsl_type(e, type_child(c, i + IR_PRIMITIVE_COUNT, j));
                     hlsl_format(e, " m%u;\n", j);
                 }
             }
@@ -114,6 +116,7 @@ void hlsl_constant(HlslEmitter *e, TypeId type, uint64_t bits, bool composite) {
         case IR_BOOL: hlsl_text(e, bits == 0u ? "false" : "true"); break;
         case IR_U32: hlsl_format(e, "0x%08" PRIx32 "u", (uint32_t)bits); break;
         case IR_I32: hlsl_format(e, "asint(0x%08" PRIx32 "u)", (uint32_t)bits); break;
+        case IR_F16: hlsl_format(e, "float16_t(f16tof32(0x%04" PRIx32 "u))", (uint32_t)bits); break;
         case IR_F32: hlsl_format(e, "asfloat(0x%08" PRIx32 "u)", (uint32_t)bits); break;
         default: hlsl_error(e, "HLSL scalar constant type is unsupported"); break;
     }
@@ -129,7 +132,7 @@ void hlsl_constants(HlslEmitter *e) {
     for (unsigned pass = 0u; pass < 2u; ++pass) {
         for (uint32_t i = 0u; i < c->constant_count && !e->failed; ++i) {
             const ConstantRecord *k = &c->constants[i];
-            if (k->type < 7u || (type_flags(c, k->type) & TYPE_ABSTRACT) != 0u) continue;
+            if (k->type < IR_PRIMITIVE_COUNT || (type_flags(c, k->type) & TYPE_ABSTRACT) != 0u) continue;
             const TypeRecord *t = aggregate(e, k->type);
             if (t == NULL) return;
             hlsl_type(e, k->type);

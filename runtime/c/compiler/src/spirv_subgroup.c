@@ -11,18 +11,18 @@ bool spirv_subgroup_builtin(Emitter *e, const IrInstruction *ir,
         case BUILTIN_SUBGROUP_ADD:
         case BUILTIN_SUBGROUP_EXCLUSIVE_ADD:
         case BUILTIN_SUBGROUP_INCLUSIVE_ADD:
-            opcode = leaf == IR_F32 ? 350u : 349u;
+            opcode = (leaf == IR_F32 || leaf == IR_F16) ? 350u : 349u;
             break;
         case BUILTIN_SUBGROUP_MUL:
         case BUILTIN_SUBGROUP_EXCLUSIVE_MUL:
         case BUILTIN_SUBGROUP_INCLUSIVE_MUL:
-            opcode = leaf == IR_F32 ? 352u : 351u;
+            opcode = (leaf == IR_F32 || leaf == IR_F16) ? 352u : 351u;
             break;
         case BUILTIN_SUBGROUP_MIN:
-            opcode = leaf == IR_F32 ? 355u : leaf == IR_I32 ? 353u : 354u;
+            opcode = (leaf == IR_F32 || leaf == IR_F16) ? 355u : leaf == IR_I32 ? 353u : 354u;
             break;
         case BUILTIN_SUBGROUP_MAX:
-            opcode = leaf == IR_F32 ? 358u : leaf == IR_I32 ? 356u : 357u;
+            opcode = (leaf == IR_F32 || leaf == IR_F16) ? 358u : leaf == IR_I32 ? 356u : 357u;
             break;
         case BUILTIN_SUBGROUP_AND: opcode = 359u; break;
         case BUILTIN_SUBGROUP_OR: opcode = 360u; break;

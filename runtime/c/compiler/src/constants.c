@@ -16,7 +16,7 @@ bool constant_reserve(Source *s, TypeId type, uint32_t kind, uint32_t count, Con
     return true;
 }
 bool constant_zero(Source *s, TypeId type, ConstantValue *out) {
-    if (type<7u) {
+    if (type<IR_PRIMITIVE_COUNT) {
         *out = (ConstantValue){.type = type};
         return true;
     }
@@ -61,8 +61,8 @@ static bool convert_node(Source *s, uint32_t offset, ConstantValue in, TypeId ty
         *out = in;
         return true;
     }
-    if (in.type<7u && type<7u) return scalar_materialize(s, offset, in, type, out);
-    if (in.type<7u || type<7u || !type_abstract(c, in.type))
+    if (in.type<IR_PRIMITIVE_COUNT && type<IR_PRIMITIVE_COUNT) return scalar_materialize(s, offset, in, type, out);
+    if (in.type<IR_PRIMITIVE_COUNT || type<IR_PRIMITIVE_COUNT || !type_abstract(c, in.type))
         return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, offset, "aggregate has no implicit conversion");
     const uint32_t source = (uint32_t)in.bits;
     for (uint32_t i = 0u; i<c->constant_count; ++i) {

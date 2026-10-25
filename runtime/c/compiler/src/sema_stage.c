@@ -6,8 +6,8 @@
 static bool leaf_shape(const CompilerWorkspace *c, TypeId type, TypeId *scalar, uint32_t *lanes) {
     *scalar = type;
     *lanes = 1u;
-    if (type >= 7u) {
-        const TypeRecord *record = &c->types[type - 7u];
+    if (type >= IR_PRIMITIVE_COUNT) {
+        const TypeRecord *record = &c->types[type - IR_PRIMITIVE_COUNT];
         if (record->kind != TYPE_VECTOR) return false;
         *scalar = record->element;
         *lanes = record->count;
@@ -113,11 +113,11 @@ static bool append_leaf(Source *source, StageInterface leaf, const InterfaceAttr
 static bool flatten_interface(Source *source, StageInterface leaf, uint32_t owner, uint32_t index) {
     const CompilerWorkspace *c = source->compiler;
     const InterfaceAttribute *attribute = stage_attribute(source, owner, index, leaf.name.offset, false);
-    if (leaf.type < 7u || c->types[leaf.type - 7u].kind != TYPE_STRUCT)
+    if (leaf.type < IR_PRIMITIVE_COUNT || c->types[leaf.type - IR_PRIMITIVE_COUNT].kind != TYPE_STRUCT)
         return append_leaf(source, leaf, attribute);
     if (attribute != NULL)
         return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, attribute->offset, "structure interface cannot carry a leaf attribute");
-    const TypeRecord *type = &c->types[leaf.type - 7u];
+    const TypeRecord *type = &c->types[leaf.type - IR_PRIMITIVE_COUNT];
     for (uint32_t i = 0u; i < type->count; ++i) {
         const uint32_t member = type->element + i;
         StageInterface child = leaf;

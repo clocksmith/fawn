@@ -26,11 +26,11 @@ static bool storage_format(const TypeRecord *t) {
 }
 void metal_handle_type(MetalEmitter *e, TypeId type) {
     const CompilerWorkspace *c = e->module;
-    if (type < 7u || type - 7u >= c->type_count) {
+    if (type < IR_PRIMITIVE_COUNT || type - IR_PRIMITIVE_COUNT >= c->type_count) {
         metal_error(e, "Metal handle type identity is invalid");
         return;
     }
-    const TypeRecord *t = &c->types[type - 7u];
+    const TypeRecord *t = &c->types[type - IR_PRIMITIVE_COUNT];
     const ImageType image = t->state.image;
     if (t->kind == TYPE_SAMPLER) {
         if (image.flags != 0u && image.flags != DOE_COMPILER_HANDLE_COMPARISON) {
@@ -84,7 +84,7 @@ void metal_handle_type(MetalEmitter *e, TypeId type) {
 void metal_handle(MetalEmitter *e, const IrInstruction *ir) {
     const uint32_t resource = ir->operands.scalar.binding;
     if (ir->result == 0u || ir->result > e->module->instruction_count ||
-        &e->module->instructions[ir->result - 1u] != ir || ir->type < 7u || ir->type - 7u >= e->module->type_count ||
+        &e->module->instructions[ir->result - 1u] != ir || ir->type < IR_PRIMITIVE_COUNT || ir->type - IR_PRIMITIVE_COUNT >= e->module->type_count ||
         !type_handle(e->module, ir->type) || resource >= e->module->resource_count ||
         e->module->resources[resource].type != ir->type) {
         metal_error(e, "Metal handle does not identify its declared typed resource");

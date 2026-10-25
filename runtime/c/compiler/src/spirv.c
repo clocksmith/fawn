@@ -6,7 +6,7 @@
 static uint32_t comparison_opcode(Comparison comparison, TypeId type) {
     if (type == IR_BOOL)
         return comparison == COMPARE_EQUAL ? OP_LOGICAL_EQUAL : OP_LOGICAL_NOT_EQUAL;
-    if (type == IR_F32) {
+    if ((type == IR_F32 || type == IR_F16)) {
         switch (comparison) {
             case COMPARE_EQUAL: return OP_FORD_EQUAL;
             case COMPARE_NOT_EQUAL: return OP_FUNORD_NOT_EQUAL;
@@ -31,8 +31,8 @@ static uint32_t comparison_opcode(Comparison comparison, TypeId type) {
 static bool emit_division(Emitter *e, TypeId value_type, IrOpcode operation,
                           uint32_t result, uint32_t left, uint32_t right) {
     const bool remainder = operation == IR_REMAINDER;
-    if (value_type == IR_F32) {
-        EMIT(remainder ? OP_FREM : OP_FDIV, ID_F32, result, left, right);
+    if ((value_type == IR_F32 || value_type == IR_F16)) {
+        EMIT(remainder ? OP_FREM : OP_FDIV, spirv_scalar_type(value_type), result, left, right);
         return true;
     }
     const bool is_signed = value_type == IR_I32;
@@ -58,13 +58,22 @@ static bool emit_division(Emitter *e, TypeId value_type, IrOpcode operation,
  * normalization ensure OpConvertFTo[US] receives only in-range finite input. */
 static bool emit_conversion(Emitter *e, TypeId from, TypeId to, uint32_t result, uint32_t input) {
     if (from == to) { EMIT(OP_COPY_OBJECT, spirv_scalar_type(to), result, input); return true; }
+    if ((from == IR_F32 || from == IR_F16) && (to == IR_F32 || to == IR_F16)) {
+        EMIT(OP_FCONVERT, spirv_scalar_type(to), result, input);
+        return true;
+    }
+    if (from == IR_F16 && (to == IR_I32 || to == IR_U32)) {
+        const uint32_t widened = spirv_reserve_ids(e, 1u);
+        EMIT(OP_FCONVERT, ID_F32, widened, input);
+        return emit_conversion(e, IR_F32, to, result, widened);
+    }
     if (to == IR_BOOL) {
-        EMIT(from == IR_F32 ? OP_FUNORD_NOT_EQUAL : OP_INOT_EQUAL, ID_BOOL, result, input,
-             from == IR_F32 ? ID_ZERO_F32 : from == IR_I32 ? ID_ZERO_I32 : ID_ZERO_U32);
+        EMIT((from == IR_F32 || from == IR_F16) ? OP_FUNORD_NOT_EQUAL : OP_INOT_EQUAL, ID_BOOL, result, input,
+             from == IR_F16 ? ID_ZERO_F16 : from == IR_F32 ? ID_ZERO_F32 : from == IR_I32 ? ID_ZERO_I32 : ID_ZERO_U32);
     } else if (from == IR_BOOL) {
         EMIT(OP_SELECT, spirv_scalar_type(to), result, input,
-             to == IR_F32 ? ID_ONE_F32 : to == IR_I32 ? ID_ONE_I32 : ID_ONE_U32,
-             to == IR_F32 ? ID_ZERO_F32 : to == IR_I32 ? ID_ZERO_I32 : ID_ZERO_U32);
+             to == IR_F16 ? ID_ONE_F16 : to == IR_F32 ? ID_ONE_F32 : to == IR_I32 ? ID_ONE_I32 : ID_ONE_U32,
+             to == IR_F16 ? ID_ZERO_F16 : to == IR_F32 ? ID_ZERO_F32 : to == IR_I32 ? ID_ZERO_I32 : ID_ZERO_U32);
     } else if (from == IR_F32) {
         const uint32_t nan = spirv_reserve_ids(e, 1u), finite = spirv_reserve_ids(e, 1u);
         const uint32_t low = spirv_reserve_ids(e, 1u), lower = spirv_reserve_ids(e, 1u);
@@ -78,8 +87,8 @@ static bool emit_conversion(Emitter *e, TypeId from, TypeId to, uint32_t result,
         EMIT(OP_FORD_GREATER_THAN, ID_BOOL, high, lower, maximum);
         EMIT(OP_SELECT, ID_F32, clamped, high, maximum, lower);
         EMIT(to == IR_I32 ? OP_CONVERT_F_TO_S : OP_CONVERT_F_TO_U, spirv_scalar_type(to), result, clamped);
-    } else if (to == IR_F32) {
-        EMIT(from == IR_I32 ? OP_CONVERT_S_TO_F : OP_CONVERT_U_TO_F, ID_F32, result, input);
+    } else if (to == IR_F32 || to == IR_F16) {
+        EMIT(from == IR_I32 ? OP_CONVERT_S_TO_F : OP_CONVERT_U_TO_F, spirv_scalar_type(to), result, input);
     } else { EMIT(OP_BITCAST, spirv_scalar_type(to), result, input); }
     return true;
 }
@@ -182,7 +191,7 @@ static bool emit_numeric_builtin(Emitter *e, const IrInstruction *ir) {
         return true;
     }
     if (builtin->kind == BUILTIN_DOT) {
-        if (leaf == IR_F32) {
+        if ((leaf == IR_F32 || leaf == IR_F16)) {
             EMIT(OP_DOT, spirv_target_type(e, ir->type), result, left, right);
             return true;
         }
@@ -244,7 +253,7 @@ static bool emit_safe_operation(Emitter *e, const IrInstruction *ir) {
 static bool emit_arithmetic(Emitter *e, const IrInstruction *ir) {
     if (type_matrix(e->program, ir->operands.scalar.binding) || type_matrix(e->program, ir->operands.scalar.literal))
         return spirv_matrix_arithmetic(e, ir);
-    const bool floating = type_leaf(e->program, ir->type) == IR_F32;
+    const bool floating = (type_leaf(e->program, ir->type) == IR_F32 || type_leaf(e->program, ir->type) == IR_F16);
     const uint32_t opcode = ir->opcode == IR_SUBTRACT ? (floating ? OP_FSUB : OP_ISUB) :
         ir->opcode == IR_MULTIPLY ? (floating ? OP_FMUL : OP_IMUL) : floating ? OP_FADD : OP_IADD;
     uint32_t left = e->values[ir->operands.scalar.left], right = e->values[ir->operands.scalar.right];
@@ -348,7 +357,7 @@ static bool access_condition(Emitter *e, const IrInstruction *ir, uint32_t *cond
         if (a->kind == ACCESS_MEMBER || a->kind == ACCESS_COMPONENT) {
             w->cursor = spirv_unsigned_constant(e, a->index); continue;
         }
-        const TypeRecord *input = &c->types[a->input_type - 7u];
+        const TypeRecord *input = &c->types[a->input_type - IR_PRIMITIVE_COUNT];
         uint32_t length;
         if (input->kind == TYPE_RUNTIME_ARRAY) {
             if (ir->operands.access.category != ROOT_RESOURCE)
@@ -461,7 +470,7 @@ static bool emit_value_access(Emitter *e, const IrInstruction *ir) {
         if (literal) {
             EMIT(OP_COMPOSITE_EXTRACT, spirv_target_type(e, a->output_type), result, value, index);
         } else {
-            if (i != 1u || c->types[a->input_type - 7u].kind != TYPE_VECTOR)
+            if (i != 1u || c->types[a->input_type - IR_PRIMITIVE_COUNT].kind != TYPE_VECTOR)
                 return spirv_emit_error(e, a->source_offset, "dynamic array value access requires Function temporary");
             /* The selected one-step suffix retains the same common guard owner. */
             const uint32_t saved_count = c->walk_count;
@@ -729,7 +738,7 @@ static bool emit_block(Emitter *e, const IrProgram *program, size_t *cursor,
             case IR_NEGATE:
             case IR_COMPLEMENT:
                 EMIT(ir->opcode == IR_BITCAST ? OP_BITCAST : ir->opcode == IR_COMPLEMENT ? OP_NOT :
-                     type_leaf(program, ir->type) == IR_F32 ? OP_FNEGATE : OP_SNEGATE,
+                     (type_leaf(program, ir->type) == IR_F32 || type_leaf(program, ir->type) == IR_F16) ? OP_FNEGATE : OP_SNEGATE,
                      spirv_target_type(e, ir->type), result, e->values[ir->operands.scalar.left]);
                 break;
             case IR_BIT_AND:

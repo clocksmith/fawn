@@ -92,8 +92,8 @@ void stage_reflect(const Source *source, DoeCompilerStageInterfaceV7 *outputs, c
         out->direction = input->direction;
         out->location = input->location;
         out->builtin = input->builtin;
-        out->scalar_kind = input->type < 7u ? input->type : c->types[input->type - 7u].element;
-        out->lane_count = input->type < 7u ? 1u : c->types[input->type - 7u].count;
+        out->scalar_kind = input->type < IR_PRIMITIVE_COUNT ? input->type : c->types[input->type - IR_PRIMITIVE_COUNT].element;
+        out->lane_count = input->type < IR_PRIMITIVE_COUNT ? 1u : c->types[input->type - IR_PRIMITIVE_COUNT].count;
         out->interpolation = input->interpolation;
         out->sampling = input->sampling;
         out->flags = input->flags;
