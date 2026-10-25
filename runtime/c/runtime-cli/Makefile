@@ -11,10 +11,10 @@ CPPFLAGS += -D_POSIX_C_SOURCE=200809L -Isrc -I../../zig/vendor/webgpu-headers -I
 CFLAGS ?= -O2 -g
 CFLAGS += -std=c11 -Wall -Wextra -Wpedantic -Werror -pthread
 CORE = src/json.c src/stream.c src/stream_texture.c src/stream_render.c src/trace.c src/sha256.c src/quirks.c \
-  src/operators.c src/numeric_gate.c src/plan.c \
+  src/operators.c src/numeric_policy.c src/numeric_stability.c src/plan.c \
   $(BUILD)/quirk_toggles.c
 CORE_HEADERS = src/json.h src/stream.h src/stream_internal.h src/trace.h src/sha256.h src/quirks.h \
-  src/operators.h src/numeric_gate.h src/plan.h
+  src/operators.h src/numeric_policy.h src/numeric_stability.h src/plan.h
 TOGGLE_REGISTRY = ../../../config/quirk-toggle-registry.json
 RUNTIME = src/execute.c src/kernel.c src/texture.c src/render.c
 RUNTIME_HEADERS = src/execute.h src/runtime_internal.h ../../zig/vendor/webgpu-headers/webgpu.h \
@@ -62,15 +62,19 @@ $(BUILD)/test_sha256: tests/test_sha256.c src/sha256.c src/sha256.h | $(BUILD)
 	$(CC) $(CPPFLAGS) $(CFLAGS) tests/test_sha256.c src/sha256.c -o $@
 $(BUILD)/test_quirks: tests/test_quirks.c $(CORE) $(CORE_HEADERS) | $(BUILD)
 	$(CC) $(CPPFLAGS) $(CFLAGS) tests/test_quirks.c $(CORE) -lm -o $@
+$(BUILD)/test_numeric: tests/test_numeric.c $(CORE) $(CORE_HEADERS) | $(BUILD)
+	$(CC) $(CPPFLAGS) $(CFLAGS) tests/test_numeric.c $(CORE) -lm -o $@
 $(BUILD)/test_trace: tests/test_trace.c $(CORE) $(CORE_HEADERS) | $(BUILD)
 	$(CC) $(CPPFLAGS) $(CFLAGS) tests/test_trace.c $(CORE) -lm -o $@
 # Host-only: parsing, rejection, the trace hash chain and SHA-256; no device.
-check-host: $(BUILD)/test_json $(BUILD)/test_stream $(BUILD)/test_trace $(BUILD)/test_sha256 $(BUILD)/test_quirks
+check-host: $(BUILD)/test_json $(BUILD)/test_stream $(BUILD)/test_trace $(BUILD)/test_sha256 $(BUILD)/test_quirks \
+  $(BUILD)/test_numeric
 	$(BUILD)/test_json
 	$(BUILD)/test_stream ../../../examples
 	$(BUILD)/test_trace
 	$(BUILD)/test_sha256
 	$(BUILD)/test_quirks ../../../examples
+	$(BUILD)/test_numeric ../../.. '$(BUILD)'
 # Executes example streams on the selected Vulkan adapter (a CPU ICD such as
 # lavapipe by default) and checks the artifacts with pipeline/trace/replay.py.
 check: check-host $(BUILD)/doe-c-runtime

@@ -4,7 +4,8 @@
  * doe-zig-runtime; every argument or value this runtime does not implement is
  * rejected before any device work. */
 #include "execute.h"
-#include "numeric_gate.h"
+#include "numeric_policy.h"
+#include "numeric_stability.h"
 #include "operators.h"
 #include "plan.h"
 #include "quirks.h"
@@ -31,7 +32,7 @@
 enum { MAX_READBACKS = 8 };
 
 typedef struct options {
-    const char *commands, *kernel_root, *trace_jsonl, *trace_meta, *quirks, *numeric_policy;
+    const char *commands, *kernel_root, *trace_jsonl, *trace_meta, *quirks, *numeric_policy, *numeric_profile;
     const char *plan, *workload; /* Plan mode: doe-plan-executor's --plan and --workload. */
     const char *vendor, *api, *family, *driver;
     bool execute, trace_stdout, validate_oracles;
@@ -66,7 +67,7 @@ typedef struct totals {
     uint64_t input_read_ns, input_parse_ns, executor_init_ns, kernel_prewarm_ns;
     uint64_t hash, previous;
     uint64_t oracles, oracles_matched, oracles_failed;
-    uint64_t matched, blocking, requires_lean, lean_required;
+    uint64_t matched, blocking, requires_lean, lean_required, skipped;
     bool semantic_tracing;
     char oracle_expected[65], oracle_actual[65];
     const char *oracle_reference;
@@ -82,7 +83,7 @@ static void usage(FILE *out)
           "  [--gpu-timestamp-mode off|auto] [--adapter auto|physical|software]\n"
           "  [--validate-output-oracles]  (schema 1 sha256_exact_v1 isolated-dispatch oracles)\n"
           "  [--readback-buffer HANDLE=PATH]...  (final buffer bytes after a successful run; at most 8)\n"
-          "  [--numeric-stability-policy <path>]  (consulted only to refuse what doe-zig-runtime would evaluate)\n"
+          "  [--numeric-stability-policy <path>] [--numeric-stability-execution-profile <id>]\n"
           "doe-c-runtime --plan <plan.json> --workload <id> --trace-jsonl <path> --trace-meta <path>\n"
           "  [--kernel-root <path>] [profile, upload and --readback-buffer arguments as above]\n"
           "  (plan mode, as doe-plan-executor: buffer_write, buffer_load and kernel_dispatch plan steps)\n"
@@ -90,7 +91,8 @@ static void usage(FILE *out)
           "copies in every direction, texture_write, texture_query, texture_destroy (2D single-mip\n"
           "uncompressed color textures), render_draw and render_pass (the default proxy pipeline),\n"
           "sampler_create and sampler_destroy. kernel_dispatch semantic fields and captures write operator\n"
-          "records; a dispatch doe-zig-runtime would evaluate for numeric stability is refused.\n"
+          "records; with a trace meta, decode.final_logits dispatches are evaluated for numeric stability and\n"
+          "other numeric stability capture plans are refused.\n"
           "Every other command, field or argument is rejected. --adapter is this runtime's own;\n"
           "auto takes a nonfallback adapter, else the fallback (CPU) adapter, and the trace meta\n"
           "records which one ran.\n", out);
@@ -131,6 +133,7 @@ static int parse_options(int argc, char **argv, options *out)
         else if (!strcmp(flag, "--trace-meta")) TAKE(trace_meta);
         else if (!strcmp(flag, "--quirks")) TAKE(quirks);
         else if (!strcmp(flag, "--numeric-stability-policy")) TAKE(numeric_policy);
+        else if (!strcmp(flag, "--numeric-stability-execution-profile")) TAKE(numeric_profile);
         else if (!strcmp(flag, "--vendor")) TAKE(vendor);
         else if (!strcmp(flag, "--api")) TAKE(api);
         else if (!strcmp(flag, "--family")) TAKE(family);
@@ -183,6 +186,7 @@ static int parse_options(int argc, char **argv, options *out)
         if (!out->workload || !out->trace_jsonl || !out->trace_meta)
             return reject_argument("--plan", "needs --workload, --trace-jsonl and --trace-meta");
         if (out->quirks || quirk_mode || out->command_repeat != 1 || out->validate_oracles || out->numeric_policy ||
+            out->numeric_profile ||
             out->trace_stdout)
             return reject_argument("--plan", "takes no --quirks, --quirk-mode, --command-repeat, oracle, numeric "
                 "stability or --trace arguments");
@@ -308,7 +312,7 @@ static bool write_shader_receipts(FILE *out, const doe_runtime *runtime, const d
 
 static bool write_meta(const char *path, const options *o, const totals *t, uint64_t command_count,
     const doe_runtime_adapter *adapter, const doe_operator_recorder *operators, const char *plan_sha256,
-    const doe_runtime *runtime, const doe_stream *stream)
+    const doe_runtime *runtime, const doe_stream *stream, const doe_ns_recorder *numeric)
 {
     FILE *out = fopen(path, "wb");
     if (!out) return false;
@@ -317,7 +321,7 @@ static bool write_meta(const char *path, const options *o, const totals *t, uint
         ",\"commandCount\":%" PRIu64 ",\"matchedCount\":%" PRIu64 ",\"blockingCount\":%" PRIu64 ",\"requiresLeanCount\":%" PRIu64
         ",\"leanRequiredCount\":%" PRIu64 ","
         "\"executionRowCount\":%" PRIu64 ",\"executionSuccessCount\":%" PRIu64 ",\"executionErrorCount\":%" PRIu64
-        ",\"executionSkippedCount\":0,\"executionUnsupportedCount\":0,\"executionTotalNs\":%" PRIu64
+        ",\"executionSkippedCount\":%" PRIu64 ",\"executionUnsupportedCount\":0,\"executionTotalNs\":%" PRIu64
         ",\"executionSetupTotalNs\":%" PRIu64 ",\"executionEncodeTotalNs\":%" PRIu64 ",\"executionSubmitWaitTotalNs\":%" PRIu64
         ",\"executionDispatchCount\":%" PRIu64 ",\"executionSubmitCount\":%" PRIu64 ",\"hostInputReadTotalNs\":%" PRIu64
         ",\"hostInputParseTotalNs\":%" PRIu64 ",\"hostExecutorInitTotalNs\":%" PRIu64
@@ -329,7 +333,7 @@ static bool write_meta(const char *path, const options *o, const totals *t, uint
         ",\"outputOracleMatchedCount\":%" PRIu64 ",\"outputOracleFailedCount\":%" PRIu64
         ",\"executionBackend\":\"" BACKEND_ID "\",\"backendId\":\"" BACKEND_ID "\","
         "\"backendSelectionReason\":\"fixed_backend\",\"fallbackUsed\":false",
-        seq_max, t->rows, command_count, t->matched, t->blocking, t->requires_lean, t->lean_required, t->rows, t->successes, t->errors, t->total_ns, t->setup_ns, t->encode_ns,
+        seq_max, t->rows, command_count, t->matched, t->blocking, t->requires_lean, t->lean_required, t->rows, t->successes, t->errors, t->skipped, t->total_ns, t->setup_ns, t->encode_ns,
         t->submit_wait_ns, t->dispatches, t->submits, t->input_read_ns, t->input_parse_ns, t->executor_init_ns,
         t->kernel_prewarm_ns, t->semantic_tracing ? "true" : "false", operators ? operators->row_count : 0,
         operators ? operators->capture_count : 0, operators ? operators->repro_count : 0,
@@ -360,6 +364,7 @@ static bool write_meta(const char *path, const options *o, const totals *t, uint
                 "\"outputOracleMaxRelativeError\":0,\"outputOracleAbsoluteTolerance\":0,\"outputOracleRelativeTolerance\":0", out) >= 0;
     }
     if (ok && runtime) ok = write_shader_receipts(out, runtime, stream);
+    if (ok && numeric) ok = doe_ns_write_summary(out, numeric);
     ok = ok && fputs(",\"profile\":{", out) >= 0;
     ok = ok && write_optional(out, "vendor", o->vendor, false) && write_optional(out, "api", o->api ? o->api : "vulkan", true) &&
         write_optional(out, "deviceFamily", o->family, true) && write_optional(out, "driver", o->driver, true);
@@ -382,36 +387,86 @@ static bool write_meta(const char *path, const options *o, const totals *t, uint
     return ok;
 }
 
-/* Refuses, before device work, a stream doe-zig-runtime would evaluate for
- * numeric stability: it loads the policy whenever it writes a trace meta. An
- * explicit policy is read and checked even without a trace meta. */
-static int check_numeric_stability(const options *o, const doe_stream *stream)
+/* Loads the numeric stability policy when doe-zig-runtime would evaluate:
+ * with a trace meta and a dispatch carrying op id, stage and phase (or an
+ * explicit policy, which is always validated). A dispatch whose auto-detect
+ * profile uses a capture plan this runtime does not evaluate is refused
+ * before device work. Returns 0, or the exit code. */
+static int load_numeric_policy(const options *o, const doe_stream *stream, doe_ns_policy *policy, char **text, bool *loaded)
 {
+    *loaded = false;
+    bool needed = false;
+    for (size_t i = 0; i < stream->count && !needed; i++) needed = doe_ns_semantic_complete(&stream->commands[i]);
     /* doe-plan-executor evaluates no numeric stability. */
-    if (o->plan || (!o->numeric_policy && !(o->trace_meta && doe_numeric_gate_needed(stream)))) return 0;
+    if (o->plan || (!o->numeric_policy && !o->numeric_profile && !(o->trace_meta && needed))) return 0;
     const char *path = o->numeric_policy ? o->numeric_policy : DOE_NUMERIC_STABILITY_DEFAULT_POLICY;
     size_t size = 0;
-    char *text = read_file(path, &size);
-    if (!text) {
-        fprintf(stderr, "doe-c-runtime: numeric stability policy %s: cannot read (needed to find the semantic "
-            "operations doe-zig-runtime would evaluate)\n", path);
+    *text = read_file(path, &size);
+    char message[256] = "";
+    if (!*text) {
+        fprintf(stderr, "doe-c-runtime: numeric stability policy %s: cannot read\n", path);
         return 2;
     }
-    size_t index = 0;
-    char profile[128] = "", message[256] = "";
-    doe_numeric_gate_result result = doe_numeric_gate_check(text, size, stream, &index, profile, sizeof(profile),
-        message, sizeof(message));
-    free(text);
-    if (result == DOE_NUMERIC_GATE_INVALID) {
+    if (!doe_ns_policy_load(*text, size, path, o->numeric_profile, policy, message, sizeof(message))) {
         fprintf(stderr, "doe-c-runtime: numeric stability policy %s: %s\n", path, message);
+        free(*text);
+        *text = NULL;
         return 2;
     }
-    if (result == DOE_NUMERIC_GATE_OBSERVED && o->trace_meta) {
-        fprintf(stderr, "doe-c-runtime: %s: command %zu: numeric stability evaluation (%s) is not implemented by "
-            "doe-c-runtime; doe-zig-runtime evaluates it when a trace meta is written\n", o->commands, index, profile);
-        return 2;
+    *loaded = true;
+    for (size_t i = 0; o->trace_meta && i < stream->count; i++) {
+        const doe_json_value *profile = doe_ns_auto_detect(policy, &stream->commands[i]);
+        const char *plan = doe_ns_string(profile, "capturePlanId");
+        if (profile && (!plan || strcmp(plan, DOE_NS_DECODE_FINAL_LOGITS_PLAN))) {
+            fprintf(stderr, "doe-c-runtime: %s: command %zu: numeric stability evaluation (%s, capture plan %s) is not "
+                "implemented by doe-c-runtime; doe-zig-runtime evaluates it when a trace meta is written\n", o->commands, i,
+                doe_ns_string(profile, "profileId"), plan ? plan : "(none)");
+            return 2;
+        }
     }
     return 0;
+}
+
+/* Buffer access for the numeric stability recorder through the runtime. */
+static bool ns_capture(void *context, uint64_t handle, uint64_t offset, uint64_t size, uint8_t **bytes, size_t *length,
+    char *message, size_t message_size)
+{
+    uint8_t *data = NULL;
+    size_t total = 0;
+    doe_trace_execution execution;
+    if (!doe_runtime_read_buffer(context, handle, &data, &total, &execution)) {
+        snprintf(message, message_size, "numeric stability capture of buffer %llu: %s: %s", (unsigned long long)handle,
+            execution.status_code, execution.message);
+        return false;
+    }
+    uint64_t end = size == UINT64_MAX ? total : offset + size;
+    if (offset > total || end > total || end < offset) {
+        free(data);
+        snprintf(message, message_size, "numeric stability capture of buffer %llu is out of range", (unsigned long long)handle);
+        return false;
+    }
+    *length = (size_t)(end - offset);
+    *bytes = malloc(*length ? *length : 1);
+    if (*bytes) memcpy(*bytes, data + offset, *length);
+    free(data);
+    if (!*bytes) snprintf(message, message_size, "out of memory");
+    return *bytes != NULL;
+}
+
+static bool ns_write(void *context, uint64_t handle, uint64_t offset, const uint32_t *words, size_t count, char *message,
+    size_t message_size)
+{
+    doe_command write = {.kind = DOE_COMMAND_BUFFER_WRITE, .label = "buffer_write"};
+    write.as.buffer_write.handle = handle;
+    write.as.buffer_write.offset = offset;
+    write.as.buffer_write.buffer_size = (uint64_t)count * 4;
+    write.as.buffer_write.words = (uint32_t *)words;
+    write.as.buffer_write.word_count = count;
+    doe_trace_execution execution;
+    if (doe_runtime_execute(context, &write, &execution)) return true;
+    snprintf(message, message_size, "numeric stability write to buffer %llu: %s: %s", (unsigned long long)handle,
+        execution.status_code, execution.message);
+    return false;
 }
 
 /* The capture a semantic command requested, read after it ran; failures are
@@ -496,8 +551,25 @@ int main(int argc, char **argv)
         }
     }
     if (stream.count > UINT64_MAX / o.command_repeat) { release_input(&stream, &plan, plan_kernel_root); return reject_argument("--command-repeat", "overflows"); }
-    int refused = check_numeric_stability(&o, &stream);
-    if (refused) { release_input(&stream, &plan, plan_kernel_root); return refused; }
+    doe_ns_policy ns_policy = {0};
+    char *ns_policy_text = NULL;
+    bool ns_loaded = false;
+    int refused = load_numeric_policy(&o, &stream, &ns_policy, &ns_policy_text, &ns_loaded);
+    if (refused) {
+        if (ns_loaded) doe_ns_policy_free(&ns_policy);
+        free(ns_policy_text);
+        release_input(&stream, &plan, plan_kernel_root);
+        return refused;
+    }
+    doe_ns_recorder ns = {0};
+    bool ns_enabled = ns_loaded && o.trace_meta;
+    if (ns_enabled && !doe_ns_recorder_open(&ns, &ns_policy, o.trace_meta)) {
+        fprintf(stderr, "doe-c-runtime: out of memory\n");
+        doe_ns_policy_free(&ns_policy);
+        free(ns_policy_text);
+        release_input(&stream, &plan, plan_kernel_root);
+        return 1;
+    }
     uint64_t command_count = (uint64_t)stream.count * o.command_repeat;
     FILE *rows = o.trace_jsonl ? fopen(o.trace_jsonl, "wb") : NULL;
     if (o.trace_jsonl && !rows) {
@@ -550,8 +622,12 @@ int main(int argc, char **argv)
     }
     t.kernel_prewarm_ns = o.plan ? 0 : doe_runtime_monotonic_ns() - prewarm_start;
     const doe_trace_identity identity = {.module = MODULE_NAME, .backend_id = BACKEND_ID};
-    for (uint64_t pass = 0; runtime && status == 0 && pass < o.command_repeat; pass++) {
-        for (size_t i = 0; i < stream.count && status == 0; i++) {
+    const doe_ns_identity ns_identity = {.backend = BACKEND_ID, .vendor = o.vendor, .api = o.api, .family = o.family,
+        .driver = o.driver};
+    const doe_ns_io ns_io = {.context = runtime, .capture = ns_capture, .write = ns_write};
+    bool stopped = false;
+    for (uint64_t pass = 0; runtime && status == 0 && !stopped && pass < o.command_repeat; pass++) {
+        for (size_t i = 0; i < stream.count && status == 0 && !stopped; i++) {
             const doe_command *command = &stream.commands[i];
             const doe_quirk_decision decision = doe_quirks_decide(&quirks, command->kind);
             if (doe_semantic_present(&command->semantic)) t.semantic_tracing = true;
@@ -601,6 +677,16 @@ int main(int argc, char **argv)
             t.submit_wait_ns += execution.submit_wait_ns;
             t.dispatches += execution.dispatch_count;
             t.submits += execution.submit_count;
+            /* doe-zig-runtime evaluates after a successful command; a stop route skips the rest. */
+            if (ok && ns_enabled) {
+                char ns_message[512];
+                if (!doe_ns_record(&ns, &ns_io, &ns_identity, command, stream.count - i - 1, &stopped, ns_message,
+                        sizeof(ns_message))) {
+                    fprintf(stderr, "doe-c-runtime: command %zu: %s\n", i, ns_message);
+                    status = 1;
+                }
+                if (stopped) t.skipped = command_count - t.rows;
+            }
             if (ok) t.successes++;
             else {
                 t.errors++;
@@ -664,11 +750,17 @@ int main(int argc, char **argv)
         status = 1;
     }
     if (o.trace_meta && !write_meta(o.trace_meta, &o, &t, command_count, runtime ? doe_runtime_adapter_info(runtime) : NULL,
-            &operators, o.plan ? plan.plan_sha256 : NULL, runtime, &stream)) {
+            &operators, o.plan ? plan.plan_sha256 : NULL, runtime, &stream, ns_enabled ? &ns : NULL)) {
         fprintf(stderr, "doe-c-runtime: cannot write %s\n", o.trace_meta);
         status = 1;
     }
     doe_operator_recorder_free(&operators);
+    if (ns_enabled) {
+        if (ns.receipts && fflush(ns.receipts) != 0) status = 1;
+        doe_ns_recorder_free(&ns);
+    }
+    if (ns_loaded) doe_ns_policy_free(&ns_policy);
+    free(ns_policy_text);
     doe_runtime_close(runtime);
     doe_quirks_free(&quirks);
     release_input(&stream, &plan, plan_kernel_root);

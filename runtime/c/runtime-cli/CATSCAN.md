@@ -37,9 +37,9 @@ Zig rows.
 runs are not GPU, performance or comparability evidence.
 
 ## Non-goals
-Numeric stability evaluation, quirk actions without a C path, surface or
-indirect commands, custom render pipelines, mipmapped or multisampled textures,
-GPU timestamps, deferred queue sync or default CLI replacement.
+Numeric stability plans beyond decode logits, unappliable quirk actions,
+surface or indirect commands, custom render pipelines, mipmapped or multisampled
+textures, GPU timestamps, deferred queue sync or default CLI replacement.
 
 ## Freedom
 Internal parsing, caching and encoding may vary.
