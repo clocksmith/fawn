@@ -34,7 +34,7 @@ uint32_t sema_find_function(const Source *s, NameSpan name) {
 uint32_t sema_find_struct(const Source *s, NameSpan name) {
     const CompilerWorkspace *c = s->compiler;
     for (uint32_t i = 0u;i<c->type_count;++i)
-        if (c->types[i].kind == TYPE_STRUCT && source_spans_equal(s, name, c->types[i].name)) return i+7u;
+        if (c->types[i].kind == TYPE_STRUCT && source_spans_equal(s, name, c->types[i].name)) return i+IR_PRIMITIVE_COUNT;
     return NO_ID;
 }
 bool sema_module_declared(const Source *s, NameSpan name) {
@@ -149,20 +149,25 @@ static bool base_type(Source *s, NameSpan name, const LocalScope *scope, TypeId 
     else if (source_span_is(s, name, "i32")) *out = IR_I32;
     else if (source_span_is(s, name, "u32")) *out = IR_U32;
     else if (source_span_is(s, name, "f32")) *out = IR_F32;
+    else if (source_span_is(s, name, "f16")) *out = IR_F16;
     else if (name.length == 5u && memcmp(s->source+name.offset, "vec", 3u) == 0 && s->source[name.offset+3u] >= '2' && s->source[name.offset+3u] <= '4') {
         const char suffix = s->source[name.offset+4u];
-        if (suffix != 'u' && suffix != 'i' && suffix != 'f') return source_error(s, DOE_COMPILER_UNSUPPORTED, name.offset, "unsupported vector type alias");
+        if (suffix != 'u' && suffix != 'i' && suffix != 'f' && suffix != 'h') return source_error(s, DOE_COMPILER_UNSUPPORTED, name.offset, "unsupported vector type alias");
         *width = (uint32_t)(s->source[name.offset+3u]-'0');
-        *out = suffix == 'u'?IR_U32:suffix == 'i'?IR_I32:IR_F32;
+        *out = suffix == 'u'?IR_U32:suffix == 'i'?IR_I32:suffix == 'h'?IR_F16:IR_F32;
     }
     else {
         uint32_t columns, rows;
         if (!type_matrix_name(s, name, &columns, &rows) || name.length != 7u)
             return source_error(s, DOE_COMPILER_UNSUPPORTED, name.offset, "unsupported type name");
-        if (s->source[name.offset + 6u] != 'f')
+        if (s->source[name.offset + 6u] != 'f' && s->source[name.offset + 6u] != 'h')
             return source_error(s, DOE_COMPILER_UNSUPPORTED, name.offset, "unsupported matrix element type");
-        return type_matrix_intern(s, IR_F32, columns, rows, out);
+        if (s->source[name.offset + 6u] == 'h' && (s->compiler->module_flags & MODULE_F16) == 0u)
+            return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, name.offset, "f16 requires enable f16");
+        return type_matrix_intern(s, s->source[name.offset + 6u] == 'h' ? IR_F16 : IR_F32, columns, rows, out);
     }
+    if (*out == IR_F16 && (s->compiler->module_flags & MODULE_F16) == 0u)
+        return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, name.offset, "f16 requires enable f16");
     return true;
 }
 bool integer_attribute(Source *s, uint32_t expression, const LocalScope *scope, bool count, uint32_t *out) {
@@ -226,7 +231,7 @@ bool sema_type_reference(Source *s, TypeRef ref, const LocalScope *scope, TypeId
             if (g->name.length == 6u && memcmp(name, "mat", 3u) == 0 &&
                 name[3] >= '2' && name[3] <= '4' && name[4] == 'x' &&
                 name[5] >= '2' && name[5] <= '4') {
-                if (g->count_expression != NO_ID || type != IR_F32)
+                if (g->count_expression != NO_ID || (type != IR_F32 && type != IR_F16))
                     return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, g->name.offset,
                                         "matrix annotation requires one floating-point scalar type");
                 if (!type_matrix_intern(s, type, (uint32_t)(name[3] - '0'),
@@ -237,7 +242,7 @@ bool sema_type_reference(Source *s, TypeRef ref, const LocalScope *scope, TypeId
             if (g->name.length != 4u || memcmp(name, "vec", 3u) != 0 || name[3]<'2' || name[3]>'4')
                 return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, g->name.offset,
                                     "unknown type generator");
-            if (g->count_expression != NO_ID || type<IR_BOOL || type>IR_F32)
+            if (g->count_expression != NO_ID || type<IR_BOOL || (type>IR_F32 && type != IR_F16))
                 return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, g->name.offset, "vector annotation requires one concrete scalar type");
             if (!type_intern(s, TYPE_VECTOR, type, (uint32_t)(name[3]-'0'), &type)) return false;
         }
@@ -259,8 +264,8 @@ static bool scalar_common(Source *s, TypeId a, TypeId b, uint32_t offset, TypeId
         *out = a;
         return true;
     }
-    if ((a == IR_ABSTRACT_FLOAT && b == IR_F32) || (b == IR_ABSTRACT_FLOAT && a == IR_F32)) {
-        *out = IR_F32;
+    if ((a == IR_ABSTRACT_FLOAT && (b == IR_F32 || b == IR_F16)) || (b == IR_ABSTRACT_FLOAT && (a == IR_F32 || a == IR_F16))) {
+        *out = a == IR_ABSTRACT_FLOAT ? b : a;
         return true;
     }
     return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, offset, "types have no common implicit materialization");
@@ -268,9 +273,9 @@ static bool scalar_common(Source *s, TypeId a, TypeId b, uint32_t offset, TypeId
 bool sema_common_type(Source *s, TypeId a, TypeId b, uint32_t offset, TypeId *out) {
     CompilerWorkspace *c = s->compiler;
     const uint32_t base = c->walk_count;
-    while (a != b && (a >= 7u || b >= 7u)) {
-        if (a<7u || b<7u) return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, offset, "aggregate shapes differ");
-        const TypeRecord *left = &c->types[a-7u], *right = &c->types[b-7u];
+    while (a != b && (a >= IR_PRIMITIVE_COUNT || b >= IR_PRIMITIVE_COUNT)) {
+        if (a<IR_PRIMITIVE_COUNT || b<IR_PRIMITIVE_COUNT) return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, offset, "aggregate shapes differ");
+        const TypeRecord *left = &c->types[a-IR_PRIMITIVE_COUNT], *right = &c->types[b-IR_PRIMITIVE_COUNT];
         if (left->kind == TYPE_STRUCT || left->kind != right->kind || left->count != right->count)
             return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, offset, "aggregate shapes or nominal identities differ");
         if (c->walk_count == c->limits.traversal) return source_pool_error(s, DOE_COMPILER_POOL_TRAVERSAL, (size_t)c->walk_count+1u, offset, "common type traversal capacity exceeded");
@@ -296,8 +301,8 @@ bool sema_default_type(Source *s, TypeId input, uint32_t offset, TypeId *out) {
         *out = type;
         return true;
     }
-    while (type >= 7u) {
-        const TypeRecord *t = &c->types[type-7u];
+    while (type >= IR_PRIMITIVE_COUNT) {
+        const TypeRecord *t = &c->types[type-IR_PRIMITIVE_COUNT];
         if (c->walk_count == c->limits.traversal) return source_pool_error(s, DOE_COMPILER_POOL_TRAVERSAL, (size_t)c->walk_count+1u, offset, "default type traversal capacity exceeded");
         c->walk[c->walk_count++] = (WalkItem){.kind = t->kind, .cursor = t->count};
         type = t->element;
@@ -323,7 +328,7 @@ static bool type_dependency(const Source *s, TypeRef ref, uint32_t *kind, uint32
     const TypeId nominal = sema_find_struct(s, name);
     if (nominal == NO_ID) return false;
     *kind = 1u;
-    *id = nominal - 7u;
+    *id = nominal - IR_PRIMITIVE_COUNT;
     return true;
 }
 static bool expression_dependency(const Source *s, const Expression *e, uint32_t *kind, uint32_t *id) {
@@ -340,7 +345,7 @@ static bool expression_dependency(const Source *s, const Expression *e, uint32_t
             return type_dependency(s, e->value.call.type, kind, id);
         if (type != NO_ID) {
             *kind = 1u;
-            *id = type-7u;
+            *id = type-IR_PRIMITIVE_COUNT;
             return true;
         }
     }
@@ -427,7 +432,7 @@ static bool finish_declaration(Source *s, uint32_t kind, uint32_t id, LocalScope
             if ((m->flags&1u) != 0u && !integer_attribute(s, m->align_expression, scope, false, &m->align_expression)) return false;
             if ((m->flags&2u) != 0u && !integer_attribute(s, m->size_expression, scope, false, &m->size_expression)) return false;
         }
-        if (!type_layout_struct(s, id+7u)) return false;
+        if (!type_layout_struct(s, id+IR_PRIMITIVE_COUNT)) return false;
     }
     return true;
 }

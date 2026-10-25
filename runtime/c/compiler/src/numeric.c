@@ -13,7 +13,7 @@ static bool integer_type(IrType type) {
     return type == IR_U32 || type == IR_I32 || type == IR_ABSTRACT_INT;
 }
 static bool floating_type(IrType type) {
-    return type == IR_F32 || type == IR_ABSTRACT_FLOAT;
+    return type == IR_F16 || type == IR_F32 || type == IR_ABSTRACT_FLOAT;
 }
 static uint64_t integer_mask(IrType type) {
     return type == IR_ABSTRACT_INT ? UINT64_MAX : UINT64_C(0xffffffff);
@@ -48,6 +48,7 @@ static uint64_t double_bits(double value) {
     return bits;
 }
 static bool finite_value(NumericValue value) {
+    if (value.type == IR_F16) return (value.bits & 0x7c00u) != 0x7c00u;
     if (value.type == IR_F32)
         return (value.bits & UINT64_C(0x7f800000)) != UINT64_C(0x7f800000);
     if (value.type == IR_ABSTRACT_FLOAT)
@@ -55,6 +56,7 @@ static bool finite_value(NumericValue value) {
     return true;
 }
 static bool zero_value(NumericValue value) {
+    if (value.type == IR_F16) return (value.bits & 0x7fffu) == 0u;
     if (value.type == IR_F32) return (value.bits & UINT64_C(0x7fffffff)) == 0u;
     if (value.type == IR_ABSTRACT_FLOAT)
         return (value.bits & UINT64_C(0x7fffffffffffffff)) == 0u;
@@ -71,6 +73,7 @@ static bool checked_float(Source *source, size_t offset, NumericValue value,
 /* Inputs have one checked numeric type and finite payloads. Strict comparison
  * selects the right operand on equality, preserving its signed-zero bits. */
 static bool numeric_less(NumericValue left, NumericValue right) {
+    if (left.type == IR_F16) return numeric_half_value(left.bits) < numeric_half_value(right.bits);
     if (left.type == IR_F32) return float_value(left.bits) < float_value(right.bits);
     if (left.type == IR_ABSTRACT_FLOAT) return double_value(left.bits) < double_value(right.bits);
     if (left.type == IR_U32) return left.bits < right.bits;
@@ -89,6 +92,16 @@ bool numeric_builtin(Source *source, size_t offset, const NumericBuiltin *signat
                      const NumericValue *arguments, NumericValue *result) {
     if (signature == NULL)
         return numeric_error(source, offset, "invalid scalar builtin identity");
+    if (arguments[0].type == IR_F16) {
+        NumericValue widened[3], answer;
+        if (signature->arity > 3u) return numeric_error(source, offset, "invalid f16 builtin arity");
+        for (uint32_t i = 0u; i < signature->arity; ++i) {
+            if (arguments[i].type != IR_F16) return numeric_error(source, offset, "builtin operands have different types");
+            widened[i] = (NumericValue){double_bits(numeric_half_value(arguments[i].bits)), IR_ABSTRACT_FLOAT};
+        }
+        return numeric_builtin(source, offset, signature, widened, &answer) &&
+            numeric_half_pack(source, offset, double_value(answer.bits), result);
+    }
     const NumericBuiltinKind kind = signature->kind;
     const IrType type = arguments[0].type;
     if (!floating_type(type) && ((signature->family == BUILTIN_COMPONENT_FLOAT || signature->family == BUILTIN_FLOAT_MIX) || !integer_type(type)))
@@ -386,10 +399,10 @@ static bool literal_capacity(Source *source, size_t offset) {
 static bool rational_float(Source *source, size_t offset, LiteralInteger numerator,
                            LiteralInteger denominator, IrType type, bool exact,
                            NumericValue *result) {
-    const unsigned precision = type == IR_F32 ? 24u : 53u;
-    const int minimum = type == IR_F32 ? -126 : -1022;
-    const int maximum = type == IR_F32 ? 127 : 1023;
-    const unsigned exponent_bias = type == IR_F32 ? 127u : 1023u;
+    const unsigned precision = type == IR_F16 ? 11u : type == IR_F32 ? 24u : 53u;
+    const int minimum = type == IR_F16 ? -14 : type == IR_F32 ? -126 : -1022;
+    const int maximum = type == IR_F16 ? 15 : type == IR_F32 ? 127 : 1023;
+    const unsigned exponent_bias = type == IR_F16 ? 15u : type == IR_F32 ? 127u : 1023u;
     int exponent = (int)big_width(&numerator) - (int)big_width(&denominator);
     LiteralInteger comparison;
     if (exponent >= 0) {
@@ -534,9 +547,11 @@ bool numeric_parse_literal(Source *source, NameSpan literal, NumericValue *resul
         (hex && suffix != '\0' && !exponent_present) ||
         (!hex && !point && !exponent_present && digits.digits > 1u && text[0] == '0'))
         return malformed_literal(source, offset);
-    if (suffix == 'h')
-        return source_error(source, DOE_COMPILER_UNSUPPORTED, offset, "f16 literals are unsupported");
-    const IrType type = suffix == 'f' ? IR_F32 : IR_ABSTRACT_FLOAT;
+    if (suffix == 'h' && source->compiler == NULL)
+        return source_error(source, DOE_COMPILER_UNSUPPORTED, offset, "f16 literals require a module feature context");
+    if (suffix == 'h' && (source->compiler->module_flags & MODULE_F16) == 0u)
+        return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, offset, "f16 requires enable f16");
+    const IrType type = suffix == 'h' ? IR_F16 : suffix == 'f' ? IR_F32 : IR_ABSTRACT_FLOAT;
     if (!digits.nonzero) {
         *result = (NumericValue){ .bits = 0u, .type = type };
         return true;
@@ -545,7 +560,7 @@ bool numeric_parse_literal(Source *source, NameSpan literal, NumericValue *resul
     if (exponent > (hex ? 1024 : 310))
         return numeric_error(source, offset, "floating-point literal is outside its finite range");
     if (exponent < (hex ? -1200 : -400)) {
-        if (hex && type == IR_F32)
+        if (hex && (type == IR_F32 || type == IR_F16))
             return numeric_error(source, offset, "hexadecimal f32 literal is not exactly representable");
         *result = (NumericValue){ .bits = 0u, .type = type };
         return true;
@@ -563,7 +578,7 @@ bool numeric_parse_literal(Source *source, NameSpan literal, NumericValue *resul
                 return literal_capacity(source, offset);
     }
     return rational_float(source, offset, digits.significand, denominator,
-                          type, hex && type == IR_F32, result);
+                          type, hex && (type == IR_F32 || type == IR_F16), result);
 }
 
 bool numeric_convert(Source *source, size_t offset, NumericValue input,
@@ -571,6 +586,15 @@ bool numeric_convert(Source *source, size_t offset, NumericValue input,
     if (!finite_value(input))
         return numeric_error(source, offset, "cannot convert a nonfinite evaluated constant");
     if (input.type == target) { *result = input; return true; }
+    if (input.type == IR_F16) {
+        input = (NumericValue){double_bits(numeric_half_value(input.bits)), IR_ABSTRACT_FLOAT};
+    }
+    if (target == IR_F16) {
+        const double value = input.type == IR_F32 ? (double)float_value(input.bits) :
+            input.type == IR_ABSTRACT_FLOAT ? double_value(input.bits) :
+            input.type == IR_U32 || input.type == IR_BOOL ? (double)input.bits : (double)signed_value(input);
+        return numeric_half_pack(source, offset, value, result);
+    }
     NumericValue converted = { .bits = 0u, .type = target };
     if (target == IR_BOOL) {
         converted.bits = zero_value(input) ? 0u : 1u;
@@ -638,8 +662,8 @@ bool numeric_materialize(Source *source, size_t offset, NumericValue input,
                          IrType target, NumericValue *result) {
     if (input.type == target) return checked_float(source, offset, input, result);
     if ((input.type == IR_ABSTRACT_INT &&
-         (target == IR_U32 || target == IR_I32 || target == IR_F32 || target == IR_ABSTRACT_FLOAT)) ||
-        (input.type == IR_ABSTRACT_FLOAT && target == IR_F32))
+         (target == IR_U32 || target == IR_I32 || target == IR_F16 || target == IR_F32 || target == IR_ABSTRACT_FLOAT)) ||
+        (input.type == IR_ABSTRACT_FLOAT && (target == IR_F32 || target == IR_F16)))
         return numeric_convert(source, offset, input, target, result);
     return numeric_error(source, offset, "no feasible automatic scalar conversion");
 }
@@ -654,7 +678,7 @@ bool numeric_override(Source *source, size_t offset, double input,
         const double maximum = target == IR_I32 ? 2147483647.0 : 4294967295.0;
         if (input < minimum || input > maximum || trunc(input) != input)
             return numeric_error(source, offset, "pipeline integer override is fractional or out of range");
-    } else if (target != IR_BOOL && target != IR_F32)
+    } else if (target != IR_BOOL && target != IR_F32 && target != IR_F16)
         return numeric_error(source, offset, "pipeline override requires an admitted concrete scalar type");
     return numeric_convert(source, offset, value, target, result);
 }
@@ -681,6 +705,7 @@ bool numeric_unary(Source *source, size_t offset, ExpressionKind operation,
     else if (operation == EXPRESSION_NEGATE) {
         if (input.type == IR_I32 || input.type == IR_ABSTRACT_INT)
             value.bits = (UINT64_C(0) - input.bits) & integer_mask(input.type);
+        else if (input.type == IR_F16) value.bits ^= UINT64_C(0x8000);
         else if (input.type == IR_F32) value.bits ^= UINT64_C(0x80000000);
         else if (input.type == IR_ABSTRACT_FLOAT) value.bits ^= UINT64_C(0x8000000000000000);
         else return numeric_error(source, offset, "unary negation requires a signed numeric scalar");
@@ -791,6 +816,14 @@ bool numeric_binary(Source *source, size_t offset, ExpressionKind operation,
                     NumericValue *result) {
     if (!finite_value(left) || !finite_value(right))
         return numeric_error(source, offset, "binary operand is a nonfinite evaluated constant");
+    if (left.type == IR_F16 && right.type == IR_F16) {
+        NumericValue answer;
+        const NumericValue a = {double_bits(numeric_half_value(left.bits)), IR_ABSTRACT_FLOAT};
+        const NumericValue b = {double_bits(numeric_half_value(right.bits)), IR_ABSTRACT_FLOAT};
+        if (!numeric_binary(source, offset, operation, comparison, a, b, &answer)) return false;
+        if (answer.type == IR_BOOL) { *result = answer; return true; }
+        return numeric_half_pack(source, offset, double_value(answer.bits), result);
+    }
     if (operation == EXPRESSION_MAX) {
         if (left.type != right.type || (!integer_type(left.type) && !floating_type(left.type)))
             return numeric_error(source, offset, "max operands have no common numeric type");

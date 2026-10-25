@@ -18,17 +18,17 @@ bool source_span_is(const Source *s, NameSpan a, const char *text) {
     return a.length == strlen(text) && memcmp(s->source+a.offset, text, a.length) == 0;
 }
 TypeId type_leaf(const CompilerWorkspace *c, TypeId id) {
-    if (id<7u) return id;
-    const TypeRecord *t = &c->types[id-7u];
+    if (id<IR_PRIMITIVE_COUNT) return id;
+    const TypeRecord *t = &c->types[id-IR_PRIMITIVE_COUNT];
     return t->kind == TYPE_VECTOR ? t->element : IR_VOID;
 }
 uint32_t type_vector_width(const CompilerWorkspace *c, TypeId id) {
-    return id >= 7u && c->types[id - 7u].kind == TYPE_VECTOR ? c->types[id - 7u].count : 1u;
+    return id >= IR_PRIMITIVE_COUNT && c->types[id - IR_PRIMITIVE_COUNT].kind == TYPE_VECTOR ? c->types[id - IR_PRIMITIVE_COUNT].count : 1u;
 }
 uint32_t type_flags(const CompilerWorkspace *c, TypeId id) {
-    if (id >= 7u) return c->types[id-7u].flags;
+    if (id >= IR_PRIMITIVE_COUNT) return c->types[id-IR_PRIMITIVE_COUNT].flags;
     if (id == IR_VOID) return TYPE_RESOLVED;
-    if (id >= IR_ABSTRACT_INT) return TYPE_CONSTRUCTIBLE|TYPE_ABSTRACT|TYPE_RESOLVED;
+    if (id == IR_ABSTRACT_INT || id == IR_ABSTRACT_FLOAT) return TYPE_CONSTRUCTIBLE|TYPE_ABSTRACT|TYPE_RESOLVED;
     return TYPE_CONSTRUCTIBLE|TYPE_FIXED|TYPE_RESOLVED|(id == IR_BOOL?0u:TYPE_HOST|TYPE_UNIFORM);
 }
 bool type_abstract(const CompilerWorkspace *c, TypeId id) {
@@ -38,16 +38,16 @@ bool type_constructible(const CompilerWorkspace *c, TypeId id) {
     return (type_flags(c, id)&TYPE_CONSTRUCTIBLE) != 0u;
 }
 uint64_t type_size(const CompilerWorkspace *c, TypeId id) {
-    return id<7u?4u:c->types[id-7u].state.layout.size;
+    return id<IR_PRIMITIVE_COUNT?(id == IR_F16 ? 2u : 4u):c->types[id-IR_PRIMITIVE_COUNT].state.layout.size;
 }
 uint64_t type_alignment(const CompilerWorkspace *c, TypeId id) {
-    return id<7u?4u:c->types[id-7u].state.layout.alignment;
+    return id<IR_PRIMITIVE_COUNT?(id == IR_F16 ? 2u : 4u):c->types[id-IR_PRIMITIVE_COUNT].state.layout.alignment;
 }
 uint32_t type_children(const CompilerWorkspace *c, TypeId id) {
-    return id<7u?0u:c->types[id-7u].count;
+    return id<IR_PRIMITIVE_COUNT?0u:c->types[id-IR_PRIMITIVE_COUNT].count;
 }
 TypeId type_child(const CompilerWorkspace *c, TypeId id, uint32_t index) {
-    const TypeRecord *t = &c->types[id-7u];
+    const TypeRecord *t = &c->types[id-IR_PRIMITIVE_COUNT];
     return t->kind == TYPE_STRUCT?c->members[t->element+index].type:
         t->kind == TYPE_ATOMIC_RESULT && index == 1u ? IR_BOOL : t->element;
 }
@@ -59,19 +59,19 @@ static bool round_up(Source *s, uint64_t value, uint64_t alignment, uint32_t off
 }
 static uint64_t required_alignment(const CompilerWorkspace *c, TypeId id) {
     uint64_t a = type_alignment(c, id);
-    if (id >= 7u && c->types[id-7u].kind != TYPE_VECTOR && c->types[id-7u].kind != TYPE_MATRIX && a<16u) a = 16u;
+    if (id >= IR_PRIMITIVE_COUNT && c->types[id-IR_PRIMITIVE_COUNT].kind != TYPE_VECTOR && c->types[id-IR_PRIMITIVE_COUNT].kind != TYPE_MATRIX && a<16u) a = 16u;
     return a;
 }
 static bool type_matrix_intern_valid(const CompilerWorkspace *c, TypeId column, uint32_t count) {
-    if (column < 7u || count < 2u || count > 4u) return false;
-    const TypeRecord *vector = &c->types[column - 7u];
-    return vector->kind == TYPE_VECTOR && (vector->element == IR_F32 || vector->element == IR_ABSTRACT_FLOAT);
+    if (column < IR_PRIMITIVE_COUNT || count < 2u || count > 4u) return false;
+    const TypeRecord *vector = &c->types[column - IR_PRIMITIVE_COUNT];
+    return vector->kind == TYPE_VECTOR && (vector->element == IR_F16 || vector->element == IR_F32 || vector->element == IR_ABSTRACT_FLOAT);
 }
 bool type_pointer(const CompilerWorkspace *c, TypeId type) {
-    return type >= 7u && c->types[type - 7u].kind == TYPE_POINTER;
+    return type >= IR_PRIMITIVE_COUNT && c->types[type - IR_PRIMITIVE_COUNT].kind == TYPE_POINTER;
 }
 bool type_matrix(const CompilerWorkspace *c, TypeId type) {
-    return type >= 7u && c->types[type - 7u].kind == TYPE_MATRIX;
+    return type >= IR_PRIMITIVE_COUNT && c->types[type - IR_PRIMITIVE_COUNT].kind == TYPE_MATRIX;
 }
 bool type_matrix_name(const Source *s, NameSpan name, uint32_t *columns, uint32_t *rows) {
     if (name.length != 6u && name.length != 7u) return false;
@@ -92,7 +92,7 @@ bool type_intern(Source *s, uint32_t kind, TypeId element, uint32_t count, TypeI
     for (uint32_t i = 0u;i<c->type_count;++i) {
         const TypeRecord *t = &c->types[i];
         if (t->kind == kind && t->element == element && t->count == count && kind != TYPE_STRUCT) {
-            *out = i+7u;
+            *out = i+IR_PRIMITIVE_COUNT;
             return true;
         }
     }
@@ -117,11 +117,11 @@ bool type_intern(Source *s, uint32_t kind, TypeId element, uint32_t count, TypeI
     }
     else
     if (kind == TYPE_VECTOR) {
-        if (element == IR_VOID || element >= 7u || count<2u || count>4u)
+        if (element == IR_VOID || element >= IR_PRIMITIVE_COUNT || count<2u || count>4u)
             return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, s->length, "vector requires scalar element and width two through four");
         t.flags|=flags&(TYPE_CONSTRUCTIBLE|TYPE_HOST|TYPE_FIXED|TYPE_ABSTRACT|TYPE_UNIFORM);
-        t.state.layout.size = 4u*count;
-        t.state.layout.alignment = count == 2u?8u:16u;
+        t.state.layout.size = type_size(c, element)*count;
+        t.state.layout.alignment = type_alignment(c, element)*(count == 2u?2u:4u);
     }
     else {
         t.flags|=flags&(TYPE_HOST|TYPE_ABSTRACT|TYPE_ATOMIC_CONTENT);
@@ -141,13 +141,13 @@ bool type_intern(Source *s, uint32_t kind, TypeId element, uint32_t count, TypeI
         }
         else t.flags|=TYPE_TAIL;
     }
-    *out = c->type_count+7u;
+    *out = c->type_count+IR_PRIMITIVE_COUNT;
     c->types[c->type_count++] = t;
     return true;
 }
 bool type_layout_struct(Source *s, TypeId id) {
     CompilerWorkspace *c = s->compiler;
-    TypeRecord *t = &c->types[id-7u];
+    TypeRecord *t = &c->types[id-IR_PRIMITIVE_COUNT];
     uint64_t end = 0u, alignment = 1u;
     uint32_t flags = TYPE_CONSTRUCTIBLE|TYPE_HOST|TYPE_FIXED|TYPE_UNIFORM|TYPE_RESOLVED;
     for (uint32_t i = 0u;i<t->count;++i) {
@@ -158,7 +158,7 @@ bool type_layout_struct(Source *s, TypeId id) {
                                 "structure members require creation-fixed footprints");
         if ((child_flags&TYPE_ABSTRACT) != 0u || m->type == IR_VOID || type_handle(c, m->type) || type_pointer(c, m->type))
             return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, m->name.offset, "struct member type must be concrete");
-        const bool tail = m->type >= 7u && c->types[m->type-7u].kind == TYPE_RUNTIME_ARRAY;
+        const bool tail = m->type >= IR_PRIMITIVE_COUNT && c->types[m->type-IR_PRIMITIVE_COUNT].kind == TYPE_RUNTIME_ARRAY;
         if ((child_flags&TYPE_TAIL) != 0u && (!tail || i+1u != t->count))
             return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, m->name.offset, "runtime array must be the direct last struct member");
         m->alignment = type_alignment(c, m->type);
@@ -188,7 +188,7 @@ bool type_layout_struct(Source *s, TypeId id) {
         }
         if (i != 0u) {
             const MemberRecord *previous = &c->members[t->element+i-1u];
-            if (previous->type >= 7u && c->types[previous->type-7u].kind == TYPE_STRUCT) {
+            if (previous->type >= IR_PRIMITIVE_COUNT && c->types[previous->type-IR_PRIMITIVE_COUNT].kind == TYPE_STRUCT) {
                 uint64_t spacing = 0u;
                 if (!round_up(s, type_size(c, previous->type), 16u, previous->name.offset, &spacing)) return false;
                 if (m->offset-previous->offset<spacing) flags&=~(uint32_t)TYPE_UNIFORM;
@@ -212,7 +212,7 @@ bool type_resource_layout(Source *s, ResourceRecord *r) {
             "atomic resource types require storage read_write access");
     if (type_handle(c, r->type)) {
         if (r->kind != 0u) return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, r->name.offset, "handle requires implicit handle address space");
-        const TypeRecord *t = &c->types[r->type - 7u];
+        const TypeRecord *t = &c->types[r->type - IR_PRIMITIVE_COUNT];
         r->kind = t->kind == TYPE_SAMPLER ? DOE_COMPILER_SAMPLER :
             t->state.image.format != 0u ? DOE_COMPILER_STORAGE_TEXTURE : DOE_COMPILER_SAMPLED_TEXTURE;
         r->access = t->kind == TYPE_SAMPLER ? DOE_COMPILER_READ : t->state.image.access;
@@ -229,7 +229,7 @@ bool type_resource_layout(Source *s, ResourceRecord *r) {
     r->minimum = type_size(c, r->type);
     r->tail_type = NO_ID;
     if ((flags&TYPE_TAIL) != 0u) {
-        const TypeRecord *t = &c->types[r->type-7u];
+        const TypeRecord *t = &c->types[r->type-IR_PRIMITIVE_COUNT];
         r->flags = DOE_COMPILER_RESOURCE_RUNTIME_TAIL;
         if (t->kind == TYPE_RUNTIME_ARRAY) {
             r->tail_type = r->type;
@@ -240,7 +240,7 @@ bool type_resource_layout(Source *s, ResourceRecord *r) {
             r->tail_type = m->type;
             r->tail_offset = m->offset;
         }
-        r->tail_stride = c->types[r->tail_type-7u].state.layout.stride;
+        r->tail_stride = c->types[r->tail_type-IR_PRIMITIVE_COUNT].state.layout.stride;
         if (r->tail_offset>UINT64_MAX-r->tail_stride)
             return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, r->name.offset, "runtime tail minimum binding size overflows uint64");
         if (!round_up(s, r->tail_offset+r->tail_stride, r->alignment, r->name.offset, &r->minimum)) return false;

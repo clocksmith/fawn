@@ -101,8 +101,8 @@ bool spirv_stage_inputs(Emitter *e, uint32_t index) {
     for (uint32_t p = 0u; p < entry->formal_count; ++p) {
         const uint32_t formal = entry->formal_first + p;
         const TypeId type = c->formals[formal].type.resolved.type;
-        const bool structure = type >= 7u && c->types[type - 7u].kind == TYPE_STRUCT;
-        const uint32_t count = structure ? c->types[type - 7u].count : 1u;
+        const bool structure = type >= IR_PRIMITIVE_COUNT && c->types[type - IR_PRIMITIVE_COUNT].kind == TYPE_STRUCT;
+        const uint32_t count = structure ? c->types[type - IR_PRIMITIVE_COUNT].count : 1u;
         const uint32_t first = spirv_reserve_ids(e, count);
         for (uint32_t j = 0u; j < count; ++j)
             if (!load_leaf(e, &stages->interfaces[cursor++], first + j)) return false;

@@ -719,3 +719,9 @@ effects and storage snapshots. `test_component_math.py` independently checks
 const vector2/3/4 values, runtime instruction operands, overload rejection and
 shadowing. SDK compilation and CPU Vulkan controls remain developer evidence;
 they do not qualify physical execution or close f16/full-language migration.
+
+## Binary16 developer surface
+
+See [binary16 semantics, focused checks and remaining gates](F16.md) for the
+shared native C f16 path. Native-device admission remains feature-scoped; target
+validation does not establish physical backend qualification.

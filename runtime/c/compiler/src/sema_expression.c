@@ -52,7 +52,7 @@ static bool shaped_type(Source *s, TypeId leaf, uint32_t n, TypeId *out) {
 }
 bool sema_constant_lane(Source *s, ConstantValue value, uint32_t index, NumericValue *out) {
     ConstantValue v = value;
-    if (value.type >= 7u && !constant_project(s, value, index, &v)) return false;
+    if (value.type >= IR_PRIMITIVE_COUNT && !constant_project(s, value, index, &v)) return false;
     *out = (NumericValue){v.bits, (IrType)v.type};
     return true;
 }
@@ -188,7 +188,7 @@ bool sema_reference_load(Source *s, ValueReference ref, uint32_t offset, bool em
             uint32_t first = ref.path;
             while (c->accesses[first].parent != NO_ID) first = c->accesses[first].parent;
             const TypeId root_type = c->accesses[first].input_type;
-            if (root_type >= 7u && c->types[root_type-7u].kind != TYPE_VECTOR) {
+            if (root_type >= IR_PRIMITIVE_COUNT && c->types[root_type-IR_PRIMITIVE_COUNT].kind != TYPE_VECTOR) {
                 if ((uint64_t)c->local_count >= (uint64_t)c->limits.statements+1u+c->limits.accesses)
                     return source_pool_error(s, DOE_COMPILER_POOL_ACCESS_STEPS, (size_t)c->access_count+1u, offset, "generated local capacity exceeded");
                 instruction.operands.access.value = c->local_count;
@@ -206,7 +206,7 @@ static inline bool dereference(Source *s, const Expression *node, const LocalSco
     if (!type_pointer(s->compiler, pointer.constant.type))
         return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, node->source_offset, "dereference requires a pointer value");
     *out = (ValueReference){pointer.pointer.root, pointer.pointer.path, pointer.pointer.category,
-        s->compiler->types[pointer.pointer.type - 7u].element, true, true};
+        s->compiler->types[pointer.pointer.type - IR_PRIMITIVE_COUNT].element, true, true};
     return true;
 }
 static bool access_base(Source *s, const Expression *node, const LocalScope *scope, bool evaluate, bool emit, ValueReference *ref, ExpressionValue *value, bool *reference, SourceReference *slot) {
@@ -265,8 +265,8 @@ static bool postfix_value(Source *s, const Expression *node, const LocalScope *s
     uint32_t kind = ACCESS_MEMBER, index = 0u;
     if (node->kind == EXPRESSION_MEMBER) {
         const NameSpan member = node->value.member.member;
-        if (input<7u) return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, member.offset, "scalar value has no member");
-        const TypeRecord *type = &c->types[input-7u];
+        if (input<IR_PRIMITIVE_COUNT) return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, member.offset, "scalar value has no member");
+        const TypeRecord *type = &c->types[input-IR_PRIMITIVE_COUNT];
         if (type->kind == TYPE_ATOMIC_RESULT) {
             if (source_span_is(s, member, "old_value")) index = 0u;
             else if (source_span_is(s, member, "exchanged")) index = 1u;
@@ -294,7 +294,7 @@ static bool postfix_value(Source *s, const Expression *node, const LocalScope *s
         else return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, member.offset, "array value has no named member");
     }
     else {
-        if (input<7u || (c->types[input-7u].kind != TYPE_ARRAY && c->types[input-7u].kind != TYPE_RUNTIME_ARRAY && c->types[input-7u].kind != TYPE_VECTOR && c->types[input-7u].kind != TYPE_MATRIX))
+        if (input<IR_PRIMITIVE_COUNT || (c->types[input-IR_PRIMITIVE_COUNT].kind != TYPE_ARRAY && c->types[input-IR_PRIMITIVE_COUNT].kind != TYPE_RUNTIME_ARRAY && c->types[input-IR_PRIMITIVE_COUNT].kind != TYPE_VECTOR && c->types[input-IR_PRIMITIVE_COUNT].kind != TYPE_MATRIX))
             return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, node->source_offset, "index requires vector, matrix or array");
         ExpressionValue ix;
         if (!sema_expression(s, node->value.reference.index, scope, evaluate, emit, &ix) || (ix.constant.type == IR_ABSTRACT_INT && !sema_materialize(s, &ix, IR_I32))) return false;
@@ -302,7 +302,7 @@ static bool postfix_value(Source *s, const Expression *node, const LocalScope *s
         if (!ix.runtime && !ix.known) {
             if (!sema_expression(s, node->value.reference.index, scope, true, false, &ix) || (ix.constant.type == IR_ABSTRACT_INT && !sema_materialize(s, &ix, IR_I32))) return false;
         }
-        const TypeRecord *t = &c->types[input-7u];
+        const TypeRecord *t = &c->types[input-IR_PRIMITIVE_COUNT];
         output = t->element;
         if (!is_ref && !base.runtime && !ix.runtime && !ix.known) {
             *reference = false;
@@ -327,7 +327,7 @@ static bool postfix_value(Source *s, const Expression *node, const LocalScope *s
             TypeId concrete;
             if (!sema_default_type(s, input, node->source_offset, &concrete) || !sema_materialize(s, &base, concrete)) return false;
             input = concrete;
-            output = c->types[input-7u].element;
+            output = c->types[input-IR_PRIMITIVE_COUNT].element;
         }
         if (!sema_ensure_value(s, &ix, emit)) return false;
         kind = ix.constant.type == IR_I32?ACCESS_INDEX_I32:ACCESS_INDEX_U32;
@@ -349,7 +349,7 @@ static bool postfix_value(Source *s, const Expression *node, const LocalScope *s
         c->accesses[c->access_count] = (AccessStep){ref->path, node->source_offset, input, output, kind, index};
         ref->path = c->access_count++;
     }
-    if (input >= 7u && c->types[input - 7u].kind == TYPE_VECTOR) ref->addressable = false;
+    if (input >= IR_PRIMITIVE_COUNT && c->types[input - IR_PRIMITIVE_COUNT].kind == TYPE_VECTOR) ref->addressable = false;
     ref->type = output;
     *reference = true;
     return true;

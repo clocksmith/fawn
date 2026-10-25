@@ -19,10 +19,10 @@ bool metal_resource_table(MetalEmitter *e, const ResourceRecord *r, uint32_t *ta
             break;
         default: metal_error(e, "Metal resource kind has no implemented lowering"); return false;
     }
-    if (r->type < 7u || r->type - 7u >= e->module->type_count || !type_handle(e->module, r->type)) {
+    if (r->type < IR_PRIMITIVE_COUNT || r->type - IR_PRIMITIVE_COUNT >= e->module->type_count || !type_handle(e->module, r->type)) {
         metal_error(e, "Metal image resource has no handle type"); return false;
     }
-    const TypeRecord *type = &e->module->types[r->type - 7u];
+    const TypeRecord *type = &e->module->types[r->type - IR_PRIMITIVE_COUNT];
     const uint32_t kind = type->kind == TYPE_SAMPLER ? DOE_COMPILER_SAMPLER :
         type->state.image.format == 0u ? DOE_COMPILER_SAMPLED_TEXTURE : DOE_COMPILER_STORAGE_TEXTURE;
     if (kind != r->kind) { metal_error(e, "Metal image resource kind differs from its handle type"); return false; }

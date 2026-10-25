@@ -4,12 +4,12 @@
 #include "private.h"
 
 void metal_zero(MetalEmitter *e, TypeId type) {
-    if (type >= 7u && type - 7u >= e->module->type_count) {
+    if (type >= IR_PRIMITIVE_COUNT && type - IR_PRIMITIVE_COUNT >= e->module->type_count) {
         metal_error(e, "Metal zero type identity is invalid");
         return;
     }
-    if (type >= 7u) {
-        const TypeRecord *t = &e->module->types[type - 7u];
+    if (type >= IR_PRIMITIVE_COUNT) {
+        const TypeRecord *t = &e->module->types[type - IR_PRIMITIVE_COUNT];
         if (t->kind == TYPE_ARRAY || t->kind == TYPE_STRUCT) {
             metal_format(e, "doe_zero%u()", type);
             return;
@@ -57,13 +57,13 @@ void metal_zero_helpers(MetalEmitter *e) {
             const TypeRecord *t = &c->types[i];
             if ((t->kind != TYPE_ARRAY && t->kind != TYPE_STRUCT) ||
                 (t->flags & TYPE_CONSTRUCTIBLE) == 0u || (t->flags & TYPE_ABSTRACT) != 0u ||
-                !zero_used(e, i + 7u)) continue;
+                !zero_used(e, i + IR_PRIMITIVE_COUNT)) continue;
             metal_text(e, "inline ");
-            metal_type(e, i + 7u);
-            metal_format(e, " doe_zero%u()", i + 7u);
+            metal_type(e, i + IR_PRIMITIVE_COUNT);
+            metal_format(e, " doe_zero%u()", i + IR_PRIMITIVE_COUNT);
             if (pass == 0u) { metal_text(e, ";\n"); continue; }
             metal_text(e, " {\n    ");
-            metal_type(e, i + 7u);
+            metal_type(e, i + IR_PRIMITIVE_COUNT);
             metal_text(e, " value;\n");
             if (t->kind == TYPE_ARRAY) {
                 metal_format(e, "    for (uint i = 0u; i < %uu; ++i) value[i] = ", t->count);
@@ -106,7 +106,7 @@ void metal_workgroup_zero_helpers(MetalEmitter *e) {
     for (unsigned pass = 0u; pass < 2u; ++pass) {
         for (uint32_t i = 0u; i < c->type_count && !e->failed; ++i) {
             const TypeRecord *t = &c->types[i];
-            const TypeId type = i + 7u;
+            const TypeId type = i + IR_PRIMITIVE_COUNT;
             if ((t->flags & (TYPE_ATOMIC_CONTENT | TYPE_FIXED)) != (TYPE_ATOMIC_CONTENT | TYPE_FIXED) ||
                 !workgroup_zero_used(e, type)) continue;
             metal_format(e, "inline void doe_wzero%u(threadgroup ", type);

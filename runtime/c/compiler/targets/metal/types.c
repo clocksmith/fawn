@@ -5,19 +5,19 @@
 #include <inttypes.h>
 
 static const TypeRecord *aggregate(MetalEmitter *e, TypeId type) {
-    if (type < 7u || type - 7u >= e->module->type_count) {
+    if (type < IR_PRIMITIVE_COUNT || type - IR_PRIMITIVE_COUNT >= e->module->type_count) {
         metal_error(e, "Metal aggregate type identity is out of range");
         return NULL;
     }
-    return &e->module->types[type - 7u];
+    return &e->module->types[type - IR_PRIMITIVE_COUNT];
 }
 static void type_name(MetalEmitter *e, TypeId type, unsigned depth) {
-    static const char *const scalars[] = {"void", "bool", "int", "uint", "float"};
+    static const char *const scalars[] = {"void", "bool", "int", "uint", "float", "", "", "half"};
     if (depth > DOE_METAL_MAX_DEPTH) {
         metal_error(e, "Metal type nesting exceeds target traversal budget");
         return;
     }
-    if (type <= IR_F32) {
+    if (type <= IR_F32 || type == IR_F16) {
         metal_text(e, scalars[type]);
         return;
     }
@@ -41,7 +41,7 @@ static void type_name(MetalEmitter *e, TypeId type, unsigned depth) {
     }
     switch (t->kind) {
         case TYPE_VECTOR:
-            if (t->element < IR_BOOL || t->element > IR_F32 || t->count < 2u || t->count > 4u) {
+            if (t->element < IR_BOOL || (t->element > IR_F32 && t->element != IR_F16) || t->count < 2u || t->count > 4u) {
                 metal_error(e, "Metal vector shape is invalid");
                 return;
             }
@@ -50,11 +50,11 @@ static void type_name(MetalEmitter *e, TypeId type, unsigned depth) {
         case TYPE_MATRIX: {
             const uint32_t rows = type_vector_width(e->module, t->element);
             if (t->count < 2u || t->count > 4u || rows < 2u || rows > 4u ||
-                type_leaf(e->module, t->element) != IR_F32) {
+                (type_leaf(e->module, t->element) != IR_F32 && type_leaf(e->module, t->element) != IR_F16)) {
                 metal_error(e, "Metal matrix shape is invalid");
                 return;
             }
-            metal_format(e, "float%ux%u", t->count, rows);
+            metal_format(e, "%s%ux%u", scalars[type_leaf(e->module, t->element)], t->count, rows);
             break;
         }
         case TYPE_ARRAY:
@@ -90,16 +90,16 @@ void metal_types(MetalEmitter *e) {
                 ((t->flags & TYPE_ATOMIC_CONTENT) != 0u && (t->flags & TYPE_FIXED) == 0u)) continue;
             unsigned d;
             if (t->kind == TYPE_ATOMIC_RESULT) d = 1u;
-            else if (!target_type_depth(c, &e->closure, i + 7u, &d, &e->traversal_left, &error)) {
+            else if (!target_type_depth(c, &e->closure, i + IR_PRIMITIVE_COUNT, &d, &e->traversal_left, &error)) {
                 metal_error(e, error);
                 return;
             }
             if (d > depth) pending = true;
             if (d != depth) continue;
-            metal_format(e, "struct DoeT%u {\n", i + 7u);
+            metal_format(e, "struct DoeT%u {\n", i + IR_PRIMITIVE_COUNT);
             for (uint32_t j = 0u; j < t->count; ++j) {
                 metal_text(e, "    ");
-                metal_type(e, type_child(c, i + 7u, j));
+                metal_type(e, type_child(c, i + IR_PRIMITIVE_COUNT, j));
                 metal_format(e, " m%u;\n", j);
             }
             metal_text(e, "};\n");
@@ -117,6 +117,7 @@ void metal_constant(MetalEmitter *e, TypeId type, uint64_t bits, bool composite,
             case IR_BOOL: metal_text(e, bits == 0u ? "false" : "true"); break;
             case IR_U32: metal_format(e, "0x%08" PRIx32 "u", (uint32_t)bits); break;
             case IR_I32: metal_format(e, "as_type<int>(0x%08" PRIx32 "u)", (uint32_t)bits); break;
+            case IR_F16: metal_format(e, "as_type<half>(ushort(0x%04" PRIx32 "u))", (uint32_t)bits); break;
             case IR_F32: metal_format(e, "as_type<float>(0x%08" PRIx32 "u)", (uint32_t)bits); break;
             default: metal_error(e, "Metal scalar constant has unsupported type"); break;
         }
@@ -150,8 +151,8 @@ void metal_constant(MetalEmitter *e, TypeId type, uint64_t bits, bool composite,
     metal_text(e, matrix ? ")" : "}");
 }
 static bool memory_type(const CompilerWorkspace *c, TypeId type) {
-    return (type >= IR_I32 && type <= IR_F32) ||
-        (type >= 7u && (c->types[type - 7u].flags & (TYPE_HOST | TYPE_FIXED)) == (TYPE_HOST | TYPE_FIXED));
+    return ((type >= IR_I32 && type <= IR_F32) || type == IR_F16) ||
+        (type >= IR_PRIMITIVE_COUNT && (c->types[type - IR_PRIMITIVE_COUNT].flags & (TYPE_HOST | TYPE_FIXED)) == (TYPE_HOST | TYPE_FIXED));
 }
 static void memory_signature(MetalEmitter *e, TypeId type, unsigned mode) {
     metal_text(e, "inline ");
@@ -175,7 +176,7 @@ static void memory_array_child(MetalEmitter *e, TypeId child, unsigned mode, uin
     }
 }
 static void memory_body(MetalEmitter *e, TypeId type, unsigned mode) {
-    const TypeRecord *t = type >= 7u ? &e->module->types[type - 7u] : NULL;
+    const TypeRecord *t = type >= IR_PRIMITIVE_COUNT ? &e->module->types[type - IR_PRIMITIVE_COUNT] : NULL;
     memory_signature(e, type, mode);
     metal_text(e, " {\n");
     if (t == NULL || t->kind == TYPE_VECTOR) {
@@ -234,7 +235,7 @@ static bool memory_helper_used(MetalEmitter *e, TypeId type, unsigned mode) {
 }
 void metal_memory_helpers(MetalEmitter *e) {
     for (unsigned pass = 0u; pass < 2u; ++pass) {
-        for (TypeId type = IR_I32; type < 7u + e->module->type_count && !e->failed; ++type) {
+        for (TypeId type = IR_I32; type < IR_PRIMITIVE_COUNT + e->module->type_count && !e->failed; ++type) {
             if (!memory_type(e->module, type)) continue;
             for (unsigned mode = 0u; mode < 3u; ++mode) {
                 if (!memory_helper_used(e, type, mode)) continue;
@@ -261,7 +262,7 @@ static void workgroup_signature(MetalEmitter *e, TypeId type, bool store) {
     metal_text(e, ")");
 }
 static void workgroup_body(MetalEmitter *e, TypeId type, bool store) {
-    const TypeRecord *t = type >= 7u ? &e->module->types[type - 7u] : NULL;
+    const TypeRecord *t = type >= IR_PRIMITIVE_COUNT ? &e->module->types[type - IR_PRIMITIVE_COUNT] : NULL;
     workgroup_signature(e, type, store);
     metal_text(e, " {\n");
     if (t == NULL || t->kind == TYPE_VECTOR) {
@@ -308,9 +309,9 @@ static bool workgroup_helper_used(MetalEmitter *e, TypeId type, bool store) {
 void metal_workgroup_helpers(MetalEmitter *e) {
     if (e->module->workgroup_count == 0u) return;
     for (unsigned pass = 0u; pass < 2u; ++pass) {
-        for (TypeId type = IR_BOOL; type < 7u + e->module->type_count && !e->failed; ++type) {
+        for (TypeId type = IR_BOOL; type < IR_PRIMITIVE_COUNT + e->module->type_count && !e->failed; ++type) {
             if (type == IR_ABSTRACT_INT || type == IR_ABSTRACT_FLOAT) continue;
-            if (type >= 7u && ((type_flags(e->module, type) & TYPE_CONSTRUCTIBLE) == 0u ||
+            if (type >= IR_PRIMITIVE_COUNT && ((type_flags(e->module, type) & TYPE_CONSTRUCTIBLE) == 0u ||
                 (type_flags(e->module, type) & TYPE_ABSTRACT) != 0u)) continue;
             for (unsigned mode = 0u; mode < 2u; ++mode) {
                 if (!workgroup_helper_used(e, type, mode != 0u)) continue;

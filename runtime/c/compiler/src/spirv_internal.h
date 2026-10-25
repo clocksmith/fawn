@@ -19,7 +19,7 @@ enum {
     OP_IMAGE_QUERY_SIZE_LOD = 103, OP_IMAGE_QUERY_SIZE = 104, OP_IMAGE_QUERY_LEVELS = 106, OP_IMAGE_QUERY_SAMPLES = 107,
     OP_COMPOSITE_CONSTRUCT = 80, OP_COMPOSITE_EXTRACT = 81, OP_COMPOSITE_INSERT = 82, OP_COPY_OBJECT = 83, OP_TRANSPOSE = 84,
     OP_CONVERT_F_TO_U = 109, OP_CONVERT_F_TO_S = 110, OP_CONVERT_S_TO_F = 111, OP_CONVERT_U_TO_F = 112,
-    OP_BITCAST = 124, OP_SNEGATE = 126, OP_FNEGATE = 127, OP_IADD = 128, OP_FADD = 129,
+    OP_FCONVERT = 115, OP_BITCAST = 124, OP_SNEGATE = 126, OP_FNEGATE = 127, OP_IADD = 128, OP_FADD = 129,
     OP_ISUB = 130, OP_FSUB = 131, OP_IMUL = 132, OP_FMUL = 133,
     OP_UDIV = 134, OP_SDIV = 135, OP_FDIV = 136, OP_UMOD = 137, OP_SREM = 138, OP_FREM = 140,
     OP_MATRIX_TIMES_SCALAR = 143, OP_VECTOR_TIMES_MATRIX = 144, OP_MATRIX_TIMES_VECTOR = 145,
@@ -45,6 +45,7 @@ enum {
     ID_ZERO_I32, ID_FALSE, ID_TRUE, ID_ONE_U32, ID_ONE_I32, ID_ONE_F32,
     ID_MIN_I32, ID_NEG_ONE_I32, ID_SHIFT_MASK, ID_F32_U32_MAX,
     ID_F32_I32_MAX, ID_F32_I32_MIN, ID_TWO_U32, ID_THREE_U32, ID_FOUR_U32,
+    ID_F16, ID_ZERO_F16, ID_ONE_F16, ID_VEC2_F16,
     FIRST_DYNAMIC_ID
 };
 enum { WALK_TYPE, WALK_CONSTANT, WALK_ACCESS };
@@ -54,7 +55,7 @@ typedef struct {
     uint32_t next_id, id_bound, current_label;
     EntryRecord *entry;
     uint32_t *values;
-    uint32_t local_base, local_start, local_pointers[4][5], math_import;
+    uint32_t local_base, local_start, local_pointers[4][IR_PRIMITIVE_COUNT], math_import;
     uint32_t barrier_semantics, subgroup_capabilities, image_capabilities;
     bool sample_rate_shading, demote_to_helper;
     size_t function_end;

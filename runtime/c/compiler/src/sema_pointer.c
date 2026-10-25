@@ -9,11 +9,11 @@ bool sema_pointer_argument(Source *s, uint32_t expression, const ExpressionValue
     const CompilerWorkspace *c = s->compiler;
     const PointerValue pointer = value->pointer;
     const TypeId root = pointer.category == ROOT_POINTER ?
-        c->types[c->formals[pointer.root].type.resolved.type - 7u].element :
+        c->types[c->formals[pointer.root].type.resolved.type - IR_PRIMITIVE_COUNT].element :
         c->locals[pointer.root].type;
     /* A proper subobject cannot have its containing finite, acyclic type.
      * This identity check also applies during non-emitting overload visits. */
-    if (c->types[pointer.type - 7u].element != root)
+    if (c->types[pointer.type - IR_PRIMITIVE_COUNT].element != root)
         return source_error(s, DOE_COMPILER_UNSUPPORTED, c->expressions[expression].source_offset,
             "subobject pointer arguments require unrestricted_pointer_parameters");
     return true;

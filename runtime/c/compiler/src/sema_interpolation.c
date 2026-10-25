@@ -4,7 +4,10 @@
 static bool literal(Source *source, uint32_t offset, TypeId type, uint32_t bits, IrValue *out) {
     const uint32_t width = type_vector_width(source->compiler, type);
     ConstantValue lanes[4];
-    for (uint32_t i = 0u; i < width; ++i) lanes[i] = (ConstantValue){.type = IR_F32, .bits = bits};
+    const TypeId leaf = type_leaf(source->compiler, type);
+    NumericValue scalar;
+    if (!numeric_convert(source, offset, (NumericValue){bits, IR_F32}, (IrType)leaf, &scalar)) return false;
+    for (uint32_t i = 0u; i < width; ++i) lanes[i] = (ConstantValue){.type = leaf, .bits = scalar.bits};
     ExpressionValue value = {.known = true, .value.source_offset = offset};
     if (!sema_finish_lanes(source, type, lanes, width, &value.constant) ||
         !sema_ensure_value(source, &value, true)) return false;

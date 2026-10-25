@@ -14,13 +14,13 @@ static bool decode(HlslEmitter *e, const IrInstruction *ir, HlslImage *image) {
     const CompilerWorkspace *c = e->module;
     const TypeId type = ir->operands.composite.reserved;
     const uint32_t first = ir->operands.composite.first, count = ir->operands.composite.count;
-    if (type < 7u || type - 7u >= c->type_count || c->types[type - 7u].kind != TYPE_TEXTURE ||
+    if (type < IR_PRIMITIVE_COUNT || type - IR_PRIMITIVE_COUNT >= c->type_count || c->types[type - IR_PRIMITIVE_COUNT].kind != TYPE_TEXTURE ||
         first > c->operand_count || count > c->operand_count - first || count == 0u) {
         hlsl_error(e, "HLSL image type or argument range is invalid");
         return false;
     }
     const uint32_t *arguments = c->typed_operands + first;
-    *image = (HlslImage){.type = &c->types[type - 7u],
+    *image = (HlslImage){.type = &c->types[type - IR_PRIMITIVE_COUNT],
         .operation = (ImageOperation)ir->operands.composite.kind, .texture = arguments[0],
         .sampler = NO_ID, .coordinates = NO_ID, .layer = NO_ID,
         .level = NO_ID, .sample = NO_ID, .data = NO_ID, .reference = NO_ID, .offset = NO_ID, .gradient_x = NO_ID, .gradient_y = NO_ID, .bias = NO_ID, .component = NO_ID};
@@ -234,9 +234,9 @@ static void texel(HlslEmitter *e, const IrInstruction *ir, const HlslImage *imag
 }
 static void sample_level(HlslEmitter *e, const IrInstruction *ir, const HlslImage *image) {
     const TypeId sampler_type = hlsl_value_type(e, image->sampler);
-    if (sampler_type < 7u || sampler_type - 7u >= e->module->type_count ||
-        e->module->types[sampler_type - 7u].kind != TYPE_SAMPLER ||
-        e->module->types[sampler_type - 7u].state.image.flags !=
+    if (sampler_type < IR_PRIMITIVE_COUNT || sampler_type - IR_PRIMITIVE_COUNT >= e->module->type_count ||
+        e->module->types[sampler_type - IR_PRIMITIVE_COUNT].kind != TYPE_SAMPLER ||
+        e->module->types[sampler_type - IR_PRIMITIVE_COUNT].state.image.flags !=
             (image->reference != NO_ID ? DOE_COMPILER_HANDLE_COMPARISON : 0u)) {
         hlsl_error(e, "HLSL sampling sampler kind differs from the typed operation");
         return;

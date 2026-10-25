@@ -96,8 +96,8 @@ const NumericBuiltin *builtin_kind(NumericBuiltinKind kind) {
 
 uint32_t builtin_extended_instruction(const NumericBuiltin *builtin, TypeId leaf) {
     if (builtin->kind == BUILTIN_FIRST_LEADING_BIT) return leaf == IR_I32 ? 74u : 75u;
-    if (builtin->kind == BUILTIN_ABS) return leaf == IR_F32 ? 4u : leaf == IR_I32 ? 5u : 0u;
-    if (builtin->kind == BUILTIN_SIGN) return leaf == IR_F32 ? 6u : leaf == IR_I32 ? 7u : 0u;
+    if (builtin->kind == BUILTIN_ABS) return (leaf == IR_F32 || leaf == IR_F16) ? 4u : leaf == IR_I32 ? 5u : 0u;
+    if (builtin->kind == BUILTIN_SIGN) return (leaf == IR_F32 || leaf == IR_F16) ? 6u : leaf == IR_I32 ? 7u : 0u;
     return builtin->extended_instruction;
 }
 
@@ -143,7 +143,7 @@ uint32_t builtin_argument_width(const NumericBuiltin *builtin, uint32_t argument
  * vector result allocates a node; no intermediate geometric vector is stored. */
 static bool constant_lane(Source *source, ConstantValue input, uint32_t index, NumericValue *out) {
     ConstantValue value = input;
-    if (input.type >= 7u && !constant_project(source, input, index, &value)) return false;
+    if (input.type >= IR_PRIMITIVE_COUNT && !constant_project(source, input, index, &value)) return false;
     *out = (NumericValue){value.bits, (IrType)value.type};
     return true;
 }

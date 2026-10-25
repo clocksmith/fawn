@@ -16,11 +16,11 @@ static bool collect_path(MetalEmitter *e, uint32_t path, MetalPath *out) {
     return error == NULL;
 }
 static const TypeRecord *path_input(MetalEmitter *e, const AccessStep *step) {
-    if (step->input_type < 7u || step->input_type - 7u >= e->module->type_count) {
+    if (step->input_type < IR_PRIMITIVE_COUNT || step->input_type - IR_PRIMITIVE_COUNT >= e->module->type_count) {
         metal_error(e, "Metal access requires an aggregate input type");
         return NULL;
     }
-    return &e->module->types[step->input_type - 7u];
+    return &e->module->types[step->input_type - IR_PRIMITIVE_COUNT];
 }
 static const ResourceRecord *resource_root(MetalEmitter *e, const IrInstruction *ir) {
     if (ir->operands.access.category != ROOT_RESOURCE) return NULL;
@@ -86,9 +86,9 @@ static void byte_offset(MetalEmitter *e, const MetalPath *path) {
             }
             metal_format(e, " + %" PRIu64 "ul", e->module->members[input->element + step->index].offset);
         } else if (step->kind == ACCESS_COMPONENT) {
-            metal_format(e, " + %uul", step->index * 4u);
+            metal_format(e, " + %uul", step->index * (uint32_t)type_size(e->module, input->element));
         } else {
-            const uint64_t stride = input->kind == TYPE_VECTOR ? 4u : input->state.layout.stride;
+            const uint64_t stride = input->kind == TYPE_VECTOR ? type_size(e->module, input->element) : input->state.layout.stride;
             metal_text(e, " + ulong(uint(");
             metal_value(e, step->index);
             metal_format(e, ")) * %" PRIu64 "ul", stride);
@@ -138,8 +138,8 @@ static TypeId atomic_scalar(MetalEmitter *e, const IrInstruction *ir, const Meta
         return IR_VOID;
     }
     if (path->count) type = e->module->accesses[path->steps[0]].output_type;
-    if (type < 7u || type - 7u >= e->module->type_count || e->module->types[type - 7u].kind != TYPE_ATOMIC ||
-        (e->module->types[type - 7u].element != IR_I32 && e->module->types[type - 7u].element != IR_U32)) {
+    if (type < IR_PRIMITIVE_COUNT || type - IR_PRIMITIVE_COUNT >= e->module->type_count || e->module->types[type - IR_PRIMITIVE_COUNT].kind != TYPE_ATOMIC ||
+        (e->module->types[type - IR_PRIMITIVE_COUNT].element != IR_I32 && e->module->types[type - IR_PRIMITIVE_COUNT].element != IR_U32)) {
         metal_error(e, "Metal atomic path does not resolve an i32/u32 atomic");
         return IR_VOID;
     }
@@ -149,7 +149,7 @@ static TypeId atomic_scalar(MetalEmitter *e, const IrInstruction *ir, const Meta
         metal_error(e, "Metal atomic typed operand span is invalid");
         return IR_VOID;
     }
-    return e->module->types[type - 7u].element;
+    return e->module->types[type - IR_PRIMITIVE_COUNT].element;
 }
 static void atomic_input(MetalEmitter *e, const IrInstruction *ir, uint32_t index) {
     metal_value(e, e->module->typed_operands[ir->operands.access.value + index]);

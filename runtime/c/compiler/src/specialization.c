@@ -145,7 +145,7 @@ DoeCompilerStatus doe_compiler_validate_module(uint32_t version,
     bool valid = specialization_layout(DOE_COMPILER_TARGET_SPIRV, caps, &base, &requirements) &&
         workspace != NULL && workspace_size >= requirements.size_bytes &&
         (uintptr_t)workspace % requirements.alignment_bytes == 0u &&
-        (flags & ~(DOE_COMPILER_CORE_BINDING_NUMBERS | DOE_COMPILER_UNIFORM_BUFFER_STANDARD_LAYOUT)) == 0u;
+        (flags & ~(DOE_COMPILER_CORE_BINDING_NUMBERS | DOE_COMPILER_UNIFORM_BUFFER_STANDARD_LAYOUT | DOE_COMPILER_DISABLE_F16)) == 0u;
     if (valid && outputs != NULL)
         valid = compiler_valid_span(outputs->overrides, outputs->override_capacity, sizeof(DoeCompilerOverrideV13),
                     _Alignof(DoeCompilerOverrideV13), true) &&
@@ -161,7 +161,8 @@ DoeCompilerStatus doe_compiler_validate_module(uint32_t version,
         CompilerWorkspace *c = workspace;
         compiler_job_bind(c, workspace, &limits);
         c->module_flags = ((flags & DOE_COMPILER_UNIFORM_BUFFER_STANDARD_LAYOUT) != 0u ? MODULE_STANDARD_UNIFORM : 0u) |
-            ((flags & DOE_COMPILER_CORE_BINDING_NUMBERS) != 0u ? MODULE_CORE_BINDINGS : 0u);
+            ((flags & DOE_COMPILER_CORE_BINDING_NUMBERS) != 0u ? MODULE_CORE_BINDINGS : 0u) |
+        ((flags & DOE_COMPILER_DISABLE_F16) != 0u ? MODULE_DISABLE_F16 : 0u);
         stage_bind(&s, workspace, &caps->target.stages, stage_base);
         NumericEnvironment environment;
         const bool analyzed = compiler_analyze(&s, c, &environment) && validation_metadata(&s, outputs, result);

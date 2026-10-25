@@ -28,7 +28,7 @@ bool spirv_runtime_length(Emitter *e, uint32_t resource, uint32_t result) {
     if (resource >= c->resource_count || c->resources[resource].tail_type == NO_ID)
         return spirv_emit_error(e, 0u, "runtime length requires a runtime-tail storage resource");
     const ResourceRecord *r = &c->resources[resource];
-    const uint32_t member = spirv_wrapped_resource(c, r) ? 0u : c->types[r->type - 7u].count - 1u;
+    const uint32_t member = spirv_wrapped_resource(c, r) ? 0u : c->types[r->type - IR_PRIMITIVE_COUNT].count - 1u;
     const uint32_t words[] = { ID_U32, result, r->target, member };
     return spirv_instruction(e, OP_ARRAY_LENGTH, words, 4u);
 }
@@ -39,11 +39,12 @@ uint32_t spirv_scalar_type(TypeId type) {
         case IR_I32: return ID_I32;
         case IR_U32: return ID_U32;
         case IR_F32: return ID_F32;
+        case IR_F16: return ID_F16;
         default: return 0u;
     }
 }
 uint32_t spirv_target_type(const Emitter *e, TypeId type) {
-    return type < 7u ? spirv_scalar_type(type) : e->program->types[type - 7u].target;
+    return type < IR_PRIMITIVE_COUNT ? spirv_scalar_type(type) : e->program->types[type - IR_PRIMITIVE_COUNT].target;
 }
 bool spirv_instruction_space(Emitter *e, uint32_t opcode, size_t count, uint32_t **arguments) {
     CompilerWorkspace *c = e->program;
@@ -129,9 +130,9 @@ uint32_t spirv_unsigned_constant(Emitter *e, uint32_t value) {
 }
 uint32_t spirv_pointer_type(Emitter *e, TypeId type, uint32_t storage) {
     CompilerWorkspace *c = e->program;
-    if (type >= 7u && c->types[type - 7u].kind == TYPE_ATOMIC) type = c->types[type - 7u].element;
+    if (type >= IR_PRIMITIVE_COUNT && c->types[type - IR_PRIMITIVE_COUNT].kind == TYPE_ATOMIC) type = c->types[type - IR_PRIMITIVE_COUNT].element;
     const uint32_t slot = storage == 7u ? 0u : storage == 2u ? 1u : storage == 12u ? 2u : 3u;
-    if (type >= IR_BOOL && type <= IR_F32 && (storage == 7u || storage == 2u || storage == 12u || storage == 4u)) {
+    if (type >= IR_BOOL && (type <= IR_F32 || type == IR_F16) && (storage == 7u || storage == 2u || storage == 12u || storage == 4u)) {
         if (e->local_pointers[slot][type] == 0u) e->local_pointers[slot][type] = spirv_reserve_ids(e, 1u);
         return e->local_pointers[slot][type];
     }
@@ -146,9 +147,9 @@ uint32_t spirv_pointer_type(Emitter *e, TypeId type, uint32_t storage) {
     return d->id;
 }
 uint32_t spirv_zero_constant(Emitter *e, TypeId type) {
-    if (type < 7u) return use_constant(e, type == IR_BOOL ? ID_FALSE : type == IR_I32 ? ID_ZERO_I32 :
-        type == IR_U32 ? ID_ZERO_U32 : type == IR_F32 ? ID_ZERO_F32 : 0u);
-    TypeRecord *t = &e->program->types[type - 7u];
+    if (type < IR_PRIMITIVE_COUNT) return use_constant(e, type == IR_BOOL ? ID_FALSE : type == IR_I32 ? ID_ZERO_I32 :
+        type == IR_U32 ? ID_ZERO_U32 : type == IR_F32 ? ID_ZERO_F32 : type == IR_F16 ? ID_ZERO_F16 : 0u);
+    TypeRecord *t = &e->program->types[type - IR_PRIMITIVE_COUNT];
     if (t->aux != 0u) return t->aux;
     TargetDeclaration *d = spirv_append_declaration(e, DECL_ZERO, type);
     if (d == NULL) return 0u;
@@ -162,39 +163,39 @@ static bool plan_workgroup_barrier(Emitter *e) {
 }
 static bool plan_type(Emitter *e, TypeId type) {
     CompilerWorkspace *c = e->program;
-    if (type < 7u) return spirv_scalar_type(type) != 0u;
-    if ((c->types[type - 7u].flags & TYPE_DEFERRED) != 0u)
+    if (type < IR_PRIMITIVE_COUNT) return spirv_scalar_type(type) != 0u;
+    if ((c->types[type - IR_PRIMITIVE_COUNT].flags & TYPE_DEFERRED) != 0u)
         return source_error(e->source, DOE_COMPILER_INPUT_ERROR, e->source->length,
                             "deferred type reached executable target planning");
-    if (c->types[type - 7u].target != 0u) return true;
+    if (c->types[type - IR_PRIMITIVE_COUNT].target != 0u) return true;
     if (type_handle(c, type)) {
-        const TypeRecord *current = &c->types[type - 7u];
-        for (uint32_t i = 0u; i < type - 7u; ++i) {
+        const TypeRecord *current = &c->types[type - IR_PRIMITIVE_COUNT];
+        for (uint32_t i = 0u; i < type - IR_PRIMITIVE_COUNT; ++i) {
             const TypeRecord *prior = &c->types[i];
             if (prior->kind != current->kind || prior->target == 0u) continue;
             if (current->kind == TYPE_SAMPLER || (prior->element == current->element &&
                 prior->state.image.dimension == current->state.image.dimension &&
                 prior->state.image.format == current->state.image.format && prior->state.image.flags == current->state.image.flags)) {
-                c->types[type - 7u].target = prior->target;
+                c->types[type - IR_PRIMITIVE_COUNT].target = prior->target;
                 return true;
             }
         }
     }
     if (!spirv_push_walk(e, WALK_TYPE, type)) return false;
-    c->types[type - 7u].target = NO_ID;
+    c->types[type - IR_PRIMITIVE_COUNT].target = NO_ID;
     while (c->walk_count != 0u) {
         WalkItem *w = &c->walk[c->walk_count - 1u];
-        TypeRecord *t = &c->types[w->object - 7u];
+        TypeRecord *t = &c->types[w->object - IR_PRIMITIVE_COUNT];
         const uint32_t children = type_handle(c, w->object) ? 0u : (t->kind == TYPE_STRUCT || t->kind == TYPE_ATOMIC_RESULT) ? t->count : 1u;
         if (w->cursor < children) {
             const TypeId child = type_child(c, w->object, w->cursor++);
-            if (child < 7u) {
+            if (child < IR_PRIMITIVE_COUNT) {
                 if (spirv_scalar_type(child) == 0u) return spirv_emit_error(e, t->name.offset, "abstract target type dependency");
-            } else if (c->types[child - 7u].target == NO_ID) {
+            } else if (c->types[child - IR_PRIMITIVE_COUNT].target == NO_ID) {
                 return spirv_emit_error(e, t->name.offset, "cyclic target type dependency");
-            } else if (c->types[child - 7u].target == 0u) {
+            } else if (c->types[child - IR_PRIMITIVE_COUNT].target == 0u) {
                 if (!spirv_push_walk(e, WALK_TYPE, child)) return false;
-                c->types[child - 7u].target = NO_ID;
+                c->types[child - IR_PRIMITIVE_COUNT].target = NO_ID;
             }
             continue;
         }
@@ -213,6 +214,7 @@ static bool plan_type(Emitter *e, TypeId type) {
         if (t->kind == TYPE_ATOMIC) t->target = spirv_scalar_type(t->element);
         else if (t->kind == TYPE_POINTER) t->target = spirv_pointer_type(e, t->element, 7u);
         else if (t->kind == TYPE_VECTOR && t->element == IR_U32 && t->count == 3u) t->target = ID_VEC3;
+        else if (t->kind == TYPE_VECTOR && t->element == IR_F16 && t->count == 2u) t->target = ID_VEC2_F16;
         else {
             const uint32_t length = t->kind == TYPE_ARRAY ? spirv_unsigned_constant(e, t->count) : 0u;
             TargetDeclaration *d = spirv_append_declaration(e, DECL_TYPE, w->object);
@@ -283,7 +285,7 @@ uint32_t spirv_constant_value(Emitter *e, ConstantValue value) {
     return e->program->constants[value.bits].target;
 }
 uint32_t spirv_sampled_type(Emitter *e, TypeId type) {
-    TypeRecord *t = &e->program->types[type - 7u];
+    TypeRecord *t = &e->program->types[type - IR_PRIMITIVE_COUNT];
     if (t->aux != 0u) return t->aux;
     TargetDeclaration *d = spirv_append_declaration(e, DECL_SAMPLED_IMAGE, type);
     if (d == NULL) return 0u;
@@ -291,8 +293,8 @@ uint32_t spirv_sampled_type(Emitter *e, TypeId type) {
     return d->id;
 }
 bool spirv_wrapped_resource(const CompilerWorkspace *c, const ResourceRecord *r) {
-    return !type_handle(c, r->type) && !(r->type >= 7u && c->types[r->type - 7u].kind == TYPE_STRUCT &&
-             (c->types[r->type - 7u].flags & TYPE_TAIL) != 0u);
+    return !type_handle(c, r->type) && !(r->type >= IR_PRIMITIVE_COUNT && c->types[r->type - IR_PRIMITIVE_COUNT].kind == TYPE_STRUCT &&
+             (c->types[r->type - IR_PRIMITIVE_COUNT].flags & TYPE_TAIL) != 0u);
 }
 uint32_t spirv_resource_storage(const ResourceRecord *r) {
     return r->kind >= DOE_COMPILER_SAMPLED_TEXTURE ? 0u : r->kind == DOE_COMPILER_UNIFORM_BUFFER ? 2u : 12u;
@@ -323,8 +325,8 @@ static void plan_scalar_guards(Emitter *e, const IrInstruction *ir) {
         if (to == IR_BOOL) (void)spirv_zero_constant(e, from);
         else if (from == IR_BOOL) {
             (void)spirv_zero_constant(e, to);
-            (void)use_constant(e, to == IR_I32 ? ID_ONE_I32 : to == IR_F32 ? ID_ONE_F32 : ID_ONE_U32);
-        } else if (from == IR_F32) {
+            (void)use_constant(e, to == IR_I32 ? ID_ONE_I32 : to == IR_F16 ? ID_ONE_F16 : to == IR_F32 ? ID_ONE_F32 : ID_ONE_U32);
+        } else if ((from == IR_F32 || from == IR_F16) && (to == IR_I32 || to == IR_U32)) {
             (void)use_constant(e, ID_ZERO_F32);
             if (to == IR_I32) (void)use_constant(e, ID_F32_I32_MIN);
             (void)use_constant(e, to == IR_I32 ? ID_F32_I32_MAX : ID_F32_U32_MAX);
@@ -337,7 +339,7 @@ bool spirv_plan_module(Emitter *e) {
     for (uint32_t i = 0u; i < c->constant_count; ++i) c->constants[i].target = 0u;
     for (uint32_t i = 0u; i < c->type_count; ++i) {
         if ((c->types[i].flags & TYPE_DEFERRED) == 0u &&
-            !type_abstract(c, i + 7u) && !plan_type(e, i + 7u)) return false;
+            !type_abstract(c, i + IR_PRIMITIVE_COUNT) && !plan_type(e, i + IR_PRIMITIVE_COUNT)) return false;
         const TypeRecord *t = &c->types[i];
         if (t->kind != TYPE_TEXTURE) continue;
         const ImageType image = t->state.image;
@@ -413,8 +415,8 @@ bool spirv_plan_module(Emitter *e) {
         if (a->kind == ACCESS_INDEX_I32) (void)use_constant(e, ID_ZERO_I32);
         if (a->kind == ACCESS_MEMBER || a->kind == ACCESS_COMPONENT) {
             if (spirv_unsigned_constant(e, a->index) == 0u) return false;
-        } else if (a->input_type >= 7u && c->types[a->input_type - 7u].kind != TYPE_RUNTIME_ARRAY) {
-            if (spirv_unsigned_constant(e, c->types[a->input_type - 7u].count) == 0u) return false;
+        } else if (a->input_type >= IR_PRIMITIVE_COUNT && c->types[a->input_type - IR_PRIMITIVE_COUNT].kind != TYPE_RUNTIME_ARRAY) {
+            if (spirv_unsigned_constant(e, c->types[a->input_type - IR_PRIMITIVE_COUNT].count) == 0u) return false;
         }
     }
     for (uint32_t i = 0u; i < c->instruction_count; ++i) {
@@ -501,7 +503,7 @@ static bool annotations(Emitter *e) {
             EMIT(OP_MEMBER_DECORATE, d->id, 0u, 35u, 0u);
             if (!spirv_matrix_member(e, d->id, 0u, d->type)) return false;
         } else if (d->kind == DECL_TYPE) {
-            const TypeRecord *t = &c->types[d->type - 7u];
+            const TypeRecord *t = &c->types[d->type - IR_PRIMITIVE_COUNT];
             if (t->kind == TYPE_ARRAY || t->kind == TYPE_RUNTIME_ARRAY) {
                 EMIT(OP_DECORATE, d->id, 6u, (uint32_t)t->state.layout.stride);
             } else if (t->kind == TYPE_STRUCT) {
@@ -534,18 +536,24 @@ static bool primitive_declarations(Emitter *e) {
     EMIT(OP_TYPE_INT, ID_U32, 32u, 0u);
     EMIT(OP_TYPE_INT, ID_I32, 32u, 1u);
     EMIT(OP_TYPE_FLOAT, ID_F32, 32u);
+    if ((e->program->module_flags & MODULE_F16) != 0u) {
+        EMIT(OP_TYPE_FLOAT, ID_F16, 16u);
+        EMIT(OP_TYPE_VECTOR, ID_VEC2_F16, ID_F16, 2u);
+    }
     EMIT(OP_TYPE_VECTOR, ID_VEC3, ID_U32, 3u);
     EMIT(OP_TYPE_POINTER, ID_PTR_INPUT, 1u, ID_VEC3);
     EMIT(OP_TYPE_POINTER, ID_PTR_INPUT_U32, 1u, ID_U32);
     EMIT(OP_TYPE_FUNCTION, ID_FN_TYPE, ID_VOID);
     for (uint32_t slot = 0u; slot < 4u; ++slot)
-        for (TypeId type = IR_BOOL; type <= IR_F32; ++type)
+        for (TypeId type = IR_BOOL; type < IR_PRIMITIVE_COUNT; ++type)
             if (e->local_pointers[slot][type] != 0u)
                 EMIT(OP_TYPE_POINTER, e->local_pointers[slot][type], slot == 0u ? 7u : slot == 1u ? 2u : slot == 2u ? 12u : 4u,
                      spirv_scalar_type(type));
     if ((e->constants_used & (UINT32_C(1) << ID_FALSE)) != 0u) { EMIT(OP_CONSTANT_FALSE, ID_BOOL, ID_FALSE); }
     if ((e->constants_used & (UINT32_C(1) << ID_TRUE)) != 0u) { EMIT(OP_CONSTANT_TRUE, ID_BOOL, ID_TRUE); }
     if ((e->constants_used & (UINT32_C(1) << ID_ZERO_U32)) != 0u) { EMIT(OP_CONSTANT, ID_U32, ID_ZERO_U32, 0u); }
+    if ((e->constants_used & (UINT32_C(1) << ID_ZERO_F16)) != 0u) { EMIT(OP_CONSTANT, ID_F16, ID_ZERO_F16, 0u); }
+    if ((e->constants_used & (UINT32_C(1) << ID_ONE_F16)) != 0u) { EMIT(OP_CONSTANT, ID_F16, ID_ONE_F16, 0x3c00u); }
     if ((e->constants_used & (UINT32_C(1) << ID_ZERO_F32)) != 0u) { EMIT(OP_CONSTANT, ID_F32, ID_ZERO_F32, 0u); }
     if ((e->constants_used & (UINT32_C(1) << ID_ZERO_I32)) != 0u) { EMIT(OP_CONSTANT, ID_I32, ID_ZERO_I32, 0u); }
     if ((e->constants_used & (UINT32_C(1) << ID_ONE_U32)) != 0u) { EMIT(OP_CONSTANT, ID_U32, ID_ONE_U32, 1u); }
@@ -571,7 +579,7 @@ static bool dynamic_declarations(Emitter *e) {
         switch (d->kind) {
             case DECL_WORKGROUP_TYPE:
             case DECL_TYPE: {
-                const TypeRecord *t = &c->types[d->type - 7u];
+                const TypeRecord *t = &c->types[d->type - IR_PRIMITIVE_COUNT];
                 const bool workgroup = d->kind == DECL_WORKGROUP_TYPE;
                 if (t->kind == TYPE_TEXTURE || t->kind == TYPE_SAMPLER) {
                     if (!spirv_image_type(e, t, d->id)) return false;
@@ -635,6 +643,11 @@ static bool dynamic_declarations(Emitter *e) {
 bool spirv_module_declarations(Emitter *e) {
     CompilerWorkspace *c = e->program;
     EMIT(OP_CAPABILITY, 1u);
+    if ((c->module_flags & MODULE_F16) != 0u) {
+        EMIT(OP_CAPABILITY, 9u); /* Float16. */
+        EMIT(OP_CAPABILITY, 4433u); /* StorageBuffer16BitAccess. */
+        EMIT(OP_CAPABILITY, 4434u); /* UniformAndStorageBuffer16BitAccess. */
+    }
     if (e->sample_rate_shading) { EMIT(OP_CAPABILITY, 35u); }
     if ((e->image_capabilities & 1u) != 0u) { EMIT(OP_CAPABILITY, 50u); }
     if ((e->image_capabilities & 2u) != 0u) { EMIT(OP_CAPABILITY, 43u); }

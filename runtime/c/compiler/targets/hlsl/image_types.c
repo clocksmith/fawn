@@ -26,11 +26,11 @@ uint32_t hlsl_image_components(HlslEmitter *e, const TypeRecord *t) {
 }
 void hlsl_handle_type(HlslEmitter *e, TypeId type) {
     const CompilerWorkspace *c = e->module;
-    if (type < 7u || type - 7u >= c->type_count) {
+    if (type < IR_PRIMITIVE_COUNT || type - IR_PRIMITIVE_COUNT >= c->type_count) {
         hlsl_error(e, "HLSL handle type identity is invalid");
         return;
     }
-    const TypeRecord *t = &c->types[type - 7u];
+    const TypeRecord *t = &c->types[type - IR_PRIMITIVE_COUNT];
     const ImageType image = t->state.image;
     if (t->kind == TYPE_SAMPLER) {
         if (image.flags != 0u && image.flags != DOE_COMPILER_HANDLE_COMPARISON) {
@@ -82,7 +82,7 @@ void hlsl_handle(HlslEmitter *e, const IrInstruction *ir) {
 }
 void hlsl_image_resource(HlslEmitter *e, uint32_t index) {
     const ResourceRecord *r = &e->module->resources[index];
-    const TypeRecord *t = &e->module->types[r->type - 7u];
+    const TypeRecord *t = &e->module->types[r->type - IR_PRIMITIVE_COUNT];
     const bool sampler = t->kind == TYPE_SAMPLER;
     const bool storage = t->kind == TYPE_TEXTURE && t->state.image.format != 0u;
     const uint32_t expected = sampler ? DOE_COMPILER_SAMPLER : storage ?

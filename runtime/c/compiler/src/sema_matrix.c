@@ -6,7 +6,7 @@ typedef struct { uint32_t columns, rows; TypeId scalar; bool matrix; } MatrixSha
 
 static MatrixShape shape(const CompilerWorkspace *c, TypeId type, bool left) {
     if (type_matrix(c, type)) {
-        const TypeRecord *m = &c->types[type - 7u];
+        const TypeRecord *m = &c->types[type - IR_PRIMITIVE_COUNT];
         return (MatrixShape){m->count, type_vector_width(c, m->element), type_leaf(c, m->element), true};
     }
     const uint32_t width = type_vector_width(c, type);
@@ -16,7 +16,7 @@ static bool materialize(Source *s, ExpressionValue *v, TypeId scalar) {
     const CompilerWorkspace *c = s->compiler;
     TypeId target = scalar;
     if (type_matrix(c, v->constant.type)) {
-        const TypeRecord *m = &c->types[v->constant.type - 7u];
+        const TypeRecord *m = &c->types[v->constant.type - IR_PRIMITIVE_COUNT];
         if (!type_matrix_intern(s, scalar, m->count, type_vector_width(c, m->element), &target)) return false;
     } else if (type_vector_width(c, v->constant.type) != 1u &&
         !type_intern(s, TYPE_VECTOR, scalar, type_vector_width(c, v->constant.type), &target)) return false;
@@ -25,7 +25,7 @@ static bool materialize(Source *s, ExpressionValue *v, TypeId scalar) {
 static bool component(Source *s, ConstantValue value, uint32_t column, uint32_t row, NumericValue *out) {
     if (type_matrix(s->compiler, value.type)) {
         if (!constant_project(s, value, column, &value) || !constant_project(s, value, row, &value)) return false;
-    } else if (value.type >= 7u && !constant_project(s, value, column + row, &value)) return false;
+    } else if (value.type >= IR_PRIMITIVE_COUNT && !constant_project(s, value, column + row, &value)) return false;
     *out = (NumericValue){value.bits, (IrType)value.type};
     return true;
 }
@@ -64,7 +64,7 @@ static bool constant_product(Source *s, uint32_t offset, ExpressionKind op, cons
     if (!constant_reserve(s, type, CONSTANT_COMPOSITE, result.matrix ? columns : width, out, &first)) return false;
     for (uint32_t col = 0u; col < columns; ++col) {
         uint32_t lane_first = first;
-        if (result.matrix && !constant_reserve(s, s->compiler->types[type - 7u].element,
+        if (result.matrix && !constant_reserve(s, s->compiler->types[type - IR_PRIMITIVE_COUNT].element,
             CONSTANT_COMPOSITE, width, &s->compiler->constant_edges[first + col], &lane_first)) return false;
         for (uint32_t lane = 0u; lane < width; ++lane) {
             NumericValue value;
@@ -84,15 +84,15 @@ bool sema_matrix_binary(Source *s, ExpressionKind op, ExpressionValue *a, Expres
     if (op == EXPRESSION_ADD || op == EXPRESSION_SUBTRACT) {
         if (!left.matrix || !right.matrix || left.columns != right.columns || left.rows != right.rows) goto invalid;
     } else if (op == EXPRESSION_MULTIPLY) {
-        if (a->constant.type < 7u) result = right;
-        else if (b->constant.type >= 7u) {
+        if (a->constant.type < IR_PRIMITIVE_COUNT) result = right;
+        else if (b->constant.type >= IR_PRIMITIVE_COUNT) {
             if (left.columns != right.rows) goto invalid;
             result = (MatrixShape){right.columns, left.rows, IR_VOID, left.matrix && right.matrix};
         }
     } else goto invalid;
     TypeId scalar;
     if (!sema_common_type(s, left.scalar, right.scalar, offset, &scalar)) return false;
-    if (scalar != IR_F32 && scalar != IR_ABSTRACT_FLOAT) goto invalid;
+    if (scalar != IR_F16 && scalar != IR_F32 && scalar != IR_ABSTRACT_FLOAT) goto invalid;
     result.scalar = scalar;
     if (!materialize(s, a, scalar) || !materialize(s, b, scalar)) return false;
     TypeId type;
@@ -116,7 +116,7 @@ bool sema_matrix_result(Source *s, NumericBuiltinKind kind, TypeId argument,
     uint32_t offset, TypeId *result) {
     if (!type_matrix(s->compiler, argument))
         return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, offset, "matrix builtin requires a matrix argument");
-    const TypeRecord *m = &s->compiler->types[argument - 7u];
+    const TypeRecord *m = &s->compiler->types[argument - IR_PRIMITIVE_COUNT];
     const uint32_t rows = type_vector_width(s->compiler, m->element);
     const TypeId scalar = type_leaf(s->compiler, m->element);
     if (kind == BUILTIN_TRANSPOSE) return type_matrix_intern(s, scalar, rows, m->count, result);
@@ -128,7 +128,7 @@ bool sema_matrix_result(Source *s, NumericBuiltinKind kind, TypeId argument,
 }
 
 static bool transpose_constant(Source *s, ConstantValue value, TypeId type, ConstantValue *out) {
-    const TypeRecord *m = &s->compiler->types[type - 7u];
+    const TypeRecord *m = &s->compiler->types[type - IR_PRIMITIVE_COUNT];
     uint32_t first;
     if (!constant_reserve(s, type, CONSTANT_COMPOSITE, m->count, out, &first)) return false;
     for (uint32_t column = 0u; column < m->count; ++column) {
@@ -147,7 +147,7 @@ static bool transpose_constant(Source *s, ConstantValue value, TypeId type, Cons
 
 static bool determinant_constant(Source *s, uint32_t offset, ConstantValue value, TypeId type,
     ConstantValue *out) {
-    const uint32_t width = s->compiler->types[value.type - 7u].count;
+    const uint32_t width = s->compiler->types[value.type - IR_PRIMITIVE_COUNT].count;
     uint32_t permutations = 1u;
     for (uint32_t i = 0u; i < width; ++i) permutations *= width;
     NumericValue sum = {0};

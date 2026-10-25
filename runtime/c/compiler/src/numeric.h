@@ -32,6 +32,8 @@ bool numeric_math(Source *, size_t, NumericBuiltinKind, bool single,
 typedef struct { uint32_t positive[5], negative[5]; } NumericDotAccumulator;
 bool numeric_dot_accumulate(Source *, size_t, NumericDotAccumulator *, NumericValue, NumericValue);
 bool numeric_dot_finish(Source *, size_t, const NumericDotAccumulator *, NumericValue *);
+double numeric_half_value(uint64_t bits);
+bool numeric_half_pack(Source *, size_t, double, NumericValue *);
 bool numeric_parse_literal(Source *source, NameSpan literal, NumericValue *result);
 bool numeric_materialize(Source *source, size_t offset, NumericValue input,
                          IrType target, NumericValue *result);

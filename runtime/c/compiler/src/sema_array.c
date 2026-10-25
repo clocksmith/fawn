@@ -34,10 +34,10 @@ bool sema_array_length(Source *s, uint32_t call, const LocalScope *scope,
         return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, root.offset,
             "runtime array address does not resolve to a storage resource");
     const ResourceRecord *resource = &c->resources[identity.index];
-    if (resource->tail_type == NO_ID || resource->type < 7u)
+    if (resource->tail_type == NO_ID || resource->type < IR_PRIMITIVE_COUNT)
         return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, root.offset,
             "arrayLength requires a runtime-sized storage array");
-    const TypeRecord *type = &c->types[resource->type - 7u];
+    const TypeRecord *type = &c->types[resource->type - IR_PRIMITIVE_COUNT];
     if ((path->kind == EXPRESSION_NAME && type->kind != TYPE_RUNTIME_ARRAY) ||
         (path->kind == EXPRESSION_MEMBER && (type->kind != TYPE_STRUCT ||
             !source_spans_equal(s, path->value.member.member,

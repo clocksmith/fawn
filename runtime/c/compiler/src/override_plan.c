@@ -93,7 +93,7 @@ static bool require_workgroups(Source *s) {
     for (uint32_t i = 0u; i < c->workgroup_count; ++i) {
         if (!override_charge(s, 1u)) return false;
         if (context->workgroups[i] == 0u) continue;
-        const TypeRecord *type = c->workgroups[i].type >= 7u ? &c->types[c->workgroups[i].type - 7u] : NULL;
+        const TypeRecord *type = c->workgroups[i].type >= IR_PRIMITIVE_COUNT ? &c->types[c->workgroups[i].type - IR_PRIMITIVE_COUNT] : NULL;
         if (type != NULL && (type->flags & TYPE_DEFERRED) != 0u) {
             const GenericSyntax *syntax = &c->generic_syntax[type->aux];
             if (!require_range(s, syntax->flags, syntax->count_expression + 1u)) return false;

@@ -6,7 +6,7 @@ static TypeId vector_type(Emitter *e, TypeId scalar, uint32_t width) {
     if (width == 1u) return scalar;
     for (uint32_t i = 0u; i < e->program->type_count; ++i) {
         const TypeRecord *t = &e->program->types[i];
-        if (t->kind == TYPE_VECTOR && t->element == scalar && t->count == width) return i + 7u;
+        if (t->kind == TYPE_VECTOR && t->element == scalar && t->count == width) return i + IR_PRIMITIVE_COUNT;
     }
     (void)spirv_emit_error(e, 0u, "missing semantic image auxiliary type");
     return IR_VOID;
@@ -32,7 +32,7 @@ bool spirv_image_type(Emitter *e, const TypeRecord *t, uint32_t id) {
     return true;
 }
 bool spirv_image_plan(Emitter *e, const IrInstruction *ir) {
-    const ImageType image = e->program->types[ir->operands.composite.reserved - 7u].state.image;
+    const ImageType image = e->program->types[ir->operands.composite.reserved - IR_PRIMITIVE_COUNT].state.image;
     const bool sampling = image_sampling((ImageOperation)ir->operands.composite.kind);
     if (!sampling || image_arrayed(image.dimension)) e->image_capabilities |= 1u;
     if (sampling && spirv_sampled_type(e, ir->operands.composite.reserved) == 0u) return false;
@@ -278,7 +278,7 @@ static bool sample(Emitter *e, const IrInstruction *ir, const TypeRecord *textur
     return !e->failed;
 }
 bool spirv_image_operation(Emitter *e, const IrInstruction *ir) {
-    const TypeRecord *texture = &e->program->types[ir->operands.composite.reserved - 7u];
+    const TypeRecord *texture = &e->program->types[ir->operands.composite.reserved - IR_PRIMITIVE_COUNT];
     const uint32_t *operands = e->program->typed_operands + ir->operands.composite.first;
     const ImageOperation op = (ImageOperation)ir->operands.composite.kind;
     if (op == IMAGE_LOAD || op == IMAGE_STORE) return texel(e, ir, texture, operands);

@@ -898,6 +898,12 @@ static bool module_directive(Parser *p, bool enable) {
         if (extension->kind != TOKEN_WORD) return parser_reject(p, "extension name");
         if (enable && parser_spelled(p, extension, "subgroups"))
             p->tokens->module_flags |= MODULE_SUBGROUPS;
+        else if (enable && parser_spelled(p, extension, "f16")) {
+            if ((p->tokens->module_flags & MODULE_DISABLE_F16) != 0u)
+                return source_error(p->source, DOE_COMPILER_UNSUPPORTED, extension->offset,
+                                    "f16 is not enabled by the compiler consumer");
+            p->tokens->module_flags |= MODULE_F16;
+        }
         else if (!enable && parser_spelled(p, extension, "uniform_buffer_standard_layout") &&
                  (p->tokens->module_flags & MODULE_STANDARD_UNIFORM) != 0u) {
             /* A language requirement checks caller-selected implementation support. */
