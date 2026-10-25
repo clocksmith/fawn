@@ -565,3 +565,13 @@ $(BUILD)/shared-memory: tests/shared_memory.c tests/consumer.h tests/adapter_cla
 check-shared-memory: $(BUILD)/shared-memory
 	$(BUILD)/shared-memory
 check: check-shared-memory
+
+# Opt-in paired-provider diagnostic. A pixel mismatch remains a failing exit;
+# this target does not replace or change check's frozen MSAA consumer.
+MSAA_DIAGNOSTIC_LIBRARY ?= $(NATIVE_LIBRARY)
+$(BUILD)/msaa-scissor-diagnostic: tests/msaa_scissor_diagnostic.c tests/consumer.h tests/adapter_class.h $(MSAA_DIAGNOSTIC_LIBRARY) | $(BUILD)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< "$(abspath $(MSAA_DIAGNOSTIC_LIBRARY))" \
+	  -Wl,-rpath,$(abspath $(dir $(MSAA_DIAGNOSTIC_LIBRARY))) -o $@
+.PHONY: check-msaa-scissor-diagnostic
+check-msaa-scissor-diagnostic: $(BUILD)/msaa-scissor-diagnostic
+	$(BUILD)/msaa-scissor-diagnostic
