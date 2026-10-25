@@ -113,6 +113,8 @@ void doe_mtl_timestamps_retire(doe_mtl_commands *commands, bool completed, bool 
             if (success) memcpy(timestamps->available, use->available, timestamps->count * sizeof(bool));
             else timestamps->poisoned = true;
         }
+        if (use->resolve_event != NULL)
+            commands->context->native.release(commands->context->native.userdata, use->resolve_event);
         timestamps->owner = NULL;
         doe_mtl_timestamps_release(timestamps);
         free(use->available);
@@ -171,8 +173,11 @@ doe_mtl_status doe_mtl_commands_resolve_timestamps(doe_mtl_commands *commands,
     status = doe_mtl_use_timestamps(commands, timestamps, &query_use);
     if (status == DOE_MTL_OK) status = doe_mtl_use_buffer(commands, destination, &buffer_use);
     if (status != DOE_MTL_OK) return doe_mtl_poison(commands, status, "timestamp resolve lease", error);
+    if (query_use->resolve_value == UINT64_MAX)
+        return doe_mtl_poison(commands, DOE_MTL_RANGE, "timestamp resolve sequence", error);
     status = native->resolve_timestamps(native->userdata, commands->native, timestamps->native,
-        first, count, destination->native, (size_t)offset, &detail);
+        first, count, destination->native, (size_t)offset, &query_use->resolve_event,
+        ++query_use->resolve_value, &detail);
     if (status == DOE_MTL_OK && offset == 0 && size == destination->size)
         buffer_use->initialized = true;
     return doe_mtl_native_record_result(commands, status, &detail, error);

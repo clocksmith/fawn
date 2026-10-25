@@ -115,3 +115,10 @@ sdk-abi: | $(BUILD)
 
 $(BUILD)/test_indirect: tests/test_indirect.c tests/mock_native.c tests/mock_native.h $(BUILD)/libdoe_metal.a
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(STRICT) tests/test_indirect.c tests/mock_native.c $(BUILD)/libdoe_metal.a $(LDLIBS) -o $@
+
+$(BUILD)/native_timestamps: tests/native_timestamps.c $(BUILD)/libdoe_metal.a
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(STRICT) $< $(BUILD)/libdoe_metal.a $(LDLIBS) -o $@
+.PHONY: native-timestamps-check
+native-timestamps-check: $(BUILD)/native_timestamps
+	@test "$(UNAME_S)" = Darwin || { echo 'native-timestamps-check requires an authorized macOS device'; exit 1; }
+	DOE_MTL_ALLOW_HARDWARE=1 python3 -c 'import subprocess; subprocess.run(["$(BUILD)/native_timestamps", "--run"], check=True, timeout=20)'

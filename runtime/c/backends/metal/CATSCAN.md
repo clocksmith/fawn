@@ -26,6 +26,7 @@ release under Apple's contract, without claiming displayed timestamps.
 Indexed/indirect [draws](include/doe_metal_draw_guard.h) use the shared GPU normalizer/scan and existing command owner.
 
 ## Invariants
+Timestamp resolves require native sample publication.
 Pending/unknown work retains every resource obligation; failed work never authorizes
 successful readback. No interpreter, backend substitution, Zig delegation or
 production-selection change. Host, SDK and physical evidence remain distinct. Native handles are borrowed; callers serialize.

@@ -6,7 +6,7 @@
 #include <string.h>
 
 enum { MOCK_KIND_DEVICE, MOCK_KIND_QUEUE, MOCK_KIND_BUFFER, MOCK_KIND_PIPELINE,
-    MOCK_KIND_COMMAND, MOCK_KIND_TEXTURE, MOCK_KIND_VIEW, MOCK_KIND_SAMPLER, MOCK_KIND_RENDER_PIPELINE, MOCK_KIND_DEPTH_STATE, MOCK_KIND_TIMESTAMPS };
+    MOCK_KIND_COMMAND, MOCK_KIND_TEXTURE, MOCK_KIND_VIEW, MOCK_KIND_SAMPLER, MOCK_KIND_RENDER_PIPELINE, MOCK_KIND_DEPTH_STATE, MOCK_KIND_TIMESTAMPS, MOCK_KIND_EVENT };
 struct mock_object {
     unsigned kind;
     size_t length;
@@ -335,9 +335,12 @@ static doe_mtl_status timestamp(void *userdata, void *command, void *buffer,
     return doe_mtl_fail(DOE_MTL_OK, "mock timestamp", error);
 }
 static doe_mtl_status resolve_timestamps(void *userdata, void *command, void *buffer,
-    uint32_t first, uint32_t count, void *destination, size_t offset, doe_mtl_error *error) {
+    uint32_t first, uint32_t count, void *destination, size_t offset,
+    void **event, uint64_t value, doe_mtl_error *error) {
     mock_native *mock = userdata;
     assert(command != NULL && buffer != NULL && destination != NULL);
+    assert(value != 0);
+    if (*event == NULL) *event = object_create(mock, MOCK_KIND_EVENT);
     if (mock->fail == MOCK_RESOLVE_TIMESTAMPS) return failure(error);
     mock->resolves++;
     mock->last_source = buffer;

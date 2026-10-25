@@ -218,7 +218,7 @@ doe_mtl_status doe_mtl_objc_timestamp(void *userdata, void *command,
     void *timestamps, uint32_t index, doe_mtl_error *error);
 doe_mtl_status doe_mtl_objc_resolve_timestamps(void *userdata, void *command,
     void *timestamps, uint32_t first, uint32_t count, void *destination,
-    size_t offset, doe_mtl_error *error);
+    size_t offset, void **event, uint64_t value, doe_mtl_error *error);
 void *doe_mtl_objc_timed_compute(doe_mtl_objc *runtime, void *command,
     const doe_mtl_native_timestamps *timestamps);
 doe_mtl_status doe_mtl_objc_dispatch_indirect(void *userdata, void *command, void *pipeline,
