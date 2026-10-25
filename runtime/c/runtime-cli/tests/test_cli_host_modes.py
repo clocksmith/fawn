@@ -70,6 +70,18 @@ def main():
     expected_hashes = ['0xd3d58a45b3411d9c','0xdf1715b3537d5cb3','0x4585478a9f8ef747','0x932455c45a37ada4','0xfe241c2a680fa89c']
     _, rows = run('embedded')
     assert [row['hash'] for row in rows] == expected_hashes
+    # Replay is allowed to overwrite its own trace after validation. A failed
+    # preflight must preserve both files, including an alternate path spelling.
+    run('embedded', '--replay', str(args.work / './embedded.jsonl'))
+    saved_rows = (args.work / 'embedded.jsonl').read_bytes()
+    saved_meta = (args.work / 'embedded.meta.json').read_bytes()
+    changed = deepcopy(rows); changed[0]['hash'] = '0'
+    (args.work / 'embedded.jsonl').write_text(''.join(json.dumps(row) + '\n' for row in changed))
+    invalid_rows = (args.work / 'embedded.jsonl').read_bytes()
+    run('embedded', '--replay', str(args.work / 'embedded.jsonl'), '--execute', '--backend', 'native', expected=1)
+    assert (args.work / 'embedded.jsonl').read_bytes() == invalid_rows
+    assert (args.work / 'embedded.meta.json').read_bytes() == saved_meta
+    (args.work / 'embedded.jsonl').write_bytes(saved_rows)
     replay = args.work / 'embedded.jsonl'
     run('replay', '--replay', str(replay))
     run('twice', '--command-repeat', '2', '--backend', 'trace')
