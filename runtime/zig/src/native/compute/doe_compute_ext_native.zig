@@ -13,6 +13,8 @@ const compute_preconditions = @import("doe_compute_preconditions_native.zig");
 const bind_group_native = @import("../resource/doe_bind_group_native.zig");
 const vulkan_compute = @import("../vulkan/vulkan_compute_native.zig");
 const shader_native = @import("../shader/doe_shader_native.zig");
+const shader_binding_reflection = @import("../shader/shader_binding_reflection.zig");
+const abi_binding_types = @import("../../contracts/model/model_binding_value_types.zig");
 const query_native = @import("../resource/doe_query_native.zig");
 const references = @import("../command/doe_command_references.zig");
 const native_exports = @import("../support/doe_native_exports.zig");
@@ -83,14 +85,21 @@ fn clamped_binding_count(pip: *const DoeComputePipeline) usize {
     return MAX_SHADER_BINDINGS;
 }
 
+/// One entry of a compute pipeline's default layout
+/// (https://gpuweb.github.io/gpuweb/#default-pipeline-layout): visible to the
+/// compute stage, a buffer with the type its address space and access imply.
+/// An undefined buffer type would mean "uniform" to createBindGroup, so a
+/// storage buffer bound through getBindGroupLayout would need UNIFORM usage.
 fn synthesize_layout_entry(binding: native_shared.BindingInfo) DoeBindGroupLayoutEntry {
     var entry = DoeBindGroupLayoutEntry{
         .binding = binding.binding,
         .resource_kind = RESOURCE_KIND_NONE,
+        .visibility = abi_binding_types.WGPUShaderStage_Compute,
     };
     switch (binding.kind) {
         @intFromEnum(binding_contract.ShaderKind.buffer) => {
             entry.resource_kind = RESOURCE_KIND_BUFFER;
+            entry.buffer_binding_type = shader_binding_reflection.bufferBindingType(binding);
         },
         @intFromEnum(binding_contract.ShaderKind.sampler) => {
             entry.resource_kind = RESOURCE_KIND_SAMPLER;

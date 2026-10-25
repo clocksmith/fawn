@@ -141,3 +141,61 @@ test "createTextureView: a format outside the texture format and viewFormats is 
     try std.testing.expectEqual(@as(u32, 0), texture_validation.srgbPairViewFormat(&texture_desc));
     try std.testing.expectEqual(@as(u32, types.WGPUTextureFormat_BC1RGBAUnormSrgb), texture_validation.srgbPair(types.WGPUTextureFormat_BC1RGBAUnorm));
 }
+
+test "automatic compute layouts bind ONNX Runtime storage buffers" {
+    // ORT takes getBindGroupLayout(0) from an automatic compute pipeline and
+    // binds Storage|CopySrc|CopyDst|Indirect buffers without Uniform usage.
+    const compute = @import("../../src/native/compute/doe_compute_ext_native.zig");
+    const bind_groups = @import("../../src/native/resource/doe_bind_group_native.zig");
+    const ir = @import("../../src/compiler/wgsl/ir/ir.zig");
+    const binding = @import("../../src/contracts/binding.zig");
+    const abi_binding = @import("../../src/contracts/model/model_binding_value_types.zig");
+    var shader = native.DoeShaderModule{ .binding_count = 3, .bindings_ready = true };
+    shader.bindings[0] = .{ .group = 0, .binding = 0, .kind = @intFromEnum(binding.ShaderKind.buffer), .addr_space = @intFromEnum(ir.AddressSpace.storage), .access = @intFromEnum(ir.AccessMode.read) };
+    shader.bindings[1] = .{ .group = 0, .binding = 1, .kind = @intFromEnum(binding.ShaderKind.buffer), .addr_space = @intFromEnum(ir.AddressSpace.storage), .access = @intFromEnum(ir.AccessMode.read_write) };
+    shader.bindings[2] = .{ .group = 0, .binding = 2, .kind = @intFromEnum(binding.ShaderKind.buffer), .addr_space = @intFromEnum(ir.AddressSpace.uniform) };
+    var pipeline = native.DoeComputePipeline{ .shader_module = &shader };
+    const layout_raw = compute.doeNativeComputePipelineGetBindGroupLayout(@ptrCast(&pipeline), 0);
+    try std.testing.expect(layout_raw != null);
+    defer bind_groups.doeNativeBindGroupLayoutRelease(layout_raw);
+    const layout = native.cast(native.DoeBindGroupLayout, layout_raw).?;
+    const layout_entries = layout.entries.?;
+    try std.testing.expectEqual(abi_binding.WGPUBufferBindingType_ReadOnlyStorage, layout_entries[0].buffer_binding_type);
+    try std.testing.expectEqual(abi_binding.WGPUBufferBindingType_Storage, layout_entries[1].buffer_binding_type);
+    try std.testing.expectEqual(abi_binding.WGPUBufferBindingType_Uniform, layout_entries[2].buffer_binding_type);
+    for (layout_entries) |entry| try std.testing.expectEqual(abi_binding.WGPUShaderStage_Compute, entry.visibility);
+
+    var dev = native.DoeDevice{ .backend = .vulkan };
+    const indirect_usage: u64 = 0x100; // webgpu.h WGPUBufferUsage_Indirect
+    const storage_usage = STORAGE | COPY_SRC | COPY_DST | indirect_usage;
+    var input = native.DoeBuffer{ .size = 6912, .usage = storage_usage, .device_ref = &dev };
+    var output = native.DoeBuffer{ .size = 6912, .usage = storage_usage, .device_ref = &dev };
+    var uniforms = native.DoeBuffer{ .size = 16, .usage = types.WGPUBufferUsage_Uniform | COPY_DST, .device_ref = &dev };
+    var entries = [_]types.WGPUBindGroupEntry{std.mem.zeroes(types.WGPUBindGroupEntry)} ** 3;
+    for (&entries, 0..) |*entry, i| {
+        entry.binding = @intCast(i);
+        entry.size = types.WGPU_WHOLE_SIZE;
+    }
+    entries[0].buffer = @ptrCast(&input);
+    entries[1].buffer = @ptrCast(&output);
+    entries[2].buffer = @ptrCast(&uniforms);
+    var desc = std.mem.zeroes(types.WGPUBindGroupDescriptor);
+    desc.layout = @ptrCast(layout_raw);
+    desc.entryCount = entries.len;
+    desc.entries = &entries;
+    dev.error_scopes.push(error_scope.FILTER_VALIDATION);
+    const group = bind_groups.doeNativeDeviceCreateBindGroup(@ptrCast(&dev), &desc);
+    try std.testing.expect(group != null);
+    bind_groups.doeNativeBindGroupRelease(group);
+    try std.testing.expectEqual(error_scope.ERROR_TYPE_NO_ERROR, try popType(&dev));
+    // Both usage checks stay enforced after correcting the automatic layout.
+    entries[2].buffer = @ptrCast(&input);
+    dev.error_scopes.push(error_scope.FILTER_VALIDATION);
+    try std.testing.expect(bind_groups.doeNativeDeviceCreateBindGroup(@ptrCast(&dev), &desc) == null);
+    try std.testing.expectEqual(error_scope.ERROR_TYPE_VALIDATION, try popType(&dev));
+    entries[2].buffer = @ptrCast(&uniforms);
+    entries[0].buffer = @ptrCast(&uniforms);
+    dev.error_scopes.push(error_scope.FILTER_VALIDATION);
+    try std.testing.expect(bind_groups.doeNativeDeviceCreateBindGroup(@ptrCast(&dev), &desc) == null);
+    try std.testing.expectEqual(error_scope.ERROR_TYPE_VALIDATION, try popType(&dev));
+}
