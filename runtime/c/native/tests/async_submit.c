@@ -527,6 +527,32 @@ static void zero_initialization_before_first_use(void)
     assert(atomic_load(&submits) == 2);
 }
 
+/* The initialization batch retains its textures and staging until it runs:
+ * the 64th texture recorded submits it, and destroy() of a texture that may be
+ * waiting in it submits it, so neither creation without submission nor a
+ * destroyed texture keeps memory until some later submission. */
+static void bounded_initialization_batch(void)
+{
+    state s = {0};
+    consumer_init(&s);
+    atomic_store(&submits, 0);
+    WGPUTexture batch[NATIVE_INIT_BATCH_TEXTURES];
+    for (unsigned i = 0; i + 1 < NATIVE_INIT_BATCH_TEXTURES; ++i)
+        batch[i] = zero_texture(&s, WGPUTextureFormat_RGBA8Unorm, WGPUTextureUsage_CopyDst);
+    assert(atomic_load(&submits) == 0);
+    batch[NATIVE_INIT_BATCH_TEXTURES - 1] = zero_texture(&s, WGPUTextureFormat_RGBA8Unorm, WGPUTextureUsage_CopyDst);
+    assert(atomic_load(&submits) == 1); /* The full batch, without waiting. */
+    for (unsigned i = 0; i < NATIVE_INIT_BATCH_TEXTURES; ++i) wgpuTextureRelease(batch[i]);
+    WGPUTexture destroyed = zero_texture(&s, WGPUTextureFormat_RGBA8Unorm, WGPUTextureUsage_RenderAttachment);
+    assert(atomic_load(&submits) == 1);
+    wgpuTextureDestroy(destroyed);
+    assert(atomic_load(&submits) == 2); /* Its pending initialization runs now. */
+    wgpuTextureDestroy(destroyed); /* No batch remains: nothing more is submitted. */
+    assert(atomic_load(&submits) == 2);
+    wgpuTextureRelease(destroyed);
+    consumer_finish(&s);
+}
+
 int main(void)
 {
     leases_until_completion();
@@ -536,6 +562,7 @@ int main(void)
     refused_submission_does_not_strand_later_work();
     targeted_host_access();
     zero_initialization_before_first_use();
-    printf("PASS async submit: no fence wait at Vulkan submit, released handles keep leases until completion, oldest-first settlement keeps the first error once, map/work-done callbacks in request order over completed work, loss with work in flight retires it as failed, a refused unresolved submission does not strand later work the worker retires by fence, host access waits only for work using its buffer and work done never waits for queue idle, batched zero initialization runs before first use with no submission of its own %s\n",
+    bounded_initialization_batch();
+    printf("PASS async submit: no fence wait at Vulkan submit, released handles keep leases until completion, oldest-first settlement keeps the first error once, map/work-done callbacks in request order over completed work, loss with work in flight retires it as failed, a refused unresolved submission does not strand later work the worker retires by fence, host access waits only for work using its buffer and work done never waits for queue idle, batched zero initialization runs before first use with no submission of its own, and a full batch or a destroy() submits it %s\n",
         adapter_class_scope());
 }

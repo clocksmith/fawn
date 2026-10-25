@@ -59,6 +59,7 @@ typedef struct native_device {
     /* Vulkan: unsubmitted zero initialization of newly created textures,
      * flushed ahead of the next recording that may touch them. */
     doe_vk_commands *init_batch;
+    uint32_t init_batch_textures; /* Textures recorded into init_batch. */
 } native_device;
 
 /* Native payloads have no independent reference count. Their resource owner
@@ -265,6 +266,8 @@ native_failure native_submit_commands(native_device *device, doe_vk_commands *co
 native_failure native_queue_texture_initialization(native_device *device, doe_vk_texture *texture,
     const doe_vk_texture_desc *desc, const doe_vk_format_caps *caps);
 native_failure native_flush_initialization(native_device *device);
+/* Textures one initialization batch holds before queueing submits it. */
+#define NATIVE_INIT_BATCH_TEXTURES 64u
 void native_release_initialization(native_device *device);
 /* Caller holds the device mutex and one ordinary device lease. Always adopts
  * the tagged command object, including allocation failure/unknown completion. */

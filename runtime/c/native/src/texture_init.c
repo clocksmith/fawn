@@ -89,8 +89,14 @@ native_failure native_queue_texture_initialization(native_device *device, doe_vk
         doe_vk_commands_abandon(device->init_batch, status);
         if (doe_vk_commands_release(device->init_batch) != DOE_VK_OK) abort();
         device->init_batch = NULL;
+        device->init_batch_textures = 0;
     }
-    return native_failure_vulkan(status, &error);
+    if (status != DOE_VK_OK) return native_failure_vulkan(status, &error);
+    /* The batch retains every texture and staging upload it holds until it is
+     * submitted, including textures released or destroyed meanwhile: bound it
+     * so creation without submission cannot grow retention without limit. */
+    if (++device->init_batch_textures >= NATIVE_INIT_BATCH_TEXTURES) return native_flush_initialization(device);
+    return native_failure_status(NATIVE_OK);
 }
 
 void native_release_initialization(native_device *device)
@@ -99,4 +105,5 @@ void native_release_initialization(native_device *device)
     /* Never submitted: its textures are unobservable without a submission. */
     if (doe_vk_commands_release(device->init_batch) != DOE_VK_OK) abort();
     device->init_batch = NULL;
+    device->init_batch_textures = 0;
 }
