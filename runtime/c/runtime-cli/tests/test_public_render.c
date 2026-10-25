@@ -8,6 +8,15 @@
 
 static unsigned pass_pipelines, pass_groups, bundle_pipelines, bundle_groups, bundles;
 static bool reject_bundle;
+static unsigned texture_copies;
+void __real_wgpuCommandEncoderCopyTextureToTexture(WGPUCommandEncoder, const WGPUTexelCopyTextureInfo *,
+    const WGPUTexelCopyTextureInfo *, const WGPUExtent3D *);
+void __wrap_wgpuCommandEncoderCopyTextureToTexture(WGPUCommandEncoder encoder, const WGPUTexelCopyTextureInfo *from,
+    const WGPUTexelCopyTextureInfo *to, const WGPUExtent3D *extent)
+{
+    texture_copies++;
+    __real_wgpuCommandEncoderCopyTextureToTexture(encoder, from, to, extent);
+}
 void __real_wgpuRenderPassEncoderSetPipeline(WGPURenderPassEncoder, WGPURenderPipeline);
 void __wrap_wgpuRenderPassEncoderSetPipeline(WGPURenderPassEncoder pass, WGPURenderPipeline pipeline)
 {
@@ -55,14 +64,16 @@ static void check_pixels(doe_runtime *runtime, bool red_tint)
     copy.as.copy.bytes = 8192;
     copy.as.copy.src.handle = 700;
     copy.as.copy.src.texture = target->declared;
-    copy.as.copy.dst.handle = 701;
+    unsigned channels = target->declared.format == DOE_FORMAT_R8_UNORM ? 1 :
+        target->declared.format == DOE_FORMAT_RG8_UNORM ? 2 : 4;
+    copy.as.copy.dst.handle = 710 + channels;
     copy.as.copy.dst.bytes_per_row = 256;
     copy.as.copy.dst.rows_per_image = 32;
     doe_trace_execution result;
     assert(doe_runtime_execute(runtime, &copy, &result));
     uint8_t *data = NULL;
     size_t size = 0;
-    assert(doe_runtime_read_buffer(runtime, 701, &data, &size, &result) && size == 8192);
+    assert(doe_runtime_read_buffer(runtime, 710 + channels, &data, &size, &result) && size == 8192);
     const uint8_t sampled[4][4] = {{255,0,0,255},{0,255,0,255},{0,0,255,255},{255,255,0,255}};
     for (unsigned y = 0; y < 32; y++) {
         for (unsigned x = 0; x < 32; x++) {
@@ -75,14 +86,14 @@ static void check_pixels(doe_runtime *runtime, bool red_tint)
                 memcpy(expected, sampled[(y >= 16 ? 2 : 0) + (x >= 16)], 4);
                 if (red_tint) expected[0] = 255;
             }
-            if (memcmp(data + y * 256 + x * 4, expected, 4)) {
+            if (memcmp(data + y * 256 + x * channels, expected, channels)) {
                 fprintf(stderr, "pixel %u,%u actual=%u,%u,%u,%u expected=%u,%u,%u,%u\n", x,y,
                     data[y*256+x*4],data[y*256+x*4+1],data[y*256+x*4+2],data[y*256+x*4+3],
                     expected[0],expected[1],expected[2],expected[3]);
                 abort();
             }
         }
-        for (unsigned x = 128; x < 256; x++) assert(data[y * 256 + x] == 0);
+        for (unsigned x = 32 * channels; x < 256; x++) assert(data[y * 256 + x] == 0);
     }
     free(data);
 }
@@ -156,8 +167,22 @@ int main(void)
     reject_bundle = false;
     assert(doe_runtime_execute(runtime, &draw, &result));
     check_pixels(runtime, false);
+    draw.kind = DOE_COMMAND_RENDER_DRAW;
+    draw.as.render.indexed = false;
+    draw.as.render.temporary_render_texture = true;
+    for (unsigned format = 0; format < 3; format++) {
+        draw.as.render.target_format = format == 0 ? DOE_FORMAT_R8_UNORM :
+            format == 1 ? DOE_FORMAT_RG8_UNORM : DOE_FORMAT_RGBA8_UNORM;
+        for (unsigned minimum = 0; minimum < 3; minimum++) {
+            draw.as.render.temporary_render_min_mip = minimum;
+            texture_copies = 0;
+            assert(doe_runtime_execute(runtime, &draw, &result));
+            assert(texture_copies == (format < 2 && minimum == 0 ? 1u : 0u));
+            check_pixels(runtime, false);
+        }
+    }
     printf("PASS public renderer: 8 state modes, bundle/pass call counts, all triangle texels, dynamic uniform pixels, "
-        "4 indirect modes, offset refusals and bundle-failure recovery: %s (%s, %s)\n",
+        "4 indirect modes, temporary R8/RG8 copy-back texels and guards, offset refusals and bundle-failure recovery: %s (%s, %s)\n",
         runtime->info.device, runtime->info.adapter_type, runtime->info.backend);
     doe_runtime_close(runtime);
     return 0;

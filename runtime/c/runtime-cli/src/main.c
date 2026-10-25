@@ -409,10 +409,7 @@ static bool emit_pending(pending_trace *pending, FILE *rows, const options *opti
         pending->hash, pending->previous, pending->command, &pending->decision, options->execute ? &pending->execution : NULL)) ok = false;
     if (!options->trace_stdout && !options->trace_jsonl && !options->trace_meta && !options->replay) {
         doe_command applied = *pending->command;
-        if (pending->decision.temporary_buffer) {
-            applied.as.copy.temporary_buffer = true;
-            applied.as.copy.temporary_buffer_alignment = pending->decision.temporary_buffer_alignment;
-        }
+        doe_quirks_apply(&pending->decision, &applied);
         if (!cli_write_summary(stdout, pending->seq, &applied, &pending->decision,
                 options->execute ? &pending->execution : NULL, identity->backend_id)) ok = false;
     }
@@ -582,10 +579,7 @@ int main(int argc, char **argv)
             const doe_quirk_decision decision = doe_quirks_decide(&quirks, command->kind);
             if (doe_semantic_present(&command->semantic)) t.semantic_tracing = true;
             doe_command applied = *command;
-            if (decision.temporary_buffer) {
-                applied.as.copy.temporary_buffer = true;
-                applied.as.copy.temporary_buffer_alignment = decision.temporary_buffer_alignment;
-            }
+            doe_quirks_apply(&decision, &applied);
             doe_trace_execution execution = {0};
             bool ok = !o.execute || doe_runtime_execute(runtime, &applied, &execution);
             uint64_t seq = t.rows;

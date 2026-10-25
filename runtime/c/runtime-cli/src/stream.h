@@ -147,6 +147,8 @@ typedef struct doe_render_draw {
     uint32_t target_width, target_height;
     doe_texture_format target_format;
     bool redundant_pipeline, redundant_bind_group, render_pass;
+    bool temporary_render_texture; /* Applied quirk; not a command-input field. */
+    uint32_t temporary_render_min_mip;
     bool has_dynamic_offsets;
     uint32_t *dynamic_offsets; /* Owned; presence preserves an explicit empty array. */
     size_t dynamic_offset_count;

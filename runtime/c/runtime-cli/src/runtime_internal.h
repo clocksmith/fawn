@@ -152,6 +152,8 @@ void runtime_release_diagnostics(doe_runtime *runtime);
 bool runtime_execute_map(doe_runtime *runtime, const doe_command *command, doe_trace_execution *execution);
 bool runtime_execute_sampler(doe_runtime *runtime, const doe_command *command, doe_trace_execution *execution);
 void runtime_release_render(doe_runtime *runtime);
+void runtime_render_copy_back(WGPUCommandEncoder encoder, WGPUTexture source, WGPUTexture destination,
+    const doe_render_draw *draw);
 bool runtime_execute_kernel(doe_runtime *runtime, const doe_command *command, doe_trace_execution *execution);
 /* dispatch and dispatch_indirect (the grid as indirect arguments). */
 bool runtime_execute_grid(doe_runtime *runtime, const doe_command *command, doe_trace_execution *execution);

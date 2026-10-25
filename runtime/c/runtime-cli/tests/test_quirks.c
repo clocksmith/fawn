@@ -118,17 +118,29 @@ int main(int argc, char **argv)
     d = doe_quirks_decide(&set, DOE_COMMAND_COPY);
     assert(d.temporary_buffer && d.temporary_buffer_alignment == 256 && !strcmp(d.toggle, "use_temporary_buffer_in_texture_to_texture_copy"));
     doe_quirks_free(&set);
-    /* Refusals: an action this runtime cannot apply in active mode (trace mode records it). */
+    /* Active rendering actions preserve source kind filtering and minimum mip. */
     quirk(a, sizeof(a), "render", "layout", "intel", "", "{\"kind\":\"use_temporary_render_texture\",\"params\":{\"minMipLevel\":2}}",
         "high", "guard_only", "guarded");
     snprintf(list, sizeof(list), "[%s]", a);
-    assert(!load(list, DOE_QUIRK_ACTIVE, &p, &set, message) && strstr(message, "cannot be applied"));
+    assert(load(list, DOE_QUIRK_ACTIVE, &p, &set, message));
+    d = doe_quirks_decide(&set, DOE_COMMAND_RENDER_DRAW);
+    assert(d.temporary_render_texture && d.temporary_render_min_mip == 2);
+    doe_command render = {.kind = DOE_COMMAND_RENDER_DRAW};
+    doe_quirks_apply(&d, &render);
+    assert(render.as.render.temporary_render_texture && render.as.render.temporary_render_min_mip == 2);
+    assert(!doe_quirks_decide(&set, DOE_COMMAND_DRAW_INDIRECT).temporary_render_texture);
+    assert(!doe_quirks_decide(&set, DOE_COMMAND_COPY).temporary_render_texture);
+    doe_quirks_free(&set);
     assert(load(list, DOE_QUIRK_TRACE, &p, &set, message));
+    assert(!doe_quirks_decide(&set, DOE_COMMAND_RENDER_DRAW).temporary_render_texture);
     doe_quirks_free(&set);
     quirk(a, sizeof(a), "metal", "layout", "intel", "",
         "{\"kind\":\"toggle\",\"params\":{\"toggle\":\"MetalRenderR8RG8UnormSmallMipToTempTexture\"}}", "high", "guard_only", "guarded");
     snprintf(list, sizeof(list), "[%s]", a);
-    assert(!load(list, DOE_QUIRK_ACTIVE, &p, &set, message) && strstr(message, "cannot be applied"));
+    assert(load(list, DOE_QUIRK_ACTIVE, &p, &set, message));
+    d = doe_quirks_decide(&set, DOE_COMMAND_RENDER_PASS);
+    assert(d.temporary_render_texture && d.temporary_render_min_mip == 2);
+    doe_quirks_free(&set);
     /* Invalid quirks: unknown action, wrong schema, unknown enum value, a lone object's extra field. */
     quirk(a, sizeof(a), "x", "layout", "intel", "", "{\"kind\":\"rewrite\"}", "low", "guard_only", "guarded");
     snprintf(list, sizeof(list), "[%s]", a);

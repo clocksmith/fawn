@@ -58,6 +58,8 @@ typedef struct doe_quirk_decision {
     /* Active mode only: the command copies through a temporary buffer of this alignment. */
     bool temporary_buffer;
     uint32_t temporary_buffer_alignment;
+    bool temporary_render_texture;
+    uint32_t temporary_render_min_mip;
 } doe_quirk_decision;
 
 typedef struct doe_quirk_bucket {
@@ -83,6 +85,7 @@ bool doe_semver_parse(const char *text, uint32_t out[3]);
 bool doe_quirks_load(const char *text, size_t size, doe_quirk_mode mode, const doe_profile *profile, doe_quirk_set *set,
     char *message, size_t message_size);
 void doe_quirks_free(doe_quirk_set *set);
+void doe_quirks_apply(const doe_quirk_decision *decision, doe_command *command);
 /* The decision for a command of this kind (an empty set decides nothing). */
 doe_quirk_decision doe_quirks_decide(const doe_quirk_set *set, doe_command_kind kind);
 #endif
