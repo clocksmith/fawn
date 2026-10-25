@@ -167,8 +167,19 @@ slice debug braces. Quoted kernel paths are JSON escaped.
   `<meta>.numeric-stability.jsonl` and the meta gains `numericStability`, both
   in doe-zig-runtime's format. The receipt `executionIdentity` carries this
   CLI's backend and profile; lane, adapter ordinal, queue family and selection
-  policy are null. A dispatch matching another capture plan (rmsnorm, attention) is refused with exit 2 before device work, and explicit
-  `numericStability` annotations stay rejected. Without a trace meta nothing is
+  policy are null. RMSNorm captures input, weights and output, evaluates serial
+  f32/f64 normalization, and uses the immediately following `matmul.logits`
+  weights for the decision only when its hidden handle, offset and extent exactly
+  match the normalization output; intervening commands and annotated downstream
+  operations reject rather than infer mutation effects; stable routing rewrites the normalized tensor, not the decision logits.
+  Attention captures query, keys, values and output and preserves the retained
+  eight-lane f32 accumulation and serial f64 reference, including score clamping.
+  Explicit `numericStability` annotations select buffer spans, candidate row/token
+  identities, labels, biases and routing policy; they override auto-detection.
+  Unknown capture plans still reject before device work; invalid captures fail
+  without publishing a successful receipt. Nonfinite captures, uniforms and
+  evaluation results fail closed; implicit captures cannot escape declared buffer
+  binding extents. Without a trace meta nothing is
   evaluated by either runtime.
 - `output_oracle` schema 1, `sha256_exact_v1`, `zero_fill_v1` initialization:
   with `--validate-output-oracles` the command runs again on isolated
@@ -507,7 +518,9 @@ The ordinary `matmul-logits-bindings-v1` numeric capture plan shares the
 retained serial f32/f64 evaluation and receipt/routing owner with decode logits,
 using hidden binding1 and weights binding2. Host controls cover stable rewrite,
 abstention and observe-only routes with independently calculated logits. The
-unchanged `matmul_logits_forward_f16accum.wgsl` live consumer currently stops at
-the C compiler's unsupported `enable f16`; the retained Zig CLI executes the
-same bounded 2x3 fixture and emits the expected receipt. Host capture/routing
-coverage does not establish that shader's C GPU execution.
+unchanged `matmul_logits_forward_f16accum.wgsl` bounded 2x3 consumer now executes
+on the native C Vulkan path with a software llvmpipe CPU adapter. Inputs
+`hidden=[1,1,1]`, `weights=[2048,1,-2048,0,.25,0]` produce actual half-accumulated
+fast logits `[0,.25]`, stable/reference `[1,.25]`, and preferred-stable device
+readback `[1,.25]`. This is software-Vulkan execution, not physical GPU
+qualification. The runtime requests ShaderF16 only when the adapter advertises it.

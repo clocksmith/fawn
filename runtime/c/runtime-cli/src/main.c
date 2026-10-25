@@ -299,7 +299,7 @@ static int load_numeric_policy(const options *o, const doe_stream *stream, doe_n
     for (size_t i = 0; o->execute && o->trace_meta && i < stream->count; i++) {
         const doe_json_value *profile = doe_ns_auto_detect(policy, &stream->commands[i]);
         const char *plan = doe_ns_string(profile, "capturePlanId");
-        if (profile && !doe_ns_capture_plan_supported(plan)) {
+        if (!stream->commands[i].numeric && profile && !doe_ns_capture_plan_supported(plan)) {
             fprintf(stderr, "doe-c-runtime: %s: command %zu: numeric stability evaluation (%s, capture plan %s) is not "
                 "implemented by doe-c-runtime; doe-zig-runtime evaluates it when a trace meta is written\n", o->commands, i,
                 doe_ns_string(profile, "profileId"), plan ? plan : "(none)");
@@ -636,7 +636,7 @@ int main(int argc, char **argv)
             /* doe-zig-runtime evaluates after a successful command; a stop route skips the rest. */
             if (ok && ns_enabled) {
                 char ns_message[512];
-                if (!doe_ns_record(&ns, &ns_io, &ns_identity, command, stream.count - i - 1, &stopped, ns_message,
+                if (!doe_ns_record(&ns, &ns_io, &ns_identity, command, stream.commands + i + 1, stream.count - i - 1, &stopped, ns_message,
                         sizeof(ns_message))) {
                     fprintf(stderr, "doe-c-runtime: command %zu: %s\n", i, ns_message);
                     status = 1;

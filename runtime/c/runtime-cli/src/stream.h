@@ -6,6 +6,7 @@
 #ifndef DOE_RUNTIME_STREAM_H
 #define DOE_RUNTIME_STREAM_H
 #include "json.h"
+#include "numeric_annotation.h"
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -243,6 +244,7 @@ typedef struct doe_command {
          * pipeline and bindings, else dispatch_noop.wgsl, as doe-zig-runtime does. */
         struct { uint32_t x, y, z; } grid;
     } as;
+    doe_numeric_annotation *numeric; /* Owned, strings borrow document. */
     doe_semantic semantic; /* kernel_dispatch only; all absent elsewhere. */
 } doe_command;
 

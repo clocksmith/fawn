@@ -215,7 +215,7 @@ int main(int argc, char **argv)
     rejects("[{\"kind\":\"kernel_dispatch\",\"kernel\":\"k\",\"captureBufferHandle\":1,\"captureSize\":4}]", 0,
         "semantic operation");
     rejects("[{\"kind\":\"kernel_dispatch\",\"kernel\":\"k\",\"semanticOpId\":\"op\",\"numericStability\":{}}]", 0,
-        "numericStability");
+        "numeric capture");
     rejects("[{\"kind\":\"buffer_write\",\"handle\":1,\"data\":[1],\"semanticOpId\":\"op\"}]", 0, "semanticOpId");
     rejects("[{\"kind\":\"kernel_dispatch\",\"kernel\":\"k\",\"bindings\":[{\"binding\":0,\"kind\":\"sampler\","
         "\"resource_handle\":1}]}]", 0, "storage_texture");

@@ -13,6 +13,8 @@
 
 #define DOE_NUMERIC_STABILITY_DEFAULT_POLICY "config/numeric-stability-policy.json"
 /* Retained runtime_plan.zig capture plans. */
+#define DOE_NS_RMSNORM_PLAN "rmsnorm-output-bindings-v1"
+#define DOE_NS_ATTENTION_PLAN "attention-output-bindings-v1"
 #define DOE_NS_MATMUL_LOGITS_PLAN "matmul-logits-bindings-v1"
 #define DOE_NS_DECODE_FINAL_LOGITS_PLAN "decode-final-logits-matmul-gemv-bindings-v1"
 
