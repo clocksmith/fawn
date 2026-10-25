@@ -139,6 +139,8 @@ void doe_mtl_texture_release(doe_mtl_texture *texture) {
     if (texture == NULL || --texture->references != 0) return;
     context = texture->context;
     if (texture->native != NULL) context->native.release(context->native.userdata, texture->native);
+    if (texture->drawable) context->native.release(context->native.userdata, texture->drawable);
+    doe_mtl_surface_release(texture->surface);
     free(texture->initialized);
     free(texture);
     doe_mtl_context_release(context);

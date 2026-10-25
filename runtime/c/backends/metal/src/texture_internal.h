@@ -13,6 +13,9 @@ struct doe_mtl_texture {
     uint8_t *initialized;
     bool poisoned;
     doe_mtl_commands *owner;
+    doe_mtl_surface *surface;
+    void *drawable;
+    bool presentation_registered;
 };
 struct doe_mtl_texture_view {
     doe_mtl_texture *texture;

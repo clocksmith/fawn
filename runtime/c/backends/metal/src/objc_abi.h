@@ -13,6 +13,7 @@ typedef struct doe_mtl_size { size_t width, height, depth; } doe_mtl_size;
 typedef struct doe_mtl_origin { size_t x, y, z; } doe_mtl_origin;
 typedef struct doe_mtl_swizzle_abi { uint8_t red, green, blue, alpha; } doe_mtl_swizzle_abi;
 typedef struct doe_mtl_range_abi { size_t location, length; } doe_mtl_range_abi;
+typedef struct doe_mtl_drawable_size { double width, height; } doe_mtl_drawable_size;
 typedef void (*doe_objc_message)(void);
 #if defined(__aarch64__) || defined(__arm64__)
 typedef bool doe_objc_bool;
@@ -44,6 +45,8 @@ typedef void (*doe_objc_dimensions_stret_call)(doe_mtl_size *, void *, void *);
 
 typedef void (*doe_objc_set_size_call)(void *, void *, size_t);
 typedef void (*doe_objc_set_float_call)(void *, void *, float);
+typedef void (*doe_objc_set_bool_call)(void *, void *, doe_objc_bool);
+typedef void (*doe_objc_set_drawable_size_call)(void *, void *, doe_mtl_drawable_size);
 typedef doe_objc_bool (*doe_objc_bool_call)(void *, void *);
 typedef doe_objc_bool (*doe_objc_samples_call)(void *, void *, size_t);
 typedef doe_objc_bool (*doe_objc_family_call)(void *, void *, intptr_t);
@@ -90,6 +93,8 @@ typedef struct doe_mtl_objc {
     doe_objc_dimensions_stret_call dimensions_stret_call;
     doe_objc_set_size_call set_size_call;
     doe_objc_set_float_call set_float_call;
+    doe_objc_set_bool_call set_bool_call;
+    doe_objc_set_drawable_size_call set_drawable_size_call;
     doe_objc_bool_call bool_call;
     doe_objc_family_call family_call;
     doe_objc_samples_call samples_call;
@@ -148,6 +153,13 @@ typedef struct doe_mtl_objc {
 } doe_mtl_objc;
 
 void *doe_mtl_objc_object(doe_mtl_objc *runtime, void *object, void *selector);
+bool doe_mtl_objc_surface_supported(void *userdata, void *layer);
+doe_mtl_status doe_mtl_objc_surface_configure(void *userdata, void *device, void *layer,
+    const doe_mtl_surface_desc *desc, void **out, doe_mtl_error *error);
+doe_mtl_status doe_mtl_objc_surface_acquire(void *userdata, void *layer, const doe_mtl_surface_desc *desc,
+    void **drawable, void **texture, doe_mtl_error *error);
+doe_mtl_status doe_mtl_objc_surface_present(void *userdata, void *command, void *drawable, doe_mtl_error *error);
+size_t doe_mtl_objc_surface_observe(void *userdata, void *command, void *drawable, bool wait, doe_mtl_error *error);
 void doe_mtl_objc_void(doe_mtl_objc *runtime, void *object, void *selector);
 size_t doe_mtl_objc_size(doe_mtl_objc *runtime, void *object, void *selector);
 bool doe_mtl_objc_limits(doe_mtl_objc *runtime, void *device, doe_mtl_caps *caps);

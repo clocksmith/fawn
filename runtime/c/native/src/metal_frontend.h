@@ -14,4 +14,6 @@ void native_metal_write_texture(native_device *device, const WGPUTexelCopyTextur
 void native_view_release(void *userdata, void *handle);
 void native_sampler_release(void *userdata, void *handle);
 bool native_metal_format(uint32_t features, WGPUTextureFormat format, doe_mtl_format *out);
+native_failure native_metal_initialize_texture(native_device *device, native_texture *texture,
+    const doe_mtl_texture_desc *desc);
 #endif

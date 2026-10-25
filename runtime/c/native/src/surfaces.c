@@ -13,6 +13,13 @@ static const WGPUTextureUsage surface_usages = WGPUTextureUsage_RenderAttachment
 
 static bool source_from_chain(const WGPUChainedStruct *chain, doe_vk_surface_desc *out)
 {
+#if defined(__APPLE__)
+    if (chain && !chain->next && chain->sType == WGPUSType_SurfaceSourceMetalLayer) {
+        const WGPUSurfaceSourceMetalLayer *source = (const WGPUSurfaceSourceMetalLayer *)chain;
+        *out = (doe_vk_surface_desc){.platform=NATIVE_SURFACE_METAL_LAYER,.display=source->layer};
+        return source->layer != NULL;
+    }
+#endif
 #if defined(__linux__)
     if (!chain || chain->next) return false;
     switch (chain->sType) {
@@ -92,6 +99,11 @@ uint32_t native_surface_default_platforms(void)
 
 native_result native_surface_compatible(WGPUSurface handle, const native_backend *adapter)
 {
+    if (handle && adapter->kind == WGPUBackendType_Metal) {
+        native_surface *surface = (native_surface *)handle;
+        return surface->source.platform == NATIVE_SURFACE_METAL_LAYER &&
+            doe_mtl_surface_supported(adapter->value.metal.context, surface->source.display) ? NATIVE_OK : NATIVE_UNSUPPORTED;
+    }
     if (!handle || adapter->kind != WGPUBackendType_Vulkan) return NATIVE_UNSUPPORTED;
     doe_vk_surface *probe = NULL;
     doe_vk_status status = doe_vk_surface_create(adapter->value.vulkan.context,
@@ -137,6 +149,8 @@ void native_surface_retirement_release(native_pending *pending)
 
 native_pending *native_surface_unconfigure_locked(native_surface *surface)
 {
+    if (surface->source.platform == NATIVE_SURFACE_METAL_LAYER)
+        return native_metal_surface_unconfigure_locked(surface);
     surface->configured = false;
     native_device *device = surface->device;
     if (!surface->vulkan) return NULL;
@@ -171,7 +185,7 @@ static void surface_teardown(native_surface *surface)
 {
     /* Any unresolved native state owns an armed pending lease. Reaching zero
      * therefore proves configuration retirement already completed. */
-    if (surface->vulkan || surface->device || surface->retirement) abort();
+    if (surface->vulkan || surface->metal || surface->device || surface->retirement) abort();
     if (doe_label_store_destroy(surface->labels) != DOE_LABEL_OK) abort();
     if (doe_mutex_destroy(&surface->mutex).status != DOE_HOST_OK) abort();
     doe_instance *instance = surface->instance;
@@ -320,6 +334,8 @@ WGPUStatus wgpuSurfaceGetCapabilities(WGPUSurface handle, WGPUAdapter adapter_ha
 {
     native_surface *surface = (native_surface *)handle;
     native_adapter *adapter = (native_adapter *)adapter_handle;
+    if (surface && surface->source.platform == NATIVE_SURFACE_METAL_LAYER)
+        return native_metal_surface_capabilities(surface, adapter, out);
     if (!surface || !adapter || !out || out->nextInChain || adapter->backend.kind != WGPUBackendType_Vulkan ||
         !(adapter->backend.value.vulkan.caps.surface_platforms & surface->source.platform))
         return WGPUStatus_Error;
@@ -387,6 +403,10 @@ void wgpuSurfaceConfigure(WGPUSurface handle, const WGPUSurfaceConfiguration *co
 {
     native_surface *surface = (native_surface *)handle;
     if (!surface || !config) return;
+    if (surface->source.platform == NATIVE_SURFACE_METAL_LAYER) {
+        native_metal_surface_configure(surface, config);
+        return;
+    }
     if (!config->device) {
         /* A configured surface still has the device on which to report a
          * malformed replacement. Preserve that configuration and its frame. */

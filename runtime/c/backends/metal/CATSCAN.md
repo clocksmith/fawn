@@ -7,7 +7,7 @@ Execute admitted Metal operations in C, preserving resource and completion oblig
 
 ## Authority
 Own native loading, device/queue/resource/pipeline lifetimes, compute/render,
-resolves, visibility/timestamps, transfers, submission and retirement. Exclude WGSL
+resolves, visibility/timestamps, CAMetalLayer drawables, transfers, submission and retirement. Exclude WGSL
 meaning, public validation, provider selection and qualification.
 
 ## Scope
@@ -20,6 +20,10 @@ Validated MSL and explicit compiler workgroup/slot facts enter the
 completion-backed shared-buffer access. Typed indirect compute copies GPU arguments
 to private scratch and executes the shared compiled bounds guard before consumption,
 under [system invariants](../../../../INTENT.md).
+Presentation borrows an explicit CAMetalLayer and retains each acquired drawable through
+the existing texture/command owner. Native presentDrawable schedules presentation;
+GPU completion permits releasing the caller lease under Apple's drawable contract,
+without claiming a displayed timestamp. Unknown GPU work remains retained.
 Indexed/indirect [draws](include/doe_metal_draw_guard.h) use the shared GPU normalizer/scan and existing command owner.
 
 ## Invariants

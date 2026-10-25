@@ -48,6 +48,7 @@ struct doe_mtl_commands {
     void *native;
     doe_mtl_command_state state;
     doe_mtl_error failure;
+    doe_mtl_texture *present_texture; /* Borrowed through the ordinary texture use. */
     doe_mtl_buffer_use *buffers;
     doe_mtl_pipeline_use *pipelines;
     struct doe_mtl_texture_use *textures;

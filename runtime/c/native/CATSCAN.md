@@ -10,7 +10,7 @@ Own ABI conversion, adapter/device leases and orchestration, not resource semant
 callback queues, shader meaning, GPU execution or production defaults.
 
 ## Scope
-Public objects, compute, graphics, copies and Linux Vulkan presentation.
+Public objects, compute, graphics, copies and Linux Vulkan and macOS Metal presentation.
 [Coverage](README.md) separates Vulkan, Metal and Windows D3D12 composition.
 Missing backend paths reject.
 
@@ -25,8 +25,11 @@ Read only the selected payload. Reflection never substitutes for dispatch analys
 Unknown work retains resources and progress. Vulkan submit returns at
 queue acceptance, settles oldest first, and zero-initializes textures before
 queue-ordered access (owner-authorized 2026-10-24). Surface acquisition/discard
-uncertainty uses reserved records on the same pending list; presentation requires
-its own frame fence. Cleanup-only records do not redefine command WorkDone.
+uncertainty uses reserved records on the same pending list; Vulkan presentation
+requires its own frame fence. Metal registers presentation with the native
+scheduled handler and conservatively retains caller drawable leases through GPU
+completion under Apple's release-after-registration contract. A skipped-frame
+display timestamp is not a WorkDone or resource-retirement condition. Cleanup-only records do not redefine command WorkDone.
 Surface cleanup preserves surface-before-device lock order and undelivered errors.
 Invalid surface configuration preserves the active configuration; successful
 replacement leaves old frame/view generations on the existing retirement owner.

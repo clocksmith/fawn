@@ -2,6 +2,7 @@
  * Compile-only comparison with the installed Apple SDK. No device is created. */
 #import <Foundation/Foundation.h>
 #import <Metal/Metal.h>
+#import <QuartzCore/CAMetalLayer.h>
 #include "../src/objc_abi.h"
 #include <stddef.h>
 
@@ -23,6 +24,8 @@ SAME_FIELD(doe_mtl_size, MTLSize, depth);
 SAME_LAYOUT(doe_mtl_origin, MTLOrigin);
 SAME_FIELD(doe_mtl_origin, MTLOrigin, z);
 SAME_LAYOUT(doe_mtl_range_abi, NSRange);
+SAME_LAYOUT(doe_mtl_drawable_size, CGSize);
+SAME_FIELD(doe_mtl_drawable_size, CGSize, height);
 SAME_FIELD(doe_mtl_range_abi, NSRange, length);
 SAME_LAYOUT(doe_mtl_swizzle_abi, MTLTextureSwizzleChannels);
 SAME_FIELD(doe_mtl_swizzle_abi, MTLTextureSwizzleChannels, alpha);
@@ -130,4 +133,20 @@ void doe_mtl_sdk_calls(id<MTLComputeCommandEncoder> compute,
     [blit fillBuffer:buffer range:(NSRange){0, 4} value:(uint8_t)0];
     [blit resolveCounters:counters inRange:(NSRange){0, 1}
         destinationBuffer:buffer destinationOffset:0];
+}
+
+void doe_mtl_sdk_surface_calls(CAMetalLayer *layer, id<MTLDevice> device,
+    id<MTLCommandBuffer> command, id<CAMetalDrawable> drawable) {
+    [layer setDevice:device];
+    [layer setPixelFormat:MTLPixelFormatBGRA8Unorm];
+    [layer setDrawableSize:(CGSize){64, 32}];
+    [layer setFramebufferOnly:(BOOL)YES];
+    [layer setAllowsNextDrawableTimeout:(BOOL)YES];
+    [layer setDisplaySyncEnabled:(BOOL)YES];
+    [layer setOpaque:(BOOL)YES];
+    (void)[layer nextDrawable];
+    (void)[drawable texture];
+    CFTimeInterval presented = [drawable presentedTime];
+    (void)presented;
+    [command presentDrawable:drawable];
 }

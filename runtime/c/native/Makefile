@@ -316,6 +316,14 @@ PHYSICAL_CLIENTS = draw-guard implicit-sampling d3d12-graphics d3d12-vertex-inpu
 # Real-window presentation (XCB on a reachable X server, e.g. Xwayland); not part
 # of headless `check`. Exit 77 means skipped (no display), never a pass.
 SURFACE_TEST_HEADERS = tests/surface_consumer.h tests/consumer.h tests/adapter_class.h
+# Authorized healthy macOS only; no ordinary check or physical matrix inclusion.
+$(BUILD)/metal-surface: tests/metal_surface.c $(SURFACE_TEST_HEADERS) ../runtime-cli/src/surface_metal.m ../runtime-cli/src/surface_platform.h $(NATIVE_LIBRARY)
+	$(CC) $(CPPFLAGS) -D_DARWIN_C_SOURCE $(CFLAGS) tests/metal_surface.c ../runtime-cli/src/surface_metal.m \
+	  -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -framework AppKit -framework QuartzCore -o $@
+.PHONY: check-metal-present
+check-metal-present: $(BUILD)/metal-surface
+	@test "$$(uname -s)" = Darwin || { echo 'check-metal-present requires an authorized healthy Mac'; exit 1; }
+	DOE_C_TEST_ADAPTER=physical DOE_C_TEST_BACKEND=metal python3 -c 'import subprocess; subprocess.run(["$(BUILD)/metal-surface"], check=True, timeout=20)'
 $(BUILD)/surface-present: tests/surface_present.c $(SURFACE_TEST_HEADERS) $(NATIVE_LIBRARY)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -lxcb -o $@
 $(BUILD)/surface-platforms: tests/surface_platforms.c $(SURFACE_TEST_HEADERS) $(NATIVE_LIBRARY)

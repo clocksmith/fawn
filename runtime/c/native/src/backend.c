@@ -2,6 +2,7 @@
 #include "backend.h"
 #include "doe_native_adapter.h"
 #include "internal.h"
+#include "surface.h"
 #include "d3d12_frontend.h"
 #include <stdlib.h>
 #include <string.h>
@@ -42,7 +43,7 @@ native_result native_backend_open(WGPUBackendType kind, bool fallback, uint32_t 
                 &result.limits) != WGPUStatus_Success) status = NATIVE_FAILURE;
     } else if (kind == WGPUBackendType_Metal) {
         if (fallback) return NATIVE_UNAVAILABLE; /* No CPU adapter is advertised. */
-        if (surface_platforms) return NATIVE_UNSUPPORTED; /* Metal layer surfaces are not composed. */
+        if (surface_platforms && surface_platforms != NATIVE_SURFACE_METAL_LAYER) return NATIVE_UNSUPPORTED;
         status = native_from_metal(doe_mtl_context_create(&result.value.metal.context, NULL));
         if (status == NATIVE_OK)
             status = native_from_metal(doe_mtl_context_caps(result.value.metal.context, &result.value.metal.caps));
