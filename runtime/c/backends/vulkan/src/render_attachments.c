@@ -58,6 +58,8 @@ doe_vk_status doe_vk_render_pass_create(doe_vk_context *context, const doe_vk_re
         color_refs[i] = (VkAttachmentReference){count++, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
     }
     VkAttachmentReference depth_ref = {VK_ATTACHMENT_UNUSED, VK_IMAGE_LAYOUT_UNDEFINED};
+    const uint32_t depth_layout = layout->depth_stencil_sampled ? VK_IMAGE_LAYOUT_GENERAL :
+        VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
     if (layout->depth_stencil != 0) {
         uint32_t aspects = doe_vk_format_aspects(layout->depth_stencil);
         attachments[count] = (VkAttachmentDescription){.format = (uint32_t)layout->depth_stencil,
@@ -66,9 +68,8 @@ doe_vk_status doe_vk_render_pass_create(doe_vk_context *context, const doe_vk_re
             .storeOp = store_operation((aspects & VK_IMAGE_ASPECT_DEPTH_BIT) != 0, desc->discard_depth),
             .stencilLoadOp = load_operation((aspects & VK_IMAGE_ASPECT_STENCIL_BIT) != 0, desc->clear_stencil),
             .stencilStoreOp = store_operation((aspects & VK_IMAGE_ASPECT_STENCIL_BIT) != 0, desc->discard_stencil),
-            .initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-            .finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL};
-        depth_ref = (VkAttachmentReference){count++, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL};
+            .initialLayout = depth_layout, .finalLayout = depth_layout};
+        depth_ref = (VkAttachmentReference){count++, depth_layout};
     }
     for (uint32_t i = 0; i < layout->color_count; ++i) {
         resolve_refs[i] = (VkAttachmentReference){VK_ATTACHMENT_UNUSED, VK_IMAGE_LAYOUT_UNDEFINED};
@@ -169,10 +170,12 @@ doe_vk_status doe_vk_render_attachments_validate(doe_vk_commands *commands,
         aspects = doe_vk_format_aspects(desc->depth_stencil->texture->desc.format);
         if (aspects == VK_IMAGE_ASPECT_COLOR_BIT) return DOE_VK_INVALID_ARGUMENT;
     }
+    /* WebGPU allows depthReadOnly/stencilReadOnly on a format without that
+     * aspect; only its load and store operations must be absent. */
     if (!(aspects & VK_IMAGE_ASPECT_DEPTH_BIT) &&
-        (desc->clear_depth || desc->discard_depth || desc->depth_read_only)) return DOE_VK_INVALID_ARGUMENT;
+        (desc->clear_depth || desc->discard_depth)) return DOE_VK_INVALID_ARGUMENT;
     if (!(aspects & VK_IMAGE_ASPECT_STENCIL_BIT) &&
-        (desc->clear_stencil || desc->discard_stencil || desc->stencil_read_only)) return DOE_VK_INVALID_ARGUMENT;
+        (desc->clear_stencil || desc->discard_stencil)) return DOE_VK_INVALID_ARGUMENT;
     if (desc->depth_read_only && (desc->clear_depth || desc->discard_depth)) return DOE_VK_INVALID_ARGUMENT;
     if (desc->stencil_read_only && (desc->clear_stencil || desc->discard_stencil)) return DOE_VK_INVALID_ARGUMENT;
     if (desc->clear_depth && (!isfinite(desc->depth_clear_value) ||
@@ -188,11 +191,13 @@ static size_t subresource_index(const doe_vk_texture_view *view) {
 }
 
 doe_vk_status doe_vk_render_attachments_prepare(doe_vk_commands *commands, const doe_vk_render_pass_desc *desc,
-    const doe_vk_render_colors *colors, uint32_t width, uint32_t height, doe_vk_render_use **out) {
+    const doe_vk_render_colors *colors, uint32_t width, uint32_t height, bool depth_stencil_sampled,
+    doe_vk_render_use **out) {
     doe_vk_texture_use *color[DOE_VK_MAX_COLOR_ATTACHMENTS] = {0}, *resolve[DOE_VK_MAX_COLOR_ATTACHMENTS] = {0};
     doe_vk_texture_use *depth = NULL;
     doe_vk_status status = DOE_VK_OK;
-    doe_vk_render_layout layout = {.color_count = colors->count};
+    doe_vk_render_layout layout = {.color_count = colors->count,
+        .depth_stencil_sampled = desc->depth_stencil != NULL && depth_stencil_sampled};
     for (uint32_t i = 0; i < colors->count; ++i) {
         const doe_vk_color_attachment *slot = &colors->slots[i];
         if (slot->view == NULL) continue;
@@ -263,7 +268,8 @@ doe_vk_status doe_vk_render_attachments_prepare(doe_vk_commands *commands, const
         if (color[i] != NULL) doe_vk_texture_transition(commands, color[i], VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
         if (resolve[i] != NULL) doe_vk_texture_transition(commands, resolve[i], VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
     }
-    if (depth != NULL) doe_vk_texture_transition(commands, depth, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+    if (depth != NULL) doe_vk_texture_transition(commands, depth, layout.depth_stencil_sampled ?
+        VK_IMAGE_LAYOUT_GENERAL : VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
     /* These are speculative final aspect states, published only on successful
      * command completion. Discard cannot become initialized through a draw. */
     for (uint32_t i = 0; i < colors->count; ++i) {

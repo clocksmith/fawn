@@ -457,8 +457,13 @@ Depth/stencil uses the same full pass recorder and completion-owned image state.
 color-only calls construct that descriptor and delegate. Initialization bytes are
 per-aspect masks, so discarding depth does not discard stencil and an abandoned
 clear does not publish either. A read-only aspect cannot clear/discard or use a
-pipeline that may write it. LOAD requires prior initialization, including empty
-passes. Views and native framebuffers stay retained through unresolved work.
+pipeline that may write it; a read-only flag on an aspect the format lacks is
+admitted (WebGPU). A draw may sample the depth/stencil attachment's texture
+through another subresource or through aspects the pass only reads; the
+attachment then stays in GENERAL for the pass (`tests/readonly_depth_sampling.c`
+in the native owner). Sampling a written aspect, a color attachment or any
+storage binding of an attachment remains unsupported. LOAD requires prior
+initialization, including empty passes. Views and native framebuffers stay retained through unresolved work.
 Depth/stencil images admit 2D attachment, copy and/or sampled usage (cube
 compatibility only when sampled); storage remains unsupported. Views carry an
 explicit aspect (`doe_vk_texture_view_desc.aspect`), resolved by the same owner
