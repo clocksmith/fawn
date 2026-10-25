@@ -74,6 +74,8 @@ doe_resource_status resource_pass_timestamps_validate(const void *device,
     if (!resource_query_available(timestamps->set)) return DOE_RESOURCE_UNAVAILABLE;
     if (timestamps->set->base.config.device.identity != device) return DOE_RESOURCE_DEVICE_MISMATCH;
     if (timestamps->set->type != WGPUQueryType_Timestamp) return DOE_RESOURCE_LAYOUT;
+    /* GPU*PassTimestampWrites must name at least one write index. */
+    if (timestamps->begin_index == UINT32_MAX && timestamps->end_index == UINT32_MAX) return DOE_RESOURCE_LAYOUT;
     if ((timestamps->begin_index != UINT32_MAX && timestamps->begin_index >= timestamps->set->count) ||
         (timestamps->end_index != UINT32_MAX && timestamps->end_index >= timestamps->set->count))
         return DOE_RESOURCE_RANGE;

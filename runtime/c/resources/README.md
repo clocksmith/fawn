@@ -47,7 +47,10 @@ an alias of device-free compiled data or a second count for one WebGPU object.
   `DOE_RESOURCE_MAX_DYNAMIC_OFFSETS` (32) dynamic buffers. Rejected layouts and
   groups validate before allocating, and dispatch/draw usage scratch stays on
   the stack up to `RESOURCE_STACK_USES` uses, so ordinary failures never touch
-  the allocator.
+  the allocator. `doe_resource_pipeline_require_minimums` records the buffer
+  sizes a compute pipeline's shader requires; each dispatch rejects a bound
+  buffer binding below them at encoding (WebGPU checks these when the layout's
+  minBindingSize is 0), without consulting liveness, which submission checks.
   Float32 textures require the explicit device-enabled `float32_filterable` policy
   for Float bindings; default admission is UnfilterableFloat regardless of driver
   capability. Features are copied for later resolve/submit revalidation. Normalized
@@ -77,7 +80,8 @@ an alias of device-free compiled data or a second count for one WebGPU object.
 - `queries.c`, `external_textures.c`, `render.c`, `render_state.c`: real native query-pool ownership,
   retained imported plane views, and attachment/draw/query replay snapshots.
   Render begin/end packets bracket query events, including empty query scopes.
-  Pass timestamps retain delayed end-write pools; indirect records retain arguments.
+  Pass timestamps retain delayed end-write pools and name at least one write
+  index; indirect records retain arguments.
 - `bundles.c`: reusable immutable draw snapshots sharing pass state/validation,
   with a 4096-operation budget and transactional storage move on finish. Replay
   creates the same retained command packets, not fake attachments or a renderer.

@@ -331,6 +331,17 @@ doe_resource_status doe_resource_bind_group_resolve_binding(const doe_resource_b
 doe_resource_status doe_resource_pipeline_create(const doe_resource_config *config,
     doe_resource_pipeline_layout *layout, doe_resource_native native,
     const uint32_t workgroup[3], doe_resource_pipeline **out);
+/* A buffer binding the pipeline's shader requires at least `size` bytes of.
+ * Each dispatch checks the bound buffer binding against it (WebGPU's minimum
+ * buffer binding size, needed when the layout's minBindingSize is 0). */
+typedef struct doe_resource_binding_minimum {
+    uint32_t group, binding;
+    uint64_t size;
+} doe_resource_binding_minimum;
+/* Copies the minimums into a pipeline no command has used yet; replaces any
+ * earlier set. */
+doe_resource_status doe_resource_pipeline_require_minimums(doe_resource_pipeline *pipeline,
+    const doe_resource_binding_minimum *minimums, size_t count);
 void doe_resource_pipeline_retain(doe_resource_pipeline *pipeline);
 void doe_resource_pipeline_release(doe_resource_pipeline *pipeline);
 void *doe_resource_pipeline_native(const doe_resource_pipeline *pipeline);
