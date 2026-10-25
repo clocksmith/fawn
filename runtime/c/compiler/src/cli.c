@@ -14,6 +14,7 @@
 #include <unistd.h>
 
 #define PATH_CAPACITY 4096u
+#define CLI_SOURCE_CAPACITY (2u * 1024u * 1024u)
 static int write_all(int fd, const unsigned char *bytes, size_t length) {
     size_t done = 0;
     while (done < length) {
@@ -95,7 +96,7 @@ int main(int argc, char **argv) {
     int binary_published = 0, json_published = 0;
     int binary_created = 0, json_created = 0;
     char binary_temp[PATH_CAPACITY] = {0}, json_temp[PATH_CAPACITY] = {0};
-    char source[DOE_COMPILER_MAX_SOURCE_BYTES + 1u];
+    char *source = NULL;
     size_t length = 0;
     void *workspace = NULL;
     DoeCompilerResultV2 *result_v2 = NULL;
@@ -103,10 +104,12 @@ int main(int argc, char **argv) {
     uint32_t *words = NULL;
     unsigned char *binary = NULL;
     size_t binary_length = 0u;
+    source = malloc(CLI_SOURCE_CAPACITY + 1u);
+    if (source == NULL) { fprintf(stderr, "source allocation failed\n"); goto cleanup; }
     input_fd = open(input, O_RDONLY);
     if (input_fd < 0) { perror("open shader"); goto cleanup; }
-    while (length < sizeof(source)) {
-        const ssize_t count = read(input_fd, source + length, sizeof(source) - length);
+    while (length < CLI_SOURCE_CAPACITY + 1u) {
+        const ssize_t count = read(input_fd, source + length, CLI_SOURCE_CAPACITY + 1u - length);
         if (count < 0 && errno == EINTR) continue;
         if (count < 0) { perror("read shader"); goto cleanup; }
         if (count == 0) break;
@@ -114,13 +117,16 @@ int main(int argc, char **argv) {
     }
     if (close(input_fd) < 0) { input_fd = -1; perror("close shader"); goto cleanup; }
     input_fd = -1;
+    if (length > CLI_SOURCE_CAPACITY) {
+        fprintf(stderr, "shader exceeds 2 MiB source limit\n"); goto cleanup;
+    }
     const DoeCompilerJobCapacities job = {
-        .source_bytes = 65536u, .tokens = 8192u, .statements = 1024u,
+        .source_bytes = CLI_SOURCE_CAPACITY, .tokens = 8192u, .statements = 1024u,
         .expressions = 4096u, .words = 65536u,
         .expression_depth = 32u, .control_depth = 16u
     };
     const DoeCompilerTypedCapacities typed = {
-        .source_bytes = 65536u, .tokens = 8192u, .statements = 1024u, .expressions = 4096u,
+        .source_bytes = CLI_SOURCE_CAPACITY, .tokens = 8192u, .statements = 1024u, .expressions = 4096u,
         .types = 256u, .members = 1024u, .resources = 32u, .access_steps = 5121u,
         .constants = 1024u, .constant_edges = 4096u, .ir_instructions = 24577u,
         .ir_operands = 4096u, .target_declarations = 7744u, .traversal_items = 1281u,
@@ -293,5 +299,6 @@ cleanup:
     free(json);
     free(result_v2);
     free(workspace);
+    free(source);
     return status;
 }

@@ -98,6 +98,35 @@ class TargetEmissionTests(unittest.TestCase):
                 else:
                     self.fail("allocation sweep did not reach success")
 
+    def test_retained_source_size_boundary_and_diagnostic_offset(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "large.wgsl"
+            limit = 2 * 1024 * 1024
+            shader = b"\n@compute @workgroup_size(1) fn main() {}\n"
+            source.write_bytes(b"//" + b" " * (limit - len(shader) - 2) + shader)
+            for target in ("spirv", "msl", "hlsl"):
+                result = self.run_cli(target, ["--shader-path", str(source)])
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertTrue(result.stdout)
+            source.write_bytes(source.read_bytes() + b" ")
+            for target in ("spirv", "msl", "hlsl"):
+                output = root / target
+                result = self.run_cli(target, ["--shader-path", str(source), "--out", str(output)])
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn(b"2 MiB", result.stderr)
+                self.assertEqual(result.stdout, b"")
+                self.assertFalse(output.exists())
+            prefix = b"//" + b" " * 70000 + b"\n"
+            source.write_bytes(prefix + b"@compute @workgroup_size(1) fn main() { let x: u32 = false; }\n")
+            for target in ("spirv", "msl", "hlsl"):
+                result = self.run_cli(target, ["--shader-path", str(source)])
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn(b":2:", result.stderr)
+                offset = int(result.stderr.split(b"offset=", 1)[1].split(b":", 1)[0])
+                self.assertGreater(offset, 70000)
+                self.assertEqual(result.stdout, b"")
+
 
 if __name__ == "__main__":
     unittest.main()
