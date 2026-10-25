@@ -6,9 +6,28 @@
 /* The device mutex owns the pending list. This thread neither copies that list
  * nor creates resource references: it owns one existing device lease, allowing
  * the recorded submissions to retire even after every public handle is gone. */
+/* The oldest command record the queue accepted and nobody has yet observed
+ * terminal, or NULL. A refused submission (uncertain, its fence never
+ * signals) is skipped: only blocking recovery resolves it, and waiting for it
+ * would strand later work. Caller holds the device mutex. */
+static doe_vk_commands *oldest_in_flight(native_device *device)
+{
+    for (native_pending *pending = device->pending; pending; pending = pending->next) {
+        if (pending->kind == NATIVE_PENDING_SURFACE || pending->native.kind != WGPUBackendType_Vulkan) continue;
+        if (doe_vk_commands_in_flight(pending->native.value.vulkan)) return pending->native.value.vulkan;
+    }
+    return NULL;
+}
+
+/* Bounds one unlocked fence wait so join requests and new records are seen. */
+#define PROGRESS_FENCE_WAIT_NS UINT64_C(100000000)
+
 static void pending_progress(void *identity)
 {
     native_device *device = identity;
+    /* A fence that signalled while its record still reports running (a
+     * backend boundary that obscures completion) falls back to timed polls. */
+    doe_vk_commands *signalled = NULL;
     native_lock(device);
     for (;;) {
         while (!device->pending && !device->pending_progress_join &&
@@ -45,6 +64,21 @@ static void pending_progress(void *identity)
             native_lock(device);
             continue;
         }
+        /* Wait for the oldest accepted submission's fence outside the device
+         * mutex (owner authorized 2026-10-24: async submit A+B, D2,
+         * fence-wait completion; futures later; reconfirmed after the section 7 risk review). The hold keeps its fence alive
+         * through a concurrent settle; completion is observed under the
+         * mutex on the next iteration. */
+        doe_vk_commands *oldest = oldest_in_flight(device);
+        if (oldest && oldest != signalled && doe_vk_commands_hold(oldest) == DOE_VK_OK) {
+            native_unlock(device);
+            doe_vk_status waited = doe_vk_commands_block(oldest, PROGRESS_FENCE_WAIT_NS);
+            native_lock(device);
+            signalled = waited == DOE_VK_OK ? oldest : NULL;
+            if (doe_vk_commands_drop(oldest) != DOE_VK_OK) abort();
+            continue;
+        }
+        if (!oldest) signalled = NULL;
         if (device->pending) {
             struct timespec now, deadline;
             doe_host_result clock = doe_monotonic_now(&now);

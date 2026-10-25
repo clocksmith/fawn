@@ -89,6 +89,20 @@ static inline void mapped(WGPUMapAsyncStatus status, WGPUStringView message, voi
     assert(status == WGPUMapAsyncStatus_Success);
     ++((state *)userdata)->mapped;
 }
+static inline void work_done_reply(WGPUQueueWorkDoneStatus status, WGPUStringView message, void *userdata, void *unused)
+{
+    (void)message; (void)unused;
+    assert(status == WGPUQueueWorkDoneStatus_Success);
+    ++*(unsigned *)userdata;
+}
+/* Vulkan submissions run asynchronously; work done waits for all of them. */
+static inline void work_done(state *s)
+{
+    unsigned done = 0;
+    WGPUQueueWorkDoneCallbackInfo info = {.mode = WGPUCallbackMode_AllowSpontaneous,
+        .callback = work_done_reply, .userdata1 = &done};
+    assert(wgpuQueueOnSubmittedWorkDone(s->queue, info).id && done == 1);
+}
 static inline void submit(state *s, WGPUCommandEncoder encoder)
 {
     WGPUCommandBuffer commands = wgpuCommandEncoderFinish(encoder, NULL);

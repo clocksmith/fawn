@@ -425,6 +425,26 @@ doe_vk_status doe_vk_commands_release(doe_vk_commands *commands) {
     return DOE_VK_OK;
 }
 
+doe_vk_status doe_vk_commands_hold(doe_vk_commands *commands) {
+    if (commands == NULL) return DOE_VK_INVALID_ARGUMENT;
+    if (commands->references == UINT32_MAX) return DOE_VK_OUT_OF_MEMORY;
+    ++commands->references;
+    return DOE_VK_OK;
+}
+
+bool doe_vk_commands_in_flight(const doe_vk_commands *commands) {
+    return commands != NULL && commands->state == DOE_VK_SUBMITTED && !commands->context->lost;
+}
+
+/* Reads only the immutable device, fence and dispatch table, so a holder may
+ * call it without the context's serialization; it never marks loss. */
+doe_vk_status doe_vk_commands_block(const doe_vk_commands *commands, uint64_t timeout_ns) {
+    if (commands == NULL || commands->fence == 0) return DOE_VK_INVALID_ARGUMENT;
+    const doe_vk_context *context = commands->context;
+    VkResult result = context->vk.vkWaitForFences(context->device, 1, &commands->fence, 1, timeout_ns);
+    return result == 0 ? DOE_VK_OK : result == 2 /* VK_TIMEOUT */ ? DOE_VK_TIMEOUT : DOE_VK_NATIVE_FAILURE;
+}
+
 doe_vk_status doe_vk_commands_drop(doe_vk_commands *commands) {
     if (commands == NULL) return DOE_VK_OK;
     if (commands->references > 1) {

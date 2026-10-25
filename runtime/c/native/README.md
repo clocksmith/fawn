@@ -156,12 +156,19 @@ and exact exports; absent platform loaders remain explicitly unavailable.
   submission device lease. Packed queue writes and 256-byte-aligned public command
   copies retain their distinct canonical validation. Native views/samplers remain
   alive through the recorded resource and backend obligations.
-- QueueSubmit currently performs a synchronous native wait/recovery. This is not
-  a completed asynchronous producer lane or a latency/parity claim. Uncertain
-  completion retains both native and resource obligations; later queue/map calls
-  may retry recovery. If still unresolved, work-done publishes no future rather
-  than reporting success. Releasing all caller handles does not free unresolved
-  work; unattended recovery/liveness remains unfinished.
+- On Vulkan, QueueSubmit returns once `vkQueueSubmit` accepts the work (owner authorized 2026-10-24: async submit A+B, D2, fence-wait completion; futures later; reconfirmed after the section 7 risk review).
+  The record stays on the pending list, oldest first, with its native and
+  resource leases until it is proven terminal. The progress worker waits for the
+  oldest accepted fence outside the device mutex under a command hold, skipping a
+  refused submission whose fence never signals; routine settlement (submit,
+  texture creation) polls, and running work is never reported as a failure. The
+  first terminal failure is reported once to a later public call. Work done and
+  map recover synchronously before admitting their callbacks. Metal, D3D12,
+  compute programs, private initialization and presentation keep their
+  synchronous wait. Uncertain completion retains both native and resource
+  obligations; if still unresolved, work-done publishes no future rather than
+  reporting success. Releasing all caller handles does not free unresolved work.
+  This is not a latency or parity claim.
 - TimestampQuery is opt-in at device creation. Generated backend WGSL is compiled
   by the same C compiler before a feature-enabled device is published. Query
   sets alias the resource owner; zero-count sets need no native pool. Query resolve

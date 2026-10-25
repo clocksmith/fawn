@@ -270,6 +270,15 @@ doe_vk_status doe_vk_commands_create_reusable(doe_vk_context *context,
 doe_vk_status doe_vk_commands_seal(doe_vk_commands *commands, doe_vk_error *error);
 doe_vk_status doe_vk_commands_retain(doe_vk_commands *commands);
 doe_vk_status doe_vk_commands_drop(doe_vk_commands *commands);
+/* Completion waiting outside the context's serialization (owner authorized 2026-10-24: async submit A+B, D2, fence-wait completion; futures later; reconfirmed after the section 7 risk review).
+ * hold adds a holder to one-shot or reusable commands, released by drop, so
+ * the fence outlives a concurrent settle. in_flight (serialized) reports a
+ * submission the queue accepted and has not yet been observed terminal.
+ * block may run unserialized while held: it waits up to timeout_ns for the
+ * fence and changes no state; poll or wait (serialized) observes completion. */
+doe_vk_status doe_vk_commands_hold(doe_vk_commands *commands);
+bool doe_vk_commands_in_flight(const doe_vk_commands *commands);
+doe_vk_status doe_vk_commands_block(const doe_vk_commands *commands, uint64_t timeout_ns);
 const char *doe_vk_status_name(doe_vk_status status);
 #ifdef __cplusplus
 }

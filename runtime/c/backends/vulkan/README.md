@@ -45,6 +45,11 @@ command retirement.
 Host accesses are blocked while commands may use a buffer. Successful fence
 completion unlocks host access. Pending/uncertain command release returns `BUSY`
 and does not consume the handle. A timed-out waiter must retain and settle it.
+`doe_vk_commands_hold`/`drop` let a waiter block on an accepted recording's
+fence with `doe_vk_commands_block` outside the caller's serialization; block
+changes no state, and completion is observed by a serialized poll or wait
+(owner authorized 2026-10-24: async submit A+B, D2, fence-wait completion;
+futures later; reconfirmed after the section 7 risk review).
 An uncertain submit can be recovered by explicit, potentially blocking queue-idle
 observation. Its original failure never becomes successful output. Device loss
 permits terminal cleanup and rejects readback. Other terminal submission failures
