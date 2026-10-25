@@ -825,6 +825,14 @@ async function reviewedChoiceResult(device, options) {
   };
 }
 
+// The runtime factory when a namespace is created without the surface's own:
+// runtime-cli's createDoeRuntime, which selects from options and environment
+// only. Package surfaces pass their provider-aware createDoeRuntime instead.
+async function defaultCreateRuntime(runtimeOptions) {
+  const runtimeCli = await import('./webgpu/runtime-cli.js');
+  return runtimeCli.createDoeRuntime(runtimeOptions);
+}
+
 function isNodeDoeRuntimeAvailable() {
   return typeof process === 'object' && process != null && !!process.versions?.node;
 }
@@ -1088,7 +1096,7 @@ function normalizeNumericStabilityOrdinaryExecutionOptions(
   };
 }
 
-async function numericStabilityMatmulLogitsSliceResult(device, options) {
+async function numericStabilityMatmulLogitsSliceResult(device, options, createRuntime = defaultCreateRuntime) {
   void device;
   const normalized = normalizeNumericStabilityMatmulLogitsSliceOptions(options);
   if (!isNodeDoeRuntimeAvailable()) {
@@ -1097,8 +1105,7 @@ async function numericStabilityMatmulLogitsSliceResult(device, options) {
       'Use doe-gpu or doe-gpu/compute with the Doe native runtime.'
     );
   }
-  const runtimeCli = await import('./webgpu/runtime-cli.js');
-  const runtime = normalized.runtime ?? runtimeCli.createDoeRuntime(normalized.runtimeOptions ?? {});
+  const runtime = normalized.runtime ?? await createRuntime(normalized.runtimeOptions ?? {});
   if (typeof runtime?.runNumericStabilityMatmulLogitsSlice !== 'function') {
     throw new Error('Doe numeric stability runtime helper is unavailable in this context.');
   }
@@ -1138,7 +1145,7 @@ async function numericStabilityMatmulLogitsSliceResult(device, options) {
   };
 }
 
-async function numericStabilityOrdinaryExecutionResult(device, options) {
+async function numericStabilityOrdinaryExecutionResult(device, options, createRuntime = defaultCreateRuntime) {
   void device;
   const normalized = normalizeNumericStabilityOrdinaryExecutionOptions(
     options,
@@ -1150,8 +1157,7 @@ async function numericStabilityOrdinaryExecutionResult(device, options) {
       'Use doe-gpu or doe-gpu/compute with the Doe native runtime.'
     );
   }
-  const runtimeCli = await import('./webgpu/runtime-cli.js');
-  const runtime = normalized.runtime ?? runtimeCli.createDoeRuntime(normalized.runtimeOptions ?? {});
+  const runtime = normalized.runtime ?? await createRuntime(normalized.runtimeOptions ?? {});
   if (typeof runtime?.runNumericStabilityOrdinaryExecution !== 'function') {
     throw new Error('Doe numeric stability ordinary-execution helper is unavailable in this context.');
   }
@@ -1211,7 +1217,7 @@ async function numericStabilityOrdinaryExecutionResult(device, options) {
   };
 }
 
-async function ordinaryExecutionResult(device, options) {
+async function ordinaryExecutionResult(device, options, createRuntime = defaultCreateRuntime) {
   void device;
   const normalized = normalizeNumericStabilityOrdinaryExecutionOptions(
     options,
@@ -1223,8 +1229,7 @@ async function ordinaryExecutionResult(device, options) {
       'Use doe-gpu or doe-gpu/compute with the Doe native runtime.'
     );
   }
-  const runtimeCli = await import('./webgpu/runtime-cli.js');
-  const runtime = normalized.runtime ?? runtimeCli.createDoeRuntime(normalized.runtimeOptions ?? {});
+  const runtime = normalized.runtime ?? await createRuntime(normalized.runtimeOptions ?? {});
   if (typeof runtime?.runOrdinaryExecution === 'function') {
     return runtime.runOrdinaryExecution({
       commandsPath: normalized.commandsPath,
@@ -1247,7 +1252,7 @@ async function ordinaryExecutionResult(device, options) {
       cwd: normalized.cwd,
     });
   }
-  return numericStabilityOrdinaryExecutionResult(device, options);
+  return numericStabilityOrdinaryExecutionResult(device, options, createRuntime);
 }
 
 function normalizeBinding(binding, index) {
@@ -2090,8 +2095,8 @@ async function computeOnce(device, options) {
   }
 }
 
-function createBoundDoe(device) {
-  const ordinaryExecution = (options) => ordinaryExecutionResult(device, options);
+function createBoundDoe(device, createRuntime = defaultCreateRuntime) {
+  const ordinaryExecution = (options) => ordinaryExecutionResult(device, options, createRuntime);
 
   /**
    * Run a one-shot typed-array compute workflow.
@@ -2420,7 +2425,7 @@ function createBoundDoe(device) {
        * - The current route vocabulary is `accept-fast`, `prefer-stable`, or `abstain`.
        */
       matmulLogitsSlice(options) {
-        return numericStabilityMatmulLogitsSliceResult(device, options);
+        return numericStabilityMatmulLogitsSliceResult(device, options, createRuntime);
       },
       /**
        * Run an ordinary Doe command stream and surface any in-path numeric-stability receipts.
@@ -2446,7 +2451,16 @@ function createBoundDoe(device) {
   };
 }
 
-export function createDoeNamespace({ requestDevice } = {}) {
+/**
+ * `createDoeRuntime` is the surface's runtime factory: its runtime helpers
+ * (`ordinaryExecution`, `numericStability.*`) run the runtime CLI it selects
+ * for the surface's provider. Without one they select from options and the
+ * environment alone.
+ */
+export function createDoeNamespace({ requestDevice, createDoeRuntime } = {}) {
+  const createRuntime = typeof createDoeRuntime === 'function'
+    ? async (runtimeOptions) => createDoeRuntime(runtimeOptions)
+    : defaultCreateRuntime;
   return {
     /**
      * Run an ordinary Doe command stream and inherit the runtime numeric-governance path.
@@ -2459,7 +2473,7 @@ export function createDoeNamespace({ requestDevice } = {}) {
      * pre-bound device helper is needed.
      */
     ordinaryExecution(options) {
-      return ordinaryExecutionResult(null, options);
+      return ordinaryExecutionResult(null, options, createRuntime);
     },
     /**
      * Request a device and return the bound Doe API in one step.
@@ -2485,7 +2499,7 @@ export function createDoeNamespace({ requestDevice } = {}) {
       if (typeof requestDevice !== 'function') {
         throw new Error('Doe requestDevice() is unavailable in this context.');
       }
-      return createBoundDoe(await requestDevice(options));
+      return createBoundDoe(await requestDevice(options), createRuntime);
     },
 
     /**
@@ -2509,7 +2523,7 @@ export function createDoeNamespace({ requestDevice } = {}) {
      * - See `doe.requestDevice(...)` for the one-step helper entrypoint.
      */
     bind(device) {
-      return createBoundDoe(device);
+      return createBoundDoe(device, createRuntime);
     },
   };
 }

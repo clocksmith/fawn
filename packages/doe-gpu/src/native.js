@@ -9,6 +9,7 @@ function currentGpuNamespace() {
   if (cachedGpuNamespace === null) {
     cachedGpuNamespace = createDoeNamespace({
       requestDevice: full.requestDevice,
+      createDoeRuntime: full.createDoeRuntime,
     });
   }
   return cachedGpuNamespace;

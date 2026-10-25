@@ -332,10 +332,22 @@ export function createDoeRuntime(options = {}) {
         };
     }
 
+    // Modules run in the Zig module-core-runner; no C module runner exists, so
+    // a doe-c-runtime selection is refused rather than run on Zig.
+    function requireZigModuleRunner(caller) {
+        if (runtimeImplementation === "zig") return;
+        throw new Error(
+            `${caller} runs the Zig module-core-runner; the selected runtime is ` +
+                `${RUNTIME_CLIS[runtimeImplementation].binary}, which has no module runner. ` +
+                'Pass { runtime: "zig" } to run it on the Zig runtime.'
+        );
+    }
+
     function runModule(moduleOptions) {
         if (!moduleOptions || typeof moduleOptions !== "object") {
             throw new Error("runModule requires an options object.");
         }
+        requireZigModuleRunner("runModule");
         if (typeof moduleOptions.moduleId !== "string" || moduleOptions.moduleId.trim().length === 0) {
             throw new Error("runModule requires a non-empty moduleId.");
         }
@@ -390,6 +402,7 @@ export function createDoeRuntime(options = {}) {
         if (!runOptions || typeof runOptions !== "object") {
             throw new Error("runNumericStabilityMatmulLogitsSlice requires an options object.");
         }
+        requireZigModuleRunner("runNumericStabilityMatmulLogitsSlice");
         const autoArtifactDir =
             runOptions.receiptPath == null || runOptions.traceMetaPath == null
                 ? mkdtempSync(join(tmpdir(), "doe-numeric-stability-"))

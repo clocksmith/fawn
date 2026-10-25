@@ -3,13 +3,16 @@
 // `runtime` option wins, otherwise a doe-c provider selects doe-c-runtime and
 // any other provider the Zig CLI; a configured binary for the other
 // implementation, a missing configured binary and an unknown runtime are
-// refused. Every run result names the implementation that ran.
+// refused. Every run result names the implementation that ran. Module runs
+// (the Zig module-core-runner) are refused on the C runtime, and the Doe
+// namespace's runtime helpers use the factory the package surface passes.
 
 import assert from 'node:assert/strict';
 import { chmodSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createDoeRuntime } from '../../src/vendor/webgpu/runtime-cli.js';
+import { createDoeNamespace } from '../../src/vendor/doe-namespace.js';
 
 const directory = mkdtempSync(join(tmpdir(), 'doe-runtime-selection-'));
 const saved = { DOE_BIN: process.env.DOE_BIN, FAWN_DOE_BIN: process.env.FAWN_DOE_BIN,
@@ -69,11 +72,30 @@ try {
     assert.throws(() => createDoeRuntime({ runtime: 'c' }), /conflicts with binary/);
   });
   withEnv({}, () => {
+    const runtime = createDoeRuntime({ runtime: 'c', binPath: c });
+    const request = { moduleId: 'm', request: {}, policyPath: '/' };
+    assert.throws(() => runtime.runModule(request), /runModule runs the Zig module-core-runner.*doe-c-runtime/);
+    assert.throws(() => runtime.runNumericStabilityMatmulLogitsSlice({}), /module-core-runner.*doe-c-runtime/);
+  });
+  withEnv({}, () => {
     assert.throws(() => createDoeRuntime({ runtime: 'c', binPath: join(directory, 'missing', 'doe-c-runtime') }),
       /configured runtime binary does not exist/);
     assert.throws(() => createDoeRuntime({ runtime: 'rust' }), /must be "zig" or "c"/);
   });
-  console.log('runtime-selection.test: provider and explicit selection, refused conflicts, no fallback, named results');
+  const factoryCalls = [];
+  const gpu = createDoeNamespace({
+    requestDevice: async () => ({}),
+    createDoeRuntime(options) {
+      factoryCalls.push(options);
+      return { runOrdinaryExecution: (run) => ({ ranBy: 'surface factory', commandsPath: run.commandsPath }) };
+    },
+  });
+  const viaNamespace = await gpu.ordinaryExecution({ commandsPath: 'stream.json', runtimeOptions: { runtime: 'c' } });
+  const viaBound = await gpu.bind({}).numericStability.ordinaryExecution({ commandsPath: 'bound.json' });
+  assert.deepEqual([viaNamespace.ranBy, viaBound.ranBy, viaBound.commandsPath], ['surface factory', 'surface factory', 'bound.json']);
+  assert.deepEqual(factoryCalls, [{ runtime: 'c' }, {}]);
+  console.log('runtime-selection.test: provider and explicit selection, refused conflicts, no fallback, named results, '
+    + 'module runs refused on C, namespace helpers use the surface factory');
 } finally {
   rmSync(directory, { recursive: true, force: true });
 }

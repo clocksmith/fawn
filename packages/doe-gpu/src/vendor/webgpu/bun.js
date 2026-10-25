@@ -27,6 +27,7 @@ const runtimeProvider = runtime === ffi ? "doe-ffi" : "doe-full";
 
 export const doe = createDoeNamespace({
   requestDevice: runtime.requestDevice,
+  createDoeRuntime: runtime.createDoeRuntime,
 });
 
 export const create = runtime.create;
