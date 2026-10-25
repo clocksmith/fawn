@@ -110,7 +110,9 @@ arguments; omitted `--out` writes to stdout. The main `doe-compiler-c` executabl
 accepts `--target spirv|msl|hlsl`, defaulting to SPIR-V. Files use its existing
 atomic no-clobber publication: an existing destination is preserved. Text emission
 measures and fills through the same whole-module validation and target owner;
-diagnostics keep original source locations. Entryless text modules emit no text;
+diagnostics keep original source locations. HLSL bundles select a source-order entry
+with DXC `-DDOE_HLSL_ENTRY=0` (or the desired index) and its declared entry name.
+Entryless text modules emit no text;
 SPIR-V output requires an executable entry. The current CLI input limit is 64 KiB.
 Legacy reflection modes require SPIR-V. Runtime override CLI arguments, DXIL,
 CSL and TSIR delivery remain separate retained-consumer work; this adapter does
