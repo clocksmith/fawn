@@ -247,17 +247,8 @@ static doe_vk_status choose_queue(doe_vk_context *context, const doe_vk_options 
     uint32_t capacity = count;
     context->vk.vkGetPhysicalDeviceQueueFamilyProperties(context->physical, &count, queues);
     uint32_t selected = UINT32_MAX;
-    if (count <= capacity) {
-        for (uint32_t i = 0; i < count; ++i) {
-            if (queues[i].queueCount == 0 || !(queues[i].queueFlags & VK_QUEUE_COMPUTE_BIT)) continue;
-            if ((options->require_graphics_queue || options->surface_platforms != 0) && !(queues[i].queueFlags & VK_QUEUE_GRAPHICS_BIT)) continue;
-            if (selected == UINT32_MAX) selected = i;
-            if (!(queues[i].queueFlags & VK_QUEUE_GRAPHICS_BIT)) {
-                selected = i;
-                break;
-            }
-        }
-    }
+    doe_vk_status status = count <= capacity ? doe_vk_select_queue(queues, count, options, &selected, error) :
+        doe_vk_fail(DOE_VK_UNSUPPORTED, "queue enumeration changed", error);
     if (selected != UINT32_MAX) {
         context->transfer_granularity = queues[selected].minImageTransferGranularity;
         context->caps.queue_family = selected;
@@ -265,7 +256,7 @@ static doe_vk_status choose_queue(doe_vk_context *context, const doe_vk_options 
         context->caps.timestamp_valid_bits = queues[selected].timestampValidBits;
     }
     free(queues);
-    return selected == UINT32_MAX ? doe_vk_fail(DOE_VK_UNSUPPORTED, "compute queue unavailable", error) : DOE_VK_OK;
+    return status;
 }
 
 static void record_caps(doe_vk_context *context, const doe_vk_options *options,
@@ -297,6 +288,8 @@ doe_vk_status doe_vk_context_create(const doe_vk_options *options,
     if (out == NULL) return doe_vk_fail(DOE_VK_INVALID_ARGUMENT, "context output", error);
     const doe_vk_options defaults = {0};
     if (options == NULL) options = &defaults;
+    doe_vk_status policy_status = doe_vk_validate_queue_policy(options, error);
+    if (policy_status != DOE_VK_OK) return policy_status;
     doe_vk_context *context = calloc(1, sizeof(*context));
     if (context == NULL) return doe_vk_fail(DOE_VK_OUT_OF_MEMORY, "context", error);
     context->references = 1;

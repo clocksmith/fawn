@@ -1,6 +1,40 @@
 /* SPDX-License-Identifier: MIT */
 #include "internal.h"
 
+doe_vk_status doe_vk_validate_queue_policy(const doe_vk_options *options, doe_vk_error *error) {
+    if (!options) return doe_vk_fail(DOE_VK_INVALID_ARGUMENT, "queue policy arguments", error);
+    switch (options->queue_selection) {
+        case DOE_VK_QUEUE_LEGACY:
+        case DOE_VK_QUEUE_PREFER_GRAPHICS_COMPUTE: return DOE_VK_OK;
+        case DOE_VK_QUEUE_REQUIRE_COMPUTE_ONLY:
+            if (!options->require_graphics_queue && !options->surface_platforms) return DOE_VK_OK;
+            return doe_vk_fail(DOE_VK_INVALID_ARGUMENT, "compute-only queue conflicts with graphics or surface", error);
+    }
+    return doe_vk_fail(DOE_VK_INVALID_ARGUMENT, "unknown queue selection", error);
+}
+
+doe_vk_status doe_vk_select_queue(const VkQueueFamilyProperties *queues, uint32_t count,
+    const doe_vk_options *options, uint32_t *out, doe_vk_error *error) {
+    doe_vk_status status = doe_vk_validate_queue_policy(options, error);
+    if (status != DOE_VK_OK) return status;
+    if (!out || (count && !queues)) return doe_vk_fail(DOE_VK_INVALID_ARGUMENT, "queue family arguments", error);
+    uint32_t selected = UINT32_MAX;
+    for (uint32_t i = 0; i < count; ++i) {
+        if (!queues[i].queueCount || !(queues[i].queueFlags & VK_QUEUE_COMPUTE_BIT)) continue;
+        bool graphics = (queues[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) != 0;
+        if ((options->require_graphics_queue || options->surface_platforms) && !graphics) continue;
+        if (options->queue_selection == DOE_VK_QUEUE_REQUIRE_COMPUTE_ONLY && graphics) continue;
+        if (selected == UINT32_MAX) selected = i;
+        bool preferred = options->queue_selection == DOE_VK_QUEUE_PREFER_GRAPHICS_COMPUTE ? graphics : !graphics;
+        if (preferred) { selected = i; break; }
+    }
+    if (selected == UINT32_MAX) return doe_vk_fail(DOE_VK_UNSUPPORTED,
+        options->queue_selection == DOE_VK_QUEUE_REQUIRE_COMPUTE_ONLY ?
+        "required compute-only queue unavailable" : "compute queue unavailable", error);
+    *out = selected;
+    return DOE_VK_OK;
+}
+
 static bool valid_selection(const doe_vk_options *options, doe_vk_error *error) {
     switch (options->adapter_selection) {
         case DOE_VK_SELECT_ORDINAL:

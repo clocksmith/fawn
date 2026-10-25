@@ -9,6 +9,9 @@
 #include <string.h>
 #include <limits.h>
 
+doe_vk_status doe_vk_validate_queue_policy(const doe_vk_options *options, doe_vk_error *error);
+doe_vk_status doe_vk_select_queue(const VkQueueFamilyProperties *queues, uint32_t count,
+    const doe_vk_options *options, uint32_t *out, doe_vk_error *error);
 doe_vk_status doe_vk_choose_device(doe_vk_context *context, const doe_vk_options *options, doe_vk_error *error);
 doe_vk_status doe_vk_load_symbol(void *library, const char *name,
     void *destination, size_t destination_size, doe_vk_error *error);
