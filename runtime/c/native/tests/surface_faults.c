@@ -361,8 +361,11 @@ static void frame(session *s, void (*between)(session *))
     WGPUSurfaceGetCurrentTextureStatus status;
     WGPUTexture texture = acquire_frame(s, &status);
     if (getenv("SURFACE_FAULTS_TRACE")) fprintf(stderr, "  acquire status %d\n", (int)status);
-    /* Outdated reconfigures; Lost means the surface itself must be recreated. */
-    if (status == WGPUSurfaceGetCurrentTextureStatus_Outdated) {
+    /* Outdated reconfigures while the window exists; Lost, or any status once the
+     * window is gone, means the window and surface must be recreated. Configuring
+     * for a destroyed X window is an application error: Mesa's X11 WSI reports
+     * no queue support for it (its window query fails), which Doe reports. */
+    if (status == WGPUSurfaceGetCurrentTextureStatus_Outdated && !s->window.destroyed) {
         configure_surface(s);
         texture = acquire_frame(s, &status);
     }
@@ -575,10 +578,15 @@ int main(void)
     close_session(&s);
 
     unsigned changed_allocations = 0, changed_calls = 0;
-    /* Debug aid: SURFACE_FAULTS_FROM=<allocation>,<native call> starts each sweep there. */
-    unsigned first_allocation = 1, first_call = 1;
-    if (getenv("SURFACE_FAULTS_FROM")) sscanf(getenv("SURFACE_FAULTS_FROM"), "%u,%u", &first_allocation, &first_call);
-    for (unsigned index = first_allocation; index <= total_allocations + 4; ++index) {
+    /* Debug aids: SURFACE_FAULTS_FROM=<allocation>,<native call>[,<cases>] starts each
+     * sweep there (and runs at most that many cases of each); SURFACE_FAULTS_SWEEP_ONLY
+     * skips the concurrency phase. */
+    unsigned first_allocation = 1, first_call = 1, cases = UINT_MAX;
+    if (getenv("SURFACE_FAULTS_FROM"))
+        sscanf(getenv("SURFACE_FAULTS_FROM"), "%u,%u,%u", &first_allocation, &first_call, &cases);
+    const unsigned last_allocation = first_allocation - 1 + (cases < total_allocations + 4 ? cases : total_allocations + 4);
+    const unsigned last_call = first_call - 1 + (cases < total_calls + 4 ? cases : total_calls + 4);
+    for (unsigned index = first_allocation; index <= total_allocations + 4 && index <= last_allocation; ++index) {
         if (getenv("SURFACE_FAULTS_TRACE")) fprintf(stderr, "allocation %u\n", index);
         assert(open_session(&s));
         atomic_store(&allocations, 0);
@@ -591,7 +599,7 @@ int main(void)
         changed_allocations += s.seen.presented != expected_presented;
         close_session(&s);
     }
-    for (unsigned index = first_call; index <= total_calls + 4; ++index) {
+    for (unsigned index = first_call; index <= total_calls + 4 && index <= last_call; ++index) {
         if (getenv("SURFACE_FAULTS_TRACE")) fprintf(stderr, "native call %u\n", index);
         assert(open_session(&s));
         install(((native_device *)s.device)->backend.value.vulkan.context);
@@ -608,6 +616,6 @@ int main(void)
     printf("surface faults: %u host allocations (%u changed presentation, each reported), %u native calls (%u changed it, each reported); "
         "resize and window loss between acquire and present, device destroy() mid-frame\n",
         total_allocations, changed_allocations, total_calls, changed_calls);
-    concurrency();
+    if (!getenv("SURFACE_FAULTS_SWEEP_ONLY")) concurrency();
     return 0;
 }
