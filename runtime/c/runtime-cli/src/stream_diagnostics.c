@@ -3,6 +3,14 @@
 #include <string.h>
 #include <strings.h>
 
+static const char *const modes[] = {"pipeline_async", "capability_introspection", "resource_table_immediates",
+    "lifecycle_refcount", "pixel_local_storage", "full"};
+
+const char *doe_diagnostic_mode_name(doe_diagnostic_mode mode)
+{
+    return (unsigned)mode < sizeof(modes) / sizeof(modes[0]) ? modes[mode] : NULL;
+}
+
 bool stream_parse_diagnostics(const doe_json_value *object, doe_command *command, size_t index, doe_stream_error *error)
 {
     static const char *const allowed[] = {"kind", "command", "command_kind", "format", "target_format", "targetFormat",
@@ -11,8 +19,6 @@ bool stream_parse_diagnostics(const doe_json_value *object, doe_command *command
     const char *mode = NULL, *policy = NULL;
     if (!stream_read_string(object, "mode", NULL, &mode, index, error) ||
         !stream_read_string(object, "feature_policy", "featurePolicy", &policy, index, error)) return false;
-    static const char *const modes[] = {"pipeline_async", "capability_introspection", "resource_table_immediates",
-        "lifecycle_refcount", "pixel_local_storage", "full"};
     command->as.diagnostics.mode = DOE_DIAG_PIPELINE;
     if (mode) {
         char normalized[64];

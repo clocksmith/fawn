@@ -160,3 +160,13 @@ bool doe_trace_write_plan_row(FILE *out, const doe_trace_identity *identity, uin
         ok = fputs(",\"kernel\":", out) >= 0 && doe_trace_write_string(out, command->as.dispatch.kernel);
     return ok && doe_trace_write_semantic(out, &command->semantic) && write_execution(out, identity, execution);
 }
+
+/* Shared by retained normalized command output and semantic repro bundles. */
+bool doe_trace_write_dispatch_fields(FILE *out, const doe_command *command)
+{
+    return fputs(",\"kernel\":", out) >= 0 && doe_trace_write_string(out, command->as.dispatch.kernel) &&
+        fprintf(out, ",\"x\":%" PRIu32 ",\"y\":%" PRIu32 ",\"z\":%" PRIu32 ",\"repeat\":%" PRIu64
+            ",\"repeatSynchronization\":\"%s\"", command->as.dispatch.x, command->as.dispatch.y,
+            command->as.dispatch.z, command->as.dispatch.repeat,
+            command->as.dispatch.repeat_independent ? "independent" : "dependent") >= 0;
+}

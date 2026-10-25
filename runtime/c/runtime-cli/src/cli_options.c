@@ -23,7 +23,7 @@ static int parse_readback(const char *value, options *out)
 static void usage(FILE *out)
 {
     fputs("doe-c-runtime [--commands <path>] [--execute] [--backend native|trace] [--kernel-root <path>]\n"
-          "  [--trace] [--trace-jsonl <path>] [--trace-meta <path>] [--replay <path>] [--command-repeat N]\n"
+          "  [--trace] [--emit-normalized] [--trace-jsonl <path>] [--trace-meta <path>] [--replay <path>] [--command-repeat N]\n"
           "  [--vendor X] [--api " DOE_RUNTIME_API "] [--family X] [--driver X.Y.Z]\n"
           "  [--quirks <path>] [--quirk-mode off|trace|active] [--queue-sync-mode per-command|deferred]\n"
           "  [--queue-wait-mode process-events|wait-any] [--webgpu-ffi-queue-wait-timeout-ns N]\n"
@@ -91,6 +91,7 @@ int parse_options(int argc, char **argv, options *out)
         else if (!strcmp(flag, "--driver")) TAKE(driver);
         else if (!strcmp(flag, "--execute")) out->execute = true;
         else if (!strcmp(flag, "--trace")) out->trace_stdout = true;
+        else if (!strcmp(flag, "--emit-normalized")) out->emit_normalized = true;
         else if (!strcmp(flag, "--validate-output-oracles")) out->validate_oracles = true;
         else if (!strcmp(flag, "--quirk-mode")) { if (!value) return reject_argument(flag, "needs a value"); quirk_mode = value; i++; }
         else if (!strcmp(flag, "--backend")) {
@@ -151,7 +152,7 @@ int parse_options(int argc, char **argv, options *out)
             return reject_argument("--plan", "needs --workload, --trace-jsonl and --trace-meta");
         if (out->quirks || quirk_mode || out->command_repeat != 1 || out->validate_oracles || out->numeric_policy ||
             out->numeric_profile ||
-            out->trace_stdout || out->replay || out->trace_backend)
+            out->trace_stdout || out->replay || out->trace_backend || out->emit_normalized)
             return reject_argument("--plan", "takes no --quirks, --quirk-mode, --command-repeat, oracle, numeric "
                 "stability or --trace arguments");
         out->execute = true;
@@ -159,6 +160,8 @@ int parse_options(int argc, char **argv, options *out)
     } else if (out->workload) {
         return reject_argument("--workload", "needs --plan");
     }
+    if (out->emit_normalized && (out->validate_oracles || out->readback_count))
+        return reject_argument("--emit-normalized", "excludes output oracles and readbacks");
     if (out->execute && out->trace_backend) return reject_argument("--execute", "requires backend native");
     if (!out->execute && (out->readback_count || out->validate_oracles))
         return reject_argument("readback/output oracles", "require --execute");

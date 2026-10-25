@@ -154,7 +154,7 @@ int main(int argc, char **argv)
     const doe_render_draw *indexed = &stream.commands[0].as.render;
     assert(stream.commands[0].kind == DOE_COMMAND_RENDER_DRAW && !strcmp(stream.commands[0].label, "render_draw"));
     assert(indexed->indexed && !indexed->index_uint32 && indexed->index_count == 3 && indexed->draw_count == 2000);
-    assert(indexed->target_handle == 0 && indexed->target_width == 64 && indexed->target_format == DOE_FORMAT_RGBA8_UNORM);
+    assert(indexed->target_handle == DOE_RENDER_SCRATCH_HANDLE && indexed->target_width == 64 && indexed->target_format == DOE_FORMAT_RGBA8_UNORM);
     doe_stream_free(&stream);
     parse_file(argv[1], "draw_call_state_bindings_commands.json", &stream);
     const doe_render_draw *state = &stream.commands[0].as.render;
