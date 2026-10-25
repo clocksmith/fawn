@@ -17,12 +17,29 @@ Both paths must be fresh and disjoint. Requires Python3.12+, Git, Make and
 C11/C++17 compilers. Linux uses GCC/G++14-compatible compilation, binutils and
 ordinary system libc/libm/pthreads/dl. Darwin uses Apple Clang, the macOS SDK
 and cctools (`otool`/`nm`); pass `CC=clang CXX=clang++` to the command above.
-No Zig, external shader compiler, installation, package download,
-GPU or system configuration change is performed. Vulkan is loaded only by actual
+Linux/Darwin staging performs no Zig build, external shader compilation, installation,
+package download, GPU work or system configuration change. Vulkan is loaded only by actual
 backend consumers; this packaging check creates an instance but no device.
 
+Windows uses the existing x64 Windows SDK developer environment and `clang-cl`:
+
+```powershell
+python runtime/c/tools/build-native-package.py --ref HEAD --build C:\doe-build\fresh --destination C:\doe-stage\fresh --dxc-root C:\doe-tools\dxc
+```
+
+Supply the official DXC SDK already used by the native Windows builder. That
+builder owns source selection, DLL/export checks and compiler host controls.
+Staging includes the native and compiler DLLs, both DXC runtime DLLs, import
+libraries and all upstream notices. DLLs reside beside the consumer in `bin/`.
+The PE dependency audit rejects missing non-system DLLs. Relocated consumption
+runs from an empty directory with `PATH` restricted to Windows System32; build
+and SDK paths cannot hide missing packaged dependencies. Existing system runtime
+DLLs remain prerequisites. No adapter or device is requested. The focused
+`c-windows-package` workflow retains actual SDK build and relocation results;
+authoring this route does not establish a Windows pass.
+
 The tool captures the named committed tree, never concurrent worktree edits. It
-calls the native owner's Makefile and its compiler source/flag owner rather than
+calls the native owner's platform builder and its compiler source/flag owner rather than
 maintaining another source list. The two shared libraries have a relative loader
 path: `$ORIGIN` on Linux, `@loader_path` with `@rpath` library identities on
 Darwin. Darwin staging also verifies the entire non-system dylib dependency
@@ -39,8 +56,8 @@ source, and the explicit implemented-symbol list. Missing symbols are not stubs.
 MANIFEST.json is copied last; its absence means staging did not finish. Failures
 preserve build logs and partial new output for diagnosis and never overwrite an
 existing destination. Copies are hash-checked before completion. This is developer
-staging, not a system installer, npm/Node addon, Fawn/browser integration, Windows
-distribution, GPU execution or full release qualification. Do not replace
+staging, not a system installer, npm/Node addon, Fawn/browser integration,
+GPU execution or full release qualification. Do not replace
 an existing application provider automatically with this artifact.
 
 The later `DEVELOPER_RECEIPT_PACKAGE_METAL.json` repeats the actual canonical

@@ -11,6 +11,11 @@ import sys
 
 
 def native_exports(library: Path, platform: str) -> set[str]:
+    if platform == "Windows":
+        output = subprocess.check_output(
+            ["dumpbin", "/nologo", "/exports", str(library)], text=True)
+        return set(re.findall(r"^\s+\d+\s+[0-9A-Fa-f]+\s+[0-9A-Fa-f]+\s+(\w+)\s*$",
+                              output, re.MULTILINE))
     # Apple cctools nm(1): -g external, -U defined, -j names only.
     # https://github.com/apple-oss-distributions/cctools/blob/main/man/nm.1
     command = ["nm", "-gjU"] if platform == "Darwin" else ["nm", "-D", "--defined-only"]
@@ -26,8 +31,9 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("library", type=Path)
     parser.add_argument("--runtime", action="store_true", help="also load the unsanitized library and inspect procedure addresses")
-    parser.add_argument("--platform", choices=("Linux", "Darwin"),
-                        default="Darwin" if sys.platform == "darwin" else "Linux")
+    parser.add_argument("--platform", choices=("Linux", "Darwin", "Windows"),
+                        default="Windows" if sys.platform == "win32" else
+                        "Darwin" if sys.platform == "darwin" else "Linux")
     args = parser.parse_args()
     owner = Path(__file__).resolve().parents[1]
     header = owner.parents[1] / "zig/vendor/webgpu-headers/webgpu.h"

@@ -61,9 +61,16 @@ class PackagePreflightTests(unittest.TestCase):
                 self.assertFalse((root / "absent").exists())
 
     def test_unsupported_host_has_no_side_effects(self) -> None:
-        with tempfile.TemporaryDirectory() as directory, patch.object(PACKAGE.platform, "system", return_value="Windows"):
+        with tempfile.TemporaryDirectory() as directory, patch.object(PACKAGE.platform, "system", return_value="Plan9"):
             root = Path(directory)
             with self.assertRaises(ValueError):
+                PACKAGE.build_package(root, "HEAD", root / "build", root / "stage", "gcc", "g++")
+            self.assertEqual(list(root.iterdir()), [])
+
+    def test_windows_requires_explicit_sdk_before_mutation(self) -> None:
+        with tempfile.TemporaryDirectory() as directory, patch.object(PACKAGE.platform, "system", return_value="Windows"):
+            root = Path(directory)
+            with self.assertRaisesRegex(ValueError, "DXC SDK"):
                 PACKAGE.build_package(root, "HEAD", root / "build", root / "stage", "gcc", "g++")
             self.assertEqual(list(root.iterdir()), [])
 
@@ -78,6 +85,34 @@ class PackagePreflightTests(unittest.TestCase):
 
 
 class PackageLoaderTests(unittest.TestCase):
+    def test_windows_cannot_load_missing_dlls_from_build_path(self) -> None:
+        environment = {"SystemRoot": "C:/Windows", "Path": "C:/old-build;C:/sdk"}
+        with patch.dict(PACKAGE.os.environ, environment, clear=True):
+            actual = PACKAGE.loader_environment("Windows")
+        self.assertNotIn("Path", actual)
+        self.assertEqual(actual["PATH"], str(Path("C:/Windows/System32")))
+
+    def test_pe_dependencies_require_packaged_or_system_dlls(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            package = root / "package"
+            system = root / "Windows/System32"
+            package.mkdir()
+            system.mkdir(parents=True)
+            (package / "webgpu_doe_c.dll").touch()
+            (package / "doe_compiler.dll").touch()
+            (system / "KERNEL32.dll").touch()
+            valid = "    doe_compiler.dll\n    KERNEL32.dll\n    api-ms-win-crt-runtime-l1-1-0.dll\n"
+            with patch.dict(PACKAGE.os.environ, {"SystemRoot": str(root / "Windows")}), \
+                    patch.object(PACKAGE, "captured", return_value=valid):
+                self.assertEqual(len(PACKAGE.audit_libraries(package, "Windows")), 2)
+            for invalid in ("    missing.dll\n", "    C:\\build\\doe_compiler.dll\n", "no imports"):
+                with self.subTest(imports=invalid), \
+                        patch.dict(PACKAGE.os.environ, {"SystemRoot": str(root / "Windows")}), \
+                        patch.object(PACKAGE, "captured", return_value=invalid):
+                    with self.assertRaises(RuntimeError):
+                        PACKAGE.audit_libraries(package, "Windows")
+
     def test_loader_overrides_cannot_rescue_relocation(self) -> None:
         environment = {"PATH": "/usr/bin", "LD_LIBRARY_PATH": "/old",
                        "LD_PRELOAD": "old.so", "DYLD_LIBRARY_PATH": "/old",
