@@ -574,6 +574,38 @@ class CompareAssessmentTests(unittest.TestCase):
             result["blockingFailedObligations"],
         )
 
+    def _c_cli_compare(self, comparison_hash: str) -> dict:
+        baseline_sample = _sample(backend="doe_c_vulkan", command_replay_ns=0)
+        comparison_sample = _sample(backend="dawn_direct_vulkan", command_replay_ns=0)
+        comparison_sample["traceMeta"]["shaderSourceReceiptsHash"] = comparison_hash
+        return compare_assessment(
+            workload_id="compute_workgroup_atomic_1024",
+            workload_comparable=True,
+            workload_domain="compute",
+            workload_api="vulkan",
+            workload_commands_path="examples/workgroup_atomic_commands.json",
+            workload_path_asymmetry=False,
+            workload_path_asymmetry_note="",
+            baseline_command_repeat=1,
+            comparison_command_repeat=1,
+            baseline={"commandSamples": [baseline_sample]},
+            comparison={"commandSamples": [comparison_sample]},
+            required_timing_class="operation",
+            allow_baseline_no_execution=False,
+            resource_probe="none",
+            comparability_mode="strict",
+            resource_sample_target_count=0,
+        )
+
+    def test_c_cli_dawn_direct_compare_requires_equal_shader_sources(self) -> None:
+        # doe-c-runtime vs dawn-c-runtime compile the same WGSL; the source
+        # receipts are their strict fairness check.
+        matched = self._c_cli_compare("a" * 64)
+        self.assertNotIn("baseline_comparison_shader_source_receipts_match", matched["blockingFailedObligations"])
+        mismatched = self._c_cli_compare("c" * 64)
+        self.assertFalse(mismatched["comparable"])
+        self.assertIn("baseline_comparison_shader_source_receipts_match", mismatched["blockingFailedObligations"])
+
     def test_shader_source_receipt_mismatch_blocks_strict_package_compare(self) -> None:
         baseline_sample = _sample(backend="doe_node_webgpu", command_replay_ns=0)
         comparison_sample = _sample(backend="node_webgpu_package", command_replay_ns=0)

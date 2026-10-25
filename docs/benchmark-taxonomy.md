@@ -182,6 +182,13 @@ You want an apples-to-apples backend compare for the same workload.
 
 Run both products independently, then compare the two run artifacts.
 
+Without Zig on Vulkan, the same backend compare uses `doe_c_direct_vulkan`
+(product `doe-c`) against `dawn_direct_vulkan` (product `dawn-c`): one C
+runtime CLI linked once against the C library and once against Dawn
+(`runtime/c/runtime-cli`, `make bench-bin bench-bin-dawn`). Both compile the
+workload's WGSL, and strict comparison checks their equal shader source
+receipts.
+
 ### 3. Plan-backed Gemma benchmark on plan executors
 
 You want to compare Gemma inference on Metal using the normalized plan surface.

@@ -24,6 +24,8 @@ from bench.lib import report_conformance
 
 # Doe-side execution: every registered runtime CLI backend plus legacy names.
 _DOE_EXECUTION_BACKENDS = doe_runtime_providers.native_execution_backends() | {"webgpu-ffi", "native"}
+# Dawn execution, as claim_gate defines it (dawn_direct_vulkan from the provider registry).
+_DAWN_EXECUTION_BACKENDS = frozenset({"dawn_delegate", "dawn-perf-tests"}) | doe_runtime_providers.dawn_execution_backends()
 _PHASE_ASYMMETRY_THRESHOLD = 0.10
 _MAX_PLAUSIBLE_THROUGHPUT_BYTES_PER_SEC = 500_000_000_000
 
@@ -292,8 +294,8 @@ def workload_is_dawn_vs_doe(workload: dict[str, Any]) -> bool:
 
     left_backends = collect_execution_backends(workload.get("baseline"))
     right_backends = collect_execution_backends(workload.get("comparison"))
-    left_dawn = "dawn_delegate" in left_backends or "dawn-perf-tests" in left_backends
-    right_dawn = "dawn_delegate" in right_backends or "dawn-perf-tests" in right_backends
+    left_dawn = bool(left_backends & _DAWN_EXECUTION_BACKENDS)
+    right_dawn = bool(right_backends & _DAWN_EXECUTION_BACKENDS)
     left_doe = any(
         backend in left_backends
         for backend in _DOE_EXECUTION_BACKENDS

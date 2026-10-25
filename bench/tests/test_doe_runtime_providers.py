@@ -92,6 +92,57 @@ class DoeRuntimeProvidersTests(unittest.TestCase):
         self.assertEqual((applies, passes), (True, False))
         self.assertIn("Doe receipt has no shader manifest", reason)
 
+    def test_dawn_c_runtime_is_a_dawn_provider_never_doe(self) -> None:
+        provider = doe_runtime_providers.provider_for_execution_backend("dawn_direct_vulkan")
+        self.assertEqual((provider.product_role, provider.binary_name, provider.product_id), ("dawn", "dawn-c-runtime", "dawn-c"))
+        self.assertNotIn("dawn_direct_vulkan", doe_runtime_providers.native_execution_backends())
+        self.assertEqual(doe_runtime_providers.dawn_execution_backends(), frozenset({"dawn_direct_vulkan"}))
+        self.assertNotIn("dawn-c", doe_runtime_providers.doe_product_ids())
+        self.assertFalse(compare_assessment_helpers.uses_doe_execution({"dawn_direct_vulkan"}))
+        self.assertFalse(doe_runtime_providers.requires_selection_policy("dawn_direct_vulkan"))
+        self.assertEqual(
+            doe_runtime_providers.wgsl_source_execution_backends(), frozenset({"doe_c_vulkan", "dawn_direct_vulkan"})
+        )
+
+    def test_dawn_direct_vulkan_executor_runs_dawn_c_runtime(self) -> None:
+        template = resolve_executor_command_template("dawn_direct_vulkan")
+        self.assertEqual(resolve_executor_boundary("dawn_direct_vulkan"), "commands")
+        self.assertIn("runtime/c/runtime-cli/bin/dawn-c-runtime --commands {commands}", template)
+        self.assertIn("LD_LIBRARY_PATH=bench/vendor/dawn/out/Release", template)
+        self.assertNotIn("doe-zig-runtime", template)
+        # The runner treats it as a runtime CLI (oracle preflight, upload flags).
+        self.assertTrue(doe_runtime_providers.template_uses_doe_runtime(template))
+
+    def test_dawn_direct_vulkan_against_c_is_dawn_vs_doe_and_distinct_from_delegate(self) -> None:
+        dawn = {"executionBackend": "dawn_direct_vulkan", "backendId": "dawn_direct_vulkan"}
+        workload = {"baseline": side(C_META), "comparison": side(dawn)}
+        self.assertTrue(claim_gate.workload_is_dawn_vs_doe(workload))
+        self.assertTrue(structural_equivalence_gate.workload_is_dawn_vs_doe(workload))
+        # Two Dawn sides are not a Dawn-vs-Doe comparison.
+        both_dawn = {"baseline": side({"executionBackend": "dawn_delegate"}), "comparison": side(dawn)}
+        self.assertFalse(claim_gate.workload_is_dawn_vs_doe(both_dawn))
+        self.assertIn("dawn_direct_vulkan", comparability_runtime._NATIVE_VULKAN_EXECUTION_BACKENDS)
+
+    def test_native_spirv_obligation_skips_only_the_c_cli_wgsl_pair(self) -> None:
+        def assess(left: str, right: str) -> tuple[bool, bool]:
+            applies, passes, _, _ = comparability_runtime.assess_native_shader_artifact_equivalence(
+                workload_api="vulkan",
+                workload_commands_path="examples/workgroup_atomic_commands.json",
+                comparability_mode="strict",
+                is_dawn_vs_doe=True,
+                left_execution_backends={left},
+                right_execution_backends={right},
+                left_command_samples=[{"traceMeta": {"executionBackend": left}}],
+                right_command_samples=[{"traceMeta": {"executionBackend": right}}],
+            )
+            return applies, passes
+
+        # doe-c vs dawn-c: the shader source receipt match applies instead.
+        self.assertEqual(assess("doe_c_vulkan", "dawn_direct_vulkan"), (False, True))
+        # Zig (SPIR-V artifacts) against either Dawn lane keeps the SPIR-V obligation.
+        self.assertTrue(assess("doe_vulkan", "dawn_direct_vulkan")[0])
+        self.assertTrue(assess("doe_vulkan", "dawn_delegate")[0])
+
     def test_zig_versus_c_is_not_a_dawn_comparison(self) -> None:
         workload = {"baseline": side(ZIG_META), "comparison": side(C_META)}
         self.assertFalse(claim_gate.workload_is_dawn_vs_doe(workload))

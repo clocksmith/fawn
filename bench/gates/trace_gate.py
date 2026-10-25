@@ -291,10 +291,10 @@ def main() -> int:
                 if isinstance(meta_payload, dict):
                     module_name = str(meta_payload.get("module", ""))
                     execution_backend = str(meta_payload.get("executionBackend", ""))
-                    if module_name.startswith(DOE_MODULE_PREFIX) and (
+                    if (module_name.startswith(DOE_MODULE_PREFIX) and (
                         execution_backend == "dawn_delegate"
                         or execution_backend in doe_runtime_providers.native_execution_backends()
-                    ):
+                    )) or execution_backend in doe_runtime_providers.dawn_execution_backends():
                         backend_id = meta_payload.get("backendId")
                         if not isinstance(backend_id, str) or not backend_id:
                             failures.append(

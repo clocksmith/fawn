@@ -254,6 +254,12 @@ def compare_assessment(
     )
     is_left_dawn = is_left_dawn_delegate or is_left_dawn_direct or is_left_dawn_perf
     is_right_dawn = is_right_dawn_delegate or is_right_dawn_direct or is_right_dawn_perf
+    # Dawn driven by a runtime CLI harness (the Zig delegate, or dawn-c-runtime's
+    # dawn_direct_vulkan) writes Doe-runtime timing sources and policies, so the
+    # timing checks hold it to the Doe-native expectations.
+    dawn_harness_backends = doe_runtime_providers.dawn_execution_backends()
+    is_left_dawn_harness = is_left_dawn_delegate or bool(left_execution_backends & dawn_harness_backends)
+    is_right_dawn_harness = is_right_dawn_delegate or bool(right_execution_backends & dawn_harness_backends)
     is_left_doe = uses_doe_execution(left_execution_backends)
     is_right_doe = uses_doe_execution(right_execution_backends)
     is_dawn_vs_doe = (is_left_dawn and is_right_doe) or (is_left_doe and is_right_dawn)
@@ -414,8 +420,8 @@ def compare_assessment(
             is_dawn_vs_doe=is_dawn_vs_doe,
             is_left_dawn_perf=is_left_dawn_perf,
             is_right_dawn_perf=is_right_dawn_perf,
-            is_left_dawn_delegate=is_left_dawn_delegate,
-            is_right_dawn_delegate=is_right_dawn_delegate,
+            is_left_dawn_delegate=is_left_dawn_harness,
+            is_right_dawn_delegate=is_right_dawn_harness,
             is_left_dawn=is_left_dawn,
             is_right_dawn=is_right_dawn,
             is_left_doe=is_left_doe,
@@ -447,8 +453,8 @@ def compare_assessment(
             is_dawn_vs_doe=is_dawn_vs_doe,
             is_left_dawn_perf=is_left_dawn_perf,
             is_right_dawn_perf=is_right_dawn_perf,
-            is_left_dawn_delegate=is_left_dawn_delegate,
-            is_right_dawn_delegate=is_right_dawn_delegate,
+            is_left_dawn_delegate=is_left_dawn_harness,
+            is_right_dawn_delegate=is_right_dawn_harness,
             is_left_dawn=is_left_dawn,
             is_right_dawn=is_right_dawn,
             is_left_doe=is_left_doe,
@@ -717,7 +723,19 @@ def compare_assessment(
             ],
         },
     )
-    shader_source_receipts_match_applies = comparability_mode == "strict" and package_execution_applies
+    # Both sides compile shader source: the package surfaces, and the C runtime
+    # CLI over either provider (doe_c_vulkan vs dawn_direct_vulkan), whose
+    # strict fairness rests on equal WGSL sources rather than SPIR-V files.
+    wgsl_source_backends = doe_runtime_providers.wgsl_source_execution_backends()
+    c_cli_source_execution = (
+        bool(left_execution_backends)
+        and bool(right_execution_backends)
+        and left_execution_backends <= wgsl_source_backends
+        and right_execution_backends <= wgsl_source_backends
+    )
+    shader_source_receipts_match_applies = comparability_mode == "strict" and (
+        package_execution_applies or c_cli_source_execution
+    )
     shader_source_receipts_match = (
         len(left_shader_source_receipt_hashes) > 0
         and len(right_shader_source_receipt_hashes) > 0
@@ -731,7 +749,7 @@ def compare_assessment(
         applicable=shader_source_receipts_match_applies,
         passes=shader_source_receipts_match,
         failure_reason=(
-            "baseline/comparison package shader source receipt mismatch: "
+            "baseline/comparison shader source receipt mismatch: "
             f"{sorted(left_shader_source_receipt_hashes)} vs "
             f"{sorted(right_shader_source_receipt_hashes)}"
         ),
@@ -856,6 +874,7 @@ def compare_assessment(
             "webgpu-ffi",
             "dawn_delegate",
             "dawn_direct_metal",
+            *doe_runtime_providers.dawn_execution_backends(),
             "node_webgpu_package",
             "doe_node_webgpu",
             "doe_node_native_direct",

@@ -1,10 +1,11 @@
 {
   "schemaVersion": 1,
-  "registryVersion": "2026-10-25-zig-and-c-runtime-clis-v2",
+  "registryVersion": "2026-10-25-zig-c-and-dawn-c-runtime-clis-v3",
   "providers": [
     {
       "providerId": "doe-zig-runtime",
       "productId": "doe",
+      "productRole": "doe",
       "runtimeImplementation": "zig",
       "binaryName": "doe-zig-runtime",
       "backendSelection": "backend-runtime-policy",
@@ -17,11 +18,23 @@
     {
       "providerId": "doe-c-runtime",
       "productId": "doe-c",
+      "productRole": "doe",
       "runtimeImplementation": "c",
       "binaryName": "doe-c-runtime",
       "backendSelection": "fixed",
       "executionBackends": [
         { "executionBackend": "doe_c_vulkan", "api": "vulkan" }
+      ]
+    },
+    {
+      "providerId": "dawn-c-runtime",
+      "productId": "dawn-c",
+      "productRole": "dawn",
+      "runtimeImplementation": "c",
+      "binaryName": "dawn-c-runtime",
+      "backendSelection": "fixed",
+      "executionBackends": [
+        { "executionBackend": "dawn_direct_vulkan", "api": "vulkan" }
       ]
     }
   ]
