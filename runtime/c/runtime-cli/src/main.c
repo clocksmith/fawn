@@ -395,6 +395,15 @@ static bool emit_pending(pending_trace *pending, FILE *rows, const options *opti
             pending->command, &pending->decision, options->execute ? &pending->execution : NULL);
     if (options->trace_stdout && !doe_trace_write_row(stdout, identity, pending->seq, pending->timestamp,
         pending->hash, pending->previous, pending->command, &pending->decision, options->execute ? &pending->execution : NULL)) ok = false;
+    if (!options->trace_stdout && !options->trace_jsonl && !options->trace_meta && !options->replay) {
+        doe_command applied = *pending->command;
+        if (pending->decision.temporary_buffer) {
+            applied.as.copy.temporary_buffer = true;
+            applied.as.copy.temporary_buffer_alignment = pending->decision.temporary_buffer_alignment;
+        }
+        if (!cli_write_summary(stdout, pending->seq, &applied, &pending->decision,
+                options->execute ? &pending->execution : NULL, identity->backend_id)) ok = false;
+    }
     pending->active = false;
     return ok;
 }
@@ -694,6 +703,7 @@ int main(int argc, char **argv)
         }
     }
     if (rows && fclose(rows) != 0) status = 1;
+    if (fflush(stdout) != 0) status = 1;
     if (operator_anchor && !doe_operator_recorder_finish(&operators)) {
         fprintf(stderr, "doe-c-runtime: cannot write %s\n", operators.manifest_path);
         status = 1;

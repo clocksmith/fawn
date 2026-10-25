@@ -49,6 +49,10 @@ def main():
     args = parser.parse_args(); args.work.mkdir(parents=True, exist_ok=True)
     env = dict(os.environ, LD_PRELOAD=str(args.no_device.resolve()))
     check_normalized(args.binary, args.work, env)
+    bare = subprocess.run([str(args.binary)], cwd=REPO, env=env, capture_output=True, text=True, timeout=10)
+    assert bare.returncode == 0 and bare.stdout.count('cmd[') == 5 and 'exec backend=' not in bare.stdout
+    assert 'matched=vulkan.intel.gen12.use_temp_buffer_compressed_copy' in bare.stdout
+    assert len([json.loads(line[5:]) for line in bare.stdout.splitlines() if line.startswith('  -> ')]) == 5
     def run(name, *flags, expected=0):
         meta = args.work / (name + '.meta.json'); rows = args.work / (name + '.jsonl')
         result = subprocess.run([str(args.binary), '--trace-jsonl', str(rows), '--trace-meta', str(meta), *flags],

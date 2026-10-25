@@ -21,6 +21,9 @@ $(BUILD)/doe-c-runtime --commands examples/rmsnorm_tree_commands.json --execute 
   --backend native --kernel-root bench/kernels --trace-jsonl out.jsonl --trace-meta out.meta.json
 ```
 
+With no trace paths, `--trace` or `--replay`, stdout shows the quirk decision
+and normalized command details. Execution timing is shown only for real execution.
+
 Without `--execute`, the same parser and quirk engine produce host-only traces:
 no instance, adapter or device is created, row execution fields are absent and
 meta execution counters are zero. `--backend trace` selects this mode explicitly;
