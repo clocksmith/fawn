@@ -1,52 +1,46 @@
-# CATSCAN: Experimental C Metal backend
+# CATSCAN: C Metal backend
 
 Parent: [Experimental C migration](../../CATSCAN.md)
 
 ## Target
-Execute admitted Metal operations in C, preserving resource and completion obligations.
+Execute Metal, preserving resource and completion obligations.
 
 ## Authority
 Own native loading, device/queue/resource/pipeline lifetimes, compute/render,
-resolves, visibility/timestamps, CAMetalLayer drawables, transfers, submission and retirement. Exclude WGSL
-meaning, public validation, provider selection and qualification.
+resolves, visibility/timestamps, drawables, transfers and retirement. Exclude WGSL,
+public validation, provider selection and qualification.
 
 ## Scope
-Backend ABI, adapter and focused tests.
+ABI and tests.
 
 ## Contracts
-Validated MSL and explicit compiler workgroup/slot facts enter the
+MSL and workgroup/slot facts enter the
 [compute boundary](include/doe_metal.h); stage/render facts enter the
-[graphics boundary](include/doe_metal_render.h). Outputs are native statuses and
-completion-backed shared-buffer access. Queried device dimensions and a known
-GPU family supply the public workgroup envelope; the actual pipeline supplies
-its independent maxTotalThreadsPerThreadgroup check. Typed indirect compute copies GPU arguments
-to private scratch and executes the shared compiled bounds guard before consumption,
+[graphics boundary](include/doe_metal_render.h). Outputs: native statuses and completion-backed buffer access. Device dimensions and GPU family bound workgroups; pipelines independently
+check maxTotalThreadsPerThreadgroup. Indirect compute copies GPU arguments
+to scratch and executes the shared bounds guard,
 under [system invariants](../../../../INTENT.md).
-Presentation borrows an explicit CAMetalLayer and retains each acquired drawable through
-the existing texture/command owner. Native presentDrawable schedules presentation;
-GPU completion permits releasing the caller lease under Apple's drawable contract,
-without claiming a displayed timestamp. Unknown GPU work remains retained.
+Presentation borrows CAMetalLayer, retaining drawables through the texture/command
+owner. presentDrawable schedules presentation; GPU completion permits caller-lease
+release under Apple's contract, without claiming displayed timestamps.
 Indexed/indirect [draws](include/doe_metal_draw_guard.h) use the shared GPU normalizer/scan and existing command owner.
 
 ## Invariants
 Pending/unknown work retains every resource obligation; failed work never authorizes
 successful readback. No interpreter, backend substitution, Zig delegation or
-production-selection change. Host controls, SDK checks and physical qualification
-remain distinct. Native handles are borrowed; caller serialization is explicit.
-Sampled stencil initialization uses parent-format attachments and the same
-speculative aspect owner, preserving initialized companions.
+production-selection change. Host, SDK and physical evidence remain distinct. Native handles are borrowed; callers serialize.
+Stencil initialization uses parent-format attachments and the speculative aspect
+owner, preserving companions.
 
 ## Acceptance
 [Focused checks](Makefile) exercise native arguments, rollback, ownership and
 completion.
-- Evidence: [Timestamp records](DEVELOPER_RECEIPT_TIMESTAMPS.json) binds host scope;
-[graphics prerequisites](DEVELOPER_RECEIPT_GRAPHICS_PREREQUISITES.json) bind canonical
-initialization, empty raster controls and bounded Apple execution, without
-qualifying public presentation. SDK verification, native execution and complete
-retained-consumer parity retain separate gates.
+- Evidence: [Timestamp records](DEVELOPER_RECEIPT_TIMESTAMPS.json) bind host scope;
+[graphics prerequisites](DEVELOPER_RECEIPT_GRAPHICS_PREREQUISITES.json) bind initialization, empty raster controls and bounded Apple execution.
+Presentation, SDK checks and retained-consumer parity require separate evidence.
 
 ## Non-goals
-WebGPU policy, duplicate lifetime authority or compile-only hardware qualification.
+WebGPU policy, duplicate lifetimes or compile-only qualification.
 
 ## Freedom
-Algorithms may vary within these boundaries.
+Algorithms vary.

@@ -3,14 +3,14 @@
 Parent: [C migration](../CATSCAN.md)
 
 ## Target
-Expose pinned WebGPU C entrypoints.
+Expose WebGPU entrypoints.
 
 ## Authority
-Own ABI conversion, adapter/device leases and orchestration, not resource semantics,
-callback queues, shader meaning, GPU execution or production defaults.
+Own ABI conversion and adapter/device leases, excluding resource semantics,
+callbacks, compilation, execution and production selection.
 
 ## Scope
-Public objects, compute, graphics, copies and Linux Vulkan and macOS Metal presentation.
+WebGPU objects and Vulkan/Metal presentation.
 [Coverage](README.md) separates Vulkan, Metal and Windows D3D12 composition.
 Missing backend paths reject.
 
@@ -20,30 +20,28 @@ error-scope, resource, shader and backend contracts apply.
 Instance requirements use the owner's [capability amendment](../instance/CAPABILITIES.md).
 
 ## Invariants
-One tagged device/pending owner selects backend without fallback or migration.
+One tagged device/pending owner selects backend without fallback.
 Read only the selected payload. Reflection never substitutes for dispatch analysis.
-Unknown work retains resources and progress. Vulkan submit returns at
+Unknown work retains resources. Vulkan submit returns at
 queue acceptance, settles oldest first, and zero-initializes textures before
 queue-ordered access (owner-authorized 2026-10-24). Surface acquisition/discard
 uncertainty uses reserved records on the same pending list; Vulkan presentation
-requires its own frame fence. Metal registers presentation with the native
-scheduled handler and conservatively retains caller drawable leases through GPU
-completion under Apple's release-after-registration contract. A skipped-frame
-display timestamp is not a WorkDone or resource-retirement condition. Cleanup-only records do not redefine command WorkDone.
-Surface cleanup preserves surface-before-device lock order and undelivered errors.
-Invalid surface configuration preserves the active configuration; successful
-replacement leaves old frame/view generations on the existing retirement owner.
+requires its own frame fence. Metal registers presentation with the scheduled handler, retaining drawables through
+GPU completion under Apple's release-after-registration contract. Display timestamps
+do not govern retirement. Cleanup records do not redefine command WorkDone.
+Cleanup preserves surface-before-device locking and undelivered errors.
+Invalid configuration preserves surfaces; replacement retains old frames/views
+on the existing retirement owner.
 Provider code remains resident through cleanup; foreign callbacks run outside locks.
 
 ## Acceptance
 [Owner checks](Makefile) exercise public behavior, rejection, first errors,
 rollback and terminal cleanup.
 - Evidence: [Source-bound records](README.md) distinguish
-host controls, native execution and unqualified paths. Developer results do not
-establish independent, physical or performance qualification.
+host controls, native execution and unqualified paths. Developer results are unqualified.
 
 ## Non-goals
 Parallel resource engines, synthetic completion or default cutover.
 
 ## Freedom
-Internal algorithms may vary.
+Algorithms vary.
