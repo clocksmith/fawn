@@ -19,6 +19,8 @@ specializations and retained legacy compilation.
 explicit capacities and borrowed views. Module-only handles expose symbolic
 metadata; executable borrow rejects them. Specialization uses the saved immutable
 source/options and compiler ABI13, producing one declared entry at index0.
+The additive ABI15 Metal fragment policy is copied before callbacks and owned
+with exact sample-mask identity; it never changes the public source interface.
 
 ## Invariants
 No parser, source substitution, semantic equivalence engine, cache or device owner.

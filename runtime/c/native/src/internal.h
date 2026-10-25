@@ -221,6 +221,8 @@ bool native_vulkan_binding_layout(const native_pipeline *pipeline, doe_vk_bindin
 doe_resource_status native_resolve_resources(const native_pipeline *pipeline,
     doe_resource_pipeline_layout *layout, doe_resource_bind_group *const *groups,
     const doe_resource_dispatch_offsets *offsets, doe_resource_binding *out);
+bool native_fragment_load(native_device *, const WGPUFragmentState *, uint32_t sample_mask,
+    native_stage *, native_pipeline_error *);
 bool native_stage_load(native_device *device, WGPUShaderModule module, WGPUStringView name,
     uint32_t stage, const WGPUConstantEntry *constants, size_t count,
     native_stage *out, native_pipeline_error *error);

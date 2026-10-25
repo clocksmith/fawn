@@ -783,44 +783,7 @@ static void sampled_float_admission(state *s)
     assert(mocks[2].live == baseline && !s->errors);
 }
 
-static void reject_metal_fragment_stores(state *s)
-{
-    const char *code =
-        "@group(0) @binding(0) var<storage,read_write> data:array<u32>;"
-        "@vertex fn vertex()->@builtin(position) vec4f{return vec4f(0.0,0.0,0.0,1.0);}"
-        "@fragment fn fragment()->@location(0) vec4f{data[0]=7u;return vec4f(1.0);}";
-    WGPUShaderSourceWGSL source = WGPU_SHADER_SOURCE_WGSL_INIT;
-    source.code = (WGPUStringView){code,WGPU_STRLEN};
-    WGPUShaderModuleDescriptor shader_descriptor = {.nextInChain=&source.chain};
-    WGPUShaderModule module = wgpuDeviceCreateShaderModule(s->device, &shader_descriptor);
-    assert(module);
-    WGPUColorTargetState color = {.format=WGPUTextureFormat_RGBA8Unorm, .writeMask=WGPUColorWriteMask_All};
-    WGPUFragmentState fragment = {.module=module, .targetCount=1, .targets=&color};
-    WGPURenderPipelineDescriptor descriptor = WGPU_RENDER_PIPELINE_DESCRIPTOR_INIT;
-    descriptor.vertex.module = module;
-    descriptor.fragment = &fragment;
-    native_device *device = (native_device *)s->device;
-    /* Poison only the inactive union representation's trailing storage: no
-     * Metal member changes, and no inactive semantic arm is read. A missing
-     * backend tag gate would mistake this byte for Vulkan feature support. */
-    size_t offset = offsetof(native_backend, value.vulkan.caps.fragment_stores_and_atomics) -
-        offsetof(native_backend, value);
-    assert(offset >= sizeof(device->backend.value.metal) && offset < sizeof(device->backend.value));
-    native_lock(device);
-    unsigned char *representation = (unsigned char *)&device->backend.value;
-    unsigned char original = representation[offset];
-    representation[offset] = 1;
-    native_unlock(device);
-    unsigned created = mocks[2].created;
-    wgpuDevicePushErrorScope(s->device, WGPUErrorFilter_Validation);
-    assert(!wgpuDeviceCreateRenderPipeline(s->device, &descriptor));
-    native_lock(device);
-    representation[offset] = original;
-    native_unlock(device);
-    pop(s, WGPUErrorType_Validation);
-    assert(mocks[2].created == created);
-    wgpuShaderModuleRelease(module);
-}
+#include "metal_storage_cases.h"
 
 #include "metal_vertex_cases.h"
 
@@ -962,7 +925,7 @@ int main(void)
     queue_upload_admission(&s);
     required_metal_limits(&s);
     sampled_float_admission(&s);
-    reject_metal_fragment_stores(&s);
+    metal_storage_cases(&s);
     graphics_ledger(&s);
     metal_vertex_formats(&s, &mocks[2]);
     mixed_resource_ledger(&s);

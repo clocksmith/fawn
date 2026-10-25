@@ -21,5 +21,6 @@
     doe_compiler_specialize;
     doe_compiler_module_specialization_requirements;
     doe_compiler_specialize_module;
+    doe_compiler_specialize_metal_pipeline;
   local: *;
 };

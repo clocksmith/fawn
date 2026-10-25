@@ -140,8 +140,7 @@ WGPURenderPipeline native_create_render_pipeline(native_device *device,
     WGPURenderPipeline pipeline = NULL;
     if (native_stage_load(device,descriptor->vertex.module,descriptor->vertex.entryPoint,
         DOE_COMPILER_STAGE_VERTEX,descriptor->vertex.constants,descriptor->vertex.constantCount,&stages[0],error) &&
-        (!fragment || native_stage_load(device,fragment->module,fragment->entryPoint,
-            DOE_COMPILER_STAGE_FRAGMENT,fragment->constants,fragment->constantCount,&stages[1],error))) {
+        (!fragment || native_fragment_load(device,fragment,descriptor->multisample.mask,&stages[1],error))) {
         pipeline = device->backend.kind == WGPUBackendType_Metal ?
             native_metal_create_render_pipeline(device,descriptor,stages,count,error) :
             device->backend.kind==WGPUBackendType_D3D12 ?

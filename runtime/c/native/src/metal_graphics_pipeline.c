@@ -155,7 +155,9 @@ WGPURenderPipeline native_metal_create_render_pipeline(native_device *device,
             &interfaces, &device->backend.limits) ||
         !native_render_fragment_depth(stages, stage_count, descriptor->depthStencil)) return NULL;
     doe_mtl_render_pipeline_desc native = {.sample_count=fixed.sample_count,
-        .alpha_to_coverage=fixed.alpha_to_coverage, .override_sample_mask=true, .sample_mask=fixed.sample_mask,
+        .alpha_to_coverage=fixed.alpha_to_coverage,
+        .override_sample_mask=!(fragment && stage_count == 2 && stages[1].view.metal_sample_mask == fixed.sample_mask),
+        .sample_mask=fixed.sample_mask,
         .color_count=resource.color_count};
     for (uint32_t i = 0; i < resource.color_count; ++i) {
         resource.color_formats[i] = fragment->targets[i].format;

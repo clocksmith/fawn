@@ -14,6 +14,7 @@ typedef struct allocation_state {
     char *source, *identity, *entry;
     const char *replacement;
     DoeCompilerOverrideValueV13 *row;
+    DoeCompilerMetalPipelineOptionsV15 *pipeline;
     struct { void *memory; size_t size, alignment; } blocks[16];
 } allocation_state;
 static void *allocate(void *userdata, size_t size, size_t alignment)
@@ -26,6 +27,7 @@ static void *allocate(void *userdata, size_t size, size_t alignment)
         if (state->identity) memcpy(state->identity,"compiler-B",10);
         if (state->entry) memcpy(state->entry,"mutate",6);
         if (state->row) ++state->row->key_length;
+        if (state->pipeline) state->pipeline->sample_mask = 0;
     }
     if (state->calls == state->fail_at) return NULL;
     void *memory = malloc(size);
@@ -345,8 +347,50 @@ static void allocator_reentry(void)
         assert(!state.live);
     }
 }
+static void metal_pipeline(void)
+{
+    allocation_state state = {0};
+    doe_shader_options opts = options(&state,DOE_SHADER_METAL);
+    const char code[] = "@fragment fn chosen()->@location(0) vec4f{return vec4f(1);}";
+    doe_shader *module = NULL, *artifact = NULL;
+    doe_shader_error error;
+    assert(doe_shader_create_module(&opts,0,code,sizeof(code)-1,&module,&error) == DOE_SHADER_OK);
+    const DoeCompilerEntrySelectionV5 chosen = selection("chosen");
+    DoeCompilerMetalPipelineOptionsV15 policy = {5};
+    state.calls = 0;
+    state.mutate_at = 1;
+    state.pipeline = &policy;
+    assert(doe_shader_specialize_metal_pipeline(module,&chosen,NULL,0,&policy,&artifact,&error) == DOE_SHADER_OK);
+    assert(policy.sample_mask == 0);
+    doe_shader_view view;
+    assert(doe_shader_borrow(artifact,&view) == DOE_SHADER_OK && view.metal_sample_mask == 5);
+    assert(!doe_shader_metal_pipeline_matches(artifact,module,&chosen,NULL,0,&policy));
+    policy.sample_mask = 5;
+    assert(doe_shader_metal_pipeline_matches(artifact,module,&chosen,NULL,0,&policy));
+    assert(!doe_shader_specialization_matches(artifact,module,&chosen,NULL,0));
+    assert(view.interface_count == 1 && view.entries[0].stage == DOE_COMPILER_STAGE_FRAGMENT);
+    doe_shader_release(artifact);
+    state.mutate_at = 0;
+    for (unsigned ordinal = 1; ordinal <= 2; ++ordinal) {
+        state.calls = 0;
+        state.fail_at = ordinal;
+        artifact = (doe_shader *)(uintptr_t)1;
+        assert(doe_shader_specialize_metal_pipeline(module,&chosen,NULL,0,&policy,&artifact,&error) == DOE_SHADER_OUT_OF_MEMORY);
+        assert(artifact == (doe_shader *)(uintptr_t)1 && state.live == 1);
+    }
+    state.fail_at = 0;
+    policy.sample_mask = UINT32_MAX;
+    assert(doe_shader_specialize_metal_pipeline(module,&chosen,NULL,0,&policy,&artifact,&error) == DOE_SHADER_OK);
+    assert(doe_shader_specialization_matches(artifact,module,&chosen,NULL,0));
+    assert(doe_shader_metal_pipeline_matches(artifact,module,&chosen,NULL,0,&policy));
+    doe_shader_release(module);
+    assert(doe_shader_borrow(artifact,&view) == DOE_SHADER_OK && view.metal_sample_mask == UINT32_MAX);
+    doe_shader_release(artifact);
+    assert(!state.live);
+}
 int main(void)
 {
+    metal_pipeline();
     allocator_reentry();
     int original = fegetround();
     const int modes[] = {FE_TONEAREST,FE_UPWARD,FE_DOWNWARD,FE_TOWARDZERO};

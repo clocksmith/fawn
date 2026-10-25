@@ -47,5 +47,6 @@ bool shader_layout(doe_shader_target, DoeCompilerModuleOutputCounts, size_t, siz
 void shader_assign_outputs(doe_shader *, const size_t [15], DoeCompilerModuleOutputCounts, size_t, size_t);
 bool shader_options_valid(const doe_shader_options *);
 doe_shader_status shader_compile(const doe_shader_options *, const char *, size_t,
-    const doe_shader *, const DoeCompilerOverrideValueV13 *, size_t, doe_shader **, doe_shader_error *);
+    const doe_shader *, const DoeCompilerOverrideValueV13 *, size_t,
+    const DoeCompilerMetalPipelineOptionsV15 *, doe_shader **, doe_shader_error *);
 #endif
