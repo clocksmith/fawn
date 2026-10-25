@@ -38,5 +38,5 @@ bool matrix_constant(Source *, uint32_t, NumericBuiltinKind, ConstantValue, Type
 bool builtin_constant(Source *, uint32_t, const NumericBuiltin *,
                       const ConstantValue *, TypeId, ConstantValue *);
 /* Bound values are borrowed only for this validation call; neither is mutated. */
-bool builtin_clamp_bounds(Source *, uint32_t, const ConstantValue *, const ConstantValue *);
+bool builtin_bounds(Source *, uint32_t, NumericBuiltinKind, const ConstantValue *, const ConstantValue *);
 #endif

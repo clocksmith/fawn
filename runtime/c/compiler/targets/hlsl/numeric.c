@@ -139,6 +139,7 @@ static void subgroup_expression(HlslEmitter *e, const IrInstruction *ir, Numeric
             inclusive = true;
             product = true;
             break;
+        case BUILTIN_FMA: case BUILTIN_STEP: case BUILTIN_SMOOTHSTEP: case BUILTIN_SATURATE:
         case BUILTIN_MIX: case BUILTIN_COUNT_ONE_BITS:
         case BUILTIN_REVERSE_BITS: case BUILTIN_COUNT_LEADING_ZEROS: case BUILTIN_COUNT_TRAILING_ZEROS:
         case BUILTIN_FIRST_LEADING_BIT: case BUILTIN_FIRST_TRAILING_BIT: case BUILTIN_UNPACK4X_U8:
@@ -353,11 +354,14 @@ static void builtin_expression(HlslEmitter *e, const IrInstruction *ir) {
         case BUILTIN_NORMALIZE: intrinsic = "normalize"; break;
         case BUILTIN_CROSS: intrinsic = "cross"; break;
         case BUILTIN_MIX: intrinsic = "lerp"; break;
+        case BUILTIN_FMA: intrinsic = "mad"; break;
+        case BUILTIN_STEP: intrinsic = "step"; break;
         case BUILTIN_REFLECT: intrinsic = "reflect"; break;
         case BUILTIN_FACE_FORWARD: intrinsic = "faceforward"; break;
         case BUILTIN_REFRACT: intrinsic = "refract"; break;
         case BUILTIN_TRANSPOSE: intrinsic = "transpose"; break;
         case BUILTIN_DETERMINANT: intrinsic = "determinant"; break;
+        case BUILTIN_SMOOTHSTEP: case BUILTIN_SATURATE:
         case BUILTIN_COUNT_ONE_BITS:
         case BUILTIN_REVERSE_BITS: case BUILTIN_COUNT_LEADING_ZEROS: case BUILTIN_COUNT_TRAILING_ZEROS:
         case BUILTIN_FIRST_LEADING_BIT: case BUILTIN_FIRST_TRAILING_BIT: case BUILTIN_UNPACK4X_U8:

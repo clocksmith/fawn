@@ -56,6 +56,18 @@ records exact admission, eager operand semantics and the unchanged retained and
 literal-oracle fixtures. `make all-any-check sanitize-all-any` checks the public
 target adapters and failure/state boundaries; actual execution remains separate.
 
+`fma`, `step`, `smoothstep` and `saturate` support abstract-float and f32
+scalar/vector values through the shared constant and runtime owners. Smoothstep
+uses typed arithmetic so descending edges retain WGSL behavior on every target;
+equal const/override edges reject at shader/pipeline creation, even with a runtime
+third argument. Saved operand IDs preserve evaluation order. FMA constants use
+declared-width fused evaluation; runtime target operations retain WGSL's permitted
+accuracy envelope. These additions do not enable f16.
+`make test-specialization` exercises all three targets and failed publication;
+`make -C runtime/c/native check-float-math` exercises 33 literal-oracle words,
+effect order, binding canaries and early release through the public C runtime.
+CPU Vulkan execution, Metal SDK and DXC compilation are separate developer checks.
+
 ## Browser and offline WGSL delivery
 
 The C source rewriter uses the same parser, semantic types and numeric owner.

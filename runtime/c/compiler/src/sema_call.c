@@ -281,19 +281,22 @@ static inline bool sema_builtin_value(Source *source, const Expression *node, co
             if (!sema_materialize(source, &arguments[i],
                 builtin_argument_width(builtin, i, width, type_vector_width(compiler, arguments[i].constant.type)) == 1u ? leaf : operand_type)) return false;
 
-        if (builtin->kind == BUILTIN_CLAMP && !arguments[1].runtime && !arguments[2].runtime) {
+        const uint32_t bound_start = builtin->kind == BUILTIN_SMOOTHSTEP ? 0u : 1u;
+        if ((builtin->kind == BUILTIN_CLAMP || builtin->kind == BUILTIN_SMOOTHSTEP) &&
+            !arguments[bound_start].runtime && !arguments[bound_start + 1u].runtime) {
             /* A skipped constant bound still has mandatory creation-time meaning.
              * Force only unknown const expressions, never an effectful runtime input. */
-            link = compiler->arguments[node->left].next;
-            for (uint32_t i = 1u; i < 3u; ++i) {
+            link = bound_start == 0u ? node->left : compiler->arguments[node->left].next;
+            for (uint32_t i = bound_start; i < bound_start + 2u; ++i) {
                 if (!arguments[i].known && !arguments[i].overridable &&
                     (!sema_expression(source, compiler->arguments[link].expression, scope,
                                       true, false, &arguments[i]) ||
                      !sema_materialize(source, &arguments[i], operand_type))) return false;
                 link = compiler->arguments[link].next;
             }
-            if (arguments[1].known && arguments[2].known && !builtin_clamp_bounds(source, node->source_offset,
-                                      &arguments[1].constant, &arguments[2].constant)) return false;
+            if (arguments[bound_start].known && arguments[bound_start + 1u].known &&
+                !builtin_bounds(source, node->source_offset, builtin->kind,
+                    &arguments[bound_start].constant, &arguments[bound_start + 1u].constant)) return false;
         }
 
     }

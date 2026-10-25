@@ -100,6 +100,43 @@ bool numeric_builtin(Source *source, size_t offset, const NumericBuiltin *signat
             return numeric_error(source, offset, "scalar builtin operand is a nonfinite evaluated constant");
     }
     switch (kind) {
+        case BUILTIN_FMA: {
+            NumericValue answer = {.type = type};
+            if (type == IR_F32)
+                answer.bits = float_bits(fmaf(float_value(arguments[0].bits),
+                    float_value(arguments[1].bits), float_value(arguments[2].bits)));
+            else answer.bits = double_bits(fma(double_value(arguments[0].bits),
+                    double_value(arguments[1].bits), double_value(arguments[2].bits)));
+            return checked_float(source, offset, answer, result);
+        }
+        case BUILTIN_STEP:
+            return numeric_convert(source, offset,
+                (NumericValue){numeric_less(arguments[1], arguments[0]) ? 0u : 1u, IR_ABSTRACT_INT},
+                type, result);
+        case BUILTIN_SATURATE:
+        case BUILTIN_SMOOTHSTEP: {
+            NumericValue zero, one, value = arguments[0];
+            if (!numeric_convert(source, offset, (NumericValue){0u, IR_ABSTRACT_INT}, type, &zero) ||
+                !numeric_convert(source, offset, (NumericValue){1u, IR_ABSTRACT_INT}, type, &one)) return false;
+            if (kind == BUILTIN_SMOOTHSTEP) {
+                NumericValue numerator, denominator;
+                if (!numeric_binary(source, offset, EXPRESSION_SUBTRACT, COMPARE_EQUAL,
+                        arguments[2], arguments[0], &numerator) ||
+                    !numeric_binary(source, offset, EXPRESSION_SUBTRACT, COMPARE_EQUAL,
+                        arguments[1], arguments[0], &denominator) ||
+                    !numeric_binary(source, offset, EXPRESSION_DIVIDE, COMPARE_EQUAL,
+                        numerator, denominator, &value)) return false;
+            }
+            value = numeric_minimum(numeric_maximum(value, zero), one);
+            if (kind == BUILTIN_SATURATE) { *result = value; return true; }
+            NumericValue two, three, square, doubled, remainder;
+            return numeric_convert(source, offset, (NumericValue){2u, IR_ABSTRACT_INT}, type, &two) &&
+                numeric_convert(source, offset, (NumericValue){3u, IR_ABSTRACT_INT}, type, &three) &&
+                numeric_binary(source, offset, EXPRESSION_MULTIPLY, COMPARE_EQUAL, value, value, &square) &&
+                numeric_binary(source, offset, EXPRESSION_MULTIPLY, COMPARE_EQUAL, two, value, &doubled) &&
+                numeric_binary(source, offset, EXPRESSION_SUBTRACT, COMPARE_EQUAL, three, doubled, &remainder) &&
+                numeric_binary(source, offset, EXPRESSION_MULTIPLY, COMPARE_EQUAL, square, remainder, result);
+        }
         case BUILTIN_MIX: {
             NumericValue one, remainder, left, right;
             return numeric_convert(source, offset, (NumericValue){1u, IR_ABSTRACT_INT}, type, &one) &&

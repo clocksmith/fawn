@@ -70,6 +70,7 @@ bool numeric_math(Source *source, size_t offset, NumericBuiltinKind kind,
             } else *result = input * factor;
             break;
         }
+        case BUILTIN_FMA: case BUILTIN_STEP: case BUILTIN_SMOOTHSTEP: case BUILTIN_SATURATE:
         case BUILTIN_MIX: case BUILTIN_COUNT_ONE_BITS:
         case BUILTIN_REVERSE_BITS: case BUILTIN_COUNT_LEADING_ZEROS: case BUILTIN_COUNT_TRAILING_ZEROS:
         case BUILTIN_FIRST_LEADING_BIT: case BUILTIN_FIRST_TRAILING_BIT: case BUILTIN_UNPACK4X_U8:

@@ -29,6 +29,7 @@ bool constant_materialize(Source *,uint32_t,ConstantValue,TypeId,ConstantValue *
 bool sema_expression(Source *,uint32_t,const LocalScope *,bool,bool,ExpressionValue *);
 bool sema_select(Source *,const Expression *,ExpressionValue [3],bool,bool,ExpressionValue *);
 bool sema_ensure_value(Source *,ExpressionValue *,bool);
+bool sema_interpolation(Source *, uint32_t, NumericBuiltinKind, ExpressionValue *, bool, ExpressionValue *);
 bool sema_materialize(Source *,ExpressionValue *,TypeId);
 bool sema_type_reference(Source *,TypeRef,const LocalScope *,TypeId *);
 bool sema_common_type(Source *,TypeId,TypeId,uint32_t,TypeId *);

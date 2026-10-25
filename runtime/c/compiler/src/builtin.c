@@ -3,6 +3,10 @@
 #include "sema.h"
 
 static const NumericBuiltin numeric_builtins[] = {
+    {"fma", BUILTIN_FMA, 3u, BUILTIN_COMPONENT_FLOAT, 50u},
+    {"step", BUILTIN_STEP, 2u, BUILTIN_COMPONENT_FLOAT, 48u},
+    {"smoothstep", BUILTIN_SMOOTHSTEP, 3u, BUILTIN_COMPONENT_FLOAT, 0u},
+    {"saturate", BUILTIN_SATURATE, 1u, BUILTIN_COMPONENT_FLOAT, 0u},
     {"reverseBits", BUILTIN_REVERSE_BITS, 1u, BUILTIN_COMPONENT_INTEGER, 0u},
     {"countLeadingZeros", BUILTIN_COUNT_LEADING_ZEROS, 1u, BUILTIN_COMPONENT_INTEGER, 75u},
     {"countTrailingZeros", BUILTIN_COUNT_TRAILING_ZEROS, 1u, BUILTIN_COMPONENT_INTEGER, 73u},
@@ -142,15 +146,19 @@ static bool constant_lane(Source *source, ConstantValue input, uint32_t index, N
     return true;
 }
 
-bool builtin_clamp_bounds(Source *source, uint32_t offset, const ConstantValue *lower, const ConstantValue *upper) {
+bool builtin_bounds(Source *source, uint32_t offset, NumericBuiltinKind kind,
+                    const ConstantValue *lower, const ConstantValue *upper) {
     const uint32_t width = type_vector_width(source->compiler, lower->type);
     for (uint32_t i = 0u; i < width; ++i) {
         NumericValue low, high, comparison;
         if (!constant_lane(source, *lower, i, &low) || !constant_lane(source, *upper, i, &high) ||
-            !numeric_binary(source, offset, EXPRESSION_COMPARE, COMPARE_GREATER, low, high, &comparison)) return false;
+            !numeric_binary(source, offset, EXPRESSION_COMPARE,
+                kind == BUILTIN_SMOOTHSTEP ? COMPARE_EQUAL : COMPARE_GREATER,
+                low, high, &comparison)) return false;
         if (comparison.bits != 0u)
             return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, offset,
-                                "clamp constant lower bound exceeds upper bound");
+                kind == BUILTIN_SMOOTHSTEP ? "smoothstep constant edges are equal" :
+                "clamp constant lower bound exceeds upper bound");
     }
     return true;
 }

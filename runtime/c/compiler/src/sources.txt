@@ -48,5 +48,6 @@ src/spirv_subgroup.c
 src/compile.c
 src/storage.c
 src/sema_packed.c
+src/sema_interpolation.c
 src/numeric_bits.c
 src/spirv_bits.c
