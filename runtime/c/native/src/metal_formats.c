@@ -26,6 +26,7 @@ bool native_metal_format(uint32_t features, WGPUTextureFormat format, doe_mtl_fo
     case WGPUTextureFormat_R16Float: *out = DOE_MTL_R16_FLOAT; return true;
     case WGPUTextureFormat_RG16Float: *out = DOE_MTL_RG16_FLOAT; return true;
     case WGPUTextureFormat_RGBA16Float: *out = DOE_MTL_RGBA16_FLOAT; return true;
+    case WGPUTextureFormat_RG11B10Ufloat: *out = DOE_MTL_RG11B10_FLOAT; return true;
     case WGPUTextureFormat_R32Uint: *out = DOE_MTL_R32_UINT; return true;
     case WGPUTextureFormat_R32Sint: *out = DOE_MTL_R32_SINT; return true;
     case WGPUTextureFormat_R32Float: *out = DOE_MTL_R32_FLOAT; return true;

@@ -49,6 +49,8 @@ uint32_t native_adapter_features(const native_backend *backend)
     if (backend->kind == WGPUBackendType_Metal)
         return NATIVE_FEATURE(WGPUFeatureName_CoreFeaturesAndLimits) |
             NATIVE_FEATURE(WGPUFeatureName_DepthClipControl) |
+            NATIVE_FEATURE(WGPUFeatureName_IndirectFirstInstance) |
+            NATIVE_FEATURE(WGPUFeatureName_Depth32FloatStencil8) |
             (native_metal_timestamp_supported(&backend->value.metal.caps) ?
                 NATIVE_FEATURE(WGPUFeatureName_TimestampQuery) : 0);
     /* No compatibility mode: every adapter that can create a device is core. */
