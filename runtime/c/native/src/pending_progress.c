@@ -54,8 +54,13 @@ static void pending_progress(void *identity)
             native_unlock(device);
             if (doe_mutex_lock(&surface->mutex).status != DOE_HOST_OK) abort();
             native_lock(device);
-            native_pending *retired = surface->retirement ?
-                native_surface_retirement_take(device, surface->retirement) : NULL;
+            native_pending *retired = NULL;
+            for (native_pending *candidate = device->pending; candidate; candidate = candidate->next) {
+                if (candidate->kind == NATIVE_PENDING_SURFACE && candidate->ready && candidate->surface == surface) {
+                    retired = native_surface_retirement_take(device, candidate);
+                    break;
+                }
+            }
             if (retired) native_surface_retirement_finish_locked(retired);
             native_unlock(device);
             if (doe_mutex_unlock(&surface->mutex).status != DOE_HOST_OK) abort();

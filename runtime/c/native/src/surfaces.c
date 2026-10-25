@@ -9,7 +9,7 @@ enum { SURFACE_ALPHA_OPAQUE = 1, SURFACE_ALPHA_PREMULTIPLIED = 2,
     SURFACE_ALPHA_POSTMULTIPLIED = 4, SURFACE_ALPHA_INHERIT = 8 };
 /* Advertised public usages are the exercised subset; others reject explicitly. */
 static const WGPUTextureUsage surface_usages = WGPUTextureUsage_RenderAttachment |
-    WGPUTextureUsage_CopySrc | WGPUTextureUsage_CopyDst;
+    WGPUTextureUsage_CopySrc | WGPUTextureUsage_CopyDst | WGPUTextureUsage_TextureBinding;
 
 static bool source_from_chain(const WGPUChainedStruct *chain, doe_vk_surface_desc *out)
 {
@@ -112,11 +112,14 @@ void native_surface_drop_current(native_surface *surface)
 void native_surface_retirement_finish_locked(native_pending *pending)
 {
     native_surface *surface = pending->surface;
-    if (!pending->ready || surface->retirement != pending || surface->vulkan != pending->frame) abort();
+    if (!pending->ready) abort();
     if (doe_vk_surface_release(pending->frame) != DOE_VK_OK) abort();
-    surface->vulkan = NULL;
-    surface->device = NULL;
-    surface->retirement = NULL;
+    if (surface->retirement == pending) {
+        if (surface->vulkan != pending->frame) abort();
+        surface->vulkan = NULL;
+        surface->device = NULL;
+        surface->retirement = NULL;
+    }
 }
 
 void native_surface_retirement_release(native_pending *pending)
@@ -179,6 +182,40 @@ static void surface_teardown(native_surface *surface)
 void native_surface_release_lease(native_surface *surface)
 {
     if (native_release_count(&surface->leases)) surface_teardown(surface);
+}
+
+native_surface_release_hold native_surface_hold_release(doe_resource_texture *texture)
+{
+    native_texture *payload = doe_resource_texture_native(texture);
+    if (!payload || !payload->surface) return (native_surface_release_hold){0};
+    native_surface_release_hold hold = {payload->surface, payload->device};
+    native_retain_count(&hold.surface->leases);
+    native_device_retain(hold.device);
+    return hold;
+}
+
+void native_surface_finish_release(native_surface_release_hold hold)
+{
+    if (!hold.surface) return;
+    for (;;) {
+        if (doe_mutex_lock(&hold.surface->mutex).status != DOE_HOST_OK) abort();
+        native_lock(hold.device);
+        native_progress_pending(hold.device);
+        native_pending *retired = NULL;
+        for (native_pending *candidate = hold.device->pending; candidate; candidate = candidate->next) {
+            if (candidate->kind == NATIVE_PENDING_SURFACE && candidate->ready && candidate->surface == hold.surface) {
+                retired = native_surface_retirement_take(hold.device, candidate);
+                break;
+            }
+        }
+        if (retired) native_surface_retirement_finish_locked(retired);
+        native_unlock(hold.device);
+        if (doe_mutex_unlock(&hold.surface->mutex).status != DOE_HOST_OK) abort();
+        if (!retired) break;
+        native_surface_retirement_release(retired);
+    }
+    native_device_release(hold.device);
+    native_surface_release_lease(hold.surface);
 }
 
 void wgpuSurfaceAddRef(WGPUSurface handle)
@@ -269,6 +306,7 @@ static WGPUStatus fill_capabilities(const doe_vk_surface_caps *caps, WGPUSurface
     WGPUTextureUsage usages = WGPUTextureUsage_RenderAttachment;
     if (caps->supported_usage & DOE_VK_TEXTURE_COPY_SRC) usages |= WGPUTextureUsage_CopySrc;
     if (caps->supported_usage & DOE_VK_TEXTURE_COPY_DST) usages |= WGPUTextureUsage_CopyDst;
+    if (caps->supported_usage & DOE_VK_TEXTURE_SAMPLED) usages |= WGPUTextureUsage_TextureBinding;
     *out = (WGPUSurfaceCapabilities){.usages=usages & surface_usages,
         .formatCount=format_count,.formats=formats,.presentModeCount=mode_count,.presentModes=modes,
         .alphaModeCount=alpha_count,.alphaModes=alphas};
@@ -319,6 +357,7 @@ static const char *convert_configuration(const WGPUSurfaceConfiguration *config,
     if (!config->usage || (config->usage & ~surface_usages)) return "surface usage unsupported";
     if (config->usage & WGPUTextureUsage_CopySrc) native.usage |= DOE_VK_TEXTURE_COPY_SRC;
     if (config->usage & WGPUTextureUsage_CopyDst) native.usage |= DOE_VK_TEXTURE_COPY_DST;
+    if (config->usage & WGPUTextureUsage_TextureBinding) native.usage |= DOE_VK_TEXTURE_SAMPLED;
     if (config->viewFormatCount && !config->viewFormats) return "surface view formats missing";
     for (size_t i = 0; i < config->viewFormatCount; ++i)
         if (config->viewFormats[i] != config->format) return "surface format reinterpretation unsupported";
@@ -347,18 +386,30 @@ static const char *convert_configuration(const WGPUSurfaceConfiguration *config,
 void wgpuSurfaceConfigure(WGPUSurface handle, const WGPUSurfaceConfiguration *config)
 {
     native_surface *surface = (native_surface *)handle;
-    if (!surface || !config || !config->device) return; /* No device to report to. */
+    if (!surface || !config) return;
+    if (!config->device) {
+        /* A configured surface still has the device on which to report a
+         * malformed replacement. Preserve that configuration and its frame. */
+        if (doe_mutex_lock(&surface->mutex).status != DOE_HOST_OK) abort();
+        native_device *configured_device = surface->device;
+        if (configured_device) native_device_retain(configured_device);
+        if (doe_mutex_unlock(&surface->mutex).status != DOE_HOST_OK) abort();
+        if (configured_device) {
+            native_error(configured_device, WGPUErrorType_Validation, "surface configuration device missing");
+            native_device_release(configured_device);
+        }
+        return;
+    }
     native_device *device = (native_device *)config->device;
     native_device_retain(device);
     WGPUErrorType type = WGPUErrorType_Validation;
     const char *message = NULL;
     if (doe_mutex_lock(&surface->mutex).status != DOE_HOST_OK) abort();
-    native_pending *retired = native_surface_unconfigure_locked(surface);
+    native_pending *retired = NULL;
     if (config->nextInChain) message = "surface configuration extension unsupported";
     else if (device->backend.kind != WGPUBackendType_Vulkan) message = "surfaces are composed for Vulkan only";
     else if (!(device->backend.value.vulkan.caps.surface_platforms & surface->source.platform))
         message = "device adapter was not requested with a compatibleSurface of this platform";
-    else if (surface->vulkan) message = "previous configuration's frame texture or views are still referenced";
     else if (config->width > device->backend.limits.maxTextureDimension2D ||
         config->height > device->backend.limits.maxTextureDimension2D)
         message = "surface size exceeds the device maxTextureDimension2D limit";
@@ -371,13 +422,14 @@ void wgpuSurfaceConfigure(WGPUSurface handle, const WGPUSurfaceConfiguration *co
     }
     doe_vk_error detail = {0};
     doe_vk_surface *native = NULL;
-    if (status == DOE_VK_OK) {
+    bool replacement = surface->vulkan && surface->device == device;
+    if (status == DOE_VK_OK && !replacement) {
         status = doe_vk_surface_create(device->backend.value.vulkan.context, &surface->source, &native, &detail);
         failure = native_failure_vulkan(status, &detail);
     }
     doe_vk_surface_caps caps;
     if (status == DOE_VK_OK) {
-        status = doe_vk_surface_capabilities(native, &caps, &detail);
+        status = doe_vk_surface_capabilities(replacement ? surface->vulkan : native, &caps, &detail);
         failure = native_failure_vulkan(status, &detail);
     }
     native_pending *reservation = NULL;
@@ -389,10 +441,22 @@ void wgpuSurfaceConfigure(WGPUSurface handle, const WGPUSurfaceConfiguration *co
         if (!reservation) status = DOE_VK_OUT_OF_MEMORY;
     }
     if (status == DOE_VK_OK) {
-        status = doe_vk_surface_configure(native, &converted, &detail);
+        status = replacement ? doe_vk_surface_replace(surface->vulkan, &converted, &native, &detail) :
+            doe_vk_surface_configure(native, &converted, &detail);
         failure = native_failure_vulkan(status, &detail);
     }
+    if (status != DOE_VK_OK) {
+        free(reservation);
+        if (native && doe_vk_surface_release(native) != DOE_VK_OK) abort();
+    }
+    native_unlock(device);
     if (status == DOE_VK_OK) {
+        retired = native_surface_unconfigure_locked(surface);
+        /* An armed old generation owns its device/frame leases independently
+         * of the newly published configuration on the same public surface. */
+        surface->vulkan = NULL;
+        surface->device = NULL;
+        surface->retirement = NULL;
         *reservation = (native_pending){.kind=NATIVE_PENDING_SURFACE,.device=device,
             .frame=native,.surface=surface};
         surface->retirement = reservation;
@@ -404,11 +468,7 @@ void wgpuSurfaceConfigure(WGPUSurface handle, const WGPUSurfaceConfiguration *co
         surface->width = config->width;
         surface->height = config->height;
         surface->presented = NATIVE_OK;
-    } else {
-        free(reservation);
-        if (native && doe_vk_surface_release(native) != DOE_VK_OK) abort(); /* Unconfigured. */
     }
-    native_unlock(device);
     if (doe_mutex_unlock(&surface->mutex).status != DOE_HOST_OK) abort();
     native_surface_retirement_release(retired);
     if (status == DOE_VK_OK) return;

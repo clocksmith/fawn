@@ -30,6 +30,7 @@ Execute admitted native Vulkan work through an independently usable C owner whil
 - Pinned ABI verification, software execution and physical qualification remain distinct.
 - Caller serialization and ownership transfer remain explicit.
 - Acquisition and presentation fences are distinct from command completion; unsupported WSI never fabricates a surface.
+- Presented frame handles remain stale while retaining their swapchain generation; replacement generations share one platform-surface owner and retire independently.
 
 ## Acceptance
 

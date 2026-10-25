@@ -28,6 +28,8 @@ queue-ordered access (owner-authorized 2026-10-24). Surface acquisition/discard
 uncertainty uses reserved records on the same pending list; presentation requires
 its own frame fence. Cleanup-only records do not redefine command WorkDone.
 Surface cleanup preserves surface-before-device lock order and undelivered errors.
+Invalid surface configuration preserves the active configuration; successful
+replacement leaves old frame/view generations on the existing retirement owner.
 Provider code remains resident independently of resource cleanup. Foreign callbacks
 run outside locks. Existing command/resource owners retain their obligations.
 

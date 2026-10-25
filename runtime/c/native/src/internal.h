@@ -78,6 +78,7 @@ typedef struct native_shader {
 typedef struct native_texture {
     native_device *device;
     union { doe_vk_texture *texture; doe_mtl_texture *metal; struct doe_dx_texture *d3d12; };
+    struct native_surface *surface; /* Borrowed frame payload owns one surface lease. */
 } native_texture;
 typedef struct native_view {
     native_device *device;

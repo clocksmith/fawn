@@ -2,6 +2,8 @@
 #include "surface_internal.h"
 
 bool doe_vk_surface_busy(const doe_vk_surface *surface) {
+    for (const doe_vk_texture *frame = surface->retired_frames; frame; frame = frame->retired_frame_next)
+        if (frame->references != 1 || frame->recording_owner != NULL) return true;
     return surface->commands != NULL || (surface->texture != NULL &&
         (surface->texture->references != 1 || surface->texture->recording_owner != NULL)) ||
         (!surface->context->lost && (surface->acquired || surface->acquire_pending || surface->present_pending));
@@ -25,6 +27,7 @@ doe_vk_status doe_vk_surface_retain(doe_vk_surface *surface) {
 doe_vk_status doe_vk_surface_unconfigure(doe_vk_surface *surface, doe_vk_error *error) {
     if (surface == NULL) return doe_vk_fail(DOE_VK_INVALID_ARGUMENT, "surface unconfigure", error);
     if (doe_vk_surface_busy(surface)) return doe_vk_fail(DOE_VK_BUSY, "surface references unresolved", error);
+    doe_vk_surface_collect_frames(surface);
     doe_vk_texture_release(surface->texture);
     surface->texture = NULL;
     doe_vk_surface_sync_destroy(surface);
@@ -47,7 +50,10 @@ doe_vk_status doe_vk_surface_release(doe_vk_surface *surface) {
         ++surface->references;
         return status;
     }
-    if (surface->surface != 0) context->vk.vkDestroySurfaceKHR(context->instance, surface->surface, NULL);
+    if (surface->source && --surface->source->references == 0) {
+        if (surface->source->handle) context->vk.vkDestroySurfaceKHR(context->instance, surface->source->handle, NULL);
+        free(surface->source);
+    }
     free(surface);
     doe_vk_context_release(context);
     return DOE_VK_OK;
@@ -74,6 +80,12 @@ doe_vk_status doe_vk_surface_create(doe_vk_context *context,
     }
     surface->context = context;
     surface->references = 1;
+    surface->source = calloc(1, sizeof(*surface->source));
+    if (!surface->source) {
+        (void)doe_vk_surface_release(surface);
+        return doe_vk_fail(DOE_VK_OUT_OF_MEMORY, "platform surface owner", error);
+    }
+    surface->source->references = 1;
     VkResult result;
     VkSurfaceKHR native_surface = 0;
     if (desc->platform == DOE_VK_SURFACE_WAYLAND) {
@@ -91,10 +103,10 @@ doe_vk_status doe_vk_surface_create(doe_vk_context *context,
     }
     status = doe_vk_result(context, result, "native platform surface create", error);
     if (status == DOE_VK_OK) {
-        surface->surface = native_surface;
+        surface->source->handle = native_surface;
         VkBool32 supported = 0;
         status = doe_vk_result(context, context->vk.vkGetPhysicalDeviceSurfaceSupportKHR(context->physical,
-            context->caps.queue_family, surface->surface, &supported), "vkGetPhysicalDeviceSurfaceSupportKHR", error);
+            context->caps.queue_family, surface->source->handle, &supported), "vkGetPhysicalDeviceSurfaceSupportKHR", error);
         if (status == DOE_VK_OK && !supported) status = doe_vk_fail(DOE_VK_UNSUPPORTED, "selected queue cannot present", error);
     }
     if (status != DOE_VK_OK) {
@@ -112,11 +124,11 @@ doe_vk_status doe_vk_surface_capabilities(doe_vk_surface *surface,
     if (context->lost) return doe_vk_fail(DOE_VK_DEVICE_LOST, "surface capabilities context", error);
     VkSurfaceCapabilitiesKHR native = {0};
     doe_vk_status status = doe_vk_result(context, context->vk.vkGetPhysicalDeviceSurfaceCapabilitiesKHR(
-        context->physical, surface->surface, &native), "vkGetPhysicalDeviceSurfaceCapabilitiesKHR", error);
+        context->physical, surface->source->handle, &native), "vkGetPhysicalDeviceSurfaceCapabilitiesKHR", error);
     if (status != DOE_VK_OK) return status;
     VkBool32 supported = 0;
     status = doe_vk_result(context, context->vk.vkGetPhysicalDeviceSurfaceSupportKHR(context->physical,
-        context->caps.queue_family, surface->surface, &supported), "vkGetPhysicalDeviceSurfaceSupportKHR", error);
+        context->caps.queue_family, surface->source->handle, &supported), "vkGetPhysicalDeviceSurfaceSupportKHR", error);
     if (status != DOE_VK_OK) return status;
     doe_vk_surface_caps caps = {.min_image_count = native.minImageCount, .max_image_count = native.maxImageCount,
         .current_extent = {native.currentExtent.width, native.currentExtent.height},
@@ -126,7 +138,7 @@ doe_vk_status doe_vk_surface_capabilities(doe_vk_surface *surface,
         .current_transform = native.currentTransform, .present_supported = supported != 0};
     VkSurfaceFormatKHR formats[DOE_VK_MAX_SURFACE_FORMATS];
     caps.format_count = DOE_VK_MAX_SURFACE_FORMATS;
-    VkResult result = context->vk.vkGetPhysicalDeviceSurfaceFormatsKHR(context->physical, surface->surface,
+    VkResult result = context->vk.vkGetPhysicalDeviceSurfaceFormatsKHR(context->physical, surface->source->handle,
         &caps.format_count, formats);
     if (result == 5 || caps.format_count > DOE_VK_MAX_SURFACE_FORMATS)
         return doe_vk_fail(DOE_VK_UNSUPPORTED, "surface format capacity", error);
@@ -134,7 +146,7 @@ doe_vk_status doe_vk_surface_capabilities(doe_vk_surface *surface,
     for (uint32_t i = 0; i < caps.format_count; ++i)
         caps.formats[i] = (doe_vk_surface_format){formats[i].format, formats[i].colorSpace};
     caps.present_mode_count = DOE_VK_MAX_PRESENT_MODES;
-    result = context->vk.vkGetPhysicalDeviceSurfacePresentModesKHR(context->physical, surface->surface,
+    result = context->vk.vkGetPhysicalDeviceSurfacePresentModesKHR(context->physical, surface->source->handle,
         &caps.present_mode_count, caps.present_modes);
     if (result == 5 || caps.present_mode_count > DOE_VK_MAX_PRESENT_MODES)
         return doe_vk_fail(DOE_VK_UNSUPPORTED, "surface present-mode capacity", error);
@@ -188,8 +200,8 @@ static doe_vk_status validate_config(doe_vk_surface *surface, const doe_vk_surfa
     return DOE_VK_OK;
 }
 
-doe_vk_status doe_vk_surface_configure(doe_vk_surface *surface,
-    const doe_vk_surface_config *config, doe_vk_error *error) {
+static doe_vk_status configure_generation(doe_vk_surface *surface,
+    const doe_vk_surface_config *config, doe_vk_surface *previous, doe_vk_error *error) {
     if (surface == NULL || config == NULL) return doe_vk_fail(DOE_VK_INVALID_ARGUMENT, "surface configure", error);
     if (surface->swapchain != 0 || doe_vk_surface_busy(surface))
         return doe_vk_fail(DOE_VK_BUSY, "unconfigure completed surface before replacement", error);
@@ -200,12 +212,16 @@ doe_vk_status doe_vk_surface_configure(doe_vk_surface *surface,
     status = validate_config(surface, config, &caps, &requested, error);
     if (status != DOE_VK_OK) return status;
     const VkSwapchainCreateInfoKHR create = {.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
-        .surface = surface->surface, .minImageCount = requested, .imageFormat = config->format,
+        .surface = surface->source->handle, .minImageCount = requested, .imageFormat = config->format,
         .imageExtent = {config->width, config->height}, .imageArrayLayers = 1, .imageUsage = config->usage,
         .preTransform = caps.current_transform, .compositeAlpha = config->alpha_mode,
-        .presentMode = (uint32_t)config->present_mode, .clipped = 1};
+        .presentMode = (uint32_t)config->present_mode, .clipped = 1,
+        .oldSwapchain = previous ? previous->swapchain : 0};
     doe_vk_context *context = surface->context;
     VkSwapchainKHR swapchain = 0;
+    /* Vulkan retires oldSwapchain once this call is made, even on failure.
+     * Validation/allocation above leaves the previous generation unchanged. */
+    if (previous) previous->swapchain_status = DOE_VK_SURFACE_OUTDATED;
     status = doe_vk_result(context, context->vk.vkCreateSwapchainKHR(context->device, &create, NULL, &swapchain), "vkCreateSwapchainKHR", error);
     if (status != DOE_VK_OK) return status;
     uint32_t count = DOE_VK_MAX_SWAPCHAIN_IMAGES;
@@ -223,4 +239,30 @@ doe_vk_status doe_vk_surface_configure(doe_vk_surface *surface,
     memcpy(surface->images, images, count * sizeof(*images));
     surface->config = *config;
     return doe_vk_fail(DOE_VK_OK, "surface configured", error);
+}
+
+
+doe_vk_status doe_vk_surface_configure(doe_vk_surface *surface,
+    const doe_vk_surface_config *config, doe_vk_error *error) {
+    return configure_generation(surface, config, NULL, error);
+}
+
+doe_vk_status doe_vk_surface_replace(doe_vk_surface *previous,
+    const doe_vk_surface_config *config, doe_vk_surface **out, doe_vk_error *error) {
+    if (!previous || !config || !out)
+        return doe_vk_fail(DOE_VK_INVALID_ARGUMENT, "replacement surface", error);
+    if (previous->source->references == UINT32_MAX)
+        return doe_vk_fail(DOE_VK_OUT_OF_MEMORY, "platform surface leases", error);
+    doe_vk_surface *next = calloc(1, sizeof(*next));
+    if (!next) return doe_vk_fail(DOE_VK_OUT_OF_MEMORY, "replacement surface owner", error);
+    doe_vk_status status = doe_vk_context_retain(previous->context);
+    if (status != DOE_VK_OK) { free(next); return status; }
+    next->context = previous->context;
+    next->references = 1;
+    next->source = previous->source;
+    ++next->source->references;
+    status = configure_generation(next, config, previous, error);
+    if (status != DOE_VK_OK) { (void)doe_vk_surface_release(next); return status; }
+    *out = next;
+    return DOE_VK_OK;
 }
