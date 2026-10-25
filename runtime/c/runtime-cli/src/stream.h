@@ -28,7 +28,14 @@ typedef enum doe_command_kind {
     DOE_COMMAND_DRAW_INDIRECT,        /* render_draw recorded as one indirect draw per draw */
     DOE_COMMAND_DRAW_INDEXED_INDIRECT, /* the indexed form */
     DOE_COMMAND_MAP_ASYNC,            /* flat kind aliases or nested map_async */
-    DOE_COMMAND_ASYNC_DIAGNOSTICS
+    DOE_COMMAND_ASYNC_DIAGNOSTICS,
+    DOE_COMMAND_SURFACE_CREATE,
+    DOE_COMMAND_SURFACE_CAPABILITIES,
+    DOE_COMMAND_SURFACE_CONFIGURE,
+    DOE_COMMAND_SURFACE_ACQUIRE,
+    DOE_COMMAND_SURFACE_PRESENT,
+    DOE_COMMAND_SURFACE_UNCONFIGURE,
+    DOE_COMMAND_SURFACE_RELEASE
 } doe_command_kind;
 
 /* The kinds whose payload is doe_render_draw. */
@@ -165,6 +172,12 @@ typedef struct doe_semantic {
     uint64_t capture_handle, capture_offset, capture_size;
 } doe_semantic;
 
+typedef struct doe_surface {
+    uint64_t handle, usage;
+    uint32_t width, height, alpha_mode, present_mode;
+    doe_texture_format format;
+} doe_surface;
+
 typedef struct doe_command {
     doe_command_kind kind;
     /* The trace row's "command" label: the normalized kind name, as
@@ -174,6 +187,7 @@ typedef struct doe_command {
         struct { uint64_t bytes, align_bytes; } upload;
         struct { uint64_t bytes; bool write; } map;
         doe_diagnostics diagnostics;
+        doe_surface surface;
         struct {
             uint64_t handle, offset, buffer_size;
             uint32_t *words;

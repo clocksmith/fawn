@@ -14,7 +14,8 @@ quirk data or bench comparability policy.
 ## Scope
 `upload`, `buffer_write`, `barrier`, WGSL `kernel_dispatch` with buffer and
 texture bindings and semantic records, copies, 2D textures, proxy-pipeline draws,
-samplers, buffer map/unmap, public WebGPU asynchronous diagnostics and doe-plan-executor plans over `libwebgpu_doe_c` or
+samplers, buffer map/unmap, asynchronous diagnostics, real window-backed surfaces
+and doe-plan-executor plans over `libwebgpu_doe_c` or
 `dawn-c-runtime`.
 [Coverage](README.md) lists admitted and rejected inputs.
 
@@ -37,7 +38,7 @@ runs are not GPU, performance or comparability evidence.
 
 ## Non-goals
 Numeric stability plans beyond decode logits, unappliable quirk actions,
-surface commands, custom render pipelines, multisampled
+custom render pipelines, multisampled
 textures, GPU timestamps, deferred queue sync or default CLI replacement.
 
 ## Freedom

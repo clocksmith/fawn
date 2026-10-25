@@ -5,6 +5,7 @@
 #define DOE_RUNTIME_INTERNAL_H
 #include "execute.h"
 #include "webgpu.h"
+#include "surface_platform.h"
 #include <stddef.h>
 
 enum { MAX_GROUPS = 4, MAX_GROUP_BINDINGS = 64, MAX_KERNEL_SOURCE_BYTES = 16 * 1024 * 1024 };
@@ -46,6 +47,14 @@ typedef struct pipeline_entry {
     uint32_t group_count;
 } pipeline_entry;
 
+typedef struct surface_entry {
+    uint64_t handle;
+    WGPUSurface surface;
+    WGPUTexture acquired;
+    doe_surface_host *host;
+    bool configured;
+} surface_entry;
+
 struct doe_runtime {
     doe_runtime_options options;
     WGPUInstance instance;
@@ -63,6 +72,8 @@ struct doe_runtime {
     size_t sampler_count, sampler_capacity;
     render_pipeline_entry *render_pipelines;
     size_t render_pipeline_count, render_pipeline_capacity;
+    surface_entry *surfaces;
+    size_t surface_count, surface_capacity;
     uint64_t uploads_since_wait;
     /* The last executed kernel_dispatch (stream-owned bindings), whose pipeline
      * and bindings dispatch and dispatch_indirect reuse. */
@@ -115,6 +126,8 @@ WGPUTextureFormat runtime_webgpu_format(doe_texture_format format);
  * and *source are the caller's to free. NULL when no candidate is readable. */
 char *runtime_resolve_kernel(const doe_runtime *runtime, const char *kernel, char **source, size_t *size);
 bool runtime_execute_render(doe_runtime *runtime, const doe_command *command, doe_trace_execution *execution);
+void runtime_release_surfaces(doe_runtime *runtime);
+bool runtime_execute_surface(doe_runtime *runtime, const doe_command *command, doe_trace_execution *execution);
 bool runtime_execute_diagnostics(doe_runtime *runtime, const doe_command *command, doe_trace_execution *execution);
 bool runtime_diagnostic_lifecycle(doe_runtime *runtime, doe_texture_format format, doe_trace_execution *execution);
 WGPURenderPipeline runtime_diagnostic_pipeline(doe_runtime *runtime, doe_texture_format format, doe_trace_execution *execution);

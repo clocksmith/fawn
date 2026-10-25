@@ -24,8 +24,16 @@
 #ifndef DOE_RUNTIME_MODULE
 #define DOE_RUNTIME_MODULE "doe-c-runtime"
 #endif
+#ifdef __APPLE__
+#define DOE_RUNTIME_API "metal"
+#ifndef DOE_RUNTIME_BACKEND_ID
+#define DOE_RUNTIME_BACKEND_ID "doe_c_metal"
+#endif
+#else
+#define DOE_RUNTIME_API "vulkan"
 #ifndef DOE_RUNTIME_BACKEND_ID
 #define DOE_RUNTIME_BACKEND_ID "doe_c_vulkan"
+#endif
 #endif
 #define MODULE_NAME DOE_RUNTIME_MODULE
 #define BACKEND_ID DOE_RUNTIME_BACKEND_ID
@@ -77,7 +85,7 @@ static void usage(FILE *out)
 {
     fputs("doe-c-runtime --commands <path> --execute [--backend native] [--kernel-root <path>]\n"
           "  [--trace] [--trace-jsonl <path>] [--trace-meta <path>] [--command-repeat N]\n"
-          "  [--vendor X] [--api vulkan] [--family X] [--driver X.Y.Z]\n"
+          "  [--vendor X] [--api " DOE_RUNTIME_API "] [--family X] [--driver X.Y.Z]\n"
           "  [--quirks <path>] [--quirk-mode off|trace|active] [--queue-sync-mode per-command]\n"
           "  [--upload-buffer-usage copy-dst-copy-src|copy-dst] [--upload-submit-every N]\n"
           "  [--gpu-timestamp-mode off|auto] [--adapter auto|physical|software]\n"
@@ -91,7 +99,7 @@ static void usage(FILE *out)
           "bindings), copies in every direction, texture_write, texture_query, texture_destroy (2D\n"
           "uncompressed color textures and their mip levels), render_draw, render_pass, draw_indirect and\n"
           "draw_indexed_indirect (the default proxy pipeline),\n"
-          "sampler_create, sampler_destroy, map_async and async_diagnostics. kernel_dispatch semantic fields and captures write operator\n"
+          "sampler_create, sampler_destroy, map_async, async_diagnostics and surface lifecycle commands. kernel_dispatch semantic fields and captures write operator\n"
           "records; with a trace meta, decode.final_logits dispatches are evaluated for numeric stability and\n"
           "other numeric stability capture plans are refused.\n"
           "Every other command, field or argument is rejected. --adapter is this runtime's own;\n"
@@ -198,14 +206,14 @@ static int parse_options(int argc, char **argv, options *out)
     }
     if (!out->commands && !out->plan) return reject_argument("--commands", "is required (no embedded sample stream)");
     if (!out->execute) return reject_argument("--execute", "is required (trace-only mode is not implemented)");
-    if (out->api && strcmp(out->api, "vulkan")) return reject_argument("--api", "only vulkan is implemented");
+    if (out->api && strcmp(out->api, DOE_RUNTIME_API)) return reject_argument("--api", "this build uses " DOE_RUNTIME_API);
     /* doe-zig-runtime's defaults: trace mode and an intel/vulkan/gen12/31.0.101 profile. */
     out->quirk_mode = DOE_QUIRK_TRACE;
     if (quirk_mode && !strcmp(quirk_mode, "off")) out->quirk_mode = DOE_QUIRK_OFF;
     else if (quirk_mode && !strcmp(quirk_mode, "active")) out->quirk_mode = DOE_QUIRK_ACTIVE;
     else if (quirk_mode && strcmp(quirk_mode, "trace")) return reject_argument("--quirk-mode", "must be off, trace or active");
     if (!out->vendor) out->vendor = "intel";
-    if (!out->api) out->api = "vulkan";
+    if (!out->api) out->api = DOE_RUNTIME_API;
     if (!out->family) out->family = "gen12";
     if (!out->driver) out->driver = "31.0.101";
     out->profile = (doe_profile){.vendor = out->vendor, .api = out->api, .family = out->family};
@@ -396,7 +404,7 @@ static bool write_meta(const char *path, const options *o, const totals *t, uint
     if (ok && runtime) ok = write_shader_receipts(out, runtime, stream);
     if (ok && numeric) ok = doe_ns_write_summary(out, numeric);
     ok = ok && fputs(",\"profile\":{", out) >= 0;
-    ok = ok && write_optional(out, "vendor", o->vendor, false) && write_optional(out, "api", o->api ? o->api : "vulkan", true) &&
+    ok = ok && write_optional(out, "vendor", o->vendor, false) && write_optional(out, "api", o->api ? o->api : DOE_RUNTIME_API, true) &&
         write_optional(out, "deviceFamily", o->family, true) && write_optional(out, "driver", o->driver, true);
     /* adapterInfo in the package traces' field names (docs/workload-system.md),
      * which bench run receipts read as hostIdentity.adapter; null when no

@@ -97,7 +97,11 @@ bool runtime_wait_future(doe_runtime *runtime, WGPUFuture future)
 static WGPUAdapter request_adapter(doe_runtime *runtime, bool fallback, char *message, size_t message_size)
 {
     WGPURequestAdapterOptions options = WGPU_REQUEST_ADAPTER_OPTIONS_INIT;
+#ifdef __APPLE__
+    options.backendType = WGPUBackendType_Metal;
+#else
     options.backendType = WGPUBackendType_Vulkan;
+#endif
     options.forceFallbackAdapter = fallback ? WGPU_TRUE : WGPU_FALSE;
     request_reply reply = {0};
     WGPURequestAdapterCallbackInfo callback = {.mode = WGPUCallbackMode_WaitAnyOnly, .callback = adapter_reply,
@@ -107,7 +111,7 @@ static WGPUAdapter request_adapter(doe_runtime *runtime, bool fallback, char *me
         return NULL;
     }
     if (reply.status != (int)WGPURequestAdapterStatus_Success || !reply.object) {
-        snprintf(message, message_size, "no %s Vulkan adapter: %.180s", fallback ? "fallback" : "nonfallback", reply.message);
+        snprintf(message, message_size, "no %s platform adapter: %.180s", fallback ? "fallback" : "nonfallback", reply.message);
         return NULL;
     }
     return reply.object;
@@ -206,6 +210,7 @@ void doe_runtime_close(doe_runtime *runtime)
     }
     free(runtime->pipelines);
     runtime_release_render(runtime);
+    runtime_release_surfaces(runtime);
     runtime_release_diagnostics(runtime);
     runtime_release_textures(runtime);
     for (size_t i = 0; i < runtime->buffer_count; i++) wgpuBufferRelease(runtime->buffers[i].buffer);
@@ -453,6 +458,14 @@ bool doe_runtime_execute(doe_runtime *runtime, const doe_command *command, doe_t
     case DOE_COMMAND_RENDER_PASS:
     case DOE_COMMAND_DRAW_INDIRECT:
     case DOE_COMMAND_DRAW_INDEXED_INDIRECT: ok = runtime_execute_render(runtime, command, execution); break;
+    case DOE_COMMAND_SURFACE_CREATE:
+    case DOE_COMMAND_SURFACE_CAPABILITIES:
+    case DOE_COMMAND_SURFACE_CONFIGURE:
+    case DOE_COMMAND_SURFACE_ACQUIRE:
+    case DOE_COMMAND_SURFACE_PRESENT:
+    case DOE_COMMAND_SURFACE_UNCONFIGURE:
+    case DOE_COMMAND_SURFACE_RELEASE:
+        ok = runtime_execute_surface(runtime, command, execution); break;
     case DOE_COMMAND_ASYNC_DIAGNOSTICS: ok = runtime_execute_diagnostics(runtime, command, execution); break;
     case DOE_COMMAND_MAP_ASYNC: ok = runtime_execute_map(runtime, command, execution); break;
     case DOE_COMMAND_SAMPLER_CREATE:
@@ -477,6 +490,13 @@ bool doe_runtime_execute(doe_runtime *runtime, const doe_command *command, doe_t
             [DOE_COMMAND_DISPATCH_INDIRECT] = "dispatch_indirect_timing_cpu_wall_clock_comparability_directional",
             [DOE_COMMAND_DRAW_INDIRECT] = "draw_indirect_timing_cpu_wall_clock_comparability_directional",
             [DOE_COMMAND_DRAW_INDEXED_INDIRECT] = "draw_indexed_indirect_timing_cpu_wall_clock_comparability_directional",
+            [DOE_COMMAND_SURFACE_CREATE] = "surface_create_timing_cpu_wall_clock_comparability_directional",
+            [DOE_COMMAND_SURFACE_CAPABILITIES] = "surface_capabilities_timing_cpu_wall_clock_comparability_directional",
+            [DOE_COMMAND_SURFACE_CONFIGURE] = "surface_configure_timing_cpu_wall_clock_comparability_directional",
+            [DOE_COMMAND_SURFACE_ACQUIRE] = "surface_acquire_timing_cpu_wall_clock_comparability_directional",
+            [DOE_COMMAND_SURFACE_PRESENT] = "surface_present_timing_cpu_wall_clock_comparability_directional",
+            [DOE_COMMAND_SURFACE_UNCONFIGURE] = "surface_unconfigure_timing_cpu_wall_clock_comparability_directional",
+            [DOE_COMMAND_SURFACE_RELEASE] = "surface_release_timing_cpu_wall_clock_comparability_directional",
             [DOE_COMMAND_ASYNC_DIAGNOSTICS] = "async_diagnostics_timing_cpu_wall_clock_comparability_directional",
             [DOE_COMMAND_MAP_ASYNC] = "map_async_timing_cpu_wall_clock_comparability_directional",
         };

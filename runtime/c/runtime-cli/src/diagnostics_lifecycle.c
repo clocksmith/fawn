@@ -131,6 +131,10 @@ bool runtime_diagnostic_lifecycle(doe_runtime *runtime, doe_texture_format forma
     if (!render_pipeline) goto cleanup;
     wgpuRenderPipelineAddRef(render_pipeline);
     wgpuRenderPipelineRelease(render_pipeline);
+    if (runtime->surface_count) {
+        wgpuSurfaceAddRef(runtime->surfaces[0].surface);
+        wgpuSurfaceRelease(runtime->surfaces[0].surface);
+    }
     ok = true;
 cleanup:
     if (render_pipeline) wgpuRenderPipelineRelease(render_pipeline);
