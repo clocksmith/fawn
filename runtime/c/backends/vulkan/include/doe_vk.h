@@ -184,6 +184,8 @@ doe_vk_status doe_vk_buffer_create(doe_vk_context *context, uint64_t size,
 doe_vk_status doe_vk_buffer_retain(doe_vk_buffer *buffer);
 void doe_vk_buffer_release(doe_vk_buffer *buffer);
 uint64_t doe_vk_buffer_size(const doe_vk_buffer *buffer);
+/* A submitted recording still uses the buffer, so host access is BUSY. */
+bool doe_vk_buffer_busy(const doe_vk_buffer *buffer);
 /* Host memory is required coherent and initialized to zero on creation.
  * Device memory requires explicit fill/copy before reading, as enforced upstream.
  * Host accesses refuse buffers retained by recorded or unresolved GPU commands.

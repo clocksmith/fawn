@@ -162,8 +162,11 @@ and exact exports; absent platform loaders remain explicitly unavailable.
   oldest accepted fence outside the device mutex under a command hold, skipping a
   refused submission whose fence never signals; routine settlement (submit,
   texture creation) polls, and running work is never reported as a failure. The
-  first terminal failure is reported once to a later public call. Work done and
-  map recover synchronously before admitting their callbacks. Metal, D3D12,
+  first terminal failure is reported once to a later public call. Buffer writes
+  and maps wait, oldest first, only while a submission still uses that buffer;
+  work done waits each pending record's own fence (queue idle only for a refused
+  submission) before admitting its callback, so map and work-done callbacks keep
+  request order. Metal, D3D12,
   compute programs, private initialization and presentation keep their
   synchronous wait. Uncertain completion retains both native and resource
   obligations; if still unresolved, work-done publishes no future rather than

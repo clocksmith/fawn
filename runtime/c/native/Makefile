@@ -119,7 +119,7 @@ $(BUILD)/failures: tests/failures.c tests/consumer.h tests/adapter_class.h $(OBJ
 $(BUILD)/timestamps: tests/timestamps.c tests/consumer.h tests/adapter_class.h $(OBJECTS) $(COMPILER_LIBRARY) | $(BUILD)
 	$(CC) $(CPPFLAGS) $(CFLAGS) tests/timestamps.c $(OBJECTS) $(COMPILER_LINK) $(PLATFORM_LIBS) -o $@
 $(BUILD)/recovery: tests/recovery.c tests/consumer.h tests/adapter_class.h $(OBJECTS) $(COMPILER_LIBRARY) | $(BUILD)
-	$(CC) $(CPPFLAGS) $(CFLAGS) tests/recovery.c $(OBJECTS) $(COMPILER_LINK) $(PLATFORM_LIBS) -Wl,--wrap=doe_vk_commands_submit -Wl,--wrap=doe_vk_commands_poll -Wl,--wrap=doe_vk_commands_recover -Wl,--wrap=doe_vk_commands_release -o $@
+	$(CC) $(CPPFLAGS) $(CFLAGS) tests/recovery.c $(OBJECTS) $(COMPILER_LINK) $(PLATFORM_LIBS) -Wl,--wrap=doe_vk_commands_submit -Wl,--wrap=doe_vk_commands_poll -Wl,--wrap=doe_vk_commands_recover -Wl,--wrap=doe_vk_commands_release -Wl,--wrap=doe_vk_commands_wait -o $@
 # A real loader control: code admission and dlclose lifetime, without a GPU.
 ifeq ($(SHARED_PLATFORM),Darwin)
 PIN_FIXTURE_FLAGS = -dynamiclib -Wl,-undefined,error

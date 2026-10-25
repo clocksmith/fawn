@@ -52,6 +52,11 @@ native_failure native_command_wait(native_command_handle *commands)
     return native_failure_status(NATIVE_UNSUPPORTED);
 }
 
+bool native_command_in_flight(const native_command_handle *commands)
+{
+    return commands->kind == WGPUBackendType_Vulkan && doe_vk_commands_in_flight(commands->value.vulkan);
+}
+
 native_failure native_command_poll(native_command_handle *commands)
 {
     if (commands->kind == WGPUBackendType_D3D12) return native_d3d12_command_progress(commands, 0);
