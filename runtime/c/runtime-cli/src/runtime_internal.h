@@ -64,6 +64,11 @@ struct doe_runtime {
     render_pipeline_entry *render_pipelines;
     size_t render_pipeline_count, render_pipeline_capacity;
     uint64_t uploads_since_wait;
+    /* The last executed kernel_dispatch (stream-owned bindings), whose pipeline
+     * and bindings dispatch and dispatch_indirect reuse. */
+    bool has_last_kernel;
+    doe_command last_kernel;
+    WGPUBuffer indirect_args; /* 16 bytes, Indirect | CopyDst */
     /* The first uncaptured device error since the last command check. */
     bool uncaptured;
     char uncaptured_message[256];
@@ -100,6 +105,8 @@ bool runtime_execute_render(doe_runtime *runtime, const doe_command *command, do
 bool runtime_execute_sampler(doe_runtime *runtime, const doe_command *command, doe_trace_execution *execution);
 void runtime_release_render(doe_runtime *runtime);
 bool runtime_execute_kernel(doe_runtime *runtime, const doe_command *command, doe_trace_execution *execution);
+/* dispatch and dispatch_indirect (the grid as indirect arguments). */
+bool runtime_execute_grid(doe_runtime *runtime, const doe_command *command, doe_trace_execution *execution);
 bool runtime_validate_oracle(doe_runtime *runtime, const doe_command *command, const doe_output_oracle *oracle,
     char actual_sha256[65], doe_trace_execution *execution);
 #endif

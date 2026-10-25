@@ -22,7 +22,9 @@ typedef enum doe_command_kind {
     DOE_COMMAND_RENDER_DRAW, /* render_draw, draw, draw_call, draw_indexed */
     DOE_COMMAND_RENDER_PASS,
     DOE_COMMAND_SAMPLER_CREATE,
-    DOE_COMMAND_SAMPLER_DESTROY
+    DOE_COMMAND_SAMPLER_DESTROY,
+    DOE_COMMAND_DISPATCH,         /* dispatch, dispatch_workgroups, dispatch_invocations */
+    DOE_COMMAND_DISPATCH_INDIRECT
 } doe_command_kind;
 
 typedef enum doe_copy_direction {
@@ -144,6 +146,9 @@ typedef struct doe_command {
             const char *entry_point; /* "main" unless the command names one. */
             uint32_t x, y, z;
             uint64_t repeat, warmup;
+            /* repeatSynchronization "independent": the repeats do not read
+             * each other's results (doe-zig-runtime omits Vulkan barriers). */
+            bool repeat_independent;
             bool initialize_buffers;
             doe_kernel_binding *bindings;
             size_t binding_count;
@@ -172,6 +177,9 @@ typedef struct doe_command {
         doe_render_draw render;
         doe_sampler_desc sampler;
         struct { uint64_t handle; } sampler_destroy;
+        /* dispatch and dispatch_indirect: a grid for the last kernel_dispatch's
+         * pipeline and bindings, else dispatch_noop.wgsl, as doe-zig-runtime does. */
+        struct { uint32_t x, y, z; } grid;
     } as;
     doe_semantic semantic; /* kernel_dispatch only; all absent elsewhere. */
 } doe_command;

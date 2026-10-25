@@ -252,7 +252,8 @@ static bool write_optional(FILE *out, const char *key, const char *value, bool c
 
 /* shaderSourceReceipts (config/trace-meta.schema.json $defs/shaderSourceReceipt)
  * for every shader the stream compiles, in first-use order: kernel_dispatch
- * kernels and the render proxy's two modules. shaderSourceReceiptsHash is the
+ * kernels (and dispatch_noop.wgsl for a grid before any kernel_dispatch), then
+ * the render proxy's two modules. shaderSourceReceiptsHash is the
  * SHA-256 of the array's compact JSON as written, as the package executor
  * hashes JSON.stringify(receipts), so two runtimes given the same sources
  * agree on it. */
@@ -262,11 +263,25 @@ static bool write_shader_receipts(FILE *out, const doe_runtime *runtime, const d
     size_t length = 0;
     FILE *list = open_memstream(&bytes, &length);
     if (!list) return false;
-    bool ok = fputc('[', list) != EOF, any = false, render = false;
+    bool ok = fputc('[', list) != EOF, any = false, render = false, kernel_seen = false, noop_written = false;
     for (size_t i = 0; ok && i < stream->count; i++) {
         const doe_command *command = &stream->commands[i];
         if (command->kind == DOE_COMMAND_RENDER_DRAW || command->kind == DOE_COMMAND_RENDER_PASS) render = true;
+        bool grid = command->kind == DOE_COMMAND_DISPATCH || command->kind == DOE_COMMAND_DISPATCH_INDIRECT;
+        if (grid && !kernel_seen && !noop_written) {
+            char *path = NULL, sha[65];
+            size_t size = 0;
+            if (doe_runtime_kernel_source(runtime, "dispatch_noop.wgsl", &path, &size, sha)) {
+                ok = (!any || fputc(',', list) != EOF) && fputs("{\"moduleId\":\"dispatch_noop.wgsl\",\"sourceKind\":\"wgsl\",\"path\":", list) >= 0 &&
+                    doe_trace_write_string(list, path) &&
+                    fprintf(list, ",\"entryPoint\":\"main\",\"byteLength\":%zu,\"sha256\":\"%s\"}", size, sha) >= 0;
+                any = true;
+                free(path);
+            }
+            noop_written = true;
+        }
         if (command->kind != DOE_COMMAND_KERNEL_DISPATCH) continue;
+        kernel_seen = true;
         bool seen = false;
         for (size_t j = 0; j < i && !seen; j++) {
             const doe_command *earlier = &stream->commands[j];

@@ -215,9 +215,12 @@ static pipeline_entry *prepare_pipeline(doe_runtime *runtime, const doe_command 
     return &runtime->pipelines[runtime->pipeline_count++];
 }
 
-/* Encodes `count` dispatches in one pass; returns the finished buffer or NULL. */
-static WGPUCommandBuffer encode(doe_runtime *runtime, const pipeline_entry *pipeline, WGPUBindGroup *groups,
-    const doe_command *command, uint64_t count)
+/* Encodes `count` dispatches in one pass (one indirect dispatch when
+ * `indirect` is set); returns the finished buffer or NULL. Independent repeats
+ * are recorded the same way: webgpu.h has no barrier control, so the provider
+ * orders them as it orders any dispatches in a pass. */
+static WGPUCommandBuffer encode_dispatches(doe_runtime *runtime, const pipeline_entry *pipeline, WGPUBindGroup *groups,
+    const doe_command *command, uint64_t count, WGPUBuffer indirect)
 {
     WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(runtime->device, NULL);
     if (!encoder) return NULL;
@@ -225,7 +228,8 @@ static WGPUCommandBuffer encode(doe_runtime *runtime, const pipeline_entry *pipe
     if (pass) {
         wgpuComputePassEncoderSetPipeline(pass, pipeline->pipeline);
         for (uint32_t g = 0; g < pipeline->group_count; g++) wgpuComputePassEncoderSetBindGroup(pass, g, groups[g], 0, NULL);
-        for (uint64_t i = 0; i < count; i++)
+        if (indirect) wgpuComputePassEncoderDispatchWorkgroupsIndirect(pass, indirect, 0);
+        for (uint64_t i = 0; !indirect && i < count; i++)
             wgpuComputePassEncoderDispatchWorkgroups(pass, command->as.dispatch.x, command->as.dispatch.y, command->as.dispatch.z);
         wgpuComputePassEncoderEnd(pass);
         wgpuComputePassEncoderRelease(pass);
@@ -233,6 +237,12 @@ static WGPUCommandBuffer encode(doe_runtime *runtime, const pipeline_entry *pipe
     WGPUCommandBuffer commands = wgpuCommandEncoderFinish(encoder, NULL);
     wgpuCommandEncoderRelease(encoder);
     return commands;
+}
+
+static WGPUCommandBuffer encode(doe_runtime *runtime, const pipeline_entry *pipeline, WGPUBindGroup *groups,
+    const doe_command *command, uint64_t count)
+{
+    return encode_dispatches(runtime, pipeline, groups, command, count, NULL);
 }
 
 static bool create_groups(doe_runtime *runtime, const pipeline_entry *pipeline, const doe_command *command,
@@ -273,7 +283,50 @@ static bool create_groups(doe_runtime *runtime, const pipeline_entry *pipeline, 
     return true;
 }
 
+static bool execute_pipeline(doe_runtime *runtime, const doe_command *command, WGPUBuffer indirect,
+    doe_trace_execution *execution);
+
 bool runtime_execute_kernel(doe_runtime *runtime, const doe_command *command, doe_trace_execution *execution)
+{
+    return execute_pipeline(runtime, command, NULL, execution);
+}
+
+/* backend_execute.zig execute_dispatch_command / execute_dispatch_indirect_command:
+ * the bound pipeline and bindings (the last kernel_dispatch), else
+ * dispatch_noop.wgsl without bindings; one dispatch of the grid. */
+bool runtime_execute_grid(doe_runtime *runtime, const doe_command *command, doe_trace_execution *execution)
+{
+    doe_command target = {.kind = DOE_COMMAND_KERNEL_DISPATCH, .label = "kernel_dispatch"};
+    if (runtime->has_last_kernel) {
+        target = runtime->last_kernel;
+    } else {
+        target.as.dispatch.kernel = "dispatch_noop.wgsl";
+        target.as.dispatch.entry_point = "main";
+    }
+    target.as.dispatch.x = command->as.grid.x;
+    target.as.dispatch.y = command->as.grid.y;
+    target.as.dispatch.z = command->as.grid.z;
+    target.as.dispatch.repeat = 1;
+    target.as.dispatch.warmup = 0;
+    if (command->kind == DOE_COMMAND_DISPATCH) return execute_pipeline(runtime, &target, NULL, execution);
+    uint64_t start = doe_runtime_monotonic_ns();
+    if (!runtime->indirect_args) {
+        WGPUBufferDescriptor descriptor = WGPU_BUFFER_DESCRIPTOR_INIT;
+        descriptor.size = 16;
+        descriptor.usage = WGPUBufferUsage_Indirect | WGPUBufferUsage_CopyDst;
+        runtime->indirect_args = wgpuDeviceCreateBuffer(runtime->device, &descriptor);
+        if (!runtime->indirect_args) return runtime_fail(execution, "dispatch_indirect_args_failed", "the indirect argument buffer was not created");
+    }
+    const uint32_t args[4] = {command->as.grid.x, command->as.grid.y, command->as.grid.z, 0};
+    wgpuQueueWriteBuffer(runtime->queue, runtime->indirect_args, 0, args, sizeof(args));
+    uint64_t args_ns = doe_runtime_monotonic_ns() - start;
+    bool ok = execute_pipeline(runtime, &target, runtime->indirect_args, execution);
+    execution->setup_ns += args_ns; /* The argument write is setup, as Zig's write_dispatch_indirect_args. */
+    return ok;
+}
+
+static bool execute_pipeline(doe_runtime *runtime, const doe_command *command, WGPUBuffer indirect,
+    doe_trace_execution *execution)
 {
     uint64_t start = doe_runtime_monotonic_ns();
     pipeline_entry *pipeline = prepare_pipeline(runtime, command, execution);
@@ -288,7 +341,8 @@ bool runtime_execute_kernel(doe_runtime *runtime, const doe_command *command, do
         ok = runtime_submit_and_wait(runtime, encode(runtime, pipeline, groups, command, command->as.dispatch.warmup), execution);
     }
     uint64_t setup_end = doe_runtime_monotonic_ns();
-    WGPUCommandBuffer commands = ok ? encode(runtime, pipeline, groups, command, command->as.dispatch.repeat) : NULL;
+    WGPUCommandBuffer commands = ok ?
+        encode_dispatches(runtime, pipeline, groups, command, command->as.dispatch.repeat, indirect) : NULL;
     uint64_t encode_end = doe_runtime_monotonic_ns();
     if (ok) {
         ok = runtime_submit_and_wait(runtime, commands, execution);

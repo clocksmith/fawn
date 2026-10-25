@@ -25,7 +25,19 @@ $(BUILD)/doe-c-runtime --commands examples/rmsnorm_tree_commands.json --execute 
 - Commands: `upload` (`buffer_upload`), `buffer_write` (`write_buffer`,
   `queue_write_buffer`), `barrier`, and `kernel_dispatch` with WGSL kernels,
   buffer bindings (`uniform`, `readonly`/`read_only_storage`, `storage`) and
-  `repeatSynchronization` `dependent`. Each kind has a field allowlist.
+  `repeatSynchronization` `dependent` or `independent` (the repeats do not read
+  each other's results; doe-zig-runtime then drops its Vulkan barriers, while
+  webgpu.h has no barrier control, so this CLI records the same ordered
+  dispatches and the provider orders them as it orders any dispatches in a
+  pass). Each kind has a field allowlist.
+- `dispatch` (`dispatch_workgroups`, `dispatch_invocations`) and
+  `dispatch_indirect` with `x`/`y`/`z` or `workgroupCount`, as doe-zig-runtime's
+  native lane runs them: one dispatch of the grid on the last kernel_dispatch's
+  pipeline and bindings, else on `dispatch_noop.wgsl` from the kernel root
+  without bindings; `dispatch_indirect` writes the grid to an Indirect argument
+  buffer first. The device requests the adapter's `maxStorageBufferBindingSize`
+  and `maxBufferSize`, as the native lane binds against device capabilities;
+  every other limit is the WebGPU default.
 - Copies in every direction under every doe-zig-runtime alias
   (`copy_buffer_to_buffer`, `copy_buffer_to_texture`, `copy_texture_to_buffer`,
   `copy_texture_to_texture`, `buffer_copy`, `texture_copy`, ... or an explicit
@@ -120,7 +132,7 @@ $(BUILD)/doe-c-runtime --commands examples/rmsnorm_tree_commands.json --execute 
   `--adapter auto|physical|software` is this CLI's own: `auto` takes a
   nonfallback adapter, else the fallback (CPU) adapter.
 
-Every other command kind (indirect draws, surfaces, dispatch, dispatch-indirect,
+Every other command kind (indirect draws, surfaces,
 `map_async`, `async_diagnostics` and the rest), field, texture dimension, mip level, sample count, aspect, format, oracle
 scope, `repeatSynchronization` value, semantic field on another kind, explicit
 `numericStability` annotation and argument is rejected with exit 2 before
@@ -296,6 +308,15 @@ comparable with equal shader source receipts and passes the structural gate
 (Dawn p50 924 ms vs C 1405 ms on the CPU adapter, not claimable); every
 sample's 1583 rows on both sides hash-equal doe-plan-executor `--dry-run` rows.
 `pipeline/trace/replay.py` rejects plan rows (`opCode` `buffer_write`) from
-either runtime, so the trace gate does not apply to plan lanes yet. A CPU
+either runtime, so the trace gate does not apply to plan lanes yet. Dispatch
+kinds (base 6a95fb73e): the eight `dispatch`/`dispatch_indirect` examples and a
+grid stream reusing a workgroup_atomic pipeline match doe-zig-runtime's row
+hashes, the reuse stream reads back as the host oracle's four dispatches, and
+on scratch comparable contracts (`compute_dispatch_grid`,
+`compute_dispatch_indirect_live_args`, an independent `rmsnorm_tree`) C against
+Dawn is strict/operation comparable with equal shader source receipts. The
+committed contracts keep those dispatch rows directional, and the three
+`compute_matvec_32768x2048_*` rows bind 256 MiB, beyond lavapipe's 128 MiB
+`maxStorageBufferRange`, so they fail on lavapipe in both CLIs. A CPU
 adapter run is not GPU evidence, a performance result
 or bench comparability, and no physical adapter has run this CLI.

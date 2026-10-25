@@ -20,6 +20,10 @@ static const kind_name KINDS[] = {
     {"queue_write_buffer", DOE_COMMAND_BUFFER_WRITE},
     {"barrier", DOE_COMMAND_BARRIER},
     {"kernel_dispatch", DOE_COMMAND_KERNEL_DISPATCH},
+    {"dispatch", DOE_COMMAND_DISPATCH},
+    {"dispatch_workgroups", DOE_COMMAND_DISPATCH},
+    {"dispatch_invocations", DOE_COMMAND_DISPATCH},
+    {"dispatch_indirect", DOE_COMMAND_DISPATCH_INDIRECT},
     {"copy_buffer_to_texture", DOE_COMMAND_COPY},
     {"copy_texture", DOE_COMMAND_COPY},
     {"texture_copy", DOE_COMMAND_COPY},
@@ -63,6 +67,8 @@ const char *doe_command_tag(doe_command_kind kind)
     case DOE_COMMAND_RENDER_PASS: return "render_pass";
     case DOE_COMMAND_SAMPLER_CREATE: return "sampler_create";
     case DOE_COMMAND_SAMPLER_DESTROY: return "sampler_destroy";
+    case DOE_COMMAND_DISPATCH: return "dispatch";
+    case DOE_COMMAND_DISPATCH_INDIRECT: return "dispatch_indirect";
     }
     return "unknown";
 }
@@ -320,8 +326,9 @@ static bool parse_kernel_dispatch(const doe_json_value *object, doe_command *com
             &command->as.dispatch.warmup, index, error)) return false;
     const char *synchronization = NULL;
     if (!stream_read_string(object, "repeatSynchronization", "repeat_synchronization", &synchronization, index, error)) return false;
-    if (synchronization && strcasecmp(synchronization, "dependent") != 0)
-        return stream_reject(error, index, "repeatSynchronization \"%s\" is not implemented by doe-c-runtime", synchronization);
+    if (synchronization && strcasecmp(synchronization, "dependent") && strcasecmp(synchronization, "independent"))
+        return stream_reject(error, index, "repeatSynchronization \"%s\" is not dependent or independent", synchronization);
+    command->as.dispatch.repeat_independent = synchronization && !strcasecmp(synchronization, "independent");
     bool ambiguous = false;
     const doe_json_value *initialize = stream_either(object, "initialize_buffers_on_create", "initializeBuffersOnCreate", &ambiguous);
     if (ambiguous || (initialize && initialize->kind != DOE_JSON_BOOL))
@@ -345,6 +352,34 @@ static bool parse_kernel_dispatch(const doe_json_value *object, doe_command *com
                 return stream_reject(error, index, "bindings repeat group %u binding %u", b->group, b->binding);
         }
     }
+    return true;
+}
+
+/* command_parse_dispatch.zig parseDispatchDimensions: workgroupCount or
+ * workgroups (three counts), else x, y, z defaulting to 1; zero is rejected. */
+static bool parse_grid(const doe_json_value *object, doe_command *command, size_t index, doe_stream_error *error)
+{
+    static const char *const allowed[] = {"kind", "command", "command_kind", "x", "y", "z", "workgroupCount", "workgroups", NULL};
+    if (!stream_only_members(object, allowed, index, command->label, error)) return false;
+    bool ambiguous = false;
+    const doe_json_value *counts = stream_either(object, "workgroupCount", "workgroups", &ambiguous);
+    if (ambiguous) return stream_reject(error, index, "both \"workgroupCount\" and \"workgroups\" are present");
+    uint64_t xyz[3] = {1, 1, 1};
+    if (counts) {
+        if (counts->kind != DOE_JSON_ARRAY || counts->count != 3)
+            return stream_reject(error, index, "\"workgroupCount\" must hold three counts");
+        for (int i = 0; i < 3; i++)
+            if (!doe_json_as_u64(counts->items[i], UINT32_MAX, &xyz[i]))
+                return stream_reject(error, index, "\"workgroupCount\"[%d] must be a u32", i);
+    } else if (!stream_read_u64(object, "x", NULL, UINT32_MAX, false, 1, &xyz[0], index, error) ||
+        !stream_read_u64(object, "y", NULL, UINT32_MAX, false, 1, &xyz[1], index, error) ||
+        !stream_read_u64(object, "z", NULL, UINT32_MAX, false, 1, &xyz[2], index, error)) {
+        return false;
+    }
+    if (!xyz[0] || !xyz[1] || !xyz[2]) return stream_reject(error, index, "%s dimensions must be nonzero", command->label);
+    command->as.grid.x = (uint32_t)xyz[0];
+    command->as.grid.y = (uint32_t)xyz[1];
+    command->as.grid.z = (uint32_t)xyz[2];
     return true;
 }
 
@@ -394,6 +429,8 @@ static bool parse_command(const doe_json_value *object, doe_command *command, si
         case DOE_COMMAND_RENDER_PASS: return stream_parse_render(object, name, command, index, error);
         case DOE_COMMAND_SAMPLER_CREATE: return stream_parse_sampler(object, command, index, error);
         case DOE_COMMAND_SAMPLER_DESTROY: return stream_parse_sampler_destroy(object, command, index, error);
+        case DOE_COMMAND_DISPATCH:
+        case DOE_COMMAND_DISPATCH_INDIRECT: return parse_grid(object, command, index, error);
         }
     }
     return stream_reject(error, index, "command kind \"%s\" is not implemented by doe-c-runtime", name);
