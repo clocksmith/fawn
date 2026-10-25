@@ -153,8 +153,8 @@ slice debug braces. Quoted kernel paths are JSON escaped.
   execution whenever it writes a trace meta: a dispatch whose op id, stage,
   phase and kernel basename match an enabled auto-detect profile of
   `config/numeric-stability-policy.json` (or `--numeric-stability-policy`) is
-  evaluated after it runs. For the `decode-final-logits-matmul-gemv-bindings-v1`
-  capture plan the fast (GPU) logits are read back and compared with serial f32
+  evaluated after it runs. For `matmul-logits-bindings-v1` and
+  `decode-final-logits-matmul-gemv-bindings-v1` capture plans the fast (GPU) logits are read back and compared with serial f32
   (stable) and f64 (reference) evaluations of its weights and hidden state; the
   trigger policy, the routing policy of the execution profile
   (`--numeric-stability-execution-profile`, default the registry's) and the route
@@ -167,8 +167,7 @@ slice debug braces. Quoted kernel paths are JSON escaped.
   `<meta>.numeric-stability.jsonl` and the meta gains `numericStability`, both
   in doe-zig-runtime's format. The receipt `executionIdentity` carries this
   CLI's backend and profile; lane, adapter ordinal, queue family and selection
-  policy are null. A dispatch matching any other capture plan (matmul.logits,
-  rmsnorm, attention) is refused with exit 2 before device work, and explicit
+  policy are null. A dispatch matching another capture plan (rmsnorm, attention) is refused with exit 2 before device work, and explicit
   `numericStability` annotations stay rejected. Without a trace meta nothing is
   evaluated by either runtime.
 - `output_oracle` schema 1, `sha256_exact_v1`, `zero_fill_v1` initialization:
@@ -503,3 +502,12 @@ limit. CLI SHA-256 was
 native library SHA-256 was
 `ea55ffb066968f82163230eb4faffc4e83ffd50e2c95b15b6cb6d751ee0ba7f5`.
 This is a focused render/copy consumer check, not hardware qualification.
+
+The ordinary `matmul-logits-bindings-v1` numeric capture plan shares the
+retained serial f32/f64 evaluation and receipt/routing owner with decode logits,
+using hidden binding1 and weights binding2. Host controls cover stable rewrite,
+abstention and observe-only routes with independently calculated logits. The
+unchanged `matmul_logits_forward_f16accum.wgsl` live consumer currently stops at
+the C compiler's unsupported `enable f16`; the retained Zig CLI executes the
+same bounded 2x3 fixture and emits the expected receipt. Host capture/routing
+coverage does not establish that shader's C GPU execution.

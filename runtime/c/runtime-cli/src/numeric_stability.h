@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: MIT
  * Numeric stability evaluation in ordinary execution, as doe-zig-runtime's
- * runtime/numeric_stability Recorder does it, for the decode-final-logits
- * capture plan (matmul-gemv.wgsl): after the dispatch runs, the fast (GPU)
+ * runtime/numeric_stability Recorder does it, for ordinary matmul-logits and
+ * decode-final-logits capture plans: after the dispatch runs, the fast (GPU)
  * logits are read back and compared with a serial f32 (stable) and an f64
  * (reference) evaluation on the host; the trigger and routing policies pick a
  * route, which may rewrite the logits with the stable values or stop the

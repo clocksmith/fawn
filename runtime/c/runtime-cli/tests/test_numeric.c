@@ -105,7 +105,7 @@ static doe_kernel_binding sample_bindings[3] = {
 
 /* Fast (GPU) logits [0, 0.5] miss the exact [1, 0.25] that the serial f32 and
  * f64 evaluations of weights [[1,0,0],[0,0.25,0]] by hidden [1,1,1] give. */
-static void route(const char *root, const char *work, const char *profile_id, const char *decision, bool rewrite, bool stop)
+static void route(const char *root, const char *work, const char *profile_id, const char *decision, bool rewrite, bool stop, bool decode)
 {
     char path[1024];
     snprintf(path, sizeof(path), "%s/config/numeric-stability-policy.json", root);
@@ -127,6 +127,16 @@ static void route(const char *root, const char *work, const char *profile_id, co
     logits.as.dispatch.binding_count = 4;
     logits.semantic = (doe_semantic){.op_id = "decode.final_logits", .stage = "decode_demo", .phase = "final_logits",
         .has_token_index = true};
+    doe_kernel_binding ordinary_bindings[4];
+    if (!decode) {
+        memcpy(ordinary_bindings, bindings, sizeof(ordinary_bindings));
+        ordinary_bindings[1] = bindings[2]; ordinary_bindings[1].binding = 1;
+        ordinary_bindings[2] = bindings[1]; ordinary_bindings[2].binding = 2;
+        logits.as.dispatch.bindings = ordinary_bindings;
+        logits.as.dispatch.kernel = "matmul_logits_forward_f16accum.wgsl";
+        logits.semantic.op_id = "matmul.logits";
+        logits.semantic.phase = "logits";
+    }
     doe_command sample = {.kind = DOE_COMMAND_KERNEL_DISPATCH, .label = "kernel_dispatch"};
     sample.as.dispatch.kernel = "bench/inference-pipeline/kernels/sample.wgsl";
     sample.as.dispatch.bindings = sample_bindings;
@@ -142,12 +152,12 @@ static void route(const char *root, const char *work, const char *profile_id, co
         .driver = "31.0.101"};
     bool stopped = false;
     assert(doe_ns_record(&recorder, &io, &identity, &logits, 1, &stopped, message, sizeof(message)));
-    assert(recorder.source.fired && !strcmp(recorder.source.decision, decision));
+    assert(!decode || (recorder.source.fired && !strcmp(recorder.source.decision, decision)));
     assert(stopped == stop && m.writes == (rewrite ? 1u : 0u));
     float committed[2];
     memcpy(committed, buffer(&m, 13), sizeof(committed));
     assert(rewrite ? committed[0] == 1.0f && committed[1] == 0.25f : committed[0] == 0.0f);
-    if (!stop) {
+    if (!stop && decode) {
         assert(doe_ns_record(&recorder, &io, &identity, &sample, 0, &stopped, message, sizeof(message)));
         assert(recorder.receipt_count == 2);
     }
@@ -195,9 +205,11 @@ int main(int argc, char **argv)
     greedy.as.dispatch.binding_count = 4;
     assert(doe_ns_layout_fingerprint(&greedy, digest));
     assert(!strcmp(digest, "e4d7cc2e5ddc5ba5494a469f66c0a853b78a7b2ba5bdaa862de16fd41d184644"));
-    route(argv[1], argv[2], NULL, "prefer-stable", true, false);
-    route(argv[1], argv[2], "numeric-stability/cautious-ordinary-execution-v1", "abstain", false, true);
-    route(argv[1], argv[2], "numeric-stability/observe-only-ordinary-execution-v1", "accept-fast", false, false);
+    for (unsigned decode = 0; decode < 2; decode++) {
+        route(argv[1], argv[2], NULL, "prefer-stable", true, false, decode != 0);
+        route(argv[1], argv[2], "numeric-stability/cautious-ordinary-execution-v1", "abstain", false, true, decode != 0);
+        route(argv[1], argv[2], "numeric-stability/observe-only-ordinary-execution-v1", "accept-fast", false, false, decode != 0);
+    }
     puts("runtime-cli numeric: Zig f64 spelling, Radeon digests and layout fingerprint, and prefer-stable rewrite, "
         "abstain stop and accept-fast routes (host only)");
     return 0;

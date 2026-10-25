@@ -188,3 +188,8 @@ void doe_ns_policy_free(doe_ns_policy *policy)
     doe_json_free(&policy->document);
     *policy = (doe_ns_policy){0};
 }
+
+bool doe_ns_capture_plan_supported(const char *plan)
+{
+    return plan && (!strcmp(plan, DOE_NS_DECODE_FINAL_LOGITS_PLAN) || !strcmp(plan, DOE_NS_MATMUL_LOGITS_PLAN));
+}
