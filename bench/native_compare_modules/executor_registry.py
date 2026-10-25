@@ -270,6 +270,29 @@ _REGISTRY: dict[str, ExecutorSpec] = {
         ),
         execution_boundary="plan",
     ),
+    "doe_c_direct_d3d12": ExecutorSpec(
+        executor_id="doe_c_direct_d3d12",
+        command_template=(
+            "runtime/c/runtime-cli/bin/doe-c-runtime.exe --commands {commands} --quirks {quirks} "
+            "--vendor {vendor} --api {api} --family {family} --driver {driver} "
+            "--backend native --execute --trace --queue-sync-mode {queue_sync_mode} "
+            "--upload-buffer-usage {upload_buffer_usage} --upload-submit-every {upload_submit_every} "
+            "--trace-jsonl {trace_jsonl} --trace-meta {trace_meta} --gpu-timestamp-mode off "
+            "--kernel-root bench/kernels {extra_args}"
+        ),
+        execution_boundary="commands",
+    ),
+    "doe_c_direct_plan_d3d12": ExecutorSpec(
+        executor_id="doe_c_direct_plan_d3d12",
+        command_template=(
+            "runtime/c/runtime-cli/bin/doe-c-runtime.exe --plan {plan} "
+            "--trace-jsonl {trace_jsonl} --trace-meta {trace_meta} --workload {workload} "
+            "--vendor {vendor} --api {api} --family {family} --driver {driver} "
+            "--queue-sync-mode {queue_sync_mode} --upload-buffer-usage {upload_buffer_usage} "
+            "--upload-submit-every {upload_submit_every} --gpu-timestamp-mode off {extra_args}"
+        ),
+        execution_boundary="plan",
+    ),
     "doe_direct_d3d12": ExecutorSpec(
         executor_id="doe_direct_d3d12",
         command_template=_DOE_RUNTIME_PREFIX.replace(
