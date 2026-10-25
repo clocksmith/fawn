@@ -36,7 +36,10 @@ runs from an empty directory with `PATH` restricted to Windows System32; build
 and SDK paths cannot hide missing packaged dependencies. Existing system runtime
 DLLs remain prerequisites. No adapter or device is requested. The focused
 `c-windows-package` workflow retains actual SDK build and relocation results;
-authoring this route does not establish a Windows pass.
+[Windows developer evidence](DEVELOPER_RECEIPT_PACKAGE_WINDOWS.json) records a
+source-bound pass at `b9d016fc0`: Windows Server 2025, Clang 20.1.8, 35
+independently rehashed package members and 199 implemented WebGPU exports.
+Both initial archive/bytecode failures are retained; no device was used.
 
 The tool captures the named committed tree, never concurrent worktree edits. It
 calls the native owner's platform builder and its compiler source/flag owner rather than
