@@ -3,6 +3,8 @@
 #include "sema.h"
 
 static const NumericBuiltin numeric_builtins[] = {
+    {"countOneBits", BUILTIN_COUNT_ONE_BITS, 1u, BUILTIN_COMPONENT_INTEGER, 0u},
+    {"unpack4xU8", BUILTIN_UNPACK4X_U8, 1u, BUILTIN_BYTE_UNPACK, 0u},
     {"all", BUILTIN_ALL, 1u, BUILTIN_BOOLEAN_REDUCTION, 0u},
     {"any", BUILTIN_ANY, 1u, BUILTIN_BOOLEAN_REDUCTION, 0u},
     {"transpose", BUILTIN_TRANSPOSE, 1u, BUILTIN_MATRIX, 0u},
@@ -307,11 +309,18 @@ static bool boolean_constant(Source *source, const NumericBuiltin *builtin, Cons
 }
 bool builtin_constant(Source *source, uint32_t offset, const NumericBuiltin *builtin,
                       const ConstantValue *arguments, TypeId result_type, ConstantValue *out) {
+    if (builtin->family == BUILTIN_BYTE_UNPACK) {
+        ConstantValue lanes[4];
+        for (uint32_t i = 0u; i < 4u; ++i)
+            lanes[i] = (ConstantValue){.type = IR_U32, .bits = (arguments[0].bits >> (i * 8u)) & 255u};
+        return constant_composite(source, result_type, lanes, 4u, false, out);
+    }
     if (builtin->family == BUILTIN_BOOLEAN_REDUCTION)
         return boolean_constant(source, builtin, arguments[0], out);
     if (builtin->family == BUILTIN_MATRIX)
         return matrix_constant(source, offset, builtin->kind, arguments[0], result_type, out);
-    if (builtin->family == BUILTIN_COMPONENT_NUMERIC || builtin->family == BUILTIN_COMPONENT_FLOAT)
+    if (builtin->family == BUILTIN_COMPONENT_NUMERIC || builtin->family == BUILTIN_COMPONENT_FLOAT ||
+        builtin->family == BUILTIN_COMPONENT_INTEGER)
         return component_constant(source, offset, builtin, arguments, result_type, out);
     if (builtin->family == BUILTIN_FLOAT_VECTOR || builtin->family == BUILTIN_FLOAT_CROSS ||
         builtin->family == BUILTIN_FLOAT_REFRACT)

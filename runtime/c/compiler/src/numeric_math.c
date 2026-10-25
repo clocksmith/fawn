@@ -70,6 +70,7 @@ bool numeric_math(Source *source, size_t offset, NumericBuiltinKind kind,
             } else *result = input * factor;
             break;
         }
+        case BUILTIN_COUNT_ONE_BITS: case BUILTIN_UNPACK4X_U8:
         case BUILTIN_ABS: case BUILTIN_MIN: case BUILTIN_MAX: case BUILTIN_CLAMP:
         case BUILTIN_DOT: case BUILTIN_LENGTH: case BUILTIN_TRANSPOSE: case BUILTIN_DETERMINANT:
         case BUILTIN_DISTANCE: case BUILTIN_NORMALIZE: case BUILTIN_CROSS: case BUILTIN_REFLECT:

@@ -926,6 +926,8 @@ bool parse_tokens(Source *source,CompilerWorkspace *s) {
         } else if (!function_declaration(&p,s)) return false;
         first=false;
     }
-    return (s->limits.flags & LIMIT_MODULE) != 0u || s->entry_count != 0u ||
-        parser_reject(&p, "one shader entry point");
+    if ((s->limits.flags & LIMIT_MODULE) == 0u && s->entry_count == 0u)
+        return parser_reject(&p, "one shader entry point");
+    for (uint32_t i = 0u; i < s->expression_count; ++i) s->expressions[i].resolved_type = IR_VOID;
+    return true;
 }

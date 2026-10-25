@@ -50,11 +50,15 @@ int main(void) {
         .expressions=1024u, .words=4096u, .expression_depth=32u, .control_depth=16u };
     DoeCompilerWorkspaceRequirements fixed, job;
     assert(doe_compiler_workspace_requirements(2u,&fixed,sizeof(fixed)) == DOE_COMPILER_OK);
-    assert(fixed.size_bytes <= 77760u);
+    /* The M10/M13 owner ledger superseded M8's 77760-byte layout. */
+    assert(fixed.size_bytes <= 147456u);
     assert(doe_compiler_job_requirements(3u,&caps,sizeof(caps),&job,sizeof(job)) == DOE_COMPILER_OK);
     const size_t size = fixed.size_bytes > job.size_bytes ? fixed.size_bytes : job.size_bytes;
     void *workspace = malloc(size); assert(workspace != NULL);
     uint32_t words[4096];
+    memset(words, 0xa5, sizeof(words));
+    assert(compile_mode(1u, &caps, workspace, fixed.size_bytes - 1u, valid, words, 4096u) == DOE_COMPILER_INPUT_ERROR);
+    assert(compile_mode(1u, &caps, workspace, fixed.size_bytes, valid, words, 4096u) == DOE_COMPILER_OK);
     fenv_t original; assert(fegetenv(&original)==0);
     const uint32_t original_sse = _mm_getcsr();
     const int rounds[] = {FE_TONEAREST,FE_DOWNWARD,FE_UPWARD,FE_TOWARDZERO};

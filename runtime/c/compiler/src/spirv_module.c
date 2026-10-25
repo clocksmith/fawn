@@ -432,6 +432,11 @@ bool spirv_plan_module(Emitter *e) {
         } else if (ir->opcode == IR_BUILTIN) {
             const NumericBuiltin *builtin = builtin_kind((NumericBuiltinKind)ir->operands.scalar.literal);
             if (builtin == NULL) return spirv_emit_error(e, ir->source_offset, "invalid numeric builtin identity");
+            if (builtin->kind == BUILTIN_UNPACK4X_U8) {
+                (void)spirv_unsigned_constant(e, 255u);
+                for (uint32_t lane = 0u; lane < 4u; ++lane)
+                    (void)spirv_unsigned_constant(e, lane * 8u);
+            }
             if (builtin_subgroup(builtin)) {
                 e->subgroup_capabilities |= 1u;
                 (void)use_constant(e, ID_THREE_U32);
