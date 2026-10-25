@@ -225,16 +225,26 @@ export function resolveDoeLibraryPath(explicitPath) {
     ]);
 }
 
-export function resolveDoeModuleRunnerPath(explicitPath, { required = true } = {}) {
+export function resolveDoeModuleRunnerPath(explicitPath, { required = true, implementation = "zig" } = {}) {
+    const binary = implementation === "c" ? "doe-c-module-runner" : "module-core-runner";
+    const relativePath = implementation === "c"
+        ? `runtime/c/modules/bin/${binary}` : `runtime/zig/zig-out/bin/${binary}`;
+    const configured = explicitPath ?? process.env.DOE_MODULE_RUNNER ?? null;
+    if (configured) {
+        const name = basename(configured).replace(/\.exe$/u, "");
+        if ((name === "module-core-runner" || name === "doe-c-module-runner") && name !== binary) {
+            throw new Error(`The selected ${implementation} runtime needs ${binary}; configured module runner is ${configured}.`);
+        }
+        if (!existsSync(configured)) throw new Error(`The configured module runner does not exist: ${configured}`);
+        return configured;
+    }
     const resolved = firstExistingPath([
-        explicitPath,
-        process.env.DOE_MODULE_RUNNER,
-        resolve(process.cwd(), "runtime/zig/zig-out/bin/module-core-runner"),
-        resolve(REPO_ROOT, "runtime/zig/zig-out/bin/module-core-runner"),
+        resolve(process.cwd(), relativePath),
+        resolve(REPO_ROOT, relativePath),
     ]);
     if (!resolved && required) {
         throw new Error(
-            "Could not locate module-core-runner. Set DOE_MODULE_RUNNER or pass { moduleRunnerPath }."
+            `Could not locate ${binary}. Set DOE_MODULE_RUNNER or pass { moduleRunnerPath }.`
         );
     }
     return resolved;
@@ -264,6 +274,7 @@ export function createDoeRuntime(options = {}) {
     const libPath = runtimeImplementation === "zig" ? resolveDoeLibraryPath(options.libPath) : null;
     const moduleRunnerPath = resolveDoeModuleRunnerPath(options.moduleRunnerPath, {
         required: false,
+        implementation: runtimeImplementation,
     });
 
     function runRaw(args, spawnOptions = {}) {
@@ -332,22 +343,10 @@ export function createDoeRuntime(options = {}) {
         };
     }
 
-    // Modules run in the Zig module-core-runner; no C module runner exists, so
-    // a doe-c-runtime selection is refused rather than run on Zig.
-    function requireZigModuleRunner(caller) {
-        if (runtimeImplementation === "zig") return;
-        throw new Error(
-            `${caller} runs the Zig module-core-runner; the selected runtime is ` +
-                `${RUNTIME_CLIS[runtimeImplementation].binary}, which has no module runner. ` +
-                'Pass { runtime: "zig" } to run it on the Zig runtime.'
-        );
-    }
-
     function runModule(moduleOptions) {
         if (!moduleOptions || typeof moduleOptions !== "object") {
             throw new Error("runModule requires an options object.");
         }
-        requireZigModuleRunner("runModule");
         if (typeof moduleOptions.moduleId !== "string" || moduleOptions.moduleId.trim().length === 0) {
             throw new Error("runModule requires a non-empty moduleId.");
         }
@@ -364,7 +363,8 @@ export function createDoeRuntime(options = {}) {
             : resolve(runCwd, policyPath);
         requireExistingPath("policyPath", resolvedPolicyPath);
         const resolvedModuleRunnerPath = resolveDoeModuleRunnerPath(
-            moduleOptions.moduleRunnerPath ?? moduleRunnerPath
+            moduleOptions.moduleRunnerPath ?? moduleRunnerPath,
+            { implementation: runtimeImplementation }
         );
         const tempDir = mkdtempSync(join(tmpdir(), "doe-module-runner-"));
         const requestPath = join(tempDir, "request.json");
@@ -392,6 +392,7 @@ export function createDoeRuntime(options = {}) {
             return {
                 ...result,
                 output,
+                runtimeImplementation,
             };
         } finally {
             rmSync(tempDir, { recursive: true, force: true });
@@ -402,7 +403,6 @@ export function createDoeRuntime(options = {}) {
         if (!runOptions || typeof runOptions !== "object") {
             throw new Error("runNumericStabilityMatmulLogitsSlice requires an options object.");
         }
-        requireZigModuleRunner("runNumericStabilityMatmulLogitsSlice");
         const autoArtifactDir =
             runOptions.receiptPath == null || runOptions.traceMetaPath == null
                 ? mkdtempSync(join(tmpdir(), "doe-numeric-stability-"))

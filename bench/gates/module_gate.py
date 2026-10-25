@@ -145,13 +145,15 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--root", default="", help="Repository root. Auto-detected when omitted.")
     parser.add_argument("--report", default="", help="Optional JSON report path.")
+    parser.add_argument("--runtime", choices=("zig", "c"), default="zig", help="Explicit implementation; no fallback.")
+    parser.add_argument("--runner", type=Path, help="Use an already-built runner for the selected implementation.")
     return parser.parse_args()
 
 
 def detect_repo_root(explicit_root: str) -> Path:
     if explicit_root:
         return Path(explicit_root).resolve()
-    return BENCH_ROOT
+    return REPO_ROOT
 
 
 def load_json(path: Path) -> Any:
@@ -181,7 +183,10 @@ def recompute_result_hash(payload: dict[str, Any]) -> str:
     return stable_hash(result_core)
 
 
-def build_runner(root: Path) -> Path:
+def build_runner(root: Path, implementation: str = "zig") -> Path:
+    if implementation == "c":
+        subprocess.run(["make", "-j4", "bench-bin"], cwd=root / "runtime/c/modules", check=True, timeout=600)
+        return root / "runtime/c/modules/bin/doe-c-module-runner"
     subprocess.run(
         ["zig", "build", "dropin", "module-core-runner"],
         cwd=root / "runtime" / "zig",
@@ -227,7 +232,10 @@ def main() -> int:
     root = detect_repo_root(args.root)
     failures: list[str] = []
     module_rows: list[dict[str, Any]] = []
-    runner_path = build_runner(root)
+    runner_path = args.runner.resolve() if args.runner else build_runner(root, args.runtime)
+    expected_name = "doe-c-module-runner" if args.runtime == "c" else "module-core-runner"
+    if runner_path.stem in ("doe-c-module-runner", "module-core-runner") and runner_path.stem != expected_name:
+        raise ValueError(f"{args.runtime} runtime requires {expected_name}, got {runner_path}")
 
     for module_id, paths in PROMOTED_MODULES.items():
         schema_path = root / paths["schema"]
@@ -318,6 +326,8 @@ def main() -> int:
 
     payload = {
         "ok": not failures,
+        "runtimeImplementation": args.runtime,
+        "runnerPath": str(runner_path),
         "moduleCount": len(PROMOTED_MODULES),
         "modules": module_rows,
         "failures": failures,

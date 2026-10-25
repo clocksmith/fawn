@@ -4,7 +4,7 @@
 // any other provider the Zig CLI; a configured binary for the other
 // implementation, a missing configured binary and an unknown runtime are
 // refused. Every run result names the implementation that ran. Module runs
-// (the Zig module-core-runner) are refused on the C runtime, and the Doe
+// select the same implementation without fallback, and the Doe
 // namespace's runtime helpers use the factory the package surface passes.
 
 import assert from 'node:assert/strict';
@@ -16,7 +16,7 @@ import { createDoeNamespace } from '../../src/vendor/doe-namespace.js';
 
 const directory = mkdtempSync(join(tmpdir(), 'doe-runtime-selection-'));
 const saved = { DOE_BIN: process.env.DOE_BIN, FAWN_DOE_BIN: process.env.FAWN_DOE_BIN,
-  DOE_WEBGPU_LIB: process.env.DOE_WEBGPU_LIB, DOE_LIB: process.env.DOE_LIB };
+  DOE_WEBGPU_LIB: process.env.DOE_WEBGPU_LIB, DOE_LIB: process.env.DOE_LIB, DOE_MODULE_RUNNER: process.env.DOE_MODULE_RUNNER };
 function fakeCli(name) {
   const path = join(directory, name);
   writeFileSync(path, `#!/bin/sh\necho ${name} "$@"\n`);
@@ -72,10 +72,18 @@ try {
     assert.throws(() => createDoeRuntime({ runtime: 'c' }), /conflicts with binary/);
   });
   withEnv({}, () => {
-    const runtime = createDoeRuntime({ runtime: 'c', binPath: c });
-    const request = { moduleId: 'm', request: {}, policyPath: '/' };
-    assert.throws(() => runtime.runModule(request), /runModule runs the Zig module-core-runner.*doe-c-runtime/);
-    assert.throws(() => runtime.runNumericStabilityMatmulLogitsSlice({}), /module-core-runner.*doe-c-runtime/);
+    const moduleRunner = fakeCli('doe-c-module-runner');
+    writeFileSync(moduleRunner, '#!/bin/sh\nprintf \'{"model":"selection-test"}\\n\'\n');
+    const runtime = createDoeRuntime({ runtime: 'c', binPath: c, moduleRunnerPath: moduleRunner });
+    const request = { moduleId: 'm', request: {}, policyPath: cLibrary };
+    const result = runtime.runModule(request);
+    assert.equal(result.runtimeImplementation, 'c');
+    assert.deepEqual(result.output, { model: 'selection-test' });
+    const zigModule = fakeCli('module-core-runner');
+    assert.throws(() => runtime.runModule({ ...request, moduleRunnerPath: zigModule }), /needs doe-c-module-runner/);
+    assert.throws(() => createDoeRuntime({ runtime: 'zig', binPath: zig, moduleRunnerPath: moduleRunner }), /needs module-core-runner/);
+    assert.throws(() => createDoeRuntime({ runtime: 'c', binPath: c, moduleRunnerPath: join(directory, 'missing-module') }),
+      /configured module runner does not exist/);
   });
   withEnv({}, () => {
     assert.throws(() => createDoeRuntime({ runtime: 'c', binPath: join(directory, 'missing', 'doe-c-runtime') }),
@@ -95,7 +103,7 @@ try {
   assert.deepEqual([viaNamespace.ranBy, viaBound.ranBy, viaBound.commandsPath], ['surface factory', 'surface factory', 'bound.json']);
   assert.deepEqual(factoryCalls, [{ runtime: 'c' }, {}]);
   console.log('runtime-selection.test: provider and explicit selection, refused conflicts, no fallback, named results, '
-    + 'module runs refused on C, namespace helpers use the surface factory');
+    + 'module runner selection without fallback, namespace helpers use the surface factory');
 } finally {
   rmSync(directory, { recursive: true, force: true });
 }
