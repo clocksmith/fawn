@@ -24,7 +24,7 @@ The five retained policy models and the numeric stability matmul service, expose
 
 ## Acceptance
 - [Owner checks](Makefile) compare source-bound retained fixtures, reject invalid contracts and exercise real package consumers.
-- [Coverage](README.md) distinguishes model semantics, host execution and physical execution evidence.
+- Evidence: [coverage](README.md) distinguishes model semantics, host execution and physical execution.
 
 ## Non-goals
 Native rendering or compute execution for the retained cost models, production provider selection and hardware qualification.
