@@ -1,8 +1,9 @@
 import { spawnSync } from "node:child_process";
 import { existsSync, mkdtempSync, readFileSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join, resolve } from "node:path";
+import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { libraryFlavor } from "./shared/public-surface.js";
 
 const LIB_EXTENSION_BY_PLATFORM = {
     darwin: "dylib",
@@ -134,17 +135,75 @@ export function resolveDoeRepoRoot(explicitPath) {
     return resolve(resolved, "..", "..");
 }
 
-export function resolveDoeBinaryPath(explicitPath) {
+// The runtime CLI of each implementation: its binary name and the repo path
+// its owner builds (runtime/c/runtime-cli: `make bench-bin`).
+const RUNTIME_CLIS = Object.freeze({
+    zig: Object.freeze({ binary: "doe-zig-runtime", path: "runtime/zig/zig-out/bin/doe-zig-runtime",
+        build: "cd runtime/zig && zig build doe-runtime" }),
+    c: Object.freeze({ binary: "doe-c-runtime", path: "runtime/c/runtime-cli/bin/doe-c-runtime",
+        build: "make -C runtime/c/runtime-cli bench-bin" }),
+});
+
+function implementationOfBinary(path) {
+    const name = basename(path);
+    for (const [implementation, cli] of Object.entries(RUNTIME_CLIS)) {
+        if (name === cli.binary || name === `${cli.binary}.exe`) return implementation;
+    }
+    return null;
+}
+
+/**
+ * Selects the runtime CLI implementation for createDoeRuntime, never by
+ * fallback: an explicit `runtime` option ("zig" or "c") wins; otherwise the
+ * selected provider library decides (a doe-c provider from
+ * `providerLibraryPath`, `libPath`, DOE_WEBGPU_LIB or DOE_LIB selects
+ * doe-c-runtime, any other the Zig CLI). A
+ * configured binary (binPath, DOE_BIN, FAWN_DOE_BIN) named for the other
+ * implementation is refused rather than run against the wrong provider.
+ */
+export function selectDoeRuntimeImplementation(options = {}) {
+    const configuredBinary = options.binPath ?? process.env.DOE_BIN ?? process.env.FAWN_DOE_BIN ?? null;
+    const binaryImplementation = configuredBinary ? implementationOfBinary(configuredBinary) : null;
+    if (options.runtime !== undefined) {
+        if (!Object.hasOwn(RUNTIME_CLIS, options.runtime)) {
+            throw new Error(`createDoeRuntime: runtime must be "zig" or "c"; got ${JSON.stringify(options.runtime)}.`);
+        }
+        if (binaryImplementation && binaryImplementation !== options.runtime) {
+            throw new Error(`createDoeRuntime: runtime "${options.runtime}" conflicts with binary ${configuredBinary}.`);
+        }
+        return { implementation: options.runtime, reason: "explicit-option" };
+    }
+    // providerLibraryPath is the package's selected provider (index.js and
+    // bun-ffi.js pass it); a direct caller's libPath or environment otherwise.
+    const providerPath = options.providerLibraryPath ?? options.libPath ?? process.env.DOE_WEBGPU_LIB ??
+        process.env.DOE_LIB ?? null;
+    const flavor = providerPath ? libraryFlavor(providerPath) : "default";
+    const implementation = flavor === "doe-c" ? "c" : "zig";
+    if (binaryImplementation && binaryImplementation !== implementation) {
+        throw new Error(
+            `createDoeRuntime: the selected provider (${flavor}) needs ${RUNTIME_CLIS[implementation].binary}, ` +
+            `but ${configuredBinary} is ${RUNTIME_CLIS[binaryImplementation].binary}; pass { runtime } to choose explicitly.`
+        );
+    }
+    return { implementation, reason: `provider-${flavor}` };
+}
+
+export function resolveDoeBinaryPath(explicitPath, implementation = "zig") {
+    const cli = RUNTIME_CLIS[implementation];
+    if (!cli) throw new Error(`resolveDoeBinaryPath: unknown runtime implementation ${JSON.stringify(implementation)}.`);
+    const configured = explicitPath ?? process.env.DOE_BIN ?? process.env.FAWN_DOE_BIN ?? null;
+    // A configured binary is that binary or nothing, never another one.
+    if (configured) {
+        if (!existsSync(configured)) throw new Error(`The configured runtime binary does not exist: ${configured}`);
+        return configured;
+    }
     const resolved = firstExistingPath([
-        explicitPath,
-        process.env.DOE_BIN,
-        process.env.FAWN_DOE_BIN,
-        resolve(process.cwd(), "runtime/zig/zig-out/bin/doe-zig-runtime"),
-        resolve(REPO_ROOT, "runtime/zig/zig-out/bin/doe-zig-runtime"),
+        resolve(process.cwd(), cli.path),
+        resolve(REPO_ROOT, cli.path),
     ]);
     if (!resolved) {
         throw new Error(
-            "Could not locate doe-zig-runtime. Set DOE_BIN or pass { binPath }."
+            `Could not locate ${cli.binary}. Build it (${cli.build}), set DOE_BIN, or pass { binPath }.`
         );
     }
     return resolved;
@@ -197,8 +256,12 @@ export function resolveCompareScriptPath(explicitPath, repoRoot = null) {
 }
 
 export function createDoeRuntime(options = {}) {
-    const binPath = resolveDoeBinaryPath(options.binPath);
-    const libPath = resolveDoeLibraryPath(options.libPath);
+    const selection = selectDoeRuntimeImplementation(options);
+    const runtimeImplementation = selection.implementation;
+    const binPath = resolveDoeBinaryPath(options.binPath, runtimeImplementation);
+    // The Zig CLI loads its provider through DOE_LIB; doe-c-runtime links the C
+    // library it was built with and reads no library path.
+    const libPath = runtimeImplementation === "zig" ? resolveDoeLibraryPath(options.libPath) : null;
     const moduleRunnerPath = resolveDoeModuleRunnerPath(options.moduleRunnerPath, {
         required: false,
     });
@@ -208,10 +271,13 @@ export function createDoeRuntime(options = {}) {
         if (libPath) {
             env.DOE_LIB = libPath;
         }
-        return runProcess(binPath, args, {
-            ...spawnOptions,
-            env,
-        });
+        return {
+            ...runProcess(binPath, args, {
+                ...spawnOptions,
+                env,
+            }),
+            runtimeImplementation,
+        };
     }
 
     function runBench(runOptions) {
@@ -454,6 +520,8 @@ export function createDoeRuntime(options = {}) {
     return {
         binPath,
         libPath,
+        runtimeImplementation,
+        runtimeSelectionReason: selection.reason,
         moduleRunnerPath,
         runRaw,
         runBench,

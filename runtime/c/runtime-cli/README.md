@@ -6,8 +6,11 @@ built by [the native owner](../native/README.md)) and writes the same trace
 JSONL rows and trace meta that `doe-zig-runtime` writes. It is the first C
 replacement for a [stage 6](../../../docs/c-migration/MIGRATION.md) consumer:
 the `doe-zig-runtime` CLI that `createDoeRuntime().runBench` in
-`packages/doe-gpu` and the bench modules call. It does not replace that CLI by
-default; a caller selects it explicitly (the package reads `DOE_BIN`).
+`packages/doe-gpu` and the bench modules call. The package's
+`createDoeRuntime()` runs it when the selected provider is the C library
+(`libraryFlavor` `doe-c`) or when `{ runtime: "c" }` is passed, from `DOE_BIN`
+or `runtime/c/runtime-cli/bin/doe-c-runtime` (`make bench-bin`); it never falls
+back to the Zig CLI, and run results carry `runtimeImplementation`.
 
 ```bash
 make -C runtime/c/runtime-cli            # builds $(BUILD)/doe-c-runtime and the native library
