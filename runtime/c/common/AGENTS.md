@@ -11,3 +11,7 @@ reflection; each backend retains limit admission, GPU scratch, barriers and leas
 Never interpret caller argument bytes on the CPU or introduce shared execution,
 device state, shader parsing or native binding policy here. Failed construction
 leaves both outputs untouched. Keep the historical Vulkan source bytes unchanged.
+
+The timestamp source leaf similarly owns exact binary32-period WGSL construction
+only. Preserve its retained kernel bytes and floor/modulo arithmetic. Backend
+owners supply real clock calibration, availability, scratch, barriers and leases.

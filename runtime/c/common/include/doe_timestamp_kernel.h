@@ -1,9 +1,9 @@
 /* SPDX-License-Identifier: MIT */
-#ifndef DOE_VK_TIMESTAMP_SHADER_H
-#define DOE_VK_TIMESTAMP_SHADER_H
+#ifndef DOE_TIMESTAMP_KERNEL_H
+#define DOE_TIMESTAMP_KERNEL_H
 /* Verbatim retained WGSL body; provenance and byte identity are checked by
- * tools/check_timestamp_source.py. This is the sole runtime kernel copy. */
-static const char doe_vk_timestamp_kernel[] =
+ * backends/vulkan/tools/check_timestamp_source.py. This is the sole runtime kernel copy. */
+static const char doe_timestamp_kernel[] =
     "// Exact f32-period multiplication using base-2^16 limbs; no shaderInt64 required.\n"
     "@group(0) @binding(0) var<storage, read_write> timestamps: array<vec2<u32>>;\n"
     "\n"

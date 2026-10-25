@@ -15,7 +15,7 @@ for name, expected in provenance['sha256'].items():
     if actual != expected:
         raise SystemExit(f'retained timestamp source drift: {name}')
 embedded = ''.join(json.loads(line.strip().removesuffix(';')) for line in
-                   (owner / 'src/timestamp_shader.h').read_text().splitlines()
+                   (args.repo / 'runtime/c/common/include/doe_timestamp_kernel.h').read_text().splitlines()
                    if line.lstrip().startswith('"'))
 original = (args.repo / 'runtime/zig/src/backend/vulkan/vk_timestamp_normalize.wgsl').read_text()
 if embedded != original:
