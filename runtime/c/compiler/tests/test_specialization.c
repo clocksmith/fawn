@@ -2,6 +2,7 @@
 #include "hlsl_fixture.h"
 #include "packed_integer_fixture.h"
 #include "integer_bits_fixture.h"
+#include "float_math_fixture.h"
 #include "../include/doe_compiler_module_specialization.h"
 #include <assert.h>
 #include <errno.h>
@@ -264,6 +265,33 @@ int main(int argc, char **argv) {
     }
     artifact(directory,"packed.wgsl",packed_integer_module,strlen(packed_integer_module));
     artifact(directory,"bits.wgsl",integer_bits_module,strlen(integer_bits_module));
+    artifact(directory,"float-math.wgsl",float_math_module,strlen(float_math_module));
+    for (uint32_t target = 0u; target < 3u; ++target) {
+        expect(target, float_math_module, "main", NULL, 0u, true);
+        DoeCompilerTextResult result;
+        assert(compile(target, float_math_module, "main", NULL, 0u, storage, words, &result, false) == DOE_COMPILER_OK);
+        if (target == DOE_COMPILER_TARGET_SPIRV)
+            artifact(directory, "float-math.spv", words, result.stages.resources.module.published.words * sizeof(*words));
+        else artifact(directory, target == DOE_COMPILER_TARGET_METAL ? "float-math.metal" : "float-math.hlsl",
+            storage->text, result.published_text_bytes);
+        const char *invalid[] = {
+            "@compute @workgroup_size(1) fn main(){_=fma(1u,2u,3u);}",
+            "@compute @workgroup_size(1) fn main(){_=step(vec2f(0),1.0);}",
+            "@compute @workgroup_size(1) fn main(){_=saturate(true);}",
+            "@compute @workgroup_size(1) fn main(){_=smoothstep(1.0,1.0,0.5);}",
+            "@compute @workgroup_size(1) fn main(){var x=0.5;_=smoothstep(1.0,1.0,x);}",
+            "@compute @workgroup_size(1) fn main(){var x=vec2f(0.5);_=smoothstep(vec2f(0,1),vec2f(1,1),x);}",
+            "@compute @workgroup_size(1) fn main(){if(false){var x=0.5;_=smoothstep(1.0,1.0,x);}}"
+        };
+        for (size_t i = 0u; i < sizeof(invalid) / sizeof(*invalid); ++i)
+            expect(target, invalid[i], "main", NULL, 0u, false);
+        const char *override_edges = "override edge:f32;@compute @workgroup_size(1) fn main(){"
+            "var x=0.5;_=smoothstep(edge,1.0,x);}";
+        DoeCompilerOverrideValueV13 edge = {"edge", 4u, 2.0};
+        expect(target, override_edges, "main", &edge, 1u, true);
+        edge.value = 1.0;
+        expect(target, override_edges, "main", &edge, 1u, false);
+    }
     const char *bundle = "override n:u32;override m:u32;override tint:f32;override unused:u32;"
         "var<workgroup> dead:array<u32,unused>;var<workgroup> left:array<u32,n>;"
         "var<workgroup> right:array<u32,m>;"

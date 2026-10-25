@@ -432,6 +432,12 @@ $(BUILD)/all-any: tests/all_any.c tests/shader_fixture.h tests/consumer.h tests/
 $(BUILD)/select: tests/select.c tests/shader_fixture.h tests/consumer.h tests/adapter_class.h ../compiler/tests/select_retained.wgsl ../compiler/tests/select_cases.wgsl $(NATIVE_LIBRARY) | $(BUILD)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
 
+$(BUILD)/float-math: tests/float_math.c tests/consumer.h tests/adapter_class.h ../compiler/tests/float_math_fixture.h $(NATIVE_LIBRARY) | $(BUILD)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
+.PHONY: check-float-math
+check-float-math: $(BUILD)/float-math
+	$(BUILD)/float-math
+
 $(BUILD)/depth-comparison: tests/depth_comparison.c tests/shader_fixture.h tests/consumer.h tests/adapter_class.h ../compiler/tests/depth_sampling.wgsl $(NATIVE_LIBRARY) | $(BUILD)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
 

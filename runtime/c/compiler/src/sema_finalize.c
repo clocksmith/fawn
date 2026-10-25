@@ -40,6 +40,8 @@ bool sema_builtin_finish(Source *source, const Expression *node, const NumericBu
 
     if (builtin->family == BUILTIN_PACKED_INTEGER)
         return sema_packed_integer(source, node->source_offset, builtin, arguments, emit, out);
+    if (builtin->kind == BUILTIN_SMOOTHSTEP || builtin->kind == BUILTIN_SATURATE)
+        return sema_interpolation(source, node->source_offset, builtin->kind, arguments, emit, out);
     uint32_t first = 0u;
     if (emit) {
         if (builtin->arity > compiler->limits.operands - compiler->operand_count)

@@ -30,7 +30,7 @@ def main():
     # Actual libm leaves from the declared-width component-math owner. As with
     # inherited exp/sqrt/tanh, their foreign implementation frames are excluded.
     for name in ('acos', 'acosh', 'asin', 'asinh', 'atan', 'atan2', 'atanh', 'cos', 'cosh',
-                 'exp2', 'floor', 'log', 'log2', 'nearbyint', 'pow', 'sin', 'sinh', 'tan', 'trunc'):
+                 'exp2', 'floor', 'fma', 'log', 'log2', 'nearbyint', 'pow', 'sin', 'sinh', 'tan', 'trunc'):
         audit.EXTERNAL.update((name, name + 'f'))
     audit.FAMILIES.update({
         'metal_control': (384, {'metal_block', 'selection', 'short_circuit', 'loop_body'}),

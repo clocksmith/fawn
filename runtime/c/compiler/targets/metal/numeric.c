@@ -213,6 +213,8 @@ static void builtin_expression(MetalEmitter *e, const IrInstruction *ir) {
     /* A source builtin registry is not a target support table. New shared
      * operations must never become unchecked MSL names by default. */
     static const char *const names[] = {
+        [BUILTIN_FMA] = "fma",
+        [BUILTIN_STEP] = "step",
         [BUILTIN_CEIL] = "ceil",
         [BUILTIN_EXP] = "exp",
         [BUILTIN_TANH] = "tanh",
