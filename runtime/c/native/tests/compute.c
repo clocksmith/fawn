@@ -53,6 +53,15 @@ static void error_callback(WGPUPopErrorScopeStatus status, WGPUErrorType type,
     assert(status == WGPUPopErrorScopeStatus_Success && type == WGPUErrorType_Validation);
     ++result->errors;
 }
+static void empty_scope_callback(WGPUPopErrorScopeStatus status, WGPUErrorType type,
+    WGPUStringView message, void *userdata1, void *userdata2)
+{
+    (void)message;
+    (void)userdata2;
+    results *result = userdata1;
+    assert(status == WGPUPopErrorScopeStatus_Success && type == WGPUErrorType_NoError);
+    ++result->errors;
+}
 static void done_callback(WGPUQueueWorkDoneStatus status, WGPUStringView message,
     void *userdata1, void *userdata2)
 {
@@ -288,6 +297,32 @@ int main(void)
         (WGPUProc)wgpuRenderPassEncoderSetImmediates);
     assert(!wgpuGetProcAddress((WGPUStringView){"wgpuExternalTextureSetLabel", WGPU_STRLEN})); /* pinned, unprovided */
     assert(!wgpuGetProcAddress((WGPUStringView){"doe_vk_context_create", WGPU_STRLEN}));
+    /* Invalid mapping reports to the active scope at the call, independently
+     * of when its WaitAnyOnly callback is delivered; a later valid map works. */
+    unsigned maps_before = result.maps;
+    wgpuDevicePushErrorScope(device, WGPUErrorFilter_Validation);
+    future = wgpuBufferMapAsync(readback, WGPUMapMode_Read, 4, 16, map);
+    assert(future.id && result.maps == maps_before);
+    wait_ready(instance, wgpuDevicePopErrorScope(device, pop));
+    assert(result.errors == 5 && result.maps == maps_before);
+    wait_ready(instance, future);
+    assert(result.maps == maps_before + 1 && result.map_status == WGPUMapAsyncStatus_Error);
+    assert(wgpuBufferGetMapState(readback) == WGPUBufferMapState_Unmapped);
+    wait_ready(instance, wgpuBufferMapAsync(readback, WGPUMapMode_Read, 0, 16, map));
+    assert(result.map_status == WGPUMapAsyncStatus_Success);
+    wgpuBufferUnmap(readback);
+
+    /* Device loss aborts mapping; it does not generate another validation
+     * error, even when the requested map also has invalid alignment. */
+    wgpuDeviceDestroy(device);
+    wgpuDevicePushErrorScope(device, WGPUErrorFilter_Validation);
+    wait_ready(instance, wgpuBufferMapAsync(readback, WGPUMapMode_Read, 0, 16, map));
+    assert(result.map_status == WGPUMapAsyncStatus_Aborted);
+    wait_ready(instance, wgpuBufferMapAsync(readback, WGPUMapMode_Read, 4, 16, map));
+    assert(result.map_status == WGPUMapAsyncStatus_Aborted);
+    pop.callback = empty_scope_callback;
+    wait_ready(instance, wgpuDevicePopErrorScope(device, pop));
+    assert(result.errors == 6);
     wgpuBufferRelease(readback);
     wgpuQueueRelease(queue);
     wgpuDeviceRelease(device);
