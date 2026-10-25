@@ -325,6 +325,32 @@ def write_resident_buffer_load_command_plan(path: Path) -> None:
 
 
 class NodeWebGPUExecutorTests(unittest.TestCase):
+    def test_supported_limits_snapshot_reads_native_prototype_accessors(self) -> None:
+        script = f"""
+import {{ snapshotSupportedLimits }} from {json.dumps(EXECUTOR_MODULE_URL)};
+const prototype = {{}};
+Object.defineProperty(prototype, 'maxBufferSize', {{ get() {{ return this.size; }} }});
+const limits = Object.create(prototype);
+Object.defineProperty(limits, 'size', {{ value: 1048576 }});
+limits.maxBindGroups = 4;
+limits.invalid = NaN;
+limits.method = () => 123;
+console.log(JSON.stringify({{
+  snapshot: snapshotSupportedLimits(limits),
+  missing: snapshotSupportedLimits(null),
+}}));
+"""
+        result = subprocess.run(
+            ["node", "--input-type=module", "-e", script], cwd=REPO_ROOT,
+            capture_output=True, text=True, check=False,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertEqual(payload["snapshot"], {
+            "size": 1048576, "maxBindGroups": 4, "maxBufferSize": 1048576,
+        })
+        self.assertIsNone(payload["missing"])
+
     def test_adapter_info_snapshot_materializes_non_enumerable_webgpu_fields(self) -> None:
         script = f"""
 import {{ snapshotAdapterInfo }} from {json.dumps(EXECUTOR_MODULE_URL)};

@@ -184,6 +184,24 @@ export function snapshotAdapterInfo(adapterInfo) {
   return snapshot;
 }
 
+// Native WebGPU limits commonly live on prototype accessors and stringify to
+// {}. Materialize numeric limits without inventing values for absent fields.
+export function snapshotSupportedLimits(limits) {
+  if (limits === null || typeof limits !== 'object') {
+    return null;
+  }
+  const names = new Set();
+  for (let owner = limits; owner && owner !== Object.prototype; owner = Object.getPrototypeOf(owner)) {
+    for (const name of Object.getOwnPropertyNames(owner)) names.add(name);
+  }
+  const snapshot = {};
+  for (const name of names) {
+    const value = limits[name];
+    if (typeof value === 'number' && Number.isFinite(value)) snapshot[name] = value;
+  }
+  return snapshot;
+}
+
 export function providerAvailabilityFailure({
   reason,
   provider = '',
@@ -3500,7 +3518,8 @@ async function executeSample(
     planId: normalizedPlan.planId,
     planHash: normalizedPlan.planHash,
     adapterInfo: runtime.adapterInfo,
-    adapterLimits: runtime.adapter.limits ?? null,
+    adapterLimits: snapshotSupportedLimits(runtime.adapter.limits ?? null),
+    deviceLimits: snapshotSupportedLimits(runtime.device.limits ?? null),
     planSummary: planSummary(normalizedPlan),
     executionShape: normalizedPlan.executionShape,
     ...shaderSourceReceiptFields(runtime.shaderSourceReceipts),
