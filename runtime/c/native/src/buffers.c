@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: MIT */
 #include "internal.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -176,7 +177,12 @@ static void *mapped_range(WGPUBuffer handle, size_t offset, size_t size, bool wr
         bytes = (unsigned char *)read_bytes;
     }
     native_unlock(device);
-    if (status != DOE_RESOURCE_OK) native_error(device, native_resource_error(status), "invalid mapped range");
+    /* Pinned native BufferMapping: getter failures return NULL with logging,
+     * not a device error. Consumers may probe an unmapped buffer before upload. */
+    if (status != DOE_RESOURCE_OK)
+        fprintf(stderr, "doe: %s failed (resource status %u)\n",
+            writable ? "wgpuBufferGetMappedRange" : "wgpuBufferGetConstMappedRange",
+            (unsigned)status);
     return status == DOE_RESOURCE_OK ? bytes : NULL;
 }
 void *wgpuBufferGetMappedRange(WGPUBuffer buffer, size_t offset, size_t size)
