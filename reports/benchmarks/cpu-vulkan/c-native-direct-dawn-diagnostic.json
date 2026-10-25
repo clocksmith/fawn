@@ -1,0 +1,3655 @@
+{
+  "schemaVersion": 1,
+  "classification": "diagnostic-not-claimable",
+  "consumer": "Regression qualification of native-direct mapped access and adapter identity, and bounded comparison of this distinct API boundary with Dawn; not replacement of full-wrapper losses.",
+  "sourceCommit": "b7c6a5ddc9f679d0413d097b4f3c441df7bb3e50",
+  "nodeVersion": "24.22.1",
+  "controls": {
+    "hardware": "CPU Vulkan llvmpipe LLVM19.1.7, 256 bits; Mesa25.0.7-2+deb13u1",
+    "order": "Dawn block then C-direct block; serial, not randomized",
+    "iterations": 16,
+    "warmupPerWorkload": 1,
+    "LP_NUM_THREADS": 1,
+    "MESA_SHADER_CACHE_DISABLE": "true",
+    "home": "separate fresh directory per provider",
+    "readbackMode": "mapAsync-host-copy",
+    "memory": "GNU time maximum individual child RSS; not total simultaneous tree RSS or VRAM",
+    "operationTiming": "host operation wall time, not GPU timestamps",
+    "executionBoundary": "existing doe_node_native_direct versus node_webgpu_package; direct is not the default full JS surface"
+  },
+  "plans": {
+    "bench/plans/package-developer/package_buffer_upload_readback_exact_1mb.plan.json": "7f519d61c6f56733cf6226fa8b0d2e602f7ea12d887989de441d01ba75657941",
+    "bench/plans/package-developer/package_pipeline_creation_8kernels.plan.json": "15ec4a1e0471dc683ac7752339c2f622b367e1dbe248e7218bc21a333e1397a1",
+    "bench/plans/package-developer/package_queue_submit_completion.plan.json": "c8fdb64ddcbb29e819f09b936c94947ee9258bf1ba9ee627e2f577816c8f5df5"
+  },
+  "providerHashes": {
+    "cNative": "e4d95e4df227fc0d74e7b6036c7f10a0104d5437f2e6ddf53c588bccfa7b9e83",
+    "cCompiler": "0a42d4f71c1e22bfdb694f00bf31bcef912b59154b127a6d68184637daa2a063",
+    "napiAddon": "ee261065973d6798050a2028be1271cc292c50b8cdd837a896e346917c655510",
+    "npmWebgpu040LinuxAddon": "fbfe599055b469963e4c9bfc900a702843db962dcaba0799b3c81ae33fa43db1",
+    "llvmpipe": "0004262f4dc95585492d55925face67a79a7c869ad8760b42ae01bd0bdb807a2",
+    "gnuTime": "efc0d1112e36ec76c14bf7508e287935cf1631d9d0d91fb532802d07aef51cea"
+  },
+  "sourceHashes": {
+    "runtime/bridge/webgpu-addon/doe_napi_nd_immediates.c": "cd7d00e87695bdb976635339c572dd2f5749ef05c47b214952ad9eae965a3bb2",
+    "runtime/bridge/webgpu-addon/doe_napi_nd_creators.c": "ab06e6751462d876088c7b591a63d85d848d3373c47d18c7c7406368f36b94df",
+    "runtime/bridge/webgpu-addon/doe_napi_caps.c": "8dfae406c1dbb737c92061c9c1efc3e6b44e557897d7a21e80a5b4d5d87278a5",
+    "bench/executors/node-webgpu/executor.js": "67f4ec3773a9b69232c3dee6fa9aad9364c71b92ac5c9766aabcea17622e416e"
+  },
+  "rows": [
+    {
+      "product": "dawn",
+      "executor": "node_webgpu_package",
+      "workload": "package_buffer_upload_readback_exact_1mb",
+      "rawReceiptSha256": "b531ff6c777b809de681688878993cded30c8a1d0c833940913b775ade49cdac",
+      "adapterInfo": {
+        "architecture": "software",
+        "description": "llvmpipe: Mesa 25.0.7-2+deb13u1 (LLVM 19.1.7) 0.0.1",
+        "device": "llvmpipe-llvm-19-1-7-256-bits-",
+        "isFallbackAdapter": true,
+        "subgroupMatrixConfigs": [],
+        "subgroupMaxSize": 8,
+        "subgroupMinSize": 8,
+        "vendor": "mesa"
+      },
+      "adapterLimits": {
+        "maxBindGroups": 4,
+        "maxBindGroupsPlusVertexBuffers": 24,
+        "maxBindingsPerBindGroup": 1000,
+        "maxBufferSize": 4294967295,
+        "maxColorAttachmentBytesPerSample": 256,
+        "maxColorAttachments": 8,
+        "maxComputeInvocationsPerWorkgroup": 1024,
+        "maxComputeWorkgroupSizeX": 1024,
+        "maxComputeWorkgroupSizeY": 1024,
+        "maxComputeWorkgroupSizeZ": 1024,
+        "maxComputeWorkgroupStorageSize": 32768,
+        "maxComputeWorkgroupsPerDimension": 65535,
+        "maxDynamicStorageBuffersPerPipelineLayout": 16,
+        "maxDynamicUniformBuffersPerPipelineLayout": 16,
+        "maxImmediateSize": 0,
+        "maxInterStageShaderVariables": 30,
+        "maxSampledTexturesPerShaderStage": 48,
+        "maxSamplersPerShaderStage": 16,
+        "maxStorageBufferBindingSize": 134217728,
+        "maxStorageBuffersInFragmentStage": 16,
+        "maxStorageBuffersInVertexStage": 16,
+        "maxStorageBuffersPerShaderStage": 16,
+        "maxStorageTexturesInFragmentStage": 8,
+        "maxStorageTexturesInVertexStage": 8,
+        "maxStorageTexturesPerShaderStage": 8,
+        "maxTextureArrayLayers": 2048,
+        "maxTextureDimension1D": 16384,
+        "maxTextureDimension2D": 16384,
+        "maxTextureDimension3D": 4096,
+        "maxUniformBufferBindingSize": 65536,
+        "maxUniformBuffersPerShaderStage": 12,
+        "maxVertexAttributes": 30,
+        "maxVertexBufferArrayStride": 2048,
+        "maxVertexBuffers": 8,
+        "minStorageBufferOffsetAlignment": 16,
+        "minUniformBufferOffsetAlignment": 16
+      },
+      "deviceLimits": {
+        "maxBindGroups": 4,
+        "maxBindGroupsPlusVertexBuffers": 24,
+        "maxBindingsPerBindGroup": 1000,
+        "maxBufferSize": 268435456,
+        "maxColorAttachmentBytesPerSample": 32,
+        "maxColorAttachments": 8,
+        "maxComputeInvocationsPerWorkgroup": 256,
+        "maxComputeWorkgroupSizeX": 256,
+        "maxComputeWorkgroupSizeY": 256,
+        "maxComputeWorkgroupSizeZ": 64,
+        "maxComputeWorkgroupStorageSize": 16384,
+        "maxComputeWorkgroupsPerDimension": 65535,
+        "maxDynamicStorageBuffersPerPipelineLayout": 4,
+        "maxDynamicUniformBuffersPerPipelineLayout": 8,
+        "maxImmediateSize": 0,
+        "maxInterStageShaderVariables": 16,
+        "maxSampledTexturesPerShaderStage": 16,
+        "maxSamplersPerShaderStage": 16,
+        "maxStorageBufferBindingSize": 134217728,
+        "maxStorageBuffersInFragmentStage": 8,
+        "maxStorageBuffersInVertexStage": 8,
+        "maxStorageBuffersPerShaderStage": 8,
+        "maxStorageTexturesInFragmentStage": 4,
+        "maxStorageTexturesInVertexStage": 4,
+        "maxStorageTexturesPerShaderStage": 4,
+        "maxTextureArrayLayers": 256,
+        "maxTextureDimension1D": 8192,
+        "maxTextureDimension2D": 8192,
+        "maxTextureDimension3D": 2048,
+        "maxUniformBufferBindingSize": 65536,
+        "maxUniformBuffersPerShaderStage": 12,
+        "maxVertexAttributes": 16,
+        "maxVertexBufferArrayStride": 2048,
+        "maxVertexBuffers": 8,
+        "minStorageBufferOffsetAlignment": 256,
+        "minUniformBufferOffsetAlignment": 256
+      },
+      "readbackMode": "mapAsync-host-copy",
+      "actualReadbackPaths": [
+        "mapped-range-host-copy"
+      ],
+      "measurements": [
+        {
+          "runIndex": 1,
+          "operationHostMs": 4.149771,
+          "processWallMs": 218.9762369962409,
+          "processCpuMs": 225.229,
+          "maximumIndividualChildRssKiB": 99592,
+          "initNs": 48605656,
+          "subphasesMs": {
+            "encodeMs": 0.032298,
+            "executionMs": 4.149771,
+            "gpuTimestampMs": null,
+            "setupMs": 1.769406,
+            "submitWaitMs": 2.348067
+          },
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "buffer_capture_0_9301",
+              "byteLength": 1048576,
+              "captureOffset": 0,
+              "captureSize": 1048576,
+              "captureSourceBufferId": "buffer_9301",
+              "decodedU32Le": 1034028181,
+              "repeatIndex": 0,
+              "sha256": "77ddbb33d6d9ea7633eb24d312009bd35f6cffc0e716e09a9cb6a6ee4e367f01",
+              "stepId": "step-0-capture-read",
+              "stepIndex": 2
+            }
+          ]
+        },
+        {
+          "runIndex": 2,
+          "operationHostMs": 3.84883,
+          "processWallMs": 224.08654198807199,
+          "processCpuMs": 232.93600000000004,
+          "maximumIndividualChildRssKiB": 99532,
+          "initNs": 48820524,
+          "subphasesMs": {
+            "encodeMs": 0.039639,
+            "executionMs": 3.84883,
+            "gpuTimestampMs": null,
+            "setupMs": 1.64383,
+            "submitWaitMs": 2.165361
+          },
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "buffer_capture_0_9301",
+              "byteLength": 1048576,
+              "captureOffset": 0,
+              "captureSize": 1048576,
+              "captureSourceBufferId": "buffer_9301",
+              "decodedU32Le": 1034028181,
+              "repeatIndex": 0,
+              "sha256": "77ddbb33d6d9ea7633eb24d312009bd35f6cffc0e716e09a9cb6a6ee4e367f01",
+              "stepId": "step-0-capture-read",
+              "stepIndex": 2
+            }
+          ]
+        },
+        {
+          "runIndex": 3,
+          "operationHostMs": 4.291664,
+          "processWallMs": 203.2237899984466,
+          "processCpuMs": 226.155,
+          "maximumIndividualChildRssKiB": 99372,
+          "initNs": 51277488,
+          "subphasesMs": {
+            "encodeMs": 0.037006,
+            "executionMs": 4.291664,
+            "gpuTimestampMs": null,
+            "setupMs": 1.759131,
+            "submitWaitMs": 2.495527
+          },
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "buffer_capture_0_9301",
+              "byteLength": 1048576,
+              "captureOffset": 0,
+              "captureSize": 1048576,
+              "captureSourceBufferId": "buffer_9301",
+              "decodedU32Le": 1034028181,
+              "repeatIndex": 0,
+              "sha256": "77ddbb33d6d9ea7633eb24d312009bd35f6cffc0e716e09a9cb6a6ee4e367f01",
+              "stepId": "step-0-capture-read",
+              "stepIndex": 2
+            }
+          ]
+        },
+        {
+          "runIndex": 4,
+          "operationHostMs": 3.8294,
+          "processWallMs": 203.30449999892153,
+          "processCpuMs": 226.1369999999998,
+          "maximumIndividualChildRssKiB": 99600,
+          "initNs": 47226390,
+          "subphasesMs": {
+            "encodeMs": 0.035714,
+            "executionMs": 3.8294,
+            "gpuTimestampMs": null,
+            "setupMs": 1.777379,
+            "submitWaitMs": 2.016307
+          },
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "buffer_capture_0_9301",
+              "byteLength": 1048576,
+              "captureOffset": 0,
+              "captureSize": 1048576,
+              "captureSourceBufferId": "buffer_9301",
+              "decodedU32Le": 1034028181,
+              "repeatIndex": 0,
+              "sha256": "77ddbb33d6d9ea7633eb24d312009bd35f6cffc0e716e09a9cb6a6ee4e367f01",
+              "stepId": "step-0-capture-read",
+              "stepIndex": 2
+            }
+          ]
+        },
+        {
+          "runIndex": 5,
+          "operationHostMs": 3.762115,
+          "processWallMs": 212.23776899569202,
+          "processCpuMs": 228.15500000000011,
+          "maximumIndividualChildRssKiB": 99940,
+          "initNs": 48371789,
+          "subphasesMs": {
+            "encodeMs": 0.036054,
+            "executionMs": 3.762115,
+            "gpuTimestampMs": null,
+            "setupMs": 1.493974,
+            "submitWaitMs": 2.232087
+          },
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "buffer_capture_0_9301",
+              "byteLength": 1048576,
+              "captureOffset": 0,
+              "captureSize": 1048576,
+              "captureSourceBufferId": "buffer_9301",
+              "decodedU32Le": 1034028181,
+              "repeatIndex": 0,
+              "sha256": "77ddbb33d6d9ea7633eb24d312009bd35f6cffc0e716e09a9cb6a6ee4e367f01",
+              "stepId": "step-0-capture-read",
+              "stepIndex": 2
+            }
+          ]
+        },
+        {
+          "runIndex": 6,
+          "operationHostMs": 3.343691,
+          "processWallMs": 203.57761599007063,
+          "processCpuMs": 223.26500000000004,
+          "maximumIndividualChildRssKiB": 99404,
+          "initNs": 46091530,
+          "subphasesMs": {
+            "encodeMs": 0.036615,
+            "executionMs": 3.343691,
+            "gpuTimestampMs": null,
+            "setupMs": 1.380974,
+            "submitWaitMs": 1.926102
+          },
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "buffer_capture_0_9301",
+              "byteLength": 1048576,
+              "captureOffset": 0,
+              "captureSize": 1048576,
+              "captureSourceBufferId": "buffer_9301",
+              "decodedU32Le": 1034028181,
+              "repeatIndex": 0,
+              "sha256": "77ddbb33d6d9ea7633eb24d312009bd35f6cffc0e716e09a9cb6a6ee4e367f01",
+              "stepId": "step-0-capture-read",
+              "stepIndex": 2
+            }
+          ]
+        },
+        {
+          "runIndex": 7,
+          "operationHostMs": 3.592105,
+          "processWallMs": 226.9851079909131,
+          "processCpuMs": 242.55499999999986,
+          "maximumIndividualChildRssKiB": 99380,
+          "initNs": 50752950,
+          "subphasesMs": {
+            "encodeMs": 0.036084,
+            "executionMs": 3.592105,
+            "gpuTimestampMs": null,
+            "setupMs": 1.460534,
+            "submitWaitMs": 2.095487
+          },
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "buffer_capture_0_9301",
+              "byteLength": 1048576,
+              "captureOffset": 0,
+              "captureSize": 1048576,
+              "captureSourceBufferId": "buffer_9301",
+              "decodedU32Le": 1034028181,
+              "repeatIndex": 0,
+              "sha256": "77ddbb33d6d9ea7633eb24d312009bd35f6cffc0e716e09a9cb6a6ee4e367f01",
+              "stepId": "step-0-capture-read",
+              "stepIndex": 2
+            }
+          ]
+        },
+        {
+          "runIndex": 8,
+          "operationHostMs": 3.4912,
+          "processWallMs": 203.10229700407945,
+          "processCpuMs": 223.0000000000003,
+          "maximumIndividualChildRssKiB": 99772,
+          "initNs": 47802535,
+          "subphasesMs": {
+            "encodeMs": 0.032679,
+            "executionMs": 3.4912,
+            "gpuTimestampMs": null,
+            "setupMs": 1.489936,
+            "submitWaitMs": 1.968585
+          },
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "buffer_capture_0_9301",
+              "byteLength": 1048576,
+              "captureOffset": 0,
+              "captureSize": 1048576,
+              "captureSourceBufferId": "buffer_9301",
+              "decodedU32Le": 1034028181,
+              "repeatIndex": 0,
+              "sha256": "77ddbb33d6d9ea7633eb24d312009bd35f6cffc0e716e09a9cb6a6ee4e367f01",
+              "stepId": "step-0-capture-read",
+              "stepIndex": 2
+            }
+          ]
+        },
+        {
+          "runIndex": 9,
+          "operationHostMs": 3.944403,
+          "processWallMs": 220.88188199268188,
+          "processCpuMs": 234.69499999999988,
+          "maximumIndividualChildRssKiB": 99692,
+          "initNs": 47262586,
+          "subphasesMs": {
+            "encodeMs": 0.035122,
+            "executionMs": 3.944403,
+            "gpuTimestampMs": null,
+            "setupMs": 1.667965,
+            "submitWaitMs": 2.241316
+          },
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "buffer_capture_0_9301",
+              "byteLength": 1048576,
+              "captureOffset": 0,
+              "captureSize": 1048576,
+              "captureSourceBufferId": "buffer_9301",
+              "decodedU32Le": 1034028181,
+              "repeatIndex": 0,
+              "sha256": "77ddbb33d6d9ea7633eb24d312009bd35f6cffc0e716e09a9cb6a6ee4e367f01",
+              "stepId": "step-0-capture-read",
+              "stepIndex": 2
+            }
+          ]
+        },
+        {
+          "runIndex": 10,
+          "operationHostMs": 3.679086,
+          "processWallMs": 219.13088799919933,
+          "processCpuMs": 231.4289999999999,
+          "maximumIndividualChildRssKiB": 99240,
+          "initNs": 44932525,
+          "subphasesMs": {
+            "encodeMs": 0.034482,
+            "executionMs": 3.679086,
+            "gpuTimestampMs": null,
+            "setupMs": 1.602577,
+            "submitWaitMs": 2.042027
+          },
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "buffer_capture_0_9301",
+              "byteLength": 1048576,
+              "captureOffset": 0,
+              "captureSize": 1048576,
+              "captureSourceBufferId": "buffer_9301",
+              "decodedU32Le": 1034028181,
+              "repeatIndex": 0,
+              "sha256": "77ddbb33d6d9ea7633eb24d312009bd35f6cffc0e716e09a9cb6a6ee4e367f01",
+              "stepId": "step-0-capture-read",
+              "stepIndex": 2
+            }
+          ]
+        },
+        {
+          "runIndex": 11,
+          "operationHostMs": 4.684497,
+          "processWallMs": 211.27082900784444,
+          "processCpuMs": 229.9920000000002,
+          "maximumIndividualChildRssKiB": 99412,
+          "initNs": 47530517,
+          "subphasesMs": {
+            "encodeMs": 0.036585,
+            "executionMs": 4.684497,
+            "gpuTimestampMs": null,
+            "setupMs": 2.29701,
+            "submitWaitMs": 2.350902
+          },
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "buffer_capture_0_9301",
+              "byteLength": 1048576,
+              "captureOffset": 0,
+              "captureSize": 1048576,
+              "captureSourceBufferId": "buffer_9301",
+              "decodedU32Le": 1034028181,
+              "repeatIndex": 0,
+              "sha256": "77ddbb33d6d9ea7633eb24d312009bd35f6cffc0e716e09a9cb6a6ee4e367f01",
+              "stepId": "step-0-capture-read",
+              "stepIndex": 2
+            }
+          ]
+        },
+        {
+          "runIndex": 12,
+          "operationHostMs": 3.564646,
+          "processWallMs": 218.95684199989773,
+          "processCpuMs": 229.73299999999952,
+          "maximumIndividualChildRssKiB": 99608,
+          "initNs": 46632243,
+          "subphasesMs": {
+            "encodeMs": 0.034873,
+            "executionMs": 3.564646,
+            "gpuTimestampMs": null,
+            "setupMs": 1.572983,
+            "submitWaitMs": 1.95679
+          },
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "buffer_capture_0_9301",
+              "byteLength": 1048576,
+              "captureOffset": 0,
+              "captureSize": 1048576,
+              "captureSourceBufferId": "buffer_9301",
+              "decodedU32Le": 1034028181,
+              "repeatIndex": 0,
+              "sha256": "77ddbb33d6d9ea7633eb24d312009bd35f6cffc0e716e09a9cb6a6ee4e367f01",
+              "stepId": "step-0-capture-read",
+              "stepIndex": 2
+            }
+          ]
+        },
+        {
+          "runIndex": 13,
+          "operationHostMs": 3.785486,
+          "processWallMs": 210.5317209934583,
+          "processCpuMs": 218.5560000000004,
+          "maximumIndividualChildRssKiB": 99416,
+          "initNs": 45358585,
+          "subphasesMs": {
+            "encodeMs": 0.041993,
+            "executionMs": 3.785486,
+            "gpuTimestampMs": null,
+            "setupMs": 1.639282,
+            "submitWaitMs": 2.104211
+          },
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "buffer_capture_0_9301",
+              "byteLength": 1048576,
+              "captureOffset": 0,
+              "captureSize": 1048576,
+              "captureSourceBufferId": "buffer_9301",
+              "decodedU32Le": 1034028181,
+              "repeatIndex": 0,
+              "sha256": "77ddbb33d6d9ea7633eb24d312009bd35f6cffc0e716e09a9cb6a6ee4e367f01",
+              "stepId": "step-0-capture-read",
+              "stepIndex": 2
+            }
+          ]
+        },
+        {
+          "runIndex": 14,
+          "operationHostMs": 3.374098,
+          "processWallMs": 200.16815001145005,
+          "processCpuMs": 220.0599999999997,
+          "maximumIndividualChildRssKiB": 99668,
+          "initNs": 46150054,
+          "subphasesMs": {
+            "encodeMs": 0.038739,
+            "executionMs": 3.374098,
+            "gpuTimestampMs": null,
+            "setupMs": 1.381145,
+            "submitWaitMs": 1.954214
+          },
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "buffer_capture_0_9301",
+              "byteLength": 1048576,
+              "captureOffset": 0,
+              "captureSize": 1048576,
+              "captureSourceBufferId": "buffer_9301",
+              "decodedU32Le": 1034028181,
+              "repeatIndex": 0,
+              "sha256": "77ddbb33d6d9ea7633eb24d312009bd35f6cffc0e716e09a9cb6a6ee4e367f01",
+              "stepId": "step-0-capture-read",
+              "stepIndex": 2
+            }
+          ]
+        },
+        {
+          "runIndex": 15,
+          "operationHostMs": 3.691193,
+          "processWallMs": 198.75143800163642,
+          "processCpuMs": 208.3170000000001,
+          "maximumIndividualChildRssKiB": 99508,
+          "initNs": 44526130,
+          "subphasesMs": {
+            "encodeMs": 0.036485,
+            "executionMs": 3.691193,
+            "gpuTimestampMs": null,
+            "setupMs": 1.581304,
+            "submitWaitMs": 2.073404
+          },
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "buffer_capture_0_9301",
+              "byteLength": 1048576,
+              "captureOffset": 0,
+              "captureSize": 1048576,
+              "captureSourceBufferId": "buffer_9301",
+              "decodedU32Le": 1034028181,
+              "repeatIndex": 0,
+              "sha256": "77ddbb33d6d9ea7633eb24d312009bd35f6cffc0e716e09a9cb6a6ee4e367f01",
+              "stepId": "step-0-capture-read",
+              "stepIndex": 2
+            }
+          ]
+        },
+        {
+          "runIndex": 16,
+          "operationHostMs": 3.300537,
+          "processWallMs": 213.95463499356993,
+          "processCpuMs": 224.42499999999964,
+          "maximumIndividualChildRssKiB": 99676,
+          "initNs": 49529889,
+          "subphasesMs": {
+            "encodeMs": 0.03341,
+            "executionMs": 3.300537,
+            "gpuTimestampMs": null,
+            "setupMs": 1.316748,
+            "submitWaitMs": 1.950379
+          },
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "buffer_capture_0_9301",
+              "byteLength": 1048576,
+              "captureOffset": 0,
+              "captureSize": 1048576,
+              "captureSourceBufferId": "buffer_9301",
+              "decodedU32Le": 1034028181,
+              "repeatIndex": 0,
+              "sha256": "77ddbb33d6d9ea7633eb24d312009bd35f6cffc0e716e09a9cb6a6ee4e367f01",
+              "stepId": "step-0-capture-read",
+              "stepIndex": 2
+            }
+          ]
+        }
+      ],
+      "medians": {
+        "operationHostMs": 3.726654,
+        "processWallMs": 211.75429900176823,
+        "processCpuMs": 226.1459999999999,
+        "maximumIndividualChildRssKiB": 99562.0,
+        "initNs": 47396551.5
+      }
+    },
+    {
+      "product": "dawn",
+      "executor": "node_webgpu_package",
+      "workload": "package_pipeline_creation_8kernels",
+      "rawReceiptSha256": "a839b91a1625066a889c79fbb3c05aff406c6035460169c707c4116456115a50",
+      "adapterInfo": {
+        "architecture": "software",
+        "description": "llvmpipe: Mesa 25.0.7-2+deb13u1 (LLVM 19.1.7) 0.0.1",
+        "device": "llvmpipe-llvm-19-1-7-256-bits-",
+        "isFallbackAdapter": true,
+        "subgroupMatrixConfigs": [],
+        "subgroupMaxSize": 8,
+        "subgroupMinSize": 8,
+        "vendor": "mesa"
+      },
+      "adapterLimits": {
+        "maxBindGroups": 4,
+        "maxBindGroupsPlusVertexBuffers": 24,
+        "maxBindingsPerBindGroup": 1000,
+        "maxBufferSize": 4294967295,
+        "maxColorAttachmentBytesPerSample": 256,
+        "maxColorAttachments": 8,
+        "maxComputeInvocationsPerWorkgroup": 1024,
+        "maxComputeWorkgroupSizeX": 1024,
+        "maxComputeWorkgroupSizeY": 1024,
+        "maxComputeWorkgroupSizeZ": 1024,
+        "maxComputeWorkgroupStorageSize": 32768,
+        "maxComputeWorkgroupsPerDimension": 65535,
+        "maxDynamicStorageBuffersPerPipelineLayout": 16,
+        "maxDynamicUniformBuffersPerPipelineLayout": 16,
+        "maxImmediateSize": 0,
+        "maxInterStageShaderVariables": 30,
+        "maxSampledTexturesPerShaderStage": 48,
+        "maxSamplersPerShaderStage": 16,
+        "maxStorageBufferBindingSize": 134217728,
+        "maxStorageBuffersInFragmentStage": 16,
+        "maxStorageBuffersInVertexStage": 16,
+        "maxStorageBuffersPerShaderStage": 16,
+        "maxStorageTexturesInFragmentStage": 8,
+        "maxStorageTexturesInVertexStage": 8,
+        "maxStorageTexturesPerShaderStage": 8,
+        "maxTextureArrayLayers": 2048,
+        "maxTextureDimension1D": 16384,
+        "maxTextureDimension2D": 16384,
+        "maxTextureDimension3D": 4096,
+        "maxUniformBufferBindingSize": 65536,
+        "maxUniformBuffersPerShaderStage": 12,
+        "maxVertexAttributes": 30,
+        "maxVertexBufferArrayStride": 2048,
+        "maxVertexBuffers": 8,
+        "minStorageBufferOffsetAlignment": 16,
+        "minUniformBufferOffsetAlignment": 16
+      },
+      "deviceLimits": {
+        "maxBindGroups": 4,
+        "maxBindGroupsPlusVertexBuffers": 24,
+        "maxBindingsPerBindGroup": 1000,
+        "maxBufferSize": 268435456,
+        "maxColorAttachmentBytesPerSample": 32,
+        "maxColorAttachments": 8,
+        "maxComputeInvocationsPerWorkgroup": 256,
+        "maxComputeWorkgroupSizeX": 256,
+        "maxComputeWorkgroupSizeY": 256,
+        "maxComputeWorkgroupSizeZ": 64,
+        "maxComputeWorkgroupStorageSize": 16384,
+        "maxComputeWorkgroupsPerDimension": 65535,
+        "maxDynamicStorageBuffersPerPipelineLayout": 4,
+        "maxDynamicUniformBuffersPerPipelineLayout": 8,
+        "maxImmediateSize": 0,
+        "maxInterStageShaderVariables": 16,
+        "maxSampledTexturesPerShaderStage": 16,
+        "maxSamplersPerShaderStage": 16,
+        "maxStorageBufferBindingSize": 134217728,
+        "maxStorageBuffersInFragmentStage": 8,
+        "maxStorageBuffersInVertexStage": 8,
+        "maxStorageBuffersPerShaderStage": 8,
+        "maxStorageTexturesInFragmentStage": 4,
+        "maxStorageTexturesInVertexStage": 4,
+        "maxStorageTexturesPerShaderStage": 4,
+        "maxTextureArrayLayers": 256,
+        "maxTextureDimension1D": 8192,
+        "maxTextureDimension2D": 8192,
+        "maxTextureDimension3D": 2048,
+        "maxUniformBufferBindingSize": 65536,
+        "maxUniformBuffersPerShaderStage": 12,
+        "maxVertexAttributes": 16,
+        "maxVertexBufferArrayStride": 2048,
+        "maxVertexBuffers": 8,
+        "minStorageBufferOffsetAlignment": 256,
+        "minUniformBufferOffsetAlignment": 256
+      },
+      "readbackMode": "mapAsync-host-copy",
+      "actualReadbackPaths": [
+        "mapped-range-host-copy"
+      ],
+      "measurements": [
+        {
+          "runIndex": 1,
+          "operationHostMs": 83.299885,
+          "processWallMs": 300.38058100035414,
+          "processCpuMs": 416.7310000000004,
+          "maximumIndividualChildRssKiB": 125808,
+          "initNs": 44853641,
+          "subphasesMs": {
+            "encodeMs": 0.061335,
+            "executionMs": 83.299885,
+            "gpuTimestampMs": null,
+            "setupMs": 6.453693,
+            "submitWaitMs": 76.784857
+          },
+          "successCount": 10,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "pipeline_readback",
+              "byteLength": 32,
+              "decodedU32Le": 1,
+              "repeatIndex": 0,
+              "sha256": "8b4b2444e57aed8c2d05a1293255da1b048c63224317d4666230760935fa4a18",
+              "stepId": "step-9",
+              "stepIndex": 9
+            }
+          ]
+        },
+        {
+          "runIndex": 2,
+          "operationHostMs": 87.366833,
+          "processWallMs": 334.62560099724215,
+          "processCpuMs": 467.05799999999977,
+          "maximumIndividualChildRssKiB": 125444,
+          "initNs": 51021275,
+          "subphasesMs": {
+            "encodeMs": 0.165808,
+            "executionMs": 87.366833,
+            "gpuTimestampMs": null,
+            "setupMs": 12.924445,
+            "submitWaitMs": 74.27658
+          },
+          "successCount": 10,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "pipeline_readback",
+              "byteLength": 32,
+              "decodedU32Le": 1,
+              "repeatIndex": 0,
+              "sha256": "8b4b2444e57aed8c2d05a1293255da1b048c63224317d4666230760935fa4a18",
+              "stepId": "step-9",
+              "stepIndex": 9
+            }
+          ]
+        },
+        {
+          "runIndex": 3,
+          "operationHostMs": 76.131826,
+          "processWallMs": 279.36882499489,
+          "processCpuMs": 389.5110000000006,
+          "maximumIndividualChildRssKiB": 125308,
+          "initNs": 46398362,
+          "subphasesMs": {
+            "encodeMs": 0.094793,
+            "executionMs": 76.131826,
+            "gpuTimestampMs": null,
+            "setupMs": 6.38545,
+            "submitWaitMs": 69.651583
+          },
+          "successCount": 10,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "pipeline_readback",
+              "byteLength": 32,
+              "decodedU32Le": 1,
+              "repeatIndex": 0,
+              "sha256": "8b4b2444e57aed8c2d05a1293255da1b048c63224317d4666230760935fa4a18",
+              "stepId": "step-9",
+              "stepIndex": 9
+            }
+          ]
+        },
+        {
+          "runIndex": 4,
+          "operationHostMs": 64.135699,
+          "processWallMs": 271.8150919972686,
+          "processCpuMs": 373.4529999999996,
+          "maximumIndividualChildRssKiB": 125396,
+          "initNs": 43860080,
+          "subphasesMs": {
+            "encodeMs": 0.060209,
+            "executionMs": 64.135699,
+            "gpuTimestampMs": null,
+            "setupMs": 7.821948,
+            "submitWaitMs": 56.253542
+          },
+          "successCount": 10,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "pipeline_readback",
+              "byteLength": 32,
+              "decodedU32Le": 1,
+              "repeatIndex": 0,
+              "sha256": "8b4b2444e57aed8c2d05a1293255da1b048c63224317d4666230760935fa4a18",
+              "stepId": "step-9",
+              "stepIndex": 9
+            }
+          ]
+        },
+        {
+          "runIndex": 5,
+          "operationHostMs": 86.835644,
+          "processWallMs": 294.30608300026506,
+          "processCpuMs": 417.03199999999987,
+          "maximumIndividualChildRssKiB": 124916,
+          "initNs": 44725145,
+          "subphasesMs": {
+            "encodeMs": 0.059338,
+            "executionMs": 86.835644,
+            "gpuTimestampMs": null,
+            "setupMs": 6.593312,
+            "submitWaitMs": 80.182994
+          },
+          "successCount": 10,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "pipeline_readback",
+              "byteLength": 32,
+              "decodedU32Le": 1,
+              "repeatIndex": 0,
+              "sha256": "8b4b2444e57aed8c2d05a1293255da1b048c63224317d4666230760935fa4a18",
+              "stepId": "step-9",
+              "stepIndex": 9
+            }
+          ]
+        },
+        {
+          "runIndex": 6,
+          "operationHostMs": 79.695313,
+          "processWallMs": 292.35982600948773,
+          "processCpuMs": 415.3070000000003,
+          "maximumIndividualChildRssKiB": 125516,
+          "initNs": 48402152,
+          "subphasesMs": {
+            "encodeMs": 0.061142,
+            "executionMs": 79.695313,
+            "gpuTimestampMs": null,
+            "setupMs": 7.452502,
+            "submitWaitMs": 72.181669
+          },
+          "successCount": 10,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "pipeline_readback",
+              "byteLength": 32,
+              "decodedU32Le": 1,
+              "repeatIndex": 0,
+              "sha256": "8b4b2444e57aed8c2d05a1293255da1b048c63224317d4666230760935fa4a18",
+              "stepId": "step-9",
+              "stepIndex": 9
+            }
+          ]
+        },
+        {
+          "runIndex": 7,
+          "operationHostMs": 75.287801,
+          "processWallMs": 300.15062999154907,
+          "processCpuMs": 403.9510000000002,
+          "maximumIndividualChildRssKiB": 125348,
+          "initNs": 52442263,
+          "subphasesMs": {
+            "encodeMs": 0.062435,
+            "executionMs": 75.287801,
+            "gpuTimestampMs": null,
+            "setupMs": 7.16424,
+            "submitWaitMs": 68.061126
+          },
+          "successCount": 10,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "pipeline_readback",
+              "byteLength": 32,
+              "decodedU32Le": 1,
+              "repeatIndex": 0,
+              "sha256": "8b4b2444e57aed8c2d05a1293255da1b048c63224317d4666230760935fa4a18",
+              "stepId": "step-9",
+              "stepIndex": 9
+            }
+          ]
+        },
+        {
+          "runIndex": 8,
+          "operationHostMs": 71.646284,
+          "processWallMs": 288.9876059925882,
+          "processCpuMs": 395.92500000000007,
+          "maximumIndividualChildRssKiB": 125032,
+          "initNs": 46069339,
+          "subphasesMs": {
+            "encodeMs": 0.094262,
+            "executionMs": 71.646284,
+            "gpuTimestampMs": null,
+            "setupMs": 6.547663,
+            "submitWaitMs": 65.004359
+          },
+          "successCount": 10,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "pipeline_readback",
+              "byteLength": 32,
+              "decodedU32Le": 1,
+              "repeatIndex": 0,
+              "sha256": "8b4b2444e57aed8c2d05a1293255da1b048c63224317d4666230760935fa4a18",
+              "stepId": "step-9",
+              "stepIndex": 9
+            }
+          ]
+        },
+        {
+          "runIndex": 9,
+          "operationHostMs": 96.681713,
+          "processWallMs": 312.294148010551,
+          "processCpuMs": 443.0329999999998,
+          "maximumIndividualChildRssKiB": 125804,
+          "initNs": 55281408,
+          "subphasesMs": {
+            "encodeMs": 0.144007,
+            "executionMs": 96.681713,
+            "gpuTimestampMs": null,
+            "setupMs": 7.164369,
+            "submitWaitMs": 89.373337
+          },
+          "successCount": 10,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "pipeline_readback",
+              "byteLength": 32,
+              "decodedU32Le": 1,
+              "repeatIndex": 0,
+              "sha256": "8b4b2444e57aed8c2d05a1293255da1b048c63224317d4666230760935fa4a18",
+              "stepId": "step-9",
+              "stepIndex": 9
+            }
+          ]
+        },
+        {
+          "runIndex": 10,
+          "operationHostMs": 87.255182,
+          "processWallMs": 304.8850399936782,
+          "processCpuMs": 434.2209999999991,
+          "maximumIndividualChildRssKiB": 125360,
+          "initNs": 52213856,
+          "subphasesMs": {
+            "encodeMs": 0.069195,
+            "executionMs": 87.255182,
+            "gpuTimestampMs": null,
+            "setupMs": 9.088098,
+            "submitWaitMs": 78.097889
+          },
+          "successCount": 10,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "pipeline_readback",
+              "byteLength": 32,
+              "decodedU32Le": 1,
+              "repeatIndex": 0,
+              "sha256": "8b4b2444e57aed8c2d05a1293255da1b048c63224317d4666230760935fa4a18",
+              "stepId": "step-9",
+              "stepIndex": 9
+            }
+          ]
+        },
+        {
+          "runIndex": 11,
+          "operationHostMs": 89.162813,
+          "processWallMs": 321.3642300106585,
+          "processCpuMs": 442.1040000000005,
+          "maximumIndividualChildRssKiB": 124824,
+          "initNs": 47224128,
+          "subphasesMs": {
+            "encodeMs": 0.061028,
+            "executionMs": 89.162813,
+            "gpuTimestampMs": null,
+            "setupMs": 6.808545,
+            "submitWaitMs": 82.29324
+          },
+          "successCount": 10,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "pipeline_readback",
+              "byteLength": 32,
+              "decodedU32Le": 1,
+              "repeatIndex": 0,
+              "sha256": "8b4b2444e57aed8c2d05a1293255da1b048c63224317d4666230760935fa4a18",
+              "stepId": "step-9",
+              "stepIndex": 9
+            }
+          ]
+        },
+        {
+          "runIndex": 12,
+          "operationHostMs": 75.401622,
+          "processWallMs": 300.36251300771255,
+          "processCpuMs": 414.1950000000012,
+          "maximumIndividualChildRssKiB": 124820,
+          "initNs": 48642271,
+          "subphasesMs": {
+            "encodeMs": 0.0721,
+            "executionMs": 75.401622,
+            "gpuTimestampMs": null,
+            "setupMs": 7.426364,
+            "submitWaitMs": 67.903158
+          },
+          "successCount": 10,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "pipeline_readback",
+              "byteLength": 32,
+              "decodedU32Le": 1,
+              "repeatIndex": 0,
+              "sha256": "8b4b2444e57aed8c2d05a1293255da1b048c63224317d4666230760935fa4a18",
+              "stepId": "step-9",
+              "stepIndex": 9
+            }
+          ]
+        },
+        {
+          "runIndex": 13,
+          "operationHostMs": 80.781535,
+          "processWallMs": 292.7988000010373,
+          "processCpuMs": 419.7629999999979,
+          "maximumIndividualChildRssKiB": 126080,
+          "initNs": 50652130,
+          "subphasesMs": {
+            "encodeMs": 0.061343,
+            "executionMs": 80.781535,
+            "gpuTimestampMs": null,
+            "setupMs": 7.81738,
+            "submitWaitMs": 72.902812
+          },
+          "successCount": 10,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "pipeline_readback",
+              "byteLength": 32,
+              "decodedU32Le": 1,
+              "repeatIndex": 0,
+              "sha256": "8b4b2444e57aed8c2d05a1293255da1b048c63224317d4666230760935fa4a18",
+              "stepId": "step-9",
+              "stepIndex": 9
+            }
+          ]
+        },
+        {
+          "runIndex": 14,
+          "operationHostMs": 76.061831,
+          "processWallMs": 293.36567599966656,
+          "processCpuMs": 399.6380000000013,
+          "maximumIndividualChildRssKiB": 125492,
+          "initNs": 50950448,
+          "subphasesMs": {
+            "encodeMs": 0.061202,
+            "executionMs": 76.061831,
+            "gpuTimestampMs": null,
+            "setupMs": 7.983901,
+            "submitWaitMs": 68.016728
+          },
+          "successCount": 10,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "pipeline_readback",
+              "byteLength": 32,
+              "decodedU32Le": 1,
+              "repeatIndex": 0,
+              "sha256": "8b4b2444e57aed8c2d05a1293255da1b048c63224317d4666230760935fa4a18",
+              "stepId": "step-9",
+              "stepIndex": 9
+            }
+          ]
+        },
+        {
+          "runIndex": 15,
+          "operationHostMs": 89.993898,
+          "processWallMs": 300.55509800149594,
+          "processCpuMs": 427.59599999999944,
+          "maximumIndividualChildRssKiB": 124112,
+          "initNs": 50418975,
+          "subphasesMs": {
+            "encodeMs": 0.103098,
+            "executionMs": 89.993898,
+            "gpuTimestampMs": null,
+            "setupMs": 8.824123,
+            "submitWaitMs": 81.066677
+          },
+          "successCount": 10,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "pipeline_readback",
+              "byteLength": 32,
+              "decodedU32Le": 1,
+              "repeatIndex": 0,
+              "sha256": "8b4b2444e57aed8c2d05a1293255da1b048c63224317d4666230760935fa4a18",
+              "stepId": "step-9",
+              "stepIndex": 9
+            }
+          ]
+        },
+        {
+          "runIndex": 16,
+          "operationHostMs": 86.424292,
+          "processWallMs": 292.4134700006107,
+          "processCpuMs": 424.1109999999999,
+          "maximumIndividualChildRssKiB": 124824,
+          "initNs": 48026887,
+          "subphasesMs": {
+            "encodeMs": 0.061491,
+            "executionMs": 86.424292,
+            "gpuTimestampMs": null,
+            "setupMs": 6.689596,
+            "submitWaitMs": 79.673205
+          },
+          "successCount": 10,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "pipeline_readback",
+              "byteLength": 32,
+              "decodedU32Le": 1,
+              "repeatIndex": 0,
+              "sha256": "8b4b2444e57aed8c2d05a1293255da1b048c63224317d4666230760935fa4a18",
+              "stepId": "step-9",
+              "stepIndex": 9
+            }
+          ]
+        }
+      ],
+      "medians": {
+        "operationHostMs": 82.04071,
+        "processWallMs": 297.22835649590706,
+        "processCpuMs": 416.88150000000013,
+        "maximumIndividualChildRssKiB": 125354.0,
+        "initNs": 48522211.5
+      }
+    },
+    {
+      "product": "dawn",
+      "executor": "node_webgpu_package",
+      "workload": "package_queue_submit_completion",
+      "rawReceiptSha256": "25b064cba1cc4a8a36c5f0ba951de473bafe5e564e4777263030ed20b1f4a437",
+      "adapterInfo": {
+        "architecture": "software",
+        "description": "llvmpipe: Mesa 25.0.7-2+deb13u1 (LLVM 19.1.7) 0.0.1",
+        "device": "llvmpipe-llvm-19-1-7-256-bits-",
+        "isFallbackAdapter": true,
+        "subgroupMatrixConfigs": [],
+        "subgroupMaxSize": 8,
+        "subgroupMinSize": 8,
+        "vendor": "mesa"
+      },
+      "adapterLimits": {
+        "maxBindGroups": 4,
+        "maxBindGroupsPlusVertexBuffers": 24,
+        "maxBindingsPerBindGroup": 1000,
+        "maxBufferSize": 4294967295,
+        "maxColorAttachmentBytesPerSample": 256,
+        "maxColorAttachments": 8,
+        "maxComputeInvocationsPerWorkgroup": 1024,
+        "maxComputeWorkgroupSizeX": 1024,
+        "maxComputeWorkgroupSizeY": 1024,
+        "maxComputeWorkgroupSizeZ": 1024,
+        "maxComputeWorkgroupStorageSize": 32768,
+        "maxComputeWorkgroupsPerDimension": 65535,
+        "maxDynamicStorageBuffersPerPipelineLayout": 16,
+        "maxDynamicUniformBuffersPerPipelineLayout": 16,
+        "maxImmediateSize": 0,
+        "maxInterStageShaderVariables": 30,
+        "maxSampledTexturesPerShaderStage": 48,
+        "maxSamplersPerShaderStage": 16,
+        "maxStorageBufferBindingSize": 134217728,
+        "maxStorageBuffersInFragmentStage": 16,
+        "maxStorageBuffersInVertexStage": 16,
+        "maxStorageBuffersPerShaderStage": 16,
+        "maxStorageTexturesInFragmentStage": 8,
+        "maxStorageTexturesInVertexStage": 8,
+        "maxStorageTexturesPerShaderStage": 8,
+        "maxTextureArrayLayers": 2048,
+        "maxTextureDimension1D": 16384,
+        "maxTextureDimension2D": 16384,
+        "maxTextureDimension3D": 4096,
+        "maxUniformBufferBindingSize": 65536,
+        "maxUniformBuffersPerShaderStage": 12,
+        "maxVertexAttributes": 30,
+        "maxVertexBufferArrayStride": 2048,
+        "maxVertexBuffers": 8,
+        "minStorageBufferOffsetAlignment": 16,
+        "minUniformBufferOffsetAlignment": 16
+      },
+      "deviceLimits": {
+        "maxBindGroups": 4,
+        "maxBindGroupsPlusVertexBuffers": 24,
+        "maxBindingsPerBindGroup": 1000,
+        "maxBufferSize": 268435456,
+        "maxColorAttachmentBytesPerSample": 32,
+        "maxColorAttachments": 8,
+        "maxComputeInvocationsPerWorkgroup": 256,
+        "maxComputeWorkgroupSizeX": 256,
+        "maxComputeWorkgroupSizeY": 256,
+        "maxComputeWorkgroupSizeZ": 64,
+        "maxComputeWorkgroupStorageSize": 16384,
+        "maxComputeWorkgroupsPerDimension": 65535,
+        "maxDynamicStorageBuffersPerPipelineLayout": 4,
+        "maxDynamicUniformBuffersPerPipelineLayout": 8,
+        "maxImmediateSize": 0,
+        "maxInterStageShaderVariables": 16,
+        "maxSampledTexturesPerShaderStage": 16,
+        "maxSamplersPerShaderStage": 16,
+        "maxStorageBufferBindingSize": 134217728,
+        "maxStorageBuffersInFragmentStage": 8,
+        "maxStorageBuffersInVertexStage": 8,
+        "maxStorageBuffersPerShaderStage": 8,
+        "maxStorageTexturesInFragmentStage": 4,
+        "maxStorageTexturesInVertexStage": 4,
+        "maxStorageTexturesPerShaderStage": 4,
+        "maxTextureArrayLayers": 256,
+        "maxTextureDimension1D": 8192,
+        "maxTextureDimension2D": 8192,
+        "maxTextureDimension3D": 2048,
+        "maxUniformBufferBindingSize": 65536,
+        "maxUniformBuffersPerShaderStage": 12,
+        "maxVertexAttributes": 16,
+        "maxVertexBufferArrayStride": 2048,
+        "maxVertexBuffers": 8,
+        "minStorageBufferOffsetAlignment": 256,
+        "minUniformBufferOffsetAlignment": 256
+      },
+      "readbackMode": "mapAsync-host-copy",
+      "actualReadbackPaths": [
+        "mapped-range-host-copy"
+      ],
+      "measurements": [
+        {
+          "runIndex": 1,
+          "operationHostMs": 15.915391,
+          "processWallMs": 218.8648449955508,
+          "processCpuMs": 252.18899999999957,
+          "maximumIndividualChildRssKiB": 110936,
+          "initNs": 47953358,
+          "subphasesMs": {
+            "encodeMs": 0.041813,
+            "executionMs": 15.915391,
+            "gpuTimestampMs": null,
+            "setupMs": 3.774108,
+            "submitWaitMs": 12.09947
+          },
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "queue_readback",
+              "byteLength": 4,
+              "decodedU32Le": 1,
+              "repeatIndex": 0,
+              "sha256": "67abdd721024f0ff4e0b3f4c2fc13bc5bad42d0b7851d456d88d203d15aaa450",
+              "stepId": "step-2",
+              "stepIndex": 2
+            }
+          ]
+        },
+        {
+          "runIndex": 2,
+          "operationHostMs": 18.064981,
+          "processWallMs": 223.91974600031972,
+          "processCpuMs": 257.91899999999936,
+          "maximumIndividualChildRssKiB": 110528,
+          "initNs": 47409119,
+          "subphasesMs": {
+            "encodeMs": 0.049885,
+            "executionMs": 18.064981,
+            "gpuTimestampMs": null,
+            "setupMs": 3.496641,
+            "submitWaitMs": 14.518455
+          },
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "queue_readback",
+              "byteLength": 4,
+              "decodedU32Le": 1,
+              "repeatIndex": 0,
+              "sha256": "67abdd721024f0ff4e0b3f4c2fc13bc5bad42d0b7851d456d88d203d15aaa450",
+              "stepId": "step-2",
+              "stepIndex": 2
+            }
+          ]
+        },
+        {
+          "runIndex": 3,
+          "operationHostMs": 17.0791,
+          "processWallMs": 231.22445099579636,
+          "processCpuMs": 260.8420000000002,
+          "maximumIndividualChildRssKiB": 112372,
+          "initNs": 45435084,
+          "subphasesMs": {
+            "encodeMs": 0.041683,
+            "executionMs": 17.0791,
+            "gpuTimestampMs": null,
+            "setupMs": 3.616682,
+            "submitWaitMs": 13.420735
+          },
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "queue_readback",
+              "byteLength": 4,
+              "decodedU32Le": 1,
+              "repeatIndex": 0,
+              "sha256": "67abdd721024f0ff4e0b3f4c2fc13bc5bad42d0b7851d456d88d203d15aaa450",
+              "stepId": "step-2",
+              "stepIndex": 2
+            }
+          ]
+        },
+        {
+          "runIndex": 4,
+          "operationHostMs": 16.833401,
+          "processWallMs": 227.82759099209215,
+          "processCpuMs": 262.49500000000126,
+          "maximumIndividualChildRssKiB": 110788,
+          "initNs": 48806277,
+          "subphasesMs": {
+            "encodeMs": 0.045809,
+            "executionMs": 16.833401,
+            "gpuTimestampMs": null,
+            "setupMs": 3.953208,
+            "submitWaitMs": 12.834384
+          },
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "queue_readback",
+              "byteLength": 4,
+              "decodedU32Le": 1,
+              "repeatIndex": 0,
+              "sha256": "67abdd721024f0ff4e0b3f4c2fc13bc5bad42d0b7851d456d88d203d15aaa450",
+              "stepId": "step-2",
+              "stepIndex": 2
+            }
+          ]
+        },
+        {
+          "runIndex": 5,
+          "operationHostMs": 16.179702,
+          "processWallMs": 239.5477639947785,
+          "processCpuMs": 271.7229999999979,
+          "maximumIndividualChildRssKiB": 112112,
+          "initNs": 50633880,
+          "subphasesMs": {
+            "encodeMs": 0.041603,
+            "executionMs": 16.179702,
+            "gpuTimestampMs": null,
+            "setupMs": 3.765506,
+            "submitWaitMs": 12.372593
+          },
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "queue_readback",
+              "byteLength": 4,
+              "decodedU32Le": 1,
+              "repeatIndex": 0,
+              "sha256": "67abdd721024f0ff4e0b3f4c2fc13bc5bad42d0b7851d456d88d203d15aaa450",
+              "stepId": "step-2",
+              "stepIndex": 2
+            }
+          ]
+        },
+        {
+          "runIndex": 6,
+          "operationHostMs": 19.068335,
+          "processWallMs": 221.789492003154,
+          "processCpuMs": 257.0830000000015,
+          "maximumIndividualChildRssKiB": 110916,
+          "initNs": 46210171,
+          "subphasesMs": {
+            "encodeMs": 0.05967,
+            "executionMs": 19.068335,
+            "gpuTimestampMs": null,
+            "setupMs": 4.229493,
+            "submitWaitMs": 14.779172
+          },
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "queue_readback",
+              "byteLength": 4,
+              "decodedU32Le": 1,
+              "repeatIndex": 0,
+              "sha256": "67abdd721024f0ff4e0b3f4c2fc13bc5bad42d0b7851d456d88d203d15aaa450",
+              "stepId": "step-2",
+              "stepIndex": 2
+            }
+          ]
+        },
+        {
+          "runIndex": 7,
+          "operationHostMs": 16.802678,
+          "processWallMs": 223.66278599656653,
+          "processCpuMs": 260.5310000000003,
+          "maximumIndividualChildRssKiB": 111188,
+          "initNs": 45194510,
+          "subphasesMs": {
+            "encodeMs": 0.044227,
+            "executionMs": 16.802678,
+            "gpuTimestampMs": null,
+            "setupMs": 3.858145,
+            "submitWaitMs": 12.900306
+          },
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "queue_readback",
+              "byteLength": 4,
+              "decodedU32Le": 1,
+              "repeatIndex": 0,
+              "sha256": "67abdd721024f0ff4e0b3f4c2fc13bc5bad42d0b7851d456d88d203d15aaa450",
+              "stepId": "step-2",
+              "stepIndex": 2
+            }
+          ]
+        },
+        {
+          "runIndex": 8,
+          "operationHostMs": 16.861135,
+          "processWallMs": 225.1034289947711,
+          "processCpuMs": 265.42500000000047,
+          "maximumIndividualChildRssKiB": 111448,
+          "initNs": 49683598,
+          "subphasesMs": {
+            "encodeMs": 0.040621,
+            "executionMs": 16.861135,
+            "gpuTimestampMs": null,
+            "setupMs": 3.940518,
+            "submitWaitMs": 12.879996
+          },
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "queue_readback",
+              "byteLength": 4,
+              "decodedU32Le": 1,
+              "repeatIndex": 0,
+              "sha256": "67abdd721024f0ff4e0b3f4c2fc13bc5bad42d0b7851d456d88d203d15aaa450",
+              "stepId": "step-2",
+              "stepIndex": 2
+            }
+          ]
+        },
+        {
+          "runIndex": 9,
+          "operationHostMs": 15.803767,
+          "processWallMs": 211.28875500289723,
+          "processCpuMs": 244.90100000000047,
+          "maximumIndividualChildRssKiB": 111072,
+          "initNs": 46531543,
+          "subphasesMs": {
+            "encodeMs": 0.040291,
+            "executionMs": 15.803767,
+            "gpuTimestampMs": null,
+            "setupMs": 4.077294,
+            "submitWaitMs": 11.686182
+          },
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "queue_readback",
+              "byteLength": 4,
+              "decodedU32Le": 1,
+              "repeatIndex": 0,
+              "sha256": "67abdd721024f0ff4e0b3f4c2fc13bc5bad42d0b7851d456d88d203d15aaa450",
+              "stepId": "step-2",
+              "stepIndex": 2
+            }
+          ]
+        },
+        {
+          "runIndex": 10,
+          "operationHostMs": 15.099618,
+          "processWallMs": 218.7686449906323,
+          "processCpuMs": 249.20799999999764,
+          "maximumIndividualChildRssKiB": 111036,
+          "initNs": 45085417,
+          "subphasesMs": {
+            "encodeMs": 0.03998,
+            "executionMs": 15.099618,
+            "gpuTimestampMs": null,
+            "setupMs": 4.043363,
+            "submitWaitMs": 11.016275
+          },
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "queue_readback",
+              "byteLength": 4,
+              "decodedU32Le": 1,
+              "repeatIndex": 0,
+              "sha256": "67abdd721024f0ff4e0b3f4c2fc13bc5bad42d0b7851d456d88d203d15aaa450",
+              "stepId": "step-2",
+              "stepIndex": 2
+            }
+          ]
+        },
+        {
+          "runIndex": 11,
+          "operationHostMs": 17.965907,
+          "processWallMs": 219.10409799602348,
+          "processCpuMs": 252.5580000000005,
+          "maximumIndividualChildRssKiB": 111096,
+          "initNs": 48687163,
+          "subphasesMs": {
+            "encodeMs": 0.044225,
+            "executionMs": 17.965907,
+            "gpuTimestampMs": null,
+            "setupMs": 4.972989,
+            "submitWaitMs": 12.948693
+          },
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "queue_readback",
+              "byteLength": 4,
+              "decodedU32Le": 1,
+              "repeatIndex": 0,
+              "sha256": "67abdd721024f0ff4e0b3f4c2fc13bc5bad42d0b7851d456d88d203d15aaa450",
+              "stepId": "step-2",
+              "stepIndex": 2
+            }
+          ]
+        },
+        {
+          "runIndex": 12,
+          "operationHostMs": 17.991399,
+          "processWallMs": 227.30513499118388,
+          "processCpuMs": 263.22800000000154,
+          "maximumIndividualChildRssKiB": 110300,
+          "initNs": 54022424,
+          "subphasesMs": {
+            "encodeMs": 0.042024,
+            "executionMs": 17.991399,
+            "gpuTimestampMs": null,
+            "setupMs": 4.149683,
+            "submitWaitMs": 13.799692
+          },
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "queue_readback",
+              "byteLength": 4,
+              "decodedU32Le": 1,
+              "repeatIndex": 0,
+              "sha256": "67abdd721024f0ff4e0b3f4c2fc13bc5bad42d0b7851d456d88d203d15aaa450",
+              "stepId": "step-2",
+              "stepIndex": 2
+            }
+          ]
+        },
+        {
+          "runIndex": 13,
+          "operationHostMs": 14.139196,
+          "processWallMs": 223.44200299994554,
+          "processCpuMs": 257.57299999999896,
+          "maximumIndividualChildRssKiB": 110860,
+          "initNs": 49680679,
+          "subphasesMs": {
+            "encodeMs": 0.040681,
+            "executionMs": 14.139196,
+            "gpuTimestampMs": null,
+            "setupMs": 4.204505,
+            "submitWaitMs": 9.89401
+          },
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "queue_readback",
+              "byteLength": 4,
+              "decodedU32Le": 1,
+              "repeatIndex": 0,
+              "sha256": "67abdd721024f0ff4e0b3f4c2fc13bc5bad42d0b7851d456d88d203d15aaa450",
+              "stepId": "step-2",
+              "stepIndex": 2
+            }
+          ]
+        },
+        {
+          "runIndex": 14,
+          "operationHostMs": 18.789692,
+          "processWallMs": 223.74466300243512,
+          "processCpuMs": 260.5930000000001,
+          "maximumIndividualChildRssKiB": 111124,
+          "initNs": 47263594,
+          "subphasesMs": {
+            "encodeMs": 0.041532,
+            "executionMs": 18.789692,
+            "gpuTimestampMs": null,
+            "setupMs": 4.066999,
+            "submitWaitMs": 14.681161
+          },
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "queue_readback",
+              "byteLength": 4,
+              "decodedU32Le": 1,
+              "repeatIndex": 0,
+              "sha256": "67abdd721024f0ff4e0b3f4c2fc13bc5bad42d0b7851d456d88d203d15aaa450",
+              "stepId": "step-2",
+              "stepIndex": 2
+            }
+          ]
+        },
+        {
+          "runIndex": 15,
+          "operationHostMs": 16.120153,
+          "processWallMs": 223.4652180050034,
+          "processCpuMs": 252.66500000000036,
+          "maximumIndividualChildRssKiB": 110932,
+          "initNs": 49687224,
+          "subphasesMs": {
+            "encodeMs": 0.041542,
+            "executionMs": 16.120153,
+            "gpuTimestampMs": null,
+            "setupMs": 3.898997,
+            "submitWaitMs": 12.179614
+          },
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "queue_readback",
+              "byteLength": 4,
+              "decodedU32Le": 1,
+              "repeatIndex": 0,
+              "sha256": "67abdd721024f0ff4e0b3f4c2fc13bc5bad42d0b7851d456d88d203d15aaa450",
+              "stepId": "step-2",
+              "stepIndex": 2
+            }
+          ]
+        },
+        {
+          "runIndex": 16,
+          "operationHostMs": 18.592144,
+          "processWallMs": 230.93571899516974,
+          "processCpuMs": 262.7259999999989,
+          "maximumIndividualChildRssKiB": 111252,
+          "initNs": 45940321,
+          "subphasesMs": {
+            "encodeMs": 0.04019,
+            "executionMs": 18.592144,
+            "gpuTimestampMs": null,
+            "setupMs": 4.604506,
+            "submitWaitMs": 13.947448
+          },
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "queue_readback",
+              "byteLength": 4,
+              "decodedU32Le": 1,
+              "repeatIndex": 0,
+              "sha256": "67abdd721024f0ff4e0b3f4c2fc13bc5bad42d0b7851d456d88d203d15aaa450",
+              "stepId": "step-2",
+              "stepIndex": 2
+            }
+          ]
+        }
+      ],
+      "medians": {
+        "operationHostMs": 16.847268,
+        "processWallMs": 223.70372449950082,
+        "processCpuMs": 259.2249999999998,
+        "maximumIndividualChildRssKiB": 111054.0,
+        "initNs": 47681238.5
+      }
+    },
+    {
+      "product": "doe",
+      "executor": "doe_node_native_direct",
+      "workload": "package_buffer_upload_readback_exact_1mb",
+      "rawReceiptSha256": "a213680db1cbca8e24a7eb527c48c25ec31e2747736f117b7a708b4ba80ed0c6",
+      "adapterInfo": {
+        "architecture": "",
+        "description": "llvmpipe (LLVM 19.1.7, 256 bits)",
+        "device": "llvmpipe (LLVM 19.1.7, 256 bits)",
+        "deviceID": 0,
+        "driverVersion": 1,
+        "isFallbackAdapter": true,
+        "subgroupMaxSize": 128,
+        "subgroupMinSize": 4,
+        "vendor": "mesa",
+        "vendorID": 65541
+      },
+      "adapterLimits": {
+        "maxBindGroups": 4,
+        "maxBindGroupsPlusVertexBuffers": 24,
+        "maxBindingsPerBindGroup": 1000,
+        "maxBufferSize": 2147483648,
+        "maxColorAttachmentBytesPerSample": 128,
+        "maxColorAttachments": 8,
+        "maxComputeInvocationsPerWorkgroup": 1024,
+        "maxComputeWorkgroupSizeX": 1024,
+        "maxComputeWorkgroupSizeY": 1024,
+        "maxComputeWorkgroupSizeZ": 1024,
+        "maxComputeWorkgroupStorageSize": 32768,
+        "maxComputeWorkgroupsPerDimension": 65535,
+        "maxDynamicStorageBuffersPerPipelineLayout": 10,
+        "maxDynamicUniformBuffersPerPipelineLayout": 12,
+        "maxImmediateSize": 64,
+        "maxInterStageShaderVariables": 32,
+        "maxSampledTexturesPerShaderStage": 16,
+        "maxSamplersPerShaderStage": 16,
+        "maxStorageBufferBindingSize": 134217728,
+        "maxStorageBuffersInFragmentStage": 10,
+        "maxStorageBuffersInVertexStage": 10,
+        "maxStorageBuffersPerShaderStage": 10,
+        "maxStorageTexturesInFragmentStage": 8,
+        "maxStorageTexturesInVertexStage": 8,
+        "maxStorageTexturesPerShaderStage": 8,
+        "maxTextureArrayLayers": 2048,
+        "maxTextureDimension1D": 16384,
+        "maxTextureDimension2D": 16384,
+        "maxTextureDimension3D": 4096,
+        "maxUniformBufferBindingSize": 65536,
+        "maxUniformBuffersPerShaderStage": 12,
+        "maxVertexAttributes": 32,
+        "maxVertexBufferArrayStride": 2048,
+        "maxVertexBuffers": 8,
+        "minStorageBufferOffsetAlignment": 32,
+        "minUniformBufferOffsetAlignment": 32
+      },
+      "deviceLimits": {
+        "maxBindGroups": 4,
+        "maxBindGroupsPlusVertexBuffers": 24,
+        "maxBindingsPerBindGroup": 1000,
+        "maxBufferSize": 268435456,
+        "maxColorAttachmentBytesPerSample": 32,
+        "maxColorAttachments": 8,
+        "maxComputeInvocationsPerWorkgroup": 256,
+        "maxComputeWorkgroupSizeX": 256,
+        "maxComputeWorkgroupSizeY": 256,
+        "maxComputeWorkgroupSizeZ": 64,
+        "maxComputeWorkgroupStorageSize": 16384,
+        "maxComputeWorkgroupsPerDimension": 65535,
+        "maxDynamicStorageBuffersPerPipelineLayout": 4,
+        "maxDynamicUniformBuffersPerPipelineLayout": 8,
+        "maxImmediateSize": 64,
+        "maxInterStageShaderVariables": 16,
+        "maxSampledTexturesPerShaderStage": 16,
+        "maxSamplersPerShaderStage": 16,
+        "maxStorageBufferBindingSize": 134217728,
+        "maxStorageBuffersInFragmentStage": 8,
+        "maxStorageBuffersInVertexStage": 8,
+        "maxStorageBuffersPerShaderStage": 8,
+        "maxStorageTexturesInFragmentStage": 4,
+        "maxStorageTexturesInVertexStage": 4,
+        "maxStorageTexturesPerShaderStage": 4,
+        "maxTextureArrayLayers": 256,
+        "maxTextureDimension1D": 8192,
+        "maxTextureDimension2D": 8192,
+        "maxTextureDimension3D": 2048,
+        "maxUniformBufferBindingSize": 65536,
+        "maxUniformBuffersPerShaderStage": 12,
+        "maxVertexAttributes": 16,
+        "maxVertexBufferArrayStride": 2048,
+        "maxVertexBuffers": 8,
+        "minStorageBufferOffsetAlignment": 256,
+        "minUniformBufferOffsetAlignment": 256
+      },
+      "readbackMode": "mapAsync-host-copy",
+      "actualReadbackPaths": [
+        "mapped-range-host-copy"
+      ],
+      "measurements": [
+        {
+          "runIndex": 1,
+          "operationHostMs": 4.460149,
+          "processWallMs": 218.72943600465078,
+          "processCpuMs": 238.70999999999998,
+          "maximumIndividualChildRssKiB": 97176,
+          "initNs": 60264386,
+          "subphasesMs": {
+            "encodeMs": 0.012359,
+            "executionMs": 4.460149,
+            "gpuTimestampMs": null,
+            "setupMs": 2.146805,
+            "submitWaitMs": 2.300985
+          },
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "buffer_capture_0_9301",
+              "byteLength": 1048576,
+              "captureOffset": 0,
+              "captureSize": 1048576,
+              "captureSourceBufferId": "buffer_9301",
+              "decodedU32Le": 1034028181,
+              "repeatIndex": 0,
+              "sha256": "77ddbb33d6d9ea7633eb24d312009bd35f6cffc0e716e09a9cb6a6ee4e367f01",
+              "stepId": "step-0-capture-read",
+              "stepIndex": 2
+            }
+          ]
+        },
+        {
+          "runIndex": 2,
+          "operationHostMs": 4.383524,
+          "processWallMs": 223.5150229971623,
+          "processCpuMs": 239.57899999999998,
+          "maximumIndividualChildRssKiB": 96864,
+          "initNs": 61062534,
+          "subphasesMs": {
+            "encodeMs": 0.012829,
+            "executionMs": 4.383524,
+            "gpuTimestampMs": null,
+            "setupMs": 1.987866,
+            "submitWaitMs": 2.382829
+          },
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "buffer_capture_0_9301",
+              "byteLength": 1048576,
+              "captureOffset": 0,
+              "captureSize": 1048576,
+              "captureSourceBufferId": "buffer_9301",
+              "decodedU32Le": 1034028181,
+              "repeatIndex": 0,
+              "sha256": "77ddbb33d6d9ea7633eb24d312009bd35f6cffc0e716e09a9cb6a6ee4e367f01",
+              "stepId": "step-0-capture-read",
+              "stepIndex": 2
+            }
+          ]
+        },
+        {
+          "runIndex": 3,
+          "operationHostMs": 4.217797,
+          "processWallMs": 218.35135700530373,
+          "processCpuMs": 241.04400000000004,
+          "maximumIndividualChildRssKiB": 97060,
+          "initNs": 58588884,
+          "subphasesMs": {
+            "encodeMs": 0.012179,
+            "executionMs": 4.217797,
+            "gpuTimestampMs": null,
+            "setupMs": 1.788006,
+            "submitWaitMs": 2.417612
+          },
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "buffer_capture_0_9301",
+              "byteLength": 1048576,
+              "captureOffset": 0,
+              "captureSize": 1048576,
+              "captureSourceBufferId": "buffer_9301",
+              "decodedU32Le": 1034028181,
+              "repeatIndex": 0,
+              "sha256": "77ddbb33d6d9ea7633eb24d312009bd35f6cffc0e716e09a9cb6a6ee4e367f01",
+              "stepId": "step-0-capture-read",
+              "stepIndex": 2
+            }
+          ]
+        },
+        {
+          "runIndex": 4,
+          "operationHostMs": 4.285847,
+          "processWallMs": 226.70572099741548,
+          "processCpuMs": 241.92400000000004,
+          "maximumIndividualChildRssKiB": 97156,
+          "initNs": 61471358,
+          "subphasesMs": {
+            "encodeMs": 0.011777,
+            "executionMs": 4.285847,
+            "gpuTimestampMs": null,
+            "setupMs": 1.806974,
+            "submitWaitMs": 2.467096
+          },
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "buffer_capture_0_9301",
+              "byteLength": 1048576,
+              "captureOffset": 0,
+              "captureSize": 1048576,
+              "captureSourceBufferId": "buffer_9301",
+              "decodedU32Le": 1034028181,
+              "repeatIndex": 0,
+              "sha256": "77ddbb33d6d9ea7633eb24d312009bd35f6cffc0e716e09a9cb6a6ee4e367f01",
+              "stepId": "step-0-capture-read",
+              "stepIndex": 2
+            }
+          ]
+        },
+        {
+          "runIndex": 5,
+          "operationHostMs": 5.474452,
+          "processWallMs": 218.51103199878708,
+          "processCpuMs": 234.19199999999995,
+          "maximumIndividualChildRssKiB": 96988,
+          "initNs": 58711172,
+          "subphasesMs": {
+            "encodeMs": 0.011938,
+            "executionMs": 5.474452,
+            "gpuTimestampMs": null,
+            "setupMs": 2.852825,
+            "submitWaitMs": 2.609689
+          },
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "buffer_capture_0_9301",
+              "byteLength": 1048576,
+              "captureOffset": 0,
+              "captureSize": 1048576,
+              "captureSourceBufferId": "buffer_9301",
+              "decodedU32Le": 1034028181,
+              "repeatIndex": 0,
+              "sha256": "77ddbb33d6d9ea7633eb24d312009bd35f6cffc0e716e09a9cb6a6ee4e367f01",
+              "stepId": "step-0-capture-read",
+              "stepIndex": 2
+            }
+          ]
+        },
+        {
+          "runIndex": 6,
+          "operationHostMs": 4.635302,
+          "processWallMs": 231.335914999363,
+          "processCpuMs": 244.33499999999998,
+          "maximumIndividualChildRssKiB": 96940,
+          "initNs": 63651474,
+          "subphasesMs": {
+            "encodeMs": 0.011848,
+            "executionMs": 4.635302,
+            "gpuTimestampMs": null,
+            "setupMs": 1.93085,
+            "submitWaitMs": 2.692604
+          },
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "buffer_capture_0_9301",
+              "byteLength": 1048576,
+              "captureOffset": 0,
+              "captureSize": 1048576,
+              "captureSourceBufferId": "buffer_9301",
+              "decodedU32Le": 1034028181,
+              "repeatIndex": 0,
+              "sha256": "77ddbb33d6d9ea7633eb24d312009bd35f6cffc0e716e09a9cb6a6ee4e367f01",
+              "stepId": "step-0-capture-read",
+              "stepIndex": 2
+            }
+          ]
+        },
+        {
+          "runIndex": 7,
+          "operationHostMs": 5.06618,
+          "processWallMs": 218.82881900819484,
+          "processCpuMs": 240.57399999999984,
+          "maximumIndividualChildRssKiB": 96820,
+          "initNs": 62751070,
+          "subphasesMs": {
+            "encodeMs": 0.011798,
+            "executionMs": 5.06618,
+            "gpuTimestampMs": null,
+            "setupMs": 1.97039,
+            "submitWaitMs": 3.083992
+          },
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "buffer_capture_0_9301",
+              "byteLength": 1048576,
+              "captureOffset": 0,
+              "captureSize": 1048576,
+              "captureSourceBufferId": "buffer_9301",
+              "decodedU32Le": 1034028181,
+              "repeatIndex": 0,
+              "sha256": "77ddbb33d6d9ea7633eb24d312009bd35f6cffc0e716e09a9cb6a6ee4e367f01",
+              "stepId": "step-0-capture-read",
+              "stepIndex": 2
+            }
+          ]
+        },
+        {
+          "runIndex": 8,
+          "operationHostMs": 4.802772,
+          "processWallMs": 223.92069699708372,
+          "processCpuMs": 248.92800000000003,
+          "maximumIndividualChildRssKiB": 96556,
+          "initNs": 61396571,
+          "subphasesMs": {
+            "encodeMs": 0.01372,
+            "executionMs": 4.802772,
+            "gpuTimestampMs": null,
+            "setupMs": 2.086063,
+            "submitWaitMs": 2.702989
+          },
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "buffer_capture_0_9301",
+              "byteLength": 1048576,
+              "captureOffset": 0,
+              "captureSize": 1048576,
+              "captureSourceBufferId": "buffer_9301",
+              "decodedU32Le": 1034028181,
+              "repeatIndex": 0,
+              "sha256": "77ddbb33d6d9ea7633eb24d312009bd35f6cffc0e716e09a9cb6a6ee4e367f01",
+              "stepId": "step-0-capture-read",
+              "stepIndex": 2
+            }
+          ]
+        },
+        {
+          "runIndex": 9,
+          "operationHostMs": 4.611478,
+          "processWallMs": 219.06225100974552,
+          "processCpuMs": 237.15399999999985,
+          "maximumIndividualChildRssKiB": 97048,
+          "initNs": 61223671,
+          "subphasesMs": {
+            "encodeMs": 0.01291,
+            "executionMs": 4.611478,
+            "gpuTimestampMs": null,
+            "setupMs": 1.962709,
+            "submitWaitMs": 2.635859
+          },
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "buffer_capture_0_9301",
+              "byteLength": 1048576,
+              "captureOffset": 0,
+              "captureSize": 1048576,
+              "captureSourceBufferId": "buffer_9301",
+              "decodedU32Le": 1034028181,
+              "repeatIndex": 0,
+              "sha256": "77ddbb33d6d9ea7633eb24d312009bd35f6cffc0e716e09a9cb6a6ee4e367f01",
+              "stepId": "step-0-capture-read",
+              "stepIndex": 2
+            }
+          ]
+        },
+        {
+          "runIndex": 10,
+          "operationHostMs": 5.159054,
+          "processWallMs": 239.3774329975713,
+          "processCpuMs": 251.76200000000026,
+          "maximumIndividualChildRssKiB": 96836,
+          "initNs": 62020619,
+          "subphasesMs": {
+            "encodeMs": 0.017567,
+            "executionMs": 5.159054,
+            "gpuTimestampMs": null,
+            "setupMs": 1.928997,
+            "submitWaitMs": 3.21249
+          },
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "buffer_capture_0_9301",
+              "byteLength": 1048576,
+              "captureOffset": 0,
+              "captureSize": 1048576,
+              "captureSourceBufferId": "buffer_9301",
+              "decodedU32Le": 1034028181,
+              "repeatIndex": 0,
+              "sha256": "77ddbb33d6d9ea7633eb24d312009bd35f6cffc0e716e09a9cb6a6ee4e367f01",
+              "stepId": "step-0-capture-read",
+              "stepIndex": 2
+            }
+          ]
+        },
+        {
+          "runIndex": 11,
+          "operationHostMs": 4.466007,
+          "processWallMs": 231.0145469964482,
+          "processCpuMs": 250.2,
+          "maximumIndividualChildRssKiB": 97120,
+          "initNs": 60555848,
+          "subphasesMs": {
+            "encodeMs": 0.012519,
+            "executionMs": 4.466007,
+            "gpuTimestampMs": null,
+            "setupMs": 2.031681,
+            "submitWaitMs": 2.421807
+          },
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "buffer_capture_0_9301",
+              "byteLength": 1048576,
+              "captureOffset": 0,
+              "captureSize": 1048576,
+              "captureSourceBufferId": "buffer_9301",
+              "decodedU32Le": 1034028181,
+              "repeatIndex": 0,
+              "sha256": "77ddbb33d6d9ea7633eb24d312009bd35f6cffc0e716e09a9cb6a6ee4e367f01",
+              "stepId": "step-0-capture-read",
+              "stepIndex": 2
+            }
+          ]
+        },
+        {
+          "runIndex": 12,
+          "operationHostMs": 4.349623,
+          "processWallMs": 232.09117399528623,
+          "processCpuMs": 243.9819999999999,
+          "maximumIndividualChildRssKiB": 97200,
+          "initNs": 65229883,
+          "subphasesMs": {
+            "encodeMs": 0.013991,
+            "executionMs": 4.349623,
+            "gpuTimestampMs": null,
+            "setupMs": 2.073545,
+            "submitWaitMs": 2.262087
+          },
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "buffer_capture_0_9301",
+              "byteLength": 1048576,
+              "captureOffset": 0,
+              "captureSize": 1048576,
+              "captureSourceBufferId": "buffer_9301",
+              "decodedU32Le": 1034028181,
+              "repeatIndex": 0,
+              "sha256": "77ddbb33d6d9ea7633eb24d312009bd35f6cffc0e716e09a9cb6a6ee4e367f01",
+              "stepId": "step-0-capture-read",
+              "stepIndex": 2
+            }
+          ]
+        },
+        {
+          "runIndex": 13,
+          "operationHostMs": 4.479077,
+          "processWallMs": 239.89339800027665,
+          "processCpuMs": 259.3870000000003,
+          "maximumIndividualChildRssKiB": 97448,
+          "initNs": 65505768,
+          "subphasesMs": {
+            "encodeMs": 0.012409,
+            "executionMs": 4.479077,
+            "gpuTimestampMs": null,
+            "setupMs": 1.922708,
+            "submitWaitMs": 2.54396
+          },
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "buffer_capture_0_9301",
+              "byteLength": 1048576,
+              "captureOffset": 0,
+              "captureSize": 1048576,
+              "captureSourceBufferId": "buffer_9301",
+              "decodedU32Le": 1034028181,
+              "repeatIndex": 0,
+              "sha256": "77ddbb33d6d9ea7633eb24d312009bd35f6cffc0e716e09a9cb6a6ee4e367f01",
+              "stepId": "step-0-capture-read",
+              "stepIndex": 2
+            }
+          ]
+        },
+        {
+          "runIndex": 14,
+          "operationHostMs": 4.819661,
+          "processWallMs": 226.95969200867694,
+          "processCpuMs": 250.09599999999966,
+          "maximumIndividualChildRssKiB": 97132,
+          "initNs": 61527763,
+          "subphasesMs": {
+            "encodeMs": 0.012189,
+            "executionMs": 4.819661,
+            "gpuTimestampMs": null,
+            "setupMs": 2.347026,
+            "submitWaitMs": 2.460446
+          },
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "buffer_capture_0_9301",
+              "byteLength": 1048576,
+              "captureOffset": 0,
+              "captureSize": 1048576,
+              "captureSourceBufferId": "buffer_9301",
+              "decodedU32Le": 1034028181,
+              "repeatIndex": 0,
+              "sha256": "77ddbb33d6d9ea7633eb24d312009bd35f6cffc0e716e09a9cb6a6ee4e367f01",
+              "stepId": "step-0-capture-read",
+              "stepIndex": 2
+            }
+          ]
+        },
+        {
+          "runIndex": 15,
+          "operationHostMs": 4.549835,
+          "processWallMs": 226.39923499082215,
+          "processCpuMs": 249.88600000000005,
+          "maximumIndividualChildRssKiB": 97356,
+          "initNs": 63952125,
+          "subphasesMs": {
+            "encodeMs": 0.012199,
+            "executionMs": 4.549835,
+            "gpuTimestampMs": null,
+            "setupMs": 2.028978,
+            "submitWaitMs": 2.508658
+          },
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "buffer_capture_0_9301",
+              "byteLength": 1048576,
+              "captureOffset": 0,
+              "captureSize": 1048576,
+              "captureSourceBufferId": "buffer_9301",
+              "decodedU32Le": 1034028181,
+              "repeatIndex": 0,
+              "sha256": "77ddbb33d6d9ea7633eb24d312009bd35f6cffc0e716e09a9cb6a6ee4e367f01",
+              "stepId": "step-0-capture-read",
+              "stepIndex": 2
+            }
+          ]
+        },
+        {
+          "runIndex": 16,
+          "operationHostMs": 4.636143,
+          "processWallMs": 238.26738099160139,
+          "processCpuMs": 261.11200000000065,
+          "maximumIndividualChildRssKiB": 96980,
+          "initNs": 57030318,
+          "subphasesMs": {
+            "encodeMs": 0.01334,
+            "executionMs": 4.636143,
+            "gpuTimestampMs": null,
+            "setupMs": 2.171682,
+            "submitWaitMs": 2.451121
+          },
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "buffer_capture_0_9301",
+              "byteLength": 1048576,
+              "captureOffset": 0,
+              "captureSize": 1048576,
+              "captureSourceBufferId": "buffer_9301",
+              "decodedU32Le": 1034028181,
+              "repeatIndex": 0,
+              "sha256": "77ddbb33d6d9ea7633eb24d312009bd35f6cffc0e716e09a9cb6a6ee4e367f01",
+              "stepId": "step-0-capture-read",
+              "stepIndex": 2
+            }
+          ]
+        }
+      ],
+      "medians": {
+        "operationHostMs": 4.5806565,
+        "processWallMs": 226.55247799411882,
+        "processCpuMs": 244.15849999999995,
+        "maximumIndividualChildRssKiB": 97054.0,
+        "initNs": 61433964.5
+      }
+    },
+    {
+      "product": "doe",
+      "executor": "doe_node_native_direct",
+      "workload": "package_pipeline_creation_8kernels",
+      "rawReceiptSha256": "c75abe32f1800aa1151c45c4bebea04c31a63a0ba4e0790ab81f419ed7df8fa9",
+      "adapterInfo": {
+        "architecture": "",
+        "description": "llvmpipe (LLVM 19.1.7, 256 bits)",
+        "device": "llvmpipe (LLVM 19.1.7, 256 bits)",
+        "deviceID": 0,
+        "driverVersion": 1,
+        "isFallbackAdapter": true,
+        "subgroupMaxSize": 128,
+        "subgroupMinSize": 4,
+        "vendor": "mesa",
+        "vendorID": 65541
+      },
+      "adapterLimits": {
+        "maxBindGroups": 4,
+        "maxBindGroupsPlusVertexBuffers": 24,
+        "maxBindingsPerBindGroup": 1000,
+        "maxBufferSize": 2147483648,
+        "maxColorAttachmentBytesPerSample": 128,
+        "maxColorAttachments": 8,
+        "maxComputeInvocationsPerWorkgroup": 1024,
+        "maxComputeWorkgroupSizeX": 1024,
+        "maxComputeWorkgroupSizeY": 1024,
+        "maxComputeWorkgroupSizeZ": 1024,
+        "maxComputeWorkgroupStorageSize": 32768,
+        "maxComputeWorkgroupsPerDimension": 65535,
+        "maxDynamicStorageBuffersPerPipelineLayout": 10,
+        "maxDynamicUniformBuffersPerPipelineLayout": 12,
+        "maxImmediateSize": 64,
+        "maxInterStageShaderVariables": 32,
+        "maxSampledTexturesPerShaderStage": 16,
+        "maxSamplersPerShaderStage": 16,
+        "maxStorageBufferBindingSize": 134217728,
+        "maxStorageBuffersInFragmentStage": 10,
+        "maxStorageBuffersInVertexStage": 10,
+        "maxStorageBuffersPerShaderStage": 10,
+        "maxStorageTexturesInFragmentStage": 8,
+        "maxStorageTexturesInVertexStage": 8,
+        "maxStorageTexturesPerShaderStage": 8,
+        "maxTextureArrayLayers": 2048,
+        "maxTextureDimension1D": 16384,
+        "maxTextureDimension2D": 16384,
+        "maxTextureDimension3D": 4096,
+        "maxUniformBufferBindingSize": 65536,
+        "maxUniformBuffersPerShaderStage": 12,
+        "maxVertexAttributes": 32,
+        "maxVertexBufferArrayStride": 2048,
+        "maxVertexBuffers": 8,
+        "minStorageBufferOffsetAlignment": 32,
+        "minUniformBufferOffsetAlignment": 32
+      },
+      "deviceLimits": {
+        "maxBindGroups": 4,
+        "maxBindGroupsPlusVertexBuffers": 24,
+        "maxBindingsPerBindGroup": 1000,
+        "maxBufferSize": 268435456,
+        "maxColorAttachmentBytesPerSample": 32,
+        "maxColorAttachments": 8,
+        "maxComputeInvocationsPerWorkgroup": 256,
+        "maxComputeWorkgroupSizeX": 256,
+        "maxComputeWorkgroupSizeY": 256,
+        "maxComputeWorkgroupSizeZ": 64,
+        "maxComputeWorkgroupStorageSize": 16384,
+        "maxComputeWorkgroupsPerDimension": 65535,
+        "maxDynamicStorageBuffersPerPipelineLayout": 4,
+        "maxDynamicUniformBuffersPerPipelineLayout": 8,
+        "maxImmediateSize": 64,
+        "maxInterStageShaderVariables": 16,
+        "maxSampledTexturesPerShaderStage": 16,
+        "maxSamplersPerShaderStage": 16,
+        "maxStorageBufferBindingSize": 134217728,
+        "maxStorageBuffersInFragmentStage": 8,
+        "maxStorageBuffersInVertexStage": 8,
+        "maxStorageBuffersPerShaderStage": 8,
+        "maxStorageTexturesInFragmentStage": 4,
+        "maxStorageTexturesInVertexStage": 4,
+        "maxStorageTexturesPerShaderStage": 4,
+        "maxTextureArrayLayers": 256,
+        "maxTextureDimension1D": 8192,
+        "maxTextureDimension2D": 8192,
+        "maxTextureDimension3D": 2048,
+        "maxUniformBufferBindingSize": 65536,
+        "maxUniformBuffersPerShaderStage": 12,
+        "maxVertexAttributes": 16,
+        "maxVertexBufferArrayStride": 2048,
+        "maxVertexBuffers": 8,
+        "minStorageBufferOffsetAlignment": 256,
+        "minUniformBufferOffsetAlignment": 256
+      },
+      "readbackMode": "mapAsync-host-copy",
+      "actualReadbackPaths": [
+        "mapped-range-host-copy"
+      ],
+      "measurements": [
+        {
+          "runIndex": 1,
+          "operationHostMs": 84.766651,
+          "processWallMs": 304.7114840010181,
+          "processCpuMs": 324.217,
+          "maximumIndividualChildRssKiB": 100308,
+          "initNs": 63124366,
+          "subphasesMs": {
+            "encodeMs": 0.031077,
+            "executionMs": 84.766651,
+            "gpuTimestampMs": null,
+            "setupMs": 4.321971,
+            "submitWaitMs": 80.413603
+          },
+          "successCount": 10,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "pipeline_readback",
+              "byteLength": 32,
+              "decodedU32Le": 1,
+              "repeatIndex": 0,
+              "sha256": "8b4b2444e57aed8c2d05a1293255da1b048c63224317d4666230760935fa4a18",
+              "stepId": "step-9",
+              "stepIndex": 9
+            }
+          ]
+        },
+        {
+          "runIndex": 2,
+          "operationHostMs": 84.44218,
+          "processWallMs": 308.6761070007924,
+          "processCpuMs": 328.85799999999944,
+          "maximumIndividualChildRssKiB": 100492,
+          "initNs": 62851030,
+          "subphasesMs": {
+            "encodeMs": 0.024736,
+            "executionMs": 84.44218,
+            "gpuTimestampMs": null,
+            "setupMs": 4.289974,
+            "submitWaitMs": 80.12747
+          },
+          "successCount": 10,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "pipeline_readback",
+              "byteLength": 32,
+              "decodedU32Le": 1,
+              "repeatIndex": 0,
+              "sha256": "8b4b2444e57aed8c2d05a1293255da1b048c63224317d4666230760935fa4a18",
+              "stepId": "step-9",
+              "stepIndex": 9
+            }
+          ]
+        },
+        {
+          "runIndex": 3,
+          "operationHostMs": 85.295935,
+          "processWallMs": 312.3785399948247,
+          "processCpuMs": 324.63000000000085,
+          "maximumIndividualChildRssKiB": 100324,
+          "initNs": 65185466,
+          "subphasesMs": {
+            "encodeMs": 0.039378,
+            "executionMs": 85.295935,
+            "gpuTimestampMs": null,
+            "setupMs": 4.500079,
+            "submitWaitMs": 80.756478
+          },
+          "successCount": 10,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "pipeline_readback",
+              "byteLength": 32,
+              "decodedU32Le": 1,
+              "repeatIndex": 0,
+              "sha256": "8b4b2444e57aed8c2d05a1293255da1b048c63224317d4666230760935fa4a18",
+              "stepId": "step-9",
+              "stepIndex": 9
+            }
+          ]
+        },
+        {
+          "runIndex": 4,
+          "operationHostMs": 87.092673,
+          "processWallMs": 325.5935060005868,
+          "processCpuMs": 344.60999999999945,
+          "maximumIndividualChildRssKiB": 100572,
+          "initNs": 64925132,
+          "subphasesMs": {
+            "encodeMs": 0.019079,
+            "executionMs": 87.092673,
+            "gpuTimestampMs": null,
+            "setupMs": 3.764714,
+            "submitWaitMs": 83.30888
+          },
+          "successCount": 10,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "pipeline_readback",
+              "byteLength": 32,
+              "decodedU32Le": 1,
+              "repeatIndex": 0,
+              "sha256": "8b4b2444e57aed8c2d05a1293255da1b048c63224317d4666230760935fa4a18",
+              "stepId": "step-9",
+              "stepIndex": 9
+            }
+          ]
+        },
+        {
+          "runIndex": 5,
+          "operationHostMs": 94.143058,
+          "processWallMs": 309.8087179969298,
+          "processCpuMs": 329.1360000000001,
+          "maximumIndividualChildRssKiB": 100456,
+          "initNs": 57164595,
+          "subphasesMs": {
+            "encodeMs": 0.01965,
+            "executionMs": 94.143058,
+            "gpuTimestampMs": null,
+            "setupMs": 4.149883,
+            "submitWaitMs": 89.973525
+          },
+          "successCount": 10,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "pipeline_readback",
+              "byteLength": 32,
+              "decodedU32Le": 1,
+              "repeatIndex": 0,
+              "sha256": "8b4b2444e57aed8c2d05a1293255da1b048c63224317d4666230760935fa4a18",
+              "stepId": "step-9",
+              "stepIndex": 9
+            }
+          ]
+        },
+        {
+          "runIndex": 6,
+          "operationHostMs": 84.578137,
+          "processWallMs": 300.28393100656103,
+          "processCpuMs": 325.31900000000036,
+          "maximumIndividualChildRssKiB": 100564,
+          "initNs": 61884870,
+          "subphasesMs": {
+            "encodeMs": 0.019129,
+            "executionMs": 84.578137,
+            "gpuTimestampMs": null,
+            "setupMs": 3.510833,
+            "submitWaitMs": 81.048175
+          },
+          "successCount": 10,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "pipeline_readback",
+              "byteLength": 32,
+              "decodedU32Le": 1,
+              "repeatIndex": 0,
+              "sha256": "8b4b2444e57aed8c2d05a1293255da1b048c63224317d4666230760935fa4a18",
+              "stepId": "step-9",
+              "stepIndex": 9
+            }
+          ]
+        },
+        {
+          "runIndex": 7,
+          "operationHostMs": 83.903311,
+          "processWallMs": 321.790483998484,
+          "processCpuMs": 332.7209999999994,
+          "maximumIndividualChildRssKiB": 100468,
+          "initNs": 64485969,
+          "subphasesMs": {
+            "encodeMs": 0.022673,
+            "executionMs": 83.903311,
+            "gpuTimestampMs": null,
+            "setupMs": 4.116483,
+            "submitWaitMs": 79.764155
+          },
+          "successCount": 10,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "pipeline_readback",
+              "byteLength": 32,
+              "decodedU32Le": 1,
+              "repeatIndex": 0,
+              "sha256": "8b4b2444e57aed8c2d05a1293255da1b048c63224317d4666230760935fa4a18",
+              "stepId": "step-9",
+              "stepIndex": 9
+            }
+          ]
+        },
+        {
+          "runIndex": 8,
+          "operationHostMs": 89.199607,
+          "processWallMs": 313.4852189978119,
+          "processCpuMs": 331.9890000000001,
+          "maximumIndividualChildRssKiB": 100260,
+          "initNs": 65958461,
+          "subphasesMs": {
+            "encodeMs": 0.024535,
+            "executionMs": 89.199607,
+            "gpuTimestampMs": null,
+            "setupMs": 9.080064,
+            "submitWaitMs": 80.095008
+          },
+          "successCount": 10,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "pipeline_readback",
+              "byteLength": 32,
+              "decodedU32Le": 1,
+              "repeatIndex": 0,
+              "sha256": "8b4b2444e57aed8c2d05a1293255da1b048c63224317d4666230760935fa4a18",
+              "stepId": "step-9",
+              "stepIndex": 9
+            }
+          ]
+        },
+        {
+          "runIndex": 9,
+          "operationHostMs": 84.669883,
+          "processWallMs": 320.70997200207785,
+          "processCpuMs": 348.0509999999999,
+          "maximumIndividualChildRssKiB": 100532,
+          "initNs": 62009082,
+          "subphasesMs": {
+            "encodeMs": 0.026289,
+            "executionMs": 84.669883,
+            "gpuTimestampMs": null,
+            "setupMs": 3.871515,
+            "submitWaitMs": 80.772079
+          },
+          "successCount": 10,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "pipeline_readback",
+              "byteLength": 32,
+              "decodedU32Le": 1,
+              "repeatIndex": 0,
+              "sha256": "8b4b2444e57aed8c2d05a1293255da1b048c63224317d4666230760935fa4a18",
+              "stepId": "step-9",
+              "stepIndex": 9
+            }
+          ]
+        },
+        {
+          "runIndex": 10,
+          "operationHostMs": 92.594145,
+          "processWallMs": 314.4258279935457,
+          "processCpuMs": 335.85700000000077,
+          "maximumIndividualChildRssKiB": 100104,
+          "initNs": 62699190,
+          "subphasesMs": {
+            "encodeMs": 0.026739,
+            "executionMs": 92.594145,
+            "gpuTimestampMs": null,
+            "setupMs": 5.244667,
+            "submitWaitMs": 87.322739
+          },
+          "successCount": 10,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "pipeline_readback",
+              "byteLength": 32,
+              "decodedU32Le": 1,
+              "repeatIndex": 0,
+              "sha256": "8b4b2444e57aed8c2d05a1293255da1b048c63224317d4666230760935fa4a18",
+              "stepId": "step-9",
+              "stepIndex": 9
+            }
+          ]
+        },
+        {
+          "runIndex": 11,
+          "operationHostMs": 92.095974,
+          "processWallMs": 305.89363700710237,
+          "processCpuMs": 327.30799999999863,
+          "maximumIndividualChildRssKiB": 100064,
+          "initNs": 60843412,
+          "subphasesMs": {
+            "encodeMs": 0.019951,
+            "executionMs": 92.095974,
+            "gpuTimestampMs": null,
+            "setupMs": 3.857574,
+            "submitWaitMs": 88.218449
+          },
+          "successCount": 10,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "pipeline_readback",
+              "byteLength": 32,
+              "decodedU32Le": 1,
+              "repeatIndex": 0,
+              "sha256": "8b4b2444e57aed8c2d05a1293255da1b048c63224317d4666230760935fa4a18",
+              "stepId": "step-9",
+              "stepIndex": 9
+            }
+          ]
+        },
+        {
+          "runIndex": 12,
+          "operationHostMs": 84.161381,
+          "processWallMs": 312.28774100600276,
+          "processCpuMs": 332.9079999999998,
+          "maximumIndividualChildRssKiB": 100488,
+          "initNs": 62625027,
+          "subphasesMs": {
+            "encodeMs": 0.019029,
+            "executionMs": 84.161381,
+            "gpuTimestampMs": null,
+            "setupMs": 3.572816,
+            "submitWaitMs": 80.569536
+          },
+          "successCount": 10,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "pipeline_readback",
+              "byteLength": 32,
+              "decodedU32Le": 1,
+              "repeatIndex": 0,
+              "sha256": "8b4b2444e57aed8c2d05a1293255da1b048c63224317d4666230760935fa4a18",
+              "stepId": "step-9",
+              "stepIndex": 9
+            }
+          ]
+        },
+        {
+          "runIndex": 13,
+          "operationHostMs": 87.661809,
+          "processWallMs": 312.3291480005719,
+          "processCpuMs": 338.05300000000216,
+          "maximumIndividualChildRssKiB": 100176,
+          "initNs": 61524224,
+          "subphasesMs": {
+            "encodeMs": 0.020612,
+            "executionMs": 87.661809,
+            "gpuTimestampMs": null,
+            "setupMs": 4.694841,
+            "submitWaitMs": 82.946356
+          },
+          "successCount": 10,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "pipeline_readback",
+              "byteLength": 32,
+              "decodedU32Le": 1,
+              "repeatIndex": 0,
+              "sha256": "8b4b2444e57aed8c2d05a1293255da1b048c63224317d4666230760935fa4a18",
+              "stepId": "step-9",
+              "stepIndex": 9
+            }
+          ]
+        },
+        {
+          "runIndex": 14,
+          "operationHostMs": 86.032573,
+          "processWallMs": 299.96542299340945,
+          "processCpuMs": 325.2849999999992,
+          "maximumIndividualChildRssKiB": 100384,
+          "initNs": 57010034,
+          "subphasesMs": {
+            "encodeMs": 0.019882,
+            "executionMs": 86.032573,
+            "gpuTimestampMs": null,
+            "setupMs": 4.309723,
+            "submitWaitMs": 81.702968
+          },
+          "successCount": 10,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "pipeline_readback",
+              "byteLength": 32,
+              "decodedU32Le": 1,
+              "repeatIndex": 0,
+              "sha256": "8b4b2444e57aed8c2d05a1293255da1b048c63224317d4666230760935fa4a18",
+              "stepId": "step-9",
+              "stepIndex": 9
+            }
+          ]
+        },
+        {
+          "runIndex": 15,
+          "operationHostMs": 84.425567,
+          "processWallMs": 305.81916999653913,
+          "processCpuMs": 323.0120000000003,
+          "maximumIndividualChildRssKiB": 100272,
+          "initNs": 61832457,
+          "subphasesMs": {
+            "encodeMs": 0.087991,
+            "executionMs": 84.425567,
+            "gpuTimestampMs": null,
+            "setupMs": 4.388191,
+            "submitWaitMs": 79.949385
+          },
+          "successCount": 10,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "pipeline_readback",
+              "byteLength": 32,
+              "decodedU32Le": 1,
+              "repeatIndex": 0,
+              "sha256": "8b4b2444e57aed8c2d05a1293255da1b048c63224317d4666230760935fa4a18",
+              "stepId": "step-9",
+              "stepIndex": 9
+            }
+          ]
+        },
+        {
+          "runIndex": 16,
+          "operationHostMs": 85.539544,
+          "processWallMs": 303.57085799914785,
+          "processCpuMs": 325.88799999999907,
+          "maximumIndividualChildRssKiB": 100532,
+          "initNs": 60397767,
+          "subphasesMs": {
+            "encodeMs": 0.018827,
+            "executionMs": 85.539544,
+            "gpuTimestampMs": null,
+            "setupMs": 3.651134,
+            "submitWaitMs": 81.869583
+          },
+          "successCount": 10,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "pipeline_readback",
+              "byteLength": 32,
+              "decodedU32Le": 1,
+              "repeatIndex": 0,
+              "sha256": "8b4b2444e57aed8c2d05a1293255da1b048c63224317d4666230760935fa4a18",
+              "stepId": "step-9",
+              "stepIndex": 9
+            }
+          ]
+        }
+      ],
+      "medians": {
+        "operationHostMs": 85.41773950000001,
+        "processWallMs": 311.04822950146627,
+        "processCpuMs": 328.99699999999973,
+        "maximumIndividualChildRssKiB": 100420.0,
+        "initNs": 62317054.5
+      }
+    },
+    {
+      "product": "doe",
+      "executor": "doe_node_native_direct",
+      "workload": "package_queue_submit_completion",
+      "rawReceiptSha256": "5cfc463e4b3acbffbba5932d7e9bfb6d27409a6020b7bce4b645e092ab2d863b",
+      "adapterInfo": {
+        "architecture": "",
+        "description": "llvmpipe (LLVM 19.1.7, 256 bits)",
+        "device": "llvmpipe (LLVM 19.1.7, 256 bits)",
+        "deviceID": 0,
+        "driverVersion": 1,
+        "isFallbackAdapter": true,
+        "subgroupMaxSize": 128,
+        "subgroupMinSize": 4,
+        "vendor": "mesa",
+        "vendorID": 65541
+      },
+      "adapterLimits": {
+        "maxBindGroups": 4,
+        "maxBindGroupsPlusVertexBuffers": 24,
+        "maxBindingsPerBindGroup": 1000,
+        "maxBufferSize": 2147483648,
+        "maxColorAttachmentBytesPerSample": 128,
+        "maxColorAttachments": 8,
+        "maxComputeInvocationsPerWorkgroup": 1024,
+        "maxComputeWorkgroupSizeX": 1024,
+        "maxComputeWorkgroupSizeY": 1024,
+        "maxComputeWorkgroupSizeZ": 1024,
+        "maxComputeWorkgroupStorageSize": 32768,
+        "maxComputeWorkgroupsPerDimension": 65535,
+        "maxDynamicStorageBuffersPerPipelineLayout": 10,
+        "maxDynamicUniformBuffersPerPipelineLayout": 12,
+        "maxImmediateSize": 64,
+        "maxInterStageShaderVariables": 32,
+        "maxSampledTexturesPerShaderStage": 16,
+        "maxSamplersPerShaderStage": 16,
+        "maxStorageBufferBindingSize": 134217728,
+        "maxStorageBuffersInFragmentStage": 10,
+        "maxStorageBuffersInVertexStage": 10,
+        "maxStorageBuffersPerShaderStage": 10,
+        "maxStorageTexturesInFragmentStage": 8,
+        "maxStorageTexturesInVertexStage": 8,
+        "maxStorageTexturesPerShaderStage": 8,
+        "maxTextureArrayLayers": 2048,
+        "maxTextureDimension1D": 16384,
+        "maxTextureDimension2D": 16384,
+        "maxTextureDimension3D": 4096,
+        "maxUniformBufferBindingSize": 65536,
+        "maxUniformBuffersPerShaderStage": 12,
+        "maxVertexAttributes": 32,
+        "maxVertexBufferArrayStride": 2048,
+        "maxVertexBuffers": 8,
+        "minStorageBufferOffsetAlignment": 32,
+        "minUniformBufferOffsetAlignment": 32
+      },
+      "deviceLimits": {
+        "maxBindGroups": 4,
+        "maxBindGroupsPlusVertexBuffers": 24,
+        "maxBindingsPerBindGroup": 1000,
+        "maxBufferSize": 268435456,
+        "maxColorAttachmentBytesPerSample": 32,
+        "maxColorAttachments": 8,
+        "maxComputeInvocationsPerWorkgroup": 256,
+        "maxComputeWorkgroupSizeX": 256,
+        "maxComputeWorkgroupSizeY": 256,
+        "maxComputeWorkgroupSizeZ": 64,
+        "maxComputeWorkgroupStorageSize": 16384,
+        "maxComputeWorkgroupsPerDimension": 65535,
+        "maxDynamicStorageBuffersPerPipelineLayout": 4,
+        "maxDynamicUniformBuffersPerPipelineLayout": 8,
+        "maxImmediateSize": 64,
+        "maxInterStageShaderVariables": 16,
+        "maxSampledTexturesPerShaderStage": 16,
+        "maxSamplersPerShaderStage": 16,
+        "maxStorageBufferBindingSize": 134217728,
+        "maxStorageBuffersInFragmentStage": 8,
+        "maxStorageBuffersInVertexStage": 8,
+        "maxStorageBuffersPerShaderStage": 8,
+        "maxStorageTexturesInFragmentStage": 4,
+        "maxStorageTexturesInVertexStage": 4,
+        "maxStorageTexturesPerShaderStage": 4,
+        "maxTextureArrayLayers": 256,
+        "maxTextureDimension1D": 8192,
+        "maxTextureDimension2D": 8192,
+        "maxTextureDimension3D": 2048,
+        "maxUniformBufferBindingSize": 65536,
+        "maxUniformBuffersPerShaderStage": 12,
+        "maxVertexAttributes": 16,
+        "maxVertexBufferArrayStride": 2048,
+        "maxVertexBuffers": 8,
+        "minStorageBufferOffsetAlignment": 256,
+        "minUniformBufferOffsetAlignment": 256
+      },
+      "readbackMode": "mapAsync-host-copy",
+      "actualReadbackPaths": [
+        "mapped-range-host-copy"
+      ],
+      "measurements": [
+        {
+          "runIndex": 1,
+          "operationHostMs": 21.13575,
+          "processWallMs": 231.24750799615867,
+          "processCpuMs": 254.31099999999952,
+          "maximumIndividualChildRssKiB": 98200,
+          "initNs": 59723920,
+          "subphasesMs": {
+            "encodeMs": 0.016434,
+            "executionMs": 21.13575,
+            "gpuTimestampMs": null,
+            "setupMs": 2.026324,
+            "submitWaitMs": 19.092992
+          },
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "queue_readback",
+              "byteLength": 4,
+              "decodedU32Le": 1,
+              "repeatIndex": 0,
+              "sha256": "67abdd721024f0ff4e0b3f4c2fc13bc5bad42d0b7851d456d88d203d15aaa450",
+              "stepId": "step-2",
+              "stepIndex": 2
+            }
+          ]
+        },
+        {
+          "runIndex": 2,
+          "operationHostMs": 14.723203,
+          "processWallMs": 222.78073099732865,
+          "processCpuMs": 242.67400000000094,
+          "maximumIndividualChildRssKiB": 97920,
+          "initNs": 57989296,
+          "subphasesMs": {
+            "encodeMs": 0.008823,
+            "executionMs": 14.723203,
+            "gpuTimestampMs": null,
+            "setupMs": 1.894816,
+            "submitWaitMs": 12.819564
+          },
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "queue_readback",
+              "byteLength": 4,
+              "decodedU32Le": 1,
+              "repeatIndex": 0,
+              "sha256": "67abdd721024f0ff4e0b3f4c2fc13bc5bad42d0b7851d456d88d203d15aaa450",
+              "stepId": "step-2",
+              "stepIndex": 2
+            }
+          ]
+        },
+        {
+          "runIndex": 3,
+          "operationHostMs": 15.122194,
+          "processWallMs": 243.89440000231843,
+          "processCpuMs": 266.8750000000006,
+          "maximumIndividualChildRssKiB": 98336,
+          "initNs": 66092385,
+          "subphasesMs": {
+            "encodeMs": 0.008683,
+            "executionMs": 15.122194,
+            "gpuTimestampMs": null,
+            "setupMs": 1.953224,
+            "submitWaitMs": 13.160287
+          },
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "queue_readback",
+              "byteLength": 4,
+              "decodedU32Le": 1,
+              "repeatIndex": 0,
+              "sha256": "67abdd721024f0ff4e0b3f4c2fc13bc5bad42d0b7851d456d88d203d15aaa450",
+              "stepId": "step-2",
+              "stepIndex": 2
+            }
+          ]
+        },
+        {
+          "runIndex": 4,
+          "operationHostMs": 14.818677,
+          "processWallMs": 223.86513999663293,
+          "processCpuMs": 245.3669999999999,
+          "maximumIndividualChildRssKiB": 98200,
+          "initNs": 58909597,
+          "subphasesMs": {
+            "encodeMs": 0.008183,
+            "executionMs": 14.818677,
+            "gpuTimestampMs": null,
+            "setupMs": 1.632592,
+            "submitWaitMs": 13.177902
+          },
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "queue_readback",
+              "byteLength": 4,
+              "decodedU32Le": 1,
+              "repeatIndex": 0,
+              "sha256": "67abdd721024f0ff4e0b3f4c2fc13bc5bad42d0b7851d456d88d203d15aaa450",
+              "stepId": "step-2",
+              "stepIndex": 2
+            }
+          ]
+        },
+        {
+          "runIndex": 5,
+          "operationHostMs": 14.265891,
+          "processWallMs": 238.91767000895925,
+          "processCpuMs": 254.7589999999982,
+          "maximumIndividualChildRssKiB": 98308,
+          "initNs": 59979664,
+          "subphasesMs": {
+            "encodeMs": 0.008474,
+            "executionMs": 14.265891,
+            "gpuTimestampMs": null,
+            "setupMs": 1.739764,
+            "submitWaitMs": 12.517653
+          },
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "queue_readback",
+              "byteLength": 4,
+              "decodedU32Le": 1,
+              "repeatIndex": 0,
+              "sha256": "67abdd721024f0ff4e0b3f4c2fc13bc5bad42d0b7851d456d88d203d15aaa450",
+              "stepId": "step-2",
+              "stepIndex": 2
+            }
+          ]
+        },
+        {
+          "runIndex": 6,
+          "operationHostMs": 17.009517,
+          "processWallMs": 239.06999699829612,
+          "processCpuMs": 253.91800000000052,
+          "maximumIndividualChildRssKiB": 98284,
+          "initNs": 61979994,
+          "subphasesMs": {
+            "encodeMs": 0.010776,
+            "executionMs": 17.009517,
+            "gpuTimestampMs": null,
+            "setupMs": 1.63793,
+            "submitWaitMs": 15.360811
+          },
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "queue_readback",
+              "byteLength": 4,
+              "decodedU32Le": 1,
+              "repeatIndex": 0,
+              "sha256": "67abdd721024f0ff4e0b3f4c2fc13bc5bad42d0b7851d456d88d203d15aaa450",
+              "stepId": "step-2",
+              "stepIndex": 2
+            }
+          ]
+        },
+        {
+          "runIndex": 7,
+          "operationHostMs": 14.854812,
+          "processWallMs": 239.3784119922202,
+          "processCpuMs": 257.7050000000014,
+          "maximumIndividualChildRssKiB": 97872,
+          "initNs": 61593144,
+          "subphasesMs": {
+            "encodeMs": 0.018038,
+            "executionMs": 14.854812,
+            "gpuTimestampMs": null,
+            "setupMs": 2.074606,
+            "submitWaitMs": 12.762168
+          },
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "queue_readback",
+              "byteLength": 4,
+              "decodedU32Le": 1,
+              "repeatIndex": 0,
+              "sha256": "67abdd721024f0ff4e0b3f4c2fc13bc5bad42d0b7851d456d88d203d15aaa450",
+              "stepId": "step-2",
+              "stepIndex": 2
+            }
+          ]
+        },
+        {
+          "runIndex": 8,
+          "operationHostMs": 17.182548,
+          "processWallMs": 239.11336799210403,
+          "processCpuMs": 254.5629999999992,
+          "maximumIndividualChildRssKiB": 98304,
+          "initNs": 63392946,
+          "subphasesMs": {
+            "encodeMs": 0.008193,
+            "executionMs": 17.182548,
+            "gpuTimestampMs": null,
+            "setupMs": 2.245623,
+            "submitWaitMs": 14.928732
+          },
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "queue_readback",
+              "byteLength": 4,
+              "decodedU32Le": 1,
+              "repeatIndex": 0,
+              "sha256": "67abdd721024f0ff4e0b3f4c2fc13bc5bad42d0b7851d456d88d203d15aaa450",
+              "stepId": "step-2",
+              "stepIndex": 2
+            }
+          ]
+        },
+        {
+          "runIndex": 9,
+          "operationHostMs": 16.327473,
+          "processWallMs": 240.28789199655876,
+          "processCpuMs": 257.655999999999,
+          "maximumIndividualChildRssKiB": 98184,
+          "initNs": 63376166,
+          "subphasesMs": {
+            "encodeMs": 0.008172,
+            "executionMs": 16.327473,
+            "gpuTimestampMs": null,
+            "setupMs": 1.805922,
+            "submitWaitMs": 14.513379
+          },
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "queue_readback",
+              "byteLength": 4,
+              "decodedU32Le": 1,
+              "repeatIndex": 0,
+              "sha256": "67abdd721024f0ff4e0b3f4c2fc13bc5bad42d0b7851d456d88d203d15aaa450",
+              "stepId": "step-2",
+              "stepIndex": 2
+            }
+          ]
+        },
+        {
+          "runIndex": 10,
+          "operationHostMs": 14.955592,
+          "processWallMs": 238.99314300797414,
+          "processCpuMs": 251.86300000000193,
+          "maximumIndividualChildRssKiB": 98408,
+          "initNs": 62349789,
+          "subphasesMs": {
+            "encodeMs": 0.009644,
+            "executionMs": 14.955592,
+            "gpuTimestampMs": null,
+            "setupMs": 1.929488,
+            "submitWaitMs": 13.01646
+          },
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "queue_readback",
+              "byteLength": 4,
+              "decodedU32Le": 1,
+              "repeatIndex": 0,
+              "sha256": "67abdd721024f0ff4e0b3f4c2fc13bc5bad42d0b7851d456d88d203d15aaa450",
+              "stepId": "step-2",
+              "stepIndex": 2
+            }
+          ]
+        },
+        {
+          "runIndex": 11,
+          "operationHostMs": 14.86654,
+          "processWallMs": 227.44490200420842,
+          "processCpuMs": 250.80099999999737,
+          "maximumIndividualChildRssKiB": 97924,
+          "initNs": 61069406,
+          "subphasesMs": {
+            "encodeMs": 0.015724,
+            "executionMs": 14.86654,
+            "gpuTimestampMs": null,
+            "setupMs": 1.977761,
+            "submitWaitMs": 12.873055
+          },
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "queue_readback",
+              "byteLength": 4,
+              "decodedU32Le": 1,
+              "repeatIndex": 0,
+              "sha256": "67abdd721024f0ff4e0b3f4c2fc13bc5bad42d0b7851d456d88d203d15aaa450",
+              "stepId": "step-2",
+              "stepIndex": 2
+            }
+          ]
+        },
+        {
+          "runIndex": 12,
+          "operationHostMs": 15.904973,
+          "processWallMs": 240.40722199424636,
+          "processCpuMs": 255.02100000000283,
+          "maximumIndividualChildRssKiB": 98052,
+          "initNs": 61327684,
+          "subphasesMs": {
+            "encodeMs": 0.016604,
+            "executionMs": 15.904973,
+            "gpuTimestampMs": null,
+            "setupMs": 1.765422,
+            "submitWaitMs": 14.122947
+          },
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "queue_readback",
+              "byteLength": 4,
+              "decodedU32Le": 1,
+              "repeatIndex": 0,
+              "sha256": "67abdd721024f0ff4e0b3f4c2fc13bc5bad42d0b7851d456d88d203d15aaa450",
+              "stepId": "step-2",
+              "stepIndex": 2
+            }
+          ]
+        },
+        {
+          "runIndex": 13,
+          "operationHostMs": 17.361687,
+          "processWallMs": 244.00495500594843,
+          "processCpuMs": 258.68599999999907,
+          "maximumIndividualChildRssKiB": 98468,
+          "initNs": 69384145,
+          "subphasesMs": {
+            "encodeMs": 0.008493,
+            "executionMs": 17.361687,
+            "gpuTimestampMs": null,
+            "setupMs": 1.806323,
+            "submitWaitMs": 15.546871
+          },
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "queue_readback",
+              "byteLength": 4,
+              "decodedU32Le": 1,
+              "repeatIndex": 0,
+              "sha256": "67abdd721024f0ff4e0b3f4c2fc13bc5bad42d0b7851d456d88d203d15aaa450",
+              "stepId": "step-2",
+              "stepIndex": 2
+            }
+          ]
+        },
+        {
+          "runIndex": 14,
+          "operationHostMs": 16.058425,
+          "processWallMs": 231.61711399734486,
+          "processCpuMs": 248.1580000000001,
+          "maximumIndividualChildRssKiB": 97868,
+          "initNs": 60870438,
+          "subphasesMs": {
+            "encodeMs": 0.014833,
+            "executionMs": 16.058425,
+            "gpuTimestampMs": null,
+            "setupMs": 1.562507,
+            "submitWaitMs": 14.481085
+          },
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "queue_readback",
+              "byteLength": 4,
+              "decodedU32Le": 1,
+              "repeatIndex": 0,
+              "sha256": "67abdd721024f0ff4e0b3f4c2fc13bc5bad42d0b7851d456d88d203d15aaa450",
+              "stepId": "step-2",
+              "stepIndex": 2
+            }
+          ]
+        },
+        {
+          "runIndex": 15,
+          "operationHostMs": 16.379631,
+          "processWallMs": 231.18046700255945,
+          "processCpuMs": 249.44799999999924,
+          "maximumIndividualChildRssKiB": 98512,
+          "initNs": 63158915,
+          "subphasesMs": {
+            "encodeMs": 0.008973,
+            "executionMs": 16.379631,
+            "gpuTimestampMs": null,
+            "setupMs": 1.71789,
+            "submitWaitMs": 14.652768
+          },
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "queue_readback",
+              "byteLength": 4,
+              "decodedU32Le": 1,
+              "repeatIndex": 0,
+              "sha256": "67abdd721024f0ff4e0b3f4c2fc13bc5bad42d0b7851d456d88d203d15aaa450",
+              "stepId": "step-2",
+              "stepIndex": 2
+            }
+          ]
+        },
+        {
+          "runIndex": 16,
+          "operationHostMs": 14.755965,
+          "processWallMs": 240.3058510099072,
+          "processCpuMs": 258.5940000000022,
+          "maximumIndividualChildRssKiB": 98520,
+          "initNs": 62300557,
+          "subphasesMs": {
+            "encodeMs": 0.015073,
+            "executionMs": 14.755965,
+            "gpuTimestampMs": null,
+            "setupMs": 1.755618,
+            "submitWaitMs": 12.985274
+          },
+          "successCount": 3,
+          "errorCount": 0,
+          "unsupportedCount": 0,
+          "skippedCount": 0,
+          "captures": [
+            {
+              "bufferId": "queue_readback",
+              "byteLength": 4,
+              "decodedU32Le": 1,
+              "repeatIndex": 0,
+              "sha256": "67abdd721024f0ff4e0b3f4c2fc13bc5bad42d0b7851d456d88d203d15aaa450",
+              "stepId": "step-2",
+              "stepIndex": 2
+            }
+          ]
+        }
+      ],
+      "medians": {
+        "operationHostMs": 15.5135835,
+        "processWallMs": 239.03157000313513,
+        "processCpuMs": 254.43699999999936,
+        "maximumIndividualChildRssKiB": 98242.0,
+        "initNs": 61786569.0
+      }
+    }
+  ],
+  "timedSampleCount": 96,
+  "warmupInvocations": 6
+}
