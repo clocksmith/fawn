@@ -346,6 +346,31 @@ void doe_vk_texture_release(doe_vk_texture *texture) {
     doe_vk_context_release(context);
 }
 
+static void free_image(doe_vk_texture *texture) {
+    doe_vk_context *context = texture->context;
+    if (texture->image != 0) context->vk.vkDestroyImage(context->device, texture->image, NULL);
+    texture->image = 0;
+    if (texture->memory != 0) context->vk.vkFreeMemory(context->device, texture->memory, NULL);
+    texture->memory = 0;
+    texture->evicted = true;
+}
+
+doe_vk_status doe_vk_texture_evict(doe_vk_texture *texture) {
+    if (texture == NULL) return DOE_VK_INVALID_ARGUMENT;
+    if (texture->borrowed_image || texture->external_owner != NULL) return DOE_VK_BUSY;
+    if (texture->evicted) return DOE_VK_OK;
+    if (texture->command_uses != 0) {
+        texture->evict_requested = true;
+        return DOE_VK_OK;
+    }
+    free_image(texture);
+    return DOE_VK_OK;
+}
+
+void doe_vk_texture_use_released(doe_vk_texture *texture) {
+    if (--texture->command_uses == 0 && texture->evict_requested && !texture->evicted) free_image(texture);
+}
+
 static doe_vk_status validate_view(doe_vk_texture *texture, const doe_vk_texture_view_desc *desc,
     uint32_t *aspects, doe_vk_texture_format *format) {
     if (desc == NULL) return DOE_VK_INVALID_ARGUMENT;
@@ -450,7 +475,9 @@ doe_vk_status doe_vk_texture_view_create(doe_vk_texture *texture,
      * Vulkan forbids an image view of it, so it has no native view. */
     const uint32_t viewable = DOE_VK_TEXTURE_SAMPLED | DOE_VK_TEXTURE_STORAGE |
         DOE_VK_TEXTURE_COLOR_ATTACHMENT | DOE_VK_TEXTURE_DEPTH_STENCIL_ATTACHMENT;
-    if (!(texture->desc.usage & viewable)) {
+    /* A view of a destroyed (evicted) texture has no image to view; every use
+     * of it is rejected. */
+    if (!(texture->desc.usage & viewable) || texture->evicted) {
         *out = view;
         return doe_vk_fail(DOE_VK_OK, "texture view ready without a native view", error);
     }

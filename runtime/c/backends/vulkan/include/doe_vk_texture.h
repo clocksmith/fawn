@@ -132,6 +132,13 @@ doe_vk_status doe_vk_texture_create(doe_vk_context *context,
     const doe_vk_texture_desc *desc, doe_vk_texture **out, doe_vk_error *error);
 doe_vk_status doe_vk_texture_retain(doe_vk_texture *texture);
 void doe_vk_texture_release(doe_vk_texture *texture);
+/* WebGPU destroy(): frees the image and its memory while views and references
+ * keep the object, at once when no commands use the texture, else when the
+ * last command use is released (its work retired; unknown completion keeps
+ * it). Later command uses fail (INVALID_STATE) and new views have no native
+ * view. BUSY, changing nothing, for a borrowed (surface) image or one a
+ * presentation owns. */
+doe_vk_status doe_vk_texture_evict(doe_vk_texture *texture);
 
 /* Native aspect bits. ALL selects every aspect of the format: required for color
  * and for texture-to-texture copies. Buffer copies of a combined depth/stencil

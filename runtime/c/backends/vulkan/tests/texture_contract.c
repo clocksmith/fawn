@@ -2,6 +2,7 @@
 #include "../src/texture_internal.h"
 #include <assert.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 static void transfer_only_format(VkPhysicalDevice device, uint32_t format, VkFormatProperties *out) {
@@ -291,8 +292,70 @@ static void view_format_admission(void) {
     assert(view == (doe_vk_texture_view *)&context && image.references == 1);
 }
 
+static unsigned destroyed_images, freed_memory, destroyed_views;
+static void count_destroy_image(VkDevice device, VkImage image, const VkAllocationCallbacks *allocator) {
+    (void)device; (void)allocator;
+    assert(image == 41);
+    ++destroyed_images;
+}
+static void count_free_memory(VkDevice device, VkDeviceMemory memory, const VkAllocationCallbacks *allocator) {
+    (void)device; (void)allocator;
+    assert(memory == 42);
+    ++freed_memory;
+}
+static void count_destroy_view(VkDevice device, VkImageView view, const VkAllocationCallbacks *allocator) {
+    (void)device; (void)allocator;
+    assert(view == 77);
+    ++destroyed_views;
+}
+/* destroy() eviction frees image and memory once while a view still retains
+ * the object, deferred to the last command use; the view keeps its own native
+ * view, a later view has none, a command use fails, and the last release frees
+ * nothing twice. A borrowed image refuses eviction without change. */
+static void destroy_eviction(void) {
+    doe_vk_context context = { .references = 2 };
+    context.vk.vkCreateImageView = create_view;
+    context.vk.vkDestroyImageView = count_destroy_view;
+    context.vk.vkDestroyImage = count_destroy_image;
+    context.vk.vkFreeMemory = count_free_memory;
+    doe_vk_texture *texture = calloc(1, sizeof(*texture));
+    assert(texture != NULL);
+    *texture = (doe_vk_texture){ .context = &context, .references = 1, .subresource_count = 1,
+        .initialized = calloc(1, 1), .image = 41, .memory = 42,
+        .desc = { .dimension = DOE_VK_TEXTURE_2D, .format = DOE_VK_FORMAT_RGBA8_UNORM, .width = 4, .height = 4,
+            .depth_or_layers = 1, .mip_levels = 1, .usage = DOE_VK_TEXTURE_SAMPLED } };
+    const doe_vk_texture_view_desc view_desc = { DOE_VK_VIEW_2D, 0, 1, 0, 1, DOE_VK_ASPECT_ALL, 0, {0} };
+    doe_vk_texture_view *held = NULL;
+    assert(doe_vk_texture_view_create(texture, &view_desc, &held, NULL) == DOE_VK_OK && held->view == 77);
+    texture->borrowed_image = true;
+    assert(doe_vk_texture_evict(texture) == DOE_VK_BUSY && texture->memory == 42 && !texture->evicted);
+    texture->borrowed_image = false;
+    /* A command use (recorded, queued or running) defers the free to its release. */
+    texture->command_uses = 2;
+    assert(doe_vk_texture_evict(texture) == DOE_VK_OK && texture->evict_requested);
+    assert(texture->image == 41 && destroyed_images == 0 && !texture->evicted);
+    doe_vk_texture_use_released(texture);
+    assert(texture->image == 41 && destroyed_images == 0);
+    doe_vk_texture_use_released(texture);
+    assert(destroyed_images == 1 && freed_memory == 1 && texture->image == 0 && texture->memory == 0);
+    assert(doe_vk_texture_evict(texture) == DOE_VK_OK && destroyed_images == 1 && freed_memory == 1);
+    doe_vk_texture_view *late = NULL;
+    assert(doe_vk_texture_view_create(texture, &view_desc, &late, NULL) == DOE_VK_OK && late->view == 0);
+    doe_vk_commands commands = { .context = &context };
+    doe_vk_texture_use *use = NULL;
+    assert(doe_vk_use_texture(&commands, texture, &use) == DOE_VK_INVALID_STATE && use == NULL);
+    assert(texture->references == 3); /* owner, held view, late view */
+    doe_vk_texture_release(texture);
+    assert(texture->references == 2);
+    doe_vk_texture_view_release(late);
+    assert(destroyed_views == 0);
+    doe_vk_texture_view_release(held);
+    assert(destroyed_views == 1 && destroyed_images == 1 && freed_memory == 1 && context.references == 1);
+}
+
 int main(void) {
     format_admission();
+    destroy_eviction();
     view_format_admission();
     cube_array_admission();
     sampler_anisotropy();
@@ -300,6 +363,6 @@ int main(void) {
     queue_transfer_granularity();
     layout_and_initialization_transaction();
     submission_publication();
-    puts("PASS texture last-byte/mip/layer/overflow checks, srgb/unorm view-format pair/creation/view admission with exact native view formats, exact view component swizzles, cube-array feature/compatibility/whole-cube view admission, speculative layout/initialization rollback, publication at accepted submission without completion overwrite, concurrent owner exclusion and failed output; sampler anisotropy feature gate, linear-filter rule and device-maximum clamp");
+    puts("PASS texture last-byte/mip/layer/overflow checks, srgb/unorm view-format pair/creation/view admission with exact native view formats, exact view component swizzles, cube-array feature/compatibility/whole-cube view admission, speculative layout/initialization rollback, publication at accepted submission without completion overwrite, concurrent owner exclusion and failed output; destroy eviction frees once under held views, waits for the last command use, refuses borrowed/presentation images, and rejects later uses; sampler anisotropy feature gate, linear-filter rule and device-maximum clamp");
     return 0;
 }
