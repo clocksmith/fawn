@@ -14,7 +14,11 @@ typedef struct cpu_device {
     cpu_state state;
     UINT heap_calls,fail_heap,srvs,samplers,rtvs,format_queries;
     DXGI_FORMAT expected_vertex;
-    bool deny_vertex;
+    bool deny_vertex, expected_blend;
+    D3D12_CULL_MODE expected_cull;
+    UINT expected_sample_mask;
+    UINT8 expected_write_mask;
+    D3D12_PRIMITIVE_TOPOLOGY_TYPE expected_topology;
 } cpu_device;
 typedef struct cpu_list {
     ID3D12GraphicsCommandList iface;
@@ -96,7 +100,17 @@ static HRESULT STDMETHODCALLTYPE create_state(ID3D12Device *raw,const D3D12_GRAP
     (void)id;
     cpu_device *device=(cpu_device *)raw;
     assert(desc->pRootSignature==&device->root.iface && desc->VS.BytecodeLength==1 && desc->PS.BytecodeLength==1);
-    assert(desc->RasterizerState.FrontCounterClockwise && desc->RasterizerState.CullMode==D3D12_CULL_MODE_NONE);
+    assert(desc->RasterizerState.FrontCounterClockwise && desc->RasterizerState.CullMode==device->expected_cull);
+    assert(desc->BlendState.RenderTarget[0].BlendEnable==device->expected_blend);
+    if (device->expected_blend) {
+        const D3D12_RENDER_TARGET_BLEND_DESC *blend=&desc->BlendState.RenderTarget[0];
+        assert(blend->SrcBlend==D3D12_BLEND_SRC_ALPHA && blend->DestBlend==D3D12_BLEND_INV_SRC_ALPHA &&
+            blend->BlendOp==D3D12_BLEND_OP_ADD && blend->SrcBlendAlpha==D3D12_BLEND_ONE &&
+            blend->DestBlendAlpha==D3D12_BLEND_INV_SRC_ALPHA && blend->BlendOpAlpha==D3D12_BLEND_OP_ADD);
+    }
+    assert(desc->SampleMask==device->expected_sample_mask &&
+        desc->BlendState.RenderTarget[0].RenderTargetWriteMask==device->expected_write_mask &&
+        desc->PrimitiveTopologyType==device->expected_topology);
     assert(!desc->DepthStencilState.DepthEnable && desc->SampleDesc.Count==1 &&
         desc->NumRenderTargets==1 && desc->RTVFormats[0]==DXGI_FORMAT_R8G8B8A8_UNORM);
     if (device->expected_vertex) {
@@ -257,10 +271,16 @@ static D3D12_GPU_VIRTUAL_ADDRESS STDMETHODCALLTYPE gpu_address(ID3D12Resource *r
     return 0x100000;
 }
 static CONST_VTBL ID3D12ResourceVtbl resource_methods={.GetGPUVirtualAddress=gpu_address};
+static void STDMETHODCALLTYPE blend_constant(ID3D12GraphicsCommandList *raw,const FLOAT value[4])
+{
+    cpu_list *list=(cpu_list *)raw;
+    assert(value[0]==0.25f && value[1]==0.5f && value[2]==0.75f && value[3]==1.0f);
+    ++list->mutations;
+}
 static CONST_VTBL ID3D12GraphicsCommandListVtbl list_methods={.Release=list_release,.SetDescriptorHeaps=set_heaps,
     .SetGraphicsRootDescriptorTable=set_table,.ResourceBarrier=barrier,.SetGraphicsRootSignature=root_signature,
     .SetPipelineState=pipeline_state,.OMSetRenderTargets=targets,.ClearRenderTargetView=clear,
-    .RSSetViewports=viewport,.RSSetScissorRects=scissor,.IASetPrimitiveTopology=topology,.IASetVertexBuffers=vertex_views,.DrawInstanced=draw};
+    .OMSetBlendFactor=blend_constant,.RSSetViewports=viewport,.RSSetScissorRects=scissor,.IASetPrimitiveTopology=topology,.IASetVertexBuffers=vertex_views,.DrawInstanced=draw};
 static void vertex_formats(cpu_device *device,doe_dx_native_context *context,doe_dx_render_pipeline_desc *desc)
 {
     static const struct { doe_dx_vertex_format typed; DXGI_FORMAT sdk; } cases[]={
@@ -326,7 +346,9 @@ static void vertex_formats(cpu_device *device,doe_dx_native_context *context,doe
 }
 int main(void)
 {
-    cpu_device device={0}; device.iface.lpVtbl=&device_methods;
+    cpu_device device={.expected_cull=D3D12_CULL_MODE_NONE,.expected_sample_mask=UINT32_MAX,
+        .expected_write_mask=15,.expected_topology=D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE};
+    device.iface.lpVtbl=&device_methods;
     doe_dx_native_context context={.device=&device.iface};
     doe_dx_binding_layout rows[64]; doe_dx_sampler_layout samplers[16];
     for (UINT i=0;i<64;++i) rows[i]=(doe_dx_binding_layout){i,0,4,DOE_DX_READ_ONLY,DOE_DX_STRUCTURED};
@@ -347,7 +369,7 @@ int main(void)
     color.description.Width=color.description.Height=4; color.description.Format=DXGI_FORMAT_R8G8B8A8_UNORM;
     doe_dx_native_buffer buffer={.resource=&buffer_resource};
     doe_dx_native_render_draw packet={.pipeline=pipeline,.vertex_count=3,.instance_count=1,
-        .viewport={0,0,4,4,0,1},.scissor={0,0,4,4}};
+        .viewport={0,0,4,4,0,1},.scissor={0,0,4,4},.blend_constant={0.25f,0.5f,0.75f,1}};
     for (size_t stage=0;stage<2;++stage) {
         packet.stages[stage].buffer_count=64; packet.stages[stage].sampler_count=16;
         for (size_t i=0;i<64;++i) packet.stages[stage].buffers[i]=(doe_dx_native_binding){&buffer,0,256};
@@ -363,11 +385,11 @@ int main(void)
     pipeline->vertex_buffers[2]=(doe_dx_vertex_layout){24,DOE_DX_PER_VERTEX};
     const float clear_color[4]={0.25f,0.5f,0.75f,1};
     device.fail_heap=3;
-    assert(doe_dx_native_render(commands,&color,true,clear_color,true,&packet,1,NULL)==DOE_DX_OUT_OF_MEMORY);
+    assert(doe_dx_native_render(commands,&color,true,clear_color,true,NULL,&packet,1,NULL)==DOE_DX_OUT_OF_MEMORY);
     assert(!list.mutations && !device.srvs && !device.samplers && !commands->descriptors);
     for (size_t i=0;i<3;++i) assert(!device.heaps[i].refs);
     device.fail_heap=0;
-    assert(doe_dx_native_render(commands,&color,true,clear_color,true,&packet,1,NULL)==DOE_DX_OK);
+    assert(doe_dx_native_render(commands,&color,true,clear_color,true,NULL,&packet,1,NULL)==DOE_DX_OK);
     assert(device.srvs==128 && device.samplers==32 && list.heap_count==2 && list.tables==4 &&
         list.barriers==4 && list.clears==2 && list.draws==1 && list.vertex_sets==1);
     const UINT64 expected[4]={10000,20000,10000+64*64,20000+16*32};
@@ -378,6 +400,19 @@ int main(void)
     doe_dx_native_pipeline_destroy(pipeline);
     assert(!device.root.refs && !device.state.refs);
     vertex_formats(&device,&context,&desc);
+    device.expected_vertex=DXGI_FORMAT_UNKNOWN;
+    desc.vertex_buffers=NULL; desc.vertex_buffer_count=0; desc.attributes=NULL; desc.attribute_count=0;
+    desc.masks_explicit=true; desc.sample_mask=0; desc.color_write_mask=0;
+    device.expected_sample_mask=0; device.expected_write_mask=0;
+    desc.blend_enabled=true; device.expected_blend=true;
+    desc.color_blend=(doe_dx_blend_component){6,7,0};
+    desc.alpha_blend=(doe_dx_blend_component){1,7,0};
+    desc.cull=DOE_DX_CULL_BACK; device.expected_cull=D3D12_CULL_MODE_BACK;
+    desc.topology=DOE_DX_LINE_STRIP; device.expected_topology=D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE;
+    assert(doe_dx_native_render_create(&context,&desc,&pipeline,NULL)==DOE_DX_OK);
+    assert(pipeline->render->topology==D3D_PRIMITIVE_TOPOLOGY_LINESTRIP);
+    doe_dx_native_pipeline_destroy(pipeline);
+    assert(!device.root.refs && !device.state.refs);
     puts("PASS SDK CPU render: 41 queried vertex formats and negative IA support,  disjoint stage register visibility,128/32 packed descriptors,4tables/2heaps, OOM before recording, clear/discard/native draws and cleanup; no device/GPU");
     return 0;
 }

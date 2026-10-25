@@ -59,13 +59,22 @@ one resource heap and one sampler heap per command descriptor use. Compute keeps
 its existing 64/16 limits. Module-local resource ordinals never identify another
 stage's resource. Compatible read aliases share allocation leases and transitions.
 
-The public graphics bridge composes triangle-list rendering to one RGBA8/BGRA8
-UNORM color target at sample 1, with frontFace, viewport and scissor. The next
-source increment adds direct vertex/instance inputs for all 41 canonical formats,
+The public graphics bridge composes all five direct primitive topologies to one
+RGBA8/BGRA8 UNORM color target at sample 1, with frontFace, culling, viewport and
+scissor. Explicit zero sample/color-write masks are preserved, not defaulted.
+Blend factors/operations use the shared frontend validation and native PSO state;
+each draw records its own blend constant. Optional render-only D32_FLOAT targets
+compose depth compare/write/bias and whole-pass clear/load/discard using the
+existing DSV and texture-use owners. Texture creation performs real zero upload.
+The source also includes direct vertex/instance inputs for all 41 canonical formats,
 with nonzero ranges, native default component fill and per-record read aliases.
 Public required empty slots remain the resource owner's admission obligation;
 backend holes never invent a buffer. This new increment has not had an SDK or
-driver run.
+driver run. Portable owner controls cover the new fixed-state admission, zero
+masks, blend code rejection, D32 initialization/clear/discard, preparation failure
+and early-release lifetimes. The native descriptor control retains its prior
+unsupported sampled-depth cases and separately admits render-only D32. These
+controls are not SDK compilation, device execution or pixel qualification.
 
 Whole passes execute empty/zero-draw CLEAR/LOAD/STORE. Discard records a real zero
 clear at pass end, so later reads observe initialized zeros through the existing
@@ -73,7 +82,7 @@ texture-use owner; no frontend availability bit is added. All native heaps/views
 prepare before recording. Ordinary command/pending leases retain every dependency
 through unknown completion. This is a checkpoint toward retained graphics parity,
 not a narrower final acceptance target. Eight MRT slots, broader color formats,
-depth/stencil, MSAA, blend/cull, public fragment UAV writes and GPU-guarded indexed
+stencil, depth-only passes, MSAA, public fragment UAV writes and GPU-guarded indexed
 or indirect draws remain concrete migration work. The retained
 [all-format consumer](../../native/tests/vertex_formats.c) additionally needs
 RGBA32 float/uint/sint targets; its acceptance is unchanged by the new RGBA8 fetch control.

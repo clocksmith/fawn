@@ -15,6 +15,12 @@ bool native_d3d12_texture_descriptor(const doe_resource_texture_desc *source,doe
     case WGPUTextureFormat_RGBA8Uint: result.format=DOE_DX_RGBA8_UINT; break;
     case WGPUTextureFormat_R32Float: result.format=DOE_DX_R32_FLOAT; break;
     case WGPUTextureFormat_R32Uint: result.format=DOE_DX_R32_UINT; break;
+    case WGPUTextureFormat_Depth32Float:
+        if (source->usage!=WGPUTextureUsage_RenderAttachment) return false;
+        result.format=DOE_DX_D32_FLOAT;
+        result.usage|=DOE_DX_TEXTURE_DEPTH_ATTACHMENT;
+        *out=result;
+        return true;
     case WGPUTextureFormat_BGRA8Unorm: result.format=DOE_DX_BGRA8_UNORM; break;
     default: return false;
     }

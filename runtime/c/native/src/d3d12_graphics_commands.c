@@ -5,7 +5,7 @@
 #if defined(_WIN32)
 static bool same_targets(const doe_resource_render_targets *a,const doe_resource_render_targets *b)
 {
-    return a->color_count==1 && b->color_count==1 && !a->depth_stencil && !b->depth_stencil &&
+    return a->color_count==1 && b->color_count==1 && a->depth_stencil==b->depth_stencil &&
         !a->occlusion_queries && !b->occlusion_queries && a->colors[0].view==b->colors[0].view &&
         !a->colors[0].resolve_target && !b->colors[0].resolve_target &&
         !a->colors[0].has_depth_slice && !b->colors[0].has_depth_slice;
@@ -44,6 +44,10 @@ static native_failure prepare_draw(const doe_resource_render_packet *packet,
             return native_failure_status(NATIVE_INVALID_ARGUMENT);
         storage->vertices[i]=(doe_dx_buffer_binding){native->allocation,offset,size};
     }
+    doe_vk_clear_color blend;
+    if (!native_render_clear(WGPUTextureFormat_RGBA32Float,packet->state.blend,&blend))
+        return native_failure_status(NATIVE_INVALID_ARGUMENT);
+    memcpy(out->blend_constant,blend.float32,sizeof(out->blend_constant));
     memcpy(out->viewport,packet->state.viewport,sizeof(out->viewport));
     memcpy(out->scissor,packet->state.scissor,sizeof(out->scissor));
     return native_failure_status(NATIVE_OK);
@@ -94,6 +98,27 @@ native_failure native_d3d12_render(native_command_handle *commands,
         failure=prepare_draw(packet,&draws[i],&storage[i]);
     }
     doe_dx_render_pass pass={.color=target->d3d12,.draws=draws,.draw_count=draws_count};
+    if (failure.status==NATIVE_OK && begin->targets.depth_stencil) {
+        doe_resource_view *depth_view=begin->targets.depth_stencil;
+        const doe_resource_view_desc *depth_span=doe_resource_view_description(depth_view);
+        native_texture *depth=doe_resource_texture_native(doe_resource_view_texture(depth_view));
+        if (!depth_span || !depth || !depth->d3d12 || depth_span->format!=WGPUTextureFormat_Depth32Float ||
+            depth_span->dimension!=WGPUTextureViewDimension_2D || depth_span->aspect!=WGPUTextureAspect_All ||
+            depth_span->base_mip || depth_span->mip_count!=1 || depth_span->base_layer || depth_span->layer_count!=1)
+            failure=native_failure_status(NATIVE_UNSUPPORTED);
+        else {
+            pass.depth=depth->d3d12;
+            pass.clear_depth=begin->targets.depth_load==WGPULoadOp_Clear;
+            pass.depth_clear=begin->targets.clear_depth;
+            pass.discard_depth=begin->targets.depth_store==WGPUStoreOp_Discard;
+            if (begin->targets.depth_read_only) {
+                if (begin->targets.depth_load!=WGPULoadOp_Undefined || begin->targets.depth_store!=WGPUStoreOp_Undefined)
+                    failure=native_failure_status(NATIVE_INVALID_ARGUMENT);
+            } else if ((begin->targets.depth_load!=WGPULoadOp_Load && !pass.clear_depth) ||
+                (begin->targets.depth_store!=WGPUStoreOp_Store && !pass.discard_depth))
+                failure=native_failure_status(NATIVE_INVALID_ARGUMENT);
+        }
+    }
     if (failure.status==NATIVE_OK) {
         if (attachment->load==WGPULoadOp_Clear) {
             doe_vk_clear_color clear;

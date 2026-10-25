@@ -38,12 +38,18 @@ typedef struct doe_dx_binding_plan {
     doe_dx_sampler_layout samplers[DOE_DX_MAX_DYNAMIC_SAMPLERS];
 } doe_dx_binding_plan;
 void doe_dx_binding_plan_copy(doe_dx_binding_plan *,const doe_dx_dynamic_pipeline_desc *);
+typedef struct doe_dx_native_render_depth {
+    doe_dx_native_texture *texture;
+    bool clear, discard;
+    float value;
+} doe_dx_native_render_depth;
 typedef struct doe_dx_native_render_draw {
     doe_dx_native_pipeline *pipeline;
     doe_dx_native_resources stages[DOE_DX_RENDER_STAGES];
     doe_dx_native_binding vertices[DOE_DX_MAX_VERTEX_BUFFERS];
     size_t vertex_buffer_count;
     uint32_t vertex_count,instance_count,first_vertex,first_instance;
+    float blend_constant[4];
     float viewport[6];
     uint32_t scissor[4];
 } doe_dx_native_render_draw;
@@ -98,7 +104,7 @@ void doe_dx_native_texture_copy(doe_dx_native_commands *commands,
 doe_dx_status doe_dx_native_render_create(doe_dx_native_context *,const doe_dx_render_pipeline_desc *,
     doe_dx_native_pipeline **,doe_dx_error *);
 doe_dx_status doe_dx_native_render(doe_dx_native_commands *,doe_dx_native_texture *,bool,
-    const float [4],bool,const doe_dx_native_render_draw *,size_t,doe_dx_error *);
+    const float [4],bool,const doe_dx_native_render_depth *,const doe_dx_native_render_draw *,size_t,doe_dx_error *);
 doe_dx_status doe_dx_native_graphics_create(doe_dx_native_context *context,
     const doe_dx_mesh_pipeline_desc *desc, doe_dx_native_pipeline **out, doe_dx_error *error);
 doe_dx_status doe_dx_native_draw(doe_dx_native_commands *commands,

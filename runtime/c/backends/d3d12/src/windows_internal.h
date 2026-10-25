@@ -30,6 +30,7 @@ struct doe_dx_native_texture {
 };
 struct doe_dx_native_timestamps { ID3D12QueryHeap *heap; };
 typedef struct doe_dx_windows_render_layout {
+    D3D_PRIMITIVE_TOPOLOGY topology;
     doe_dx_binding_plan stages[DOE_DX_RENDER_STAGES];
     uint32_t resource_table[DOE_DX_RENDER_STAGES],sampler_table[DOE_DX_RENDER_STAGES];
     uint32_t resource_offset[DOE_DX_RENDER_STAGES],sampler_offset[DOE_DX_RENDER_STAGES];
@@ -88,6 +89,8 @@ DXGI_FORMAT doe_dx_texture_format(doe_dx_format format);
 doe_dx_status doe_dx_prepare_sets(doe_dx_native_commands *,const doe_dx_resource_set *,size_t,
     doe_dx_descriptor_use **,doe_dx_error *);
 void doe_dx_transition_sets(doe_dx_native_commands *,const doe_dx_resource_set *,size_t,bool,bool);
+doe_dx_status doe_dx_prepare_depth_target(doe_dx_native_commands *,doe_dx_native_texture *,
+    doe_dx_descriptor_use **,D3D12_CPU_DESCRIPTOR_HANDLE *,doe_dx_error *);
 doe_dx_status doe_dx_prepare_color_target(doe_dx_native_commands *,doe_dx_native_texture *,
     doe_dx_descriptor_use **,D3D12_CPU_DESCRIPTOR_HANDLE *,doe_dx_error *);
 void doe_dx_graphics_defaults(D3D12_GRAPHICS_PIPELINE_STATE_DESC *,doe_dx_format);
