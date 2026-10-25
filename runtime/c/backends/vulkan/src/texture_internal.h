@@ -18,6 +18,7 @@ struct doe_vk_texture {
     bool evict_requested; /* destroy() while command uses remained: evict at the last. */
     uint32_t command_uses; /* Commands holding a use (recording, queued or running). */
     doe_vk_commands *external_owner; /* Prepared presentation seals this frame. */
+    doe_vk_texture *retired_frame_next; /* Surface generation owns retained, stale frames. */
     VkImage image;
     VkDeviceMemory memory;
     /* Mutable-format list (image format first); zero count when immutable. */

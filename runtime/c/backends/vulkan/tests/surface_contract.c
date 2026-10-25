@@ -8,6 +8,7 @@ static VkResult acquire_result, wait_result, present_result, release_result, sub
 static unsigned acquires, presents, releases, barriers, submits, destroyed_fences, destroyed_semaphores;
 static unsigned platform_creates, surface_destroys, swapchain_destroys;
 static uint64_t next_fence = 100;
+static VkSwapchainKHR expected_old_swapchain;
 static bool queue_supported = true;
 static VkResult create_xcb(VkInstance instance, const VkXcbSurfaceCreateInfoKHR *info,
     const VkAllocationCallbacks *allocator, VkSurfaceKHR *out) {
@@ -72,7 +73,7 @@ static VkResult create_swapchain(VkDevice device, const VkSwapchainCreateInfoKHR
     assert(info->sType == VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR && info->surface == 71);
     assert(info->minImageCount == 3 && info->imageExtent.width == 8 && info->imageExtent.height == 8);
     assert(info->imageFormat == DOE_VK_FORMAT_RGBA8_UNORM && info->presentMode == 1);
-    assert(info->imageArrayLayers == 1 && info->oldSwapchain == 0 && info->imageSharingMode == 0);
+    assert(info->imageArrayLayers == 1 && info->oldSwapchain == expected_old_swapchain && info->imageSharingMode == 0);
     *out = 81;
     return 0;
 }
@@ -210,6 +211,18 @@ int main(void) {
     config.present_mode = DOE_VK_PRESENT_MAILBOX;
     assert(doe_vk_surface_configure(surface, &config, &error) == DOE_VK_OK);
     assert(doe_vk_surface_configure(surface, &config, &error) == DOE_VK_BUSY);
+    doe_vk_surface *replacement = NULL;
+    config.present_mode = DOE_VK_PRESENT_FIFO_RELAXED;
+    assert(doe_vk_surface_replace(surface, &config, &replacement, &error) == DOE_VK_UNSUPPORTED);
+    assert(!replacement && surface->swapchain_status == DOE_VK_OK && surface->source->references == 1);
+    config.present_mode = DOE_VK_PRESENT_MAILBOX;
+    expected_old_swapchain = surface->swapchain;
+    assert(doe_vk_surface_replace(surface, &config, &replacement, &error) == DOE_VK_OK);
+    assert(surface->swapchain_status == DOE_VK_SURFACE_OUTDATED && surface->source == replacement->source);
+    assert(surface->source->references == 2 && surface_destroys == 1);
+    assert(doe_vk_surface_release(surface) == DOE_VK_OK && surface_destroys == 1);
+    surface = replacement;
+    expected_old_swapchain = 0;
     doe_vk_texture *texture = NULL;
     bool suboptimal = true;
     assert(doe_vk_surface_acquire(surface, UINT64_MAX, &texture, &suboptimal, &error) == DOE_VK_INVALID_ARGUMENT);
@@ -261,8 +274,12 @@ int main(void) {
     assert(doe_vk_texture_view_create(texture, &view_desc, &view, &error) == DOE_VK_INVALID_STATE && view == NULL);
     assert(doe_vk_texture_retain(texture) == DOE_VK_OK);
     assert(doe_vk_commands_release(commands) == DOE_VK_OK && surface->references == 1);
-    assert(doe_vk_surface_acquire(surface, 0, &texture, &suboptimal, &error) == DOE_VK_BUSY);
-    doe_vk_texture_release(texture);
+    doe_vk_texture *kept = texture;
+    assert(doe_vk_surface_acquire(surface, 0, &texture, &suboptimal, &error) == DOE_VK_OK);
+    assert(texture != kept && !kept->external_alive);
+    assert(doe_vk_surface_discard(surface, &error) == DOE_VK_OK);
+    assert(doe_vk_surface_unconfigure(surface, &error) == DOE_VK_BUSY);
+    doe_vk_texture_release(kept);
     acquire_result = VK_SUBOPTIMAL_KHR;
     assert(doe_vk_surface_acquire(surface, 0, &texture, &suboptimal, &error) == DOE_VK_OK && suboptimal);
     commands = recording(&context);
@@ -311,8 +328,8 @@ int main(void) {
     assert(doe_vk_surface_retire(surface, 0, &error) == DOE_VK_NATIVE_FAILURE && acquires == acquisition_count + 1);
     context.lost = true;
     assert(doe_vk_surface_release(surface) == DOE_VK_OK);
-    assert(context.references == 1 && swapchain_destroys == 4 && surface_destroys == 2);
-    assert(presents == 3 && releases == 3 && destroyed_fences > 0);
+    assert(context.references == 1 && swapchain_destroys == 5 && surface_destroys == 2);
+    assert(presents == 3 && releases == 4 && destroyed_fences > 0);
     puts("PASS WSI fault-only native boundaries: exact queue/platform/mode admission, acquire retry and output preservation, existing submit signals semaphore, present OOM retry, separate unknown retirement, stale image and caller leases, real discard entrypoint, refused release on surface loss, canonical retirement never acquires a fresh image, terminal device loss; no window-system execution claim");
     return 0;
 }

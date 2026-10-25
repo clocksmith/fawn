@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: MIT */
 #include "internal.h"
+#include "surface.h"
 #include "metal_frontend.h"
 #include "d3d12_texture.h"
 #include <stdlib.h>
@@ -117,7 +118,12 @@ WGPUTextureView wgpuTextureCreateView(WGPUTexture handle, const WGPUTextureViewD
     return (WGPUTextureView)view;
 }
 void wgpuTextureViewAddRef(WGPUTextureView view) { doe_resource_view_retain((doe_resource_view *)view); }
-void wgpuTextureViewRelease(WGPUTextureView view) { doe_resource_view_release((doe_resource_view *)view); }
+void wgpuTextureViewRelease(WGPUTextureView view)
+{
+    native_surface_release_hold hold = native_surface_hold_release(doe_resource_view_texture((doe_resource_view *)view));
+    doe_resource_view_release((doe_resource_view *)view);
+    native_surface_finish_release(hold);
+}
 void wgpuTextureViewSetLabel(WGPUTextureView view, WGPUStringView label)
 {
     native_label(doe_resource_view_device((doe_resource_view *)view), view, label);

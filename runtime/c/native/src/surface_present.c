@@ -8,7 +8,7 @@
 static void release_frame(void *userdata, void *handle)
 {
     native_surface_frame *frame = handle;
-    native_surface *surface = frame->surface;
+    native_surface *surface = frame->texture.surface;
     native_texture_release(userdata, &frame->texture); /* Frees the frame (first member). */
     native_surface_release_lease(surface);
 }
@@ -32,8 +32,7 @@ static native_failure publish_frame(native_surface *surface, doe_vk_texture *fra
         free(payload);
         return native_failure_status(native_from_vulkan(status));
     }
-    payload->texture = (native_texture){.device=device,.texture=frame};
-    payload->surface = surface;
+    payload->texture = (native_texture){.device=device,.texture=frame,.surface=surface};
     native_retain_count(&surface->leases);
     const WGPULimits *device_limits = &device->backend.limits;
     doe_resource_texture_limits limits = {device_limits->maxTextureDimension1D, device_limits->maxTextureDimension2D,

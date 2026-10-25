@@ -148,11 +148,17 @@ int main(void)
     assert(wgpuSurfacePresent(surface) == WGPUStatus_Error); /* Present without acquire. */
     WGPURenderPipeline pipeline = quadrant_pipeline(&s, format);
     for (unsigned i = 0; i < FRAMES; ++i) render_frame(&s, surface, format, pipeline, w.width, w.height, i, i == 0);
+    /* Replacing an active configuration on another device keeps the ordinary
+     * cross-device surface handoff, using that device's own native context. */
+    default_adapter_device(&s, surface, format, &w);
+    configure(&s, surface, format, w.width, w.height);
 
-    /* Stale frame: a texture kept past present cannot be recorded, and its
-     * lease blocks the next acquisition until released. */
+    /* Stale frames cannot be recorded, but their handles and native views may
+     * survive new acquisitions and successful configuration generations. */
     WGPUSurfaceTexture kept = acquire(surface);
     assert(kept.texture);
+    WGPUTextureView kept_view = wgpuTextureCreateView(kept.texture, NULL);
+    assert(kept_view);
     assert(wgpuSurfacePresent(surface) == WGPUStatus_Success); /* Untouched frame: zero-initialized. */
     WGPUBuffer stale = buffer(&s, 256, WGPUBufferUsage_MapRead | WGPUBufferUsage_CopyDst);
     WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(s.device, NULL);
@@ -168,10 +174,25 @@ int main(void)
     wgpuQueueSubmit(s.queue, 1, &rejected);
     expect_validation(&s);
     wgpuCommandBufferRelease(rejected);
+    WGPUSurfaceTexture next = acquire(surface);
+    assert(next.texture && next.texture != kept.texture);
     push_validation(&s);
-    WGPUSurfaceTexture blocked = acquire(surface);
+    configure(&s, surface, WGPUTextureFormat_RGBA16Float, w.width, w.height);
     expect_validation(&s);
-    assert(blocked.status == WGPUSurfaceGetCurrentTextureStatus_Error && !blocked.texture);
+    WGPUSurfaceTexture unchanged = acquire(surface);
+    assert(unchanged.texture == next.texture);
+    wgpuTextureRelease(unchanged.texture);
+    push_validation(&s);
+    bad.device = NULL;
+    wgpuSurfaceConfigure(surface, &bad);
+    expect_validation(&s);
+    unchanged = acquire(surface);
+    assert(unchanged.texture == next.texture);
+    wgpuTextureRelease(unchanged.texture);
+    configure(&s, surface, format, w.width, w.height);
+    render_frame(&s, surface, format, pipeline, w.width, w.height, 1, false);
+    wgpuTextureRelease(next.texture);
+    wgpuTextureViewRelease(kept_view);
     wgpuTextureRelease(kept.texture);
     wgpuBufferRelease(stale);
     render_frame(&s, surface, format, pipeline, w.width, w.height, 1, false);
@@ -206,9 +227,8 @@ int main(void)
     wgpuSurfaceUnconfigure(surface);
     assert(acquire(surface).status == WGPUSurfaceGetCurrentTextureStatus_Error);
     assert(wgpuSurfacePresent(surface) == WGPUStatus_Error);
-    push_validation(&s);
-    configure(&s, surface, format, w.width, w.height); /* Leases still held: explicit rejection. */
-    expect_validation(&s);
+    configure(&s, surface, format, w.width, w.height); /* Old leases stay with their generation. */
+    render_frame(&s, surface, format, pipeline, w.width, w.height, 4, false);
     wgpuTextureViewRelease(held_view);
     wgpuTextureRelease(held.texture);
     configure(&s, surface, format, w.width, w.height);
@@ -228,7 +248,7 @@ int main(void)
     xcb_disconnect(w.connection);
     printf("PASS public surface presentation: XCB window %ux%u after resize (%s), compatibleSurface adapter, default adapter presents, "
         "capabilities, %u verified frames with zero-init/asymmetric pixels/same-submission readback before present, "
-        "stale-frame and lease rejection, reconfigure, reconfigure at a new size after a present burst, deferred unconfigure, early releases and configure/acquire/present "
+        "stale-frame rejection with retained-view acquisition and reconfigure, reconfigure at a new size after a present burst, deferred unconfigure, early releases and configure/acquire/present "
         "negatives; %u retried Timeout statuses %s\n", w.width, w.height, observed, FRAMES + 6, timeouts,
         adapter_class_scope());
     return 0;

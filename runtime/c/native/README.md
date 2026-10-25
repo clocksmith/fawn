@@ -119,14 +119,13 @@ and exact exports; absent platform loaders remain explicitly unavailable.
   async pipeline) that the callback owner refuses for lack of memory returns a
   zero future and, unless the operation already reports its own error, reports
   OutOfMemory to the device, so the callback is never lost silently.
-- On Vulkan, creation on a device that is no longer alive (destroy() or loss)
+- On each backend, creation on a device that is no longer alive (destroy() or loss)
   returns the resource owner's invalid object, never NULL. Getters keep their
   descriptor values; operations on these objects fail silently; maps complete
   with a failure status; async pipelines resolve with an invalid pipeline; and
   compilation info reports no messages. Once a device is lost or destroyed,
   `native_error` reports nothing, because WebGPU generates no errors after loss
-  and the loss callback is the one report. Metal and D3D12 still return NULL
-  there. `tests/lost_objects.c` covers objects created before and after destroy().
+  and the loss callback is the one report. `tests/lost_objects.c` covers objects created before and after destroy().
 - Adapters/devices have their sole native references here. Queue handles retain
   their device. Public buffers, shaders, layouts, groups, pipelines, encoders,
   passes and command buffers alias their typed C resource owners, not wrappers
@@ -379,8 +378,11 @@ owner (`backends/vulkan/include/doe_vk_surface.h`). Design decisions:
   by an adapter mutex). An adapter's Vulkan context is adapter-only (instance and
   physical device, no `VkDevice`); a default request selects the first non-CPU
   device, else the CPU device, from that one context, and retries with the CPU
-  device only when a non-CPU device fails admission. Configure first unconfigures any previous configuration.
-- Capabilities advertise RenderAttachment|CopySrc|CopyDst (the exercised subset),
+  device only when a non-CPU device fails admission. Invalid configuration leaves
+  the previous configuration and current frame intact. A successful replacement
+  retires the previous generation on the existing pending owner.
+- Capabilities advertise RenderAttachment|CopySrc|CopyDst and TextureBinding when
+  the native surface supports sampled images,
   the SRGB-nonlinear BGRA8/RGBA8 (sRGB or unorm) formats the surface reports, the
   native present modes (Fifo always required) and alpha modes with Inherit first,
   so Auto aliases the first element and prefers Inherit as the pinned header says.
@@ -397,7 +399,7 @@ owner (`backends/vulkan/include/doe_vk_surface.h`). Design decisions:
   backend retains the pending acquisition and the next call waits that same one),
   SURFACE_OUTDATED -> Outdated, SURFACE_LOST -> Lost (both sticky until
   reconfiguration, also when observed at present), DEVICE_LOST -> Error (loss is
-  reported by the loss owner), BUSY (previous frame texture/views still held) ->
+  reported by the loss owner), BUSY (unresolved frame recording) ->
   Error plus a Validation error, everything else -> Error plus its typed error.
   Unconfigured surfaces return Error with a NULL texture.
 - Present creates one private command object, attaches the frame with the
@@ -410,11 +412,12 @@ owner (`backends/vulkan/include/doe_vk_surface.h`). Design decisions:
   zero-if-undefined and PRESENT_SRC transition, not a second submission engine;
   the caller's render work keeps its ordinary synchronous QueueSubmit path. The
   public frame is destroyed after Present, so later recording rejects it.
-- One frame is in flight. Callers must release the previous frame's texture and
-  views before the next GetCurrentTexture or Configure (the backend refuses
-  acquisition while old leases exist). Unconfigure and final surface release defer
-  native swapchain retirement until those leases drop; the frame payload's surface
-  lease keeps the native owner alive. A presentation-fence wait that times out keeps
+- One acquired frame is current. Presented texture/view handles may survive
+  subsequent acquisitions and reconfiguration, but remain invalid for new work.
+  Each native swapchain generation retains its stale frames until their leases
+  drop; generations on the same device share the platform VkSurfaceKHR owner.
+  Unconfigure and final surface release retire through the existing pending owner.
+  Old generations never clear a newer public configuration during cleanup. A presentation-fence wait that times out keeps
   the present commands on the pending list: queue settlement then reports uncertain
   completion (as for any unresolved work) until a later surface call retires the
   frame. Unknown presentation completion at final

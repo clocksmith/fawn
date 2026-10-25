@@ -299,6 +299,34 @@ static void cleanup_does_not_block_work_done(xcb_connection_t *connection, xcb_w
     assert(atomic_load(&acquires) == 1 && atomic_load(&discards) == 1);
 }
 
+static void configuration_generations(xcb_connection_t *connection, xcb_window_t window)
+{
+    state s = {0};
+    WGPUSurface surface = setup(&s, connection, window);
+    WGPUSurfaceTexture first = acquire(surface);
+    assert(first.texture);
+    WGPUTextureView old_view = wgpuTextureCreateView(first.texture, NULL);
+    assert(old_view);
+    assert(wgpuSurfacePresent(surface) == WGPUStatus_Success);
+    wgpuTextureRelease(first.texture);
+    configure(&s, surface, choose_format(surface, s.adapter), 64, 48);
+    assert(!s.errors && !atomic_load(&swapchains_closed) && !atomic_load(&surfaces_closed));
+    WGPUSurfaceTexture second = acquire(surface);
+    assert(second.texture);
+    assert(wgpuSurfacePresent(surface) == WGPUStatus_Success);
+    wgpuTextureRelease(second.texture);
+    release_handles(&s, surface);
+    wait_count(&swapchains_closed); /* New generation closes; old view still owns the first. */
+    assert(!atomic_load(&surfaces_closed) && !atomic_load(&contexts_closed));
+    wgpuTextureViewRelease(old_view);
+    /* All work is already terminal: the caller can now destroy its window and
+     * disconnect XCB without racing a deferred vkDestroySurfaceKHR. */
+    assert(atomic_load(&swapchains_closed) == 2 && atomic_load(&surfaces_closed) == 1);
+    wait_count(&contexts_closed);
+    assert(atomic_load(&swapchains_closed) == 2 && atomic_load(&surfaces_closed) == 1);
+    assert(atomic_load(&frontends_closed) == 1 && atomic_load(&acquires) == 2);
+}
+
 static void cached_error(WGPUPopErrorScopeStatus status, WGPUErrorType type,
     WGPUStringView message, void *userdata, void *unused)
 {
@@ -358,10 +386,11 @@ int main(void)
     discard_release_all(connection, window);
     presentation_retry(connection, window);
     unconfigure_preserves_failure(connection, window);
+    configuration_generations(connection, window);
     cleanup_does_not_block_work_done(connection, window, false);
     cleanup_does_not_block_work_done(connection, window, true);
     xcb_destroy_window(connection, window);
     xcb_disconnect(connection);
     printf("PASS surface progress: real WSI fence visibility gates; release-all presentation, acquire-only and failed-discard retirement, "
-        "held-view lifetime, exactly-once native/frontend cleanup, retry ordering, cached-error delivery, WorkDone independent of view/acquire cleanup %s\n", adapter_class_scope());
+        "held-view lifetime across two configuration generations, exactly-once native/frontend cleanup, retry ordering, cached-error delivery, WorkDone independent of view/acquire cleanup %s\n", adapter_class_scope());
 }

@@ -40,8 +40,16 @@ typedef struct native_surface {
  * existing native_texture consumer (views, copies, passes) unchanged. */
 typedef struct native_surface_frame {
     native_texture texture;
-    native_surface *surface; /* Lease dropped after the borrowed frame texture. */
 } native_surface_frame;
+
+/* Public texture/view release holds existing owners across resource finalizers,
+ * then retires completed generations before borrowed window handles may die. */
+typedef struct native_surface_release_hold {
+    native_surface *surface;
+    native_device *device;
+} native_surface_release_hold;
+native_surface_release_hold native_surface_hold_release(doe_resource_texture *texture);
+void native_surface_finish_release(native_surface_release_hold hold);
 
 typedef struct native_presentation {
     native_failure submission; /* Private present-command submission and settlement. */

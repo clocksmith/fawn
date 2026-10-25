@@ -56,10 +56,15 @@ doe_vk_status doe_vk_surface_release(doe_vk_surface *surface);
 doe_vk_status doe_vk_surface_capabilities(doe_vk_surface *surface,
     doe_vk_surface_caps *out, doe_vk_error *error);
 /* Explicit unconfigure is required before replacement; no implicit retirement
- * of an old swapchain on failed creation. At most one frame is in flight, and
- * previous texture/view/command leases must be released before acquiring again. */
+ * of an old swapchain on failed creation. At most one acquired frame is live;
+ * presented texture/view leases may survive subsequent acquisitions. */
 doe_vk_status doe_vk_surface_configure(doe_vk_surface *surface,
     const doe_vk_surface_config *config, doe_vk_error *error);
+/* New swapchain generation on the same platform surface. Validation failures
+ * preserve previous; native creation retires its swapchain per Vulkan. Old
+ * frame/view leases keep that generation alive until separately retired. */
+doe_vk_status doe_vk_surface_replace(doe_vk_surface *previous,
+    const doe_vk_surface_config *config, doe_vk_surface **out, doe_vk_error *error);
 doe_vk_status doe_vk_surface_unconfigure(doe_vk_surface *surface, doe_vk_error *error);
 /* Acquisition uses a real fence. Timeout/pending never publishes a texture and
  * retains pending ownership; a subsequent call waits the same acquisition.

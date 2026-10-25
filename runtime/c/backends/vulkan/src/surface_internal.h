@@ -8,15 +8,20 @@ typedef struct doe_vk_instance_extensions {
     const uint8_t *names[DOE_VK_MAX_INSTANCE_EXTENSIONS];
     uint32_t count;
 } doe_vk_instance_extensions;
+typedef struct doe_vk_surface_source {
+    VkSurfaceKHR handle;
+    uint32_t references; /* Swapchain generations sharing this platform surface. */
+} doe_vk_surface_source;
 struct doe_vk_surface {
     doe_vk_context *context;
     uint32_t references;
-    VkSurfaceKHR surface;
+    doe_vk_surface_source *source;
     VkSwapchainKHR swapchain;
     VkImage images[DOE_VK_MAX_SWAPCHAIN_IMAGES];
     uint32_t image_count, image_index;
     doe_vk_surface_config config;
     doe_vk_texture *texture;
+    doe_vk_texture *retired_frames;
     doe_vk_commands *commands;
     VkFence acquire_fence, present_fence;
     VkSemaphore render_finished;
@@ -39,4 +44,5 @@ doe_vk_status doe_vk_surface_commands_release(doe_vk_commands *commands);
 bool doe_vk_surface_busy(const doe_vk_surface *surface);
 void doe_vk_surface_sync_destroy(doe_vk_surface *surface);
 doe_vk_status doe_vk_surface_fence(doe_vk_surface *surface, VkFence *out, doe_vk_error *error);
+void doe_vk_surface_collect_frames(doe_vk_surface *surface);
 #endif

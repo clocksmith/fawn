@@ -10,12 +10,27 @@ doe_vk_status doe_vk_surface_fence(doe_vk_surface *surface, VkFence *out, doe_vk
     return status;
 }
 
+void doe_vk_surface_collect_frames(doe_vk_surface *surface) {
+    doe_vk_texture **cursor = &surface->retired_frames;
+    while (*cursor) {
+        doe_vk_texture *texture = *cursor;
+        if (texture->references == 1 && texture->recording_owner == NULL) {
+            *cursor = texture->retired_frame_next;
+            texture->retired_frame_next = NULL;
+            doe_vk_texture_release(texture);
+        } else cursor = &texture->retired_frame_next;
+    }
+}
+
 static doe_vk_status frame_texture(doe_vk_surface *surface, doe_vk_error *error) {
+    doe_vk_surface_collect_frames(surface);
     if (surface->texture != NULL) {
-        if (surface->texture->references != 1 || surface->texture->recording_owner != NULL)
-            return doe_vk_fail(DOE_VK_BUSY, "previous surface texture leases", error);
-        doe_vk_texture_release(surface->texture);
+        if (surface->texture->recording_owner != NULL || surface->texture->external_alive)
+            return doe_vk_fail(DOE_VK_BUSY, "previous surface image still in use", error);
+        surface->texture->retired_frame_next = surface->retired_frames;
+        surface->retired_frames = surface->texture;
         surface->texture = NULL;
+        doe_vk_surface_collect_frames(surface);
     }
     doe_vk_texture *texture = calloc(1, sizeof(*texture));
     if (texture == NULL) return doe_vk_fail(DOE_VK_OUT_OF_MEMORY, "acquisition texture owner", error);
