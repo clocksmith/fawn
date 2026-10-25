@@ -495,4 +495,11 @@ native Vulkan/D3D12 preserve the retained flag's lack of an encoding effect.
 Focused Dawn/lavapipe controls count actual copy calls and compare every output
 texel across affected formats, unaffected RGBA, and minimum-mip guards. The
 actual CLI also reads both the original and temporary textures after an active
-quirk. Native Metal staging still requires its own platform execution check.
+quirk. A focused actual Darwin build and Apple M3 run on 2026-10-25 also
+executed one native Metal active RGBA draw with `minMipLevel=2`, checking all
+32x32 output pixels and row padding under an external five-second process
+limit. CLI SHA-256 was
+`7e51a1918000fa6f257e91cbccb9d3e71dc7094f2f6bf246f4ece39f9bd058a1`;
+native library SHA-256 was
+`ea55ffb066968f82163230eb4faffc4e83ffd50e2c95b15b6cb6d751ee0ba7f5`.
+This is a focused render/copy consumer check, not hardware qualification.
