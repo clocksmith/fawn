@@ -157,17 +157,45 @@ static void unary_component(MetalEmitter *e, const IrInstruction *ir, NumericBui
     }
     if (width != 1u) metal_text(e, ")");
 }
+static void integer_builtin(MetalEmitter *e, const IrInstruction *ir, NumericBuiltinKind kind) {
+    const bool sign = type_leaf(e->module, ir->type) == IR_I32;
+    if (kind == BUILTIN_FIRST_TRAILING_BIT) {
+        metal_text(e, "select(");
+        metal_type(e, ir->type);
+        metal_text(e, "(ctz(");
+        metal_value(e, ir->operands.scalar.left);
+        metal_text(e, ")), ");
+        metal_type(e, ir->type);
+        metal_text(e, "(-1), ");
+        metal_value(e, ir->operands.scalar.left);
+        metal_text(e, " == 0)");
+        return;
+    }
+    metal_type(e, ir->type);
+    metal_text(e, "(");
+    if (kind == BUILTIN_FIRST_LEADING_BIT) metal_text(e, sign ? "31 - " : "31u - ");
+    const char *name = kind == BUILTIN_COUNT_ONE_BITS ? "popcount" : kind == BUILTIN_REVERSE_BITS ? "reverse_bits" :
+        kind == BUILTIN_COUNT_TRAILING_ZEROS ? "ctz" : "clz";
+    metal_format(e, "%s(", name);
+    if (kind == BUILTIN_FIRST_LEADING_BIT && sign) {
+        metal_text(e, "select(");
+        metal_value(e, ir->operands.scalar.left);
+        metal_text(e, ", ~");
+        metal_value(e, ir->operands.scalar.left);
+        metal_text(e, ", ");
+        metal_value(e, ir->operands.scalar.left);
+        metal_text(e, " < 0)");
+    } else metal_value(e, ir->operands.scalar.left);
+    metal_text(e, "))");
+}
 static void builtin_expression(MetalEmitter *e, const IrInstruction *ir) {
     const NumericBuiltin *builtin = builtin_kind((NumericBuiltinKind)ir->operands.scalar.literal);
     if (builtin == NULL) {
         metal_error(e, "Metal builtin identity has no registered semantics");
         return;
     }
-    if (builtin->kind == BUILTIN_COUNT_ONE_BITS) {
-        metal_type(e, ir->type);
-        metal_text(e, "(popcount(");
-        metal_value(e, ir->operands.scalar.left);
-        metal_text(e, "))");
+    if (builtin->family == BUILTIN_COMPONENT_INTEGER) {
+        integer_builtin(e, ir, builtin->kind);
         return;
     }
     if (builtin->family == BUILTIN_BOOLEAN_REDUCTION) {

@@ -29,7 +29,7 @@ enum {
     OP_ULESS_THAN = 176, OP_SLESS_THAN = 177, OP_ULESS_EQUAL = 178, OP_SLESS_EQUAL = 179, OP_FORD_EQUAL = 180, OP_FUNORD_NOT_EQUAL = 183,
     OP_FORD_LESS_THAN = 184, OP_FORD_GREATER_THAN = 186, OP_FORD_LESS_EQUAL = 188,
     OP_FORD_GREATER_EQUAL = 190,
-    OP_BIT_COUNT = 205, OP_SHIFT_RIGHT_LOGICAL = 194, OP_SHIFT_RIGHT_ARITHMETIC = 195, OP_SHIFT_LEFT = 196,
+    OP_BIT_REVERSE = 204, OP_BIT_COUNT = 205, OP_SHIFT_RIGHT_LOGICAL = 194, OP_SHIFT_RIGHT_ARITHMETIC = 195, OP_SHIFT_LEFT = 196,
     OP_BIT_OR = 197, OP_BIT_XOR = 198, OP_BIT_AND = 199, OP_NOT = 200, OP_CONTROL_BARRIER = 224,
     OP_ATOMIC_LOAD = 227, OP_ATOMIC_STORE = 228, OP_ATOMIC_EXCHANGE = 229, OP_ATOMIC_COMPARE_EXCHANGE = 230,
     OP_ATOMIC_ADD = 234, OP_ATOMIC_SUBTRACT = 235, OP_ATOMIC_SMIN = 236, OP_ATOMIC_UMIN = 237,
@@ -110,4 +110,5 @@ bool spirv_subgroup_builtin(Emitter *, const IrInstruction *, const NumericBuilt
     const uint32_t arguments[] = { __VA_ARGS__ }; \
     if (!spirv_instruction(e, opcode, arguments, sizeof(arguments) / sizeof(arguments[0]))) return false; \
 } while (0)
+bool spirv_integer_builtin(Emitter *, const IrInstruction *, const NumericBuiltin *);
 #endif

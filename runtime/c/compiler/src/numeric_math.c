@@ -70,7 +70,9 @@ bool numeric_math(Source *source, size_t offset, NumericBuiltinKind kind,
             } else *result = input * factor;
             break;
         }
-        case BUILTIN_MIX: case BUILTIN_COUNT_ONE_BITS: case BUILTIN_UNPACK4X_U8:
+        case BUILTIN_MIX: case BUILTIN_COUNT_ONE_BITS:
+        case BUILTIN_REVERSE_BITS: case BUILTIN_COUNT_LEADING_ZEROS: case BUILTIN_COUNT_TRAILING_ZEROS:
+        case BUILTIN_FIRST_LEADING_BIT: case BUILTIN_FIRST_TRAILING_BIT: case BUILTIN_UNPACK4X_U8:
         case BUILTIN_PACK4X_I8: case BUILTIN_PACK4X_U8: case BUILTIN_PACK4X_I8_CLAMP:
         case BUILTIN_PACK4X_U8_CLAMP: case BUILTIN_UNPACK4X_I8:
         case BUILTIN_DOT4_I8_PACKED: case BUILTIN_DOT4_U8_PACKED:

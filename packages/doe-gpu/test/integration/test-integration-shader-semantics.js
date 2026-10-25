@@ -38,6 +38,86 @@ const POINTER_EXPECTED = [2, 4, 9, 19, 22, 4, 5, 10, 30, 33,
   6, 6, 11, 21, 24, 8, 7, 12, 32, 35];
 const CASES = [
   {
+    label: 'integer bit scans preserve signed edges, vectors, constants and saved effects',
+    code: `@group(0) @binding(0) var<storage,read_write> data:array<u32>;
+fn changed()->u32{data[49]+=1u;return 1u;}
+@compute @workgroup_size(1) fn main(){
+var u=vec4u(0u,1u,0x80000000u,0xffffffffu);
+var s=bitcast<vec4i>(u);
+let v0=reverseBits(u);
+data[0]=bitcast<u32>(v0.x);
+data[1]=bitcast<u32>(v0.y);
+data[2]=bitcast<u32>(v0.z);
+data[3]=bitcast<u32>(v0.w);
+let v4=reverseBits(s);
+data[4]=bitcast<u32>(v4.x);
+data[5]=bitcast<u32>(v4.y);
+data[6]=bitcast<u32>(v4.z);
+data[7]=bitcast<u32>(v4.w);
+let v8=countLeadingZeros(u);
+data[8]=bitcast<u32>(v8.x);
+data[9]=bitcast<u32>(v8.y);
+data[10]=bitcast<u32>(v8.z);
+data[11]=bitcast<u32>(v8.w);
+let v12=countLeadingZeros(s);
+data[12]=bitcast<u32>(v12.x);
+data[13]=bitcast<u32>(v12.y);
+data[14]=bitcast<u32>(v12.z);
+data[15]=bitcast<u32>(v12.w);
+let v16=countTrailingZeros(u);
+data[16]=bitcast<u32>(v16.x);
+data[17]=bitcast<u32>(v16.y);
+data[18]=bitcast<u32>(v16.z);
+data[19]=bitcast<u32>(v16.w);
+let v20=countTrailingZeros(s);
+data[20]=bitcast<u32>(v20.x);
+data[21]=bitcast<u32>(v20.y);
+data[22]=bitcast<u32>(v20.z);
+data[23]=bitcast<u32>(v20.w);
+let v24=firstLeadingBit(u);
+data[24]=bitcast<u32>(v24.x);
+data[25]=bitcast<u32>(v24.y);
+data[26]=bitcast<u32>(v24.z);
+data[27]=bitcast<u32>(v24.w);
+let v28=firstLeadingBit(s);
+data[28]=bitcast<u32>(v28.x);
+data[29]=bitcast<u32>(v28.y);
+data[30]=bitcast<u32>(v28.z);
+data[31]=bitcast<u32>(v28.w);
+let v32=firstTrailingBit(u);
+data[32]=bitcast<u32>(v32.x);
+data[33]=bitcast<u32>(v32.y);
+data[34]=bitcast<u32>(v32.z);
+data[35]=bitcast<u32>(v32.w);
+let v36=firstTrailingBit(s);
+data[36]=bitcast<u32>(v36.x);
+data[37]=bitcast<u32>(v36.y);
+data[38]=bitcast<u32>(v36.z);
+data[39]=bitcast<u32>(v36.w);
+var negative=vec4i(-1,-2,-3,-2147483648);
+let n=firstLeadingBit(negative);
+data[40]=bitcast<u32>(n.x);
+data[41]=bitcast<u32>(n.y);
+data[42]=bitcast<u32>(n.z);
+data[43]=bitcast<u32>(n.w);
+const c0=reverseBits(1u);data[44]=bitcast<u32>(c0);
+const c1=countLeadingZeros(0i);data[45]=bitcast<u32>(c1);
+const c2=countTrailingZeros(0u);data[46]=bitcast<u32>(c2);
+const c3=firstLeadingBit(-1i);data[47]=bitcast<u32>(c3);
+const c4=firstTrailingBit(0u);data[48]=bitcast<u32>(c4);
+data[49]=0u;data[50]=reverseBits(changed());
+}`,
+    expected: [
+      0, 2147483648, 1, 4294967295, 0, 2147483648, 1, 4294967295,
+      32, 31, 0, 0, 32, 31, 0, 0,
+      32, 0, 31, 0, 32, 0, 31, 0,
+      4294967295, 0, 31, 31, 4294967295, 0, 30, 4294967295,
+      4294967295, 0, 31, 0, 4294967295, 0, 31, 0,
+      4294967295, 0, 1, 30, 2147483648, 32, 32, 4294967295,
+      4294967295, 1, 2147483648,
+    ],
+  },
+  {
     label: 'packed integer byte order, sign extension, clamps and argument effects',
     code: `requires packed_4x8_integer_dot_product;
 const c0 = pack4xU8(vec4u(0u,255u,256u,0xffffffffu))==0xff00ff00u;
