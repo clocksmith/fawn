@@ -311,7 +311,7 @@ check-sanitizers:
 # Developer evidence on the printed adapter/driver only, not qualification. Uses the
 # system ICDs: unset VK_ICD_FILENAMES. Never run on a host under a physical hold.
 PHYSICAL_CLIENTS = draw-guard implicit-sampling d3d12-graphics d3d12-vertex-inputs depth-comparison all-any select pipeline-overrides texture-bindings atomic-operations texture-transfers indirect-dispatch map-oom command-resources binding-aliases mixed-resources offscreen-triangle draw-budget indirect-render indexed-render depth-copies depth-sampling readonly-depth-sampling cube-array view-formats point-list color-discard msaa-sampling format-features draw-features copy-layouts bc-compression component-swizzle encoder-errors core-formats indirect-compute atomics debug msaa depth \
-	demote graphics-admission empty-shader graphics compute lifecycle instance-devices textures admission \
+	demote graphics-admission empty-shader graphics compute lifecycle instance-devices lost-objects textures admission \
 	failures timestamps recovery uniform-standard wgsl-language-features texture-binding-view-dimension compute-programs fused-commands program-prepare vertex-formats mrt anisotropy storage-textures limits large-write slice-render
 # Real-window presentation (XCB on a reachable X server, e.g. Xwayland); not part
 # of headless `check`. Exit 77 means skipped (no display), never a pass.

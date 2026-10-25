@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: MIT
- * WebGPU invalid objects after device.destroy() on software Vulkan: every
+ * WebGPU invalid objects after device.destroy() on the selected backend: every
  * creation returns an object, getters report its descriptor, every operation
  * using it fails silently (no error after loss), every callback is delivered
  * exactly once with a non-success or invalid-object result, and releasing
@@ -100,7 +100,7 @@ typedef struct objects {
     WGPUQuerySet queries;
 } objects;
 
-static void create(WGPUDevice device, objects *o)
+static void create(WGPUDevice device, objects *o, bool lost)
 {
     WGPUBufferDescriptor storage = {.size = 256, .usage = WGPUBufferUsage_Storage | WGPUBufferUsage_CopySrc |
         WGPUBufferUsage_CopyDst | WGPUBufferUsage_Indirect | WGPUBufferUsage_QueryResolve};
@@ -137,9 +137,11 @@ static void create(WGPUDevice device, objects *o)
     WGPUBindGroupDescriptor group = {.layout = o->layout, .entryCount = 1, .entries = &entry};
     o->group = wgpuDeviceCreateBindGroup(device, &group);
     WGPUQuerySetDescriptor queries = {.type = WGPUQueryType_Occlusion, .count = 4};
-    o->queries = wgpuDeviceCreateQuerySet(device, &queries);
+    if (lost || adapter_class_backend() == WGPUBackendType_Vulkan)
+        o->queries = wgpuDeviceCreateQuerySet(device, &queries);
     assert(o->buffer && o->mappable && o->texture && o->view && o->sampler && o->compute && o->render &&
-        o->layout && o->pipeline_layout && o->group && o->queries);
+        o->layout && o->pipeline_layout && o->group);
+    assert(!lost || o->queries);
 }
 
 /* Every recording, submission and queue operation over the objects. */
@@ -150,7 +152,7 @@ static void use(WGPUInstance instance, WGPUDevice device, WGPUQueue queue, objec
     assert(wgpuBufferGetMapState(o->mappable) == WGPUBufferMapState_Unmapped);
     assert(wgpuTextureGetWidth(o->texture) == 8 && wgpuTextureGetHeight(o->texture) == 4);
     assert(wgpuTextureGetFormat(o->texture) == WGPUTextureFormat_RGBA8Unorm);
-    assert(wgpuQuerySetGetCount(o->queries) == 4 && wgpuQuerySetGetType(o->queries) == WGPUQueryType_Occlusion);
+    if (o->queries) assert(wgpuQuerySetGetCount(o->queries) == 4 && wgpuQuerySetGetType(o->queries) == WGPUQueryType_Occlusion);
     WGPUTextureView extra = wgpuTextureCreateView(o->texture, NULL);
     assert(extra);
     WGPUBindGroupLayout layout = wgpuRenderPipelineGetBindGroupLayout(o->render, 0);
@@ -267,6 +269,7 @@ int main(void)
     adapter_class_options(&options);
     assert(wgpuInstanceRequestAdapter(instance, &options,
         (WGPURequestAdapterCallbackInfo){.mode = WGPUCallbackMode_AllowSpontaneous, .callback = on_adapter, .userdata1 = &adapter}).id);
+    adapter_class_require(adapter);
     WGPUDeviceDescriptor descriptor = WGPU_DEVICE_DESCRIPTOR_INIT;
     descriptor.uncapturedErrorCallbackInfo = (WGPUUncapturedErrorCallbackInfo){.callback = on_error};
     descriptor.deviceLostCallbackInfo = (WGPUDeviceLostCallbackInfo){.mode = WGPUCallbackMode_AllowSpontaneous, .callback = on_lost};
@@ -274,10 +277,10 @@ int main(void)
         (WGPURequestDeviceCallbackInfo){.mode = WGPUCallbackMode_AllowSpontaneous, .callback = on_device, .userdata1 = &device}).id);
     WGPUQueue queue = wgpuDeviceGetQueue(device);
     objects before = {0}, after = {0};
-    create(device, &before);
+    create(device, &before, false);
     wgpuDeviceDestroy(device);
     assert(losses == 1);
-    create(device, &after); /* Every creation still returns an object. */
+    create(device, &after, true); /* Every creation still returns an object. */
     use(instance, device, queue, &before);
     use(instance, device, queue, &after);
     assert(!errors && losses == 1);
@@ -287,6 +290,6 @@ int main(void)
     wgpuDeviceRelease(device);
     wgpuAdapterRelease(adapter);
     wgpuInstanceRelease(instance);
-    puts("lost objects: every creation after destroy() returns an invalid object with its descriptor; every use fails silently; callbacks once; clean release");
+    printf("PASS lost objects: every creation after destroy() returns an invalid object with its descriptor; every use fails silently; callbacks once; clean release %s\n", adapter_class_scope());
     return 0;
 }

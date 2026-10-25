@@ -28,7 +28,7 @@ WGPUFuture wgpuDeviceCreateComputePipelineAsync(WGPUDevice handle,
     native_device_retain(device);
     native_pipeline_error error = {WGPUErrorType_Internal, "compute pipeline creation failed"};
     /* A lost device resolves with its invalid pipeline, never an error. */
-    WGPUComputePipeline pipeline = native_vulkan_dead(device) ?
+    WGPUComputePipeline pipeline = native_device_dead(device) ?
         native_lost_compute_pipeline(device, descriptor ? descriptor->label : (WGPUStringView){NULL, 0}) :
         native_create_compute_pipeline(device, descriptor, &error);
     native_lock(device);

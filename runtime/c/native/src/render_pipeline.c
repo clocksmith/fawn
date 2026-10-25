@@ -156,7 +156,7 @@ WGPURenderPipeline wgpuDeviceCreateRenderPipeline(WGPUDevice handle, const WGPUR
 {
     native_device *device = (native_device *)handle;
     if (!device) return NULL;
-    if (native_vulkan_dead(device)) return native_lost_render_pipeline(device, (descriptor ? descriptor->label : (WGPUStringView){NULL, 0}));
+    if (native_device_dead(device)) return native_lost_render_pipeline(device, (descriptor ? descriptor->label : (WGPUStringView){NULL, 0}));
     native_pipeline_error error;
     WGPURenderPipeline pipeline = native_create_render_pipeline(device, descriptor, &error);
     if (!pipeline) native_error(device, error.type, error.message);
@@ -173,7 +173,7 @@ WGPUBindGroupLayout wgpuRenderPipelineGetBindGroupLayout(WGPURenderPipeline hand
     doe_resource_render_pipeline *pipeline = (doe_resource_render_pipeline *)handle;
     native_device *device = doe_resource_render_pipeline_device(pipeline);
     if (!device) return NULL;
-    if (native_vulkan_dead(device)) return native_lost_bind_group_layout(device, (WGPUStringView){NULL, 0});
+    if (native_device_dead(device)) return native_lost_bind_group_layout(device, (WGPUStringView){NULL, 0});
     doe_resource_layout *layout = NULL;
     native_lock(device);
     doe_resource_status status = index < device->backend.limits.maxBindGroups ?

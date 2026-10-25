@@ -23,7 +23,7 @@ WGPUTexture wgpuDeviceCreateTexture(WGPUDevice handle, const WGPUTextureDescript
 {
     native_device *device = (native_device *)handle;
     if (!device) return NULL;
-    if (native_vulkan_dead(device)) return native_lost_texture(device, descriptor);
+    if (native_device_dead(device)) return native_lost_texture(device, descriptor);
     if (device->backend.kind == WGPUBackendType_Metal) return native_metal_create_texture(device, descriptor);
     if (device->backend.kind == WGPUBackendType_D3D12) return native_d3d12_create_texture(device, descriptor);
     if (device->backend.kind != WGPUBackendType_Vulkan) {

@@ -8,13 +8,6 @@
 #include "internal.h"
 #include <stdlib.h>
 
-/* Metal and D3D12 keep their existing NULL results until their owners adopt
- * these objects; only the Vulkan path is exercised. */
-bool native_vulkan_dead(native_device *device)
-{
-    return device->backend.kind == WGPUBackendType_Vulkan && native_device_dead(device);
-}
-
 bool native_device_dead(native_device *device)
 {
     native_lock(device);
