@@ -28,6 +28,9 @@ bool spirv_subgroup_builtin(Emitter *e, const IrInstruction *ir,
         case BUILTIN_SUBGROUP_OR: opcode = 360u; break;
         case BUILTIN_SUBGROUP_XOR: opcode = 361u; break;
         case BUILTIN_MIX: case BUILTIN_COUNT_ONE_BITS: case BUILTIN_UNPACK4X_U8:
+        case BUILTIN_PACK4X_I8: case BUILTIN_PACK4X_U8: case BUILTIN_PACK4X_I8_CLAMP:
+        case BUILTIN_PACK4X_U8_CLAMP: case BUILTIN_UNPACK4X_I8:
+        case BUILTIN_DOT4_I8_PACKED: case BUILTIN_DOT4_U8_PACKED:
         case BUILTIN_ABS: case BUILTIN_SIGN: case BUILTIN_FLOOR: case BUILTIN_ROUND:
         case BUILTIN_TRUNC: case BUILTIN_FRACT: case BUILTIN_SIN: case BUILTIN_COS:
         case BUILTIN_TAN: case BUILTIN_ASIN: case BUILTIN_ACOS: case BUILTIN_ATAN:

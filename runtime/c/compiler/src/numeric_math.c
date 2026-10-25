@@ -71,6 +71,9 @@ bool numeric_math(Source *source, size_t offset, NumericBuiltinKind kind,
             break;
         }
         case BUILTIN_MIX: case BUILTIN_COUNT_ONE_BITS: case BUILTIN_UNPACK4X_U8:
+        case BUILTIN_PACK4X_I8: case BUILTIN_PACK4X_U8: case BUILTIN_PACK4X_I8_CLAMP:
+        case BUILTIN_PACK4X_U8_CLAMP: case BUILTIN_UNPACK4X_I8:
+        case BUILTIN_DOT4_I8_PACKED: case BUILTIN_DOT4_U8_PACKED:
         case BUILTIN_ABS: case BUILTIN_MIN: case BUILTIN_MAX: case BUILTIN_CLAMP:
         case BUILTIN_DOT: case BUILTIN_LENGTH: case BUILTIN_TRANSPOSE: case BUILTIN_DETERMINANT:
         case BUILTIN_DISTANCE: case BUILTIN_NORMALIZE: case BUILTIN_CROSS: case BUILTIN_REFLECT:

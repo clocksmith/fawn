@@ -902,6 +902,9 @@ static bool module_directive(Parser *p, bool enable) {
                  (p->tokens->module_flags & MODULE_STANDARD_UNIFORM) != 0u) {
             /* A language requirement checks caller-selected implementation support. */
         }
+        else if (!enable && parser_spelled(p, extension, "packed_4x8_integer_dot_product")) {
+            /* Portable typed integer lowering provides the complete packed family. */
+        }
         else if (!enable && parser_spelled(p, extension, "subgroup_uniformity")) {
             /* This implementation analyzes both workgroup and subgroup scopes. */
         } else return source_error(p->source, DOE_COMPILER_UNSUPPORTED, extension->offset,

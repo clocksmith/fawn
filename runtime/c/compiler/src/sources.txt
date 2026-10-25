@@ -47,3 +47,4 @@ src/spirv_module.c
 src/spirv_subgroup.c
 src/compile.c
 src/storage.c
+src/sema_packed.c

@@ -263,11 +263,13 @@ static inline bool sema_builtin_value(Source *source, const Expression *node, co
     if (builtin->family != BUILTIN_MATRIX) {
         if (builtin_floating(builtin) && leaf == IR_ABSTRACT_INT) leaf = IR_ABSTRACT_FLOAT;
         if (builtin->family == BUILTIN_COMPONENT_INTEGER && leaf == IR_ABSTRACT_INT) leaf = IR_I32;
-        if (builtin->family == BUILTIN_BYTE_UNPACK && leaf == IR_ABSTRACT_INT) leaf = IR_U32;
+        if (builtin->family == BUILTIN_PACKED_INTEGER && leaf == IR_ABSTRACT_INT)
+            leaf = packed_pack(builtin->kind) && packed_signed(builtin->kind) ? IR_I32 : IR_U32;
         if (!builtin_shape(builtin, width) ||
             (builtin->kind == BUILTIN_SIGN && leaf == IR_U32) ||
             (builtin->family == BUILTIN_COMPONENT_INTEGER && leaf != IR_I32 && leaf != IR_U32) ||
-            (builtin->family == BUILTIN_BYTE_UNPACK && (leaf != IR_U32 || width != 1u)) ||
+            (builtin->family == BUILTIN_PACKED_INTEGER &&
+             leaf != (packed_pack(builtin->kind) && packed_signed(builtin->kind) ? IR_I32 : IR_U32)) ||
             (builtin->family == BUILTIN_SUBGROUP_INTEGER && leaf != IR_I32 && leaf != IR_U32 && leaf != IR_ABSTRACT_INT) ||
             (builtin_floating(builtin) && leaf != IR_F32 && leaf != IR_ABSTRACT_FLOAT))
             return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, node->source_offset,
@@ -296,8 +298,11 @@ static inline bool sema_builtin_value(Source *source, const Expression *node, co
 
     }
     TypeId result_type = builtin->family == BUILTIN_MATRIX || builtin_scalar_result(builtin) ? leaf : operand_type;
-    if (builtin->family == BUILTIN_BYTE_UNPACK &&
-        !type_intern(source, TYPE_VECTOR, IR_U32, 4u, &result_type)) return false;
+    if (builtin->family == BUILTIN_PACKED_INTEGER) {
+        result_type = packed_pack(builtin->kind) || !packed_signed(builtin->kind) ? IR_U32 : IR_I32;
+        if (!packed_pack(builtin->kind) && !packed_dot(builtin->kind) &&
+            !type_intern(source, TYPE_VECTOR, result_type, 4u, &result_type)) return false;
+    }
     *out = (ExpressionValue){
         .runtime = runtime, .overridable = overridable, .known = known && !runtime, .constant.type = result_type,
         .value = {.type = result_type, .source_offset = node->source_offset}
