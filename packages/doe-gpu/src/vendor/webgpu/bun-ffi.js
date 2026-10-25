@@ -4818,7 +4818,7 @@ function ensureLibrary() {
     if (libraryLoaded) return;
     if (!DOE_LIB_PATH) {
         throw new Error(
-            "doe-gpu: libwebgpu_doe not found. Install the matching doe-gpu optional platform package, or build it with `cd runtime/zig && zig build dropin`, or set DOE_WEBGPU_LIB."
+            "doe-gpu: libwebgpu_doe not found. Install the matching doe-gpu optional platform package, or build the C provider with `python3 runtime/c/tools/build-native-package.py --ref HEAD --build <build> --destination <stage>` and set DOE_C_STAGE, or set DOE_WEBGPU_LIB."
         );
     }
     wgpu = openLibrary(DOE_LIB_PATH);
