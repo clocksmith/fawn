@@ -5,6 +5,7 @@
 #include "doe_compiler_metal.h"
 #include "doe_compiler_specialization.h"
 #include "doe_compiler_metal_pipeline.h"
+#include "doe_compiler_sampling.h"
 #include <stdbool.h>
 #ifdef __cplusplus
 extern "C" {
@@ -40,6 +41,7 @@ typedef struct doe_shader_options {
     /* Only compiler semantic bits, never output/measure flags. Zero preserves
      * conservative standalone defaults. Policy participates in artifact identity. */
     uint32_t semantic_flags;
+    size_t sampling_pairs; /* Explicit ABI16 specialization staging capacity. */
 } doe_shader_options;
 typedef struct doe_shader_error {
     doe_shader_status status;
@@ -82,6 +84,9 @@ typedef struct doe_shader_view {
     size_t handle_count;
     const DoeCompilerStageInterfaceV7 *interfaces;
     size_t interface_count;
+    const DoeCompilerSamplingPairV16 *sampling_pairs;
+    size_t sampling_pair_count;
+    bool sampling_pairs_complete; /* False for legacy artifacts without ABI16 metadata. */
 } doe_shader_view;
 /* Compiles with the one public C pipeline, owns a source/identity copy and exact
  * target/reflection spans. Outputs remain untouched on failure; error may change.

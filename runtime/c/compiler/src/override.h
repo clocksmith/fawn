@@ -2,6 +2,7 @@
 #ifndef DOE_COMPILER_OVERRIDE_H
 #define DOE_COMPILER_OVERRIDE_H
 #include "sema.h"
+#include "sampling_internal.h"
 #include "../include/doe_compiler_module_specialization.h"
 #include "../include/doe_compiler_metal_pipeline.h"
 enum { DECLARATION_OVERRIDE = 32u, DECLARATION_KNOWN = 64u };
@@ -12,6 +13,7 @@ typedef struct {
     TypeId type;
 } OverrideRecord;
 struct SpecializationContext {
+    SamplingContext *sampling;
     OverrideRecord *records;
     uint32_t count, capacity;
     const DoeCompilerOverrideValueV13 *values;

@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: MIT
  * Copyright (c) 2026 Doe contributors */
 #include "compile_internal.h"
+#include <string.h>
 
 bool compiler_metadata_prepare(Source *source, DoeCompilerTypedOutputCounts *typed,
     uint32_t flags, bool handles, CompilerMetadata *metadata) {
@@ -14,6 +15,8 @@ bool compiler_metadata_prepare(Source *source, DoeCompilerTypedOutputCounts *typ
     typed->name_bytes += (size_t)stage_names;
     if ((flags & DOE_COMPILER_MODULE_WORDS) != 0u) metadata->counts.words = typed->words;
     if ((flags & DOE_COMPILER_MODULE_REFLECTION) == 0u) return true;
+    if (!sampling_prepare(source)) return false;
+    metadata->sampling = sampling_context(source);
     metadata->interfaces = source->stages != NULL ? source->stages->interface_count : 0u;
     metadata->handles = handles ? reflect_handle_count(c) : 0u;
     metadata->counts.types = typed->types;
@@ -37,7 +40,8 @@ bool compiler_metadata_prepare(Source *source, DoeCompilerTypedOutputCounts *typ
 bool compiler_metadata_fits(const CompilerMetadata *metadata, const DoeCompilerModuleOutputs *outputs,
     const DoeCompilerResourceOutputs *resources, const DoeCompilerStageOutputs *stages) {
     const DoeCompilerModuleOutputCounts *counts = &metadata->counts;
-    return (stages == NULL || stages->interface_capacity >= metadata->interfaces) &&
+    return (metadata->sampling == NULL || metadata->sampling->outputs->pair_capacity >= metadata->sampling->count) &&
+        (stages == NULL || stages->interface_capacity >= metadata->interfaces) &&
         (resources == NULL || resources->handle_capacity >= metadata->handles) &&
         outputs->word_capacity >= counts->words && outputs->type_capacity >= counts->types &&
         outputs->member_capacity >= counts->members && outputs->resource_capacity >= counts->resources &&
@@ -49,6 +53,9 @@ void compiler_metadata_publish(Source *source, const CompilerMetadata *metadata,
     const DoeCompilerModuleOutputs *outputs, DoeCompilerModuleResult *result,
     const DoeCompilerResourceOutputs *resources, DoeCompilerResourceResult *resource_result,
     const DoeCompilerStageOutputs *stages, DoeCompilerStageResult *stage_result) {
+    if (metadata->sampling != NULL && metadata->sampling->count != 0u)
+        memcpy(metadata->sampling->outputs->pairs, metadata->sampling->staging,
+            metadata->sampling->count * sizeof(*metadata->sampling->staging));
     reflect_module(source, source->compiler, outputs, selected, &result->module);
     if (resource_result != NULL) {
         reflect_handles(source->compiler, resources->handles);

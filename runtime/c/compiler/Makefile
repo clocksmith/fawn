@@ -529,3 +529,9 @@ build/test_f16: $(LIB_SOURCES) tests/test_f16.c $(HEADERS) | build/.ready
 test-f16: build/doe-compiler-c build/test_f16
 	build/test_f16
 	DOE_COMPILER_CLI="$(CURDIR)/build/doe-compiler-c" SPIRV_VAL="$(SPIRV_VAL)" python3 tests/test_f16.py
+
+.PHONY: test-sampling
+build/test_sampling: $(LIB_SOURCES) tests/test_sampling.c tests/hlsl_fixture.h $(HEADERS) | build/.ready
+	$(CC) $(CFLAGS) $(LIB_SOURCES) tests/test_sampling.c -lm -o $@
+test-sampling: build/test_sampling
+	build/test_sampling

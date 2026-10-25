@@ -147,6 +147,12 @@ retains its immutable source module. Caller module/source/options/value lifetime
 may end while artifacts remain referenced. Temporary snapshots/workspaces release
 before success publication, and failed replacement preserves existing artifacts.
 
+Specialization now uses additive ABI16 with explicit `sampling_pairs` staging
+capacity. Each artifact owns immutable selected-entry texture/sampler pair rows
+from the compiler, with a completeness flag distinguishing known-empty metadata
+from legacy artifacts. Pair spans share the existing allocation, rollback and
+module-retained lifetime; this owner performs no source or call-graph analysis.
+
 All targets publish one executable entry at index0 with its declared name/stage;
 resource ordinals and target-specific slots/registers come from the compiler.
 Legacy identity matching deliberately rejects new handle kinds.

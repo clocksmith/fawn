@@ -18,7 +18,8 @@ specializations and retained legacy compilation.
 [Public header](include/doe_shader.h) describes caller allocator lifetimes,
 explicit capacities and borrowed views. Module-only handles expose symbolic
 metadata; executable borrow rejects them. Specialization uses the saved immutable
-source/options and compiler ABI13, producing one declared entry at index0.
+source/options and additive compiler ABI16, producing one declared entry at index0
+and immutable complete sampling-pair metadata from explicit staging capacity.
 The additive ABI15 Metal fragment policy is copied before callbacks and owned
 with exact sample-mask identity; it never changes the public source interface.
 

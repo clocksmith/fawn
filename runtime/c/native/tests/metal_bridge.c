@@ -9,6 +9,7 @@
 #include "metal_copy_cases.h"
 #include "metal_view_cases.h"
 #include "metal_f16_cases.h"
+#include "sampling_pair_cases.h"
 #include "doe_native_programs.h"
 
 static mock_native mocks[8];
@@ -945,6 +946,7 @@ int main(void)
     metal_f16_consumer(&s, &mocks[2]);
     metal_f16_compact_storage(&s, &mocks[2]);
     metal_swizzle_case(&s, &mocks[2], true);
+    exact_pair_layouts(&s);
     required_metal_limits(&s);
     sampled_float_admission(&s);
     metal_storage_cases(&s);

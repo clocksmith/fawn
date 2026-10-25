@@ -86,6 +86,28 @@ let s=bitcast<i32>(h.xy); a[3]=vec2u(bitcast<u32>(bitcast<vec2h>(s)),0u);}"""
                     values.append(words[cursor + 3])
                 cursor += length
             assert expected in values, (expected, values)
+        override_source = directory / "half-override.wgsl"
+        override_source.write_text("enable f16; override h:f16; @group(0) @binding(0) var<storage,read_write> a:array<f16>; @compute @workgroup_size(1) fn main(){a[0]=h;}")
+        for i, value in enumerate(("1.00048828125", "-0.0", "0.000000059604644775390625", "65504")):
+            output = directory / f"half-override{i}.spv"
+            subprocess.run([CLI, "--shader-path", str(override_source), "--out", str(output),
+                            "--mode", "vulkan-compute-runtime", "--overrides", "h=" + value], check=True)
+            subprocess.run([VALIDATOR, "--target-env", "vulkan1.1", str(output)], check=True)
+            words = struct.unpack("<" + "I" * (output.stat().st_size // 4), output.read_bytes())
+            expected = int.from_bytes(struct.pack("<e", float(value)), "little")
+            cursor, halves, found = 5, set(), False
+            while cursor < len(words):
+                length, opcode = words[cursor] >> 16, words[cursor] & 0xffff
+                if opcode == 22 and words[cursor + 2] == 16:
+                    halves.add(words[cursor + 1])
+                if opcode == 43 and words[cursor + 1] in halves and words[cursor + 3] == expected:
+                    found = True
+                cursor += length
+            assert found, (value, expected)
+        output = directory / "half-override-overflow.spv"
+        rejected = subprocess.run([CLI, "--shader-path", str(override_source), "--out", str(output),
+                                   "--mode", "vulkan-compute-runtime", "--overrides", "h=65520"], capture_output=True)
+        assert rejected.returncode != 0 and not output.exists()
         for i, bad in enumerate(("@compute @workgroup_size(1) fn main(){let x=1h;}",
                 "@compute @workgroup_size(1) fn main(){var x:f16;}",
                 "enable f16; @compute @workgroup_size(1) fn main(){let x=65520h;}",

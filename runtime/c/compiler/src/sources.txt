@@ -54,3 +54,4 @@ src/numeric_bits.c
 src/spirv_bits.c
 
 src/numeric_half.c
+src/sampling.c
