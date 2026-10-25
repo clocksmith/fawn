@@ -91,14 +91,29 @@ WGPUFuture wgpuInstanceRequestAdapter(WGPUInstance handle,
     if (valid) {
         native_backend backend = {0};
         const bool force_fallback = options && options->forceFallbackAdapter;
-        native_result status = native_backend_open(kind, force_fallback, native_surface_platform(compatible), &backend);
+        /* webgpu.h lets any adapter that can present configure a surface;
+         * compatibleSurface only narrows selection to adapters that can. So a
+         * default Vulkan request enables every composed WSI platform when the
+         * loader and device provide it, and opens without WSI when they do not
+         * (UNSUPPORTED; UNAVAILABLE means no such device at all). The
+         * device order is kept: a non-CPU device without WSI is preferred to
+         * the CPU fallback with it. */
+        const uint32_t required = native_surface_platform(compatible);
+        const bool discover = !compatible && kind == WGPUBackendType_Vulkan && native_surface_default_platforms();
+        native_result status = native_backend_open(kind, force_fallback,
+            discover ? native_surface_default_platforms() : required, &backend);
+        if (discover && status == NATIVE_UNSUPPORTED)
+            status = native_backend_open(kind, force_fallback, 0, &backend);
         /* WebGPU may answer a default request with the fallback adapter; on
          * Vulkan a host whose only device is a CPU implementation (lavapipe)
          * gets it from the default open, reported as the fallback adapter,
          * and a non-CPU device that fails admission retries with the CPU one. */
         if ((status == NATIVE_UNAVAILABLE || status == NATIVE_UNSUPPORTED) && !force_fallback &&
-            kind == WGPUBackendType_Vulkan)
-            status = native_backend_open(kind, true, native_surface_platform(compatible), &backend);
+            kind == WGPUBackendType_Vulkan) {
+            status = native_backend_open(kind, true, discover ? native_surface_default_platforms() : required, &backend);
+            if (discover && status == NATIVE_UNSUPPORTED)
+                status = native_backend_open(kind, true, 0, &backend);
+        }
         if (status == NATIVE_OK && compatible) {
             status = native_surface_compatible(compatible, &backend);
             if (status != NATIVE_OK) native_backend_close(&backend);

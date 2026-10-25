@@ -81,6 +81,15 @@ uint32_t native_surface_platform(WGPUSurface handle)
     return handle ? ((native_surface *)handle)->source.platform : 0;
 }
 
+uint32_t native_surface_default_platforms(void)
+{
+#if defined(__linux__)
+    return DOE_VK_SURFACE_WAYLAND | DOE_VK_SURFACE_XCB | DOE_VK_SURFACE_XLIB;
+#else
+    return 0;
+#endif
+}
+
 native_result native_surface_compatible(WGPUSurface handle, const native_backend *adapter)
 {
     if (!handle || adapter->kind != WGPUBackendType_Vulkan) return NATIVE_UNSUPPORTED;
