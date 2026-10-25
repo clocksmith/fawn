@@ -642,6 +642,29 @@ def check_grid(binary: Path, work: Path) -> None:
     check(outputs[0] == outputs[1], "independent repeats produce the dependent result")
 
 
+
+def check_mapping(binary: Path, work: Path) -> None:
+    names = ["resource_buffer_map_readback_1kb", "resource_buffer_map_readback_64kb",
+             "resource_buffer_map_write_1kb", "resource_buffer_map_write_64kb",
+             "resource_buffer_map_partial_read_4kb", "resource_buffer_map_partial_write_64kb",
+             "resource_buffer_map_double_request_guard", "resource_buffer_map_unmap_storm"]
+    for name in names:
+        code, stderr, meta, rows = run(binary, work, name, "--quirk-mode", "off", "--command-repeat", "2")
+        expected = len(json.loads((EXAMPLES / f"{name}_commands.json").read_text())) * 2
+        check(code == 0 and len(rows) == expected and meta["executionSuccessCount"] == expected,
+              f"{name}: exit {code}: {stderr}")
+        check(all(row["command"] == "map_async" and row["executionStatus"] == "ok"
+                  and row["executionSubmitCount"] == row["executionDispatchCount"] == 0 for row in rows),
+              f"{name}: map rows and counts")
+        check(replay_passes(work, name), f"{name}: map artifacts fail replay")
+    # Alternating modes and increasing/decreasing sizes exercises replacement
+    # as well as reuse within one runtime; the C consumer checks actual bytes.
+    commands = work / "map_modes_commands.json"
+    commands.write_text(json.dumps([{"kind": "buffer_map_async", "bytes": size, "mapMode": mode}
+                                    for mode in ("write", "read", "write") for size in (4, 65536, 16, 16)]))
+    code, stderr, _, rows = run(binary, work, "map_modes", commands=commands)
+    check(code == 0 and len(rows) == 12, f"map mode/size changes: {stderr}")
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--binary", required=True, type=Path)
@@ -727,6 +750,7 @@ def main() -> int:
     check_quirks(args.binary, args.work)
     check_semantic(args.binary, args.work)
     check_grid(args.binary, args.work)
+    check_mapping(args.binary, args.work)
     check_plan(args.binary, args.work)
 
     print(f"PASS {args.module}: 3 example streams with doe-zig-runtime hash chains, replay-valid artifacts, "
@@ -736,8 +760,8 @@ def main() -> int:
           f"failures, {len(ZIG_RENDER_FINAL_HASH)} render streams, scissored and indexed draws, "
           f"{len(ZIG_INDIRECT_FINAL_HASH)} indirect draw streams and scissored and indexed indirect draws read back against the "
           f"proxy and clear colors, an indirect first-instance refusal, a missing render target, {len(ZIG_QUIRK_FINAL_HASH)} quirk-matched streams, active "
-          f"staging read back against host bytes, 2 quirk refusals, {len(ZIG_GRID_FINAL_HASH)} dispatch-kind streams "
-          f"and a pipeline-reusing grid stream read back against the host oracle, independent repeats, semantic rows with operator records, repro "
+          f"staging read back against host bytes, 2 quirk refusals, {len(ZIG_GRID_FINAL_HASH)} dispatch-kind streams, "
+          f"8 mapping examples repeated, mapping mode/size changes, and a pipeline-reusing grid stream read back against the host oracle, independent repeats, semantic rows with operator records, repro "
           f"bundles and host-checked captures, greedy and sampled numeric stability receipts equal to "
           f"doe-zig-runtime's Radeon receipts, an execution profile route and 3 numeric stability refusals, plan rows chained like "
           f"doe-plan-executor's with host-checked loads and dispatches and 5 plan refusals on "

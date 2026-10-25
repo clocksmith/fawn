@@ -48,6 +48,8 @@ static const kind_name KINDS[] = {
     {"render_pass", DOE_COMMAND_RENDER_PASS},
     {"draw_indirect", DOE_COMMAND_DRAW_INDIRECT},
     {"draw_indexed_indirect", DOE_COMMAND_DRAW_INDEXED_INDIRECT},
+    {"map_async", DOE_COMMAND_MAP_ASYNC},
+    {"buffer_map_async", DOE_COMMAND_MAP_ASYNC},
     {"sampler_create", DOE_COMMAND_SAMPLER_CREATE},
     {"create_sampler", DOE_COMMAND_SAMPLER_CREATE},
     {"sampler_destroy", DOE_COMMAND_SAMPLER_DESTROY},
@@ -73,6 +75,7 @@ const char *doe_command_tag(doe_command_kind kind)
     case DOE_COMMAND_DISPATCH_INDIRECT: return "dispatch_indirect";
     case DOE_COMMAND_DRAW_INDIRECT: return "draw_indirect";
     case DOE_COMMAND_DRAW_INDEXED_INDIRECT: return "draw_indexed_indirect";
+    case DOE_COMMAND_MAP_ASYNC: return "map_async";
     }
     return "unknown";
 }
@@ -165,6 +168,33 @@ static bool parse_upload(const doe_json_value *object, doe_command *command, siz
     if (command->as.upload.bytes == 0) return stream_reject(error, index, "upload \"bytes\" must be nonzero");
     if (command->as.upload.align_bytes == 0 || command->as.upload.align_bytes % 4 != 0)
         return stream_reject(error, index, "upload \"alignBytes\" must be a nonzero multiple of 4");
+    return true;
+}
+
+/* The retained map payload has a flat mode alias or a nested mode member. */
+static bool parse_map_async(const doe_json_value *object, doe_command *command, size_t index, doe_stream_error *error)
+{
+    const doe_json_value *nested = doe_json_member_value(object, "map_async");
+    const char *mode = NULL;
+    if (nested) {
+        static const char *const outer[] = {"map_async", NULL};
+        static const char *const inner[] = {"bytes", "mode", NULL};
+        if (!stream_only_members(object, outer, index, "map_async", error)) return false;
+        if (nested->kind != DOE_JSON_OBJECT) return stream_reject(error, index, "map_async must be an object");
+        if (!stream_only_members(nested, inner, index, "map_async", error)) return false;
+        object = nested;
+        if (!stream_read_string(object, "mode", NULL, &mode, index, error)) return false;
+    } else {
+        static const char *const allowed[] = {"kind", "command", "command_kind", "bytes", "map_mode", "mapMode", NULL};
+        if (!stream_only_members(object, allowed, index, "map_async", error)) return false;
+        if (!stream_read_string(object, "map_mode", "mapMode", &mode, index, error)) return false;
+    }
+    if (!stream_read_u64(object, "bytes", NULL, UINT64_MAX, true, 0, &command->as.map.bytes, index, error)) return false;
+    if (command->as.map.bytes == 0 || command->as.map.bytes % 4 != 0)
+        return stream_reject(error, index, "map_async bytes must be a nonzero multiple of 4");
+    if (mode && strcmp(mode, "read") != 0 && strcmp(mode, "write") != 0)
+        return stream_reject(error, index, "map_async mode %s is not read or write", mode);
+    command->as.map.write = !mode || strcmp(mode, "write") == 0;
     return true;
 }
 
@@ -471,6 +501,10 @@ static bool parse_command(const doe_json_value *object, doe_command *command, si
         if (value->kind != DOE_JSON_STRING) return stream_reject(error, index, "\"%s\" must be a string", keys[i]);
         name = value->string;
     }
+    if (doe_json_member_value(object, "map_async")) {
+        if (name) return stream_reject(error, index, "a map_async object names no other kind");
+        name = "map_async";
+    }
     if (!name) return stream_reject(error, index, "command has no \"kind\"");
     for (size_t i = 0; i < sizeof(KINDS) / sizeof(KINDS[0]); i++) {
         if (strcasecmp(name, KINDS[i].name) != 0) continue;
@@ -493,6 +527,7 @@ static bool parse_command(const doe_json_value *object, doe_command *command, si
         case DOE_COMMAND_SAMPLER_DESTROY: return stream_parse_sampler_destroy(object, command, index, error);
         case DOE_COMMAND_DISPATCH:
         case DOE_COMMAND_DISPATCH_INDIRECT: return parse_grid(object, command, index, error);
+        case DOE_COMMAND_MAP_ASYNC: return parse_map_async(object, command, index, error);
         }
     }
     return stream_reject(error, index, "command kind \"%s\" is not implemented by doe-c-runtime", name);

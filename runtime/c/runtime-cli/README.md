@@ -82,6 +82,14 @@ $(BUILD)/doe-c-runtime --commands examples/rmsnorm_tree_commands.json --execute 
   handles are rejected.
   `sampler_create` (`create_sampler`) and `sampler_destroy` (`destroy_sampler`)
   create and release samplers keyed by handle.
+- `map_async` (`buffer_map_async`) with `bytes` and `mapMode`/`map_mode`
+  (`read` or `write`, default `write`), or the nested
+  `{"map_async":{"bytes":1024,"mode":"read"}}` shape. The runtime reuses
+  one buffer while its size and mode suffice, replacing it otherwise. Each
+  command maps the requested range, waits, zero-fills write mappings and unmaps;
+  read mappings leave the bytes untouched, matching the retained WebGPU path.
+  Sizes must be nonzero multiples of four. The native Zig Vulkan lane reports
+  mapping unsupported; C executes it through the selected WebGPU provider.
 - Kernels resolve as given, then under `--kernel-root`, then with `.wgsl`.
 - Semantic identity on `kernel_dispatch` (`src/operators.c`), as
   doe-zig-runtime's `contracts/semantic.zig` reads it: `semanticOpId`,
@@ -150,7 +158,7 @@ $(BUILD)/doe-c-runtime --commands examples/rmsnorm_tree_commands.json --execute 
   nonfallback adapter, else the fallback (CPU) adapter.
 
 Every other command kind (surfaces,
-`map_async`, `async_diagnostics` and the rest), field, texture dimension, sample count, aspect, format, oracle
+`async_diagnostics` and the rest), field, texture dimension, sample count, aspect, format, oracle
 scope, `repeatSynchronization` value, semantic field on another kind, explicit
 `numericStability` annotation and argument is rejected with exit 2 before
 device work.
@@ -337,3 +345,11 @@ committed contracts keep those dispatch rows directional, and the three
 `maxStorageBufferRange`, so they fail on lavapipe in both CLIs. A CPU
 adapter run is not GPU evidence, a performance result
 or bench comparability, and no physical adapter has run this CLI.
+
+The 2026-10-25 mapping continuation exercises eight mapping example streams,
+repeated maps and mode/size changes through both C and Dawn on llvmpipe
+(LLVM 21.1.8, CPU Vulkan). `test_map` checks partial zero-fill, reuse,
+replacement and final unmap. `test_texture_cleanup` counts actual view
+acquisition/release when a later buffer binding fails for missing size,
+overflow or injected allocation failure. These checks do not establish
+physical-backend qualification or performance advantage.

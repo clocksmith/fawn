@@ -106,6 +106,19 @@ int main(int argc, char **argv)
     assert(stream.count == 1 && stream.commands[0].as.dispatch.repeat == 100);
     doe_stream_free(&stream);
 
+    /* Flat aliases and the retained nested map shape preserve mode and bytes. */
+    const char *maps = "[{\"kind\":\"buffer_map_async\",\"bytes\":16},{\"map_async\":{\"bytes\":64,\"mode\":\"read\"}},"
+        "{\"kind\":\"map_async\",\"bytes\":4,\"map_mode\":\"write\"}]";
+    assert(doe_stream_parse(maps, strlen(maps), &stream, &semantic_error) && stream.count == 3);
+    assert(stream.commands[0].kind == DOE_COMMAND_MAP_ASYNC && stream.commands[0].as.map.write);
+    assert(!strcmp(stream.commands[0].label, "map_async") && stream.commands[0].as.map.bytes == 16);
+    assert(!stream.commands[1].as.map.write && stream.commands[1].as.map.bytes == 64);
+    assert(stream.commands[2].as.map.write && stream.commands[2].as.map.bytes == 4);
+    doe_stream_free(&stream);
+    parse_file(argv[1], "resource_buffer_map_partial_read_4kb_commands.json", &stream);
+    assert(!stream.commands[0].as.map.write && stream.commands[0].as.map.bytes == 4096);
+    doe_stream_free(&stream);
+
     /* Copy directions come from the kind name, layouts and defaults as doe-zig-runtime parses them. */
     parse_file(argv[1], "copy_texture_to_buffer_padded_commands.json", &stream);
     const doe_command *copy = &stream.commands[0];
@@ -174,7 +187,13 @@ int main(int argc, char **argv)
     rejects("{}", SIZE_MAX, "array");
     rejects("[1", SIZE_MAX, "syntax");
     rejects("[{\"kind\":\"draw_mesh_tasks\"}]", 0, "not implemented");
-    rejects("[{\"kind\":\"upload\",\"bytes\":4},{\"kind\":\"map_async\",\"bytes\":4}]", 1, "map_async");
+    rejects("[{\"kind\":\"map_async\",\"bytes\":3}]", 0, "multiple of 4");
+    rejects("[{\"kind\":\"map_async\",\"bytes\":0}]", 0, "nonzero");
+    rejects("[{\"kind\":\"map_async\",\"bytes\":4,\"mapMode\":\"Read\"}]", 0, "not read or write");
+    rejects("[{\"kind\":\"map_async\",\"bytes\":4,\"mapMode\":\"read\",\"map_mode\":\"write\"}]", 0, "both");
+    rejects("[{\"kind\":\"map_async\",\"map_async\":{\"bytes\":4}}]", 0, "no other kind");
+    rejects("[{\"map_async\":{\"bytes\":4,\"offset\":4}}]", 0, "offset");
+    rejects("[{\"map_async\":4}]", 0, "must be an object");
     rejects("[{\"kind\":\"upload\",\"bytes\":4,\"extra\":1}]", 0, "\"extra\"");
     rejects("[{\"kind\":\"upload\"}]", 0, "\"bytes\" is required");
     rejects("[{\"kind\":\"upload\",\"bytes\":4,\"alignBytes\":3}]", 0, "multiple of 4");
@@ -236,7 +255,7 @@ int main(int argc, char **argv)
     rejects("[{\"kind\":\"render_draw\",\"drawCount\":1,\"targetFormat\":\"depth24plus\"}]", 0, "target format");
     rejects("[{\"kind\":\"sampler_create\",\"handle\":1,\"magFilter\":\"cubic\"}]", 0, "mag_filter");
     rejects("[{\"kind\":\"sampler_create\",\"handle\":1,\"maxAnisotropy\":0}]", 0, "max_anisotropy");
-    puts("runtime-cli stream: eleven example streams, semantic fields, aliases, copy, texture, render, indirect draw and sampler kinds, dispatch kinds and 54 visible "
-        "rejections (host only)");
+    puts("runtime-cli stream: example streams, semantic fields, aliases, copy, texture, render, indirect draw, sampler, dispatch and map kinds; "
+        "visible field/value rejections (host only)");
     return 0;
 }
