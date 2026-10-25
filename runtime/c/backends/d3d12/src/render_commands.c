@@ -8,6 +8,42 @@ static bool add(size_t *value,size_t count)
     *value+=count;
     return true;
 }
+static doe_dx_status prepare_indirect(doe_dx_commands *commands,const doe_dx_render_draw *draw,
+    doe_dx_native_render_draw *out,doe_dx_reservation *needed,doe_dx_error *error)
+{
+    if (!draw->indirect) return draw->indices ? doe_dx_fail(DOE_DX_INVALID_ARGUMENT,0,"render.index_without_indirect",error) : DOE_DX_OK;
+    if (draw->indices && draw->index_format!=DOE_DX_INDEX_UINT16 && draw->index_format!=DOE_DX_INDEX_UINT32)
+        return doe_dx_fail(DOE_DX_INVALID_ARGUMENT,0,"render.index_format",error);
+    const doe_dx_render_layout *layout=draw->pipeline->render;
+    if (draw->indices && (layout->topology==DOE_DX_LINE_STRIP || layout->topology==DOE_DX_TRIANGLE_STRIP) &&
+        (!layout->strip_indexed || layout->strip_index_format!=draw->index_format))
+        return doe_dx_fail(DOE_DX_INVALID_ARGUMENT,0,"render.strip_index_format",error);
+    const doe_dx_buffer_binding *views[2]={draw->indirect,draw->indices};
+    for (size_t i=0;i<2;++i) {
+        const doe_dx_buffer_binding *view=views[i];
+        if (!view) continue;
+        doe_dx_status status=doe_dx_buffer_preflight(commands,view->buffer,true);
+        if (status!=DOE_DX_OK) return doe_dx_fail(status,0,"render.indirect_buffer",error);
+        uint32_t alignment=i && draw->index_format==DOE_DX_INDEX_UINT16 ? 2u : 4u;
+        if (view->buffer->memory!=DOE_DX_DEFAULT || view->offset%alignment ||
+            !doe_dx_range(view->buffer->size,view->offset,view->size) ||
+            (i ? view->size>UINT32_MAX || view->size%alignment : view->size<(draw->indices ? 20u : 16u)))
+            return doe_dx_fail(DOE_DX_RANGE,0,"render.indirect_view",error);
+        for (size_t stage=0;stage<DOE_DX_RENDER_STAGES;++stage) {
+            const doe_dx_binding_plan *plan=&draw->pipeline->render->stages[stage];
+            for (size_t j=0;j<plan->binding_count;++j)
+                if (draw->stages[stage].resources.buffers[j].buffer==view->buffer &&
+                    doe_dx_buffer_descriptor_kind(&plan->bindings[j])==DOE_DX_DESCRIPTOR_UAV)
+                    return doe_dx_fail(DOE_DX_UNSUPPORTED,0,"render.indirect_write_alias",error);
+        }
+        if (!doe_dx_find_buffer(commands,view->buffer) && !add(&needed->buffers,1))
+            return doe_dx_fail(DOE_DX_RANGE,0,"render.indirect_reservation",error);
+        doe_dx_native_binding native={view->buffer->native,view->offset,view->size};
+        if (i) out->indices=native; else out->indirect=native;
+    }
+    out->index_format=draw->index_format;
+    return DOE_DX_OK;
+}
 static doe_dx_status prepare_draw(doe_dx_commands *commands,const doe_dx_render_draw *draw,
     doe_dx_texture *color,doe_dx_texture *depth,doe_dx_native_render_draw *out,doe_dx_reservation *needed,doe_dx_error *error)
 {
@@ -15,8 +51,8 @@ static doe_dx_status prepare_draw(doe_dx_commands *commands,const doe_dx_render_
     if (!pipeline || !pipeline->render || pipeline->context!=commands->context ||
         pipeline->color_format!=color->desc.format || pipeline->depth_enabled!=(depth!=NULL))
         return doe_dx_fail(DOE_DX_INVALID_ARGUMENT,0,"render.draw.pipeline",error);
-    if ((draw->vertex_count && draw->vertex_count-1>UINT32_MAX-draw->first_vertex) ||
-        (draw->instance_count && draw->instance_count-1>UINT32_MAX-draw->first_instance))
+    if (!draw->indirect && ((draw->vertex_count && draw->vertex_count-1>UINT32_MAX-draw->first_vertex) ||
+        (draw->instance_count && draw->instance_count-1>UINT32_MAX-draw->first_instance)))
         return doe_dx_fail(DOE_DX_RANGE,0,"render.draw.counts",error);
     for (size_t i=0;i<4;++i) if (!isfinite(draw->blend_constant[i]))
         return doe_dx_fail(DOE_DX_INVALID_ARGUMENT,0,"render.blend_constant.finite",error);
@@ -45,6 +81,8 @@ static doe_dx_status prepare_draw(doe_dx_commands *commands,const doe_dx_render_
         &pipeline->render->stages[1],&draw->stages[1]);
     if (status!=DOE_DX_OK) return doe_dx_fail(status,0,"render.stage_alias",error);
     status=doe_dx_prepare_render_vertices(commands,pipeline,draw,out,needed,error);
+    if (status!=DOE_DX_OK) return status;
+    status=prepare_indirect(commands,draw,out,needed,error);
     if (status!=DOE_DX_OK) return status;
     out->pipeline=pipeline->native;
     out->vertex_count=draw->vertex_count;
@@ -119,6 +157,8 @@ doe_dx_status doe_dx_commands_render(doe_dx_commands *commands,
             }
             for (size_t slot=0;slot<draw->vertex_buffer_count;++slot)
                 if (draw->vertices[slot].buffer) doe_dx_use_buffer(commands,draw->vertices[slot].buffer);
+            if (draw->indirect) doe_dx_use_buffer(commands,draw->indirect->buffer);
+            if (draw->indices) doe_dx_use_buffer(commands,draw->indices->buffer);
             commands->pipelines[commands->pipeline_count++]=draw->pipeline;
         }
         if (pass->depth) {

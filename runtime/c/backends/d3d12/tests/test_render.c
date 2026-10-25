@@ -58,6 +58,54 @@ static void aliases(void)
     assert(doe_dx_context_destroy(context)==DOE_DX_OK);
     mock_reset();
 }
+static void indirect_pass(void)
+{
+    doe_dx_context *context=NULL;
+    assert(doe_dx_context_create(&(doe_dx_options){0},&context,NULL)==DOE_DX_OK);
+    unsigned char code=1;
+    doe_dx_render_pipeline_desc desc={.color_format=DOE_DX_RGBA8_UNORM};
+    for (size_t i=0;i<2;++i) desc.stages[i].resources.buffers=(doe_dx_pipeline_desc){&code,1,NULL,0};
+    doe_dx_pipeline *pipeline=NULL;
+    assert(doe_dx_pipeline_create_render(context,&desc,&pipeline,NULL)==DOE_DX_OK);
+    doe_dx_texture *color=NULL;
+    assert(doe_dx_texture_create(context,&(doe_dx_texture_desc){4,4,DOE_DX_RGBA8_UNORM,
+        DOE_DX_TEXTURE_RENDER_ATTACHMENT},&color,NULL)==DOE_DX_OK);
+    doe_dx_buffer *upload=NULL,*buffer=NULL;
+    assert(doe_dx_buffer_create(context,64,DOE_DX_UPLOAD,&upload,NULL)==DOE_DX_OK);
+    assert(doe_dx_buffer_create(context,64,DOE_DX_DEFAULT,&buffer,NULL)==DOE_DX_OK);
+    doe_dx_commands *commands=NULL;
+    assert(doe_dx_commands_create(context,&commands,NULL)==DOE_DX_OK);
+    doe_dx_buffer_binding arguments={buffer,0,40},indices={buffer,40,24};
+    doe_dx_render_draw packet=draw(pipeline);
+    packet.vertex_count=packet.instance_count=0;
+    packet.indirect=&arguments;
+    uint64_t capacities[2]={0};
+    assert(doe_dx_render_draw_capacities(&packet,capacities)==DOE_DX_OK &&
+        capacities[0]==UINT64_MAX && capacities[1]==UINT64_MAX);
+    doe_dx_render_pass pass={.color=color,.draws=&packet,.draw_count=1};
+    assert(doe_dx_commands_render(commands,&pass,NULL)==DOE_DX_UNINITIALIZED);
+    assert(!commands->buffer_count && !commands->texture_count && !mock.render_passes);
+    assert(doe_dx_commands_copy(commands,upload,0,buffer,0,64,NULL)==DOE_DX_OK);
+    assert(doe_dx_commands_render(commands,&pass,NULL)==DOE_DX_OK);
+    assert(mock.last_render_draw.indirect.buffer==buffer->native && !mock.last_render_draw.indices.buffer);
+    packet.indices=&indices; packet.index_format=DOE_DX_INDEX_UINT16;
+    assert(doe_dx_commands_render(commands,&pass,NULL)==DOE_DX_OK);
+    assert(mock.last_render_draw.indices.buffer==buffer->native && commands->buffer_count==2);
+    size_t before=mock.render_passes;
+    arguments.size=19;
+    assert(doe_dx_commands_render(commands,&pass,NULL)==DOE_DX_RANGE && mock.render_passes==before);
+    arguments.size=40; arguments.offset=2;
+    assert(doe_dx_commands_render(commands,&pass,NULL)==DOE_DX_RANGE && mock.render_passes==before);
+    arguments.offset=0; indices.offset=41;
+    assert(doe_dx_commands_render(commands,&pass,NULL)==DOE_DX_RANGE && mock.render_passes==before);
+    indices.offset=40; packet.indirect=NULL;
+    assert(doe_dx_commands_render(commands,&pass,NULL)==DOE_DX_INVALID_ARGUMENT && mock.render_passes==before);
+    doe_dx_pipeline_release(pipeline); doe_dx_texture_release(color);
+    doe_dx_buffer_release(upload); doe_dx_buffer_release(buffer);
+    doe_dx_commands_release(commands);
+    assert(!mock.buffers && !mock.pipelines && !mock.textures && doe_dx_context_destroy(context)==DOE_DX_OK);
+    mock_reset();
+}
 static void depth_pass(void)
 {
     doe_dx_context *context=NULL;
@@ -245,6 +293,7 @@ int main(void)
     aliases();
     fixed_state();
     depth_pass();
+    indirect_pass();
     puts("PASS D3D12 render owner: independent stage128/32 layouts, empty/zero draws, real-init requests, sampler snapshots, OOM/native rollback and unknown early-release leases; no SDK/GPU");
     return 0;
 }

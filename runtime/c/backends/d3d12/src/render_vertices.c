@@ -49,7 +49,7 @@ doe_dx_status doe_dx_prepare_render_vertices(doe_dx_commands *commands,doe_dx_pi
     if (draw->vertex_buffer_count!=pipeline->vertex_buffer_count || (draw->vertex_buffer_count && !draw->vertices))
         return doe_dx_fail(DOE_DX_INVALID_ARGUMENT,0,"render.vertex_count",error);
     native->vertex_buffer_count=draw->vertex_buffer_count;
-    bool active=draw->vertex_count && draw->instance_count;
+    bool active=draw->indirect || (draw->vertex_count && draw->instance_count);
     for (size_t i=0;i<draw->vertex_buffer_count;++i) {
         const doe_dx_buffer_binding *binding=&draw->vertices[i];
         uint32_t end=pipeline->vertex_ends[i];
@@ -61,7 +61,7 @@ doe_dx_status doe_dx_prepare_render_vertices(doe_dx_commands *commands,doe_dx_pi
         if (binding->offset%4) return doe_dx_fail(DOE_DX_ALIGNMENT,0,"render.vertex_offset",error);
         if (binding->size>UINT32_MAX || !doe_dx_range(binding->buffer->size,binding->offset,binding->size))
             return doe_dx_fail(DOE_DX_RANGE,0,"render.vertex_range",error);
-        if (active && end) {
+        if (active && end && !draw->indirect) {
             const doe_dx_vertex_layout *layout=&pipeline->vertex_buffers[i];
             uint64_t first=layout->step==DOE_DX_PER_INSTANCE ? draw->first_instance : draw->first_vertex;
             uint64_t count=layout->step==DOE_DX_PER_INSTANCE ? draw->instance_count : draw->vertex_count;
@@ -79,5 +79,26 @@ doe_dx_status doe_dx_prepare_render_vertices(doe_dx_commands *commands,doe_dx_pi
         }
         native->vertices[i]=(doe_dx_native_binding){binding->buffer->native,binding->offset,binding->size};
     }
+    return DOE_DX_OK;
+}
+
+
+doe_dx_status doe_dx_render_draw_capacities(const doe_dx_render_draw *draw,uint64_t out[2])
+{
+    if (!draw || !out || !draw->pipeline || !draw->pipeline->render ||
+        draw->vertex_buffer_count!=draw->pipeline->vertex_buffer_count ||
+        (draw->vertex_buffer_count && !draw->vertices)) return DOE_DX_INVALID_ARGUMENT;
+    uint64_t capacities[2]={UINT64_MAX,UINT64_MAX};
+    for (size_t i=0;i<draw->vertex_buffer_count;++i) {
+        uint32_t end=draw->pipeline->vertex_ends[i];
+        if (!end) continue;
+        const doe_dx_buffer_binding *binding=&draw->vertices[i];
+        const doe_dx_vertex_layout *layout=&draw->pipeline->vertex_buffers[i];
+        if (!binding->buffer || !doe_dx_range(binding->buffer->size,binding->offset,binding->size)) return DOE_DX_RANGE;
+        uint64_t capacity=end>binding->size ? 0 : layout->stride ? (binding->size-end)/layout->stride+1 : UINT64_MAX;
+        size_t axis=layout->step==DOE_DX_PER_INSTANCE ? 1u : 0u;
+        if (capacity<capacities[axis]) capacities[axis]=capacity;
+    }
+    memcpy(out,capacities,sizeof(capacities));
     return DOE_DX_OK;
 }

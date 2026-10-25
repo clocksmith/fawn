@@ -17,6 +17,7 @@ struct doe_dx_native_context {
     ID3D12CommandQueue *queue;
     ID3D12Fence *fence;
     ID3D12CommandSignature *dispatch_signature;
+    ID3D12CommandSignature *draw_signature, *draw_indexed_signature;
     doe_dx_limits limits;
 };
 struct doe_dx_native_buffer {
@@ -76,6 +77,8 @@ void doe_dx_transition_resources(doe_dx_native_commands *commands, doe_dx_native
 doe_dx_status doe_dx_input_layout_rows(doe_dx_native_context *,const doe_dx_vertex_layout *,size_t,
     const doe_dx_vertex_attribute *,size_t,doe_dx_native_pipeline *,D3D12_INPUT_ELEMENT_DESC *,doe_dx_error *);
 void doe_dx_bind_vertex_views(doe_dx_native_commands *,doe_dx_native_pipeline *,const doe_dx_native_binding *,size_t);
+void doe_dx_transition_render_sets(doe_dx_native_commands *,const doe_dx_resource_set *,size_t,
+    const doe_dx_native_render_draw *,bool);
 void doe_dx_transition_vertex_sets(doe_dx_native_commands *,const doe_dx_resource_set *,size_t,
     const doe_dx_native_binding *,size_t,bool);
 doe_dx_status doe_dx_input_layout(doe_dx_native_context *context, const doe_dx_mesh_pipeline_desc *desc,

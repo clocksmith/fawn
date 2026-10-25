@@ -41,7 +41,7 @@ static void draw_packet(doe_dx_native_commands *commands,const doe_dx_native_ren
 {
     doe_dx_resource_set sets[DOE_DX_RENDER_STAGES];
     resource_sets(draw,sets);
-    doe_dx_transition_vertex_sets(commands,sets,DOE_DX_RENDER_STAGES,draw->vertices,draw->vertex_buffer_count,false);
+    doe_dx_transition_render_sets(commands,sets,DOE_DX_RENDER_STAGES,draw,false);
     ID3D12GraphicsCommandList *list=commands->list;
     ID3D12GraphicsCommandList_SetGraphicsRootSignature(list,draw->pipeline->root);
     ID3D12GraphicsCommandList_SetPipelineState(list,draw->pipeline->state);
@@ -55,9 +55,40 @@ static void draw_packet(doe_dx_native_commands *commands,const doe_dx_native_ren
     ID3D12GraphicsCommandList_RSSetScissorRects(list,1,&scissor);
     ID3D12GraphicsCommandList_IASetPrimitiveTopology(list,draw->pipeline->render->topology);
     doe_dx_bind_vertex_views(commands,draw->pipeline,draw->vertices,draw->vertex_buffer_count);
-    ID3D12GraphicsCommandList_DrawInstanced(list,draw->vertex_count,draw->instance_count,
+    if (draw->indices.buffer) {
+        D3D12_INDEX_BUFFER_VIEW indices={0};
+        indices.BufferLocation=ID3D12Resource_GetGPUVirtualAddress(draw->indices.buffer->resource)+draw->indices.offset;
+        indices.SizeInBytes=(UINT)draw->indices.size;
+        indices.Format=draw->index_format==DOE_DX_INDEX_UINT16 ? DXGI_FORMAT_R16_UINT : DXGI_FORMAT_R32_UINT;
+        ID3D12GraphicsCommandList_IASetIndexBuffer(list,&indices);
+    }
+    if (draw->indirect.buffer) {
+        ID3D12CommandSignature *signature=draw->indices.buffer ? commands->context->draw_indexed_signature :
+            commands->context->draw_signature;
+        ID3D12GraphicsCommandList_ExecuteIndirect(list,signature,1,draw->indirect.buffer->resource,
+            draw->indirect.offset,NULL,0);
+    } else ID3D12GraphicsCommandList_DrawInstanced(list,draw->vertex_count,draw->instance_count,
         draw->first_vertex,draw->first_instance);
-    doe_dx_transition_vertex_sets(commands,sets,DOE_DX_RENDER_STAGES,draw->vertices,draw->vertex_buffer_count,true);
+    doe_dx_transition_render_sets(commands,sets,DOE_DX_RENDER_STAGES,draw,true);
+}
+
+static doe_dx_status prepare_draw_signature(doe_dx_native_context *context,bool indexed,doe_dx_error *error)
+{
+    ID3D12CommandSignature **slot=indexed ? &context->draw_indexed_signature : &context->draw_signature;
+    if (*slot) return DOE_DX_OK;
+    _Static_assert(sizeof(D3D12_DRAW_ARGUMENTS)==16 && sizeof(D3D12_DRAW_INDEXED_ARGUMENTS)==20,
+        "Shared guard argument prefix matches SDK draw records");
+    D3D12_INDIRECT_ARGUMENT_DESC argument={0};
+    argument.Type=indexed ? D3D12_INDIRECT_ARGUMENT_TYPE_DRAW_INDEXED : D3D12_INDIRECT_ARGUMENT_TYPE_DRAW;
+    D3D12_COMMAND_SIGNATURE_DESC desc={0};
+    desc.ByteStride=indexed ? (UINT)sizeof(D3D12_DRAW_INDEXED_ARGUMENTS) : (UINT)sizeof(D3D12_DRAW_ARGUMENTS);
+    desc.NumArgumentDescs=1; desc.pArgumentDescs=&argument;
+    ID3D12CommandSignature *signature=NULL;
+    HRESULT result=ID3D12Device_CreateCommandSignature(context->device,&desc,NULL,
+        &IID_ID3D12CommandSignature,(void **)&signature);
+    if (FAILED(result)) return doe_dx_hresult(result,"CreateCommandSignature.draw",error);
+    *slot=signature;
+    return DOE_DX_OK;
 }
 
 doe_dx_status doe_dx_native_render(doe_dx_native_commands *commands,doe_dx_native_texture *color,
@@ -80,7 +111,10 @@ doe_dx_status doe_dx_native_render(doe_dx_native_commands *commands,doe_dx_nativ
     }
     for (size_t i=0;i<count;++i) {
         const doe_dx_native_render_draw *draw=&draws[i];
-        if (!draw->vertex_count || !draw->instance_count) continue;
+        if (draw->indirect.buffer) {
+            status=prepare_draw_signature(commands->context,draw->indices.buffer!=NULL,error);
+            if (status!=DOE_DX_OK) goto fail;
+        } else if (!draw->vertex_count || !draw->instance_count) continue;
         doe_dx_resource_set sets[DOE_DX_RENDER_STAGES];
         resource_sets(draw,sets);
         size_t descriptors=0;
@@ -106,7 +140,7 @@ doe_dx_status doe_dx_native_render(doe_dx_native_commands *commands,doe_dx_nativ
         ID3D12GraphicsCommandList_ClearDepthStencilView(list,depth_handle,D3D12_CLEAR_FLAG_DEPTH,depth->value,0,0,NULL);
     if (clear) ID3D12GraphicsCommandList_ClearRenderTargetView(list,target,clear_color,0,NULL);
     for (size_t i=0;i<count;++i)
-        if (draws[i].vertex_count && draws[i].instance_count) draw_packet(commands,&draws[i],bindings[i]);
+        if (draws[i].indirect.buffer || (draws[i].vertex_count && draws[i].instance_count)) draw_packet(commands,&draws[i],bindings[i]);
     if (discard) {
         const float zero[4]={0};
         /* Eager real initialization preserves WebGPU's later zero observation

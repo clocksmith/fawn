@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: MIT */
-#include "d3d12_graphics_internal.h"
+#include "d3d12_draw_guard.h"
 #include <stdlib.h>
 
 #if defined(_WIN32)
@@ -8,7 +8,7 @@ static bool descriptor(const native_device *device,const WGPURenderPipelineDescr
 {
     const WGPUFragmentState *fragment=source->fragment;
     if (!fragment || count!=2 || fragment->targetCount!=1 || !fragment->targets ||
-        (source->depthStencil && source->depthStencil->format!=WGPUTextureFormat_Depth32Float) || source->primitive.stripIndexFormat!=WGPUIndexFormat_Undefined) return false;
+        (source->depthStencil && source->depthStencil->format!=WGPUTextureFormat_Depth32Float)) return false;
     const WGPUColorTargetState *color=&fragment->targets[0];
     if (color->format==WGPUTextureFormat_RGBA8Unorm) out->color_format=DOE_DX_RGBA8_UNORM;
     else if (color->format==WGPUTextureFormat_BGRA8Unorm) out->color_format=DOE_DX_BGRA8_UNORM;
@@ -30,6 +30,14 @@ static bool descriptor(const native_device *device,const WGPURenderPipelineDescr
     case DOE_VK_LINE_STRIP: out->topology=DOE_DX_LINE_STRIP; break;
     case DOE_VK_POINTS: out->topology=DOE_DX_POINTS; break;
     }
+    switch (source->primitive.stripIndexFormat) {
+    case WGPUIndexFormat_Undefined: break;
+    case WGPUIndexFormat_Uint16: out->strip_indexed=true; out->strip_index_format=DOE_DX_INDEX_UINT16; break;
+    case WGPUIndexFormat_Uint32: out->strip_indexed=true; out->strip_index_format=DOE_DX_INDEX_UINT32; break;
+    case WGPUIndexFormat_Force32: return false;
+    }
+    if (out->strip_indexed && fixed.topology!=DOE_VK_LINE_STRIP && fixed.topology!=DOE_VK_TRIANGLE_STRIP) return false;
+    resource->strip_index_format=source->primitive.stripIndexFormat;
     out->front_counter_clockwise=!fixed.clockwise_front;
     switch (fixed.cull_mask) {
     case 0: out->cull=DOE_DX_CULL_NONE; break;
@@ -82,6 +90,9 @@ WGPURenderPipeline native_d3d12_create_render_pipeline(native_device *device,
     native_failure failure=native_failure_status(NATIVE_OK);
     failure=native_d3d12_compile_vertex(&stages[0],interstage_mask,&compiled[0]);
     if (failure.status==NATIVE_OK) failure=native_d3d12_compile_stage(&stages[1],&compiled[1]);
+    native_d3d12_draw_code *guards[2]={0};
+    if (failure.status==NATIVE_OK) failure=native_d3d12_draw_compile(false,&guards[0]);
+    if (failure.status==NATIVE_OK) failure=native_d3d12_draw_compile(true,&guards[1]);
     native_pipeline *payload=NULL;
     if (failure.status==NATIVE_OK) {
         payload=calloc(1,sizeof(*payload));
@@ -116,6 +127,8 @@ WGPURenderPipeline native_d3d12_create_render_pipeline(native_device *device,
             doe_dx_error detail={0};
             doe_dx_status created=doe_dx_pipeline_create_render(device->backend.value.d3d12.context,&desc,&payload->handle.d3d12,&detail);
             failure=native_failure_d3d12(created,&detail);
+            if (failure.status==NATIVE_OK) failure=native_d3d12_draw_pipeline(device,guards[0],&payload->d3d12_graphics->draw_normalize);
+            if (failure.status==NATIVE_OK) failure=native_d3d12_draw_pipeline(device,guards[1],&payload->d3d12_graphics->index_scan);
             if (failure.status==NATIVE_OK) status=doe_resource_render_pipeline_create(&device->resources,layout,&resource,
                 (doe_resource_native){payload,NULL,native_pipeline_release},&pipeline);
         }
@@ -126,7 +139,10 @@ WGPURenderPipeline native_d3d12_create_render_pipeline(native_device *device,
         if (automatic) doe_resource_pipeline_layout_release(layout);
         native_unlock(device);
     }
-    for (size_t i=0;i<2;++i) native_d3d12_compiler_release(compiled[i]);
+    for (size_t i=0;i<2;++i) {
+        native_d3d12_compiler_release(compiled[i]);
+        native_d3d12_draw_code_release(guards[i]);
+    }
     if (!pipeline) {
         if (payload) {
             if (payload->device) native_pipeline_release(NULL,payload);

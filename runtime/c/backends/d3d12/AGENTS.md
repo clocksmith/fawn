@@ -117,8 +117,9 @@
   remains typed unsupported; never CPU-decode vertices or rewrite shader source.
 - Vertex/Instance fetch extents are checked before recording. Repeated vertex and
   shader-read roles aggregate native states and retain one allocation lease;
-  reject a mixed UAV role before mutation. Indexed and indirect paths remain
-  absent from whole-pass admission until their GPU bounds contract composes.
+  reject a mixed UAV role before mutation. Indexed and indirect whole-pass
+  records require the upstream common V2 argument/index-scan GPU bounds contract;
+  allocation-bounded IA views alone do not prove user index values.
 
 - Native VS/PS composition uses the compiler-owned 32-bit interstage mask only
   after selected interface admission. Keep the old shader options/compile ABI

@@ -47,6 +47,8 @@ typedef struct doe_dx_native_render_draw {
     doe_dx_native_pipeline *pipeline;
     doe_dx_native_resources stages[DOE_DX_RENDER_STAGES];
     doe_dx_native_binding vertices[DOE_DX_MAX_VERTEX_BUFFERS];
+    doe_dx_native_binding indirect, indices;
+    doe_dx_index_format index_format;
     size_t vertex_buffer_count;
     uint32_t vertex_count,instance_count,first_vertex,first_instance;
     float blend_constant[4];

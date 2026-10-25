@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: MIT */
 #include "d3d12_indirect.h"
-#include "d3d12_binding_internal.h"
+#include "d3d12_graphics_internal.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -52,6 +52,10 @@ void native_d3d12_pipeline_close(native_pipeline *pipeline)
     doe_dx_pipeline_release(pipeline->handle.d3d12);
     native_d3d12_compute *map = pipeline->d3d12_compute;
     if (map) doe_dx_pipeline_release(map->guard);
+    if (pipeline->d3d12_graphics) {
+        doe_dx_pipeline_release(pipeline->d3d12_graphics->draw_normalize);
+        doe_dx_pipeline_release(pipeline->d3d12_graphics->index_scan);
+    }
 #endif
     free(pipeline->d3d12_compute);
     pipeline->d3d12_compute = NULL;
