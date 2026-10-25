@@ -41,3 +41,16 @@ try {
 } finally {
   rmSync(directory, { recursive: true, force: true });
 }
+
+// Guard the two distinct discovery roles. Actual loading is exercised by the
+// native first-kernel consumer; this source control prevents a wrong-list edit
+// from replacing addon candidates with runtime shared-library candidates.
+const providerSource = readFileSync(join(root, 'src/vendor/webgpu/index.js'), 'utf8');
+const addonDiscovery = providerSource.slice(providerSource.indexOf('function loadAddon()'),
+  providerSource.indexOf('function currentAddon()'));
+assert.match(addonDiscovery, /'build', 'Release', 'doe_napi\.node'/);
+assert.doesNotMatch(addonDiscovery, /cWorkspaceLibraryCandidates/);
+const runtimeDiscovery = providerSource.slice(providerSource.indexOf('function resolveDoeLibraryPath()'),
+  providerSource.indexOf('function currentDoeLibraryPath()'));
+assert.match(runtimeDiscovery, /cWorkspaceLibraryCandidates\(WORKSPACE_ROOT\)/);
+assert.doesNotMatch(runtimeDiscovery, /zig-out/);

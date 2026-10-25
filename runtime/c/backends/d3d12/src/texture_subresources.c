@@ -84,9 +84,10 @@ doe_dx_status doe_dx_commands_blit_texture_ex(doe_dx_commands *commands,doe_dx_t
     status=doe_dx_texture_preflight(commands,source,DOE_DX_TEXTURE_COPY_SRC,true);
     if (status==DOE_DX_OK) status=doe_dx_texture_preflight(commands,destination,DOE_DX_TEXTURE_COPY_DST,true);
     if (status!=DOE_DX_OK) return doe_dx_fail(status,0,"texture.subresource_copy.resources",error);
-    doe_dx_texture_desc a,b;
+    doe_dx_texture_desc a={0},b={0};
     status=region_shape(source,from,&a);
-    if (status==DOE_DX_OK) status=region_shape(destination,to,&b);
+    if (status!=DOE_DX_OK) return doe_dx_fail(status,0,"texture.subresource_copy.region",error);
+    status=region_shape(destination,to,&b);
     if (status!=DOE_DX_OK) return doe_dx_fail(status,0,"texture.subresource_copy.region",error);
     if (!doe_dx_format_compatible(a.format,b.format) || source->samples!=destination->samples || from.aspect!=to.aspect ||
         from.rect.width!=to.rect.width || from.rect.height!=to.rect.height)
