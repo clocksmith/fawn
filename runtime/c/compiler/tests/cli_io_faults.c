@@ -3,6 +3,7 @@
  * Test-only linker wrappers; never linked into the shipped CLI or library. */
 #define _POSIX_C_SOURCE 200809L
 #include "../include/doe_compiler_job.h"
+#include "../include/doe_compiler_stages.h"
 #include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -110,4 +111,16 @@ DoeCompilerStatus __wrap_doe_compiler_job_requirements(uint32_t version,
     DoeCompilerWorkspaceRequirements *requirements, size_t size) {
     if (selected("query", 1u)) return DOE_COMPILER_ABI_MISMATCH;
     return __real_doe_compiler_job_requirements(version, capacities, capacities_size, requirements, size);
+}
+DoeCompilerStatus __real_doe_compiler_stage_requirements(uint32_t version,
+    const DoeCompilerStageCapacities *capacities, size_t capacities_size,
+    DoeCompilerWorkspaceRequirements *requirements, size_t size);
+DoeCompilerStatus __wrap_doe_compiler_stage_requirements(uint32_t version,
+    const DoeCompilerStageCapacities *capacities, size_t capacities_size,
+    DoeCompilerWorkspaceRequirements *requirements, size_t size);
+DoeCompilerStatus __wrap_doe_compiler_stage_requirements(uint32_t version,
+    const DoeCompilerStageCapacities *capacities, size_t capacities_size,
+    DoeCompilerWorkspaceRequirements *requirements, size_t size) {
+    if (selected("query", 1u)) return DOE_COMPILER_ABI_MISMATCH;
+    return __real_doe_compiler_stage_requirements(version, capacities, capacities_size, requirements, size);
 }

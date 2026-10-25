@@ -96,6 +96,26 @@ execution; the browser remains the GPU provider for this delivery path.
 
 ## Build and decisive checks
 
+The same C CLI also emits MSL and HLSL through the public typed target APIs:
+
+```sh
+make -C runtime/c/compiler test-emit-targets
+runtime/c/compiler/build/doe-emit-msl-c --shader-path input.wgsl --out fresh.metal
+runtime/c/compiler/build/doe-emit-hlsl-c --shader-path input.wgsl > output.hlsl
+runtime/c/compiler/build/doe-emit-spirv-c --shader-path input.wgsl > output.spv
+```
+
+These explicit C executable names preserve the retained emitter input/output
+arguments; omitted `--out` writes to stdout. The main `doe-compiler-c` executable
+accepts `--target spirv|msl|hlsl`, defaulting to SPIR-V. Files use its existing
+atomic no-clobber publication: an existing destination is preserved. Text emission
+measures and fills through the same whole-module validation and target owner;
+diagnostics keep original source locations. Entryless text modules emit no text;
+SPIR-V output requires an executable entry. The current CLI input limit is 64 KiB.
+Legacy reflection modes require SPIR-V. Runtime override CLI arguments, DXIL,
+CSL and TSIR delivery remain separate retained-consumer work; this adapter does
+not substitute for native SDK validation or device execution.
+
 From the repository root, ordinary source consumption is:
 
 ```sh
