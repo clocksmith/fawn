@@ -920,6 +920,20 @@ diagnostics. `tests/shader_check.c` exercises acceptance, parse and semantic
 rejection, truncated copies and a null source; `test-integration-shader-preflight.js`
 checks the same contract through doe-gpu on every provider.
 
+## Doe queue sync-info extension
+
+`include/doe_native_queue.h` declares `doeNativeQueueSyncInfo`, the retained Zig
+export the addon's `queueSyncInfo` (doe-gpu `nativeQueueSyncInfo`) resolves, with
+the same bit values (listed in `EXTENSION_SYMBOLS.txt`). A Vulkan queue reports
+`BACKEND_VULKAN`, never `TIMELINE_SEMAPHORE` or `FENCE_POOL` (each submission owns
+one fence), and `DEFERRED_SUBMISSIONS` while a submitted command record remains on
+the pending list, that is, until a public wait or the progress worker observes its
+completion or failure. Other backends and a NULL queue report 0. Because the
+worker settles in the background, a caller sees the deferred bit only for work not
+yet observed, never a guaranteed state after submit. `tests/queue_sync_info.c`
+withholds fence observation at the real poll boundary to check the bit while work
+is unobserved and its clearing by work done and by host access to a used buffer.
+
 ## Doe binding-reflection extension
 
 `include/doe_native_reflection.h` declares `doeNativeShaderModuleGetBindings` and

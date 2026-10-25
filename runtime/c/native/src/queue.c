@@ -2,6 +2,7 @@
 #include "surface.h"
 #include "metal_frontend.h"
 #include "d3d12_frontend.h"
+#include "doe_native_queue.h"
 #include <stdlib.h>
 
 static doe_vk_status record_dispatch(doe_vk_commands *commands, const doe_resource_command *record)
@@ -556,4 +557,21 @@ WGPUFuture wgpuQueueOnSubmittedWorkDone(WGPUQueue handle, WGPUQueueWorkDoneCallb
     }
     native_device_release(device);
     return future;
+}
+
+uint32_t doeNativeQueueSyncInfo(WGPUQueue handle)
+{
+    native_device *device = (native_device *)handle;
+    if (!device || device->backend.kind != WGPUBackendType_Vulkan) return 0;
+    uint32_t bits = DOE_NATIVE_QUEUE_SYNC_BACKEND_VULKAN;
+    native_lock(device);
+    /* A command record leaves the pending list once its completion or failure
+     * has been observed; surface records are presentation cleanup, not work. */
+    for (const native_pending *pending = device->pending; pending; pending = pending->next) {
+        if (pending->kind != NATIVE_PENDING_COMMANDS) continue;
+        bits |= DOE_NATIVE_QUEUE_SYNC_DEFERRED_SUBMISSIONS;
+        break;
+    }
+    native_unlock(device);
+    return bits;
 }
