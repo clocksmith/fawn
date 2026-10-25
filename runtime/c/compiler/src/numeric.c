@@ -685,6 +685,7 @@ bool numeric_override(Source *source, size_t offset, double input,
 
 bool numeric_bitcast(Source *source, size_t offset, NumericValue input,
                      IrType target, NumericValue *result) {
+    if (input.type == IR_F16 && target == IR_F16) return checked_float(source, offset, input, result);
     if (!(input.type == IR_U32 || input.type == IR_I32 || input.type == IR_F32) ||
         !(target == IR_U32 || target == IR_I32 || target == IR_F32))
         return numeric_error(source, offset, "bitcast requires a concrete 32-bit numeric scalar");
