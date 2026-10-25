@@ -24,10 +24,31 @@ doe_mtl_status doe_mtl_texture_region_check(const doe_mtl_texture *texture,
     return DOE_MTL_OK;
 }
 
+static doe_mtl_status transfer_format(const doe_mtl_texture *texture, doe_mtl_transfer_aspect aspect,
+    doe_mtl_format_info *format, uint8_t *aspects, size_t *options) {
+    *format = texture->format;
+    *aspects = doe_mtl_format_aspects(texture->desc.format);
+    *options = 0;
+    if (aspect == DOE_MTL_TRANSFER_ALL) {
+        if (format->depth && format->stencil) return DOE_MTL_INVALID_ARGUMENT;
+    } else if (aspect == DOE_MTL_TRANSFER_DEPTH) {
+        if (!format->depth) return DOE_MTL_INVALID_ARGUMENT;
+        if (texture->desc.format == DOE_MTL_DEPTH24_STENCIL8) return DOE_MTL_UNSUPPORTED;
+        *aspects = DOE_MTL_ASPECT_DEPTH;
+        if (format->stencil) { format->block_bytes = 4; *options = 1; }
+    } else if (aspect == DOE_MTL_TRANSFER_STENCIL) {
+        if (!format->stencil) return DOE_MTL_INVALID_ARGUMENT;
+        *aspects = DOE_MTL_ASPECT_STENCIL;
+        format->block_bytes = 1;
+        if (format->depth) *options = 2;
+    } else return DOE_MTL_INVALID_ARGUMENT;
+    return format->block_bytes ? DOE_MTL_OK : DOE_MTL_UNSUPPORTED;
+}
+
 static doe_mtl_status transfer_layout(const doe_mtl_texture *texture,
     doe_mtl_texture_region region, doe_mtl_texture_buffer_layout layout,
-    const doe_mtl_buffer *buffer, doe_mtl_native_texture_copy *copy, bool *covers_buffer) {
-    const doe_mtl_format_info *f = &texture->format;
+    const doe_mtl_buffer *buffer, const doe_mtl_format_info *f,
+    doe_mtl_native_texture_copy *copy, bool *covers_buffer) {
     uint64_t columns = ((uint64_t)region.width + f->block_width - 1) / f->block_width;
     uint64_t rows = ((uint64_t)region.height + f->block_height - 1) / f->block_height;
     uint64_t row_bytes = columns * f->block_bytes;
@@ -59,7 +80,8 @@ static doe_mtl_status transfer_layout(const doe_mtl_texture *texture,
 
 static doe_mtl_status buffer_texture_transfer(doe_mtl_commands *commands,
     doe_mtl_buffer *buffer, doe_mtl_texture_buffer_layout layout,
-    doe_mtl_texture *texture, doe_mtl_texture_region region, bool upload, doe_mtl_error *error) {
+    doe_mtl_texture *texture, doe_mtl_texture_region region, doe_mtl_transfer_aspect aspect,
+    bool upload, doe_mtl_error *error) {
     doe_mtl_status status = doe_mtl_recording(commands, error);
     doe_mtl_native_texture_copy copy = {0};
     doe_mtl_texture_use *texture_use;
@@ -67,15 +89,19 @@ static doe_mtl_status buffer_texture_transfer(doe_mtl_commands *commands,
     doe_mtl_native *native;
     doe_mtl_error detail = {0};
     bool full = false, covers_buffer = false;
+    doe_mtl_format_info format = {0};
+    uint8_t aspects = 0;
     if (status != DOE_MTL_OK) return status;
     status = doe_mtl_buffer_preflight(commands, buffer, upload);
     if (status == DOE_MTL_OK) status = doe_mtl_texture_preflight(commands, texture,
         upload ? DOE_MTL_TEXTURE_COPY_DST : DOE_MTL_TEXTURE_COPY_SRC);
+    if (status == DOE_MTL_OK) status = transfer_format(texture, aspect, &format, &aspects, &copy.options);
     if (status == DOE_MTL_OK) status = doe_mtl_texture_region_check(texture, region, &full);
+    if (status == DOE_MTL_OK && (format.depth || format.stencil) && !full) status = DOE_MTL_UNSUPPORTED;
     if (status == DOE_MTL_OK && (!upload || !full) &&
-        !doe_mtl_texture_region_initialized(commands, texture, region)) status = DOE_MTL_UNINITIALIZED;
+        !doe_mtl_texture_region_aspects_initialized(commands, texture, region, aspects)) status = DOE_MTL_UNINITIALIZED;
     if (status == DOE_MTL_OK)
-        status = transfer_layout(texture, region, layout, buffer, &copy, &covers_buffer);
+        status = transfer_layout(texture, region, layout, buffer, &format, &copy, &covers_buffer);
     native = &commands->context->native;
     if (status == DOE_MTL_OK && (upload ? native->upload_texture == NULL : native->read_texture == NULL))
         status = DOE_MTL_UNSUPPORTED;
@@ -88,7 +114,7 @@ static doe_mtl_status buffer_texture_transfer(doe_mtl_commands *commands,
     else status = native->read_texture(native->userdata, commands->native,
         texture->native, buffer->native, &copy, &detail);
     if (status == DOE_MTL_OK) {
-        if (upload && full) doe_mtl_texture_region_initialize(texture_use, region);
+        if (upload && full) doe_mtl_texture_region_aspects_initialize(texture_use, region, aspects);
         if (!upload && covers_buffer) buffer_use->initialized = true;
     }
     return doe_mtl_native_record_result(commands, status, &detail, error);
@@ -97,12 +123,23 @@ static doe_mtl_status buffer_texture_transfer(doe_mtl_commands *commands,
 doe_mtl_status doe_mtl_commands_upload_texture(doe_mtl_commands *commands,
     doe_mtl_buffer *source, doe_mtl_texture_buffer_layout layout,
     doe_mtl_texture *destination, doe_mtl_texture_region region, doe_mtl_error *error) {
-    return buffer_texture_transfer(commands, source, layout, destination, region, true, error);
+    return buffer_texture_transfer(commands, source, layout, destination, region, DOE_MTL_TRANSFER_ALL, true, error);
 }
 doe_mtl_status doe_mtl_commands_read_texture(doe_mtl_commands *commands,
     doe_mtl_texture *source, doe_mtl_texture_region region,
     doe_mtl_buffer *destination, doe_mtl_texture_buffer_layout layout, doe_mtl_error *error) {
-    return buffer_texture_transfer(commands, destination, layout, source, region, false, error);
+    return buffer_texture_transfer(commands, destination, layout, source, region, DOE_MTL_TRANSFER_ALL, false, error);
+}
+
+doe_mtl_status doe_mtl_commands_upload_texture_aspect(doe_mtl_commands *commands,
+    doe_mtl_buffer *source, doe_mtl_texture_buffer_layout layout, doe_mtl_texture *destination,
+    doe_mtl_texture_region region, doe_mtl_transfer_aspect aspect, doe_mtl_error *error) {
+    return buffer_texture_transfer(commands, source, layout, destination, region, aspect, true, error);
+}
+doe_mtl_status doe_mtl_commands_read_texture_aspect(doe_mtl_commands *commands,
+    doe_mtl_texture *source, doe_mtl_texture_region region, doe_mtl_transfer_aspect aspect,
+    doe_mtl_buffer *destination, doe_mtl_texture_buffer_layout layout, doe_mtl_error *error) {
+    return buffer_texture_transfer(commands, destination, layout, source, region, aspect, false, error);
 }
 
 static bool overlaps(doe_mtl_texture_region a, doe_mtl_texture_region b) {
@@ -124,7 +161,11 @@ doe_mtl_status doe_mtl_commands_copy_texture(doe_mtl_commands *commands,
     status = doe_mtl_texture_preflight(commands, source, DOE_MTL_TEXTURE_COPY_SRC);
     if (status == DOE_MTL_OK) status = doe_mtl_texture_preflight(commands, destination, DOE_MTL_TEXTURE_COPY_DST);
     if (status == DOE_MTL_OK) status = doe_mtl_texture_region_check(source, source_region, &full);
+    if (status == DOE_MTL_OK && (source->format.depth || source->format.stencil) && !full)
+        status = DOE_MTL_UNSUPPORTED;
     if (status == DOE_MTL_OK) status = doe_mtl_texture_region_check(destination, destination_region, &full);
+    if (status == DOE_MTL_OK && (destination->format.depth || destination->format.stencil) && !full)
+        status = DOE_MTL_UNSUPPORTED;
     if (status == DOE_MTL_OK && (source->desc.format != destination->desc.format ||
         source_region.width != destination_region.width || source_region.height != destination_region.height ||
         source_region.depth_or_layers != destination_region.depth_or_layers)) status = DOE_MTL_INVALID_ARGUMENT;

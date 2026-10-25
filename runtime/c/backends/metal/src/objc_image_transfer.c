@@ -23,9 +23,9 @@ static doe_mtl_status buffer_image(void *userdata, void *command, void *buffer,
         size_t slice = copy->volume ? 0 : region->z + layer;
         size_t stride = copy->volume ? copy->bytes_per_image : 0;
         if (upload) r->upload_image_call(encoder, r->upload_image, buffer,
-            offset, copy->bytes_per_row, stride, size, texture, slice, region->mip, origin, 0);
+            offset, copy->bytes_per_row, stride, size, texture, slice, region->mip, origin, copy->options);
         else r->read_image_call(encoder, r->read_image, texture, slice, region->mip,
-            origin, size, buffer, offset, copy->bytes_per_row, stride, 0);
+            origin, size, buffer, offset, copy->bytes_per_row, stride, copy->options);
     }
     doe_mtl_objc_void(r, encoder, r->end_encoding);
     doe_mtl_objc_drain(r, pool);

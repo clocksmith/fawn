@@ -125,7 +125,10 @@ views for its selected mip/layers. Missing aspects clear to zero while initializ
 companions LOAD/STORE; temporary views join the ordinary command leases, and only
 terminal success publishes their speculative initialization. X formats never
 become render attachments.
-Depth/stencil and multisample images do not admit storage or staging transfers.
+Depth/stencil staging transfers select the canonical depth or stencil aspect and
+native blit option; successful uploads publish only that aspect in the same
+subresource owner. Combined-format whole-buffer transfers reject. Depth/stencil
+storage and multisample staging transfers remain unsupported.
 
 `doe_mtl_commands_initialize_attachment` initializes a selected 2D/array/cube/MS
 view range through real clear-only passes. It prepares every selected mip/layer

@@ -31,7 +31,8 @@ Pending/unknown work retains every resource obligation; failed work never author
 successful readback. No interpreter, backend substitution, Zig delegation or
 production-selection change. Host, SDK and physical evidence remain distinct. Native handles are borrowed; callers serialize.
 Stencil initialization uses parent-format attachments and the speculative aspect
-owner, preserving companions.
+owner, preserving companions. Aspect transfers use the same bits and native
+component-copy options, publishing only after completion.
 
 ## Acceptance
 [Focused checks](Makefile) exercise native arguments, rollback, ownership and

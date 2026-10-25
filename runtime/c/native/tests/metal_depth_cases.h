@@ -106,6 +106,10 @@ static void metal_depth_admission(state *s, mock_native *mock)
             descriptor.format = formats[i];
             descriptor.size = (WGPUExtent3D){2,2,1};
             descriptor.usage = copy ? WGPUTextureUsage_CopyDst : WGPUTextureUsage_CopySrc;
+            WGPUTexture copy_image = wgpuDeviceCreateTexture(s->device,&descriptor);
+            assert(copy_image);
+            wgpuTextureRelease(copy_image);
+            descriptor.usage = WGPUTextureUsage_StorageBinding;
             wgpuDevicePushErrorScope(s->device,WGPUErrorFilter_Validation);
             assert(!wgpuDeviceCreateTexture(s->device,&descriptor));
             pop(s,WGPUErrorType_Validation);
@@ -191,6 +195,6 @@ static void metal_depth_admission(state *s, mock_native *mock)
     assert(settled.complete && settled.failure.status == NATIVE_OK && !device->pending);
     native_unlock(device);
     assert(mock->live == baseline && !s->errors);
-    puts("PASS public Metal depth/stencil sampling host composition: canonical aspect views, dense MSL bindings, parent-format zero clears preserving companions, copied errors, copy rejection and pending early-release leases; no GPU execution");
+    puts("PASS public Metal depth/stencil sampling host composition: canonical aspect views, dense MSL bindings, parent-format zero clears preserving companions, copied errors, copy admission and storage rejection and pending early-release leases; no GPU execution");
 }
 #endif

@@ -1256,8 +1256,10 @@ pipelines and direct, indexed and GPU-guarded indirect whole passes. Vertex and
 fragment use their own
 compiler-provided binding tables; vertex-fetch slots avoid shader buffer/size
 slots. Shared public fixed/depth/interface admission is converted explicitly to
-Metal without synthetic Vulkan capabilities. Partial sample masks, unclipped depth,
-and depth/stencil texture transfers reject explicitly.
+Metal without synthetic Vulkan capabilities. Depth/stencil transfers consume
+resource-normalized aspect layouts, retaining forbidden depth uploads and opaque
+Plus-depth readback validation. Partial sample masks and unclipped depth reject
+explicitly.
 Texture initialization, discard recovery and public submissions share the same
 backend aspect state and tagged pending owner. An initialization that becomes
 unknown does not publish a public texture and cannot drop its private allocation.

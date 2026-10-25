@@ -119,6 +119,18 @@ typedef struct doe_mtl_texture_buffer_layout {
     uint32_t bytes_per_row; /* 0 chooses a 256-byte-aligned packed block row. */
     uint32_t rows_per_image; /* In block rows, 0 selects region block height. */
 } doe_mtl_texture_buffer_layout;
+typedef enum doe_mtl_transfer_aspect {
+    DOE_MTL_TRANSFER_ALL, DOE_MTL_TRANSFER_DEPTH, DOE_MTL_TRANSFER_STENCIL
+} doe_mtl_transfer_aspect;
+/* Selected-component copies preserve the companion aspect. Combined formats
+ * require an explicit component; depth24 buffer representation is not admitted.
+ * Depth/stencil copies cover a complete mip width/height and selected layers. */
+doe_mtl_status doe_mtl_commands_upload_texture_aspect(doe_mtl_commands *commands,
+    doe_mtl_buffer *source, doe_mtl_texture_buffer_layout layout, doe_mtl_texture *destination,
+    doe_mtl_texture_region region, doe_mtl_transfer_aspect aspect, doe_mtl_error *error);
+doe_mtl_status doe_mtl_commands_read_texture_aspect(doe_mtl_commands *commands,
+    doe_mtl_texture *source, doe_mtl_texture_region region, doe_mtl_transfer_aspect aspect,
+    doe_mtl_buffer *destination, doe_mtl_texture_buffer_layout layout, doe_mtl_error *error);
 /* Nonempty regions only. Row pitches must be 256-byte aligned; image padding
  * is not copied and does not initialize private-buffer padding bytes.
  * Uploads initialize only complete selected mip/layer subresources. Partial

@@ -22,7 +22,7 @@ void native_metal_write_texture(native_device *device, const WGPUTexelCopyTextur
     if (status == DOE_RESOURCE_OK) {
         native_texture *payload = doe_resource_texture_native(texture);
         if (doe_mtl_texture_format_info(doe_mtl_texture_description(payload->metal)->format, &format) != DOE_MTL_OK ||
-            format.depth || format.stencil || format.compressed) status = DOE_RESOURCE_UNSUPPORTED;
+            format.compressed) status = DOE_RESOURCE_UNSUPPORTED;
     }
     native_unlock(device);
     if (status != DOE_RESOURCE_OK) {
@@ -34,7 +34,7 @@ void native_metal_write_texture(native_device *device, const WGPUTexelCopyTextur
         native_device_release(device);
         return;
     }
-    uint64_t row_bytes = (uint64_t)copy.width * format.block_bytes;
+    uint64_t row_bytes = region.row_bytes;
     uint64_t pitch = (row_bytes + 255) / 256 * 256;
     const uint64_t allocation_bound = native_allocation_bound(device);
     if (pitch > UINT32_MAX || copy.height > SIZE_MAX / pitch) {

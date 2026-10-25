@@ -29,7 +29,7 @@ static doe_mtl_status texture_validate(const doe_mtl_context *context,
     } else if (desc->type == DOE_MTL_TEXTURE_2D_MS || desc->type == DOE_MTL_TEXTURE_2D_MS_ARRAY)
         return DOE_MTL_INVALID_ARGUMENT;
     if ((format->depth || format->stencil) &&
-        ((desc->usage & (DOE_MTL_TEXTURE_STORAGE | DOE_MTL_TEXTURE_COPY_SRC | DOE_MTL_TEXTURE_COPY_DST)) != 0 ||
+        ((desc->usage & DOE_MTL_TEXTURE_STORAGE) != 0 ||
          (desc->type != DOE_MTL_TEXTURE_2D && desc->type != DOE_MTL_TEXTURE_2D_ARRAY &&
           desc->type != DOE_MTL_TEXTURE_2D_MS && desc->type != DOE_MTL_TEXTURE_2D_MS_ARRAY)))
         return DOE_MTL_UNSUPPORTED;

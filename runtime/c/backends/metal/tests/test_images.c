@@ -351,7 +351,48 @@ static void transfer_record_faults(void) {
     doe_mtl_texture_release(texture); doe_mtl_texture_release(destination);
     doe_mtl_buffer_release(buffer); doe_mtl_context_release(context); mock_assert_closed(&mock);
 }
+static void selected_aspect_transfer(void) {
+    mock_native mock;
+    doe_mtl_context *context = context_open(&mock);
+    doe_mtl_texture_desc desc = {DOE_MTL_TEXTURE_2D_ARRAY, DOE_MTL_DEPTH32_STENCIL8,
+        4,2,2,1,DOE_MTL_TEXTURE_COPY_SRC | DOE_MTL_TEXTURE_COPY_DST | DOE_MTL_TEXTURE_RENDER_TARGET,false,1};
+    doe_mtl_texture *texture = image_new(context, desc);
+    doe_mtl_buffer *buffer = buffer_new(context, 1024, DOE_MTL_SHARED);
+    doe_mtl_texture_region region = {0,0,0,1,4,2,1};
+    doe_mtl_commands *commands = commands_new(context);
+    assert(doe_mtl_commands_upload_texture_aspect(commands, buffer, (doe_mtl_texture_buffer_layout){0},
+        texture, region, DOE_MTL_TRANSFER_STENCIL, NULL) == DOE_MTL_OK);
+    assert(mock.image_to.options == 2 && mock.image_to.bytes_per_row == 256);
+    assert(commands->textures->initialized[1] == DOE_MTL_ASPECT_STENCIL && texture->initialized[1] == 0);
+    assert(doe_mtl_commands_submit(commands, NULL) == DOE_MTL_OK);
+    assert(doe_mtl_commands_poll(commands, NULL) == DOE_MTL_PENDING);
+    assert(doe_mtl_commands_wait(commands, NULL) == DOE_MTL_COMPLETION_UNKNOWN);
+    assert(doe_mtl_commands_release(commands) == DOE_MTL_BUSY && texture->initialized[1] == 0);
+    mock_result(&mock, 4, 0);
+    assert(doe_mtl_commands_poll(commands, NULL) == DOE_MTL_OK);
+    assert(doe_mtl_commands_release(commands) == DOE_MTL_OK);
+    assert(texture->initialized[1] == DOE_MTL_ASPECT_STENCIL && texture->initialized[0] == 0);
+    commands = commands_new(context);
+    assert(doe_mtl_commands_read_texture_aspect(commands, texture, region, DOE_MTL_TRANSFER_DEPTH,
+        buffer, (doe_mtl_texture_buffer_layout){0}, NULL) == DOE_MTL_UNINITIALIZED);
+    assert(doe_mtl_commands_release(commands) == DOE_MTL_OK);
+    commands = commands_new(context); mock.fail = MOCK_UPLOAD_IMAGE;
+    assert(doe_mtl_commands_upload_texture_aspect(commands, buffer, (doe_mtl_texture_buffer_layout){0},
+        texture, region, DOE_MTL_TRANSFER_DEPTH, NULL) == DOE_MTL_NATIVE_FAILURE);
+    assert(doe_mtl_commands_release(commands) == DOE_MTL_OK);
+    assert(texture->initialized[1] == DOE_MTL_ASPECT_STENCIL);
+    commands = commands_new(context); mock.fail = MOCK_NONE;
+    assert(doe_mtl_commands_upload_texture_aspect(commands, buffer, (doe_mtl_texture_buffer_layout){0},
+        texture, region, DOE_MTL_TRANSFER_DEPTH, NULL) == DOE_MTL_OK);
+    assert(mock.image_to.options == 1);
+    complete(&mock, commands);
+    assert(texture->initialized[1] == (DOE_MTL_ASPECT_DEPTH | DOE_MTL_ASPECT_STENCIL));
+    assert(texture->initialized[0] == 0);
+    doe_mtl_buffer_release(buffer); doe_mtl_texture_release(texture);
+    doe_mtl_context_release(context); mock_assert_closed(&mock);
+}
 int main(void) {
+    selected_aspect_transfer();
     factory_rollback(); descriptor_validation(); mixed_dispatch_lifetime();
     mip_layer_initialization(); copies_and_padding(); compressed_and_volume(); failures_and_busy();
     image_binding_validation(); transfer_record_faults();
