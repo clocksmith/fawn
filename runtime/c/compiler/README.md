@@ -116,7 +116,20 @@ Entryless text modules emit no text;
 SPIR-V output requires an executable entry. The CLI accepts up to 2 MiB of source, matching the retained offline emitters.
 Legacy ABI1 reflection retains its 64 KiB library admission limit; typed CLI paths
 use caller-sized source storage. Other declared compiler pool limits still apply.
-Legacy reflection modes require SPIR-V. Runtime override CLI arguments, DXIL,
+Legacy reflection modes require SPIR-V. Runtime SPIR-V mode accepts up to 64 finite
+override values through ABI14, preserving every compute and graphics entry:
+
+```sh
+runtime/c/compiler/build/doe-emit-spirv-c --shader-path input.wgsl \
+  --mode vulkan-compute-runtime --overrides SCALE=2,7=4 --out fresh.spv
+```
+
+An `@id` declaration uses its canonical decimal ID; other declarations use their
+name. Repeated `--overrides` flags accumulate values; duplicate/unknown keys and
+missing required values reject before output publication. Booleans use 0/1.
+Unlike the retained Zig emitter, missing values accessed only by a graphics sibling
+also reject, preserving the shared C semantic contract. This mode does not accept
+legacy reflection options. Native DXIL,
 CSL and TSIR delivery remain separate retained-consumer work; this adapter does
 not substitute for native SDK validation or device execution.
 

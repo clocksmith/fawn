@@ -18,8 +18,8 @@ MSL or HLSL through one typed pipeline. Reflection includes entry/binding
 metadata, HLSL spaces and native requirements; diagnostics retain source locations.
 The browser/offline adapter preserves validated WGSL with typed source edits;
 its bounded Wasm reactor imports no host functions.
-[ABI13 specialization](SPECIALIZATION.md) separates symbolic module validation
-from concrete selected-entry emission through the same semantic owner.
+[ABI13/14 specialization](SPECIALIZATION.md) separates symbolic module validation
+from selected-entry or whole-module emission through shared semantics.
 
 ## Invariants
 Unsupported syntax, types and targets reject without fallback.
