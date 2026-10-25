@@ -283,7 +283,8 @@ buffer_entry *runtime_find_buffer(doe_runtime *runtime, uint64_t handle)
 
 /* Handle buffers serve uploads, uniforms and storage alike. WebGPU zero-fills
  * new buffers, which is the "initialize_buffers_on_create" contents. */
-buffer_entry *runtime_create_buffer(doe_runtime *runtime, uint64_t handle, uint64_t size, doe_trace_execution *execution)
+static buffer_entry *create_buffer_usage(doe_runtime *runtime, uint64_t handle, uint64_t size, WGPUBufferUsage usage,
+    doe_trace_execution *execution)
 {
     if (size == 0 || size > UINT64_MAX - 3) {
         runtime_fail(execution, "buffer_size_invalid", "buffer %llu needs a nonzero size", (unsigned long long)handle);
@@ -298,7 +299,7 @@ buffer_entry *runtime_create_buffer(doe_runtime *runtime, uint64_t handle, uint6
     }
     WGPUBufferDescriptor descriptor = WGPU_BUFFER_DESCRIPTOR_INIT;
     descriptor.size = (size + 3) & ~UINT64_C(3);
-    descriptor.usage = WGPUBufferUsage_Storage | WGPUBufferUsage_Uniform | WGPUBufferUsage_CopyDst | WGPUBufferUsage_CopySrc;
+    descriptor.usage = usage;
     WGPUBuffer buffer = wgpuDeviceCreateBuffer(runtime->device, &descriptor);
     if (!buffer) {
         runtime_fail(execution, "buffer_create_failed", "buffer %llu of %llu bytes was not created",
@@ -306,21 +307,35 @@ buffer_entry *runtime_create_buffer(doe_runtime *runtime, uint64_t handle, uint6
         return NULL;
     }
     buffer_entry *entry = &runtime->buffers[runtime->buffer_count++];
-    *entry = (buffer_entry){.handle = handle, .buffer = buffer, .size = descriptor.size};
+    *entry = (buffer_entry){.handle = handle, .buffer = buffer, .size = descriptor.size, .usage = usage};
     return entry;
+}
+
+buffer_entry *runtime_create_buffer(doe_runtime *runtime, uint64_t handle, uint64_t size, doe_trace_execution *execution)
+{
+    return create_buffer_usage(runtime, handle, size, WGPUBufferUsage_Storage | WGPUBufferUsage_Uniform |
+        WGPUBufferUsage_CopyDst | WGPUBufferUsage_CopySrc, execution);
+}
+
+buffer_entry *runtime_ensure_buffer_usage(doe_runtime *runtime, uint64_t handle, uint64_t size, WGPUBufferUsage usage,
+    doe_trace_execution *execution)
+{
+    buffer_entry *entry = runtime_find_buffer(runtime, handle);
+    if (entry && entry->size >= size && (entry->usage & usage) == usage) return entry;
+    if (!entry) return create_buffer_usage(runtime, handle, size, usage, execution);
+    usage |= entry->usage;
+    size_t position = (size_t)(entry - runtime->buffers);
+    WGPUBuffer previous = entry->buffer;
+    runtime->buffers[position] = runtime->buffers[--runtime->buffer_count];
+    buffer_entry *created = create_buffer_usage(runtime, handle, size, usage, execution);
+    wgpuBufferRelease(previous);
+    return created;
 }
 
 buffer_entry *runtime_ensure_buffer(doe_runtime *runtime, uint64_t handle, uint64_t size, doe_trace_execution *execution)
 {
-    buffer_entry *entry = runtime_find_buffer(runtime, handle);
-    if (entry && entry->size >= size) return entry;
-    if (!entry) return runtime_create_buffer(runtime, handle, size, execution);
-    size_t position = (size_t)(entry - runtime->buffers);
-    WGPUBuffer previous = entry->buffer;
-    runtime->buffers[position] = runtime->buffers[--runtime->buffer_count];
-    buffer_entry *created = runtime_create_buffer(runtime, handle, size, execution);
-    wgpuBufferRelease(previous);
-    return created;
+    return runtime_ensure_buffer_usage(runtime, handle, size, WGPUBufferUsage_Storage | WGPUBufferUsage_Uniform |
+        WGPUBufferUsage_CopyDst | WGPUBufferUsage_CopySrc, execution);
 }
 
 bool runtime_submit(doe_runtime *runtime, WGPUCommandBuffer commands, doe_trace_execution *execution)

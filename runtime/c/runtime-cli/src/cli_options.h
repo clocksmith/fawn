@@ -25,7 +25,7 @@ enum { MAX_READBACKS = 8 };
 
 typedef struct options {
     const char *commands, *kernel_root, *trace_jsonl, *trace_meta, *quirks, *numeric_policy, *numeric_profile;
-    const char *plan, *workload, *replay; /* Plan mode: doe-plan-executor's --plan and --workload. */
+    const char *plan, *workload, *replay, *backend_lane; /* Plan mode: doe-plan-executor's --plan and --workload. */
     const char *vendor, *api, *family, *driver;
     bool execute, trace_stdout, validate_oracles, trace_backend, emit_normalized;
     doe_quirk_mode quirk_mode;

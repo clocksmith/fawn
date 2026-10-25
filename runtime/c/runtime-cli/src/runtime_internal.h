@@ -15,6 +15,7 @@ typedef struct buffer_entry {
     uint64_t handle;
     WGPUBuffer buffer;
     uint64_t size;
+    WGPUBufferUsage usage;
 } buffer_entry;
 
 /* A stream texture: `declared` is the stream's descriptor; the WebGPU texture
@@ -55,6 +56,7 @@ typedef struct surface_entry {
     bool configured;
 } surface_entry;
 
+struct public_render_state;
 struct doe_runtime {
     doe_runtime_options options;
     WGPUInstance instance;
@@ -70,6 +72,7 @@ struct doe_runtime {
     size_t texture_count, texture_capacity;
     sampler_entry *samplers;
     size_t sampler_count, sampler_capacity;
+    struct public_render_state *public_render;
     render_pipeline_entry *render_pipelines;
     size_t render_pipeline_count, render_pipeline_capacity;
     surface_entry *surfaces;
@@ -112,6 +115,16 @@ buffer_entry *runtime_create_buffer(doe_runtime *runtime, uint64_t handle, uint6
  * buffer replaces it (its contents are lost), as doe-zig-runtime does. The
  * pointer is valid until the next buffer is created. */
 buffer_entry *runtime_ensure_buffer(doe_runtime *runtime, uint64_t handle, uint64_t size, doe_trace_execution *execution);
+buffer_entry *runtime_ensure_buffer_usage(doe_runtime *runtime, uint64_t handle, uint64_t size, WGPUBufferUsage usage,
+    doe_trace_execution *execution);
+WGPUTexture runtime_ensure_texture(doe_runtime *runtime, const doe_texture_desc *desc, doe_trace_execution *execution);
+WGPUBuffer runtime_render_indices(doe_runtime *runtime, const doe_render_draw *draw, uint64_t *size);
+WGPUBuffer runtime_render_arguments(doe_runtime *runtime, const doe_render_draw *draw, uint32_t *stride,
+    doe_trace_execution *execution);
+bool runtime_execute_public_render(doe_runtime *runtime, const doe_command *command, doe_trace_execution *execution);
+void runtime_release_public_render(doe_runtime *runtime);
+WGPURenderPipeline runtime_async_render_pipeline(doe_runtime *runtime, WGPUShaderModule shader,
+    const WGPURenderPipelineDescriptor *descriptor, doe_trace_execution *execution);
 /* Submits and releases the command buffer; waits unless deferred sync is selected. */
 bool runtime_submit(doe_runtime *runtime, WGPUCommandBuffer commands, doe_trace_execution *execution);
 /* Copies `size` bytes (a multiple of 4) at `offset` of `source` to `out`. */

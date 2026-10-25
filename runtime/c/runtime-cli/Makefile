@@ -17,7 +17,7 @@ CORE = src/json.c src/stream.c src/stream_texture.c src/stream_render.c src/stre
 CORE_HEADERS = src/json.h src/stream.h src/stream_internal.h src/trace.h src/sha256.h src/quirks.h \
   src/operators.h src/numeric_policy.h src/numeric_stability.h src/plan.h
 TOGGLE_REGISTRY = ../../../config/quirk-toggle-registry.json
-RUNTIME = src/cli_options.c src/cli_inputs.c src/cli_output.c src/execute.c src/queue.c src/kernel.c src/texture.c src/render.c src/map.c src/diagnostics.c src/diagnostics_lifecycle.c src/surface.c $(SURFACE_HOST)
+RUNTIME = src/cli_options.c src/cli_inputs.c src/cli_output.c src/execute.c src/queue.c src/kernel.c src/texture.c src/render.c src/render_public.c src/render_public_resources.c src/map.c src/diagnostics.c src/diagnostics_lifecycle.c src/surface.c $(SURFACE_HOST)
 ifeq ($(shell uname -s),Darwin)
 CPPFLAGS += -D_DARWIN_C_SOURCE
 SURFACE_HOST = $(BUILD)/surface_metal.o
@@ -32,7 +32,7 @@ DAWN_SURFACE_CPPFLAGS = -DDOE_SURFACE_XLIB
 DAWN_SURFACE_LIBS = -lX11-xcb -lX11
 LDLIBS += -lxcb
 endif
-RUNTIME_HEADERS = src/cli_options.h src/cli_inputs.h src/cli_output.h src/surface_platform.h src/execute.h src/runtime_internal.h ../../zig/vendor/webgpu-headers/webgpu.h \
+RUNTIME_HEADERS = src/cli_options.h src/cli_inputs.h src/cli_output.h src/render_public.h src/surface_platform.h src/execute.h src/runtime_internal.h ../../zig/vendor/webgpu-headers/webgpu.h \
   ../native/include/doe_native_adapter.h
 .PHONY: all bench-bin bench-bin-dawn check check-dawn check-host dawn native
 all: $(BUILD)/doe-c-runtime
@@ -53,7 +53,7 @@ $(BUILD)/doe-c-runtime: src/main.c $(CORE) $(RUNTIME) $(CORE_HEADERS) $(RUNTIME_
 DAWN_LIBRARY ?= $(abspath ../../../bench/vendor/dawn/out/Release/libwebgpu_dawn.so)
 $(BUILD)/dawn-c-runtime: src/main.c $(CORE) $(RUNTIME) $(CORE_HEADERS) $(RUNTIME_HEADERS) | $(BUILD)
 	@test -f '$(DAWN_LIBRARY)' || { echo "dawn-c-runtime: DAWN_LIBRARY $(DAWN_LIBRARY) does not exist" >&2; exit 2; }
-	$(CC) $(CPPFLAGS) $(CFLAGS) $(DAWN_SURFACE_CPPFLAGS) -DDOE_RUNTIME_MODULE='"dawn-c-runtime"' -DDOE_RUNTIME_BACKEND_ID='"$(DAWN_BACKEND_ID)"' \
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(DAWN_SURFACE_CPPFLAGS) -DDOE_RUNTIME_DAWN -DDOE_RUNTIME_MODULE='"dawn-c-runtime"' -DDOE_RUNTIME_BACKEND_ID='"$(DAWN_BACKEND_ID)"' \
 	  src/main.c $(CORE) $(RUNTIME) '$(DAWN_LIBRARY)' '-Wl,-rpath,$(dir $(DAWN_LIBRARY))' $(DAWN_SURFACE_LIBS) $(LDLIBS) -lm -o $@
 dawn: $(BUILD)/dawn-c-runtime
 # The bench executor dawn_direct_vulkan runs bin/dawn-c-runtime (gitignored).
@@ -139,3 +139,14 @@ check-host-modes: $(BUILD)/doe-c-runtime $(BUILD)/no_device.so
 ifeq ($(shell uname -s),Linux)
 check: check-host-modes
 endif
+
+$(BUILD)/test_public_render_dawn: tests/test_public_render.c $(CORE) $(RUNTIME) $(CORE_HEADERS) $(RUNTIME_HEADERS) | $(BUILD)
+	$(CC) $(CPPFLAGS) $(CFLAGS) tests/test_public_render.c $(CORE) $(RUNTIME) '$(DAWN_LIBRARY)' \
+	  '-Wl,-rpath,$(dir $(DAWN_LIBRARY))' $(LDLIBS) -lm \
+	  -Wl,--wrap=wgpuRenderPassEncoderSetPipeline,--wrap=wgpuRenderPassEncoderSetBindGroup \
+	  -Wl,--wrap=wgpuRenderBundleEncoderSetPipeline,--wrap=wgpuRenderBundleEncoderSetBindGroup \
+	  -Wl,--wrap=wgpuRenderPassEncoderExecuteBundles,--wrap=wgpuRenderBundleEncoderFinish -o $@
+check-public-render: $(BUILD)/test_public_render_dawn $(BUILD)/dawn-c-runtime $(BUILD)/doe-c-runtime
+	$(BUILD)/test_public_render_dawn
+	$(PYTHON) tests/test_cli_public_render.py --binary '$(BUILD)/dawn-c-runtime' --native '$(BUILD)/doe-c-runtime' \
+	  --work '$(BUILD)/public-render-work'
