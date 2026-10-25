@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: MIT
-"""Build and relocate a Linux or Darwin C-only package from one committed tree.
+"""Build and relocate a native C-only package from one committed tree.
 
 This is an explicit partial native provider, not an installer or release gate.
-The native Makefile owns compilation; this tool owns immutable source capture,
+The native build owner compiles; this tool owns immutable source capture,
 package contents and a no-device C++ consumer check. Existing paths are refused.
 """
 from __future__ import annotations
@@ -33,10 +33,10 @@ def lean_proof_record(source: Path) -> dict[str, object]:
     artifact digest (doe-zig-runtime's default -Dlean-verified=false is the same)."""
     lean_root = source / "pipeline/lean/Doe"
     tree = hashlib.sha256()
-    for path in sorted(lean_root.rglob("*.lean"), key=lambda p: str(p.relative_to(lean_root)).encode()):
+    for path in sorted(lean_root.rglob("*.lean"), key=lambda p: p.relative_to(lean_root).as_posix().encode()):
         if not path.is_file():
             continue
-        tree.update(f"pipeline/lean/Doe/{path.relative_to(lean_root)}".encode())
+        tree.update(f"pipeline/lean/Doe/{path.relative_to(lean_root).as_posix()}".encode())
         tree.update(b"\n")
         tree.update(path.read_bytes())
         tree.update(b"\n")
@@ -70,6 +70,28 @@ def captured(arguments: list[str], cwd: Path | None = None) -> str:
 
 def audit_libraries(directory: Path, system: str) -> dict[str, str]:
     """Refuse build-path dependencies before testing the relocated consumer."""
+    if system == "Windows":
+        records: dict[str, str] = {}
+        packaged = {path.name.casefold() for path in directory.glob("*.dll")}
+        system_directory = Path(os.environ["SystemRoot"]) / "System32"
+        for library in sorted(directory.glob("*.dll")):
+            output = captured(["dumpbin", "/nologo", "/dependents", str(library)])
+            dependencies = re.findall(r"^\s+([^\s]+\.dll)\s*$", output,
+                                      re.MULTILINE | re.IGNORECASE)
+            if not dependencies:
+                raise RuntimeError(f"No PE dependencies reported for {library.name}")
+            for name in dependencies:
+                if "/" in name or "\\" in name or ":" in name:
+                    raise RuntimeError(f"Nonrelative PE dependency: {name}")
+                # API-set names are resolved by Windows, not by PATH. Remaining
+                # dependencies must be packaged or actual system DLLs. Never
+                # accept an SDK/build directory as a runtime dependency source.
+                if (name.casefold() not in packaged
+                        and not name.casefold().startswith(("api-ms-win-", "ext-ms-win-"))
+                        and not (system_directory / name).is_file()):
+                    raise RuntimeError(f"Unpackaged PE dependency: {library.name}: {name}")
+            records[library.name] = output
+        return records
     if system == "Linux":
         dynamic = captured(["readelf", "-d", str(directory / "libwebgpu_doe_c.so")])
         if "Library runpath: [$ORIGIN]" not in dynamic:
@@ -100,17 +122,29 @@ def audit_libraries(directory: Path, system: str) -> dict[str, str]:
     return records
 
 
-def loader_environment() -> dict[str, str]:
-    return {key: value for key, value in os.environ.items()
+def loader_environment(system: str | None = None) -> dict[str, str]:
+    environment = {key: value for key, value in os.environ.items()
             if key not in ("LD_LIBRARY_PATH", "LD_PRELOAD")
             and not key.startswith("DYLD_")}
+    if system == "Windows":
+        # PE imports first resolve beside the executable. An SDK or build path
+        # must not rescue an incomplete relocated package.
+        environment = {key: value for key, value in environment.items()
+                       if key.casefold() != "path"}
+        environment["PATH"] = str(Path(os.environ["SystemRoot"]) / "System32")
+    return environment
 
 
 def build_package(repo: Path, revision: str, build: Path, destination: Path,
-                  cc: str, cxx: str) -> dict[str, object]:
+                  cc: str, cxx: str, *, dxc_root: Path | None = None,
+                  clang_cl: str = "clang-cl") -> dict[str, object]:
     system = platform.system()
-    if system not in ("Linux", "Darwin"):
-        raise ValueError(f"Unsupported package host {system}; use Linux or Darwin")
+    if system not in ("Linux", "Darwin", "Windows"):
+        raise ValueError(f"Unsupported package host {system}")
+    if system == "Windows":
+        if dxc_root is None or not (dxc_root / "inc/dxcapi.h").is_file():
+            raise ValueError("Windows requires --dxc-root with the official DXC SDK")
+        cc = cxx = clang_cl
     if build.exists() or build.is_symlink() or destination.exists() or destination.is_symlink():
         raise FileExistsError("Use fresh build and destination paths; existing work is never replaced")
     build, destination = build.resolve(), destination.resolve()
@@ -133,7 +167,7 @@ def build_package(repo: Path, revision: str, build: Path, destination: Path,
                        cwd=repo, stdout=output, check=True)
     with tarfile.open(archive) as bundle:
         bundle.extractall(source, filter="data")
-    source_hashes = {str(p.relative_to(source)): digest(p)
+    source_hashes = {p.relative_to(source).as_posix(): digest(p)
                      for p in sorted(source.rglob("*")) if p.is_file()}
     (build / "SOURCE_INPUTS.json").write_text(
         json.dumps(source_hashes, indent=2, sort_keys=True) + "\n", encoding="utf-8")
@@ -144,16 +178,30 @@ def build_package(repo: Path, revision: str, build: Path, destination: Path,
     native_name = "libwebgpu_doe_c." + suffix
     compiler_name = "libdoe_compiler." + suffix
     runpath = "@loader_path" if system == "Darwin" else "$$ORIGIN"
-    command = ["make", "-C", str(owner), "all", f"BUILD={objects}",
-               f"CC={cc}", f"CXX={cxx}", f"SHARED_PLATFORM={system}",
-               f"COMPILER_RUNPATH={runpath}"]
+    if system == "Windows":
+        native_name, compiler_name = "webgpu_doe_c.dll", "doe_compiler.dll"
+        command = [sys.executable, str(owner / "tools/build_windows.py"),
+                   "--out", str(objects), "--dxc-root", str(dxc_root.resolve()),
+                   "--clang-cl", clang_cl]
+    else:
+        command = ["make", "-C", str(owner), "all", f"BUILD={objects}",
+                   f"CC={cc}", f"CXX={cxx}", f"SHARED_PLATFORM={system}",
+                   f"COMPILER_RUNPATH={runpath}"]
     execute(command, build / "build.log")
     loader_records = audit_libraries(objects, system)
     candidate = build / "package-before-relocation"
     for name in ("lib", "include", "bin", "licenses"):
         (candidate / name).mkdir(parents=True)
+    runtime_directory = "bin" if system == "Windows" else "lib"
     for name in (native_name, compiler_name):
-        shutil.copy2(objects / name, candidate / "lib" / name)
+        shutil.copy2(objects / name, candidate / runtime_directory / name)
+    if system == "Windows":
+        for name in ("dxcompiler.dll", "dxil.dll"):
+            shutil.copy2(objects / name, candidate / "bin" / name)
+        shutil.copy2(objects / "webgpu_doe_c.lib", candidate / "lib/webgpu_doe_c.lib")
+        shutil.copy2(objects / "compiler/doe_compiler.lib", candidate / "lib/doe_compiler.lib")
+        shutil.copytree(objects / "dxc-licenses", candidate / "licenses/DXC")
+        shutil.copy2(objects / "native-scope.json", candidate / "NATIVE_BUILD.json")
     for header in sorted((source / "runtime/c/compiler/include").glob("*.h")):
         shutil.copy2(header, candidate / "include" / header.name)
     for header in sorted((owner / "include").glob("*.h")):  # Doe extension ABI headers.
@@ -168,25 +216,38 @@ def build_package(repo: Path, revision: str, build: Path, destination: Path,
     shutil.copy2(owner / "EXTENSION_SYMBOLS.txt", candidate / "EXTENSION_SYMBOLS.txt")
     shutil.copy2(owner / "tests/procedures.cpp", candidate / "procedures.cpp")
     consumer_runpath = "@executable_path/../lib" if system == "Darwin" else "$ORIGIN/../lib"
+    consumer_name = "procedures.exe" if system == "Windows" else "procedures"
     consumer_command = [cxx, "-std=c++17", "-Wall", "-Wextra", "-Wpedantic", "-Werror",
                         str(candidate / "procedures.cpp"), "-I" + str(candidate / "include"),
                         "-L" + str(candidate / "lib"), "-lwebgpu_doe_c",
                         "-Wl,-rpath," + consumer_runpath, "-o", str(candidate / "bin/procedures")]
+    if system == "Windows":
+        consumer_command = [clang_cl, "--target=x86_64-pc-windows-msvc", "/nologo",
+                            "/MD", "/O2", "/WX", "/std:c++17", "/DWGPU_SHARED_LIBRARY",
+                            "/clang:-Wall", "/clang:-Wextra", "/clang:-Wpedantic",
+                            str(candidate / "procedures.cpp"),
+                            "/I" + str(candidate / "include"),
+                            "/Fo" + str(build / "procedures.obj"),
+                            "/Fe" + str(candidate / "bin" / consumer_name),
+                            "/link", str(candidate / "lib/webgpu_doe_c.lib")]
     execute(consumer_command, build / "consumer-build.log")
     moved = build / "package-after-relocation"
     candidate.rename(moved)
-    environment = loader_environment()
+    environment = loader_environment(system)
+    working_directory = build / "empty-working-directory"
+    working_directory.mkdir()
     with (build / "relocated-consumer.log").open("wb") as log:
-        subprocess.run([str(moved / "bin/procedures")], cwd="/", env=environment,
-                       stdout=log, stderr=subprocess.STDOUT, check=True)
+        subprocess.run([str(moved / "bin" / consumer_name)], cwd=working_directory,
+                       env=environment, stdout=log, stderr=subprocess.STDOUT,
+                       check=True, timeout=30)
     execute([sys.executable, str(owner / "tests/audit-exports.py"),
-             str(moved / "lib" / native_name), "--runtime", "--platform", system],
+             str(moved / runtime_directory / native_name), "--runtime", "--platform", system],
             build / "exports.log")
-    after = {str(p.relative_to(source)): digest(p)
+    after = {p.relative_to(source).as_posix(): digest(p)
              for p in sorted(source.rglob("*")) if p.is_file()}
     if after != source_hashes:
         raise RuntimeError("Captured source changed during the build")
-    artifacts = {str(p.relative_to(moved)): digest(p)
+    artifacts = {p.relative_to(moved).as_posix(): digest(p)
                  for p in sorted(moved.rglob("*")) if p.is_file()}
     manifest: dict[str, object] = {
         "source_commit": commit, "source_tree": tree,
@@ -200,7 +261,7 @@ def build_package(repo: Path, revision: str, build: Path, destination: Path,
         "loader_records": loader_records,
         "checks": ["native C-only source build", "moved C++ consumer with no library-path override",
                    "exact exported procedure inventory and addresses"],
-        "qualification": f"partial {system} developer package; no GPU execution, Windows package, browser or production cutover qualification",
+        "qualification": f"partial {system} developer package; no GPU execution, browser or production cutover qualification",
     }
     (moved / "MANIFEST.json").write_text(
         json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
@@ -230,9 +291,14 @@ def main() -> None:
     parser.add_argument("--destination", type=Path, required=True)
     parser.add_argument("--cc", default="gcc")
     parser.add_argument("--cxx", default="g++")
+    parser.add_argument("--dxc-root", type=Path,
+                        help="official Windows DXC SDK with headers, x64 DLLs and licenses")
+    parser.add_argument("--clang-cl", default="clang-cl",
+                        help="Windows SDK clang-cl compiler (Windows only)")
     args = parser.parse_args()
     result = build_package(args.repo.resolve(), args.ref, args.build.absolute(),
-                           args.destination.absolute(), args.cc, args.cxx)
+                           args.destination.absolute(), args.cc, args.cxx,
+                           dxc_root=args.dxc_root, clang_cl=args.clang_cl)
     print(f"PASS source-bound relocatable partial C package: {result['source_commit']}")
     print(args.destination / "MANIFEST.json")
 
