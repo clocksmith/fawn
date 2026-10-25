@@ -266,6 +266,37 @@ static void compressed_and_volume(void) {
     doe_mtl_texture_release(texture); doe_mtl_buffer_release(buffer); doe_mtl_context_release(context);
     mock_assert_closed(&mock);
 }
+static void oversized_compressed_stride(void) {
+    mock_native mock;
+    doe_mtl_context *context = context_open(&mock);
+    doe_mtl_texture_desc desc = image_desc();
+    desc.width = 8; desc.height = 8; desc.format = DOE_MTL_BC1_RGBA;
+    desc.usage = DOE_MTL_TEXTURE_COPY_SRC | DOE_MTL_TEXTURE_COPY_DST;
+    doe_mtl_texture *texture = image_new(context, desc);
+    context->caps.max_texture_2d = 128;
+    const uint32_t pitch = 512;
+    doe_mtl_buffer *buffer = buffer_new(context, pitch * 5 + 16, DOE_MTL_SHARED);
+    doe_mtl_commands *commands = commands_new(context);
+    doe_mtl_texture_region region = {0,0,0,0,8,8,2};
+    assert(doe_mtl_commands_upload_texture(commands, buffer,
+        (doe_mtl_texture_buffer_layout){0,pitch,4}, texture, region, NULL) == DOE_MTL_OK);
+    assert(mock.uploads == 4);
+    assert(mock.image_to.buffer_offset == pitch * 5 && mock.image_to.bytes_per_row == 16);
+    assert(mock.image_to.region.y == 4 && mock.image_to.region.height == 4 &&
+        mock.image_to.region.z == 1 && mock.image_to.region.depth_or_layers == 1);
+    assert(doe_mtl_commands_read_texture(commands, texture, region, buffer,
+        (doe_mtl_texture_buffer_layout){0,pitch,4}, NULL) == DOE_MTL_OK);
+    assert(mock.reads == 4 && mock.image_from.buffer_offset == pitch * 5);
+    complete(&mock, commands);
+    doe_mtl_buffer *short_buffer = buffer_new(context, pitch * 5 + 15, DOE_MTL_SHARED);
+    commands = commands_new(context);
+    assert(doe_mtl_commands_read_texture(commands, texture, region, short_buffer,
+        (doe_mtl_texture_buffer_layout){0,pitch,4}, NULL) == DOE_MTL_RANGE);
+    assert(mock.reads == 4 && doe_mtl_commands_release(commands) == DOE_MTL_OK);
+    doe_mtl_buffer_release(short_buffer);
+    doe_mtl_buffer_release(buffer); doe_mtl_texture_release(texture);
+    doe_mtl_context_release(context); mock_assert_closed(&mock);
+}
 static void failures_and_busy(void) {
     mock_native mock;
     doe_mtl_context *context = context_open(&mock);
@@ -406,11 +437,71 @@ static void selected_aspect_transfer(void) {
     doe_mtl_buffer_release(buffer); doe_mtl_texture_release(texture);
     doe_mtl_context_release(context); mock_assert_closed(&mock);
 }
+static void extended_compressed_formats(void) {
+    mock_native mock;
+    doe_mtl_context *context = context_open(&mock);
+    doe_mtl_texture_desc desc = image_desc();
+    desc.format = DOE_MTL_ASTC_5x4_UNORM;
+    desc.width = 10; desc.height = 8;
+    desc.usage = DOE_MTL_TEXTURE_COPY_SRC | DOE_MTL_TEXTURE_COPY_DST | DOE_MTL_TEXTURE_SAMPLED;
+    doe_mtl_texture *texture = NULL;
+    assert(doe_mtl_texture_create(context, &desc, &texture, NULL) == DOE_MTL_UNSUPPORTED);
+    context->caps.astc_texture_compression = true;
+    texture = image_new(context, desc);
+    doe_mtl_buffer *buffer = buffer_new(context, 1024, DOE_MTL_SHARED);
+    doe_mtl_commands *commands = commands_new(context);
+    doe_mtl_texture_region region = {0,0,0,0,10,8,2};
+    assert(doe_mtl_commands_upload_texture(commands, buffer,
+        (doe_mtl_texture_buffer_layout){0}, texture, region, NULL) == DOE_MTL_OK);
+    assert(mock.image_to.bytes_per_row == 256 && mock.image_to.bytes_per_image == 512);
+    assert(mock.image_to.region.width == 10 && mock.image_to.region.height == 8);
+    complete(&mock, commands);
+    commands = commands_new(context);
+    region.x = 4; region.width = 5;
+    assert(doe_mtl_commands_read_texture(commands, texture, region, buffer,
+        (doe_mtl_texture_buffer_layout){0}, NULL) == DOE_MTL_ALIGNMENT);
+    assert(doe_mtl_commands_release(commands) == DOE_MTL_OK);
+    doe_mtl_texture_view_desc vd = {DOE_MTL_TEXTURE_2D_ARRAY, DOE_MTL_ASTC_5x4_SRGB,
+        0,1,0,2,DOE_MTL_SWIZZLE_RED,DOE_MTL_SWIZZLE_GREEN,DOE_MTL_SWIZZLE_BLUE,DOE_MTL_SWIZZLE_ALPHA};
+    doe_mtl_texture_view *view = NULL;
+    assert(doe_mtl_texture_view_create(texture, &vd, &view, NULL) == DOE_MTL_OK);
+    doe_mtl_texture_view_release(view);
+    doe_mtl_texture_release(texture);
+    /* At the native width limit, a nonsquare block's tight row is legal but
+     * rounding it to the public 256-byte stride would exceed Metal's maximum. */
+    context->caps.max_texture_2d = 128;
+    desc.width = 125; desc.height = 4; desc.depth_or_layers = 1;
+    texture = image_new(context, desc);
+    commands = commands_new(context);
+    region = (doe_mtl_texture_region){0,0,0,0,125,4,1};
+    assert(doe_mtl_commands_upload_texture(commands, buffer,
+        (doe_mtl_texture_buffer_layout){0,512,1}, texture, region, NULL) == DOE_MTL_OK);
+    assert(mock.image_to.bytes_per_row == 400 && mock.image_to.region.width == 125);
+    complete(&mock, commands);
+    doe_mtl_texture_release(texture);
+    desc.format = DOE_MTL_EAC_R11_UNORM;
+    desc.width = 8; desc.height = 4;
+    assert(doe_mtl_texture_create(context, &desc, &texture, NULL) == DOE_MTL_UNSUPPORTED);
+    context->caps.etc2_texture_compression = true;
+    texture = image_new(context, desc);
+    doe_mtl_format_info info;
+    assert(doe_mtl_texture_format_info(desc.format, &info) == DOE_MTL_OK);
+    assert(info.block_width == 4 && info.block_height == 4 && info.block_bytes == 8 && !info.srgb);
+    assert(doe_mtl_texture_format_info(DOE_MTL_ETC2_RGBA8_SRGB, &info) == DOE_MTL_OK);
+    assert(info.block_width == 4 && info.block_height == 4 && info.block_bytes == 16 && info.srgb);
+    assert(doe_mtl_texture_format_info(DOE_MTL_ASTC_10x6_SRGB, &info) == DOE_MTL_OK);
+    assert(info.block_width == 10 && info.block_height == 6 && info.block_bytes == 16 && info.srgb);
+    doe_mtl_texture_release(texture); doe_mtl_buffer_release(buffer);
+    doe_mtl_context_release(context); mock_assert_closed(&mock);
+}
+
 int main(void) {
+    extended_compressed_formats();
+    oversized_compressed_stride();
     selected_aspect_transfer();
     factory_rollback(); descriptor_validation(); mixed_dispatch_lifetime();
     mip_layer_initialization(); copies_and_padding(); compressed_and_volume(); failures_and_busy();
     image_binding_validation(); transfer_record_faults();
-    puts("Metal image ownership controls: 9 groups passed; mocked native calls, no pixel/GPU execution");
+    puts("Metal image ownership controls: 12 groups passed; mocked native calls, no pixel/GPU execution");
     return 0;
 }

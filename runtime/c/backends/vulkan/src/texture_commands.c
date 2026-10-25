@@ -24,24 +24,26 @@ static doe_vk_status region_valid(const doe_vk_texture *texture, doe_vk_texture_
             return DOE_VK_INVALID_ARGUMENT;
     }
     /* Block formats: block-aligned origin; extent whole blocks or reaching the edge. */
-    uint32_t block = doe_vk_format_block_extent(texture->desc.format);
-    for (uint32_t i = 0; i < 2; ++i)
+    for (uint32_t i = 0; i < 2; ++i) {
+        uint32_t block = doe_vk_format_block_extent(texture->desc.format, i);
         if (region.origin[i] % block != 0 ||
             (region.extent[i] % block != 0 && region.origin[i] + region.extent[i] != dimensions[i]))
             return DOE_VK_INVALID_ARGUMENT;
+    }
     return DOE_VK_OK;
 }
 
 /* A WebGPU block-format copy names the physical (block-rounded) extent; the
  * native region stops at the subresource edge. Uncompressed regions pass. */
 static doe_vk_texture_region native_region(const doe_vk_texture *texture, doe_vk_texture_region region) {
-    uint32_t block = doe_vk_format_block_extent(texture->desc.format);
-    if (block == 1 || region.mip >= 32) return region;
+    if (region.mip >= 32) return region;
     const uint32_t sizes[2] = {mip_extent(texture->desc.width, region.mip), mip_extent(texture->desc.height, region.mip)};
-    for (uint32_t i = 0; i < 2; ++i)
+    for (uint32_t i = 0; i < 2; ++i) {
+        uint32_t block = doe_vk_format_block_extent(texture->desc.format, i);
         if (region.origin[i] < sizes[i] && region.extent[i] > sizes[i] - region.origin[i] &&
             region.extent[i] - (sizes[i] - region.origin[i]) < block)
             region.extent[i] = sizes[i] - region.origin[i];
+    }
     return region;
 }
 
@@ -101,9 +103,10 @@ doe_vk_status doe_vk_texture_copy_region(const doe_vk_texture *texture,
     status = region_aspect(texture, region.aspect, true, &aspect, &texel);
     if (status != DOE_VK_OK) return status;
     /* Buffer rows count texel blocks: rows_per_image is in block rows. */
-    const uint32_t block = doe_vk_format_block_extent(texture->desc.format);
-    const uint64_t block_columns = ((uint64_t)region.extent[0] + block - 1) / block;
-    const uint64_t block_rows = ((uint64_t)region.extent[1] + block - 1) / block;
+    const uint32_t block_width = doe_vk_format_block_extent(texture->desc.format, 0);
+    const uint32_t block_height = doe_vk_format_block_extent(texture->desc.format, 1);
+    const uint64_t block_columns = ((uint64_t)region.extent[0] + block_width - 1) / block_width;
+    const uint64_t block_rows = ((uint64_t)region.extent[1] + block_height - 1) / block_height;
     uint64_t row_bytes = block_columns * texel;
     uint64_t pitch = layout.bytes_per_row != 0 ? layout.bytes_per_row : row_bytes;
     uint64_t rows = layout.rows_per_image != 0 ? layout.rows_per_image : block_rows;
@@ -112,15 +115,15 @@ doe_vk_status doe_vk_texture_copy_region(const doe_vk_texture *texture,
     const bool depth_stencil = (aspect & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)) != 0;
     if (pitch < row_bytes || pitch % texel != 0 || rows < block_rows ||
         (depth_stencil && (layout.offset & 3) != 0) || layout.offset % texel != 0 ||
-        pitch / texel * block > UINT32_MAX || rows * block > UINT32_MAX) return DOE_VK_INVALID_ARGUMENT;
+        pitch / texel * block_width > UINT32_MAX || rows * block_height > UINT32_MAX) return DOE_VK_INVALID_ARGUMENT;
     uint64_t bytes;
     if (!doe_copy_footprint(row_bytes, block_rows, rows, pitch, region.extent[2], &bytes) ||
         !doe_vk_range(buffer_size, layout.offset, bytes)) return DOE_VK_INVALID_ARGUMENT;
     bool volume = texture->desc.dimension == DOE_VK_TEXTURE_3D;
     VkBufferImageCopy copy = {
         .bufferOffset = layout.offset,
-        .bufferRowLength = layout.bytes_per_row != 0 ? (uint32_t)(pitch / texel * block) : 0,
-        .bufferImageHeight = layout.rows_per_image * block,
+        .bufferRowLength = layout.bytes_per_row != 0 ? (uint32_t)(pitch / texel * block_width) : 0,
+        .bufferImageHeight = layout.rows_per_image * block_height,
         .imageSubresource = { aspect, region.mip,
             volume ? 0 : region.origin[2], volume ? 1 : region.extent[2] },
         .imageOffset = { (int32_t)region.origin[0], (int32_t)region.origin[1], volume ? (int32_t)region.origin[2] : 0 },
@@ -320,9 +323,10 @@ doe_vk_status doe_vk_commands_copy_texture(doe_vk_commands *commands,
      * have no valid VkImageCopy region; such copies go through a staging buffer. */
     const bool staged = memcmp(source_region.extent, destination_region.extent, sizeof(source_region.extent)) != 0;
     doe_vk_buffer *staging = NULL;
-    const uint32_t block = doe_vk_format_block_extent(source->desc.format);
-    const uint64_t columns = ((uint64_t)source_region.extent[0] + block - 1) / block;
-    const uint64_t rows = ((uint64_t)source_region.extent[1] + block - 1) / block;
+    const uint32_t block_width = doe_vk_format_block_extent(source->desc.format, 0);
+    const uint32_t block_height = doe_vk_format_block_extent(source->desc.format, 1);
+    const uint64_t columns = ((uint64_t)source_region.extent[0] + block_width - 1) / block_width;
+    const uint64_t rows = ((uint64_t)source_region.extent[1] + block_height - 1) / block_height;
     if (staged) {
         status = doe_vk_buffer_create(commands->context, columns * rows * source_region.extent[2] * source->texel_bytes,
             DOE_VK_BUFFER_COPY_SRC | DOE_VK_BUFFER_COPY_DST, DOE_VK_MEMORY_DEVICE, &staging, NULL);
@@ -362,11 +366,11 @@ doe_vk_status doe_vk_commands_copy_texture(doe_vk_commands *commands,
         return DOE_VK_OK;
     }
     /* Both sides cover the same whole blocks; tight block rows in the buffer. */
-    const VkBufferImageCopy out = { .bufferOffset = 0, .bufferRowLength = (uint32_t)(columns * block),
-        .bufferImageHeight = (uint32_t)(rows * block), .imageSubresource = from, .imageOffset = from_offset,
+    const VkBufferImageCopy out = { .bufferOffset = 0, .bufferRowLength = (uint32_t)(columns * block_width),
+        .bufferImageHeight = (uint32_t)(rows * block_height), .imageSubresource = from, .imageOffset = from_offset,
         .imageExtent = { source_region.extent[0], source_region.extent[1], volume ? source_region.extent[2] : 1 } };
-    const VkBufferImageCopy in = { .bufferOffset = 0, .bufferRowLength = (uint32_t)(columns * block),
-        .bufferImageHeight = (uint32_t)(rows * block), .imageSubresource = to, .imageOffset = to_offset,
+    const VkBufferImageCopy in = { .bufferOffset = 0, .bufferRowLength = (uint32_t)(columns * block_width),
+        .bufferImageHeight = (uint32_t)(rows * block_height), .imageSubresource = to, .imageOffset = to_offset,
         .imageExtent = { destination_region.extent[0], destination_region.extent[1],
             volume ? destination_region.extent[2] : 1 } };
     commands->context->vk.vkCmdCopyImageToBuffer(commands->command, source->image,

@@ -4,6 +4,7 @@
 #include <stdio.h>
 
 static bool extension, demote, robust, unterminated;
+static unsigned half_mask, half_queries;
 static bool dynamic_rendering, maintenance_extension, maintenance_feature;
 static uint32_t enumerations, queries, chains, maintenance_chains;
 static VkResult count_result, list_result;
@@ -37,6 +38,21 @@ static VkResult enumerate(VkPhysicalDevice device, const uint8_t *layer,
 }
 static void features(VkPhysicalDevice device, VkPhysicalDeviceFeatures2 *out) {
     (void)device;
+    if (out->pNext && *(const VkStructureType *)out->pNext ==
+        VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_FLOAT16_INT8_FEATURES) {
+        VkPhysicalDeviceShaderFloat16Int8Features *half = out->pNext;
+        VkPhysicalDevice16BitStorageFeatures *storage = half->pNext;
+        assert(storage && storage->sType == VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_16BIT_STORAGE_FEATURES);
+        assert(!storage->pNext);
+        half->shaderFloat16 = (half_mask & 1) != 0;
+        half->shaderInt8 = 1; /* Unrelated support never enables this feature. */
+        storage->storageBuffer16BitAccess = (half_mask & 2) != 0;
+        storage->uniformAndStorageBuffer16BitAccess = (half_mask & 4) != 0;
+        storage->storageInputOutput16 = (half_mask & 8) != 0;
+        storage->storagePushConstant16 = 1;
+        ++half_queries;
+        return;
+    }
     ++queries;
     assert(out->sType == VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2);
     out->features.robustBufferAccess = robust;
@@ -129,6 +145,18 @@ int main(void) {
     assert(doe_vk_prepare_features(NULL, &options, &selection, &error) == DOE_VK_INVALID_ARGUMENT);
     assert(memcmp(&selection, &saved, sizeof(saved)) == 0);
     maintenance5(&context);
+    options = (doe_vk_options){0};
+    for (half_mask = 0; half_mask < 16; ++half_mask) {
+        unsigned before = half_queries;
+        assert(doe_vk_prepare_features(&context, &options, &selection, &error) == DOE_VK_OK);
+        assert(half_queries == before + 1 && selection.shader_f16 == ((half_mask & 7) == 7));
+        assert(selection.float16.shaderInt8 == 0 && selection.storage16.storagePushConstant16 == 0);
+        assert(selection.float16.pNext == NULL && selection.storage16.pNext == NULL);
+        assert(selection.float16.shaderFloat16 == ((half_mask & 7) == 7));
+        assert(selection.storage16.storageBuffer16BitAccess == ((half_mask & 7) == 7));
+        assert(selection.storage16.uniformAndStorageBuffer16BitAccess == ((half_mask & 7) == 7));
+        assert(selection.storage16.storageInputOutput16 == 0);
+    }
     puts("PASS default-on maintenance5 only with dynamic_rendering, maintenance5 and its reported feature, explicit optional demote selection, absent/false/malformed extension controls, robust-only baseline, failed/incomplete enumeration and unchanged failure outputs");
     return 0;
 }

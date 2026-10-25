@@ -310,4 +310,6 @@ enum {
 /* Official VkAttachmentReference sentinel (~0U); see ABI_PROVENANCE.json. Not an
  * enum constant because it exceeds int. */
 #define VK_ATTACHMENT_UNUSED (~0U)
+#define VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_FLOAT16_INT8_FEATURES 1000082000
+#define VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_16BIT_STORAGE_FEATURES 1000083000
 #endif

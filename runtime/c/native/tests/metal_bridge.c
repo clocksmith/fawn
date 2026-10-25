@@ -6,6 +6,8 @@
 #include "../../backends/metal/tests/mock_native.h"
 #include "consumer.h"
 #include "metal_graphics_cases.h"
+#include "metal_copy_cases.h"
+#include "metal_f16_cases.h"
 #include "doe_native_programs.h"
 
 static mock_native mocks[8];
@@ -37,7 +39,9 @@ doe_mtl_status __wrap_doe_mtl_context_create(doe_mtl_context **out, doe_mtl_erro
 {
     assert(context_count < 8);
     unsigned index = context_count++;
-    doe_mtl_status status = doe_mtl_context_open(mock_driver(&mocks[index]), out, error);
+    doe_mtl_native driver = mock_driver(&mocks[index]);
+    mocks[index].etc2 = mocks[index].astc = mocks[index].astc_sliced_3d = true;
+    doe_mtl_status status = doe_mtl_context_open(driver, out, error);
     if (status == DOE_MTL_OK) contexts[index] = *out;
     return status;
 }
@@ -707,6 +711,8 @@ static void required_metal_limits(state *s)
         .callback=device_reply, .userdata1=&limited};
     assert(wgpuAdapterRequestDevice(s->adapter, &descriptor, requested).id && limited.device);
     assert(context_count == opened + 1);
+    metal_f16_disabled(&limited);
+    metal_extended_copy_disabled(&limited);
     WGPULimits resolved = WGPU_LIMITS_INIT;
     assert(wgpuDeviceGetLimits(limited.device, &resolved) == WGPUStatus_Success);
     assert(resolved.maxBindGroupsPlusVertexBuffers == required.maxBindGroupsPlusVertexBuffers);
@@ -859,6 +865,11 @@ int main(void)
     mock_assert_closed(&mocks[1]);
     changed_default = false;
     WGPUDeviceDescriptor descriptor = WGPU_DEVICE_DESCRIPTOR_INIT;
+    const WGPUFeatureName features[] = {WGPUFeatureName_TextureCompressionBC, WGPUFeatureName_ShaderF16,
+        WGPUFeatureName_TextureCompressionETC2, WGPUFeatureName_TextureCompressionASTC,
+        WGPUFeatureName_TextureCompressionASTCSliced3D};
+    descriptor.requiredFeatureCount = sizeof(features) / sizeof(features[0]);
+    descriptor.requiredFeatures = features;
     descriptor.uncapturedErrorCallbackInfo = (WGPUUncapturedErrorCallbackInfo){.callback=error_reply,.userdata1=&s};
     WGPURequestDeviceCallbackInfo requested = {.mode=WGPUCallbackMode_AllowSpontaneous,.callback=device_reply,.userdata1=&s};
     assert(wgpuAdapterRequestDevice(s.adapter,&descriptor,requested).id && s.device);
@@ -923,6 +934,10 @@ int main(void)
     assert(mocks[2].copies == 1 && mocks[2].fills == 2);
     host_replay_program(&s);
     queue_upload_admission(&s);
+    metal_compressed_copy_ledger(&s, &mocks[2]);
+    metal_extended_copy_ledger(&s, &mocks[2]);
+    metal_f16_consumer(&s, &mocks[2]);
+    metal_f16_compact_storage(&s, &mocks[2]);
     required_metal_limits(&s);
     sampled_float_admission(&s);
     metal_storage_cases(&s);

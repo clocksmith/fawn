@@ -77,14 +77,39 @@ int main(void) {
     doe_vk_format_caps caps = {0};
     assert(doe_vk_texture_format_caps(&context, DOE_VK_FORMAT_RGBA8_UNORM, &caps) == DOE_VK_OK);
     assert(caps.attachment_sample_counts == 5 && caps.color_attachment && !caps.depth_stencil_attachment);
-    assert(caps.block_extent == 1 && caps.volume && volume_queries == 1);
+    assert(caps.block_width == 1 && caps.block_height == 1 && caps.volume && volume_queries == 1);
     /* BC formats report caps only with enabled textureCompressionBC: 4x4 blocks. */
     assert(doe_vk_texture_format_caps(&context, DOE_VK_FORMAT_BC1_RGBA_UNORM, &caps) == DOE_VK_UNSUPPORTED);
     context.caps.texture_compression_bc = true;
     assert(doe_vk_texture_format_caps(&context, DOE_VK_FORMAT_BC7_RGBA_SRGB, &caps) == DOE_VK_OK);
-    assert(caps.block_extent == 4 && caps.texel_bytes == 16);
+    assert(caps.block_width == 4 && caps.block_height == 4 && caps.texel_bytes == 16);
     assert(doe_vk_texture_format_caps(&context, DOE_VK_FORMAT_BC4_R_SNORM, &caps) == DOE_VK_OK);
-    assert(caps.block_extent == 4 && caps.texel_bytes == 8);
+    assert(caps.block_width == 4 && caps.block_height == 4 && caps.texel_bytes == 8);
+    {
+    assert(doe_vk_texture_format_caps(&context, DOE_VK_FORMAT_ETC2_RGB8_UNORM, &caps) == DOE_VK_UNSUPPORTED);
+    assert(doe_vk_texture_format_caps(&context, DOE_VK_FORMAT_ASTC_5x4_SRGB, &caps) == DOE_VK_UNSUPPORTED);
+    context.caps.texture_compression_etc2 = context.caps.texture_compression_astc = true;
+    assert(doe_vk_texture_format_caps(&context, DOE_VK_FORMAT_ETC2_RGB8_UNORM, &caps) == DOE_VK_OK);
+    assert(caps.texel_bytes == 8 && caps.block_width == 4 && caps.block_height == 4);
+    assert(doe_vk_texture_format_caps(&context, DOE_VK_FORMAT_ETC2_RGBA8_SRGB, &caps) == DOE_VK_OK);
+    assert(caps.texel_bytes == 16 && caps.block_width == 4 && caps.block_height == 4);
+    assert(doe_vk_texture_format_caps(&context, DOE_VK_FORMAT_ASTC_5x4_SRGB, &caps) == DOE_VK_OK);
+    assert(caps.texel_bytes == 16 && caps.block_width == 5 && caps.block_height == 4);
+    doe_vk_texture astc = {.desc = {.dimension=DOE_VK_TEXTURE_2D, .format=DOE_VK_FORMAT_ASTC_5x4_UNORM,
+        .width=10,.height=8,.depth_or_layers=2,.mip_levels=2},.texel_bytes=16};
+    doe_vk_texture_region region = {.extent={10,8,2}};
+    VkBufferImageCopy copy;
+    assert(doe_vk_texture_copy_region(&astc, region, 1632,
+        (doe_vk_texture_buffer_layout){.bytes_per_row=256,.rows_per_image=5}, &copy) == DOE_VK_OK);
+    assert(copy.bufferRowLength == 80 && copy.bufferImageHeight == 20 && copy.imageSubresource.layerCount == 2);
+    assert(doe_vk_texture_copy_region(&astc, region, 1567,
+        (doe_vk_texture_buffer_layout){.bytes_per_row=256,.rows_per_image=5}, &copy) == DOE_VK_INVALID_ARGUMENT);
+    region.origin[0] = 4; region.extent[0] = 5;
+    assert(doe_vk_texture_copy_region(&astc, region, 1632,
+        (doe_vk_texture_buffer_layout){.bytes_per_row=256,.rows_per_image=5}, &copy) == DOE_VK_INVALID_ARGUMENT);
+    assert(doe_vk_srgb_pair(DOE_VK_FORMAT_ASTC_5x4_UNORM) == DOE_VK_FORMAT_ASTC_5x4_SRGB);
+    assert(doe_vk_srgb_pair(DOE_VK_FORMAT_ETC2_RGBA8_SRGB) == DOE_VK_FORMAT_ETC2_RGBA8_UNORM);
+    }
     context.caps.texture_compression_bc = false;
     assert(doe_vk_texture_format_caps(&context, DOE_VK_FORMAT_RGBA8_UNORM, &caps) == DOE_VK_OK);
     assert(doe_vk_texture_format_caps(&context, DOE_VK_FORMAT_D32_FLOAT, &caps) == DOE_VK_OK);

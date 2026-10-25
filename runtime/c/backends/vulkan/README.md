@@ -103,8 +103,12 @@ casts. All thirty-seven WebGPU core uncompressed color formats (including rg11b1
 are admitted when native format support exists. The fourteen BC formats (4x4
 blocks of 8 or 16 bytes) exist for a context only with enabled
 textureCompressionBC (`caps.texture_compression_bc`); `doe_vk_format_caps` then
-reports `block_extent` 4, and `volume` reports sampled+transfer 3D images (for
-sliced 3D). Buffer copies of block formats count block columns and rows
+reports `block_width` and `block_height` 4, and `volume` reports sampled+transfer 3D images (for
+sliced 3D). ETC2/EAC and ASTC LDR formats similarly require their independently
+enabled native feature and sampled/filterable/copy format support. ASTC uses
+independent block widths/heights, including nonsquare 5x4 through 12x10 shapes;
+native zero initialization, copies, padding and edge staging use those same facts.
+These source/host controls do not qualify a physical adapter. Buffer copies of block formats count block columns and rows
 (`rows_per_image` is in block rows; native row length and image height are
 texels), regions start block-aligned and end on whole blocks or at the
 subresource edge, and a block-rounded WebGPU extent is clamped to that edge.

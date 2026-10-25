@@ -57,13 +57,9 @@ static doe_mtl_status transfer_layout(const doe_mtl_texture *texture,
     uint64_t row_bytes = columns * f->block_bytes;
     uint64_t pitch = layout.bytes_per_row != 0 ? layout.bytes_per_row : (row_bytes + 255) / 256 * 256;
     uint64_t image_rows = layout.rows_per_image != 0 ? layout.rows_per_image : rows;
-    uint32_t max_width = texture->desc.type == DOE_MTL_TEXTURE_3D ? texture->context->caps.max_texture_3d :
-        (texture->desc.type == DOE_MTL_TEXTURE_1D || texture->desc.type == DOE_MTL_TEXTURE_1D_ARRAY ?
-        texture->context->caps.max_texture_1d : texture->context->caps.max_texture_2d);
-    uint64_t max_pitch = (uint64_t)max_width / f->block_width * f->block_bytes;
     uint64_t stride, tail, length;
     if (layout.offset % f->block_bytes != 0 || pitch % 256 != 0) return DOE_MTL_ALIGNMENT;
-    if (pitch < row_bytes || pitch > max_pitch || image_rows < rows || pitch > SIZE_MAX ||
+    if (pitch < row_bytes || image_rows < rows || pitch > SIZE_MAX ||
         image_rows > SIZE_MAX / pitch) return DOE_MTL_RANGE;
     stride = pitch * image_rows;
     tail = pitch * (rows - 1) + row_bytes;
@@ -84,6 +80,50 @@ static doe_mtl_status transfer_layout(const doe_mtl_texture *texture,
     *covers_buffer = layout.offset == 0 && length == buffer->size &&
         (rows == 1 || pitch == row_bytes) &&
         (region.depth_or_layers == 1 || stride == row_bytes * rows);
+    return DOE_MTL_OK;
+}
+
+/* Metal bounds native row strides by its maximum texture width. WebGPU
+ * allows larger padding; lower those copies into block rows, without copying
+ * padding or changing the logical footprint already checked above. */
+static doe_mtl_status encode_transfer(doe_mtl_commands *commands, doe_mtl_buffer *buffer,
+    doe_mtl_texture *texture, const doe_mtl_format_info *f,
+    const doe_mtl_native_texture_copy *copy, bool upload, doe_mtl_error *error) {
+    uint32_t max_width = texture->desc.type == DOE_MTL_TEXTURE_3D ? texture->context->caps.max_texture_3d :
+        (texture->desc.type == DOE_MTL_TEXTURE_1D || texture->desc.type == DOE_MTL_TEXTURE_1D_ARRAY ?
+        texture->context->caps.max_texture_1d : texture->context->caps.max_texture_2d);
+    uint64_t max_pitch = (uint64_t)max_width / f->block_width * f->block_bytes;
+    doe_mtl_native *native = &commands->context->native;
+    bool split = copy->bytes_per_row > max_pitch;
+    doe_mtl_native_texture_copy part = *copy;
+    uint32_t layers = split ? copy->region.depth_or_layers : 1;
+    uint32_t rows = split ? (uint32_t)(((uint64_t)copy->region.height + f->block_height - 1) / f->block_height) : 1;
+    if (split) {
+        uint64_t columns = ((uint64_t)copy->region.width + f->block_width - 1) / f->block_width;
+        /* Each native call has one block row: only block-byte alignment is
+         * required by Metal, and no public padding is consumed by this row. */
+        part.bytes_per_row = (size_t)(columns * f->block_bytes);
+        if (part.bytes_per_row > max_pitch) return DOE_MTL_RANGE;
+        part.bytes_per_image = part.bytes_per_row;
+        part.region.depth_or_layers = 1;
+    }
+    for (uint32_t layer = 0; layer < layers; ++layer) {
+        for (uint32_t row = 0; row < rows; ++row) {
+            if (split) {
+                uint32_t y = row * f->block_height;
+                part.buffer_offset = copy->buffer_offset + (size_t)layer * copy->bytes_per_image +
+                    (size_t)row * copy->bytes_per_row;
+                part.region.z = copy->region.z + layer;
+                part.region.y = copy->region.y + y;
+                part.region.height = copy->region.height - y;
+                if (part.region.height > f->block_height) part.region.height = f->block_height;
+            }
+            doe_mtl_status status = upload ? native->upload_texture(native->userdata, commands->native,
+                buffer->native, texture->native, &part, error) :
+                native->read_texture(native->userdata, commands->native, texture->native, buffer->native, &part, error);
+            if (status != DOE_MTL_OK) return status;
+        }
+    }
     return DOE_MTL_OK;
 }
 
@@ -118,10 +158,7 @@ static doe_mtl_status buffer_texture_transfer(doe_mtl_commands *commands,
     status = doe_mtl_use_buffer(commands, buffer, &buffer_use);
     if (status == DOE_MTL_OK) status = doe_mtl_use_texture(commands, texture, &texture_use);
     if (status != DOE_MTL_OK) return doe_mtl_poison(commands, status, "texture transfer lease", error);
-    if (upload) status = native->upload_texture(native->userdata, commands->native,
-        buffer->native, texture->native, &copy, &detail);
-    else status = native->read_texture(native->userdata, commands->native,
-        texture->native, buffer->native, &copy, &detail);
+    status = encode_transfer(commands, buffer, texture, &format, &copy, upload, &detail);
     if (status == DOE_MTL_OK) {
         if (upload && full) doe_mtl_texture_region_aspects_initialize(texture_use, region, aspects);
         if (!upload && covers_buffer) buffer_use->initialized = true;

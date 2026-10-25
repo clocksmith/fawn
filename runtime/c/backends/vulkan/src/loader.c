@@ -274,6 +274,7 @@ static void record_caps(doe_vk_context *context, const doe_vk_options *options,
     context->caps.robust_buffer_access = true;
     context->caps.shader_demote_to_helper_invocation = features->extension != NULL;
     context->caps.maintenance5 = features->maintenance5_enabled;
+    context->caps.shader_f16 = features->shader_f16;
     context->caps.full_draw_index_uint32 = features->base.fullDrawIndexUint32 != 0;
     context->caps.image_cube_array = features->base.imageCubeArray != 0;
     context->caps.independent_blend = features->base.independentBlend != 0;
@@ -283,6 +284,8 @@ static void record_caps(doe_vk_context *context, const doe_vk_options *options,
     context->caps.draw_indirect_first_instance = features->base.drawIndirectFirstInstance != 0;
     context->caps.depth_clamp = features->base.depthClamp != 0;
     context->caps.texture_compression_bc = features->base.textureCompressionBC != 0;
+    context->caps.texture_compression_etc2 = features->base.textureCompressionETC2 != 0;
+    context->caps.texture_compression_astc = features->base.textureCompressionASTC_LDR != 0;
     context->caps.sample_rate_shading = features->base.sampleRateShading != 0;
     context->caps.depth_bias_clamp = features->base.depthBiasClamp != 0;
     context->caps.max_sampler_anisotropy = context->caps.sampler_anisotropy ?
@@ -367,6 +370,11 @@ doe_vk_status doe_vk_context_create(const doe_vk_options *options,
         device_extensions[extension_count++] = (const uint8_t *)"VK_KHR_maintenance5";
         features.maintenance5.pNext = feature_chain;
         feature_chain = &features.maintenance5;
+    }
+    if (features.shader_f16) {
+        features.storage16.pNext = feature_chain;
+        features.float16.pNext = &features.storage16;
+        feature_chain = &features.float16;
     }
     if (features.surface_enabled) {
         device_extensions[extension_count++] = (const uint8_t *)"VK_KHR_swapchain";

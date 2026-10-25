@@ -68,14 +68,52 @@ typedef enum doe_vk_texture_format {
     DOE_VK_FORMAT_BC6H_RGB_UFLOAT = 143,
     DOE_VK_FORMAT_BC6H_RGB_FLOAT = 144,
     DOE_VK_FORMAT_BC7_RGBA_UNORM = 145,
-    DOE_VK_FORMAT_BC7_RGBA_SRGB = 146
+    DOE_VK_FORMAT_BC7_RGBA_SRGB = 146,
+    DOE_VK_FORMAT_ETC2_RGB8_UNORM = 147,
+    DOE_VK_FORMAT_ETC2_RGB8_SRGB = 148,
+    DOE_VK_FORMAT_ETC2_RGB8A1_UNORM = 149,
+    DOE_VK_FORMAT_ETC2_RGB8A1_SRGB = 150,
+    DOE_VK_FORMAT_ETC2_RGBA8_UNORM = 151,
+    DOE_VK_FORMAT_ETC2_RGBA8_SRGB = 152,
+    DOE_VK_FORMAT_EAC_R11_UNORM = 153,
+    DOE_VK_FORMAT_EAC_R11_SNORM = 154,
+    DOE_VK_FORMAT_EAC_RG11_UNORM = 155,
+    DOE_VK_FORMAT_EAC_RG11_SNORM = 156,
+    DOE_VK_FORMAT_ASTC_4x4_UNORM = 157,
+    DOE_VK_FORMAT_ASTC_4x4_SRGB = 158,
+    DOE_VK_FORMAT_ASTC_5x4_UNORM = 159,
+    DOE_VK_FORMAT_ASTC_5x4_SRGB = 160,
+    DOE_VK_FORMAT_ASTC_5x5_UNORM = 161,
+    DOE_VK_FORMAT_ASTC_5x5_SRGB = 162,
+    DOE_VK_FORMAT_ASTC_6x5_UNORM = 163,
+    DOE_VK_FORMAT_ASTC_6x5_SRGB = 164,
+    DOE_VK_FORMAT_ASTC_6x6_UNORM = 165,
+    DOE_VK_FORMAT_ASTC_6x6_SRGB = 166,
+    DOE_VK_FORMAT_ASTC_8x5_UNORM = 167,
+    DOE_VK_FORMAT_ASTC_8x5_SRGB = 168,
+    DOE_VK_FORMAT_ASTC_8x6_UNORM = 169,
+    DOE_VK_FORMAT_ASTC_8x6_SRGB = 170,
+    DOE_VK_FORMAT_ASTC_8x8_UNORM = 171,
+    DOE_VK_FORMAT_ASTC_8x8_SRGB = 172,
+    DOE_VK_FORMAT_ASTC_10x5_UNORM = 173,
+    DOE_VK_FORMAT_ASTC_10x5_SRGB = 174,
+    DOE_VK_FORMAT_ASTC_10x6_UNORM = 175,
+    DOE_VK_FORMAT_ASTC_10x6_SRGB = 176,
+    DOE_VK_FORMAT_ASTC_10x8_UNORM = 177,
+    DOE_VK_FORMAT_ASTC_10x8_SRGB = 178,
+    DOE_VK_FORMAT_ASTC_10x10_UNORM = 179,
+    DOE_VK_FORMAT_ASTC_10x10_SRGB = 180,
+    DOE_VK_FORMAT_ASTC_12x10_UNORM = 181,
+    DOE_VK_FORMAT_ASTC_12x10_SRGB = 182,
+    DOE_VK_FORMAT_ASTC_12x12_UNORM = 183,
+    DOE_VK_FORMAT_ASTC_12x12_SRGB = 184
 } doe_vk_texture_format;
 /* Optimal-tiling facts for admitted formats, not shader-feature enablement or
  * a claim that every dimension/usage/extent combination is supported. Failure
  * leaves output unchanged. Compiler/native admission must check shader features. */
 typedef struct doe_vk_format_caps {
     uint32_t texel_bytes; /* Bytes of one texel block. */
-    uint32_t block_extent; /* Texel width and height of one block: 4 for BC, else 1. */
+    uint32_t block_width, block_height; /* Native texel-block shape, including nonsquare ASTC. */
     bool sampled;
     bool storage;
     bool color_attachment;

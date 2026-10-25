@@ -33,7 +33,10 @@ static doe_mtl_status texture_validate(const doe_mtl_context *context,
          (desc->type != DOE_MTL_TEXTURE_2D && desc->type != DOE_MTL_TEXTURE_2D_ARRAY &&
           desc->type != DOE_MTL_TEXTURE_2D_MS && desc->type != DOE_MTL_TEXTURE_2D_MS_ARRAY)))
         return DOE_MTL_UNSUPPORTED;
-    if (format->compressed && (!context->caps.bc_texture_compression ||
+    bool compressed_supported = desc->format >= DOE_MTL_BC1_RGBA && desc->format <= DOE_MTL_BC7_RGBA_SRGB ?
+        context->caps.bc_texture_compression : desc->format >= DOE_MTL_EAC_R11_UNORM && desc->format <= DOE_MTL_ETC2_RGB8A1_SRGB ?
+        context->caps.etc2_texture_compression : context->caps.astc_texture_compression;
+    if (format->compressed && (!compressed_supported ||
         (desc->usage & (DOE_MTL_TEXTURE_STORAGE | DOE_MTL_TEXTURE_RENDER_TARGET)) != 0))
         return DOE_MTL_UNSUPPORTED;
     if (format->srgb && (desc->usage & DOE_MTL_TEXTURE_STORAGE) != 0) return DOE_MTL_UNSUPPORTED;
@@ -64,6 +67,8 @@ static doe_mtl_status texture_validate(const doe_mtl_context *context,
         max_dimension = context->caps.max_texture_2d;
         break;
     case DOE_MTL_TEXTURE_3D:
+        if (format->compressed && desc->format >= DOE_MTL_ASTC_4x4_SRGB &&
+            !context->caps.astc_sliced_3d) return DOE_MTL_UNSUPPORTED;
         if (desc->depth_or_layers > context->caps.max_texture_3d) return DOE_MTL_RANGE;
         max_dimension = context->caps.max_texture_3d;
         break;
