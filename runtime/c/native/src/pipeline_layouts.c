@@ -200,15 +200,14 @@ bool native_pipeline_bindings(native_pipeline *payload, const native_stage *stag
             }
             /* Vertex stores remain forbidden. Vulkan requires its enabled
              * fragmentStoresAndAtomics capability. Metal device-buffer stores
-             * and atomics use the same typed resource/command owner as compute;
-             * fragment storage textures retain their existing rejection. */
+             * and texture writes use the same typed resource/command owner as
+             * compute, including attachment alias checks and retained views. */
             if (stage->visibility != WGPUShaderStage_Compute && resource->access != DOE_COMPILER_READ &&
                 (resource->kind == DOE_COMPILER_STORAGE_BUFFER || resource->kind == DOE_COMPILER_STORAGE_TEXTURE)) {
                 const bool vulkan = payload->device->backend.kind == WGPUBackendType_Vulkan &&
                     payload->device->backend.value.vulkan.caps.fragment_stores_and_atomics;
-                const bool metal_buffer = payload->device->backend.kind == WGPUBackendType_Metal &&
-                    resource->kind == DOE_COMPILER_STORAGE_BUFFER;
-                if (stage->visibility != WGPUShaderStage_Fragment || (!vulkan && !metal_buffer)) return false;
+                const bool metal = payload->device->backend.kind == WGPUBackendType_Metal;
+                if (stage->visibility != WGPUShaderStage_Fragment || (!vulkan && !metal)) return false;
             }
             doe_resource_layout_entry required;
             if (!resource_entry(view, index, stage->visibility, sampled, &required)) return false;

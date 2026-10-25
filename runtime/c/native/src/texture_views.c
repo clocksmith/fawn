@@ -20,32 +20,45 @@ void native_view_release(void *userdata, void *handle)
  * may carry RenderAttachment or StorageBinding usage: WebGPU rejects such a view
  * where it is used as an attachment, resolve target or storage binding (the
  * resource view's swizzled flag), not at creation. */
-static bool view_swizzle(const native_device *device, const WGPUChainedStruct *chain, doe_vk_swizzle out[4])
+bool native_view_swizzle(const native_device *device, const WGPUChainedStruct *chain,
+    WGPUComponentSwizzle out[4], bool *swizzled)
 {
-    for (uint32_t i = 0; i < 4; ++i) out[i] = DOE_VK_SWIZZLE_IDENTITY;
+    const WGPUComponentSwizzle own[4] = {WGPUComponentSwizzle_R, WGPUComponentSwizzle_G,
+        WGPUComponentSwizzle_B, WGPUComponentSwizzle_A};
+    for (uint32_t i = 0; i < 4; ++i) out[i] = own[i];
+    *swizzled = false;
     if (!chain) return true;
     if (chain->sType != WGPUSType_TextureComponentSwizzleDescriptor || chain->next) return false;
     const WGPUTextureComponentSwizzle *swizzle = &((const WGPUTextureComponentSwizzleDescriptor *)chain)->swizzle;
     const WGPUComponentSwizzle sources[4] = {swizzle->r, swizzle->g, swizzle->b, swizzle->a};
-    const WGPUComponentSwizzle own[4] = {WGPUComponentSwizzle_R, WGPUComponentSwizzle_G,
-        WGPUComponentSwizzle_B, WGPUComponentSwizzle_A};
-    bool identity = true;
     for (uint32_t i = 0; i < 4; ++i) {
         switch (sources[i]) {
-        case WGPUComponentSwizzle_Undefined: out[i] = DOE_VK_SWIZZLE_IDENTITY; break;
-        case WGPUComponentSwizzle_Zero: out[i] = DOE_VK_SWIZZLE_ZERO; break;
-        case WGPUComponentSwizzle_One: out[i] = DOE_VK_SWIZZLE_ONE; break;
-        case WGPUComponentSwizzle_R: out[i] = DOE_VK_SWIZZLE_R; break;
-        case WGPUComponentSwizzle_G: out[i] = DOE_VK_SWIZZLE_G; break;
-        case WGPUComponentSwizzle_B: out[i] = DOE_VK_SWIZZLE_B; break;
-        case WGPUComponentSwizzle_A: out[i] = DOE_VK_SWIZZLE_A; break;
+        case WGPUComponentSwizzle_Undefined: break;
+        case WGPUComponentSwizzle_Zero: case WGPUComponentSwizzle_One:
+        case WGPUComponentSwizzle_R: case WGPUComponentSwizzle_G:
+        case WGPUComponentSwizzle_B: case WGPUComponentSwizzle_A: out[i] = sources[i]; break;
         case WGPUComponentSwizzle_Force32:
         default: return false;
         }
-        if (sources[i] == own[i]) out[i] = DOE_VK_SWIZZLE_IDENTITY;
-        identity &= out[i] == DOE_VK_SWIZZLE_IDENTITY;
+        *swizzled |= out[i] != own[i];
     }
-    return identity || native_feature_enabled(device, WGPUFeatureName_TextureComponentSwizzle);
+    return !*swizzled || native_feature_enabled(device, WGPUFeatureName_TextureComponentSwizzle);
+}
+
+static doe_vk_swizzle vulkan_swizzle(WGPUComponentSwizzle source, uint32_t channel)
+{
+    const WGPUComponentSwizzle own[4] = {WGPUComponentSwizzle_R, WGPUComponentSwizzle_G,
+        WGPUComponentSwizzle_B, WGPUComponentSwizzle_A};
+    if (source == own[channel]) return DOE_VK_SWIZZLE_IDENTITY;
+    switch (source) {
+    case WGPUComponentSwizzle_Zero: return DOE_VK_SWIZZLE_ZERO;
+    case WGPUComponentSwizzle_One: return DOE_VK_SWIZZLE_ONE;
+    case WGPUComponentSwizzle_R: return DOE_VK_SWIZZLE_R;
+    case WGPUComponentSwizzle_G: return DOE_VK_SWIZZLE_G;
+    case WGPUComponentSwizzle_B: return DOE_VK_SWIZZLE_B;
+    case WGPUComponentSwizzle_A: return DOE_VK_SWIZZLE_A;
+    case WGPUComponentSwizzle_Undefined: case WGPUComponentSwizzle_Force32: default: abort();
+    }
 }
 
 WGPUTextureView wgpuTextureCreateView(WGPUTexture handle, const WGPUTextureViewDescriptor *descriptor)
@@ -69,10 +82,11 @@ WGPUTextureView wgpuTextureCreateView(WGPUTexture handle, const WGPUTextureViewD
     doe_resource_status status = !descriptor->mipLevelCount || !descriptor->arrayLayerCount ? DOE_RESOURCE_RANGE :
         doe_resource_view_validate(texture, &desc, &resolved);
     doe_vk_texture_view_desc native = {0};
-    if (status == DOE_RESOURCE_OK && !view_swizzle(device, descriptor->nextInChain, native.swizzle))
+    WGPUComponentSwizzle channels[4];
+    if (status == DOE_RESOURCE_OK && !native_view_swizzle(device, descriptor->nextInChain, channels, &resolved.swizzled))
         status = DOE_RESOURCE_UNSUPPORTED;
     if (status == DOE_RESOURCE_OK) {
-        for (uint32_t i = 0; i < 4; ++i) resolved.swizzled |= native.swizzle[i] != DOE_VK_SWIZZLE_IDENTITY;
+        for (uint32_t i = 0; i < 4; ++i) native.swizzle[i] = vulkan_swizzle(channels[i], i);
         /* A DepthOnly/StencilOnly view resolves to its aspect format; the backend
          * view selects that native aspect over the same parent image. */
         WGPUTextureFormat aspect_format;

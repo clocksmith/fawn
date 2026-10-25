@@ -50,6 +50,7 @@ uint32_t native_adapter_features(const native_backend *backend)
         const doe_mtl_caps *caps = &backend->value.metal.caps;
         return NATIVE_FEATURE(WGPUFeatureName_CoreFeaturesAndLimits) |
             NATIVE_FEATURE(WGPUFeatureName_ShaderF16) |
+            (caps->texture_swizzle ? NATIVE_FEATURE(WGPUFeatureName_TextureComponentSwizzle) : 0) |
             NATIVE_FEATURE(WGPUFeatureName_DepthClipControl) |
             NATIVE_FEATURE(WGPUFeatureName_IndirectFirstInstance) |
             NATIVE_FEATURE(WGPUFeatureName_Depth32FloatStencil8) |

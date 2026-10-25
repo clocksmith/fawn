@@ -7,6 +7,7 @@
 #include "consumer.h"
 #include "metal_graphics_cases.h"
 #include "metal_copy_cases.h"
+#include "metal_view_cases.h"
 #include "metal_f16_cases.h"
 #include "doe_native_programs.h"
 
@@ -713,6 +714,7 @@ static void required_metal_limits(state *s)
     assert(context_count == opened + 1);
     metal_f16_disabled(&limited);
     metal_extended_copy_disabled(&limited);
+    metal_swizzle_case(&limited, &mocks[context_count - 1], false);
     WGPULimits resolved = WGPU_LIMITS_INIT;
     assert(wgpuDeviceGetLimits(limited.device, &resolved) == WGPUStatus_Success);
     assert(resolved.maxBindGroupsPlusVertexBuffers == required.maxBindGroupsPlusVertexBuffers);
@@ -738,6 +740,10 @@ static void required_metal_limits(state *s)
     assert(mocks[opened].created == created && !limited.errors);
     wgpuDeviceRelease(limited.device);
     mock_assert_closed(&mocks[opened]);
+    /* Retired test contexts must not steal a reused command address from the
+     * active device when the wait wrapper resolves its call ledger. */
+    commands[opened] = NULL;
+    contexts[opened] = NULL;
 }
 
 static void sampled_float_admission(state *s)
@@ -867,7 +873,7 @@ int main(void)
     WGPUDeviceDescriptor descriptor = WGPU_DEVICE_DESCRIPTOR_INIT;
     const WGPUFeatureName features[] = {WGPUFeatureName_TextureCompressionBC, WGPUFeatureName_ShaderF16,
         WGPUFeatureName_TextureCompressionETC2, WGPUFeatureName_TextureCompressionASTC,
-        WGPUFeatureName_TextureCompressionASTCSliced3D};
+        WGPUFeatureName_TextureCompressionASTCSliced3D, WGPUFeatureName_TextureComponentSwizzle};
     descriptor.requiredFeatureCount = sizeof(features) / sizeof(features[0]);
     descriptor.requiredFeatures = features;
     descriptor.uncapturedErrorCallbackInfo = (WGPUUncapturedErrorCallbackInfo){.callback=error_reply,.userdata1=&s};
@@ -938,6 +944,7 @@ int main(void)
     metal_extended_copy_ledger(&s, &mocks[2]);
     metal_f16_consumer(&s, &mocks[2]);
     metal_f16_compact_storage(&s, &mocks[2]);
+    metal_swizzle_case(&s, &mocks[2], true);
     required_metal_limits(&s);
     sampled_float_admission(&s);
     metal_storage_cases(&s);

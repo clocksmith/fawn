@@ -145,6 +145,19 @@ WGPUTexture native_metal_create_texture(native_device *device, const WGPUTexture
     return (WGPUTexture)texture;
 }
 
+static doe_mtl_swizzle metal_swizzle(WGPUComponentSwizzle source)
+{
+    switch (source) {
+    case WGPUComponentSwizzle_Zero: return DOE_MTL_SWIZZLE_ZERO;
+    case WGPUComponentSwizzle_One: return DOE_MTL_SWIZZLE_ONE;
+    case WGPUComponentSwizzle_R: return DOE_MTL_SWIZZLE_RED;
+    case WGPUComponentSwizzle_G: return DOE_MTL_SWIZZLE_GREEN;
+    case WGPUComponentSwizzle_B: return DOE_MTL_SWIZZLE_BLUE;
+    case WGPUComponentSwizzle_A: return DOE_MTL_SWIZZLE_ALPHA;
+    case WGPUComponentSwizzle_Undefined: case WGPUComponentSwizzle_Force32: default: abort();
+    }
+}
+
 WGPUTextureView native_metal_create_view(doe_resource_texture *texture, const WGPUTextureViewDescriptor *descriptor)
 {
     native_device *device = doe_resource_texture_device(texture);
@@ -155,12 +168,16 @@ WGPUTextureView native_metal_create_view(doe_resource_texture *texture, const WG
         .base_layer=descriptor->baseArrayLayer,.layer_count=descriptor->arrayLayerCount,
         .aspect=descriptor->aspect,.usage=descriptor->usage}, resolved;
     native_lock(device);
-    doe_resource_status status = descriptor->nextInChain ? DOE_RESOURCE_UNSUPPORTED :
-        !descriptor->mipLevelCount || !descriptor->arrayLayerCount ? DOE_RESOURCE_RANGE :
+    doe_resource_status status = !descriptor->mipLevelCount || !descriptor->arrayLayerCount ? DOE_RESOURCE_RANGE :
         doe_resource_view_validate(texture, &desc, &resolved);
     doe_mtl_texture_view_desc native = {.red=DOE_MTL_SWIZZLE_RED,.green=DOE_MTL_SWIZZLE_GREEN,
         .blue=DOE_MTL_SWIZZLE_BLUE,.alpha=DOE_MTL_SWIZZLE_ALPHA};
+    WGPUComponentSwizzle channels[4];
+    if (status == DOE_RESOURCE_OK && !native_view_swizzle(device, descriptor->nextInChain, channels, &resolved.swizzled))
+        status = DOE_RESOURCE_UNSUPPORTED;
     if (status == DOE_RESOURCE_OK) {
+        native.red = metal_swizzle(channels[0]); native.green = metal_swizzle(channels[1]);
+        native.blue = metal_swizzle(channels[2]); native.alpha = metal_swizzle(channels[3]);
         if (!native_metal_format(device->features, resolved.format, &native.format)) status = DOE_RESOURCE_UNSUPPORTED;
         native.base_mip = resolved.base_mip; native.mip_count = resolved.mip_count;
         native.base_layer = resolved.base_layer; native.layer_count = resolved.layer_count;

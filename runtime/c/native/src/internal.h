@@ -324,6 +324,8 @@ bool native_color_renderable(uint32_t features, WGPUTextureFormat format);
 /* Resource-normalized copy aspect to native aspect bits; Undefined is rejected
  * because the resource owner always resolves a concrete aspect first. */
 bool native_texture_aspect(WGPUTextureAspect aspect, doe_vk_texture_aspect *out);
+bool native_view_swizzle(const native_device *device, const WGPUChainedStruct *chain,
+    WGPUComponentSwizzle out[4], bool *swizzled);
 bool native_storage_format(uint32_t format, WGPUTextureFormat *out);
 doe_resource_status native_automatic_layout(native_device *device,
     const native_stage *stages, size_t stage_count, doe_resource_pipeline_layout **out);
