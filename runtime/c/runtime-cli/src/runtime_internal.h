@@ -76,6 +76,10 @@ struct doe_runtime {
     /* Callback storage outlives a failed wait, through instance release. */
     bool map_done;
     WGPUMapAsyncStatus map_status;
+    /* Diagnostics callbacks may remain registered after a failed wait. */
+    bool diagnostic_done, diagnostic_ok, diagnostic_abandoned;
+    WGPURenderPipeline diagnostic_pipeline;
+    bool diagnostic_render_compiled, diagnostic_compute_compiled;
     /* The first uncaptured device error since the last command check. */
     bool uncaptured;
     char uncaptured_message[256];
@@ -111,6 +115,11 @@ WGPUTextureFormat runtime_webgpu_format(doe_texture_format format);
  * and *source are the caller's to free. NULL when no candidate is readable. */
 char *runtime_resolve_kernel(const doe_runtime *runtime, const char *kernel, char **source, size_t *size);
 bool runtime_execute_render(doe_runtime *runtime, const doe_command *command, doe_trace_execution *execution);
+bool runtime_execute_diagnostics(doe_runtime *runtime, const doe_command *command, doe_trace_execution *execution);
+bool runtime_diagnostic_lifecycle(doe_runtime *runtime, doe_texture_format format, doe_trace_execution *execution);
+WGPURenderPipeline runtime_diagnostic_pipeline(doe_runtime *runtime, doe_texture_format format, doe_trace_execution *execution);
+WGPUTextureView runtime_diagnostic_view(doe_runtime *runtime, doe_texture_format format, doe_trace_execution *execution);
+void runtime_release_diagnostics(doe_runtime *runtime);
 bool runtime_execute_map(doe_runtime *runtime, const doe_command *command, doe_trace_execution *execution);
 bool runtime_execute_sampler(doe_runtime *runtime, const doe_command *command, doe_trace_execution *execution);
 void runtime_release_render(doe_runtime *runtime);

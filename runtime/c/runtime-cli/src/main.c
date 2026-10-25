@@ -91,7 +91,7 @@ static void usage(FILE *out)
           "bindings), copies in every direction, texture_write, texture_query, texture_destroy (2D\n"
           "uncompressed color textures and their mip levels), render_draw, render_pass, draw_indirect and\n"
           "draw_indexed_indirect (the default proxy pipeline),\n"
-          "sampler_create, sampler_destroy and map_async. kernel_dispatch semantic fields and captures write operator\n"
+          "sampler_create, sampler_destroy, map_async and async_diagnostics. kernel_dispatch semantic fields and captures write operator\n"
           "records; with a trace meta, decode.final_logits dispatches are evaluated for numeric stability and\n"
           "other numeric stability capture plans are refused.\n"
           "Every other command, field or argument is rejected. --adapter is this runtime's own;\n"
@@ -311,6 +311,18 @@ static bool write_shader_receipts(FILE *out, const doe_runtime *runtime, const d
             fprintf(list, ",\"byteLength\":%zu,\"sha256\":\"%s\"}", size, sha) >= 0;
         any = true;
         free(path);
+    }
+    for (int compute = 0; ok && compute < 2; compute++) {
+        if (!doe_runtime_used_diagnostic_source(runtime, compute != 0)) continue;
+        const char *source = doe_runtime_diagnostic_source(compute != 0);
+        uint8_t digest[32];
+        char hash[65];
+        doe_sha256(source, strlen(source), digest);
+        doe_sha256_hex(digest, hash);
+        ok = (!any || fputc(',', list) != EOF) && fprintf(list,
+            "{\"moduleId\":\"doe-diagnostic-%s\",\"sourceKind\":\"wgsl\",\"byteLength\":%zu,\"sha256\":\"%s\"}",
+            compute ? "compute" : "render", strlen(source), hash) >= 0;
+        any = true;
     }
     ok = fputc(']', list) != EOF && ok;
     ok = fclose(list) == 0 && ok;

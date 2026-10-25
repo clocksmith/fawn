@@ -48,6 +48,8 @@ static const kind_name KINDS[] = {
     {"render_pass", DOE_COMMAND_RENDER_PASS},
     {"draw_indirect", DOE_COMMAND_DRAW_INDIRECT},
     {"draw_indexed_indirect", DOE_COMMAND_DRAW_INDEXED_INDIRECT},
+    {"async_diagnostics", DOE_COMMAND_ASYNC_DIAGNOSTICS},
+    {"pipeline_async_diagnostics", DOE_COMMAND_ASYNC_DIAGNOSTICS},
     {"map_async", DOE_COMMAND_MAP_ASYNC},
     {"buffer_map_async", DOE_COMMAND_MAP_ASYNC},
     {"sampler_create", DOE_COMMAND_SAMPLER_CREATE},
@@ -76,6 +78,7 @@ const char *doe_command_tag(doe_command_kind kind)
     case DOE_COMMAND_DRAW_INDIRECT: return "draw_indirect";
     case DOE_COMMAND_DRAW_INDEXED_INDIRECT: return "draw_indexed_indirect";
     case DOE_COMMAND_MAP_ASYNC: return "map_async";
+    case DOE_COMMAND_ASYNC_DIAGNOSTICS: return "async_diagnostics";
     }
     return "unknown";
 }
@@ -528,6 +531,7 @@ static bool parse_command(const doe_json_value *object, doe_command *command, si
         case DOE_COMMAND_DISPATCH:
         case DOE_COMMAND_DISPATCH_INDIRECT: return parse_grid(object, command, index, error);
         case DOE_COMMAND_MAP_ASYNC: return parse_map_async(object, command, index, error);
+        case DOE_COMMAND_ASYNC_DIAGNOSTICS: return stream_parse_diagnostics(object, command, index, error);
         }
     }
     return stream_reject(error, index, "command kind \"%s\" is not implemented by doe-c-runtime", name);

@@ -27,7 +27,8 @@ typedef enum doe_command_kind {
     DOE_COMMAND_DISPATCH_INDIRECT,
     DOE_COMMAND_DRAW_INDIRECT,        /* render_draw recorded as one indirect draw per draw */
     DOE_COMMAND_DRAW_INDEXED_INDIRECT, /* the indexed form */
-    DOE_COMMAND_MAP_ASYNC             /* flat kind aliases or nested map_async */
+    DOE_COMMAND_MAP_ASYNC,            /* flat kind aliases or nested map_async */
+    DOE_COMMAND_ASYNC_DIAGNOSTICS
 } doe_command_kind;
 
 /* The kinds whose payload is doe_render_draw. */
@@ -56,6 +57,18 @@ typedef enum doe_texture_format {
     DOE_FORMAT_RGBA16_FLOAT,
     DOE_FORMAT_RGBA32_FLOAT
 } doe_texture_format;
+
+typedef enum doe_diagnostic_mode {
+    DOE_DIAG_PIPELINE, DOE_DIAG_CAPABILITIES, DOE_DIAG_RESOURCE_TABLE,
+    DOE_DIAG_LIFECYCLE, DOE_DIAG_PIXEL_LOCAL, DOE_DIAG_FULL
+} doe_diagnostic_mode;
+
+typedef struct doe_diagnostics {
+    doe_diagnostic_mode mode;
+    doe_texture_format format;
+    uint32_t iterations;
+    bool emulate; /* Explicit retained featurePolicy, never an implicit fallback. */
+} doe_diagnostics;
 
 /* A 2D, single-sample texture keyed by its stream handle. */
 typedef struct doe_texture_desc {
@@ -160,6 +173,7 @@ typedef struct doe_command {
     union {
         struct { uint64_t bytes, align_bytes; } upload;
         struct { uint64_t bytes; bool write; } map;
+        doe_diagnostics diagnostics;
         struct {
             uint64_t handle, offset, buffer_size;
             uint32_t *words;

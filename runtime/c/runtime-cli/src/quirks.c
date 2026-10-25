@@ -10,7 +10,7 @@
 typedef enum bucket_kind {
     BUCKET_UPLOAD, BUCKET_COPY, BUCKET_BARRIER, BUCKET_KERNEL_DISPATCH, BUCKET_RENDER_DRAW,
     BUCKET_SAMPLER_CREATE, BUCKET_SAMPLER_DESTROY, BUCKET_TEXTURE_WRITE, BUCKET_TEXTURE_QUERY,
-    BUCKET_TEXTURE_DESTROY, BUCKET_DISPATCH, BUCKET_MAP_ASYNC, BUCKET_COUNT
+    BUCKET_TEXTURE_DESTROY, BUCKET_DISPATCH, BUCKET_MAP_ASYNC, BUCKET_DIAGNOSTICS, BUCKET_COUNT
 } bucket_kind;
 _Static_assert((int)BUCKET_COUNT <= (int)DOE_QUIRK_BUCKETS, "bucket storage");
 
@@ -158,6 +158,7 @@ static uint32_t score(const doe_quirk *q, bucket_kind kind, const doe_profile *p
         if (q->scope == DOE_SCOPE_LAYOUT) s += 4;
         if (q->scope == DOE_SCOPE_BARRIER) s += 6;
         break;
+    case BUCKET_DIAGNOSTICS: if (q->scope == DOE_SCOPE_MEMORY) s += 5; break;
     case BUCKET_MAP_ASYNC: if (q->scope == DOE_SCOPE_MEMORY) s += 6; break;
     case BUCKET_COUNT: break;
     }
@@ -361,6 +362,7 @@ static bucket_kind bucket_of(doe_command_kind kind)
     case DOE_COMMAND_DISPATCH:
     case DOE_COMMAND_DISPATCH_INDIRECT: return BUCKET_DISPATCH;
     case DOE_COMMAND_MAP_ASYNC: return BUCKET_MAP_ASYNC;
+    case DOE_COMMAND_ASYNC_DIAGNOSTICS: return BUCKET_DIAGNOSTICS;
     }
     return BUCKET_COUNT;
 }

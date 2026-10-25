@@ -14,7 +14,7 @@ quirk data or bench comparability policy.
 ## Scope
 `upload`, `buffer_write`, `barrier`, WGSL `kernel_dispatch` with buffer and
 texture bindings and semantic records, copies, 2D textures, proxy-pipeline draws,
-samplers, buffer map/unmap and doe-plan-executor plans over `libwebgpu_doe_c` or
+samplers, buffer map/unmap, public WebGPU asynchronous diagnostics and doe-plan-executor plans over `libwebgpu_doe_c` or
 `dawn-c-runtime`.
 [Coverage](README.md) lists admitted and rejected inputs.
 
@@ -24,7 +24,7 @@ command-stream examples and schema 1 output oracles apply.
 
 ## Invariants
 Unknown commands, fields and arguments reject before device work with exit 2.
-No input is silently ignored, emulated or reported as success. Commands complete sequentially and preserves its first device error. Oracles run on
+No input is silently ignored, emulated or reported as success. Commands complete sequentially and preserve the first device error. Oracles run on
 isolated zero-filled buffers; a digest mismatch fails the run. The meta names
 the executing adapter, so CPU runs stay identifiable.
 
@@ -37,7 +37,7 @@ runs are not GPU, performance or comparability evidence.
 
 ## Non-goals
 Numeric stability plans beyond decode logits, unappliable quirk actions,
-surface commands, indirect-buffer draws, custom render pipelines, multisampled
+surface commands, custom render pipelines, multisampled
 textures, GPU timestamps, deferred queue sync or default CLI replacement.
 
 ## Freedom

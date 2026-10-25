@@ -10,13 +10,13 @@ NATIVE_LIBRARY = $(NATIVE_BUILD)/$(NATIVE_LIBRARY_NAME)
 CPPFLAGS += -D_POSIX_C_SOURCE=200809L -Isrc -I../../zig/vendor/webgpu-headers -I../native/include
 CFLAGS ?= -O2 -g
 CFLAGS += -std=c11 -Wall -Wextra -Wpedantic -Werror -pthread
-CORE = src/json.c src/stream.c src/stream_texture.c src/stream_render.c src/trace.c src/sha256.c src/quirks.c \
+CORE = src/json.c src/stream.c src/stream_texture.c src/stream_render.c src/stream_diagnostics.c src/trace.c src/sha256.c src/quirks.c \
   src/operators.c src/numeric_policy.c src/numeric_stability.c src/plan.c \
   $(BUILD)/quirk_toggles.c
 CORE_HEADERS = src/json.h src/stream.h src/stream_internal.h src/trace.h src/sha256.h src/quirks.h \
   src/operators.h src/numeric_policy.h src/numeric_stability.h src/plan.h
 TOGGLE_REGISTRY = ../../../config/quirk-toggle-registry.json
-RUNTIME = src/execute.c src/kernel.c src/texture.c src/render.c src/map.c
+RUNTIME = src/execute.c src/kernel.c src/texture.c src/render.c src/map.c src/diagnostics.c src/diagnostics_lifecycle.c
 RUNTIME_HEADERS = src/execute.h src/runtime_internal.h ../../zig/vendor/webgpu-headers/webgpu.h \
   ../native/include/doe_native_adapter.h
 .PHONY: all bench-bin bench-bin-dawn check check-dawn check-host dawn native
@@ -49,6 +49,7 @@ bench-bin-dawn: $(BUILD)/dawn-c-runtime
 check-dawn: check-host $(BUILD)/dawn-c-runtime
 	$(PYTHON) tests/test_cli.py --binary '$(BUILD)/dawn-c-runtime' --work '$(BUILD)/dawn-cli-work' \
 	  --module dawn-c-runtime --backend-id dawn_direct_vulkan
+	$(PYTHON) tests/test_cli_diagnostics.py --binary '$(BUILD)/dawn-c-runtime' --work '$(BUILD)/dawn-diagnostics-work'
 # The bench executor doe_c_direct_vulkan runs bin/doe-c-runtime (gitignored);
 # the copy keeps its rpath to $(NATIVE_BUILD), which must stay in place.
 bench-bin: $(BUILD)/doe-c-runtime
@@ -84,7 +85,17 @@ check-host: $(BUILD)/test_json $(BUILD)/test_stream $(BUILD)/test_trace $(BUILD)
 	$(BUILD)/test_numeric ../../.. '$(BUILD)'
 # Executes example streams on the selected Vulkan adapter (a CPU ICD such as
 # lavapipe by default) and checks the artifacts with pipeline/trace/replay.py.
-check: check-host $(BUILD)/doe-c-runtime $(BUILD)/test_map $(BUILD)/test_texture_cleanup
+check: check-diagnostics check-host $(BUILD)/doe-c-runtime $(BUILD)/test_map $(BUILD)/test_texture_cleanup
 	$(BUILD)/test_map
 	$(BUILD)/test_texture_cleanup ../../../bench/kernels
 	$(PYTHON) tests/test_cli.py --binary '$(BUILD)/doe-c-runtime' --work '$(BUILD)/cli-work'
+
+check-diagnostics: $(BUILD)/doe-c-runtime $(BUILD)/test_diagnostics
+	$(BUILD)/test_diagnostics
+	$(PYTHON) tests/test_cli_diagnostics.py --binary '$(BUILD)/doe-c-runtime' --work '$(BUILD)/diagnostics-work'
+
+$(BUILD)/test_diagnostics: tests/test_diagnostics.c $(CORE) $(RUNTIME) $(CORE_HEADERS) $(RUNTIME_HEADERS) $(NATIVE_LIBRARY) | $(BUILD)
+	$(CC) $(CPPFLAGS) $(CFLAGS) tests/test_diagnostics.c $(CORE) $(RUNTIME) -L'$(abspath $(NATIVE_BUILD))' \
+	  -l:$(NATIVE_LIBRARY_NAME) '-Wl,-rpath,$(abspath $(NATIVE_BUILD))' -lm \
+	  -Wl,--wrap=wgpuShaderModuleGetCompilationInfo,--wrap=wgpuDeviceCreateRenderPipelineAsync,--wrap=wgpuCommandEncoderFinish \
+	  -Wl,--wrap=wgpuRenderPassEncoderDraw,--wrap=wgpuQueueSubmit -o $@

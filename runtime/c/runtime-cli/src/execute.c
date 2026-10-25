@@ -206,6 +206,7 @@ void doe_runtime_close(doe_runtime *runtime)
     }
     free(runtime->pipelines);
     runtime_release_render(runtime);
+    runtime_release_diagnostics(runtime);
     runtime_release_textures(runtime);
     for (size_t i = 0; i < runtime->buffer_count; i++) wgpuBufferRelease(runtime->buffers[i].buffer);
     free(runtime->buffers);
@@ -452,6 +453,7 @@ bool doe_runtime_execute(doe_runtime *runtime, const doe_command *command, doe_t
     case DOE_COMMAND_RENDER_PASS:
     case DOE_COMMAND_DRAW_INDIRECT:
     case DOE_COMMAND_DRAW_INDEXED_INDIRECT: ok = runtime_execute_render(runtime, command, execution); break;
+    case DOE_COMMAND_ASYNC_DIAGNOSTICS: ok = runtime_execute_diagnostics(runtime, command, execution); break;
     case DOE_COMMAND_MAP_ASYNC: ok = runtime_execute_map(runtime, command, execution); break;
     case DOE_COMMAND_SAMPLER_CREATE:
     case DOE_COMMAND_SAMPLER_DESTROY: ok = runtime_execute_sampler(runtime, command, execution); break;
@@ -475,11 +477,12 @@ bool doe_runtime_execute(doe_runtime *runtime, const doe_command *command, doe_t
             [DOE_COMMAND_DISPATCH_INDIRECT] = "dispatch_indirect_timing_cpu_wall_clock_comparability_directional",
             [DOE_COMMAND_DRAW_INDIRECT] = "draw_indirect_timing_cpu_wall_clock_comparability_directional",
             [DOE_COMMAND_DRAW_INDEXED_INDIRECT] = "draw_indexed_indirect_timing_cpu_wall_clock_comparability_directional",
+            [DOE_COMMAND_ASYNC_DIAGNOSTICS] = "async_diagnostics_timing_cpu_wall_clock_comparability_directional",
             [DOE_COMMAND_MAP_ASYNC] = "map_async_timing_cpu_wall_clock_comparability_directional",
         };
         execution->ok = true;
         execution->status_code = codes[command->kind];
-        snprintf(execution->message, sizeof(execution->message), "%s timing=cpu_wall_clock comparability=directional",
+        if (!execution->message[0]) snprintf(execution->message, sizeof(execution->message), "%s timing=cpu_wall_clock comparability=directional",
             doe_command_tag(command->kind));
     }
     return ok;

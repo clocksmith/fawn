@@ -58,6 +58,8 @@ bool doe_runtime_read_buffer(doe_runtime *runtime, uint64_t handle, uint8_t **da
  * (lowercase hex). False when it does not resolve. */
 bool doe_runtime_kernel_source(const doe_runtime *runtime, const char *kernel, char **path, size_t *size,
     char sha256_hex[65]);
+const char *doe_runtime_diagnostic_source(bool compute);
+bool doe_runtime_used_diagnostic_source(const doe_runtime *runtime, bool compute);
 void doe_runtime_close(doe_runtime *runtime);
 uint64_t doe_runtime_monotonic_ns(void);
 #endif
