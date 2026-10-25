@@ -21,7 +21,8 @@ WGPURenderBundleEncoder wgpuDeviceCreateRenderBundleEncoder(WGPUDevice handle,
         /* Undefined entries are unused slots; formats are admitted by the resource owner. */
         for (size_t i = 0; i < descriptor->colorFormatCount; ++i) {
             converted.color_formats[i] = descriptor->colorFormats[i];
-            if (!native_color_renderable(device->features, descriptor->colorFormats[i])) valid = false;
+            if (descriptor->colorFormats[i] != WGPUTextureFormat_Undefined &&
+                !native_color_renderable(device->features, descriptor->colorFormats[i])) valid = false;
         }
     }
     doe_resource_bundle_encoder *encoder = NULL;

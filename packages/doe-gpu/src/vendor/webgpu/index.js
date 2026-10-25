@@ -259,7 +259,12 @@ function loadAddon() {
     requireFn: require,
     workspaceRoot: WORKSPACE_ROOT,
   });
-  const workspaceCandidates = cWorkspaceLibraryCandidates(WORKSPACE_ROOT);
+  const workspaceCandidates = [
+    resolve(PACKAGE_ROOT, 'build', 'Release', 'doe_napi.node'),
+    resolve(PACKAGE_ROOT, 'build', 'Debug', 'doe_napi.node'),
+    resolve(__dirname, '..', 'build', 'Release', 'doe_napi.node'),
+    resolve(__dirname, '..', 'build', 'Debug', 'doe_napi.node'),
+  ];
   const packagedCandidates = [
     packagedAddonPath,
     resolve(PACKAGE_ROOT, 'prebuilds', `${process.platform}-${process.arch}`, 'doe_napi.node'),
@@ -297,10 +302,7 @@ function resolveDoeLibraryPath() {
     process.env.DOE_WEBGPU_LIB,
     process.env.DOE_LIB,
   ].map((path) => (path ? resolve(path) : path));
-  const workspaceCandidates = [
-    ...workspaceLibraryNames.map((name) => resolve(WORKSPACE_ROOT, 'runtime', 'zig', 'zig-out', 'lib', name)),
-    ...workspaceLibraryNames.map((name) => resolve(WORKSPACE_ROOT, 'zig', 'zig-out', 'lib', name)),
-  ];
+  const workspaceCandidates = cWorkspaceLibraryCandidates(WORKSPACE_ROOT);
   const packagedCandidates = [
     packagedLibraryPath,
     ...workspaceLibraryNames.map((name) => resolve(PACKAGE_ROOT, 'prebuilds', `${process.platform}-${process.arch}`, name)),
