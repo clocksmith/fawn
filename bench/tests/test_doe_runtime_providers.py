@@ -18,7 +18,7 @@ from bench.gates import claim_gate, structural_equivalence_gate
 from bench.gates.claim_backend_telemetry import backend_telemetry_failures
 from bench.lib import doe_runtime_providers
 from bench.native_compare_modules import compare_assessment_helpers, comparability_runtime, run_artifact
-from bench.native_compare_modules.executor_registry import resolve_executor_command_template
+from bench.native_compare_modules.executor_registry import resolve_executor_boundary, resolve_executor_command_template
 
 ZIG_META = {
     "executionBackend": "doe_vulkan",
@@ -61,6 +61,14 @@ class DoeRuntimeProvidersTests(unittest.TestCase):
         self.assertTrue(doe_runtime_providers.template_uses_doe_runtime(zig_template))
         self.assertFalse(doe_runtime_providers.template_uses_doe_runtime("node bench/executors/run.js"))
         self.assertEqual(doe_runtime_providers.runtime_index(["env", "X=1", "/abs/doe-c-runtime"]), 2)
+
+    def test_c_plan_executor_runs_the_c_cli_at_the_plan_boundary(self) -> None:
+        template = resolve_executor_command_template("doe_c_direct_plan_vulkan")
+        self.assertEqual(resolve_executor_boundary("doe_c_direct_plan_vulkan"), "plan")
+        self.assertIn("runtime/c/runtime-cli/bin/doe-c-runtime --plan {plan}", template)
+        self.assertIn("--workload {workload}", template)
+        self.assertNotIn("--backend-lane", template)
+        self.assertTrue(doe_runtime_providers.template_uses_doe_runtime(template))
 
     def test_c_trace_is_doe_execution_in_dawn_comparisons(self) -> None:
         self.assertTrue(compare_assessment_helpers.uses_doe_execution({"doe_c_vulkan"}))

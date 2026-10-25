@@ -13,9 +13,9 @@ quirk data or bench comparability policy.
 
 ## Scope
 `upload`, `buffer_write`, `barrier`, WGSL `kernel_dispatch` with buffer
-bindings and semantic records, copies, 2D textures, proxy-pipeline draws and
-samplers over `libwebgpu_doe_c`. [Coverage](README.md) lists admitted and
-rejected inputs.
+bindings and semantic records, copies, 2D textures, proxy-pipeline draws,
+samplers and doe-plan-executor plans over `libwebgpu_doe_c`.
+[Coverage](README.md) lists admitted and rejected inputs.
 
 ## Contracts
 `pipeline/trace/replay.py` artifact shape, the trace v1 hash chain, the
@@ -23,17 +23,17 @@ command-stream examples and schema 1 output oracles apply.
 
 ## Invariants
 Unknown commands, fields and arguments reject before device work with exit 2.
-No input is ignored, emulated or reported as success. Each command completes
+No input is silently ignored, emulated or reported as success. Each command completes
 before the next starts and preserves its first device error. Oracles run on
-isolated zero-filled buffers; a digest mismatch fails the run. The meta records
-the adapter that executed, so CPU adapter runs stay identifiable.
+isolated zero-filled buffers; a digest mismatch fails the run. The meta names
+the executing adapter, so CPU runs stay identifiable.
 
 ## Acceptance
 [Owner checks](Makefile): host parsing, rejection, hash-chain and SHA-256 vectors;
-`make check` executes example streams, replays their artifacts and compares hash
-chains with doe-zig-runtime rows.
+`make check` executes examples, replays artifacts and compares hash chains with
+Zig rows.
 - Evidence: [Recorded runs](README.md) name adapter and source; CPU adapter
-runs are not GPU, performance or bench-comparability evidence.
+runs are not GPU, performance or comparability evidence.
 
 ## Non-goals
 Numeric stability evaluation, quirk actions without a C path, surface or
@@ -41,4 +41,4 @@ indirect commands, custom render pipelines, mipmapped or multisampled textures,
 GPU timestamps, deferred queue sync or default CLI replacement.
 
 ## Freedom
-Internal parsing, resource caching and encoding may vary within these boundaries.
+Internal parsing, resource caching and encoding may vary.

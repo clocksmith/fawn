@@ -104,6 +104,23 @@ bool doe_trace_write_semantic(FILE *out, const doe_semantic *semantic)
         write_semantic_string(out, "semanticExecutionPlanHash", semantic->execution_plan_hash);
 }
 
+/* The execution fields that end every row, then the row's closing brace. */
+static bool write_execution(FILE *out, const doe_trace_identity *identity, const doe_trace_execution *execution)
+{
+    bool ok = fputs(",\"executionBackend\":", out) >= 0;
+    ok = ok && doe_trace_write_string(out, identity->backend_id) && fputs(",\"backendId\":", out) >= 0 &&
+        doe_trace_write_string(out, identity->backend_id);
+    ok = ok && fprintf(out, ",\"executionStatus\":\"%s\",\"executionStatusCode\":", execution->ok ? "ok" : "error") >= 0;
+    ok = ok && doe_trace_write_string(out, execution->status_code) && fputs(",\"executionStatusMessage\":", out) >= 0 &&
+        doe_trace_write_string(out, execution->message);
+    return ok && fprintf(out, ",\"executionDurationNs\":%" PRIu64 ",\"executionSetupNs\":%" PRIu64
+        ",\"executionEncodeNs\":%" PRIu64 ",\"executionSubmitWaitNs\":%" PRIu64 ",\"executionDispatchCount\":%" PRIu64
+        ",\"executionSubmitCount\":%" PRIu64 ",\"executionGpuTimestampNs\":0,\"executionGpuTimestampAttempted\":false,"
+        "\"executionGpuTimestampValid\":false}\n",
+        execution->duration_ns, execution->setup_ns, execution->encode_ns, execution->submit_wait_ns,
+        execution->dispatch_count, execution->submit_count) >= 0;
+}
+
 bool doe_trace_write_row(FILE *out, const doe_trace_identity *identity, uint64_t seq, uint64_t timestamp_ns,
     uint64_t hash, uint64_t previous, const doe_command *command, const doe_quirk_decision *decision,
     const doe_trace_execution *execution)
@@ -127,17 +144,18 @@ bool doe_trace_write_row(FILE *out, const doe_trace_identity *identity, uint64_t
         d->requires_lean ? "true" : "false", d->blocking ? "true" : "false", d->score, d->matched_count) >= 0;
     ok = ok && doe_trace_write_string(out, d->action) && fputs(",\"toggle\":", out) >= 0 &&
         doe_trace_write_string(out, d->toggle ? d->toggle : "none");
-    ok = ok && fputs(",\"executionBackend\":", out) >= 0;
-    ok = ok && doe_trace_write_string(out, identity->backend_id) && fputs(",\"backendId\":", out) >= 0 &&
-        doe_trace_write_string(out, identity->backend_id);
-    ok = ok && fprintf(out, ",\"executionStatus\":\"%s\",\"executionStatusCode\":", execution->ok ? "ok" : "error") >= 0;
-    ok = ok && doe_trace_write_string(out, execution->status_code) && fputs(",\"executionStatusMessage\":", out) >= 0 &&
-        doe_trace_write_string(out, execution->message);
-    ok = ok && fprintf(out, ",\"executionDurationNs\":%" PRIu64 ",\"executionSetupNs\":%" PRIu64
-        ",\"executionEncodeNs\":%" PRIu64 ",\"executionSubmitWaitNs\":%" PRIu64 ",\"executionDispatchCount\":%" PRIu64
-        ",\"executionSubmitCount\":%" PRIu64 ",\"executionGpuTimestampNs\":0,\"executionGpuTimestampAttempted\":false,"
-        "\"executionGpuTimestampValid\":false}\n",
-        execution->duration_ns, execution->setup_ns, execution->encode_ns, execution->submit_wait_ns,
-        execution->dispatch_count, execution->submit_count) >= 0;
-    return ok;
+    return ok && write_execution(out, identity, execution);
+}
+
+bool doe_trace_write_plan_row(FILE *out, const doe_trace_identity *identity, uint64_t seq, uint64_t timestamp_ns,
+    uint64_t hash, uint64_t previous, const doe_command *command, const doe_trace_execution *execution)
+{
+    bool ok = fputs("{\"traceVersion\":1,\"module\":", out) >= 0 && doe_trace_write_string(out, identity->module) &&
+        fputs(",\"opCode\":", out) >= 0 && doe_trace_write_string(out, command->label);
+    ok = ok && fprintf(out, ",\"seq\":%" PRIu64 ",\"timestampMonoNs\":%" PRIu64 ",\"hash\":\"0x%" PRIx64
+        "\",\"previousHash\":\"0x%" PRIx64 "\",\"command\":", seq, timestamp_ns, hash, previous) >= 0;
+    ok = ok && doe_trace_write_string(out, command->label);
+    if (ok && command->kind == DOE_COMMAND_KERNEL_DISPATCH)
+        ok = fputs(",\"kernel\":", out) >= 0 && doe_trace_write_string(out, command->as.dispatch.kernel);
+    return ok && doe_trace_write_semantic(out, &command->semantic) && write_execution(out, identity, execution);
 }

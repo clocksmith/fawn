@@ -30,6 +30,7 @@ from bench.native_compare_modules.runner import (
 from bench.native_compare_modules.comparability_upload_contract import (
     verify_fawn_upload_runtime_contract,
 )
+from bench.native_compare_modules.executor_registry import resolve_executor_command_template
 from bench.native_compare_modules.workload_validation import (
     infer_workload_queue_sync_mode,
 )
@@ -325,6 +326,54 @@ class RunnerPlanSupportTests(unittest.TestCase):
         self.assertEqual([sample["runIndex"] for sample in result["commandSamples"]], [2, 3, 4])
         self.assertEqual(result["timingsMs"], [3.0, 4.0, 5.0])
         self.assertEqual(result["stats"]["count"], 3)
+
+    @patch("bench.native_compare_modules.runner.run_once")
+    def test_strict_oracle_preflight_skips_doe_runtime_plan_templates(self, mock_run_once) -> None:
+        commands = []
+
+        def fake_run_once(command, **kwargs):
+            commands.append(list(command))
+            kwargs["trace_meta_path"].write_text(
+                json.dumps(
+                    {
+                        "executionErrorCount": 0,
+                        "executionSkippedCount": 0,
+                        "executionUnsupportedCount": 0,
+                        "executionTotalNs": 1_000_000,
+                        "executionSetupTotalNs": 0,
+                        "executionEncodeTotalNs": 1_000_000,
+                        "executionSubmitWaitTotalNs": 0,
+                        "executionDispatchCount": 1,
+                        "executionRowCount": 1,
+                        "executionSuccessCount": 1,
+                    }
+                ),
+                encoding="utf-8",
+            )
+            return 1.0, 0.0, 0, {"processWallMs": 1.0}
+
+        mock_run_once.side_effect = fake_run_once
+        with tempfile.TemporaryDirectory(prefix="doe-runner-plan-preflight-") as tmpdir:
+            plan_path = Path(tmpdir) / "alpha.plan.json"
+            plan_path.write_text(json.dumps({"commands": [{"kind": "buffer_write", "handle": 1, "data": [1]}]}))
+            workload = SimpleNamespace(
+                id="alpha", domain="compute", commands_path="", plan_path=str(plan_path),
+                quirks_path="", vendor="amd", api="vulkan", family="gfx11", driver="24.0.0", dawn_filter="",
+                extra_args=[], comparable=True, strict_normalization_unit="",
+            )
+            run_workload(
+                name="doe-c",
+                template=resolve_executor_command_template("doe_c_direct_plan_vulkan"),
+                workload=workload, iterations=2, warmup=0, out_dir=Path(tmpdir), gpu_memory_probe="none",
+                resource_sample_ms=100, resource_sample_target_count=0, timing_divisor=1.0, command_repeat=1,
+                ignore_first_ops=0, upload_buffer_usage="copy-dst-copy-src", upload_submit_every=1,
+                inject_upload_runtime_flags=False, required_timing_class="operation", comparability_mode="strict",
+                benchmark_policy=SimpleNamespace(), emit_shell=False,
+            )
+
+        # Plan executors validate no output oracles, so no preflight run takes the flag.
+        self.assertEqual(len(commands), 2)
+        self.assertTrue(all("--plan" in command and "--validate-output-oracles" not in command for command in commands))
 
     @patch(
         "bench.native_compare_modules.runner._parse_compilation_ndjson",

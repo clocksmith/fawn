@@ -695,12 +695,15 @@ def run_workload(
         if arg == "--queue-sync-mode" and i + 1 < len(workload.extra_args):
             queue_sync_mode = workload.extra_args[i + 1]
 
+    # The oracle preflight runs a Doe runtime CLI on its command stream; plan
+    # templates (doe-plan-executor, doe-c-runtime --plan) validate no oracles.
     strict_runtime_preflight = (
         (not emit_shell)
         and comparability_mode == "strict"
         and workload.comparable
         and required_timing_class != "process-wall"
         and is_doe_runtime
+        and "{plan}" not in template
     )
     preflight_oracle_evidence: dict[str, Any] = {}
     if strict_runtime_preflight:
