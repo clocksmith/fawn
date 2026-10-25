@@ -581,8 +581,9 @@ capacity), which on Vulkan is 10 storage buffers and 8 storage textures with
 sampled textures, samplers and uniform buffers at their defaults; 32 vertex
 attributes from the device (the backend's attribute storage) with vertex buffers
 at eight (resource-owner draw packets); maxBindingsPerBindGroup 1000 (sparse
-resource-owner storage), 16 dynamic uniform and 16 dynamic storage buffers
-(applied by the resource owner, 32 per group), maxBufferSize from Vulkan
+resource-owner storage), dynamic uniform and dynamic storage buffers at 16
+each capped by that stage's uniform/storage buffer limit, so a layout at the
+limit fits one stage (applied by the resource owner, 32 per group), maxBufferSize from Vulkan
 maxMemoryAllocationSize with binding sizes bounded by it and rounded down to 4,
 the minimum dispatch dimension across axes, and workgroup sizes/invocations at
 the C compiler's 256 bound. A device resolves requestDevice requiredLimits per
