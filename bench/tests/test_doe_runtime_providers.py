@@ -99,6 +99,10 @@ class DoeRuntimeProvidersTests(unittest.TestCase):
         )
         self.assertNotIn("runtimeImplementation", dawn)
 
+    def test_every_doe_runtime_product_takes_the_doe_role(self) -> None:
+        self.assertEqual(doe_runtime_providers.doe_product_ids(), frozenset({"doe", "doe-c"}))
+        self.assertEqual(doe_runtime_providers.provider_for_execution_backend("doe_c_vulkan").product_id, "doe-c")
+
     def test_selection_policy_hash_follows_the_provider(self) -> None:
         def failures(meta: dict, expected: str) -> list[str]:
             return backend_telemetry_failures(

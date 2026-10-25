@@ -69,7 +69,9 @@ def run_product_bundle(
                 comparison_product=product,
             )
         elif run_role == "auto":
-            if product == "doe":
+            # Every Doe runtime CLI product (config/doe-runtime-providers.json)
+            # takes the workload contract's Doe-side (baseline) parameters.
+            if product in doe_runtime_providers.doe_product_ids():
                 spec, configs = workload.to_spec_and_configs(
                     baseline_product=product,
                     comparison_product=f"{product}__comparison",
