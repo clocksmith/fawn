@@ -2,7 +2,7 @@
 #include "hlsl_fixture.h"
 #include "packed_integer_fixture.h"
 #include "integer_bits_fixture.h"
-#include "../include/doe_compiler_specialization.h"
+#include "../include/doe_compiler_module_specialization.h"
 #include <assert.h>
 #include <errno.h>
 #include <fenv.h>
@@ -26,7 +26,7 @@ static DoeCompilerStatus compile(uint32_t target, const char *source, const char
         &requirements, sizeof(requirements)) == DOE_COMPILER_OK);
     void *workspace = malloc(requirements.size_bytes);
     assert(workspace != NULL);
-    DoeCompilerEntrySelectionV5 selection = {DOE_COMPILER_SELECT_NAME, 0u, entry, strlen(entry)};
+    DoeCompilerEntrySelectionV5 selection = {DOE_COMPILER_SELECT_NAME, 0u, entry, entry != NULL ? strlen(entry) : 0u};
     DoeCompilerSpecializationOutputs outputs = {0};
     DoeCompilerMetalBindingV12 metal_bindings[64];
     DoeCompilerMetalEntryV12 metal_entries[8];
@@ -39,7 +39,12 @@ static DoeCompilerStatus compile(uint32_t target, const char *source, const char
         outputs.metal = (DoeCompilerMetalOutputs){hlsl.stages, hlsl.text, hlsl.text_capacity,
             metal_bindings, 64u, sizeof(metal_bindings[0]), metal_entries, 8u, sizeof(metal_entries[0])};
     else outputs.hlsl = hlsl;
-    const DoeCompilerStatus status = doe_compiler_specialize(13u, target, &caps, sizeof(caps),
+    const DoeCompilerStatus status = entry == NULL ?
+        doe_compiler_specialize_module(14u, target, &caps, sizeof(caps), workspace, requirements.size_bytes,
+            source, strlen(source), values, count, sizeof(*values),
+            3u | (measure ? 4u : 0u) | DOE_COMPILER_CORE_BINDING_NUMBERS,
+            measure ? NULL : &outputs, measure ? 0u : sizeof(outputs), result, sizeof(*result)) :
+        doe_compiler_specialize(13u, target, &caps, sizeof(caps),
         workspace, requirements.size_bytes, source, strlen(source), &selection, sizeof(selection),
         values, count, sizeof(*values), 3u | (measure ? 4u : 0u) | DOE_COMPILER_CORE_BINDING_NUMBERS,
         measure ? NULL : &outputs, measure ? 0u : sizeof(outputs), result, sizeof(*result));
@@ -62,8 +67,10 @@ static void expect(uint32_t target, const char *source, const char *entry,
             result.stages.resources.module.diagnostic.offset, result.stages.resources.module.diagnostic.message, source);
     assert((status == DOE_COMPILER_OK) == success);
     if (success) {
-        assert(result.stages.resources.module.published.entries == 1u);
-        assert(strcmp(storage->names + storage->entries[0].name.offset, entry) == 0);
+        if (entry != NULL) {
+            assert(result.stages.resources.module.published.entries == 1u);
+            assert(strcmp(storage->names + storage->entries[0].name.offset, entry) == 0);
+        } else assert(result.stages.resources.module.published.entries > 0u);
         DoeCompilerTextResult measured;
         assert(compile(target, source, entry, values, count, storage, words, &measured, true) == DOE_COMPILER_OK);
         assert(measured.required_text_bytes == result.required_text_bytes);
@@ -257,8 +264,48 @@ int main(int argc, char **argv) {
     }
     artifact(directory,"packed.wgsl",packed_integer_module,strlen(packed_integer_module));
     artifact(directory,"bits.wgsl",integer_bits_module,strlen(integer_bits_module));
+    const char *bundle = "override n:u32;override m:u32;override tint:f32;override unused:u32;"
+        "var<workgroup> dead:array<u32,unused>;var<workgroup> left:array<u32,n>;"
+        "var<workgroup> right:array<u32,m>;"
+        "@group(0) @binding(0) var<storage,read_write> output:array<u32>;"
+        "fn unusedHelper()->u32{return unused;}fn add(x:u32)->u32{return x+7u;}"
+        "@compute @workgroup_size(n) fn first(@builtin(local_invocation_index) i:u32){"
+        "left[i]=add(i);workgroupBarrier();output[i]=left[i];}"
+        "@fragment fn color()->@location(0) vec4f{return vec4f(tint);}"
+        "@compute @workgroup_size(m) fn second(@builtin(local_invocation_index) i:u32){"
+        "right[i]=add(i)+100u;workgroupBarrier();output[n+i]=right[i];}";
+    const DoeCompilerOverrideValueV13 bundle_values[]={{"n",1u,2.0},{"m",1u,3.0},{"tint",4u,0.5}};
+    for (uint32_t target=0u;target<3u;++target) {
+        assert(fesetround(FE_DOWNWARD)==0 && feraiseexcept(FE_INVALID|FE_INEXACT)==0);
+        const int saved_exceptions=fetestexcept(FE_ALL_EXCEPT);
+        errno=ERANGE;
+        expect(target,bundle,NULL,bundle_values,3u,true);
+        assert(errno==ERANGE && fegetround()==FE_DOWNWARD && fetestexcept(FE_ALL_EXCEPT)==saved_exceptions);
+        expect(target,bundle,NULL,bundle_values,2u,false);
+        assert(errno==ERANGE && fegetround()==FE_DOWNWARD && fetestexcept(FE_ALL_EXCEPT)==saved_exceptions);
+        assert(fesetround(original_mode)==0);
+        expect(target,bundle,NULL,bundle_values,1u,false);
+        expect(target,"override unused:u32;fn helper()->u32{return unused;}",NULL,NULL,0u,false);
+        DoeCompilerTextResult result;
+        assert(compile(target,bundle,NULL,bundle_values,3u,storage,words,&result,false)==DOE_COMPILER_OK);
+        assert(result.stages.resources.module.published.entries==3u);
+        assert(result.stages.resources.module.module.selected_entry==DOE_COMPILER_MODULE_NONE);
+        assert(strcmp(storage->names+storage->entries[0].name.offset,"first")==0);
+        assert(strcmp(storage->names+storage->entries[1].name.offset,"color")==0);
+        assert(strcmp(storage->names+storage->entries[2].name.offset,"second")==0);
+        assert(storage->entries[0].workgroup_size[0]==2u && storage->entries[2].workgroup_size[0]==3u);
+        assert(storage->entries[0].workgroup_storage_bytes==8u && storage->entries[2].workgroup_storage_bytes==12u);
+        assert(storage->entries[1].workgroup_reference_count==0u && storage->entries[1].resource_reference_count==0u);
+        assert(result.stages.resources.module.published.workgroups==2u);
+        assert(storage->workgroups[0].size_bytes==8u && storage->workgroups[1].size_bytes==12u);
+        if (target==DOE_COMPILER_TARGET_SPIRV)
+            artifact(directory,"bundle.spv",words,result.stages.resources.module.published.words*sizeof(*words));
+        else artifact(directory,target==DOE_COMPILER_TARGET_METAL?"bundle.metal":"bundle.hlsl",
+            storage->text,result.published_text_bytes);
+    }
+    artifact(directory,"bundle.wgsl",bundle,strlen(bundle));
     free(words);
     free(storage);
-    puts("selected override specialization target controls passed");
+    puts("selected and all-entry override specialization target controls passed");
     return 0;
 }

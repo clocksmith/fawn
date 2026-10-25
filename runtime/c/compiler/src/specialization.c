@@ -49,7 +49,7 @@ void specialization_bind(SpecializationContext *context, void *workspace, size_t
     for (size_t i = 0u; i < caps->target.stages.module.entries; ++i)
         for (size_t axis = 0u; axis < 6u; ++axis) context->entry_expressions[6u*i + axis] = NO_ID;
 }
-DoeCompilerStatus doe_compiler_specialization_requirements(uint32_t version, uint32_t target,
+static DoeCompilerStatus specialization_requirements(uint32_t version, uint32_t expected, uint32_t target,
     const DoeCompilerSpecializationCapacities *caps, size_t capacities_size,
     DoeCompilerWorkspaceRequirements *requirements, size_t requirements_size) {
     const int saved_errno = errno;
@@ -57,12 +57,24 @@ DoeCompilerStatus doe_compiler_specialization_requirements(uint32_t version, uin
     DoeCompilerWorkspaceRequirements queried;
     size_t base;
     if (requirements == NULL) status = DOE_COMPILER_INPUT_ERROR;
-    else if (version != DOE_COMPILER_SPECIALIZATION_ABI_VERSION || capacities_size != sizeof(*caps) ||
+    else if (version != expected || capacities_size != sizeof(*caps) ||
              requirements_size != sizeof(*requirements)) status = DOE_COMPILER_ABI_MISMATCH;
     else if (!specialization_layout(target, caps, &base, &queried)) status = DOE_COMPILER_INPUT_ERROR;
     else *requirements = queried;
     errno = saved_errno;
     return status;
+}
+DoeCompilerStatus doe_compiler_specialization_requirements(uint32_t version, uint32_t target,
+    const DoeCompilerSpecializationCapacities *caps, size_t capacities_size,
+    DoeCompilerWorkspaceRequirements *requirements, size_t requirements_size) {
+    return specialization_requirements(version, DOE_COMPILER_SPECIALIZATION_ABI_VERSION,
+        target, caps, capacities_size, requirements, requirements_size);
+}
+DoeCompilerStatus doe_compiler_module_specialization_requirements(uint32_t version, uint32_t target,
+    const DoeCompilerSpecializationCapacities *caps, size_t capacities_size,
+    DoeCompilerWorkspaceRequirements *requirements, size_t requirements_size) {
+    return specialization_requirements(version, DOE_COMPILER_MODULE_SPECIALIZATION_ABI_VERSION,
+        target, caps, capacities_size, requirements, requirements_size);
 }
 static DoeCompilerNameV4 publish_name(const Source *s, NameSpan name, char *names, uint32_t *cursor) {
     const DoeCompilerNameV4 out = {*cursor, name.length};

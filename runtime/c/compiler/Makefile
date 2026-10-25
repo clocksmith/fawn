@@ -22,7 +22,7 @@ CXXFLAGS = -std=c++17 -fno-exceptions -fno-rtti -O2 -Wall -Wextra -Wpedantic -Wc
 include targets/metal/sources.mk
 include targets/hlsl/sources.mk
 LIB_SOURCES = $(addprefix targets/metal/,$(METAL_SOURCE_NAMES)) $(addprefix targets/hlsl/,$(HLSL_SOURCE_NAMES)) $(shell cat src/sources.txt)
-HEADERS = include/doe_compiler_specialization.h src/override.h src/sources.txt include/doe_compiler_metal.h include/doe_compiler_hlsl.h src/numeric_host.h include/doe_compiler_text.h src/compile_internal.h src/text_internal.h $(wildcard targets/metal/*.h targets/hlsl/*.h targets/*.h) include/doe_compiler_stages.h src/stage.h src/parse_internal.h include/doe_compiler_resources.h include/doe_compiler_features.h include/doe_compiler_module.h src/builtin.h src/spirv_decl.h src/spirv_internal.h include/doe_compiler_typed.h src/sema.h src/numeric.h src/internal.h include/doe_compiler.h include/doe_compiler_v2.h include/doe_compiler_job.h src/cli_json.h src/cli_text.h
+HEADERS = include/doe_compiler_module_specialization.h include/doe_compiler_specialization.h src/override.h src/sources.txt include/doe_compiler_metal.h include/doe_compiler_hlsl.h src/numeric_host.h include/doe_compiler_text.h src/compile_internal.h src/text_internal.h $(wildcard targets/metal/*.h targets/hlsl/*.h targets/*.h) include/doe_compiler_stages.h src/stage.h src/parse_internal.h include/doe_compiler_resources.h include/doe_compiler_features.h include/doe_compiler_module.h src/builtin.h src/spirv_decl.h src/spirv_internal.h include/doe_compiler_typed.h src/sema.h src/numeric.h src/internal.h include/doe_compiler.h include/doe_compiler_v2.h include/doe_compiler_job.h src/cli_json.h src/cli_text.h
 SPIRV_VAL ?= spirv-val
 CLI_FAULT_FLAGS = -Wl,--wrap=write,--wrap=close,--wrap=link,--wrap=mkstemp,--wrap=malloc,--wrap=free,--wrap=doe_compiler_job_requirements,--wrap=doe_compiler_stage_requirements
 .PHONY: all test test-cli-modes test-uniform sanitize sanitize-cli sanitize-uniform clean
@@ -508,3 +508,11 @@ build/test_private_module: tests/test_private_module.c build/libdoe_compiler.so 
 	$(CC) $(CFLAGS) tests/test_private_module.c -Lbuild -ldoe_compiler -Wl,-rpath,'$$ORIGIN' -lm -o $@
 test-private-module: build/test_private_module
 	build/test_private_module
+
+.PHONY: test-module-specialization-vulkan
+$(CONSUMER_BUILD)/test_module_specialization_vulkan: tests/test_module_specialization_vulkan.c $(VULKAN_BUILD)/libdoe_vk.a $(VULKAN_CONSUMER_DEPS)
+	mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) -I../backends/vulkan/include $< $(VULKAN_BUILD)/libdoe_vk.a -ldl -o $@
+test-module-specialization-vulkan: require-software-vulkan $(CONSUMER_BUILD)/test_module_specialization_vulkan
+	@test -n "$(MODULE_SPECIALIZATION_SPIRV)" || { echo "Set MODULE_SPECIALIZATION_SPIRV to the fresh mixed-entry module" >&2; exit 1; }
+	VK_ICD_FILENAMES="$(abspath $(SOFTWARE_VULKAN_ICD))" $(CONSUMER_BUILD)/test_module_specialization_vulkan "$(MODULE_SPECIALIZATION_SPIRV)"
