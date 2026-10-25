@@ -72,6 +72,7 @@ static doe_mtl_status device_create(void *userdata, void **out,
     result.astc_texture_compression = mock->astc;
     result.astc_sliced_3d = mock->astc_sliced_3d;
     result.sample_count_mask = 31;
+    result.texture_swizzle = true;
     result.depth24_stencil8 = true;
     result.separate_depth_stencil = true;
     result.depth_resolve = true;

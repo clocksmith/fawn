@@ -378,3 +378,8 @@ checks and exact source hashes are in `DEVELOPER_RECEIPT_LIMITS.json`. Typed hos
 calls and both syntax branches are not Apple SDK or physical-device qualification.
 The property's official declaration is documented by Apple at
 https://developer.apple.com/documentation/metal/mtldevice/maxthreadgroupmemorylength?language=objc .
+
+Texture swizzle capability currently follows the published Apple2 or Mac2 family floor
+([Apple capabilities table](https://developer.apple.com/metal/capabilities/)).
+Nonidentity backend views reject without that capability; identity views remain
+valid. Host controls cover the capability and descriptor paths, not GPU pixels.

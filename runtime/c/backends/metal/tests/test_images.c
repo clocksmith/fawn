@@ -108,6 +108,13 @@ static void descriptor_validation(void) {
     assert(doe_mtl_texture_view_create(texture, &vd, &view, NULL) == DOE_MTL_RANGE);
     vd = view_desc(); vd.red = (doe_mtl_swizzle)-1;
     assert(doe_mtl_texture_view_create(texture, &vd, &view, NULL) == DOE_MTL_INVALID_ARGUMENT);
+    vd = view_desc(); vd.red = DOE_MTL_SWIZZLE_BLUE;
+    context->caps.texture_swizzle = false;
+    assert(doe_mtl_texture_view_create(texture, &vd, &view, NULL) == DOE_MTL_UNSUPPORTED);
+    vd = view_desc();
+    assert(doe_mtl_texture_view_create(texture, &vd, &view, NULL) == DOE_MTL_OK);
+    doe_mtl_texture_view_release(view);
+    context->caps.texture_swizzle = true;
     sd.max_lod = NAN;
     assert(doe_mtl_sampler_create(context, &sd, &sampler, NULL) == DOE_MTL_INVALID_ARGUMENT);
     sd = sampler_desc(); sd.min_filter = DOE_MTL_FILTER_NEAREST;

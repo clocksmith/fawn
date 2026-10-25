@@ -170,6 +170,9 @@ static doe_mtl_status view_validate(const doe_mtl_texture *texture,
     if ((unsigned)desc->red > DOE_MTL_SWIZZLE_ALPHA || (unsigned)desc->green > DOE_MTL_SWIZZLE_ALPHA ||
         (unsigned)desc->blue > DOE_MTL_SWIZZLE_ALPHA || (unsigned)desc->alpha > DOE_MTL_SWIZZLE_ALPHA)
         return DOE_MTL_INVALID_ARGUMENT;
+    if (!texture->context->caps.texture_swizzle &&
+        (desc->red != DOE_MTL_SWIZZLE_RED || desc->green != DOE_MTL_SWIZZLE_GREEN ||
+         desc->blue != DOE_MTL_SWIZZLE_BLUE || desc->alpha != DOE_MTL_SWIZZLE_ALPHA)) return DOE_MTL_UNSUPPORTED;
     if (!doe_mtl_format_compatible(parent->format, desc->format) ||
         (parent->format != desc->format && !parent->allow_format_views)) return DOE_MTL_UNSUPPORTED;
     if (parent->sample_count > 1) {

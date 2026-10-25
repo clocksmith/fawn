@@ -51,6 +51,7 @@ typedef struct doe_mtl_caps {
     char device_name[256];
     uint32_t max_texture_1d, max_texture_2d, max_texture_3d, max_texture_layers;
     bool bc_texture_compression;
+    bool texture_swizzle;
     bool etc2_texture_compression, astc_texture_compression, astc_sliced_3d;
     bool float32_filterable, float32_blendable, rg11b10_renderable;
     uint32_t sample_count_mask; /* Bit log2(count), native queried counts 1..16. */

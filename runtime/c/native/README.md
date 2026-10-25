@@ -96,7 +96,18 @@ canonical block rows; buffer transfers keep full block footprints while native
 edge extents use logical mip dimensions. Initialization and transfers share the
 existing command leases. The unchanged M3 `bc-compression` consumer exercises
 edge mips/copies, padded rows/layers, exact block sampling, large zero publication
-and sliced 3D; other compressed families remain uncomposed.
+and sliced 3D. ETC2/EAC and ASTC LDR now compose through native capability
+admission, named formats and independent block geometry; ASTC sliced 3D needs
+its additional enabled feature. Their 38 public format/copy host controls are
+not an extension of the retained physical BC evidence.
+
+Texture component swizzles use the same canonical chain/channel validator on
+Vulkan and Metal. Metal reports the feature on Apple2- or Mac2-family devices;
+nonidentity views preserve the shared storage-binding/attachment rejection at
+use. Fragment storage texture writes now use ordinary reflected stage slots,
+image initialization, attachment-alias validation and pending leases. Public
+Metal host-ledger tests exercise both additions, including early releases;
+physical rendering qualification remains separate.
 
 Metal's workgroup envelope follows the selected device dimensions and known GPU
 family total; each pipeline also checks its actual maxTotalThreadsPerThreadgroup.
@@ -550,8 +561,9 @@ writes whole blocks into a 2x2 mip (a 2x2 write rejects), reads one block throug
 unorm and srgb views, zero-initializes an 8192x8192x8 BC1 texture, and decodes a
 3D BC1 texture uploaded with rowsPerImage 2 per slice.
 A WGPUTextureComponentSwizzleDescriptor on a view maps each channel (Undefined is
-the channel's own); a non-identity swizzle needs texture-component-swizzle and a
-view usage without RenderAttachment or StorageBinding. `tests/component_swizzle.c`
+the channel's own); a non-identity swizzle needs texture-component-swizzle.
+Such a view rejects when used as a storage binding or attachment, not merely
+because its declared usage includes those bits. `tests/component_swizzle.c`
 reads (b,a,0,r) and (1,g,r,g) views through textureLoad and nearest sampling as
 exact rearrangements of the identity view.
 
@@ -1280,8 +1292,10 @@ slots. Shared public fixed/depth/interface admission is converted explicitly to
 Metal without synthetic Vulkan capabilities. Depth/stencil transfers consume
 resource-normalized aspect layouts, retaining forbidden depth uploads and opaque
 Plus-depth readback validation. Depth bias, unclipped depth and fragment
-depth/sample builtins retain shared validation and native per-draw state. Partial
-fixed sample masks reject explicitly.
+depth/sample builtins retain shared validation and native per-draw state. Fixed
+sample masks use compiler-owned fragment output lowering. A partial mask with
+no fragment stage still rejects: the explicit absent-fragment contract is not
+replaced by a synthetic fragment shader.
 Texture initialization, discard recovery and public submissions share the same
 backend aspect state and tagged pending owner. An initialization that becomes
 unknown does not publish a public texture and cannot drop its private allocation.
