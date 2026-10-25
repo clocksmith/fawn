@@ -114,7 +114,11 @@ function verify(report, app, runtime) {
   const stageManifest = JSON.parse(readFileSync(resolve(stage, 'MANIFEST.json'), 'utf8'));
   assert.equal(report.info.buildMetadataSource, 'c-package');
   assert.equal(report.info.buildMetadataPath, join(dirname(report.info.doeLibraryPath), 'doe-c-manifest.json'));
-  assert.equal(report.info.leanVerifiedBuild, null, 'the C manifest records no Lean-verified build');
+  // The stage manifest's lean_proof record (977122f33): no C build embeds or
+  // validates the proof artifact, so it is not a Lean-verified build.
+  assert.equal(report.info.leanVerifiedBuild, stageManifest.lean_proof.leanVerifiedBuild,
+    'providerInfo reports the manifest Lean record');
+  assert.equal(report.info.leanVerifiedBuild, false, 'the C manifest records no Lean-verified build');
   assert.equal(report.info.proofArtifactSha256, null, 'the C manifest records no proof artifact');
   assert.deepEqual(report.info.buildIdentity, {
     sourceCommit: stageManifest.source_commit,
