@@ -79,6 +79,13 @@ The same later receipt binds both public atomic consumers to actual M3 execution
 including the unchanged retained all-operations WGSL and its exact readback oracle.
 It does not establish atomic contention or forward-progress qualification.
 
+Metal exposes composed IndirectFirstInstance, DepthClipControl and
+Depth32FloatStencil8 paths in addition to calibrated TimestampQuery. Disabled
+optional features still reject through shared admission. The retained draw and
+format feature consumers exercise these paths on M3; the format consumer's other
+three optional features remain unoffered, not implicitly qualified. RG11B10Ufloat
+is admitted for core sampling independently of optional rendering.
+
 Metal's workgroup envelope follows the selected device dimensions and known GPU
 family total; each pipeline also checks its actual maxTotalThreadsPerThreadgroup.
 Default devices retain 256 invocations; requiredLimits can request higher reported
