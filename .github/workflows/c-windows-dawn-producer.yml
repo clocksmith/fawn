@@ -1,0 +1,67 @@
+name: c-windows-dawn-producer
+
+on:
+  workflow_dispatch:
+    inputs:
+      exact_revision:
+        description: Exact 40-character Doe revision for the pinned Dawn producer
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  dawn-producer:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.exact_revision }}
+          clean: true
+          persist-credentials: false
+      - name: Bind exact source and discover the real Windows SDK
+        shell: pwsh
+        env:
+          EXACT_REVISION: ${{ inputs.exact_revision }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if ($env:EXACT_REVISION -notmatch '^[0-9a-f]{40}$') { throw 'full lowercase commit required' }
+          if ((git rev-parse HEAD).Trim() -ne $env:EXACT_REVISION) { throw 'revision mismatch' }
+          if (git status --short) { throw 'source checkout is not clean' }
+          $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio/Installer/vswhere.exe'
+          $installation = (& $vswhere -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath).Trim()
+          if (!$installation) { throw 'actual Windows SDK developer toolchain unavailable' }
+          $devcmd = Join-Path $installation 'Common7/Tools/VsDevCmd.bat'
+          if (!(Test-Path $devcmd)) { throw 'developer environment missing' }
+          "DEVCMD=$devcmd" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+          "DAWN_OUT=$(Join-Path $env:RUNNER_TEMP 'doe-c-windows-dawn')" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+      - name: Build immutable official Dawn and verify ABI, host controls and relocation
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $script = Join-Path $env:GITHUB_WORKSPACE 'runtime/c/runtime-cli/tools/build_windows_dawn.py'
+          $command = 'call "' + $env:DEVCMD + '" -arch=x64 >nul && python "' + $script + '" --out "' + $env:DAWN_OUT + '"'
+          & cmd.exe /d /s /c $command 2>&1 | Tee-Object (Join-Path $env:RUNNER_TEMP 'doe-c-windows-dawn.log')
+          if ($LASTEXITCODE -ne 0) { throw "Dawn producer failed: $LASTEXITCODE" }
+          if (git status --short) { throw 'producer changed source checkout' }
+      - name: Retain exact producer evidence and redistributable products
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: c-windows-dawn-${{ inputs.exact_revision }}
+          if-no-files-found: error
+          path: |
+            ${{ runner.temp }}/doe-c-windows-dawn.log
+            ${{ runner.temp }}/doe-c-windows-dawn/dawn-producer.json
+            ${{ runner.temp }}/doe-c-windows-dawn/abi-*.txt
+            ${{ runner.temp }}/doe-c-windows-dawn/products/*.dll
+            ${{ runner.temp }}/doe-c-windows-dawn/products/*.lib
+            ${{ runner.temp }}/doe-c-windows-dawn/products/licenses/**
+            ${{ runner.temp }}/doe-c-windows-dawn/cli/cli-scope.json
+            ${{ runner.temp }}/doe-c-windows-dawn/cli/toolchain.txt
+            ${{ runner.temp }}/doe-c-windows-dawn/cli/*.exe
+            ${{ runner.temp }}/doe-c-windows-dawn/cli/*.dll
+            ${{ runner.temp }}/doe-c-windows-dawn/cli/cli-controls/**
+            ${{ runner.temp }}/doe-c-windows-dawn/relocation-controls/**

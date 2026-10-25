@@ -13,7 +13,7 @@ exclude GPU semantics, backend execution, quirk data and comparability policy.
 ## Scope
 Command streams and doe-plan-executor plans through `libwebgpu_doe_c` or
 `dawn-c-runtime`, including buffers, textures, compute, graphics, asynchronous
-diagnostics and real window-backed surfaces. Numeric stability retains explicit annotations,
+diagnostics and real window-backed surfaces. Compute and render timing uses real backend timestamp queries. Numeric stability retains explicit annotations,
 matmul, RMSNorm and attention capture, evaluation, routing and tensor rewrites.
 Explicit matching Dawn delegate lanes preserve textured triangles and real
 bundle/binding modes. Native proxy remains default.
@@ -39,7 +39,7 @@ runs are not GPU, performance or comparability evidence.
 ## Non-goals
 Unappliable quirks,
 custom render pipelines, multisampled
-textures, GPU timestamps or default CLI replacement.
+textures or default CLI replacement.
 
 ## Freedom
 Internal parsing, caching and encoding may vary.

@@ -35,11 +35,11 @@ def inventory(owner: Path, name: str) -> list[Path]:
     return [owner.joinpath(path).resolve() for path in paths]
 
 
-def invoke(command: list[str], directory: Path) -> None:
+def invoke(command: list[str], directory: Path, timeout: int = 180) -> None:
     print(subprocess.list2cmdline(command), flush=True)
     process = subprocess.Popen(command, cwd=directory)
     try:
-        result = process.wait(timeout=180)
+        result = process.wait(timeout=timeout)
     except subprocess.TimeoutExpired:
         subprocess.run(['taskkill', '/PID', str(process.pid), '/T', '/F'], check=False, timeout=15)
         process.wait(timeout=15)
@@ -55,7 +55,12 @@ def digest(path: Path) -> str:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--out', type=Path, required=True, help='fresh output outside checkout')
-    parser.add_argument('--native-dir', type=Path, required=True, help='actual native owner Windows builder output')
+    parser.add_argument('--provider', choices=['native', 'dawn'], default='native')
+    parser.add_argument('--native-dir', type=Path, help='actual native owner Windows builder output')
+    parser.add_argument('--dawn-dll', type=Path, help='actual Dawn shared WebGPU provider DLL')
+    parser.add_argument('--dawn-import', type=Path, help='matching actual Dawn MSVC import library')
+    parser.add_argument('--dawn-runtime', type=Path, action='append', default=[],
+                        help='explicit additional runtime DLL dependency; repeat as needed')
     parser.add_argument('--clang-cl', default='clang-cl')
     args = parser.parse_args()
     if os.name != 'nt':
@@ -66,19 +71,38 @@ def main() -> int:
     out = args.out.resolve()
     if out == REPO or REPO in out.parents or out.exists() and any(out.iterdir()):
         parser.error('out must be fresh or empty and outside checkout')
-    native = args.native_dir.resolve()
-    receipt = json.loads(native.joinpath('native-scope.json').read_text(encoding='utf-8'))
-    runtime_names = ['webgpu_doe_c.dll', 'doe_compiler.dll', 'dxcompiler.dll', 'dxil.dll']
-    expected = {'webgpu_doe_c.dll': receipt['native_dll_sha256'], **receipt['packaged_runtime_sha256']}
-    for name in runtime_names:
-        if digest(native / name) != expected[name]:
-            raise ValueError(f'producer runtime digest mismatch: {name}')
-    imports = native / 'webgpu_doe_c.lib'
+    native = None
+    producer_receipt = None
+    if args.provider == 'native':
+        if args.native_dir is None or args.dawn_dll or args.dawn_import or args.dawn_runtime:
+            parser.error('native provider requires only --native-dir')
+        native = args.native_dir.resolve()
+        producer_receipt = native / 'native-scope.json'
+        receipt = json.loads(producer_receipt.read_text(encoding='utf-8'))
+        runtime_names = ['webgpu_doe_c.dll', 'doe_compiler.dll', 'dxcompiler.dll', 'dxil.dll']
+        expected = {'webgpu_doe_c.dll': receipt['native_dll_sha256'], **receipt['packaged_runtime_sha256']}
+        runtime_files = [native / name for name in runtime_names]
+        for path in runtime_files:
+            if digest(path) != expected[path.name]:
+                raise ValueError(f'producer runtime digest mismatch: {path.name}')
+        imports = native / 'webgpu_doe_c.lib'
+    else:
+        if args.native_dir or args.dawn_dll is None or args.dawn_import is None:
+            parser.error('Dawn provider requires --dawn-dll and --dawn-import, not --native-dir')
+        imports = args.dawn_import.resolve()
+        runtime_files = [args.dawn_dll.resolve(), *(path.resolve() for path in args.dawn_runtime)]
+        runtime_names = [path.name for path in runtime_files]
+        if len({name.casefold() for name in runtime_names}) != len(runtime_names):
+            parser.error('Dawn runtime DLL basenames must be unique')
+        if any(path.suffix.lower() != '.dll' or not path.is_file() for path in runtime_files):
+            parser.error('Dawn runtime inputs must be explicit existing DLL files')
+        if imports.suffix.lower() != '.lib':
+            parser.error('Dawn requires an actual MSVC import library')
     if not imports.is_file():
-        parser.error('native owner import library is required')
+        parser.error('provider import library is required')
     out.mkdir(parents=True, exist_ok=True)
-    for name in runtime_names:
-        shutil.copy2(native / name, out / name)
+    for path in runtime_files:
+        shutil.copy2(path, out / path.name)
     version = subprocess.run([compiler, '--version'], capture_output=True, text=True, check=True, timeout=30)
     out.joinpath('toolchain.txt').write_text(version.stdout + version.stderr, encoding='utf-8')
     toggles = out / 'quirk_toggles.c'
@@ -89,6 +113,13 @@ def main() -> int:
              '/clang:-std=c11', '/clang:-Wall', '/clang:-Wextra', '/clang:-Wpedantic',
              '/I' + str(ROOT / 'src'), '/I' + str(MODULES / 'src'), '/I' + str(C_ROOT / 'native/include'),
              '/I' + str(REPO / 'runtime/zig/vendor/webgpu-headers')]
+    provider_header = None
+    if args.provider == 'dawn':
+        provider_header = out / 'provider_identity.h'
+        provider_header.write_text('#define DOE_RUNTIME_DAWN 1\n'
+                                   '#define DOE_RUNTIME_MODULE "dawn-c-runtime"\n'
+                                   '#define DOE_RUNTIME_BACKEND_ID "dawn_direct_d3d12"\n', encoding='utf-8')
+        flags += ['/FI' + str(provider_header)]
     core = inventory(ROOT, 'CLI_CORE') + [toggles]
     runtime = inventory(ROOT, 'CLI_RUNTIME') + [ROOT / 'src/surface_windows.c']
     modules = inventory(MODULES, 'MODULE_SOURCES') + [toggles]
@@ -112,7 +143,7 @@ def main() -> int:
                 '/Fe' + str(executable), '/link', '/stack:8388608', *libraries], out)
         return executable
 
-    cli = build('doe-c-runtime', [ROOT / 'src/main.c', startup, *core, *runtime],
+    cli = build('dawn-c-runtime' if args.provider == 'dawn' else 'doe-c-runtime', [ROOT / 'src/main.c', startup, *core, *runtime],
                 [str(imports), 'kernel32.lib', 'user32.lib'])
     module = build('doe-c-module-runner', [*modules, startup], ['kernel32.lib'])
     for name, arguments in [('host_io', []), ('json', []), ('stream', [str(REPO / 'examples')]),
@@ -123,7 +154,7 @@ def main() -> int:
     invoke([sys.executable, str(MODULES / 'tests/test_modules.py'), '--binary', str(module),
             '--work', str(out / 'module-controls')], out)
     invoke([sys.executable, str(ROOT / 'tests/test_windows_cli.py'), '--binary', str(cli),
-            '--work', str(out / 'cli-controls')], out)
+            '--work', str(out / 'cli-controls'), '--provider', args.provider], out)
     inputs = [*source_objects, ROOT / 'sources.mk', MODULES / 'sources.mk', Path(__file__).resolve(),
               ROOT / 'tests/test_windows_cli.py', ROOT / 'tests/normalized_retained.json',
               MODULES / 'tests/test_modules.py', MODULES / 'tests/cases.py', MODULES / 'tests/retained.json',
@@ -136,8 +167,11 @@ def main() -> int:
         'vc_tools_version': os.environ.get('VCToolsVersion'),
         'compiler_version_output': version.stdout + version.stderr,
         'input_sha256': {path.relative_to(REPO).as_posix(): digest(path) for path in inputs if path != toggles},
-        'generated_toggle_sha256': digest(toggles), 'native_import_sha256': digest(imports),
-        'native_receipt_sha256': digest(native / 'native-scope.json'),
+        'generated_toggle_sha256': digest(toggles), 'provider': args.provider,
+        'provider_import_sha256': digest(imports),
+        'provider_identity_sha256': digest(provider_header) if provider_header else None,
+        'native_import_sha256': digest(imports) if native else None,
+        'native_receipt_sha256': digest(producer_receipt) if producer_receipt else None,
         'runtime_sha256': {name: digest(out / name) for name in runtime_names},
         'executable_sha256': {path.name: digest(path) for path in [cli, module]},
         'scope': 'Actual Windows SDK CLI/module build and host controls. No adapter, device, surface, GPU, performance or production qualification.'
