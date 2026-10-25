@@ -290,24 +290,12 @@ function currentAddon() {
 }
 
 function resolveDoeLibraryPath() {
-  const workspaceLibraryNames = cLibraryBasenamesForPlatform();
-  const packagedLibraryPath = resolvePlatformPackageLibraryPath({
-    requireFn: require,
-    workspaceRoot: WORKSPACE_ROOT,
-  });
-
   // Absolute, so the library checked here is the one the loader opens: dlopen
   // would search the system library path for a bare name instead of cwd.
   const configuredCandidates = [
     process.env.DOE_WEBGPU_LIB,
     process.env.DOE_LIB,
   ].map((path) => (path ? resolve(path) : path));
-  const workspaceCandidates = cWorkspaceLibraryCandidates(WORKSPACE_ROOT);
-  const packagedCandidates = [
-    packagedLibraryPath,
-    ...workspaceLibraryNames.map((name) => resolve(PACKAGE_ROOT, 'prebuilds', `${process.platform}-${process.arch}`, name)),
-  ];
-  const cwdCandidates = cWorkspaceLibraryCandidates(process.cwd());
   // An explicit provider override is that provider or nothing: a missing file
   // never falls through to another library, which would misattribute every
   // result to a provider the caller did not select.
@@ -317,6 +305,18 @@ function resolveDoeLibraryPath() {
     doeLibraryOverrideMissing = configured;
     return null;
   }
+  const workspaceLibraryNames = cLibraryBasenamesForPlatform();
+  const packagedLibraryPath = resolvePlatformPackageLibraryPath({
+    requireFn: require,
+    workspaceRoot: WORKSPACE_ROOT,
+  });
+
+  const workspaceCandidates = cWorkspaceLibraryCandidates(WORKSPACE_ROOT);
+  const packagedCandidates = [
+    packagedLibraryPath,
+    ...workspaceLibraryNames.map((name) => resolve(PACKAGE_ROOT, 'prebuilds', `${process.platform}-${process.arch}`, name)),
+  ];
+  const cwdCandidates = cWorkspaceLibraryCandidates(process.cwd());
   const candidates = [
     ...(isInstalledPackageRoot(PACKAGE_ROOT)
       ? [...packagedCandidates, ...workspaceCandidates]
