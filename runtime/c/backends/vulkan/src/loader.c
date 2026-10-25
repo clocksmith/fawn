@@ -271,6 +271,9 @@ static void record_caps(doe_vk_context *context, const doe_vk_options *options,
     context->caps.full_draw_index_uint32 = features->base.fullDrawIndexUint32 != 0;
     context->caps.image_cube_array = features->base.imageCubeArray != 0;
     context->caps.independent_blend = features->base.independentBlend != 0;
+    context->caps.shader_clip_distance = features->base.shaderClipDistance != 0;
+    context->caps.geometry_shader = features->base.geometryShader != 0;
+    context->caps.dual_source_blend = features->base.dualSrcBlend != 0;
     context->caps.sampler_anisotropy = features->base.samplerAnisotropy != 0;
     context->caps.storage_image_extended_formats = features->base.shaderStorageImageExtendedFormats != 0;
     context->caps.fragment_stores_and_atomics = features->base.fragmentStoresAndAtomics != 0;

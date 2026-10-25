@@ -57,7 +57,7 @@ typedef struct {
     uint32_t *values;
     uint32_t local_base, local_start, local_pointers[4][IR_PRIMITIVE_COUNT], math_import;
     uint32_t barrier_semantics, subgroup_capabilities, image_capabilities;
-    bool sample_rate_shading, demote_to_helper, derivative_control;
+    bool sample_rate_shading, demote_to_helper, derivative_control, clip_distance, primitive_id;
     size_t function_end;
     uint32_t constants_used;
     bool failed;

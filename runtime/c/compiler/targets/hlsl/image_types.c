@@ -41,7 +41,7 @@ void hlsl_handle_type(HlslEmitter *e, TypeId type) {
         return;
     }
     if (t->kind != TYPE_TEXTURE || t->element < IR_I32 || t->element > IR_F32 ||
-        (image.flags & ~(uint32_t)(DOE_COMPILER_HANDLE_DEPTH | DOE_COMPILER_HANDLE_MULTISAMPLED)) != 0u) {
+        (image.flags & ~(uint32_t)(DOE_COMPILER_HANDLE_DEPTH | DOE_COMPILER_HANDLE_MULTISAMPLED | DOE_COMPILER_HANDLE_EXTERNAL)) != 0u) {
         hlsl_error(e, "HLSL texture type or scalar is unsupported");
         return;
     }

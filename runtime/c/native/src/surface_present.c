@@ -88,6 +88,10 @@ void wgpuSurfaceGetCurrentTexture(WGPUSurface handle, WGPUSurfaceTexture *out)
     out->texture = NULL;
     out->status = WGPUSurfaceGetCurrentTextureStatus_Error;
     if (!surface || out->nextInChain) return;
+    if (surface->source.platform == NATIVE_SURFACE_WINDOWS_HWND) {
+        native_d3d12_surface_acquire(surface, out);
+        return;
+    }
     if (surface->source.platform == NATIVE_SURFACE_METAL_LAYER) {
         native_metal_surface_acquire(surface, out);
         return;
@@ -160,6 +164,8 @@ WGPUStatus wgpuSurfacePresent(WGPUSurface handle)
 {
     native_surface *surface = (native_surface *)handle;
     if (!surface) return WGPUStatus_Error;
+    if (surface->source.platform == NATIVE_SURFACE_WINDOWS_HWND)
+        return native_d3d12_surface_present(surface);
     if (surface->source.platform == NATIVE_SURFACE_METAL_LAYER)
         return native_metal_surface_present(surface);
     if (doe_mutex_lock(&surface->mutex).status != DOE_HOST_OK) abort();

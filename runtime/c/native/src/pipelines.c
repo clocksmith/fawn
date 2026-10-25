@@ -58,6 +58,8 @@ bool native_shader_capabilities(const doe_shader_view *view, const doe_vk_caps *
             uint32_t capability = view->words[at + 1];
             if (capability != 0 && capability != 1 && capability != 43 && capability != 44 && capability != 50 && capability != 51 &&
                 !((capability == 9 || capability == 4433 || capability == 4434) && caps->shader_f16) &&
+                !(capability == 2 && caps->geometry_shader) &&
+                !(capability == 32 && caps->shader_clip_distance) &&
                 !(capability == 4435 && caps->storage_push_constant16) &&
                 !(capability == 4441 && caps->variable_pointers_storage) &&
                 !(capability == 4442 && caps->variable_pointers) &&
@@ -181,7 +183,7 @@ static WGPUComputePipeline create_compute_pipeline(native_device *device,
             else {
                 doe_vk_error detail = {0};
                 doe_vk_status status = doe_vk_pipeline_create_with_immediates(device->backend.value.vulkan.context,
-                    view->words, view->counts.words, stage.name, native_bindings, payload->binding_count, required_subgroup(&device->backend, entry), payload->immediate_bytes,
+                    view->words, view->counts.words, stage.name, native_bindings, payload->binding_count, stage.imported ? 0 : required_subgroup(&device->backend, entry), payload->immediate_bytes,
                     &payload->handle.vulkan, &detail);
                 backend_failure = native_failure_vulkan(status, &detail);
             }

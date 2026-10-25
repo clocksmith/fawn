@@ -16,6 +16,7 @@ static void release_shader(void *userdata, void *handle)
     (void)userdata;
     native_shader *payload = handle;
     doe_shader_release(payload->module);
+    native_shader_import_dispose(&payload->imported);
     free(payload);
 }
 
@@ -24,19 +25,23 @@ uint32_t native_shader_semantic_flags(void)
     /* Raw uniform lowering supplies natural WGSL layout on every composed
      * target without requiring a backend layout extension. This exact policy
      * also owns language-feature reporting; standalone defaults stay conservative. */
-    return DOE_COMPILER_CORE_BINDING_NUMBERS | DOE_COMPILER_UNIFORM_BUFFER_STANDARD_LAYOUT | DOE_COMPILER_DISABLE_F16 | DOE_COMPILER_DISABLE_SUBGROUPS;
+    return DOE_COMPILER_CORE_BINDING_NUMBERS | DOE_COMPILER_UNIFORM_BUFFER_STANDARD_LAYOUT | DOE_COMPILER_DISABLE_F16 | DOE_COMPILER_DISABLE_SUBGROUPS |
+        DOE_COMPILER_DISABLE_CLIP_DISTANCES | DOE_COMPILER_DISABLE_PRIMITIVE_INDEX |
+        DOE_COMPILER_DISABLE_DUAL_SOURCE_BLENDING;
 }
 
-static doe_shader_options shader_options(doe_shader_target target)
+static doe_shader_options shader_options(doe_shader_target target, size_t source_size)
 {
-    /* Capacity is explicit and compiler-owned. Exhaustion fails visibly without
-     * growing pools or retrying through another compiler. */
+    /* Source storage follows the supplied span within the compiler's uint32
+     * representation. Semantic pools stay explicitly bounded: whitespace or
+     * comments do not create an unrelated 64-KiB source cutoff. Exhaustion fails
+     * visibly without retrying through another compiler. */
     static const char identity[] = "experimental-c-native-no-cache";
     doe_shader_options options = {
         .target=target,.semantic_flags=native_shader_semantic_flags(),
         .allocator = {NULL, shader_allocate, shader_deallocate},
         .capacities = {
-            .typed = {.source_bytes=65536, .tokens=8192, .statements=2048, .expressions=8192,
+            .typed = {.source_bytes=source_size > 65536 ? source_size : 65536, .tokens=8192, .statements=2048, .expressions=8192,
                 .types=512, .members=1024, .resources=128, .access_steps=8192,
                 .constants=1024, .constant_edges=4096, .ir_instructions=32768,
                 .ir_operands=32768, .target_declarations=4096, .traversal_items=193,
@@ -52,7 +57,7 @@ static doe_shader_options shader_options(doe_shader_target target)
 doe_shader_status native_compile_shader_target(doe_shader_target target, const char *source, size_t size,
     doe_shader **out, doe_shader_error *error)
 {
-    const doe_shader_options options = shader_options(target);
+    const doe_shader_options options = shader_options(target, size);
     return doe_shader_create(&options, source, size, out, error);
 }
 
@@ -65,7 +70,7 @@ doe_shader_status native_check_shader_module(doe_shader_target target, const cha
     doe_shader_error *error)
 {
     /* The same whole-module validation and emission createShaderModule runs. */
-    const doe_shader_options options = shader_options(target);
+    const doe_shader_options options = shader_options(target, size);
     doe_shader *module = NULL;
     doe_shader_status status = doe_shader_create_module(&options,options.capacities.typed.expressions,
         source,size,&module,error);
@@ -73,33 +78,9 @@ doe_shader_status native_check_shader_module(doe_shader_target target, const cha
     return status;
 }
 
-static WGPUShaderModule create_shader_module(native_device *device, const WGPUShaderModuleDescriptor *descriptor)
+static WGPUShaderModule publish_shader(native_device *device,const WGPUShaderModuleDescriptor *descriptor,
+    native_shader *payload,doe_shader_status status)
 {
-    if (!descriptor || !descriptor->nextInChain || descriptor->nextInChain->next ||
-        descriptor->nextInChain->sType != WGPUSType_ShaderSourceWGSL) {
-        native_error(device, WGPUErrorType_Validation, "only a single WGSL shader source is supported");
-        return NULL;
-    }
-    const WGPUShaderSourceWGSL *source = (const WGPUShaderSourceWGSL *)descriptor->nextInChain;
-    size_t size;
-    if (!native_string_size(source->code, &size) || size > 65536) {
-        native_error(device, WGPUErrorType_Validation, "WGSL source exceeds admitted capacity");
-        return NULL;
-    }
-    native_shader *payload = calloc(1, sizeof(*payload));
-    if (!payload) {
-        native_error(device, WGPUErrorType_OutOfMemory, "shader payload allocation failed");
-        return NULL;
-    }
-    doe_shader_target target = device->backend.kind == WGPUBackendType_Metal ? DOE_SHADER_METAL :
-        device->backend.kind == WGPUBackendType_D3D12 ? DOE_SHADER_HLSL : DOE_SHADER_SPIRV;
-    doe_shader_options options = shader_options(target);
-    if (native_feature_enabled(device, WGPUFeatureName_ShaderF16))
-        options.semantic_flags &= ~DOE_COMPILER_DISABLE_F16;
-    if (native_feature_enabled(device, WGPUFeatureName_Subgroups))
-        options.semantic_flags &= ~DOE_COMPILER_DISABLE_SUBGROUPS;
-    doe_shader_status status = doe_shader_create_module(&options,options.capacities.typed.expressions,
-        source->code.data,size,&payload->module,&payload->error);
     if (status != DOE_SHADER_OK && !payload->error.diagnostic.message[0])
         memcpy(payload->error.diagnostic.message, "C shader validation failed", sizeof("C shader validation failed"));
     doe_resource_shader *shader = NULL;
@@ -118,6 +99,56 @@ static WGPUShaderModule create_shader_module(native_device *device, const WGPUSh
     }
     return (WGPUShaderModule)shader;
 }
+static WGPUShaderModule create_shader_module(native_device *device, const WGPUShaderModuleDescriptor *descriptor)
+{
+    if (!descriptor || !descriptor->nextInChain || descriptor->nextInChain->next) {
+        native_error(device,WGPUErrorType_Validation,"shader module requires one source chain");
+        return NULL;
+    }
+    const WGPUSType kind=descriptor->nextInChain->sType;
+    if (kind != WGPUSType_ShaderSourceWGSL) {
+        if (kind != WGPUSType_ShaderSourceSPIRV && kind != DOE_NATIVE_STYPE_SHADER_SOURCE_MSL &&
+            kind != DOE_NATIVE_STYPE_SHADER_SOURCE_HLSL) {
+            native_error(device,WGPUErrorType_Validation,"unsupported shader source chain");
+            return NULL;
+        }
+        native_shader *payload=calloc(1,sizeof(*payload));
+        if (!payload) {
+            native_error(device,WGPUErrorType_OutOfMemory,"shader payload allocation failed");
+            return NULL;
+        }
+        doe_shader_status status=native_shader_import_create(device,descriptor->nextInChain,&payload->imported,&payload->error);
+        return publish_shader(device,descriptor,payload,status);
+    }
+    const WGPUShaderSourceWGSL *source = (const WGPUShaderSourceWGSL *)descriptor->nextInChain;
+    size_t size;
+    if (!native_string_size(source->code, &size) || size >= UINT32_MAX) {
+        native_error(device, WGPUErrorType_Validation, "WGSL source exceeds compiler address representation");
+        return NULL;
+    }
+    native_shader *payload = calloc(1, sizeof(*payload));
+    if (!payload) {
+        native_error(device, WGPUErrorType_OutOfMemory, "shader payload allocation failed");
+        return NULL;
+    }
+    doe_shader_target target = device->backend.kind == WGPUBackendType_Metal ? DOE_SHADER_METAL :
+        device->backend.kind == WGPUBackendType_D3D12 ? DOE_SHADER_HLSL : DOE_SHADER_SPIRV;
+    doe_shader_options options = shader_options(target, size);
+    if (native_feature_enabled(device, WGPUFeatureName_ShaderF16))
+        options.semantic_flags &= ~DOE_COMPILER_DISABLE_F16;
+    if (native_feature_enabled(device, WGPUFeatureName_Subgroups))
+        options.semantic_flags &= ~DOE_COMPILER_DISABLE_SUBGROUPS;
+    if (native_feature_enabled(device, WGPUFeatureName_ClipDistances))
+        options.semantic_flags &= ~DOE_COMPILER_DISABLE_CLIP_DISTANCES;
+    if (native_feature_enabled(device, WGPUFeatureName_PrimitiveIndex))
+        options.semantic_flags &= ~DOE_COMPILER_DISABLE_PRIMITIVE_INDEX;
+    if (native_feature_enabled(device, WGPUFeatureName_DualSourceBlending))
+        options.semantic_flags &= ~DOE_COMPILER_DISABLE_DUAL_SOURCE_BLENDING;
+    doe_shader_status status = doe_shader_create_module(&options,options.capacities.typed.expressions,
+        source->code.data,size,&payload->module,&payload->error);
+    return publish_shader(device,descriptor,payload,status);
+}
+
 WGPUShaderModule wgpuDeviceCreateShaderModule(WGPUDevice handle, const WGPUShaderModuleDescriptor *descriptor)
 {
     native_device *device = (native_device *)handle;

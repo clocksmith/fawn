@@ -42,6 +42,8 @@ struct doe_dx_native_timestamps { ID3D12QueryHeap *heap; D3D12_QUERY_TYPE kind; 
 typedef struct doe_dx_windows_render_layout {
     uint32_t immediate_root[DOE_DX_RENDER_STAGES],storage_sizes_root[DOE_DX_RENDER_STAGES];
     bool stencil_test;
+    uint32_t draw_offsets_root;
+    ID3D12CommandSignature *draw_signature, *draw_indexed_signature;
     D3D_PRIMITIVE_TOPOLOGY topology;
     doe_dx_binding_plan stages[DOE_DX_RENDER_STAGES];
     uint32_t resource_table[DOE_DX_RENDER_STAGES],sampler_table[DOE_DX_RENDER_STAGES];

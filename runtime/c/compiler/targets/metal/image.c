@@ -43,12 +43,12 @@ static bool decode(MetalEmitter *e, const IrInstruction *ir, MetalImage *image) 
     }
     uint32_t expected = 1u;
     switch (image->operation) {
-        case IMAGE_LOAD: expected = 2u + (image->arrayed ? 1u : 0u) + (image->storage ? 0u : 1u); break;
+        case IMAGE_LOAD: expected = 2u + (image->arrayed ? 1u : 0u) + ((image->storage || (image->type->state.image.flags & DOE_COMPILER_HANDLE_EXTERNAL)) ? 0u : 1u); break;
         case IMAGE_STORE: expected = 3u + (image->arrayed ? 1u : 0u); break;
         case IMAGE_DIMENSIONS: expected = !image->storage && !image->multisampled && count == 2u ? 2u : 1u; break;
         case IMAGE_LEVELS: case IMAGE_LAYERS: case IMAGE_SAMPLES: break;
         case IMAGE_GATHER: case IMAGE_GATHER_COMPARE:
-        case IMAGE_SAMPLE_GRAD: case IMAGE_SAMPLE_BIAS:
+        case IMAGE_SAMPLE_BASE_CLAMP: case IMAGE_SAMPLE_GRAD: case IMAGE_SAMPLE_BIAS:
         case IMAGE_SAMPLE: case IMAGE_SAMPLE_COMPARE: case IMAGE_SAMPLE_LEVEL: case IMAGE_SAMPLE_COMPARE_LEVEL:
             expected = image_sample_arity(shape, image->operation);
             if (image_offset_width(shape, image->operation) != 0u && count == expected + 1u) ++expected;
@@ -95,7 +95,7 @@ static bool decode(MetalEmitter *e, const IrInstruction *ir, MetalImage *image) 
         if (image->arrayed) image->layer = args[2];
         if (image->operation == IMAGE_STORE) image->data = args[count - 1u];
         else if (image->multisampled) image->sample = args[count - 1u];
-        else if (!image->storage) image->level = args[count - 1u];
+        else if (!image->storage && !(image->type->state.image.flags & DOE_COMPILER_HANDLE_EXTERNAL)) image->level = args[count - 1u];
     } else if (image->operation == IMAGE_DIMENSIONS && count == 2u) image->level = args[1];
     else if (image_sampling(image->operation)) {
         image->sampler = args[1];
@@ -112,7 +112,7 @@ static bool decode(MetalEmitter *e, const IrInstruction *ir, MetalImage *image) 
             image->gradient_y = args[last + 1u];
         } else if (image->operation == IMAGE_SAMPLE_BIAS) image->bias = args[last];
         else if (image_comparison(image->operation)) image->reference = args[last];
-        else if (!image_implicit(image->operation)) image->level = args[last];
+        else if (!image_implicit(image->operation) && image->operation!=IMAGE_SAMPLE_BASE_CLAMP) image->level = args[last];
         const uint32_t arity = image_sample_arity(shape, image->operation);
         if (count == arity + 1u) image->offset = args[arity];
         const TypeId sampler = metal_value_type(e, image->sampler);
@@ -231,6 +231,7 @@ static void texel(MetalEmitter *e, const IrInstruction *ir, const MetalImage *im
     metal_line(e, "}");
 }
 static void sample_level(MetalEmitter *e, const IrInstruction *ir, const MetalImage *image) {
+    if (image->operation==IMAGE_SAMPLE_BASE_CLAMP) dimensions(e,image);
     if (image->arrayed) {
         metal_line(e, "if (image_layers != 0u) {");
         ++e->indent;
@@ -251,7 +252,10 @@ static void sample_level(MetalEmitter *e, const IrInstruction *ir, const MetalIm
         image->reference != NO_ID ? ".sample_compare(" : ".sample(");
     metal_value(e, image->sampler);
     metal_text(e, ", ");
+    if (image->operation==IMAGE_SAMPLE_BASE_CLAMP) metal_text(e,"clamp(");
     metal_value(e, image->coordinates);
+    if (image->operation==IMAGE_SAMPLE_BASE_CLAMP)
+        metal_text(e,", 0.5f / float2(image_x,image_y), 1.0f - 0.5f / float2(image_x,image_y))");
     if (image->arrayed) metal_text(e, ", image_layer");
     /* WebGPU 1D views have one level. MSL has no 1D LOD sample overload;
      * the supplied LOD has already evaluated, and the sole level is selected. */
@@ -271,7 +275,7 @@ static void sample_level(MetalEmitter *e, const IrInstruction *ir, const MetalIm
         metal_text(e, ", -16.0f, 15.99f))");
     } else if (image->operation != IMAGE_GATHER && image->operation != IMAGE_GATHER_COMPARE &&
         !image->one_dimensional && !image_implicit(image->operation)) {
-        if (image->reference != NO_ID) metal_text(e, ", level(0.0f)");
+        if (image->reference != NO_ID || image->operation==IMAGE_SAMPLE_BASE_CLAMP) metal_text(e, ", level(0.0f)");
         else {
             metal_text(e, ", level(float(");
             metal_value(e, image->level);
@@ -331,7 +335,7 @@ void metal_image(MetalEmitter *e, const IrInstruction *ir) {
     switch (image.operation) {
         case IMAGE_LOAD: case IMAGE_STORE: texel(e, ir, &image); break;
         case IMAGE_GATHER: case IMAGE_GATHER_COMPARE:
-        case IMAGE_SAMPLE_GRAD: case IMAGE_SAMPLE_BIAS:
+        case IMAGE_SAMPLE_BASE_CLAMP: case IMAGE_SAMPLE_GRAD: case IMAGE_SAMPLE_BIAS:
         case IMAGE_SAMPLE: case IMAGE_SAMPLE_COMPARE: case IMAGE_SAMPLE_LEVEL: case IMAGE_SAMPLE_COMPARE_LEVEL: sample_level(e, ir, &image); break;
         case IMAGE_DIMENSIONS:
             dimensions(e, &image);

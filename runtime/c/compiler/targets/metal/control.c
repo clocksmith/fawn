@@ -123,7 +123,10 @@ void metal_block(MetalEmitter *e, uint32_t *cursor, unsigned depth, uint32_t loo
             metal_access(e, ir);
             continue;
         }
-        if (ir->opcode == IR_ADDRESS) { metal_address(e, ir); continue; }
+        if (ir->opcode == IR_ADDRESS) {
+            if (ir->operands.access.category == ROOT_LOCAL || ir->operands.access.category == ROOT_POINTER) metal_address(e, ir);
+            continue;
+        }
         if (ir->opcode == IR_HANDLE) {
             metal_handle(e, ir);
             continue;

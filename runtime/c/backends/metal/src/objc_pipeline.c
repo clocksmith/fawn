@@ -1,34 +1,51 @@
 /* SPDX-License-Identifier: MIT */
 #include "objc_abi.h"
 
+/* One constructor owns source encoding, native errors and library creation.
+ * Both early native-module validation and actual stage compilation use it. */
+static doe_mtl_status library_create(doe_mtl_objc *runtime, void *device,
+    const char *msl, size_t length, void **out, doe_mtl_error *error) {
+    void *source=doe_mtl_objc_string(runtime,msl,length), *native_error=NULL;
+    if (!source) return doe_mtl_fail(DOE_MTL_INVALID_ARGUMENT,"MSL UTF-8 encoding",error);
+    void *library=runtime->library_call(device,runtime->new_library,source,NULL,&native_error);
+    doe_mtl_objc_void(runtime,source,runtime->release);
+    if (!library) return doe_mtl_objc_error(runtime,native_error,"newLibraryWithSource:options:error:",error);
+    *out=library;
+    return DOE_MTL_OK;
+}
+
+doe_mtl_status doe_mtl_objc_shader_validate(void *userdata, void *device,
+    const char *source, size_t length, doe_mtl_error *error) {
+    doe_mtl_objc *runtime=userdata;
+    void *pool=doe_mtl_objc_pool(runtime), *library=NULL;
+    if (!pool) return doe_mtl_fail(DOE_MTL_NATIVE_FAILURE,"autorelease pool",error);
+    doe_mtl_status status=library_create(runtime,device,source,length,&library,error);
+    if (library) doe_mtl_objc_void(runtime,library,runtime->release);
+    doe_mtl_objc_drain(runtime,pool);
+    return status;
+}
+
 /* Caller owns an autorelease pool. The function owns +1 on success; strings and
  * temporary library ownership never escape this shared stage constructor. */
 doe_mtl_status doe_mtl_objc_function(doe_mtl_objc *runtime, void *device,
     const char *msl, size_t length, const char *entrypoint, void **out, doe_mtl_error *error) {
-    void *source = NULL, *name = NULL, *library = NULL, *function = NULL, *native_error = NULL;
-    doe_mtl_status status;
-    source = doe_mtl_objc_string(runtime, msl, length);
-    name = doe_mtl_objc_string(runtime, entrypoint, strlen(entrypoint));
-    if (source == NULL || name == NULL) {
-        status = doe_mtl_fail(DOE_MTL_INVALID_ARGUMENT, "MSL UTF-8 encoding", error);
+    void *name=NULL, *library=NULL, *function=NULL;
+    doe_mtl_status status=library_create(runtime,device,msl,length,&library,error);
+    if (status!=DOE_MTL_OK) return status;
+    name=doe_mtl_objc_string(runtime,entrypoint,strlen(entrypoint));
+    if (!name) {
+        status=doe_mtl_fail(DOE_MTL_INVALID_ARGUMENT,"MSL entry UTF-8 encoding",error);
         goto cleanup;
     }
-    library = runtime->library_call(device, runtime->new_library, source, NULL, &native_error);
-    if (library == NULL) {
-        status = doe_mtl_objc_error(runtime, native_error, "newLibraryWithSource:options:error:", error);
+    function=runtime->named_call(library,runtime->new_function,name);
+    if (!function) {
+        status=doe_mtl_fail(DOE_MTL_NATIVE_FAILURE,"newFunctionWithName:",error);
         goto cleanup;
     }
-    function = runtime->named_call(library, runtime->new_function, name);
-    if (function == NULL) {
-        status = doe_mtl_fail(DOE_MTL_NATIVE_FAILURE, "newFunctionWithName:", error);
-        goto cleanup;
-    }
-    *out = function;
-    status = DOE_MTL_OK;
+    *out=function;
 cleanup:
-    if (library != NULL) doe_mtl_objc_void(runtime, library, runtime->release);
-    if (name != NULL) doe_mtl_objc_void(runtime, name, runtime->release);
-    if (source != NULL) doe_mtl_objc_void(runtime, source, runtime->release);
+    if (library) doe_mtl_objc_void(runtime,library,runtime->release);
+    if (name) doe_mtl_objc_void(runtime,name,runtime->release);
     return status;
 }
 

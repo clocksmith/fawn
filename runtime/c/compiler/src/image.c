@@ -14,7 +14,7 @@ bool image_arrayed(uint32_t dimension) {
     return dimension == DOE_COMPILER_VIEW_2D_ARRAY || dimension == DOE_COMPILER_VIEW_CUBE_ARRAY;
 }
 bool image_sampling(ImageOperation operation) {
-    return operation == IMAGE_SAMPLE_LEVEL || operation == IMAGE_SAMPLE_COMPARE_LEVEL ||
+    return operation == IMAGE_SAMPLE_BASE_CLAMP || operation == IMAGE_SAMPLE_LEVEL || operation == IMAGE_SAMPLE_COMPARE_LEVEL ||
         operation == IMAGE_SAMPLE || operation == IMAGE_SAMPLE_COMPARE ||
         operation == IMAGE_SAMPLE_GRAD || operation == IMAGE_SAMPLE_BIAS ||
         operation == IMAGE_GATHER || operation == IMAGE_GATHER_COMPARE;
@@ -26,10 +26,11 @@ bool image_implicit(ImageOperation operation) {
     return operation == IMAGE_SAMPLE || operation == IMAGE_SAMPLE_COMPARE || operation == IMAGE_SAMPLE_BIAS;
 }
 uint32_t image_sample_arity(ImageType image,ImageOperation operation) {
+    if (operation==IMAGE_SAMPLE_BASE_CLAMP) return 3u;
     return 3u + (image_arrayed(image.dimension) ? 1u : 0u) + (operation == IMAGE_SAMPLE ? 0u : operation == IMAGE_SAMPLE_GRAD ? 2u : 1u);
 }
 uint32_t image_offset_width(ImageType image,ImageOperation operation) {
-    if (!image_sampling(operation)) return 0u;
+    if (!image_sampling(operation) || operation==IMAGE_SAMPLE_BASE_CLAMP) return 0u;
     if (image.dimension == DOE_COMPILER_VIEW_2D || image.dimension == DOE_COMPILER_VIEW_2D_ARRAY) return 2u;
     return !image_comparison(operation) && image.dimension == DOE_COMPILER_VIEW_3D ? 3u : 0u;
 }

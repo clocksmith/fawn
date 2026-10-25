@@ -434,40 +434,44 @@ historical evidence and the full compiler migration gates.
 The final full-feature50% source-reduction goal includes the complete delivery
 burden. No such reduction or complete compiler migration is claimed by M13.
 
-## Function-address pointer increment
+## Shared pointer semantics
 
-The shared grammar/typed pipeline admits `ptr<function,T>` parameters and ordinary
-address/dereference expressions, including immutable pointer aliases and forwarded
-helper arguments. Pointees must be concrete constructible types. Pointer values
+The current shared grammar and typed pipeline admit Function, Private, Workgroup,
+Uniform, Storage and Immediate pointers, immutable pointer aliases, forwarded
+helper arguments and subobject paths. `requires unrestricted_pointer_parameters`
+and `requires pointer_composite_access` are recognized. Store types and access
+modes remain address-space checked; readonly pointers cannot write. Pointer values
 cannot escape through returns, mutable variables, structs, arrays or resources;
-vector components are not addressable. Baseline arguments retain their root's
-whole memory view. Private module variables and the `unrestricted_pointer_parameters`
-and `pointer_composite_access` extensions remain unsupported, not inferred from
-SPIR-V acceptance. The unchanged `monte_carlo_paths_fixed_samples.wgsl` is a source
-admission witness, not a performance or physical-execution claim.
+vector components are not addressable. Earlier incremental limitations above are
+historical, not the current pointer admission contract.
 
-`TYPE_POINTER` and `IR_ADDRESS` are private typed identities, with no new public ABI,
-reflection kind, record growth or queried workspace increase. A local address keeps
-its root and access path, including once-evaluated dynamic indices; pointer formals
-refer to the actual caller's Function variable. Subobject addresses are not converted
-into target pointers until an ordinary guarded read/write, preserving per-access
-OOB zero/discard behavior. Whole-root helper arguments use ordinary Function
-pointers without either VariablePointers capability or a copy-in/copy-out substitute.
+`TYPE_POINTER` and `IR_ADDRESS` remain private typed identities. Shared bounded
+IR specialization widens Function subobjects to their whole local root and passes
+already-evaluated dynamic indices separately. Global-root specialization removes
+pointer formals and substitutes exact resource/module roots, retaining canonical
+robust paths. It does not copy shared storage through HLSL inout parameters or
+invent SPIR-V VariablePointers capabilities. Atomic and arrayLength pointer
+operands use the same reference owner; dynamic out-of-bounds accesses retain
+zero/discard behavior.
 
-Source-static alias analysis propagates pointer parameter reads/writes across the
-complete call graph, including skipped/dead calls. Read-only alias arguments are
-legal; a repeated root with any written corresponding parameter rejects. One byte
-per formal borrows the already charged analysis union after successful semantic
-Walk completion, before closure/uniformity phases reset it. The checked work budget
-is 67,108,864 operations; no unbounded hidden matrix/worklist is allocated.
+Source-static alias analysis propagates pointer reads/writes across the complete
+call graph, including skipped/dead calls. Read/read aliases are legal; writable
+same-root aliases and conflicts with transitive direct module-variable accesses
+reject. The existing uniformity analyzer separately models pointer addresses and
+pointee contents, tracks write-through effects and per-output helper dependencies,
+and merges branch, loop and return paths. A definite whole-root constant overwrite
+can establish uniform content; a varying address does not become a valid
+workgroupUniformLoad operand merely because its pointee value is uniform.
 
-A function whose transitive closure combines first-class pointer operations and a
-collective currently rejects explicitly: pointer write-through uniformity requires
-additional dependency summaries beyond the current return-value analysis. This
-increment does not misclassify a uniform pointer identity as uniform pointee data.
-Independent sibling entries without that interaction remain usable. `test_pointers.py`
-checks source-static alias/lifetime rules, guards and actual emitted scalar helper
-execution; `test_pointer_api.c` checks ABI7-9 projection/failure/reuse behavior.
+Pointer dependency summaries and additional control snapshots borrow the dead
+value-ID pool after semantic lowering. Its explicit IR-capacity bound and the
+67,108,864-operation analysis budget remain enforced; there is no hidden allocation
+or frozen workspace-record growth. Insufficient scratch reports the exact minimum
+IR capacity and publishes no outputs. `test-global-pointers`,
+`test-pointer-uniformity`, `test-pointer-uniformity-capacity` and
+`test-pointer-specialization` exercise these current contracts. Frozen historical
+negative tests are not rewritten into new oracles. Target compilation and SPIR-V
+validation do not establish Metal/Windows SDK or physical-device qualification.
 
 `test_pointer_vulkan.c` consumes `tests/pointer_operations.wgsl` through the real
 ABI9 library and the C Vulkan backend. Run `make test-pointer-vulkan
@@ -734,3 +738,31 @@ per-entry texture/sampler pairs to specialization without changing frozen record
 
 [ABI17 translation metadata and native builtins](TRANSLATION.md) describes
 immediate-data layout, reserved target bindings and focused developer checks.
+
+Optional graphics interfaces retain one typed semantic owner: `clip_distances`
+(vertex output `array<f32,N>`, 1–8), `primitive_index` (fragment input `u32`),
+and `dual_source_blending` (matching location-zero source0/source1 struct members).
+Each requires its WGSL enable directive and the consumer's enabled feature.
+Stage reflection keeps its record layout: clip array length uses `lane_count`;
+additive flags distinguish the two blend sources. Metal emits native clip arrays,
+primitive IDs and color indices; HLSL packs clip values into at most two native
+clip semantics and emits primitive IDs and target0/1; SPIR-V uses ClipDistance,
+PrimitiveId and Index with their required capabilities. The named optional-stage
+controls in `tests/test_emit_targets.py` validate all three mappings and SPIR-V;
+these controls are not Metal/D3D driver execution or raster qualification.
+
+`texture_external` is a distinct canonical handle (`HANDLE_EXTERNAL` in the
+resource handle flags), even when its target image representation matches a
+sampled 2D float texture. Its admitted operations are `textureDimensions`,
+`textureLoad` at base level, and `textureSampleBaseClampToEdge`. The latter also
+supports ordinary `texture_2d<f32>` and emits explicit level zero with the WGSL
+half-texel coordinate clamp, not implicit derivatives or sampler address-mode
+substitution. Ordinary sample/LOD/gather/store operations on external handles
+reject. Target type deduplication preserves canonical external identity.
+
+The retained native external contract samples **plane zero only**. Two-plane
+objects retain both planes but do not acquire YUV conversion, crop, rotation, or
+color-space transformations through this spelling. No conversion matrices or
+color defaults are invented. `test-external-handles` checks canonical metadata;
+the named external target control checks MSL/HLSL text and validated SPIR-V,
+including mixed external/ordinary helper signatures, not physical video output.

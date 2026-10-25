@@ -21,7 +21,8 @@ doe_resource_status native_resolve_resources(const native_pipeline *pipeline,
             offsets ? offsets->values[layout.group] : NULL, offsets ? offsets->counts[layout.group] : 0,
             layout.binding, &binding);
         if (status != DOE_RESOURCE_OK) return status;
-        if (binding.kind != layout.kind) return DOE_RESOURCE_LAYOUT;
+        if (binding.kind != layout.kind &&
+            !(layout.kind == DOE_BIND_EXTERNAL_TEXTURE && binding.kind == DOE_BIND_TEXTURE)) return DOE_RESOURCE_LAYOUT;
         if (binding.kind == DOE_BIND_BUFFER && binding.resource.buffer.size < pipeline->minimum_sizes[i])
             return DOE_RESOURCE_RANGE;
         out[i] = binding;
@@ -38,7 +39,8 @@ bool native_vulkan_binding_layout(const native_pipeline *pipeline, doe_vk_bindin
         case DOE_BIND_BUFFER:
             kind = binding.buffer_type == WGPUBufferBindingType_Uniform ? DOE_VK_BINDING_UNIFORM : DOE_VK_BINDING_STORAGE;
             break;
-        case DOE_BIND_TEXTURE: kind = DOE_VK_BINDING_SAMPLED_TEXTURE; break;
+        case DOE_BIND_TEXTURE:
+        case DOE_BIND_EXTERNAL_TEXTURE: kind = DOE_VK_BINDING_SAMPLED_TEXTURE; break;
         case DOE_BIND_STORAGE_TEXTURE: kind = DOE_VK_BINDING_STORAGE_TEXTURE; break;
         case DOE_BIND_SAMPLER: kind = DOE_VK_BINDING_SAMPLER; break;
         default: return false;
@@ -68,10 +70,12 @@ doe_vk_status native_resolve_bindings(doe_vk_commands *commands, const native_pi
             native_sampler *sampler = doe_resource_sampler_native(binding->resource.sampler);
             bindings[i].value.sampler = sampler->sampler;
         } else {
-            native_view *view = doe_resource_view_native(binding->resource.view);
+            doe_resource_view *resource = binding->kind == DOE_BIND_EXTERNAL_TEXTURE ?
+                doe_resource_external_texture_plane(binding->resource.external_texture, 0) : binding->resource.view;
+            native_view *view = doe_resource_view_native(resource);
             bindings[i].value.view = view->view;
             if (commands) {
-                native_texture *texture = doe_resource_texture_native(doe_resource_view_texture(binding->resource.view));
+                native_texture *texture = doe_resource_texture_native(doe_resource_view_texture(resource));
                 doe_vk_status status = doe_vk_commands_initialize_texture(commands, texture->texture);
                 if (status != DOE_VK_OK) return status;
             }

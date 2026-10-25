@@ -35,6 +35,10 @@ static void aliases(void)
     doe_dx_pipeline *mixed=NULL,*writable=NULL;
     assert(doe_dx_pipeline_create_render(context,&desc,&mixed,NULL)==DOE_DX_OK);
     rows[0].access=DOE_DX_READ_WRITE;
+    uint32_t saved_uavs=context->caps.limits.max_uavs;
+    context->caps.limits.max_uavs=1;
+    assert(doe_dx_pipeline_create_render(context,&desc,&writable,NULL)==DOE_DX_RANGE && !writable);
+    context->caps.limits.max_uavs=saved_uavs;
     assert(doe_dx_pipeline_create_render(context,&desc,&writable,NULL)==DOE_DX_OK);
     doe_dx_buffer_binding views[2]={{buffer,0,128},{buffer,128,128}};
     doe_dx_render_draw packet=draw(mixed);
@@ -58,14 +62,55 @@ static void aliases(void)
     assert(doe_dx_context_destroy(context)==DOE_DX_OK);
     mock_reset();
 }
-static void indirect_pass(void)
+static void dual_source(void)
 {
     doe_dx_context *context=NULL;
     assert(doe_dx_context_create(&(doe_dx_options){0},&context,NULL)==DOE_DX_OK);
     unsigned char code=1;
-    doe_dx_render_pipeline_desc desc={.color_format=DOE_DX_RGBA8_UNORM};
+    doe_dx_render_pipeline_desc desc={.color_format=DOE_DX_RGBA8_UNORM,.blend_enabled=true,
+        .color_blend={15,16,0},.alpha_blend={17,18,0}};
     for (size_t i=0;i<2;++i) desc.stages[i].resources.buffers=(doe_dx_pipeline_desc){&code,1,NULL,0};
     doe_dx_pipeline *pipeline=NULL;
+    assert(doe_dx_pipeline_create_render(context,&desc,&pipeline,NULL)==DOE_DX_OK);
+    doe_dx_pipeline_release(pipeline); pipeline=NULL;
+    desc.targets_explicit=true; desc.target_count=2;
+    desc.targets[0]=(doe_dx_render_target){.format=DOE_DX_RGBA8_UNORM,.blend_enabled=true,.write_mask=15,
+        .color_blend={15,16,0},.alpha_blend={17,18,0}};
+    desc.targets[1]=desc.targets[0];
+    assert(doe_dx_pipeline_create_render(context,&desc,&pipeline,NULL)==DOE_DX_UNSUPPORTED && !pipeline);
+    assert(doe_dx_context_destroy(context)==DOE_DX_OK);
+    mock_reset();
+}
+static void indirect_pass(bool offsets)
+{
+    doe_dx_context *context=NULL;
+    assert(doe_dx_context_create(&(doe_dx_options){0},&context,NULL)==DOE_DX_OK);
+    unsigned char code=1;
+    doe_dx_render_pipeline_desc desc={.color_format=DOE_DX_RGBA8_UNORM,.draw_offsets=offsets};
+    for (size_t i=0;i<2;++i) desc.stages[i].resources.buffers=(doe_dx_pipeline_desc){&code,1,NULL,0};
+    doe_dx_pipeline *pipeline=NULL;
+    if (offsets) {
+        const doe_dx_binding_layout collision={3,7,0,DOE_DX_READ_ONLY,DOE_DX_UNIFORM};
+        desc.stages[0].resources.buffers.bindings=&collision;
+        desc.stages[0].resources.buffers.binding_count=1;
+        assert(doe_dx_pipeline_create_render(context,&desc,&pipeline,NULL)==DOE_DX_INVALID_ARGUMENT && !pipeline);
+        desc.stages[0].resources.buffers.bindings=NULL;
+        desc.stages[0].resources.buffers.binding_count=0;
+        uint32_t saved=context->caps.limits.max_cbvs;
+        context->caps.limits.max_cbvs=0;
+        desc.stages[0].immediate_bytes=4;
+        /* Root constants do not consume descriptor-table CBV slots. */
+        assert(doe_dx_pipeline_create_render(context,&desc,&pipeline,NULL)==DOE_DX_OK);
+        doe_dx_pipeline_release(pipeline); pipeline=NULL;
+        doe_dx_binding_layout table={0,0,0,DOE_DX_READ_ONLY,DOE_DX_UNIFORM};
+        desc.stages[0].resources.buffers.bindings=&table;
+        desc.stages[0].resources.buffers.binding_count=1;
+        assert(doe_dx_pipeline_create_render(context,&desc,&pipeline,NULL)==DOE_DX_RANGE && !pipeline);
+        desc.stages[0].resources.buffers.bindings=NULL;
+        desc.stages[0].resources.buffers.binding_count=0;
+        desc.stages[0].immediate_bytes=0;
+        context->caps.limits.max_cbvs=saved;
+    }
     assert(doe_dx_pipeline_create_render(context,&desc,&pipeline,NULL)==DOE_DX_OK);
     doe_dx_texture *color=NULL;
     assert(doe_dx_texture_create(context,&(doe_dx_texture_desc){4,4,DOE_DX_RGBA8_UNORM,
@@ -92,7 +137,7 @@ static void indirect_pass(void)
     assert(doe_dx_commands_render(commands,&pass,NULL)==DOE_DX_OK);
     assert(mock.last_render_draw.indices.buffer==buffer->native && commands->buffer_count==2);
     size_t before=mock.render_passes;
-    arguments.size=19;
+    arguments.size=offsets ? 27u : 19u;
     assert(doe_dx_commands_render(commands,&pass,NULL)==DOE_DX_RANGE && mock.render_passes==before);
     arguments.size=40; arguments.offset=2;
     assert(doe_dx_commands_render(commands,&pass,NULL)==DOE_DX_RANGE && mock.render_passes==before);
@@ -489,7 +534,9 @@ int main(void)
     multiple_targets_stencil();
     selected_attachment_views();
     read_only_depth_sampling();
-    indirect_pass();
+    dual_source();
+    indirect_pass(false);
+    indirect_pass(true);
     puts("PASS D3D12 render owner: independent stage128/32 layouts, empty/zero draws, real-init requests, sampler snapshots, OOM/native rollback and unknown early-release leases; no SDK/GPU");
     return 0;
 }

@@ -68,7 +68,7 @@ static void deliver_compilation(void *context)
     WGPUCompilationMessage message = {0};
     WGPUCompilationInfo info = {0};
     /* A module of a lost device has no compilation and reports no messages. */
-    if (shader && !shader->module) {
+    if (shader && !shader->module && !shader->imported.data) {
         const DoeCompilerDiagnostic *diagnostic = &shader->error.diagnostic;
         message = (WGPUCompilationMessage){.message=native_string(diagnostic->message),
             .type=WGPUCompilationMessageType_Error, .lineNum=diagnostic->line,

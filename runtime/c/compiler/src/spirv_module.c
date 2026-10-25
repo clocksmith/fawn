@@ -138,7 +138,8 @@ uint32_t spirv_pointer_type(Emitter *e, TypeId type, uint32_t storage) {
     }
     for (uint32_t i = 0u; i < c->target_count; ++i) {
         const TargetDeclaration *d = &c->targets[i];
-        if (d->kind == DECL_POINTER && d->type == type && d->storage == storage) return d->id;
+        if (d->kind == DECL_POINTER && d->storage == storage && (d->type == type ||
+            (type_handle(c,type) && d->payload==spirv_target_type(e,type)))) return d->id;
     }
     TargetDeclaration *d = spirv_append_declaration(e, DECL_POINTER, type);
     if (d == NULL) return 0u;
@@ -175,7 +176,9 @@ static bool plan_type(Emitter *e, TypeId type) {
             if (prior->kind != current->kind || prior->target == 0u) continue;
             if (current->kind == TYPE_SAMPLER || (prior->element == current->element &&
                 prior->state.image.dimension == current->state.image.dimension &&
-                prior->state.image.format == current->state.image.format && prior->state.image.flags == current->state.image.flags)) {
+                prior->state.image.format == current->state.image.format &&
+                (prior->state.image.flags & ~(uint32_t)DOE_COMPILER_HANDLE_EXTERNAL) ==
+                (current->state.image.flags & ~(uint32_t)DOE_COMPILER_HANDLE_EXTERNAL))) {
                 c->types[type - IR_PRIMITIVE_COUNT].target = prior->target;
                 return true;
             }
@@ -212,7 +215,10 @@ static bool plan_type(Emitter *e, TypeId type) {
                                 "SPIR-V ArrayStride format capacity exceeded");
         }
         if (t->kind == TYPE_ATOMIC) t->target = spirv_scalar_type(t->element);
-        else if (t->kind == TYPE_POINTER) t->target = spirv_pointer_type(e, t->element, 7u);
+        else if (t->kind == TYPE_POINTER) t->target = spirv_pointer_type(e, t->element,
+            t->count == POINTER_FUNCTION ? 7u : t->count == POINTER_PRIVATE ? 6u :
+            t->count == POINTER_WORKGROUP ? 4u : t->count == POINTER_UNIFORM ? 2u :
+            t->count == POINTER_IMMEDIATE ? 9u : 12u);
         else if (t->kind == TYPE_VECTOR && t->element == IR_U32 && t->count == 3u) t->target = ID_VEC3;
         else if (t->kind == TYPE_VECTOR && t->element == IR_F16 && t->count == 2u) t->target = ID_VEC2_F16;
         else {
@@ -287,6 +293,15 @@ uint32_t spirv_constant_value(Emitter *e, ConstantValue value) {
 uint32_t spirv_sampled_type(Emitter *e, TypeId type) {
     TypeRecord *t = &e->program->types[type - IR_PRIMITIVE_COUNT];
     if (t->aux != 0u) return t->aux;
+    /* External and ordinary sampled handles remain distinct WGSL identities,
+     * but their plane-zero native image type must not be redeclared. */
+    for (uint32_t i=0;i<e->program->target_count;++i) {
+        const TargetDeclaration *prior=&e->program->targets[i];
+        if (prior->kind==DECL_SAMPLED_IMAGE && spirv_target_type(e,prior->type)==t->target) {
+            t->aux=prior->id;
+            return t->aux;
+        }
+    }
     TargetDeclaration *d = spirv_append_declaration(e, DECL_SAMPLED_IMAGE, type);
     if (d == NULL) return 0u;
     t->aux = d->id;
@@ -299,11 +314,12 @@ bool spirv_wrapped_resource(const CompilerWorkspace *c, const ResourceRecord *r)
 uint32_t spirv_resource_storage(const ResourceRecord *r) {
     return r->kind >= DOE_COMPILER_SAMPLED_TEXTURE ? 0u : r->kind == DOE_COMPILER_UNIFORM_BUFFER ? 2u : 12u;
 }
-static bool same_signature(const IrProgram *program, const FunctionRecord *a, const FunctionRecord *b) {
-    if (a->result_type != b->result_type || a->formal_count != b->formal_count) return false;
-    for (uint32_t i = 0u; i < a->formal_count; ++i)
-        if (program->formals[a->formal_start + i].type.resolved.type !=
-            program->formals[b->formal_start + i].type.resolved.type) return false;
+static bool same_signature(const Emitter *e, const FunctionRecord *a, const FunctionRecord *b) {
+    const IrProgram *program=e->program;
+    if (spirv_target_type(e,a->result_type)!=spirv_target_type(e,b->result_type) || a->formal_count!=b->formal_count) return false;
+    for (uint32_t i=0;i<a->formal_count;++i)
+        if (spirv_target_type(e,program->formals[a->formal_start+i].type.resolved.type)!=
+            spirv_target_type(e,program->formals[b->formal_start+i].type.resolved.type)) return false;
     return true;
 }
 static void plan_scalar_guards(Emitter *e, const IrInstruction *ir) {
@@ -351,6 +367,7 @@ bool spirv_plan_module(Emitter *e) {
     }
     for (uint32_t f = 0u; f < c->function_count; ++f) {
         FunctionRecord *function = &c->functions[f];
+        if ((function->flags & FUNCTION_REACHABLE) == 0u) { function->state.target.function = 0u; function->state.target.signature = 0u; function->state.target.label = 0u; continue; }
         function->state.target.function = spirv_reserve_ids(e, 1u);
         function->state.target.label = spirv_reserve_ids(e, 1u);
         function->state.target.signature = 0u;
@@ -360,7 +377,7 @@ bool spirv_plan_module(Emitter *e) {
                 return source_error(e->source, DOE_COMPILER_UNSUPPORTED, function->name.offset,
                                     "SPIR-V function spirv_instruction word-count format capacity exceeded");
             for (uint32_t p = 0u; p < f; ++p)
-                if (!stage_graphics(&c->functions[p]) && same_signature(c, function, &c->functions[p])) {
+                if ((c->functions[p].flags & FUNCTION_REACHABLE) != 0u && !stage_graphics(&c->functions[p]) && same_signature(e, function, &c->functions[p])) {
                     function->state.target.signature = c->functions[p].state.target.signature; break;
                 }
             if (function->state.target.signature == 0u) function->state.target.signature = spirv_reserve_ids(e, 1u);
@@ -678,6 +695,8 @@ bool spirv_module_declarations(Emitter *e) {
             EMIT(OP_CAPABILITY,4435u); break; /* StoragePushConstant16. */
         }
     }
+    if (e->clip_distance) { EMIT(OP_CAPABILITY,32u); }
+    if (e->primitive_id) { EMIT(OP_CAPABILITY,2u); }
     if (e->derivative_control) { EMIT(OP_CAPABILITY, 51u); }
     if (e->sample_rate_shading) { EMIT(OP_CAPABILITY, 35u); }
     if ((e->image_capabilities & 1u) != 0u) { EMIT(OP_CAPABILITY, 50u); }
@@ -739,6 +758,7 @@ bool spirv_module_declarations(Emitter *e) {
     if (!annotations(e) || !spirv_stage_annotations(e) || !primitive_declarations(e) || !dynamic_declarations(e)) return false;
     for (uint32_t f = 0u; f < c->function_count; ++f) {
         const FunctionRecord *fn = &c->functions[f];
+        if ((fn->flags & FUNCTION_REACHABLE) == 0u) continue;
         bool emitted = fn->state.target.signature == ID_FN_TYPE;
         for (uint32_t p = 0u; p < f && !emitted; ++p)
             emitted = c->functions[p].state.target.signature == fn->state.target.signature;

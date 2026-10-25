@@ -34,11 +34,16 @@ bool spirv_image_type(Emitter *e, const TypeRecord *t, uint32_t id) {
 bool spirv_image_plan(Emitter *e, const IrInstruction *ir) {
     const ImageType image = e->program->types[ir->operands.composite.reserved - IR_PRIMITIVE_COUNT].state.image;
     const bool sampling = image_sampling((ImageOperation)ir->operands.composite.kind);
-    if (!sampling || image_arrayed(image.dimension)) e->image_capabilities |= 1u;
+    if (!sampling || image_arrayed(image.dimension) || ir->operands.composite.kind==IMAGE_SAMPLE_BASE_CLAMP) e->image_capabilities |= 1u;
     if (sampling && spirv_sampled_type(e, ir->operands.composite.reserved) == 0u) return false;
     if (ir->type != IR_VOID && spirv_zero_constant(e, ir->type) == 0u) return false;
     (void)spirv_zero_constant(e, IR_I32);
     if (sampling) (void)spirv_zero_constant(e, IR_F32);
+    if (ir->operands.composite.kind==IMAGE_SAMPLE_BASE_CLAMP) {
+        if (!e->math_import) e->math_import=spirv_reserve_ids(e,1u);
+        (void)spirv_constant_value(e,(ConstantValue){IR_F32,0u,0x3f000000u});
+        (void)spirv_constant_value(e,(ConstantValue){IR_F32,0u,0x3f800000u});
+    }
     if (ir->operands.composite.kind == IMAGE_SAMPLE_BIAS) {
         if (e->math_import == 0u) e->math_import = spirv_reserve_ids(e, 1u);
         /* Exact f32 encodings of the WGSL bias clamp endpoints -16 and 15.99. */
@@ -160,7 +165,7 @@ static bool texel(Emitter *e, const IrInstruction *ir, const TypeRecord *t, cons
     const bool storage = image.format != 0u, multisampled = (image.flags & DOE_COMPILER_HANDLE_MULTISAMPLED) != 0u;
     const uint32_t handle = e->values[operands[0]], extra = 2u + (image_arrayed(image.dimension) ? 1u : 0u);
     uint32_t valid = ID_TRUE, level = ID_ZERO_U32, sample = ID_ZERO_U32, size, coordinate;
-    if (!storage && !multisampled && !safe_level(e, handle, operands[extra], &level, &valid)) return false;
+    if (!storage && !multisampled && !(image.flags & DOE_COMPILER_HANDLE_EXTERNAL) && !safe_level(e, handle, operands[extra], &level, &valid)) return false;
     if (multisampled) {
         const uint32_t samples = spirv_reserve_ids(e, 1u);
         EMIT(OP_IMAGE_QUERY_SAMPLES, ID_U32, samples, handle);
@@ -224,6 +229,22 @@ static bool sample(Emitter *e, const IrInstruction *ir, const TypeRecord *textur
     const bool depth = (texture->state.image.flags & DOE_COMPILER_HANDLE_DEPTH) != 0u;
     uint32_t coordinate;
     if (!sampled_coordinates(e, texture->state.image, operands, &coordinate)) return false;
+    if (operation==IMAGE_SAMPLE_BASE_CLAMP) {
+        uint32_t size;
+        if (!dimensions(e,texture->state.image,e->values[operands[0]],ID_ZERO_U32,&size)) return false;
+        uint32_t type=spirv_target_type(e,vector_type(e,IR_F32,2u));
+        uint32_t half=spirv_constant_value(e,(ConstantValue){IR_F32,0u,0x3f000000u});
+        uint32_t one=spirv_constant_value(e,(ConstantValue){IR_F32,0u,0x3f800000u});
+        uint32_t size_f=spirv_reserve_ids(e,1u),half_v=spirv_reserve_ids(e,1u),one_v=spirv_reserve_ids(e,1u);
+        uint32_t low=spirv_reserve_ids(e,1u),high=spirv_reserve_ids(e,1u),clamped=spirv_reserve_ids(e,1u);
+        EMIT(OP_CONVERT_U_TO_F,type,size_f,size);
+        EMIT(OP_COMPOSITE_CONSTRUCT,type,half_v,half,half);
+        EMIT(OP_COMPOSITE_CONSTRUCT,type,one_v,one,one);
+        EMIT(OP_FDIV,type,low,half_v,size_f);
+        EMIT(OP_FSUB,type,high,one_v,low);
+        EMIT(OP_EXT_INST,type,clamped,e->math_import,43u,coordinate,low,high);
+        coordinate=clamped;
+    }
     const uint32_t sampled = spirv_reserve_ids(e, 1u);
     EMIT(OP_SAMPLED_IMAGE, texture->aux, sampled, e->values[operands[0]], e->values[operands[1]]);
     const uint32_t last = 3u + (image_arrayed(texture->state.image.dimension) ? 1u : 0u);
@@ -237,7 +258,7 @@ static bool sample(Emitter *e, const IrInstruction *ir, const TypeRecord *textur
             e->values[operands[last]]); }
         return !e->failed;
     }
-    uint32_t lod = implicit || compare ? spirv_zero_constant(e, IR_F32) : e->values[operands[last]];
+    uint32_t lod = implicit || compare || operation==IMAGE_SAMPLE_BASE_CLAMP ? spirv_zero_constant(e, IR_F32) : e->values[operands[last]];
     if (depth && !compare && !implicit) {
         lod = spirv_reserve_ids(e, 1u);
         if (spirv_value_type(e->program, operands[last]) == IR_I32) {

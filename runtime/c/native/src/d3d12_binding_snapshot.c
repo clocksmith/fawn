@@ -31,9 +31,11 @@ native_failure native_d3d12_binding_values(const native_pipeline *pipeline,
     for (size_t i = 0; i < map->texture_count; ++i) {
         size_t index = map->texture_indices[i];
         if (index >= pipeline->binding_count ||
-            (resolved[index].kind != DOE_BIND_TEXTURE && resolved[index].kind != DOE_BIND_STORAGE_TEXTURE))
+            (resolved[index].kind != DOE_BIND_TEXTURE && resolved[index].kind != DOE_BIND_STORAGE_TEXTURE &&
+            resolved[index].kind != DOE_BIND_EXTERNAL_TEXTURE))
             return native_failure_status(NATIVE_INVALID_STATE);
-        doe_resource_view *view = resolved[index].resource.view;
+        doe_resource_view *view = resolved[index].kind == DOE_BIND_EXTERNAL_TEXTURE ?
+            doe_resource_external_texture_plane(resolved[index].resource.external_texture, 0) : resolved[index].resource.view;
         const doe_resource_view_desc *span = doe_resource_view_description(view);
         doe_resource_texture *texture = doe_resource_view_texture(view);
         const doe_resource_texture_desc *desc = doe_resource_texture_description(texture);

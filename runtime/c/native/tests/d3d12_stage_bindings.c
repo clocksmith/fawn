@@ -85,6 +85,40 @@ static void raw_half_metadata(const doe_shader_options *options)
     stage.view.hlsl_entries=&row; reject(&pipeline,&stage);
     doe_shader_release(shader);
 }
+static void external_metadata(const doe_shader_options *options)
+{
+    const char *source = "@group(2) @binding(3) var frame:texture_external;"
+        "@group(0) @binding(1) var<storage,read_write> output:array<vec4f>;"
+        "@compute @workgroup_size(1) fn main(){output[0]=textureLoad(frame,vec2i(0));}";
+    doe_shader *shader = NULL;
+    doe_shader_error error = {0};
+    assert(doe_shader_create(options,source,strlen(source),&shader,&error) == DOE_SHADER_OK);
+    doe_shader_view view;
+    assert(doe_shader_borrow(shader,&view) == DOE_SHADER_OK);
+    native_pipeline pipeline = {.binding_count=2,.bindings={
+        {.group=2,.binding=3,.kind=DOE_BIND_EXTERNAL_TEXTURE},
+        {.group=0,.binding=1,.kind=DOE_BIND_BUFFER,.buffer_type=WGPUBufferBindingType_Storage}}};
+    native_stage stage = {.view=view,.entry=&view.entries[0]};
+    native_d3d12_layout layout;
+    native_d3d12_compute map;
+    assert(native_d3d12_stage_bindings(&pipeline,&stage,&layout,&map));
+    assert(map.texture_count == 1 && layout.contracts[0].sample_class == DOE_DX_SAMPLE_FLOAT &&
+        layout.contracts[0].dimension == DOE_COMPILER_VIEW_2D && map.texture_indices[0] == 0 &&
+        layout.textures[0].shader_register == 3 && layout.textures[0].register_space == 2);
+    pipeline.bindings[0].kind = DOE_BIND_TEXTURE;
+    reject(&pipeline,&stage);
+    pipeline.bindings[0].kind = DOE_BIND_EXTERNAL_TEXTURE;
+    assert(view.handle_count == 1);
+    DoeCompilerHandleV6 handle = view.handles[0];
+    stage.view.handles = &handle;
+    handle.flags |= DOE_COMPILER_HANDLE_MULTISAMPLED;
+    reject(&pipeline,&stage);
+    handle = view.handles[0];
+    handle.view_dimension = DOE_COMPILER_VIEW_CUBE;
+    reject(&pipeline,&stage);
+    doe_shader_release(shader);
+}
+
 int main(int argc,char **argv)
 {
     const char *source =
@@ -164,6 +198,7 @@ int main(int argc,char **argv)
     stage.entry=&view.entries[0];
     pipeline.bindings[4].buffer_type=WGPUBufferBindingType_ReadOnlyStorage; reject(&pipeline,&stage);
     raw_half_metadata(&options);
+    external_metadata(&options);
     samplers();
     doe_shader_release(shader);
     puts("PASS D3D12 selected compiler binding/sampler conversion: actual HLSL, read-storage SRV, dynamic samplers, row/span rejection and untouched outputs; no SDK/GPU");

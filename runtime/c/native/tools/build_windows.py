@@ -185,6 +185,18 @@ def main() -> int:
     invoke(strict + [str(loader_test), '/Fo' + str(out / 'loader_win32.obj'),
                      '/Fe' + str(executable), '/link', *map(str, loader_objects), 'kernel32.lib'], out)
     invoke([str(executable)], out)
+    # Build only: real HWND/device execution is an explicit developer action.
+    window_source = ROOT / 'tests/windows_surface.c'
+    window_host = C_ROOT / 'runtime-cli/src/surface_windows.c'
+    window_fixture = out / 'windows_surface.exe'
+    consumer_flags = [flag for flag in strict if flag != '/DWGPU_IMPLEMENTATION']
+    window_objects = []
+    for source in [window_source, window_host]:
+        obj = out / ('window_fixture_' + source.name + '.obj')
+        invoke(consumer_flags + ['/c', str(source), '/Fo' + str(obj)], out)
+        window_objects.append(obj)
+    invoke([compiler, '--target=x86_64-pc-windows-msvc', '/nologo', *map(str, window_objects),
+            '/Fe' + str(window_fixture), '/link', str(imports), 'kernel32.lib', 'user32.lib'], out)
     headers = sorted(set(ROOT.joinpath('src').glob('*.h')) |
                      set(ROOT.joinpath('include').glob('*.h')) |
                      set(C_ROOT.joinpath('compiler/include').glob('*.h')) |
@@ -195,7 +207,9 @@ def main() -> int:
         headers.extend(sorted(owner.joinpath('src').glob('*.h')))
     inputs = [*sources, *headers, ROOT / 'sources.mk', ROOT / 'EXPORTED_SYMBOLS.txt',
               ROOT / 'EXTENSION_SYMBOLS.txt', Path(__file__).resolve(), schema, loader_test,
-              shader_adapter, REPO / 'runtime/zig/vendor/webgpu-headers/webgpu.h']
+              shader_adapter, window_source, window_host, ROOT / 'tests/surface_consumer.h',
+              ROOT / 'tests/consumer.h', ROOT / 'tests/adapter_class.h',
+              C_ROOT / 'runtime-cli/src/surface_platform.h', REPO / 'runtime/zig/vendor/webgpu-headers/webgpu.h']
     out.joinpath('native-scope.json').write_text(json.dumps({
         'compiler': compiler, 'windows_sdk_version': os.environ.get('WindowsSDKVersion'),
         'vc_tools_version': os.environ.get('VCToolsVersion'),
@@ -209,6 +223,7 @@ def main() -> int:
         'packaged_runtime_sha256': {path.name: digest(out / path.name)
                                    for path in [compiler_library, *dxc_runtime]},
         'shader_adapter_object_sha256': digest(shader_object),
+        'window_fixture_sha256': digest(window_fixture),
         'native_dll_sha256': digest(library),
         'scope': 'Actual SDK native DLL build/export audit and Win32 loader CPU host control only; no GPU, native device execution or production qualification.'
     }, indent=2, sort_keys=True) + '\n', encoding='utf-8')

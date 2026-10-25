@@ -42,7 +42,9 @@ static void signature(HlslEmitter *e, uint32_t resource, TypeId type, bool store
     hlsl_text(e, ")");
 }
 static void word(HlslEmitter *e, uint32_t resource, bool uniform, uint32_t lane) {
-    if (uniform) hlsl_format(e, "r%u_data[(offset + %uu) / 16u][((offset + %uu) / 4u) %% 4u]",
+    if (resource >= e->module->resource_count)
+        hlsl_format(e, "doe_r%u_word((offset + %uu) / 4u)", resource, lane * 4u);
+    else if (uniform) hlsl_format(e, "r%u_data[(offset + %uu) / 16u][((offset + %uu) / 4u) %% 4u]",
                             resource, lane * 4u, lane * 4u);
     else if (hlsl_raw_storage(e->module,resource))
         hlsl_format(e,"r%u.Load(offset + %uu)",resource,lane*4u);
@@ -71,7 +73,10 @@ static void half_lane(HlslEmitter *e, uint32_t resource, bool uniform,
     hlsl_format(e,"    { uint byte = offset + %uu; uint shift = (byte & 2u) * 8u;\n",lane*2u);
     hlsl_text(e,"      value");
     if (width != 1u) hlsl_format(e,"[%u]",lane);
-    hlsl_format(e," = float16_t(f16tof32((r%u_data[byte / 16u][(byte / 4u) %% 4u] >> shift) & 0xffffu));\n    }\n",resource);
+    hlsl_text(e," = float16_t(f16tof32((");
+    if (resource >= e->module->resource_count) hlsl_format(e,"doe_r%u_word(byte / 4u)",resource);
+    else hlsl_format(e,"r%u_data[byte / 16u][(byte / 4u) %% 4u]",resource);
+    hlsl_text(e," >> shift) & 0xffffu));\n    }\n");
 }
 static void body(HlslEmitter *e, uint32_t resource, TypeId type, bool store) {
     const CompilerWorkspace *c = e->module;
@@ -183,8 +188,19 @@ static void immediate_resource(HlslEmitter *e) {
     const uint64_t bytes = type_size(c,c->workgroups[root].type);
     if (bytes > 65536u) { hlsl_error(e,"HLSL immediate block exceeds CBV capacity"); return; }
     const uint32_t key = c->resource_count + root;
-    hlsl_format(e,"cbuffer DoeImmediate : register(b%u, space%u) { uint4 r%u_data[%u]; };\n",
-        DOE_COMPILER_HLSL_IMMEDIATE_REGISTER,DOE_COMPILER_HLSL_IMMEDIATE_SPACE,key,(uint32_t)((bytes+15u)/16u));
+    const uint32_t words = (uint32_t)((bytes+3u)/4u);
+    /* Root constants cannot be dynamically indexed arrays. Flatten the small
+     * immediate block and select named scalar fields; the existing typed load
+     * and access guards keep byte layout, half extraction and OOB semantics. */
+    hlsl_format(e,"cbuffer DoeImmediate : register(b%u, space%u) {\n",
+        DOE_COMPILER_HLSL_IMMEDIATE_REGISTER,DOE_COMPILER_HLSL_IMMEDIATE_SPACE);
+    for (uint32_t i = 0u; i < words && !e->failed; ++i)
+        hlsl_format(e,"    uint r%u_word%u;\n",key,i);
+    hlsl_text(e,"};\n");
+    hlsl_format(e,"uint doe_r%u_word(uint index) {\n",key);
+    for (uint32_t i = 0u; i < words && !e->failed; ++i)
+        hlsl_format(e,"    if (index == %uu) return r%u_word%u;\n",i,key,i);
+    hlsl_text(e,"    return 0u;\n}\n");
     for (unsigned pass = 0u; pass < 2u; ++pass) {
         for (TypeId type = IR_I32; type < IR_PRIMITIVE_COUNT+c->type_count && !e->failed; ++type) {
             if (!memory_type(c,type)) continue;

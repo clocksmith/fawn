@@ -4,6 +4,7 @@
 #include "../include/doe_metal.h"
 #include "../include/doe_metal_cache.h"
 #include "../include/doe_metal_texture.h"
+#include "../include/doe_metal_external.h"
 #include "../include/doe_metal_render.h"
 #include "../include/doe_metal_query.h"
 #include "../include/doe_metal_surface.h"
@@ -63,10 +64,19 @@ typedef struct doe_mtl_native_timestamps {
     uint32_t begin, end;
 } doe_mtl_native_timestamps;
 
+typedef struct doe_mtl_native_external {
+    void *planes[2];
+    doe_mtl_texture_desc desc[2];
+    uint32_t count;
+} doe_mtl_native_external;
+
 typedef struct doe_mtl_native {
     void *userdata;
     void (*close)(void *userdata);
     void (*release)(void *userdata, void *object);
+    /* Transactional: failure releases partial imports and leaves out untouched. */
+    doe_mtl_status (*external_texture)(void *, void *, doe_mtl_external_source, void *,
+        doe_mtl_native_external *, doe_mtl_error *);
     bool (*surface_supported)(void *userdata, void *layer);
     doe_mtl_status (*surface_configure)(void *userdata, void *device, void *layer,
         const doe_mtl_surface_desc *desc, void **out, doe_mtl_error *error);
@@ -81,6 +91,8 @@ typedef struct doe_mtl_native {
     doe_mtl_status (*buffer)(void *userdata, void *device, size_t length,
         doe_mtl_memory memory, void **out, doe_mtl_error *error);
     void *(*contents)(void *userdata, void *buffer);
+    doe_mtl_status (*shader_validate)(void *userdata, void *device,
+        const char *source, size_t length, doe_mtl_error *error);
     doe_mtl_status (*pipeline)(void *userdata, void *device,
         const doe_mtl_pipeline_desc *desc, void **out, size_t *max_threads,
         doe_mtl_error *error);

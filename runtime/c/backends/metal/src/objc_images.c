@@ -68,6 +68,13 @@ void doe_mtl_objc_image_caps(doe_mtl_objc *r, void *device, doe_mtl_caps *caps) 
          * admission. Apple family membership, not device-name guessing, binds
          * the documented 32-lane family range; this is not a measured PSO width.
          * https://developer.apple.com/metal/Metal-Feature-Set-Tables.pdf */
+        /* supportsFamily itself requires the macOS 10.15/iOS 13 generation;
+         * Mac2 therefore has MSL 2.2, while Apple7 requires iOS 14/MSL 2.3.
+         * Those are primitive_id's language minima as well as family bounds. */
+        caps->primitive_index = r->family_call(device, r->supports_family, 1007) ||
+            r->family_call(device, r->supports_family, 2002);
+        caps->dual_source_blending = r->family_call(device, r->supports_family, 1002) ||
+            r->family_call(device, r->supports_family, 2002);
         caps->subgroups = r->family_call(device, r->supports_family, 1007) != 0;
         if (caps->subgroups) caps->subgroup_min_size = caps->subgroup_max_size = 32;
         /* Apple Metal Feature Set Tables: Apple2/3 512, Apple4+ and Mac1/2

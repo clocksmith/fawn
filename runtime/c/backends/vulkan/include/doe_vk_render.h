@@ -76,7 +76,7 @@ typedef struct doe_vk_stencil_face {
     uint32_t fail_operation, pass_operation, depth_fail_operation, compare_operation;
 } doe_vk_stencil_face;
 /* One indexed color target. Zero format is an unused slot whose write mask and
- * blend must be zero/false. Native blend factors0..14, operations0..4. */
+ * blend must be zero/false. Native blend factors0..18, operations0..4. */
 typedef struct doe_vk_color_target {
     doe_vk_texture_format format;
     uint32_t write_mask; /* RGBA low four bits. */
@@ -127,7 +127,7 @@ typedef struct doe_vk_render_pipeline_desc {
 /* Graphics pipeline with zero or more indexed color targets and format-admitted
  * native sample counts. Compiler/native admission validates
  * shader interfaces/capabilities including disabled vertex/fragment stores.
- * Native blend factors0..14 (no dual source), operations0..4; constant blend
+ * Native blend factors0..18 (source1 requires enabled dual_source_blend), operations0..4; constant blend
  * factors use the pipeline constant unless an explicit per-draw override is set.
  * Optional depth/stencil uses the same sample count. Sample shading stays disabled.
  * color_format=0 requires depth/stencil, disabled blend/alpha-to-coverage and zero

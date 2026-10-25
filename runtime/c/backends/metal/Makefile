@@ -5,7 +5,7 @@ BUILD ?= $(DOE_C_TMP)/metal
 CPPFLAGS += -Iinclude
 CFLAGS ?= -O2 -g
 STRICT = -std=c11 -Wall -Wextra -Wpedantic -Werror -Wconversion -Wshadow
-SOURCES = src/timeline.c src/objc_timeline.c src/pipeline_cache.c src/objc_archive.c src/context.c src/resources.c src/commands.c src/surfaces.c src/objc_surface.c src/indirect_commands.c src/draw_guard.c src/compute_commands.c src/timestamps.c src/objc_queries.c src/objc_runtime.c \
+SOURCES = src/external_textures.c src/objc_external.c src/objc_external_loader.c src/timeline.c src/objc_timeline.c src/pipeline_cache.c src/objc_archive.c src/context.c src/resources.c src/commands.c src/surfaces.c src/objc_surface.c src/indirect_commands.c src/draw_guard.c src/compute_commands.c src/timestamps.c src/objc_queries.c src/objc_runtime.c \
           src/objc_pipeline.c src/objc_commands.c src/texture_formats.c src/textures.c \
           src/samplers.c src/texture_ownership.c src/texture_initialization.c src/texture_transfer.c \
           src/objc_images.c src/objc_image_transfer.c src/render_pipeline.c \
@@ -102,6 +102,7 @@ sanitize:
 abi-compile: | $(BUILD)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(STRICT) -D__APPLE__ -D__MACH__ -D__ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__=130000 -c src/objc_runtime.c -o $(BUILD)/objc_x86_64_compile.o
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(STRICT) -D__APPLE__ -D__MACH__ -D__ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__=130000 -D__arm64__ -c src/objc_runtime.c -o $(BUILD)/objc_arm64_branch_compile.o
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(STRICT) -D__arm64__ -c src/objc_external.c -o $(BUILD)/objc_external_arm64_branch_compile.o
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(STRICT) -D__arm64__ -c src/objc_images.c -o $(BUILD)/objc_images_arm64_branch_compile.o
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(STRICT) -D__arm64__ -c src/objc_image_transfer.c -o $(BUILD)/objc_image_transfer_arm64_branch_compile.o
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(STRICT) -D__arm64__ -c src/objc_render_loader.c -o $(BUILD)/objc_render_loader_arm64_branch_compile.o
@@ -132,3 +133,13 @@ $(BUILD)/test_timeline: tests/test_timeline.c tests/mock_native.c tests/mock_nat
 .PHONY: check-timeline
 check-timeline: $(BUILD)/test_timeline
 	$(BUILD)/test_timeline
+
+$(BUILD)/test_external: tests/test_external.c tests/mock_native.c tests/mock_native.h $(BUILD)/libdoe_metal.a
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(STRICT) tests/test_external.c tests/mock_native.c $(BUILD)/libdoe_metal.a $(LDLIBS) -o $@
+.PHONY: check-external
+check-external: $(BUILD)/test_external $(BUILD)/test_objc_external
+	$(BUILD)/test_external
+	$(BUILD)/test_objc_external
+check: check-external
+$(BUILD)/test_objc_external: tests/test_objc_external.c $(BUILD)/libdoe_metal.a
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(STRICT) $< $(BUILD)/libdoe_metal.a $(LDLIBS) -o $@

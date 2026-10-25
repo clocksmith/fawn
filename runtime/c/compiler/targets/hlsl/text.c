@@ -86,6 +86,7 @@ static void emit_entry(HlslEmitter *e, uint32_t entry) {
     e->uses_wave_counter = false;
     e->uses_array_views = false;
     e->uses_raw_storage = false;
+    e->uses_draw_offsets = false;
     e->entry = entry;
     e->traversal_left = 4096u * ((uint64_t)e->module->type_count +
         e->module->member_count + e->module->instruction_count + 1u);
@@ -108,7 +109,8 @@ static void emit_entry(HlslEmitter *e, uint32_t entry) {
                 (e->uses_native16 ? DOE_COMPILER_HLSL_ENTRY_NATIVE16 : 0u) |
                 (e->uses_wave_counter ? DOE_COMPILER_HLSL_ENTRY_WAVE_COUNTER : 0u) |
                 (e->uses_array_views ? DOE_COMPILER_HLSL_ENTRY_ARRAY_VIEWS : 0u) |
-                (e->uses_raw_storage ? DOE_COMPILER_HLSL_ENTRY_RAW_STORAGE : 0u),
+                (e->uses_raw_storage ? DOE_COMPILER_HLSL_ENTRY_RAW_STORAGE : 0u) |
+                (e->uses_draw_offsets ? DOE_COMPILER_HLSL_ENTRY_DRAW_OFFSETS : 0u),
             .dispatch_register=e->needs_dispatch ? DOE_HLSL_DISPATCH_SLOT : NO_ID,
             .dispatch_space=e->needs_dispatch ? DOE_HLSL_DISPATCH_SPACE : NO_ID,
             .dispatch_bytes=e->needs_dispatch ? 16u : 0u};

@@ -103,6 +103,10 @@ static const doe_shader *module_of(WGPUShaderModule handle, const char **failure
         *failure = "expected a live shader module";
         return NULL;
     }
+    if (payload->imported.data) {
+        *failure = "native source imports have no WGSL binding reflection; use the explicit native layout contract";
+        return NULL;
+    }
     if (!payload->module) {
         *failure = payload->error.diagnostic.message[0] ? payload->error.diagnostic.message :
             "shader module failed WGSL validation";

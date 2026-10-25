@@ -50,7 +50,7 @@ struct doe_dx_timestamps {
     uint64_t initialized_upper[DOE_DX_MAX_QUERIES/64-1];
 };
 typedef struct doe_dx_render_layout {
-    bool color_absent, fragment_absent;
+    bool color_absent, fragment_absent, draw_offsets;
     uint32_t samples, target_count;
     doe_dx_format depth_format;
     bool depth_write, stencil_write;

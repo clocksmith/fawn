@@ -11,7 +11,8 @@ native_result native_backend_open(WGPUBackendType kind, bool fallback, uint32_t 
     native_backend *out)
 {
     if (kind == WGPUBackendType_D3D12)
-        return surface_platforms ? NATIVE_UNSUPPORTED : native_d3d12_open(fallback, out);
+        return surface_platforms && surface_platforms != NATIVE_SURFACE_WINDOWS_HWND ?
+            NATIVE_UNSUPPORTED : native_d3d12_open(fallback, out);
     native_backend result = {.kind=kind};
     native_result status;
     if (kind == WGPUBackendType_Vulkan) {

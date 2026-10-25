@@ -74,11 +74,29 @@ static bool stage_load(native_device *device, WGPUShaderModule module, WGPUStrin
     doe_resource_shader_retain((doe_resource_shader *)module);
     native_shader *payload = doe_resource_shader_native((doe_resource_shader *)module);
     native_stage result = {0};
+    if (payload && payload->imported.data) {
+        bool valid=count == 0;
+        if (!valid) reject(error,WGPUErrorType_Validation,"native source imports do not accept WGSL override constants");
+        if (valid) valid=native_shader_import_select(device,&payload->imported,name,stage,&result,error);
+        if (valid) {
+            result.imported_module=(doe_resource_shader *)module;
+            doe_resource_shader_retain(result.imported_module);
+        }
+        doe_resource_shader_release((doe_resource_shader *)module);
+        native_device_release(device);
+        if (!valid) return false;
+        *out=result;
+        out->entry=&out->imported_entry;
+        out->view.entries=&out->imported_entry;
+        out->view.names=out->name;
+        return true;
+    }
     DoeCompilerOverrideValueV13 *values = NULL;
     doe_shader_module_view metadata;
     bool valid = payload && payload->module &&
         doe_shader_borrow_module(payload->module,&metadata) == DOE_SHADER_OK;
-    if (!valid) reject(error,WGPUErrorType_Validation,"shader module failed WGSL validation; see compilation info");
+    if (!valid) reject(error,WGPUErrorType_Validation,payload && payload->error.diagnostic.message[0] ?
+        payload->error.diagnostic.message : "shader module creation failed; see compilation info");
     if (valid && (!selected_entry(&metadata,name,stage,result.name) || count > metadata.override_count ||
         (count && !constants) || count > SIZE_MAX / sizeof(*values)))
         valid = reject(error,WGPUErrorType_Validation,"stage entry selection or pipeline constant span is invalid");
@@ -147,5 +165,6 @@ void native_stage_release(native_stage *stage)
     if (!stage) return;
     /* Allocator hooks and final module release must remain outside owner locks. */
     doe_shader_release(stage->compiled);
+    doe_resource_shader_release(stage->imported_module);
     memset(stage,0,sizeof(*stage));
 }

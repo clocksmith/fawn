@@ -59,10 +59,11 @@ static void semantic(HlslEmitter *e, const StageInterface *leaf) {
     const FunctionRecord *function = &e->module->functions[e->module->entries[e->entry].function];
     if (leaf->location != NO_ID) {
         hlsl_format(e, "%s%u", (function->flags & FUNCTION_FRAGMENT) != 0u &&
-                    leaf->direction == DOE_COMPILER_INTERFACE_OUTPUT ? "SV_Target" : "TEXCOORD", leaf->location);
+                    leaf->direction == DOE_COMPILER_INTERFACE_OUTPUT ? "SV_Target" : "TEXCOORD", (leaf->flags & DOE_COMPILER_INTERFACE_BLEND_SRC_ONE) ? 1u : leaf->location);
         return;
     }
     switch (leaf->builtin) {
+        case DOE_COMPILER_BUILTIN_PRIMITIVE_INDEX: hlsl_text(e, "SV_PrimitiveID"); break;
         case DOE_COMPILER_BUILTIN_POSITION: hlsl_text(e, "SV_Position"); break;
         case DOE_COMPILER_BUILTIN_VERTEX_INDEX: hlsl_text(e, "SV_VertexID"); break;
         case DOE_COMPILER_BUILTIN_INSTANCE_INDEX: hlsl_text(e, "SV_InstanceID"); break;
@@ -88,6 +89,8 @@ static void interpolation(HlslEmitter *e, const StageInterface *leaf) {
  * stages. The native pipeline projects unused producer locations before DXC. */
 static bool interface_before(const StageInterface *left, const StageInterface *right) {
     if ((left->location != NO_ID) != (right->location != NO_ID)) return left->location != NO_ID;
+    if (left->location!=NO_ID && left->location==right->location)
+        return (left->flags & DOE_COMPILER_INTERFACE_BLEND_SRC_ONE)<(right->flags & DOE_COMPILER_INTERFACE_BLEND_SRC_ONE);
     return left->location != NO_ID ? left->location < right->location : left->builtin < right->builtin;
 }
 static bool projected_output(HlslEmitter *e, const StageInterface *leaf, bool declaration) {
@@ -107,7 +110,7 @@ static uint32_t interface_type(HlslEmitter *e, const StageEntry *entry, uint32_t
     const StageInterface *leaves = e->source->stages->interfaces + entry->interface_first;
     uint32_t count = 0u;
     for (uint32_t i = 0u; i < entry->interface_count; ++i)
-        if (leaves[i].direction == direction && leaves[i].builtin < DOE_COMPILER_BUILTIN_SUBGROUP_SIZE) ++count;
+        if (leaves[i].direction == direction && (leaves[i].builtin != DOE_COMPILER_BUILTIN_SUBGROUP_SIZE && leaves[i].builtin != DOE_COMPILER_BUILTIN_SUBGROUP_INVOCATION_ID)) ++count;
     if (count == 0u) return 0u;
     hlsl_format(e, "struct DoeStage%u {\n", direction);
     uint32_t previous = NO_ID;
@@ -119,7 +122,7 @@ static uint32_t interface_type(HlslEmitter *e, const StageEntry *entry, uint32_t
                 return count;
             }
             --e->traversal_left;
-            if (leaves[i].builtin >= DOE_COMPILER_BUILTIN_SUBGROUP_SIZE || leaves[i].direction != direction ||
+            if ((leaves[i].builtin == DOE_COMPILER_BUILTIN_SUBGROUP_SIZE || leaves[i].builtin == DOE_COMPILER_BUILTIN_SUBGROUP_INVOCATION_ID) || leaves[i].direction != direction ||
                 (previous != NO_ID && !interface_before(&leaves[previous], &leaves[i]))) continue;
             if (next == NO_ID || interface_before(&leaves[i], &leaves[next])) next = i;
         }
@@ -128,6 +131,16 @@ static uint32_t interface_type(HlslEmitter *e, const StageEntry *entry, uint32_t
             return count;
         }
         const StageInterface *leaf = &leaves[next];
+        if (leaf->builtin==DOE_COMPILER_BUILTIN_CLIP_DISTANCES) {
+            uint32_t n=e->module->types[leaf->type-IR_PRIMITIVE_COUNT].count;
+            for (uint32_t k=0;k<(n+3)/4;++k) {
+                uint32_t width=n-k*4; if (width>4) width=4;
+                hlsl_text(e,"    float"); if (width>1) hlsl_format(e,"%u",width);
+                hlsl_format(e," field%u_clip%u : SV_ClipDistance%u;\n",next,k,k);
+            }
+            previous=next;
+            continue;
+        }
         const bool projected = projected_output(e, leaf, true);
         hlsl_text(e, "    ");
         interpolation(e, leaf);
@@ -145,6 +158,18 @@ void hlsl_graphics_wrapper(HlslEmitter *e) {
     const StageEntry *entry = stage_entry(e);
     if (entry == NULL) return;
     const FunctionRecord *function = &e->module->functions[e->module->entries[e->entry].function];
+    for (uint32_t i = 0u; i < entry->interface_count; ++i) {
+        const StageInterface *leaf = &e->source->stages->interfaces[entry->interface_first + i];
+        if (leaf->direction == DOE_COMPILER_INTERFACE_INPUT &&
+            (leaf->builtin == DOE_COMPILER_BUILTIN_VERTEX_INDEX ||
+             leaf->builtin == DOE_COMPILER_BUILTIN_INSTANCE_INDEX)) e->uses_draw_offsets = true;
+    }
+    if (e->uses_draw_offsets) {
+        /* SM6.0 system IDs omit API draw offsets. Native draws bind exact
+         * normalized arguments, including GPU-produced indirect offsets. */
+        hlsl_format(e, "cbuffer DoeDrawOffsets : register(b%u, space%u) { uint2 doe_draw_offsets; };\n",
+            DOE_COMPILER_HLSL_DRAW_OFFSETS_REGISTER, DOE_COMPILER_HLSL_DRAW_OFFSETS_SPACE);
+    }
     const uint32_t inputs = interface_type(e, entry, DOE_COMPILER_INTERFACE_INPUT);
     const uint32_t outputs = interface_type(e, entry, DOE_COMPILER_INTERFACE_OUTPUT);
     hlsl_text(e, outputs != 0u ? "DoeStage2 " : "void ");
@@ -165,6 +190,8 @@ void hlsl_graphics_wrapper(HlslEmitter *e) {
             const bool half = type_leaf(e->module,leaf->type) == IR_F16;
             if (half) { hlsl_type(e,leaf->type); hlsl_text(e,"("); }
             hlsl_format(e,"input.field%u",i);
+            if (leaf->builtin == DOE_COMPILER_BUILTIN_VERTEX_INDEX) hlsl_text(e, " + doe_draw_offsets.x");
+            else if (leaf->builtin == DOE_COMPILER_BUILTIN_INSTANCE_INDEX) hlsl_text(e, " + doe_draw_offsets.y");
             hlsl_text(e,half ? ");\n" : ";\n");
         }
     }
@@ -179,6 +206,17 @@ void hlsl_graphics_wrapper(HlslEmitter *e) {
         for (uint32_t i = 0u; i < entry->interface_count; ++i) {
             const StageInterface *leaf = &e->source->stages->interfaces[entry->interface_first + i];
             if (leaf->direction != DOE_COMPILER_INTERFACE_OUTPUT) continue;
+            if (leaf->builtin==DOE_COMPILER_BUILTIN_CLIP_DISTANCES) {
+                uint32_t n=e->module->types[leaf->type-IR_PRIMITIVE_COUNT].count;
+                for (uint32_t k=0;k<n;++k) {
+                    hlsl_format(e,"    output.field%u_clip%u",i,k/4);
+                    if (n-(k/4)*4>1) hlsl_format(e,"[%u]",k%4);
+                    hlsl_text(e," = value");
+                    if (leaf->member!=NO_ID) hlsl_format(e,".m%u",leaf->member);
+                    hlsl_format(e,".elements[%u];\n",k);
+                }
+                continue;
+            }
             const bool projected = projected_output(e, leaf, false);
             hlsl_format(e, "    output.field%u = value", i);
             if (leaf->member != NO_ID) hlsl_format(e, ".m%u", leaf->member);

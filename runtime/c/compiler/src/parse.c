@@ -167,15 +167,27 @@ static bool generic_reference(Parser *p,Syntax *s,NameSpan name,TypeRef *out) {
     if (source_span_is(p->source, name, "ptr")) {
         NameSpan space;
         if (!parser_name_span(p, &space) || !parser_punctuation(p, ',', ",")) return false;
-        if (!source_span_is(p->source, space, "function"))
-            return source_error(p->source, DOE_COMPILER_UNSUPPORTED, space.offset,
-                "only function-address pointer types are currently admitted");
+        if (source_span_is(p->source, space, "function")) g->flags = POINTER_FUNCTION;
+        else if (source_span_is(p->source, space, "private")) g->flags = POINTER_PRIVATE;
+        else if (source_span_is(p->source, space, "workgroup")) g->flags = POINTER_WORKGROUP;
+        else if (source_span_is(p->source, space, "uniform")) g->flags = POINTER_UNIFORM;
+        else if (source_span_is(p->source, space, "storage")) g->flags = POINTER_STORAGE_READ;
+        else if (source_span_is(p->source, space, "immediate")) g->flags = POINTER_IMMEDIATE;
+        else return source_error(p->source, DOE_COMPILER_SEMANTIC_ERROR, space.offset,
+            "invalid pointer address space");
         if (!type_reference(p, s, &g->element)) return false;
         if (parser_peek(p)->kind == ',') {
             ++p->cursor;
-            if (parser_peek(p)->kind != '>')
-                return source_error(p->source, DOE_COMPILER_SEMANTIC_ERROR, parser_peek(p)->offset,
-                    "function pointer types cannot specify an access mode");
+            if (parser_peek(p)->kind != '>') {
+                NameSpan access;
+                if (!parser_name_span(p, &access)) return false;
+                if (g->flags != POINTER_STORAGE_READ ||
+                    (!source_span_is(p->source, access, "read") && !source_span_is(p->source, access, "read_write")))
+                    return source_error(p->source, DOE_COMPILER_SEMANTIC_ERROR, access.offset,
+                        "only storage pointers accept read or read_write access");
+                if (source_span_is(p->source, access, "read_write")) g->flags = POINTER_STORAGE_WRITE;
+                if (parser_peek(p)->kind == ',') ++p->cursor;
+            }
         }
         if (!template_close(p)) return false;
         --p->active_type;
@@ -908,6 +920,21 @@ static bool module_directive(Parser *p, bool enable) {
                                     "f16 is not enabled by the compiler consumer");
             p->tokens->module_flags |= MODULE_F16;
         }
+        else if (enable && parser_spelled(p, extension, "clip_distances")) {
+            if ((p->tokens->module_flags & MODULE_DISABLE_CLIP_DISTANCES) != 0u)
+                return source_error(p->source,DOE_COMPILER_UNSUPPORTED,extension->offset,"clip_distances is not enabled by the compiler consumer");
+            p->tokens->module_flags |= MODULE_CLIP_DISTANCES;
+        }
+        else if (enable && parser_spelled(p, extension, "primitive_index")) {
+            if ((p->tokens->module_flags & MODULE_DISABLE_PRIMITIVE_INDEX) != 0u)
+                return source_error(p->source,DOE_COMPILER_UNSUPPORTED,extension->offset,"primitive_index is not enabled by the compiler consumer");
+            p->tokens->module_flags |= MODULE_PRIMITIVE_INDEX;
+        }
+        else if (enable && parser_spelled(p, extension, "dual_source_blending")) {
+            if ((p->tokens->module_flags & MODULE_DISABLE_DUAL_SOURCE_BLENDING) != 0u)
+                return source_error(p->source,DOE_COMPILER_UNSUPPORTED,extension->offset,"dual_source_blending is not enabled by the compiler consumer");
+            p->tokens->module_flags |= MODULE_DUAL_SOURCE_BLENDING;
+        }
         else if (!enable && parser_spelled(p, extension, "uniform_buffer_standard_layout") &&
                  (p->tokens->module_flags & MODULE_STANDARD_UNIFORM) != 0u) {
             /* A language requirement checks caller-selected implementation support. */
@@ -917,6 +944,7 @@ static bool module_directive(Parser *p, bool enable) {
         }
         else if (!enable && (parser_spelled(p, extension, "texture_and_sampler_let") ||
                  parser_spelled(p, extension, "pointer_composite_access") ||
+                 parser_spelled(p, extension, "unrestricted_pointer_parameters") ||
                  parser_spelled(p, extension, "subgroup_id"))) {
             /* Shared SSA aliases, reference paths and native target contracts. */
         }

@@ -52,6 +52,7 @@ typedef struct doe_mtl_caps {
     uint32_t max_texture_1d, max_texture_2d, max_texture_3d, max_texture_layers;
     bool bc_texture_compression;
     bool texture_swizzle;
+    bool primitive_index, dual_source_blending; /* Actual family admission, not target syntax support. */
     bool subgroups; /* Conservative Apple7+ complete native SIMD/quad operation envelope. */
     uint32_t subgroup_min_size, subgroup_max_size;
     bool etc2_texture_compression, astc_texture_compression, astc_sliced_3d;
@@ -66,6 +67,9 @@ typedef struct doe_mtl_caps {
     float timestamp_period_ns; /* Paired CPU(ns)/GPU clock calibration; zero means unavailable. */
 } doe_mtl_caps;
 
+/* Compile an MSL library without inventing an entry or pipeline; no retained PSO.
+ * Used by the native-source module contract to report syntax errors at creation. */
+doe_mtl_status doe_mtl_shader_validate(doe_mtl_context *, const char *, size_t, doe_mtl_error *);
 doe_mtl_status doe_mtl_context_create(doe_mtl_context **out, doe_mtl_error *error);
 /* Before publishing resources: prefer a real shared-event timeline when supported.
  * No API/selector support keeps ordinary command completion; native errors fail. */

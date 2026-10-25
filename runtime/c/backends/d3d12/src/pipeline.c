@@ -44,7 +44,10 @@ doe_dx_status doe_dx_validate_layout(const doe_dx_context *context, const doe_dx
     const doe_dx_limits *limits = &context->caps.limits;
     if (buffers->binding_count + desc->texture_count > limits->max_descriptors ||
         desc->sampler_count > limits->max_static_samplers) return DOE_DX_RANGE;
-    uint32_t cbvs = dynamic ? (dynamic->immediate_bytes ? 1u : 0u)+(dynamic->logical_size_count ? 1u : 0u) : 0u;
+    /* Tier limits cover descriptor tables. Inline root constants and root
+     * CBVs consume the separate root-DWORD budget, not table descriptors.
+     * https://microsoft.github.io/DirectX-Specs/d3d/ResourceBinding.html */
+    uint32_t cbvs = 0;
     uint32_t srvs = 0, uavs = 0;
     for (size_t index = 0; index < buffers->binding_count; index++) {
         const doe_dx_binding_layout *binding = &buffers->bindings[index];

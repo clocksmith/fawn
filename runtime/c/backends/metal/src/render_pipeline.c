@@ -23,7 +23,7 @@ static bool face_valid(doe_mtl_stencil_face face) {
     return face.compare <= 7 && face.fail <= 7 && face.depth_fail <= 7 && face.pass <= 7;
 }
 static bool blend_valid(doe_mtl_blend_component blend) {
-    return blend.operation <= 4 && blend.source <= 14 && blend.destination <= 14;
+    return blend.operation <= 4 && blend.source <= 18 && blend.destination <= 18;
 }
 static doe_mtl_status pipeline_validate(const doe_mtl_context *context, const doe_mtl_render_pipeline_desc *desc) {
     size_t i, j;
@@ -46,6 +46,9 @@ static doe_mtl_status pipeline_validate(const doe_mtl_context *context, const do
         const doe_mtl_color_target *color = &desc->colors[i];
         doe_mtl_format_info info;
         if (color->format == 0) continue;
+        if (color->blend && (color->color.source>=15 || color->color.destination>=15 ||
+            color->alpha.source>=15 || color->alpha.destination>=15) && (desc->color_count!=1 || i!=0))
+            return DOE_MTL_UNSUPPORTED;
         occupied = true;
         if (doe_mtl_texture_format_info(color->format, &info) != DOE_MTL_OK ||
             info.compressed || info.depth || info.stencil) return DOE_MTL_UNSUPPORTED;

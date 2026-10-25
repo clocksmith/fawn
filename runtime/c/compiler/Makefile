@@ -575,3 +575,39 @@ build/test_pointer_specialization: tests/test_pointer_specialization.c tests/hls
 	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) $< $(abspath $(SHARED_LIBRARY)) -Wl,-rpath,$(abspath $(dir $(SHARED_LIBRARY))) -lm -o $@
 test-pointer-specialization: build/test_pointer_specialization
 	build/test_pointer_specialization
+
+.PHONY: test-hlsl-draw-offsets
+build/test_hlsl_draw_offsets: tests/test_hlsl_draw_offsets.c tests/hlsl_fixture.h $(HEADERS) $(SHARED_LIBRARY) | build/.ready
+	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) $< $(abspath $(SHARED_LIBRARY)) -Wl,-rpath,$(abspath $(dir $(SHARED_LIBRARY))) -lm -o $@
+test-hlsl-draw-offsets: build/test_hlsl_draw_offsets
+	build/test_hlsl_draw_offsets
+
+.PHONY: test-global-pointers
+test-global-pointers: all
+	PYTHONDONTWRITEBYTECODE=1 python3 tests/test_global_pointers.py
+
+.PHONY: test-hlsl-immediate
+build/test_hlsl_immediate: tests/test_hlsl_immediate.c tests/hlsl_fixture.h $(HEADERS) $(SHARED_LIBRARY) | build/.ready
+	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) $< $(abspath $(SHARED_LIBRARY)) -Wl,-rpath,$(abspath $(dir $(SHARED_LIBRARY))) -lm -o $@
+test-hlsl-immediate: build/test_hlsl_immediate
+	build/test_hlsl_immediate
+
+.PHONY: test-pointer-uniformity
+test-pointer-uniformity: all
+	PYTHONDONTWRITEBYTECODE=1 python3 tests/test_pointer_uniformity.py
+
+.PHONY: test-feature-admission test-pointer-uniformity-capacity
+build/test_feature_admission: tests/test_feature_admission.c tests/hlsl_fixture.h build/libdoe_compiler.so
+	$(CC) $(CFLAGS) $< $(CURDIR)/build/libdoe_compiler.so -Wl,-rpath,$(CURDIR)/build -lm -o $@
+test-feature-admission: build/test_feature_admission
+	$<
+build/test_pointer_uniformity_capacity: tests/test_pointer_uniformity_capacity.c tests/hlsl_fixture.h build/libdoe_compiler.so
+	$(CC) $(CFLAGS) $< $(CURDIR)/build/libdoe_compiler.so -Wl,-rpath,$(CURDIR)/build -lm -o $@
+test-pointer-uniformity-capacity: build/test_pointer_uniformity_capacity
+	$<
+
+build/test_external_handles: tests/test_external_handles.c tests/hlsl_fixture.h $(HEADERS) $(SHARED_LIBRARY) | build/.ready
+	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) $< $(abspath $(SHARED_LIBRARY)) -Wl,-rpath,$(abspath $(dir $(SHARED_LIBRARY))) -lm -o $@
+.PHONY: test-external-handles
+test-external-handles: build/test_external_handles
+	build/test_external_handles

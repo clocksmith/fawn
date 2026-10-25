@@ -5,7 +5,7 @@
 typedef struct {
     Source *source;
     FunctionRecord original, clone;
-    uint32_t extra_formal, argument_first, argument_count;
+    uint32_t extra_formal, argument_first, argument_count, value_start;
     uint64_t *work;
 } PointerClone;
 bool pointer_lower(Source *);

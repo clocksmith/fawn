@@ -37,7 +37,11 @@ static bool texture(const DoeCompilerResourceV4 *resource,const DoeCompilerHandl
     const DoeCompilerHlslBindingV11 *target,doe_dx_texture_binding_layout *out,doe_dx_texture_contract *contract)
 {
     if (!typed || (typed->view_dimension<DOE_COMPILER_VIEW_1D || typed->view_dimension>DOE_COMPILER_VIEW_3D) ||
-        (typed->flags & ~(DOE_COMPILER_HANDLE_MULTISAMPLED|DOE_COMPILER_HANDLE_DEPTH)) || target->stride) return false;
+        (typed->flags & ~(DOE_COMPILER_HANDLE_MULTISAMPLED|DOE_COMPILER_HANDLE_DEPTH|DOE_COMPILER_HANDLE_EXTERNAL)) || target->stride) return false;
+    if ((typed->flags & DOE_COMPILER_HANDLE_EXTERNAL) &&
+        (typed->flags != DOE_COMPILER_HANDLE_EXTERNAL || typed->view_dimension != DOE_COMPILER_VIEW_2D ||
+        typed->sample_scalar != DOE_COMPILER_LEAF_F32 || resource->kind != DOE_COMPILER_SAMPLED_TEXTURE ||
+        resource->access != DOE_COMPILER_READ)) return false;
     *out = (doe_dx_texture_binding_layout){.shader_register=target->shader_register,.register_space=target->register_space};
     if (resource->kind == DOE_COMPILER_STORAGE_TEXTURE) {
         if (typed->flags) return false;
@@ -76,6 +80,15 @@ bool native_d3d12_stage_bindings_for(const native_pipeline *pipeline,const nativ
          expected_stage!=DOE_COMPILER_STAGE_FRAGMENT)) return false;
     const doe_shader_view *view = &stage->view;
     const DoeCompilerEntryV5 *entry = stage->entry;
+    if (stage->imported) {
+        /* The retained raw-HLSL path has no buffer element/register contract.
+         * An empty native root signature is real; guessing reflected rows is not. */
+        if (view->target != DOE_SHADER_HLSL || !entry || entry->stage != expected_stage ||
+            pipeline->binding_count || pipeline->immediate_bytes) return false;
+        *out=(native_d3d12_layout){0};
+        *map=(native_d3d12_compute){.dispatch_index=UINT32_MAX};
+        return true;
+    }
     if (view->target != DOE_SHADER_HLSL || view->target_language_version != 600 ||
         !view->entries || !entry || (view->counts.resources && !view->resources) ||
         (view->counts.entry_references && !view->entry_references) ||
@@ -131,12 +144,15 @@ bool native_d3d12_stage_bindings_for(const native_pipeline *pipeline,const nativ
             if (!uniform && !target->stride) raw_storage=true;
             result.buffer_indices[slot] = i;
             result.uniform[slot] = uniform;
-        } else if (public->kind == DOE_BIND_TEXTURE || public->kind == DOE_BIND_STORAGE_TEXTURE) {
+        } else if (public->kind == DOE_BIND_TEXTURE || public->kind == DOE_BIND_STORAGE_TEXTURE ||
+            public->kind == DOE_BIND_EXTERNAL_TEXTURE) {
             if (result.texture_count == DOE_DX_MAX_BINDINGS ||
-                (public->kind == DOE_BIND_TEXTURE) != (resource->kind == DOE_COMPILER_SAMPLED_TEXTURE)) return false;
+                (public->kind != DOE_BIND_STORAGE_TEXTURE) != (resource->kind == DOE_COMPILER_SAMPLED_TEXTURE)) return false;
             size_t slot = result.texture_count++;
             if (!texture(resource,handle(view,index),target,&layout.textures[slot],&layout.contracts[slot])) return false;
             const DoeCompilerHandleV6 *typed=handle(view,index);
+            if (!typed || ((typed->flags & DOE_COMPILER_HANDLE_EXTERNAL) != 0) !=
+                (public->kind == DOE_BIND_EXTERNAL_TEXTURE)) return false;
             if (typed && ((typed->view_dimension==DOE_COMPILER_VIEW_2D && !(typed->flags & DOE_COMPILER_HANDLE_MULTISAMPLED)) ||
                 typed->view_dimension==DOE_COMPILER_VIEW_CUBE)) array_views=true;
             result.texture_indices[slot] = i;
@@ -157,12 +173,13 @@ bool native_d3d12_stage_bindings_for(const native_pipeline *pipeline,const nativ
         if (native) return false;
         native = &view->hlsl_entries[i];
     }
-    if (!native || native->stage != expected_stage || (native->flags & ~(DOE_COMPILER_HLSL_ENTRY_ARRAY_VIEWS|DOE_COMPILER_HLSL_ENTRY_NATIVE16|DOE_COMPILER_HLSL_ENTRY_RAW_STORAGE|DOE_COMPILER_HLSL_ENTRY_WAVES|DOE_COMPILER_HLSL_ENTRY_WAVE_COUNTER)) ||
+    if (!native || native->stage != expected_stage || (native->flags & ~(DOE_COMPILER_HLSL_ENTRY_ARRAY_VIEWS|DOE_COMPILER_HLSL_ENTRY_NATIVE16|DOE_COMPILER_HLSL_ENTRY_RAW_STORAGE|DOE_COMPILER_HLSL_ENTRY_WAVES|DOE_COMPILER_HLSL_ENTRY_WAVE_COUNTER|DOE_COMPILER_HLSL_ENTRY_DRAW_OFFSETS)) ||
         (array_views && !(native->flags & DOE_COMPILER_HLSL_ENTRY_ARRAY_VIEWS))) return false;
     if (raw_storage!=((native->flags & DOE_COMPILER_HLSL_ENTRY_RAW_STORAGE)!=0) ||
         (raw_storage && (!(native->flags & DOE_COMPILER_HLSL_ENTRY_NATIVE16) || view->counts.resources>16384))) return false;
     if ((native->flags & DOE_COMPILER_HLSL_ENTRY_WAVE_COUNTER) &&
         (!(native->flags & DOE_COMPILER_HLSL_ENTRY_WAVES) || expected_stage!=DOE_COMPILER_STAGE_COMPUTE)) return false;
+    if ((native->flags & DOE_COMPILER_HLSL_ENTRY_DRAW_OFFSETS) && expected_stage!=DOE_COMPILER_STAGE_VERTEX) return false;
     result.entry_flags=native->flags;
     result.logical_size_count=raw_storage ? (uint32_t)view->counts.resources : 0;
     if (expected_stage != DOE_COMPILER_STAGE_COMPUTE && native->dispatch_bytes) return false;

@@ -4,7 +4,7 @@
 
 static uint32_t builtin_name(const Parser *p) {
     static const char *const names[] = {"position", "vertex_index", "instance_index",
-        "front_facing", "frag_depth", "sample_index", "sample_mask", "subgroup_size", "subgroup_invocation_id"};
+        "front_facing", "frag_depth", "sample_index", "sample_mask", "subgroup_size", "subgroup_invocation_id", "clip_distances", "primitive_index"};
     for (uint32_t i = 0u; i < sizeof(names) / sizeof(names[0]); ++i)
         if (parser_spelled(p, parser_peek(p), names[i])) return i + 1u;
     return 0u;
@@ -33,6 +33,7 @@ bool parse_interface_attribute(Parser *p, Syntax *syntax, uint32_t owner, uint32
     if (parser_spelled(p, parser_peek(p), "builtin")) flag = STAGE_HAS_BUILTIN;
     else if (parser_spelled(p, parser_peek(p), "location")) flag = STAGE_HAS_LOCATION;
     else if (parser_spelled(p, parser_peek(p), "interpolate")) flag = STAGE_HAS_INTERPOLATION;
+    else if (parser_spelled(p, parser_peek(p), "blend_src")) flag = STAGE_HAS_BLEND_SRC;
     else if (parser_spelled(p, parser_peek(p), "invariant")) flag = STAGE_HAS_INVARIANT;
     else return source_error(p->source, DOE_COMPILER_UNSUPPORTED, offset, "unsupported stage interface attribute");
     InterfaceAttribute *attribute = stage_attribute(p->source, owner, index, offset, true);
@@ -43,7 +44,9 @@ bool parse_interface_attribute(Parser *p, Syntax *syntax, uint32_t owner, uint32
     ++p->cursor;
     if (flag == STAGE_HAS_INVARIANT) return true;
     if (!parser_punctuation(p, '(', "(")) return false;
-    if (flag == STAGE_HAS_LOCATION) {
+    if (flag == STAGE_HAS_BLEND_SRC) {
+        if (!expression(p, syntax, 0u, 0u, &attribute->blend_expression)) return false;
+    } else if (flag == STAGE_HAS_LOCATION) {
         if (!expression(p, syntax, 0u, 0u, &attribute->location_expression)) return false;
     } else if (flag == STAGE_HAS_BUILTIN) {
         attribute->builtin = builtin_name(p);

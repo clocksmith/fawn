@@ -433,3 +433,21 @@ contracts and the existing timestamp owner's typed event-call ABI. `check-timeli
 checks native call arguments, terminal-error authority, missing signal proof,
 overflow-before-commit and retained ownership. These are host-call controls, not
 an Apple SDK build, physical-Metal execution, performance or cutover claim.
+
+### External IOSurface/CoreVideo planes
+
+`doe_metal_external.h` imports completed IOSurface or IOSurface-backed
+CVPixelBuffer storage into the existing texture owner. Packed RGBA8/BGRA8 and
+8-bit two-plane 420v/420f use actual `newTextureWithDescriptor:iosurface:plane:`
+calls and canonical Metal formats (RG8Unorm is 30, not the retained bridge's
+R16Float value 25). Every plane has ordinary view/command/context leases;
+partial construction rolls back, and pending/unknown work retains its storage.
+The caller synchronizes and preserves external producer contents through those
+leases. No second command queue, resource refcount or fabricated GPU result is
+introduced.
+
+`make check-external` exercises typed call identities/arguments, packed and NV12
+shapes, partial failure, untouched outputs, and normal command retirement using
+host call ledgers. `sdk-abi` includes the new format and selector signatures;
+it still needs an Apple SDK. These checks are not physical Metal import/video
+qualification, and the import primitive performs no color-space conversion.

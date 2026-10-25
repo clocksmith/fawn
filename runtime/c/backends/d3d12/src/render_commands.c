@@ -47,7 +47,7 @@ static doe_dx_status prepare_indirect(doe_dx_commands *commands,const doe_dx_ren
         uint32_t alignment=i && draw->index_format==DOE_DX_INDEX_UINT16 ? 2u : 4u;
         if (view->buffer->memory!=DOE_DX_DEFAULT || view->offset%alignment ||
             !doe_dx_range(view->buffer->size,view->offset,view->size) ||
-            (i ? view->size>UINT32_MAX || view->size%alignment : view->size<(draw->indices ? 20u : 16u)))
+            (i ? view->size>UINT32_MAX || view->size%alignment : view->size<(draw->indices ? 20u : 16u)+(layout->draw_offsets ? 8u : 0u)))
             return doe_dx_fail(DOE_DX_RANGE,0,"render.indirect_view",error);
         for (size_t stage=0;stage<DOE_DX_RENDER_STAGES;++stage) {
             const doe_dx_binding_plan *plan=&draw->pipeline->render->stages[stage];

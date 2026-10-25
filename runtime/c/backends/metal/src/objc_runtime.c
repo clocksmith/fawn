@@ -169,6 +169,7 @@ static void close_runtime(void *userdata) {
     if (runtime == NULL) return;
     (void)doe_mtl_objc_archive_flush(runtime, NULL);
     doe_mtl_objc_archive_clear(runtime);
+    doe_mtl_objc_close_external(runtime);
     if (runtime->metal_library != NULL) dlclose(runtime->metal_library);
     if (runtime->foundation_library != NULL) dlclose(runtime->foundation_library);
     if (runtime->objc_library != NULL) dlclose(runtime->objc_library);
@@ -304,9 +305,11 @@ static doe_mtl_status open_apple_runtime(doe_mtl_native *out, doe_mtl_error *err
         !doe_mtl_objc_load_render(runtime, message)) goto unavailable;
     doe_mtl_objc_load_queries(runtime, message);
     doe_mtl_objc_load_archives(runtime, message);
+    doe_mtl_objc_load_external(runtime, message);
     native.userdata = runtime;
     native.close = close_runtime;
     native.release = doe_mtl_objc_release;
+    native.external_texture = doe_mtl_objc_external_import;
     native.surface_supported = doe_mtl_objc_surface_supported;
     native.surface_configure = doe_mtl_objc_surface_configure;
     native.surface_acquire = doe_mtl_objc_surface_acquire;
@@ -316,6 +319,7 @@ static doe_mtl_status open_apple_runtime(doe_mtl_native *out, doe_mtl_error *err
     native.queue = create_queue;
     native.buffer = create_buffer;
     native.contents = buffer_contents;
+    native.shader_validate = doe_mtl_objc_shader_validate;
     native.pipeline = doe_mtl_objc_pipeline;
     native.pipeline_cache = doe_mtl_objc_archive_configure;
     native.pipeline_cache_flush = doe_mtl_objc_archive_flush;

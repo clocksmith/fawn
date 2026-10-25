@@ -130,7 +130,8 @@ static bool capture_identity(Source *s, const LocalScope *scope, SourceReference
         kind = SOURCE_POINTER_FORMAL;
     else if (identity.kind == IDENTITY_LOCAL && type_pointer(s->compiler, scope->values[identity.index].type)) {
         const PointerValue pointer = scope->values[identity.index].pointer_value;
-        kind = pointer.category == ROOT_POINTER ? SOURCE_POINTER_FORMAL : SOURCE_POINTER_LOCAL;
+        kind = pointer.category == ROOT_POINTER ? SOURCE_POINTER_FORMAL :
+            pointer.category == ROOT_RESOURCE ? SOURCE_RESOURCE : pointer.category == ROOT_WORKGROUP ? SOURCE_WORKGROUP : SOURCE_POINTER_LOCAL;
         identity.index = pointer.root;
     }
     else if (identity.kind==IDENTITY_RESOURCE) kind=SOURCE_RESOURCE;
@@ -210,7 +211,8 @@ static inline bool dereference(Source *s, const Expression *node, const LocalSco
     if (!type_pointer(s->compiler, pointer.constant.type))
         return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, node->source_offset, "dereference requires a pointer value");
     *out = (ValueReference){pointer.pointer.root, pointer.pointer.path, pointer.pointer.category,
-        s->compiler->types[pointer.pointer.type - IR_PRIMITIVE_COUNT].element, true, true};
+        s->compiler->types[pointer.pointer.type - IR_PRIMITIVE_COUNT].element,
+        type_pointer_writable(s->compiler, pointer.pointer.type), true};
     return true;
 }
 static bool access_base(Source *s, const Expression *node, const LocalScope *scope, bool evaluate, bool emit, ValueReference *ref, ExpressionValue *value, bool *reference, SourceReference *slot) {
@@ -270,7 +272,7 @@ static bool postfix_value(Source *s, const Expression *node, const LocalScope *s
     if (!is_ref && type_pointer(c,base.constant.type)) {
         const PointerValue pointer = base.pointer;
         *ref = (ValueReference){pointer.root,pointer.path,pointer.category,
-            c->types[pointer.type-IR_PRIMITIVE_COUNT].element,true,true};
+            c->types[pointer.type-IR_PRIMITIVE_COUNT].element,type_pointer_writable(c,pointer.type),true};
         is_ref = true;
     }
     TypeId input = is_ref?ref->type:base.constant.type, output = IR_VOID;
@@ -428,12 +430,27 @@ bool sema_assignment_reference(Source *s, const Assignment *a, const LocalScope 
         out->category==ROOT_WORKGROUP?SOURCE_WORKGROUP:SOURCE_NONE;
     return source_reference_record(s,slot,kind,kind==SOURCE_NONE?0u:out->root,a->root.offset);
 }
+uint32_t sema_reference_space(const CompilerWorkspace *c, ValueReference ref) {
+    if (ref.category == ROOT_POINTER) return c->types[c->formals[ref.root].type.resolved.type-IR_PRIMITIVE_COUNT].count;
+    if (ref.category == ROOT_RESOURCE) return c->resources[ref.root].kind == DOE_COMPILER_UNIFORM_BUFFER ? POINTER_UNIFORM :
+        c->resources[ref.root].access == DOE_COMPILER_READ_WRITE ? POINTER_STORAGE_WRITE : POINTER_STORAGE_READ;
+    if (ref.category == ROOT_WORKGROUP) return c->workgroups[ref.root].state.resolved.address_space == MODULE_PRIVATE ? POINTER_PRIVATE :
+        c->workgroups[ref.root].state.resolved.address_space == MODULE_IMMEDIATE ? POINTER_IMMEDIATE : POINTER_WORKGROUP;
+    return POINTER_FUNCTION;
+}
 bool sema_address_reference(Source *s, uint32_t id, const LocalScope *scope,
                              bool evaluate, bool emit, ValueReference *out) {
     CompilerWorkspace *c = s->compiler;
     const Expression *address = &c->expressions[id];
-    if (address->kind != EXPRESSION_ADDRESS)
-        return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, address->source_offset, "builtin requires an address expression");
+    if (address->kind != EXPRESSION_ADDRESS) {
+        ExpressionValue pointer;
+        if (!sema_expression(s,id,scope,evaluate,emit,&pointer)) return false;
+        if (!type_pointer(c,pointer.constant.type))
+            return source_error(s,DOE_COMPILER_SEMANTIC_ERROR,address->source_offset,"builtin requires a pointer value");
+        *out = (ValueReference){pointer.pointer.root,pointer.pointer.path,pointer.pointer.category,
+            c->types[pointer.constant.type-IR_PRIMITIVE_COUNT].element,type_pointer_writable(c,pointer.constant.type),true};
+        return true;
+    }
     if (!reference_expression(s, address->left, scope, evaluate, emit, out)) return false;
     if (!out->addressable)
         return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, address->source_offset, "vector components are not addressable");
@@ -444,11 +461,11 @@ static inline bool address_value(Source *s, uint32_t id, const LocalScope *scope
     ValueReference ref;
     if (!sema_address_reference(s, id, scope, evaluate, emit, &ref)) return false;
     const uint32_t offset = s->compiler->expressions[id].source_offset;
-    if (ref.category != ROOT_LOCAL && ref.category != ROOT_POINTER)
-        return source_error(s, DOE_COMPILER_UNSUPPORTED, offset, "non-function address values are supported only as arrayLength or atomic builtin operands");
+    const uint32_t space = sema_reference_space(s->compiler,ref);
     TypeId type;
-    if (!type_intern(s, TYPE_POINTER, ref.type, 1u, &type)) return false;
-    const SourceReferenceKind kind = ref.category == ROOT_POINTER ? SOURCE_POINTER_FORMAL : SOURCE_POINTER_LOCAL;
+    if (!type_intern(s, TYPE_POINTER, ref.type, space, &type)) return false;
+    const SourceReferenceKind kind = ref.category == ROOT_POINTER ? SOURCE_POINTER_FORMAL :
+        ref.category == ROOT_RESOURCE ? SOURCE_RESOURCE : ref.category == ROOT_WORKGROUP ? SOURCE_WORKGROUP : SOURCE_POINTER_LOCAL;
     if (!source_reference_record(s, &s->compiler->expression_references[id], kind, ref.root, offset)) return false;
     *out = (ExpressionValue){.runtime = true, .pointer = {type, ref.category, ref.root, ref.path},
         .value = {.type = type, .source_offset = offset}};

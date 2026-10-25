@@ -87,6 +87,9 @@ wgpuDevicePopErrorScope
 wgpuDevicePushErrorScope
 wgpuDeviceRelease
 wgpuDeviceSetLabel
+wgpuExternalTextureAddRef
+wgpuExternalTextureRelease
+wgpuExternalTextureSetLabel
 wgpuGetInstanceFeatures
 wgpuGetInstanceLimits
 wgpuGetProcAddress

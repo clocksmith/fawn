@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: MIT */
 #include "internal.h"
+#include "native_import_layout.h"
 
 /* ABI17 owns exact byte accessibility; native code never reconstructs WGSL layout. */
 static bool immediate_requirements(const native_stage *stages, size_t count,
@@ -9,6 +10,7 @@ static bool immediate_requirements(const native_stage *stages, size_t count,
     *mask = 0;
     *visibility = 0;
     for (size_t s = 0; s < count; ++s) {
+        if (stages[s].imported) continue; /* Explicit native contract, no compiler completeness claim. */
         const doe_shader_view *view = &stages[s].view;
         if (!view->translation_complete || !view->entries || !stages[s].entry ||
             (view->translation_entry_count && !view->translation_entries)) return false;
@@ -39,6 +41,7 @@ static bool immediate_requirements(const native_stage *stages, size_t count,
 static bool sampling_complete(const native_stage *stages, size_t count)
 {
     for (size_t s = 0; s < count; ++s) {
+        if (stages[s].imported) continue; /* Explicit native contract, no compiler completeness claim. */
         const doe_shader_view *view = &stages[s].view;
         if (!view->sampling_pairs_complete || !view->entries || !stages[s].entry ||
             (view->sampling_pair_count && (!view->sampling_pairs || !view->resources))) return false;
@@ -59,6 +62,7 @@ static bool sampling_complete(const native_stage *stages, size_t count)
 static bool texture_sampled(const native_stage *stages, size_t count, const DoeCompilerResourceV4 *resource)
 {
     for (size_t s = 0; s < count; ++s) {
+        if (stages[s].imported) continue; /* Explicit native contract, no compiler completeness claim. */
         const doe_shader_view *view = &stages[s].view;
         for (size_t i = 0; i < view->sampling_pair_count; ++i) {
             const DoeCompilerResourceV4 *texture = &view->resources[view->sampling_pairs[i].texture_resource_index];
@@ -79,6 +83,7 @@ static const doe_resource_layout_entry *layout_entry(doe_resource_pipeline_layou
 static bool sampling_layout(const native_stage *stages, size_t count, doe_resource_pipeline_layout *layout)
 {
     for (size_t s = 0; s < count; ++s) {
+        if (stages[s].imported) continue; /* Explicit native contract, no compiler completeness claim. */
         const doe_shader_view *view = &stages[s].view;
         for (size_t i = 0; i < view->sampling_pair_count; ++i) {
             const DoeCompilerSamplingPairV16 *pair = &view->sampling_pairs[i];
@@ -112,6 +117,15 @@ static bool resource_entry(const doe_shader_view *view, uint32_t index, WGPUShad
         out->kind = DOE_BIND_SAMPLER;
         out->sampler_type = handle->flags & DOE_COMPILER_HANDLE_COMPARISON ?
             WGPUSamplerBindingType_Comparison : WGPUSamplerBindingType_Filtering;
+        return true;
+    }
+    if (handle->flags & DOE_COMPILER_HANDLE_EXTERNAL) {
+        if (resource->kind != DOE_COMPILER_SAMPLED_TEXTURE || resource->access != DOE_COMPILER_READ ||
+            handle->flags != DOE_COMPILER_HANDLE_EXTERNAL || handle->view_dimension != DOE_COMPILER_VIEW_2D ||
+            handle->sample_scalar != DOE_COMPILER_LEAF_F32) return false;
+        /* Keep the external handle in the canonical layout/command leases.
+         * Target adapters resolve its retained plane-zero compatibility view. */
+        out->kind = DOE_BIND_EXTERNAL_TEXTURE;
         return true;
     }
     /* texture_multisampled_2d<f32> defaults to 'unfilterable-float' (multisampled
@@ -179,6 +193,7 @@ doe_resource_status native_automatic_layout(native_device *device,
     if (!sampling_complete(stages, stage_count)) return DOE_RESOURCE_UNSUPPORTED;
     for (size_t stage_index = 0; stage_index < stage_count; ++stage_index) {
         const native_stage *stage = &stages[stage_index];
+        if (stage->imported) continue; /* No inferred resources: automatic imported layout stays empty. */
         const doe_shader_view *view = &stage->view;
         const DoeCompilerEntryV5 *entry = stage->entry;
         for (uint32_t i = 0; i < entry->resource_reference_count; ++i) {
@@ -222,6 +237,8 @@ static bool compatible(const doe_resource_layout_entry *actual, const doe_resour
     case DOE_BIND_SAMPLER:
         return (actual->sampler_type == WGPUSamplerBindingType_Comparison) ==
             (required->sampler_type == WGPUSamplerBindingType_Comparison);
+    case DOE_BIND_EXTERNAL_TEXTURE:
+        return true; /* Kind and stage visibility were checked above. */
     case DOE_BIND_TEXTURE:
         return actual->view_dimension == required->view_dimension && actual->multisampled == required->multisampled &&
             (actual->sample_type == required->sample_type ||
@@ -249,6 +266,10 @@ bool native_pipeline_bindings(native_pipeline *payload, const native_stage *stag
             doe_resource_pipeline_layout_immediate_size(layout)) return false;
     for (size_t stage_index = 0; stage_index < stage_count; ++stage_index) {
         const native_stage *stage = &stages[stage_index];
+        if (stage->imported) {
+            if (!native_import_layout_bindings(payload,stage,layout)) return false;
+            continue;
+        }
         const doe_shader_view *view = &stage->view;
         const DoeCompilerEntryV5 *entry = stage->entry;
         const WGPULimits *limits = &payload->device->backend.limits;
@@ -283,7 +304,10 @@ bool native_pipeline_bindings(native_pipeline *payload, const native_stage *stag
                 const bool vulkan = payload->device->backend.kind == WGPUBackendType_Vulkan &&
                     payload->device->backend.value.vulkan.caps.fragment_stores_and_atomics;
                 const bool metal = payload->device->backend.kind == WGPUBackendType_Metal;
-                if (stage->visibility != WGPUShaderStage_Fragment || (!vulkan && !metal)) return false;
+                const doe_dx_caps *dx = &payload->device->backend.value.d3d12.caps;
+                const bool d3d12 = payload->device->backend.kind == WGPUBackendType_D3D12 &&
+                    dx->feature_level >= 0xb000 && dx->shader_model >= 0x60;
+                if (stage->visibility != WGPUShaderStage_Fragment || (!vulkan && !metal && !d3d12)) return false;
             }
             doe_resource_layout_entry required;
             if (!resource_entry(view, index, stage->visibility, texture_sampled(stages, stage_count, resource), &required)) return false;

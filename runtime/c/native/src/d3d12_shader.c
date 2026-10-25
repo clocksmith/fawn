@@ -57,7 +57,7 @@ static native_failure compile_stage(const native_stage *stage,const uint32_t *in
 #if defined(_WIN32)
     const doe_shader_view *view = &stage->view;
     if (view->target != DOE_SHADER_HLSL || view->target_language_version != 600 ||
-        !view->text || !view->text_size || !view->entries || !view->hlsl_entries) return native_failure_status(NATIVE_INVALID_ARGUMENT);
+        !view->text || !view->text_size || !view->entries || (!stage->imported && !view->hlsl_entries)) return native_failure_status(NATIVE_INVALID_ARGUMENT);
     size_t selected=SIZE_MAX;
     for (size_t i=0;i<view->counts.entries;++i) if (&view->entries[i]==stage->entry) selected=i;
     if (selected==SIZE_MAX) return native_failure_status(NATIVE_INVALID_ARGUMENT);
@@ -67,11 +67,11 @@ static native_failure compile_stage(const native_stage *stage,const uint32_t *in
         if (entry) return native_failure_status(NATIVE_INVALID_ARGUMENT);
         entry = &view->hlsl_entries[i];
     }
-    if (!entry || entry->stage != stage->entry->stage ||
-        (entry->flags & ~(DOE_COMPILER_HLSL_ENTRY_NATIVE16 | DOE_COMPILER_HLSL_ENTRY_RAW_STORAGE | DOE_COMPILER_HLSL_ENTRY_WAVES | DOE_COMPILER_HLSL_ENTRY_WAVE_COUNTER | DOE_COMPILER_HLSL_ENTRY_ARRAY_VIEWS)) ||
-        !memchr(entry->name, 0, sizeof(entry->name))) return native_failure_status(NATIVE_UNSUPPORTED);
+    if (!stage->imported && (!entry || entry->stage != stage->entry->stage ||
+        (entry->flags & ~(DOE_COMPILER_HLSL_ENTRY_NATIVE16 | DOE_COMPILER_HLSL_ENTRY_RAW_STORAGE | DOE_COMPILER_HLSL_ENTRY_WAVES | DOE_COMPILER_HLSL_ENTRY_WAVE_COUNTER | DOE_COMPILER_HLSL_ENTRY_ARRAY_VIEWS | DOE_COMPILER_HLSL_ENTRY_DRAW_OFFSETS)) ||
+        !memchr(entry->name, 0, sizeof(entry->name)))) return native_failure_status(NATIVE_UNSUPPORTED);
     doe_dx_shader_stage target;
-    switch (entry->stage) {
+    switch (stage->entry->stage) {
     case DOE_COMPILER_STAGE_COMPUTE: target=DOE_DX_SHADER_COMPUTE; break;
     case DOE_COMPILER_STAGE_VERTEX: target=DOE_DX_SHADER_VERTEX; break;
     case DOE_COMPILER_STAGE_FRAGMENT: target=DOE_DX_SHADER_FRAGMENT; break;
@@ -81,21 +81,21 @@ static native_failure compile_stage(const native_stage *stage,const uint32_t *in
     native_failure failure = compiler_path(&path);
     if (failure.status != NATIVE_OK) return failure;
     doe_dx_shader_options options = {.compiler_module_path = path,
-        .source = view->text, .source_size = view->text_size, .entry = entry->name,
-        .stage = target, .has_entry_index = true, .entry_index = entry->entry_index};
+        .source = view->text, .source_size = view->text_size, .entry = stage->imported ? stage->name : entry->name,
+        .stage = target, .has_entry_index = !stage->imported, .entry_index = entry ? entry->entry_index : 0};
     doe_dx_shader_error error = {0};
     const doe_dx_shader_projection projection={.interstage_mask=interstage_mask ? *interstage_mask : 0};
-    const bool native16 = (entry->flags & DOE_COMPILER_HLSL_ENTRY_NATIVE16) != 0;
+    const bool native16 = !stage->imported && (entry->flags & DOE_COMPILER_HLSL_ENTRY_NATIVE16) != 0;
     const doe_dx_shader_requirements requirements = {.shader_model = native16 ? 620u : 600u,
         .flags = native16 ? DOE_DX_SHADER_NATIVE16 : 0u};
     doe_dx_status status = doe_dx_shader_compile_required(&options,
-        interstage_mask ? &projection : NULL, &requirements, out, &error);
+        interstage_mask && !stage->imported ? &projection : NULL, &requirements, out, &error);
     doe_dx_error native = {status, error.native_code, error.operation};
     failure = native_failure_d3d12(status, &native);
     /* These exact target bytes/options were produced by the provider after
      * WGSL validation. A rejected DXC input is a provider/compiler failure,
      * not a second diagnosis of invalid application WGSL. Keep its first detail. */
-    if (status == DOE_DX_INVALID_ARGUMENT) failure.status = NATIVE_FAILURE;
+    if (status == DOE_DX_INVALID_ARGUMENT && !stage->imported) failure.status = NATIVE_FAILURE;
     if (status != DOE_DX_OK) {
         size_t size = error.message_size < sizeof(failure.message) - 1 ?
             error.message_size : sizeof(failure.message) - 1;
