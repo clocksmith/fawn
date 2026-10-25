@@ -934,6 +934,23 @@ yet observed, never a guaranteed state after submit. `tests/queue_sync_info.c`
 withholds fence observation at the real poll boundary to check the bit while work
 is unobserved and its clearing by work done and by host access to a used buffer.
 
+## Doe fused compute command extension
+
+`include/doe_native_commands.h` declares
+`doeNativeCreateComputeDispatchCopyCommandBuffer` and
+`doeNativeCreateComputeDispatchBatchCopyCommandBuffer` with the retained Zig
+signatures that `runtime/zig/tests/native_recorded_compute.c` calls (listed in
+`EXTENSION_SYMBOLS.txt`; the addon resolves neither). Each records, under one device
+lock, a compute pass with one or more dispatches (bind group slots 0..count-1, at
+most 4 per dispatch, NULL slots unbound) and then `copyBufferToBuffer`, through the
+same resource encoder, pass, dispatch-limit and copy validation as the public calls,
+and returns only a successful Finish. The command buffer holds its own leases, so
+the caller may release every input before submission. A rejection returns NULL and
+reports one `compute command construction failed: <status>` error (validation, or
+out of memory); a NULL device or an empty batch returns NULL and reports nothing.
+`tests/fused_commands.c` checks dispatch-before-copy results, a two-dispatch batch,
+caller release before submit and each rejection.
+
 ## Doe binding-reflection extension
 
 `include/doe_native_reflection.h` declares `doeNativeShaderModuleGetBindings` and
