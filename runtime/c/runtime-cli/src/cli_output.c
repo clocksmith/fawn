@@ -136,3 +136,24 @@ bool cli_write_normalized(FILE *out, uint64_t seq, const doe_command *command)
     return fprintf(out, "{\"seq\":%" PRIu64 ",\"kind\":", seq) >= 0 && doe_trace_write_string(out, command->label) &&
         write_fields(out, command) && fputs("}\n", out) >= 0;
 }
+
+/* Human output carries the same typed command fields as normalized output,
+ * together with the actual quirk decision and (only when executed) timing. */
+bool cli_write_summary(FILE *out, uint64_t seq, const doe_command *command, const doe_quirk_decision *decision,
+    const doe_trace_execution *execution, const char *backend)
+{
+    if (fprintf(out, "cmd[%" PRIu64 "] matched=%s score=%" PRIu64 " matched_count=%" PRIu64, seq,
+            decision->matched_id ? decision->matched_id : "<none>", decision->score, decision->matched_count) < 0)
+        return false;
+    if (decision->matched_id && fprintf(out, " verification=%s proof=%s requiresLean=%s blocking=%s",
+            decision->verification, decision->proof, decision->requires_lean ? "true" : "false",
+            decision->blocking ? "true" : "false") < 0) return false;
+    if (fputs("\n  -> ", out) < 0 || !cli_write_normalized(out, seq, command)) return false;
+    if (execution && fprintf(out, "  -> exec backend=%s status=%s statusCode=%s durationNs=%" PRIu64
+            " setupNs=%" PRIu64 " encodeNs=%" PRIu64 " submitWaitNs=%" PRIu64 " dispatchCount=%" PRIu64
+            " gpuTimestampNs=0 gpuTimestampAttempted=false gpuTimestampValid=false\n", backend,
+            execution->ok ? "ok" : "error", execution->status_code ? execution->status_code : "",
+            execution->duration_ns, execution->setup_ns, execution->encode_ns, execution->submit_wait_ns,
+            execution->dispatch_count) < 0) return false;
+    return true;
+}
