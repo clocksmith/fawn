@@ -5,8 +5,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-enum { MOCK_KIND_DEVICE, MOCK_KIND_QUEUE, MOCK_KIND_BUFFER, MOCK_KIND_PIPELINE,
-    MOCK_KIND_COMMAND, MOCK_KIND_TEXTURE, MOCK_KIND_VIEW, MOCK_KIND_SAMPLER, MOCK_KIND_RENDER_PIPELINE, MOCK_KIND_DEPTH_STATE, MOCK_KIND_TIMESTAMPS, MOCK_KIND_EVENT };
 struct mock_object {
     unsigned kind;
     size_t length;
@@ -42,7 +40,7 @@ static void close_driver(void *userdata) {
 static void release_object(void *userdata, void *handle) {
     mock_native *mock = userdata;
     mock_object *object = handle;
-    assert(object != NULL && mock->live > 0);
+    assert(object != NULL && object->kind < MOCK_KIND_COUNT && mock->live > 0);
     if (object->kind == MOCK_KIND_COMMAND)
         assert(object->status != 2 && object->status != 3);
     mock->released++;
