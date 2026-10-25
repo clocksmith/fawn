@@ -36,7 +36,15 @@ _PACKAGE_EXECUTION_BACKENDS = frozenset({
 })
 # Doe Vulkan backends of every runtime CLI (config/doe-runtime-providers.json).
 _DOE_VULKAN_EXECUTION_BACKENDS = doe_runtime_providers.native_execution_backends_for_api("vulkan")
-_NATIVE_VULKAN_EXECUTION_BACKENDS = _DOE_VULKAN_EXECUTION_BACKENDS | frozenset({"dawn_delegate"})
+# Dawn on native Vulkan: the Zig delegate and the Dawn-role runtime CLIs.
+_NATIVE_VULKAN_EXECUTION_BACKENDS = (
+    _DOE_VULKAN_EXECUTION_BACKENDS
+    | frozenset({"dawn_delegate"})
+    | doe_runtime_providers.dawn_execution_backends_for_api("vulkan")
+)
+# Both sides of a C runtime CLI pair compile the same WGSL; their fairness is
+# the shader source receipt match, not the SPIR-V artifact match.
+_WGSL_SOURCE_EXECUTION_BACKENDS = doe_runtime_providers.wgsl_source_execution_backends()
 _DEFAULT_COMPARE_KERNEL_ROOT = REPO_ROOT / "bench" / "kernels"
 _PACKAGE_SUBMIT_SCOPE_BUCKETS: tuple[tuple[str, tuple[str, ...]], ...] = (
     (
@@ -652,6 +660,13 @@ def assess_native_shader_artifact_equivalence(
         "baselineExecutionBackends": sorted(left_execution_backends),
         "comparisonExecutionBackends": sorted(right_execution_backends),
     }
+    wgsl_source_pair = (
+        bool(left_execution_backends)
+        and bool(right_execution_backends)
+        and left_execution_backends <= _WGSL_SOURCE_EXECUTION_BACKENDS
+        and right_execution_backends <= _WGSL_SOURCE_EXECUTION_BACKENDS
+    )
+    details["wgslSourcePair"] = wgsl_source_pair
     applies = (
         comparability_mode == "strict"
         and is_dawn_vs_doe
@@ -659,6 +674,7 @@ def assess_native_shader_artifact_equivalence(
         and bool(left_execution_backends & _NATIVE_VULKAN_EXECUTION_BACKENDS)
         and bool(right_execution_backends & _NATIVE_VULKAN_EXECUTION_BACKENDS)
         and bool(workload_commands_path.strip())
+        and not wgsl_source_pair
     )
     if not applies:
         return False, True, details, ""

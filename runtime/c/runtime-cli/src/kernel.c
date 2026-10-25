@@ -60,6 +60,19 @@ char *runtime_resolve_kernel(const doe_runtime *runtime, const char *kernel, cha
     return chosen;
 }
 
+bool doe_runtime_kernel_source(const doe_runtime *runtime, const char *kernel, char **path, size_t *size,
+    char sha256_hex[65])
+{
+    char *source = NULL;
+    *path = runtime_resolve_kernel(runtime, kernel, &source, size);
+    if (!*path) return false;
+    uint8_t digest[32];
+    doe_sha256(source, *size, digest);
+    doe_sha256_hex(digest, sha256_hex);
+    free(source);
+    return true;
+}
+
 static WGPUBufferBindingType binding_type(doe_binding_buffer_type type)
 {
     switch (type) {

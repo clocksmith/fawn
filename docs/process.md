@@ -607,6 +607,15 @@ classified and cannot be promoted by benchmark results.
   after the workload duplicate-removal gate proves equivalent sensitivity.
 - Public claims bind to receipts, source/config identities, execution boundary,
   toolchain identity, and comparability status.
+- Dawn execution in a Dawn-vs-Doe comparison is `dawn_delegate`,
+  `dawn-perf-tests`, a `dawn_direct*` backend, or a Dawn-role provider in
+  [the runtime provider registry](../config/doe-runtime-providers.json)
+  (`dawn_direct_vulkan`, the C runtime CLI over Dawn). A Dawn-role trace is never
+  Doe execution. When both sides are the C runtime CLI (`doe_c_vulkan` and
+  `dawn_direct_vulkan`), both compile the same WGSL through their providers, so
+  strict comparison requires equal `shaderSourceReceiptsHash` instead of the
+  native SPIR-V artifact match; a Zig Doe trace against either Dawn lane keeps
+  the SPIR-V artifact match.
 - A claim-bearing external-project report must reference a passing preparation
   receipt that binds the same actor, harness, upstream commit, clean checkout,
   physical support target, toolchain, and Doe/provider artifacts. The release

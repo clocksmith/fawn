@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Doe runtime CLI providers",
-  "description": "Which Doe runtime CLI produced a native trace: binary name, runtime implementation, and the executionBackend values it writes. Each executionBackend belongs to exactly one provider, so a comparison names the runtime behind every trace. backendSelection is backend-runtime-policy when the CLI selects its backend through config/backend-runtime-policy.json lanes (its trace meta carries selectionPolicyHash) and fixed when the CLI has a single backend and no lane policy.",
+  "title": "Native runtime CLI providers",
+  "description": "Which runtime CLI produced a native trace: binary name, runtime implementation, the executionBackend values it writes, and whose execution the trace is (productRole doe: a Doe runtime, its traces are Doe execution; productRole dawn: a CLI driving Dawn through plain webgpu.h, its traces are Dawn execution and never Doe). Each executionBackend belongs to exactly one provider, so a comparison names the runtime behind every trace. backendSelection is backend-runtime-policy when the CLI selects its backend through config/backend-runtime-policy.json lanes (its trace meta carries selectionPolicyHash) and fixed when the CLI has a single backend and no lane policy.",
   "type": "object",
   "additionalProperties": false,
   "required": ["schemaVersion", "registryVersion", "providers"],
@@ -14,14 +14,15 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["providerId", "productId", "runtimeImplementation", "binaryName", "backendSelection", "executionBackends"],
+        "required": ["providerId", "productId", "productRole", "runtimeImplementation", "binaryName", "backendSelection", "executionBackends"],
         "properties": {
           "providerId": { "type": "string", "pattern": "^[a-z0-9-]+$" },
           "productId": {
-            "description": "The bench run product id of this provider; its runs take the workload contract's Doe (baseline) role.",
+            "description": "The bench run product id of this provider; Doe-role products take the workload contract's Doe (baseline) parameters and Dawn-role products its Dawn (comparison) parameters.",
             "type": "string",
             "pattern": "^[a-z0-9-]+$"
           },
+          "productRole": { "type": "string", "enum": ["doe", "dawn"] },
           "runtimeImplementation": { "type": "string", "enum": ["zig", "c"] },
           "binaryName": { "type": "string", "pattern": "^[a-z0-9-]+$" },
           "backendSelection": { "type": "string", "enum": ["backend-runtime-policy", "fixed"] },

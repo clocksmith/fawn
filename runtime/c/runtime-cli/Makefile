@@ -19,7 +19,7 @@ TOGGLE_REGISTRY = ../../../config/quirk-toggle-registry.json
 RUNTIME = src/execute.c src/kernel.c src/texture.c src/render.c
 RUNTIME_HEADERS = src/execute.h src/runtime_internal.h ../../zig/vendor/webgpu-headers/webgpu.h \
   ../native/include/doe_native_adapter.h
-.PHONY: all bench-bin check check-dawn check-host dawn native
+.PHONY: all bench-bin bench-bin-dawn check check-dawn check-host dawn native
 all: $(BUILD)/doe-c-runtime
 $(BUILD):
 	mkdir -p $@
@@ -41,6 +41,10 @@ $(BUILD)/dawn-c-runtime: src/main.c $(CORE) $(RUNTIME) $(CORE_HEADERS) $(RUNTIME
 	$(CC) $(CPPFLAGS) $(CFLAGS) -DDOE_RUNTIME_MODULE='"dawn-c-runtime"' -DDOE_RUNTIME_BACKEND_ID='"dawn_direct_vulkan"' \
 	  src/main.c $(CORE) $(RUNTIME) '$(DAWN_LIBRARY)' '-Wl,-rpath,$(dir $(DAWN_LIBRARY))' -lm -o $@
 dawn: $(BUILD)/dawn-c-runtime
+# The bench executor dawn_direct_vulkan runs bin/dawn-c-runtime (gitignored).
+bench-bin-dawn: $(BUILD)/dawn-c-runtime
+	mkdir -p bin
+	cp '$(BUILD)/dawn-c-runtime' bin/dawn-c-runtime
 # The whole CLI suite over Dawn: the same host references and Zig hash chains.
 check-dawn: check-host $(BUILD)/dawn-c-runtime
 	$(PYTHON) tests/test_cli.py --binary '$(BUILD)/dawn-c-runtime' --work '$(BUILD)/dawn-cli-work' \

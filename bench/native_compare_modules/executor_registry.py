@@ -173,6 +173,25 @@ _REGISTRY: dict[str, ExecutorSpec] = {
         ),
         execution_boundary="commands",
     ),
+    # dawn-c-runtime is the same C runtime CLI linked against Dawn's webgpu.h
+    # library (runtime/c/runtime-cli `make bench-bin-dawn`): a Dawn lane with
+    # no Zig. Its traces carry executionBackend dawn_direct_vulkan, a Dawn-role
+    # provider in config/doe-runtime-providers.json, distinct from the Zig
+    # runtime's dawn_delegate. LD_LIBRARY_PATH names the Dawn library the run
+    # receipt records and the dynamic loader takes ahead of the build RUNPATH.
+    "dawn_direct_vulkan": ExecutorSpec(
+        executor_id="dawn_direct_vulkan",
+        command_template=(
+            "env LD_LIBRARY_PATH=bench/vendor/dawn/out/Release:$LD_LIBRARY_PATH "
+            "runtime/c/runtime-cli/bin/dawn-c-runtime --commands {commands} --quirks {quirks} "
+            "--vendor {vendor} --api {api} --family {family} --driver {driver} "
+            "--backend native --execute --trace --queue-sync-mode {queue_sync_mode} "
+            "--upload-buffer-usage {upload_buffer_usage} --upload-submit-every {upload_submit_every} "
+            "--trace-jsonl {trace_jsonl} --trace-meta {trace_meta} --gpu-timestamp-mode off "
+            "--kernel-root bench/kernels {extra_args}"
+        ),
+        execution_boundary="commands",
+    ),
     # doe-c-runtime's plan mode lowers the same normalized plans as
     # doe-plan-executor (rows chain identically) and executes them through the
     # C runtime; its traces carry executionBackend doe_c_vulkan.

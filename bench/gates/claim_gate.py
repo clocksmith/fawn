@@ -38,6 +38,9 @@ from native_compare_modules.config_support import (
 
 # Doe-side execution: every registered runtime CLI backend plus legacy names.
 _DOE_EXECUTION_BACKENDS = doe_runtime_providers.native_execution_backends() | {"webgpu-ffi", "native"}
+# Dawn execution: the Zig Dawn delegate, dawn-perf-tests, and the Dawn-role
+# runtime CLIs of config/doe-runtime-providers.json (dawn_direct_vulkan).
+_DAWN_EXECUTION_BACKENDS = frozenset({"dawn_delegate", "dawn-perf-tests"}) | doe_runtime_providers.dawn_execution_backends()
 VALID_COMPARISON_STATUSES = {"comparable", "diagnostic"}
 VALID_CLAIM_STATUSES = {"claimable", "diagnostic"}
 VALID_CLAIMABILITY_MODES = {"local", "release"}
@@ -226,10 +229,8 @@ def workload_is_dawn_vs_doe(workload: dict[str, Any]) -> bool:
 
     baseline_backends = collect_execution_backends(workload.get("baseline"))
     comparison_backends = collect_execution_backends(workload.get("comparison"))
-    baseline_dawn = "dawn_delegate" in baseline_backends or "dawn-perf-tests" in baseline_backends
-    comparison_dawn = (
-        "dawn_delegate" in comparison_backends or "dawn-perf-tests" in comparison_backends
-    )
+    baseline_dawn = bool(baseline_backends & _DAWN_EXECUTION_BACKENDS)
+    comparison_dawn = bool(comparison_backends & _DAWN_EXECUTION_BACKENDS)
     baseline_doe = any(
         backend in baseline_backends
         for backend in _DOE_EXECUTION_BACKENDS

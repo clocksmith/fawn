@@ -8,6 +8,7 @@
 #include "operators.h"
 #include "plan.h"
 #include "quirks.h"
+#include "sha256.h"
 #include "stream.h"
 #include "trace.h"
 #include <errno.h>
@@ -245,8 +246,69 @@ static bool write_optional(FILE *out, const char *key, const char *value, bool c
     return value ? doe_trace_write_string(out, value) : fputs("null", out) >= 0;
 }
 
+/* shaderSourceReceipts (config/trace-meta.schema.json $defs/shaderSourceReceipt)
+ * for every shader the stream compiles, in first-use order: kernel_dispatch
+ * kernels and the render proxy's two modules. shaderSourceReceiptsHash is the
+ * SHA-256 of the array's compact JSON as written, as the package executor
+ * hashes JSON.stringify(receipts), so two runtimes given the same sources
+ * agree on it. */
+static bool write_shader_receipts(FILE *out, const doe_runtime *runtime, const doe_stream *stream)
+{
+    char *bytes = NULL;
+    size_t length = 0;
+    FILE *list = open_memstream(&bytes, &length);
+    if (!list) return false;
+    bool ok = fputc('[', list) != EOF, any = false, render = false;
+    for (size_t i = 0; ok && i < stream->count; i++) {
+        const doe_command *command = &stream->commands[i];
+        if (command->kind == DOE_COMMAND_RENDER_DRAW || command->kind == DOE_COMMAND_RENDER_PASS) render = true;
+        if (command->kind != DOE_COMMAND_KERNEL_DISPATCH) continue;
+        bool seen = false;
+        for (size_t j = 0; j < i && !seen; j++) {
+            const doe_command *earlier = &stream->commands[j];
+            seen = earlier->kind == DOE_COMMAND_KERNEL_DISPATCH && !strcmp(earlier->as.dispatch.kernel, command->as.dispatch.kernel) &&
+                !strcmp(earlier->as.dispatch.entry_point, command->as.dispatch.entry_point);
+        }
+        if (seen) continue;
+        char *path = NULL, sha[65];
+        size_t size = 0;
+        if (!doe_runtime_kernel_source(runtime, command->as.dispatch.kernel, &path, &size, sha)) continue;
+        ok = (!any || fputc(',', list) != EOF) && fputs("{\"moduleId\":", list) >= 0 &&
+            doe_trace_write_string(list, command->as.dispatch.kernel) && fputs(",\"sourceKind\":\"wgsl\",\"path\":", list) >= 0 &&
+            doe_trace_write_string(list, path) && fputs(",\"entryPoint\":", list) >= 0 &&
+            doe_trace_write_string(list, command->as.dispatch.entry_point) &&
+            fprintf(list, ",\"byteLength\":%zu,\"sha256\":\"%s\"}", size, sha) >= 0;
+        any = true;
+        free(path);
+    }
+    static const char *const proxy[2][2] = {{"draw_call_proxy_vertex.wgsl", "main"}, {"draw_call_proxy_fragment.wgsl", "main"}};
+    for (int k = 0; ok && render && k < 2; k++) {
+        char *path = NULL, sha[65];
+        size_t size = 0;
+        if (!doe_runtime_kernel_source(runtime, proxy[k][0], &path, &size, sha)) continue;
+        ok = (!any || fputc(',', list) != EOF) && fputs("{\"moduleId\":", list) >= 0 && doe_trace_write_string(list, proxy[k][0]) &&
+            fputs(",\"sourceKind\":\"wgsl\",\"path\":", list) >= 0 && doe_trace_write_string(list, path) &&
+            fprintf(list, ",\"byteLength\":%zu,\"sha256\":\"%s\"}", size, sha) >= 0;
+        any = true;
+        free(path);
+    }
+    ok = fputc(']', list) != EOF && ok;
+    ok = fclose(list) == 0 && ok;
+    if (ok && any) {
+        uint8_t digest[32];
+        char hash[65];
+        doe_sha256(bytes, length, digest);
+        doe_sha256_hex(digest, hash);
+        ok = fputs(",\"shaderSourceReceipts\":", out) >= 0 && fwrite(bytes, 1, length, out) == length &&
+            fprintf(out, ",\"shaderSourceReceiptsHash\":\"%s\"", hash) >= 0;
+    }
+    free(bytes);
+    return ok;
+}
+
 static bool write_meta(const char *path, const options *o, const totals *t, uint64_t command_count,
-    const doe_runtime_adapter *adapter, const doe_operator_recorder *operators, const char *plan_sha256)
+    const doe_runtime_adapter *adapter, const doe_operator_recorder *operators, const char *plan_sha256,
+    const doe_runtime *runtime, const doe_stream *stream)
 {
     FILE *out = fopen(path, "wb");
     if (!out) return false;
@@ -297,6 +359,7 @@ static bool write_meta(const char *path, const options *o, const totals *t, uint
             fputs(",\"outputOracleComparedValueCount\":0,\"outputOracleMismatchCount\":0,\"outputOracleMaxAbsoluteError\":0,"
                 "\"outputOracleMaxRelativeError\":0,\"outputOracleAbsoluteTolerance\":0,\"outputOracleRelativeTolerance\":0", out) >= 0;
     }
+    if (ok && runtime) ok = write_shader_receipts(out, runtime, stream);
     ok = ok && fputs(",\"profile\":{", out) >= 0;
     ok = ok && write_optional(out, "vendor", o->vendor, false) && write_optional(out, "api", o->api ? o->api : "vulkan", true) &&
         write_optional(out, "deviceFamily", o->family, true) && write_optional(out, "driver", o->driver, true);
@@ -601,7 +664,7 @@ int main(int argc, char **argv)
         status = 1;
     }
     if (o.trace_meta && !write_meta(o.trace_meta, &o, &t, command_count, runtime ? doe_runtime_adapter_info(runtime) : NULL,
-            &operators, o.plan ? plan.plan_sha256 : NULL)) {
+            &operators, o.plan ? plan.plan_sha256 : NULL, runtime, &stream)) {
         fprintf(stderr, "doe-c-runtime: cannot write %s\n", o.trace_meta);
         status = 1;
     }

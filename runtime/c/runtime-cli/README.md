@@ -141,7 +141,12 @@ semantic counts (`semanticTracingEnabled`, `semanticOpRowCount`,
 `operatorRecordManifestPath` and its SHA-256 `operatorRecordManifestHash` follow
 doe-zig-runtime; the manifest bytes use its layout (`[\n`, records joined by
 `,\n`, `\n]\n`), so an empty manifest is `[\n\n]\n`. No `numericStability`
-summary is written because no evaluation runs. Like doe-zig-runtime, the meta
+summary is written because no evaluation runs. `shaderSourceReceipts` lists
+every shader the stream compiles (kernel_dispatch kernels in first-use order,
+then the render proxy's modules) with its resolved path, entry point, byte
+length and SHA-256, and `shaderSourceReceiptsHash` is the SHA-256 of that
+array's compact JSON as written; strict comparison between `doe_c_vulkan` and
+`dawn_direct_vulkan` requires the two hashes to be equal. Like doe-zig-runtime, the meta
 carries no upload arguments: the bench records them per sample, and a meta
 `uploadSubmitEvery` would change its upload normalization for this CLI only.
 `make check` validates every row and meta against `config/trace.schema.json`
@@ -188,8 +193,11 @@ builds `$(BUILD)/dawn-c-runtime`, whose rows and meta name module
 over plain `webgpu.h` that the stage-6 dispositions name for
 `webgpu-plan-executor` and the Dawn-delegate lane. `make check-dawn` runs the
 whole CLI suite (host references, Zig hash chains, plan mode, schemas) over Dawn.
-The bench executors, registry identity and comparability rules for a
-`dawn_direct_vulkan` trace are not wired; that is bench policy.
+`make bench-bin-dawn` installs the gitignored `bin/dawn-c-runtime` that the
+bench executor `dawn_direct_vulkan` (product `dawn-c`) runs with
+`LD_LIBRARY_PATH=bench/vendor/dawn/out/Release`; the provider registry lists it
+with productRole `dawn`, so its traces are Dawn execution in every gate and
+never Doe, and stay distinct from the Zig runtime's `dawn_delegate`.
 
 ## Bench comparisons
 
@@ -256,5 +264,11 @@ Over Dawn (base fba5980ac + this owner; Dawn library in
 lavapipe): `make check-dawn` passes; the
 prefill/decode plan runs all 1583 rows and its final logits (buffer 2227, 4096
 f32) and token (buffer 2228, 1664) are bit-identical to `doe-c-runtime` over
-`libwebgpu_doe_c`. A CPU adapter run is not GPU evidence, a performance result
+`libwebgpu_doe_c`. Bench lane (base 71574e529, lavapipe, 7 iterations):
+`compute_workgroup_atomic_1024` through `doe_c_direct_vulkan` against
+`dawn_direct_vulkan` is strict/operation comparable with equal shader source
+receipts (Dawn p50 4.4% faster on the CPU adapter, not claimable); against the
+Zig `dawn_delegate_vulkan` lane the same C run is diagnostic, blocked by the
+native SPIR-V artifact obligation, because this CLI writes no shader artifact
+manifest. A CPU adapter run is not GPU evidence, a performance result
 or bench comparability, and no physical adapter has run this CLI.

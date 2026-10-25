@@ -53,6 +53,11 @@ bool doe_runtime_prewarm_kernel(doe_runtime *runtime, const doe_command *command
  * frees; false when the handle has no buffer or the readback failed. */
 bool doe_runtime_read_buffer(doe_runtime *runtime, uint64_t handle, uint8_t **data, size_t *size,
     doe_trace_execution *execution);
+/* The source a kernel name resolves to, as kernel_dispatch and the render
+ * proxy load it: the resolved path (caller frees), byte length and SHA-256
+ * (lowercase hex). False when it does not resolve. */
+bool doe_runtime_kernel_source(const doe_runtime *runtime, const char *kernel, char **path, size_t *size,
+    char sha256_hex[65]);
 void doe_runtime_close(doe_runtime *runtime);
 uint64_t doe_runtime_monotonic_ns(void);
 #endif
