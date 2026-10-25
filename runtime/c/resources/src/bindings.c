@@ -609,6 +609,8 @@ doe_resource_status doe_resource_pipeline_create(const doe_resource_config *conf
     if (!pipeline) return DOE_RESOURCE_OUT_OF_MEMORY;
     pipeline->layout = layout;
     memcpy(pipeline->workgroup, workgroup, sizeof(pipeline->workgroup));
+    pipeline->minimums = NULL;
+    pipeline->minimum_count = 0;
     resource_pipeline_layout_claim(layout);
     doe_resource_pipeline_layout_retain(layout);
     resource_init(&pipeline->base, config, native);
@@ -621,10 +623,58 @@ void doe_resource_pipeline_retain(doe_resource_pipeline *pipeline)
     if (pipeline) resource_retain(&pipeline->base);
 }
 
+doe_resource_status doe_resource_pipeline_require_minimums(doe_resource_pipeline *pipeline,
+    const doe_resource_binding_minimum *minimums, size_t count)
+{
+    if (!pipeline || (count && !minimums)) return DOE_RESOURCE_INVALID_ARGUMENT;
+    if (count > SIZE_MAX / sizeof(*minimums)) return DOE_RESOURCE_OVERFLOW;
+    doe_resource_binding_minimum *copy = NULL;
+    if (count) {
+        copy = resource_allocate(&pipeline->base.config, count * sizeof(*minimums), _Alignof(doe_resource_binding_minimum));
+        if (!copy) return DOE_RESOURCE_OUT_OF_MEMORY;
+        memcpy(copy, minimums, count * sizeof(*minimums));
+    }
+    resource_free(&pipeline->base.config, pipeline->minimums, pipeline->minimum_count * sizeof(*minimums),
+        _Alignof(doe_resource_binding_minimum));
+    pipeline->minimums = copy;
+    pipeline->minimum_count = count;
+    return DOE_RESOURCE_OK;
+}
+
+/* The size bound at `binding`, from the group's validated bindings. Liveness
+ * is not consulted: minimum sizes are checked when a command is encoded and
+ * destroyed buffers when it is submitted. False when no buffer is bound. */
+static bool bound_buffer_size(const doe_resource_bind_group *group, uint32_t binding, uint64_t *size)
+{
+    for (size_t i = 0; i < group->count; i++) {
+        if (group->layout->entries[i].binding != binding) continue;
+        if (group->bindings[i].kind != DOE_BIND_BUFFER) return false;
+        *size = group->bindings[i].resource.buffer.size;
+        return true;
+    }
+    return false;
+}
+
+doe_resource_status resource_pipeline_minimums_check(const doe_resource_pipeline *pipeline,
+    const doe_resource_dispatch_group *groups, size_t group_count)
+{
+    for (size_t i = 0; i < pipeline->minimum_count; i++) {
+        const doe_resource_binding_minimum *minimum = &pipeline->minimums[i];
+        /* A missing group or binding is reported by the bindings check. */
+        if (minimum->group >= group_count || !groups[minimum->group].group) continue;
+        uint64_t size;
+        if (bound_buffer_size(groups[minimum->group].group, minimum->binding, &size) && size < minimum->size)
+            return DOE_RESOURCE_RANGE;
+    }
+    return DOE_RESOURCE_OK;
+}
+
 void doe_resource_pipeline_release(doe_resource_pipeline *pipeline)
 {
     if (!pipeline || !resource_last_reference(&pipeline->base)) return;
     doe_resource_pipeline_layout *layout = pipeline->layout;
+    resource_free(&pipeline->base.config, pipeline->minimums, pipeline->minimum_count * sizeof(*pipeline->minimums),
+        _Alignof(doe_resource_binding_minimum));
     resource_finalize(&pipeline->base, sizeof(*pipeline), _Alignof(doe_resource_pipeline));
     doe_resource_pipeline_layout_release(layout);
 }

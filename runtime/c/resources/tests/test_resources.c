@@ -584,6 +584,48 @@ static void test_dispatch_lifetime(void)
     empty(&f);
 }
 
+/* A pipeline's shader minimum buffer sizes bind each dispatch: a binding of
+ * 32 bytes satisfies a 32-byte minimum and fails a 64-byte one at encoding. */
+static void test_pipeline_minimums(void)
+{
+    for (uint64_t minimum = 32; minimum <= 64; minimum += 32) {
+        fixture f = fresh();
+        doe_resource_config c = config(&f);
+        native_token buffer_token = {0}, pipeline_token = {0};
+        doe_resource_buffer *buf = buffer(&f, &buffer_token, 64, WGPUBufferUsage_Storage);
+        doe_resource_layout_entry entry = storage_entry(0, false);
+        doe_resource_layout *layout;
+        assert(doe_resource_layout_create(&c, &entry, 1, false, &layout) == DOE_RESOURCE_OK);
+        doe_resource_binding binding = {.binding = 0, .kind = DOE_BIND_BUFFER, .resource.buffer = {buf, 0, 32}};
+        doe_resource_binding_limits limits = {16, 16, 64, 64};
+        doe_resource_bind_group *group;
+        assert(doe_resource_bind_group_create(layout, &binding, 1, &limits, &group) == DOE_RESOURCE_OK);
+        doe_resource_pipeline_layout *pl;
+        assert(doe_resource_pipeline_layout_create(&c, &layout, 1, 0, &pl) == DOE_RESOURCE_OK);
+        doe_resource_pipeline *pipeline;
+        uint32_t workgroup[] = {64, 1, 1};
+        assert(doe_resource_pipeline_create(&c, pl, native(&f, &pipeline_token), workgroup, &pipeline) == DOE_RESOURCE_OK);
+        const doe_resource_binding_minimum required = {0, 0, minimum};
+        assert(doe_resource_pipeline_require_minimums(pipeline, &required, 1) == DOE_RESOURCE_OK);
+        doe_resource_encoder *encoder;
+        assert(doe_resource_encoder_create(&c, &encoder) == DOE_RESOURCE_OK);
+        assert(doe_resource_encoder_dispatch(encoder, pipeline, &group, 1, 1, 1, 1) ==
+            (minimum == 32 ? DOE_RESOURCE_OK : DOE_RESOURCE_RANGE));
+        doe_resource_commands *commands = NULL;
+        doe_resource_status finished = doe_resource_encoder_finish(encoder, &commands);
+        assert(finished == (minimum == 32 ? DOE_RESOURCE_OK : DOE_RESOURCE_RANGE));
+        doe_resource_encoder_release(encoder);
+        doe_resource_commands_release(commands);
+        doe_resource_pipeline_release(pipeline);
+        doe_resource_pipeline_layout_release(pl);
+        doe_resource_bind_group_release(group);
+        doe_resource_layout_release(layout);
+        doe_resource_buffer_release(buf);
+        assert(buffer_token.releases == 1 && pipeline_token.releases == 1);
+        empty(&f);
+    }
+}
+
 /* setBindGroup without a dispatch still counts for submission: a group whose
  * buffer is destroyed after finish() fails begin_submit. */
 static void test_set_group_without_dispatch(void)
@@ -817,12 +859,13 @@ int main(void)
     test_program_replay();
     test_failed_publication();
     test_dispatch_lifetime();
+    test_pipeline_minimums();
     test_set_group_without_dispatch();
     test_dynamic_dispatch();
     test_rejected_dependencies();
     test_sampler_and_texture_group();
     test_label_reuse();
     test_atomic_references();
-    puts("resource owner: 17 host suites passed; no GPU execution claimed");
+    puts("resource owner: 18 host suites passed; no GPU execution claimed");
     return 0;
 }

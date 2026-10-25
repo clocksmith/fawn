@@ -140,13 +140,29 @@ static WGPUComputePipeline create_compute_pipeline(native_device *device,
         if (backend_failure.status == NATIVE_OK)
             resource_status = doe_resource_pipeline_create(&device->resources, layout,
                 (doe_resource_native){payload, NULL, native_pipeline_release}, entry->workgroup_size, &pipeline);
+        if (pipeline) {
+            /* The shader's buffer sizes, enforced per dispatch by the resource owner. */
+            doe_resource_binding_minimum minimums[NATIVE_MAX_PIPELINE_BINDINGS];
+            size_t minimum_count = 0;
+            for (size_t i = 0; i < payload->binding_count; ++i)
+                if (payload->bindings[i].kind == DOE_BIND_BUFFER && payload->minimum_sizes[i])
+                    minimums[minimum_count++] = (doe_resource_binding_minimum){payload->bindings[i].group,
+                        payload->bindings[i].binding, payload->minimum_sizes[i]};
+            resource_status = doe_resource_pipeline_require_minimums(pipeline, minimums, minimum_count);
+        }
     }
     if (automatic) doe_resource_pipeline_layout_release(layout);
     native_unlock(device);
     native_d3d12_compiler_release(compiled);
     native_d3d12_guard_code_release(guard);
+    if (pipeline && resource_status != DOE_RESOURCE_OK) {
+        /* Its release, outside the device lock, also releases the payload. */
+        doe_resource_pipeline_release(pipeline);
+        pipeline = NULL;
+        payload = NULL;
+    }
     if (!pipeline) {
-        native_pipeline_release(NULL, payload);
+        if (payload) native_pipeline_release(NULL, payload);
         WGPUErrorType type = backend_failure.status != NATIVE_OK ?
             native_result_error(backend_failure.status) : native_resource_error(resource_status);
         const char *fallback = "compute pipeline/layout failed or precise unfilterable texture/sampler pairing analysis unsupported";

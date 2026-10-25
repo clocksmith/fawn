@@ -40,10 +40,23 @@ int main(void)
     assert(doe_resource_encoder_create(&c, &encoder) == DOE_RESOURCE_OK);
     assert(doe_resource_encoder_resolve_queries(encoder, set, DOE_RESOURCE_MAX_QUERIES - 1, 0, dst, 0) == DOE_RESOURCE_OK);
     doe_resource_encoder_release(encoder);
+    /* Pass timestamp writes name at least one index; either one alone is enough. */
+    const doe_resource_pass_timestamps writes[] = {{set, UINT32_MAX, UINT32_MAX}, {set, 0, UINT32_MAX}, {set, UINT32_MAX, 1}};
+    for (size_t i = 0; i < sizeof(writes) / sizeof(writes[0]); i++) {
+        doe_resource_compute_pass *pass = NULL;
+        assert(doe_resource_encoder_create(&c, &encoder) == DOE_RESOURCE_OK);
+        doe_resource_status begun = doe_resource_encoder_begin_compute_with_timestamps(encoder, &writes[i], &pass);
+        assert(begun == (i == 0 ? DOE_RESOURCE_LAYOUT : DOE_RESOURCE_OK));
+        if (pass) {
+            assert(doe_resource_compute_pass_end(pass) == DOE_RESOURCE_OK);
+            doe_resource_compute_pass_release(pass);
+        }
+        doe_resource_encoder_release(encoder);
+    }
     doe_resource_query_set_release(set);
     doe_resource_buffer_release(dst);
     assert(token.releases == 1 && buffer_token.releases == 1);
     empty(&f);
-    puts("query descriptor owner: 1 host suite passed; no GPU execution claimed");
+    puts("query descriptor owner: 1 host suite passed (pass timestamp writes need an index); no GPU execution claimed");
     return 0;
 }
