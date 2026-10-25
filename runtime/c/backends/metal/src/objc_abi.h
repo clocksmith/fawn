@@ -111,7 +111,7 @@ typedef struct doe_mtl_objc {
     void *set_address_u, *set_address_v, *set_address_w;
     void *set_min_lod, *set_max_lod, *set_compare, *set_anisotropy;
     void *upload_image, *read_image, *copy_image, *set_texture, *set_sampler;
-    void *supports_family, *supports_bc, *supports_samples, *supports_depth24;
+    void *supports_family, *supports_bc, *supports_samples, *supports_depth24, *supports_float_filter;
     void *pool_class;
     void *string_class;
     void *responds;

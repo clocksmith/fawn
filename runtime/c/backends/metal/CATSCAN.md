@@ -16,7 +16,7 @@ ABI/tests.
 ## Contracts
 MSL and workgroup/slot facts enter the
 [compute boundary](include/doe_metal.h); stage/render facts enter the
-[graphics boundary](include/doe_metal_render.h). Outputs: statuses and completion-backed buffer access. Device dimensions and GPU family bound workgroups; pipelines independently
+[graphics boundary](include/doe_metal_render.h). Outputs: statuses and completion-backed buffer access. Device capabilities bound workgroups and formats; pipelines independently
 check maxTotalThreadsPerThreadgroup. Indirect compute guards GPU arguments in scratch,
 under [invariants](../../../../INTENT.md).
 Presentation borrows CAMetalLayer; texture/command leases retain drawables. presentDrawable schedules presentation; GPU completion permits caller-lease

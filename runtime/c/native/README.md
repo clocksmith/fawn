@@ -80,11 +80,12 @@ including the unchanged retained all-operations WGSL and its exact readback orac
 It does not establish atomic contention or forward-progress qualification.
 
 Metal exposes composed IndirectFirstInstance, DepthClipControl and
-Depth32FloatStencil8 paths in addition to calibrated TimestampQuery. Disabled
-optional features still reject through shared admission. The retained draw and
-format feature consumers exercise these paths on M3; the format consumer's other
-three optional features remain unoffered, not implicitly qualified. RG11B10Ufloat
-is admitted for core sampling independently of optional rendering.
+Depth32FloatStencil8 paths in addition to calibrated TimestampQuery. Float32
+filtering follows supports32BitFloatFiltering; float32 blending and RG11B10
+rendering follow known native family facts, with actual store/resolve support
+required for the latter. Disabled features retain shared admission. The retained
+draw and format consumers exercise all two draw and four format feature branches
+on M3. RG11B10Ufloat core sampling remains independent of optional rendering.
 Metal's named format projection also includes the thirteen core snorm/integer/
 packed formats exercised by `core-formats`. Initialization asks the resource
 validator whether a private attachment clear is legal; other shapes use real

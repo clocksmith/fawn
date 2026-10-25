@@ -36,6 +36,7 @@ bool doe_mtl_objc_load_image_selectors(doe_mtl_objc *r) {
     r->supports_bc = r->selector("supportsBCTextureCompression");
     r->supports_samples = r->selector("supportsTextureSampleCount:");
     r->supports_depth24 = r->selector("isDepth24Stencil8PixelFormatSupported");
+    r->supports_float_filter = r->selector("supports32BitFloatFiltering");
     return r->texture_class != NULL && r->sampler_class != NULL &&
         r->new_texture != NULL && r->new_view != NULL && r->new_sampler != NULL &&
         r->set_type != NULL && r->set_format != NULL && r->set_width != NULL &&
@@ -47,7 +48,7 @@ bool doe_mtl_objc_load_image_selectors(doe_mtl_objc *r) {
         r->set_compare != NULL && r->set_anisotropy != NULL && r->upload_image != NULL &&
         r->read_image != NULL && r->copy_image != NULL && r->set_texture != NULL &&
         r->set_sampler != NULL && r->supports_family != NULL && r->supports_bc != NULL &&
-        r->supports_samples != NULL && r->supports_depth24 != NULL;
+        r->supports_samples != NULL && r->supports_depth24 != NULL && r->supports_float_filter != NULL;
 }
 
 void doe_mtl_objc_image_caps(doe_mtl_objc *r, void *device, doe_mtl_caps *caps) {
@@ -57,6 +58,8 @@ void doe_mtl_objc_image_caps(doe_mtl_objc *r, void *device, doe_mtl_caps *caps) 
             if (r->samples_call(device, r->supports_samples, (size_t)1 << bit)) caps->sample_count_mask |= 1u << bit;
     if (r->responds_call(device, r->responds, r->supports_depth24))
         caps->depth24_stencil8 = r->bool_call(device, r->supports_depth24) != 0;
+    if (r->responds_call(device, r->responds, r->supports_float_filter))
+        caps->float32_filterable = r->bool_call(device, r->supports_float_filter) != 0;
     /* Conservative published family limits. Unrecognized older devices keep
      * buffer compute, but have no admitted image dimensions rather than guesses. */
     if (r->responds_call(device, r->responds, r->supports_family)) {
@@ -70,6 +73,14 @@ void doe_mtl_objc_image_caps(doe_mtl_objc *r, void *device, doe_mtl_caps *caps) 
         else if (r->family_call(device, r->supports_family, 1001) ||
             r->family_call(device, r->supports_family, 1002) ||
             r->family_call(device, r->supports_family, 1003)) caps->max_threads_per_workgroup = 512;
+        /* Apple pixel-format tables give R/RG/RGBA32Float blending and
+         * RG11B10Float color/blend/resolve on these known families. Filtering
+         * remains the independently queried device property above.
+         * https://developer.apple.com/metal/Metal-Feature-Set-Tables.pdf */
+        bool color_formats = r->family_call(device, r->supports_family, 1002) ||
+            r->family_call(device, r->supports_family, 2002);
+        caps->float32_blendable = color_formats;
+        caps->rg11b10_renderable = color_formats && (caps->sample_count_mask & 5) == 5;
         caps->separate_depth_stencil = r->family_call(device, r->supports_family, 1002) != 0;
         caps->depth_resolve = r->family_call(device, r->supports_family, 1003) ||
             r->family_call(device, r->supports_family, 2002);

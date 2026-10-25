@@ -139,6 +139,7 @@ void doe_mtl_sdk_calls(id<MTLComputeCommandEncoder> compute,
 
 void doe_mtl_sdk_surface_calls(CAMetalLayer *layer, id<MTLDevice> device,
     id<MTLCommandBuffer> command, id<CAMetalDrawable> drawable) {
+    (void)[device supports32BitFloatFiltering];
     [layer setDevice:device];
     [layer setPixelFormat:MTLPixelFormatBGRA8Unorm];
     [layer setDrawableSize:(CGSize){64, 32}];
