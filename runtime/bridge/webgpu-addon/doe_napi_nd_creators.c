@@ -91,140 +91,14 @@ static napi_value native_direct_adapter_get_preferred_canvas_format(napi_env env
  * Adapter — getInfo
  * ================================================================ */
 
-static size_t native_direct_adapter_info_string_len(WGPUStringView view) {
-    return view.length == WGPU_STRLEN ? NAPI_AUTO_LENGTH : view.length;
-}
-
-static void native_direct_set_adapter_info_string_prop(
-    napi_env env,
-    napi_value obj,
-    const char* name,
-    WGPUStringView view
-) {
-    napi_value value;
-    const char* data = view.data ? view.data : "";
-    napi_create_string_utf8(env, data, native_direct_adapter_info_string_len(view), &value);
-    napi_set_named_property(env, obj, name, value);
-}
-
 static napi_value native_direct_adapter_get_info(napi_env env, napi_callback_info info) {
     size_t argc = 0;
     napi_value this_arg;
     napi_get_cb_info(env, info, &argc, NULL, &this_arg, NULL);
-
-    napi_value obj;
-    napi_create_object(env, &obj);
-
-    napi_value v_vendor, v_arch, v_device, v_desc, v_is_fallback, v_sg_min, v_sg_max;
-    napi_create_string_utf8(env, "", NAPI_AUTO_LENGTH, &v_vendor);
-    napi_create_string_utf8(env, "", NAPI_AUTO_LENGTH, &v_arch);
-    napi_create_string_utf8(env, "", NAPI_AUTO_LENGTH, &v_device);
-    napi_create_string_utf8(env, "", NAPI_AUTO_LENGTH, &v_desc);
-    napi_get_boolean(env, false, &v_is_fallback);
-    napi_create_uint32(env, 0, &v_sg_min);
-    napi_create_uint32(env, 0, &v_sg_max);
-    napi_set_named_property(env, obj, "vendor", v_vendor);
-    napi_set_named_property(env, obj, "architecture", v_arch);
-    napi_set_named_property(env, obj, "device", v_device);
-    napi_set_named_property(env, obj, "description", v_desc);
-    napi_set_named_property(env, obj, "isFallbackAdapter", v_is_fallback);
-    napi_set_named_property(env, obj, "subgroupMinSize", v_sg_min);
-    napi_set_named_property(env, obj, "subgroupMaxSize", v_sg_max);
-
     NativeDirectHandleCache* cache = native_direct_get_handle_cache(env, this_arg);
     void* adapter = cache ? cache->native
-                          : native_direct_unwrap_external_prop(env, this_arg, DOE_DIRECT_NATIVE);
-
-    const char* vendor = "";
-    const char* arch   = "";
-    const char* device = "";
-    const char* desc   = "";
-    char* block = NULL;
-
-    const bool tried_native_adapter_info =
-        pfn_doeNativeAdapterGetInfo && pfn_doeNativeAdapterFreeInfo;
-
-    if (tried_native_adapter_info) {
-        pfn_doeNativeAdapterGetInfo(adapter, &vendor, &arch, &device, &desc, &block);
-        if (!vendor) vendor = "";
-        if (!arch)   arch   = "";
-        if (!device) device = "";
-        if (!desc)   desc   = "";
-    }
-
-    if (block && pfn_doeNativeAdapterFreeInfo) {
-        napi_create_string_utf8(env, vendor, NAPI_AUTO_LENGTH, &v_vendor);
-        napi_create_string_utf8(env, arch,   NAPI_AUTO_LENGTH, &v_arch);
-        napi_create_string_utf8(env, device, NAPI_AUTO_LENGTH, &v_device);
-        napi_create_string_utf8(env, desc,   NAPI_AUTO_LENGTH, &v_desc);
-        napi_get_boolean(env, false, &v_is_fallback);
-        napi_set_named_property(env, obj, "vendor",       v_vendor);
-        napi_set_named_property(env, obj, "architecture", v_arch);
-        napi_set_named_property(env, obj, "device",       v_device);
-        napi_set_named_property(env, obj, "description",  v_desc);
-        napi_set_named_property(env, obj, "isFallbackAdapter", v_is_fallback);
-
-        napi_create_uint32(env, 32, &v_sg_min);
-        napi_create_uint32(env, 32, &v_sg_max);
-        napi_set_named_property(env, obj, "subgroupMinSize", v_sg_min);
-        napi_set_named_property(env, obj, "subgroupMaxSize", v_sg_max);
-        if (pfn_doeNativeAdapterGetPciIdentity) {
-            uint32_t vendor_id = 0;
-            uint32_t device_id = 0;
-            uint32_t driver_version = 0;
-            napi_value v_vendor_id, v_device_id, v_driver_version;
-            pfn_doeNativeAdapterGetPciIdentity(adapter, &vendor_id, &device_id, &driver_version);
-            napi_create_uint32(env, vendor_id, &v_vendor_id);
-            napi_create_uint32(env, device_id, &v_device_id);
-            napi_create_uint32(env, driver_version, &v_driver_version);
-            napi_set_named_property(env, obj, "vendorID", v_vendor_id);
-            napi_set_named_property(env, obj, "deviceID", v_device_id);
-            napi_set_named_property(env, obj, "driverVersion", v_driver_version);
-        }
-        pfn_doeNativeAdapterFreeInfo(block);
-        return obj;
-    }
-
-    WGPUAdapterInfo info_view;
-    memset(&info_view, 0, sizeof(info_view));
-    info_view.vendor.length = WGPU_STRLEN;
-    info_view.architecture.length = WGPU_STRLEN;
-    info_view.device.length = WGPU_STRLEN;
-    info_view.description.length = WGPU_STRLEN;
-    if (pfn_wgpuAdapterGetInfo && pfn_wgpuAdapterGetInfo(adapter, &info_view) == WGPU_STATUS_SUCCESS) {
-        native_direct_set_adapter_info_string_prop(env, obj, "vendor", info_view.vendor);
-        native_direct_set_adapter_info_string_prop(env, obj, "architecture", info_view.architecture);
-        native_direct_set_adapter_info_string_prop(env, obj, "device", info_view.device);
-        native_direct_set_adapter_info_string_prop(env, obj, "description", info_view.description);
-        napi_get_boolean(env, false, &v_is_fallback);
-        napi_create_uint32(env, info_view.subgroupMinSize, &v_sg_min);
-        napi_create_uint32(env, info_view.subgroupMaxSize, &v_sg_max);
-        napi_set_named_property(env, obj, "isFallbackAdapter", v_is_fallback);
-        napi_set_named_property(env, obj, "subgroupMinSize", v_sg_min);
-        napi_set_named_property(env, obj, "subgroupMaxSize", v_sg_max);
-
-        /* PCI identity for providers without the Doe info block: the standard
-         * IDs, or the Doe extension when exported, which also reports the
-         * driver's version. driverVersion stays absent without it. */
-        uint32_t vendor_id = info_view.vendorID, device_id = info_view.deviceID, driver_version = 0;
-        if (pfn_doeNativeAdapterGetPciIdentity)
-            pfn_doeNativeAdapterGetPciIdentity(adapter, &vendor_id, &device_id, &driver_version);
-        napi_value v_vendor_id, v_device_id;
-        napi_create_uint32(env, vendor_id, &v_vendor_id);
-        napi_create_uint32(env, device_id, &v_device_id);
-        napi_set_named_property(env, obj, "vendorID", v_vendor_id);
-        napi_set_named_property(env, obj, "deviceID", v_device_id);
-        if (pfn_doeNativeAdapterGetPciIdentity) {
-            napi_value v_driver_version;
-            napi_create_uint32(env, driver_version, &v_driver_version);
-            napi_set_named_property(env, obj, "driverVersion", v_driver_version);
-        }
-
-        if (pfn_wgpuAdapterInfoFreeMembers) {
-            pfn_wgpuAdapterInfoFreeMembers(info_view);
-        }
-    }
-    return obj;
+        : native_direct_unwrap_external_prop(env, this_arg, DOE_DIRECT_NATIVE);
+    return create_adapter_info_object(env, adapter);
 }
 
 /* ================================================================

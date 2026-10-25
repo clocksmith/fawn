@@ -15,6 +15,15 @@ if (!process.argv.includes('--child')) {
   const { createNativeDirect, globals } = await import('../../src/native.js');
   const adapter = await createNativeDirect().requestAdapter();
   assert(adapter, 'provider adapter required');
+  const { loadNativeAddon } = await import('./native-addon-test-helper.js');
+  const addon = await loadNativeAddon();
+  const info = adapter.getInfo();
+  assert.deepEqual(info, addon.adapterGetInfo(adapter.__doe_native),
+    'direct and full surfaces share queried adapter identity');
+  if (process.env.DOE_C_TEST_ADAPTER === 'software') {
+    assert.equal(info.isFallbackAdapter, true, 'CPU adapter must not be reported as physical');
+  }
+
   const device = await adapter.requestDevice();
   const { GPUBufferUsage: usage, GPUMapMode: mode } = globals;
   const expected = new Uint32Array([17, 29, 43, 71]);

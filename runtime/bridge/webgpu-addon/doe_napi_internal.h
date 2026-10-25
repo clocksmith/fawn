@@ -910,8 +910,8 @@ napi_value doe_canvas_surface_present(napi_env env, napi_callback_info info);
 napi_value doe_canvas_surface_unconfigure(napi_env env, napi_callback_info info);
 napi_value doe_canvas_surface_release(napi_env env, napi_callback_info info);
 
-/* Limits helper */
 napi_value create_limits_object(napi_env env, const WGPULimits* limits);
+napi_value create_adapter_info_object(napi_env env, void* adapter);
 void pop_error_scope_callback(uint32_t error_type, WGPUStringView message, void* userdata1, void* userdata2);
 bool doe_standard_pop_error_scope(WGPUDevice device, uint32_t* type, char* message, size_t capacity);
 void extract_buffer_data(napi_env env, napi_value val, void** out_ptr, size_t* out_len);
