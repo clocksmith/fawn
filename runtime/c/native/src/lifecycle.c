@@ -128,9 +128,21 @@ WGPUFuture wgpuInstanceRequestAdapter(WGPUInstance handle,
             delivery.message = "requested backend initialization failed";
         }
     } else delivery.message = "requested adapter extension is unsupported";
-    WGPUFuture future = native_callback(instance, callback.mode, &delivery,
-        sizeof(delivery), _Alignof(adapter_delivery), copy_adapter, deliver_adapter);
-    if (!future.id) wgpuAdapterRelease((WGPUAdapter)delivery.adapter);
+    doe_callback_status admitted;
+    WGPUFuture future = native_callback_admit(instance, callback.mode, &delivery,
+        sizeof(delivery), _Alignof(adapter_delivery), copy_adapter, deliver_adapter, &admitted);
+    if (!future.id) {
+        wgpuAdapterRelease((WGPUAdapter)delivery.adapter);
+        /* No device channel exists here. A spontaneous callback may run on the
+         * calling thread, so a refusal for lack of memory is delivered now as
+         * an error; other modes only ever run inside WaitAny/ProcessEvents and
+         * get the null future, webgpu.h's synchronous-error sentinel. */
+        if (admitted == DOE_CALLBACK_OUT_OF_MEMORY && callback.mode == WGPUCallbackMode_AllowSpontaneous &&
+                callback.callback)
+            callback.callback(WGPURequestAdapterStatus_Error, NULL,
+                native_string("adapter callback registration failed for lack of memory"),
+                callback.userdata1, callback.userdata2);
+    }
     doe_instance_release(instance);
     return future;
 }
@@ -347,9 +359,19 @@ WGPUFuture wgpuAdapterRequestDevice(WGPUAdapter handle,
         native_loss_complete(loss, WGPUDeviceLostReason_FailedCreation, "device initialization failed");
         native_loss_release(loss);
     }
-    WGPUFuture future = native_callback(adapter->instance, callback.mode, &delivery,
-        sizeof(delivery), _Alignof(device_delivery), copy_device, deliver_device);
-    if (!future.id) wgpuDeviceRelease((WGPUDevice)delivery.device);
+    doe_callback_status admitted;
+    WGPUFuture future = native_callback_admit(adapter->instance, callback.mode, &delivery,
+        sizeof(delivery), _Alignof(device_delivery), copy_device, deliver_device, &admitted);
+    if (!future.id) {
+        wgpuDeviceRelease((WGPUDevice)delivery.device);
+        /* As for adapters: spontaneous mode reports the refusal now; others
+         * get the null future. */
+        if (admitted == DOE_CALLBACK_OUT_OF_MEMORY && callback.mode == WGPUCallbackMode_AllowSpontaneous &&
+                callback.callback)
+            callback.callback(WGPURequestDeviceStatus_Error, NULL,
+                native_string("device callback registration failed for lack of memory"),
+                callback.userdata1, callback.userdata2);
+    }
     wgpuAdapterRelease(handle);
     return future;
 }
