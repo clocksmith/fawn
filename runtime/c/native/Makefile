@@ -316,13 +316,25 @@ $(BUILD)/surface-platforms: tests/surface_platforms.c $(SURFACE_TEST_HEADERS) $(
 $(BUILD)/surface-progress: tests/surface_progress.c $(SURFACE_TEST_HEADERS) $(OBJECTS) $(COMPILER_LIBRARY) | $(BUILD)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< $(OBJECTS) $(COMPILER_LINK) $(PLATFORM_LIBS) \
 	  -Wl,--wrap=doe_vk_commands_release -Wl,--wrap=native_backend_close -Wl,--wrap=free -lxcb -o $@
+$(BUILD)/surface-faults: tests/surface_faults.c $(SURFACE_TEST_HEADERS) $(OBJECTS) $(COMPILER_LIBRARY) | $(BUILD)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< $(OBJECTS) $(COMPILER_LINK) $(PLATFORM_LIBS) -Wl,--wrap=malloc -Wl,--wrap=calloc -lxcb -o $@
 .PHONY: check-surface-progress
 check-surface-progress: $(BUILD)/surface-progress
 	$(BUILD)/surface-progress
 .PHONY: check-present
-check-present: $(BUILD)/surface-present $(BUILD)/surface-platforms
+check-present: $(BUILD)/surface-present $(BUILD)/surface-platforms $(BUILD)/surface-faults
 	$(BUILD)/surface-present
 	$(BUILD)/surface-platforms
+	$(BUILD)/surface-faults
+# The surface fault sweep and concurrency under ASan+UBSan (leaks) and TSan.
+.PHONY: check-present-sanitizers
+check-present-sanitizers:
+	$(MAKE) --no-print-directory BUILD='$(SANITIZER_BUILD)/address' SANITIZE='-fsanitize=address,undefined -fno-omit-frame-pointer' \
+	  '$(SANITIZER_BUILD)/address/surface-faults'
+	ASAN_OPTIONS=detect_leaks=1:halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1 '$(SANITIZER_BUILD)/address/surface-faults'
+	$(MAKE) --no-print-directory BUILD='$(SANITIZER_BUILD)/thread' SANITIZE='-fsanitize=thread -fno-omit-frame-pointer' \
+	  '$(SANITIZER_BUILD)/thread/surface-faults'
+	TSAN_OPTIONS='halt_on_error=1 suppressions=$(abspath tests/tsan.supp)' '$(SANITIZER_BUILD)/thread/surface-faults'
 .PHONY: check-physical
 check-physical: $(addprefix $(BUILD)/,$(PHYSICAL_CLIENTS))
 	@set -e; for client in $(PHYSICAL_CLIENTS); do \
@@ -358,7 +370,7 @@ check-empty-module: $(BUILD)/empty-shader
 clean:
 	rm -f $(BUILD)/d3d12-graphics-vertices $(BUILD)/d3d12-vertex-inputs $(BUILD)/draw-guard $(BUILD)/implicit-sampling $(BUILD)/d3d12-graphics-limits $(BUILD)/d3d12-graphics-layout $(BUILD)/d3d12-graphics $(BUILD)/depth-comparison $(BUILD)/all-any $(BUILD)/select $(BUILD)/pipeline-overrides $(BUILD)/texture-bindings $(BUILD)/command-resources $(BUILD)/indirect-dispatch $(BUILD)/texture-transfers $(BUILD)/d3d12-texture-desc $(BUILD)/atomic-operations
 	rm -f $(OBJECTS)
-	rm -f $(BUILD)/map-oom $(BUILD)/fault-sweep $(BUILD)/concurrency $(BUILD)/lost-objects $(BUILD)/binding-aliases $(BUILD)/native.exports $(BUILD)/native.exports.tmp $(BUILD)/draw-budget $(BUILD)/indirect-render $(BUILD)/indexed-render $(BUILD)/depth-sampling $(BUILD)/readonly-depth-sampling $(BUILD)/cube-array $(BUILD)/view-formats $(BUILD)/point-list $(BUILD)/color-discard $(BUILD)/msaa-sampling $(BUILD)/format-features $(BUILD)/draw-features $(BUILD)/copy-layouts $(BUILD)/bc-compression $(BUILD)/component-swizzle $(BUILD)/encoder-errors $(BUILD)/core-formats $(BUILD)/indirect-compute $(BUILD)/backend-selection $(BUILD)/metal-bridge $(BUILD)/atomics $(BUILD)/debug $(BUILD)/msaa $(BUILD)/depth $(BUILD)/demote $(BUILD)/graphics-admission $(BUILD)/graphics $(BUILD)/empty-shader $(NATIVE_LIBRARY) $(BUILD)/libdoe_compiler.$(SHARED_SUFFIX) $(BUILD)/compute $(BUILD)/procedures-cxx $(BUILD)/lifecycle $(BUILD)/textures $(BUILD)/admission $(BUILD)/failures $(BUILD)/timestamps $(BUILD)/recovery $(BUILD)/pending-progress $(BUILD)/vulkan-identity $(BUILD)/provider-pin $(BUILD)/provider-pin-fixture.$(SHARED_SUFFIX) $(BUILD)/backend-failure $(BUILD)/depth-copies $(BUILD)/surface-present $(BUILD)/surface-platforms $(BUILD)/uniform-standard $(BUILD)/wgsl-language-features $(BUILD)/texture-binding-view-dimension $(BUILD)/mrt $(BUILD)/anisotropy $(BUILD)/storage-textures $(BUILD)/compute-programs $(BUILD)/fused-commands $(BUILD)/shader-check $(BUILD)/shader-reflection $(BUILD)/adapter-info $(BUILD)/program-prepare $(BUILD)/surface-progress $(BUILD)/limits $(BUILD)/large-write $(BUILD)/slice-render $(BUILD)/mixed-resources $(BUILD)/offscreen-triangle
+	rm -f $(BUILD)/map-oom $(BUILD)/fault-sweep $(BUILD)/concurrency $(BUILD)/lost-objects $(BUILD)/binding-aliases $(BUILD)/native.exports $(BUILD)/native.exports.tmp $(BUILD)/draw-budget $(BUILD)/indirect-render $(BUILD)/indexed-render $(BUILD)/depth-sampling $(BUILD)/readonly-depth-sampling $(BUILD)/cube-array $(BUILD)/view-formats $(BUILD)/point-list $(BUILD)/color-discard $(BUILD)/msaa-sampling $(BUILD)/format-features $(BUILD)/draw-features $(BUILD)/copy-layouts $(BUILD)/bc-compression $(BUILD)/component-swizzle $(BUILD)/encoder-errors $(BUILD)/core-formats $(BUILD)/indirect-compute $(BUILD)/backend-selection $(BUILD)/metal-bridge $(BUILD)/atomics $(BUILD)/debug $(BUILD)/msaa $(BUILD)/depth $(BUILD)/demote $(BUILD)/graphics-admission $(BUILD)/graphics $(BUILD)/empty-shader $(NATIVE_LIBRARY) $(BUILD)/libdoe_compiler.$(SHARED_SUFFIX) $(BUILD)/compute $(BUILD)/procedures-cxx $(BUILD)/lifecycle $(BUILD)/textures $(BUILD)/admission $(BUILD)/failures $(BUILD)/timestamps $(BUILD)/recovery $(BUILD)/pending-progress $(BUILD)/vulkan-identity $(BUILD)/provider-pin $(BUILD)/provider-pin-fixture.$(SHARED_SUFFIX) $(BUILD)/backend-failure $(BUILD)/depth-copies $(BUILD)/surface-present $(BUILD)/surface-platforms $(BUILD)/surface-faults $(BUILD)/uniform-standard $(BUILD)/wgsl-language-features $(BUILD)/texture-binding-view-dimension $(BUILD)/mrt $(BUILD)/anisotropy $(BUILD)/storage-textures $(BUILD)/compute-programs $(BUILD)/fused-commands $(BUILD)/shader-check $(BUILD)/shader-reflection $(BUILD)/adapter-info $(BUILD)/program-prepare $(BUILD)/surface-progress $(BUILD)/limits $(BUILD)/large-write $(BUILD)/slice-render $(BUILD)/mixed-resources $(BUILD)/offscreen-triangle
 
 $(BUILD)/offscreen-triangle: tests/offscreen_triangle.c tests/metal_graphics_cases.h tests/consumer.h tests/adapter_class.h $(NATIVE_LIBRARY)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
