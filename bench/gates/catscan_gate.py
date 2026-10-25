@@ -6,8 +6,10 @@ from __future__ import annotations
 import argparse
 from dataclasses import dataclass
 import json
+import os
 from pathlib import Path
 import re
+import subprocess
 from typing import Any
 
 
@@ -65,11 +67,26 @@ def _is_excluded(path: Path, root: Path) -> bool:
 
 
 def discover_charter_paths(root: Path) -> list[Path]:
-    return [
-        path
-        for path in sorted(root.rglob("CATSCAN.md"))
-        if not _is_excluded(path, root)
-    ]
+    # Repository authority comes from the index, including staged new charters.
+    # Never walk benchmark output or external source/symlink trees to discover it.
+    if (root / ".git").exists():
+        result = subprocess.run(
+            ["git", "-C", str(root), "ls-files", "-z", "--", "CATSCAN.md", "*/CATSCAN.md"],
+            capture_output=True, check=True, timeout=20,
+        )
+        return sorted(root / os.fsdecode(name) for name in result.stdout.split(b"\0")
+                      if name and not _is_excluded(root / os.fsdecode(name), root))
+    # Standalone fixtures have no index. Prune excluded directories before
+    # descent and never follow symlinks, rather than filtering after rglob.
+    paths = []
+    for directory, children, files in os.walk(root, followlinks=False):
+        parent = Path(directory)
+        children[:] = [name for name in children
+                       if not (parent / name).is_symlink()
+                       and not _is_excluded(parent / name, root)]
+        if "CATSCAN.md" in files and not (parent / "CATSCAN.md").is_symlink():
+            paths.append(parent / "CATSCAN.md")
+    return sorted(paths)
 
 
 def _section_bodies(text: str) -> tuple[dict[str, str], list[str]]:

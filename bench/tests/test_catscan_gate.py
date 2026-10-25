@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import tempfile
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 
 from bench.gates import catscan_gate as gate
@@ -81,6 +82,33 @@ def write_fixture(root: Path) -> None:
 
 
 class CatscanGateTests(unittest.TestCase):
+    def test_repository_discovery_never_walks_output(self) -> None:
+        with patch.object(gate.os, "walk", side_effect=AssertionError("repository traversal")):
+            paths = gate.discover_charter_paths(REPO_ROOT)
+        self.assertIn(REPO_ROOT / "bench/CATSCAN.md", paths)
+        self.assertNotIn(REPO_ROOT / "bench/out/CATSCAN.md", paths)
+
+    def test_fixture_exclusions_are_pruned_before_descent(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            output = root / "bench/out"
+            output.mkdir(parents=True)
+            (output / "CATSCAN.md").write_text("not authority", encoding="utf-8")
+            (root / "CATSCAN.md").write_text("root", encoding="utf-8")
+            (root / "loop").symlink_to(root, target_is_directory=True)
+            visited = []
+            os_walk = gate.os.walk
+
+            def observe(*args, **kwargs):
+                for entry in os_walk(*args, **kwargs):
+                    visited.append(Path(entry[0]))
+                    yield entry
+
+            with patch.object(gate.os, "walk", observe):
+                self.assertEqual(gate.discover_charter_paths(root), [root / "CATSCAN.md"])
+            self.assertNotIn(output, visited)
+            self.assertNotIn(root / "loop", visited)
+
     def test_tracked_charters_and_index_pass(self) -> None:
         result = gate.evaluate_repository(
             REPO_ROOT,
