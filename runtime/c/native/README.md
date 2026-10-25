@@ -1174,17 +1174,24 @@ background Vulkan detail is observed once. These are developer correctness
 controls, separate from physical failure/recovery qualification.
 
 Stage-4 robustness controls on software Vulkan:
-- `tests/fault_sweep.c` runs one complete workload twice per fresh device. The
-  workload covers a zero-initialized texture through the init batch, buffers, a
-  queue write, a shader, a pipeline, a bind group, a dispatch, copies,
-  submission with immediate caller release, work done and a map; the second
-  round reuses the retained pipeline and spare command pool. Each case fails one
-  thing in turn:
+- `tests/fault_sweep.c` runs one workload per fresh device. It has four rounds:
+  - compute: an init-batch texture, buffers, writes, a shader, a pipeline, a bind
+    group, a direct and an indirect dispatch, and copies;
+  - render: a render pipeline, a pass with an occlusion query around a direct
+    draw plus an indirect draw, a query resolve and a readback;
+  - compute program: prepared and submitted twice;
+  - compute again, reusing the retained pipeline and the spare pool.
+
+  Each round submits with immediate caller release, then requests work done and
+  a map. Each case fails one thing in turn:
   - every host allocation of the C owners (GNU `--wrap` of malloc/calloc);
   - every result-returning Vulkan call, through the device context's function
     table. Creation and allocation calls report out-of-memory, `vkQueueSubmit`
     refuses, and fence, wait and idle calls report device loss while the real
-    queue may still be running.
+    queue may still be running;
+  - every host allocation from `wgpuCreateInstance` through requestAdapter,
+    requestDevice and one compute round. A failed creation must arrive through
+    its request callback.
 
   Every case must settle without a crash or hang. Every map completes, a
   successful map is exact, every admitted work-done future is delivered, and a
@@ -1192,13 +1199,20 @@ Stage-4 robustness controls on software Vulkan:
   reclaims everything; the leak half runs under ASan.
 - `tests/concurrency.c` runs work from several threads. Four threads on one
   device and two on their own devices create, record, submit, map and release
-  (half immediately after submit), with fresh and shared pipelines and init-batch
-  textures. A poller thread meanwhile requests work done and processes events.
-  Then three threads keep copying and mapping while another thread destroys the
-  device: maps settle, one loss callback runs.
-- `make check-sanitizers` builds sanitized libraries and runs both tests. It runs
-  the concurrency test under TSan and under ASan+UBSan, and the fault sweep under
-  ASan+UBSan with leak detection. It is separate from `check`.
+  (half immediately after submit). Their rounds cover direct and indirect
+  compute with fresh and shared pipelines, init-batch textures, render rounds
+  (fresh render pipelines, occlusion queries, direct and indirect draws) and
+  compute programs. Meanwhile a poller thread requests work done, and another
+  thread requests, uses and releases 24 adapter/device pairs. Then three threads
+  keep copying and mapping while another thread destroys the device: maps
+  settle, one loss callback runs.
+- `tests/lost_objects.c`: invalid objects after destroy() (see above).
+- `make check-sanitizers` builds sanitized libraries. It runs the concurrency
+  test under TSan and under ASan+UBSan, and the fault sweep and lost objects
+  under ASan+UBSan with leak detection. It is separate from `check`.
+  `tests/tsan.supp` suppresses only reports whose stacks lie entirely in
+  uninstrumented third-party code: lavapipe's own threads, libgcc's unwinder
+  registry under LLVM's JIT, and the loader/LLVM lock order.
 
 The Metal frontend now composes real initialized textures/views/samplers, color
 copies and packed QueueWriteTexture uploads, compiler-reflected vertex/fragment

@@ -5,12 +5,17 @@
  *   through the batched init path), shaders and pipelines (shared and new),
  *   record, submit, map and release, some immediately after submit;
  * - threads on separate devices of one instance do the same;
- * - another thread polls instance events and queue work done meanwhile;
+ * - render rounds (render pipeline, occlusion query, direct and indirect
+ *   draws, query resolve) and compute-program rounds run among them, and a
+ *   compute dispatch is also issued indirectly;
+ * - another thread polls instance events and queue work done meanwhile, and
+ *   another keeps requesting, using and releasing adapters and devices;
  * - threads keep submitting and mapping while the device is destroyed from
  *   another thread: every map then settles (success with exact data, or an
  *   error/abort status), nothing hangs, and the loss callback runs once.
  * Every successful readback is checked against the host computation. */
 #include "consumer.h"
+#include "doe_native_programs.h"
 #include <pthread.h>
 #include <stdatomic.h>
 #include <stdint.h>
@@ -133,6 +138,9 @@ static void round_trip(worker *w, unsigned round)
     for (unsigned i = 0; i < WORDS; ++i) input[i] = w->seed * 131u + round * 7u + i;
     WGPUBuffer storage = make_buffer(s->device, BYTES, WGPUBufferUsage_Storage | WGPUBufferUsage_CopySrc | WGPUBufferUsage_CopyDst);
     WGPUBuffer readback = make_buffer(s->device, BYTES + 256, WGPUBufferUsage_MapRead | WGPUBufferUsage_CopyDst);
+    WGPUBuffer indirect = make_buffer(s->device, 12, WGPUBufferUsage_Indirect | WGPUBufferUsage_CopyDst);
+    const uint32_t workgroups[3] = {1, 1, 1};
+    wgpuQueueWriteBuffer(s->queue, indirect, 0, workgroups, sizeof(workgroups));
     wgpuQueueWriteBuffer(s->queue, storage, 0, input, sizeof(input));
     WGPUTextureDescriptor texture_desc = WGPU_TEXTURE_DESCRIPTOR_INIT;
     texture_desc.size = (WGPUExtent3D){4, 1, 1};
@@ -151,6 +159,7 @@ static void round_trip(worker *w, unsigned round)
     wgpuComputePassEncoderSetPipeline(pass, pipeline);
     wgpuComputePassEncoderSetBindGroup(pass, 0, group, 0, NULL);
     wgpuComputePassEncoderDispatchWorkgroups(pass, 1, 1, 1);
+    wgpuComputePassEncoderDispatchWorkgroupsIndirect(pass, indirect, 0);
     wgpuComputePassEncoderEnd(pass);
     wgpuComputePassEncoderRelease(pass);
     wgpuCommandEncoderCopyBufferToBuffer(encoder, storage, 0, readback, 0, BYTES);
@@ -180,10 +189,11 @@ static void round_trip(worker *w, unsigned round)
     assert(status == WGPUMapAsyncStatus_Success);
     const uint32_t *output = wgpuBufferGetConstMappedRange(readback, 0, BYTES + 256);
     assert(output);
-    for (unsigned i = 0; i < WORDS; ++i) assert(output[i] == input[i] * 3u + offset);
+    for (unsigned i = 0; i < WORDS; ++i) assert(output[i] == (input[i] * 3u + offset) * 3u + offset); /* direct, indirect */
     for (unsigned i = 0; i < 4; ++i) assert(output[WORDS + i] == 0); /* Zero-initialized texels. */
     wgpuBufferUnmap(readback);
     wgpuBufferRelease(readback);
+    wgpuBufferRelease(indirect);
     if (group) wgpuBindGroupRelease(group);
     if (storage) wgpuBufferRelease(storage);
     if (texture) wgpuTextureRelease(texture);
@@ -191,10 +201,180 @@ static void round_trip(worker *w, unsigned round)
     ++w->rounds_checked;
 }
 
+
+static const char *const render_code =
+    "@vertex fn vs(@builtin(vertex_index) i: u32) -> @builtin(position) vec4f {\n"
+    "  let p = array(vec2f(-1.0, -1.0), vec2f(3.0, -1.0), vec2f(-1.0, 3.0));\n"
+    "  return vec4f(p[i], 0.0, 1.0);\n"
+    "}\n"
+    "@fragment fn fs() -> @location(0) vec4f { return vec4f(0.0, 1.0, 0.0, 1.0); }\n";
+
+static WGPURenderPipeline make_render_pipeline(WGPUDevice device)
+{
+    WGPUShaderSourceWGSL wgsl = WGPU_SHADER_SOURCE_WGSL_INIT;
+    wgsl.code = (WGPUStringView){render_code, WGPU_STRLEN};
+    WGPUShaderModuleDescriptor shader_desc = {.nextInChain = &wgsl.chain};
+    WGPUShaderModule shader = wgpuDeviceCreateShaderModule(device, &shader_desc);
+    assert(shader);
+    WGPUColorTargetState color = WGPU_COLOR_TARGET_STATE_INIT;
+    color.format = WGPUTextureFormat_RGBA8Unorm;
+    WGPUFragmentState fragment = WGPU_FRAGMENT_STATE_INIT;
+    fragment.module = shader;
+    fragment.targetCount = 1;
+    fragment.targets = &color;
+    WGPURenderPipelineDescriptor descriptor = WGPU_RENDER_PIPELINE_DESCRIPTOR_INIT;
+    descriptor.vertex.module = shader;
+    descriptor.fragment = &fragment;
+    WGPURenderPipeline pipeline = wgpuDeviceCreateRenderPipeline(device, &descriptor);
+    wgpuShaderModuleRelease(shader);
+    assert(pipeline);
+    return pipeline;
+}
+
+static const uint32_t *map_wait(shared_device *s, WGPUBuffer buffer, size_t size)
+{
+    WGPUMapAsyncStatus status = (WGPUMapAsyncStatus)0;
+    WGPUBufferMapCallbackInfo callback = {.mode = WGPUCallbackMode_WaitAnyOnly, .callback = mapped_reply, .userdata1 = &status};
+    WGPUFuture future = wgpuBufferMapAsync(buffer, WGPUMapMode_Read, 0, size, callback);
+    WGPUFutureWaitInfo wait = {.future = future};
+    assert(future.id && wgpuInstanceWaitAny(s->instance, 1, &wait, 0) == WGPUWaitStatus_Success);
+    assert(status == WGPUMapAsyncStatus_Success);
+    const uint32_t *output = wgpuBufferGetConstMappedRange(buffer, 0, size);
+    assert(output);
+    return output;
+}
+
+/* Render round: a fresh render pipeline, an occlusion query around a direct
+ * draw, an indirect draw, a resolve and a readback (green, samples passed). */
+static void render_round(worker *w)
+{
+    shared_device *s = w->device;
+    WGPURenderPipeline pipeline = make_render_pipeline(s->device);
+    WGPUTextureDescriptor target_desc = WGPU_TEXTURE_DESCRIPTOR_INIT;
+    target_desc.size = (WGPUExtent3D){4, 4, 1};
+    target_desc.format = WGPUTextureFormat_RGBA8Unorm;
+    target_desc.usage = WGPUTextureUsage_RenderAttachment | WGPUTextureUsage_CopySrc;
+    WGPUTexture target = wgpuDeviceCreateTexture(s->device, &target_desc);
+    assert(target);
+    WGPUTextureView view = wgpuTextureCreateView(target, NULL);
+    WGPUQuerySetDescriptor query_desc = {.type = WGPUQueryType_Occlusion, .count = 1};
+    WGPUQuerySet queries = wgpuDeviceCreateQuerySet(s->device, &query_desc);
+    WGPUBuffer indirect = make_buffer(s->device, 16, WGPUBufferUsage_Indirect | WGPUBufferUsage_CopyDst);
+    const uint32_t draw[4] = {3, 1, 0, 0};
+    wgpuQueueWriteBuffer(s->queue, indirect, 0, draw, sizeof(draw));
+    WGPUBuffer resolved = make_buffer(s->device, 256, WGPUBufferUsage_QueryResolve | WGPUBufferUsage_CopySrc);
+    WGPUBuffer readback = make_buffer(s->device, 256 * 4 + 8, WGPUBufferUsage_MapRead | WGPUBufferUsage_CopyDst);
+    assert(view && queries);
+    WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(s->device, NULL);
+    WGPURenderPassColorAttachment attachment = WGPU_RENDER_PASS_COLOR_ATTACHMENT_INIT;
+    attachment.view = view;
+    attachment.loadOp = WGPULoadOp_Clear;
+    attachment.storeOp = WGPUStoreOp_Store;
+    WGPURenderPassDescriptor pass_desc = WGPU_RENDER_PASS_DESCRIPTOR_INIT;
+    pass_desc.colorAttachmentCount = 1;
+    pass_desc.colorAttachments = &attachment;
+    pass_desc.occlusionQuerySet = queries;
+    WGPURenderPassEncoder pass = wgpuCommandEncoderBeginRenderPass(encoder, &pass_desc);
+    wgpuRenderPassEncoderSetPipeline(pass, pipeline);
+    wgpuRenderPassEncoderBeginOcclusionQuery(pass, 0);
+    wgpuRenderPassEncoderDraw(pass, 3, 1, 0, 0);
+    wgpuRenderPassEncoderEndOcclusionQuery(pass);
+    wgpuRenderPassEncoderDrawIndirect(pass, indirect, 0);
+    wgpuRenderPassEncoderEnd(pass);
+    wgpuRenderPassEncoderRelease(pass);
+    wgpuCommandEncoderResolveQuerySet(encoder, queries, 0, 1, resolved, 0);
+    WGPUTexelCopyTextureInfo source = {.texture = target};
+    WGPUTexelCopyBufferInfo destination = {.buffer = readback, .layout = {.bytesPerRow = 256, .rowsPerImage = 4}};
+    WGPUExtent3D extent = {4, 4, 1};
+    wgpuCommandEncoderCopyTextureToBuffer(encoder, &source, &destination, &extent);
+    wgpuCommandEncoderCopyBufferToBuffer(encoder, resolved, 0, readback, 256 * 4, 8);
+    WGPUCommandBuffer commands = wgpuCommandEncoderFinish(encoder, NULL);
+    wgpuCommandEncoderRelease(encoder);
+    assert(commands);
+    wgpuQueueSubmit(s->queue, 1, &commands);
+    wgpuCommandBufferRelease(commands);
+    wgpuRenderPipelineRelease(pipeline);
+    wgpuTextureViewRelease(view);
+    wgpuTextureRelease(target);
+    wgpuQuerySetRelease(queries);
+    wgpuBufferRelease(indirect);
+    wgpuBufferRelease(resolved);
+    const uint32_t *output = map_wait(s, readback, 256 * 4 + 8);
+    for (unsigned row = 0; row < 4; ++row)
+        for (unsigned x = 0; x < 4; ++x) assert(output[row * 64 + x] == 0xff00ff00u); /* RGBA8 green */
+    assert(output[256] || output[257]);
+    wgpuBufferUnmap(readback);
+    wgpuBufferRelease(readback);
+}
+
+/* Compute-program round: one dispatch and copy prepared as a gpu-recorded
+ * program and submitted twice. */
+static void program_round(worker *w, unsigned round)
+{
+    shared_device *s = w->device;
+    uint32_t input[WORDS];
+    for (unsigned i = 0; i < WORDS; ++i) input[i] = w->seed + round + i;
+    WGPUBuffer storage = make_buffer(s->device, BYTES, WGPUBufferUsage_Storage | WGPUBufferUsage_CopySrc | WGPUBufferUsage_CopyDst);
+    WGPUBuffer readback = make_buffer(s->device, BYTES, WGPUBufferUsage_MapRead | WGPUBufferUsage_CopyDst);
+    wgpuQueueWriteBuffer(s->queue, storage, 0, input, sizeof(input));
+    WGPUBindGroupLayout layout = wgpuComputePipelineGetBindGroupLayout(s->pipeline, 0);
+    WGPUBindGroupEntry entry = {.binding = 0, .buffer = storage, .size = BYTES};
+    WGPUBindGroupDescriptor group_desc = {.layout = layout, .entryCount = 1, .entries = &entry};
+    WGPUBindGroup group = wgpuDeviceCreateBindGroup(s->device, &group_desc);
+    wgpuBindGroupLayoutRelease(layout);
+    WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(s->device, NULL);
+    WGPUComputePassEncoder pass = wgpuCommandEncoderBeginComputePass(encoder, NULL);
+    wgpuComputePassEncoderSetPipeline(pass, s->pipeline);
+    wgpuComputePassEncoderSetBindGroup(pass, 0, group, 0, NULL);
+    wgpuComputePassEncoderDispatchWorkgroups(pass, 1, 1, 1);
+    wgpuComputePassEncoderEnd(pass);
+    wgpuComputePassEncoderRelease(pass);
+    wgpuCommandEncoderCopyBufferToBuffer(encoder, storage, 0, readback, 0, BYTES);
+    WGPUCommandBuffer commands = wgpuCommandEncoderFinish(encoder, NULL);
+    wgpuCommandEncoderRelease(encoder);
+    void *program = doeNativeComputeProgramPrepare(s->queue, commands);
+    wgpuCommandBufferRelease(commands);
+    assert(program);
+    assert(doeNativeComputeProgramSubmit(program) == 1 && doeNativeComputeProgramSubmit(program) == 1);
+    doeNativeComputeProgramRelease(program);
+    wgpuBindGroupRelease(group);
+    wgpuBufferRelease(storage);
+    const uint32_t *output = map_wait(s, readback, BYTES);
+    for (unsigned i = 0; i < WORDS; ++i) assert(output[i] == (input[i] * 3u + 1u) * 3u + 1u);
+    wgpuBufferUnmap(readback);
+    wgpuBufferRelease(readback);
+}
+
+/* Requests, uses and releases adapters and devices while the workers run. */
+typedef struct churner {
+    WGPUInstance instance;
+    unsigned devices;
+} churner;
+static void *run_churner(void *userdata)
+{
+    churner *c = userdata;
+    for (unsigned i = 0; i < 24; ++i) {
+        shared_device d = {0};
+        open_device(&d, c->instance);
+        WGPUBuffer buffer = make_buffer(d.device, 64, WGPUBufferUsage_CopyDst);
+        const uint32_t word = i;
+        wgpuQueueWriteBuffer(d.queue, buffer, 0, &word, sizeof(word));
+        wgpuBufferRelease(buffer);
+        if (i % 2) wgpuDeviceDestroy(d.device);
+        close_device(&d);
+        ++c->devices;
+    }
+    return NULL;
+}
+
 static void *run_worker(void *userdata)
 {
     worker *w = userdata;
-    for (unsigned round = 0; round < ROUNDS; ++round) round_trip(w, round);
+    for (unsigned round = 0; round < ROUNDS; ++round) {
+        round_trip(w, round);
+        if (round % 4 == 1) render_round(w);
+        if (round % 5 == 2) program_round(w, round);
+    }
     return NULL;
 }
 
@@ -331,6 +511,9 @@ int main(void)
     poller poll = {.devices = devices, .count = 1 + DEVICE_THREADS};
     pthread_t poll_thread;
     assert(!pthread_create(&poll_thread, NULL, run_poller, &poll));
+    churner churn = {.instance = instance};
+    pthread_t churn_thread;
+    assert(!pthread_create(&churn_thread, NULL, run_churner, &churn));
     worker workers[SHARED_THREADS + DEVICE_THREADS];
     pthread_t threads[SHARED_THREADS + DEVICE_THREADS];
     for (unsigned i = 0; i < SHARED_THREADS + DEVICE_THREADS; ++i) {
@@ -341,13 +524,14 @@ int main(void)
         assert(!pthread_join(threads[i], NULL));
         assert(workers[i].rounds_checked == ROUNDS);
     }
+    assert(!pthread_join(churn_thread, NULL) && churn.devices == 24);
     atomic_store(&poll.stop, true);
     assert(!pthread_join(poll_thread, NULL));
     assert(atomic_load(&poll.done) > 0);
     for (unsigned i = 0; i < 1 + DEVICE_THREADS; ++i) close_device(&devices[i]);
     destroy_under_load(instance);
     wgpuInstanceRelease(instance);
-    printf("concurrency: %u threads on one device and %u on their own devices, %u rounds each, checked readback, early release, init-batch textures\n",
+    printf("concurrency: %u threads on one device and %u on their own devices, %u rounds each (direct and indirect compute, render with occlusion query and indirect draw, compute programs), 24 device lifetimes alongside, checked readback, early release, init-batch textures\n",
         (unsigned)SHARED_THREADS, (unsigned)DEVICE_THREADS, (unsigned)ROUNDS);
     return 0;
 }

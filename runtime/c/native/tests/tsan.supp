@@ -1,0 +1,13 @@
+# ThreadSanitizer suppressions for check-sanitizers.
+# lavapipe (the software Vulkan driver) and LLVM are not instrumented. The
+# reports below have every stack inside them, not in Doe code:
+# - races between lavapipe's own threads (for example mutex destroy against
+#   lock during device teardown);
+race:libvulkan_lvp.so
+# - races in libgcc's unwinder frame registry when LLVM's JIT registers code
+#   from two lavapipe compile threads;
+race:libgcc_s.so
+# - a lock-order report between the Vulkan loader's instance mutex and LLVM's
+#   JIT listener mutex (lavapipe compiling while another thread creates an
+#   instance).
+deadlock:libLLVM.so
