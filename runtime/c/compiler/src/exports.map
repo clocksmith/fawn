@@ -19,5 +19,7 @@
     doe_compiler_specialization_requirements;
     doe_compiler_validate_module;
     doe_compiler_specialize;
+    doe_compiler_module_specialization_requirements;
+    doe_compiler_specialize_module;
   local: *;
 };

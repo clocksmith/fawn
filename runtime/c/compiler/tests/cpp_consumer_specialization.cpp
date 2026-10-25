@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: MIT */
-#include "../include/doe_compiler_specialization.h"
+#include "../include/doe_compiler_module_specialization.h"
 #include <cassert>
 #include <cstdlib>
 #include <cstring>
@@ -33,6 +33,11 @@ int main() {
     DoeCompilerWorkspaceRequirements requirements{};
     assert(doe_compiler_specialization_requirements(13u, DOE_COMPILER_TARGET_SPIRV,
         &caps, sizeof(caps), &requirements, sizeof(requirements)) == DOE_COMPILER_OK);
+    DoeCompilerWorkspaceRequirements module_requirements{};
+    assert(doe_compiler_module_specialization_requirements(14u, DOE_COMPILER_TARGET_SPIRV,
+        &caps, sizeof(caps), &module_requirements, sizeof(module_requirements)) == DOE_COMPILER_OK);
+    assert(module_requirements.size_bytes == requirements.size_bytes &&
+        module_requirements.alignment_bytes == requirements.alignment_bytes);
     void *workspace = std::malloc(requirements.size_bytes);
     assert(workspace != nullptr);
     const char source[] = "override width:u32; @compute @workgroup_size(width) fn main(){}";
@@ -48,6 +53,33 @@ int main() {
         &value, 1u, sizeof(value), DOE_COMPILER_MODULE_WORDS | DOE_COMPILER_MODULE_MEASURE,
         nullptr, 0u, &result, sizeof(result)) == DOE_COMPILER_OK);
     assert(result.stages.resources.module.required.words > 0u);
+    selection.mode = DOE_COMPILER_SELECT_NONE;
+    selection.name = nullptr;
+    selection.name_length = 0u;
+    assert(doe_compiler_specialize(13u, DOE_COMPILER_TARGET_SPIRV, &caps, sizeof(caps),
+        workspace, requirements.size_bytes, source, sizeof(source) - 1u, &selection, sizeof(selection),
+        &value, 1u, sizeof(value), DOE_COMPILER_MODULE_WORDS | DOE_COMPILER_MODULE_MEASURE,
+        nullptr, 0u, &result, sizeof(result)) == DOE_COMPILER_INPUT_ERROR);
+    const char bundle[] = "override width:u32; @compute @workgroup_size(width) fn first(){}"
+        "@compute @workgroup_size(width+1u) fn second(){}";
+    assert(doe_compiler_specialize_module(14u, DOE_COMPILER_TARGET_SPIRV, &caps, sizeof(caps),
+        workspace, requirements.size_bytes, bundle, sizeof(bundle) - 1u, &value, 1u, sizeof(value),
+        DOE_COMPILER_MODULE_WORDS | DOE_COMPILER_MODULE_REFLECTION | DOE_COMPILER_MODULE_MEASURE,
+        nullptr, 0u, &result, sizeof(result)) == DOE_COMPILER_OK);
+    assert(result.stages.resources.module.required.entries == 2u &&
+        result.stages.resources.module.required.words > 0u);
+    std::memset(&result, 0x5a, sizeof(result));
+    const DoeCompilerTextResult untouched = result;
+    assert(doe_compiler_specialize_module(13u, DOE_COMPILER_TARGET_SPIRV, &caps, sizeof(caps),
+        workspace, requirements.size_bytes, bundle, sizeof(bundle) - 1u, &value, 1u, sizeof(value),
+        DOE_COMPILER_MODULE_WORDS | DOE_COMPILER_MODULE_MEASURE,
+        nullptr, 0u, &result, sizeof(result)) == DOE_COMPILER_ABI_MISMATCH);
+    assert(std::memcmp(&untouched, &result, sizeof(result)) == 0);
+    assert(doe_compiler_specialize_module(14u, DOE_COMPILER_TARGET_SPIRV, &caps, sizeof(caps),
+        workspace, requirements.size_bytes, bundle, sizeof(bundle) - 1u, &value, 1u, sizeof(value),
+        DOE_COMPILER_MODULE_WORDS | DOE_COMPILER_MODULE_MEASURE,
+        nullptr, 0u, &result, sizeof(result) - 1u) == DOE_COMPILER_ABI_MISMATCH);
+    assert(std::memcmp(&untouched, &result, sizeof(result)) == 0);
     std::free(workspace);
-    std::puts("C++17 ABI13 module/specialization shared consumer passed");
+    std::puts("C++17 ABI13/14 selected/all-entry shared consumers and frozen ABI13 NONE rejection passed");
 }

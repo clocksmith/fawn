@@ -37,8 +37,8 @@ dimensions are concrete compiler results; unrelated deferred workgroup types
 cannot leak into executable reflection. SPIR-V uses the existing ABI9 records,
 Metal the ABI12 dense entry records, and HLSL the ABI11 register records. No target
 fallback or additional native specialization policy exists. Existing workgroup
-dimension/product limits remain 256; numeric binding limits follow the explicit
-semantic flags. Caller capacities and a charged override work limit bound analysis.
+dimensions and their product must fit positive u32 values; device limits remain
+a native pipeline obligation. Numeric binding limits follow the explicit semantic flags. Caller capacities and a charged override work limit bound analysis.
 
 Const, override and runtime stages remain distinct after values become known.
 For example, `sqrt(n)` can produce a pipeline error for a negative override value,
@@ -52,6 +52,28 @@ same work. All fallible semantic, capacity, target and floating-point restoratio
 steps finish before bulk output publication. Exact public descriptor/record sizes,
 errno preservation and caller rounding/exception restoration apply on failure too.
 Internal deferred IR is rejected by every executable target.
+
+[ABI14](include/doe_compiler_module_specialization.h) adds
+`doe_compiler_specialize_module` and its matching requirements query. It specializes
+all shader entries in their source order, including compute and graphics siblings,
+and emits one module or target bundle through the same output owners. Required
+functions, workgroup roots and overrides are the union of all entry closures.
+Unreachable functions and deferred workgroup roots remain excluded. Every entry
+keeps its own interfaces, resource references, workgroup dimensions and storage
+bytes; module reflection reports no single selected entry. A module without a
+shader entry rejects. Caller records and workspace layouts are the ABI13 records;
+ABI13 still accepts only AUTO/NAME selection and rejects NONE.
+
+The retained `--mode vulkan-compute-runtime` spelling does not filter graphics
+entries: its preparation pass only conditionally performs compute float fusion.
+An actual mixed-stage retained module emits compute, fragment and compute entries
+in source order. ABI14 preserves that coverage. It also keeps C's existing strict
+required-override validation across all entries: the retained Zig runtime accepted
+a missing fragment-only override in this fixture; ABI14 rejects it instead of
+inventing an executable value. The focused artifact contains two compute entries
+with independent 2/3-element workgroup arrays and a fragment sibling. Both compute
+entries execute from the same SPIR-V module on explicit CPU Vulkan and produce
+five literal expected words; this is not physical GPU qualification.
 
 Focused host controls:
 

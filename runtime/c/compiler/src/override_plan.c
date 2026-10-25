@@ -60,8 +60,6 @@ static bool require_range(Source *s, uint32_t first, uint32_t end) {
 static bool require_functions(Source *s, uint32_t entry) {
     CompilerWorkspace *c = s->compiler;
     SpecializationContext *context = s->specialization;
-    memset(context->functions, 0, (size_t)c->function_count * sizeof(*context->functions));
-    memset(context->workgroups, 0, c->workgroup_count);
     uint32_t current = c->entries[entry].function;
     context->functions[current] = 1u;
     c->functions[current].state.graph.parent = NO_ID;
@@ -87,7 +85,13 @@ static bool require_functions(Source *s, uint32_t entry) {
     const uint32_t *dimensions = context->entry_expressions + 6u*entry;
     for (uint32_t i = 0u; i < 3u; ++i)
         if (dimensions[2u*i] != NO_ID && !require_range(s, dimensions[2u*i], dimensions[2u*i + 1u])) return false;
+    return true;
+}
+static bool require_workgroups(Source *s) {
+    CompilerWorkspace *c = s->compiler;
+    SpecializationContext *context = s->specialization;
     for (uint32_t i = 0u; i < c->workgroup_count; ++i) {
+        if (!override_charge(s, 1u)) return false;
         if (context->workgroups[i] == 0u) continue;
         const TypeRecord *type = c->workgroups[i].type >= 7u ? &c->types[c->workgroups[i].type - 7u] : NULL;
         if (type != NULL && (type->flags & TYPE_DEFERRED) != 0u) {
@@ -146,6 +150,15 @@ static bool require_dependencies(Source *s) {
 }
 bool override_plan(Source *s) {
     SpecializationContext *context = s->specialization;
-    return compiler_select_entry(s, context->selection, &context->selected) &&
-        context->selected != NO_ID && supplied_values(s) && require_functions(s, context->selected) && require_dependencies(s);
+    CompilerWorkspace *c = s->compiler;
+    if (!compiler_select_entry(s, context->selection, &context->selected) || !supplied_values(s)) return false;
+    if (c->entry_count == 0u || (!context->all_entries && context->selected == NO_ID))
+        return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, 0u, "specialization requires a shader entry");
+    memset(context->functions, 0, (size_t)c->function_count * sizeof(*context->functions));
+    memset(context->workgroups, 0, c->workgroup_count);
+    if (context->all_entries) {
+        for (uint32_t i = 0u; i < c->entry_count; ++i)
+            if (!require_functions(s, i)) return false;
+    } else if (!require_functions(s, context->selected)) return false;
+    return require_workgroups(s) && require_dependencies(s);
 }

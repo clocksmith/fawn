@@ -19,7 +19,7 @@ static bool output_records(uint32_t target, const DoeCompilerSpecializationOutpu
             outputs->hlsl.entry_record_size == sizeof(DoeCompilerHlslEntryV11);
     return true;
 }
-DoeCompilerStatus doe_compiler_specialize(uint32_t version, uint32_t target,
+static DoeCompilerStatus specialize(bool all_entries, uint32_t version, uint32_t target,
     const DoeCompilerSpecializationCapacities *caps, size_t capacities_size,
     void *workspace, size_t workspace_size, const char *source, size_t length,
     const DoeCompilerEntrySelectionV5 *selection, size_t selection_size,
@@ -28,7 +28,8 @@ DoeCompilerStatus doe_compiler_specialize(uint32_t version, uint32_t target,
     DoeCompilerTextResult *result, size_t result_size) {
     const int saved_errno = errno;
     if (result == NULL) return DOE_COMPILER_INPUT_ERROR;
-    if (version != DOE_COMPILER_SPECIALIZATION_ABI_VERSION || capacities_size != sizeof(*caps) ||
+    if (version != (all_entries ? DOE_COMPILER_MODULE_SPECIALIZATION_ABI_VERSION : DOE_COMPILER_SPECIALIZATION_ABI_VERSION) ||
+        capacities_size != sizeof(*caps) ||
         selection_size != sizeof(*selection) || value_record_size != sizeof(*values) ||
         result_size != sizeof(*result) || (outputs != NULL ? outputs_size != sizeof(*outputs) : outputs_size != 0u) ||
         !output_records(target, outputs)) return DOE_COMPILER_ABI_MISMATCH;
@@ -40,7 +41,7 @@ DoeCompilerStatus doe_compiler_specialize(uint32_t version, uint32_t target,
     bool valid = specialization_layout(target, caps, &base, &requirements) &&
         workspace != NULL && workspace_size >= requirements.size_bytes &&
         (uintptr_t)workspace % requirements.alignment_bytes == 0u &&
-        selection != NULL && selection->mode != DOE_COMPILER_SELECT_NONE && value_count < UINT32_MAX &&
+        selection != NULL && (all_entries || selection->mode != DOE_COMPILER_SELECT_NONE) && value_count < UINT32_MAX &&
         compiler_valid_span(values, value_count, sizeof(*values), _Alignof(DoeCompilerOverrideValueV13), true);
     if (valid) for (size_t i = 0u; i < value_count; ++i)
         if (values[i].key == NULL || values[i].key_length == 0u || values[i].key_length > DOE_COMPILER_MAX_NAME_BYTES) valid = false;
@@ -50,7 +51,7 @@ DoeCompilerStatus doe_compiler_specialize(uint32_t version, uint32_t target,
         return module->diagnostic.status;
     }
     SpecializationContext context = {.values=values, .value_count=value_count,
-        .capacities=caps, .selection=selection};
+        .capacities=caps, .selection=selection, .all_entries=all_entries};
     specialization_bind(&context, workspace, base, caps);
     DoeCompilerStatus status;
     if (target == DOE_COMPILER_TARGET_SPIRV) {
@@ -63,4 +64,27 @@ DoeCompilerStatus doe_compiler_specialize(uint32_t version, uint32_t target,
         source, length, selection, flags, outputs, result, &context);
     errno = saved_errno;
     return status;
+}
+
+DoeCompilerStatus doe_compiler_specialize(uint32_t version, uint32_t target,
+    const DoeCompilerSpecializationCapacities *caps, size_t capacities_size,
+    void *workspace, size_t workspace_size, const char *source, size_t length,
+    const DoeCompilerEntrySelectionV5 *selection, size_t selection_size,
+    const DoeCompilerOverrideValueV13 *values, size_t value_count, size_t value_record_size,
+    uint32_t flags, const DoeCompilerSpecializationOutputs *outputs, size_t outputs_size,
+    DoeCompilerTextResult *result, size_t result_size) {
+    return specialize(false, version, target, caps, capacities_size, workspace, workspace_size,
+        source, length, selection, selection_size, values, value_count, value_record_size,
+        flags, outputs, outputs_size, result, result_size);
+}
+DoeCompilerStatus doe_compiler_specialize_module(uint32_t version, uint32_t target,
+    const DoeCompilerSpecializationCapacities *caps, size_t capacities_size,
+    void *workspace, size_t workspace_size, const char *source, size_t length,
+    const DoeCompilerOverrideValueV13 *values, size_t value_count, size_t value_record_size,
+    uint32_t flags, const DoeCompilerSpecializationOutputs *outputs, size_t outputs_size,
+    DoeCompilerTextResult *result, size_t result_size) {
+    const DoeCompilerEntrySelectionV5 selection = {.mode = DOE_COMPILER_SELECT_NONE};
+    return specialize(true, version, target, caps, capacities_size, workspace, workspace_size,
+        source, length, &selection, sizeof(selection), values, value_count, value_record_size,
+        flags, outputs, outputs_size, result, result_size);
 }
