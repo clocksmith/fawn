@@ -180,7 +180,13 @@ $(BUILD)/doe-c-runtime --commands examples/rmsnorm_tree_commands.json --execute 
   embedded sample quirk instead, so default runs without a quirks file differ.
   No Lean-verified build exists for C, so `lean_required` quirks without a proven
   level are counted as blocking, as in a Zig build without Lean.
-- Arguments as listed by `--help`. `--queue-sync-mode` admits only `per-command`; `--gpu-timestamp-mode` admits
+- Arguments as listed by `--help`. `--queue-sync-mode per-command|deferred` waits per submission or drains once
+  after the command loop; final drain time belongs to the last row and totals.
+  `--queue-wait-mode process-events|wait-any` selects real callback delivery
+  (default process-events). `--webgpu-ffi-queue-wait-timeout-ns` bounds a queue
+  wait; timeout is failure, and its callback storage lives through instance
+  destruction. Barriers and host readbacks always complete their required work.
+  Partial upload batches also drain before exit; `--gpu-timestamp-mode` admits
   `off` and `auto` (no timestamps are recorded); `--api` matches the platform build (`vulkan` on Linux, `metal` on Darwin).
   `--adapter auto|physical|software` is this CLI's own: `auto` takes a
   nonfallback adapter, else the fallback (CPU) adapter.
@@ -297,7 +303,7 @@ The executor passes the workload's `--quirks` in the default trace mode, so its
 rows carry the same quirk decisions as doe-zig-runtime's. `doe_c_direct_plan_vulkan`
 runs plan mode at the plan boundary with doe-plan-executor's arguments (no
 backend lane); like doe-plan-executor it gets no strict oracle preflight.
-Workloads outside the admitted input (upload-domain `deferred` sync, render,
+Workloads outside the admitted input (custom render pipelines,
 textures) fail the run rather than being skipped. The Dawn-versus-Doe strict
 Vulkan shader-artifact obligation applies to C traces too; the CLI writes no
 shader artifact manifest, so that obligation fails for them.
@@ -382,7 +388,8 @@ overflow or injected allocation failure. These checks do not establish
 physical-backend qualification or performance advantage.
 
 
-The expanded host-only inventory admits 91 of all 98 tracked
+The original AMD Vulkan workload inventory admits all 84 workload rows
+(81 unique command paths). The expanded host-only inventory admits 91 of all 98 tracked
 `examples/*_commands.json` files, including every kind in Zig's command-kind
 registry. The other seven are inference `buffer_load` compatibility streams:
 Zig's raw command parser also rejects that kind; their active consumers use

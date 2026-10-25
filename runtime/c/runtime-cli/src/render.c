@@ -230,7 +230,7 @@ bool runtime_execute_render(doe_runtime *runtime, const doe_command *command, do
         WGPUCommandBuffer commands = wgpuCommandEncoderFinish(encoder, NULL);
         wgpuCommandEncoderRelease(encoder);
         encode_end = doe_runtime_monotonic_ns();
-        ok = runtime_submit_and_wait(runtime, commands, execution);
+        ok = runtime_submit(runtime, commands, execution);
         execution->submit_count = 1;
         execution->dispatch_count = draw->draw_count;
     }

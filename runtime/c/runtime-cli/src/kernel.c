@@ -385,14 +385,15 @@ static bool execute_pipeline(doe_runtime *runtime, const doe_command *command, W
     runtime_push_scopes(runtime);
     bool ok = create_groups(runtime, pipeline, command, groups, execution);
     if (ok && command->as.dispatch.warmup) {
-        ok = runtime_submit_and_wait(runtime, encode(runtime, pipeline, groups, command, command->as.dispatch.warmup), execution);
+        ok = runtime_submit(runtime, encode(runtime, pipeline, groups, command, command->as.dispatch.warmup), execution);
+        if (ok && runtime->options.defer_queue_sync) ok = runtime_wait_queue(runtime, execution);
     }
     uint64_t setup_end = doe_runtime_monotonic_ns();
     WGPUCommandBuffer commands = ok ?
         encode_dispatches(runtime, pipeline, groups, command, command->as.dispatch.repeat, indirect) : NULL;
     uint64_t encode_end = doe_runtime_monotonic_ns();
     if (ok) {
-        ok = runtime_submit_and_wait(runtime, commands, execution);
+        ok = runtime_submit(runtime, commands, execution);
         execution->submit_count = 1;
         execution->dispatch_count = command->as.dispatch.repeat;
     }
@@ -464,7 +465,7 @@ bool runtime_validate_oracle(doe_runtime *runtime, const doe_command *command, c
     if (ok) {
         doe_command isolated = *command;
         isolated.as.dispatch.warmup = 0;
-        ok = runtime_submit_and_wait(runtime, encode(runtime, pipeline, groups, &isolated, oracle->dispatch_count), execution);
+        ok = runtime_submit(runtime, encode(runtime, pipeline, groups, &isolated, oracle->dispatch_count), execution);
     }
     if (ok && target->buffer_size > SIZE_MAX) ok = runtime_fail(execution, "output_oracle_buffer_size", "the oracle range exceeds host memory");
     if (ok && !(bytes = malloc((size_t)target->buffer_size))) ok = runtime_fail(execution, "out_of_memory", "oracle readback allocation failed");

@@ -25,7 +25,7 @@ command-stream examples and schema 1 output oracles apply.
 
 ## Invariants
 Unknown commands, fields and arguments reject before device work with exit 2.
-No input is silently ignored, emulated or reported as success. Commands complete sequentially and preserve the first device error. Oracles run on
+No input is silently ignored, emulated or reported as success. Commands preserve the first device error; deferred work drains before successful completion. Oracles run on
 isolated zero-filled buffers; a digest mismatch fails the run. The meta names
 the executing adapter, so CPU runs stay identifiable.
 
@@ -39,7 +39,7 @@ runs are not GPU, performance or comparability evidence.
 ## Non-goals
 Numeric stability plans beyond decode logits, unappliable quirk actions,
 custom render pipelines, multisampled
-textures, GPU timestamps, deferred queue sync or default CLI replacement.
+textures, GPU timestamps or default CLI replacement.
 
 ## Freedom
 Internal parsing, caching and encoding may vary.

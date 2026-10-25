@@ -86,7 +86,8 @@ static void usage(FILE *out)
     fputs("doe-c-runtime --commands <path> --execute [--backend native] [--kernel-root <path>]\n"
           "  [--trace] [--trace-jsonl <path>] [--trace-meta <path>] [--command-repeat N]\n"
           "  [--vendor X] [--api " DOE_RUNTIME_API "] [--family X] [--driver X.Y.Z]\n"
-          "  [--quirks <path>] [--quirk-mode off|trace|active] [--queue-sync-mode per-command]\n"
+          "  [--quirks <path>] [--quirk-mode off|trace|active] [--queue-sync-mode per-command|deferred]\n"
+          "  [--queue-wait-mode process-events|wait-any] [--webgpu-ffi-queue-wait-timeout-ns N]\n"
           "  [--upload-buffer-usage copy-dst-copy-src|copy-dst] [--upload-submit-every N]\n"
           "  [--gpu-timestamp-mode off|auto] [--adapter auto|physical|software]\n"
           "  [--validate-output-oracles]  (schema 1 sha256_exact_v1 isolated-dispatch oracles)\n"
@@ -155,7 +156,18 @@ static int parse_options(int argc, char **argv, options *out)
             if (!value || strcmp(value, "native")) return reject_argument(flag, "only \"native\" execution is implemented");
             i++;
         } else if (!strcmp(flag, "--queue-sync-mode")) {
-            if (!value || strcmp(value, "per-command")) return reject_argument(flag, "only \"per-command\" is implemented");
+            if (value && !strcmp(value, "per-command")) out->runtime.defer_queue_sync = false;
+            else if (value && !strcmp(value, "deferred")) out->runtime.defer_queue_sync = true;
+            else return reject_argument(flag, "must be per-command or deferred");
+            i++;
+        } else if (!strcmp(flag, "--queue-wait-mode")) {
+            if (value && !strcmp(value, "process-events")) out->runtime.queue_wait = DOE_WAIT_PROCESS_EVENTS;
+            else if (value && !strcmp(value, "wait-any")) out->runtime.queue_wait = DOE_WAIT_ANY;
+            else return reject_argument(flag, "must be process-events or wait-any");
+            i++;
+        } else if (!strcmp(flag, "--webgpu-ffi-queue-wait-timeout-ns")) {
+            if (!parse_u64(value, &out->runtime.queue_wait_timeout_ns) || !out->runtime.queue_wait_timeout_ns)
+                return reject_argument(flag, "must be a positive integer");
             i++;
         } else if (!strcmp(flag, "--upload-buffer-usage")) {
             if (value && !strcmp(value, "copy-dst-copy-src")) out->runtime.upload_copy_src = true;
@@ -387,9 +399,11 @@ static bool write_meta(const char *path, const options *o, const totals *t, uint
     /* The upload arguments are recorded by the caller, as for doe-zig-runtime,
      * whose meta has no upload fields; the bench reads a meta uploadSubmitEvery
      * as an upload normalization input. */
-    ok = ok && fprintf(out, ",\"queueSyncMode\":\"per-command\",\"quirkMode\":\"%s\""
+    ok = ok && fprintf(out, ",\"queueSyncMode\":\"%s\",\"queueWaitMode\":\"%s\",\"quirkMode\":\"%s\""
         /* No persistent pipeline cache exists in this runtime. */
         ",\"pipelineCache\":{\"state\":\"disabled\",\"reason\":\"platform-unsupported\",\"warmupCount\":0,\"warmupNs\":0}",
+        o->runtime.defer_queue_sync ? "deferred" : "per-command",
+        o->runtime.queue_wait == DOE_WAIT_PROCESS_EVENTS ? "process-events" : "wait-any",
         o->quirk_mode == DOE_QUIRK_OFF ? "off" : o->quirk_mode == DOE_QUIRK_ACTIVE ? "active" : "trace") >= 0;
     if (ok && t->oracles) {
         ok = write_optional(out, "outputOracleKind", "sha256_exact_v1", true) &&
@@ -541,6 +555,31 @@ static void release_input(doe_stream *stream, doe_plan *plan, char *plan_kernel_
     free(plan_kernel_root);
 }
 
+/* Delay only the last row so final deferred completion time is attributed to
+ * the same row as retained runtime_cli.applyDeferredFlushToTraceRows. */
+typedef struct pending_trace {
+    bool active;
+    const doe_command *command;
+    doe_quirk_decision decision;
+    doe_trace_execution execution;
+    uint64_t seq, timestamp, hash, previous;
+} pending_trace;
+
+static bool emit_pending(pending_trace *pending, FILE *rows, const options *options, const doe_trace_identity *identity)
+{
+    if (!pending->active) return true;
+    bool ok = true;
+    if (rows) ok = options->plan ?
+        doe_trace_write_plan_row(rows, identity, pending->seq, pending->timestamp, pending->hash, pending->previous,
+            pending->command, &pending->execution) :
+        doe_trace_write_row(rows, identity, pending->seq, pending->timestamp, pending->hash, pending->previous,
+            pending->command, &pending->decision, &pending->execution);
+    if (options->trace_stdout && !doe_trace_write_row(stdout, identity, pending->seq, pending->timestamp,
+        pending->hash, pending->previous, pending->command, &pending->decision, &pending->execution)) ok = false;
+    pending->active = false;
+    return ok;
+}
+
 int main(int argc, char **argv)
 {
     options o;
@@ -664,8 +703,10 @@ int main(int argc, char **argv)
         .driver = o.driver};
     const doe_ns_io ns_io = {.context = runtime, .capture = ns_capture, .write = ns_write};
     bool stopped = false;
+    pending_trace pending = {0};
     for (uint64_t pass = 0; runtime && status == 0 && !stopped && pass < o.command_repeat; pass++) {
         for (size_t i = 0; i < stream.count && status == 0 && !stopped; i++) {
+            if (!emit_pending(&pending, rows, &o, &identity)) { status = 1; break; }
             const doe_command *command = &stream.commands[i];
             const doe_quirk_decision decision = doe_quirks_decide(&quirks, command->kind);
             if (doe_semantic_present(&command->semantic)) t.semantic_tracing = true;
@@ -681,10 +722,8 @@ int main(int argc, char **argv)
                 command->kind == DOE_COMMAND_KERNEL_DISPATCH ? command->as.dispatch.kernel : NULL, &decision,
                 &command->semantic);
             uint64_t now = realtime_ns();
-            if (rows && !(o.plan ? doe_trace_write_plan_row(rows, &identity, seq, now, hash, t.hash, command, &execution) :
-                    doe_trace_write_row(rows, &identity, seq, now, hash, t.hash, command, &decision, &execution))) status = 1;
-            if (o.trace_stdout && !doe_trace_write_row(stdout, &identity, seq, now, hash, t.hash, command, &decision, &execution))
-                status = 1;
+            pending = (pending_trace){.active = true, .command = command, .decision = decision, .execution = execution,
+                .seq = seq, .timestamp = now, .hash = hash, .previous = t.hash};
             if (operator_anchor && doe_semantic_present(&command->semantic)) {
                 doe_operator_capture capture;
                 uint8_t *capture_data = NULL;
@@ -734,6 +773,28 @@ int main(int argc, char **argv)
             }
         }
     }
+    if (runtime) {
+        doe_trace_execution flush;
+        bool complete = doe_runtime_flush(runtime, &flush);
+        if (pending.active) {
+            pending.execution.duration_ns += flush.duration_ns;
+            pending.execution.submit_wait_ns += flush.submit_wait_ns;
+            t.total_ns += flush.duration_ns;
+            t.submit_wait_ns += flush.submit_wait_ns;
+            if (!complete && pending.execution.ok) {
+                pending.execution.ok = false;
+                pending.execution.status_code = flush.status_code;
+                memcpy(pending.execution.message, flush.message, sizeof(flush.message));
+                t.successes--;
+                t.errors++;
+            }
+        }
+        if (!complete) {
+            fprintf(stderr, "doe-c-runtime: final queue drain: %s: %s\n", flush.status_code, flush.message);
+            status = 1;
+        }
+    }
+    if (!emit_pending(&pending, rows, &o, &identity)) status = 1;
     for (size_t i = 0; runtime && status == 0 && o.validate_oracles && i < stream.count; i++) {
         const doe_command *command = &stream.commands[i];
         if (command->kind != DOE_COMMAND_KERNEL_DISPATCH || !command->as.dispatch.oracle) continue;

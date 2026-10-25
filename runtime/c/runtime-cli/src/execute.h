@@ -1,8 +1,8 @@
 /* SPDX-License-Identifier: MIT
  * Executes typed runtime commands through the public WebGPU C ABI of the C
  * runtime (libwebgpu_doe_c). One device, one queue; resources are keyed by the
- * stream's buffer handles and live until close. Each command completes (queue
- * work done) before the next starts. */
+ * stream's buffer handles and live until close. The selected sync mode waits per command or defers
+ * completion to an explicit flush; barriers and host reads always wait. */
 #ifndef DOE_RUNTIME_EXECUTE_H
 #define DOE_RUNTIME_EXECUTE_H
 #include "stream.h"
@@ -17,8 +17,13 @@ typedef enum doe_adapter_class {
     DOE_ADAPTER_SOFTWARE  /* The fallback adapter or failure. */
 } doe_adapter_class;
 
+typedef enum doe_queue_wait { DOE_WAIT_PROCESS_EVENTS, DOE_WAIT_ANY } doe_queue_wait;
+
 typedef struct doe_runtime_options {
     doe_adapter_class adapter;
+    doe_queue_wait queue_wait;
+    uint64_t queue_wait_timeout_ns; /* 0: runtime default bound. */
+    bool defer_queue_sync;
     const char *kernel_root; /* NULL: kernels resolve from the working directory only. */
     bool upload_copy_src;    /* Upload buffers use CopyDst|CopySrc, else CopyDst. */
     uint64_t upload_submit_every; /* Uploads complete every N uploads; nonzero. */
@@ -60,6 +65,8 @@ bool doe_runtime_kernel_source(const doe_runtime *runtime, const char *kernel, c
     char sha256_hex[65]);
 const char *doe_runtime_diagnostic_source(bool compute);
 bool doe_runtime_used_diagnostic_source(const doe_runtime *runtime, bool compute);
+/* Completes outstanding queue work; elapsed time belongs to the final trace row. */
+bool doe_runtime_flush(doe_runtime *runtime, doe_trace_execution *execution);
 void doe_runtime_close(doe_runtime *runtime);
 uint64_t doe_runtime_monotonic_ns(void);
 #endif

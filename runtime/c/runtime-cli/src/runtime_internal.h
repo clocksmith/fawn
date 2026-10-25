@@ -75,6 +75,8 @@ struct doe_runtime {
     surface_entry *surfaces;
     size_t surface_count, surface_capacity;
     uint64_t uploads_since_wait;
+    bool queue_pending, queue_done, queue_wait_failed;
+    WGPUQueueWorkDoneStatus queue_status;
     /* The last executed kernel_dispatch (stream-owned bindings), whose pipeline
      * and bindings dispatch and dispatch_indirect reuse. */
     bool has_last_kernel;
@@ -102,6 +104,7 @@ void runtime_copy_view(char *out, size_t size, WGPUStringView view);
 bool runtime_wait_future(doe_runtime *runtime, WGPUFuture future);
 void runtime_push_scopes(doe_runtime *runtime);
 bool runtime_pop_scopes(doe_runtime *runtime, doe_trace_execution *execution);
+bool runtime_after_submit(doe_runtime *runtime, doe_trace_execution *execution);
 bool runtime_wait_queue(doe_runtime *runtime, doe_trace_execution *execution);
 buffer_entry *runtime_find_buffer(doe_runtime *runtime, uint64_t handle);
 buffer_entry *runtime_create_buffer(doe_runtime *runtime, uint64_t handle, uint64_t size, doe_trace_execution *execution);
@@ -109,8 +112,8 @@ buffer_entry *runtime_create_buffer(doe_runtime *runtime, uint64_t handle, uint6
  * buffer replaces it (its contents are lost), as doe-zig-runtime does. The
  * pointer is valid until the next buffer is created. */
 buffer_entry *runtime_ensure_buffer(doe_runtime *runtime, uint64_t handle, uint64_t size, doe_trace_execution *execution);
-/* Submits and releases the command buffer, then waits for the queue. */
-bool runtime_submit_and_wait(doe_runtime *runtime, WGPUCommandBuffer commands, doe_trace_execution *execution);
+/* Submits and releases the command buffer; waits unless deferred sync is selected. */
+bool runtime_submit(doe_runtime *runtime, WGPUCommandBuffer commands, doe_trace_execution *execution);
 /* Copies `size` bytes (a multiple of 4) at `offset` of `source` to `out`. */
 bool runtime_read_back(doe_runtime *runtime, WGPUBuffer source, uint64_t offset, uint64_t size, uint8_t *out,
     doe_trace_execution *execution);
