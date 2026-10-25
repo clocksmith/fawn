@@ -2,6 +2,8 @@
 # Copyright (c) 2026 Doe contributors
 CC = gcc
 CXX = g++
+include ../build-root.mk
+BROWSER_BUILD ?= $(DOE_C_TMP)/browser-compiler
 SHARED_LIBRARY ?= build/libdoe_compiler.so
 SHARED_PLATFORM ?= $(shell uname -s)
 SHARED_INSTALL_NAME ?= @rpath/$(notdir $(SHARED_LIBRARY))
@@ -98,6 +100,26 @@ sanitize-cli: | build/.ready
 	cd ../../.. && ASAN_OPTIONS=detect_leaks=0:halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1 DOE_COMPILER_CLI="$(CURDIR)/build/doe-compiler-c-sanitize" DOE_COMPILER_FAULT_CLI="$(CURDIR)/build/test_cli_faults_sanitize" SPIRV_VAL="$(SPIRV_VAL)" python3 -m unittest runtime.c.compiler.tests.test_cli_modes
 clean:
 	rm -rf build
+
+BROWSER_JOB_SOURCES = src/rewrite.c browser/job.c
+build/doe-emit-wgsl-c: $(LIB_SOURCES) $(BROWSER_JOB_SOURCES) browser/emit_wgsl.c $(HEADERS) src/rewrite.h browser/job.h | build/.ready
+	$(CC) $(CFLAGS) $(LIB_SOURCES) $(BROWSER_JOB_SOURCES) browser/emit_wgsl.c -lm -o $@
+build/test_browser_rewrite: $(LIB_SOURCES) $(BROWSER_JOB_SOURCES) tests/test_browser_rewrite.c $(HEADERS) src/rewrite.h browser/job.h | build/.ready
+	$(CC) $(CFLAGS) $(LIB_SOURCES) $(BROWSER_JOB_SOURCES) tests/test_browser_rewrite.c -lm -o $@
+.PHONY: test-browser sanitize-browser browser-wasm browser-wasm-path test-browser-wasm
+test-browser: build/test_browser_rewrite build/doe-emit-wgsl-c
+	build/test_browser_rewrite
+	python3 tests/test_emit_wgsl.py
+sanitize-browser: | build/.ready
+	$(CC) $(CFLAGS) -O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer $(LIB_SOURCES) $(BROWSER_JOB_SOURCES) tests/test_browser_rewrite.c -lm -o build/test_browser_rewrite_sanitize
+	ASAN_OPTIONS=detect_leaks=1:halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1 build/test_browser_rewrite_sanitize
+browser-wasm:
+	python3 tools/build_browser.py --output '$(BROWSER_BUILD)/doe-wgsl.wasm'
+browser-wasm-path:
+	@printf '%s\n' '$(BROWSER_BUILD)/doe-wgsl.wasm'
+test-browser-wasm: browser-wasm
+	node tests/test_browser_wasm.mjs '$(BROWSER_BUILD)/doe-wgsl.wasm'
+	DOE_BROWSER_COMPILER_WASM='$(BROWSER_BUILD)/doe-wgsl.wasm' node ../../../packages/doe-gpu/test/unit/browser-compiler.test.js
 
 build/test_uniform_api: $(LIB_SOURCES) tests/test_uniform_api.c $(HEADERS) | build/.ready
 	$(CC) $(CFLAGS) -pthread $(LIB_SOURCES) tests/test_uniform_api.c -lm -o $@

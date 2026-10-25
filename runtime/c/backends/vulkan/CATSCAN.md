@@ -37,12 +37,12 @@ Execute admitted native Vulkan work through an independently usable C owner whil
 - [Host checks](Makefile) verify ABI, rollback, invalid input and submission lifetime.
 - [Native test](tests/native_compute.c) checks actual Vulkan output and early caller release.
 - Physical backend and complete retained consumer parity remain separate gates.
-- Evidence: [focused terminal receipt](TERMINAL_RECEIPT.txt); physical execution remains unqualified.
+- Evidence: [focused terminal receipt](TERMINAL_RECEIPT.txt).
 
 ## Non-goals
 
-- Replacing native WebGPU validation or promoting authored code through compilation alone.
+- WebGPU validation or promotion through compilation.
 
 ## Freedom
 
-Any implementation is permitted if it preserves these boundaries and passes the acceptance evidence.
+Internal algorithms may vary.

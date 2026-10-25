@@ -24,7 +24,7 @@ _Static_assert(INT64_MIN == -INT64_MAX - 1 && INT32_MIN == -INT32_MAX - 1,
 
 /* GCC uses the canonical strict build flags. Clang additionally supports the
  * standard pragma, including exceptions and calls across environment changes. */
-#if defined(__clang__)
+#if defined(__clang__) && !defined(__wasm__)
 #pragma STDC FENV_ACCESS ON
 #pragma STDC FP_CONTRACT OFF
 #endif

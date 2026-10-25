@@ -1,17 +1,21 @@
 // Trust, ABI and ownership checks for the shipped browser compiler artifact.
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { compilerArtifact } from '../../src/browser-compiler-artifact.js';
+import { compilerArtifact as shippedArtifact } from '../../src/browser-compiler-artifact.js';
 import { sha256, acquireCompilerBytes } from '../../src/browser-compiler-cache.js';
 import { createDoeCompiler, createDoeShaderAdapter } from '../../src/browser-compiler.js';
 import { createParticleSession } from '../../examples/browser-compiler/benchmark.js';
 
-const bytes = await readFile(new URL(`../../assets/${compilerArtifact.asset}`, import.meta.url));
+const bytes = await readFile(process.env.DOE_BROWSER_COMPILER_WASM ??
+  new URL(`../../assets/${shippedArtifact.asset}`, import.meta.url));
+const compilerArtifact = process.env.DOE_BROWSER_COMPILER_WASM
+  ? { ...shippedArtifact, sha256: await sha256(bytes), byteLength: bytes.length } : shippedArtifact;
 assert.equal(await sha256(bytes), compilerArtifact.sha256);
 assert.equal(bytes.length, compilerArtifact.byteLength);
 const module = await WebAssembly.compile(bytes);
 assert.deepEqual(WebAssembly.Module.imports(module), []);
 const { exports: wasm } = await WebAssembly.instantiate(module);
+wasm._initialize?.();
 function compile(source, enabled = true) {
   const encoded = new TextEncoder().encode(source);
   const input = wasm.reserve_source(encoded.length);
