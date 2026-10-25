@@ -44,7 +44,9 @@ typedef enum {
     EXPRESSION_CONSTRUCT, EXPRESSION_BITCAST, EXPRESSION_CALL, EXPRESSION_ADDRESS, EXPRESSION_DEREFERENCE
 } ExpressionKind;
 typedef struct {
-    uint32_t source_offset; ExpressionKind kind; unsigned depth; uint32_t left, right;
+    uint32_t source_offset; ExpressionKind kind;
+    union { unsigned depth; TypeId resolved_type; }; /* Parse depth dies before semantic typing. */
+    uint32_t left, right;
     union { uint32_t integer; NameSpan name; Comparison comparison;
         struct { NameSpan object, member; } member;
         struct { NameSpan storage; uint32_t index; } reference;
@@ -66,7 +68,8 @@ typedef enum {
     BUILTIN_SINH, BUILTIN_COSH, BUILTIN_ASINH, BUILTIN_ACOSH,
     BUILTIN_ATANH, BUILTIN_LOG, BUILTIN_LOG2, BUILTIN_EXP2,
     BUILTIN_INVERSE_SQRT, BUILTIN_DEGREES, BUILTIN_RADIANS,
-    BUILTIN_ATAN2, BUILTIN_POW, BUILTIN_REFLECT, BUILTIN_FACE_FORWARD, BUILTIN_REFRACT, BUILTIN_ALL, BUILTIN_ANY
+    BUILTIN_ATAN2, BUILTIN_POW, BUILTIN_REFLECT, BUILTIN_FACE_FORWARD, BUILTIN_REFRACT, BUILTIN_ALL, BUILTIN_ANY,
+    BUILTIN_COUNT_ONE_BITS, BUILTIN_UNPACK4X_U8
 } NumericBuiltinKind;
 typedef struct { uint64_t bits; IrType type; } NumericValue;
 typedef struct { TypeId type; uint32_t flags; uint64_t bits; } ConstantValue;

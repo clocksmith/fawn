@@ -245,7 +245,7 @@ static bool swizzle(Source *s, NameSpan name, uint32_t n, uint32_t *mask) {
 static bool postfix_value(Source *s, const Expression *node, const LocalScope *scope, bool evaluate, bool emit, ValueReference *ref, ExpressionValue *out, bool *reference, SourceReference *slot) {
     CompilerWorkspace *c = s->compiler;
     ExpressionValue base = {0};
-    ValueReference r = {0};
+    *ref = (ValueReference){0};
     bool is_ref = false;
 /* Preserve the old one-node/one-IR builtin component route through the
  * general typed input owner, without materializing an unused vector. */
@@ -260,8 +260,8 @@ static bool postfix_value(Source *s, const Expression *node, const LocalScope *s
             return sema_emit(s, emit, (IrInstruction){.opcode = IR_INPUT, .type = IR_U32, .source_offset = node->source_offset, .operands.scalar = {.binding = p, .literal = mask}}, &out->value);
         }
     }
-    if (!access_base(s, node, scope, evaluate, emit, &r, &base, &is_ref, slot)) return false;
-    TypeId input = is_ref?r.type:base.constant.type, output = IR_VOID;
+    if (!access_base(s, node, scope, evaluate, emit, ref, &base, &is_ref, slot)) return false;
+    TypeId input = is_ref?ref->type:base.constant.type, output = IR_VOID;
     uint32_t kind = ACCESS_MEMBER, index = 0u;
     if (node->kind == EXPRESSION_MEMBER) {
         const NameSpan member = node->value.member.member;
@@ -286,7 +286,7 @@ static bool postfix_value(Source *s, const Expression *node, const LocalScope *s
             kind = ACCESS_COMPONENT;
             if (member.length>1u) {
                 if (!type_intern(s, TYPE_VECTOR, output, member.length, &output)) return false;
-                if (is_ref && !sema_reference_load(s, r, node->source_offset, emit, &base)) return false;
+                if (is_ref && !sema_reference_load(s, *ref, node->source_offset, emit, &base)) return false;
                 *reference = false;
                 return sema_swizzle_value(s, node, &base, output, mask, evaluate, emit, out);
             }
@@ -342,16 +342,15 @@ static bool postfix_value(Source *s, const Expression *node, const LocalScope *s
     }
     if (!is_ref) {
         if (!sema_ensure_value(s, &base, emit)) return false;
-        r = (ValueReference){base.value.id, NO_ID, ROOT_VALUE, input, false,false};
+        *ref = (ValueReference){base.value.id, NO_ID, ROOT_VALUE, input, false,false};
     }
     if (emit) {
         if (c->access_count == c->limits.accesses) return source_pool_error(s, DOE_COMPILER_POOL_ACCESS_STEPS, (size_t)c->access_count+1u, node->source_offset, "access step capacity exceeded");
-        c->accesses[c->access_count] = (AccessStep){r.path, node->source_offset, input, output, kind, index};
-        r.path = c->access_count++;
+        c->accesses[c->access_count] = (AccessStep){ref->path, node->source_offset, input, output, kind, index};
+        ref->path = c->access_count++;
     }
-    if (input >= 7u && c->types[input - 7u].kind == TYPE_VECTOR) r.addressable = false;
-    r.type = output;
-    *ref = r;
+    if (input >= 7u && c->types[input - 7u].kind == TYPE_VECTOR) ref->addressable = false;
+    ref->type = output;
     *reference = true;
     return true;
 }
@@ -525,16 +524,23 @@ bool sema_call_statement(Source *s, uint32_t id, const LocalScope *scope) {
 bool sema_expression(Source *s, uint32_t id, const LocalScope *scope, bool evaluate, bool emit, ExpressionValue *out) {
     CompilerWorkspace *c = s->compiler;
     if (id >= c->expression_count) return source_error(s, DOE_COMPILER_INPUT_ERROR, s->length, "invalid expression identity");
-    const Expression *e = &c->expressions[id];
+    Expression *e = &c->expressions[id];
     *out = (ExpressionValue){.value.source_offset = e->source_offset};
-    if (e->kind == EXPRESSION_ADDRESS) return address_value(s, id, scope, evaluate, emit, out);
+    if (e->kind == EXPRESSION_ADDRESS) {
+        if (!address_value(s, id, scope, evaluate, emit, out)) return false;
+        goto resolved;
+    }
     if (e->kind == EXPRESSION_DEREFERENCE) {
         ValueReference ref;
-        return dereference(s, e, scope, evaluate, emit, &ref) &&
-            reference_effect(s, &c->expression_references[id], ref, false, e->source_offset) &&
-            sema_reference_load(s, ref, e->source_offset, emit, out);
+        if (!dereference(s, e, scope, evaluate, emit, &ref) ||
+            !reference_effect(s, &c->expression_references[id], ref, false, e->source_offset) ||
+            !sema_reference_load(s, ref, e->source_offset, emit, out)) return false;
+        goto resolved;
     }
-    if (e->kind == EXPRESSION_CALL) return sema_call_value(s, id, scope, evaluate, emit, false, out);
+    if (e->kind == EXPRESSION_CALL) {
+        if (!sema_call_value(s, id, scope, evaluate, emit, false, out)) return false;
+        goto resolved;
+    }
     if (e->kind == EXPRESSION_LITERAL || e->kind == EXPRESSION_BOOLEAN) {
         NumericValue n;
         if (e->kind == EXPRESSION_BOOLEAN) n = (NumericValue){e->value.integer, IR_BOOL};
@@ -542,20 +548,27 @@ bool sema_expression(Source *s, uint32_t id, const LocalScope *scope, bool evalu
         out->known = true;
         out->constant = (ConstantValue){.type = (TypeId)n.type, .bits = n.bits};
         out->value.type = (TypeId)n.type;
-        return true;
+        goto resolved;
     }
-    if (e->kind == EXPRESSION_NAME) return name_value(s, e->value.name, scope, emit, out, &c->expression_references[id]);
+    if (e->kind == EXPRESSION_NAME) {
+        if (!name_value(s, e->value.name, scope, emit, out, &c->expression_references[id])) return false;
+        goto resolved;
+    }
     if (e->kind == EXPRESSION_MEMBER || e->kind == EXPRESSION_LOAD) {
         ValueReference ref;
         bool reference;
         if (!postfix_value(s, e, scope, evaluate, emit, &ref, out, &reference, &c->expression_references[id])) return false;
-        return !reference || (reference_effect(s, &c->expression_references[id], ref, false, e->source_offset) &&
-            sema_reference_load(s, ref, e->source_offset, emit, out));
+        if (reference && (!reference_effect(s, &c->expression_references[id], ref, false, e->source_offset) ||
+            !sema_reference_load(s, ref, e->source_offset, emit, out))) return false;
+        goto resolved;
     }
     ExpressionValue a, b;
     if (!sema_expression(s, e->left, scope, evaluate, emit, &a)) return false;
     const bool unary = e->kind == EXPRESSION_NOT || e->kind == EXPRESSION_NEGATE || e->kind == EXPRESSION_COMPLEMENT;
-    if (unary) return sema_unary_value(s, e, &a, evaluate, emit, out);
+    if (unary) {
+        if (!sema_unary_value(s, e, &a, evaluate, emit, out)) return false;
+        goto resolved;
+    }
     const bool logical = e->kind == EXPRESSION_AND || e->kind == EXPRESSION_OR;
     bool skip = false;
     if (logical) {
@@ -573,20 +586,25 @@ bool sema_expression(Source *s, uint32_t id, const LocalScope *scope, bool evalu
         if (skip) {
             out->known = true;
             out->constant.bits = a.constant.bits;
-            return true;
+            goto resolved;
         }
-        if (!out->runtime && !a.known) return true;
+        if (!out->runtime && !a.known) goto resolved;
         if (!a.runtime) {
             const bool overridable = out->overridable;
             *out = b;
             out->overridable = overridable;
             out->value.source_offset = e->source_offset;
-            return true;
+            goto resolved;
         }
         if (!sema_ensure_value(s, &b, emit)) return false;
-        return sema_emit(s, emit, (IrInstruction){.opcode = IR_SHORT_END, .type = IR_BOOL, .source_offset = e->source_offset, .operands.scalar = {.left = a.value.id, .right = b.value.id}}, &out->value);
+        if (!sema_emit(s, emit, (IrInstruction){.opcode = IR_SHORT_END, .type = IR_BOOL, .source_offset = e->source_offset, .operands.scalar = {.left = a.value.id, .right = b.value.id}}, &out->value)) return false;
+        goto resolved;
     }
     const bool mandatory = e->kind == EXPRESSION_SHIFT_LEFT || e->kind == EXPRESSION_SHIFT_RIGHT || ((e->kind == EXPRESSION_DIVIDE || e->kind == EXPRESSION_REMAINDER) && is_integer(type_leaf(c, a.constant.type)));
     if (mandatory && !b.runtime && !b.known && !sema_expression(s, e->right, scope, true, false, &b)) return false;
-    return sema_binary(s, e->kind, e->value.comparison, &a, &b, e->source_offset, evaluate, emit, out);
+    if (!sema_binary(s, e->kind, e->value.comparison, &a, &b, e->source_offset, evaluate, emit, out)) return false;
+resolved:
+    /* Parser depth is dead; retain type for source targets, including dead code. */
+    e->resolved_type = out->runtime ? out->value.type : out->constant.type;
+    return true;
 }

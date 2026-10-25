@@ -163,6 +163,24 @@ static void builtin_expression(MetalEmitter *e, const IrInstruction *ir) {
         metal_error(e, "Metal builtin identity has no registered semantics");
         return;
     }
+    if (builtin->kind == BUILTIN_COUNT_ONE_BITS) {
+        metal_type(e, ir->type);
+        metal_text(e, "(popcount(");
+        metal_value(e, ir->operands.scalar.left);
+        metal_text(e, "))");
+        return;
+    }
+    if (builtin->kind == BUILTIN_UNPACK4X_U8) {
+        metal_text(e, "uint4(");
+        for (uint32_t i = 0u; i < 4u; ++i) {
+            if (i != 0u) metal_text(e, ", ");
+            metal_text(e, "((");
+            metal_value(e, ir->operands.scalar.left);
+            metal_format(e, " >> %uu) & 255u)", i * 8u);
+        }
+        metal_text(e, ")");
+        return;
+    }
     if (builtin->family == BUILTIN_BOOLEAN_REDUCTION) {
         const TypeId operand = metal_value_type(e, ir->operands.scalar.left);
         if (type_leaf(e->module, operand) != IR_BOOL || ir->type != IR_BOOL ||

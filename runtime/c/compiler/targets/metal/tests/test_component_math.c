@@ -52,6 +52,18 @@ int main(int argc, char **argv) {
         free(output);
         release(binary);
     }
+    Fixture *integers = prepare(
+        "@group(0) @binding(0) var<storage,read_write> data:array<u32>;"
+        "@compute @workgroup_size(1) fn bits(){"
+        "data[1]=countOneBits(data[0]);"
+        "data[2]=u32(countOneBits(bitcast<i32>(data[0])));"
+        "data[3]=countOneBits(vec2u(data[0],data[1])).y;"
+        "data[4]=unpack4xU8(data[0]).z;}");
+    char *integer_text = emit(integers, 0u);
+    has(integer_text, "popcount(");
+    has(integer_text, "255u");
+    free(integer_text);
+    release(integers);
     Fixture *f = prepare(component_math_source);
     char *text = emit(f, 0u);
     has(text, " - floor(");

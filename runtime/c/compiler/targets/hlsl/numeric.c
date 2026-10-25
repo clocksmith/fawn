@@ -139,6 +139,7 @@ static void subgroup_expression(HlslEmitter *e, const IrInstruction *ir, Numeric
             inclusive = true;
             product = true;
             break;
+        case BUILTIN_COUNT_ONE_BITS: case BUILTIN_UNPACK4X_U8:
         case BUILTIN_ABS: case BUILTIN_SIGN: case BUILTIN_FLOOR: case BUILTIN_ROUND:
         case BUILTIN_TRUNC: case BUILTIN_FRACT: case BUILTIN_SIN: case BUILTIN_COS:
         case BUILTIN_TAN: case BUILTIN_ASIN: case BUILTIN_ACOS: case BUILTIN_ATAN:
@@ -215,6 +216,24 @@ static void builtin_expression(HlslEmitter *e, const IrInstruction *ir) {
     const NumericBuiltin *builtin = builtin_kind((NumericBuiltinKind)ir->operands.scalar.literal);
     if (builtin == NULL) {
         hlsl_error(e, "Hlsl builtin identity has no registered semantics");
+        return;
+    }
+    if (builtin->kind == BUILTIN_COUNT_ONE_BITS) {
+        hlsl_type(e, ir->type);
+        hlsl_text(e, "(countbits(");
+        hlsl_value(e, ir->operands.scalar.left);
+        hlsl_text(e, "))");
+        return;
+    }
+    if (builtin->kind == BUILTIN_UNPACK4X_U8) {
+        hlsl_text(e, "uint4(");
+        for (uint32_t i = 0u; i < 4u; ++i) {
+            if (i != 0u) hlsl_text(e, ", ");
+            hlsl_text(e, "((");
+            hlsl_value(e, ir->operands.scalar.left);
+            hlsl_format(e, " >> %uu) & 255u)", i * 8u);
+        }
+        hlsl_text(e, ")");
         return;
     }
     if (builtin->family == BUILTIN_BOOLEAN_REDUCTION) {
@@ -329,6 +348,7 @@ static void builtin_expression(HlslEmitter *e, const IrInstruction *ir) {
         case BUILTIN_REFRACT: intrinsic = "refract"; break;
         case BUILTIN_TRANSPOSE: intrinsic = "transpose"; break;
         case BUILTIN_DETERMINANT: intrinsic = "determinant"; break;
+        case BUILTIN_COUNT_ONE_BITS: case BUILTIN_UNPACK4X_U8:
         case BUILTIN_ABS: case BUILTIN_SIGN: case BUILTIN_FRACT: case BUILTIN_ALL: case BUILTIN_ANY:
         case BUILTIN_ASINH: case BUILTIN_ACOSH: case BUILTIN_ATANH:
         case BUILTIN_MIN: case BUILTIN_MAX: case BUILTIN_CLAMP:

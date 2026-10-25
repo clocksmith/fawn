@@ -100,6 +100,14 @@ bool numeric_builtin(Source *source, size_t offset, const NumericBuiltin *signat
             return numeric_error(source, offset, "scalar builtin operand is a nonfinite evaluated constant");
     }
     switch (kind) {
+        case BUILTIN_COUNT_ONE_BITS: {
+            if (type != IR_I32 && type != IR_U32)
+                return numeric_error(source, offset, "countOneBits requires a concrete integer");
+            uint32_t bits = (uint32_t)arguments[0].bits, count = 0u;
+            while (bits != 0u) { bits &= bits - 1u; ++count; }
+            *result = (NumericValue){count, type};
+            return true;
+        }
         case BUILTIN_MIN:
             *result = numeric_minimum(arguments[0], arguments[1]);
             return true;
@@ -154,6 +162,7 @@ bool numeric_builtin(Source *source, size_t offset, const NumericBuiltin *signat
         case BUILTIN_DEGREES:
         case BUILTIN_RADIANS:
             break;
+        case BUILTIN_UNPACK4X_U8:
         case BUILTIN_DOT: case BUILTIN_LENGTH: case BUILTIN_TRANSPOSE: case BUILTIN_DETERMINANT:
         case BUILTIN_DISTANCE: case BUILTIN_NORMALIZE: case BUILTIN_CROSS: case BUILTIN_REFLECT:
         case BUILTIN_FACE_FORWARD: case BUILTIN_REFRACT: case BUILTIN_ALL: case BUILTIN_ANY:

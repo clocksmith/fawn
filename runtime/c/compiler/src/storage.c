@@ -174,7 +174,13 @@ void compiler_legacy_bind(LegacyWorkspace *storage, bool uniforms) {
         .entries=1u,.entry_inputs=5u,.entry_references=264u };
     compiler_job_bind(&storage->job,storage,&l);
 }
-_Static_assert(sizeof(CompilerWorkspace)==472u,"M13 core ledger");
+#if UINTPTR_MAX == UINT64_MAX
+_Static_assert(sizeof(CompilerWorkspace)==472u,"LP64 core ledger");
+#elif UINTPTR_MAX == UINT32_MAX
+_Static_assert(sizeof(CompilerWorkspace)==340u,"32-bit core ledger");
+#else
+#error Unsupported pointer width
+#endif
 _Static_assert(sizeof(Expression)==40u && sizeof(Statement)==56u && sizeof(ConstantSyntax)==40u,"M10 syntax ledger");
 _Static_assert(sizeof(TypeRecord)==56u && sizeof(MemberRecord)==56u && sizeof(ResourceRecord)==104u,"M10 type ledger");
 _Static_assert(sizeof(ConstantRecord)==32u && sizeof(ConstantValue)==16u && sizeof(AccessStep)==24u,"M10 value ledger");
@@ -182,7 +188,11 @@ _Static_assert(sizeof(IrInstruction)==32u && sizeof(LocalBinding)==48u && sizeof
 _Static_assert(sizeof(LegacyWorkspace)<=147456u,"M10 fixed workspace ceiling");
 
 _Static_assert(sizeof(WorkgroupRoot)==24u,"M11 workgroup root ledger");
-_Static_assert(sizeof(LegacyWorkspace)==146048u,"M13 exact fixed workspace ledger");
+#if UINTPTR_MAX == UINT64_MAX
+_Static_assert(sizeof(LegacyWorkspace)==146048u,"LP64 exact fixed workspace ledger");
+#else
+_Static_assert(sizeof(LegacyWorkspace)==145920u,"32-bit exact fixed workspace ledger");
+#endif
 
 _Static_assert(sizeof(EntryRecord)==64u && sizeof(EntryInput)==20u && sizeof(SourceReference)==8u,"M13 entry ledger");
 
