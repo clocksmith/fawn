@@ -3536,9 +3536,9 @@
       },
       "src/native/compute/doe_compute_ext_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "d34869f55eb8b1ee7fbcd72ae74d1f829754364033bdf27ba3c94fa08ab76924",
-        "reason": "Keep: the encoder owns pass identity and recording lifetime; native adapters validate operations against that single state. setBindGroup resolves dynamic offsets; dispatch validates pipeline, workgroup counts and explicit-layout bind groups. Dispatch passes the pipeline's required binding kinds for automatic layouts. Compute pass debug groups are balanced at end(). Compute getBindGroupLayout layouts belong to the pipeline's automatic layout; dispatch passes its identity. Dispatches pass the full required-binding list; bindings above the execution slot table fail explicitly. Each dispatch validates the usage scope of the bind groups its pipeline uses and its indirect buffer.",
-        "reviewer": "doe-c-claude-indexed/2026-10-24"
+        "moduleSha256": "a0283d391fa58f9788409bec6cc5c28f2d7935eb541427a5b2ce8e88fdff3cdb",
+        "reason": "Keep: the encoder owns pass identity and recording lifetime; native adapters validate operations against that single state. setBindGroup resolves dynamic offsets; dispatch validates pipeline, workgroup counts and explicit-layout bind groups. Dispatch passes the pipeline's required binding kinds for automatic layouts. Compute pass debug groups are balanced at end(). Compute getBindGroupLayout layouts belong to the pipeline's automatic layout; dispatch passes its identity. Dispatches pass the full required-binding list; bindings above the execution slot table fail explicitly. Each dispatch validates the usage scope of the bind groups its pipeline uses and its indirect buffer. Automatic compute layouts preserve reflected buffer address space/access and compute visibility so bind-group usage validation sees the shader actual resource type.",
+        "reviewer": "Codex/2026-10-25"
       },
       "src/native/compute/doe_compute_fast.zig": {
         "decision": "Keep",
