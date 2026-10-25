@@ -80,6 +80,7 @@ uint32_t spirv_target_type(const Emitter *e, TypeId type);
 bool spirv_instruction_space(Emitter *e, uint32_t opcode, size_t count, uint32_t **arguments);
 bool spirv_instruction(Emitter *e, uint32_t opcode, const uint32_t *arguments, size_t count);
 bool spirv_push_walk(Emitter *e, uint32_t kind, uint32_t object);
+uint32_t spirv_constant_value(Emitter *, ConstantValue);
 uint32_t spirv_unsigned_constant(Emitter *e, uint32_t value);
 uint32_t spirv_pointer_type(Emitter *e, TypeId type, uint32_t storage);
 uint32_t spirv_zero_constant(Emitter *e, TypeId type);

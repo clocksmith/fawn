@@ -97,6 +97,8 @@ static void object_path(HlslEmitter *e, const IrInstruction *ir, const HlslPath 
         case ROOT_VALUE: hlsl_value(e, root); break;
         case ROOT_WORKGROUP:
             if (root >= e->module->workgroup_count) hlsl_error(e, "Hlsl workgroup root identity is invalid");
+            if (root < e->module->workgroup_count &&
+                e->module->workgroups[root].state.resolved.address_space == MODULE_PRIVATE) hlsl_text(e, "ctx.");
             hlsl_format(e, "w%u", root);
             break;
         default: hlsl_error(e, "Hlsl object root category has no implemented semantics"); break;

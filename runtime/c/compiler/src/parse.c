@@ -273,25 +273,39 @@ static bool resource_declaration(Parser *p,Syntax *s,ResourceRecord *r) {
         type_reference(p,s,&r->annotation) && parser_punctuation(p,';',";");
 }
 static bool workgroup_declaration(Parser *p, Syntax *s) {
-    const uint32_t offset=parser_peek(p)->offset;
-    WorkgroupRoot root={0};
-    if (!parser_word(p,"var")) return false;
-    if (parser_peek(p)->kind!='<')
-        return source_error(p->source,DOE_COMPILER_UNSUPPORTED,offset,"private module variables are not supported");
-    ++p->cursor;
-    if (!parser_spelled(p,parser_peek(p),"workgroup"))
-        return source_error(p->source,DOE_COMPILER_UNSUPPORTED,offset,"unsupported module variable address space");
-    ++p->cursor;
-    if (parser_peek(p)->kind==',')
-        return source_error(p->source,DOE_COMPILER_SEMANTIC_ERROR,parser_peek(p)->offset,"workgroup variables cannot specify an access mode");
-    if (!template_close(p) || !parser_name_span(p,&root.name) || !parser_punctuation(p,':',":") ||
-        !type_reference(p,s,&root.annotation)) return false;
-    if (parser_peek(p)->kind=='=')
-        return source_error(p->source,DOE_COMPILER_SEMANTIC_ERROR,parser_peek(p)->offset,"workgroup variables cannot have an initializer");
-    if (!parser_punctuation(p,';',";")) return false;
-    if (s->workgroup_count==s->limits.tokens/8u)
-        return source_pool_error(p->source,DOE_COMPILER_POOL_TOKENS,8u*((size_t)s->workgroup_count+1u),offset,"workgroup declaration token capacity exceeded");
-    s->workgroups[s->workgroup_count++]=root;
+    const uint32_t offset = parser_peek(p)->offset;
+    WorkgroupRoot root = {.state.annotation.offset = NO_ID, .type = MODULE_PRIVATE, .target = NO_ID};
+    if (!parser_word(p, "var")) return false;
+    if (parser_peek(p)->kind == '<') {
+        ++p->cursor;
+        if (parser_spelled(p, parser_peek(p), "workgroup")) root.type = MODULE_WORKGROUP;
+        else if (!parser_spelled(p, parser_peek(p), "private"))
+            return source_error(p->source, DOE_COMPILER_UNSUPPORTED, offset, "unsupported module variable address space");
+        ++p->cursor;
+        if (parser_peek(p)->kind == ',')
+            return source_error(p->source, DOE_COMPILER_SEMANTIC_ERROR, parser_peek(p)->offset,
+                                "private and workgroup variables cannot specify an access mode");
+        if (!template_close(p)) return false;
+    }
+    if (!parser_name_span(p, &root.name)) return false;
+    if (parser_peek(p)->kind == ':') {
+        ++p->cursor;
+        if (!type_reference(p, s, &root.state.annotation)) return false;
+    }
+    if (parser_peek(p)->kind == '=') {
+        if (root.type == MODULE_WORKGROUP)
+            return source_error(p->source, DOE_COMPILER_SEMANTIC_ERROR, parser_peek(p)->offset,
+                                "workgroup variables cannot have an initializer");
+        ++p->cursor;
+        if (!expression(p, s, 0u, 0u, &root.target)) return false;
+    }
+    if (root.state.annotation.offset == NO_ID && root.target == NO_ID)
+        return parser_reject(p, "module variable type or initializer");
+    if (!parser_punctuation(p, ';', ";")) return false;
+    if (s->workgroup_count == s->limits.tokens / 8u)
+        return source_pool_error(p->source, DOE_COMPILER_POOL_TOKENS,
+            8u * ((size_t)s->workgroup_count + 1u), offset, "module variable token capacity exceeded");
+    s->workgroups[s->workgroup_count++] = root;
     return true;
 }
 static bool expression_node(Parser *p, Syntax *s, const Expression *node, bool charged, uint32_t *id) {

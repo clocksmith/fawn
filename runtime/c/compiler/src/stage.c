@@ -113,7 +113,9 @@ bool stage_closure(Source *source, uint32_t function, SourceReference reference,
         return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, offset,
             "implicit texture sampling is restricted to fragment entry call graphs");
     if (!stage_graphics(entry)) return true;
-    if (reference.kind == SOURCE_WORKGROUP || reference.kind == SOURCE_BARRIER)
+    if ((reference.kind == SOURCE_WORKGROUP &&
+         source->compiler->workgroups[reference.index].state.resolved.address_space == MODULE_WORKGROUP) ||
+        reference.kind == SOURCE_BARRIER)
         return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, entry->name.offset,
             "workgroup storage and barriers are restricted to compute entry call graphs");
     if ((entry->flags & FUNCTION_VERTEX) != 0u && reference.kind == SOURCE_SUBGROUP)

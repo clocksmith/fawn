@@ -131,7 +131,15 @@ typedef struct { NameSpan name; TypeRef annotation;
     uint32_t group_expression, binding_expression, group, binding, kind, access; TypeId type; uint32_t flags;
     uint64_t minimum, alignment, required_alignment, tail_offset, tail_stride;
     TypeId tail_type; uint32_t target, source_offset, reserved; } ResourceRecord;
-typedef struct { NameSpan name; TypeRef annotation; TypeId type; uint32_t target; } WorkgroupRoot;
+enum { MODULE_WORKGROUP = 4u, MODULE_PRIVATE = 6u }; /* SPIR-V storage classes. */
+/* Module memory roots share the existing bounded pool. During parse, type holds
+ * the address space and target the initializer expression; resolution consumes
+ * both before target becomes an emitted ID. After emission it holds the compact
+ * public workgroup index. Annotation storage dies at semantic resolution. */
+typedef struct { NameSpan name;
+    union { TypeRef annotation; struct { uint32_t initializer, address_space; } resolved; } state;
+    TypeId type; uint32_t target;
+} WorkgroupRoot;
 enum { CONSTANT_ZERO, CONSTANT_REPEAT, CONSTANT_COMPOSITE };
 typedef struct { uint32_t kind; TypeId type; uint32_t first, count;
     uint64_t payload; uint32_t target, converted_from; } ConstantRecord;

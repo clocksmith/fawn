@@ -6,6 +6,9 @@
 
 static const char component_math_source[] =
     "alias Floating=f32;"
+    "struct PrivateState { values:array<u32,2> }"
+    "var privateState=PrivateState(array<u32,2>(9u,10u));"
+    "fn privateNext()->u32{privateState.values[0]+=1u;return privateState.values[0];}"
     "@group(0) @binding(0) var<storage,read_write> data:array<u32>;"
     "fn read()->f32{data[31]+=1u;return bitcast<f32>(data[0]);}"
     "fn exponent()->Floating{data[29]+=1u;return Floating(data[29]+1u);}"
@@ -28,7 +31,8 @@ static const char component_math_source[] =
     "data[22]=bitcast<u32>(pow(half+0.5f,other-half+1.0f));"
     "data[23]=bitcast<u32>(atan2(half-half,half+other));"
     "data[24]=bitcast<u32>(pow(exponent(),exponent()));"
-    "data[25]=bitcast<u32>(atan2(axis(),axis()));}"
+    "data[25]=bitcast<u32>(atan2(axis(),axis()));"
+    "data[26]=privateNext();data[27]=privateNext();data[28]=privateState.values[1];}"
     ;
 /* Exact, independently written exercised values. Transcendentals use only
  * exact elementary inputs here; no universal accuracy claim follows. */
@@ -37,6 +41,6 @@ static const uint32_t component_math_expected[] = {
     0x40800000u, 0x80000000u, 0xbf800000u, 0u, 0u, 0x3e800000u,
     0x3f800000u, 0x80000000u, 0x3f800000u, 0x40000000u, 0x40400000u,
     0x3f000000u, 0xffffffffu, 1u, 0xffffffffu, 0u, 0u,
-    0x41100000u, 0u, 0x41000000u, 0u
+    0x41100000u, 0u, 0x41000000u, 0u, 10u, 11u, 10u
 };
 #endif

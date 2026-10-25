@@ -399,7 +399,7 @@ static bool emit_pointer_access(Emitter *e, const IrInstruction *ir) {
     const bool store = ir->opcode == IR_ACCESS_STORE || ir->opcode == IR_ATOMIC_STORE;
     const TypeId pointer_type = atomic ? atomic_element(c, ir) : ir->type;
     const ResourceRecord *resource = category == ROOT_RESOURCE ? &c->resources[root] : NULL;
-    const uint32_t storage = resource != NULL ? spirv_resource_storage(resource) : category == ROOT_WORKGROUP ? 4u : 7u;
+    const uint32_t storage = resource != NULL ? spirv_resource_storage(resource) : category == ROOT_WORKGROUP ? c->workgroups[root].state.resolved.address_space : 7u;
     const bool wrapped = resource != NULL && spirv_wrapped_resource(c, resource);
     const uint32_t local = category == ROOT_VALUE ? ir->operands.access.value : root;
     const uint32_t base = resource != NULL ? resource->target : category == ROOT_WORKGROUP ? c->workgroups[root].target :
@@ -831,12 +831,32 @@ static bool emit_workgroup_initialization(Emitter *e) {
     for (uint32_t i=0u;i<e->entry->state.resolved.workgroup_count;++i) {
         const uint32_t index=e->program->entry_references[e->entry->state.resolved.workgroup_first+i];
         const WorkgroupRoot *root=&e->program->workgroups[index];
-        EMIT(OP_STORE, root->target, spirv_workgroup_zero(e, root->type));
+        if (root->state.resolved.address_space == MODULE_WORKGROUP)
+            EMIT(OP_STORE, root->target, spirv_workgroup_zero(e, root->type));
     }
     EMIT(OP_BRANCH, merge);
     EMIT(OP_LABEL, merge);
     e->current_label = merge;
     return emit_workgroup_barrier(e);
+}
+static bool emit_private_initialization(Emitter *e) {
+    const CompilerWorkspace *c = e->program;
+    for (uint32_t i = 0u; i < e->entry->state.resolved.workgroup_count; ++i) {
+        const WorkgroupRoot *root = &c->workgroups[c->entry_references[e->entry->state.resolved.workgroup_first + i]];
+        if (root->state.resolved.address_space != MODULE_PRIVATE) continue;
+        uint32_t value = spirv_workgroup_zero(e, root->type);
+        if (root->state.resolved.initializer != NO_ID) {
+            value = spirv_constant_value(e, c->constant_edges[root->state.resolved.initializer]);
+            if (spirv_workgroup_type(e, root->type) != spirv_target_type(e, root->type)) {
+                const uint32_t converted = spirv_reserve_ids(e, 1u);
+                if (!spirv_workgroup_convert(e, root->type, value, converted, true)) return false;
+                value = converted;
+            }
+        }
+        if (value == 0u) return false;
+        EMIT(OP_STORE, root->target, value);
+    }
+    return !e->failed;
 }
 static bool function_body(Emitter *e, const IrProgram *program, const FunctionRecord *function) {
     EMIT(OP_FUNCTION, stage_graphics(function) ? ID_VOID : spirv_target_type(e, function->result_type), function->state.target.function, 0u, function->state.target.signature);
@@ -855,8 +875,10 @@ static bool function_body(Emitter *e, const IrProgram *program, const FunctionRe
         EMIT(OP_VARIABLE, spirv_pointer_type(e, program->locals[function->local_start + i].type, 7u), e->local_base + i, 7u);
     e->entry=(function->flags&FUNCTION_ENTRY)!=0u?&e->program->entries[function->entry_index]:NULL;
     if (stage_graphics(function) && !spirv_stage_inputs(e, function->entry_index)) return false;
-    if (e->entry!=NULL && e->entry->state.resolved.workgroup_count!=0u)
-        if (!emit_workgroup_initialization(e)) return false;
+    if (e->entry != NULL) {
+        if (!emit_private_initialization(e)) return false;
+        if (e->entry->state.resolved.workgroup_storage_bytes != 0u && !emit_workgroup_initialization(e)) return false;
+    }
     size_t cursor = function->instruction_start;
     bool live = true;
     if (!emit_block(e, program, &cursor, 0u, NULL, &live)) return false;

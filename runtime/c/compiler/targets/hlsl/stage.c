@@ -30,7 +30,7 @@ static void signature(HlslEmitter *e, uint32_t index) {
     const CompilerWorkspace *c = e->module;
     const FunctionRecord *f = &c->functions[index];
     hlsl_type(e, f->result_type);
-    hlsl_format(e, " doe_fn%u(DoeContext ctx", index);
+    hlsl_format(e, " doe_fn%u(inout DoeContext ctx", index);
     if ((f->flags & FUNCTION_ENTRY) == 0u) {
         if (f->formal_start > c->formal_count || f->formal_count > c->formal_count - f->formal_start) {
             hlsl_error(e, "HLSL formal range is invalid");
@@ -188,7 +188,7 @@ static void entry_wrapper(HlslEmitter *e) {
     const CompilerWorkspace *c = e->module;
     const EntryRecord *entry = &c->entries[e->entry];
     uint32_t mask = entry->source_input_mask;
-    if (entry->state.resolved.workgroup_count != 0u) mask |= 1u << INPUT_LOCAL_INDEX;
+    if (entry->state.resolved.workgroup_storage_bytes != 0u) mask |= 1u << INPUT_LOCAL_INDEX;
     hlsl_format(e, "[numthreads(%u, %u, %u)]\nvoid ", entry->state.resolved.workgroup_size[0],
                 entry->state.resolved.workgroup_size[1], entry->state.resolved.workgroup_size[2]);
     hlsl_entry_name(e, c->functions[entry->function].name);
@@ -203,6 +203,7 @@ static void entry_wrapper(HlslEmitter *e) {
     hlsl_text(e, ") {\n");
     e->indent = 1u;
     hlsl_line(e, "DoeContext ctx = (DoeContext)0;");
+    hlsl_private_initialization(e);
     for (unsigned i = 0u; i <= INPUT_SUBGROUP_INVOCATION; ++i) {
         if ((mask & (1u << i)) == 0u) continue;
         hlsl_indent(e);
@@ -213,11 +214,11 @@ static void entry_wrapper(HlslEmitter *e) {
                         i == INPUT_SUBGROUP_SIZE ? "WaveGetLaneCount" : "WaveGetLaneIndex");
         } else hlsl_format(e, "ctx.input%u = input%u;\n", i, i);
     }
-    if (entry->state.resolved.workgroup_count != 0u) {
+    if (entry->state.resolved.workgroup_storage_bytes != 0u) {
         hlsl_line(e, "if (input4 == 0u) {");
         ++e->indent;
         for (uint32_t i = 0u; i < c->workgroup_count; ++i) {
-            if (!hlsl_entry_workgroup(e, i)) continue;
+            if (!hlsl_entry_workgroup(e, i) || c->workgroups[i].state.resolved.address_space != MODULE_WORKGROUP) continue;
             hlsl_indent(e);
             hlsl_format(e, "w%u = ", i);
             hlsl_zero(e, c->workgroups[i].type);
@@ -232,6 +233,19 @@ static void entry_wrapper(HlslEmitter *e) {
     e->indent = 0u;
     hlsl_text(e, "}\n");
 }
+void hlsl_private_initialization(HlslEmitter *e) {
+    const CompilerWorkspace *c = e->module;
+    for (uint32_t i = 0u; i < c->workgroup_count; ++i) {
+        const WorkgroupRoot *root = &c->workgroups[i];
+        if (!hlsl_entry_workgroup(e, i) || root->state.resolved.address_space != MODULE_PRIVATE ||
+            root->state.resolved.initializer == NO_ID) continue;
+        const ConstantValue value = c->constant_edges[root->state.resolved.initializer];
+        hlsl_indent(e);
+        hlsl_format(e, "ctx.w%u = ", i);
+        hlsl_constant(e, value.type, value.bits, (value.flags & CONSTANT_AGGREGATE) != 0u);
+        hlsl_text(e, ";\n");
+    }
+}
 void hlsl_functions(HlslEmitter *e) {
     if (!entry_admit(e)) return;
     const CompilerWorkspace *c = e->module;
@@ -245,10 +259,16 @@ void hlsl_functions(HlslEmitter *e) {
     hlsl_text(e, "struct DoeContext {\n");
     for (unsigned i = 0u; i <= INPUT_SUBGROUP_INVOCATION; ++i)
         hlsl_format(e, "    %s input%u;\n", input_scalar((InputKind)i) ? "uint" : "uint3", i);
+    for (uint32_t i = 0u; i < c->workgroup_count; ++i) {
+        if (!hlsl_entry_workgroup(e, i) || c->workgroups[i].state.resolved.address_space != MODULE_PRIVATE) continue;
+        hlsl_text(e, "    ");
+        hlsl_type(e, c->workgroups[i].type);
+        hlsl_format(e, " w%u;\n", i);
+    }
     hlsl_graphics_context(e);
     hlsl_text(e, "};\n");
     for (uint32_t i = 0u; i < c->workgroup_count; ++i) {
-        if (!hlsl_entry_workgroup(e, i)) continue;
+        if (!hlsl_entry_workgroup(e, i) || c->workgroups[i].state.resolved.address_space != MODULE_WORKGROUP) continue;
         hlsl_text(e, "groupshared ");
         hlsl_type(e, c->workgroups[i].type);
         hlsl_format(e, " w%u;\n", i);

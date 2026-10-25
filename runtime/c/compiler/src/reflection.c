@@ -53,7 +53,13 @@ bool reflect_prepare(Source *s, CompilerWorkspace *c, DoeCompilerTypedOutputCoun
         names+=(uint64_t)c->resources[i].name.length+1u;
         if (!type_handle(c, c->resources[i].type) && !discover(s, c->resources[i].type, &counts->types)) return false;
     }
+    uint32_t workgroup_index = 0u;
     if (module) for (uint32_t i=0u;i<c->workgroup_count;++i) {
+        /* Target IDs are dead after emission/planning. Reuse that field for
+         * the compact public workgroup index; private roots are not reflected. */
+        c->workgroups[i].target = NO_ID;
+        if (c->workgroups[i].state.resolved.address_space == MODULE_PRIVATE) continue;
+        c->workgroups[i].target = workgroup_index++;
         names+=(uint64_t)c->workgroups[i].name.length+1u;
         if (!discover(s,c->workgroups[i].type,&counts->types)) return false;
     }
@@ -184,6 +190,7 @@ void reflect_module(const Source *s, const CompilerWorkspace *c, const DoeCompil
         DOE_COMPILER_TYPED_PROFILE_STANDARD_UNIFORM : DOE_COMPILER_TYPED_PROFILE_CONSERVATIVE_UNIFORM;
     module->declared_struct_count=declared_structs(c);
     module->selected_entry=selected;
+    uint32_t reference_cursor = 0u;
     for (uint32_t i=0u;i<c->entry_count;++i) {
         const EntryRecord *entry=&c->entries[i];
         DoeCompilerEntryV5 *out=&o->entries[i];
@@ -194,26 +201,32 @@ void reflect_module(const Source *s, const CompilerWorkspace *c, const DoeCompil
         for (uint32_t k=entry->input_first;k<entry->input_first+entry->input_count;++k)
             out->declared_builtin_mask|=1u<<c->entry_inputs[k].kind;
         out->static_builtin_mask=entry->source_input_mask;
-        out->first_resource_reference=entry->state.resolved.resource_first;
-        out->resource_reference_count=entry->state.resolved.resource_count;
-        out->first_workgroup_reference=entry->state.resolved.workgroup_first;
-        out->workgroup_reference_count=entry->state.resolved.workgroup_count;
+        out->first_resource_reference = reference_cursor;
+        out->resource_reference_count = entry->state.resolved.resource_count;
+        for (uint32_t j = 0u; j < entry->state.resolved.resource_count; ++j)
+            o->entry_references[reference_cursor++] = c->entry_references[entry->state.resolved.resource_first + j];
+        out->first_workgroup_reference = reference_cursor;
+        for (uint32_t j = 0u; j < entry->state.resolved.workgroup_count; ++j) {
+            const WorkgroupRoot *root = &c->workgroups[c->entry_references[entry->state.resolved.workgroup_first + j]];
+            if (root->state.resolved.address_space == MODULE_PRIVATE) continue;
+            o->entry_references[reference_cursor++] = root->target;
+            ++out->workgroup_reference_count;
+        }
         out->workgroup_storage_bytes=entry->state.resolved.workgroup_storage_bytes;
-        if (entry->state.resolved.workgroup_count!=0u) out->flags=DOE_COMPILER_ENTRY_WORKGROUP_INITIALIZATION;
+        if (out->workgroup_reference_count != 0u) out->flags=DOE_COMPILER_ENTRY_WORKGROUP_INITIALIZATION;
     }
     const DoeCompilerTypedOutputs tables={.types=o->types,.members=o->members,.resources=o->resources,.names=o->names};
     publish_tables(s,c,&tables,&cursor);
     for (uint32_t i=0u;i<c->workgroup_count;++i) {
         const WorkgroupRoot *root=&c->workgroups[i];
-        DoeCompilerWorkgroupV5 *out=&o->workgroups[i];
+        if (root->state.resolved.address_space == MODULE_PRIVATE) continue;
+        DoeCompilerWorkgroupV5 *out=&o->workgroups[root->target];
         memset(out,0,sizeof(*out));
         out->name=publish_name(s,root->name,o->names,&cursor);
         out->type_index=c->reflection_map[root->type];
         out->size_bytes=type_size(c,root->type);
         out->alignment_bytes=type_alignment(c,root->type);
     }
-    if (c->entry_reference_count!=0u)
-        memcpy(o->entry_references,c->entry_references,(size_t)c->entry_reference_count*sizeof(*o->entry_references));
 }
 
 static bool flat_struct(const CompilerWorkspace *c, const TypeRecord *t) {

@@ -203,6 +203,7 @@ for name, main in (("control", scalar), ("aggregate", aggregate), ("effects", ef
         text = re.sub(r"\((DoeT\d+|DoeContext)\)0", r"host_zero<\1>()", text)
     text = re.sub(r"\((DoeT\d+|DoeContext|uint3|uint4)\)0", r"\1{}", text)
     text = text.replace("precise ", "")
+    text = text.replace("inout DoeContext", "DoeContext&")
     if name == "graphics":
         text = re.sub(r" : (?:TEXCOORD|SV_)[A-Za-z0-9_]+", "", text)
         text = re.sub(r"\b(?:nointerpolation|noperspective|linear|centroid|sample) ", "", text)

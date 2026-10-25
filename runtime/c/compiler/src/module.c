@@ -151,6 +151,7 @@ static bool publish_closure(Source *s, EntryRecord *entry, ClosureWork *work,
         if (marks[(size_t)c->resource_count+i]==0u) continue;
         if (!append_reference(s,entry,i)) return false;
         ++entry->state.resolved.workgroup_count;
+        if (c->workgroups[i].state.resolved.address_space == MODULE_PRIVATE) continue;
         const TypeId type=c->workgroups[i].type;
         const uint64_t size=type_size(c,type), alignment=type_alignment(c,type);
         const uint64_t remainder=size%alignment, padding=remainder==0u?0u:alignment-remainder;

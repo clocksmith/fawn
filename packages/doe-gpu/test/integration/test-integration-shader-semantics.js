@@ -38,6 +38,30 @@ const POINTER_EXPECTED = [2, 4, 9, 19, 22, 4, 5, 10, 30, 33,
   6, 6, 11, 21, 24, 8, 7, 12, 32, 35];
 const CASES = [
   {
+    label: 'private aggregate initializers remain invocation-local beside shared storage',
+    code: `const INITIAL: u32 = 13u;
+      struct PrivateState { values: array<u32, 2>, flag: bool }
+      @group(0) @binding(0) var<storage, read_write> data: array<u32>;
+      var state = PrivateState(array<u32, 2>(11u, INITIAL), true);
+      var<private> inferred = 3;
+      var<workgroup> sharedValue: u32;
+      fn mutate(value: u32) -> u32 { state.values[1] += value; return state.values[1]; }
+      @compute @workgroup_size(4) fn main(@builtin(global_invocation_id) id: vec3u,
+                                         @builtin(local_invocation_index) lane: u32) {
+        if (lane == 0u) { sharedValue = 7u; }
+        workgroupBarrier();
+        let offset = id.x * 4u;
+        data[offset] = state.values[0] + u32(state.flag);
+        data[offset + 1u] = mutate(id.x);
+        data[offset + 2u] = sharedValue;
+        data[offset + 3u] = u32(inferred);
+        inferred += 1; state.flag = false;
+      }`,
+    dispatch: 2,
+    expected: [12, 13, 7, 3, 12, 14, 7, 3, 12, 15, 7, 3, 12, 16, 7, 3,
+      12, 17, 7, 3, 12, 18, 7, 3, 12, 19, 7, 3, 12, 20, 7, 3],
+  },
+  {
     label: 'contextual member names and valid aliases remain executable',
     code: `alias Word = u32;
       struct Values { storage: Word, read: Word }
@@ -197,6 +221,20 @@ const CASES = [
 ];
 
 async function runIdentifierAdmissionCase() {
+  for (const declaration of [
+    'var<private> value: atomic<u32>;',
+    'override N: u32 = 1u; var<private> value: u32 = N;',
+    'var<private> first: u32; var<private> second: u32 = first;',
+    'var<workgroup> value: u32 = 0u;',
+    'var<private, read_write> value: u32;',
+    'var<private> value: array<u32>;',
+    'var<private> value: u32 = -1i;',
+  ]) {
+    const module = device.createShaderModule({ code: `${declaration} @compute @workgroup_size(1) fn main() {}` });
+    try {
+      assert((await module.getCompilationInfo()).messages.some(message => message.type === 'error'), declaration);
+    } finally { releaseOwnedResource(module); }
+  }
   const declarations = [
     name => `var<private> ${name}: u32;`,
     name => `override ${name}: u32 = 1u;`,

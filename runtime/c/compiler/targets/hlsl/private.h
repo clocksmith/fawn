@@ -41,6 +41,7 @@ void hlsl_expression(HlslEmitter *, const IrInstruction *);
 void hlsl_composite(HlslEmitter *, const IrInstruction *);
 void hlsl_array_length(HlslEmitter *, const IrInstruction *);
 void hlsl_access(HlslEmitter *, const IrInstruction *);
+void hlsl_private_initialization(HlslEmitter *);
 void hlsl_functions(HlslEmitter *);
 void hlsl_entry_name(HlslEmitter *, NameSpan);
 bool hlsl_graphics_admit(HlslEmitter *);
