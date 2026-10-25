@@ -9,6 +9,14 @@ typedef enum mock_operation {
     MOCK_TEXTURE, MOCK_VIEW, MOCK_SAMPLER, MOCK_UPLOAD_IMAGE, MOCK_READ_IMAGE, MOCK_COPY_IMAGE,
     MOCK_RENDER_PIPELINE, MOCK_DEPTH_STATE, MOCK_RENDER, MOCK_TIMESTAMPS, MOCK_TIMESTAMP, MOCK_RESOLVE_TIMESTAMPS
 } mock_operation;
+/* Shared ledger bound: the old 11-element array omitted event kind11,
+ * so releasing a test event wrote past its own bookkeeping. */
+typedef enum mock_kind {
+    MOCK_KIND_DEVICE, MOCK_KIND_QUEUE, MOCK_KIND_BUFFER, MOCK_KIND_PIPELINE,
+    MOCK_KIND_COMMAND, MOCK_KIND_TEXTURE, MOCK_KIND_VIEW, MOCK_KIND_SAMPLER,
+    MOCK_KIND_RENDER_PIPELINE, MOCK_KIND_DEPTH_STATE, MOCK_KIND_TIMESTAMPS,
+    MOCK_KIND_EVENT, MOCK_KIND_COUNT
+} mock_kind;
 typedef struct mock_object mock_object;
 typedef struct mock_native {
     mock_operation fail;
@@ -33,7 +41,7 @@ typedef struct mock_native {
     unsigned commits;
     unsigned polls;
     unsigned waits;
-    unsigned releases_by_kind[11];
+    unsigned releases_by_kind[MOCK_KIND_COUNT];
     size_t pipeline_max_threads;
     bool unknown_commit;
     char completion_message[256];
