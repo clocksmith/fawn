@@ -3,9 +3,10 @@
 // platform package is staged from a runtime/c package stage (DOE_C_STAGE=<stage>),
 // both packages are packed and installed offline into a clean project, and a
 // compute kernel there resolves libwebgpu_doe_c from the installed platform
-// package (no DOE_WEBGPU_LIB) and returns exact results; providerInfo() reports
-// the stage manifest's identity for that exact library. Skips without
-// DOE_C_STAGE; the workspace staging and the Zig default are untouched.
+// package (no DOE_WEBGPU_LIB) and returns exact results under Node and, when
+// installed, Bun; providerInfo() reports the stage manifest's identity for that
+// exact library. Skips without DOE_C_STAGE; the workspace staging and the Zig
+// default are untouched.
 
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
@@ -89,7 +90,22 @@ const values = new Uint32Array(readback.getMappedRange());
 console.log(JSON.stringify({ info, exact: values.every((v, i) => v === i * 2 + 1) }));
 device.destroy();
 `);
-  const report = JSON.parse(run(process.execPath, ['check.mjs'], app).trim().split('\n').pop());
+  verify(JSON.parse(run(process.execPath, ['check.mjs'], app).trim().split('\n').pop()), app, 'Node');
+  // Bun resolves the package's bun entry from the same installed project; the C
+  // runtime has no Doe flat entry points, so Bun runs it through the N-API surface.
+  const bun = spawnSync('bun', ['--version'], { env, encoding: 'utf8' });
+  if (bun.status === 0) {
+    const report = JSON.parse(run('bun', ['check.mjs'], app).trim().split('\n').pop());
+    assert.equal(report.info.bunRuntimeProvider, 'doe-full', 'Bun runs the installed C runtime through N-API');
+    verify(report, app, `Bun ${bun.stdout.trim()}`);
+  } else {
+    console.log('C package install (bun): skipped (bun is not installed)');
+  }
+} finally {
+  rmSync(scratch, { recursive: true, force: true });
+}
+
+function verify(report, app, runtime) {
   assert.equal(report.info.libraryFlavor, 'doe-c', 'the installed package resolves the C runtime');
   assert.ok(report.info.doeLibraryPath.startsWith(join(app, 'node_modules', 'doe-gpu-linux-x64', 'bin')),
     `library comes from the installed platform package: ${report.info.doeLibraryPath}`);
@@ -107,11 +123,9 @@ device.destroy();
     qualification: stageManifest.qualification,
   });
   if (report.skipped) {
-    console.log(`C package install: installed and loaded; ${report.skipped}`);
+    console.log(`C package install (${runtime}): installed and loaded; ${report.skipped}`);
   } else {
     assert.equal(report.exact, true, 'compute through the installed C runtime is exact');
-    console.log('ok: the C runtime installs through the package and computes exactly');
+    console.log(`ok: the C runtime installs through the package and computes exactly under ${runtime}`);
   }
-} finally {
-  rmSync(scratch, { recursive: true, force: true });
 }
