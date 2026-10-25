@@ -49,7 +49,7 @@ bool override_finish(Source *s, uint32_t declaration, const LocalScope *scope) {
             !sema_default_type(s, value.constant.type, syntax->name.offset, &annotation)) return false;
         if (!sema_materialize(s, &value, annotation)) return false;
     }
-    if (annotation < IR_BOOL || annotation > IR_F32)
+    if (annotation < IR_BOOL || (annotation > IR_F32 && annotation != IR_F16))
         return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, syntax->name.offset,
                             "override requires a concrete scalar type");
     if (record->id_expression != NO_ID) {

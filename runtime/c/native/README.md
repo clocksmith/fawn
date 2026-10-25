@@ -696,12 +696,15 @@ requestAdapter (UNAVAILABLE), because WebGPU core admits fragment storage writes
 under the per-stage limits and no limit can report their absence. Vertex-stage
 writes stay rejected.
 
-Spec deviation, not finished: default (automatic) layouts report
-`unfilterable-float` for f32 textures only when the pipeline declares no sampler.
-With any sampler every f32 texture becomes `float`, although the WebGPU
-default-layout rule makes `float` only those statically used with a sampler, so a
-textureLoad-only r32float texture is then rejected at createBindGroup. The fix
-needs per-entry-point texture/sampler pair-use reflection from the compiler.
+Default layouts use the compiler's ABI16 selected-entry sampling pairs, including
+transitive helper-formal substitution. Only f32 textures actually paired with a
+sampler become `float`; unrelated textureLoad-only textures remain
+`unfilterable-float`. Explicit layouts reject Filtering samplers with
+UnfilterableFloat textures only when the shader pairs those exact resources.
+The public texture-binding test exercises an unrelated r32float load alongside
+a nested-helper linear sample and verifies exact readback, plus explicit valid,
+invalid and nonfiltering pair layouts. Metal host controls share the layout test;
+physical GPU qualification remains separate.
 
 `tests/storage_textures.c` writes all sixteen formats with textureStore and checks
 every channel of a 4x4 readback exactly; reads r32uint/sint/float through read-only
@@ -799,9 +802,9 @@ declares immediates yet, so the layout needs no push-constant range and nothing
 reads it. setImmediates validates its range (4-byte aligned offset and size
 within maxImmediateSize) and invalidates the encoder otherwise; a valid call
 records nothing a draw or dispatch reads.
-ABI6 lacks exact texture/sampler pair-use reflection through helper parameters.
-Selected layouts combining UnfilterableFloat with Filtering samplers therefore
-reject explicitly; this is an unsupported analysis case, not full admission parity.
+ABI16 supplies exact texture/sampler pair-use metadata through helper parameters;
+selected layouts validate the actual pairs rather than globally rejecting
+unrelated UnfilterableFloat textures and Filtering samplers.
 The image receipt predates canonical cross-binding usage admission. The separate
 admission correction exercises the resource owner's whole-buffer read/write
 conflicts, effective writable ranges and overlapping texture mip/layer identities.

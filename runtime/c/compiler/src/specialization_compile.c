@@ -26,7 +26,7 @@ static DoeCompilerStatus specialize(bool all_entries, bool metal_pipeline, uint3
     const DoeCompilerEntrySelectionV5 *selection, size_t selection_size,
     const DoeCompilerOverrideValueV13 *values, size_t value_count, size_t value_record_size,
     uint32_t flags, const DoeCompilerSpecializationOutputs *outputs, size_t outputs_size,
-    DoeCompilerTextResult *result, size_t result_size) {
+    DoeCompilerTextResult *result, size_t result_size, SamplingContext *sampling) {
     const int saved_errno = errno;
     if (result == NULL) return DOE_COMPILER_INPUT_ERROR;
     if (version != (metal_pipeline ? DOE_COMPILER_METAL_PIPELINE_ABI_VERSION :
@@ -52,7 +52,7 @@ static DoeCompilerStatus specialize(bool all_entries, bool metal_pipeline, uint3
         errno = saved_errno;
         return module->diagnostic.status;
     }
-    SpecializationContext context = {.values=values, .value_count=value_count,
+    SpecializationContext context = {.sampling=sampling, .values=values, .value_count=value_count,
         .capacities=caps, .selection=selection, .all_entries=all_entries,
         .metal_pipeline=metal_pipeline, .metal_sample_mask=sample_mask};
     specialization_bind(&context, workspace, base, caps);
@@ -78,7 +78,7 @@ DoeCompilerStatus doe_compiler_specialize(uint32_t version, uint32_t target,
     DoeCompilerTextResult *result, size_t result_size) {
     return specialize(false, false, UINT32_MAX, version, target, caps, capacities_size, workspace, workspace_size,
         source, length, selection, selection_size, values, value_count, value_record_size,
-        flags, outputs, outputs_size, result, result_size);
+        flags, outputs, outputs_size, result, result_size, NULL);
 }
 DoeCompilerStatus doe_compiler_specialize_module(uint32_t version, uint32_t target,
     const DoeCompilerSpecializationCapacities *caps, size_t capacities_size,
@@ -89,7 +89,7 @@ DoeCompilerStatus doe_compiler_specialize_module(uint32_t version, uint32_t targ
     const DoeCompilerEntrySelectionV5 selection = {.mode = DOE_COMPILER_SELECT_NONE};
     return specialize(true, false, UINT32_MAX, version, target, caps, capacities_size, workspace, workspace_size,
         source, length, &selection, sizeof(selection), values, value_count, value_record_size,
-        flags, outputs, outputs_size, result, result_size);
+        flags, outputs, outputs_size, result, result_size, NULL);
 }
 
 DoeCompilerStatus doe_compiler_specialize_metal_pipeline(uint32_t version,
@@ -105,5 +105,54 @@ DoeCompilerStatus doe_compiler_specialize_metal_pipeline(uint32_t version,
     const uint32_t sample_mask = options->sample_mask;
     return specialize(false, true, sample_mask, version, DOE_COMPILER_TARGET_METAL,
         caps, capacities_size, workspace, workspace_size, source, length, selection, selection_size,
-        values, value_count, value_record_size, flags, outputs, outputs_size, result, result_size);
+        values, value_count, value_record_size, flags, outputs, outputs_size, result, result_size, NULL);
+}
+
+DoeCompilerStatus doe_compiler_specialize_sampling(uint32_t version, uint32_t target,
+    const DoeCompilerSamplingOptionsV16 *options, size_t options_size,
+    const DoeCompilerSamplingCapacitiesV16 *caps, size_t capacities_size,
+    void *workspace, size_t workspace_size, const char *source, size_t length,
+    const DoeCompilerEntrySelectionV5 *selection, size_t selection_size,
+    const DoeCompilerOverrideValueV13 *values, size_t value_count, size_t value_record_size,
+    uint32_t flags, const DoeCompilerSamplingOutputsV16 *outputs, size_t outputs_size,
+    DoeCompilerSamplingResultV16 *result, size_t result_size) {
+    const int saved_errno = errno;
+    if (result == NULL) return DOE_COMPILER_INPUT_ERROR;
+    if (version != DOE_COMPILER_SAMPLING_ABI_VERSION || options_size != sizeof(*options) ||
+        capacities_size != sizeof(*caps) || result_size != sizeof(*result) ||
+        selection_size != sizeof(*selection) || value_record_size != sizeof(*values) ||
+        (outputs != NULL ? outputs_size != sizeof(*outputs) ||
+            outputs->pair_record_size != sizeof(DoeCompilerSamplingPairV16) : outputs_size != 0u) ||
+        !output_records(target, outputs != NULL ? &outputs->target : NULL)) return DOE_COMPILER_ABI_MISMATCH;
+    memset(result, 0, sizeof(*result));
+    DoeCompilerWorkspaceRequirements requirements;
+    size_t base;
+    if (options == NULL || (options->flags & ~DOE_COMPILER_SAMPLING_METAL_PIPELINE) != 0u ||
+        (options->flags != 0u && target != DOE_COMPILER_TARGET_METAL) ||
+        (options->flags == 0u && options->metal_sample_mask != UINT32_MAX) ||
+        (flags & DOE_COMPILER_MODULE_REFLECTION) == 0u ||
+        !sampling_layout(target, caps, &base, &requirements) || workspace == NULL ||
+        workspace_size < requirements.size_bytes || (uintptr_t)workspace % requirements.alignment_bytes != 0u ||
+        (outputs != NULL && !compiler_valid_span(outputs->pairs, outputs->pair_capacity,
+            sizeof(*outputs->pairs), _Alignof(DoeCompilerSamplingPairV16), true))) {
+        Source context = {.source=source, .length=length,
+            .diagnostic=&result->target.stages.resources.module.diagnostic};
+        (void)source_error(&context, DOE_COMPILER_INPUT_ERROR, 0u, "invalid sampling specialization options, flags or spans");
+        errno = saved_errno;
+        return DOE_COMPILER_INPUT_ERROR;
+    }
+    SamplingContext sampling = {.staging=(DoeCompilerSamplingPairV16 *)((unsigned char *)workspace + base),
+        .capacity=caps->sampling_pairs, .outputs=outputs};
+    const bool metal = (options->flags & DOE_COMPILER_SAMPLING_METAL_PIPELINE) != 0u;
+    const DoeCompilerStatus status = specialize(false, metal, options->metal_sample_mask,
+        metal ? DOE_COMPILER_METAL_PIPELINE_ABI_VERSION : DOE_COMPILER_SPECIALIZATION_ABI_VERSION,
+        target, &caps->specialization, sizeof(caps->specialization), workspace, workspace_size,
+        source, length, selection, selection_size, values, value_count, value_record_size,
+        flags, outputs != NULL ? &outputs->target : NULL, outputs != NULL ? sizeof(outputs->target) : 0u,
+        &result->target, sizeof(result->target), &sampling);
+    result->required_pairs = sampling.count;
+    if (status == DOE_COMPILER_OK && (flags & DOE_COMPILER_MODULE_MEASURE) == 0u)
+        result->published_pairs = sampling.count;
+    errno = saved_errno;
+    return status;
 }

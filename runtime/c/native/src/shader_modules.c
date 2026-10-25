@@ -43,7 +43,7 @@ static doe_shader_options shader_options(doe_shader_target target)
                 .words=131072, .expression_depth=64, .control_depth=32, .type_syntax_depth=64},
             .entries=64, .entry_inputs=256, .entry_references=8192},
         .selection = {.mode=DOE_COMPILER_SELECT_NONE},
-        .interface_attributes=4096, .stage_interfaces=1024,
+        .interface_attributes=4096, .stage_interfaces=1024, .sampling_pairs=32768,
         .compiler_identity=identity, .compiler_identity_size=sizeof(identity)-1
     };
     return options;

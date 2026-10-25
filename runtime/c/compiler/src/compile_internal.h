@@ -4,6 +4,7 @@
 #define DOE_COMPILER_COMPILE_INTERNAL_H
 #include "numeric.h"
 #include "stage.h"
+#include "sampling_internal.h"
 
 bool compiler_analyze(Source *, CompilerWorkspace *, NumericEnvironment *);
 bool compiler_valid_span(const void *, size_t count, size_t width, size_t alignment, bool selected);
@@ -14,6 +15,7 @@ bool compiler_module_records(const DoeCompilerModuleOutputs *);
 
 typedef struct {
     DoeCompilerModuleOutputCounts counts;
+    SamplingContext *sampling;
     size_t handles, interfaces, stage_names;
 } CompilerMetadata;
 bool compiler_metadata_prepare(Source *, DoeCompilerTypedOutputCounts *, uint32_t flags,

@@ -60,7 +60,7 @@ static doe_shader_options options(allocation_state *state, doe_shader_target tar
             .types=64,.members=128,.resources=16,.access_steps=1024,.constants=256,.constant_edges=512,
             .ir_instructions=4096,.ir_operands=2048,.target_declarations=4096,.traversal_items=193,
             .words=32768,.expression_depth=32,.control_depth=16,.type_syntax_depth=32},
-            .entries=8,.entry_inputs=64,.entry_references=128},.interface_attributes=64,.stage_interfaces=64,
+            .entries=8,.entry_inputs=64,.entry_references=128},.interface_attributes=64,.stage_interfaces=64,.sampling_pairs=128,
         .compiler_identity="ABI13-owner-control",.compiler_identity_size=19,
         .semantic_flags=DOE_COMPILER_CORE_BINDING_NUMBERS};
 }
@@ -388,8 +388,63 @@ static void metal_pipeline(void)
     doe_shader_release(artifact);
     assert(!state.live);
 }
+static void sampling_pairs(void)
+{
+    const char code[] =
+        "@group(0) @binding(0) var loaded:texture_2d<f32>;"
+        "@group(0) @binding(1) var sampled:texture_2d<f32>;"
+        "@group(1) @binding(2) var sampling:sampler;"
+        "@group(0) @binding(3) var<storage,read_write> result:array<f32>;"
+        "fn leaf(t:texture_2d<f32>,s:sampler)->f32{return textureSampleLevel(t,s,vec2f(0.5),0.0).r;}"
+        "fn middle(s:sampler,t:texture_2d<f32>)->f32{return leaf(t,s);}"
+        "@compute @workgroup_size(1) fn chosen(){result[0]=textureLoad(loaded,vec2i(0),0).r+middle(sampling,sampled);}";
+    for (unsigned target = 0; target < 3; ++target) {
+        allocation_state state = {0};
+        doe_shader_options opts = options(&state, (doe_shader_target)target);
+        doe_shader *module = NULL, *artifact = NULL;
+        doe_shader_error error;
+        assert(doe_shader_create_module(&opts, 8, code, sizeof(code)-1, &module, &error) == DOE_SHADER_OK);
+        unsigned live = state.live, before = state.calls;
+        DoeCompilerEntrySelectionV5 chosen = selection("chosen");
+        assert(doe_shader_specialize(module, &chosen, NULL, 0, &artifact, &error) == DOE_SHADER_OK);
+        unsigned allocations = state.calls - before;
+        doe_shader_view view;
+        assert(doe_shader_borrow(artifact, &view) == DOE_SHADER_OK);
+        assert(view.sampling_pairs_complete && view.sampling_pair_count == 1);
+        const DoeCompilerSamplingPairV16 *pair = view.sampling_pairs;
+        assert(pair->entry_index == 0 && !pair->reserved);
+        assert(pair->texture_resource_index < view.counts.resources && pair->sampler_resource_index < view.counts.resources);
+        assert(view.resources[pair->texture_resource_index].group == 0 &&
+            view.resources[pair->texture_resource_index].binding == 1);
+        assert(view.resources[pair->sampler_resource_index].group == 1 &&
+            view.resources[pair->sampler_resource_index].binding == 2);
+        doe_shader_release(artifact);
+        for (unsigned fault = 1; fault <= allocations; ++fault) {
+            doe_shader *failed = (doe_shader *)&state;
+            state.fail_at = state.calls + fault;
+            assert(doe_shader_specialize(module, &chosen, NULL, 0, &failed, &error) == DOE_SHADER_OUT_OF_MEMORY);
+            assert(failed == (doe_shader *)&state && state.live == live);
+        }
+        state.fail_at = 0;
+        assert(doe_shader_specialize(module, &chosen, NULL, 0, &artifact, &error) == DOE_SHADER_OK);
+        doe_shader_release(module);
+        assert(doe_shader_borrow(artifact, &view) == DOE_SHADER_OK && view.sampling_pair_count == 1);
+        assert(view.resources[view.sampling_pairs[0].texture_resource_index].binding == 1);
+        doe_shader_release(artifact);
+        assert(!state.live);
+        opts.sampling_pairs = 0;
+        assert(doe_shader_create_module(&opts, 8, code, sizeof(code)-1, &module, &error) == DOE_SHADER_OK);
+        artifact = (doe_shader *)&state;
+        assert(doe_shader_specialize(module, &chosen, NULL, 0, &artifact, &error) == DOE_SHADER_COMPILE_FAILED);
+        assert(artifact == (doe_shader *)&state && error.compiler_status == DOE_COMPILER_INPUT_ERROR);
+        doe_shader_release(module);
+        assert(!state.live);
+    }
+}
+
 int main(void)
 {
+    sampling_pairs();
     metal_pipeline();
     allocator_reentry();
     int original = fegetround();

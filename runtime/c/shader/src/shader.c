@@ -33,25 +33,32 @@ static DoeCompilerStatus compile_text(doe_shader_target target,
 static DoeCompilerStatus specialization_requirements(const doe_shader *module,
     const DoeCompilerTextCapacities *target, DoeCompilerWorkspaceRequirements *requirements)
 {
-    const DoeCompilerSpecializationCapacities capacities = {*target,module->override_capacity};
-    return doe_compiler_specialization_requirements(DOE_COMPILER_SPECIALIZATION_ABI_VERSION,
+    const DoeCompilerSamplingCapacitiesV16 capacities = {
+        {*target,module->override_capacity},module->options.sampling_pairs};
+    return doe_compiler_sampling_requirements(DOE_COMPILER_SAMPLING_ABI_VERSION,
         (uint32_t)module->options.target,&capacities,sizeof(capacities),requirements,sizeof(*requirements));
 }
 static DoeCompilerStatus specialize(const doe_shader *module, const DoeCompilerTextCapacities *target,
     void *workspace, size_t workspace_size, const DoeCompilerEntrySelectionV5 *selection,
     const DoeCompilerOverrideValueV13 *values, size_t count, uint32_t flags,
     const DoeCompilerMetalPipelineOptionsV15 *pipeline,
-    const DoeCompilerSpecializationOutputs *outputs, DoeCompilerTextResult *result)
+    const DoeCompilerSpecializationOutputs *outputs, DoeCompilerTextResult *result,
+    DoeCompilerSamplingPairV16 *pairs, size_t pair_count, DoeCompilerSamplingResultV16 *sampling)
 {
-    const DoeCompilerSpecializationCapacities capacities = {*target,module->override_capacity};
-    if (pipeline) return doe_compiler_specialize_metal_pipeline(DOE_COMPILER_METAL_PIPELINE_ABI_VERSION,
-        pipeline,sizeof(*pipeline),&capacities,sizeof(capacities),workspace,workspace_size,module->source,module->source_size,
-        selection,sizeof(*selection),values,count,sizeof(*values),flags,outputs,outputs ? sizeof(*outputs) : 0,
-        result,sizeof(*result));
-    return doe_compiler_specialize(DOE_COMPILER_SPECIALIZATION_ABI_VERSION,(uint32_t)module->options.target,
-        &capacities,sizeof(capacities),workspace,workspace_size,module->source,module->source_size,
-        selection,sizeof(*selection),values,count,sizeof(*values),flags,outputs,outputs ? sizeof(*outputs) : 0,
-        result,sizeof(*result));
+    const DoeCompilerSamplingCapacitiesV16 capacities = {
+        {*target,module->override_capacity},module->options.sampling_pairs};
+    const DoeCompilerSamplingOptionsV16 options = {pipeline ? pipeline->sample_mask : UINT32_MAX,
+        pipeline ? DOE_COMPILER_SAMPLING_METAL_PIPELINE : 0};
+    DoeCompilerSamplingOutputsV16 combined = {.pairs=pairs,.pair_capacity=pair_count,
+        .pair_record_size=sizeof(DoeCompilerSamplingPairV16)};
+    if (outputs) combined.target = *outputs;
+    DoeCompilerStatus status = doe_compiler_specialize_sampling(DOE_COMPILER_SAMPLING_ABI_VERSION,
+        (uint32_t)module->options.target,&options,sizeof(options),&capacities,sizeof(capacities),
+        workspace,workspace_size,module->source,module->source_size,selection,sizeof(*selection),
+        values,count,sizeof(*values),flags,outputs ? &combined : NULL,outputs ? sizeof(combined) : 0,
+        sampling,sizeof(*sampling));
+    *result = sampling->target;
+    return status;
 }
 
 doe_shader_status doe_shader_create(const doe_shader_options *options,
@@ -85,6 +92,7 @@ doe_shader_status shader_compile(const doe_shader_options *options,
         .interface_attributes = saved.interface_attributes, .stage_interfaces = saved.stage_interfaces};
     DoeCompilerTextCapacities text_capacities = {.stages = capacities};
     DoeCompilerTextResult text_result = {0};
+    DoeCompilerSamplingResultV16 sampling = {0};
     DoeCompilerWorkspaceRequirements requirements;
     DoeCompilerStatus status = module ? specialization_requirements(module,&text_capacities,&requirements) :
         textual ? text_requirements(saved.target, &text_capacities, &requirements) :
@@ -107,7 +115,7 @@ doe_shader_status shader_compile(const doe_shader_options *options,
     if (module) {
         status = specialize(module,&text_capacities,workspace,requirements.size_bytes,&saved.selection,
             values,value_count,DOE_COMPILER_TEXT_CODE | DOE_COMPILER_TEXT_REFLECTION |
-            DOE_COMPILER_TEXT_MEASURE | saved.semantic_flags,saved_pipeline,NULL,&text_result);
+            DOE_COMPILER_TEXT_MEASURE | saved.semantic_flags,saved_pipeline,NULL,&text_result,NULL,0,&sampling);
         result = text_result.stages;
     } else if (textual) {
         status = compile_text(saved.target, &text_capacities, workspace, requirements.size_bytes,
@@ -132,12 +140,14 @@ doe_shader_status shader_compile(const doe_shader_options *options,
         }
         key_bytes += values[i].key_length;
     }
-    size_t bytes, offsets[15], value_offset = 0, key_offset = 0;
+    const size_t pair_count = sampling.required_pairs;
+    size_t bytes, offsets[15], value_offset = 0, key_offset = 0, pair_offset = 0;
     if (!result.resources.module.required_is_exact || !shader_layout(saved.target, result.resources.module.required, result.resources.required_handles, result.required_interfaces, module ? 0 : source_size,
             module ? 0 : saved.compiler_identity_size, text_result.required_text_bytes,
             text_result.required_bindings, text_result.required_entries, &bytes, offsets) ||
         !shader_reserve(&bytes,value_count,sizeof(*values),alignof(DoeCompilerOverrideValueV13),&value_offset) ||
-        !shader_reserve(&bytes,key_bytes,1,1,&key_offset)) {
+        !shader_reserve(&bytes,key_bytes,1,1,&key_offset) ||
+        !shader_reserve(&bytes,pair_count,sizeof(DoeCompilerSamplingPairV16),alignof(DoeCompilerSamplingPairV16),&pair_offset)) {
         outcome = DOE_SHADER_OVERFLOW;
         goto finished;
     }
@@ -196,6 +206,8 @@ doe_shader_status shader_compile(const doe_shader_options *options,
             goto finished;
         }
     }
+    DoeCompilerSamplingPairV16 *pairs = pair_count ?
+        (DoeCompilerSamplingPairV16 *)((unsigned char *)shader + pair_offset) : NULL;
     DoeCompilerMetalOutputs text_outputs = {0};
     DoeCompilerHlslOutputs hlsl_outputs = {0};
     char *target_text = NULL;
@@ -230,7 +242,7 @@ doe_shader_status shader_compile(const doe_shader_options *options,
             else outputs.hlsl = hlsl_outputs;
             status = specialize(module,&text_capacities,workspace,requirements.size_bytes,&saved.selection,
                 shader->values,value_count,DOE_COMPILER_TEXT_CODE | DOE_COMPILER_TEXT_REFLECTION | saved.semantic_flags,
-                saved_pipeline,&outputs,&text_result);
+                saved_pipeline,&outputs,&text_result,pairs,pair_count,&sampling);
         } else status = compile_text(saved.target, &text_capacities, workspace, requirements.size_bytes,
             shader->source, source_size, &saved.selection, DOE_COMPILER_TEXT_CODE |
             DOE_COMPILER_TEXT_REFLECTION | saved.semantic_flags, &text_outputs, &hlsl_outputs, &text_result);
@@ -239,7 +251,7 @@ doe_shader_status shader_compile(const doe_shader_options *options,
         const DoeCompilerSpecializationOutputs outputs = {.spirv=shader->outputs};
         status = specialize(module,&text_capacities,workspace,requirements.size_bytes,&saved.selection,
             shader->values,value_count,DOE_COMPILER_TEXT_CODE | DOE_COMPILER_TEXT_REFLECTION | saved.semantic_flags,
-            saved_pipeline,&outputs,&text_result);
+            saved_pipeline,&outputs,&text_result,pairs,pair_count,&sampling);
         result = text_result.stages;
     } else {
         status = doe_compiler_compile_stages(DOE_COMPILER_ATOMIC_ABI_VERSION,
@@ -267,7 +279,8 @@ doe_shader_status shader_compile(const doe_shader_options *options,
             .workgroups = shader->outputs.resources.module.workgroups, .entries = shader->outputs.resources.module.entries,
             .entry_references = shader->outputs.resources.module.entry_references, .names = shader->outputs.resources.module.names,
             .handles = shader->outputs.resources.handles, .handle_count = result.resources.published_handles,
-            .interfaces = shader->outputs.interfaces, .interface_count = result.published_interfaces
+            .interfaces = shader->outputs.interfaces, .interface_count = result.published_interfaces,
+            .sampling_pairs=pairs,.sampling_pair_count=sampling.published_pairs,.sampling_pairs_complete=module != NULL
         };
         outcome = DOE_SHADER_OK;
     }

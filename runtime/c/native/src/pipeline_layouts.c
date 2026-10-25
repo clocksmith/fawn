@@ -1,24 +1,61 @@
 /* SPDX-License-Identifier: MIT */
 #include "internal.h"
 
-/* SPEC DEVIATION, not finished: WebGPU default layouts report 'float' only for
- * an f32 texture statically used in a texture builtin call together with a
- * sampler (https://gpuweb.github.io/gpuweb/#default-pipeline-layout), otherwise
- * 'unfilterable-float'. The compiler reflects no texture/sampler pair use, so
- * once a pipeline references any sampler every f32 texture becomes 'float': an
- * r32float texture used only by textureLoad is then rejected at createBindGroup.
- * Only a pipeline without samplers is exact. The reflection needed from the
- * compiler is requested in the team log. */
-static bool stages_sample(const native_stage *stages, size_t stage_count)
+/* Immutable compiler pairs describe actual sample/gather calls, including
+ * helper formal substitution. Resource identities are local to each stage. */
+static bool sampling_complete(const native_stage *stages, size_t count)
 {
-    for (size_t s = 0; s < stage_count; ++s) {
-        const DoeCompilerEntryV5 *entry = stages[s].entry;
-        for (uint32_t i = 0; i < entry->resource_reference_count; ++i) {
-            uint32_t index = stages[s].view.entry_references[entry->first_resource_reference + i];
-            if (stages[s].view.resources[index].kind == DOE_COMPILER_SAMPLER) return true;
+    for (size_t s = 0; s < count; ++s) {
+        const doe_shader_view *view = &stages[s].view;
+        if (!view->sampling_pairs_complete || !view->entries || !stages[s].entry ||
+            (view->sampling_pair_count && (!view->sampling_pairs || !view->resources))) return false;
+        size_t entry = 0;
+        while (entry < view->counts.entries && &view->entries[entry] != stages[s].entry) ++entry;
+        if (entry == view->counts.entries) return false;
+        for (size_t i = 0; i < view->sampling_pair_count; ++i) {
+            const DoeCompilerSamplingPairV16 *pair = &view->sampling_pairs[i];
+            if (pair->reserved || pair->entry_index != entry ||
+                pair->texture_resource_index >= view->counts.resources ||
+                pair->sampler_resource_index >= view->counts.resources ||
+                view->resources[pair->texture_resource_index].kind != DOE_COMPILER_SAMPLED_TEXTURE ||
+                view->resources[pair->sampler_resource_index].kind != DOE_COMPILER_SAMPLER) return false;
+        }
+    }
+    return true;
+}
+static bool texture_sampled(const native_stage *stages, size_t count, const DoeCompilerResourceV4 *resource)
+{
+    for (size_t s = 0; s < count; ++s) {
+        const doe_shader_view *view = &stages[s].view;
+        for (size_t i = 0; i < view->sampling_pair_count; ++i) {
+            const DoeCompilerResourceV4 *texture = &view->resources[view->sampling_pairs[i].texture_resource_index];
+            if (texture->group == resource->group && texture->binding == resource->binding) return true;
         }
     }
     return false;
+}
+static const doe_resource_layout_entry *layout_entry(doe_resource_pipeline_layout *layout,
+    const DoeCompilerResourceV4 *resource)
+{
+    doe_resource_layout *group = doe_resource_pipeline_layout_group(layout, resource->group);
+    size_t count = 0;
+    const doe_resource_layout_entry *entries = doe_resource_layout_entries(group, &count);
+    for (size_t i = 0; i < count; ++i) if (entries[i].binding == resource->binding) return &entries[i];
+    return NULL;
+}
+static bool sampling_layout(const native_stage *stages, size_t count, doe_resource_pipeline_layout *layout)
+{
+    for (size_t s = 0; s < count; ++s) {
+        const doe_shader_view *view = &stages[s].view;
+        for (size_t i = 0; i < view->sampling_pair_count; ++i) {
+            const DoeCompilerSamplingPairV16 *pair = &view->sampling_pairs[i];
+            const doe_resource_layout_entry *texture = layout_entry(layout, &view->resources[pair->texture_resource_index]);
+            const doe_resource_layout_entry *sampler = layout_entry(layout, &view->resources[pair->sampler_resource_index]);
+            if (!texture || !sampler || (texture->sample_type == WGPUTextureSampleType_UnfilterableFloat &&
+                sampler->sampler_type == WGPUSamplerBindingType_Filtering)) return false;
+        }
+    }
+    return true;
 }
 
 static bool resource_entry(const doe_shader_view *view, uint32_t index, WGPUShaderStage visibility, bool sampled,
@@ -102,7 +139,7 @@ doe_resource_status native_automatic_layout(native_device *device,
     doe_resource_layout_entry entries[DOE_RESOURCE_MAX_GROUPS][NATIVE_MAX_PIPELINE_BINDINGS];
     size_t counts[DOE_RESOURCE_MAX_GROUPS] = {0};
     size_t group_count = 0;
-    const bool sampled = stages_sample(stages, stage_count); /* Spec deviation: see stages_sample. */
+    if (!sampling_complete(stages, stage_count)) return DOE_RESOURCE_UNSUPPORTED;
     for (size_t stage_index = 0; stage_index < stage_count; ++stage_index) {
         const native_stage *stage = &stages[stage_index];
         const doe_shader_view *view = &stage->view;
@@ -111,7 +148,7 @@ doe_resource_status native_automatic_layout(native_device *device,
             uint32_t index = view->entry_references[entry->first_resource_reference + i];
             const DoeCompilerResourceV4 *resource = &view->resources[index];
             doe_resource_layout_entry converted;
-            if (!resource_entry(view, index, stage->visibility, sampled, &converted)) return DOE_RESOURCE_UNSUPPORTED;
+            if (!resource_entry(view, index, stage->visibility, texture_sampled(stages, stage_count, resource), &converted)) return DOE_RESOURCE_UNSUPPORTED;
             if (resource->binding >= device->backend.limits.maxBindingsPerBindGroup ||
                 resource->group >= device->backend.limits.maxBindGroups) return DOE_RESOURCE_RANGE;
             size_t at = 0;
@@ -169,8 +206,7 @@ static bool compatible(const doe_resource_layout_entry *actual, const doe_resour
 bool native_pipeline_bindings(native_pipeline *payload, const native_stage *stages,
     size_t stage_count, doe_resource_pipeline_layout *layout)
 {
-    bool unfilterable = false, filtering = false;
-    const bool sampled = stages_sample(stages, stage_count);
+    if (!sampling_complete(stages, stage_count)) return false;
     for (size_t stage_index = 0; stage_index < stage_count; ++stage_index) {
         const native_stage *stage = &stages[stage_index];
         const doe_shader_view *view = &stage->view;
@@ -210,18 +246,9 @@ bool native_pipeline_bindings(native_pipeline *payload, const native_stage *stag
                 if (stage->visibility != WGPUShaderStage_Fragment || (!vulkan && !metal)) return false;
             }
             doe_resource_layout_entry required;
-            if (!resource_entry(view, index, stage->visibility, sampled, &required)) return false;
-            doe_resource_layout *group = doe_resource_pipeline_layout_group(layout, resource->group);
-            size_t count = 0;
-            const doe_resource_layout_entry *entries = doe_resource_layout_entries(group, &count);
-            const doe_resource_layout_entry *actual = NULL;
-            for (size_t j = 0; j < count; ++j) if (entries[j].binding == resource->binding) actual = &entries[j];
+            if (!resource_entry(view, index, stage->visibility, texture_sampled(stages, stage_count, resource), &required)) return false;
+            const doe_resource_layout_entry *actual = layout_entry(layout, resource);
             if (!actual || !compatible(actual, &required)) return false;
-            /* A multisampled texture never pairs with a sampler (textureLoad only),
-             * so only single-sample unfilterable textures enter the pair check. */
-            if (actual->kind == DOE_BIND_TEXTURE && !actual->multisampled &&
-                actual->sample_type == WGPUTextureSampleType_UnfilterableFloat) unfilterable = true;
-            if (actual->kind == DOE_BIND_SAMPLER && actual->sampler_type == WGPUSamplerBindingType_Filtering) filtering = true;
             size_t at = 0;
             while (at < payload->binding_count && (payload->bindings[at].group != resource->group ||
                 payload->bindings[at].binding != resource->binding)) ++at;
@@ -235,7 +262,5 @@ bool native_pipeline_bindings(native_pipeline *payload, const native_stage *stag
                 payload->minimum_sizes[at] = resource->minimum_binding_size_bytes;
         }
     }
-    /* The compiler owns resource closure, not precise texture/sampler pair-use
-     * through helper formals. This ambiguous combination remains unsupported. */
-    return !(unfilterable && filtering);
+    return sampling_layout(stages, stage_count, layout);
 }

@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: MIT
  * Public sampled/storage/read-alias/runtime-sampler compute consumer. */
 #include "consumer.h"
+#include "sampling_pair_cases.h"
 
 static WGPUTexture image(state *s,WGPUTextureFormat format,uint32_t height,WGPUTextureUsage usage)
 {
@@ -162,13 +163,62 @@ static void reject_write_alias(state *s)
     wgpuTextureRelease(shared);
     wgpuComputePipelineRelease(program);
 }
+static void unrelated_sampler_pair(state *s)
+{
+    WGPUComputePipeline program = pipeline(s,
+        "@group(0) @binding(0) var loaded:texture_2d<f32>;"
+        "@group(0) @binding(1) var sampled:texture_2d<f32>;"
+        "@group(0) @binding(2) var sampling:sampler;"
+        "@group(0) @binding(3) var<storage,read_write> result:array<f32>;"
+        "fn leaf(t:texture_2d<f32>,s:sampler)->f32{return textureSampleLevel(t,s,vec2f(0.5),0.0).r;}"
+        "fn middle(s:sampler,t:texture_2d<f32>)->f32{return leaf(t,s);}"
+        "@compute @workgroup_size(1) fn main(){result[0]=textureLoad(loaded,vec2i(0),0).r+middle(sampling,sampled);}");
+    assert(program);
+    WGPUTexture loaded = image(s,WGPUTextureFormat_R32Float,1,WGPUTextureUsage_TextureBinding|WGPUTextureUsage_CopyDst);
+    WGPUTexture sampled = image(s,WGPUTextureFormat_RGBA8Unorm,1,WGPUTextureUsage_TextureBinding|WGPUTextureUsage_CopyDst);
+    const float values[4] = {2,2,2,2};
+    const unsigned char white[16] = {255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255};
+    write_pixels(s,loaded,values,sizeof(values));
+    write_pixels(s,sampled,white,sizeof(white));
+    WGPUTextureView loaded_view = wgpuTextureCreateView(loaded,NULL);
+    WGPUTextureView sampled_view = wgpuTextureCreateView(sampled,NULL);
+    WGPUSamplerDescriptor sampler_desc = WGPU_SAMPLER_DESCRIPTOR_INIT;
+    sampler_desc.minFilter = sampler_desc.magFilter = WGPUFilterMode_Linear;
+    WGPUSampler sampling = wgpuDeviceCreateSampler(s->device,&sampler_desc);
+    WGPUBuffer output = buffer(s,4,WGPUBufferUsage_Storage|WGPUBufferUsage_CopySrc);
+    WGPUBuffer readback = buffer(s,4,WGPUBufferUsage_MapRead|WGPUBufferUsage_CopyDst);
+    WGPUBindGroupEntry entries[4] = {{.binding=0,.textureView=loaded_view},{.binding=1,.textureView=sampled_view},
+        {.binding=2,.sampler=sampling},{.binding=3,.buffer=output,.size=4}};
+    WGPUBindGroup bindings = group(s,program,entries,4);
+    assert(bindings);
+    WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(s->device,NULL);
+    WGPUComputePassEncoder pass = wgpuCommandEncoderBeginComputePass(encoder,NULL);
+    wgpuComputePassEncoderSetPipeline(pass,program);
+    wgpuComputePassEncoderSetBindGroup(pass,0,bindings,0,NULL);
+    wgpuComputePassEncoderDispatchWorkgroups(pass,1,1,1);
+    wgpuComputePassEncoderEnd(pass);
+    wgpuComputePassEncoderRelease(pass);
+    wgpuCommandEncoderCopyBufferToBuffer(encoder,output,0,readback,0,4);
+    wgpuBindGroupRelease(bindings);
+    wgpuTextureViewRelease(loaded_view); wgpuTextureViewRelease(sampled_view);
+    wgpuTextureRelease(loaded); wgpuTextureRelease(sampled);
+    wgpuSamplerRelease(sampling); wgpuComputePipelineRelease(program); wgpuBufferRelease(output);
+    submit(s,encoder);
+    const float *actual = map(s,readback,4);
+    assert(actual[0] == 3.0f);
+    wgpuBufferUnmap(readback); wgpuBufferRelease(readback);
+    assert(!s->errors);
+}
+
 int main(void)
 {
     state s = {0};
     consumer_init(&s);
+    unrelated_sampler_pair(&s);
+    exact_pair_layouts(&s);
     sampler_pixels(&s);
     read_aliases(&s);
     reject_write_alias(&s);
     consumer_finish(&s);
-    printf("PASS public sampled/storage textures: runtime nearest/linear changes, direct+guarded indirect, GPU num_workgroups, sampled/read-storage aliases, storage-only SRV usage, writable-alias rejection, exact pixels/padding and early releases %s\n",adapter_class_scope());
+    printf("PASS public sampled/storage textures: exact helper-call sampler pairs and unrelated load-only r32float, runtime nearest/linear changes, direct+guarded indirect, GPU num_workgroups, sampled/read-storage aliases, storage-only SRV usage, writable-alias rejection, exact pixels/padding and early releases %s\n",adapter_class_scope());
 }

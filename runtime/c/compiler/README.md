@@ -725,3 +725,6 @@ they do not qualify physical execution or close f16/full-language migration.
 See [binary16 semantics, focused checks and remaining gates](F16.md) for the
 shared native C f16 path. Native-device admission remains feature-scoped; target
 validation does not establish physical backend qualification.
+
+[ABI16 sampling relationships](SAMPLING.md) adds explicit, failure-atomic
+per-entry texture/sampler pairs to specialization without changing frozen records.
