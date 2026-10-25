@@ -33,8 +33,8 @@ typedef struct doe_kernel_binding {
 
 typedef struct doe_command {
     doe_command_kind kind;
-    /* The kind as written (an accepted alias stays as written): the trace row's
-     * "command" label. Points into the stream's document. */
+    /* The trace row's "command" label: the normalized kind name, as
+     * doe-zig-runtime writes it ("buffer_write" for "write_buffer"). Static. */
     const char *label;
     union {
         struct { uint64_t bytes, align_bytes; } upload;

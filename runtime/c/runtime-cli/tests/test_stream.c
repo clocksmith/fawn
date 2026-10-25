@@ -76,10 +76,10 @@ int main(int argc, char **argv)
     assert(stream.count == 1 && stream.commands[0].as.dispatch.repeat == 100);
     doe_stream_free(&stream);
 
-    /* Aliases keep their label; kinds compare case-insensitively like the Zig parser. */
+    /* Aliases label rows with the normalized kind; kinds compare case-insensitively like the Zig parser. */
     const char *alias = "{\"commands\":[{\"command\":\"Write_Buffer\",\"handle\":1,\"data\":[7]}]}";
     assert(doe_stream_parse(alias, strlen(alias), &stream, &(doe_stream_error){0}));
-    assert(stream.commands[0].kind == DOE_COMMAND_BUFFER_WRITE && !strcmp(stream.commands[0].label, "Write_Buffer"));
+    assert(stream.commands[0].kind == DOE_COMMAND_BUFFER_WRITE && !strcmp(stream.commands[0].label, "buffer_write"));
     assert(!strcmp(doe_command_tag(stream.commands[0].kind), "buffer_write"));
     doe_stream_free(&stream);
 

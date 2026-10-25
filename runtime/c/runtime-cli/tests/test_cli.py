@@ -81,6 +81,14 @@ def main() -> int:
     check(atomic["outputOracleCount"] == 1 and atomic["outputOracleMatchedCount"] == 1, "workgroup_atomic oracle did not match")
     check(atomic["outputOracleActualSha256"] == atomic["outputOracleExpectedSha256"], "oracle digests differ")
 
+    # Alias kinds label rows with the normalized name, as doe-zig-runtime does.
+    aliases = args.work / "alias_commands.json"
+    aliases.write_text(json.dumps([{"kind": "write_buffer", "handle": 1, "data": [1, 2, 3, 4]},
+                                   {"kind": "buffer_upload", "bytes": 16}]))
+    code, stderr, meta, rows = run(args.binary, args.work, "alias", commands=aliases)
+    check(code == 0 and [row["command"] for row in rows] == ["buffer_write", "upload"]
+          and [row["hash"] for row in rows] == ["0x3eb0c370aa46f5f9", "0x7ac9433e64554c12"], f"alias rows: {code} {stderr}")
+
     # --command-repeat continues one hash chain over the replayed stream.
     code, stderr, meta, rows = run(args.binary, args.work, "p0_resource_lifecycle", "--command-repeat", "2")
     check(code == 0 and len(rows) == 10 and meta["commandCount"] == 10, f"command repeat: {code} {stderr}")
@@ -108,7 +116,7 @@ def main() -> int:
     check(code == 2 and "not implemented" in stderr, f"copy stream: exit {code}: {stderr}")
 
     print(f"PASS doe-c-runtime: 3 example streams with doe-zig-runtime hash chains, replay-valid artifacts, "
-          f"an independent oracle match, command repeat, an oracle mismatch and 5 rejections on "
+          f"an independent oracle match, alias labels, command repeat, an oracle mismatch and 5 rejections on "
           f"{adapter.get('device')} ({adapter.get('adapterType')}, {adapter.get('backend')})")
     return 0
 

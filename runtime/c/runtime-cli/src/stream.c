@@ -287,7 +287,7 @@ static bool parse_command(const doe_json_value *object, doe_command *command, si
     for (size_t i = 0; i < sizeof(KINDS) / sizeof(KINDS[0]); i++) {
         if (strcasecmp(name, KINDS[i].name) != 0) continue;
         command->kind = KINDS[i].kind;
-        command->label = name;
+        command->label = doe_command_tag(command->kind);
         switch (command->kind) {
         case DOE_COMMAND_UPLOAD: return parse_upload(object, command, index, error);
         case DOE_COMMAND_BUFFER_WRITE: return parse_buffer_write(object, command, index, error);
