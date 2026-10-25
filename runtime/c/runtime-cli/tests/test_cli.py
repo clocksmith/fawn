@@ -38,10 +38,11 @@ REPLAY = REPO / "pipeline" / "trace" / "replay.py"
 sys.path.insert(0, str(REPO / "bench" / "oracles"))
 import workgroup_recurrence_u32_v1 as recurrence  # noqa: E402  (independent CPU reference)
 
-# Final row hashes doe-zig-runtime wrote for these streams (db0979828, lavapipe).
+# Final row hashes from a fresh retained doe-zig-runtime host trace (runtime/zig
+# unchanged at 796b98338, 2026-10-25), including the default embedded quirk.
 ZIG_FINAL_HASH = {
-    "p0_resource_lifecycle": "0xb51cc5ee8f6a8133",
-    "rmsnorm_tree": "0x3ab94f41b34d8349",
+    "p0_resource_lifecycle": "0x8c442985fd5b3ecf",
+    "rmsnorm_tree": "0xe39ba87ba64a423b",
     "workgroup_atomic": "0xd00d567969d44b72",
 }
 # doe-zig-runtime (db0979828, --quirk-mode off, lavapipe) final hashes for copy
@@ -275,7 +276,7 @@ def check_textures(binary: Path, work: Path) -> None:
 
 def check_copies(binary: Path, work: Path) -> None:
     for name, final_hash in ZIG_COPY_FINAL_HASH.items():
-        code, stderr, meta, rows = run(binary, work, name)
+        code, stderr, meta, rows = run(binary, work, name, "--quirk-mode", "off")
         check(code == 0 and meta["hash"] == final_hash and all(r["executionStatus"] == "ok" for r in rows),
               f"{name}: exit {code}, hash {meta.get('hash')} != {final_hash}: {stderr}")
         check(replay_passes(work, name), f"{name} artifacts fail replay")
@@ -283,7 +284,7 @@ def check_copies(binary: Path, work: Path) -> None:
     commands = work / "roundtrip_commands.json"
     commands.write_text(json.dumps(stream))
     readbacks = [arg for handle in expected for arg in ("--readback-buffer", f"{handle}={work / f'readback_{handle}.bin'}")]
-    code, stderr, meta, rows = run(binary, work, "roundtrip", *readbacks, commands=commands)
+    code, stderr, meta, rows = run(binary, work, "roundtrip", "--quirk-mode", "off", *readbacks, commands=commands)
     check(code == 0 and meta["hash"] == ZIG_ROUNDTRIP_FINAL_HASH, f"roundtrip: exit {code} hash {meta.get('hash')}: {stderr}")
     check(replay_passes(work, "roundtrip"), "roundtrip artifacts fail replay")
     for handle, data in expected.items():
@@ -345,7 +346,7 @@ def check_quirks(binary: Path, work: Path) -> None:
 
 def check_render(binary: Path, work: Path) -> None:
     for name, final_hash in ZIG_RENDER_FINAL_HASH.items():
-        code, stderr, meta, rows = run(binary, work, name)
+        code, stderr, meta, rows = run(binary, work, name, "--quirk-mode", "off")
         check(code == 0 and meta["hash"] == final_hash and all(r["executionStatus"] == "ok" for r in rows),
               f"{name}: exit {code}, hash {meta.get('hash')} != {final_hash}: {stderr}")
         check(replay_passes(work, name), f"{name} artifacts fail replay")
@@ -356,13 +357,13 @@ def check_render(binary: Path, work: Path) -> None:
     commands = work / "render_roundtrip_commands.json"
     commands.write_text(json.dumps(stream))
     readbacks = [arg for handle in scissors for arg in ("--readback-buffer", f"{handle}={work / f'render_{handle}.bin'}")]
-    code, stderr, meta, _ = run(binary, work, "render_roundtrip", *readbacks, commands=commands)
+    code, stderr, meta, _ = run(binary, work, "render_roundtrip", "--quirk-mode", "off", *readbacks, commands=commands)
     check(code == 0 and meta["hash"] == ZIG_RENDER_ROUNDTRIP_FINAL_HASH,
           f"render roundtrip: exit {code} hash {meta.get('hash')}: {stderr}")
     for handle, scissor in scissors.items():
         check(pixels_match((work / f"render_{handle}.bin").read_bytes(), scissor), f"render target {handle} pixels")
     for name, final_hash in ZIG_INDIRECT_FINAL_HASH.items():
-        code, stderr, meta, rows = run(binary, work, name)
+        code, stderr, meta, rows = run(binary, work, name, "--quirk-mode", "off")
         draws = json.loads((EXAMPLES / f"{name}_commands.json").read_text())[0]["drawCount"]
         check(code == 0 and meta["hash"] == final_hash and rows[0]["executionDispatchCount"] == draws,
               f"{name}: exit {code}, hash {meta.get('hash')} != {final_hash}: {stderr}")
@@ -370,7 +371,7 @@ def check_render(binary: Path, work: Path) -> None:
     commands = work / "indirect_roundtrip_commands.json"
     commands.write_text(json.dumps(stream))
     readbacks = [arg for handle in scissors for arg in ("--readback-buffer", f"{handle}={work / f'indirect_{handle}.bin'}")]
-    code, stderr, meta, _ = run(binary, work, "indirect_roundtrip", *readbacks, commands=commands)
+    code, stderr, meta, _ = run(binary, work, "indirect_roundtrip", "--quirk-mode", "off", *readbacks, commands=commands)
     check(code == 0 and meta["hash"] == ZIG_INDIRECT_ROUNDTRIP_FINAL_HASH,
           f"indirect roundtrip: exit {code} hash {meta.get('hash')}: {stderr}")
     for handle, scissor in scissors.items():
@@ -712,7 +713,7 @@ def main() -> int:
                                    {"kind": "buffer_upload", "bytes": 16}]))
     code, stderr, meta, rows = run(args.binary, args.work, "alias", commands=aliases)
     check(code == 0 and [row["command"] for row in rows] == ["buffer_write", "upload"]
-          and [row["hash"] for row in rows] == ["0x3eb0c370aa46f5f9", "0x7ac9433e64554c12"], f"alias rows: {code} {stderr}")
+          and [row["hash"] for row in rows] == ["0x27d8ed438aa5b23", "0x131e0ef17d859f82"], f"alias rows: {code} {stderr}")
 
     # --command-repeat continues one hash chain over the replayed stream.
     code, stderr, meta, rows = run(args.binary, args.work, "p0_resource_lifecycle", "--command-repeat", "2")
@@ -732,7 +733,6 @@ def main() -> int:
         (["--quirk-mode", "on"], "off, trace or active"),
         (["--driver", "31.x"], "major[.minor[.patch]]"),
         (["--queue-sync-mode", "invalid"], "per-command or deferred"),
-        (["--replay", "x"], "not implemented"),
         (["--gpu-timestamp-mode", "require"], "GPU timestamps"),
     ]
     for extra, needle in rejected:
