@@ -437,6 +437,11 @@ bool spirv_plan_module(Emitter *e) {
             e->demote_to_helper = true;
         } else if (ir->opcode == IR_WORKGROUP_BARRIER) {
             if (!plan_workgroup_barrier(e)) return false;
+            if (ir->operands.scalar.literal != BARRIER_WORKGROUP) {
+                if (ir->operands.scalar.literal != BARRIER_STORAGE && ir->operands.scalar.literal != BARRIER_TEXTURE)
+                    return spirv_emit_error(e, ir->source_offset, "invalid barrier memory class");
+                (void)spirv_unsigned_constant(e, ir->operands.scalar.literal == BARRIER_STORAGE ? 0x48u : 0x808u);
+            }
         } else if (ir->opcode == IR_BUILTIN) {
             const NumericBuiltin *builtin = builtin_kind((NumericBuiltinKind)ir->operands.scalar.literal);
             if (builtin == NULL) return spirv_emit_error(e, ir->source_offset, "invalid numeric builtin identity");

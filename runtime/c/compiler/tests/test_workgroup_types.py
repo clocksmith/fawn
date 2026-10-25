@@ -27,6 +27,29 @@ def words(code):
 class WorkgroupTypes(unittest.TestCase):
     compile = test_stages.Stages.compile
 
+    def test_barrier_memory_classes_and_uniformity(self):
+        code = self.compile('@compute @workgroup_size(4) fn main(){'
+                            'workgroupBarrier();storageBarrier();textureBarrier();}')
+        constants = {a[1]: a[2] for op, a in code if op == 43}
+        barriers = [[constants[v] for v in a] for op, a in code if op == 224]
+        self.assertEqual(barriers, [[2, 2, 0x108], [2, 2, 0x48], [2, 2, 0x808]])
+        for builtin in ['storageBarrier', 'textureBarrier']:
+            self.compile('fn helper(){' + builtin + '();}'
+                '@compute @workgroup_size(4) fn main(@builtin(local_invocation_index) i:u32){'
+                'if(i>0u){helper();}}', 'uniform')
+            self.compile('fn helper(){' + builtin + '();}'
+                '@fragment fn main()->@location(0) vec4f{helper();return vec4f(0);}', 'compute entry')
+            self.compile('@compute @workgroup_size(1) fn main(){' + builtin + '(1u);}', 'no arguments')
+            self.compile('@compute @workgroup_size(1) fn main(){let x=' + builtin + '();}', 'no result')
+
+    def test_device_independent_workgroup_dimensions(self):
+        for dimensions in [(512, 1, 1), (16, 32, 2), (4294967295, 1, 1)]:
+            code = self.compile('@compute @workgroup_size(' + ','.join(str(v) + 'u' for v in dimensions) +
+                                ') fn main(){}')
+            self.assertEqual([a[2:] for op, a in code if op == 16 and a[1] == 17], [dimensions])
+        for dimensions in ['0,1,1', '65536u,65536u,1u', '4294967295u,2u,1u']:
+            self.compile('@compute @workgroup_size(' + dimensions + ') fn main(){}', 'product must fit u32')
+
     def test_private_storage_in_graphics_has_no_shared_barrier_or_hidden_lane(self):
         code = self.compile('''struct State { values:array<vec4f,2> }
             var<private> state=State(array<vec4f,2>(vec4f(0.0),vec4f(1.0)));

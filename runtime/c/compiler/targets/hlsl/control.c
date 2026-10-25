@@ -138,7 +138,12 @@ void hlsl_block(HlslEmitter *e, uint32_t *cursor, unsigned depth, uint32_t loop,
         hlsl_indent(e);
         switch (ir->opcode) {
             case IR_WORKGROUP_BARRIER:
-                hlsl_text(e, "GroupMemoryBarrierWithGroupSync();\n");
+                switch ((BarrierMemory)ir->operands.scalar.literal) {
+                    case BARRIER_WORKGROUP: hlsl_text(e, "GroupMemoryBarrierWithGroupSync();\n"); break;
+                    case BARRIER_STORAGE: case BARRIER_TEXTURE:
+                        hlsl_text(e, "DeviceMemoryBarrierWithGroupSync();\n"); break;
+                    default: hlsl_error(e, "invalid barrier memory class"); return;
+                }
                 break;
             case IR_LOCAL_STORE:
                 hlsl_format(e, "l%u = ", ir->operands.scalar.binding);

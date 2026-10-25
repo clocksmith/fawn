@@ -635,9 +635,12 @@ static bool emit_loop(Emitter *e, const IrProgram *program, size_t *cursor,
     }
     return true;
 }
-static bool emit_workgroup_barrier(Emitter *e) {
-    /* AcquireRelease | WorkgroupMemory. This does not fence descriptor storage. */
-    EMIT(OP_CONTROL_BARRIER, ID_TWO_U32, ID_TWO_U32, e->barrier_semantics);
+static bool emit_workgroup_barrier(Emitter *e, BarrierMemory memory) {
+    /* All WGSL barriers synchronize workgroup invocations; the memory class
+     * selects WorkgroupMemory, UniformMemory or ImageMemory with AcquireRelease. */
+    const uint32_t semantics = memory == BARRIER_WORKGROUP ? e->barrier_semantics :
+        spirv_unsigned_constant(e, memory == BARRIER_STORAGE ? 0x48u : 0x808u);
+    EMIT(OP_CONTROL_BARRIER, ID_TWO_U32, ID_TWO_U32, semantics);
     return true;
 }
 static bool emit_block(Emitter *e, const IrProgram *program, size_t *cursor,
@@ -763,7 +766,7 @@ static bool emit_block(Emitter *e, const IrProgram *program, size_t *cursor,
                 if (!spirv_instruction(e, OP_DEMOTE_TO_HELPER_INVOCATION, NULL, 0u)) return false;
                 break;
             case IR_WORKGROUP_BARRIER:
-                if (!emit_workgroup_barrier(e)) return false;
+                if (!emit_workgroup_barrier(e, (BarrierMemory)ir->operands.scalar.literal)) return false;
                 break;
             case IR_COMPARE:
                 EMIT(comparison_opcode((Comparison)ir->operands.scalar.literal, type_leaf(program, ir->operands.scalar.binding)),
@@ -837,7 +840,7 @@ static bool emit_workgroup_initialization(Emitter *e) {
     EMIT(OP_BRANCH, merge);
     EMIT(OP_LABEL, merge);
     e->current_label = merge;
-    return emit_workgroup_barrier(e);
+    return emit_workgroup_barrier(e, BARRIER_WORKGROUP);
 }
 static bool emit_private_initialization(Emitter *e) {
     const CompilerWorkspace *c = e->program;
