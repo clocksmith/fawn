@@ -23,9 +23,9 @@ doe_vk_status doe_vk_prepare_features(doe_vk_context *context, const doe_vk_opti
     if (!features.features.robustBufferAccess)
         return doe_vk_fail(DOE_VK_UNSUPPORTED, "robustBufferAccess required", error);
     doe_vk_feature_selection selection = {.base = {.robustBufferAccess = 1}};
-    /* The selected device is Vulkan 1.2. Arithmetic and interface storage
+    /* The selected device is Vulkan 1.2. Arithmetic and buffer storage
      * capabilities are independent: never expose half arithmetic alone as the
-     * complete WebGPU shader-f16 feature. */
+     * admitted shader-f16 buffer contract. */
     VkPhysicalDevice16BitStorageFeatures storage16 = {
         .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_16BIT_STORAGE_FEATURES};
     VkPhysicalDeviceShaderFloat16Int8Features float16 = {

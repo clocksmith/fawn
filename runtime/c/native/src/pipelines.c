@@ -43,6 +43,7 @@ bool native_shader_capabilities(const doe_shader_view *view, const doe_vk_caps *
             if (length != 2) return false;
             uint32_t capability = view->words[at + 1];
             if (capability != 0 && capability != 1 && capability != 43 && capability != 44 && capability != 50 &&
+                !((capability == 9 || capability == 4433 || capability == 4434) && caps->shader_f16) &&
                 !(capability == 45 && caps->image_cube_array) &&
                 !(capability == 49 && caps->storage_image_extended_formats) &&
                 !(capability == 35 && caps->sample_rate_shading) &&
