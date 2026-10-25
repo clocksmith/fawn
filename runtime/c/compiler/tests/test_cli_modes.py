@@ -267,18 +267,21 @@ class TestCliModes(unittest.TestCase):
             self.reflection.unlink(missing_ok=True)
 
     def test_allocation_and_query_failures_preserve_artifacts(self) -> None:
-        for reflected, allocations in [(False, 4), (True, 3), ("--reflection-v2", 5)]:
-            for call in range(1, allocations + 1):
+        for reflected in [False, True, "--reflection-v2"]:
+            for call in range(1, 33):
                 before = snapshot(self.folder)
                 env = dict(os.environ, DOE_CLI_FAULT="malloc", DOE_CLI_FAULT_CALL=str(call))
                 run = self.invoke(self.args(reflected), FAULT_CLI, env)
+                if run.returncode == 0:
+                    # The first non-triggered fault establishes the allocation
+                    # frontier without mirroring an implementation call count.
+                    self.assertGreater(call, 1)
+                    break
                 self.assertEqual(run.returncode, 1, run.stderr)
                 self.assertIn("allocation failed", run.stderr)
                 self.assertEqual(snapshot(self.folder), before)
-            # One call beyond the exact allocation count must not fire.
-            env = dict(os.environ, DOE_CLI_FAULT="malloc", DOE_CLI_FAULT_CALL=str(allocations + 1))
-            run = self.invoke(self.args(reflected), FAULT_CLI, env)
-            self.assertEqual(run.returncode, 0, run.stderr)
+            else:
+                self.fail("allocation sweep did not reach a successful invocation")
             self.output.unlink()
             self.reflection.unlink(missing_ok=True)
         for reflected in (False, "--reflection-v2"):
