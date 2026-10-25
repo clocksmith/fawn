@@ -244,13 +244,21 @@ static doe_mtl_status observe(doe_mtl_commands *commands, bool wait,
     if (commands->state != DOE_MTL_SUBMITTED)
         return doe_mtl_fail(DOE_MTL_INVALID_STATE, "unsubmitted completion", error);
     native = &commands->context->native;
-    status = native->observe(native->userdata, commands->native, wait, &native_error);
+    status = commands->present_texture ? native->surface_observe(native->userdata, commands->native,
+        commands->present_texture->drawable, wait, &native_error) :
+        native->observe(native->userdata, commands->native, wait, &native_error);
     if (status == 4) {
+        if (commands->present_texture) {
+            native->release(native->userdata, commands->present_texture->drawable);
+            commands->present_texture->drawable = NULL;
+            commands->present_texture = NULL;
+        }
         commands->state = DOE_MTL_COMPLETE;
         retire_uses(commands, true, true);
         return doe_mtl_fail(DOE_MTL_OK, "command completion", error);
     }
     if (status == 5) {
+        commands->present_texture = NULL;
         commands->state = DOE_MTL_FAILED;
         commands->failure = native_error;
         commands->failure.status = DOE_MTL_EXECUTION_FAILED;

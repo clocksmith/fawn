@@ -6,10 +6,12 @@
 #define DOE_NATIVE_SURFACE_H
 #include "internal.h"
 #include "doe_vk_surface.h"
+#include "doe_metal_surface.h"
 
 /* Bounded native waits for one acquisition or one presentation retirement.
  * The backend may wait up to twice this per call (acquire plus its fence). */
 #define NATIVE_SURFACE_TIMEOUT_NS UINT64_C(1000000000)
+enum { NATIVE_SURFACE_METAL_LAYER = 8 };
 
 typedef struct native_surface {
     atomic_uint references; /* Public handles. Zero triggers public teardown once. */
@@ -20,8 +22,9 @@ typedef struct native_surface {
     doe_label_store *labels;
     /* Native ownership. `vulkan` lives on `device`'s context and may outlive the
      * public configuration until caller frame/view leases drop (deferred retire). */
-    native_device *device; /* Internal reference while `vulkan` exists. */
+    native_device *device; /* Internal reference while a backend configuration exists. */
     doe_vk_surface *vulkan;
+    doe_mtl_surface *metal;
     native_pending *retirement; /* Reserved before configuration publication. */
     /* Public configuration. */
     bool configured;
@@ -102,4 +105,10 @@ native_pending *native_surface_unconfigure_locked(native_surface *surface);
 /* Caller holds surface->mutex and the device mutex. Destroys and releases the
  * current public frame texture (the frame itself is retired separately). */
 void native_surface_drop_current(native_surface *surface);
+WGPUStatus native_metal_surface_capabilities(native_surface *surface, native_adapter *adapter,
+    WGPUSurfaceCapabilities *out);
+void native_metal_surface_configure(native_surface *surface, const WGPUSurfaceConfiguration *config);
+native_pending *native_metal_surface_unconfigure_locked(native_surface *surface);
+void native_metal_surface_acquire(native_surface *surface, WGPUSurfaceTexture *out);
+WGPUStatus native_metal_surface_present(native_surface *surface);
 #endif

@@ -2,7 +2,7 @@
 #include "metal_frontend.h"
 #include <stdlib.h>
 
-static native_failure initialize_texture(native_device *device, native_texture *texture,
+native_failure native_metal_initialize_texture(native_device *device, native_texture *texture,
     const doe_mtl_texture_desc *desc)
 {
     native_command_handle commands = {0};
@@ -122,7 +122,7 @@ WGPUTexture native_metal_create_texture(native_device *device, const WGPUTexture
         doe_mtl_status status = doe_mtl_texture_create(device->backend.value.metal.context, &native, &payload->metal, &detail);
         failure = native_failure_metal(status, &detail);
     }
-    if (failure.status == NATIVE_OK) failure = initialize_texture(device, payload, &native);
+    if (failure.status == NATIVE_OK) failure = native_metal_initialize_texture(device, payload, &native);
     doe_resource_status adopted = DOE_RESOURCE_INVALID_ARGUMENT;
     if (failure.status == NATIVE_OK)
         adopted = doe_resource_texture_create(&device->resources, &desc, &limits,

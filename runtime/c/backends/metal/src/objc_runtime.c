@@ -288,6 +288,8 @@ static doe_mtl_status open_apple_runtime(doe_mtl_native *out, doe_mtl_error *err
     runtime->dimensions_stret_call = (doe_objc_dimensions_stret_call)message_stret;
     runtime->set_size_call = (doe_objc_set_size_call)message;
     runtime->set_float_call = (doe_objc_set_float_call)message;
+    runtime->set_bool_call = (doe_objc_set_bool_call)message;
+    runtime->set_drawable_size_call = (doe_objc_set_drawable_size_call)message;
     runtime->bool_call = (doe_objc_bool_call)message;
     runtime->family_call = (doe_objc_family_call)message;
     runtime->samples_call = (doe_objc_samples_call)message;
@@ -302,6 +304,11 @@ static doe_mtl_status open_apple_runtime(doe_mtl_native *out, doe_mtl_error *err
     native.userdata = runtime;
     native.close = close_runtime;
     native.release = doe_mtl_objc_release;
+    native.surface_supported = doe_mtl_objc_surface_supported;
+    native.surface_configure = doe_mtl_objc_surface_configure;
+    native.surface_acquire = doe_mtl_objc_surface_acquire;
+    native.surface_present = doe_mtl_objc_surface_present;
+    native.surface_observe = doe_mtl_objc_surface_observe;
     native.device = create_device;
     native.queue = create_queue;
     native.buffer = create_buffer;

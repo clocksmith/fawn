@@ -66,3 +66,13 @@ limits. Odd uint16 ends require initialized physical padding while logical range
 stay unchanged. All compute guards precede one whole native render pass. A partial
 record failure discards the whole command; unknown retains scratch, PSOs, source
 buffers and temporary parameters through the same ordinary leases.
+
+CAMetalLayer drawables use the existing texture and command owners. Register
+presentation through presentDrawable before commit; retain the caller drawable
+lease until GPU completion and preserve it on unknown work. Apple's
+[drawable ownership contract](https://developer.apple.com/library/archive/documentation/3DDrawing/Conceptual/MTLBestPracticesGuide/Drawables.html)
+permits release after registration. presentedTime is zero for unpresented or
+skipped frames; never gate WorkDone or caller-lease retirement on that display
+timestamp. Real pixel readback and native presentation scheduling do not certify
+onscreen display timing. Bound the presentation command's completion wait to
+five seconds; no private retry queue or replacement drawable on uncertainty.

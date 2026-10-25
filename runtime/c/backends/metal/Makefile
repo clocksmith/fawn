@@ -5,7 +5,7 @@ BUILD ?= $(DOE_C_TMP)/metal
 CPPFLAGS += -Iinclude
 CFLAGS ?= -O2 -g
 STRICT = -std=c11 -Wall -Wextra -Wpedantic -Werror -Wconversion -Wshadow
-SOURCES = src/context.c src/resources.c src/commands.c src/indirect_commands.c src/draw_guard.c src/compute_commands.c src/timestamps.c src/objc_queries.c src/objc_runtime.c \
+SOURCES = src/context.c src/resources.c src/commands.c src/surfaces.c src/objc_surface.c src/indirect_commands.c src/draw_guard.c src/compute_commands.c src/timestamps.c src/objc_queries.c src/objc_runtime.c \
           src/objc_pipeline.c src/objc_commands.c src/texture_formats.c src/textures.c \
           src/samplers.c src/texture_ownership.c src/texture_initialization.c src/texture_transfer.c \
           src/objc_images.c src/objc_image_transfer.c src/render_pipeline.c \
@@ -22,6 +22,8 @@ LDLIBS = -ldl
 endif
 .PHONY: all check probe sanitize clean abi-compile sdk-abi native-check native-graphics-check
 all: $(BUILD)/libdoe_metal.a
+$(BUILD)/test_surface: tests/test_surface.c tests/mock_native.c tests/mock_native.h $(BUILD)/libdoe_metal.a
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(STRICT) tests/test_surface.c tests/mock_native.c $(BUILD)/libdoe_metal.a $(LDLIBS) -o $@
 $(BUILD):
 	mkdir -p $@
 $(BUILD)/%.o: src/%.c $(HEADERS) | $(BUILD)
@@ -68,7 +70,11 @@ $(BUILD)/test_timestamps: tests/test_timestamps.c tests/mock_native.c tests/mock
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(STRICT) tests/test_timestamps.c tests/mock_native.c $(BUILD)/libdoe_metal.a $(LDLIBS) -o $@
 $(BUILD)/test_objc_queries: tests/test_objc_queries.c $(BUILD)/libdoe_metal.a
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(STRICT) $< $(BUILD)/libdoe_metal.a $(LDLIBS) -o $@
-check: $(BUILD)/test_draw_guard $(BUILD)/test_indirect $(BUILD)/test_initialization $(BUILD)/test_device_limits $(BUILD)/test_objc_queries $(BUILD)/test_timestamps $(BUILD)/test_visibility $(BUILD)/test_multisample $(BUILD)/test_objc_render_commands $(BUILD)/test_objc_render_pipeline $(BUILD)/test_render $(BUILD)/test_lifetime $(BUILD)/test_objc_calls $(BUILD)/test_images $(BUILD)/test_objc_images
+$(BUILD)/test_objc_surface: tests/test_objc_surface.c $(BUILD)/libdoe_metal.a
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(STRICT) $< $(BUILD)/libdoe_metal.a $(LDLIBS) -o $@
+check: $(BUILD)/test_objc_surface $(BUILD)/test_surface $(BUILD)/test_draw_guard $(BUILD)/test_indirect $(BUILD)/test_initialization $(BUILD)/test_device_limits $(BUILD)/test_objc_queries $(BUILD)/test_timestamps $(BUILD)/test_visibility $(BUILD)/test_multisample $(BUILD)/test_objc_render_commands $(BUILD)/test_objc_render_pipeline $(BUILD)/test_render $(BUILD)/test_lifetime $(BUILD)/test_objc_calls $(BUILD)/test_images $(BUILD)/test_objc_images
+	$(BUILD)/test_objc_surface
+	$(BUILD)/test_surface
 	$(BUILD)/test_draw_guard
 	$(BUILD)/test_indirect
 	$(BUILD)/test_initialization

@@ -5,6 +5,7 @@
 #include "../include/doe_metal_texture.h"
 #include "../include/doe_metal_render.h"
 #include "../include/doe_metal_query.h"
+#include "../include/doe_metal_surface.h"
 
 /* Private actual-platform call boundary. Tests substitute these calls only;
  * the production constructor has no injectable/public fake-runtime option.
@@ -63,6 +64,13 @@ typedef struct doe_mtl_native {
     void *userdata;
     void (*close)(void *userdata);
     void (*release)(void *userdata, void *object);
+    bool (*surface_supported)(void *userdata, void *layer);
+    doe_mtl_status (*surface_configure)(void *userdata, void *device, void *layer,
+        const doe_mtl_surface_desc *desc, void **out, doe_mtl_error *error);
+    doe_mtl_status (*surface_acquire)(void *userdata, void *layer, const doe_mtl_surface_desc *desc,
+        void **drawable, void **texture, doe_mtl_error *error);
+    doe_mtl_status (*surface_present)(void *userdata, void *command, void *drawable, doe_mtl_error *error);
+    size_t (*surface_observe)(void *userdata, void *command, void *drawable, bool wait, doe_mtl_error *error);
     doe_mtl_status (*device)(void *userdata, void **out, doe_mtl_caps *caps,
         doe_mtl_error *error);
     doe_mtl_status (*queue)(void *userdata, void *device, void **out,

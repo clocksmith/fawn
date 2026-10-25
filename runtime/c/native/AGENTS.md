@@ -148,9 +148,14 @@ enables it. Preserve standalone compiler/shader conservative defaults, and do no
 invent a backend feature requirement for compiler-owned raw uniform lowering.
 
 Surfaces enable WSI only through an explicit compatibleSurface adapter; never
-add platforms implicitly or substitute an offscreen image. Present attaches the
+add platforms implicitly or substitute an offscreen image. Vulkan present attaches the
 frame to a private command object on the existing pending owner and retires it by
-the backend presentation fence, never by command completion or queue idle. Take
+the backend presentation fence, never by command completion or queue idle.
+Metal presentDrawable registers presentation with the native scheduled handler;
+Apple permits releasing the caller drawable after registration. The Metal owner
+conservatively retains that lease through actual GPU completion, preserving
+unknown work. presentedTime may be zero for skipped frames and is not a resource
+retirement fence or WorkDone condition; completion does not claim display timing. Take
 the surface mutex before any device mutex, and report errors after both unlock.
 Reserve a typed surface-retirement record before publishing configuration. Arm it
 on the same pending list before dropping the last public/frame lease when acquire,
