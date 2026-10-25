@@ -7,26 +7,26 @@ Replay host traces and execute command streams through C, producing
 doe-zig-runtime-compatible artifacts.
 
 ## Authority
-Own command-stream parsing, quirk matching, CLI arguments, trace rows/meta and
-embedded sample inputs and output-oracle digests, not WebGPU semantics, shader meaning, backend execution,
-quirk data or bench comparability policy.
+Own parsing, arguments, quirk matching, embedded samples, traces and output digests;
+exclude GPU semantics, backend execution, quirk data and comparability policy.
 
 ## Scope
 Command streams and doe-plan-executor plans through `libwebgpu_doe_c` or
 `dawn-c-runtime`, including buffers, textures, compute, graphics, asynchronous
 diagnostics and real window-backed surfaces.
-[Coverage](README.md) defines admitted and rejected inputs.
+Explicit matching Dawn delegate lanes preserve textured triangles and real
+bundle/binding modes. Native proxy remains default.
+[Coverage](README.md) defines admission.
 
 ## Contracts
 `pipeline/trace/replay.py` artifact shape, the trace v1 hash chain, the
 command-stream examples and schema 1 output oracles apply.
 
 ## Invariants
-Unknown commands, fields and arguments reject before device work with exit 2.
+Unknown inputs reject before device work with exit 2.
 Host-only traces create no device and claim no execution. Replay mismatches fail before device work.
-No input is silently ignored, emulated or reported as success. Commands preserve the first device error; deferred work drains before successful completion. Oracles run on
-isolated zero-filled buffers; a digest mismatch fails the run. The meta names
-the executing adapter, so CPU runs stay identifiable.
+No silent ignoring, emulation or false success. Commands preserve the first device error; deferred work drains before successful completion. Oracles run on
+isolated zero-filled buffers; a digest mismatch fails the run. Metadata identifies the actual adapter.
 
 ## Acceptance
 [Owner checks](Makefile): host parsing, rejection, hash-chain and SHA-256 vectors;
