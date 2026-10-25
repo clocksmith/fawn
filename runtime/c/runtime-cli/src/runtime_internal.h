@@ -100,7 +100,6 @@ texture_entry *runtime_find_texture(doe_runtime *runtime, uint64_t handle);
 WGPUTexture runtime_binding_texture(doe_runtime *runtime, uint64_t handle, WGPUTextureUsage required, bool has_format,
     doe_texture_format format, doe_texture_format *view_format, doe_trace_execution *execution);
 WGPUTextureFormat runtime_webgpu_format(doe_texture_format format);
-WGPUTextureFormat runtime_webgpu_format(doe_texture_format format);
 /* The kernel source by doe-zig-runtime's resolution order; the returned path
  * and *source are the caller's to free. NULL when no candidate is readable. */
 char *runtime_resolve_kernel(const doe_runtime *runtime, const char *kernel, char **source, size_t *size);

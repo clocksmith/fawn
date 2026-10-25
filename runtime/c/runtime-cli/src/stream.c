@@ -46,6 +46,8 @@ static const kind_name KINDS[] = {
     {"draw_call", DOE_COMMAND_RENDER_DRAW},
     {"draw_indexed", DOE_COMMAND_RENDER_DRAW},
     {"render_pass", DOE_COMMAND_RENDER_PASS},
+    {"draw_indirect", DOE_COMMAND_DRAW_INDIRECT},
+    {"draw_indexed_indirect", DOE_COMMAND_DRAW_INDEXED_INDIRECT},
     {"sampler_create", DOE_COMMAND_SAMPLER_CREATE},
     {"create_sampler", DOE_COMMAND_SAMPLER_CREATE},
     {"sampler_destroy", DOE_COMMAND_SAMPLER_DESTROY},
@@ -69,6 +71,8 @@ const char *doe_command_tag(doe_command_kind kind)
     case DOE_COMMAND_SAMPLER_DESTROY: return "sampler_destroy";
     case DOE_COMMAND_DISPATCH: return "dispatch";
     case DOE_COMMAND_DISPATCH_INDIRECT: return "dispatch_indirect";
+    case DOE_COMMAND_DRAW_INDIRECT: return "draw_indirect";
+    case DOE_COMMAND_DRAW_INDEXED_INDIRECT: return "draw_indexed_indirect";
     }
     return "unknown";
 }
@@ -444,7 +448,7 @@ static void free_command(doe_command *command)
     if (command->kind == DOE_COMMAND_BUFFER_WRITE) free(command->as.buffer_write.words);
     if (command->kind == DOE_COMMAND_KERNEL_DISPATCH) free(command->as.dispatch.bindings);
     if (command->kind == DOE_COMMAND_TEXTURE_WRITE) free(command->as.texture_write.data);
-    if (command->kind == DOE_COMMAND_RENDER_DRAW || command->kind == DOE_COMMAND_RENDER_PASS) free(command->as.render.indices);
+    if (doe_command_is_render(command->kind)) free(command->as.render.indices);
 }
 
 void doe_stream_free(doe_stream *stream)
@@ -482,7 +486,9 @@ static bool parse_command(const doe_json_value *object, doe_command *command, si
         case DOE_COMMAND_TEXTURE_QUERY: return stream_parse_texture_query(object, command, index, error);
         case DOE_COMMAND_TEXTURE_DESTROY: return stream_parse_texture_destroy(object, command, index, error);
         case DOE_COMMAND_RENDER_DRAW:
-        case DOE_COMMAND_RENDER_PASS: return stream_parse_render(object, name, command, index, error);
+        case DOE_COMMAND_RENDER_PASS:
+        case DOE_COMMAND_DRAW_INDIRECT:
+        case DOE_COMMAND_DRAW_INDEXED_INDIRECT: return stream_parse_render(object, name, command, index, error);
         case DOE_COMMAND_SAMPLER_CREATE: return stream_parse_sampler(object, command, index, error);
         case DOE_COMMAND_SAMPLER_DESTROY: return stream_parse_sampler_destroy(object, command, index, error);
         case DOE_COMMAND_DISPATCH:

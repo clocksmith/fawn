@@ -448,7 +448,9 @@ bool doe_runtime_execute(doe_runtime *runtime, const doe_command *command, doe_t
     case DOE_COMMAND_TEXTURE_QUERY:
     case DOE_COMMAND_TEXTURE_DESTROY: ok = runtime_execute_texture(runtime, command, execution); break;
     case DOE_COMMAND_RENDER_DRAW:
-    case DOE_COMMAND_RENDER_PASS: ok = runtime_execute_render(runtime, command, execution); break;
+    case DOE_COMMAND_RENDER_PASS:
+    case DOE_COMMAND_DRAW_INDIRECT:
+    case DOE_COMMAND_DRAW_INDEXED_INDIRECT: ok = runtime_execute_render(runtime, command, execution); break;
     case DOE_COMMAND_SAMPLER_CREATE:
     case DOE_COMMAND_SAMPLER_DESTROY: ok = runtime_execute_sampler(runtime, command, execution); break;
     }
@@ -469,6 +471,8 @@ bool doe_runtime_execute(doe_runtime *runtime, const doe_command *command, doe_t
             [DOE_COMMAND_SAMPLER_DESTROY] = "sampler_destroy_timing_cpu_wall_clock_comparability_directional",
             [DOE_COMMAND_DISPATCH] = "dispatch_timing_cpu_wall_clock_comparability_directional",
             [DOE_COMMAND_DISPATCH_INDIRECT] = "dispatch_indirect_timing_cpu_wall_clock_comparability_directional",
+            [DOE_COMMAND_DRAW_INDIRECT] = "draw_indirect_timing_cpu_wall_clock_comparability_directional",
+            [DOE_COMMAND_DRAW_INDEXED_INDIRECT] = "draw_indexed_indirect_timing_cpu_wall_clock_comparability_directional",
         };
         execution->ok = true;
         execution->status_code = codes[command->kind];

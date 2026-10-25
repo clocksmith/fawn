@@ -24,8 +24,17 @@ typedef enum doe_command_kind {
     DOE_COMMAND_SAMPLER_CREATE,
     DOE_COMMAND_SAMPLER_DESTROY,
     DOE_COMMAND_DISPATCH,         /* dispatch, dispatch_workgroups, dispatch_invocations */
-    DOE_COMMAND_DISPATCH_INDIRECT
+    DOE_COMMAND_DISPATCH_INDIRECT,
+    DOE_COMMAND_DRAW_INDIRECT,        /* render_draw recorded as one indirect draw per draw */
+    DOE_COMMAND_DRAW_INDEXED_INDIRECT /* the indexed form */
 } doe_command_kind;
+
+/* The kinds whose payload is doe_render_draw. */
+static inline bool doe_command_is_render(doe_command_kind kind)
+{
+    return kind == DOE_COMMAND_RENDER_DRAW || kind == DOE_COMMAND_RENDER_PASS || kind == DOE_COMMAND_DRAW_INDIRECT ||
+        kind == DOE_COMMAND_DRAW_INDEXED_INDIRECT;
+}
 
 typedef enum doe_copy_direction {
     DOE_COPY_BUFFER_TO_BUFFER,

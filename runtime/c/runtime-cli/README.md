@@ -72,8 +72,14 @@ $(BUILD)/doe-c-runtime --commands examples/rmsnorm_tree_commands.json --execute 
   The target is a scratch texture unless `targetHandle` names an existing
   texture with RenderAttachment usage. `pipelineMode`, `bindGroupMode`,
   `encodeMode` and `bindGroupDynamicOffsets` are validated but, as in that lane,
-  do not change the recorded work. Explicit attachments, depth/stencil
-  attachments, vertex buffers, bind groups and indirect draws are rejected.
+  do not change the recorded work. `draw_indirect` and `draw_indexed_indirect`
+  take the same fields; their argument record is written `drawCount` times into
+  one Indirect buffer (as doe-zig-runtime's WebGPU multi-draw path does) and
+  drawn with one indirect draw per record, while doe-zig-runtime's native lane
+  draws them directly. Their `firstInstance` must be 0, since the
+  indirect-first-instance feature is not requested. Explicit attachments,
+  depth/stencil attachments, vertex buffers, bind groups and indirect-buffer
+  handles are rejected.
   `sampler_create` (`create_sampler`) and `sampler_destroy` (`destroy_sampler`)
   create and release samplers keyed by handle.
 - Kernels resolve as given, then under `--kernel-root`, then with `.wgsl`.
@@ -143,7 +149,7 @@ $(BUILD)/doe-c-runtime --commands examples/rmsnorm_tree_commands.json --execute 
   `--adapter auto|physical|software` is this CLI's own: `auto` takes a
   nonfallback adapter, else the fallback (CPU) adapter.
 
-Every other command kind (indirect draws, surfaces,
+Every other command kind (surfaces,
 `map_async`, `async_diagnostics` and the rest), field, texture dimension, sample count, aspect, format, oracle
 scope, `repeatSynchronization` value, semantic field on another kind, explicit
 `numericStability` annotation and argument is rejected with exit 2 before

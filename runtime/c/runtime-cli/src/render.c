@@ -7,7 +7,11 @@
  * is waited to completion. The target is a scratch texture for the command
  * unless the command names an existing texture. As in that lane, the
  * pipeline, bind-group and encode modes and dynamic offsets are validated but
- * do not change the recorded work. */
+ * do not change the recorded work. draw_indirect and draw_indexed_indirect
+ * write the command's draw arguments `draw_count` times into one Indirect
+ * buffer, as doe-zig-runtime's WebGPU path does for multi-draw, and record one
+ * indirect draw per record; doe-zig-runtime's native lane draws those
+ * commands directly. */
 #include "runtime_internal.h"
 #include <stdlib.h>
 #include <string.h>
@@ -102,6 +106,54 @@ static WGPUBuffer index_buffer(doe_runtime *runtime, const doe_render_draw *draw
     return buffer;
 }
 
+enum { INDIRECT_ARGUMENTS_MAX = 256u << 20 }; /* WebGPU's default maxBufferSize */
+
+/* The `draw_count` argument records of an indirect draw: VkDrawIndirectCommand
+ * or VkDrawIndexedIndirectCommand words, as WebGPU defines them. */
+static WGPUBuffer indirect_arguments(doe_runtime *runtime, const doe_render_draw *draw, uint32_t *stride,
+    doe_trace_execution *execution)
+{
+    uint32_t record[5];
+    uint32_t words = 4;
+    if (draw->indexed) {
+        record[0] = draw->index_count;
+        record[1] = draw->instance_count;
+        record[2] = draw->first_index;
+        memcpy(&record[3], &draw->base_vertex, 4);
+        record[4] = draw->first_instance;
+        words = 5;
+    } else {
+        record[0] = draw->vertex_count;
+        record[1] = draw->instance_count;
+        record[2] = draw->first_vertex;
+        record[3] = draw->first_instance;
+    }
+    *stride = words * 4;
+    /* Without indirect-first-instance, which this runtime does not request,
+     * WebGPU skips such a draw instead of failing it. */
+    if (draw->first_instance) {
+        runtime_fail(execution, "render_indirect_first_instance", "an indirect draw's first_instance must be 0");
+        return NULL;
+    }
+    uint64_t size = (uint64_t)draw->draw_count * *stride;
+    if (size > INDIRECT_ARGUMENTS_MAX) {
+        runtime_fail(execution, "render_indirect_arguments_too_large", "%u indirect draw records exceed %u bytes",
+            draw->draw_count, (unsigned)INDIRECT_ARGUMENTS_MAX);
+        return NULL;
+    }
+    uint8_t *bytes = malloc((size_t)size);
+    if (!bytes) { runtime_fail(execution, "out_of_memory", "out of memory"); return NULL; }
+    for (uint32_t i = 0; i < draw->draw_count; i++) memcpy(bytes + (size_t)i * *stride, record, *stride);
+    WGPUBufferDescriptor descriptor = WGPU_BUFFER_DESCRIPTOR_INIT;
+    descriptor.size = size;
+    descriptor.usage = WGPUBufferUsage_Indirect | WGPUBufferUsage_CopyDst;
+    WGPUBuffer buffer = wgpuDeviceCreateBuffer(runtime->device, &descriptor);
+    if (buffer) wgpuQueueWriteBuffer(runtime->queue, buffer, 0, bytes, (size_t)size);
+    else runtime_fail(execution, "render_indirect_buffer_failed", "the indirect argument buffer was not created");
+    free(bytes);
+    return buffer;
+}
+
 bool runtime_execute_render(doe_runtime *runtime, const doe_command *command, doe_trace_execution *execution)
 {
     const doe_render_draw *draw = &command->as.render;
@@ -127,6 +179,10 @@ bool runtime_execute_render(doe_runtime *runtime, const doe_command *command, do
     uint64_t index_size = 0;
     WGPUBuffer indices = ok && draw->indexed ? index_buffer(runtime, draw, &index_size) : NULL;
     if (ok && draw->indexed && !indices) ok = runtime_fail(execution, "render_index_buffer_failed", "the index buffer was not created");
+    bool indirect = command->kind == DOE_COMMAND_DRAW_INDIRECT || command->kind == DOE_COMMAND_DRAW_INDEXED_INDIRECT;
+    uint32_t stride = 0;
+    WGPUBuffer arguments = ok && indirect ? indirect_arguments(runtime, draw, &stride, execution) : NULL;
+    if (indirect && !arguments) ok = false;
     uint64_t setup_end = doe_runtime_monotonic_ns();
     uint64_t encode_end = setup_end;
     if (ok) {
@@ -158,7 +214,11 @@ bool runtime_execute_render(doe_runtime *runtime, const doe_command *command, do
                 0, index_size);
         }
         for (uint32_t i = 0; i < draw->draw_count; i++) {
-            if (indices) {
+            if (arguments) {
+                uint64_t offset = (uint64_t)i * stride;
+                if (indices) wgpuRenderPassEncoderDrawIndexedIndirect(pass, arguments, offset);
+                else wgpuRenderPassEncoderDrawIndirect(pass, arguments, offset);
+            } else if (indices) {
                 wgpuRenderPassEncoderDrawIndexed(pass, draw->index_count, draw->instance_count, draw->first_index,
                     draw->base_vertex, draw->first_instance);
             } else {
@@ -175,6 +235,10 @@ bool runtime_execute_render(doe_runtime *runtime, const doe_command *command, do
         execution->dispatch_count = draw->draw_count;
     }
     uint64_t end = doe_runtime_monotonic_ns();
+    if (arguments) {
+        wgpuBufferDestroy(arguments);
+        wgpuBufferRelease(arguments);
+    }
     if (indices) wgpuBufferRelease(indices);
     if (view) wgpuTextureViewRelease(view);
     if (scratch) {

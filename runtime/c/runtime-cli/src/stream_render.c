@@ -1,8 +1,9 @@
 /* SPDX-License-Identifier: MIT
  * render_draw, render_pass and sampler command parsing, following
  * doe-zig-runtime's command_parse_render.zig and command_json_extra.zig names,
- * defaults and validation. Fields of the explicit-attachment, depth, vertex
- * buffer, bind group and indirect forms are not admitted. */
+ * defaults and validation. draw_indirect and draw_indexed_indirect take the
+ * render_draw fields. Fields of the explicit-attachment, depth, vertex buffer,
+ * bind group and indirect-buffer forms are not admitted. */
 #include "stream_internal.h"
 #include <math.h>
 #include <stdlib.h>
@@ -180,7 +181,8 @@ bool stream_parse_render(const doe_json_value *object, const char *name, doe_com
         if (!read_float(object, blend_names[i][0], blend_names[i][1], &present, 0, &draw->blend[i], index, error)) return false;
         if (present) draw->has_blend_constant = true;
     }
-    return parse_indices(object, draw, strcasecmp(name, "draw_indexed") == 0, index, error);
+    bool kind_indexed = strcasecmp(name, "draw_indexed") == 0 || strcasecmp(name, "draw_indexed_indirect") == 0;
+    return parse_indices(object, draw, kind_indexed, index, error);
 }
 
 static bool read_sampler_handle(const doe_json_value *object, uint64_t *out, size_t index, doe_stream_error *error)
