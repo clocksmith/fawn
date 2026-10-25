@@ -127,6 +127,8 @@ static void check_adapter_and_defaults(state *s, WGPULimits *adapter)
         assert(value == row->fallback);
     }
     assert(adapter->maxUniformBufferBindingSize % 4 == 0 && adapter->maxStorageBufferBindingSize % 4 == 0);
+    /* WebGPU requires offset alignments of at least 32 (RADV reports 4). */
+    assert(adapter->minUniformBufferOffsetAlignment >= 32 && adapter->minStorageBufferOffsetAlignment >= 32);
     assert(adapter->maxStorageBufferBindingSize <= adapter->maxBufferSize);
     assert(adapter->maxUniformBufferBindingSize <= adapter->maxBufferSize);
 }
