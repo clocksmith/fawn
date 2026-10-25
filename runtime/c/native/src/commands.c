@@ -6,6 +6,7 @@ WGPUCommandEncoder wgpuDeviceCreateCommandEncoder(WGPUDevice handle,
 {
     native_device *device = (native_device *)handle;
     if (!device) return NULL;
+    if (native_vulkan_dead(device)) return native_lost_encoder(device, descriptor);
     doe_resource_encoder *encoder = NULL;
     native_lock(device);
     doe_resource_status status = descriptor && descriptor->nextInChain ? DOE_RESOURCE_UNSUPPORTED :

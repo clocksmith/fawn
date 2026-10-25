@@ -18,6 +18,7 @@ WGPUBuffer wgpuDeviceCreateBuffer(WGPUDevice handle, const WGPUBufferDescriptor 
 {
     native_device *device = (native_device *)handle;
     if (!device) return NULL;
+    if (native_vulkan_dead(device)) return native_lost_buffer(device, descriptor);
     return native_device_create_buffer(device, descriptor, device->backend.limits.maxBufferSize);
 }
 

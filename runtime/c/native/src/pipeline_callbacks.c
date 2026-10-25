@@ -27,7 +27,10 @@ WGPUFuture wgpuDeviceCreateComputePipelineAsync(WGPUDevice handle,
     if (!device || callback.nextInChain) return (WGPUFuture){0};
     native_device_retain(device);
     native_pipeline_error error = {WGPUErrorType_Internal, "compute pipeline creation failed"};
-    WGPUComputePipeline pipeline = native_create_compute_pipeline(device, descriptor, &error);
+    /* A lost device resolves with its invalid pipeline, never an error. */
+    WGPUComputePipeline pipeline = native_vulkan_dead(device) ?
+        native_lost_compute_pipeline(device, descriptor ? descriptor->label : (WGPUStringView){NULL, 0}) :
+        native_create_compute_pipeline(device, descriptor, &error);
     native_lock(device);
     bool lost = native_backend_status(&device->backend) == NATIVE_DEVICE_LOST;
     native_unlock(device);
@@ -64,7 +67,8 @@ static void deliver_compilation(void *context)
     native_shader *shader = doe_resource_shader_native(value.shader);
     WGPUCompilationMessage message = {0};
     WGPUCompilationInfo info = {0};
-    if (!shader->module) {
+    /* A module of a lost device has no compilation and reports no messages. */
+    if (shader && !shader->module) {
         const DoeCompilerDiagnostic *diagnostic = &shader->error.diagnostic;
         message = (WGPUCompilationMessage){.message=native_string(diagnostic->message),
             .type=WGPUCompilationMessageType_Error, .lineNum=diagnostic->line,

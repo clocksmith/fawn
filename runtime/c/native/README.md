@@ -119,6 +119,14 @@ and exact exports; absent platform loaders remain explicitly unavailable.
   async pipeline) that the callback owner refuses for lack of memory returns a
   zero future and, unless the operation already reports its own error, reports
   OutOfMemory to the device, so the callback is never lost silently.
+- On Vulkan, creation on a device that is no longer alive (destroy() or loss)
+  returns the resource owner's invalid object, never NULL. Getters keep their
+  descriptor values; operations on these objects fail silently; maps complete
+  with a failure status; async pipelines resolve with an invalid pipeline; and
+  compilation info reports no messages. Once a device is lost or destroyed,
+  `native_error` reports nothing, because WebGPU generates no errors after loss
+  and the loss callback is the one report. Metal and D3D12 still return NULL
+  there. `tests/lost_objects.c` covers objects created before and after destroy().
 - Adapters/devices have their sole native references here. Queue handles retain
   their device. Public buffers, shaders, layouts, groups, pipelines, encoders,
   passes and command buffers alias their typed C resource owners, not wrappers

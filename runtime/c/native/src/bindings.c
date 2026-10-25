@@ -7,6 +7,7 @@ WGPUBindGroupLayout wgpuDeviceCreateBindGroupLayout(WGPUDevice handle,
 {
     native_device *device = (native_device *)handle;
     if (!device) return NULL;
+    if (native_vulkan_dead(device)) return native_lost_bind_group_layout(device, (descriptor ? descriptor->label : (WGPUStringView){NULL, 0}));
     /* maxBindingsPerBindGroup bounds binding numbers, so distinct entries too. */
     bool valid = descriptor && !descriptor->nextInChain &&
         descriptor->entryCount <= device->backend.limits.maxBindingsPerBindGroup &&
@@ -85,6 +86,7 @@ WGPUPipelineLayout wgpuDeviceCreatePipelineLayout(WGPUDevice handle,
 {
     native_device *device = (native_device *)handle;
     if (!device) return NULL;
+    if (native_vulkan_dead(device)) return native_lost_pipeline_layout(device, (descriptor ? descriptor->label : (WGPUStringView){NULL, 0}));
     doe_resource_layout *groups[DOE_RESOURCE_MAX_GROUPS];
     bool valid = descriptor && !descriptor->nextInChain &&
         descriptor->bindGroupLayoutCount <= DOE_RESOURCE_MAX_GROUPS &&
@@ -139,6 +141,7 @@ WGPUBindGroup wgpuDeviceCreateBindGroup(WGPUDevice handle, const WGPUBindGroupDe
 {
     native_device *device = (native_device *)handle;
     if (!device) return NULL;
+    if (native_vulkan_dead(device)) return native_lost_bind_group(device, (descriptor ? descriptor->label : (WGPUStringView){NULL, 0}));
     bool valid = descriptor && !descriptor->nextInChain && descriptor->layout &&
         descriptor->entryCount <= device->backend.limits.maxBindingsPerBindGroup &&
         (!descriptor->entryCount || descriptor->entries);

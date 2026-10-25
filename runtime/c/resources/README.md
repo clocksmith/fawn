@@ -67,6 +67,13 @@ an alias of device-free compiled data or a second count for one WebGPU object.
   and program claims reject.
   After a failed bundle finish, `doe_resource_render_bundle_rejected` returns
   an invalid bundle that has no draws and fails execution.
+- A device that is no longer alive (lost or destroyed) still answers creation:
+  `doe_resource_*_lost` returns the WebGPU invalid object for buffers, textures,
+  views, samplers, layouts, pipeline layouts, bind groups, shaders, compute and
+  render pipelines, query sets and encoders. These objects own no backend
+  allocation and keep only the descriptor values their getters report; because
+  device liveness never returns, every operation on them rejects as UNAVAILABLE.
+  A lost buffer is never mapped, even mappedAtCreation.
 - `queries.c`, `external_textures.c`, `render.c`, `render_state.c`: real native query-pool ownership,
   retained imported plane views, and attachment/draw/query replay snapshots.
   Render begin/end packets bracket query events, including empty query scopes.
