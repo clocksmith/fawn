@@ -178,6 +178,23 @@ WGPUFuture native_callback_admit(doe_instance *instance, WGPUCallbackMode mode,
  * future only. Call after rollback, without the device mutex. */
 void native_callback_refused(native_device *device, doe_callback_status status);
 
+/* lost_objects.c: WebGPU invalid objects of a Vulkan device that is no longer
+ * alive (destroy() or loss); creation reports nothing and returns these. */
+bool native_device_dead(native_device *device);
+bool native_vulkan_dead(native_device *device);
+WGPUBuffer native_lost_buffer(native_device *device, const WGPUBufferDescriptor *descriptor);
+WGPUTexture native_lost_texture(native_device *device, const WGPUTextureDescriptor *descriptor);
+WGPUTextureView native_lost_view(native_device *device, doe_resource_texture *texture, const WGPUTextureViewDescriptor *descriptor);
+WGPUSampler native_lost_sampler(native_device *device, const WGPUSamplerDescriptor *descriptor);
+WGPUBindGroupLayout native_lost_bind_group_layout(native_device *device, WGPUStringView label);
+WGPUPipelineLayout native_lost_pipeline_layout(native_device *device, WGPUStringView label);
+WGPUBindGroup native_lost_bind_group(native_device *device, WGPUStringView label);
+WGPUShaderModule native_lost_shader(native_device *device, WGPUStringView label);
+WGPUComputePipeline native_lost_compute_pipeline(native_device *device, WGPUStringView label);
+WGPURenderPipeline native_lost_render_pipeline(native_device *device, WGPUStringView label);
+WGPUQuerySet native_lost_query_set(native_device *device, const WGPUQuerySetDescriptor *descriptor);
+WGPUCommandEncoder native_lost_encoder(native_device *device, const WGPUCommandEncoderDescriptor *descriptor);
+
 WGPUStatus native_limits(const native_backend *backend, WGPULimits *out);
 /* wgpuDeviceCreateBuffer with an explicit size bound: the public entry passes
  * the device's maxBufferSize; internal staging (not bound by WebGPU limits)

@@ -114,8 +114,15 @@ void native_error(native_device *device, WGPUErrorType type, const char *message
     native_device_retain(device);
     native_lock(device);
     bool lost = native_backend_status(&device->backend) == NATIVE_DEVICE_LOST;
+    const bool destroyed = device->destroyed;
     native_unlock(device);
     if (lost) native_loss_complete(device->loss, WGPUDeviceLostReason_Unknown, "native device lost");
+    /* WebGPU generates no errors once a device is lost or destroyed: its loss
+     * callback is the one report, and later operations fail silently. */
+    if (lost || destroyed) {
+        native_device_release(device);
+        return;
+    }
     doe_error_scope_result result = doe_error_scope_deliver(device->errors,
         (uint32_t)type, (const unsigned char *)message, strlen(message));
     if (result.status != DOE_ERROR_SCOPE_OK) abort();

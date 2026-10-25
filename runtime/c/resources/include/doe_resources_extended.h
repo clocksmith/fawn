@@ -260,6 +260,28 @@ void doe_resource_render_bundle_release(doe_resource_render_bundle *bundle);
 doe_resource_status doe_resource_render_pass_execute_bundles(doe_resource_render_pass *pass,
     doe_resource_render_bundle *const *bundles, size_t count);
 
+/* WebGPU invalid objects of a device that is no longer alive (lost or
+ * destroyed): creation on such a device returns one of these instead of
+ * nothing. They own no native payload and keep the descriptor values their
+ * getters report; device liveness never returns, so every operation on them
+ * rejects as UNAVAILABLE. NULL for an invalid configuration, a live device or
+ * allocation failure. A lost buffer is never mapped, even when requested
+ * mappedAtCreation. */
+doe_resource_shader *doe_resource_shader_lost(const doe_resource_config *config);
+/* native, which may be empty, is frontend bookkeeping released with the buffer. */
+doe_resource_buffer *doe_resource_buffer_lost(const doe_resource_config *config, const doe_resource_buffer_desc *desc,
+    doe_resource_native native);
+doe_resource_texture *doe_resource_texture_lost(const doe_resource_config *config, const doe_resource_texture_desc *desc);
+doe_resource_view *doe_resource_view_lost(doe_resource_texture *texture, const doe_resource_view_desc *desc);
+doe_resource_sampler *doe_resource_sampler_lost(const doe_resource_config *config);
+doe_resource_layout *doe_resource_layout_lost(const doe_resource_config *config);
+doe_resource_pipeline_layout *doe_resource_pipeline_layout_lost(const doe_resource_config *config);
+doe_resource_bind_group *doe_resource_bind_group_lost(const doe_resource_config *config);
+doe_resource_pipeline *doe_resource_pipeline_lost(const doe_resource_config *config);
+doe_resource_render_pipeline *doe_resource_render_pipeline_lost(const doe_resource_config *config);
+doe_resource_query_set *doe_resource_query_set_lost(const doe_resource_config *config, WGPUQueryType type, uint32_t count);
+doe_resource_encoder *doe_resource_encoder_lost(const doe_resource_config *config);
+
 #ifdef __cplusplus
 }
 #endif

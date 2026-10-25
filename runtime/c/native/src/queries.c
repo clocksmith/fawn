@@ -46,6 +46,7 @@ WGPUQuerySet wgpuDeviceCreateQuerySet(WGPUDevice handle, const WGPUQuerySetDescr
 {
     native_device *device = (native_device *)handle;
     if (!device) return NULL;
+    if (native_vulkan_dead(device)) return native_lost_query_set(device, descriptor);
     if (device->backend.kind != WGPUBackendType_Vulkan) {
         native_error(device, WGPUErrorType_Validation, "operation not yet composed for selected backend");
         return NULL;

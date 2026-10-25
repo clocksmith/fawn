@@ -192,6 +192,7 @@ WGPUComputePipeline wgpuDeviceCreateComputePipeline(WGPUDevice handle,
 {
     native_device *device = (native_device *)handle;
     if (!device) return NULL;
+    if (native_vulkan_dead(device)) return native_lost_compute_pipeline(device, (descriptor ? descriptor->label : (WGPUStringView){NULL, 0}));
     native_pipeline_error error = {WGPUErrorType_Internal, "compute pipeline creation failed"};
     WGPUComputePipeline pipeline = native_create_compute_pipeline(device, descriptor, &error);
     if (!pipeline) native_error(device, error.type, error.message);
@@ -205,6 +206,7 @@ WGPUBindGroupLayout wgpuComputePipelineGetBindGroupLayout(WGPUComputePipeline ha
     doe_resource_pipeline *pipeline = (doe_resource_pipeline *)handle;
     native_device *device = doe_resource_pipeline_device(pipeline);
     if (!device) return NULL;
+    if (native_vulkan_dead(device)) return native_lost_bind_group_layout(device, (WGPUStringView){NULL, 0});
     native_lock(device);
     doe_resource_layout *layout = NULL;
     doe_resource_status status = index < device->backend.limits.maxBindGroups ?
