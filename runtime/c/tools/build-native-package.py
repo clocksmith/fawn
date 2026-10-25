@@ -60,9 +60,14 @@ def lean_proof_record(source: Path) -> dict[str, object]:
 
 
 def execute(arguments: list[str], log: Path, cwd: Path | None = None) -> None:
+    environment = os.environ.copy()
+    # Build helpers import canonical inventories from the captured source. Python
+    # bytecode caches would mutate that immutable input tree and fail its audit.
+    environment["PYTHONDONTWRITEBYTECODE"] = "1"
     try:
         with log.open("wb") as output:
-            subprocess.run(arguments, cwd=cwd, stdout=output, stderr=subprocess.STDOUT, check=True)
+            subprocess.run(arguments, cwd=cwd, env=environment, stdout=output,
+                           stderr=subprocess.STDOUT, check=True)
     except subprocess.CalledProcessError:
         # Preserve the full log, but expose a bounded diagnostic in hosted jobs.
         with log.open("rb") as output:
@@ -257,7 +262,9 @@ def build_package(repo: Path, revision: str, build: Path, destination: Path,
     after = {p.relative_to(source).as_posix(): digest(p)
              for p in sorted(source.rglob("*")) if p.is_file()}
     if after != source_hashes:
-        raise RuntimeError("Captured source changed during the build")
+        changed = sorted(name for name in source_hashes.keys() | after.keys()
+                         if source_hashes.get(name) != after.get(name))
+        raise RuntimeError(f"Captured source changed during the build: {changed[:8]}")
     artifacts = {p.relative_to(moved).as_posix(): digest(p)
                  for p in sorted(moved.rglob("*")) if p.is_file()}
     manifest: dict[str, object] = {
