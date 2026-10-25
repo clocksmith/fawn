@@ -273,7 +273,6 @@ bool resource_format_color_renderable(WGPUTextureFormat format);
 bool resource_format_multisample(WGPUTextureFormat format);
 bool resource_format_resolvable(WGPUTextureFormat format);
 /* Core storage-texture format; read_write reports the read-write access subset. */
-bool resource_storage_format(WGPUTextureFormat format, bool *read_write);
 bool resource_format_aspect(WGPUTextureFormat format, WGPUTextureAspect aspect);
 unsigned resource_format_aspects(WGPUTextureFormat format);
 doe_resource_status resource_format_block(WGPUTextureFormat format, uint32_t *bytes,

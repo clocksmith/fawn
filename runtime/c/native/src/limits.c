@@ -24,9 +24,8 @@ typedef struct limit_field {
 enum { GROUP_VERTEX_BUDGET = 24 };
 
 /* WebGPU core defaults (https://gpuweb.github.io/gpuweb/#limits), including
- * maxImmediateSize 64. Every adapter reports at least these, so a device that
- * requires every adapter limit (as the CTS does) resolves. setImmediates and
- * shader immediates remain absent here (compiler); the limit is only reported. */
+ * maxImmediateSize 64, backed by shared immediate validation and target lowering.
+ * Adapters below this envelope must not infer core support from these defaults. */
 static const limit_field fields[] = {
     LIMIT32(maxTextureDimension1D, 8192), LIMIT32(maxTextureDimension2D, 8192),
     LIMIT32(maxTextureDimension3D, 2048), LIMIT32(maxTextureArrayLayers, 256),
@@ -248,6 +247,19 @@ WGPUStatus native_d3d12_limits(const doe_dx_caps *caps, WGPULimits *out)
         .maxImmediateSize = DOE_RESOURCE_MAX_IMMEDIATE_BYTES
     };
     return WGPUStatus_Success;
+}
+
+bool native_limits_support_core(const WGPULimits *limits)
+{
+    if (!limits || limits->nextInChain) return false;
+    for (size_t i=0;i<sizeof(fields)/sizeof(fields[0]);++i) {
+        const limit_field *field=&fields[i];
+        uint64_t value=field_get(limits,field);
+        if (value==(field->wide ? WGPU_LIMIT_U64_UNDEFINED : WGPU_LIMIT_U32_UNDEFINED) ||
+            better(field,field->fallback,value)) return false;
+        if (field->alignment && (!value || (value & (value-1)))) return false;
+    }
+    return true;
 }
 
 /* https://gpuweb.github.io/gpuweb/#dom-gpuadapter-requestdevice: a required

@@ -64,7 +64,8 @@ doe_dx_status doe_dx_native_texture_create(doe_dx_native_context *context,
     if ((desc->usage & DOE_DX_TEXTURE_SAMPLED) && !doe_dx_format_depth(desc->format))
         required |= D3D12_FORMAT_SUPPORT1_SHADER_LOAD;
     if (samples==1 && (desc->usage & DOE_DX_TEXTURE_SAMPLED) &&
-        info.kind==1)
+        info.kind==1 && desc->format!=DOE_DX_R32_FLOAT &&
+        desc->format!=DOE_DX_RG32_FLOAT && desc->format!=DOE_DX_RGBA32_FLOAT)
         required |= D3D12_FORMAT_SUPPORT1_SHADER_SAMPLE;
     if (desc->usage & DOE_DX_TEXTURE_STORAGE)
         required |= D3D12_FORMAT_SUPPORT1_TYPED_UNORDERED_ACCESS_VIEW | D3D12_FORMAT_SUPPORT1_SHADER_LOAD;
@@ -84,7 +85,7 @@ doe_dx_status doe_dx_native_texture_create(doe_dx_native_context *context,
     }
     if ((desc->usage & DOE_DX_TEXTURE_STORAGE) || exact_clear) {
         UINT storage = D3D12_FORMAT_SUPPORT2_UAV_TYPED_STORE;
-        if (desc->usage & DOE_DX_TEXTURE_STORAGE) storage |= D3D12_FORMAT_SUPPORT2_UAV_TYPED_LOAD;
+        /* Load capability follows actual binding access, not allocation usage. */
         if (((UINT)support.Support2 & storage) != storage)
             return doe_dx_fail(DOE_DX_UNSUPPORTED, 0, "texture.native_storage", error);
     }

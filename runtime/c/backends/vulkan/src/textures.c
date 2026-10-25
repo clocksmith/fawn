@@ -34,6 +34,12 @@ _Static_assert((int)DOE_VK_FORMAT_R8_SINT == (int)VK_FORMAT_R8_SINT, "r8sint");
 _Static_assert((int)DOE_VK_FORMAT_RG8_SNORM == (int)VK_FORMAT_R8G8_SNORM, "rg8snorm");
 _Static_assert((int)DOE_VK_FORMAT_RG8_UINT == (int)VK_FORMAT_R8G8_UINT, "rg8uint");
 _Static_assert((int)DOE_VK_FORMAT_RG8_SINT == (int)VK_FORMAT_R8G8_SINT, "rg8sint");
+_Static_assert((int)DOE_VK_FORMAT_R16_UNORM == (int)VK_FORMAT_R16_UNORM, "r16unorm");
+_Static_assert((int)DOE_VK_FORMAT_R16_SNORM == (int)VK_FORMAT_R16_SNORM, "r16snorm");
+_Static_assert((int)DOE_VK_FORMAT_RG16_UNORM == (int)VK_FORMAT_R16G16_UNORM, "rg16unorm");
+_Static_assert((int)DOE_VK_FORMAT_RG16_SNORM == (int)VK_FORMAT_R16G16_SNORM, "rg16snorm");
+_Static_assert((int)DOE_VK_FORMAT_RGBA16_UNORM == (int)VK_FORMAT_R16G16B16A16_UNORM, "rgba16unorm");
+_Static_assert((int)DOE_VK_FORMAT_RGBA16_SNORM == (int)VK_FORMAT_R16G16B16A16_SNORM, "rgba16snorm");
 _Static_assert((int)DOE_VK_FORMAT_R16_UINT == (int)VK_FORMAT_R16_UINT, "r16uint");
 _Static_assert((int)DOE_VK_FORMAT_R16_SINT == (int)VK_FORMAT_R16_SINT, "r16sint");
 _Static_assert((int)DOE_VK_FORMAT_RG16_UINT == (int)VK_FORMAT_R16G16_UINT, "rg16uint");
@@ -131,6 +137,8 @@ static uint32_t texel_bytes(doe_vk_texture_format format) {
         case DOE_VK_FORMAT_RG8_SNORM:
         case DOE_VK_FORMAT_RG8_UINT:
         case DOE_VK_FORMAT_RG8_SINT:
+        case DOE_VK_FORMAT_R16_UNORM:
+        case DOE_VK_FORMAT_R16_SNORM:
         case DOE_VK_FORMAT_R16_UINT:
         case DOE_VK_FORMAT_R16_SINT:
         case DOE_VK_FORMAT_D16_UNORM:
@@ -148,6 +156,8 @@ static uint32_t texel_bytes(doe_vk_texture_format format) {
         case DOE_VK_FORMAT_R32_UINT:
         case DOE_VK_FORMAT_R32_SINT:
         case DOE_VK_FORMAT_R32_FLOAT:
+        case DOE_VK_FORMAT_RG16_UNORM:
+        case DOE_VK_FORMAT_RG16_SNORM:
         case DOE_VK_FORMAT_RG16_UINT:
         case DOE_VK_FORMAT_RG16_SINT:
         case DOE_VK_FORMAT_RGB10A2_UNORM:
@@ -155,6 +165,8 @@ static uint32_t texel_bytes(doe_vk_texture_format format) {
         case DOE_VK_FORMAT_RGB9E5_UFLOAT:
         case DOE_VK_FORMAT_RG11B10_UFLOAT: return 4;
         case DOE_VK_FORMAT_D32_FLOAT_S8_UINT:
+        case DOE_VK_FORMAT_RGBA16_UNORM:
+        case DOE_VK_FORMAT_RGBA16_SNORM:
         case DOE_VK_FORMAT_RGBA16_UINT:
         case DOE_VK_FORMAT_RGBA16_SINT:
         case DOE_VK_FORMAT_RGBA16_FLOAT:

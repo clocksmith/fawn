@@ -59,7 +59,7 @@ int main(int argc, char **argv) {
     if (status != DOE_DX_OK) goto failed;
     status = doe_dx_buffer_create(context, 16, DOE_DX_READBACK, &ticks, &error);
     if (status != DOE_DX_OK) goto failed;
-    doe_dx_texture_binding_layout layout = {0, 0, DOE_DX_RGBA8_UNORM, DOE_DX_READ_ONLY};
+    doe_dx_texture_binding_layout layout = {0, 0, DOE_DX_RGBA8_UNORM, DOE_DX_READ_ONLY, false};
     doe_dx_static_sampler sampler = {0, 0, DOE_DX_NEAREST, DOE_DX_CLAMP, DOE_DX_CLAMP};
     doe_dx_graphics_pipeline_desc pipeline_desc = {
         vertex, vertex_size, {{fragment, fragment_size, NULL, 0}, &layout, 1, &sampler, 1}, DOE_DX_RGBA8_UNORM

@@ -12,30 +12,44 @@ typedef struct doe_dx_texture doe_dx_texture;
  * https://learn.microsoft.com/en-us/windows/win32/direct3d12/constants */
 enum { DOE_DX_MAX_TEXTURE_DIMENSION_1D = 16384, DOE_DX_MAX_TEXTURE_DIMENSION_2D = 16384,
     DOE_DX_MAX_TEXTURE_DIMENSION_3D = 2048, DOE_DX_MAX_TEXTURE_ARRAY_LAYERS = 2048 };
-/* Backend formats, not WebGPU enum values. All admitted formats have 4-byte
- * texels; actual SDK format support is checked during native allocation. */
+/* Backend formats, not WebGPU enum values. Size/block properties have one
+ * table owner; actual SDK format support is checked during native allocation. */
 typedef enum doe_dx_format {
 #define DOE_DX_FORMAT(name,public,sdk,bytes,block,kind) DOE_DX_##name,
 #include "doe_d3d12_formats.inc"
 #undef DOE_DX_FORMAT
 } doe_dx_format;
+typedef struct doe_dx_format_caps {
+    bool texture_1d, texture_2d, texture_3d, texture_cube;
+    bool shader_load, filterable, render_target, blendable, depth_stencil;
+    bool storage_store, storage_load, sample4, resolve;
+    bool comparison, multisample_load, stencil_load;
+} doe_dx_format_caps;
+/* Queried facts, not WebGPU feature policy. Failure leaves output unchanged. */
+doe_dx_status doe_dx_context_format_caps(const doe_dx_context *,doe_dx_format,doe_dx_format_caps *,doe_dx_error *);
 enum {
     DOE_DX_TEXTURE_COPY_SRC = 1, DOE_DX_TEXTURE_COPY_DST = 2,
     DOE_DX_TEXTURE_SAMPLED = 4, DOE_DX_TEXTURE_STORAGE = 8,
-    DOE_DX_TEXTURE_RENDER_ATTACHMENT = 16, /* RGBA8/BGRA8 UNORM. */
-    DOE_DX_TEXTURE_DEPTH_ATTACHMENT = 32 /* D32_FLOAT only. */
+    DOE_DX_TEXTURE_RENDER_ATTACHMENT = 16,
+    DOE_DX_TEXTURE_DEPTH_ATTACHMENT = 32
 };
 typedef struct doe_dx_texture_desc {
     uint32_t width, height;
     doe_dx_format format;
     uint32_t usage;
 } doe_dx_texture_desc;
+typedef enum doe_dx_swizzle {
+    DOE_DX_SWIZZLE_IDENTITY, DOE_DX_SWIZZLE_ZERO, DOE_DX_SWIZZLE_ONE,
+    DOE_DX_SWIZZLE_R, DOE_DX_SWIZZLE_G, DOE_DX_SWIZZLE_B, DOE_DX_SWIZZLE_A
+} doe_dx_swizzle;
 typedef struct doe_dx_texture_view_desc {
     doe_dx_format format;
     uint32_t dimension; /* 1D=1,2D=2,2DArray=3,Cube=4,CubeArray=5,3D=6. */
     uint32_t base_mip,mip_count,base_layer,layer_count;
     uint32_t aspect; /* All=0,depth=1,stencil=2. */
+    doe_dx_swizzle swizzle[4]; /* Zero-initialized identity; sampled views only. */
 } doe_dx_texture_view_desc;
+bool doe_dx_texture_view_swizzled(const doe_dx_texture_view_desc *);
 doe_dx_status doe_dx_texture_view_validate(const doe_dx_texture *,const doe_dx_texture_view_desc *,doe_dx_texture_view_desc *);
 typedef struct doe_dx_texture_shape {
     doe_dx_texture_desc image;
@@ -44,12 +58,10 @@ typedef struct doe_dx_texture_shape {
 } doe_dx_texture_shape;
 doe_dx_status doe_dx_texture_create_shape(doe_dx_context *,const doe_dx_texture_shape *,doe_dx_texture **,doe_dx_error *);
 doe_dx_status doe_dx_texture_shape_description(const doe_dx_texture *,doe_dx_texture_shape *);
-/* Explicit subset: 2D, one mip, one layer, one sample, immutable same-format
- * whole-resource views. The additive samples constructor admits sample4 render/depth attachments;
- * no compressed, sRGB or reinterpretation yet.
- * D32_FLOAT requires depth attachment usage and permits only full copy usages
- * in addition; it cannot be a sampled/storage binding.
- * A full upload/copy initializes the texture; dispatch never implies full writes. */
+/* Legacy constructor selects 2D, one mip/layer/sample. The shape constructor
+ * supports explicit dimensional spans; native allocation queries every actual
+ * format/usage/sample requirement. A full upload/copy initializes its span;
+ * dispatch never implies full writes. */
 doe_dx_status doe_dx_texture_create(doe_dx_context *context,
     const doe_dx_texture_desc *desc, doe_dx_texture **out, doe_dx_error *error);
 /* Additive sample contract; old constructor remains exactly single-sample. */
@@ -90,6 +102,7 @@ typedef struct doe_dx_texture_binding_layout {
     uint32_t shader_register, register_space;
     doe_dx_format format;
     doe_dx_binding_access access; /* READ_ONLY=SRV; READ_WRITE=typed UAV. */
+    bool write_only; /* UAV stores only; false preserves legacy read/write validation. */
 } doe_dx_texture_binding_layout;
 typedef enum doe_dx_filter { DOE_DX_NEAREST, DOE_DX_LINEAR } doe_dx_filter;
 typedef enum doe_dx_address { DOE_DX_CLAMP, DOE_DX_REPEAT, DOE_DX_MIRROR } doe_dx_address;

@@ -20,7 +20,7 @@ typedef struct fixture {
     property properties[16];
     transfer transfers[4];
     float min_lod, max_lod;
-    size_t format, type;
+    size_t format, type, read_write_tier;
     doe_mtl_range_abi mips, layers;
     doe_mtl_swizzle_abi swizzle;
     void *textures[DOE_MTL_TEXTURE_SLOTS], *samplers[DOE_MTL_SAMPLER_SLOTS];
@@ -98,6 +98,10 @@ static doe_objc_bool boolean(void *object, void *sel) {
         named(sel, "isDepth24Stencil8PixelFormatSupported")));
     return 1;
 }
+static size_t size_query(void *object,void *sel) {
+    assert(object==&active->device && named(sel,"readWriteTextureSupport"));
+    return active->read_write_tier;
+}
 static doe_objc_bool samples(void *object, void *sel, size_t count) {
     assert(object == &active->device && named(sel, "supportsTextureSampleCount:"));
     return (doe_objc_bool)(count == 1 || count == 4);
@@ -167,7 +171,7 @@ static void initialize(fixture *f) {
     r->blit_encoder = selector("blitCommandEncoder"); r->compute_encoder = selector("computeCommandEncoder");
     r->end_encoding = selector("endEncoding"); r->set_pipeline = selector("setComputePipelineState:");
     r->set_buffer = selector("setBuffer:offset:atIndex:"); r->dispatch = selector("dispatchThreadgroups:threadsPerThreadgroup:");
-    r->object_call = object_call; r->void_call = void_call; r->set_size_call = set_size;
+    r->object_call = object_call; r->void_call = void_call; r->set_size_call = set_size; r->size_call = size_query;
     r->set_float_call = set_float; r->named_call = named_call; r->view_call = view_call;
     r->responds_call = responds; r->family_call = family; r->bool_call = boolean; r->samples_call = samples;
     r->upload_image_call = upload; r->read_image_call = read_image; r->copy_image_call = copy_image;
@@ -232,6 +236,15 @@ static void views_and_caps(void) {
     assert(caps.sample_count_mask == 5 && caps.depth24_stencil8 && caps.multisample_array && caps.store_and_resolve);
     assert(!caps.separate_depth_stencil && caps.max_threads_per_workgroup == 1024);
     assert(caps.texture_swizzle && !caps.etc2_texture_compression && !caps.astc_texture_compression && !caps.astc_sliced_3d);
+    assert(caps.bgra8unorm_storage && caps.texture_formats_tier1 && !caps.texture_formats_tier2);
+    f.read_write_tier=2;
+    memset(&caps,0,sizeof(caps));
+    doe_mtl_objc_image_caps(&f.runtime,&f.device,&caps);
+    assert(caps.texture_formats_tier2);
+    f.read_write_tier=1;
+    memset(&caps,0,sizeof(caps));
+    doe_mtl_objc_image_caps(&f.runtime,&f.device,&caps);
+    assert(caps.texture_formats_tier1 && !caps.texture_formats_tier2);
     memset(&caps, 0, sizeof(caps)); f.family = 1002; f.float_filter = false;
     doe_mtl_objc_image_caps(&f.runtime, &f.device, &caps);
     assert(!caps.float32_filterable && caps.float32_blendable && caps.rg11b10_renderable);

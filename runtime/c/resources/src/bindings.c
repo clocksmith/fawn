@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-static doe_resource_status normalize_entry(const doe_resource_layout_entry *input,
+static doe_resource_status normalize_entry(uint32_t features, const doe_resource_layout_entry *input,
     doe_resource_layout_entry *out)
 {
     if (input->binding >= DOE_RESOURCE_MAX_BINDING_NUMBER) return DOE_RESOURCE_RANGE;
@@ -44,7 +44,7 @@ static doe_resource_status normalize_entry(const doe_resource_layout_entry *inpu
         if (resource_format_depth(input->storage_format) || width != 1 || height != 1)
             return DOE_RESOURCE_LAYOUT;
         bool read_write = false;
-        if (!resource_storage_format(input->storage_format, &read_write) ||
+        if (!doe_resource_format_storage(input->storage_format, features, &read_write) ||
             (input->storage_access == WGPUStorageTextureAccess_ReadWrite && !read_write)) return DOE_RESOURCE_LAYOUT;
         result.storage_access = input->storage_access;
         result.storage_format = input->storage_format;
@@ -146,7 +146,7 @@ doe_resource_status doe_resource_layout_create(const doe_resource_config *config
     slot_counts counts = {0};
     for (size_t i = 0; i < count; i++) {
         doe_resource_layout_entry entry;
-        doe_resource_status status = normalize_entry(&entries[i], &entry);
+        doe_resource_status status = normalize_entry(config->format_features, &entries[i], &entry);
         if (status != DOE_RESOURCE_OK) return status;
         for (size_t j = 0; j < i; j++)
             if (entries[j].binding == entry.binding) return DOE_RESOURCE_LAYOUT;
@@ -162,7 +162,7 @@ doe_resource_status doe_resource_layout_create(const doe_resource_config *config
     doe_resource_layout_entry *sorted = layout->entries;
     for (size_t i = 0; i < count; i++) {
         doe_resource_layout_entry entry;
-        if (normalize_entry(&entries[i], &entry) != DOE_RESOURCE_OK) abort(); /* Validated above. */
+        if (normalize_entry(config->format_features, &entries[i], &entry) != DOE_RESOURCE_OK) abort(); /* Validated above. */
         size_t position = i;
         while (position && sorted[position - 1].binding > entry.binding) {
             sorted[position] = sorted[position - 1];

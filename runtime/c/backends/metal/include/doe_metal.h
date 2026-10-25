@@ -57,6 +57,7 @@ typedef struct doe_mtl_caps {
     uint32_t subgroup_min_size, subgroup_max_size;
     bool etc2_texture_compression, astc_texture_compression, astc_sliced_3d;
     bool float32_filterable, float32_blendable, rg11b10_renderable;
+    bool bgra8unorm_storage, texture_formats_tier1, texture_formats_tier2;
     uint32_t sample_count_mask; /* Bit log2(count), native queried counts 1..16. */
     bool depth24_stencil8, separate_depth_stencil;
     bool depth_resolve, stencil_resolve, store_and_resolve, multisample_array;

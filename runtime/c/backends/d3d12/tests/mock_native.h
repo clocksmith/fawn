@@ -23,6 +23,8 @@ typedef struct mock_state {
     doe_dx_options open_options;
     bool override_caps;
     doe_dx_caps reported_caps;
+    doe_dx_format_caps reported_format_caps;
+    doe_dx_format queried_format;
     size_t contexts, buffers, pipelines, commands, textures, timestamps;
     size_t copies, dispatches, finishes, executes, signals, waits;
     size_t allocations, allocation_attempts, allocation_failure;

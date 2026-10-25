@@ -325,11 +325,67 @@ doe_resource_status doe_resource_format_color_components(WGPUTextureFormat forma
 
 /* WebGPU core storage-texture formats (texture format capabilities table):
  * read-only and write-only for all, read-write only for the r32 formats.
- * bgra8unorm needs bgra8unorm-storage and tier formats need texture-formats-
- * tier1/2; neither feature is offered, so those remain non-storage formats.
+ * bgra8unorm and tier formats require their copied requested feature bits.
  * https://gpuweb.github.io/gpuweb/#plain-color-formats */
-bool resource_storage_format(WGPUTextureFormat format, bool *read_write)
+bool doe_resource_format_storage(WGPUTextureFormat format, uint32_t features, bool *read_write)
 {
+    if (!read_write) return false;
+    /* Tier2 is not blanket read_write: the plain-color table names15 formats.
+     * Core r32 formats remain read_write without an optional feature. */
+    bool tier2_read_write=false;
+    switch (format) {
+    case WGPUTextureFormat_R8Unorm:
+    case WGPUTextureFormat_R8Uint:
+    case WGPUTextureFormat_R8Sint:
+    case WGPUTextureFormat_RGBA8Unorm:
+    case WGPUTextureFormat_RGBA8Uint:
+    case WGPUTextureFormat_RGBA8Sint:
+    case WGPUTextureFormat_R16Uint:
+    case WGPUTextureFormat_R16Sint:
+    case WGPUTextureFormat_R16Float:
+    case WGPUTextureFormat_RGBA16Uint:
+    case WGPUTextureFormat_RGBA16Sint:
+    case WGPUTextureFormat_RGBA16Float:
+    case WGPUTextureFormat_RGBA32Uint:
+    case WGPUTextureFormat_RGBA32Sint:
+    case WGPUTextureFormat_RGBA32Float:
+        tier2_read_write=(features & DOE_RESOURCE_FORMAT_TIER2) != 0;
+        break;
+    default: break;
+    }
+    if (features & DOE_RESOURCE_FORMAT_TIER2) features |= DOE_RESOURCE_FORMAT_TIER1;
+    if (format == WGPUTextureFormat_BGRA8Unorm) {
+        *read_write = tier2_read_write;
+        return (features & DOE_RESOURCE_FORMAT_BGRA8_STORAGE) != 0;
+    }
+    switch (format) {
+    case WGPUTextureFormat_R8Unorm:
+    case WGPUTextureFormat_R8Snorm:
+    case WGPUTextureFormat_R8Uint:
+    case WGPUTextureFormat_R8Sint:
+    case WGPUTextureFormat_RG8Unorm:
+    case WGPUTextureFormat_RG8Snorm:
+    case WGPUTextureFormat_RG8Uint:
+    case WGPUTextureFormat_RG8Sint:
+    case WGPUTextureFormat_R16Unorm:
+    case WGPUTextureFormat_R16Snorm:
+    case WGPUTextureFormat_R16Uint:
+    case WGPUTextureFormat_R16Sint:
+    case WGPUTextureFormat_R16Float:
+    case WGPUTextureFormat_RG16Unorm:
+    case WGPUTextureFormat_RG16Snorm:
+    case WGPUTextureFormat_RG16Uint:
+    case WGPUTextureFormat_RG16Sint:
+    case WGPUTextureFormat_RG16Float:
+    case WGPUTextureFormat_RGBA16Unorm:
+    case WGPUTextureFormat_RGBA16Snorm:
+    case WGPUTextureFormat_RGB10A2Uint:
+    case WGPUTextureFormat_RGB10A2Unorm:
+    case WGPUTextureFormat_RG11B10Ufloat:
+        *read_write = tier2_read_write;
+        return (features & DOE_RESOURCE_FORMAT_TIER1) != 0;
+    default: break;
+    }
     switch (format) {
     case WGPUTextureFormat_R32Float:
     case WGPUTextureFormat_R32Uint:
@@ -349,9 +405,36 @@ bool resource_storage_format(WGPUTextureFormat format, bool *read_write)
     case WGPUTextureFormat_RGBA32Uint:
     case WGPUTextureFormat_RGBA32Sint:
     case WGPUTextureFormat_RGBA32Float:
-        *read_write = false;
+        *read_write = tier2_read_write;
         return true;
     default:
         return false;
     }
+}
+
+
+doe_resource_status doe_resource_format_properties_get(WGPUTextureFormat format,
+    uint32_t features, doe_resource_format_properties *out)
+{
+    if (!out) return DOE_RESOURCE_INVALID_ARGUMENT;
+    doe_resource_format_properties properties={0};
+    doe_resource_status status=resource_format_block(format,&properties.block_bytes,
+        &properties.block_width,&properties.block_height);
+    if (status!=DOE_RESOURCE_OK) return status;
+    WGPUTextureSampleType sample=format_sample_type(format);
+    properties.depth=resource_format_aspect(format,WGPUTextureAspect_DepthOnly);
+    properties.stencil=resource_format_aspect(format,WGPUTextureAspect_StencilOnly);
+    properties.sampled=true;
+    properties.filterable=sample==WGPUTextureSampleType_Float || sample==WGPUTextureSampleType_Depth ||
+        (sample==WGPUTextureSampleType_UnfilterableFloat && (features & DOE_RESOURCE_FORMAT_FLOAT32_FILTERABLE));
+    properties.renderable=resource_format_depth(format) || doe_resource_format_color_renderable(format,features);
+    if (format==WGPUTextureFormat_RG11B10Ufloat &&
+        !(features & (DOE_RESOURCE_FORMAT_RG11_RENDER|DOE_RESOURCE_FORMAT_TIER1|DOE_RESOURCE_FORMAT_TIER2)))
+        properties.renderable=false;
+    properties.blendable=properties.renderable && (sample==WGPUTextureSampleType_Float ||
+        (sample==WGPUTextureSampleType_UnfilterableFloat && (features & DOE_RESOURCE_FORMAT_FLOAT32_BLENDABLE)));
+    properties.multisample=properties.renderable && resource_format_multisample(format);
+    properties.storage=doe_resource_format_storage(format,features,&properties.read_write);
+    *out=properties;
+    return DOE_RESOURCE_OK;
 }

@@ -78,7 +78,7 @@ WGPUTexture native_metal_create_texture(native_device *device, const WGPUTexture
         device->backend.limits.maxTextureArrayLayers};
     doe_mtl_texture_desc native = {.width=desc.width,.height=desc.height,.depth_or_layers=desc.depth_or_layers,
         .mip_levels=desc.mip_levels,.sample_count=desc.samples,.allow_format_views=desc.view_format_count != 0};
-    doe_resource_status valid = doe_resource_texture_validate(&desc, &limits);
+    doe_resource_status valid = doe_resource_texture_validate_with_features(&desc, &limits, device->resources.format_features);
     if (valid != DOE_RESOURCE_OK || !native_metal_format(device->features, desc.format, &native.format)) {
         native_error(device, valid != DOE_RESOURCE_OK ? native_resource_error(valid) : WGPUErrorType_Validation,
             "Metal texture shape, feature or format unsupported");
@@ -113,7 +113,7 @@ WGPUTexture native_metal_create_texture(native_device *device, const WGPUTexture
      * initialize by staging instead. This adds no public usage permission. */
     doe_resource_texture_desc clearing = desc;
     clearing.usage = WGPUTextureUsage_RenderAttachment;
-    if (doe_resource_texture_validate(&clearing, &limits) == DOE_RESOURCE_OK)
+    if (doe_resource_texture_validate_with_features(&clearing, &limits, device->resources.format_features) == DOE_RESOURCE_OK)
         native.usage |= DOE_MTL_TEXTURE_RENDER_TARGET;
     else native.usage |= DOE_MTL_TEXTURE_COPY_DST;
     native_texture *payload = calloc(1, sizeof(*payload));

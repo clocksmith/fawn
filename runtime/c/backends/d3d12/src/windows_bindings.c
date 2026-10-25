@@ -76,6 +76,18 @@ doe_dx_status doe_dx_prepare_sets(doe_dx_native_commands *commands,
             values->buffer_count>DOE_DX_MAX_BINDINGS-values->texture_count ||
             values->sampler_count>DOE_DX_MAX_DYNAMIC_SAMPLERS)
             return doe_dx_fail(DOE_DX_RANGE,0,"descriptors.set_range",error);
+        for (size_t j=0;j<values->texture_count;++j) {
+            const doe_dx_texture_binding_layout *layout=&sets[i].textures[j];
+            if (layout->access!=DOE_DX_READ_WRITE || layout->write_only) continue;
+            D3D12_FEATURE_DATA_FORMAT_SUPPORT support={0};
+            support.Format=doe_dx_texture_format(values->texture_views[j].dimension ?
+                values->texture_views[j].format : values->textures[j]->format);
+            HRESULT hr=ID3D12Device_CheckFeatureSupport(commands->context->device,
+                D3D12_FEATURE_FORMAT_SUPPORT,&support,sizeof(support));
+            if (FAILED(hr)) return doe_dx_hresult(hr,"CheckFeatureSupport.storage_read_write",error);
+            if (!((UINT)support.Support2&D3D12_FORMAT_SUPPORT2_UAV_TYPED_LOAD))
+                return doe_dx_fail(DOE_DX_UNSUPPORTED,0,"descriptors.storage_read_write",error);
+        }
         resource_count+=sets[i].resources->buffer_count+sets[i].resources->texture_count;
         sampler_count+=sets[i].resources->sampler_count;
     }

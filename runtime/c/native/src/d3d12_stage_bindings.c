@@ -51,6 +51,7 @@ static bool texture(const DoeCompilerResourceV4 *resource,const DoeCompilerHandl
         else if (resource->access == DOE_COMPILER_WRITE || resource->access == DOE_COMPILER_READ_WRITE)
             out->access = DOE_DX_READ_WRITE;
         else return false;
+        out->write_only=resource->access==DOE_COMPILER_WRITE;
         *contract = (doe_dx_texture_contract){.storage=true};
     } else if (resource->kind == DOE_COMPILER_SAMPLED_TEXTURE && !typed->storage_format &&
         resource->access == DOE_COMPILER_READ) {

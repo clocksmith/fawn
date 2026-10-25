@@ -98,6 +98,8 @@ doe_dx_status doe_dx_prepare_binding_plan(doe_dx_commands *commands,const doe_dx
         doe_dx_texture_view_desc view;
         status=doe_dx_texture_view_validate(texture,values->texture_views ? &values->texture_views[index] : NULL,&view);
         if (status!=DOE_DX_OK) return doe_dx_fail(status,0,"commands.bindings.texture_view",error);
+        if (usage==DOE_DX_TEXTURE_STORAGE && doe_dx_texture_view_swizzled(&view))
+            return doe_dx_fail(DOE_DX_INVALID_ARGUMENT,0,"commands.bindings.storage_swizzle",error);
         if (view.dimension!=(contract->dimension ? contract->dimension : 2u) ||
             ((contract->storage || layout->access==DOE_DX_READ_WRITE) && view.mip_count!=1))
             return doe_dx_fail(DOE_DX_INVALID_ARGUMENT,0,"commands.bindings.texture_dimension",error);

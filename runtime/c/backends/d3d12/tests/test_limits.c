@@ -24,7 +24,7 @@ static void mixed_descriptor_limits(void) {
             index < 12 ? DOE_DX_READ_ONLY : DOE_DX_READ_WRITE,
             index < 12 ? DOE_DX_UNIFORM : DOE_DX_STRUCTURED};
         textures[index] = (doe_dx_texture_binding_layout){index,1,DOE_DX_R32_UINT,
-            index < 16 ? DOE_DX_READ_ONLY : DOE_DX_READ_WRITE};
+            index < 16 ? DOE_DX_READ_ONLY : DOE_DX_READ_WRITE, false};
     }
     for (uint32_t index = 0; index < 16; ++index)
         samplers[index] = (doe_dx_static_sampler){index,0,DOE_DX_NEAREST,DOE_DX_CLAMP,DOE_DX_CLAMP};

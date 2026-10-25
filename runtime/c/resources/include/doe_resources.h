@@ -57,6 +57,14 @@ typedef struct doe_resource_native {
     void (*release)(void *userdata, void *handle);
 } doe_resource_native;
 
+#define DOE_RESOURCE_FORMAT_BGRA8_STORAGE 1u
+#define DOE_RESOURCE_FORMAT_TIER1 2u
+#define DOE_RESOURCE_FORMAT_TIER2 4u
+/* Query-only classification options; existing config admission is unchanged. */
+#define DOE_RESOURCE_FORMAT_RG11_RENDER 8u
+#define DOE_RESOURCE_FORMAT_FLOAT32_FILTERABLE 16u
+#define DOE_RESOURCE_FORMAT_FLOAT32_BLENDABLE 32u
+
 typedef struct doe_resource_config {
     doe_instance_allocator allocator;
     doe_resource_device device;
@@ -85,6 +93,8 @@ typedef struct doe_resource_config {
         uint32_t max_sampled_textures, max_samplers, max_storage_buffers;
         uint32_t max_storage_textures, max_uniform_buffers;
     } slot_limits;
+    /* Requested optional texture-format features, copied into every owner. */
+    uint32_t format_features;
 } doe_resource_config;
 
 typedef struct doe_resource_shader doe_resource_shader;
@@ -184,6 +194,21 @@ doe_resource_status doe_resource_format_color_components(WGPUTextureFormat forma
 
 doe_resource_status doe_resource_texture_validate(const doe_resource_texture_desc *desc,
     const doe_resource_texture_limits *limits);
+/* Baseline wrapper above disables optional format features. */
+doe_resource_status doe_resource_texture_validate_with_features(const doe_resource_texture_desc *desc,
+    const doe_resource_texture_limits *limits, uint32_t format_features);
+typedef struct doe_resource_format_properties {
+    uint32_t block_bytes, block_width, block_height;
+    bool sampled, filterable, renderable, blendable, multisample;
+    bool storage, read_write, depth, stencil;
+} doe_resource_format_properties;
+/* Semantic requirements, not physical backend capability. Output is untouched
+ * on failure. Native feature and physical-format admission remain separate. */
+doe_resource_status doe_resource_format_properties_get(WGPUTextureFormat format,
+    uint32_t format_features, doe_resource_format_properties *out);
+bool doe_resource_format_storage(WGPUTextureFormat format, uint32_t format_features, bool *read_write);
+bool doe_resource_format_color_renderable(WGPUTextureFormat format, uint32_t format_features);
+
 doe_resource_status doe_resource_texture_create(const doe_resource_config *config,
     const doe_resource_texture_desc *desc, const doe_resource_texture_limits *limits,
     doe_resource_native native, doe_resource_texture **out);

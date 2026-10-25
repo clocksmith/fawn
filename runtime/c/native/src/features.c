@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: MIT */
 #include "internal.h"
+#include "feature_formats.h"
 #include <stdlib.h>
 
 uint32_t native_timestamp_workgroup(const doe_vk_caps *caps)
@@ -72,11 +73,18 @@ uint32_t native_adapter_features(const native_backend *backend)
          * builtin consumers use the matching root-constant command signature. */
         if (caps->feature_level >= 0xb000 && caps->shader_model >= 0x60)
             features |= NATIVE_FEATURE(WGPUFeatureName_IndirectFirstInstance);
-        return features;
+        if (caps->texture_compression_bc && caps->texture_compression_bc_sliced_3d)
+            features |= NATIVE_FEATURE(WGPUFeatureName_TextureCompressionBCSliced3D);
+        if (caps->float32_filterable) features |= NATIVE_FEATURE(WGPUFeatureName_Float32Filterable);
+        if (caps->float32_blendable) features |= NATIVE_FEATURE(WGPUFeatureName_Float32Blendable);
+        if (caps->rg11b10ufloat_renderable) features |= NATIVE_FEATURE(WGPUFeatureName_RG11B10UfloatRenderable);
+        if (caps->feature_level >= 0xb000) features |= NATIVE_FEATURE(WGPUFeatureName_TextureComponentSwizzle);
+        if (native_d3d12_core_supported(backend)) features |= NATIVE_FEATURE(WGPUFeatureName_CoreFeaturesAndLimits);
+        return features | native_format_adapter_features(backend);
     }
     if (backend->kind == WGPUBackendType_Metal) {
         const doe_mtl_caps *caps = &backend->value.metal.caps;
-        return NATIVE_FEATURE(WGPUFeatureName_CoreFeaturesAndLimits) |
+        return native_format_adapter_features(backend) | NATIVE_FEATURE(WGPUFeatureName_CoreFeaturesAndLimits) |
             NATIVE_FEATURE(WGPUFeatureName_ShaderF16) |
             NATIVE_FEATURE(WGPUFeatureName_ClipDistances) |
             (caps->primitive_index ? NATIVE_FEATURE(WGPUFeatureName_PrimitiveIndex) : 0) |
@@ -181,7 +189,7 @@ uint32_t native_adapter_features(const native_backend *backend)
         if (formats_offer(context, bc, 14, block_volume))
             features |= NATIVE_FEATURE(WGPUFeatureName_TextureCompressionBCSliced3D);
     }
-    return features;
+    return features | native_format_adapter_features(backend);
 }
 bool native_requested_features(const native_backend *backend,
     const WGPUDeviceDescriptor *descriptor, uint32_t *enabled)
@@ -190,14 +198,19 @@ bool native_requested_features(const native_backend *backend,
      * core envelope. Compatibility adapters must not gain it on default creation. */
     const uint32_t offered = native_adapter_features(backend);
     uint32_t requested = offered & NATIVE_FEATURE(WGPUFeatureName_CoreFeaturesAndLimits);
+    uint32_t explicit_requested = 0;
     if (descriptor && descriptor->requiredFeatureCount) {
         if (!descriptor->requiredFeatures) return false;
         for (size_t i = 0; i < descriptor->requiredFeatureCount; ++i) {
             uint32_t name = (uint32_t)descriptor->requiredFeatures[i];
-            if (name >= 32 || !(offered & NATIVE_FEATURE(name))) return false;
+            if (name >= 32 || !(offered & NATIVE_FEATURE(name)) ||
+                (explicit_requested & NATIVE_FEATURE(name))) return false;
+            explicit_requested |= NATIVE_FEATURE(name);
             requested |= NATIVE_FEATURE(name);
         }
     }
+    requested = native_feature_dependencies(requested);
+    if (requested & ~offered) return false;
     *enabled = requested;
     return true;
 }

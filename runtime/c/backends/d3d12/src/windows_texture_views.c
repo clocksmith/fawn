@@ -30,7 +30,16 @@ static DXGI_FORMAT sampled_format(const doe_dx_native_texture *texture,const doe
 void doe_dx_texture_srv(const doe_dx_native_texture *texture,const doe_dx_texture_view_desc *span,D3D12_SHADER_RESOURCE_VIEW_DESC *out)
 {
     *out=(D3D12_SHADER_RESOURCE_VIEW_DESC){0};
-    out->Shader4ComponentMapping=D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+    UINT components[4];
+    for (UINT i=0;i<4;++i) {
+        switch (span->swizzle[i]) {
+        case DOE_DX_SWIZZLE_IDENTITY: components[i]=i; break;
+        case DOE_DX_SWIZZLE_ZERO: components[i]=D3D12_SHADER_COMPONENT_MAPPING_FORCE_VALUE_0; break;
+        case DOE_DX_SWIZZLE_ONE: components[i]=D3D12_SHADER_COMPONENT_MAPPING_FORCE_VALUE_1; break;
+        default: components[i]=(UINT)span->swizzle[i]-(UINT)DOE_DX_SWIZZLE_R; break;
+        }
+    }
+    out->Shader4ComponentMapping=D3D12_ENCODE_SHADER_4_COMPONENT_MAPPING(components[0],components[1],components[2],components[3]);
     if (!span->dimension) {
         out->Format=doe_dx_texture_format(texture->format);
         out->ViewDimension=texture->description.SampleDesc.Count>1 ? D3D12_SRV_DIMENSION_TEXTURE2DMS : D3D12_SRV_DIMENSION_TEXTURE2D;

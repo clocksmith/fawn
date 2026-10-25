@@ -9,8 +9,9 @@
 #include <string.h>
 
 /* WebGPU color-target capabilities (plain color formats table): byte cost,
- * alignment, multisampling and resolve. Formats absent here (snorm, rgb9e5,
- * compressed) are not color targets. rg11b10ufloat is listed; its feature gate
+ * alignment, multisampling and resolve. Optional normalized targets have
+ * a separate requested-feature gate; rgb9e5/compressed are not color targets.
+ * rg11b10ufloat is listed; its feature gate
  * is native. https://gpuweb.github.io/gpuweb/#plain-color-formats */
 enum { MS = 1, RESOLVE = 2 };
 static bool target_caps(WGPUTextureFormat format, uint32_t *cost, uint32_t *alignment, unsigned *caps)
@@ -18,6 +19,12 @@ static bool target_caps(WGPUTextureFormat format, uint32_t *cost, uint32_t *alig
     uint32_t c, a;
     unsigned flags;
     switch (format) {
+    case WGPUTextureFormat_R8Snorm: c=1; a=1; flags=MS|RESOLVE; break;
+    case WGPUTextureFormat_RG8Snorm: c=2; a=1; flags=MS|RESOLVE; break;
+    case WGPUTextureFormat_RGBA8Snorm: c=4; a=1; flags=MS|RESOLVE; break;
+    case WGPUTextureFormat_R16Unorm: case WGPUTextureFormat_R16Snorm: c=2; a=2; flags=MS|RESOLVE; break;
+    case WGPUTextureFormat_RG16Unorm: case WGPUTextureFormat_RG16Snorm: c=4; a=2; flags=MS|RESOLVE; break;
+    case WGPUTextureFormat_RGBA16Unorm: case WGPUTextureFormat_RGBA16Snorm: c=8; a=2; flags=MS|RESOLVE; break;
     case WGPUTextureFormat_R8Unorm: c = 1; a = 1; flags = MS | RESOLVE; break;
     case WGPUTextureFormat_R8Uint: case WGPUTextureFormat_R8Sint: c = 1; a = 1; flags = MS; break;
     case WGPUTextureFormat_RG8Unorm: c = 2; a = 1; flags = MS | RESOLVE; break;
@@ -53,9 +60,22 @@ static bool target_cost(WGPUTextureFormat format, uint32_t *cost, uint32_t *alig
     return target_caps(format, cost, alignment, NULL);
 }
 
+bool doe_resource_format_color_renderable(WGPUTextureFormat format, uint32_t features)
+{
+    switch (format) {
+    case WGPUTextureFormat_R8Snorm: case WGPUTextureFormat_RG8Snorm: case WGPUTextureFormat_RGBA8Snorm:
+    case WGPUTextureFormat_R16Unorm: case WGPUTextureFormat_R16Snorm:
+    case WGPUTextureFormat_RG16Unorm: case WGPUTextureFormat_RG16Snorm:
+    case WGPUTextureFormat_RGBA16Unorm: case WGPUTextureFormat_RGBA16Snorm:
+        if (!(features & (DOE_RESOURCE_FORMAT_TIER1 | DOE_RESOURCE_FORMAT_TIER2))) return false;
+        break;
+    default: break;
+    }
+    return target_caps(format, NULL, NULL, NULL);
+}
 bool resource_format_color_renderable(WGPUTextureFormat format)
 {
-    return target_caps(format, NULL, NULL, NULL);
+    return doe_resource_format_color_renderable(format, 0);
 }
 
 /* Depth/stencil formats all multisample; color formats per the table. */
@@ -88,7 +108,8 @@ doe_resource_status resource_color_layout_validate(const doe_resource_config *co
     for (uint32_t i = 0; i < count; i++) {
         if (formats[i] == WGPUTextureFormat_Undefined) continue;
         uint32_t cost, alignment;
-        if (!target_cost(formats[i], &cost, &alignment)) return DOE_RESOURCE_LAYOUT;
+        if (!doe_resource_format_color_renderable(formats[i], config->format_features) ||
+            !target_cost(formats[i], &cost, &alignment)) return DOE_RESOURCE_LAYOUT;
         /* total stays at most limit + 16, so neither step can wrap. */
         total = (total + alignment - 1) / alignment * alignment + cost;
         if (total > limit) return DOE_RESOURCE_RANGE;

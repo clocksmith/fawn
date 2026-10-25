@@ -31,6 +31,18 @@ bool doe_dx_format_valid(doe_dx_format format) {
     return doe_dx_format_properties(format,&info);
 }
 
+doe_dx_status doe_dx_context_format_caps(const doe_dx_context *context,doe_dx_format format,
+    doe_dx_format_caps *out,doe_dx_error *error)
+{
+    if (!context || !out || !doe_dx_format_valid(format))
+        return doe_dx_fail(DOE_DX_INVALID_ARGUMENT,0,"format_caps.arguments",error);
+    if (context->lost) return doe_dx_fail(DOE_DX_DEVICE_LOST,0,"format_caps.device",error);
+    doe_dx_format_caps result={0};
+    doe_dx_status status=doe_dx_native_format_caps(context->native,format,&result,error);
+    if (status==DOE_DX_OK) *out=result;
+    return status;
+}
+
 doe_dx_status doe_dx_texture_create(doe_dx_context *context,
     const doe_dx_texture_desc *desc,doe_dx_texture **out,doe_dx_error *error) {
     return doe_dx_texture_create_samples(context,desc,1,out,error);

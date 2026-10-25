@@ -4,6 +4,7 @@
 #include "doe_platform.h"
 #include "webgpu.h"
 #include "backend.h"
+#include "../../backends/d3d12/include/doe_d3d12_texture.h"
 #include "doe_metal_render.h"
 #include "doe_metal_query.h"
 #include "doe_metal_indirect.h"
@@ -89,6 +90,7 @@ typedef struct native_texture {
 typedef struct native_view {
     native_device *device;
     union { doe_vk_texture_view *view; doe_mtl_texture_view *metal; };
+    doe_dx_swizzle d3d12_swizzle[4];
 } native_view;
 typedef struct native_sampler {
     native_device *device;
@@ -327,6 +329,7 @@ void native_sampler_release(void *userdata, void *handle);
 bool native_compare_operation(WGPUCompareFunction value, uint32_t fallback, uint32_t *out);
 /* features: the device's enabled NATIVE_FEATURE bits; feature formats map only when enabled. */
 bool native_depth_format(uint32_t features, WGPUTextureFormat format, doe_vk_texture_format *out);
+bool native_format_feature_enabled(uint32_t features, WGPUTextureFormat format);
 bool native_texture_format(uint32_t features, WGPUTextureFormat format, doe_vk_texture_format *out);
 bool native_color_renderable(uint32_t features, WGPUTextureFormat format);
 /* Resource-normalized copy aspect to native aspect bits; Undefined is rejected

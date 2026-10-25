@@ -88,6 +88,9 @@ typedef struct doe_dx_caps {
     uint32_t shader_model; /* Queried up to SM6_2; 0 means query unavailable. */
     bool wave_ops, native_16bit_shader_ops;
     bool texture_compression_bc, depth32float_stencil8; /* Complete queried format contracts. */
+    bool texture_compression_bc_sliced_3d, bgra8unorm_storage;
+    bool texture_formats_tier1, texture_formats_tier2;
+    bool float32_filterable, float32_blendable, rg11b10ufloat_renderable;
     uint32_t wave_lane_count_min, wave_lane_count_max; /* Actual OPTIONS1 facts. */
     uint64_t timestamp_frequency; /* Actual direct-queue ticks per second, never a default. */
     doe_dx_limits limits;

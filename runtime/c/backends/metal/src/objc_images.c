@@ -37,6 +37,7 @@ bool doe_mtl_objc_load_image_selectors(doe_mtl_objc *r) {
     r->supports_samples = r->selector("supportsTextureSampleCount:");
     r->supports_depth24 = r->selector("isDepth24Stencil8PixelFormatSupported");
     r->supports_float_filter = r->selector("supports32BitFloatFiltering");
+    r->read_write_texture_support = r->selector("readWriteTextureSupport");
     return r->texture_class != NULL && r->sampler_class != NULL &&
         r->new_texture != NULL && r->new_view != NULL && r->new_sampler != NULL &&
         r->set_type != NULL && r->set_format != NULL && r->set_width != NULL &&
@@ -108,6 +109,17 @@ void doe_mtl_objc_image_caps(doe_mtl_objc *r, void *device, doe_mtl_caps *caps) 
         caps->stencil_resolve = r->family_call(device, r->supports_family, 1005) ||
             r->family_call(device, r->supports_family, 2002);
         caps->store_and_resolve = caps->depth_resolve;
+        /* The known Apple2/Mac2 format envelope includes BGRA storage and
+         * tier1 color/storage formats. The public tier1 feature also promises
+         * RG11 render/resolve, so its actual sample/resolve prerequisites apply.
+         * Tier2 is a separate queried read-write texture capability, never
+         * inferred from successful translation or from tier1 membership. */
+        caps->bgra8unorm_storage = color_formats;
+        caps->texture_formats_tier1 = color_formats && caps->rg11b10_renderable && caps->store_and_resolve;
+        if (r->read_write_texture_support && r->responds_call(device,r->responds,r->read_write_texture_support))
+            caps->texture_formats_tier2 = caps->texture_formats_tier1 &&
+                doe_mtl_objc_size(r,device,r->read_write_texture_support) == 2;
+
         caps->counting_visibility = caps->depth_resolve;
         caps->multisample_array = r->family_call(device, r->supports_family, 1007) ||
             r->family_call(device, r->supports_family, 2002);

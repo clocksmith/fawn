@@ -31,7 +31,7 @@ static doe_dx_timestamps *timestamps(doe_dx_context *context, uint32_t count) {
 }
 static doe_dx_pipeline *graphics(doe_dx_context *context, bool textured) {
     unsigned char bytecode = 1;
-    doe_dx_texture_binding_layout layout = {0, 0, DOE_DX_RGBA8_UNORM, DOE_DX_READ_ONLY};
+    doe_dx_texture_binding_layout layout = {0, 0, DOE_DX_RGBA8_UNORM, DOE_DX_READ_ONLY, false};
     doe_dx_graphics_pipeline_desc desc = {
         &bytecode, 1, {{&bytecode, 1, NULL, 0}, textured ? &layout : NULL, textured ? 1u : 0u, NULL, 0},
         DOE_DX_RGBA8_UNORM
