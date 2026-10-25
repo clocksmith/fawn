@@ -1,0 +1,1114 @@
+{
+  "kind": "paired-provider-msaa-correctness-diagnostic",
+  "consumer": "Retained Zig-to-C non-CSL parity investigation; does not replace frozen native MSAA acceptance",
+  "status": "correctness-failed-on-both-providers",
+  "comparison": "all64 RGBA pixel values and expected values identical; no C-only raster regression established for this case",
+  "sourceInputsSha256": {
+    "runtime/c/native/tests/msaa_scissor_diagnostic.c": "ae2c235f1334915dd31a4b78feb717d60825a4976509653c9e483160c2950eaf",
+    "runtime/c/native/tests/consumer.h": "09f2fbeeb77255394a4c66c496990adcf44e37d02762fb1c12fea8622e22f1f0",
+    "runtime/c/native/tests/adapter_class.h": "a7ee1dc66aec072095a4fea1b7e4ace346ba450ab62f6a49afbd52ffd0e00a2a",
+    "runtime/c/native/tests/msaa_sampling.c": "3297eb4472c40e7594e411076e5fb73e7ab259ca3c7a595146d63ad90f62575b",
+    "runtime/zig/vendor/webgpu-headers/webgpu.h": "7691d76ceb67056f89e97b9ff0b62163eacf19a8e0e09a8fa7dbb32069b7978c"
+  },
+  "providers": {
+    "c": {
+      "sourceCommit": "5babea0a8a28b74bd39732702506fb05b8a7038d",
+      "library": "libwebgpu_doe_c.so",
+      "sha256": "e4d95e4df227fc0d74e7b6036c7f10a0104d5437f2e6ddf53c588bccfa7b9e83",
+      "diagnosticExit": 1,
+      "makeTargetExit": 2
+    },
+    "zig": {
+      "sourceCommit": "9918f132fc6417ad5b268ab5405d387fdfb33ede",
+      "library": "libwebgpu_doe.so",
+      "sha256": "3e60dbfa3281210d98639fd2f30e81ed001a31f066e39e106cd867a07b3847d1",
+      "compiler": "Zig0.15.2",
+      "build": "zig build dropin -j1 -Doptimize=ReleaseFast",
+      "diagnosticExit": 1,
+      "makeTargetExit": 2
+    }
+  },
+  "environment": {
+    "platform": "Linux x86_64",
+    "cc": "gcc (Debian14.2.0-19)14.2.0",
+    "adapter": "llvmpipe (LLVM19.1.7,256bits)",
+    "adapterType": "CPU",
+    "driverPackage": "mesa-vulkan-drivers25.0.7-2+deb13u1_amd64.deb",
+    "driverPackageSha256": "caf2f7d296b7522efe74e40a74bce762a3ce84c33b53b5e54e1248ac2e0a13a5",
+    "driverLibrary": "libvulkan_lvp.so",
+    "driverLibrarySha256": "0004262f4dc95585492d55925face67a79a7c869ad8760b42ae01bd0bdb807a2",
+    "LP_NUM_THREADS": 1,
+    "MESA_SHADER_CACHE_DISABLE": true,
+    "cpuSecondsCap": 25,
+    "wallSecondsCap": 30,
+    "virtualBytesCap": 2147483648
+  },
+  "case": {
+    "size": [
+      8,
+      8
+    ],
+    "format": "RGBA8Unorm",
+    "samples": 4,
+    "scissor": [
+      4,
+      0,
+      4,
+      8
+    ],
+    "clear": [
+      0,
+      0,
+      255,
+      255
+    ],
+    "draw": [
+      255,
+      0,
+      0,
+      255
+    ],
+    "readbackBytesPerRow": 256,
+    "tolerance": 0
+  },
+  "pixelLogSha256": "af6ec6448ff53cef7434a675ec2458e35ee14d416d32c9e24a6a0dee32994b6e",
+  "mismatchingPixels": 8,
+  "pixelsForBothProviders": [
+    {
+      "x": 0,
+      "y": 0,
+      "actual": [
+        0,
+        0,
+        255,
+        255
+      ],
+      "expected": [
+        0,
+        0,
+        255,
+        255
+      ]
+    },
+    {
+      "x": 1,
+      "y": 0,
+      "actual": [
+        0,
+        0,
+        255,
+        255
+      ],
+      "expected": [
+        0,
+        0,
+        255,
+        255
+      ]
+    },
+    {
+      "x": 2,
+      "y": 0,
+      "actual": [
+        0,
+        0,
+        255,
+        255
+      ],
+      "expected": [
+        0,
+        0,
+        255,
+        255
+      ]
+    },
+    {
+      "x": 3,
+      "y": 0,
+      "actual": [
+        128,
+        0,
+        128,
+        255
+      ],
+      "expected": [
+        0,
+        0,
+        255,
+        255
+      ]
+    },
+    {
+      "x": 4,
+      "y": 0,
+      "actual": [
+        255,
+        0,
+        0,
+        255
+      ],
+      "expected": [
+        255,
+        0,
+        0,
+        255
+      ]
+    },
+    {
+      "x": 5,
+      "y": 0,
+      "actual": [
+        255,
+        0,
+        0,
+        255
+      ],
+      "expected": [
+        255,
+        0,
+        0,
+        255
+      ]
+    },
+    {
+      "x": 6,
+      "y": 0,
+      "actual": [
+        255,
+        0,
+        0,
+        255
+      ],
+      "expected": [
+        255,
+        0,
+        0,
+        255
+      ]
+    },
+    {
+      "x": 7,
+      "y": 0,
+      "actual": [
+        255,
+        0,
+        0,
+        255
+      ],
+      "expected": [
+        255,
+        0,
+        0,
+        255
+      ]
+    },
+    {
+      "x": 0,
+      "y": 1,
+      "actual": [
+        0,
+        0,
+        255,
+        255
+      ],
+      "expected": [
+        0,
+        0,
+        255,
+        255
+      ]
+    },
+    {
+      "x": 1,
+      "y": 1,
+      "actual": [
+        0,
+        0,
+        255,
+        255
+      ],
+      "expected": [
+        0,
+        0,
+        255,
+        255
+      ]
+    },
+    {
+      "x": 2,
+      "y": 1,
+      "actual": [
+        0,
+        0,
+        255,
+        255
+      ],
+      "expected": [
+        0,
+        0,
+        255,
+        255
+      ]
+    },
+    {
+      "x": 3,
+      "y": 1,
+      "actual": [
+        128,
+        0,
+        128,
+        255
+      ],
+      "expected": [
+        0,
+        0,
+        255,
+        255
+      ]
+    },
+    {
+      "x": 4,
+      "y": 1,
+      "actual": [
+        255,
+        0,
+        0,
+        255
+      ],
+      "expected": [
+        255,
+        0,
+        0,
+        255
+      ]
+    },
+    {
+      "x": 5,
+      "y": 1,
+      "actual": [
+        255,
+        0,
+        0,
+        255
+      ],
+      "expected": [
+        255,
+        0,
+        0,
+        255
+      ]
+    },
+    {
+      "x": 6,
+      "y": 1,
+      "actual": [
+        255,
+        0,
+        0,
+        255
+      ],
+      "expected": [
+        255,
+        0,
+        0,
+        255
+      ]
+    },
+    {
+      "x": 7,
+      "y": 1,
+      "actual": [
+        255,
+        0,
+        0,
+        255
+      ],
+      "expected": [
+        255,
+        0,
+        0,
+        255
+      ]
+    },
+    {
+      "x": 0,
+      "y": 2,
+      "actual": [
+        0,
+        0,
+        255,
+        255
+      ],
+      "expected": [
+        0,
+        0,
+        255,
+        255
+      ]
+    },
+    {
+      "x": 1,
+      "y": 2,
+      "actual": [
+        0,
+        0,
+        255,
+        255
+      ],
+      "expected": [
+        0,
+        0,
+        255,
+        255
+      ]
+    },
+    {
+      "x": 2,
+      "y": 2,
+      "actual": [
+        0,
+        0,
+        255,
+        255
+      ],
+      "expected": [
+        0,
+        0,
+        255,
+        255
+      ]
+    },
+    {
+      "x": 3,
+      "y": 2,
+      "actual": [
+        128,
+        0,
+        128,
+        255
+      ],
+      "expected": [
+        0,
+        0,
+        255,
+        255
+      ]
+    },
+    {
+      "x": 4,
+      "y": 2,
+      "actual": [
+        255,
+        0,
+        0,
+        255
+      ],
+      "expected": [
+        255,
+        0,
+        0,
+        255
+      ]
+    },
+    {
+      "x": 5,
+      "y": 2,
+      "actual": [
+        255,
+        0,
+        0,
+        255
+      ],
+      "expected": [
+        255,
+        0,
+        0,
+        255
+      ]
+    },
+    {
+      "x": 6,
+      "y": 2,
+      "actual": [
+        255,
+        0,
+        0,
+        255
+      ],
+      "expected": [
+        255,
+        0,
+        0,
+        255
+      ]
+    },
+    {
+      "x": 7,
+      "y": 2,
+      "actual": [
+        255,
+        0,
+        0,
+        255
+      ],
+      "expected": [
+        255,
+        0,
+        0,
+        255
+      ]
+    },
+    {
+      "x": 0,
+      "y": 3,
+      "actual": [
+        0,
+        0,
+        255,
+        255
+      ],
+      "expected": [
+        0,
+        0,
+        255,
+        255
+      ]
+    },
+    {
+      "x": 1,
+      "y": 3,
+      "actual": [
+        0,
+        0,
+        255,
+        255
+      ],
+      "expected": [
+        0,
+        0,
+        255,
+        255
+      ]
+    },
+    {
+      "x": 2,
+      "y": 3,
+      "actual": [
+        0,
+        0,
+        255,
+        255
+      ],
+      "expected": [
+        0,
+        0,
+        255,
+        255
+      ]
+    },
+    {
+      "x": 3,
+      "y": 3,
+      "actual": [
+        128,
+        0,
+        128,
+        255
+      ],
+      "expected": [
+        0,
+        0,
+        255,
+        255
+      ]
+    },
+    {
+      "x": 4,
+      "y": 3,
+      "actual": [
+        255,
+        0,
+        0,
+        255
+      ],
+      "expected": [
+        255,
+        0,
+        0,
+        255
+      ]
+    },
+    {
+      "x": 5,
+      "y": 3,
+      "actual": [
+        255,
+        0,
+        0,
+        255
+      ],
+      "expected": [
+        255,
+        0,
+        0,
+        255
+      ]
+    },
+    {
+      "x": 6,
+      "y": 3,
+      "actual": [
+        255,
+        0,
+        0,
+        255
+      ],
+      "expected": [
+        255,
+        0,
+        0,
+        255
+      ]
+    },
+    {
+      "x": 7,
+      "y": 3,
+      "actual": [
+        255,
+        0,
+        0,
+        255
+      ],
+      "expected": [
+        255,
+        0,
+        0,
+        255
+      ]
+    },
+    {
+      "x": 0,
+      "y": 4,
+      "actual": [
+        0,
+        0,
+        255,
+        255
+      ],
+      "expected": [
+        0,
+        0,
+        255,
+        255
+      ]
+    },
+    {
+      "x": 1,
+      "y": 4,
+      "actual": [
+        0,
+        0,
+        255,
+        255
+      ],
+      "expected": [
+        0,
+        0,
+        255,
+        255
+      ]
+    },
+    {
+      "x": 2,
+      "y": 4,
+      "actual": [
+        0,
+        0,
+        255,
+        255
+      ],
+      "expected": [
+        0,
+        0,
+        255,
+        255
+      ]
+    },
+    {
+      "x": 3,
+      "y": 4,
+      "actual": [
+        128,
+        0,
+        128,
+        255
+      ],
+      "expected": [
+        0,
+        0,
+        255,
+        255
+      ]
+    },
+    {
+      "x": 4,
+      "y": 4,
+      "actual": [
+        255,
+        0,
+        0,
+        255
+      ],
+      "expected": [
+        255,
+        0,
+        0,
+        255
+      ]
+    },
+    {
+      "x": 5,
+      "y": 4,
+      "actual": [
+        255,
+        0,
+        0,
+        255
+      ],
+      "expected": [
+        255,
+        0,
+        0,
+        255
+      ]
+    },
+    {
+      "x": 6,
+      "y": 4,
+      "actual": [
+        255,
+        0,
+        0,
+        255
+      ],
+      "expected": [
+        255,
+        0,
+        0,
+        255
+      ]
+    },
+    {
+      "x": 7,
+      "y": 4,
+      "actual": [
+        255,
+        0,
+        0,
+        255
+      ],
+      "expected": [
+        255,
+        0,
+        0,
+        255
+      ]
+    },
+    {
+      "x": 0,
+      "y": 5,
+      "actual": [
+        0,
+        0,
+        255,
+        255
+      ],
+      "expected": [
+        0,
+        0,
+        255,
+        255
+      ]
+    },
+    {
+      "x": 1,
+      "y": 5,
+      "actual": [
+        0,
+        0,
+        255,
+        255
+      ],
+      "expected": [
+        0,
+        0,
+        255,
+        255
+      ]
+    },
+    {
+      "x": 2,
+      "y": 5,
+      "actual": [
+        0,
+        0,
+        255,
+        255
+      ],
+      "expected": [
+        0,
+        0,
+        255,
+        255
+      ]
+    },
+    {
+      "x": 3,
+      "y": 5,
+      "actual": [
+        128,
+        0,
+        128,
+        255
+      ],
+      "expected": [
+        0,
+        0,
+        255,
+        255
+      ]
+    },
+    {
+      "x": 4,
+      "y": 5,
+      "actual": [
+        255,
+        0,
+        0,
+        255
+      ],
+      "expected": [
+        255,
+        0,
+        0,
+        255
+      ]
+    },
+    {
+      "x": 5,
+      "y": 5,
+      "actual": [
+        255,
+        0,
+        0,
+        255
+      ],
+      "expected": [
+        255,
+        0,
+        0,
+        255
+      ]
+    },
+    {
+      "x": 6,
+      "y": 5,
+      "actual": [
+        255,
+        0,
+        0,
+        255
+      ],
+      "expected": [
+        255,
+        0,
+        0,
+        255
+      ]
+    },
+    {
+      "x": 7,
+      "y": 5,
+      "actual": [
+        255,
+        0,
+        0,
+        255
+      ],
+      "expected": [
+        255,
+        0,
+        0,
+        255
+      ]
+    },
+    {
+      "x": 0,
+      "y": 6,
+      "actual": [
+        0,
+        0,
+        255,
+        255
+      ],
+      "expected": [
+        0,
+        0,
+        255,
+        255
+      ]
+    },
+    {
+      "x": 1,
+      "y": 6,
+      "actual": [
+        0,
+        0,
+        255,
+        255
+      ],
+      "expected": [
+        0,
+        0,
+        255,
+        255
+      ]
+    },
+    {
+      "x": 2,
+      "y": 6,
+      "actual": [
+        0,
+        0,
+        255,
+        255
+      ],
+      "expected": [
+        0,
+        0,
+        255,
+        255
+      ]
+    },
+    {
+      "x": 3,
+      "y": 6,
+      "actual": [
+        128,
+        0,
+        128,
+        255
+      ],
+      "expected": [
+        0,
+        0,
+        255,
+        255
+      ]
+    },
+    {
+      "x": 4,
+      "y": 6,
+      "actual": [
+        255,
+        0,
+        0,
+        255
+      ],
+      "expected": [
+        255,
+        0,
+        0,
+        255
+      ]
+    },
+    {
+      "x": 5,
+      "y": 6,
+      "actual": [
+        255,
+        0,
+        0,
+        255
+      ],
+      "expected": [
+        255,
+        0,
+        0,
+        255
+      ]
+    },
+    {
+      "x": 6,
+      "y": 6,
+      "actual": [
+        255,
+        0,
+        0,
+        255
+      ],
+      "expected": [
+        255,
+        0,
+        0,
+        255
+      ]
+    },
+    {
+      "x": 7,
+      "y": 6,
+      "actual": [
+        255,
+        0,
+        0,
+        255
+      ],
+      "expected": [
+        255,
+        0,
+        0,
+        255
+      ]
+    },
+    {
+      "x": 0,
+      "y": 7,
+      "actual": [
+        0,
+        0,
+        255,
+        255
+      ],
+      "expected": [
+        0,
+        0,
+        255,
+        255
+      ]
+    },
+    {
+      "x": 1,
+      "y": 7,
+      "actual": [
+        0,
+        0,
+        255,
+        255
+      ],
+      "expected": [
+        0,
+        0,
+        255,
+        255
+      ]
+    },
+    {
+      "x": 2,
+      "y": 7,
+      "actual": [
+        0,
+        0,
+        255,
+        255
+      ],
+      "expected": [
+        0,
+        0,
+        255,
+        255
+      ]
+    },
+    {
+      "x": 3,
+      "y": 7,
+      "actual": [
+        128,
+        0,
+        128,
+        255
+      ],
+      "expected": [
+        0,
+        0,
+        255,
+        255
+      ]
+    },
+    {
+      "x": 4,
+      "y": 7,
+      "actual": [
+        255,
+        0,
+        0,
+        255
+      ],
+      "expected": [
+        255,
+        0,
+        0,
+        255
+      ]
+    },
+    {
+      "x": 5,
+      "y": 7,
+      "actual": [
+        255,
+        0,
+        0,
+        255
+      ],
+      "expected": [
+        255,
+        0,
+        0,
+        255
+      ]
+    },
+    {
+      "x": 6,
+      "y": 7,
+      "actual": [
+        255,
+        0,
+        0,
+        255
+      ],
+      "expected": [
+        255,
+        0,
+        0,
+        255
+      ]
+    },
+    {
+      "x": 7,
+      "y": 7,
+      "actual": [
+        255,
+        0,
+        0,
+        255
+      ],
+      "expected": [
+        255,
+        0,
+        0,
+        255
+      ]
+    }
+  ],
+  "frozenConsumer": {
+    "path": "runtime/c/native/tests/msaa_sampling.c",
+    "unchanged": true,
+    "c": "fails line245 masked sample exact comparison",
+    "zig": "fails earlier line79: invalid multisampled Float layout unexpectedly accepted",
+    "verdict": "Neither frozen consumer passes; earlier Zig failure was not removed or bypassed. Separate diagnostic is not a replacement gate."
+  },
+  "limits": [
+    "CPU Vulkan only; no physical GPU qualification",
+    "No tolerances changed, no production workaround, no acceptance waiver",
+    "Same symptom also observed in separate direct-Vulkan diagnostic; this receipt independently compares public C and Zig providers"
+  ]
+}
