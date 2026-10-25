@@ -3,8 +3,8 @@
  * ABI, with the resource rules of doe-zig-runtime's WebGPU command path
  * (runtime/zig/src/core/resource): a copy source that does not exist yet is
  * created zero-filled, a resource too small or of another shape is replaced
- * (losing its contents), and each command is one submission waited to
- * completion. Buffer-side layouts fall back to the other side's bytes per row
+ * (losing its contents), and each copy command is one submission governed by the
+ * selected queue synchronization mode. Buffer-side layouts fall back to the other side's bytes per row
  * and rows per image as that path does. An active-mode quirk's temporary
  * buffer routes buffer-to-texture and texture-to-texture copies through a
  * staging buffer of the command's bytes rounded up to its alignment, as that
@@ -219,7 +219,7 @@ bool runtime_execute_copy(doe_runtime *runtime, const doe_command *command, doe_
         WGPUCommandBuffer commands = wgpuCommandEncoderFinish(encoder, NULL);
         wgpuCommandEncoderRelease(encoder);
         encode_end = doe_runtime_monotonic_ns();
-        ok = runtime_submit_and_wait(runtime, commands, execution);
+        ok = runtime_submit(runtime, commands, execution);
         execution->submit_count = 1;
     } else if (ok) {
         WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(runtime->device, NULL);
@@ -252,7 +252,7 @@ bool runtime_execute_copy(doe_runtime *runtime, const doe_command *command, doe_
         WGPUCommandBuffer commands = wgpuCommandEncoderFinish(encoder, NULL);
         wgpuCommandEncoderRelease(encoder);
         encode_end = doe_runtime_monotonic_ns();
-        ok = runtime_submit_and_wait(runtime, commands, execution);
+        ok = runtime_submit(runtime, commands, execution);
         execution->submit_count = 1;
     }
     uint64_t end = doe_runtime_monotonic_ns();
@@ -282,7 +282,7 @@ static bool texture_write(doe_runtime *runtime, const doe_command *command, doe_
         WGPUExtent3D extent = {.width = desc->width, .height = desc->height, .depthOrArrayLayers = 1};
         wgpuQueueWriteTexture(runtime->queue, &destination, command->as.texture_write.data,
             command->as.texture_write.data_size, &layout, &extent);
-        ok = runtime_wait_queue(runtime, execution);
+        ok = runtime_after_submit(runtime, execution);
         execution->submit_count = 1;
     }
     uint64_t end = doe_runtime_monotonic_ns();
@@ -347,7 +347,8 @@ bool runtime_read_back(doe_runtime *runtime, WGPUBuffer source, uint64_t offset,
     wgpuCommandEncoderCopyBufferToBuffer(encoder, source, offset, readback, 0, size);
     WGPUCommandBuffer copy = wgpuCommandEncoderFinish(encoder, NULL);
     wgpuCommandEncoderRelease(encoder);
-    bool ok = runtime_submit_and_wait(runtime, copy, execution);
+    bool ok = runtime_submit(runtime, copy, execution);
+    if (ok && runtime->options.defer_queue_sync) ok = runtime_wait_queue(runtime, execution);
     if (ok) {
         map_reply reply = {0};
         WGPUBufferMapCallbackInfo callback = {.mode = WGPUCallbackMode_WaitAnyOnly, .callback = mapped, .userdata1 = &reply};

@@ -275,32 +275,6 @@ bool runtime_pop_scopes(doe_runtime *runtime, doe_trace_execution *execution)
     return ok;
 }
 
-typedef struct done_reply {
-    bool done;
-    WGPUQueueWorkDoneStatus status;
-} done_reply;
-
-static void work_done(WGPUQueueWorkDoneStatus status, WGPUStringView message, void *userdata1, void *userdata2)
-{
-    (void)message;
-    (void)userdata2;
-    done_reply *reply = userdata1;
-    reply->done = true;
-    reply->status = status;
-}
-
-bool runtime_wait_queue(doe_runtime *runtime, doe_trace_execution *execution)
-{
-    done_reply reply = {0};
-    WGPUQueueWorkDoneCallbackInfo callback = {.mode = WGPUCallbackMode_WaitAnyOnly, .callback = work_done,
-        .userdata1 = &reply};
-    if (!runtime_wait_future(runtime, wgpuQueueOnSubmittedWorkDone(runtime->queue, callback)) || !reply.done)
-        return runtime_fail(execution, "queue_wait_unresolved", "queue work did not complete within the wait bound");
-    if (reply.status != WGPUQueueWorkDoneStatus_Success)
-        return runtime_fail(execution, "queue_work_failed", "queue work completed with status %d", (int)reply.status);
-    return true;
-}
-
 buffer_entry *runtime_find_buffer(doe_runtime *runtime, uint64_t handle)
 {
     for (size_t i = 0; i < runtime->buffer_count; i++) if (runtime->buffers[i].handle == handle) return &runtime->buffers[i];
@@ -349,12 +323,12 @@ buffer_entry *runtime_ensure_buffer(doe_runtime *runtime, uint64_t handle, uint6
     return created;
 }
 
-bool runtime_submit_and_wait(doe_runtime *runtime, WGPUCommandBuffer commands, doe_trace_execution *execution)
+bool runtime_submit(doe_runtime *runtime, WGPUCommandBuffer commands, doe_trace_execution *execution)
 {
     if (!commands) return runtime_fail(execution, "encode_failed", "command buffer was not created");
     wgpuQueueSubmit(runtime->queue, 1, &commands);
     wgpuCommandBufferRelease(commands);
-    return runtime_wait_queue(runtime, execution);
+    return runtime_after_submit(runtime, execution);
 }
 
 static bool execute_upload(doe_runtime *runtime, const doe_command *command, doe_trace_execution *execution)
@@ -376,9 +350,10 @@ static bool execute_upload(doe_runtime *runtime, const doe_command *command, doe
     if (buffer) wgpuQueueWriteBuffer(runtime->queue, buffer, 0, data, (size_t)size);
     free(data);
     bool ok = true;
+    runtime->queue_pending = true;
     runtime->uploads_since_wait++;
     if (runtime->uploads_since_wait >= runtime->options.upload_submit_every) {
-        ok = runtime_wait_queue(runtime, execution);
+        ok = runtime_after_submit(runtime, execution);
         runtime->uploads_since_wait = 0;
         execution->submit_count = 1;
     }
@@ -412,7 +387,7 @@ static bool execute_buffer_write(doe_runtime *runtime, const doe_command *comman
     uint64_t setup_end = doe_runtime_monotonic_ns();
     if (ok) {
         wgpuQueueWriteBuffer(runtime->queue, entry->buffer, offset, command->as.buffer_write.words, (size_t)data_bytes);
-        ok = runtime_wait_queue(runtime, execution);
+        ok = runtime_after_submit(runtime, execution);
         execution->submit_count = 1;
     }
     uint64_t end = doe_runtime_monotonic_ns();

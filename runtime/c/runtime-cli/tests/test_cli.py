@@ -731,7 +731,7 @@ def main() -> int:
     rejected = [
         (["--quirk-mode", "on"], "off, trace or active"),
         (["--driver", "31.x"], "major[.minor[.patch]]"),
-        (["--queue-sync-mode", "deferred"], "per-command"),
+        (["--queue-sync-mode", "invalid"], "per-command or deferred"),
         (["--replay", "x"], "not implemented"),
         (["--gpu-timestamp-mode", "require"], "GPU timestamps"),
     ]

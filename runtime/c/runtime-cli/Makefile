@@ -17,7 +17,7 @@ CORE = src/json.c src/stream.c src/stream_texture.c src/stream_render.c src/stre
 CORE_HEADERS = src/json.h src/stream.h src/stream_internal.h src/trace.h src/sha256.h src/quirks.h \
   src/operators.h src/numeric_policy.h src/numeric_stability.h src/plan.h
 TOGGLE_REGISTRY = ../../../config/quirk-toggle-registry.json
-RUNTIME = src/execute.c src/kernel.c src/texture.c src/render.c src/map.c src/diagnostics.c src/diagnostics_lifecycle.c src/surface.c $(SURFACE_HOST)
+RUNTIME = src/execute.c src/queue.c src/kernel.c src/texture.c src/render.c src/map.c src/diagnostics.c src/diagnostics_lifecycle.c src/surface.c $(SURFACE_HOST)
 ifeq ($(shell uname -s),Darwin)
 SURFACE_HOST = $(BUILD)/surface_metal.o
 DAWN_BACKEND_ID = dawn_c_metal
@@ -64,6 +64,7 @@ check-dawn: check-host $(BUILD)/dawn-c-runtime
 	$(PYTHON) tests/test_cli.py --binary '$(BUILD)/dawn-c-runtime' --work '$(BUILD)/dawn-cli-work' \
 	  --module dawn-c-runtime --backend-id dawn_direct_vulkan
 	$(PYTHON) tests/test_cli_diagnostics.py --binary '$(BUILD)/dawn-c-runtime' --work '$(BUILD)/dawn-diagnostics-work'
+	$(PYTHON) tests/test_cli_queue.py --binary '$(BUILD)/dawn-c-runtime' --work '$(BUILD)/dawn-queue-work'
 # The bench executor doe_c_direct_vulkan runs bin/doe-c-runtime (gitignored);
 # the copy keeps its rpath to $(NATIVE_BUILD), which must stay in place.
 bench-bin: $(BUILD)/doe-c-runtime
@@ -99,7 +100,7 @@ check-host: $(BUILD)/test_json $(BUILD)/test_stream $(BUILD)/test_trace $(BUILD)
 	$(BUILD)/test_numeric ../../.. '$(BUILD)'
 # Executes example streams on the selected Vulkan adapter (a CPU ICD such as
 # lavapipe by default) and checks the artifacts with pipeline/trace/replay.py.
-check: check-diagnostics check-host $(BUILD)/doe-c-runtime $(BUILD)/test_map $(BUILD)/test_texture_cleanup
+check: check-queue check-diagnostics check-host $(BUILD)/doe-c-runtime $(BUILD)/test_map $(BUILD)/test_texture_cleanup
 	$(BUILD)/test_map
 	$(BUILD)/test_texture_cleanup ../../../bench/kernels
 	$(PYTHON) tests/test_cli.py --binary '$(BUILD)/doe-c-runtime' --work '$(BUILD)/cli-work'
@@ -119,3 +120,11 @@ check-surface: $(BUILD)/doe-c-runtime
 	$(PYTHON) tests/test_cli_surface.py --binary '$(BUILD)/doe-c-runtime' --work '$(BUILD)/surface-work'
 check-surface-dawn: $(BUILD)/dawn-c-runtime
 	$(PYTHON) tests/test_cli_surface.py --binary '$(BUILD)/dawn-c-runtime' --work '$(BUILD)/dawn-surface-work'
+
+$(BUILD)/test_queue: tests/test_queue.c $(CORE) $(RUNTIME) $(CORE_HEADERS) $(RUNTIME_HEADERS) $(NATIVE_LIBRARY) | $(BUILD)
+	$(CC) $(CPPFLAGS) $(CFLAGS) tests/test_queue.c $(CORE) $(RUNTIME) -L'$(abspath $(NATIVE_BUILD))' \
+	  '$(abspath $(NATIVE_LIBRARY))' '-Wl,-rpath,$(abspath $(NATIVE_BUILD))' $(LDLIBS) -lm \
+	  -Wl,--wrap=wgpuQueueOnSubmittedWorkDone,--wrap=wgpuInstanceProcessEvents,--wrap=wgpuInstanceWaitAny -o $@
+check-queue: $(BUILD)/test_queue $(BUILD)/doe-c-runtime
+	$(BUILD)/test_queue
+	$(PYTHON) tests/test_cli_queue.py --binary '$(BUILD)/doe-c-runtime' --work '$(BUILD)/queue-work'
