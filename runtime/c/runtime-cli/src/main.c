@@ -50,7 +50,7 @@ static int parse_readback(const char *value, options *out)
 typedef struct totals {
     uint64_t rows, successes, errors;
     uint64_t total_ns, setup_ns, encode_ns, submit_wait_ns, dispatches, submits;
-    uint64_t input_read_ns, input_parse_ns, executor_init_ns;
+    uint64_t input_read_ns, input_parse_ns, executor_init_ns, kernel_prewarm_ns;
     uint64_t hash, previous;
     uint64_t oracles, oracles_matched, oracles_failed;
     uint64_t matched, blocking, requires_lean, lean_required;
@@ -223,15 +223,19 @@ static bool write_meta(const char *path, const options *o, const totals *t, uint
         ",\"executionSetupTotalNs\":%" PRIu64 ",\"executionEncodeTotalNs\":%" PRIu64 ",\"executionSubmitWaitTotalNs\":%" PRIu64
         ",\"executionDispatchCount\":%" PRIu64 ",\"executionSubmitCount\":%" PRIu64 ",\"hostInputReadTotalNs\":%" PRIu64
         ",\"hostInputParseTotalNs\":%" PRIu64 ",\"hostExecutorInitTotalNs\":%" PRIu64
+        ",\"hostUploadPrewarmTotalNs\":0,\"hostKernelPrewarmTotalNs\":%" PRIu64
         ",\"executionGpuTimestampTotalNs\":0,\"executionGpuTimestampAttemptedCount\":0,\"executionGpuTimestampValidCount\":0,"
         "\"semanticTracingEnabled\":false,\"semanticOpRowCount\":0,\"semanticCaptureCount\":0,\"semanticReproCount\":0,"
         "\"hash\":\"0x%" PRIx64 "\",\"previousHash\":\"0x%" PRIx64 "\",\"outputOracleCount\":%" PRIu64
         ",\"outputOracleMatchedCount\":%" PRIu64 ",\"outputOracleFailedCount\":%" PRIu64
         ",\"executionBackend\":\"" BACKEND_ID "\",\"backendId\":\"" BACKEND_ID "\","
         "\"backendSelectionReason\":\"fixed_backend\",\"fallbackUsed\":false,\"queueSyncMode\":\"per-command\","
-        "\"quirkMode\":\"%s\",\"uploadBufferUsage\":\"%s\",\"uploadSubmitEvery\":%" PRIu64,
+        "\"quirkMode\":\"%s\",\"uploadBufferUsage\":\"%s\",\"uploadSubmitEvery\":%" PRIu64
+        /* No persistent pipeline cache exists in this runtime. */
+        ",\"pipelineCache\":{\"state\":\"disabled\",\"reason\":\"platform-unsupported\",\"warmupCount\":0,\"warmupNs\":0}",
         seq_max, t->rows, command_count, t->matched, t->blocking, t->requires_lean, t->lean_required, t->rows, t->successes, t->errors, t->total_ns, t->setup_ns, t->encode_ns,
         t->submit_wait_ns, t->dispatches, t->submits, t->input_read_ns, t->input_parse_ns, t->executor_init_ns,
+        t->kernel_prewarm_ns,
         t->hash, t->previous, t->oracles, t->oracles_matched, t->oracles_failed,
         o->quirk_mode == DOE_QUIRK_OFF ? "off" : o->quirk_mode == DOE_QUIRK_ACTIVE ? "active" : "trace",
         o->runtime.upload_copy_src ? "copy-dst-copy-src" : "copy-dst", o->runtime.upload_submit_every) >= 0;
@@ -239,7 +243,11 @@ static bool write_meta(const char *path, const options *o, const totals *t, uint
         ok = write_optional(out, "outputOracleKind", "sha256_exact_v1", true) &&
             write_optional(out, "outputOracleReferenceId", t->oracle_reference, true) &&
             write_optional(out, "outputOracleExpectedSha256", t->oracle_expected, true) &&
-            write_optional(out, "outputOracleActualSha256", t->oracle_actual[0] ? t->oracle_actual : NULL, true);
+            write_optional(out, "outputOracleActualSha256", t->oracle_actual[0] ? t->oracle_actual : NULL, true) &&
+            /* Schema 1 oracles are independent references compared by exact digest. */
+            write_optional(out, "outputOracleReferenceClass", "independent_v1", true) &&
+            fputs(",\"outputOracleComparedValueCount\":0,\"outputOracleMismatchCount\":0,\"outputOracleMaxAbsoluteError\":0,"
+                "\"outputOracleMaxRelativeError\":0,\"outputOracleAbsoluteTolerance\":0,\"outputOracleRelativeTolerance\":0", out) >= 0;
     }
     ok = ok && fputs(",\"profile\":{", out) >= 0;
     ok = ok && write_optional(out, "vendor", o->vendor, false) && write_optional(out, "api", o->api ? o->api : "vulkan", true) &&
@@ -254,6 +262,23 @@ static bool write_meta(const char *path, const options *o, const totals *t, uint
     ok = ok && fputs("}}\n", out) >= 0;
     if (fclose(out) != 0) ok = false;
     return ok;
+}
+
+/* <meta>.operators.json, the operator record manifest doe-zig-runtime writes
+ * next to its meta: records exist only for semantic operations, which this
+ * runtime rejects, so the manifest is always the empty list. */
+static bool write_operator_manifest(const char *meta_path)
+{
+    size_t length = strlen(meta_path);
+    char *path = malloc(length + sizeof(".operators.json"));
+    if (!path) return false;
+    memcpy(path, meta_path, length);
+    memcpy(path + length, ".operators.json", sizeof(".operators.json"));
+    FILE *out = fopen(path, "wb");
+    free(path);
+    if (!out) return false;
+    bool ok = fputs("[]\n", out) >= 0;
+    return fclose(out) == 0 && ok;
 }
 
 int main(int argc, char **argv)
@@ -310,6 +335,14 @@ int main(int argc, char **argv)
         fprintf(stderr, "doe-c-runtime: %s\n", message);
         status = 1;
     }
+    /* Kernel pipelines compile before the command loop, outside execution timing. */
+    uint64_t prewarm_start = doe_runtime_monotonic_ns();
+    for (size_t i = 0; runtime && status == 0 && i < stream.count; i++) {
+        doe_trace_execution prewarm;
+        if (!doe_runtime_prewarm_kernel(runtime, &stream.commands[i], &prewarm))
+            fprintf(stderr, "doe-c-runtime: warning: kernel prewarm of command %zu: %s: %s\n", i, prewarm.status_code, prewarm.message);
+    }
+    t.kernel_prewarm_ns = doe_runtime_monotonic_ns() - prewarm_start;
     const doe_trace_identity identity = {.module = MODULE_NAME, .backend_id = BACKEND_ID};
     for (uint64_t pass = 0; runtime && status == 0 && pass < o.command_repeat; pass++) {
         for (size_t i = 0; i < stream.count && status == 0; i++) {
@@ -404,6 +437,10 @@ int main(int argc, char **argv)
     if (rows && fclose(rows) != 0) status = 1;
     if (o.trace_meta && !write_meta(o.trace_meta, &o, &t, command_count, runtime ? doe_runtime_adapter_info(runtime) : NULL)) {
         fprintf(stderr, "doe-c-runtime: cannot write %s\n", o.trace_meta);
+        status = 1;
+    }
+    if (o.trace_meta && !write_operator_manifest(o.trace_meta)) {
+        fprintf(stderr, "doe-c-runtime: cannot write %s.operators.json\n", o.trace_meta);
         status = 1;
     }
     doe_runtime_close(runtime);

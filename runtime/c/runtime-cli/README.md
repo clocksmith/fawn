@@ -102,7 +102,20 @@ three streams in `make check` the row hashes equal those `doe-zig-runtime`
 naming the executing adapter, with `module` `doe-c-runtime`,
 `executionBackend`/`backendId` `doe_c_vulkan`, `backendSelectionReason`
 `fixed_backend` and no `selectionPolicyHash` (there is no lane policy), plus the
-applied `uploadBufferUsage` and `uploadSubmitEvery`.
+applied `uploadBufferUsage` and `uploadSubmitEvery`, `hostKernelPrewarmTotalNs`
+(kernel pipelines compile before the command loop, outside execution timing, as
+doe-zig-runtime prewarms them), `pipelineCache` `disabled`/`platform-unsupported`
+(no persistent pipeline cache exists here), and for schema 1 oracles
+`outputOracleReferenceClass` `independent_v1` with zero tolerance counts. The
+operator record manifest `<meta>.operators.json` is the empty list: records exist
+only for semantic operations, which this CLI rejects.
+
+No shader artifact manifest is written. The strict Dawn-versus-Doe obligation
+requires the executed SPIR-V to equal the checked-in `bench/kernels/<name>.spv`,
+which doe-zig-runtime executes directly; the C library compiles the WGSL with the
+C compiler instead (workgroup_atomic: C SPIR-V `ee68b9ed...`, checked-in
+`066ee154...`) and exposes neither SPIR-V module input nor its executed SPIR-V,
+so a truthful manifest could not satisfy the obligation.
 
 ## Bench comparisons
 

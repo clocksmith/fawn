@@ -274,9 +274,15 @@ def main() -> int:
         adapter = meta["adapter"]
     rmsnorm = json.loads((args.work / "rmsnorm_tree.meta.json").read_text())
     check(rmsnorm["executionDispatchCount"] == 100 and rmsnorm["executionSubmitCount"] == 2, "rmsnorm dispatch/submit counts")
+    # Meta fields the bench reads, as doe-zig-runtime writes them: kernel prewarm
+    # outside execution timing, no persistent pipeline cache, an empty operator manifest.
+    check(rmsnorm["hostKernelPrewarmTotalNs"] > 0 and rmsnorm["pipelineCache"]["state"] == "disabled", "rmsnorm prewarm and cache")
+    check(json.loads((args.work / "rmsnorm_tree.meta.json.operators.json").read_text()) == [], "operator manifest")
     atomic = json.loads((args.work / "workgroup_atomic.meta.json").read_text())
     check(atomic["outputOracleCount"] == 1 and atomic["outputOracleMatchedCount"] == 1, "workgroup_atomic oracle did not match")
     check(atomic["outputOracleActualSha256"] == atomic["outputOracleExpectedSha256"], "oracle digests differ")
+    check(atomic["outputOracleReferenceClass"] == "independent_v1" and atomic["outputOracleMismatchCount"] == 0,
+          "oracle reference class and exact-digest counts")
 
     # Alias kinds label rows with the normalized name, as doe-zig-runtime does.
     aliases = args.work / "alias_commands.json"
