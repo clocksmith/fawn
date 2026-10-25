@@ -96,7 +96,16 @@ bool runtime_execute_public_render(doe_runtime *runtime, const doe_command *comm
         .height = draw->target_height, .depth = 1, .format = draw->target_format,
         .usage = WGPUTextureUsage_RenderAttachment | WGPUTextureUsage_CopySrc | WGPUTextureUsage_CopyDst};
     WGPUTexture target = pipeline ? runtime_ensure_texture(runtime, &target_descriptor, execution) : NULL;
-    WGPUTextureView view = target ? wgpuTextureCreateView(target, NULL) : NULL;
+    WGPUTexture temporary = NULL;
+    bool stage = draw->temporary_render_texture && draw->temporary_render_min_mip == 0 &&
+        (draw->target_format == DOE_FORMAT_R8_UNORM || draw->target_format == DOE_FORMAT_RG8_UNORM);
+    if (target && stage) {
+        /* Public source uses this wrapping handle offset and renders at mip0. */
+        target_descriptor.handle += UINT64_C(0xBEEF000000000001);
+        temporary = runtime_ensure_texture(runtime, &target_descriptor, execution);
+    }
+    WGPUTexture attachment = stage ? temporary : target;
+    WGPUTextureView view = attachment ? wgpuTextureCreateView(attachment, NULL) : NULL;
     WGPUTextureView depth = view ? depth_view(runtime, draw) : NULL;
     bool ok = pipeline && view && depth;
     if (!ok && execution->ok) runtime_fail(execution, "render_public_target_failed", "public renderer target or depth view was not created");
@@ -149,6 +158,7 @@ bool runtime_execute_public_render(doe_runtime *runtime, const doe_command *comm
             else encode_pass(pass, runtime->public_render, draw, pipeline, indices, index_size, arguments, stride, dynamic_offset);
             wgpuRenderPassEncoderEnd(pass);
             wgpuRenderPassEncoderRelease(pass);
+            if (temporary) runtime_render_copy_back(encoder, temporary, target, draw);
             WGPUCommandBuffer commands = wgpuCommandEncoderFinish(encoder, NULL);
             encode_end = doe_runtime_monotonic_ns();
             ok = runtime_submit(runtime, commands, execution);

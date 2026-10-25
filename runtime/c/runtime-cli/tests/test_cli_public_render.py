@@ -53,6 +53,33 @@ def main():
         failed = subprocess.run([str(binary), *flags, '--backend-lane', lane], cwd=REPO,
                                 capture_output=True, text=True, timeout=10)
         assert failed.returncode == 2 and '--backend-lane' in failed.stderr, failed.stderr
+    # The active action must reach the encoder: read both the named target and
+    # the retained source's temporary handle, independently of trace wording.
+    staged = json.loads(commands.read_text())
+    staged[0]['targetFormat'] = 'r8unorm'
+    staged[1]['src_format'] = 'r8unorm'
+    staged.append({**staged[1], 'src_handle': 700 + 0xBEEF000000000001, 'dst_handle': 702})
+    commands.write_text(json.dumps(staged))
+    quirk = json.loads((REPO / 'examples/quirks/intel_gen12_temp_buffer.json').read_text())
+    quirk['scope'] = 'layout'
+    quirk['action'] = dict(kind='use_temporary_render_texture', params=dict(minMipLevel=0))
+    quirk_path = args.work / 'render-quirk.json'
+    quirk_path.write_text(json.dumps(quirk))
+    temporary_pixels = args.work / 'temporary.bin'
+    active_flags = list(flags)
+    active_flags[active_flags.index('off')] = 'active'
+    result = subprocess.run([str(args.binary), *active_flags, '--backend-lane', 'vulkan_dawn_release',
+                             '--quirks', str(quirk_path), '--readback-buffer', f'702={temporary_pixels}'],
+                            cwd=REPO, capture_output=True, text=True, timeout=20)
+    assert result.returncode == 0, result.stderr
+    staged_pixels = pixels.read_bytes()
+    assert staged_pixels == temporary_pixels.read_bytes()
+    for y in range(32):
+        for x in range(32):
+            assert staged_pixels[y * 256 + x] == data[y * 256 + x * 4], (x, y)
+        assert staged_pixels[y * 256 + 32:(y + 1) * 256] == bytes(224)
+    trace = [json.loads(line) for line in rows.read_text().splitlines()]
+    assert trace[0]['action'] == 'use_temporary_render_texture'
     print('PASS explicit Dawn delegate CLI route, canonical lane, truthful shader receipt, all pixels and provider refusals:',
           metadata['adapterInfo'])
 

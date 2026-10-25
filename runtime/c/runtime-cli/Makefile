@@ -144,7 +144,8 @@ $(BUILD)/test_public_render_dawn: tests/test_public_render.c $(CORE) $(RUNTIME) 
 	  '-Wl,-rpath,$(dir $(DAWN_LIBRARY))' $(LDLIBS) -lm \
 	  -Wl,--wrap=wgpuRenderPassEncoderSetPipeline,--wrap=wgpuRenderPassEncoderSetBindGroup \
 	  -Wl,--wrap=wgpuRenderBundleEncoderSetPipeline,--wrap=wgpuRenderBundleEncoderSetBindGroup \
-	  -Wl,--wrap=wgpuRenderPassEncoderExecuteBundles,--wrap=wgpuRenderBundleEncoderFinish -o $@
+	  -Wl,--wrap=wgpuRenderPassEncoderExecuteBundles,--wrap=wgpuRenderBundleEncoderFinish \
+	  -Wl,--wrap=wgpuCommandEncoderCopyTextureToTexture -o $@
 check-public-render: $(BUILD)/test_public_render_dawn $(BUILD)/dawn-c-runtime $(BUILD)/doe-c-runtime
 	$(BUILD)/test_public_render_dawn
 	$(PYTHON) tests/test_cli_public_render.py --binary '$(BUILD)/dawn-c-runtime' --native '$(BUILD)/doe-c-runtime' \

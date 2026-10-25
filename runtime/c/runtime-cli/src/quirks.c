@@ -284,11 +284,15 @@ static bool parse_quirk(const doe_json_value *object, bool strict, size_t index,
     return true;
 }
 
+static bool is_render_texture_toggle(const char *name)
+{
+    return !doe_host_casecmp(name, "MetalRenderR8RG8UnormSmallMipToTempTexture");
+}
+
 /* Active mode applies actions; refuse the ones this runtime has no path for. */
 static bool applicable(const doe_quirk *q)
 {
-    if (q->action == DOE_ACTION_USE_TEMPORARY_RENDER_TEXTURE) return false;
-    if (q->action == DOE_ACTION_TOGGLE && doe_toggle_effect_of(q->toggle) == DOE_TOGGLE_BEHAVIORAL) return is_staging_toggle(q->toggle);
+    if (q->action == DOE_ACTION_TOGGLE && doe_toggle_effect_of(q->toggle) == DOE_TOGGLE_BEHAVIORAL) return is_staging_toggle(q->toggle) || is_render_texture_toggle(q->toggle);
     return true;
 }
 
@@ -407,5 +411,28 @@ doe_quirk_decision doe_quirks_decide(const doe_quirk_set *set, doe_command_kind 
             d.temporary_buffer_alignment = STAGING_TOGGLE_ALIGNMENT;
         }
     }
+    if (set->mode == DOE_QUIRK_ACTIVE && (kind == DOE_COMMAND_RENDER_DRAW || kind == DOE_COMMAND_RENDER_PASS)) {
+        if (q->action == DOE_ACTION_USE_TEMPORARY_RENDER_TEXTURE) {
+            d.temporary_render_texture = true;
+            d.temporary_render_min_mip = q->min_mip_level;
+        } else if (q->action == DOE_ACTION_TOGGLE && doe_toggle_effect_of(q->toggle) == DOE_TOGGLE_BEHAVIORAL &&
+            is_render_texture_toggle(q->toggle)) {
+            d.temporary_render_texture = true;
+            d.temporary_render_min_mip = 2;
+        }
+    }
     return d;
+}
+
+void doe_quirks_apply(const doe_quirk_decision *decision, doe_command *command)
+{
+    if (decision->temporary_buffer && command->kind == DOE_COMMAND_COPY) {
+        command->as.copy.temporary_buffer = true;
+        command->as.copy.temporary_buffer_alignment = decision->temporary_buffer_alignment;
+    }
+    if (decision->temporary_render_texture &&
+        (command->kind == DOE_COMMAND_RENDER_DRAW || command->kind == DOE_COMMAND_RENDER_PASS)) {
+        command->as.render.temporary_render_texture = true;
+        command->as.render.temporary_render_min_mip = decision->temporary_render_min_mip;
+    }
 }

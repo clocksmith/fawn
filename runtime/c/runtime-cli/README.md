@@ -215,10 +215,9 @@ slice debug braces. Quoted kernel paths are JSON escaped.
   into the build. `--quirk-mode trace` (the default) records decisions;
   `active` also applies them: `use_temporary_buffer` and the behavioral staging
   toggles route buffer-to-texture and texture-to-texture copies through a staging
-  buffer. In active mode a quirk file with an action this CLI cannot apply
-  (`use_temporary_render_texture`, the Metal render-texture toggle) is refused
-  with exit 2. Without `--quirks` no quirk is loaded; doe-zig-runtime loads its
-  embedded sample quirk instead, so default runs without a quirks file differ.
+  buffer. Render-texture actions follow the platform/lane rules below. Other
+  behavioral actions without an implementation fail with exit 2. Omitting
+  `--quirks` loads the same embedded sample as the retained runtime.
   No Lean-verified build exists for C, so `lean_required` quirks without a proven
   level are counted as blocking, as in a Zig build without Lean.
 - Arguments as listed by `--help`. `--queue-sync-mode per-command|deferred` waits per submission or drains once
@@ -485,3 +484,15 @@ advertised BGRA formats are honored; the retained default RGBA format correctly
 fails on that platform. This is focused physical execution, not broad hardware
 qualification or a performance result. The Darwin build enables the Darwin SDK
 feature definitions required by AppKit alongside the POSIX API definitions.
+
+Active `use_temporary_render_texture` and the
+`MetalRenderR8RG8UnormSmallMipToTempTexture` toggle preserve retained kind filtering
+(render_draw/render_pass only). The public renderer stages R8/RG8 at mip0 only
+when `minMipLevel` is zero; the toggle's default minimum is two. It uses the
+retained wrapping temporary-handle offset and encodes copy-back before submit.
+Native Metal stages every flagged draw, matching its retained implementation;
+native Vulkan/D3D12 preserve the retained flag's lack of an encoding effect.
+Focused Dawn/lavapipe controls count actual copy calls and compare every output
+texel across affected formats, unaffected RGBA, and minimum-mip guards. The
+actual CLI also reads both the original and temporary textures after an active
+quirk. Native Metal staging still requires its own platform execution check.

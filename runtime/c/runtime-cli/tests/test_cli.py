@@ -331,13 +331,13 @@ def check_quirks(binary: Path, work: Path) -> None:
     check(rows[2]["action"] == "use_temporary_buffer", "the staged copy row names its action")
     for handle, data in expected.items():
         check((work / f"staged_{handle}.bin").read_bytes() == data, f"staged buffer {handle} differs from the host reference")
-    # An action this runtime cannot apply is refused in active mode, never ignored.
+    # Render action loads; at minMip2 the public mip0 target needs no staging.
     unappliable = json.loads((EXAMPLES / "quirks" / "intel_gen12_temp_buffer.json").read_text())
     unappliable["action"] = {"kind": "use_temporary_render_texture", "params": {"minMipLevel": 2}}
     path = work / "render_texture_quirk.json"
     path.write_text(json.dumps(unappliable))
     code, stderr, _, _ = run(binary, work, "draw_call_proxy", "--quirks", str(path), "--quirk-mode", "active")
-    check(code == 2 and "cannot be applied" in stderr, f"unappliable quirk: exit {code}: {stderr}")
+    check(code == 0, f"render quirk: exit {code}: {stderr}")
     unappliable["action"] = {"kind": "rewrite"}
     path.write_text(json.dumps(unappliable))
     code, stderr, _, _ = run(binary, work, "draw_call_proxy", "--quirks", str(path))
@@ -760,7 +760,7 @@ def main() -> int:
           f"failures, {len(ZIG_RENDER_FINAL_HASH)} render streams, scissored and indexed draws, "
           f"{len(ZIG_INDIRECT_FINAL_HASH)} indirect draw streams and scissored and indexed indirect draws read back against the "
           f"proxy and clear colors, an indirect first-instance refusal, a missing render target, {len(ZIG_QUIRK_FINAL_HASH)} quirk-matched streams, active "
-          f"staging read back against host bytes, 2 quirk refusals, {len(ZIG_GRID_FINAL_HASH)} dispatch-kind streams, "
+          f"staging read back against host bytes, render quirk admission and unknown-action refusal, {len(ZIG_GRID_FINAL_HASH)} dispatch-kind streams, "
           f"8 mapping examples repeated, mapping mode/size changes, and a pipeline-reusing grid stream read back against the host oracle, independent repeats, semantic rows with operator records, repro "
           f"bundles and host-checked captures, greedy and sampled numeric stability receipts equal to "
           f"doe-zig-runtime's Radeon receipts, an execution profile route and 3 numeric stability refusals, plan rows chained like "

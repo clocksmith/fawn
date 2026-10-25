@@ -155,6 +155,17 @@ WGPUBuffer runtime_render_arguments(doe_runtime *runtime, const doe_render_draw 
     return buffer;
 }
 
+void runtime_render_copy_back(WGPUCommandEncoder encoder, WGPUTexture source, WGPUTexture destination,
+    const doe_render_draw *draw)
+{
+    WGPUTexelCopyTextureInfo from = WGPU_TEXEL_COPY_TEXTURE_INFO_INIT;
+    WGPUTexelCopyTextureInfo to = WGPU_TEXEL_COPY_TEXTURE_INFO_INIT;
+    from.texture = source;
+    to.texture = destination;
+    WGPUExtent3D extent = {draw->target_width, draw->target_height, 1};
+    wgpuCommandEncoderCopyTextureToTexture(encoder, &from, &to, &extent);
+}
+
 bool runtime_execute_render(doe_runtime *runtime, const doe_command *command, doe_trace_execution *execution)
 {
     if (runtime->options.public_webgpu_renderer) return runtime_execute_public_render(runtime, command, execution);
@@ -177,7 +188,21 @@ bool runtime_execute_render(doe_runtime *runtime, const doe_command *command, do
         target = scratch = wgpuDeviceCreateTexture(runtime->device, &descriptor);
         if (!scratch) ok = runtime_fail(execution, "render_target_failed", "the scratch render target was not created");
     }
-    WGPUTextureView view = ok ? wgpuTextureCreateView(target, NULL) : NULL;
+    WGPUTexture temporary = NULL;
+#ifdef __APPLE__
+    /* Retained Metal native renderer stages every flagged draw, independent of
+     * format/minimum mip. Vulkan/D3D12 native paths do not consume this flag. */
+    if (ok && draw->temporary_render_texture) {
+        WGPUTextureDescriptor descriptor = WGPU_TEXTURE_DESCRIPTOR_INIT;
+        descriptor.usage = WGPUTextureUsage_RenderAttachment | WGPUTextureUsage_CopySrc;
+        descriptor.size = (WGPUExtent3D){draw->target_width, draw->target_height, 1};
+        descriptor.format = runtime_webgpu_format(draw->target_format);
+        temporary = wgpuDeviceCreateTexture(runtime->device, &descriptor);
+        if (!temporary) ok = runtime_fail(execution, "render_temporary_failed", "temporary Metal target creation failed");
+    }
+#endif
+    WGPUTextureView view = ok ? wgpuTextureCreateView(temporary ? temporary : target, NULL) : NULL;
+    if (ok && !view) ok = runtime_fail(execution, "render_view_failed", "render target view creation failed");
     uint64_t index_size = 0;
     WGPUBuffer indices = ok && draw->indexed ? runtime_render_indices(runtime, draw, &index_size) : NULL;
     if (ok && draw->indexed && !indices) ok = runtime_fail(execution, "render_index_buffer_failed", "the index buffer was not created");
@@ -229,6 +254,7 @@ bool runtime_execute_render(doe_runtime *runtime, const doe_command *command, do
         }
         wgpuRenderPassEncoderEnd(pass);
         wgpuRenderPassEncoderRelease(pass);
+        if (temporary) runtime_render_copy_back(encoder, temporary, target, draw);
         WGPUCommandBuffer commands = wgpuCommandEncoderFinish(encoder, NULL);
         wgpuCommandEncoderRelease(encoder);
         encode_end = doe_runtime_monotonic_ns();
@@ -243,6 +269,7 @@ bool runtime_execute_render(doe_runtime *runtime, const doe_command *command, do
     }
     if (indices) wgpuBufferRelease(indices);
     if (view) wgpuTextureViewRelease(view);
+    if (temporary) wgpuTextureRelease(temporary);
     if (scratch) {
         wgpuTextureDestroy(scratch);
         wgpuTextureRelease(scratch);
