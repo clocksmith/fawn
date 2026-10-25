@@ -624,10 +624,15 @@ fails). `tests/limits.c` prints the default,
 adapter and device columns and checks each resolution rule and default-limit
 rejection, and on a device that requires the adapter limits executes 10
 storage buffers, 8 storage textures, 32 vertex attributes and eight rgba32float
-targets with exact readback, each refused on the default device. Bind groups
-(groups 0..3), binding numbers (0..999) and workgroup size/invocations (256)
-stay at the C compiler's bounds; maxImmediateSize stays 64 (no compiler
-immediates). The native shader policy selects core binding numbers
+targets with exact readback, each refused on the default device. Workgroup
+dimensions and invocation limits now follow Vulkan/D3D12 device facts and
+Metal's queried family envelope plus per-axis device properties; every Metal
+pipeline still checks its actual maxTotalThreadsPerThreadgroup. The default
+device keeps 256 invocations unless requiredLimits raises it.
+`tests/workgroups.c` checks default rejection, raised limits and exact execution
+at 256/512/1024 invocations when advertised. Bind groups (groups 0..3) and binding
+numbers (0..999) stay at the C compiler's bounds; maxImmediateSize stays64 (no
+compiler immediates). The native shader policy selects core binding numbers
 (`native_shader_semantic_flags`), so shaders reference bindings 0..999 in groups
 0..3; the compiler's standalone default stays 0..31.
 

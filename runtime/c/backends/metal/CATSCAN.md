@@ -17,7 +17,9 @@ Backend ABI, adapter and focused tests.
 Validated MSL and explicit compiler workgroup/slot facts enter the
 [compute boundary](include/doe_metal.h); stage/render facts enter the
 [graphics boundary](include/doe_metal_render.h). Outputs are native statuses and
-completion-backed shared-buffer access. Typed indirect compute copies GPU arguments
+completion-backed shared-buffer access. Queried device dimensions and a known
+GPU family supply the public workgroup envelope; the actual pipeline supplies
+its independent maxTotalThreadsPerThreadgroup check. Typed indirect compute copies GPU arguments
 to private scratch and executes the shared compiled bounds guard before consumption,
 under [system invariants](../../../../INTENT.md).
 Presentation borrows an explicit CAMetalLayer and retains each acquired drawable through
