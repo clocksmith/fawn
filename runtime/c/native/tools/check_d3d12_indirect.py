@@ -31,7 +31,12 @@ def main() -> None:
                'runtime/c/native/tests/d3d12_indirect_layout.c',
                'runtime/c/native/src/d3d12_indirect_layout.c',
                *sorted(str(path.relative_to(ROOT)) for path in (ROOT/'runtime/c/shader/src').glob('*.c'))]
-    inputs = [*sources, 'runtime/c/common/include/doe_dispatch_guard.h',
+    draw_sources = ['runtime/c/native/tests/d3d12_draw_layout.c',
+                    'runtime/c/native/src/d3d12_draw_guard.c',
+                    'runtime/c/native/src/d3d12_stage_bindings.c',
+                    *sources[3:]]
+    inputs = [*sources, *draw_sources, 'runtime/c/common/include/doe_draw_guard.h',
+              'runtime/c/native/src/d3d12_draw_guard.h', 'runtime/c/common/include/doe_dispatch_guard.h',
               'runtime/c/native/src/d3d12_indirect_layout.h', 'runtime/c/shader/include/doe_shader.h']
     inputs += [str(path.relative_to(ROOT)) for path in (ROOT/'runtime/c/compiler/include').glob('*.h')]
     hashes = {name: hashlib.sha256((ROOT/name).read_bytes()).hexdigest() for name in inputs}
@@ -44,6 +49,15 @@ def main() -> None:
          '-I'+str(ROOT/'runtime/c/shader/include'),*[str(ROOT/name) for name in sources[1:]],
          str(library),'-Wl,-rpath,'+str(library.parent),'-o',str(output/'layout-control')],
         [str(output/'layout-control')]]
+    includes = ['native', 'compiler', 'instance', 'futures', 'callbacks', 'resources',
+                'labels', 'error-scopes', 'shader', 'backends/vulkan', 'backends/metal', 'platform']
+    commands += [
+        [args.cc,*flags,'-ffunction-sections','-fdata-sections',
+         '-I'+str(ROOT/'runtime/zig/vendor/webgpu-headers'),
+         *['-I'+str(ROOT/'runtime/c'/owner/'include') for owner in includes],
+         *[str(ROOT/name) for name in draw_sources],str(library),
+         '-Wl,--gc-sections','-Wl,-rpath,'+str(library.parent),'-o',str(output/'draw-layout-control')],
+        [str(output/'draw-layout-control')]]
     receipts = []
     for index, command in enumerate(commands):
         result = subprocess.run(command,cwd=ROOT,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,timeout=120)

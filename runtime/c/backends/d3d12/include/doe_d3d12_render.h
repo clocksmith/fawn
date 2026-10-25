@@ -27,6 +27,8 @@ typedef struct doe_dx_render_pipeline_desc {
     bool front_counter_clockwise;
     doe_dx_cull cull;
     doe_dx_topology topology;
+    bool strip_indexed;
+    doe_dx_index_format strip_index_format;
     bool depth_enabled, depth_write; /* Optional D32_FLOAT attachment. */
     doe_dx_compare depth_compare;
     int32_t depth_bias;
@@ -48,6 +50,12 @@ typedef struct doe_dx_render_draw {
     doe_dx_pipeline *pipeline;
     doe_dx_dynamic_resources stages[DOE_DX_RENDER_STAGES];
     uint32_t vertex_count, instance_count, first_vertex, first_instance;
+    /* Optional GPU-normalized DRAW/DRAW_INDEXED record. Caller proves every
+     * vertex/instance fetch and indexed value using the common GPU guard;
+     * this layer checks allocation, aliases and native record/view shape only. */
+    const doe_dx_buffer_binding *indirect;
+    const doe_dx_buffer_binding *indices; /* Only with indirect; bounded IA view. */
+    doe_dx_index_format index_format;
     float blend_constant[4];
     float viewport[6]; /* x/y/w/h/minDepth/maxDepth, finite, within target. */
     uint32_t scissor[4]; /* x/y/w/h, within target; empty is permitted. */
@@ -66,13 +74,15 @@ typedef struct doe_dx_render_pass {
     size_t draw_count; /* Zero draws still execute attachment operations. */
 } doe_dx_render_pass;
 /* Constructors copy typed declarations. No borrowed shader/DXC data survives.
- * No index buffers, stencil, MSAA or indirect work yet.
+ * Stencil and MSAA are not yet composed.
  * These are explicit initial composition gaps, not the final migration target. */
 doe_dx_status doe_dx_pipeline_create_render(doe_dx_context *context,
     const doe_dx_render_pipeline_desc *desc,doe_dx_pipeline **out,doe_dx_error *error);
 /* All fallible preparation precedes native command mutation. Existing pipeline,
  * resource and descriptor-use leases survive unknown completion. Failure leaves
  * prior command records intact, output/initialization/leases unpublished. */
+/* Exact immutable layout fetch capacities; no index/argument contents are read. */
+doe_dx_status doe_dx_render_draw_capacities(const doe_dx_render_draw *,uint64_t [2]);
 doe_dx_status doe_dx_commands_render(doe_dx_commands *commands,
     const doe_dx_render_pass *pass,doe_dx_error *error);
 #ifdef __cplusplus

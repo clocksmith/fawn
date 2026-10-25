@@ -117,7 +117,8 @@ static void pass_indirect(WGPURenderPassEncoder handle, WGPUBuffer arguments, ui
     native_lock(device);
     doe_resource_render_pass_retain(pass);
     const bool ended = doe_resource_render_pass_ended(pass);
-    doe_resource_status status = (device->backend.kind == WGPUBackendType_Vulkan || device->backend.kind == WGPUBackendType_Metal) ?
+    doe_resource_status status = (device->backend.kind == WGPUBackendType_Vulkan || device->backend.kind == WGPUBackendType_Metal ||
+        device->backend.kind == WGPUBackendType_D3D12) ?
         doe_resource_render_pass_draw_indirect(pass,(doe_resource_buffer *)arguments,offset,indexed) :
         doe_resource_render_pass_invalidate(pass,DOE_RESOURCE_UNSUPPORTED);
     native_unlock(device);
@@ -138,7 +139,8 @@ static void bundle_indirect(WGPURenderBundleEncoder handle, WGPUBuffer arguments
     native_lock(device);
     doe_resource_bundle_encoder_retain(encoder);
     const bool ended = doe_resource_bundle_encoder_ended(encoder);
-    doe_resource_status status = (device->backend.kind == WGPUBackendType_Vulkan || device->backend.kind == WGPUBackendType_Metal) ?
+    doe_resource_status status = (device->backend.kind == WGPUBackendType_Vulkan || device->backend.kind == WGPUBackendType_Metal ||
+        device->backend.kind == WGPUBackendType_D3D12) ?
         doe_resource_bundle_encoder_draw_indirect(encoder,(doe_resource_buffer *)arguments,offset,indexed) :
         doe_resource_bundle_encoder_invalidate(encoder,DOE_RESOURCE_UNSUPPORTED);
     native_unlock(device);

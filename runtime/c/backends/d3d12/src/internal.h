@@ -42,6 +42,9 @@ struct doe_dx_timestamps {
     uint64_t initialized;
 };
 typedef struct doe_dx_render_layout {
+    doe_dx_topology topology;
+    bool strip_indexed;
+    doe_dx_index_format strip_index_format;
     doe_dx_binding_plan stages[DOE_DX_RENDER_STAGES];
 } doe_dx_render_layout;
 struct doe_dx_pipeline {

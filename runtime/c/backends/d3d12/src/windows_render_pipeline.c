@@ -158,6 +158,8 @@ doe_dx_status doe_dx_native_render_create(doe_dx_native_context *context,
             state.PrimitiveTopologyType=D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT;
             pipeline->render->topology=D3D_PRIMITIVE_TOPOLOGY_POINTLIST; break;
         }
+        if (desc->strip_indexed) state.IBStripCutValue=desc->strip_index_format==DOE_DX_INDEX_UINT16 ?
+            D3D12_INDEX_BUFFER_STRIP_CUT_VALUE_0xFFFF : D3D12_INDEX_BUFFER_STRIP_CUT_VALUE_0xFFFFFFFF;
         if (desc->depth_enabled) {
             state.DepthStencilState.DepthEnable=TRUE;
             state.DepthStencilState.DepthWriteMask=desc->depth_write ? D3D12_DEPTH_WRITE_MASK_ALL : D3D12_DEPTH_WRITE_MASK_ZERO;

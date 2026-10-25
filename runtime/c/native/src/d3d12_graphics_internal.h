@@ -6,11 +6,13 @@
 #include "render_internal.h"
 
 typedef struct native_d3d12_graphics {
-    native_d3d12_compute stages[DOE_DX_RENDER_STAGES]; /* Copied slot maps, no guard objects. */
+    native_d3d12_compute stages[DOE_DX_RENDER_STAGES];
+    doe_dx_pipeline *draw_normalize, *index_scan; /* Existing pipeline retirement owner. */
 } native_d3d12_graphics;
 typedef struct native_d3d12_graphics_snapshot {
     native_d3d12_snapshot stages[DOE_DX_RENDER_STAGES];
     doe_dx_buffer_binding vertices[DOE_DX_MAX_VERTEX_BUFFERS];
+    doe_dx_buffer_binding arguments, indices;
 } native_d3d12_graphics_snapshot;
 /* Maps independently compiled stage identities into one canonical public binding
  * list. Module-local resource ordinals never become cross-stage identities. */

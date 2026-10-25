@@ -31,6 +31,9 @@ doe_dx_status doe_dx_pipeline_create_render(doe_dx_context *context,
     if (context->lost) return doe_dx_fail(DOE_DX_DEVICE_LOST,0,"render.pipeline",error);
     if (desc->color_format!=DOE_DX_RGBA8_UNORM && desc->color_format!=DOE_DX_BGRA8_UNORM)
         return doe_dx_fail(DOE_DX_UNSUPPORTED,0,"render.color_format",error);
+    if (desc->strip_indexed && ((desc->topology!=DOE_DX_TRIANGLE_STRIP && desc->topology!=DOE_DX_LINE_STRIP) ||
+        (desc->strip_index_format!=DOE_DX_INDEX_UINT16 && desc->strip_index_format!=DOE_DX_INDEX_UINT32)))
+        return doe_dx_fail(DOE_DX_INVALID_ARGUMENT,0,"render.strip_index",error);
     if (desc->depth_enabled && (desc->depth_compare<DOE_DX_NEVER || desc->depth_compare>DOE_DX_ALWAYS ||
         !isfinite(desc->depth_bias_slope) || !isfinite(desc->depth_bias_clamp)))
         return doe_dx_fail(DOE_DX_INVALID_ARGUMENT,0,"render.depth",error);
@@ -80,6 +83,9 @@ doe_dx_status doe_dx_pipeline_create_render(doe_dx_context *context,
     memcpy(pipeline->vertex_ends,ends,sizeof(ends));
     pipeline->color_format=desc->color_format;
     pipeline->depth_enabled=desc->depth_enabled;
+    pipeline->render->topology=desc->topology;
+    pipeline->render->strip_indexed=desc->strip_indexed;
+    pipeline->render->strip_index_format=desc->strip_index_format;
     context->objects++;
     *out=pipeline;
     return doe_dx_fail(DOE_DX_OK,0,"render.pipeline.create",error);

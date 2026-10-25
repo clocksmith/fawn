@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: MIT */
-#include "d3d12_graphics_internal.h"
+#include "d3d12_draw_guard.h"
 #include <stdlib.h>
 
 #if defined(_WIN32)
@@ -13,7 +13,7 @@ static bool same_targets(const doe_resource_render_targets *a,const doe_resource
 static native_failure prepare_draw(const doe_resource_render_packet *packet,
     doe_dx_render_draw *out,native_d3d12_graphics_snapshot *storage)
 {
-    if (packet->indexed || packet->indirect || packet->occlusion_active)
+    if (packet->occlusion_active)
         return native_failure_status(NATIVE_UNSUPPORTED);
     native_pipeline *pipeline=doe_resource_render_pipeline_native(packet->pipeline);
     if (!pipeline || !pipeline->d3d12_graphics )
@@ -96,6 +96,7 @@ native_failure native_d3d12_render(native_command_handle *commands,
     for (size_t i=0;failure.status==NATIVE_OK && i<draws_count;++i) {
         const doe_resource_render_packet *packet=doe_resource_render_record_borrow(records[i+1].value.render);
         failure=prepare_draw(packet,&draws[i],&storage[i]);
+        if (failure.status==NATIVE_OK) failure=native_d3d12_draw_prepare(commands,packet,&draws[i],&storage[i]);
     }
     doe_dx_render_pass pass={.color=target->d3d12,.draws=draws,.draw_count=draws_count};
     if (failure.status==NATIVE_OK && begin->targets.depth_stencil) {
@@ -133,6 +134,7 @@ native_failure native_d3d12_render(native_command_handle *commands,
         doe_dx_status status=doe_dx_commands_render(commands->value.d3d12.commands,&pass,&detail);
         failure=native_failure_d3d12(status,&detail);
     }
+    if (storage) for (size_t i=0;i<draws_count;++i) doe_dx_buffer_release(storage[i].arguments.buffer);
     free(draws);
     free(storage);
     if (failure.status==NATIVE_OK) *consumed=end+1;

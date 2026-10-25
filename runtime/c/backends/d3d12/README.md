@@ -82,8 +82,9 @@ texture-use owner; no frontend availability bit is added. All native heaps/views
 prepare before recording. Ordinary command/pending leases retain every dependency
 through unknown completion. This is a checkpoint toward retained graphics parity,
 not a narrower final acceptance target. Eight MRT slots, broader color formats,
-stencil, depth-only passes, MSAA, public fragment UAV writes and GPU-guarded indexed
-or indirect draws remain concrete migration work. The retained
+stencil, depth-only passes, MSAA and public fragment UAV writes remain concrete
+migration work. Guarded indexed/indirect source composition is described below;
+its device qualification remains open. The retained
 [all-format consumer](../../native/tests/vertex_formats.c) additionally needs
 RGBA32 float/uint/sint targets; its acceptance is unchanged by the new RGBA8 fetch control.
 
@@ -529,3 +530,31 @@ actual official-DXC CPU control for zero/full/sparse masks together with the exa
 entry selector, legacy absence, wrong-stage/reserved/null failures and preserved
 host state. Its authored source has not yet run on the SDK; compiler DXIL controls
 and later source-bound Windows pipeline/pixel results are separate evidence.
+
+### Guarded indexed and indirect whole-pass source checkpoint
+
+The whole-pass API accepts caller-normalized DRAW/DRAW_INDEXED argument records
+and bounded index views. The native bridge compiles the exact shared V2 argument
+normalizer and atomic index scanner through the C compiler and selected DXC
+provider before entering the device lock. Guard pipelines belong to the existing
+graphics pipeline; scratch, parameters, input allocations and command signatures
+use existing pipeline/command/context retirement. No CPU mapping or interpretation
+of user arguments or index values occurs. Fetch capacities are exact 64-bit layout
+bounds; uint16 alignment, negative base vertex, instance bounds and strip restart
+are handled by the shared guard contract. Indexed strips carry the matching SDK
+strip-cut format. Compatible IA/indirect/shader reads aggregate native transitions;
+a writable alias is rejected before pass mutation.
+
+Guard dispatches precede the whole native render pass. A preparation failure
+causes the existing submission path to discard the unsubmitted command, including
+any earlier guard dispatches; unknown submitted work retains every ordinary lease.
+All render descriptor heaps and required command signatures still prepare before
+attachment transitions or clears. Empty/direct behavior remains unchanged.
+
+Portable owner tests cover indirect/index view shape, uninitialized arguments,
+alignment/range failures and early release. The registered
+`check-d3d12-indirect-layout` control compiles both shared guard sources to actual
+HLSL and verifies compiler-owned register/stride/access metadata and failure
+nonpublication. This newer checkpoint has **not** yet had SDK compilation, DXC
+execution, GPU guard execution, indexed pixels or WARP/physical-device validation.
+Earlier source-bound SDK receipts do not qualify it.

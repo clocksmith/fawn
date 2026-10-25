@@ -12,9 +12,10 @@ typedef struct texture_use {
 } texture_use;
 
 static void transition_sets(doe_dx_native_commands *commands,const doe_dx_resource_set *sets,
-    size_t count,bool graphics,const doe_dx_native_binding *vertices,size_t vertex_count,bool restore)
+    size_t count,bool graphics,const doe_dx_native_binding *vertices,size_t vertex_count,
+    const doe_dx_native_binding *indices,const doe_dx_native_binding *indirect,bool restore)
 {
-    buffer_use buffers[DOE_DX_RENDER_DESCRIPTORS+DOE_DX_MAX_VERTEX_BUFFERS];
+    buffer_use buffers[DOE_DX_RENDER_DESCRIPTORS+DOE_DX_MAX_VERTEX_BUFFERS+2];
     texture_use textures[DOE_DX_RENDER_DESCRIPTORS];
     size_t buffer_count=0,texture_count=0;
     D3D12_RESOURCE_STATES read=D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
@@ -36,6 +37,8 @@ static void transition_sets(doe_dx_native_commands *commands,const doe_dx_resour
     }
     for (size_t i=0;i<vertex_count;++i) if (vertices[i].buffer)
         buffers[buffer_count++]=(buffer_use){vertices[i].buffer,D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER};
+    if (indices && indices->buffer) buffers[buffer_count++]=(buffer_use){indices->buffer,D3D12_RESOURCE_STATE_INDEX_BUFFER};
+    if (indirect && indirect->buffer) buffers[buffer_count++]=(buffer_use){indirect->buffer,D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT};
     for (size_t i=0;i<buffer_count;++i) {
         bool repeated=false;
         for (size_t j=0;j<i;++j) if (buffers[j].buffer==buffers[i].buffer) repeated=true;
@@ -63,12 +66,17 @@ static void transition_sets(doe_dx_native_commands *commands,const doe_dx_resour
 void doe_dx_transition_sets(doe_dx_native_commands *commands,const doe_dx_resource_set *sets,
     size_t count,bool graphics,bool restore)
 {
-    transition_sets(commands,sets,count,graphics,NULL,0,restore);
+    transition_sets(commands,sets,count,graphics,NULL,0,NULL,NULL,restore);
 }
 void doe_dx_transition_vertex_sets(doe_dx_native_commands *commands,const doe_dx_resource_set *sets,
     size_t count,const doe_dx_native_binding *vertices,size_t vertex_count,bool restore)
 {
-    transition_sets(commands,sets,count,true,vertices,vertex_count,restore);
+    transition_sets(commands,sets,count,true,vertices,vertex_count,NULL,NULL,restore);
+}
+void doe_dx_transition_render_sets(doe_dx_native_commands *commands,const doe_dx_resource_set *sets,
+    size_t count,const doe_dx_native_render_draw *draw,bool restore)
+{
+    transition_sets(commands,sets,count,true,draw->vertices,draw->vertex_buffer_count,&draw->indices,&draw->indirect,restore);
 }
 void doe_dx_transition_resources(doe_dx_native_commands *commands,doe_dx_native_pipeline *pipeline,
     const doe_dx_native_resources *resources,bool graphics,bool restore)
