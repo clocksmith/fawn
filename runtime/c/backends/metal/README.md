@@ -126,6 +126,10 @@ views for its selected mip/layers. Missing aspects clear to zero while initializ
 companions LOAD/STORE; temporary views join the ordinary command leases, and only
 terminal success publishes their speculative initialization. X formats never
 become render attachments.
+BC transfers admit block-rounded mip extents and sliced 3D through the existing
+texture owner. Buffer/image native calls clamp only their edge texel extents;
+buffer layouts and texture/texture copies retain whole physical blocks. Array
+image strides and 3D depth coordinates remain distinct.
 Depth/stencil staging transfers select the canonical depth or stencil aspect and
 native blit option; successful uploads publish only that aspect in the same
 subresource owner. Combined-format whole-buffer transfers reject. Depth/stencil

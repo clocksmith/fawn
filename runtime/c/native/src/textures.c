@@ -25,6 +25,13 @@ WGPUTexture wgpuDeviceCreateTexture(WGPUDevice handle, const WGPUTextureDescript
     native_device *device = (native_device *)handle;
     if (!device) return NULL;
     if (native_device_dead(device)) return native_lost_texture(device, descriptor);
+    /* 3D BC textures need texture-compression-bc-sliced-3d as well. */
+    if (descriptor && descriptor->dimension == WGPUTextureDimension_3D &&
+        descriptor->format >= WGPUTextureFormat_BC1RGBAUnorm && descriptor->format <= WGPUTextureFormat_BC7RGBAUnormSrgb &&
+        !native_feature_enabled(device, WGPUFeatureName_TextureCompressionBCSliced3D)) {
+        native_error(device, WGPUErrorType_Validation, "3D BC textures need texture-compression-bc-sliced-3d");
+        return NULL;
+    }
     if (device->backend.kind == WGPUBackendType_Metal) return native_metal_create_texture(device, descriptor);
     if (device->backend.kind == WGPUBackendType_D3D12) return native_d3d12_create_texture(device, descriptor);
     if (device->backend.kind != WGPUBackendType_Vulkan) {
@@ -78,13 +85,6 @@ WGPUTexture wgpuDeviceCreateTexture(WGPUDevice handle, const WGPUTextureDescript
         !native_texture_format(device->features, desc.format, &native.format) ||
         ((desc.usage & WGPUTextureUsage_RenderAttachment) && !native_color_renderable(device->features, desc.format))) {
         native_error(device, WGPUErrorType_Validation, "texture shape or format unsupported");
-        return NULL;
-    }
-    /* 3D BC textures need texture-compression-bc-sliced-3d as well. */
-    if (desc.dimension == WGPUTextureDimension_3D && desc.format >= WGPUTextureFormat_BC1RGBAUnorm &&
-        desc.format <= WGPUTextureFormat_BC7RGBAUnormSrgb &&
-        !native_feature_enabled(device, WGPUFeatureName_TextureCompressionBCSliced3D)) {
-        native_error(device, WGPUErrorType_Validation, "3D BC textures need texture-compression-bc-sliced-3d");
         return NULL;
     }
     switch (desc.dimension) {

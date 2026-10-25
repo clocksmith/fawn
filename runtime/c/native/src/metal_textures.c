@@ -22,11 +22,13 @@ native_failure native_metal_initialize_texture(native_device *device, native_tex
     } else {
         doe_mtl_format_info format = {0};
         doe_mtl_status status = doe_mtl_texture_format_info(desc->format, &format);
-        uint64_t pitch = ((uint64_t)desc->width * format.block_bytes + 255) / 256 * 256;
+        uint64_t columns = status == DOE_MTL_OK ? ((uint64_t)desc->width + format.block_width - 1) / format.block_width : 0;
+        uint64_t rows = status == DOE_MTL_OK ? ((uint64_t)desc->height + format.block_height - 1) / format.block_height : 0;
+        uint64_t pitch = (columns * format.block_bytes + 255) / 256 * 256;
         uint64_t bytes = 0;
-        bool bounded = status == DOE_MTL_OK && format.block_bytes && pitch && desc->height <= SIZE_MAX / pitch;
+        bool bounded = status == DOE_MTL_OK && format.block_bytes && pitch && rows <= SIZE_MAX / pitch;
         if (bounded) {
-            bytes = pitch * desc->height;
+            bytes = pitch * rows;
             bounded = desc->depth_or_layers <= SIZE_MAX / bytes;
         }
         if (bounded) {
@@ -43,7 +45,8 @@ native_failure native_metal_initialize_texture(native_device *device, native_tex
                 if (!width) width = 1;
                 if (!height) height = 1;
                 if (!depth) depth = 1;
-                uint32_t row = (uint32_t)(((uint64_t)width * format.block_bytes + 255) / 256 * 256);
+                uint64_t mip_columns = ((uint64_t)width + format.block_width - 1) / format.block_width;
+                uint32_t row = (uint32_t)((mip_columns * format.block_bytes + 255) / 256 * 256);
                 status = doe_mtl_commands_upload_texture(commands.value.metal, zero,
                     (doe_mtl_texture_buffer_layout){.bytes_per_row=row}, texture->metal,
                     (doe_mtl_texture_region){.mip=mip,.width=width,.height=height,.depth_or_layers=depth}, &detail);

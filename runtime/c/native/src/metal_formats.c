@@ -51,6 +51,20 @@ bool native_metal_format(uint32_t features, WGPUTextureFormat format, doe_mtl_fo
     case WGPUTextureFormat_RGBA32Float: *out = DOE_MTL_RGBA32_FLOAT; return true;
     case WGPUTextureFormat_Depth24Plus: *out = DOE_MTL_DEPTH32_FLOAT; return true;
     case WGPUTextureFormat_Depth24PlusStencil8: *out = DOE_MTL_DEPTH32_STENCIL8; return true;
+    case WGPUTextureFormat_BC1RGBAUnorm: *out = DOE_MTL_BC1_RGBA; return true;
+    case WGPUTextureFormat_BC1RGBAUnormSrgb: *out = DOE_MTL_BC1_RGBA_SRGB; return true;
+    case WGPUTextureFormat_BC2RGBAUnorm: *out = DOE_MTL_BC2_RGBA; return true;
+    case WGPUTextureFormat_BC2RGBAUnormSrgb: *out = DOE_MTL_BC2_RGBA_SRGB; return true;
+    case WGPUTextureFormat_BC3RGBAUnorm: *out = DOE_MTL_BC3_RGBA; return true;
+    case WGPUTextureFormat_BC3RGBAUnormSrgb: *out = DOE_MTL_BC3_RGBA_SRGB; return true;
+    case WGPUTextureFormat_BC4RUnorm: *out = DOE_MTL_BC4_R_UNORM; return true;
+    case WGPUTextureFormat_BC4RSnorm: *out = DOE_MTL_BC4_R_SNORM; return true;
+    case WGPUTextureFormat_BC5RGUnorm: *out = DOE_MTL_BC5_RG_UNORM; return true;
+    case WGPUTextureFormat_BC5RGSnorm: *out = DOE_MTL_BC5_RG_SNORM; return true;
+    case WGPUTextureFormat_BC6HRGBUfloat: *out = DOE_MTL_BC6H_RGB_UFLOAT; return true;
+    case WGPUTextureFormat_BC6HRGBFloat: *out = DOE_MTL_BC6H_RGB_FLOAT; return true;
+    case WGPUTextureFormat_BC7RGBAUnorm: *out = DOE_MTL_BC7_RGBA; return true;
+    case WGPUTextureFormat_BC7RGBAUnormSrgb: *out = DOE_MTL_BC7_RGBA_SRGB; return true;
     default: return false;
     }
 }

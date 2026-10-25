@@ -12,14 +12,17 @@ doe_mtl_status doe_mtl_texture_region_check(const doe_mtl_texture *texture,
     height = doe_mtl_mip_extent(texture->desc.height, r.mip);
     depth = texture->desc.type == DOE_MTL_TEXTURE_3D ?
         doe_mtl_mip_extent(texture->desc.depth_or_layers, r.mip) : texture->desc.depth_or_layers;
-    if (r.width == 0 || r.height == 0 || r.depth_or_layers == 0 ||
-        r.x > width || r.width > width - r.x || r.y > height || r.height > height - r.y ||
+    uint64_t physical_width = ((uint64_t)width + f->block_width - 1) / f->block_width * f->block_width;
+    uint64_t physical_height = ((uint64_t)height + f->block_height - 1) / f->block_height * f->block_height;
+    if (physical_width > UINT32_MAX || physical_height > UINT32_MAX ||
+        r.width == 0 || r.height == 0 || r.depth_or_layers == 0 ||
+        r.x >= width || r.width > physical_width - r.x || r.y >= height || r.height > physical_height - r.y ||
         r.z > depth || r.depth_or_layers > depth - r.z) return DOE_MTL_RANGE;
     if (r.x % f->block_width != 0 || r.y % f->block_height != 0 ||
         (r.width % f->block_width != 0 && r.x + r.width != width) ||
         (r.height % f->block_height != 0 && r.y + r.height != height))
         return DOE_MTL_ALIGNMENT;
-    *full = r.x == 0 && r.y == 0 && r.width == width && r.height == height &&
+    *full = r.x == 0 && r.y == 0 && r.width >= width && r.height >= height &&
         (texture->desc.type != DOE_MTL_TEXTURE_3D || (r.z == 0 && r.depth_or_layers == depth));
     return DOE_MTL_OK;
 }
@@ -71,6 +74,12 @@ static doe_mtl_status transfer_layout(const doe_mtl_texture *texture,
     copy->bytes_per_row = (size_t)pitch;
     copy->bytes_per_image = (size_t)stride;
     copy->region = region;
+    /* Metal buffer/image transfers name virtual texels at a compressed mip
+     * edge, while the validated buffer footprint still contains whole blocks. */
+    uint32_t remaining_width = doe_mtl_mip_extent(texture->desc.width, region.mip) - region.x;
+    uint32_t remaining_height = doe_mtl_mip_extent(texture->desc.height, region.mip) - region.y;
+    if (copy->region.width > remaining_width) copy->region.width = remaining_width;
+    if (copy->region.height > remaining_height) copy->region.height = remaining_height;
     copy->volume = texture->desc.type == DOE_MTL_TEXTURE_3D;
     *covers_buffer = layout.offset == 0 && length == buffer->size &&
         (rows == 1 || pitch == row_bytes) &&

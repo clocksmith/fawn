@@ -18,12 +18,6 @@ void native_metal_write_texture(native_device *device, const WGPUTexelCopyTextur
         !doe_resource_texture_available(texture) ? DOE_RESOURCE_UNAVAILABLE :
         doe_resource_texture_copy_validate(data_size, doe_resource_texture_description(texture), &copy,
             DOE_RESOURCE_BUFFER_TO_TEXTURE, DOE_RESOURCE_COPY_QUEUE, &region);
-    doe_mtl_format_info format = {0};
-    if (status == DOE_RESOURCE_OK) {
-        native_texture *payload = doe_resource_texture_native(texture);
-        if (doe_mtl_texture_format_info(doe_mtl_texture_description(payload->metal)->format, &format) != DOE_MTL_OK ||
-            format.compressed) status = DOE_RESOURCE_UNSUPPORTED;
-    }
     native_unlock(device);
     if (status != DOE_RESOURCE_OK) {
         native_error(device, native_resource_error(status), "Metal queue texture write range or format invalid");
@@ -37,12 +31,12 @@ void native_metal_write_texture(native_device *device, const WGPUTexelCopyTextur
     uint64_t row_bytes = region.row_bytes;
     uint64_t pitch = (row_bytes + 255) / 256 * 256;
     const uint64_t allocation_bound = native_allocation_bound(device);
-    if (pitch > UINT32_MAX || copy.height > SIZE_MAX / pitch) {
+    if (pitch > UINT32_MAX || region.rows > SIZE_MAX / pitch) {
         native_error(device, WGPUErrorType_OutOfMemory, "Metal queue texture write staging extent exceeds limit");
         native_device_release(device);
         return;
     }
-    uint64_t bytes = pitch * copy.height;
+    uint64_t bytes = pitch * region.rows;
     if (copy.depth_or_layers > SIZE_MAX / bytes || bytes * copy.depth_or_layers > allocation_bound) {
         native_error(device, WGPUErrorType_OutOfMemory, "Metal queue texture write staging extent exceeds limit");
         native_device_release(device);
@@ -57,8 +51,8 @@ void native_metal_write_texture(native_device *device, const WGPUTexelCopyTextur
     }
     const unsigned char *source = data;
     for (uint32_t z = 0; z < copy.depth_or_layers; ++z)
-        for (uint32_t y = 0; y < copy.height; ++y)
-            memcpy(packed + pitch * ((uint64_t)z * copy.height + y),
+        for (uint32_t y = 0; y < region.rows; ++y)
+            memcpy(packed + pitch * ((uint64_t)z * region.rows + y),
                 source + copy.offset + (uint64_t)region.pitch * ((uint64_t)z * region.image_rows + y), (size_t)row_bytes);
     WGPUBufferDescriptor descriptor = {.size=bytes, .usage=WGPUBufferUsage_CopySrc | WGPUBufferUsage_CopyDst};
     /* Caller data has queue-write layout rules; this private aligned copy is
@@ -74,7 +68,7 @@ void native_metal_write_texture(native_device *device, const WGPUTexelCopyTextur
         status = written.status == NATIVE_OK ? doe_resource_encoder_create(&device->resources, &encoder) : DOE_RESOURCE_STATE;
         copy.offset = 0;
         copy.bytes_per_row = (uint32_t)pitch;
-        copy.rows_per_image = copy.height;
+        copy.rows_per_image = region.rows;
         if (status == DOE_RESOURCE_OK) status = doe_resource_encoder_copy_texture(encoder,
             (doe_resource_buffer *)staging, texture, &copy, DOE_RESOURCE_BUFFER_TO_TEXTURE, DOE_RESOURCE_COPY_NATIVE);
         if (status == DOE_RESOURCE_OK) status = doe_resource_encoder_finish(encoder, &commands);
