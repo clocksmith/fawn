@@ -1,0 +1,100 @@
+{
+  "fixtureSha256": "b33b3d468b28a1993e8082c2f0a12b73dd97c9dad8432d494584b747d3155fad",
+  "rows": [
+    {
+      "provider": "c",
+      "librarySha256": "e4d95e4df227fc0d74e7b6036c7f10a0104d5437f2e6ddf53c588bccfa7b9e83",
+      "exitCode": 0,
+      "observed": {
+        "expected": [
+          42,
+          43,
+          44,
+          45
+        ],
+        "actual": [
+          42,
+          43,
+          44,
+          45
+        ],
+        "detached": true
+      }
+    },
+    {
+      "provider": "zig",
+      "librarySha256": "3e60dbfa3281210d98639fd2f30e81ed001a31f066e39e106cd867a07b3847d1",
+      "exitCode": 1,
+      "observed": {
+        "expected": [
+          42,
+          43,
+          44,
+          45
+        ],
+        "actual": [
+          999,
+          43,
+          44,
+          45
+        ],
+        "detached": true
+      }
+    },
+    {
+      "provider": "dawn",
+      "librarySha256": "fbfe599055b469963e4c9bfc900a702843db962dcaba0799b3c81ae33fa43db1",
+      "exitCode": 1,
+      "observed": {
+        "expected": [
+          42,
+          43,
+          44,
+          45
+        ],
+        "actual": [
+          999,
+          43,
+          44,
+          45
+        ],
+        "detached": true
+      }
+    }
+  ],
+  "schemaVersion": 1,
+  "classification": "diagnostic-not-claimable",
+  "consumer": "Reject unsafe readback zero-copy optimization and preserve READ-map mutation discard behavior",
+  "fixture": "packages/doe-gpu/test/integration/test-read-map-discard.js",
+  "source": "76b67a3fba0a151334894ce915f4b01300517752",
+  "spec": "https://gpuweb.github.io/gpuweb/#dom-gpumapmode-read",
+  "adapter": "llvmpipe LLVM19.1.7 CPU Vulkan",
+  "node": "24.22.1",
+  "originalPerformanceLossesRemain": true,
+  "phaseMediansMs": {
+    "doe": {
+      "bufferCreate": 1.5259945,
+      "writeMaterialize": 0.839435,
+      "writeQueueWrite": 0.0744075,
+      "submitCommandEncoderFinish": 0.3996575,
+      "submitQueueSubmit": 0.5684465,
+      "readbackMapAsync": 0.5727825,
+      "readbackGetMappedRange": 0.195695,
+      "readbackHostCopy": 0.300823,
+      "readbackUnmap": 0.1749285,
+      "readbackValidation": 0.83967
+    },
+    "dawn": {
+      "bufferCreate": 0.1067055,
+      "writeMaterialize": 0.7037905,
+      "writeQueueWrite": 0.429282,
+      "submitCommandEncoderFinish": 0.0168055,
+      "submitQueueSubmit": 0.0879725,
+      "readbackMapAsync": 0.4723815,
+      "readbackGetMappedRange": 0.020406,
+      "readbackHostCopy": 0.370944,
+      "readbackUnmap": 0.0200205,
+      "readbackValidation": 0.8337665
+    }
+  }
+}
