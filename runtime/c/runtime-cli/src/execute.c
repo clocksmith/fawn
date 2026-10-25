@@ -171,6 +171,13 @@ doe_runtime *doe_runtime_open(const doe_runtime_options *options, char *message,
     }
     record_adapter(runtime);
     WGPUDeviceDescriptor descriptor = WGPU_DEVICE_DESCRIPTOR_INIT;
+    /* The stream compiler may consume unchanged shaders with enable f16.
+     * Request the real adapter feature; unavailable devices still reject f16. */
+    WGPUFeatureName feature = WGPUFeatureName_ShaderF16;
+    if (wgpuAdapterHasFeature(runtime->adapter, feature)) {
+        descriptor.requiredFeatures = &feature;
+        descriptor.requiredFeatureCount = 1;
+    }
     /* Buffer size limits at the adapter's maxima, as doe-zig-runtime's native
      * lane allocates and binds against device capabilities (the 256 MiB
      * matrix-vector weights exceed WebGPU's 128 MiB default binding limit).

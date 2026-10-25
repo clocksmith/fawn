@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: MIT */
-#include "numeric_stability.h"
+#include "numeric_eval.h"
 #include "sha256.h"
 #include "trace.h"
 #include <inttypes.h>
@@ -138,17 +138,6 @@ static bool write_proof_links(FILE *out, const char *key, const doe_json_value *
 
 /* ---- Evaluation ---- */
 
-static uint32_t argmax_token(const doe_ns_candidate *candidates, size_t count, int lane)
-{
-    size_t best = 0;
-    for (size_t i = 1; i < count; i++) {
-        double value = lane == 0 ? candidates[i].fast : lane == 1 ? candidates[i].stable : candidates[i].reference;
-        double best_value = lane == 0 ? candidates[best].fast : lane == 1 ? candidates[best].stable : candidates[best].reference;
-        if (value > best_value) best = i;
-    }
-    return candidates[best].token_id;
-}
-
 static bool contains_string(const doe_json_value *array, const char *needle)
 {
     for (size_t i = 0; array && array->kind == DOE_JSON_ARRAY && i < array->count; i++)
@@ -162,9 +151,21 @@ static bool flag(const doe_json_value *object, const char *key)
     return value && value->kind == DOE_JSON_BOOL && value->boolean;
 }
 
+static const char *evaluation_policy(const doe_ns_evaluation *e, const char *key)
+{
+    const doe_numeric_annotation *a = e->command ? e->command->numeric : NULL;
+    if (!a) return doe_ns_string(e->profile, key);
+    if (!strcmp(key, "operatorFamily")) return a->operator_family;
+    if (!strcmp(key, "triggerPolicyId")) return a->trigger_policy_id;
+    if (!strcmp(key, "fastPolicyId")) return a->fast_policy_id;
+    if (!strcmp(key, "stablePolicyId")) return a->stable_policy_id;
+    if (!strcmp(key, "referencePolicyId")) return "lm-head-slice/cpu-f64-serial-v1";
+    return NULL;
+}
+
 bool doe_ns_decide(const doe_ns_policy *policy, doe_ns_evaluation *e, char *message, size_t message_size)
 {
-    const char *trigger_id = doe_ns_string(e->profile, "triggerPolicyId");
+    const char *trigger_id = evaluation_policy(e, "triggerPolicyId");
     e->trigger_policy = doe_ns_find(policy->root, "triggerPolicies", "triggerPolicyId", trigger_id);
     e->routing_policy = doe_ns_find(policy->root, "routingPolicies", "policyId", e->routing_policy_id);
     if (!e->trigger_policy || !e->routing_policy || strcmp(doe_ns_string(e->routing_policy, "triggerPolicyId"), trigger_id)) {
@@ -193,7 +194,7 @@ bool doe_ns_decide(const doe_ns_policy *policy, doe_ns_evaluation *e, char *mess
     e->committed_mode = doe_ns_string(e->metadata, "committedResultMode");
     e->downstream_action = doe_ns_string(e->metadata, "downstreamAction");
     bool stable = !strcmp(e->selection_mode, "stable"), fast = !strcmp(e->selection_mode, "fast");
-    e->selected_policy_id = stable ? doe_ns_string(e->profile, "stablePolicyId") : fast ? doe_ns_string(e->profile, "fastPolicyId") : NULL;
+    e->selected_policy_id = stable ? evaluation_policy(e, "stablePolicyId") : fast ? evaluation_policy(e, "fastPolicyId") : NULL;
     e->has_selected_token = stable || fast;
     e->selected_token = stable ? e->stable_token : e->fast_token;
     return true;
@@ -221,22 +222,22 @@ static bool write_receipt(FILE *out, const doe_ns_recorder *r, const doe_ns_eval
     const char *family, const doe_semantic *semantic, const decode_boundary *boundary)
 {
     const doe_json_value *root = r->policy->root;
-    const doe_json_value *profile = e->profile;
     bool ok = fprintf(out, "{\"schemaVersion\":1,\"mode\":\"numeric-stability\"") >= 0 && write_field(out, "operatorFamily", family) &&
         write_field(out, "semanticOpId", semantic->op_id) && write_field(out, "semanticStage", semantic->stage) &&
         write_field(out, "semanticPhase", semantic->phase) && write_field(out, "policyRegistryPath", r->policy->path) &&
         write_field(out, "policyRegistryVersion", doe_ns_string(root, "registryVersion")) &&
         write_field(out, "routeTaxonomyVersion", doe_ns_string(root, "routeTaxonomyVersion")) &&
         write_field(out, "proofArtifactPath", doe_ns_string(root, "proofArtifactPath")) &&
-        write_field(out, "triggerPolicyId", doe_ns_string(profile, "triggerPolicyId")) &&
+        write_field(out, "triggerPolicyId", evaluation_policy(e, "triggerPolicyId")) &&
         write_field(out, "routingPolicyId", e->routing_policy_id) &&
-        write_field(out, "fastPolicyId", doe_ns_string(profile, "fastPolicyId")) &&
-        write_field(out, "stablePolicyId", doe_ns_string(profile, "stablePolicyId")) &&
-        write_field(out, "referencePolicyId", doe_ns_string(profile, "referencePolicyId")) &&
+        write_field(out, "fastPolicyId", evaluation_policy(e, "fastPolicyId")) &&
+        write_field(out, "stablePolicyId", evaluation_policy(e, "stablePolicyId")) &&
+        write_field(out, "referencePolicyId", evaluation_policy(e, "referencePolicyId")) &&
         write_key(out, "candidates", true) && fputc('[', out) != EOF;
     for (size_t i = 0; ok && i < e->candidate_count; i++) {
         const doe_ns_candidate *c = &e->candidates[i];
-        ok = (!i || fputc(',', out) != EOF) && fprintf(out, "{\"tokenId\":%" PRIu32 ",\"label\":null,\"fastLogit\":", c->token_id) >= 0 &&
+        ok = (!i || fputc(',', out) != EOF) && fprintf(out, "{\"tokenId\":%" PRIu32 ",\"label\":", c->token_id) >= 0 &&
+            write_string_or_null(out, c->label) && fputs(",\"fastLogit\":", out) >= 0 &&
             doe_ns_write_f64(out, c->fast) && fputs(",\"stableLogit\":", out) >= 0 && doe_ns_write_f64(out, c->stable) &&
             fputs(",\"referenceLogit\":", out) >= 0 && doe_ns_write_f64(out, c->reference) && fputc('}', out) != EOF;
     }
@@ -342,113 +343,6 @@ static bool open_receipts(doe_ns_recorder *r, char *message, size_t message_size
     return r->receipts != NULL;
 }
 
-static bool binding_of(const doe_command *command, uint32_t index, const doe_kernel_binding **out, char *message,
-    size_t message_size)
-{
-    for (size_t i = 0; i < command->as.dispatch.binding_count; i++) {
-        const doe_kernel_binding *b = &command->as.dispatch.bindings[i];
-        if (b->binding == index && b->group == 0) { *out = b; return true; }
-    }
-    snprintf(message, message_size, "numeric stability: %s has no group 0 binding %u", command->as.dispatch.kernel, index);
-    return false;
-}
-
-static bool capture_f32(const doe_ns_io *io, uint64_t handle, uint64_t offset, size_t count, double *out, char *message,
-    size_t message_size)
-{
-    uint8_t *bytes = NULL;
-    size_t length = 0;
-    if (!io->capture(io->context, handle, offset, (uint64_t)count * 4, &bytes, &length, message, message_size)) return false;
-    bool ok = length == count * 4;
-    for (size_t i = 0; ok && i < count; i++) {
-        uint32_t bits = (uint32_t)bytes[4 * i] | (uint32_t)bytes[4 * i + 1] << 8 | (uint32_t)bytes[4 * i + 2] << 16 |
-            (uint32_t)bytes[4 * i + 3] << 24;
-        float value;
-        memcpy(&value, &bits, sizeof(value));
-        out[i] = (double)value;
-    }
-    free(bytes);
-    if (!ok) snprintf(message, message_size, "numeric stability: buffer %llu capture size mismatch", (unsigned long long)handle);
-    return ok;
-}
-
-static bool capture_uniform(const doe_ns_io *io, const doe_kernel_binding *b, uint8_t **bytes, size_t *length, char *message,
-    size_t message_size)
-{
-    return io->capture(io->context, b->handle, b->buffer_offset, b->buffer_size, bytes, length, message, message_size);
-}
-
-static uint32_t read_u32(const uint8_t *bytes, size_t length, size_t word)
-{
-    if ((word + 1) * 4 > length) return 0;
-    const uint8_t *b = bytes + word * 4;
-    return (uint32_t)b[0] | (uint32_t)b[1] << 8 | (uint32_t)b[2] << 16 | (uint32_t)b[3] << 24;
-}
-
-static float read_f32(const uint8_t *bytes, size_t length, size_t word)
-{
-    uint32_t bits = read_u32(bytes, length, word);
-    float value;
-    memcpy(&value, &bits, sizeof(value));
-    return value;
-}
-
-/* runtime_plan.zig buildAutoDecodeFinalLogitsObservation and
- * runtime_eval.zig evaluateMatmulObservation: uniform (rows, cols), weights
- * binding 1, hidden binding 2, logits binding 3. Ordinary matmul swaps
- * weights/hidden bindings while retaining the same evaluation order. */
-static bool evaluate_matmul(const doe_ns_io *io, doe_ns_evaluation *e, bool decode, char *message, size_t message_size)
-{
-    const doe_command *command = e->command;
-    const doe_kernel_binding *uniform, *weights, *hidden, *logits;
-    if (!binding_of(command, 0, &uniform, message, message_size) || !binding_of(command, decode ? 1 : 2, &weights, message, message_size) ||
-        !binding_of(command, decode ? 2 : 1, &hidden, message, message_size) || !binding_of(command, 3, &logits, message, message_size))
-        return false;
-    uint8_t *bytes = NULL;
-    size_t length = 0;
-    if (!capture_uniform(io, uniform, &bytes, &length, message, message_size)) return false;
-    uint32_t rows = read_u32(bytes, length, 0), cols = read_u32(bytes, length, 1);
-    free(bytes);
-    if (!rows || !cols || rows > (1u << 24) || cols > (1u << 24)) {
-        snprintf(message, message_size, "numeric stability: logits shape %" PRIu32 "x%" PRIu32 " is not admitted", rows, cols);
-        return false;
-    }
-    double *hidden_values = calloc(cols, sizeof(double)), *fast = calloc(rows, sizeof(double));
-    double *stable = calloc(rows, sizeof(double)), *row = calloc(cols, sizeof(double));
-    e->candidates = calloc(rows, sizeof(doe_ns_candidate));
-    e->candidate_count = rows;
-    bool ok = hidden_values && fast && stable && row && e->candidates &&
-        capture_f32(io, hidden->handle, hidden->buffer_offset, cols, hidden_values, message, message_size) &&
-        capture_f32(io, logits->handle, logits->buffer_offset, rows, fast, message, message_size);
-    if (!ok && !message[0]) snprintf(message, message_size, "out of memory");
-    for (uint32_t r = 0; ok && r < rows; r++) {
-        uint64_t offset = weights->buffer_offset + (uint64_t)r * cols * 4;
-        ok = capture_f32(io, weights->handle, offset, cols, row, message, message_size);
-        float f32_acc = 0;
-        double f64_acc = 0;
-        for (uint32_t c = 0; ok && c < cols; c++) {
-            f32_acc = f32_acc + (float)hidden_values[c] * (float)row[c];
-            f64_acc += hidden_values[c] * row[c];
-        }
-        stable[r] = (double)f32_acc;
-        e->candidates[r] = (doe_ns_candidate){.token_id = r, .fast = fast[r], .stable = stable[r], .reference = f64_acc};
-    }
-    ok = ok && doe_ns_digest(fast, rows, e->fast_digest) && doe_ns_digest(stable, rows, e->stable_digest) &&
-        doe_ns_layout_fingerprint(command, e->layout_fingerprint);
-    if (ok) {
-        e->fast_token = argmax_token(e->candidates, rows, 0);
-        e->stable_token = argmax_token(e->candidates, rows, 1);
-        e->reference_token = argmax_token(e->candidates, rows, 2);
-        e->logits_handle = logits->handle;
-        e->logits_offset = logits->buffer_offset;
-    }
-    free(hidden_values);
-    free(fast);
-    free(stable);
-    free(row);
-    return ok;
-}
-
 typedef struct replay_entry {
     uint32_t token;
     double scaled, probability;
@@ -532,17 +426,17 @@ static bool record_decode_boundary(doe_ns_recorder *r, const doe_ns_io *io, cons
 {
     doe_ns_evaluation *source = &r->source;
     const doe_kernel_binding *uniform, *output;
-    if (!binding_of(command, 0, &uniform, message, message_size) || !binding_of(command, 2, &output, message, message_size))
+    if (!doe_ns_binding_of(command, 0, &uniform, message, message_size) || !doe_ns_binding_of(command, 2, &output, message, message_size))
         return false;
     uint8_t *bytes = NULL;
     size_t length = 0;
-    if (!capture_uniform(io, uniform, &bytes, &length, message, message_size)) return false;
-    decode_boundary b = {.vocab_size = read_u32(bytes, length, 0)};
+    if (!doe_ns_capture_uniform(io, uniform, &bytes, &length, message, message_size)) return false;
+    decode_boundary b = {.vocab_size = doe_ns_read_u32(bytes, length, 0)};
     if (length >= 32) {
-        uint32_t top_k = read_u32(bytes, length, 1), flags = read_u32(bytes, length, 7);
-        double top_p = read_f32(bytes, length, 2), temperature = read_f32(bytes, length, 3), draw = read_f32(bytes, length, 6);
+        uint32_t top_k = doe_ns_read_u32(bytes, length, 1), flags = doe_ns_read_u32(bytes, length, 7);
+        double top_p = doe_ns_read_f32(bytes, length, 2), temperature = doe_ns_read_f32(bytes, length, 3), draw = doe_ns_read_f32(bytes, length, 6);
         b.has_seed = true;
-        b.seed = (uint64_t)read_u32(bytes, length, 4) | (uint64_t)read_u32(bytes, length, 5) << 32;
+        b.seed = (uint64_t)doe_ns_read_u32(bytes, length, 4) | (uint64_t)doe_ns_read_u32(bytes, length, 5) << 32;
         b.has_temperature = temperature > 0;
         b.temperature = temperature;
         b.has_top_k = top_k > 0;
@@ -587,7 +481,7 @@ static bool record_decode_boundary(doe_ns_recorder *r, const doe_ns_io *io, cons
             snprintf(message, message_size, "numeric stability: sampled token buffer holds no token");
             ok = false;
         }
-        if (ok) b.live_token = read_u32(bytes, length, 0);
+        if (ok) b.live_token = doe_ns_read_u32(bytes, length, 0);
         free(bytes);
     }
     bool stable = !strcmp(source->selection_mode, "stable"), fast = !strcmp(source->selection_mode, "fast");
@@ -617,49 +511,58 @@ static bool is_sample_dispatch(const doe_command *command)
 }
 
 bool doe_ns_record(doe_ns_recorder *r, const doe_ns_io *io, const doe_ns_identity *identity, const doe_command *command,
-    size_t following, bool *stop, char *message, size_t message_size)
+    const doe_command *future, size_t following, bool *stop, char *message, size_t message_size)
 {
     *stop = false;
     message[0] = '\0';
     if (!doe_ns_semantic_complete(command)) return true;
     if (r->has_source && is_sample_dispatch(command)) {
         const doe_kernel_binding *logits;
-        if (binding_of(command, 1, &logits, message, message_size) && logits->handle == r->source.logits_handle)
+        if (doe_ns_binding_of(command, 1, &logits, message, message_size) && logits->handle == r->source.logits_handle)
             return record_decode_boundary(r, io, command, message, message_size);
         message[0] = '\0';
     }
     const doe_json_value *profile = doe_ns_auto_detect(r->policy, command);
-    if (!profile) return true;
+    if (!profile && !command->numeric) return true;
     const char *plan = doe_ns_string(profile, "capturePlanId");
-    if (!doe_ns_capture_plan_supported(plan)) {
+    if (!command->numeric && !doe_ns_capture_plan_supported(plan)) {
         snprintf(message, message_size, "numeric stability capture plan %.100s is not implemented", plan ? plan : "(none)");
         return false;
     }
     doe_ns_evaluation e = {.profile = profile, .command = command,
-        .routing_policy_id = doe_ns_string(r->policy->execution_profile, "routingPolicyId")};
-    bool ok = evaluate_matmul(io, &e, !strcmp(plan, DOE_NS_DECODE_FINAL_LOGITS_PLAN), message, message_size) && doe_ns_decide(r->policy, &e, message, message_size);
+        .routing_policy_id = command->numeric ? command->numeric->routing_policy_id :
+            doe_ns_string(r->policy->execution_profile, "routingPolicyId")};
+    bool ok = command->numeric ? doe_ns_evaluate_matmul(io, &e, false, message, message_size) :
+        !strcmp(plan, DOE_NS_RMSNORM_PLAN) ? doe_ns_evaluate_rmsnorm(io, &e, future, following, message, message_size) :
+        !strcmp(plan, DOE_NS_ATTENTION_PLAN) ? doe_ns_evaluate_attention(io, &e, message, message_size) :
+        doe_ns_evaluate_matmul(io, &e, !strcmp(plan, DOE_NS_DECODE_FINAL_LOGITS_PLAN), message, message_size);
+    ok = ok && doe_ns_decide(r->policy, &e, message, message_size);
     bool rewrite = ok && !strcmp(e.committed_mode, "stable");
     if (rewrite) {
-        uint32_t *words = malloc(e.candidate_count * sizeof(uint32_t));
+        size_t count = e.rewrite_values ? e.rewrite_count : e.candidate_count;
+        uint32_t *words = malloc(count * sizeof(uint32_t));
         ok = words != NULL;
-        for (size_t i = 0; ok && i < e.candidate_count; i++) {
-            float value = (float)e.candidates[i].stable;
+        for (size_t i = 0; ok && i < count; i++) {
+            float value = (float)(e.rewrite_values ? e.rewrite_values[i] : e.candidates[i].stable);
             memcpy(&words[i], &value, sizeof(value));
         }
-        ok = ok && io->write(io->context, e.logits_handle, e.logits_offset, words, e.candidate_count, message, message_size);
+        ok = ok && io->write(io->context, e.logits_handle, e.logits_offset, words, count, message, message_size);
         free(words);
     }
+    free(e.rewrite_values);
+    e.rewrite_values = NULL;
     *stop = ok && !strcmp(e.downstream_action, "stop") && following > 0;
     e.effect_applied = rewrite || *stop;
     ok = ok && open_receipts(r, message, message_size) &&
-        write_receipt(r->receipts, r, &e, identity, doe_ns_string(profile, "operatorFamily"), &command->semantic, NULL);
+        write_receipt(r->receipts, r, &e, identity, evaluation_policy(&e, "operatorFamily"), &command->semantic, NULL);
     if (!ok) {
         if (!message[0]) snprintf(message, message_size, "cannot write %s", r->receipt_path);
         free(e.candidates);
         return false;
     }
     r->receipt_count++;
-    r->auto_detect_count++;
+    if (command->numeric) r->annotation_count++;
+    else r->auto_detect_count++;
     if (e.checks[0]) r->first_divergence_count++;
     if (!strcmp(e.decision, "accept-fast")) r->accept_fast++;
     else if (!strcmp(e.decision, "prefer-stable")) r->prefer_stable++;
@@ -686,9 +589,9 @@ bool doe_ns_write_summary(FILE *out, const doe_ns_recorder *r)
         write_field(out, "executionProfileId", doe_ns_string(r->policy->execution_profile, "profileId")) &&
         write_field(out, "receiptPath", r->receipt_path) &&
         fprintf(out, ",\"receiptCount\":%" PRIu32 ",\"decisionCounts\":{\"accept-fast\":%" PRIu32 ",\"prefer-stable\":%" PRIu32
-            ",\"abstain\":%" PRIu32 "},\"firstDivergencePresentCount\":%" PRIu32 ",\"annotationCount\":0,\"autoDetectCount\":%" PRIu32
+            ",\"abstain\":%" PRIu32 "},\"firstDivergencePresentCount\":%" PRIu32 ",\"annotationCount\":%" PRIu32 ",\"autoDetectCount\":%" PRIu32
             ",\"committedStableRewriteCount\":%" PRIu32 ",\"downstreamStopCount\":%" PRIu32 "}", r->receipt_count, r->accept_fast,
-            r->prefer_stable, r->abstain, r->first_divergence_count, r->auto_detect_count, r->rewrite_count, r->stop_count) >= 0;
+            r->prefer_stable, r->abstain, r->first_divergence_count, r->annotation_count, r->auto_detect_count, r->rewrite_count, r->stop_count) >= 0;
 }
 
 void doe_ns_recorder_free(doe_ns_recorder *r)
@@ -697,4 +600,35 @@ void doe_ns_recorder_free(doe_ns_recorder *r)
     if (r->has_source) free(r->source.candidates);
     free(r->receipt_path);
     *r = (doe_ns_recorder){0};
+}
+
+static bool write_numeric_capture(FILE *out, const char *key, const doe_numeric_capture *capture, bool weights)
+{
+    return fprintf(out, ",\"%s\":{\"bufferHandle\":%" PRIu64 ",\"offset\":%" PRIu64 ",\"%s\":%" PRIu32 "}",
+        key, capture->handle, capture->offset, weights ? "rowStrideElements" : "elementCount", capture->count) >= 0;
+}
+
+/* Repro commands must retain the explicit policy and exact capture identities;
+ * otherwise replay would silently fall back to auto-detection. */
+bool doe_ns_write_annotation(FILE *out, const doe_numeric_annotation *annotation)
+{
+    if (!annotation) return true;
+    bool ok = fputs(",\"numericStability\":{\"operatorFamily\":", out) >= 0 &&
+        doe_trace_write_string(out, annotation->operator_family) &&
+        write_field(out, "triggerPolicyId", annotation->trigger_policy_id) &&
+        write_field(out, "routingPolicyId", annotation->routing_policy_id) &&
+        write_field(out, "fastPolicyId", annotation->fast_policy_id) &&
+        write_field(out, "stablePolicyId", annotation->stable_policy_id) &&
+        write_numeric_capture(out, "hiddenState", &annotation->hidden, false) &&
+        write_numeric_capture(out, "logits", &annotation->logits, false) &&
+        write_numeric_capture(out, "weights", &annotation->weights, true) && fputs(",\"candidates\":[", out) >= 0;
+    for (size_t i = 0; ok && i < annotation->candidate_count; i++) {
+        const doe_numeric_candidate *candidate = &annotation->candidates[i];
+        ok = (!i || fputc(',', out) != EOF) &&
+            fprintf(out, "{\"tokenId\":%" PRIu32 ",\"rowIndex\":%" PRIu32 ",\"label\":",
+                candidate->token_id, candidate->row_index) >= 0 && write_string_or_null(out, candidate->label) &&
+            fputs(",\"bias\":", out) >= 0 && (candidate->has_bias ? doe_ns_write_f64(out, candidate->bias) : fputs("null", out) >= 0) &&
+            fputc('}', out) != EOF;
+    }
+    return ok && fputs("]}", out) >= 0;
 }

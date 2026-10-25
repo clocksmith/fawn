@@ -191,5 +191,5 @@ void doe_ns_policy_free(doe_ns_policy *policy)
 
 bool doe_ns_capture_plan_supported(const char *plan)
 {
-    return plan && (!strcmp(plan, DOE_NS_DECODE_FINAL_LOGITS_PLAN) || !strcmp(plan, DOE_NS_MATMUL_LOGITS_PLAN));
+    return plan && (!strcmp(plan, DOE_NS_RMSNORM_PLAN) || !strcmp(plan, DOE_NS_ATTENTION_PLAN) || !strcmp(plan, DOE_NS_DECODE_FINAL_LOGITS_PLAN) || !strcmp(plan, DOE_NS_MATMUL_LOGITS_PLAN));
 }

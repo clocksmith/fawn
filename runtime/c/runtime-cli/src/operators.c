@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: MIT */
 #include "operators.h"
+#include "numeric_stability.h"
 #include "sha256.h"
 #include <inttypes.h>
 #include <stdlib.h>
@@ -112,7 +113,7 @@ static bool write_repro_commands(const char *path, const doe_command *command)
     if (ok && command->kind == DOE_COMMAND_KERNEL_DISPATCH) {
         ok = doe_trace_write_dispatch_fields(out, command);
     }
-    ok = ok && doe_trace_write_semantic(out, s);
+    ok = ok && doe_trace_write_semantic(out, s) && doe_ns_write_annotation(out, command->numeric);
     if (ok && s->has_capture)
         ok = fprintf(out, ",\"captureBufferHandle\":%" PRIu64 ",\"captureOffset\":%" PRIu64 ",\"captureSize\":%" PRIu64,
             s->capture_handle, s->capture_offset, s->capture_size) >= 0;

@@ -420,9 +420,10 @@ static bool parse_kernel_dispatch(const doe_json_value *object, doe_command *com
         "semanticStage", "semantic_phase", "semanticPhase", "semantic_token_index", "semanticTokenIndex",
         "semantic_layer_index", "semanticLayerIndex", "semantic_execution_plan_hash", "semanticExecutionPlanHash",
         "capture_buffer_handle", "captureBufferHandle", "capture_offset", "captureOffset", "capture_size",
-        "captureSize", NULL};
+        "captureSize", "numericStability", "numeric_stability", NULL};
     if (!stream_only_members(object, allowed, index, "kernel_dispatch", error)) return false;
-    if (!parse_semantic(object, &command->semantic, index, error)) return false;
+    if (!parse_semantic(object, &command->semantic, index, error) ||
+        !stream_parse_numeric(object, command, index, error)) return false;
     if (!stream_read_string(object, "kernel", "kernel_name", &command->as.dispatch.kernel, index, error)) return false;
     if (!command->as.dispatch.kernel) return stream_reject(error, index, "kernel_dispatch requires a kernel string");
     if (!stream_read_string(object, "entry_point", "entryPoint", &command->as.dispatch.entry_point, index, error)) return false;
@@ -500,6 +501,7 @@ static bool parse_grid(const doe_json_value *object, doe_command *command, size_
 
 static void free_command(doe_command *command)
 {
+    if (command->numeric) { free(command->numeric->candidates); free(command->numeric); }
     if (command->kind == DOE_COMMAND_BUFFER_WRITE) free(command->as.buffer_write.words);
     if (command->kind == DOE_COMMAND_KERNEL_DISPATCH) free(command->as.dispatch.bindings);
     if (command->kind == DOE_COMMAND_TEXTURE_WRITE) free(command->as.texture_write.data);

@@ -453,13 +453,13 @@ def check_numeric_stability(binary: Path, work: Path) -> None:
     code, stderr, _, _ = run(binary, work, "ns_bad_profile", "--numeric-stability-execution-profile", "missing",
                              commands=greedy)
     check(code == 2 and "not an ordinary-execution profile" in stderr, f"unknown execution profile: {code} {stderr}")
-    # A capture plan this runtime does not evaluate (rmsnorm-output) is refused before device work.
+    # RMSNorm evaluation requires a downstream matmul decision, not an invented token oracle.
     rmsnorm = json.loads((EXAMPLES / "rmsnorm_tree_commands.json").read_text())
     rmsnorm[1].update(semanticOpId="rmsnorm.output", semanticStage="decode", semanticPhase="normalized_hidden")
     path = work / "ns_rmsnorm_commands.json"
     path.write_text(json.dumps(rmsnorm))
     code, stderr, _, _ = run(binary, work, "ns_rmsnorm", commands=path)
-    check(code == 2 and "rmsnorm-output-bindings-v1" in stderr, f"unevaluated capture plan: {code} {stderr}")
+    check(code == 1 and "missing downstream matmul.logits" in stderr, f"missing RMSNorm decision: {code} {stderr}")
 
 
 def check_semantic(binary: Path, work: Path) -> None:

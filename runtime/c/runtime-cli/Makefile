@@ -10,11 +10,11 @@ NATIVE_LIBRARY_NAME := $(shell $(MAKE) --no-print-directory -s -C ../native nati
 NATIVE_LIBRARY = $(NATIVE_BUILD)/$(NATIVE_LIBRARY_NAME)
 CPPFLAGS += -D_POSIX_C_SOURCE=200809L -Isrc -I../../zig/vendor/webgpu-headers -I../native/include
 CFLAGS ?= -O2 -g
-CFLAGS += -std=c11 -Wall -Wextra -Wpedantic -Werror -pthread
+CFLAGS += -std=c11 -Wall -Wextra -Wpedantic -Werror -pthread -ffp-contract=off
 include sources.mk
 CORE = $(CLI_CORE) $(BUILD)/quirk_toggles.c
 CORE_HEADERS = src/host_io.h src/json.h src/stream.h src/stream_internal.h src/trace.h src/sha256.h src/quirks.h \
-  src/operators.h src/numeric_policy.h src/numeric_stability.h src/plan.h
+  src/operators.h src/numeric_policy.h src/numeric_stability.h src/numeric_eval.h src/numeric_annotation.h src/plan.h
 TOGGLE_REGISTRY = ../../../config/quirk-toggle-registry.json
 RUNTIME = $(CLI_RUNTIME) $(SURFACE_HOST)
 ifeq ($(shell uname -s),Darwin)

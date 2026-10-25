@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: MIT
  * Numeric stability evaluation in ordinary execution, as doe-zig-runtime's
- * runtime/numeric_stability Recorder does it, for ordinary matmul-logits and
- * decode-final-logits capture plans: after the dispatch runs, the fast (GPU)
+ * runtime/numeric_stability Recorder does it, for matmul-logits, decode-final-logits, RMSNorm and attention capture plans
+ * and explicit numeric annotations: after the dispatch runs, the fast (GPU)
  * logits are read back and compared with a serial f32 (stable) and an f64
  * (reference) evaluation on the host; the trigger and routing policies pick a
  * route, which may rewrite the logits with the stable values or stop the
@@ -37,6 +37,7 @@ typedef struct doe_ns_identity {
 
 typedef struct doe_ns_candidate {
     uint32_t token_id;
+    const char *label;
     double fast, stable, reference;
 } doe_ns_candidate;
 
@@ -50,6 +51,8 @@ typedef struct doe_ns_evaluation {
     uint32_t fast_token, stable_token, reference_token;
     char fast_digest[65], stable_digest[65], layout_fingerprint[65];
     uint64_t logits_handle, logits_offset;
+    double *rewrite_values; /* Owned when output differs from decision logits (RMSNorm). */
+    size_t rewrite_count;
     /* Route */
     bool checks[5]; /* firstDivergencePresent ... fastMissesExactReference */
     bool fired;
@@ -65,7 +68,7 @@ typedef struct doe_ns_recorder {
     char *receipt_path;
     FILE *receipts;
     uint32_t receipt_count, accept_fast, prefer_stable, abstain, first_divergence_count;
-    uint32_t auto_detect_count, rewrite_count, stop_count;
+    uint32_t annotation_count, auto_detect_count, rewrite_count, stop_count;
     bool has_source; /* The last decode.final_logits evaluation, for its decode boundary. */
     doe_ns_evaluation source;
     doe_ns_identity source_identity;
@@ -75,13 +78,17 @@ typedef struct doe_ns_recorder {
 bool doe_ns_recorder_open(doe_ns_recorder *recorder, const doe_ns_policy *policy, const char *meta_path);
 /* Evaluates one executed command: a decode boundary for a sample dispatch
  * after a decode.final_logits receipt, else an auto-detected observation;
+ * `future` borrows the following commands for RMSNorm decision capture;
  * other commands record nothing. *stop is set when the route stops the
  * stream with `following` commands left. False with the reason in message. */
 bool doe_ns_record(doe_ns_recorder *recorder, const doe_ns_io *io, const doe_ns_identity *identity,
-    const doe_command *command, size_t following, bool *stop, char *message, size_t message_size);
+    const doe_command *command, const doe_command *future, size_t following, bool *stop, char *message, size_t message_size);
 /* ,"numericStability":{...} when any receipt was written (trace_meta.zig). */
 bool doe_ns_write_summary(FILE *out, const doe_ns_recorder *recorder);
 void doe_ns_recorder_free(doe_ns_recorder *recorder);
+
+/* Appends explicit numeric metadata to a structural repro command. */
+bool doe_ns_write_annotation(FILE *out, const doe_numeric_annotation *annotation);
 
 /* Pure parts, exposed for host tests. */
 /* Zig's std.json f64 spelling: shortest round-trip digits in plain decimal. */

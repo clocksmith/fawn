@@ -20,6 +20,8 @@ bool stream_read_u64(const doe_json_value *object, const char *a, const char *b,
 bool stream_read_string(const doe_json_value *object, const char *a, const char *b, const char **out,
     size_t index, doe_stream_error *error);
 
+bool stream_parse_numeric(const doe_json_value *object, doe_command *command, size_t index, doe_stream_error *error);
+
 bool stream_parse_copy(const doe_json_value *object, const char *name, doe_command *command, size_t index,
     doe_stream_error *error);
 bool stream_parse_texture_write(const doe_json_value *object, doe_command *command, size_t index,
