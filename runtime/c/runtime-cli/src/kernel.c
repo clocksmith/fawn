@@ -260,14 +260,6 @@ static bool create_groups(doe_runtime *runtime, const pipeline_entry *pipeline, 
     return true;
 }
 
-static bool submit_and_wait(doe_runtime *runtime, WGPUCommandBuffer commands, doe_trace_execution *execution)
-{
-    if (!commands) return runtime_fail(execution, "kernel_encode_failed", "command buffer was not created");
-    wgpuQueueSubmit(runtime->queue, 1, &commands);
-    wgpuCommandBufferRelease(commands);
-    return runtime_wait_queue(runtime, execution);
-}
-
 bool runtime_execute_kernel(doe_runtime *runtime, const doe_command *command, doe_trace_execution *execution)
 {
     uint64_t start = doe_runtime_monotonic_ns();
@@ -280,13 +272,13 @@ bool runtime_execute_kernel(doe_runtime *runtime, const doe_command *command, do
     runtime_push_scopes(runtime);
     bool ok = create_groups(runtime, pipeline, command, groups, execution);
     if (ok && command->as.dispatch.warmup) {
-        ok = submit_and_wait(runtime, encode(runtime, pipeline, groups, command, command->as.dispatch.warmup), execution);
+        ok = runtime_submit_and_wait(runtime, encode(runtime, pipeline, groups, command, command->as.dispatch.warmup), execution);
     }
     uint64_t setup_end = doe_runtime_monotonic_ns();
     WGPUCommandBuffer commands = ok ? encode(runtime, pipeline, groups, command, command->as.dispatch.repeat) : NULL;
     uint64_t encode_end = doe_runtime_monotonic_ns();
     if (ok) {
-        ok = submit_and_wait(runtime, commands, execution);
+        ok = runtime_submit_and_wait(runtime, commands, execution);
         execution->submit_count = 1;
         execution->dispatch_count = command->as.dispatch.repeat;
     }
@@ -297,20 +289,6 @@ bool runtime_execute_kernel(doe_runtime *runtime, const doe_command *command, do
     execution->encode_ns = encode_end - setup_end;
     execution->submit_wait_ns = end - encode_end;
     return ok && scopes_ok;
-}
-
-typedef struct map_reply {
-    bool done;
-    WGPUMapAsyncStatus status;
-} map_reply;
-
-static void mapped(WGPUMapAsyncStatus status, WGPUStringView message, void *userdata1, void *userdata2)
-{
-    (void)message;
-    (void)userdata2;
-    map_reply *reply = userdata1;
-    reply->done = true;
-    reply->status = status;
 }
 
 /* Fresh zero-filled buffers for every binding (WebGPU zero-fills on
@@ -334,7 +312,7 @@ bool runtime_validate_oracle(doe_runtime *runtime, const doe_command *command, c
     WGPUBuffer buffers[MAX_GROUP_BINDINGS] = {0};
     WGPUBuffer target_buffer = NULL;
     WGPUBindGroup groups[MAX_GROUPS] = {0};
-    WGPUBuffer readback = NULL;
+    uint8_t *bytes = NULL;
     runtime_push_scopes(runtime);
     bool ok = command->as.dispatch.binding_count <= MAX_GROUP_BINDINGS ||
         runtime_fail(execution, "output_oracle_bindings", "more than %d bindings", MAX_GROUP_BINDINGS);
@@ -369,38 +347,17 @@ bool runtime_validate_oracle(doe_runtime *runtime, const doe_command *command, c
     if (ok) {
         doe_command isolated = *command;
         isolated.as.dispatch.warmup = 0;
-        ok = submit_and_wait(runtime, encode(runtime, pipeline, groups, &isolated, oracle->dispatch_count), execution);
+        ok = runtime_submit_and_wait(runtime, encode(runtime, pipeline, groups, &isolated, oracle->dispatch_count), execution);
     }
+    if (ok && target->buffer_size > SIZE_MAX) ok = runtime_fail(execution, "output_oracle_buffer_size", "the oracle range exceeds host memory");
+    if (ok && !(bytes = malloc((size_t)target->buffer_size))) ok = runtime_fail(execution, "out_of_memory", "oracle readback allocation failed");
+    if (ok) ok = runtime_read_back(runtime, target_buffer, target->buffer_offset, target->buffer_size, bytes, execution);
     if (ok) {
-        WGPUBufferDescriptor descriptor = WGPU_BUFFER_DESCRIPTOR_INIT;
-        descriptor.size = target->buffer_size;
-        descriptor.usage = WGPUBufferUsage_MapRead | WGPUBufferUsage_CopyDst;
-        readback = wgpuDeviceCreateBuffer(runtime->device, &descriptor);
-        WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(runtime->device, NULL);
-        wgpuCommandEncoderCopyBufferToBuffer(encoder, target_buffer, target->buffer_offset, readback, 0, target->buffer_size);
-        WGPUCommandBuffer copy = wgpuCommandEncoderFinish(encoder, NULL);
-        wgpuCommandEncoderRelease(encoder);
-        ok = submit_and_wait(runtime, copy, execution);
+        uint8_t digest[32];
+        doe_sha256(bytes, (size_t)target->buffer_size, digest);
+        doe_sha256_hex(digest, actual_sha256);
     }
-    if (ok) {
-        map_reply reply = {0};
-        WGPUBufferMapCallbackInfo callback = {.mode = WGPUCallbackMode_WaitAnyOnly, .callback = mapped, .userdata1 = &reply};
-        if (!runtime_wait_future(runtime, wgpuBufferMapAsync(readback, WGPUMapMode_Read, 0, target->buffer_size, callback)) ||
-            reply.status != WGPUMapAsyncStatus_Success) {
-            ok = runtime_fail(execution, "output_oracle_readback", "oracle readback did not map");
-        } else {
-            const void *bytes = wgpuBufferGetConstMappedRange(readback, 0, target->buffer_size);
-            if (!bytes) {
-                ok = runtime_fail(execution, "output_oracle_readback", "oracle readback has no mapped range");
-            } else {
-                uint8_t digest[32];
-                doe_sha256(bytes, (size_t)target->buffer_size, digest);
-                doe_sha256_hex(digest, actual_sha256);
-            }
-            wgpuBufferUnmap(readback);
-        }
-    }
-    if (readback) wgpuBufferRelease(readback);
+    free(bytes);
     for (uint32_t g = 0; g < MAX_GROUPS; g++) if (groups[g]) wgpuBindGroupRelease(groups[g]);
     for (size_t i = 0; i < MAX_GROUP_BINDINGS; i++) if (buffers[i]) wgpuBufferRelease(buffers[i]);
     bool scopes_ok = runtime_pop_scopes(runtime, execution);

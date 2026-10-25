@@ -16,6 +16,14 @@ typedef struct buffer_entry {
     uint64_t size;
 } buffer_entry;
 
+/* A stream texture: `declared` is the stream's descriptor; the WebGPU texture
+ * also carries CopySrc|CopyDst so copies and writes keep its contents. */
+typedef struct texture_entry {
+    WGPUTexture texture;
+    doe_texture_desc declared;
+    WGPUTextureUsage usage;
+} texture_entry;
+
 typedef struct pipeline_entry {
     char *source_path;
     char *entry_point;
@@ -38,6 +46,8 @@ struct doe_runtime {
     size_t buffer_count, buffer_capacity;
     pipeline_entry *pipelines;
     size_t pipeline_count, pipeline_capacity;
+    texture_entry *textures;
+    size_t texture_count, texture_capacity;
     uint64_t uploads_since_wait;
     /* The first uncaptured device error since the last command check. */
     bool uncaptured;
@@ -53,6 +63,18 @@ bool runtime_pop_scopes(doe_runtime *runtime, doe_trace_execution *execution);
 bool runtime_wait_queue(doe_runtime *runtime, doe_trace_execution *execution);
 buffer_entry *runtime_find_buffer(doe_runtime *runtime, uint64_t handle);
 buffer_entry *runtime_create_buffer(doe_runtime *runtime, uint64_t handle, uint64_t size, doe_trace_execution *execution);
+/* The handle's buffer when it holds `size` bytes; otherwise a new zero-filled
+ * buffer replaces it (its contents are lost), as doe-zig-runtime does. The
+ * pointer is valid until the next buffer is created. */
+buffer_entry *runtime_ensure_buffer(doe_runtime *runtime, uint64_t handle, uint64_t size, doe_trace_execution *execution);
+/* Submits and releases the command buffer, then waits for the queue. */
+bool runtime_submit_and_wait(doe_runtime *runtime, WGPUCommandBuffer commands, doe_trace_execution *execution);
+/* Copies `size` bytes (a multiple of 4) at `offset` of `source` to `out`. */
+bool runtime_read_back(doe_runtime *runtime, WGPUBuffer source, uint64_t offset, uint64_t size, uint8_t *out,
+    doe_trace_execution *execution);
+bool runtime_execute_copy(doe_runtime *runtime, const doe_command *command, doe_trace_execution *execution);
+bool runtime_execute_texture(doe_runtime *runtime, const doe_command *command, doe_trace_execution *execution);
+void runtime_release_textures(doe_runtime *runtime);
 bool runtime_execute_kernel(doe_runtime *runtime, const doe_command *command, doe_trace_execution *execution);
 bool runtime_validate_oracle(doe_runtime *runtime, const doe_command *command, const doe_output_oracle *oracle,
     char actual_sha256[65], doe_trace_execution *execution);

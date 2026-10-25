@@ -15,6 +15,7 @@
 
 #define MODULE_NAME "doe-c-runtime"
 #define BACKEND_ID "doe_c_vulkan"
+enum { MAX_READBACKS = 8 };
 
 typedef struct options {
     const char *commands, *kernel_root, *trace_jsonl, *trace_meta, *quirks;
@@ -22,7 +23,26 @@ typedef struct options {
     bool execute, trace_stdout, validate_oracles;
     uint64_t command_repeat;
     doe_runtime_options runtime;
+    /* --readback-buffer HANDLE=PATH: final buffer contents written after a successful run. */
+    uint64_t readback_handles[MAX_READBACKS];
+    const char *readback_paths[MAX_READBACKS];
+    size_t readback_count;
 } options;
+
+static bool parse_u64(const char *text, uint64_t *out);
+
+static int parse_readback(const char *value, options *out)
+{
+    const char *equals = value ? strchr(value, '=') : NULL;
+    char handle[32];
+    size_t length = equals ? (size_t)(equals - value) : 0;
+    if (!equals || !length || length >= sizeof(handle) || !equals[1]) return 0;
+    memcpy(handle, value, length);
+    handle[length] = '\0';
+    if (out->readback_count == MAX_READBACKS || !parse_u64(handle, &out->readback_handles[out->readback_count])) return 0;
+    out->readback_paths[out->readback_count++] = equals + 1;
+    return 1;
+}
 
 typedef struct totals {
     uint64_t rows, successes, errors;
@@ -43,7 +63,10 @@ static void usage(FILE *out)
           "  [--upload-buffer-usage copy-dst-copy-src|copy-dst] [--upload-submit-every N]\n"
           "  [--gpu-timestamp-mode off|auto] [--adapter auto|physical|software]\n"
           "  [--validate-output-oracles]  (schema 1 sha256_exact_v1 isolated-dispatch oracles)\n"
-          "Commands: upload, buffer_write, barrier, kernel_dispatch (WGSL kernels, buffer bindings).\n"
+          "  [--readback-buffer HANDLE=PATH]...  (final buffer bytes after a successful run; at most 8)\n"
+          "Commands: upload, buffer_write, barrier, kernel_dispatch (WGSL kernels, buffer bindings),\n"
+          "copies in every direction, texture_write, texture_query, texture_destroy (2D single-mip\n"
+          "uncompressed color textures).\n"
           "Every other command, field or argument is rejected. --adapter is this runtime's own;\n"
           "auto takes a nonfallback adapter, else the fallback (CPU) adapter, and the trace meta\n"
           "records which one ran.\n", out);
@@ -103,6 +126,9 @@ static int parse_options(int argc, char **argv, options *out)
         } else if (!strcmp(flag, "--upload-submit-every")) {
             if (!parse_u64(value, &out->runtime.upload_submit_every) || !out->runtime.upload_submit_every)
                 return reject_argument(flag, "must be a positive integer");
+            i++;
+        } else if (!strcmp(flag, "--readback-buffer")) {
+            if (!parse_readback(value, out)) return reject_argument(flag, "must be HANDLE=PATH (at most 8)");
             i++;
         } else if (!strcmp(flag, "--command-repeat")) {
             if (!parse_u64(value, &out->command_repeat) || !out->command_repeat) return reject_argument(flag, "must be a positive integer");
@@ -311,6 +337,25 @@ int main(int argc, char **argv)
             status = 1;
         } else {
             t.oracles_matched++;
+        }
+    }
+    for (size_t i = 0; runtime && status == 0 && i < o.readback_count; i++) {
+        uint8_t *data = NULL;
+        size_t size = 0;
+        doe_trace_execution execution;
+        if (!doe_runtime_read_buffer(runtime, o.readback_handles[i], &data, &size, &execution)) {
+            fprintf(stderr, "doe-c-runtime: --readback-buffer %llu: %s: %s\n", (unsigned long long)o.readback_handles[i],
+                execution.status_code, execution.message);
+            status = 1;
+            break;
+        }
+        FILE *out = fopen(o.readback_paths[i], "wb");
+        bool written = out && fwrite(data, 1, size, out) == size;
+        if (out && fclose(out) != 0) written = false;
+        free(data);
+        if (!written) {
+            fprintf(stderr, "doe-c-runtime: cannot write %s\n", o.readback_paths[i]);
+            status = 1;
         }
     }
     if (rows && fclose(rows) != 0) status = 1;

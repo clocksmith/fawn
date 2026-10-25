@@ -190,6 +190,7 @@ void doe_runtime_close(doe_runtime *runtime)
         free(entry->signature);
     }
     free(runtime->pipelines);
+    runtime_release_textures(runtime);
     for (size_t i = 0; i < runtime->buffer_count; i++) wgpuBufferRelease(runtime->buffers[i].buffer);
     free(runtime->buffers);
     if (runtime->queue) wgpuQueueRelease(runtime->queue);
@@ -311,6 +312,27 @@ buffer_entry *runtime_create_buffer(doe_runtime *runtime, uint64_t handle, uint6
     return entry;
 }
 
+buffer_entry *runtime_ensure_buffer(doe_runtime *runtime, uint64_t handle, uint64_t size, doe_trace_execution *execution)
+{
+    buffer_entry *entry = runtime_find_buffer(runtime, handle);
+    if (entry && entry->size >= size) return entry;
+    if (!entry) return runtime_create_buffer(runtime, handle, size, execution);
+    size_t position = (size_t)(entry - runtime->buffers);
+    WGPUBuffer previous = entry->buffer;
+    runtime->buffers[position] = runtime->buffers[--runtime->buffer_count];
+    buffer_entry *created = runtime_create_buffer(runtime, handle, size, execution);
+    wgpuBufferRelease(previous);
+    return created;
+}
+
+bool runtime_submit_and_wait(doe_runtime *runtime, WGPUCommandBuffer commands, doe_trace_execution *execution)
+{
+    if (!commands) return runtime_fail(execution, "encode_failed", "command buffer was not created");
+    wgpuQueueSubmit(runtime->queue, 1, &commands);
+    wgpuCommandBufferRelease(commands);
+    return runtime_wait_queue(runtime, execution);
+}
+
 static bool execute_upload(doe_runtime *runtime, const doe_command *command, doe_trace_execution *execution)
 {
     uint64_t align = command->as.upload.align_bytes;
@@ -396,14 +418,25 @@ bool doe_runtime_execute(doe_runtime *runtime, const doe_command *command, doe_t
     case DOE_COMMAND_BUFFER_WRITE: ok = execute_buffer_write(runtime, command, execution); break;
     case DOE_COMMAND_BARRIER: ok = execute_barrier(runtime, execution); break;
     case DOE_COMMAND_KERNEL_DISPATCH: ok = runtime_execute_kernel(runtime, command, execution); break;
+    case DOE_COMMAND_COPY: ok = runtime_execute_copy(runtime, command, execution); break;
+    case DOE_COMMAND_TEXTURE_WRITE:
+    case DOE_COMMAND_TEXTURE_QUERY:
+    case DOE_COMMAND_TEXTURE_DESTROY: ok = runtime_execute_texture(runtime, command, execution); break;
     }
     execution->duration_ns = doe_runtime_monotonic_ns() - start;
     if (ok) {
+        static const char *const codes[] = {
+            [DOE_COMMAND_UPLOAD] = "upload_timing_cpu_wall_clock_comparability_directional",
+            [DOE_COMMAND_BUFFER_WRITE] = "buffer_write_timing_cpu_wall_clock_comparability_directional",
+            [DOE_COMMAND_BARRIER] = "barrier_timing_cpu_wall_clock_comparability_directional",
+            [DOE_COMMAND_KERNEL_DISPATCH] = "kernel_dispatch_timing_cpu_wall_clock_comparability_directional",
+            [DOE_COMMAND_COPY] = "copy_buffer_to_texture_timing_cpu_wall_clock_comparability_directional",
+            [DOE_COMMAND_TEXTURE_WRITE] = "texture_write_timing_cpu_wall_clock_comparability_directional",
+            [DOE_COMMAND_TEXTURE_QUERY] = "texture_query_timing_cpu_wall_clock_comparability_directional",
+            [DOE_COMMAND_TEXTURE_DESTROY] = "texture_destroy_timing_cpu_wall_clock_comparability_directional",
+        };
         execution->ok = true;
-        execution->status_code = command->kind == DOE_COMMAND_UPLOAD ? "upload_timing_cpu_wall_clock_comparability_directional" :
-            command->kind == DOE_COMMAND_BUFFER_WRITE ? "buffer_write_timing_cpu_wall_clock_comparability_directional" :
-            command->kind == DOE_COMMAND_BARRIER ? "barrier_timing_cpu_wall_clock_comparability_directional" :
-            "kernel_dispatch_timing_cpu_wall_clock_comparability_directional";
+        execution->status_code = codes[command->kind];
         snprintf(execution->message, sizeof(execution->message), "%s timing=cpu_wall_clock comparability=directional",
             doe_command_tag(command->kind));
     }

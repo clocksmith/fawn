@@ -12,9 +12,10 @@ digests, not WebGPU semantics, shader meaning, backend execution, quirks or
 bench comparability policy.
 
 ## Scope
-`upload`, `buffer_write`, `barrier` and WGSL `kernel_dispatch` with buffer
-bindings over public `webgpu.h` and `libwebgpu_doe_c`. [Coverage](README.md)
-lists accepted arguments and rejected inputs.
+`upload`, `buffer_write`, `barrier`, WGSL `kernel_dispatch` with buffer
+bindings, copies and 2D texture write, query and destroy over public `webgpu.h`
+and `libwebgpu_doe_c`. [Coverage](README.md) lists accepted arguments and
+rejected inputs.
 
 ## Contracts
 `pipeline/trace/replay.py` artifact shape, the trace v1 hash chain, the
@@ -35,8 +36,9 @@ chains with doe-zig-runtime rows.
 runs are not GPU, performance or bench-comparability evidence.
 
 ## Non-goals
-Quirk matching, render or texture commands, GPU timestamps, deferred queue
-synchronization or default CLI replacement.
+Quirk matching, render, sampler or surface commands, mipmapped or
+multisampled textures, GPU timestamps, deferred queue synchronization or
+default CLI replacement.
 
 ## Freedom
 Internal parsing, resource caching and encoding may vary within these boundaries.
