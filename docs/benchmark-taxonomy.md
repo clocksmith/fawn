@@ -187,7 +187,8 @@ Without Zig on Vulkan, the same backend compare uses `doe_c_direct_vulkan`
 runtime CLI linked once against the C library and once against Dawn
 (`runtime/c/runtime-cli`, `make bench-bin bench-bin-dawn`). Both compile the
 workload's WGSL, and strict comparison checks their equal shader source
-receipts.
+receipts. The plan surface pairs `doe_c_direct_plan_vulkan` with
+`dawn_direct_plan_vulkan` the same way.
 
 ### 3. Plan-backed Gemma benchmark on plan executors
 

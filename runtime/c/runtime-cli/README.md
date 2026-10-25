@@ -209,7 +209,8 @@ over plain `webgpu.h` that the stage-6 dispositions name for
 whole CLI suite (host references, Zig hash chains, plan mode, schemas) over Dawn.
 `make bench-bin-dawn` installs the gitignored `bin/dawn-c-runtime` that the
 bench executor `dawn_direct_vulkan` (product `dawn-c`) runs with
-`LD_LIBRARY_PATH=bench/vendor/dawn/out/Release`; the provider registry lists it
+`LD_LIBRARY_PATH=bench/vendor/dawn/out/Release`, and `dawn_direct_plan_vulkan`
+runs its plan mode at the plan boundary; the provider registry lists it
 with productRole `dawn`, so its traces are Dawn execution in every gate and
 never Doe, and stay distinct from the Zig runtime's `dawn_delegate`.
 
@@ -288,5 +289,13 @@ f32) and token (buffer 2228, 1664) are bit-identical to `doe-c-runtime` over
 receipts (Dawn p50 4.4% faster on the CPU adapter, not claimable); against the
 Zig `dawn_delegate_vulkan` lane the same C run is diagnostic, blocked by the
 native SPIR-V artifact obligation, because this CLI writes no shader artifact
-manifest. A CPU adapter run is not GPU evidence, a performance result
+manifest. Plan lane (base 6a95fb73e, lavapipe, 7 iterations):
+`inference_gemma3_270m_prefill_64tok_decode_64tok` through
+`doe_c_direct_plan_vulkan` against `dawn_direct_plan_vulkan` is strict/operation
+comparable with equal shader source receipts and passes the structural gate
+(Dawn p50 924 ms vs C 1405 ms on the CPU adapter, not claimable); every
+sample's 1583 rows on both sides hash-equal doe-plan-executor `--dry-run` rows.
+`pipeline/trace/replay.py` rejects plan rows (`opCode` `buffer_write`) from
+either runtime, so the trace gate does not apply to plan lanes yet. A CPU
+adapter run is not GPU evidence, a performance result
 or bench comparability, and no physical adapter has run this CLI.
