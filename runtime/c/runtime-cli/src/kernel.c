@@ -39,7 +39,7 @@ static char *join(const char *root, const char *name, const char *suffix)
 
 /* The doe-zig-runtime order (wgpu_commands_compute.zig resolveKernelSource):
  * the name as a path, the name under the kernel root, then name.wgsl there. */
-static char *resolve_kernel(const doe_runtime *runtime, const char *kernel, char **source, size_t *size)
+char *runtime_resolve_kernel(const doe_runtime *runtime, const char *kernel, char **source, size_t *size)
 {
     char *candidates[3] = {0};
     candidates[0] = strdup(kernel);
@@ -156,7 +156,7 @@ static pipeline_entry *prepare_pipeline(doe_runtime *runtime, const doe_command 
 {
     char *source = NULL;
     size_t source_size = 0;
-    char *path = resolve_kernel(runtime, command->as.dispatch.kernel, &source, &source_size);
+    char *path = runtime_resolve_kernel(runtime, command->as.dispatch.kernel, &source, &source_size);
     if (!path) {
         runtime_fail(execution, "kernel_source_missing", "kernel \"%s\" has no readable WGSL source%s",
             command->as.dispatch.kernel, runtime->options.kernel_root ? " under the kernel root" : " (no --kernel-root)");

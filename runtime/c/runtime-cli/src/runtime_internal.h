@@ -24,6 +24,17 @@ typedef struct texture_entry {
     WGPUTextureUsage usage;
 } texture_entry;
 
+typedef struct sampler_entry {
+    uint64_t handle;
+    WGPUSampler sampler;
+} sampler_entry;
+
+/* The default proxy render pipeline for one color target format. */
+typedef struct render_pipeline_entry {
+    doe_texture_format format;
+    WGPURenderPipeline pipeline;
+} render_pipeline_entry;
+
 typedef struct pipeline_entry {
     char *source_path;
     char *entry_point;
@@ -48,6 +59,10 @@ struct doe_runtime {
     size_t pipeline_count, pipeline_capacity;
     texture_entry *textures;
     size_t texture_count, texture_capacity;
+    sampler_entry *samplers;
+    size_t sampler_count, sampler_capacity;
+    render_pipeline_entry *render_pipelines;
+    size_t render_pipeline_count, render_pipeline_capacity;
     uint64_t uploads_since_wait;
     /* The first uncaptured device error since the last command check. */
     bool uncaptured;
@@ -75,6 +90,15 @@ bool runtime_read_back(doe_runtime *runtime, WGPUBuffer source, uint64_t offset,
 bool runtime_execute_copy(doe_runtime *runtime, const doe_command *command, doe_trace_execution *execution);
 bool runtime_execute_texture(doe_runtime *runtime, const doe_command *command, doe_trace_execution *execution);
 void runtime_release_textures(doe_runtime *runtime);
+/* The handle's texture entry, or NULL. */
+texture_entry *runtime_find_texture(doe_runtime *runtime, uint64_t handle);
+WGPUTextureFormat runtime_webgpu_format(doe_texture_format format);
+/* The kernel source by doe-zig-runtime's resolution order; the returned path
+ * and *source are the caller's to free. NULL when no candidate is readable. */
+char *runtime_resolve_kernel(const doe_runtime *runtime, const char *kernel, char **source, size_t *size);
+bool runtime_execute_render(doe_runtime *runtime, const doe_command *command, doe_trace_execution *execution);
+bool runtime_execute_sampler(doe_runtime *runtime, const doe_command *command, doe_trace_execution *execution);
+void runtime_release_render(doe_runtime *runtime);
 bool runtime_execute_kernel(doe_runtime *runtime, const doe_command *command, doe_trace_execution *execution);
 bool runtime_validate_oracle(doe_runtime *runtime, const doe_command *command, const doe_output_oracle *oracle,
     char actual_sha256[65], doe_trace_execution *execution);

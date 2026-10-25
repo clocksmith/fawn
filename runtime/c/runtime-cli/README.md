@@ -37,6 +37,19 @@ $(BUILD)/doe-c-runtime --commands examples/rmsnorm_tree_commands.json --execute 
   the texture side's. Textures also carry CopySrc|CopyDst so writes and copies
   keep their contents. WebGPU validates layouts: a row pitch that is not a
   multiple of 256 fails the copy with exit 1.
+- `render_draw` (`draw`, `draw_call`, `draw_indexed`) and `render_pass`, as
+  doe-zig-runtime's native Vulkan lane records them: `drawCount` draws of the
+  default proxy pipeline (`draw_call_proxy_vertex.wgsl` and
+  `draw_call_proxy_fragment.wgsl` from the kernel root, no bind groups) inline in
+  one render pass that clears the color target to (0, 0, 0, 1), with the
+  command's viewport, scissor, blend constant, stencil reference and index data.
+  The target is a scratch texture unless `targetHandle` names an existing
+  texture with RenderAttachment usage. `pipelineMode`, `bindGroupMode`,
+  `encodeMode` and `bindGroupDynamicOffsets` are validated but, as in that lane,
+  do not change the recorded work. Explicit attachments, depth/stencil
+  attachments, vertex buffers, bind groups and indirect draws are rejected.
+  `sampler_create` (`create_sampler`) and `sampler_destroy` (`destroy_sampler`)
+  create and release samplers keyed by handle.
 - Kernels resolve as given, then under `--kernel-root`, then with `.wgsl`.
 - `output_oracle` schema 1, `sha256_exact_v1`, `zero_fill_v1` initialization:
   with `--validate-output-oracles` the command runs again on isolated
@@ -51,14 +64,17 @@ $(BUILD)/doe-c-runtime --commands examples/rmsnorm_tree_commands.json --execute 
   `--adapter auto|physical|software` is this CLI's own: `auto` takes a
   nonfallback adapter, else the fallback (CPU) adapter.
 
-Every other command kind (render, sampler, surface, dispatch-indirect and the
-rest), field, texture dimension, mip level, sample count, aspect, format, oracle
+Every other command kind (indirect draws, surfaces, dispatch, dispatch-indirect,
+`map_async`, `async_diagnostics` and the rest), field, texture dimension, mip level, sample count, aspect, format, oracle
 scope, `repeatSynchronization` value, `semanticOpId` and argument is rejected
 with exit 2 before device work.
 
 doe-zig-runtime's native Vulkan lane reports every copy `unsupported` and
 continues; this CLI executes them. The row hash chain covers command identity,
-so the chains still equal, but `executionStatus` differs on copy rows.
+so the chains still equal, but `executionStatus` differs on copy rows. Its
+render rows report `executionSubmitCount` 0 although the lane submits once;
+this CLI reports the one submission, so render execution shapes differ in
+that field.
 
 ## Trace artifacts
 
@@ -103,5 +119,9 @@ commands executes five copy example streams and a roundtrip of copies in every
 direction and a texture write whose three read-back buffers equal bytes computed
 on the host, with hash chains equal to doe-zig-runtime's, and rejects or fails
 an invalid row pitch, a mip-level copy, a mismatched query and a missing
-read-back handle. A CPU adapter run is not GPU evidence, a performance result
+read-back handle. With render and sampler commands, six render example streams
+(direct, indexed, state-bound, viewport/scissor, sampler/texture/render and
+upload/render) match doe-zig-runtime's hash chains, a scissored draw and an
+indexed draw read back as the proxy color inside the scissor and the clear color
+outside, and a missing render target fails. A CPU adapter run is not GPU evidence, a performance result
 or bench comparability, and no physical adapter has run this CLI.

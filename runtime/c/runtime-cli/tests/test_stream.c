@@ -106,6 +106,25 @@ int main(int argc, char **argv)
     assert(stream.commands[4].kind == DOE_COMMAND_TEXTURE_DESTROY && stream.commands[4].as.texture_destroy.handle == 5);
     doe_stream_free(&stream);
 
+    /* Render and sampler commands with doe-zig-runtime defaults. */
+    parse_file(argv[1], "draw_call_indexed_proxy_commands.json", &stream);
+    const doe_render_draw *indexed = &stream.commands[0].as.render;
+    assert(stream.commands[0].kind == DOE_COMMAND_RENDER_DRAW && !strcmp(stream.commands[0].label, "render_draw"));
+    assert(indexed->indexed && !indexed->index_uint32 && indexed->index_count == 3 && indexed->draw_count == 2000);
+    assert(indexed->target_handle == 0 && indexed->target_width == 64 && indexed->target_format == DOE_FORMAT_RGBA8_UNORM);
+    doe_stream_free(&stream);
+    parse_file(argv[1], "draw_call_state_bindings_commands.json", &stream);
+    const doe_render_draw *state = &stream.commands[0].as.render;
+    assert(!state->indexed && state->has_scissor_width && state->scissor_width == 64 && state->has_stencil_reference);
+    assert(state->has_viewport_width && state->viewport_max_depth == 1.0f && state->has_blend_constant);
+    doe_stream_free(&stream);
+    parse_file(argv[1], "texture_sampler_write_query_destroy_commands.json", &stream);
+    const doe_sampler_desc *sampler = &stream.commands[0].as.sampler;
+    assert(stream.commands[0].kind == DOE_COMMAND_SAMPLER_CREATE && sampler->handle == 9100 && sampler->mag_filter == 2);
+    assert(sampler->address_mode[0] == 1 && sampler->lod_max_clamp == 32.0f && sampler->max_anisotropy == 1);
+    assert(stream.commands[3].kind == DOE_COMMAND_RENDER_DRAW && stream.commands[5].kind == DOE_COMMAND_SAMPLER_DESTROY);
+    doe_stream_free(&stream);
+
     /* Aliases label rows with the normalized kind; kinds compare case-insensitively like the Zig parser. */
     const char *alias = "{\"commands\":[{\"command\":\"Write_Buffer\",\"handle\":1,\"data\":[7]}]}";
     assert(doe_stream_parse(alias, strlen(alias), &stream, &(doe_stream_error){0}));
@@ -115,7 +134,7 @@ int main(int argc, char **argv)
 
     rejects("{}", SIZE_MAX, "array");
     rejects("[1", SIZE_MAX, "syntax");
-    rejects("[{\"kind\":\"render_draw\"}]", 0, "not implemented");
+    rejects("[{\"kind\":\"draw_indirect\"}]", 0, "not implemented");
     rejects("[{\"kind\":\"upload\",\"bytes\":4},{\"kind\":\"map_async\",\"bytes\":4}]", 1, "map_async");
     rejects("[{\"kind\":\"upload\",\"bytes\":4,\"extra\":1}]", 0, "\"extra\"");
     rejects("[{\"kind\":\"upload\"}]", 0, "\"bytes\" is required");
@@ -148,6 +167,16 @@ int main(int argc, char **argv)
     rejects("[{\"kind\":\"texture_write\",\"handle\":1,\"data\":[256]}]", 0, "[0, 255]");
     rejects("[{\"kind\":\"texture_write\",\"handle\":0}]", 0, "nonzero integer texture handle");
     rejects("[{\"kind\":\"texture_query\",\"handle\":1,\"textureHandle\":1}]", 0, "more than once");
-    puts("runtime-cli stream: five example streams, aliases, copy and texture kinds and 31 visible rejections (host only)");
+    rejects("[{\"kind\":\"render_draw\"}]", 0, "\"draw_count\" is required");
+    rejects("[{\"kind\":\"render_draw\",\"drawCount\":1,\"pipelineMode\":\"dynamic\"}]", 0, "pipeline_mode");
+    rejects("[{\"kind\":\"render_pass\",\"drawCount\":1,\"viewportMinDepth\":0.5,\"viewportMaxDepth\":0.25}]", 0, "depths");
+    rejects("[{\"kind\":\"draw_indexed\",\"drawCount\":1,\"indexData\":[0,1],\"indexCount\":3}]", 0, "exceeds");
+    rejects("[{\"kind\":\"draw_indexed\",\"drawCount\":1}]", 0, "index_data");
+    rejects("[{\"kind\":\"render_draw\",\"drawCount\":1,\"indirectBufferHandle\":5}]", 0, "\"indirectBufferHandle\"");
+    rejects("[{\"kind\":\"render_draw\",\"drawCount\":1,\"targetFormat\":\"depth24plus\"}]", 0, "target format");
+    rejects("[{\"kind\":\"sampler_create\",\"handle\":1,\"magFilter\":\"cubic\"}]", 0, "mag_filter");
+    rejects("[{\"kind\":\"sampler_create\",\"handle\":1,\"maxAnisotropy\":0}]", 0, "max_anisotropy");
+    puts("runtime-cli stream: eight example streams, aliases, copy, texture, render and sampler kinds and 40 visible "
+        "rejections (host only)");
     return 0;
 }

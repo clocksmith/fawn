@@ -13,8 +13,8 @@ bench comparability policy.
 
 ## Scope
 `upload`, `buffer_write`, `barrier`, WGSL `kernel_dispatch` with buffer
-bindings, copies and 2D texture write, query and destroy over public `webgpu.h`
-and `libwebgpu_doe_c`. [Coverage](README.md) lists accepted arguments and
+bindings, copies, 2D texture write, query and destroy, proxy-pipeline render
+draws and samplers over public `webgpu.h` and `libwebgpu_doe_c`. [Coverage](README.md) lists accepted arguments and
 rejected inputs.
 
 ## Contracts
@@ -36,8 +36,8 @@ chains with doe-zig-runtime rows.
 runs are not GPU, performance or bench-comparability evidence.
 
 ## Non-goals
-Quirk matching, render, sampler or surface commands, mipmapped or
-multisampled textures, GPU timestamps, deferred queue synchronization or
+Quirk matching, surface or indirect commands, custom render pipelines,
+mipmapped or multisampled textures, GPU timestamps, deferred queue synchronization or
 default CLI replacement.
 
 ## Freedom

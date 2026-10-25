@@ -44,10 +44,16 @@ static bool read_format(const doe_json_value *object, const char *a, const char 
     if (ambiguous) return stream_reject(error, index, "\"%s\" is named more than once", a);
     if (!value) return true;
     if (value->kind != DOE_JSON_STRING) return stream_reject(error, index, "\"%s\" must be a string", a);
-    for (size_t i = 0; i < sizeof(FORMATS) / sizeof(FORMATS[0]); i++) {
-        if (strcasecmp(value->string, FORMATS[i].name) == 0) { *out = FORMATS[i].format; return true; }
-    }
+    if (stream_texture_format(value->string, out)) return true;
     return stream_reject(error, index, "texture format \"%s\" is not implemented by doe-c-runtime", value->string);
+}
+
+bool stream_texture_format(const char *name, doe_texture_format *out)
+{
+    for (size_t i = 0; i < sizeof(FORMATS) / sizeof(FORMATS[0]); i++) {
+        if (strcasecmp(name, FORMATS[i].name) == 0) { *out = FORMATS[i].format; return true; }
+    }
+    return false;
 }
 
 static bool read_u32_of(const doe_json_value *object, const char *a, const char *b, const char *c, bool *present,
@@ -88,7 +94,8 @@ static bool require_u32(const doe_json_value *object, const char *a, const char 
 
 static bool read_handle(const doe_json_value *object, uint64_t *out, size_t index, doe_stream_error *error)
 {
-    const char *names[] = {"texture_handle", "textureHandle", "handle", "target_handle", "targetHandle"};
+    const char *names[] = {"texture_handle", "textureHandle", "handle", "resource_handle", "resourceHandle",
+        "target_handle", "targetHandle"};
     const doe_json_value *found = NULL;
     for (size_t i = 0; i < sizeof(names) / sizeof(names[0]); i++) {
         const doe_json_value *value = doe_json_member_value(object, names[i]);
@@ -222,7 +229,7 @@ bool stream_parse_texture_write(const doe_json_value *object, doe_command *comma
     doe_stream_error *error)
 {
     static const char *const allowed[] = {"kind", "command", "command_kind", "texture_handle", "textureHandle", "handle",
-        "target_handle", "targetHandle", "width", "target_width", "targetWidth", "height", "target_height",
+        "resource_handle", "resourceHandle", "target_handle", "targetHandle", "width", "target_width", "targetWidth", "height", "target_height",
         "targetHeight", "depth_or_array_layers", "depthOrArrayLayers", "depth", "mip_level", "mipLevel",
         "sample_count", "sampleCount", "format", "target_format", "targetFormat", "usage", "dimension",
         "view_dimension", "viewDimension", "aspect", "bytesPerRow", "rows_per_image", "rowsPerImage", "offset", "data",
@@ -274,7 +281,7 @@ bool stream_parse_texture_query(const doe_json_value *object, doe_command *comma
     doe_stream_error *error)
 {
     static const char *const allowed[] = {"kind", "command", "command_kind", "texture_handle", "textureHandle", "handle",
-        "target_handle", "targetHandle", "width", "height", "depth_or_array_layers", "depthOrArrayLayers", "depth",
+        "resource_handle", "resourceHandle", "target_handle", "targetHandle", "width", "height", "depth_or_array_layers", "depthOrArrayLayers", "depth",
         "format", "target_format", "targetFormat", "dimension", "view_dimension", "viewDimension", "sample_count",
         "sampleCount", "usage", NULL};
     if (!stream_only_members(object, allowed, index, "texture_query", error)) return false;
@@ -303,7 +310,7 @@ bool stream_parse_texture_destroy(const doe_json_value *object, doe_command *com
     doe_stream_error *error)
 {
     static const char *const allowed[] = {"kind", "command", "command_kind", "texture_handle", "textureHandle", "handle",
-        "target_handle", "targetHandle", NULL};
+        "resource_handle", "resourceHandle", "target_handle", "targetHandle", NULL};
     if (!stream_only_members(object, allowed, index, "texture_destroy", error)) return false;
     return read_handle(object, &command->as.texture_destroy.handle, index, error);
 }

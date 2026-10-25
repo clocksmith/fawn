@@ -18,7 +18,11 @@ typedef enum doe_command_kind {
     DOE_COMMAND_COPY, /* Every copy direction; doe-zig-runtime's copy_buffer_to_texture kind. */
     DOE_COMMAND_TEXTURE_WRITE,
     DOE_COMMAND_TEXTURE_QUERY,
-    DOE_COMMAND_TEXTURE_DESTROY
+    DOE_COMMAND_TEXTURE_DESTROY,
+    DOE_COMMAND_RENDER_DRAW, /* render_draw, draw, draw_call, draw_indexed */
+    DOE_COMMAND_RENDER_PASS,
+    DOE_COMMAND_SAMPLER_CREATE,
+    DOE_COMMAND_SAMPLER_DESTROY
 } doe_command_kind;
 
 typedef enum doe_copy_direction {
@@ -81,6 +85,34 @@ typedef struct doe_texture_query {
     uint64_t usage;
 } doe_texture_query;
 
+/* render_draw and render_pass: `draw_count` draws of the default fullscreen
+ * proxy pipeline into one color target, as doe-zig-runtime's native lane. */
+typedef struct doe_render_draw {
+    uint32_t draw_count, vertex_count, instance_count, first_vertex, first_instance;
+    bool indexed, index_uint32;
+    uint32_t *indices; /* Owned. */
+    size_t index_data_count;
+    uint32_t index_count, first_index;
+    int32_t base_vertex;
+    uint64_t target_handle; /* 0: a scratch target created for the command. */
+    uint32_t target_width, target_height;
+    doe_texture_format target_format;
+    bool has_viewport_width, has_viewport_height, has_scissor_width, has_scissor_height;
+    bool has_blend_constant, has_stencil_reference;
+    float viewport_x, viewport_y, viewport_width, viewport_height, viewport_min_depth, viewport_max_depth;
+    uint32_t scissor_x, scissor_y, scissor_width, scissor_height;
+    double blend[4];
+    uint32_t stencil_reference;
+} doe_render_draw;
+
+/* sampler_create: WebGPU enum values as doe-zig-runtime parses them. */
+typedef struct doe_sampler_desc {
+    uint64_t handle;
+    uint32_t address_mode[3], mag_filter, min_filter, mipmap_filter, compare;
+    float lod_min_clamp, lod_max_clamp;
+    uint16_t max_anisotropy;
+} doe_sampler_desc;
+
 typedef struct doe_command {
     doe_command_kind kind;
     /* The trace row's "command" label: the normalized kind name, as
@@ -120,6 +152,9 @@ typedef struct doe_command {
         } texture_write;
         doe_texture_query texture_query;
         struct { uint64_t handle; } texture_destroy;
+        doe_render_draw render;
+        doe_sampler_desc sampler;
+        struct { uint64_t handle; } sampler_destroy;
     } as;
 } doe_command;
 
