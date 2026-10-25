@@ -73,6 +73,7 @@ static WGPURenderPipeline render_pipeline(doe_runtime *runtime, doe_texture_form
 
 void runtime_release_render(doe_runtime *runtime)
 {
+    runtime_release_public_render(runtime);
     for (size_t i = 0; i < runtime->render_pipeline_count; i++) wgpuRenderPipelineRelease(runtime->render_pipelines[i].pipeline);
     free(runtime->render_pipelines);
     for (size_t i = 0; i < runtime->sampler_count; i++) wgpuSamplerRelease(runtime->samplers[i].sampler);
@@ -84,7 +85,7 @@ void runtime_release_render(doe_runtime *runtime)
 }
 
 /* The index buffer of an indexed draw: the command's data in its format. */
-static WGPUBuffer index_buffer(doe_runtime *runtime, const doe_render_draw *draw, uint64_t *size)
+WGPUBuffer runtime_render_indices(doe_runtime *runtime, const doe_render_draw *draw, uint64_t *size)
 {
     size_t element = draw->index_uint32 ? 4 : 2;
     *size = ((uint64_t)draw->index_data_count * element + 3) & ~UINT64_C(3);
@@ -110,7 +111,7 @@ enum { INDIRECT_ARGUMENTS_MAX = 256u << 20 }; /* WebGPU's default maxBufferSize 
 
 /* The `draw_count` argument records of an indirect draw: VkDrawIndirectCommand
  * or VkDrawIndexedIndirectCommand words, as WebGPU defines them. */
-static WGPUBuffer indirect_arguments(doe_runtime *runtime, const doe_render_draw *draw, uint32_t *stride,
+WGPUBuffer runtime_render_arguments(doe_runtime *runtime, const doe_render_draw *draw, uint32_t *stride,
     doe_trace_execution *execution)
 {
     uint32_t record[5];
@@ -156,6 +157,7 @@ static WGPUBuffer indirect_arguments(doe_runtime *runtime, const doe_render_draw
 
 bool runtime_execute_render(doe_runtime *runtime, const doe_command *command, doe_trace_execution *execution)
 {
+    if (runtime->options.public_webgpu_renderer) return runtime_execute_public_render(runtime, command, execution);
     const doe_render_draw *draw = &command->as.render;
     uint64_t start = doe_runtime_monotonic_ns();
     runtime_push_scopes(runtime);
@@ -177,11 +179,11 @@ bool runtime_execute_render(doe_runtime *runtime, const doe_command *command, do
     }
     WGPUTextureView view = ok ? wgpuTextureCreateView(target, NULL) : NULL;
     uint64_t index_size = 0;
-    WGPUBuffer indices = ok && draw->indexed ? index_buffer(runtime, draw, &index_size) : NULL;
+    WGPUBuffer indices = ok && draw->indexed ? runtime_render_indices(runtime, draw, &index_size) : NULL;
     if (ok && draw->indexed && !indices) ok = runtime_fail(execution, "render_index_buffer_failed", "the index buffer was not created");
     bool indirect = command->kind == DOE_COMMAND_DRAW_INDIRECT || command->kind == DOE_COMMAND_DRAW_INDEXED_INDIRECT;
     uint32_t stride = 0;
-    WGPUBuffer arguments = ok && indirect ? indirect_arguments(runtime, draw, &stride, execution) : NULL;
+    WGPUBuffer arguments = ok && indirect ? runtime_render_arguments(runtime, draw, &stride, execution) : NULL;
     if (indirect && !arguments) ok = false;
     uint64_t setup_end = doe_runtime_monotonic_ns();
     uint64_t encode_end = setup_end;

@@ -52,7 +52,7 @@ void runtime_release_textures(doe_runtime *runtime)
 
 /* The handle's texture when its shape matches and its usage covers the
  * declared one; otherwise a new zero-filled texture replaces it. */
-static WGPUTexture ensure_texture(doe_runtime *runtime, const doe_texture_desc *desc, doe_trace_execution *execution)
+WGPUTexture runtime_ensure_texture(doe_runtime *runtime, const doe_texture_desc *desc, doe_trace_execution *execution)
 {
     WGPUTextureUsage usage = (WGPUTextureUsage)desc->usage | WGPUTextureUsage_CopySrc | WGPUTextureUsage_CopyDst;
     texture_entry *existing = runtime_find_texture(runtime, desc->handle);
@@ -106,7 +106,7 @@ WGPUTexture runtime_binding_texture(doe_runtime *runtime, uint64_t handle, WGPUT
     if (has_format) desc.format = format;
     desc.usage = (existing ? existing->usage : 0) | required;
     *view_format = desc.format;
-    return ensure_texture(runtime, &desc, execution);
+    return runtime_ensure_texture(runtime, &desc, execution);
 }
 
 static uint32_t layout_value(uint32_t primary, uint32_t fallback)
@@ -172,13 +172,13 @@ bool runtime_execute_copy(doe_runtime *runtime, const doe_command *command, doe_
         ok = (src_buffer = side_buffer(runtime, src, bytes, execution)) && (dst_buffer = side_buffer(runtime, dst, bytes, execution));
         break;
     case DOE_COPY_BUFFER_TO_TEXTURE:
-        ok = (src_buffer = side_buffer(runtime, src, bytes, execution)) && (dst_texture = ensure_texture(runtime, &dst->texture, execution));
+        ok = (src_buffer = side_buffer(runtime, src, bytes, execution)) && (dst_texture = runtime_ensure_texture(runtime, &dst->texture, execution));
         break;
     case DOE_COPY_TEXTURE_TO_BUFFER:
-        ok = (src_texture = ensure_texture(runtime, &src->texture, execution)) && (dst_buffer = side_buffer(runtime, dst, bytes, execution));
+        ok = (src_texture = runtime_ensure_texture(runtime, &src->texture, execution)) && (dst_buffer = side_buffer(runtime, dst, bytes, execution));
         break;
     case DOE_COPY_TEXTURE_TO_TEXTURE:
-        ok = (src_texture = ensure_texture(runtime, &src->texture, execution)) && (dst_texture = ensure_texture(runtime, &dst->texture, execution));
+        ok = (src_texture = runtime_ensure_texture(runtime, &src->texture, execution)) && (dst_texture = runtime_ensure_texture(runtime, &dst->texture, execution));
         break;
     }
     WGPUBuffer staging = NULL;
@@ -269,7 +269,7 @@ static bool texture_write(doe_runtime *runtime, const doe_command *command, doe_
     const doe_texture_desc *desc = &command->as.texture_write.texture;
     uint64_t start = doe_runtime_monotonic_ns();
     runtime_push_scopes(runtime);
-    WGPUTexture texture = ensure_texture(runtime, desc, execution);
+    WGPUTexture texture = runtime_ensure_texture(runtime, desc, execution);
     bool ok = texture != NULL;
     uint64_t setup_end = doe_runtime_monotonic_ns();
     if (ok && command->as.texture_write.data_size) {

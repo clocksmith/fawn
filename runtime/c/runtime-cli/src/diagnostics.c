@@ -69,17 +69,6 @@ WGPURenderPipeline runtime_diagnostic_pipeline(doe_runtime *runtime, doe_texture
     WGPUShaderModule shader = wgpuDeviceCreateShaderModule(runtime->device, &module_desc);
     runtime->diagnostic_render_compiled = true;
     if (!shader) { runtime_fail(execution, "diagnostic_shader_failed", "diagnostic shader creation failed"); return NULL; }
-    runtime->diagnostic_done = false;
-    runtime->diagnostic_ok = false;
-    WGPUCompilationInfoCallbackInfo compilation = {.mode = WGPUCallbackMode_WaitAnyOnly, .callback = compilation_info,
-        .userdata1 = runtime};
-    bool ok = runtime_wait_future(runtime, wgpuShaderModuleGetCompilationInfo(shader, compilation)) &&
-        runtime->diagnostic_done && runtime->diagnostic_ok;
-    if (!ok) {
-        wgpuShaderModuleRelease(shader);
-        runtime_fail(execution, "diagnostic_compilation_failed", "diagnostic compilation information did not report success");
-        return NULL;
-    }
     WGPUColorTargetState color = WGPU_COLOR_TARGET_STATE_INIT;
     color.format = runtime_webgpu_format(format);
     WGPUFragmentState fragment = WGPU_FRAGMENT_STATE_INIT;
@@ -92,14 +81,31 @@ WGPURenderPipeline runtime_diagnostic_pipeline(doe_runtime *runtime, doe_texture
     descriptor.vertex.module = shader;
     descriptor.vertex.entryPoint = string_view("vs_main");
     descriptor.fragment = &fragment;
+    WGPURenderPipeline pipeline = runtime_async_render_pipeline(runtime, shader, &descriptor, execution);
+    wgpuShaderModuleRelease(shader);
+    return pipeline;
+}
+
+WGPURenderPipeline runtime_async_render_pipeline(doe_runtime *runtime, WGPUShaderModule shader,
+    const WGPURenderPipelineDescriptor *descriptor, doe_trace_execution *execution)
+{
+    runtime->diagnostic_done = false;
+    runtime->diagnostic_ok = false;
+    WGPUCompilationInfoCallbackInfo compilation = {.mode = WGPUCallbackMode_WaitAnyOnly, .callback = compilation_info,
+        .userdata1 = runtime};
+    bool ok = runtime_wait_future(runtime, wgpuShaderModuleGetCompilationInfo(shader, compilation)) &&
+        runtime->diagnostic_done && runtime->diagnostic_ok;
+    if (!ok) {
+        runtime_fail(execution, "diagnostic_compilation_failed", "diagnostic compilation information did not report success");
+        return NULL;
+    }
     runtime->diagnostic_done = false;
     runtime->diagnostic_ok = false;
     runtime->diagnostic_abandoned = false;
     WGPUCreateRenderPipelineAsyncCallbackInfo callback = {.mode = WGPUCallbackMode_WaitAnyOnly, .callback = pipeline_ready,
         .userdata1 = runtime};
-    WGPUFuture future = wgpuDeviceCreateRenderPipelineAsync(runtime->device, &descriptor, callback);
+    WGPUFuture future = wgpuDeviceCreateRenderPipelineAsync(runtime->device, descriptor, callback);
     ok = runtime_wait_future(runtime, future) && runtime->diagnostic_done && runtime->diagnostic_ok;
-    wgpuShaderModuleRelease(shader);
     if (!ok) {
         runtime_release_diagnostics(runtime);
         runtime_fail(execution, "diagnostic_pipeline_failed", "asynchronous diagnostic render pipeline did not succeed");

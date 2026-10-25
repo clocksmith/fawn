@@ -95,7 +95,7 @@ static bool write_optional(FILE *out, const char *key, const char *value, bool c
  * SHA-256 of the array's compact JSON as written, as the package executor
  * hashes JSON.stringify(receipts), so two runtimes given the same sources
  * agree on it. */
-static bool write_shader_receipts(FILE *out, const doe_runtime *runtime, const doe_stream *stream)
+static bool write_shader_receipts(FILE *out, const doe_runtime *runtime, const doe_stream *stream, bool public_renderer)
 {
     char *bytes = NULL;
     size_t length = 0;
@@ -139,7 +139,8 @@ static bool write_shader_receipts(FILE *out, const doe_runtime *runtime, const d
         free(path);
     }
     static const char *const proxy[2][2] = {{"draw_call_proxy_vertex.wgsl", "main"}, {"draw_call_proxy_fragment.wgsl", "main"}};
-    for (int k = 0; ok && render && k < 2; k++) {
+    const char *public_source = doe_runtime_public_render_source(runtime);
+    for (int k = 0; ok && render && !public_renderer && k < 2; k++) {
         char *path = NULL, sha[65];
         size_t size = 0;
         if (!doe_runtime_kernel_source(runtime, proxy[k][0], &path, &size, sha)) continue;
@@ -148,6 +149,16 @@ static bool write_shader_receipts(FILE *out, const doe_runtime *runtime, const d
             fprintf(list, ",\"byteLength\":%zu,\"sha256\":\"%s\"}", size, sha) >= 0;
         any = true;
         free(path);
+    }
+    if (public_source) {
+        uint8_t digest[32];
+        char hash[65];
+        doe_sha256(public_source, strlen(public_source), digest);
+        doe_sha256_hex(digest, hash);
+        ok = (!any || fputc(',', list) != EOF) && fprintf(list,
+            "{\"moduleId\":\"doe-public-render\",\"sourceKind\":\"wgsl\",\"byteLength\":%zu,\"sha256\":\"%s\"}",
+            strlen(public_source), hash) >= 0;
+        any = true;
     }
     for (int compute = 0; ok && compute < 2; compute++) {
         if (!doe_runtime_used_diagnostic_source(runtime, compute != 0)) continue;
@@ -206,6 +217,7 @@ static bool write_meta(const char *path, const options *o, const totals *t, uint
         t->hash, t->previous, t->oracles, t->oracles_matched, t->oracles_failed) >= 0;
     if (ok && o->execute) ok = fputs(",\"executionBackend\":\"" BACKEND_ID "\",\"backendId\":\"" BACKEND_ID "\","
         "\"backendSelectionReason\":\"fixed_backend\",\"fallbackUsed\":false", out) >= 0;
+    if (ok && o->backend_lane) ok = write_optional(out, "backendLane", o->backend_lane, true);
     /* doe-plan-executor names the plan and its planSha256 as the host plan artifact. */
     if (ok && o->plan)
         ok = write_optional(out, "hostPlanArtifactPath", o->plan, true) &&
@@ -233,7 +245,7 @@ static bool write_meta(const char *path, const options *o, const totals *t, uint
             fputs(",\"outputOracleComparedValueCount\":0,\"outputOracleMismatchCount\":0,\"outputOracleMaxAbsoluteError\":0,"
                 "\"outputOracleMaxRelativeError\":0,\"outputOracleAbsoluteTolerance\":0,\"outputOracleRelativeTolerance\":0", out) >= 0;
     }
-    if (ok && runtime) ok = write_shader_receipts(out, runtime, stream);
+    if (ok && runtime) ok = write_shader_receipts(out, runtime, stream, o->runtime.public_webgpu_renderer);
     if (ok && numeric) ok = doe_ns_write_summary(out, numeric);
     ok = ok && fputs(",\"profile\":{", out) >= 0;
     ok = ok && write_optional(out, "vendor", o->vendor, false) && write_optional(out, "api", o->api ? o->api : DOE_RUNTIME_API, true) &&

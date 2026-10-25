@@ -226,6 +226,32 @@ render rows report `executionSubmitCount` 0 although the lane submits once;
 this CLI reports the one submission, so render execution shapes differ in
 that field.
 
+## Explicit public WebGPU renderer
+
+The default remains the native fullscreen proxy described above. A matching
+explicit delegate lane selects the retained public WebGPU renderer in
+`dawn-c-runtime`: `--backend-lane vulkan_dawn_release` on Linux, or
+`metal_dawn_release` on Darwin. Lane aliases normalize as in retained Zig;
+a native provider or a lane for another compiled platform rejects before device
+work. This route uses the retained textured triangle, vertex buffer, 2x2 sampled
+texture, sampler, dynamic uniform binding and depth/stencil attachment.
+`encodeMode` selects actual render bundles or passes. Redundant pipeline and
+bind-group modes perform the corresponding repeated native calls. Dynamic
+offsets select a 12-byte color binding within 64 slots of 256 bytes; invalid
+counts, alignment or ranges fail. Missing named color targets are created and
+incompatible targets are replaced, as in the public source path.
+
+`make check-public-render DAWN_LIBRARY=/path/to/libwebgpu_dawn.so` with a CPU ICD
+checks all eight mode combinations using actual API counters, every rendered
+texel against an independent triangle/nearest-sampling oracle, a dynamic offset
+that changes shader pixels, four indirect modes, offset rejection, bundle finish
+failure/recovery, and the actual delegate CLI route. The meta records the
+canonical lane and the embedded public shader's digest; it does not claim the
+native proxy shaders ran. The retained Zig delegate executes the reference
+stream but its buffer capture is unsupported, so this is an independent pixel
+oracle rather than a retained GPU-byte comparison. Darwin is compile-selected;
+this new route has been exercised on Linux Dawn/lavapipe only.
+
 ## Trace artifacts
 
 Rows follow the trace v1 FNV hash chain (seed `0x9e3779b97f4a7c15`); for the

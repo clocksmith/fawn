@@ -29,6 +29,7 @@ static void usage(FILE *out)
           "  [--queue-wait-mode process-events|wait-any] [--webgpu-ffi-queue-wait-timeout-ns N]\n"
           "  [--upload-buffer-usage copy-dst-copy-src|copy-dst] [--upload-submit-every N]\n"
           "  [--gpu-timestamp-mode off|auto] [--adapter auto|physical|software]\n"
+          "  [--backend-lane <compiled Dawn delegate lane>]\n"
           "  [--validate-output-oracles]  (schema 1 sha256_exact_v1 isolated-dispatch oracles)\n"
           "  [--readback-buffer HANDLE=PATH]...  (final buffer bytes after a successful run; at most 8)\n"
           "  [--numeric-stability-policy <path>] [--numeric-stability-execution-profile <id>]\n"
@@ -78,6 +79,7 @@ int parse_options(int argc, char **argv, options *out)
         else if (!strcmp(flag, "--commands")) TAKE(commands);
         else if (!strcmp(flag, "--plan")) TAKE(plan);
         else if (!strcmp(flag, "--workload")) TAKE(workload);
+        else if (!strcmp(flag, "--backend-lane")) TAKE(backend_lane);
         else if (!strcmp(flag, "--kernel-root")) TAKE(runtime.kernel_root);
         else if (!strcmp(flag, "--trace-jsonl")) TAKE(trace_jsonl);
         else if (!strcmp(flag, "--trace-meta")) TAKE(trace_meta);
@@ -143,6 +145,27 @@ int parse_options(int argc, char **argv, options *out)
             return reject_argument(flag, "is not implemented by doe-c-runtime");
         }
 #undef TAKE
+    }
+    if (out->backend_lane) {
+#ifdef DOE_RUNTIME_DAWN
+#ifdef __APPLE__
+        const char *lane = "metal_dawn_release";
+#else
+        const char *lane = "vulkan_dawn_release";
+#endif
+        char normalized[64];
+        size_t length = strlen(out->backend_lane);
+        if (length >= sizeof(normalized)) return reject_argument("--backend-lane", "lane name is too long");
+        for (size_t i = 0; i <= length; i++) normalized[i] = out->backend_lane[i] == '-' ? '_' : out->backend_lane[i];
+#ifndef __APPLE__
+        if (!strcasecmp(normalized, "vulkan_dawn_directional")) strcpy(normalized, "vulkan_dawn_release");
+#endif
+        if (strcasecmp(normalized, lane)) return reject_argument("--backend-lane", "does not match this compiled Dawn provider");
+        out->backend_lane = lane;
+        out->runtime.public_webgpu_renderer = true;
+#else
+        return reject_argument("--backend-lane", "native lane configuration is not implemented by this provider");
+#endif
     }
     if (out->plan) {
         /* doe-plan-executor always executes and writes both artifacts; it has no

@@ -24,6 +24,7 @@ typedef struct doe_runtime_options {
     doe_queue_wait queue_wait;
     uint64_t queue_wait_timeout_ns; /* 0: runtime default bound. */
     bool defer_queue_sync;
+    bool public_webgpu_renderer; /* Explicit delegate lane; native proxy remains default. */
     const char *kernel_root; /* NULL: kernels resolve from the working directory only. */
     bool upload_copy_src;    /* Upload buffers use CopyDst|CopySrc, else CopyDst. */
     uint64_t upload_submit_every; /* Uploads complete every N uploads; nonzero. */
@@ -42,6 +43,8 @@ typedef struct doe_runtime doe_runtime;
 /* NULL on failure, with the reason in message. */
 doe_runtime *doe_runtime_open(const doe_runtime_options *options, char *message, size_t message_size);
 const doe_runtime_adapter *doe_runtime_adapter_info(const doe_runtime *runtime);
+/* Embedded public-render source only when its pipeline was compiled in this run. */
+const char *doe_runtime_public_render_source(const doe_runtime *runtime);
 /* Executes one command and fills `execution`; false when it failed (the
  * execution record then carries the error). */
 bool doe_runtime_execute(doe_runtime *runtime, const doe_command *command, doe_trace_execution *execution);
