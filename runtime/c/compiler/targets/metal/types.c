@@ -62,6 +62,8 @@ static void type_name(MetalEmitter *e, TypeId type, unsigned depth) {
             type_name(e, t->element, depth + 1u);
             metal_format(e, ", %u>", t->count);
             break;
+        case TYPE_FREXP_RESULT:
+        case TYPE_MODF_RESULT:
         case TYPE_ATOMIC_RESULT:
         case TYPE_STRUCT:
             metal_format(e, "DoeT%u", type);
@@ -85,7 +87,7 @@ void metal_types(MetalEmitter *e) {
         bool pending = false;
         for (uint32_t i = 0u; i < c->type_count && !e->failed; ++i) {
             const TypeRecord *t = &c->types[i];
-            if ((t->kind != TYPE_STRUCT && t->kind != TYPE_ATOMIC_RESULT) ||
+            if ((t->kind != TYPE_STRUCT && t->kind != TYPE_ATOMIC_RESULT && t->kind != TYPE_FREXP_RESULT && t->kind != TYPE_MODF_RESULT) ||
                 (t->flags & (TYPE_CONSTRUCTIBLE | TYPE_ATOMIC_CONTENT)) == 0u ||
                 ((t->flags & TYPE_ATOMIC_CONTENT) != 0u && (t->flags & TYPE_FIXED) == 0u)) continue;
             unsigned d;

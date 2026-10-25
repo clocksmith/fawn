@@ -74,7 +74,7 @@ typedef enum {
     BUILTIN_UNPACK4X_I8, BUILTIN_DOT4_I8_PACKED, BUILTIN_DOT4_U8_PACKED,
     BUILTIN_REVERSE_BITS, BUILTIN_COUNT_LEADING_ZEROS, BUILTIN_COUNT_TRAILING_ZEROS, BUILTIN_FIRST_LEADING_BIT, BUILTIN_FIRST_TRAILING_BIT,
     BUILTIN_FMA, BUILTIN_STEP, BUILTIN_SMOOTHSTEP, BUILTIN_SATURATE,
-    BUILTIN_EXTRACT_BITS, BUILTIN_INSERT_BITS
+    BUILTIN_EXTRACT_BITS, BUILTIN_INSERT_BITS, BUILTIN_FREXP, BUILTIN_MODF, BUILTIN_LDEXP
 } NumericBuiltinKind;
 typedef struct { uint64_t bits; IrType type; } NumericValue;
 typedef struct { TypeId type; uint32_t flags; uint64_t bits; } ConstantValue;
@@ -120,13 +120,14 @@ typedef struct { NameSpan name; union { TypeRef annotation;
     struct { TypeId type; uint32_t offset; } resolved; } type; } FormalRecord;
 typedef struct { uint32_t expression, next; } ArgumentSyntax;
 typedef struct { NameSpan name; TypeRef element; uint32_t count_expression, flags; } GenericSyntax;
-enum { TYPE_VECTOR = 1u, TYPE_ARRAY, TYPE_RUNTIME_ARRAY, TYPE_STRUCT, TYPE_TEXTURE, TYPE_SAMPLER, TYPE_MATRIX, TYPE_ATOMIC, TYPE_ATOMIC_RESULT, TYPE_POINTER };
+enum { TYPE_VECTOR = 1u, TYPE_ARRAY, TYPE_RUNTIME_ARRAY, TYPE_STRUCT, TYPE_TEXTURE, TYPE_SAMPLER, TYPE_MATRIX, TYPE_ATOMIC, TYPE_ATOMIC_RESULT, TYPE_POINTER, TYPE_FREXP_RESULT, TYPE_MODF_RESULT };
 enum { TYPE_CONSTRUCTIBLE = 1u, TYPE_HOST = 2u, TYPE_FIXED = 4u, TYPE_TAIL = 8u,
     TYPE_RESOLVING = 16u, TYPE_RESOLVED = 32u, TYPE_ABSTRACT = 64u, TYPE_UNIFORM = 128u, TYPE_ATOMIC_CONTENT = 256u,
     TYPE_DEFERRED = 512u };
 typedef struct { uint32_t dimension, format, access, flags; } ImageType;
 typedef struct { uint32_t kind, flags, element, count; NameSpan name;
     union { struct { uint64_t size, alignment, stride; } layout;
+        struct { uint64_t size, alignment; TypeId second; uint32_t reserved; } result;
         ImageType image;
         struct { uint32_t first_expression, end_expression, scan, parent, member, parent_kind; } dependency; } state;
     uint32_t target, aux; } TypeRecord;

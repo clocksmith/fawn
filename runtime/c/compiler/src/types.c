@@ -49,7 +49,8 @@ uint32_t type_children(const CompilerWorkspace *c, TypeId id) {
 TypeId type_child(const CompilerWorkspace *c, TypeId id, uint32_t index) {
     const TypeRecord *t = &c->types[id-IR_PRIMITIVE_COUNT];
     return t->kind == TYPE_STRUCT?c->members[t->element+index].type:
-        t->kind == TYPE_ATOMIC_RESULT && index == 1u ? IR_BOOL : t->element;
+        t->kind == TYPE_ATOMIC_RESULT && index == 1u ? IR_BOOL :
+        (t->kind == TYPE_FREXP_RESULT || t->kind == TYPE_MODF_RESULT) && index == 1u ? t->state.result.second : t->element;
 }
 static bool round_up(Source *s, uint64_t value, uint64_t alignment, uint32_t offset, uint64_t *out) {
     const uint64_t remainder = value%alignment, padding = remainder == 0u?0u:alignment-remainder;
@@ -89,6 +90,14 @@ bool type_matrix_intern(Source *s, TypeId scalar, uint32_t columns, uint32_t row
 }
 bool type_intern(Source *s, uint32_t kind, TypeId element, uint32_t count, TypeId *out) {
     CompilerWorkspace *c = s->compiler;
+    TypeId second = element;
+    if (kind == TYPE_FREXP_RESULT) {
+        const uint32_t width = type_vector_width(c, element);
+        second = type_abstract(c, element) ? IR_ABSTRACT_INT : IR_I32;
+        /* This dependency is a vector only: fixed one-level interning, never a
+         * recursive aggregate walk. The result's two children remain explicit. */
+        if (width != 1u && !type_intern(s, TYPE_VECTOR, second, width, &second)) return false;
+    }
     for (uint32_t i = 0u;i<c->type_count;++i) {
         const TypeRecord *t = &c->types[i];
         if (t->kind == kind && t->element == element && t->count == count && kind != TYPE_STRUCT) {
@@ -102,7 +111,20 @@ bool type_intern(Source *s, uint32_t kind, TypeId element, uint32_t count, TypeI
     const uint32_t flags = type_flags(c, element);
     if (!type_constructible(c, element) && (flags & TYPE_ATOMIC_CONTENT) == 0u)
         return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, s->length, "aggregate element must be constructible or contain atomics");
-    if (kind == TYPE_POINTER) {
+    if (kind == TYPE_FREXP_RESULT || kind == TYPE_MODF_RESULT) {
+        const TypeId leaf = type_leaf(c, element);
+        if (count != 2u || (leaf != IR_ABSTRACT_FLOAT && leaf != IR_F32 && leaf != IR_F16))
+            return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, s->length, "floating decomposition requires a floating scalar or vector");
+        t.flags |= TYPE_CONSTRUCTIBLE | (flags & (TYPE_ABSTRACT | TYPE_FIXED));
+        const uint64_t alignment = type_alignment(c, element) > type_alignment(c, second) ?
+            type_alignment(c, element) : type_alignment(c, second);
+        uint64_t offset = 0u;
+        if (!round_up(s, type_size(c, element), type_alignment(c, second), 0u, &offset) ||
+            !round_up(s, offset + type_size(c, second), alignment, 0u, &t.state.result.size)) return false;
+        t.state.result.alignment = alignment;
+        t.state.result.second = second;
+    }
+    else if (kind == TYPE_POINTER) {
         if (!type_constructible(c, element) || type_abstract(c, element))
             return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, s->length, "function pointer requires a concrete constructible store type");
         t.state.layout.alignment = 1u;

@@ -186,7 +186,7 @@ static bool plan_type(Emitter *e, TypeId type) {
     while (c->walk_count != 0u) {
         WalkItem *w = &c->walk[c->walk_count - 1u];
         TypeRecord *t = &c->types[w->object - IR_PRIMITIVE_COUNT];
-        const uint32_t children = type_handle(c, w->object) ? 0u : (t->kind == TYPE_STRUCT || t->kind == TYPE_ATOMIC_RESULT) ? t->count : 1u;
+        const uint32_t children = type_handle(c, w->object) ? 0u : (t->kind == TYPE_STRUCT || t->kind == TYPE_ATOMIC_RESULT || t->kind == TYPE_FREXP_RESULT || t->kind == TYPE_MODF_RESULT) ? t->count : 1u;
         if (w->cursor < children) {
             const TypeId child = type_child(c, w->object, w->cursor++);
             if (child < IR_PRIMITIVE_COUNT) {

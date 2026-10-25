@@ -728,3 +728,6 @@ validation does not establish physical backend qualification.
 
 [ABI16 sampling relationships](SAMPLING.md) adds explicit, failure-atomic
 per-entry texture/sampler pairs to specialization without changing frozen records.
+
+[Floating decomposition](DECOMPOSITION.md) covers the shared `frexp`, `modf` and
+`ldexp` semantics and focused target/constant controls.

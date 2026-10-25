@@ -63,6 +63,7 @@ bool sema_finish_lanes(Source *, TypeId, ConstantValue[4], uint32_t, ConstantVal
 bool sema_swizzle_value(Source *, const Expression *, ExpressionValue *, TypeId, uint32_t, bool, bool, ExpressionValue *);
 bool sema_unary_value(Source *, const Expression *, ExpressionValue *, bool, bool, ExpressionValue *);
 bool sema_packed_integer(Source *, uint32_t, const NumericBuiltin *, ExpressionValue *, bool, ExpressionValue *);
+bool sema_decompose_call(Source *, const Expression *, const LocalScope *, const NumericBuiltin *, bool, bool, ExpressionValue *);
 bool sema_builtin_finish(Source *, const Expression *, const NumericBuiltin *, ExpressionValue *, bool, ExpressionValue *);
 bool sema_image_component(Source *, ExpressionValue *);
 bool sema_image_finish(Source *, const Expression *, TypeId, TypeId, ImageOperation, uint32_t, bool, ExpressionValue *);
