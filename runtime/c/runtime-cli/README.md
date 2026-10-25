@@ -133,6 +133,20 @@ $(BUILD)/doe-c-runtime --commands examples/rmsnorm_tree_commands.json --execute 
   with `--validate-output-oracles` the command runs again on isolated
   zero-filled buffers and the read-back target's SHA-256 must equal
   `expected_sha256`; a mismatch exits 1.
+- `async_diagnostics` (`pipeline_async_diagnostics`): async shader compilation and
+  render pipeline creation, capability queries, standard object reference
+  lifetimes, and `full` combinations. `iterations`/`repeat` repeats the selected
+  operation. Resource-table/immediates and pixel-local-storage extensions are
+  unavailable in the pinned public WebGPU ABI: strict policy fails with
+  `diagnostic_extension_unavailable`; explicit `emulate-when-unavailable` records
+  the retained public WebGPU fallback's compute/render/bundle operations. These
+  diagnostics record without submission and report that path in each trace row.
+  Shader receipts cover the actual inline sources compiled. Lifecycle queries use
+  an occlusion query set to exercise ownership without enabling an unrequested
+  timestamp feature. `check-diagnostics` executes all nine standalone diagnostic
+  examples, validates schema/replay, tests strict rejection, and counts actual ABI
+  calls for two full iterations (six async pipelines and six command buffers,
+  four draws, zero submissions). C and Dawn pass on lavapipe LLVM 21.1.8 CPU Vulkan.
 - `--readback-buffer HANDLE=PATH` (up to 8) writes a buffer's final bytes after
   a successful run, so a test can compare them with bytes computed without the
   GPU.
@@ -157,8 +171,7 @@ $(BUILD)/doe-c-runtime --commands examples/rmsnorm_tree_commands.json --execute 
   `--adapter auto|physical|software` is this CLI's own: `auto` takes a
   nonfallback adapter, else the fallback (CPU) adapter.
 
-Every other command kind (surfaces,
-`async_diagnostics` and the rest), field, texture dimension, sample count, aspect, format, oracle
+Every other command kind (surfaces and the rest), field, texture dimension, sample count, aspect, format, oracle
 scope, `repeatSynchronization` value, semantic field on another kind, explicit
 `numericStability` annotation and argument is rejected with exit 2 before
 device work.

@@ -66,7 +66,7 @@ typedef struct doe_quirk_bucket {
     bool requires_lean, blocking, identity;
 } doe_quirk_bucket;
 
-enum { DOE_QUIRK_BUCKETS = 12 };
+enum { DOE_QUIRK_BUCKETS = 15 };
 typedef struct doe_quirk_set {
     doe_json_document document;
     doe_quirk *quirks;
