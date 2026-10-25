@@ -1,3 +1,6 @@
+// CSL is quarantined; only explicit -Denable-csl=true builds expose its implementation.
+const enable_csl = @import("build_options").enable_csl;
+
 // Public WGSL compiler compatibility facade.
 // Production runtime and backend modules import the narrow modules below directly.
 
@@ -25,26 +28,26 @@ pub const emit_spirv_fn = @import("emit/spirv/emit_spirv_fn.zig");
 pub const emit_spirv_stages = @import("emit/spirv/emit_spirv_stages.zig");
 pub const emit_spirv_texture = @import("emit/spirv/emit_spirv_texture.zig");
 pub const emit_dxil = @import("emit/dxil/emit_dxil.zig");
-pub const emit_csl = @import("emit/csl/emit_csl.zig");
-pub const emit_csl_reduce_dist = @import("emit/csl/emit_csl_reduce_dist.zig");
-pub const emit_csl_attention = @import("emit/csl/emit_csl_attention.zig");
-pub const emit_csl_gather = @import("emit/csl/emit_csl_gather.zig");
-pub const emit_csl_rope = @import("emit/csl/emit_csl_rope.zig");
-pub const emit_csl_dequant = @import("emit/csl/emit_csl_dequant.zig");
-pub const emit_csl_sample = @import("emit/csl/emit_csl_sample.zig");
-pub const emit_csl_fused = @import("emit/csl/emit_csl_fused.zig");
-pub const emit_csl_dense_gemv = @import("emit/csl/emit_csl_dense_gemv.zig");
-pub const emit_csl_linear_attn = @import("emit/csl/emit_csl_linear_attn.zig");
-pub const emit_csl_kv_cache = @import("emit/csl/emit_csl_kv_cache.zig");
-pub const emit_csl_fused_ffn = @import("emit/csl/emit_csl_fused_ffn.zig");
-pub const emit_csl_host = @import("emit/csl/emit_csl_host.zig");
-pub const emit_csl_host_plan = @import("emit/csl/emit_csl_host_plan.zig");
-pub const emit_csl_toolchain = @import("emit/csl/emit_csl_toolchain.zig");
-pub const emit_csl_simulator = @import("emit/csl/emit_csl_simulator.zig");
-pub const emit_csl_mem_plan = @import("emit/csl/emit_csl_mem_plan.zig");
-pub const emit_csl_exec_v1 = @import("emit/csl/emit_csl_exec_v1.zig");
-pub const emit_csl_host_runtime = @import("emit/csl/emit_csl_host_runtime.zig");
-pub const emit_csl_validate = @import("emit/csl/emit_csl_validate.zig");
+pub const emit_csl = if (enable_csl) @import("emit/csl/emit_csl.zig") else struct {};
+pub const emit_csl_reduce_dist = if (enable_csl) @import("emit/csl/emit_csl_reduce_dist.zig") else struct {};
+pub const emit_csl_attention = if (enable_csl) @import("emit/csl/emit_csl_attention.zig") else struct {};
+pub const emit_csl_gather = if (enable_csl) @import("emit/csl/emit_csl_gather.zig") else struct {};
+pub const emit_csl_rope = if (enable_csl) @import("emit/csl/emit_csl_rope.zig") else struct {};
+pub const emit_csl_dequant = if (enable_csl) @import("emit/csl/emit_csl_dequant.zig") else struct {};
+pub const emit_csl_sample = if (enable_csl) @import("emit/csl/emit_csl_sample.zig") else struct {};
+pub const emit_csl_fused = if (enable_csl) @import("emit/csl/emit_csl_fused.zig") else struct {};
+pub const emit_csl_dense_gemv = if (enable_csl) @import("emit/csl/emit_csl_dense_gemv.zig") else struct {};
+pub const emit_csl_linear_attn = if (enable_csl) @import("emit/csl/emit_csl_linear_attn.zig") else struct {};
+pub const emit_csl_kv_cache = if (enable_csl) @import("emit/csl/emit_csl_kv_cache.zig") else struct {};
+pub const emit_csl_fused_ffn = if (enable_csl) @import("emit/csl/emit_csl_fused_ffn.zig") else struct {};
+pub const emit_csl_host = if (enable_csl) @import("emit/csl/emit_csl_host.zig") else struct {};
+pub const emit_csl_host_plan = if (enable_csl) @import("emit/csl/emit_csl_host_plan.zig") else struct {};
+pub const emit_csl_toolchain = if (enable_csl) @import("emit/csl/emit_csl_toolchain.zig") else struct {};
+pub const emit_csl_simulator = if (enable_csl) @import("emit/csl/emit_csl_simulator.zig") else struct {};
+pub const emit_csl_mem_plan = if (enable_csl) @import("emit/csl/emit_csl_mem_plan.zig") else struct {};
+pub const emit_csl_exec_v1 = if (enable_csl) @import("emit/csl/emit_csl_exec_v1.zig") else struct {};
+pub const emit_csl_host_runtime = if (enable_csl) @import("emit/csl/emit_csl_host_runtime.zig") else struct {};
+pub const emit_csl_validate = if (enable_csl) @import("emit/csl/emit_csl_validate.zig") else struct {};
 pub const layout_utils = @import("ir/layout_utils.zig");
 
 pub const analysis = @import("pipeline/analysis.zig");
@@ -54,7 +57,7 @@ pub const translate_msl = @import("pipeline/translate_msl.zig");
 pub const translate_hlsl = @import("pipeline/translate_hlsl.zig");
 pub const translate_spirv = @import("pipeline/translate_spirv.zig");
 pub const translate_dxil = @import("pipeline/translate_dxil.zig");
-pub const translate_csl = @import("pipeline/translate_csl.zig");
+pub const translate_csl = if (enable_csl) @import("pipeline/translate_csl.zig") else struct {};
 
 pub const TranslateError = analysis.TranslateError;
 pub const CompilationStage = analysis.CompilationStage;

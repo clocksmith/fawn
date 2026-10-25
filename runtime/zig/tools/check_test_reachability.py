@@ -33,6 +33,13 @@ def declared_test_files() -> set[str]:
     }
 
 
+def quarantined_csl_source(path: str) -> bool:
+    # The versioned quarantine manifest owns the optional source boundary.
+    manifest = json.loads((ROOT.parents[1] / "config/csl-quarantine.json").read_text())
+    repository_path = "runtime/zig/" + path
+    return repository_path.startswith(tuple(manifest["sourcePrefixes"])) or repository_path in manifest["sourceFiles"]
+
+
 def module_name(path: str) -> str:
     return path.removesuffix(".zig").replace("/", ".")
 
@@ -49,11 +56,15 @@ def reached_modules(binaries: list[Path]) -> set[str]:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--include-csl", action="store_true", help="include the explicit optional CSL suite")
     parser.add_argument("binaries", nargs="+", type=Path, help="unfiltered test-suite executables")
     args = parser.parse_args()
     inventory = json.loads(INVENTORY_PATH.read_text(encoding="utf-8"))
     allowed = {entry["path"]: entry.get("reason", "") for entry in inventory.get("unreachedSourceTests", [])}
     declared = declared_test_files()
+    quarantined = set() if args.include_csl else {path for path in declared if quarantined_csl_source(path)}
+    declared -= quarantined
+    allowed = {path: reason for path, reason in allowed.items() if path not in quarantined}
     reached = reached_modules(args.binaries)
     errors: list[str] = []
     for path in sorted(declared):
@@ -73,7 +84,7 @@ def main() -> int:
     if errors:
         return 1
     print(f"test reachability: {len(declared) - len(allowed)} source files with tests reached; "
-          f"{len(allowed)} listed as deliberately unreached")
+          f"{len(allowed)} listed as deliberately unreached; {len(quarantined)} optional CSL files excluded")
     return 0
 
 

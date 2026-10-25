@@ -1,8 +1,22 @@
 // TSIR executable kernel-body emitter tests.
 
 const std = @import("std");
+const enable_csl = @import("build_options").enable_csl;
 const tsir = @import("../../src/compiler/tsir/mod.zig");
 const targets = @import("../../src/compiler/targets/mod.zig");
+
+test "default TSIR writer rejects quarantined CSL before writing" {
+    if (enable_csl) return error.SkipZigTest;
+    const allocator = std.testing.allocator;
+    var output = std.ArrayList(u8){};
+    defer output.deinit(allocator);
+    try std.testing.expectError(error.UnsupportedKernelBody, tsir.emit_kernel_body.emit(
+        output.writer(allocator),
+        fusedGemvSemantic(),
+        .csl,
+    ));
+    try std.testing.expectEqual(@as(usize, 0), output.items.len);
+}
 
 test "tsir emitters produce executable fused_gemv bodies" {
     const allocator = std.testing.allocator;
@@ -19,16 +33,18 @@ test "tsir emitters produce executable fused_gemv bodies" {
     try expectContains(webgpu, "tsir_output[row] = acc;");
     try expectNotContains(webgpu, "mechanical skeleton");
 
-    const csl = try tsir.emit_csl.emitSemanticFunction(
-        allocator,
-        semantic,
-        fixtureFunction(targets.wse3.descriptor),
-        targets.wse3.descriptor,
-    );
-    defer allocator.free(csl);
-    try expectContains(csl, "for (@range(i16, M)) |row|");
-    try expectContains(csl, "sys_mod.unblock_cmd_stream();");
-    try expectNotContains(csl, "mechanical skeleton");
+    if (enable_csl) {
+        const csl = try tsir.emit_csl.emitSemanticFunction(
+            allocator,
+            semantic,
+            fixtureFunction(targets.wse3.descriptor),
+            targets.wse3.descriptor,
+        );
+        defer allocator.free(csl);
+        try expectContains(csl, "for (@range(i16, M)) |row|");
+        try expectContains(csl, "sys_mod.unblock_cmd_stream();");
+        try expectNotContains(csl, "mechanical skeleton");
+    }
 
     const msl = try tsir.emit_msl.emitSemanticFunction(
         allocator,
@@ -76,16 +92,18 @@ test "tsir emitters produce executable rms_norm bodies" {
     try expectContains(webgpu, "inverseSqrt(mean_sq + tsir_dims.epsilon)");
     try expectContains(webgpu, "tsir_output[d] = tsir_input[d] * inv_rms * tsir_scale[d];");
 
-    const csl = try tsir.emit_csl.emitSemanticFunction(
-        allocator,
-        semantic,
-        fixtureFunction(targets.wse3.descriptor),
-        targets.wse3.descriptor,
-    );
-    defer allocator.free(csl);
-    try expectContains(csl, "fn sqrt_nr(x: f32) f32");
-    try expectContains(csl, "const y0: f32 = math.sqrt(x);");
-    try expectContains(csl, "const inv_rms = 1.0 / sqrt_nr(mean_sq + epsilon);");
+    if (enable_csl) {
+        const csl = try tsir.emit_csl.emitSemanticFunction(
+            allocator,
+            semantic,
+            fixtureFunction(targets.wse3.descriptor),
+            targets.wse3.descriptor,
+        );
+        defer allocator.free(csl);
+        try expectContains(csl, "fn sqrt_nr(x: f32) f32");
+        try expectContains(csl, "const y0: f32 = math.sqrt(x);");
+        try expectContains(csl, "const inv_rms = 1.0 / sqrt_nr(mean_sq + epsilon);");
+    }
 
     const msl = try tsir.emit_msl.emitSemanticFunction(
         allocator,
@@ -116,6 +134,7 @@ test "tsir emitters produce executable rms_norm bodies" {
 }
 
 test "tsir csl residual_add emitWithConfig var_prefix='' produces bare names" {
+    if (!enable_csl) return error.SkipZigTest;
     // The live emit_csl_semantic_ops.emitResidualPe path expects bare
     // `a` / `b` / `output` var names (no `tsir_` prefix). The Config
     // hook lets a TSIR-driven swap of that path strip the prefix while
@@ -174,6 +193,7 @@ test "tsir csl residual_add emitWithConfig var_prefix='' produces bare names" {
 }
 
 test "tsir csl residual_add honors binding.name for var + export naming" {
+    if (!enable_csl) return error.SkipZigTest;
     // The TSIR emitter parameterizes variable / export names via
     // `binding.name` rather than hardcoding the role string. This is the
     // hook the live HostPlan path needs to swap through TSIR without
@@ -238,6 +258,7 @@ test "tsir csl residual_add honors binding.name for var + export naming" {
 }
 
 test "tsir csl emitter produces executable residual_add body" {
+    if (!enable_csl) return error.SkipZigTest;
     const allocator = std.testing.allocator;
     const semantic = residualAddSemantic();
 
@@ -272,6 +293,7 @@ test "tsir csl emitter produces executable residual_add body" {
 }
 
 test "tsir csl emitter produces executable gelu_gated body" {
+    if (!enable_csl) return error.SkipZigTest;
     const allocator = std.testing.allocator;
     const semantic = geluGatedSemantic();
 
@@ -309,6 +331,7 @@ test "tsir csl emitter produces executable gelu_gated body" {
 }
 
 test "tsir csl emitter produces executable silu_gated body" {
+    if (!enable_csl) return error.SkipZigTest;
     const allocator = std.testing.allocator;
     const semantic = siluGatedSemantic();
 
@@ -349,6 +372,7 @@ test "tsir csl emitter produces executable silu_gated body" {
 }
 
 test "tsir csl emitter produces executable sigmoid_gated body" {
+    if (!enable_csl) return error.SkipZigTest;
     const allocator = std.testing.allocator;
     const semantic = sigmoidGatedSemantic();
 
@@ -390,6 +414,7 @@ test "tsir csl emitter produces executable sigmoid_gated body" {
 }
 
 test "tsir csl emitter produces executable kv_write body" {
+    if (!enable_csl) return error.SkipZigTest;
     const allocator = std.testing.allocator;
     const semantic = kvWriteSemantic();
 
@@ -425,6 +450,7 @@ test "tsir csl emitter produces executable kv_write body" {
 }
 
 test "tsir csl emitter produces executable kv_read body" {
+    if (!enable_csl) return error.SkipZigTest;
     const allocator = std.testing.allocator;
     const semantic = kvReadSemantic();
 
@@ -461,6 +487,7 @@ test "tsir csl emitter produces executable kv_read body" {
 }
 
 test "tsir csl emitter produces executable attention_scores body" {
+    if (!enable_csl) return error.SkipZigTest;
     // Bootstrap-shape canary fingerprint: head_dim=256, kv_len bound by
     // param so the same compiled artifact runs across canary-shape
     // inputs, two-pass-stable softmax, no causal masking, no softcap,
@@ -519,6 +546,7 @@ test "tsir csl emitter produces executable attention_scores body" {
 }
 
 test "tsir csl attention_scores rejects out-of-contract bodies" {
+    if (!enable_csl) return error.SkipZigTest;
     // The bootstrap canary contract: softmax_mode=.two_pass_stable, no
     // softcap, literal scale. Causal mask (.causal / .sliding_window)
     // is now accepted; only streaming softmax, softcap, sliding window
@@ -586,6 +614,7 @@ test "tsir csl attention_scores rejects out-of-contract bodies" {
 }
 
 test "tsir csl attention_scores kv_axis_sharded emits per-PE partials shape" {
+    if (!enable_csl) return error.SkipZigTest;
     // Multi-PE kv-axis-sharded body: K/V are sliced along the position
     // axis and each PE writes a `[head_dim + 2]f32` partials buffer
     // (`local_O[d]` un-normalized + `local_max` + `local_sum_exp`).
@@ -643,6 +672,7 @@ test "tsir csl attention_scores kv_axis_sharded emits per-PE partials shape" {
 }
 
 test "tsir csl attention_scores kv_axis_sharded full-bundle has no duplicate pe_id" {
+    if (!enable_csl) return error.SkipZigTest;
     // Regression for the redeclaration bug: emit_csl's per-PE skeleton
     // already declares `param pe_id: u32; param num_pes: u32;`. If the
     // sharded body redeclares them as `i16`, the bundled CSL has two
@@ -686,6 +716,7 @@ test "tsir csl attention_scores kv_axis_sharded full-bundle has no duplicate pe_
 }
 
 test "tsir csl attention_scores emits causal mask conditional" {
+    if (!enable_csl) return error.SkipZigTest;
     // `.causal` is a structural no-op for the single-Q canary surface
     // (query_pos = kv_len - 1 means no K position is ever after Q), but
     // the conditional is emitted so the lane is exercised end-to-end.
@@ -708,6 +739,7 @@ test "tsir csl attention_scores emits causal mask conditional" {
 }
 
 test "tsir csl attention_scores emits sliding-window mask with declared size" {
+    if (!enable_csl) return error.SkipZigTest;
     // sliding_window_size=4: any K position before
     // `kv_len - 4` must be masked to -1e30. Both the kernel and the
     // reference interpreter at runtime/zig/src/compiler/tsir/reference_interpreter.zig
@@ -732,6 +764,7 @@ test "tsir csl attention_scores emits sliding-window mask with declared size" {
 }
 
 test "tsir csl attention_scores kv_axis_sharded multi-Q widens Q and output buffers" {
+    if (!enable_csl) return error.SkipZigTest;
     // Causal-prefill body: query_seq_len > 1 emits the kv-axis-sharded
     // body wrapped in a per-query loop. Q widens to
     // [query_seq_len * head_dim]; output widens to
@@ -778,6 +811,7 @@ test "tsir csl attention_scores kv_axis_sharded multi-Q widens Q and output buff
 }
 
 test "tsir csl emitter produces executable l2_normalize body" {
+    if (!enable_csl) return error.SkipZigTest;
     // DeltaNet Q/K pre-attention L2 normalize. Two-pass body: compute
     // squared sum, then divide each element by sqrt(sum + eps). Same
     // var-prefix / export-symbol contract as rms_norm.
@@ -804,6 +838,7 @@ test "tsir csl emitter produces executable l2_normalize body" {
 }
 
 test "tsir csl emitter produces executable conv1d_depthwise body" {
+    if (!enable_csl) return error.SkipZigTest;
     // DeltaNet conv1d kernel_size=4 depthwise with bias. Causal pad
     // (left-only) so the kernel cannot see future tokens. Per-channel
     // bias is added before the conv accumulator.
@@ -829,6 +864,7 @@ test "tsir csl emitter produces executable conv1d_depthwise body" {
 }
 
 test "tsir csl emitter produces executable linear_attention body" {
+    if (!enable_csl) return error.SkipZigTest;
     // Gated DeltaNet single-token update + readout. Shared-norm form
     // (one A_log scalar per head pair, no dt_bias). Sigmoid-gated
     // residual carries the query stream through to the output.
@@ -857,6 +893,7 @@ test "tsir csl emitter produces executable linear_attention body" {
 }
 
 test "tsir csl attention_scores defaults to full_per_pe single-PE shape" {
+    if (!enable_csl) return error.SkipZigTest;
     // Regression guard: with the default Config, the emit must still
     // produce the single-PE body. Mirrors the existing canary contract
     // (no pe_id / num_pes / slots_per_pe params, full kv_len * head_dim
@@ -897,15 +934,17 @@ test "tsir emitters produce executable gather bodies" {
     try expectContains(webgpu, "let row = tsir_indices[token];");
     try expectContains(webgpu, "tsir_output[token * hidden + h] = tsir_table[row * hidden + h];");
 
-    const csl = try tsir.emit_csl.emitSemanticFunction(
-        allocator,
-        semantic,
-        fixtureFunction(targets.wse3.descriptor),
-        targets.wse3.descriptor,
-    );
-    defer allocator.free(csl);
-    try expectContains(csl, "param num_tokens: i16;");
-    try expectContains(csl, "tsir_output[dst] = tsir_table[row * @as(u32, hidden) + @as(u32, h)];");
+    if (enable_csl) {
+        const csl = try tsir.emit_csl.emitSemanticFunction(
+            allocator,
+            semantic,
+            fixtureFunction(targets.wse3.descriptor),
+            targets.wse3.descriptor,
+        );
+        defer allocator.free(csl);
+        try expectContains(csl, "param num_tokens: i16;");
+        try expectContains(csl, "tsir_output[dst] = tsir_table[row * @as(u32, hidden) + @as(u32, h)];");
+    }
 
     const msl = try tsir.emit_msl.emitSemanticFunction(
         allocator,
@@ -1459,6 +1498,7 @@ fn fusedGemvSemanticF16() tsir.schema.SemanticFunction {
 }
 
 test "tsir csl fused_gemv emits f16 buffers/accum when bindings are f16" {
+    if (!enable_csl) return error.SkipZigTest;
     const allocator = std.testing.allocator;
     const semantic = fusedGemvSemanticF16();
     var buf = std.ArrayList(u8){};
@@ -1523,6 +1563,7 @@ fn rmsNormSemanticF16() tsir.schema.SemanticFunction {
 }
 
 test "tsir csl rms_norm emits f16 sum_sq + sqrt_nr up-cast for f16 lane" {
+    if (!enable_csl) return error.SkipZigTest;
     const allocator = std.testing.allocator;
     const semantic = rmsNormSemanticF16();
     var buf = std.ArrayList(u8){};
@@ -1546,6 +1587,7 @@ test "tsir csl rms_norm emits f16 sum_sq + sqrt_nr up-cast for f16 lane" {
 }
 
 test "tsir csl unsupported activation dtype rejected at compute-elem gate" {
+    if (!enable_csl) return error.SkipZigTest;
     // bf16 / int8 / etc. are not admitted today. Door admission in
     // csl_host_plan_tool.zig only accepts f32 + f16; the emit-side
     // gate is requireSupportedComputeElem, exercised here via a

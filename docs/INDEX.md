@@ -29,6 +29,8 @@ of repeated prose does not delete them.
   roadmap are maintained in the owner's private strategy repository; Doe remains
   canonical for Doe behavior and measurements
 
+- [`csl-quarantine.md`](csl-quarantine.md): preserved optional CSL scope, source manifest and explicit build/test opt-in
+
 ## Product and project contracts
 
 - [`problems-addressed.md`](problems-addressed.md): user problems and proof required

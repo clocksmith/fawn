@@ -7,11 +7,9 @@ const TranslateError = api.TranslateError;
 const MAX_OUTPUT = api.MAX_OUTPUT;
 const MAX_HLSL_OUTPUT = api.MAX_HLSL_OUTPUT;
 const MAX_SPIRV_OUTPUT = api.MAX_SPIRV_OUTPUT;
-const MAX_CSL_OUTPUT = api.MAX_CSL_OUTPUT;
 const translateToMsl = api.translateToMsl;
 const translateToHlsl = api.translateToHlsl;
 const translateToSpirv = api.translateToSpirv;
-const translateToCsl = api.translateToCsl;
 
 test "translate vertex shader with struct I/O to MSL" {
     const source =
@@ -206,10 +204,4 @@ test "arrayLength on struct member compiles to HLSL" {
 }
 test "arrayLength on struct member compiles to SPIR-V" {
     try csl_tests.expectArrayLengthOnStructMemberCompilesToSpirv(std.testing.allocator, translateToSpirv, MAX_SPIRV_OUTPUT);
-}
-test "translate element-wise compute shader to CSL" {
-    try csl_tests.expectElementWiseComputeShaderCompilesToCsl(std.testing.allocator, translateToCsl, MAX_CSL_OUTPUT);
-}
-test "vertex shader rejected for CSL emission" {
-    try csl_tests.expectVertexShaderRejectedForCsl(std.testing.allocator, translateToCsl, TranslateError.UnsupportedConstruct, MAX_CSL_OUTPUT);
 }

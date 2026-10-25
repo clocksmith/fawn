@@ -1,3 +1,6 @@
+// CSL is quarantined; only explicit -Denable-csl=true builds expose its implementation.
+const enable_csl = @import("build_options").enable_csl;
+
 // TSIR public module surface.
 //
 // Downstream callers (frontend, residency/collective passes, emitters,
@@ -11,7 +14,7 @@ pub const reference = @import("reference_interpreter.zig");
 pub const frontend = @import("frontend.zig");
 pub const planner = @import("planner.zig");
 pub const emit_kernel_body = @import("emit_kernel_body.zig");
-pub const emit_csl = @import("emit_csl.zig");
+pub const emit_csl = if (enable_csl) @import("emit_csl.zig") else struct {};
 pub const emit_dxil = @import("emit_dxil.zig");
 pub const emit_msl = @import("emit_msl.zig");
 pub const emit_spir_v = @import("emit_spir_v.zig");

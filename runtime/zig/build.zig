@@ -556,6 +556,8 @@ fn configureCErrorScopesArtifact(artifact: *std.Build.Step.Compile, b: *std.Buil
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
+    const enable_csl = b.option(bool, "enable-csl", "Explicitly enable quarantined CSL compiler and tools") orelse false;
+    const csl_step = b.step("csl", "Build quarantined CSL tools (requires -Denable-csl=true)");
     const c_dropin_policy_archive = b.option([]const u8, "experimental-c-dropin-policy-archive", "Explicit GCC-built process-once routing archive (default: retained Zig)");
     const c_dropin_policy_verifier: ?*std.Build.Step.Run = if (c_dropin_policy_archive) |archive| blk: {
         if (!target.query.isNative() or target.result.os.tag != .linux or target.result.cpu.arch != .x86_64 or target.result.abi != .gnu)
@@ -690,6 +692,7 @@ pub fn build(b: *std.Build) void {
 
     const lean_verified = b.option(bool, "lean-verified", "Embed Lean proof artifact and validate at comptime") orelse false;
     const build_options = b.addOptions();
+    build_options.addOption(bool, "enable_csl", enable_csl);
     build_options.addOption(bool, "experimental_c_dropin_policy", c_dropin_policy_archive != null);
     build_options.addOption(bool, "experimental_c_labels", c_labels_archive != null);
     build_options.addOption(bool, "experimental_c_error_scopes", c_error_scopes_archive != null);
@@ -1210,8 +1213,8 @@ pub fn build(b: *std.Build) void {
     emit_csl_exe.linkLibC();
     const install_emit_csl = b.addInstallArtifact(emit_csl_exe, .{});
     const emit_csl_step = b.step("emit-csl", "Build the WGSL-to-CSL emitter tool");
-    emit_csl_step.dependOn(&install_emit_csl.step);
-    b.getInstallStep().dependOn(emit_csl_step);
+    if (enable_csl) emit_csl_step.dependOn(&install_emit_csl.step) else emit_csl_step.dependOn(&b.addFail("CSL is quarantined; select -Denable-csl=true explicitly").step);
+    csl_step.dependOn(emit_csl_step);
 
     const emit_tsir_attention_canary_exe = b.addExecutable(.{
         .name = "doe-emit-tsir-attention-canary",
@@ -1234,8 +1237,8 @@ pub fn build(b: *std.Build) void {
         "emit-tsir-attention-canary",
         "Build the TSIR-CSL attention canary emitter tool",
     );
-    emit_tsir_attention_canary_step.dependOn(&install_emit_tsir_attention_canary.step);
-    b.getInstallStep().dependOn(emit_tsir_attention_canary_step);
+    if (enable_csl) emit_tsir_attention_canary_step.dependOn(&install_emit_tsir_attention_canary.step) else emit_tsir_attention_canary_step.dependOn(&b.addFail("CSL is quarantined; select -Denable-csl=true explicitly").step);
+    csl_step.dependOn(emit_tsir_attention_canary_step);
 
     const emit_hlsl_exe = b.addExecutable(.{
         .name = "doe-emit-hlsl",
@@ -1348,8 +1351,8 @@ pub fn build(b: *std.Build) void {
     csl_sim_runner.linkLibC();
     const install_csl_sim_runner = b.addInstallArtifact(csl_sim_runner, .{});
     const csl_sim_runner_step = b.step("csl-sim-runner", "Build the CSL simulator contract runner");
-    csl_sim_runner_step.dependOn(&install_csl_sim_runner.step);
-    b.getInstallStep().dependOn(csl_sim_runner_step);
+    if (enable_csl) csl_sim_runner_step.dependOn(&install_csl_sim_runner.step) else csl_sim_runner_step.dependOn(&b.addFail("CSL is quarantined; select -Denable-csl=true explicitly").step);
+    csl_step.dependOn(csl_sim_runner_step);
 
     const csl_bundle_emitter = b.addExecutable(.{
         .name = "doe-csl-bundle-emitter",
@@ -1365,8 +1368,8 @@ pub fn build(b: *std.Build) void {
     });
     const install_csl_bundle_emitter = b.addInstallArtifact(csl_bundle_emitter, .{});
     const csl_bundle_emitter_step = b.step("csl-bundle-emitter", "Build the WGSL-to-CSL bundle emitter");
-    csl_bundle_emitter_step.dependOn(&install_csl_bundle_emitter.step);
-    b.getInstallStep().dependOn(csl_bundle_emitter_step);
+    if (enable_csl) csl_bundle_emitter_step.dependOn(&install_csl_bundle_emitter.step) else csl_bundle_emitter_step.dependOn(&b.addFail("CSL is quarantined; select -Denable-csl=true explicitly").step);
+    csl_step.dependOn(csl_bundle_emitter_step);
 
     const csl_host_plan_tool = b.addExecutable(.{
         .name = "doe-csl-host-plan-tool",
@@ -1383,8 +1386,8 @@ pub fn build(b: *std.Build) void {
     csl_host_plan_tool.linkLibC();
     const install_csl_host_plan_tool = b.addInstallArtifact(csl_host_plan_tool, .{});
     const csl_host_plan_tool_step = b.step("csl-host-plan-tool", "Build the CSL host-plan lowering tool");
-    csl_host_plan_tool_step.dependOn(&install_csl_host_plan_tool.step);
-    b.getInstallStep().dependOn(csl_host_plan_tool_step);
+    if (enable_csl) csl_host_plan_tool_step.dependOn(&install_csl_host_plan_tool.step) else csl_host_plan_tool_step.dependOn(&b.addFail("CSL is quarantined; select -Denable-csl=true explicitly").step);
+    csl_step.dependOn(csl_host_plan_tool_step);
 
     // Bootstrap manifest fixture generator. Invoked by
     // `bench/tools/generate_tsir_manifest_fixtures.py` through this build
@@ -1495,6 +1498,7 @@ pub fn build(b: *std.Build) void {
     // The default `dropin` step uses the --tier option (default: headless).
     // These named steps override tier for convenience.
     const compute_build_options = b.addOptions();
+    compute_build_options.addOption(bool, "enable_csl", enable_csl);
     compute_build_options.addOption(bool, "experimental_c_dropin_policy", c_dropin_policy_archive != null);
     compute_build_options.addOption(bool, "experimental_c_labels", c_labels_archive != null);
     compute_build_options.addOption(bool, "experimental_c_error_scopes", c_error_scopes_archive != null);
@@ -1550,6 +1554,7 @@ pub fn build(b: *std.Build) void {
 
     // Full Dawn drop-in variant (tier=full).
     const full_build_options = b.addOptions();
+    full_build_options.addOption(bool, "enable_csl", enable_csl);
     full_build_options.addOption(bool, "experimental_c_dropin_policy", c_dropin_policy_archive != null);
     full_build_options.addOption(bool, "experimental_c_labels", c_labels_archive != null);
     full_build_options.addOption(bool, "experimental_c_error_scopes", c_error_scopes_archive != null);
@@ -1746,6 +1751,25 @@ pub fn build(b: *std.Build) void {
     wgsl_test_step.dependOn(&test_inventory_check.step);
     wgsl_test_step.dependOn(&run_wgsl_tests.step);
 
+    const csl_test_step = b.step("test-csl", "Run quarantined CSL tests (requires -Denable-csl=true)");
+    const csl_test_root_module = b.createModule(.{
+        .root_source_file = b.path("test_suite_csl.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "build_options", .module = build_options_module },
+        },
+    });
+    addSourceModuleIncludePaths(csl_test_root_module, b);
+    const csl_test_exec = b.addTest(.{ .root_module = csl_test_root_module, .filters = test_filters });
+    csl_test_exec.linkLibC();
+    if (enable_csl) {
+        csl_test_step.dependOn(&fmt_check.step);
+        csl_test_step.dependOn(&source_layout_check.step);
+        csl_test_step.dependOn(&test_inventory_check.step);
+        csl_test_step.dependOn(&b.addRunArtifact(csl_test_exec).step);
+    } else csl_test_step.dependOn(&b.addFail("CSL is quarantined; select -Denable-csl=true explicitly").step);
+
     // Every source file that declares tests must be compiled into an unfiltered
     // suite binary (or be listed as deliberately unreached); test-full runs it.
     const reachability_step = b.step("test-reachability", "Check that every source-local Zig test is compiled into a test suite");
@@ -1753,6 +1777,10 @@ pub fn build(b: *std.Build) void {
         const reachability = b.addSystemCommand(&.{ "python3", "tools/check_test_reachability.py" });
         for ([_]*std.Build.Step.Compile{ test_exec, device_test_exec, core_test_exec, full_test_exec, d3d12_test_exec, wgsl_test_exec }) |suite|
             reachability.addArtifactArg(suite);
+        if (enable_csl) {
+            reachability.addArg("--include-csl");
+            reachability.addArtifactArg(csl_test_exec);
+        }
         reachability_step.dependOn(&reachability.step);
         full_test_step.dependOn(&reachability.step);
     }
@@ -2074,29 +2102,29 @@ pub fn build(b: *std.Build) void {
         for ([_]*std.Build.Module{ doe_module, compute_doe_module, full_doe_module }) |module|
             configureCOwnersModule(module, b, archive, c_callbacks_archive, c_instance_archive);
         for ([_]*std.Build.Step.Compile{
-            dropin_lib,                   exe,                            metal_staged_write_bench,       metal_compute_bench,            module_runner,
-            emit_msl_exe,                 emit_ir_digest_exe,             emit_csl_exe,                   emit_tsir_attention_canary_exe, emit_hlsl_exe,
-            emit_dxil_exe,                emit_spirv_exe,                 webgpu_plan_executor,           doe_plan_executor,              csl_sim_runner,
-            csl_bundle_emitter,           csl_host_plan_tool,             tsir_bootstrap_manifest_inputs, core_dropin_lib,                full_dropin_lib,
-            test_exec,                    device_test_exec,               core_test_exec,                 full_test_exec,                 d3d12_test_exec,
-            wgsl_test_exec,               metal_staged_write_bench_tests, metal_compute_bench_tests,      shader_bench_exe,               shader_bench_tests,
-            host_hotpath_bench_exe,       host_hotpath_bench_tests,       compilation_bench_exe,          compilation_bench_tests,        runtime_compile_report_exe,
-            runtime_compile_report_tests,
+            dropin_lib,                 exe,                          metal_staged_write_bench,       metal_compute_bench,            module_runner,
+            emit_msl_exe,               emit_ir_digest_exe,           emit_csl_exe,                   emit_tsir_attention_canary_exe, emit_hlsl_exe,
+            emit_dxil_exe,              emit_spirv_exe,               webgpu_plan_executor,           doe_plan_executor,              csl_sim_runner,
+            csl_bundle_emitter,         csl_host_plan_tool,           tsir_bootstrap_manifest_inputs, core_dropin_lib,                full_dropin_lib,
+            test_exec,                  device_test_exec,             core_test_exec,                 full_test_exec,                 d3d12_test_exec,
+            wgsl_test_exec,             csl_test_exec,                metal_staged_write_bench_tests, metal_compute_bench_tests,      shader_bench_exe,
+            shader_bench_tests,         host_hotpath_bench_exe,       host_hotpath_bench_tests,       compilation_bench_exe,          compilation_bench_tests,
+            runtime_compile_report_exe, runtime_compile_report_tests,
         }) |artifact| configureCOwnersModule(artifact.root_module, b, archive, c_callbacks_archive, c_instance_archive);
     } else {
         c_futures_test_step.dependOn(&b.addFail("test-c-futures-integration requires -Dexperimental-c-futures-archive=/absolute/GCC/archive.a").step);
     }
     const selected_c_artifacts = [_]*std.Build.Step.Compile{
-        dropin_lib,                   core_dropin_lib,          full_dropin_lib,                exe,
-        module_runner,                metal_staged_write_bench, metal_compute_bench,            emit_msl_exe,
-        emit_ir_digest_exe,           emit_csl_exe,             emit_tsir_attention_canary_exe, emit_hlsl_exe,
-        emit_dxil_exe,                emit_spirv_exe,           doe_plan_executor,              webgpu_plan_executor,
-        csl_sim_runner,               csl_bundle_emitter,       csl_host_plan_tool,             tsir_bootstrap_manifest_inputs,
-        tsir_bootstrap_oracle,        test_exec,                device_test_exec,               core_test_exec,
-        full_test_exec,               d3d12_test_exec,          wgsl_test_exec,                 metal_staged_write_bench_tests,
-        metal_compute_bench_tests,    shader_bench_exe,         shader_bench_tests,             host_hotpath_bench_exe,
-        host_hotpath_bench_tests,     compilation_bench_exe,    compilation_bench_tests,        runtime_compile_report_exe,
-        runtime_compile_report_tests,
+        dropin_lib,                     core_dropin_lib,              full_dropin_lib,                exe,
+        module_runner,                  metal_staged_write_bench,     metal_compute_bench,            emit_msl_exe,
+        emit_ir_digest_exe,             emit_csl_exe,                 emit_tsir_attention_canary_exe, emit_hlsl_exe,
+        emit_dxil_exe,                  emit_spirv_exe,               doe_plan_executor,              webgpu_plan_executor,
+        csl_sim_runner,                 csl_bundle_emitter,           csl_host_plan_tool,             tsir_bootstrap_manifest_inputs,
+        tsir_bootstrap_oracle,          test_exec,                    device_test_exec,               core_test_exec,
+        full_test_exec,                 d3d12_test_exec,              wgsl_test_exec,                 csl_test_exec,
+        metal_staged_write_bench_tests, metal_compute_bench_tests,    shader_bench_exe,               shader_bench_tests,
+        host_hotpath_bench_exe,         host_hotpath_bench_tests,     compilation_bench_exe,          compilation_bench_tests,
+        runtime_compile_report_exe,     runtime_compile_report_tests,
     };
     if (c_dropin_policy_archive) |archive| {
         for ([_]*std.Build.Module{ doe_module, compute_doe_module, full_doe_module }) |module|

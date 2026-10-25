@@ -1,0 +1,102 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Preserved optional CSL quarantine boundary",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "status",
+    "scope",
+    "sourceBaseline",
+    "optInBuildOption",
+    "aggregateBuildStep",
+    "testStep",
+    "testSuite",
+    "historyPolicy",
+    "sourcePrefixes",
+    "sourceFiles",
+    "buildSteps",
+    "preservedSourceBlobs"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "status": {
+      "const": "quarantined-optional"
+    },
+    "scope": {
+      "type": "string",
+      "minLength": 1
+    },
+    "sourceBaseline": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "optInBuildOption": {
+      "type": "string",
+      "minLength": 1
+    },
+    "aggregateBuildStep": {
+      "type": "string",
+      "minLength": 1
+    },
+    "testStep": {
+      "type": "string",
+      "minLength": 1
+    },
+    "testSuite": {
+      "type": "string",
+      "minLength": 1
+    },
+    "historyPolicy": {
+      "type": "string",
+      "minLength": 1
+    },
+    "sourcePrefixes": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "sourceFiles": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "buildSteps": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "preservedSourceBlobs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "path",
+          "gitBlob"
+        ],
+        "properties": {
+          "path": {
+            "type": "string",
+            "minLength": 1
+          },
+          "gitBlob": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{40}$"
+          }
+        }
+      }
+    }
+  }
+}

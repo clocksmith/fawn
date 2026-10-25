@@ -6,6 +6,7 @@
 // family roles.
 
 const std = @import("std");
+const enable_csl = @import("build_options").enable_csl;
 const schema = @import("schema.zig");
 const emit_context = @import("emit_kernel_context.zig");
 
@@ -104,7 +105,7 @@ pub const default_config = emit_context.default_config;
 // emit_kernel_body.zig stays under the 999-line cap. Re-exported here
 // for backward-compat callers that referenced them via this module.
 const dtype_routing = @import("emit_dtype_routing.zig");
-const csl_f16_pack = @import("emit_csl_f16_pack.zig");
+const csl_f16_pack = if (enable_csl) @import("emit_csl_f16_pack.zig") else struct {};
 pub const cslElemName = emit_context.cslElemName;
 pub const wgslElemName = dtype_routing.wgslElemName;
 pub const isSupportedComputeElem = dtype_routing.isSupportedComputeElem;
@@ -129,7 +130,7 @@ pub fn emitWithConfig(
 ) EmitError!void {
     return switch (backend) {
         .webgpu => emitWebGpu(writer, func),
-        .csl => emitCsl(writer, func, config),
+        .csl => if (enable_csl) emitCsl(writer, func, config) else error.UnsupportedKernelBody,
         .msl => emitMsl(writer, func),
         .dxil => emitDxil(writer, func),
         .spir_v => emitSpirV(writer, func),

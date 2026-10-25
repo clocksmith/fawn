@@ -25,6 +25,8 @@ from bench.lib.bench_utils import detect_repo_root, load_json_object
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
+    parser.add_argument("--include-csl", action="store_true",
+                        help="explicitly evaluate quarantined CSL receipts; native parity excludes CSL")
     parser.add_argument("--root", default="", help="Repository root. Auto-detected when omitted.")
     parser.add_argument("--registry", default="config/csl-runtime-fixtures.json")
     parser.add_argument("--registry-schema", default="config/csl-runtime-fixtures.schema.json")
@@ -207,7 +209,9 @@ def build_row(root: Path, fixture: dict[str, Any], args: argparse.Namespace) -> 
                 out_path=artifact_root / "dxil" / f"{fixture_id}.dxil",
                 ready_reason="DXIL emitter completed",
             ),
-            "csl": csl_backend(root, evidence),
+            "csl": csl_backend(root, evidence) if args.include_csl else {
+                "status": "not_wired", "reason": "CSL quarantined; use --include-csl for optional receipt evaluation"
+            },
         },
     }
 
@@ -271,6 +275,7 @@ def main() -> int:
         "artifactKind": "wgsl_backend_matrix_report",
         "generatedAtUtc": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         "sourceRegistryPath": args.registry,
+        "includeQuarantinedCsl": args.include_csl,
         "summary": {
             "rowCount": len(rows),
             "vulkanReady": count_ready(rows, "vulkan_spirv"),

@@ -1,6 +1,7 @@
 // Emit schema-tool inputs for TSIR bootstrap manifest lowering fixtures.
 
 const std = @import("std");
+const build_options = @import("build_options");
 const doe = @import("doe");
 const tsir = doe.compiler.tsir();
 const targets = doe.compiler.targets();
@@ -61,12 +62,6 @@ pub fn main() !void {
             .emitter_digest = tsir.emit_webgpu.emitterCodeDigest(),
         },
         .{
-            .backend = "wse3",
-            .descriptor = targets.wse3.descriptor,
-            .emitter_digest = tsir.emit_csl.emitterCodeDigest(),
-            .fabric_streaming = true,
-        },
-        .{
             .backend = "msl",
             .descriptor = targets.msl.descriptor,
             .emitter_digest = tsir.emit_msl.emitterCodeDigest(),
@@ -76,7 +71,14 @@ pub fn main() !void {
             .descriptor = targets.spir_v.descriptor,
             .emitter_digest = tsir.emit_spir_v.emitterCodeDigest(),
         },
-    };
+    } ++ (if (build_options.enable_csl) [_]TargetSpec{
+        .{
+            .backend = "wse3",
+            .descriptor = targets.wse3.descriptor,
+            .emitter_digest = tsir.emit_csl.emitterCodeDigest(),
+            .fabric_streaming = true,
+        },
+    } else [_]TargetSpec{});
 
     const stdout = std.fs.File.stdout().deprecatedWriter();
     try stdout.writeAll("[\n");

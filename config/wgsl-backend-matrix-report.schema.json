@@ -8,6 +8,7 @@
     "schemaVersion": { "type": "integer", "const": 1 },
     "artifactKind": { "type": "string", "const": "wgsl_backend_matrix_report" },
     "generatedAtUtc": { "type": "string", "minLength": 1 },
+    "includeQuarantinedCsl": { "type": "boolean" },
     "sourceRegistryPath": { "type": "string", "minLength": 1 },
     "summary": {
       "type": "object",

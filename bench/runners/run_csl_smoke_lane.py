@@ -114,10 +114,10 @@ def main() -> int:
     }
 
     if not BUNDLE_EMITTER.exists():
-        if run_step("build-bundle-emitter", [zig_executable, "build", "csl-bundle-emitter"], cwd=RUNTIME_ZIG_DIR, dry_run=args.dry_run) != 0:
+        if run_step("build-bundle-emitter", [zig_executable, "build", "csl-bundle-emitter", "-Denable-csl=true"], cwd=RUNTIME_ZIG_DIR, dry_run=args.dry_run) != 0:
             phases["translate"] = phase("failed", "zig build csl-bundle-emitter failed")
     if phases["translate"]["status"] == "not-run" and not SIM_RUNNER.exists():
-        if run_step("build-sim-runner", [zig_executable, "build", "csl-sim-runner"], cwd=RUNTIME_ZIG_DIR, dry_run=args.dry_run) != 0:
+        if run_step("build-sim-runner", [zig_executable, "build", "csl-sim-runner", "-Denable-csl=true"], cwd=RUNTIME_ZIG_DIR, dry_run=args.dry_run) != 0:
             phases["translate"] = phase("failed", "zig build csl-sim-runner failed")
     if phases["translate"]["status"] == "not-run" and run_step(
         "emit-bundle",

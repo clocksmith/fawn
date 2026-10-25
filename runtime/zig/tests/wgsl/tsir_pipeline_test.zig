@@ -6,6 +6,7 @@
 // per-kernel-family parity step owns simulator/hardware proof.
 
 const std = @import("std");
+const enable_csl = @import("build_options").enable_csl;
 const tsir = @import("../../src/compiler/tsir/mod.zig");
 const targets = @import("../../src/compiler/targets/mod.zig");
 const parser = @import("../../src/compiler/wgsl/frontend/parser.zig");
@@ -63,17 +64,8 @@ fn expectBootstrapKernel(
     try assertCleanRealization(name, "webgpu-generic-repeat", webgpu_b);
     try assertHasResidency(webgpu_a, .host_copied);
 
-    const wse3_a = try planWse3(allocator, semantic);
-    const wse3_b = try planWse3(allocator, semantic);
-    try assertCleanRealization(name, "wse3", wse3_a);
-    try assertCleanRealization(name, "wse3-repeat", wse3_b);
-    try assertHasResidency(wse3_a, .fabric_streamed);
-
     const webgpu_emitter_digest = tsir.emit_webgpu.emitterCodeDigest();
-    const csl_emitter_digest = tsir.emit_csl.emitterCodeDigest();
     try std.testing.expectEqualSlices(u8, &webgpu_emitter_digest, &webgpu_a.emitter_digest);
-    try std.testing.expectEqualSlices(u8, &csl_emitter_digest, &wse3_a.emitter_digest);
-
     const webgpu_digest_a = try tsir.digest.computeWithEmitterDigest(
         allocator,
         semantic,
@@ -86,30 +78,42 @@ fn expectBootstrapKernel(
         webgpu_b,
         webgpu_emitter_digest,
     );
-    const wse3_digest_a = try tsir.digest.computeWithEmitterDigest(
-        allocator,
-        semantic,
-        wse3_a,
-        csl_emitter_digest,
-    );
-    const wse3_digest_b = try tsir.digest.computeWithEmitterDigest(
-        allocator,
-        semantic,
-        wse3_b,
-        csl_emitter_digest,
-    );
-
     try std.testing.expectEqualSlices(u8, &webgpu_digest_a.semantic, &webgpu_digest_b.semantic);
     try std.testing.expectEqualSlices(u8, &webgpu_digest_a.realization, &webgpu_digest_b.realization);
-    try std.testing.expectEqualSlices(u8, &wse3_digest_a.semantic, &wse3_digest_b.semantic);
-    try std.testing.expectEqualSlices(u8, &wse3_digest_a.realization, &wse3_digest_b.realization);
-    try std.testing.expectEqualSlices(u8, &webgpu_digest_a.semantic, &wse3_digest_a.semantic);
-    try std.testing.expect(!std.mem.eql(u8, &webgpu_digest_a.realization, &wse3_digest_a.realization));
     try std.testing.expectEqualSlices(u8, &webgpu_emitter_digest, &webgpu_digest_a.emitter);
-    try std.testing.expectEqualSlices(u8, &csl_emitter_digest, &wse3_digest_a.emitter);
     try std.testing.expect(!allZero(&webgpu_digest_a.semantic));
     try std.testing.expect(!allZero(&webgpu_digest_a.realization));
-    try std.testing.expect(!allZero(&wse3_digest_a.realization));
+
+    if (enable_csl) {
+        const wse3_a = try planWse3(allocator, semantic);
+        const wse3_b = try planWse3(allocator, semantic);
+        try assertCleanRealization(name, "wse3", wse3_a);
+        try assertCleanRealization(name, "wse3-repeat", wse3_b);
+        try assertHasResidency(wse3_a, .fabric_streamed);
+
+        const csl_emitter_digest = tsir.emit_csl.emitterCodeDigest();
+        try std.testing.expectEqualSlices(u8, &csl_emitter_digest, &wse3_a.emitter_digest);
+
+        const wse3_digest_a = try tsir.digest.computeWithEmitterDigest(
+            allocator,
+            semantic,
+            wse3_a,
+            csl_emitter_digest,
+        );
+        const wse3_digest_b = try tsir.digest.computeWithEmitterDigest(
+            allocator,
+            semantic,
+            wse3_b,
+            csl_emitter_digest,
+        );
+
+        try std.testing.expectEqualSlices(u8, &wse3_digest_a.semantic, &wse3_digest_b.semantic);
+        try std.testing.expectEqualSlices(u8, &wse3_digest_a.realization, &wse3_digest_b.realization);
+        try std.testing.expectEqualSlices(u8, &webgpu_digest_a.semantic, &wse3_digest_a.semantic);
+        try std.testing.expect(!std.mem.eql(u8, &webgpu_digest_a.realization, &wse3_digest_a.realization));
+        try std.testing.expectEqualSlices(u8, &csl_emitter_digest, &wse3_digest_a.emitter);
+        try std.testing.expect(!allZero(&wse3_digest_a.realization));
+    }
 }
 
 fn lowerBootstrapWgsl(

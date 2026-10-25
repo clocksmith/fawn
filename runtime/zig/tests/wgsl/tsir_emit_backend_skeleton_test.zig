@@ -1,6 +1,7 @@
 // TSIR backend skeleton emitter tests.
 
 const std = @import("std");
+const enable_csl = @import("build_options").enable_csl;
 const tsir = @import("../../src/compiler/tsir/mod.zig");
 const targets = @import("../../src/compiler/targets/mod.zig");
 
@@ -38,14 +39,13 @@ test "tsir emitter code digests are pairwise distinct across all five backends" 
     // artifacts to the wrong backend silently. Lock the invariant
     // here so that collision becomes a test failure, not a production
     // ambiguity.
-    const digests = [_][32]u8{
-        tsir.emit_csl.emitterCodeDigest(),
+    const digests = (if (enable_csl) [_][32]u8{tsir.emit_csl.emitterCodeDigest()} else [_][32]u8{}) ++ [_][32]u8{
         tsir.emit_webgpu.emitterCodeDigest(),
         tsir.emit_msl.emitterCodeDigest(),
         tsir.emit_dxil.emitterCodeDigest(),
         tsir.emit_spir_v.emitterCodeDigest(),
     };
-    const names = [_][]const u8{ "csl", "webgpu", "msl", "dxil", "spir_v" };
+    const names = (if (enable_csl) [_][]const u8{"csl"} else [_][]const u8{}) ++ [_][]const u8{ "webgpu", "msl", "dxil", "spir_v" };
     var i: usize = 0;
     while (i < digests.len) : (i += 1) {
         try std.testing.expect(!allZero(&digests[i]));

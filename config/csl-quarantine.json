@@ -1,0 +1,231 @@
+{
+  "schemaVersion": 1,
+  "status": "quarantined-optional",
+  "scope": "CSL compiler, Cerebras runtime tools and dedicated tests; not native WebGPU parity",
+  "sourceBaseline": "932f5c19e23ab8c985773e6cb1ebecb26d5450ed",
+  "sourcePrefixes": [
+    "runtime/zig/src/compiler/wgsl/emit/csl/",
+    "runtime/zig/src/spatial/csl/"
+  ],
+  "sourceFiles": [
+    "runtime/zig/src/compiler/wgsl/pipeline/translate_csl.zig",
+    "runtime/zig/src/compiler/tsir/emit_csl.zig",
+    "runtime/zig/src/compiler/tsir/emit_csl_f16_pack.zig",
+    "runtime/zig/src/cli/entrypoints/main_emit_csl.zig",
+    "runtime/zig/src/cli/entrypoints/main_emit_tsir_attention_canary.zig"
+  ],
+  "optInBuildOption": "-Denable-csl=true",
+  "buildSteps": [
+    "emit-csl",
+    "emit-tsir-attention-canary",
+    "csl-sim-runner",
+    "csl-bundle-emitter",
+    "csl-host-plan-tool"
+  ],
+  "aggregateBuildStep": "csl",
+  "testStep": "test-csl",
+  "testSuite": "runtime/zig/test_suite_csl.zig",
+  "preservedSourceBlobs": [
+    {
+      "path": "runtime/zig/src/cli/entrypoints/main_emit_csl.zig",
+      "gitBlob": "0657a837b08091f5ab29beb5f2cdd220dbd43c86"
+    },
+    {
+      "path": "runtime/zig/src/cli/entrypoints/main_emit_tsir_attention_canary.zig",
+      "gitBlob": "8d31cb40b14490b6484648ebbdd0f38b7893a671"
+    },
+    {
+      "path": "runtime/zig/src/compiler/tsir/emit_csl.zig",
+      "gitBlob": "34b8b8f6714718fe5e7dc0f8cd97b817ad1df043"
+    },
+    {
+      "path": "runtime/zig/src/compiler/tsir/emit_csl_f16_pack.zig",
+      "gitBlob": "90a7ffc9e2a3e9b77bcdcfc16faed0382cdfc0f6"
+    },
+    {
+      "path": "runtime/zig/src/compiler/wgsl/emit/csl/csl_compile_sections.zig",
+      "gitBlob": "0f352a6254c3e9444726bcd515115a4fb00e9fdd"
+    },
+    {
+      "path": "runtime/zig/src/compiler/wgsl/emit/csl/csl_spec.zig",
+      "gitBlob": "aeee80943bf49c051c314f0ba109f363f6c33b93"
+    },
+    {
+      "path": "runtime/zig/src/compiler/wgsl/emit/csl/csl_storage_emit.zig",
+      "gitBlob": "ea729630f4f99e54e853319860b44927c521c4ba"
+    },
+    {
+      "path": "runtime/zig/src/compiler/wgsl/emit/csl/csl_text_buffer.zig",
+      "gitBlob": "d9e10471e945c7a23f704f0b7678431aa0e8f2ef"
+    },
+    {
+      "path": "runtime/zig/src/compiler/wgsl/emit/csl/emit_csl.zig",
+      "gitBlob": "e36be197c40703bb3977f7d2b3a5d7e73d1015bc"
+    },
+    {
+      "path": "runtime/zig/src/compiler/wgsl/emit/csl/emit_csl_attention.zig",
+      "gitBlob": "2b83fa40b5a7dde1eb761dd7be7ddf2c20d9c8ce"
+    },
+    {
+      "path": "runtime/zig/src/compiler/wgsl/emit/csl/emit_csl_classify.zig",
+      "gitBlob": "a651fa86309a5738377ffd6c3a836203cd99918f"
+    },
+    {
+      "path": "runtime/zig/src/compiler/wgsl/emit/csl/emit_csl_core.zig",
+      "gitBlob": "b5a22d1db0c13b080c60fb5eedf92eb4f5cef941"
+    },
+    {
+      "path": "runtime/zig/src/compiler/wgsl/emit/csl/emit_csl_dense_gemv.zig",
+      "gitBlob": "79800e705fbc77c4636895a381762a812e683cef"
+    },
+    {
+      "path": "runtime/zig/src/compiler/wgsl/emit/csl/emit_csl_dequant.zig",
+      "gitBlob": "9fff098b119e3f7b33423e724da091fd95921dea"
+    },
+    {
+      "path": "runtime/zig/src/compiler/wgsl/emit/csl/emit_csl_elementwise.zig",
+      "gitBlob": "db5a408273661fd8309867000bfa5d3472d54a5d"
+    },
+    {
+      "path": "runtime/zig/src/compiler/wgsl/emit/csl/emit_csl_exec_v1.zig",
+      "gitBlob": "75c70377cbce83ee0a3ee35f2454fd7dff951324"
+    },
+    {
+      "path": "runtime/zig/src/compiler/wgsl/emit/csl/emit_csl_fused.zig",
+      "gitBlob": "b1183315447611ec5f7273d4dedb8240e0663587"
+    },
+    {
+      "path": "runtime/zig/src/compiler/wgsl/emit/csl/emit_csl_fused_ffn.zig",
+      "gitBlob": "34cfb9ad85b49099d902f76c062ea53afb169475"
+    },
+    {
+      "path": "runtime/zig/src/compiler/wgsl/emit/csl/emit_csl_gather.zig",
+      "gitBlob": "942bb7eab274351dee8585e23e29b03833fa59d1"
+    },
+    {
+      "path": "runtime/zig/src/compiler/wgsl/emit/csl/emit_csl_host.zig",
+      "gitBlob": "d9c53736ad2eeef479d0c41bf84837185b066532"
+    },
+    {
+      "path": "runtime/zig/src/compiler/wgsl/emit/csl/emit_csl_host_compile_rewrite.zig",
+      "gitBlob": "9a09b4b80a3e4fdb796f78d7b9bb9e84d23f8c09"
+    },
+    {
+      "path": "runtime/zig/src/compiler/wgsl/emit/csl/emit_csl_host_compile_source.zig",
+      "gitBlob": "30e8a789fcda65a4c9129a1e924e55a5ec0b0be7"
+    },
+    {
+      "path": "runtime/zig/src/compiler/wgsl/emit/csl/emit_csl_host_plan.zig",
+      "gitBlob": "cc3cef32808f884db3355c3cd9a005b9c0c3c4a9"
+    },
+    {
+      "path": "runtime/zig/src/compiler/wgsl/emit/csl/emit_csl_host_runtime.zig",
+      "gitBlob": "ae7f6f7b7784ed514af47a54728933e8190baf85"
+    },
+    {
+      "path": "runtime/zig/src/compiler/wgsl/emit/csl/emit_csl_ir_walk.zig",
+      "gitBlob": "48f7db2f61481ce4b3829802d9d3593bf38a2c25"
+    },
+    {
+      "path": "runtime/zig/src/compiler/wgsl/emit/csl/emit_csl_kv_cache.zig",
+      "gitBlob": "d82d1b45d36ce568a31733e6af8d5535db9d113c"
+    },
+    {
+      "path": "runtime/zig/src/compiler/wgsl/emit/csl/emit_csl_layout.zig",
+      "gitBlob": "c95c8047b94a2800c9b1adcea5c83fd554bd5f07"
+    },
+    {
+      "path": "runtime/zig/src/compiler/wgsl/emit/csl/emit_csl_linear_attn.zig",
+      "gitBlob": "a26344da822c0119f6855ef3d9aad745f2bb7a2b"
+    },
+    {
+      "path": "runtime/zig/src/compiler/wgsl/emit/csl/emit_csl_maps.zig",
+      "gitBlob": "c47788393bd4887c0a594573f8b5a53ce077342d"
+    },
+    {
+      "path": "runtime/zig/src/compiler/wgsl/emit/csl/emit_csl_matmul.zig",
+      "gitBlob": "44a21e88bbc13a0b37cd237d651ccd2adbf38234"
+    },
+    {
+      "path": "runtime/zig/src/compiler/wgsl/emit/csl/emit_csl_matmul_q4k.zig",
+      "gitBlob": "5cd2bf08796adf7844f7b2bff2fcd71e8d088925"
+    },
+    {
+      "path": "runtime/zig/src/compiler/wgsl/emit/csl/emit_csl_mem_plan.zig",
+      "gitBlob": "1fd420981fe02ba9e29ae0cd25c35029f5c56371"
+    },
+    {
+      "path": "runtime/zig/src/compiler/wgsl/emit/csl/emit_csl_reduce_dist.zig",
+      "gitBlob": "76f5462c9b2e6a1e150e19b34597fcc3b42ae65f"
+    },
+    {
+      "path": "runtime/zig/src/compiler/wgsl/emit/csl/emit_csl_reduction.zig",
+      "gitBlob": "790899268461fb870540d4248abc364497936689"
+    },
+    {
+      "path": "runtime/zig/src/compiler/wgsl/emit/csl/emit_csl_rmsnorm_pack.zig",
+      "gitBlob": "53d1fec1071f1549b4635264cff3d5488ea4bc04"
+    },
+    {
+      "path": "runtime/zig/src/compiler/wgsl/emit/csl/emit_csl_rope.zig",
+      "gitBlob": "9aaad0509fbbd2b2ffc0ac6347359a71887766de"
+    },
+    {
+      "path": "runtime/zig/src/compiler/wgsl/emit/csl/emit_csl_sample.zig",
+      "gitBlob": "10eed0ebfaccd2b6388fb9cef7d35ad6d933a76d"
+    },
+    {
+      "path": "runtime/zig/src/compiler/wgsl/emit/csl/emit_csl_semantic_ops.zig",
+      "gitBlob": "60157a57779613469a9dcb91d69e584264f7a31c"
+    },
+    {
+      "path": "runtime/zig/src/compiler/wgsl/emit/csl/emit_csl_simulator.zig",
+      "gitBlob": "81676156963fac151fa9e7f97ecffd6a460f0bf1"
+    },
+    {
+      "path": "runtime/zig/src/compiler/wgsl/emit/csl/emit_csl_toolchain.zig",
+      "gitBlob": "cf4d5ee13eafed2a0f43a96f397f51951863ddaf"
+    },
+    {
+      "path": "runtime/zig/src/compiler/wgsl/emit/csl/emit_csl_validate.zig",
+      "gitBlob": "7fe0b000bdf76076f6faeb8fc24ef4d0eb239f46"
+    },
+    {
+      "path": "runtime/zig/src/compiler/wgsl/pipeline/translate_csl.zig",
+      "gitBlob": "c855c6f335b1877d83f22aacfc02aaa7312a0f06"
+    },
+    {
+      "path": "runtime/zig/src/spatial/csl/csl_bundle_emitter.zig",
+      "gitBlob": "62e8dd88b85929d8b2c6ce47a61982145d0179a8"
+    },
+    {
+      "path": "runtime/zig/src/spatial/csl/csl_dense_gemv_host_plan.zig",
+      "gitBlob": "9503863ac432ddafccdf0da01f4d41c0503ed964"
+    },
+    {
+      "path": "runtime/zig/src/spatial/csl/csl_host_plan_bindings.zig",
+      "gitBlob": "4de661cc1c40df0f5b2105ed3fd4074e4adceb5b"
+    },
+    {
+      "path": "runtime/zig/src/spatial/csl/csl_host_plan_materialize.zig",
+      "gitBlob": "2d8ca97f19b8ab46db40d9153ebdc16d3381e1cc"
+    },
+    {
+      "path": "runtime/zig/src/spatial/csl/csl_host_plan_tool.zig",
+      "gitBlob": "34f377064c8c65387af43c038631f2aa0440d3ba"
+    },
+    {
+      "path": "runtime/zig/src/spatial/csl/csl_host_plan_tool_config.zig",
+      "gitBlob": "f0e63c6862fe830c227d0d45b4bd465b4983f392"
+    },
+    {
+      "path": "runtime/zig/src/spatial/csl/csl_pe_program_metadata.zig",
+      "gitBlob": "711287cecfe790fb83dea1ac78357ab85e957600"
+    },
+    {
+      "path": "runtime/zig/src/spatial/csl/csl_sim_runner.zig",
+      "gitBlob": "6a57f73d581c35bbe43c4e825842a7913597855e"
+    }
+  ],
+  "historyPolicy": "Keep sources at their original paths; preserve sealed receipts and the immutable migration inventory. Blob IDs record the pre-quarantine snapshot, not a current-source checksum exemption."
+}

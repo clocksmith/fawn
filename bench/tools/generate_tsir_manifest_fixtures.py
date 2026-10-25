@@ -36,6 +36,7 @@ def _run_zig_input_tool(zig: str) -> list[dict[str, Any]]:
             zig,
             "build",
             "tsir-bootstrap-manifest-inputs",
+            "-Denable-csl=true",
         ],
         cwd=ZIG_WORKDIR,
         check=True,

@@ -1202,10 +1202,6 @@
           "kind": "integration"
         },
         {
-          "path": "tests/wgsl/mod_cslc_validate_test.zig",
-          "kind": "integration"
-        },
-        {
           "path": "tests/wgsl/mod_feature_translation_test.zig",
           "kind": "golden"
         },
@@ -1216,34 +1212,6 @@
         {
           "path": "tests/wgsl/emit_dxil_test.zig",
           "kind": "integration"
-        },
-        {
-          "path": "tests/wgsl/emit_csl_classify_test.zig",
-          "kind": "integration"
-        },
-        {
-          "path": "tests/wgsl/emit_csl_classify_reduction_test.zig",
-          "kind": "integration"
-        },
-        {
-          "path": "tests/wgsl/emit_csl_ir_walk_loop_test.zig",
-          "kind": "integration"
-        },
-        {
-          "path": "tests/wgsl/emit_csl_builtin_shim_test.zig",
-          "kind": "integration"
-        },
-        {
-          "path": "tests/wgsl/emit_csl_reduction_layout_test.zig",
-          "kind": "integration"
-        },
-        {
-          "path": "tests/wgsl/emit_csl_matmul_q4k_test.zig",
-          "kind": "integration"
-        },
-        {
-          "path": "src/compiler/wgsl/emit/csl/emit_csl_host_compile_source.zig",
-          "kind": "inline"
         },
         {
           "path": "src/compiler/wgsl/emit/dxil/dxil_validate.zig",
@@ -1302,10 +1270,6 @@
           "kind": "integration"
         },
         {
-          "path": "tests/wgsl/tsir_emit_csl_test.zig",
-          "kind": "integration"
-        },
-        {
           "path": "tests/wgsl/tsir_emit_backend_skeleton_test.zig",
           "kind": "integration"
         },
@@ -1315,14 +1279,6 @@
         },
         {
           "path": "tests/wgsl/tsir_emit_kernel_body_test.zig",
-          "kind": "integration"
-        },
-        {
-          "path": "tests/wgsl/exec_v1_paired_gate_canary_test.zig",
-          "kind": "integration"
-        },
-        {
-          "path": "tests/wgsl/emit_csl_exec_v1_test.zig",
           "kind": "integration"
         },
         {
@@ -1394,6 +1350,71 @@
       "entries": [
         {
           "path": "tests/c_error_scopes_integration_test.zig",
+          "kind": "integration"
+        }
+      ]
+    },
+    "csl": {
+      "output": "test_suite_csl.zig",
+      "entries": [
+        {
+          "path": "tests/wgsl/mod_cslc_validate_test.zig",
+          "kind": "integration"
+        },
+        {
+          "path": "tests/wgsl/emit_csl_classify_test.zig",
+          "kind": "integration"
+        },
+        {
+          "path": "tests/wgsl/emit_csl_classify_reduction_test.zig",
+          "kind": "integration"
+        },
+        {
+          "path": "tests/wgsl/emit_csl_ir_walk_loop_test.zig",
+          "kind": "integration"
+        },
+        {
+          "path": "tests/wgsl/emit_csl_builtin_shim_test.zig",
+          "kind": "integration"
+        },
+        {
+          "path": "tests/wgsl/emit_csl_reduction_layout_test.zig",
+          "kind": "integration"
+        },
+        {
+          "path": "tests/wgsl/emit_csl_matmul_q4k_test.zig",
+          "kind": "integration"
+        },
+        {
+          "path": "src/compiler/wgsl/emit/csl/emit_csl_host_compile_source.zig",
+          "kind": "inline"
+        },
+        {
+          "path": "tests/wgsl/tsir_emit_csl_test.zig",
+          "kind": "integration"
+        },
+        {
+          "path": "tests/wgsl/exec_v1_paired_gate_canary_test.zig",
+          "kind": "integration"
+        },
+        {
+          "path": "tests/wgsl/emit_csl_exec_v1_test.zig",
+          "kind": "integration"
+        },
+        {
+          "path": "tests/wgsl/translation_csl_facade_test.zig",
+          "kind": "cross-backend"
+        },
+        {
+          "path": "tests/wgsl/tsir_pipeline_test.zig",
+          "kind": "integration"
+        },
+        {
+          "path": "tests/wgsl/tsir_emit_backend_skeleton_test.zig",
+          "kind": "integration"
+        },
+        {
+          "path": "tests/wgsl/tsir_emit_kernel_body_test.zig",
           "kind": "integration"
         }
       ]
@@ -1493,7 +1514,8 @@
       "path": "tests/wgsl/translation_test_support.zig",
       "kind": "domain-fixture",
       "consumers": [
-        "tests/wgsl/translation_facade_test.zig"
+        "tests/wgsl/translation_facade_test.zig",
+        "tests/wgsl/translation_csl_facade_test.zig"
       ]
     },
     {
