@@ -296,7 +296,7 @@ check-sanitizers:
 	ASAN_OPTIONS=detect_leaks=1:halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1 '$(SANITIZER_BUILD)/address/lost-objects'
 	$(MAKE) --no-print-directory BUILD='$(SANITIZER_BUILD)/thread' SANITIZE='-fsanitize=thread -fno-omit-frame-pointer' \
 	  '$(SANITIZER_BUILD)/thread/concurrency'
-	TSAN_OPTIONS=halt_on_error=1 '$(SANITIZER_BUILD)/thread/concurrency'
+	TSAN_OPTIONS='halt_on_error=1 suppressions=$(abspath tests/tsan.supp)' '$(SANITIZER_BUILD)/thread/concurrency'
 # The same public clients on a nonfallback GPU adapter (DOE_C_TEST_ADAPTER=physical).
 # Developer evidence on the printed adapter/driver only, not qualification. Uses the
 # system ICDs: unset VK_ICD_FILENAMES. Never run on a host under a physical hold.
