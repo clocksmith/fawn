@@ -153,18 +153,6 @@ static bool emit_numeric_builtin(Emitter *e, const IrInstruction *ir) {
         EMIT(OP_BIT_COUNT, spirv_target_type(e, ir->type), result, left);
         return true;
     }
-    if (builtin->kind == BUILTIN_UNPACK4X_U8) {
-        uint32_t lanes[4];
-        const uint32_t mask = spirv_unsigned_constant(e, 255u);
-        for (uint32_t i = 0u; i < 4u; ++i) {
-            const uint32_t shift = spirv_unsigned_constant(e, i * 8u);
-            const uint32_t shifted = spirv_reserve_ids(e, 1u);
-            lanes[i] = spirv_reserve_ids(e, 1u);
-            EMIT(OP_SHIFT_RIGHT_LOGICAL, ID_U32, shifted, left, shift);
-            EMIT(OP_BIT_AND, ID_U32, lanes[i], shifted, mask);
-        }
-        return vector_construct(e, ir->type, result, lanes, 4u);
-    }
     if (builtin->family == BUILTIN_BOOLEAN_REDUCTION) {
         if (leaf != IR_BOOL || ir->type != IR_BOOL ||
             (builtin->kind != BUILTIN_ALL && builtin->kind != BUILTIN_ANY))

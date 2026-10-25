@@ -4,7 +4,14 @@
 
 static const NumericBuiltin numeric_builtins[] = {
     {"countOneBits", BUILTIN_COUNT_ONE_BITS, 1u, BUILTIN_COMPONENT_INTEGER, 0u},
-    {"unpack4xU8", BUILTIN_UNPACK4X_U8, 1u, BUILTIN_BYTE_UNPACK, 0u},
+    {"unpack4xU8", BUILTIN_UNPACK4X_U8, 1u, BUILTIN_PACKED_INTEGER, 0u},
+    {"pack4xI8", BUILTIN_PACK4X_I8, 1u, BUILTIN_PACKED_INTEGER, 0u},
+    {"pack4xU8", BUILTIN_PACK4X_U8, 1u, BUILTIN_PACKED_INTEGER, 0u},
+    {"pack4xI8Clamp", BUILTIN_PACK4X_I8_CLAMP, 1u, BUILTIN_PACKED_INTEGER, 0u},
+    {"pack4xU8Clamp", BUILTIN_PACK4X_U8_CLAMP, 1u, BUILTIN_PACKED_INTEGER, 0u},
+    {"unpack4xI8", BUILTIN_UNPACK4X_I8, 1u, BUILTIN_PACKED_INTEGER, 0u},
+    {"dot4I8Packed", BUILTIN_DOT4_I8_PACKED, 2u, BUILTIN_PACKED_INTEGER, 0u},
+    {"dot4U8Packed", BUILTIN_DOT4_U8_PACKED, 2u, BUILTIN_PACKED_INTEGER, 0u},
     {"all", BUILTIN_ALL, 1u, BUILTIN_BOOLEAN_REDUCTION, 0u},
     {"any", BUILTIN_ANY, 1u, BUILTIN_BOOLEAN_REDUCTION, 0u},
     {"transpose", BUILTIN_TRANSPOSE, 1u, BUILTIN_MATRIX, 0u},
@@ -104,6 +111,7 @@ bool builtin_scalar_result(const NumericBuiltin *builtin) {
 }
 
 bool builtin_shape(const NumericBuiltin *builtin, uint32_t width) {
+    if (builtin->family == BUILTIN_PACKED_INTEGER) return width == (packed_pack(builtin->kind) ? 4u : 1u);
     if (builtin->family == BUILTIN_FLOAT_CROSS) return width == 3u;
     if (builtin->family == BUILTIN_NUMERIC_REDUCTION || builtin->family == BUILTIN_FLOAT_VECTOR ||
         builtin->family == BUILTIN_FLOAT_REFRACT)
@@ -313,12 +321,8 @@ static bool boolean_constant(Source *source, const NumericBuiltin *builtin, Cons
 }
 bool builtin_constant(Source *source, uint32_t offset, const NumericBuiltin *builtin,
                       const ConstantValue *arguments, TypeId result_type, ConstantValue *out) {
-    if (builtin->family == BUILTIN_BYTE_UNPACK) {
-        ConstantValue lanes[4];
-        for (uint32_t i = 0u; i < 4u; ++i)
-            lanes[i] = (ConstantValue){.type = IR_U32, .bits = (arguments[0].bits >> (i * 8u)) & 255u};
-        return constant_composite(source, result_type, lanes, 4u, false, out);
-    }
+    if (builtin->family == BUILTIN_PACKED_INTEGER)
+        return packed_constant(source, builtin->kind, arguments, result_type, out);
     if (builtin->family == BUILTIN_BOOLEAN_REDUCTION)
         return boolean_constant(source, builtin, arguments[0], out);
     if (builtin->family == BUILTIN_MATRIX)

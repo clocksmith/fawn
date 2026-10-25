@@ -70,7 +70,7 @@ void test_component_math(const char *path) {
         "data[4]=unpack4xU8(data[0]).z;}");
     char *integer_text = emit(integers, 0u);
     has(integer_text, "countbits(");
-    has(integer_text, "255u");
+    has(integer_text, "0x000000ffu");
     free(integer_text);
     release(integers);
     Fixture *f = prepare(component_math_source);

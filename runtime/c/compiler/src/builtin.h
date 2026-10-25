@@ -8,7 +8,7 @@ typedef enum {
     BUILTIN_COMPONENT_NUMERIC, BUILTIN_COMPONENT_FLOAT, BUILTIN_NUMERIC_REDUCTION,
     BUILTIN_FLOAT_REDUCTION, BUILTIN_FLOAT_VECTOR, BUILTIN_FLOAT_CROSS, BUILTIN_FLOAT_REFRACT,
     BUILTIN_SUBGROUP_NUMERIC, BUILTIN_SUBGROUP_INTEGER, BUILTIN_MATRIX, BUILTIN_BOOLEAN_REDUCTION,
-    BUILTIN_COMPONENT_INTEGER, BUILTIN_BYTE_UNPACK, BUILTIN_FLOAT_MIX
+    BUILTIN_COMPONENT_INTEGER, BUILTIN_PACKED_INTEGER, BUILTIN_FLOAT_MIX
 } BuiltinFamily;
 
 /* This read-only signature owns shape, stage-independent arity and target
@@ -24,6 +24,10 @@ typedef struct {
 const NumericBuiltin *builtin_named(const Source *, NameSpan);
 const NumericBuiltin *builtin_kind(NumericBuiltinKind);
 uint32_t builtin_extended_instruction(const NumericBuiltin *, TypeId leaf);
+bool packed_signed(NumericBuiltinKind);
+bool packed_pack(NumericBuiltinKind);
+bool packed_dot(NumericBuiltinKind);
+bool packed_constant(Source *, NumericBuiltinKind, const ConstantValue *, TypeId, ConstantValue *);
 bool builtin_floating(const NumericBuiltin *);
 bool builtin_subgroup(const NumericBuiltin *);
 bool builtin_subgroup_uniform(const NumericBuiltin *);
