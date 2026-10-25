@@ -56,6 +56,10 @@ doe_mtl_status doe_mtl_texture_preflight(const doe_mtl_commands *commands,
     const doe_mtl_texture *texture, uint32_t usage);
 doe_mtl_status doe_mtl_texture_region_check(const doe_mtl_texture *texture,
     doe_mtl_texture_region region, bool *full);
+bool doe_mtl_texture_region_aspects_initialized(const doe_mtl_commands *commands,
+    const doe_mtl_texture *texture, doe_mtl_texture_region region, uint8_t aspects);
+void doe_mtl_texture_region_aspects_initialize(doe_mtl_texture_use *use,
+    doe_mtl_texture_region region, uint8_t aspects);
 bool doe_mtl_texture_region_initialized(const doe_mtl_commands *commands,
     const doe_mtl_texture *texture, doe_mtl_texture_region region);
 doe_mtl_status doe_mtl_use_texture(doe_mtl_commands *commands,

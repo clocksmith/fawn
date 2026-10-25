@@ -35,9 +35,12 @@ static native_failure transfer(doe_mtl_commands *commands, const doe_resource_co
         pitch = 0;
     }
     doe_mtl_texture_buffer_layout layout = {copy->offset, pitch, record->value.texture.region.image_rows};
+    doe_mtl_transfer_aspect aspect = record->value.texture.region.aspect == WGPUTextureAspect_DepthOnly ?
+        DOE_MTL_TRANSFER_DEPTH : record->value.texture.region.aspect == WGPUTextureAspect_StencilOnly ?
+        DOE_MTL_TRANSFER_STENCIL : DOE_MTL_TRANSFER_ALL;
     if (status == DOE_MTL_OK) status = record->value.texture.direction == DOE_RESOURCE_BUFFER_TO_TEXTURE ?
-        doe_mtl_commands_upload_texture(commands, buffer->handle.metal, layout, texture->metal, region, &error) :
-        doe_mtl_commands_read_texture(commands, texture->metal, region, buffer->handle.metal, layout, &error);
+        doe_mtl_commands_upload_texture_aspect(commands, buffer->handle.metal, layout, texture->metal, region, aspect, &error) :
+        doe_mtl_commands_read_texture_aspect(commands, texture->metal, region, aspect, buffer->handle.metal, layout, &error);
     return native_failure_metal(status, &error);
 }
 

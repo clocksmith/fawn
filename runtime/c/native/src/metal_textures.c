@@ -89,8 +89,8 @@ WGPUTexture native_metal_create_texture(native_device *device, const WGPUTexture
         return NULL;
     }
     if ((format.depth || format.stencil) &&
-        (desc.usage & ~(WGPUTextureUsage_RenderAttachment | WGPUTextureUsage_TextureBinding))) {
-        native_error(device, WGPUErrorType_Validation, "Metal depth/stencil transfers and storage are not composed");
+        (desc.usage & WGPUTextureUsage_StorageBinding)) {
+        native_error(device, WGPUErrorType_Validation, "Metal depth/stencil storage textures are unsupported");
         return NULL;
     }
     /* Stencil sampling uses a native X24/X32 view of the combined allocation.

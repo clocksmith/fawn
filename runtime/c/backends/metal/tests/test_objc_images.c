@@ -6,7 +6,7 @@
 
 typedef struct property { const char *name; size_t value; } property;
 typedef struct transfer {
-    size_t offset, row, stride, source_slice, destination_slice, source_mip, destination_mip;
+    size_t offset, row, stride, source_slice, destination_slice, source_mip, destination_mip, options;
     doe_mtl_origin source_origin, destination_origin;
     doe_mtl_size size;
 } transfer;
@@ -109,17 +109,17 @@ static void upload(void *object, void *sel, void *buffer, size_t offset, size_t 
     size_t stride, doe_mtl_size size, void *texture, size_t slice, size_t mip,
     doe_mtl_origin origin, size_t options) {
     transfer *t = &active->transfers[active->transfer_count++];
-    assert(object == &active->encoder && buffer == &active->buffer && texture == &active->texture && options == 0);
+    assert(object == &active->encoder && buffer == &active->buffer && texture == &active->texture);
     assert(named(sel, "copyFromBuffer:sourceOffset:sourceBytesPerRow:sourceBytesPerImage:sourceSize:toTexture:destinationSlice:destinationLevel:destinationOrigin:options:"));
-    t->offset = offset; t->row = row; t->stride = stride; t->size = size;
+    t->options = options; t->offset = offset; t->row = row; t->stride = stride; t->size = size;
     t->destination_slice = slice; t->destination_mip = mip; t->destination_origin = origin;
 }
 static void read_image(void *object, void *sel, void *texture, size_t slice, size_t mip,
     doe_mtl_origin origin, doe_mtl_size size, void *buffer, size_t offset, size_t row, size_t stride, size_t options) {
     transfer *t = &active->transfers[active->transfer_count++];
-    assert(object == &active->encoder && buffer == &active->buffer && texture == &active->texture && options == 0);
+    assert(object == &active->encoder && buffer == &active->buffer && texture == &active->texture);
     assert(named(sel, "copyFromTexture:sourceSlice:sourceLevel:sourceOrigin:sourceSize:toBuffer:destinationOffset:destinationBytesPerRow:destinationBytesPerImage:options:"));
-    t->offset = offset; t->row = row; t->stride = stride; t->size = size;
+    t->options = options; t->offset = offset; t->row = row; t->stride = stride; t->size = size;
     t->source_slice = slice; t->source_mip = mip; t->source_origin = origin;
 }
 static void copy_image(void *object, void *sel, void *source, size_t source_slice, size_t source_mip,
@@ -243,8 +243,8 @@ static void views_and_caps(void) {
 }
 static void transfers(void) {
     fixture f;
-    doe_mtl_native_texture_copy c = {32, 256, 2048, {2, 4, 8, 3, 12, 6, 2}, false};
-    doe_mtl_native_texture_copy to = {0, 0, 0, {1, 8, 10, 7, 12, 6, 2}, true};
+    doe_mtl_native_texture_copy c = {32, 256, 2048, {2, 4, 8, 3, 12, 6, 2}, false, 0};
+    doe_mtl_native_texture_copy to = {0, 0, 0, {1, 8, 10, 7, 12, 6, 2}, true, 0};
     initialize(&f);
     assert(doe_mtl_objc_upload_image(&f.runtime, &f.command, &f.buffer, &f.texture, &c, NULL) == DOE_MTL_OK);
     assert(f.transfer_count == 2 && f.transfers[0].offset == 32 && f.transfers[1].offset == 2080);
@@ -261,6 +261,12 @@ static void transfers(void) {
     assert(f.transfer_count == 2 && f.transfers[0].source_slice == 3 && f.transfers[1].source_slice == 4);
     assert(f.transfers[0].destination_slice == 0 && f.transfers[0].destination_origin.z == 7);
     assert(f.transfers[1].destination_origin.z == 8 && f.transfers[1].size.depth == 1);
+    initialize(&f); c.options = 2;
+    assert(doe_mtl_objc_upload_image(&f.runtime, &f.command, &f.buffer, &f.texture, &c, NULL) == DOE_MTL_OK);
+    assert(f.transfers[0].options == 2 && f.transfers[1].options == 2);
+    initialize(&f); c.options = 1;
+    assert(doe_mtl_objc_read_image(&f.runtime, &f.command, &f.texture, &f.buffer, &c, NULL) == DOE_MTL_OK);
+    assert(f.transfers[0].options == 1 && f.transfers[1].options == 1);
     initialize(&f); f.no_encoder = true;
     assert(doe_mtl_objc_upload_image(&f.runtime, &f.command, &f.buffer, &f.texture, &c, NULL) == DOE_MTL_NATIVE_FAILURE);
     assert(f.transfer_count == 0 && f.ends == 0 && f.pools == f.drains);

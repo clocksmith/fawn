@@ -166,3 +166,6 @@ void doe_mtl_sdk_stage_timestamp(id<MTLDevice> device, id<MTLCommandBuffer> comm
     desc.sampleBufferAttachments[0].endOfEncoderSampleIndex = MTLCounterDontSample;
     (void)[command blitCommandEncoderWithDescriptor:desc];
 }
+
+_Static_assert(MTLBlitOptionDepthFromDepthStencil == 1, "native depth blit option");
+_Static_assert(MTLBlitOptionStencilFromDepthStencil == 2, "native stencil blit option");

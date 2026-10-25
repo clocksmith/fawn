@@ -27,6 +27,7 @@ typedef struct doe_mtl_native_texture_copy {
     size_t buffer_offset, bytes_per_row, bytes_per_image;
     doe_mtl_texture_region region;
     bool volume;
+    size_t options; /* Native depth/stencil component selection for buffer copies. */
 } doe_mtl_native_texture_copy;
 
 typedef struct doe_mtl_native_render_attachment {
