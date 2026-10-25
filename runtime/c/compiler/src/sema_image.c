@@ -75,7 +75,8 @@ uint32_t image_builtin_kind(const Source *s, NameSpan name) {
         {"textureDimensions", IMAGE_DIMENSIONS}, {"textureNumLevels", IMAGE_LEVELS},
         {"textureNumLayers", IMAGE_LAYERS}, {"textureNumSamples", IMAGE_SAMPLES},
         {"textureSampleLevel", IMAGE_SAMPLE_LEVEL}, {"textureSampleCompareLevel", IMAGE_SAMPLE_COMPARE_LEVEL},
-        {"textureSample", IMAGE_SAMPLE}, {"textureSampleCompare", IMAGE_SAMPLE_COMPARE}
+        {"textureSample", IMAGE_SAMPLE}, {"textureSampleCompare", IMAGE_SAMPLE_COMPARE},
+        {"textureSampleGrad", IMAGE_SAMPLE_GRAD}, {"textureSampleBias", IMAGE_SAMPLE_BIAS}
     };
     for (size_t i = 0u; i < sizeof(builtins) / sizeof(builtins[0]); ++i)
         if (source_span_is(s, name, builtins[i].name)) {
@@ -118,6 +119,10 @@ TypeId sema_image_result(Source *s, const Expression *node, const TypeRecord *t,
         case IMAGE_SAMPLE_COMPARE: case IMAGE_SAMPLE_COMPARE_LEVEL:
             if ((image.flags & DOE_COMPILER_HANDLE_DEPTH) == 0u) goto invalid;
             /* fall through */
+        case IMAGE_SAMPLE_GRAD: case IMAGE_SAMPLE_BIAS:
+            if ((op == IMAGE_SAMPLE_GRAD || op == IMAGE_SAMPLE_BIAS) &&
+                ((image.flags & DOE_COMPILER_HANDLE_DEPTH) != 0u || image.dimension == DOE_COMPILER_VIEW_1D)) goto invalid;
+            /* fall through */
         case IMAGE_SAMPLE: case IMAGE_SAMPLE_LEVEL:
             if (storage || multisampled || t->element != IR_F32) goto invalid;
             arity = image_sample_arity(image, op);
@@ -158,9 +163,11 @@ bool sema_image_argument(Source *s, const TypeRecord *texture, ImageOperation op
     const bool is_coordinate = (op == IMAGE_LOAD || op == IMAGE_STORE || sampling) && index == coordinate;
     const bool level = sampling && op != IMAGE_SAMPLE && index == 3u + (image_arrayed(image.dimension) ? 1u : 0u);
     const bool offset = sampling && index == image_sample_arity(image, op);
-    const uint32_t width = offset ? image_offset_width(image, op) : data ? 4u : is_coordinate ? image_coordinate_width(image.dimension) : 1u;
+    const uint32_t gradient_first = 3u + (image_arrayed(image.dimension) ? 1u : 0u);
+    const bool gradient = op == IMAGE_SAMPLE_GRAD && index >= gradient_first && index < gradient_first + 2u;
+    const uint32_t width = offset ? image_offset_width(image, op) : data ? 4u : (is_coordinate || gradient) ? image_coordinate_width(image.dimension) : 1u;
     TypeId scalar = data ? texture->element :
-        ((level && (compare || !depth)) || (is_coordinate && sampling)) ? IR_F32 : IR_I32;
+        ((level && (compare || !depth)) || (is_coordinate && sampling) || gradient) ? IR_F32 : IR_I32;
     const TypeId original = type_leaf(s->compiler, value->constant.type);
     if (!offset && scalar == IR_I32 && original == IR_U32) scalar = IR_U32;
     TypeId expected = scalar;

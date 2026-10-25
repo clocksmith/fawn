@@ -5,7 +5,7 @@
 typedef struct {
     const TypeRecord *type;
     ImageOperation operation;
-    uint32_t texture, sampler, coordinates, layer, level, sample, data, reference, offset;
+    uint32_t texture, sampler, coordinates, layer, level, sample, data, reference, offset, gradient_x, gradient_y, bias;
     uint32_t width;
     bool storage, multisampled, arrayed, depth;
 } HlslImage;
@@ -22,7 +22,7 @@ static bool decode(HlslEmitter *e, const IrInstruction *ir, HlslImage *image) {
     *image = (HlslImage){.type = &c->types[type - 7u],
         .operation = (ImageOperation)ir->operands.composite.kind, .texture = arguments[0],
         .sampler = NO_ID, .coordinates = NO_ID, .layer = NO_ID,
-        .level = NO_ID, .sample = NO_ID, .data = NO_ID, .reference = NO_ID, .offset = NO_ID};
+        .level = NO_ID, .sample = NO_ID, .data = NO_ID, .reference = NO_ID, .offset = NO_ID, .gradient_x = NO_ID, .gradient_y = NO_ID, .bias = NO_ID};
     const ImageType t = image->type->state.image;
     image->storage = t.format != 0u;
     image->multisampled = (t.flags & DOE_COMPILER_HANDLE_MULTISAMPLED) != 0u;
@@ -39,6 +39,7 @@ static bool decode(HlslEmitter *e, const IrInstruction *ir, HlslImage *image) {
         case IMAGE_STORE: expected = 3u + (image->arrayed ? 1u : 0u); break;
         case IMAGE_DIMENSIONS: expected = !image->storage && !image->multisampled && count == 2u ? 2u : 1u; break;
         case IMAGE_LEVELS: case IMAGE_LAYERS: case IMAGE_SAMPLES: break;
+        case IMAGE_SAMPLE_GRAD: case IMAGE_SAMPLE_BIAS:
         case IMAGE_SAMPLE: case IMAGE_SAMPLE_COMPARE: case IMAGE_SAMPLE_LEVEL: case IMAGE_SAMPLE_COMPARE_LEVEL:
             expected = image_sample_arity(t, image->operation);
             if (image_offset_width(t, image->operation) != 0u && count == expected + 1u) ++expected;
@@ -62,7 +63,11 @@ static bool decode(HlslEmitter *e, const IrInstruction *ir, HlslImage *image) {
         image->coordinates = arguments[2];
         if (image->arrayed) image->layer = arguments[3];
         const uint32_t last = 3u + (image->arrayed ? 1u : 0u);
-        if (image_comparison(image->operation)) image->reference = arguments[last];
+        if (image->operation == IMAGE_SAMPLE_GRAD) {
+            image->gradient_x = arguments[last];
+            image->gradient_y = arguments[last + 1u];
+        } else if (image->operation == IMAGE_SAMPLE_BIAS) image->bias = arguments[last];
+        else if (image_comparison(image->operation)) image->reference = arguments[last];
         else if (!image_implicit(image->operation)) image->level = arguments[last];
         const uint32_t arity = image_sample_arity(t, image->operation);
         if (count == arity + 1u) image->offset = arguments[arity];
@@ -82,7 +87,9 @@ static bool decode(HlslEmitter *e, const IrInstruction *ir, HlslImage *image) {
         (image->operation == IMAGE_LOAD && image->storage && t.access == DOE_COMPILER_WRITE) ||
         ((image_sampling(image->operation)) &&
          (image->storage || image->multisampled || image->type->element != IR_F32 ||
-          (image_comparison(image->operation) && !image->depth)))) {
+          (image_comparison(image->operation) && !image->depth) ||
+          ((image->operation == IMAGE_SAMPLE_GRAD || image->operation == IMAGE_SAMPLE_BIAS) &&
+           (image->depth || t.dimension == DOE_COMPILER_VIEW_1D))))) {
         hlsl_error(e, "HLSL image operation violates its texture access or sampling type");
         return false;
     }
@@ -225,6 +232,9 @@ static void sample_level(HlslEmitter *e, const IrInstruction *ir, const HlslImag
     const TypeId level = image->level == NO_ID ? IR_VOID : hlsl_value_type(e, image->level);
     if (type_leaf(e->module, coordinates) != IR_F32 || type_vector_width(e->module, coordinates) != image->width ||
         (image->reference != NO_ID && hlsl_value_type(e, image->reference) != IR_F32) ||
+        (image->bias != NO_ID && hlsl_value_type(e, image->bias) != IR_F32) ||
+        (image->gradient_x != NO_ID && (hlsl_value_type(e, image->gradient_x) != coordinates ||
+         hlsl_value_type(e, image->gradient_y) != coordinates)) ||
         (image->level != NO_ID && (image->depth ? level != IR_I32 && level != IR_U32 : level != IR_F32))) {
         hlsl_error(e, "HLSL sampling operand types differ from the typed image operation");
         return;
@@ -246,7 +256,8 @@ static void sample_level(HlslEmitter *e, const IrInstruction *ir, const HlslImag
     hlsl_value(e, ir->result);
     hlsl_text(e, " = ");
     hlsl_value(e, image->texture);
-    hlsl_text(e, image_implicit(image->operation) ?
+    hlsl_text(e, image->operation == IMAGE_SAMPLE_GRAD ? ".SampleGrad(" :
+        image->operation == IMAGE_SAMPLE_BIAS ? ".SampleBias(" : image_implicit(image->operation) ?
         (image->reference != NO_ID ? ".SampleCmp(" : ".Sample(") :
         (image->reference != NO_ID ? ".SampleCmpLevelZero(" : ".SampleLevel("));
     hlsl_value(e, image->sampler);
@@ -254,7 +265,16 @@ static void sample_level(HlslEmitter *e, const IrInstruction *ir, const HlslImag
     if (image->arrayed) hlsl_format(e, "float%u(", image->width + 1u);
     hlsl_value(e, image->coordinates);
     if (image->arrayed) hlsl_text(e, ", float(image_layer))");
-    if (image->reference != NO_ID) {
+    if (image->gradient_x != NO_ID) {
+        hlsl_text(e, ", ");
+        hlsl_value(e, image->gradient_x);
+        hlsl_text(e, ", ");
+        hlsl_value(e, image->gradient_y);
+    } else if (image->bias != NO_ID) {
+        hlsl_text(e, ", clamp(");
+        hlsl_value(e, image->bias);
+        hlsl_text(e, ", -16.0f, 15.99f)");
+    } else if (image->reference != NO_ID) {
         hlsl_text(e, ", ");
         hlsl_value(e, image->reference);
     } else if (image->level != NO_ID) {
@@ -301,7 +321,8 @@ static void query_result(HlslEmitter *e, const IrInstruction *ir, const HlslImag
         case IMAGE_LEVELS: hlsl_text(e, "image_levels"); break;
         case IMAGE_LAYERS: hlsl_text(e, "image_layers"); break;
         case IMAGE_SAMPLES: hlsl_text(e, "image_samples"); break;
-        case IMAGE_LOAD: case IMAGE_STORE: case IMAGE_SAMPLE: case IMAGE_SAMPLE_COMPARE: case IMAGE_SAMPLE_LEVEL: case IMAGE_SAMPLE_COMPARE_LEVEL:
+        case IMAGE_LOAD: case IMAGE_STORE: case IMAGE_SAMPLE_GRAD: case IMAGE_SAMPLE_BIAS:
+        case IMAGE_SAMPLE: case IMAGE_SAMPLE_COMPARE: case IMAGE_SAMPLE_LEVEL: case IMAGE_SAMPLE_COMPARE_LEVEL:
         default: hlsl_error(e, "HLSL image query has no lowering"); break;
     }
     hlsl_text(e, ";\n");
@@ -336,6 +357,7 @@ void hlsl_image(HlslEmitter *e, const IrInstruction *ir) {
     }
     switch (image.operation) {
         case IMAGE_LOAD: case IMAGE_STORE: texel(e, ir, &image); break;
+        case IMAGE_SAMPLE_GRAD: case IMAGE_SAMPLE_BIAS:
         case IMAGE_SAMPLE: case IMAGE_SAMPLE_COMPARE: case IMAGE_SAMPLE_LEVEL: case IMAGE_SAMPLE_COMPARE_LEVEL: sample_level(e, ir, &image); break;
         case IMAGE_DIMENSIONS: case IMAGE_LEVELS: case IMAGE_LAYERS: case IMAGE_SAMPLES:
             query_result(e, ir, &image);

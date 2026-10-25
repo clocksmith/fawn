@@ -154,6 +154,31 @@ int main(int argc, char **argv) {
         assert(snprintf(name, sizeof(name), "%s_%s", depth ? "depth" : "color", shapes[i]) > 0);
         expect(source, true, directory, name, NULL);
     }
+    for (uint32_t grad = 0u; grad < 2u; ++grad) for (uint32_t i = 1u; i < 6u; ++i) {
+        const char *coordinates = i < 3u ? "vec2f(0.5)" : "vec3f(1,0,0)";
+        const char *layer = i == 2u || i == 5u ? ",-1i" : "";
+        const char *offset = i < 3u ? ",vec2i(-8,7)" : i == 3u ? ",vec3i(-8,0,7)" : "";
+        char source[4096], name[64], operands[128];
+        assert(snprintf(operands, sizeof(operands), grad ? ",%s,%s" : ",%s",
+            grad ? coordinates : "32.0f", coordinates) > 0);
+        assert(snprintf(source, sizeof(source), "@group(0) @binding(0) var t:texture_%s<f32>;"
+            "@group(0) @binding(1) var s:sampler;"
+            "@fragment fn main()->@location(0) vec4f{return textureSample%s(t,s,%s%s%s%s);}",
+            shapes[i], grad ? "Grad" : "Bias", coordinates, layer, operands, offset) > 0);
+        assert(snprintf(name, sizeof(name), "%s_%s", grad ? "grad" : "bias", shapes[i]) > 0);
+        expect(source, true, directory, name, NULL);
+    }
+    expect("@group(0) @binding(0) var t:texture_2d<f32>;@group(0) @binding(1) var s:sampler;"
+        "@compute @workgroup_size(1) fn main(@builtin(global_invocation_id) i:vec3u){"
+        "if(i.x>0u){let x=textureSampleGrad(t,s,vec2f(0.5),vec2f(1,0),vec2f(0,1));}}",
+        true,directory,"grad_compute",NULL);
+    expect("@group(0) @binding(0) var t:texture_2d<f32>;@group(0) @binding(1) var s:sampler;"
+        "@fragment fn main(@builtin(position) p:vec4f)->@location(0) vec4f{"
+        "if(p.x>0){return textureSampleBias(t,s,p.xy,0.0);}return vec4f(0);}",
+        false,NULL,NULL,"uniform control");
+    expect("@group(0) @binding(0) var t:texture_2d<f32>;@group(0) @binding(1) var s:sampler;"
+        "@compute @workgroup_size(1) fn main(){let x=textureSampleBias(t,s,vec2f(0.5),0.0);}",
+        false,NULL,NULL,NULL);
     expect("fn textureSample(x:u32)->u32{return x;}@compute @workgroup_size(1) fn main(){let x=textureSample(7u);}",
         true,NULL,NULL,NULL);
     expect("alias textureSample=u32;@compute @workgroup_size(1) fn main(){let x=textureSample(7u);}",
