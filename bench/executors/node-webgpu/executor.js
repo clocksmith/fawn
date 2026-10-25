@@ -170,6 +170,10 @@ export function normalizeProviderFailureReason(reason) {
   return PROVIDER_FAILURE_REASON_SET.has(reason) ? reason : 'runner_error';
 }
 
+export function readAdapterInfo(adapter) {
+  return adapter?.info ?? (typeof adapter?.getInfo === 'function' ? adapter.getInfo() : null);
+}
+
 export function snapshotAdapterInfo(adapterInfo) {
   if (adapterInfo === null || typeof adapterInfo !== 'object') {
     return null;
@@ -2472,7 +2476,8 @@ async function createRuntime(normalizedPlan, webgpu, spec, {
       }),
     });
   }
-  const adapterIssue = describeUnusableAdapterInfo(adapter?.info ?? null, spec.providerName);
+  const selectedAdapterInfo = readAdapterInfo(adapter);
+  const adapterIssue = describeUnusableAdapterInfo(selectedAdapterInfo, spec.providerName);
   if (adapterIssue) {
     throw makeUnsupportedNodeWebGpuError({
       unsupportedCode: 'adapter_unavailable',
@@ -2526,7 +2531,7 @@ async function createRuntime(normalizedPlan, webgpu, spec, {
   }
   debugLog('runtime.requestDevice.done', {});
   const deviceIssue = describeUnusableAdapterInfo(
-    device?.adapterInfo ?? adapter?.info ?? null,
+    device?.adapterInfo ?? selectedAdapterInfo,
     spec.providerName,
   );
   if (deviceIssue) {
@@ -2547,7 +2552,7 @@ async function createRuntime(normalizedPlan, webgpu, spec, {
       }),
     });
   }
-  const adapterInfo = snapshotAdapterInfo(device?.adapterInfo ?? adapter?.info ?? null);
+  const adapterInfo = snapshotAdapterInfo(device?.adapterInfo ?? selectedAdapterInfo);
   const hostExecutorInitTotalNs = nsDelta(executorInitStartedAt);
   const queue = device.queue;
   const queueWaitMode = queueWaitModeForRuntimeHost(runtimeHost);

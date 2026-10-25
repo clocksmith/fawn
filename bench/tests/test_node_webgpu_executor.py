@@ -351,6 +351,23 @@ console.log(JSON.stringify({{
         })
         self.assertIsNone(payload["missing"])
 
+    def test_adapter_info_reads_direct_method_without_masking_errors(self) -> None:
+        script = f"""
+import assert from 'node:assert/strict';
+import {{ readAdapterInfo }} from {json.dumps(EXECUTOR_MODULE_URL)};
+const info = {{ description: 'queried CPU', isFallbackAdapter: true }};
+const adapter = {{ marker: info, getInfo() {{ return this.marker; }} }};
+assert.equal(readAdapterInfo(adapter), info);
+assert.equal(readAdapterInfo({{ info, getInfo() {{ throw Error('not called'); }} }}), info);
+assert.equal(readAdapterInfo(null), null);
+assert.throws(() => readAdapterInfo({{ getInfo() {{ throw Error('query failed'); }} }}), /query failed/);
+"""
+        result = subprocess.run(
+            ["node", "--input-type=module", "-e", script], cwd=REPO_ROOT,
+            capture_output=True, text=True, check=False,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+
     def test_adapter_info_snapshot_materializes_non_enumerable_webgpu_fields(self) -> None:
         script = f"""
 import {{ snapshotAdapterInfo }} from {json.dumps(EXECUTOR_MODULE_URL)};

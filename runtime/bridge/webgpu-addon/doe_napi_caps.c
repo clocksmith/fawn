@@ -444,9 +444,11 @@ static bool adapter_is_cpu(void* adapter) {
 napi_value doe_adapter_get_info(napi_env env, napi_callback_info info) {
     NAPI_ASSERT_ARGC(env, info, 1);
     CHECK_LIB_LOADED(env);
-    void* adapter = unwrap_ptr(env, _args[0]);
-    if (!adapter) NAPI_THROW(env, "Invalid adapter");
+    return create_adapter_info_object(env, unwrap_ptr(env, _args[0]));
+}
 
+napi_value create_adapter_info_object(napi_env env, void* adapter) {
+    if (!adapter) NAPI_THROW(env, "Invalid adapter");
     napi_value obj;
     napi_create_object(env, &obj);
 
