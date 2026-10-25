@@ -190,6 +190,69 @@ def check(condition: bool, message: str) -> None:
         raise SystemExit(f"FAIL: {message}")
 
 
+# doe-zig-runtime (runtime/zig at 58774d6ec, --quirk-mode off, lavapipe, 2026-10-25)
+# rows: the texture_raster_proxy example without its render_draw, plus a
+# copy of the storage texture to buffer 7201; and a mip-level-1 roundtrip.
+ZIG_SAMPLE_HASHES_FINAL = "0xb761ab212b2073f2"
+ZIG_MIP_ROUNDTRIP_FINAL = "0x469fbb162bd2e35"
+ZIG_MIP_SUBRESOURCE_FINAL = "0xdb020b52b2155989"
+
+
+def sample_stream() -> list:
+    stream = [c for c in json.loads((EXAMPLES / "texture_raster_proxy_commands.json").read_text()) if c["kind"] != "render_draw"]
+    stream.insert(5, {"kind": "copy_texture_to_buffer", "bytes": 16384, "src_handle": 7102, "src_width": 64, "src_height": 64,
+                      "src_format": "rgba8unorm", "src_usage": 10, "dst_handle": 7201, "dst_bytes_per_row": 256,
+                      "dst_rows_per_image": 64})
+    return stream
+
+
+def mip_stream() -> tuple[list, bytes]:
+    words = [(i * 2654435761 + 7) & 0xFFFFFFFF for i in range(4096)]
+
+    def side(prefix: str, handle: int) -> dict:
+        return {f"{prefix}_handle": handle, f"{prefix}_width": 128, f"{prefix}_height": 128, f"{prefix}_format": "rgba8unorm",
+                f"{prefix}_usage": 6, f"{prefix}_mip_level": 1}
+
+    pitch = {"bytes_per_row": 256, "rows_per_image": 64}
+    stream = [
+        {"kind": "buffer_write", "handle": 9000, "data": words},
+        {"kind": "copy_buffer_to_texture", "bytes": 16384, "src_handle": 9000, **side("dst", 9100),
+         **{f"dst_{k}": v for k, v in pitch.items()}},
+        {"kind": "copy_texture_to_texture", "bytes": 16384, **side("src", 9100), **{f"src_{k}": v for k, v in pitch.items()},
+         **side("dst", 9101), **{f"dst_{k}": v for k, v in pitch.items()}},
+        {"kind": "copy_texture_to_buffer", "bytes": 16384, **side("src", 9101), "dst_handle": 9002,
+         **{f"dst_{k}": v for k, v in pitch.items()}},
+    ]
+    return stream, b"".join(struct.pack("<I", w) for w in words)
+
+
+def check_textures(binary: Path, work: Path) -> None:
+    # A sampled texture read and a storage texture written by one kernel: the
+    # 8x8 workgroup covers texels x, y < 8 with f(0) = (0.25, 0.10, 0.05, 1) in
+    # rgba8unorm; every other texel stays zero.
+    commands = work / "sample_commands.json"
+    commands.write_text(json.dumps(sample_stream()))
+    code, stderr, meta, rows = run(binary, work, "sample", "--quirk-mode", "off", "--readback-buffer",
+                                   f"7201={work / 'sample.bin'}", commands=commands)
+    data = (work / "sample.bin").read_bytes() if code == 0 else b""
+    expected = bytearray(16384)
+    for y in range(8):
+        for x in range(8):
+            expected[y * 256 + x * 4:y * 256 + x * 4 + 4] = bytes((64, 26, 13, 255))
+    check(code == 0 and meta["hash"] == ZIG_SAMPLE_HASHES_FINAL and len(data) == 16384
+          and all(abs(a - b) <= 1 for a, b in zip(data, expected)), f"texture bindings: exit {code}: {stderr}")
+    # Mip level 1 of 128x128 textures: buffer -> texture -> texture -> buffer keeps every byte.
+    stream, words = mip_stream()
+    commands = work / "mip_commands.json"
+    commands.write_text(json.dumps(stream))
+    code, stderr, meta, _ = run(binary, work, "mip", "--quirk-mode", "off", "--readback-buffer", f"9002={work / 'mip.bin'}",
+                                commands=commands)
+    check(code == 0 and meta["hash"] == ZIG_MIP_ROUNDTRIP_FINAL and (work / "mip.bin").read_bytes() == words,
+          f"mip level roundtrip: exit {code}: {stderr}")
+    code, stderr, meta, _ = run(binary, work, "copy_texture_to_texture_subresource", "--quirk-mode", "off")
+    check(code == 0 and meta["hash"] == ZIG_MIP_SUBRESOURCE_FINAL, f"mip level copy example: exit {code}: {stderr}")
+
+
 def check_copies(binary: Path, work: Path) -> None:
     for name, final_hash in ZIG_COPY_FINAL_HASH.items():
         code, stderr, meta, rows = run(binary, work, name)
@@ -208,8 +271,7 @@ def check_copies(binary: Path, work: Path) -> None:
     # WebGPU layout rules hold: a 128-byte row pitch is not a valid buffer-texture copy.
     code, stderr, _, rows = run(binary, work, "copy_buffer_to_texture_tight_pitch")
     check(code == 1 and rows and rows[0]["executionStatus"] == "error", f"tight pitch: exit {code}: {stderr}")
-    code, stderr, _, _ = run(binary, work, "copy_texture_to_texture_subresource")
-    check(code == 2 and "mip_level" in stderr, f"mip level copy: exit {code}: {stderr}")
+    check_textures(binary, work)
     mismatch = work / "query_mismatch_commands.json"
     mismatch.write_text(json.dumps([stream[5], {**stream[6], "width": 3}]))
     code, stderr, _, _ = run(binary, work, "query_mismatch", commands=mismatch)
@@ -630,7 +692,8 @@ def main() -> int:
 
     print(f"PASS {args.module}: 3 example streams with doe-zig-runtime hash chains, replay-valid artifacts, "
           f"an independent oracle match, alias labels, command repeat, an oracle mismatch, 6 rejections, "
-          f"{len(ZIG_COPY_FINAL_HASH)} copy streams, a copy/texture roundtrip read back against host bytes, 4 copy "
+          f"{len(ZIG_COPY_FINAL_HASH)} copy streams, a copy/texture roundtrip read back against host bytes, "
+          f"a sampled-texture stream and 2 mip-level copy streams with doe-zig-runtime hashes, 4 copy "
           f"failures, {len(ZIG_RENDER_FINAL_HASH)} render streams, scissored and indexed draws read back against the "
           f"proxy and clear colors, a missing render target, {len(ZIG_QUIRK_FINAL_HASH)} quirk-matched streams, active "
           f"staging read back against host bytes, 2 quirk refusals, {len(ZIG_GRID_FINAL_HASH)} dispatch-kind streams "

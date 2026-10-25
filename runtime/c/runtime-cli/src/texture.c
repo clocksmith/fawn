@@ -56,9 +56,10 @@ static WGPUTexture ensure_texture(doe_runtime *runtime, const doe_texture_desc *
 {
     WGPUTextureUsage usage = (WGPUTextureUsage)desc->usage | WGPUTextureUsage_CopySrc | WGPUTextureUsage_CopyDst;
     texture_entry *existing = runtime_find_texture(runtime, desc->handle);
+    uint32_t mips = desc->mip_levels ? desc->mip_levels : 1;
     if (existing && existing->declared.width == desc->width && existing->declared.height == desc->height &&
         existing->declared.depth == desc->depth && existing->declared.format == desc->format &&
-        (existing->usage & usage) == usage) {
+        (existing->usage & usage) == usage && (existing->declared.mip_levels ? existing->declared.mip_levels : 1) >= mips) {
         return existing->texture;
     }
     if (existing) {
@@ -77,13 +78,35 @@ static WGPUTexture ensure_texture(doe_runtime *runtime, const doe_texture_desc *
     descriptor.dimension = WGPUTextureDimension_2D;
     descriptor.size = (WGPUExtent3D){.width = desc->width, .height = desc->height, .depthOrArrayLayers = desc->depth};
     descriptor.format = runtime_webgpu_format(desc->format);
+    descriptor.mipLevelCount = mips;
     WGPUTexture texture = wgpuDeviceCreateTexture(runtime->device, &descriptor);
     if (!texture) {
         runtime_fail(execution, "texture_create_failed", "texture %llu was not created", (unsigned long long)desc->handle);
         return NULL;
     }
-    runtime->textures[runtime->texture_count++] = (texture_entry){.texture = texture, .declared = *desc, .usage = usage};
+    doe_texture_desc declared = *desc;
+    declared.mip_levels = mips;
+    runtime->textures[runtime->texture_count++] = (texture_entry){.texture = texture, .declared = declared, .usage = usage};
     return texture;
+}
+
+/* wgpu_resources.zig getOrCreateTextureFromBinding: the handle's texture when
+ * its usage covers the binding's and the format matches; otherwise one of the
+ * same shape (a missing texture: 1x1) with the union of usages replaces it. */
+WGPUTexture runtime_binding_texture(doe_runtime *runtime, uint64_t handle, WGPUTextureUsage required, bool has_format,
+    doe_texture_format format, doe_texture_format *view_format, doe_trace_execution *execution)
+{
+    texture_entry *existing = runtime_find_texture(runtime, handle);
+    if (existing && (existing->usage & required) == required && (!has_format || existing->declared.format == format)) {
+        *view_format = existing->declared.format;
+        return existing->texture;
+    }
+    doe_texture_desc desc = existing ? existing->declared :
+        (doe_texture_desc){.handle = handle, .width = 1, .height = 1, .depth = 1, .format = DOE_FORMAT_R8_UNORM};
+    if (has_format) desc.format = format;
+    desc.usage = (existing ? existing->usage : 0) | required;
+    *view_format = desc.format;
+    return ensure_texture(runtime, &desc, execution);
 }
 
 static uint32_t layout_value(uint32_t primary, uint32_t fallback)
@@ -92,10 +115,11 @@ static uint32_t layout_value(uint32_t primary, uint32_t fallback)
     return value ? value : WGPU_COPY_STRIDE_UNDEFINED;
 }
 
-static WGPUTexelCopyTextureInfo texture_info(WGPUTexture texture)
+static WGPUTexelCopyTextureInfo texture_info(WGPUTexture texture, uint32_t mip_level)
 {
     WGPUTexelCopyTextureInfo info = WGPU_TEXEL_COPY_TEXTURE_INFO_INIT;
     info.texture = texture;
+    info.mipLevel = mip_level;
     return info;
 }
 
@@ -109,9 +133,12 @@ static WGPUTexelCopyBufferInfo buffer_info(WGPUBuffer buffer, const doe_copy_sid
     return info;
 }
 
-static WGPUExtent3D extent_of(const doe_texture_desc *desc)
+/* The extent of one mip level (doe-zig-runtime's WebGPU path copies the full
+ * extent and creates single-level textures, so it cannot copy a level > 0). */
+static WGPUExtent3D extent_of(const doe_texture_desc *desc, uint32_t mip_level)
 {
-    return (WGPUExtent3D){.width = desc->width, .height = desc->height, .depthOrArrayLayers = desc->depth};
+    uint32_t width = desc->width >> mip_level, height = desc->height >> mip_level;
+    return (WGPUExtent3D){.width = width ? width : 1, .height = height ? height : 1, .depthOrArrayLayers = desc->depth};
 }
 
 /* bytes + offset rounded up to 4, the buffer size doe-zig-runtime requires. */
@@ -172,16 +199,16 @@ bool runtime_execute_copy(doe_runtime *runtime, const doe_command *command, doe_
         WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(runtime->device, NULL);
         WGPUTexelCopyBufferInfo through = WGPU_TEXEL_COPY_BUFFER_INFO_INIT;
         through.buffer = staging;
-        WGPUTexelCopyTextureInfo destination = texture_info(dst_texture);
+        WGPUTexelCopyTextureInfo destination = texture_info(dst_texture, dst->mip_level);
         if (command->as.copy.direction == DOE_COPY_BUFFER_TO_TEXTURE) {
             wgpuCommandEncoderCopyBufferToBuffer(encoder, src_buffer, src->offset, staging, 0, bytes);
             through.layout.bytesPerRow = layout_value(src->bytes_per_row, dst->bytes_per_row);
             through.layout.rowsPerImage = layout_value(src->rows_per_image, dst->rows_per_image);
-            WGPUExtent3D extent = extent_of(&dst->texture);
+            WGPUExtent3D extent = extent_of(&dst->texture, dst->mip_level);
             wgpuCommandEncoderCopyBufferToTexture(encoder, &through, &destination, &extent);
         } else {
-            WGPUTexelCopyTextureInfo source = texture_info(src_texture);
-            WGPUExtent3D src_extent = extent_of(&src->texture), dst_extent = extent_of(&dst->texture);
+            WGPUTexelCopyTextureInfo source = texture_info(src_texture, src->mip_level);
+            WGPUExtent3D src_extent = extent_of(&src->texture, src->mip_level), dst_extent = extent_of(&dst->texture, dst->mip_level);
             through.layout.bytesPerRow = layout_value(src->bytes_per_row, dst->bytes_per_row);
             through.layout.rowsPerImage = layout_value(src->rows_per_image, dst->rows_per_image);
             wgpuCommandEncoderCopyTextureToBuffer(encoder, &source, &through, &src_extent);
@@ -205,20 +232,20 @@ bool runtime_execute_copy(doe_runtime *runtime, const doe_command *command, doe_
             break;
         case DOE_COPY_BUFFER_TO_TEXTURE:
             buffer = buffer_info(src_buffer, src, dst);
-            destination = texture_info(dst_texture);
-            extent = extent_of(&dst->texture);
+            destination = texture_info(dst_texture, dst->mip_level);
+            extent = extent_of(&dst->texture, dst->mip_level);
             wgpuCommandEncoderCopyBufferToTexture(encoder, &buffer, &destination, &extent);
             break;
         case DOE_COPY_TEXTURE_TO_BUFFER:
-            source = texture_info(src_texture);
+            source = texture_info(src_texture, src->mip_level);
             buffer = buffer_info(dst_buffer, dst, src);
-            extent = extent_of(&src->texture);
+            extent = extent_of(&src->texture, src->mip_level);
             wgpuCommandEncoderCopyTextureToBuffer(encoder, &source, &buffer, &extent);
             break;
         case DOE_COPY_TEXTURE_TO_TEXTURE:
-            source = texture_info(src_texture);
-            destination = texture_info(dst_texture);
-            extent = extent_of(&src->texture);
+            source = texture_info(src_texture, src->mip_level);
+            destination = texture_info(dst_texture, dst->mip_level);
+            extent = extent_of(&src->texture, src->mip_level);
             wgpuCommandEncoderCopyTextureToTexture(encoder, &source, &destination, &extent);
             break;
         }
@@ -246,7 +273,7 @@ static bool texture_write(doe_runtime *runtime, const doe_command *command, doe_
     bool ok = texture != NULL;
     uint64_t setup_end = doe_runtime_monotonic_ns();
     if (ok && command->as.texture_write.data_size) {
-        WGPUTexelCopyTextureInfo destination = texture_info(texture);
+        WGPUTexelCopyTextureInfo destination = texture_info(texture, 0);
         WGPUTexelCopyBufferLayout layout = WGPU_TEXEL_COPY_BUFFER_LAYOUT_INIT;
         layout.offset = command->as.texture_write.offset;
         layout.bytesPerRow = layout_value(command->as.texture_write.bytes_per_row, desc->width * doe_texture_format_bytes(desc->format));

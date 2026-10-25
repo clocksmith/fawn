@@ -47,10 +47,11 @@ typedef enum doe_texture_format {
     DOE_FORMAT_RGBA32_FLOAT
 } doe_texture_format;
 
-/* A 2D, single-mip, single-sample texture keyed by its stream handle. */
+/* A 2D, single-sample texture keyed by its stream handle. */
 typedef struct doe_texture_desc {
     uint64_t handle;
     uint32_t width, height, depth;
+    uint32_t mip_levels; /* At least this many mip levels (0: one). */
     doe_texture_format format;
     uint64_t usage; /* WebGPU texture usage bits the stream declares. */
 } doe_texture_desc;
@@ -60,6 +61,7 @@ typedef struct doe_copy_side {
     doe_texture_desc texture; /* Texture sides only. */
     uint32_t bytes_per_row, rows_per_image; /* 0: undefined (tight). */
     uint64_t offset;
+    uint32_t mip_level; /* Texture sides: the copied level, whose extent the copy uses. */
 } doe_copy_side;
 
 typedef enum doe_binding_buffer_type {
@@ -68,9 +70,21 @@ typedef enum doe_binding_buffer_type {
     DOE_BINDING_STORAGE
 } doe_binding_buffer_type;
 
+typedef enum doe_binding_resource {
+    DOE_RESOURCE_BUFFER,
+    DOE_RESOURCE_TEXTURE,        /* a sampled 2D texture view */
+    DOE_RESOURCE_STORAGE_TEXTURE /* a 2D storage texture view */
+} doe_binding_resource;
+
 typedef struct doe_kernel_binding {
     uint32_t group, binding;
     uint64_t handle;
+    doe_binding_resource resource;
+    /* Textures: WGPUTextureSampleType or WGPUStorageTextureAccess values, and
+     * the view format (has_format false: the texture's own). */
+    uint32_t sample_type, storage_access;
+    bool has_format;
+    doe_texture_format format;
     doe_binding_buffer_type buffer_type;
     uint64_t buffer_offset;
     uint64_t buffer_size; /* UINT64_MAX: the whole buffer. */

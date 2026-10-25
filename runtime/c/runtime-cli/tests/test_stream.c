@@ -189,8 +189,14 @@ int main(int argc, char **argv)
     rejects("[{\"kind\":\"kernel_dispatch\",\"kernel\":\"k\",\"semanticOpId\":\"op\",\"numericStability\":{}}]", 0,
         "numericStability");
     rejects("[{\"kind\":\"buffer_write\",\"handle\":1,\"data\":[1],\"semanticOpId\":\"op\"}]", 0, "semanticOpId");
+    rejects("[{\"kind\":\"kernel_dispatch\",\"kernel\":\"k\",\"bindings\":[{\"binding\":0,\"kind\":\"sampler\","
+        "\"resource_handle\":1}]}]", 0, "storage_texture");
+    rejects("[{\"kind\":\"kernel_dispatch\",\"kernel\":\"k\",\"bindings\":[{\"binding\":0,\"kind\":\"storage_texture\","
+        "\"resource_handle\":1}]}]", 0, "texture_format");
     rejects("[{\"kind\":\"kernel_dispatch\",\"kernel\":\"k\",\"bindings\":[{\"binding\":0,\"kind\":\"texture\","
-        "\"resource_handle\":1}]}]", 0, "buffers only");
+        "\"resource_handle\":1,\"texture_view_dimension\":\"3d\"}]}]", 0, "2d only");
+    rejects("[{\"kind\":\"kernel_dispatch\",\"kernel\":\"k\",\"bindings\":[{\"binding\":0,\"kind\":\"texture\","
+        "\"resource_handle\":1,\"buffer_size\":4}]}]", 0, "buffer field");
     rejects("[{\"kind\":\"kernel_dispatch\",\"kernel\":\"k\",\"bindings\":[{\"binding\":0,\"resource_handle\":1}]}]",
         0, "buffer_type");
     rejects("[{\"kind\":\"kernel_dispatch\",\"kernel\":\"k\",\"bindings\":[{\"binding\":0,\"resource_handle\":1,"
@@ -200,7 +206,8 @@ int main(int argc, char **argv)
     rejects("[{\"kind\":\"copy_buffer_to_buffer\",\"src_handle\":1,\"dst_handle\":2}]", 0, "\"bytes\" is required");
     rejects("[{\"kind\":\"copy_buffer_to_buffer\",\"bytes\":4,\"src_handle\":1,\"dst_handle\":2,\"direction\":\"up\"}]", 0, "direction");
     rejects("[{\"kind\":\"copy_buffer_to_buffer\",\"bytes\":4,\"src_handle\":1,\"dst_handle\":2,\"src_width\":4}]", 0, "buffer side");
-    rejects("[{\"kind\":\"copy_texture_to_texture\",\"bytes\":4,\"src_handle\":1,\"dst_handle\":2,\"dst_mip_level\":1}]", 0, "mip_level");
+    rejects("[{\"kind\":\"copy_texture_to_texture\",\"bytes\":4,\"src_handle\":1,\"dst_handle\":2,\"dst_width\":4,"
+        "\"dst_height\":4,\"dst_mip_level\":3}]", 0, "levels");
     rejects("[{\"kind\":\"copy_texture_to_texture\",\"bytes\":4,\"src_handle\":1,\"dst_handle\":2,\"src_format\":\"bc1-rgba-unorm\"}]", 0, "format");
     rejects("[{\"kind\":\"copy_texture_to_buffer\",\"bytes\":4,\"src_handle\":1,\"dst_handle\":2,\"src_kind\":\"buffer\"}]", 0, "contradicts");
     rejects("[{\"kind\":\"copy_buffer_to_texture\",\"bytes\":4,\"src_handle\":1,\"dst_handle\":2,\"dst_offset\":4}]", 0, "texture side");
@@ -218,7 +225,7 @@ int main(int argc, char **argv)
     rejects("[{\"kind\":\"render_draw\",\"drawCount\":1,\"targetFormat\":\"depth24plus\"}]", 0, "target format");
     rejects("[{\"kind\":\"sampler_create\",\"handle\":1,\"magFilter\":\"cubic\"}]", 0, "mag_filter");
     rejects("[{\"kind\":\"sampler_create\",\"handle\":1,\"maxAnisotropy\":0}]", 0, "max_anisotropy");
-    puts("runtime-cli stream: nine example streams, semantic fields, aliases, copy, texture, render and sampler kinds, dispatch kinds and 49 visible "
+    puts("runtime-cli stream: nine example streams, semantic fields, aliases, copy, texture, render and sampler kinds, dispatch kinds and 52 visible "
         "rejections (host only)");
     return 0;
 }
