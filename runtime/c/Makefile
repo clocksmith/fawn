@@ -9,6 +9,7 @@ BUILD ?= $(DOE_C_TMP)/package-build
 STAGE ?= $(DOE_C_TMP)/package
 # Every owner with a library build, in dependency order. A changed public header
 # or enum must still build every consumer; owner checks alone cannot see that.
+# runtime-cli links the native library, so check-build builds it after native.
 OWNERS = futures callbacks instance labels error-scopes dropin-policy shader \
 	resources compiler backends/vulkan backends/metal backends/d3d12 native
 .PHONY: package check check-tools check-style check-build check-globals check-platform check-js check-vulkan
@@ -25,7 +26,8 @@ check-build:
 	@set -e; for owner in $(OWNERS); do \
 		$(MAKE) --no-print-directory -C $$owner BUILD='$(BUILD)'/$$owner OUT='$(BUILD)'/$$owner all; \
 	done
-	@echo "C owner build: $(words $(OWNERS)) owners built into $(BUILD)"
+	$(MAKE) --no-print-directory -C runtime-cli BUILD='$(abspath $(BUILD))'/runtime-cli NATIVE_BUILD='$(abspath $(BUILD))'/native all
+	@echo "C owner build: $(words $(OWNERS)) owners and the runtime-cli consumer built into $(BUILD)"
 # The compiler owner builds into its gitignored compiler/build regardless of BUILD.
 check-globals: check-build
 	$(PYTHON) tools/check_globals.py '$(BUILD)' compiler/build
