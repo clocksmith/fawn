@@ -1256,9 +1256,9 @@
       },
       "src/backend/vulkan/native_runtime.zig": {
         "decision": "Keep",
-        "moduleSha256": "4e666567c5424f1b1aa6f5acf4854300e6f3151a6962e77cefd4b8001f25ed79",
-        "reason": "Keep: per-device runtime borrows the adapter-selected Vulkan instance while retaining its own VkDevice and queue; runtime teardown never destroys the borrowed instance; MUTABLE_FORMAT images with a VkImageFormatListCreateInfo only for textures whose viewFormats name the srgb pair. Carries the CPU-only (fallback adapter) selection flag. Owns the indirect-dispatch guard scratch handle.",
-        "reviewer": "doe-c-claude-indexed/2026-10-24"
+        "moduleSha256": "93a6cd4cebca5b517b0fb65c9a72f6c125863d446bd37fd5e5da8ef13b36aabb",
+        "reason": "Keep: per-device runtime borrows the adapter-selected Vulkan instance while retaining its own VkDevice and queue; runtime teardown never destroys the borrowed instance; MUTABLE_FORMAT images with a VkImageFormatListCreateInfo only for textures whose viewFormats name the srgb pair. Carries the CPU-only (fallback adapter) selection flag. Owns the indirect-dispatch guard scratch handle. Texture destroy frees the image and memory; new textures are zero-initialized before first use.",
+        "reviewer": "doe-c-claude-coordinator/2026-10-25"
       },
       "src/backend/vulkan/vk_adapter_probe.zig": {
         "decision": "Keep",
@@ -1436,9 +1436,9 @@
       },
       "src/backend/vulkan/vk_texture_commands.zig": {
         "decision": "Keep",
-        "moduleSha256": "e1b8f4f93f046d1bfc3529016c4a644c816dca3f14d35fb9894bfa99ab0eb4d4",
-        "reason": "Keep: Vulkan texture command capsule; queue writes derive their region from the shared texel copy contract instead of whole-mip, color-only arithmetic; texture-to-texture copies zero-initialize undefined subresources and address array layers separately from 3D depth. Queue texture writes repack rows tightly into staging, so unaligned writeTexture offsets and pitches reach Vulkan. A copy between subresources of one image keeps it in GENERAL for both sides of vkCmdCopyImage.",
-        "reviewer": "doe-c-claude-surface/2026-10-24"
+        "moduleSha256": "5a96453ca5939077db08feaf38c50e47e1a75a2582c28b88f39b1fbead10aa03",
+        "reason": "Keep: Vulkan texture command capsule; queue writes derive their region from the shared texel copy contract instead of whole-mip, color-only arithmetic; texture-to-texture copies zero-initialize undefined subresources and address array layers separately from 3D depth. Queue texture writes repack rows tightly into staging, so unaligned writeTexture offsets and pitches reach Vulkan. A copy between subresources of one image keeps it in GENERAL for both sides of vkCmdCopyImage. Zero-initializes new texture images, render attachments included.",
+        "reviewer": "doe-c-claude-coordinator/2026-10-25"
       },
       "src/backend/vulkan/vk_upload.zig": {
         "decision": "Keep",
@@ -3710,9 +3710,9 @@
       },
       "src/native/resource/doe_texture_sampler_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "9d3685dbcc471c5de8cc39673f6b09ff022c9883e00f9fb45b0c32393754cdcc",
-        "reason": "Keep: preserves this native ownership or ABI boundary while separating internal device cleanup leases from application release and enforcing destroyed-device admission; invalid sampler clamps/anisotropy and view formats generate validation errors with invalid objects; MUTABLE_FORMAT images with a VkImageFormatListCreateInfo only for textures whose viewFormats name the srgb pair. A single-aspect view naming its aspect format is admitted and keeps the texture format internally. Texture views record a non-identity swizzle. Samplers record whether they compare and whether they filter. createView resolves an undefined layer count per view dimension and reports view descriptor errors with an invalid view.",
-        "reviewer": "doe-c-claude-indexed/2026-10-24"
+        "moduleSha256": "b603ec6f15cb47c5689ba854eb7153d0f505df52315af211b2af21c4820023d3",
+        "reason": "Keep: preserves this native ownership or ABI boundary while separating internal device cleanup leases from application release and enforcing destroyed-device admission; invalid sampler clamps/anisotropy and view formats generate validation errors with invalid objects; MUTABLE_FORMAT images with a VkImageFormatListCreateInfo only for textures whose viewFormats name the srgb pair. A single-aspect view naming its aspect format is admitted and keeps the texture format internally. Texture views record a non-identity swizzle. Samplers record whether they compare and whether they filter. createView resolves an undefined layer count per view dimension and reports view descriptor errors with an invalid view. Texture destroy() frees the Vulkan image while views remain.",
+        "reviewer": "doe-c-claude-coordinator/2026-10-25"
       },
       "src/native/resource/doe_texture_validation.zig": {
         "decision": "Keep",
@@ -3884,9 +3884,9 @@
       },
       "src/native/vulkan/vulkan_texture_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "6e312a6ff33d5e01fe0a9be6683a8ebb4d5595e0bdad1357a1e47fe65184ae8a",
-        "reason": "Keep: Vulkan owns native image-view admission; copy-only texture views retain WebGPU metadata without allocating an invalid native view; MUTABLE_FORMAT images with a VkImageFormatListCreateInfo only for textures whose viewFormats name the srgb pair.",
-        "reviewer": "doe-c-claude-surface/2026-10-23"
+        "moduleSha256": "cf2b0bed2df656c72250d1d96586f2e4b0cf88fe97bdbac4ca8c381d65437692",
+        "reason": "Keep: Vulkan owns native image-view admission; copy-only texture views retain WebGPU metadata without allocating an invalid native view; MUTABLE_FORMAT images with a VkImageFormatListCreateInfo only for textures whose viewFormats name the srgb pair. Destroyed textures release their image and memory immediately.",
+        "reviewer": "doe-c-claude-coordinator/2026-10-25"
       },
       "src/plan/dawn_plan_types.zig": {
         "decision": "Keep",
