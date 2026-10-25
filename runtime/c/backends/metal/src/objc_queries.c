@@ -15,6 +15,11 @@ void doe_mtl_objc_load_queries(doe_mtl_objc *r, doe_objc_message message) {
     q->equal_string = (doe_objc_equal_string_call)message;
     q->sample = (doe_objc_sample_counter_call)message;
     q->resolve = (doe_objc_resolve_counter_call)message;
+    q->event = (doe_objc_event_call)message;
+    q->device = r->selector("device");
+    q->new_event = r->selector("newSharedEvent");
+    q->signal_event = r->selector("encodeSignalEvent:value:");
+    q->wait_event = r->selector("encodeWaitForEvent:value:");
     q->descriptor_class = r->get_class("MTLCounterSampleBufferDescriptor");
     q->compute_pass_class = r->get_class("MTLComputePassDescriptor");
     q->common_timestamp_set = constant_object(r->metal_library, "MTLCommonCounterSetTimestamp");
@@ -127,12 +132,30 @@ doe_mtl_status doe_mtl_objc_timestamp(void *userdata, void *command,
 
 doe_mtl_status doe_mtl_objc_resolve_timestamps(void *userdata, void *command,
     void *timestamps, uint32_t first, uint32_t count, void *destination,
-    size_t offset, doe_mtl_error *error) {
+    size_t offset, void **event, uint64_t value, doe_mtl_error *error) {
     doe_mtl_objc *r = userdata;
     void *pool = doe_mtl_objc_pool(r);
     void *encoder;
     const doe_mtl_range_abi range = {first, count};
     if (pool == NULL) return doe_mtl_fail(DOE_MTL_NATIVE_FAILURE, "autorelease pool", error);
+    if (!r->responds_call(command, r->responds, r->queries.signal_event) ||
+        !r->responds_call(command, r->responds, r->queries.wait_event)) {
+        doe_mtl_objc_drain(r, pool);
+        return doe_mtl_fail(DOE_MTL_UNSUPPORTED, "timestamp resolve ordering", error);
+    }
+    if (*event == NULL) {
+        void *device = doe_mtl_objc_object(r, command, r->queries.device);
+        *event = doe_mtl_objc_object(r, device, r->queries.new_event);
+        if (*event == NULL) {
+            doe_mtl_objc_drain(r, pool);
+            return doe_mtl_fail(DOE_MTL_NATIVE_FAILURE, "newSharedEvent", error);
+        }
+    }
+    /* Stage samples can remain invisible to a later encoder in this command.
+     * A native event orders their publication before GPU resolve. Its +1 lease
+     * belongs to the existing timestamp use until terminal completion. */
+    r->queries.event(command, r->queries.signal_event, *event, value);
+    r->queries.event(command, r->queries.wait_event, *event, value);
     encoder = doe_mtl_objc_object(r, command, r->blit_encoder);
     if (encoder == NULL) {
         doe_mtl_objc_drain(r, pool);

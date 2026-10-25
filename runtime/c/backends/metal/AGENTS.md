@@ -35,7 +35,9 @@ companion depth/stencil; reuse the existing speculative aspect and command lease
 Visibility offsets form one contiguous run per pass and share buffer completion
 access rules. Timestamp samples share that completion owner too: distinguish stage
 and blit capabilities, never resolve unwritten samples, and preserve native error
-values instead of fabricating time or assuming Mach clock units. Reset/aggregation and public query-set policy remain upstream.
+values instead of fabricating time or assuming Mach clock units. Order GPU resolves
+after native counter publication with a shared-event signal/wait; the event belongs
+to the existing timestamp command lease and survives unknown completion. Reset/aggregation and public query-set policy remain upstream.
 
 Portable call-ledger tests are not a Metal emulator, SDK check or physical run.
 On an Apple toolchain, run `make sdk-abi` after native ABI record/signature changes;

@@ -13,6 +13,8 @@ struct doe_mtl_timestamps {
 typedef struct doe_mtl_timestamp_use {
     doe_mtl_timestamps *timestamps;
     bool *available, *written;
+    void *resolve_event; /* +1 native lease, retained with this recording. */
+    uint64_t resolve_value;
     struct doe_mtl_timestamp_use *next;
 } doe_mtl_timestamp_use;
 doe_mtl_status doe_mtl_timestamps_preflight(const doe_mtl_commands *commands,

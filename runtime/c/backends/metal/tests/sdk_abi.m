@@ -150,3 +150,10 @@ void doe_mtl_sdk_surface_calls(CAMetalLayer *layer, id<MTLDevice> device,
     (void)presented;
     [command presentDrawable:drawable];
 }
+
+void doe_mtl_sdk_timestamp_ordering(id<MTLDevice> device, id<MTLCommandBuffer> command) {
+    id<MTLSharedEvent> event = [device newSharedEvent];
+    [command encodeSignalEvent:event value:(uint64_t)1];
+    [command encodeWaitForEvent:event value:(uint64_t)1];
+    [event release];
+}
