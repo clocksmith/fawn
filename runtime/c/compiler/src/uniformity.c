@@ -349,7 +349,9 @@ static bool call_bit(Uniformity *a,uint32_t id,uint32_t cf,uint32_t *out) {
             (collective->kind == BUILTIN_SUBGROUP_SHUFFLE_XOR || collective->kind == BUILTIN_SUBGROUP_SHUFFLE_UP ||
              collective->kind == BUILTIN_SUBGROUP_SHUFFLE_DOWN) && !require_uniform(a, bit, e->source_offset)) return false;
         if (function==NULL) {
-            if (!(collective != NULL && a->subgroup && builtin_subgroup_uniform(collective))) *out|=bit;
+            /* WGSL 15.2.7: subgroup reduction function tags may be uniform,
+             * but their default parameter-return dependency still applies. */
+            *out|=bit;
         }
         else {
             if (!charge(a,1u)) return false;

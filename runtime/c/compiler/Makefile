@@ -225,6 +225,7 @@ build/test_subgroup_api: $(LIB_SOURCES) tests/test_subgroup_api.c $(HEADERS) | b
 test-subgroups: all build/test_subgroup_api
 	build/test_subgroup_api
 	DOE_COMPILER_CLI="$(CURDIR)/build/doe-compiler-c" SPIRV_VAL="$(SPIRV_VAL)" python3 tests/test_subgroups.py
+	DOE_COMPILER_CLI="$(CURDIR)/build/doe-compiler-c" SPIRV_VAL="$(SPIRV_VAL)" python3 tests/test_subgroup_return_dependencies.py
 
 .PHONY: test-resources
 build/test_resource_api: $(LIB_SOURCES) tests/test_resource_api.c $(HEADERS) | build/.ready
