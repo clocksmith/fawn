@@ -84,6 +84,13 @@ static void test_float_literals(void) {
     check_literal("0x1p-1075", IR_ABSTRACT_FLOAT, 0u);
     check_literal("0x1.8p-1074", IR_ABSTRACT_FLOAT, 2u);
     check_literal("0x1.fffffffffffffp1023", IR_ABSTRACT_FLOAT, UINT64_C(0x7fefffffffffffff));
+    /* Decimal values just above MAX still round to its finite encoding. */
+    check_literal("3.4028234663852886e38f", IR_F32, UINT64_C(0x7f7fffff));
+    check_literal("3.4028234663852885982e38f", IR_F32, UINT64_C(0x7f7fffff));
+    check_literal("3.4028235677973366163e38f", IR_F32, UINT64_C(0x7f7fffff));
+    check_literal("1.7976931348623158e308", IR_ABSTRACT_FLOAT, UINT64_C(0x7fefffffffffffff));
+    check_literal("1.7976931348623158079e308", IR_ABSTRACT_FLOAT, UINT64_C(0x7fefffffffffffff));
+    check_literal("0x1.fffffffffffff7p1023", IR_ABSTRACT_FLOAT, UINT64_C(0x7fefffffffffffff));
     check_literal("1.000000059604644775390625f", IR_F32, UINT64_C(0x3f800000));
     check_literal("1.0000000596046447754f", IR_F32, UINT64_C(0x3f800001));
     check_literal("1.000000178813934326171875f", IR_F32, UINT64_C(0x3f800001));
@@ -107,8 +114,13 @@ static void test_float_literals(void) {
     reject_literal("0x1p128f", DOE_COMPILER_SEMANTIC_ERROR);
     reject_literal("0x1p1024", DOE_COMPILER_SEMANTIC_ERROR);
     reject_literal("1e999999999999999999999999999999999999", DOE_COMPILER_SEMANTIC_ERROR);
-    reject_literal("3.4028234663852885982e38f", DOE_COMPILER_SEMANTIC_ERROR);
-    reject_literal("1.7976931348623158e308", DOE_COMPILER_SEMANTIC_ERROR);
+    /* Nearest-even rounding reaches infinity at the overflow midpoint. */
+    reject_literal("3.4028235677973366164e38f", DOE_COMPILER_SEMANTIC_ERROR);
+    reject_literal("1.7976931348623158080e308", DOE_COMPILER_SEMANTIC_ERROR);
+    reject_literal("0x1.fffffffffffff8p1023", DOE_COMPILER_SEMANTIC_ERROR);
+    reject_literal("0x1.fffffffffffff9p1023", DOE_COMPILER_SEMANTIC_ERROR);
+    /* Concrete hexadecimal literals must still be exactly representable. */
+    reject_literal("0x1.fffffe1p127f", DOE_COMPILER_SEMANTIC_ERROR);
     reject_literal("1h", DOE_COMPILER_UNSUPPORTED);
     reject_literal("0x1p0h", DOE_COMPILER_UNSUPPORTED);
     const char *const malformed[] = {
