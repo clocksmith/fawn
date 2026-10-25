@@ -545,12 +545,14 @@ WGPUFuture wgpuQueueOnSubmittedWorkDone(WGPUQueue handle, WGPUQueueWorkDoneCallb
         failure = native_failure_status(NATIVE_FAILURE);
     native_failure_format(&failure, "queue work failed", delivery.message);
     if (settled.complete) {
-        future = native_callback(device->instance, callback.mode, &delivery,
-            sizeof(delivery), _Alignof(queue_delivery), copy_queue, deliver_queue);
+        doe_callback_status admitted;
+        future = native_callback_admit(device->instance, callback.mode, &delivery,
+            sizeof(delivery), _Alignof(queue_delivery), copy_queue, deliver_queue, &admitted);
         /* No callback was admitted. Preserve the consumed receipt through the
          * existing error channel while this call still owns its device lease. */
         if (!future.id && settled.failure.status != NATIVE_OK)
             native_error(device, native_result_error(settled.failure.status), delivery.message);
+        else if (!future.id) native_callback_refused(device, admitted);
     } else {
         char message[NATIVE_FAILURE_MESSAGE_CAPACITY];
         native_failure_format(&settled.failure, "queue completion remains unknown; no completion future published", message);

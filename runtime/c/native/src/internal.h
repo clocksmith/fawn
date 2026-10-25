@@ -168,6 +168,15 @@ bool native_string_size(WGPUStringView view, size_t *size);
 WGPUFuture native_callback(doe_instance *instance, WGPUCallbackMode mode,
     void *context, size_t size, size_t alignment,
     doe_callback_copy_context copy, doe_callback_deliver_context deliver);
+/* native_callback that also returns the admission status. */
+WGPUFuture native_callback_admit(doe_instance *instance, WGPUCallbackMode mode,
+    void *context, size_t size, size_t alignment,
+    doe_callback_copy_context copy, doe_callback_deliver_context deliver, doe_callback_status *status);
+/* A device-scoped operation whose callback was refused for lack of memory and
+ * that reports no other error reports OutOfMemory, so its callback is never
+ * lost silently. Other refusals (invalid mode, released instance) remain a zero
+ * future only. Call after rollback, without the device mutex. */
+void native_callback_refused(native_device *device, doe_callback_status status);
 
 WGPUStatus native_limits(const native_backend *backend, WGPULimits *out);
 /* wgpuDeviceCreateBuffer with an explicit size bound: the public entry passes
