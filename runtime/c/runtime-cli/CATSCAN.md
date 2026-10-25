@@ -3,8 +3,8 @@
 Parent: [C migration](../CATSCAN.md)
 
 ## Target
-Parse and replay host traces, execute admitted runtime command streams through the C native library and write
-doe-zig-runtime-compatible trace artifacts.
+Replay host traces and execute command streams through C, producing
+doe-zig-runtime-compatible artifacts.
 
 ## Authority
 Own command-stream parsing, quirk matching, CLI arguments, trace rows/meta and
@@ -12,12 +12,10 @@ embedded sample inputs and output-oracle digests, not WebGPU semantics, shader m
 quirk data or bench comparability policy.
 
 ## Scope
-`upload`, `buffer_write`, `barrier`, WGSL `kernel_dispatch` with buffer and
-texture bindings and semantic records, copies, 2D textures, proxy-pipeline draws,
-samplers, buffer map/unmap, asynchronous diagnostics, real window-backed surfaces
-and doe-plan-executor plans over `libwebgpu_doe_c` or
-`dawn-c-runtime`.
-[Coverage](README.md) lists admitted and rejected inputs.
+Command streams and doe-plan-executor plans through `libwebgpu_doe_c` or
+`dawn-c-runtime`, including buffers, textures, compute, graphics, asynchronous
+diagnostics and real window-backed surfaces.
+[Coverage](README.md) defines admitted and rejected inputs.
 
 ## Contracts
 `pipeline/trace/replay.py` artifact shape, the trace v1 hash chain, the

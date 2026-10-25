@@ -1,0 +1,49 @@
+{
+  "kind": "developer-correctness-evidence",
+  "component": "C-only Windows native package",
+  "source_commit": "b9d016fc0d5fcacac8b2bbbdf15a3d0a73e82d34",
+  "source_tree": "a83939c59187bbf6fbfab7e149789ab64cafaad6",
+  "source_archive_sha256": "84474875aefa79fb27be7964e0f0a62d35f63bf5f30aa3b224d257ad14f36a81",
+  "packaging_tool_sha256": "faee82002526c26f2123f9499deefca1d1698bcbad9a82f60355937ad3ee595f",
+  "host": "Windows-2025Server-10.0.26100-SP0",
+  "compiler": "clang version 20.1.8",
+  "workflow_run_url": "https://github.com/doerun/doe/actions/runs/40195504334",
+  "artifact_id": 12600060552,
+  "downloaded_archive_sha256": "a5ac61f4d50aa9063dc1517e87541312ae0646c40a56954e1a11f634ab0349e1",
+  "independently_rehashed_package_members": 35,
+  "native_exports": {
+    "webgpu_implemented": 199,
+    "webgpu_unprovided": 3,
+    "doe_extensions": 19,
+    "private_leaks": 0
+  },
+  "checks": [
+    "native C-only source build",
+    "moved C++ consumer with no library-path override",
+    "exact exported procedure inventory and addresses",
+    "PE dependencies are packaged or actual system DLLs/API sets",
+    "relocated executable runs from empty directory with PATH restricted to System32",
+    "captured source hashes unchanged after build",
+    "destination members rehashed before completion marker"
+  ],
+  "artifact_sha256": {
+    "bin/doe_compiler.dll": "a721a1ca4afaf8fdd69121f784dacbc7458ccc15986e35d5175e9666e931c2af",
+    "bin/dxcompiler.dll": "0689e2fee0a1c9df8662a59680469f24e2a3ad7ce6bbbcc9284f7a83172bfc59",
+    "bin/dxil.dll": "64be2368211d257a038a7d4ea6bb3e24c878eb8d588c7b8414fccf759b69c2ac",
+    "bin/procedures.exe": "d253faf914195cfa5d5fd2349fcc1d3df13d7a754e61ab991c3625a53db37fed",
+    "bin/webgpu_doe_c.dll": "a78fad0ee220aaff11df7d9a380f78f382fbee6b340c53afde9b7b4680999861"
+  },
+  "retained_first_failures": [
+    {
+      "run_id": 40195036043,
+      "cause": "Windows compiler consumer shader was absent from the captured archive",
+      "repair": "capture its retained residual.wgsl input"
+    },
+    {
+      "run_id": 40195187487,
+      "cause": "Python inventory imports emitted bytecode into captured source",
+      "repair": "disable bytecode writes in builder subprocesses; preserve immutable source audit"
+    }
+  ],
+  "scope": "Actual Windows SDK C-only native DLL build and relocated C++ host consumption. No adapter, device, WARP, physical GPU, npm release or production cutover qualification."
+}

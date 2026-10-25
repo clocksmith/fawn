@@ -90,24 +90,33 @@ The browser owns GPU execution. This does not qualify the native C GPU backend
 or complete broader WGSL coverage. The shipped browser artifact remains Zig
 until the separately governed default switch.
 
+The later source checkpoints add gradient/bias/gather sampling, storage/texture
+barriers and uniform workgroup loads. Backend limits and explicit requests execute
+256/512/1024 invocations on CPU Vulkan and M3. Metal presentation and occlusion
+queries pass their actual M3 public consumers. The C module runner passes 36
+retained cases, unchanged package APIs and the 10-case module gate; its cost models
+remain host predictions. [Windows packaging](../../runtime/c/DEVELOPER_RECEIPT_PACKAGE_WINDOWS.json)
+passes C-only SDK build, moved C++ consumption, exact exports and immutable source
+checks at its recorded commit. These results qualify their named checks only.
+
 ### Open completion checklist
 
 The lists below name known remaining work, not an exhaustive feature denominator
 or a percentage-complete claim. A command, API export or passing test is not an
 interchangeable unit of migration completion.
 
-- Compiler: gather/gradient/bias image builtins; remaining memory barriers and
-  workgroup-uniform loads; immediate storage; workgroup dimension/storage limits;
+- Compiler: retained packed/numeric/bitfield/derivative builtins, f16 and subgroup
+  coverage; generalized pointer parameters and immediate storage;
   TranslationInfo and retained compiler consumers; TSIR/CSL and the declared
   DXIL routes. Broader browser shader admission follows the same compiler gaps.
-- Metal: native layer presentation, public query recording/resolve, partial
-  sample masks/unclipped depth, and depth/stencil transfers.
+- Metal: public calibrated timestamp queries, partial sample masks/unclipped
+  depth, and depth/stencil transfers.
 - D3D12: native window presentation, public query recording/resolve, indexed and
   indirect whole-pass graphics, broader texture shapes/formats, and physical
   verification of current lifetime behavior.
 - CLI and consumers: native backend-lane policy controls, required GPU timing,
   persistent pipeline cache, remaining argument/render/texture contracts,
-  `runModule`, and platform package/helper routes.
+  and platform package/helper routes.
 - Delivery and qualification: C-only builds for every retained consumer and
   platform package; required independent and physical qualification; the audited
   source-size target and final production switch. Zig remains the default.
