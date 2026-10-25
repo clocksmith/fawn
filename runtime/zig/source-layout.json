@@ -4490,9 +4490,9 @@
       },
       "src/native/support/doe_future_c_adapter.zig": {
         "decision": "Keep",
-        "moduleSha256": "945d1056ef4e7e8a6bccaf4afa4189f2bb594d47d0fa9f63b6b7a690504fe526",
-        "reason": "Keep: typed accepted C queue/completion adaptation and copied non-owning QueueView; existing owned fixtures delegate without a second queue.",
-        "reviewer": "codex-c-instance-author/2026-10-23"
+        "moduleSha256": "271445f44c2f60abb3f5d6ad41cbee39872fa1ba3aede49ed661b509560da06e",
+        "reason": "Keep: typed C queue/completion adaptation and non-owning QueueView. Reviewed the shared host-primitives layout change: the nine-value queue size/alignment/offset vector matches the canonical C bridge; leases and C delivery ownership are unchanged. Fresh GCC archive and C++ bridge initialization/layout control pass.",
+        "reviewer": "codex-c-migration/2026-10-25"
       },
       "src/native/support/doe_callback_owner.zig": {
         "decision": "Keep",
