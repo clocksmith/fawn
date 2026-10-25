@@ -7,11 +7,12 @@
 #include "internal.h"
 #include "doe_vk_surface.h"
 #include "doe_metal_surface.h"
+#include "../../backends/d3d12/include/doe_d3d12_surface.h"
 
 /* Bounded native waits for one acquisition or one presentation retirement.
  * The backend may wait up to twice this per call (acquire plus its fence). */
 #define NATIVE_SURFACE_TIMEOUT_NS UINT64_C(1000000000)
-enum { NATIVE_SURFACE_METAL_LAYER = 8 };
+enum { NATIVE_SURFACE_METAL_LAYER = 8, NATIVE_SURFACE_WINDOWS_HWND = 16 };
 
 typedef struct native_surface {
     atomic_uint references; /* Public handles. Zero triggers public teardown once. */
@@ -25,6 +26,7 @@ typedef struct native_surface {
     native_device *device; /* Internal reference while a backend configuration exists. */
     doe_vk_surface *vulkan;
     doe_mtl_surface *metal;
+    doe_dx_surface *d3d12;
     native_pending *retirement; /* Reserved before configuration publication. */
     /* Public configuration. */
     bool configured;
@@ -111,4 +113,9 @@ void native_metal_surface_configure(native_surface *surface, const WGPUSurfaceCo
 native_pending *native_metal_surface_unconfigure_locked(native_surface *surface);
 void native_metal_surface_acquire(native_surface *surface, WGPUSurfaceTexture *out);
 WGPUStatus native_metal_surface_present(native_surface *surface);
+WGPUStatus native_d3d12_surface_capabilities(native_surface *,native_adapter *,WGPUSurfaceCapabilities *);
+void native_d3d12_surface_configure(native_surface *,const WGPUSurfaceConfiguration *);
+native_pending *native_d3d12_surface_unconfigure_locked(native_surface *);
+void native_d3d12_surface_acquire(native_surface *,WGPUSurfaceTexture *);
+WGPUStatus native_d3d12_surface_present(native_surface *);
 #endif

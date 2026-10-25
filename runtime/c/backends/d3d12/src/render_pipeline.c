@@ -37,8 +37,8 @@ static bool stencil_face_valid(doe_dx_stencil_face face) {
 static bool stencil_writes(doe_dx_stencil_face face) { return face.fail || face.depth_fail || face.pass; }
 static bool blend_component_valid(doe_dx_blend_component component)
 {
-    bool source=component.source<=11 || component.source==14;
-    bool destination=component.destination<=11 || component.destination==14;
+    bool source=component.source<=11 || (component.source>=14 && component.source<=18);
+    bool destination=component.destination<=11 || (component.destination>=14 && component.destination<=18);
     return source && destination && component.operation<=4 &&
         (component.operation<3 || (component.source==1 && component.destination==1));
 }
@@ -54,6 +54,9 @@ doe_dx_status doe_dx_pipeline_create_render(doe_dx_context *context,
     for (uint32_t i=0;i<target_count;++i) {
         doe_dx_render_target target=doe_dx_render_target_at(desc,i);
         if (target.absent) continue;
+        if (target.blend_enabled && (target.color_blend.source>=15 || target.color_blend.destination>=15 ||
+            target.alpha_blend.source>=15 || target.alpha_blend.destination>=15) && (target_count!=1 || i!=0))
+            return doe_dx_fail(DOE_DX_UNSUPPORTED,0,"render.dual_source_targets",error);
         color_present=true;
         if (!doe_dx_format_renderable(target.format))
             return doe_dx_fail(DOE_DX_UNSUPPORTED,0,"render.color_format",error);
@@ -103,6 +106,27 @@ doe_dx_status doe_dx_pipeline_create_render(doe_dx_context *context,
         doe_dx_status status=doe_dx_validate_layout(context,&desc->stages[i].resources,&desc->stages[i]);
         if (status!=DOE_DX_OK) return doe_dx_fail(status,0,"render.stage_layout",error);
     }
+    /* Tables are separate per stage in the emitted root signature. Count
+     * their actual UAV descriptors together, even for a shared register pair. */
+    uint32_t uavs=0;
+    for (size_t stage=0;stage<(desc->fragment_absent ? 1u : DOE_DX_RENDER_STAGES);++stage) {
+        const doe_dx_resource_pipeline_desc *resources=&desc->stages[stage].resources;
+        for (size_t i=0;i<resources->buffers.binding_count;++i)
+            if (doe_dx_buffer_descriptor_kind(&resources->buffers.bindings[i])==DOE_DX_DESCRIPTOR_UAV) ++uavs;
+        for (size_t i=0;i<resources->texture_count;++i)
+            if (resources->textures[i].access==DOE_DX_READ_WRITE) ++uavs;
+    }
+    if (uavs>context->caps.limits.max_uavs) return doe_dx_fail(DOE_DX_RANGE,0,"render.combined_uavs",error);
+    if (desc->draw_offsets) {
+        const doe_dx_dynamic_pipeline_desc *stage=&desc->stages[0];
+        const doe_dx_pipeline_desc *buffers=&stage->resources.buffers;
+        for (size_t i=0;i<buffers->binding_count;++i) {
+            const doe_dx_binding_layout *binding=&buffers->bindings[i];
+            if (doe_dx_buffer_descriptor_kind(binding)!=DOE_DX_DESCRIPTOR_CBV) continue;
+            if (binding->shader_register==3 && binding->register_space==7)
+                return doe_dx_fail(DOE_DX_INVALID_ARGUMENT,0,"render.draw_offsets_collision",error);
+        }
+    }
     uint32_t ends[DOE_DX_MAX_VERTEX_BUFFERS]={0};
     doe_dx_status vertex_status=doe_dx_validate_render_vertices(desc,ends);
     if (vertex_status!=DOE_DX_OK) return doe_dx_fail(vertex_status,0,"render.vertex_layout",error);
@@ -141,6 +165,7 @@ doe_dx_status doe_dx_pipeline_create_render(doe_dx_context *context,
     pipeline->render->target_count=target_count;
     for (uint32_t i=0;i<target_count;++i) pipeline->render->targets[i]=doe_dx_render_target_at(desc,i);
     pipeline->render->fragment_absent=desc->fragment_absent;
+    pipeline->render->draw_offsets=desc->draw_offsets;
     pipeline->render->topology=desc->topology;
     pipeline->render->strip_indexed=desc->strip_indexed;
     pipeline->render->strip_index_format=desc->strip_index_format;

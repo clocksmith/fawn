@@ -12,6 +12,11 @@
 doe_mtl_status doe_mtl_objc_timeline_create(void *, void *, void **, doe_mtl_error *);
 doe_mtl_status doe_mtl_objc_timeline_signal(void *, void *, void *, uint64_t, doe_mtl_error *);
 uint64_t doe_mtl_objc_timeline_value(void *, void *);
+struct doe_mtl_objc;
+void doe_mtl_objc_load_external(struct doe_mtl_objc *runtime, void (*message)(void));
+void doe_mtl_objc_close_external(struct doe_mtl_objc *runtime);
+doe_mtl_status doe_mtl_objc_external_import(void *, void *, doe_mtl_external_source, void *,
+    doe_mtl_native_external *, doe_mtl_error *);
 typedef struct doe_mtl_size { size_t width, height, depth; } doe_mtl_size;
 typedef struct doe_mtl_origin { size_t x, y, z; } doe_mtl_origin;
 typedef struct doe_mtl_swizzle_abi { uint8_t red, green, blue, alpha; } doe_mtl_swizzle_abi;
@@ -26,6 +31,7 @@ typedef signed char doe_objc_bool;
 #include "objc_render_types.h"
 #include "objc_query_types.h"
 #include "objc_archive_types.h"
+#include "objc_external_types.h"
 typedef doe_objc_bool (*doe_objc_responds_call)(void *, void *, void *);
 typedef void *(*doe_objc_object_call)(void *, void *);
 typedef void (*doe_objc_void_call)(void *, void *);
@@ -68,6 +74,7 @@ typedef struct doe_mtl_objc {
     doe_mtl_objc_graphics graphics;
     doe_mtl_objc_queries queries;
     doe_mtl_objc_archives archives;
+    doe_mtl_objc_external external;
     void *objc_library;
     void *foundation_library;
     void *metal_library;
@@ -182,6 +189,7 @@ void *doe_mtl_objc_string(doe_mtl_objc *runtime, const char *bytes, size_t lengt
 doe_mtl_status doe_mtl_objc_error(doe_mtl_objc *runtime, void *native_error,
     const char *operation, doe_mtl_error *error);
 void doe_mtl_objc_text(doe_mtl_objc *runtime, void *string, char *out, size_t capacity);
+doe_mtl_status doe_mtl_objc_shader_validate(void *, void *, const char *, size_t, doe_mtl_error *);
 doe_mtl_status doe_mtl_objc_function(doe_mtl_objc *runtime, void *device,
     const char *msl, size_t length, const char *entrypoint, void **out, doe_mtl_error *error);
 doe_mtl_status doe_mtl_objc_pipeline(void *userdata, void *device,

@@ -18,7 +18,11 @@ static bool factor(WGPUBlendFactor value, uint32_t fallback, uint32_t *out)
     case WGPUBlendFactor_Constant: *out = 10; return true;
     case WGPUBlendFactor_OneMinusConstant: *out = 11; return true;
     case WGPUBlendFactor_SrcAlphaSaturated: *out = 14; return true;
-    default: return false; /* Dual-source is not enabled. */
+    case WGPUBlendFactor_Src1: *out=15; return true;
+    case WGPUBlendFactor_OneMinusSrc1: *out=16; return true;
+    case WGPUBlendFactor_Src1Alpha: *out=17; return true;
+    case WGPUBlendFactor_OneMinusSrc1Alpha: *out=18; return true;
+    default: return false;
     }
 }
 static bool blend(const WGPUBlendComponent *source, uint32_t *operation, uint32_t *from, uint32_t *to)
@@ -105,6 +109,10 @@ bool native_render_fixed(uint32_t features, const WGPURenderPipelineDescriptor *
                 &slot->color_source_factor, &slot->color_destination_factor) ||
             !blend(&color->blend->alpha, &slot->alpha_operation,
                 &slot->alpha_source_factor, &slot->alpha_destination_factor))) return false;
+        if (slot->color_source_factor>=15 || slot->color_destination_factor>=15 ||
+            slot->alpha_source_factor>=15 || slot->alpha_destination_factor>=15) {
+            if (!(features & NATIVE_FEATURE(WGPUFeatureName_DualSourceBlending)) || count!=1 || i!=0) return false;
+        }
     }
     return true;
 }

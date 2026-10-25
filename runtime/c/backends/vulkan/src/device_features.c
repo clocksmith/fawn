@@ -112,6 +112,11 @@ doe_vk_status doe_vk_prepare_features(doe_vk_context *context, const doe_vk_opti
      * disabled and the corresponding requests reject at admission. */
     if (features.features.independentBlend) selection.base.independentBlend = 1;
     if (features.features.samplerAnisotropy) selection.base.samplerAnisotropy = 1;
+    /* Optional stage/output semantics. Geometry capability is needed for
+     * fragment PrimitiveId even without a geometry-stage pipeline. */
+    if (features.features.shaderClipDistance) selection.base.shaderClipDistance = 1;
+    if (features.features.geometryShader) selection.base.geometryShader = 1;
+    if (features.features.dualSrcBlend) selection.base.dualSrcBlend = 1;
     /* Optional storage-image formats and fragment stores, enabled only when offered. */
     if (features.features.shaderStorageImageExtendedFormats) selection.base.shaderStorageImageExtendedFormats = 1;
     if (features.features.fragmentStoresAndAtomics) selection.base.fragmentStoresAndAtomics = 1;

@@ -68,6 +68,11 @@ static bool type_matrix_intern_valid(const CompilerWorkspace *c, TypeId column, 
     const TypeRecord *vector = &c->types[column - IR_PRIMITIVE_COUNT];
     return vector->kind == TYPE_VECTOR && (vector->element == IR_F16 || vector->element == IR_F32 || vector->element == IR_ABSTRACT_FLOAT);
 }
+bool type_pointer_writable(const CompilerWorkspace *c, TypeId type) {
+    if (!type_pointer(c, type)) return false;
+    const uint32_t space = c->types[type-IR_PRIMITIVE_COUNT].count;
+    return space != POINTER_UNIFORM && space != POINTER_STORAGE_READ && space != POINTER_IMMEDIATE;
+}
 bool type_pointer(const CompilerWorkspace *c, TypeId type) {
     return type >= IR_PRIMITIVE_COUNT && c->types[type - IR_PRIMITIVE_COUNT].kind == TYPE_POINTER;
 }
@@ -110,7 +115,7 @@ bool type_intern(Source *s, uint32_t kind, TypeId element, uint32_t count, TypeI
     TypeRecord t = {.kind = kind, .element = element, .count = count, .flags = TYPE_RESOLVED, .target = NO_ID, .aux = NO_ID};
     const uint32_t flags = type_flags(c, element);
     t.flags |= flags & TYPE_F16_CONTENT;
-    if (!type_constructible(c, element) && (flags & TYPE_ATOMIC_CONTENT) == 0u)
+    if (kind != TYPE_POINTER && !type_constructible(c, element) && (flags & TYPE_ATOMIC_CONTENT) == 0u)
         return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, s->length, "aggregate element must be constructible or contain atomics");
     if (kind == TYPE_FREXP_RESULT || kind == TYPE_MODF_RESULT) {
         const TypeId leaf = type_leaf(c, element);
@@ -126,8 +131,15 @@ bool type_intern(Source *s, uint32_t kind, TypeId element, uint32_t count, TypeI
         t.state.result.second = second;
     }
     else if (kind == TYPE_POINTER) {
-        if (!type_constructible(c, element) || type_abstract(c, element))
-            return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, s->length, "function pointer requires a concrete constructible store type");
+        const bool host = (flags & TYPE_HOST) != 0u;
+        const bool atomic = (flags & TYPE_ATOMIC_CONTENT) != 0u;
+        const bool valid = count == POINTER_FUNCTION || count == POINTER_PRIVATE ? type_constructible(c, element) :
+            count == POINTER_WORKGROUP ? (flags & TYPE_FIXED) != 0u && (type_constructible(c, element) || atomic) :
+            count == POINTER_STORAGE_WRITE ? host :
+            count == POINTER_STORAGE_READ ? host && !atomic :
+            (count == POINTER_UNIFORM || count == POINTER_IMMEDIATE) ? host && type_constructible(c, element) : false;
+        if (!valid || type_abstract(c, element))
+            return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, s->length, "pointer store type is invalid for its address space and access");
         t.state.layout.alignment = 1u;
     }
     else if (kind == TYPE_ATOMIC || kind == TYPE_ATOMIC_RESULT) {

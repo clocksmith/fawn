@@ -18,7 +18,8 @@ typedef enum doe_dx_topology {
 typedef enum doe_dx_cull { DOE_DX_CULL_NONE, DOE_DX_CULL_FRONT, DOE_DX_CULL_BACK } doe_dx_cull;
 /* Portable blend codes: zero/one=0/1, source/inverse=2/3, destination/
  * inverse=4/5, source-alpha/inverse=6/7, destination-alpha/inverse=8/9,
- * constant/inverse=10/11, source-alpha-saturated=14. Operations add,
+ * constant/inverse=10/11, source-alpha-saturated=14, source1/inverse=15/16,
+ * source1-alpha/inverse=17/18 (single color target only). Operations add,
  * subtract, reverse-subtract, minimum, maximum are 0..4. */
 typedef struct doe_dx_blend_component { uint32_t source, destination, operation; } doe_dx_blend_component;
 enum { DOE_DX_MAX_COLOR_TARGETS=8 };
@@ -37,6 +38,7 @@ typedef struct doe_dx_render_pipeline_desc {
     doe_dx_format color_format; /* One RGBA8/BGRA8 UNORM target. */
     uint32_t samples; /* 0 preserves legacy sample1, otherwise1 or4. */
     bool alpha_to_coverage;
+    bool draw_offsets; /* Vertex b3 space7 uint2; indirect records prepend these two words. */
     bool color_absent, fragment_absent; /* Explicit absence, never inferred from empty stage data. */
     bool targets_explicit;
     uint32_t target_count;

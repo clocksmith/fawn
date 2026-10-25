@@ -1,7 +1,7 @@
 {
   "name": "doe-gpu",
   "version": "0.5.0",
-  "description": "Zig-first WebGPU runtime for Node.js, Bun, and Deno",
+  "description": "Native C WebGPU runtime for Node.js, Bun, and Deno",
   "type": "module",
   "main": "./src/index.js",
   "types": "./src/index.d.ts",

@@ -455,7 +455,8 @@ static inline bool sema_atomic_call(Source *source, const Expression *node, cons
     ValueReference reference;
     uint32_t link = node->left;
     if (!sema_address_reference(source, c->arguments[link].expression, scope, evaluate, emit, &reference)) return false;
-    if (!reference.writable || (reference.category != ROOT_RESOURCE && reference.category != ROOT_WORKGROUP) ||
+    const uint32_t pointer_space = sema_reference_space(c,reference);
+    if (!reference.writable || (pointer_space != POINTER_STORAGE_WRITE && pointer_space != POINTER_WORKGROUP) ||
         reference.type < IR_PRIMITIVE_COUNT || c->types[reference.type - IR_PRIMITIVE_COUNT].kind != TYPE_ATOMIC)
         return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, node->source_offset,
             "atomic builtin requires a writable storage or workgroup atomic address");
@@ -489,8 +490,7 @@ static inline bool workgroup_uniform_load(Source *s, const Expression *node, con
     CompilerWorkspace *c = s->compiler;
     ValueReference reference;
     if (!sema_address_reference(s, c->arguments[node->left].expression, scope, evaluate, emit, &reference)) return false;
-    if (reference.category != ROOT_WORKGROUP ||
-        c->workgroups[reference.root].state.resolved.address_space != MODULE_WORKGROUP)
+    if (sema_reference_space(c,reference) != POINTER_WORKGROUP)
         return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, node->source_offset,
             "workgroupUniformLoad requires a workgroup address");
     const bool atomic = reference.type >= IR_PRIMITIVE_COUNT && c->types[reference.type - IR_PRIMITIVE_COUNT].kind == TYPE_ATOMIC;
@@ -507,7 +507,7 @@ static inline bool workgroup_uniform_load(Source *s, const Expression *node, con
             .value = {.type = type, .source_offset = node->source_offset}};
         if (!sema_emit(s, emit, (IrInstruction){.opcode = IR_ATOMIC_LOAD, .type = type,
             .source_offset = node->source_offset,
-            .operands.access = {.root = reference.root, .path = reference.path, .category = ROOT_WORKGROUP}},
+            .operands.access = {.root = reference.root, .path = reference.path, .category = reference.category}},
             &out->value)) return false;
     } else if (!sema_reference_load(s, reference, node->source_offset, emit, out)) return false;
     /* The trailing barrier keeps a faster invocation's following writes from

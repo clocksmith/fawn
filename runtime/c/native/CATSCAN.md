@@ -47,3 +47,8 @@ Parallel resource engines, synthetic completion or default cutover.
 
 ## Freedom
 Algorithms vary.
+
+HWND/DXGI composition uses the same native pending submission and resource texture
+owners as other backends. Exact backbuffer identity survives early public release;
+no surface teardown or resize forces outstanding frame/view leases away. Actual
+Windows SDK compilation and window/device execution are separate evidence gates.

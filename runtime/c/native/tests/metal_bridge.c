@@ -14,6 +14,9 @@
 #include "doe_native_programs.h"
 
 static mock_native mocks[8];
+static doe_mtl_native external_drivers[8];
+static doe_mtl_status external_import_ledger(void *, void *, doe_mtl_external_source, void *,
+    doe_mtl_native_external *, doe_mtl_error *);
 static doe_mtl_context *contexts[8];
 static doe_mtl_commands *commands[8];
 static unsigned context_count;
@@ -43,6 +46,8 @@ doe_mtl_status __wrap_doe_mtl_context_create(doe_mtl_context **out, doe_mtl_erro
     assert(context_count < 8);
     unsigned index = context_count++;
     doe_mtl_native driver = mock_driver(&mocks[index]);
+    external_drivers[index] = driver;
+    driver.external_texture = external_import_ledger;
     mocks[index].etc2 = mocks[index].astc = mocks[index].astc_sliced_3d = true;
     doe_mtl_status status = doe_mtl_context_open(driver, out, error);
     if (status == DOE_MTL_OK) contexts[index] = *out;
@@ -87,8 +92,12 @@ doe_mtl_status __wrap_doe_mtl_buffer_create(doe_mtl_context *context, uint64_t s
 static void captured(WGPUPopErrorScopeStatus status, WGPUErrorType type,
     WGPUStringView message, void *userdata, void *unused)
 {
-    (void)message;
     (void)unused;
+    if (status != WGPUPopErrorScopeStatus_Success || type != *(WGPUErrorType *)userdata)
+        fprintf(stderr,"Metal scope status=%u type=%u expected=%u: %.*s\n",
+            (unsigned)status,(unsigned)type,(unsigned)*(WGPUErrorType *)userdata,
+            (int)(!message.data ? 0 : message.length == WGPU_STRLEN ? strlen(message.data) : message.length),
+            message.data ? message.data : "");
     assert(status == WGPUPopErrorScopeStatus_Success && type == *(WGPUErrorType *)userdata);
     *(WGPUErrorType *)userdata = WGPUErrorType_NoError;
 }
@@ -851,8 +860,12 @@ static void graphics_ledger(state *s)
 #include "metal_depth_cases.h"
 #include "metal_draw_cases.h"
 
-int main(void)
+#include "metal_external_cases.h"
+#include "metal_import_cases.h"
+
+int main(int argc, char **argv)
 {
+    assert(argc == 1 || (argc == 2 && (!strcmp(argv[1], "--external-only") || !strcmp(argv[1], "--imports-only"))));
     state s = {0};
     s.instance = wgpuCreateInstance(NULL);
     WGPURequestAdapterOptions options = WGPU_REQUEST_ADAPTER_OPTIONS_INIT;
@@ -884,6 +897,13 @@ int main(void)
     s.queue = wgpuDeviceGetQueue(s.device);
     native_device *device = (native_device *)s.device;
     assert(device->backend.kind == WGPUBackendType_Metal);
+    if (argc == 2) {
+        if (!strcmp(argv[1], "--imports-only")) metal_shader_import_cases(&s);
+        else metal_external_import_cases(&s);
+        consumer_finish(&s);
+        for (unsigned i = 0; i < context_count; ++i) mock_assert_closed(&mocks[i]);
+        return 0;
+    }
     compute_binding_ledger(&s);
     atomic_pipeline_admission(&s);
     WGPUBuffer source = buffer(&s,16,WGPUBufferUsage_CopySrc|WGPUBufferUsage_CopyDst);
@@ -958,7 +978,9 @@ int main(void)
     metal_indirect_ledger(&s, &mocks[2]);
     metal_depth_admission(&s, &mocks[2]);
     metal_draw_guard_ledger(&s, &mocks[2]);
-    public_error_detail(&s);
+    metal_shader_import_cases(&s);
+    metal_external_import_cases(&s);
+    public_error_detail(&s); /* Deliberately destroys the device; keep last. */
     consumer_finish(&s);
     for (unsigned i = 0; i < context_count; ++i) mock_assert_closed(&mocks[i]);
     puts("PASS public Metal host composition: exact backend/adapter identity, compiler-owned MSL entry/slots/sizes, shared buffer copy/fill/map, typed failures, early releases and unknown queue retention; call ledger only, not GPU evidence");

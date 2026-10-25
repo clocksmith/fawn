@@ -587,3 +587,9 @@ explicit and uses an owned temporary plus atomic replacement; teardown does not
 silently flush. Optional store failures retain a valid PSO and increment failure
 counters, while device loss follows normal retirement. Windows SDK/runtime
 qualification of this authored path remains outstanding.
+
+The Windows producer uses the existing real HWND host for both native and Dawn
+providers. It verifies the actual client rectangle after resize rather than
+assuming outer-window geometry equals the requested render extent. Native HWND
+support now composes the D3D12 surface owner; this source path is not an actual
+Windows desktop/presentation qualification on Linux dot.

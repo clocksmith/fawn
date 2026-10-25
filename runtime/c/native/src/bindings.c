@@ -118,7 +118,8 @@ static bool group_backend_compatible(native_device *device, doe_resource_layout 
          * consumes whole 2D color views plus immutable runtime sampler values. */
         for (size_t i = 0; i < entry_count; ++i)
             if (entries[i].kind != DOE_BIND_BUFFER && entries[i].kind != DOE_BIND_TEXTURE &&
-                entries[i].kind != DOE_BIND_STORAGE_TEXTURE && entries[i].kind != DOE_BIND_SAMPLER) return false;
+                entries[i].kind != DOE_BIND_STORAGE_TEXTURE && entries[i].kind != DOE_BIND_SAMPLER &&
+                entries[i].kind != DOE_BIND_EXTERNAL_TEXTURE) return false;
         return true;
     }
     if (device->backend.kind != WGPUBackendType_Vulkan) return false;
@@ -151,10 +152,16 @@ WGPUBindGroup wgpuDeviceCreateBindGroup(WGPUDevice handle, const WGPUBindGroupDe
     valid = valid && bindings;
     if (valid) for (size_t i = 0; i < descriptor->entryCount; ++i) {
         const WGPUBindGroupEntry *entry = &descriptor->entries[i];
-        unsigned kinds = (entry->buffer != NULL) + (entry->sampler != NULL) + (entry->textureView != NULL);
-        if (entry->nextInChain || kinds != 1) { valid = false; break; }
+        const bool external = entry->nextInChain && !entry->nextInChain->next &&
+            entry->nextInChain->sType == WGPUSType_ExternalTextureBindingEntry;
+        unsigned kinds = (entry->buffer != NULL) + (entry->sampler != NULL) + (entry->textureView != NULL) + external;
+        if ((entry->nextInChain && !external) || kinds != 1) { valid = false; break; }
         bindings[i] = (doe_resource_binding){.binding=entry->binding};
-        if (entry->buffer) {
+        if (external) {
+            const WGPUExternalTextureBindingEntry *chain = (const WGPUExternalTextureBindingEntry *)entry->nextInChain;
+            bindings[i].kind = DOE_BIND_EXTERNAL_TEXTURE;
+            bindings[i].resource.external_texture = (doe_resource_external_texture *)chain->externalTexture;
+        } else if (entry->buffer) {
             bindings[i].kind = DOE_BIND_BUFFER;
             bindings[i].resource.buffer.buffer = (doe_resource_buffer *)entry->buffer;
             bindings[i].resource.buffer.offset = entry->offset;

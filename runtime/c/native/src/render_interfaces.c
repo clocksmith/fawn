@@ -7,7 +7,7 @@ static const DoeCompilerStageInterfaceV7 *location(const native_stage *stage, ui
     for (size_t i = 0; i < stage->view.interface_count; ++i) {
         const DoeCompilerStageInterfaceV7 *item = &stage->view.interfaces[i];
         if (item->entry_index == entry_index && item->direction == direction &&
-            !item->builtin && item->location == slot) return item;
+            !item->builtin && item->location == slot && !(item->flags & DOE_COMPILER_INTERFACE_BLEND_SRC_ONE)) return item;
     }
     return NULL;
 }
@@ -35,6 +35,9 @@ static bool source_alpha(const WGPUBlendState *blend)
 static bool target_output(const native_stage *fragment, const WGPUColorTargetState *color, uint32_t slot)
 {
     if (color->format == WGPUTextureFormat_Undefined) return true;
+    /* Raw native source carries no WGSL interface proof. Format/state admission
+     * remains in the shared render owner; native PSO linking owns shader IO. */
+    if (fragment && fragment->imported) return true;
     uint32_t scalar = 0, components = 0;
     if (!native_color_scalar(color->format, &scalar) ||
         doe_resource_format_color_components(color->format, &components) != DOE_RESOURCE_OK) return false;
@@ -54,11 +57,31 @@ bool native_render_interfaces(const native_stage stages[2], size_t stage_count, 
         if (!target_output(fragment_stage, &fragment->targets[i], (uint32_t)i)) return false;
     const DoeCompilerStageInterfaceV7 *written = fragment_stage ?
         location(fragment_stage, DOE_COMPILER_INTERFACE_OUTPUT, 0) : NULL;
-    if (alpha_to_coverage && (!written || !scalar_compatible(DOE_COMPILER_LEAF_F32, written->scalar_kind) ||
+    const DoeCompilerStageInterfaceV7 *secondary=NULL;
+    if (fragment_stage && !fragment_stage->imported) for (size_t i=0;i<fragment_stage->view.interface_count;++i) {
+        const DoeCompilerStageInterfaceV7 *item=&fragment_stage->view.interfaces[i];
+        if (item->entry_index==(uint32_t)(fragment_stage->entry-fragment_stage->view.entries) &&
+            item->direction==DOE_COMPILER_INTERFACE_OUTPUT && (item->flags & DOE_COMPILER_INTERFACE_BLEND_SRC_ONE)) secondary=item;
+    }
+    if (secondary && (secondary->location!=0 || !written ||
+        secondary->scalar_kind!=written->scalar_kind || secondary->lane_count!=written->lane_count)) return false;
+    for (size_t i=0; (!fragment_stage || !fragment_stage->imported) && i<targets; ++i) {
+        const WGPUBlendState *blend=fragment->targets[i].blend;
+        if (!blend) continue;
+        WGPUBlendFactor factors[4]={blend->color.srcFactor,blend->color.dstFactor,blend->alpha.srcFactor,blend->alpha.dstFactor};
+        for (size_t j=0;j<4;++j) {
+            bool source1=factors[j]==WGPUBlendFactor_Src1 || factors[j]==WGPUBlendFactor_OneMinusSrc1 ||
+                factors[j]==WGPUBlendFactor_Src1Alpha || factors[j]==WGPUBlendFactor_OneMinusSrc1Alpha;
+            if (source1 && (!secondary || i!=0)) return false;
+            if (j<2 && (factors[j]==WGPUBlendFactor_Src1Alpha || factors[j]==WGPUBlendFactor_OneMinusSrc1Alpha) && secondary->lane_count!=4) return false;
+        }
+    }
+    if (alpha_to_coverage && (!fragment_stage || !fragment_stage->imported) && (!written || !scalar_compatible(DOE_COMPILER_LEAF_F32, written->scalar_kind) ||
         written->lane_count != 4)) return false;
     /* https://gpuweb.github.io/gpuweb/#abstract-opdef-validating-gpufragmentstate */
     for (size_t s = 0; s < stage_count; ++s) {
         const native_stage *stage = &stages[s];
+        if (stage->imported) continue; /* No fabricated native-source interface rows. */
         size_t entry_index = (size_t)(stage->entry - stage->view.entries);
         uint32_t components = 0;
         /* https://gpuweb.github.io/gpuweb/#abstract-opdef-validating-inter-stage-interfaces:
@@ -70,11 +93,17 @@ bool native_render_interfaces(const native_stage stages[2], size_t stage_count, 
             const DoeCompilerStageInterfaceV7 *item = &stage->view.interfaces[i];
             if (item->entry_index != entry_index) continue;
             if (item->builtin) {
+                if (item->builtin==DOE_COMPILER_BUILTIN_CLIP_DISTANCES) {
+                    uint32_t slots=(item->lane_count+3u)/4u;
+                    if (slots>variable_budget || item->lane_count>8 || !item->lane_count) return false;
+                    variable_budget-=slots;
+                    components+=item->lane_count;
+                }
                 const bool fragment_input = s == 1 && item->direction == DOE_COMPILER_INTERFACE_INPUT;
                 const bool sample_builtin = item->builtin == DOE_COMPILER_BUILTIN_SAMPLE_INDEX ||
                     item->builtin == DOE_COMPILER_BUILTIN_SAMPLE_MASK;
                 /* Each front_facing, sample_index and sample_mask input takes one slot. */
-                if (fragment_input && (sample_builtin || item->builtin == DOE_COMPILER_BUILTIN_FRONT_FACING)) {
+                if (fragment_input && (sample_builtin || item->builtin == DOE_COMPILER_BUILTIN_FRONT_FACING || item->builtin == DOE_COMPILER_BUILTIN_PRIMITIVE_INDEX)) {
                     if (!variable_budget) return false;
                     --variable_budget;
                 }
@@ -105,7 +134,7 @@ bool native_render_interfaces(const native_stage stages[2], size_t stage_count, 
                 ++variables;
                 if (components > UINT32_MAX - item->lane_count) return false;
                 components += item->lane_count;
-                if (s == 1) {
+                if (s == 1 && !stages[0].imported) {
                     const DoeCompilerStageInterfaceV7 *output = location(&stages[0], DOE_COMPILER_INTERFACE_OUTPUT, item->location);
                     if (!output || output->scalar_kind != item->scalar_kind || output->lane_count != item->lane_count ||
                         output->interpolation != item->interpolation || output->sampling != item->sampling) return false;

@@ -22,6 +22,8 @@ extern "C" {
 #define DOE_COMPILER_HANDLE_DEPTH 1u
 #define DOE_COMPILER_HANDLE_MULTISAMPLED 2u
 #define DOE_COMPILER_HANDLE_COMPARISON 4u
+/* Distinct canonical external binding; current native targets read plane zero. */
+#define DOE_COMPILER_HANDLE_EXTERNAL 8u
 /* Storage formats use the corresponding SPIR-V Image Format value. Zero is
  * not a storage format. Unsupported formats are rejected, never approximated. */
 #define DOE_COMPILER_FORMAT_RGBA32FLOAT 1u

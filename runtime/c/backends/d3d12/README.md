@@ -398,8 +398,10 @@ retirement. The separate static-sampler limit remains 16. Cumulative command use
 within the same owner rather than imposing a 64-resource limit. Per-kind counts are checked before native preparation using actual
 [resource binding tiers](https://learn.microsoft.com/en-us/windows/win32/direct3d12/hardware-support):
 Tier 1/2 CBVs 14, Tier 1 SRVs 128 (clamped to 64), Tier 1 FL11_0 UAVs 8, otherwise
-UAVs 64; Tier 3 CBVs are clamped to 64. ALL-visible graphics root tables use the
-same conservative combined counts. This is not complete WebGPU graphics admission.
+UAVs 64; Tier 3 CBVs are clamped to 64. CBV/SRV limits apply per stage to actual
+descriptor tables. Hidden root constants and root CBVs consume the separate root
+signature DWORD budget. UAV descriptors are counted across both actual graphics
+stage tables; a duplicated descriptor really consumes two entries. This is not complete WebGPU graphics admission.
 
 After actual FL11_0+ admission, SDK guarantees supply compute threads 1024,
 axis sizes 1024/1024/64, dispatch groups 65535 per axis, shared memory 32768 bytes,
@@ -706,8 +708,8 @@ configuration on admission failure. Changing buffer usage requires replacement;
 FIFO and queried tearing-enabled Immediate are the initial modes, opaque HWND
 composition only. Host typed-call controls prove ordering, lease retention,
 first-error recovery, discard and resize admission, not SDK compilation or a
-window/driver run. Public WebGPU frontend composition and actual Windows SDK,
-DXGI window, resize and device-loss execution remain separate gates.
+window/driver run. The public WebGPU frontend composes this owner; actual Windows
+SDK compilation, DXGI window, resize and device-loss execution remain separate gates.
 
 Bound sampled/storage views now use immutable mip/layer overlap checks, including
 cross-stage aliases. Disjoint SRV/UAV subresources share the same texture lease;
@@ -717,3 +719,11 @@ views still reject. Focused controls exercise distinct layers/mips and overlappi
 rejection. Native fragment admission now uses the actual SM6 SV_SampleIndex,
 SV_Coverage and SV_Depth implementation, while canonical alpha-to-coverage and
 fragment-depth validation remain authoritative.
+
+Vertex draw-offset metadata uses vertex-visible `b3, space7` uint2 root constants.
+Direct draws bind first vertex/instance; guarded indexed/indirect draws project
+base-vertex bits and first instance using GPU buffer copies, then a pipeline-owned
+command signature consumes the constants and unchanged SDK draw record. Signed
+base-vertex addition is modulo uint32 in the HLSL wrapper. Portable controls cover
+reserved-register/budget rejection and the larger indirect record; SDK and device
+execution qualification remain separate.

@@ -53,7 +53,7 @@ $(BUILD)/native.exports: EXPORTED_SYMBOLS.txt EXTENSION_SYMBOLS.txt | $(BUILD)
 	mv $@.tmp $@
 $(BUILD)/backend-selection: tests/backend_selection.c tests/consumer.h tests/adapter_class.h $(NATIVE_LIBRARY)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
-$(BUILD)/metal-bridge: tests/metal_bridge.c tests/metal_copy_cases.h tests/metal_view_cases.h tests/metal_f16_cases.h tests/sampling_pair_cases.h tests/pipeline_cache_cases.h tests/shader_fixture.h tests/metal_storage_cases.h tests/metal_draw_cases.h tests/metal_depth_cases.h tests/metal_indirect_cases.h tests/metal_vertex_cases.h tests/metal_graphics_cases.h tests/mixed_resource_cases.h tests/metal_mixed_host.h tests/consumer.h tests/adapter_class.h $(OBJECTS) $(COMPILER_LIBRARY) | $(BUILD)
+$(BUILD)/metal-bridge: tests/metal_bridge.c tests/metal_import_cases.h tests/metal_external_cases.h tests/metal_copy_cases.h tests/metal_view_cases.h tests/metal_f16_cases.h tests/sampling_pair_cases.h tests/pipeline_cache_cases.h tests/shader_fixture.h tests/metal_storage_cases.h tests/metal_draw_cases.h tests/metal_depth_cases.h tests/metal_indirect_cases.h tests/metal_vertex_cases.h tests/metal_graphics_cases.h tests/mixed_resource_cases.h tests/metal_mixed_host.h tests/consumer.h tests/adapter_class.h $(OBJECTS) $(COMPILER_LIBRARY) | $(BUILD)
 	$(CC) $(CPPFLAGS) $(CFLAGS) tests/metal_bridge.c ../backends/metal/tests/mock_native.c $(OBJECTS) $(COMPILER_LINK) $(PLATFORM_LIBS) \
 	  -Wl,--wrap=doe_mtl_context_create -Wl,--wrap=doe_mtl_context_device -Wl,--wrap=doe_mtl_commands_create \
 	  -Wl,--wrap=doe_mtl_commands_wait -Wl,--wrap=doe_mtl_buffer_create \
@@ -324,7 +324,7 @@ check-sanitizers:
 # The same public clients on a nonfallback GPU adapter (DOE_C_TEST_ADAPTER=physical).
 # Developer evidence on the printed adapter/driver only, not qualification. Uses the
 # system ICDs: unset VK_ICD_FILENAMES. Never run on a host under a physical hold.
-PHYSICAL_CLIENTS = occlusion workgroups draw-guard implicit-sampling d3d12-graphics d3d12-vertex-inputs depth-comparison all-any select pipeline-overrides texture-bindings atomic-operations texture-transfers indirect-dispatch map-oom command-resources binding-aliases mixed-resources offscreen-triangle draw-budget indirect-render indexed-render depth-copies depth-sampling readonly-depth-sampling cube-array view-formats point-list color-discard msaa-sampling format-features draw-features copy-layouts bc-compression component-swizzle encoder-errors core-formats indirect-compute atomics debug msaa depth \
+PHYSICAL_CLIENTS = stage-extensions occlusion workgroups draw-guard implicit-sampling d3d12-graphics d3d12-vertex-inputs depth-comparison all-any select pipeline-overrides texture-bindings atomic-operations texture-transfers indirect-dispatch map-oom command-resources binding-aliases mixed-resources offscreen-triangle draw-budget indirect-render indexed-render depth-copies depth-sampling readonly-depth-sampling cube-array view-formats point-list color-discard msaa-sampling format-features draw-features copy-layouts bc-compression component-swizzle encoder-errors core-formats indirect-compute atomics debug msaa depth \
 	demote graphics-admission empty-shader graphics compute lifecycle instance-devices lost-objects textures admission \
 	failures timestamps recovery uniform-standard wgsl-language-features texture-binding-view-dimension compute-programs fused-commands program-prepare vertex-formats mrt anisotropy storage-textures limits large-write slice-render
 # Real-window presentation (XCB on a reachable X server, e.g. Xwayland); not part
@@ -515,3 +515,27 @@ $(BUILD)/capability-admission: tests/capability_admission.c $(OBJECTS) $(COMPILE
 .PHONY: check-capability-admission
 check-capability-admission: $(BUILD)/capability-admission
 	$(BUILD)/capability-admission
+
+$(BUILD)/shader-source-span: tests/shader_source_span.c tests/consumer.h tests/adapter_class.h $(NATIVE_LIBRARY)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
+
+$(BUILD)/stage-extensions: tests/stage_extensions.c tests/consumer.h tests/adapter_class.h $(NATIVE_LIBRARY)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
+
+$(BUILD)/external-textures: tests/external_textures.c tests/consumer.h tests/adapter_class.h include/doe_native_external_texture.h $(NATIVE_LIBRARY)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
+.PHONY: check-external-textures
+check-external-textures: $(BUILD)/external-textures
+	$(BUILD)/external-textures
+check: check-external-textures
+PHYSICAL_CLIENTS += external-textures
+
+.PHONY: check-metal-external
+check-metal-external: $(BUILD)/metal-bridge
+	$(BUILD)/metal-bridge --external-only
+
+$(BUILD)/shader-imports: tests/shader_imports.c tests/consumer.h tests/adapter_class.h ../compiler/tests/hlsl_fixture.h $(NATIVE_LIBRARY)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c $(COMPILER_LINK) -o $@
+.PHONY: check-shader-imports
+check-shader-imports: $(BUILD)/shader-imports
+	$(BUILD)/shader-imports

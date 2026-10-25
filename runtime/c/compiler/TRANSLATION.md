@@ -25,7 +25,7 @@ and immutable command snapshots remain consumer responsibilities.
 `make test-translation` checks all three target APIs, selected/absent entries,
 padded-layout masks, capacity failure and caller errno preservation. Compilation
 and SPIR-V validation are developer checks, not SDK or physical-device acceptance.
-Generalized pointer parameters remain a separate language migration gate.
+Pointer metadata and lowering use the shared semantics described below.
 
 ## Other target requirements
 
@@ -62,7 +62,7 @@ See Microsoft's [templated byte-buffer contract](https://github.com/microsoft/Di
 `test-language-aliases` checks immutable texture/sampler SSA aliases and implicit
 pointer-composite reference access across all three targets. These reuse existing
 resource identities, sampling-pair analysis, pointer effects and robust bounds;
-they do not remove the generalized subobject pointer-argument restriction.
+generalized pointer calls are handled by the shared specialization owner below.
 
 The HLSL target's `check-current` derives its runner from the unchanged historical
 `test_hlsl.c`: two whole-root pointer negatives become positive inout/lvalue
@@ -70,7 +70,7 @@ checks, and the obsolete synthetic subgroup-count/id rejection is replaced by a
 source-level generated wave-counter check. Every other historical assertion is
 retained. This adapter does not imply SDK or hardware acceptance.
 
-## Function subobject pointer specialization
+## Shared pointer specialization and uniformity
 
 After shared alias and uniformity analysis, the bounded typed-IR specialization
 owner widens a subobject pointer formal to the complete function-local root and
@@ -79,5 +79,21 @@ retain the full prefix and all robustness checks. Forwarded pointers and repeate
 calls retain their identity. All targets consume this same IR; there is no source
 rewrite or target-specific interpretation of pointer aliases. Pool exhaustion
 fails before output publication. No SPIR-V VariablePointers capability is added
-for Function pointers. Non-function pointer spaces and pointer-write/collective
-dependency analysis remain separate migration work.
+for Function pointers. Non-function pointers retain their canonical global root:
+shared specialization removes their pointer formals rather than copying buffers
+or shared variables. Dynamic indices remain scalar arguments evaluated once.
+Atomic, runtime-array length and uniform-load operations use this same owner.
+
+The existing uniformity analyzer models address and pointee sensitivities
+separately. Per-output call summaries preserve constant whole-root overwrites,
+partial-write dependencies, aliasing, and control/return joins. Additional bounded
+scratch borrows the dead value-ID pool; insufficient capacity fails atomically
+with an exact minimum IR capacity rather than allocating hidden storage.
+`test-global-pointers`, `test-pointer-uniformity` and
+`test-pointer-uniformity-capacity` cover the current positive/negative contracts.
+
+Optional graphics enables are consumer-authorized via the additive typed flags
+DISABLE_CLIP_DISTANCES, DISABLE_PRIMITIVE_INDEX and DISABLE_DUAL_SOURCE_BLENDING.
+Module validation and selected-entry compilation share this admission owner.
+`test-feature-admission` checks each denied/allowed directive and caller state;
+feature advertising and actual backend support remain native responsibilities.

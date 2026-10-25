@@ -7,6 +7,8 @@ static uint32_t storage_class(const StageInterface *leaf) {
 }
 static uint32_t builtin_decoration(const StageInterface *leaf) {
     switch (leaf->builtin) {
+        case DOE_COMPILER_BUILTIN_CLIP_DISTANCES: return 3u;
+        case DOE_COMPILER_BUILTIN_PRIMITIVE_INDEX: return 7u;
         case DOE_COMPILER_BUILTIN_POSITION:
             return leaf->direction == DOE_COMPILER_INTERFACE_INPUT ? 15u : 0u;
         case DOE_COMPILER_BUILTIN_VERTEX_INDEX: return 42u;
@@ -35,6 +37,8 @@ bool spirv_stage_plan(Emitter *e) {
     for (uint32_t i = 0u; i < stages->interface_count; ++i) {
         StageInterface *leaf = &stages->interfaces[i];
         if (leaf->builtin == DOE_COMPILER_BUILTIN_SUBGROUP_SIZE || leaf->builtin == DOE_COMPILER_BUILTIN_SUBGROUP_INVOCATION_ID) e->subgroup_capabilities |= 2u;
+        if (leaf->builtin==DOE_COMPILER_BUILTIN_CLIP_DISTANCES) e->clip_distance=true;
+        if (leaf->builtin==DOE_COMPILER_BUILTIN_PRIMITIVE_INDEX) e->primitive_id=true;
         leaf->target = spirv_reserve_ids(e, 1u);
         if (spirv_pointer_type(e, leaf->target_type, storage_class(leaf)) == 0u) return false;
         if (leaf->builtin == DOE_COMPILER_BUILTIN_SAMPLE_MASK) {
@@ -53,10 +57,11 @@ bool spirv_stage_annotations(Emitter *e) {
         if (leaf->builtin != 0u) {
             EMIT(OP_DECORATE, leaf->target, 11u, builtin_decoration(leaf));
         } else { EMIT(OP_DECORATE, leaf->target, 30u, leaf->location); }
+        if (leaf->flags & DOE_COMPILER_INTERFACE_BLEND_SRC) { EMIT(OP_DECORATE,leaf->target,32u,(leaf->flags & DOE_COMPILER_INTERFACE_BLEND_SRC_ONE) ? 1u : 0u); }
         if (leaf->interpolation == DOE_COMPILER_INTERPOLATION_FLAT ||
             (leaf->direction == DOE_COMPILER_INTERFACE_INPUT &&
              (leaf->builtin == DOE_COMPILER_BUILTIN_SAMPLE_INDEX || leaf->builtin == DOE_COMPILER_BUILTIN_SAMPLE_MASK ||
-              leaf->builtin == DOE_COMPILER_BUILTIN_FRONT_FACING || leaf->builtin == DOE_COMPILER_BUILTIN_SUBGROUP_SIZE ||
+              leaf->builtin == DOE_COMPILER_BUILTIN_FRONT_FACING || leaf->builtin == DOE_COMPILER_BUILTIN_PRIMITIVE_INDEX || leaf->builtin == DOE_COMPILER_BUILTIN_SUBGROUP_SIZE ||
               leaf->builtin == DOE_COMPILER_BUILTIN_SUBGROUP_INVOCATION_ID))) { EMIT(OP_DECORATE, leaf->target, 14u); }
         if (leaf->interpolation == DOE_COMPILER_INTERPOLATION_LINEAR) { EMIT(OP_DECORATE, leaf->target, 13u); }
         if (leaf->sampling == DOE_COMPILER_SAMPLING_CENTROID) { EMIT(OP_DECORATE, leaf->target, 16u); }

@@ -61,5 +61,27 @@ static void abandoned_acquisition(void) {
     doe_dx_commands_release(work);doe_dx_surface_release(surface);
     assert(doe_dx_context_destroy(context)==DOE_DX_OK);mock_reset();
 }
+static void early_release(bool lost) {
+    doe_dx_context *context=NULL;assert(doe_dx_context_create(NULL,&context,NULL)==DOE_DX_OK);
+    doe_dx_surface_desc desc={.width=1,.height=1,.format=DOE_DX_RGBA8_UNORM,.usage=DOE_DX_TEXTURE_RENDER_ATTACHMENT};
+    doe_dx_surface *surface=NULL;assert(doe_dx_surface_create(context,context,&desc,&surface,NULL)==DOE_DX_OK);
+    doe_dx_commands *work=commands(context);doe_dx_texture *frame=NULL;
+    assert(doe_dx_surface_acquire(surface,work,&frame,NULL)==DOE_DX_OK);
+    assert(doe_dx_commands_initialize_texture(work,frame,NULL)==DOE_DX_OK);
+    complete(context,work);work=commands(context);
+    assert(doe_dx_commands_present(work,surface,frame,NULL)==DOE_DX_OK);
+    mock.fail_present=true;mock.failure=MOCK_SIGNAL;
+    doe_dx_error error={0};assert(doe_dx_commands_submit(work,&error)==DOE_DX_COMPLETION_UNKNOWN);
+    assert(error.native_code==-811);
+    doe_dx_surface_release(surface);doe_dx_texture_release(frame);
+    assert(mock.surfaces==1&&mock.textures==1&&mock.commands==1);
+    if(lost){mock.lost=true;assert(doe_dx_context_poll(context,0,NULL)==DOE_DX_DEVICE_LOST);
+        assert(doe_dx_commands_result(work,&error)==DOE_DX_NATIVE_FAILURE&&error.native_code==-811);}
+    doe_dx_commands_release(work);
+    if(!lost){assert(mock.surfaces==1&&mock.textures==1);mock.failure=MOCK_NONE;mock.completed=2;
+        assert(doe_dx_context_poll(context,0,NULL)==DOE_DX_OK);}
+    assert(!mock.surfaces&&!mock.textures&&!mock.commands);
+    assert(doe_dx_context_destroy(context)==DOE_DX_OK);mock_reset();
+}
 int main(void) {mock_reset();lifecycle(false,false);lifecycle(true,false);lifecycle(false,true);
-    abandoned_acquisition();puts("D3D12 surface owner: ordering, leases, discard, resize and first-error controls passed");return 0;}
+    abandoned_acquisition();early_release(false);early_release(true);puts("D3D12 surface owner: ordering, leases, discard, resize and first-error controls passed");return 0;}

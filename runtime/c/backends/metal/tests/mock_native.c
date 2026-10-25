@@ -22,6 +22,16 @@ static doe_mtl_status failure(doe_mtl_error *error) {
     return DOE_MTL_NATIVE_FAILURE;
 }
 
+static doe_mtl_status shader_validate(void *userdata, void *device,
+    const char *source, size_t length, doe_mtl_error *error) {
+    mock_native *mock=userdata;
+    assert(device && source && length);
+    ++mock->shader_source_calls;
+    if (mock->fail==MOCK_SHADER_SOURCE) return failure(error);
+    /* Call ledger only: successful mock validation is not an MSL compiler. */
+    return doe_mtl_fail(DOE_MTL_OK,"mock shader source validation",error);
+}
+
 static mock_object *object_create(mock_native *mock, unsigned kind) {
     mock_object *object = calloc(1, sizeof(*object));
     assert(object != NULL);
@@ -396,6 +406,7 @@ doe_mtl_native mock_driver(mock_native *mock) {
     native.queue = queue_create;
     native.buffer = buffer_create;
     native.contents = buffer_contents;
+    native.shader_validate = shader_validate;
     native.pipeline = pipeline_create;
     native.command = command_create;
     native.copy = copy_buffer;

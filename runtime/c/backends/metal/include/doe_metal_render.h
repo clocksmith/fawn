@@ -42,7 +42,7 @@ typedef struct doe_mtl_shader_stage {
 } doe_mtl_shader_stage;
 typedef struct doe_mtl_blend_component {
     uint32_t operation; /* Native add/subtract/reverse/min/max = 0..4. */
-    uint32_t source, destination; /* Native factors 0..14; dual-source unsupported. */
+    uint32_t source, destination; /* Native factors 0..18, including genuine source1 color/alpha. */
 } doe_mtl_blend_component;
 typedef struct doe_mtl_color_target {
     doe_mtl_format format; /* Zero is an unoccupied color slot. */

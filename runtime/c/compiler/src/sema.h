@@ -78,6 +78,7 @@ uint32_t image_builtin_kind(const Source *, NameSpan);
 uint32_t atomic_builtin_kind(const Source *, NameSpan);
 bool atomic_opcode(IrOpcode);
 TypeId atomic_element(const CompilerWorkspace *, const IrInstruction *);
+uint32_t sema_reference_space(const CompilerWorkspace *, ValueReference);
 bool sema_address_reference(Source *, uint32_t, const LocalScope *, bool, bool, ValueReference *);
 bool sema_pointer_aliases(Source *);
 bool sema_array_length(Source *, uint32_t, const LocalScope *, bool, ExpressionValue *);

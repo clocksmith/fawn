@@ -61,6 +61,10 @@ static D3D12_BLEND blend_factor(uint32_t factor,bool alpha)
     case 10: return D3D12_BLEND_BLEND_FACTOR;
     case 11: return D3D12_BLEND_INV_BLEND_FACTOR;
     case 14: return alpha ? D3D12_BLEND_ONE : D3D12_BLEND_SRC_ALPHA_SAT;
+    case 15: return alpha ? D3D12_BLEND_SRC1_ALPHA : D3D12_BLEND_SRC1_COLOR;
+    case 16: return alpha ? D3D12_BLEND_INV_SRC1_ALPHA : D3D12_BLEND_INV_SRC1_COLOR;
+    case 17: return D3D12_BLEND_SRC1_ALPHA;
+    case 18: return D3D12_BLEND_INV_SRC1_ALPHA;
     }
     return D3D12_BLEND_ZERO; /* Private owner rejected every other code. */
 }
@@ -80,7 +84,7 @@ static doe_dx_status render_root(doe_dx_native_context *context,
     const doe_dx_render_pipeline_desc *desc,doe_dx_native_pipeline *pipeline,doe_dx_error *error)
 {
     D3D12_DESCRIPTOR_RANGE resources[DOE_DX_RENDER_DESCRIPTORS],samplers[DOE_DX_RENDER_SAMPLERS];
-    D3D12_ROOT_PARAMETER parameters[8]={0};
+    D3D12_ROOT_PARAMETER parameters[9]={0};
     size_t resource_count=0,sampler_count=0;
     UINT table_count=0;
     for (size_t stage=0;stage<DOE_DX_RENDER_STAGES;++stage) {
@@ -142,6 +146,14 @@ static doe_dx_status render_root(doe_dx_native_context *context,
         parameter->ParameterType=D3D12_ROOT_PARAMETER_TYPE_CBV;
         parameter->ShaderVisibility=stage==0 ? D3D12_SHADER_VISIBILITY_VERTEX : D3D12_SHADER_VISIBILITY_PIXEL;
         parameter->Descriptor=(D3D12_ROOT_DESCRIPTOR){2,7};
+    }
+    pipeline->render->draw_offsets_root=UINT32_MAX;
+    if (desc->draw_offsets) {
+        pipeline->render->draw_offsets_root=table_count;
+        D3D12_ROOT_PARAMETER *parameter=&parameters[table_count++];
+        parameter->ParameterType=D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
+        parameter->ShaderVisibility=D3D12_SHADER_VISIBILITY_VERTEX;
+        parameter->Constants=(D3D12_ROOT_CONSTANTS){3,7,2};
     }
     const D3D12_ROOT_SIGNATURE_DESC root={table_count,table_count ? parameters : NULL,0,NULL,
         desc->attribute_count ? D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT : D3D12_ROOT_SIGNATURE_FLAG_NONE};

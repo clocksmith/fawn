@@ -110,7 +110,7 @@ typedef struct {
  * graph. expression==NO_ID identifies it; until resolved, type holds its parsed
  * expression end, then its canonical underlying TypeId. No alias type is emitted. */
 enum { FUNCTION_ENTRY = 1u, FUNCTION_MUST_USE = 2u, FUNCTION_VERTEX = 4u, FUNCTION_FRAGMENT = 8u,
-    FUNCTION_POINTER_USE = 16u, FUNCTION_COLLECTIVE_USE = 32u };
+    FUNCTION_POINTER_USE = 16u, FUNCTION_COLLECTIVE_USE = 32u, FUNCTION_REACHABLE = 64u };
 typedef struct {
     NameSpan name; TypeRef annotation;
     union { uint32_t formal_start, entry_index; };
@@ -141,6 +141,8 @@ typedef struct { NameSpan name; TypeRef annotation;
     uint32_t group_expression, binding_expression, group, binding, kind, access; TypeId type; uint32_t flags;
     uint64_t minimum, alignment, required_alignment, tail_offset, tail_stride;
     TypeId tail_type; uint32_t target, source_offset, reserved; } ResourceRecord;
+enum { POINTER_FUNCTION = 1u, POINTER_PRIVATE, POINTER_WORKGROUP, POINTER_UNIFORM,
+    POINTER_STORAGE_READ, POINTER_STORAGE_WRITE, POINTER_IMMEDIATE };
 enum { MODULE_WORKGROUP = 4u, MODULE_PRIVATE = 6u, MODULE_IMMEDIATE = 9u }; /* SPIR-V storage classes. */
 /* Module memory roots share the existing bounded pool. During parse, type holds
  * the address space and target the initializer expression; resolution consumes
@@ -187,7 +189,7 @@ typedef struct { TypeId type; uint32_t category, root, path; } PointerValue;
 typedef struct { NameSpan name; uint32_t value; TypeId type;
     union { ConstantValue constant_value; PointerValue pointer_value; };
     uint32_t local_id, declaration_offset, flags, level; } LocalBinding;
-typedef enum { IMAGE_LOAD, IMAGE_STORE, IMAGE_DIMENSIONS, IMAGE_LEVELS, IMAGE_LAYERS, IMAGE_SAMPLES, IMAGE_SAMPLE_LEVEL, IMAGE_SAMPLE_COMPARE_LEVEL, IMAGE_SAMPLE, IMAGE_SAMPLE_COMPARE, IMAGE_SAMPLE_GRAD, IMAGE_SAMPLE_BIAS, IMAGE_GATHER, IMAGE_GATHER_COMPARE } ImageOperation;
+typedef enum { IMAGE_LOAD, IMAGE_STORE, IMAGE_DIMENSIONS, IMAGE_LEVELS, IMAGE_LAYERS, IMAGE_SAMPLES, IMAGE_SAMPLE_LEVEL, IMAGE_SAMPLE_COMPARE_LEVEL, IMAGE_SAMPLE, IMAGE_SAMPLE_COMPARE, IMAGE_SAMPLE_GRAD, IMAGE_SAMPLE_BIAS, IMAGE_GATHER, IMAGE_GATHER_COMPARE, IMAGE_SAMPLE_BASE_CLAMP } ImageOperation;
 enum { ROOT_LOCAL, ROOT_RESOURCE, ROOT_VALUE, ROOT_INPUT, ROOT_WORKGROUP, ROOT_POINTER };
 typedef struct { uint32_t kind, id; TypeId type; uint32_t storage, first, count; uint64_t payload; } TargetDeclaration;
 typedef struct { uint32_t kind, object, cursor, parent; } WalkItem;
@@ -218,7 +220,7 @@ typedef struct {
     uint32_t entries, entry_inputs, entry_references;
 } CompilerLimits;
 enum { LIMIT_LEGACY = 1u, LIMIT_SINGULAR = 2u, LIMIT_MODULE = 4u };
-enum { MODULE_SUBGROUPS = 1u, MODULE_STANDARD_UNIFORM = 2u, MODULE_CORE_BINDINGS = 4u, MODULE_F16 = 8u, MODULE_DISABLE_F16 = 16u, MODULE_DISABLE_SUBGROUPS = 32u };
+enum { MODULE_SUBGROUPS = 1u, MODULE_STANDARD_UNIFORM = 2u, MODULE_CORE_BINDINGS = 4u, MODULE_F16 = 8u, MODULE_DISABLE_F16 = 16u, MODULE_DISABLE_SUBGROUPS = 32u, MODULE_CLIP_DISTANCES = 64u, MODULE_PRIMITIVE_INDEX = 128u, MODULE_DUAL_SOURCE_BLENDING = 256u, MODULE_DISABLE_CLIP_DISTANCES = 512u, MODULE_DISABLE_PRIMITIVE_INDEX = 1024u, MODULE_DISABLE_DUAL_SOURCE_BLENDING = 2048u };
 typedef struct CompilerWorkspace CompilerWorkspace;
 typedef struct StageWorkspace StageWorkspace;
 typedef struct SpecializationContext SpecializationContext;
@@ -303,6 +305,7 @@ bool source_spans_equal(const Source *, NameSpan, NameSpan);
 bool source_span_is(const Source *, NameSpan, const char *);
 bool type_matrix(const CompilerWorkspace *, TypeId);
 bool type_pointer(const CompilerWorkspace *, TypeId);
+bool type_pointer_writable(const CompilerWorkspace *, TypeId);
 bool atomic_opcode(IrOpcode);
 TypeId atomic_element(const CompilerWorkspace *, const IrInstruction *);
 bool type_matrix_name(const Source *, NameSpan, uint32_t *, uint32_t *);

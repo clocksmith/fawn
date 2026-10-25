@@ -18,8 +18,12 @@ static bool access(PointerClone *p, IrInstruction *ir) {
         const uint32_t formal = ir->operands.access.root-p->original.formal_start;
         if (formal >= p->original.formal_count)
             return source_error(p->source,DOE_COMPILER_INPUT_ERROR,ir->source_offset,"specialized pointer formal is invalid");
-        prefix = c->walk[formal].cursor;
-        ir->operands.access.root = p->clone.formal_start+formal;
+        prefix = c->walk[2u*formal].cursor;
+        const WalkItem map = c->walk[2u*formal+1u];
+        if (map.kind == ROOT_RESOURCE || map.kind == ROOT_WORKGROUP) {
+            ir->operands.access.category = map.kind;
+            ir->operands.access.root = map.parent;
+        } else ir->operands.access.root = map.object-c->limits.instructions-1u;
     } else if (ir->operands.access.category == ROOT_LOCAL)
         ir->operands.access.root += p->clone.local_start-p->original.local_start;
     else if (ir->operands.access.category == ROOT_VALUE)
@@ -80,9 +84,18 @@ bool pointer_clone_instruction(PointerClone *p, const IrInstruction *original) {
         case IR_CONVERT: case IR_BITCAST: case IR_SWIZZLE:
             ir.operands.scalar.left = pointer_clone_value(p,ir.operands.scalar.left);
             break;
+        case IR_ARRAY_LENGTH:
+            if (ir.operands.scalar.literal == ROOT_POINTER) {
+                const uint32_t formal = ir.operands.scalar.binding-p->original.formal_start;
+                if (formal >= p->original.formal_count || c->walk[2u*formal+1u].kind != ROOT_RESOURCE)
+                    return source_error(p->source,DOE_COMPILER_INPUT_ERROR,ir.source_offset,"runtime array formal lacks its resource root");
+                ir.operands.scalar.binding = c->walk[2u*formal+1u].parent;
+                ir.operands.scalar.literal = ROOT_RESOURCE;
+            }
+            break;
         case IR_CONSTANT: case IR_ELSE: case IR_END_IF: case IR_LOOP_BEGIN:
         case IR_LOOP_CONTINUING: case IR_END_LOOP: case IR_BREAK: case IR_CONTINUE:
-        case IR_WORKGROUP_BARRIER: case IR_HANDLE: case IR_ARRAY_LENGTH: case IR_DISCARD:
+        case IR_WORKGROUP_BARRIER: case IR_HANDLE: case IR_DISCARD:
             break;
         case IR_INPUT: case IR_STAGE_INPUT: case IR_ROBUST_LOAD: case IR_UNIFORM_LOAD:
         case IR_MAX: case IR_ROBUST_STORE: case IR_DEFERRED_OVERRIDE:

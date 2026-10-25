@@ -51,6 +51,12 @@ bool surface_host_resize(doe_surface_host *host, uint32_t width, uint32_t height
     ShowWindow(host->window, SW_SHOW);
     UpdateWindow(host->window);
     pump_messages();
+    RECT actual = {0};
+    if (!GetClientRect(host->window, &actual) || (int64_t)actual.right - actual.left != width ||
+        (int64_t)actual.bottom - actual.top != height) {
+        snprintf(message, capacity, "Win32 surface client extent did not match %ux%u", width, height);
+        return false;
+    }
     return true;
 }
 
@@ -73,6 +79,10 @@ bool surface_host_create(WGPUInstance instance, doe_surface_host **host_out, WGP
         WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, 64, 64, NULL, NULL, host->instance, NULL);
     if (!host->window) {
         snprintf(message, capacity, "Win32 surface window creation failed: %lu", (unsigned long)GetLastError());
+        surface_host_release(host);
+        return false;
+    }
+    if (!surface_host_resize(host, 64, 64, message, capacity)) {
         surface_host_release(host);
         return false;
     }

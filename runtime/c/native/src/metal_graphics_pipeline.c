@@ -127,7 +127,7 @@ static uint32_t blend_factor(uint32_t admitted)
 {
     /* Shared policy emits Vulkan's named factor representation; Metal uses a
      * separate namespace. This table is conversion only, not another policy. */
-    static const uint32_t factors[15] = {0,1,2,3,6,7,4,5,8,9,11,12,0,0,10};
+    static const uint32_t factors[19] = {0,1,2,3,6,7,4,5,8,9,11,12,0,0,10,15,16,17,18};
     return factors[admitted];
 }
 static doe_mtl_stencil_face stencil(doe_vk_stencil_face face)
@@ -158,7 +158,8 @@ WGPURenderPipeline native_metal_create_render_pipeline(native_device *device,
         !native_render_fragment_depth(stages, stage_count, descriptor->depthStencil)) return NULL;
     doe_mtl_render_pipeline_desc native = {.sample_count=fixed.sample_count,
         .alpha_to_coverage=fixed.alpha_to_coverage,
-        .override_sample_mask=!(fragment && stage_count == 2 && stages[1].view.metal_sample_mask == fixed.sample_mask),
+        .override_sample_mask=!(fragment && stage_count == 2 && !stages[1].imported &&
+            stages[1].view.metal_sample_mask == fixed.sample_mask),
         .sample_mask=fixed.sample_mask,
         .color_count=resource.color_count};
     for (uint32_t i = 0; i < resource.color_count; ++i) {

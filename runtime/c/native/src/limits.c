@@ -244,7 +244,8 @@ WGPUStatus native_d3d12_limits(const doe_dx_caps *caps, WGPULimits *out)
         .maxComputeWorkgroupSizeY = native->max_compute_size[1],
         .maxComputeWorkgroupSizeZ = native->max_compute_size[2],
         .maxComputeWorkgroupsPerDimension = min32(native->max_dispatch_groups[0],
-            min32(native->max_dispatch_groups[1], native->max_dispatch_groups[2]))
+            min32(native->max_dispatch_groups[1], native->max_dispatch_groups[2])),
+        .maxImmediateSize = DOE_RESOURCE_MAX_IMMEDIATE_BYTES
     };
     return WGPUStatus_Success;
 }

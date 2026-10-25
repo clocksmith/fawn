@@ -156,6 +156,7 @@ WGPURenderPipeline native_d3d12_create_render_pipeline(native_device *device,
                     .immediate_bytes=payload->immediate_bytes,.immediate_required_bytes=payload->immediate_required_bytes,
                     .logical_size_count=map->logical_size_count,.logical_size_indices=map->logical_size_indices};
             }
+            desc.draw_offsets=(payload->d3d12_graphics->stages[0].entry_flags & DOE_COMPILER_HLSL_ENTRY_DRAW_OFFSETS)!=0;
             doe_dx_error detail={0};
             doe_dx_status created=failure.status==NATIVE_OK ?
                 doe_dx_pipeline_create_render(device->backend.value.d3d12.context,&desc,&payload->handle.d3d12,&detail) : DOE_DX_UNSUPPORTED;

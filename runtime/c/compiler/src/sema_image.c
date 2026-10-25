@@ -5,6 +5,7 @@
 
 static bool image_spelling(const Source *s, NameSpan name, uint32_t *kind, ImageType *image, bool *generic) {
     static const struct { const char *name; uint32_t dimension, flags; bool generic, storage; } textures[] = {
+        {"texture_external", 2u, DOE_COMPILER_HANDLE_EXTERNAL, false, false},
         {"texture_1d", 1u, 0u, true, false}, {"texture_2d", 2u, 0u, true, false},
         {"texture_2d_array", 3u, 0u, true, false}, {"texture_cube", 4u, 0u, true, false},
         {"texture_cube_array", 5u, 0u, true, false}, {"texture_3d", 6u, 0u, true, false},
@@ -74,6 +75,7 @@ uint32_t image_builtin_kind(const Source *s, NameSpan name) {
         {"textureLoad", IMAGE_LOAD}, {"textureStore", IMAGE_STORE},
         {"textureDimensions", IMAGE_DIMENSIONS}, {"textureNumLevels", IMAGE_LEVELS},
         {"textureNumLayers", IMAGE_LAYERS}, {"textureNumSamples", IMAGE_SAMPLES},
+        {"textureSampleBaseClampToEdge", IMAGE_SAMPLE_BASE_CLAMP},
         {"textureSampleLevel", IMAGE_SAMPLE_LEVEL}, {"textureSampleCompareLevel", IMAGE_SAMPLE_COMPARE_LEVEL},
         {"textureSample", IMAGE_SAMPLE}, {"textureSampleCompare", IMAGE_SAMPLE_COMPARE},
         {"textureSampleGrad", IMAGE_SAMPLE_GRAD}, {"textureSampleBias", IMAGE_SAMPLE_BIAS},
@@ -90,12 +92,19 @@ TypeId sema_image_result(Source *s, const Expression *node, const TypeRecord *t,
     const bool storage = image.format != 0u, arrayed = image_arrayed(image.dimension);
     const bool multisampled = (image.flags & DOE_COMPILER_HANDLE_MULTISAMPLED) != 0u;
     const bool cube = image.dimension == DOE_COMPILER_VIEW_CUBE || image.dimension == DOE_COMPILER_VIEW_CUBE_ARRAY;
+    const bool external=(image.flags & DOE_COMPILER_HANDLE_EXTERNAL)!=0u;
+    if (external && op!=IMAGE_LOAD && op!=IMAGE_DIMENSIONS && op!=IMAGE_SAMPLE_BASE_CLAMP) goto invalid;
     uint32_t arity = 1u, width = 1u;
     TypeId scalar = IR_U32;
     switch (op) {
+        case IMAGE_SAMPLE_BASE_CLAMP:
+            if (storage || multisampled || image.dimension!=DOE_COMPILER_VIEW_2D ||
+                (image.flags & DOE_COMPILER_HANDLE_DEPTH) || t->element!=IR_F32) goto invalid;
+            arity=3; width=4; scalar=IR_F32;
+            break;
         case IMAGE_LOAD:
             if (cube || image.access == DOE_COMPILER_WRITE) goto invalid;
-            arity = 2u + (arrayed ? 1u : 0u) + (storage ? 0u : 1u);
+            arity = 2u + (arrayed ? 1u : 0u) + ((storage || external) ? 0u : 1u);
             width = (image.flags & DOE_COMPILER_HANDLE_DEPTH) != 0u ? 1u : 4u;
             scalar = t->element;
             break;
@@ -105,7 +114,7 @@ TypeId sema_image_result(Source *s, const Expression *node, const TypeRecord *t,
             scalar = IR_VOID;
             break;
         case IMAGE_DIMENSIONS:
-            if (!storage && !multisampled && node->right == 2u) arity = 2u;
+            if (!storage && !external && !multisampled && node->right == 2u) arity = 2u;
             width = cube ? 2u : image_coordinate_width(image.dimension);
             break;
         case IMAGE_LEVELS:

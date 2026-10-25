@@ -21,6 +21,8 @@ bool atomic_opcode(IrOpcode opcode) {
 TypeId atomic_element(const CompilerWorkspace *c, const IrInstruction *ir) {
     const TypeId type = ir->operands.access.path != NO_ID ? c->accesses[ir->operands.access.path].output_type :
         ir->operands.access.category == ROOT_RESOURCE ? c->resources[ir->operands.access.root].type :
+        ir->operands.access.category == ROOT_POINTER ?
+        c->types[c->formals[ir->operands.access.root].type.resolved.type-IR_PRIMITIVE_COUNT].element :
         c->workgroups[ir->operands.access.root].type;
     return c->types[type - IR_PRIMITIVE_COUNT].element;
 }

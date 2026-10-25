@@ -168,6 +168,8 @@ typedef struct doe_vk_caps {
     /* Enabled independentBlend, not merely advertised. Without it every color
      * slot of one pipeline must use identical blend and write-mask state. */
     bool independent_blend;
+    /* Queried and enabled optional stage/output features, not API-version assumptions. */
+    bool shader_clip_distance, geometry_shader, dual_source_blend;
     /* Enabled samplerAnisotropy and the native maxSamplerAnisotropy; zero/false
      * when the feature is absent, so anisotropic samplers then reject. */
     bool sampler_anisotropy;

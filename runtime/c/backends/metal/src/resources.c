@@ -179,3 +179,13 @@ void doe_mtl_pipeline_release(doe_mtl_pipeline *pipeline) {
 void *doe_mtl_pipeline_native(const doe_mtl_pipeline *pipeline) {
     return pipeline != NULL ? pipeline->native : NULL;
 }
+
+
+doe_mtl_status doe_mtl_shader_validate(doe_mtl_context *context, const char *source,
+    size_t length, doe_mtl_error *error) {
+    if (!context || !source || !length)
+        return doe_mtl_fail(DOE_MTL_INVALID_ARGUMENT, "shader source validation", error);
+    if (!context->native.shader_validate)
+        return doe_mtl_fail(DOE_MTL_UNSUPPORTED, "shader source validation unavailable", error);
+    return context->native.shader_validate(context->native.userdata, context->device, source, length, error);
+}

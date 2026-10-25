@@ -77,8 +77,8 @@ static doe_vk_status normalize_targets(const doe_vk_render_pipeline_desc *desc, 
             continue;
         }
         targets.used = true;
-        if (slot->blend_enabled && (slot->color_source_factor > 14 || slot->color_destination_factor > 14 ||
-            slot->alpha_source_factor > 14 || slot->alpha_destination_factor > 14 ||
+        if (slot->blend_enabled && (slot->color_source_factor > 18 || slot->color_destination_factor > 18 ||
+            slot->alpha_source_factor > 18 || slot->alpha_destination_factor > 18 ||
             slot->color_operation > 4 || slot->alpha_operation > 4)) return DOE_VK_UNSUPPORTED;
     }
     *out = targets;
@@ -99,6 +99,10 @@ static doe_vk_status blend_states(const doe_vk_context *context, const color_tar
     VkPipelineColorBlendAttachmentState out[DOE_VK_MAX_COLOR_ATTACHMENTS]) {
     const VkPipelineColorBlendAttachmentState *shared = NULL;
     for (uint32_t i = 0; i < targets->count; ++i) {
+        const doe_vk_color_target *slot=&targets->slots[i];
+        if (slot->blend_enabled && (slot->color_source_factor>=15 || slot->color_destination_factor>=15 ||
+            slot->alpha_source_factor>=15 || slot->alpha_destination_factor>=15) &&
+            (!context->caps.dual_source_blend || targets->count!=1 || i!=0)) return DOE_VK_UNSUPPORTED;
         out[i] = blend_state(&targets->slots[i]);
         if (targets->slots[i].format == 0 || context->caps.independent_blend) continue;
         if (shared != NULL && memcmp(shared, &out[i], sizeof(out[i])) != 0) return DOE_VK_UNSUPPORTED;

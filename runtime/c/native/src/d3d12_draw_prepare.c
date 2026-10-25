@@ -105,10 +105,27 @@ native_failure native_d3d12_draw_prepare(native_command_handle *commands,const d
         pipeline->d3d12_graphics->draw_normalize,&binding,1,1,1,1,&error);
     if (status==DOE_DX_OK && packet->indexed) status=scan_indices(commands,packet,pipeline->d3d12_graphics,
         draw,scratch,capacities[0],pipeline->device->backend.limits.maxComputeWorkgroupsPerDimension,&error);
-    if (status==DOE_DX_OK) {
-        storage->arguments=binding;
-        draw->indirect=&storage->arguments;
-    }
+    if (status==DOE_DX_OK && (pipeline->d3d12_graphics->stages[0].entry_flags & DOE_COMPILER_HLSL_ENTRY_DRAW_OFFSETS)) {
+        /* GPU-only projection of already normalized arguments. The signature
+         * consumes uint2 root constants followed by the unchanged SDK record. */
+        doe_dx_buffer *projected=NULL;
+        uint64_t bytes=packet->indexed ? 20u : 16u;
+        status=doe_dx_buffer_create(commands->value.d3d12.context,bytes+8,DOE_DX_DEFAULT,&projected,&error);
+        /* Whole initialization is real GPU data, not a synthetic initialized
+         * mark: the shared copy owner intentionally does not union partials. */
+        if (status==DOE_DX_OK) status=doe_dx_commands_copy(commands->value.d3d12.commands,
+            scratch,0,projected,0,bytes+8,&error);
+        if (status==DOE_DX_OK) status=doe_dx_commands_copy(commands->value.d3d12.commands,
+            scratch,packet->indexed ? 12u : 8u,projected,0,8,&error);
+        if (status==DOE_DX_OK) status=doe_dx_commands_copy(commands->value.d3d12.commands,
+            scratch,0,projected,8,bytes,&error);
+        if (status==DOE_DX_OK) {
+            doe_dx_buffer_release(scratch);
+            scratch=projected;
+            storage->arguments=(doe_dx_buffer_binding){scratch,0,bytes+8};
+        } else doe_dx_buffer_release(projected);
+    } else if (status==DOE_DX_OK) storage->arguments=binding;
+    if (status==DOE_DX_OK) draw->indirect=&storage->arguments;
     /* Normalizer acquired scratch; the frontend retains this temporary owner
      * through render preparation, then releases it even when preparation fails. */
     if (status!=DOE_DX_OK) doe_dx_buffer_release(scratch);

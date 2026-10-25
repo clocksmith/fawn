@@ -70,6 +70,21 @@ static void complete(mock_native *mock, doe_mtl_commands *commands) {
     assert(doe_mtl_commands_poll(commands, NULL) == DOE_MTL_OK);
     assert(doe_mtl_commands_release(commands) == DOE_MTL_OK);
 }
+static void dual_source(void) {
+    mock_native mock;
+    doe_mtl_context *context=context_new(&mock);
+    doe_mtl_render_pipeline_desc desc=pipeline_desc();
+    desc.colors[0].blend=true;
+    desc.colors[0].color=(doe_mtl_blend_component){0,15,16};
+    desc.colors[0].alpha=(doe_mtl_blend_component){0,17,18};
+    doe_mtl_render_pipeline *pipeline=pipeline_new(context,desc);
+    doe_mtl_render_pipeline_release(pipeline);
+    desc.color_count=2;
+    desc.colors[1]=desc.colors[0];
+    pipeline=NULL;
+    assert(doe_mtl_render_pipeline_create(context,&desc,&pipeline,NULL)==DOE_MTL_UNSUPPORTED && !pipeline);
+    doe_mtl_context_release(context); mock_assert_closed(&mock);
+}
 static void constructors(void) {
     mock_native mock;
     doe_mtl_context *context = context_new(&mock);
@@ -96,7 +111,8 @@ static void constructors(void) {
     assert(doe_mtl_render_pipeline_create(context, &desc, &pipeline, NULL) == DOE_MTL_UNSUPPORTED);
     desc = pipeline_desc(); desc.fragment.msl = NULL;
     assert(doe_mtl_render_pipeline_create(context, &desc, &pipeline, NULL) == DOE_MTL_INVALID_ARGUMENT);
-    desc = pipeline_desc(); desc.colors[0].color.source = 18;
+    /* Source1 factors 15..18 are now implemented; 19 remains invalid. */
+    desc = pipeline_desc(); desc.colors[0].color.source = 19;
     assert(doe_mtl_render_pipeline_create(context, &desc, &pipeline, NULL) == DOE_MTL_INVALID_ARGUMENT);
     doe_mtl_context_release(context); mock_assert_closed(&mock);
 }
@@ -329,10 +345,11 @@ static void coverage_and_empty_raster(void) {
     mock_assert_closed(&mock);
 }
 int main(void) {
+    dual_source();
     coverage_and_empty_raster();
     constructors(); clear_load_store(); mixed_draw_lifetime(); depth_stencil();
     preflight_atomicity(); fetch_bounds_and_faults();
     aliases_devices_and_leases(); index_and_attachment_ranges();
-    puts("Metal render ownership controls: 9 groups passed; no shader/raster/GPU execution");
+    puts("Metal render ownership controls: 10 groups passed; no shader/raster/GPU execution");
     return 0;
 }

@@ -65,13 +65,22 @@ uint32_t native_adapter_features(const native_backend *backend)
             features |= NATIVE_FEATURE(WGPUFeatureName_Subgroups);
         if (caps->texture_compression_bc) features |= NATIVE_FEATURE(WGPUFeatureName_TextureCompressionBC);
         if (caps->depth32float_stencil8) features |= NATIVE_FEATURE(WGPUFeatureName_Depth32FloatStencil8);
-        if (caps->feature_level >= 0xb000) features |= NATIVE_FEATURE(WGPUFeatureName_DepthClipControl);
+        if (caps->feature_level >= 0xb000) features |= NATIVE_FEATURE(WGPUFeatureName_DepthClipControl) |
+            NATIVE_FEATURE(WGPUFeatureName_ClipDistances) | NATIVE_FEATURE(WGPUFeatureName_PrimitiveIndex) |
+            NATIVE_FEATURE(WGPUFeatureName_DualSourceBlending);
+        /* Both indexed and nonindexed indirect records are GPU-normalized;
+         * builtin consumers use the matching root-constant command signature. */
+        if (caps->feature_level >= 0xb000 && caps->shader_model >= 0x60)
+            features |= NATIVE_FEATURE(WGPUFeatureName_IndirectFirstInstance);
         return features;
     }
     if (backend->kind == WGPUBackendType_Metal) {
         const doe_mtl_caps *caps = &backend->value.metal.caps;
         return NATIVE_FEATURE(WGPUFeatureName_CoreFeaturesAndLimits) |
             NATIVE_FEATURE(WGPUFeatureName_ShaderF16) |
+            NATIVE_FEATURE(WGPUFeatureName_ClipDistances) |
+            (caps->primitive_index ? NATIVE_FEATURE(WGPUFeatureName_PrimitiveIndex) : 0) |
+            (caps->dual_source_blending ? NATIVE_FEATURE(WGPUFeatureName_DualSourceBlending) : 0) |
             (caps->subgroups ? NATIVE_FEATURE(WGPUFeatureName_Subgroups) : 0) |
             (caps->texture_swizzle ? NATIVE_FEATURE(WGPUFeatureName_TextureComponentSwizzle) : 0) |
             NATIVE_FEATURE(WGPUFeatureName_DepthClipControl) |
@@ -143,6 +152,9 @@ uint32_t native_adapter_features(const native_backend *backend)
         DOE_VK_FORMAT_ASTC_12x12_SRGB};
     uint32_t features = NATIVE_FEATURE(WGPUFeatureName_CoreFeaturesAndLimits);
     if (native_vulkan_subgroups_supported(caps)) features |= NATIVE_FEATURE(WGPUFeatureName_Subgroups);
+    if (caps->shader_clip_distance) features |= NATIVE_FEATURE(WGPUFeatureName_ClipDistances);
+    if (caps->geometry_shader) features |= NATIVE_FEATURE(WGPUFeatureName_PrimitiveIndex);
+    if (caps->dual_source_blend) features |= NATIVE_FEATURE(WGPUFeatureName_DualSourceBlending);
     if (caps->shader_f16) features |= NATIVE_FEATURE(WGPUFeatureName_ShaderF16);
     if (caps->texture_compression_etc2 && formats_offer(context, etc2, sizeof(etc2) / sizeof(etc2[0]), block_sampled))
         features |= NATIVE_FEATURE(WGPUFeatureName_TextureCompressionETC2);
@@ -174,23 +186,25 @@ uint32_t native_adapter_features(const native_backend *backend)
 bool native_requested_features(const native_backend *backend,
     const WGPUDeviceDescriptor *descriptor, uint32_t *enabled)
 {
-    /* A core device always has core-features-and-limits, requested or not. */
-    const uint32_t core = NATIVE_FEATURE(WGPUFeatureName_CoreFeaturesAndLimits);
-    *enabled = core;
-    if (!descriptor || !descriptor->requiredFeatureCount) return true;
-    if (!descriptor->requiredFeatures) return false;
-    uint32_t offered = native_adapter_features(backend), requested = core;
-    for (size_t i = 0; i < descriptor->requiredFeatureCount; ++i) {
-        WGPUFeatureName name = descriptor->requiredFeatures[i];
-        if (name >= 32 || !(offered & NATIVE_FEATURE(name))) return false;
-        requested |= NATIVE_FEATURE(name);
+    /* Core is implicit only on an adapter that actually offers the complete
+     * core envelope. Compatibility adapters must not gain it on default creation. */
+    const uint32_t offered = native_adapter_features(backend);
+    uint32_t requested = offered & NATIVE_FEATURE(WGPUFeatureName_CoreFeaturesAndLimits);
+    if (descriptor && descriptor->requiredFeatureCount) {
+        if (!descriptor->requiredFeatures) return false;
+        for (size_t i = 0; i < descriptor->requiredFeatureCount; ++i) {
+            uint32_t name = (uint32_t)descriptor->requiredFeatures[i];
+            if (name >= 32 || !(offered & NATIVE_FEATURE(name))) return false;
+            requested |= NATIVE_FEATURE(name);
+        }
     }
     *enabled = requested;
     return true;
 }
+
 bool native_feature_enabled(const native_device *device, WGPUFeatureName feature)
 {
-    return device && feature < 32 && (device->features & NATIVE_FEATURE(feature));
+    return device && (uint32_t)feature < 32 && (device->features & NATIVE_FEATURE(feature));
 }
 static bool feature_list(uint32_t mask, WGPUSupportedFeatures *features)
 {
@@ -223,7 +237,7 @@ void wgpuDeviceGetFeatures(WGPUDevice handle, WGPUSupportedFeatures *features)
 WGPUBool wgpuAdapterHasFeature(WGPUAdapter handle, WGPUFeatureName feature)
 {
     native_adapter *adapter = (native_adapter *)handle;
-    return adapter && feature < 32 && (native_adapter_features(&adapter->backend) & NATIVE_FEATURE(feature));
+    return adapter && (uint32_t)feature < 32 && (native_adapter_features(&adapter->backend) & NATIVE_FEATURE(feature));
 }
 WGPUBool wgpuDeviceHasFeature(WGPUDevice handle, WGPUFeatureName feature)
 {
@@ -265,11 +279,11 @@ static bool wgsl_feature_reported(WGPUWGSLLanguageFeatureName feature)
         return (native_shader_semantic_flags() & DOE_COMPILER_UNIFORM_BUFFER_STANDARD_LAYOUT) != 0;
     case WGPUWGSLLanguageFeatureName_Packed4x8IntegerDotProduct:
         return true; /* Shared typed integer lowering; no native packed intrinsic required. */
+    case WGPUWGSLLanguageFeatureName_UnrestrictedPointerParameters:
     case WGPUWGSLLanguageFeatureName_PointerCompositeAccess:
     case WGPUWGSLLanguageFeatureName_TextureAndSamplerLet:
     case WGPUWGSLLanguageFeatureName_ImmediateAddressSpace:
         return true; /* Canonical references/aliases and all three native immediate transports. */
-    case WGPUWGSLLanguageFeatureName_UnrestrictedPointerParameters: /* General address-space lowering pending. */
     case WGPUWGSLLanguageFeatureName_SubgroupId: /* Global language exposure pending complete target composition. */
     case WGPUWGSLLanguageFeatureName_SubgroupUniformity: /* Uniformity language contract not yet admitted. */
     case WGPUWGSLLanguageFeatureName_TextureFormatsTier1: /* Extended storage formats rejected. */

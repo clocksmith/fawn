@@ -69,7 +69,7 @@ typedef struct doe_dx_options {
  * allocation success, or physical qualification. */
 typedef struct doe_dx_limits {
     uint32_t max_descriptors, max_static_samplers;
-    uint32_t max_cbvs, max_srvs, max_uavs; /* Combined across ALL-visible root stages. */
+    uint32_t max_cbvs, max_srvs, max_uavs; /* Descriptor-table bounds; UAVs combine all stages. */
     uint32_t max_compute_threads, max_compute_size[3], max_dispatch_groups[3];
     uint32_t max_compute_shared_bytes, uniform_offset_alignment, max_uniform_bytes;
     uint64_t max_buffer_size, max_buffer_allocation_bytes, buffer_allocation_alignment;

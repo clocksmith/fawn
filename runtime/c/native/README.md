@@ -578,12 +578,15 @@ through the public shader-module path and creates a real Vulkan compute pipeline
 both without and with `requires <name>;`. Every probe also has a control shader of
 the same shape without the feature that must create a pipeline, so a rejection is
 attributable to the feature. Each unreported probe must be rejected at the module
-or pipeline boundary, so the table cannot silently drift from the compiler. The
-current table reports `uniform_buffer_standard_layout`. Its admission and report
-both use `native_shader_semantic_flags`, which also selects core binding numbers
-for every native shader target. Standalone compiler and shader-owner defaults
-remain conservative. The table records the public pipeline probes; current
-standard-layout execution evidence is software Vulkan, not physical qualification:
+or pipeline boundary, so the table cannot silently drift from the compiler. The current report includes uniform-buffer standard layout, packed integer dot,
+unrestricted pointer parameters, pointer-composite access, texture/sampler lets
+and immediate address space. The same semantic and feature owners govern native
+admission; standalone compiler defaults remain conservative.
+
+The table below preserves the **initial baseline**, not today's support list.
+Current pointer/immediate and stage-extension receipts appear in the later
+migration sections. All cited execution here is software Vulkan, not physical
+qualification:
 
 | Feature | Without `requires` | With `requires` | First diagnostic |
 | --- | --- | --- | --- |
@@ -1371,9 +1374,122 @@ physical-device qualification.
 
 The public WGSL feature probe admits pointer-composite access, immutable
 texture/sampler lets and immediate address space with and without `requires`.
-Unrestricted pointer parameters and complete subgroup-uniformity composition
-remain separate implementation gates. D3D12 ShaderF16 advertisement requires
+Unrestricted pointer parameters now use canonical root/argument specialization
+and pointer-content uniformity; the unchanged public language-feature consumer
+creates real CPU Vulkan pipelines both with and without `requires`. Six of the
+12 pinned language features are reported. Subgroup language exposure remains a
+separate composition gate, not implied by these pointer controls. D3D12 ShaderF16 advertisement requires
 actual native-16-bit operations and shader model 6.2, not feature-level inference.
 Queried BC and depth32float-stencil8 support remain independent flags. The
 `capability-admission` host control covers these combinations and distinct
 Vulkan variable-pointer-storage/full capability gates without emulating a device.
+
+### D3D12 HWND surfaces
+
+The Windows source route accepts `WGPUSurfaceSourceWindowsHWND`, selects the
+requested D3D12 adapter without fallback, queries actual DXGI/format support,
+and composes acquisition, zero initialization, rendering/copies and presentation
+through the existing native pending and resource texture owners. A frame's
+ordinary texture/view leases retain its actual backbuffer and swapchain.
+Failed publication returns an executed acquisition through the same command owner;
+unknown completion is retained, never treated as safe cleanup.
+
+The initial surface contract is opaque HWND, BGRA8/RGBA8 linear or sRGB, FIFO
+and queried tearing-enabled Immediate. Alternate view formats and changing
+swapchain buffer usage require an explicit supported configuration; cross-device
+replacement requires unconfigure. Resize rejects retained frame/view/command
+leases and preserves the previous configuration. A failed/unresolved presentation
+requires reconfiguration after retirement. Backend host call controls and a Linux
+common-source build are not Windows SDK or actual HWND presentation evidence;
+those execution gates remain unqualified on dot.
+
+The actual Windows native producer builds `windows_surface.exe` against its
+produced DLL and the existing CLI HWND host, and records the fixture/source hashes;
+it does not run the fixture. Explicit execution requires a Windows desktop and
+`DOE_C_TEST_BACKEND=d3d12`; default `DOE_C_TEST_ADAPTER=software` requests WARP,
+while `physical` is a separate opt-in adapter scope. The shared surface consumer
+checks real pixel readback, zero initialization, invalid-config preservation,
+retained-view resize rejection, successful resize after release and teardown.
+
+### External-texture native ABI and import
+
+`doe_native_external_texture.h` declares the retained creation/import/lifecycle
+extensions. Public `wgpuExternalTextureAddRef`, `Release` and `SetLabel` share the
+canonical resource owner, and a chained `WGPUExternalTextureBindingEntry` binds
+its exact external object. View-backed creation retains one or two same-device
+planes. Metal native chains import IOSurface/CoreVideo planes through the normal
+Metal texture/view owners. Unsupported source formats/backends and failed native
+imports report errors without falling back to descriptor views.
+
+Compiler external identity survives automatic/explicit layouts and canonical
+command leases. Vulkan, Metal and D3D12 resolve the compiler-selected sampled
+texture slot to plane zero; both planes stay retained for two-plane objects.
+This explicitly preserves the retained plane-zero compatibility behavior. It is
+**not YUV conversion or complete WebGPU external-color semantics**, and no
+video-correctness or native physical-import qualification follows.
+
+`make check-external-textures` covers public expiry/refresh/destroy, label and
+reference lifecycle, chained binding, cross-device rejection, import failure,
+early release, and exact plane-zero sample readback on the selected adapter.
+The existing Metal host bridge additionally exercises native import rollback,
+resource adoption, compiler slot identity and both-plane pending retention.
+`make -C ../backends/metal check-external` owns the native-call ledger controls;
+Apple SDK and physical IOSurface/CVPixelBuffer execution remain separate gates.
+
+
+### Retained graphics extensions and admission composition
+
+Clip-distance arrays, fragment primitive indices and dual-source outputs retain
+canonical stage metadata through Metal, HLSL and SPIR-V. Native modules require
+that the corresponding optional device feature was requested. Vulkan uses actual
+enabled clip-distance, geometry and dual-source feature bits. Metal clip distances
+are baseline; primitive index requires Apple7/Mac2 with the matching language
+baseline, and dual-source blending requires Apple2/Mac2. D3D12 uses the admitted
+FL11+ stage/blend envelope. Source1 blends require the actual second output and
+one color target, rather than treating a second render target as source1.
+
+The public `stage-extensions` control has created a real CPU Vulkan pipeline and
+rejected missing secondary output and multiple-target misuse. It is not a pixel
+oracle or Windows/Apple hardware qualification. Source spans beyond 64 KiB use the
+compiler's bounded address representation and unchanged semantic capacities;
+`shader-source-span` proves copied ownership and a real pipeline after the caller
+releases its large input. The old small-source cutoff is not a retained contract.
+
+D3D12 device feature composition never silently grants CoreFeaturesAndLimits when
+the adapter lacks it. Its 64-byte immediate limit now matches the composed root
+constant transport. Immediate HLSL uses flat scalar fields, not dynamically indexed
+root-constant arrays. Root constants/root CBVs consume root-signature DWORDs, not
+the descriptor-table CBV limit; graphics UAV counts cover both actual stage tables.
+Fragment writable storage uses the admitted FL11+/SM6 path; vertex writes remain
+rejected. GPU-normalized indexed/indirect argument records carry actual base-vertex
+and first-instance values to the pipeline-owned root-constant command signature.
+
+### Pretranslated native shader sources
+
+`doe_native_shader_sources.h` describes the retained contextual MSL/HLSL shader
+chains; upstream `WGPUShaderSourceSPIRV` carries SPIR-V words. Modules copy source
+bytes and pipelines retain the module owner after caller handles are released.
+MSL validates its library at module creation through the same Metal compiler
+owner used for pipelines. HLSL compilation is deferred to genuine DXC pipeline
+creation. SPIR-V framing is checked at creation; compute entry selection requires
+an unambiguous fixed `LocalSize` (not `LocalSizeId`). Raw SPIR-V render imports are
+not admitted.
+
+These imports have an explicit native/degraded contract: no WGSL reflection,
+robustness, sampling-pair completeness, or TranslationInfo proof is invented.
+Automatic layouts are empty, not proof that native code uses no resources.
+Explicit layouts describe resources and retain ordinary device limits and
+binding ownership. MSL uses separate native tables with slot `group * 32 +
+binding`; SPIR-V uses its declared descriptor sets/bindings. Raw HLSL currently
+admits only empty-resource layouts, without guessing structured-buffer strides
+or register mappings. WGSL override constants and generated immediate-data
+carriers do not apply. MSL/HLSL zero workgroup dimensions normalize to one.
+Opaque graphics interfaces defer native interface compatibility to the actual
+backend pipeline constructor; fixed-state validation still applies. Imported
+Metal fragments do not receive generated sample-mask injection, so genuinely
+partial active masks remain unsupported.
+
+Named controls cover actual CPU Vulkan SPIR-V dispatch/readback after caller
+source/module release and Metal constructor/slot/lifetime call ledgers. Metal
+mock ledgers are not GPU execution evidence; Windows DXC execution remains a
+separate SDK/platform gate.

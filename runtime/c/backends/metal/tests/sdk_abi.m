@@ -3,6 +3,8 @@
 #import <Foundation/Foundation.h>
 #import <Metal/Metal.h>
 #import <QuartzCore/CAMetalLayer.h>
+#import <IOSurface/IOSurface.h>
+#import <CoreVideo/CoreVideo.h>
 #include "../src/objc_abi.h"
 #include <stddef.h>
 
@@ -55,6 +57,11 @@ SAME_ENUM(DOE_MTL_TEXTURE_2D_MS_ARRAY, MTLTextureType2DMultisampleArray);
 SAME_ENUM(DOE_MTL_TEXTURE_CUBE_ARRAY, MTLTextureTypeCubeArray);
 SAME_ENUM(DOE_MTL_TEXTURE_3D, MTLTextureType3D);
 SAME_ENUM(DOE_MTL_RGBA8_UNORM, MTLPixelFormatRGBA8Unorm);
+SAME_ENUM(DOE_MTL_RG8_UNORM, MTLPixelFormatRG8Unorm);
+SAME_ENUM(0x52474241, kCVPixelFormatType_32RGBA);
+SAME_ENUM(0x42475241, kCVPixelFormatType_32BGRA);
+SAME_ENUM(0x34323076, kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange);
+SAME_ENUM(0x34323066, kCVPixelFormatType_420YpCbCr8BiPlanarFullRange);
 SAME_ENUM(DOE_MTL_BGRA8_SRGB, MTLPixelFormatBGRA8Unorm_sRGB);
 SAME_ENUM(DOE_MTL_RGBA32_FLOAT, MTLPixelFormatRGBA32Float);
 SAME_ENUM(DOE_MTL_DEPTH24_STENCIL8, MTLPixelFormatDepth24Unorm_Stencil8);
@@ -214,3 +221,19 @@ SAME_ENUM(DOE_MTL_ASTC_12x10_UNORM, MTLPixelFormatASTC_12x10_LDR);
 SAME_ENUM(DOE_MTL_ASTC_12x10_SRGB, MTLPixelFormatASTC_12x10_sRGB);
 SAME_ENUM(DOE_MTL_ASTC_12x12_UNORM, MTLPixelFormatASTC_12x12_LDR);
 SAME_ENUM(DOE_MTL_ASTC_12x12_SRGB, MTLPixelFormatASTC_12x12_sRGB);
+
+void doe_mtl_sdk_external_calls(id<MTLDevice> device, MTLTextureDescriptor *descriptor,
+    IOSurfaceRef surface, CVPixelBufferRef pixel) {
+    (void)[device newTextureWithDescriptor:descriptor iosurface:surface plane:(NSUInteger)0];
+    size_t count = IOSurfaceGetPlaneCount(surface);
+    count += IOSurfaceGetWidthOfPlane(surface, (size_t)0);
+    count += IOSurfaceGetHeightOfPlane(surface, (size_t)0);
+    count += CVPixelBufferGetPlaneCount(pixel);
+    count += CVPixelBufferGetWidthOfPlane(pixel, (size_t)0);
+    count += CVPixelBufferGetHeightOfPlane(pixel, (size_t)0);
+    uint32_t format = IOSurfaceGetPixelFormat(surface) + CVPixelBufferGetPixelFormatType(pixel);
+    surface = CVPixelBufferGetIOSurface(pixel);
+    (void)count;
+    (void)format;
+    (void)surface;
+}

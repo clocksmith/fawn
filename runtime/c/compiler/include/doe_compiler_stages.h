@@ -31,6 +31,8 @@ extern "C" {
 #define DOE_COMPILER_INTERFACE_INPUT 1u
 #define DOE_COMPILER_INTERFACE_OUTPUT 2u
 #define DOE_COMPILER_INTERFACE_INVARIANT 1u
+#define DOE_COMPILER_INTERFACE_BLEND_SRC 2u
+#define DOE_COMPILER_INTERFACE_BLEND_SRC_ONE 4u
 #define DOE_COMPILER_INTERPOLATION_PERSPECTIVE 1u
 #define DOE_COMPILER_INTERPOLATION_LINEAR 2u
 #define DOE_COMPILER_INTERPOLATION_FLAT 3u
@@ -49,12 +51,17 @@ extern "C" {
 #define DOE_COMPILER_BUILTIN_SAMPLE_MASK 7u
 #define DOE_COMPILER_BUILTIN_SUBGROUP_SIZE 8u
 #define DOE_COMPILER_BUILTIN_SUBGROUP_INVOCATION_ID 9u
+#define DOE_COMPILER_BUILTIN_CLIP_DISTANCES 10u
+#define DOE_COMPILER_BUILTIN_PRIMITIVE_INDEX 11u
 
 typedef struct {
     DoeCompilerModuleCapacities module;
     size_t interface_attributes, stage_interfaces;
 } DoeCompilerStageCapacities;
 /* One record per declared graphics scalar/vector IO leaf, in entry/source order.
+ * ClipDistances is the sole array leaf: scalar_kind=f32 and lane_count=array length.
+ * BLEND_SRC marks explicit dual-source outputs; BLEND_SRC_ONE distinguishes the
+ * second source at the same location. Record layout and reserved zero are unchanged.
  * Flat structures are flattened only at the target interface, not in typed IR.
  * A builtin leaf has location NONE; a location leaf has builtin zero.
  * Integer vertex outputs/fragment inputs are flat. Other non-interpolated leaves

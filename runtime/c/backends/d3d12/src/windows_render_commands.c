@@ -115,6 +115,11 @@ static void draw_packet(doe_dx_native_commands *commands,const doe_dx_native_ren
         if (words) ID3D12GraphicsCommandList_SetGraphicsRoot32BitConstants(list,
             draw->pipeline->render->immediate_root[stage],words,draw->stages[stage].immediate_words,0);
     }
+    if (draw->pipeline->render->draw_offsets_root!=UINT32_MAX && !draw->indirect.buffer) {
+        const uint32_t offsets[2]={draw->first_vertex,draw->first_instance};
+        ID3D12GraphicsCommandList_SetGraphicsRoot32BitConstants(list,
+            draw->pipeline->render->draw_offsets_root,2,offsets,0);
+    }
     if (bindings) bind_tables(commands,draw,bindings);
     const float *v=draw->viewport;
     const D3D12_VIEWPORT viewport={v[0],v[1],v[2],v[3],v[4],v[5]};
@@ -136,6 +141,8 @@ static void draw_packet(doe_dx_native_commands *commands,const doe_dx_native_ren
     if (draw->indirect.buffer) {
         ID3D12CommandSignature *signature=draw->indices.buffer ? commands->context->draw_indexed_signature :
             commands->context->draw_signature;
+        if (draw->pipeline->render->draw_offsets_root!=UINT32_MAX)
+            signature=draw->indices.buffer ? draw->pipeline->render->draw_indexed_signature : draw->pipeline->render->draw_signature;
         ID3D12GraphicsCommandList_ExecuteIndirect(list,signature,1,draw->indirect.buffer->resource,
             draw->indirect.offset,NULL,0);
     } else ID3D12GraphicsCommandList_DrawInstanced(list,draw->vertex_count,draw->instance_count,
@@ -143,19 +150,27 @@ static void draw_packet(doe_dx_native_commands *commands,const doe_dx_native_ren
     doe_dx_transition_render_sets(commands,sets,DOE_DX_RENDER_STAGES,draw,true);
 }
 
-static doe_dx_status prepare_draw_signature(doe_dx_native_context *context,bool indexed,doe_dx_error *error)
+static doe_dx_status prepare_draw_signature(doe_dx_native_context *context,doe_dx_native_pipeline *pipeline,bool indexed,doe_dx_error *error)
 {
     ID3D12CommandSignature **slot=indexed ? &context->draw_indexed_signature : &context->draw_signature;
+    bool offsets=pipeline->render->draw_offsets_root!=UINT32_MAX;
+    if (offsets) slot=indexed ? &pipeline->render->draw_indexed_signature : &pipeline->render->draw_signature;
     if (*slot) return DOE_DX_OK;
     _Static_assert(sizeof(D3D12_DRAW_ARGUMENTS)==16 && sizeof(D3D12_DRAW_INDEXED_ARGUMENTS)==20,
         "Shared guard argument prefix matches SDK draw records");
-    D3D12_INDIRECT_ARGUMENT_DESC argument={0};
-    argument.Type=indexed ? D3D12_INDIRECT_ARGUMENT_TYPE_DRAW_INDEXED : D3D12_INDIRECT_ARGUMENT_TYPE_DRAW;
+    D3D12_INDIRECT_ARGUMENT_DESC arguments[2]={0};
+    if (offsets) {
+        arguments[0].Type=D3D12_INDIRECT_ARGUMENT_TYPE_CONSTANT;
+        arguments[0].Constant.RootParameterIndex=pipeline->render->draw_offsets_root;
+        arguments[0].Constant.Num32BitValuesToSet=2;
+    }
+    arguments[offsets ? 1 : 0].Type=indexed ? D3D12_INDIRECT_ARGUMENT_TYPE_DRAW_INDEXED : D3D12_INDIRECT_ARGUMENT_TYPE_DRAW;
     D3D12_COMMAND_SIGNATURE_DESC desc={0};
     desc.ByteStride=indexed ? (UINT)sizeof(D3D12_DRAW_INDEXED_ARGUMENTS) : (UINT)sizeof(D3D12_DRAW_ARGUMENTS);
-    desc.NumArgumentDescs=1; desc.pArgumentDescs=&argument;
+    desc.ByteStride+=offsets ? 8u : 0u;
+    desc.NumArgumentDescs=offsets ? 2u : 1u; desc.pArgumentDescs=arguments;
     ID3D12CommandSignature *signature=NULL;
-    HRESULT result=ID3D12Device_CreateCommandSignature(context->device,&desc,NULL,
+    HRESULT result=ID3D12Device_CreateCommandSignature(context->device,&desc,offsets ? pipeline->root : NULL,
         &IID_ID3D12CommandSignature,(void **)&signature);
     if (FAILED(result)) return doe_dx_hresult(result,"CreateCommandSignature.draw",error);
     *slot=signature;
@@ -231,7 +246,7 @@ doe_dx_status doe_dx_native_render_targets(doe_dx_native_commands *commands,
         const doe_dx_native_render_draw *draw=&draws[i];
         if (draw->query) continue;
         if (draw->indirect.buffer) {
-            status=prepare_draw_signature(commands->context,draw->indices.buffer!=NULL,error);
+            status=prepare_draw_signature(commands->context,draw->pipeline,draw->indices.buffer!=NULL,error);
             if (status!=DOE_DX_OK) goto fail;
         } else if (!draw->vertex_count || !draw->instance_count) continue;
         doe_dx_resource_set sets[DOE_DX_RENDER_STAGES];

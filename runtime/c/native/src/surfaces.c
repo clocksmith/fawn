@@ -13,6 +13,14 @@ static const WGPUTextureUsage surface_usages = WGPUTextureUsage_RenderAttachment
 
 static bool source_from_chain(const WGPUChainedStruct *chain, doe_vk_surface_desc *out)
 {
+#if defined(_WIN32)
+    if (chain && !chain->next && chain->sType == WGPUSType_SurfaceSourceWindowsHWND) {
+        const WGPUSurfaceSourceWindowsHWND *source = (const WGPUSurfaceSourceWindowsHWND *)chain;
+        *out = (doe_vk_surface_desc){.platform=NATIVE_SURFACE_WINDOWS_HWND,.display=source->hinstance,
+            .window.wayland_surface=source->hwnd};
+        return source->hwnd != NULL;
+    }
+#endif
 #if defined(__APPLE__)
     if (chain && !chain->next && chain->sType == WGPUSType_SurfaceSourceMetalLayer) {
         const WGPUSurfaceSourceMetalLayer *source = (const WGPUSurfaceSourceMetalLayer *)chain;
@@ -104,6 +112,15 @@ native_result native_surface_compatible(WGPUSurface handle, const native_backend
         return surface->source.platform == NATIVE_SURFACE_METAL_LAYER &&
             doe_mtl_surface_supported(adapter->value.metal.context, surface->source.display) ? NATIVE_OK : NATIVE_UNSUPPORTED;
     }
+#if defined(_WIN32)
+    if (handle && adapter->kind == WGPUBackendType_D3D12) {
+        native_surface *surface = (native_surface *)handle;
+        if (surface->source.platform != NATIVE_SURFACE_WINDOWS_HWND) return NATIVE_UNSUPPORTED;
+        doe_dx_surface_caps caps = {0};
+        return native_from_d3d12(doe_dx_surface_capabilities(adapter->value.d3d12.context,
+            surface->source.window.wayland_surface, &caps, NULL));
+    }
+#endif
     if (!handle || adapter->kind != WGPUBackendType_Vulkan) return NATIVE_UNSUPPORTED;
     doe_vk_surface *probe = NULL;
     doe_vk_status status = doe_vk_surface_create(adapter->value.vulkan.context,
@@ -151,6 +168,8 @@ native_pending *native_surface_unconfigure_locked(native_surface *surface)
 {
     if (surface->source.platform == NATIVE_SURFACE_METAL_LAYER)
         return native_metal_surface_unconfigure_locked(surface);
+    if (surface->source.platform == NATIVE_SURFACE_WINDOWS_HWND)
+        return native_d3d12_surface_unconfigure_locked(surface);
     surface->configured = false;
     native_device *device = surface->device;
     if (!surface->vulkan) return NULL;
@@ -185,7 +204,7 @@ static void surface_teardown(native_surface *surface)
 {
     /* Any unresolved native state owns an armed pending lease. Reaching zero
      * therefore proves configuration retirement already completed. */
-    if (surface->vulkan || surface->metal || surface->device || surface->retirement) abort();
+    if (surface->vulkan || surface->metal || surface->d3d12 || surface->device || surface->retirement) abort();
     if (doe_label_store_destroy(surface->labels) != DOE_LABEL_OK) abort();
     if (doe_mutex_destroy(&surface->mutex).status != DOE_HOST_OK) abort();
     doe_instance *instance = surface->instance;
@@ -334,6 +353,8 @@ WGPUStatus wgpuSurfaceGetCapabilities(WGPUSurface handle, WGPUAdapter adapter_ha
 {
     native_surface *surface = (native_surface *)handle;
     native_adapter *adapter = (native_adapter *)adapter_handle;
+    if (surface && surface->source.platform == NATIVE_SURFACE_WINDOWS_HWND)
+        return native_d3d12_surface_capabilities(surface, adapter, out);
     if (surface && surface->source.platform == NATIVE_SURFACE_METAL_LAYER)
         return native_metal_surface_capabilities(surface, adapter, out);
     if (!surface || !adapter || !out || out->nextInChain || adapter->backend.kind != WGPUBackendType_Vulkan ||
@@ -403,6 +424,10 @@ void wgpuSurfaceConfigure(WGPUSurface handle, const WGPUSurfaceConfiguration *co
 {
     native_surface *surface = (native_surface *)handle;
     if (!surface || !config) return;
+    if (surface->source.platform == NATIVE_SURFACE_WINDOWS_HWND) {
+        native_d3d12_surface_configure(surface, config);
+        return;
+    }
     if (surface->source.platform == NATIVE_SURFACE_METAL_LAYER) {
         native_metal_surface_configure(surface, config);
         return;

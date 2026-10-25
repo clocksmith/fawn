@@ -45,6 +45,8 @@ void metal_stage_input(MetalEmitter *e, const IrInstruction *ir) {
 }
 static const char *builtin(uint32_t value) {
     switch (value) {
+        case DOE_COMPILER_BUILTIN_CLIP_DISTANCES: return "clip_distance";
+        case DOE_COMPILER_BUILTIN_PRIMITIVE_INDEX: return "primitive_id";
         case DOE_COMPILER_BUILTIN_POSITION: return "position";
         case DOE_COMPILER_BUILTIN_VERTEX_INDEX: return "vertex_id";
         case DOE_COMPILER_BUILTIN_INSTANCE_INDEX: return "instance_id";
@@ -66,9 +68,11 @@ static void attributes(MetalEmitter *e, const StageInterface *leaf, bool vertex)
     }
     if (vertex && leaf->direction == DOE_COMPILER_INTERFACE_INPUT)
         metal_format(e, " [[attribute(%u)]]", leaf->location);
-    else if (!vertex && leaf->direction == DOE_COMPILER_INTERFACE_OUTPUT)
-        metal_format(e, " [[color(%u)]]", leaf->location);
-    else {
+    else if (!vertex && leaf->direction == DOE_COMPILER_INTERFACE_OUTPUT) {
+        if (leaf->flags & DOE_COMPILER_INTERFACE_BLEND_SRC)
+            metal_format(e," [[color(%u), index(%u)]]",leaf->location,(leaf->flags & DOE_COMPILER_INTERFACE_BLEND_SRC_ONE) ? 1u : 0u);
+        else metal_format(e," [[color(%u)]]",leaf->location);
+    } else {
         metal_format(e, " [[user(locn%u)]]", leaf->location);
         if (leaf->interpolation == DOE_COMPILER_INTERPOLATION_FLAT) metal_text(e, " [[flat]]");
         else {
@@ -107,6 +111,10 @@ static uint32_t interface_type(MetalEmitter *e, uint32_t index, const StageEntry
     for (uint32_t i = 0u; i < entry->interface_count; ++i) {
         const StageInterface *leaf = &e->source->stages->interfaces[entry->interface_first + i];
         if (leaf->direction != direction || (direction == DOE_COMPILER_INTERFACE_INPUT && leaf->location == NO_ID)) continue;
+        if (leaf->builtin==DOE_COMPILER_BUILTIN_CLIP_DISTANCES) {
+            metal_format(e,"    float field%u [[clip_distance]] [%u];\n",i,e->module->types[leaf->type-IR_PRIMITIVE_COUNT].count);
+            continue;
+        }
         metal_text(e, "    ");
         metal_type(e, type_leaf(e->module,leaf->type) == IR_F16 ? leaf->target_type : leaf->type);
         metal_format(e, " field%u", i);
@@ -187,6 +195,15 @@ void metal_graphics_wrapper(MetalEmitter *e, uint32_t index) {
         for (uint32_t i = 0u; i < entry->interface_count; ++i) {
             const StageInterface *leaf = &e->source->stages->interfaces[entry->interface_first + i];
             if (leaf->direction != DOE_COMPILER_INTERFACE_OUTPUT) continue;
+            if (leaf->builtin==DOE_COMPILER_BUILTIN_CLIP_DISTANCES) {
+                uint32_t n=e->module->types[leaf->type-IR_PRIMITIVE_COUNT].count;
+                for (uint32_t k=0;k<n;++k) {
+                    metal_format(e,"    output.field%u[%u] = value",i,k);
+                    if (leaf->member!=NO_ID) metal_format(e,".m%u",leaf->member);
+                    metal_format(e,"[%u];\n",k);
+                }
+                continue;
+            }
             metal_format(e, "    output.field%u = value", i);
             if (leaf->member != NO_ID) metal_format(e, ".m%u", leaf->member);
             if (!vertex && leaf->builtin == DOE_COMPILER_BUILTIN_SAMPLE_MASK && sample_mask(e) != UINT32_MAX)

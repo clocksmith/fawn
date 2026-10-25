@@ -12,6 +12,7 @@
 #include "doe_resources.h"
 #include "doe_resources_extended.h"
 #include "doe_shader.h"
+#include "native_shader_import.h"
 #include "doe_vk.h"
 #include "doe_vk_bindings.h"
 #include "doe_vk_timestamp.h"
@@ -76,6 +77,7 @@ typedef struct native_buffer {
 
 typedef struct native_shader {
     doe_shader *module;
+    native_shader_import imported;
     doe_shader_error error;
 } native_shader;
 
@@ -106,6 +108,11 @@ typedef struct native_pipeline_error {
 } native_pipeline_error;
 
 typedef struct native_stage {
+    /* Native imports retain their source owner through actual PSO creation.
+     * imported_entry is selected native geometry, never WGSL reflection. */
+    const native_shader_import *imported;
+    doe_resource_shader *imported_module;
+    DoeCompilerEntryV5 imported_entry;
     doe_shader *compiled; /* Temporary selected artifact; release outside owner locks. */
     doe_shader_view view;
     const DoeCompilerEntryV5 *entry;
@@ -140,6 +147,7 @@ typedef struct native_pipeline {
     struct native_d3d12_compute *d3d12_compute;
     struct native_d3d12_graphics *d3d12_graphics;
     native_binding bindings[NATIVE_MAX_PIPELINE_BINDINGS];
+    WGPUShaderStage imported_binding_visibility[NATIVE_MAX_PIPELINE_BINDINGS];
     uint64_t minimum_sizes[NATIVE_MAX_PIPELINE_BINDINGS];
 } native_pipeline;
 

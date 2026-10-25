@@ -48,6 +48,116 @@ class TargetEmissionTests(unittest.TestCase):
                     self.assertEqual(path.read_bytes(), sentinel)
                     self.assertFalse(list(root.glob("*.tmp.*")))
 
+    def test_retained_optional_graphics_interfaces(self) -> None:
+        sources = {
+            "clip": """enable clip_distances;
+                struct Out { @builtin(position) p:vec4f, @builtin(clip_distances) c:array<f32,5> }
+                @vertex fn main()->Out { return Out(vec4f(0,0,0,1),array<f32,5>(1,2,3,4,5)); }""",
+            "primitive": """enable primitive_index;
+                @fragment fn main(@builtin(primitive_index) p:u32)->@location(0) vec4f { return vec4f(f32(p)); }""",
+            "dual": """enable dual_source_blending;
+                struct Out { @location(0) @blend_src(0) a:vec4f, @location(0) @blend_src(1) b:vec4f }
+                @fragment fn main()->Out { return Out(vec4f(1),vec4f(0.5)); }""",
+        }
+        markers = {
+            "msl": {"clip": b"[[clip_distance]] [5]", "primitive": b"[[primitive_id]]", "dual": b"[[color(0), index(1)]]"},
+            "hlsl": {"clip": b"SV_ClipDistance1", "primitive": b"SV_PrimitiveID", "dual": b"SV_Target1"},
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for name, text in sources.items():
+                source = root / (name + ".wgsl")
+                source.write_text(text, encoding="utf-8")
+                for target in ("msl", "hlsl", "spirv"):
+                    result = self.run_cli(target, ["--shader-path", str(source)])
+                    self.assertEqual(result.returncode, 0, (name, target, result.stderr))
+                    if target != "spirv":
+                        self.assertIn(markers[target][name], result.stdout)
+                    else:
+                        path = root / (name + ".spv")
+                        path.write_bytes(result.stdout)
+                        checked = subprocess.run([os.environ.get("SPIRV_VAL", "spirv-val"),
+                            "--target-env", "vulkan1.1", str(path)], capture_output=True, timeout=20)
+                        self.assertEqual(checked.returncode, 0, checked.stderr)
+                source.write_text(text.split(";", 1)[1], encoding="utf-8")
+                for target in ("msl", "hlsl", "spirv"):
+                    rejected = self.run_cli(target, ["--shader-path", str(source)])
+                    self.assertNotEqual(rejected.returncode, 0)
+                    self.assertEqual(rejected.stdout, b"")
+
+    def test_optional_graphics_semantic_rejections(self) -> None:
+        invalid = [
+            "enable clip_distances; struct O{@builtin(position)p:vec4f,@builtin(clip_distances)c:array<f32,9>} @vertex fn main()->O{return O();}",
+            "enable primitive_index; @vertex fn main(@builtin(primitive_index)p:u32)->@builtin(position)vec4f{return vec4f(f32(p));}",
+            "enable dual_source_blending; struct O{@location(0)@blend_src(2)a:vec4f} @fragment fn main()->O{return O();}",
+            "enable dual_source_blending; struct O{@location(0)@blend_src(0)a:vec4f} @fragment fn main()->O{return O();}",
+            "enable dual_source_blending; struct O{@location(0)@blend_src(0)a:vec4f,@location(0)@blend_src(1)b:vec3f} @fragment fn main()->O{return O();}",
+        ]
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory) / "invalid.wgsl"
+            for text in invalid:
+                source.write_text(text, encoding="utf-8")
+                for target in ("msl", "hlsl", "spirv"):
+                    result = self.run_cli(target, ["--shader-path", str(source)])
+                    self.assertNotEqual(result.returncode, 0, text)
+                    self.assertEqual(result.stdout, b"")
+
+    def test_external_plane_zero_and_base_clamp(self) -> None:
+        source_text = """
+            @group(0) @binding(0) var image:texture_external;
+            @group(0) @binding(1) var sample_state:sampler;
+            @group(0) @binding(2) var<storage,read_write> output:array<vec4f>;
+            fn sample_external(t:texture_external,s:sampler,p:vec2f)->vec4f {
+                return textureSampleBaseClampToEdge(t,s,p); }
+            @compute @workgroup_size(1) fn main(){
+                output[0]=sample_external(image,sample_state,vec2f(-1.0,2.0));
+                output[1]=textureLoad(image,vec2i(0));
+                output[2]=vec4f(vec2f(textureDimensions(image)),0,1);
+            }
+        """
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory)
+            source=root / "external.wgsl"
+            for external in (True,False):
+                text=source_text if external else source_text.replace("texture_external","texture_2d<f32>").replace("textureLoad(image,vec2i(0))","textureLoad(image,vec2i(0),0)")
+                source.write_text(text,encoding="utf-8")
+                for target in ("msl","hlsl","spirv"):
+                    result=self.run_cli(target,["--shader-path",str(source)])
+                    self.assertEqual(result.returncode,0,(target,result.stderr))
+                    if target=="spirv":
+                        binary=root / "external.spv"
+                        binary.write_bytes(result.stdout)
+                        checked=subprocess.run([os.environ.get("SPIRV_VAL","spirv-val"),"--target-env","vulkan1.1",str(binary)],capture_output=True,timeout=20)
+                        self.assertEqual(checked.returncode,0,checked.stderr)
+                    else:
+                        self.assertIn(b"0.5f / float2(image_x,image_y)",result.stdout)
+                        self.assertIn(b"level(0.0f)" if target=="msl" else b"SampleLevel(",result.stdout)
+            mixed = """
+                @group(0)@binding(0)var e:texture_external;
+                @group(0)@binding(1)var t:texture_2d<f32>;
+                @group(0)@binding(2)var s:sampler;
+                fn a(x:texture_external,y:sampler)->vec4f{return textureSampleBaseClampToEdge(x,y,vec2f(0));}
+                fn b(x:texture_2d<f32>,y:sampler)->vec4f{return textureSampleBaseClampToEdge(x,y,vec2f(1));}
+                @fragment fn main()->@location(0)vec4f{return a(e,s)+b(t,s);}
+            """
+            source.write_text(mixed,encoding="utf-8")
+            for target in ("msl","hlsl","spirv"):
+                result=self.run_cli(target,["--shader-path",str(source)])
+                self.assertEqual(result.returncode,0,(target,result.stderr))
+                if target=="spirv":
+                    binary=root / "mixed.spv"
+                    binary.write_bytes(result.stdout)
+                    checked=subprocess.run([os.environ.get("SPIRV_VAL","spirv-val"),"--target-env","vulkan1.1",str(binary)],capture_output=True,timeout=20)
+                    self.assertEqual(checked.returncode,0,checked.stderr)
+            prefix="@group(0)@binding(0)var t:texture_external; @group(0)@binding(1)var s:sampler; "
+            for expression in ("textureSample(t,s,vec2f(0))","textureSampleLevel(t,s,vec2f(0),0)",
+                               "textureNumLevels(t)","textureLoad(t,vec2i(0),0)","textureDimensions(t,0)"):
+                source.write_text(prefix+"@fragment fn main(){let x="+expression+";}",encoding="utf-8")
+                for target in ("msl","hlsl","spirv"):
+                    rejected=self.run_cli(target,["--shader-path",str(source)])
+                    self.assertNotEqual(rejected.returncode,0,expression)
+                    self.assertEqual(rejected.stdout,b"")
+
     def test_invalid_source_reports_location_without_publication(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

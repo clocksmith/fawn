@@ -204,7 +204,7 @@ bool sema_type_reference(Source *s, TypeRef ref, const LocalScope *scope, TypeId
         if (type_image_named(s, g->name)) {
             if (!sema_image_type(s, (TypeRef){g->name.offset, index}, type, &type)) return false;
         } else if (source_span_is(s, g->name, "ptr")) {
-            if (!type_intern(s, TYPE_POINTER, type, 1u, &type)) return false;
+            if (!type_intern(s, TYPE_POINTER, type, g->flags, &type)) return false;
         } else if (source_span_is(s, g->name, "atomic")) {
             if (g->count_expression != NO_ID || (type != IR_I32 && type != IR_U32))
                 return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, g->name.offset, "atomic requires one i32 or u32 element type");

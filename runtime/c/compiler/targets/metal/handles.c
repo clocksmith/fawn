@@ -44,7 +44,7 @@ void metal_handle_type(MetalEmitter *e, TypeId type) {
     const bool multisampled = (image.flags & DOE_COMPILER_HANDLE_MULTISAMPLED) != 0u;
     const bool storage = image.format != 0u;
     if (t->kind != TYPE_TEXTURE || t->element < IR_I32 || t->element > IR_F32 ||
-        (image.flags & ~(uint32_t)(DOE_COMPILER_HANDLE_DEPTH | DOE_COMPILER_HANDLE_MULTISAMPLED)) != 0u ||
+        (image.flags & ~(uint32_t)(DOE_COMPILER_HANDLE_DEPTH | DOE_COMPILER_HANDLE_MULTISAMPLED | DOE_COMPILER_HANDLE_EXTERNAL)) != 0u ||
         (depth && t->element != IR_F32) || (storage && (depth || multisampled || !storage_format(t))) ||
         (multisampled && image.dimension != DOE_COMPILER_VIEW_2D)) {
         metal_error(e, "Metal texture flags, scalar or storage format have no supported mapping");

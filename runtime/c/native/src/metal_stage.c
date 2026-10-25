@@ -8,6 +8,30 @@ bool native_metal_stage_map_build(const native_pipeline *pipeline, const native_
     const doe_shader_view *view = &stage->view;
     if (view->target != DOE_SHADER_METAL || view->target_language_version != 300 ||
         !view->text || !view->text_size || pipeline->binding_count > NATIVE_MAX_PIPELINE_BINDINGS) return false;
+    if (stage->imported) {
+        if (!stage->entry || stage->entry->stage != expected_stage || pipeline->immediate_bytes) return false;
+        native_metal_stage_map result={0};
+        for (size_t i=0;i<pipeline->binding_count;++i) {
+            if (!(pipeline->imported_binding_visibility[i] & stage->visibility)) continue;
+            const native_binding *binding=&pipeline->bindings[i];
+            /* Retained native MSL ABI: one flat slot per actual public binding,
+             * independently in each Metal argument table, with MAX_BIND=32. */
+            if (binding->binding>=DOE_NATIVE_MSL_BINDINGS_PER_GROUP || binding->group>UINT32_MAX/DOE_NATIVE_MSL_BINDINGS_PER_GROUP) return false;
+            uint32_t slot=binding->group*DOE_NATIVE_MSL_BINDINGS_PER_GROUP+binding->binding, table, limit;
+            switch (binding->kind) {
+            case DOE_BIND_BUFFER: table=DOE_COMPILER_TEXT_TABLE_BUFFER; limit=DOE_MTL_BUFFER_SLOTS; break;
+            case DOE_BIND_TEXTURE: case DOE_BIND_EXTERNAL_TEXTURE: case DOE_BIND_STORAGE_TEXTURE:
+                table=DOE_COMPILER_TEXT_TABLE_TEXTURE; limit=DOE_MTL_TEXTURE_SLOTS; break;
+            case DOE_BIND_SAMPLER: table=DOE_COMPILER_TEXT_TABLE_SAMPLER; limit=DOE_MTL_SAMPLER_SLOTS; break;
+            default: return false;
+            }
+            if (slot>=limit) return false;
+            result.tables[i]=table; result.slots[i]=slot;
+        }
+        *map=result;
+        *out=(doe_mtl_shader_stage){view->text,view->text_size,stage->name,UINT32_MAX};
+        return true;
+    }
     size_t selected = (size_t)(stage->entry - view->entries);
     const DoeCompilerMetalEntryV12 *entry = NULL;
     for (size_t i = 0; i < view->metal_entry_count; ++i) {
@@ -58,6 +82,7 @@ bool native_metal_stage_map_build(const native_pipeline *pipeline, const native_
         switch (pipeline->bindings[binding].kind) {
         case DOE_BIND_BUFFER: table = DOE_COMPILER_TEXT_TABLE_BUFFER; break;
         case DOE_BIND_TEXTURE:
+        case DOE_BIND_EXTERNAL_TEXTURE:
         case DOE_BIND_STORAGE_TEXTURE: table = DOE_COMPILER_TEXT_TABLE_TEXTURE; break;
         case DOE_BIND_SAMPLER: table = DOE_COMPILER_TEXT_TABLE_SAMPLER; break;
         default: return false;

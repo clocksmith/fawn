@@ -12,8 +12,8 @@ struct doe_dx_native_surface {
 };
 static DXGI_FORMAT surface_format(doe_dx_format format) {
     switch(format){
-    case DOE_DX_RGBA8_UNORM:case DOE_DX_RGBA8_SRGB:return DXGI_FORMAT_R8G8B8A8_UNORM;
-    case DOE_DX_BGRA8_UNORM:case DOE_DX_BGRA8_SRGB:return DXGI_FORMAT_B8G8R8A8_UNORM;
+    case DOE_DX_RGBA8_UNORM:case DOE_DX_RGBA8_UNORM_SRGB:return DXGI_FORMAT_R8G8B8A8_UNORM;
+    case DOE_DX_BGRA8_UNORM:case DOE_DX_BGRA8_UNORM_SRGB:return DXGI_FORMAT_B8G8R8A8_UNORM;
     default:return DXGI_FORMAT_UNKNOWN;
     }
 }
@@ -34,7 +34,7 @@ doe_dx_status doe_dx_native_surface_capabilities(doe_dx_native_context *context,
     doe_dx_surface_caps caps={.usages=DOE_DX_TEXTURE_RENDER_ATTACHMENT|DOE_DX_TEXTURE_COPY_SRC|
         DOE_DX_TEXTURE_COPY_DST|DOE_DX_TEXTURE_SAMPLED,.immediate=tearing(factory)};
     IDXGIFactory4_Release(factory);
-    const doe_dx_format candidates[]={DOE_DX_BGRA8_UNORM,DOE_DX_BGRA8_SRGB,DOE_DX_RGBA8_UNORM,DOE_DX_RGBA8_SRGB};
+    const doe_dx_format candidates[]={DOE_DX_BGRA8_UNORM,DOE_DX_BGRA8_UNORM_SRGB,DOE_DX_RGBA8_UNORM,DOE_DX_RGBA8_UNORM_SRGB};
     for(unsigned i=0;i<4;++i){
         D3D12_FEATURE_DATA_FORMAT_SUPPORT base={.Format=surface_format(candidates[i])};
         hr=ID3D12Device_CheckFeatureSupport(context->device,D3D12_FEATURE_FORMAT_SUPPORT,&base,sizeof(base));

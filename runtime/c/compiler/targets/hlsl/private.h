@@ -16,6 +16,7 @@ typedef struct {
     uint32_t selected_entry, entry, function_end, offset;
     unsigned indent;
     bool failed, needs_dispatch, uses_subgroups, uses_native16, uses_wave_counter, uses_array_views, uses_raw_storage;
+    bool uses_draw_offsets;
     DoeHlslMetadata metadata;
 } HlslEmitter;
 void hlsl_text(HlslEmitter *, const char *);

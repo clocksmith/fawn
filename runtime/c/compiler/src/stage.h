@@ -6,10 +6,10 @@
 #include "../include/doe_compiler_stages.h"
 enum { STAGE_ATTRIBUTE_MEMBER, STAGE_ATTRIBUTE_PARAMETER, STAGE_ATTRIBUTE_RESULT };
 enum { STAGE_HAS_BUILTIN = 1u, STAGE_HAS_LOCATION = 2u, STAGE_HAS_INTERPOLATION = 4u,
-    STAGE_HAS_INVARIANT = 8u };
+    STAGE_HAS_INVARIANT = 8u, STAGE_HAS_BLEND_SRC = 16u };
 typedef struct {
     uint32_t owner, index, offset, flags;
-    uint32_t builtin, location_expression, interpolation, sampling;
+    uint32_t builtin, location_expression, interpolation, sampling, blend_expression, reserved;
 } InterfaceAttribute;
 typedef struct {
     uint32_t entry, direction, formal, member; TypeId type, target_type;

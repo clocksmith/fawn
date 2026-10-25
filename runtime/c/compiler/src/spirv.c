@@ -673,7 +673,8 @@ static bool emit_block(Emitter *e, const IrProgram *program, size_t *cursor,
                 /* A local subobject address is a typed path descriptor. Its
                  * bounds are tested only when dereferenced; baseline calls
                  * accept whole-root pointers, never these subobject values. */
-                e->values[ir->result] = ir->operands.access.path != NO_ID ? 0u :
+                e->values[ir->result] = ir->operands.access.path != NO_ID ||
+                    ir->operands.access.category == ROOT_RESOURCE || ir->operands.access.category == ROOT_WORKGROUP ? 0u :
                     ir->operands.access.category == ROOT_POINTER ?
                     e->values[program->limits.instructions + 1u + ir->operands.access.root] :
                     e->local_base + ir->operands.access.root - e->local_start;
@@ -954,7 +955,8 @@ bool emit_spirv(Source *source, CompilerWorkspace *program) {
     if (!spirv_plan_module(&emitter) || !spirv_module_declarations(&emitter)) return false;
     const uint32_t planned = program->target_count, constants_planned = emitter.constants_used;
     for (uint32_t f = 0u; f < program->function_count; ++f)
-        if (!function_body(&emitter, program, &program->functions[f])) return false;
+        if ((program->functions[f].flags & FUNCTION_REACHABLE) != 0u &&
+            !function_body(&emitter, program, &program->functions[f])) return false;
     if (emitter.failed || program->target_count != planned || emitter.constants_used != constants_planned)
         return spirv_emit_error(&emitter, (uint32_t)source->length, "target declaration plan changed during body emission");
     if (!finish_entry_interfaces(&emitter)) return false;
