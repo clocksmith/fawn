@@ -26,9 +26,9 @@ WGPUFuture wgpuDeviceCreateRenderPipelineAsync(WGPUDevice handle,
     native_device *device = (native_device *)handle;
     if (!device || callback.nextInChain) return (WGPUFuture){0};
     native_device_retain(device);
-    native_pipeline_error error;
+    native_pipeline_error error = {WGPUErrorType_Internal, "render pipeline creation failed"};
     /* A lost device resolves with its invalid pipeline, never an error. */
-    WGPURenderPipeline pipeline = native_vulkan_dead(device) ?
+    WGPURenderPipeline pipeline = native_device_dead(device) ?
         native_lost_render_pipeline(device, descriptor ? descriptor->label : (WGPUStringView){NULL, 0}) :
         native_create_render_pipeline(device,descriptor,&error);
     native_lock(device);

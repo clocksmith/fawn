@@ -181,7 +181,6 @@ void native_callback_refused(native_device *device, doe_callback_status status);
 /* lost_objects.c: WebGPU invalid objects of a Vulkan device that is no longer
  * alive (destroy() or loss); creation reports nothing and returns these. */
 bool native_device_dead(native_device *device);
-bool native_vulkan_dead(native_device *device);
 WGPUBuffer native_lost_buffer(native_device *device, const WGPUBufferDescriptor *descriptor);
 WGPUTexture native_lost_texture(native_device *device, const WGPUTextureDescriptor *descriptor);
 WGPUTextureView native_lost_view(native_device *device, doe_resource_texture *texture, const WGPUTextureViewDescriptor *descriptor);

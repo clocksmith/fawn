@@ -52,7 +52,7 @@ WGPUTextureView wgpuTextureCreateView(WGPUTexture handle, const WGPUTextureViewD
     doe_resource_texture *texture = (doe_resource_texture *)handle;
     native_device *device = doe_resource_texture_device(texture);
     if (!device) return NULL;
-    if (native_vulkan_dead(device)) return native_lost_view(device, texture, descriptor);
+    if (native_device_dead(device)) return native_lost_view(device, texture, descriptor);
     if (device->backend.kind == WGPUBackendType_Metal) return native_metal_create_view(texture, descriptor);
     if (device->backend.kind == WGPUBackendType_D3D12) return native_d3d12_create_view(texture, descriptor);
     WGPUTextureViewDescriptor defaults = WGPU_TEXTURE_VIEW_DESCRIPTOR_INIT;
@@ -145,7 +145,7 @@ WGPUSampler wgpuDeviceCreateSampler(WGPUDevice handle, const WGPUSamplerDescript
 {
     native_device *device = (native_device *)handle;
     if (!device) return NULL;
-    if (native_vulkan_dead(device)) return native_lost_sampler(device, descriptor);
+    if (native_device_dead(device)) return native_lost_sampler(device, descriptor);
     if (device->backend.kind == WGPUBackendType_Metal) return native_metal_create_sampler(device, descriptor);
     if (device->backend.kind == WGPUBackendType_D3D12) return native_d3d12_create_sampler(device, descriptor);
     if (device->backend.kind != WGPUBackendType_Vulkan) {

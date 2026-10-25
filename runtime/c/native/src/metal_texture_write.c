@@ -14,9 +14,10 @@ void native_metal_write_texture(native_device *device, const WGPUTexelCopyTextur
         .origin={destination->origin.x,destination->origin.y,destination->origin.z}, .aspect=destination->aspect};
     doe_resource_copy_region region = {0};
     native_lock(device);
-    doe_resource_status status = doe_resource_texture_device(texture) == device ?
+    doe_resource_status status = doe_resource_texture_device(texture) != device ? DOE_RESOURCE_DEVICE_MISMATCH :
+        !doe_resource_texture_available(texture) ? DOE_RESOURCE_UNAVAILABLE :
         doe_resource_texture_copy_validate(data_size, doe_resource_texture_description(texture), &copy,
-            DOE_RESOURCE_BUFFER_TO_TEXTURE, DOE_RESOURCE_COPY_QUEUE, &region) : DOE_RESOURCE_DEVICE_MISMATCH;
+            DOE_RESOURCE_BUFFER_TO_TEXTURE, DOE_RESOURCE_COPY_QUEUE, &region);
     doe_mtl_format_info format = {0};
     if (status == DOE_RESOURCE_OK) {
         native_texture *payload = doe_resource_texture_native(texture);

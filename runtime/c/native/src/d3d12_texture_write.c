@@ -15,9 +15,10 @@ void native_d3d12_write_texture(native_device *device,const WGPUTexelCopyTexture
         .origin={destination->origin.x,destination->origin.y,destination->origin.z},.aspect=destination->aspect};
     doe_resource_copy_region admitted = {0};
     native_lock(device);
-    doe_resource_status status = doe_resource_texture_device(texture) == device ?
+    doe_resource_status status = doe_resource_texture_device(texture) != device ? DOE_RESOURCE_DEVICE_MISMATCH :
+        !doe_resource_texture_available(texture) ? DOE_RESOURCE_UNAVAILABLE :
         doe_resource_texture_copy_validate(data_size,doe_resource_texture_description(texture),&copy,
-            DOE_RESOURCE_BUFFER_TO_TEXTURE,DOE_RESOURCE_COPY_QUEUE,&admitted) : DOE_RESOURCE_DEVICE_MISMATCH;
+            DOE_RESOURCE_BUFFER_TO_TEXTURE,DOE_RESOURCE_COPY_QUEUE,&admitted);
     if (status == DOE_RESOURCE_OK) doe_resource_texture_retain(texture);
     native_unlock(device);
     if (status != DOE_RESOURCE_OK) {
