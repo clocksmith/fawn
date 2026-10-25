@@ -103,6 +103,7 @@ static WGPUAdapter request_adapter(doe_runtime *runtime, bool fallback, char *me
 #else
     options.backendType = WGPUBackendType_Vulkan;
 #endif
+    if (runtime->options.backend_lane) options.backendType = runtime->policy_backend;
     options.forceFallbackAdapter = fallback ? WGPU_TRUE : WGPU_FALSE;
     request_reply reply = {0};
     WGPURequestAdapterCallbackInfo callback = {.mode = WGPUCallbackMode_WaitAnyOnly, .callback = adapter_reply,
@@ -153,7 +154,7 @@ doe_runtime *doe_runtime_open(const doe_runtime_options *options, char *message,
     }
     runtime->options = *options;
     DoeNativeDevicePolicy policy = {0};
-    if (options->backend_lane && !doe_runtime_load_device_policy(options->backend_lane, &policy, message, message_size, runtime->device_policy_hash)) {
+    if (options->backend_lane && !doe_runtime_load_device_policy(options->backend_lane, &policy, message, message_size, runtime->device_policy_hash, &runtime->policy_backend)) {
         free(runtime);
         return NULL;
     }

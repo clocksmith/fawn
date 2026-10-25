@@ -102,7 +102,7 @@
         "synchronization": { "type": "integer", "minimum": 0, "maximum": 1 },
         "uploadPolicy": { "type": "integer", "minimum": 0, "maximum": 2 },
         "subgroupPolicy": { "type": "integer", "minimum": 0, "maximum": 3 },
-        "observedQueueSyncBits": { "type": "integer", "minimum": 0, "maximum": 15 }
+        "observedQueueSyncBits": { "type": "integer", "minimum": 0, "maximum": 63 }
       }
     },
     "adapterOrdinal": { "type": "integer", "minimum": 0 },

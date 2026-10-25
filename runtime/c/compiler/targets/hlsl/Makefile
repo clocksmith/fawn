@@ -47,3 +47,14 @@ atomic-software: all
 .PHONY: linkage-dxc
 linkage-dxc: all
 	python3 tests/linkage_dxc.py $(OUT) "$(DXC)"
+
+# Frozen pointer-negative source is retained; this named adapter asserts the
+# now-supported unchanged programs instead of relaxing unrelated expectations.
+$(OUT)/test_hlsl_current.c: tests/test_hlsl.c tests/derive_current.py
+	mkdir -p $(OUT)
+	python3 tests/derive_current.py $@
+$(OUT)/test_hlsl_current: $(SOURCES) $(CORE) $(filter-out tests/test_hlsl.c,$(TESTS)) $(OUT)/test_hlsl_current.c $(wildcard ../../src/*.h ../../include/*.h) private.h
+	$(CC) $(CFLAGS) -Itests $(SOURCES) $(CORE) $(filter-out tests/test_hlsl.c,$(TESTS)) $(OUT)/test_hlsl_current.c -lm -o $@
+.PHONY: check-current
+check-current: $(OUT)/test_hlsl_current
+	$(OUT)/test_hlsl_current

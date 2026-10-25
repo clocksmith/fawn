@@ -44,7 +44,12 @@ int main(void)
     consumer_init(&s);
     assert(!doeNativeQueueSyncInfo(NULL));
     if (!vulkan(&s)) {
-        assert(!doeNativeQueueSyncInfo(s.queue));
+        WGPUAdapterInfo info = WGPU_ADAPTER_INFO_INIT;
+        assert(wgpuAdapterGetInfo(s.adapter,&info) == WGPUStatus_Success);
+        assert(doeNativeQueueSyncInfo(s.queue) == (info.backendType == WGPUBackendType_Metal ?
+            DOE_NATIVE_QUEUE_SYNC_BACKEND_METAL : info.backendType == WGPUBackendType_D3D12 ?
+            DOE_NATIVE_QUEUE_SYNC_BACKEND_D3D12 | DOE_NATIVE_QUEUE_SYNC_TIMELINE_SEMAPHORE : 0));
+        wgpuAdapterInfoFreeMembers(info);
         consumer_finish(&s);
         puts("queue sync info: non-Vulkan queue reports no Vulkan state");
         return 0;

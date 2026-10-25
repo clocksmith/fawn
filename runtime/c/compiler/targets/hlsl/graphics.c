@@ -131,7 +131,7 @@ static uint32_t interface_type(HlslEmitter *e, const StageEntry *entry, uint32_t
         const bool projected = projected_output(e, leaf, true);
         hlsl_text(e, "    ");
         interpolation(e, leaf);
-        hlsl_type(e, leaf->type);
+        hlsl_type(e, type_leaf(e->module,leaf->type) == IR_F16 ? leaf->target_type : leaf->type);
         hlsl_format(e, " field%u : ", next);
         semantic(e, leaf);
         hlsl_text(e, ";\n");
@@ -160,7 +160,13 @@ void hlsl_graphics_wrapper(HlslEmitter *e) {
         if (leaf->builtin == DOE_COMPILER_BUILTIN_SUBGROUP_SIZE || leaf->builtin == DOE_COMPILER_BUILTIN_SUBGROUP_INVOCATION_ID) {
             e->uses_subgroups = true;
             hlsl_format(e, " = %s();\n", leaf->builtin == DOE_COMPILER_BUILTIN_SUBGROUP_SIZE ? "WaveGetLaneCount" : "WaveGetLaneIndex");
-        } else hlsl_format(e, " = input.field%u;\n", i);
+        } else {
+            hlsl_text(e," = ");
+            const bool half = type_leaf(e->module,leaf->type) == IR_F16;
+            if (half) { hlsl_type(e,leaf->type); hlsl_text(e,"("); }
+            hlsl_format(e,"input.field%u",i);
+            hlsl_text(e,half ? ");\n" : ";\n");
+        }
     }
     hlsl_text(e, "    ");
     if (function->result_type != IR_VOID) {

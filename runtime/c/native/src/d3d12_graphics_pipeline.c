@@ -30,7 +30,7 @@ static bool descriptor(const native_device *device,const WGPURenderPipelineDescr
     /* Direct3D guarantees32 four-component VS outputs/PS inputs. The actual SDK
      * constants are asserted by the private Windows graphics source; this is
      * a native interface guarantee, not a queried adapter capability. */
-    const native_graphics_limits interfaces={128,128,false};
+    const native_graphics_limits interfaces=native_d3d12_interface_limits();
     if (!native_render_fixed(device->features,source,&fixed) ||
         (fixed.sample_count!=1 && fixed.sample_count!=4) ||
         !native_render_interfaces(stages,count,&source->vertex,fragment,fixed.alpha_to_coverage,fixed.topology==DOE_VK_POINTS,&interfaces,&device->backend.limits) ||
@@ -145,14 +145,20 @@ WGPURenderPipeline native_d3d12_create_render_pipeline(native_device *device,
         if (status==DOE_RESOURCE_OK && failure.status==NATIVE_OK) {
             for (size_t i=0;i<count;++i) {
                 const native_d3d12_compute *map=&payload->d3d12_graphics->stages[i];
+                if (!native_d3d12_capabilities(map,&device->backend.value.d3d12.caps)) {
+                    failure=native_failure_status(NATIVE_UNSUPPORTED); break;
+                }
                 size_t bytes=0;
                 const uint8_t *code=doe_dx_shader_bytes(compiled[i],&bytes);
                 desc.stages[i]=(doe_dx_dynamic_pipeline_desc){.resources={.buffers={code,bytes,layouts[i].buffers,map->buffer_count},
                     .textures=layouts[i].textures,.texture_count=map->texture_count},.texture_contracts=layouts[i].contracts,
-                    .samplers=layouts[i].samplers,.sampler_count=map->sampler_count};
+                    .samplers=layouts[i].samplers,.sampler_count=map->sampler_count,
+                    .immediate_bytes=payload->immediate_bytes,.immediate_required_bytes=payload->immediate_required_bytes,
+                    .logical_size_count=map->logical_size_count,.logical_size_indices=map->logical_size_indices};
             }
             doe_dx_error detail={0};
-            doe_dx_status created=doe_dx_pipeline_create_render(device->backend.value.d3d12.context,&desc,&payload->handle.d3d12,&detail);
+            doe_dx_status created=failure.status==NATIVE_OK ?
+                doe_dx_pipeline_create_render(device->backend.value.d3d12.context,&desc,&payload->handle.d3d12,&detail) : DOE_DX_UNSUPPORTED;
             failure=native_failure_d3d12(created,&detail);
             if (failure.status==NATIVE_OK) failure=native_d3d12_kernel_pipeline(device,guards[0],&payload->d3d12_graphics->draw_normalize);
             if (failure.status==NATIVE_OK) failure=native_d3d12_kernel_pipeline(device,guards[1],&payload->d3d12_graphics->index_scan);

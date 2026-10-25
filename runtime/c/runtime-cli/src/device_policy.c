@@ -13,7 +13,7 @@ static const char *string_field(const doe_json_value *object, const char *name) 
 }
 
 bool doe_runtime_load_device_policy(const char *lane_name, DoeNativeDevicePolicy *policy,
-    char *message, size_t capacity, char source_hash[65]) {
+    char *message, size_t capacity, char source_hash[65], WGPUBackendType *backend_type) {
     char normalized[96];
     size_t length = strlen(lane_name);
     if (length >= sizeof(normalized)) { snprintf(message, capacity, "lane name too long"); return false; }
@@ -45,7 +45,10 @@ bool doe_runtime_load_device_policy(const char *lane_name, DoeNativeDevicePolicy
     const doe_json_value *strict = doe_json_member_value(lane, "strictNoFallback");
     DoeNativeDevicePolicy selected = {0};
     const char *reason = NULL;
-    if (!backend || strcmp(backend, "doe_vulkan")) reason = "lane does not select the implemented Vulkan device policy";
+    WGPUBackendType selected_backend = backend && !strcmp(backend,"doe_vulkan") ? WGPUBackendType_Vulkan :
+        backend && !strcmp(backend,"doe_metal") ? WGPUBackendType_Metal :
+        backend && !strcmp(backend,"doe_d3d12") ? WGPUBackendType_D3D12 : WGPUBackendType_Undefined;
+    if (selected_backend == WGPUBackendType_Undefined) reason = "lane does not select an implemented native device policy";
     else if (!fallback || fallback->kind != DOE_JSON_BOOL || fallback->boolean ||
         !strict || strict->kind != DOE_JSON_BOOL || !strict->boolean) reason = "lane fallback contract unsupported";
     else if (!queue) reason = "lane lacks queueFamilyPolicy";
@@ -70,8 +73,17 @@ bool doe_runtime_load_device_policy(const char *lane_name, DoeNativeDevicePolicy
         else if (subgroup && !strcmp(subgroup, "suppress_for_workgroup_memory_256_or_single_invocation")) selected.subgroup_policy = 3;
         else reason = "unimplemented vulkanSubgroupSizePolicy";
     }
+    if (!reason && selected_backend == WGPUBackendType_Metal &&
+        (selected.queue_selection == DOE_NATIVE_QUEUE_REQUIRE_COMPUTE_ONLY ||
+         selected.synchronization != DOE_NATIVE_SYNC_PREFER_TIMELINE || selected.subgroup_policy))
+        reason = "unsupported Metal queue/synchronization/subgroup combination";
+    if (!reason && selected_backend == WGPUBackendType_D3D12 &&
+        (selected.queue_selection == DOE_NATIVE_QUEUE_REQUIRE_COMPUTE_ONLY ||
+         selected.synchronization != DOE_NATIVE_SYNC_PREFER_TIMELINE ||
+         selected.upload_policy == DOE_NATIVE_UPLOAD_ALLOW_MAPPED || selected.subgroup_policy))
+        reason = "unsupported D3D12 queue/synchronization/upload/subgroup combination";
     if (reason) snprintf(message, capacity, "lane %s: %s", lane_name, reason);
-    else *policy = selected;
+    else { *policy = selected; if (backend_type) *backend_type = selected_backend; }
     doe_json_free(&document);
     return !reason;
 }

@@ -79,7 +79,6 @@ uint32_t atomic_builtin_kind(const Source *, NameSpan);
 bool atomic_opcode(IrOpcode);
 TypeId atomic_element(const CompilerWorkspace *, const IrInstruction *);
 bool sema_address_reference(Source *, uint32_t, const LocalScope *, bool, bool, ValueReference *);
-bool sema_pointer_argument(Source *, uint32_t, const ExpressionValue *);
 bool sema_pointer_aliases(Source *);
 bool sema_array_length(Source *, uint32_t, const LocalScope *, bool, ExpressionValue *);
 bool sema_call_value(Source *,uint32_t,const LocalScope *,bool,bool,bool,ExpressionValue *);

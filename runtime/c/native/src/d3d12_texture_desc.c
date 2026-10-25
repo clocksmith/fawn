@@ -67,6 +67,7 @@ bool native_d3d12_view_descriptor(const doe_resource_view_desc *source,const doe
     case WGPUTextureAspect_StencilOnly: result.aspect=2; break;
     default: return false;
     }
+    if (texture->format==WGPUTextureFormat_Stencil8) result.aspect=2;
     if (!native_d3d12_format(result.aspect ? texture->format : source->format,&result.format)) return false;
     switch (source->dimension) {
     case WGPUTextureViewDimension_1D: result.dimension=1; break;

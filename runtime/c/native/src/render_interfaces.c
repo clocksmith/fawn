@@ -12,6 +12,14 @@ static const DoeCompilerStageInterfaceV7 *location(const native_stage *stage, ui
     return NULL;
 }
 
+/* Native stage carriers are f32 for both WGSL floating scalar widths. Keep
+ * canonical reflection unchanged so interstage f16/f32 mismatches still fail. */
+static bool scalar_compatible(uint32_t format_scalar, uint32_t shader_scalar)
+{
+    return format_scalar == shader_scalar ||
+        (format_scalar == DOE_COMPILER_LEAF_F32 && shader_scalar == DOE_COMPILER_LEAF_F16);
+}
+
 static bool source_alpha(const WGPUBlendState *blend)
 {
     if (!blend) return false;
@@ -32,7 +40,7 @@ static bool target_output(const native_stage *fragment, const WGPUColorTargetSta
         doe_resource_format_color_components(color->format, &components) != DOE_RESOURCE_OK) return false;
     const DoeCompilerStageInterfaceV7 *written = fragment ? location(fragment, DOE_COMPILER_INTERFACE_OUTPUT, slot) : NULL;
     if (!written) return !color->writeMask;
-    return written->scalar_kind == scalar && written->lane_count >= components &&
+    return scalar_compatible(scalar, written->scalar_kind) && written->lane_count >= components &&
         (!source_alpha(color->blend) || written->lane_count == 4);
 }
 
@@ -46,7 +54,7 @@ bool native_render_interfaces(const native_stage stages[2], size_t stage_count, 
         if (!target_output(fragment_stage, &fragment->targets[i], (uint32_t)i)) return false;
     const DoeCompilerStageInterfaceV7 *written = fragment_stage ?
         location(fragment_stage, DOE_COMPILER_INTERFACE_OUTPUT, 0) : NULL;
-    if (alpha_to_coverage && (!written || written->scalar_kind != DOE_COMPILER_LEAF_F32 ||
+    if (alpha_to_coverage && (!written || !scalar_compatible(DOE_COMPILER_LEAF_F32, written->scalar_kind) ||
         written->lane_count != 4)) return false;
     /* https://gpuweb.github.io/gpuweb/#abstract-opdef-validating-gpufragmentstate */
     for (size_t s = 0; s < stage_count; ++s) {
@@ -86,7 +94,7 @@ bool native_render_interfaces(const native_stage stages[2], size_t stage_count, 
                         doe_vk_vertex_format native;
                         uint32_t scalar, bytes;
                         if (found || !native_vertex_format(attribute->format, &native, &scalar, &bytes) ||
-                            scalar != item->scalar_kind) return false;
+                            !scalar_compatible(scalar, item->scalar_kind)) return false;
                         found = true; /* Component-count mismatch is legal vertex fetching. */
                     }
                 if (!found) return false;

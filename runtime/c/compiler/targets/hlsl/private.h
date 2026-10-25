@@ -15,7 +15,7 @@ typedef struct {
     uint64_t traversal_left;
     uint32_t selected_entry, entry, function_end, offset;
     unsigned indent;
-    bool failed, needs_dispatch, uses_subgroups, uses_native16, uses_wave_counter, uses_array_views;
+    bool failed, needs_dispatch, uses_subgroups, uses_native16, uses_wave_counter, uses_array_views, uses_raw_storage;
     DoeHlslMetadata metadata;
 } HlslEmitter;
 void hlsl_text(HlslEmitter *, const char *);
@@ -31,6 +31,7 @@ void hlsl_constant(HlslEmitter *, TypeId, uint64_t, bool);
 void hlsl_types(HlslEmitter *);
 void hlsl_constants(HlslEmitter *);
 void hlsl_resources(HlslEmitter *);
+bool hlsl_raw_storage(const CompilerWorkspace *, uint32_t);
 void hlsl_register(HlslEmitter *, uint32_t resource, uint32_t kind, uint32_t stride);
 void hlsl_handle_type(HlslEmitter *, TypeId);
 void hlsl_image_resource(HlslEmitter *, uint32_t);

@@ -166,7 +166,7 @@ def main() -> int:
     imports = out / 'webgpu_doe_c.lib'
     invoke([compiler, '--target=x86_64-pc-windows-msvc', '/nologo', '/LD',
             *map(str, objects), '/Fe' + str(library), '/link', str(compiler_imports),
-            'kernel32.lib', 'd3d12.lib', 'dxgi.lib', 'dxguid.lib',
+            'kernel32.lib', 'user32.lib', 'd3d12.lib', 'dxgi.lib', 'dxguid.lib',
             '/def:' + str(export_file), '/implib:' + str(imports)], out)
     exports = subprocess.run(['dumpbin', '/nologo', '/exports', str(library)], cwd=out,
                              check=True, timeout=30, capture_output=True, text=True)

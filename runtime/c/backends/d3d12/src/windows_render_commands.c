@@ -8,6 +8,7 @@ typedef struct exact_clear_view {
     D3D12_CPU_DESCRIPTOR_HANDLE cpu;
 } exact_clear_view;
 static doe_dx_status prepare_exact_clear(doe_dx_native_commands *commands,doe_dx_native_texture *texture,
+    const doe_dx_texture_view_desc *span,uint32_t slice,
     doe_dx_descriptor_use **head,exact_clear_view *out,doe_dx_error *error)
 {
     doe_dx_descriptor_use *gpu=calloc(1,sizeof(*gpu)),*cpu=calloc(1,sizeof(*cpu));
@@ -30,7 +31,8 @@ static doe_dx_status prepare_exact_clear(doe_dx_native_commands *commands,doe_dx
     gpu->heap->lpVtbl->GetGPUDescriptorHandleForHeapStart(gpu->heap,&out->gpu);
     cpu->heap->lpVtbl->GetCPUDescriptorHandleForHeapStart(cpu->heap,&out->cpu);
     D3D12_UNORDERED_ACCESS_VIEW_DESC view={0};
-    view.Format=doe_dx_texture_format(texture->format); view.ViewDimension=D3D12_UAV_DIMENSION_TEXTURE2D;
+    doe_dx_texture_uav(texture,span,&view);
+    if (span->dimension==6) { view.Texture3D.FirstWSlice=slice; view.Texture3D.WSize=1; }
     ID3D12Device_CreateUnorderedAccessView(device,texture->resource,NULL,&view,visible);
     ID3D12Device_CreateUnorderedAccessView(device,texture->resource,NULL,&view,out->cpu);
     out->heap=gpu->heap;
@@ -72,6 +74,9 @@ static void resource_sets(const doe_dx_native_render_draw *draw,doe_dx_resource_
 static void bind_tables(doe_dx_native_commands *commands,const doe_dx_native_render_draw *draw,
     doe_dx_descriptor_use *use)
 {
+    for (size_t stage=0;stage<DOE_DX_RENDER_STAGES;++stage)
+        if (use->storage_sizes[stage]) ID3D12GraphicsCommandList_SetGraphicsRootConstantBufferView(commands->list,
+            draw->pipeline->render->storage_sizes_root[stage],ID3D12Resource_GetGPUVirtualAddress(use->storage_sizes[stage]->resource));
     ID3D12DescriptorHeap *heaps[2];
     UINT count=0;
     if (use->heap) heaps[count++]=use->heap;
@@ -105,6 +110,11 @@ static void draw_packet(doe_dx_native_commands *commands,const doe_dx_native_ren
     ID3D12GraphicsCommandList *list=commands->list;
     ID3D12GraphicsCommandList_SetGraphicsRootSignature(list,draw->pipeline->root);
     ID3D12GraphicsCommandList_SetPipelineState(list,draw->pipeline->state);
+    for (size_t stage=0;stage<DOE_DX_RENDER_STAGES;++stage) {
+        uint32_t words=draw->pipeline->render->stages[stage].immediate_bytes/4;
+        if (words) ID3D12GraphicsCommandList_SetGraphicsRoot32BitConstants(list,
+            draw->pipeline->render->immediate_root[stage],words,draw->stages[stage].immediate_words,0);
+    }
     if (bindings) bind_tables(commands,draw,bindings);
     const float *v=draw->viewport;
     const D3D12_VIEWPORT viewport={v[0],v[1],v[2],v[3],v[4],v[5]};
@@ -152,6 +162,26 @@ static doe_dx_status prepare_draw_signature(doe_dx_native_context *context,bool 
     return DOE_DX_OK;
 }
 
+static void depth_transitions(ID3D12GraphicsCommandList *list,const doe_dx_native_render_depth *depth,
+    uint32_t sampled_planes,bool restore)
+{
+    const doe_dx_native_texture *texture=depth->texture;
+    uint32_t layers=texture->description.DepthOrArraySize;
+    uint32_t slices=layers*texture->description.MipLevels;
+    uint32_t planes=doe_dx_format_stencil(texture->format) ? 2u : 1u;
+    for (uint32_t plane=0;plane<planes;++plane) {
+        bool read_only=plane ? depth->stencil_read_only : depth->depth_read_only;
+        D3D12_RESOURCE_STATES state=read_only ? D3D12_RESOURCE_STATE_DEPTH_READ : D3D12_RESOURCE_STATE_DEPTH_WRITE;
+        if (sampled_planes & (1u<<plane)) state|=D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE|D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
+        for (uint32_t slice=0;slice<slices;++slice) {
+            D3D12_RESOURCE_BARRIER barrier={0}; barrier.Type=D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+            barrier.Transition.pResource=texture->resource; barrier.Transition.Subresource=plane*slices+slice;
+            barrier.Transition.StateBefore=restore ? state : D3D12_RESOURCE_STATE_COPY_DEST;
+            barrier.Transition.StateAfter=restore ? D3D12_RESOURCE_STATE_COPY_DEST : state;
+            ID3D12GraphicsCommandList_ResourceBarrier(list,1,&barrier);
+        }
+    }
+}
 doe_dx_status doe_dx_native_render(doe_dx_native_commands *commands,doe_dx_native_texture *color,
     bool clear,const float clear_color[4],bool discard,const doe_dx_native_render_depth *depth,
     const doe_dx_native_render_draw *draws,size_t count,doe_dx_error *error) {
@@ -178,21 +208,22 @@ doe_dx_status doe_dx_native_render_targets(doe_dx_native_commands *commands,
     doe_dx_status status=DOE_DX_OK;
     for (uint32_t i=0;i<color_count;++i) {
         doe_dx_descriptor_use *rtv=NULL;
-        status=doe_dx_prepare_color_target(commands,colors[i].texture,&rtv,&targets[i],error);
+        status=doe_dx_prepare_color_view(commands,colors[i].texture,colors[i].view.dimension ? &colors[i].view : NULL,colors[i].depth_slice,&rtv,&targets[i],error);
         if (status!=DOE_DX_OK) goto fail;
         rtv->next=head; head=rtv;
         if (colors[i].resolve && !colors[i].texture->resolve_supported) {
             status=doe_dx_fail(DOE_DX_UNSUPPORTED,0,"render.native_resolve_format",error); goto fail;
         }
         if (colors[i].texture && (colors[i].clear || colors[i].discard) && doe_dx_format_exact_clear(colors[i].texture->format)) {
-            status=prepare_exact_clear(commands,colors[i].texture,&head,&clears[i],error);
+            status=prepare_exact_clear(commands,colors[i].texture,&colors[i].view,colors[i].depth_slice,&head,&clears[i],error);
             if (status!=DOE_DX_OK) goto fail;
         }
     }
     D3D12_CPU_DESCRIPTOR_HANDLE depth_handle={0};
     if (depth) {
         doe_dx_descriptor_use *dsv=NULL;
-        status=doe_dx_prepare_depth_target(commands,depth->texture,&dsv,&depth_handle,error);
+        status=doe_dx_prepare_depth_view(commands,depth->texture,depth->view.dimension ? &depth->view : NULL,
+            depth->depth_read_only,depth->stencil_read_only,&dsv,&depth_handle,error);
         if (status!=DOE_DX_OK) goto fail;
         dsv->next=head; head=dsv;
     }
@@ -221,9 +252,20 @@ doe_dx_status doe_dx_native_render_targets(doe_dx_native_commands *commands,
     tail->next=commands->descriptors;
     commands->descriptors=head;
     ID3D12GraphicsCommandList *list=commands->list;
-    for (uint32_t i=0;i<color_count;++i) if (colors[i].texture)
-        doe_dx_transition(list,colors[i].texture->resource,D3D12_RESOURCE_STATE_COPY_DEST,D3D12_RESOURCE_STATE_RENDER_TARGET);
-    if (depth) doe_dx_transition(list,depth->texture->resource,D3D12_RESOURCE_STATE_COPY_DEST,D3D12_RESOURCE_STATE_DEPTH_WRITE);
+    for (uint32_t i=0;i<color_count;++i) if (colors[i].texture) {
+        bool prior=false;
+        for (uint32_t j=0;j<i;++j) if (colors[j].texture==colors[i].texture) prior=true;
+        if (!prior) doe_dx_transition(list,colors[i].texture->resource,D3D12_RESOURCE_STATE_COPY_DEST,D3D12_RESOURCE_STATE_RENDER_TARGET);
+    }
+    uint32_t sampled_planes=0;
+    if (depth) {
+        for (size_t i=0;i<count;++i) if (!draws[i].query)
+            for (size_t stage=0;stage<DOE_DX_RENDER_STAGES;++stage)
+                for (size_t j=0;j<draws[i].stages[stage].texture_count;++j)
+                    if (draws[i].stages[stage].textures[j]==depth->texture)
+                        sampled_planes|=draws[i].stages[stage].texture_views[j].aspect==2 ? 2u : 1u;
+        depth_transitions(list,depth,sampled_planes,false);
+    }
     ID3D12GraphicsCommandList_OMSetRenderTargets(list,color_count,color_count ? targets : NULL,FALSE,depth ? &depth_handle : NULL);
     if (depth && (depth->clear || depth->clear_stencil)) {
         D3D12_CLEAR_FLAGS flags=(D3D12_CLEAR_FLAGS)((depth->clear ? D3D12_CLEAR_FLAG_DEPTH : 0) |
@@ -245,7 +287,10 @@ doe_dx_status doe_dx_native_render_targets(doe_dx_native_commands *commands,
         if (color->resolve) {
             doe_dx_transition(list,color->texture->resource,D3D12_RESOURCE_STATE_RENDER_TARGET,D3D12_RESOURCE_STATE_RESOLVE_SOURCE);
             doe_dx_transition(list,color->resolve->resource,D3D12_RESOURCE_STATE_COPY_DEST,D3D12_RESOURCE_STATE_RESOLVE_DEST);
-            ID3D12GraphicsCommandList_ResolveSubresource(list,color->resolve->resource,0,color->texture->resource,0,doe_dx_texture_format(color->texture->format));
+            ID3D12GraphicsCommandList_ResolveSubresource(list,color->resolve->resource,
+                color->resolve_view.base_mip+color->resolve_view.base_layer*color->resolve->description.MipLevels,
+                color->texture->resource,color->view.base_mip+color->view.base_layer*color->texture->description.MipLevels,
+                doe_dx_texture_format(color->view.dimension ? color->view.format : color->texture->format));
             doe_dx_transition(list,color->resolve->resource,D3D12_RESOURCE_STATE_RESOLVE_DEST,D3D12_RESOURCE_STATE_COPY_DEST);
             doe_dx_transition(list,color->texture->resource,D3D12_RESOURCE_STATE_RESOLVE_SOURCE,D3D12_RESOURCE_STATE_RENDER_TARGET);
         }
@@ -253,7 +298,9 @@ doe_dx_status doe_dx_native_render_targets(doe_dx_native_commands *commands,
             const float zero[4]={0};
             clear_color(list,color->texture,targets[i],&clears[i],zero);
         }
-        doe_dx_transition(list,color->texture->resource,D3D12_RESOURCE_STATE_RENDER_TARGET,D3D12_RESOURCE_STATE_COPY_DEST);
+        bool later=false;
+        for (uint32_t j=i+1;j<color_count;++j) if (colors[j].texture==color->texture) later=true;
+        if (!later) doe_dx_transition(list,color->texture->resource,D3D12_RESOURCE_STATE_RENDER_TARGET,D3D12_RESOURCE_STATE_COPY_DEST);
     }
     if (depth) {
         if (depth->discard || depth->discard_stencil) {
@@ -261,7 +308,7 @@ doe_dx_status doe_dx_native_render_targets(doe_dx_native_commands *commands,
                 (depth->discard_stencil ? D3D12_CLEAR_FLAG_STENCIL : 0));
             ID3D12GraphicsCommandList_ClearDepthStencilView(list,depth_handle,flags,0,0,0,NULL);
         }
-        doe_dx_transition(list,depth->texture->resource,D3D12_RESOURCE_STATE_DEPTH_WRITE,D3D12_RESOURCE_STATE_COPY_DEST);
+        depth_transitions(list,depth,sampled_planes,true);
     }
     free(bindings);
     return doe_dx_fail(DOE_DX_OK,0,"render.native.pass",error);

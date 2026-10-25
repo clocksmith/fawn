@@ -92,6 +92,8 @@ typedef struct doe_dx_render_color {
     doe_dx_texture *texture, *resolve;
     bool clear, discard;
     float value[4];
+    doe_dx_texture_view_desc view,resolve_view; /* dimension0: legacy base2D. */
+    uint32_t depth_slice; /* Selected 3D attachment W slice. */
 } doe_dx_render_color;
 typedef struct doe_dx_render_pass {
     bool colors_explicit;
@@ -109,10 +111,11 @@ typedef struct doe_dx_render_pass {
     bool discard; /* Records a real zero clear at end, not a fake init bit. */
     const doe_dx_render_draw *draws;
     size_t draw_count; /* Zero draws still execute attachment operations. */
+    doe_dx_texture_view_desc depth_view;
 } doe_dx_render_pass;
 /* Constructors copy typed declarations. No borrowed shader/DXC data survives.
- * Stencil and multiple color targets are not yet composed.
- * These are explicit initial composition gaps, not the final migration target. */
+ * Stencil, multiple targets and selected attachment subresources share the
+ * same pass owner and initialization/retirement obligations. */
 doe_dx_status doe_dx_pipeline_create_render(doe_dx_context *context,
     const doe_dx_render_pipeline_desc *desc,doe_dx_pipeline **out,doe_dx_error *error);
 /* All fallible preparation precedes native command mutation. Existing pipeline,

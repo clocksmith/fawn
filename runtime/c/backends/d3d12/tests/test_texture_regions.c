@@ -2,8 +2,42 @@
 #include "mock_native.h"
 #include <stdio.h>
 
+static void same_subresource_scratch(void)
+{
+    mock_reset();
+    doe_dx_context *context=NULL;
+    assert(doe_dx_context_create(NULL,&context,NULL)==DOE_DX_OK);
+    doe_dx_texture *texture=NULL;
+    const doe_dx_texture_desc desc={4,1,DOE_DX_RGBA8_UNORM,DOE_DX_TEXTURE_COPY_SRC|DOE_DX_TEXTURE_COPY_DST};
+    assert(doe_dx_texture_create(context,&desc,&texture,NULL)==DOE_DX_OK);
+    doe_dx_buffer *upload=NULL;
+    assert(doe_dx_buffer_create(context,16,DOE_DX_UPLOAD,&upload,NULL)==DOE_DX_OK);
+    doe_dx_commands *commands=NULL;
+    assert(doe_dx_commands_create(context,&commands,NULL)==DOE_DX_OK);
+    assert(doe_dx_commands_upload_texture(commands,upload,(doe_dx_texture_layout){0},texture,NULL)==DOE_DX_OK);
+    doe_dx_texture_region_ex from={.rect={0,0,1,1}},to={.rect={3,0,1,1}};
+    mock.allocation_failure=mock.allocation_attempts+1;
+    assert(doe_dx_commands_blit_texture_ex(commands,texture,from,texture,to,NULL)==DOE_DX_OUT_OF_MEMORY);
+    assert(!mock.texture_blits && commands->texture_count==1);
+    mock.allocation_failure=0;
+    assert(doe_dx_commands_blit_texture_ex(commands,texture,from,texture,to,NULL)==DOE_DX_OK);
+    assert(mock.texture_blits==2 && commands->texture_count==2 && mock.textures==2);
+    assert(doe_dx_commands_blit_texture_ex(commands,texture,from,texture,from,NULL)==DOE_DX_INVALID_ARGUMENT);
+    assert(mock.texture_blits==2);
+    doe_dx_texture_release(texture); doe_dx_buffer_release(upload);
+    mock.failure=MOCK_SIGNAL;
+    assert(doe_dx_commands_submit(commands,NULL)==DOE_DX_COMPLETION_UNKNOWN);
+    doe_dx_commands_release(commands);
+    assert(mock.textures==2);
+    mock.failure=MOCK_NONE; mock.completed=context->next_fence;
+    assert(doe_dx_context_poll(context,0,NULL)==DOE_DX_OK);
+    assert(!mock.textures && !mock.buffers);
+    assert(doe_dx_context_destroy(context)==DOE_DX_OK);
+    mock_reset();
+}
 int main(void)
 {
+    same_subresource_scratch();
     mock_reset();
     doe_dx_context *context = NULL;
     assert(doe_dx_context_create(NULL,&context,NULL) == DOE_DX_OK);

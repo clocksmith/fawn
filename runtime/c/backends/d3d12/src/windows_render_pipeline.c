@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: MIT */
 #include "windows_internal.h"
+#include "windows_cache.h"
 #ifdef _WIN32
 _Static_assert(D3D12_VS_OUTPUT_REGISTER_COUNT * D3D12_VS_OUTPUT_REGISTER_COMPONENTS == 128 &&
     D3D12_PS_INPUT_REGISTER_COUNT == D3D12_VS_OUTPUT_REGISTER_COUNT,"public stage component admission matches SDK guarantees");
@@ -79,7 +80,7 @@ static doe_dx_status render_root(doe_dx_native_context *context,
     const doe_dx_render_pipeline_desc *desc,doe_dx_native_pipeline *pipeline,doe_dx_error *error)
 {
     D3D12_DESCRIPTOR_RANGE resources[DOE_DX_RENDER_DESCRIPTORS],samplers[DOE_DX_RENDER_SAMPLERS];
-    D3D12_ROOT_PARAMETER parameters[4]={0};
+    D3D12_ROOT_PARAMETER parameters[8]={0};
     size_t resource_count=0,sampler_count=0;
     UINT table_count=0;
     for (size_t stage=0;stage<DOE_DX_RENDER_STAGES;++stage) {
@@ -123,12 +124,32 @@ static doe_dx_status render_root(doe_dx_native_context *context,
             parameter->DescriptorTable=(D3D12_ROOT_DESCRIPTOR_TABLE){(UINT)(sampler_count-first),&samplers[first]};
         }
     }
+    for (size_t stage=0;stage<DOE_DX_RENDER_STAGES;++stage) {
+        pipeline->render->immediate_root[stage]=UINT32_MAX;
+        uint32_t words=desc->stages[stage].immediate_bytes/4;
+        if (!words) continue;
+        pipeline->render->immediate_root[stage]=table_count;
+        D3D12_ROOT_PARAMETER *parameter=&parameters[table_count++];
+        parameter->ParameterType=D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
+        parameter->ShaderVisibility=stage==0 ? D3D12_SHADER_VISIBILITY_VERTEX : D3D12_SHADER_VISIBILITY_PIXEL;
+        parameter->Constants=(D3D12_ROOT_CONSTANTS){1,7,words};
+    }
+    for (size_t stage=0;stage<DOE_DX_RENDER_STAGES;++stage) {
+        pipeline->render->storage_sizes_root[stage]=UINT32_MAX;
+        if (!desc->stages[stage].logical_size_count) continue;
+        pipeline->render->storage_sizes_root[stage]=table_count;
+        D3D12_ROOT_PARAMETER *parameter=&parameters[table_count++];
+        parameter->ParameterType=D3D12_ROOT_PARAMETER_TYPE_CBV;
+        parameter->ShaderVisibility=stage==0 ? D3D12_SHADER_VISIBILITY_VERTEX : D3D12_SHADER_VISIBILITY_PIXEL;
+        parameter->Descriptor=(D3D12_ROOT_DESCRIPTOR){2,7};
+    }
     const D3D12_ROOT_SIGNATURE_DESC root={table_count,table_count ? parameters : NULL,0,NULL,
         desc->attribute_count ? D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT : D3D12_ROOT_SIGNATURE_FLAG_NONE};
     ID3DBlob *blob=NULL,*diagnostic=NULL;
     HRESULT result=D3D12SerializeRootSignature(&root,D3D_ROOT_SIGNATURE_VERSION_1,&blob,&diagnostic);
     if (diagnostic) ID3D10Blob_Release(diagnostic);
     if (FAILED(result)) return doe_dx_hresult(result,"D3D12SerializeRootSignature.render",error);
+    doe_dx_cache_root_key(ID3D10Blob_GetBufferPointer(blob),ID3D10Blob_GetBufferSize(blob),pipeline->root_digest);
     result=ID3D12Device_CreateRootSignature(context->device,0,ID3D10Blob_GetBufferPointer(blob),
         ID3D10Blob_GetBufferSize(blob),&IID_ID3D12RootSignature,(void **)&pipeline->root);
     ID3D10Blob_Release(blob);
@@ -220,9 +241,7 @@ doe_dx_status doe_dx_native_render_create(doe_dx_native_context *context,
         }
         if (desc->masks_explicit) state.SampleMask=desc->sample_mask;
         state.InputLayout=(D3D12_INPUT_LAYOUT_DESC){desc->attribute_count ? attributes : NULL,(UINT)desc->attribute_count};
-        HRESULT result=ID3D12Device_CreateGraphicsPipelineState(context->device,&state,
-            &IID_ID3D12PipelineState,(void **)&pipeline->state);
-        status=doe_dx_hresult(result,"ID3D12Device.CreateGraphicsPipelineState.render",error);
+        status=doe_dx_cached_graphics(context,&state,pipeline->root_digest,&pipeline->state,error);
     }
     if (status!=DOE_DX_OK) { doe_dx_native_pipeline_destroy(pipeline); return status; }
     *out=pipeline;

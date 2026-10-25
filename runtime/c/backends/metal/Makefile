@@ -5,7 +5,7 @@ BUILD ?= $(DOE_C_TMP)/metal
 CPPFLAGS += -Iinclude
 CFLAGS ?= -O2 -g
 STRICT = -std=c11 -Wall -Wextra -Wpedantic -Werror -Wconversion -Wshadow
-SOURCES = src/pipeline_cache.c src/objc_archive.c src/context.c src/resources.c src/commands.c src/surfaces.c src/objc_surface.c src/indirect_commands.c src/draw_guard.c src/compute_commands.c src/timestamps.c src/objc_queries.c src/objc_runtime.c \
+SOURCES = src/timeline.c src/objc_timeline.c src/pipeline_cache.c src/objc_archive.c src/context.c src/resources.c src/commands.c src/surfaces.c src/objc_surface.c src/indirect_commands.c src/draw_guard.c src/compute_commands.c src/timestamps.c src/objc_queries.c src/objc_runtime.c \
           src/objc_pipeline.c src/objc_commands.c src/texture_formats.c src/textures.c \
           src/samplers.c src/texture_ownership.c src/texture_initialization.c src/texture_transfer.c \
           src/objc_images.c src/objc_image_transfer.c src/render_pipeline.c \
@@ -74,7 +74,8 @@ $(BUILD)/test_objc_surface: tests/test_objc_surface.c $(BUILD)/libdoe_metal.a
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(STRICT) $< $(BUILD)/libdoe_metal.a $(LDLIBS) -o $@
 $(BUILD)/test_objc_archive: tests/test_objc_archive.c $(BUILD)/libdoe_metal.a
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(STRICT) $< $(BUILD)/libdoe_metal.a $(LDLIBS) -o $@
-check: $(BUILD)/test_objc_archive $(BUILD)/test_objc_surface $(BUILD)/test_surface $(BUILD)/test_draw_guard $(BUILD)/test_indirect $(BUILD)/test_initialization $(BUILD)/test_device_limits $(BUILD)/test_objc_queries $(BUILD)/test_timestamps $(BUILD)/test_visibility $(BUILD)/test_multisample $(BUILD)/test_objc_render_commands $(BUILD)/test_objc_render_pipeline $(BUILD)/test_render $(BUILD)/test_lifetime $(BUILD)/test_objc_calls $(BUILD)/test_images $(BUILD)/test_objc_images
+check: $(BUILD)/test_timeline $(BUILD)/test_objc_archive $(BUILD)/test_objc_surface $(BUILD)/test_surface $(BUILD)/test_draw_guard $(BUILD)/test_indirect $(BUILD)/test_initialization $(BUILD)/test_device_limits $(BUILD)/test_objc_queries $(BUILD)/test_timestamps $(BUILD)/test_visibility $(BUILD)/test_multisample $(BUILD)/test_objc_render_commands $(BUILD)/test_objc_render_pipeline $(BUILD)/test_render $(BUILD)/test_lifetime $(BUILD)/test_objc_calls $(BUILD)/test_images $(BUILD)/test_objc_images
+	$(BUILD)/test_timeline
 	$(BUILD)/test_objc_archive
 	$(BUILD)/test_objc_surface
 	$(BUILD)/test_surface
@@ -125,3 +126,9 @@ $(BUILD)/native_timestamps: tests/native_timestamps.c $(BUILD)/libdoe_metal.a
 native-timestamps-check: $(BUILD)/native_timestamps
 	@test "$(UNAME_S)" = Darwin || { echo 'native-timestamps-check requires an authorized macOS device'; exit 1; }
 	DOE_MTL_ALLOW_HARDWARE=1 python3 -c 'import subprocess; subprocess.run(["$(BUILD)/native_timestamps", "--run"], check=True, timeout=20)'
+
+$(BUILD)/test_timeline: tests/test_timeline.c tests/mock_native.c tests/mock_native.h $(BUILD)/libdoe_metal.a
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(STRICT) tests/test_timeline.c tests/mock_native.c $(BUILD)/libdoe_metal.a $(LDLIBS) -o $@
+.PHONY: check-timeline
+check-timeline: $(BUILD)/test_timeline
+	$(BUILD)/test_timeline

@@ -181,13 +181,76 @@ static void texture_query_indices(void) {
     assert(!mock.textures && !mock.timestamps && !mock.buffers && !mock.commands);
     finish(owner);
 }
+static void immediate_snapshots(void) {
+    doe_dx_context *owner=open_context();
+    const unsigned char code=1;
+    doe_dx_dynamic_pipeline_desc desc={.resources={.buffers={&code,1,NULL,0}},
+        .immediate_bytes=8,.immediate_required_bytes=UINT64_C(255)};
+    doe_dx_pipeline *pipeline=NULL;
+    desc.immediate_bytes=65;
+    assert(doe_dx_pipeline_create_dynamic(owner,&desc,&pipeline,NULL)==DOE_DX_INVALID_ARGUMENT && !pipeline);
+    desc.immediate_bytes=8;
+    assert(doe_dx_pipeline_create_dynamic(owner,&desc,&pipeline,NULL)==DOE_DX_OK);
+    doe_dx_commands *commands=recording(owner);
+    doe_dx_dynamic_resources values={.immediate_words={123,456}};
+    assert(doe_dx_commands_dispatch_dynamic(commands,pipeline,&values,1,1,1,NULL)==DOE_DX_UNINITIALIZED);
+    assert(!mock.dispatches && !commands->pipeline_count);
+    values.immediate_initialized_bytes=UINT64_C(255);
+    assert(doe_dx_commands_dispatch_dynamic(commands,pipeline,&values,1,1,1,NULL)==DOE_DX_OK);
+    values.immediate_words[0]=789;
+    assert(mock.immediate_words[0]==123 && mock.immediate_words[1]==456);
+    assert(doe_dx_commands_dispatch_dynamic(commands,pipeline,&values,1,1,1,NULL)==DOE_DX_OK);
+    assert(mock.immediate_words[0]==789);
+    doe_dx_pipeline_release(pipeline);
+    doe_dx_commands_release(commands);
+    finish(owner);
+}
+static void raw_logical_tail(void) {
+    doe_dx_context *owner=open_context();
+    const unsigned char code=1;
+    const doe_dx_binding_layout raw={.shader_register=3,.register_space=2,.access=DOE_DX_READ_WRITE,.view=DOE_DX_RAW};
+    uint32_t index=4;
+    doe_dx_dynamic_pipeline_desc desc={.resources={.buffers={&code,1,&raw,1}},
+        .logical_size_count=5,.logical_size_indices=&index};
+    doe_dx_pipeline *pipeline=NULL;
+    index=5;
+    assert(doe_dx_pipeline_create_dynamic(owner,&desc,&pipeline,NULL)==DOE_DX_INVALID_ARGUMENT && !pipeline);
+    index=4;
+    assert(doe_dx_pipeline_create_dynamic(owner,&desc,&pipeline,NULL)==DOE_DX_OK);
+    doe_dx_buffer *upload=NULL,*buffer=NULL,*short_buffer=NULL;
+    assert(doe_dx_buffer_create(owner,4,DOE_DX_UPLOAD,&upload,NULL)==DOE_DX_OK);
+    assert(doe_dx_buffer_create(owner,4,DOE_DX_DEFAULT,&buffer,NULL)==DOE_DX_OK);
+    assert(doe_dx_buffer_create(owner,2,DOE_DX_DEFAULT,&short_buffer,NULL)==DOE_DX_OK);
+    doe_dx_commands *commands=recording(owner);
+    assert(doe_dx_commands_copy(commands,upload,0,buffer,0,4,NULL)==DOE_DX_OK);
+    assert(doe_dx_commands_copy_bytes(commands,upload,0,short_buffer,0,2,NULL)==DOE_DX_OK);
+    doe_dx_buffer_binding binding={short_buffer,0,2};
+    doe_dx_dynamic_resources values={.resources={.buffers=&binding,.buffer_count=1}};
+    assert(doe_dx_commands_dispatch_dynamic(commands,pipeline,&values,1,1,1,NULL)==DOE_DX_RANGE);
+    assert(!mock.dispatches && !commands->pipeline_count);
+    binding.buffer=buffer;
+    assert(doe_dx_commands_dispatch_dynamic(commands,pipeline,&values,1,1,1,NULL)==DOE_DX_OK);
+    assert(mock.logical_size_count==5 && mock.logical_size_indices[0]==4 && mock.bindings[0].size==2);
+    doe_dx_buffer_release(upload); doe_dx_buffer_release(buffer); doe_dx_buffer_release(short_buffer);
+    doe_dx_pipeline_release(pipeline);
+    mock.failure=MOCK_SIGNAL;
+    assert(doe_dx_commands_submit(commands,NULL)==DOE_DX_COMPLETION_UNKNOWN);
+    doe_dx_commands_release(commands);
+    assert(mock.buffers==3 && mock.pipelines==1);
+    mock.failure=MOCK_NONE; mock.completed=owner->next_fence;
+    assert(doe_dx_context_poll(owner,0,NULL)==DOE_DX_OK);
+    assert(!mock.buffers && !mock.pipelines);
+    finish(owner);
+}
 int main(void) {
+    raw_logical_tail();
+    immediate_snapshots();
     buffer_growth(65);
     buffer_growth(129);
     pipeline_records();
     partial_reservation();
     texture_query_indices();
     recording_reserve_failures();
-    puts("D3D12 dynamic command owner:6 host groups passed; no SDK or GPU execution");
+    puts("D3D12 dynamic command owner:8 host groups passed; no SDK or GPU execution");
     return 0;
 }

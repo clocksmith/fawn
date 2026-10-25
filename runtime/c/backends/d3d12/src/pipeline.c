@@ -8,7 +8,7 @@ static doe_dx_descriptor_kind texture_kind(doe_dx_binding_access access) {
 }
 
 doe_dx_descriptor_kind doe_dx_buffer_descriptor_kind(const doe_dx_binding_layout *layout) {
-    if (layout->view == DOE_DX_STRUCTURED) return texture_kind(layout->access);
+    if (layout->view == DOE_DX_STRUCTURED || layout->view == DOE_DX_RAW) return texture_kind(layout->access);
     if (layout->view == DOE_DX_UNIFORM && layout->access == DOE_DX_READ_ONLY)
         return DOE_DX_DESCRIPTOR_CBV;
     return DOE_DX_DESCRIPTOR_INVALID;
@@ -29,6 +29,14 @@ doe_dx_status doe_dx_validate_layout(const doe_dx_context *context, const doe_dx
     if (desc->texture_count > DOE_DX_MAX_BINDINGS || desc->sampler_count > DOE_DX_MAX_STATIC_SAMPLERS ||
         buffers->binding_count > DOE_DX_MAX_BINDINGS - desc->texture_count)
         return DOE_DX_RANGE;
+    if (dynamic) {
+        if (dynamic->logical_size_count>16384 ||
+            (dynamic->logical_size_count && !dynamic->logical_size_indices)) return DOE_DX_INVALID_ARGUMENT;
+        uint32_t bytes=dynamic->immediate_bytes;
+        if (bytes>64 || bytes%4) return DOE_DX_INVALID_ARGUMENT;
+        uint64_t allowed=bytes==64 ? UINT64_MAX : ((UINT64_C(1)<<bytes)-1);
+        if (dynamic->immediate_required_bytes & ~allowed) return DOE_DX_INVALID_ARGUMENT;
+    }
     size_t runtime_samplers = dynamic ? dynamic->sampler_count : 0;
     if (runtime_samplers > DOE_DX_MAX_DYNAMIC_SAMPLERS ||
         runtime_samplers > DOE_DX_MAX_DYNAMIC_SAMPLERS - desc->sampler_count) return DOE_DX_RANGE;
@@ -36,21 +44,30 @@ doe_dx_status doe_dx_validate_layout(const doe_dx_context *context, const doe_dx
     const doe_dx_limits *limits = &context->caps.limits;
     if (buffers->binding_count + desc->texture_count > limits->max_descriptors ||
         desc->sampler_count > limits->max_static_samplers) return DOE_DX_RANGE;
-    uint32_t cbvs = 0, srvs = 0, uavs = 0;
+    uint32_t cbvs = dynamic ? (dynamic->immediate_bytes ? 1u : 0u)+(dynamic->logical_size_count ? 1u : 0u) : 0u;
+    uint32_t srvs = 0, uavs = 0;
     for (size_t index = 0; index < buffers->binding_count; index++) {
         const doe_dx_binding_layout *binding = &buffers->bindings[index];
         doe_dx_descriptor_kind kind = doe_dx_buffer_descriptor_kind(binding);
+        if (dynamic && dynamic->immediate_bytes && kind==DOE_DX_DESCRIPTOR_CBV &&
+            binding->shader_register==1 && binding->register_space==7) return DOE_DX_INVALID_ARGUMENT;
+        if (dynamic && dynamic->logical_size_count && kind==DOE_DX_DESCRIPTOR_CBV &&
+            binding->shader_register==2 && binding->register_space==7) return DOE_DX_INVALID_ARGUMENT;
+        if (binding->view==DOE_DX_RAW && (!dynamic || !dynamic->logical_size_count ||
+            dynamic->logical_size_indices[index]>=dynamic->logical_size_count)) return DOE_DX_INVALID_ARGUMENT;
         switch (kind) {
         case DOE_DX_DESCRIPTOR_CBV: ++cbvs; break;
         case DOE_DX_DESCRIPTOR_SRV: ++srvs; break;
         case DOE_DX_DESCRIPTOR_UAV: ++uavs; break;
         case DOE_DX_DESCRIPTOR_INVALID: return DOE_DX_INVALID_ARGUMENT;
         }
-        if ((kind == DOE_DX_DESCRIPTOR_CBV ? binding->stride != 0 :
+        if ((kind == DOE_DX_DESCRIPTOR_CBV || binding->view==DOE_DX_RAW ? binding->stride != 0 :
                 binding->stride < 4 || binding->stride > 2048 || binding->stride % 4))
             return DOE_DX_INVALID_ARGUMENT;
         for (size_t prior = 0; prior < index; prior++) {
             const doe_dx_binding_layout *other = &buffers->bindings[prior];
+            if (binding->view==DOE_DX_RAW && other->view==DOE_DX_RAW &&
+                dynamic->logical_size_indices[index]==dynamic->logical_size_indices[prior]) return DOE_DX_INVALID_ARGUMENT;
             if (same_register(binding->shader_register, binding->register_space, kind,
                 other->shader_register, other->register_space, doe_dx_buffer_descriptor_kind(other))) return DOE_DX_INVALID_ARGUMENT;
         }
@@ -146,6 +163,11 @@ static doe_dx_status create_pipeline(doe_dx_context *context,
         memcpy(pipeline->textures, desc->textures,
             pipeline->texture_count * sizeof(*pipeline->textures));
     if (dynamic) {
+        pipeline->logical_size_count=dynamic->logical_size_count;
+        if (dynamic->logical_size_count) memcpy(pipeline->logical_size_indices,dynamic->logical_size_indices,
+            pipeline->binding_count*sizeof(*pipeline->logical_size_indices));
+        pipeline->immediate_bytes=dynamic->immediate_bytes;
+        pipeline->immediate_required_bytes=dynamic->immediate_required_bytes;
         if (dynamic->texture_contracts && pipeline->texture_count)
             memcpy(pipeline->texture_contracts,dynamic->texture_contracts,
                 pipeline->texture_count * sizeof(*pipeline->texture_contracts));

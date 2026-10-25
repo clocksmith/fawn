@@ -17,9 +17,11 @@ extern "C" {
 #define DOE_NATIVE_EXTENSION
 #endif
 
-/* Queue synchronization state bits; 0 for a NULL queue or a non-Vulkan device. */
+/* Queue synchronization state bits; 0 for a NULL queue or an unsupported backend. */
 enum {
     DOE_NATIVE_QUEUE_SYNC_BACKEND_VULKAN = 1u << 0,
+    DOE_NATIVE_QUEUE_SYNC_BACKEND_METAL = 1u << 4,
+    DOE_NATIVE_QUEUE_SYNC_BACKEND_D3D12 = 1u << 5,
     DOE_NATIVE_QUEUE_SYNC_TIMELINE_SEMAPHORE = 1u << 1, /* Actual enabled timeline mode. */
     DOE_NATIVE_QUEUE_SYNC_FENCE_POOL = 1u << 2,         /* Proven-terminal tuples reused by command owner. */
     /* A submitted command record whose completion or failure has not yet been

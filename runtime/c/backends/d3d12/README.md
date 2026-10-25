@@ -636,3 +636,84 @@ presentation, device policy and persistent PSO caching are not completed here.
 Internal admission/text-output assertions were extended for these new source
 contracts, not substituted for frozen consumer pixel oracles. Portable builds
 and controls are not Windows SDK, DXC or physical-GPU qualification.
+
+### Explicit native pipeline library
+
+The cache API uses actual `ID3D12PipelineLibrary` create/load/store/serialize
+operations for compute, legacy graphics, mesh and render PSOs. Keys encode every
+current SDK descriptor value plus exact DXIL and serialized root-signature
+hashes, never pointer values or structure padding. The on-disk envelope binds
+adapter LUID/vendor/device/software identity and queried driver version; a shared
+SHA256 owner checks the bounded native payload before passing it to the driver.
+The input allocation stays alive until the library is released.
+
+Only an explicit directory enables persistence. Its parent must already exist;
+configuration may create the final directory. Call flush to persist additions:
+teardown does not write files implicitly. Serialization uses an exclusively
+created temporary sibling, flushes it, then atomically replaces the prior file.
+Incompatible or checksum-invalid inputs are discarded before native use;
+documented native-library compatibility failures can initialize an empty
+library, but failed GPU pipeline creation is never retried. Non-device-loss
+cache-store failure preserves an already valid PSO and increments the observable
+addition-failure counter. Device loss enters the existing context retirement
+owner. These sources and SDK descriptor controls do not claim Windows driver or
+physical-GPU qualification.
+
+### Immediate/raw buffers and selected subresources: next source composition
+
+Compute and graphics roots now bind actual b1/space7 32-bit root constants from
+canonical immutable command snapshots. Required-byte masks reject missing values
+before recording. Raw half-containing storage uses real R32_TYPELESS RAW SRV/UAV
+views, with physical extent rounded4 only within the allocation. Exact logical
+binding lengths are uploaded into b2/space7 at canonical resource indices, with
+unused slots zero and table extent matching compiler metadata. The upload resource
+belongs to the existing descriptor-use retirement list, including unknown fences.
+True native16 admission checks queried OPTIONS4 and SM6.2; wave admission checks
+actual OPTIONS1/SM6.0. Workgroup wave counters are genuine compiler groupshared
+operations, not inferred lane arithmetic.
+
+Native copies and queue writes now forward mips, array/3D images, aspects and
+independent image strides. Byte-granular occupied rows share the existing buffer
+copy owner; canonical public buffer-copy alignment is unchanged. Same-subresource
+disjoint copies use a real temporary texture, fully populated before reading and
+retained through the ordinary command lifetime. Overlapping regions still reject.
+Selected RTV/DSV/UAV clears and resolves carry mip/layer/3D-slice views. Disjoint MRT
+views share one allocation lease and deduplicated transitions; overlapping views
+reject. A partial-view clear never initializes untouched subresources. Read-only
+depth/stencil sampling uses separate plane states and read-only DSV flags, with
+pass-managed depth transitions excluded from per-draw shader transitions.
+
+Portable controls cover exact2-byte logical tails, physical-padding rejection,
+immediate snapshots, scratch OOM/unknown-completion leases, selected attachment
+bounds and read-only depth aliases. These are source/ownership controls. Actual
+Windows SDK compilation, DXC execution and GPU readback remain distinct gates for
+this source batch; previous source-bound CI is not inherited. HWND surfaces and
+persistent PSO caches are being composed by their respective owners.
+
+### HWND surface owner (source and host contract)
+
+`doe_d3d12_surface.h` composes a real HWND flip-discard DXGI swapchain with the
+existing context, texture and submitted-command owners. Acquisition uses
+`GetCurrentBackBufferIndex`/`GetBuffer`; ordinary texture leases retain the
+swapchain. PRESENT/COPY_DEST transitions use the existing command list. Present
+runs after ExecuteCommandLists and before the same queue's fence signal. Neither
+a failed Present nor a failed signal releases uncertain work; the first failure
+survives recovery. Discard records the return transition without Present. Dropping
+an executed acquisition without discard fails the surface closed.
+
+ResizeBuffers requires all frame/view/command leases gone and preserves the old
+configuration on admission failure. Changing buffer usage requires replacement;
+FIFO and queried tearing-enabled Immediate are the initial modes, opaque HWND
+composition only. Host typed-call controls prove ordering, lease retention,
+first-error recovery, discard and resize admission, not SDK compilation or a
+window/driver run. Public WebGPU frontend composition and actual Windows SDK,
+DXGI window, resize and device-loss execution remain separate gates.
+
+Bound sampled/storage views now use immutable mip/layer overlap checks, including
+cross-stage aliases. Disjoint SRV/UAV subresources share the same texture lease;
+SDK transitions aggregate exact selected subresources, retaining the whole-resource
+fast path when every view covers the allocation in one state. Overlapping writable
+views still reject. Focused controls exercise distinct layers/mips and overlapping
+rejection. Native fragment admission now uses the actual SM6 SV_SampleIndex,
+SV_Coverage and SV_Depth implementation, while canonical alpha-to-coverage and
+fragment-depth validation remain authoritative.

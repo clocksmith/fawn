@@ -1326,7 +1326,8 @@ checks native failure delivery, unknown completion and final resource retirement
 
 `doe_native_device_policy.h` provides a versioned per-request policy extension.
 It shares ordinary request-device callbacks and loss/lifetime handling, reopens
-only the selected adapter's device/driver UUID pair, and never mutates the adapter
+only the selected Vulkan adapter's device/driver UUID pair or the same retained
+Metal device identity or exact D3D12 adapter LUID, and never mutates the adapter
 or process defaults. Vulkan queue selection, fence/timeline synchronization and
 queue-write upload mechanisms are explicit. Staged queue writes record a real
 copy from a private host buffer and submit through the existing pending owner;
@@ -1334,7 +1335,20 @@ unknown completion retains those leases. Subgroup-size decisions remain with
 selected-entry reflection and the backend's exact pipeline cache key. Unsupported
 values/backend tuples fail device creation. `doeNativeQueueSyncInfo` reports the
 actual synchronization mode; the default fence pool was already present before
-its previously missing reporting bit was corrected.
+its previously missing reporting bit was corrected. Metal policies use its real
+unified graphics/compute queue, optional shared-event timeline and either an
+actual staged blit upload or existing mapped writes. Event-unavailable preference
+fallback is reported as ordinary command completion, never as a fictitious
+timeline. Metal compute-only/fence-pool/subgroup requests are rejected.
+`check-metal-device-policy` exercises this public route with typed host calls,
+not GPU results; backend `check-timeline` covers event/error/lifetime ordering.
+D3D12 policy admission reuses the existing direct queue, monotonic native fence,
+and UPLOAD-to-DEFAULT copy/pending owner. No new queue or upload engine exists.
+Compute-only/fence-pool/direct-mapped/subgroup requests fail before reopening the
+same selected LUID. `check-d3d12-device-policy` checks exact tuple admission and
+unchanged outputs on original reopen failure; it is a host boundary control,
+not Windows or WARP execution. Queue-sync backend bits distinguish all three
+backends, while timeline and pending bits describe their actual owners.
 
 The same optional pipeline-cache extension now routes Vulkan to its real driver
 `VkPipelineCache` owner as well as Metal to `MTLBinaryArchive`. Vulkan supports
@@ -1342,3 +1356,24 @@ explicit bounded persistence/reload with exact driver/device identity and a
 corruption checksum; D3D12 persistence remains unsupported. Counters describe
 native operations only. Cache failures do not issue WebGPU error callbacks or
 replace a command's first error, and disabling never writes a cache file.
+
+
+### Canonical half stage interfaces and feature composition
+
+Stage-interface reflection retains the WGSL f16 identity while each target uses
+an f32 input/output carrier and explicit boundary conversion. Native vertex fetch
+and fragment target checks accept both floating scalar widths; interstage matching
+still requires equal canonical widths, lanes and interpolation. The public
+`half-interfaces` control creates real CPU Vulkan pipelines for f32/f16 vertex
+fetch, half fragment output and alpha coverage, and rejects integer-format and
+f16/f32 interface mismatches. This is pipeline composition, not pixel-output or
+physical-device qualification.
+
+The public WGSL feature probe admits pointer-composite access, immutable
+texture/sampler lets and immediate address space with and without `requires`.
+Unrestricted pointer parameters and complete subgroup-uniformity composition
+remain separate implementation gates. D3D12 ShaderF16 advertisement requires
+actual native-16-bit operations and shader model 6.2, not feature-level inference.
+Queried BC and depth32float-stencil8 support remain independent flags. The
+`capability-admission` host control covers these combinations and distinct
+Vulkan variable-pointer-storage/full capability gates without emulating a device.

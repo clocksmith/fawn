@@ -4,8 +4,12 @@
 
 void doe_dx_binding_plan_copy(doe_dx_binding_plan *out,const doe_dx_dynamic_pipeline_desc *desc)
 {
-    *out=(doe_dx_binding_plan){.binding_count=desc->resources.buffers.binding_count,
+    *out=(doe_dx_binding_plan){.immediate_bytes=desc->immediate_bytes,
+        .immediate_required_bytes=desc->immediate_required_bytes,.binding_count=desc->resources.buffers.binding_count,
         .texture_count=desc->resources.texture_count,.sampler_count=desc->sampler_count};
+    out->logical_size_count=desc->logical_size_count;
+    if (desc->logical_size_count) memcpy(out->logical_size_indices,desc->logical_size_indices,
+        out->binding_count*sizeof(*out->logical_size_indices));
     if (out->binding_count) memcpy(out->bindings,desc->resources.buffers.bindings,
         out->binding_count*sizeof(*out->bindings));
     if (out->texture_count) {
@@ -89,7 +93,8 @@ doe_dx_status doe_dx_pipeline_create_render(doe_dx_context *context,
         if (stage->resources.buffers.bytecode || stage->resources.buffers.bytecode_size ||
             stage->resources.buffers.bindings || stage->resources.buffers.binding_count ||
             stage->resources.textures || stage->resources.texture_count || stage->resources.samplers ||
-            stage->resources.sampler_count || stage->texture_contracts || stage->samplers || stage->sampler_count)
+            stage->resources.sampler_count || stage->texture_contracts || stage->samplers || stage->sampler_count ||
+            stage->immediate_bytes || stage->immediate_required_bytes || stage->logical_size_count || stage->logical_size_indices)
             return doe_dx_fail(DOE_DX_INVALID_ARGUMENT,0,"render.fragment_absence",error);
     }
     for (size_t i=0;i<(desc->fragment_absent ? 1u : DOE_DX_RENDER_STAGES);++i) {

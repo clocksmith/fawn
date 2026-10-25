@@ -2,6 +2,7 @@
 #include "internal.h"
 #include "doe_metal_cache.h"
 #include "doe_vk_cache.h"
+#include "../../backends/d3d12/include/doe_d3d12_cache.h"
 #include "doe_native_pipeline_cache.h"
 #include <string.h>
 
@@ -52,6 +53,19 @@ static uint32_t cache_operation(void *handle, uint32_t version, unsigned operati
         (void)doe_mtl_context_pipeline_cache_stats(context, &stats);
         COPY_CACHE_STATS(result, stats);
         failure = native_failure_metal(status, &error);
+    } else if (device->backend.kind == WGPUBackendType_D3D12) {
+#if defined(_WIN32)
+        doe_dx_context *context = device->backend.value.d3d12.context;
+        doe_dx_error error = {0}; doe_dx_status status = DOE_DX_OK;
+        doe_dx_pipeline_cache_stats stats = {0};
+        if (operation == 0) status = doe_dx_context_pipeline_cache(context,directory,length,&error);
+        else if (operation == 1) status = doe_dx_context_pipeline_cache_flush(context,&error);
+        (void)doe_dx_context_pipeline_cache_stats(context,&stats);
+        COPY_CACHE_STATS(result,stats);
+        failure = native_failure_d3d12(status,&error);
+#else
+        failure = native_failure_status(NATIVE_UNSUPPORTED);
+#endif
     } else if (operation != 0 || directory) failure = native_failure_status(NATIVE_UNSUPPORTED);
     native_unlock(device);
     result.status = cache_status(failure.status);

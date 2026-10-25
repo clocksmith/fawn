@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: MIT */
 #include "windows_internal.h"
+#include "windows_cache.h"
 #ifdef _WIN32
 
 doe_dx_status doe_dx_hresult(HRESULT result, const char *operation, doe_dx_error *error) {
@@ -13,6 +14,7 @@ doe_dx_status doe_dx_hresult(HRESULT result, const char *operation, doe_dx_error
 
 void doe_dx_native_close(doe_dx_native_context *context) {
     if (!context) return;
+    doe_dx_cache_close(context);
     if (context->draw_signature) ID3D12CommandSignature_Release(context->draw_signature);
     if (context->draw_indexed_signature) ID3D12CommandSignature_Release(context->draw_indexed_signature);
     if (context->dispatch_signature) ID3D12CommandSignature_Release(context->dispatch_signature);
@@ -69,6 +71,7 @@ doe_dx_status doe_dx_native_open(const doe_dx_options *options,
         doe_dx_native_close(context);
         return caps_status;
     }
+    doe_dx_cache_adapter(context,adapter);
     IDXGIAdapter1_Release(adapter);
     IDXGIFactory4_Release(factory);
     *caps = found;

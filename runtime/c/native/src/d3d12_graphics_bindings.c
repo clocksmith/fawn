@@ -71,3 +71,9 @@ bool native_d3d12_graphics_maps(const native_pipeline *pipeline,const native_sta
 {
     return native_d3d12_graphics_maps_count(pipeline,stages,2,out,maps);
 }
+
+native_graphics_limits native_d3d12_interface_limits(void)
+{
+    /* Real SM6 pixel semantics plus the FL11+ 32-register stage envelope. */
+    return (native_graphics_limits){128,128,true};
+}

@@ -93,13 +93,35 @@ doe_dx_status doe_dx_commands_blit_texture_ex(doe_dx_commands *commands,doe_dx_t
         return doe_dx_fail(DOE_DX_INVALID_ARGUMENT,0,"texture.subresource_copy.shape",error);
     if ((source->samples>1 || doe_dx_format_depth(a.format)) && (!whole(&a,from) || !whole(&b,to)))
         return doe_dx_fail(DOE_DX_UNSUPPORTED,0,"texture.subresource_copy.whole",error);
-    if (source==destination && from.mip==to.mip && from.layer==to.layer)
-        return doe_dx_fail(DOE_DX_UNSUPPORTED,0,"texture.subresource_copy.same_slice",error);
     if (!doe_dx_format_depth(a.format) && source->samples==1) {
         doe_dx_texture_footprint checked;
         status=doe_dx_texture_region_layout(source,from,(doe_dx_texture_layout){0},&checked);
         if (status==DOE_DX_OK) status=doe_dx_texture_region_layout(destination,to,(doe_dx_texture_layout){0},&checked);
         if (status!=DOE_DX_OK) return doe_dx_fail(status,0,"texture.subresource_copy.blocks",error);
+    }
+    if (source==destination && from.mip==to.mip && from.layer==to.layer) {
+        bool overlap=from.z==to.z && from.rect.x<to.rect.x+to.rect.width && to.rect.x<from.rect.x+from.rect.width &&
+            from.rect.y<to.rect.y+to.rect.height && to.rect.y<from.rect.y+from.rect.height;
+        if (overlap) return doe_dx_fail(DOE_DX_INVALID_ARGUMENT,0,"texture.subresource_copy.overlap",error);
+        if (source->samples!=1 || doe_dx_format_depth(a.format))
+            return doe_dx_fail(DOE_DX_UNSUPPORTED,0,"texture.subresource_copy.scratch_format",error);
+        doe_dx_texture_desc desc={from.rect.width,from.rect.height,a.format,DOE_DX_TEXTURE_COPY_SRC|DOE_DX_TEXTURE_COPY_DST};
+        doe_dx_texture *scratch=NULL;
+        status=doe_dx_texture_create(commands->context,&desc,&scratch,error);
+        if (status!=DOE_DX_OK) return status;
+        doe_dx_reservation reserve={.textures=1u+(doe_dx_find_texture(commands,source) ? 0u : 1u)};
+        status=doe_dx_reserve_uses(commands,reserve,error);
+        if (status==DOE_DX_OK) {
+            /* Exact full scratch copy initializes every texel before it is read;
+             * no zero bit, CPU pixel copy or untracked temporary allocation. */
+            doe_dx_use_texture(commands,source); doe_dx_use_texture(commands,scratch);
+            doe_dx_texture_region_ex whole_scratch={.rect={0,0,from.rect.width,from.rect.height}};
+            doe_dx_native_texture_blit_ex(commands->native,source->native,from,scratch->native,whole_scratch);
+            doe_dx_find_texture(commands,scratch)->initialized=true;
+            doe_dx_native_texture_blit_ex(commands->native,scratch->native,whole_scratch,destination->native,to);
+        }
+        doe_dx_texture_release(scratch);
+        return status;
     }
     doe_dx_reservation needed={.textures=(doe_dx_find_texture(commands,source) ? 0u : 1u)+
         (source!=destination && !doe_dx_find_texture(commands,destination) ? 1u : 0u)};

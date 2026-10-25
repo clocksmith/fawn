@@ -62,3 +62,6 @@ src/sema_float_pack.c
 src/spirv_float_pack.c
 src/sema_subgroup.c
 src/translation.c
+
+src/pointer_lower.c
+src/pointer_clone.c

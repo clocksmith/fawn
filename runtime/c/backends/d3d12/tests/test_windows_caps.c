@@ -12,6 +12,8 @@ typedef struct sdk_device {
     UINT resource_bits, process_bits;
     D3D12_FEATURE failed_query;
     HRESULT shader_result;
+    DXGI_FORMAT missing_format;
+    bool no_depth_msaa;
     UINT allocation_fault, allocation_calls;
 } sdk_device;
 
@@ -54,6 +56,22 @@ static HRESULT STDMETHODCALLTYPE check_feature(ID3D12Device *raw, D3D12_FEATURE 
         D3D12_FEATURE_DATA_SHADER_MODEL *shader = data;
         assert(shader->HighestShaderModel == D3D_SHADER_MODEL_6_0 || shader->HighestShaderModel == D3D_SHADER_MODEL_6_2);
         shader->HighestShaderModel = D3D_SHADER_MODEL_6_0;
+        break;
+    }
+    case D3D12_FEATURE_FORMAT_SUPPORT: {
+        assert(size==sizeof(D3D12_FEATURE_DATA_FORMAT_SUPPORT));
+        D3D12_FEATURE_DATA_FORMAT_SUPPORT *format=data;
+        format->Support1=format->Format==device->missing_format ? D3D12_FORMAT_SUPPORT1_NONE :
+            (D3D12_FORMAT_SUPPORT1)(D3D12_FORMAT_SUPPORT1_TEXTURE2D|D3D12_FORMAT_SUPPORT1_SHADER_SAMPLE|
+            D3D12_FORMAT_SUPPORT1_SHADER_LOAD|D3D12_FORMAT_SUPPORT1_SHADER_SAMPLE_COMPARISON|
+            D3D12_FORMAT_SUPPORT1_DEPTH_STENCIL|D3D12_FORMAT_SUPPORT1_MULTISAMPLE_RENDERTARGET);
+        break;
+    }
+    case D3D12_FEATURE_MULTISAMPLE_QUALITY_LEVELS: {
+        assert(size==sizeof(D3D12_FEATURE_DATA_MULTISAMPLE_QUALITY_LEVELS));
+        D3D12_FEATURE_DATA_MULTISAMPLE_QUALITY_LEVELS *samples=data;
+        assert(samples->Format==DXGI_FORMAT_D32_FLOAT_S8X24_UINT && samples->SampleCount==4);
+        samples->NumQualityLevels=device->no_depth_msaa ? 0u : 1u;
         break;
     }
     case D3D12_FEATURE_D3D12_OPTIONS1:
@@ -111,6 +129,7 @@ static void caps_controls(void) {
             assert(caps.resource_binding_tier == tier && caps.resource_heap_tier == 1);
             assert(caps.gpu_va_bits_per_resource == 40 && caps.gpu_va_bits_per_process == 40);
             assert(caps.shader_model == (uint32_t)D3D_SHADER_MODEL_6_0);
+            assert(caps.texture_compression_bc && caps.depth32float_stencil8);
             assert(caps.limits.max_descriptors == 64 && caps.limits.max_static_samplers == 16);
             assert(caps.limits.max_cbvs == (tier == 3 ? 64u : 14u));
             assert(caps.limits.max_uavs == (tier == 1 && !newer ? 8u : 64u));
@@ -133,7 +152,8 @@ static void caps_controls(void) {
     assert(doe_dx_query_caps(&context,&caps,NULL) == DOE_DX_OK);
     assert(caps.shader_model == 0 && caps.limits.max_buffer_size == UINT64_C(134217728));
     const D3D12_FEATURE failures[] = {D3D12_FEATURE_FEATURE_LEVELS,D3D12_FEATURE_D3D12_OPTIONS,
-        D3D12_FEATURE_GPU_VIRTUAL_ADDRESS_SUPPORT,D3D12_FEATURE_ARCHITECTURE,D3D12_FEATURE_SHADER_MODEL};
+        D3D12_FEATURE_GPU_VIRTUAL_ADDRESS_SUPPORT,D3D12_FEATURE_ARCHITECTURE,D3D12_FEATURE_SHADER_MODEL,
+        D3D12_FEATURE_FORMAT_SUPPORT,D3D12_FEATURE_MULTISAMPLE_QUALITY_LEVELS};
     for (size_t index = 0; index < sizeof(failures)/sizeof(failures[0]); ++index) {
         device = device_defaults();
         device.failed_query = failures[index];
@@ -144,6 +164,15 @@ static void caps_controls(void) {
         assert(caps.vendor_id == 77 && error.native_code == (int32_t)E_FAIL && error.operation);
         assert(!device.allocation_calls && context.limits.max_buffer_size == 123);
     }
+    device=device_defaults(); device.missing_format=DXGI_FORMAT_BC6H_SF16;
+    assert(doe_dx_query_caps(&context,&caps,NULL)==DOE_DX_OK);
+    assert(!caps.texture_compression_bc && caps.depth32float_stencil8);
+    device=device_defaults(); device.missing_format=DXGI_FORMAT_X32_TYPELESS_G8X24_UINT;
+    assert(doe_dx_query_caps(&context,&caps,NULL)==DOE_DX_OK);
+    assert(caps.texture_compression_bc && !caps.depth32float_stencil8);
+    device=device_defaults(); device.no_depth_msaa=true;
+    assert(doe_dx_query_caps(&context,&caps,NULL)==DOE_DX_OK);
+    assert(!caps.depth32float_stencil8);
     for (UINT fault = 1; fault <= 6; ++fault) {
         device = device_defaults();
         device.allocation_fault = fault;

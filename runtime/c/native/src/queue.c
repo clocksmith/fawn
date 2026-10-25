@@ -579,8 +579,15 @@ WGPUFuture wgpuQueueOnSubmittedWorkDone(WGPUQueue handle, WGPUQueueWorkDoneCallb
 uint32_t doeNativeQueueSyncInfo(WGPUQueue handle)
 {
     native_device *device = (native_device *)handle;
-    if (!device || device->backend.kind != WGPUBackendType_Vulkan) return 0;
-    uint32_t bits = DOE_NATIVE_QUEUE_SYNC_BACKEND_VULKAN |
+    if (!device || (device->backend.kind != WGPUBackendType_Vulkan && device->backend.kind != WGPUBackendType_Metal &&
+        device->backend.kind != WGPUBackendType_D3D12)) return 0;
+    uint32_t bits;
+    if (device->backend.kind == WGPUBackendType_Metal)
+        bits = DOE_NATIVE_QUEUE_SYNC_BACKEND_METAL |
+            (device->backend.value.metal.caps.timeline_enabled ? DOE_NATIVE_QUEUE_SYNC_TIMELINE_SEMAPHORE : 0);
+    else if (device->backend.kind == WGPUBackendType_D3D12)
+        bits = DOE_NATIVE_QUEUE_SYNC_BACKEND_D3D12 | DOE_NATIVE_QUEUE_SYNC_TIMELINE_SEMAPHORE;
+    else bits = DOE_NATIVE_QUEUE_SYNC_BACKEND_VULKAN |
         (device->backend.value.vulkan.caps.timeline_enabled ? DOE_NATIVE_QUEUE_SYNC_TIMELINE_SEMAPHORE :
          DOE_NATIVE_QUEUE_SYNC_FENCE_POOL);
     native_lock(device);

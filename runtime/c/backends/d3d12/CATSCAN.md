@@ -44,3 +44,12 @@ Replacing WebGPU or asserting complete graphics, textures, presentation or queri
 ## Freedom
 
 Implementation freedom requires these boundaries and acceptance obligations.
+
+## HWND presentation extension
+
+The HWND swapchain is subordinate to the existing context/texture/command owners,
+not a second queue or resource registry. Exact DXGI backbuffer identity and
+PRESENT/COPY_DEST state transitions are mandatory. Execute precedes Present;
+Present precedes signal; completion or terminal loss alone retires leases.
+Retained frames make ResizeBuffers busy, never force-release their identity.
+Host call controls and source support are not Windows presentation qualification.

@@ -34,7 +34,7 @@ memory, and native array texture representations. The wave-counter flag adds the
 publicly specified four-byte target overhead to semantic workgroup storage.
 Native array-view representation permits a selected 2D layer or cube at a nonzero
 base array layer; the WGSL source type and coordinate arity do not change.
-The reserved raw-storage flag is not evidence of an implemented raw-buffer route.
+Raw-storage requirements are described below; native-device admission remains separate.
 
 ## Native builtin developer surface
 
@@ -44,3 +44,40 @@ fresh target outputs and independent constant expectations. Stage legality and
 uniformity use the shared semantic graph. Subgroups require the source extension
 and are rejected when `DOE_COMPILER_DISABLE_SUBGROUPS` is set. This test is a
 focused developer gate, not a hardware qualification claim.
+
+## Raw half storage
+
+HLSL half-containing storage bindings use ByteAddressBuffer/RWByteAddressBuffer
+and ABI11 stride zero. RAW_STORAGE entries require exact logical binding sizes
+at b2, space7, one uint per canonical reflected resource index, padded into uint4
+carriers. The table uses the actual selected module's resource count, not source
+binding numbers or a fixed native limit. Native raw descriptor padding must not
+increase these logical sizes. Tables larger than the 64 KiB CBV limit fail closed.
+Half loads/stores use native float16_t operations with two-byte alignment; mixed
+32-bit leaves and atomic operations retain their original byte offsets. The
+producer must honor NATIVE16 and compile with the corresponding DXC requirements.
+See Microsoft's [templated byte-buffer contract](https://github.com/microsoft/DirectXShaderCompiler/wiki/ByteAddressBuffer-Load-Store-Additions).
+`test-hlsl-raw` checks these source and metadata contracts, not Windows execution.
+
+`test-language-aliases` checks immutable texture/sampler SSA aliases and implicit
+pointer-composite reference access across all three targets. These reuse existing
+resource identities, sampling-pair analysis, pointer effects and robust bounds;
+they do not remove the generalized subobject pointer-argument restriction.
+
+The HLSL target's `check-current` derives its runner from the unchanged historical
+`test_hlsl.c`: two whole-root pointer negatives become positive inout/lvalue
+checks, and the obsolete synthetic subgroup-count/id rejection is replaced by a
+source-level generated wave-counter check. Every other historical assertion is
+retained. This adapter does not imply SDK or hardware acceptance.
+
+## Function subobject pointer specialization
+
+After shared alias and uniformity analysis, the bounded typed-IR specialization
+owner widens a subobject pointer formal to the complete function-local root and
+adds scalar formals for already-evaluated dynamic indices. Callee access paths
+retain the full prefix and all robustness checks. Forwarded pointers and repeated
+calls retain their identity. All targets consume this same IR; there is no source
+rewrite or target-specific interpretation of pointer aliases. Pool exhaustion
+fails before output publication. No SPIR-V VariablePointers capability is added
+for Function pointers. Non-function pointer spaces and pointer-write/collective
+dependency analysis remain separate migration work.

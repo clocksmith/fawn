@@ -6,12 +6,25 @@ static bool overlapping(const doe_dx_buffer_binding *a, const doe_dx_buffer_bind
         a->offset - b->offset < b->size;
 }
 
+static bool texture_overlap(const doe_dx_texture_view_desc *a,const doe_dx_texture_view_desc *b)
+{
+    if (a->aspect && b->aspect && a->aspect!=b->aspect) return false;
+    return a->base_mip<b->base_mip+b->mip_count && b->base_mip<a->base_mip+a->mip_count &&
+        a->base_layer<b->base_layer+b->layer_count && b->base_layer<a->base_layer+a->layer_count;
+}
+
 /* Shared graphics/compute resource rules: validation only, no publication. */
 doe_dx_status doe_dx_prepare_binding_plan(doe_dx_commands *commands,const doe_dx_binding_plan *plan,
     const doe_dx_dynamic_resources *values, doe_dx_native_resources *native,
     doe_dx_reservation *needed, doe_dx_error *error) {
     if (!plan || !values)
         return doe_dx_fail(DOE_DX_INVALID_ARGUMENT, 0, "commands.resources", error);
+    if ((values->immediate_initialized_bytes & plan->immediate_required_bytes)!=plan->immediate_required_bytes)
+        return doe_dx_fail(DOE_DX_UNINITIALIZED,0,"commands.immediates",error);
+    memcpy(native->immediate_words,values->immediate_words,sizeof(native->immediate_words));
+    native->logical_size_count=plan->logical_size_count;
+    for (size_t i=0;i<plan->binding_count;++i) native->logical_size_indices[i]=
+        plan->bindings[i].view==DOE_DX_RAW ? plan->logical_size_indices[i] : UINT32_MAX;
     const doe_dx_compute_resources *resources = &values->resources;
     doe_dx_status status;
     const doe_dx_buffer_binding *bindings = resources->buffers;
@@ -49,6 +62,12 @@ doe_dx_status doe_dx_prepare_binding_plan(doe_dx_commands *commands,const doe_dx
                 return doe_dx_fail(DOE_DX_ALIGNMENT, 0, "commands.bindings.uniform_alignment", error);
             if (binding->size > commands->context->caps.limits.max_uniform_bytes)
                 return doe_dx_fail(DOE_DX_RANGE, 0, "commands.bindings.uniform_size", error);
+        } else if (layout->view==DOE_DX_RAW) {
+            if (binding->offset%4 || binding->size>UINT32_MAX || binding->size>UINT64_MAX-3)
+                return doe_dx_fail(DOE_DX_ALIGNMENT,0,"commands.bindings.raw_alignment",error);
+            uint64_t physical=(binding->size+3)&~UINT64_C(3);
+            if (!doe_dx_range(buffer->size,binding->offset,physical))
+                return doe_dx_fail(DOE_DX_RANGE,0,"commands.bindings.raw_extent",error);
         } else {
             uint32_t stride = layout->stride;
             if (binding->offset % stride || binding->size % stride)
@@ -100,7 +119,8 @@ doe_dx_status doe_dx_prepare_binding_plan(doe_dx_commands *commands,const doe_dx
         for (size_t prior = 0; prior < index; prior++) {
             if (resources->textures[prior] != texture) continue;
             repeated = true;
-            if (layout->access != DOE_DX_READ_ONLY || plan->textures[prior].access != DOE_DX_READ_ONLY)
+            if ((layout->access != DOE_DX_READ_ONLY || plan->textures[prior].access != DOE_DX_READ_ONLY) &&
+                texture_overlap(&view,&native->texture_views[prior]))
                 return doe_dx_fail(DOE_DX_UNSUPPORTED,0,"commands.bindings.texture_alias",error);
         }
         if (!repeated && !doe_dx_find_texture(commands, texture)) needed->textures++;
@@ -117,7 +137,9 @@ doe_dx_status doe_dx_prepare_dynamic_resources(doe_dx_commands *commands,doe_dx_
     if (pipeline->references == UINT32_MAX) return doe_dx_fail(DOE_DX_RANGE,0,"commands.pipeline_references",error);
     const doe_dx_dynamic_pipeline_desc desc = {.resources={.buffers={.bindings=pipeline->bindings,
         .binding_count=pipeline->binding_count},.textures=pipeline->textures,.texture_count=pipeline->texture_count},
-        .texture_contracts=pipeline->texture_contracts,.samplers=pipeline->samplers,.sampler_count=pipeline->sampler_count};
+        .texture_contracts=pipeline->texture_contracts,.samplers=pipeline->samplers,.sampler_count=pipeline->sampler_count,
+        .immediate_bytes=pipeline->immediate_bytes,.immediate_required_bytes=pipeline->immediate_required_bytes,
+        .logical_size_count=pipeline->logical_size_count,.logical_size_indices=pipeline->logical_size_indices};
     doe_dx_binding_plan plan;
     doe_dx_binding_plan_copy(&plan,&desc);
     doe_dx_status status = doe_dx_prepare_binding_plan(commands,&plan,values,native,needed,error);
@@ -154,9 +176,15 @@ doe_dx_status doe_dx_stage_aliases(const doe_dx_binding_plan *a,const doe_dx_dyn
         bool y_write=doe_dx_buffer_descriptor_kind(&b->bindings[j])==DOE_DX_DESCRIPTOR_UAV;
         if (x_write != y_write || (x_write && overlapping(x,y))) return DOE_DX_UNSUPPORTED;
     }
-    for (size_t i=0;i<a->texture_count;++i) for (size_t j=0;j<b->texture_count;++j)
-        if (av->resources.textures[i]==bv->resources.textures[j] &&
-            (a->textures[i].access!=DOE_DX_READ_ONLY || b->textures[j].access!=DOE_DX_READ_ONLY))
-            return DOE_DX_UNSUPPORTED;
+    for (size_t i=0;i<a->texture_count;++i) for (size_t j=0;j<b->texture_count;++j) {
+        doe_dx_texture *texture=av->resources.textures[i];
+        if (texture!=bv->resources.textures[j] ||
+            (a->textures[i].access==DOE_DX_READ_ONLY && b->textures[j].access==DOE_DX_READ_ONLY)) continue;
+        doe_dx_texture_view_desc x,y;
+        doe_dx_status status=doe_dx_texture_view_validate(texture,av->texture_views ? &av->texture_views[i] : NULL,&x);
+        if (status==DOE_DX_OK) status=doe_dx_texture_view_validate(texture,bv->texture_views ? &bv->texture_views[j] : NULL,&y);
+        if (status!=DOE_DX_OK) return status;
+        if (texture_overlap(&x,&y)) return DOE_DX_UNSUPPORTED;
+    }
     return DOE_DX_OK;
 }

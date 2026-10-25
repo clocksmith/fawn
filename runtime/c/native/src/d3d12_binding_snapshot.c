@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: MIT */
 #include "d3d12_binding_internal.h"
 #include "d3d12_texture_desc.h"
+#include <string.h>
 
 native_failure native_d3d12_binding_values(const native_pipeline *pipeline,
     const native_d3d12_compute *map,const doe_resource_binding *resolved,native_d3d12_snapshot *out)
@@ -68,7 +69,12 @@ native_failure native_d3d12_binding_snapshot(const doe_resource_command *record,
         doe_resource_pipeline_get_layout(record->value.dispatch.pipeline),record->value.dispatch.groups,
         record->value.dispatch.dynamic_offsets,resolved);
     if (resource!=DOE_RESOURCE_OK) return native_failure_status(NATIVE_INVALID_ARGUMENT);
-    return native_d3d12_binding_values(pipeline,pipeline->d3d12_compute,resolved,out);
+    native_failure failure=native_d3d12_binding_values(pipeline,pipeline->d3d12_compute,resolved,out);
+    if (failure.status==NATIVE_OK) {
+        memcpy(out->values.immediate_words,record->value.dispatch.immediates.words,sizeof(out->values.immediate_words));
+        out->values.immediate_initialized_bytes=record->value.dispatch.immediates.initialized_bytes;
+    }
+    return failure;
 #else
     (void)record;
     (void)out;

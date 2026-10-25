@@ -91,6 +91,8 @@ doe_mtl_status doe_mtl_context_retain(doe_mtl_context *context) {
 
 void doe_mtl_context_release(doe_mtl_context *context) {
     if (context == NULL || --context->references != 0) return;
+    if (context->timeline != NULL)
+        context->native.release(context->native.userdata, context->timeline);
     if (context->queue != NULL)
         context->native.release(context->native.userdata, context->queue);
     if (context->device != NULL)

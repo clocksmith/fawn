@@ -565,11 +565,25 @@ policy. An unknown policy/backend fails rather than becoming a default. Strict
 lanes do not use automatic hardware-to-software adapter fallback; explicit
 `--adapter software` remains software evidence. Trace `nativeDevicePolicy` binds
 the exact policy file SHA256, requested values and observed queue-sync bits.
-Metal/D3D12 native lane policies remain explicitly unsupported here until their
-own concrete mechanisms are composed; selecting a name does not qualify them.
+Metal lanes explicitly select Metal (not the host's default backend), its unified
+queue, preferred shared-event timeline, and real staged-copy or mapped-upload
+mechanism. An unavailable optional event is truthfully reported as command-buffer
+completion. D3D12 lanes explicitly use the existing direct graphics/compute queue,
+its monotonic `ID3D12Fence` timeline, and real UPLOAD-to-DEFAULT staging. They
+reject compute-only queues, fence-pool synchronization, direct mapped shortcuts
+and Vulkan subgroup policies rather than silently remapping those requests.
+Typed host controls do not qualify a Metal/D3D12 device or turn a lane label into
+evidence.
 
 `--pipeline-cache-dir` now also selects Vulkan driver-native persistence through
 the same optional native extension. Trace load/creation/serialization counters
 are actual operations, not cache-hit claims. `--no-pipeline-cache` still overrides
 an explicit directory, and absent configuration creates no persistent cache.
-D3D12 persistent pipeline libraries are not yet implemented.
+D3D12 uses the same extension to configure its genuine `ID3D12PipelineLibrary`.
+Its envelope binds adapter LUID, driver version, canonical root signature and
+complete PSO descriptor/shader bytes; invalid persisted blobs never reach the
+driver. The explicit directory's parent must already exist. Serialization is
+explicit and uses an owned temporary plus atomic replacement; teardown does not
+silently flush. Optional store failures retain a valid PSO and increment failure
+counters, while device loss follows normal retirement. Windows SDK/runtime
+qualification of this authored path remains outstanding.

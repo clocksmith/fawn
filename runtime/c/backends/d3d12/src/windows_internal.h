@@ -12,7 +12,11 @@
 #include <stdlib.h>
 #include <string.h>
 
+struct doe_dx_pipeline_cache;
 struct doe_dx_native_context {
+    struct doe_dx_pipeline_cache *cache;
+    uint64_t cache_driver_version;
+    bool cache_driver_known;
     ID3D12Device *device;
     ID3D12CommandQueue *queue;
     ID3D12Fence *fence;
@@ -36,6 +40,7 @@ struct doe_dx_native_texture {
 };
 struct doe_dx_native_timestamps { ID3D12QueryHeap *heap; D3D12_QUERY_TYPE kind; };
 typedef struct doe_dx_windows_render_layout {
+    uint32_t immediate_root[DOE_DX_RENDER_STAGES],storage_sizes_root[DOE_DX_RENDER_STAGES];
     bool stencil_test;
     D3D_PRIMITIVE_TOPOLOGY topology;
     doe_dx_binding_plan stages[DOE_DX_RENDER_STAGES];
@@ -48,6 +53,8 @@ typedef struct doe_dx_resource_set {
     const doe_dx_native_resources *resources;
 } doe_dx_resource_set;
 struct doe_dx_native_pipeline {
+    uint32_t immediate_root,immediate_words,storage_sizes_root;
+    uint8_t root_digest[32];
     ID3D12RootSignature *root;
     ID3D12PipelineState *state;
     uint32_t resource_table, sampler_table;
@@ -57,10 +64,16 @@ struct doe_dx_native_pipeline {
     doe_dx_texture_binding_layout textures[DOE_DX_MAX_BINDINGS];
 };
 typedef struct doe_dx_descriptor_use {
+    doe_dx_native_buffer *storage_sizes[DOE_DX_RENDER_STAGES];
     ID3D12DescriptorHeap *heap;
     ID3D12DescriptorHeap *sampler_heap;
     struct doe_dx_descriptor_use *next;
 } doe_dx_descriptor_use;
+doe_dx_status doe_dx_prepare_color_view(doe_dx_native_commands *,doe_dx_native_texture *,const doe_dx_texture_view_desc *,
+    uint32_t,doe_dx_descriptor_use **,D3D12_CPU_DESCRIPTOR_HANDLE *,doe_dx_error *);
+doe_dx_status doe_dx_prepare_depth_view(doe_dx_native_commands *,doe_dx_native_texture *,const doe_dx_texture_view_desc *,
+    bool,bool,doe_dx_descriptor_use **,D3D12_CPU_DESCRIPTOR_HANDLE *,doe_dx_error *);
+doe_dx_status doe_dx_prepare_storage_sizes(doe_dx_native_commands *,const doe_dx_native_resources *,doe_dx_native_buffer **,doe_dx_error *);
 struct doe_dx_native_commands {
     doe_dx_native_context *context; /* Context cannot close with live commands. */
     ID3D12CommandAllocator *allocator;

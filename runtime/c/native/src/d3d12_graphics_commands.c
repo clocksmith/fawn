@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: MIT */
 #include "d3d12_draw_guard.h"
+#include "d3d12_texture_desc.h"
 #include <stdlib.h>
 
 #if defined(_WIN32)
@@ -9,29 +10,31 @@ static bool same_targets(const doe_resource_render_targets *a,const doe_resource
         a->depth_stencil!=b->depth_stencil || a->occlusion_queries!=b->occlusion_queries) return false;
     for (uint32_t i=0;i<a->color_count;++i)
         if (a->colors[i].view!=b->colors[i].view || a->colors[i].resolve_target!=b->colors[i].resolve_target ||
-            a->colors[i].has_depth_slice || b->colors[i].has_depth_slice) return false;
+            a->colors[i].has_depth_slice!=b->colors[i].has_depth_slice ||
+            (a->colors[i].has_depth_slice && a->colors[i].depth_slice!=b->colors[i].depth_slice)) return false;
     return true;
 }
-static native_texture *attachment_texture(doe_resource_view *view)
+static native_texture *attachment_texture(doe_resource_view *view,doe_dx_texture_view_desc *out)
 {
     if (!view) return NULL;
     const doe_resource_view_desc *span=doe_resource_view_description(view);
     doe_resource_texture *texture=doe_resource_view_texture(view);
     const doe_resource_texture_desc *desc=doe_resource_texture_description(texture);
     native_texture *native=doe_resource_texture_native(texture);
-    if (!doe_resource_view_native(view) || !span || !desc || !native || !native->d3d12 || span->format!=desc->format ||
-        span->dimension!=WGPUTextureViewDimension_2D || span->aspect!=WGPUTextureAspect_All ||
-        span->base_mip || span->mip_count!=1 || span->base_layer || span->layer_count!=1) return NULL;
+    if (!doe_resource_view_native(view) || !span || !desc || !native || !native->d3d12 ||
+        (span->dimension!=WGPUTextureViewDimension_2D && span->dimension!=WGPUTextureViewDimension_3D) ||
+        span->mip_count!=1 || span->layer_count!=1 || !native_d3d12_view_descriptor(span,desc,out)) return NULL;
     return native;
 }
 static native_failure color_attachment(const doe_resource_color_attachment *source,doe_dx_render_color *out)
 {
     if (!source->view) return native_failure_status(source->resolve_target ? NATIVE_INVALID_ARGUMENT : NATIVE_OK);
-    native_texture *texture=attachment_texture(source->view);
+    native_texture *texture=attachment_texture(source->view,&out->view);
     if (!texture) return native_failure_status(NATIVE_UNSUPPORTED);
     out->texture=texture->d3d12;
+    out->depth_slice=source->has_depth_slice ? source->depth_slice : 0;
     if (source->resolve_target) {
-        texture=attachment_texture(source->resolve_target);
+        texture=attachment_texture(source->resolve_target,&out->resolve_view);
         if (!texture) return native_failure_status(NATIVE_UNSUPPORTED);
         out->resolve=texture->d3d12;
     }
@@ -61,6 +64,8 @@ static native_failure prepare_draw(const doe_resource_render_packet *packet,
             resolved,&storage->stages[stage]);
         if (failure.status!=NATIVE_OK) return failure;
         out->stages[stage]=storage->stages[stage].values;
+        memcpy(out->stages[stage].immediate_words,packet->immediates.words,sizeof(out->stages[stage].immediate_words));
+        out->stages[stage].immediate_initialized_bytes=packet->immediates.initialized_bytes;
     }
     out->vertices=storage->vertices;
     out->vertex_buffer_count=pipeline->vertex_count;
@@ -146,8 +151,8 @@ native_failure native_d3d12_render(native_command_handle *commands,
         const doe_resource_view_desc *depth_span=doe_resource_view_description(depth_view);
         native_texture *depth=doe_resource_texture_native(doe_resource_view_texture(depth_view));
         if (!depth_span || !depth || !depth->d3d12 ||
-            depth_span->dimension!=WGPUTextureViewDimension_2D || depth_span->aspect!=WGPUTextureAspect_All ||
-            depth_span->base_mip || depth_span->mip_count!=1 || depth_span->base_layer || depth_span->layer_count!=1)
+            depth_span->dimension!=WGPUTextureViewDimension_2D || depth_span->mip_count!=1 || depth_span->layer_count!=1 ||
+            !native_d3d12_view_descriptor(depth_span,doe_resource_texture_description(doe_resource_view_texture(depth_view)),&pass.depth_view))
             failure=native_failure_status(NATIVE_UNSUPPORTED);
         else {
             pass.depth=depth->d3d12;

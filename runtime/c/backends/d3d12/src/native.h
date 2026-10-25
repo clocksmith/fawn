@@ -28,10 +28,15 @@ typedef struct doe_dx_native_resources {
     size_t buffer_count, texture_count;
     doe_dx_sampler_desc samplers[DOE_DX_MAX_DYNAMIC_SAMPLERS];
     size_t sampler_count;
+    uint32_t immediate_words[16];
+    uint32_t logical_size_count,logical_size_indices[DOE_DX_MAX_BINDINGS];
 } doe_dx_native_resources;
 
 /* Plain copied layout, not a pipeline/refcount/resource owner. */
 typedef struct doe_dx_binding_plan {
+    uint32_t immediate_bytes;
+    uint64_t immediate_required_bytes;
+    uint32_t logical_size_count,logical_size_indices[DOE_DX_MAX_BINDINGS];
     size_t binding_count,texture_count,sampler_count;
     doe_dx_binding_layout bindings[DOE_DX_MAX_BINDINGS];
     doe_dx_texture_binding_layout textures[DOE_DX_MAX_BINDINGS];
@@ -53,6 +58,8 @@ typedef struct doe_dx_native_render_color {
     doe_dx_native_texture *texture,*resolve;
     bool clear,discard;
     float value[4];
+    doe_dx_texture_view_desc view,resolve_view;
+    uint32_t depth_slice;
 } doe_dx_native_render_color;
 typedef struct doe_dx_native_render_depth {
     doe_dx_native_texture *texture;
@@ -60,8 +67,11 @@ typedef struct doe_dx_native_render_depth {
     float value;
     bool clear_stencil, discard_stencil;
     uint32_t stencil;
+    doe_dx_texture_view_desc view;
+    bool depth_read_only,stencil_read_only;
 } doe_dx_native_render_depth;
 typedef struct doe_dx_native_render_draw {
+    doe_dx_native_texture *attachment_depth; /* Plane states owned by enclosing pass. */
     doe_dx_native_timestamps *query;
     uint32_t query_index;
     bool query_begin;

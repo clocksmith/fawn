@@ -29,12 +29,14 @@ void native_d3d12_write_texture(native_device *device,const WGPUTexelCopyTexture
     /* Canonical recording below checks usage/availability even for zero writes. */
     uint64_t pitch = ((uint64_t)admitted.row_bytes + 255) & ~UINT64_C(255);
     bool nonempty = copy.width && copy.height && copy.depth_or_layers;
-    uint64_t bytes = nonempty ? pitch * admitted.rows : 0;
+    uint64_t image_bytes=nonempty ? pitch*admitted.rows : 0;
+    bool overflow=nonempty && image_bytes>UINT64_MAX/copy.depth_or_layers;
+    uint64_t bytes=overflow ? UINT64_MAX : image_bytes*copy.depth_or_layers;
     uint64_t bound = native_allocation_bound(device);
-    if (copy.depth_or_layers > 1 || copy.mip || copy.origin[2] || pitch > UINT32_MAX ||
+    if (overflow || pitch > UINT32_MAX ||
         bytes > SIZE_MAX || bytes > bound) {
         native_error(device,bytes > bound || bytes > SIZE_MAX ? WGPUErrorType_OutOfMemory : WGPUErrorType_Validation,
-            "D3D12 queue texture write shape or staging not composed");
+            "D3D12 queue texture write staging extent exceeds allocation bound");
         doe_resource_texture_release(texture);
         native_device_release(device);
         return;
@@ -50,9 +52,10 @@ void native_d3d12_write_texture(native_device *device,const WGPUTexelCopyTexture
         return;
     }
     const unsigned char *source = data;
-    for (uint32_t row = 0; nonempty && row < admitted.rows; ++row)
-        memcpy(packed + (uint64_t)row * pitch,
-            source + copy.offset + (uint64_t)row * admitted.pitch,admitted.row_bytes);
+    for (uint32_t image=0;nonempty && image<copy.depth_or_layers;++image)
+        for (uint32_t row=0;row<admitted.rows;++row)
+            memcpy(packed+(uint64_t)image*image_bytes+(uint64_t)row*pitch,
+                source+copy.offset+((uint64_t)image*admitted.image_rows+row)*admitted.pitch,admitted.row_bytes);
     WGPUBufferDescriptor descriptor = {.size=allocation,.usage=WGPUBufferUsage_CopySrc|WGPUBufferUsage_CopyDst};
     WGPUBuffer staging = native_device_create_buffer(device,&descriptor,bound);
     doe_resource_encoder *encoder = NULL;

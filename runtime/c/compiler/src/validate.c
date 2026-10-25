@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: MIT
  * Copyright (c) 2026 Doe contributors */
 #include "sema.h"
+#include "pointer_lower.h"
 static bool lower_boolean(Source *source,const Syntax *s,uint32_t id,const LocalScope *scope,IrProgram *program,IrValue *value) {
     (void)s;(void)program;ExpressionValue result;
     if (!sema_expression(source,id,scope,true,true,&result)) return false;
@@ -84,7 +85,8 @@ static bool lower_local(Source *source,const Syntax *s,const LocalSyntax *local,
         }
     } else if (!constant_zero(source,annotation,&result.constant)) return false;
     if (!constant && !type_constructible(program,result.constant.type) &&
-        !((local->flags & LOCAL_MUTABLE) == 0u && type_pointer(program, result.constant.type))) return source_error(source,DOE_COMPILER_SEMANTIC_ERROR,name.offset,"local variable type must be concrete and constructible");
+        !((local->flags & LOCAL_MUTABLE) == 0u && (type_pointer(program, result.constant.type) ||
+            type_handle(program,result.constant.type)))) return source_error(source,DOE_COMPILER_SEMANTIC_ERROR,name.offset,"local variable type must be concrete and constructible");
     if (!constant && !sema_ensure_value(source,&result,true)) return false;
     if (scope->count==scope->capacity) return source_pool_error(source,DOE_COMPILER_POOL_STATEMENTS,scope->count,name.offset,"local scope capacity exceeded");
     LocalBinding binding={.name=name,.value=result.value.id,.type=result.constant.type,.constant_value=result.constant,
@@ -344,5 +346,5 @@ bool validate_syntax(Source *source,CompilerWorkspace *c) {
             return source_error(source,DOE_COMPILER_SEMANTIC_ERROR,function->name.offset,"value-returning function must return a value on every path");
         function->instruction_end=c->instruction_count;function->local_count=c->local_count-function->local_start;
     }
-    return reject_call_cycles(source,c) && sema_pointer_aliases(source) && module_closures(source) && uniformity_analyze(source,UNIFORMITY_WORK_LIMIT,NULL);
+    return reject_call_cycles(source,c) && sema_pointer_aliases(source) && module_closures(source) && uniformity_analyze(source,UNIFORMITY_WORK_LIMIT,NULL) && pointer_lower(source);
 }
