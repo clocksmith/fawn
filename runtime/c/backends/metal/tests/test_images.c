@@ -239,6 +239,21 @@ static void compressed_and_volume(void) {
     assert(doe_mtl_commands_read_texture(commands, texture, region, buffer,
         (doe_mtl_texture_buffer_layout){0}, NULL) == DOE_MTL_ALIGNMENT);
     assert(doe_mtl_commands_release(commands) == DOE_MTL_OK);
+    commands = commands_new(context); region = (doe_mtl_texture_region){0,0,0,0,8,8,1};
+    assert(doe_mtl_commands_read_texture(commands, texture, region, buffer,
+        (doe_mtl_texture_buffer_layout){0}, NULL) == DOE_MTL_OK);
+    assert(mock.image_from.region.width == 7 && mock.image_from.region.height == 5 &&
+        mock.image_from.bytes_per_image == 512);
+    complete(&mock, commands);
+    doe_mtl_texture_release(texture);
+    desc.type = DOE_MTL_TEXTURE_3D; desc.depth_or_layers = 2;
+    texture = image_new(context, desc);
+    commands = commands_new(context); region.depth_or_layers = 2;
+    assert(doe_mtl_commands_upload_texture(commands, buffer,
+        (doe_mtl_texture_buffer_layout){.rows_per_image=3}, texture, region, NULL) == DOE_MTL_OK);
+    assert(mock.image_to.volume && mock.image_to.region.width == 7 && mock.image_to.region.height == 5 &&
+        mock.image_to.region.depth_or_layers == 2 && mock.image_to.bytes_per_image == 768);
+    complete(&mock, commands);
     doe_mtl_texture_release(texture);
     desc = image_desc(); desc.type = DOE_MTL_TEXTURE_3D;
     texture = image_new(context, desc);

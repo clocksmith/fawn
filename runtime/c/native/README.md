@@ -91,6 +91,12 @@ packed formats exercised by `core-formats`. Initialization asks the resource
 validator whether a private attachment clear is legal; other shapes use real
 zero staging bounded by native allocation capacity, not public maxBufferSize.
 This preserves non-renderable sampled formats without adding public usage rights.
+BC and BC sliced-3D follow the native compression capability. Queue writes pack
+canonical block rows; buffer transfers keep full block footprints while native
+edge extents use logical mip dimensions. Initialization and transfers share the
+existing command leases. The unchanged M3 `bc-compression` consumer exercises
+edge mips/copies, padded rows/layers, exact block sampling, large zero publication
+and sliced 3D; other compressed families remain uncomposed.
 
 Metal's workgroup envelope follows the selected device dimensions and known GPU
 family total; each pipeline also checks its actual maxTotalThreadsPerThreadgroup.

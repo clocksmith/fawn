@@ -64,7 +64,6 @@ static doe_mtl_status texture_validate(const doe_mtl_context *context,
         max_dimension = context->caps.max_texture_2d;
         break;
     case DOE_MTL_TEXTURE_3D:
-        if (format->compressed) return DOE_MTL_UNSUPPORTED;
         if (desc->depth_or_layers > context->caps.max_texture_3d) return DOE_MTL_RANGE;
         max_dimension = context->caps.max_texture_3d;
         break;

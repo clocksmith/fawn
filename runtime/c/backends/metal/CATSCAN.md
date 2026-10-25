@@ -11,7 +11,7 @@ resolves, visibility/timestamps, drawables, transfers and retirement. Exclude WG
 public validation, provider selection and qualification.
 
 ## Scope
-ABI/tests.
+ABI/tests, including compressed transfers.
 
 ## Contracts
 MSL and workgroup/slot facts enter the
@@ -37,7 +37,6 @@ mode and bias use native encoder state.
 completion.
 - Evidence: [Timestamps](DEVELOPER_RECEIPT_TIMESTAMPS.json) bind host scope;
 [Graphics](DEVELOPER_RECEIPT_GRAPHICS_PREREQUISITES.json) bind initialization, empty raster controls and Apple execution.
-SDK/parity require evidence.
 
 ## Non-goals
 WebGPU policy, duplicate lifetimes or compile-only qualification.

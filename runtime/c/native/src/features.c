@@ -52,6 +52,8 @@ uint32_t native_adapter_features(const native_backend *backend)
             NATIVE_FEATURE(WGPUFeatureName_DepthClipControl) |
             NATIVE_FEATURE(WGPUFeatureName_IndirectFirstInstance) |
             NATIVE_FEATURE(WGPUFeatureName_Depth32FloatStencil8) |
+            (caps->bc_texture_compression ? NATIVE_FEATURE(WGPUFeatureName_TextureCompressionBC) |
+                NATIVE_FEATURE(WGPUFeatureName_TextureCompressionBCSliced3D) : 0) |
             (caps->float32_filterable ? NATIVE_FEATURE(WGPUFeatureName_Float32Filterable) : 0) |
             (caps->float32_blendable ? NATIVE_FEATURE(WGPUFeatureName_Float32Blendable) : 0) |
             (caps->rg11b10_renderable && caps->store_and_resolve ? NATIVE_FEATURE(WGPUFeatureName_RG11B10UfloatRenderable) : 0) |
