@@ -259,6 +259,22 @@ static void async_lifetime(void) {
     assert(doe_vk_commands_release(commands) == DOE_VK_OK);
     assert(mock.buffers_destroyed == 1 && mock.memory_freed == 1 && mock.unmaps == 1);
     assert(mock.pools_destroyed == 1 && mock.fences_destroyed == 1 && ctx.references == 1);
+
+    /* A fence holder (an unserialized waiter) keeps only the fence and shell:
+     * the last reference still releases the recorded buffer at once. */
+    assert(doe_vk_buffer_create(&ctx, 256, DOE_VK_BUFFER_COPY_DST, DOE_VK_MEMORY_HOST, &buffer, NULL) == DOE_VK_OK);
+    assert(doe_vk_commands_create(&ctx, &commands, NULL) == DOE_VK_OK);
+    assert(doe_vk_commands_fill(commands, buffer, 0, 256, 7) == DOE_VK_OK);
+    doe_vk_buffer_release(buffer);
+    assert(doe_vk_commands_submit(commands, NULL) == DOE_VK_OK);
+    assert(doe_vk_commands_hold(commands) == DOE_VK_OK);
+    assert(doe_vk_commands_block(commands, 1) == DOE_VK_OK);
+    assert(doe_vk_commands_wait(commands, 1, NULL) == DOE_VK_OK);
+    assert(doe_vk_commands_release(commands) == DOE_VK_OK);
+    assert(mock.buffers_destroyed == 2 && mock.pools_destroyed == 1 && mock.fences_destroyed == 1);
+    assert(doe_vk_commands_block(commands, 1) == DOE_VK_OK); /* Fence outlives the release. */
+    doe_vk_commands_unhold(commands);
+    assert(mock.pools_destroyed == 2 && mock.fences_destroyed == 2 && ctx.references == 1);
 }
 
 static void uncertain_and_loss(void) {
@@ -581,7 +597,7 @@ int main(void) {
     first_failure_detail();
     reusable_lifetime();
     reusable_queries();
-    puts("PASS host Vulkan boundary rollback, timeout, uncertain submission, device loss, bounds, poisoning");
+    puts("PASS host Vulkan boundary rollback, fence holder without resource uses, timeout, uncertain submission, device loss, bounds, poisoning");
     puts("PASS reusable recording: one native command buffer resubmitted with fence re-arm, buffer uses dropped between runs, pending-holder BUSY vs program drop, terminal reset/execution failure, one-shot retain rejected");
     puts("PASS reusable timestamp recording: self-contained reset/write/resolve sealed, pool ownership released at seal and at each accepted submission (published once, never overwritten by completion), BUSY under another owner without native submit, three runs publishing only recorded indices, unhealthy pool rejection, failed run poisoning, non-self-contained write/resolve rejected at seal");
     return 0;

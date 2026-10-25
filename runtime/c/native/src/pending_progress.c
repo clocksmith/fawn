@@ -75,7 +75,7 @@ static void pending_progress(void *identity)
             doe_vk_status waited = doe_vk_commands_block(oldest, PROGRESS_FENCE_WAIT_NS);
             native_lock(device);
             signalled = waited == DOE_VK_OK ? oldest : NULL;
-            if (doe_vk_commands_drop(oldest) != DOE_VK_OK) abort();
+            doe_vk_commands_unhold(oldest);
             continue;
         }
         if (!oldest) signalled = NULL;

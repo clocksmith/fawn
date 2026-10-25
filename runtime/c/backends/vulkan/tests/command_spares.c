@@ -136,11 +136,12 @@ int main(void) {
     assert(doe_vk_commands_release(commands) == DOE_VK_OK);
     assert(ctx.command_spare_count == 0 && mock.pools_destroyed == 1 && mock.fences_destroyed == 1);
 
-    /* A held recording is a spare only after the last holder drops it. */
+    /* A fence-held recording is a spare only after the last holder unholds it. */
     commands = recording(&ctx);
     assert(doe_vk_commands_hold(commands) == DOE_VK_OK);
     assert(doe_vk_commands_release(commands) == DOE_VK_OK && ctx.command_spare_count == 0);
-    assert(doe_vk_commands_drop(commands) == DOE_VK_OK && ctx.command_spare_count == 1);
+    doe_vk_commands_unhold(commands);
+    assert(ctx.command_spare_count == 1);
 
     /* The list is bounded; a failed pool reset or a lost context destroys. */
     doe_vk_commands *many[DOE_VK_COMMAND_SPARES + 1];
