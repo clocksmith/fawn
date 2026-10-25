@@ -9,6 +9,15 @@ const requestedBackend = process.env.DOE_BUN_WEBGPU_BACKEND ?? "";
 // structs by value, which Bun FFI cannot. Other providers (the C runtime) run
 // through the N-API surface, which Bun loads.
 const ffiLoaded = ffi.providerInfo().loaded && ffi.providerHasFlatEntryPoints();
+// An explicit FFI request is honored or refused, never silently replaced.
+if (requestedBackend === "ffi" && !ffiLoaded) {
+  const info = ffi.providerInfo();
+  throw new Error(
+    `doe-gpu: DOE_BUN_WEBGPU_BACKEND=ffi needs a provider exporting the Doe flat entry points (the Zig drop-in); `
+      + `${info.loaded ? `the loaded ${info.libraryFlavor} provider (${info.doeLibraryPath}) does not` : "no provider library loaded"}. `
+      + "Unset it to use the N-API path, which runs every provider.",
+  );
+}
 const runtime = requestedBackend === "full"
   ? full
   : (requestedBackend === "ffi" || ffiDefaultPlatforms.has(process.platform)) && ffiLoaded

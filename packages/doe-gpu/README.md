@@ -489,8 +489,12 @@ diagnostics but cannot satisfy the retained-package candidate gate.
 Node 18 or newer is required for the default entrypoint. Bun and Deno use their
 declared package export conditions. Under Bun the package uses its FFI backend with the Zig
 drop-in and the Node addon (N-API) with other providers such as the C runtime,
-because webgpu.h passes callback structs by value, which Bun FFI cannot. Electron uses the default Node-compatible
-entrypoint in its main process. Actual platform support remains limited to
+because webgpu.h passes callback structs by value, which Bun FFI cannot. An explicit
+`DOE_BUN_WEBGPU_BACKEND=ffi` with such a provider is refused with that reason rather
+than silently replaced. `DOE_WEBGPU_LIB` (or `DOE_LIB`) selects exactly one provider:
+when it names a missing file nothing loads, and the package never falls back to
+another library. Electron uses the default Node-compatible entrypoint in its main
+process. Actual platform support remains limited to
 the tuples in [`docs/doe-support-matrix.md`](../../docs/doe-support-matrix.md).
 
 ## Evidence

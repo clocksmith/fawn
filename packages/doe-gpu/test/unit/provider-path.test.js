@@ -2,7 +2,8 @@
 // A relative DOE_WEBGPU_LIB names a file under the working directory. The
 // package resolves it to an absolute path, so the library it reports is the
 // one the loader opens (dlopen would search the system path for a bare name),
-// and a library that fails to load is reported as not loaded.
+// and a library that fails to load is reported as not loaded. An override that
+// names a missing file selects nothing: it never falls back to another library.
 
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
@@ -23,6 +24,12 @@ try {
   // The empty file cannot load; providerInfo reports that instead of loaded.
   assert.equal(info.loaded, false);
   assert.ok(info.loadError.length > 0, 'loadError names the load failure');
+  const missing = JSON.parse(execFileSync(process.execPath, ['--input-type=module', '-e',
+    `const { providerInfo } = await import(${JSON.stringify(entry)}); process.stdout.write(JSON.stringify(providerInfo()));`],
+  { cwd: directory, env: { ...process.env, DOE_WEBGPU_LIB: 'missing/libwebgpu_doe_c.so' }, encoding: 'utf8' }));
+  assert.equal(missing.loaded, false);
+  assert.equal(missing.doeLibraryPath, '');
+  assert.match(missing.loadError, /selected provider .*missing\/libwebgpu_doe_c\.so does not exist/);
 } finally {
   rmSync(directory, { recursive: true, force: true });
 }
