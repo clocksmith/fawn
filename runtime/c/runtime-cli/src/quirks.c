@@ -10,7 +10,7 @@
 typedef enum bucket_kind {
     BUCKET_UPLOAD, BUCKET_COPY, BUCKET_BARRIER, BUCKET_KERNEL_DISPATCH, BUCKET_RENDER_DRAW,
     BUCKET_SAMPLER_CREATE, BUCKET_SAMPLER_DESTROY, BUCKET_TEXTURE_WRITE, BUCKET_TEXTURE_QUERY,
-    BUCKET_TEXTURE_DESTROY, BUCKET_DISPATCH, BUCKET_MAP_ASYNC, BUCKET_DIAGNOSTICS, BUCKET_COUNT
+    BUCKET_TEXTURE_DESTROY, BUCKET_DISPATCH, BUCKET_MAP_ASYNC, BUCKET_DIAGNOSTICS, BUCKET_SURFACE, BUCKET_SURFACE_PRESENT, BUCKET_COUNT
 } bucket_kind;
 _Static_assert((int)BUCKET_COUNT <= (int)DOE_QUIRK_BUCKETS, "bucket storage");
 
@@ -108,7 +108,7 @@ static bool supports(doe_quirk_scope scope, bucket_kind kind)
     case DOE_SCOPE_ALIGNMENT: return kind == BUCKET_UPLOAD || kind == BUCKET_COPY;
     case DOE_SCOPE_LAYOUT: return kind != BUCKET_UPLOAD && kind != BUCKET_BARRIER && kind != BUCKET_MAP_ASYNC;
     case DOE_SCOPE_BARRIER:
-        return kind == BUCKET_BARRIER || kind == BUCKET_KERNEL_DISPATCH || kind == BUCKET_RENDER_DRAW || kind == BUCKET_DISPATCH;
+        return kind == BUCKET_BARRIER || kind == BUCKET_KERNEL_DISPATCH || kind == BUCKET_RENDER_DRAW || kind == BUCKET_DISPATCH || kind == BUCKET_SURFACE_PRESENT;
     case DOE_SCOPE_DRIVER_TOGGLE: return true;
     case DOE_SCOPE_MEMORY:
         return kind == BUCKET_COPY || kind == BUCKET_UPLOAD || kind == BUCKET_TEXTURE_WRITE || kind == BUCKET_TEXTURE_QUERY ||
@@ -158,6 +158,8 @@ static uint32_t score(const doe_quirk *q, bucket_kind kind, const doe_profile *p
         if (q->scope == DOE_SCOPE_LAYOUT) s += 4;
         if (q->scope == DOE_SCOPE_BARRIER) s += 6;
         break;
+    case BUCKET_SURFACE:
+    case BUCKET_SURFACE_PRESENT:
     case BUCKET_DIAGNOSTICS: if (q->scope == DOE_SCOPE_MEMORY) s += 5; break;
     case BUCKET_MAP_ASYNC: if (q->scope == DOE_SCOPE_MEMORY) s += 6; break;
     case BUCKET_COUNT: break;
@@ -362,6 +364,14 @@ static bucket_kind bucket_of(doe_command_kind kind)
     case DOE_COMMAND_DISPATCH:
     case DOE_COMMAND_DISPATCH_INDIRECT: return BUCKET_DISPATCH;
     case DOE_COMMAND_MAP_ASYNC: return BUCKET_MAP_ASYNC;
+    case DOE_COMMAND_SURFACE_CREATE:
+    case DOE_COMMAND_SURFACE_CAPABILITIES:
+    case DOE_COMMAND_SURFACE_CONFIGURE:
+    case DOE_COMMAND_SURFACE_ACQUIRE:
+    case DOE_COMMAND_SURFACE_UNCONFIGURE:
+    case DOE_COMMAND_SURFACE_RELEASE:
+        return BUCKET_SURFACE;
+    case DOE_COMMAND_SURFACE_PRESENT: return BUCKET_SURFACE_PRESENT;
     case DOE_COMMAND_ASYNC_DIAGNOSTICS: return BUCKET_DIAGNOSTICS;
     }
     return BUCKET_COUNT;

@@ -15,6 +15,7 @@ back to the Zig CLI, and run results carry `runtimeImplementation`.
 ```bash
 make -C runtime/c/runtime-cli            # builds $(BUILD)/doe-c-runtime and the native library
 make -C runtime/c/runtime-cli check-host # host-only tests
+make -C runtime/c/runtime-cli check-surface # real display required
 VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json make -C runtime/c/runtime-cli check
 $(BUILD)/doe-c-runtime --commands examples/rmsnorm_tree_commands.json --execute \
   --backend native --kernel-root bench/kernels --trace-jsonl out.jsonl --trace-meta out.meta.json
@@ -147,6 +148,19 @@ $(BUILD)/doe-c-runtime --commands examples/rmsnorm_tree_commands.json --execute 
   examples, validates schema/replay, tests strict rejection, and counts actual ABI
   calls for two full iterations (six async pipelines and six command buffers,
   four draws, zero submissions). C and Dawn pass on lavapipe LLVM 21.1.8 CPU Vulkan.
+- All seven surface lifecycle commands and retained aliases: create, capabilities,
+  configure, acquire, present, unconfigure and release. Linux uses real XCB windows
+  (the pinned Dawn build requires an Xlib surface chain on the shared XCB display);
+  Darwin owns an NSWindow/CAMetalLayer. Configuration retains format, usage, alpha
+  mode, present mode and dimensions. Nonstandard tone mapping and frame-latency
+  hints beyond the retained defaults reject before device work. Surface handles
+  own acquired texture references through present, reconfigure, unconfigure,
+  release or runtime close. Missing/duplicate handles and invalid acquisition or
+  presentation order fail explicitly. `check-surface` and `check-surface-dawn`
+  require a reachable display; both pass the two surface fixtures plus resize,
+  acquired-frame cleanup and state failures on CPU lavapipe/Xwayland. Darwin host
+  source passes strict clang syntax checking; native Metal presentation is a
+  separate backend prerequisite, not established by that compile.
 - `--readback-buffer HANDLE=PATH` (up to 8) writes a buffer's final bytes after
   a successful run, so a test can compare them with bytes computed without the
   GPU.
@@ -167,11 +181,11 @@ $(BUILD)/doe-c-runtime --commands examples/rmsnorm_tree_commands.json --execute 
   No Lean-verified build exists for C, so `lean_required` quirks without a proven
   level are counted as blocking, as in a Zig build without Lean.
 - Arguments as listed by `--help`. `--queue-sync-mode` admits only `per-command`; `--gpu-timestamp-mode` admits
-  `off` and `auto` (no timestamps are recorded); `--api` admits only `vulkan`.
+  `off` and `auto` (no timestamps are recorded); `--api` matches the platform build (`vulkan` on Linux, `metal` on Darwin).
   `--adapter auto|physical|software` is this CLI's own: `auto` takes a
   nonfallback adapter, else the fallback (CPU) adapter.
 
-Every other command kind (surfaces and the rest), field, texture dimension, sample count, aspect, format, oracle
+Every other command kind or field, texture dimension, sample count, aspect, format, oracle
 scope, `repeatSynchronization` value, semantic field on another kind, explicit
 `numericStability` annotation and argument is rejected with exit 2 before
 device work.
@@ -366,3 +380,12 @@ replacement and final unmap. `test_texture_cleanup` counts actual view
 acquisition/release when a later buffer binding fails for missing size,
 overflow or injected allocation failure. These checks do not establish
 physical-backend qualification or performance advantage.
+
+
+The expanded host-only inventory admits 91 of all 98 tracked
+`examples/*_commands.json` files, including every kind in Zig's command-kind
+registry. The other seven are inference `buffer_load` compatibility streams:
+Zig's raw command parser also rejects that kind; their active consumers use
+normalized `planPath` through the plan executor. Parser admission is distinct
+from execution: for example `copy_protocol` has a row pitch of 8 that the public
+WebGPU path correctly rejects (the native Zig CLI marks copies unsupported).

@@ -48,6 +48,21 @@ static const kind_name KINDS[] = {
     {"render_pass", DOE_COMMAND_RENDER_PASS},
     {"draw_indirect", DOE_COMMAND_DRAW_INDIRECT},
     {"draw_indexed_indirect", DOE_COMMAND_DRAW_INDEXED_INDIRECT},
+    {"surface_create", DOE_COMMAND_SURFACE_CREATE},
+    {"create_surface", DOE_COMMAND_SURFACE_CREATE},
+    {"surface_capabilities", DOE_COMMAND_SURFACE_CAPABILITIES},
+    {"surface_get_capabilities", DOE_COMMAND_SURFACE_CAPABILITIES},
+    {"surface_configure", DOE_COMMAND_SURFACE_CONFIGURE},
+    {"configure_surface", DOE_COMMAND_SURFACE_CONFIGURE},
+    {"surface_acquire", DOE_COMMAND_SURFACE_ACQUIRE},
+    {"surface_get_current_texture", DOE_COMMAND_SURFACE_ACQUIRE},
+    {"surface_current_texture", DOE_COMMAND_SURFACE_ACQUIRE},
+    {"surface_present", DOE_COMMAND_SURFACE_PRESENT},
+    {"present_surface", DOE_COMMAND_SURFACE_PRESENT},
+    {"surface_unconfigure", DOE_COMMAND_SURFACE_UNCONFIGURE},
+    {"unconfigure_surface", DOE_COMMAND_SURFACE_UNCONFIGURE},
+    {"surface_release", DOE_COMMAND_SURFACE_RELEASE},
+    {"release_surface", DOE_COMMAND_SURFACE_RELEASE},
     {"async_diagnostics", DOE_COMMAND_ASYNC_DIAGNOSTICS},
     {"pipeline_async_diagnostics", DOE_COMMAND_ASYNC_DIAGNOSTICS},
     {"map_async", DOE_COMMAND_MAP_ASYNC},
@@ -78,6 +93,13 @@ const char *doe_command_tag(doe_command_kind kind)
     case DOE_COMMAND_DRAW_INDIRECT: return "draw_indirect";
     case DOE_COMMAND_DRAW_INDEXED_INDIRECT: return "draw_indexed_indirect";
     case DOE_COMMAND_MAP_ASYNC: return "map_async";
+    case DOE_COMMAND_SURFACE_CREATE: return "surface_create";
+    case DOE_COMMAND_SURFACE_CAPABILITIES: return "surface_capabilities";
+    case DOE_COMMAND_SURFACE_CONFIGURE: return "surface_configure";
+    case DOE_COMMAND_SURFACE_ACQUIRE: return "surface_acquire";
+    case DOE_COMMAND_SURFACE_PRESENT: return "surface_present";
+    case DOE_COMMAND_SURFACE_UNCONFIGURE: return "surface_unconfigure";
+    case DOE_COMMAND_SURFACE_RELEASE: return "surface_release";
     case DOE_COMMAND_ASYNC_DIAGNOSTICS: return "async_diagnostics";
     }
     return "unknown";
@@ -531,6 +553,14 @@ static bool parse_command(const doe_json_value *object, doe_command *command, si
         case DOE_COMMAND_DISPATCH:
         case DOE_COMMAND_DISPATCH_INDIRECT: return parse_grid(object, command, index, error);
         case DOE_COMMAND_MAP_ASYNC: return parse_map_async(object, command, index, error);
+        case DOE_COMMAND_SURFACE_CREATE:
+        case DOE_COMMAND_SURFACE_CAPABILITIES:
+        case DOE_COMMAND_SURFACE_CONFIGURE:
+        case DOE_COMMAND_SURFACE_ACQUIRE:
+        case DOE_COMMAND_SURFACE_PRESENT:
+        case DOE_COMMAND_SURFACE_UNCONFIGURE:
+        case DOE_COMMAND_SURFACE_RELEASE:
+            return stream_parse_surface(object, command, index, error);
         case DOE_COMMAND_ASYNC_DIAGNOSTICS: return stream_parse_diagnostics(object, command, index, error);
         }
     }
