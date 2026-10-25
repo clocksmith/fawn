@@ -109,7 +109,7 @@ static void recording_reserve_failures(void) {
         doe_dx_buffer_release(upload);
         const unsigned char code = 1;
         const doe_dx_binding_layout buffer_layout = {0,0,4,DOE_DX_READ_ONLY,DOE_DX_STRUCTURED};
-        const doe_dx_texture_binding_layout texture_layout = {0,1,DOE_DX_R32_UINT,DOE_DX_READ_ONLY};
+        const doe_dx_texture_binding_layout texture_layout = {0,1,DOE_DX_R32_UINT,DOE_DX_READ_ONLY, false};
         const doe_dx_resource_pipeline_desc desc = {{&code,1,&buffer_layout,1},&texture_layout,1,NULL,0};
         doe_dx_pipeline *pipeline = NULL;
         assert(doe_dx_pipeline_create_resources(owner,&desc,&pipeline,NULL) == DOE_DX_OK);

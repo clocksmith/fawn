@@ -15,6 +15,13 @@ bool doe_dx_format_compatible(doe_dx_format a,doe_dx_format b)
     return false;
 }
 
+bool doe_dx_texture_view_swizzled(const doe_dx_texture_view_desc *view)
+{
+    for (uint32_t i=0;i<4;++i)
+        if (view->swizzle[i]!=DOE_DX_SWIZZLE_IDENTITY && view->swizzle[i]!=(doe_dx_swizzle)(DOE_DX_SWIZZLE_R+i)) return true;
+    return false;
+}
+
 doe_dx_status doe_dx_texture_view_validate(const doe_dx_texture *texture,
     const doe_dx_texture_view_desc *input,doe_dx_texture_view_desc *out)
 {
@@ -23,6 +30,8 @@ doe_dx_status doe_dx_texture_view_validate(const doe_dx_texture *texture,
     doe_dx_texture_view_desc view=input ? *input : (doe_dx_texture_view_desc){.format=texture->desc.format,
         .dimension=shape->dimension==1 ? 1u : shape->dimension==3 ? 6u : shape->depth_or_layers>1 ? 3u : 2u,
         .mip_count=shape->mip_levels,.layer_count=shape->dimension==3 ? 1u : shape->depth_or_layers};
+    for (uint32_t i=0;i<4;++i)
+        if ((unsigned)view.swizzle[i]>DOE_DX_SWIZZLE_A) return DOE_DX_INVALID_ARGUMENT;
     if (!view.mip_count || view.base_mip>=shape->mip_levels || view.mip_count>shape->mip_levels-view.base_mip ||
         !view.layer_count || view.aspect>2 || !doe_dx_format_compatible(view.format,texture->desc.format)) return DOE_DX_RANGE;
     uint32_t layers=shape->dimension==3 ? 1u : shape->depth_or_layers;

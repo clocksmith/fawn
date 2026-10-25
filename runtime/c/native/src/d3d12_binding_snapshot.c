@@ -41,6 +41,9 @@ native_failure native_d3d12_binding_values(const native_pipeline *pipeline,
         const doe_resource_texture_desc *desc = doe_resource_texture_description(texture);
         if (!native_d3d12_view_descriptor(span,desc,&out->texture_views[i]))
             return native_failure_status(NATIVE_UNSUPPORTED);
+        const native_view *view_payload=doe_resource_view_native(view);
+        if (!view_payload) return native_failure_status(NATIVE_INVALID_STATE);
+        for (uint32_t channel=0;channel<4;++channel) out->texture_views[i].swizzle[channel]=view_payload->d3d12_swizzle[channel];
         native_texture *native = doe_resource_texture_native(texture);
         if (!native || !native->d3d12) return native_failure_status(NATIVE_INVALID_STATE);
         out->textures[i] = native->d3d12;

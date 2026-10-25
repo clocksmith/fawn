@@ -34,6 +34,11 @@ static void disjoint_storage_views(void)
         {.format=DOE_DX_RGBA8_UNORM,.dimension=2,.mip_count=1,.layer_count=1,.base_layer=1}};
     doe_dx_dynamic_resources values={.resources={.textures=textures,.texture_count=2},.texture_views=views};
     assert(doe_dx_commands_dispatch_dynamic(commands,pipeline,&values,1,1,1,NULL)==DOE_DX_OK && commands->texture_count==1);
+    views[0].swizzle[0]=DOE_DX_SWIZZLE_B;
+    assert(doe_dx_commands_dispatch_dynamic(commands,pipeline,&values,1,1,1,NULL)==DOE_DX_OK);
+    views[1].swizzle[0]=DOE_DX_SWIZZLE_B;
+    assert(doe_dx_commands_dispatch_dynamic(commands,pipeline,&values,1,1,1,NULL)==DOE_DX_INVALID_ARGUMENT);
+    views[1].swizzle[0]=DOE_DX_SWIZZLE_IDENTITY;
     views[1].base_layer=0;
     assert(doe_dx_commands_dispatch_dynamic(commands,pipeline,&values,1,1,1,NULL)==DOE_DX_UNSUPPORTED);
     views[1].base_mip=1;
@@ -56,9 +61,9 @@ int main(void)
     assert(doe_dx_commands_create(context,&commands,NULL) == DOE_DX_OK);
     const unsigned char bytecode = 1;
     doe_dx_texture_binding_layout textures[3] = {
-        {0,0,DOE_DX_RGBA8_UNORM,DOE_DX_READ_ONLY},
-        {1,0,DOE_DX_R32_UINT,DOE_DX_READ_ONLY},
-        {2,0,DOE_DX_R32_UINT,DOE_DX_READ_WRITE}};
+        {0,0,DOE_DX_RGBA8_UNORM,DOE_DX_READ_ONLY, false},
+        {1,0,DOE_DX_R32_UINT,DOE_DX_READ_ONLY, false},
+        {2,0,DOE_DX_R32_UINT,DOE_DX_READ_WRITE, false}};
     doe_dx_texture_contract contracts[3] = {{.sample_class=DOE_DX_SAMPLE_UINT},
         {.sample_class=DOE_DX_SAMPLE_EXACT,.storage=true},{.sample_class=DOE_DX_SAMPLE_EXACT,.storage=true}};
     doe_dx_sampler_layout sampler_layout = {7,3,false};

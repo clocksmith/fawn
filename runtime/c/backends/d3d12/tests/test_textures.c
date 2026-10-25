@@ -69,7 +69,7 @@ static void footprint_and_construction(void) {
 static doe_dx_pipeline *texture_pipeline(doe_dx_context *context, doe_dx_format format) {
     unsigned char bytecode = 1;
     doe_dx_texture_binding_layout textures[2] = {
-        {0, 2, format, DOE_DX_READ_ONLY}, {1, 2, format, DOE_DX_READ_WRITE}
+        {0, 2, format, DOE_DX_READ_ONLY, false}, {1, 2, format, DOE_DX_READ_WRITE, false}
     };
     doe_dx_static_sampler sampler = {3, 2, DOE_DX_NEAREST, DOE_DX_CLAMP, DOE_DX_REPEAT};
     doe_dx_resource_pipeline_desc desc = {{&bytecode, 1, NULL, 0}, textures, 2, &sampler, 1};
@@ -160,7 +160,7 @@ static void binding_layout_rejections(void) {
     doe_dx_context *context = open_context();
     unsigned char bytecode = 1;
     doe_dx_binding_layout buffer_layout = {0, 0, 4, DOE_DX_READ_ONLY, DOE_DX_STRUCTURED};
-    doe_dx_texture_binding_layout texture_layout = {0, 0, DOE_DX_R32_UINT, DOE_DX_READ_ONLY};
+    doe_dx_texture_binding_layout texture_layout = {0, 0, DOE_DX_R32_UINT, DOE_DX_READ_ONLY, false};
     doe_dx_resource_pipeline_desc desc = {{&bytecode, 1, &buffer_layout, 1}, &texture_layout, 1, NULL, 0};
     doe_dx_pipeline *pipeline = NULL;
     assert(doe_dx_pipeline_create_resources(context, &desc, &pipeline, NULL) == DOE_DX_INVALID_ARGUMENT);
@@ -300,7 +300,7 @@ static void mixed_binding_snapshot(void) {
     assert(doe_dx_commands_upload_texture(work, upload, (doe_dx_texture_layout){0}, texture, NULL) == DOE_DX_OK);
     unsigned char bytecode = 1;
     doe_dx_binding_layout buffer_layout = {2, 3, 4, DOE_DX_READ_ONLY, DOE_DX_STRUCTURED};
-    doe_dx_texture_binding_layout texture_layout = {2, 3, DOE_DX_R32_UINT, DOE_DX_READ_WRITE};
+    doe_dx_texture_binding_layout texture_layout = {2, 3, DOE_DX_R32_UINT, DOE_DX_READ_WRITE, false};
     doe_dx_resource_pipeline_desc desc = {{&bytecode, 1, &buffer_layout, 1}, &texture_layout, 1, NULL, 0};
     doe_dx_pipeline *pipeline = NULL;
     assert(doe_dx_pipeline_create_resources(context, &desc, &pipeline, NULL) == DOE_DX_OK);
@@ -321,8 +321,44 @@ static void mixed_binding_snapshot(void) {
     close_context(context);
 }
 
+static void queried_format_projection(void) {
+    doe_dx_context *context=open_context();
+    mock.reported_format_caps=(doe_dx_format_caps){.texture_3d=true,.storage_store=true};
+    doe_dx_format_caps caps={0};
+    assert(doe_dx_context_format_caps(context,DOE_DX_R16_UNORM,&caps,NULL)==DOE_DX_OK);
+    assert(mock.queried_format==DOE_DX_R16_UNORM && caps.texture_3d && caps.storage_store && !caps.storage_load);
+    doe_dx_format_caps saved=caps;
+    mock.failure=MOCK_TEXTURE;
+    assert(doe_dx_context_format_caps(context,DOE_DX_R32_FLOAT,&caps,NULL)==DOE_DX_NATIVE_FAILURE);
+    assert(memcmp(&saved,&caps,sizeof(caps))==0);
+    mock.failure=MOCK_NONE;
+    assert(doe_dx_context_format_caps(context,(doe_dx_format)999,&caps,NULL)==DOE_DX_INVALID_ARGUMENT);
+    close_context(context);
+}
+static void component_swizzles(void) {
+    doe_dx_context *context=open_context();
+    doe_dx_texture *texture=image(context,2,2,DOE_DX_RGBA8_UNORM,DOE_DX_TEXTURE_SAMPLED);
+    doe_dx_texture_view_desc view={.format=DOE_DX_RGBA8_UNORM,.dimension=2,.mip_count=1,.layer_count=1},out;
+    assert(!doe_dx_texture_view_swizzled(&view));
+    view.swizzle[0]=DOE_DX_SWIZZLE_B;
+    view.swizzle[1]=DOE_DX_SWIZZLE_ZERO;
+    view.swizzle[2]=DOE_DX_SWIZZLE_R;
+    view.swizzle[3]=DOE_DX_SWIZZLE_ONE;
+    assert(doe_dx_texture_view_validate(texture,&view,&out)==DOE_DX_OK);
+    assert(doe_dx_texture_view_swizzled(&out));
+    assert(memcmp(view.swizzle,out.swizzle,sizeof(view.swizzle))==0);
+    doe_dx_texture_view_desc saved=out;
+    view.swizzle[2]=(doe_dx_swizzle)99;
+    assert(doe_dx_texture_view_validate(texture,&view,&out)==DOE_DX_INVALID_ARGUMENT);
+    assert(memcmp(&saved,&out,sizeof(out))==0);
+    doe_dx_texture_release(texture);
+    close_context(context);
+}
+
 int main(void) {
     mock_reset();
+    queried_format_projection();
+    component_swizzles();
     footprint_and_construction();
     padded_readback_and_early_release();
     cancellation_and_unpadded_readback();
@@ -332,6 +368,6 @@ int main(void) {
     texture_and_buffer_budget();
     transfer_rejections();
     mixed_binding_snapshot();
-    puts("D3D12 C texture owner: 9 groups passed (no SDK or GPU execution)");
+    puts("D3D12 C texture owner: 11 groups passed (no SDK or GPU execution)");
     return 0;
 }

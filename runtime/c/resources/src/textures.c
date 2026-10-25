@@ -8,8 +8,8 @@ static uint32_t maximum(uint32_t a, uint32_t b)
     return a > b ? a : b;
 }
 
-doe_resource_status doe_resource_texture_validate(const doe_resource_texture_desc *desc,
-    const doe_resource_texture_limits *limits)
+doe_resource_status doe_resource_texture_validate_with_features(const doe_resource_texture_desc *desc,
+    const doe_resource_texture_limits *limits, uint32_t format_features)
 {
     if (!desc || !limits || (desc->view_format_count && !desc->view_formats))
         return DOE_RESOURCE_INVALID_ARGUMENT;
@@ -68,16 +68,22 @@ doe_resource_status doe_resource_texture_validate(const doe_resource_texture_des
     /* Render attachments need a renderable format; multisampling a format that
      * supports it (WebGPU plain color formats table). */
     if ((desc->usage & WGPUTextureUsage_RenderAttachment) && !resource_format_depth(desc->format) &&
-        !resource_format_color_renderable(desc->format)) return DOE_RESOURCE_USAGE;
+        !doe_resource_format_color_renderable(desc->format, format_features)) return DOE_RESOURCE_USAGE;
     if (desc->samples > 1 && !resource_format_multisample(desc->format)) return DOE_RESOURCE_LAYOUT;
     if (resource_format_depth(desc->format) && desc->dimension != WGPUTextureDimension_2D)
         return DOE_RESOURCE_LAYOUT;
     bool read_write;
-    if ((desc->usage & WGPUTextureUsage_StorageBinding) && !resource_storage_format(desc->format, &read_write))
+    if ((desc->usage & WGPUTextureUsage_StorageBinding) && !doe_resource_format_storage(desc->format, format_features, &read_write))
         return DOE_RESOURCE_USAGE;
     for (size_t i = 0; i < desc->view_format_count; i++)
         if (!resource_format_compatible(desc->format, desc->view_formats[i])) return DOE_RESOURCE_LAYOUT;
     return DOE_RESOURCE_OK;
+}
+
+doe_resource_status doe_resource_texture_validate(const doe_resource_texture_desc *desc,
+    const doe_resource_texture_limits *limits)
+{
+    return doe_resource_texture_validate_with_features(desc, limits, 0);
 }
 
 doe_resource_status doe_resource_texture_create(const doe_resource_config *config,
@@ -87,7 +93,7 @@ doe_resource_status doe_resource_texture_create(const doe_resource_config *confi
     if (!out || !resource_config_valid(config) || !native.handle || !native.release)
         return DOE_RESOURCE_INVALID_ARGUMENT;
     if (!config->device.alive(config->device.identity)) return DOE_RESOURCE_UNAVAILABLE;
-    doe_resource_status status = doe_resource_texture_validate(desc, limits);
+    doe_resource_status status = doe_resource_texture_validate_with_features(desc, limits, config->format_features);
     if (status != DOE_RESOURCE_OK) return status;
     doe_resource_texture *texture = resource_allocate(config, sizeof(*texture), _Alignof(doe_resource_texture));
     if (!texture) return DOE_RESOURCE_OUT_OF_MEMORY;

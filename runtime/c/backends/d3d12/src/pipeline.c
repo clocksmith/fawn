@@ -86,6 +86,7 @@ doe_dx_status doe_dx_validate_layout(const doe_dx_context *context, const doe_dx
             (contract.sample_class == DOE_DX_SAMPLE_EXACT && !doe_dx_format_valid(binding->format)) ||
             (binding->access != DOE_DX_READ_ONLY && binding->access != DOE_DX_READ_WRITE))
             return DOE_DX_INVALID_ARGUMENT;
+        if (binding->write_only && binding->access!=DOE_DX_READ_WRITE) return DOE_DX_INVALID_ARGUMENT;
         if (contract.dimension>6) return DOE_DX_INVALID_ARGUMENT;
         if (binding->access == DOE_DX_READ_ONLY) ++srvs;
         else ++uavs;

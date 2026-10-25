@@ -126,3 +126,10 @@ $(BUILD)/vulkan_indirect_render_lifetime: tests/vulkan_indirect_render_lifetime.
 	$(CC) $(CPPFLAGS) -I../backends/vulkan/include -I$(SHADER_ROOT)/include -I$(SHADER_ROOT)/../compiler/include $(CFLAGS) $(filter-out %.h vulkan-library shader-library compiler-library $(COMPILER_LIBRARY),$^) $(VK_BUILD)/libdoe_vk.a $(SHADER_BUILD)/libdoe_shader.a $(COMPILER_LIBRARY) -Wl,-rpath,$(abspath $(dir $(COMPILER_LIBRARY))) -ldl -o $@
 vulkan-indirect-render-lifetime: $(BUILD)/vulkan_indirect_render_lifetime
 	$(BUILD)/vulkan_indirect_render_lifetime $(TINT_GRAPHICS)/output.vs_main.spv $(TINT_GRAPHICS)/output.fs_main.spv tests/indirect_draw_arguments.wgsl "$$(sha256sum $(COMPILER_LIBRARY) | cut -d ' ' -f 1)" --allow-software
+
+$(BUILD)/test_optional_formats: tests/test_optional_formats.c $(BUILD)/libdoe_resources.a $(LABEL_SOURCES) tests/fixture.h
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(filter-out %.h,$^) -o $@
+.PHONY: check-optional-formats
+check-optional-formats: $(BUILD)/test_optional_formats
+	$(BUILD)/test_optional_formats
+check: check-optional-formats

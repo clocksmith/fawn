@@ -727,3 +727,27 @@ command signature consumes the constants and unchanged SDK draw record. Signed
 base-vertex addition is modulo uint32 in the HLSL wrapper. Portable controls cover
 reserved-register/budget rejection and the larger indirect record; SDK and device
 execution qualification remain separate.
+
+### Queried optional formats and component views
+
+The native adapter consumes queried BC sliced-3D, BGRA storage, format-tier,
+float32 filtering/blending and RG11B10 render capabilities. Required members of
+format families are checked separately; RG11B10 rendering includes actual 4x
+sample quality. Unsupported query values do not invent capability, and native
+query failures preserve their first error. WebGPU feature enablement remains the
+native/resource owners' responsibility, separate from backend format mapping.
+The retained WGSL storage-format vocabulary remains unchanged; optional resource
+and layout admission is not a claim of additional shader syntax.
+
+Immutable sampled views carry typed component selection through native binding
+snapshots into real D3D12 SRV Shader4ComponentMapping, including zero and one.
+Nonidentity mapping is rejected at storage and attachment use, not merely because
+a view was created with those usage bits. Storage allocations require typed
+stores; actual read/write UAV bindings additionally query typed-load support.
+Explicit write-only bindings therefore do not demand unrelated load support.
+
+Portable owner checks exercise mapping preservation, bad-component rollback and
+storage-use rejection. SDK CPU controls cover the real component encoding and
+optional format/query distinctions; their authored source is not an SDK run or
+a GPU execution result. CoreFeaturesAndLimits is not inferred from feature level
+or these optional-family queries alone.

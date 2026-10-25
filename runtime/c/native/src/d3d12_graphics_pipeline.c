@@ -10,7 +10,8 @@ static bool descriptor(const native_device *device,const WGPURenderPipelineDescr
     const WGPUFragmentState *fragment=source->fragment;
     if (count!=(fragment ? 2u : 1u) || (fragment && (fragment->targetCount>DOE_DX_MAX_COLOR_TARGETS ||
         (fragment->targetCount && !fragment->targets))) ||
-        (source->depthStencil && !native_d3d12_format(source->depthStencil->format,&out->depth_format))) return false;
+        (source->depthStencil && (!native_format_feature_enabled(device->features,source->depthStencil->format) ||
+            !native_d3d12_format(source->depthStencil->format,&out->depth_format)))) return false;
     out->fragment_absent=fragment==NULL;
     out->targets_explicit=true;
     out->target_count=fragment ? (uint32_t)fragment->targetCount : 0;
@@ -21,7 +22,7 @@ static bool descriptor(const native_device *device,const WGPURenderPipelineDescr
         target->absent=color->format==WGPUTextureFormat_Undefined;
         if (target->absent) continue;
         out->color_absent=false;
-        if (!native_d3d12_format(color->format,&target->format)) return false;
+        if (!native_format_feature_enabled(device->features,color->format) || !native_d3d12_format(color->format,&target->format)) return false;
         if (color->writeMask & ~WGPUColorWriteMask_All) return false;
         target->write_mask=(uint32_t)color->writeMask;
     }

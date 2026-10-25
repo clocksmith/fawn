@@ -539,3 +539,11 @@ $(BUILD)/shader-imports: tests/shader_imports.c tests/consumer.h tests/adapter_c
 .PHONY: check-shader-imports
 check-shader-imports: $(BUILD)/shader-imports
 	$(BUILD)/shader-imports
+
+$(BUILD)/optional-formats: tests/optional_formats.c tests/consumer.h tests/adapter_class.h $(NATIVE_LIBRARY)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
+.PHONY: check-optional-formats
+check-optional-formats: $(BUILD)/optional-formats
+	$(BUILD)/optional-formats
+check: check-optional-formats
+PHYSICAL_CLIENTS += optional-formats

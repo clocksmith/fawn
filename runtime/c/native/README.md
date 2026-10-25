@@ -24,7 +24,8 @@ canonical resource owner. Sampled/storage compute bindings and runtime sampler
 values now follow compiler-owned resource metadata; their newer SDK/device
 execution has separate evidence. Procedural single-color graphics is now authored
 with a separate public pixel control; presentation remains uncomposed.
-CoreFeaturesAndLimits is absent.
+CoreFeaturesAndLimits requires the complete queried format and frontend-limit
+envelope described below; it is not inferred from the D3D feature level alone.
 The [public D3D12 developer receipt](DEVELOPER_RECEIPT_D3D12_PUBLIC.json) binds an
 actual Windows SDK DLL build and four unchanged C consumers to one source, with
 the same binaries passing on CPU WARP and the named Miles GPU. It covers compute,
@@ -1493,3 +1494,50 @@ Named controls cover actual CPU Vulkan SPIR-V dispatch/readback after caller
 source/module release and Metal constructor/slot/lifetime call ledgers. Metal
 mock ledgers are not GPU execution evidence; Windows DXC execution remains a
 separate SDK/platform gate.
+
+### Retained optional-format closure
+
+The finite native feature audit covers 22 retained offered features: core limits,
+DepthClipControl, Depth32FloatStencil8, BC and sliced BC, ETC2, ASTC and sliced
+ASTC, timestamps, indirect first instance, shader f16, RG11 rendering, BGRA
+storage, float32 filtering/blending, clip distances, dual-source blending,
+subgroups, texture format tiers 1/2, primitive index, and component swizzles.
+All have source-composed offered/requested/admitted paths where the backend
+supports them; this inventory is not hardware qualification. ETC2/ASTC remain
+unsupported on D3D12, rather than advertised through another implementation.
+
+BGRA storage and Tier1 use the canonical resource format predicates for texture,
+layout, and render admission. Six normalized-16 formats map through the normal
+Vulkan/Metal/D3D12 format owners. Tier1's 23 additional storage formats and nine
+additional render formats are enabled only for a requested feature. Their
+backend support is independent of compiler vocabulary: retained and C WGSL both
+accept the same 16 core storage format spellings; this change adds no WGSL
+format syntax. Native pretranslated inputs retain their documented contracts.
+
+Tier2 now has meaningful, requested-feature admission for its specified 15
+read-write formats. Baseline r32 read-write remains available. This deliberately
+corrects retained blanket core-format read-write admission: translation success
+is not evidence that arbitrary formats support native read/write. Tier2 implies
+Tier1, which implies RG11 rendering; sliced compression implies its base
+compression feature. Explicit duplicate feature requests reject without
+publishing a partially enabled set.
+
+Vulkan intersects each optional requirement with actual format queries and the
+enabled extended-storage feature. A driver lacking signed-normalized blending
+cannot offer Tier1 or its dependent Tier2 even if storage operations alone work.
+The CPU llvmpipe validation environment exercises BGRA creation and disabled
+feature rejection; its queried signed-normalized formats lack blending, so the
+Tier2 execution control reports unsupported rather than overriding admission.
+Metal uses supported family format bounds, actual multisample/resolve support,
+and `readWriteTextureSupport` for Tier2. D3D12 queries the actual format support
+bits and sample quality; write-only UAV bindings do not spuriously require typed
+UAV loads, while read-write bindings do. Optional-disabled BC/depth/normalized
+format creation now passes the same shared gate as other backends. Sampled
+D3D12 swizzles use real SRV component mappings, not shader substitution.
+
+D3D12 CoreFeaturesAndLimits is offered only when its reported frontend limits
+meet every canonical core default and queried baseline formats meet the shared
+format-properties requirements. Missing query facts keep it absent. The device
+never gains implicit Core when the adapter does not offer it. Windows SDK and
+physical-device qualification remain separate from the portable composition
+controls and strict host builds.

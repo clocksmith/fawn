@@ -17,6 +17,7 @@ typedef struct sdk_device {
     sdk_root root;
     sdk_state state;
     UINT heap_calls, fail_heap, views, samplers, resources;
+    bool no_typed_load;
     D3D12_SAMPLER_DESC sampler_values[2];
 } sdk_device;
 typedef struct sdk_list {
@@ -154,7 +155,15 @@ static void STDMETHODCALLTYPE create_sampler(ID3D12Device *raw,const D3D12_SAMPL
     assert(device->samplers < 2 && handle.ptr == 1100u + 32u * device->samplers);
     device->sampler_values[device->samplers++] = *desc;
 }
-static CONST_VTBL ID3D12DeviceVtbl device_methods = {.CreateRootSignature=create_root,
+static HRESULT STDMETHODCALLTYPE query_format(ID3D12Device *raw,D3D12_FEATURE feature,void *data,UINT size)
+{
+    sdk_device *device=(sdk_device *)raw;
+    assert(feature==D3D12_FEATURE_FORMAT_SUPPORT && size==sizeof(D3D12_FEATURE_DATA_FORMAT_SUPPORT));
+    D3D12_FEATURE_DATA_FORMAT_SUPPORT *support=data;
+    support->Support2=device->no_typed_load ? D3D12_FORMAT_SUPPORT2_NONE : D3D12_FORMAT_SUPPORT2_UAV_TYPED_LOAD;
+    return S_OK;
+}
+static CONST_VTBL ID3D12DeviceVtbl device_methods = {.CheckFeatureSupport=query_format,.CreateRootSignature=create_root,
     .CreateComputePipelineState=create_state,.CreateDescriptorHeap=create_heap,.GetDescriptorHandleIncrementSize=increment,
     .CreateShaderResourceView=create_srv,.CreateUnorderedAccessView=create_uav,.CreateSampler=create_sampler};
 static void STDMETHODCALLTYPE set_heaps(ID3D12GraphicsCommandList *raw,UINT count,ID3D12DescriptorHeap *const *heaps)
@@ -178,13 +187,26 @@ static void STDMETHODCALLTYPE barriers(ID3D12GraphicsCommandList *raw,UINT count
 }
 static CONST_VTBL ID3D12GraphicsCommandListVtbl list_methods = {
     .SetDescriptorHeaps=set_heaps,.SetComputeRootDescriptorTable=set_table,.ResourceBarrier=barriers};
+static void component_mapping(void)
+{
+    doe_dx_native_texture texture={.format=DOE_DX_RGBA8_UNORM};
+    doe_dx_texture_view_desc span={.format=DOE_DX_RGBA8_UNORM,.dimension=2,.mip_count=1,.layer_count=1,
+        .swizzle={DOE_DX_SWIZZLE_B,DOE_DX_SWIZZLE_ZERO,DOE_DX_SWIZZLE_R,DOE_DX_SWIZZLE_ONE}};
+    D3D12_SHADER_RESOURCE_VIEW_DESC view;
+    doe_dx_texture_srv(&texture,&span,&view);
+    assert(view.Shader4ComponentMapping==D3D12_ENCODE_SHADER_4_COMPONENT_MAPPING(2,4,0,5));
+    span.swizzle[0]=span.swizzle[1]=span.swizzle[2]=span.swizzle[3]=DOE_DX_SWIZZLE_IDENTITY;
+    doe_dx_texture_srv(&texture,&span,&view);
+    assert(view.Shader4ComponentMapping==D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING);
+}
 int main(void)
 {
+    component_mapping();
     sdk_device device = {.resources=3};
     device.iface.lpVtbl = &device_methods;
     doe_dx_native_context context = {.device=&device.iface};
-    doe_dx_texture_binding_layout textures[3] = {{2,0,DOE_DX_RGBA8_UNORM,DOE_DX_READ_ONLY},
-        {3,1,DOE_DX_R32_UINT,DOE_DX_READ_ONLY},{4,2,DOE_DX_R32_UINT,DOE_DX_READ_WRITE}};
+    doe_dx_texture_binding_layout textures[3] = {{2,0,DOE_DX_RGBA8_UNORM,DOE_DX_READ_ONLY, false},
+        {3,1,DOE_DX_R32_UINT,DOE_DX_READ_ONLY, false},{4,2,DOE_DX_R32_UINT,DOE_DX_READ_WRITE, false}};
     doe_dx_sampler_layout samplers[2] = {{5,3,false},{6,3,true}};
     unsigned char bytecode = 1;
     doe_dx_dynamic_pipeline_desc desc = {.resources={.buffers={&bytecode,1,NULL,0},.textures=textures,.texture_count=3},
@@ -207,6 +229,10 @@ int main(void)
         .mip_filter=DOE_DX_LINEAR,.address_u=DOE_DX_CLAMP,.address_v=DOE_DX_REPEAT,.address_w=DOE_DX_MIRROR,
         .min_lod=1,.max_lod=8,.max_anisotropy=16,.compare=DOE_DX_SAMPLER_LESS_EQUAL};
     doe_dx_descriptor_use *use = NULL;
+    device.no_typed_load=true;
+    assert(doe_dx_prepare_descriptors(&commands,pipeline,&values,&use,NULL)==DOE_DX_UNSUPPORTED && !use);
+    assert(!device.heap_calls && !device.views && !device.samplers);
+    device.no_typed_load=false;
     device.fail_heap = 2;
     doe_dx_error error = {0};
     assert(doe_dx_prepare_descriptors(&commands,pipeline,&values,&use,&error) == DOE_DX_OUT_OF_MEMORY && !use);

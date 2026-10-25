@@ -550,3 +550,13 @@ void doe_dx_native_texture_blit_ex(doe_dx_native_commands *commands,doe_dx_nativ
     doe_dx_texture_region_ex from,doe_dx_native_texture *destination,doe_dx_texture_region_ex to) {
     doe_dx_native_texture_blit(commands,source,from.rect,destination,to.rect.x,to.rect.y);
 }
+
+doe_dx_status doe_dx_native_format_caps(doe_dx_native_context *context,doe_dx_format format,
+    doe_dx_format_caps *out,doe_dx_error *error)
+{
+    assert(context);
+    mock.queried_format=format;
+    if (mock.failure==MOCK_TEXTURE) return doe_dx_fail(DOE_DX_NATIVE_FAILURE,-1,"mock.format_caps",error);
+    *out=mock.reported_format_caps;
+    return DOE_DX_OK;
+}

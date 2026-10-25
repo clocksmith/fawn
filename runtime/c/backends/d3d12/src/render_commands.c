@@ -6,6 +6,7 @@ static uint32_t mip_extent(uint32_t base,uint32_t mip) { uint32_t value=base>>mi
 static doe_dx_status attachment_view(doe_dx_commands *commands,doe_dx_texture *texture,
     doe_dx_texture_view_desc *view,uint32_t slice)
 {
+    if (doe_dx_texture_view_swizzled(view)) return DOE_DX_INVALID_ARGUMENT;
     if (!view->dimension) *view=(doe_dx_texture_view_desc){.format=texture->desc.format,
         .dimension=texture->shape.dimension==3 ? 6u : texture->shape.dimension==1 ? 1u : 2u,.mip_count=1,.layer_count=1};
     doe_dx_texture_view_desc normalized;

@@ -44,14 +44,14 @@ static doe_dx_status buffer_bound(doe_dx_native_context *context, doe_dx_caps *c
     return DOE_DX_OK;
 }
 
-static doe_dx_status format_support(ID3D12Device *device,DXGI_FORMAT format,UINT required,
+static doe_dx_status format_support(ID3D12Device *device,DXGI_FORMAT format,UINT required,UINT required2,
     bool *supported,doe_dx_error *error)
 {
     D3D12_FEATURE_DATA_FORMAT_SUPPORT row={0}; row.Format=format;
     HRESULT hr=ID3D12Device_CheckFeatureSupport(device,D3D12_FEATURE_FORMAT_SUPPORT,&row,sizeof(row));
     if (hr==E_INVALIDARG) { *supported=false; return DOE_DX_OK; }
     if (FAILED(hr)) return doe_dx_hresult(hr,"CheckFeatureSupport.FORMAT_SUPPORT.caps",error);
-    *supported=((UINT)row.Support1&required)==required;
+    *supported=((UINT)row.Support1&required)==required && ((UINT)row.Support2&required2)==required2;
     return DOE_DX_OK;
 }
 static doe_dx_status optional_formats(ID3D12Device *device,doe_dx_caps *caps,doe_dx_error *error)
@@ -61,13 +61,19 @@ static doe_dx_status optional_formats(ID3D12Device *device,doe_dx_caps *caps,doe
         DXGI_FORMAT_BC4_UNORM,DXGI_FORMAT_BC4_SNORM,DXGI_FORMAT_BC5_UNORM,DXGI_FORMAT_BC5_SNORM,
         DXGI_FORMAT_BC6H_UF16,DXGI_FORMAT_BC6H_SF16,DXGI_FORMAT_BC7_UNORM,DXGI_FORMAT_BC7_UNORM_SRGB};
     caps->texture_compression_bc=true;
+    caps->texture_compression_bc_sliced_3d=true;
     for (size_t i=0;i<sizeof(bc)/sizeof(bc[0]);++i) {
         bool supported=false;
         doe_dx_status status=format_support(device,bc[i],
-            D3D12_FORMAT_SUPPORT1_TEXTURE2D|D3D12_FORMAT_SUPPORT1_SHADER_SAMPLE,&supported,error);
+            D3D12_FORMAT_SUPPORT1_TEXTURE2D|D3D12_FORMAT_SUPPORT1_SHADER_SAMPLE,0,&supported,error);
         if (status!=DOE_DX_OK) return status;
         caps->texture_compression_bc=caps->texture_compression_bc&&supported;
+        status=format_support(device,bc[i],D3D12_FORMAT_SUPPORT1_TEXTURE3D|
+            D3D12_FORMAT_SUPPORT1_SHADER_SAMPLE,0,&supported,error);
+        if (status!=DOE_DX_OK) return status;
+        caps->texture_compression_bc_sliced_3d=caps->texture_compression_bc_sliced_3d&&supported;
     }
+    caps->texture_compression_bc_sliced_3d&=caps->texture_compression_bc;
     const DXGI_FORMAT formats[]={DXGI_FORMAT_D32_FLOAT_S8X24_UINT,
         DXGI_FORMAT_R32_FLOAT_X8X24_TYPELESS,DXGI_FORMAT_X32_TYPELESS_G8X24_UINT};
     const UINT required[]={D3D12_FORMAT_SUPPORT1_TEXTURE2D|D3D12_FORMAT_SUPPORT1_DEPTH_STENCIL|
@@ -78,7 +84,7 @@ static doe_dx_status optional_formats(ID3D12Device *device,doe_dx_caps *caps,doe
     caps->depth32float_stencil8=true;
     for (size_t i=0;i<3;++i) {
         bool supported=false;
-        doe_dx_status status=format_support(device,formats[i],required[i],&supported,error);
+        doe_dx_status status=format_support(device,formats[i],required[i],0,&supported,error);
         if (status!=DOE_DX_OK) return status;
         caps->depth32float_stencil8=caps->depth32float_stencil8&&supported;
     }
@@ -90,6 +96,151 @@ static doe_dx_status optional_formats(ID3D12Device *device,doe_dx_caps *caps,doe
         else if (FAILED(hr)) return doe_dx_hresult(hr,"CheckFeatureSupport.MULTISAMPLE_QUALITY_LEVELS.caps",error);
         else caps->depth32float_stencil8=samples.NumQualityLevels!=0;
     }
+    return DOE_DX_OK;
+}
+
+static doe_dx_status format_family(ID3D12Device *device,const DXGI_FORMAT *formats,size_t count,
+    UINT support1,UINT support2,bool *out,doe_dx_error *error)
+{
+    *out=true;
+    for (size_t i=0;i<count;++i) {
+        bool supported=false;
+        doe_dx_status status=format_support(device,formats[i],support1,support2,&supported,error);
+        if (status!=DOE_DX_OK) return status;
+        *out=*out&&supported;
+    }
+    return DOE_DX_OK;
+}
+static doe_dx_status optional_render_formats(ID3D12Device *device,bool *supported,doe_dx_error *error)
+{
+    const DXGI_FORMAT formats[]={DXGI_FORMAT_R8_SNORM,DXGI_FORMAT_R8G8_SNORM,DXGI_FORMAT_R8G8B8A8_SNORM,
+        DXGI_FORMAT_R16_UNORM,DXGI_FORMAT_R16_SNORM,DXGI_FORMAT_R16G16_UNORM,DXGI_FORMAT_R16G16_SNORM,
+        DXGI_FORMAT_R16G16B16A16_UNORM,DXGI_FORMAT_R16G16B16A16_SNORM};
+    *supported=true;
+    for (size_t i=0;i<sizeof(formats)/sizeof(formats[0]);++i) {
+        bool valid=false;
+        doe_dx_status status=format_support(device,formats[i],D3D12_FORMAT_SUPPORT1_TEXTURE2D|
+            D3D12_FORMAT_SUPPORT1_SHADER_SAMPLE|D3D12_FORMAT_SUPPORT1_RENDER_TARGET|
+            D3D12_FORMAT_SUPPORT1_BLENDABLE|D3D12_FORMAT_SUPPORT1_MULTISAMPLE_RENDERTARGET|
+            D3D12_FORMAT_SUPPORT1_MULTISAMPLE_RESOLVE,0,&valid,error);
+        if (status!=DOE_DX_OK) return status;
+        D3D12_FEATURE_DATA_MULTISAMPLE_QUALITY_LEVELS quality={0};
+        quality.Format=formats[i]; quality.SampleCount=4;
+        HRESULT hr=ID3D12Device_CheckFeatureSupport(device,D3D12_FEATURE_MULTISAMPLE_QUALITY_LEVELS,&quality,sizeof(quality));
+        if (hr!=E_INVALIDARG && FAILED(hr)) return doe_dx_hresult(hr,"CheckFeatureSupport.tier1.sample4",error);
+        *supported=*supported&&valid&&SUCCEEDED(hr)&&quality.NumQualityLevels!=0;
+    }
+    return DOE_DX_OK;
+}
+static doe_dx_status optional_storage_formats(ID3D12Device *device,doe_dx_caps *caps,doe_dx_error *error)
+{
+    /* Retained tier contracts; every constituent is independently queried.
+     * FORMAT_SUPPORT1_SHADER_SAMPLE includes filtering, unlike SHADER_LOAD.
+     * https://learn.microsoft.com/en-us/windows/win32/api/d3d12/ne-d3d12-d3d12_format_support1 */
+    const DXGI_FORMAT tier1[]={DXGI_FORMAT_R8_UNORM,DXGI_FORMAT_R8_SNORM,DXGI_FORMAT_R8_UINT,DXGI_FORMAT_R8_SINT,
+        DXGI_FORMAT_R16_UNORM,DXGI_FORMAT_R16_SNORM,DXGI_FORMAT_R16_UINT,DXGI_FORMAT_R16_SINT,DXGI_FORMAT_R16_FLOAT,
+        DXGI_FORMAT_R8G8_UNORM,DXGI_FORMAT_R8G8_SNORM,DXGI_FORMAT_R8G8_UINT,DXGI_FORMAT_R8G8_SINT,
+        DXGI_FORMAT_R16G16_UNORM,DXGI_FORMAT_R16G16_SNORM,DXGI_FORMAT_R16G16_UINT,DXGI_FORMAT_R16G16_SINT,DXGI_FORMAT_R16G16_FLOAT,
+        DXGI_FORMAT_R16G16B16A16_UNORM,DXGI_FORMAT_R16G16B16A16_SNORM,
+        DXGI_FORMAT_R10G10B10A2_UINT,DXGI_FORMAT_R10G10B10A2_UNORM,DXGI_FORMAT_R11G11B10_FLOAT};
+    const DXGI_FORMAT tier2[]={DXGI_FORMAT_R8_UNORM,DXGI_FORMAT_R8_UINT,DXGI_FORMAT_R8_SINT,
+        DXGI_FORMAT_R8G8B8A8_UNORM,DXGI_FORMAT_R8G8B8A8_UINT,DXGI_FORMAT_R8G8B8A8_SINT,
+        DXGI_FORMAT_R16_UINT,DXGI_FORMAT_R16_SINT,DXGI_FORMAT_R16_FLOAT,
+        DXGI_FORMAT_R16G16B16A16_UINT,DXGI_FORMAT_R16G16B16A16_SINT,DXGI_FORMAT_R16G16B16A16_FLOAT,
+        DXGI_FORMAT_R32G32B32A32_UINT,DXGI_FORMAT_R32G32B32A32_SINT,DXGI_FORMAT_R32G32B32A32_FLOAT};
+    const DXGI_FORMAT floats[]={DXGI_FORMAT_R32_FLOAT,DXGI_FORMAT_R32G32_FLOAT,DXGI_FORMAT_R32G32B32A32_FLOAT};
+    UINT storage=D3D12_FORMAT_SUPPORT1_TEXTURE2D|D3D12_FORMAT_SUPPORT1_SHADER_LOAD|
+        D3D12_FORMAT_SUPPORT1_TYPED_UNORDERED_ACCESS_VIEW;
+    UINT read_write=D3D12_FORMAT_SUPPORT2_UAV_TYPED_STORE|D3D12_FORMAT_SUPPORT2_UAV_TYPED_LOAD;
+    doe_dx_status status=format_family(device,tier1,sizeof(tier1)/sizeof(tier1[0]),storage,
+        D3D12_FORMAT_SUPPORT2_UAV_TYPED_STORE,&caps->texture_formats_tier1,error);
+    if (status!=DOE_DX_OK) return status;
+    status=format_family(device,tier2,sizeof(tier2)/sizeof(tier2[0]),storage,
+        read_write,&caps->texture_formats_tier2,error);
+    if (status!=DOE_DX_OK) return status;
+    status=format_support(device,DXGI_FORMAT_B8G8R8A8_UNORM,storage,D3D12_FORMAT_SUPPORT2_UAV_TYPED_STORE,&caps->bgra8unorm_storage,error);
+    if (status!=DOE_DX_OK) return status;
+    status=format_support(device,DXGI_FORMAT_R11G11B10_FLOAT,D3D12_FORMAT_SUPPORT1_TEXTURE2D|
+        D3D12_FORMAT_SUPPORT1_RENDER_TARGET|D3D12_FORMAT_SUPPORT1_MULTISAMPLE_RENDERTARGET|
+        D3D12_FORMAT_SUPPORT1_MULTISAMPLE_RESOLVE|D3D12_FORMAT_SUPPORT1_BLENDABLE,0,&caps->rg11b10ufloat_renderable,error);
+    if (status!=DOE_DX_OK) return status;
+    if (caps->rg11b10ufloat_renderable) {
+        D3D12_FEATURE_DATA_MULTISAMPLE_QUALITY_LEVELS quality={0};
+        quality.Format=DXGI_FORMAT_R11G11B10_FLOAT; quality.SampleCount=4;
+        HRESULT hr=ID3D12Device_CheckFeatureSupport(device,D3D12_FEATURE_MULTISAMPLE_QUALITY_LEVELS,&quality,sizeof(quality));
+        if (hr==E_INVALIDARG) caps->rg11b10ufloat_renderable=false;
+        else if (FAILED(hr)) return doe_dx_hresult(hr,"CheckFeatureSupport.RG11B10.samples",error);
+        else caps->rg11b10ufloat_renderable=quality.NumQualityLevels!=0;
+    }
+    bool render=false;
+    status=optional_render_formats(device,&render,error);
+    if (status!=DOE_DX_OK) return status;
+    caps->texture_formats_tier1&=render&&caps->rg11b10ufloat_renderable;
+    caps->texture_formats_tier2&=caps->texture_formats_tier1&&caps->rg11b10ufloat_renderable;
+    status=format_family(device,floats,3,D3D12_FORMAT_SUPPORT1_TEXTURE2D|
+        D3D12_FORMAT_SUPPORT1_SHADER_SAMPLE,0,&caps->float32_filterable,error);
+    if (status!=DOE_DX_OK) return status;
+    return format_family(device,floats,3,D3D12_FORMAT_SUPPORT1_TEXTURE2D|
+        D3D12_FORMAT_SUPPORT1_RENDER_TARGET|D3D12_FORMAT_SUPPORT1_BLENDABLE,0,&caps->float32_blendable,error);
+}
+
+doe_dx_status doe_dx_native_format_caps(doe_dx_native_context *context,doe_dx_format format,
+    doe_dx_format_caps *out,doe_dx_error *error)
+{
+    D3D12_FEATURE_DATA_FORMAT_SUPPORT support={0}; support.Format=doe_dx_texture_format(format);
+    HRESULT hr=ID3D12Device_CheckFeatureSupport(context->device,D3D12_FEATURE_FORMAT_SUPPORT,&support,sizeof(support));
+    if (hr==E_INVALIDARG) { *out=(doe_dx_format_caps){0}; return DOE_DX_OK; }
+    if (FAILED(hr)) return doe_dx_hresult(hr,"CheckFeatureSupport.format_caps",error);
+    UINT bits=(UINT)support.Support1,bits2=(UINT)support.Support2;
+    doe_dx_format_caps result={
+        .texture_1d=(bits&D3D12_FORMAT_SUPPORT1_TEXTURE1D)!=0,
+        .texture_2d=(bits&D3D12_FORMAT_SUPPORT1_TEXTURE2D)!=0,
+        .texture_3d=(bits&D3D12_FORMAT_SUPPORT1_TEXTURE3D)!=0,
+        .texture_cube=(bits&D3D12_FORMAT_SUPPORT1_TEXTURECUBE)!=0,
+        .shader_load=(bits&D3D12_FORMAT_SUPPORT1_SHADER_LOAD)!=0,
+        .filterable=(bits&D3D12_FORMAT_SUPPORT1_SHADER_SAMPLE)!=0,
+        .render_target=(bits&D3D12_FORMAT_SUPPORT1_RENDER_TARGET)!=0,
+        .blendable=(bits&D3D12_FORMAT_SUPPORT1_BLENDABLE)!=0,
+        .depth_stencil=(bits&D3D12_FORMAT_SUPPORT1_DEPTH_STENCIL)!=0,
+        .storage_store=(bits&D3D12_FORMAT_SUPPORT1_TYPED_UNORDERED_ACCESS_VIEW)!=0 && (bits2&D3D12_FORMAT_SUPPORT2_UAV_TYPED_STORE)!=0,
+        .storage_load=(bits&D3D12_FORMAT_SUPPORT1_TYPED_UNORDERED_ACCESS_VIEW)!=0 && (bits2&D3D12_FORMAT_SUPPORT2_UAV_TYPED_LOAD)!=0,
+        .resolve=(bits&D3D12_FORMAT_SUPPORT1_MULTISAMPLE_RESOLVE)!=0,
+        .comparison=(bits&D3D12_FORMAT_SUPPORT1_SHADER_SAMPLE_COMPARISON)!=0,
+        .multisample_load=(bits&D3D12_FORMAT_SUPPORT1_MULTISAMPLE_LOAD)!=0};
+    if (bits&D3D12_FORMAT_SUPPORT1_MULTISAMPLE_RENDERTARGET) {
+        D3D12_FEATURE_DATA_MULTISAMPLE_QUALITY_LEVELS quality={0}; quality.Format=support.Format; quality.SampleCount=4;
+        hr=ID3D12Device_CheckFeatureSupport(context->device,D3D12_FEATURE_MULTISAMPLE_QUALITY_LEVELS,&quality,sizeof(quality));
+        if (hr!=E_INVALIDARG && FAILED(hr)) return doe_dx_hresult(hr,"CheckFeatureSupport.format_caps.sample4",error);
+        result.sample4=SUCCEEDED(hr)&&quality.NumQualityLevels!=0;
+    }
+    DXGI_FORMAT sampled=DXGI_FORMAT_UNKNOWN;
+    switch (format) {
+    case DOE_DX_D16_UNORM: sampled=DXGI_FORMAT_R16_UNORM; break;
+    case DOE_DX_D32_FLOAT: sampled=DXGI_FORMAT_R32_FLOAT; break;
+    case DOE_DX_D24_UNORM_S8_UINT: sampled=DXGI_FORMAT_R24_UNORM_X8_TYPELESS; break;
+    case DOE_DX_D32_FLOAT_S8_UINT: sampled=DXGI_FORMAT_R32_FLOAT_X8X24_TYPELESS; break;
+    default: break;
+    }
+    if (sampled!=DXGI_FORMAT_UNKNOWN) {
+        support=(D3D12_FEATURE_DATA_FORMAT_SUPPORT){0}; support.Format=sampled;
+        hr=ID3D12Device_CheckFeatureSupport(context->device,D3D12_FEATURE_FORMAT_SUPPORT,&support,sizeof(support));
+        if (hr!=E_INVALIDARG && FAILED(hr)) return doe_dx_hresult(hr,"CheckFeatureSupport.format_caps.depth_srv",error);
+        result.shader_load=SUCCEEDED(hr)&&((UINT)support.Support1&D3D12_FORMAT_SUPPORT1_SHADER_LOAD)!=0;
+        result.filterable=SUCCEEDED(hr)&&((UINT)support.Support1&D3D12_FORMAT_SUPPORT1_SHADER_SAMPLE)!=0;
+        result.comparison=SUCCEEDED(hr)&&((UINT)support.Support1&D3D12_FORMAT_SUPPORT1_SHADER_SAMPLE_COMPARISON)!=0;
+        result.multisample_load=SUCCEEDED(hr)&&((UINT)support.Support1&D3D12_FORMAT_SUPPORT1_MULTISAMPLE_LOAD)!=0;
+    }
+    if (format==DOE_DX_D24_UNORM_S8_UINT || format==DOE_DX_D32_FLOAT_S8_UINT) {
+        support=(D3D12_FEATURE_DATA_FORMAT_SUPPORT){0};
+        support.Format=format==DOE_DX_D24_UNORM_S8_UINT ? DXGI_FORMAT_X24_TYPELESS_G8_UINT : DXGI_FORMAT_X32_TYPELESS_G8X24_UINT;
+        hr=ID3D12Device_CheckFeatureSupport(context->device,D3D12_FEATURE_FORMAT_SUPPORT,&support,sizeof(support));
+        if (hr!=E_INVALIDARG && FAILED(hr)) return doe_dx_hresult(hr,"CheckFeatureSupport.format_caps.stencil_srv",error);
+        result.stencil_load=SUCCEEDED(hr)&&((UINT)support.Support1&D3D12_FORMAT_SUPPORT1_SHADER_LOAD)!=0;
+        /* The combined format promises multisample loads for both aspects. */
+        result.multisample_load=result.multisample_load && SUCCEEDED(hr) &&
+            ((UINT)support.Support1&D3D12_FORMAT_SUPPORT1_MULTISAMPLE_LOAD)!=0;
+    }
+    *out=result;
     return DOE_DX_OK;
 }
 
@@ -157,6 +308,8 @@ doe_dx_status doe_dx_query_caps(doe_dx_native_context *context, doe_dx_caps *out
     if (optional!=E_INVALIDARG && FAILED(optional)) return doe_dx_hresult(optional,"CheckFeatureSupport.OPTIONS4",error);
     if (SUCCEEDED(optional)) caps.native_16bit_shader_ops=native16.Native16BitShaderOpsSupported!=FALSE;
     status=optional_formats(context->device,&caps,error);
+    if (status!=DOE_DX_OK) return status;
+    status=optional_storage_formats(context->device,&caps,error);
     if (status!=DOE_DX_OK) return status;
     doe_dx_limits *limits = &caps.limits;
     limits->max_descriptors = DOE_DX_MAX_BINDINGS;

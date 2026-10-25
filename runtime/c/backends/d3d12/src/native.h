@@ -121,6 +121,7 @@ doe_dx_status doe_dx_native_pipeline_create_dynamic(doe_dx_native_context *conte
 /* Shared normalized footprint; native SDK query must agree before allocation publishes. */
 doe_dx_status doe_dx_texture_layout_2d(const doe_dx_texture_desc *desc,
     doe_dx_texture_layout layout, doe_dx_texture_footprint *out);
+doe_dx_status doe_dx_native_format_caps(doe_dx_native_context *,doe_dx_format,doe_dx_format_caps *,doe_dx_error *);
 doe_dx_status doe_dx_native_texture_create(doe_dx_native_context *context,
     const doe_dx_texture_shape *shape, doe_dx_native_texture **out, doe_dx_error *error);
 uint64_t doe_dx_native_texture_upload_bytes(const doe_dx_native_texture *);

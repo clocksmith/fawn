@@ -495,3 +495,21 @@ and [layout-entry rules](https://gpuweb.github.io/gpuweb/#dom-gpudevice-createbi
 Existing visibility-alias controls use legal Fragment/Compute pairs; whole-pass
 usage history remains independent of visibility. `DEVELOPER_RECEIPT_PIPELINE_ADMISSION.json`
 preserves the four first failures and focused host evidence, not GPU qualification.
+
+Optional format admission is copied in `doe_resource_config.format_features`.
+The baseline texture validator stays conservative; the additive feature-aware
+validator and constructors use the same storage/render tables. BGRA storage,
+Tier1's23 additional storage formats and9 render targets, and Tier2's15 named
+read-write formats are independent of backend support. Tier2 implies Tier1 in
+this owner; native feature closure also enables rg11b10ufloat-renderable.
+Unlike retained Zig's unrestricted read-write layout admission, this owner
+preserves the [WebGPU plain-color table](https://gpuweb.github.io/gpuweb/#plain-color-formats):
+core r32 formats permit read-write, Tier2 adds only its defined15 formats, and
+RG32/snorm/BGRA do not become read-write merely because storage is supported.
+This is resource/native-import parity, not new WGSL texture-format syntax.
+
+`doe_resource_format_properties_get` derives semantic format requirements from
+the same block/aspect/sample/storage/target owners for native capability queries.
+Its RG11_RENDER, FLOAT32_FILTERABLE and FLOAT32_BLENDABLE query-option bits affect
+classification only; they do not silently change existing config admission.
+Physical backend capabilities and requested public features are still required.

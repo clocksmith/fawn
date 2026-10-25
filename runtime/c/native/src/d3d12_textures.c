@@ -36,7 +36,10 @@ WGPUTexture native_d3d12_create_texture(native_device *device,const WGPUTextureD
         device->backend.limits.maxTextureDimension2D,device->backend.limits.maxTextureDimension3D,
         device->backend.limits.maxTextureArrayLayers};
     doe_dx_texture_desc native;
-    doe_resource_status status = doe_resource_texture_validate(&desc,&limits);
+    doe_resource_status status = doe_resource_texture_validate_with_features(&desc,&limits,device->resources.format_features);
+    if (!native_format_feature_enabled(device->features,desc.format)) status=DOE_RESOURCE_UNSUPPORTED;
+    for (size_t i=0;i<desc.view_format_count && status==DOE_RESOURCE_OK;++i)
+        if (!native_format_feature_enabled(device->features,desc.view_formats[i])) status=DOE_RESOURCE_UNSUPPORTED;
     if (status != DOE_RESOURCE_OK || !native_d3d12_texture_descriptor(&desc,&native)) {
         native_error(device,WGPUErrorType_Validation,"D3D12 texture shape, format or usage not composed");
         return NULL;
@@ -89,11 +92,27 @@ WGPUTextureView native_d3d12_create_view(doe_resource_texture *texture,const WGP
         .base_layer=descriptor->baseArrayLayer,.layer_count=descriptor->arrayLayerCount,
         .aspect=descriptor->aspect,.usage=descriptor->usage}, resolved;
     native_lock(device);
-    doe_resource_status status = descriptor->nextInChain ? DOE_RESOURCE_UNSUPPORTED :
-        !desc.mip_count || !desc.layer_count ? DOE_RESOURCE_RANGE : doe_resource_view_validate(texture,&desc,&resolved);
+    doe_resource_status status = !desc.mip_count || !desc.layer_count ? DOE_RESOURCE_RANGE : doe_resource_view_validate(texture,&desc,&resolved);
+    if (status==DOE_RESOURCE_OK && !native_format_feature_enabled(device->features,resolved.format)) status=DOE_RESOURCE_UNSUPPORTED;
+    WGPUComponentSwizzle channels[4];
+    if (status==DOE_RESOURCE_OK && !native_view_swizzle(device,descriptor->nextInChain,channels,&resolved.swizzled))
+        status=DOE_RESOURCE_UNSUPPORTED;
     doe_dx_texture_view_desc native;
     if (status==DOE_RESOURCE_OK && !native_d3d12_view_descriptor(&resolved,doe_resource_texture_description(texture),&native))
         status=DOE_RESOURCE_UNSUPPORTED;
+    if (status==DOE_RESOURCE_OK) {
+        for (uint32_t i=0;i<4;++i) {
+            switch (channels[i]) {
+            case WGPUComponentSwizzle_Zero: native.swizzle[i]=DOE_DX_SWIZZLE_ZERO; break;
+            case WGPUComponentSwizzle_One: native.swizzle[i]=DOE_DX_SWIZZLE_ONE; break;
+            case WGPUComponentSwizzle_R: native.swizzle[i]=DOE_DX_SWIZZLE_R; break;
+            case WGPUComponentSwizzle_G: native.swizzle[i]=DOE_DX_SWIZZLE_G; break;
+            case WGPUComponentSwizzle_B: native.swizzle[i]=DOE_DX_SWIZZLE_B; break;
+            case WGPUComponentSwizzle_A: native.swizzle[i]=DOE_DX_SWIZZLE_A; break;
+            default: abort();
+            }
+        }
+    }
 #if defined(_WIN32)
     if (status==DOE_RESOURCE_OK) {
         native_texture *parent=doe_resource_texture_native(texture);
@@ -105,6 +124,7 @@ WGPUTextureView native_d3d12_create_view(doe_resource_texture *texture,const WGP
     doe_resource_view *view = NULL;
     if (payload) {
         payload->device = device;
+        for (uint32_t i=0;i<4;++i) payload->d3d12_swizzle[i]=native.swizzle[i];
         /* This immutable view keeps the canonical selected parent span.
          * D3D descriptors are later command-owned; no borrowed COM view escapes. */
         status = doe_resource_view_create(texture,&resolved,(doe_resource_native){payload,NULL,native_view_release},&view);

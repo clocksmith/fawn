@@ -5,9 +5,16 @@
 /* A format whose WebGPU definition names a feature maps only when the device
  * enabled that feature, wherever a format is admitted (textures, views,
  * pipeline targets, bundles, layouts). Core formats need nothing. */
-static bool format_feature_enabled(uint32_t features, WGPUTextureFormat format)
+bool native_format_feature_enabled(uint32_t features, WGPUTextureFormat format)
 {
     switch (format) {
+    case WGPUTextureFormat_R16Unorm:
+    case WGPUTextureFormat_R16Snorm:
+    case WGPUTextureFormat_RG16Unorm:
+    case WGPUTextureFormat_RG16Snorm:
+    case WGPUTextureFormat_RGBA16Unorm:
+    case WGPUTextureFormat_RGBA16Snorm:
+        return (features & NATIVE_FEATURE(WGPUFeatureName_TextureFormatsTier1)) != 0;
     case WGPUTextureFormat_Depth32FloatStencil8:
         return (features & NATIVE_FEATURE(WGPUFeatureName_Depth32FloatStencil8)) != 0;
     case WGPUTextureFormat_BC1RGBAUnorm: case WGPUTextureFormat_BC1RGBAUnormSrgb:
@@ -65,7 +72,7 @@ static bool format_feature_enabled(uint32_t features, WGPUTextureFormat format)
 /* Plus depth may use 32-bit float backing. */
 bool native_depth_format(uint32_t features, WGPUTextureFormat format, doe_vk_texture_format *out)
 {
-    if (!format_feature_enabled(features, format)) return false;
+    if (!native_format_feature_enabled(features, format)) return false;
     switch (format) {
     case WGPUTextureFormat_Depth16Unorm: *out = DOE_VK_FORMAT_D16_UNORM; return true;
     case WGPUTextureFormat_Depth24Plus:
@@ -79,7 +86,7 @@ bool native_depth_format(uint32_t features, WGPUTextureFormat format, doe_vk_tex
 
 bool native_texture_format(uint32_t features, WGPUTextureFormat format, doe_vk_texture_format *out)
 {
-    if (!format_feature_enabled(features, format)) return false;
+    if (!native_format_feature_enabled(features, format)) return false;
     switch (format) {
     case WGPUTextureFormat_R8Unorm: *out = DOE_VK_FORMAT_R8_UNORM; break;
     case WGPUTextureFormat_R8Snorm: *out = DOE_VK_FORMAT_R8_SNORM; break;
@@ -89,6 +96,12 @@ bool native_texture_format(uint32_t features, WGPUTextureFormat format, doe_vk_t
     case WGPUTextureFormat_RG8Snorm: *out = DOE_VK_FORMAT_RG8_SNORM; break;
     case WGPUTextureFormat_RG8Uint: *out = DOE_VK_FORMAT_RG8_UINT; break;
     case WGPUTextureFormat_RG8Sint: *out = DOE_VK_FORMAT_RG8_SINT; break;
+    case WGPUTextureFormat_R16Unorm: *out = DOE_VK_FORMAT_R16_UNORM; break;
+    case WGPUTextureFormat_R16Snorm: *out = DOE_VK_FORMAT_R16_SNORM; break;
+    case WGPUTextureFormat_RG16Unorm: *out = DOE_VK_FORMAT_RG16_UNORM; break;
+    case WGPUTextureFormat_RG16Snorm: *out = DOE_VK_FORMAT_RG16_SNORM; break;
+    case WGPUTextureFormat_RGBA16Unorm: *out = DOE_VK_FORMAT_RGBA16_UNORM; break;
+    case WGPUTextureFormat_RGBA16Snorm: *out = DOE_VK_FORMAT_RGBA16_SNORM; break;
     case WGPUTextureFormat_R16Uint: *out = DOE_VK_FORMAT_R16_UINT; break;
     case WGPUTextureFormat_R16Sint: *out = DOE_VK_FORMAT_R16_SINT; break;
     case WGPUTextureFormat_RG16Uint: *out = DOE_VK_FORMAT_RG16_UINT; break;
@@ -180,8 +193,10 @@ bool native_texture_format(uint32_t features, WGPUTextureFormat format, doe_vk_t
  * with rg11b10ufloat-renderable. The backend still checks native support. */
 bool native_color_renderable(uint32_t features, WGPUTextureFormat format)
 {
-    return format != WGPUTextureFormat_RG11B10Ufloat ||
-        (features & NATIVE_FEATURE(WGPUFeatureName_RG11B10UfloatRenderable)) != 0;
+    uint32_t optional = (features & NATIVE_FEATURE(WGPUFeatureName_TextureFormatsTier1)) ? DOE_RESOURCE_FORMAT_TIER1 : 0;
+    return doe_resource_format_color_renderable(format, optional) &&
+        (format != WGPUTextureFormat_RG11B10Ufloat ||
+         (features & NATIVE_FEATURE(WGPUFeatureName_RG11B10UfloatRenderable)) != 0);
 }
 
 bool native_storage_format(uint32_t format, WGPUTextureFormat *out)

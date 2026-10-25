@@ -13,7 +13,7 @@ typedef struct sdk_device {
     D3D12_FEATURE failed_query;
     HRESULT shader_result;
     DXGI_FORMAT missing_format;
-    bool no_depth_msaa;
+    bool no_depth_msaa, no_rg11_msaa, no_typed_load;
     UINT allocation_fault, allocation_calls;
 } sdk_device;
 
@@ -62,16 +62,20 @@ static HRESULT STDMETHODCALLTYPE check_feature(ID3D12Device *raw, D3D12_FEATURE 
         assert(size==sizeof(D3D12_FEATURE_DATA_FORMAT_SUPPORT));
         D3D12_FEATURE_DATA_FORMAT_SUPPORT *format=data;
         format->Support1=format->Format==device->missing_format ? D3D12_FORMAT_SUPPORT1_NONE :
-            (D3D12_FORMAT_SUPPORT1)(D3D12_FORMAT_SUPPORT1_TEXTURE2D|D3D12_FORMAT_SUPPORT1_SHADER_SAMPLE|
+            (D3D12_FORMAT_SUPPORT1)(D3D12_FORMAT_SUPPORT1_TEXTURE2D|D3D12_FORMAT_SUPPORT1_TEXTURE3D|D3D12_FORMAT_SUPPORT1_SHADER_SAMPLE|
             D3D12_FORMAT_SUPPORT1_SHADER_LOAD|D3D12_FORMAT_SUPPORT1_SHADER_SAMPLE_COMPARISON|
-            D3D12_FORMAT_SUPPORT1_DEPTH_STENCIL|D3D12_FORMAT_SUPPORT1_MULTISAMPLE_RENDERTARGET);
+            D3D12_FORMAT_SUPPORT1_DEPTH_STENCIL|D3D12_FORMAT_SUPPORT1_MULTISAMPLE_RENDERTARGET|
+            D3D12_FORMAT_SUPPORT1_MULTISAMPLE_RESOLVE|D3D12_FORMAT_SUPPORT1_RENDER_TARGET|
+            D3D12_FORMAT_SUPPORT1_BLENDABLE|D3D12_FORMAT_SUPPORT1_TYPED_UNORDERED_ACCESS_VIEW);
+        format->Support2=(D3D12_FORMAT_SUPPORT2)(D3D12_FORMAT_SUPPORT2_UAV_TYPED_STORE|
+            (device->no_typed_load ? 0 : D3D12_FORMAT_SUPPORT2_UAV_TYPED_LOAD));
         break;
     }
     case D3D12_FEATURE_MULTISAMPLE_QUALITY_LEVELS: {
         assert(size==sizeof(D3D12_FEATURE_DATA_MULTISAMPLE_QUALITY_LEVELS));
         D3D12_FEATURE_DATA_MULTISAMPLE_QUALITY_LEVELS *samples=data;
-        assert(samples->Format==DXGI_FORMAT_D32_FLOAT_S8X24_UINT && samples->SampleCount==4);
-        samples->NumQualityLevels=device->no_depth_msaa ? 0u : 1u;
+        assert(samples->SampleCount==4);
+        samples->NumQualityLevels=(samples->Format==DXGI_FORMAT_R11G11B10_FLOAT ? device->no_rg11_msaa : device->no_depth_msaa) ? 0u : 1u;
         break;
     }
     case D3D12_FEATURE_D3D12_OPTIONS1:
@@ -130,6 +134,9 @@ static void caps_controls(void) {
             assert(caps.gpu_va_bits_per_resource == 40 && caps.gpu_va_bits_per_process == 40);
             assert(caps.shader_model == (uint32_t)D3D_SHADER_MODEL_6_0);
             assert(caps.texture_compression_bc && caps.depth32float_stencil8);
+            assert(caps.texture_compression_bc_sliced_3d && caps.bgra8unorm_storage);
+            assert(caps.texture_formats_tier1 && caps.texture_formats_tier2);
+            assert(caps.float32_filterable && caps.float32_blendable && caps.rg11b10ufloat_renderable);
             assert(caps.limits.max_descriptors == 64 && caps.limits.max_static_samplers == 16);
             assert(caps.limits.max_cbvs == (tier == 3 ? 64u : 14u));
             assert(caps.limits.max_uavs == (tier == 1 && !newer ? 8u : 64u));
@@ -164,6 +171,14 @@ static void caps_controls(void) {
         assert(caps.vendor_id == 77 && error.native_code == (int32_t)E_FAIL && error.operation);
         assert(!device.allocation_calls && context.limits.max_buffer_size == 123);
     }
+    device=device_defaults();
+    doe_dx_format_caps format_caps={0};
+    assert(doe_dx_native_format_caps(&context,DOE_DX_RGBA8_UNORM,&format_caps,NULL)==DOE_DX_OK);
+    assert(format_caps.storage_load && format_caps.storage_store && format_caps.sample4 && format_caps.blendable);
+    doe_dx_format_caps saved_format=format_caps;
+    device.failed_query=D3D12_FEATURE_FORMAT_SUPPORT;
+    assert(doe_dx_native_format_caps(&context,DOE_DX_RGBA8_UNORM,&format_caps,NULL)==DOE_DX_NATIVE_FAILURE);
+    assert(memcmp(&format_caps,&saved_format,sizeof(format_caps))==0);
     device=device_defaults(); device.missing_format=DXGI_FORMAT_BC6H_SF16;
     assert(doe_dx_query_caps(&context,&caps,NULL)==DOE_DX_OK);
     assert(!caps.texture_compression_bc && caps.depth32float_stencil8);
@@ -173,6 +188,15 @@ static void caps_controls(void) {
     device=device_defaults(); device.no_depth_msaa=true;
     assert(doe_dx_query_caps(&context,&caps,NULL)==DOE_DX_OK);
     assert(!caps.depth32float_stencil8);
+    device=device_defaults(); device.no_rg11_msaa=true;
+    assert(doe_dx_query_caps(&context,&caps,NULL)==DOE_DX_OK);
+    assert(!caps.rg11b10ufloat_renderable && !caps.texture_formats_tier2 && caps.texture_formats_tier1);
+    device=device_defaults(); device.no_typed_load=true;
+    assert(doe_dx_query_caps(&context,&caps,NULL)==DOE_DX_OK);
+    assert(caps.texture_formats_tier1 && caps.bgra8unorm_storage && !caps.texture_formats_tier2);
+    device=device_defaults(); device.missing_format=DXGI_FORMAT_R32G32_FLOAT;
+    assert(doe_dx_query_caps(&context,&caps,NULL)==DOE_DX_OK);
+    assert(!caps.float32_filterable && !caps.float32_blendable);
     for (UINT fault = 1; fault <= 6; ++fault) {
         device = device_defaults();
         device.allocation_fault = fault;

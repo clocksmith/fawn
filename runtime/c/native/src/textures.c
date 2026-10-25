@@ -91,7 +91,7 @@ WGPUTexture wgpuDeviceCreateTexture(WGPUDevice handle, const WGPUTextureDescript
         .depth_or_layers=desc.depth_or_layers, .mip_levels=desc.mip_levels,.sample_count=desc.samples,
         .usage=DOE_VK_TEXTURE_COPY_DST, /* Initialization is internal usage only. */
         .view_formats=view_format_count ? view_formats : NULL,.view_format_count=view_format_count};
-    if (doe_resource_texture_validate(&desc, &limits) != DOE_RESOURCE_OK ||
+    if (doe_resource_texture_validate_with_features(&desc, &limits, device->resources.format_features) != DOE_RESOURCE_OK ||
         !native_texture_format(device->features, desc.format, &native.format) ||
         ((desc.usage & WGPUTextureUsage_RenderAttachment) && !native_color_renderable(device->features, desc.format))) {
         native_error(device, WGPUErrorType_Validation, "texture shape or format unsupported");

@@ -53,8 +53,8 @@ int main(int argc, char **argv) {
     status = doe_dx_buffer_write(upload, 0, expected, sizeof(expected), &error);
     if (status != DOE_DX_OK) goto failed;
     doe_dx_texture_binding_layout textures[2] = {
-        {0, 0, DOE_DX_R32_FLOAT, DOE_DX_READ_ONLY},
-        {0, 0, DOE_DX_R32_FLOAT, DOE_DX_READ_WRITE}
+        {0, 0, DOE_DX_R32_FLOAT, DOE_DX_READ_ONLY, false},
+        {0, 0, DOE_DX_R32_FLOAT, DOE_DX_READ_WRITE, false}
     };
     doe_dx_static_sampler sampler = {0, 0, DOE_DX_NEAREST, DOE_DX_CLAMP, DOE_DX_CLAMP};
     doe_dx_resource_pipeline_desc pipeline_desc = {{bytecode, length, NULL, 0}, textures, 2, &sampler, 1};
