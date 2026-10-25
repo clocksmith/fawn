@@ -51,6 +51,30 @@ class DoeRuntimeProvidersTests(unittest.TestCase):
             frozenset({"doe_vulkan", "doe_c_vulkan"}),
         )
 
+    def test_metal_c_routes_preserve_provider_and_execution_boundary(self) -> None:
+        for backend, role, provider in (("doe_c_metal", "doe", "doe-c-runtime"),
+                                        ("dawn_c_metal", "dawn", "dawn-c-runtime")):
+            with self.subTest(backend=backend):
+                resolved = doe_runtime_providers.provider_for_execution_backend(backend)
+                self.assertEqual((resolved.product_role, resolved.binary_name), (role, provider))
+                self.assertFalse(doe_runtime_providers.requires_selection_policy(backend))
+        self.assertIsNone(doe_runtime_providers.provider_for_execution_backend("dawn_direct_metal"))
+        for executor, boundary, binary in (
+            ("doe_c_direct_metal", "commands", "doe-c-runtime"),
+            ("doe_c_direct_plan_metal", "plan", "doe-c-runtime"),
+            ("dawn_c_direct_metal", "commands", "dawn-c-runtime"),
+            ("dawn_c_direct_plan_metal", "plan", "dawn-c-runtime"),
+        ):
+            with self.subTest(executor=executor):
+                template = resolve_executor_command_template(executor)
+                self.assertEqual(resolve_executor_boundary(executor), boundary)
+                self.assertIn(f"runtime/c/runtime-cli/bin/{binary} --{boundary}", template)
+                self.assertTrue(doe_runtime_providers.template_uses_doe_runtime(template))
+        comparison = {"baseline": side({"executionBackend": "dawn_c_metal"}),
+                      "comparison": side({**C_META, "executionBackend": "doe_c_metal", "backendId": "doe_c_metal"})}
+        self.assertTrue(claim_gate.workload_is_dawn_vs_doe(comparison))
+        self.assertTrue(structural_equivalence_gate.workload_is_dawn_vs_doe(comparison))
+
     def test_binary_detection_covers_both_clis(self) -> None:
         c_template = resolve_executor_command_template("doe_c_direct_vulkan")
         self.assertIn("runtime/c/runtime-cli/bin/doe-c-runtime", c_template)
@@ -96,12 +120,12 @@ class DoeRuntimeProvidersTests(unittest.TestCase):
         provider = doe_runtime_providers.provider_for_execution_backend("dawn_direct_vulkan")
         self.assertEqual((provider.product_role, provider.binary_name, provider.product_id), ("dawn", "dawn-c-runtime", "dawn-c"))
         self.assertNotIn("dawn_direct_vulkan", doe_runtime_providers.native_execution_backends())
-        self.assertEqual(doe_runtime_providers.dawn_execution_backends(), frozenset({"dawn_direct_vulkan"}))
+        self.assertEqual(doe_runtime_providers.dawn_execution_backends(), frozenset({"dawn_direct_vulkan", "dawn_c_metal"}))
         self.assertNotIn("dawn-c", doe_runtime_providers.doe_product_ids())
         self.assertFalse(compare_assessment_helpers.uses_doe_execution({"dawn_direct_vulkan"}))
         self.assertFalse(doe_runtime_providers.requires_selection_policy("dawn_direct_vulkan"))
         self.assertEqual(
-            doe_runtime_providers.wgsl_source_execution_backends(), frozenset({"doe_c_vulkan", "dawn_direct_vulkan"})
+            doe_runtime_providers.wgsl_source_execution_backends(), frozenset({"doe_c_vulkan", "doe_c_metal", "dawn_direct_vulkan", "dawn_c_metal"})
         )
 
     def test_dawn_direct_vulkan_executor_runs_dawn_c_runtime(self) -> None:
