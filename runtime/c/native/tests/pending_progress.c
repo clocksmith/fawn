@@ -42,7 +42,8 @@ doe_vk_status __wrap_doe_vk_commands_recover(doe_vk_commands *commands, doe_vk_e
 doe_vk_status __wrap_doe_vk_commands_poll(doe_vk_commands *commands, doe_vk_error *error)
 {
     doe_vk_status actual = __real_doe_vk_commands_poll(commands, error);
-    if (commands != atomic_load(&observed_commands)) return actual;
+    /* Submission no longer waits: the real work may still be running. */
+    if (commands != atomic_load(&observed_commands) || actual == DOE_VK_PENDING) return actual;
     assert(actual == DOE_VK_OK);
     doe_vk_status status = atomic_load(&hold) ? DOE_VK_PENDING : atomic_load(&terminal_status);
     if (error) *error = (doe_vk_error){status, -771, "injected background fence"};
@@ -105,7 +106,7 @@ static void release_all_pending(doe_vk_status terminal)
     native_lock(device);
     assert(device->pending && device->pending_progress_ready);
     native_unlock(device);
-    assert(s.errors == 1);
+    assert(s.errors == 0); /* Accepted, still running: not an error. */
     wgpuCommandBufferRelease(commands);
     wgpuBufferRelease(target);
     wgpuQueueRelease(s.queue);
@@ -171,7 +172,7 @@ static void background_failure_is_observed_once(void)
     atomic_store(&hold, true);
     atomic_store(&arm, true);
     wgpuQueueSubmit(s.queue, 1, &commands);
-    assert(s.errors == 1);
+    assert(s.errors == 0);
     wgpuCommandBufferRelease(commands);
     atomic_store(&hold, false);
     bool complete = false;
@@ -200,10 +201,9 @@ static void background_failure_is_observed_once(void)
     assert(*(const uint64_t *)map(&s, target, 8) == 0);
     wgpuBufferUnmap(target);
     wgpuQueueWriteBuffer(s.queue, target, 0, &value, sizeof(value));
-    assert(*(const uint64_t *)map(&s, target, 8) == value && s.errors == 1);
+    assert(*(const uint64_t *)map(&s, target, 8) == value && s.errors == 0);
     wgpuBufferUnmap(target);
     wgpuBufferRelease(target);
-    s.errors = 0; /* The one deliberate submit failure was checked above. */
     consumer_finish(&s);
 }
 
@@ -213,5 +213,5 @@ int main(void)
     background_failure_is_observed_once();
     release_all_pending(DOE_VK_OK);
     release_all_pending(DOE_VK_NATIVE_FAILURE);
-    puts("PASS pending progress: startup failure publishes no device; idle final release joins; release-all retains unknown work and retires success/failure without a caller; background terminal error is observed once");
+    puts("PASS pending progress: startup failure publishes no device; idle final release joins; release-all retains running work and the worker retires success/failure by fence without a caller; background terminal error is observed once");
 }

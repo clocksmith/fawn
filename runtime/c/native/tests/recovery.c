@@ -23,11 +23,14 @@ doe_vk_status __wrap_doe_vk_commands_recover(doe_vk_commands *commands, doe_vk_e
     if (commands == obscured) { assert(actual == DOE_VK_OK); return injected; }
     return actual;
 }
+/* Submission no longer waits: a poll may see the real work still running.
+ * While held, the obscured work reports running; recovery reports injected. */
 doe_vk_status __wrap_doe_vk_commands_poll(doe_vk_commands *commands, doe_vk_error *error)
 {
     doe_vk_status actual = __real_doe_vk_commands_poll(commands,error);
-    if (commands == obscured) { assert(actual == DOE_VK_OK); return injected; }
-    return actual;
+    if (commands != obscured || actual == DOE_VK_PENDING) return actual;
+    assert(actual == DOE_VK_OK);
+    return hold ? DOE_VK_PENDING : injected;
 }
 doe_vk_status __wrap_doe_vk_commands_release(doe_vk_commands *commands)
 {
@@ -86,9 +89,10 @@ int main(void)
     wgpuCommandEncoderRelease(encoder);
     unsigned references = atomic_load(&device->references);
     arm = hold = true;
+    /* The queue accepted the work: submit reports nothing while it runs. */
     wgpuDevicePushErrorScope(s.device,WGPUErrorFilter_Internal);
     wgpuQueueSubmit(s.queue,1,&commands);
-    pop(&s,WGPUErrorType_Internal);
+    pop(&s,WGPUErrorType_NoError);
     assert(device->pending && atomic_load(&device->references) > references);
     wgpuCommandBufferRelease(commands);
     wgpuBufferRelease(retained);
@@ -100,13 +104,17 @@ int main(void)
     texture_desc.size = (WGPUExtent3D){1,1,1};
     texture_desc.format = WGPUTextureFormat_RGBA8Unorm;
     texture_desc.usage = WGPUTextureUsage_TextureBinding;
+    /* Routine settlement polls: running work neither blocks nor fails
+     * texture creation or a later submission; recovery (write, work done) does. */
     wgpuDevicePushErrorScope(s.device,WGPUErrorFilter_Internal);
-    assert(!wgpuDeviceCreateTexture(s.device,&texture_desc));
-    pop(&s,WGPUErrorType_Internal);
+    WGPUTexture created = wgpuDeviceCreateTexture(s.device,&texture_desc);
+    assert(created);
+    pop(&s,WGPUErrorType_NoError);
+    wgpuTextureRelease(created);
     commands = empty_commands(&s);
     wgpuDevicePushErrorScope(s.device,WGPUErrorFilter_Internal);
     wgpuQueueSubmit(s.queue,1,&commands);
-    pop(&s,WGPUErrorType_Internal);
+    pop(&s,WGPUErrorType_NoError);
     wgpuCommandBufferRelease(commands);
     wgpuDevicePushErrorScope(s.device,WGPUErrorFilter_Internal);
     assert(!wgpuQueueOnSubmittedWorkDone(s.queue,(WGPUQueueWorkDoneCallbackInfo){.mode=WGPUCallbackMode_AllowSpontaneous}).id);
@@ -141,6 +149,9 @@ int main(void)
     wgpuCommandEncoderWriteTimestamp(encoder,set,0);
     wgpuCommandEncoderResolveQuerySet(encoder,set,0,1,resolved,0);
     submit(&s,encoder);
+    native_lock(device); /* Earlier injected failures leave work done reporting Error. */
+    assert(native_settle_pending(device).complete);
+    native_unlock(device);
     assert(device->timestamp_normalizer && !device->pending && !s.errors);
     assert(native_dispatch_guard_initialize(device) == DOE_VK_OK);
     assert(native_draw_guard_initialize(device) == DOE_VK_OK);
@@ -151,5 +162,5 @@ int main(void)
     wgpuDeviceRelease(s.device);
     wgpuAdapterRelease(s.adapter);
     wgpuInstanceRelease(s.instance);
-    printf("PASS typed recovery: native/OOM/pending errors survive submit/write/texture/workdone, unknown leases retained, terminal cleanup and fresh GPU normalizer/indirect guard recovery %s\n", adapter_class_scope());
+    printf("PASS typed recovery: running work leaves submit/texture creation unblocked, native/OOM/pending errors survive write/workdone recovery, unknown leases retained, terminal cleanup and fresh GPU normalizer/indirect guard recovery %s\n", adapter_class_scope());
 }

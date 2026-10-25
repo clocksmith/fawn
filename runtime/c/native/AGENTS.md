@@ -22,9 +22,13 @@ holding device/resource locks. POSIX retains one loader reference per provider i
 Win32 uses InitOnce and a permanent FROM_ADDRESS|PIN loader pin, with no ordinary
 LoadLibrary fallback. This code residency survives to process exit; GPU/resource
 leases settle independently. The pending owner retains
-one device lease and polls completion; do not add a second queue or report
-unknown work as terminal. Idle final release joins the worker. Preserve the first
-background terminal error for a public operation to observe.
+one device lease and observes completion; do not add a second queue or report
+unknown work as terminal. Vulkan submissions return once the queue accepts
+them; the worker waits for the oldest accepted fence outside the device mutex
+under a command hold and skips refused records, routine settlement polls, and
+running work is never a failure (owner authorized 2026-10-24: async submit A+B, D2, fence-wait completion; futures later; reconfirmed after the section 7 risk review). Idle final release joins the worker.
+Settle oldest first and preserve the first background terminal error for a
+public operation to observe.
 
 Use the private host primitives for mutexes, conditions and real thread handles.
 Condition waits hold the recursive device mutex at depth one. Publish the thread

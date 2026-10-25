@@ -140,6 +140,10 @@ $(BUILD)/vulkan-identity: tests/vulkan_identity.c ../backends/vulkan/tests/adapt
 	  -Wl,--wrap=doe_vk_context_create -Wl,--wrap=doe_vk_context_release -o $@
 $(BUILD)/barrier-coverage: tests/barrier_coverage.c tests/consumer.h tests/adapter_class.h $(OBJECTS) $(COMPILER_LIBRARY) | $(BUILD)
 	$(CC) $(CPPFLAGS) $(CFLAGS) tests/barrier_coverage.c $(OBJECTS) $(COMPILER_LINK) $(PLATFORM_LIBS) -o $@
+$(BUILD)/async-submit: tests/async_submit.c tests/consumer.h tests/adapter_class.h $(OBJECTS) $(COMPILER_LIBRARY) | $(BUILD)
+	$(CC) $(CPPFLAGS) $(CFLAGS) tests/async_submit.c $(OBJECTS) $(COMPILER_LINK) $(PLATFORM_LIBS) -Wl,--wrap=native_buffer_close \
+	  -Wl,--wrap=doe_vk_commands_submit -Wl,--wrap=doe_vk_commands_wait -Wl,--wrap=doe_vk_commands_poll -Wl,--wrap=doe_vk_commands_recover -Wl,--wrap=doe_vk_commands_release \
+	  -Wl,--wrap=doe_vk_commands_block -o $@
 $(BUILD)/pending-progress: tests/pending_progress.c tests/consumer.h tests/adapter_class.h $(OBJECTS) $(COMPILER_LIBRARY) | $(BUILD)
 	$(CC) $(CPPFLAGS) $(CFLAGS) tests/pending_progress.c $(OBJECTS) $(COMPILER_LINK) $(PLATFORM_LIBS) \
 	  -Wl,--wrap=pthread_create -Wl,--wrap=native_backend_close -Wl,--wrap=native_buffer_close \
@@ -191,7 +195,7 @@ $(BUILD)/lifecycle: tests/lifecycle.c tests/adapter_class.h $(OBJECTS) $(COMPILE
 $(BUILD)/procedures-cxx: tests/procedures.cpp $(NATIVE_LIBRARY)
 	$(CXX) $(CPPFLAGS) -std=c++17 -Wall -Wextra -Wpedantic -Werror $(SANITIZE) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -o $@
 ifeq ($(SHARED_PLATFORM),Linux)
-check: $(BUILD)/draw-guard $(BUILD)/implicit-sampling $(BUILD)/d3d12-graphics check-d3d12-graphics-layout $(BUILD)/depth-comparison $(BUILD)/all-any $(BUILD)/select $(BUILD)/pipeline-overrides check-d3d12-bindings $(BUILD)/texture-bindings $(BUILD)/atomic-operations $(BUILD)/d3d12-texture-desc $(BUILD)/texture-transfers check-d3d12-indirect-layout $(BUILD)/indirect-dispatch $(BUILD)/map-oom $(BUILD)/command-resources $(BUILD)/binding-aliases $(BUILD)/mixed-resources $(BUILD)/offscreen-triangle check-provider-pin $(BUILD)/backend-failure $(BUILD)/vulkan-identity $(BUILD)/draw-budget $(BUILD)/indirect-render $(BUILD)/indexed-render $(BUILD)/depth-sampling $(BUILD)/cube-array $(BUILD)/view-formats $(BUILD)/point-list $(BUILD)/color-discard $(BUILD)/msaa-sampling $(BUILD)/format-features $(BUILD)/draw-features $(BUILD)/copy-layouts $(BUILD)/bc-compression $(BUILD)/component-swizzle $(BUILD)/encoder-errors $(BUILD)/core-formats $(BUILD)/indirect-compute check-build-dependencies check-host-bridge $(BUILD)/atomics $(BUILD)/debug $(BUILD)/msaa $(BUILD)/depth $(BUILD)/demote $(BUILD)/graphics-admission $(BUILD)/empty-shader $(BUILD)/graphics $(BUILD)/compute $(BUILD)/procedures-cxx $(BUILD)/lifecycle $(BUILD)/textures $(BUILD)/admission $(BUILD)/failures $(BUILD)/timestamps $(BUILD)/recovery $(BUILD)/pending-progress $(BUILD)/barrier-coverage $(BUILD)/depth-copies $(BUILD)/uniform-standard $(BUILD)/wgsl-language-features $(BUILD)/texture-binding-view-dimension $(BUILD)/compute-programs $(BUILD)/shader-check $(BUILD)/shader-reflection $(BUILD)/adapter-info $(BUILD)/program-prepare $(BUILD)/vertex-formats $(BUILD)/mrt $(BUILD)/anisotropy $(BUILD)/storage-textures $(BUILD)/limits $(BUILD)/large-write $(BUILD)/slice-render
+check: $(BUILD)/draw-guard $(BUILD)/implicit-sampling $(BUILD)/d3d12-graphics check-d3d12-graphics-layout $(BUILD)/depth-comparison $(BUILD)/all-any $(BUILD)/select $(BUILD)/pipeline-overrides check-d3d12-bindings $(BUILD)/texture-bindings $(BUILD)/atomic-operations $(BUILD)/d3d12-texture-desc $(BUILD)/texture-transfers check-d3d12-indirect-layout $(BUILD)/indirect-dispatch $(BUILD)/map-oom $(BUILD)/command-resources $(BUILD)/binding-aliases $(BUILD)/mixed-resources $(BUILD)/offscreen-triangle check-provider-pin $(BUILD)/backend-failure $(BUILD)/vulkan-identity $(BUILD)/draw-budget $(BUILD)/indirect-render $(BUILD)/indexed-render $(BUILD)/depth-sampling $(BUILD)/cube-array $(BUILD)/view-formats $(BUILD)/point-list $(BUILD)/color-discard $(BUILD)/msaa-sampling $(BUILD)/format-features $(BUILD)/draw-features $(BUILD)/copy-layouts $(BUILD)/bc-compression $(BUILD)/component-swizzle $(BUILD)/encoder-errors $(BUILD)/core-formats $(BUILD)/indirect-compute check-build-dependencies check-host-bridge $(BUILD)/atomics $(BUILD)/debug $(BUILD)/msaa $(BUILD)/depth $(BUILD)/demote $(BUILD)/graphics-admission $(BUILD)/empty-shader $(BUILD)/graphics $(BUILD)/compute $(BUILD)/procedures-cxx $(BUILD)/lifecycle $(BUILD)/textures $(BUILD)/admission $(BUILD)/failures $(BUILD)/timestamps $(BUILD)/recovery $(BUILD)/pending-progress $(BUILD)/barrier-coverage $(BUILD)/async-submit $(BUILD)/depth-copies $(BUILD)/uniform-standard $(BUILD)/wgsl-language-features $(BUILD)/texture-binding-view-dimension $(BUILD)/compute-programs $(BUILD)/shader-check $(BUILD)/shader-reflection $(BUILD)/adapter-info $(BUILD)/program-prepare $(BUILD)/vertex-formats $(BUILD)/mrt $(BUILD)/anisotropy $(BUILD)/storage-textures $(BUILD)/limits $(BUILD)/large-write $(BUILD)/slice-render
 	$(BUILD)/map-oom
 	$(BUILD)/binding-aliases
 	$(BUILD)/command-resources
@@ -245,6 +249,7 @@ check: $(BUILD)/draw-guard $(BUILD)/implicit-sampling $(BUILD)/d3d12-graphics ch
 	$(BUILD)/recovery
 	$(BUILD)/pending-progress
 	$(BUILD)/barrier-coverage
+	$(BUILD)/async-submit
 	$(BUILD)/vulkan-identity
 	$(BUILD)/backend-failure
 	$(BUILD)/uniform-standard

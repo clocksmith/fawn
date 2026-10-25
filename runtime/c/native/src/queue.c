@@ -143,7 +143,11 @@ static void settle_resources(native_pending *pending, bool success)
     native_device_release(device);
 }
 
-static native_queue_settlement settle_pending(native_device *device, bool background)
+/* Oldest first, so the first terminal failure is the earliest submission's.
+ * poll observes completion without blocking; a record still running stays
+ * linked with every lease and is not a failure. Otherwise recovery blocks
+ * until each record is terminal (queue idle for uncertain submissions). */
+static native_queue_settlement settle_pending(native_device *device, bool poll)
 {
     native_queue_settlement result = {.complete = true};
     native_pending **cursor = &device->pending;
@@ -160,8 +164,13 @@ static native_queue_settlement settle_pending(native_device *device, bool backgr
             cursor = &pending->next;
             continue;
         }
-        native_failure failure = background ? native_command_poll(&pending->native) :
+        native_failure failure = poll ? native_command_poll(&pending->native) :
             native_command_recover(&pending->native);
+        if (poll && failure.status == NATIVE_PENDING) {
+            result.complete = false;
+            cursor = &pending->next;
+            continue;
+        }
         /* A terminal render fence does not retire presentation. Poll the same
          * backend frame before release, including discard after enqueue failure. */
         if (pending->frame) (void)doe_vk_surface_retire_frame(pending->frame, 0, NULL);
@@ -190,14 +199,39 @@ static native_queue_settlement settle_pending(native_device *device, bool backgr
     return result;
 }
 
-native_queue_settlement native_settle_pending(native_device *device)
+static native_queue_settlement consume_settlement(native_device *device, bool poll)
 {
-    native_queue_settlement result = settle_pending(device, false);
+    native_queue_settlement result = settle_pending(device, poll);
     if (device->retired_failure.status != NATIVE_OK) {
         result.failure = device->retired_failure;
         device->retired_failure = native_failure_status(NATIVE_OK);
     }
     return result;
+}
+
+native_queue_settlement native_settle_pending(native_device *device)
+{
+    return consume_settlement(device, false);
+}
+
+native_queue_settlement native_poll_pending(native_device *device)
+{
+    return consume_settlement(device, true);
+}
+
+native_queue_settlement native_settle_routine(native_device *device)
+{
+    return consume_settlement(device, device->backend.kind == WGPUBackendType_Vulkan);
+}
+
+/* Appends, keeping the list in submission order. */
+static void link_pending(native_device *device, native_pending *pending)
+{
+    native_pending **cursor = &device->pending;
+    while (*cursor) cursor = &(*cursor)->next;
+    pending->next = NULL;
+    *cursor = pending;
+    native_pending_progress_wake(device);
 }
 
 void native_progress_pending(native_device *device)
@@ -245,16 +279,34 @@ native_pending *native_surface_retirement_take(native_device *device, native_pen
     return NULL;
 }
 
-static native_failure submit_pending(native_device *device, native_pending *pending)
+/* Vulkan submissions return once the queue accepts them (owner authorized 2026-10-24: async submit A+B, D2, fence-wait completion; futures later; reconfirmed after the section 7 risk review):
+ * the record keeps its native and resource leases on the pending list until
+ * the progress worker or a later public call observes it terminal. wait keeps
+ * the synchronous fence wait (Metal, D3D12, programs, private initialization).
+ * A refused submission recovers before returning, as before. */
+static native_failure submit_pending(native_device *device, native_pending *pending, bool wait)
 {
-    pending->next = device->pending;
-    device->pending = pending;
-    native_pending_progress_wake(device);
+    link_pending(device, pending);
     native_failure failure = native_command_submit(&pending->native);
-    if (failure.status == NATIVE_OK) failure = native_command_wait(&pending->native);
-    if (failure.status != NATIVE_OK) device->queue_failed = true;
-    native_queue_settlement settled = native_settle_pending(device);
-    return failure.status == NATIVE_OK ? settled.failure : failure;
+    wait = wait || pending->native.kind != WGPUBackendType_Vulkan;
+    if (failure.status == NATIVE_OK && wait) failure = native_command_wait(&pending->native);
+    if (failure.status != NATIVE_OK) {
+        device->queue_failed = true;
+        native_queue_settlement settled = native_settle_pending(device);
+        (void)settled;
+        return failure;
+    }
+    native_queue_settlement settled = native_poll_pending(device);
+    if (wait && settled.failure.status == NATIVE_OK) {
+        /* A waited submission still linked after its fence has unknown
+         * completion: it keeps its leases and the queue reports failure. */
+        for (native_pending *linked = device->pending; linked; linked = linked->next) {
+            if (linked != pending) continue;
+            device->queue_failed = true;
+            return native_failure_status(NATIVE_PENDING);
+        }
+    }
+    return settled.failure;
 }
 
 native_failure native_submit_program(native_device *device, native_command_handle native,
@@ -272,7 +324,7 @@ native_failure native_submit_program(native_device *device, native_command_handl
     resources[0] = commands;
     *pending = (native_pending){.device=device,.native=native,.resources=resources,.count=1,.replay=true};
     native_device_retain(device);
-    return submit_pending(device, pending);
+    return submit_pending(device, pending, true);
 }
 
 native_failure native_submit_backend_commands(native_device *device, native_command_handle commands)
@@ -285,7 +337,7 @@ native_failure native_submit_backend_commands(native_device *device, native_comm
     pending->device = device;
     native_device_retain(device);
     pending->native = commands;
-    return submit_pending(device, pending);
+    return submit_pending(device, pending, true);
 }
 
 native_failure native_submit_commands(native_device *device, doe_vk_commands *commands)
@@ -309,9 +361,7 @@ native_presentation native_submit_present(native_device *device, doe_vk_commands
     native_device_retain(device);
     pending->native = (native_command_handle){.kind=WGPUBackendType_Vulkan,.value.vulkan=commands};
     pending->frame = surface;
-    pending->next = device->pending;
-    device->pending = pending;
-    native_pending_progress_wake(device);
+    link_pending(device, pending);
     native_failure failure = native_command_submit(&pending->native);
     if (failure.status == NATIVE_OK) {
         bool suboptimal = false;
@@ -368,7 +418,7 @@ void wgpuQueueSubmit(WGPUQueue handle, size_t count, const WGPUCommandBuffer *ha
     native_device_retain(device);
     native_lock(device);
     native_failure failure = native_failure_status(native_device_result(device));
-    if (failure.status == NATIVE_OK) failure = native_settle_pending(device).failure;
+    if (failure.status == NATIVE_OK) failure = native_settle_routine(device).failure;
     for (size_t i = 0; failure.status == NATIVE_OK && i < count; ++i) {
         pending->resources[i] = (doe_resource_commands *)handles[i];
         if (doe_resource_commands_device(pending->resources[i]) != device)
@@ -390,7 +440,7 @@ void wgpuQueueSubmit(WGPUQueue handle, size_t count, const WGPUCommandBuffer *ha
     if (failure.status == NATIVE_OK) {
         /* Recovery preserves the original submission failure; successful release
          * is the backend's proof of terminal or never-dispatched ownership. */
-        failure = submit_pending(device, pending);
+        failure = submit_pending(device, pending, false);
     } else {
         if (native_command_release(&pending->native) != NATIVE_OK) abort();
         settle_resources(pending, false);

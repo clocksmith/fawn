@@ -139,7 +139,7 @@ WGPUTexture wgpuDeviceCreateTexture(WGPUDevice handle, const WGPUTextureDescript
     doe_vk_status status = native_device_status(device);
     native_failure failure = native_failure_status(native_from_vulkan(status));
     if (status == DOE_VK_OK) {
-        failure = native_settle_pending(device).failure;
+        failure = native_settle_routine(device).failure;
         status = native_to_vulkan(failure.status);
     }
     if (status == DOE_VK_OK) status = doe_vk_texture_format_caps(device->backend.value.vulkan.context, native.format, &caps);

@@ -232,6 +232,11 @@ typedef struct native_queue_settlement {
     native_failure failure;
 } native_queue_settlement;
 native_queue_settlement native_settle_pending(native_device *device);
+/* Observes completion without blocking: running work stays linked and is not
+ * a failure. routine polls on Vulkan, whose submissions run asynchronously,
+ * and recovers on the backends that still wait at submit. */
+native_queue_settlement native_poll_pending(native_device *device);
+native_queue_settlement native_settle_routine(native_device *device);
 /* Lowers a resource command list into native commands (the one recorder for
  * queue submission and compute-program recording/replay). */
 native_failure native_record_resource_commands(native_command_handle *native, doe_resource_commands *commands);
