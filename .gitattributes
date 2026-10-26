@@ -2,6 +2,8 @@
 runtime/zig/**/*.zig text eol=lf
 # This upstream header is admitted by its exact SHA-256, including line endings.
 runtime/zig/vendor/webgpu-headers/webgpu.h -text
+# The workspace's independent fixture is frozen by its exact SHA-256.
+browser/workspace/qualification/fixture-site.js text eol=lf
 # Retained unified patches contain significant spaces on empty context lines.
 reports/maintenance/**/source.diff -whitespace
 reports/maintenance/**/source.patch -whitespace
