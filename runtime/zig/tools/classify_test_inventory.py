@@ -41,7 +41,7 @@ def main() -> int:
     ]
     test_paths = sorted(
         path.relative_to(ROOT).as_posix()
-        for path in (ROOT / "tests").rglob("*.zig")
+        for path in [*(ROOT / "tests").rglob("*.zig"), *ROOT.glob("test_*.zig")]
     )
     inventory["supportFiles"] = []
     for support_path in support_paths:
