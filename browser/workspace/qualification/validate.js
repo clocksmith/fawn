@@ -12,13 +12,15 @@
 // Usage: node qualification/validate.js <resultDir> [--require-current-source]
 
 import { readFileSync, writeFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readVerifiedJournal } from '../src/journal.js';
 import { ACTION_STATUS, OUTCOMES, RECORD_TYPES, applyRecord, createState, describeAction } from '../src/state.js';
 import { formEffectKey } from '../src/workflows/form-submission.js';
-import { REPO_ROOT, repoFileSha256, treeDigest } from './identity.js';
+import { REPO_ROOT, executableIdentityKey, repoFileSha256, treeDigest } from './identity.js';
 import { summarizeAction } from './summaries.js';
+import { terminationMatches } from './termination.js';
 
 const CASE_SET_PATH = 'config/fawn-workspace-qualification.json';
 const STRATEGY_PATH = 'config/doe-product-strategy.json';
@@ -300,7 +302,7 @@ function checkAuthorityUnavailable(runDir, run, fail) {
   }
 }
 
-function validateRun({ resultDir, run, caseSpec, caseSet, failures }) {
+function validateRun({ resultDir, run, caseSpec, caseSet, failures, platform }) {
   const fail = (check, detail) => failures.push({ caseId: run.caseId, workflow: run.workflow, adapter: run.adapter, check, detail });
   const wf = caseSet.workflows[run.workflow] ?? null;
   const runDir = join(resultDir, run.evidence.directory);
@@ -315,6 +317,9 @@ function validateRun({ resultDir, run, caseSpec, caseSet, failures }) {
   }
   for (const violation of journal.violations) fail('journal-invariant', violation);
   const expected = mergeExpected(caseSpec.expected, caseSpec.expectedByWorkflow?.[run.workflow]);
+  if (expected.steps?.crash && !terminationMatches(run.steps.crash, platform)) {
+    fail('forced-termination', `kill request and raw OS exit do not establish abrupt termination on ${platform}`);
+  }
   const mismatches = [];
   if (expected.steps) matchPartial(expected.steps, run.steps, 'steps', mismatches, caseSet.oracles);
   const actions = Object.fromEntries(Object.entries(run.actionRefs).map(([ref, actionId]) => [ref, journalAction(journal, actionId)]));
@@ -337,6 +342,11 @@ function validateRun({ resultDir, run, caseSpec, caseSet, failures }) {
   checkExternalEffects(journal, fixture, caseSet, fail);
   checkArtifacts(journal, fixture, caseSet, fail);
   for (const inspection of run.inspections) {
+    const modulesHash = createHash('sha256').update(canonical(inspection.codeModules ?? [])).digest('hex');
+    if (!Array.isArray(inspection.codeModules)
+        || inspection.executables.some((image) => image.codeModulesSha256 !== modulesHash)) {
+      fail('browser-image-identity', 'mapped browser code modules do not match the recorded root identity');
+    }
     if (inspection.listeningTcpSockets !== 0) fail('debugging-endpoint', `${inspection.listeningTcpSockets} listening TCP sockets`);
     if (inspection.devToolsActivePortFiles !== 0) fail('debugging-endpoint', 'DevToolsActivePort file in the profile');
   }
@@ -371,7 +381,7 @@ function browserIdentities(runs, fail) {
     for (const inspection of run.inspections) {
       for (const executable of inspection.executables) {
         byAdapter[run.adapter] ??= new Map();
-        byAdapter[run.adapter].set(`${executable.path}|${executable.sha256}`, executable);
+        byAdapter[run.adapter].set(executableIdentityKey(executable), executable);
       }
     }
   }
@@ -414,7 +424,7 @@ function validateResult(resultDir, { requireCurrentSource = false } = {}) {
       continue;
     }
     const before = failures.length;
-    const signature = validateRun({ resultDir, run, caseSpec, caseSet, failures });
+    const signature = validateRun({ resultDir, run, caseSpec, caseSet, failures, platform: result.identity.os.platform });
     if (failures.length > before) failedCases.add(run.caseId);
     const group = `${run.caseId}|${run.workflow}`;
     if (!signatures.has(group)) signatures.set(group, []);

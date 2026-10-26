@@ -17,6 +17,7 @@ import { PROCEDURES } from './procedures.js';
 import { startHost } from './service-client.js';
 import { summarizeAction, summarizeError, summarizeWorkflow } from './summaries.js';
 import { writeVerdict } from './validate.js';
+import { terminationEvidence } from './termination.js';
 
 const CASE_SET_PATH = 'config/fawn-workspace-qualification.json';
 const DEFAULT_OUT_ROOT = 'bench/out/fawn-workspace-qualification';
@@ -138,7 +139,7 @@ class RunContext {
     if (pending) await pending;
     this.host = null;
     await waitForProfileRelease(this.stateDir);
-    return { signal: exit.signal };
+    return terminationEvidence(exit, host.terminationRequest());
   }
 
   async setup() {

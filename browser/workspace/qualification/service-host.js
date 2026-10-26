@@ -6,6 +6,7 @@
 // Usage: node service-host.js '{"stateDir": "...", "adapter": "fake"|"playwright"|"cdp", ...}'
 
 import { createInterface } from 'node:readline';
+import { writeSync } from 'node:fs';
 import { loadServiceConfig } from '../src/config.js';
 import { WorkspaceService } from '../src/service.js';
 import { createOwnerSession } from '../src/workflows/owner-session.js';
@@ -44,7 +45,11 @@ const WORKFLOWS = Object.freeze({
 const raceHooks = {};
 function serviceHooks(crash) {
   const hook = (name) => (request) => {
-    if (crash?.hook === name && request.actionId.endsWith(crash.actionIdSuffix)) process.kill(process.pid, 'SIGKILL');
+    if (crash?.hook === name && request.actionId.endsWith(crash.actionIdSuffix)) {
+      // Synchronous pipe publication survives the immediate process kill.
+      writeSync(1, `${JSON.stringify({ event: 'termination-requested', pid: process.pid, signal: 'SIGKILL' })}\n`);
+      process.kill(process.pid, 'SIGKILL');
+    }
     const raced = raceHooks[name];
     if (raced && request.actionId.endsWith(raced.actionIdSuffix)) {
       delete raceHooks[name];

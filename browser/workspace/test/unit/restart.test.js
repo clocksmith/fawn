@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { loadServiceConfig } from '../../src/config.js';
 import { startHost } from '../../qualification/service-client.js';
+import { terminationEvidence } from '../../qualification/termination.js';
 import { ORIGIN } from '../support/fake-adapter.js';
 
 const config = loadServiceConfig();
@@ -54,7 +55,7 @@ async function prepare() {
 async function crashDuringForm(base, owner, hook) {
   const host = await startHost({ ...base, crash: { hook, actionIdSuffix: '-submit' } });
   await assert.rejects(host.workflow('form', owner, { ...FORM_TASK, runId: 'run-1' }), (error) => {
-    assert.equal(error.exit?.signal, 'SIGKILL');
+    assert.equal(terminationEvidence(error.exit, host.terminationRequest()).abrupt, true);
     return true;
   });
 }

@@ -11,14 +11,17 @@ import { validateResult } from '../../qualification/validate.js';
 const RUNNER = fileURLToPath(new URL('../../qualification/run.js', import.meta.url));
 const SUBSET = Object.freeze(['failure-after-effect-started', 'handoff-races-effect', 'background-change-regions-scope', 'recovery-effect-absent']);
 const RUN_TIME_LIMIT_MS = 150000;
+const browserArgs = process.env.FAWN_WORKSPACE_TEST_BROWSER_CHANNEL
+  ? ['--browser-channel', process.env.FAWN_WORKSPACE_TEST_BROWSER_CHANNEL] : [];
 
 const root = mkdtempSync(join(tmpdir(), 'fawn-qualification-test-'));
 const resultDir = join(root, 'result');
-const ran = spawnSync(process.execPath, [RUNNER, '--out', resultDir, '--cases', SUBSET.join(',')], {
+const ran = spawnSync(process.execPath, [RUNNER, '--out', resultDir, '--cases', SUBSET.join(','), ...browserArgs], {
   encoding: 'utf8',
   timeout: RUN_TIME_LIMIT_MS,
   killSignal: 'SIGKILL',
 });
+assert.equal(ran.status, 0, `qualification process failed (${ran.signal ?? ran.status})\n${ran.stdout}\n${ran.stderr}`);
 const verdict = JSON.parse(readFileSync(join(resultDir, 'verdict.json'), 'utf8'));
 assert.deepEqual(verdict.failures, [], ran.stdout);
 assert.equal(verdict.subsetPassed, true);
@@ -76,6 +79,16 @@ assert.ok(checksAfter(({ formRun }) => {
   formRun.steps.afterRestart.outcome = 'completed';
 }).has('expectation'));
 
+// Successful/ordinary exits cannot stand in for the crash-recovery control.
+assert.ok(checksAfter(({ formRun }) => {
+  formRun.steps.crash.rawExit = { code: 0, signal: null };
+}).has('forced-termination'));
+
+// Windows exit1 alone is also an ordinary failure, without a kill request.
+assert.ok(checksAfter(({ formRun }) => {
+  formRun.steps.crash.request = null;
+}).has('forced-termination'));
+
 // The run used a fixture site other than the frozen one.
 assert.ok(checksAfter(({ result }) => {
   result.identity.fixtureSite.sha256 = '0'.repeat(64);
@@ -85,6 +98,11 @@ assert.ok(checksAfter(({ result }) => {
 assert.ok(checksAfter(({ formRun }) => {
   formRun.inspections[0].listeningTcpSockets = 1;
 }).has('debugging-endpoint'));
+
+// A browser root cannot claim a different mapped framework/application image.
+assert.ok(checksAfter(({ formRun }) => {
+  formRun.inspections[0].executables[0].codeModulesSha256 = '0'.repeat(64);
+}).has('browser-image-identity'));
 
 // The adapters behaved differently for the same case.
 assert.ok(checksAfter(({ formRun }) => {

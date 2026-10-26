@@ -18,7 +18,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { AGENT_RESTART_DELAY_MS, Arm, HUMAN_HOLD_FACTOR, median, sleep } from './arms.js';
 import { SUITES } from './differentiation-suites.js';
-import { REPO_ROOT, resultIdentity } from './identity.js';
+import { REPO_ROOT, executableIdentityKey, resultIdentity } from './identity.js';
 
 const POLICY_PATH = 'config/browser-product-comparison-policy.json';
 const DEFAULT_OUT_ROOT = 'bench/out/fawn-workspace-differentiation';
@@ -46,16 +46,17 @@ function parseArgs(argv) {
     scriptedComparison: options['scripted-comparison'] ?? null,
     suite: options.suite ?? 'differentiation',
     mode: options.mode ?? null,
+    browserChannel: options['browser-channel'] ?? null,
     priorSuites: options['prior-suites'] ? options['prior-suites'].split(',') : [],
   };
 }
 
-async function runArm(name, scenario, repetition, suite, definition) {
+async function runArm(name, scenario, repetition, suite, definition, browserChannel) {
   const site = await definition.startSite();
   const application = definition.applications[scenario.application ?? definition.defaultApplication];
   const flags = { ...application, churn: scenario.area === 'incremental-observation' };
   await fetch(`${site.origin}/control/setup?${new URLSearchParams(Object.entries(flags).map(([key, value]) => [key, value ? '1' : '0']))}`);
-  const arm = new Arm({ name, site, scenario, definition });
+  const arm = new Arm({ name, site, scenario, definition, browserChannel });
   await arm.start();
   const id = `${scenario.id}-${name}-${repetition}`;
   const task = { id, intent: definition.intent, origin: site.origin, ...definition.task(site, id) };
@@ -201,7 +202,7 @@ async function main() {
     const repetitions = options.repetitions ?? scenario.repetitions;
     for (let repetition = 1; repetition <= repetitions; repetition += 1) {
       for (const name of repetition % 2 ? ARMS : [...ARMS].reverse()) {
-        const run = await runArm(name, scenario, repetition, suite, definition);
+        const run = await runArm(name, scenario, repetition, suite, definition, options.browserChannel);
         rows.push(run.row);
         inspections[name].push(...run.inspections);
         evidence.push({ scenarioId: scenario.id, arm: name, repetition, ...run.evidence });
@@ -240,7 +241,7 @@ async function main() {
     doesNotEstablish: rule.doesNotEstablish,
   };
   const executables = Object.fromEntries(ARMS.map((name) => [name, [...new Map(inspections[name].flatMap((inspection) => inspection.executables)
-    .map((executable) => [executable.sha256, executable])).values()]]));
+    .map((executable) => [executableIdentityKey(executable), executable])).values()]]));
   const result = {
     schemaVersion: DIFFERENTIATION_SCHEMA_VERSION,
     suiteVersion: suite.suiteVersion,
@@ -248,7 +249,7 @@ async function main() {
     identity: resultIdentity(),
     browsers: executables,
     sameBrowserBinary: executables.treatment.length === 1 && executables.control.length === 1
-      && executables.treatment[0].sha256 === executables.control[0].sha256,
+      && executableIdentityKey(executables.treatment[0]) === executableIdentityKey(executables.control[0]),
     debuggingEndpoints: [...inspections.treatment, ...inspections.control]
       .reduce((total, inspection) => total + inspection.listeningTcpSockets + inspection.devToolsActivePortFiles, 0),
     harnessLines: Object.fromEntries(Object.entries(HARNESS_FILES).map(([arm, files]) => [arm,

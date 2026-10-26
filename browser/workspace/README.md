@@ -209,6 +209,7 @@ cd browser/workspace
 npm ci
 npm test               # unit tests: journal, service rules, process-kill restart
 npm run test:browser   # adds a qualification subset through both adapters
+npm run test:browser -- --browser-channel chrome # use installed Chrome for both arms/adapters
 npm run qualify        # full case set; writes bench/out/fawn-workspace-qualification/<stamp>
 npm run compare        # baseline comparison; writes bench/out/fawn-workspace-comparison/<stamp>
 npm run differentiate  # first suite; --suite revalidatedDifferentiation runs the second
@@ -219,9 +220,23 @@ xvfb-run -a npm run qualify -- --browser-channel chrome --headless false   # hea
 node qualification/validate.js <resultDir> --require-current-source
 ```
 
-The browser tests need Playwright's Chromium headless shell
-(`npx playwright-core install --only-shell chromium`). Qualification reads
-`/proc`, so it runs on Linux.
+The browser tests use Playwright's Chromium headless shell by default
+(`npx playwright-core install --only-shell chromium`), or installed Chrome with
+`--browser-channel chrome`. Channel selection applies equally to both adapters
+and both comparison arms; it does not weaken the browser sandbox.
+Qualification observes owned processes, actual executable images and TCP listeners
+through `/proc` on Linux, `ps`/`lsof` plus libproc through Python3 on macOS,
+and CIM/NetTCPIP on Windows. macOS uses kernel executable paths rather than
+mutable/truncated process titles.
+macOS browser roots, helper images and mapped app frameworks have separate hashes.
+
+The `2026-10-26-behavioral-v3-platform-exits` case freeze retains the same25 cases,
+102 runs, fixtures and semantic expectations. Crash evidence now records the
+acknowledged controller kill or synchronously received self-kill request separately
+from the raw OS exit: signal SIGKILL/code null on
+Linux/macOS and signal null/code1 on Windows. The validator rejects normal exits
+and wrong termination codes or missing kill requests rather than fabricating a
+POSIX signal on Windows.
 
 ## Known limits
 

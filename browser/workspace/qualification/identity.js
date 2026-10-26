@@ -1,25 +1,20 @@
 // Fawn workspace qualification — source, harness and browser identities.
 //
 // Results name the exact bytes they ran: source trees by per-file SHA-256, and browser
-// executables as actually running under the service host, read from /proc rather than from
-// adapter claims.
+// executables and listeners as observed by the host OS, never adapter claims.
 
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { createRequire } from 'node:module';
 import { arch, platform, release } from 'node:os';
-import { existsSync, readdirSync, readFileSync, readlinkSync, realpathSync, statSync } from 'node:fs';
-import { join, relative } from 'node:path';
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
+import { join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { canonicalJson } from '../src/journal.js';
+import { descendants, inspectProcesses, processesUsing, windowsFileVersion } from './process-inspection.js';
 
 const REPO_ROOT = fileURLToPath(new URL('../../../', import.meta.url));
 const EXCLUDED_DIRECTORIES = Object.freeze(['node_modules']);
-const LISTEN_STATE = '0A';
-const TCP_TABLES = Object.freeze(['/proc/net/tcp', '/proc/net/tcp6']);
-const INODE_FIELD = 9;
-const STATE_FIELD = 3;
-const PPID_FIELD = 1;
 const VERSION_TIMEOUT_MS = 10000;
 const DEVTOOLS_PORT_FILE = 'DevToolsActivePort';
 const PROFILE_RELEASE_POLL_MS = 50;
@@ -39,7 +34,7 @@ function listFiles(directory) {
 /** Digest of a source tree: sorted repo-relative paths with their SHA-256. */
 function treeDigest(repoPath) {
   const root = join(REPO_ROOT, repoPath);
-  const files = listFiles(root).map((path) => [relative(REPO_ROOT, path), sha256File(path)])
+  const files = listFiles(root).map((path) => [relative(REPO_ROOT, path).split(sep).join('/'), sha256File(path)])
     .sort((a, b) => (a[0] < b[0] ? -1 : 1));
   return { path: repoPath, sha256: createHash('sha256').update(canonicalJson(files)).digest('hex'), fileCount: files.length };
 }
@@ -60,73 +55,29 @@ function gitState() {
   }
 }
 
-function parentOf(pid) {
-  try {
-    const stat = readFileSync(`/proc/${pid}/stat`, 'utf8');
-    return Number(stat.slice(stat.lastIndexOf(')') + 2).split(' ')[PPID_FIELD]);
-  } catch {
-    return null;
-  }
-}
-
-/** Every live descendant of rootPid. */
-function descendants(rootPid) {
-  const children = new Map();
-  for (const entry of readdirSync('/proc')) {
-    if (!/^\d+$/.test(entry)) continue;
-    const ppid = parentOf(entry);
-    if (ppid === null) continue;
-    if (!children.has(ppid)) children.set(ppid, []);
-    children.get(ppid).push(Number(entry));
-  }
-  const found = [];
-  const pending = [...(children.get(rootPid) ?? [])];
-  while (pending.length > 0) {
-    const pid = pending.shift();
-    found.push(pid);
-    pending.push(...(children.get(pid) ?? []));
-  }
-  return found;
-}
-
-function listeningInodes() {
-  const inodes = new Set();
-  for (const table of TCP_TABLES) {
-    if (!existsSync(table)) continue;
-    for (const line of readFileSync(table, 'utf8').trim().split('\n').slice(1)) {
-      const fields = line.trim().split(/\s+/);
-      if (fields[STATE_FIELD] === LISTEN_STATE) inodes.add(fields[INODE_FIELD]);
-    }
-  }
-  return inodes;
-}
-
-function socketInodes(pid) {
-  try {
-    return readdirSync(`/proc/${pid}/fd`).flatMap((fd) => {
-      try {
-        const match = /^socket:\[(\d+)\]$/.exec(readlinkSync(`/proc/${pid}/fd/${fd}`));
-        return match ? [match[1]] : [];
-      } catch {
-        return [];
-      }
-    });
-  } catch {
-    return [];
-  }
-}
-
 function countFilesNamed(directory, name) {
   if (!existsSync(directory)) return 0;
-  return listFiles(directory).filter((path) => path.endsWith(`/${name}`)).length;
+  return listFiles(directory).filter((path) => path.split(sep).at(-1) === name).length;
 }
 
 const executableCache = new Map();
+const imageCache = new Map();
+function describeImage(path) {
+  const stat = statSync(path);
+  const cached = imageCache.get(path);
+  if (!cached || cached.mtimeMs !== stat.mtimeMs || cached.identity.byteLength !== stat.size) {
+    imageCache.set(path, { mtimeMs: stat.mtimeMs,
+      identity: { path, sha256: sha256File(path), byteLength: stat.size } });
+  }
+  return imageCache.get(path).identity;
+}
+
 function describeExecutable(path) {
   if (!executableCache.has(path)) {
     let version = null;
     try {
-      version = execFileSync(path, ['--version'], { encoding: 'utf8', timeout: VERSION_TIMEOUT_MS }).trim();
+      version = process.platform === 'win32' ? windowsFileVersion(path)
+        : execFileSync(path, ['--version'], { encoding: 'utf8', timeout: VERSION_TIMEOUT_MS }).trim();
     } catch (error) {
       version = `unavailable: ${error.message.split('\n')[0]}`;
     }
@@ -136,36 +87,29 @@ function describeExecutable(path) {
 }
 
 /**
- * Inspect the processes a service host started: executables, TCP listeners and DevTools port files.
+ * Inspect owned browser roots, descendant images, TCP listeners and DevTools port files.
  */
 function inspectBrowserProcesses(hostPid, profileRoot) {
-  const pids = descendants(hostPid);
-  const executables = new Set();
-  for (const pid of pids) {
-    try {
-      executables.add(realpathSync(`/proc/${pid}/exe`));
-    } catch {
-      // The process exited between listing and inspection.
-    }
-  }
-  const listening = listeningInodes();
-  const listeningTcpSockets = pids.flatMap(socketInodes).filter((inode) => listening.has(inode)).length;
+  const inspection = inspectProcesses(hostPid);
+  const imagePaths = [...new Set(inspection.rows.map((row) => row.executable))].sort();
+  const codeModules = inspection.codeModules.sort().map(describeImage);
+  const codeModulesSha256 = createHash('sha256').update(canonicalJson(codeModules)).digest('hex');
   return {
-    processCount: pids.length,
-    executables: [...executables].sort().map(describeExecutable),
-    listeningTcpSockets,
+    processCount: inspection.rows.length,
+    // Root browser images are compared between adapters; platform helper
+    // executables and mapped app frameworks retain their own exact identities.
+    executables: [...new Set(inspection.roots.map((row) => row.executable))].sort()
+      .map((path) => ({ ...describeExecutable(path), codeModulesSha256 })),
+    processImages: imagePaths.map(describeImage),
+    codeModules,
+    mappedCodeModules: inspection.mappedCodeModules.sort().map(describeImage),
+    listeningTcpSockets: inspection.listeningTcpSockets,
     devToolsActivePortFiles: countFilesNamed(profileRoot, DEVTOOLS_PORT_FILE),
   };
 }
 
-function processesUsing(path) {
-  return readdirSync('/proc').filter((entry) => /^\d+$/.test(entry)).filter((pid) => {
-    try {
-      return readFileSync(`/proc/${pid}/cmdline`, 'utf8').includes(path);
-    } catch {
-      return false;
-    }
-  });
+function executableIdentityKey(executable) {
+  return `${executable.path}|${executable.sha256}|${executable.codeModulesSha256 ?? ''}`;
 }
 
 /** Wait until no process still uses a state directory (a killed host's browser exits on pipe close). */
@@ -204,6 +148,7 @@ function resultIdentity() {
 export {
   REPO_ROOT,
   descendants,
+  executableIdentityKey,
   gitState,
   inspectBrowserProcesses,
   repoFileSha256,
