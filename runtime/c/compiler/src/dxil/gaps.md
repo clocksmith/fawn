@@ -72,10 +72,13 @@ accepted here.
 
 ### 4. Windows DXC runner
 
-`dxil_dxc_run` on Windows returns
-`DXIL_SHADER_TOOLCHAIN_UNAVAILABLE` with a message saying the Windows
-runner is not implemented. The POSIX runner is fully implemented and
-tested on this Linux VM. No Windows result is claimed.
+`dxil_dxc_run` now has a Windows `CreateProcessW` implementation with
+UTF-8 argument conversion, CRT quoting, an explicit inherited-handle list,
+concurrent bounded stdout/stderr capture and complete process cleanup.
+`tools/test_dxil_windows.py` builds the process boundary and a real child
+probe, then requires actual DXC compilation and container validation.
+Windows execution remains unverified until that control runs on Windows;
+this process implementation alone does not close adapter, D3D12 or release gates.
 
 ## Fully ported files
 

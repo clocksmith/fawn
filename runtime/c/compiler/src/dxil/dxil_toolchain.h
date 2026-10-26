@@ -72,16 +72,19 @@ void dxil_dxc_argv(const char *executable, const char *profile,
     const char *entry_name, const char *output_path,
     const char *input_path, const char *argv[9]);
 
-/* Runs DXC once. On POSIX (Linux) this forks and execs, capturing up
- * to DXIL_DXC_MAX_OUTPUT_BYTES of combined output for diagnostics:
+/* Runs DXC once. POSIX uses fork/exec; Windows uses CreateProcessW
+ * without a shell, with UTF-8 arguments and a restricted inherited-handle
+ * list. Each output stream retains at most DXIL_DXC_MAX_OUTPUT_BYTES:
  * spawn failure (including executable not found) gives
  * DXIL_SHADER_TOOLCHAIN_UNAVAILABLE with a discovery-specific
  * message; a nonzero exit or termination by a signal gives
  * DXIL_INVALID_IR with a message containing the discovery label,
  * executable, exit code or signal, profile, and entry name, plus the
  * captured detail (trimmed stderr, else trimmed stdout) when
- * non-empty. On Windows this function is not implemented on this VM
- * and returns DXIL_SHADER_TOOLCHAIN_UNAVAILABLE saying so (gaps.md).
+ * non-empty. Windows drains both streams concurrently, discarding excess
+ * bytes after the cap, and reports the complete unsigned process exit code.
+ * Its transient OS attribute allocation is released before returning;
+ * caller input, workspace and output ownership do not change.
  * Messages are written to errbuf (truncated, NUL-terminated, when the
  * buffer is too small); errbuf may be NULL only when errcap is 0. */
 DxilStatus dxil_dxc_run(const char *executable, const char *profile,
