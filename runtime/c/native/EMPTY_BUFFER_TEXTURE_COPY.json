@@ -1,0 +1,352 @@
+{
+  "schemaVersion": 1,
+  "classification": "shared-correctness-repair-not-strict-migration-differential",
+  "consumer": "Regression qualification of zero-extent buffer/texture submission resource uses through the canonical command owner",
+  "baselineCommit": "40b041208ed8ea93e43f660abc632bf600bed955",
+  "fixture": "packages/doe-gpu/test/integration/test-empty-copy-submit.js",
+  "fixtureSha256": "821ae859810a1a2be9a0ee4f90f7713f76b9114f209d9cf0c43620c3495cbf39",
+  "sourceHashes": {
+    "runtime/c/resources/src/commands.c": "605f3ea4fced180e79cf1136d345ac725d765fe78140232ab85c690839d31192",
+    "runtime/c/resources/tests/test_resources.c": "52634ec01aad38e5ccf5f97a87f5a38673dc3e93e21b8a63999871308e4704d1",
+    "runtime/c/native/tests/texture_transfers.c": "d7392bcabc066fca770c980ecc9a92f0f587ad79c0b8ace78537e703d927a1dc"
+  },
+  "environment": {
+    "node": "24.22.1",
+    "adapter": "llvmpipe LLVM19.1.7, 256bits, CPU",
+    "mesa": "25.0.7-2+deb13u1",
+    "threads": 1,
+    "shaderCache": "disabled",
+    "dawn": "official npm webgpu0.4.0 pinned distribution; not Windows producer",
+    "napiAddonSha256": "ee261065973d6798050a2028be1271cc292c50b8cdd837a896e346917c655510"
+  },
+  "rows": [
+    {
+      "provider": "c-before",
+      "librarySha256": "286603418e9a90893d9485b02e0116c954c50c8f671678c6f3fc6d08a1a10cb9",
+      "exitCode": 1,
+      "results": [
+        {
+          "direction": "buffer-texture",
+          "axis": 0,
+          "destroyed": "buffer",
+          "rejected": false
+        },
+        {
+          "direction": "buffer-texture",
+          "axis": 0,
+          "destroyed": "texture",
+          "rejected": false
+        },
+        {
+          "direction": "buffer-texture",
+          "axis": 1,
+          "destroyed": "buffer",
+          "rejected": false
+        },
+        {
+          "direction": "buffer-texture",
+          "axis": 1,
+          "destroyed": "texture",
+          "rejected": false
+        },
+        {
+          "direction": "buffer-texture",
+          "axis": 2,
+          "destroyed": "buffer",
+          "rejected": false
+        },
+        {
+          "direction": "buffer-texture",
+          "axis": 2,
+          "destroyed": "texture",
+          "rejected": false
+        },
+        {
+          "direction": "texture-buffer",
+          "axis": 0,
+          "destroyed": "buffer",
+          "rejected": false
+        },
+        {
+          "direction": "texture-buffer",
+          "axis": 0,
+          "destroyed": "texture",
+          "rejected": false
+        },
+        {
+          "direction": "texture-buffer",
+          "axis": 1,
+          "destroyed": "buffer",
+          "rejected": false
+        },
+        {
+          "direction": "texture-buffer",
+          "axis": 1,
+          "destroyed": "texture",
+          "rejected": false
+        },
+        {
+          "direction": "texture-buffer",
+          "axis": 2,
+          "destroyed": "buffer",
+          "rejected": false
+        },
+        {
+          "direction": "texture-buffer",
+          "axis": 2,
+          "destroyed": "texture",
+          "rejected": false
+        }
+      ]
+    },
+    {
+      "provider": "zig",
+      "librarySha256": "3e60dbfa3281210d98639fd2f30e81ed001a31f066e39e106cd867a07b3847d1",
+      "exitCode": 1,
+      "results": [
+        {
+          "direction": "buffer-texture",
+          "axis": 0,
+          "destroyed": "buffer",
+          "rejected": false
+        },
+        {
+          "direction": "buffer-texture",
+          "axis": 0,
+          "destroyed": "texture",
+          "rejected": false
+        },
+        {
+          "direction": "buffer-texture",
+          "axis": 1,
+          "destroyed": "buffer",
+          "rejected": false
+        },
+        {
+          "direction": "buffer-texture",
+          "axis": 1,
+          "destroyed": "texture",
+          "rejected": false
+        },
+        {
+          "direction": "buffer-texture",
+          "axis": 2,
+          "destroyed": "buffer",
+          "rejected": false
+        },
+        {
+          "direction": "buffer-texture",
+          "axis": 2,
+          "destroyed": "texture",
+          "rejected": false
+        },
+        {
+          "direction": "texture-buffer",
+          "axis": 0,
+          "destroyed": "buffer",
+          "rejected": false
+        },
+        {
+          "direction": "texture-buffer",
+          "axis": 0,
+          "destroyed": "texture",
+          "rejected": false
+        },
+        {
+          "direction": "texture-buffer",
+          "axis": 1,
+          "destroyed": "buffer",
+          "rejected": false
+        },
+        {
+          "direction": "texture-buffer",
+          "axis": 1,
+          "destroyed": "texture",
+          "rejected": false
+        },
+        {
+          "direction": "texture-buffer",
+          "axis": 2,
+          "destroyed": "buffer",
+          "rejected": false
+        },
+        {
+          "direction": "texture-buffer",
+          "axis": 2,
+          "destroyed": "texture",
+          "rejected": false
+        }
+      ]
+    },
+    {
+      "provider": "dawn",
+      "librarySha256": "fbfe599055b469963e4c9bfc900a702843db962dcaba0799b3c81ae33fa43db1",
+      "exitCode": 0,
+      "results": [
+        {
+          "direction": "buffer-texture",
+          "axis": 0,
+          "destroyed": "buffer",
+          "rejected": true
+        },
+        {
+          "direction": "buffer-texture",
+          "axis": 0,
+          "destroyed": "texture",
+          "rejected": true
+        },
+        {
+          "direction": "buffer-texture",
+          "axis": 1,
+          "destroyed": "buffer",
+          "rejected": true
+        },
+        {
+          "direction": "buffer-texture",
+          "axis": 1,
+          "destroyed": "texture",
+          "rejected": true
+        },
+        {
+          "direction": "buffer-texture",
+          "axis": 2,
+          "destroyed": "buffer",
+          "rejected": true
+        },
+        {
+          "direction": "buffer-texture",
+          "axis": 2,
+          "destroyed": "texture",
+          "rejected": true
+        },
+        {
+          "direction": "texture-buffer",
+          "axis": 0,
+          "destroyed": "buffer",
+          "rejected": true
+        },
+        {
+          "direction": "texture-buffer",
+          "axis": 0,
+          "destroyed": "texture",
+          "rejected": true
+        },
+        {
+          "direction": "texture-buffer",
+          "axis": 1,
+          "destroyed": "buffer",
+          "rejected": true
+        },
+        {
+          "direction": "texture-buffer",
+          "axis": 1,
+          "destroyed": "texture",
+          "rejected": true
+        },
+        {
+          "direction": "texture-buffer",
+          "axis": 2,
+          "destroyed": "buffer",
+          "rejected": true
+        },
+        {
+          "direction": "texture-buffer",
+          "axis": 2,
+          "destroyed": "texture",
+          "rejected": true
+        }
+      ]
+    },
+    {
+      "provider": "c-after",
+      "librarySha256": "84dc663806a45bb5ad05772406b26d56ae2c4f6a46c9436edfbd7b2d56e5893a",
+      "exitCode": 0,
+      "results": [
+        {
+          "direction": "buffer-texture",
+          "axis": 0,
+          "destroyed": "buffer",
+          "rejected": true
+        },
+        {
+          "direction": "buffer-texture",
+          "axis": 0,
+          "destroyed": "texture",
+          "rejected": true
+        },
+        {
+          "direction": "buffer-texture",
+          "axis": 1,
+          "destroyed": "buffer",
+          "rejected": true
+        },
+        {
+          "direction": "buffer-texture",
+          "axis": 1,
+          "destroyed": "texture",
+          "rejected": true
+        },
+        {
+          "direction": "buffer-texture",
+          "axis": 2,
+          "destroyed": "buffer",
+          "rejected": true
+        },
+        {
+          "direction": "buffer-texture",
+          "axis": 2,
+          "destroyed": "texture",
+          "rejected": true
+        },
+        {
+          "direction": "texture-buffer",
+          "axis": 0,
+          "destroyed": "buffer",
+          "rejected": true
+        },
+        {
+          "direction": "texture-buffer",
+          "axis": 0,
+          "destroyed": "texture",
+          "rejected": true
+        },
+        {
+          "direction": "texture-buffer",
+          "axis": 1,
+          "destroyed": "buffer",
+          "rejected": true
+        },
+        {
+          "direction": "texture-buffer",
+          "axis": 1,
+          "destroyed": "texture",
+          "rejected": true
+        },
+        {
+          "direction": "texture-buffer",
+          "axis": 2,
+          "destroyed": "buffer",
+          "rejected": true
+        },
+        {
+          "direction": "texture-buffer",
+          "axis": 2,
+          "destroyed": "texture",
+          "rejected": true
+        }
+      ]
+    }
+  ],
+  "otherControls": {
+    "resourceStates": 30,
+    "resourceReserveFailureDirections": 2,
+    "nativeCases": 24,
+    "nativeTransferOracle": "passed unchanged",
+    "backends": "existing zero-extent guards before native payload access; no backend code changes"
+  },
+  "limits": [
+    "No physical GPU qualification.",
+    "Retained Zig negative behavior is preserved as evidence, not counted as a pass.",
+    "MSAA and other recorded failures remain unchanged."
+  ]
+}
