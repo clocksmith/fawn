@@ -50,7 +50,7 @@ coordinator's clarification that CSL can be ignored; mapped, not built.
 | frontend_expr.zig (637) | done | `tsir_frontend_expr.c` literal/symbolic upper bounds, step, init bound, dispatch-guard scan, step-sign detection, dispatch-axis letter |
 | frontend_rejections.zig (122) | done | `tsir_frontend_passes.c` rejections walker (while loop, unstructured loop, decreasing for loop; `.body[i]`/`.then`/`.else` path segments) |
 | frontend_types.zig (27) | done | `tsir_frontend.c` scalar mapping |
-| mod.zig (57) | partial: public surface is spread across the C headers (no single re-export module); CONTRACT_VERSION done | no separate `tsir_mod` file; a coordinator decision whether a single umbrella header is wanted |
+| mod.zig (57) | implemented | `tsir.h` re-exports the non-CSL public owners; both standalone tools consume the facade. |
 | planner.zig (295) | done | `tsir_planner.c` |
 | planner_support.zig (47) | done | `tsir_planner.c` |
 | reference_extended_ops.zig (841) | done, with transcendental caveat (see G-TRANSCENDENTAL-BIT) | `tsir_extended.c`, `tsir_extended_ops.c`: identity, residual_add, gated (gelu/silu/sigmoid), attention_scores, l2_normalize, conv1d_depthwise all implemented and tested; linear_attention dispatch preserves Zig's fall-through (see G-LINEAR-DEAD-PATH) and its math is implemented separately as `tsir_linear_attention_step` and tested directly. Transcendentals use double-precision evaluation rounded to f32 (`tsir_transcendental.c`), not Zig's declared minimax polynomials. |
@@ -60,16 +60,14 @@ coordinator's clarification that CSL can be ignored; mapped, not built.
 | reference_scalar.zig (113) | done | `tsir_scalar.c` |
 | reference_types.zig (18) | done | `tsir_reference.h` result type |
 | schema.zig (767) | done | `tsir_schema.h`, `tsir_schema.c` |
-| tools/tsir_bootstrap_manifest_inputs.zig (220) | partial | `tsir_bootstrap.c` entry writer in Zig field order plus kernel templates (exactness, invariants, tolerance); the WGSL pipeline behind it (parser, sema, ir_builder) is not ported, so digests and descriptor hashes stay caller-supplied (see G-MANIFEST-PIPELINE). No CLI binary built. |
-| tools/tsir_bootstrap_oracle.zig (531) | partial | `tsir_bootstrap.c` oracle runner as a library function: exact Zig status JSON (detail, referenceHash, status), three kernel semantics, canonical kernel names, 16 MiB cap, NotImplemented/InvalidJson mapped to `not_implemented` status. No CLI binary built (no argv parsing or file reads); non-NotImplemented reference failures are reported as `not_implemented` instead of Zig's process failure (see G-ORACLE-CLI). JSON reader reused from runtime/c (`tsir_json.c`), not hand-rolled. |
+| tools/tsir_bootstrap_manifest_inputs.zig (220) | implemented for the non-CSL bootstrap inputs | `tsir_bootstrap_manifest.c`, `tsir_source*.c`, `tsir_targets.c`, and `tools/tsir_bootstrap_manifest_inputs.c`: actual shared C parser/sema, typed adaptation, TSIR lowering/planning/digests; nine entries match actual Zig output byte for byte. See source-adapter limits below. |
+| tools/tsir_bootstrap_oracle.zig (531) | implemented and exercised | `tsir_bootstrap_oracle.c` and standalone `tools/tsir_bootstrap_oracle.c`: argv, bounded reads, reference execution, exact status JSON and process-failure boundaries. 67 independent/differential checks against Zig 0.15.2. |
 
-Totals: done 28 files, partial 3 files, missing 0 files,
-quarantined (not built by design) 7 files. 28 + 3 + 0 + 7 = 38.
-Partial files: mod.zig (no single umbrella header, coordinator
-decision), tools/tsir_bootstrap_manifest_inputs.zig (entry writer
-only, no WGSL pipeline), tools/tsir_bootstrap_oracle.zig (library
-runner only, no CLI binary). No Zig file is left unimplemented
-outside the quarantined CSL set.
+The three previously partial non-CSL inventory entries now have executable C
+replacements and focused acceptance evidence. This file inventory does not prove
+universal runtime parity. The original 28 implemented entries retain their
+qualifications below; all seven CSL-only TSIR files remain excluded.
+See [bootstrap evidence and limits](../../TSIR_BOOTSTRAP.md).
 
 ## Open items that no code in this directory resolves
 
@@ -77,22 +75,20 @@ outside the quarantined CSL set.
   API inventory were not found in this tree. No registry-row mapping
   is claimed. The coordinator must supply the inventory file (reported
   to live on the user's Mac) before that mapping can be written.
-- G-DESCRIPTOR-HASH: `targets.descriptorHash` lives outside TSIR.
-  The C planner leaves `target_descriptor_hash` zeroed, and C
-  emitters take the hash as a caller-supplied input and compare it.
-  A plan must not be digest-compared or emitted as "matching Zig"
-  until the hash function is ported or supplied.
+- G-DESCRIPTOR-HASH: resolved for the three non-CSL bootstrap targets by
+  `tsir_targets.c`; the manifest pipeline installs actual correctness hashes
+  into planned functions. The older low-level planner API still accepts its
+  reduced descriptor, so standalone callers must supply identity explicitly.
 - G-F64: Zig f64 `{d}` formatting is verified only for the plain
   cases in the tests (0.5-style values, 1.5, 0.000001, integers).
   Scientific-notation exponents, negative zero, and other exotic
   values need a Zig cross-check before any manifest digest is
   compared byte-for-byte against Zig output. The C writer is
   deterministic and round-trips, but determinism is not Zig equality.
-- G-EMITTER-DIGEST: Zig `emitterCodeDigest` hashes Zig source text.
-  No C equivalent is offered, because hashing C sources would give a
-  different value and hashing Zig sources from C would require
-  carrying Zig bytes as data. Coordinator decision needed before
-  manifest lowering entries can be compared across implementations.
+- G-EMITTER-DIGEST: bootstrap manifests now hash the actual retained
+  reference emitter source concatenations, exactly matching the format's Zig
+  reference identity. This identifies those reference inputs, not C source.
+  Missing or oversized inputs reject; no Zig executable is needed by C tools.
 - G-SOFTMAX-TRAP: Zig traps on softmax_stable reaching the scalar
   fold helpers; C returns TSIR_ERR_INVALID. Neither produces a
   value, but the observable behavior differs (trap vs error code).
@@ -110,12 +106,9 @@ outside the quarantined CSL set.
   its docstring summary mentions propagate. C follows the code, not
   the docstring. If the docstring is the intended contract, GEMV
   needs a nan_inf check added in both implementations' tests.
-- G-NO-ZIG-CROSSCHECK: no Zig toolchain was invoked and no output
-  byte string in this directory was compared against a Zig binary's
-  output. All "byte-exact" claims rest on reading the Zig source
-  during this run. A Zig cross-check (canonical strings, digests,
-  reference hashes, skeleton text) is still required before any
-  cross-implementation parity claim.
+- G-NO-ZIG-CROSSCHECK: superseded for bootstrap manifests, target/emitter
+  identities and the 67 oracle cases by actual pinned Zig 0.15.2 differential
+  checks on Mars. This does not establish untested interpreter/emitter corners.
 - G-NO-GPU: nothing here was run on a GPU, and emitted skeleton text
   is contract text, not a compilable module. No Doe-over-Dawn, release,
   or browser qualification claim is made or implied.
@@ -159,27 +152,17 @@ outside the quarantined CSL set.
   descending instead of recursing unboundedly; no such tree was
   observed in the fixtures. Local-alias indirect-access detection
   keeps Zig's exact depth cap 8.
-- G-MANIFEST-PIPELINE: the manifest entry writer is complete, but
-  the WGSL pipeline behind manifest inputs (parser, sema,
-  ir_builder) is not ported, so no manifest entry produced here can
-  be claimed to match a Zig lowering run. Digests and descriptor
-  hashes are caller-supplied inputs.
-- G-ORACLE-CLI: no standalone oracle CLI binary is built. The
-  library runner takes the kernel name and JSON text directly; argv
-  parsing, file reads, and the accepted-and-ignored
-  --semantic-tsir/--realization-tsir flags are not implemented.
-  Also, Zig propagates non-NotImplemented reference errors as
-  process failures, while C reports them as `not_implemented`
-  status instead of failing the caller; no hash is fabricated in
-  either case.
-- G-ORACLE-VALUE: oracle `values` entries beyond f32 range are
-  reported InvalidJson (Zig @floatCast behavior on overflow was not
-  established from the source read). Shape products that overflow
-  usize are likewise InvalidJson, where Zig's elemCount wraps to 0.
-  Both are non-crashing rejections; the exact Zig behavior on those
-  pathological inputs needs a Zig cross-check.
+- G-MANIFEST-PIPELINE: real source lowering, planning and identity generation
+  now execute through shared C owners. The adapter has explicit compiler pools
+  and a 1 MiB source cap. Module constants/memory roots, switch/continuing and
+  unsupported expressions reject with diagnostics; no source-pattern classifier
+  or Zig fallback substitutes for these paths. These limits do not affect the
+  three bootstrap fixtures. Wider WGSL equivalence remains a separate gate.
+- G-ORACLE-CLI: resolved by the standalone C CLI, including accepted-and-ignored
+  provenance flags, first errors and process failures. Shape/byte overflow and
+  f32/f16 conversion boundaries are covered against retained Zig.
 
-## What was NOT done, on purpose
+## Original Linux worker scope (historical)
 
 - Nothing was pushed to GitHub (task forbids it; the coordinator
   merges and pushes).
