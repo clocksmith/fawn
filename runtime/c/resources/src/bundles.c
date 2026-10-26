@@ -33,8 +33,9 @@ static doe_resource_status fail(doe_resource_bundle_encoder *encoder, doe_resour
 static doe_resource_status open_encoder(doe_resource_bundle_encoder *encoder)
 {
     if (!encoder) return DOE_RESOURCE_INVALID_ARGUMENT;
+    /* Preserve the recording error, but reject later calls as already ended. */
+    if (encoder->finished) return DOE_RESOURCE_STATE;
     if (encoder->status != DOE_RESOURCE_OK) return encoder->status;
-    if (encoder->finished) return fail(encoder, DOE_RESOURCE_STATE);
     if (!resource_alive(&encoder->base)) return fail(encoder, DOE_RESOURCE_UNAVAILABLE);
     return DOE_RESOURCE_OK;
 }

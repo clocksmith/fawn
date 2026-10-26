@@ -70,6 +70,10 @@ an alias of device-free compiled data or a second count for one WebGPU object.
   and program claims reject.
   After a failed bundle finish, `doe_resource_render_bundle_rejected` returns
   an invalid bundle that has no draws and fails execution.
+  First Finish reports the sticky recording failure (including allocation failure);
+  later command/bundle encoder calls and repeated Finish return STATE without
+  replacing that stored first failure. Native error scopes therefore distinguish
+  the first OutOfMemory from subsequent finished-state Validation errors.
 - A device that is no longer alive (lost or destroyed) still answers creation:
   `doe_resource_*_lost` returns the WebGPU invalid object for buffers, textures,
   views, samplers, layouts, pipeline layouts, bind groups, shaders, compute and
