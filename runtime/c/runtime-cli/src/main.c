@@ -705,7 +705,7 @@ int main(int argc, char **argv)
     }
     if (ns_loaded) doe_ns_policy_free(&ns_policy);
     free(ns_policy_text);
-    doe_runtime_close(runtime);
+    if (!doe_runtime_close(runtime)) status = 1;
     doe_quirks_free(&quirks);
     release_input(&stream, &plan, plan_kernel_root);
     return status;

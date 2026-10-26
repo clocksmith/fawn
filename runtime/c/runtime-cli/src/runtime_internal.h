@@ -4,6 +4,7 @@
 #ifndef DOE_RUNTIME_INTERNAL_H
 #define DOE_RUNTIME_INTERNAL_H
 #include "execute.h"
+#include <stdatomic.h>
 #include "webgpu.h"
 #include "surface_platform.h"
 #include "doe_native_pipeline_cache.h"
@@ -120,6 +121,10 @@ struct doe_runtime {
     uint64_t map_size;
     bool map_write;
     /* Callback storage outlives a failed wait, through instance release. */
+    _Atomic unsigned host_references;
+    atomic_flag error_guard;
+    bool closing;
+    bool request_wait_failed, scope_wait_failed;
     bool map_done;
     WGPUMapAsyncStatus map_status;
     /* Diagnostics callbacks may remain registered after a failed wait. */

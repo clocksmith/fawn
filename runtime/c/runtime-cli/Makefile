@@ -179,3 +179,26 @@ $(BUILD)/test-device-policy: tests/test_device_policy.c src/device_policy.c src/
 check-device-policy: $(BUILD)/test-device-policy
 	cd ../../.. && $(abspath $(BUILD))/test-device-policy
 check: check-device-policy
+
+# Host-only provider callbacks: no native library, device, SDK or GPU work.
+ifeq ($(shell uname -s),Darwin)
+CALLBACK_GC_FLAGS = -Wl,-dead_strip
+else
+CALLBACK_GC_FLAGS = -Wl,--gc-sections
+endif
+$(BUILD)/callback-lifetime: tests/callback_lifetime.c src/execute.c $(RUNTIME_HEADERS) | $(BUILD)
+	$(CC) $(CPPFLAGS) $(CFLAGS) -ffunction-sections -fdata-sections $< $(CALLBACK_GC_FLAGS) -o $@
+.PHONY: check-callback-lifetime
+check-callback-lifetime: $(BUILD)/callback-lifetime
+	$(PYTHON) -c 'import subprocess,sys; subprocess.run([sys.argv[1]],check=True,timeout=20)' '$(BUILD)/callback-lifetime'
+$(BUILD)/callback-lifetime-sanitize: tests/callback_lifetime.c src/execute.c $(RUNTIME_HEADERS) | $(BUILD)
+	$(CC) $(CPPFLAGS) $(CFLAGS) -O1 -fsanitize=address,undefined -fno-omit-frame-pointer -ffunction-sections -fdata-sections $< $(CALLBACK_GC_FLAGS) -o $@
+.PHONY: check-callback-lifetime-sanitize
+check-callback-lifetime-sanitize: $(BUILD)/callback-lifetime-sanitize
+	ASAN_OPTIONS=detect_leaks=0:halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1 $(PYTHON) -c 'import subprocess,sys; subprocess.run([sys.argv[1]],check=True,timeout=20)' '$(BUILD)/callback-lifetime-sanitize'
+$(BUILD)/callback-lifetime-ubsan: tests/callback_lifetime.c src/execute.c $(RUNTIME_HEADERS) | $(BUILD)
+	$(CC) $(CPPFLAGS) $(CFLAGS) -O1 -fsanitize=undefined -fno-sanitize-recover=all -ffunction-sections -fdata-sections $< $(CALLBACK_GC_FLAGS) -o $@
+.PHONY: check-callback-lifetime-ubsan
+check-callback-lifetime-ubsan: $(BUILD)/callback-lifetime-ubsan
+	$(PYTHON) -c 'import subprocess,sys; subprocess.run([sys.argv[1]],check=True,timeout=20)' '$(BUILD)/callback-lifetime-ubsan'
+check-host: check-callback-lifetime
