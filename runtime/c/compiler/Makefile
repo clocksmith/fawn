@@ -706,6 +706,10 @@ tsir-bootstrap-tools: build/doe-tsir-bootstrap-oracle-c build/doe-tsir-bootstrap
 all: tsir-bootstrap-tools
 build/test_tsir_source: src/tsir/tests/test_source.c build/libdoe_tsir.a $(LIB_SOURCES) $(HEADERS)
 	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) -Isrc/tsir $< $(LIB_SOURCES) build/libdoe_tsir.a -lm -o $@
+build/test_tsir_source_control: src/tsir/tests/test_source_control.c build/libdoe_tsir.a $(LIB_SOURCES) $(HEADERS)
+	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) -Isrc/tsir $< $(LIB_SOURCES) build/libdoe_tsir.a -lm -o $@
+build/test_tsir_source_expr: src/tsir/tests/test_source_expr.c build/libdoe_tsir.a $(LIB_SOURCES) $(HEADERS)
+	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) -Isrc/tsir $< $(LIB_SOURCES) build/libdoe_tsir.a -lm -o $@
 ORACLE_FAULT_NAMES = bootstrap bootstrap_oracle json reference reference_bodies schema sha256 scalar extended extended_ops digest transcendental
 ORACLE_FAULT_OBJECTS = $(addprefix build/tsir-fault/tsir_,$(addsuffix .o,$(ORACLE_FAULT_NAMES)))
 build/tsir-fault/%.o: src/tsir/%.c $(TSIR_TOOL_HEADERS) src/tsir/tests/oracle_alloc.h | build/.ready
@@ -721,9 +725,11 @@ test-tsir: $(TSIR_PARTIAL_TEST_FILES) | build/.ready
 		$(CC) $(PARTIAL_CFLAGS) -Isrc/tsir -Isrc/tsir/tests src/tsir/tests/$$t.c $(TSIR_PARTIAL_SOURCES) -lm -o build/$$t || exit 1; \
 		build/$$t || exit 1; \
 	done
-test-tsir-bootstrap: tsir-bootstrap-tools build/test_bootstrap_manifest build/test_bootstrap_writer build/test_tsir_source build/test_oracle_alloc build/test_manifest_alloc
+test-tsir-bootstrap: build/test_tsir_source_control build/test_tsir_source_expr tsir-bootstrap-tools build/test_bootstrap_manifest build/test_bootstrap_writer build/test_tsir_source build/test_oracle_alloc build/test_manifest_alloc
 	cd ../../.. && runtime/c/compiler/build/test_bootstrap_manifest
 	build/test_bootstrap_writer
+	build/test_tsir_source_control
+	build/test_tsir_source_expr
 	cd ../../.. && runtime/c/compiler/build/test_tsir_source
 	build/test_oracle_alloc
 	cd ../../.. && runtime/c/compiler/build/test_manifest_alloc

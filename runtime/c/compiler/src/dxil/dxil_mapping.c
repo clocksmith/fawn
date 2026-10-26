@@ -41,6 +41,11 @@ bool dxil_compute_param_opcode(DxilParamBuiltin builtin, uint32_t *opcode,
             *opcode = DXIL_OP_FLATTENED_THREAD_ID_IN_GROUP;
             *call_count = 1;
             return true;
+        case DXIL_BUILTIN_VERTEX_INDEX:
+        case DXIL_BUILTIN_INSTANCE_INDEX:
+        case DXIL_BUILTIN_POSITION:
+        case DXIL_BUILTIN_FRONT_FACING:
+        case DXIL_BUILTIN_OTHER:
         default:
             *opcode = 0;
             *call_count = 0;
@@ -264,6 +269,9 @@ bool dxil_classify_resource(DxilAddrSpace addr_space, DxilAccess access,
                         ? DXIL_RESOURCE_SRV : DXIL_RESOURCE_UAV;
                     *out_kind = DXIL_RESOURCE_TEXTURE_2D;
                     return true;
+                case DXIL_RESTYPE_ARRAY:
+                case DXIL_RESTYPE_STRUCT:
+                case DXIL_RESTYPE_OTHER:
                 default:
                     return false;
             }

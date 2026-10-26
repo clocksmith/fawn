@@ -4,6 +4,7 @@
 #define DOE_TSIR_SOURCE_INTERNAL_H
 #include "tsir_source.h"
 #include "../compile_internal.h"
+#include "../override.h"
 
 typedef struct TsirSourceFunction {
     TsirIrFunction view;

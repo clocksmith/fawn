@@ -15,7 +15,7 @@ static uint32_t push(TsirSourceBridge *b, TsirSourceFunction *f, TsirIrStmt node
     f->stmts[id] = node;
     return id;
 }
-static uint32_t block(TsirSourceBridge *b, TsirSourceFunction *f, uint32_t first, uint32_t end, unsigned depth) {
+static uint32_t block_scope(TsirSourceBridge *b, TsirSourceFunction *f, uint32_t first, uint32_t end, unsigned depth, bool retain_scope) {
     size_t scope = f->scope_count;
     uint32_t count = 0u;
     for (uint32_t i = first; i < end;) {
@@ -35,8 +35,39 @@ static uint32_t block(TsirSourceBridge *b, TsirSourceFunction *f, uint32_t first
     uint32_t slot = start;
     for (uint32_t i = first; b->status == TSIR_OK && i < end; i = b->compiler->statements[i].end)
         f->children[slot++] = statement(b, f, i, depth + 1u);
-    f->scope_count = scope;
+    if (!retain_scope) f->scope_count = scope;
     return push(b, f, (TsirIrStmt){.kind = TSIR_IR_STMT_BLOCK, .range_start = start, .range_len = count});
+}
+static uint32_t block(TsirSourceBridge *b, TsirSourceFunction *f, uint32_t first, uint32_t end, unsigned depth) {
+    return block_scope(b, f, first, end, depth, false);
+}
+/* Retained TSIR walkers inspect the switch selector but not case control flow.
+ * Still lower each case's selectors and body into the expression inventory:
+ * binding discovery observes every global reference, even inside a case. This
+ * projection is for TSIR recovery, not an executable WGSL IR replacement. */
+static uint32_t switch_statement(TsirSourceBridge *b, TsirSourceFunction *f,
+    const Statement *s, unsigned depth) {
+    for (uint32_t first = s->body_start; b->status == TSIR_OK && first < s->end;) {
+        const Statement *clause = &b->compiler->statements[first];
+        if (clause->kind != STATEMENT_CASE || clause->body_start <= first ||
+            clause->body_start > clause->end || clause->end > s->end) {
+            (void)tsir_source_fail(b, s->source_offset, "invalid typed switch clause range");
+            return TSIR_IR_NONE;
+        }
+        (void)block(b, f, clause->body_start, clause->end, depth + 1u);
+        for (uint32_t selector = first; b->status == TSIR_OK && selector < clause->body_start; ++selector) {
+            const Statement *item = &b->compiler->statements[selector];
+            if (item->kind != STATEMENT_CASE) {
+                (void)tsir_source_fail(b, item->source_offset, "invalid typed switch selector");
+                return TSIR_IR_NONE;
+            }
+            if (item->value.condition != NO_ID)
+                (void)tsir_source_expr(b, f, item->value.condition, false, 0u);
+        }
+        first = clause->end;
+    }
+    uint32_t selector = tsir_source_expr(b, f, s->value.condition, false, 0u);
+    return push(b, f, (TsirIrStmt){.kind = TSIR_IR_STMT_SWITCH, .expr = selector});
 }
 static TsirIrAssignOp assignment(UpdateKind kind) {
     switch (kind) {
@@ -84,7 +115,7 @@ static uint32_t statement(TsirSourceBridge *b, TsirSourceFunction *f, uint32_t i
                 return TSIR_IR_NONE;
             }
             o.local = (uint32_t)f->view.local_count++;
-            o.is_const = s->kind == STATEMENT_CONST;
+            o.is_const = s->kind != STATEMENT_VAR;
             f->locals[o.local] = (TsirIrLocal){tsir_source_name(b, l->name), ty, s->kind == STATEMENT_VAR};
             f->local_names[o.local] = l->name;
             f->scope[f->scope_count++] = o.local;
@@ -92,6 +123,11 @@ static uint32_t statement(TsirSourceBridge *b, TsirSourceFunction *f, uint32_t i
         }
         case STATEMENT_ASSIGN: {
             const Assignment *a = &s->value.assignment;
+            if (a->kind == TARGET_ROOT && source_span_is(&b->source, a->root, "_")) {
+                o.kind = TSIR_IR_STMT_EXPR;
+                o.expr = tsir_source_expr(b, f, a->expression, false, 0u);
+                break;
+            }
             o.kind = TSIR_IR_STMT_ASSIGN;
             if (a->kind == TARGET_ROOT) o.assign_lhs = tsir_source_root(b, f, a->root, true);
             else if (a->kind == TARGET_REFERENCE) o.assign_lhs = tsir_source_expr(b, f, a->path, true, 0u);
@@ -133,10 +169,29 @@ static uint32_t statement(TsirSourceBridge *b, TsirSourceFunction *f, uint32_t i
             if (o.has_loop_cond) o.loop_cond = tsir_source_expr(b, f, s->value.condition, false, 0u);
             o.has_loop_continuing = s->update != NO_ID;
             if (o.has_loop_continuing) o.loop_continuing = statement(b, f, s->update, depth + 1u);
-            o.loop_body = block(b, f, s->body_start, s->end, depth + 1u);
+            uint32_t body_end = s->end;
+            if (s->kind == STATEMENT_LOOP) {
+                for (uint32_t child = s->body_start; child < s->end;
+                    child = b->compiler->statements[child].end) {
+                    if (b->compiler->statements[child].kind == STATEMENT_CONTINUING) {
+                        body_end = child;
+                        break;
+                    }
+                }
+            }
+            /* WGSL continuing can refer to declarations in the loop body.
+             * Keep those names until the separately represented continuation
+             * has been lowered, then restore the surrounding lexical scope. */
+            o.loop_body = block_scope(b, f, s->body_start, body_end, depth + 1u,
+                body_end != s->end);
+            if (body_end != s->end) {
+                o.has_loop_continuing = true;
+                o.loop_continuing = statement(b, f, body_end, depth + 1u);
+            }
             f->scope_count = scope;
             break;
         }
+        case STATEMENT_CONTINUING:
         case STATEMENT_BLOCK: return block(b, f, s->body_start, s->end, depth + 1u);
         case STATEMENT_RETURN:
             o.kind = TSIR_IR_STMT_RETURN;
@@ -151,8 +206,22 @@ static uint32_t statement(TsirSourceBridge *b, TsirSourceFunction *f, uint32_t i
             o.expr = tsir_source_expr(b, f, s->value.condition, false, 0u);
             break;
         case STATEMENT_EMPTY: return push(b, f, (TsirIrStmt){.kind = TSIR_IR_STMT_BLOCK});
-        case STATEMENT_CONTINUING: case STATEMENT_BREAK_IF:
-        case STATEMENT_SWITCH: case STATEMENT_CASE:
+        case STATEMENT_BREAK_IF: {
+            uint32_t break_id = push(b, f, (TsirIrStmt){.kind = TSIR_IR_STMT_BREAK});
+            if (f->view.stmt_child_count == f->stmt_cap) {
+                (void)tsir_source_fail(b, s->source_offset, "TSIR break-if edge capacity exceeded");
+                return TSIR_IR_NONE;
+            }
+            uint32_t child = (uint32_t)f->view.stmt_child_count++;
+            f->children[child] = break_id;
+            o.kind = TSIR_IR_STMT_IF;
+            o.if_then = push(b, f, (TsirIrStmt){.kind = TSIR_IR_STMT_BLOCK,
+                .range_start = child, .range_len = 1u});
+            o.if_cond = tsir_source_expr(b, f, s->value.condition, false, 0u);
+            break;
+        }
+        case STATEMENT_SWITCH: return switch_statement(b, f, s, depth);
+        case STATEMENT_CASE:
             (void)tsir_source_fail(b, s->source_offset, "typed statement is outside the TSIR source adapter");
             return TSIR_IR_NONE;
     }

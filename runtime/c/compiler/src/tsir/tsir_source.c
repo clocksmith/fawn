@@ -83,7 +83,20 @@ static bool types(TsirSourceBridge *b) {
                 break;
             }
             case TYPE_ATOMIC: o->kind = TSIR_IR_TYPE_ATOMIC; break;
-            case TYPE_POINTER: o->kind = TSIR_IR_TYPE_REF; break;
+            case TYPE_POINTER:
+                o->kind = TSIR_IR_TYPE_REF;
+                o->ref_access = t->count == POINTER_UNIFORM || t->count == POINTER_STORAGE_READ ?
+                    TSIR_IR_ACCESS_READ : TSIR_IR_ACCESS_READ_WRITE;
+                switch (t->count) {
+                    case POINTER_FUNCTION: o->ref_addr_space = TSIR_IR_SPACE_FUNCTION; break;
+                    case POINTER_PRIVATE: o->ref_addr_space = TSIR_IR_SPACE_PRIVATE; break;
+                    case POINTER_WORKGROUP: o->ref_addr_space = TSIR_IR_SPACE_WORKGROUP; break;
+                    case POINTER_UNIFORM: o->ref_addr_space = TSIR_IR_SPACE_UNIFORM; break;
+                    case POINTER_STORAGE_READ: case POINTER_STORAGE_WRITE:
+                        o->ref_addr_space = TSIR_IR_SPACE_STORAGE; break;
+                    default: return tsir_source_fail(b, 0u, "TSIR pointer address space is not represented");
+                }
+                break;
             default: o->kind = TSIR_IR_TYPE_OTHER; break;
         }
     }
@@ -91,20 +104,46 @@ static bool types(TsirSourceBridge *b) {
 }
 static bool globals(TsirSourceBridge *b) {
     CompilerWorkspace *c = b->compiler;
-    if (c->workgroup_count || c->constant_decl_count)
-        return tsir_source_fail(b, 0u, "TSIR source bridge does not yet admit module constants or memory roots");
-    b->globals = calloc(c->resource_count + 1u, sizeof(*b->globals));
+    const size_t capacity = (size_t)c->resource_count + c->workgroup_count + c->constant_decl_count;
+    b->globals = calloc(capacity + 1u, sizeof(*b->globals));
     if (!b->globals) return false;
     b->module.globals = b->globals;
     b->module.global_count = c->resource_count;
     for (uint32_t i = 0u; i < c->resource_count; ++i) {
         const ResourceRecord *r = &c->resources[i];
+        const bool handle = type_handle(c, r->type);
         b->globals[i] = (TsirIrGlobal){.name = tsir_source_name(b, r->name),
             .ty = r->type, .class = TSIR_IR_GLOBAL_VAR, .has_addr_space = true,
-            .addr_space = r->kind == DOE_COMPILER_UNIFORM_BUFFER ? TSIR_IR_SPACE_UNIFORM : TSIR_IR_SPACE_STORAGE,
-            .has_access = r->kind != DOE_COMPILER_UNIFORM_BUFFER,
+            .addr_space = handle ? TSIR_IR_SPACE_HANDLE : r->kind == DOE_COMPILER_UNIFORM_BUFFER ? TSIR_IR_SPACE_UNIFORM : TSIR_IR_SPACE_STORAGE,
+            .has_access = !handle && r->kind != DOE_COMPILER_UNIFORM_BUFFER,
             .access = r->access == DOE_COMPILER_READ_WRITE ? TSIR_IR_ACCESS_READ_WRITE : TSIR_IR_ACCESS_READ,
             .has_binding = true, .group = r->group, .binding = r->binding};
+    }
+    for (uint32_t i = 0u; i < c->workgroup_count; ++i) {
+        const WorkgroupRoot *root = &c->workgroups[i];
+        if (root->state.resolved.address_space != MODULE_WORKGROUP &&
+            root->state.resolved.address_space != MODULE_PRIVATE)
+            return tsir_source_fail(b, root->name.offset, "TSIR has no immediate address-space representation");
+        b->globals[b->module.global_count++] = (TsirIrGlobal){
+            .name = tsir_source_name(b, root->name), .ty = root->type,
+            .class = TSIR_IR_GLOBAL_VAR, .has_addr_space = true,
+            .addr_space = root->state.resolved.address_space == MODULE_PRIVATE ?
+                TSIR_IR_SPACE_PRIVATE : TSIR_IR_SPACE_WORKGROUP};
+    }
+    for (uint32_t i = 0u; i < c->constant_decl_count; ++i) {
+        const ConstantSyntax *declaration = &c->constant_decls[i];
+        /* Type aliases resolve to canonical types and are not IR globals. */
+        if (declaration->expression == NO_ID) continue;
+        TsirIrGlobal global = {.name = tsir_source_name(b, declaration->name),
+            .ty = declaration->type, .class = TSIR_IR_GLOBAL_CONST};
+        if ((declaration->state & DECLARATION_OVERRIDE) != 0u) {
+            global.class = TSIR_IR_GLOBAL_OVERRIDE;
+            OverrideRecord *record = override_declaration(&b->source, i);
+            if (!record) return tsir_source_fail(b, declaration->name.offset, "missing override identity");
+            global.has_override_id = (record->flags & DOE_COMPILER_OVERRIDE_HAS_ID) != 0u;
+            global.override_id = record->id;
+        }
+        b->globals[b->module.global_count++] = global;
     }
     return b->status == TSIR_OK;
 }
@@ -141,12 +180,26 @@ TsirStatus tsir_source_lower(const char *source, size_t length,
     CompilerLimits limits;
     size_t bytes = 0u;
     if (!compiler_module_layout(&capacities, &limits, &bytes)) return TSIR_ERR_INVALID;
-    b.compiler = calloc(1u, bytes);
+    DoeCompilerSpecializationCapacities specialization_capacities = {
+        .target = {.stages = {.module = capacities}},
+        .overrides = capacities.typed.expressions};
+    DoeCompilerWorkspaceRequirements requirements;
+    size_t specialization_base;
+    if (!specialization_layout(DOE_COMPILER_TARGET_SPIRV,
+        &specialization_capacities, &specialization_base, &requirements))
+        return TSIR_ERR_INVALID;
+    b.compiler = calloc(1u, requirements.size_bytes);
     if (!b.compiler) {
         errno = saved_errno;
         return TSIR_ERR_NOMEM;
     }
     compiler_job_bind(b.compiler, b.compiler, &limits);
+    /* Reuse the compiler's symbolic override owner; no specialization values
+     * or target selection are supplied by semantic TSIR recovery. */
+    SpecializationContext specialization = {0};
+    specialization_bind(&specialization, b.compiler, specialization_base,
+        &specialization_capacities);
+    b.source.specialization = &specialization;
     NumericEnvironment environment;
     bool analyzed = compiler_analyze(&b.source, b.compiler, &environment);
     if (analyzed) {
