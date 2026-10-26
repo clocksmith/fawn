@@ -6,7 +6,7 @@ import subprocess
 import tempfile
 import unittest
 
-from check_globals import main
+from check_globals import main, writable_names
 
 SOURCE = b"""
 static int counter;
@@ -15,6 +15,40 @@ static const char *const names[] = {"a", "b"};
 static const int table[] = {1, 2, 3};
 const char *const *use(int i) { counter += i; return names + table[i]; }
 """
+
+
+class SymbolFormatTests(unittest.TestCase):
+    def test_elf_writable_objects_exclude_constants_and_functions(self) -> None:
+        symbols = """
+0000000000000000 l     O .bss 0000000000000004 counter
+0000000000000000 g     O .data 0000000000000004 exported_state
+0000000000000000 l     O .data.rel.ro.local 0000000000000010 names
+0000000000000000 l     O .rodata 000000000000000c table
+0000000000000000 g     F .text 0000000000000020 use
+0000000000000000 l     O .bss 0000000000000001 completed.0
+"""
+        self.assertEqual(writable_names(symbols), {"counter", "exported_state"})
+
+    def test_macho_normalizes_one_prefix_without_accepting_section_labels(self) -> None:
+        symbols = """
+0000000000000070 l     O __DATA,__bss _counter
+000000000000002c g     O __DATA,__data _exported_state
+0000000000000030 l     O __DATA,__const _names
+0000000000000040 l     O __TEXT,__const _table
+0000000000000070 l     O __DATA,__bss ltmp2
+0000000000000074 l     O __DATA,__common __private_state
+0000000000000000 g     F __TEXT,__text _use
+"""
+        self.assertEqual(writable_names(symbols),
+                         {"counter", "exported_state", "_private_state"})
+
+    def test_macho_thread_local_storage_remains_owned_mutable_state(self) -> None:
+        symbols = """
+0000000000000000 g     O __DATA,__thread_data _thread_data
+0000000000000004 l     O __DATA,__thread_bss _thread_bss
+0000000000000008 g     F __DATA,__data _function
+"""
+        self.assertEqual(writable_names(symbols), {"thread_data", "thread_bss"})
 
 
 @unittest.skipUnless(shutil.which("cc") and shutil.which("objdump"), "needs cc and objdump")

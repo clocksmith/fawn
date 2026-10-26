@@ -2,9 +2,9 @@
 """Fail on writable process-global objects that are not explicitly owned.
 
 STYLE.md forbids hidden mutable globals. This reads the symbol tables of built
-artifacts (objdump -t) and collects data objects placed in writable .data/.bss.
-Relocated constant tables (.data.rel.ro) and read-only data are not mutable state
-and are ignored. Every remaining symbol must appear in mutable_globals.txt with its
+artifacts (objdump -t) and collects writable ELF .data/.bss and Mach-O data
+objects. Relocated constant tables (.data.rel.ro or __DATA,__const) and read-only
+data are ignored. Every remaining symbol must appear in mutable_globals.txt with its
 owner source and the reason it is process-lifetime state; an entry no artifact
 defines is stale and also fails, so the list cannot outlive the code.
 """
@@ -18,8 +18,13 @@ import sys
 
 ALLOW = Path(__file__).with_name("mutable_globals.txt")
 ARTIFACT_SUFFIXES = {".a", ".so", ".o", ".dylib"}
-# objdump -t: "<addr> <flags> <section>\t<size> <name>"; O marks a data object.
+# ELF objdump: "<addr> <flags> <section>\t<size> <name>"; O marks data.
 SYMBOL = re.compile(r"^\S+\s+.{7}\s+(\.data|\.bss)\s+\S+\s+(\S+)$")
+# Mach-O has no size column and prefixes C symbols with one underscore.
+MACHO_SYMBOL = re.compile(
+    r"^\S+\s+.{7}\s+__DATA,(?:__data|__bss|__common|__thread_data|__thread_bss)"
+    r"\s+(\S+)$"
+)
 TOOLCHAIN = {"completed.0", "__dso_handle", "__TMC_END__"}
 
 
@@ -47,14 +52,28 @@ def artifacts(roots: list[Path]) -> list[Path]:
     return sorted(found)
 
 
-def writable_objects(path: Path) -> set[str]:
-    output = subprocess.run(["objdump", "-t", str(path)], capture_output=True, text=True, check=True).stdout
+def writable_names(output: str) -> set[str]:
+    """Read defined writable objects, normalizing Mach-O's C symbol prefix."""
     names = set()
     for line in output.splitlines():
+        if " O " not in line:
+            continue
         match = SYMBOL.match(line.strip())
-        if match and " O " in line and match.group(2) not in TOOLCHAIN and not match.group(2).startswith("DW.ref."):
-            names.add(match.group(2))
+        if match:
+            name = match.group(2)
+        else:
+            match = MACHO_SYMBOL.match(line.strip())
+            if not match or re.fullmatch(r"ltmp\d+", match.group(1)):
+                continue
+            name = match.group(1).removeprefix("_")
+        if name not in TOOLCHAIN and not name.startswith("DW.ref."):
+            names.add(name)
     return names
+
+
+def writable_objects(path: Path) -> set[str]:
+    output = subprocess.run(["objdump", "-t", str(path)], capture_output=True, text=True, check=True).stdout
+    return writable_names(output)
 
 
 def main(argv: list[str] | None = None) -> int:
