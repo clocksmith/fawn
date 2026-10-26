@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "artifactKind": "browser_smoke_report_check",
+  "smokeReportPath": "browser/chromium/artifacts/all-platform-20261026/mars-relocated-smoke.json",
+  "requiredModes": [
+    "dawn",
+    "doe"
+  ],
+  "status": "fail",
+  "failures": [
+    {
+      "code": "smoke_report_contract_failure",
+      "path": "smokeReport",
+      "message": "smoke bothComputeSmokePass must be true"
+    },
+    {
+      "code": "smoke_report_contract_failure",
+      "path": "smokeReport",
+      "message": "smoke bothRenderSmokePass must be true"
+    },
+    {
+      "code": "smoke_report_contract_failure",
+      "path": "smokeReport",
+      "message": "smoke bothRenderBundleSmokePass must be true"
+    },
+    {
+      "code": "smoke_report_contract_failure",
+      "path": "smokeReport",
+      "message": "smoke bothRenderIndirectSmokePass must be true"
+    },
+    {
+      "code": "smoke_report_contract_failure",
+      "path": "smokeReport",
+      "message": "smoke bothTimestampQuerySmokePass must be true"
+    },
+    {
+      "code": "smoke_report_contract_failure",
+      "path": "smokeReport",
+      "message": "smoke mode doe adapterAvailable must be true"
+    },
+    {
+      "code": "smoke_report_contract_failure",
+      "path": "smokeReport",
+      "message": "smoke mode doe activeRuntimeProof does not prove forced doe"
+    },
+    {
+      "code": "smoke_report_contract_failure",
+      "path": "smokeReport",
+      "message": "smoke mode doe errors must be empty"
+    },
+    {
+      "code": "smoke_report_contract_failure",
+      "path": "smokeReport",
+      "message": "smoke mode doe computeIncrement pass must be true"
+    },
+    {
+      "code": "smoke_report_contract_failure",
+      "path": "smokeReport",
+      "message": "smoke mode doe renderTriangle pass must be true"
+    },
+    {
+      "code": "smoke_report_contract_failure",
+      "path": "smokeReport",
+      "message": "smoke mode doe renderBundle pass must be true"
+    },
+    {
+      "code": "smoke_report_contract_failure",
+      "path": "smokeReport",
+      "message": "smoke mode doe renderIndirect pass must be true"
+    },
+    {
+      "code": "smoke_report_contract_failure",
+      "path": "smokeReport",
+      "message": "smoke mode doe timestampQuery pass must be true"
+    },
+    {
+      "code": "smoke_report_contract_failure",
+      "path": "smokeReport",
+      "message": "smoke mode doe requestAdapterXrCompatible pass must be true"
+    },
+    {
+      "code": "smoke_report_contract_failure",
+      "path": "smokeReport",
+      "message": "smoke mode doe copyExternalImageToTexture pass must be true"
+    },
+    {
+      "code": "smoke_report_contract_failure",
+      "path": "smokeReport",
+      "message": "smoke mode doe importExternalTexture pass must be true"
+    }
+  ]
+}

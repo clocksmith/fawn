@@ -1,0 +1,284 @@
+{
+  "protocol": "deco.task.v1",
+  "op": "events",
+  "ok": true,
+  "workId": "fawn-windows-native-controls-20261026-a",
+  "events": [
+    {
+      "seq": 3,
+      "at": "2026-10-26T21:32:15.640Z",
+      "type": "output",
+      "attemptId": "fawn-windows-native-controls-20261026-a.a1",
+      "stream": "stdout",
+      "text": "COMPILE compute"
+    },
+    {
+      "seq": 4,
+      "at": "2026-10-26T21:32:18.024Z",
+      "type": "output",
+      "attemptId": "fawn-windows-native-controls-20261026-a.a1",
+      "stream": "stdout",
+      "text": "RUN compute D3D12 software"
+    },
+    {
+      "seq": 5,
+      "at": "2026-10-26T21:32:18.383Z",
+      "type": "output",
+      "attemptId": "fawn-windows-native-controls-20261026-a.a1",
+      "stream": "stderr",
+      "text": "doe: wgpuBufferGetMappedRange failed (resource status 7)"
+    },
+    {
+      "seq": 6,
+      "at": "2026-10-26T21:32:18.391Z",
+      "type": "output",
+      "attemptId": "fawn-windows-native-controls-20261026-a.a1",
+      "stream": "stderr",
+      "text": "doe: wgpuBufferGetConstMappedRange failed (resource status 8)"
+    },
+    {
+      "seq": 7,
+      "at": "2026-10-26T21:32:18.397Z",
+      "type": "output",
+      "attemptId": "fawn-windows-native-controls-20261026-a.a1",
+      "stream": "stderr",
+      "text": "doe: wgpuBufferGetConstMappedRange failed (resource status 9)"
+    },
+    {
+      "seq": 8,
+      "at": "2026-10-26T21:32:18.405Z",
+      "type": "output",
+      "attemptId": "fawn-windows-native-controls-20261026-a.a1",
+      "stream": "stderr",
+      "text": "doe: wgpuBufferGetMappedRange failed (resource status 7)"
+    },
+    {
+      "seq": 9,
+      "at": "2026-10-26T21:32:18.413Z",
+      "type": "output",
+      "attemptId": "fawn-windows-native-controls-20261026-a.a1",
+      "stream": "stderr",
+      "text": "doe: wgpuBufferGetConstMappedRange failed (resource status 13)"
+    },
+    {
+      "seq": 10,
+      "at": "2026-10-26T21:32:18.582Z",
+      "type": "output",
+      "attemptId": "fawn-windows-native-controls-20261026-a.a1",
+      "stream": "stdout",
+      "text": "Selected adapter backend D3D12, type 3, vendor 5140, device 140: Microsoft Basic Render Driver"
+    },
+    {
+      "seq": 11,
+      "at": "2026-10-26T21:32:18.590Z",
+      "type": "output",
+      "attemptId": "fawn-windows-native-controls-20261026-a.a1",
+      "stream": "stdout",
+      "text": "Explicit WebGPU C path adapter (CPU D3D12 WARP only)"
+    },
+    {
+      "seq": 12,
+      "at": "2026-10-26T21:32:18.599Z",
+      "type": "output",
+      "attemptId": "fawn-windows-native-controls-20261026-a.a1",
+      "stream": "stdout",
+      "text": "PASS public ABI: compute/readback, OOB guards, dynamic offsets, cross-device rejection, one-shot submit, early releases, callback reentry and map cancellation (CPU D3D12 WARP only)"
+    },
+    {
+      "seq": 13,
+      "at": "2026-10-26T21:32:18.606Z",
+      "type": "output",
+      "attemptId": "fawn-windows-native-controls-20261026-a.a1",
+      "stream": "stdout",
+      "text": "RUN compute D3D12 physical"
+    },
+    {
+      "seq": 14,
+      "at": "2026-10-26T21:32:18.886Z",
+      "type": "output",
+      "attemptId": "fawn-windows-native-controls-20261026-a.a1",
+      "stream": "stderr",
+      "text": "doe: wgpuBufferGetMappedRange failed (resource status 7)"
+    },
+    {
+      "seq": 15,
+      "at": "2026-10-26T21:32:18.899Z",
+      "type": "output",
+      "attemptId": "fawn-windows-native-controls-20261026-a.a1",
+      "stream": "stderr",
+      "text": "doe: wgpuBufferGetConstMappedRange failed (resource status 8)"
+    },
+    {
+      "seq": 16,
+      "at": "2026-10-26T21:32:18.908Z",
+      "type": "output",
+      "attemptId": "fawn-windows-native-controls-20261026-a.a1",
+      "stream": "stderr",
+      "text": "doe: wgpuBufferGetConstMappedRange failed (resource status 9)"
+    },
+    {
+      "seq": 17,
+      "at": "2026-10-26T21:32:18.915Z",
+      "type": "output",
+      "attemptId": "fawn-windows-native-controls-20261026-a.a1",
+      "stream": "stderr",
+      "text": "doe: wgpuBufferGetMappedRange failed (resource status 7)"
+    },
+    {
+      "seq": 18,
+      "at": "2026-10-26T21:32:18.923Z",
+      "type": "output",
+      "attemptId": "fawn-windows-native-controls-20261026-a.a1",
+      "stream": "stderr",
+      "text": "doe: wgpuBufferGetConstMappedRange failed (resource status 13)"
+    },
+    {
+      "seq": 19,
+      "at": "2026-10-26T21:32:19.106Z",
+      "type": "output",
+      "attemptId": "fawn-windows-native-controls-20261026-a.a1",
+      "stream": "stdout",
+      "text": "Selected adapter backend D3D12, type 2, vendor 4098, device 5761: AMD Radeon(TM) Graphics"
+    },
+    {
+      "seq": 20,
+      "at": "2026-10-26T21:32:19.113Z",
+      "type": "output",
+      "attemptId": "fawn-windows-native-controls-20261026-a.a1",
+      "stream": "stdout",
+      "text": "Explicit WebGPU C path adapter (physical D3D12 developer run: AMD Radeon(TM) Graphics; not qualification)"
+    },
+    {
+      "seq": 21,
+      "at": "2026-10-26T21:32:19.120Z",
+      "type": "output",
+      "attemptId": "fawn-windows-native-controls-20261026-a.a1",
+      "stream": "stdout",
+      "text": "PASS public ABI: compute/readback, OOB guards, dynamic offsets, cross-device rejection, one-shot submit, early releases, callback reentry and map cancellation (physical D3D12 developer run: AMD Radeon(TM) Graphics; not qualification)"
+    },
+    {
+      "seq": 22,
+      "at": "2026-10-26T21:32:19.127Z",
+      "type": "output",
+      "attemptId": "fawn-windows-native-controls-20261026-a.a1",
+      "stream": "stdout",
+      "text": "COMPILE instance_devices"
+    },
+    {
+      "seq": 23,
+      "at": "2026-10-26T21:32:21.567Z",
+      "type": "output",
+      "attemptId": "fawn-windows-native-controls-20261026-a.a1",
+      "stream": "stdout",
+      "text": "RUN instance_devices D3D12 software"
+    },
+    {
+      "seq": 24,
+      "at": "2026-10-26T21:32:21.955Z",
+      "type": "output",
+      "attemptId": "fawn-windows-native-controls-20261026-a.a1",
+      "stream": "stdout",
+      "text": "Selected adapter backend D3D12, type 3, vendor 5140, device 140: Microsoft Basic Render Driver"
+    },
+    {
+      "seq": 25,
+      "at": "2026-10-26T21:32:21.963Z",
+      "type": "output",
+      "attemptId": "fawn-windows-native-controls-20261026-a.a1",
+      "stream": "stdout",
+      "text": "PASS same-adapter two-device copies, isolation, surviving-device reuse and finite WaitAnyOnly delivery (CPU D3D12 WARP only)"
+    },
+    {
+      "seq": 26,
+      "at": "2026-10-26T21:32:21.971Z",
+      "type": "output",
+      "attemptId": "fawn-windows-native-controls-20261026-a.a1",
+      "stream": "stdout",
+      "text": "RUN instance_devices D3D12 physical"
+    },
+    {
+      "seq": 27,
+      "at": "2026-10-26T21:32:22.453Z",
+      "type": "output",
+      "attemptId": "fawn-windows-native-controls-20261026-a.a1",
+      "stream": "stdout",
+      "text": "Selected adapter backend D3D12, type 2, vendor 4098, device 5761: AMD Radeon(TM) Graphics"
+    },
+    {
+      "seq": 28,
+      "at": "2026-10-26T21:32:22.460Z",
+      "type": "output",
+      "attemptId": "fawn-windows-native-controls-20261026-a.a1",
+      "stream": "stdout",
+      "text": "PASS same-adapter two-device copies, isolation, surviving-device reuse and finite WaitAnyOnly delivery (physical D3D12 developer run: AMD Radeon(TM) Graphics; not qualification)"
+    },
+    {
+      "seq": 29,
+      "at": "2026-10-26T21:32:22.468Z",
+      "type": "output",
+      "attemptId": "fawn-windows-native-controls-20261026-a.a1",
+      "stream": "stdout",
+      "text": "COMPILE d3d12_graphics"
+    },
+    {
+      "seq": 30,
+      "at": "2026-10-26T21:32:25.137Z",
+      "type": "output",
+      "attemptId": "fawn-windows-native-controls-20261026-a.a1",
+      "stream": "stdout",
+      "text": "RUN d3d12_graphics D3D12 software"
+    },
+    {
+      "seq": 31,
+      "at": "2026-10-26T21:32:25.524Z",
+      "type": "output",
+      "attemptId": "fawn-windows-native-controls-20261026-a.a1",
+      "stream": "stdout",
+      "text": "Selected adapter backend D3D12, type 3, vendor 5140, device 140: Microsoft Basic Render Driver"
+    },
+    {
+      "seq": 32,
+      "at": "2026-10-26T21:32:25.531Z",
+      "type": "output",
+      "attemptId": "fawn-windows-native-controls-20261026-a.a1",
+      "stream": "stdout",
+      "text": "PASS public procedural graphics: independent VS/PS modules, shared binding, yellow pixels, frontFace, runtime sampler replacement, scissor/viewport, empty/zero draw, LOAD/STORE/discard zeros, padding/canaries and early releases (CPU D3D12 WARP only)"
+    },
+    {
+      "seq": 33,
+      "at": "2026-10-26T21:32:25.538Z",
+      "type": "output",
+      "attemptId": "fawn-windows-native-controls-20261026-a.a1",
+      "stream": "stdout",
+      "text": "RUN d3d12_graphics D3D12 physical"
+    },
+    {
+      "seq": 34,
+      "at": "2026-10-26T21:32:26.348Z",
+      "type": "output",
+      "attemptId": "fawn-windows-native-controls-20261026-a.a1",
+      "stream": "stdout",
+      "text": "Selected adapter backend D3D12, type 2, vendor 4098, device 5761: AMD Radeon(TM) Graphics"
+    },
+    {
+      "seq": 35,
+      "at": "2026-10-26T21:32:26.355Z",
+      "type": "output",
+      "attemptId": "fawn-windows-native-controls-20261026-a.a1",
+      "stream": "stdout",
+      "text": "PASS public procedural graphics: independent VS/PS modules, shared binding, yellow pixels, frontFace, runtime sampler replacement, scissor/viewport, empty/zero draw, LOAD/STORE/discard zeros, padding/canaries and early releases (physical D3D12 developer run: AMD Radeon(TM) Graphics; not qualification)"
+    },
+    {
+      "seq": 36,
+      "at": "2026-10-26T21:32:26.507Z",
+      "type": "completed",
+      "attemptId": "fawn-windows-native-controls-20261026-a.a1",
+      "stopped": true,
+      "reason": null,
+      "exitCode": 0,
+      "signal": null,
+      "receipt": "attempts/fawn-windows-native-controls-20261026-a.a1/result.json"
+    }
+  ],
+  "lastSeq": 36
+}

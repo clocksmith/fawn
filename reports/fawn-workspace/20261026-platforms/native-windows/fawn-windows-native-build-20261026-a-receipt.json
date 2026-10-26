@@ -1,0 +1,49 @@
+{
+  "protocol": "deco.task.v1",
+  "op": "result",
+  "ok": true,
+  "workId": "fawn-windows-native-build-20261026-a",
+  "attemptId": "fawn-windows-native-build-20261026-a.a1",
+  "state": "completed",
+  "reason": null,
+  "stopped": true,
+  "receipt": {
+    "protocol": "deco.task.v1",
+    "workId": "fawn-windows-native-build-20261026-a",
+    "attemptId": "fawn-windows-native-build-20261026-a.a1",
+    "state": "completed",
+    "reason": null,
+    "member": "bee",
+    "account": "clocksmith",
+    "hostname": "miles",
+    "runner": "shell",
+    "runnerSession": null,
+    "startedAt": "2026-10-26T21:28:09.405Z",
+    "endedAt": "2026-10-26T21:29:15.230Z",
+    "exitCode": 0,
+    "signal": null,
+    "source": {
+      "repository": "doe",
+      "testedCommit": "5678df1ef9f12faa8c7895201f8718500f6f8122",
+      "dirtyPaths": [
+        "untime/c/compiler/src/dxil/dxil_container.c",
+        "runtime/c/compiler/src/dxil/dxil_container.h",
+        "runtime/c/compiler/src/dxil/dxil_validate.c",
+        "runtime/c/compiler/src/dxil/dxil_validate.h",
+        "runtime/c/compiler/src/dxil/parity-test.md",
+        "runtime/c/compiler/src/dxil/tests/test_bitcode_scan.h",
+        "runtime/c/compiler/src/dxil/tests/test_dxil_container.c",
+        "runtime/c/compiler/src/dxil/tests/test_dxil_validate.c",
+        "runtime/c/compiler/tools/test_dxil_windows.py",
+        "packages/doe-gpu/bench/"
+      ]
+    },
+    "checks": [],
+    "artifacts": [],
+    "publication": null,
+    "deployment": null,
+    "notes": [
+      "Deployment receipts come from the owning project; the executor does not observe live routes."
+    ]
+  }
+}

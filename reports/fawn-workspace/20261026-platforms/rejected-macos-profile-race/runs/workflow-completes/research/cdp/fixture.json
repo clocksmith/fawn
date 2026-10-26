@@ -1,0 +1,71 @@
+{
+  "origin": "http://127.0.0.1:53855",
+  "foreignOrigin": "http://127.0.0.1:53856",
+  "requests": [
+    {
+      "seq": 1,
+      "at": "2026-10-26T21:46:16.626Z",
+      "server": "main",
+      "method": "GET",
+      "path": "/research/",
+      "search": "",
+      "kind": "document",
+      "status": 200
+    },
+    {
+      "seq": 2,
+      "at": "2026-10-26T21:46:16.643Z",
+      "server": "main",
+      "method": "GET",
+      "path": "/favicon.ico",
+      "search": "",
+      "kind": "other",
+      "status": 404
+    },
+    {
+      "seq": 3,
+      "at": "2026-10-26T21:46:16.684Z",
+      "server": "main",
+      "method": "GET",
+      "path": "/research/vulkan-memory.html",
+      "search": "",
+      "kind": "document",
+      "status": 200
+    },
+    {
+      "seq": 4,
+      "at": "2026-10-26T21:46:16.720Z",
+      "server": "main",
+      "method": "GET",
+      "path": "/research/",
+      "search": "",
+      "kind": "document",
+      "status": 200
+    },
+    {
+      "seq": 5,
+      "at": "2026-10-26T21:46:16.753Z",
+      "server": "main",
+      "method": "GET",
+      "path": "/research/vulkan-sync.html",
+      "search": "",
+      "kind": "document",
+      "status": 200
+    },
+    {
+      "seq": 6,
+      "at": "2026-10-26T21:46:16.784Z",
+      "server": "main",
+      "method": "GET",
+      "path": "/research/",
+      "search": "",
+      "kind": "document",
+      "status": 200
+    }
+  ],
+  "receipts": [],
+  "reportSha256": {
+    "/export/report.csv": "98e79f8c6f16f49f82a7b94c42fc4ca04944cf7dddde39078df92522d5428146",
+    "/export/report-v2.csv": "d3b0e0c3d5158608348ac368583104e9269f3f55f0751334372819c47839887d"
+  }
+}

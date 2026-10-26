@@ -1,0 +1,50 @@
+{
+  "scope": "Focused native C Vulkan developer controls and CPU sanitizer controls; no full runtime, browser, release, performance or hardware-matrix qualification",
+  "sourceCommit": "d25e075341219fc398dedb9286c2669a1b966221",
+  "sourceWorktreeStatusAtRun": "",
+  "host": "Linux suby 6.8.0-90-generic #91-Ubuntu SMP PREEMPT_DYNAMIC Tue Nov 18 14:14:30 UTC 2025 x86_64 x86_64 x86_64 GNU/Linux",
+  "compiler": "gcc (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0",
+  "physicalVulkan": {
+    "device": "Intel(R) UHD Graphics (TGL GT2)",
+    "deviceUuid": "8680789a-0100-0000-0002-000000000000",
+    "driver": "Intel open-source Mesa driver; Mesa 24.2.8-1ubuntu1~24.04.1",
+    "driverUuid": "01445b43-3542-5b20-af99-316b29c3521c",
+    "apiVersion": "1.3.289",
+    "selection": {
+      "VK_ICD_FILENAMES": "/usr/share/vulkan/icd.d/intel_icd.x86_64.json",
+      "DOE_C_TEST_ADAPTER": "physical",
+      "DOE_C_TEST_BACKEND": "vulkan"
+    },
+    "controls": {
+      "compute": "PASS",
+      "instance-devices": "PASS",
+      "async-submit": "PASS",
+      "offscreen-triangle": "PASS"
+    },
+    "identityEvidence": "vulkaninfo.txt; explicit Intel ICD; each unchanged public consumer requires a nonfallback GPU adapter and prints its actual name"
+  },
+  "sanitizers": {
+    "execution": "CPU host controls only",
+    "options": "address,undefined; detect_leaks=0; halt_on_error=1",
+    "totalChecks": 391,
+    "controls": {
+      "test_dxil_mapping_toolchain": {
+        "checks": 230,
+        "binarySha256": "64c8128aee4c6794a869ecc26e175587c5086a4c2859ebe29d8ff9afa7bcce3a",
+        "instrumentation": "ELF dependencies include libasan and libubsan"
+      },
+      "test_planner": {
+        "checks": 69,
+        "binarySha256": "49359950a368e3b1842a3091d1d6ba8b46cbf47ce4af2286634ffe44b3f995f5",
+        "instrumentation": "ELF dependencies include libasan and libubsan"
+      },
+      "test_reference_emit": {
+        "checks": 92,
+        "binarySha256": "43232feb5906e90bb608cc598cfce36c7c4c1d10cf005a7ad1ff82e57abc1b76",
+        "instrumentation": "ELF dependencies include libasan and libubsan"
+      }
+    }
+  },
+  "retainedFirstInvocationError": "Uppercase Vulkan rejected by adapter test env parser before device creation; corrected to lowercase vulkan; retained in compute.invalid-backend-environment.log",
+  "originalArtifactHashes": "summary.json"
+}

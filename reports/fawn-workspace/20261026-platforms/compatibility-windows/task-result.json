@@ -1,0 +1,41 @@
+{
+  "protocol": "deco.task.v1",
+  "workId": "fawn-windows-workspace-full-20261026-478",
+  "attemptId": "fawn-windows-workspace-full-20261026-478.a1",
+  "state": "completed",
+  "reason": null,
+  "member": "bee",
+  "account": "clocksmith",
+  "hostname": "miles",
+  "runner": "shell",
+  "runnerSession": null,
+  "startedAt": "2026-10-26T21:48:17.387Z",
+  "endedAt": "2026-10-26T22:01:05.654Z",
+  "exitCode": 0,
+  "signal": null,
+  "source": {
+    "repository": "doe",
+    "testedCommit": "47863428f9cd4ffa986a055d658685edcb6db3e8",
+    "dirtyPaths": [
+      "packages/doe-gpu/bench/"
+    ]
+  },
+  "checks": [],
+  "artifacts": [
+    {
+      "path": "bench/out/miles-workspace-full-20261026-478/result.json",
+      "sha256": "825275bfcc729785d50836147d3a4b5dca8c1206cf18779f633e4fd77a4058e8",
+      "bytes": 297406
+    },
+    {
+      "path": "bench/out/miles-workspace-full-20261026-478/verdict.json",
+      "sha256": "b859d0f9b56faa9f4c5f71de1812e88e057b77725c856a351d8e160d12689139",
+      "bytes": 12318
+    }
+  ],
+  "publication": null,
+  "deployment": null,
+  "notes": [
+    "Deployment receipts come from the owning project; the executor does not observe live routes."
+  ]
+}

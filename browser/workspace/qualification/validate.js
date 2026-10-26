@@ -21,6 +21,7 @@ import { formEffectKey } from '../src/workflows/form-submission.js';
 import { REPO_ROOT, executableIdentityKey, repoFileSha256, treeDigest } from './identity.js';
 import { summarizeAction } from './summaries.js';
 import { terminationMatches } from './termination.js';
+import { evidencePath, caseSetMatches } from './evidence-input.js';
 
 const CASE_SET_PATH = 'config/fawn-workspace-qualification.json';
 const STRATEGY_PATH = 'config/doe-product-strategy.json';
@@ -292,10 +293,10 @@ function checkRace(run, caseSpec, wf, journal, fixture, fail) {
   return classes;
 }
 
-function checkAuthorityUnavailable(runDir, run, fail) {
+function checkAuthorityUnavailable(runDir, run, fail, platform) {
   if (!run.evidence.corruptJournal) return fail('evidence-missing', 'corrupt journal copy');
   try {
-    readVerifiedJournal(join(runDir, run.evidence.corruptJournal));
+    readVerifiedJournal(evidencePath(runDir, run.evidence.corruptJournal, platform));
     fail('corruption-undetected', 'the corrupted journal verified');
   } catch (error) {
     if (error.code !== 'journal-corrupt') fail('corruption-undetected', error.message);
@@ -305,12 +306,12 @@ function checkAuthorityUnavailable(runDir, run, fail) {
 function validateRun({ resultDir, run, caseSpec, caseSet, failures, platform }) {
   const fail = (check, detail) => failures.push({ caseId: run.caseId, workflow: run.workflow, adapter: run.adapter, check, detail });
   const wf = caseSet.workflows[run.workflow] ?? null;
-  const runDir = join(resultDir, run.evidence.directory);
+  const runDir = evidencePath(resultDir, run.evidence.directory, platform);
   if (run.error) fail('run-error', run.error.message);
-  const fixture = loadJson(join(runDir, run.evidence.fixture));
+  const fixture = loadJson(evidencePath(runDir, run.evidence.fixture, platform));
   let journal;
   try {
-    journal = deriveJournal(join(runDir, run.evidence.journal));
+    journal = deriveJournal(evidencePath(runDir, run.evidence.journal, platform));
   } catch (error) {
     fail('journal-unverifiable', error.message);
     return null;
@@ -351,7 +352,7 @@ function validateRun({ resultDir, run, caseSpec, caseSet, failures, platform }) 
     if (inspection.devToolsActivePortFiles !== 0) fail('debugging-endpoint', 'DevToolsActivePort file in the profile');
   }
   const raceClasses = caseSpec.race ? checkRace(run, caseSpec, wf, journal, fixture, fail) : null;
-  if (caseSpec.procedure === 'authority-unavailable') checkAuthorityUnavailable(runDir, run, fail);
+  if (caseSpec.procedure === 'authority-unavailable') checkAuthorityUnavailable(runDir, run, fail, platform);
   const deterministicRace = raceClasses?.filter((_, index) => caseSpec.race.iterations[index].expectedClass);
   return caseSpec.race
     ? { raceClasses: deterministicRace }
@@ -402,7 +403,8 @@ function validateResult(resultDir, { requireCurrentSource = false } = {}) {
   const strategy = loadJson(join(REPO_ROOT, STRATEGY_PATH));
   const failures = [];
   const fail = (failure) => failures.push(failure);
-  if (result.caseSetVersion !== caseSet.caseSetVersion || result.identity.caseSet.sha256 !== repoFileSha256(CASE_SET_PATH)) {
+  if (result.caseSetVersion !== caseSet.caseSetVersion
+      || !caseSetMatches(resultDir, result.identity.caseSet.sha256, readFileSync(join(REPO_ROOT, CASE_SET_PATH)))) {
     fail({ check: 'case-set-identity', detail: 'the result ran a different case set than the frozen one' });
   }
   if (result.identity.fixtureSite.sha256 !== caseSet.harness.fixtureSite.sha256) {

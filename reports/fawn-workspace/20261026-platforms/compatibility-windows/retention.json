@@ -1,0 +1,11 @@
+{
+  "testedCommit": "47863428f9cd4ffa986a055d658685edcb6db3e8",
+  "runs": 102,
+  "admitted": true,
+  "archive": "C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\miles-workspace-full-20261026-478.tar.gz",
+  "archiveBytes": 334634,
+  "archiveSha256": "e8772f85e5bc8cc19e136f366f204990cc5ad0ae37ba28c69551469bcb753099",
+  "originalVerdictSha256": "b859d0f9b56faa9f4c5f71de1812e88e057b77725c856a351d8e160d12689139",
+  "currentSourceVerdictSha256": "0079ad711fe15f4c06768f24bd8e554426c93be87404afa304e14c976367c99d",
+  "caseSetSha256": "809971abf77615fa1efb75740d46584f6c508ff6e465bdbfad67d20b7683c607"
+}

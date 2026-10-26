@@ -27,6 +27,18 @@ def load_json(relative: str) -> dict[str, Any]:
 ESTABLISHED = "established-on-frozen-case-set"
 
 
+def frozen_case_set_matches(recorded_hash: str, current: bytes, snapshot: bytes) -> bool:
+    """Require exact producer bytes and identical frozen rules across line endings."""
+    return hashlib.sha256(snapshot).hexdigest() == recorded_hash and json.loads(snapshot) == json.loads(current)
+
+
+def case_set_binding_matches(verdict: dict[str, Any], verdict_path: str, case_set_path: str) -> bool:
+    current = (REPO_ROOT / case_set_path).read_bytes()
+    snapshot_path = (REPO_ROOT / verdict_path).with_name("case-set.json")
+    snapshot = snapshot_path.read_bytes() if snapshot_path.exists() else current
+    return frozen_case_set_matches(verdict["identity"]["caseSet"]["sha256"], current, snapshot)
+
+
 def binding_failures(strategy: dict[str, Any], verdict: dict[str, Any]) -> list[str]:
     """Every requirement of an established step must be established in the admitted verdict."""
     workspace = strategy["fawnWorkspace"]
@@ -40,8 +52,9 @@ def binding_failures(strategy: dict[str, Any], verdict: dict[str, Any]) -> list[
         failures.append("verdict ran a different commit")
     if verdict["identity"]["git"]["workingTreeChanges"]:
         failures.append("verdict ran uncommitted source")
-    current = hashlib.sha256((REPO_ROOT / case_set_path).read_bytes()).hexdigest()
-    if verdict["identity"]["caseSet"]["sha256"] != current or verdict["caseSetVersion"] != case_set["caseSetVersion"]:
+    if not case_set_binding_matches(verdict, evidence["admittedVerdictPath"], case_set_path) or (
+        verdict["caseSetVersion"] != case_set["caseSetVersion"]
+    ):
         failures.append("verdict ran a different case set than the frozen one")
     statuses = {entry["id"]: entry["status"] for entry in verdict["requirements"]}
     for step in workspace["steps"]:
@@ -114,7 +127,9 @@ def compatibility_failures(strategy: dict[str, Any]) -> list[str]:
     for build in evidence["builds"]:
         verdict = load_json(build["verdictPath"])
         result = load_json(build["verdictPath"].replace("verdict.json", "result.json"))
-        if not verdict["admitted"] or verdict["caseSetVersion"] != case_set["caseSetVersion"]:
+        if not verdict["admitted"] or verdict["caseSetVersion"] != case_set["caseSetVersion"] or not case_set_binding_matches(
+            verdict, build["verdictPath"], "config/fawn-workspace-qualification.json"
+        ):
             failures.append(f"{build['channel']}: not an admitted run of the frozen case set")
         if verdict["identity"]["git"]["commit"] != build["sourceCommit"] or verdict["identity"]["git"]["workingTreeChanges"]:
             failures.append(f"{build['channel']}: ran another or uncommitted commit")
@@ -134,6 +149,15 @@ def validator() -> Draft202012Validator:
 
 class FawnWorkspaceStrategyTests(unittest.TestCase):
     """These are policy checks; runtime admission remains blocked."""
+
+    def test_retained_case_set_requires_exact_hash_and_identical_rules(self) -> None:
+        current = b'{\n"expected": "reject"\n}\n'
+        windows = current.replace(b"\n", b"\r\n")
+        recorded_hash = hashlib.sha256(windows).hexdigest()
+        self.assertTrue(frozen_case_set_matches(recorded_hash, current, windows))
+        self.assertFalse(frozen_case_set_matches(recorded_hash, current, current))
+        changed = b'{"expected":"accept"}'
+        self.assertFalse(frozen_case_set_matches(hashlib.sha256(changed).hexdigest(), current, changed))
 
     def test_ordered_workspace_steps_have_one_canonical_owner(self) -> None:
         strategy = load_strategy()

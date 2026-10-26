@@ -1,0 +1,36 @@
+{
+  "protocol": "deco.task.v1",
+  "workId": "fawn-windows-stock-dawn-20261026-d",
+  "attemptId": "fawn-windows-stock-dawn-20261026-d.a1",
+  "state": "completed",
+  "reason": null,
+  "member": "bee",
+  "account": "clocksmith",
+  "hostname": "miles",
+  "runner": "shell",
+  "runnerSession": null,
+  "startedAt": "2026-10-26T22:04:43.434Z",
+  "endedAt": "2026-10-26T22:04:59.059Z",
+  "exitCode": 0,
+  "signal": null,
+  "source": {
+    "repository": "doe",
+    "testedCommit": "8001ce0afeefe1ab331ddded9c7ff85f7f4c47bb",
+    "dirtyPaths": [
+      "packages/doe-gpu/bench/"
+    ]
+  },
+  "checks": [],
+  "artifacts": [
+    {
+      "path": "bench/out/miles-stock-chrome-dawn-20261026-d.json",
+      "sha256": "66648dc1327813def1514e6e24cc2366bdd01f1d2205dc7f593091ee101438ee",
+      "bytes": 14574
+    }
+  ],
+  "publication": null,
+  "deployment": null,
+  "notes": [
+    "Deployment receipts come from the owning project; the executor does not observe live routes."
+  ]
+}

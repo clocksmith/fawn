@@ -1,7 +1,7 @@
 {
   "$schema": "doe-product-strategy.schema.json",
   "schemaVersion": 16,
-  "strategyVersion": "8.0.0",
+  "strategyVersion": "8.0.1",
   "artifactKind": "doe-product-strategy",
   "authority": {
     "goals": "GOALS.md",
@@ -365,9 +365,9 @@
     "qualificationEvidence": {
       "caseSetPath": "config/fawn-workspace-qualification.json",
       "validatorPath": "browser/workspace/qualification/validate.js",
-      "admittedVerdictPath": "reports/fawn-workspace/20261015-service-v3-3/qualification/verdict.json",
+      "admittedVerdictPath": "reports/fawn-workspace/20261026-platforms/qualification/verdict.json",
       "comparisonPath": "reports/fawn-workspace/20261015-revalidated-control/comparison/comparison.json",
-      "sourceCommit": "a1f8e4573361c7e81c61571ac46d95e842649bd4",
+      "sourceCommit": "8001ce0afeefe1ab331ddded9c7ff85f7f4c47bb",
       "comparisonSourceCommit": "9f522f7d98406eca21a2db5062d76c917c375c47",
       "scope": "frozen-case-set-on-recorded-browser-and-host"
     },
@@ -388,15 +388,21 @@
       "builds": [
         {
           "channel": "chrome",
-          "headless": true,
-          "verdictPath": "reports/fawn-workspace/20261015-revalidated-control/compatibility-chrome/verdict.json",
-          "sourceCommit": "9f522f7d98406eca21a2db5062d76c917c375c47"
+          "headless": false,
+          "verdictPath": "reports/fawn-workspace/20261026-platforms/compatibility-linux-headed/verdict.json",
+          "sourceCommit": "8001ce0afeefe1ab331ddded9c7ff85f7f4c47bb"
         },
         {
           "channel": "chrome",
-          "headless": false,
-          "verdictPath": "reports/fawn-workspace/20261015-revalidated-control/compatibility-chrome-headed/verdict.json",
-          "sourceCommit": "581a16510ab7d0bd87497adb5194f7ebce21ad4a"
+          "headless": true,
+          "verdictPath": "reports/fawn-workspace/20261026-platforms/compatibility-macos/verdict.json",
+          "sourceCommit": "8001ce0afeefe1ab331ddded9c7ff85f7f4c47bb"
+        },
+        {
+          "channel": "chrome",
+          "headless": true,
+          "verdictPath": "reports/fawn-workspace/20261026-platforms/compatibility-windows/verdict.json",
+          "sourceCommit": "47863428f9cd4ffa986a055d658685edcb6db3e8"
         }
       ],
       "scope": "frozen-case-set-on-recorded-builds-not-release-qualification"

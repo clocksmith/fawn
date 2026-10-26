@@ -1,0 +1,4 @@
+clang version 19.1.5
+Target: x86_64-pc-windows-msvc
+Thread model: posix
+InstalledDir: C:\Users\clocksmith\AppData\Local\deco\toolchains\vs2022-buildtools\VC\Tools\Llvm\x64\bin

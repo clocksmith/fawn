@@ -1,0 +1,3 @@
+ok: observed descendant images, real listener rejection and profile release
+[PASS] dawn: webgpu=true adapter=true compute=true render=true bundle=true indirect=true timestamp=true xrCompatible=true copyExternal=true importExternal=true canvas=true upload64kb_us=400.000 dispatch_us=2300.000
+report written: C:\Users\clocksmith\deco\doe\bench\out\miles-stock-chrome-dawn-20261026-d.json

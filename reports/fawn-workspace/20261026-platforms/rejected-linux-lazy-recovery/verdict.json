@@ -1,0 +1,461 @@
+{
+  "schemaVersion": 1,
+  "validator": {
+    "path": "browser/workspace/qualification/validate.js",
+    "sha256": "69b9b2312498ecf7af64bd84d3317e6ac709647f49d975be1a5c09c2b4d307e5"
+  },
+  "caseSetVersion": "2026-10-26-behavioral-v3-platform-exits",
+  "scope": "full",
+  "admitted": false,
+  "subsetPassed": false,
+  "admissionBlockers": [],
+  "requireCurrentSource": false,
+  "identity": {
+    "caseSet": {
+      "path": "config/fawn-workspace-qualification.json",
+      "sha256": "e9faad64630e7f35f68b03bed1b54d6682b10f64705680c7fc500d399d54d8df"
+    },
+    "serviceConfig": {
+      "path": "config/fawn-workspace-service.json",
+      "sha256": "b06d96c5812bffc46880dab53406610519cdc415377a27dff17ddac066953a27"
+    },
+    "comparisonPolicy": {
+      "path": "config/browser-product-comparison-policy.json",
+      "sha256": "6bfb8c1ed17e32316cf453f5e833711dd51f19854831f3a76061eba3bd8e688c"
+    },
+    "serviceSource": {
+      "path": "browser/workspace/src",
+      "sha256": "2ea5964d99ad5ff1d670158e4c587bebc7bf29e7b3cf138263730e58daa0aa52",
+      "fileCount": 15
+    },
+    "harness": {
+      "path": "browser/workspace/qualification",
+      "sha256": "a923421efde696fb2843e2ec14dd4c89148f9fcbff242ca3944ec9064fbd8950",
+      "fileCount": 41
+    },
+    "packageLock": {
+      "path": "browser/workspace/package-lock.json",
+      "sha256": "39f0a7a6ee1132526dbd806276c2d90f8f9a3833d4d200a9d36a33df617d0c49"
+    },
+    "fixtureSite": {
+      "path": "browser/workspace/qualification/fixture-site.js",
+      "sha256": "26d88112a09468f07398f6677a6bdce393f9b6a54169359ec4d3f5ec5e82dc41"
+    },
+    "node": "v22.21.0",
+    "playwrightCore": "1.58.2",
+    "os": {
+      "platform": "linux",
+      "release": "6.8.0-90-generic",
+      "arch": "x64"
+    },
+    "git": {
+      "commit": "fd27a095f32c9724a5954a6feb34753bc3fcd82c",
+      "workingTreeChanges": []
+    }
+  },
+  "browsers": {
+    "playwright": [
+      {
+        "path": "/opt/google/chrome/chrome",
+        "sha256": "e6dcd16c398e8a5714f7dcc1d7dd48cbb5427695ac1cd1a266fb23a00388f878",
+        "byteLength": 258825432,
+        "version": "Google Chrome 136.0.7103.59",
+        "codeModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      }
+    ],
+    "cdp": [
+      {
+        "path": "/opt/google/chrome/chrome",
+        "sha256": "e6dcd16c398e8a5714f7dcc1d7dd48cbb5427695ac1cd1a266fb23a00388f878",
+        "byteLength": 258825432,
+        "version": "Google Chrome 136.0.7103.59",
+        "codeModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      }
+    ]
+  },
+  "runsChecked": 102,
+  "failures": [
+    {
+      "caseId": "failure-after-completion-before-acknowledgment",
+      "workflow": "research",
+      "adapter": "playwright",
+      "check": "run-error",
+      "detail": "no live browser process belongs to host 1171281"
+    },
+    {
+      "caseId": "failure-after-completion-before-acknowledgment",
+      "workflow": "research",
+      "adapter": "cdp",
+      "check": "run-error",
+      "detail": "no live browser process belongs to host 1171434"
+    },
+    {
+      "caseId": "failure-after-completion-before-acknowledgment",
+      "workflow": "export",
+      "adapter": "playwright",
+      "check": "run-error",
+      "detail": "no live browser process belongs to host 1172050"
+    },
+    {
+      "caseId": "failure-after-completion-before-acknowledgment",
+      "workflow": "export",
+      "adapter": "cdp",
+      "check": "run-error",
+      "detail": "no live browser process belongs to host 1172205"
+    }
+  ],
+  "requirements": [
+    {
+      "id": "persistent-workspace-identity",
+      "step": "shared-workspace-service",
+      "status": "established",
+      "cases": [
+        "workflow-completes"
+      ]
+    },
+    {
+      "id": "persistent-authorization",
+      "step": "shared-workspace-service",
+      "status": "established",
+      "cases": [
+        "stale-owner-after-handoff-and-restart"
+      ]
+    },
+    {
+      "id": "persistent-ownership-generation",
+      "step": "shared-workspace-service",
+      "status": "established",
+      "cases": [
+        "stale-owner-after-handoff-and-restart"
+      ]
+    },
+    {
+      "id": "persistent-observation-versions",
+      "step": "shared-workspace-service",
+      "status": "established",
+      "cases": [
+        "workflow-completes"
+      ]
+    },
+    {
+      "id": "persistent-action-records",
+      "step": "shared-workspace-service",
+      "status": "failed",
+      "cases": [
+        "workflow-completes",
+        "failure-before-dispatch",
+        "failure-after-completion-before-acknowledgment"
+      ]
+    },
+    {
+      "id": "narrow-cdp-playwright-adapters",
+      "step": "shared-workspace-service",
+      "status": "established",
+      "cases": [
+        "workflow-completes",
+        "mutation-surface"
+      ]
+    },
+    {
+      "id": "workflow-logic-outside-shared-service",
+      "step": "shared-workspace-service",
+      "status": "established",
+      "cases": [
+        "workflow-completes",
+        "mutation-surface"
+      ]
+    },
+    {
+      "id": "versioned-observations-and-page-changes",
+      "step": "observation-action-binding",
+      "status": "established",
+      "cases": [
+        "background-change-page-scope",
+        "background-change-regions-scope",
+        "background-change-scoped-region-changed"
+      ]
+    },
+    {
+      "id": "workspace-owner-intent-target-observation-preconditions",
+      "step": "observation-action-binding",
+      "status": "established",
+      "cases": [
+        "unauthorized-intent",
+        "unauthorized-target",
+        "violated-precondition"
+      ]
+    },
+    {
+      "id": "dispatch-time-authorization-and-preconditions",
+      "step": "observation-action-binding",
+      "status": "established",
+      "cases": [
+        "violated-precondition",
+        "background-change-regions-scope",
+        "background-change-target-replaced",
+        "revoked-while-queued"
+      ]
+    },
+    {
+      "id": "reject-stale-or-unauthorized-actions",
+      "step": "observation-action-binding",
+      "status": "established",
+      "cases": [
+        "unauthorized-intent",
+        "unauthorized-target",
+        "background-change-page-scope",
+        "background-change-target-replaced",
+        "background-change-scoped-region-changed",
+        "stale-observation"
+      ]
+    },
+    {
+      "id": "disclose-nonatomic-browser-external-boundary",
+      "step": "observation-action-binding",
+      "status": "established",
+      "cases": [
+        "workflow-completes"
+      ]
+    },
+    {
+      "id": "all-fawn-automated-mutations-through-dispatcher",
+      "step": "durable-ownership",
+      "status": "established",
+      "cases": [
+        "handoff-while-queued",
+        "mutation-surface"
+      ]
+    },
+    {
+      "id": "serialize-handoff-admission-dispatch",
+      "step": "durable-ownership",
+      "status": "established",
+      "cases": [
+        "handoff-while-queued",
+        "handoff-races-effect"
+      ]
+    },
+    {
+      "id": "durably-advance-generation-before-admission",
+      "step": "durable-ownership",
+      "status": "established",
+      "cases": [
+        "stale-owner-after-handoff-and-restart",
+        "handoff-races-effect"
+      ]
+    },
+    {
+      "id": "invalidate-old-owner-queue",
+      "step": "durable-ownership",
+      "status": "established",
+      "cases": [
+        "handoff-while-queued",
+        "handoff-races-effect"
+      ]
+    },
+    {
+      "id": "reject-stale-generation-after-restart",
+      "step": "durable-ownership",
+      "status": "established",
+      "cases": [
+        "stale-owner-after-handoff-and-restart"
+      ]
+    },
+    {
+      "id": "restore-authority-before-command-admission",
+      "step": "durable-ownership",
+      "status": "established",
+      "cases": [
+        "stale-owner-after-handoff-and-restart",
+        "authority-unavailable"
+      ]
+    },
+    {
+      "id": "handoff-outstanding-action-records",
+      "step": "durable-ownership",
+      "status": "established",
+      "cases": [
+        "failure-after-effect-started",
+        "handoff-while-queued",
+        "human-review"
+      ]
+    },
+    {
+      "id": "disclose-in-flight-external-effects",
+      "step": "durable-ownership",
+      "status": "established",
+      "cases": [
+        "handoff-while-queued",
+        "handoff-races-effect"
+      ]
+    },
+    {
+      "id": "persist-intent-before-dispatch",
+      "step": "uncertainty-recovery",
+      "status": "established",
+      "cases": [
+        "failure-before-dispatch"
+      ]
+    },
+    {
+      "id": "completed-failed-unknown-outcomes",
+      "step": "uncertainty-recovery",
+      "status": "established",
+      "cases": [
+        "workflow-completes",
+        "failure-condition",
+        "failure-after-effect-started"
+      ]
+    },
+    {
+      "id": "prove-never-dispatched-separately",
+      "step": "uncertainty-recovery",
+      "status": "established",
+      "cases": [
+        "violated-precondition",
+        "failure-before-dispatch",
+        "revoked-while-queued",
+        "recovery-never-dispatched"
+      ]
+    },
+    {
+      "id": "missing-completion-never-authorizes-resubmission",
+      "step": "uncertainty-recovery",
+      "status": "failed",
+      "cases": [
+        "failure-after-effect-started",
+        "failure-after-completion-before-acknowledgment",
+        "external-idempotency",
+        "human-review",
+        "recovery-effect-present",
+        "recovery-effect-absent",
+        "recovery-never-dispatched"
+      ]
+    },
+    {
+      "id": "preserve-unknown-across-restart",
+      "step": "uncertainty-recovery",
+      "status": "established",
+      "cases": [
+        "failure-after-effect-started",
+        "external-idempotency",
+        "recovery-effect-present",
+        "recovery-effect-absent",
+        "export-recovery-after-crash"
+      ]
+    },
+    {
+      "id": "reconcile-state-or-external-idempotency-or-human-review",
+      "step": "uncertainty-recovery",
+      "status": "established",
+      "cases": [
+        "failure-after-effect-started",
+        "external-idempotency",
+        "human-review",
+        "recovery-effect-present",
+        "recovery-effect-absent",
+        "recovery-never-dispatched"
+      ]
+    },
+    {
+      "id": "local-action-id-is-not-external-idempotency",
+      "step": "uncertainty-recovery",
+      "status": "established",
+      "cases": [
+        "external-idempotency"
+      ]
+    },
+    {
+      "id": "shared-service-document-research-form-submission-artifact-export",
+      "step": "reuse-and-product-value",
+      "status": "established",
+      "cases": [
+        "workflow-completes",
+        "export-recovery-after-crash"
+      ]
+    },
+    {
+      "id": "failure-before-dispatch-after-submission-before-acknowledgment",
+      "step": "reuse-and-product-value",
+      "status": "failed",
+      "cases": [
+        "failure-before-dispatch",
+        "failure-after-effect-started",
+        "failure-after-completion-before-acknowledgment",
+        "recovery-effect-present",
+        "recovery-effect-absent",
+        "recovery-never-dispatched",
+        "export-recovery-after-crash"
+      ]
+    },
+    {
+      "id": "handoff-races-stale-queues-restart-outstanding-requests",
+      "step": "reuse-and-product-value",
+      "status": "established",
+      "cases": [
+        "stale-owner-after-handoff-and-restart",
+        "failure-after-effect-started",
+        "handoff-while-queued",
+        "handoff-races-effect"
+      ]
+    },
+    {
+      "id": "identical-stale-rejection-and-unknown-preservation-for-every-adapter",
+      "step": "reuse-and-product-value",
+      "status": "established",
+      "cases": [
+        "stale-observation",
+        "stale-owner-after-handoff-and-restart",
+        "failure-after-effect-started"
+      ]
+    },
+    {
+      "id": "competent-stock-chromium-playwright-baseline",
+      "step": "reuse-and-product-value",
+      "status": "not-covered",
+      "cases": []
+    },
+    {
+      "id": "task-success-incorrect-actions-recovery-observation-volume-latency-overhead-integration-effort",
+      "step": "reuse-and-product-value",
+      "status": "not-covered",
+      "cases": []
+    },
+    {
+      "id": "chromium-hooks-and-runtime-integration-require-measured-benefits-justifying-compatibility-and-maintenance-costs",
+      "step": "selective-deeper-capabilities",
+      "status": "not-covered",
+      "cases": []
+    },
+    {
+      "id": "doppler-owns-model-semantics",
+      "step": "selective-deeper-capabilities",
+      "status": "not-covered",
+      "cases": []
+    },
+    {
+      "id": "doeruntime-explicit-integration-independent-qualification",
+      "step": "selective-deeper-capabilities",
+      "status": "not-covered",
+      "cases": []
+    },
+    {
+      "id": "doelab-offline-improvements",
+      "step": "selective-deeper-capabilities",
+      "status": "not-covered",
+      "cases": []
+    },
+    {
+      "id": "doeproof-adoption-evidence",
+      "step": "selective-deeper-capabilities",
+      "status": "not-covered",
+      "cases": []
+    },
+    {
+      "id": "fawn-remains-integrated-product",
+      "step": "selective-deeper-capabilities",
+      "status": "not-covered",
+      "cases": []
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "protocol": "deco.task.v1",
+  "workId": "fawn-mac-workspace-8001-20261026-04",
+  "title": "Qualify Fawn workspace on physical Mars macOS with installed Chrome",
+  "target": {
+    "member": "mac",
+    "repository": "doe",
+    "sourceCommit": "8001ce0afeefe1ab331ddded9c7ff85f7f4c47bb",
+    "branch": "main",
+    "capability": "browser"
+  },
+  "runner": {
+    "kind": "shell"
+  },
+  "instructions": {
+    "commands": [
+      "node browser/workspace/qualification/run.js --out bench/out/fawn-workspace-platforms/mars-8001-final --browser-channel chrome",
+      "node browser/workspace/qualification/validate.js bench/out/fawn-workspace-platforms/mars-8001-final --require-current-source"
+    ]
+  },
+  "scope": {
+    "writePaths": [
+      "bench/out/fawn-workspace-platforms/mars-8001-final"
+    ],
+    "network": true,
+    "publish": false,
+    "deploy": false
+  },
+  "artifacts": [
+    "bench/out/fawn-workspace-platforms/mars-8001-final/result.json",
+    "bench/out/fawn-workspace-platforms/mars-8001-final/verdict.json"
+  ],
+  "limits": {
+    "wallClockSeconds": 600,
+    "heartbeatSeconds": 15,
+    "checkSeconds": 60
+  }
+}

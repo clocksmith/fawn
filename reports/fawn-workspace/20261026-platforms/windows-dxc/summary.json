@@ -1,0 +1,392 @@
+{
+  "scope": "Windows DXC process boundary; no D3D12/device qualification",
+  "host": "miles",
+  "platform": "Windows-11-10.0.26300-SP0",
+  "compiler": "C:\\Users\\clocksmith\\AppData\\Local\\deco\\toolchains\\vs2022-buildtools\\VC\\Tools\\Llvm\\bin\\clang-cl.exe",
+  "compiler_sha256": "92769f6aea78f81282d329e44bcee3c4a69b5cf8b81c2bca44f800a3c4d8e5de",
+  "source_commit": "5678df1ef9f12faa8c7895201f8718500f6f8122",
+  "source_status": " M runtime/c/compiler/src/dxil/dxil_container.h\n M runtime/c/compiler/src/dxil/dxil_validate.c\n M runtime/c/compiler/src/dxil/dxil_validate.h\n M runtime/c/compiler/tools/test_dxil_windows.py\n",
+  "sha256": {
+    "src\\dxil\\dxil_toolchain.c": "e631acf19a26b7dd322911926527ec69a31c93cecd158eec8aaf9026cc497d91",
+    "src\\dxil\\dxil_process_windows.c": "854cc7d79a64ff91b556c86a8262aff351c7e6d9446fdefeba294e9dff8a29d7",
+    "src\\dxil\\dxil_mapping.c": "a4d52a623772894428f1279f2ddb4067e570df56f263f2ed0155a9700ccf8ac9",
+    "src\\dxil\\dxil_spec.c": "dc5999fabd80d54e058d866c8252eb77abe9ba553fcfa547f17cac944d4c1ed6",
+    "src\\dxil\\dxil_validate.c": "bc0a507bbf0b2120c1de62e6a25e7006caaa63c400e9cfa9530715ef1b87fb95",
+    "src\\dxil\\tests\\dxc_process_probe.c": "48266984684e39c144fd0ae0a8bb4be348942d2098e470ddb7a973c67c94abbe",
+    "tools\\test_dxil_windows.py": "57e023c18b75b71125114fd36ca9e012ecc844ee074f93b096e783d54ed362c7",
+    "src\\dxil\\dxil_analyze.h": "55b4ece54aaf31cffd397ecea4d8dd669f1083b25b5fd16789a328ed4d24330f",
+    "src\\dxil\\dxil_analyze_internal.h": "29fcf7e1f0195d2b4cc0ba76d09fe68801fd85f6e5f237a6490aad0338348c0e",
+    "src\\dxil\\dxil_bitcode.h": "a63821a4109057a4b303abbbe2394851c9974d4a5ff67ec1a8e1e250384a724f",
+    "src\\dxil\\dxil_builder.h": "85a48da4deb87bac321e7fc3be73ad4faf6169dc113b6283ada2452680922bee",
+    "src\\dxil\\dxil_container.h": "242d92db85c5b2ff2744fc9ceaf6c0675dfc4cb93604888500124bbef38dad6d",
+    "src\\dxil\\dxil_diagnostic.h": "d7a13cb0900302abeb6b70d794a81822f60a9e2159c5181d42b61d1ad2688833",
+    "src\\dxil\\dxil_emit.h": "66c3253a96b99b75b595a1a5d0057057c5cff15f238b31d516e5ac1fbcea18ac",
+    "src\\dxil\\dxil_error.h": "a979231f40c0bcef54de8eef29a6b6c3b97b6b6df7bbced6eb9a85c8135e0c1b",
+    "src\\dxil\\dxil_hlsl.h": "a902d6f1276a42bbc739a88b9f1b027bdd9168e439d265c9896049576de96652",
+    "src\\dxil\\dxil_hlsl_internal.h": "8ace7ad59c127a2dc0d308797f4912a79150a8a5d38b25b9d7e10dbb7b36e65e",
+    "src\\dxil\\dxil_ir.h": "99cd85fc9a458a623a296146e2ccd3c4e2d5f4f5ef024030ec461e79d54542a2",
+    "src\\dxil\\dxil_mapping.h": "3bc847745d73ce07657a60255872629b3ea6f6c0be22260c8a20411ca2e15a7f",
+    "src\\dxil\\dxil_md5.h": "6f29a5a5723724bae20a241e1c1ca76c26a74a3d48138b12b0889ae3b78965dc",
+    "src\\dxil\\dxil_native.h": "41122161001068c97d65b8cee7ef19379481e397ccb1a7567957b5f51746940c",
+    "src\\dxil\\dxil_native_internal.h": "ded152cd04680cdf60346715401360d202556ee7365e6c9a14c0962b773ef4ee",
+    "src\\dxil\\dxil_process.h": "ffac94f8fd0f478a8b3bc5d999d0dcb145e4ca8abf513d9a0197df44bfa3927c",
+    "src\\dxil\\dxil_serialize.h": "7bd19b6139e7bfaf0f696192798841d5d302475a341b738a69a34b82b577c852",
+    "src\\dxil\\dxil_spec.h": "31a17e03c59cc2d2ba5b0461b521d4731382daae8b6528bf97bb14851469f585",
+    "src\\dxil\\dxil_toolchain.h": "330ad7bc75d167de8c11c99c97594b2f8eb7c48d8d6eecbb113b1c5adaf2a865",
+    "src\\dxil\\dxil_translate.h": "147bcbe9ea03db675be8bd38c8ba5bec711930639dbe6afb957b17da8b65eff5",
+    "src\\dxil\\dxil_validate.h": "78063488a051c2f1a01ed30019288559200e2079fb53f6a1f3ff7c570379ca55"
+  },
+  "dxc_sha256": "aa7965b3763d9c710baaa5a28cedcc633449962a75d1391d161a85304a41b3e2",
+  "dxc_dll_sha256": {
+    "dxcompiler.dll": "0689e2fee0a1c9df8662a59680469f24e2a3ad7ce6bbbcc9284f7a83172bfc59",
+    "dxil.dll": "64be2368211d257a038a7d4ea6bb3e24c878eb8d588c7b8414fccf759b69c2ac"
+  },
+  "commands": [
+    [
+      "C:\\Users\\clocksmith\\AppData\\Local\\deco\\toolchains\\vs2022-buildtools\\VC\\Tools\\Llvm\\bin\\clang-cl.exe",
+      "--target=x86_64-pc-windows-msvc",
+      "/nologo",
+      "/MD",
+      "/O2",
+      "/WX",
+      "/D_CRT_SECURE_NO_WARNINGS",
+      "/clang:-std=c11",
+      "/clang:-Wall",
+      "/clang:-Wextra",
+      "/clang:-Wpedantic",
+      "/clang:-Wconversion",
+      "/clang:-Wshadow",
+      "/clang:-Wstrict-prototypes",
+      "/clang:-Wmissing-prototypes",
+      "/clang:-Wswitch-enum",
+      "/LD",
+      "C:\\Users\\clocksmith\\deco\\doe\\runtime\\c\\compiler\\src\\dxil\\dxil_toolchain.c",
+      "C:\\Users\\clocksmith\\deco\\doe\\runtime\\c\\compiler\\src\\dxil\\dxil_process_windows.c",
+      "C:\\Users\\clocksmith\\deco\\doe\\runtime\\c\\compiler\\src\\dxil\\dxil_mapping.c",
+      "C:\\Users\\clocksmith\\deco\\doe\\runtime\\c\\compiler\\src\\dxil\\dxil_spec.c",
+      "C:\\Users\\clocksmith\\deco\\doe\\runtime\\c\\compiler\\src\\dxil\\dxil_validate.c",
+      "/FeC:\\Users\\clocksmith\\deco\\doe\\bench\\out\\miles-windows-dxc-20261026-c\\dxil_process.dll",
+      "/link",
+      "/EXPORT:dxil_dxc_run",
+      "/EXPORT:dxil_validate_output"
+    ],
+    [
+      "C:\\Users\\clocksmith\\AppData\\Local\\deco\\toolchains\\vs2022-buildtools\\VC\\Tools\\Llvm\\bin\\clang-cl.exe",
+      "--target=x86_64-pc-windows-msvc",
+      "/nologo",
+      "/MD",
+      "/O2",
+      "/WX",
+      "/D_CRT_SECURE_NO_WARNINGS",
+      "/clang:-std=c11",
+      "/clang:-Wall",
+      "/clang:-Wextra",
+      "/clang:-Wpedantic",
+      "/clang:-Wconversion",
+      "/clang:-Wshadow",
+      "/clang:-Wstrict-prototypes",
+      "/clang:-Wmissing-prototypes",
+      "/clang:-Wswitch-enum",
+      "C:\\Users\\clocksmith\\deco\\doe\\runtime\\c\\compiler\\src\\dxil\\tests\\dxc_process_probe.c",
+      "/FeC:\\Users\\clocksmith\\deco\\doe\\bench\\out\\miles-windows-dxc-20261026-c\\space & \u96ea\\probe compiler.exe"
+    ],
+    [
+      "C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\miles-windows-dxc-20261026-c\\space & \u96ea\\probe compiler.exe",
+      "-T",
+      "handles",
+      "-E",
+      "728",
+      "-Fo",
+      "C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\miles-windows-dxc-20261026-c\\space & \u96ea\\output shader.dxil",
+      "C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\miles-windows-dxc-20261026-c\\space & \u96ea\\input shader.hlsl"
+    ],
+    [
+      "C:\\Users\\clocksmith\\AppData\\Local\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\dxc\\bin\\x64\\dxc.exe",
+      "-dumpbin",
+      "C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\miles-windows-dxc-20261026-c\\space & \u96ea\\output shader.dxil"
+    ]
+  ],
+  "checks": [
+    {
+      "executable": "C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\miles-windows-dxc-20261026-c\\space & \u96ea\\probe compiler.exe",
+      "profile": "success",
+      "discovery": 0,
+      "status": 0,
+      "detail": "untouched"
+    },
+    {
+      "executable": "C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\miles-windows-dxc-20261026-c\\space & \u96ea\\probe compiler.exe",
+      "profile": "stderr",
+      "discovery": 0,
+      "status": 4,
+      "detail": "DXC failed via explicit-config `C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\miles-windows-dxc-20261026-c\\space & \u96ea\\probe compiler.exe` with exit code 3 for profile `stderr` and entry `main`: compiler failed"
+    },
+    {
+      "executable": "C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\miles-windows-dxc-20261026-c\\space & \u96ea\\probe compiler.exe",
+      "profile": "stdout",
+      "discovery": 0,
+      "status": 4,
+      "detail": "DXC failed via explicit-config `C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\miles-windows-dxc-20261026-c\\space & \u96ea\\probe compiler.exe` with exit code 4 for profile `stdout` and entry `main`: stdout fallback"
+    },
+    {
+      "executable": "C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\miles-windows-dxc-20261026-c\\space & \u96ea\\probe compiler.exe",
+      "profile": "noisy",
+      "discovery": 0,
+      "status": 4,
+      "detail": "DXC failed via explicit-config `C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\miles-windows-dxc-20261026-c\\space & \u96ea\\probe compiler.exe` with exit code 5 for profile `noisy` and entry `main`: bounded stderrxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+    },
+    {
+      "executable": "C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\miles-windows-dxc-20261026-c\\space & \u96ea\\probe compiler.exe",
+      "profile": "crash",
+      "discovery": 0,
+      "status": 4,
+      "detail": "DXC failed via explicit-config `C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\miles-windows-dxc-20261026-c\\space & \u96ea\\probe compiler.exe` with exit code 3221225477 for profile `crash` and entry `main`"
+    },
+    {
+      "executable": "C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\miles-windows-dxc-20261026-c\\space & \u96ea\\probe compiler.exe",
+      "profile": "stderr",
+      "discovery": 0,
+      "status": 4,
+      "detail": ""
+    },
+    {
+      "executable": "C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\miles-windows-dxc-20261026-c\\space & \u96ea\\probe compiler.exe",
+      "profile": "stderr",
+      "discovery": 0,
+      "status": 4,
+      "detail": ""
+    },
+    {
+      "executable": "C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\miles-windows-dxc-20261026-c\\space & \u96ea\\missing.exe",
+      "profile": "cs_6_0",
+      "discovery": 0,
+      "status": 6,
+      "detail": "DXC executable from explicit DXIL toolchain config was not found at `C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\miles-windows-dxc-20261026-c\\space & \u96ea\\missing.exe`; pass a valid ToolchainConfig path or set DOE_WGSL_DXC to a valid DXC path"
+    },
+    {
+      "executable": "C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\miles-windows-dxc-20261026-c\\space & \u96ea\\missing.exe",
+      "profile": "cs_6_0",
+      "discovery": 1,
+      "status": 6,
+      "detail": "DOE_WGSL_DXC points to `C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\miles-windows-dxc-20261026-c\\space & \u96ea\\missing.exe`, but that DXC executable was not found; fix DOE_WGSL_DXC or use `PATH` to opt into PATH lookup"
+    },
+    {
+      "executable": "C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\miles-windows-dxc-20261026-c\\space & \u96ea\\missing.exe",
+      "profile": "cs_6_0",
+      "discovery": 2,
+      "status": 6,
+      "detail": "DOE_WGSL_DXC=PATH requested explicit PATH lookup, but `C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\miles-windows-dxc-20261026-c\\space & \u96ea\\missing.exe` was not found on PATH"
+    },
+    {
+      "executable": "C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\miles-windows-dxc-20261026-c\\space & \u96ea\\missing.exe",
+      "profile": "cs_6_0",
+      "discovery": 3,
+      "status": 6,
+      "detail": "DXC was not found on PATH (`C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\miles-windows-dxc-20261026-c\\space & \u96ea\\missing.exe`); set DOE_WGSL_DXC to an absolute/workspace-relative DXC path or `PATH` to make PATH lookup explicit"
+    },
+    {
+      "executable": "C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\miles-windows-dxc-20261026-c\\space & \u96ea\\not executable.exe",
+      "profile": "cs_6_0",
+      "discovery": 0,
+      "status": 6,
+      "detail": "failed to start DXC via explicit-config `C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\miles-windows-dxc-20261026-c\\space & \u96ea\\not executable.exe`: Windows error 216"
+    },
+    {
+      "executable": "C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\miles-windows-dxc-20261026-c\\space & \u96ea\\probe compiler.exe",
+      "profile": "handles",
+      "discovery": 0,
+      "status": 0,
+      "detail": "untouched"
+    },
+    {
+      "executable": "C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\miles-windows-dxc-20261026-c\\space & \u96ea\\probe compiler.exe",
+      "profile": "stderr",
+      "discovery": 0,
+      "status": 4,
+      "detail": "DXC failed via explicit-config `C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\miles-windows-dxc-20261026-c\\space & \u96ea\\probe compiler.exe` with exit code 3 for profile `stderr` and entry `main`: compiler failed"
+    },
+    {
+      "executable": "C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\miles-windows-dxc-20261026-c\\space & \u96ea\\missing.exe",
+      "profile": "cs_6_0",
+      "discovery": 0,
+      "status": 6,
+      "detail": "DXC executable from explicit DXIL toolchain config was not found at `C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\miles-windows-dxc-20261026-c\\space & \u96ea\\missing.exe`; pass a valid ToolchainConfig path or set DOE_WGSL_DXC to a valid DXC path"
+    },
+    {
+      "executable": "C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\miles-windows-dxc-20261026-c\\space & \u96ea\\probe compiler.exe",
+      "profile": "stderr",
+      "discovery": 0,
+      "status": 4,
+      "detail": "DXC failed via explicit-config `C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\miles-windows-dxc-20261026-c\\space & \u96ea\\probe compiler.exe` with exit code 3 for profile `stderr` and entry `main`: compiler failed"
+    },
+    {
+      "executable": "C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\miles-windows-dxc-20261026-c\\space & \u96ea\\missing.exe",
+      "profile": "cs_6_0",
+      "discovery": 0,
+      "status": 6,
+      "detail": "DXC executable from explicit DXIL toolchain config was not found at `C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\miles-windows-dxc-20261026-c\\space & \u96ea\\missing.exe`; pass a valid ToolchainConfig path or set DOE_WGSL_DXC to a valid DXC path"
+    },
+    {
+      "executable": "C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\miles-windows-dxc-20261026-c\\space & \u96ea\\probe compiler.exe",
+      "profile": "stderr",
+      "discovery": 0,
+      "status": 4,
+      "detail": "DXC failed via explicit-config `C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\miles-windows-dxc-20261026-c\\space & \u96ea\\probe compiler.exe` with exit code 3 for profile `stderr` and entry `main`: compiler failed"
+    },
+    {
+      "executable": "C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\miles-windows-dxc-20261026-c\\space & \u96ea\\missing.exe",
+      "profile": "cs_6_0",
+      "discovery": 0,
+      "status": 6,
+      "detail": "DXC executable from explicit DXIL toolchain config was not found at `C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\miles-windows-dxc-20261026-c\\space & \u96ea\\missing.exe`; pass a valid ToolchainConfig path or set DOE_WGSL_DXC to a valid DXC path"
+    },
+    {
+      "executable": "C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\miles-windows-dxc-20261026-c\\space & \u96ea\\probe compiler.exe",
+      "profile": "stderr",
+      "discovery": 0,
+      "status": 4,
+      "detail": "DXC failed via explicit-config `C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\miles-windows-dxc-20261026-c\\space & \u96ea\\probe compiler.exe` with exit code 3 for profile `stderr` and entry `main`: compiler failed"
+    },
+    {
+      "executable": "C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\miles-windows-dxc-20261026-c\\space & \u96ea\\missing.exe",
+      "profile": "cs_6_0",
+      "discovery": 0,
+      "status": 6,
+      "detail": "DXC executable from explicit DXIL toolchain config was not found at `C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\miles-windows-dxc-20261026-c\\space & \u96ea\\missing.exe`; pass a valid ToolchainConfig path or set DOE_WGSL_DXC to a valid DXC path"
+    },
+    {
+      "executable": "C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\miles-windows-dxc-20261026-c\\space & \u96ea\\probe compiler.exe",
+      "profile": "stderr",
+      "discovery": 0,
+      "status": 4,
+      "detail": "DXC failed via explicit-config `C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\miles-windows-dxc-20261026-c\\space & \u96ea\\probe compiler.exe` with exit code 3 for profile `stderr` and entry `main`: compiler failed"
+    },
+    {
+      "executable": "C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\miles-windows-dxc-20261026-c\\space & \u96ea\\missing.exe",
+      "profile": "cs_6_0",
+      "discovery": 0,
+      "status": 6,
+      "detail": "DXC executable from explicit DXIL toolchain config was not found at `C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\miles-windows-dxc-20261026-c\\space & \u96ea\\missing.exe`; pass a valid ToolchainConfig path or set DOE_WGSL_DXC to a valid DXC path"
+    },
+    {
+      "executable": "C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\miles-windows-dxc-20261026-c\\space & \u96ea\\probe compiler.exe",
+      "profile": "stderr",
+      "discovery": 0,
+      "status": 4,
+      "detail": "DXC failed via explicit-config `C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\miles-windows-dxc-20261026-c\\space & \u96ea\\probe compiler.exe` with exit code 3 for profile `stderr` and entry `main`: compiler failed"
+    },
+    {
+      "executable": "C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\miles-windows-dxc-20261026-c\\space & \u96ea\\missing.exe",
+      "profile": "cs_6_0",
+      "discovery": 0,
+      "status": 6,
+      "detail": "DXC executable from explicit DXIL toolchain config was not found at `C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\miles-windows-dxc-20261026-c\\space & \u96ea\\missing.exe`; pass a valid ToolchainConfig path or set DOE_WGSL_DXC to a valid DXC path"
+    },
+    {
+      "executable": "C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\miles-windows-dxc-20261026-c\\space & \u96ea\\probe compiler.exe",
+      "profile": "stderr",
+      "discovery": 0,
+      "status": 4,
+      "detail": "DXC failed via explicit-config `C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\miles-windows-dxc-20261026-c\\space & \u96ea\\probe compiler.exe` with exit code 3 for profile `stderr` and entry `main`: compiler failed"
+    },
+    {
+      "executable": "C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\miles-windows-dxc-20261026-c\\space & \u96ea\\missing.exe",
+      "profile": "cs_6_0",
+      "discovery": 0,
+      "status": 6,
+      "detail": "DXC executable from explicit DXIL toolchain config was not found at `C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\miles-windows-dxc-20261026-c\\space & \u96ea\\missing.exe`; pass a valid ToolchainConfig path or set DOE_WGSL_DXC to a valid DXC path"
+    },
+    {
+      "executable": "C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\miles-windows-dxc-20261026-c\\space & \u96ea\\probe compiler.exe",
+      "profile": "stderr",
+      "discovery": 0,
+      "status": 4,
+      "detail": "DXC failed via explicit-config `C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\miles-windows-dxc-20261026-c\\space & \u96ea\\probe compiler.exe` with exit code 3 for profile `stderr` and entry `main`: compiler failed"
+    },
+    {
+      "executable": "C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\miles-windows-dxc-20261026-c\\space & \u96ea\\missing.exe",
+      "profile": "cs_6_0",
+      "discovery": 0,
+      "status": 6,
+      "detail": "DXC executable from explicit DXIL toolchain config was not found at `C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\miles-windows-dxc-20261026-c\\space & \u96ea\\missing.exe`; pass a valid ToolchainConfig path or set DOE_WGSL_DXC to a valid DXC path"
+    },
+    {
+      "executable": "C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\miles-windows-dxc-20261026-c\\space & \u96ea\\probe compiler.exe",
+      "profile": "stderr",
+      "discovery": 0,
+      "status": 4,
+      "detail": "DXC failed via explicit-config `C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\miles-windows-dxc-20261026-c\\space & \u96ea\\probe compiler.exe` with exit code 3 for profile `stderr` and entry `main`: compiler failed"
+    },
+    {
+      "executable": "C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\miles-windows-dxc-20261026-c\\space & \u96ea\\missing.exe",
+      "profile": "cs_6_0",
+      "discovery": 0,
+      "status": 6,
+      "detail": "DXC executable from explicit DXIL toolchain config was not found at `C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\miles-windows-dxc-20261026-c\\space & \u96ea\\missing.exe`; pass a valid ToolchainConfig path or set DOE_WGSL_DXC to a valid DXC path"
+    },
+    {
+      "executable": "C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\miles-windows-dxc-20261026-c\\space & \u96ea\\probe compiler.exe",
+      "profile": "stderr",
+      "discovery": 0,
+      "status": 4,
+      "detail": "DXC failed via explicit-config `C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\miles-windows-dxc-20261026-c\\space & \u96ea\\probe compiler.exe` with exit code 3 for profile `stderr` and entry `main`: compiler failed"
+    },
+    {
+      "executable": "C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\miles-windows-dxc-20261026-c\\space & \u96ea\\missing.exe",
+      "profile": "cs_6_0",
+      "discovery": 0,
+      "status": 6,
+      "detail": "DXC executable from explicit DXIL toolchain config was not found at `C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\miles-windows-dxc-20261026-c\\space & \u96ea\\missing.exe`; pass a valid ToolchainConfig path or set DOE_WGSL_DXC to a valid DXC path"
+    },
+    {
+      "executable": "C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\miles-windows-dxc-20261026-c\\space & \u96ea\\probe compiler.exe",
+      "profile": "stderr",
+      "discovery": 0,
+      "status": 4,
+      "detail": "DXC failed via explicit-config `C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\miles-windows-dxc-20261026-c\\space & \u96ea\\probe compiler.exe` with exit code 3 for profile `stderr` and entry `main`: compiler failed"
+    },
+    {
+      "executable": "C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\miles-windows-dxc-20261026-c\\space & \u96ea\\missing.exe",
+      "profile": "cs_6_0",
+      "discovery": 0,
+      "status": 6,
+      "detail": "DXC executable from explicit DXIL toolchain config was not found at `C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\miles-windows-dxc-20261026-c\\space & \u96ea\\missing.exe`; pass a valid ToolchainConfig path or set DOE_WGSL_DXC to a valid DXC path"
+    },
+    {
+      "executable": "C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\miles-windows-dxc-20261026-c\\space & \u96ea\\probe compiler.exe",
+      "profile": "stderr",
+      "discovery": 0,
+      "status": 4,
+      "detail": "DXC failed via explicit-config `C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\miles-windows-dxc-20261026-c\\space & \u96ea\\probe compiler.exe` with exit code 3 for profile `stderr` and entry `main`: compiler failed"
+    },
+    {
+      "executable": "C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\miles-windows-dxc-20261026-c\\space & \u96ea\\missing.exe",
+      "profile": "cs_6_0",
+      "discovery": 0,
+      "status": 6,
+      "detail": "DXC executable from explicit DXIL toolchain config was not found at `C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\miles-windows-dxc-20261026-c\\space & \u96ea\\missing.exe`; pass a valid ToolchainConfig path or set DOE_WGSL_DXC to a valid DXC path"
+    },
+    {
+      "executable": "probe compiler.exe",
+      "profile": "success",
+      "discovery": 2,
+      "status": 0,
+      "detail": "untouched"
+    },
+    {
+      "executable": "C:\\Users\\clocksmith\\AppData\\Local\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\dxc\\bin\\x64\\dxc.exe",
+      "profile": "cs_6_0",
+      "discovery": 0,
+      "status": 0,
+      "detail": "untouched"
+    },
+    {
+      "executable": "C:\\Users\\clocksmith\\AppData\\Local\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\dxc\\bin\\x64\\dxc.exe",
+      "profile": "cs_6_0",
+      "discovery": 0,
+      "status": 4,
+      "detail": "DXC failed via explicit-config `C:\\Users\\clocksmith\\AppData\\Local\\deco\\validation\\doe-d3d12-159b58-ki3pcb23\\dxc\\bin\\x64\\dxc.exe` with exit code 2147500037 for profile `cs_6_0` and entry `main`: C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\miles-windows-dxc-20261026-c\\space & ?\\input shader.hlsl:1:1: error: expected unqualified-id\r\nthis is invalid HLSL;\r\n^"
+    }
+  ],
+  "handle_count": 190
+}

@@ -1,0 +1,15 @@
+{
+    "gpu":  [
+                {
+                    "Name":  "AMD Radeon(TM) Graphics",
+                    "DriverVersion":  "32.0.21030.2001"
+                }
+            ],
+    "inputs":  {
+                   "compute":  "b596f7890272f267eed9785599b6e0c6327eff82f52c29b36caabc89eaad52cb",
+                   "d3d12_graphics":  "8d3c8afcaf3e05793b1399723d77eb196eff8b3af250c1887bb598fa34cf763b",
+                   "instance_devices":  "509b7286e778bd6f8c37a31d65244288098cd0d33b7736ee44267a0e00b05860"
+               },
+    "native":  "45c6ac4e3c7a379be5db205c7dd2d4ea0a3442b11f0d67676e089b0a4fea75a6",
+    "source":  "5678df1ef9f12faa8c7895201f8718500f6f8122"
+}

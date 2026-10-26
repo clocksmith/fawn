@@ -1,0 +1,7 @@
+make: Entering directory '/home/clocksmith/deco/doe/runtime/c/compiler'
+mkdir -p build/tmp build/logs
+touch build/.ready
+PASS test_dxil_mapping_toolchain (230 checks)
+test_planner: 69 checks, 0 failures
+test_reference_emit: 92 checks, 0 failures
+make: Leaving directory '/home/clocksmith/deco/doe/runtime/c/compiler'
