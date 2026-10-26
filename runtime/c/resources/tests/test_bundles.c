@@ -140,25 +140,46 @@ static void test_bundle_failed_publication(void)
     empty(&f);
 }
 
-static void test_bundle_budget(void)
+/* The old C-only 4096-operation limit is not a public or retained limit.
+ * State updates need no command allocation; draws grow through the owner. */
+static void test_bundle_growth(void)
 {
     fixture f = fresh();
     doe_resource_bundle_encoder *encoder = make_encoder(&f);
-    for (size_t i = 0; i < 4096; i++)
+    size_t allocations = f.allocations;
+    for (size_t i = 0; i < 8193; i++)
         assert(doe_resource_bundle_encoder_set_group(encoder, 0, NULL) == DOE_RESOURCE_OK);
+    assert(f.allocations == allocations);
     doe_resource_render_bundle *bundle;
     assert(doe_resource_bundle_encoder_finish(encoder, &bundle) == DOE_RESOURCE_OK);
     doe_resource_bundle_encoder_release(encoder);
     doe_resource_render_bundle_release(bundle);
     empty(&f);
-    encoder = make_encoder(&f);
-    for (size_t i = 0; i < 4096; i++)
-        assert(doe_resource_bundle_encoder_set_group(encoder, 0, NULL) == DOE_RESOURCE_OK);
-    assert(doe_resource_bundle_encoder_set_group(encoder, 0, NULL) == DOE_RESOURCE_RANGE);
-    bundle = NULL;
-    assert(doe_resource_bundle_encoder_finish(encoder, &bundle) == DOE_RESOURCE_RANGE && !bundle);
-    doe_resource_bundle_encoder_release(encoder);
-    empty(&f);
+
+    for (unsigned fail_growth = 0; fail_growth < 2; fail_growth++) {
+        native_token token = {0};
+        doe_resource_render_pipeline *pipeline = make_pipeline(&f, &token, false);
+        encoder = make_encoder(&f);
+        assert(doe_resource_bundle_encoder_set_pipeline(encoder, pipeline) == DOE_RESOURCE_OK);
+        for (size_t i = 0; i < 4096; i++)
+            assert(doe_resource_bundle_encoder_draw(encoder, false, 3, 1, 0, 0, 0) == DOE_RESOURCE_OK);
+        if (fail_growth) f.fail_at = f.allocations;
+        doe_resource_status expected = fail_growth ? DOE_RESOURCE_OUT_OF_MEMORY : DOE_RESOURCE_OK;
+        assert(doe_resource_bundle_encoder_draw(encoder, false, 3, 1, 0, 0, 0) == expected);
+        bundle = NULL;
+        assert(doe_resource_bundle_encoder_finish(encoder, &bundle) == expected);
+        doe_resource_render_pipeline_release(pipeline);
+        assert(!token.releases);
+        doe_resource_bundle_encoder_release(encoder);
+        if (fail_growth) assert(!bundle && token.releases == 1);
+        else {
+            assert(bundle && !token.releases);
+            doe_resource_render_bundle_release(bundle);
+            assert(token.releases == 1);
+        }
+        f.fail_at = SIZE_MAX;
+        empty(&f);
+    }
 }
 
 static void test_bundle_replay_rejection(void)
@@ -367,7 +388,7 @@ int main(void)
 {
     test_bundle_replay_lifetimes();
     test_bundle_failed_publication();
-    test_bundle_budget();
+    test_bundle_growth();
     test_bundle_replay_rejection();
     test_bundle_destroyed_texture_rejects_at_submit();
     test_bundle_state_reset();

@@ -2,14 +2,12 @@
 #include "internal.h"
 #include <string.h>
 
-enum { MAX_BUNDLE_OPERATIONS = 4096 };
-
 struct doe_resource_bundle_encoder {
     resource_base base;
     doe_resource_render_bundle_desc desc;
     doe_resource_status status;
     bool finished;
-    size_t operations, count, capacity, debug_depth;
+    size_t count, capacity, debug_depth;
     doe_resource_render_packet state;
     doe_resource_render_packet *draws;
     resource_usage_scope scope;
@@ -37,21 +35,6 @@ static doe_resource_status open_encoder(doe_resource_bundle_encoder *encoder)
     if (encoder->finished) return DOE_RESOURCE_STATE;
     if (encoder->status != DOE_RESOURCE_OK) return encoder->status;
     if (!resource_alive(&encoder->base)) return fail(encoder, DOE_RESOURCE_UNAVAILABLE);
-    return DOE_RESOURCE_OK;
-}
-
-static doe_resource_status admit_operation(doe_resource_bundle_encoder *encoder)
-{
-    doe_resource_status status = open_encoder(encoder);
-    if (status != DOE_RESOURCE_OK) return status;
-    if (encoder->operations == MAX_BUNDLE_OPERATIONS) return fail(encoder, DOE_RESOURCE_RANGE);
-    return DOE_RESOURCE_OK;
-}
-
-static doe_resource_status complete_operation(doe_resource_bundle_encoder *encoder, doe_resource_status status)
-{
-    if (status != DOE_RESOURCE_OK) return fail(encoder, status);
-    encoder->operations++;
     return DOE_RESOURCE_OK;
 }
 
@@ -107,46 +90,46 @@ void doe_resource_bundle_encoder_release(doe_resource_bundle_encoder *encoder)
 doe_resource_status doe_resource_bundle_encoder_set_pipeline(doe_resource_bundle_encoder *encoder,
     doe_resource_render_pipeline *pipeline)
 {
-    doe_resource_status status = admit_operation(encoder);
+    doe_resource_status status = open_encoder(encoder);
     if (status != DOE_RESOURCE_OK) return status;
     status = resource_render_set_pipeline(encoder->base.config.device.identity, &encoder->state, &encoder->desc, pipeline);
-    return complete_operation(encoder, status);
+    return fail(encoder, status);
 }
 
 doe_resource_status doe_resource_bundle_encoder_set_immediates(doe_resource_bundle_encoder *encoder,
     uint32_t offset, const void *data, size_t size)
 {
-    doe_resource_status status = admit_operation(encoder);
+    doe_resource_status status = open_encoder(encoder);
     if (status != DOE_RESOURCE_OK) return status;
-    return complete_operation(encoder,
+    return fail(encoder,
         resource_immediates_update(&encoder->base.config, &encoder->state.immediates, offset, data, size));
 }
 
 doe_resource_status doe_resource_bundle_encoder_set_group(doe_resource_bundle_encoder *encoder,
     uint32_t index, const doe_resource_dispatch_group *group)
 {
-    doe_resource_status status = admit_operation(encoder);
+    doe_resource_status status = open_encoder(encoder);
     if (status != DOE_RESOURCE_OK) return status;
     status = resource_render_set_group(&encoder->base.config, &encoder->scope, &encoder->state, index, group);
-    return complete_operation(encoder, status);
+    return fail(encoder, status);
 }
 
 doe_resource_status doe_resource_bundle_encoder_set_vertex(doe_resource_bundle_encoder *encoder,
     uint32_t slot, doe_resource_buffer *buffer, uint64_t offset, uint64_t size)
 {
-    doe_resource_status status = admit_operation(encoder);
+    doe_resource_status status = open_encoder(encoder);
     if (status != DOE_RESOURCE_OK) return status;
     status = resource_render_set_vertex(&encoder->base.config, &encoder->scope, &encoder->state, slot, buffer, offset, size);
-    return complete_operation(encoder, status);
+    return fail(encoder, status);
 }
 
 doe_resource_status doe_resource_bundle_encoder_set_index(doe_resource_bundle_encoder *encoder,
     doe_resource_buffer *buffer, WGPUIndexFormat format, uint64_t offset, uint64_t size)
 {
-    doe_resource_status status = admit_operation(encoder);
+    doe_resource_status status = open_encoder(encoder);
     if (status != DOE_RESOURCE_OK) return status;
     status = resource_render_set_index(&encoder->base.config, &encoder->scope, &encoder->state, buffer, format, offset, size);
-    return complete_operation(encoder, status);
+    return fail(encoder, status);
 }
 
 static doe_resource_status append_draw(doe_resource_bundle_encoder *encoder,
@@ -159,8 +142,10 @@ static doe_resource_status append_draw(doe_resource_bundle_encoder *encoder,
         if (status != DOE_RESOURCE_OK) return fail(encoder, status);
     }
     if (encoder->count == encoder->capacity) {
+        /* The retained bundle is dynamically sized, not a fixed operation
+         * budget. Check doubling before allocating or moving existing draws. */
+        if (encoder->capacity > SIZE_MAX / 2) return fail(encoder, DOE_RESOURCE_OVERFLOW);
         size_t capacity = encoder->capacity ? encoder->capacity * 2 : 8;
-        if (capacity > MAX_BUNDLE_OPERATIONS) capacity = MAX_BUNDLE_OPERATIONS;
         if (capacity > SIZE_MAX / sizeof(*encoder->draws)) return fail(encoder, DOE_RESOURCE_OVERFLOW);
         doe_resource_render_packet *draws = resource_allocate(&encoder->base.config,
             capacity * sizeof(*draws), _Alignof(doe_resource_render_packet));
@@ -173,14 +158,14 @@ static doe_resource_status append_draw(doe_resource_bundle_encoder *encoder,
     }
     resource_render_packet_retain(packet);
     encoder->draws[encoder->count++] = *packet;
-    return complete_operation(encoder, DOE_RESOURCE_OK);
+    return fail(encoder, DOE_RESOURCE_OK);
 }
 
 doe_resource_status doe_resource_bundle_encoder_draw(doe_resource_bundle_encoder *encoder,
     bool indexed, uint32_t count, uint32_t instances, uint32_t first,
     int32_t base_vertex, uint32_t first_instance)
 {
-    doe_resource_status status = admit_operation(encoder);
+    doe_resource_status status = open_encoder(encoder);
     if (status != DOE_RESOURCE_OK) return status;
     doe_resource_render_packet packet = encoder->state;
     packet.indexed = indexed;
@@ -195,7 +180,7 @@ doe_resource_status doe_resource_bundle_encoder_draw(doe_resource_bundle_encoder
 doe_resource_status doe_resource_bundle_encoder_draw_indirect(doe_resource_bundle_encoder *encoder,
     doe_resource_buffer *arguments, uint64_t offset, bool indexed)
 {
-    doe_resource_status status = admit_operation(encoder);
+    doe_resource_status status = open_encoder(encoder);
     if (status != DOE_RESOURCE_OK) return status;
     if (!arguments) return fail(encoder, DOE_RESOURCE_INVALID_ARGUMENT);
     doe_resource_render_packet packet = encoder->state;
