@@ -15,7 +15,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadServiceConfig } from '../src/config.js';
 import { startFixtureSite } from './fixture-site.js';
-import { REPO_ROOT, inspectBrowserProcesses, resultIdentity, waitForProfileRelease } from './identity.js';
+import { REPO_ROOT, executableIdentityKey, inspectBrowserProcesses, resultIdentity, waitForProfileRelease } from './identity.js';
 import { startHost } from './service-client.js';
 
 const POLICY_PATH = 'config/browser-product-comparison-policy.json';
@@ -309,7 +309,7 @@ function browserIdentity(inspectionsBySide) {
   return Object.fromEntries(SIDES.map((name) => {
     const executables = new Map();
     for (const inspection of inspectionsBySide[name]) {
-      for (const executable of inspection.executables) executables.set(`${executable.path}|${executable.sha256}`, executable);
+      for (const executable of inspection.executables) executables.set(executableIdentityKey(executable), executable);
     }
     return [name, [...executables.values()]];
   }));
@@ -333,7 +333,7 @@ async function main() {
     console.log(`ran: ${scenario.id}`);
   }
   const browsers = browserIdentity(inspections);
-  const sameBrowser = JSON.stringify(browsers.treatment.map((entry) => entry.sha256)) === JSON.stringify(browsers.control.map((entry) => entry.sha256))
+  const sameBrowser = JSON.stringify(browsers.treatment.map(executableIdentityKey)) === JSON.stringify(browsers.control.map(executableIdentityKey))
     && browsers.treatment.length === 1;
   const evaluation = scenarios.map((scenario) => evaluateScenario(scenario, rows.filter((row) => row.scenarioId === scenario.id), policy.criteria));
   const comparison = {

@@ -1,7 +1,7 @@
 {
   "$schema": "fawn-workspace-qualification.schema.json",
   "schemaVersion": 1,
-  "caseSetVersion": "2026-10-14-behavioral-v2",
+  "caseSetVersion": "2026-10-26-behavioral-v3-platform-exits",
   "contractPath": "docs/fawn-workspace-contract.md",
   "serviceConfigPath": "config/fawn-workspace-service.json",
   "strategyPath": "config/doe-product-strategy.json#fawnWorkspace",
@@ -323,7 +323,7 @@
       ],
       "expected": {
         "steps": {
-          "crash": { "signal": "SIGKILL" },
+          "crash": { "requestedSignal": "SIGKILL", "abrupt": true },
           "afterRestart": {
             "dispatchStatus": "never-dispatched",
             "neverDispatchedCode": "restart-invalidated-queue",
@@ -368,7 +368,7 @@
       ],
       "expected": {
         "steps": {
-          "crash": { "signal": "SIGKILL" },
+          "crash": { "requestedSignal": "SIGKILL", "abrupt": true },
           "afterRestart": {
             "outcome": "unknown",
             "outcomeBasis": "restart-after-dispatch-start",
@@ -421,7 +421,7 @@
       ],
       "expected": {
         "steps": {
-          "crash": { "signal": "SIGKILL" },
+          "crash": { "requestedSignal": "SIGKILL", "abrupt": true },
           "afterRestart": { "outcome": "completed", "acknowledged": false },
           "outstandingBeforeAcknowledgment": { "includesEffect": true },
           "outstandingAfterAcknowledgment": { "includesEffect": false }
@@ -595,7 +595,7 @@
       "expected": {
         "steps": {
           "localActionIdKey": { "rejection": "invalid-idempotency-key" },
-          "crash": { "signal": "SIGKILL" },
+          "crash": { "requestedSignal": "SIGKILL", "abrupt": true },
           "afterRestart": { "outcome": "unknown", "isUncertain": true },
           "reconcile": { "reconciliationResult": "idempotent-resubmission-permitted", "isUncertain": true },
           "keylessResubmit": { "rejection": "resubmission-not-permitted" },
@@ -621,7 +621,7 @@
       ],
       "expected": {
         "steps": {
-          "crash": { "signal": "SIGKILL" },
+          "crash": { "requestedSignal": "SIGKILL", "abrupt": true },
           "handoff": { "effect": { "outcome": "unknown", "isUncertain": true } },
           "review": { "reconciliationResult": "human-review-requested", "isUncertain": true },
           "resubmitDuringReview": { "rejection": "effect-unresolved" },
@@ -648,7 +648,7 @@
       ],
       "expected": {
         "steps": {
-          "crash": { "signal": "SIGKILL" },
+          "crash": { "requestedSignal": "SIGKILL", "abrupt": true },
           "afterRestart": {
             "outcome": "unknown",
             "outcomeBasis": "restart-after-dispatch-start",
@@ -683,7 +683,7 @@
       ],
       "expected": {
         "steps": {
-          "crash": { "signal": "SIGKILL" },
+          "crash": { "requestedSignal": "SIGKILL", "abrupt": true },
           "afterRestart": {
             "outcome": "unknown",
             "outcomeBasis": "restart-after-dispatch-start",
@@ -718,7 +718,7 @@
       ],
       "expected": {
         "steps": {
-          "crash": { "signal": "SIGKILL" },
+          "crash": { "requestedSignal": "SIGKILL", "abrupt": true },
           "afterRestart": {
             "dispatchStatus": "never-dispatched",
             "neverDispatchedCode": "restart-invalidated-queue"
@@ -749,7 +749,7 @@
       ],
       "expected": {
         "steps": {
-          "crash": { "signal": "SIGKILL" },
+          "crash": { "requestedSignal": "SIGKILL", "abrupt": true },
           "afterRestart": {
             "outcome": "unknown",
             "outcomeBasis": "restart-after-dispatch-start",

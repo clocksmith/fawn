@@ -64,11 +64,12 @@ function createPause() {
 }
 
 class Arm {
-  constructor({ name, site, scenario, definition }) {
+  constructor({ name, site, scenario, definition, browserChannel = null }) {
     this.name = name;
     this.site = site;
     this.scenario = scenario;
     this.definition = definition;
+    this.browserChannel = browserChannel;
     this.root = mkdtempSync(join(tmpdir(), `fawn-differentiation-${name}-`));
     this.stateDir = join(this.root, 'state');
     this.checkpointPath = join(this.root, 'checkpoint.json');
@@ -79,7 +80,7 @@ class Arm {
 
   async start() {
     if (this.name === 'treatment') {
-      this.host = await startHost({ stateDir: this.stateDir, adapter: 'playwright' });
+      this.host = await startHost({ stateDir: this.stateDir, adapter: 'playwright', browserChannel: this.browserChannel });
       const { adminCredential } = await this.host.call('createWorkspace', { workspaceId: WORKSPACE_ID });
       this.adminCredential = adminCredential;
       await this.host.call('grantAuthorization', {
@@ -93,7 +94,8 @@ class Arm {
       });
       await this.assign(AGENT_ID);
     } else {
-      this.host = await startHost({ stateDir: this.stateDir, actionTimeoutMs: loadServiceConfig().dispatch.actionTimeoutMs, headless: true }, TOOL_HOST);
+      this.host = await startHost({ stateDir: this.stateDir, actionTimeoutMs: loadServiceConfig().dispatch.actionTimeoutMs,
+        headless: true, browserChannel: this.browserChannel }, TOOL_HOST);
     }
   }
 

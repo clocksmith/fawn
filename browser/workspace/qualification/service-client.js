@@ -19,12 +19,19 @@ function startHost(options, hostPath = HOST_PATH) {
   const child = spawn(process.execPath, [hostPath, JSON.stringify(options)], { stdio: ['pipe', 'pipe', 'inherit'] });
   const pending = new Map();
   let nextId = 1;
-  const exited = new Promise((resolve) => child.on('exit', (code, signal) => resolve({ code, signal })));
+  let terminationRequest = null;
+  // close follows stdout drain: a self-kill receipt must arrive before the
+  // parent records/rejects the final OS exit.
+  const exited = new Promise((resolve) => child.on('close', (code, signal) => resolve({ code, signal })));
   const ready = new Promise((resolve, reject) => {
     createInterface({ input: child.stdout }).on('line', (line) => {
       const message = JSON.parse(line);
       if (message.event === 'ready') resolve();
       else if (message.event === 'open-failed') reject(new HostError(message.error));
+      else if (message.event === 'termination-requested') {
+        if (message.pid !== child.pid || message.signal !== 'SIGKILL') throw new Error('invalid host termination receipt');
+        terminationRequest = { source: 'host-hook', pid: message.pid, signal: message.signal };
+      }
       else {
         const waiter = pending.get(message.id);
         pending.delete(message.id);
@@ -67,9 +74,11 @@ function startHost(options, hostPath = HOST_PATH) {
       return exited;
     },
     kill: () => {
-      child.kill('SIGKILL');
+      if (!child.kill('SIGKILL')) throw new Error(`failed to request forced termination of host ${child.pid}`);
+      terminationRequest = { source: 'controller', pid: child.pid, signal: 'SIGKILL' };
       return exited;
     },
+    terminationRequest: () => terminationRequest,
     exited,
     pid: child.pid,
   }));

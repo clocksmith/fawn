@@ -8,16 +8,19 @@ import { fileURLToPath } from 'node:url';
 
 const RUNNER = fileURLToPath(new URL('../../qualification/differentiate.js', import.meta.url));
 const RUN_TIME_LIMIT_MS = 120000;
+const browserArgs = process.env.FAWN_WORKSPACE_TEST_BROWSER_CHANNEL
+  ? ['--browser-channel', process.env.FAWN_WORKSPACE_TEST_BROWSER_CHANNEL] : [];
 
 const SUITES = Object.freeze({ differentiation: 'agent-clean', revalidatedDifferentiation: 'helpdesk-clean' });
 
 for (const [suite, scenario] of Object.entries(SUITES)) {
   const outDir = join(mkdtempSync(join(tmpdir(), 'fawn-differentiation-test-')), 'result');
-  const ran = spawnSync(process.execPath, [RUNNER, '--suite', suite, '--out', outDir, '--scenarios', scenario, '--repetitions', '1'], {
+  const ran = spawnSync(process.execPath, [RUNNER, '--suite', suite, '--out', outDir, '--scenarios', scenario, '--repetitions', '1', ...browserArgs], {
     encoding: 'utf8',
     timeout: RUN_TIME_LIMIT_MS,
     killSignal: 'SIGKILL',
   });
+  assert.equal(ran.status, 0, `differentiation process failed (${ran.signal ?? ran.status})\n${ran.stdout}\n${ran.stderr}`);
   const result = JSON.parse(readFileSync(join(outDir, 'differentiation.json'), 'utf8'));
   assert.equal(result.scope, 'subset');
   assert.equal(result.productAdvantage.established, false, 'a subset never establishes product advantage');

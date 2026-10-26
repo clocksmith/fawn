@@ -10,6 +10,13 @@ import { fileURLToPath } from 'node:url';
 const TEST_ROOT = fileURLToPath(new URL('.', import.meta.url));
 const FILE_TIME_LIMIT_MS = 180000;
 const SUITES = Object.freeze({ unit: 'unit', browser: 'browser' });
+const channelIndex = process.argv.indexOf('--browser-channel');
+const browserChannel = channelIndex === -1 ? null : process.argv[channelIndex + 1];
+if (channelIndex !== -1 && (!browserChannel || browserChannel.startsWith('--'))) {
+  throw new Error('--browser-channel requires a channel');
+}
+const env = { ...process.env,
+  ...(browserChannel ? { FAWN_WORKSPACE_TEST_BROWSER_CHANNEL: browserChannel } : {}) };
 
 const suites = process.argv.includes('--browser') ? [SUITES.unit, SUITES.browser] : [SUITES.unit];
 let failures = 0;
@@ -20,6 +27,7 @@ for (const suite of suites) {
       stdio: 'inherit',
       timeout: FILE_TIME_LIMIT_MS,
       killSignal: 'SIGKILL',
+      env,
     });
     if (result.status !== 0) {
       failures++;
