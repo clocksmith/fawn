@@ -1,0 +1,142 @@
+{
+  "origin": "http://127.0.0.1:58675",
+  "foreignOrigin": "http://127.0.0.1:58676",
+  "requests": [
+    {
+      "seq": 1,
+      "at": "2026-10-26T21:56:13.406Z",
+      "server": "main",
+      "method": "GET",
+      "path": "/live/export",
+      "search": "",
+      "kind": "document",
+      "status": 200
+    },
+    {
+      "seq": 2,
+      "at": "2026-10-26T21:56:13.420Z",
+      "server": "main",
+      "method": "GET",
+      "path": "/favicon.ico",
+      "search": "",
+      "kind": "other",
+      "status": 404
+    },
+    {
+      "seq": 3,
+      "at": "2026-10-26T21:56:13.463Z",
+      "server": "main",
+      "method": "GET",
+      "path": "/live/state",
+      "search": "",
+      "kind": "poll",
+      "status": 200
+    },
+    {
+      "seq": 4,
+      "at": "2026-10-26T21:56:13.511Z",
+      "server": "main",
+      "method": "GET",
+      "path": "/live/state",
+      "search": "",
+      "kind": "poll",
+      "status": 200
+    },
+    {
+      "seq": 5,
+      "at": "2026-10-26T21:56:13.561Z",
+      "server": "main",
+      "method": "GET",
+      "path": "/live/state",
+      "search": "",
+      "kind": "poll",
+      "status": 200
+    },
+    {
+      "seq": 6,
+      "at": "2026-10-26T21:56:13.611Z",
+      "server": "main",
+      "method": "GET",
+      "path": "/live/state",
+      "search": "",
+      "kind": "poll",
+      "status": 200
+    },
+    {
+      "seq": 7,
+      "at": "2026-10-26T21:56:13.661Z",
+      "server": "main",
+      "method": "GET",
+      "path": "/live/state",
+      "search": "",
+      "kind": "poll",
+      "status": 200
+    },
+    {
+      "seq": 8,
+      "at": "2026-10-26T21:56:13.714Z",
+      "server": "main",
+      "method": "GET",
+      "path": "/live/state",
+      "search": "",
+      "kind": "poll",
+      "status": 200
+    },
+    {
+      "seq": 9,
+      "at": "2026-10-26T21:56:13.762Z",
+      "server": "main",
+      "method": "GET",
+      "path": "/live/state",
+      "search": "",
+      "kind": "poll",
+      "status": 200
+    },
+    {
+      "seq": 10,
+      "at": "2026-10-26T21:56:13.804Z",
+      "server": "main",
+      "method": "GET",
+      "path": "/export/report.csv",
+      "search": "",
+      "kind": "download",
+      "status": 200,
+      "sha256": "98e79f8c6f16f49f82a7b94c42fc4ca04944cf7dddde39078df92522d5428146"
+    },
+    {
+      "seq": 11,
+      "at": "2026-10-26T21:56:13.812Z",
+      "server": "main",
+      "method": "GET",
+      "path": "/live/state",
+      "search": "",
+      "kind": "poll",
+      "status": 200
+    },
+    {
+      "seq": 12,
+      "at": "2026-10-26T21:56:13.930Z",
+      "server": "main",
+      "method": "GET",
+      "path": "/live/state",
+      "search": "",
+      "kind": "poll",
+      "status": 200
+    },
+    {
+      "seq": 13,
+      "at": "2026-10-26T21:56:13.931Z",
+      "server": "main",
+      "method": "GET",
+      "path": "/live/state",
+      "search": "",
+      "kind": "poll",
+      "status": 200
+    }
+  ],
+  "receipts": [],
+  "reportSha256": {
+    "/export/report.csv": "98e79f8c6f16f49f82a7b94c42fc4ca04944cf7dddde39078df92522d5428146",
+    "/export/report-v2.csv": "d3b0e0c3d5158608348ac368583104e9269f3f55f0751334372819c47839887d"
+  }
+}

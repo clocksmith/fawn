@@ -148,8 +148,10 @@ every listed workflow.
 - `service-host.js` runs the service in a separate process. The runner kills it
   at declared points, reopens its state and issues concurrent commands so
   handoff can race admission and dispatch.
-- `identity.js` binds results to source trees, configs, the commit and the
-  browser executable actually running under the host, read from `/proc`.
+- `identity.js` binds results to source trees, configs, the commit, running
+  browser images and mapped browser code. `process-inspection.js` observes
+  processes and listeners through Linux `/proc`, macOS libproc/lsof, or Windows
+  CIM/NetTCPIP; adapter assertions do not establish identity.
 - `validate.js` admits a full result only if it names committed source and
   matches the frozen case set and fixture. For every run it then:
   - re-verifies and replays the journal and checks ordering invariants
@@ -158,7 +160,14 @@ every listed workflow.
   - judges external effects by the application's receipts
   - requires identical behavior across adapters and no debugging endpoint
 
-  It reports coverage of every strategy requirement.
+  It reports coverage of every strategy requirement. Retained evidence paths
+  use the producer's OS grammar and must stay inside their evidence directory,
+  including after symlink resolution. An optional `case-set.json` snapshot must
+  hash to the producer's recorded bytes and contain exactly the current frozen
+  rules. This permits cross-platform line endings without changing receipts or
+  accepting different expectations. `--require-current-source` additionally
+  checks the live service/config/harness identities; offline revalidation does
+  not transfer a result to newer source.
 - `compare.js` and `baseline/` compare the same workflows against competent
   stock Playwright automation, under the frozen scenarios and criteria in
   `workspaceComparison` of

@@ -1,0 +1,41 @@
+{
+  "origin": "http://127.0.0.1:46661",
+  "foreignOrigin": "http://127.0.0.1:41635",
+  "requests": [
+    {
+      "seq": 1,
+      "at": "2026-10-26T21:58:29.734Z",
+      "server": "main",
+      "method": "GET",
+      "path": "/research/",
+      "search": "",
+      "kind": "document",
+      "status": 200
+    },
+    {
+      "seq": 2,
+      "at": "2026-10-26T21:58:29.749Z",
+      "server": "main",
+      "method": "GET",
+      "path": "/favicon.ico",
+      "search": "",
+      "kind": "other",
+      "status": 404
+    },
+    {
+      "seq": 3,
+      "at": "2026-10-26T21:58:29.831Z",
+      "server": "main",
+      "method": "GET",
+      "path": "/research/vulkan-memory.html",
+      "search": "",
+      "kind": "document",
+      "status": 200
+    }
+  ],
+  "receipts": [],
+  "reportSha256": {
+    "/export/report.csv": "98e79f8c6f16f49f82a7b94c42fc4ca04944cf7dddde39078df92522d5428146",
+    "/export/report-v2.csv": "d3b0e0c3d5158608348ac368583104e9269f3f55f0751334372819c47839887d"
+  }
+}

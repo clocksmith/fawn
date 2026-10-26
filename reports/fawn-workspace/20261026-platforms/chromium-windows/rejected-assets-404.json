@@ -1,0 +1,473 @@
+{
+  "schemaVersion": 2,
+  "reportKind": "chromium-webgpu-playwright-smoke",
+  "benchmarkClass": "diagnostic",
+  "comparisonStatus": "diagnostic",
+  "claimStatus": "diagnostic",
+  "timingClass": "browser-operation-proxy",
+  "timingSource": "performance.now",
+  "generatedAt": "2026-10-26T21:41:20.296Z",
+  "hashAlgorithm": "sha256",
+  "runtimeSelectorPolicyPath": "C:\\Users\\clocksmith\\deco\\doe\\config\\browser-runtime-selector-policy.json",
+  "workloadIdentity": {
+    "kind": "browser_smoke_suite",
+    "workloadIds": [
+      "compute_increment",
+      "render_triangle",
+      "request_adapter_xr_compatible",
+      "copy_external_image_to_texture",
+      "import_external_texture",
+      "gpu_canvas_context",
+      "fawn_prismatic_lifecycle",
+      "write_buffer_64kb",
+      "compute_dispatch"
+    ],
+    "workloadHash": "6fafedf67e877f6bfea9610bead3a3424abb2d7bf4f3777e0fcd6d308f0162c6"
+  },
+  "invocation": {
+    "argv": [
+      "--chrome",
+      "C:/Program Files/Google/Chrome/Application/chrome.exe",
+      "--doe-lib",
+      "C:/Users/clocksmith/deco/doe/.cache/doe-c-packages/5d7fb0ad141b48e1c9199ef882b25c80bb12d683/bin/webgpu_doe_c.dll",
+      "--mode",
+      "dawn",
+      "--chrome",
+      "C:/Program Files/Google/Chrome/Application/chrome.exe",
+      "--sandbox",
+      "true",
+      "--chrome-arg",
+      "--do-not-de-elevate",
+      "--chrome-arg",
+      "--enable-logging=stderr",
+      "--chrome-arg",
+      "--v=1",
+      "--upload-iters",
+      "1",
+      "--dispatch-iters",
+      "1",
+      "--suite-timeout-ms",
+      "180000",
+      "--out",
+      "bench/out/miles-stock-chrome-dawn-20261026-c.json",
+      "--allow-bench-out"
+    ],
+    "cwd": "C:\\Users\\clocksmith\\deco\\doe",
+    "nodeVersion": "v22.23.4",
+    "platform": "win32",
+    "arch": "x64"
+  },
+  "chromePath": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+  "headless": true,
+  "chromeArgs": [
+    "--do-not-de-elevate",
+    "--enable-logging=stderr",
+    "--v=1"
+  ],
+  "mode": "dawn",
+  "methodology": {
+    "uploadIterations": 1,
+    "dispatchIterations": 1,
+    "uploadWarmupIterations": 50,
+    "dispatchWarmupIterations": 20,
+    "suiteTimeoutMs": 180000,
+    "operationTimeoutMs": 30000,
+    "strictMode": false,
+    "notes": [
+      "Browser harness output is diagnostic and not a strict L0 apples-to-apples claim artifact."
+    ]
+  },
+  "runtimeSelections": [
+    {
+      "selectionMode": "dawn",
+      "selectedRuntime": "dawn",
+      "forcedMode": "dawn",
+      "fallbackApplied": false,
+      "fallbackReasonCode": "",
+      "hiddenFallbackAllowed": false,
+      "profile": {
+        "profileId": "",
+        "vendor": "unknown",
+        "api": "unknown",
+        "deviceFamily": "unknown",
+        "driver": "unknown"
+      },
+      "adapterDenylist": {
+        "matched": false,
+        "reasonCode": "",
+        "profileId": "",
+        "vendor": "",
+        "api": "",
+        "deviceFamily": "",
+        "driverPattern": ""
+      },
+      "selectorVersion": "browser-runtime-selector-v1",
+      "artifactIdentity": {
+        "browserExecutablePath": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+        "browserExecutableSha256": "15188ffe6bb074b2fc8f90d8e0fa4b8a17fa390ce49e58f55a94cd52edf9bec0",
+        "dawnRuntimePath": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+        "dawnRuntimeSha256": "15188ffe6bb074b2fc8f90d8e0fa4b8a17fa390ce49e58f55a94cd52edf9bec0",
+        "doeLibPath": null,
+        "doeLibSha256": null
+      },
+      "launchArgsHash": "64baee42d28ed74c5deb6c4eae7bfa63f27a6970b449176e4ba00ef965efbd80"
+    }
+  ],
+  "modeResults": [
+    {
+      "mode": "dawn",
+      "runtimeSelection": {
+        "selectionMode": "dawn",
+        "selectedRuntime": "dawn",
+        "forcedMode": "dawn",
+        "fallbackApplied": false,
+        "fallbackReasonCode": "",
+        "hiddenFallbackAllowed": false,
+        "profile": {
+          "profileId": "",
+          "vendor": "unknown",
+          "api": "unknown",
+          "deviceFamily": "unknown",
+          "driver": "unknown"
+        },
+        "adapterDenylist": {
+          "matched": false,
+          "reasonCode": "",
+          "profileId": "",
+          "vendor": "",
+          "api": "",
+          "deviceFamily": "",
+          "driverPattern": ""
+        },
+        "selectorVersion": "browser-runtime-selector-v1",
+        "artifactIdentity": {
+          "browserExecutablePath": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+          "browserExecutableSha256": "15188ffe6bb074b2fc8f90d8e0fa4b8a17fa390ce49e58f55a94cd52edf9bec0",
+          "dawnRuntimePath": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+          "dawnRuntimeSha256": "15188ffe6bb074b2fc8f90d8e0fa4b8a17fa390ce49e58f55a94cd52edf9bec0",
+          "doeLibPath": null,
+          "doeLibSha256": null
+        },
+        "launchArgsHash": "64baee42d28ed74c5deb6c4eae7bfa63f27a6970b449176e4ba00ef965efbd80"
+      },
+      "shaderCompilerIdentity": {
+        "compilerSurface": "dawn_runtime_embedded_shader_compiler",
+        "compilerArtifactPath": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+        "compilerArtifactSha256": "15188ffe6bb074b2fc8f90d8e0fa4b8a17fa390ce49e58f55a94cd52edf9bec0",
+        "identitySource": "runtime_artifact_identity"
+      },
+      "runtimeArgs": [
+        "--use-webgpu-runtime=dawn"
+      ],
+      "launchArgs": [
+        "--disable-dev-shm-usage",
+        "--ignore-gpu-blocklist",
+        "--enable-unsafe-webgpu",
+        "--unsafely-treat-insecure-origin-as-secure=http://127.0.0.1:57088",
+        "--do-not-de-elevate",
+        "--enable-logging=stderr",
+        "--v=1",
+        "--use-webgpu-runtime=dawn"
+      ],
+      "browserVersion": "155.0.8059.86",
+      "elapsedMs": 32070,
+      "apiSurface": "native",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+      "webgpuAvailable": true,
+      "adapterAvailable": true,
+      "adapterInfo": {
+        "vendor": "amd",
+        "architecture": "rdna-2",
+        "device": "",
+        "description": "",
+        "subgroupMinSize": 32,
+        "subgroupMaxSize": 64
+      },
+      "features": [
+        "atomic-vec2u-min-max",
+        "bgra8unorm-storage",
+        "chromium-experimental-multi-draw-indirect",
+        "chromium-experimental-sampling-resource-table",
+        "chromium-experimental-timestamp-query-inside-passes",
+        "clip-distances",
+        "core-features-and-limits",
+        "depth-clip-control",
+        "depth32float-stencil8",
+        "dual-source-blending",
+        "float32-blendable",
+        "float32-filterable",
+        "indirect-first-instance",
+        "primitive-index",
+        "rg11b10ufloat-renderable",
+        "shader-f16",
+        "subgroup-size-control",
+        "subgroups",
+        "texture-component-swizzle",
+        "texture-compression-bc",
+        "texture-compression-bc-sliced-3d",
+        "texture-compression-unaligned",
+        "texture-formats-tier1",
+        "texture-formats-tier2",
+        "timestamp-query"
+      ],
+      "limits": {
+        "maxTextureDimension1D": 16384,
+        "maxTextureDimension2D": 16384,
+        "maxTextureDimension3D": 2048,
+        "maxTextureArrayLayers": 2048,
+        "maxBindGroups": 4,
+        "maxBindingsPerBindGroup": 1000,
+        "maxDynamicUniformBuffersPerPipelineLayout": 10,
+        "maxDynamicStorageBuffersPerPipelineLayout": 8,
+        "maxSampledTexturesPerShaderStage": 48,
+        "maxSamplersPerShaderStage": 16,
+        "maxStorageBuffersPerShaderStage": 16,
+        "maxStorageTexturesPerShaderStage": 8,
+        "maxUniformBuffersPerShaderStage": 12,
+        "maxUniformBufferBindingSize": 65536,
+        "maxStorageBufferBindingSize": 2147483644,
+        "maxBufferSize": 2147483648,
+        "maxComputeInvocationsPerWorkgroup": 1024,
+        "maxComputeWorkgroupSizeX": 1024,
+        "maxComputeWorkgroupSizeY": 1024,
+        "maxComputeWorkgroupSizeZ": 64,
+        "maxComputeWorkgroupsPerDimension": 65535,
+        "maxComputeWorkgroupStorageSize": 32768
+      },
+      "wgslLanguageFeatures": [
+        "buffer_view",
+        "immediate_address_space",
+        "linear_indexing",
+        "packed_4x8_integer_dot_product",
+        "pointer_composite_access",
+        "readonly_and_readwrite_storage_textures",
+        "subgroup_id",
+        "subgroup_uniformity",
+        "swizzle_assignment",
+        "texture_and_sampler_let",
+        "texture_formats_tier1",
+        "uniform_buffer_standard_layout",
+        "unrestricted_pointer_parameters"
+      ],
+      "smoke": {
+        "computeIncrement": {
+          "pass": true,
+          "actual": [
+            2,
+            3,
+            4,
+            5
+          ],
+          "expected": [
+            2,
+            3,
+            4,
+            5
+          ],
+          "error": null
+        },
+        "renderTriangle": {
+          "pass": true,
+          "centerRgba": [
+            255,
+            0,
+            0,
+            255
+          ],
+          "error": null
+        },
+        "requestAdapterXrCompatible": {
+          "pass": true,
+          "returnedAdapter": true,
+          "forwarded": null,
+          "observedOptions": null,
+          "error": null
+        },
+        "copyExternalImageToTexture": {
+          "pass": true,
+          "topLeftRgba": [
+            0,
+            255,
+            0,
+            255
+          ],
+          "sourceType": "ImageBitmap",
+          "attempts": [
+            {
+              "sourceType": "ImageBitmap",
+              "pass": true,
+              "topLeftRgba": [
+                0,
+                255,
+                0,
+                255
+              ]
+            }
+          ],
+          "error": null
+        },
+        "importExternalTexture": {
+          "pass": true,
+          "centerRgba": [
+            255,
+            0,
+            0,
+            255
+          ],
+          "error": null
+        },
+        "renderBundle": {
+          "pass": true,
+          "centerRgba": [
+            255,
+            0,
+            0,
+            255
+          ],
+          "error": null
+        },
+        "renderIndirect": {
+          "pass": true,
+          "centerRgba": [
+            255,
+            0,
+            0,
+            255
+          ],
+          "error": null
+        },
+        "timestampQuery": {
+          "pass": true,
+          "actual": [
+            "7869657155110",
+            "7869657158950"
+          ],
+          "error": null
+        },
+        "recovery": {
+          "validationError": {
+            "pass": true,
+            "captured": true,
+            "messageCount": 1,
+            "error": null
+          },
+          "deviceLost": {
+            "pass": true,
+            "promiseAvailable": true,
+            "error": null
+          },
+          "postValidationCompute": {
+            "pass": true,
+            "actual": [
+              2,
+              3,
+              4,
+              5
+            ],
+            "expected": [
+              2,
+              3,
+              4,
+              5
+            ],
+            "error": null
+          }
+        }
+      },
+      "webgpuCanvasApi": {
+        "offscreenCanvasAvailable": true,
+        "webgpuContextAvailable": true,
+        "webgpuContextHasConfigure": true,
+        "webgpuContextHasGetCurrentTexture": true,
+        "preferredCanvasFormatSupported": true,
+        "preferredCanvasFormat": "bgra8unorm"
+      },
+      "webgpuDeviceApi": {
+        "hasImportExternalTexture": true,
+        "hasCopyExternalImageToTexture": true
+      },
+      "benches": {
+        "writeBuffer64kbUsPerOp": 400.00000037252903,
+        "computeDispatchUsPerOp": 4000,
+        "iterations": {
+          "upload": 1,
+          "dispatch": 1
+        },
+        "errors": []
+      },
+      "diagnostics": {
+        "uncapturedErrors": [
+          {
+            "device": "primary",
+            "error": {
+              "name": "",
+              "message": "Error while parsing WGSL: :4:28 error: unresolved type 'missing_type'\n                let value: missing_type = 1;\n                           ^^^^^^^^^^^^\n\n\n - While calling [Device].CreateShaderModule([ShaderModuleDescriptor]).\n",
+              "string": "[object GPUValidationError]"
+            }
+          }
+        ],
+        "deviceLostEvents": [
+          {
+            "device": "timestamp",
+            "reason": "destroyed",
+            "message": "Device was destroyed."
+          }
+        ]
+      },
+      "errors": [
+        "fawn prismatic lifecycle: page.waitForFunction: Timeout 30000ms exceeded.\n    at runFawnPrismaticLifecycleProbe (C:\\Users\\clocksmith\\deco\\doe\\browser\\chromium\\scripts\\webgpu-playwright-smoke.mjs:1376:16)\n    at async runMode (C:\\Users\\clocksmith\\deco\\doe\\browser\\chromium\\scripts\\webgpu-playwright-smoke.mjs:2539:32)\n    at async main (C:\\Users\\clocksmith\\deco\\doe\\browser\\chromium\\scripts\\webgpu-playwright-smoke.mjs:2637:22)"
+      ],
+      "fawnPrismaticLifecycle": {
+        "pass": false,
+        "error": "page.waitForFunction: Timeout 30000ms exceeded.\n    at runFawnPrismaticLifecycleProbe (C:\\Users\\clocksmith\\deco\\doe\\browser\\chromium\\scripts\\webgpu-playwright-smoke.mjs:1376:16)\n    at async runMode (C:\\Users\\clocksmith\\deco\\doe\\browser\\chromium\\scripts\\webgpu-playwright-smoke.mjs:2539:32)\n    at async main (C:\\Users\\clocksmith\\deco\\doe\\browser\\chromium\\scripts\\webgpu-playwright-smoke.mjs:2637:22)"
+      },
+      "adapterIdentity": {
+        "adapterInfoSha256": "f98a6a005a8873bb60727e34a5284e5ce0145840489c22306cd1204b68cf37a7",
+        "featuresSha256": "bc0a15f071d9b6b1b55832c16acbeb34bdc01c5f9f551de5c2644a6cba50ba76",
+        "limitsSha256": "e8332dcb9abbefec14e124361d01a41bee4fef10a31ae14dae0a2427749a6e2a",
+        "featureCount": 25,
+        "limitCount": 22,
+        "adapter": "rdna-2"
+      },
+      "activeRuntimeProof": {
+        "schemaVersion": 2,
+        "providerIdentitySource": "runtimeSelector",
+        "hardwareIdentitySource": "wgpuAdapterGetInfo",
+        "selectedRuntime": "dawn",
+        "expected": {
+          "provider": "dawn",
+          "fallbackApplied": false,
+          "hiddenFallbackAllowed": false,
+          "hardwareVendorMustBeNonEmpty": true,
+          "hardwareArchitectureMustBeNonEmpty": true
+        },
+        "provider": {
+          "selectionMode": "dawn",
+          "selectedRuntime": "dawn",
+          "forcedMode": "dawn",
+          "fallbackApplied": false,
+          "hiddenFallbackAllowed": false,
+          "runtimeArtifactSha256": "15188ffe6bb074b2fc8f90d8e0fa4b8a17fa390ce49e58f55a94cd52edf9bec0",
+          "launchArgsHash": "64baee42d28ed74c5deb6c4eae7bfa63f27a6970b449176e4ba00ef965efbd80"
+        },
+        "hardware": {
+          "vendor": "amd",
+          "architecture": "rdna-2",
+          "device": "",
+          "description": ""
+        },
+        "matched": true
+      },
+      "browserClose": {
+        "attempted": true,
+        "pass": true,
+        "elapsedMs": 145,
+        "error": null
+      },
+      "previousHash": null,
+      "hash": "e1acc7776fed4f3d4e7ac3f546808f6da645ea7da3444b831c958492ffe8345f"
+    }
+  ],
+  "comparison": null,
+  "reportHash": "98518867d5d269d6b3f7a74bca7021c613e759e6440e6f4645fc3716d8972320"
+}

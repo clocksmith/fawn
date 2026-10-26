@@ -1,0 +1,8 @@
+Selected adapter backend Metal, type 4: Apple M3
+Explicit WebGPU C path adapter (native Metal device: Apple M3; subtype unclassified; developer run, not qualification)
+PASS public ABI: compute/readback, OOB guards, dynamic offsets, cross-device rejection, one-shot submit, early releases, callback reentry and map cancellation (native Metal device: Apple M3; subtype unclassified; developer run, not qualification)
+doe: wgpuBufferGetMappedRange failed (resource status 7)
+doe: wgpuBufferGetConstMappedRange failed (resource status 8)
+doe: wgpuBufferGetConstMappedRange failed (resource status 9)
+doe: wgpuBufferGetMappedRange failed (resource status 7)
+doe: wgpuBufferGetConstMappedRange failed (resource status 13)

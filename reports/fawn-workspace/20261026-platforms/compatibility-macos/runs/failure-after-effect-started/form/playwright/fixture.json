@@ -1,0 +1,99 @@
+{
+  "origin": "http://127.0.0.1:59555",
+  "foreignOrigin": "http://127.0.0.1:59556",
+  "requests": [
+    {
+      "seq": 1,
+      "at": "2026-10-26T21:56:49.672Z",
+      "server": "main",
+      "method": "GET",
+      "path": "/form",
+      "search": "",
+      "kind": "document",
+      "status": 200
+    },
+    {
+      "seq": 2,
+      "at": "2026-10-26T21:56:49.701Z",
+      "server": "main",
+      "method": "GET",
+      "path": "/favicon.ico",
+      "search": "",
+      "kind": "other",
+      "status": 404
+    },
+    {
+      "seq": 3,
+      "at": "2026-10-26T21:56:49.816Z",
+      "server": "main",
+      "method": "POST",
+      "path": "/form/submit",
+      "search": "",
+      "kind": "submission",
+      "status": 303,
+      "fields": {
+        "name": "Ada q54",
+        "email": "ada@example.test",
+        "reference": ""
+      },
+      "receiptId": 1,
+      "duplicateOf": null,
+      "held": true
+    },
+    {
+      "seq": 4,
+      "at": "2026-10-26T21:56:50.808Z",
+      "server": "main",
+      "method": "GET",
+      "path": "/form",
+      "search": "",
+      "kind": "document",
+      "status": 200
+    },
+    {
+      "seq": 5,
+      "at": "2026-10-26T21:56:50.822Z",
+      "server": "main",
+      "method": "GET",
+      "path": "/favicon.ico",
+      "search": "",
+      "kind": "other",
+      "status": 404
+    },
+    {
+      "seq": 6,
+      "at": "2026-10-26T21:56:50.914Z",
+      "server": "main",
+      "method": "GET",
+      "path": "/submissions",
+      "search": "",
+      "kind": "document",
+      "status": 200
+    },
+    {
+      "seq": 7,
+      "at": "2026-10-26T21:56:50.941Z",
+      "server": "main",
+      "method": "GET",
+      "path": "/form",
+      "search": "",
+      "kind": "document",
+      "status": 200
+    }
+  ],
+  "receipts": [
+    {
+      "id": 1,
+      "fields": {
+        "name": "Ada q54",
+        "email": "ada@example.test",
+        "reference": ""
+      },
+      "receivedAt": "2026-10-26T21:56:49.816Z"
+    }
+  ],
+  "reportSha256": {
+    "/export/report.csv": "98e79f8c6f16f49f82a7b94c42fc4ca04944cf7dddde39078df92522d5428146",
+    "/export/report-v2.csv": "d3b0e0c3d5158608348ac368583104e9269f3f55f0751334372819c47839887d"
+  }
+}

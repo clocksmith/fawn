@@ -1,0 +1,4 @@
+[PASS] dawn: webgpu=true adapter=true compute=true render=true bundle=true indirect=true timestamp=true xrCompatible=true copyExternal=true importExternal=true canvas=true upload64kb_us=15.200 dispatch_us=28.000
+[FAIL] doe: webgpu=true adapter=false compute=false render=false bundle=false indirect=false timestamp=false xrCompatible=false copyExternal=false importExternal=false canvas=false upload64kb_us=n/a dispatch_us=n/a
+report written: /Users/xyz/deco/doe/browser/chromium/artifacts/all-platform-20261026/mars-relocated-smoke.json
+delta (diagnostic only; positive=doe faster): writeBuffer64kb=n/a% dispatch=n/a%

@@ -1,0 +1,1 @@
+PASS public WGSL triangle, early release, discard initialization and packed uploads (physical Vulkan developer run: Intel(R) UHD Graphics (TGL GT2); not qualification)

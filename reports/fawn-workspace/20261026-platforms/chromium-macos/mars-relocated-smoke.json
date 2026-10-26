@@ -1,0 +1,713 @@
+{
+  "schemaVersion": 2,
+  "reportKind": "chromium-webgpu-playwright-smoke",
+  "benchmarkClass": "diagnostic",
+  "comparisonStatus": "diagnostic",
+  "claimStatus": "diagnostic",
+  "timingClass": "browser-operation-proxy",
+  "timingSource": "performance.now",
+  "generatedAt": "2026-10-26T21:22:12.312Z",
+  "hashAlgorithm": "sha256",
+  "runtimeSelectorPolicyPath": "/Users/xyz/deco/doe/config/browser-runtime-selector-policy.json",
+  "workloadIdentity": {
+    "kind": "browser_smoke_suite",
+    "workloadIds": [
+      "compute_increment",
+      "render_triangle",
+      "request_adapter_xr_compatible",
+      "copy_external_image_to_texture",
+      "import_external_texture",
+      "gpu_canvas_context",
+      "fawn_prismatic_lifecycle",
+      "write_buffer_64kb",
+      "compute_dispatch"
+    ],
+    "workloadHash": "6fafedf67e877f6bfea9610bead3a3424abb2d7bf4f3777e0fcd6d308f0162c6"
+  },
+  "invocation": {
+    "argv": [
+      "--chrome",
+      "/Users/xyz/deco/doe/browser/chromium/artifacts/all-platform-20261026/Moved Fawn Candidate.app/Contents/MacOS/Chromium-real",
+      "--doe-lib",
+      "/Users/xyz/deco/doe/browser/chromium/artifacts/all-platform-20261026/Moved Fawn Candidate.app/Contents/Frameworks/libwebgpu_doe_c.dylib",
+      "--chrome",
+      "/Users/xyz/deco/doe/browser/chromium/artifacts/all-platform-20261026/Moved Fawn Candidate.app/Contents/MacOS/Chromium-real",
+      "--doe-lib",
+      "/Users/xyz/deco/doe/browser/chromium/artifacts/all-platform-20261026/Moved Fawn Candidate.app/Contents/Frameworks/libwebgpu_doe_c.dylib",
+      "--mode",
+      "both",
+      "--strict",
+      "--sandbox",
+      "true",
+      "--out",
+      "browser/chromium/artifacts/all-platform-20261026/mars-relocated-smoke.json"
+    ],
+    "cwd": "/Users/xyz/deco/doe",
+    "nodeVersion": "v22.20.0",
+    "platform": "darwin",
+    "arch": "arm64"
+  },
+  "chromePath": "/Users/xyz/deco/doe/browser/chromium/artifacts/all-platform-20261026/Moved Fawn Candidate.app/Contents/MacOS/Chromium-real",
+  "headless": true,
+  "chromeArgs": [],
+  "mode": "both",
+  "methodology": {
+    "uploadIterations": 500,
+    "dispatchIterations": 200,
+    "uploadWarmupIterations": 50,
+    "dispatchWarmupIterations": 20,
+    "suiteTimeoutMs": 120000,
+    "operationTimeoutMs": 30000,
+    "strictMode": true,
+    "notes": [
+      "Browser harness output is diagnostic and not a strict L0 apples-to-apples claim artifact."
+    ]
+  },
+  "runtimeSelections": [
+    {
+      "selectionMode": "dawn",
+      "selectedRuntime": "dawn",
+      "forcedMode": "dawn",
+      "fallbackApplied": false,
+      "fallbackReasonCode": "",
+      "hiddenFallbackAllowed": false,
+      "profile": {
+        "profileId": "",
+        "vendor": "unknown",
+        "api": "unknown",
+        "deviceFamily": "unknown",
+        "driver": "unknown"
+      },
+      "adapterDenylist": {
+        "matched": false,
+        "reasonCode": "",
+        "profileId": "",
+        "vendor": "",
+        "api": "",
+        "deviceFamily": "",
+        "driverPattern": ""
+      },
+      "selectorVersion": "browser-runtime-selector-v1",
+      "artifactIdentity": {
+        "browserExecutablePath": "/Users/xyz/deco/doe/browser/chromium/artifacts/all-platform-20261026/Moved Fawn Candidate.app/Contents/MacOS/Chromium-real",
+        "browserExecutableSha256": "4309f473b6d3414692dbef2a60a89c3a8eea432b5df6646053d4c83ecace6021",
+        "dawnRuntimePath": "/Users/xyz/deco/doe/browser/chromium/artifacts/all-platform-20261026/Moved Fawn Candidate.app/Contents/MacOS/Chromium-real",
+        "dawnRuntimeSha256": "4309f473b6d3414692dbef2a60a89c3a8eea432b5df6646053d4c83ecace6021",
+        "doeLibPath": null,
+        "doeLibSha256": null
+      },
+      "launchArgsHash": "956e1210a60cbb23ed9b925a564347ffb65f7ef0e2cef093447b1d4d80a34657"
+    },
+    {
+      "selectionMode": "doe",
+      "selectedRuntime": "doe",
+      "forcedMode": "doe",
+      "fallbackApplied": false,
+      "fallbackReasonCode": "",
+      "hiddenFallbackAllowed": false,
+      "profile": {
+        "profileId": "",
+        "vendor": "unknown",
+        "api": "unknown",
+        "deviceFamily": "unknown",
+        "driver": "unknown"
+      },
+      "adapterDenylist": {
+        "matched": false,
+        "reasonCode": "",
+        "profileId": "",
+        "vendor": "",
+        "api": "",
+        "deviceFamily": "",
+        "driverPattern": ""
+      },
+      "selectorVersion": "browser-runtime-selector-v1",
+      "artifactIdentity": {
+        "browserExecutablePath": "/Users/xyz/deco/doe/browser/chromium/artifacts/all-platform-20261026/Moved Fawn Candidate.app/Contents/MacOS/Chromium-real",
+        "browserExecutableSha256": "4309f473b6d3414692dbef2a60a89c3a8eea432b5df6646053d4c83ecace6021",
+        "dawnRuntimePath": "/Users/xyz/deco/doe/browser/chromium/artifacts/all-platform-20261026/Moved Fawn Candidate.app/Contents/MacOS/Chromium-real",
+        "dawnRuntimeSha256": "4309f473b6d3414692dbef2a60a89c3a8eea432b5df6646053d4c83ecace6021",
+        "doeLibPath": "/Users/xyz/deco/doe/browser/chromium/artifacts/all-platform-20261026/Moved Fawn Candidate.app/Contents/Frameworks/libwebgpu_doe_c.dylib",
+        "doeLibSha256": "d0a77e01ba8d1da79439c332b6ddeb7f39520890e21b12f21b53d34278fc1ab9"
+      },
+      "launchArgsHash": "8ffdbbea11c02d2f1c17e05a1c4563d18a343ab59c2e174d8a5a93c6345c6ff7"
+    }
+  ],
+  "modeResults": [
+    {
+      "mode": "dawn",
+      "runtimeSelection": {
+        "selectionMode": "dawn",
+        "selectedRuntime": "dawn",
+        "forcedMode": "dawn",
+        "fallbackApplied": false,
+        "fallbackReasonCode": "",
+        "hiddenFallbackAllowed": false,
+        "profile": {
+          "profileId": "",
+          "vendor": "unknown",
+          "api": "unknown",
+          "deviceFamily": "unknown",
+          "driver": "unknown"
+        },
+        "adapterDenylist": {
+          "matched": false,
+          "reasonCode": "",
+          "profileId": "",
+          "vendor": "",
+          "api": "",
+          "deviceFamily": "",
+          "driverPattern": ""
+        },
+        "selectorVersion": "browser-runtime-selector-v1",
+        "artifactIdentity": {
+          "browserExecutablePath": "/Users/xyz/deco/doe/browser/chromium/artifacts/all-platform-20261026/Moved Fawn Candidate.app/Contents/MacOS/Chromium-real",
+          "browserExecutableSha256": "4309f473b6d3414692dbef2a60a89c3a8eea432b5df6646053d4c83ecace6021",
+          "dawnRuntimePath": "/Users/xyz/deco/doe/browser/chromium/artifacts/all-platform-20261026/Moved Fawn Candidate.app/Contents/MacOS/Chromium-real",
+          "dawnRuntimeSha256": "4309f473b6d3414692dbef2a60a89c3a8eea432b5df6646053d4c83ecace6021",
+          "doeLibPath": null,
+          "doeLibSha256": null
+        },
+        "launchArgsHash": "956e1210a60cbb23ed9b925a564347ffb65f7ef0e2cef093447b1d4d80a34657"
+      },
+      "shaderCompilerIdentity": {
+        "compilerSurface": "dawn_runtime_embedded_shader_compiler",
+        "compilerArtifactPath": "/Users/xyz/deco/doe/browser/chromium/artifacts/all-platform-20261026/Moved Fawn Candidate.app/Contents/MacOS/Chromium-real",
+        "compilerArtifactSha256": "4309f473b6d3414692dbef2a60a89c3a8eea432b5df6646053d4c83ecace6021",
+        "identitySource": "runtime_artifact_identity"
+      },
+      "runtimeArgs": [
+        "--use-webgpu-runtime=dawn"
+      ],
+      "launchArgs": [
+        "--disable-dev-shm-usage",
+        "--ignore-gpu-blocklist",
+        "--enable-unsafe-webgpu",
+        "--unsafely-treat-insecure-origin-as-secure=http://127.0.0.1:57351",
+        "--use-webgpu-runtime=dawn"
+      ],
+      "browserVersion": "148.0.7741.0",
+      "elapsedMs": 1759,
+      "apiSurface": "native",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/148.0.0.0 Safari/537.36",
+      "webgpuAvailable": true,
+      "adapterAvailable": true,
+      "adapterInfo": {
+        "vendor": "apple",
+        "architecture": "metal-3",
+        "device": "",
+        "description": "",
+        "subgroupMinSize": 32,
+        "subgroupMaxSize": 32
+      },
+      "features": [
+        "bgra8unorm-storage",
+        "chromium-experimental-subgroup-matrix",
+        "clip-distances",
+        "core-features-and-limits",
+        "depth-clip-control",
+        "depth32float-stencil8",
+        "dual-source-blending",
+        "float32-blendable",
+        "float32-filterable",
+        "indirect-first-instance",
+        "primitive-index",
+        "rg11b10ufloat-renderable",
+        "shader-f16",
+        "subgroups",
+        "texture-component-swizzle",
+        "texture-compression-astc",
+        "texture-compression-astc-sliced-3d",
+        "texture-compression-bc",
+        "texture-compression-bc-sliced-3d",
+        "texture-compression-etc2",
+        "texture-formats-tier1",
+        "texture-formats-tier2",
+        "timestamp-query"
+      ],
+      "limits": {
+        "maxTextureDimension1D": 16384,
+        "maxTextureDimension2D": 16384,
+        "maxTextureDimension3D": 2048,
+        "maxTextureArrayLayers": 2048,
+        "maxBindGroups": 4,
+        "maxBindingsPerBindGroup": 1000,
+        "maxDynamicUniformBuffersPerPipelineLayout": 10,
+        "maxDynamicStorageBuffersPerPipelineLayout": 8,
+        "maxSampledTexturesPerShaderStage": 48,
+        "maxSamplersPerShaderStage": 16,
+        "maxStorageBuffersPerShaderStage": 10,
+        "maxStorageTexturesPerShaderStage": 8,
+        "maxUniformBuffersPerShaderStage": 12,
+        "maxUniformBufferBindingSize": 65536,
+        "maxStorageBufferBindingSize": 4294967292,
+        "maxBufferSize": 4294967292,
+        "maxComputeInvocationsPerWorkgroup": 1024,
+        "maxComputeWorkgroupSizeX": 1024,
+        "maxComputeWorkgroupSizeY": 1024,
+        "maxComputeWorkgroupSizeZ": 64,
+        "maxComputeWorkgroupsPerDimension": 65535,
+        "maxComputeWorkgroupStorageSize": 32768
+      },
+      "wgslLanguageFeatures": [
+        "linear_indexing",
+        "packed_4x8_integer_dot_product",
+        "pointer_composite_access",
+        "readonly_and_readwrite_storage_textures",
+        "subgroup_id",
+        "subgroup_uniformity",
+        "swizzle_assignment",
+        "texture_and_sampler_let",
+        "uniform_buffer_standard_layout",
+        "unrestricted_pointer_parameters"
+      ],
+      "smoke": {
+        "computeIncrement": {
+          "pass": true,
+          "actual": [
+            2,
+            3,
+            4,
+            5
+          ],
+          "expected": [
+            2,
+            3,
+            4,
+            5
+          ],
+          "error": null
+        },
+        "renderTriangle": {
+          "pass": true,
+          "centerRgba": [
+            255,
+            0,
+            0,
+            255
+          ],
+          "error": null
+        },
+        "requestAdapterXrCompatible": {
+          "pass": true,
+          "returnedAdapter": true,
+          "forwarded": null,
+          "observedOptions": null,
+          "error": null
+        },
+        "copyExternalImageToTexture": {
+          "pass": true,
+          "topLeftRgba": [
+            0,
+            255,
+            0,
+            255
+          ],
+          "sourceType": "ImageBitmap",
+          "attempts": [
+            {
+              "sourceType": "ImageBitmap",
+              "pass": true,
+              "topLeftRgba": [
+                0,
+                255,
+                0,
+                255
+              ]
+            }
+          ],
+          "error": null
+        },
+        "importExternalTexture": {
+          "pass": true,
+          "centerRgba": [
+            255,
+            0,
+            0,
+            255
+          ],
+          "error": null
+        },
+        "renderBundle": {
+          "pass": true,
+          "centerRgba": [
+            255,
+            0,
+            0,
+            255
+          ],
+          "error": null
+        },
+        "renderIndirect": {
+          "pass": true,
+          "centerRgba": [
+            255,
+            0,
+            0,
+            255
+          ],
+          "error": null
+        },
+        "timestampQuery": {
+          "pass": true,
+          "actual": [
+            "808085511940083",
+            "808085511946250"
+          ],
+          "error": null
+        },
+        "recovery": {
+          "validationError": {
+            "pass": true,
+            "captured": true,
+            "messageCount": 1,
+            "error": null
+          },
+          "deviceLost": {
+            "pass": true,
+            "promiseAvailable": true,
+            "error": null
+          },
+          "postValidationCompute": {
+            "pass": true,
+            "actual": [
+              2,
+              3,
+              4,
+              5
+            ],
+            "expected": [
+              2,
+              3,
+              4,
+              5
+            ],
+            "error": null
+          }
+        }
+      },
+      "webgpuCanvasApi": {
+        "offscreenCanvasAvailable": true,
+        "webgpuContextAvailable": true,
+        "webgpuContextHasConfigure": true,
+        "webgpuContextHasGetCurrentTexture": true,
+        "preferredCanvasFormatSupported": true,
+        "preferredCanvasFormat": "bgra8unorm"
+      },
+      "webgpuDeviceApi": {
+        "hasImportExternalTexture": true,
+        "hasCopyExternalImageToTexture": true
+      },
+      "benches": {
+        "writeBuffer64kbUsPerOp": 15.200000047683716,
+        "computeDispatchUsPerOp": 28.00000011920929,
+        "iterations": {
+          "upload": 500,
+          "dispatch": 200
+        },
+        "errors": []
+      },
+      "diagnostics": {
+        "uncapturedErrors": [
+          {
+            "device": "primary",
+            "error": {
+              "name": "",
+              "message": "Error while parsing WGSL: :4:28 error: unresolved type 'missing_type'\n                let value: missing_type = 1;\n                           ^^^^^^^^^^^^\n\n\n - While calling [Device].CreateShaderModule([ShaderModuleDescriptor]).\n",
+              "string": "[object GPUValidationError]"
+            }
+          }
+        ],
+        "deviceLostEvents": [
+          {
+            "device": "timestamp",
+            "reason": "destroyed",
+            "message": "Device was destroyed."
+          }
+        ]
+      },
+      "errors": [],
+      "fawnPrismaticLifecycle": {
+        "pass": true,
+        "splashToFluid": true,
+        "transientAdapterRetry": {
+          "adapterRequestCount": 2,
+          "contextAvailable": true
+        }
+      },
+      "adapterIdentity": {
+        "adapterInfoSha256": "eb787198d5620ad9d765eeeeac23b72feb8eb84ead7f6e887290f555c4ac04ec",
+        "featuresSha256": "63992bff836e55a58e2872f880e368cac153a66c61add6ce1d3ef5fd9368fad0",
+        "limitsSha256": "7b3269129689cf84fb126a4df19c0c36fa4d58e5da56d564718892853d8bacfb",
+        "featureCount": 23,
+        "limitCount": 22,
+        "adapter": "metal-3"
+      },
+      "activeRuntimeProof": {
+        "schemaVersion": 2,
+        "providerIdentitySource": "runtimeSelector",
+        "hardwareIdentitySource": "wgpuAdapterGetInfo",
+        "selectedRuntime": "dawn",
+        "expected": {
+          "provider": "dawn",
+          "fallbackApplied": false,
+          "hiddenFallbackAllowed": false,
+          "hardwareVendorMustBeNonEmpty": true,
+          "hardwareArchitectureMustBeNonEmpty": true
+        },
+        "provider": {
+          "selectionMode": "dawn",
+          "selectedRuntime": "dawn",
+          "forcedMode": "dawn",
+          "fallbackApplied": false,
+          "hiddenFallbackAllowed": false,
+          "runtimeArtifactSha256": "4309f473b6d3414692dbef2a60a89c3a8eea432b5df6646053d4c83ecace6021",
+          "launchArgsHash": "956e1210a60cbb23ed9b925a564347ffb65f7ef0e2cef093447b1d4d80a34657"
+        },
+        "hardware": {
+          "vendor": "apple",
+          "architecture": "metal-3",
+          "device": "",
+          "description": ""
+        },
+        "matched": true
+      },
+      "browserClose": {
+        "attempted": true,
+        "pass": true,
+        "elapsedMs": 115,
+        "error": null
+      },
+      "previousHash": null,
+      "hash": "1a4a58aaed89bede18cd6bd66a9af3437061dd6f20496f744542b8904b6afa51"
+    },
+    {
+      "mode": "doe",
+      "runtimeSelection": {
+        "selectionMode": "doe",
+        "selectedRuntime": "doe",
+        "forcedMode": "doe",
+        "fallbackApplied": false,
+        "fallbackReasonCode": "",
+        "hiddenFallbackAllowed": false,
+        "profile": {
+          "profileId": "",
+          "vendor": "unknown",
+          "api": "unknown",
+          "deviceFamily": "unknown",
+          "driver": "unknown"
+        },
+        "adapterDenylist": {
+          "matched": false,
+          "reasonCode": "",
+          "profileId": "",
+          "vendor": "",
+          "api": "",
+          "deviceFamily": "",
+          "driverPattern": ""
+        },
+        "selectorVersion": "browser-runtime-selector-v1",
+        "artifactIdentity": {
+          "browserExecutablePath": "/Users/xyz/deco/doe/browser/chromium/artifacts/all-platform-20261026/Moved Fawn Candidate.app/Contents/MacOS/Chromium-real",
+          "browserExecutableSha256": "4309f473b6d3414692dbef2a60a89c3a8eea432b5df6646053d4c83ecace6021",
+          "dawnRuntimePath": "/Users/xyz/deco/doe/browser/chromium/artifacts/all-platform-20261026/Moved Fawn Candidate.app/Contents/MacOS/Chromium-real",
+          "dawnRuntimeSha256": "4309f473b6d3414692dbef2a60a89c3a8eea432b5df6646053d4c83ecace6021",
+          "doeLibPath": "/Users/xyz/deco/doe/browser/chromium/artifacts/all-platform-20261026/Moved Fawn Candidate.app/Contents/Frameworks/libwebgpu_doe_c.dylib",
+          "doeLibSha256": "d0a77e01ba8d1da79439c332b6ddeb7f39520890e21b12f21b53d34278fc1ab9"
+        },
+        "launchArgsHash": "8ffdbbea11c02d2f1c17e05a1c4563d18a343ab59c2e174d8a5a93c6345c6ff7"
+      },
+      "shaderCompilerIdentity": {
+        "compilerSurface": "doe_runtime_embedded_shader_compiler",
+        "compilerArtifactPath": "/Users/xyz/deco/doe/browser/chromium/artifacts/all-platform-20261026/Moved Fawn Candidate.app/Contents/Frameworks/libwebgpu_doe_c.dylib",
+        "compilerArtifactSha256": "d0a77e01ba8d1da79439c332b6ddeb7f39520890e21b12f21b53d34278fc1ab9",
+        "identitySource": "runtime_artifact_identity"
+      },
+      "runtimeArgs": [
+        "--use-webgpu-runtime=doe",
+        "--doe-webgpu-library-path=/Users/xyz/deco/doe/browser/chromium/artifacts/all-platform-20261026/Moved Fawn Candidate.app/Contents/Frameworks/libwebgpu_doe_c.dylib"
+      ],
+      "launchArgs": [
+        "--disable-dev-shm-usage",
+        "--ignore-gpu-blocklist",
+        "--enable-unsafe-webgpu",
+        "--unsafely-treat-insecure-origin-as-secure=http://127.0.0.1:57351",
+        "--use-webgpu-runtime=doe",
+        "--doe-webgpu-library-path=/Users/xyz/deco/doe/browser/chromium/artifacts/all-platform-20261026/Moved Fawn Candidate.app/Contents/Frameworks/libwebgpu_doe_c.dylib"
+      ],
+      "browserVersion": "148.0.7741.0",
+      "elapsedMs": 30652,
+      "apiSurface": "native",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/148.0.0.0 Safari/537.36",
+      "webgpuAvailable": true,
+      "adapterAvailable": false,
+      "adapterInfo": null,
+      "features": [],
+      "limits": {},
+      "wgslLanguageFeatures": [],
+      "smoke": {
+        "computeIncrement": {
+          "pass": false,
+          "actual": null,
+          "expected": [
+            2,
+            3,
+            4,
+            5
+          ],
+          "error": null
+        },
+        "renderTriangle": {
+          "pass": false,
+          "centerRgba": null,
+          "error": null
+        },
+        "requestAdapterXrCompatible": {
+          "pass": false,
+          "returnedAdapter": false,
+          "forwarded": null,
+          "observedOptions": null,
+          "error": null
+        },
+        "copyExternalImageToTexture": {
+          "pass": false,
+          "topLeftRgba": null,
+          "sourceType": null,
+          "attempts": [],
+          "error": null
+        },
+        "importExternalTexture": {
+          "pass": false,
+          "centerRgba": null,
+          "error": null
+        },
+        "renderBundle": {
+          "pass": false,
+          "centerRgba": null,
+          "error": null
+        },
+        "renderIndirect": {
+          "pass": false,
+          "centerRgba": null,
+          "error": null
+        },
+        "timestampQuery": {
+          "pass": false,
+          "actual": null,
+          "error": null
+        },
+        "recovery": {
+          "validationError": {
+            "pass": false,
+            "captured": false,
+            "messageCount": 0,
+            "error": null
+          },
+          "deviceLost": {
+            "pass": false,
+            "promiseAvailable": false,
+            "error": null
+          },
+          "postValidationCompute": {
+            "pass": false,
+            "actual": null,
+            "expected": [
+              2,
+              3,
+              4,
+              5
+            ],
+            "error": null
+          }
+        }
+      },
+      "webgpuCanvasApi": {
+        "offscreenCanvasAvailable": false,
+        "webgpuContextAvailable": false,
+        "webgpuContextHasConfigure": false,
+        "webgpuContextHasGetCurrentTexture": false,
+        "preferredCanvasFormatSupported": false,
+        "preferredCanvasFormat": null
+      },
+      "webgpuDeviceApi": {
+        "hasImportExternalTexture": false,
+        "hasCopyExternalImageToTexture": false
+      },
+      "benches": {
+        "writeBuffer64kbUsPerOp": null,
+        "computeDispatchUsPerOp": null,
+        "iterations": {
+          "upload": 500,
+          "dispatch": 200
+        },
+        "errors": []
+      },
+      "diagnostics": {
+        "uncapturedErrors": [],
+        "deviceLostEvents": []
+      },
+      "errors": [
+        "requestAdapter returned null",
+        "fawn prismatic lifecycle: page.waitForFunction: Timeout 30000ms exceeded.\n    at runFawnPrismaticLifecycleProbe (/Users/xyz/deco/doe/browser/chromium/scripts/webgpu-playwright-smoke.mjs:1376:16)\n    at async runMode (/Users/xyz/deco/doe/browser/chromium/scripts/webgpu-playwright-smoke.mjs:2539:32)\n    at async main (/Users/xyz/deco/doe/browser/chromium/scripts/webgpu-playwright-smoke.mjs:2637:22)"
+      ],
+      "fawnPrismaticLifecycle": {
+        "pass": false,
+        "error": "page.waitForFunction: Timeout 30000ms exceeded.\n    at runFawnPrismaticLifecycleProbe (/Users/xyz/deco/doe/browser/chromium/scripts/webgpu-playwright-smoke.mjs:1376:16)\n    at async runMode (/Users/xyz/deco/doe/browser/chromium/scripts/webgpu-playwright-smoke.mjs:2539:32)\n    at async main (/Users/xyz/deco/doe/browser/chromium/scripts/webgpu-playwright-smoke.mjs:2637:22)"
+      },
+      "adapterIdentity": {
+        "adapterInfoSha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "featuresSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "limitsSha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "featureCount": 0,
+        "limitCount": 0
+      },
+      "activeRuntimeProof": {
+        "schemaVersion": 2,
+        "providerIdentitySource": "runtimeSelector",
+        "hardwareIdentitySource": "wgpuAdapterGetInfo",
+        "selectedRuntime": "doe",
+        "expected": {
+          "provider": "doe",
+          "fallbackApplied": false,
+          "hiddenFallbackAllowed": false,
+          "hardwareVendorMustBeNonEmpty": true,
+          "hardwareArchitectureMustBeNonEmpty": true
+        },
+        "provider": {
+          "selectionMode": "doe",
+          "selectedRuntime": "doe",
+          "forcedMode": "doe",
+          "fallbackApplied": false,
+          "hiddenFallbackAllowed": false,
+          "runtimeArtifactSha256": "d0a77e01ba8d1da79439c332b6ddeb7f39520890e21b12f21b53d34278fc1ab9",
+          "launchArgsHash": "8ffdbbea11c02d2f1c17e05a1c4563d18a343ab59c2e174d8a5a93c6345c6ff7"
+        },
+        "hardware": {
+          "vendor": "",
+          "architecture": "",
+          "device": "",
+          "description": ""
+        },
+        "matched": false
+      },
+      "browserClose": {
+        "attempted": true,
+        "pass": true,
+        "elapsedMs": 156,
+        "error": null
+      },
+      "previousHash": "1a4a58aaed89bede18cd6bd66a9af3437061dd6f20496f744542b8904b6afa51",
+      "hash": "33eb971c0f435f85d7096a33655b9f7d26a875d52dcd17eb7a3ffc919fc5c15f"
+    }
+  ],
+  "comparison": {
+    "writeBuffer64kbDeltaPercent": null,
+    "computeDispatchDeltaPercent": null,
+    "bothComputeSmokePass": false,
+    "bothRenderSmokePass": false,
+    "bothRenderBundleSmokePass": false,
+    "bothRenderIndirectSmokePass": false,
+    "bothTimestampQuerySmokePass": false
+  },
+  "reportHash": "62b826868cb9ababf8e3a832bd377e1bd8dabe2d4fb8d56c960e7803fc444d52"
+}

@@ -18,8 +18,10 @@ advantages: the revalidating control reproduced both.
   against Playwright agent tooling.
 - **Release-qualified**: not established.
 
-The scope is the recorded headless Chromium binary and this Linux host. Scripted
-workflows show no material advantage over competent stock automation.
+Behavioral scope covers the recorded Google Chrome builds on Windows, macOS and
+Linux in the [platform evidence](../../reports/fawn-workspace/20261026-platforms/README.md).
+Product comparisons retain their own recorded Linux scope. Scripted workflows
+show no material advantage over competent stock automation.
 
 ## Service
 
@@ -45,18 +47,14 @@ contains:
 
 ## Behavioral qualification
 
-The [admitted result](../../reports/fawn-workspace/20261015-service-v3-3/README.md) ran the frozen
-[case set](../../config/fawn-workspace-qualification.json) through both adapters
-and all three workflows on commit `a1f8e4573`, the current service source.
-[The semantic validator](../../browser/workspace/qualification/validate.js)
-admitted it with no failures. Every requirement of strategy steps 1–4, and the
-behavioral requirements of step 5, are established in its
-[verdict](../../reports/fawn-workspace/20261015-service-v3-3/qualification/verdict.json).
-It requalifies the service after the `url-not-equals` condition and region-group
-membership in the outline view. Step 5's suites, the scripted comparison and the
-Chrome stable runs keep their own commits and their own
-[qualification](../../reports/fawn-workspace/20261015-revalidated-control/qualification/verdict.json)
-of the source they ran.
+The [platform evidence](../../reports/fawn-workspace/20261026-platforms/README.md)
+binds full runs of the frozen [case set](../../config/fawn-workspace-qualification.json)
+through both adapters and all three workflows on each recorded platform.
+The [semantic validator](../../browser/workspace/qualification/validate.js)
+admits the retained results. Strategy steps 1–4 and the behavioral requirements
+of step 5 bind to the [primary verdict](../../reports/fawn-workspace/20261026-platforms/qualification/verdict.json).
+Step 5's product-comparison suites retain their original source and scope;
+platform compatibility does not rerun or broaden their product-advantage claims.
 
 The cases cover:
 - process kills before dispatch, while the application holds the effect, and
@@ -229,16 +227,14 @@ which this machine does not have.
 
 ## Compatibility
 
-The frozen case set passed in full, through both adapters, on Playwright's
-Chrome for Testing headless shell and on installed Google Chrome stable, a later
-major version with a different headless mode
-([verdict](../../reports/fawn-workspace/20261015-revalidated-control/compatibility-chrome/verdict.json)).
-It also passed headed on Chrome stable, on a virtual display (Xvfb)
-([verdict](../../reports/fawn-workspace/20261015-revalidated-control/compatibility-chrome-headed/verdict.json)).
-This is compatibility evidence on this Linux host, not release qualification.
-Other engines, operating systems, physical-display sessions and multiple pages
-are untested; multi-page support waits until the model-driven comparison is
-done.
+The current frozen case set is admitted through both adapters on installed
+Google Chrome on [Windows](../../reports/fawn-workspace/20261026-platforms/compatibility-windows/verdict.json),
+[macOS](../../reports/fawn-workspace/20261026-platforms/compatibility-macos/verdict.json)
+and [Linux](../../reports/fawn-workspace/20261026-platforms/qualification/verdict.json).
+Linux also has a [headed Xvfb run](../../reports/fawn-workspace/20261026-platforms/compatibility-linux-headed/verdict.json).
+Exact browser images, source commits and operating systems live in those receipts.
+This establishes compatibility only for the recorded builds and fixtures.
+Other engines, physical-display sessions and multiple pages remain unqualified.
 
 ## Limits and open work
 
@@ -257,10 +253,11 @@ Open work:
   frozen before implementation. Its workloads are the frozen model-driven agent
   suite, unchanged browser Doppler generation, the UMAP SGD workload and a pinned
   upstream Three.js WebGPU application. It needs a forced-Doe Chromium build in
-  which the page's WebGPU work is Doe-owned. None exists here: the external
-  Chromium lane drive is not attached, the local checkout is empty, and the last
-  legacy-shell archive (`browser/chromium/artifacts/20260811T130500Z/`) failed
-  clean installation and its smoke checks. Its agent suite has its own approved
+  which the page's WebGPU work is Doe-owned. The
+  [platform verification](../../reports/fawn-workspace/20261026-platforms/README.md#fawn-chromium-boundary-not-verified-on-all-platforms)
+  is blocked by an unmatched retained Mac browser artifact, unavailable matching
+  source on the external lane drive, and absent Fawn browser builds on Windows
+  and Linux. Its agent suite has its own approved
   hard ceiling, and no billed request runs before the forced-Doe build passes its
   complete build gate.
 - broader workloads, compatibility, deployment qualification and selective

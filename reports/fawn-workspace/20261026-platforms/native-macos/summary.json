@@ -1,0 +1,30 @@
+{
+  "host": "mars",
+  "source_commit": "31d954557cd1eb990c79566606ce0ea6bc9bdf27",
+  "source_status": "",
+  "scope": "Focused physical Metal developer controls; no browser or release qualification",
+  "results": [
+    {
+      "name": "compute",
+      "exit_code": 0,
+      "log": "/Users/xyz/deco/doe/bench/out/mars-metal-20261026/compute.log",
+      "sha256": "0f746bafe5c8ca31de79e4aeacab94f5af106f68dd5af4d6b1159d8985a3522f"
+    },
+    {
+      "name": "instance-devices",
+      "exit_code": 0,
+      "log": "/Users/xyz/deco/doe/bench/out/mars-metal-20261026/instance-devices.log",
+      "sha256": "a431ddc04e1216f8caf04e565b8c20b86ca2ac07e71042c11eec1841a00f0a86"
+    },
+    {
+      "name": "offscreen-triangle",
+      "exit_code": 0,
+      "log": "/Users/xyz/deco/doe/bench/out/mars-metal-20261026/offscreen-triangle.log",
+      "sha256": "3ae248d8924a4d20921f06ffa8d5063dfd3596c50594d65637296b204636682f"
+    }
+  ],
+  "library_sha256": {
+    "libwebgpu_doe_c.dylib": "cccfcbb2f36a713df8c044fa50d5e9f5a103e8accc5abe22258cb871069b7d66",
+    "libdoe_compiler.dylib": "e8665506c7e1ce4418e3199002992e0453d432e14f63d008ed9f3f275cb7013e"
+  }
+}

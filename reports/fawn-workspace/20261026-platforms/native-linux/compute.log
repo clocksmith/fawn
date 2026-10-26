@@ -1,0 +1,7 @@
+doe: wgpuBufferGetMappedRange failed (resource status 7)
+doe: wgpuBufferGetConstMappedRange failed (resource status 8)
+doe: wgpuBufferGetConstMappedRange failed (resource status 9)
+doe: wgpuBufferGetMappedRange failed (resource status 7)
+doe: wgpuBufferGetConstMappedRange failed (resource status 13)
+Explicit WebGPU C path adapter (physical Vulkan developer run: Intel(R) UHD Graphics (TGL GT2); not qualification)
+PASS public ABI: compute/readback, OOB guards, dynamic offsets, cross-device rejection, one-shot submit, early releases, callback reentry and map cancellation (physical Vulkan developer run: Intel(R) UHD Graphics (TGL GT2); not qualification)

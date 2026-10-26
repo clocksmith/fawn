@@ -1,0 +1,152 @@
+{
+  "host": "mars",
+  "scope": "Sandboxed actual Fawn Chromium integration verification; not release qualified",
+  "source_commit": "2fc67a8839755eae4db3d52e3a2d44e369d9a036",
+  "source_files": [
+    {
+      "path": "/Users/xyz/deco/doe/browser/chromium/scripts/patch-chromium-app-doe.sh",
+      "bytes": 11319,
+      "sha256": "eb31137ec5cb2fb012f15a7748d88874497cd87ef9ad7171498d3e1e9a0ee0cf"
+    },
+    {
+      "path": "/Users/xyz/deco/doe/browser/chromium/scripts/webgpu-playwright-smoke.mjs",
+      "bytes": 105310,
+      "sha256": "f2ba097e4de70c7e042b48891507cb012b80435684d614e453ed5a4f5418552f"
+    },
+    {
+      "path": "/Users/xyz/deco/doe/bench/tests/test_browser_doe_lib_defaults.py",
+      "bytes": 30960,
+      "sha256": "4098bd5d44548166a9be756f9d38f5767e5d331f288fcd02e9992b2c08f6688b"
+    },
+    {
+      "path": "/Users/xyz/deco/doe/bench/tests/test_browser_smoke_lifecycle.py",
+      "bytes": 3286,
+      "sha256": "6c67f69d56721f9748a1af3536b46ab8b040800603d6c203d9fc4c866ec8bca6"
+    },
+    {
+      "path": "/Users/xyz/deco/doe/browser/chromium/patches/dawn-doe-runtime.patch",
+      "bytes": 23939,
+      "sha256": "602ff9c5ce364f6e5b4e86ca00d8bf3ed412d20654303ece8dc6518b958a4ba9"
+    },
+    {
+      "path": "/Users/xyz/deco/doe/runtime/c/native/tests/browser_required_procedures.py",
+      "bytes": 2239,
+      "sha256": "4a1f33aebf751109bd0cea2b564cc16119db4b215d9d029b9455d1b65b3c53b8"
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "/Users/xyz/deco/doe/browser/chromium/artifacts/all-platform-20261026/mac-package-build.log",
+      "bytes": 145,
+      "sha256": "67cdf78ba750dc3ce7d036bf991619bd9af29d5354ad3dea620c33c02dd49eb5"
+    },
+    {
+      "path": "/Users/xyz/deco/doe/browser/chromium/artifacts/all-platform-20261026/mac-boundary-probe.log",
+      "bytes": 4520,
+      "sha256": "57bb018a2e7cc6af814df7550259090ed34abdb7244b1c04ffd384690ddb9081"
+    },
+    {
+      "path": "/Users/xyz/deco/doe/browser/chromium/artifacts/all-platform-20261026/mac-bundled-boundary-probe.log",
+      "bytes": 3937,
+      "sha256": "d2b6728f73efd7af35b756f7c680edc11f8b45dd9d9f9b904dbad0f67b716d2d"
+    },
+    {
+      "path": "/Users/xyz/deco/doe/browser/chromium/artifacts/all-platform-20261026/mac-relocated-boundary-probe.log",
+      "bytes": 3956,
+      "sha256": "3a6beeb42479f1348bf2385e6cacc67a4bde5ff6d9e1b984c68f7e7ebb73f633"
+    },
+    {
+      "path": "/Users/xyz/deco/doe/browser/chromium/artifacts/all-platform-20261026/mars-relocated-smoke.json",
+      "bytes": 24802,
+      "sha256": "1c72d3f872875c83d452a2b19bbbe8d9dba16395d04a8774af91577e7a5b6e66"
+    },
+    {
+      "path": "/Users/xyz/deco/doe/browser/chromium/artifacts/all-platform-20261026/mars-relocated-smoke.verdict.json",
+      "bytes": 2762,
+      "sha256": "eb9bc2366b64f4493464cab7cbc16881f35143b8d18165dbd83e1efb623fedef"
+    },
+    {
+      "path": "/Users/xyz/deco/doe/browser/chromium/artifacts/all-platform-20261026/Moved Fawn Candidate.app/Contents/MacOS/Chromium-real",
+      "bytes": 68560,
+      "sha256": "4309f473b6d3414692dbef2a60a89c3a8eea432b5df6646053d4c83ecace6021"
+    },
+    {
+      "path": "/Users/xyz/deco/doe/browser/chromium/artifacts/all-platform-20261026/Moved Fawn Candidate.app/Contents/Frameworks/libwebgpu_doe_c.dylib",
+      "bytes": 725192,
+      "sha256": "d0a77e01ba8d1da79439c332b6ddeb7f39520890e21b12f21b53d34278fc1ab9"
+    },
+    {
+      "path": "/Users/xyz/deco/doe/browser/chromium/artifacts/all-platform-20261026/Moved Fawn Candidate.app/Contents/Frameworks/libdoe_compiler.dylib",
+      "bytes": 503832,
+      "sha256": "e8665506c7e1ce4418e3199002992e0453d432e14f63d008ed9f3f275cb7013e"
+    },
+    {
+      "path": "/Users/xyz/deco/doe/browser/chromium/artifacts/all-platform-20261026/Moved Fawn Candidate.app/Contents/Frameworks/Chromium Framework.framework/Versions/Current/Chromium Framework",
+      "bytes": 245721792,
+      "sha256": "1ec2e2bacd151e179d0e85f16c3ac2ec76b947f8ad00485dcaa746628ff5fa39"
+    },
+    {
+      "path": "/tmp/fawn-mac-relocatable-20261026/stage/MANIFEST.json",
+      "bytes": 674968,
+      "sha256": "3e568f0bf908c2cb922e8e7c9943cfe508ee17098d983fbda5d7cc1a0a94f67f"
+    }
+  ],
+  "checks": {
+    "relocatable_C_package": "PASS",
+    "wrapper_refresh_and_relocation_controls": "PASS",
+    "lifecycle_failure_preserves_completed_suite_control": "PASS",
+    "current_required_procedures": {
+      "required": 138,
+      "all_resolve": true,
+      "both_string_view_lengths": true
+    },
+    "sandboxed_Dawn_browser_smoke": "PASS",
+    "sandboxed_forced_Doe_browser_smoke": "FAIL",
+    "nonrelocatable_C_runtime_preflight_rejection": "PASS"
+  },
+  "first_failures": [
+    {
+      "boundary": "external build directory to GPU sandbox",
+      "result": "runtime_artifact_load_failed: file system sandbox blocked open()",
+      "resolution": "canonical app patcher bundles runtime and compiler with @loader_path; relocated sandboxed candidate loads them"
+    },
+    {
+      "boundary": "retained Chromium artifact to current native C proc table",
+      "result": "wire_proc_table_incomplete: wgpuBufferCreateTexelView",
+      "current_source_requires_this_procedure": false,
+      "resolution": null
+    }
+  ],
+  "browser_source_binding": {
+    "build_metadata": {
+      "target": "chrome",
+      "releaseProfile": "official",
+      "argsSha256": "5bba03f88bf3a61d9a28c7615f0e744375cf02e413243953b70f74496fe64907"
+    },
+    "matching_source": "/Volumes/MACOS/fawn-browser/src",
+    "matching_source_exists": false,
+    "external_volume_mounted": false,
+    "status": "retained browser artifact has a loader surface that differs from current source patch; matching build source unavailable"
+  },
+  "implementation_commit": "d691ac483",
+  "browser_candidates": [
+    {
+      "path": "/Users/xyz/Applications/Fawn.app",
+      "resolved": "/Users/xyz/Applications/Fawn.app",
+      "main_sha256": "4309f473b6d3414692dbef2a60a89c3a8eea432b5df6646053d4c83ecace6021",
+      "framework_sha256": "1ec2e2bacd151e179d0e85f16c3ac2ec76b947f8ad00485dcaa746628ff5fa39"
+    },
+    {
+      "path": "browser/chromium/out/fawn_release_local/Fawn.app",
+      "resolved": "/Users/xyz/deco/doe/browser/chromium/out/fawn_release_local/Fawn.app",
+      "main_sha256": "4309f473b6d3414692dbef2a60a89c3a8eea432b5df6646053d4c83ecace6021",
+      "framework_sha256": "1ec2e2bacd151e179d0e85f16c3ac2ec76b947f8ad00485dcaa746628ff5fa39"
+    },
+    {
+      "path": "browser/chromium_webgpu_lane/out/fawn_release_local/Fawn.app",
+      "resolved": "/Users/xyz/deco/doe/browser/chromium_webgpu_lane/out/fawn_release_local/Fawn.app",
+      "main_sha256": "575a24eec93d240fea648ce6109a922b08e976ed03641cc0bafa92773a554073",
+      "framework_sha256": "8b84c32c4f187dd1f7bff1749e13ac312cb5ad834ffeded1717179eabc30df3c"
+    }
+  ]
+}

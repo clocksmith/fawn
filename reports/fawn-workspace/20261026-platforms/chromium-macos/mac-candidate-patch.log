@@ -1,0 +1,4 @@
+patched app bundle: browser/chromium/artifacts/all-platform-20261026/FawnCandidate.app
+runtime default: --use-webgpu-runtime=doe --doe-webgpu-library-path=browser/chromium/artifacts/all-platform-20261026/FawnCandidate.app/Contents/Frameworks/libwebgpu_doe_c.dylib
+app name: Fawn
+app icon: /Users/xyz/deco/doe/browser/chromium/assets/logo/source/fawn-icon-main.svg

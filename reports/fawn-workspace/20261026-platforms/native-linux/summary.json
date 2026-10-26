@@ -1,0 +1,39 @@
+{
+  "scope": "Focused developer controls on Suby, no release/browser/performance or whole-backend qualification",
+  "source_commit": "d25e075341219fc398dedb9286c2669a1b966221",
+  "worktree_status": "",
+  "host": "Linux suby 6.8.0-90-generic #91-Ubuntu SMP PREEMPT_DYNAMIC Tue Nov 18 14:14:30 UTC 2025 x86_64 x86_64 x86_64 GNU/Linux",
+  "compiler": "gcc (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0",
+  "physical_selection": {
+    "VK_ICD_FILENAMES": "/usr/share/vulkan/icd.d/intel_icd.x86_64.json",
+    "DOE_C_TEST_ADAPTER": "physical",
+    "DOE_C_TEST_BACKEND": "vulkan"
+  },
+  "physical_clients": {
+    "compute": "PASS",
+    "instance-devices": "PASS",
+    "async-submit": "PASS",
+    "offscreen-triangle": "PASS"
+  },
+  "sanitizer_checks": {
+    "test_dxil_mapping_toolchain": 230,
+    "test_planner": 69,
+    "test_reference_emit": 92
+  },
+  "sanitizers": "address,undefined; detect_leaks=0; halt_on_error=1",
+  "initial_invocation_error": "Uppercase Vulkan rejected by adapter test env parser before device creation; corrected to lowercase vulkan; retained in compute.invalid-backend-environment.log",
+  "files": {
+    "native/libwebgpu_doe_c.so": "98364152ea450a1f2e11fc007fb625f97d08a868a79e2302b23b6c89b6fc11f8",
+    "native/libdoe_compiler.so": "582df16458bf7138a519ed44eb65790999ac3260ecc451a58bf2bab2d5cd33c1",
+    "native/compute": "8b9b8703c80a16735e79e0bb1324ac75d0231a6367681510e7329e9ace788ca6",
+    "native/instance-devices": "5d2546666d739229ce3003d3badf44ae9a8e1924cdd99121bf0bd09fbe202f75",
+    "native/async-submit": "163365a4b3758ab0a9a72fbc936efa72b13522887c489cc6b19a0132ca1e2430",
+    "native/offscreen-triangle": "55fdb88b5f2fb82421630ff99eb30ed708348bbba3de77486b04d7a50120ce16",
+    "compute.log": "3edeb464054969cfaa0fdff86dbb3ebb4f752374ea29342af547a2b5a3d99400",
+    "instance-devices.log": "95db2ea1dc1be8bfcec34b415281544ad56afc222092b2c611ccd5e8d6de8bfc",
+    "async-submit.log": "e73d57f97bea368b608f74b2368098648334fcd42710c52d222d5733173c7fb5",
+    "offscreen-triangle.log": "9b86dccf4ef1739f9415b58203455b9a8ba0ae7cab4b114defebd84ddfc8324c",
+    "compiler-sanitize.log": "d91c154d1807b9732a9968c99199c84e7937a88ebf9dbad1b8842a423c0a4e09",
+    "vulkaninfo.txt": "71808b599ea99faff7e735cdfcf5f648bff27e9972d49f9ea090b8f8f7932ed1"
+  }
+}

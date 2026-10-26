@@ -1,0 +1,1 @@
+C runtime needs @loader_path; build it with runtime/c/tools/build-native-package.py
