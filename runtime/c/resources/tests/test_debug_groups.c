@@ -44,8 +44,9 @@ static void test_encoder_groups(void)
             assert(doe_resource_commands_settle(commands, DOE_RESOURCE_OK) == DOE_RESOURCE_OK);
         } else {
             assert(!commands && f.allocations == allocations);
-            assert(doe_resource_encoder_debug(encoder, DOE_RESOURCE_DEBUG_POP) == expected);
-            assert(doe_resource_encoder_debug(encoder, DOE_RESOURCE_DEBUG_MARKER) == expected);
+            /* After Finish, receiver state takes precedence over the old error. */
+            assert(doe_resource_encoder_debug(encoder, DOE_RESOURCE_DEBUG_POP) == DOE_RESOURCE_STATE);
+            assert(doe_resource_encoder_debug(encoder, DOE_RESOURCE_DEBUG_MARKER) == DOE_RESOURCE_STATE);
         }
         doe_resource_encoder_release(encoder);
         empty(&f);
@@ -264,14 +265,50 @@ static void test_compute_invalidation(void)
     }
 }
 
+/* Finishing consumes recording state even when the first failure was OOM.
+ * Keep that first error for diagnostics, not for subsequent closed-state calls. */
+static void test_finished_failure(void)
+{
+    for (unsigned allocation_failure = 0; allocation_failure < 2; allocation_failure++) {
+        fixture f = fresh();
+        doe_resource_config c = config(&f);
+        doe_resource_encoder *encoder;
+        assert(doe_resource_encoder_create(&c, &encoder) == DOE_RESOURCE_OK);
+        if (allocation_failure) f.fail_at = f.allocations;
+        else assert(doe_resource_encoder_invalidate(encoder, DOE_RESOURCE_OUT_OF_MEMORY) == DOE_RESOURCE_OUT_OF_MEMORY);
+        doe_resource_commands *commands = NULL;
+        assert(doe_resource_encoder_finish(encoder, &commands) == DOE_RESOURCE_OUT_OF_MEMORY && !commands);
+        f.fail_at = SIZE_MAX;
+        assert(doe_resource_encoder_debug(encoder, DOE_RESOURCE_DEBUG_MARKER) == DOE_RESOURCE_STATE);
+        assert(doe_resource_encoder_invalidate(encoder, DOE_RESOURCE_RANGE) == DOE_RESOURCE_STATE);
+        assert(doe_resource_encoder_finish(encoder, &commands) == DOE_RESOURCE_STATE && !commands);
+        assert(doe_resource_encoder_status(encoder) == DOE_RESOURCE_OUT_OF_MEMORY);
+        doe_resource_encoder_release(encoder);
+        doe_resource_render_bundle_desc desc = {.color_format = WGPUTextureFormat_RGBA8Unorm, .samples = 1};
+        doe_resource_bundle_encoder *builder;
+        assert(doe_resource_bundle_encoder_create(&c, &desc, &builder) == DOE_RESOURCE_OK);
+        if (allocation_failure) f.fail_at = f.allocations;
+        else assert(doe_resource_bundle_encoder_invalidate(builder, DOE_RESOURCE_OUT_OF_MEMORY) == DOE_RESOURCE_OUT_OF_MEMORY);
+        doe_resource_render_bundle *bundle = NULL;
+        assert(doe_resource_bundle_encoder_finish(builder, &bundle) == DOE_RESOURCE_OUT_OF_MEMORY && !bundle);
+        f.fail_at = SIZE_MAX;
+        assert(doe_resource_bundle_encoder_debug(builder, DOE_RESOURCE_DEBUG_MARKER) == DOE_RESOURCE_STATE);
+        assert(doe_resource_bundle_encoder_invalidate(builder, DOE_RESOURCE_RANGE) == DOE_RESOURCE_STATE);
+        assert(doe_resource_bundle_encoder_finish(builder, &bundle) == DOE_RESOURCE_STATE && !bundle);
+        doe_resource_bundle_encoder_release(builder);
+        empty(&f);
+    }
+}
+
 int main(void)
 {
+    test_finished_failure();
     test_encoder_groups();
     test_compute_groups();
     test_render_groups();
     test_bundle_groups();
     test_debug_arithmetic();
     test_compute_invalidation();
-    puts("debug group owner: 6 host suites passed; optional native diagnostics not captured");
+    puts("debug group owner: 7 host suites passed; optional native diagnostics not captured");
     return 0;
 }

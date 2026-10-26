@@ -27,6 +27,7 @@ doe_resource_status doe_resource_encoder_invalidate(doe_resource_encoder *encode
     doe_resource_status rejection)
 {
     if (!resource_status_is_rejection(rejection)) return DOE_RESOURCE_INVALID_ARGUMENT;
+    if (encoder && encoder->finished) return DOE_RESOURCE_STATE;
     return resource_encoder_fail(encoder, rejection);
 }
 
@@ -38,9 +39,11 @@ bool doe_resource_encoder_ended(const doe_resource_encoder *encoder)
 doe_resource_status resource_encoder_open(doe_resource_encoder *encoder)
 {
     if (!encoder) return DOE_RESOURCE_INVALID_ARGUMENT;
+    /* Finished state is a new admission failure, not a replacement for the
+     * sticky recording error returned by the first Finish. */
+    if (encoder->finished) return DOE_RESOURCE_STATE;
     if (encoder->status != DOE_RESOURCE_OK) return encoder->status;
     if (encoder->active_pass) return resource_encoder_fail(encoder, DOE_RESOURCE_STATE);
-    if (encoder->finished) return resource_encoder_fail(encoder, DOE_RESOURCE_STATE);
     if (!resource_alive(&encoder->base)) return resource_encoder_fail(encoder, DOE_RESOURCE_UNAVAILABLE);
     return DOE_RESOURCE_OK;
 }
