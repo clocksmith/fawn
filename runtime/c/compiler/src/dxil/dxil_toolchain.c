@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: MIT
  * Copyright (c) 2026 Doe contributors */
 #include "dxil_toolchain.h"
+#include "dxil_process.h"
 
 #include <ctype.h>
 #include <stdio.h>
@@ -181,29 +182,7 @@ DxilStatus dxil_emit_error_to_translate_error(DxilStatus status) {
     return DXIL_INVALID_IR;
 }
 
-#if defined(_WIN32)
-
-DxilStatus dxil_dxc_run(const char *executable, const char *profile,
-    const char *entry_name, const char *output_path,
-    const char *input_path, DxilDiscovery discovery,
-    char *errbuf, size_t errcap) {
-    char message[512];
-    (void)executable;
-    (void)profile;
-    (void)entry_name;
-    (void)output_path;
-    (void)input_path;
-    (void)discovery;
-    snprintf(message, sizeof(message),
-        "DXC invocation is not implemented for Windows in this port; "
-        "the POSIX runner is the only implementation (see gaps.md)");
-    write_message(errbuf, errcap, message);
-    return DXIL_SHADER_TOOLCHAIN_UNAVAILABLE;
-}
-
-#else /* POSIX runner */
-
-static void missing_toolchain_message(DxilDiscovery discovery,
+void dxil_dxc_missing_message(DxilDiscovery discovery,
     const char *executable, char *out, size_t out_cap) {
     switch (discovery) {
         case DXIL_DISCOVERY_EXPLICIT_CONFIG:
@@ -236,6 +215,8 @@ static void missing_toolchain_message(DxilDiscovery discovery,
     }
     snprintf(out, out_cap, "DXC executable `%s` was not found", executable);
 }
+
+#if !defined(_WIN32)
 
 /* Trims spaces, tabs, CR, and LF from both ends, in place. */
 static void trim_in_place(char *text) {
@@ -361,7 +342,7 @@ DxilStatus dxil_dxc_run(const char *executable, const char *profile,
                     && errno == EINTR) {
                 }
                 if (child_errno == ENOENT) {
-                    missing_toolchain_message(discovery, executable,
+                    dxil_dxc_missing_message(discovery, executable,
                         message, sizeof(message));
                     write_message(errbuf, errcap, message);
                     return DXIL_SHADER_TOOLCHAIN_UNAVAILABLE;

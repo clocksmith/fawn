@@ -483,9 +483,12 @@ is every decision table the walk uses:
   discovery label, executable, exit code, profile, and entry name
   (plus captured output detail when non-empty); termination by a
   signal -> InvalidIr with an "unexpectedly terminated" message.
-  The Windows runner is not implemented on this Linux VM (gaps.md);
-  the Windows build of this function returns
-  ShaderToolchainUnavailable and says so.
+  Windows uses `CreateProcessW` with UTF-8 arguments, CRT quoting,
+  restricted handle inheritance and concurrent bounded pipe capture.
+  Launch failures use the same discovery diagnostics; all nonzero Windows
+  exit codes (including NTSTATUS values) map to InvalidIr.
+  `tools/test_dxil_windows.py` requires a real Windows SDK and DXC;
+  cross-compilation alone is not Windows execution evidence.
 - Output validation gate: after either emission path, the bytes are
   validated with section 6; an invalid container gives InvalidIr with
   the message `{producer} produced a structurally invalid DXIL
