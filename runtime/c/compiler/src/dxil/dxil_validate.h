@@ -7,8 +7,9 @@
 #include <stddef.h>
 #include <stdint.h>
 
-/* DXBC container structural validation. Faithful port of
- * dxil_validate.zig: validates the binary envelope (DXBC header magic,
+/* DXBC container structural validation. Validates Microsoft's actual
+ * program-header layout, correcting the inherited Zig offset mismatch.
+ * Checks the binary envelope (DXBC header magic,
  * version, part table bounds, DXIL program sub-header, LLVM bitcode
  * magic) without checking shader semantics.
  *

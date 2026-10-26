@@ -108,11 +108,11 @@ int main(void) {
             bitcode, sizeof(bitcode), buf, sizeof(buf), &size), DXIL_OK);
         CHECK(size == 28);
         CHECK(dxil_test_read_u32le(buf, 0) == 0x00050060u);
-        CHECK(dxil_test_read_u32le(buf, 4) == 0x00000100u);
-        CHECK(dxil_test_read_u32le(buf, 8) == 24);
-        CHECK(dxil_test_read_u32le(buf, 12) == 4);
-        CHECK(dxil_test_read_u32le(buf, 16) == 0);
-        CHECK(dxil_test_read_u32le(buf, 20) == 0);
+        CHECK(dxil_test_read_u32le(buf, 4) == 7);
+        CHECK(memcmp(buf + 8, "DXIL", 4) == 0);
+        CHECK(dxil_test_read_u32le(buf, 12) == 0x00000100u);
+        CHECK(dxil_test_read_u32le(buf, 16) == 16);
+        CHECK(dxil_test_read_u32le(buf, 20) == 4);
         CHECK(memcmp(buf + 24, bitcode, 4) == 0);
     }
 
@@ -125,7 +125,7 @@ int main(void) {
             bitcode, sizeof(bitcode), buf, sizeof(buf), &size), DXIL_OK);
         CHECK(size == 32);
         CHECK(dxil_test_read_u32le(buf, 0) == 0x00010060u);
-        CHECK(dxil_test_read_u32le(buf, 12) == 5);
+        CHECK(dxil_test_read_u32le(buf, 20) == 5);
         CHECK(buf[29] == 0);
         CHECK(buf[30] == 0);
         CHECK(buf[31] == 0);

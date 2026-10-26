@@ -22,10 +22,10 @@ typedef struct DxilPart {
     size_t len;
 } DxilPart;
 
-/* Encodes a DXIL program header plus bitcode: program version word
- * (shader kind, shader model major, shader model minor), DXIL version
- * word (1.0), bitcode offset 24, bitcode size, two zero pipeline-state
- * words, the bitcode bytes, and zero padding to a 4-byte boundary. */
+/* Encodes Microsoft's DXIL program header plus bitcode: program version,
+ * total size in words, DXIL magic, DXIL version 1.0, bitcode offset 16
+ * relative to that magic, and unpadded bitcode size. Bitcode follows the
+ * 24-byte program header, padded with zeros to a 4-byte boundary. */
 DxilStatus dxil_write_program_part(uint32_t shader_kind,
     uint32_t shader_model_major, uint32_t shader_model_minor,
     const uint8_t *bitcode, size_t bitcode_len,

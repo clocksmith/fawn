@@ -22,7 +22,7 @@ static const char *error_message_for(DxilValidationError error) {
         case DXIL_VALIDATION_TOO_SMALL:
             return "container too small for DXBC header";
         case DXIL_VALIDATION_BAD_MAGIC:
-            return "invalid DXBC magic bytes";
+            return "invalid DXBC or DXIL magic bytes";
         case DXIL_VALIDATION_BAD_VERSION:
             return "unsupported DXBC version (expected 1)";
         case DXIL_VALIDATION_SIZE_MISMATCH:
@@ -132,6 +132,7 @@ void dxil_validate(const uint8_t *data, size_t len,
         if (memcmp(fourcc, dxil_fourcc, 4) == 0) {
             const size_t prog_base = (size_t)part_data_start;
             uint32_t program_version = 0;
+            uint64_t program_size = 0;
             uint32_t bc_offset = 0;
             uint32_t bc_size = 0;
             uint64_t bc_abs = 0;
@@ -141,19 +142,33 @@ void dxil_validate(const uint8_t *data, size_t len,
                     DXIL_VALIDATION_DXIL_PART_TOO_SMALL, result);
                 return;
             }
+            /* DXC's bitcode offset is relative to the DXIL magic at
+             * program+8, not to the program-version word. */
+            if (memcmp(data + prog_base + 8, dxil_fourcc, 4) != 0) {
+                fill_error_result(data, len, DXIL_VALIDATION_BAD_MAGIC, result);
+                return;
+            }
+            program_size = (uint64_t)read_u32(data, prog_base + 4) * 4u;
+            if (program_size < DXIL_PROGRAM_HEADER_SIZE
+                || program_size > part_data_size) {
+                fill_error_result(data, len,
+                    DXIL_VALIDATION_DXIL_PART_TOO_SMALL, result);
+                return;
+            }
             program_version = read_u32(data, prog_base);
-            shader_kind = (program_version >> 16) & 0xFu;
+            shader_kind = program_version >> 16;
             dxil_major = (uint16_t)((program_version >> 4) & 0xFu);
             dxil_minor = (uint16_t)(program_version & 0xFu);
             has_shader_kind = true;
             has_dxil_major = true;
             has_dxil_minor = true;
-            bc_offset = read_u32(data, prog_base + 8);
-            bc_size = read_u32(data, prog_base + 12);
+            bc_offset = read_u32(data, prog_base + 16);
+            bc_size = read_u32(data, prog_base + 20);
             bitcode_size = bc_size;
             has_bitcode_size = true;
-            bc_abs = (uint64_t)prog_base + bc_offset;
-            if (bc_abs + bc_size > part_data_start + part_data_size) {
+            bc_abs = (uint64_t)prog_base + 8u + bc_offset;
+            if (bc_offset < DXIL_PROGRAM_HEADER_SIZE - 8u || bc_size < 4
+                || bc_abs + bc_size > part_data_start + program_size) {
                 fill_error_result(data, len,
                     DXIL_VALIDATION_DXIL_PART_TOO_SMALL, result);
                 return;

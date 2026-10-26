@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: MIT
-"""Build and exercise the Windows DXC process boundary, including real DXC.
+"""Build and exercise the x64 Windows DXC process boundary, including real DXC.
 
 Run in a Windows SDK developer environment. Output must be fresh; source hashes,
 commands, real compiler diagnostics and DXIL artifacts remain in that directory.
@@ -48,6 +48,8 @@ def main() -> None:
         if code != 0:
             raise subprocess.CalledProcessError(code, process.args)
         return
+    if ctypes.sizeof(ctypes.c_void_p) != 8:
+        parser.error('requires a 64-bit Python host for the x64 Windows control')
     compiler = shutil.which(args.cc)
     if compiler is None or not args.dxc.is_file():
         parser.error('requires clang-cl and an existing official DXC executable')
@@ -91,7 +93,7 @@ def main() -> None:
         result.check_returncode()
         return result
 
-    strict = [compiler, '/nologo', '/MD', '/O2', '/WX',
+    strict = [compiler, '--target=x86_64-pc-windows-msvc', '/nologo', '/MD', '/O2', '/WX',
               '/D_CRT_SECURE_NO_WARNINGS', '/clang:-std=c11', '/clang:-Wall',
               '/clang:-Wextra', '/clang:-Wpedantic', '/clang:-Wconversion',
               '/clang:-Wshadow', '/clang:-Wstrict-prototypes',

@@ -279,11 +279,13 @@ Exact emission order for `serialize(builder, bodies, out)`:
   OutputTooLarge (Zig would trap on the cast).
 - Words, little-endian: program_version = (shader_kind << 16) |
   (shader_model_major << 4) | shader_model_minor (defaults 6 and 0);
-  dxil_version = (1 << 8) | 0 = 0x100; bitcode offset 24; bitcode size
-  (unpadded); pipeline-state-validation size 0; pipeline-state offset 0.
+  total program size in uint32 words; `DXIL` magic; dxil_version =
+  (1 << 8) | 0 = 0x100; bitcode offset 16 relative to `DXIL` magic;
+  unpadded bitcode size. This corrects the inherited Zig header layout
+  against Microsoft's `DxilProgramHeader`, rather than preserving invalid bytes.
 - Then the bitcode bytes, then zero padding to a 4-byte boundary.
 - Example: compute kind 5, SM 6.0, 4-byte bitcode gives the words
-  `0x00050060, 0x00000100, 24, 4, 0, 0` followed by the bitcode, 28
+  `0x00050060, 7, 0x4c495844, 0x00000100, 16, 4` followed by the bitcode, 28
   bytes total, no padding. A 5-byte bitcode pads with 3 zero bytes.
 
 `write_container(parts, out)`:
@@ -346,11 +348,14 @@ Zig order, with the first failure winning:
    header: shader kind = (program_version >> 16) & 0xF, major =
    (program_version >> 4) & 0xF, minor = program_version & 0xF (these
    are the SHADER MODEL fields from word 0, even though the result
-   struct names them dxil_major/dxil_minor). Bitcode offset = word at
-   +8, bitcode size = word at +12. If program-base + bitcode offset +
-   bitcode size exceeds the part data end -> DxilPartTooSmall. If
-   bitcode size >= 4 and the first four bitcode bytes != `42 43 C0 DE`
-   -> BadBitcodeMagic ("LLVM bitcode magic (0x4243C0DE) not found").
+   struct names them dxil_major/dxil_minor). The word count at +4 must
+   admit a complete header and fit the part. Magic at +8 must be `DXIL`.
+   Bitcode offset is the word at +16, relative to that magic; bitcode
+   size is the word at +20. Offsets before the bitcode header, sizes
+   below four bytes, and spans beyond the declared program size reject
+   as DxilPartTooSmall. Incorrect first bitcode bytes `42 43 C0 DE`
+   reject as BadBitcodeMagic. These are Microsoft DXC's actual fields,
+   correcting the inherited Zig layout rather than accepting two formats.
    A later DXIL part overwrites the kind/major/minor/bitcode fields
    of an earlier one.
 9. After the loop, no DXIL part -> NoDxilPart ("no DXIL part found in
