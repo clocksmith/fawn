@@ -7,6 +7,7 @@ import { dirname, extname, resolve } from "node:path";
 import process from "node:process";
 import { cWorkspaceLibraryCandidates } from "../../../packages/doe-gpu/src/vendor/webgpu/platform-package.js";
 import { fileURLToPath } from "node:url";
+import { pathWithin } from "./browser-path-containment.mjs";
 import {
   loadRuntimeSelectorPolicy,
   resolveRuntimeSelection,
@@ -369,12 +370,6 @@ function readOptionValue(argv, optionIndex, flag) {
     throw new Error(`${flag} requires a value`);
   }
   return value;
-}
-
-function pathWithin(pathValue, rootPath) {
-  const absolutePath = resolve(pathValue);
-  const absoluteRoot = resolve(rootPath);
-  return absolutePath === absoluteRoot || absolutePath.startsWith(`${absoluteRoot}/`);
 }
 
 function resolveInvocationPath(pathValue) {
