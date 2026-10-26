@@ -6,6 +6,7 @@ import { dirname, extname, resolve } from "node:path";
 import process from "node:process";
 import { cWorkspaceLibraryCandidates } from "../../../packages/doe-gpu/src/vendor/webgpu/platform-package.js";
 import { fileURLToPath } from "node:url";
+import { pathWithin } from "./browser-path-containment.mjs";
 import {
   loadRuntimeSelectorPolicy,
   resolveRuntimeSelection,
@@ -320,12 +321,6 @@ function parseModeSchedule(text) {
     return normalized;
   }
   throw new Error("--mode-schedule must be grouped, paired, or paired-balanced");
-}
-
-function pathWithin(pathValue, rootPath) {
-  const absolutePath = resolve(pathValue);
-  const absoluteRoot = resolve(rootPath);
-  return absolutePath === absoluteRoot || absolutePath.startsWith(`${absoluteRoot}/`);
 }
 
 function ensureAllowedOutPath(outPath, allowBenchOut) {
