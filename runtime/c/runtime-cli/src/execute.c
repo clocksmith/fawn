@@ -250,6 +250,7 @@ void doe_runtime_close(doe_runtime *runtime)
         free(entry->signature);
     }
     free(runtime->pipelines);
+    runtime_kernel_sources_clear(runtime);
     runtime_release_render(runtime);
     runtime_release_surfaces(runtime);
     runtime_release_diagnostics(runtime);

@@ -88,69 +88,28 @@ static bool write_optional(FILE *out, const char *key, const char *value, bool c
     return value ? doe_trace_write_string(out, value) : fputs("null", out) >= 0;
 }
 
-/* shaderSourceReceipts (config/trace-meta.schema.json $defs/shaderSourceReceipt)
- * for every shader the stream compiles, in first-use order: kernel_dispatch
- * kernels (and dispatch_noop.wgsl for a grid before any kernel_dispatch), then
- * the render proxy's two modules. shaderSourceReceiptsHash is the
- * SHA-256 of the array's compact JSON as written, as the package executor
- * hashes JSON.stringify(receipts), so two runtimes given the same sources
- * agree on it. */
-static bool write_shader_receipts(FILE *out, const doe_runtime *runtime, const doe_stream *stream, bool public_renderer)
+/* Receipts enumerate immutable source snapshots registered by compilation,
+ * never paths reread after execution. Distinct versions remain visible. */
+static bool write_shader_receipts(FILE *out, const doe_runtime *runtime)
 {
     char *bytes = NULL;
     size_t length = 0;
     doe_host_output output;
     FILE *list = doe_host_output_open(&output);
     if (!list) return false;
-    bool ok = fputc('[', list) != EOF, any = false, render = false, kernel_seen = false, noop_written = false;
-    for (size_t i = 0; ok && i < stream->count; i++) {
-        const doe_command *command = &stream->commands[i];
-        if (doe_command_is_render(command->kind)) render = true;
-        bool grid = command->kind == DOE_COMMAND_DISPATCH || command->kind == DOE_COMMAND_DISPATCH_INDIRECT;
-        if (grid && !kernel_seen && !noop_written) {
-            char *path = NULL, sha[65];
-            size_t size = 0;
-            if (doe_runtime_kernel_source(runtime, "dispatch_noop.wgsl", &path, &size, sha)) {
-                ok = (!any || fputc(',', list) != EOF) && fputs("{\"moduleId\":\"dispatch_noop.wgsl\",\"sourceKind\":\"wgsl\",\"path\":", list) >= 0 &&
-                    doe_trace_write_string(list, path) &&
-                    fprintf(list, ",\"entryPoint\":\"main\",\"byteLength\":%zu,\"sha256\":\"%s\"}", size, sha) >= 0;
-                any = true;
-                free(path);
-            }
-            noop_written = true;
-        }
-        if (command->kind != DOE_COMMAND_KERNEL_DISPATCH) continue;
-        kernel_seen = true;
-        bool seen = false;
-        for (size_t j = 0; j < i && !seen; j++) {
-            const doe_command *earlier = &stream->commands[j];
-            seen = earlier->kind == DOE_COMMAND_KERNEL_DISPATCH && !strcmp(earlier->as.dispatch.kernel, command->as.dispatch.kernel) &&
-                !strcmp(earlier->as.dispatch.entry_point, command->as.dispatch.entry_point);
-        }
-        if (seen) continue;
-        char *path = NULL, sha[65];
-        size_t size = 0;
-        if (!doe_runtime_kernel_source(runtime, command->as.dispatch.kernel, &path, &size, sha)) continue;
+    bool ok = fputc('[', list) != EOF, any = false;
+    for (size_t i = 0; ok && i < doe_runtime_source_receipt_count(runtime); i++) {
+        doe_runtime_source_receipt receipt;
+        if (!doe_runtime_source_receipt_at(runtime, i, &receipt)) { ok = false; break; }
         ok = (!any || fputc(',', list) != EOF) && fputs("{\"moduleId\":", list) >= 0 &&
-            doe_trace_write_string(list, command->as.dispatch.kernel) && fputs(",\"sourceKind\":\"wgsl\",\"path\":", list) >= 0 &&
-            doe_trace_write_string(list, path) && fputs(",\"entryPoint\":", list) >= 0 &&
-            doe_trace_write_string(list, command->as.dispatch.entry_point) &&
-            fprintf(list, ",\"byteLength\":%zu,\"sha256\":\"%s\"}", size, sha) >= 0;
+            doe_trace_write_string(list, receipt.module_id) && fputs(",\"sourceKind\":\"wgsl\",\"path\":", list) >= 0 &&
+            doe_trace_write_string(list, receipt.path);
+        if (ok && receipt.entry_point)
+            ok = fputs(",\"entryPoint\":", list) >= 0 && doe_trace_write_string(list, receipt.entry_point);
+        ok = ok && fprintf(list, ",\"byteLength\":%zu,\"sha256\":\"%s\"}", receipt.byte_length, receipt.sha256) >= 0;
         any = true;
-        free(path);
     }
-    static const char *const proxy[2][2] = {{"draw_call_proxy_vertex.wgsl", "main"}, {"draw_call_proxy_fragment.wgsl", "main"}};
     const char *public_source = doe_runtime_public_render_source(runtime);
-    for (int k = 0; ok && render && !public_renderer && k < 2; k++) {
-        char *path = NULL, sha[65];
-        size_t size = 0;
-        if (!doe_runtime_kernel_source(runtime, proxy[k][0], &path, &size, sha)) continue;
-        ok = (!any || fputc(',', list) != EOF) && fputs("{\"moduleId\":", list) >= 0 && doe_trace_write_string(list, proxy[k][0]) &&
-            fputs(",\"sourceKind\":\"wgsl\",\"path\":", list) >= 0 && doe_trace_write_string(list, path) &&
-            fprintf(list, ",\"byteLength\":%zu,\"sha256\":\"%s\"}", size, sha) >= 0;
-        any = true;
-        free(path);
-    }
     if (public_source) {
         uint8_t digest[32];
         char hash[65];
@@ -191,7 +150,7 @@ static bool write_shader_receipts(FILE *out, const doe_runtime *runtime, const d
 
 static bool write_meta(const char *path, const options *o, const totals *t, uint64_t command_count,
     const doe_runtime_adapter *adapter, const doe_operator_recorder *operators, const char *plan_sha256,
-    const doe_runtime *runtime, const doe_stream *stream, const doe_ns_recorder *numeric)
+    const doe_runtime *runtime, const doe_ns_recorder *numeric)
 {
     FILE *out = doe_host_fopen(path, "wb");
     if (!out) return false;
@@ -247,7 +206,7 @@ static bool write_meta(const char *path, const options *o, const totals *t, uint
             fputs(",\"outputOracleComparedValueCount\":0,\"outputOracleMismatchCount\":0,\"outputOracleMaxAbsoluteError\":0,"
                 "\"outputOracleMaxRelativeError\":0,\"outputOracleAbsoluteTolerance\":0,\"outputOracleRelativeTolerance\":0", out) >= 0;
     }
-    if (ok && runtime) ok = write_shader_receipts(out, runtime, stream, o->runtime.public_webgpu_renderer);
+    if (ok && runtime) ok = write_shader_receipts(out, runtime);
     if (ok && numeric) ok = doe_ns_write_summary(out, numeric);
     ok = ok && fputs(",\"profile\":{", out) >= 0;
     ok = ok && write_optional(out, "vendor", o->vendor, false) && write_optional(out, "api", o->api ? o->api : DOE_RUNTIME_API, true) &&
@@ -735,7 +694,7 @@ int main(int argc, char **argv)
     }
     if (runtime) doe_runtime_flush_pipeline_cache(runtime);
     if (o.trace_meta && !write_meta(o.trace_meta, &o, &t, command_count, runtime ? doe_runtime_adapter_info(runtime) : NULL,
-            &operators, o.plan ? plan.plan_sha256 : NULL, runtime, &stream, ns_enabled ? &ns : NULL)) {
+            &operators, o.plan ? plan.plan_sha256 : NULL, runtime, ns_enabled ? &ns : NULL)) {
         fprintf(stderr, "doe-c-runtime: cannot write %s\n", o.trace_meta);
         status = 1;
     }

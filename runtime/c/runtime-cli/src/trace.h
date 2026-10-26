@@ -28,6 +28,7 @@ typedef struct doe_trace_execution {
     uint64_t dispatch_count, submit_count;
     uint64_t gpu_timestamp_ns;
     bool gpu_timestamp_attempted, gpu_timestamp_valid;
+    char shader_source_sha256[65]; /* Exact compiled source for this compute execution; empty otherwise. */
 } doe_trace_execution;
 
 typedef struct doe_trace_identity {

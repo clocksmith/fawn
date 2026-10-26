@@ -30,9 +30,15 @@ static WGPUShaderModule shader_module(doe_runtime *runtime, const char *name, do
     WGPUShaderModuleDescriptor descriptor = WGPU_SHADER_MODULE_DESCRIPTOR_INIT;
     descriptor.nextInChain = &wgsl.chain;
     WGPUShaderModule module = wgpuDeviceCreateShaderModule(runtime->device, &descriptor);
+    size_t identity;
+    if (module && !runtime_record_kernel_source(runtime, name, path, NULL, source, size, &identity)) {
+        wgpuShaderModuleRelease(module);
+        module = NULL;
+        runtime_fail(execution, "out_of_memory", "render source receipt allocation failed");
+    }
     free(source);
     free(path);
-    if (!module) runtime_fail(execution, "render_shader_failed", "render shader %s was not created", name);
+    if (!module && execution->ok) runtime_fail(execution, "render_shader_failed", "render shader %s was not created", name);
     return module;
 }
 
