@@ -12,7 +12,7 @@ This package's available interfaces are listed under [Entry points](#entry-point
 
 Support is limited to the runtime, operating system, architecture, backend, and
 workload combinations declared in the
-[Doe support matrix](https://github.com/doerun/doe/blob/main/docs/doe-support-matrix.md).
+[Doe support matrix](https://github.com/clocksmith/fawn/blob/main/docs/doe-support-matrix.md).
 
 ## Install and verify
 
