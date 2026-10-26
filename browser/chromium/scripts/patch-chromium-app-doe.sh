@@ -15,8 +15,9 @@ Patches a Chromium.app bundle so direct launch defaults to:
   --use-webgpu-runtime=doe
   --doe-webgpu-library-path=<resolved lib>
 
-The script renames the original binary to `Chromium-real` and installs
-an executable wrapper at `Contents/MacOS/Chromium`.
+The script bundles the selected runtime (and C compiler sibling) under
+Contents/Frameworks, renames the original binary to Chromium-real, and
+installs a relocatable wrapper at Contents/MacOS/Chromium.
 
 It also updates bundle metadata so the app displays as `Fawn` by default and
 forces the dock icon from the canonical Fawn icon asset.
@@ -165,6 +166,31 @@ if [[ "$(basename "${DOE_LIB}")" == libwebgpu_doe_c.dylib ]] && \
   exit 1
 fi
 
+# The GPU sandbox can read its own app bundle, not arbitrary build directories.
+# C packages must retain their sibling-only compiler lookup after relocation.
+if [[ "$(basename "${DOE_LIB}")" == libwebgpu_doe_c.dylib ]]; then
+  if ! otool -l "${DOE_LIB}" | grep -Fq 'path @loader_path (offset'; then
+    echo "C runtime needs @loader_path; build it with runtime/c/tools/build-native-package.py" >&2
+    exit 1
+  fi
+fi
+
+FRAMEWORKS_DIR="${APP_PATH}/Contents/Frameworks"
+DOE_LIB_NAME="$(basename "${DOE_LIB}")"
+mkdir -p "${FRAMEWORKS_DIR}"
+RUNTIME_DESTINATION="${FRAMEWORKS_DIR}/${DOE_LIB_NAME}"
+if [[ ! "${DOE_LIB}" -ef "${RUNTIME_DESTINATION}" ]]; then
+  cp -p "${DOE_LIB}" "${RUNTIME_DESTINATION}"
+fi
+if [[ "${DOE_LIB_NAME}" == libwebgpu_doe_c.dylib ]]; then
+  COMPILER_SOURCE="$(dirname "${DOE_LIB}")/libdoe_compiler.dylib"
+  COMPILER_DESTINATION="${FRAMEWORKS_DIR}/libdoe_compiler.dylib"
+  if [[ ! "${COMPILER_SOURCE}" -ef "${COMPILER_DESTINATION}" ]]; then
+    cp -p "${COMPILER_SOURCE}" "${COMPILER_DESTINATION}"
+  fi
+fi
+DOE_LIB="${FRAMEWORKS_DIR}/${DOE_LIB_NAME}"
+
 MACOS_BIN="${APP_PATH}/Contents/MacOS/Chromium"
 REAL_BIN="${MACOS_BIN}-real"
 WRAPPER_MARKER="${MACOS_BIN}.fawn-doe-wrapped"
@@ -206,37 +232,40 @@ fi
 
 if [[ "${write_wrapper}" -eq 1 ]]; then
 
-  cat > "${MACOS_BIN}" <<EOF
+  cat > "${MACOS_BIN}" <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
 
-SCRIPT_DIR="\$(cd "\$(dirname "\${BASH_SOURCE[0]}")" && pwd)"
-REAL_BINARY="\${SCRIPT_DIR}/Chromium-real"
-DOE_LIB="${DOE_LIB}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REAL_BINARY="${SCRIPT_DIR}/Chromium-real"
+EOF
+  printf 'DOE_LIB_NAME=%q\n' "${DOE_LIB_NAME}" >> "${MACOS_BIN}"
+  cat >> "${MACOS_BIN}" <<'EOF'
+DOE_LIB="${SCRIPT_DIR}/../Frameworks/${DOE_LIB_NAME}"
 
-if [[ -n "\${FAWN_DOE_LIB:-}" ]]; then
-  DOE_LIB="\${FAWN_DOE_LIB}"
+if [[ -n "${FAWN_DOE_LIB:-}" ]]; then
+  DOE_LIB="${FAWN_DOE_LIB}"
 fi
 
-if [[ ! -x "\${REAL_BINARY}" ]]; then
-  echo "missing real Chromium binary: \${REAL_BINARY}" >&2
+if [[ ! -x "${REAL_BINARY}" ]]; then
+  echo "missing real Chromium binary: ${REAL_BINARY}" >&2
   exit 1
 fi
 
-if [[ -z "\${DOE_LIB}" || ! -f "\${DOE_LIB}" ]]; then
-  echo "missing libwebgpu_doe runtime: \${DOE_LIB}" >&2
+if [[ -z "${DOE_LIB}" || ! -f "${DOE_LIB}" ]]; then
+  echo "missing libwebgpu_doe runtime: ${DOE_LIB}" >&2
   exit 1
 fi
 
-FAWN_START="\${SCRIPT_DIR}/../Resources/fawn-start.html"
+FAWN_START="${SCRIPT_DIR}/../Resources/fawn-start.html"
 
-exec -a fawn-doe "\${REAL_BINARY}" \
+exec -a fawn-doe "${REAL_BINARY}" \
   --use-webgpu-runtime=doe \
-  --doe-webgpu-library-path="\${DOE_LIB}" \
+  --doe-webgpu-library-path="${DOE_LIB}" \
   --no-first-run \
-  --homepage="file://\${FAWN_START}" \
-  --new-window "file://\${FAWN_START}" \
-  "\$@"
+  --homepage="file://${FAWN_START}" \
+  --new-window "file://${FAWN_START}" \
+  "$@"
 EOF
   chmod 0755 "${MACOS_BIN}"
 fi
@@ -308,7 +337,7 @@ else
 fi
 
 if [[ -d "${RESOURCES_DIR}" ]]; then
-  for RESOURCE_SRC in "${LANE_ROOT}"/resources/fawn-*.{html,svg}; do
+  for RESOURCE_SRC in "${LANE_ROOT}"/resources/fawn-*.{html,svg,js}; do
     if [[ -f "${RESOURCE_SRC}" ]]; then
       cp -f "${RESOURCE_SRC}" "${RESOURCES_DIR}/$(basename "${RESOURCE_SRC}")"
     fi

@@ -2533,11 +2533,19 @@ async function runMode(chromium, mode, args, localUrl, localPort) {
       `${mode} smoke suite`,
     );
 
-    const fawnPrismaticLifecycle = await runFawnPrismaticLifecycleProbe(
-      browser,
-      localUrl,
-      args.opTimeoutMs,
-    );
+    // A later artwork/lifecycle failure must not erase completed WebGPU evidence.
+    let fawnPrismaticLifecycle;
+    try {
+      fawnPrismaticLifecycle = await runFawnPrismaticLifecycleProbe(
+        browser,
+        localUrl,
+        args.opTimeoutMs,
+      );
+    } catch (error) {
+      const detail = String(error?.stack ?? error);
+      fawnPrismaticLifecycle = { pass: false, error: detail };
+      suite.errors.push(`fawn prismatic lifecycle: ${detail}`);
+    }
 
     const runtimeSelection = buildRuntimeSelection(mode, args, launchArgs);
     result = {
@@ -2601,6 +2609,7 @@ function computeComparison(modeResults) {
 }
 
 function hasFailure(result) {
+  if (result.fawnPrismaticLifecycle?.pass !== true) return true;
   if (!result.webgpuAvailable || !result.adapterAvailable) return true;
   if (result.activeRuntimeProof?.matched !== true) return true;
   if (!result.smoke.computeIncrement.pass) return true;

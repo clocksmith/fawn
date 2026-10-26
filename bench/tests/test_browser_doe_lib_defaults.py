@@ -577,6 +577,44 @@ class BrowserDoeLibDefaultTests(unittest.TestCase):
             self.assertIn('REAL_BINARY="${SCRIPT_DIR}/Chromium-real"', wrapper)
             self.assertIn('--use-webgpu-runtime=doe', wrapper)
 
+    def test_app_wrapper_keeps_runtime_when_app_is_relocated(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="fawn app relocation ") as tmpdir:
+            root = Path(tmpdir)
+            app = root / "Original.app"
+            macos = app / "Contents/MacOS"
+            macos.mkdir(parents=True)
+            (app / "Contents/Resources").mkdir()
+            chromium = macos / "Chromium"
+            chromium.write_text('#!/bin/sh\nprintf "%s\\n" "$@"\n', encoding="utf-8")
+            chromium.chmod(0o755)
+            library = root / "libwebgpu_doe_full.dylib"
+            library.write_bytes(b"selected runtime")
+            fake_bin = root / "bin"
+            fake_bin.mkdir()
+            uname = fake_bin / "uname"
+            uname.write_text("#!/bin/sh\necho Darwin\n", encoding="utf-8")
+            uname.chmod(0o755)
+            env = {**os.environ, "PATH": f"{fake_bin}:{os.environ['PATH']}"}
+            env.pop("FAWN_DOE_LIB", None)
+            subprocess.run([
+                "bash", str(PATCH_CHROMIUM_APP_DOE), "--app", str(app),
+                "--doe-lib", str(library),
+            ], cwd=REPO_ROOT, env=env, check=True, capture_output=True)
+            library.unlink()
+            moved = root / "Moved with spaces.app"
+            app.rename(moved)
+            result = subprocess.run([
+                str(moved / "Contents/MacOS/Chromium"), "--extra-argument=with spaces",
+            ], env=env, check=True, capture_output=True, text=True)
+            arguments = result.stdout.splitlines()
+            runtime = next(value.split("=", 1)[1] for value in arguments
+                           if value.startswith("--doe-webgpu-library-path="))
+            bundled = moved / "Contents/Frameworks/libwebgpu_doe_full.dylib"
+            self.assertEqual(Path(runtime).resolve(), bundled.resolve())
+            self.assertEqual(bundled.read_bytes(), b"selected runtime")
+            self.assertEqual(arguments[-1], "--extra-argument=with spaces")
+            self.assertTrue((moved / "Contents/Resources/fawn-formation.js").is_file())
+
     def test_python_superset_runner_prefers_real_app_binary_before_launcher(self) -> None:
         old_root = self.module.REPO_ROOT
         old_env = os.environ.pop("FAWN_CHROME_BIN", None)
