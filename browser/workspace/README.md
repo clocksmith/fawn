@@ -233,8 +233,9 @@ macOS browser roots, helper images and mapped app frameworks have separate hashe
 The `2026-10-26-behavioral-v3-platform-exits` case freeze retains the same25 cases,
 102 runs, fixtures and semantic expectations. Crash evidence now records the
 acknowledged controller kill or synchronously received self-kill request separately
-from the raw OS exit: signal SIGKILL/code null on
-Linux/macOS and signal null/code1 on Windows. The validator rejects normal exits
+from the raw Node close-event tuple. Linux/macOS report signal SIGKILL/code null;
+Windows reports that tuple for an acknowledged controller kill, and signal null/code1
+for a synchronously received self-kill request. The validator rejects normal exits
 and wrong termination codes or missing kill requests rather than fabricating a
 POSIX signal on Windows.
 
