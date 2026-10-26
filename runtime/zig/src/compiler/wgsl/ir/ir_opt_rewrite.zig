@@ -328,11 +328,14 @@ fn foldIntegerBinary(op: ir.BinaryOp, result_scalar: ir.ScalarType, lhs_raw: u64
         .bit_and => lhs_u32 & rhs_u32,
         .bit_or => lhs_u32 | rhs_u32,
         .bit_xor => lhs_u32 ^ rhs_u32,
-        .shift_left => if (rhs_u32 >= 32) 0 else lhs_u32 << @intCast(rhs_u32),
+        // This pass folds runtime-stage let aliases, not const expressions.
+        // WGSL 8.10 masks concrete runtime shift counts modulo the bit width;
+        // const-stage invalid-count diagnostics remain in the frontend.
+        .shift_left => lhs_u32 << @as(u5, @truncate(rhs_u32)),
         .shift_right => if (unsigned)
-            (if (rhs_u32 >= 32) 0 else lhs_u32 >> @intCast(rhs_u32))
+            lhs_u32 >> @as(u5, @truncate(rhs_u32))
         else
-            @bitCast(if (rhs_u32 >= 32) @as(i32, if (lhs_i32 < 0) -1 else 0) else lhs_i32 >> @intCast(rhs_u32)),
+            @bitCast(lhs_i32 >> @as(u5, @truncate(rhs_u32))),
         else => return null,
     };
     return folded_u32;
@@ -445,7 +448,33 @@ fn canReplaceWith(function: *const ir.Function, expr_id: ir.ExprId, operand_slot
     const expr = function.exprs.items[expr_id];
     const replacement_id = replacementExprId(function, expr_id, operand_slot);
     const replacement = function.exprs.items[replacement_id];
-    return replacement.ty == expr.ty and replacement.category == expr.category;
+    const discarded = replacementExprId(function, expr_id, if (operand_slot == .lhs) .rhs else .lhs);
+    return replacement.ty == expr.ty and replacement.category == expr.category and
+        !mayHaveEffects(function, discarded, 64);
+}
+
+// An annihilator (x*0, 0*x, x&0, 0&x) must not remove a call hidden inside
+// the discarded expression. Conservatively preserve all calls, including
+// builtins, and graphs beyond the bounded walk; optimization is optional.
+fn mayHaveEffects(function: *const ir.Function, id: ir.ExprId, depth: u32) bool {
+    if (depth == 0 or id >= function.exprs.items.len) return true;
+    return switch (function.exprs.items[id].data) {
+        .call => true,
+        .load, .address_of, .deref => |inner| mayHaveEffects(function, inner, depth - 1),
+        .unary => |unary| mayHaveEffects(function, unary.operand, depth - 1),
+        .binary => |binary| mayHaveEffects(function, binary.lhs, depth - 1) or
+            mayHaveEffects(function, binary.rhs, depth - 1),
+        .construct => |construct| blk: {
+            for (function.expr_args.items[construct.args.start..][0..construct.args.len]) |arg| {
+                if (mayHaveEffects(function, arg, depth - 1)) break :blk true;
+            }
+            break :blk false;
+        },
+        .member => |member| mayHaveEffects(function, member.base, depth - 1),
+        .index => |index| mayHaveEffects(function, index.base, depth - 1) or
+            mayHaveEffects(function, index.index, depth - 1),
+        .bool_lit, .int_lit, .float_lit, .param_ref, .local_ref, .global_ref => false,
+    };
 }
 
 fn replacementExprId(function: *const ir.Function, expr_id: ir.ExprId, operand_slot: OperandSlot) ir.ExprId {
@@ -797,4 +826,59 @@ test "bool identity rewrites logical expression roots" {
     const stats = try apply(module.allocator, &module);
     try std.testing.expectEqual(@as(u32, 1), stats.bool_identities);
     try std.testing.expectEqual(flag_id, module.functions.items[0].stmts.items[function.root_stmt].return_.?);
+}
+
+test "runtime integer optimizer shifts mask counts modulo 32" {
+    try std.testing.expectEqual(@as(?u64, 7), foldIntegerBinary(.shift_left, .u32, 7, 32));
+    try std.testing.expectEqual(@as(?u64, 14), foldIntegerBinary(.shift_left, .u32, 7, 33));
+    try std.testing.expectEqual(@as(?u64, 0x80000000), foldIntegerBinary(.shift_right, .u32, 0x80000000, 32));
+    try std.testing.expectEqual(@as(?u64, 0xc0000000), foldIntegerBinary(.shift_right, .i32, 0x80000000, 33));
+    try std.testing.expectEqual(@as(?u64, 0xffffffff), foldIntegerBinary(.shift_right, .i32, 0x80000000, 63));
+    try std.testing.expectEqual(@as(?u64, 0x80000000), foldIntegerBinary(.shift_left, .u32, 1, 0xffffffff));
+}
+
+test "integer annihilator optimization preserves nested calls" {
+    for ([_]ir.BinaryOp{ .mul, .bit_and }) |op| {
+        for ([_]bool{ false, true }) |zero_on_left| {
+            for ([_]ir.CallKind{ .user, .builtin }) |kind| {
+                var module = ir.Module.init(std.testing.allocator);
+                defer module.deinit();
+                const ty = try module.types.intern(.{ .scalar = .u32 });
+                const function = try appendTestFunction(&module, "main", ty);
+                const call = try function.append_expr(module.allocator, .{
+                    .ty = ty,
+                    .category = .value,
+                    .data = .{ .call = .{
+                        .name = try ir.dup_string(module.allocator, "effect"),
+                        .kind = kind,
+                        .args = .{ .start = 0, .len = 0 },
+                    } },
+                });
+                const argument = try function.append_expr_args(module.allocator, &.{call});
+                const nested = try function.append_expr(module.allocator, .{
+                    .ty = ty,
+                    .category = .value,
+                    .data = .{ .construct = .{ .ty = ty, .args = argument } },
+                });
+                const zero = try function.append_expr(module.allocator, .{
+                    .ty = ty,
+                    .category = .value,
+                    .data = .{ .int_lit = 0 },
+                });
+                const product = try function.append_expr(module.allocator, .{
+                    .ty = ty,
+                    .category = .value,
+                    .data = .{ .binary = .{
+                        .op = op,
+                        .lhs = if (zero_on_left) zero else nested,
+                        .rhs = if (zero_on_left) nested else zero,
+                    } },
+                });
+                function.root_stmt = try function.append_stmt(module.allocator, .{ .return_ = product });
+                const stats = try apply(module.allocator, &module);
+                try std.testing.expectEqual(@as(u32, 0), stats.integer_identities);
+                try std.testing.expectEqual(product, function.stmts.items[function.root_stmt].return_.?);
+            }
+        }
+    }
 }

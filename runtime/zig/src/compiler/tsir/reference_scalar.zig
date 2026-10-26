@@ -4,7 +4,7 @@ const schema = @import("schema.zig");
 /// Identity element for a reduction op in f32. Left-folding any
 /// sequence starting from this value must yield the same result as
 /// folding the sequence alone.
-pub fn reductionIdentityF32(op: schema.ReductionOp) f32 {
+pub fn reductionIdentityF32(op: schema.ReductionOp) error{InvalidReductionOp}!f32 {
     return switch (op) {
         .sum => 0.0,
         .product => 1.0,
@@ -14,14 +14,14 @@ pub fn reductionIdentityF32(op: schema.ReductionOp) f32 {
         // not have a left-fold identity and must not be dispatched
         // through the scalar simple-fold helpers. Attention semantic
         // evaluation happens outside this path.
-        .softmax_stable => unreachable,
+        .softmax_stable => error.InvalidReductionOp,
     };
 }
 
 /// Combine `acc` with `val` under the declared reduction op in f32.
 /// `std.math.min` / `std.math.max` honor IEEE-754 min/max semantics
 /// including NaN propagation per the `NanInfPolicy.propagate` contract.
-pub fn combineF32(op: schema.ReductionOp, acc: f32, val: f32) f32 {
+pub fn combineF32(op: schema.ReductionOp, acc: f32, val: f32) error{InvalidReductionOp}!f32 {
     return switch (op) {
         .sum => acc + val,
         .product => acc * val,
@@ -29,7 +29,7 @@ pub fn combineF32(op: schema.ReductionOp, acc: f32, val: f32) f32 {
         .max => @max(acc, val),
         // See `reductionIdentityF32` - softmax_stable is handled
         // outside the scalar simple-fold path.
-        .softmax_stable => unreachable,
+        .softmax_stable => error.InvalidReductionOp,
     };
 }
 

@@ -30,6 +30,16 @@ CASES = [
     ("local-const-bound", PRELUDE + "const limit = 4u; for (var i = 0u; i < limit; i += 1u) {} }", 0),
     ("local-let-bound", PRELUDE + "let limit = 4u; for (var i = 0u; i < limit; i += 1u) {} }", 0),
     ("phony-assignment", STORAGE + PRELUDE + "_ = output[0u]; }", 0),
+    ("nested-vector-swizzle-values", STORAGE + PRELUDE +
+     "var v = vec4u(1u,2u,3u,4u); output[0u] = v.zy.x; let q = v.yx; output[1u] = q.y; }", 0),
+    ("nested-aggregate-access", "struct S{v:vec4f,m:mat2x2f,a:array<vec4f,2>}" + PRELUDE +
+     "var s:S;let pair=s.v.xy;let element=s.v.z;let column=s.m[1u];"
+     "let lane=s.m[1u][0u];let item=s.a[1u].yx;}", 0),
+    ("contextual-vector-declaration", PRELUDE + "let pair:vec2i=vec2(1,2);}", 0),
+    ("contextual-vector-argument", "fn take(x:vec2i){}" + PRELUDE + "take(vec2(1,2));}", 0),
+    ("contextual-vector-return", "fn give()->vec2i{return vec2(1,2);}" + PRELUDE + "let x=give();}", 0),
+    ("default-vector-bitcast", PRELUDE + "let x=bitcast<vec2u>(vec2(1,2));}", 0),
+    ("default-float-vector-bitcast", PRELUDE + "let x=bitcast<vec2u>(vec2(1.0,2.0));}", 0),
     ("opaque-sampler", "@group(0) @binding(0) var s: sampler;" + PRELUDE + "_ = s; }", 1),
     ("opaque-comparison-sampler", "@group(0) @binding(0) var s: sampler_comparison;" + PRELUDE + "_ = s; }", 1),
     ("opaque-texture-2d", "@group(0) @binding(0) var t: texture_2d<f32>;" + PRELUDE + "_ = textureDimensions(t); }", 1),
@@ -52,17 +62,13 @@ CASES = [
      "output[0u] = u32(ldexp(1 + 1, 3)); output[1u] = u32(ldexp(vec2(1.0,2.0),vec2(3,4)).y); }", 0),
 
 
-]
-
-
-# Known frontend admission divergence, not an equal-success semantic case.
-# Zig sema.analyze_local_decl materializes inferred const to i32, which its
-# packed integer inferType rejects. C currently keeps the abstract constant.
-ADMISSION_DIVERGENCES = [
+    # Intentional retained-reference correction: 5d7fb0ad Zig rejected these
+    # valid abstract inputs as TypeMismatch. Compare full canonical semantics,
+    # not merely joint admission, after its contextual materialization fix.
     ("ldexp-inferred-integer-vector-admission", STORAGE + PRELUDE +
-     "output[0u] = u32(ldexp(vec2(1,2),vec2(3,4)).y); }", b"error: TypeMismatch"),
+     "output[0u] = u32(ldexp(vec2(1,2),vec2(3,4)).y); }", 0),
     ("packed-local-const-admission", "requires packed_4x8_integer_dot_product;" + STORAGE + PRELUDE +
-     "const word = 7; output[0u] = unpack4xU8(word + 1).x; }", b"error: TypeMismatch"),
+     "const word = 7; output[0u] = unpack4xU8(word + 1).x; }", 0),
 ]
 
 
@@ -138,14 +144,6 @@ pub fn main() !void {
                 semantic = json.loads(candidate.stdout)
                 assert len(semantic["rejections"]) == rejection_count, (name, semantic["rejections"])
                 print(f"source semantic differential: {name} canonical SHA-256 matches, {rejection_count} retained rejections")
-            for name, source, diagnostic in ADMISSION_DIVERGENCES:
-                path = temp / (name + ".wgsl")
-                path.write_text(source)
-                candidate = run([str(args.c_driver.resolve()), str(path)])
-                reference = run([str(binary), str(path)])
-                assert candidate.returncode == 0, (name, candidate)
-                assert reference.returncode != 0 and diagnostic in reference.stderr, (name, reference)
-                print(f"KNOWN ADMISSION GAP: {name}: C accepts; Zig rejects TypeMismatch (not parity)")
     print(f"TSIR source semantic differential: {len(CASES)} canonical semantic SHA-256 cases passed")
     return 0
 

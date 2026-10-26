@@ -1910,21 +1910,21 @@
       },
       "src/compiler/tsir/reference_reduction.zig": {
         "decision": "Keep",
-        "moduleSha256": "06ede08f1a901856fa8c8ff49b5dd4d11f09b89de8a4bb5cfe86f2bda5b3975b",
-        "reason": "Keep: reachable compiler implementation with a distinct named responsibility and no merge, elevation, recomposition, or deletion signal.",
-        "reviewer": "codex-recomposition-review/2026-08-08"
+        "moduleSha256": "da0ea9e1c00efa6ff9a8fb4e157c9df4e2dda5347ad7160294d6e32901326120",
+        "reason": "Keep: generic reduction dispatch propagates invalid scalar-fold operators through the existing reference lifetime owner, without partial output publication.",
+        "reviewer": "codex-c-parity-reference-errors/2026-10-26"
       },
       "src/compiler/tsir/reference_scalar.zig": {
         "decision": "Keep",
-        "moduleSha256": "9e42d7d029d3c4d9956d80f10ba85e008df18f598deb2d15f4392b62c6b138cd",
-        "reason": "Keep: reachable compiler implementation shared by 3 production consumers with no conflicting ownership signal.",
-        "reviewer": "codex-recomposition-review/2026-08-08"
+        "moduleSha256": "84db0b3fa0b9745bf8e64cb8d04ccc10c84a90890965d55744446ee5d84073f9",
+        "reason": "Keep: scalar fold primitives reject compound softmax with InvalidReductionOp rather than trapping or substituting an identity.",
+        "reviewer": "codex-c-parity-reference-errors/2026-10-26"
       },
       "src/compiler/tsir/reference_types.zig": {
         "decision": "Keep",
-        "moduleSha256": "4542cb5a620bac8b883b42c9f12bcbc6233f84d2a595cf584120bd4be1e1ff85",
-        "reason": "Keep: reachable compiler implementation shared by 3 production consumers with no conflicting ownership signal.",
-        "reviewer": "codex-recomposition-review/2026-08-08"
+        "moduleSha256": "875c89b534a36c57df6c640058d2370c315828b2039fd59ac7f81a799d230ec2",
+        "reason": "Keep: the shared reference error contract distinguishes invalid compound scalar folds from unsupported oracle shapes and explicit semantic rejection.",
+        "reviewer": "codex-c-parity-reference-errors/2026-10-26"
       },
       "src/compiler/tsir/schema.zig": {
         "decision": "Keep",
@@ -2426,9 +2426,9 @@
       },
       "src/compiler/wgsl/frontend/sema.zig": {
         "decision": "Keep",
-        "moduleSha256": "c3932ec7b41d6b27cc0ac65cf4f6f133621c19ff58ae5fd363a005339d5c5fda",
-        "reason": "Keep: requires syntax and supported extension admission remain frontend-owned and reject malformed or unknown requirements.",
-        "reviewer": "codex-packed-integers/2026-10-11"
+        "moduleSha256": "cf47d1e0ae63b41c76e4af7b7eb3ac039e11fdfdfd995bf961bd73dd1da02f80",
+        "reason": "Keep: declaration analysis preserves abstract const/vector types, contextual vector compatibility and default vector bitcast concretization without admitting concrete sign or width changes.",
+        "reviewer": "codex-c-parity-abstract-inference/2026-10-26"
       },
       "src/compiler/wgsl/frontend/sema_attrs.zig": {
         "decision": "Keep",
@@ -2438,9 +2438,9 @@
       },
       "src/compiler/wgsl/frontend/sema_expr.zig": {
         "decision": "Keep",
-        "moduleSha256": "9ff9e4cb232499000ae2ab520572192a880d7cc6eb2130f3e9188911ec67b2b2",
-        "reason": "Keep: reachable compiler implementation with a distinct named responsibility and no merge, elevation, recomposition, or deletion signal.",
-        "reviewer": "codex-doe-wgsl-correctness/2026-09-01"
+        "moduleSha256": "50b54922150c438c8e2601b4bacb84857472d23dfc8513e43e431cfbc8529254",
+        "reason": "Keep: constructor inference preserves abstract vector elements until contextual conversion; matrix inference keeps its retained materialization contract.",
+        "reviewer": "codex-c-parity-abstract-inference/2026-10-26"
       },
       "src/compiler/wgsl/frontend/sema_helpers.zig": {
         "decision": "Keep",
@@ -2462,15 +2462,15 @@
       },
       "src/compiler/wgsl/frontend/sema_types.zig": {
         "decision": "Keep",
-        "moduleSha256": "f3378bd99309dc86ea4c582ce91f635b370c5d39f04207c83ecf4bb2ccfaa4b6",
-        "reason": "Keep: reachable compiler implementation shared by 5 production consumers with no conflicting ownership signal.",
-        "reviewer": "codex-recomposition-review/2026-08-08"
+        "moduleSha256": "67cd6a5f901d634d7745cec430b32561f9dcaf481fb093bb25c030afb4694268",
+        "reason": "Keep: semantic binding metadata carries resolved local const initializer AST identities, allowing the IR constant folder to reuse lexical resolution instead of a second name lookup.",
+        "reviewer": "codex-c-parity-abstract-inference/2026-10-26"
       },
       "src/compiler/wgsl/frontend/sema_typeutils.zig": {
         "decision": "Keep",
-        "moduleSha256": "447680fdb74fe84ff4c83f8c2da15093d8bced06eff72d1c148484caf535406d",
-        "reason": "Keep: reachable compiler implementation shared by 2 production consumers with no conflicting ownership signal.",
-        "reviewer": "codex-recomposition-review/2026-08-08"
+        "moduleSha256": "1808e0aafdd686ce5428165cddf5996c9d0a04a5fb691cf6c0d08387eaaae39b",
+        "reason": "Keep: one fallible type utility materializes scalar and vector runtime declaration types, propagating interning allocation failures without changing concrete types.",
+        "reviewer": "codex-c-parity-abstract-inference/2026-10-26"
       },
       "src/compiler/wgsl/frontend/token.zig": {
         "decision": "Keep",
@@ -2486,9 +2486,9 @@
       },
       "src/compiler/wgsl/ir/ir_builder.zig": {
         "decision": "Keep",
-        "moduleSha256": "2f5e1cfac1618ab3ef668a3c18d8a2007f6ad0d4d34ebaa78fc24317d25cbc4c",
-        "reason": "Keep: frontend validates ldexp overloads and result types; typed IR expresses abstract-integer argument conversion once before backend instruction emission.",
-        "reviewer": "codex-glsl-mapping/2026-10-12"
+        "moduleSha256": "d9834d5c236b1640c75b88571dbe207bba88268ac072ddccdb5d8ce4c9a1043c",
+        "reason": "Keep: lexical const initializers use resolved bindings and contextual abstract-vector arguments/returns reuse ordinary typed construct conversions; no second constant evaluator.",
+        "reviewer": "codex-c-parity-abstract-inference/2026-10-26"
       },
       "src/compiler/wgsl/ir/ir_const_eval.zig": {
         "decision": "Keep",
@@ -2504,9 +2504,9 @@
       },
       "src/compiler/wgsl/ir/ir_opt_rewrite.zig": {
         "decision": "Keep",
-        "moduleSha256": "7ec761ae79bf009cf2b43c6315f99391a48ca9e0c7703f334bb4a13e8ea93be1",
-        "reason": "Keep: optional integer folding applies concrete 32-bit rules only to concrete types; wider abstract arithmetic remains in typed IR.",
-        "reviewer": "codex-qwen-metal-correctness/2026-10-15"
+        "moduleSha256": "3d265d1b9df9c712d73d1617888bc87c6c66e10fb421def4115169ee173f4007",
+        "reason": "Keep: optional runtime integer folding shares concrete modulo-width shift rules, preserves calls discarded by annihilator rewrites, and leaves const-stage diagnostics and wider abstract arithmetic with their existing typed owners.",
+        "reviewer": "codex-c-parity-reference-correctness/2026-10-26"
       },
       "src/compiler/wgsl/ir/ir_query.zig": {
         "decision": "Keep",
@@ -2522,9 +2522,9 @@
       },
       "src/compiler/wgsl/ir/ir_validate.zig": {
         "decision": "Keep",
-        "moduleSha256": "73e74cc0bb57a380bfe2c785732f88df48b2ec0669a571e8b65950c50dea3cf9",
-        "reason": "Keep: WGSL IR validation checks pointer expression shape and mutable dereference access.",
-        "reviewer": "codex-doe-pointer-reference-20260928"
+        "moduleSha256": "ae4d7e5182d72a26be6dc01af2040efe9792b8bbd444bb88f72d6041a85cf8a5",
+        "reason": "Keep: typed IR validates equal-width vectors through the existing scalar abstract-materialization rules, preserving concrete signedness and shape refusals.",
+        "reviewer": "codex-c-parity-abstract-inference/2026-10-26"
       },
       "src/compiler/wgsl/ir/layout_utils.zig": {
         "decision": "Keep",

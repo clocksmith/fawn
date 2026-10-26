@@ -126,3 +126,19 @@ const DoeCompilerNoticeV18 *doe_shader_get_diagnostics(const doe_shader *shader,
     if (count) *count=shader->notice_count;
     return shader->notices;
 }
+
+bool doe_shader_module_matches(const doe_shader *module, doe_shader_target target,
+    uint32_t semantic_flags, const char *source, size_t size,
+    const void *identity, size_t identity_size)
+{
+    return module && module->kind == SHADER_MODULE && module->options.target == target &&
+        module->semantic_flags == semantic_flags && (!size || source) && (!identity_size || identity) &&
+        size == module->source_size && identity_size == module->identity_size &&
+        (!size || !memcmp(source,module->source,size)) &&
+        (!identity_size || !memcmp(identity,module->identity,identity_size));
+}
+
+size_t doe_shader_owned_bytes(const doe_shader *shader)
+{
+    return shader ? shader->allocation_size : 0;
+}

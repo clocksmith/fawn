@@ -34,7 +34,7 @@ bool sema_materialize(Source *s, ExpressionValue *v, TypeId type) {
     if (v->constant.type == type) return true;
     TypeId common;
     if (!type_abstract(s->compiler, v->constant.type) || !sema_common_type(s, v->constant.type, type, v->value.source_offset, &common) || common != type)
-        return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, v->value.source_offset, "value has no implicit conversion to destination type");
+        return source_error_cause(s, DOE_COMPILER_SEMANTIC_ERROR, SOURCE_CAUSE_TYPE_MISMATCH, v->value.source_offset, "value has no implicit conversion to destination type");
     if (v->known && !constant_materialize(s, v->value.source_offset, v->constant, type, &v->constant)) return false;
     v->constant.type = type;
     v->value.type = type;
@@ -122,7 +122,7 @@ static bool identity_value(Source *s,NameSpan name,const LocalScope *scope,Value
         }
         case IDENTITY_NONE: break;
     }
-    return source_error(s,DOE_COMPILER_SEMANTIC_ERROR,name.offset,"name does not resolve to an available value");
+    return source_error_cause(s, DOE_COMPILER_SEMANTIC_ERROR, SOURCE_CAUSE_UNKNOWN_IDENTIFIER,name.offset,"name does not resolve to an available value");
 }
 static bool capture_identity(Source *s, const LocalScope *scope, SourceReference *slot, ValueIdentity identity, uint32_t offset) {
     SourceReferenceKind kind=SOURCE_NONE;
@@ -284,18 +284,18 @@ static bool postfix_value(Source *s, const Expression *node, const LocalScope *s
         if (type->kind == TYPE_FREXP_RESULT || type->kind == TYPE_MODF_RESULT) {
             if (source_span_is(s, member, "fract")) index = 0u;
             else if (source_span_is(s, member, type->kind == TYPE_FREXP_RESULT ? "exp" : "whole")) index = 1u;
-            else return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, member.offset, "unknown floating decomposition result member");
+            else return source_error_cause(s, DOE_COMPILER_SEMANTIC_ERROR, SOURCE_CAUSE_UNKNOWN_IDENTIFIER, member.offset, "unknown floating decomposition result member");
             output = type_child(c, input, index);
         }
         else if (type->kind == TYPE_ATOMIC_RESULT) {
             if (source_span_is(s, member, "old_value")) index = 0u;
             else if (source_span_is(s, member, "exchanged")) index = 1u;
-            else return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, member.offset, "unknown atomic compare-exchange result member");
+            else return source_error_cause(s, DOE_COMPILER_SEMANTIC_ERROR, SOURCE_CAUSE_UNKNOWN_IDENTIFIER, member.offset, "unknown atomic compare-exchange result member");
             output = type_child(c, input, index);
         }
         else if (type->kind == TYPE_STRUCT) {
             for (;index<type->count;++index) if (source_spans_equal(s, member, c->members[type->element+index].name)) break;
-            if (index == type->count) return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, member.offset, "unknown struct member");
+            if (index == type->count) return source_error_cause(s, DOE_COMPILER_SEMANTIC_ERROR, SOURCE_CAUSE_UNKNOWN_IDENTIFIER, member.offset, "unknown struct member");
             output = c->members[type->element+index].type;
         }
         else if (type->kind == TYPE_VECTOR) {
@@ -502,9 +502,9 @@ static bool binary_types(Source *s, ExpressionKind op, Comparison cmp, Expressio
     const bool arithmetic = op == EXPRESSION_ADD || op == EXPRESSION_SUBTRACT || op == EXPRESSION_MULTIPLY || op == EXPRESSION_DIVIDE || op == EXPRESSION_REMAINDER;
     const bool shift = op == EXPRESSION_SHIFT_LEFT || op == EXPRESSION_SHIFT_RIGHT;
     if (la == IR_VOID || lb == IR_VOID || (wa != wb && (!arithmetic || (wa != 1u && wb != 1u))))
-        return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, offset, "operator operand shapes do not match an admitted overload");
+        return source_error_cause(s, DOE_COMPILER_SEMANTIC_ERROR, SOURCE_CAUSE_TYPE_MISMATCH, offset, "operator operand shapes do not match an admitted overload");
     if (shift) {
-        if (wa != wb || !is_integer(la)) return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, offset, "shift operands require matching integer shapes");
+        if (wa != wb || !is_integer(la)) return source_error_cause(s, DOE_COMPILER_SEMANTIC_ERROR, SOURCE_CAUSE_TYPE_MISMATCH, offset, "shift operands require matching integer shapes");
         if (b->runtime && la == IR_ABSTRACT_INT) la = IR_I32;
         TypeId at, bt;
         if (!shaped_type(s, la, wa, &at) || !shaped_type(s, IR_U32, wb, &bt) || !sema_materialize(s, a, at) || !sema_materialize(s, b, bt)) return false;
@@ -608,14 +608,14 @@ bool sema_expression(Source *s, uint32_t id, const LocalScope *scope, bool evalu
     const bool logical = e->kind == EXPRESSION_AND || e->kind == EXPRESSION_OR;
     bool skip = false;
     if (logical) {
-        if (a.constant.type != IR_BOOL) return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, e->source_offset, "logical operands require scalar bool");
+        if (a.constant.type != IR_BOOL) return source_error_cause(s, DOE_COMPILER_SEMANTIC_ERROR, SOURCE_CAUSE_TYPE_MISMATCH, e->source_offset, "logical operands require scalar bool");
         skip = !a.runtime && a.known && (a.constant.bits != 0u) == (e->kind == EXPRESSION_OR);
         if (a.runtime && emit && (!sema_ensure_value(s, &a, true) || !sema_append(s, (IrInstruction){.opcode = IR_SHORT_BEGIN, .source_offset = e->source_offset, .operands.scalar = {.left = a.value.id, .literal = e->kind == EXPRESSION_OR}}, NULL))) return false;
     }
 /* Mutable LHS reads have already emitted their snapshot before RHS calls. */
     if (!sema_expression(s, e->right, scope, evaluate && !skip, emit && !skip, &b)) return false;
     if (logical) {
-        if (b.constant.type != IR_BOOL) return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, e->source_offset, "logical operands require scalar bool");
+        if (b.constant.type != IR_BOOL) return source_error_cause(s, DOE_COMPILER_SEMANTIC_ERROR, SOURCE_CAUSE_TYPE_MISMATCH, e->source_offset, "logical operands require scalar bool");
         *out = (ExpressionValue){
             .runtime = a.runtime || b.runtime, .overridable = a.overridable || b.overridable, .constant.type = IR_BOOL, .value = {.type = IR_BOOL, .source_offset = e->source_offset}
         };

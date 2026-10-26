@@ -1628,3 +1628,39 @@ Native tests exercise mapped-buffer submission as well as destroyed resources.
 All backends retain their zero-GPU-operation guards. The fix preserves the
 original copy validation order, exact command leases, and ordinary pending
 resource finalization; it introduces no second lifetime mechanism.
+
+
+### Native shader reuse and persisted target artifacts
+
+The device now owns one bounded immutable shader cache: exact WGSL bytes,
+target, enabled semantic policy and compiler identity select validated modules;
+immutable module identity, selected entry, ordered override key/value bits and
+Metal sample mask select executable artifacts. It retains at most sixteen
+one-MiB direct allocations (plus their bounded module owners), caches successful
+artifacts only, compiles outside device locks, and drops displaced owners after
+unlocking. Device finalization clears the cache before closing its backend.
+
+Selected targets also use optional local-build persistence. The shader owner
+serializes pointer-free target bytes and complete typed reflection; the native
+owner binds the exact loaded native, core compiler and shader images. Linux
+requires mapped GNU build IDs and hashes immutable loaded spans, not paths that
+may have been replaced. Missing identity, corrupt/truncated/oversized records,
+I/O failure and allocation failure are misses, never compilation success or a
+replacement WebGPU diagnostic. Existing bounded atomic cache-file primitives
+own storage. Files are isolated from retained Zig and native-driver caches in
+`$HOME/.cache/doe/c_shader_translation_cache_v1` (or
+`cache/doe/c_shader_translation_cache_v1` without HOME).
+`DOE_SHADER_CACHE_DIR` chooses another directory; an explicitly empty value
+disables persistence. Each artifact is at most one MiB. The checksum detects
+corruption; it is not authentication against an actor who can rewrite the
+user's cache and digest.
+
+`check-shader-cache` covers all three targets and exact reflection/byte reload,
+policy/entry/constant/mask misses, separate device caches, corruption, malformed
+references/type cycles, allocator mutation/OOM and final release.
+`check-shader-cache-reload` proves a fresh-process Linux target hit without target
+recompilation; the Linux no-build-ID control proves fail-closed identity. macOS
+and Windows have mapped-image implementations, but ASLR-sensitive fixups can
+conservatively miss; their actual cross-process hit and hardware qualification
+are not established by Linux controls. Metal library call ledgers likewise do
+not qualify native GPU execution.

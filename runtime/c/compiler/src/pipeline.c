@@ -7,6 +7,7 @@
 /* One analysis owner. The caller always ends the initialized environment, even
  * on failure, and publishes only after restoration and target work succeed. */
 bool compiler_analyze(Source *source, CompilerWorkspace *c, NumericEnvironment *environment) {
+    source->error_cause = SOURCE_CAUSE_NONE;
     environment->active = false;
     source->compiler = c;
     source->limits = &c->limits;

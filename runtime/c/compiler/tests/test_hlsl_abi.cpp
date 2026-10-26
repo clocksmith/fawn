@@ -22,7 +22,7 @@ int main() {
         &outputs, sizeof(outputs), &result, sizeof(result)) == DOE_COMPILER_OK);
     assert(result.target == DOE_COMPILER_TARGET_HLSL && result.published_entries == 1);
     assert(result.stages.resources.module.module.selected_entry == 1 && result.published_bindings == 6);
-    assert(outputs.entries[0].dispatch_space == 7 && outputs.entries[0].flags == DOE_COMPILER_HLSL_ENTRY_WAVES);
+    assert(outputs.entries[0].dispatch_space == 7 && outputs.entries[0].flags == (DOE_COMPILER_HLSL_ENTRY_WAVES | DOE_COMPILER_HLSL_ENTRY_ARRAY_VIEWS));
     assert(outputs.bindings[2].register_kind == DOE_COMPILER_HLSL_REGISTER_CBV);
     assert(outputs.bindings[2].register_space == 1 && outputs.bindings[2].shader_register == 2);
     assert(outputs.bindings[0].stride == 4 && outputs.bindings[0].shader_register == 5);

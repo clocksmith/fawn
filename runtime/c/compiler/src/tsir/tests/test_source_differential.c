@@ -16,7 +16,7 @@ int main(int argc, char **argv) {
     bool failed = ferror(file) != 0;
     if (fclose(file) != 0) failed = true;
     if (failed || length == capacity) { free(source); return 2; }
-    TsirSemantic semantic;
+    TsirSemantic semantic = {0};
     DoeCompilerDiagnostic diagnostic;
     TsirStatus status = tsir_source_lower(source, length,
         "source-differential-v1", &semantic, &diagnostic);

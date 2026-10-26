@@ -54,5 +54,11 @@ bool numeric_unary(Source *source, size_t offset, ExpressionKind operation,
 bool numeric_binary(Source *source, size_t offset, ExpressionKind operation,
                     Comparison comparison, NumericValue left, NumericValue right,
                     NumericValue *result);
+/* Diagnostic-free partial fold of concrete runtime integer operations. Shifts
+ * mask the u32 count modulo 32; const-stage numeric_binary checks are unchanged.
+ * Unsupported types/operations and undefined division decline without modifying
+ * result or source diagnostics. Admitted arithmetic uses the scalar owner. */
+bool numeric_runtime_integer_binary(Source *, ExpressionKind, NumericValue,
+                                    NumericValue, NumericValue *);
 uint32_t numeric_integer_bits(NumericBuiltinKind, uint32_t, bool);
 #endif

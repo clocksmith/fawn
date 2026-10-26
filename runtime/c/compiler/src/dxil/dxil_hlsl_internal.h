@@ -5,6 +5,8 @@
 
 #include "dxil_hlsl.h"
 
+#define DXIL_HLSL_TEMPORARY_NAME_CAP 96u
+
 typedef struct DxilHlslEmitter {
     const DxilIrModule *module;
     char *out;
@@ -12,6 +14,14 @@ typedef struct DxilHlslEmitter {
     size_t pos;
     size_t indent;
     unsigned depth;
+    char temporary_prefix[32];
+    bool store_override;
+    uint32_t store_owner, store_expression_count;
+    DxilIrExprId store_expressions[DXIL_IR_MAX_EXPRS];
+    bool pointer_override;
+    DxilIrExprId pointer_override_raw, pointer_override_length, pointer_override_owner;
+    bool stage_array_return;
+    uint32_t stage_array_length;
     bool loop_continuing_has;
     DxilIrStmtId loop_continuing;
     bool loop_break_has;
@@ -28,6 +38,10 @@ DxilStatus dxil_hlsl_write_indent(DxilHlslEmitter *emitter);
 DxilStatus dxil_hlsl_write_u32(DxilHlslEmitter *emitter, uint32_t value);
 DxilStatus dxil_hlsl_write_u64(DxilHlslEmitter *emitter, uint64_t value);
 DxilStatus dxil_hlsl_write_float(DxilHlslEmitter *emitter, double value);
+DxilStatus dxil_hlsl_choose_temporary_names(DxilHlslEmitter *);
+DxilStatus dxil_hlsl_temporary_name(const DxilHlslEmitter *, const char *, uint32_t,
+    char buffer[DXIL_HLSL_TEMPORARY_NAME_CAP]);
+DxilStatus dxil_hlsl_write_temporary(DxilHlslEmitter *, const char *, uint32_t);
 
 /* Type, constant, expression, and statement emitters. Types and
  * expressions live in dxil_hlsl_expr.c, statements in
@@ -46,6 +60,25 @@ DxilStatus dxil_hlsl_emit_block_contents(DxilHlslEmitter *emitter,
     const DxilIrFunction *function, DxilIrStmtId stmt_id);
 DxilStatus dxil_hlsl_emit_stmt(DxilHlslEmitter *emitter,
     const DxilIrFunction *function, DxilIrStmtId stmt_id);
+
+DxilStatus dxil_hlsl_emit_guarded_store(DxilHlslEmitter *, const DxilIrFunction *, DxilIrStmtId,
+    DxilIrExprId captured, DxilIrExprId raw, DxilIrExprId length);
+const char *dxil_hlsl_assignment_text(DxilIrAssignOp);
+const char *dxil_hlsl_local_name(const DxilIrFunction *, uint32_t, char buffer[32]);
+DxilStatus dxil_hlsl_emit_pointer_captures(DxilHlslEmitter *, const DxilIrFunction *, DxilIrExprId);
+DxilStatus dxil_hlsl_emit_captured_index(DxilHlslEmitter *, const DxilIrFunction *, DxilIrExprId, bool runtime_raw);
+bool dxil_hlsl_runtime_guard(const DxilHlslEmitter *, const DxilIrFunction *, DxilIrExprId,
+    DxilIrExprId *captured, DxilIrExprId *raw, DxilIrExprId *length);
+bool dxil_hlsl_pointer_index_captured(const DxilHlslEmitter *, const DxilIrFunction *, DxilIrExprId);
+DxilStatus dxil_hlsl_emit_array_length(DxilHlslEmitter *, const DxilIrFunction *, DxilIrRange);
+DxilStatus dxil_hlsl_emit_array_helpers(DxilHlslEmitter *);
+DxilStatus dxil_hlsl_emit_stage_return(DxilHlslEmitter *, const DxilIrFunction *, DxilIrExprId);
+DxilStatus dxil_hlsl_emit_stage(DxilHlslEmitter *, const DxilIrFunction *);
+DxilStatus dxil_hlsl_emit_plain_function(DxilHlslEmitter *, const DxilIrFunction *, bool implementation);
+DxilStatus dxil_hlsl_emit_helpers(DxilHlslEmitter *);
+DxilStatus dxil_hlsl_emit_extra_builtin(DxilHlslEmitter *, const DxilIrFunction *, DxilIrTypeId,
+    const char *, DxilIrRange, bool *handled);
+const char *dxil_hlsl_builtin_semantic(DxilIrBuiltin);
 
 /* Subgroup builtin classification from the maps, defined in
  * dxil_hlsl_expr.c. */

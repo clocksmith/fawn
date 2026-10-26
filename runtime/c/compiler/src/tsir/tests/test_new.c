@@ -112,13 +112,13 @@ static void fir_init_types(void) {
 
 static void test_frontend_layout_and_query(void) {
     TsirIrStructField fields[2];
-    TsirIrStructDef def;
+    TsirIrStructDef def = {0};
     uint32_t size = 0;
     uint32_t offset = 0;
     uint32_t base = 0;
     uint64_t lit = 0;
     TsirIrType types[4];
-    TsirIrFunction func;
+    TsirIrFunction func = {0};
     TsirIrExpr exprs[3];
     memset(types, 0, sizeof(types));
     types[0].kind = TSIR_IR_TYPE_SCALAR;
@@ -166,7 +166,7 @@ static void test_frontend_layout_and_query(void) {
 }
 
 static void test_frontend_bindings(void) {
-    TsirSemantic semantic;
+    TsirSemantic semantic = {0};
     uint8_t digest[32];
     TsirStatus status = TSIR_OK;
     fir_init_types();
@@ -217,7 +217,7 @@ static void test_frontend_bindings(void) {
 }
 
 static void test_frontend_for_axis_and_rejection(void) {
-    TsirSemantic semantic;
+    TsirSemantic semantic = {0};
     uint8_t digest[32];
     TsirStatus status = TSIR_OK;
     fir_init_types();

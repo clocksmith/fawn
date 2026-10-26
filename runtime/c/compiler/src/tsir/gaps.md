@@ -43,8 +43,8 @@ coordinator's clarification that CSL can be ignored; mapped, not built.
 | emit_spir_v.zig (71) | done | `tsir_emit.c` skeleton plus `tsir_kernel_body.c` SPIR-V bodies for fused_gemv, rms_norm, gather |
 | emit_text_skeleton.zig (132) | done | `tsir_emit.c`: header, metadata, realization-only body_comment, and semantic-aware path (header, metadata, kernel body; no partial text on failure) |
 | emit_webgpu.zig (141) | done | `tsir_emit.c` realization-only skeleton plus `tsir_kernel_body.c` WGSL bodies for fused_gemv, rms_norm, gather |
-| family_hint.zig (183) | done | `tsir_frontend.c` `tsir_family_hint_classify` (pure predicate, retained) plus `tsir_family_hint_infer_ir` (indexed-access coverage, indirect-access detection with the Zig depth cap 8 for local aliases) |
-| frontend.zig (885) | done | `tsir_frontend_lower.c`, `tsir_frontend_bindings_axes.c`, `tsir_frontend_axes.c`, `tsir_frontend_reductions.c`, plus `tsir_wgsl_ir.c` (C mirror of `../wgsl/ir/ir.zig`, `ir_query`, `layout_utils`). Per-function bindings, axes, reductions, collectives, rejections, family hint, semantic body; contract_version 1. Approximations: manually constructed OTHER without metadata uses "other" (see G-IR-OTHER); general tree walks have a 512 depth guard (see G-DEPTH-GUARD). |
+| family_hint.zig (183) | done | `tsir_frontend.c` pure predicate plus `tsir_family_hint.c` `tsir_family_hint_infer_ir` (indexed-access coverage, indirect-access detection with the Zig depth cap 8 for local aliases) |
+| frontend.zig (885) | done | `tsir_frontend_lower.c`, `tsir_frontend_bindings_axes.c`, `tsir_frontend_axes.c`, `tsir_frontend_reductions.c`, plus `tsir_wgsl_ir.c` (C mirror of `../wgsl/ir/ir.zig`, `ir_query`, `layout_utils`). Per-function bindings, axes, reductions, collectives, rejections, family hint, semantic body; contract_version 1. Approximations: manually constructed OTHER without metadata uses "other" (see G-IR-OTHER); family-hint expression graphs use an explicit work stack (see G-DEPTH-GUARD). |
 | frontend_body.zig (178) | done | `tsir_frontend_passes.c` body inference, including RMSNorm epsilon inference (uniform path `uniform:u.eps` with std430 field offset, or literal fallback) |
 | frontend_collectives.zig (246) | done | `tsir_frontend_passes.c` collectives walker (statement-walk order, switch expressions only, axis from innermost recognized for loop or -1) |
 | frontend_expr.zig (637) | done | `tsir_frontend_expr.c` literal/symbolic upper bounds, step, init bound, dispatch-guard scan, step-sign detection, dispatch-axis letter |
@@ -71,28 +71,47 @@ See [bootstrap evidence and limits](../../TSIR_BOOTSTRAP.md).
 
 ## Open items that no code in this directory resolves
 
-- G-REGISTRY: the 103-row capability registry and the 266-name native
-  API inventory were not found in this tree. No registry-row mapping
-  is claimed. The coordinator must supply the inventory file (reported
-  to live on the user's Mac) before that mapping can be written.
-- G-DESCRIPTOR-HASH: resolved for the three non-CSL bootstrap targets by
-  `tsir_targets.c`; the manifest pipeline installs actual correctness hashes
-  into planned functions. The older low-level planner API still accepts its
-  reduced descriptor, so standalone callers must supply identity explicitly.
+- G-REGISTRY: `config/webgpu-capability-inventory.json` exists with 103
+  capability rows, but has no exhaustive C-versus-Zig parity mapping. This
+  TSIR-local inventory is not a substitute. `runtime/c/native/README.md`
+  reconciles 266 retained lookup names versus 250 C names: the remaining 15
+  foreign-delegation-only names and one logging no-op are not 16 working
+  retained native features waiting to be ported. Actual native/browser
+  functionality and physical qualification remain independent gates.
+- G-DESCRIPTOR-HASH: resolved for low-level planning as well as bootstrap.
+  `TsirTargetDescriptor` now carries the complete retained correctness fields;
+  `TsirTargetIdentity` aliases it. Planning computes the shared target hash
+  before allocating results, and rejects invalid descriptors with empty output.
+  This changes the source contract: old reduced manually constructed descriptors
+  must supply name, streaming-GEMM tag and the complete correctness fields.
+  In-tree initializers and consumers were updated; identity-only mutations alter
+  the stored hash and mismatched emitter identities reject.
 - G-F64: Shared tsir_format.c now matches 4,152 actual Zig 0.15.2 plain-decimal outputs, including signed zero, subnormals and extreme finite values. Nonfinite rejection preserves errno/fenv including signaling NaNs. This sample is not exhaustive over binary64.
 
-- G-EMITTER-DIGEST: bootstrap manifests now hash the actual retained
-  reference emitter source concatenations, exactly matching the format's Zig
-  reference identity. This identifies those reference inputs, not C source.
-  Missing or oversized inputs reject; no Zig executable is needed by C tools.
-- G-SOFTMAX-TRAP: Zig traps on softmax_stable reaching the scalar
-  fold helpers; C returns TSIR_ERR_INVALID. Neither produces a
-  value, but the observable behavior differs (trap vs error code).
-  If the coordinator needs trap-identical behavior, say so; the C
-  choice was made because a library must not trap on bad input.
-- G-STRINGS: the C API uses NUL-terminated strings, so TSIR names
-  containing a NUL byte cannot be represented. Zig slices can contain
-  them. No test covers that case because the API cannot express it.
+- G-EMITTER-DIGEST: resolved for all four non-CSL emitters through
+  `tsir_emitter_code_digest`, including DXIL outside the three-target bootstrap
+  registry. Seven actual Zig comparisons cover three descriptors and four
+  emitter source concatenations; eleven bounded source/error controls also pass.
+  This identifies retained reference inputs, not C source. Missing or oversized
+  inputs reject; no Zig executable is needed by C tools. E23 live configuration
+  knobs are consumed only by retained CSL bodies and remain excluded, not an
+  unimplemented non-CSL feature.
+- G-SOFTMAX-TRAP: resolved by a retained-reference safety correction, not by
+  adding a C trap. Zig scalar-fold helpers now report `InvalidReductionOp` for
+  the compound `softmax_stable` operation and generic interpretation propagates
+  it; C retains `TSIR_ERR_INVALID`. Neither returns a fabricated scalar value.
+  This deliberately changes the old Zig invalid-input contract; valid folds
+  are unchanged and the whole retained WGSL suite passes after the correction.
+- G-STRINGS: resolved by length-bearing schema/IR/descriptor fields and span
+  entry points. Positive `*_length` selects exact caller-owned bytes, including
+  embedded NUL and nonterminated slices; zero retains legacy `strlen`, and an
+  empty value remains `""`. Caller storage must cover the declared span and
+  remain alive for the synchronous call. Frontend/planner outputs own duplicated
+  bytes and lengths. Canonical JSON, identities, name/role comparisons, bound
+  construction, epsilon lookup and emitter metadata preserve lengths. Six actual
+  Zig slice comparisons cover semantic, realization, emitter-version, manifest,
+  descriptor and skeleton identities. This is independent of WGSL source syntax,
+  whose identifier syntax does not admit embedded NUL.
 - G-MINMAX-NAN: The pinned Linux x86-64 reference drops one NaN and selects the second payload for two NaNs, without FE_INVALID. The AArch64 reference instead uses native minimum/maximum-number behavior: signaling NaNs quiet and raise FE_INVALID, and quiet payload selection follows that target. C implements both target paths. Signed-zero ties retain numeric-only comparison where the reference does not promise their sign.
 
 - G-GEMV-NANINF: Zig GEMV code does not check `nan_inf`, although
@@ -121,12 +140,13 @@ See [bootstrap evidence and limits](../../TSIR_BOOTSTRAP.md).
 
 - G-IR-OTHER: Source adaptation retains actual sampler/texture/storage-texture tag names for shared retained types; five actual Zig semantic digest/rejection cases pass. Manually constructed OTHER types without metadata still use the generic other detail. C-only type kinds without retained Zig equivalents are not claimed equivalent.
 
-- G-DEPTH-GUARD: general IR tree walks in the C frontend carry a
-  512 depth guard (the Zig walkers are recursive without an explicit
-  cap in the code read). A tree deeper than 512 levels stops
-  descending instead of recursing unboundedly; no such tree was
-  observed in the fixtures. Local-alias indirect-access detection
-  keeps Zig's exact depth cap 8.
+- G-DEPTH-GUARD: resolved for the formerly truncated family-hint expression
+  predicates by `tsir_family_hint.c` work stacks and memoized graph queries.
+  A 4,096-level shared DAG retains axis evidence; traversed malformed edges and
+  cycles fail explicitly rather than silently classifying a different family.
+  Global-base lookup is bounded by graph size, not 512. The retained eight-local
+  alias bound is unchanged and tested at both sides. This does not remove source
+  adapter pool limits: those are explicit error boundaries, not silent truncation.
 - G-MANIFEST-PIPELINE: real source lowering, planning and identity generation
   now execute through shared C owners. The adapter has explicit compiler pools
   and a 1 MiB source cap. Constants, aliases, symbolic overrides, private and
@@ -135,11 +155,18 @@ See [bootstrap evidence and limits](../../TSIR_BOOTSTRAP.md).
   retained Zig TSIR; the projection is not an executable general WGSL IR.
   Five mutated global-declaration fixtures compare exactly against Zig.
   Packed-integer builtin expansion and ldexp argument materialization now
-  have 21 shared semantic differential cases overall. Two admission differences
-  remain: C accepts inferred integer-vector ldexp and local-const packed unpack
-  inputs that pinned Zig rejects as TypeMismatch. General WGSL-IR structural
+  have actual shared semantic differential coverage. The two formerly different
+  admissions (inferred integer-vector ldexp and local-const packed unpack) now
+  match after narrow retained Zig abstract-type/constant-binding corrections;
+  pre-change rejection receipts are preserved separately. The canonical
+  source differential matches against that explicitly changed reference; this is not
+  a claim that the old reference already accepted them. General WGSL-IR structural
   identity is not established; immediate roots still reject because retained TSIR has no such
   address-space representation. Wider WGSL equivalence remains a separate gate.
+  Nested member/index types are projected from canonical aggregate metadata,
+  not potentially uncached intermediate AST type slots; vector multi-swizzles
+  project value-loaded bases. Direct struct/vector/matrix/array controls and
+  actual nested-source differentials exercise that distinction.
   No source-pattern classifier or Zig fallback substitutes for these paths.
 - G-ORACLE-CLI: resolved by the standalone C CLI, including accepted-and-ignored
   provenance flags, first errors and process failures. Shape/byte overflow and

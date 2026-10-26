@@ -61,7 +61,7 @@ bool override_finish(Source *s, uint32_t declaration, const LocalScope *scope) {
             if (!override_charge(s, 1u)) return false;
             const OverrideRecord *other = &s->specialization->records[i];
             if (other != record && other->id == record->id)
-                return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, syntax->name.offset,
+                return source_error_cause(s, DOE_COMPILER_SEMANTIC_ERROR, SOURCE_CAUSE_INVALID_ATTRIBUTE, syntax->name.offset,
                                     "duplicate override id");
         }
     }
@@ -79,8 +79,9 @@ bool override_finish(Source *s, uint32_t declaration, const LocalScope *scope) {
     record->type = annotation;
     syntax->value.bits = value.known ? value.constant.bits : 0u;
     syntax->state = 2u | DECLARATION_OVERRIDE |
-        (s->specialization->specializing && value.known &&
-            (record->required != 0u || record->supplied != NO_ID) ? DECLARATION_KNOWN : 0u);
+        (value.known && (s->specialization->default_initializers ||
+            (s->specialization->specializing &&
+             (record->required != 0u || record->supplied != NO_ID))) ? DECLARATION_KNOWN : 0u);
     return true;
 }
 bool override_integer(Source *s, uint32_t expression, const LocalScope *scope,

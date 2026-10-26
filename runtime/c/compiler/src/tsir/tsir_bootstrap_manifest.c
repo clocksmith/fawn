@@ -8,6 +8,7 @@
 #include "tsir_planner.h"
 #include "tsir_source.h"
 #include "tsir_targets.h"
+#include "tsir_file.h"
 
 #include <errno.h>
 #include <stdio.h>
@@ -38,17 +39,16 @@ static TsirStatus append_target(const char *root, const char *kernel,
     TsirBootstrapManifestError *error) {
     const TsirTargetIdentity *identity = tsir_target_descriptor(target);
     TsirPlannedRealization planned;
-    TsirPlannerOptions options;
+    TsirPlannerOptions options = {0};
     TsirRealization realization;
     TsirDigests digests;
-    TsirManifestEntry entry;
+    TsirManifestEntry entry = {0};
     TsirStatus status = TSIR_OK;
     uint8_t descriptor_hash[32];
     char emitter_hex[65];
     char descriptor_hex[65];
     char realization_hex[65];
     char semantic_hex[65];
-    size_t i = 0;
     memset(&planned, 0, sizeof(planned));
     memset(&realization, 0, sizeof(realization));
     tsir_planner_default_options(&options);
@@ -64,7 +64,7 @@ static TsirStatus append_target(const char *root, const char *kernel,
         return status;
     }
     error->stage = "realization planning";
-    status = tsir_plan_realization(semantic, &identity->planner, &options,
+    status = tsir_plan_realization(semantic, identity, &options,
         &planned);
     if (status != TSIR_OK) {
         return status;
@@ -74,9 +74,6 @@ static TsirStatus append_target(const char *root, const char *kernel,
             "%s", planned.rejections[0].detail);
         tsir_plan_free_realization(&planned);
         return TSIR_ERR_REJECTED;
-    }
-    for (i = 0; i < planned.function_count; i++) {
-        memcpy(planned.functions[i].target_descriptor_hash, descriptor_hash, 32);
     }
     realization.contract_version = planned.contract_version;
     realization.functions = planned.functions;
@@ -110,9 +107,9 @@ TsirStatus tsir_bootstrap_manifest_source(const char *root, const char *kernel,
         TSIR_TARGET_WEBGPU_GENERIC, TSIR_TARGET_MSL, TSIR_TARGET_SPIR_V
     };
     TsirBootstrapManifestError local_error;
-    TsirSemantic semantic;
+    TsirSemantic semantic = {0};
     TsirBuffer staged;
-    TsirManifestEntry metadata;
+    TsirManifestEntry metadata = {0};
     TsirStatus status = TSIR_OK;
     size_t i = 0;
     memset(&local_error, 0, sizeof(local_error));
@@ -190,13 +187,14 @@ static TsirStatus read_source(const char *root, const char *relative,
     memcpy(path, root, root_length);
     path[root_length] = '/';
     memcpy(path + root_length + 1u, relative, relative_length + 1u);
-    input = fopen(path, "rb");
+    TsirFileStamp stamp;
+    status = tsir_file_open(path, &input, &stamp);
     first_errno = errno;
     free(path);
-    if (input == NULL) {
+    if (status != TSIR_OK) {
         free(bytes);
         error->system_error = first_errno;
-        return TSIR_ERR_INVALID;
+        return status;
     }
     *length = fread(bytes, 1u, capacity, input);
     if (ferror(input)) {

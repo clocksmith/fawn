@@ -23,16 +23,22 @@ include targets/metal/sources.mk
 include targets/hlsl/sources.mk
 LIB_SOURCES = $(addprefix targets/metal/,$(METAL_SOURCE_NAMES)) $(addprefix targets/hlsl/,$(HLSL_SOURCE_NAMES)) $(shell cat src/sources.txt)
 HEADERS = include/doe_compiler_diagnostics.h src/diagnostics_internal.h include/doe_compiler_pool_growth.h src/pointer_lower.h include/doe_compiler_translation.h include/doe_compiler_sampling.h include/doe_compiler_metal_pipeline.h include/doe_compiler_module_specialization.h include/doe_compiler_specialization.h src/override.h src/sources.txt include/doe_compiler_metal.h include/doe_compiler_hlsl.h src/numeric_host.h include/doe_compiler_text.h src/compile_internal.h src/text_internal.h $(wildcard targets/metal/*.h targets/hlsl/*.h targets/*.h) include/doe_compiler_stages.h src/stage.h src/parse_internal.h include/doe_compiler_resources.h include/doe_compiler_features.h include/doe_compiler_module.h src/builtin.h src/spirv_decl.h src/spirv_internal.h include/doe_compiler_typed.h src/sema.h src/numeric.h src/internal.h include/doe_compiler.h include/doe_compiler_v2.h include/doe_compiler_job.h src/cli_json.h src/cli_text.h src/cli_specialization.h
+# Private typed layout is consumed by TSIR/DXIL projections as well as core.
+HEADERS += $(wildcard include/*.h src/*.h)
 SPIRV_VAL ?= spirv-val
 CLI_FAULT_FLAGS = -Wl,--wrap=write,--wrap=close,--wrap=link,--wrap=mkstemp,--wrap=malloc,--wrap=free,--wrap=doe_compiler_job_requirements,--wrap=doe_compiler_stage_requirements
 .PHONY: all test test-cli-modes test-uniform sanitize sanitize-cli sanitize-uniform clean
-all: build/doe-compiler-c build/libdoe_compiler.so build/doe-emit-msl-c build/doe-emit-hlsl-c build/doe-emit-spirv-c
+# Core consumer checks do not depend on the optional allocating host companion.
+# `all` still builds every artifact; host/TSIR keep their own behavioral gates.
+.PHONY: compiler-core
+all: compiler-core
+compiler-core: build/doe-compiler-c build/libdoe_compiler.so build/doe-emit-msl-c build/doe-emit-hlsl-c build/doe-emit-spirv-c
 build/doe-emit-msl-c build/doe-emit-hlsl-c build/doe-emit-spirv-c: build/doe-compiler-c
 	ln -sf doe-compiler-c $@
 build/test_array_length_api: $(LIB_SOURCES) tests/test_array_length_api.c $(HEADERS) | build/.ready
 	$(CC) $(CFLAGS) $(LIB_SOURCES) tests/test_array_length_api.c -lm -o $@
 .PHONY: test-array-length
-test-array-length: all build/test_array_length_api
+test-array-length: compiler-core build/test_array_length_api
 	build/test_array_length_api
 	DOE_COMPILER_CLI="$(CURDIR)/build/doe-compiler-c" SPIRV_VAL="$(SPIRV_VAL)" python3 tests/test_array_length.py
 build/.ready:
@@ -42,10 +48,10 @@ build/doe-compiler-c: $(LIB_SOURCES) src/cli.c src/cli_json.c src/cli_text.c src
 	$(CC) $(CFLAGS) $(LIB_SOURCES) src/cli.c src/cli_json.c src/cli_text.c src/cli_specialization.c -lm -o $@
 build/test_cli_faults: $(LIB_SOURCES) src/cli.c src/cli_json.c src/cli_text.c src/cli_specialization.c tests/cli_io_faults.c $(HEADERS) | build/.ready
 	$(CC) $(CFLAGS) $(LIB_SOURCES) src/cli.c src/cli_json.c src/cli_text.c src/cli_specialization.c tests/cli_io_faults.c $(CLI_FAULT_FLAGS) -lm -o $@
-test-cli-modes: all build/test_cli_faults
+test-cli-modes: compiler-core build/test_cli_faults
 	cd ../../.. && SPIRV_VAL="$(SPIRV_VAL)" python3 -m unittest runtime.c.compiler.tests.test_cli_modes
 .PHONY: test-emit-targets
-test-emit-targets: all build/test_cli_faults
+test-emit-targets: compiler-core build/test_cli_faults
 	SPIRV_VAL="$(SPIRV_VAL)" python3 tests/test_emit_targets.py
 $(SHARED_LIBRARY): $(SHARED_EXPORTS) $(LIB_SOURCES) $(HEADERS) targets/metal/sources.mk targets/hlsl/sources.mk src/exports.map
 	mkdir -p $(dir $@) $(TMPDIR)
@@ -74,7 +80,7 @@ build/cpp_consumer: tests/cpp_consumer.cpp include/doe_compiler.h build/libdoe_c
 	$(CXX) $(CXXFLAGS) tests/cpp_consumer.cpp -Lbuild -ldoe_compiler -Wl,-rpath,'$$ORIGIN' -lm -o $@
 build/interposition_consumer: tests/interposition_consumer.c include/doe_compiler.h build/libdoe_compiler.so | build/.ready
 	$(CC) $(CFLAGS) tests/interposition_consumer.c -Lbuild -ldoe_compiler -Wl,-rpath,'$$ORIGIN' -Wl,--export-dynamic -lm -o $@
-test: all test-job test-compute test-uniform test-cli-modes build/interposition_consumer build/test_api build/test_boundaries build/test_constants build/test_control_api build/test_expression_api build/native_consumer build/test_layout build/cpp_consumer
+test: compiler-core test-job test-compute test-uniform test-cli-modes build/interposition_consumer build/test_api build/test_boundaries build/test_constants build/test_control_api build/test_expression_api build/native_consumer build/test_layout build/cpp_consumer
 	build/test_api
 	build/test_boundaries
 	build/test_constants
@@ -130,7 +136,7 @@ build/test_uniform_api: $(LIB_SOURCES) tests/test_uniform_api.c $(HEADERS) | bui
 	$(CC) $(CFLAGS) -pthread $(LIB_SOURCES) tests/test_uniform_api.c -lm -o $@
 build/cpp_consumer_v2: tests/cpp_consumer_v2.cpp include/doe_compiler_v2.h build/libdoe_compiler.so | build/.ready
 	$(CXX) $(CXXFLAGS) tests/cpp_consumer_v2.cpp -Lbuild -ldoe_compiler -Wl,-rpath,'$$ORIGIN' -lm -o $@
-test-uniform: all build/test_uniform_api build/cpp_consumer_v2 build/native_consumer_v2 build/test_layout_v2
+test-uniform: compiler-core build/test_uniform_api build/cpp_consumer_v2 build/native_consumer_v2 build/test_layout_v2
 	build/test_uniform_api
 	build/cpp_consumer_v2
 	build/test_layout_v2
@@ -146,7 +152,7 @@ build/test_layout_v2: tests/test_layout_v2.c include/doe_compiler_v2.h | build/.
 	$(CC) $(CFLAGS) tests/test_layout_v2.c -lm -o $@
 
 .PHONY: test-compute
-test-compute: all build/test_compute_api
+test-compute: compiler-core build/test_compute_api
 	build/test_compute_api
 	cd ../../.. && SPIRV_VAL="$(SPIRV_VAL)" python3 -m unittest runtime.c.compiler.tests.test_compute
 
@@ -163,7 +169,7 @@ sanitize-compute: | build/.ready
 .PHONY: test-job sanitize-job
 build/test_job_api: $(LIB_SOURCES) tests/test_job_api.c $(HEADERS) | build/.ready
 	$(CC) $(CFLAGS) -pthread $(LIB_SOURCES) tests/test_job_api.c -lm -o $@
-test-job: all build/test_job_api build/cpp_consumer_job
+test-job: compiler-core build/test_job_api build/cpp_consumer_job
 	build/cpp_consumer_job
 	build/test_job_api
 	SPIRV_VAL="$(SPIRV_VAL)" python3 tests/test_job.py
@@ -178,7 +184,7 @@ build/test_scalar_api: $(LIB_SOURCES) tests/test_scalar_api.c $(HEADERS) | build
 	$(CC) $(CFLAGS) $(LIB_SOURCES) tests/test_scalar_api.c -Wl,--wrap=malloc,--wrap=calloc,--wrap=realloc,--wrap=free -lm -o $@
 build/test_numeric_values: src/numeric.c src/numeric_half.c src/numeric_bits.c src/numeric_math.c src/numeric_environment.c tests/test_numeric_values.c $(HEADERS) | build/.ready
 	$(CC) $(CFLAGS) -pthread src/numeric.c src/numeric_half.c src/numeric_bits.c src/numeric_math.c src/numeric_environment.c tests/test_numeric_values.c -lm -o $@
-test-scalar: all build/test_scalar_api build/test_numeric_values
+test-scalar: compiler-core build/test_scalar_api build/test_numeric_values
 	build/test_scalar_api
 	build/test_numeric_values
 	SPIRV_VAL="$(SPIRV_VAL)" python3 tests/test_scalar_numeric.py
@@ -189,7 +195,7 @@ sanitize-scalar: | build/.ready
 .PHONY: test-functions sanitize-functions
 build/test_function_api: tests/test_function_api.c $(HEADERS) build/libdoe_compiler.so | build/.ready
 	$(CC) $(CFLAGS) tests/test_function_api.c -Lbuild -ldoe_compiler -Wl,-rpath,'$$ORIGIN' -lm -o $@
-test-functions: all build/test_function_api
+test-functions: compiler-core build/test_function_api
 	build/test_function_api
 	SPIRV_VAL="$(SPIRV_VAL)" python3 tests/test_functions.py
 sanitize-functions: | build/.ready
@@ -201,7 +207,7 @@ sanitize-functions: | build/.ready
 .PHONY: test-numeric-builtins
 build/test_m12_numeric: src/numeric.c src/numeric_half.c src/numeric_bits.c src/numeric_math.c src/numeric_environment.c tests/test_m12_numeric.c $(HEADERS) | build/.ready
 	$(CC) $(CFLAGS) src/numeric.c src/numeric_half.c src/numeric_bits.c src/numeric_math.c src/numeric_environment.c tests/test_m12_numeric.c -lm -o $@
-test-numeric-builtins: all build/test_m12_numeric build/test_m12_api
+test-numeric-builtins: compiler-core build/test_m12_numeric build/test_m12_api
 	build/test_m12_numeric
 	build/test_m12_api
 	DOE_COMPILER_CLI="$(CURDIR)/build/doe-compiler-c" SPIRV_VAL="$(SPIRV_VAL)" python3 tests/test_m12_builtins.py
@@ -214,7 +220,7 @@ build/test_m13_module: $(LIB_SOURCES) tests/test_m13_module.c $(HEADERS) | build
 	$(CC) $(CFLAGS) $(LIB_SOURCES) tests/test_m13_module.c -lm -o $@
 build/test_m13_cpp: tests/test_m13_cpp.cpp $(HEADERS) build/libdoe_compiler.so | build/.ready
 	$(CXX) $(CXXFLAGS) tests/test_m13_cpp.cpp -Lbuild -ldoe_compiler -Wl,-rpath,'$$ORIGIN' -lm -o $@
-test-module: all build/test_m13_module build/test_m13_cpp
+test-module: compiler-core build/test_m13_module build/test_m13_cpp
 	build/test_m13_module
 	build/test_m13_cpp
 	DOE_COMPILER_CLI="$(CURDIR)/build/doe-compiler-c" SPIRV_VAL="$(SPIRV_VAL)" python3 tests/test_m13_modules.py
@@ -222,7 +228,7 @@ test-module: all build/test_m13_module build/test_m13_cpp
 .PHONY: test-subgroups
 build/test_subgroup_api: $(LIB_SOURCES) tests/test_subgroup_api.c $(HEADERS) | build/.ready
 	$(CC) $(CFLAGS) $(LIB_SOURCES) tests/test_subgroup_api.c -lm -o $@
-test-subgroups: all build/test_subgroup_api
+test-subgroups: compiler-core build/test_subgroup_api
 	build/test_subgroup_api
 	DOE_COMPILER_CLI="$(CURDIR)/build/doe-compiler-c" SPIRV_VAL="$(SPIRV_VAL)" python3 tests/test_subgroups.py
 	DOE_COMPILER_CLI="$(CURDIR)/build/doe-compiler-c" SPIRV_VAL="$(SPIRV_VAL)" python3 tests/test_subgroup_return_dependencies.py
@@ -232,7 +238,7 @@ build/test_resource_api: $(LIB_SOURCES) tests/test_resource_api.c $(HEADERS) | b
 	$(CC) $(CFLAGS) $(LIB_SOURCES) tests/test_resource_api.c -lm -o $@
 build/test_resources_cpp: tests/test_resources_cpp.cpp include/doe_compiler_resources.h build/libdoe_compiler.so | build/.ready
 	$(CXX) $(CXXFLAGS) tests/test_resources_cpp.cpp -Lbuild -ldoe_compiler -Wl,-rpath,'$$ORIGIN' -o $@
-test-resources: all build/test_resource_api build/test_resources_cpp
+test-resources: compiler-core build/test_resource_api build/test_resources_cpp
 	build/test_resource_api
 	build/test_resources_cpp
 	DOE_COMPILER_CLI="$(CURDIR)/build/doe-compiler-c" SPIRV_VAL="$(SPIRV_VAL)" python3 tests/test_images.py
@@ -242,7 +248,7 @@ build/test_stage_api: $(LIB_SOURCES) tests/test_stage_api.c $(HEADERS) | build/.
 	$(CC) $(CFLAGS) $(LIB_SOURCES) tests/test_stage_api.c -lm -o $@
 build/test_stages_cpp: tests/test_stages_cpp.cpp $(HEADERS) build/libdoe_compiler.so | build/.ready
 	$(CXX) $(CXXFLAGS) tests/test_stages_cpp.cpp -Lbuild -ldoe_compiler -Wl,-rpath,'$$ORIGIN' -o $@
-test-stages: all build/test_stage_api build/test_stages_cpp
+test-stages: compiler-core build/test_stage_api build/test_stages_cpp
 	build/test_stage_api
 	build/test_stages_cpp
 	cd tests && DOE_COMPILER_CLI="$(CURDIR)/build/doe-compiler-c" SPIRV_VAL="$(SPIRV_VAL)" python3 -m unittest test_stages
@@ -318,7 +324,7 @@ $(TEXT_TEST_BUILD)/test_hlsl_abi: tests/test_hlsl_abi.cpp tests/hlsl_fixture.h $
 build/test_component_math_api: $(LIB_SOURCES) tests/test_component_math_api.c $(HEADERS) | build/.ready
 	$(CC) $(CFLAGS) $(LIB_SOURCES) tests/test_component_math_api.c -lm -o $@
 .PHONY: test-component-math
-test-component-math: all build/test_component_math_api
+test-component-math: compiler-core build/test_component_math_api
 	build/test_component_math_api
 	DOE_COMPILER_CLI="$(CURDIR)/build/doe-compiler-c" SPIRV_VAL="$(SPIRV_VAL)" python3 tests/test_component_math.py
 	python3 tests/test_export_symbols.py
@@ -584,7 +590,7 @@ test-hlsl-draw-offsets: build/test_hlsl_draw_offsets
 	build/test_hlsl_draw_offsets
 
 .PHONY: test-global-pointers
-test-global-pointers: all
+test-global-pointers: compiler-core
 	PYTHONDONTWRITEBYTECODE=1 python3 tests/test_global_pointers.py
 
 .PHONY: test-hlsl-immediate
@@ -594,7 +600,7 @@ test-hlsl-immediate: build/test_hlsl_immediate
 	build/test_hlsl_immediate
 
 .PHONY: test-pointer-uniformity
-test-pointer-uniformity: all
+test-pointer-uniformity: compiler-core
 	PYTHONDONTWRITEBYTECODE=1 python3 tests/test_pointer_uniformity.py
 
 .PHONY: test-feature-admission test-pointer-uniformity-capacity
@@ -614,7 +620,7 @@ test-external-handles: build/test_external_handles
 	build/test_external_handles
 
 .PHONY: test-switch
-test-switch: all
+test-switch: compiler-core
 	DOE_COMPILER_CLI="$(CURDIR)/build/doe-compiler-c" SPIRV_VAL="$(SPIRV_VAL)" python3 tests/test_switch.py
 
 build/test_cli_capacity: tests/test_cli_capacity.c include/doe_compiler_pool_growth.h | build/.ready
@@ -627,7 +633,7 @@ test-cli-growth: build/doe-compiler-c build/test_cli_faults build/test_cli_capac
 build/test_long_names: tests/test_long_names.c build/libdoe_compiler.so $(HEADERS) | build/.ready
 	$(CC) $(CFLAGS) $< -Lbuild -ldoe_compiler -Wl,-rpath,$(abspath build) -o $@
 .PHONY: test-long-names
-test-long-names: all build/test_long_names build/test_entry_names
+test-long-names: compiler-core build/test_long_names build/test_entry_names
 	build/test_entry_names
 	build/test_long_names
 	DOE_COMPILER_CLI="$(CURDIR)/build/doe-compiler-c" SPIRV_VAL="$(SPIRV_VAL)" python3 tests/test_long_names.py
@@ -647,32 +653,46 @@ test-diagnostics: build/test_diagnostics build/test_diagnostics_abi
 # Standalone DXIL/TSIR developer owners. They use the compiler's strict flags,
 # but remain separate from the no-allocator production compiler ABI. Historical
 # target names stay available; a passing subset is not universal parity.
-PARTIAL_CFLAGS = $(CFLAGS)
+PARTIAL_CFLAGS = $(CFLAGS) $(EXTRA_CFLAGS)
 DXIL_PARTIAL_SOURCES = $(wildcard src/dxil/*.c)
 TSIR_PARTIAL_SOURCES = $(filter-out src/tsir/tsir_source%.c src/tsir/tsir_bootstrap_manifest.c,$(wildcard src/tsir/*.c))
-DXIL_PARTIAL_TESTS = test_dxil_md5 test_dxil_bitcode test_dxil_container test_dxil_validate test_dxil_builder_serialize test_dxil_mapping_toolchain test_dxil_ir_native test_dxil_hlsl test_dxil_emit test_dxil_analyze_translate
+DXIL_PARTIAL_TESTS = test_dxil_md5 test_dxil_bitcode test_dxil_container test_dxil_validate test_dxil_builder_serialize test_dxil_mapping_toolchain test_dxil_ir_native test_dxil_hlsl test_dxil_emit test_dxil_analyze_translate test_dxil_source test_dxil_io test_dxil_native_projection_expr test_dxil_native_projection test_dxil_hlsl_texture test_dxil_hlsl_numeric test_dxil_hlsl_complete test_dxil_hlsl_access test_dxil_native_opt
 TSIR_PARTIAL_TESTS = test_sha_scalar test_digest test_planner test_reference_emit test_new test_new2
-DXIL_PARTIAL_TEST_FILES = src/dxil/tests/test_dxil_md5.c src/dxil/tests/test_dxil_bitcode.c src/dxil/tests/test_dxil_container.c src/dxil/tests/test_dxil_validate.c src/dxil/tests/test_dxil_builder_serialize.c src/dxil/tests/test_dxil_mapping_toolchain.c src/dxil/tests/test_dxil_ir_native.c src/dxil/tests/test_dxil_hlsl.c src/dxil/tests/test_dxil_emit.c src/dxil/tests/test_dxil_analyze_translate.c
+DXIL_PARTIAL_TEST_FILES = src/dxil/tests/test_dxil_md5.c src/dxil/tests/test_dxil_bitcode.c src/dxil/tests/test_dxil_container.c src/dxil/tests/test_dxil_validate.c src/dxil/tests/test_dxil_builder_serialize.c src/dxil/tests/test_dxil_mapping_toolchain.c src/dxil/tests/test_dxil_ir_native.c src/dxil/tests/test_dxil_hlsl.c src/dxil/tests/test_dxil_emit.c src/dxil/tests/test_dxil_analyze_translate.c src/dxil/tests/test_dxil_source.c src/dxil/tests/test_dxil_io.c src/dxil/tests/test_dxil_native_projection_expr.c src/dxil/tests/test_dxil_native_projection.c src/dxil/tests/test_dxil_hlsl_texture.c src/dxil/tests/test_dxil_hlsl_numeric.c src/dxil/tests/test_dxil_hlsl_complete.c src/dxil/tests/test_dxil_hlsl_access.c src/dxil/tests/test_dxil_native_opt.c
 TSIR_PARTIAL_TEST_FILES = src/tsir/tests/test_sha_scalar.c src/tsir/tests/test_digest.c src/tsir/tests/test_planner.c src/tsir/tests/test_reference_emit.c src/tsir/tests/test_new.c src/tsir/tests/test_new2.c
 .PHONY: test-dxil-tsir-partial test-dxil-tsir-sanitize
-test-dxil-tsir-partial: $(DXIL_PARTIAL_TEST_FILES) $(TSIR_PARTIAL_TEST_FILES) | build/.ready
-	@for t in $(DXIL_PARTIAL_TESTS); do \
-		$(CC) $(PARTIAL_CFLAGS) -Isrc/dxil -Isrc/dxil/tests src/dxil/tests/$$t.c $(DXIL_PARTIAL_SOURCES) -lm -o build/$$t || exit 1; \
-		build/$$t || exit 1; \
-	done
+DXIL_PARTIAL_BINS = $(addprefix build/,$(DXIL_PARTIAL_TESTS))
+# Every focused executable is a real dependency-tracked target, including the
+# historical tests formerly compiled only inside the aggregate shell loop.
+$(DXIL_PARTIAL_BINS) build/test_dxil_source_differential: build/%: src/dxil/tests/%.c build/libdoe_dxil.a build/libdoe_compiler_core.a $(wildcard src/dxil/tests/*.h) Makefile
+	$(CC) $(PARTIAL_CFLAGS) -Isrc/dxil -Isrc/dxil/tests $< build/libdoe_dxil.a build/libdoe_compiler_core.a -lm -o $@
+test-dxil-tsir-partial: $(DXIL_PARTIAL_TEST_FILES) $(TSIR_PARTIAL_TEST_FILES) $(DXIL_PARTIAL_BINS) | build/.ready
+	@for t in $(DXIL_PARTIAL_TESTS); do build/$$t || exit 1; done
 	@for t in $(TSIR_PARTIAL_TESTS); do \
 		$(CC) $(PARTIAL_CFLAGS) -Isrc/tsir -Isrc/tsir/tests src/tsir/tests/$$t.c $(TSIR_PARTIAL_SOURCES) -lm -o build/$$t || exit 1; \
 		build/$$t || exit 1; \
 	done
-test-dxil-tsir-sanitize: $(DXIL_PARTIAL_TEST_FILES) $(TSIR_PARTIAL_TEST_FILES) | build/.ready
+# Instrument each owner once; never link an uninstrumented core into a
+# sanitized consumer or rebuild the complete compiler for every test binary.
+PARTIAL_SANITIZERS ?= address,undefined
+PARTIAL_SANITIZE_ROOT = build/partial-sanitize/$(PARTIAL_SANITIZERS)
+PARTIAL_SANITIZE_FLAGS = -fsanitize=$(PARTIAL_SANITIZERS) -fno-sanitize-recover=all -g
+PARTIAL_SANITIZE_SOURCES = $(LIB_SOURCES) $(DXIL_PARTIAL_SOURCES) $(TSIR_PARTIAL_SOURCES)
+PARTIAL_SANITIZE_OBJECTS = $(patsubst %.c,$(PARTIAL_SANITIZE_ROOT)/%.o,$(PARTIAL_SANITIZE_SOURCES))
+$(PARTIAL_SANITIZE_ROOT)/%.o: %.c $(HEADERS) $(wildcard src/dxil/*.h src/tsir/*.h) Makefile | build/.ready
+	mkdir -p $(dir $@)
+	$(CC) $(PARTIAL_CFLAGS) $(PARTIAL_SANITIZE_FLAGS) -c $< -o $@
+$(PARTIAL_SANITIZE_ROOT)/owners.a: $(PARTIAL_SANITIZE_OBJECTS) $(PARTIAL_SANITIZE_ROOT)/sources
+	rm -f $@
+	$(AR) rcs $@ $(filter %.o,$^)
+test-dxil-tsir-sanitize: $(DXIL_PARTIAL_TEST_FILES) $(TSIR_PARTIAL_TEST_FILES) $(PARTIAL_SANITIZE_ROOT)/owners.a | build/.ready
 	@for t in $(DXIL_PARTIAL_TESTS); do \
-		$(CC) $(PARTIAL_CFLAGS) -fsanitize=address,undefined -fno-sanitize-recover=all -g -Isrc/dxil -Isrc/dxil/tests src/dxil/tests/$$t.c $(DXIL_PARTIAL_SOURCES) -lm -o build/$${t}_sanitize || exit 1; \
-		ASAN_OPTIONS=detect_leaks=0:halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1 build/$${t}_sanitize || exit 1; \
+		$(CC) $(PARTIAL_CFLAGS) $(PARTIAL_SANITIZE_FLAGS) -Isrc/dxil -Isrc/dxil/tests src/dxil/tests/$$t.c $(PARTIAL_SANITIZE_ROOT)/owners.a -lm -o $(PARTIAL_SANITIZE_ROOT)/$$t || exit 1; \
+		ASAN_OPTIONS=detect_leaks=0:halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1 $(PARTIAL_SANITIZE_ROOT)/$$t || exit 1; \
 	done
-
 	@for t in $(TSIR_PARTIAL_TESTS); do \
-		$(CC) $(PARTIAL_CFLAGS) -fsanitize=address,undefined -fno-sanitize-recover=all -g -Isrc/tsir -Isrc/tsir/tests src/tsir/tests/$$t.c $(TSIR_PARTIAL_SOURCES) -lm -o build/$${t}_sanitize || exit 1; \
-		ASAN_OPTIONS=detect_leaks=0:halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1 build/$${t}_sanitize || exit 1; \
+		$(CC) $(PARTIAL_CFLAGS) $(PARTIAL_SANITIZE_FLAGS) -Isrc/tsir -Isrc/tsir/tests src/tsir/tests/$$t.c $(PARTIAL_SANITIZE_ROOT)/owners.a -lm -o $(PARTIAL_SANITIZE_ROOT)/$$t || exit 1; \
+		ASAN_OPTIONS=detect_leaks=0:halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1 $(PARTIAL_SANITIZE_ROOT)/$$t || exit 1; \
 	done
 
 # The non-CSL bootstrap tools use the shared C WGSL semantic owner and TSIR
@@ -681,12 +701,13 @@ test-dxil-tsir-sanitize: $(DXIL_PARTIAL_TEST_FILES) $(TSIR_PARTIAL_TEST_FILES) |
 TSIR_TOOL_SOURCES = $(wildcard src/tsir/*.c)
 TSIR_TOOL_OBJECTS = $(patsubst src/tsir/%.c,build/tsir/%.o,$(TSIR_TOOL_SOURCES))
 TSIR_TOOL_HEADERS = $(wildcard src/tsir/*.h)
-TSIR_TOOL_CFLAGS = $(CFLAGS) -g $(EXTRA_CFLAGS)
-build/tsir/%.o: src/tsir/%.c $(TSIR_TOOL_HEADERS) $(HEADERS) | build/.ready
+TSIR_TOOL_CFLAGS = $(CFLAGS) -g -fPIC $(EXTRA_CFLAGS)
+build/tsir/%.o: src/tsir/%.c $(TSIR_TOOL_HEADERS) $(HEADERS) Makefile | build/.ready
 	mkdir -p $(dir $@)
 	$(CC) $(TSIR_TOOL_CFLAGS) -Isrc/tsir -c $< -o $@
-build/libdoe_tsir.a: $(TSIR_TOOL_OBJECTS)
-	$(AR) rcs $@ $^
+build/libdoe_tsir.a: $(TSIR_TOOL_OBJECTS) build/tsir.sources
+	rm -f $@
+	$(AR) rcs $@ $(filter %.o,$^)
 build/doe-tsir-bootstrap-oracle-c: tools/tsir_bootstrap_oracle.c build/libdoe_tsir.a
 	$(CC) $(TSIR_TOOL_CFLAGS) -Isrc/tsir $< build/libdoe_tsir.a -lm -o $@
 build/doe-tsir-bootstrap-manifest-inputs-c: tools/tsir_bootstrap_manifest_inputs.c build/libdoe_tsir.a $(LIB_SOURCES) $(HEADERS)
@@ -706,9 +727,9 @@ build/test_tsir_source_expr: src/tsir/tests/test_source_expr.c build/libdoe_tsir
 	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) -Isrc/tsir $< $(LIB_SOURCES) build/libdoe_tsir.a -lm -o $@
 build/test_source_differential: src/tsir/tests/test_source_differential.c build/libdoe_tsir.a $(LIB_SOURCES) $(HEADERS)
 	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) -Isrc/tsir $< $(LIB_SOURCES) build/libdoe_tsir.a -lm -o $@
-ORACLE_FAULT_NAMES = bootstrap bootstrap_oracle json reference reference_bodies schema sha256 scalar extended extended_ops digest format transcendental
+ORACLE_FAULT_NAMES = bootstrap bootstrap_oracle json reference reference_bodies schema sha256 scalar extended extended_ops digest format transcendental text
 ORACLE_FAULT_OBJECTS = $(addprefix build/tsir-fault/tsir_,$(addsuffix .o,$(ORACLE_FAULT_NAMES)))
-build/tsir-fault/%.o: src/tsir/%.c $(TSIR_TOOL_HEADERS) src/tsir/tests/oracle_alloc.h | build/.ready
+build/tsir-fault/%.o: src/tsir/%.c $(TSIR_TOOL_HEADERS) $(HEADERS) Makefile src/tsir/tests/oracle_alloc.h | build/.ready
 	mkdir -p $(dir $@)
 	$(CC) $(TSIR_TOOL_CFLAGS) -Isrc/tsir -include src/tsir/tests/oracle_alloc.h -c $< -o $@
 build/test_oracle_alloc: src/tsir/tests/test_oracle_alloc.c $(ORACLE_FAULT_OBJECTS)
@@ -738,3 +759,131 @@ test-tsir-bootstrap-differential: test-tsir-bootstrap build/test_source_differen
 	python3 src/tsir/tests/test_source_differential.py
 	python3 src/tsir/tests/test_f64_format.py
 	python3 src/tsir/tests/test_numeric_parity.py
+
+# Allocating host companion. Keep its filesystem/process/allocator dependencies
+# outside src/sources.txt, the no-heap compiler ABI, and the WASI reactor.
+HOST_CORE_OBJECTS = $(patsubst %.c,build/host-core/%.o,$(LIB_SOURCES))
+DXIL_HOST_OBJECTS = $(patsubst src/dxil/%.c,build/dxil/%.o,$(DXIL_PARTIAL_SOURCES))
+HOST_SOURCES = $(wildcard host/*.c)
+HOST_OBJECTS = $(patsubst host/%.c,build/host/%.o,$(HOST_SOURCES))
+HOST_HEADERS = include/doe_compiler_host.h host/internal.h
+HOST_SHARED_LIBRARY ?= build/libdoe_compiler_host.so
+HOST_PREFIX ?= build/host-install
+ifeq ($(SHARED_PLATFORM),Darwin)
+HOST_SHARED_FLAGS = -dynamiclib -Wl,-install_name,@rpath/$(notdir $(HOST_SHARED_LIBRARY)) -Wl,-exported_symbols_list,$(HOST_SHARED_LIBRARY).exports
+HOST_SHARED_EXPORTS = $(HOST_SHARED_LIBRARY).exports
+HOST_CONSUMER_RPATH = -Wl,-rpath,@loader_path
+else
+HOST_SHARED_FLAGS = -shared -Wl,-soname,$(notdir $(HOST_SHARED_LIBRARY)) -Wl,--version-script=host/exports.map
+HOST_SHARED_EXPORTS =
+HOST_CONSUMER_RPATH = -Wl,-rpath,'$$ORIGIN'
+endif
+build/host-core/%.o: %.c $(HEADERS) Makefile | build/.ready
+	mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) -fPIC -c $< -o $@
+build/libdoe_compiler_core.a: $(HOST_CORE_OBJECTS) build/core.sources
+	rm -f $@
+	$(AR) rcs $@ $(filter %.o,$^)
+build/dxil/%.o: src/dxil/%.c $(wildcard src/dxil/*.h) $(HEADERS) Makefile | build/.ready
+	mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) -fPIC -c $< -o $@
+build/libdoe_dxil.a: $(DXIL_HOST_OBJECTS) build/dxil.sources
+	rm -f $@
+	$(AR) rcs $@ $(filter %.o,$^)
+build/host/%.o: host/%.c $(HOST_HEADERS) $(HEADERS) $(TSIR_TOOL_HEADERS) $(wildcard src/dxil/*.h) Makefile | build/.ready
+	mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) -fPIC -c $< -o $@
+$(HOST_SHARED_LIBRARY): $(HOST_OBJECTS) build/libdoe_tsir.a build/libdoe_dxil.a build/libdoe_compiler_core.a host/exports.map $(HOST_SHARED_EXPORTS)
+	mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) $(HOST_SHARED_FLAGS) $(HOST_OBJECTS) build/libdoe_tsir.a build/libdoe_dxil.a build/libdoe_compiler_core.a -lm -o $@
+$(HOST_SHARED_LIBRARY).exports: host/exports.map tools/export_symbols.py
+	mkdir -p $(dir $@)
+	python3 tools/export_symbols.py host/exports.map > $@.tmp
+	mv $@.tmp $@
+.PHONY: compiler-host install-compiler-host test-compiler-host test-dxil-source test-dxil-io test-compiler-host-alloc
+compiler-host: $(HOST_SHARED_LIBRARY)
+all: compiler-host
+build/test_compiler_host: tests/test_compiler_host.c $(HOST_HEADERS) $(HOST_SHARED_LIBRARY)
+	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) -Iinclude $< $(HOST_SHARED_LIBRARY) $(HOST_CONSUMER_RPATH) -o $@
+build/test_compiler_host_cpp: tests/test_compiler_host.cpp $(HOST_HEADERS) $(HOST_SHARED_LIBRARY)
+	$(CXX) $(CXXFLAGS) $(EXTRA_CFLAGS) -Iinclude $< $(HOST_SHARED_LIBRARY) $(HOST_CONSUMER_RPATH) -o $@
+test-compiler-host: build/test_compiler_host build/test_compiler_host_cpp build/libdoe_compiler.so
+	build/test_compiler_host ../../..
+	build/test_compiler_host_cpp
+	python3 tests/test_host_exports.py '$(HOST_SHARED_LIBRARY)'
+test-dxil-source: build/test_dxil_source
+	build/test_dxil_source
+test-dxil-io: build/test_dxil_io
+	build/test_dxil_io
+build/test_compiler_host_alloc: tests/test_compiler_host_alloc.c $(HOST_HEADERS) $(HOST_OBJECTS) build/libdoe_tsir.a build/libdoe_dxil.a build/libdoe_compiler_core.a
+	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) -Iinclude $< $(HOST_OBJECTS) build/libdoe_tsir.a build/libdoe_dxil.a build/libdoe_compiler_core.a -Wl,--wrap=malloc,--wrap=calloc,--wrap=realloc,--wrap=free -lm -o $@
+test-compiler-host-alloc: build/test_compiler_host_alloc
+	build/test_compiler_host_alloc
+install-compiler-host: compiler-host tsir-bootstrap-tools
+	mkdir -p '$(HOST_PREFIX)/include' '$(HOST_PREFIX)/lib' '$(HOST_PREFIX)/bin'
+	cp include/doe_compiler_host.h '$(HOST_PREFIX)/include/'
+	cp '$(HOST_SHARED_LIBRARY)' '$(HOST_PREFIX)/lib/'
+	cp build/doe-tsir-bootstrap-manifest-inputs-c build/doe-tsir-bootstrap-oracle-c '$(HOST_PREFIX)/bin/'
+.PHONY: test-compiler-host-install
+test-compiler-host-install: compiler-host tsir-bootstrap-tools
+	python3 tools/test_host_install.py --cc '$(CC)' --cxx '$(CXX)' --library '$(HOST_SHARED_LIBRARY)'
+
+.PHONY: test-compiler-host-dxil test-tsir-text
+test-compiler-host-dxil: compiler-host build/test_dxil_io
+	python3 tools/test_host_dxil.py --library '$(HOST_SHARED_LIBRARY)' --child build/test_dxil_io
+test-tsir-text: src/tsir/tests/test_text.c src/tsir/tests/test_text.py
+	python3 src/tsir/tests/test_text.py
+test-tsir-bootstrap-differential: test-tsir-text
+
+.PHONY: test-dxil-native-projection-expr
+test-dxil-native-projection-expr: build/test_dxil_native_projection_expr
+	build/test_dxil_native_projection_expr
+
+.PHONY: test-header-dependencies
+test-header-dependencies:
+	python3 tools/test_header_dependencies.py --cc '$(CC)'
+
+# Wildcard source removal is also an archive change, even when every remaining
+# object is older. Compare the actual object inventory without touching stable
+# timestamps, then recreate the archive rather than retaining obsolete members.
+.PHONY: compiler-inventory-force
+compiler-inventory-force:
+build/core.sources: compiler-inventory-force | build/.ready
+	@printf '%s\n' $(HOST_CORE_OBJECTS) > $@.tmp; cmp -s $@.tmp $@ || mv $@.tmp $@; rm -f $@.tmp
+build/tsir.sources: compiler-inventory-force | build/.ready
+	@printf '%s\n' $(TSIR_TOOL_OBJECTS) > $@.tmp; cmp -s $@.tmp $@ || mv $@.tmp $@; rm -f $@.tmp
+build/dxil.sources: compiler-inventory-force | build/.ready
+	@printf '%s\n' $(DXIL_HOST_OBJECTS) > $@.tmp; cmp -s $@.tmp $@ || mv $@.tmp $@; rm -f $@.tmp
+$(PARTIAL_SANITIZE_ROOT)/sources: compiler-inventory-force | build/.ready
+	@mkdir -p $(dir $@)
+	@printf '%s\n' $(PARTIAL_SANITIZE_OBJECTS) > $@.tmp; cmp -s $@.tmp $@ || mv $@.tmp $@; rm -f $@.tmp
+.PHONY: test-dxil-native-projection
+test-dxil-native-projection: build/test_dxil_native_projection
+	build/test_dxil_native_projection
+
+ZIG ?= zig
+.PHONY: test-dxil-source-differential
+test-dxil-source-differential: build/test_dxil_source_differential src/dxil/tests/test_dxil_source_differential.c src/dxil/tests/test_dxil_source_differential.py
+	python3 src/dxil/tests/test_dxil_source_differential.py --zig '$(ZIG)'
+
+.PHONY: test-dxil-hlsl-texture
+test-dxil-hlsl-texture: build/test_dxil_hlsl_texture
+	build/test_dxil_hlsl_texture
+
+.PHONY: test-dxil-hlsl-numeric
+test-dxil-hlsl-numeric: build/test_dxil_hlsl_numeric src/dxil/tests/test_hlsl_numeric.py
+	build/test_dxil_hlsl_numeric
+	python3 src/dxil/tests/test_hlsl_numeric.py --zig "$(ZIG)"
+
+.PHONY: test-dxil-hlsl-complete
+test-dxil-hlsl-complete: build/test_dxil_hlsl_complete
+	build/test_dxil_hlsl_complete
+
+.PHONY: test-dxil-hlsl-access
+test-dxil-hlsl-access: build/test_dxil_hlsl_access
+	build/test_dxil_hlsl_access
+
+.PHONY: test-dxil-native-opt
+test-dxil-native-opt: build/test_dxil_native_opt src/dxil/tests/test_native_opt.py
+	build/test_dxil_native_opt
+	python3 src/dxil/tests/test_native_opt.py --zig "$(ZIG)"

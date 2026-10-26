@@ -71,7 +71,17 @@ class JobTests(unittest.TestCase):
         self.check('var x:u32;'+'x+=1u;'*80+'out[0]=x;', [80])
         self.check('var x:u32;'+'x=1u+2u+3u+4u+5u+6u+7u+8u+9u;'*150+'out[0]=x;', [45])
 
-    def test_static_invalid_and_bounded_unsupported(self):
+    def test_abstract_numeric_materialization(self):
+        # These were unsupported in the historical M7 subset. They are now
+        # admitted by the canonical numeric owner, including exact abstract
+        # float comparison before f32 materialization.
+        self.check('var x=1; if(x==1){out[0]=7u;}', [7])
+        self.check('let x=(1);if(x==1){out[0]=1u;}', [1])
+        self.check('out[0]=(1+2)+1u;', [4])
+        self.check('var f:f32=1.0+2.0;if(f==3.0){out[0]=9u;}', [9])
+        self.check('if(16777217.0==16777216.0){out[0]=1u;}else{out[0]=2u;}', [2])
+
+    def test_static_invalid(self):
         semantic = ['loop{}','loop{continue;}','break;','continue;','if(1u){}',
                     'let x=1u;x=2u;','var x:u32;var x:u32;',
                     'loop{continue;let x=1u;continuing{out[0]=x;break if true;}}',
@@ -80,14 +90,9 @@ class JobTests(unittest.TestCase):
                     'loop{break if true;}','loop{break;continuing{break if true;out[0]=1u;}}',
                     'for(var k:u32=0;k<1u;k=body){let body=2u;}',
                     '{let hidden=1u;}out[0]=hidden;','var b:bool=true;b+=false;',
-                    'return;loop{}']
-        unsupported = ['var x=1;','let x=(1);','out[2147483648]=1u;',
-                       'out[0]=(1-2)+1u;','out[0]=(1+2)+1u;',
-                       'var f:f32=1.0+2.0;','if(16777217.0==16777216.0){}']
+                    'return;loop{}','out[2147483648]=1u;','out[0]=(1-2)+1u;']
         for body in semantic:
             with self.subTest(body=body): self.compile(HEADER+body+'}',4)
-        for body in unsupported:
-            with self.subTest(body=body): self.compile(HEADER+body+'}',3)
 
     def test_harness_bound_not_shader_semantics(self):
         for body in ('while true{}','loop{if false{break;}}'):

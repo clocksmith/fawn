@@ -6,18 +6,18 @@
 #include <string.h>
 
 const TsirBackendTextSpec tsir_spec_dxil = {
-    "doe.tsir.dxil_skeleton.version",
-    "; tsir mechanical skeleton: DXIL module body is emitted by later lowering."
+    .version_key = "doe.tsir.dxil_skeleton.version",
+    .body_comment = "; tsir mechanical skeleton: DXIL module body is emitted by later lowering."
 };
 
 const TsirBackendTextSpec tsir_spec_msl = {
-    "doe.tsir.msl_skeleton.version",
-    "// tsir mechanical skeleton: MSL kernel body is emitted by later lowering."
+    .version_key = "doe.tsir.msl_skeleton.version",
+    .body_comment = "// tsir mechanical skeleton: MSL kernel body is emitted by later lowering."
 };
 
 const TsirBackendTextSpec tsir_spec_spir_v = {
-    "doe.tsir.spir_v_skeleton.version",
-    "; tsir mechanical skeleton: SPIR-V module body is emitted by later lowering."
+    .version_key = "doe.tsir.spir_v_skeleton.version",
+    .body_comment = "; tsir mechanical skeleton: SPIR-V module body is emitted by later lowering."
 };
 
 static void opt_u32_line(TsirBuffer *buf, const char *prefix, size_t index,
@@ -141,8 +141,9 @@ void tsir_emit_write_hash(TsirBuffer *buf, const uint8_t hash[32]) {
     }
 }
 
-void tsir_emit_write_quoted(TsirBuffer *buf, const char *text) {
+void tsir_emit_write_quoted_span(TsirBuffer *buf, const char *text, size_t length) {
     size_t i = 0;
+    size_t count = tsir_text_length(text, length);
     if (text == NULL) {
         if (buf->err == TSIR_OK) {
             buf->err = TSIR_ERR_INVALID;
@@ -150,7 +151,7 @@ void tsir_emit_write_quoted(TsirBuffer *buf, const char *text) {
         return;
     }
     tsir_buf_putc(buf, '"');
-    for (i = 0; text[i] != '\0'; i++) {
+    for (i = 0; i < count; i++) {
         switch (text[i]) {
             case '\\':
                 tsir_buf_puts(buf, "\\\\");
@@ -176,14 +177,17 @@ void tsir_emit_write_quoted(TsirBuffer *buf, const char *text) {
 }
 
 static void write_contract_header(TsirBuffer *buf,
-    const TsirRealizationFunction *function, const char *target_name,
+    const TsirRealizationFunction *function, const char *target_name, size_t target_name_length,
     const uint8_t target_descriptor_hash[32],
     const TsirBackendTextSpec *spec) {
     char tmp[256];
-    snprintf(tmp, sizeof(tmp), "// %s = 1\n", spec->version_key);
-    tsir_buf_puts(buf, tmp);
-    snprintf(tmp, sizeof(tmp), "// target.name = %s\n", target_name);
-    tsir_buf_puts(buf, tmp);
+    tsir_buf_puts(buf, "// ");
+    tsir_buf_putn(buf, spec->version_key,
+        tsir_text_length(spec->version_key, spec->version_key_length));
+    tsir_buf_puts(buf, " = 1\n");
+    tsir_buf_puts(buf, "// target.name = ");
+    tsir_buf_putn(buf, target_name, tsir_text_length(target_name, target_name_length));
+    tsir_buf_putc(buf, '\n');
     tsir_buf_puts(buf, "// target.descriptor_hash = ");
     tsir_emit_write_hash(buf, target_descriptor_hash);
     tsir_buf_putc(buf, '\n');
@@ -197,7 +201,8 @@ static void write_contract_header(TsirBuffer *buf,
         function->pe_grid.height);
     tsir_buf_puts(buf, tmp);
     tsir_buf_puts(buf, "// emitter_params_json = ");
-    tsir_emit_write_quoted(buf, function->emitter_params_json);
+    tsir_emit_write_quoted_span(buf, function->emitter_params_json,
+        function->emitter_params_json_length);
     tsir_buf_puts(buf, "\n\n");
 }
 
@@ -233,8 +238,8 @@ static TsirStatus finish_emit(TsirBuffer *buf, char **out_text,
     return TSIR_OK;
 }
 
-TsirStatus tsir_emit_skeleton_function(
-    const TsirRealizationFunction *function, const char *target_name,
+TsirStatus tsir_emit_skeleton_function_span(
+    const TsirRealizationFunction *function, const char *target_name, size_t target_name_length,
     const uint8_t target_descriptor_hash[32],
     const TsirBackendTextSpec *spec, char **out_text, size_t *out_len) {
     TsirBuffer buf;
@@ -252,16 +257,17 @@ TsirStatus tsir_emit_skeleton_function(
     *out_text = NULL;
     *out_len = 0;
     tsir_buf_init(&buf);
-    write_contract_header(&buf, function, target_name,
+    write_contract_header(&buf, function, target_name, target_name_length,
         target_descriptor_hash, spec);
     write_metadata(&buf, function);
-    tsir_buf_puts(&buf, spec->body_comment);
+    tsir_buf_putn(&buf, spec->body_comment,
+        tsir_text_length(spec->body_comment, spec->body_comment_length));
     tsir_buf_putc(&buf, '\n');
     return finish_emit(&buf, out_text, out_len);
 }
 
-TsirStatus tsir_emit_skeleton(const TsirRealization *realization,
-    size_t function_index, const char *target_name,
+TsirStatus tsir_emit_skeleton_span(const TsirRealization *realization,
+    size_t function_index, const char *target_name, size_t target_name_length,
     const uint8_t target_descriptor_hash[32],
     const TsirBackendTextSpec *spec, char **out_text, size_t *out_len) {
     if (realization == NULL || out_text == NULL || out_len == NULL) {
@@ -273,14 +279,14 @@ TsirStatus tsir_emit_skeleton(const TsirRealization *realization,
     if (function_index >= realization->function_count) {
         return TSIR_ERR_RANGE;
     }
-    return tsir_emit_skeleton_function(
-        &realization->functions[function_index], target_name,
+    return tsir_emit_skeleton_function_span(
+        &realization->functions[function_index], target_name, target_name_length,
         target_descriptor_hash, spec, out_text, out_len);
 }
 
-TsirStatus tsir_emit_semantic_function(
+TsirStatus tsir_emit_semantic_function_span(
     const TsirSemanticFunction *semantic_function,
-    const TsirRealizationFunction *function, const char *target_name,
+    const TsirRealizationFunction *function, const char *target_name, size_t target_name_length,
     const uint8_t target_descriptor_hash[32],
     const TsirBackendTextSpec *spec, char **out_text, size_t *out_len) {
     TsirBuffer buf;
@@ -299,23 +305,23 @@ TsirStatus tsir_emit_semantic_function(
         32) != 0) {
         return TSIR_ERR_INVALID;
     }
-    if (strcmp(spec->version_key,
-        "doe.tsir.dxil_skeleton.version") == 0) {
+    if (tsir_text_equal(spec->version_key, spec->version_key_length,
+        "doe.tsir.dxil_skeleton.version", 0)) {
         backend = TSIR_KERNEL_DXIL;
-    } else if (strcmp(spec->version_key,
-        "doe.tsir.msl_skeleton.version") == 0) {
+    } else if (tsir_text_equal(spec->version_key, spec->version_key_length,
+        "doe.tsir.msl_skeleton.version", 0)) {
         backend = TSIR_KERNEL_MSL;
-    } else if (strcmp(spec->version_key,
-        "doe.tsir.spir_v_skeleton.version") == 0) {
+    } else if (tsir_text_equal(spec->version_key, spec->version_key_length,
+        "doe.tsir.spir_v_skeleton.version", 0)) {
         backend = TSIR_KERNEL_SPIR_V;
-    } else if (strcmp(spec->version_key,
-        "doe.tsir.webgpu.version") == 0) {
+    } else if (tsir_text_equal(spec->version_key, spec->version_key_length,
+        "doe.tsir.webgpu.version", 0)) {
         backend = TSIR_KERNEL_WEBGPU;
     } else {
         return TSIR_ERR_UNSUPPORTED;
     }
     tsir_buf_init(&buf);
-    write_contract_header(&buf, function, target_name,
+    write_contract_header(&buf, function, target_name, target_name_length,
         target_descriptor_hash, spec);
     write_metadata(&buf, function);
     status = tsir_emit_kernel_body(semantic_function, backend, &buf);
@@ -326,9 +332,9 @@ TsirStatus tsir_emit_semantic_function(
     return finish_emit(&buf, out_text, out_len);
 }
 
-TsirStatus tsir_emit_semantic(const TsirSemantic *semantic,
+TsirStatus tsir_emit_semantic_span(const TsirSemantic *semantic,
     const TsirRealization *realization, size_t function_index,
-    const char *target_name, const uint8_t target_descriptor_hash[32],
+    const char *target_name, size_t target_name_length, const uint8_t target_descriptor_hash[32],
     const TsirBackendTextSpec *spec, char **out_text, size_t *out_len) {
     const TsirRealizationFunction *function = NULL;
     if (semantic == NULL || realization == NULL || out_text == NULL ||
@@ -345,9 +351,9 @@ TsirStatus tsir_emit_semantic(const TsirSemantic *semantic,
     if (function->semantic_index >= semantic->function_count) {
         return TSIR_ERR_RANGE;
     }
-    return tsir_emit_semantic_function(
+    return tsir_emit_semantic_function_span(
         &semantic->functions[function->semantic_index], function,
-        target_name, target_descriptor_hash, spec, out_text, out_len);
+        target_name, target_name_length, target_descriptor_hash, spec, out_text, out_len);
 }
 
 const char *tsir_csl_elem_name(TsirScalarKind elem) {
@@ -537,4 +543,38 @@ void tsir_write_csl_f16_export_symbol(TsirBuffer *buf, const char *prefix,
         "    @export_symbol(%s%s_bits_ptr, \"%s\");\n", prefix, name,
         name);
     tsir_buf_puts(buf, tmp);
+}
+
+/* Legacy NUL-terminated convenience entry points. */
+void tsir_emit_write_quoted(TsirBuffer *buf, const char *text) {
+    tsir_emit_write_quoted_span(buf, text, 0);
+}
+
+TsirStatus tsir_emit_skeleton_function(
+    const TsirRealizationFunction *function, const char *target_name,
+    const uint8_t target_descriptor_hash[32],
+    const TsirBackendTextSpec *spec, char **out_text, size_t *out_len) {
+    return tsir_emit_skeleton_function_span(function, target_name, 0, target_descriptor_hash, spec, out_text, out_len);
+}
+
+TsirStatus tsir_emit_skeleton(const TsirRealization *realization,
+    size_t function_index, const char *target_name,
+    const uint8_t target_descriptor_hash[32],
+    const TsirBackendTextSpec *spec, char **out_text, size_t *out_len) {
+    return tsir_emit_skeleton_span(realization, function_index, target_name, 0, target_descriptor_hash, spec, out_text, out_len);
+}
+
+TsirStatus tsir_emit_semantic_function(
+    const TsirSemanticFunction *semantic_function,
+    const TsirRealizationFunction *function, const char *target_name,
+    const uint8_t target_descriptor_hash[32],
+    const TsirBackendTextSpec *spec, char **out_text, size_t *out_len) {
+    return tsir_emit_semantic_function_span(semantic_function, function, target_name, 0, target_descriptor_hash, spec, out_text, out_len);
+}
+
+TsirStatus tsir_emit_semantic(const TsirSemantic *semantic,
+    const TsirRealization *realization, size_t function_index,
+    const char *target_name, const uint8_t target_descriptor_hash[32],
+    const TsirBackendTextSpec *spec, char **out_text, size_t *out_len) {
+    return tsir_emit_semantic_span(semantic, realization, function_index, target_name, 0, target_descriptor_hash, spec, out_text, out_len);
 }

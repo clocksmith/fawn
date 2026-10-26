@@ -201,10 +201,21 @@ int main(void)
     wgpuRenderPassEncoderEnd(pass); /* its parent is not locked */
     expect_errors(&s,before,5,"End of a pass begun on an ended encoder");
     wgpuRenderPassEncoderRelease(pass);
+    compute = wgpuCommandEncoderBeginComputePass(encoder,NULL);
+    assert(compute); /* Finished parents still return an invalid pass object. */
+    expect_errors(&s,before,6,"compute pass on an ended encoder");
+    wgpuComputePassEncoderDispatchWorkgroups(compute,1,1,1);
+    expect_errors(&s,before,7,"dispatch from a pass begun on an ended encoder");
+    wgpuComputePassEncoderEnd(compute);
+    expect_errors(&s,before,8,"End of a compute pass begun on an ended encoder");
+    wgpuComputePassEncoderRelease(compute);
     finish_invalid(encoder);
-    expect_errors(&s,before,6,"second Finish");
-    wgpuCommandBufferRelease(commands);
+    expect_errors(&s,before,9,"second Finish");
     wgpuCommandEncoderRelease(encoder);
+    /* Neither rejected pass nor the second Finish invalidates the first buffer. */
+    wgpuQueueSubmit(s.queue,1,&commands);
+    expect_errors(&s,before,9,"earlier valid buffer after rejected finished operations");
+    wgpuCommandBufferRelease(commands);
 
     /* Ended passes report at the call and leave a valid parent valid: End twice,
      * Draw after End and Dispatch after End each give one error, and Finish

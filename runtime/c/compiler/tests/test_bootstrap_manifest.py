@@ -29,10 +29,10 @@ ZIG_BINARY = Path(os.environ.get(
 KERNEL_NAMES = ("fused_gemv", "rms_norm", "gather")
 
 
-def run_tool(binary: Path, root: Path) -> subprocess.CompletedProcess[bytes]:
+def run_tool(binary: Path, root: Path, *arguments: str) -> subprocess.CompletedProcess[bytes]:
     """Bound both elapsed execution and the complete child process group."""
     process = subprocess.Popen(
-        [str(binary)], cwd=root, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+        [str(binary), *arguments], cwd=root, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
         start_new_session=True,
     )
     try:
@@ -48,7 +48,7 @@ def run_tool(binary: Path, root: Path) -> subprocess.CompletedProcess[bytes]:
 class BootstrapManifestTest(unittest.TestCase):
     def setUp(self) -> None:
         self.directory = tempfile.TemporaryDirectory(prefix="fawn-manifest-")
-        self.root = Path(self.directory.name)
+        self.root = Path(self.directory.name) / "sources-λ"
         # These are the tool's explicit input sets; never recursively scan or
         # copy benchmark/results trees into a fixture.
         source_dir = self.root / "runtime/zig/src/compiler/tsir"
@@ -98,6 +98,12 @@ class BootstrapManifestTest(unittest.TestCase):
                 self.assertRegex(entry[key], r"^[0-9a-f]{64}$")
                 self.assertNotEqual(entry[key], "0" * 64)
         return result.stdout
+
+    def test_utf8_repository_root_uses_shared_file_owner(self) -> None:
+        driver = ROOT / "runtime/c/compiler/build/test_bootstrap_manifest"
+        result = run_tool(driver, ROOT, str(self.root))
+        self.assertEqual(result.returncode, 0, result.stderr.decode(errors="replace"))
+        self.assertEqual(result.stdout, self.c_manifest())
 
     def compare_zig(self, actual: bytes) -> None:
         if not ZIG_BINARY.is_file():

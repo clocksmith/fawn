@@ -784,6 +784,17 @@ static bool abstract_arithmetic(Source *source, size_t offset, ExpressionKind op
     *result = (NumericValue){ .bits = answer, .type = IR_ABSTRACT_INT };
     return true;
 }
+/* Count policy belongs to the caller: const-stage checks precede this kernel;
+ * concrete runtime evaluation masks the count modulo 32. */
+static uint64_t integer_shift_bits(ExpressionKind operation, uint64_t bits,
+    uint64_t mask, unsigned width, uint32_t count, bool negative) {
+    if (count >= width) return operation == EXPRESSION_SHIFT_RIGHT && negative ? mask : 0u;
+    if (count == 0u) return bits;
+    if (operation == EXPRESSION_SHIFT_LEFT) return (bits << count) & mask;
+    uint64_t answer = bits >> count;
+    if (negative) answer |= mask ^ (mask >> count);
+    return answer;
+}
 static bool integer_shift(Source *source, size_t offset, ExpressionKind operation,
                           NumericValue left, NumericValue right, NumericValue *result) {
     if (!integer_type(left.type) || right.type != IR_U32)
@@ -794,23 +805,17 @@ static bool integer_shift(Source *source, size_t offset, ExpressionKind operatio
     const bool negative = left.type != IR_U32 && (bits & (UINT64_C(1) << (width - 1u))) != 0u;
     if (width == 32u && count >= 32u)
         return numeric_error(source, offset, "constant concrete shift count must be less than 32");
-    uint64_t answer = bits;
-    if (operation == EXPRESSION_SHIFT_RIGHT) {
-        if (count >= width) answer = negative ? mask : 0u;
-        else if (count != 0u) {
-            answer = bits >> count;
-            if (negative) answer |= mask ^ (mask >> count);
+    if (operation == EXPRESSION_SHIFT_LEFT) {
+        if (count >= width) {
+            if (bits != 0u) return numeric_error(source, offset, "constant left shift overflows");
+        } else if (count != 0u) {
+            const uint64_t leading = negative ? ~bits & mask : bits;
+            const unsigned keep = left.type == IR_U32 ? width - count : width - count - 1u;
+            if ((leading >> keep) != 0u)
+                return numeric_error(source, offset, "constant left shift overflows");
         }
-    } else if (count >= width) {
-        if (bits != 0u) return numeric_error(source, offset, "constant left shift overflows");
-        answer = 0u;
-    } else if (count != 0u) {
-        const uint64_t leading = negative ? ~bits & mask : bits;
-        const unsigned keep = left.type == IR_U32 ? width - count : width - count - 1u;
-        if ((leading >> keep) != 0u)
-            return numeric_error(source, offset, "constant left shift overflows");
-        answer = (bits << count) & mask;
     }
+    const uint64_t answer = integer_shift_bits(operation, bits, mask, width, count, negative);
     *result = (NumericValue){ .bits = answer, .type = left.type };
     return true;
 }
@@ -923,4 +928,29 @@ bool numeric_binary(Source *source, size_t offset, ExpressionKind operation,
     } else return numeric_error(source, offset, "invalid integer binary operation");
     *result = (NumericValue){ .bits = answer & integer_mask(left.type), .type = left.type };
     return true;
+}
+
+/* Refusal is not a source error. Restrict the operation/type domain before
+ * calling the existing concrete scalar arithmetic owner. */
+bool numeric_runtime_integer_binary(Source *source, ExpressionKind operation,
+    NumericValue left, NumericValue right, NumericValue *result) {
+    if (result == NULL || (left.type != IR_I32 && left.type != IR_U32)) return false;
+    left.bits = (uint32_t)left.bits;
+    right.bits = (uint32_t)right.bits;
+    if (operation == EXPRESSION_SHIFT_LEFT || operation == EXPRESSION_SHIFT_RIGHT) {
+        if (right.type != IR_U32) return false;
+        const bool negative = left.type == IR_I32 && (left.bits & UINT32_C(0x80000000)) != 0u;
+        const uint64_t bits = integer_shift_bits(operation, left.bits, UINT32_MAX,
+            32u, (uint32_t)right.bits & 31u, negative);
+        *result = (NumericValue){.bits = bits, .type = left.type};
+        return true;
+    }
+    if (right.type != left.type) return false;
+    if (operation == EXPRESSION_DIVIDE || operation == EXPRESSION_REMAINDER) {
+        if (right.bits == 0u || (left.type == IR_I32 &&
+            left.bits == UINT32_C(0x80000000) && right.bits == UINT32_MAX)) return false;
+    } else if (operation != EXPRESSION_ADD && operation != EXPRESSION_SUBTRACT &&
+        operation != EXPRESSION_MULTIPLY && operation != EXPRESSION_BIT_AND &&
+        operation != EXPRESSION_BIT_OR && operation != EXPRESSION_BIT_XOR) return false;
+    return numeric_binary(source, 0u, operation, COMPARE_EQUAL, left, right, result);
 }

@@ -8,21 +8,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-static char *dup_str(const char *text) {
-    size_t len = 0;
-    char *copy = NULL;
-    if (text == NULL) {
-        return NULL;
-    }
-    len = strlen(text);
-    copy = (char *)malloc(len + 1);
-    if (copy == NULL) {
-        return NULL;
-    }
-    memcpy(copy, text, len + 1);
-    return copy;
-}
-
 static char *join2(const char *a, const char *b) {
     size_t la = strlen(a);
     size_t lb = strlen(b);
@@ -35,12 +20,13 @@ static char *join2(const char *a, const char *b) {
     return out;
 }
 
-static bool name_equals_ci(const char *a, const char *b) {
+static bool name_equals_ci(const char *a, size_t length, const char *b) {
     size_t i = 0;
-    if (a == NULL || b == NULL) {
+    size_t count = tsir_text_length(a, length);
+    if (a == NULL || b == NULL || count != strlen(b)) {
         return false;
     }
-    for (i = 0;; i++) {
+    for (i = 0; i < count; i++) {
         char ca = a[i];
         char cb = b[i];
         if (ca >= 'A' && ca <= 'Z') {
@@ -52,10 +38,8 @@ static bool name_equals_ci(const char *a, const char *b) {
         if (ca != cb) {
             return false;
         }
-        if (ca == '\0') {
-            return true;
-        }
     }
+    return true;
 }
 
 /* ---- collectives ---- */
@@ -92,7 +76,7 @@ static const TsirIrStmt *cstmt(CollectiveCtx *ctx, uint32_t id) {
     return &ctx->func->stmts[id];
 }
 
-static bool collective_kind_for_name(const char *name,
+static bool collective_kind_for_name(const char *name, size_t length,
     TsirCollectiveKind *out) {
     static const struct {
         const char *name;
@@ -120,7 +104,7 @@ static bool collective_kind_for_name(const char *name,
         return false;
     }
     for (i = 0; i < sizeof(table) / sizeof(table[0]); i++) {
-        if (strcmp(name, table[i].name) == 0) {
+        if (tsir_text_equal(name, length, table[i].name, 0)) {
             *out = table[i].kind;
             return true;
         }
@@ -184,7 +168,7 @@ static void collective_walk_expr(CollectiveCtx *ctx, uint32_t id) {
         case TSIR_IR_EXPR_CALL: {
             TsirCollectiveKind kind;
             if (expr->call_is_builtin && expr->call_name != NULL &&
-                collective_kind_for_name(expr->call_name, &kind)) {
+                collective_kind_for_name(expr->call_name, expr->call_name_length, &kind)) {
                 collective_emit(ctx, expr, kind);
             }
             for (i = 0; i < expr->args_len; i++) {
@@ -266,7 +250,7 @@ static void collective_walk_stmt(CollectiveCtx *ctx, uint32_t id) {
         case TSIR_IR_STMT_LOCAL_DECL: {
             const char *letter = NULL;
             if (tsir_expr_dispatch_axis_letter(ctx->func,
-                stmt->has_initializer, stmt->initializer, &letter)) {
+                stmt->has_initializer, stmt->initializer, &letter, NULL)) {
                 ctx->axis_counter += 1;
             }
             if (stmt->has_initializer) {
@@ -518,10 +502,6 @@ TsirStatus tsir_frontend_recover_rejections(
 
 /* ---- body inference ---- */
 
-static bool starts_with(const char *text, const char *prefix) {
-    return strncmp(text, prefix, strlen(prefix)) == 0;
-}
-
 static bool make_roles(TsirSemanticBody *out,
     const TsirSemanticBodyBinding *bindings, size_t binding_count,
     const TsirSemanticBodyAxis *axes, size_t axis_count) {
@@ -557,126 +537,72 @@ static bool make_roles(TsirSemanticBody *out,
  * -1 on allocation failure. */
 static int infer_rms_epsilon(const TsirWgslModule *module,
     const TsirBufferBinding *bindings, size_t binding_count,
-    const char *hidden_bound, char **path_out,
-    uint32_t *binding_out, uint32_t *offset_out) {
-    char *epsilon_path = NULL;
-    const char *rest = NULL;
-    const char *dot = NULL;
-    char *binding_name = NULL;
-    char *field_name = NULL;
-    size_t dot_index = 0;
-    size_t i = 0;
-    int result = 0;
-    if (starts_with(hidden_bound, "uniform:")) {
-        const char *last_dot = strrchr(hidden_bound, '.');
-        size_t prefix_len = 0;
-        if (last_dot != NULL) {
-            prefix_len = (size_t)(last_dot - hidden_bound) + 1;
-            epsilon_path = (char *)malloc(prefix_len + 3 + 1);
-            if (epsilon_path == NULL) {
-                return -1;
-            }
-            memcpy(epsilon_path, hidden_bound, prefix_len);
-            memcpy(epsilon_path + prefix_len, "eps", 4);
+    const char *hidden_bound, size_t hidden_length, char **path_out,
+    size_t *path_length_out, uint32_t *binding_out, uint32_t *offset_out) {
+    TsirBuffer path;
+    const char *rest;
+    const char *dot;
+    size_t binding_length;
+    size_t field_length;
+    size_t prefix_length = 0;
+    size_t hidden_count = tsir_text_length(hidden_bound, hidden_length);
+    bool found = false;
+    tsir_buf_init(&path);
+    if (tsir_text_starts_with(hidden_bound, hidden_length, "uniform:")) {
+        for (size_t i = 0; i < hidden_count; i++) {
+            if (hidden_bound[i] == '.') prefix_length = i + 1;
         }
     }
-    if (epsilon_path == NULL) {
-        epsilon_path = dup_str("uniform:u.eps");
-        if (epsilon_path == NULL) {
-            return -1;
-        }
+    if (prefix_length != 0) {
+        tsir_buf_putn(&path, hidden_bound, prefix_length);
+        tsir_buf_puts(&path, "eps");
+    } else {
+        tsir_buf_puts(&path, "uniform:u.eps");
     }
-    if (!starts_with(epsilon_path, "uniform:")) {
-        free(epsilon_path);
-        return 0;
-    }
-    rest = epsilon_path + strlen("uniform:");
-    dot = strchr(rest, '.');
-    if (dot == NULL) {
-        free(epsilon_path);
-        return 0;
-    }
-    dot_index = (size_t)(dot - rest);
-    if (dot_index == 0 || dot_index + 1 >= strlen(rest)) {
-        free(epsilon_path);
-        return 0;
-    }
-    binding_name = (char *)malloc(dot_index + 1);
-    if (binding_name == NULL) {
-        free(epsilon_path);
+    if (path.err != TSIR_OK) {
+        tsir_buf_free(&path);
         return -1;
     }
-    memcpy(binding_name, rest, dot_index);
-    binding_name[dot_index] = '\0';
-    field_name = dup_str(rest + dot_index + 1);
-    if (field_name == NULL) {
-        free(binding_name);
-        free(epsilon_path);
-        return -1;
+    rest = path.data + 8;
+    dot = memchr(rest, '.', path.len - 8);
+    if (dot == NULL || dot == rest || (size_t)(dot - path.data) + 1 >= path.len) {
+        tsir_buf_free(&path);
+        return 0;
     }
-    for (i = 0; i < binding_count; i++) {
-        if (strcmp(bindings[i].name, binding_name) == 0) {
+    binding_length = (size_t)(dot - rest);
+    field_length = path.len - (size_t)(dot + 1 - path.data);
+    for (size_t i = 0; i < binding_count; i++) {
+        if (tsir_text_equal(bindings[i].name, bindings[i].name_length,
+                rest, binding_length)) {
             *binding_out = (uint32_t)i;
-            result = 1;
+            found = true;
             break;
         }
     }
-    if (result != 1) {
-        free(binding_name);
-        free(field_name);
-        free(epsilon_path);
-        return 0;
-    }
-    if (module != NULL) {
-        size_t g = 0;
-        for (g = 0; g < module->global_count; g++) {
+    if (found && module != NULL) {
+        for (size_t g = 0; g < module->global_count; g++) {
             const TsirIrGlobal *global = &module->globals[g];
             uint32_t cursor = 0;
-            const TsirIrType *t = NULL;
-            const TsirIrStructDef *def = NULL;
-            size_t f = 0;
-            bool found_field = false;
-            if (strcmp(global->name, binding_name) != 0) {
-                continue;
+            const TsirIrType *type;
+            const TsirIrStructDef *definition;
+            if (!tsir_text_equal(global->name, global->name_length, rest, binding_length)) continue;
+            if (!tsir_ir_unwrap_ref(module, global->ty, &cursor) || cursor >= module->type_count) break;
+            type = &module->types[cursor];
+            if (type->kind != TSIR_IR_TYPE_STRUCT || type->struct_id >= module->struct_count) break;
+            definition = &module->structs[type->struct_id];
+            for (size_t f = 0; f < definition->field_count; f++) {
+                const TsirIrStructField *field = &definition->fields[f];
+                if (!tsir_text_equal(field->name, field->name_length, dot + 1, field_length)) continue;
+                if (!tsir_ir_type_is_scalar(module, field->ty, TSIR_IR_F32) ||
+                    !tsir_ir_struct_field_offset(module, definition, (uint32_t)f, offset_out)) break;
+                *path_out = path.data;
+                *path_length_out = path.len;
+                return 1;
             }
-            if (!tsir_ir_unwrap_ref(module, global->ty, &cursor) ||
-                cursor >= module->type_count) {
-                break;
-            }
-            t = &module->types[cursor];
-            if (t->kind != TSIR_IR_TYPE_STRUCT) {
-                break;
-            }
-            if (t->struct_id >= module->struct_count) {
-                break;
-            }
-            def = &module->structs[t->struct_id];
-            for (f = 0; f < def->field_count; f++) {
-                if (strcmp(def->fields[f].name, field_name) == 0) {
-                    uint32_t offset = 0;
-                    found_field = true;
-                    if (!tsir_ir_type_is_scalar(module,
-                        def->fields[f].ty, TSIR_IR_F32)) {
-                        break;
-                    }
-                    if (!tsir_ir_struct_field_offset(module, def,
-                        (uint32_t)f, &offset)) {
-                        break;
-                    }
-                    *offset_out = offset;
-                    *path_out = epsilon_path;
-                    free(binding_name);
-                    free(field_name);
-                    return 1;
-                }
-            }
-            (void)found_field;
             break;
         }
     }
-    free(binding_name);
-    free(field_name);
-    free(epsilon_path);
+    tsir_buf_free(&path);
     return 0;
 }
 
@@ -728,17 +654,19 @@ TsirStatus tsir_frontend_infer_body(const TsirWgslModule *module,
     if (axis_count >= 2 && binding_count >= 3 &&
         reduction_count == 1 && reductions[0].op == TSIR_REDUCTION_SUM &&
         reductions[0].axis < axis_count &&
-        strcmp(axes[0].upper_bound,
-            axes[reductions[0].axis].upper_bound) == 0 &&
-        name_equals_ci(bindings[0].name, "input") &&
-        (name_equals_ci(bindings[1].name, "weight") ||
-            name_equals_ci(bindings[1].name, "scale")) &&
-        name_equals_ci(bindings[2].name, "output")) {
+        tsir_text_equal(axes[0].upper_bound, axes[0].upper_bound_length,
+            axes[reductions[0].axis].upper_bound, axes[reductions[0].axis].upper_bound_length) &&
+        name_equals_ci(bindings[0].name, bindings[0].name_length, "input") &&
+        (name_equals_ci(bindings[1].name, bindings[1].name_length, "weight") ||
+            name_equals_ci(bindings[1].name, bindings[1].name_length, "scale")) &&
+        name_equals_ci(bindings[2].name, bindings[2].name_length, "output")) {
         char *path = NULL;
+        size_t path_length = 0;
         uint32_t binding_index = 0;
         uint32_t offset = 0;
         int rc = infer_rms_epsilon(module, bindings, binding_count,
-            axes[0].upper_bound, &path, &binding_index, &offset);
+            axes[0].upper_bound, axes[0].upper_bound_length, &path,
+            &path_length, &binding_index, &offset);
         if (rc == -1) {
             return TSIR_ERR_NOMEM;
         }
@@ -767,6 +695,7 @@ TsirStatus tsir_frontend_infer_body(const TsirWgslModule *module,
             out->rms_norm.epsilon.source =
                 TSIR_EPSILON_UNIFORM_FIELD;
             out->rms_norm.epsilon.path = path;
+            out->rms_norm.epsilon.path_length = path_length;
             out->rms_norm.epsilon.binding_index.has = true;
             out->rms_norm.epsilon.binding_index.value = binding_index;
             out->rms_norm.epsilon.byte_offset.has = true;

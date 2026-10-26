@@ -39,12 +39,12 @@ const char *tsir_bootstrap_canonical_kernel(const char *kernel) {
     return text;
 }
 
-static bool is_hex64(const char *text) {
+static bool is_hex64(const char *text, size_t length) {
     size_t i = 0;
     if (text == NULL) {
         return false;
     }
-    if (strlen(text) != 64) {
+    if (tsir_text_length(text, length) != 64) {
         return false;
     }
     for (i = 0; i < 64; i++) {
@@ -57,14 +57,15 @@ static bool is_hex64(const char *text) {
     return true;
 }
 
-static void put_json_string(TsirBuffer *buf, const char *text) {
+static void put_json_string(TsirBuffer *buf, const char *text, size_t length) {
     size_t i = 0;
+    size_t count = tsir_text_length(text, length);
     tsir_buf_putc(buf, '"');
     if (text == NULL) {
         tsir_buf_putc(buf, '"');
         return;
     }
-    for (i = 0; text[i] != '\0'; i++) {
+    for (i = 0; i < count; i++) {
         switch (text[i]) {
             case '\\':
                 tsir_buf_puts(buf, "\\\\");
@@ -98,14 +99,14 @@ static void put_json_string(TsirBuffer *buf, const char *text) {
 }
 
 static void put_string_array(TsirBuffer *buf,
-    const char *const *items, size_t count) {
+    const char *const *items, const size_t *lengths, size_t count) {
     size_t i = 0;
     tsir_buf_putc(buf, '[');
     for (i = 0; i < count; i++) {
         if (i != 0) {
             tsir_buf_puts(buf, ", ");
         }
-        put_json_string(buf, items[i]);
+        put_json_string(buf, items[i], lengths == NULL ? 0 : lengths[i]);
     }
     tsir_buf_putc(buf, ']');
 }
@@ -114,57 +115,60 @@ static void write_manifest_entry(TsirBuffer *buf,
     const TsirManifestEntry *entry) {
     tsir_buf_puts(buf, "  {\n");
     tsir_buf_puts(buf, "    \"backend\": ");
-    put_json_string(buf, entry->backend);
+    put_json_string(buf, entry->backend, entry->backend_length);
     tsir_buf_puts(buf, ",\n");
     tsir_buf_puts(buf, "    \"compilerVersion\": ");
-    put_json_string(buf, tsir_bootstrap_compiler_version());
+    put_json_string(buf, tsir_bootstrap_compiler_version(), 0);
     tsir_buf_puts(buf, ",\n");
     tsir_buf_puts(buf, "    \"emitterDigest\": ");
-    put_json_string(buf, entry->emitter_digest);
+    put_json_string(buf, entry->emitter_digest, entry->emitter_digest_length);
     tsir_buf_puts(buf, ",\n");
     tsir_buf_puts(buf, "    \"exactnessClass\": ");
-    put_json_string(buf, entry->exactness_class);
+    put_json_string(buf, entry->exactness_class, entry->exactness_class_length);
     tsir_buf_puts(buf, ",\n");
     tsir_buf_puts(buf, "    \"algorithmExactInvariants\": ");
     put_string_array(buf, entry->algorithm_exact_invariants,
-        entry->invariant_count);
+        entry->algorithm_exact_invariant_lengths, entry->invariant_count);
     tsir_buf_puts(buf, ",\n");
     tsir_buf_puts(buf, "    \"toleranceMetric\": ");
     put_json_string(buf, entry->tolerance_metric == NULL ? "" :
-        entry->tolerance_metric);
+        entry->tolerance_metric, entry->tolerance_metric == NULL ? 0 :
+        entry->tolerance_metric_length);
     tsir_buf_puts(buf, ",\n");
     tsir_buf_puts(buf, "    \"toleranceEpsilon\": ");
-    tsir_buf_puts(buf, entry->tolerance_epsilon == NULL ? "0" :
-        entry->tolerance_epsilon);
+    tsir_buf_putn(buf, entry->tolerance_epsilon == NULL ? "0" :
+        entry->tolerance_epsilon, entry->tolerance_epsilon == NULL ? 1 :
+        tsir_text_length(entry->tolerance_epsilon, entry->tolerance_epsilon_length));
     tsir_buf_puts(buf, ",\n");
     tsir_buf_puts(buf, "    \"frontendVersion\": ");
-    put_json_string(buf, tsir_bootstrap_frontend_version());
+    put_json_string(buf, tsir_bootstrap_frontend_version(), 0);
     tsir_buf_puts(buf, ",\n");
     tsir_buf_puts(buf, "    \"kernelRef\": ");
     /* Quote the complete reference through the same JSON string owner. */
     TsirBuffer reference;
     tsir_buf_init(&reference);
     tsir_buf_puts(&reference, "doe.tsir.bootstrap.");
-    tsir_buf_puts(&reference, entry->kernel_ref);
+    tsir_buf_putn(&reference, entry->kernel_ref,
+        tsir_text_length(entry->kernel_ref, entry->kernel_ref_length));
     if (reference.err == TSIR_OK) {
-        put_json_string(buf, reference.data);
+        put_json_string(buf, reference.data, reference.len);
     } else if (buf->err == TSIR_OK) {
         buf->err = reference.err;
     }
     tsir_buf_free(&reference);
     tsir_buf_puts(buf, ",\n");
     tsir_buf_puts(buf, "    \"rejectionReasons\": ");
-    put_string_array(buf, entry->rejection_reasons,
+    put_string_array(buf, entry->rejection_reasons, entry->rejection_reason_lengths,
         entry->rejection_count);
     tsir_buf_puts(buf, ",\n");
     tsir_buf_puts(buf, "    \"targetDescriptorCorrectnessHash\": ");
-    put_json_string(buf, entry->target_descriptor_correctness_hash);
+    put_json_string(buf, entry->target_descriptor_correctness_hash, entry->target_descriptor_correctness_hash_length);
     tsir_buf_puts(buf, ",\n");
     tsir_buf_puts(buf, "    \"tsirRealizationDigest\": ");
-    put_json_string(buf, entry->tsir_realization_digest);
+    put_json_string(buf, entry->tsir_realization_digest, entry->tsir_realization_digest_length);
     tsir_buf_puts(buf, ",\n");
     tsir_buf_puts(buf, "    \"tsirSemanticDigest\": ");
-    put_json_string(buf, entry->tsir_semantic_digest);
+    put_json_string(buf, entry->tsir_semantic_digest, entry->tsir_semantic_digest_length);
     tsir_buf_puts(buf, "\n");
     tsir_buf_puts(buf, "  }");
 }
@@ -191,10 +195,10 @@ TsirStatus tsir_bootstrap_write_manifest_entry(TsirBuffer *buf,
     }
     if (entry == NULL || entry->backend == NULL ||
         entry->exactness_class == NULL || entry->kernel_ref == NULL ||
-        !is_hex64(entry->emitter_digest) ||
-        !is_hex64(entry->target_descriptor_correctness_hash) ||
-        !is_hex64(entry->tsir_realization_digest) ||
-        !is_hex64(entry->tsir_semantic_digest) ||
+        !is_hex64(entry->emitter_digest, entry->emitter_digest_length) ||
+        !is_hex64(entry->target_descriptor_correctness_hash, entry->target_descriptor_correctness_hash_length) ||
+        !is_hex64(entry->tsir_realization_digest, entry->tsir_realization_digest_length) ||
+        !is_hex64(entry->tsir_semantic_digest, entry->tsir_semantic_digest_length) ||
         !valid_string_array(entry->algorithm_exact_invariants,
             entry->invariant_count) ||
         !valid_string_array(entry->rejection_reasons,
@@ -204,7 +208,8 @@ TsirStatus tsir_bootstrap_write_manifest_entry(TsirBuffer *buf,
     const char *epsilon = entry->tolerance_epsilon == NULL ? "0" :
         entry->tolerance_epsilon;
     doe_json_document number = {0};
-    doe_json_status parsed = doe_json_parse(epsilon, strlen(epsilon),
+    doe_json_status parsed = doe_json_parse(epsilon, entry->tolerance_epsilon == NULL ? 1 :
+        tsir_text_length(epsilon, entry->tolerance_epsilon_length),
         &number, NULL);
     if (parsed != DOE_JSON_OK) {
         return parsed == DOE_JSON_OUT_OF_MEMORY ? TSIR_ERR_NOMEM :

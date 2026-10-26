@@ -9,7 +9,8 @@ import hashlib
 import random
 import unittest
 
-from test_cli import CompilerFixture, REPO, execute, float_bits, invoke
+from test_cli import CompilerFixture, REPO, execute, f32, float_bits, invoke
+from scalar_machine import execute_scalar
 from test_control import HEADER
 
 FLOAT_HEADER = HEADER.replace("array<u32>", "array<f32>")
@@ -172,8 +173,7 @@ class TestScalarExpressions(CompilerFixture):
     def test_scope_and_builtin_lookup_fail_closed(self) -> None:
         for body in (
             "out[0u]=x;let x=1u;", "let x=x;", "let x=1u;let x=2u;",
-            "let x=1u;if(gid.x==0u){let x=2u;}", "let out=1u;",
-            "let src=1u;", "let gid=1u;", "let run=1u;", "let x=gid;",
+            "let gid=1u;",
             "let x=1u;x=2u;", "if(gid.x==0u){let x=2u;}out[0u]=x;",
             "if(gid.x==0u){let x=2u;}else{out[0u]=x;}",
             "let max=1u;out[0u]=max(1u,2u);", "let max=gid.x;out[0u]=max(1u,2u);",
@@ -193,17 +193,45 @@ class TestScalarExpressions(CompilerFixture):
         self.compile(FLOAT_HEADER + "let f32=1u;let x=0.1;out[0u]=x;}")
         self.reject("let f32=1u;let x:f32=0.1;", FLOAT_HEADER)
 
+    def test_canonical_shadowing_and_vector_alias(self) -> None:
+        cases = (("let x=1u;if(gid.x==0u){let x=2u;out[0]=x;}out[1]=x;", [2, 1]),
+                 ("var result:u32;{let out=7u;result=out;}out[0]=result;", [7]),
+                 ("let src=1u;out[0]=src;", [1]), ("let run=1u;out[0]=run;", [1]),
+                 ("let x=gid;out[0]=x.y;", [7]))
+        for body, expected in cases:
+            with self.subTest(body=body):
+                instructions, _ = self.compile(HEADER + body + "}")
+                memory = {(0, 0): [3], (0, 1): [99] * len(expected)}
+                execute_scalar(instructions, memory, (0, 7, 0))
+                self.assertEqual(memory, {(0, 0): [3], (0, 1): expected})
+
     def test_numerical_and_grammar_exclusions(self) -> None:
-        for literal in (".1", "1.", "1.0h", "1.0u", "1.0ff", "1.0e1", "1e-1",
-                        "0x1.0p+0", "1.000000000", "1.0.0", "1f", "-1.0", "+1.0"):
+        for literal in ("1.0h", "1.0u", "1.0ff", "1.0.0", "+1.0"):
             self.reject(f"out[0u]={literal};", FLOAT_HEADER)
-        for expression in ("0.1+0.2", "max(0.1,0.2)", "1.0f*2.0f",
-                           "src[0u]*(0.1+0.2)", "src[0u]*(16777217.0-16777216.0)",
-                           "max(src[0u],max(0.1,0.2))", "src[0u]+1u", "1.0+1u",
-                           "src[0u]/2.0", "f32(1u)", "min(src[0u],0.0)"):
+        for expression in ("src[0u]+1u", "1.0+1u"):
             self.reject(f"out[0u]={expression};", FLOAT_HEADER)
-        for expression in ("1u+1.0", "max(1u,1.0)", "u32(1.0)"):
+        for expression in ("1u+1.0", "max(1u,1.0)"):
             self.reject(f"out[0u]={expression};")
+
+    def test_canonical_numeric_admissions(self) -> None:
+        # Independent expected binary32 values replace historical M4 exclusions.
+        cases = ((".1", 0.1), ("1.", 1.0), ("1.0e1", 10.0), ("1e-1", 0.1),
+                 ("0x1.0p+0", 1.0), ("1.000000000", 1.0), ("1f", 1.0), ("-1.0", -1.0),
+                 ("0.1+0.2", 0.3), ("max(0.1,0.2)", 0.2), ("1.0f*2.0f", 2.0),
+                 ("src[0u]*(0.1+0.2)", 3.0 * f32(float_bits(0.3))),
+                 ("src[0u]*(16777217.0-16777216.0)", 3.0),
+                 ("max(src[0u],max(0.1,0.2))", 3.0), ("src[0u]/2.0", 1.5),
+                 ("f32(1u)", 1.0), ("min(src[0u],0.0)", 0.0))
+        for expression, expected in cases:
+            with self.subTest(expression=expression):
+                instructions, _ = self.compile(FLOAT_HEADER + f"out[0u]={expression};" + "}")
+                memory = {(0, 0): [float_bits(3.0)], (0, 1): [0xDEADBEEF]}
+                execute_scalar(instructions, memory, 0)
+                self.assertEqual(memory[(0, 1)], [float_bits(expected)])
+        instructions, _ = self.compile(HEADER + "out[0u]=u32(1.0);}")
+        memory = {(0, 0): [], (0, 1): [99]}
+        execute_scalar(instructions, memory, 0)
+        self.assertEqual(memory[(0, 1)], [1])
 
     def test_decimal_materialization_exact_oracle(self) -> None:
         literals = ["0.0", "000.000", "0.00000001", "99999999.9", "0.1", "0.2f",
@@ -253,14 +281,17 @@ class TestScalarExpressions(CompilerFixture):
             memory = {(0, 0): [float_bits(x) for x in inputs], (0, 1): [0]}
             execute(bad, memory, 0)
             self.assertNotEqual(memory[(0, 1)], [float_bits(expected)])
-        instructions, _ = self.compile(HEADER + "out[0u]=3u*4u;}")
+        # A constant expression is correctly folded before emission. Use a
+        # real load so this mutation must reach an actual multiply opcode.
+        instructions, _ = self.compile(HEADER + "out[0u]=src[0u]*4u;}")
+        self.assertTrue(any(op == 132 for op, _ in instructions))
         bad = [(128 if op == 132 else op, args) for op, args in instructions]
-        memory = {(0, 0): [], (0, 1): [0]}
+        memory = {(0, 0): [3], (0, 1): [0]}
         execute(bad, memory, 0)
         self.assertNotEqual(memory[(0, 1)], [12])
         bad = [(65535 if op == 132 else op, args) for op, args in instructions]
         with self.assertRaisesRegex(AssertionError, "unexpected instruction"):
-            execute(bad, {(0, 0): [], (0, 1): [0]}, 0)
+            execute(bad, {(0, 0): [3], (0, 1): [0]}, 0)
 
 
 if __name__ == "__main__":

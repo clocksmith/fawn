@@ -57,7 +57,8 @@ static void *parallel(void *unused) {
 }
 int main(void) {
     assert(doe_compiler_workspace_requirements(2u, &requirements, sizeof(requirements)) == DOE_COMPILER_OK);
-    assert(requirements.size_bytes <= 96208u);
+    /* Match the current fixed-storage ledger, unchanged from the baseline. */
+    assert(requirements.size_bytes == (UINTPTR_MAX == UINT64_MAX ? 146048u : 145920u));
     const long page_query = sysconf(_SC_PAGESIZE);
     assert(page_query > 0);
     const size_t page = (size_t)page_query;

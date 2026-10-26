@@ -316,7 +316,9 @@ fn infer_constructor_elem_type(self: anytype, arg_types: []const ir.TypeId) !ir.
         }
     }
     if (elem_ty == ir.INVALID_TYPE) return error.TypeMismatch;
-    return materialize_inferred_local_type(self.module, elem_ty);
+    // An inferred constructor is an expression, not a runtime declaration:
+    // keep abstract elements available for surrounding overload resolution.
+    return elem_ty;
 }
 
 fn infer_matrix_elem_type(self: anytype, arg_types: []const ir.TypeId, columns: u8, rows: u8) !ir.TypeId {
@@ -337,9 +339,9 @@ fn infer_matrix_elem_type(self: anytype, arg_types: []const ir.TypeId, columns: 
             }
         }
         if (elem_ty == ir.INVALID_TYPE) return error.TypeMismatch;
-        return materialize_inferred_local_type(self.module, elem_ty);
+        return try materialize_inferred_local_type(self.module, elem_ty);
     }
-    return try infer_constructor_elem_type(self, arg_types);
+    return try materialize_inferred_local_type(self.module, try infer_constructor_elem_type(self, arg_types));
 }
 
 const RefBindingInfo = struct {

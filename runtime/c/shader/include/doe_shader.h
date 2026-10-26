@@ -132,6 +132,13 @@ doe_shader_status doe_shader_create_module(const doe_shader_options *options,
     size_t override_capacity, const char *source, size_t source_size,
     doe_shader **out, doe_shader_error *error);
 doe_shader_status doe_shader_borrow_module(const doe_shader *module, doe_shader_module_view *out);
+/* Immutable module identity, not semantic equivalence. Capacity/allocator policy
+ * is not a language key; callers must use one admission policy independently. */
+bool doe_shader_module_matches(const doe_shader *module, doe_shader_target target,
+    uint32_t semantic_flags, const char *source, size_t size,
+    const void *identity, size_t identity_size);
+/* Direct owned allocation size (specializations separately retain their module). */
+size_t doe_shader_owned_bytes(const doe_shader *shader);
 /* Specialize the immutable saved module/options, with exact key bytes and double
  * value bits snapshotted before measure/fill. AUTO/NAME produces a separately
  * owned executable artifact with one entry at index0 and its declared identity.

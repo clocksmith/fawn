@@ -71,12 +71,17 @@ pub fn captureFailureNode(tree: *const Ast, node_idx: u32, last_failure_context:
     };
 }
 
-pub fn materialize_inferred_local_type(module: *SemanticModule, ty: ir.TypeId) ir.TypeId {
+pub fn materialize_inferred_local_type(module: *SemanticModule, ty: ir.TypeId) AnalyzeError!ir.TypeId {
     return switch (module.types.get(ty)) {
         .scalar => |scalar| switch (scalar) {
             .abstract_int => module.i32_type,
             .abstract_float => module.f32_type,
             else => ty,
+        },
+        .vector => |vec| blk: {
+            const elem = try materialize_inferred_local_type(module, vec.elem);
+            if (elem == vec.elem) break :blk ty;
+            break :blk try module.types.intern(.{ .vector = .{ .elem = elem, .len = vec.len } });
         },
         else => ty,
     };

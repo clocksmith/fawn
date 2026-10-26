@@ -396,7 +396,7 @@ doe_resource_status doe_resource_encoder_finish(doe_resource_encoder *encoder,
 
 doe_resource_commands *doe_resource_commands_rejected(doe_resource_encoder *encoder)
 {
-    if (!encoder || encoder->status == DOE_RESOURCE_OK) return NULL;
+    if (!encoder || (encoder->status == DOE_RESOURCE_OK && !encoder->finished)) return NULL;
     doe_resource_commands *commands = resource_allocate(&encoder->base.config,
         sizeof(*commands), _Alignof(doe_resource_commands));
     if (!commands) return NULL;

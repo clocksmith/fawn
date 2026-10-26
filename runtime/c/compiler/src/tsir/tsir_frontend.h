@@ -39,11 +39,14 @@ TsirKernelFamilyHint tsir_family_hint_classify(size_t axis_count,
 /* family_hint.infer over real IR: the evidence booleans above are
  * computed here by walking the function's expressions (indexed
  * access covering both axis locals, indirect buffer access with
- * the Zig depth-8 local-alias cap). */
-TsirKernelFamilyHint tsir_family_hint_infer_ir(
+ * the Zig depth-8 local-alias cap). Expression depth has no fixed cap;
+ * caller-bounded graph storage controls the explicit traversal workspace.
+ * Invalid traversed edges/cycles and allocation failures return an error,
+ * leaving *out untouched, rather than silently changing the family hint. */
+TsirStatus tsir_family_hint_infer_ir(
     const TsirIrFunction *func, const TsirIterationAxis *axes,
     size_t axis_count, const TsirReductionRegion *reductions,
-    size_t reduction_count);
+    size_t reduction_count, TsirKernelFamilyHint *out);
 
 /* Growable lists used while lowering one function. Append
  * functions return false on allocation failure and preserve the
@@ -91,6 +94,9 @@ bool tsir_frontend_reduction_append(TsirReductionList *list,
     TsirReductionRegion reduction);
 bool tsir_frontend_collective_append(TsirCollectiveList *list,
     TsirCollectiveSemanticNode node);
+bool tsir_frontend_rejection_append_span(TsirRejectionList *list,
+    TsirRejectionReason reason, const char *node_path, size_t node_path_length,
+    const char *detail, size_t detail_length);
 bool tsir_frontend_rejection_append(TsirRejectionList *list,
     TsirRejectionReason reason, const char *node_path,
     const char *detail);
@@ -105,6 +111,9 @@ void tsir_frontend_rejection_free(TsirRejectionList *list);
  * failure *out is left zeroed and nothing leaks from the call. */
 TsirStatus tsir_frontend_lower(const TsirWgslModule *module,
     const uint8_t source_digest[32], const char *frontend_version,
+    TsirSemantic *out);
+TsirStatus tsir_frontend_lower_span(const TsirWgslModule *module,
+    const uint8_t source_digest[32], const char *frontend_version, size_t frontend_version_length,
     TsirSemantic *out);
 void tsir_frontend_free_semantic(TsirSemantic *semantic);
 

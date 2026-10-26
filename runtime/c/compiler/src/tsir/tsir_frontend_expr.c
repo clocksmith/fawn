@@ -7,31 +7,24 @@
 #include <string.h>
 
 static char *dup_str(const char *text) {
-    size_t len = 0;
-    char *copy = NULL;
-    if (text == NULL) {
-        return NULL;
-    }
-    len = strlen(text);
-    copy = (char *)malloc(len + 1);
-    if (copy == NULL) {
-        return NULL;
-    }
-    memcpy(copy, text, len + 1);
-    return copy;
+    return tsir_text_duplicate(text, 0);
 }
 
-static char *concat3(const char *a, const char *b, const char *c) {
-    size_t la = strlen(a);
-    size_t lb = strlen(b);
-    size_t lc = strlen(c);
+static char *concat3_span(const char *a, size_t la,
+    const char *b, size_t lb, const char *c, size_t lc, size_t *out_length) {
+    la = tsir_text_length(a, la);
+    lb = tsir_text_length(b, lb);
+    lc = tsir_text_length(c, lc);
+    if (la > SIZE_MAX - lb || la + lb >= SIZE_MAX - lc) return NULL;
     char *out = (char *)malloc(la + lb + lc + 1);
     if (out == NULL) {
         return NULL;
     }
     memcpy(out, a, la);
     memcpy(out + la, b, lb);
-    memcpy(out + la + lb, c, lc + 1);
+    memcpy(out + la + lb, c, lc);
+    out[la + lb + lc] = '\0';
+    if (out_length != NULL) *out_length = la + lb + lc;
     return out;
 }
 
@@ -47,7 +40,7 @@ static char *fmt_prefixed_u64(const char *prefix, uint64_t value) {
     if (digits == NULL) {
         return NULL;
     }
-    out = concat3(prefix, digits, "");
+    out = concat3_span(prefix, 0, digits, 0, "", 0, NULL);
     free(digits);
     return out;
 }
@@ -157,7 +150,9 @@ int tsir_expr_literal_upper_bound(const TsirIrFunction *func,
 }
 
 int tsir_expr_override_or_const_name(const TsirIrGlobal *global,
-    char **out) {
+    char **out, size_t *out_length) {
+    if (out_length == NULL) return 0;
+    *out_length = 0;
     char tmp[64];
     if (global == NULL || out == NULL) {
         return 0;
@@ -168,10 +163,10 @@ int tsir_expr_override_or_const_name(const TsirIrGlobal *global,
                 global->override_id);
             *out = dup_str(tmp);
         } else {
-            *out = concat3("override:", global->name, "");
+            *out = concat3_span("override:", 0, global->name, global->name_length, "", 0, out_length);
         }
     } else if (global->class == TSIR_IR_GLOBAL_CONST) {
-        *out = concat3("const:", global->name, "");
+        *out = concat3_span("const:", 0, global->name, global->name_length, "", 0, out_length);
     } else {
         return 0;
     }
@@ -180,7 +175,7 @@ int tsir_expr_override_or_const_name(const TsirIrGlobal *global,
 
 bool tsir_expr_uniform_field_access(const TsirIrFunction *func,
     uint32_t expr_id, uint32_t *global_index_out,
-    const char **field_name_out) {
+    const char **field_name_out, size_t *field_length_out) {
     uint32_t cursor = expr_id;
     const TsirIrExpr *node = NULL;
     if (func == NULL) {
@@ -216,6 +211,8 @@ bool tsir_expr_uniform_field_access(const TsirIrFunction *func,
                     }
                     if (field_name_out != NULL) {
                         *field_name_out = field;
+                        if (field_length_out != NULL)
+                            *field_length_out = node->member_field_name_length;
                     }
                     return true;
                 }
@@ -228,22 +225,25 @@ bool tsir_expr_uniform_field_access(const TsirIrFunction *func,
 /* Resolve an expression to a bound-name string: uniform field
  * first, then override/const global. Returns 1/0/-1. */
 static int resolve_bound_name(const TsirWgslModule *module,
-    const TsirIrFunction *func, uint32_t expr_id, char **out) {
+    const TsirIrFunction *func, uint32_t expr_id, char **out, size_t *out_length) {
+    if (out_length == NULL) return 0;
+    *out_length = 0;
     uint32_t global_index = 0;
     const char *field = NULL;
+    size_t field_length = 0;
     if (tsir_expr_uniform_field_access(func, expr_id, &global_index,
-        &field)) {
+        &field, &field_length)) {
         if (module != NULL && global_index < module->global_count) {
             const TsirIrGlobal *g = &module->globals[global_index];
             if (g->class == TSIR_IR_GLOBAL_VAR &&
                 g->has_addr_space &&
                 g->addr_space == TSIR_IR_SPACE_UNIFORM) {
-                *out = concat3("uniform:", g->name, "");
+                *out = concat3_span("uniform:", 0, g->name, g->name_length, "", 0, out_length);
                 if (*out == NULL) {
                     return -1;
                 }
                 {
-                    char *joined = concat3(*out, ".", field);
+                    char *joined = concat3_span(*out, *out_length, ".", 0, field, field_length, out_length);
                     free(*out);
                     *out = joined;
                 }
@@ -256,7 +256,7 @@ static int resolve_bound_name(const TsirWgslModule *module,
         if (tsir_ir_find_global_base(func, expr_id, &base) &&
             module != NULL && base < module->global_count) {
             return tsir_expr_override_or_const_name(
-                &module->globals[base], out);
+                &module->globals[base], out, out_length);
         }
     }
     return 0;
@@ -264,7 +264,9 @@ static int resolve_bound_name(const TsirWgslModule *module,
 
 int tsir_expr_symbolic_upper_bound(const TsirWgslModule *module,
     const TsirIrFunction *func, bool has_cond, uint32_t cond_id,
-    uint32_t induction, char **out) {
+    uint32_t induction, char **out, size_t *out_length) {
+    if (out_length == NULL) return 0;
+    *out_length = 0;
     bool is_less_equal = false;
     uint32_t name_expr = 0;
     int rc = 0;
@@ -276,12 +278,12 @@ int tsir_expr_symbolic_upper_bound(const TsirWgslModule *module,
         &name_expr)) {
         return 0;
     }
-    rc = resolve_bound_name(module, func, name_expr, &base);
+    rc = resolve_bound_name(module, func, name_expr, &base, out_length);
     if (rc != 1) {
         return rc;
     }
     if (is_less_equal) {
-        char *joined = concat3(base, "+1", "");
+        char *joined = concat3_span(base, *out_length, "+1", 0, "", 0, out_length);
         free(base);
         base = joined;
         if (base == NULL) {
@@ -294,7 +296,9 @@ int tsir_expr_symbolic_upper_bound(const TsirWgslModule *module,
 
 int tsir_expr_extract_step(const TsirWgslModule *module,
     const TsirIrFunction *func, bool has_cont, uint32_t cont_id,
-    uint32_t induction, char **out) {
+    uint32_t induction, char **out, size_t *out_length) {
+    if (out_length == NULL) return 0;
+    *out_length = 0;
     const TsirIrStmt *cont = NULL;
     const char *prefix = "";
     uint32_t value_expr = 0;
@@ -360,12 +364,12 @@ int tsir_expr_extract_step(const TsirWgslModule *module,
         return (*out == NULL) ? -1 : 1;
     }
     {
-        int rc = resolve_bound_name(module, func, value_expr, out);
+        int rc = resolve_bound_name(module, func, value_expr, out, out_length);
         if (rc != 1) {
             return rc;
         }
         if (prefix[0] != '\0') {
-            char *joined = concat3(prefix, *out, "");
+            char *joined = concat3_span(prefix, 0, *out, *out_length, "", 0, out_length);
             free(*out);
             *out = joined;
             if (*out == NULL) {
@@ -378,7 +382,9 @@ int tsir_expr_extract_step(const TsirWgslModule *module,
 
 int tsir_expr_extract_init_bound(const TsirWgslModule *module,
     const TsirIrFunction *func, bool has_init, uint32_t init_id,
-    char **out) {
+    char **out, size_t *out_length) {
+    if (out_length == NULL) return 0;
+    *out_length = 0;
     const TsirIrExpr *node = NULL;
     if (!has_init || out == NULL) {
         return 0;
@@ -391,7 +397,7 @@ int tsir_expr_extract_init_bound(const TsirWgslModule *module,
         *out = fmt_u64(node->int_value);
         return (*out == NULL) ? -1 : 1;
     }
-    return resolve_bound_name(module, func, init_id, out);
+    return resolve_bound_name(module, func, init_id, out, out_length);
 }
 
 TsirStepSign tsir_expr_detect_step_sign(const TsirIrFunction *func,
@@ -446,7 +452,7 @@ TsirStepSign tsir_expr_detect_step_sign(const TsirIrFunction *func,
 }
 
 bool tsir_expr_dispatch_axis_letter(const TsirIrFunction *func,
-    bool has_init, uint32_t init_id, const char **letter_out) {
+    bool has_init, uint32_t init_id, const char **letter_out, size_t *letter_length_out) {
     uint32_t cursor = 0;
     const TsirIrExpr *node = NULL;
     const TsirIrExpr *member_node = NULL;
@@ -494,6 +500,8 @@ bool tsir_expr_dispatch_axis_letter(const TsirIrFunction *func,
             }
             if (letter_out != NULL) {
                 *letter_out = member_node->member_field_name;
+                if (letter_length_out != NULL)
+                    *letter_length_out = member_node->member_field_name_length;
             }
             return true;
         }
@@ -505,7 +513,9 @@ bool tsir_expr_dispatch_axis_letter(const TsirIrFunction *func,
  * `if (i > bound) { return; }` with no else branch. */
 static int dispatch_bound_from_guard(
     const TsirWgslModule *module, const TsirIrFunction *func,
-    uint32_t guard_stmt_id, uint32_t dispatch_local, char **out) {
+    uint32_t guard_stmt_id, uint32_t dispatch_local, char **out, size_t *out_length) {
+    if (out_length == NULL) return 0;
+    *out_length = 0;
     const TsirIrStmt *stmt = stmt_at(func, guard_stmt_id);
     const TsirIrStmt *then_stmt = NULL;
     const TsirIrExpr *cond = NULL;
@@ -563,14 +573,14 @@ static int dispatch_bound_from_guard(
         }
     } else {
         rc = resolve_bound_name(module, func, cond->binary_rhs,
-            &base);
+            &base, out_length);
         if (rc != 1) {
             return rc;
         }
         *out = base;
     }
     if (suffix[0] != '\0') {
-        char *joined = concat3(*out, suffix, "");
+        char *joined = concat3_span(*out, *out_length, suffix, 0, "", 0, out_length);
         free(*out);
         *out = joined;
         if (*out == NULL) {
@@ -583,7 +593,9 @@ static int dispatch_bound_from_guard(
 int tsir_expr_scan_dispatch_guard(const TsirWgslModule *module,
     const TsirIrFunction *func, uint32_t range_start,
     uint32_t range_len, uint32_t start_pos, uint32_t dispatch_local,
-    char **out) {
+    char **out, size_t *out_length) {
+    if (out_length == NULL) return 0;
+    *out_length = 0;
     uint32_t k = 0;
     if (func == NULL || out == NULL) {
         return 0;
@@ -607,7 +619,7 @@ int tsir_expr_scan_dispatch_guard(const TsirWgslModule *module,
             return 0;
         }
         rc = dispatch_bound_from_guard(module, func, child_id,
-            dispatch_local, out);
+            dispatch_local, out, out_length);
         if (rc == 1 || rc == -1) {
             return rc;
         }

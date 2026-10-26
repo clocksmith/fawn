@@ -6,7 +6,7 @@
 #include "tsir_sha256.h"
 
 static void test_empty_semantic(void) {
-    TsirSemantic semantic;
+    TsirSemantic semantic = {0};
     char *text = NULL;
     size_t len = 0;
     TsirStatus st = TSIR_OK;
@@ -21,11 +21,11 @@ static void test_empty_semantic(void) {
 }
 
 static void test_one_function_exact(void) {
-    TsirIterationAxis axis;
-    TsirBufferBinding binding;
+    TsirIterationAxis axis = {0};
+    TsirBufferBinding binding = {0};
     TsirSemanticBody body;
-    TsirSemanticFunction func;
-    TsirSemantic semantic;
+    TsirSemanticFunction func = {0};
+    TsirSemantic semantic = {0};
     uint64_t shape[1] = { 4 };
     char *text = NULL;
     size_t len = 0;
@@ -77,9 +77,9 @@ static void test_one_function_exact(void) {
 }
 
 static void test_escaping(void) {
-    TsirBufferBinding binding;
-    TsirSemanticFunction func;
-    TsirSemantic semantic;
+    TsirBufferBinding binding = {0};
+    TsirSemanticFunction func = {0};
+    TsirSemantic semantic = {0};
     char *text = NULL;
     size_t len = 0;
     TsirStatus st = TSIR_OK;
@@ -104,7 +104,7 @@ static void test_escaping(void) {
 
 static void test_optional_and_nan(void) {
     TsirResidencyDecision decision;
-    TsirRealizationFunction func;
+    TsirRealizationFunction func = {0};
     TsirRealization realization;
     char *text = NULL;
     size_t len = 0;
@@ -131,8 +131,8 @@ static void test_optional_and_nan(void) {
     /* NaN tolerance epsilon is invalid, never serialized. */
     {
         TsirCollectiveSemanticNode node;
-        TsirSemanticFunction sfunc;
-        TsirSemantic semantic2;
+        TsirSemanticFunction sfunc = {0};
+        TsirSemantic semantic2 = {0};
         memset(&node, 0, sizeof(node));
         node.kind = TSIR_COLLECTIVE_SUBGROUP_ADD;
         node.axis = -1;
@@ -192,10 +192,10 @@ static void test_f64_plain_and_determinism(void) {
 }
 
 static void test_split_digests(void) {
-    TsirSemantic semantic;
-    TsirSemantic semantic2;
+    TsirSemantic semantic = {0};
+    TsirSemantic semantic2 = {0};
     TsirRealization realization;
-    TsirRealizationFunction rfunc;
+    TsirRealizationFunction rfunc = {0};
     TsirDigests digests1;
     TsirDigests digests2;
     TsirStatus st = TSIR_OK;
@@ -234,8 +234,8 @@ static void test_split_digests(void) {
 
 static void test_digest_drops_other_bodies(void) {
     TsirSemanticBody body;
-    TsirSemanticFunction func;
-    TsirSemantic semantic;
+    TsirSemanticFunction func = {0};
+    TsirSemantic semantic = {0};
     char *text = NULL;
     size_t len = 0;
     TsirStatus st = TSIR_OK;

@@ -557,9 +557,9 @@ test "sema: bitcast_types_compatible" {
 test "sema: materialize_inferred_local_type" {
     var s = try initTestSemaModule();
     defer s.module.types.deinit();
-    try testing.expectEqual(s.module.i32_type, sema_typeutils.materialize_inferred_local_type(&s.module, s.module.abstract_int_type));
-    try testing.expectEqual(s.module.f32_type, sema_typeutils.materialize_inferred_local_type(&s.module, s.module.abstract_float_type));
-    try testing.expectEqual(s.module.i32_type, sema_typeutils.materialize_inferred_local_type(&s.module, s.module.i32_type));
+    try testing.expectEqual(s.module.i32_type, try sema_typeutils.materialize_inferred_local_type(&s.module, s.module.abstract_int_type));
+    try testing.expectEqual(s.module.f32_type, try sema_typeutils.materialize_inferred_local_type(&s.module, s.module.abstract_float_type));
+    try testing.expectEqual(s.module.i32_type, try sema_typeutils.materialize_inferred_local_type(&s.module, s.module.i32_type));
 }
 
 test "sema: concrete_numeric_type coercion" {

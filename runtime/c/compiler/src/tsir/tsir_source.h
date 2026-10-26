@@ -12,4 +12,9 @@
 TsirStatus tsir_source_lower(const char *source, size_t length,
     const char *frontend_version, TsirSemantic *out,
     DoeCompilerDiagnostic *diagnostic);
+/* Opaque version bytes use the shared optional-length convention; WGSL source
+ * syntax still rejects embedded NUL independently of TSIR schema text. */
+TsirStatus tsir_source_lower_span(const char *source, size_t length,
+    const char *frontend_version, size_t frontend_version_length, TsirSemantic *out,
+    DoeCompilerDiagnostic *diagnostic);
 #endif

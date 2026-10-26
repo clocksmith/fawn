@@ -22,7 +22,7 @@ static void descriptor_tests(void) {
         changed.fabric_per_hop_latency_ns += 999;
         CHECK_STATUS(tsir_target_descriptor_hash(&changed, mutated), TSIR_OK);
         CHECK(memcmp(original, mutated, sizeof(original)) == 0);
-        changed.planner.pe_working_memory_bytes += 1;
+        changed.pe_working_memory_bytes += 1;
         CHECK_STATUS(tsir_target_descriptor_hash(&changed, mutated), TSIR_OK);
         CHECK(memcmp(original, mutated, sizeof(original)) != 0);
         changed = *base;
@@ -34,7 +34,7 @@ static void descriptor_tests(void) {
         CHECK_STATUS(tsir_target_descriptor_hash(&changed, mutated), TSIR_OK);
         CHECK(memcmp(original, mutated, sizeof(original)) != 0);
         changed = *base;
-        changed.planner.native_numerical_modes = NULL;
+        changed.native_numerical_modes = NULL;
         memset(mutated, 0xa5, sizeof(mutated));
         CHECK_STATUS(tsir_target_descriptor_hash(&changed, mutated), TSIR_ERR_INVALID);
         CHECK(mutated[0] == 0xa5 && mutated[31] == 0xa5);
@@ -59,6 +59,15 @@ static int print_digests(const char *root) {
         hex_digest(digest, hex);
         puts(hex);
     }
+    {
+        uint8_t digest[32];
+        char hex[65];
+        if (tsir_emitter_code_digest(TSIR_KERNEL_DXIL, root, digest) != TSIR_OK) {
+            return 1;
+        }
+        hex_digest(digest, hex);
+        puts(hex);
+    }
     return 0;
 }
 
@@ -73,6 +82,26 @@ int main(int argc, char **argv) {
         TsirBootstrapTarget target = (TsirBootstrapTarget)atoi(argv[2]);
         memset(digest, 0xa5, sizeof(digest));
         status = tsir_target_emitter_digest(target, argv[3], digest);
+        hex_digest(digest, hex);
+        printf("%d %s\n", (int)status, hex);
+        return 0;
+    }
+    if (argc == 4 && strcmp(argv[1], "--backend") == 0) {
+        uint8_t digest[32];
+        char hex[65];
+        TsirStatus status;
+        memset(digest, 0xa5, sizeof(digest));
+        status = tsir_emitter_code_digest((TsirKernelBackend)atoi(argv[2]), argv[3], digest);
+        hex_digest(digest, hex);
+        printf("%d %s\n", (int)status, hex);
+        return 0;
+    }
+    if (argc == 2 && strcmp(argv[1], "--invalid-utf8") == 0) {
+        uint8_t digest[32];
+        char hex[65];
+        memset(digest, 0xa5, sizeof(digest));
+        TsirStatus status = tsir_target_emitter_digest(TSIR_TARGET_WEBGPU_GENERIC,
+            "invalid-\xc0\xaf", digest);
         hex_digest(digest, hex);
         printf("%d %s\n", (int)status, hex);
         return 0;

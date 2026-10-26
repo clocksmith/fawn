@@ -1,5 +1,10 @@
 # DXIL behavioral parity test definition
 
+Historical initial-port contract for the bounded native/low-level adapters.
+The production source-to-DXC route now uses the shared typed compiler/HLSL
+owners; see [`source-integration.md`](source-integration.md). The historical
+environment and source inventory below are not a current full-parity claim.
+
 Written FIRST, before any C code. Source of truth: the Zig sources at
 `~/workspace/fawn-tree`, head `43040741d1d4822d64c8ec8976d6c652ec345242`
 (read-only; nothing in that tree is modified by this work).

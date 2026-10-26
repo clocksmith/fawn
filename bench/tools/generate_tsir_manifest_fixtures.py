@@ -28,6 +28,10 @@ ZIG_INPUT_BINARY = (
     ZIG_WORKDIR / "zig-out" / "bin" / "doe-tsir-bootstrap-manifest-inputs"
 )
 EXPECTED_BOOTSTRAP_FIXTURE_COUNT = 12
+NATIVE_BACKENDS = frozenset({"webgpu-generic", "msl", "spir-v"})
+BOOTSTRAP_KERNELS = frozenset({"fused_gemv", "rms_norm", "gather"})
+C_COMPILER_DIR = REPO_ROOT / "runtime" / "c" / "compiler"
+C_INPUT_BINARY = C_COMPILER_DIR / "build" / "doe-tsir-bootstrap-manifest-inputs-c"
 
 
 def _run_zig_input_tool(zig: str) -> list[dict[str, Any]]:
@@ -83,23 +87,67 @@ def _fixture_name(entry: dict[str, Any]) -> str:
     return f"{kernel}.{entry['backend']}.json"
 
 
-def generate_entries(zig: str) -> dict[str, dict[str, Any]]:
+def _entries_from_documents(
+    documents: list[dict[str, Any]], backends: frozenset[str]
+) -> dict[str, dict[str, Any]]:
     fixtures: dict[str, dict[str, Any]] = {}
-    for doc in _run_zig_input_tool(zig):
+    for doc in documents:
         if not isinstance(doc, dict):
             raise ValueError("bootstrap manifest input rows must be JSON objects")
+        kernel_ref = doc.get("kernelRef")
+        if kernel_ref not in {
+            f"doe.tsir.bootstrap.{kernel}" for kernel in BOOTSTRAP_KERNELS
+        }:
+            raise ValueError(f"unexpected bootstrap kernel identity: {kernel_ref!r}")
         entry = build_manifest_lowering_entry(_lowering_inputs(doc))
         name = _fixture_name(entry)
         if name in fixtures:
             raise ValueError(f"duplicate TSIR manifest fixture name: {name}")
         fixtures[name] = entry
-    if len(fixtures) != EXPECTED_BOOTSTRAP_FIXTURE_COUNT:
+    expected_names = {
+        f"{kernel}.{backend}.json"
+        for kernel in BOOTSTRAP_KERNELS for backend in backends
+    }
+    if set(fixtures) != expected_names:
         raise ValueError(
-            f"expected {EXPECTED_BOOTSTRAP_FIXTURE_COUNT} bootstrap manifest "
-            f"fixtures (3 kernels x 4 backends: webgpu-generic, wse3, msl, "
-            f"spir-v), got {len(fixtures)}"
+            "bootstrap fixture identity set differs: "
+            f"missing={sorted(expected_names - set(fixtures))}; "
+            f"unexpected={sorted(set(fixtures) - expected_names)}"
         )
     return fixtures
+
+
+def generate_entries(zig: str) -> dict[str, dict[str, Any]]:
+    """Preserve the historical twelve-row, explicitly CSL-inclusive route."""
+    return _entries_from_documents(
+        _run_zig_input_tool(zig), NATIVE_BACKENDS | {"wse3"}
+    )
+
+
+def generate_native_entries(
+    binary: Path | None = None, make: str = "make"
+) -> dict[str, dict[str, Any]]:
+    """Run the C source consumer without building or invoking any Zig tool.
+
+    The default binary is rebuilt through its canonical owner. An explicitly
+    supplied binary is consumed as-is, with no fallback to another provider.
+    Retained emitter source bytes remain provenance inputs, not executable code.
+    """
+    if binary is None:
+        subprocess.run(
+            [make, "-C", str(C_COMPILER_DIR), "tsir-bootstrap-tools", "-j1"],
+            cwd=REPO_ROOT, check=True, capture_output=True, text=True,
+            timeout=300,
+        )
+        binary = C_INPUT_BINARY
+    result = subprocess.run(
+        [str(binary.resolve())], cwd=REPO_ROOT, check=True,
+        capture_output=True, text=True, timeout=30,
+    )
+    documents = json.loads(result.stdout)
+    if not isinstance(documents, list):
+        raise ValueError("C bootstrap input tool must emit a JSON array")
+    return _entries_from_documents(documents, NATIVE_BACKENDS)
 
 
 def _entry_text(entry: dict[str, Any]) -> str:
@@ -111,7 +159,8 @@ def write_entries(
     fixtures: dict[str, dict[str, Any]],
     check: bool,
 ) -> int:
-    output_dir.mkdir(parents=True, exist_ok=True)
+    if not check:
+        output_dir.mkdir(parents=True, exist_ok=True)
     failures: list[str] = []
     for name, entry in sorted(fixtures.items()):
         path = output_dir / name
@@ -126,7 +175,7 @@ def write_entries(
             continue
         path.write_text(expected, encoding="utf-8")
         digest = manifest_lowering_entry_digest(entry)
-        print(f"{path.relative_to(REPO_ROOT)} manifestLoweringEntryDigest={digest}")
+        print(f"{path} manifestLoweringEntryDigest={digest}")
     if failures:
         for failure in failures:
             print(failure, file=sys.stderr)
@@ -152,19 +201,45 @@ def parse_args() -> argparse.Namespace:
         default=os.environ.get("ZIG", "zig"),
         help="Zig executable used to run the bootstrap input tool.",
     )
-    return parser.parse_args()
+    parser.add_argument(
+        "--native-only", action="store_true",
+        help="Use the C compiler for the nine non-CSL rows; no Zig executable.",
+    )
+    parser.add_argument(
+        "--c-manifest-binary", type=Path,
+        help="Explicit prebuilt C manifest tool (native-only); never falls back.",
+    )
+    parser.add_argument(
+        "--make", default="make",
+        help="Make executable for the default native-only C tool build.",
+    )
+    args = parser.parse_args()
+    if args.c_manifest_binary is not None and not args.native_only:
+        parser.error("--c-manifest-binary requires --native-only")
+    if (args.native_only and not args.check and
+            args.output_dir.resolve() == DEFAULT_OUTPUT_DIR.resolve()):
+        parser.error(
+            "native-only generation needs a separate --output-dir; "
+            "use --check to compare the existing historical fixtures"
+        )
+    return args
 
 
 def main() -> int:
     try:
         args = parse_args()
-        fixtures = generate_entries(args.zig)
+        fixtures = (
+            generate_native_entries(args.c_manifest_binary, args.make)
+            if args.native_only else generate_entries(args.zig)
+        )
         return write_entries(args.output_dir, fixtures, args.check)
     except (
         KeyError,
         ValueError,
         json.JSONDecodeError,
         subprocess.CalledProcessError,
+        subprocess.TimeoutExpired,
+        OSError,
     ) as exc:
         print(str(exc), file=sys.stderr)
         return 1

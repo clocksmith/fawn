@@ -36,7 +36,7 @@ static doe_shader_options shader_options(doe_shader_target target, size_t source
     /* Source storage follows the supplied span within the compiler's uint32
      * representation. Semantic pools are initial workspace sizes, not language
      * limits: only explicit compiler pool reports authorize checked growth. */
-    static const char identity[] = "experimental-c-native-no-cache";
+    static const char identity[] = "doe-c-native-immutable-shader-v1";
     doe_shader_options options = {
         .target=target,.semantic_flags=native_shader_semantic_flags(),.grow_pools=true,
         .allocator = {NULL, shader_allocate, shader_deallocate},
@@ -166,8 +166,18 @@ static WGPUShaderModule create_shader_module(native_device *device, const WGPUSh
         options.semantic_flags &= ~DOE_COMPILER_DISABLE_PRIMITIVE_INDEX;
     if (native_feature_enabled(device, WGPUFeatureName_DualSourceBlending))
         options.semantic_flags &= ~DOE_COMPILER_DISABLE_DUAL_SOURCE_BLENDING;
-    doe_shader_status status = doe_shader_create_module(&options,options.capacities.typed.expressions,
-        source->code.data,size,&payload->module,&payload->error);
+    native_lock(device);
+    payload->module = native_shader_cache_module(&device->shaders,&options,source->code.data,size);
+    native_unlock(device);
+    doe_shader_status status = payload->module ? DOE_SHADER_OK :
+        doe_shader_create_module(&options,options.capacities.typed.expressions,
+            source->code.data,size,&payload->module,&payload->error);
+    if (status == DOE_SHADER_OK) {
+        native_lock(device);
+        doe_shader *displaced = native_shader_cache_insert(&device->shaders,payload->module);
+        native_unlock(device);
+        doe_shader_release(displaced);
+    }
     if (status == DOE_SHADER_OK && !prepare_compilation_messages(payload)) {
         release_shader(NULL, payload);
         native_error(device, WGPUErrorType_OutOfMemory, "shader compilation messages allocation failed");

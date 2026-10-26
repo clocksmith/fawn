@@ -218,8 +218,8 @@ static bool detect_reduction_op(ReductionCtx *ctx,
             if (!rhs->call_is_builtin || rhs->call_name == NULL) {
                 return false;
             }
-            is_max = strcmp(rhs->call_name, "max") == 0;
-            is_min = strcmp(rhs->call_name, "min") == 0;
+            is_max = tsir_text_equal(rhs->call_name, rhs->call_name_length, "max", 0);
+            is_min = tsir_text_equal(rhs->call_name, rhs->call_name_length, "min", 0);
             if ((!is_max && !is_min) || rhs->args_len < 2) {
                 return false;
             }
@@ -376,7 +376,7 @@ static void reductions_walk_stmt(ReductionCtx *ctx, uint32_t id,
             const char *letter = NULL;
             if (tsir_expr_dispatch_axis_letter(ctx->func,
                 stmt->has_initializer, stmt->initializer,
-                &letter)) {
+                &letter, NULL)) {
                 ctx->axis_counter += 1;
             }
             return;

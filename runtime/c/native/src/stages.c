@@ -1,5 +1,7 @@
 /* SPDX-License-Identifier: MIT */
 #include "internal.h"
+#include "shader_disk_cache.h"
+#include "shader_cache_identity.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -109,9 +111,36 @@ static bool stage_load(native_device *device, WGPUShaderModule module, WGPUStrin
         DoeCompilerEntrySelectionV5 selection = {.mode=DOE_COMPILER_SELECT_NAME,
             .name=result.name,.name_length=strlen(result.name)};
         doe_shader_error detail = {0};
-        const doe_shader_status status = pipeline ?
+        native_lock(device);
+        result.compiled = native_shader_cache_stage(&device->shaders,payload->module,&selection,values,count,pipeline);
+        uint8_t image_identity[32];
+        bool have_identity = device->shaders.image_identity_ready;
+        if (have_identity) memcpy(image_identity,device->shaders.image_identity,sizeof(image_identity));
+        native_unlock(device);
+        if (!result.compiled) {
+            if (!have_identity && native_shader_cache_identity(image_identity)) {
+                native_lock(device);
+                memcpy(device->shaders.image_identity,image_identity,sizeof(image_identity));
+                device->shaders.image_identity_ready = true;
+                native_unlock(device);
+                have_identity = true;
+            }
+            if (have_identity) {
+                result.compiled = native_shader_disk_lookup(image_identity,payload->module,&selection,values,count,pipeline);
+            }
+        }
+        const bool compile_needed = result.compiled == NULL;
+        const doe_shader_status status = result.compiled ? DOE_SHADER_OK : pipeline ?
             doe_shader_specialize_metal_pipeline(payload->module,&selection,values,count,pipeline,&result.compiled,&detail) :
             doe_shader_specialize(payload->module,&selection,values,count,&result.compiled,&detail);
+        if (status == DOE_SHADER_OK && have_identity && compile_needed)
+            native_shader_disk_store(image_identity,payload->module,&selection,values,count,pipeline,result.compiled);
+        if (status == DOE_SHADER_OK && native_shader_cache_admits(payload->module)) {
+            native_lock(device);
+            doe_shader *displaced = native_shader_cache_insert(&device->shaders,result.compiled);
+            native_unlock(device);
+            doe_shader_release(displaced);
+        }
         if (status != DOE_SHADER_OK)
             valid = reject(error,status == DOE_SHADER_OUT_OF_MEMORY ? WGPUErrorType_OutOfMemory :
                 WGPUErrorType_Validation,detail.diagnostic.message[0] ? detail.diagnostic.message :

@@ -367,6 +367,19 @@ doe-plan-executor, and reported on stderr. Quirk, repeat, oracle, numeric
 stability and `--trace` arguments are rejected; `--readback-buffer` is admitted.
 No operator records are written. Unknown plan fields and kinds are rejected.
 
+`--dry-run` validates and lowers the same plan without reading buffer-load
+assets, compiling kernels, creating an instance or submitting work. Every row
+has `executionStatusCode: "dry_run"`, zero execution timings/submits and the
+same semantic/hash identity as an executed row. As in the retained Zig plan
+executor, success/dispatch counts describe planned rows, not completed device
+work; `adapterInfo` is null and no backend-selection/fallback result is claimed.
+This mode rejects `--execute` and readbacks. When `--kernel-root` is absent,
+optional IR metadata is still read to resolve the default root, as in Zig;
+missing or malformed metadata uses the retained default without reading kernels.
+Linux `make check-host-modes`
+interposes the actual instance boundary and compares retained Zig plan hashes,
+missing-asset/kernel controls, empty plans and malformed-plan refusals.
+
 ## Over Dawn (`dawn-c-runtime`)
 
 The CLI uses only `webgpu.h` plus one optional Doe extension

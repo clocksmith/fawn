@@ -339,8 +339,8 @@ static TsirStatus write_status(const char *status,
 static TsirStatus run_kernel(const char *kernel,
     const OracleBuffer *buffers, size_t buffer_count,
     TsirReferenceResult *result) {
-    TsirSemantic semantic;
-    TsirSemanticFunction func;
+    TsirSemantic semantic = {0};
+    TsirSemanticFunction func = {0};
     TsirRealization realization;
     TsirStatus status = TSIR_OK;
     memset(&semantic, 0, sizeof(semantic));

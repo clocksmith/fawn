@@ -170,13 +170,13 @@ static bool write_meta(const char *path, const options *o, const totals *t, uint
         "\"hash\":\"0x%" PRIx64 "\",\"previousHash\":\"0x%" PRIx64 "\",\"outputOracleCount\":%" PRIu64
         ",\"outputOracleMatchedCount\":%" PRIu64 ",\"outputOracleFailedCount\":%" PRIu64,
         seq_max, t->rows, command_count, t->matched, t->blocking, t->requires_lean, t->lean_required,
-        o->execute ? t->rows : 0, t->successes, t->errors, t->skipped, t->total_ns, t->setup_ns, t->encode_ns,
+        o->execute || o->dry_run ? t->rows : 0, t->successes, t->errors, t->skipped, t->total_ns, t->setup_ns, t->encode_ns,
         t->submit_wait_ns, t->dispatches, t->submits, t->input_read_ns, t->input_parse_ns, t->executor_init_ns,
         t->kernel_prewarm_ns, t->gpu_timestamp_ns, t->gpu_timestamp_attempted, t->gpu_timestamp_valid, t->semantic_tracing ? "true" : "false", operators ? operators->row_count : 0,
         operators ? operators->capture_count : 0, operators ? operators->repro_count : 0,
         t->hash, t->previous, t->oracles, t->oracles_matched, t->oracles_failed) >= 0;
-    if (ok && o->execute) ok = fputs(",\"executionBackend\":\"" BACKEND_ID "\",\"backendId\":\"" BACKEND_ID "\","
-        "\"backendSelectionReason\":\"fixed_backend\",\"fallbackUsed\":false", out) >= 0;
+    if (ok && (o->execute || o->dry_run)) ok = fputs(",\"executionBackend\":\"" BACKEND_ID "\",\"backendId\":\"" BACKEND_ID "\"", out) >= 0;
+    if (ok && o->execute) ok = fputs(",\"backendSelectionReason\":\"fixed_backend\",\"fallbackUsed\":false", out) >= 0;
     if (ok && o->backend_lane) ok = write_optional(out, "backendLane", o->backend_lane, true);
     /* doe-plan-executor names the plan and its planSha256 as the host plan artifact. */
     if (ok && o->plan)
@@ -383,7 +383,7 @@ int main(int argc, char **argv)
     options o;
     int parsed = parse_options(argc, argv, &o);
     if (parsed) return parsed == 1 ? 0 : parsed;
-    totals t = {.hash = DOE_TRACE_HASH_SEED, .previous = DOE_TRACE_HASH_SEED};
+    totals t = {.hash = DOE_TRACE_HASH_SEED, .previous = DOE_TRACE_HASH_SEED, .semantic_tracing = o.plan != NULL};
     uint64_t read_start = doe_runtime_monotonic_ns();
     size_t size = 0;
     const char *input = o.plan ? o.plan : o.commands;
@@ -392,17 +392,19 @@ int main(int argc, char **argv)
     if (!text) { fprintf(stderr, "doe-c-runtime: cannot read %s\n", input); return 2; }
     uint64_t parse_start = doe_runtime_monotonic_ns();
     doe_stream stream;
-    doe_stream_error stream_error;
+    doe_stream_error stream_error = {.command_index = SIZE_MAX};
     doe_plan plan = {0};
-    char *asset_root = o.plan ? doe_plan_asset_root() : NULL;
-    bool stream_ok = o.plan ? asset_root && doe_plan_parse(text, size, asset_root, &plan, &stream_error) :
+    char *asset_root = o.plan && !o.dry_run ? doe_plan_asset_root() : NULL;
+    bool stream_ok = o.plan ? (o.dry_run ? doe_plan_parse_dry_run(text, size, &plan, &stream_error) :
+        asset_root && doe_plan_parse(text, size, asset_root, &plan, &stream_error)) :
         doe_stream_parse(text, size, &stream, &stream_error);
+    bool asset_root_failed = o.plan && !o.dry_run && !asset_root;
     free(text);
     free(asset_root);
     t.input_read_ns = parse_start - read_start;
     t.input_parse_ns = doe_runtime_monotonic_ns() - parse_start;
     if (!stream_ok) {
-        if (o.plan && !asset_root) snprintf(stream_error.message, sizeof(stream_error.message), "out of memory");
+        if (asset_root_failed) snprintf(stream_error.message, sizeof(stream_error.message), "out of memory");
         if (stream_error.command_index == SIZE_MAX) fprintf(stderr, "doe-c-runtime: %s: %s\n", input, stream_error.message);
         else fprintf(stderr, "doe-c-runtime: %s: command %zu: %s\n", input, stream_error.command_index, stream_error.message);
         return 2;
@@ -556,6 +558,8 @@ int main(int argc, char **argv)
             doe_command applied = *command;
             doe_quirks_apply(&decision, &applied);
             doe_trace_execution execution = {0};
+            if (o.dry_run) execution = (doe_trace_execution){.ok = true, .status_code = "dry_run",
+                .dispatch_count = command->kind == DOE_COMMAND_KERNEL_DISPATCH ? 1 : 0};
             bool ok = !o.execute || doe_runtime_execute(runtime, &applied, &execution);
             uint64_t seq = t.rows;
             uint64_t hash = doe_trace_payload_hash(t.hash, seq, command->label, doe_command_tag(command->kind),
@@ -607,7 +611,7 @@ int main(int argc, char **argv)
                 }
                 if (stopped) t.skipped = command_count - t.rows;
             }
-            if (ok) { if (o.execute) t.successes++; }
+            if (ok) { if (o.execute || o.dry_run) t.successes++; }
             else {
                 t.errors++;
                 fprintf(stderr, "doe-c-runtime: command %zu (%s): %s: %s\n", i, command->label,

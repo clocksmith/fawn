@@ -78,6 +78,7 @@ typedef void (*doe_objc_copy_image_call)(void *, void *, void *, size_t, size_t,
     doe_mtl_origin, doe_mtl_size, void *, size_t, size_t, doe_mtl_origin);
 
 typedef struct doe_mtl_objc {
+    struct doe_mtl_library_cache *libraries;
     doe_mtl_objc_graphics graphics;
     doe_mtl_objc_queries queries;
     doe_mtl_objc_archives archives;
@@ -171,6 +172,15 @@ typedef struct doe_mtl_objc {
     void *status;
     void *error;
 } doe_mtl_objc;
+
+/* Context-serialized optional library cache; exact source bytes and device
+ * identity. Entries retain both library and device, preventing pointer reuse
+ * while a cache entry is live. Functions/PSOs keep ordinary leases. */
+void doe_mtl_objc_library_cache_open(doe_mtl_objc *);
+void doe_mtl_objc_library_cache_close(doe_mtl_objc *);
+void *doe_mtl_objc_library_lookup(doe_mtl_objc *, void *, const char *, size_t);
+char *doe_mtl_objc_library_source(doe_mtl_objc *, const char *, size_t);
+void doe_mtl_objc_library_store(doe_mtl_objc *, void *, const char *, size_t, void *);
 
 void doe_mtl_objc_load_archives(doe_mtl_objc *, doe_objc_message);
 doe_mtl_status doe_mtl_objc_archive_configure(void *, void *, const char *, size_t, doe_mtl_error *);

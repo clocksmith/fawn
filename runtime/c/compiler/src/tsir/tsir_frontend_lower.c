@@ -10,8 +10,8 @@
 #include <stdio.h>
 #include <string.h>
 
-TsirStatus tsir_frontend_lower(const TsirWgslModule *module,
-    const uint8_t source_digest[32], const char *frontend_version,
+TsirStatus tsir_frontend_lower_span(const TsirWgslModule *module,
+    const uint8_t source_digest[32], const char *frontend_version, size_t frontend_version_length,
     TsirSemantic *out) {
     TsirSemanticFunction *functions = NULL;
     TsirRejectionList rejections;
@@ -83,11 +83,13 @@ TsirStatus tsir_frontend_lower(const TsirWgslModule *module,
             tsir_frontend_collective_free(&collectives);
             break;
         }
-        hint = tsir_family_hint_infer_ir(ir_func, axes.items,
-            axes.count, reductions.items, reductions.count);
-        status = tsir_frontend_infer_body(module, hint, axes.items,
-            axes.count, bindings.items, bindings.count,
-            reductions.items, reductions.count, &body);
+        status = tsir_family_hint_infer_ir(ir_func, axes.items,
+            axes.count, reductions.items, reductions.count, &hint);
+        if (status == TSIR_OK) {
+            status = tsir_frontend_infer_body(module, hint, axes.items,
+                axes.count, bindings.items, bindings.count,
+                reductions.items, reductions.count, &body);
+        }
         if (status != TSIR_OK) {
             free((void *)body.binding_roles);
             free((void *)body.axis_roles);
@@ -98,7 +100,7 @@ TsirStatus tsir_frontend_lower(const TsirWgslModule *module,
             tsir_frontend_collective_free(&collectives);
             break;
         }
-        name_copy = tsir_frontend_dup_str(ir_func->name);
+        name_copy = tsir_text_duplicate(ir_func->name, ir_func->name_length);
         if (name_copy == NULL) {
             free((void *)body.binding_roles);
             free((void *)body.axis_roles);
@@ -111,6 +113,7 @@ TsirStatus tsir_frontend_lower(const TsirWgslModule *module,
             break;
         }
         functions[fi].name = name_copy;
+        functions[fi].name_length = ir_func->name_length;
         functions[fi].family_hint = hint;
         functions[fi].axes = axes.items;
         functions[fi].axis_count = axes.count;
@@ -137,7 +140,8 @@ TsirStatus tsir_frontend_lower(const TsirWgslModule *module,
         return status;
     }
     out->contract_version = TSIR_CONTRACT_VERSION;
-    out->frontend_version = tsir_frontend_dup_str(frontend_version);
+    out->frontend_version_length = frontend_version_length;
+    out->frontend_version = tsir_text_duplicate(frontend_version, frontend_version_length);
     if (out->frontend_version == NULL) {
         size_t done = 0;
         for (done = 0; done < module->function_count; done++) {
@@ -153,4 +157,10 @@ TsirStatus tsir_frontend_lower(const TsirWgslModule *module,
     out->rejections = rejections.items;
     out->rejection_count = rejections.count;
     return TSIR_OK;
+}
+
+TsirStatus tsir_frontend_lower(const TsirWgslModule *module,
+    const uint8_t source_digest[32], const char *frontend_version,
+    TsirSemantic *out) {
+    return tsir_frontend_lower_span(module, source_digest, frontend_version, 0, out);
 }

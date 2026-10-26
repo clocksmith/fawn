@@ -32,7 +32,7 @@ typedef struct options {
     const char *commands, *kernel_root, *trace_jsonl, *trace_meta, *quirks, *numeric_policy, *numeric_profile;
     const char *plan, *workload, *replay, *backend_lane; /* Plan mode: doe-plan-executor's --plan and --workload. */
     const char *vendor, *api, *family, *driver;
-    bool execute, trace_stdout, validate_oracles, trace_backend, emit_normalized;
+    bool execute, dry_run, trace_stdout, validate_oracles, trace_backend, emit_normalized;
     doe_quirk_mode quirk_mode;
     doe_profile profile; /* The quirk matching profile, with doe-zig-runtime's defaults. */
     uint64_t command_repeat;

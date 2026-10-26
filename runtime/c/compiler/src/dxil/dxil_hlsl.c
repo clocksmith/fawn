@@ -3,6 +3,7 @@
 #include "dxil_hlsl.h"
 
 #include "dxil_hlsl_internal.h"
+#include "../decimal.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -12,7 +13,7 @@
 DxilStatus dxil_hlsl_write_text(DxilHlslEmitter *emitter,
     const char *text) {
     size_t len = strlen(text);
-    if (emitter->pos + len > emitter->out_len) {
+    if (emitter->pos > emitter->out_len || len > emitter->out_len - emitter->pos) {
         return DXIL_OUTPUT_TOO_LARGE;
     }
     memcpy(emitter->out + emitter->pos, text, len);
@@ -43,38 +44,22 @@ DxilStatus dxil_hlsl_write_u64(DxilHlslEmitter *emitter, uint64_t value) {
     return dxil_hlsl_write_text(emitter, buf);
 }
 
-/* Zig write_float: shortest decimal with ".0" appended when the text
- * has no '.' and no exponent. The C search tries precisions 1..17
- * with %.*g and keeps the first that round-trips through strtod. */
+/* Reuse the exact finite {d} owner with Zig's 64-byte local format budget.
+ * Nonfinite caller-built literals fail visibly rather than emit invalid HLSL. */
 DxilStatus dxil_hlsl_write_float(DxilHlslEmitter *emitter, double value) {
-    char buf[64];
-    int precision = 0;
-    bool found = false;
-    for (precision = 1; precision <= 17; precision++) {
-        snprintf(buf, sizeof(buf), "%.*g", precision, value);
-        if (strtod(buf, NULL) == value) {
-            found = true;
-            break;
-        }
-    }
-    if (!found) {
-        snprintf(buf, sizeof(buf), "%.17g", value);
-    }
-    {
-        DxilStatus status = dxil_hlsl_write_text(emitter, buf);
-        if (status != DXIL_OK) {
-            return status;
-        }
-    }
-    if (strchr(buf, '.') == NULL && strchr(buf, 'e') == NULL
-        && strchr(buf, 'E') == NULL) {
-        return dxil_hlsl_write_text(emitter, ".0");
-    }
-    return DXIL_OK;
+    char text[65];
+    size_t length = 0u;
+    const DoeDecimalStatus formatted = doe_decimal_f64(value, text, 64u, &length);
+    if (formatted == DOE_DECIMAL_TOO_SMALL) return DXIL_OUTPUT_TOO_LARGE;
+    if (formatted != DOE_DECIMAL_OK) return DXIL_INVALID_IR;
+    text[length] = '\0';
+    const DxilStatus status = dxil_hlsl_write_text(emitter, text);
+    if (status != DXIL_OK) return status;
+    return strchr(text, '.') == NULL ? dxil_hlsl_write_text(emitter, ".0") : DXIL_OK;
 }
 
 
-static const char *builtin_semantic(DxilIrBuiltin builtin) {
+const char *dxil_hlsl_builtin_semantic(DxilIrBuiltin builtin) {
     switch (builtin) {
         case DXIL_IR_BUILTIN_POSITION:
             return "SV_Position";
@@ -317,7 +302,8 @@ static DxilStatus emit_bound_global(DxilHlslEmitter *emitter,
     switch (type.kind) {
         case DXIL_IR_TYPE_SAMPLER:
         case DXIL_IR_TYPE_SAMPLER_COMPARISON:
-            status = dxil_hlsl_write_text(emitter, "\nSamplerState ");
+            status = dxil_hlsl_write_text(emitter, type.kind == DXIL_IR_TYPE_SAMPLER_COMPARISON ?
+                "\nSamplerComparisonState " : "\nSamplerState ");
             if (status != DXIL_OK) {
                 return status;
             }
@@ -538,7 +524,7 @@ static DxilStatus emit_param(DxilHlslEmitter *emitter,
     }
     if (param->has_io) {
         if (param->io.builtin != DXIL_IR_BUILTIN_NONE) {
-            const char *semantic = builtin_semantic(param->io.builtin);
+            const char *semantic = dxil_hlsl_builtin_semantic(param->io.builtin);
             if (semantic == NULL) {
                 return DXIL_UNSUPPORTED_BUILTIN;
             }
@@ -555,8 +541,8 @@ static DxilStatus emit_param(DxilHlslEmitter *emitter,
     return DXIL_OK;
 }
 
-static DxilStatus emit_function(DxilHlslEmitter *emitter,
-    const DxilIrFunction *function) {
+DxilStatus dxil_hlsl_emit_plain_function(DxilHlslEmitter *emitter,
+    const DxilIrFunction *function, bool implementation) {
     DxilStatus status = DXIL_OK;
     uint32_t i = 0;
     bool first_param = true;
@@ -564,7 +550,7 @@ static DxilStatus emit_function(DxilHlslEmitter *emitter,
     if (status != DXIL_OK) {
         return status;
     }
-    if (function->has_stage) {
+    if (function->has_stage && !implementation) {
         if (function->stage != DXIL_IR_STAGE_COMPUTE) {
             return DXIL_UNSUPPORTED_CONSTRUCT;
         }
@@ -597,7 +583,8 @@ static DxilStatus emit_function(DxilHlslEmitter *emitter,
             return status;
         }
     }
-    status = dxil_hlsl_emit_type_only(emitter, function->return_type);
+    status = implementation && emitter->stage_array_return ?
+        dxil_hlsl_write_text(emitter, "void") : dxil_hlsl_emit_type_only(emitter, function->return_type);
     if (status != DXIL_OK) {
         return status;
     }
@@ -609,13 +596,21 @@ static DxilStatus emit_function(DxilHlslEmitter *emitter,
     if (status != DXIL_OK) {
         return status;
     }
+    if (implementation) {
+        status = dxil_hlsl_write_text(emitter, "_impl");
+        if (status != DXIL_OK) return status;
+    }
     status = dxil_hlsl_write_text(emitter, "(");
-    if (status != DXIL_OK) {
-        return status;
+    if (status != DXIL_OK) return status;
+    if (implementation && emitter->stage_array_return) {
+        status = dxil_hlsl_write_text(emitter, "out ");
+        if (status == DXIL_OK) status = dxil_hlsl_emit_typed_name(emitter, function->return_type, "_doe_stage_result");
+        if (status != DXIL_OK) return status;
+        first_param = false;
     }
     for (i = 0; i < function->param_count; i++) {
         const DxilIrParam *param = &function->params[i];
-        if (param->has_io
+        if (!implementation && param->has_io
             && (dxil_hlsl_builtin_is_intrinsic(param->io.builtin)
                 || param->io.builtin
                     == DXIL_IR_BUILTIN_NUM_WORKGROUPS)) {
@@ -627,7 +622,9 @@ static DxilStatus emit_function(DxilHlslEmitter *emitter,
                 return status;
             }
         }
-        status = emit_param(emitter, param);
+        DxilIrParam plain = *param;
+        if (implementation) plain.has_io = false;
+        status = emit_param(emitter, &plain);
         if (status != DXIL_OK) {
             return status;
         }
@@ -675,15 +672,17 @@ DxilStatus dxil_hlsl_emit(const DxilIrModule *module, char *out,
     DxilHlslEmitter emitter;
     DxilStatus status = DXIL_OK;
     uint32_t fi = 0;
-    if (out == NULL || written == NULL) {
-        return DXIL_INVALID_IR;
-    }
+    if (out == NULL || written == NULL) return DXIL_INVALID_IR;
+    status = dxil_ir_validate(module);
+    if (status != DXIL_OK) return status;
     memset(&emitter, 0, sizeof(emitter));
     emitter.module = module;
     emitter.out = out;
     emitter.out_len = out_len;
+    status = dxil_hlsl_choose_temporary_names(&emitter);
+    if (status != DXIL_OK) return status;
     status = dxil_hlsl_write_text(&emitter,
-        "// Generated by doe_wgsl/dxil_hlsl (bounded subset)\n");
+        "// Generated by doe_wgsl/dxil_hlsl\n");
     if (status != DXIL_OK) {
         return status;
     }
@@ -722,11 +721,15 @@ DxilStatus dxil_hlsl_emit(const DxilIrModule *module, char *out,
         return status;
     }
     status = emit_globals(&emitter);
-    if (status != DXIL_OK) {
-        return status;
-    }
+    if (status != DXIL_OK) return status;
+    status = dxil_hlsl_emit_array_helpers(&emitter);
+    if (status != DXIL_OK) return status;
+    status = dxil_hlsl_emit_helpers(&emitter);
+    if (status != DXIL_OK) return status;
     for (fi = 0; fi < module->function_count; fi++) {
-        status = emit_function(&emitter, &module->functions[fi]);
+        const DxilIrFunction *function = &module->functions[fi];
+        status = function->has_stage && function->stage != DXIL_IR_STAGE_COMPUTE ?
+            dxil_hlsl_emit_stage(&emitter, function) : dxil_hlsl_emit_plain_function(&emitter, function, false);
         if (status != DXIL_OK) {
             return status;
         }

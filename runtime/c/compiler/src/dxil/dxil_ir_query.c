@@ -630,6 +630,9 @@ bool dxil_ir_stmt_contains_expr(const DxilIrFunction *function,
 bool dxil_ir_runtime_array_write_guard(const DxilIrFunction *function,
     DxilIrExprId lhs_expr_id, DxilIrExprId *out_unclamped_index,
     DxilIrExprId *out_array_length) {
+    if (function == NULL || out_unclamped_index == NULL || out_array_length == NULL ||
+        function->expr_count > DXIL_IR_MAX_EXPRS || function->expr_arg_count > DXIL_IR_MAX_EXPR_ARGS)
+        return false;
     DxilIrExprId current = lhs_expr_id;
     uint32_t steps = 0;
     while (steps <= function->expr_count) {
@@ -656,7 +659,8 @@ bool dxil_ir_runtime_array_write_guard(const DxilIrFunction *function,
             || clamp->call_kind != DXIL_IR_CALL_BUILTIN
             || clamp->name == NULL
             || strcmp(clamp->name, "min") != 0
-            || clamp->args.len != 2) {
+            || clamp->args.len != 2 || clamp->args.start > function->expr_arg_count
+            || clamp->args.len > function->expr_arg_count - clamp->args.start) {
             current = expr->base;
             steps += 1;
             continue;
@@ -676,7 +680,7 @@ bool dxil_ir_runtime_array_write_guard(const DxilIrFunction *function,
             || length_expr->call_kind != DXIL_IR_CALL_BUILTIN
             || length_expr->name == NULL
             || strcmp(length_expr->name, "arrayLength") != 0
-            || length_expr->args.len != 1) {
+            || length_expr->args.len != 1 || length_expr->args.start >= function->expr_arg_count) {
             return false;
         }
         *out_unclamped_index =

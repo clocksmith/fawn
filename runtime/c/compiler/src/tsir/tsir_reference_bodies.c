@@ -252,7 +252,7 @@ static bool resolve_rms_norm_epsilon(const TsirSemanticFunction *func,
     const TsirInputBuffer *inputs, size_t input_count,
     const TsirRmsNormEpsilon *epsilon, float *out) {
     if (epsilon->source == TSIR_EPSILON_LITERAL_F32) {
-        if (epsilon->path == NULL || epsilon->path[0] != '\0') {
+        if (epsilon->path == NULL || tsir_text_length(epsilon->path, epsilon->path_length) != 0) {
             return false;
         }
         if (epsilon->binding_index.has || epsilon->byte_offset.has) {
@@ -269,6 +269,7 @@ static bool resolve_rms_norm_epsilon(const TsirSemanticFunction *func,
     }
     if (epsilon->source == TSIR_EPSILON_UNIFORM_FIELD) {
         const char *path = epsilon->path;
+        size_t path_length = tsir_text_length(path, epsilon->path_length);
         const char *prefix = "uniform:";
         const char *rest = NULL;
         const char *dot = NULL;
@@ -281,17 +282,17 @@ static bool resolve_rms_norm_epsilon(const TsirSemanticFunction *func,
         uint32_t offset = 0;
         uint32_t bits = 0;
         float value = 0.0f;
-        if (path == NULL || strncmp(path, prefix, 8) != 0) {
+        if (!tsir_text_starts_with(path, path_length, prefix)) {
             return false;
         }
         rest = path + 8;
-        dot = strchr(rest, '.');
-        if (dot == NULL || dot == rest || dot[1] == '\0') {
+        dot = memchr(rest, '.', path_length - 8);
+        if (dot == NULL || dot == rest || (size_t)(dot + 1 - path) >= path_length) {
             return false;
         }
         binding_len = (size_t)(dot - rest);
         field = dot + 1;
-        if (strcmp(field, "eps") != 0) {
+        if (!tsir_text_equal(field, path_length - (size_t)(field - path), "eps", 0)) {
             return false;
         }
         if (epsilon->has_literal_f64) {
@@ -308,8 +309,7 @@ static bool resolve_rms_norm_epsilon(const TsirSemanticFunction *func,
             return false;
         }
         if (binding->name == NULL ||
-            strlen(binding->name) != binding_len ||
-            strncmp(binding->name, rest, binding_len) != 0) {
+            !tsir_text_equal(binding->name, binding->name_length, rest, binding_len)) {
             return false;
         }
         for (i = 0; i < epsilon->binding_index.value; i++) {

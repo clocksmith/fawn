@@ -13,6 +13,8 @@ compiler alone owns WGSL validation, specialization, layouts and target meaning.
 ## Scope
 Copied module source/policy, ABI13 validation metadata, selected-entry executable
 specializations and retained legacy compilation.
+Local-build pointer-free artifact import/export is part of immutable ownership;
+filesystem paths, cache admission and native image identity remain upstream.
 
 ## Contracts
 [Public header](include/doe_shader.h) describes caller allocator lifetimes,
@@ -30,6 +32,9 @@ never equates different ordered values. Specialized artifacts retain their modul
 and own code/value spans. Workspaces and temporary inputs release before success
 publication. Failed creation leaves the caller artifact unchanged; failed
 replacement preserves existing artifacts. Legacy creation retains its contract.
+Artifact import checks exact specialization identity, integrity, bounded spans
+and an iterative acyclic type graph before publication. It does not authenticate
+files against a local actor or turn target bytes into source validation.
 
 ## Acceptance
 [Owner tests](Makefile) cover C/C++ consumption, all targets, source/policy copying,

@@ -6,7 +6,7 @@ CPPFLAGS += -Iinclude
 CFLAGS ?= -O2 -g
 STRICT = -std=c11 -Wall -Wextra -Wpedantic -Werror -Wconversion -Wshadow
 SOURCES = src/shared_memory.c src/objc_shared.c src/external_textures.c src/objc_external.c src/objc_external_loader.c src/timeline.c src/objc_timeline.c src/pipeline_cache.c src/objc_archive.c src/context.c src/resources.c src/commands.c src/surfaces.c src/objc_surface.c src/indirect_commands.c src/draw_guard.c src/compute_commands.c src/timestamps.c src/objc_queries.c src/objc_runtime.c \
-          src/objc_pipeline.c src/objc_commands.c src/texture_formats.c src/textures.c \
+          src/objc_pipeline.c src/objc_library_cache.c src/objc_commands.c src/texture_formats.c src/textures.c \
           src/samplers.c src/texture_ownership.c src/texture_initialization.c src/texture_transfer.c \
           src/objc_images.c src/objc_image_transfer.c src/render_pipeline.c \
           src/render_attachments.c src/render_initialization.c src/render_draws.c src/render_commands.c src/render_visibility.c \
@@ -15,6 +15,9 @@ SOURCES = src/shared_memory.c src/objc_shared.c src/external_textures.c src/objc
 OBJECTS = $(SOURCES:src/%.c=$(BUILD)/%.o)
 HEADERS = $(wildcard include/*.h src/*.h ../../common/include/*.h)
 UNAME_S := $(shell uname -s)
+ifeq ($(UNAME_S),Linux)
+LIBRARY_CACHE_TEST_FLAGS = -DDOE_CACHE_TEST_WRAP -Wl,--wrap=malloc
+endif
 ifeq ($(UNAME_S),Darwin)
 LDLIBS =
 else
@@ -22,6 +25,12 @@ LDLIBS = -ldl
 endif
 .PHONY: all check probe sanitize clean abi-compile sdk-abi native-check native-graphics-check
 all: $(BUILD)/libdoe_metal.a
+$(BUILD)/test_library_cache: tests/test_library_cache.c $(BUILD)/libdoe_metal.a
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(STRICT) $< $(BUILD)/libdoe_metal.a $(LDLIBS) $(LIBRARY_CACHE_TEST_FLAGS) -o $@
+.PHONY: check-library-cache
+check-library-cache: $(BUILD)/test_library_cache
+	$(BUILD)/test_library_cache
+check: check-library-cache
 $(BUILD)/test_surface: tests/test_surface.c tests/mock_native.c tests/mock_native.h $(BUILD)/libdoe_metal.a
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(STRICT) tests/test_surface.c tests/mock_native.c $(BUILD)/libdoe_metal.a $(LDLIBS) -o $@
 $(BUILD):

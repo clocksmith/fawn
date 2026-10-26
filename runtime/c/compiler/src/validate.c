@@ -71,7 +71,7 @@ static bool lower_local(Source *source,const Syntax *s,const LocalSyntax *local,
     for (size_t i=scope->scope_start;i<scope->count;++i) duplicate=duplicate||source_spans_equal(source,name,scope->values[i].name);
     if (scope->level==0u && (sema_find_formal(source,name)!=NO_ID || sema_find_parameter(source,name)!=NO_ID ||
         (sema_alias_visible(source) && source_spans_equal(source,name,program->alias)))) duplicate=true;
-    if (duplicate) return source_error(source,DOE_COMPILER_SEMANTIC_ERROR,name.offset,"local declaration duplicates a binding in its scope");
+    if (duplicate) return source_error_cause(source, DOE_COMPILER_SEMANTIC_ERROR, SOURCE_CAUSE_DUPLICATE_SYMBOL,name.offset,"local declaration duplicates a binding in its scope");
     TypeId annotation=IR_VOID;const bool constant=(local->flags&LOCAL_CONSTANT)!=0u;
     if ((local->flags&LOCAL_ANNOTATED)!=0u && !sema_type_reference(source,local->annotation,scope,&annotation)) return false;
     ExpressionValue result={.known=true,.constant.type=annotation,.value={.type=annotation,.source_offset=name.offset}};

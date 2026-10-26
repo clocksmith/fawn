@@ -4,6 +4,7 @@ pub const InterpretError = error{
     OutOfMemory,
     NotImplemented,
     RejectedBySemantic,
+    InvalidReductionOp,
 };
 
 pub const Result = struct {

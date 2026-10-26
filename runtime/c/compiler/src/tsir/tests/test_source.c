@@ -28,7 +28,7 @@ static char *read_fixture(const char *name, size_t *length) {
     return bytes;
 }
 static TsirSemantic lower(const char *text, size_t length) {
-    TsirSemantic semantic;
+    TsirSemantic semantic = {0};
     DoeCompilerDiagnostic diagnostic;
     errno = EDOM;
     check(tsir_source_lower(text, length, "frontend-bootstrap-pipeline-v1", &semantic, &diagnostic) == TSIR_OK,
@@ -67,7 +67,7 @@ int main(void) {
     fixture("rms_norm", TSIR_HINT_REDUCTION, 1u);
     fixture("gather", TSIR_HINT_GATHER, 0u);
     DoeCompilerDiagnostic diagnostic;
-    TsirSemantic semantic;
+    TsirSemantic semantic = {0};
     static const char invalid[] = "@compute @workgroup_size(1) fn main() { let x: u32 = true; }";
     check(tsir_source_lower(invalid, sizeof(invalid) - 1u, "v", &semantic, &diagnostic) == TSIR_ERR_INVALID, "typed invalid source rejected");
     check(diagnostic.status == DOE_COMPILER_SEMANTIC_ERROR, "semantic error retained");
@@ -77,6 +77,24 @@ int main(void) {
     check(diagnostic.message[0] != '\0', "first parser error inspectable");
     check(tsir_source_lower("x", (1u << 20) + 1u, "v", &semantic, &diagnostic) == TSIR_ERR_INVALID, "source cap before reading bytes");
     check(tsir_source_lower(NULL, 0u, "v", &semantic, &diagnostic) == TSIR_ERR_INVALID, "NULL source rejected");
+    static const char nul_name[] = "@compute @workgroup_size(1) fn ma\0in() {}";
+    check(tsir_source_lower(nul_name, sizeof(nul_name) - 1, "v", &semantic,
+        &diagnostic) == TSIR_ERR_INVALID, "WGSL NUL identifier is not opaque TSIR text");
+    static const char empty[] = "@compute @workgroup_size(1) fn main() {}";
+    static const char version[] = {'v', '\0', 'x'};
+    check(tsir_source_lower_span(empty, sizeof(empty) - 1, version, sizeof(version),
+        &semantic, &diagnostic) == TSIR_OK, "source opaque version byte span");
+    check(semantic.frontend_version_length == sizeof(version) &&
+        memcmp(semantic.frontend_version, version, sizeof(version)) == 0,
+        "opaque source version survives owned lowering");
+    tsir_frontend_free_semantic(&semantic);
+    static const char nested[] = "struct S {v:vec4f,m:mat2x2f,a:array<vec4f,2>}"
+        "@compute @workgroup_size(1) fn main(){var s:S; let pair=s.v.xy;"
+        "let element=s.v.z; let column=s.m[1u]; let lane=s.m[1u][0u]; let item=s.a[1u].yx;}";
+    check(tsir_source_lower(nested, sizeof(nested) - 1u, "v", &semantic, &diagnostic) == TSIR_OK,
+        "actual nested aggregate source projects canonical typed paths");
+    check(semantic.rejection_count == 0u, "nested aggregate source has no fabricated rejection");
+    tsir_frontend_free_semantic(&semantic);
     printf("TSIR source: %u checks passed\n", checks);
     return 0;
 }

@@ -37,6 +37,7 @@
 #define DXIL_IR_MAX_SWITCH_SELECTORS 128u
 #define DXIL_IR_MAX_SWITCH_CASES 32u
 #define DXIL_IR_MAX_ENTRY_POINTS 16u
+#define DXIL_IR_MAX_CONSTANTS 1024u
 
 typedef uint32_t DxilIrTypeId;
 typedef uint32_t DxilIrExprId;
@@ -100,7 +101,9 @@ typedef enum DxilIrInterpolation {
 typedef enum DxilIrInterpolationSampling {
     DXIL_IR_SAMPLING_CENTER,
     DXIL_IR_SAMPLING_CENTROID,
-    DXIL_IR_SAMPLING_SAMPLE
+    DXIL_IR_SAMPLING_SAMPLE,
+    DXIL_IR_SAMPLING_FIRST,
+    DXIL_IR_SAMPLING_EITHER
 } DxilIrInterpolationSampling;
 
 typedef struct DxilIrIoAttr {
@@ -231,7 +234,23 @@ typedef struct DxilIrGlobal {
     bool init_bool;
     uint64_t init_int;
     double init_float;
+    bool has_override_id;
+    uint32_t override_id;
+    bool has_init_tree;
+    uint32_t init_tree;
 } DxilIrGlobal;
+
+/* Typed initializer tree for aggregate module constants. Scalar legacy fields
+ * remain valid; a tree is explicit and never encoded as an invented zero. */
+typedef struct DxilIrConstant {
+    DxilIrTypeId ty;
+    bool composite;
+    DxilIrConstKind kind;
+    bool bool_value;
+    uint64_t int_value;
+    double float_value;
+    DxilIrRange children;
+} DxilIrConstant;
 
 typedef struct DxilIrParam {
     const char *name;
@@ -438,9 +457,17 @@ typedef struct DxilIrModule {
     uint32_t function_count;
     DxilIrEntryPoint entry_points[DXIL_IR_MAX_ENTRY_POINTS];
     uint32_t entry_point_count;
+    DxilIrConstant constants[DXIL_IR_MAX_CONSTANTS];
+    uint32_t constant_count;
+    uint32_t constant_children[DXIL_IR_MAX_CONSTANTS];
+    uint32_t constant_child_count;
 } DxilIrModule;
 
 void dxil_ir_init(DxilIrModule *module);
+
+/* Bounded structural validation of caller-built tables, identities, ranges,
+ * names and type/constant graph cycles. This is not WGSL semantic admission. */
+DxilStatus dxil_ir_validate(const DxilIrModule *module);
 
 /* Interns a type with Zig type_eql dedup; returns the existing id for
  * an equal type. Fails with DXIL_OUTPUT_TOO_LARGE at 128 types. */

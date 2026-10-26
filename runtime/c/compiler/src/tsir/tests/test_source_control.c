@@ -11,7 +11,7 @@ static void check(bool condition, const char *detail) {
     if (!condition) { fprintf(stderr, "TSIR control: %s\n", detail); exit(1); }
 }
 static TsirSemantic lower(const char *source) {
-    TsirSemantic result;
+    TsirSemantic result = {0};
     DoeCompilerDiagnostic diagnostic;
     TsirStatus status = tsir_source_lower(source, strlen(source), "control-test", &result, &diagnostic);
     if (status != TSIR_OK) fprintf(stderr, "lower: %s (%s)\n", diagnostic.message, tsir_status_name(status));

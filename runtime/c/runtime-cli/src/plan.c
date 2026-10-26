@@ -120,6 +120,9 @@ static bool lower_buffer_load(const doe_json_value *object, const char *asset_ro
         return stream_reject(error, index, "plan buffer_load byteLength and offset must be nonzero multiples of 4");
     if (strstr(space, "..") || strstr(key, "..") || strchr(key, '/'))
         return stream_reject(error, index, "plan buffer_load cache names must not leave the asset cache");
+    /* A dry run validates the descriptor but does not depend on asset files.
+     * Only the explicitly named dry-run entrypoint supplies a null root. */
+    if (!asset_root) return true;
     int path_size = snprintf(NULL, 0, "%s/%s/%s.bin", asset_root, space, key);
     char *path = path_size < 0 ? NULL : malloc((size_t)path_size + 1);
     if (!path) return stream_reject(error, index, "out of memory");
@@ -308,7 +311,7 @@ static bool parse_root(const doe_json_value *root, const char *asset_root, doe_p
         count_matches(root, "dispatchCount", true, dispatches, error);
 }
 
-bool doe_plan_parse(const char *text, size_t size, const char *asset_root, doe_plan *plan, doe_stream_error *error)
+static bool parse_plan(const char *text, size_t size, const char *asset_root, doe_plan *plan, doe_stream_error *error)
 {
     *plan = (doe_plan){0};
     *error = (doe_stream_error){.command_index = SIZE_MAX};
@@ -324,6 +327,21 @@ bool doe_plan_parse(const char *text, size_t size, const char *asset_root, doe_p
         return false;
     }
     return true;
+}
+
+bool doe_plan_parse(const char *text, size_t size, const char *asset_root, doe_plan *plan, doe_stream_error *error)
+{
+    if (!asset_root) {
+        *plan = (doe_plan){0};
+        *error = (doe_stream_error){.command_index = SIZE_MAX};
+        return stream_reject(error, SIZE_MAX, "execution plans require an asset root");
+    }
+    return parse_plan(text, size, asset_root, plan, error);
+}
+
+bool doe_plan_parse_dry_run(const char *text, size_t size, doe_plan *plan, doe_stream_error *error)
+{
+    return parse_plan(text, size, NULL, plan, error);
 }
 
 void doe_plan_free(doe_plan *plan)

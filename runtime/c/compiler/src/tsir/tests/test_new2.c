@@ -5,6 +5,7 @@
 #include "tsir_bootstrap.h"
 #include "tsir_emit.h"
 #include "tsir_sha256.h"
+#include "tsir_frontend.h"
 
 /* ---- kernel-body fixtures ---- */
 
@@ -223,7 +224,7 @@ static void test_kernel_bodies(void) {
     kb_binding(1, 0, 1, TSIR_SCALAR_F32);
     kb_binding(2, 0, 2, TSIR_SCALAR_F32);
     {
-        TsirRealizationFunction rfunc;
+        TsirRealizationFunction rfunc = {0};
         TsirRealization realization;
         uint8_t hash[32];
         char *text = NULL;
@@ -251,7 +252,7 @@ static void test_kernel_bodies(void) {
 static void test_bootstrap(void) {
     TsirBuffer buf;
     TsirStatus status = TSIR_OK;
-    TsirManifestEntry entry;
+    TsirManifestEntry entry = {0};
     char digest[65];
     size_t i = 0;
     for (i = 0; i < 32; i++) {
@@ -402,8 +403,86 @@ static void test_bootstrap(void) {
     }
 }
 
+static void test_family_hint_graphs(void) {
+    const uint32_t depth = 4096u;
+    TsirIrExpr *expressions = calloc((size_t)depth + 6u, sizeof(*expressions));
+    TsirIrLocal locals[2] = {{.name = "row"}, {.name = "k"}};
+    TsirIterationAxis axes[2] = {{.name = "row", .upper_bound = "dispatch.x"}, {.name = "k"}};
+    TsirReductionRegion reduction = {.axis = 1u, .op = TSIR_REDUCTION_SUM};
+    TsirIrFunction function = {.exprs = expressions, .expr_count = (size_t)depth + 6u,
+        .locals = locals, .local_count = 2u};
+    TsirKernelFamilyHint hint = TSIR_HINT_UNKNOWN;
+    CHECK(expressions != NULL);
+    if (expressions == NULL) return;
+    expressions[0].kind = TSIR_IR_EXPR_GLOBAL_REF;
+    expressions[1] = (TsirIrExpr){.kind = TSIR_IR_EXPR_LOCAL_REF, .ref_index = 0};
+    expressions[2] = (TsirIrExpr){.kind = TSIR_IR_EXPR_LOCAL_REF, .ref_index = 1};
+    for (uint32_t i = 0; i < depth; i++) {
+        uint32_t previous = i == 0 ? 1u : i + 2u;
+        expressions[i + 3u] = (TsirIrExpr){.kind = TSIR_IR_EXPR_BINARY,
+            .binary_lhs = previous, .binary_rhs = previous};
+    }
+    expressions[depth + 3u] = (TsirIrExpr){.kind = TSIR_IR_EXPR_BINARY,
+        .binary_lhs = depth + 2u, .binary_rhs = 2u};
+    expressions[depth + 4u] = (TsirIrExpr){.kind = TSIR_IR_EXPR_INDEX,
+        .index_base = 0, .index_index = depth + 3u};
+    expressions[depth + 5u] = (TsirIrExpr){.kind = TSIR_IR_EXPR_LOAD, .inner = depth + 4u};
+    /* The inner-axis search must traverse a deep shared DAG with a false
+     * branch. Recursive truncation loses GEMV; no memoization is exponential. */
+    CHECK_STATUS(tsir_family_hint_infer_ir(&function, axes, 2u, &reduction, 1u, &hint), TSIR_OK);
+    CHECK(hint == TSIR_HINT_FUSED_GEMV);
+    expressions[depth + 3u].binary_rhs = 1u;
+    CHECK_STATUS(tsir_family_hint_infer_ir(&function, axes, 2u, &reduction, 1u, &hint), TSIR_OK);
+    CHECK(hint == TSIR_HINT_REDUCTION);
+    free(expressions);
+
+    TsirIrExpr invalid[3] = {
+        {.kind = TSIR_IR_EXPR_GLOBAL_REF},
+        {.kind = TSIR_IR_EXPR_LOAD, .inner = 1u},
+        {.kind = TSIR_IR_EXPR_INDEX, .index_base = 0, .index_index = 1u}
+    };
+    function = (TsirIrFunction){.exprs = invalid, .expr_count = 3u};
+    hint = TSIR_HINT_ROPE;
+    CHECK_STATUS(tsir_family_hint_infer_ir(&function, axes, 1u, NULL, 0, &hint), TSIR_ERR_INVALID);
+    CHECK(hint == TSIR_HINT_ROPE);
+    uint32_t global = 99u;
+    CHECK(!tsir_ir_find_global_base(&function, 1u, &global));
+    CHECK(global == 99u);
+    invalid[1] = (TsirIrExpr){.kind = TSIR_IR_EXPR_CALL, .args_len = 1u};
+    CHECK_STATUS(tsir_family_hint_infer_ir(&function, axes, 1u, NULL, 0, &hint), TSIR_ERR_INVALID);
+    CHECK(hint == TSIR_HINT_ROPE);
+    invalid[1] = (TsirIrExpr){.kind = TSIR_IR_EXPR_LOAD, .inner = 3u};
+    CHECK_STATUS(tsir_family_hint_infer_ir(&function, axes, 1u, NULL, 0, &hint), TSIR_ERR_INVALID);
+    CHECK(hint == TSIR_HINT_ROPE);
+}
+
+static void test_family_hint_alias_limit(void) {
+    TsirIterationAxis axis = {.name = "i"};
+    for (uint32_t count = 8u; count <= 9u; count++) {
+        TsirIrExpr expressions[13] = {0};
+        TsirIrStmt statements[9] = {0};
+        expressions[0].kind = TSIR_IR_EXPR_GLOBAL_REF;
+        expressions[1].kind = TSIR_IR_EXPR_INT_LIT;
+        expressions[2] = (TsirIrExpr){.kind = TSIR_IR_EXPR_INDEX, .index_base = 0, .index_index = 1u};
+        for (uint32_t i = 0; i < count; i++) {
+            expressions[i + 3u] = (TsirIrExpr){.kind = TSIR_IR_EXPR_LOCAL_REF, .ref_index = i};
+            statements[i] = (TsirIrStmt){.kind = TSIR_IR_STMT_LOCAL_DECL, .local = i,
+                .has_initializer = true, .initializer = i + 1u == count ? 2u : i + 4u};
+        }
+        expressions[count + 3u] = (TsirIrExpr){.kind = TSIR_IR_EXPR_INDEX,
+            .index_base = 0, .index_index = 3u};
+        TsirIrFunction function = {.exprs = expressions, .expr_count = count + 4u,
+            .stmts = statements, .stmt_count = count};
+        TsirKernelFamilyHint hint = TSIR_HINT_UNKNOWN;
+        CHECK_STATUS(tsir_family_hint_infer_ir(&function, &axis, 1u, NULL, 0, &hint), TSIR_OK);
+        CHECK(hint == (count == 8u ? TSIR_HINT_GATHER : TSIR_HINT_ELEMENTWISE));
+    }
+}
+
 int main(void) {
     test_kernel_bodies();
     test_bootstrap();
+    test_family_hint_graphs();
+    test_family_hint_alias_limit();
     return finish_tests("test_new2");
 }

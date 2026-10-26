@@ -13,6 +13,7 @@ static DoeCompilerStatus compiler_return(DoeCompilerStatus status, int saved_err
 }
 
 bool source_error(Source *source, DoeCompilerStatus status, size_t offset, const char *message) {
+    source->error_cause = SOURCE_CAUSE_NONE;
     DoeCompilerDiagnostic *diagnostic = source->diagnostic;
     diagnostic->status = status;
     diagnostic->offset = offset;
@@ -34,6 +35,13 @@ bool source_error(Source *source, DoeCompilerStatus status, size_t offset, const
     if (message_length >= sizeof(diagnostic->message)) message_length = sizeof(diagnostic->message) - 1u;
     memcpy(diagnostic->message, message, message_length);
     diagnostic->message[message_length] = '\0';
+    return false;
+}
+
+bool source_error_cause(Source *source, DoeCompilerStatus status,
+    SourceErrorCause cause, size_t offset, const char *message) {
+    (void)source_error(source, status, offset, message);
+    source->error_cause = cause;
     return false;
 }
 

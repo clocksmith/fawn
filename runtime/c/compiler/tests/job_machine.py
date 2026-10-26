@@ -8,9 +8,9 @@ never a shader iteration rule. This is not GPU qualification.
 from __future__ import annotations
 import struct
 if __package__:
-    from .test_cli import Instruction, Descriptor, f32, float_bits
+    from .test_cli import Instruction, Descriptor, UniformLayout, f32, float_bits
 else:
-    from test_cli import Instruction, Descriptor, f32, float_bits
+    from test_cli import Instruction, Descriptor, UniformLayout, f32, float_bits
 
 def execute_job(instructions: list[Instruction], memory: dict[Descriptor, list[int]],
             invocation: int | tuple[int, int, int],
@@ -25,14 +25,14 @@ def execute_job(instructions: list[Instruction], memory: dict[Descriptor, list[i
     readonly: set[int] = set()
     variables = []
     pointers: dict[int, int] = {}
-    members: dict[int, tuple[int, ...]] = {}
-    offsets: dict[tuple[int, int], int] = {}
+    uniform_layout = UniformLayout()
     uniforms = {} if uniforms is None else uniforms
     inputs = ({28: (invocation, 0, 0) if isinstance(invocation, int) else invocation}
               if inputs is None else inputs)
     entry = None
     body_start = None
     for pc, (op, args) in enumerate(instructions):
+        uniform_layout.record(op, args)
         if op == 43:  # Constant scalar bit pattern.
             values[args[1]] = args[2]
         elif op in (41, 42):
@@ -42,12 +42,8 @@ def execute_job(instructions: list[Instruction], memory: dict[Descriptor, list[i
                 readonly.add(args[0])
             elif len(args) == 3:
                 decorations.setdefault(args[0], {})[args[1]] = args[2]
-        elif op == 30:
-            members[args[0]] = args[1:]
         elif op == 32:
             pointers[args[0]] = args[2]
-        elif op == 72 and args[2] == 35:
-            offsets[(args[0], args[1])] = args[3]
         elif op == 59:
             variables.append((args[1], args[2], args[0]))
         elif op == 15:
@@ -68,7 +64,7 @@ def execute_job(instructions: list[Instruction], memory: dict[Descriptor, list[i
         elif storage == 2:
             descriptor = (decorations[ident][34], decorations[ident][33])
             type_id = pointers[pointer_type]
-            minimum = max(offsets[(type_id, i)] + 4 for i in range(len(members[type_id])))
+            minimum = uniform_layout.extent(type_id)
             assert len(uniforms[descriptor]) >= minimum, "short uniform binding rejected before invocation"
             values[ident] = ("uniform", descriptor, type_id)
         elif storage == 7:
@@ -131,10 +127,7 @@ def execute_job(instructions: list[Instruction], memory: dict[Descriptor, list[i
         elif op == 65:
             pointer = values[args[2]]
             if pointer[0] == "uniform":
-                assert len(args) == 4
-                member_index = values[args[3]]
-                assert 0 <= member_index < len(members[pointer[2]])
-                offset = offsets[(pointer[2], member_index)]
+                offset = uniform_layout.offset(pointer[2], [values[index] for index in args[3:]])
                 assert offset + 4 <= len(uniforms[pointer[1]])
                 values[args[1]] = ("member", pointer[1], offset)
             else:
