@@ -42,6 +42,7 @@
     "toggle": { "type": "string" },
     "executionBackend": { "type": "string" },
     "backendId": { "type": "string" },
+    "shaderSourceSha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
     "executionStatus": { "type": "string", "enum": ["ok", "skipped", "unsupported", "error"] },
     "executionStatusCode": { "type": "string" },
     "executionStatusMessage": { "type": "string" },

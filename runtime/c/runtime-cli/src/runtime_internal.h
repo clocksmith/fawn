@@ -38,7 +38,14 @@ typedef struct render_pipeline_entry {
     WGPURenderPipeline pipeline;
 } render_pipeline_entry;
 
+typedef struct kernel_source_record {
+    char *module_id, *path, *entry_point, *bytes;
+    size_t size;
+    char sha256[65];
+} kernel_source_record;
+
 typedef struct pipeline_entry {
+    size_t source_index;
     char *source_path;
     char *entry_point;
     /* Binding signature the explicit layout was built from. */
@@ -89,6 +96,8 @@ struct doe_runtime {
     size_t buffer_count, buffer_capacity;
     pipeline_entry *pipelines;
     size_t pipeline_count, pipeline_capacity;
+    kernel_source_record *kernel_sources;
+    size_t kernel_source_count, kernel_source_capacity;
     texture_entry *textures;
     size_t texture_count, texture_capacity;
     sampler_entry *samplers;
@@ -161,6 +170,9 @@ WGPUTexture runtime_binding_texture(doe_runtime *runtime, uint64_t handle, WGPUT
 WGPUTextureFormat runtime_webgpu_format(doe_texture_format format);
 /* The kernel source by doe-zig-runtime's resolution order; the returned path
  * and *source are the caller's to free. NULL when no candidate is readable. */
+bool runtime_record_kernel_source(doe_runtime *runtime, const char *module_id, const char *path,
+    const char *entry_point, const char *source, size_t size, size_t *index);
+void runtime_kernel_sources_clear(doe_runtime *runtime);
 char *runtime_resolve_kernel(const doe_runtime *runtime, const char *kernel, char **source, size_t *size);
 bool runtime_execute_render(doe_runtime *runtime, const doe_command *command, doe_trace_execution *execution);
 void runtime_release_surfaces(doe_runtime *runtime);

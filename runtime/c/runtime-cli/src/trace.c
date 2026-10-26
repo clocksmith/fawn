@@ -114,6 +114,9 @@ static bool write_execution(FILE *out, const doe_trace_identity *identity, const
     ok = ok && fprintf(out, ",\"executionStatus\":\"%s\",\"executionStatusCode\":", execution->ok ? "ok" : "error") >= 0;
     ok = ok && doe_trace_write_string(out, execution->status_code) && fputs(",\"executionStatusMessage\":", out) >= 0 &&
         doe_trace_write_string(out, execution->message);
+    if (execution->ok && execution->shader_source_sha256[0])
+        ok = ok && fputs(",\"shaderSourceSha256\":", out) >= 0 &&
+            doe_trace_write_string(out, execution->shader_source_sha256);
     return ok && fprintf(out, ",\"executionDurationNs\":%" PRIu64 ",\"executionSetupNs\":%" PRIu64
         ",\"executionEncodeNs\":%" PRIu64 ",\"executionSubmitWaitNs\":%" PRIu64 ",\"executionDispatchCount\":%" PRIu64
         ",\"executionSubmitCount\":%" PRIu64 ",\"executionGpuTimestampNs\":%" PRIu64 ",\"executionGpuTimestampAttempted\":%s,"

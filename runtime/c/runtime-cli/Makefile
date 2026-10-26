@@ -85,6 +85,12 @@ $(BUILD)/test_trace: tests/test_trace.c $(CORE) $(CORE_HEADERS) | $(BUILD)
 $(BUILD)/test_map: tests/test_map.c $(CORE) $(RUNTIME) $(CORE_HEADERS) $(RUNTIME_HEADERS) $(NATIVE_LIBRARY) | $(BUILD)
 	$(CC) $(CPPFLAGS) $(CFLAGS) tests/test_map.c $(CORE) $(RUNTIME) -L'$(abspath $(NATIVE_BUILD))' \
 	  '$(abspath $(NATIVE_LIBRARY))' '-Wl,-rpath,$(abspath $(NATIVE_BUILD))' $(LDLIBS) -lm -o $@
+$(BUILD)/test_kernel_identity: tests/test_kernel_identity.c src/main.c $(CORE) $(RUNTIME) $(CORE_HEADERS) $(RUNTIME_HEADERS) $(NATIVE_LIBRARY) | $(BUILD)
+	$(CC) $(CPPFLAGS) $(CFLAGS) tests/test_kernel_identity.c $(CORE) $(RUNTIME) -L'$(abspath $(NATIVE_BUILD))' \
+	  '$(abspath $(NATIVE_LIBRARY))' '-Wl,-rpath,$(abspath $(NATIVE_BUILD))' $(LDLIBS) -lm -Wl,--wrap=malloc,--wrap=realloc -o $@
+.PHONY: check-kernel-identity
+check-kernel-identity: $(BUILD)/test_kernel_identity
+	$(BUILD)/test_kernel_identity '$(abspath $(BUILD))/kernel-identity.wgsl'
 $(BUILD)/test_texture_cleanup: tests/test_texture_cleanup.c $(CORE) $(RUNTIME) $(CORE_HEADERS) $(RUNTIME_HEADERS) $(NATIVE_LIBRARY) | $(BUILD)
 	$(CC) $(CPPFLAGS) $(CFLAGS) tests/test_texture_cleanup.c $(CORE) $(RUNTIME) -L'$(abspath $(NATIVE_BUILD))' \
 	  '$(abspath $(NATIVE_LIBRARY))' '-Wl,-rpath,$(abspath $(NATIVE_BUILD))' $(LDLIBS) -lm \
@@ -101,7 +107,7 @@ check-host: $(BUILD)/test_json $(BUILD)/test_stream $(BUILD)/test_trace $(BUILD)
 	$(BUILD)/test_numeric ../../.. '$(BUILD)'
 # Executes example streams on the selected Vulkan adapter (a CPU ICD such as
 # lavapipe by default) and checks the artifacts with pipeline/trace/replay.py.
-check: check-queue check-diagnostics check-host $(BUILD)/doe-c-runtime $(BUILD)/test_map $(BUILD)/test_texture_cleanup
+check: check-kernel-identity check-queue check-diagnostics check-host $(BUILD)/doe-c-runtime $(BUILD)/test_map $(BUILD)/test_texture_cleanup
 	$(BUILD)/test_map
 	$(BUILD)/test_texture_cleanup ../../../bench/kernels
 	$(PYTHON) tests/test_cli.py --binary '$(BUILD)/doe-c-runtime' --work '$(BUILD)/cli-work'

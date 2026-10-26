@@ -593,3 +593,22 @@ providers. It verifies the actual client rectangle after resize rather than
 assuming outer-window geometry equals the requested render extent. Native HWND
 support now composes the D3D12 surface owner; this source path is not an actual
 Windows desktop/presentation qualification on Linux dot.
+
+### Immutable shader source receipts
+
+File-backed compute cache identity includes the exact resolved WGSL bytes, entry
+point and binding layout, not only the pathname. Replacing a kernel after prewarm
+therefore compiles the new bytes rather than executing an older cached pipeline.
+The source owner retains immutable snapshots through runtime teardown. Compute
+and proxy-render compilation register receipts from those snapshots; metadata
+serialization never rereads the filesystem. Distinct compiled versions of one
+path remain separate receipts in first-construction order, including prewarmed
+versions. Identical source/layout cache hits do not create duplicate receipts.
+
+Compute execution rows additionally carry optional `shaderSourceSha256`, binding
+the selected pipeline to its exact source receipt even when one path has multiple
+versions. Non-compute rows omit this field. The existing trace-v1 payload hash,
+independent output oracle and timing fields are unchanged. Receipts identify
+compiled inputs; they do not claim that prewarmed-only shaders were dispatched.
+`check-kernel-identity` exercises same-path replacement, exact CPU readback,
+per-execution hashes, post-execution file mutation and allocation rollback.

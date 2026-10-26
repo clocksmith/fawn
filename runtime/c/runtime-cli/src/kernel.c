@@ -64,16 +64,65 @@ char *runtime_resolve_kernel(const doe_runtime *runtime, const char *kernel, cha
     return chosen;
 }
 
-bool doe_runtime_kernel_source(const doe_runtime *runtime, const char *kernel, char **path, size_t *size,
-    char sha256_hex[65])
+static void source_record_clear(kernel_source_record *record)
 {
-    char *source = NULL;
-    *path = runtime_resolve_kernel(runtime, kernel, &source, size);
-    if (!*path) return false;
+    free(record->module_id);
+    free(record->path);
+    free(record->entry_point);
+    free(record->bytes);
+    *record = (kernel_source_record){0};
+}
+void runtime_kernel_sources_clear(doe_runtime *runtime)
+{
+    for (size_t i = 0; i < runtime->kernel_source_count; i++) source_record_clear(&runtime->kernel_sources[i]);
+    free(runtime->kernel_sources);
+    runtime->kernel_sources = NULL;
+    runtime->kernel_source_count = runtime->kernel_source_capacity = 0;
+}
+size_t doe_runtime_source_receipt_count(const doe_runtime *runtime)
+{
+    return runtime ? runtime->kernel_source_count : 0;
+}
+bool doe_runtime_source_receipt_at(const doe_runtime *runtime, size_t index, doe_runtime_source_receipt *out)
+{
+    if (!runtime || !out || index >= runtime->kernel_source_count) return false;
+    const kernel_source_record *record = &runtime->kernel_sources[index];
+    *out = (doe_runtime_source_receipt){record->module_id, record->path, record->entry_point,
+        record->sha256, record->size};
+    return true;
+}
+bool runtime_record_kernel_source(doe_runtime *runtime, const char *module_id, const char *path,
+    const char *entry_point, const char *source, size_t size, size_t *index)
+{
+    for (size_t i = 0; i < runtime->kernel_source_count; i++) {
+        const kernel_source_record *record = &runtime->kernel_sources[i];
+        if (record->size == size && !strcmp(record->module_id, module_id) && !strcmp(record->path, path) &&
+            ((!entry_point && !record->entry_point) || (entry_point && record->entry_point && !strcmp(entry_point, record->entry_point))) &&
+            !memcmp(record->bytes, source, size)) { *index = i; return true; }
+    }
+    if (size == SIZE_MAX) return false;
+    kernel_source_record record = {.module_id=doe_host_strdup(module_id), .path=doe_host_strdup(path),
+        .entry_point=entry_point ? doe_host_strdup(entry_point) : NULL, .bytes=malloc(size + 1), .size=size};
+    if (!record.module_id || !record.path || (entry_point && !record.entry_point) || !record.bytes) {
+        source_record_clear(&record);
+        return false;
+    }
+    memcpy(record.bytes, source, size);
+    record.bytes[size] = '\0';
     uint8_t digest[32];
-    doe_sha256(source, *size, digest);
-    doe_sha256_hex(digest, sha256_hex);
-    free(source);
+    doe_sha256(record.bytes, size, digest);
+    doe_sha256_hex(digest, record.sha256);
+    if (runtime->kernel_source_count == runtime->kernel_source_capacity) {
+        size_t capacity = runtime->kernel_source_capacity;
+        if (capacity > SIZE_MAX / 2 / sizeof(record)) { source_record_clear(&record); return false; }
+        capacity = capacity ? capacity * 2 : 8;
+        kernel_source_record *grown = realloc(runtime->kernel_sources, capacity * sizeof(record));
+        if (!grown) { source_record_clear(&record); return false; }
+        runtime->kernel_sources = grown;
+        runtime->kernel_source_capacity = capacity;
+    }
+    *index = runtime->kernel_source_count;
+    runtime->kernel_sources[runtime->kernel_source_count++] = record;
     return true;
 }
 
@@ -100,11 +149,13 @@ static bool same_signature(const pipeline_entry *entry, const doe_kernel_binding
 }
 
 static pipeline_entry *find_pipeline(doe_runtime *runtime, const char *path, const char *entry_point,
-    const doe_kernel_binding *bindings, size_t count)
+    const doe_kernel_binding *bindings, size_t count, const char *source, size_t source_size)
 {
     for (size_t i = 0; i < runtime->pipeline_count; i++) {
         pipeline_entry *entry = &runtime->pipelines[i];
+        const kernel_source_record *identity = &runtime->kernel_sources[entry->source_index];
         if (!strcmp(entry->source_path, path) && !strcmp(entry->entry_point, entry_point) &&
+            identity->size == source_size && !memcmp(identity->bytes, source, source_size) &&
             same_signature(entry, bindings, count)) return entry;
     }
     return NULL;
@@ -192,13 +243,22 @@ static pipeline_entry *prepare_pipeline(doe_runtime *runtime, const doe_command 
     }
     const doe_kernel_binding *bindings = command->as.dispatch.bindings;
     size_t count = command->as.dispatch.binding_count;
-    pipeline_entry *cached = find_pipeline(runtime, path, command->as.dispatch.entry_point, bindings, count);
+    pipeline_entry *cached = find_pipeline(runtime, path, command->as.dispatch.entry_point, bindings, count, source, source_size);
     if (cached) {
+        size_t identity;
+        bool recorded = runtime_record_kernel_source(runtime, command->as.dispatch.kernel, path,
+            command->as.dispatch.entry_point, source, source_size, &identity);
         free(path);
         free(source);
+        if (!recorded) { runtime_fail(execution, "out_of_memory", "source receipt allocation failed"); return NULL; }
         return cached;
     }
     if (runtime->pipeline_count == runtime->pipeline_capacity) {
+        if (runtime->pipeline_capacity > SIZE_MAX / 2 / sizeof(pipeline_entry)) {
+            free(path); free(source);
+            runtime_fail(execution, "out_of_memory", "pipeline cache capacity overflow");
+            return NULL;
+        }
         size_t capacity = runtime->pipeline_capacity ? runtime->pipeline_capacity * 2 : 8;
         pipeline_entry *grown = realloc(runtime->pipelines, capacity * sizeof(*grown));
         if (!grown) {
@@ -221,6 +281,9 @@ static pipeline_entry *prepare_pipeline(doe_runtime *runtime, const doe_command 
     if (count) memcpy(entry.signature, bindings, count * sizeof(*bindings));
     entry.signature_count = count;
     bool built = build_pipeline(runtime, &entry, source, source_size, bindings, count, execution);
+    if (built && !runtime_record_kernel_source(runtime, command->as.dispatch.kernel, path,
+        command->as.dispatch.entry_point, source, source_size, &entry.source_index))
+        built = runtime_fail(execution, "out_of_memory", "source receipt allocation failed");
     free(source);
     if (!built) {
         release_pipeline(&entry);
@@ -413,6 +476,9 @@ static bool execute_pipeline(doe_runtime *runtime, const doe_command *command, W
     execution->setup_ns = setup_end - start;
     execution->encode_ns = encode_end - setup_end;
     execution->submit_wait_ns = end - encode_end;
+    if (ok && scopes_ok)
+        memcpy(execution->shader_source_sha256, runtime->kernel_sources[pipeline->source_index].sha256,
+            sizeof(execution->shader_source_sha256));
     return ok && scopes_ok;
 }
 
