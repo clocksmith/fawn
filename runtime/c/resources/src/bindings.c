@@ -480,7 +480,8 @@ const doe_resource_binding *doe_resource_bind_group_bindings(const doe_resource_
     return group->bindings;
 }
 
-/* Creation and setBindGroup admit a destroyed texture; `submit` rejects it. */
+/* Recording admits mapped buffers and destroyed textures; queue admission
+ * validates their execution-time availability after the caller can unmap. */
 doe_resource_status resource_group_validate(const doe_resource_bind_group *group, bool submit)
 {
     if (!group || !resource_alive(&group->base)) return DOE_RESOURCE_UNAVAILABLE;
@@ -491,7 +492,7 @@ doe_resource_status resource_group_validate(const doe_resource_bind_group *group
         if (status != DOE_RESOURCE_OK) return status;
         if (submit && (resolved.kind == DOE_BIND_TEXTURE || resolved.kind == DOE_BIND_STORAGE_TEXTURE) &&
             !resource_texture_available(resolved.resource.view->texture)) return DOE_RESOURCE_UNAVAILABLE;
-        if (resolved.kind == DOE_BIND_BUFFER &&
+        if (submit && resolved.kind == DOE_BIND_BUFFER &&
             (resolved.resource.buffer.buffer->mapped || resolved.resource.buffer.buffer->map_pending))
             return DOE_RESOURCE_STATE;
     }

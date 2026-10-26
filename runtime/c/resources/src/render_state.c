@@ -106,7 +106,6 @@ static doe_resource_status validate_vertex(const doe_resource_vertex_binding *bi
     const doe_resource_vertex_layout *layout, uint32_t first, uint32_t count, bool check_range)
 {
     if (!resource_buffer_available(binding->buffer)) return DOE_RESOURCE_UNAVAILABLE;
-    if (binding->buffer->mapped || binding->buffer->map_pending) return DOE_RESOURCE_STATE;
     uint64_t strides = (uint64_t)first + count;
     if (!check_range || !strides) return DOE_RESOURCE_OK;
     uint64_t last = strides - 1;
@@ -116,6 +115,8 @@ static doe_resource_status validate_vertex(const doe_resource_vertex_binding *bi
     return required <= binding->size ? DOE_RESOURCE_OK : DOE_RESOURCE_RANGE;
 }
 
+/* Mapping state is queue-time admission in the retained render usage scope,
+ * not draw recording: mapped-at-creation buffers may be unmapped before submit. */
 doe_resource_status resource_render_draw_validate(const doe_resource_render_packet *packet,
     void *device, const doe_resource_render_bundle_desc *signature)
 {
@@ -123,7 +124,6 @@ doe_resource_status resource_render_draw_validate(const doe_resource_render_pack
     if (packet->indirect) {
         status = resource_indirect_validate(device, packet->indirect, packet->indirect_offset, packet->indexed ? 20 : 16);
         if (status != DOE_RESOURCE_OK) return status;
-        if (packet->indirect->mapped || packet->indirect->map_pending) return DOE_RESOURCE_STATE;
     }
     const doe_resource_render_pipeline *pipeline = packet->pipeline;
     status = validate_pipeline(pipeline, device, signature);
@@ -150,7 +150,6 @@ doe_resource_status resource_render_draw_validate(const doe_resource_render_pack
             pipeline->desc.topology == WGPUPrimitiveTopology_TriangleStrip;
         if (strip && packet->index_format != pipeline->desc.strip_index_format) return DOE_RESOURCE_LAYOUT;
         if (!resource_buffer_available(packet->index.buffer)) return DOE_RESOURCE_UNAVAILABLE;
-        if (packet->index.buffer->mapped || packet->index.buffer->map_pending) return DOE_RESOURCE_STATE;
         uint32_t bytes = packet->index_format == WGPUIndexFormat_Uint16 ? 2 : 4;
         uint64_t end = ((uint64_t)packet->first + packet->count) * bytes;
         if (!packet->indirect && end > packet->index.size) return DOE_RESOURCE_RANGE;

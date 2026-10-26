@@ -87,7 +87,9 @@ an alias of device-free compiled data or a second count for one WebGPU object.
   Pass timestamps retain delayed end-write pools and name at least one write
   index; indirect records retain arguments.
 - `bundles.c`: reusable immutable draw snapshots sharing pass state/validation,
-  with a 4096-operation budget and transactional storage move on finish. Replay
+  with overflow-checked dynamic draw storage and transactional move on finish.
+  State updates have no arbitrary operation-count ceiling; allocation failures
+  preserve existing draw leases and the first error until cleanup. Replay
   creates the same retained command packets, not fake attachments or a renderer.
 
 Uses existing `doe_instance_allocator` and optional `doe_label_store`. No second
@@ -180,6 +182,14 @@ within one draw are not. Successful setters retain exact resource identities;
 unbind and bundle state reset cannot remove historical uses. The finished scope
 moves to the final pass record and remains alive through pending submission.
 Destroyed, mapped and expired unused resources are checked before native submit.
+Mapped-at-creation uniform, storage, vertex, index and indirect buffers may be
+bound and recorded while mapped, then unmapped after Finish but before Submit.
+Recording still validates usage, identity, offsets and ranges; the retained group
+and render-scope owners reject mapped or map-pending buffers at queue admission.
+`test_mapping_timing` covers these phases and early-release leases (pending
+primary-buffer state is a defensive white-box control, not a public usage claim).
+The native `mapping-timing` consumer checks uniform/storage exact compute readback
+and mapped/destroyed submission rejection through the public ABI.
 A destroyed texture that is still referenced is admitted by view creation, bind
 group creation, setBindGroup, executeBundles, copies and render attachments; submission rejects it
 (WebGPU validates destroyed textures at submit) and queue writes reject it at once.
