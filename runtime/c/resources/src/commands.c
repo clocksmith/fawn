@@ -227,7 +227,8 @@ doe_resource_status doe_resource_encoder_copy_texture(doe_resource_encoder *enco
     doe_resource_copy_region region;
     status = doe_resource_texture_copy_validate(buffer->desc.size, &texture->desc, copy, direction, alignment, &region);
     if (status != DOE_RESOURCE_OK) return resource_encoder_fail(encoder, status);
-    if (!copy->width || !copy->height || !copy->depth_or_layers) return DOE_RESOURCE_OK;
+    /* Resource use is independent of the copied extent. Preserve submission
+     * validation and leases even when the backend has no texels to transfer. */
     status = resource_encoder_reserve(encoder);
     if (status != DOE_RESOURCE_OK) return status;
     doe_resource_command command = {.kind = DOE_COMMAND_BUFFER_TEXTURE};

@@ -1601,3 +1601,22 @@ that assertion was not removed or counted as passing. Buffer/texture empty
 copies have a shared retained early-return behavior and are not silently
 changed by this texture-to-texture parity repair. Physical execution remains
 unqualified by these host/software checks.
+
+### Empty buffer/texture copies: separate shared-correctness correction
+
+[The receipt](EMPTY_BUFFER_TEXTURE_COPY.json) preserves a separate 12-case public
+control: both C and retained Zig accepted destroyed resources on zero-extent
+buffer-to-texture and texture-to-buffer submissions; pinned npm Dawn rejected
+all twelve. The patched C rejects all twelve through the existing command
+owner. This corrects inherited behavior rather than claiming another strict
+Zig/C migration differential. Neither the retained Zig result nor an earlier
+failed check is relabeled as a pass.
+
+`test-empty-copy-submit.js` runs the same provider-neutral test with an optional
+explicit provider module URL. Resource tests additionally cover all three zero
+axes in both directions with live early release, destroyed endpoints, mapped
+and map-pending buffers, and allocation-failure rollback/first-error retention.
+Native tests exercise mapped-buffer submission as well as destroyed resources.
+All backends retain their zero-GPU-operation guards. The fix preserves the
+original copy validation order, exact command leases, and ordinary pending
+resource finalization; it introduces no second lifetime mechanism.

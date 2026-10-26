@@ -319,6 +319,82 @@ static void test_empty_texture_copy_leases(void)
     }
 }
 
+static void test_empty_buffer_texture_leases(void)
+{
+    for (unsigned direction = 0; direction < 2; ++direction)
+        for (unsigned axis = 0; axis < 3; ++axis) for (unsigned changed = 0; changed < 5; ++changed) {
+            fixture f = fresh();
+            doe_resource_config c = config(&f);
+            doe_resource_texture_desc desc = texture_desc();
+            doe_resource_texture_limits limits = texture_limits();
+            native_token texture_token = {0}, buffer_token = {0};
+            doe_resource_texture *texture;
+            assert(doe_resource_texture_create(&c, &desc, &limits, native(&f, &texture_token),
+                &texture) == DOE_RESOURCE_OK);
+            uint64_t usage = direction ? WGPUBufferUsage_MapRead | WGPUBufferUsage_CopyDst :
+                WGPUBufferUsage_MapWrite | WGPUBufferUsage_CopySrc;
+            doe_resource_buffer *bytes = buffer(&f, &buffer_token, 256, usage);
+            doe_resource_texture_copy copy = {.width=1, .height=1, .depth_or_layers=1,
+                .bytes_per_row=256, .rows_per_image=1};
+            if (axis == 0) copy.width = 0;
+            else if (axis == 1) copy.height = 0;
+            else copy.depth_or_layers = 0;
+            doe_resource_encoder *encoder;
+            assert(doe_resource_encoder_create(&c, &encoder) == DOE_RESOURCE_OK);
+            assert(doe_resource_encoder_copy_texture(encoder, bytes, texture, &copy,
+                direction ? DOE_RESOURCE_TEXTURE_TO_BUFFER : DOE_RESOURCE_BUFFER_TO_TEXTURE,
+                DOE_RESOURCE_COPY_WEBGPU) == DOE_RESOURCE_OK);
+            doe_resource_commands *commands;
+            assert(doe_resource_encoder_finish(encoder, &commands) == DOE_RESOURCE_OK);
+            doe_resource_encoder_release(encoder);
+            unsigned char memory[256] = {0};
+            if (changed == 1) doe_resource_buffer_destroy(bytes);
+            if (changed == 2) doe_resource_texture_destroy(texture);
+            if (changed >= 3) {
+                uint64_t generation;
+                assert(doe_resource_buffer_map_begin(bytes, direction ? WGPUMapMode_Read : WGPUMapMode_Write,
+                    0, sizeof(memory), &generation) == DOE_RESOURCE_OK);
+                if (changed == 3)
+                    assert(doe_resource_buffer_map_complete(bytes, generation, true, memory) == DOE_RESOURCE_OK);
+            }
+            doe_resource_buffer_release(bytes);
+            doe_resource_texture_release(texture);
+            assert(!buffer_token.releases && !texture_token.releases);
+            doe_resource_status expected = !changed ? DOE_RESOURCE_OK :
+                changed >= 3 ? DOE_RESOURCE_STATE : DOE_RESOURCE_UNAVAILABLE;
+            assert(doe_resource_commands_begin_submit(commands) == expected);
+            if (!changed) assert(doe_resource_commands_settle(commands, DOE_RESOURCE_OK) == DOE_RESOURCE_OK);
+            doe_resource_commands_release(commands);
+            assert(buffer_token.releases == 1 && texture_token.releases == 1);
+            empty(&f);
+        }
+    for (unsigned direction = 0; direction < 2; ++direction) {
+        fixture f = fresh();
+        doe_resource_config c = config(&f);
+        doe_resource_texture_desc desc = texture_desc();
+        doe_resource_texture_limits limits = texture_limits();
+        native_token texture_token = {0}, buffer_token = {0};
+        doe_resource_texture *texture;
+        assert(doe_resource_texture_create(&c, &desc, &limits, native(&f, &texture_token), &texture) == DOE_RESOURCE_OK);
+        doe_resource_buffer *bytes = buffer(&f, &buffer_token, 256,
+            direction ? WGPUBufferUsage_CopyDst : WGPUBufferUsage_CopySrc);
+        doe_resource_encoder *encoder;
+        assert(doe_resource_encoder_create(&c, &encoder) == DOE_RESOURCE_OK);
+        doe_resource_texture_copy copy = {.height=1, .depth_or_layers=1, .bytes_per_row=256, .rows_per_image=1};
+        f.fail_at = f.allocations;
+        assert(doe_resource_encoder_copy_texture(encoder, bytes, texture, &copy,
+            direction ? DOE_RESOURCE_TEXTURE_TO_BUFFER : DOE_RESOURCE_BUFFER_TO_TEXTURE,
+            DOE_RESOURCE_COPY_WEBGPU) == DOE_RESOURCE_OUT_OF_MEMORY);
+        assert(doe_resource_encoder_copy_texture(encoder, NULL, NULL, NULL,
+            DOE_RESOURCE_BUFFER_TO_TEXTURE, DOE_RESOURCE_COPY_WEBGPU) == DOE_RESOURCE_OUT_OF_MEMORY);
+        doe_resource_encoder_release(encoder);
+        doe_resource_buffer_release(bytes);
+        doe_resource_texture_release(texture);
+        assert(buffer_token.releases == 1 && texture_token.releases == 1);
+        empty(&f);
+    }
+}
+
 static void test_destroyed_texture(void)
 {
     fixture f = fresh();
@@ -890,6 +966,7 @@ int main(void)
     test_view_lifetime();
     test_destroyed_texture();
     test_empty_texture_copy_leases();
+    test_empty_buffer_texture_leases();
     test_binding_layouts();
     test_recorded_submission();
     test_program_replay();
@@ -902,6 +979,6 @@ int main(void)
     test_sampler_and_texture_group();
     test_label_reuse();
     test_atomic_references();
-    puts("resource owner: 18 host suites passed; no GPU execution claimed");
+    puts("resource owner: 20 host suites passed; no GPU execution claimed");
     return 0;
 }

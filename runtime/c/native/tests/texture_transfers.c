@@ -61,11 +61,55 @@ static void empty_copy_lifetimes(state *s)
     }
 }
 
+static void empty_buffer_texture_lifetimes(state *s)
+{
+    for (unsigned direction = 0; direction < 2; ++direction)
+        for (unsigned axis = 0; axis < 3; ++axis) for (unsigned changed = 0; changed < 4; ++changed) {
+            WGPUTextureDescriptor descriptor = WGPU_TEXTURE_DESCRIPTOR_INIT;
+            descriptor.dimension = WGPUTextureDimension_2D;
+            descriptor.size = (WGPUExtent3D){1,1,1};
+            descriptor.format = WGPUTextureFormat_RGBA8Unorm;
+            descriptor.usage = WGPUTextureUsage_CopySrc | WGPUTextureUsage_CopyDst;
+            WGPUTexture texture = wgpuDeviceCreateTexture(s->device, &descriptor);
+            assert(texture);
+            WGPUBuffer bytes = buffer(s, 256, direction ? WGPUBufferUsage_MapRead | WGPUBufferUsage_CopyDst :
+                WGPUBufferUsage_MapWrite | WGPUBufferUsage_CopySrc);
+            WGPUTexelCopyTextureInfo image_copy = {.texture=texture};
+            WGPUTexelCopyBufferInfo buffer_copy = {.buffer=bytes, .layout={.bytesPerRow=256, .rowsPerImage=1}};
+            WGPUExtent3D size = {1,1,1};
+            if (axis == 0) size.width = 0;
+            else if (axis == 1) size.height = 0;
+            else size.depthOrArrayLayers = 0;
+            WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(s->device, NULL);
+            if (direction) wgpuCommandEncoderCopyTextureToBuffer(encoder, &image_copy, &buffer_copy, &size);
+            else wgpuCommandEncoderCopyBufferToTexture(encoder, &buffer_copy, &image_copy, &size);
+            WGPUCommandBuffer commands = wgpuCommandEncoderFinish(encoder, NULL);
+            assert(commands);
+            wgpuCommandEncoderRelease(encoder);
+            if (changed == 1) wgpuBufferDestroy(bytes);
+            if (changed == 2) wgpuTextureDestroy(texture);
+            if (changed == 3) {
+                unsigned before = s->mapped;
+                WGPUBufferMapCallbackInfo callback = {.mode=WGPUCallbackMode_AllowSpontaneous,
+                    .callback=mapped, .userdata1=s};
+                assert(wgpuBufferMapAsync(bytes, direction ? WGPUMapMode_Read : WGPUMapMode_Write,
+                    0, 256, callback).id && s->mapped == before + 1);
+            }
+            wgpuBufferRelease(bytes);
+            wgpuTextureRelease(texture);
+            if (changed) wgpuDevicePushErrorScope(s->device, WGPUErrorFilter_Validation);
+            wgpuQueueSubmit(s->queue, 1, &commands);
+            if (changed) expect_validation(s);
+            wgpuCommandBufferRelease(commands);
+        }
+}
+
 int main(void)
 {
     state s = {0};
     consumer_init(&s);
     empty_copy_lifetimes(&s);
+    empty_buffer_texture_lifetimes(&s);
     WGPUTexture source = image(&s), destination = image(&s);
     WGPUTextureView view = wgpuTextureCreateView(source,NULL);
     assert(view);
