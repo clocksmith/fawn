@@ -11,8 +11,11 @@
  * payload; the build ID binds relocation-bearing data without process pointers.
  * Windows x64 follows the canonical compiler DLL IAT import (not a thunk);
  * the shader owner is statically composed by the native Windows source list.
- * Other formats hash current read-only mappings; ASLR/loader fixups can
- * conservatively prevent cross-process reuse. Unsupported
+ * Mach-O requires a nonzero LC_UUID and hashes originally read-only mapped
+ * payload. The UUID binds relocation-bearing __DATA_CONST bytes without ASLR
+ * pointers, even when dyld has made those pages read-only. Windows hashes
+ * current read-only mappings; loader fixups can conservatively prevent
+ * cross-process reuse. Unsupported
  * image enumeration fails closed, preserving digest; there is no disk fallback.
  * Runtime options/device/pipeline inputs must be independently bound by caller.
  */

@@ -4,8 +4,12 @@ runtime/zig/**/*.zig text eol=lf
 runtime/zig/vendor/webgpu-headers/webgpu.h -text
 # The workspace's independent fixture is frozen by its exact SHA-256.
 browser/workspace/qualification/fixture-site.js text eol=lf
+# Managed Chromium patches must apply to canonical upstream bytes on every host.
+browser/chromium/patches/*.patch text eol=lf
 # Platform qualification receipts retain the producer's exact bytes and hashes.
 reports/fawn-workspace/20261026-platforms/** -text
+# The imported delivery and its receipts retain their original byte identities.
+reports/maintenance/20261026-noncsl-c-parity-delivery/** -text
 # Retained unified patches contain significant spaces on empty context lines.
 reports/maintenance/**/source.diff -whitespace
 reports/maintenance/**/source.patch -whitespace

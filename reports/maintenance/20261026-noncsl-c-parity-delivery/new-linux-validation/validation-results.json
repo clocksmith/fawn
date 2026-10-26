@@ -1,0 +1,94 @@
+{
+  "scope": "Exact242-path delivery on advanced d8ed base; isolated uncommitted main clone; CPU Vulkan, not physical qualification",
+  "inputs": "delivery-on-advanced-base.json",
+  "active": null,
+  "checks": [
+    {
+      "name": "aggregate",
+      "command": [
+        "make",
+        "-C",
+        "runtime/c",
+        "check"
+      ],
+      "exitCode": 2,
+      "elapsedSeconds": 0.5645358079927973,
+      "log": "aggregate.log"
+    },
+    {
+      "name": "cross-owner",
+      "command": [
+        "make",
+        "-C",
+        "runtime/c",
+        "check-tools",
+        "check-platform",
+        "check-globals"
+      ],
+      "exitCode": 0,
+      "elapsedSeconds": 76.98103229698609,
+      "log": "cross-owner.log"
+    },
+    {
+      "name": "cpu-vulkan",
+      "command": [
+        "make",
+        "-C",
+        "runtime/c",
+        "check-vulkan"
+      ],
+      "exitCode": 0,
+      "elapsedSeconds": 12.74178712599678,
+      "log": "cpu-vulkan.log"
+    },
+    {
+      "name": "compiler-host",
+      "command": [
+        "make",
+        "-j4",
+        "-C",
+        "runtime/c/compiler",
+        "test-compiler-host",
+        "test-compiler-host-alloc",
+        "test-compiler-host-install",
+        "test-compiler-host-dxil"
+      ],
+      "exitCode": 0,
+      "elapsedSeconds": 0.3143294519977644,
+      "log": "compiler-host.log"
+    },
+    {
+      "name": "dxil-tsir",
+      "command": [
+        "make",
+        "-j4",
+        "-C",
+        "runtime/c/compiler",
+        "test-dxil-tsir-partial",
+        "test-tsir-bootstrap",
+        "test-tsir-text",
+        "test-header-dependencies"
+      ],
+      "exitCode": 0,
+      "elapsedSeconds": 22.611150978977093,
+      "log": "dxil-tsir.log"
+    },
+    {
+      "name": "dxil-tsir-sanitizers",
+      "command": [
+        "make",
+        "-j4",
+        "-C",
+        "runtime/c/compiler",
+        "test-dxil-tsir-sanitize"
+      ],
+      "exitCode": 0,
+      "elapsedSeconds": 16.800596465996932,
+      "log": "dxil-tsir-sanitizers.log"
+    }
+  ],
+  "postTestInputHashesVerified": true,
+  "incomingPathCount": 242,
+  "patchSha256": "b5643701a0988cae5d67ea06d9a92901f80b1aea6b5ba0bf715cd770cf5864cc",
+  "canonicalPeerHead": "d8ed4913ae5e2ae3d5fdf15a4b43ca46d714467b"
+}

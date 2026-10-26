@@ -1,0 +1,3805 @@
+{
+  "protocol": "deco.task.v1",
+  "op": "events",
+  "ok": true,
+  "workId": "doe-c-parity-delivery-mars-focused-20261026-02",
+  "events": [
+    {
+      "seq": 1,
+      "at": "2026-10-26T23:36:10.336Z",
+      "type": "accepted",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "commandId": "doe-c-parity-delivery-mars-focused-20261026-02:start:5bca1d1efbd2",
+      "op": "start",
+      "reply": {
+        "ok": true,
+        "workId": "doe-c-parity-delivery-mars-focused-20261026-02",
+        "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+        "state": "accepted"
+      },
+      "plan": {
+        "argv": [
+          "/bin/sh",
+          "-c",
+          "set -e\nmake -C runtime/c/compiler test-compiler-host test-dxil-source test-tsir-text test-dxil-native-projection-expr test-dxil-hlsl-complete test-dxil-hlsl-access -j1\npython3 -m unittest bench.tests.test_generate_tsir_manifest_fixtures\ncd runtime/zig && zig build test-wgsl -Doptimize=ReleaseFast --summary all"
+        ],
+        "cwd": "/Users/xyz/deco/doe"
+      },
+      "continues": null,
+      "runnerSession": null,
+      "effectiveScope": {
+        "requested": {
+          "writePaths": [
+            "runtime/c/compiler/build",
+            "runtime/zig/zig-out",
+            "bench/out/c-parity-delivery-20261026"
+          ],
+          "network": false,
+          "publish": false,
+          "deploy": false
+        },
+        "enforced": {
+          "mechanism": "none: commands run with the account permissions",
+          "writePaths": "not enforced",
+          "network": "not enforced",
+          "publish": "not enforced",
+          "deploy": "not enforced"
+        }
+      },
+      "source": {
+        "head": "4b5c9e42089bde3a554e72ae12dfde532e2ab45c",
+        "branch": "main",
+        "dirtyPaths": [
+          "bench/tests/test_generate_tsir_manifest_fixtures.py",
+          "bench/tools/generate_tsir_manifest_fixtures.py",
+          "docs/tsir-contract.md",
+          "runtime/c/backends/metal/Makefile",
+          "runtime/c/backends/metal/README.md",
+          "runtime/c/backends/metal/src/objc_abi.h",
+          "runtime/c/backends/metal/src/objc_library_cache.c",
+          "runtime/c/backends/metal/src/objc_pipeline.c",
+          "runtime/c/backends/metal/src/objc_runtime.c",
+          "runtime/c/backends/metal/tests/test_library_cache.c",
+          "runtime/c/compiler/CATSCAN.md",
+          "runtime/c/compiler/Makefile",
+          "runtime/c/compiler/README.md",
+          "runtime/c/compiler/TSIR_BOOTSTRAP.md",
+          "runtime/c/compiler/TSIR_NONCSL_COMPLETE.md",
+          "runtime/c/compiler/host/README.md",
+          "runtime/c/compiler/host/dxil.c",
+          "runtime/c/compiler/host/exports.map",
+          "runtime/c/compiler/host/host.c",
+          "runtime/c/compiler/host/internal.h",
+          "runtime/c/compiler/host/tsir.c",
+          "runtime/c/compiler/include/doe_compiler_host.h",
+          "runtime/c/compiler/src/compile.c",
+          "runtime/c/compiler/src/decimal.h",
+          "runtime/c/compiler/src/dxil/dxil_analyze.c",
+          "runtime/c/compiler/src/dxil/dxil_analyze.h",
+          "runtime/c/compiler/src/dxil/dxil_analyze_decl.c",
+          "runtime/c/compiler/src/dxil/dxil_analyze_expr.c",
+          "runtime/c/compiler/src/dxil/dxil_analyze_internal.h",
+          "runtime/c/compiler/src/dxil/dxil_analyze_stmt.c",
+          "runtime/c/compiler/src/dxil/dxil_analyze_types.c",
+          "runtime/c/compiler/src/dxil/dxil_emit.c",
+          "runtime/c/compiler/src/dxil/dxil_emit.h",
+          "runtime/c/compiler/src/dxil/dxil_files.c",
+          "runtime/c/compiler/src/dxil/dxil_files.h",
+          "runtime/c/compiler/src/dxil/dxil_hlsl.c",
+          "runtime/c/compiler/src/dxil/dxil_hlsl.h",
+          "runtime/c/compiler/src/dxil/dxil_hlsl_array.c",
+          "runtime/c/compiler/src/dxil/dxil_hlsl_expr.c",
+          "runtime/c/compiler/src/dxil/dxil_hlsl_helpers.c",
+          "runtime/c/compiler/src/dxil/dxil_hlsl_internal.h",
+          "runtime/c/compiler/src/dxil/dxil_hlsl_names.c",
+          "runtime/c/compiler/src/dxil/dxil_hlsl_numeric.c",
+          "runtime/c/compiler/src/dxil/dxil_hlsl_numeric.h",
+          "runtime/c/compiler/src/dxil/dxil_hlsl_pointer.c",
+          "runtime/c/compiler/src/dxil/dxil_hlsl_stage.c",
+          "runtime/c/compiler/src/dxil/dxil_hlsl_stmt.c",
+          "runtime/c/compiler/src/dxil/dxil_hlsl_store.c",
+          "runtime/c/compiler/src/dxil/dxil_hlsl_texture.c",
+          "runtime/c/compiler/src/dxil/dxil_hlsl_texture.h",
+          "runtime/c/compiler/src/dxil/dxil_ir.h",
+          "runtime/c/compiler/src/dxil/dxil_ir_query.c",
+          "runtime/c/compiler/src/dxil/dxil_ir_validate.c",
+          "runtime/c/compiler/src/dxil/dxil_native.c",
+          "runtime/c/compiler/src/dxil/dxil_process_windows.c",
+          "runtime/c/compiler/src/dxil/dxil_source.c",
+          "runtime/c/compiler/src/dxil/dxil_source.h",
+          "runtime/c/compiler/src/dxil/dxil_source_native_bounds.c",
+          "runtime/c/compiler/src/dxil/dxil_source_native_bounds.h",
+          "runtime/c/compiler/src/dxil/dxil_source_native_expr.c",
+          "runtime/c/compiler/src/dxil/dxil_source_native_globals.c",
+          "runtime/c/compiler/src/dxil/dxil_source_native_internal.h",
+          "runtime/c/compiler/src/dxil/dxil_source_native_opt.c",
+          "runtime/c/compiler/src/dxil/dxil_source_native_opt.h",
+          "runtime/c/compiler/src/dxil/dxil_source_native_packed.c",
+          "runtime/c/compiler/src/dxil/dxil_source_native_packed.h",
+          "runtime/c/compiler/src/dxil/dxil_source_native_stmts.c",
+          "runtime/c/compiler/src/dxil/dxil_source_native_types.c",
+          "runtime/c/compiler/src/dxil/dxil_toolchain.c",
+          "runtime/c/compiler/src/dxil/dxil_toolchain.h",
+          "runtime/c/compiler/src/dxil/dxil_translate.c",
+          "runtime/c/compiler/src/dxil/dxil_translate.h",
+          "runtime/c/compiler/src/dxil/gaps.md",
+          "runtime/c/compiler/src/dxil/parity-test.md",
+          "runtime/c/compiler/src/dxil/source-integration.md",
+          "runtime/c/compiler/src/dxil/test-results.md",
+          "runtime/c/compiler/src/dxil/tests/test_dxil_hlsl.c",
+          "runtime/c/compiler/src/dxil/tests/test_dxil_hlsl_access.c",
+          "runtime/c/compiler/src/dxil/tests/test_dxil_hlsl_complete.c",
+          "runtime/c/compiler/src/dxil/tests/test_dxil_hlsl_numeric.c",
+          "runtime/c/compiler/src/dxil/tests/test_dxil_hlsl_texture.c",
+          "runtime/c/compiler/src/dxil/tests/test_dxil_io.c",
+          "runtime/c/compiler/src/dxil/tests/test_dxil_native_opt.c",
+          "runtime/c/compiler/src/dxil/tests/test_dxil_native_projection.c",
+          "runtime/c/compiler/src/dxil/tests/test_dxil_native_projection_expr.c",
+          "runtime/c/compiler/src/dxil/tests/test_dxil_source.c",
+          "runtime/c/compiler/src/dxil/tests/test_dxil_source_differential.c",
+          "runtime/c/compiler/src/dxil/tests/test_dxil_source_differential.py",
+          "runtime/c/compiler/src/dxil/tests/test_hlsl_numeric.py",
+          "runtime/c/compiler/src/dxil/tests/test_native_opt.py",
+          "runtime/c/compiler/src/dxil/texture-serialization.md",
+          "runtime/c/compiler/src/internal.h",
+          "runtime/c/compiler/src/numeric.c",
+          "runtime/c/compiler/src/numeric.h",
+          "runtime/c/compiler/src/override.c",
+          "runtime/c/compiler/src/override.h",
+          "runtime/c/compiler/src/pipeline.c",
+          "runtime/c/compiler/src/sema_declarations.c",
+          "runtime/c/compiler/src/sema_expression.c",
+          "runtime/c/compiler/src/tsir/gaps.md",
+          "runtime/c/compiler/src/tsir/parity-mapping.md",
+          "runtime/c/compiler/src/tsir/tests/test_bootstrap_manifest.c",
+          "runtime/c/compiler/src/tsir/tests/test_bootstrap_writer.c",
+          "runtime/c/compiler/src/tsir/tests/test_digest.c",
+          "runtime/c/compiler/src/tsir/tests/test_f64_format.py",
+          "runtime/c/compiler/src/tsir/tests/test_manifest_alloc.c",
+          "runtime/c/compiler/src/tsir/tests/test_new.c",
+          "runtime/c/compiler/src/tsir/tests/test_new2.c",
+          "runtime/c/compiler/src/tsir/tests/test_numeric_parity.py",
+          "runtime/c/compiler/src/tsir/tests/test_planner.c",
+          "runtime/c/compiler/src/tsir/tests/test_reference_emit.c",
+          "runtime/c/compiler/src/tsir/tests/test_sha_scalar.c",
+          "runtime/c/compiler/src/tsir/tests/test_source.c",
+          "runtime/c/compiler/src/tsir/tests/test_source_control.c",
+          "runtime/c/compiler/src/tsir/tests/test_source_differential.c",
+          "runtime/c/compiler/src/tsir/tests/test_source_differential.py",
+          "runtime/c/compiler/src/tsir/tests/test_source_expr.c",
+          "runtime/c/compiler/src/tsir/tests/test_targets.c",
+          "runtime/c/compiler/src/tsir/tests/test_targets.py",
+          "runtime/c/compiler/src/tsir/tests/test_text.c",
+          "runtime/c/compiler/src/tsir/tests/test_text.py",
+          "runtime/c/compiler/src/tsir/tsir_bootstrap.c",
+          "runtime/c/compiler/src/tsir/tsir_bootstrap.h",
+          "runtime/c/compiler/src/tsir/tsir_bootstrap_manifest.c",
+          "runtime/c/compiler/src/tsir/tsir_bootstrap_oracle.c",
+          "runtime/c/compiler/src/tsir/tsir_digest.c",
+          "runtime/c/compiler/src/tsir/tsir_digest.h",
+          "runtime/c/compiler/src/tsir/tsir_emit.c",
+          "runtime/c/compiler/src/tsir/tsir_emit.h",
+          "runtime/c/compiler/src/tsir/tsir_family_hint.c",
+          "runtime/c/compiler/src/tsir/tsir_file.c",
+          "runtime/c/compiler/src/tsir/tsir_file.h",
+          "runtime/c/compiler/src/tsir/tsir_format.c",
+          "runtime/c/compiler/src/tsir/tsir_frontend.c",
+          "runtime/c/compiler/src/tsir/tsir_frontend.h",
+          "runtime/c/compiler/src/tsir/tsir_frontend_axes.c",
+          "runtime/c/compiler/src/tsir/tsir_frontend_bindings_axes.c",
+          "runtime/c/compiler/src/tsir/tsir_frontend_expr.c",
+          "runtime/c/compiler/src/tsir/tsir_frontend_expr.h",
+          "runtime/c/compiler/src/tsir/tsir_frontend_lower.c",
+          "runtime/c/compiler/src/tsir/tsir_frontend_passes.c",
+          "runtime/c/compiler/src/tsir/tsir_frontend_reductions.c",
+          "runtime/c/compiler/src/tsir/tsir_planner.c",
+          "runtime/c/compiler/src/tsir/tsir_planner.h",
+          "runtime/c/compiler/src/tsir/tsir_reference.c",
+          "runtime/c/compiler/src/tsir/tsir_reference.h",
+          "runtime/c/compiler/src/tsir/tsir_reference_bodies.c",
+          "runtime/c/compiler/src/tsir/tsir_schema.c",
+          "runtime/c/compiler/src/tsir/tsir_schema.h",
+          "runtime/c/compiler/src/tsir/tsir_source.c",
+          "runtime/c/compiler/src/tsir/tsir_source.h",
+          "runtime/c/compiler/src/tsir/tsir_source_expr.c",
+          "runtime/c/compiler/src/tsir/tsir_source_stmts.c",
+          "runtime/c/compiler/src/tsir/tsir_targets.c",
+          "runtime/c/compiler/src/tsir/tsir_targets.h",
+          "runtime/c/compiler/src/tsir/tsir_text.c",
+          "runtime/c/compiler/src/tsir/tsir_wgsl_ir.c",
+          "runtime/c/compiler/src/tsir/tsir_wgsl_ir.h",
+          "runtime/c/compiler/src/validate.c",
+          "runtime/c/compiler/targets/hlsl/access.c",
+          "runtime/c/compiler/targets/hlsl/float_pack.c",
+          "runtime/c/compiler/targets/hlsl/float_pack.h",
+          "runtime/c/compiler/targets/ir_view.h",
+          "runtime/c/compiler/targets/source_facts.h",
+          "runtime/c/compiler/tests/job_machine.py",
+          "runtime/c/compiler/tests/test_api.c",
+          "runtime/c/compiler/tests/test_bootstrap_manifest.py",
+          "runtime/c/compiler/tests/test_cli.py",
+          "runtime/c/compiler/tests/test_compiler_host.c",
+          "runtime/c/compiler/tests/test_compiler_host.cpp",
+          "runtime/c/compiler/tests/test_compiler_host_alloc.c",
+          "runtime/c/compiler/tests/test_compute.py",
+          "runtime/c/compiler/tests/test_compute_api.c",
+          "runtime/c/compiler/tests/test_constants.c",
+          "runtime/c/compiler/tests/test_control.py",
+          "runtime/c/compiler/tests/test_expressions.py",
+          "runtime/c/compiler/tests/test_hlsl_abi.cpp",
+          "runtime/c/compiler/tests/test_hlsl_api.c",
+          "runtime/c/compiler/tests/test_host_exports.py",
+          "runtime/c/compiler/tests/test_job.py",
+          "runtime/c/compiler/tests/test_job_api.c",
+          "runtime/c/compiler/tests/test_uniforms.py",
+          "runtime/c/compiler/tools/build_host_windows.py",
+          "runtime/c/compiler/tools/build_windows.py",
+          "runtime/c/compiler/tools/test_header_dependencies.py",
+          "runtime/c/compiler/tools/test_host_dxil.py",
+          "runtime/c/compiler/tools/test_host_install.py",
+          "runtime/c/compiler/tools/windows_compile.py",
+          "runtime/c/native/Makefile",
+          "runtime/c/native/README.md",
+          "runtime/c/native/src/internal.h",
+          "runtime/c/native/src/lifecycle.c",
+          "runtime/c/native/src/shader_cache.c",
+          "runtime/c/native/src/shader_cache.h",
+          "runtime/c/native/src/shader_cache_identity.c",
+          "runtime/c/native/src/shader_cache_identity.h",
+          "runtime/c/native/src/shader_disk_cache.c",
+          "runtime/c/native/src/shader_disk_cache.h",
+          "runtime/c/native/src/shader_modules.c",
+          "runtime/c/native/src/stages.c",
+          "runtime/c/native/tests/encoder_errors.c",
+          "runtime/c/native/tests/shader_cache.c",
+          "runtime/c/resources/README.md",
+          "runtime/c/resources/include/doe_resources.h",
+          "runtime/c/resources/src/commands.c",
+          "runtime/c/resources/src/compute_pass.c",
+          "runtime/c/resources/src/render.c",
+          "runtime/c/resources/tests/test_extended.c",
+          "runtime/c/runtime-cli/CATSCAN.md",
+          "runtime/c/runtime-cli/README.md",
+          "runtime/c/runtime-cli/src/cli_options.c",
+          "runtime/c/runtime-cli/src/cli_options.h",
+          "runtime/c/runtime-cli/src/main.c",
+          "runtime/c/runtime-cli/src/plan.c",
+          "runtime/c/runtime-cli/src/plan.h",
+          "runtime/c/runtime-cli/tests/test_cli_host_modes.py",
+          "runtime/c/shader/CATSCAN.md",
+          "runtime/c/shader/Makefile",
+          "runtime/c/shader/README.md",
+          "runtime/c/shader/include/doe_shader.h",
+          "runtime/c/shader/include/doe_shader_artifact.h",
+          "runtime/c/shader/src/artifact.c",
+          "runtime/c/shader/src/artifact_internal.h",
+          "runtime/c/shader/src/artifact_validate.c",
+          "runtime/c/shader/src/module.c",
+          "runtime/c/shader/tests/cpp.cpp",
+          "runtime/zig/source-layout.json",
+          "runtime/zig/src/compiler/tsir/reference_reduction.zig",
+          "runtime/zig/src/compiler/tsir/reference_scalar.zig",
+          "runtime/zig/src/compiler/tsir/reference_types.zig",
+          "runtime/zig/src/compiler/wgsl/WGSL_SUPPORT.md",
+          "runtime/zig/src/compiler/wgsl/frontend/sema.zig",
+          "runtime/zig/src/compiler/wgsl/frontend/sema_expr.zig",
+          "runtime/zig/src/compiler/wgsl/frontend/sema_types.zig",
+          "runtime/zig/src/compiler/wgsl/frontend/sema_typeutils.zig",
+          "runtime/zig/src/compiler/wgsl/ir/ir_builder.zig",
+          "runtime/zig/src/compiler/wgsl/ir/ir_opt_rewrite.zig",
+          "runtime/zig/src/compiler/wgsl/ir/ir_validate.zig",
+          "runtime/zig/tests/core/wgsl_parser_ir_test.zig",
+          "runtime/zig/tests/wgsl/emit_spirv_builtin_test.zig",
+          "runtime/zig/tests/wgsl/shader_sema_test.zig",
+          "runtime/zig/tests/wgsl/tsir_scaffold_test.zig"
+        ]
+      }
+    },
+    {
+      "seq": 2,
+      "at": "2026-10-26T23:36:10.375Z",
+      "type": "running",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "supervisor": {
+        "pid": 88864,
+        "started": "Mon Oct 26 23:36:10 2026"
+      },
+      "runner": {
+        "pid": 88872,
+        "started": "Mon Oct 26 23:36:10 2026"
+      }
+    },
+    {
+      "seq": 3,
+      "at": "2026-10-26T23:36:10.486Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host/"
+    },
+    {
+      "seq": 4,
+      "at": "2026-10-26T23:36:10.487Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c host/dxil.c -o build/host/dxil.o"
+    },
+    {
+      "seq": 5,
+      "at": "2026-10-26T23:36:10.526Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host/"
+    },
+    {
+      "seq": 6,
+      "at": "2026-10-26T23:36:10.527Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c host/host.c -o build/host/host.o"
+    },
+    {
+      "seq": 7,
+      "at": "2026-10-26T23:36:10.563Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host/"
+    },
+    {
+      "seq": 8,
+      "at": "2026-10-26T23:36:10.564Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c host/tsir.c -o build/host/tsir.o"
+    },
+    {
+      "seq": 9,
+      "at": "2026-10-26T23:36:10.601Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/tsir/"
+    },
+    {
+      "seq": 10,
+      "at": "2026-10-26T23:36:10.603Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror -g -fPIC  -Isrc/tsir -c src/tsir/tsir_bootstrap.c -o build/tsir/tsir_bootstrap.o"
+    },
+    {
+      "seq": 11,
+      "at": "2026-10-26T23:36:10.656Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/tsir/"
+    },
+    {
+      "seq": 12,
+      "at": "2026-10-26T23:36:10.657Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror -g -fPIC  -Isrc/tsir -c src/tsir/tsir_bootstrap_manifest.c -o build/tsir/tsir_bootstrap_manifest.o"
+    },
+    {
+      "seq": 13,
+      "at": "2026-10-26T23:36:10.717Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/tsir/"
+    },
+    {
+      "seq": 14,
+      "at": "2026-10-26T23:36:10.719Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror -g -fPIC  -Isrc/tsir -c src/tsir/tsir_bootstrap_oracle.c -o build/tsir/tsir_bootstrap_oracle.o"
+    },
+    {
+      "seq": 15,
+      "at": "2026-10-26T23:36:10.803Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/tsir/"
+    },
+    {
+      "seq": 16,
+      "at": "2026-10-26T23:36:10.804Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror -g -fPIC  -Isrc/tsir -c src/tsir/tsir_digest.c -o build/tsir/tsir_digest.o"
+    },
+    {
+      "seq": 17,
+      "at": "2026-10-26T23:36:10.916Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/tsir/"
+    },
+    {
+      "seq": 18,
+      "at": "2026-10-26T23:36:10.918Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror -g -fPIC  -Isrc/tsir -c src/tsir/tsir_emit.c -o build/tsir/tsir_emit.o"
+    },
+    {
+      "seq": 19,
+      "at": "2026-10-26T23:36:10.977Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/tsir/"
+    },
+    {
+      "seq": 20,
+      "at": "2026-10-26T23:36:10.979Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror -g -fPIC  -Isrc/tsir -c src/tsir/tsir_extended.c -o build/tsir/tsir_extended.o"
+    },
+    {
+      "seq": 21,
+      "at": "2026-10-26T23:36:11.069Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/tsir/"
+    },
+    {
+      "seq": 22,
+      "at": "2026-10-26T23:36:11.070Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror -g -fPIC  -Isrc/tsir -c src/tsir/tsir_extended_ops.c -o build/tsir/tsir_extended_ops.o"
+    },
+    {
+      "seq": 23,
+      "at": "2026-10-26T23:36:11.151Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/tsir/"
+    },
+    {
+      "seq": 24,
+      "at": "2026-10-26T23:36:11.152Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror -g -fPIC  -Isrc/tsir -c src/tsir/tsir_family_hint.c -o build/tsir/tsir_family_hint.o"
+    },
+    {
+      "seq": 25,
+      "at": "2026-10-26T23:36:11.207Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/tsir/"
+    },
+    {
+      "seq": 26,
+      "at": "2026-10-26T23:36:11.208Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror -g -fPIC  -Isrc/tsir -c src/tsir/tsir_file.c -o build/tsir/tsir_file.o"
+    },
+    {
+      "seq": 27,
+      "at": "2026-10-26T23:36:11.247Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/tsir/"
+    },
+    {
+      "seq": 28,
+      "at": "2026-10-26T23:36:11.249Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror -g -fPIC  -Isrc/tsir -c src/tsir/tsir_format.c -o build/tsir/tsir_format.o"
+    },
+    {
+      "seq": 29,
+      "at": "2026-10-26T23:36:11.294Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/tsir/"
+    },
+    {
+      "seq": 30,
+      "at": "2026-10-26T23:36:11.295Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror -g -fPIC  -Isrc/tsir -c src/tsir/tsir_frontend.c -o build/tsir/tsir_frontend.o"
+    },
+    {
+      "seq": 31,
+      "at": "2026-10-26T23:36:11.342Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/tsir/"
+    },
+    {
+      "seq": 32,
+      "at": "2026-10-26T23:36:11.344Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror -g -fPIC  -Isrc/tsir -c src/tsir/tsir_frontend_axes.c -o build/tsir/tsir_frontend_axes.o"
+    },
+    {
+      "seq": 33,
+      "at": "2026-10-26T23:36:11.391Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/tsir/"
+    },
+    {
+      "seq": 34,
+      "at": "2026-10-26T23:36:11.393Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror -g -fPIC  -Isrc/tsir -c src/tsir/tsir_frontend_bindings_axes.c -o build/tsir/tsir_frontend_bindings_axes.o"
+    },
+    {
+      "seq": 35,
+      "at": "2026-10-26T23:36:11.446Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/tsir/"
+    },
+    {
+      "seq": 36,
+      "at": "2026-10-26T23:36:11.448Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror -g -fPIC  -Isrc/tsir -c src/tsir/tsir_frontend_expr.c -o build/tsir/tsir_frontend_expr.o"
+    },
+    {
+      "seq": 37,
+      "at": "2026-10-26T23:36:11.521Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/tsir/"
+    },
+    {
+      "seq": 38,
+      "at": "2026-10-26T23:36:11.523Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror -g -fPIC  -Isrc/tsir -c src/tsir/tsir_frontend_lower.c -o build/tsir/tsir_frontend_lower.o"
+    },
+    {
+      "seq": 39,
+      "at": "2026-10-26T23:36:11.566Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/tsir/"
+    },
+    {
+      "seq": 40,
+      "at": "2026-10-26T23:36:11.567Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror -g -fPIC  -Isrc/tsir -c src/tsir/tsir_frontend_passes.c -o build/tsir/tsir_frontend_passes.o"
+    },
+    {
+      "seq": 41,
+      "at": "2026-10-26T23:36:11.636Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/tsir/"
+    },
+    {
+      "seq": 42,
+      "at": "2026-10-26T23:36:11.638Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror -g -fPIC  -Isrc/tsir -c src/tsir/tsir_frontend_reductions.c -o build/tsir/tsir_frontend_reductions.o"
+    },
+    {
+      "seq": 43,
+      "at": "2026-10-26T23:36:11.699Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/tsir/"
+    },
+    {
+      "seq": 44,
+      "at": "2026-10-26T23:36:11.701Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror -g -fPIC  -Isrc/tsir -c src/tsir/tsir_json.c -o build/tsir/tsir_json.o"
+    },
+    {
+      "seq": 45,
+      "at": "2026-10-26T23:36:11.784Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/tsir/"
+    },
+    {
+      "seq": 46,
+      "at": "2026-10-26T23:36:11.786Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror -g -fPIC  -Isrc/tsir -c src/tsir/tsir_kernel_body.c -o build/tsir/tsir_kernel_body.o"
+    },
+    {
+      "seq": 47,
+      "at": "2026-10-26T23:36:11.846Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/tsir/"
+    },
+    {
+      "seq": 48,
+      "at": "2026-10-26T23:36:11.847Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror -g -fPIC  -Isrc/tsir -c src/tsir/tsir_planner.c -o build/tsir/tsir_planner.o"
+    },
+    {
+      "seq": 49,
+      "at": "2026-10-26T23:36:11.935Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/tsir/"
+    },
+    {
+      "seq": 50,
+      "at": "2026-10-26T23:36:11.936Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror -g -fPIC  -Isrc/tsir -c src/tsir/tsir_reference.c -o build/tsir/tsir_reference.o"
+    },
+    {
+      "seq": 51,
+      "at": "2026-10-26T23:36:12.006Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/tsir/"
+    },
+    {
+      "seq": 52,
+      "at": "2026-10-26T23:36:12.007Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror -g -fPIC  -Isrc/tsir -c src/tsir/tsir_reference_bodies.c -o build/tsir/tsir_reference_bodies.o"
+    },
+    {
+      "seq": 53,
+      "at": "2026-10-26T23:36:12.098Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/tsir/"
+    },
+    {
+      "seq": 54,
+      "at": "2026-10-26T23:36:12.100Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror -g -fPIC  -Isrc/tsir -c src/tsir/tsir_scalar.c -o build/tsir/tsir_scalar.o"
+    },
+    {
+      "seq": 55,
+      "at": "2026-10-26T23:36:12.158Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/tsir/"
+    },
+    {
+      "seq": 56,
+      "at": "2026-10-26T23:36:12.160Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror -g -fPIC  -Isrc/tsir -c src/tsir/tsir_schema.c -o build/tsir/tsir_schema.o"
+    },
+    {
+      "seq": 57,
+      "at": "2026-10-26T23:36:12.209Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/tsir/"
+    },
+    {
+      "seq": 58,
+      "at": "2026-10-26T23:36:12.211Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror -g -fPIC  -Isrc/tsir -c src/tsir/tsir_sha256.c -o build/tsir/tsir_sha256.o"
+    },
+    {
+      "seq": 59,
+      "at": "2026-10-26T23:36:12.257Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/tsir/"
+    },
+    {
+      "seq": 60,
+      "at": "2026-10-26T23:36:12.259Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror -g -fPIC  -Isrc/tsir -c src/tsir/tsir_source.c -o build/tsir/tsir_source.o"
+    },
+    {
+      "seq": 61,
+      "at": "2026-10-26T23:36:12.326Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/tsir/"
+    },
+    {
+      "seq": 62,
+      "at": "2026-10-26T23:36:12.328Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror -g -fPIC  -Isrc/tsir -c src/tsir/tsir_source_expr.c -o build/tsir/tsir_source_expr.o"
+    },
+    {
+      "seq": 63,
+      "at": "2026-10-26T23:36:12.403Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/tsir/"
+    },
+    {
+      "seq": 64,
+      "at": "2026-10-26T23:36:12.404Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror -g -fPIC  -Isrc/tsir -c src/tsir/tsir_source_packed.c -o build/tsir/tsir_source_packed.o"
+    },
+    {
+      "seq": 65,
+      "at": "2026-10-26T23:36:12.468Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/tsir/"
+    },
+    {
+      "seq": 66,
+      "at": "2026-10-26T23:36:12.469Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror -g -fPIC  -Isrc/tsir -c src/tsir/tsir_source_stmts.c -o build/tsir/tsir_source_stmts.o"
+    },
+    {
+      "seq": 67,
+      "at": "2026-10-26T23:36:12.539Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/tsir/"
+    },
+    {
+      "seq": 68,
+      "at": "2026-10-26T23:36:12.541Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror -g -fPIC  -Isrc/tsir -c src/tsir/tsir_targets.c -o build/tsir/tsir_targets.o"
+    },
+    {
+      "seq": 69,
+      "at": "2026-10-26T23:36:12.585Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/tsir/"
+    },
+    {
+      "seq": 70,
+      "at": "2026-10-26T23:36:12.587Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror -g -fPIC  -Isrc/tsir -c src/tsir/tsir_text.c -o build/tsir/tsir_text.o"
+    },
+    {
+      "seq": 71,
+      "at": "2026-10-26T23:36:12.622Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/tsir/"
+    },
+    {
+      "seq": 72,
+      "at": "2026-10-26T23:36:12.623Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror -g -fPIC  -Isrc/tsir -c src/tsir/tsir_transcendental.c -o build/tsir/tsir_transcendental.o"
+    },
+    {
+      "seq": 73,
+      "at": "2026-10-26T23:36:12.658Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/tsir/"
+    },
+    {
+      "seq": 74,
+      "at": "2026-10-26T23:36:12.660Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror -g -fPIC  -Isrc/tsir -c src/tsir/tsir_wgsl_ir.c -o build/tsir/tsir_wgsl_ir.o"
+    },
+    {
+      "seq": 75,
+      "at": "2026-10-26T23:36:12.721Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "rm -f build/libdoe_tsir.a"
+    },
+    {
+      "seq": 76,
+      "at": "2026-10-26T23:36:12.724Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "ar rcs build/libdoe_tsir.a build/tsir/tsir_bootstrap.o build/tsir/tsir_bootstrap_manifest.o build/tsir/tsir_bootstrap_oracle.o build/tsir/tsir_digest.o build/tsir/tsir_emit.o build/tsir/tsir_extended.o build/tsir/tsir_extended_ops.o build/tsir/tsir_family_hint.o build/tsir/tsir_file.o build/tsir/tsir_format.o build/tsir/tsir_frontend.o build/tsir/tsir_frontend_axes.o build/tsir/tsir_frontend_bindings_axes.o build/tsir/tsir_frontend_expr.o build/tsir/tsir_frontend_lower.o build/tsir/tsir_frontend_passes.o build/tsir/tsir_frontend_reductions.o build/tsir/tsir_json.o build/tsir/tsir_kernel_body.o build/tsir/tsir_planner.o build/tsir/tsir_reference.o build/tsir/tsir_reference_bodies.o build/tsir/tsir_scalar.o build/tsir/tsir_schema.o build/tsir/tsir_sha256.o build/tsir/tsir_source.o build/tsir/tsir_source_expr.o build/tsir/tsir_source_packed.o build/tsir/tsir_source_stmts.o build/tsir/tsir_targets.o build/tsir/tsir_text.o build/tsir/tsir_transcendental.o build/tsir/tsir_wgsl_ir.o"
+    },
+    {
+      "seq": 77,
+      "at": "2026-10-26T23:36:12.741Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/dxil/"
+    },
+    {
+      "seq": 78,
+      "at": "2026-10-26T23:36:12.743Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/dxil/dxil_analyze.c -o build/dxil/dxil_analyze.o"
+    },
+    {
+      "seq": 79,
+      "at": "2026-10-26T23:36:12.811Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/dxil/"
+    },
+    {
+      "seq": 80,
+      "at": "2026-10-26T23:36:12.812Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/dxil/dxil_bitcode.c -o build/dxil/dxil_bitcode.o"
+    },
+    {
+      "seq": 81,
+      "at": "2026-10-26T23:36:12.859Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/dxil/"
+    },
+    {
+      "seq": 82,
+      "at": "2026-10-26T23:36:12.860Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/dxil/dxil_builder.c -o build/dxil/dxil_builder.o"
+    },
+    {
+      "seq": 83,
+      "at": "2026-10-26T23:36:12.912Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/dxil/"
+    },
+    {
+      "seq": 84,
+      "at": "2026-10-26T23:36:12.914Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/dxil/dxil_container.c -o build/dxil/dxil_container.o"
+    },
+    {
+      "seq": 85,
+      "at": "2026-10-26T23:36:12.955Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/dxil/"
+    },
+    {
+      "seq": 86,
+      "at": "2026-10-26T23:36:12.956Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/dxil/dxil_diagnostic.c -o build/dxil/dxil_diagnostic.o"
+    },
+    {
+      "seq": 87,
+      "at": "2026-10-26T23:36:12.998Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/dxil/"
+    },
+    {
+      "seq": 88,
+      "at": "2026-10-26T23:36:13.000Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/dxil/dxil_emit.c -o build/dxil/dxil_emit.o"
+    },
+    {
+      "seq": 89,
+      "at": "2026-10-26T23:36:13.046Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/dxil/"
+    },
+    {
+      "seq": 90,
+      "at": "2026-10-26T23:36:13.047Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/dxil/dxil_error.c -o build/dxil/dxil_error.o"
+    },
+    {
+      "seq": 91,
+      "at": "2026-10-26T23:36:13.073Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/dxil/"
+    },
+    {
+      "seq": 92,
+      "at": "2026-10-26T23:36:13.074Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/dxil/dxil_files.c -o build/dxil/dxil_files.o"
+    },
+    {
+      "seq": 93,
+      "at": "2026-10-26T23:36:13.106Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/dxil/"
+    },
+    {
+      "seq": 94,
+      "at": "2026-10-26T23:36:13.107Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/dxil/dxil_hlsl.c -o build/dxil/dxil_hlsl.o"
+    },
+    {
+      "seq": 95,
+      "at": "2026-10-26T23:36:13.191Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/dxil/"
+    },
+    {
+      "seq": 96,
+      "at": "2026-10-26T23:36:13.192Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/dxil/dxil_hlsl_array.c -o build/dxil/dxil_hlsl_array.o"
+    },
+    {
+      "seq": 97,
+      "at": "2026-10-26T23:36:13.230Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/dxil/"
+    },
+    {
+      "seq": 98,
+      "at": "2026-10-26T23:36:13.232Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/dxil/dxil_hlsl_expr.c -o build/dxil/dxil_hlsl_expr.o"
+    },
+    {
+      "seq": 99,
+      "at": "2026-10-26T23:36:13.295Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/dxil/"
+    },
+    {
+      "seq": 100,
+      "at": "2026-10-26T23:36:13.296Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/dxil/dxil_hlsl_helpers.c -o build/dxil/dxil_hlsl_helpers.o"
+    },
+    {
+      "seq": 101,
+      "at": "2026-10-26T23:36:13.357Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/dxil/"
+    },
+    {
+      "seq": 102,
+      "at": "2026-10-26T23:36:13.359Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/dxil/dxil_hlsl_names.c -o build/dxil/dxil_hlsl_names.o"
+    },
+    {
+      "seq": 103,
+      "at": "2026-10-26T23:36:13.398Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/dxil/"
+    },
+    {
+      "seq": 104,
+      "at": "2026-10-26T23:36:13.399Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/dxil/dxil_hlsl_numeric.c -o build/dxil/dxil_hlsl_numeric.o"
+    },
+    {
+      "seq": 105,
+      "at": "2026-10-26T23:36:13.448Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/dxil/"
+    },
+    {
+      "seq": 106,
+      "at": "2026-10-26T23:36:13.450Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/dxil/dxil_hlsl_pointer.c -o build/dxil/dxil_hlsl_pointer.o"
+    },
+    {
+      "seq": 107,
+      "at": "2026-10-26T23:36:13.494Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/dxil/"
+    },
+    {
+      "seq": 108,
+      "at": "2026-10-26T23:36:13.496Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/dxil/dxil_hlsl_stage.c -o build/dxil/dxil_hlsl_stage.o"
+    },
+    {
+      "seq": 109,
+      "at": "2026-10-26T23:36:13.549Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/dxil/"
+    },
+    {
+      "seq": 110,
+      "at": "2026-10-26T23:36:13.550Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/dxil/dxil_hlsl_stmt.c -o build/dxil/dxil_hlsl_stmt.o"
+    },
+    {
+      "seq": 111,
+      "at": "2026-10-26T23:36:13.595Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/dxil/"
+    },
+    {
+      "seq": 112,
+      "at": "2026-10-26T23:36:13.596Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/dxil/dxil_hlsl_store.c -o build/dxil/dxil_hlsl_store.o"
+    },
+    {
+      "seq": 113,
+      "at": "2026-10-26T23:36:13.644Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/dxil/"
+    },
+    {
+      "seq": 114,
+      "at": "2026-10-26T23:36:13.645Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/dxil/dxil_hlsl_texture.c -o build/dxil/dxil_hlsl_texture.o"
+    },
+    {
+      "seq": 115,
+      "at": "2026-10-26T23:36:13.706Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/dxil/"
+    },
+    {
+      "seq": 116,
+      "at": "2026-10-26T23:36:13.707Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/dxil/dxil_ir.c -o build/dxil/dxil_ir.o"
+    },
+    {
+      "seq": 117,
+      "at": "2026-10-26T23:36:13.762Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/dxil/"
+    },
+    {
+      "seq": 118,
+      "at": "2026-10-26T23:36:13.764Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/dxil/dxil_ir_query.c -o build/dxil/dxil_ir_query.o"
+    },
+    {
+      "seq": 119,
+      "at": "2026-10-26T23:36:13.833Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/dxil/"
+    },
+    {
+      "seq": 120,
+      "at": "2026-10-26T23:36:13.834Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/dxil/dxil_ir_validate.c -o build/dxil/dxil_ir_validate.o"
+    },
+    {
+      "seq": 121,
+      "at": "2026-10-26T23:36:13.891Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/dxil/"
+    },
+    {
+      "seq": 122,
+      "at": "2026-10-26T23:36:13.892Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/dxil/dxil_mapping.c -o build/dxil/dxil_mapping.o"
+    },
+    {
+      "seq": 123,
+      "at": "2026-10-26T23:36:13.927Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/dxil/"
+    },
+    {
+      "seq": 124,
+      "at": "2026-10-26T23:36:13.929Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/dxil/dxil_md5.c -o build/dxil/dxil_md5.o"
+    },
+    {
+      "seq": 125,
+      "at": "2026-10-26T23:36:13.970Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/dxil/"
+    },
+    {
+      "seq": 126,
+      "at": "2026-10-26T23:36:13.972Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/dxil/dxil_native.c -o build/dxil/dxil_native.o"
+    },
+    {
+      "seq": 127,
+      "at": "2026-10-26T23:36:14.023Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/dxil/"
+    },
+    {
+      "seq": 128,
+      "at": "2026-10-26T23:36:14.025Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/dxil/dxil_native_walk.c -o build/dxil/dxil_native_walk.o"
+    },
+    {
+      "seq": 129,
+      "at": "2026-10-26T23:36:14.075Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/dxil/"
+    },
+    {
+      "seq": 130,
+      "at": "2026-10-26T23:36:14.077Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/dxil/dxil_process_windows.c -o build/dxil/dxil_process_windows.o"
+    },
+    {
+      "seq": 131,
+      "at": "2026-10-26T23:36:14.102Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/dxil/"
+    },
+    {
+      "seq": 132,
+      "at": "2026-10-26T23:36:14.103Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/dxil/dxil_serialize.c -o build/dxil/dxil_serialize.o"
+    },
+    {
+      "seq": 133,
+      "at": "2026-10-26T23:36:14.170Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/dxil/"
+    },
+    {
+      "seq": 134,
+      "at": "2026-10-26T23:36:14.172Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/dxil/dxil_source.c -o build/dxil/dxil_source.o"
+    },
+    {
+      "seq": 135,
+      "at": "2026-10-26T23:36:14.225Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/dxil/"
+    },
+    {
+      "seq": 136,
+      "at": "2026-10-26T23:36:14.227Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/dxil/dxil_source_native_bounds.c -o build/dxil/dxil_source_native_bounds.o"
+    },
+    {
+      "seq": 137,
+      "at": "2026-10-26T23:36:14.293Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/dxil/"
+    },
+    {
+      "seq": 138,
+      "at": "2026-10-26T23:36:14.294Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/dxil/dxil_source_native_expr.c -o build/dxil/dxil_source_native_expr.o"
+    },
+    {
+      "seq": 139,
+      "at": "2026-10-26T23:36:14.366Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/dxil/"
+    },
+    {
+      "seq": 140,
+      "at": "2026-10-26T23:36:14.368Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/dxil/dxil_source_native_globals.c -o build/dxil/dxil_source_native_globals.o"
+    },
+    {
+      "seq": 141,
+      "at": "2026-10-26T23:36:14.421Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/dxil/"
+    },
+    {
+      "seq": 142,
+      "at": "2026-10-26T23:36:14.423Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/dxil/dxil_source_native_opt.c -o build/dxil/dxil_source_native_opt.o"
+    },
+    {
+      "seq": 143,
+      "at": "2026-10-26T23:36:14.495Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/dxil/"
+    },
+    {
+      "seq": 144,
+      "at": "2026-10-26T23:36:14.497Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/dxil/dxil_source_native_packed.c -o build/dxil/dxil_source_native_packed.o"
+    },
+    {
+      "seq": 145,
+      "at": "2026-10-26T23:36:14.542Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/dxil/"
+    },
+    {
+      "seq": 146,
+      "at": "2026-10-26T23:36:14.543Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/dxil/dxil_source_native_stmts.c -o build/dxil/dxil_source_native_stmts.o"
+    },
+    {
+      "seq": 147,
+      "at": "2026-10-26T23:36:14.609Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/dxil/"
+    },
+    {
+      "seq": 148,
+      "at": "2026-10-26T23:36:14.611Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/dxil/dxil_source_native_types.c -o build/dxil/dxil_source_native_types.o"
+    },
+    {
+      "seq": 149,
+      "at": "2026-10-26T23:36:14.660Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/dxil/"
+    },
+    {
+      "seq": 150,
+      "at": "2026-10-26T23:36:14.661Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/dxil/dxil_spec.c -o build/dxil/dxil_spec.o"
+    },
+    {
+      "seq": 151,
+      "at": "2026-10-26T23:36:14.688Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/dxil/"
+    },
+    {
+      "seq": 152,
+      "at": "2026-10-26T23:36:14.690Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/dxil/dxil_toolchain.c -o build/dxil/dxil_toolchain.o"
+    },
+    {
+      "seq": 153,
+      "at": "2026-10-26T23:36:14.751Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/dxil/"
+    },
+    {
+      "seq": 154,
+      "at": "2026-10-26T23:36:14.753Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/dxil/dxil_translate.c -o build/dxil/dxil_translate.o"
+    },
+    {
+      "seq": 155,
+      "at": "2026-10-26T23:36:14.788Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/dxil/"
+    },
+    {
+      "seq": 156,
+      "at": "2026-10-26T23:36:14.790Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/dxil/dxil_validate.c -o build/dxil/dxil_validate.o"
+    },
+    {
+      "seq": 157,
+      "at": "2026-10-26T23:36:14.836Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "rm -f build/libdoe_dxil.a"
+    },
+    {
+      "seq": 158,
+      "at": "2026-10-26T23:36:14.837Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "ar rcs build/libdoe_dxil.a build/dxil/dxil_analyze.o build/dxil/dxil_bitcode.o build/dxil/dxil_builder.o build/dxil/dxil_container.o build/dxil/dxil_diagnostic.o build/dxil/dxil_emit.o build/dxil/dxil_error.o build/dxil/dxil_files.o build/dxil/dxil_hlsl.o build/dxil/dxil_hlsl_array.o build/dxil/dxil_hlsl_expr.o build/dxil/dxil_hlsl_helpers.o build/dxil/dxil_hlsl_names.o build/dxil/dxil_hlsl_numeric.o build/dxil/dxil_hlsl_pointer.o build/dxil/dxil_hlsl_stage.o build/dxil/dxil_hlsl_stmt.o build/dxil/dxil_hlsl_store.o build/dxil/dxil_hlsl_texture.o build/dxil/dxil_ir.o build/dxil/dxil_ir_query.o build/dxil/dxil_ir_validate.o build/dxil/dxil_mapping.o build/dxil/dxil_md5.o build/dxil/dxil_native.o build/dxil/dxil_native_walk.o build/dxil/dxil_process_windows.o build/dxil/dxil_serialize.o build/dxil/dxil_source.o build/dxil/dxil_source_native_bounds.o build/dxil/dxil_source_native_expr.o build/dxil/dxil_source_native_globals.o build/dxil/dxil_source_native_opt.o build/dxil/dxil_source_native_packed.o build/dxil/dxil_source_native_stmts.o build/dxil/dxil_source_native_types.o build/dxil/dxil_spec.o build/dxil/dxil_toolchain.o build/dxil/dxil_translate.o build/dxil/dxil_validate.o"
+    },
+    {
+      "seq": 159,
+      "at": "2026-10-26T23:36:14.851Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/targets/metal/"
+    },
+    {
+      "seq": 160,
+      "at": "2026-10-26T23:36:14.852Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c targets/metal/bindings.c -o build/host-core/targets/metal/bindings.o"
+    },
+    {
+      "seq": 161,
+      "at": "2026-10-26T23:36:14.903Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/targets/metal/"
+    },
+    {
+      "seq": 162,
+      "at": "2026-10-26T23:36:14.905Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c targets/metal/text.c -o build/host-core/targets/metal/text.o"
+    },
+    {
+      "seq": 163,
+      "at": "2026-10-26T23:36:14.954Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/targets/metal/"
+    },
+    {
+      "seq": 164,
+      "at": "2026-10-26T23:36:14.956Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c targets/metal/zero.c -o build/host-core/targets/metal/zero.o"
+    },
+    {
+      "seq": 165,
+      "at": "2026-10-26T23:36:15.009Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/targets/metal/"
+    },
+    {
+      "seq": 166,
+      "at": "2026-10-26T23:36:15.010Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c targets/metal/types.c -o build/host-core/targets/metal/types.o"
+    },
+    {
+      "seq": 167,
+      "at": "2026-10-26T23:36:15.095Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/targets/metal/"
+    },
+    {
+      "seq": 168,
+      "at": "2026-10-26T23:36:15.097Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c targets/metal/numeric.c -o build/host-core/targets/metal/numeric.o"
+    },
+    {
+      "seq": 169,
+      "at": "2026-10-26T23:36:15.396Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/targets/metal/"
+    },
+    {
+      "seq": 170,
+      "at": "2026-10-26T23:36:15.397Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c targets/metal/access.c -o build/host-core/targets/metal/access.o"
+    },
+    {
+      "seq": 171,
+      "at": "2026-10-26T23:36:15.454Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/targets/metal/"
+    },
+    {
+      "seq": 172,
+      "at": "2026-10-26T23:36:15.456Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c targets/metal/control.c -o build/host-core/targets/metal/control.o"
+    },
+    {
+      "seq": 173,
+      "at": "2026-10-26T23:36:15.504Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/targets/metal/"
+    },
+    {
+      "seq": 174,
+      "at": "2026-10-26T23:36:15.505Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c targets/metal/stage.c -o build/host-core/targets/metal/stage.o"
+    },
+    {
+      "seq": 175,
+      "at": "2026-10-26T23:36:15.607Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/targets/metal/"
+    },
+    {
+      "seq": 176,
+      "at": "2026-10-26T23:36:15.608Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c targets/metal/handles.c -o build/host-core/targets/metal/handles.o"
+    },
+    {
+      "seq": 177,
+      "at": "2026-10-26T23:36:15.656Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/targets/metal/"
+    },
+    {
+      "seq": 178,
+      "at": "2026-10-26T23:36:15.658Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c targets/metal/image.c -o build/host-core/targets/metal/image.o"
+    },
+    {
+      "seq": 179,
+      "at": "2026-10-26T23:36:15.723Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/targets/metal/"
+    },
+    {
+      "seq": 180,
+      "at": "2026-10-26T23:36:15.725Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c targets/metal/graphics.c -o build/host-core/targets/metal/graphics.o"
+    },
+    {
+      "seq": 181,
+      "at": "2026-10-26T23:36:15.780Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/targets/metal/"
+    },
+    {
+      "seq": 182,
+      "at": "2026-10-26T23:36:15.781Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c targets/metal/float_pack.c -o build/host-core/targets/metal/float_pack.o"
+    },
+    {
+      "seq": 183,
+      "at": "2026-10-26T23:36:15.817Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/targets/metal/"
+    },
+    {
+      "seq": 184,
+      "at": "2026-10-26T23:36:15.818Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c targets/metal/subgroup.c -o build/host-core/targets/metal/subgroup.o"
+    },
+    {
+      "seq": 185,
+      "at": "2026-10-26T23:36:15.856Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/targets/hlsl/"
+    },
+    {
+      "seq": 186,
+      "at": "2026-10-26T23:36:15.858Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c targets/hlsl/text.c -o build/host-core/targets/hlsl/text.o"
+    },
+    {
+      "seq": 187,
+      "at": "2026-10-26T23:36:15.918Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/targets/hlsl/"
+    },
+    {
+      "seq": 188,
+      "at": "2026-10-26T23:36:15.919Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c targets/hlsl/types.c -o build/host-core/targets/hlsl/types.o"
+    },
+    {
+      "seq": 189,
+      "at": "2026-10-26T23:36:15.976Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/targets/hlsl/"
+    },
+    {
+      "seq": 190,
+      "at": "2026-10-26T23:36:15.978Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c targets/hlsl/resources.c -o build/host-core/targets/hlsl/resources.o"
+    },
+    {
+      "seq": 191,
+      "at": "2026-10-26T23:36:16.051Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/targets/hlsl/"
+    },
+    {
+      "seq": 192,
+      "at": "2026-10-26T23:36:16.053Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c targets/hlsl/image_types.c -o build/host-core/targets/hlsl/image_types.o"
+    },
+    {
+      "seq": 193,
+      "at": "2026-10-26T23:36:16.092Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/targets/hlsl/"
+    },
+    {
+      "seq": 194,
+      "at": "2026-10-26T23:36:16.093Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c targets/hlsl/image.c -o build/host-core/targets/hlsl/image.o"
+    },
+    {
+      "seq": 195,
+      "at": "2026-10-26T23:36:16.156Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/targets/hlsl/"
+    },
+    {
+      "seq": 196,
+      "at": "2026-10-26T23:36:16.158Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c targets/hlsl/numeric.c -o build/host-core/targets/hlsl/numeric.o"
+    },
+    {
+      "seq": 197,
+      "at": "2026-10-26T23:36:16.229Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/targets/hlsl/"
+    },
+    {
+      "seq": 198,
+      "at": "2026-10-26T23:36:16.231Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c targets/hlsl/access.c -o build/host-core/targets/hlsl/access.o"
+    },
+    {
+      "seq": 199,
+      "at": "2026-10-26T23:36:16.286Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/targets/hlsl/"
+    },
+    {
+      "seq": 200,
+      "at": "2026-10-26T23:36:16.287Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c targets/hlsl/control.c -o build/host-core/targets/hlsl/control.o"
+    },
+    {
+      "seq": 201,
+      "at": "2026-10-26T23:36:16.334Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/targets/hlsl/"
+    },
+    {
+      "seq": 202,
+      "at": "2026-10-26T23:36:16.335Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c targets/hlsl/stage.c -o build/host-core/targets/hlsl/stage.o"
+    },
+    {
+      "seq": 203,
+      "at": "2026-10-26T23:36:16.417Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/targets/hlsl/"
+    },
+    {
+      "seq": 204,
+      "at": "2026-10-26T23:36:16.418Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c targets/hlsl/graphics.c -o build/host-core/targets/hlsl/graphics.o"
+    },
+    {
+      "seq": 205,
+      "at": "2026-10-26T23:36:16.480Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/targets/hlsl/"
+    },
+    {
+      "seq": 206,
+      "at": "2026-10-26T23:36:16.481Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c targets/hlsl/float_pack.c -o build/host-core/targets/hlsl/float_pack.o"
+    },
+    {
+      "seq": 207,
+      "at": "2026-10-26T23:36:16.517Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/targets/hlsl/"
+    },
+    {
+      "seq": 208,
+      "at": "2026-10-26T23:36:16.518Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c targets/hlsl/subgroup.c -o build/host-core/targets/hlsl/subgroup.o"
+    },
+    {
+      "seq": 209,
+      "at": "2026-10-26T23:36:16.551Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/src/"
+    },
+    {
+      "seq": 210,
+      "at": "2026-10-26T23:36:16.552Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/pipeline.c -o build/host-core/src/pipeline.o"
+    },
+    {
+      "seq": 211,
+      "at": "2026-10-26T23:36:16.587Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/src/"
+    },
+    {
+      "seq": 212,
+      "at": "2026-10-26T23:36:16.589Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/override.c -o build/host-core/src/override.o"
+    },
+    {
+      "seq": 213,
+      "at": "2026-10-26T23:36:16.638Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/src/"
+    },
+    {
+      "seq": 214,
+      "at": "2026-10-26T23:36:16.639Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/parse_override.c -o build/host-core/src/parse_override.o"
+    },
+    {
+      "seq": 215,
+      "at": "2026-10-26T23:36:16.674Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/src/"
+    },
+    {
+      "seq": 216,
+      "at": "2026-10-26T23:36:16.675Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/specialization.c -o build/host-core/src/specialization.o"
+    },
+    {
+      "seq": 217,
+      "at": "2026-10-26T23:36:16.732Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/src/"
+    },
+    {
+      "seq": 218,
+      "at": "2026-10-26T23:36:16.734Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/specialization_compile.c -o build/host-core/src/specialization_compile.o"
+    },
+    {
+      "seq": 219,
+      "at": "2026-10-26T23:36:16.780Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/src/"
+    },
+    {
+      "seq": 220,
+      "at": "2026-10-26T23:36:16.782Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/override_plan.c -o build/host-core/src/override_plan.o"
+    },
+    {
+      "seq": 221,
+      "at": "2026-10-26T23:36:16.844Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/src/"
+    },
+    {
+      "seq": 222,
+      "at": "2026-10-26T23:36:16.845Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/override_selection.c -o build/host-core/src/override_selection.o"
+    },
+    {
+      "seq": 223,
+      "at": "2026-10-26T23:36:16.888Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/src/"
+    },
+    {
+      "seq": 224,
+      "at": "2026-10-26T23:36:16.890Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/compile_spans.c -o build/host-core/src/compile_spans.o"
+    },
+    {
+      "seq": 225,
+      "at": "2026-10-26T23:36:16.930Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/src/"
+    },
+    {
+      "seq": 226,
+      "at": "2026-10-26T23:36:16.932Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/compile_metadata.c -o build/host-core/src/compile_metadata.o"
+    },
+    {
+      "seq": 227,
+      "at": "2026-10-26T23:36:16.970Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/src/"
+    },
+    {
+      "seq": 228,
+      "at": "2026-10-26T23:36:16.972Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/compile_text.c -o build/host-core/src/compile_text.o"
+    },
+    {
+      "seq": 229,
+      "at": "2026-10-26T23:36:17.030Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/src/"
+    },
+    {
+      "seq": 230,
+      "at": "2026-10-26T23:36:17.031Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/text_metal.c -o build/host-core/src/text_metal.o"
+    },
+    {
+      "seq": 231,
+      "at": "2026-10-26T23:36:17.071Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/src/"
+    },
+    {
+      "seq": 232,
+      "at": "2026-10-26T23:36:17.073Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/text_hlsl.c -o build/host-core/src/text_hlsl.o"
+    },
+    {
+      "seq": 233,
+      "at": "2026-10-26T23:36:17.104Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/src/"
+    },
+    {
+      "seq": 234,
+      "at": "2026-10-26T23:36:17.106Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/sema_matrix.c -o build/host-core/src/sema_matrix.o"
+    },
+    {
+      "seq": 235,
+      "at": "2026-10-26T23:36:17.170Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/src/"
+    },
+    {
+      "seq": 236,
+      "at": "2026-10-26T23:36:17.171Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/spirv_matrix.c -o build/host-core/src/spirv_matrix.o"
+    },
+    {
+      "seq": 237,
+      "at": "2026-10-26T23:36:17.209Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/src/"
+    },
+    {
+      "seq": 238,
+      "at": "2026-10-26T23:36:17.211Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/spirv_atomic.c -o build/host-core/src/spirv_atomic.o"
+    },
+    {
+      "seq": 239,
+      "at": "2026-10-26T23:36:17.242Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/src/"
+    },
+    {
+      "seq": 240,
+      "at": "2026-10-26T23:36:17.243Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/spirv_uniform.c -o build/host-core/src/spirv_uniform.o"
+    },
+    {
+      "seq": 241,
+      "at": "2026-10-26T23:36:17.308Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/src/"
+    },
+    {
+      "seq": 242,
+      "at": "2026-10-26T23:36:17.310Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/spirv_workgroup.c -o build/host-core/src/spirv_workgroup.o"
+    },
+    {
+      "seq": 243,
+      "at": "2026-10-26T23:36:17.352Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/src/"
+    },
+    {
+      "seq": 244,
+      "at": "2026-10-26T23:36:17.353Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/sema_array.c -o build/host-core/src/sema_array.o"
+    },
+    {
+      "seq": 245,
+      "at": "2026-10-26T23:36:17.383Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/src/"
+    },
+    {
+      "seq": 246,
+      "at": "2026-10-26T23:36:17.385Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/sema_atomic.c -o build/host-core/src/sema_atomic.o"
+    },
+    {
+      "seq": 247,
+      "at": "2026-10-26T23:36:17.415Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/src/"
+    },
+    {
+      "seq": 248,
+      "at": "2026-10-26T23:36:17.417Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/sema_pointer.c -o build/host-core/src/sema_pointer.o"
+    },
+    {
+      "seq": 249,
+      "at": "2026-10-26T23:36:17.473Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/src/"
+    },
+    {
+      "seq": 250,
+      "at": "2026-10-26T23:36:17.474Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/stage.c -o build/host-core/src/stage.o"
+    },
+    {
+      "seq": 251,
+      "at": "2026-10-26T23:36:17.520Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/src/"
+    },
+    {
+      "seq": 252,
+      "at": "2026-10-26T23:36:17.522Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/parse_interface.c -o build/host-core/src/parse_interface.o"
+    },
+    {
+      "seq": 253,
+      "at": "2026-10-26T23:36:17.560Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/src/"
+    },
+    {
+      "seq": 254,
+      "at": "2026-10-26T23:36:17.562Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/sema_stage.c -o build/host-core/src/sema_stage.o"
+    },
+    {
+      "seq": 255,
+      "at": "2026-10-26T23:36:17.621Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/src/"
+    },
+    {
+      "seq": 256,
+      "at": "2026-10-26T23:36:17.623Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/spirv_stage.c -o build/host-core/src/spirv_stage.o"
+    },
+    {
+      "seq": 257,
+      "at": "2026-10-26T23:36:17.672Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/src/"
+    },
+    {
+      "seq": 258,
+      "at": "2026-10-26T23:36:17.673Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/sema_finalize.c -o build/host-core/src/sema_finalize.o"
+    },
+    {
+      "seq": 259,
+      "at": "2026-10-26T23:36:17.715Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/src/"
+    },
+    {
+      "seq": 260,
+      "at": "2026-10-26T23:36:17.716Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/image.c -o build/host-core/src/image.o"
+    },
+    {
+      "seq": 261,
+      "at": "2026-10-26T23:36:17.759Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/src/"
+    },
+    {
+      "seq": 262,
+      "at": "2026-10-26T23:36:17.761Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/sema_image.c -o build/host-core/src/sema_image.o"
+    },
+    {
+      "seq": 263,
+      "at": "2026-10-26T23:36:17.810Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/src/"
+    },
+    {
+      "seq": 264,
+      "at": "2026-10-26T23:36:17.812Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/spirv_image.c -o build/host-core/src/spirv_image.o"
+    },
+    {
+      "seq": 265,
+      "at": "2026-10-26T23:36:17.892Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/src/"
+    },
+    {
+      "seq": 266,
+      "at": "2026-10-26T23:36:17.894Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/module.c -o build/host-core/src/module.o"
+    },
+    {
+      "seq": 267,
+      "at": "2026-10-26T23:36:17.959Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/src/"
+    },
+    {
+      "seq": 268,
+      "at": "2026-10-26T23:36:17.960Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/builtin.c -o build/host-core/src/builtin.o"
+    },
+    {
+      "seq": 269,
+      "at": "2026-10-26T23:36:18.029Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/src/"
+    },
+    {
+      "seq": 270,
+      "at": "2026-10-26T23:36:18.031Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/numeric.c -o build/host-core/src/numeric.o"
+    },
+    {
+      "seq": 271,
+      "at": "2026-10-26T23:36:18.156Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/src/"
+    },
+    {
+      "seq": 272,
+      "at": "2026-10-26T23:36:18.157Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/numeric_math.c -o build/host-core/src/numeric_math.o"
+    },
+    {
+      "seq": 273,
+      "at": "2026-10-26T23:36:18.193Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/src/"
+    },
+    {
+      "seq": 274,
+      "at": "2026-10-26T23:36:18.195Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/numeric_environment.c -o build/host-core/src/numeric_environment.o"
+    },
+    {
+      "seq": 275,
+      "at": "2026-10-26T23:36:18.230Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/src/"
+    },
+    {
+      "seq": 276,
+      "at": "2026-10-26T23:36:18.231Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/lex.c -o build/host-core/src/lex.o"
+    },
+    {
+      "seq": 277,
+      "at": "2026-10-26T23:36:18.275Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/src/"
+    },
+    {
+      "seq": 278,
+      "at": "2026-10-26T23:36:18.276Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/parse.c -o build/host-core/src/parse.o"
+    },
+    {
+      "seq": 279,
+      "at": "2026-10-26T23:36:18.499Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/src/"
+    },
+    {
+      "seq": 280,
+      "at": "2026-10-26T23:36:18.501Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/parse_statements.c -o build/host-core/src/parse_statements.o"
+    },
+    {
+      "seq": 281,
+      "at": "2026-10-26T23:36:18.547Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/src/"
+    },
+    {
+      "seq": 282,
+      "at": "2026-10-26T23:36:18.548Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/validate.c -o build/host-core/src/validate.o"
+    },
+    {
+      "seq": 283,
+      "at": "2026-10-26T23:36:18.640Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/src/"
+    },
+    {
+      "seq": 284,
+      "at": "2026-10-26T23:36:18.642Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/uniformity.c -o build/host-core/src/uniformity.o"
+    },
+    {
+      "seq": 285,
+      "at": "2026-10-26T23:36:18.809Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/src/"
+    },
+    {
+      "seq": 286,
+      "at": "2026-10-26T23:36:18.811Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/types.c -o build/host-core/src/types.o"
+    },
+    {
+      "seq": 287,
+      "at": "2026-10-26T23:36:18.876Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/src/"
+    },
+    {
+      "seq": 288,
+      "at": "2026-10-26T23:36:18.878Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/constants.c -o build/host-core/src/constants.o"
+    },
+    {
+      "seq": 289,
+      "at": "2026-10-26T23:36:18.919Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/src/"
+    },
+    {
+      "seq": 290,
+      "at": "2026-10-26T23:36:18.920Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/sema_declarations.c -o build/host-core/src/sema_declarations.o"
+    },
+    {
+      "seq": 291,
+      "at": "2026-10-26T23:36:19.075Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/src/"
+    },
+    {
+      "seq": 292,
+      "at": "2026-10-26T23:36:19.077Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/sema_expression.c -o build/host-core/src/sema_expression.o"
+    },
+    {
+      "seq": 293,
+      "at": "2026-10-26T23:36:19.177Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/src/"
+    },
+    {
+      "seq": 294,
+      "at": "2026-10-26T23:36:19.178Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/sema_call.c -o build/host-core/src/sema_call.o"
+    },
+    {
+      "seq": 295,
+      "at": "2026-10-26T23:36:19.285Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/src/"
+    },
+    {
+      "seq": 296,
+      "at": "2026-10-26T23:36:19.286Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/sema_select.c -o build/host-core/src/sema_select.o"
+    },
+    {
+      "seq": 297,
+      "at": "2026-10-26T23:36:19.323Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/src/"
+    },
+    {
+      "seq": 298,
+      "at": "2026-10-26T23:36:19.324Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/reflection.c -o build/host-core/src/reflection.o"
+    },
+    {
+      "seq": 299,
+      "at": "2026-10-26T23:36:19.421Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/src/"
+    },
+    {
+      "seq": 300,
+      "at": "2026-10-26T23:36:19.423Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/spirv.c -o build/host-core/src/spirv.o"
+    },
+    {
+      "seq": 301,
+      "at": "2026-10-26T23:36:19.590Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/src/"
+    },
+    {
+      "seq": 302,
+      "at": "2026-10-26T23:36:19.591Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/spirv_switch.c -o build/host-core/src/spirv_switch.o"
+    },
+    {
+      "seq": 303,
+      "at": "2026-10-26T23:36:19.629Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/src/"
+    },
+    {
+      "seq": 304,
+      "at": "2026-10-26T23:36:19.630Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/spirv_module.c -o build/host-core/src/spirv_module.o"
+    },
+    {
+      "seq": 305,
+      "at": "2026-10-26T23:36:19.805Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/src/"
+    },
+    {
+      "seq": 306,
+      "at": "2026-10-26T23:36:19.806Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/spirv_subgroup.c -o build/host-core/src/spirv_subgroup.o"
+    },
+    {
+      "seq": 307,
+      "at": "2026-10-26T23:36:19.839Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/src/"
+    },
+    {
+      "seq": 308,
+      "at": "2026-10-26T23:36:19.840Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/compile.c -o build/host-core/src/compile.o"
+    },
+    {
+      "seq": 309,
+      "at": "2026-10-26T23:36:19.903Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/src/"
+    },
+    {
+      "seq": 310,
+      "at": "2026-10-26T23:36:19.904Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/storage.c -o build/host-core/src/storage.o"
+    },
+    {
+      "seq": 311,
+      "at": "2026-10-26T23:36:19.958Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/src/"
+    },
+    {
+      "seq": 312,
+      "at": "2026-10-26T23:36:19.959Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/sema_packed.c -o build/host-core/src/sema_packed.o"
+    },
+    {
+      "seq": 313,
+      "at": "2026-10-26T23:36:20.004Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/src/"
+    },
+    {
+      "seq": 314,
+      "at": "2026-10-26T23:36:20.006Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/sema_interpolation.c -o build/host-core/src/sema_interpolation.o"
+    },
+    {
+      "seq": 315,
+      "at": "2026-10-26T23:36:20.041Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/src/"
+    },
+    {
+      "seq": 316,
+      "at": "2026-10-26T23:36:20.043Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/sema_bitfield.c -o build/host-core/src/sema_bitfield.o"
+    },
+    {
+      "seq": 317,
+      "at": "2026-10-26T23:36:20.095Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/src/"
+    },
+    {
+      "seq": 318,
+      "at": "2026-10-26T23:36:20.096Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/numeric_bits.c -o build/host-core/src/numeric_bits.o"
+    },
+    {
+      "seq": 319,
+      "at": "2026-10-26T23:36:20.127Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/src/"
+    },
+    {
+      "seq": 320,
+      "at": "2026-10-26T23:36:20.128Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/spirv_bits.c -o build/host-core/src/spirv_bits.o"
+    },
+    {
+      "seq": 321,
+      "at": "2026-10-26T23:36:20.164Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/src/"
+    },
+    {
+      "seq": 322,
+      "at": "2026-10-26T23:36:20.165Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/numeric_half.c -o build/host-core/src/numeric_half.o"
+    },
+    {
+      "seq": 323,
+      "at": "2026-10-26T23:36:20.198Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/src/"
+    },
+    {
+      "seq": 324,
+      "at": "2026-10-26T23:36:20.199Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/sampling.c -o build/host-core/src/sampling.o"
+    },
+    {
+      "seq": 325,
+      "at": "2026-10-26T23:36:20.242Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/src/"
+    },
+    {
+      "seq": 326,
+      "at": "2026-10-26T23:36:20.243Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/sema_decompose.c -o build/host-core/src/sema_decompose.o"
+    },
+    {
+      "seq": 327,
+      "at": "2026-10-26T23:36:20.280Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/src/"
+    },
+    {
+      "seq": 328,
+      "at": "2026-10-26T23:36:20.281Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/numeric_decompose.c -o build/host-core/src/numeric_decompose.o"
+    },
+    {
+      "seq": 329,
+      "at": "2026-10-26T23:36:20.321Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/src/"
+    },
+    {
+      "seq": 330,
+      "at": "2026-10-26T23:36:20.322Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/numeric_float_pack.c -o build/host-core/src/numeric_float_pack.o"
+    },
+    {
+      "seq": 331,
+      "at": "2026-10-26T23:36:20.361Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/src/"
+    },
+    {
+      "seq": 332,
+      "at": "2026-10-26T23:36:20.362Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/sema_float_pack.c -o build/host-core/src/sema_float_pack.o"
+    },
+    {
+      "seq": 333,
+      "at": "2026-10-26T23:36:20.394Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/src/"
+    },
+    {
+      "seq": 334,
+      "at": "2026-10-26T23:36:20.395Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/spirv_float_pack.c -o build/host-core/src/spirv_float_pack.o"
+    },
+    {
+      "seq": 335,
+      "at": "2026-10-26T23:36:20.432Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/src/"
+    },
+    {
+      "seq": 336,
+      "at": "2026-10-26T23:36:20.433Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/sema_subgroup.c -o build/host-core/src/sema_subgroup.o"
+    },
+    {
+      "seq": 337,
+      "at": "2026-10-26T23:36:20.470Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/src/"
+    },
+    {
+      "seq": 338,
+      "at": "2026-10-26T23:36:20.471Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/translation.c -o build/host-core/src/translation.o"
+    },
+    {
+      "seq": 339,
+      "at": "2026-10-26T23:36:20.511Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/src/"
+    },
+    {
+      "seq": 340,
+      "at": "2026-10-26T23:36:20.513Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/pointer_lower.c -o build/host-core/src/pointer_lower.o"
+    },
+    {
+      "seq": 341,
+      "at": "2026-10-26T23:36:20.587Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/src/"
+    },
+    {
+      "seq": 342,
+      "at": "2026-10-26T23:36:20.589Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/pointer_clone.c -o build/host-core/src/pointer_clone.o"
+    },
+    {
+      "seq": 343,
+      "at": "2026-10-26T23:36:20.627Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/src/"
+    },
+    {
+      "seq": 344,
+      "at": "2026-10-26T23:36:20.628Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/parse_diagnostics.c -o build/host-core/src/parse_diagnostics.o"
+    },
+    {
+      "seq": 345,
+      "at": "2026-10-26T23:36:20.663Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/host-core/src/"
+    },
+    {
+      "seq": 346,
+      "at": "2026-10-26T23:36:20.665Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c src/diagnostics.c -o build/host-core/src/diagnostics.o"
+    },
+    {
+      "seq": 347,
+      "at": "2026-10-26T23:36:20.715Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "rm -f build/libdoe_compiler_core.a"
+    },
+    {
+      "seq": 348,
+      "at": "2026-10-26T23:36:20.716Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "ar rcs build/libdoe_compiler_core.a build/host-core/targets/metal/bindings.o build/host-core/targets/metal/text.o build/host-core/targets/metal/zero.o build/host-core/targets/metal/types.o build/host-core/targets/metal/numeric.o build/host-core/targets/metal/access.o build/host-core/targets/metal/control.o build/host-core/targets/metal/stage.o build/host-core/targets/metal/handles.o build/host-core/targets/metal/image.o build/host-core/targets/metal/graphics.o build/host-core/targets/metal/float_pack.o build/host-core/targets/metal/subgroup.o build/host-core/targets/hlsl/text.o build/host-core/targets/hlsl/types.o build/host-core/targets/hlsl/resources.o build/host-core/targets/hlsl/image_types.o build/host-core/targets/hlsl/image.o build/host-core/targets/hlsl/numeric.o build/host-core/targets/hlsl/access.o build/host-core/targets/hlsl/control.o build/host-core/targets/hlsl/stage.o build/host-core/targets/hlsl/graphics.o build/host-core/targets/hlsl/float_pack.o build/host-core/targets/hlsl/subgroup.o build/host-core/src/pipeline.o build/host-core/src/override.o build/host-core/src/parse_override.o build/host-core/src/specialization.o build/host-core/src/specialization_compile.o build/host-core/src/override_plan.o build/host-core/src/override_selection.o build/host-core/src/compile_spans.o build/host-core/src/compile_metadata.o build/host-core/src/compile_text.o build/host-core/src/text_metal.o build/host-core/src/text_hlsl.o build/host-core/src/sema_matrix.o build/host-core/src/spirv_matrix.o build/host-core/src/spirv_atomic.o build/host-core/src/spirv_uniform.o build/host-core/src/spirv_workgroup.o build/host-core/src/sema_array.o build/host-core/src/sema_atomic.o build/host-core/src/sema_pointer.o build/host-core/src/stage.o build/host-core/src/parse_interface.o build/host-core/src/sema_stage.o build/host-core/src/spirv_stage.o build/host-core/src/sema_finalize.o build/host-core/src/image.o build/host-core/src/sema_image.o build/host-core/src/spirv_image.o build…"
+    },
+    {
+      "seq": 349,
+      "at": "2026-10-26T23:36:20.735Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/"
+    },
+    {
+      "seq": 350,
+      "at": "2026-10-26T23:36:20.736Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "python3 tools/export_symbols.py host/exports.map > build/libdoe_compiler_host.so.exports.tmp"
+    },
+    {
+      "seq": 351,
+      "at": "2026-10-26T23:36:20.765Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mv build/libdoe_compiler_host.so.exports.tmp build/libdoe_compiler_host.so.exports"
+    },
+    {
+      "seq": 352,
+      "at": "2026-10-26T23:36:20.767Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/"
+    },
+    {
+      "seq": 353,
+      "at": "2026-10-26T23:36:20.769Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -dynamiclib -Wl,-install_name,@rpath/libdoe_compiler_host.so -Wl,-exported_symbols_list,build/libdoe_compiler_host.so.exports build/host/dxil.o build/host/host.o build/host/tsir.o build/libdoe_tsir.a build/libdoe_dxil.a build/libdoe_compiler_core.a -lm -o build/libdoe_compiler_host.so"
+    },
+    {
+      "seq": 354,
+      "at": "2026-10-26T23:36:20.809Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -Iinclude tests/test_compiler_host.c build/libdoe_compiler_host.so -Wl,-rpath,@loader_path -o build/test_compiler_host"
+    },
+    {
+      "seq": 355,
+      "at": "2026-10-26T23:36:20.868Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "g++ -std=c++17 -fno-exceptions -fno-rtti -O2 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror  -Iinclude tests/test_compiler_host.cpp build/libdoe_compiler_host.so -Wl,-rpath,@loader_path -o build/test_compiler_host_cpp"
+    },
+    {
+      "seq": 356,
+      "at": "2026-10-26T23:36:20.955Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "mkdir -p build/ /Users/xyz/deco/doe/runtime/c/compiler/build/tmp"
+    },
+    {
+      "seq": 357,
+      "at": "2026-10-26T23:36:20.956Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -dynamiclib -Wl,-install_name,@rpath/libdoe_compiler.so -Wl,-exported_symbols_list,build/libdoe_compiler.so.exports targets/metal/bindings.c targets/metal/text.c targets/metal/zero.c targets/metal/types.c targets/metal/numeric.c targets/metal/access.c targets/metal/control.c targets/metal/stage.c targets/metal/handles.c targets/metal/image.c targets/metal/graphics.c targets/metal/float_pack.c targets/metal/subgroup.c targets/hlsl/text.c targets/hlsl/types.c targets/hlsl/resources.c targets/hlsl/image_types.c targets/hlsl/image.c targets/hlsl/numeric.c targets/hlsl/access.c targets/hlsl/control.c targets/hlsl/stage.c targets/hlsl/graphics.c targets/hlsl/float_pack.c targets/hlsl/subgroup.c src/pipeline.c src/override.c src/parse_override.c src/specialization.c src/specialization_compile.c src/override_plan.c src/override_selection.c src/compile_spans.c src/compile_metadata.c src/compile_text.c src/text_metal.c src/text_hlsl.c src/sema_matrix.c src/spirv_matrix.c src/spirv_atomic.c src/spirv_uniform.c src/spirv_workgroup.c src/sema_array.c src/sema_atomic.c src/sema_pointer.c src/stage.c src/parse_interface.c src/sema_stage.c src/spirv_stage.c src/sema_finalize.c src/image.c src/sema_image.c src/spirv_image.c src/module.c src/builtin.c src/numeric.c src/numeric_math.c src/numeric_environment.c src/lex.c src/parse.c src/parse_statements.c src/validate.c src/uniformity.c src/types.c src/constants.c src/sema_declarations.c src/sema_expression.c src/sema_call.c src/sema_select.c src/reflection.c src/spirv.c src/spirv_switch.c src/spirv_module.c src/spirv_subgroup.c src/compile.c src/storage.c src/sema_packed.c src/sema_interpolation.c src/sema_bitfield.c src/numeric_bits.c src/spirv_bits.c  src/numeric_half.c src/sampling.c src/sema_decompose.c src/numeric_decompose.c src/numeric_float_pack.c…"
+    },
+    {
+      "seq": 358,
+      "at": "2026-10-26T23:36:24.826Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "build/test_compiler_host ../../.."
+    },
+    {
+      "seq": 359,
+      "at": "2026-10-26T23:36:24.833Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "PASS: allocating host C ABI, source/manifest/oracle, publication and release"
+    },
+    {
+      "seq": 360,
+      "at": "2026-10-26T23:36:24.834Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "build/test_compiler_host_cpp"
+    },
+    {
+      "seq": 361,
+      "at": "2026-10-26T23:36:24.835Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "PASS: ordinary C++ host ABI consumer"
+    },
+    {
+      "seq": 362,
+      "at": "2026-10-26T23:36:24.835Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "python3 tests/test_host_exports.py 'build/libdoe_compiler_host.so'"
+    },
+    {
+      "seq": 363,
+      "at": "2026-10-26T23:36:24.922Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "PASS: bounded host exports; original compiler exports/no-heap imports preserved"
+    },
+    {
+      "seq": 364,
+      "at": "2026-10-26T23:36:24.925Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -Isrc/dxil -Isrc/dxil/tests src/dxil/tests/test_dxil_source.c build/libdoe_dxil.a build/libdoe_compiler_core.a -lm -o build/test_dxil_source"
+    },
+    {
+      "seq": 365,
+      "at": "2026-10-26T23:36:24.996Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "build/test_dxil_source"
+    },
+    {
+      "seq": 366,
+      "at": "2026-10-26T23:36:25.010Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "PASS shared DXIL source (827 checks)"
+    },
+    {
+      "seq": 367,
+      "at": "2026-10-26T23:36:25.011Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "python3 src/tsir/tests/test_text.py"
+    },
+    {
+      "seq": 368,
+      "at": "2026-10-26T23:36:28.273Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "text spans: 33 checks, 0 failures"
+    },
+    {
+      "seq": 369,
+      "at": "2026-10-26T23:36:28.273Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "text spans: 6 actual Zig embedded-NUL semantic/realization/emitter/manifest/target/skeleton identities match"
+    },
+    {
+      "seq": 370,
+      "at": "2026-10-26T23:36:28.277Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -Isrc/dxil -Isrc/dxil/tests src/dxil/tests/test_dxil_native_projection_expr.c build/libdoe_dxil.a build/libdoe_compiler_core.a -lm -o build/test_dxil_native_projection_expr"
+    },
+    {
+      "seq": 371,
+      "at": "2026-10-26T23:36:28.426Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "build/test_dxil_native_projection_expr"
+    },
+    {
+      "seq": 372,
+      "at": "2026-10-26T23:36:28.428Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "PASS test_dxil_native_projection_expr (688 checks)"
+    },
+    {
+      "seq": 373,
+      "at": "2026-10-26T23:36:28.428Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -Isrc/dxil -Isrc/dxil/tests src/dxil/tests/test_dxil_hlsl_complete.c build/libdoe_dxil.a build/libdoe_compiler_core.a -lm -o build/test_dxil_hlsl_complete"
+    },
+    {
+      "seq": 374,
+      "at": "2026-10-26T23:36:28.690Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "build/test_dxil_hlsl_complete"
+    },
+    {
+      "seq": 375,
+      "at": "2026-10-26T23:36:28.693Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "PASS caller-built HLSL graphics/helper integration (56 checks)"
+    },
+    {
+      "seq": 376,
+      "at": "2026-10-26T23:36:28.693Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -Isrc/dxil -Isrc/dxil/tests src/dxil/tests/test_dxil_hlsl_access.c build/libdoe_dxil.a build/libdoe_compiler_core.a -lm -o build/test_dxil_hlsl_access"
+    },
+    {
+      "seq": 377,
+      "at": "2026-10-26T23:36:28.909Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "build/test_dxil_hlsl_access"
+    },
+    {
+      "seq": 378,
+      "at": "2026-10-26T23:36:28.912Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stdout",
+      "text": "PASS test_dxil_hlsl_access (89 checks)"
+    },
+    {
+      "seq": 379,
+      "at": "2026-10-26T23:36:29.054Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stderr",
+      "text": "......usage: manifest [-h] [--output-dir OUTPUT_DIR] [--check] [--zig ZIG]"
+    },
+    {
+      "seq": 380,
+      "at": "2026-10-26T23:36:29.054Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stderr",
+      "text": "                [--native-only] [--c-manifest-binary C_MANIFEST_BINARY]"
+    },
+    {
+      "seq": 381,
+      "at": "2026-10-26T23:36:29.054Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stderr",
+      "text": "                [--make MAKE]"
+    },
+    {
+      "seq": 382,
+      "at": "2026-10-26T23:36:29.055Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stderr",
+      "text": "manifest: error: native-only generation needs a separate --output-dir; use --check to compare the existing historical fixtures"
+    },
+    {
+      "seq": 383,
+      "at": "2026-10-26T23:36:29.055Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stderr",
+      "text": "."
+    },
+    {
+      "seq": 384,
+      "at": "2026-10-26T23:36:29.055Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stderr",
+      "text": "----------------------------------------------------------------------"
+    },
+    {
+      "seq": 385,
+      "at": "2026-10-26T23:36:29.056Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stderr",
+      "text": "Ran 7 tests in 0.013s"
+    },
+    {
+      "seq": 386,
+      "at": "2026-10-26T23:36:29.056Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stderr",
+      "text": ""
+    },
+    {
+      "seq": 387,
+      "at": "2026-10-26T23:36:29.057Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stderr",
+      "text": "OK"
+    },
+    {
+      "seq": 388,
+      "at": "2026-10-26T23:36:30.115Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stderr",
+      "text": "Zig source architecture review signals:"
+    },
+    {
+      "seq": 389,
+      "at": "2026-10-26T23:36:30.116Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stderr",
+      "text": "src/backend/d3d12/mod.zig: 858 lines exceeds advisory review signal 800"
+    },
+    {
+      "seq": 390,
+      "at": "2026-10-26T23:36:30.116Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stderr",
+      "text": "src/backend/vulkan/native_runtime.zig: 1114 lines exceeds advisory review signal 800"
+    },
+    {
+      "seq": 391,
+      "at": "2026-10-26T23:36:30.116Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stderr",
+      "text": "src/backend/vulkan/vk_render.zig: 964 lines exceeds advisory review signal 800"
+    },
+    {
+      "seq": 392,
+      "at": "2026-10-26T23:36:30.117Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stderr",
+      "text": "src/backend/vulkan/vk_resources.zig: 1200 lines exceeds advisory review signal 800"
+    },
+    {
+      "seq": 393,
+      "at": "2026-10-26T23:36:30.117Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stderr",
+      "text": "src/compiler/tsir/digest.zig: 999 lines exceeds advisory review signal 800"
+    },
+    {
+      "seq": 394,
+      "at": "2026-10-26T23:36:30.117Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stderr",
+      "text": "src/compiler/tsir/emit_kernel_body.zig: 896 lines exceeds advisory review signal 800"
+    },
+    {
+      "seq": 395,
+      "at": "2026-10-26T23:36:30.117Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stderr",
+      "text": "src/compiler/tsir/frontend.zig: 885 lines exceeds advisory review signal 800"
+    },
+    {
+      "seq": 396,
+      "at": "2026-10-26T23:36:30.117Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stderr",
+      "text": "src/compiler/tsir/reference_extended_ops.zig: 841 lines exceeds advisory review signal 800"
+    },
+    {
+      "seq": 397,
+      "at": "2026-10-26T23:36:30.118Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stderr",
+      "text": "src/compiler/wgsl/emit/csl/emit_csl_exec_v1.zig: 989 lines exceeds advisory review signal 800"
+    },
+    {
+      "seq": 398,
+      "at": "2026-10-26T23:36:30.118Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stderr",
+      "text": "src/compiler/wgsl/emit/csl/emit_csl_host_compile_source.zig: 895 lines exceeds advisory review signal 800"
+    },
+    {
+      "seq": 399,
+      "at": "2026-10-26T23:36:30.118Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stderr",
+      "text": "src/compiler/wgsl/emit/csl/emit_csl_host_runtime.zig: 837 lines exceeds advisory review signal 800"
+    },
+    {
+      "seq": 400,
+      "at": "2026-10-26T23:36:30.118Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stderr",
+      "text": "src/compiler/wgsl/emit/csl/emit_csl_ir_walk.zig: 889 lines exceeds advisory review signal 800"
+    },
+    {
+      "seq": 401,
+      "at": "2026-10-26T23:36:30.118Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stderr",
+      "text": "src/compiler/wgsl/emit/csl/emit_csl_layout.zig: 911 lines exceeds advisory review signal 800"
+    },
+    {
+      "seq": 402,
+      "at": "2026-10-26T23:36:30.119Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stderr",
+      "text": "src/compiler/wgsl/emit/hlsl/emit_hlsl.zig: 1099 lines exceeds advisory review signal 800"
+    },
+    {
+      "seq": 403,
+      "at": "2026-10-26T23:36:30.119Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stderr",
+      "text": "src/compiler/wgsl/emit/msl/emit_msl_ir.zig: 1096 lines exceeds advisory review signal 800"
+    },
+    {
+      "seq": 404,
+      "at": "2026-10-26T23:36:30.119Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stderr",
+      "text": "src/compiler/wgsl/emit/spirv/emit_spirv_builtins.zig: 937 lines exceeds advisory review signal 800"
+    },
+    {
+      "seq": 405,
+      "at": "2026-10-26T23:36:30.119Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stderr",
+      "text": "src/compiler/wgsl/emit/spirv/emit_spirv_fn.zig: 1054 lines exceeds advisory review signal 800"
+    },
+    {
+      "seq": 406,
+      "at": "2026-10-26T23:36:30.119Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stderr",
+      "text": "src/compiler/wgsl/frontend/parser_expr.zig: 851 lines exceeds advisory review signal 800"
+    },
+    {
+      "seq": 407,
+      "at": "2026-10-26T23:36:30.120Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stderr",
+      "text": "src/compiler/wgsl/frontend/sema.zig: 836 lines exceeds advisory review signal 800"
+    },
+    {
+      "seq": 408,
+      "at": "2026-10-26T23:36:30.120Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stderr",
+      "text": "src/compiler/wgsl/ir/ir_builder.zig: 815 lines exceeds advisory review signal 800"
+    },
+    {
+      "seq": 409,
+      "at": "2026-10-26T23:36:30.120Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stderr",
+      "text": "src/compiler/wgsl/ir/ir_opt_rewrite.zig: 884 lines exceeds advisory review signal 800"
+    },
+    {
+      "seq": 410,
+      "at": "2026-10-26T23:36:30.120Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stderr",
+      "text": "src/compiler/wgsl/ir/ir_transform_robustness.zig: 984 lines exceeds advisory review signal 800"
+    },
+    {
+      "seq": 411,
+      "at": "2026-10-26T23:36:30.120Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stderr",
+      "text": "src/compiler/wgsl/proof/dispatch_proof_match.zig: 890 lines exceeds advisory review signal 800"
+    },
+    {
+      "seq": 412,
+      "at": "2026-10-26T23:36:30.121Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stderr",
+      "text": "src/compiler/wgsl/proof/dispatch_uniform_bounds.zig: 878 lines exceeds advisory review signal 800"
+    },
+    {
+      "seq": 413,
+      "at": "2026-10-26T23:36:30.121Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stderr",
+      "text": "src/dropin/dropin_browser_shared_memory.zig: 806 lines exceeds advisory review signal 800"
+    },
+    {
+      "seq": 414,
+      "at": "2026-10-26T23:36:30.121Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stderr",
+      "text": "src/dropin/wgpu_dropin_ext_a_pipeline.zig: 804 lines exceeds advisory review signal 800"
+    },
+    {
+      "seq": 415,
+      "at": "2026-10-26T23:36:30.121Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stderr",
+      "text": "src/native/compute/doe_compute_fast.zig: 1093 lines exceeds advisory review signal 800"
+    },
+    {
+      "seq": 416,
+      "at": "2026-10-26T23:36:30.121Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stderr",
+      "text": "src/native/lifecycle/doe_instance_device_native.zig: 905 lines exceeds advisory review signal 800"
+    },
+    {
+      "seq": 417,
+      "at": "2026-10-26T23:36:30.122Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stderr",
+      "text": "src/native/queue/doe_queue_submit_metal.zig: 837 lines exceeds advisory review signal 800"
+    },
+    {
+      "seq": 418,
+      "at": "2026-10-26T23:36:30.122Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stderr",
+      "text": "src/native/render/doe_bundle_native.zig: 985 lines exceeds advisory review signal 800"
+    },
+    {
+      "seq": 419,
+      "at": "2026-10-26T23:36:30.122Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stderr",
+      "text": "src/native/render/doe_render_pipeline_native.zig: 888 lines exceeds advisory review signal 800"
+    },
+    {
+      "seq": 420,
+      "at": "2026-10-26T23:36:30.122Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stderr",
+      "text": "src/native/resource/doe_bind_group_native.zig: 1198 lines exceeds advisory review signal 800"
+    },
+    {
+      "seq": 421,
+      "at": "2026-10-26T23:36:30.122Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stderr",
+      "text": "src/native/resource/doe_texture_sampler_native.zig: 942 lines exceeds advisory review signal 800"
+    },
+    {
+      "seq": 422,
+      "at": "2026-10-26T23:36:30.123Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stderr",
+      "text": "src/native/shader/doe_shader_native.zig: 1124 lines exceeds advisory review signal 800"
+    },
+    {
+      "seq": 423,
+      "at": "2026-10-26T23:36:30.123Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stderr",
+      "text": "src/native/vulkan/vulkan_compute_native.zig: 890 lines exceeds advisory review signal 800"
+    },
+    {
+      "seq": 424,
+      "at": "2026-10-26T23:36:30.123Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stderr",
+      "text": "src/runtime/trace/trace.zig: 879 lines exceeds advisory review signal 800"
+    },
+    {
+      "seq": 425,
+      "at": "2026-10-26T23:36:30.123Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stderr",
+      "text": "src/spatial/csl/csl_host_plan_tool.zig: 828 lines exceeds advisory review signal 800"
+    },
+    {
+      "seq": 426,
+      "at": "2026-10-26T23:36:52.647Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stderr",
+      "text": ""
+    },
+    {
+      "seq": 427,
+      "at": "2026-10-26T23:36:52.648Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stderr",
+      "text": "Build Summary: 9/9 steps succeeded; 1077/1099 tests passed; 22 skipped"
+    },
+    {
+      "seq": 428,
+      "at": "2026-10-26T23:36:52.648Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stderr",
+      "text": "test-wgsl success"
+    },
+    {
+      "seq": 429,
+      "at": "2026-10-26T23:36:52.648Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stderr",
+      "text": "+- zig fmt --check success"
+    },
+    {
+      "seq": 430,
+      "at": "2026-10-26T23:36:52.648Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stderr",
+      "text": "+- run python3 success 779ms MaxRSS:32M"
+    },
+    {
+      "seq": 431,
+      "at": "2026-10-26T23:36:52.648Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stderr",
+      "text": "+- run python3 success 40ms MaxRSS:23M"
+    },
+    {
+      "seq": 432,
+      "at": "2026-10-26T23:36:52.649Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stderr",
+      "text": "+- run python3 success 86ms MaxRSS:25M"
+    },
+    {
+      "seq": 433,
+      "at": "2026-10-26T23:36:52.649Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stderr",
+      "text": "+- run python3 success 38ms MaxRSS:23M"
+    },
+    {
+      "seq": 434,
+      "at": "2026-10-26T23:36:52.649Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stderr",
+      "text": "+- run test 1077 passed 22 skipped 379ms MaxRSS:4M"
+    },
+    {
+      "seq": 435,
+      "at": "2026-10-26T23:36:52.649Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stderr",
+      "text": "   +- compile test ReleaseFast native success 23s MaxRSS:1G"
+    },
+    {
+      "seq": 436,
+      "at": "2026-10-26T23:36:52.649Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stderr",
+      "text": "      +- options success"
+    },
+    {
+      "seq": 437,
+      "at": "2026-10-26T23:36:52.650Z",
+      "type": "output",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stream": "stderr",
+      "text": ""
+    },
+    {
+      "seq": 438,
+      "at": "2026-10-26T23:36:52.867Z",
+      "type": "completed",
+      "attemptId": "doe-c-parity-delivery-mars-focused-20261026-02.a1",
+      "stopped": true,
+      "reason": null,
+      "exitCode": 0,
+      "signal": null,
+      "receipt": "attempts/doe-c-parity-delivery-mars-focused-20261026-02.a1/result.json"
+    }
+  ],
+  "lastSeq": 438
+}

@@ -1,0 +1,74 @@
+{
+  "schemaVersion": 1,
+  "scope": "Linux GCC developer validation of exact parity-delivery bytes on advanced base; no physical GPU, Windows SDK, browser, performance, release or full migration qualification",
+  "baseCommit": "d8ed4913ae5e2ae3d5fdf15a4b43ca46d714467b",
+  "candidateIncomingCommitReportedByRoot": "b5f9de95929e83b305b5161881b58c4e2124c907",
+  "patchSha256": "b5643701a0988cae5d67ea06d9a92901f80b1aea6b5ba0bf715cd770cf5864cc",
+  "inputPathCount": 242,
+  "deletedPaths": [
+    "runtime/c/compiler/src/dxil/dxil_analyze_decl.c",
+    "runtime/c/compiler/src/dxil/dxil_analyze_expr.c",
+    "runtime/c/compiler/src/dxil/dxil_analyze_internal.h",
+    "runtime/c/compiler/src/dxil/dxil_analyze_stmt.c",
+    "runtime/c/compiler/src/dxil/dxil_analyze_types.c"
+  ],
+  "postTestInputHashesVerified": true,
+  "canonicalPeerHead": "d8ed4913ae5e2ae3d5fdf15a4b43ca46d714467b",
+  "aggregate": {
+    "exitCode": 2,
+    "passed": false,
+    "baselineFailures": [
+      "runtime/c/compiler/src/csl/tests/csl_emit_smoke.c is not named by a build script",
+      "runtime/c/compiler/src/csl/tests/csl_spatial_tests.c is not named by a build script",
+      "runtime/c/compiler/src/csl/tests/tsir_csl_tests.c is not named by a build script"
+    ]
+  },
+  "passingChecks": [
+    "cross-owner",
+    "cpu-vulkan",
+    "compiler-host",
+    "dxil-tsir",
+    "dxil-tsir-sanitizers"
+  ],
+  "crossOwnerBuild": {
+    "owners": 13,
+    "additional": [
+      "runtime-cli",
+      "modules"
+    ],
+    "globalArtifacts": 516,
+    "writableObjects": 11,
+    "globalFailures": 0
+  },
+  "vulkan": {
+    "class": "explicit CPU lavapipe",
+    "icd": "/usr/share/vulkan/icd.d/lvp_icd.json",
+    "environment": {
+      "VK_ICD_FILENAMES": "/usr/share/vulkan/icd.d/lvp_icd.json",
+      "VK_DRIVER_FILES": "/usr/share/vulkan/icd.d/lvp_icd.json",
+      "DOE_C_TEST_ADAPTER": "software"
+    },
+    "consumers": [
+      "vulkan-lifetime",
+      "vulkan-render-lifetime",
+      "vulkan-query-lifetime",
+      "vulkan-indirect-lifetime",
+      "vulkan-indirect-render-lifetime"
+    ]
+  },
+  "sanitizers": {
+    "kinds": [
+      "address",
+      "undefined"
+    ],
+    "reportedChecks": 5593,
+    "leakDetection": false,
+    "haltOnError": true,
+    "scope": "Changed DXIL/TSIR/core owner closure; CPU controls"
+  },
+  "explicitSkips": [
+    "Bootstrap manifest unittest ran8tests with7skipped because retained Zig oracle executable was unavailable; no differential acceptance claimed"
+  ],
+  "inputManifest": "delivery-on-advanced-base.json",
+  "results": "validation-results.json"
+}

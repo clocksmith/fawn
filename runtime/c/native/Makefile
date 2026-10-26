@@ -40,14 +40,20 @@ check: check-shader-cache
 check-shader-cache-reload: $(BUILD)/shader-cache
 	@directory=$$(mktemp -d); trap 'rm -f "$$directory"/*.bin; rmdir "$$directory"' 0; \
 	DOE_SHADER_CACHE_DIR="$$directory" $(BUILD)/shader-cache warm && DOE_SHADER_CACHE_DIR="$$directory" $(BUILD)/shader-cache reload
+$(BUILD)/shader-cache-changed-image: tests/shader_cache.c src/shader_cache.c src/shader_disk_cache.c src/shader_cache_identity.c $(wildcard ../shader/src/*.c ../shader/src/*.h ../shader/include/*.h) $(COMPILER_LIBRARY) | $(BUILD)
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DDOE_CACHE_IDENTITY_VARIANT=1 tests/shader_cache.c src/shader_cache.c src/shader_disk_cache.c src/shader_cache_identity.c ../backends/vulkan/src/cache_file.c $(wildcard ../shader/src/*.c) $(COMPILER_LINK) $(PLATFORM_LIBS) -o $@
+ifeq ($(SHARED_PLATFORM),Darwin)
+.PHONY: check-shader-cache-macho
+check-shader-cache-macho: $(BUILD)/shader-cache $(BUILD)/shader-cache-changed-image
+	python3 tests/mac_shader_cache_identity.py --binary "$(BUILD)/shader-cache" --changed-binary "$(BUILD)/shader-cache-changed-image"
+check: check-shader-cache-macho
+endif
 ifeq ($(SHARED_PLATFORM),Linux)
 $(BUILD)/shader-cache-no-build-id: tests/shader_cache.c src/shader_cache.c src/shader_disk_cache.c src/shader_cache_identity.c $(wildcard ../shader/src/*.c ../shader/src/*.h ../shader/include/*.h) $(COMPILER_LIBRARY) | $(BUILD)
 	$(CC) $(CPPFLAGS) $(CFLAGS) tests/shader_cache.c src/shader_cache.c src/shader_disk_cache.c src/shader_cache_identity.c ../backends/vulkan/src/cache_file.c $(wildcard ../shader/src/*.c) $(COMPILER_LINK) $(PLATFORM_LIBS) -Wl,--build-id=none -o $@
 .PHONY: check-shader-cache-no-build-id
 check-shader-cache-no-build-id: $(BUILD)/shader-cache-no-build-id
 	$(BUILD)/shader-cache-no-build-id identity-absent
-$(BUILD)/shader-cache-changed-image: tests/shader_cache.c src/shader_cache.c src/shader_disk_cache.c src/shader_cache_identity.c $(wildcard ../shader/src/*.c ../shader/src/*.h ../shader/include/*.h) $(COMPILER_LIBRARY) | $(BUILD)
-	$(CC) $(CPPFLAGS) $(CFLAGS) -DDOE_CACHE_IDENTITY_VARIANT=1 tests/shader_cache.c src/shader_cache.c src/shader_disk_cache.c src/shader_cache_identity.c ../backends/vulkan/src/cache_file.c $(wildcard ../shader/src/*.c) $(COMPILER_LINK) $(PLATFORM_LIBS) -o $@
 .PHONY: check-shader-cache-image-change
 check-shader-cache-image-change: $(BUILD)/shader-cache $(BUILD)/shader-cache-changed-image
 	@directory=$$(mktemp -d); trap 'rm -f "$$directory"/*.bin; rmdir "$$directory"' 0; \

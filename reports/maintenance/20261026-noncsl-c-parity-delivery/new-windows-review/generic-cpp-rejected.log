@@ -1,0 +1,8 @@
+C:\Users\clocksmith\AppData\Local\deco\toolchains\vs2022-buildtools\VC\Tools\Llvm\bin\clang-cl.exe /nologo /MD /c C:\Users\clocksmith\deco\doe\bench\out\fawn-windows-build\review-sdk-results-c\arch.cpp /FoC:\Users\clocksmith\deco\doe\bench\out\fawn-windows-build\review-sdk-results-c\bad.obj
+C:\Users\clocksmith\deco\doe\bench\out\fawn-windows-build\review-sdk-results-c\arch.cpp(1,15): error: static assertion failed due to requirement 'sizeof(void *) == 8': x64 required
+    1 | static_assert(sizeof(void*)==8,"x64 required"); extern "C" __declspec(dllexport) int arch_probe(void){return sizeof(void*);}
+      |               ^~~~~~~~~~~~~~~~
+C:\Users\clocksmith\deco\doe\bench\out\fawn-windows-build\review-sdk-results-c\arch.cpp(1,28): note: expression evaluates to '4 == 8'
+    1 | static_assert(sizeof(void*)==8,"x64 required"); extern "C" __declspec(dllexport) int arch_probe(void){return sizeof(void*);}
+      |               ~~~~~~~~~~~~~^~~
+1 error generated.

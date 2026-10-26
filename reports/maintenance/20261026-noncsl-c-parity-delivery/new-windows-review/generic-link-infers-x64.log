@@ -1,0 +1,2 @@
+C:\Users\clocksmith\AppData\Local\deco\toolchains\vs2022-buildtools\VC\Tools\Llvm\bin\clang-cl.exe /nologo /LD C:\Users\clocksmith\deco\doe\bench\out\fawn-windows-build\review-sdk-results-c\arch.obj /FeC:\Users\clocksmith\deco\doe\bench\out\fawn-windows-build\review-sdk-results-c\inferred.dll
+   Creating library C:\Users\clocksmith\deco\doe\bench\out\fawn-windows-build\review-sdk-results-c\inferred.lib and object C:\Users\clocksmith\deco\doe\bench\out\fawn-windows-build\review-sdk-results-c\inferred.exp

@@ -1,0 +1,104 @@
+make: Entering directory '/workspace/shared/fawn-c-parity-completion-20261026/runtime/c/compiler'
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -Isrc/dxil -Isrc/dxil/tests src/dxil/tests/test_dxil_source_differential.c build/libdoe_dxil.a build/libdoe_compiler_core.a -lm -o build/test_dxil_source_differential
+make: Leaving directory '/workspace/shared/fawn-c-parity-completion-20261026/runtime/c/compiler'
+native source differential: empty: MATCH C={'exit_code': 0, 'diagnostic': '', 'size': 592, 'sha256': 'a5d526a1c62b74277195eb8789415693ee055905b1e563cdddd8a61939326cd8', 'parts': [('SFI0', 8), ('ISGN', 8), ('OSGN', 8), ('DXIL', 488)]} Zig={'exit_code': 0, 'diagnostic': '', 'size': 592, 'sha256': 'a5d526a1c62b74277195eb8789415693ee055905b1e563cdddd8a61939326cd8', 'parts': [('SFI0', 8), ('ISGN', 8), ('OSGN', 8), ('DXIL', 488)]}
+native source differential: for: MATCH C={'exit_code': 0, 'diagnostic': '', 'size': 616, 'sha256': '6d372d8dcdbe3ad1f08ffec932c3d844e814d9c184fc71c7e2cf1c7e0f0df969', 'parts': [('SFI0', 8), ('ISGN', 8), ('OSGN', 8), ('DXIL', 512)]} Zig={'exit_code': 0, 'diagnostic': '', 'size': 616, 'sha256': '6d372d8dcdbe3ad1f08ffec932c3d844e814d9c184fc71c7e2cf1c7e0f0df969', 'parts': [('SFI0', 8), ('ISGN', 8), ('OSGN', 8), ('DXIL', 512)]}
+native source differential: forward-struct: REFERENCE_DIFFERENCE C={'exit_code': 0, 'diagnostic': '', 'size': 600, 'sha256': 'e0ce4a37f684f77143a3b1e52d59950a11e7b3d4bdc690ac4466e025ddc86436', 'parts': [('SFI0', 8), ('ISGN', 8), ('OSGN', 8), ('DXIL', 496)]} Zig={'exit_code': 1, 'diagnostic': 'TypeMismatch sema', 'size': 0, 'sha256': 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'}
+native source differential: forward-type: MATCH C={'exit_code': 0, 'diagnostic': '', 'size': 600, 'sha256': '84e42c2ae11202a38a46314b1f0e6de9dac2602e78a46a0f7f59ad6edba7202b', 'parts': [('SFI0', 8), ('ISGN', 8), ('OSGN', 8), ('DXIL', 496)]} Zig={'exit_code': 0, 'diagnostic': '', 'size': 600, 'sha256': '84e42c2ae11202a38a46314b1f0e6de9dac2602e78a46a0f7f59ad6edba7202b', 'parts': [('SFI0', 8), ('ISGN', 8), ('OSGN', 8), ('DXIL', 496)]}
+native source differential: composite-global: REFERENCE_DIFFERENCE C={'exit_code': 0, 'diagnostic': '', 'size': 600, 'sha256': 'e0ce4a37f684f77143a3b1e52d59950a11e7b3d4bdc690ac4466e025ddc86436', 'parts': [('SFI0', 8), ('ISGN', 8), ('OSGN', 8), ('DXIL', 496)]} Zig={'exit_code': 1, 'diagnostic': 'UnsupportedConstruct ir_builder', 'size': 0, 'sha256': 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'}
+native source differential: composite-literal: MATCH C={'exit_code': 0, 'diagnostic': '', 'size': 600, 'sha256': 'e0ce4a37f684f77143a3b1e52d59950a11e7b3d4bdc690ac4466e025ddc86436', 'parts': [('SFI0', 8), ('ISGN', 8), ('OSGN', 8), ('DXIL', 496)]} Zig={'exit_code': 0, 'diagnostic': '', 'size': 600, 'sha256': 'e0ce4a37f684f77143a3b1e52d59950a11e7b3d4bdc690ac4466e025ddc86436', 'parts': [('SFI0', 8), ('ISGN', 8), ('OSGN', 8), ('DXIL', 496)]}
+native source differential: override-id: MATCH C={'exit_code': 0, 'diagnostic': '', 'size': 596, 'sha256': 'd2e7b21af626e2440ab00ac26c2b797655587a15a53aceddd7d8b379f90afe76', 'parts': [('SFI0', 8), ('ISGN', 8), ('OSGN', 8), ('DXIL', 492)]} Zig={'exit_code': 0, 'diagnostic': '', 'size': 596, 'sha256': 'd2e7b21af626e2440ab00ac26c2b797655587a15a53aceddd7d8b379f90afe76', 'parts': [('SFI0', 8), ('ISGN', 8), ('OSGN', 8), ('DXIL', 492)]}
+native source differential: matrix-index: MATCH C={'exit_code': 0, 'diagnostic': '', 'size': 620, 'sha256': '91b22035e34e0fbbac293382dc9b5a061fb87a9df5738be00198e1a3acf95599', 'parts': [('SFI0', 8), ('ISGN', 8), ('OSGN', 8), ('DXIL', 516)]} Zig={'exit_code': 0, 'diagnostic': '', 'size': 620, 'sha256': '91b22035e34e0fbbac293382dc9b5a061fb87a9df5738be00198e1a3acf95599', 'parts': [('SFI0', 8), ('ISGN', 8), ('OSGN', 8), ('DXIL', 516)]}
+native source differential: nested-members: MATCH C={'exit_code': 0, 'diagnostic': '', 'size': 608, 'sha256': 'f4d60fd19198f1bab311823054e51f1dd6e7eb21fc353bf8f8b63e1a129039b8', 'parts': [('SFI0', 8), ('ISGN', 8), ('OSGN', 8), ('DXIL', 504)]} Zig={'exit_code': 0, 'diagnostic': '', 'size': 608, 'sha256': 'f4d60fd19198f1bab311823054e51f1dd6e7eb21fc353bf8f8b63e1a129039b8', 'parts': [('SFI0', 8), ('ISGN', 8), ('OSGN', 8), ('DXIL', 504)]}
+native source differential: runtime-read: MATCH C={'exit_code': 0, 'diagnostic': '', 'size': 620, 'sha256': 'b673eec219801283170f342533d96e7f171387c605566f07061c7b9fb7e799d3', 'parts': [('SFI0', 8), ('ISGN', 8), ('OSGN', 8), ('DXIL', 516)]} Zig={'exit_code': 0, 'diagnostic': '', 'size': 620, 'sha256': 'b673eec219801283170f342533d96e7f171387c605566f07061c7b9fb7e799d3', 'parts': [('SFI0', 8), ('ISGN', 8), ('OSGN', 8), ('DXIL', 516)]}
+native source differential: runtime-read-gid: MATCH C={'exit_code': 0, 'diagnostic': '', 'size': 656, 'sha256': 'dd9266752617f1d5068972f00d2a044f9cc3b879e9f9c547ae5fbf7db01890e0', 'parts': [('SFI0', 8), ('ISGN', 8), ('OSGN', 8), ('DXIL', 552)]} Zig={'exit_code': 0, 'diagnostic': '', 'size': 656, 'sha256': 'dd9266752617f1d5068972f00d2a044f9cc3b879e9f9c547ae5fbf7db01890e0', 'parts': [('SFI0', 8), ('ISGN', 8), ('OSGN', 8), ('DXIL', 552)]}
+native source differential: runtime-write: MATCH C={'exit_code': 0, 'diagnostic': '', 'size': 600, 'sha256': '7a3abb8cf01b62d9b5d33277cb55e0d330ae865ae8aa7ea1c26bce63d6858406', 'parts': [('SFI0', 8), ('ISGN', 8), ('OSGN', 8), ('DXIL', 496)]} Zig={'exit_code': 0, 'diagnostic': '', 'size': 600, 'sha256': '7a3abb8cf01b62d9b5d33277cb55e0d330ae865ae8aa7ea1c26bce63d6858406', 'parts': [('SFI0', 8), ('ISGN', 8), ('OSGN', 8), ('DXIL', 496)]}
+native source differential: fixed-read: MATCH C={'exit_code': 0, 'diagnostic': '', 'size': 608, 'sha256': '0f8c29e9a9e304f9f829b0f503c4e5a19d5ea91c4280a622d8f9dc0a307dc15a', 'parts': [('SFI0', 8), ('ISGN', 8), ('OSGN', 8), ('DXIL', 504)]} Zig={'exit_code': 0, 'diagnostic': '', 'size': 608, 'sha256': '0f8c29e9a9e304f9f829b0f503c4e5a19d5ea91c4280a622d8f9dc0a307dc15a', 'parts': [('SFI0', 8), ('ISGN', 8), ('OSGN', 8), ('DXIL', 504)]}
+native source differential: fixed-write-loop: MATCH C={'exit_code': 0, 'diagnostic': '', 'size': 612, 'sha256': 'e05ff0df21e918b2a60d9e2b70d1d7f148b713d87266c76ae02a378ca5c39848', 'parts': [('SFI0', 8), ('ISGN', 8), ('OSGN', 8), ('DXIL', 508)]} Zig={'exit_code': 0, 'diagnostic': '', 'size': 612, 'sha256': 'e05ff0df21e918b2a60d9e2b70d1d7f148b713d87266c76ae02a378ca5c39848', 'parts': [('SFI0', 8), ('ISGN', 8), ('OSGN', 8), ('DXIL', 508)]}
+native source differential: fixed-read-loop: MATCH C={'exit_code': 0, 'diagnostic': '', 'size': 616, 'sha256': 'b4c3e28955c27af6ae2aa97dc0428de486ee5cce61f3f651175f179a55b09fd3', 'parts': [('SFI0', 8), ('ISGN', 8), ('OSGN', 8), ('DXIL', 512)]} Zig={'exit_code': 0, 'diagnostic': '', 'size': 616, 'sha256': 'b4c3e28955c27af6ae2aa97dc0428de486ee5cce61f3f651175f179a55b09fd3', 'parts': [('SFI0', 8), ('ISGN', 8), ('OSGN', 8), ('DXIL', 512)]}
+native source differential: constant-fold: MATCH C={'exit_code': 0, 'diagnostic': '', 'size': 596, 'sha256': '1d36c6998edb876e9666255811e63f857a62e3cc7e7dfe66377ab8a697bf41a9', 'parts': [('SFI0', 8), ('ISGN', 8), ('OSGN', 8), ('DXIL', 492)]} Zig={'exit_code': 0, 'diagnostic': '', 'size': 596, 'sha256': '1d36c6998edb876e9666255811e63f857a62e3cc7e7dfe66377ab8a697bf41a9', 'parts': [('SFI0', 8), ('ISGN', 8), ('OSGN', 8), ('DXIL', 492)]}
+native source differential: switch-continuing: MATCH C={'exit_code': 0, 'diagnostic': '', 'size': 624, 'sha256': '8315a97ebe88841fa1f0f227fb2f38383e0acf390d2c2b51d23fdf7bc73f5dff', 'parts': [('SFI0', 8), ('ISGN', 8), ('OSGN', 8), ('DXIL', 520)]} Zig={'exit_code': 0, 'diagnostic': '', 'size': 624, 'sha256': '8315a97ebe88841fa1f0f227fb2f38383e0acf390d2c2b51d23fdf7bc73f5dff', 'parts': [('SFI0', 8), ('ISGN', 8), ('OSGN', 8), ('DXIL', 520)]}
+native source differential: vertex: MATCH C={'exit_code': 0, 'diagnostic': '', 'size': 572, 'sha256': '166923c0100743feb6209cdddd82b6b2d66449ed34dfd6a5c9732455c8337cd8', 'parts': [('SFI0', 8), ('ISGN', 8), ('OSGN', 8), ('DXIL', 468)]} Zig={'exit_code': 0, 'diagnostic': '', 'size': 572, 'sha256': '166923c0100743feb6209cdddd82b6b2d66449ed34dfd6a5c9732455c8337cd8', 'parts': [('SFI0', 8), ('ISGN', 8), ('OSGN', 8), ('DXIL', 468)]}
+native source differential: fragment: MATCH C={'exit_code': 0, 'diagnostic': '', 'size': 572, 'sha256': 'b5a4d6ab57ec9231e2c0ccbed20ddcd19b0b34afd4515834ae3e92d3c6ae4fab', 'parts': [('SFI0', 8), ('ISGN', 8), ('OSGN', 8), ('DXIL', 468)]} Zig={'exit_code': 0, 'diagnostic': '', 'size': 572, 'sha256': 'b5a4d6ab57ec9231e2c0ccbed20ddcd19b0b34afd4515834ae3e92d3c6ae4fab', 'parts': [('SFI0', 8), ('ISGN', 8), ('OSGN', 8), ('DXIL', 468)]}
+native source differential: unknown-name: MATCH C={'exit_code': 1, 'diagnostic': 'UnknownIdentifier sema', 'size': 0, 'sha256': 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'} Zig={'exit_code': 1, 'diagnostic': 'UnknownIdentifier sema', 'size': 0, 'sha256': 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'}
+native source differential: unknown-type: MATCH C={'exit_code': 1, 'diagnostic': 'UnknownType sema', 'size': 0, 'sha256': 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'} Zig={'exit_code': 1, 'diagnostic': 'UnknownType sema', 'size': 0, 'sha256': 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'}
+native source differential: duplicate-name: MATCH C={'exit_code': 1, 'diagnostic': 'DuplicateSymbol sema', 'size': 0, 'sha256': 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'} Zig={'exit_code': 1, 'diagnostic': 'DuplicateSymbol sema', 'size': 0, 'sha256': 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'}
+native source differential: type-mismatch: MATCH C={'exit_code': 1, 'diagnostic': 'TypeMismatch sema', 'size': 0, 'sha256': 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'} Zig={'exit_code': 1, 'diagnostic': 'TypeMismatch sema', 'size': 0, 'sha256': 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'}
+native source differential: duplicate-id: REFERENCE_DIFFERENCE C={'exit_code': 1, 'diagnostic': 'InvalidAttribute sema', 'size': 0, 'sha256': 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'} Zig={'exit_code': 0, 'diagnostic': '', 'size': 592, 'sha256': 'a5d526a1c62b74277195eb8789415693ee055905b1e563cdddd8a61939326cd8', 'parts': [('SFI0', 8), ('ISGN', 8), ('OSGN', 8), ('DXIL', 488)]}
+native source differential: syntax: MATCH C={'exit_code': 1, 'diagnostic': 'UnexpectedToken parser', 'size': 0, 'sha256': 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'} Zig={'exit_code': 1, 'diagnostic': 'UnexpectedToken parser', 'size': 0, 'sha256': 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'}
+native source differential: no-entry: MATCH C={'exit_code': 1, 'diagnostic': 'InvalidIr dxil_emit', 'size': 0, 'sha256': 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'} Zig={'exit_code': 1, 'diagnostic': 'InvalidIr dxil_emit', 'size': 0, 'sha256': 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'}
+native source differential: derived-override: MATCH C={'exit_code': 0, 'diagnostic': '', 'size': 596, 'sha256': 'd2e7b21af626e2440ab00ac26c2b797655587a15a53aceddd7d8b379f90afe76', 'parts': [('SFI0', 8), ('ISGN', 8), ('OSGN', 8), ('DXIL', 492)]} Zig={'exit_code': 0, 'diagnostic': '', 'size': 596, 'sha256': 'd2e7b21af626e2440ab00ac26c2b797655587a15a53aceddd7d8b379f90afe76', 'parts': [('SFI0', 8), ('ISGN', 8), ('OSGN', 8), ('DXIL', 492)]}
+Native DXIL source differential: 24 exact matches, 3 documented reference differences, 0 unexpected failures; no device qualification
+make: Entering directory '/workspace/shared/fawn-c-parity-completion-20261026/runtime/c'
+python3 -m unittest discover -s tools -p 'test_*.py'
+.stale mutable_globals.txt entry removed_state (src/unit.c): no scanned artifact defines it
+.unowned mutable global exported_state in unit.o
+.................................
+----------------------------------------------------------------------
+Ran 35 tests in 0.141s
+
+OK
+C mutable globals: 1 artifacts, 2 writable objects, 0 failures
+C mutable globals: 1 artifacts, 2 writable objects, 1 failures
+C mutable globals: 1 artifacts, 2 writable objects, 1 failures
+make --no-print-directory -C platform BUILD='/tmp/doe-c-1857531807/final-production-build/platform' check
+/tmp/doe-c-1857531807/final-production-build/platform/test_primitives
+Host primitive CPU control passed: deadlines, signal ordering, recursive depth1 wait, join/detach ownership.
+/tmp/doe-c-1857531807/final-production-build/platform/test_cpp
+make[1]: Nothing to be done for 'all'.
+make[1]: Nothing to be done for 'all'.
+make[1]: Nothing to be done for 'all'.
+PYTHONDONTWRITEBYTECODE=1 python3 "/workspace/shared/fawn-c-parity-completion-20261026/runtime/c/labels/tools/archive.py" --repo-root "/workspace/shared/fawn-c-parity-completion-20261026" --compiler "gcc" --archiver "ar" --target "x86_64-linux-gnu" --profile "normal" --build-dir "/tmp/doe-c-1857531807/final-production-build/labels"
+label archives unchanged; identities verified
+make[1]: Nothing to be done for 'all'.
+python3 "/workspace/shared/fawn-c-parity-completion-20261026/runtime/c/dropin-policy/tools/verify_archive.py" --repo-root "/workspace/shared/fawn-c-parity-completion-20261026" --target "x86_64-linux-gnu" --profile "1" --compiler "/usr/bin/x86_64-linux-gnu-gcc-14" --archiver "/usr/bin/x86_64-linux-gnu-ar" --write-build-settings "/tmp/doe-c-1857531807/final-production-build/dropin-policy/build_settings.json"
+python3 "/workspace/shared/fawn-c-parity-completion-20261026/runtime/c/dropin-policy/tools/generate_config.py" --behavior "/workspace/shared/fawn-c-parity-completion-20261026/config/dropin-abi-behavior.json" --ownership "/workspace/shared/fawn-c-parity-completion-20261026/config/dropin-symbol-ownership.json" --profile "1" --output "/tmp/doe-c-1857531807/final-production-build/dropin-policy/generated_config.c"
+python3 "/workspace/shared/fawn-c-parity-completion-20261026/runtime/c/dropin-policy/tools/verify_archive.py" --repo-root "/workspace/shared/fawn-c-parity-completion-20261026" --target "x86_64-linux-gnu" --profile "1" --compiler "/usr/bin/x86_64-linux-gnu-gcc-14" --archiver "/usr/bin/x86_64-linux-gnu-ar" --archive "/tmp/doe-c-1857531807/final-production-build/dropin-policy/libdoe_dropin_policy.a"
+make[1]: Nothing to be done for 'all'.
+make[1]: Nothing to be done for 'all'.
+make[1]: Nothing to be done for 'all'.
+make[1]: Nothing to be done for 'all'.
+/tmp/doe-c-1857531807/final-production-build/backends/d3d12/test_surface
+D3D12 surface owner: ordering, leases, discard, resize and first-error controls passed
+/tmp/doe-c-1857531807/final-production-build/backends/d3d12/test_render_vertices
+PASS direct render vertices: 41 typed formats, immutable strides, holes/zero-stride instancing, fetch spans/alignment, shared-read aliases, writable rejection and early-release unknown retirement; no SDK/GPU
+/tmp/doe-c-1857531807/final-production-build/backends/d3d12/test_render
+PASS D3D12 render owner: independent stage128/32 layouts, empty/zero draws, real-init requests, sampler snapshots, OOM/native rollback and unknown early-release leases; no SDK/GPU
+/tmp/doe-c-1857531807/final-production-build/backends/d3d12/test_sampled
+PASS D3D12 sampled/storage SRV aliases and immutable runtime sampler values: actual owner preflight/rollback/unknown leases; no SDK/GPU
+/tmp/doe-c-1857531807/final-production-build/backends/d3d12/test_texture_regions
+PASS private D3D12 texture regions: typed bounds, DEFAULT transfer, init, padding obligation, aliases, unknown leases; no SDK/GPU
+/tmp/doe-c-1857531807/final-production-build/backends/d3d12/test_dynamic
+D3D12 dynamic command owner:8 host groups passed; no SDK or GPU execution
+/tmp/doe-c-1857531807/final-production-build/backends/d3d12/test_aliases
+D3D12 buffer alias owner:3 host groups passed; no SDK or shader execution
+/tmp/doe-c-1857531807/final-production-build/backends/d3d12/test_limits
+D3D12 queried-cap consumption: 4 host groups passed; programmed facts, no SDK/device execution
+/tmp/doe-c-1857531807/final-production-build/backends/d3d12/test_adapter_selection
+D3D12 adapter selection: 5 host groups passed; no SDK/adapter/driver claim
+/tmp/doe-c-1857531807/final-production-build/backends/d3d12/test_owner
+D3D12 C host owner: 13 groups passed (no SDK or GPU execution)
+/tmp/doe-c-1857531807/final-production-build/backends/d3d12/test_textures
+D3D12 C texture owner: 11 groups passed (no SDK or GPU execution)
+/tmp/doe-c-1857531807/final-production-build/backends/d3d12/test_graphics
+D3D12 C graphics/timestamps: 9 groups passed (no SDK or GPU execution)
+/tmp/doe-c-1857531807/final-production-build/backends/d3d12/test_mesh
+D3D12 C mesh/depth: 10 groups passed (no SDK or GPU execution)
+/tmp/doe-c-1857531807/final-production-build/backends/d3d12/test_indirect
+D3D12 C indirect dispatch: 3 groups passed (no SDK or GPU execution)
+/tmp/doe-c-1857531807/final-production-build/backends/d3d12/test_uniform
+D3D12 C uniform bindings: 3 groups passed (no SDK or GPU execution)
+make -C ../compiler shared SHARED_LIBRARY="/tmp/doe-c-1857531807/final-production-build/native/libdoe_compiler.so" \
+  SHARED_PLATFORM="Linux" TMPDIR="/tmp/doe-c-1857531807/final-production-build/native/tmp" EXTRA_CFLAGS=""
+make[2]: Nothing to be done for 'shared'.
+make --no-print-directory -C runtime-cli BUILD='/tmp/doe-c-1857531807/final-production-build'/runtime-cli NATIVE_BUILD='/tmp/doe-c-1857531807/final-production-build'/native all
+make --no-print-directory -C ../native BUILD='/tmp/doe-c-1857531807/final-production-build/native' all
+make -C ../compiler shared SHARED_LIBRARY="/tmp/doe-c-1857531807/final-production-build/native/libdoe_compiler.so" \
+  SHARED_PLATFORM="Linux" TMPDIR="/tmp/doe-c-1857531807/final-production-build/native/tmp" EXTRA_CFLAGS=""
+make[3]: Nothing to be done for 'shared'.
+make --no-print-directory -C modules BUILD='/tmp/doe-c-1857531807/final-production-build'/modules all
+make[1]: Nothing to be done for 'all'.
+C owner build: 13 owners, runtime-cli and modules built into /tmp/doe-c-1857531807/final-production-build
+python3 tools/check_globals.py '/tmp/doe-c-1857531807/final-production-build' compiler/build
+C mutable globals: 693 artifacts, 11 writable objects, 0 failures
+make: Leaving directory '/workspace/shared/fawn-c-parity-completion-20261026/runtime/c'

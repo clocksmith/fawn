@@ -1,0 +1,85 @@
+{
+  "archiveSha256": "2df35c954a6a9bde5b0ce630b0a80ca947c471bd3b5f009ef6a2e4eae8ef0ccd",
+  "compilerSourcesChecked": 170,
+  "nativeIdentitySourcesChecked": 1,
+  "errors": [],
+  "driverControls": [
+    {
+      "name": "generic-version",
+      "exit": 0,
+      "argv": [
+        "C:\\Users\\clocksmith\\AppData\\Local\\deco\\toolchains\\vs2022-buildtools\\VC\\Tools\\Llvm\\bin\\clang-cl.exe",
+        "--version"
+      ]
+    },
+    {
+      "name": "generic-cpp-rejected",
+      "exit": 1,
+      "argv": [
+        "C:\\Users\\clocksmith\\AppData\\Local\\deco\\toolchains\\vs2022-buildtools\\VC\\Tools\\Llvm\\bin\\clang-cl.exe",
+        "/nologo",
+        "/MD",
+        "/c",
+        "C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\fawn-windows-build\\review-sdk-results-c\\arch.cpp",
+        "/FoC:\\Users\\clocksmith\\deco\\doe\\bench\\out\\fawn-windows-build\\review-sdk-results-c\\bad.obj"
+      ]
+    },
+    {
+      "name": "explicit-x64-cpp",
+      "exit": 0,
+      "argv": [
+        "C:\\Users\\clocksmith\\AppData\\Local\\deco\\toolchains\\vs2022-buildtools\\VC\\Tools\\Llvm\\bin\\clang-cl.exe",
+        "--target=x86_64-pc-windows-msvc",
+        "/nologo",
+        "/MD",
+        "/c",
+        "C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\fawn-windows-build\\review-sdk-results-c\\arch.cpp",
+        "/FoC:\\Users\\clocksmith\\deco\\doe\\bench\\out\\fawn-windows-build\\review-sdk-results-c\\arch.obj"
+      ]
+    },
+    {
+      "name": "generic-link-infers-x64",
+      "exit": 0,
+      "argv": [
+        "C:\\Users\\clocksmith\\AppData\\Local\\deco\\toolchains\\vs2022-buildtools\\VC\\Tools\\Llvm\\bin\\clang-cl.exe",
+        "/nologo",
+        "/LD",
+        "C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\fawn-windows-build\\review-sdk-results-c\\arch.obj",
+        "/FeC:\\Users\\clocksmith\\deco\\doe\\bench\\out\\fawn-windows-build\\review-sdk-results-c\\inferred.dll"
+      ]
+    },
+    {
+      "name": "generic-inferred-machine",
+      "exit": 0,
+      "argv": [
+        "C:\\Users\\clocksmith\\AppData\\Local\\deco\\toolchains\\vs2026-buildtools\\VC\\Tools\\MSVC\\14.51.36231\\bin\\Hostx64\\x64\\dumpbin.exe",
+        "/nologo",
+        "/headers",
+        "C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\fawn-windows-build\\review-sdk-results-c\\inferred.dll"
+      ]
+    },
+    {
+      "name": "explicit-x64-link",
+      "exit": 0,
+      "argv": [
+        "C:\\Users\\clocksmith\\AppData\\Local\\deco\\toolchains\\vs2022-buildtools\\VC\\Tools\\Llvm\\bin\\clang-cl.exe",
+        "--target=x86_64-pc-windows-msvc",
+        "/nologo",
+        "/LD",
+        "C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\fawn-windows-build\\review-sdk-results-c\\arch.obj",
+        "/FeC:\\Users\\clocksmith\\deco\\doe\\bench\\out\\fawn-windows-build\\review-sdk-results-c\\arch.dll"
+      ]
+    },
+    {
+      "name": "explicit-x64-machine",
+      "exit": 0,
+      "argv": [
+        "C:\\Users\\clocksmith\\AppData\\Local\\deco\\toolchains\\vs2026-buildtools\\VC\\Tools\\MSVC\\14.51.36231\\bin\\Hostx64\\x64\\dumpbin.exe",
+        "/nologo",
+        "/headers",
+        "C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\fawn-windows-build\\review-sdk-results-c\\arch.dll"
+      ]
+    }
+  ],
+  "frozenNativeBuild": false
+}

@@ -98,6 +98,7 @@ nohup.out
 *.log
 # Source-bound platform qualification consumes these original pass/failure logs.
 !reports/fawn-workspace/20261026-platforms/**/*.log
+!reports/maintenance/20261026-noncsl-c-parity-delivery/**/*.log
 simfab_traces/
 doe_pipeline_archive.fingerprint
 doe_pipeline_archive.manifest
