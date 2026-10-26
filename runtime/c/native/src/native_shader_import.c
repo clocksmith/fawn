@@ -104,37 +104,55 @@ void native_shader_import_dispose(native_shader_import *imported)
     native_deallocate(NULL,NULL,imported->data,imported->size,_Alignof(uint32_t));
     memset(imported,0,sizeof(*imported));
 }
-static bool packed_name(const uint32_t *words,size_t count,char out[64])
+static bool packed_name(const uint32_t *words,size_t count,size_t *length)
 {
-    size_t length=0;
     for (size_t i=0;i<count*4u;++i) {
-        unsigned char byte=(unsigned char)(words[i/4u]>>((i%4u)*8u));
-        if (!byte) { out[length]=0; return length!=0; }
-        if (length==63) return false;
-        out[length++]=(char)byte;
+        if (!(unsigned char)(words[i/4u]>>((i%4u)*8u))) { *length=i; return i!=0; }
     }
     return false;
+}
+static bool own_name(native_stage *out,const char *name,size_t length,native_pipeline_error *error)
+{
+    if (length >= UINT32_MAX) return reject(error,"native entry name length is not representable");
+    char *copy=malloc(length+1);
+    if (!copy) {
+        reject(error,"native entry name allocation failed");
+        error->type=WGPUErrorType_OutOfMemory;
+        return false;
+    }
+    memcpy(copy,name,length); copy[length]=0;
+    out->owned_name=copy; out->name=copy;
+    return true;
 }
 static bool spirv_entry(const native_shader_import *imported,WGPUStringView name,native_stage *out,
     native_pipeline_error *error)
 {
     const uint32_t *words=imported->data;
     size_t count=imported->size/sizeof(*words), requested=0;
-    if (!native_string_size(name,&requested) || requested>=sizeof(out->name) ||
+    if (!native_string_size(name,&requested) ||
         (name.data && (!requested || memchr(name.data,0,requested))))
         return reject(error,"native SPIR-V entry name is invalid");
     uint32_t entry=0;
+    const uint32_t *selected=NULL;
+    size_t selected_length=0;
     for (size_t at=5;at<count;at+=words[at]>>16) {
         uint32_t length=words[at]>>16, opcode=words[at]&65535u;
         if (opcode!=15 || length<4 || words[at+1]!=5u) continue;
-        char candidate[64];
-        if (!packed_name(words+at+3,length-3,candidate))
-            return reject(error,"native SPIR-V entry name exceeds the selected-entry contract");
-        if (name.data && (strlen(candidate)!=requested || memcmp(candidate,name.data,requested))) continue;
+        size_t candidate_length=0;
+        const uint32_t *candidate=words+at+3;
+        if (!packed_name(candidate,length-3,&candidate_length))
+            return reject(error,"native SPIR-V entry name is empty or unterminated");
+        if (name.data) {
+            if (candidate_length!=requested) continue;
+            bool matches=true;
+            for (size_t i=0;i<requested;++i)
+                if ((unsigned char)(candidate[i/4u]>>((i%4u)*8u)) != (unsigned char)name.data[i]) matches=false;
+            if (!matches) continue;
+        }
         if (entry) return reject(error,"native SPIR-V compute entry selection is ambiguous");
         entry=words[at+2];
         if (!entry || entry>=words[3]) return reject(error,"native SPIR-V entry identity is invalid");
-        memcpy(out->name,candidate,strlen(candidate)+1);
+        selected=candidate; selected_length=candidate_length;
     }
     if (!entry) return reject(error,"native SPIR-V compute entry was not found");
     bool geometry=false;
@@ -149,7 +167,12 @@ static bool spirv_entry(const native_shader_import *imported,WGPUStringView name
         memcpy(out->imported_entry.workgroup_size,words+at+3,3*sizeof(uint32_t));
         geometry=true;
     }
-    return geometry || reject(error,"native SPIR-V compute entry has no fixed LocalSize");
+    if (!geometry) return reject(error,"native SPIR-V compute entry has no fixed LocalSize");
+    char *copy=malloc(selected_length+1);
+    if (!copy) { reject(error,"native entry name allocation failed"); error->type=WGPUErrorType_OutOfMemory; return false; }
+    for (size_t i=0;i<selected_length;++i) copy[i]=(char)(selected[i/4u]>>((i%4u)*8u));
+    copy[selected_length]=0; out->owned_name=copy; out->name=copy;
+    return true;
 }
 bool native_shader_import_select(native_device *device,const native_shader_import *imported,WGPUStringView name,
     uint32_t stage,native_stage *out,native_pipeline_error *error)
@@ -168,9 +191,9 @@ bool native_shader_import_select(native_device *device,const native_shader_impor
     } else {
         size_t length=0;
         if (!name.data) { name.data="main"; name.length=4; }
-        if (!native_string_size(name,&length) || !length || length>=sizeof(out->name) || memchr(name.data,0,length))
+        if (!native_string_size(name,&length) || !length || length>=UINT32_MAX || memchr(name.data,0,length))
             return reject(error,"native text entry name is invalid");
-        memcpy(out->name,name.data,length); out->name[length]=0;
+        if (!own_name(out,name.data,length,error)) return false;
         memcpy(out->imported_entry.workgroup_size,imported->workgroup_size,sizeof(imported->workgroup_size));
         out->view.text=imported->data; out->view.text_size=imported->size;
         out->view.target_language_version=imported->target==DOE_SHADER_METAL ? 300 : 600;

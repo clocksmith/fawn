@@ -46,7 +46,7 @@ bool metal_dense_plan(MetalEmitter *e, DoeMetalMetadata *metadata) {
         *out = (DoeCompilerMetalEntryV12){.entry_index=index,.stage=stage_kind(&c->functions[entry->function]),
             .first_binding=(uint32_t)metadata->binding_count,.sizes_slot=NO_ID};
         MetalEmitter name = {.source=e->source,.module=c,.output=out->name,.capacity=sizeof(out->name)-1u};
-        metal_entry_name(&name, c->functions[entry->function].name);
+        metal_entry_name(&name, entry->function);
         if (name.failed) { e->failed = true; return false; }
         uint32_t counts[3] = {0u,0u,0u}, previous = 0u;
         for (uint32_t j = 0u; j < entry->state.resolved.resource_count; ++j) {

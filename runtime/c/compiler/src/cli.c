@@ -4,6 +4,7 @@
 #include "cli_json.h"
 #include "cli_text.h"
 #include "cli_specialization.h"
+#include "../include/doe_compiler_pool_growth.h"
 #include "../include/doe_compiler_job.h"
 #include "../include/doe_compiler_stages.h"
 #include <errno.h>
@@ -154,7 +155,7 @@ int main(int argc, char **argv) {
         .ir_operands = 4096u, .target_declarations = 7744u, .traversal_items = 1281u,
         .words = 65536u, .expression_depth = 32u, .control_depth = 16u, .type_syntax_depth = 32u
     };
-    const DoeCompilerStageCapacities stages = {
+    DoeCompilerStageCapacities stages = {
         .module = {.typed = typed, .entries = 630u, .entry_inputs = 1024u,
             .entry_references = 665280u},
         .interface_attributes = 4096u, .stage_interfaces = 4096u
@@ -190,30 +191,39 @@ int main(int argc, char **argv) {
     DoeCompilerStageResult stage_result;
     DoeCompilerWorkspaceRequirements requirements = {0};
     if (!legacy) {
-        const DoeCompilerStatus queried = binary_only ?
-            doe_compiler_stage_requirements(DOE_COMPILER_STAGES_ABI_VERSION,
-                &stages, sizeof(stages), &requirements, sizeof(requirements)) :
-            doe_compiler_job_requirements(DOE_COMPILER_JOB_ABI_VERSION,
-                &job, sizeof(job), &requirements, sizeof(requirements));
-        if (queried != DOE_COMPILER_OK) {
-            fprintf(stderr, "workspace requirements query failed\n"); goto cleanup;
-        }
-        workspace = malloc(requirements.size_bytes);
-        if (workspace == NULL) { fprintf(stderr, "workspace allocation failed\n"); goto cleanup; }
-        if (binary_only) {
+        for (;;) {
+            const DoeCompilerStatus queried = binary_only ?
+                doe_compiler_stage_requirements(DOE_COMPILER_STAGES_ABI_VERSION,
+                    &stages, sizeof(stages), &requirements, sizeof(requirements)) :
+                doe_compiler_job_requirements(DOE_COMPILER_JOB_ABI_VERSION,
+                    &job, sizeof(job), &requirements, sizeof(requirements));
+            if (queried != DOE_COMPILER_OK) {
+                fprintf(stderr, "workspace requirements query failed\n"); goto cleanup;
+            }
+            workspace = malloc(requirements.size_bytes);
+            if (workspace == NULL) { fprintf(stderr, "workspace allocation failed\n"); goto cleanup; }
+            if (!binary_only) break;
             const DoeCompilerStatus measured = doe_compiler_compile_stages(
                 DOE_COMPILER_STAGES_ABI_VERSION, &stages, sizeof(stages), workspace,
                 requirements.size_bytes, source, length, &selection, sizeof(selection),
                 DOE_COMPILER_TYPED_WORDS | DOE_COMPILER_TYPED_MEASURE,
                 NULL, 0u, &stage_result, sizeof(stage_result));
-            if (measured != DOE_COMPILER_OK) {
-                const DoeCompilerDiagnostic *d = &stage_result.resources.module.diagnostic;
-                fprintf(stderr, "%s:%u:%u: category=%u offset=%zu: %s\n", input,
-                    d->line, d->column, (unsigned)d->status, d->offset, d->message);
-                goto cleanup;
+            if (measured == DOE_COMPILER_OK) {
+                word_capacity = stage_result.resources.module.required.words;
+                break;
             }
-            word_capacity = stage_result.resources.module.required.words;
-        } else {
+            if (doe_compiler_grow_stage_pool(&stages, measured, stage_result.resources.module.exhausted_pool,
+                    stage_result.resources.module.minimum_pool_capacity)) {
+                free(workspace);
+                workspace = NULL;
+                continue;
+            }
+            const DoeCompilerDiagnostic *d = &stage_result.resources.module.diagnostic;
+            fprintf(stderr, "%s:%u:%u: category=%u offset=%zu: %s\n", input,
+                d->line, d->column, (unsigned)d->status, d->offset, d->message);
+            goto cleanup;
+        }
+        if (!binary_only) {
             result_v2 = malloc(sizeof(*result_v2));
             if (result_v2 == NULL) { fprintf(stderr, "result allocation failed\n"); goto cleanup; }
         }

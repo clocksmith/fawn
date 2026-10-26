@@ -246,15 +246,27 @@ static bool old_resource(const CompilerWorkspace *c, const ResourceRecord *r, bo
 bool reflect_legacy_admit(Source *s, const CompilerWorkspace *c, bool v2) {
     uint32_t offset = NO_ID, count = 0u;
     NameSpan name = {0};
+    /* Fixed ABI1/2 output names remain bounded. Typed source spans are not:
+     * reject only this legacy projection before any fixed-size name copy. */
+    if (c->entry_count != 0u) {
+        const NameSpan entry = c->functions[c->entries[0].function].name;
+        if (entry.length > DOE_COMPILER_MAX_NAME_BYTES) { offset = entry.offset; name = entry; }
+    }
     for (uint32_t i = 0u;i<c->type_count;++i) if (c->types[i].kind == TYPE_STRUCT) {
             const TypeRecord *t = &c->types[i];
             ++count;
-            if ((!v2 || count>DOE_COMPILER_MAX_STRUCTS || !flat_struct(c, t)) && t->name.offset<offset) {
+            if ((!v2 || count>DOE_COMPILER_MAX_STRUCTS || !flat_struct(c, t) ||
+                 t->name.length>DOE_COMPILER_MAX_NAME_BYTES) && t->name.offset<offset) {
                 offset = t->name.offset;
                 name = t->name;
             }
+            for (uint32_t j = 0u; j < t->count; ++j) {
+                const NameSpan member = c->members[t->element+j].name;
+                if (member.length>DOE_COMPILER_MAX_NAME_BYTES && member.offset<offset) { offset=member.offset; name=member; }
+            }
         }
-    for (uint32_t i = 0u;i<c->resource_count;++i) if ((i >= DOE_COMPILER_MAX_BINDINGS || !old_resource(c, &c->resources[i], v2)) && c->resources[i].name.offset<offset) {
+    for (uint32_t i = 0u;i<c->resource_count;++i) if ((i >= DOE_COMPILER_MAX_BINDINGS ||
+        c->resources[i].name.length>DOE_COMPILER_MAX_NAME_BYTES || !old_resource(c, &c->resources[i], v2)) && c->resources[i].name.offset<offset) {
             offset = c->resources[i].name.offset;
             name = c->resources[i].name;
         }

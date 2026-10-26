@@ -14,8 +14,8 @@ bool compiler_selection_shape(Source *s, const DoeCompilerEntrySelectionV5 *sele
     if (selection->mode!=DOE_COMPILER_SELECT_NAME)
         return (selection->name==NULL && selection->name_length==0u) ||
             source_error(s,DOE_COMPILER_INPUT_ERROR,0u,"NONE and AUTO selection require no name");
-    if (selection->name==NULL || selection->name_length==0u || selection->name_length>63u)
-        return source_error(s,DOE_COMPILER_INPUT_ERROR,0u,"NAME selection requires 1 through 63 identifier bytes");
+    if (selection->name==NULL || selection->name_length==0u || selection->name_length>s->length)
+        return source_error(s,DOE_COMPILER_INPUT_ERROR,0u,"NAME selection requires identifier bytes within source length");
     for (size_t i=0u;i<selection->name_length;++i) {
         const char ch=selection->name[i];
         if (ch!='_' && !(ch>='A' && ch<='Z') && !(ch>='a' && ch<='z') && !(i!=0u && ch>='0' && ch<='9'))

@@ -33,6 +33,7 @@ src/numeric_math.c
 src/numeric_environment.c
 src/lex.c
 src/parse.c
+src/parse_statements.c
 src/validate.c
 src/uniformity.c
 src/types.c
@@ -43,6 +44,7 @@ src/sema_call.c
 src/sema_select.c
 src/reflection.c
 src/spirv.c
+src/spirv_switch.c
 src/spirv_module.c
 src/spirv_subgroup.c
 src/compile.c

@@ -99,7 +99,8 @@ typedef struct {
  * Independent workspaces may compile concurrently; reuse needs no reset.
  * All modes perform the same whole-module validation and private SPIR-V1.3 emission.
  * Selection changes metadata validation/projection only, never emitted entry set.
- * NONE/AUTO require NULL name and zero length; NAME requires1..63 bytes.
+ * NONE/AUTO require NULL name and zero length; NAME borrows a nonempty ASCII
+ * identifier span bounded by the supplied source length.
  * WORDS-only/MEASURE/failure module fields are all zero. In published reflection,
  * selected_entry is NONE for NONE, otherwise an index into the entries span.
  * Each entry's resource range contains indices into resources; its workgroup

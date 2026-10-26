@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: MIT
  * Copyright (c) 2026 Doe contributors */
 #include "private.h"
+#include "../entry_name.h"
 #include "../closure.h"
 
 static bool entry_reference(const CompilerWorkspace *c, uint32_t first, uint32_t count, uint32_t item) {
@@ -147,19 +148,29 @@ static void function_body(MetalEmitter *e, uint32_t index) {
     e->indent = 0u;
     metal_text(e, "}\n");
 }
-void metal_entry_name(MetalEmitter *e, NameSpan name) {
-    if (name.length == 0u || name.length > 63u || name.offset > e->source->length ||
+void metal_entry_name(MetalEmitter *e, uint32_t function) {
+    if (function >= e->module->function_count) {
+        metal_error(e, "entry function identity is invalid");
+        return;
+    }
+    const NameSpan name = e->module->functions[function].name;
+    if (name.length == 0u || name.offset > e->source->length ||
         name.length > e->source->length - name.offset) {
         metal_error(e, "Metal entry name span is invalid");
         return;
     }
+    if (!target_entry_ascii(e->source, name)) {
+        metal_error(e, "Metal entry name is not an ASCII shader identifier");
+        return;
+    }
+    /* The reserved target prefix also remaps short source collisions. Exact
+     * module function identity makes the actual names injective without hashes. */
+    if (target_entry_short_name(e->source, name)) {
+        metal_format(e, "doe_long_entry_%u", function);
+        return;
+    }
     for (uint32_t i = 0u; i < name.length; ++i) {
         const char character = e->source->source[name.offset + i];
-        if (!((character >= 'a' && character <= 'z') || (character >= 'A' && character <= 'Z') ||
-            (i != 0u && character >= '0' && character <= '9') || character == '_')) {
-            metal_error(e, "Metal entry name is not an ASCII shader identifier");
-            return;
-        }
         const char text[] = {character, '\0'};
         metal_text(e, text);
     }
@@ -270,7 +281,7 @@ static void entry_wrapper(MetalEmitter *e, uint32_t index) {
     uint32_t input_mask = entry->source_input_mask;
     if (entry->state.resolved.workgroup_storage_bytes != 0u) input_mask |= 1u << INPUT_LOCAL_INDEX;
     metal_text(e, "[[host_name(\"");
-    metal_entry_name(e, c->functions[entry->function].name);
+    metal_entry_name(e, entry->function);
     metal_format(e, "\")]] kernel void doe_entry%u(", index);
     bool comma = false;
     metal_resource_parameters(e, entry, &comma);

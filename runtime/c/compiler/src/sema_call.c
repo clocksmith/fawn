@@ -564,8 +564,6 @@ bool sema_call_value(Source *s, uint32_t id, const LocalScope *scope, bool evalu
                 "workgroupUniformLoad requires one address and a used result in a runtime function");
         return workgroup_uniform_load(s, node, scope, evaluate, emit, out);
     }
-    if (name.length >= sizeof(((Name *)0)->text))
-        return source_error(s, DOE_COMPILER_UNSUPPORTED, name.offset, "identifier length exceeds supported capacity");
     const uint32_t atomic = !declared_type ? atomic_builtin_kind(s, name) : NO_ID;
     if (atomic != NO_ID) {
         if (!statement && atomic == IR_ATOMIC_STORE)

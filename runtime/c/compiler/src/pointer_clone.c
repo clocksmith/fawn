@@ -79,7 +79,7 @@ bool pointer_clone_instruction(PointerClone *p, const IrInstruction *original) {
             ir.operands.scalar.left = pointer_clone_value(p,ir.operands.scalar.left);
             ir.operands.scalar.right = pointer_clone_value(p,ir.operands.scalar.right);
             break;
-        case IR_IF: case IR_RETURN: case IR_NOT: case IR_SHORT_BEGIN:
+        case IR_SWITCH_BEGIN: case IR_IF: case IR_RETURN: case IR_NOT: case IR_SHORT_BEGIN:
         case IR_LOOP_TEST: case IR_BREAK_IF: case IR_NEGATE: case IR_COMPLEMENT:
         case IR_CONVERT: case IR_BITCAST: case IR_SWIZZLE:
             ir.operands.scalar.left = pointer_clone_value(p,ir.operands.scalar.left);
@@ -95,6 +95,7 @@ bool pointer_clone_instruction(PointerClone *p, const IrInstruction *original) {
             break;
         case IR_CONSTANT: case IR_ELSE: case IR_END_IF: case IR_LOOP_BEGIN:
         case IR_LOOP_CONTINUING: case IR_END_LOOP: case IR_BREAK: case IR_CONTINUE:
+        case IR_SWITCH_CASE: case IR_END_CASE: case IR_END_SWITCH: case IR_SWITCH_BREAK:
         case IR_WORKGROUP_BARRIER: case IR_HANDLE: case IR_DISCARD:
             break;
         case IR_INPUT: case IR_STAGE_INPUT: case IR_ROBUST_LOAD: case IR_UNIFORM_LOAD:

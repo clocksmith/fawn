@@ -123,7 +123,8 @@ typedef struct native_stage {
     doe_shader_view view;
     const DoeCompilerEntryV5 *entry;
     WGPUShaderStage visibility;
-    char name[64];
+    const char *name;
+    char *owned_name;
 } native_stage;
 
 /* Distinct resources one pipeline references: at most two stages, each within

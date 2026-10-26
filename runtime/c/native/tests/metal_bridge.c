@@ -809,6 +809,7 @@ static void sampled_float_admission(state *s)
 #include "metal_storage_cases.h"
 
 #include "metal_vertex_cases.h"
+#include "metal_vertex_span_cases.h"
 
 static void graphics_ledger(state *s)
 {
@@ -974,6 +975,7 @@ int main(int argc, char **argv)
     metal_storage_cases(&s);
     graphics_ledger(&s);
     metal_vertex_formats(&s, &mocks[2]);
+    metal_vertex_spans(&s, &mocks[2]);
     mixed_resource_ledger(&s);
     metal_indirect_ledger(&s, &mocks[2]);
     metal_depth_admission(&s, &mocks[2]);

@@ -52,17 +52,28 @@ static doe_shader_status specialize(const doe_shader *module,
 {
     if (!module || module->kind != SHADER_MODULE || !selection || !out || selection->reserved ||
         (selection->mode != DOE_COMPILER_SELECT_AUTO && selection->mode != DOE_COMPILER_SELECT_NAME) ||
-        selection->name_length > 63 || (!selection->name && selection->name_length) ||
+        selection->name_length > module->source_size || (!selection->name && selection->name_length) ||
         (selection->mode == DOE_COMPILER_SELECT_AUTO && (selection->name || selection->name_length)))
         return shader_fail(error,DOE_SHADER_INVALID_ARGUMENT,DOE_COMPILER_INPUT_ERROR,NULL);
     if (pipeline && module->options.target != DOE_SHADER_METAL)
         return shader_fail(error,DOE_SHADER_INVALID_ARGUMENT,DOE_COMPILER_INPUT_ERROR,NULL);
     const DoeCompilerMetalPipelineOptionsV15 policy = {pipeline ? pipeline->sample_mask : UINT32_MAX};
     doe_shader_options options = module->options;
-    char name[64] = {0};
-    if (selection->name_length) memcpy(name,selection->name,selection->name_length);
     options.selection = *selection;
-    options.selection.name = selection->name_length ? name : NULL;
+    /* Resolve into immutable module storage before allocator callbacks. */
+    if (selection->name_length) {
+        const DoeCompilerModuleEntryV13 *found = NULL;
+        for (size_t i = 0; i < module->module_entry_count; ++i) {
+            const DoeCompilerModuleEntryV13 *entry = &module->validation.entries[i];
+            if (entry->name.length == selection->name_length &&
+                !memcmp(module->validation.names + entry->name.offset,selection->name,selection->name_length)) {
+                found = entry;
+                break;
+            }
+        }
+        if (!found) return shader_fail(error,DOE_SHADER_COMPILE_FAILED,DOE_COMPILER_SEMANTIC_ERROR,NULL);
+        options.selection.name = module->validation.names + found->name.offset;
+    }
     doe_shader_status status = doe_shader_retain((doe_shader *)module);
     if (status != DOE_SHADER_OK) return shader_fail(error,status,DOE_COMPILER_OK,NULL);
     DoeCompilerOverrideValueV13 *snapshot = NULL;

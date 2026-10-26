@@ -46,7 +46,7 @@ static DoeCompilerStatus specialize(bool all_entries, bool metal_pipeline, uint3
         selection != NULL && (all_entries || selection->mode != DOE_COMPILER_SELECT_NONE) && value_count < UINT32_MAX &&
         compiler_valid_span(values, value_count, sizeof(*values), _Alignof(DoeCompilerOverrideValueV13), true);
     if (valid) for (size_t i = 0u; i < value_count; ++i)
-        if (values[i].key == NULL || values[i].key_length == 0u || values[i].key_length > DOE_COMPILER_MAX_NAME_BYTES) valid = false;
+        if (values[i].key == NULL || values[i].key_length == 0u || values[i].key_length > length) valid = false;
     if (!valid) {
         (void)source_error(&s, DOE_COMPILER_INPUT_ERROR, 0u, "invalid specialization capacities/workspace/selection/value spans");
         errno = saved_errno;

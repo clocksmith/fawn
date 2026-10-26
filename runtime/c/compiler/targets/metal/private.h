@@ -44,7 +44,7 @@ void metal_functions(MetalEmitter *);
 void metal_graphics_context(MetalEmitter *);
 void metal_graphics_wrapper(MetalEmitter *, uint32_t);
 void metal_stage_input(MetalEmitter *, const IrInstruction *);
-void metal_entry_name(MetalEmitter *, NameSpan);
+void metal_entry_name(MetalEmitter *, uint32_t);
 void metal_resource_parameters(MetalEmitter *, const EntryRecord *, bool *);
 void metal_resource_context(MetalEmitter *, const EntryRecord *);
 bool metal_function_used(MetalEmitter *, uint32_t);

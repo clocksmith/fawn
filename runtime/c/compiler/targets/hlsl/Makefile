@@ -58,3 +58,9 @@ $(OUT)/test_hlsl_current: $(SOURCES) $(CORE) $(filter-out tests/test_hlsl.c,$(TE
 .PHONY: check-current
 check-current: $(OUT)/test_hlsl_current
 	$(OUT)/test_hlsl_current
+
+# Opt-in emitted-source control; does not bypass the frozen full target checks.
+.PHONY: switch-host-control
+switch-host-control:
+	$(MAKE) -C ../.. build/doe-compiler-c
+	python3 tests/host_control.py $(OUT)/switch --switch $(abspath ../../build/doe-compiler-c)

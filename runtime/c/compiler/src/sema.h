@@ -5,7 +5,7 @@
 #include "numeric.h"
 #include "stage.h"
 typedef struct LoopScope LoopScope;
-struct LoopScope { LoopScope *parent; size_t body_scope_start, body_scope_end; uint32_t first_continue; bool continuing; };
+struct LoopScope { LoopScope *parent; size_t body_scope_start, body_scope_end; uint32_t first_continue; bool continuing, is_switch; };
 typedef struct { LocalBinding *values; size_t count, capacity, scope_start, level; LoopScope *loop; } LocalScope;
 /* Stage flags occupy IrValue's alignment gap before the eight-byte constant
  * payload. This private semantic temporary stays 32 bytes on 32/64-bit hosts. */
