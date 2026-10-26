@@ -44,6 +44,10 @@ remain separate gates. This inventory itself establishes no GPU execution or
 Vulkan, Metal, or D3D12 physical qualification. Host compilation, sanitizer passes, fixture output,
 bytecode validation, and simulated completion never inherit that qualification.
 
+The [current consistency audit ledger](CONSISTENCY_AUDIT.md) records concrete
+inspected paths, remaining implementation gaps, evidence and publication state.
+It is not a full-layer certification.
+
 ## Current implementation workflow
 
 The 2026-10-25 owner-authorized [instance capability amendment](../../runtime/c/instance/CAPABILITIES.md)

@@ -146,7 +146,7 @@ void metal_graphics_wrapper(MetalEmitter *e, uint32_t index) {
     const uint32_t inputs = interface_type(e, index, entry, DOE_COMPILER_INTERFACE_INPUT, vertex);
     const uint32_t outputs = interface_type(e, index, entry, DOE_COMPILER_INTERFACE_OUTPUT, vertex);
     metal_text(e, "[[host_name(\"");
-    metal_entry_name(e, f->name);
+    metal_entry_name(e, root->function);
     metal_format(e, "\")]] %s ", vertex ? "vertex" : "fragment");
     if (outputs != 0u) metal_format(e, "DoeStage%u_2 ", index);
     else metal_text(e, "void ");

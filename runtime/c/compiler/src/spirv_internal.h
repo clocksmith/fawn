@@ -35,7 +35,7 @@ enum {
     OP_ATOMIC_ADD = 234, OP_ATOMIC_SUBTRACT = 235, OP_ATOMIC_SMIN = 236, OP_ATOMIC_UMIN = 237,
     OP_ATOMIC_SMAX = 238, OP_ATOMIC_UMAX = 239, OP_ATOMIC_AND = 240, OP_ATOMIC_OR = 241, OP_ATOMIC_XOR = 242,
     OP_PHI = 245, OP_LOOP_MERGE = 246, OP_SELECTION_MERGE = 247, OP_LABEL = 248,
-    OP_BRANCH = 249, OP_BRANCH_CONDITIONAL = 250, OP_RETURN = 253, OP_RETURN_VALUE = 254, OP_UNREACHABLE = 255, OP_DEMOTE_TO_HELPER_INVOCATION = 5380
+    OP_BRANCH = 249, OP_BRANCH_CONDITIONAL = 250, OP_SWITCH = 251, OP_RETURN = 253, OP_RETURN_VALUE = 254, OP_UNREACHABLE = 255, OP_DEMOTE_TO_HELPER_INVOCATION = 5380
 };
 /* Primitive/guard declarations use the frozen bounded allowance, never D or a
  * semantic-value slot. Aggregate declarations are caller-owned descriptors. */
@@ -52,7 +52,7 @@ enum { WALK_TYPE, WALK_CONSTANT, WALK_ACCESS };
 typedef struct {
     Source *source;
     CompilerWorkspace *program;
-    uint32_t next_id, id_bound, current_label;
+    uint32_t next_id, id_bound, current_label, switch_merge;
     EntryRecord *entry;
     uint32_t *values;
     uint32_t local_base, local_start, local_pointers[4][IR_PRIMITIVE_COUNT], math_import;
@@ -62,6 +62,14 @@ typedef struct {
     uint32_t constants_used;
     bool failed;
 } Emitter;
+typedef struct EmitLoop EmitLoop;
+struct EmitLoop {
+    EmitLoop *parent;
+    uint32_t header, continuing, merge;
+    bool continue_live;
+};
+bool spirv_emit_block(Emitter *, const IrProgram *, size_t *, unsigned, EmitLoop *, bool *);
+bool spirv_emit_switch(Emitter *, const IrProgram *, size_t *, unsigned, EmitLoop *, bool *);
 TargetDeclaration *spirv_append_declaration(Emitter *, uint32_t, TypeId);
 bool spirv_uniform_plan(Emitter *, ResourceRecord *, bool *);
 bool spirv_uniform_annotations(Emitter *, const TargetDeclaration *);

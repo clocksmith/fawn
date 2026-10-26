@@ -99,3 +99,14 @@ atomic-control: $(OUT)/test_atomics
 	$(OUT)/test_atomics $(OUT)/atomic
 atomic-sdk: atomic-control
 	python3 tests/atomic_sdk_control.py $(OUT)
+
+# Opt-in emitted-source control; does not bypass the frozen full target checks.
+.PHONY: switch-host-control
+switch-host-control:
+	$(MAKE) -C ../.. build/doe-compiler-c
+	mkdir -p $(OUT)
+	rm -f $(OUT)/switch_control.metal.tmp
+	../../build/doe-compiler-c --shader-path ../tests/switch_source.wgsl --target msl --out $(OUT)/switch_control.metal.tmp
+	mv $(OUT)/switch_control.metal.tmp $(OUT)/switch_control.metal
+	g++ -std=c++17 -O2 -fno-fast-math -ffp-contract=off -Wno-attributes -fsanitize=undefined -Itests/host -I$(OUT) tests/host/check_switch.cpp -o $(OUT)/check_switch
+	$(OUT)/check_switch

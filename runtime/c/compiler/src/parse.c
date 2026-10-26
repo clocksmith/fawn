@@ -34,9 +34,6 @@ bool parser_word(Parser *p, const char *text) {
 bool parser_name_span(Parser *p, NameSpan *out) {
     const Token *t = parser_peek(p);
     if (t->kind != TOKEN_WORD) return parser_reject(p, "ASCII WGSL identifier");
-    if (t->length > DOE_COMPILER_MAX_NAME_BYTES)
-        return source_error(p->source, DOE_COMPILER_INPUT_ERROR, t->offset,
-                            "identifier exceeds 63 bytes");
     if (t->offset > p->source->length || t->length > p->source->length - t->offset ||
         t->offset > UINT32_MAX)
         return source_error(p->source, DOE_COMPILER_INPUT_ERROR, t->offset,
@@ -338,7 +335,7 @@ bool expression(Parser *p, Syntax *s, unsigned minimum, unsigned nesting, uint32
  * plus one over-depth level, so the existing parser can diagnose that boundary.
  * Commas, value operators and comparison delimiters return to ordinary parsing.
  * No recursive lookahead or speculative type/constant graph is constructed. */
-static bool single_type_call(const Parser *p, size_t cursor) {
+bool parser_single_type_call(const Parser *p, size_t cursor) {
     if (cursor >= p->tokens->token_count || p->tokens->tokens[cursor].kind != '<') return false;
     const size_t maximum_depth = (size_t)p->source->limits->type_depth + 1u;
     const size_t maximum_tokens = 3u * maximum_depth + 2u;
@@ -363,7 +360,7 @@ static bool single_type_call(const Parser *p, size_t cursor) {
     return false;
 }
 
-static bool primary(Parser *p,Syntax *s,unsigned nesting,uint32_t *id) {
+bool parser_primary(Parser *p,Syntax *s,unsigned nesting,uint32_t *id) {
     if (nesting>=p->source->limits->expression_depth || p->active_expression>p->source->limits->expression_depth)
         return source_pool_error(p->source,DOE_COMPILER_POOL_EXPRESSION_DEPTH,(size_t)p->active_expression+1u,parser_peek(p)->offset,"expression depth capacity exceeded");
     Expression node={.source_offset=parser_peek(p)->offset,.depth=1u,.left=NO_ID,.right=NO_ID};
@@ -379,7 +376,7 @@ static bool primary(Parser *p,Syntax *s,unsigned nesting,uint32_t *id) {
         node.kind=parser_peek(p)->kind=='!'?EXPRESSION_NOT:parser_peek(p)->kind=='-'?EXPRESSION_NEGATE:
             parser_peek(p)->kind=='&'?EXPRESSION_ADDRESS:parser_peek(p)->kind=='*'?EXPRESSION_DEREFERENCE:EXPRESSION_COMPLEMENT;
         ++p->cursor; ++p->active_expression;
-        const bool ok=primary(p,s,nesting+1u,&node.left); --p->active_expression; if (!ok) return false;
+        const bool ok=parser_primary(p,s,nesting+1u,&node.left); --p->active_expression; if (!ok) return false;
         node.depth=1u+s->expressions[node.left].depth;
     } else if (parser_peek(p)->kind==TOKEN_NUMBER || parser_peek(p)->kind==TOKEN_DECIMAL) {
         node.kind=EXPRESSION_LITERAL;node.value.name=(NameSpan){parser_peek(p)->offset,parser_peek(p)->length};++p->cursor;
@@ -392,7 +389,7 @@ static bool primary(Parser *p,Syntax *s,unsigned nesting,uint32_t *id) {
         TypeRef annotation={NO_ID,NO_ID};
         const bool generator=source_span_is(p->source,name,"array") || source_span_is(p->source,name,"vec2") ||
             source_span_is(p->source,name,"vec3") || source_span_is(p->source,name,"vec4");
-        if (parser_peek(p)->kind=='<' && (generator || source_span_is(p->source,name,"bitcast") || single_type_call(p, p->cursor))) {
+        if (parser_peek(p)->kind=='<' && (generator || source_span_is(p->source,name,"bitcast") || parser_single_type_call(p, p->cursor))) {
             if (source_span_is(p->source,name,"bitcast")) {
                 ++p->cursor;if (!type_reference(p,s,&annotation) || !template_close(p)) return false;
             } else if (!generic_reference(p,s,name,&annotation)) return false;
@@ -474,7 +471,7 @@ static bool unary_form(const Expression *node) {
         node->kind == EXPRESSION_MAX || node->kind == EXPRESSION_CALL;
 }
 static bool expression_inner(Parser *p, Syntax *s, unsigned minimum, unsigned nesting, uint32_t *id) {
-    if (!primary(p, s, nesting, id)) return false;
+    if (!parser_primary(p, s, nesting, id)) return false;
     for (;;) {
         ExpressionKind kind = EXPRESSION_ADD;
         Comparison comparison = COMPARE_EQUAL;
@@ -508,7 +505,7 @@ bool expression(Parser *p,Syntax *s,unsigned minimum,unsigned nesting,uint32_t *
     const bool ok=expression_inner(p,s,minimum,nesting,id);
     --p->active_expression;return ok;
 }
-static bool local_declaration(Parser *p,Syntax *s,LocalSyntax *l,unsigned terminator) {
+bool parser_local_declaration(Parser *p,Syntax *s,LocalSyntax *l,unsigned terminator) {
     l->annotation=(TypeRef){NO_ID,NO_ID};l->expression=NO_ID;
     if (parser_spelled(p,parser_peek(p),"var")) l->flags|=LOCAL_MUTABLE;
     if (parser_spelled(p,parser_peek(p),"const")) l->flags|=LOCAL_CONSTANT;
@@ -522,7 +519,7 @@ static bool local_declaration(Parser *p,Syntax *s,LocalSyntax *l,unsigned termin
     else if ((l->flags&(LOCAL_MUTABLE|LOCAL_ANNOTATED))!=(LOCAL_MUTABLE|LOCAL_ANNOTATED)) return parser_reject(p,"local initializer or explicit var type");
     return terminator==0u || parser_punctuation(p,terminator,";");
 }
-static bool condition(Parser *p, Syntax *s, uint32_t *id) {
+bool parser_condition(Parser *p, Syntax *s, uint32_t *id) {
     /* Preserve only the old accounting exemption, never a second grammar. */
     uint32_t comparison_offset = UINT32_MAX;
     if ((p->source->limits->flags & LIMIT_LEGACY) != 0u && parser_peek(p)->kind == '(') {
@@ -551,12 +548,12 @@ static bool condition(Parser *p, Syntax *s, uint32_t *id) {
     p->exempt_comparison = UINT32_MAX;
     return ok;
 }
-static bool assignment(Parser *p,Syntax *s,Assignment *out,unsigned terminator) {
+bool parser_assignment(Parser *p,Syntax *s,Assignment *out,unsigned terminator) {
     *out=(Assignment){.path=NO_ID,.index=NO_ID,.expression=NO_ID};
     const bool reference = parser_peek(p)->kind == '*' || parser_peek(p)->kind == '(';
     if (reference) {
         out->root = (NameSpan){parser_peek(p)->offset, 0u};
-        if (!primary(p, s, 0u, &out->path)) return false;
+        if (!parser_primary(p, s, 0u, &out->path)) return false;
         out->kind = TARGET_REFERENCE;
     } else if (!parser_name_span(p,&out->root)) return false;
     /* '_' is a statement token, never a writable name or access path. */
@@ -600,131 +597,6 @@ static bool assignment(Parser *p,Syntax *s,Assignment *out,unsigned terminator) 
     if (out->operation != UPDATE_INCREMENT && out->operation != UPDATE_DECREMENT &&
         !expression(p, s, 0u, 0u, &out->expression)) return false;
     return terminator == 0u || parser_punctuation(p, terminator, ";");
-}
-static bool statement_slot(Parser *p, Syntax *s, uint32_t *id) {
-    if (s->statement_count == s->limits.statements)
-        return source_pool_error(p->source, DOE_COMPILER_POOL_STATEMENTS, (size_t)s->statement_count+1u, parser_peek(p)->offset, "statement capacity exceeded");
-    *id = (uint32_t)s->statement_count++;
-    Statement *statement = &s->statements[*id];
-    memset(statement, 0, sizeof(*statement));
-    statement->source_offset = parser_peek(p)->offset;
-    statement->initializer = UINT32_MAX;
-    statement->update = UINT32_MAX;
-    return true;
-}
-static bool simple_statement(Parser *p, Syntax *s, bool declaration, unsigned terminator, uint32_t *id) {
-    if (!statement_slot(p, s, id)) return false;
-    Statement *st = &s->statements[*id];
-    if (declaration && (parser_spelled(p, parser_peek(p), "let") || parser_spelled(p, parser_peek(p), "var") || parser_spelled(p, parser_peek(p), "const"))) {
-        st->kind = parser_spelled(p, parser_peek(p), "var") ? STATEMENT_VAR :
-                   parser_spelled(p, parser_peek(p), "const") ? STATEMENT_CONST : STATEMENT_LET;
-        if (!local_declaration(p, s, &st->value.local, terminator)) return false;
-    } else if (parser_peek(p)->kind == TOKEN_WORD && p->cursor + 1u < p->tokens->token_count &&
-               (p->tokens->tokens[p->cursor + 1u].kind == '(' ||
-                (parser_spelled(p, parser_peek(p), "bitcast") && p->tokens->tokens[p->cursor + 1u].kind == '<') ||
-                single_type_call(p, p->cursor + 1u))) {
-        st->kind = STATEMENT_CALL;
-        if (!primary(p, s, 0u, &st->value.condition)) return false;
-        if (s->expressions[st->value.condition].kind != EXPRESSION_CALL)
-            return parser_reject(p, "function call statement");
-        if (terminator != 0u && !parser_punctuation(p, terminator, ";")) return false;
-    } else {
-        st->kind = STATEMENT_ASSIGN;
-        if (!assignment(p, s, &st->value.assignment, terminator)) return false;
-    }
-    st->end = (uint32_t)s->statement_count;
-    return true;
-}
-static bool block(Parser *p, Syntax *s, unsigned depth);
-static bool statement(Parser *p, Syntax *s, unsigned depth) {
-    const Token *token = parser_peek(p);
-    const bool is_if = parser_spelled(p, token, "if");
-    const bool is_for = parser_spelled(p, token, "for");
-    const bool is_while = parser_spelled(p, token, "while");
-    const bool is_loop = parser_spelled(p, token, "loop");
-    const bool is_block = token->kind == '{';
-    const bool is_continuing = parser_spelled(p, token, "continuing");
-    if (is_if || is_for || is_while || is_loop || is_block) {
-        if (depth >= p->source->limits->control_depth)
-            return source_pool_error(p->source, DOE_COMPILER_POOL_CONTROL_DEPTH, (size_t)depth+1u, token->offset, "control depth capacity exceeded");
-    }
-    uint32_t id;
-    if (parser_spelled(p, token, "let") || parser_spelled(p, token, "var") || parser_spelled(p, token, "const"))
-        return simple_statement(p, s, true, ';', &id);
-    if (!is_if && !is_for && !is_while && !is_loop && !is_block && !is_continuing &&
-        !parser_spelled(p, token, "return") && !parser_spelled(p, token, "discard") && !((parser_spelled(p, token, "break") || parser_spelled(p, token, "continue") || token->kind == ';')))
-        return simple_statement(p, s, false, ';', &id);
-    if (!statement_slot(p, s, &id)) return false;
-    Statement *st = &s->statements[id];
-    ++p->cursor;
-    if (is_if) {
-        st->kind = STATEMENT_IF;
-        if (!condition(p, s, &st->value.condition) || !parser_punctuation(p, '{', "{")) return false;
-        st->body_start = (uint32_t)s->statement_count;
-        if (!block(p, s, depth + 1u)) return false;
-        st->else_start = (uint32_t)s->statement_count;
-        if (parser_spelled(p, parser_peek(p), "else")) {
-            ++p->cursor;
-            if (parser_spelled(p, parser_peek(p), "if")) {
-                if (!statement(p, s, depth + 1u)) return false;
-            } else if (!parser_punctuation(p, '{', "{") || !block(p, s, depth + 1u)) return false;
-        }
-    } else if (is_for) {
-        st->kind = STATEMENT_FOR;
-        st->value.condition = UINT32_MAX;
-        if (!parser_punctuation(p, '(', "(")) return false;
-        if (parser_peek(p)->kind == ';') ++p->cursor;
-        else if (!simple_statement(p, s, true, ';', &st->initializer)) return false;
-        if (parser_peek(p)->kind != ';' && !expression(p, s, 0u, 0u, &st->value.condition)) return false;
-        if (!parser_punctuation(p, ';', ";")) return false;
-        if (parser_peek(p)->kind != ')' && !simple_statement(p, s, false, 0u, &st->update)) return false;
-        if (!parser_punctuation(p, ')', ")") || !parser_punctuation(p, '{', "{")) return false;
-        st->body_start = (uint32_t)s->statement_count;
-        if (!block(p, s, depth + 1u)) return false;
-    } else if (is_while || is_loop || is_block || is_continuing) {
-        st->kind = is_while ? STATEMENT_WHILE : is_loop ? STATEMENT_LOOP :
-                   is_block ? STATEMENT_BLOCK : STATEMENT_CONTINUING;
-        st->value.condition = UINT32_MAX;
-        if (is_while && !expression(p, s, 0u, 0u, &st->value.condition)) return false;
-        if (!is_block && !parser_punctuation(p, '{', "{")) return false;
-        st->body_start = (uint32_t)s->statement_count;
-        if (!block(p, s, depth + (is_continuing ? 0u : 1u))) return false;
-    } else if (parser_spelled(p, token, "return")) {
-        st->kind = STATEMENT_RETURN;
-        st->value.condition = UINT32_MAX;
-        if (parser_peek(p)->kind != ';' && !expression(p, s, 0u, 0u, &st->value.condition)) return false;
-        if (!parser_punctuation(p, ';', ";")) return false;
-    } else if (parser_spelled(p, token, "break")) {
-        st->kind = STATEMENT_BREAK;
-        if (parser_spelled(p, parser_peek(p), "if")) {
-            ++p->cursor;
-            st->kind = STATEMENT_BREAK_IF;
-            if (!expression(p, s, 0u, 0u, &st->value.condition)) return false;
-        }
-        if (!parser_punctuation(p, ';', ";")) return false;
-    } else if (parser_spelled(p, token, "discard")) {
-        st->kind = STATEMENT_DISCARD;
-        if (!parser_punctuation(p, ';', ";")) return false;
-    } else if (parser_spelled(p, token, "continue")) {
-        st->kind = STATEMENT_CONTINUE;
-        if (!parser_punctuation(p, ';', ";")) return false;
-    } else st->kind = STATEMENT_EMPTY;
-    st->end = (uint32_t)s->statement_count;
-    return true;
-}
-static bool block(Parser *p, Syntax *s, unsigned depth) {
-    /* Required loop/continuing braces may share one language depth, but even
-     * malformed nested continuing blocks must have a bounded C call path. */
-    if (p->block_nesting >= 2u * p->source->limits->control_depth + 1u)
-        return source_pool_error(p->source, DOE_COMPILER_POOL_CONTROL_DEPTH, (size_t)p->source->limits->control_depth+1u, parser_peek(p)->offset,
-                            "control recursion capacity exceeded");
-    ++p->block_nesting;
-    while (parser_peek(p)->kind != '}') {
-        if (parser_peek(p)->kind == TOKEN_END) return parser_reject(p, "statement or }");
-        if (!statement(p, s, depth)) return false;
-    }
-    --p->block_nesting;
-    return parser_punctuation(p, '}', "}");
 }
 static bool starts_storage(const Parser *p) {
     if (parser_peek(p)->kind != '@' || p->cursor + 1u >= p->tokens->token_count) return false;
@@ -814,7 +686,7 @@ static bool module_constant(Parser *p, Syntax *s, bool first) {
     ConstantSyntax *constant = &s->constant_decls[s->constant_decl_count];
     memset(constant, 0, sizeof(*constant));
     constant->first_expression = (uint32_t)s->expression_count;
-    if (!local_declaration(p, s, &local, ';')) return false;
+    if (!parser_local_declaration(p, s, &local, ';')) return false;
     p->exempt_literal = UINT32_MAX;
     constant->name = local.name;
     constant->annotation = local.annotation;
@@ -896,7 +768,7 @@ static bool function_declaration(Parser *p, Syntax *s) {
             !parser_name_span(p, &s->alias_source) || !parser_punctuation(p, '.', ".") ||
             !parser_word(p, "x") || !parser_punctuation(p, ';', ";")) return false;
     }
-    if (!block(p, s, 0u)) return false;
+    if (!parser_block(p, s, 0u)) return false;
     function->statement_end = (uint32_t)s->statement_count;
     function->expression_end = (uint32_t)s->expression_count;
     ++s->function_count;

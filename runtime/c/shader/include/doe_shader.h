@@ -42,6 +42,10 @@ typedef struct doe_shader_options {
      * conservative standalone defaults. Policy participates in artifact identity. */
     uint32_t semantic_flags;
     size_t sampling_pairs; /* Explicit ABI16 specialization staging capacity. */
+    /* Explicit opt-in: retry only compiler-reported pool exhaustion through the
+     * canonical growth policy. False preserves all caller-supplied hard pools.
+     * Source bound and compiler ABI depth/representation limits never expand. */
+    bool grow_pools;
 } doe_shader_options;
 typedef struct doe_shader_error {
     doe_shader_status status;

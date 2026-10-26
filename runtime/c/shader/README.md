@@ -15,11 +15,23 @@ without pretending that standalone reflection supplies its dispatch/texture
 preconditions or complete production cache semantics. Metal slots and per-entry
 size-buffer facts are retained directly from compiler ABI12, not recomputed.
 
-The caller supplies explicit compiler capacities and allocator hooks. Additional
+The caller supplies explicit compiler capacities and allocator hooks. By default,
+these remain hard budgets. Explicit `grow_pools=true` treats semantic pools as
+initial sizes and retries only a named compiler exhaustion report through
+`doe_compiler_pool_growth.h`; native default shader admission opts in. Source and
+ABI depth/representation limits remain hard. Semantic errors, malformed reports,
+requirements failures and allocation failures never trigger another attempt.
+Growth copies the existing owned input snapshot into the next allocation before
+freeing the old allocation; it never rereads mutable caller input on retry. A
+module retains the grown validation policy; specialization grows a private copy,
+not the immutable module. Allocation rollback leaves outputs and live artifacts
+unchanged. The same policy covers direct emission, symbolic validation and
+specialization, including override/sampling/translation pools.
+
+Additional
 interface-attribute and stage-interface capacities are explicit options; zero
 retains compute-only admission rather than inventing hidden capacity. Graphics
-entries retain actual stage and zero compute metadata. Two compiler
-calls measure then publish; no source re-parser or alternate semantic engine.
+entries retain actual stage and zero compute metadata. Successful measure then publish calls use the same effective capacities; no source re-parser or alternate semantic engine.
 The temporary workspace is released before publication. One owned allocation
 contains the retained result. Identity matching compares exact source, explicit
 compiler identity and entry selection, not hashes alone. It is not a cache.
@@ -168,3 +180,10 @@ lifetimes. It also checks errno and four rounding modes. `make sanitize` exercis
 both legacy and specialization ownership; report whether the linked compiler is
 instrumented separately. These controls do not execute shaders or qualify SDKs,
 physical GPUs or the complete native migration.
+
+`test_growth` covers all three targets, fixed-policy opt-out, source bounds,
+retry snapshot mutation, every direct/module/specialization allocation failure,
+and retained-module lifetime. The old unknown-option test used bit64 after it
+became `DOE_COMPILER_DISABLE_SUBGROUPS`; it now explicitly accepts that named bit
+and rejects the unassigned bit1024. This corrects the test's classifier, not a
+change to supported compiler semantics or a waiver of a frozen independent gate.

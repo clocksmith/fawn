@@ -26,6 +26,47 @@ static void selection(MetalEmitter *e, uint32_t *cursor, unsigned depth, uint32_
     ++*cursor;
     metal_line(e, "}");
 }
+static void switch_body(MetalEmitter *e, uint32_t *cursor, unsigned depth, uint32_t loop, bool continuing) {
+    const IrInstruction *begin = &e->module->instructions[(*cursor)++];
+    const TypeId type = metal_value_type(e, begin->operands.scalar.left);
+    metal_indent(e);
+    metal_text(e, "switch (");
+    metal_value(e, begin->operands.scalar.left);
+    metal_text(e, ") {\n");
+    ++e->indent;
+    while (*cursor < e->function_end && e->module->instructions[*cursor].opcode == IR_SWITCH_CASE) {
+        do {
+            const IrInstruction *label = &e->module->instructions[(*cursor)++];
+            metal_indent(e);
+            if (label->operands.scalar.right) metal_text(e, "default:\n");
+            else if (type == IR_U32) metal_format(e, "case %uu:\n", label->operands.scalar.literal);
+            else {
+                const uint32_t bits = label->operands.scalar.literal;
+                if (bits == UINT32_C(2147483648)) metal_text(e, "case (-2147483647 - 1):\n");
+                else if (bits > INT32_MAX) metal_format(e, "case -%u:\n", UINT32_MAX - bits + 1u);
+                else metal_format(e, "case %u:\n", bits);
+            }
+        } while (*cursor < e->function_end && e->module->instructions[*cursor].opcode == IR_SWITCH_CASE);
+        metal_line(e, "{");
+        ++e->indent;
+        metal_block(e, cursor, depth + 1u, loop, continuing);
+        if (!marker(e, *cursor, IR_END_CASE)) return;
+        ++*cursor;
+        metal_line(e, "break;");
+        --e->indent;
+        metal_line(e, "}");
+    }
+    if (!marker(e, *cursor, IR_END_SWITCH)) return;
+    ++*cursor;
+    --e->indent;
+    metal_line(e, "}");
+    /* A continue inside a case first leaves that switch, then propagates across
+     * enclosing switches to the loop's do-once body and its continuing block. */
+    if (loop != NO_ID && !continuing) {
+        metal_indent(e);
+        metal_format(e, "if (loopControl%u != 0u) break;\n", loop);
+    }
+}
 static void short_circuit(MetalEmitter *e, uint32_t *cursor, unsigned depth, uint32_t loop, bool continuing) {
     const IrInstruction *begin = &e->module->instructions[(*cursor)++];
     const uint32_t start = *cursor;
@@ -79,7 +120,7 @@ static void loop_body(MetalEmitter *e, uint32_t *cursor, unsigned depth) {
         metal_text(e, ") break;\n");
     }
     metal_indent(e);
-    metal_format(e, "bool break%u = false;\n", loop);
+    metal_format(e, "uint loopControl%u = 0u;\n", loop);
     metal_line(e, "do {");
     ++e->indent;
     metal_block(e, cursor, depth + 1u, loop, false);
@@ -88,7 +129,7 @@ static void loop_body(MetalEmitter *e, uint32_t *cursor, unsigned depth) {
     ++*cursor;
     metal_line(e, "} while (false);");
     metal_indent(e);
-    metal_format(e, "if (break%u) break;\n", loop);
+    metal_format(e, "if (loopControl%u == 1u) break;\n", loop);
     metal_block(e, cursor, depth + 1u, loop, true);
     if (!marker(e, *cursor, IR_END_LOOP)) return;
     ++*cursor;
@@ -104,13 +145,18 @@ void metal_block(MetalEmitter *e, uint32_t *cursor, unsigned depth, uint32_t loo
         const IrInstruction *ir = &e->module->instructions[*cursor];
         e->offset = ir->source_offset;
         if (ir->opcode == IR_ELSE || ir->opcode == IR_END_IF || ir->opcode == IR_SHORT_END ||
-            ir->opcode == IR_LOOP_TEST || ir->opcode == IR_LOOP_CONTINUING || ir->opcode == IR_END_LOOP) return;
+            ir->opcode == IR_LOOP_TEST || ir->opcode == IR_LOOP_CONTINUING || ir->opcode == IR_END_LOOP ||
+            ir->opcode == IR_END_CASE || ir->opcode == IR_END_SWITCH) return;
         if (ir->opcode == IR_IF) {
             selection(e, cursor, depth, loop, continuing);
             continue;
         }
         if (ir->opcode == IR_SHORT_BEGIN) {
             short_circuit(e, cursor, depth, loop, continuing);
+            continue;
+        }
+        if (ir->opcode == IR_SWITCH_BEGIN) {
+            switch_body(e, cursor, depth, loop, continuing);
             continue;
         }
         if (ir->opcode == IR_LOOP_BEGIN) {
@@ -161,6 +207,9 @@ void metal_block(MetalEmitter *e, uint32_t *cursor, unsigned depth, uint32_t loo
                 }
                 metal_text(e, ";\n");
                 break;
+            case IR_SWITCH_BREAK:
+                metal_text(e, "break;\n");
+                break;
             case IR_BREAK: case IR_CONTINUE: case IR_BREAK_IF:
                 if (loop == NO_ID) {
                     metal_error(e, "Metal loop control has no enclosing loop");
@@ -179,7 +228,8 @@ void metal_block(MetalEmitter *e, uint32_t *cursor, unsigned depth, uint32_t loo
                         metal_error(e, "Metal unconditional loop control in continuing is unsupported");
                         break;
                     }
-                    if (ir->opcode == IR_BREAK) metal_format(e, "break%u = true; ", loop);
+                    if (ir->opcode == IR_BREAK) metal_format(e, "loopControl%u = 1u; ", loop);
+                    else metal_format(e, "loopControl%u = 2u; ", loop);
                     /* The do-once body funnels every continue through continuing. */
                     metal_text(e, "break;\n");
                 }
@@ -200,6 +250,7 @@ void metal_block(MetalEmitter *e, uint32_t *cursor, unsigned depth, uint32_t loo
                 metal_text(e, ";\n");
                 break;
             case IR_HANDLE: case IR_IMAGE: case IR_ROBUST_LOAD: case IR_UNIFORM_LOAD: case IR_ROBUST_STORE: case IR_MAX:
+            case IR_SWITCH_BEGIN: case IR_SWITCH_CASE: case IR_END_CASE: case IR_END_SWITCH:
             case IR_IF: case IR_ELSE: case IR_END_IF: case IR_SHORT_BEGIN: case IR_SHORT_END:
             case IR_LOOP_BEGIN: case IR_LOOP_TEST: case IR_LOOP_CONTINUING: case IR_END_LOOP:
             case IR_ACCESS_LOAD: case IR_ACCESS_STORE: case IR_VALUE_ACCESS:

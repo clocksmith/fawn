@@ -33,12 +33,11 @@ uint32_t native_shader_semantic_flags(void)
 static doe_shader_options shader_options(doe_shader_target target, size_t source_size)
 {
     /* Source storage follows the supplied span within the compiler's uint32
-     * representation. Semantic pools stay explicitly bounded: whitespace or
-     * comments do not create an unrelated 64-KiB source cutoff. Exhaustion fails
-     * visibly without retrying through another compiler. */
+     * representation. Semantic pools are initial workspace sizes, not language
+     * limits: only explicit compiler pool reports authorize checked growth. */
     static const char identity[] = "experimental-c-native-no-cache";
     doe_shader_options options = {
-        .target=target,.semantic_flags=native_shader_semantic_flags(),
+        .target=target,.semantic_flags=native_shader_semantic_flags(),.grow_pools=true,
         .allocator = {NULL, shader_allocate, shader_deallocate},
         .capacities = {
             .typed = {.source_bytes=source_size > 65536 ? source_size : 65536, .tokens=8192, .statements=2048, .expressions=8192,

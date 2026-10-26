@@ -47,10 +47,27 @@ static bool target_output(const native_stage *fragment, const WGPUColorTargetSta
         (!source_alpha(color->blend) || written->lane_count == 4);
 }
 
+/* Shared interface matching traverses caller-owned vertex spans before some
+ * backends lower layouts. Bound every span first, independent of shader IO. */
+static bool vertex_spans(const WGPUVertexState *vertex, const WGPULimits *limits)
+{
+    if (!vertex || !limits || vertex->bufferCount > DOE_RESOURCE_MAX_VERTEX_BUFFERS ||
+        vertex->bufferCount > limits->maxVertexBuffers || (vertex->bufferCount && !vertex->buffers)) return false;
+    size_t attributes = 0;
+    for (size_t slot = 0; slot < vertex->bufferCount; ++slot) {
+        const WGPUVertexBufferLayout *buffer = &vertex->buffers[slot];
+        if (buffer->attributeCount > limits->maxVertexAttributes - attributes ||
+            (buffer->attributeCount && !buffer->attributes)) return false;
+        attributes += buffer->attributeCount;
+    }
+    return true;
+}
+
 bool native_render_interfaces(const native_stage stages[2], size_t stage_count, const WGPUVertexState *vertex,
     const WGPUFragmentState *fragment, bool alpha_to_coverage, bool point_list,
     const native_graphics_limits *caps, const WGPULimits *limits)
 {
+    if (!vertex_spans(vertex, limits)) return false;
     const native_stage *fragment_stage = stage_count == 2 ? &stages[1] : NULL;
     size_t targets = fragment ? fragment->targetCount : 0;
     for (size_t i = 0; i < targets; ++i)

@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: MIT */
 #include "cli_specialization.h"
+#include "../include/doe_compiler_pool_growth.h"
 #include "../include/doe_compiler_module_specialization.h"
 #include <ctype.h>
 #include <math.h>
@@ -38,25 +39,38 @@ bool cli_compile_specialized(const DoeCompilerStageCapacities *stages,
     *diagnostic = (DoeCompilerDiagnostic){.status = DOE_COMPILER_INPUT_ERROR};
     memcpy(diagnostic->message, "specialization allocation or requirements failed",
         sizeof("specialization allocation or requirements failed"));
-    const DoeCompilerSpecializationCapacities capacities = {
+    DoeCompilerSpecializationCapacities capacities = {
         .target = {.stages = *stages}, .overrides = stages->module.typed.constants};
     DoeCompilerWorkspaceRequirements size = {0};
-    if (doe_compiler_module_specialization_requirements(
-            DOE_COMPILER_MODULE_SPECIALIZATION_ABI_VERSION, DOE_COMPILER_TARGET_SPIRV,
-            &capacities, sizeof(capacities), &size, sizeof(size)) != DOE_COMPILER_OK) return false;
-    void *workspace = malloc(size.size_bytes);
-    if (workspace == NULL) return false;
+    void *workspace = NULL;
     bool success = false;
     uint32_t *words = NULL;
     unsigned char *binary = NULL;
     DoeCompilerTextResult result = {0};
-    if (doe_compiler_specialize_module(DOE_COMPILER_MODULE_SPECIALIZATION_ABI_VERSION,
-            DOE_COMPILER_TARGET_SPIRV, &capacities, sizeof(capacities), workspace,
-            size.size_bytes, source, length, overrides->values, overrides->count,
-            sizeof(overrides->values[0]), DOE_COMPILER_TYPED_WORDS | DOE_COMPILER_TYPED_MEASURE,
-            NULL, 0u, &result, sizeof(result)) != DOE_COMPILER_OK) {
-        *diagnostic = result.stages.resources.module.diagnostic;
-        goto finish;
+    for (;;) {
+        if (doe_compiler_module_specialization_requirements(
+                DOE_COMPILER_MODULE_SPECIALIZATION_ABI_VERSION, DOE_COMPILER_TARGET_SPIRV,
+                &capacities, sizeof(capacities), &size, sizeof(size)) != DOE_COMPILER_OK) goto finish;
+        workspace = malloc(size.size_bytes);
+        if (workspace == NULL) goto finish;
+        const DoeCompilerStatus status = doe_compiler_specialize_module(
+            DOE_COMPILER_MODULE_SPECIALIZATION_ABI_VERSION, DOE_COMPILER_TARGET_SPIRV,
+            &capacities, sizeof(capacities), workspace, size.size_bytes, source, length,
+            overrides->values, overrides->count, sizeof(overrides->values[0]),
+            DOE_COMPILER_TYPED_WORDS | DOE_COMPILER_TYPED_MEASURE, NULL, 0u, &result, sizeof(result));
+        if (status == DOE_COMPILER_OK) break;
+        const uint32_t pool = result.stages.resources.module.exhausted_pool;
+        const size_t minimum = result.stages.resources.module.minimum_pool_capacity;
+        const bool grew = pool == DOE_COMPILER_POOL_OVERRIDES ?
+            ((status == DOE_COMPILER_INPUT_ERROR || status == DOE_COMPILER_OUTPUT_TOO_SMALL) &&
+                doe_compiler_grow_pool_capacity(&capacities.overrides, minimum)) :
+            doe_compiler_grow_stage_pool(&capacities.target.stages, status, pool, minimum);
+        if (!grew) {
+            *diagnostic = result.stages.resources.module.diagnostic;
+            goto finish;
+        }
+        free(workspace);
+        workspace = NULL;
     }
     const size_t word_count = result.stages.resources.module.required.words;
     if (word_count == 0u || word_count > SIZE_MAX / sizeof(*words)) goto finish;

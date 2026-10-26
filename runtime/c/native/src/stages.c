@@ -12,26 +12,25 @@ static bool reject(native_pipeline_error *error, WGPUErrorType type, const char 
 }
 
 static bool selected_entry(const doe_shader_module_view *module, WGPUStringView name,
-    uint32_t stage, char selected[DOE_COMPILER_MAX_NAME_BYTES + 1])
+    uint32_t stage, const char **selected)
 {
     size_t length;
-    if (!native_string_size(name,&length) || length > DOE_COMPILER_MAX_NAME_BYTES ||
+    if (!native_string_size(name,&length) ||
         (name.data && (!length || memchr(name.data,0,length)))) return false;
     const DoeCompilerModuleEntryV13 *found = NULL;
     for (size_t i = 0; i < module->entry_count; ++i) {
         const DoeCompilerModuleEntryV13 *entry = &module->entries[i];
         if (entry->stage != stage) continue;
         if (entry->name.offset > module->name_bytes ||
-            entry->name.length > module->name_bytes - entry->name.offset ||
-            entry->name.length > DOE_COMPILER_MAX_NAME_BYTES) return false;
+            entry->name.length >= module->name_bytes - entry->name.offset ||
+            module->names[entry->name.offset + entry->name.length] != 0) return false;
         if (name.data && (entry->name.length != length ||
             memcmp(module->names + entry->name.offset,name.data,length))) continue;
         if (found) return false;
         found = entry;
     }
     if (!found) return false;
-    memcpy(selected,module->names + found->name.offset,found->name.length);
-    selected[found->name.length] = 0;
+    *selected = module->names + found->name.offset;
     return true;
 }
 
@@ -57,7 +56,7 @@ static bool constant_values(const WGPUConstantEntry *constants, size_t count,
     for (size_t i = 0; i < count; ++i) {
         size_t length;
         if (constants[i].nextInChain || !native_string_size(constants[i].key,&length) ||
-            !constants[i].key.data || !length || length > DOE_COMPILER_MAX_NAME_BYTES ||
+            !constants[i].key.data || !length ||
             memchr(constants[i].key.data,0,length)) return false;
         values[i] = (DoeCompilerOverrideValueV13){constants[i].key.data,length,constants[i].value};
     }
@@ -84,7 +83,7 @@ static bool stage_load(native_device *device, WGPUShaderModule module, WGPUStrin
         }
         doe_resource_shader_release((doe_resource_shader *)module);
         native_device_release(device);
-        if (!valid) return false;
+        if (!valid) { native_stage_release(&result); return false; }
         *out=result;
         out->entry=&out->imported_entry;
         out->view.entries=&out->imported_entry;
@@ -97,7 +96,7 @@ static bool stage_load(native_device *device, WGPUShaderModule module, WGPUStrin
         doe_shader_borrow_module(payload->module,&metadata) == DOE_SHADER_OK;
     if (!valid) reject(error,WGPUErrorType_Validation,payload && payload->error.diagnostic.message[0] ?
         payload->error.diagnostic.message : "shader module creation failed; see compilation info");
-    if (valid && (!selected_entry(&metadata,name,stage,result.name) || count > metadata.override_count ||
+    if (valid && (!selected_entry(&metadata,name,stage,&result.name) || count > metadata.override_count ||
         (count && !constants) || count > SIZE_MAX / sizeof(*values)))
         valid = reject(error,WGPUErrorType_Validation,"stage entry selection or pipeline constant span is invalid");
     if (valid && count) {
@@ -126,10 +125,12 @@ static bool stage_load(native_device *device, WGPUShaderModule module, WGPUStrin
             result.entry = &result.view.entries[0];
             const DoeCompilerNameV4 entry = result.entry->name;
             valid = result.entry->stage == stage && entry.offset <= result.view.counts.name_bytes &&
-                entry.length <= result.view.counts.name_bytes - entry.offset &&
+                entry.length < result.view.counts.name_bytes - entry.offset &&
+                result.view.names[entry.offset + entry.length] == 0 &&
                 entry.length == strlen(result.name) &&
                 !memcmp(result.view.names + entry.offset,result.name,entry.length);
         }
+        if (valid) result.name = result.view.names + result.entry->name.offset;
         if (!valid) reject(error,WGPUErrorType_Validation,"specialized entry identity or native capability admission failed");
     }
     free(values);
@@ -164,6 +165,7 @@ void native_stage_release(native_stage *stage)
 {
     if (!stage) return;
     /* Allocator hooks and final module release must remain outside owner locks. */
+    free(stage->owned_name);
     doe_shader_release(stage->compiled);
     doe_resource_shader_release(stage->imported_module);
     memset(stage,0,sizeof(*stage));

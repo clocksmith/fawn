@@ -17,7 +17,7 @@ struct doe_shader {
     unsigned char *identity;
     uint32_t selection_mode, semantic_flags;
     size_t selection_size;
-    char selection_name[64];
+    char *selection_name;
     enum { SHADER_LEGACY, SHADER_MODULE, SHADER_SPECIALIZED } kind;
     doe_shader *module; /* Specialized result retains immutable module source/policy. */
     doe_shader_options options;
@@ -36,10 +36,17 @@ typedef struct shader_input {
     size_t bytes;
     const char *source;
     const void *identity;
+    const char *selection;
+    size_t selection_size;
 } shader_input;
 doe_shader_status shader_input_allocate(const doe_shader_allocator *,
     const DoeCompilerWorkspaceRequirements *, const char *, size_t, const void *, size_t,
-    bool, shader_input *);
+    bool, const char *, size_t, shader_input *);
+bool shader_grow_pools(doe_shader_options *, DoeCompilerStageCapacities *, size_t *,
+    DoeCompilerStatus, uint32_t, size_t);
+doe_shader_status shader_input_resize(const doe_shader_allocator *,
+    const DoeCompilerWorkspaceRequirements *, const DoeCompilerWorkspaceRequirements *,
+    size_t, size_t, bool, shader_input *);
 doe_shader_status shader_fail(doe_shader_error *, doe_shader_status, DoeCompilerStatus, const DoeCompilerDiagnostic *);
 bool shader_reserve(size_t *, size_t, size_t, size_t, size_t *);
 bool shader_layout(doe_shader_target, DoeCompilerModuleOutputCounts, size_t, size_t,

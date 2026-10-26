@@ -499,14 +499,6 @@ static bool emit_value_access(Emitter *e, const IrInstruction *ir) {
     c->walk_count = 0u;
     return !e->failed;
 }
-typedef struct EmitLoop EmitLoop;
-struct EmitLoop {
-    EmitLoop *parent;
-    uint32_t header, continuing, merge;
-    bool continue_live;
-};
-static bool emit_block(Emitter *e, const IrProgram *program, size_t *cursor,
-                       unsigned depth, EmitLoop *loop, bool *live);
 static bool emit_selection(Emitter *e, const IrProgram *program, size_t *cursor,
                            unsigned depth, EmitLoop *loop, bool *live) {
     const IrInstruction *test = &program->instructions[(*cursor)++];
@@ -525,7 +517,7 @@ static bool emit_selection(Emitter *e, const IrProgram *program, size_t *cursor,
         e->current_label = yes;
     }
     bool yes_live = active;
-    if (!emit_block(e, program, cursor, depth + 1u, loop, &yes_live)) return false;
+    if (!spirv_emit_block(e, program, cursor, depth + 1u, loop, &yes_live)) return false;
     if (*cursor == program->instruction_count || program->instructions[*cursor].opcode != IR_ELSE)
         return source_error(e->source, DOE_COMPILER_INPUT_ERROR, test->source_offset,
                             "internal structured IR missing else boundary");
@@ -536,7 +528,7 @@ static bool emit_selection(Emitter *e, const IrProgram *program, size_t *cursor,
         e->current_label = no;
     }
     bool no_live = active;
-    if (!emit_block(e, program, cursor, depth + 1u, loop, &no_live)) return false;
+    if (!spirv_emit_block(e, program, cursor, depth + 1u, loop, &no_live)) return false;
     if (*cursor == program->instruction_count || program->instructions[*cursor].opcode != IR_END_IF)
         return source_error(e->source, DOE_COMPILER_INPUT_ERROR, test->source_offset,
                             "internal structured IR missing merge boundary");
@@ -570,7 +562,7 @@ static bool emit_short_circuit(Emitter *e, const IrProgram *program, size_t *cur
         e->current_label = rhs;
     }
     bool rhs_live = active;
-    if (!emit_block(e, program, cursor, depth + 1u, loop, &rhs_live) ||
+    if (!spirv_emit_block(e, program, cursor, depth + 1u, loop, &rhs_live) ||
         !expect_marker(e, program, *cursor, IR_SHORT_END)) return false;
     const IrInstruction *end = &program->instructions[(*cursor)++];
     if (active) {
@@ -602,7 +594,7 @@ static bool emit_loop(Emitter *e, const IrProgram *program, size_t *cursor,
         e->current_label = test_label;
     }
     bool test_live = active;
-    if (!emit_block(e, program, cursor, depth + 1u, &loop, &test_live) ||
+    if (!spirv_emit_block(e, program, cursor, depth + 1u, &loop, &test_live) ||
         !expect_marker(e, program, *cursor, IR_LOOP_TEST)) return false;
     const IrInstruction *test = &program->instructions[(*cursor)++];
     if (active) {
@@ -612,7 +604,7 @@ static bool emit_loop(Emitter *e, const IrProgram *program, size_t *cursor,
         e->current_label = body_label;
     }
     bool body_live = active;
-    if (!emit_block(e, program, cursor, depth + 1u, &loop, &body_live) ||
+    if (!spirv_emit_block(e, program, cursor, depth + 1u, &loop, &body_live) ||
         !expect_marker(e, program, *cursor, IR_LOOP_CONTINUING)) return false;
     ++*cursor;
     if (body_live) { EMIT(OP_BRANCH, loop.continuing); loop.continue_live = true; }
@@ -623,7 +615,7 @@ static bool emit_loop(Emitter *e, const IrProgram *program, size_t *cursor,
          * back-edge required by SPIR-V. Its source operations remain suppressed. */
     }
     bool tail_live = active && loop.continue_live;
-    if (!emit_block(e, program, cursor, depth + 1u, &loop, &tail_live) ||
+    if (!spirv_emit_block(e, program, cursor, depth + 1u, &loop, &tail_live) ||
         !expect_marker(e, program, *cursor, IR_END_LOOP)) return false;
     ++*cursor;
     if (tail_live || (active && !loop.continue_live)) { EMIT(OP_BRANCH, loop.header); }
@@ -643,18 +635,23 @@ static bool emit_workgroup_barrier(Emitter *e, BarrierMemory memory) {
     EMIT(OP_CONTROL_BARRIER, ID_TWO_U32, ID_TWO_U32, semantics);
     return true;
 }
-static bool emit_block(Emitter *e, const IrProgram *program, size_t *cursor,
+bool spirv_emit_block(Emitter *e, const IrProgram *program, size_t *cursor,
                        unsigned depth, EmitLoop *loop, bool *live) {
     while (*cursor < e->function_end) {
         const IrInstruction *ir = &program->instructions[*cursor];
         if (ir->opcode == IR_ELSE || ir->opcode == IR_END_IF || ir->opcode == IR_SHORT_END ||
-            ir->opcode == IR_LOOP_TEST || ir->opcode == IR_LOOP_CONTINUING || ir->opcode == IR_END_LOOP) return true;
+            ir->opcode == IR_LOOP_TEST || ir->opcode == IR_LOOP_CONTINUING || ir->opcode == IR_END_LOOP ||
+            ir->opcode == IR_END_CASE || ir->opcode == IR_END_SWITCH) return true;
         if (ir->opcode == IR_IF) {
             if (!emit_selection(e, program, cursor, depth, loop, live)) return false;
             continue;
         }
         if (ir->opcode == IR_SHORT_BEGIN) {
             if (!emit_short_circuit(e, program, cursor, depth, loop, live)) return false;
+            continue;
+        }
+        if (ir->opcode == IR_SWITCH_BEGIN) {
+            if (!spirv_emit_switch(e, program, cursor, depth, loop, live)) return false;
             continue;
         }
         if (ir->opcode == IR_LOOP_BEGIN) {
@@ -782,6 +779,11 @@ static bool emit_block(Emitter *e, const IrProgram *program, size_t *cursor,
             case IR_LOCAL_STORE:
                 EMIT(OP_STORE, e->local_base + (ir->operands.scalar.binding - e->local_start), e->values[ir->operands.scalar.right]);
                 break;
+            case IR_SWITCH_BREAK:
+                if (!e->switch_merge) return spirv_emit_error(e, ir->source_offset, "switch break target is missing");
+                EMIT(OP_BRANCH, e->switch_merge);
+                *live = false;
+                break;
             case IR_BREAK:
             case IR_CONTINUE:
             case IR_BREAK_IF:
@@ -809,6 +811,7 @@ static bool emit_block(Emitter *e, const IrProgram *program, size_t *cursor,
             case IR_ROBUST_STORE:
             case IR_MAX:
                 return spirv_emit_error(e, ir->source_offset, "obsolete scalar-only IR operation");
+            case IR_SWITCH_BEGIN: case IR_SWITCH_CASE: case IR_END_CASE: case IR_END_SWITCH:
             case IR_SHORT_BEGIN:
             case IR_SHORT_END:
             case IR_LOOP_BEGIN:
@@ -885,7 +888,7 @@ static bool function_body(Emitter *e, const IrProgram *program, const FunctionRe
     }
     size_t cursor = function->instruction_start;
     bool live = true;
-    if (!emit_block(e, program, &cursor, 0u, NULL, &live)) return false;
+    if (!spirv_emit_block(e, program, &cursor, 0u, NULL, &live)) return false;
     if (cursor != function->instruction_end) return spirv_emit_error(e, (uint32_t)e->source->length, "unexpected top-level structured IR boundary");
     if (live) {
         if (function->result_type != IR_VOID) return spirv_emit_error(e, (uint32_t)e->source->length, "missing typed function return");

@@ -34,7 +34,7 @@ bool compiler_text_metal(Source *source, uint32_t selected, DoeTargetScratch scr
         emitter.output = out->name;
         emitter.capacity = sizeof(out->name) - 1u;
         emitter.position = 0u;
-        metal_entry_name(&emitter, function->name);
+        metal_entry_name(&emitter, entry->function);
         for (uint32_t j = 0u; j < entry->state.resolved.resource_count; ++j) {
             if (work == 0u) return source_error(source, DOE_COMPILER_UNSUPPORTED, source->length,
                 "text metadata traversal work limit exceeded");

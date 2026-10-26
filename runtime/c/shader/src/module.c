@@ -20,8 +20,8 @@ doe_shader_status doe_shader_create_module(const doe_shader_options *options,
     if (!shader_options_valid(options) || !out || (!source && source_size) ||
         options->selection.mode != DOE_COMPILER_SELECT_NONE || options->selection.reserved || options->selection.name || options->selection.name_length)
         return shader_fail(error,DOE_SHADER_INVALID_ARGUMENT,DOE_COMPILER_INPUT_ERROR,NULL);
-    const doe_shader_options saved = *options;
-    const DoeCompilerSpecializationCapacities capacities = {.target={.stages={.module=saved.capacities,
+    doe_shader_options saved = *options;
+    DoeCompilerSpecializationCapacities capacities = {.target={.stages={.module=saved.capacities,
         .interface_attributes=saved.interface_attributes,.stage_interfaces=saved.stage_interfaces}},.overrides=override_capacity};
     DoeCompilerWorkspaceRequirements requirements;
     DoeCompilerStatus status = doe_compiler_specialization_requirements(DOE_COMPILER_SPECIALIZATION_ABI_VERSION,
@@ -29,14 +29,29 @@ doe_shader_status doe_shader_create_module(const doe_shader_options *options,
     if (status != DOE_COMPILER_OK) return shader_fail(error,DOE_SHADER_COMPILE_FAILED,status,NULL);
     shader_input input;
     doe_shader_status acquired = shader_input_allocate(&saved.allocator,&requirements,source,source_size,
-        saved.compiler_identity,saved.compiler_identity_size,source_size <= saved.capacities.typed.source_bytes,&input);
+        saved.compiler_identity,saved.compiler_identity_size,source_size <= saved.capacities.typed.source_bytes,NULL,0,&input);
     if (acquired != DOE_SHADER_OK) return shader_fail(error,acquired,DOE_COMPILER_OK,NULL);
     void *workspace = input.allocation;
     DoeCompilerValidationResult result = {0};
-    status = doe_compiler_validate_module(DOE_COMPILER_SPECIALIZATION_ABI_VERSION,&capacities,sizeof(capacities),
-        workspace,requirements.size_bytes,input.source,source_size,saved.semantic_flags,NULL,0,&result,sizeof(result));
     doe_shader *module = NULL;
     doe_shader_status outcome = DOE_SHADER_COMPILE_FAILED;
+    for (;;) {
+        status = doe_compiler_validate_module(DOE_COMPILER_SPECIALIZATION_ABI_VERSION,&capacities,sizeof(capacities),
+            workspace,requirements.size_bytes,input.source,source_size,saved.semantic_flags,NULL,0,&result,sizeof(result));
+        if (status == DOE_COMPILER_OK) break;
+        if (!shader_grow_pools(&saved,&capacities.target.stages,&capacities.overrides,
+                status,result.exhausted_pool,result.minimum_pool_capacity)) goto finished;
+        DoeCompilerWorkspaceRequirements next;
+        status = doe_compiler_specialization_requirements(DOE_COMPILER_SPECIALIZATION_ABI_VERSION,
+            (uint32_t)saved.target,&capacities,sizeof(capacities),&next,sizeof(next));
+        if (status != DOE_COMPILER_OK) goto finished;
+        outcome = shader_input_resize(&saved.allocator,&requirements,&next,source_size,
+            saved.compiler_identity_size,source_size <= saved.capacities.typed.source_bytes,&input);
+        if (outcome != DOE_SHADER_OK) goto finished;
+        requirements = next;
+        workspace = input.allocation;
+        outcome = DOE_SHADER_COMPILE_FAILED;
+    }
     if (status != DOE_COMPILER_OK) goto finished;
     size_t bytes, offsets[5];
     if (!result.required_is_exact || !module_layout(&result,source_size,saved.compiler_identity_size,&bytes,offsets)) {
@@ -56,7 +71,7 @@ doe_shader_status doe_shader_create_module(const doe_shader_options *options,
     module->source_size = source_size;
     module->identity_size = saved.compiler_identity_size;
     module->semantic_flags = saved.semantic_flags;
-    module->override_capacity = override_capacity;
+    module->override_capacity = capacities.overrides;
     module->source = (char *)module + offsets[0];
     module->identity = (unsigned char *)module + offsets[1];
     module->options = saved;

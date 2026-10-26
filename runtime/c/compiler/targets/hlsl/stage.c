@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: MIT
  * Copyright (c) 2026 Doe contributors */
 #include "private.h"
+#include "../entry_name.h"
 #include "../closure.h"
 #include <string.h>
 
@@ -114,7 +115,8 @@ static bool entry_admit(HlslEmitter *e) {
     e->offset = c->functions[entry->function].name.offset;
     const bool graphics = (c->functions[entry->function].flags & (FUNCTION_VERTEX | FUNCTION_FRAGMENT)) != 0u;
     if (graphics && !hlsl_graphics_admit(e)) return false;
-    if (entry_private_name(e, c->functions[entry->function].name)) {
+    if (!target_entry_short_name(e->source, c->functions[entry->function].name) &&
+        entry_private_name(e, c->functions[entry->function].name)) {
         hlsl_error(e, "HLSL entry name collides with the private target symbol namespace");
         return false;
     }
@@ -149,10 +151,19 @@ static bool entry_admit(HlslEmitter *e) {
     }
     return !e->failed;
 }
-void hlsl_entry_name(HlslEmitter *e, NameSpan name) {
-    if (name.length == 0u || name.length > 63u || name.offset > e->source->length ||
+void hlsl_entry_name(HlslEmitter *e, uint32_t function) {
+    if (function >= e->module->function_count) {
+        hlsl_error(e, "entry function identity is invalid");
+        return;
+    }
+    const NameSpan name = e->module->functions[function].name;
+    if (name.length == 0u || name.offset > e->source->length ||
         name.length > e->source->length - name.offset) {
         hlsl_error(e, "HLSL entry name span is invalid");
+        return;
+    }
+    if (!target_entry_ascii(e->source, name)) {
+        hlsl_error(e, "HLSL entry name is not an ASCII shader identifier");
         return;
     }
     /* Generated compile-time controls must never expand a legal WGSL entry
@@ -171,13 +182,14 @@ void hlsl_entry_name(HlslEmitter *e, NameSpan name) {
             return;
         }
     }
+    /* The reserved target prefix also remaps short source collisions. Exact
+     * module function identity makes the actual names injective without hashes. */
+    if (target_entry_short_name(e->source, name)) {
+        hlsl_format(e, "doe_long_entry_%u", function);
+        return;
+    }
     for (uint32_t i = 0u; i < name.length; ++i) {
         const char character = e->source->source[name.offset + i];
-        if (!((character >= 'a' && character <= 'z') || (character >= 'A' && character <= 'Z') ||
-            (i != 0u && character >= '0' && character <= '9') || character == '_')) {
-            hlsl_error(e, "HLSL entry name is not an ASCII shader identifier");
-            return;
-        }
         const char text[] = {character, '\0'};
         hlsl_text(e, text);
     }
@@ -192,7 +204,7 @@ static void entry_wrapper(HlslEmitter *e) {
     if (entry->state.resolved.workgroup_storage_bytes != 0u || group_waves) mask |= 1u << INPUT_LOCAL_INDEX;
     hlsl_format(e, "[numthreads(%u, %u, %u)]\nvoid ", entry->state.resolved.workgroup_size[0],
                 entry->state.resolved.workgroup_size[1], entry->state.resolved.workgroup_size[2]);
-    hlsl_entry_name(e, c->functions[entry->function].name);
+    hlsl_entry_name(e, entry->function);
     hlsl_text(e, "(");
     bool comma = false;
     for (unsigned i = 0u; i <= INPUT_LOCAL_INDEX; ++i) {

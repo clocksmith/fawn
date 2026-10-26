@@ -8,7 +8,7 @@
  * source of the dated WGSL uniformity graph. No source numerics are executed. */
 enum { SUMMARY_REQUIRED=1u, SUMMARY_RETURN=2u };
 enum { MAP_INCOMING, MAP_FIRST, MAP_HEAD, MAP_CONTINUE, MAP_BREAK, MAP_TEMP, MAP_COUNT };
-enum { FRAME_BREAK=1u, FRAME_CONTINUE=2u };
+enum { FRAME_BREAK=1u, FRAME_CONTINUE=2u, FRAME_SWITCH=4u };
 typedef struct {
     uint32_t statement, parent_loop, incoming_cf, first_cf, head_cf, break_cf, continue_cf, flags;
 } UniformityFrame;
@@ -520,15 +520,45 @@ static bool if_bits(Uniformity *a,uint32_t statement) {
     --a->frame_count; return true;
 }
 static bool loop_exit(Uniformity *a,bool continuing) {
-    if (a->loop==NO_ID)
+    uint32_t target = a->loop;
+    if (continuing)
+        while (target != NO_ID && (a->frames[target].flags & FRAME_SWITCH) != 0u)
+            target = a->frames[target].parent_loop;
+    if (target==NO_ID)
         return source_error(a->source,DOE_COMPILER_INPUT_ERROR,a->budget.offset,"validated uniformity loop target is missing");
-    UniformityFrame *frame=&a->frames[a->loop];
+    UniformityFrame *frame=&a->frames[target];
     const uint32_t flag=continuing?FRAME_CONTINUE:FRAME_BREAK, map=continuing?MAP_CONTINUE:MAP_BREAK;
     if ((frame->flags&flag)!=0u) {
-        if (!join_map(a,frame_map(a,a->loop,map),a->current_local)) return false;
-    } else if (!copy_map(a,frame_map(a,a->loop,map),a->current_local)) return false;
+        if (!join_map(a,frame_map(a,target,map),a->current_local)) return false;
+    } else if (!copy_map(a,frame_map(a,target,map),a->current_local)) return false;
     frame->flags|=flag;
     if (continuing) frame->continue_cf|=a->cf; else frame->break_cf|=a->cf;
+    return true;
+}
+static bool switch_bits(Uniformity *a,uint32_t statement) {
+    const Statement *st = &a->compiler->statements[statement];
+    uint32_t frame, test;
+    if (!enter_frame(a, statement, &frame) ||
+        !copy_map(a, frame_map(a, frame, MAP_INCOMING), a->current_local) ||
+        !expression_bit(a, st->value.condition, a->cf, &test)) return false;
+    a->frames[frame].flags |= FRAME_SWITCH;
+    a->loop = frame;
+    uint32_t outgoing = 0u;
+    for (uint32_t clause = st->body_start; clause < st->end; clause = a->compiler->statements[clause].end) {
+        if (!charge(a, 1u) || !copy_map(a, a->current_local, frame_map(a, frame, MAP_INCOMING))) return false;
+        const Statement *part = &a->compiler->statements[clause];
+        a->cf = test;
+        bool next;
+        if (!block_bits(a, part->body_start, part->end, false, &next)) return false;
+        outgoing |= a->cf;
+        if (next && !loop_exit(a, false)) return false;
+    }
+    if ((a->frames[frame].flags & FRAME_BREAK) != 0u &&
+        !copy_map(a, a->current_local, frame_map(a, frame, MAP_BREAK))) return false;
+    const uint32_t behavior = a->compiler->statement_behaviors[statement] & 15u;
+    a->cf = behavior == BEHAVIOR_NEXT ? a->frames[frame].incoming_cf : outgoing;
+    a->loop = a->frames[frame].parent_loop;
+    --a->frame_count;
     return true;
 }
 static bool loop_bits(Uniformity *a,uint32_t statement) {
@@ -615,6 +645,9 @@ static bool statement_bits(Uniformity *a,uint32_t id) {
         case STATEMENT_BREAK_IF:
             return expression_bit(a,st->value.condition,a->cf,&a->cf) && loop_exit(a,false);
         case STATEMENT_IF: return if_bits(a,id);
+        case STATEMENT_SWITCH: return switch_bits(a,id);
+        case STATEMENT_CASE:
+            return source_error(a->source, DOE_COMPILER_INPUT_ERROR, st->source_offset, "unexpected standalone case header");
         case STATEMENT_BLOCK: return block_bits(a,st->body_start,st->end,false,&ignored);
         case STATEMENT_FOR: case STATEMENT_WHILE: case STATEMENT_LOOP: return loop_bits(a,id);
         case STATEMENT_CONTINUING:

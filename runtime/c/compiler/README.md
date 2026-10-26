@@ -127,7 +127,14 @@ with DXC `-DDOE_HLSL_ENTRY=0` (or the desired index) and its declared entry name
 Entryless text modules emit no text;
 SPIR-V output requires an executable entry. The CLI accepts up to 2 MiB of source, matching the retained offline emitters.
 Legacy ABI1 reflection retains its 64 KiB library admission limit; typed CLI paths
-use caller-sized source storage. Other declared compiler pool limits still apply.
+use caller-sized source storage. Default SPIR-V, MSL, HLSL and runtime-override
+CLI paths grow only the named exhausted semantic pool using the public typed
+report and shared `doe_compiler_pool_growth.h` policy. Compiler depth and integer
+representation limits remain explicit. Failed allocation/query or semantic
+validation is terminal; no failed attempt publishes output. Fixed legacy
+reflection projections retain their separate API budgets. `test-cli-growth`
+exercises larger statements/types/resources, post-growth rejection and allocation
+failure cleanup without changing frozen ABI capacity tests.
 Legacy reflection modes require SPIR-V. Runtime SPIR-V mode accepts up to 64 finite
 override values through ABI14, preserving every compute and graphics entry:
 

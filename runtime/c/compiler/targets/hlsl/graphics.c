@@ -173,7 +173,7 @@ void hlsl_graphics_wrapper(HlslEmitter *e) {
     const uint32_t inputs = interface_type(e, entry, DOE_COMPILER_INTERFACE_INPUT);
     const uint32_t outputs = interface_type(e, entry, DOE_COMPILER_INTERFACE_OUTPUT);
     hlsl_text(e, outputs != 0u ? "DoeStage2 " : "void ");
-    hlsl_entry_name(e, function->name);
+    hlsl_entry_name(e, e->module->entries[e->entry].function);
     hlsl_text(e, inputs != 0u ? "(DoeStage1 input) {\n" : "() {\n");
     hlsl_line(e, "    DoeContext ctx = (DoeContext)0;");
     hlsl_private_initialization(e);

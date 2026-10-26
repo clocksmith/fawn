@@ -179,6 +179,88 @@ static bool lower_loop(Source *source, const Syntax *s, const Statement *st,
     scope->count = saved_count; scope->scope_start = saved_start; scope->level = saved_level; scope->loop = outer;
     return true;
 }
+static bool switch_integer(TypeId type) {
+    return type == IR_I32 || type == IR_U32 || type == IR_ABSTRACT_INT;
+}
+static bool lower_switch(Source *source, const Syntax *s, const Statement *st,
+                         LocalScope *scope, IrProgram *program, LoopScope *outer,
+                         bool reachable, unsigned *behavior) {
+    ExpressionValue selector;
+    if (!sema_expression(source, st->value.condition, scope, true, true, &selector)) return false;
+    TypeId type = selector.constant.type;
+    if (!switch_integer(type))
+        return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, st->source_offset,
+                            "switch selector requires a scalar integer");
+    unsigned defaults = 0u;
+    /* Case expressions have the enclosing lexical scope, never another case's
+     * declarations. Store their const scalar values in unused header fields so
+     * type unification does not evaluate expressions twice or allocate scratch. */
+    for (uint32_t clause = st->body_start; clause < st->end; clause = s->statements[clause].end) {
+        const uint32_t body = s->statements[clause].body_start;
+        for (uint32_t i = clause; i < body; ++i) {
+            Statement *item = &s->statements[i];
+            if (item->value.condition == NO_ID) { ++defaults; continue; }
+            ExpressionValue value;
+            if (!sema_expression(source, item->value.condition, scope, true, false, &value)) return false;
+            if (!value.known || value.runtime || value.overridable || !switch_integer(value.constant.type))
+                return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, item->source_offset,
+                                    "case selector requires a const scalar integer expression");
+            if (!sema_common_type(source, type, value.constant.type, item->source_offset, &type)) return false;
+            item->initializer = value.constant.type;
+            item->else_start = (uint32_t)value.constant.bits;
+            item->update = (uint32_t)(value.constant.bits >> 32u);
+        }
+    }
+    if (defaults != 1u)
+        return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, st->source_offset,
+                            "switch requires exactly one default selector");
+    if (!sema_default_type(source, type, st->source_offset, &type) ||
+        !sema_materialize(source, &selector, type) || !sema_ensure_value(source, &selector, true)) return false;
+    /* Materialize all selectors before duplicate comparison, including negative
+     * abstract integers and unsigned values whose bit patterns overlap. */
+    for (uint32_t clause = st->body_start; clause < st->end; clause = s->statements[clause].end) {
+        for (uint32_t i = clause; i < s->statements[clause].body_start; ++i) {
+            Statement *item = &s->statements[i];
+            if (item->value.condition == NO_ID) continue;
+            ExpressionValue value = {.known=true, .constant={.type=item->initializer,
+                .bits=(uint64_t)item->else_start | (uint64_t)item->update << 32u},
+                .value={.source_offset=item->source_offset}};
+            if (!sema_materialize(source, &value, type)) return false;
+            item->else_start = (uint32_t)value.constant.bits;
+            for (uint32_t previous = st->body_start; previous <= clause; previous = s->statements[previous].end) {
+                const uint32_t limit = previous == clause ? i : s->statements[previous].body_start;
+                for (uint32_t j = previous; j < limit; ++j)
+                    if (s->statements[j].value.condition != NO_ID && s->statements[j].else_start == item->else_start)
+                        return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, item->source_offset,
+                                            "switch case selector value is duplicated");
+            }
+        }
+    }
+    const size_t begin = program->instruction_count;
+    if (!sema_append(source, (IrInstruction){.opcode=IR_SWITCH_BEGIN, .type=type,
+        .operands.scalar.left=selector.value.id, .source_offset=st->source_offset}, NULL)) return false;
+    LoopScope selection = {.parent=outer, .is_switch=true, .first_continue=NO_ID};
+    *behavior = 0u;
+    for (uint32_t clause = st->body_start; clause < st->end; clause = s->statements[clause].end) {
+        const Statement *first = &s->statements[clause];
+        for (uint32_t i = clause; i < first->body_start; ++i) {
+            const Statement *item = &s->statements[i];
+            const bool fallback = item->value.condition == NO_ID;
+            if (!sema_append(source, (IrInstruction){.opcode=IR_SWITCH_CASE, .type=type,
+                .source_offset=item->source_offset, .operands.scalar={.right=fallback ? 1u : 0u,
+                .literal=fallback ? 0u : item->else_start}}, NULL)) return false;
+        }
+        unsigned current;
+        if (!lower_block(source, s, first->body_start, first->end, scope, program,
+                         &selection, false, reachable, false, &current)) return false;
+        program->statement_behaviors[clause] = (unsigned char)current;
+        *behavior |= current;
+        if (!marker(source, program, IR_END_CASE, first->source_offset, current)) return false;
+    }
+    if ((*behavior & BEHAVIOR_BREAK) != 0u) *behavior = (*behavior & ~(unsigned)BEHAVIOR_BREAK) | BEHAVIOR_NEXT;
+    program->instructions[begin].operands.scalar.literal = *behavior;
+    return marker(source, program, IR_END_SWITCH, st->source_offset, *behavior);
+}
 static bool lower_block(Source *source, const Syntax *s, size_t start, size_t end,
                         LocalScope *scope, IrProgram *program, LoopScope *loop,
                         bool retain_scope, bool reachable, bool continuing_direct, unsigned *behavior) {
@@ -229,16 +311,21 @@ static bool lower_block(Source *source, const Syntax *s, size_t start, size_t en
                 break;
             }
             case STATEMENT_BREAK:
-            case STATEMENT_CONTINUE:
-                if (loop == NULL || loop->continuing)
+            case STATEMENT_CONTINUE: {
+                LoopScope *target = loop;
+                if (st->kind == STATEMENT_CONTINUE)
+                    while (target != NULL && target->is_switch) target = target->parent;
+                if (target == NULL || target->continuing)
                     return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, st->source_offset,
-                                        "break or continue requires a non-continuing nearest loop");
+                                        "break or continue requires an enclosing permitted control target");
                 current = st->kind == STATEMENT_BREAK ? BEHAVIOR_BREAK : BEHAVIOR_CONTINUE;
-                if (current == BEHAVIOR_CONTINUE && live && st->source_offset < loop->first_continue)
-                    loop->first_continue = st->source_offset;
-                if (!marker(source, program, st->kind == STATEMENT_BREAK ? IR_BREAK : IR_CONTINUE,
-                            st->source_offset, 0u)) return false;
+                if (current == BEHAVIOR_CONTINUE && live && st->source_offset < target->first_continue)
+                    target->first_continue = st->source_offset;
+                const IrOpcode opcode = st->kind == STATEMENT_CONTINUE ? IR_CONTINUE :
+                    target->is_switch ? IR_SWITCH_BREAK : IR_BREAK;
+                if (!marker(source, program, opcode, st->source_offset, 0u)) return false;
                 break;
+            }
             case STATEMENT_BREAK_IF: {
                 if (!continuing_direct || loop == NULL || !loop->continuing || st->end != end)
                     return source_error(source, DOE_COMPILER_SEMANTIC_ERROR, st->source_offset,
@@ -265,6 +352,11 @@ static bool lower_block(Source *source, const Syntax *s, size_t start, size_t en
                 current = yes | no;
                 break;
             }
+            case STATEMENT_SWITCH:
+                if (!lower_switch(source, s, st, scope, program, loop, live, &current)) return false;
+                break;
+            case STATEMENT_CASE:
+                return source_error(source, DOE_COMPILER_INPUT_ERROR, st->source_offset, "case header outside switch");
             case STATEMENT_BLOCK:
                 if (!lower_block(source, s, st->body_start, st->end, scope, program, loop,
                                  false, live, false, &current)) return false;

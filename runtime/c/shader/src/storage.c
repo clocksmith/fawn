@@ -97,11 +97,13 @@ bool shader_options_valid(const doe_shader_options *options)
  * or the privately prepared artifact, never the caller's mutable storage. */
 doe_shader_status shader_input_allocate(const doe_shader_allocator *allocator,
     const DoeCompilerWorkspaceRequirements *requirements, const char *source, size_t source_size,
-    const void *identity, size_t identity_size, bool snapshot, shader_input *out)
+    const void *identity, size_t identity_size, bool snapshot, const char *selection, size_t selection_size, shader_input *out)
 {
-    size_t bytes = requirements->size_bytes, source_offset = 0, identity_offset = 0;
+    size_t bytes = requirements->size_bytes, source_offset = 0, identity_offset = 0, selection_offset = 0;
     if (snapshot && (!shader_reserve(&bytes,source_size,1,1,&source_offset) ||
         !shader_reserve(&bytes,identity_size,1,1,&identity_offset))) return DOE_SHADER_OVERFLOW;
+    if (selection_size == SIZE_MAX || !shader_reserve(&bytes,selection_size + 1,1,1,&selection_offset))
+        return DOE_SHADER_OVERFLOW;
     void *allocation = allocator->allocate(allocator->userdata,bytes,requirements->alignment_bytes);
     if (!allocation) return DOE_SHADER_OUT_OF_MEMORY;
     shader_input input = {.allocation=allocation,.bytes=bytes,.source=source,.identity=identity};
@@ -113,6 +115,11 @@ doe_shader_status shader_input_allocate(const doe_shader_allocator *allocator,
         input.source = source_copy;
         input.identity = identity_copy;
     }
+    char *selection_copy = (char *)allocation + selection_offset;
+    if (selection_size) memcpy(selection_copy,selection,selection_size);
+    selection_copy[selection_size] = 0;
+    input.selection = selection ? selection_copy : NULL;
+    input.selection_size = selection_size;
     *out = input;
     return DOE_SHADER_OK;
 }

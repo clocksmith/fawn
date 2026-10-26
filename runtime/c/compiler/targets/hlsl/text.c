@@ -116,7 +116,7 @@ static void emit_entry(HlslEmitter *e, uint32_t entry) {
             .dispatch_bytes=e->needs_dispatch ? 16u : 0u};
         HlslEmitter name = {.source=e->source,.module=e->module,.output=record->name,
             .capacity=sizeof(record->name)-1u};
-        hlsl_entry_name(&name, function->name);
+        hlsl_entry_name(&name, e->module->entries[entry].function);
         if (name.failed) e->failed = true;
     }
     e->needs_dispatch = previous_dispatch || e->needs_dispatch;

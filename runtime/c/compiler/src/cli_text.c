@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: MIT */
 #include "cli_text.h"
+#include "../include/doe_compiler_pool_growth.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -57,16 +58,25 @@ bool cli_compile_text(uint32_t target, const DoeCompilerStageCapacities *stages,
         sizeof("text job allocation or requirements failed"));
     DoeCompilerTextCapacities capacities = {.stages = *stages};
     DoeCompilerWorkspaceRequirements size = {0};
-    if (requirements(target, &capacities, &size) != DOE_COMPILER_OK) return false;
-    void *workspace = malloc(size.size_bytes);
-    if (workspace == NULL) return false;
+    void *workspace = NULL;
     DoeCompilerTextResult result = {0};
     bool success = false;
     char *text = NULL;
-    if (compile(target, &capacities, workspace, size.size_bytes, source, length,
-            NULL, 0u, true, &result) != DOE_COMPILER_OK) {
-        *diagnostic = result.stages.resources.module.diagnostic;
-        goto finish;
+    for (;;) {
+        if (requirements(target, &capacities, &size) != DOE_COMPILER_OK) goto finish;
+        workspace = malloc(size.size_bytes);
+        if (workspace == NULL) goto finish;
+        const DoeCompilerStatus status = compile(target, &capacities, workspace,
+            size.size_bytes, source, length, NULL, 0u, true, &result);
+        if (status == DOE_COMPILER_OK) break;
+        if (!doe_compiler_grow_stage_pool(&capacities.stages, status,
+                result.stages.resources.module.exhausted_pool,
+                result.stages.resources.module.minimum_pool_capacity)) {
+            *diagnostic = result.stages.resources.module.diagnostic;
+            goto finish;
+        }
+        free(workspace);
+        workspace = NULL;
     }
     capacities.text_bytes = result.required_text_bytes;
     if (requirements(target, &capacities, &size) != DOE_COMPILER_OK) goto finish;

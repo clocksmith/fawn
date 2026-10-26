@@ -47,7 +47,7 @@ void hlsl_array_length(HlslEmitter *, const IrInstruction *);
 void hlsl_access(HlslEmitter *, const IrInstruction *);
 void hlsl_private_initialization(HlslEmitter *);
 void hlsl_functions(HlslEmitter *);
-void hlsl_entry_name(HlslEmitter *, NameSpan);
+void hlsl_entry_name(HlslEmitter *, uint32_t);
 bool hlsl_graphics_admit(HlslEmitter *);
 void hlsl_graphics_context(HlslEmitter *);
 void hlsl_graphics_wrapper(HlslEmitter *);

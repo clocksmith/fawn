@@ -16,9 +16,16 @@ import subprocess
 import sys
 
 out = pathlib.Path(sys.argv[1])
-subprocess.run([str(out / "test_hlsl"), str(out / "control.hlsl"),
-                str(out / "aggregate.hlsl"), str(out / "effects.hlsl"), str(out / "image_guard.hlsl"),
-                str(out / "graphics.hlsl"), str(out / "array_length.hlsl"), str(out / "matrices.hlsl"), str(out / "component_math.hlsl")], check=True)
+switch_only = len(sys.argv) == 4 and sys.argv[2] == "--switch"
+if switch_only:
+    out.mkdir(parents=True, exist_ok=True)
+    source = pathlib.Path(__file__).resolve().parents[2] / "tests" / "switch_source.wgsl"
+    subprocess.run([sys.argv[3], "--shader-path", str(source), "--target", "hlsl",
+                    "--out", str(out / "switch_control.hlsl")], check=True)
+else:
+    subprocess.run([str(out / "test_hlsl"), str(out / "control.hlsl"),
+                    str(out / "aggregate.hlsl"), str(out / "effects.hlsl"), str(out / "image_guard.hlsl"),
+                    str(out / "graphics.hlsl"), str(out / "array_length.hlsl"), str(out / "matrices.hlsl"), str(out / "component_math.hlsl")], check=True)
 prelude = r"""
 #include <algorithm>
 #include <array>
@@ -183,10 +190,23 @@ int main() {
     std::puts("HLSL runtime array length: tail prefix, stride, partial elements and bound-view metadata.");
 }
 """
-for name, main in (("control", scalar), ("aggregate", aggregate), ("effects", effects),
+switch_main = r"""
+int main() {
+    uint words[16] = {};
+    r0 = words; r0_count = 16;
+    for (uint lane = 0; lane < 8; ++lane) switch_entry(uint3{lane, 0, 0});
+    const uint expected[16] = {11,11,23,8,99,99,99,99,1,1,1,1,1,1,1,1};
+    for (unsigned i = 0; i < 16; ++i) assert(words[i] == expected[i]);
+    std::puts("HLSL switch host control: exact16words, nested break/continue, selector once; not SDK/GPU qualification.");
+}
+"""
+controls = (("control", scalar), ("aggregate", aggregate), ("effects", effects),
                    ("image_guard", image_guard), ("graphics", graphics), ("array_length", array_length),
                    ("matrices", pathlib.Path("tests/matrix_main.cpp").read_text()),
-                   ("component_math", pathlib.Path("tests/component_math_main.cpp").read_text())):
+                   ("component_math", pathlib.Path("tests/component_math_main.cpp").read_text()))
+if switch_only:
+    controls = (("switch_control", switch_main),)
+for name, main in controls:
     text = (out / (name + ".hlsl")).read_text()
     if name == "image_guard":
         text = re.sub(r"Texture2D<float> (r\d+) : register\([^;]+;", r"ImageTexture \1;", text)
@@ -204,14 +224,18 @@ for name, main in (("control", scalar), ("aggregate", aggregate), ("effects", ef
     text = re.sub(r"\((DoeT\d+|DoeContext|uint3|uint4)\)0", r"\1{}", text)
     text = text.replace("precise ", "")
     text = text.replace("inout DoeContext", "DoeContext&")
-    if name == "graphics":
+    if name in ("graphics", "switch_control"):
         text = re.sub(r" : (?:TEXCOORD|SV_)[A-Za-z0-9_]+", "", text)
         text = re.sub(r"\b(?:nointerpolation|noperspective|linear|centroid|sample) ", "", text)
         text = re.sub(r"\((DoeStage[12])\)0", r"\1{}", text)
     if name == "matrices":
         text = re.sub(r"cbuffer DoeUniform\d+ : register\([^\n]+\n(.*?)\n};", r"\1", text, flags=re.S)
+    if name == "switch_control":
+        text = re.sub(r"\bvoid main\(", "void switch_entry(", text)
     path = out / (name + "_host.cpp")
     extra = image_types if name == "image_guard" else ""
+    if name == "switch_control":
+        extra = "#define DOE_HLSL_ENTRY 0\n"
     if name == "matrices":
         extra = '#include "matrix_control.h"\n'
     if name == "component_math":

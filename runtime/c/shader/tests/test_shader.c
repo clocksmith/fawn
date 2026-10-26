@@ -371,7 +371,14 @@ int main(void)
         assert(!a.live);
         a = (allocations){0};
         shader = sentinel;
-        options.semantic_flags = 64;
+        /* 64 is the admitted device-disabled-subgroups bit, not unknown input. */
+        options.semantic_flags = DOE_COMPILER_DISABLE_SUBGROUPS | DOE_COMPILER_CORE_BINDING_NUMBERS;
+        assert(doe_shader_create(&options, sparse, strlen(sparse), &shader, &error) == DOE_SHADER_OK);
+        doe_shader_release(shader);
+        assert(!a.live);
+        a = (allocations){0};
+        shader = sentinel;
+        options.semantic_flags = 1024; /* Unassigned semantic option. */
         assert(doe_shader_create(&options, sparse, strlen(sparse), &shader, &error) == DOE_SHADER_INVALID_ARGUMENT);
         assert(shader == sentinel && !a.calls);
     }

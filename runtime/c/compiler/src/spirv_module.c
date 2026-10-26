@@ -71,18 +71,23 @@ bool spirv_instruction(Emitter *e, uint32_t opcode, const uint32_t *arguments, s
     return true;
 }
 static size_t span_words(const Source *source, NameSpan name, uint32_t *words) {
-    const size_t count = ((size_t)name.length + 4u) / 4u;
+    const size_t count = (size_t)name.length / 4u + 1u;
     memset(words, 0, count * sizeof(*words));
     for (uint32_t i = 0u; i < name.length; ++i)
         words[i / 4u] |= (uint32_t)(unsigned char)source->source[name.offset + i] << ((i % 4u) * 8u);
     return count;
 }
 static bool debug_name(Emitter *e, uint32_t id, NameSpan name) {
-    uint32_t arguments[17] = { id };
-    if (name.length > 63u || name.offset > e->source->length || name.length > e->source->length - name.offset)
+    if (name.offset > e->source->length || name.length > e->source->length - name.offset)
         return spirv_emit_error(e, name.offset, "invalid target source name span");
-    const size_t count = span_words(e->source, name, arguments + 1u);
-    return spirv_instruction(e, OP_NAME, arguments, count + 1u);
+    const size_t count = (size_t)name.length / 4u + 1u;
+    uint32_t *arguments = NULL;
+    /* Names use the checked SPIR-V word pool, including its instruction-format
+     * bound; no legacy reflection string buffer constrains source identifiers. */
+    if (!spirv_instruction_space(e, OP_NAME, count + 1u, &arguments)) return false;
+    arguments[0] = id;
+    (void)span_words(e->source, name, arguments + 1u);
+    return true;
 }
 TargetDeclaration *spirv_append_declaration(Emitter *e, uint32_t kind, TypeId type) {
     CompilerWorkspace *c = e->program;
