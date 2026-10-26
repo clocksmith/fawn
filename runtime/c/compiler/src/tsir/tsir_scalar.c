@@ -77,22 +77,24 @@ TsirStatus tsir_combine_f32(TsirReductionOp op, float acc, float val,
             *out = acc * val;
             return TSIR_OK;
         case TSIR_REDUCTION_MIN:
-            /* IEEE minimum with NaN propagation: if either operand is
-             * NaN the result is NaN, matching the propagate contract
-             * the Zig scalar helper documents. fminf would drop NaN. */
-            if (isnan(acc) || isnan(val)) {
-                *out = NAN;
-            } else {
-                *out = acc < val ? acc : val;
-            }
+        case TSIR_REDUCTION_MAX: {
+#if defined(__aarch64__)
+            /* Match the retained reference's AArch64 minimum/maximum-number
+             * operations, including quieting and raising invalid for sNaNs. */
+            *out = op == TSIR_REDUCTION_MIN ? fminf(acc, val) : fmaxf(acc, val);
+#else
+            /* Retained Zig @min/@max drop one NaN, including signaling NaNs,
+             * and select the second payload when both inputs are NaN. Test
+             * bits before arithmetic so classification does not quiet them. */
+            const bool acc_nan = (f32_bits(acc) & UINT32_C(0x7fffffff)) > UINT32_C(0x7f800000);
+            const bool val_nan = (f32_bits(val) & UINT32_C(0x7fffffff)) > UINT32_C(0x7f800000);
+            if (acc_nan) *out = val;
+            else if (val_nan) *out = acc;
+            else *out = op == TSIR_REDUCTION_MIN
+                ? (acc < val ? acc : val) : (acc > val ? acc : val);
+#endif
             return TSIR_OK;
-        case TSIR_REDUCTION_MAX:
-            if (isnan(acc) || isnan(val)) {
-                *out = NAN;
-            } else {
-                *out = acc > val ? acc : val;
-            }
-            return TSIR_OK;
+        }
         case TSIR_REDUCTION_SOFTMAX_STABLE:
             return TSIR_ERR_INVALID;
         default:

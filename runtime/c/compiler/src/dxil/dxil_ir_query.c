@@ -64,6 +64,17 @@ bool dxil_ir_reference_root_local(const DxilIrFunction *function,
             case DXIL_IR_EXPR_LOAD:
                 current = expr->inner;
                 break;
+            case DXIL_IR_EXPR_BOOL_LIT:
+            case DXIL_IR_EXPR_INT_LIT:
+            case DXIL_IR_EXPR_FLOAT_LIT:
+            case DXIL_IR_EXPR_PARAM_REF:
+            case DXIL_IR_EXPR_GLOBAL_REF:
+            case DXIL_IR_EXPR_ADDRESS_OF:
+            case DXIL_IR_EXPR_DEREF:
+            case DXIL_IR_EXPR_UNARY:
+            case DXIL_IR_EXPR_BINARY:
+            case DXIL_IR_EXPR_CALL:
+            case DXIL_IR_EXPR_CONSTRUCT:
             default:
                 return false;
         }
@@ -93,6 +104,17 @@ static bool reference_roots_at_parameter(const DxilIrFunction *function,
             case DXIL_IR_EXPR_LOAD:
                 current = expr->inner;
                 break;
+            case DXIL_IR_EXPR_BOOL_LIT:
+            case DXIL_IR_EXPR_INT_LIT:
+            case DXIL_IR_EXPR_FLOAT_LIT:
+            case DXIL_IR_EXPR_LOCAL_REF:
+            case DXIL_IR_EXPR_GLOBAL_REF:
+            case DXIL_IR_EXPR_ADDRESS_OF:
+            case DXIL_IR_EXPR_DEREF:
+            case DXIL_IR_EXPR_UNARY:
+            case DXIL_IR_EXPR_BINARY:
+            case DXIL_IR_EXPR_CALL:
+            case DXIL_IR_EXPR_CONSTRUCT:
             default:
                 return false;
         }
@@ -160,6 +182,18 @@ DxilIrExprId dxil_ir_resolve_value_alias(
                 }
                 current = resolved;
                 break;
+            case DXIL_IR_EXPR_BOOL_LIT:
+            case DXIL_IR_EXPR_INT_LIT:
+            case DXIL_IR_EXPR_FLOAT_LIT:
+            case DXIL_IR_EXPR_PARAM_REF:
+            case DXIL_IR_EXPR_GLOBAL_REF:
+            case DXIL_IR_EXPR_ADDRESS_OF:
+            case DXIL_IR_EXPR_DEREF:
+            case DXIL_IR_EXPR_UNARY:
+            case DXIL_IR_EXPR_BINARY:
+            case DXIL_IR_EXPR_CALL:
+            case DXIL_IR_EXPR_MEMBER:
+            case DXIL_IR_EXPR_INDEX:
             default:
                 return current;
         }
@@ -325,6 +359,17 @@ static bool walk_chain_to_global(const DxilIrFunction *function,
             case DXIL_IR_EXPR_LOAD:
                 current = expr->inner;
                 break;
+            case DXIL_IR_EXPR_BOOL_LIT:
+            case DXIL_IR_EXPR_INT_LIT:
+            case DXIL_IR_EXPR_FLOAT_LIT:
+            case DXIL_IR_EXPR_PARAM_REF:
+            case DXIL_IR_EXPR_LOCAL_REF:
+            case DXIL_IR_EXPR_ADDRESS_OF:
+            case DXIL_IR_EXPR_DEREF:
+            case DXIL_IR_EXPR_UNARY:
+            case DXIL_IR_EXPR_BINARY:
+            case DXIL_IR_EXPR_CALL:
+            case DXIL_IR_EXPR_CONSTRUCT:
             default:
                 return false;
         }
@@ -408,6 +453,12 @@ static bool stmt_writes_local_depth(const DxilIrFunction *function,
                 }
             }
             return false;
+        case DXIL_IR_STMT_LOCAL_DECL:
+        case DXIL_IR_STMT_EXPR:
+        case DXIL_IR_STMT_RETURN:
+        case DXIL_IR_STMT_BREAK:
+        case DXIL_IR_STMT_CONTINUE:
+        case DXIL_IR_STMT_DISCARD:
         default:
             return false;
     }
@@ -464,6 +515,12 @@ static bool expr_contains_depth(const DxilIrFunction *function,
                     depth + 1)
                 || expr_contains_depth(function, expr->index_expr,
                     target, depth + 1);
+        case DXIL_IR_EXPR_BOOL_LIT:
+        case DXIL_IR_EXPR_INT_LIT:
+        case DXIL_IR_EXPR_FLOAT_LIT:
+        case DXIL_IR_EXPR_PARAM_REF:
+        case DXIL_IR_EXPR_LOCAL_REF:
+        case DXIL_IR_EXPR_GLOBAL_REF:
         default:
             return false;
     }
@@ -557,6 +614,9 @@ static bool stmt_contains_depth(const DxilIrFunction *function,
             }
             return false;
         }
+        case DXIL_IR_STMT_BREAK:
+        case DXIL_IR_STMT_CONTINUE:
+        case DXIL_IR_STMT_DISCARD:
         default:
             return false;
     }

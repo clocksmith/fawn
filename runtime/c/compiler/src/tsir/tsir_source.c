@@ -38,6 +38,32 @@ static TsirIrScalar scalar(TypeId id) {
     }
     return TSIR_IR_VOID;
 }
+/* Translate validated image properties to the retained TSIR rejection tag;
+ * this preserves diagnostic identity without pretending a texture is a buffer. */
+static const char *opaque_tag(const TypeRecord *type) {
+    const ImageType image = type->state.image;
+    if (type->kind == TYPE_SAMPLER)
+        return (image.flags & DOE_COMPILER_HANDLE_COMPARISON) != 0u ? "sampler_comparison" : "sampler";
+    if (type->kind != TYPE_TEXTURE || (image.flags & DOE_COMPILER_HANDLE_EXTERNAL) != 0u) return NULL;
+    if (image.format != 0u)
+        return image.dimension == DOE_COMPILER_VIEW_2D ? "storage_texture_2d" : NULL;
+    if ((image.flags & DOE_COMPILER_HANDLE_DEPTH) != 0u) {
+        if ((image.flags & DOE_COMPILER_HANDLE_MULTISAMPLED) != 0u) return NULL;
+        if (image.dimension == DOE_COMPILER_VIEW_2D) return "texture_depth_2d";
+        if (image.dimension == DOE_COMPILER_VIEW_CUBE) return "texture_depth_cube";
+        return NULL;
+    }
+    if ((image.flags & DOE_COMPILER_HANDLE_MULTISAMPLED) != 0u)
+        return "texture_multisampled_2d";
+    switch (image.dimension) {
+        case DOE_COMPILER_VIEW_1D: return "texture_1d";
+        case DOE_COMPILER_VIEW_2D: return "texture_2d";
+        case DOE_COMPILER_VIEW_2D_ARRAY: return "texture_2d_array";
+        case DOE_COMPILER_VIEW_CUBE: return "texture_cube";
+        case DOE_COMPILER_VIEW_3D: return "texture_3d";
+        default: return NULL;
+    }
+}
 static bool types(TsirSourceBridge *b) {
     CompilerWorkspace *c = b->compiler;
     b->module.type_count = (size_t)c->type_count + IR_PRIMITIVE_COUNT;
@@ -97,7 +123,10 @@ static bool types(TsirSourceBridge *b) {
                     default: return tsir_source_fail(b, 0u, "TSIR pointer address space is not represented");
                 }
                 break;
-            default: o->kind = TSIR_IR_TYPE_OTHER; break;
+            default:
+                o->kind = TSIR_IR_TYPE_OTHER;
+                o->unlowerable_tag = opaque_tag(t);
+                break;
         }
     }
     return b->status == TSIR_OK;

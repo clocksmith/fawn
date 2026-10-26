@@ -229,6 +229,22 @@ bool dxil_ir_is_float_type(const DxilIrModule *module, DxilIrTypeId ty) {
                 || type->scalar == DXIL_IR_SCALAR_ABSTRACT_FLOAT;
         case DXIL_IR_TYPE_VECTOR:
             return dxil_ir_is_float_type(module, type->elem);
+        case DXIL_IR_TYPE_MATRIX:
+        case DXIL_IR_TYPE_ARRAY:
+        case DXIL_IR_TYPE_ATOMIC:
+        case DXIL_IR_TYPE_STRUCT:
+        case DXIL_IR_TYPE_SAMPLER:
+        case DXIL_IR_TYPE_SAMPLER_COMPARISON:
+        case DXIL_IR_TYPE_TEXTURE_1D:
+        case DXIL_IR_TYPE_TEXTURE_2D:
+        case DXIL_IR_TYPE_TEXTURE_2D_ARRAY:
+        case DXIL_IR_TYPE_TEXTURE_CUBE:
+        case DXIL_IR_TYPE_TEXTURE_MULTISAMPLED_2D:
+        case DXIL_IR_TYPE_TEXTURE_DEPTH_2D:
+        case DXIL_IR_TYPE_TEXTURE_DEPTH_CUBE:
+        case DXIL_IR_TYPE_TEXTURE_3D:
+        case DXIL_IR_TYPE_STORAGE_TEXTURE_2D:
+        case DXIL_IR_TYPE_REF:
         default:
             return false;
     }
@@ -245,6 +261,22 @@ bool dxil_ir_is_signed_type(const DxilIrModule *module, DxilIrTypeId ty) {
                 || type->scalar == DXIL_IR_SCALAR_ABSTRACT_INT;
         case DXIL_IR_TYPE_VECTOR:
             return dxil_ir_is_signed_type(module, type->elem);
+        case DXIL_IR_TYPE_MATRIX:
+        case DXIL_IR_TYPE_ARRAY:
+        case DXIL_IR_TYPE_ATOMIC:
+        case DXIL_IR_TYPE_STRUCT:
+        case DXIL_IR_TYPE_SAMPLER:
+        case DXIL_IR_TYPE_SAMPLER_COMPARISON:
+        case DXIL_IR_TYPE_TEXTURE_1D:
+        case DXIL_IR_TYPE_TEXTURE_2D:
+        case DXIL_IR_TYPE_TEXTURE_2D_ARRAY:
+        case DXIL_IR_TYPE_TEXTURE_CUBE:
+        case DXIL_IR_TYPE_TEXTURE_MULTISAMPLED_2D:
+        case DXIL_IR_TYPE_TEXTURE_DEPTH_2D:
+        case DXIL_IR_TYPE_TEXTURE_DEPTH_CUBE:
+        case DXIL_IR_TYPE_TEXTURE_3D:
+        case DXIL_IR_TYPE_STORAGE_TEXTURE_2D:
+        case DXIL_IR_TYPE_REF:
         default:
             return false;
     }
@@ -312,6 +344,18 @@ static uint32_t alignment_depth(const DxilIrModule *module,
             }
             return max_align;
         }
+        case DXIL_IR_TYPE_SAMPLER:
+        case DXIL_IR_TYPE_SAMPLER_COMPARISON:
+        case DXIL_IR_TYPE_TEXTURE_1D:
+        case DXIL_IR_TYPE_TEXTURE_2D:
+        case DXIL_IR_TYPE_TEXTURE_2D_ARRAY:
+        case DXIL_IR_TYPE_TEXTURE_CUBE:
+        case DXIL_IR_TYPE_TEXTURE_MULTISAMPLED_2D:
+        case DXIL_IR_TYPE_TEXTURE_DEPTH_2D:
+        case DXIL_IR_TYPE_TEXTURE_DEPTH_CUBE:
+        case DXIL_IR_TYPE_TEXTURE_3D:
+        case DXIL_IR_TYPE_STORAGE_TEXTURE_2D:
+        case DXIL_IR_TYPE_REF:
         default:
             return 4;
     }
@@ -376,6 +420,18 @@ static uint32_t size_depth(const DxilIrModule *module, DxilIrTypeId ty,
             }
             return dxil_ir_round_up(offset, max_align);
         }
+        case DXIL_IR_TYPE_SAMPLER:
+        case DXIL_IR_TYPE_SAMPLER_COMPARISON:
+        case DXIL_IR_TYPE_TEXTURE_1D:
+        case DXIL_IR_TYPE_TEXTURE_2D:
+        case DXIL_IR_TYPE_TEXTURE_2D_ARRAY:
+        case DXIL_IR_TYPE_TEXTURE_CUBE:
+        case DXIL_IR_TYPE_TEXTURE_MULTISAMPLED_2D:
+        case DXIL_IR_TYPE_TEXTURE_DEPTH_2D:
+        case DXIL_IR_TYPE_TEXTURE_DEPTH_CUBE:
+        case DXIL_IR_TYPE_TEXTURE_3D:
+        case DXIL_IR_TYPE_STORAGE_TEXTURE_2D:
+        case DXIL_IR_TYPE_REF:
         default:
             return 4;
     }
@@ -472,6 +528,22 @@ static DxilStatus minimum_binding_depth(const DxilIrModule *module,
                 (uint32_t)alignment);
             return DXIL_OK;
         }
+        case DXIL_IR_TYPE_SCALAR:
+        case DXIL_IR_TYPE_VECTOR:
+        case DXIL_IR_TYPE_MATRIX:
+        case DXIL_IR_TYPE_ATOMIC:
+        case DXIL_IR_TYPE_SAMPLER:
+        case DXIL_IR_TYPE_SAMPLER_COMPARISON:
+        case DXIL_IR_TYPE_TEXTURE_1D:
+        case DXIL_IR_TYPE_TEXTURE_2D:
+        case DXIL_IR_TYPE_TEXTURE_2D_ARRAY:
+        case DXIL_IR_TYPE_TEXTURE_CUBE:
+        case DXIL_IR_TYPE_TEXTURE_MULTISAMPLED_2D:
+        case DXIL_IR_TYPE_TEXTURE_DEPTH_2D:
+        case DXIL_IR_TYPE_TEXTURE_DEPTH_CUBE:
+        case DXIL_IR_TYPE_TEXTURE_3D:
+        case DXIL_IR_TYPE_STORAGE_TEXTURE_2D:
+        case DXIL_IR_TYPE_REF:
         default:
             *out = dxil_ir_type_size(module, ty);
             return DXIL_OK;

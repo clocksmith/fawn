@@ -255,6 +255,27 @@ uint32_t tsir_source_expr(TsirSourceBridge *b, TsirSourceFunction *f, uint32_t i
                 cursor = b->compiler->arguments[cursor].next;
             }
             if (is_constructor) o.kind = TSIR_IR_EXPR_CONSTRUCT;
+            if (!is_constructor && o.call_is_builtin) {
+                const NumericBuiltin *builtin = builtin_named(&b->source, e->value.call.callee);
+                if (builtin && builtin->kind == BUILTIN_LDEXP && o.args_len == 2u) {
+                    uint32_t first = f->args[o.args_start];
+                    uint32_t type = f->exprs[first].ty;
+                    uint32_t element = type < b->module.type_count && b->types[type].kind == TSIR_IR_TYPE_VECTOR ?
+                        b->types[type].elem : type;
+                    if (element == IR_ABSTRACT_INT) {
+                        if (f->view.expr_arg_count == f->expr_cap) {
+                            (void)tsir_source_fail(b, e->source_offset, "TSIR ldexp conversion capacity exceeded");
+                            return TSIR_IR_NONE;
+                        }
+                        uint32_t start = (uint32_t)f->view.expr_arg_count++;
+                        f->args[start] = first;
+                        f->args[o.args_start] = tsir_source_push_expr(b, f, (TsirIrExpr){
+                            .kind = TSIR_IR_EXPR_CONSTRUCT, .ty = o.ty, .args_start = start, .args_len = 1u});
+                    }
+                }
+                if (builtin && builtin->family == BUILTIN_PACKED_INTEGER)
+                    return tsir_source_packed(b, f, builtin->kind, &o);
+            }
             break;
         }
         case EXPRESSION_ADDRESS: case EXPRESSION_DEREFERENCE:

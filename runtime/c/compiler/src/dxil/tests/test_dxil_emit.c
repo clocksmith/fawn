@@ -141,9 +141,42 @@ static void check_diagnostic_units(void) {
         "ShaderToolchainUnavailable") == 0);
 }
 
+static void check_diagnostic_context_boundary(void) {
+    DxilDiagnostic diagnostic;
+    char source[DXIL_DIAGNOSTIC_CONTEXT_CAP * 2u];
+    const size_t lengths[] = {DXIL_DIAGNOSTIC_CONTEXT_CAP - 1u,
+        DXIL_DIAGNOSTIC_CONTEXT_CAP, sizeof(source)};
+    const size_t offsets[] = {0u, 48u, sizeof(source) - 1u};
+    for (size_t i = 0; i < sizeof(source); i++) {
+        source[i] = (char)('a' + i % 26u);
+    }
+    for (size_t i = 0; i < sizeof(lengths) / sizeof(lengths[0]); i++) {
+        size_t length = lengths[i];
+        size_t expected_len = length < DXIL_DIAGNOSTIC_CONTEXT_CAP
+            ? length : DXIL_DIAGNOSTIC_CONTEXT_CAP;
+        size_t start = i == 2u ? length - expected_len : 0u;
+        char expected[DXIL_DIAGNOSTIC_MESSAGE_CAP];
+        memset(&diagnostic, 0x7f, sizeof(diagnostic));
+        dxil_diagnostic_set(&diagnostic, DXIL_DIAG_STAGE_SEMA,
+            DXIL_DIAG_UNKNOWN_IDENTIFIER, source, length, offsets[i]);
+        CHECK(diagnostic.context_len == expected_len);
+        CHECK(diagnostic.context[expected_len] == '\0');
+        CHECK(memcmp(diagnostic.context, source + start, expected_len) == 0);
+        CHECK(diagnostic.line == 1u);
+        CHECK(diagnostic.column == offsets[i] + 1u);
+        int written = snprintf(expected, sizeof(expected),
+            "sema: UnknownIdentifier at 1:%zu near `%.*s`",
+            offsets[i] + 1u, (int)expected_len, source + start);
+        CHECK(written > 0 && (size_t)written < sizeof(expected));
+        CHECK(strcmp(diagnostic.message, expected) == 0);
+        CHECK(diagnostic.message_len == (size_t)written);
+    }
+}
+
 int main(void) {
     check_lower();
     check_emit();
     check_diagnostic_units();
+    check_diagnostic_context_boundary();
     TEST_SUMMARY("test_dxil_emit");
 }

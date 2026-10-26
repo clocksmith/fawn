@@ -80,6 +80,11 @@ DxilStatus dxil_hlsl_emit_type_only(DxilHlslEmitter *emitter,
                 case DXIL_IR_SCALAR_F16:
                     name = "half";
                     break;
+                case DXIL_IR_SCALAR_VOID:
+                case DXIL_IR_SCALAR_BOOL:
+                case DXIL_IR_SCALAR_ABSTRACT_INT:
+                case DXIL_IR_SCALAR_I32:
+                case DXIL_IR_SCALAR_U32:
                 default:
                     return DXIL_INVALID_IR;
             }
@@ -113,6 +118,11 @@ DxilStatus dxil_hlsl_emit_type_only(DxilHlslEmitter *emitter,
                 case DXIL_IR_SCALAR_I32:
                 case DXIL_IR_SCALAR_ABSTRACT_INT:
                     return dxil_hlsl_write_text(emitter, "int");
+                case DXIL_IR_SCALAR_VOID:
+                case DXIL_IR_SCALAR_BOOL:
+                case DXIL_IR_SCALAR_ABSTRACT_FLOAT:
+                case DXIL_IR_SCALAR_F32:
+                case DXIL_IR_SCALAR_F16:
                 default:
                     return DXIL_INVALID_IR;
             }
@@ -247,6 +257,21 @@ const char *dxil_hlsl_builtin_intrinsic(DxilIrBuiltin builtin) {
             return "WaveGetLaneCount()";
         case DXIL_IR_BUILTIN_SUBGROUP_INVOCATION_ID:
             return "WaveGetLaneIndex()";
+        case DXIL_IR_BUILTIN_NONE:
+        case DXIL_IR_BUILTIN_POSITION:
+        case DXIL_IR_BUILTIN_FRAG_DEPTH:
+        case DXIL_IR_BUILTIN_FRONT_FACING:
+        case DXIL_IR_BUILTIN_GLOBAL_INVOCATION_ID:
+        case DXIL_IR_BUILTIN_LOCAL_INVOCATION_ID:
+        case DXIL_IR_BUILTIN_LOCAL_INVOCATION_INDEX:
+        case DXIL_IR_BUILTIN_WORKGROUP_ID:
+        case DXIL_IR_BUILTIN_NUM_WORKGROUPS:
+        case DXIL_IR_BUILTIN_SAMPLE_INDEX:
+        case DXIL_IR_BUILTIN_SAMPLE_MASK:
+        case DXIL_IR_BUILTIN_VERTEX_INDEX:
+        case DXIL_IR_BUILTIN_INSTANCE_INDEX:
+        case DXIL_IR_BUILTIN_CLIP_DISTANCES:
+        case DXIL_IR_BUILTIN_PRIMITIVE_INDEX:
         default:
             return NULL;
     }
@@ -411,6 +436,9 @@ static DxilStatus emit_builtin_call(DxilHlslEmitter *emitter,
                 case DXIL_IR_SCALAR_ABSTRACT_INT:
                     fn = "asint";
                     break;
+                case DXIL_IR_SCALAR_VOID:
+                case DXIL_IR_SCALAR_BOOL:
+                case DXIL_IR_SCALAR_U32:
                 default:
                     fn = "asuint";
                     break;
@@ -432,6 +460,9 @@ static DxilStatus emit_builtin_call(DxilHlslEmitter *emitter,
                     case DXIL_IR_SCALAR_ABSTRACT_INT:
                         fn = "asint";
                         break;
+                    case DXIL_IR_SCALAR_VOID:
+                    case DXIL_IR_SCALAR_BOOL:
+                    case DXIL_IR_SCALAR_U32:
                     default:
                         fn = "asuint";
                         break;

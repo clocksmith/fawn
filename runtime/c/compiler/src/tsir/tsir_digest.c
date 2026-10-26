@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: MIT
  * Copyright (c) 2026 Doe contributors */
 #include "tsir_digest.h"
+#include "tsir_format.h"
 
 #include "tsir_sha256.h"
 
@@ -91,107 +92,6 @@ static void emit_hex_digest(TsirBuffer *buf, const uint8_t digest[32]) {
     tsir_buf_putc(buf, '"');
 }
 
-/* Shortest round-trip decimal: try precisions 1..17 with %g, keep the
- * first whose strtod round-trips to the same double bits, then render
- * its digits in plain notation for exponents in [-6, 21). */
-static void emit_f64(TsirBuffer *buf, double value) {
-    char raw[64];
-    char digits[32];
-    int precision = 0;
-    int exp10 = 0;
-    size_t digit_count = 0;
-    size_t i = 0;
-    bool negative = false;
-    double parsed = 0.0;
-    uint64_t want = 0;
-    uint64_t got = 0;
-    if (!isfinite(value)) {
-        if (buf->err == TSIR_OK) {
-            buf->err = TSIR_ERR_INVALID;
-        }
-        return;
-    }
-    if (value == 0.0) {
-        /* Zig {d} prints 0 for both +0 and -0? Negative zero keeps its
-         * sign in Zig float formatting only via the value; to stay
-         * deterministic this writer prints "0" for +0 and "-0" for -0,
-         * matching the sign bit. */
-        tsir_buf_puts(buf, signbit(value) ? "-0" : "0");
-        return;
-    }
-    memcpy(&want, &value, sizeof(want));
-    raw[0] = '\0';
-    for (precision = 1; precision <= 17; precision++) {
-        snprintf(raw, sizeof(raw), "%.*e", precision - 1, value);
-        parsed = strtod(raw, NULL);
-        memcpy(&got, &parsed, sizeof(got));
-        if (got == want) {
-            break;
-        }
-    }
-    /* raw is now like "-1.2345e+07" or "1e+00". Split digits/exponent. */
-    {
-        const char *p = raw;
-        const char *epos = strchr(raw, 'e');
-        size_t j = 0;
-        if (p[0] == '-') {
-            negative = true;
-            p += 1;
-        }
-        for (; p < epos; p++) {
-            if (*p != '.') {
-                digits[j] = *p;
-                j += 1;
-            }
-        }
-        digits[j] = '\0';
-        digit_count = j;
-        exp10 = atoi(epos + 1);
-    }
-    /* Strip trailing zeros that %e kept for the chosen precision. */
-    while (digit_count > 1 && digits[digit_count - 1] == '0') {
-        digit_count -= 1;
-        digits[digit_count] = '\0';
-    }
-    if (negative) {
-        tsir_buf_putc(buf, '-');
-    }
-    if (exp10 >= -6 && exp10 < 21) {
-        if (exp10 >= 0) {
-            /* Digits before the point: exp10 + 1 of them. */
-            size_t int_count = (size_t)exp10 + 1;
-            if (int_count >= digit_count) {
-                tsir_buf_putn(buf, digits, digit_count);
-                for (i = digit_count; i < int_count; i++) {
-                    tsir_buf_putc(buf, '0');
-                }
-            } else {
-                tsir_buf_putn(buf, digits, int_count);
-                tsir_buf_putc(buf, '.');
-                tsir_buf_putn(buf, digits + int_count,
-                    digit_count - int_count);
-            }
-        } else {
-            tsir_buf_puts(buf, "0.");
-            for (i = 0; i < (size_t)(-exp10 - 1); i++) {
-                tsir_buf_putc(buf, '0');
-            }
-            tsir_buf_putn(buf, digits, digit_count);
-        }
-    } else {
-        tsir_buf_putc(buf, digits[0]);
-        if (digit_count > 1) {
-            tsir_buf_putc(buf, '.');
-            tsir_buf_putn(buf, digits + 1, digit_count - 1);
-        }
-        {
-            char exp_text[16];
-            snprintf(exp_text, sizeof(exp_text), "e%+d", exp10);
-            tsir_buf_puts(buf, exp_text);
-        }
-    }
-}
-
 static void emit_opt_u32(TsirBuffer *buf, TsirOptU32 value) {
     if (value.has) {
         emit_u32(buf, value.value);
@@ -210,7 +110,7 @@ static void emit_opt_u64(TsirBuffer *buf, TsirOptU64 value) {
 
 static void emit_opt_f64(TsirBuffer *buf, bool has, double value) {
     if (has) {
-        emit_f64(buf, value);
+        tsir_format_f64(buf, value);
     } else {
         tsir_buf_puts(buf, "null");
     }
@@ -245,7 +145,7 @@ static void emit_exactness(TsirBuffer *buf, const TsirExactness *value) {
     emit_enum(buf, tsir_exactness_class_name(value->class));
     tsir_buf_putc(buf, ',');
     emit_key(buf, "toleranceEpsilon");
-    emit_f64(buf, value->tolerance_epsilon);
+    tsir_format_f64(buf, value->tolerance_epsilon);
     tsir_buf_putc(buf, ',');
     emit_key(buf, "toleranceMetric");
     emit_string(buf, value->tolerance_metric);

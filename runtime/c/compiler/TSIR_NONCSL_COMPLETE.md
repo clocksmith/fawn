@@ -18,6 +18,10 @@ runtime parity, GPU performance, production promotion or browser qualification.
 
 The scoped tools now build through `make all` and `tsir-bootstrap-tools`, with
 an internal static TSIR archive and shared compiler sources. TSIR and DXIL are
-still separate from the production `libdoe_compiler.so` source list; strict
+still separate from the production `libdoe_compiler.so` source list; production
 integration and all broader migration gates remain independently required.
 The pre-existing six TSIR tests pass 388 checks on Mars in this follow-up.
+
+Dot v3 removes the standalone strict-warning blockers and adds direct numeric,
+formatting and source semantic differentials. The filename is historical:
+remaining API/adapter and production integration gaps are not declared closed.

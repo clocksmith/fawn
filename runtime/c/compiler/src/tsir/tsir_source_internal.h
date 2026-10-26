@@ -37,5 +37,6 @@ bool tsir_source_fail(TsirSourceBridge *, uint32_t, const char *);
 uint32_t tsir_source_expr(TsirSourceBridge *, TsirSourceFunction *, uint32_t, bool, unsigned);
 uint32_t tsir_source_push_expr(TsirSourceBridge *, TsirSourceFunction *, TsirIrExpr);
 uint32_t tsir_source_root(TsirSourceBridge *, TsirSourceFunction *, NameSpan, bool);
+uint32_t tsir_source_packed(TsirSourceBridge *, TsirSourceFunction *, NumericBuiltinKind, const TsirIrExpr *);
 bool tsir_source_function(TsirSourceBridge *, TsirSourceFunction *, uint32_t);
 #endif

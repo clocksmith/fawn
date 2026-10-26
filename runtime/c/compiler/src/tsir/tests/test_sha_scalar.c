@@ -4,6 +4,7 @@
 
 #include "tsir_scalar.h"
 #include "tsir_sha256.h"
+#include <fenv.h>
 
 static void test_sha(void) {
     uint8_t out[32];
@@ -204,12 +205,41 @@ static void test_reduction_helpers(void) {
     CHECK_STATUS(tsir_combine_f32(TSIR_REDUCTION_SUM, 2.0f, 3.0f, &out),
         TSIR_OK);
     CHECK(out == 5.0f);
+    /* Pinned Zig 0.15.2 runtime combineF32 drops one NaN, contrary to
+     * the old propagate comment. The direct numeric differential binds it. */
     CHECK_STATUS(tsir_combine_f32(TSIR_REDUCTION_MIN, NAN, 1.0f, &out),
         TSIR_OK);
-    CHECK(isnan(out));
+    CHECK(out == 1.0f);
     CHECK_STATUS(tsir_combine_f32(TSIR_REDUCTION_MAX, 2.0f, NAN, &out),
         TSIR_OK);
-    CHECK(isnan(out));
+    CHECK(out == 2.0f);
+    uint32_t signaling_bits = UINT32_C(0x7f801234);
+    float signaling;
+    memcpy(&signaling, &signaling_bits, sizeof(signaling));
+    fenv_t saved;
+    CHECK(fegetenv(&saved) == 0);
+    CHECK(feclearexcept(FE_ALL_EXCEPT) == 0);
+    CHECK_STATUS(tsir_combine_f32(TSIR_REDUCTION_MIN, signaling, 1.0f, &out), TSIR_OK);
+#if defined(__aarch64__)
+    uint32_t quiet_bits;
+    memcpy(&quiet_bits, &out, sizeof(quiet_bits));
+    CHECK(quiet_bits == (signaling_bits | UINT32_C(0x00400000)));
+    CHECK((fetestexcept(FE_INVALID) & FE_INVALID) != 0);
+#else
+    CHECK(out == 1.0f);
+    CHECK((fetestexcept(FE_INVALID) & FE_INVALID) == 0);
+#endif
+    CHECK_STATUS(tsir_combine_f32(TSIR_REDUCTION_MAX, NAN, signaling, &out), TSIR_OK);
+    uint32_t result_bits;
+    memcpy(&result_bits, &out, sizeof(result_bits));
+#if defined(__aarch64__)
+    CHECK(result_bits == (signaling_bits | UINT32_C(0x00400000)));
+    CHECK((fetestexcept(FE_INVALID) & FE_INVALID) != 0);
+#else
+    CHECK(result_bits == signaling_bits);
+    CHECK((fetestexcept(FE_INVALID) & FE_INVALID) == 0);
+#endif
+    CHECK(fesetenv(&saved) == 0);
 }
 
 int main(void) {

@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: MIT
  * Copyright (c) 2026 Doe contributors */
 #include "tsir_emit.h"
+#include "tsir_format.h"
 
 #include <math.h>
 #include <stdarg.h>
@@ -14,10 +15,8 @@
  * built here. All other ops return TSIR_ERR_UNSUPPORTED, exactly
  * as Zig's emitWebGpu/emitMsl/emitDxil/emitSpirV switches do.
  * Backend order matches Zig: webgpu, csl, msl, dxil, spir_v.
- * Literal epsilon formatting uses a shortest-round-trip f64
- * writer in the style of Zig {d}; only plain-decimal values are
- * asserted exactly in tests, because the scientific-exponent form
- * was not cross-checked against a Zig binary (see gaps.md). */
+ * Literal epsilon and canonical identities share the retained Zig {d}
+ * plain-decimal formatter, including extreme exponents and signed zero. */
 
 static void putf(TsirBuffer *buf, const char *fmt, ...) {
     char tmp[512];
@@ -26,133 +25,6 @@ static void putf(TsirBuffer *buf, const char *fmt, ...) {
     vsnprintf(tmp, sizeof(tmp), fmt, args);
     va_end(args);
     tsir_buf_puts(buf, tmp);
-}
-
-static bool shortest_digits(double value, char *digits, size_t digits_cap,
-    int *exp10_out) {
-    int prec = 0;
-    for (prec = 1; prec <= 17; prec++) {
-        char sci[64];
-        char *dot = NULL;
-        char *e = NULL;
-        double back = 0.0;
-        size_t i = 0;
-        size_t j = 0;
-        snprintf(sci, sizeof(sci), "%.*e", prec - 1, value);
-        back = strtod(sci, NULL);
-        if (back != value) {
-            continue;
-        }
-        e = strchr(sci, 'e');
-        dot = strchr(sci, '.');
-        if (e == NULL) {
-            return false;
-        }
-        *exp10_out = atoi(e + 1);
-        if (dot != NULL && dot < e) {
-            for (i = 0; sci[i] != '\0' && &sci[i] < dot; i++) {
-                if (j + 1 < digits_cap) {
-                    digits[j++] = sci[i];
-                }
-            }
-            for (i = (size_t)(dot - sci) + 1; &sci[i] < e; i++) {
-                if (j + 1 < digits_cap) {
-                    digits[j++] = sci[i];
-                }
-            }
-        } else {
-            for (i = 0; &sci[i] < e; i++) {
-                if (j + 1 < digits_cap) {
-                    digits[j++] = sci[i];
-                }
-            }
-        }
-        while (j > 1 && digits[j - 1] == '0') {
-            j -= 1;
-        }
-        digits[j] = '\0';
-        return true;
-    }
-    return false;
-}
-
-/* Zig {d} style: plain decimal when the decimal exponent is in
- * [-6, 21), scientific otherwise. Zero prints "0" / "-0". */
-static void fmt_f64(char *out, size_t cap, double value) {
-    char digits[32];
-    int exp10 = 0;
-    size_t ndigits = 0;
-    size_t pos = 0;
-    size_t i = 0;
-    bool negative = false;
-    if (value == 0.0) {
-        snprintf(out, cap, "%s", signbit(value) ? "-0" : "0");
-        return;
-    }
-    if (value < 0) {
-        negative = true;
-        value = -value;
-    }
-    if (!shortest_digits(value, digits, sizeof(digits), &exp10)) {
-        snprintf(out, cap, "%.17g", negative ? -value : value);
-        return;
-    }
-    ndigits = strlen(digits);
-    if (negative && pos + 1 < cap) {
-        out[pos++] = '-';
-    }
-    if (exp10 >= -6 && exp10 < 21) {
-        if (exp10 >= 0) {
-            size_t int_digits = (size_t)exp10 + 1;
-            for (i = 0; i < int_digits; i++) {
-                if (pos + 1 < cap) {
-                    out[pos++] = (i < ndigits) ? digits[i] : '0';
-                }
-            }
-            if (ndigits > int_digits) {
-                if (pos + 1 < cap) {
-                    out[pos++] = '.';
-                }
-                for (i = int_digits; i < ndigits; i++) {
-                    if (pos + 1 < cap) {
-                        out[pos++] = digits[i];
-                    }
-                }
-            }
-        } else {
-            if (pos + 2 < cap) {
-                out[pos++] = '0';
-                out[pos++] = '.';
-            }
-            for (i = 0; i < (size_t)(-exp10 - 1); i++) {
-                if (pos + 1 < cap) {
-                    out[pos++] = '0';
-                }
-            }
-            for (i = 0; i < ndigits; i++) {
-                if (pos + 1 < cap) {
-                    out[pos++] = digits[i];
-                }
-            }
-        }
-    } else {
-        if (pos + 1 < cap) {
-            out[pos++] = digits[0];
-        }
-        if (ndigits > 1) {
-            if (pos + 1 < cap) {
-                out[pos++] = '.';
-            }
-            for (i = 1; i < ndigits; i++) {
-                if (pos + 1 < cap) {
-                    out[pos++] = digits[i];
-                }
-            }
-        }
-        pos += (size_t)snprintf(out + pos,
-            cap > pos ? cap - pos : 0, "e%d", exp10);
-    }
-    out[pos < cap ? pos : cap - 1] = '\0';
 }
 
 static TsirStatus fail(TsirBuffer *buf, TsirStatus status) {
@@ -284,24 +156,20 @@ static TsirStatus check_epsilon(const TsirSemanticFunction *func,
 
 static void put_wgsl_epsilon(TsirBuffer *buf,
     const TsirRmsNormBody *rms) {
-    char tmp[128];
     if (rms->epsilon.source == TSIR_EPSILON_UNIFORM_FIELD) {
         tsir_buf_puts(buf, "tsir_dims.epsilon");
         return;
     }
-    fmt_f64(tmp, sizeof(tmp), rms->epsilon.literal_f64);
-    tsir_buf_puts(buf, tmp);
+    tsir_format_f64(buf, rms->epsilon.literal_f64);
 }
 
 static void put_c_epsilon(TsirBuffer *buf,
     const TsirRmsNormBody *rms) {
-    char tmp[128];
     if (rms->epsilon.source == TSIR_EPSILON_UNIFORM_FIELD) {
         tsir_buf_puts(buf, "tsir_epsilon");
         return;
     }
-    fmt_f64(tmp, sizeof(tmp), rms->epsilon.literal_f64);
-    tsir_buf_puts(buf, tmp);
+    tsir_format_f64(buf, rms->epsilon.literal_f64);
     tsir_buf_putc(buf, 'f');
 }
 
@@ -752,7 +620,18 @@ TsirStatus tsir_emit_kernel_body(const TsirSemanticFunction *func,
                 return emit_dxil_gather(buf, func);
             }
             return emit_spirv_gather(buf, func);
-        default:
+        case TSIR_BODY_UNKNOWN:
+        case TSIR_BODY_RESIDUAL_ADD:
+        case TSIR_BODY_GELU_GATED:
+        case TSIR_BODY_SILU_GATED:
+        case TSIR_BODY_SIGMOID_GATED:
+        case TSIR_BODY_KV_WRITE:
+        case TSIR_BODY_KV_READ:
+        case TSIR_BODY_ATTENTION_SCORES:
+        case TSIR_BODY_CONV1D_DEPTHWISE:
+        case TSIR_BODY_L2_NORMALIZE:
+        case TSIR_BODY_LINEAR_ATTENTION:
             return fail(buf, TSIR_ERR_UNSUPPORTED);
     }
+    return fail(buf, TSIR_ERR_UNSUPPORTED);
 }

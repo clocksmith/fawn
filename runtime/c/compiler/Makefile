@@ -644,16 +644,10 @@ test-diagnostics: build/test_diagnostics build/test_diagnostics_abi
 	build/test_diagnostics
 	build/test_diagnostics_abi
 
-# --- PARTIAL DXIL/TSIR parity, not full parity, not yet in lib sources ---
-# Sources are present under src/dxil/ and src/tsir/ and are tested here
-# with standalone C11 flags, matching the workers' flags. They are NOT
-# yet in src/sources.txt, because many fail the compiler owner's strict
-# flags (-Wconversion, -Wswitch-enum, etc.); adding them there would
-# break the lib build. See PARTIAL_DXIL_TSIR.md. Strict-flag fixes and
-# sources.txt wiring are Part 2 work. Excluded from this section:
-# dxil_translate.c/.h (missing dxil_analyze.h) and
-# src/tsir/tests/test_reference_emit.c (2 failing checks, see PARTIAL doc).
-PARTIAL_CFLAGS = -std=c11 -Wall -Wextra -Wpedantic -Werror
+# Standalone DXIL/TSIR developer owners. They use the compiler's strict flags,
+# but remain separate from the no-allocator production compiler ABI. Historical
+# target names stay available; a passing subset is not universal parity.
+PARTIAL_CFLAGS = $(CFLAGS)
 DXIL_PARTIAL_SOURCES = $(wildcard src/dxil/*.c)
 TSIR_PARTIAL_SOURCES = $(filter-out src/tsir/tsir_source%.c src/tsir/tsir_bootstrap_manifest.c,$(wildcard src/tsir/*.c))
 DXIL_PARTIAL_TESTS = test_dxil_md5 test_dxil_bitcode test_dxil_container test_dxil_validate test_dxil_builder_serialize test_dxil_mapping_toolchain test_dxil_ir_native test_dxil_hlsl test_dxil_emit test_dxil_analyze_translate
@@ -687,7 +681,7 @@ test-dxil-tsir-sanitize: $(DXIL_PARTIAL_TEST_FILES) $(TSIR_PARTIAL_TEST_FILES) |
 TSIR_TOOL_SOURCES = $(wildcard src/tsir/*.c)
 TSIR_TOOL_OBJECTS = $(patsubst src/tsir/%.c,build/tsir/%.o,$(TSIR_TOOL_SOURCES))
 TSIR_TOOL_HEADERS = $(wildcard src/tsir/*.h)
-TSIR_TOOL_CFLAGS = $(PARTIAL_CFLAGS) -O2 -g -fno-fast-math -ffp-contract=off $(EXTRA_CFLAGS)
+TSIR_TOOL_CFLAGS = $(CFLAGS) -g $(EXTRA_CFLAGS)
 build/tsir/%.o: src/tsir/%.c $(TSIR_TOOL_HEADERS) $(HEADERS) | build/.ready
 	mkdir -p $(dir $@)
 	$(CC) $(TSIR_TOOL_CFLAGS) -Isrc/tsir -c $< -o $@
@@ -710,7 +704,9 @@ build/test_tsir_source_control: src/tsir/tests/test_source_control.c build/libdo
 	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) -Isrc/tsir $< $(LIB_SOURCES) build/libdoe_tsir.a -lm -o $@
 build/test_tsir_source_expr: src/tsir/tests/test_source_expr.c build/libdoe_tsir.a $(LIB_SOURCES) $(HEADERS)
 	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) -Isrc/tsir $< $(LIB_SOURCES) build/libdoe_tsir.a -lm -o $@
-ORACLE_FAULT_NAMES = bootstrap bootstrap_oracle json reference reference_bodies schema sha256 scalar extended extended_ops digest transcendental
+build/test_source_differential: src/tsir/tests/test_source_differential.c build/libdoe_tsir.a $(LIB_SOURCES) $(HEADERS)
+	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) -Isrc/tsir $< $(LIB_SOURCES) build/libdoe_tsir.a -lm -o $@
+ORACLE_FAULT_NAMES = bootstrap bootstrap_oracle json reference reference_bodies schema sha256 scalar extended extended_ops digest format transcendental
 ORACLE_FAULT_OBJECTS = $(addprefix build/tsir-fault/tsir_,$(addsuffix .o,$(ORACLE_FAULT_NAMES)))
 build/tsir-fault/%.o: src/tsir/%.c $(TSIR_TOOL_HEADERS) src/tsir/tests/oracle_alloc.h | build/.ready
 	mkdir -p $(dir $@)
@@ -735,7 +731,10 @@ test-tsir-bootstrap: build/test_tsir_source_control build/test_tsir_source_expr 
 	cd ../../.. && runtime/c/compiler/build/test_manifest_alloc
 	python3 tools/test_bootstrap_oracle.py --c-oracle build/doe-tsir-bootstrap-oracle-c
 	cd ../../.. && DOE_TSIR_MANIFEST_CLI='$(CURDIR)/build/doe-tsir-bootstrap-manifest-inputs-c' python3 -m runtime.c.compiler.tests.test_bootstrap_manifest
-test-tsir-bootstrap-differential: test-tsir-bootstrap
+test-tsir-bootstrap-differential: test-tsir-bootstrap build/test_source_differential
 	python3 tools/test_bootstrap_oracle.py --c-oracle build/doe-tsir-bootstrap-oracle-c --zig-oracle ../../zig/zig-out/bin/doe-tsir-bootstrap-oracle
 	cd ../../.. && DOE_TSIR_MANIFEST_CLI='$(CURDIR)/build/doe-tsir-bootstrap-manifest-inputs-c' DOE_TSIR_MANIFEST_ZIG='$(abspath ../../zig/zig-out/bin/doe-tsir-bootstrap-manifest-inputs)' python3 -m runtime.c.compiler.tests.test_bootstrap_manifest
 	cd ../../.. && python3 runtime/c/compiler/src/tsir/tests/test_targets.py
+	python3 src/tsir/tests/test_source_differential.py
+	python3 src/tsir/tests/test_f64_format.py
+	python3 src/tsir/tests/test_numeric_parity.py

@@ -55,6 +55,9 @@ typedef struct TsirIrType {
     uint32_t struct_id;
     uint32_t ref_addr_space;
     uint32_t ref_access;
+    /* Borrowed retained-IR tag for nonlowerable opaque types. NULL keeps the
+     * historical generic OTHER tag for callers without source metadata. */
+    const char *unlowerable_tag;
 } TsirIrType;
 
 typedef struct TsirIrStructField {

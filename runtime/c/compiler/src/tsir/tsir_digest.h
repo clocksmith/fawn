@@ -12,10 +12,9 @@
  * treated as invalid, never as an empty string, because Zig slices
  * distinguish nothing here but a NULL C pointer is a caller bug, not a
  * TSIR value. f64 formatting: shortest round-trip decimal digits,
- * rendered in plain decimal notation when the decimal exponent is in
- * [-6, 21), otherwise in scientific notation; this matches Zig's {d}
- * output for the plain cases the tests pin (0, 1, 0.5, 1.5) but is NOT
- * verified against Zig for arbitrary exponents, see gaps.md. NaN or
+ * always rendered in plain decimal notation, matching retained Zig {d}.
+ * The shared formatter preserves caller fenv and errno and has edge/seeded
+ * actual-Zig differential coverage; see tests/test_f64_format.py. NaN or
  * Inf f64 values are TSIR_ERR_INVALID, never serialized. */
 
 TsirStatus tsir_canonicalize_semantic(const TsirSemantic *semantic,

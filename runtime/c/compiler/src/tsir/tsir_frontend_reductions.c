@@ -90,6 +90,14 @@ static bool contains_alias_load(ReductionCtx *ctx, uint32_t id,
                 }
             }
             return false;
+        case TSIR_IR_EXPR_BOOL_LIT:
+        case TSIR_IR_EXPR_INT_LIT:
+        case TSIR_IR_EXPR_FLOAT_LIT:
+        case TSIR_IR_EXPR_PARAM_REF:
+        case TSIR_IR_EXPR_LOCAL_REF:
+        case TSIR_IR_EXPR_GLOBAL_REF:
+        case TSIR_IR_EXPR_ADDRESS_OF:
+        case TSIR_IR_EXPR_DEREF:
         default:
             return false;
     }
@@ -411,6 +419,13 @@ static void reductions_walk_stmt(ReductionCtx *ctx, uint32_t id,
             }
             return;
         }
+        case TSIR_IR_STMT_EXPR:
+        case TSIR_IR_STMT_ASSIGN:
+        case TSIR_IR_STMT_RETURN:
+        case TSIR_IR_STMT_SWITCH:
+        case TSIR_IR_STMT_BREAK:
+        case TSIR_IR_STMT_CONTINUE:
+        case TSIR_IR_STMT_DISCARD:
         default:
             return;
     }
