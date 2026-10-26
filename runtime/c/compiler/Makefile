@@ -657,9 +657,9 @@ PARTIAL_CFLAGS = -std=c11 -Wall -Wextra -Wpedantic -Werror
 DXIL_PARTIAL_SOURCES = $(wildcard src/dxil/*.c)
 TSIR_PARTIAL_SOURCES = $(wildcard src/tsir/*.c)
 DXIL_PARTIAL_TESTS = test_dxil_md5 test_dxil_bitcode test_dxil_container test_dxil_validate test_dxil_builder_serialize test_dxil_mapping_toolchain
-TSIR_PARTIAL_TESTS = test_sha_scalar test_digest test_planner
+TSIR_PARTIAL_TESTS = test_sha_scalar test_digest test_planner test_reference_emit test_new test_new2
 DXIL_PARTIAL_TEST_FILES = src/dxil/tests/test_dxil_md5.c src/dxil/tests/test_dxil_bitcode.c src/dxil/tests/test_dxil_container.c src/dxil/tests/test_dxil_validate.c src/dxil/tests/test_dxil_builder_serialize.c src/dxil/tests/test_dxil_mapping_toolchain.c
-TSIR_PARTIAL_TEST_FILES = src/tsir/tests/test_sha_scalar.c src/tsir/tests/test_digest.c src/tsir/tests/test_planner.c
+TSIR_PARTIAL_TEST_FILES = src/tsir/tests/test_sha_scalar.c src/tsir/tests/test_digest.c src/tsir/tests/test_planner.c src/tsir/tests/test_reference_emit.c src/tsir/tests/test_new.c src/tsir/tests/test_new2.c
 .PHONY: test-dxil-tsir-partial test-dxil-tsir-sanitize
 test-dxil-tsir-partial: $(DXIL_PARTIAL_TEST_FILES) $(TSIR_PARTIAL_TEST_FILES) | build/.ready
 	@for t in $(DXIL_PARTIAL_TESTS); do \

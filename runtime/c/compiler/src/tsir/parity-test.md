@@ -381,13 +381,20 @@ transcendental cases (see T-TRANS below).
   behavior (output within the clamped form, checked by value, not
   by bit equality against Zig).
 - T-EXT-4: attention_scores: two_pass_stable, literal scale, no
-  softcap, single-Q, head_dim 2, kv_len 2 with Q/K/V chosen so
-  scores are 0 (exp(0) = 1 exact) -> uniform weights 0.5 and the
-  exact mean of V rows; streaming mode, softcap, or
-  query_seq_len > 1 -> unsupported; sum_exp == 0 -> unsupported.
+  softcap, single-Q, head_dim 2, kv_len 2 with Q = [1, 0],
+  K = identity rows, V = [[10, 20], [30, 40]] -> scores [1, 0],
+  weights [0.7310586, 0.2689414], outputs [15.378829, 25.378829]
+  within 1e-5 (exp path, not a bit claim); streaming mode, softcap,
+  or query_seq_len > 1 -> unsupported; sum_exp == 0 -> unsupported.
+  (Definition updated during implementation: the as-built fixture
+  uses non-uniform weights instead of the originally planned
+  scores-are-0 uniform case.)
 - T-EXT-5: l2_normalize: input [3,4], eps 0 -> [0.6, 0.8] within
   1e-6 (sqrt path, not a bit claim); hidden 0 or missing body
-  payload -> unsupported.
+  payload -> unsupported. Fixture note: the output binding shape
+  must differ from the input shape, or the identity path (which
+  runs first in Zig too) matches the fixture before l2_normalize
+  is reached; the as-built fixture uses output shape [5].
 - T-EXT-6: conv1d_depthwise: causal left pad, kernel_size 2,
   channels 1, with and without bias, hand-computed outputs exact
   for f32 (addition/multiplication only, no transcendentals);
@@ -396,9 +403,11 @@ transcendental cases (see T-TRANS below).
   Zig's fall-through (see T-EXT-8), while the state-update math
   itself is tested directly through
   `tsir_linear_attention_step` with a_log = 0.5, alpha =
-  1 - exp(-0.5), decay = 1 - alpha: a zero prior state, q/k/v/g
-  fixture gives the hand-computed new state and output (sigmoid
-  term checked at g = 0, where sigmoid = 0.5 exactly).
+  1 - exp(-0.5), decay = 1 - alpha: as built, value_dim 1,
+  key_dim 1, q = 2, k = 1, v = 3, gate = 0, prior state = 1 gives
+  new state 1 and output 4 within 1e-6 (sigmoid term checked at
+  g = 0, where sigmoid = 0.5 exactly). (Definition updated during
+  implementation: the as-built fixture uses prior state 1, not 0.)
 - T-EXT-8: linear_attention interpreter reachability (documented
   Zig behavior, not a C shortcut): Zig's tryLinearAttention reads
   the read-write state binding through

@@ -165,22 +165,25 @@ by the tests match exactly.
 ## Frontend: frontend.zig (885) and helpers
 
 The frontend consumes the WGSL IR module type (`../wgsl/ir/ir.zig`,
-`ir_query`, `layout_utils`), which is outside the TSIR directory and
-has no C counterpart in this output directory. A faithful
-`lowerIrToTsir` therefore cannot be written here without first porting
-the WGSL IR; inventing a lookalike IR would be a stub, not parity.
+`ir_query`, `layout_utils`), which is outside the TSIR directory.
+That module is now ported as a C mirror in `tsir_wgsl_ir.c`
+(types, struct layout, globals, params, locals, expressions,
+statements, plus the ir_query helpers the frontend uses). The mirror
+covers only the node kinds the frontend walks; type kinds the
+frontend never distinguishes collapse to TSIR_IR_TYPE_OTHER (see
+gaps.md G-IR-OTHER).
 
 | Row | Zig behavior | C status |
 | --- | --- | --- |
-| F1 | `lowerIrToTsir`: per-function bindings (only globals actually referenced by that function, with a bound @group/@binding), iteration axes, reductions, collectives, rejections, family hint, semantic body; contract_version 1, frontend_version pinned by caller, source_digest carried per function | missing: `tsir_frontend_lower` returns TSIR_ERR_UNSUPPORTED visibly. Gap, not a stub. |
+| F1 | `lowerIrToTsir`: per-function bindings (only globals actually referenced by that function, with a bound @group/@binding), iteration axes, reductions, collectives, rejections, family hint, semantic body; contract_version 1, frontend_version pinned by caller, source_digest carried per function | done: `tsir_frontend_lower` (bindings/axes in `tsir_frontend_bindings_axes.c` and `tsir_frontend_axes.c`, reductions in `tsir_frontend_reductions.c`, orchestration in `tsir_frontend_lower.c`); returned semantic owns its strings and is freed by `tsir_frontend_free_semantic`. Approximations in gaps.md: G-IR-OTHER, G-DEPTH-GUARD. |
 | F2 | `frontend_types.scalarKindFromIr`: f32->f32, f16->f16, i32->i32, u32->u32, abstract_int->i32, abstract_float->f32, bool->u32, void->u32 | done: `tsir_ir_scalar_to_kind` over a C mirror enum of exactly those 8 IR scalar kinds; Zig test cases reproduced in tests |
 | F3 | `frontend_types.FrontendError`: OutOfMemory only | done: mapped to TSIR_ERR_NOMEM |
-| F4 | `frontend_body.inferSemanticBody` (178 lines): body inference from hint/axes/bindings/reductions | missing: returns TSIR_ERR_UNSUPPORTED |
-| F5 | `frontend_collectives.collectCollectives` (246 lines) | missing: returns TSIR_ERR_UNSUPPORTED |
-| F6 | `frontend_expr` (637 lines): literal/symbolic upper bounds, step, init bound, dispatch-guard scan, step-sign detection, dispatch-axis letter extraction | missing: returns TSIR_ERR_UNSUPPORTED |
-| F7 | `frontend_rejections.recoverRejections` (122 lines): typed rejections for unrepresentable constructs, never placeholder values | missing: returns TSIR_ERR_UNSUPPORTED |
-| F8 | `family_hint.infer` (183 lines): reductions present -> fused_gemv only when 2 axes, 1 sum reduction on axis 1, nontrivial bound string (dispatch./uniform:/override:/override@id:/const:), and one indexed load covering both axis locals; else reduction; axes present -> gather when any indirect buffer access, else elementwise; else unknown. Hints are tiebreakers only and must not change feasibility | partial: the pure shape predicate (reduction/fused_gemv/elementwise/unknown classification from axis/reduction/bound facts, without IR expression walking) is implemented as `tsir_family_hint_classify`; the IR-walking parts (indexed-access coverage, indirect-access detection) are missing and return the conservative fallback the Zig code itself uses when evidence is absent (reduction / elementwise), documented in gaps.md. This is the one row where "partial" needs care: the C function never claims IR evidence it did not examine. |
-| F9 | `frontend_body`/`frontend_expr`/`frontend_collectives` internal helpers | missing, same reason as F1 |
+| F4 | `frontend_body.inferSemanticBody` (178 lines): body inference from hint/axes/bindings/reductions | done: `tsir_frontend_passes.c`, including fused_gemv/gather role inference and RMSNorm epsilon inference |
+| F5 | `frontend_collectives.collectCollectives` (246 lines) | done: `tsir_frontend_passes.c` collectives walker |
+| F6 | `frontend_expr` (637 lines): literal/symbolic upper bounds, step, init bound, dispatch-guard scan, step-sign detection, dispatch-axis letter extraction | done: `tsir_frontend_expr.c` |
+| F7 | `frontend_rejections.recoverRejections` (122 lines): typed rejections for unrepresentable constructs, never placeholder values | done: `tsir_frontend_passes.c` rejections walker |
+| F8 | `family_hint.infer` (183 lines): reductions present -> fused_gemv only when 2 axes, 1 sum reduction on axis 1, nontrivial bound string (dispatch./uniform:/override:/override@id:/const:), and one indexed load covering both axis locals; else reduction; axes present -> gather when any indirect buffer access, else elementwise; else unknown. Hints are tiebreakers only and must not change feasibility | done: `tsir_family_hint_infer_ir` in `tsir_frontend.c` (indexed-access coverage, indirect-access detection with Zig's local-alias depth cap 8); the pure predicate `tsir_family_hint_classify` is retained for callers without IR |
+| F9 | `frontend_body`/`frontend_expr`/`frontend_collectives` internal helpers | done: ported as part of `tsir_frontend_expr.c` and `tsir_frontend_passes.c` |
 
 ## Planner: planner.zig (295), planner_support.zig (47), collective_synthesis.zig (144)
 
@@ -223,7 +226,7 @@ taxonomy, never a silent zero.
 
 | Row | Zig behavior | C status |
 | --- | --- | --- |
-| R1 | `run` dispatch order: rejections present (semantic or realization) -> RejectedBySemantic; empty kernel; simple reduction; fused GEMV; RMSNorm; gather; identity; residual_add; gated; attention_scores; l2_normalize; conv1d_depthwise; linear_attention; else NotImplemented | partial: dispatch order preserved for the implemented paths (empty, simple reduction, GEMV, RMSNorm, gather) followed by TSIR_ERR_UNSUPPORTED for the extended-op shapes. Rejection-first rule done. |
+| R1 | `run` dispatch order: rejections present (semantic or realization) -> RejectedBySemantic; empty kernel; simple reduction; fused GEMV; RMSNorm; gather; identity; residual_add; gated; attention_scores; l2_normalize; conv1d_depthwise; linear_attention; else NotImplemented | done: full order preserved, extended ops via `tsir_try_extended_ops` after gather; linear_attention falls through exactly as Zig does (see R28) |
 | R2 | `Result`: reference_hash = SHA-256 over the canonical byte image of all output buffers in declared order; outputs caller-owned; empty outputs when rejected | done: `TsirReferenceResult` with caller-owned buffers and `tsir_reference_free_result` |
 | R3 | `freeResult` semantics | done |
 | R4 | Empty kernel: exactly 1 function, 0 bindings, 0 reductions, 0 collectives, 0 inputs -> hash of empty input (e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855) | done, including the exact hash constant in tests |
@@ -244,14 +247,14 @@ taxonomy, never a silent zero.
 | R19 | `tryRmsNorm`: 1 function, 0 collectives, >= 3 bindings, 1 reduction, 2 axes; body op rms_norm with formula sum_squares_mean_epsilon_rsqrt_scale and intermediate_scalar target; inputs count == read-only binding count; exactly 3 binding roles (input, scale, output, distinct) and 2 axis roles (hidden 0, reduction 1, hidden_extent_axis == hidden axis); reduction sum over reduction axis, f32 accumulation, strict_ordered, propagate; input/scale read-only, output read-write; equal shapes [H], equal dtypes in {f32, f16, bf16}; computation sum_sq left-fold, mean = sum/H, inv_rms = 1/sqrt(mean + eps), out[d] = x * inv_rms * scale[d]; hidden == 0 -> zero-length output | done |
 | R20 | RMSNorm epsilon resolution: literal_f32 requires empty path, no binding/offset, finite literal, cast f64->f32; uniform_field requires path splitting to field "eps", binding name matching, read-only binding, offset + 4 bytes within the uniform input, finite f32 value | done: path split implemented for the `uniform:<binding>.<field>` shape the Zig splitter accepts (see gaps.md for the exact splitter rule) |
 | R21 | `tryGather`: 1 function, 0 collectives, 0 reductions, 3 bindings, 2 axes; body op gather with roles indices/table/output (distinct) and axes token 0, hidden 1; indices/output read-write rules (indices, table read-only; output read-write); indices elem u32; table/output equal dtypes in {f32, f16, bf16}; shapes [tokens], [vocab, hidden], [tokens, hidden]; inputs exactly 2 in read-only order; every index validated < vocab (out-of-range falls through to NotImplemented, not an error value); output is a byte copy of table rows | done: out-of-range index -> TSIR_ERR_UNSUPPORTED (fall-through equivalent), not a fabricated row |
-| R22 | `tryIdentity` (extended ops) | missing: TSIR_ERR_UNSUPPORTED |
-| R23 | `tryResidualAdd`: output[i] = summand_a[i] + summand_b[i] | missing: TSIR_ERR_UNSUPPORTED |
-| R24 | `tryGated`: gelu (tanh approximation, Doppler MLP form), silu, sigmoid gated products | missing: TSIR_ERR_UNSUPPORTED. Deliberately not approximated with libm: the Zig oracle uses declared transcendental behavior and the gated path's exact polynomial is in the extended-ops file; a libm approximation would pass a smoke test while breaking bit parity. |
-| R25 | `tryAttentionScores`: fused softmax_stable attention body | missing: TSIR_ERR_UNSUPPORTED |
-| R26 | `tryL2Normalize`: output[d] = input[d] / sqrt(sum input^2 + eps) | missing: TSIR_ERR_UNSUPPORTED |
-| R27 | `tryConv1DDepthwise`: causal left-padded depthwise conv, kernel_size parameter, optional bias | missing: TSIR_ERR_UNSUPPORTED |
-| R28 | `tryLinearAttention`: gated DeltaNet state update and readout | missing: TSIR_ERR_UNSUPPORTED |
-| R29 | `TranscendentalTable`: exp/log/sin/cos/tan/tanh/rsqrt/recip ULP bounds (1,1,1,1,2,2,1,1) as declared metadata | done: constant table in `tsir_reference.h`; the polynomial implementations themselves are missing (they are what R24-R28 need), so the table is metadata only and is labeled as such |
+| R22 | `tryIdentity` (extended ops) | done: `tsir_extended.c`, byte copy with shape/elem/input-length checks |
+| R23 | `tryResidualAdd`: output[i] = summand_a[i] + summand_b[i] | done: `tsir_extended.c`, f32 left-fold-free elementwise add |
+| R24 | `tryGated`: gelu (tanh approximation, Doppler MLP form), silu, sigmoid gated products | done: `tsir_extended.c` with the exact Zig clamp forms (-15/15) and tanh form constants; transcendental evaluation is double-precision rounded to f32, so bit parity against Zig is unestablished (gaps.md G-TRANSCENDENTAL-BIT); tests assert exact cases bit-exactly and the rest within tolerance |
+| R25 | `tryAttentionScores`: fused softmax_stable attention body | done: `tsir_extended_ops.c`, single-Q decode shape only, causal as structural no-op, sliding-window masking, sentinel -1.0e30, left-fold f32 accumulation; exp via double-precision (see G-TRANSCENDENTAL-BIT) |
+| R26 | `tryL2Normalize`: output[d] = input[d] / sqrt(sum input^2 + eps) | done: `tsir_extended_ops.c`; sqrt via double-precision (see G-TRANSCENDENTAL-BIT) |
+| R27 | `tryConv1DDepthwise`: causal left-padded depthwise conv, kernel_size parameter, optional bias | done: `tsir_extended_ops.c`, including the has_bias/bias-role agreement rule |
+| R28 | `tryLinearAttention`: gated DeltaNet state update and readout | done, with the Zig fall-through preserved: dispatch always falls through because Zig reads the read-write state through the read-only input helper (gaps.md G-LINEAR-DEAD-PATH); the state-update math itself is implemented as `tsir_linear_attention_step` (a_log pinned to 0.5, as in Zig) and tested directly |
+| R29 | `TranscendentalTable`: exp/log/sin/cos/tan/tanh/rsqrt/recip ULP bounds (1,1,1,1,2,2,1,1) as declared metadata | done: constant table in `tsir_reference.h`; exp/tanh/sqrt are now also evaluated (double-precision, rounded to f32, in `tsir_transcendental.c`), not as Zig's declared minimax polynomials, so bit parity is unestablished; log/sin/cos/tan/rsqrt/recip have no C function |
 | R30 | Interpreter error taxonomy: OutOfMemory, NotImplemented, RejectedBySemantic | done: TSIR_ERR_NOMEM, TSIR_ERR_UNSUPPORTED, TSIR_ERR_REJECTED |
 
 ## Emitters
@@ -276,44 +279,46 @@ module), and is listed in gaps.md.
 | E5 | `writeOptionalU32/U64`: value or `none`, each with trailing newline | done |
 | E6 | `writeHash`: 64 lowercase hex chars, no newline added by the writer itself | done |
 | E7 | `writeQuoted`: double-quoted, escapes `\\`, `"`, `\n`, `\r`, `\t` only (other bytes pass through, including control bytes Zig's digest escaper would escape; the metadata writer is not the digest escaper) | done: restriction preserved |
-| E8 | `emit_text_skeleton` contract header: `// {version_key} = 1`, `// target.name = {name}`, `// target.descriptor_hash = {hex}`, `// semantic_index = N`, `// pe_grid.width/height`, `// emitter_params_json = {quoted}`, blank line; then residency, tiles, collectives, reductions; then kernel body (semantic-aware) or body_comment + newline (realization-only) | partial: header plus metadata plus realization-only body_comment done byte-exact; the semantic-aware path's kernel-body step is missing (see E13), so `tsir_emit_semantic` returns TSIR_ERR_UNSUPPORTED rather than emitting a skeleton with a fake body |
+| E8 | `emit_text_skeleton` contract header: `// {version_key} = 1`, `// target.name = {name}`, `// target.descriptor_hash = {hex}`, `// semantic_index = N`, `// pe_grid.width/height`, `// emitter_params_json = {quoted}`, blank line; then residency, tiles, collectives, reductions; then kernel body (semantic-aware) or body_comment + newline (realization-only) | done: header plus metadata plus realization-only body_comment byte-exact, and the semantic-aware path now appends the kernel body (E13) with no partial text on failure |
 | E9 | DXIL skeleton spec: version_key `doe.tsir.dxil_skeleton.version`, body_comment `; tsir mechanical skeleton: DXIL module body is emitted by later lowering.` | done: realization-only emission |
 | E10 | MSL skeleton spec: version_key `doe.tsir.msl_skeleton.version`, body_comment `// tsir mechanical skeleton: MSL kernel body is emitted by later lowering.` | done: realization-only emission |
 | E11 | SPIR-V skeleton spec: version_key `doe.tsir.spir_v_skeleton.version`, body_comment `; tsir mechanical skeleton: SPIR-V module body is emitted by later lowering.` | done: realization-only emission |
-| E12 | WebGPU emitter: realization-only calls emit the contract skeleton (its own header/metadata layout, same writers); semantic-aware calls emit executable WGSL for supported body families via kernel_body | partial: realization-only skeleton done; semantic-aware WGSL body emission missing (see E13) |
-| E13 | `emit_kernel_body` (896 lines): Backend enum webgpu/csl/msl/dxil/spir_v; webgpu/msl/dxil/spir_v bodies support fused_gemv, rms_norm, gather and reject all other ops (including attention_scores, which is fixture-only) with UnsupportedKernelBody; CSL bodies support all 13 non-unknown ops (gated via emit_kernel_body_gated, attention via emit_kernel_body_attention, conv1d, l2_normalize, linear_attention, kv read/write, residual_add) and are build-gated on enable_csl | missing: `tsir_emit_kernel_body` returns TSIR_ERR_UNSUPPORTED for every op. This is the largest single emitter gap. The per-op body files are listed individually below so the coordinator can schedule them. |
+| E12 | WebGPU emitter: realization-only calls emit the contract skeleton (its own header/metadata layout, same writers); semantic-aware calls emit executable WGSL for supported body families via kernel_body | done: realization-only skeleton plus WGSL bodies for fused_gemv, rms_norm, gather via `tsir_kernel_body.c` |
+| E13 | `emit_kernel_body` (896 lines): Backend enum webgpu/csl/msl/dxil/spir_v; webgpu/msl/dxil/spir_v bodies support fused_gemv, rms_norm, gather and reject all other ops (including attention_scores, which is fixture-only) with UnsupportedKernelBody; CSL bodies support all 13 non-unknown ops (gated via emit_kernel_body_gated, attention via emit_kernel_body_attention, conv1d, l2_normalize, linear_attention, kv read/write, residual_add) and are build-gated on enable_csl | partial: non-CSL backends done in `tsir_kernel_body.c` (WGSL/MSL/DXIL/SPIR-V bodies for fused_gemv, rms_norm, gather; all other ops return TSIR_ERR_UNSUPPORTED; backend enum `TsirKernelBackend` in `tsir_emit.h`); CSL backend returns TSIR_ERR_UNSUPPORTED and stays quarantined, not built |
 | E14 | `emit_kernel_context.Config` and defaults: var_prefix `tsir_`, no param defaults, no Gemma offset, kv full_per_pe, attention full_per_pe, tile_param pe-id source | done: struct plus defaults (as configuration data; the bodies that consume it are missing per E13) |
 | E15 | `emit_kernel_context` helpers: bindingForRole (first matching role, else MissingBindingRole), bindingForIndex (out of range -> InvalidBodyContract), requireElem (mismatch -> UnsupportedScalarKind), writeCslSqrtNr (f32 form vs upcast form), writeCslBufferArray, writeCslBufferPointer, writeCslExportSymbol | done: helpers implemented byte-exact for the CSL text fragments they produce; they are CSL text helpers, not a CSL emitter claim |
 | E16 | `emit_dtype_routing`: cslElemName (f32/f16/bf16/i32/u32 verbatim), wgslElemName (bf16 maps to f16 spelling, rejected elsewhere), isSupportedComputeElem (f32/f16 only), requireSupportedComputeElem, writeWgslF16Enable (`enable f16;\n\n` only for f16) | done |
 | E17 | `emit_csl_f16_pack` (48 lines): writeBufferArray, writeBufferPointer, writePackLoop, writeExportSymbol | done: text helpers (quarantined CSL text; see n/a note) |
 | E18 | CSL emitter proper (`emit_csl.zig`, 237 lines): realization-only CSL-shaped contract text; semantic-aware executable PE bodies for supported families | n/a (quarantined): realization-only CSL contract shape is NOT reimplemented here, because CSL is excluded from default parity and the coordinator clarified CSL can be ignored. Mapped, not built. |
 | E19 | Per-op CSL body files: emit_kernel_body_attention (443), emit_kernel_body_kv (245), emit_kernel_body_linear_attention (169), emit_kernel_body_gated (115), emit_kernel_body_conv1d (110), emit_kernel_body_l2_normalize (73) | n/a (quarantined): mapped, not built |
-| E20 | `emit_webgpu` semantic-aware WGSL bodies (fused_gemv, rms_norm, gather) | missing: TSIR_ERR_UNSUPPORTED |
-| E21 | `emit_msl`/`emit_dxil`/`emit_spir_v` semantic-aware bodies (fused_gemv, rms_norm, gather, via kernel_body) | missing: TSIR_ERR_UNSUPPORTED |
+| E20 | `emit_webgpu` semantic-aware WGSL bodies (fused_gemv, rms_norm, gather) | done: `tsir_kernel_body.c` WGSL emitters, exact texts, literal and uniform epsilon forms |
+| E21 | `emit_msl`/`emit_dxil`/`emit_spir_v` semantic-aware bodies (fused_gemv, rms_norm, gather, via kernel_body) | done: `tsir_kernel_body.c` MSL/DXIL/SPIR-V emitters, exact texts, including the SPIR-V gather ternary with 0.0 (not 0.0f) |
 | E22 | Emitter code digests (`emitterCodeDigest`): SHA-256 over the emitter's own source text plus the shared skeleton/body/metadata sources it embeds | missing: the C sources are not the Zig sources, so a C "emitter digest" equal to the Zig value cannot be produced by hashing C files. `tsir_emit` does not offer a fake digest. A coordinator decision is needed: either the digest is defined over the C emitter sources (new identity, breaks cross-implementation manifest comparison) or the Zig source bytes are carried as data (not done here). Listed in gaps.md. |
-| E23 | `emit_kernel_body` Config-driven live-path knobs (chunk_size_default 1024, hidden_size_default 1024, Gemma 1+weight offset, kv head_dim/max_seq_len/read_len defaults, slot-sharded kv, kv-axis-sharded attention, attention pe-id source) | missing with E13: config fields exist (E14), behavior does not |
+| E23 | `emit_kernel_body` Config-driven live-path knobs (chunk_size_default 1024, hidden_size_default 1024, Gemma 1+weight offset, kv head_dim/max_seq_len/read_len defaults, slot-sharded kv, kv-axis-sharded attention, attention pe-id source) | missing: config fields exist (E14), behavior does not; the non-CSL bodies built here do not consume these knobs (fixed `tsir_` names, no kv/attention paths), and the CSL paths that do are quarantined |
 
 ## Tools: tools/ (751 lines)
 
 Both tools depend on the full Doe pipeline (WGSL parser, sema, IR
 builder, targets, TSIR frontend/planner/emitters) and on bootstrap
-fixture files under `runtime/zig/tests/tsir/`. Neither can be ported
-faithfully inside the TSIR-only output directory.
+fixture files under `runtime/zig/tests/tsir/`. The JSON/argument
+layers are now ported as library functions in `tsir_bootstrap.c`
+(the reader is the repo bounded JSON reader, reused, not
+hand-rolled); the WGSL pipeline behind manifest inputs is still
+missing, and neither tool has a CLI binary in this directory.
 
 | Row | Zig behavior | C status |
 | --- | --- | --- |
-| T1 | `tsir_bootstrap_manifest_inputs`: emits schema-tool inputs for bootstrap manifest lowering fixtures; kernels fused_gemv (algorithm_exact, invariants reduction_order/accum_dtype), rms_norm (tolerance_bounded max_abs 1e-6), gather (bit_exact_solo); frontend version `frontend-bootstrap-pipeline-v1`, compiler version `doe-tsir-bootstrap-2026-04-24`, WSE3 stream chunk 4096, max WGSL 1 MiB | missing: constants recorded here, no C tool built |
-| T2 | `tsir_bootstrap_oracle`: CLI `--kernel <name> --inputs <path> [--semantic-tsir] [--realization-tsir]`; builds Phase A semantic shapes for fused_gemv/rms_norm/gather, runs reference interpreter, prints status/hash; 16 MiB input cap; NotImplemented/InvalidJson reported as `not_implemented` status, not a crash | missing: no C tool built. The C reference interpreter covers the same three kernel shapes (R18, R19, R21) as a library, so a future C oracle CLI is a thin argument/JSON layer over `tsir_reference_run`, not a new interpreter. JSON parsing is the missing piece, and it must not be hand-rolled into the library. |
+| T1 | `tsir_bootstrap_manifest_inputs`: emits schema-tool inputs for bootstrap manifest lowering fixtures; kernels fused_gemv (algorithm_exact, invariants reduction_order/accum_dtype), rms_norm (tolerance_bounded max_abs 1e-6), gather (bit_exact_solo); frontend version `frontend-bootstrap-pipeline-v1`, compiler version `doe-tsir-bootstrap-2026-04-24`, WSE3 stream chunk 4096, max WGSL 1 MiB | partial: entry writer in Zig field order plus kernel templates (`tsir_bootstrap_write_manifest_entry`, `tsir_bootstrap_manifest_template`); the WGSL pipeline (parser, sema, ir_builder) and digest computation are missing, so digests and descriptor hashes stay caller-supplied (gaps.md G-MANIFEST-PIPELINE). WSE3 backend is a CSL path and stays quarantined. |
+| T2 | `tsir_bootstrap_oracle`: CLI `--kernel <name> --inputs <path> [--semantic-tsir] [--realization-tsir]`; builds Phase A semantic shapes for fused_gemv/rms_norm/gather, runs reference interpreter, prints status/hash; 16 MiB input cap; NotImplemented/InvalidJson reported as `not_implemented` status, not a crash | partial: oracle run semantics complete as a library function (`tsir_bootstrap_oracle_run`): exact Zig status JSON, three kernel semantics, canonical kernel names, 16 MiB cap, NotImplemented/InvalidJson mapped to `not_implemented` status; the CLI binary itself (argv parsing, file reads) is not built (gaps.md G-ORACLE-CLI). JSON parsing reuses the repo bounded reader, not a hand-rolled parser. |
 
 ## Summary counts
 
 - Rows mapped: R0, R0b, S1-S47 (47), D1-D19 (19), F1-F9 (9),
   P1-P13 (13), R1-R30 (30), E1-E23 (23), T1-T2 (2): 145 rows.
-- Done: 115 rows. Partial: 6 rows (F8, R1, R5, R6, E8, E12; see the
-  table notes for exact subsets). Missing: 22 rows (F1, F4, F5, F6, F7,
-  F9, R22-R28, E13, E20, E21, E22, E23, T1, T2, R0, R0b).
+- Done: 134 rows. Partial: 5 rows (R5, R6, E13, T1, T2; see the
+  table notes for exact subsets). Missing: 4 rows (R0, R0b, E22, E23).
   Quarantined (mapped, not built): 2 rows (E18, E19) plus the CSL parts
-  of E13, which are text helpers only where implemented.
+  of E13, which are not built. 134 + 5 + 4 + 2 = 145.
 - File-level status is in gaps.md. No row above is marked done on the
   basis of an existing C subsystem, a stub, or a related-but-different
   implementation.
