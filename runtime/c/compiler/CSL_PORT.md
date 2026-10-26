@@ -1,12 +1,11 @@
 # CSL C port, one-page summary
 
-Label: CSL C port, untested / not run, parity not verified. Nothing pushed.
+Label: CSL C port, untested / not run, parity not verified. Pushed to clocksmith/fawn main at 5678df1ef9f12faa8c7895201f8718500f6f8122; this file was corrected in a follow-up commit after the push.
 
 ## What was done
 
 Ported all 52 CSL Zig files (17,425 lines) from clocksmith/fawn main d25e075 to C,
-in ~/workspace/doe-c-work/csl-port/src/, as a single local patch set ready for one
-future snapshot-push. This reverses the earlier NO CSL exclusion for this patch only;
+in ~/workspace/doe-c-work/csl-port/src/, as a single patch set, pushed to clocksmith/fawn main at 5678df1ef9f12faa8c7895201f8718500f6f8122. This reverses the earlier NO CSL exclusion for this patch only;
 it does not claim full Zig/C parity.
 
 - emit/csl: 37 Zig files, 13,508 lines -> 49 C files, 2,830 lines. Done 7, partial 30, missing 0.
