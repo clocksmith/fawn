@@ -801,9 +801,12 @@ as `elem name[]`.
   atomic and pack/unpack builtins fail here with UnsupportedBuiltin
   instead of emitting helper calls (recorded in gaps.md).
 - Dispatch info: when any function parameter uses the num_workgroups
-  builtin, the exact Zig cbuffer is emitted:
-  `cbuffer DoeDispatchInfo : register(b0, space7) { uint3
-  doe_num_workgroups; uint _doe_num_workgroups_pad; };` and such a
+  builtin, the Zig cbuffer is emitted with the same name, register,
+  fields, and pad, but laid out across lines by the C emitter
+  (whitespace-only difference from Zig's single-line form):
+  `cbuffer DoeDispatchInfo : register(b0, space7) {` then
+  `uint3 doe_num_workgroups;` and
+  `uint _doe_num_workgroups_pad;` indented, then `};`. Such a
   parameter is rendered in the body as
   `const uint3 <name> = doe_num_workgroups;`. Parameters with the
   subgroup_size or subgroup_invocation_id builtins are not entry
@@ -869,8 +872,9 @@ as `elem name[]`.
   continuing block exists, the condition is
   `!__doe_loop_break_<id> && (<cond>)` with a continuing block else
   the condition or `true`, the body follows, then the continuing
-  block; switch renders `switch (<expr>) { case <selector>: { ... }
-  default: { ... } }` with each case body as a block; break renders
+  block; switch renders `switch (<expr>) {` then, per case, one
+  `case <selector>:` line per selector (or one `default:` line), then
+  the case body block, then `break;`, then `}`; break renders
   `break;`, continue renders `continue;` except inside a loop with a
   continuing block, where it fails with UnsupportedConstruct (the
   Zig break-flag dance for that case is not in the bounded emitter);
