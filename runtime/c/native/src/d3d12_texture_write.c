@@ -15,10 +15,7 @@ void native_d3d12_write_texture(native_device *device,const WGPUTexelCopyTexture
         .origin={destination->origin.x,destination->origin.y,destination->origin.z},.aspect=destination->aspect};
     doe_resource_copy_region admitted = {0};
     native_lock(device);
-    doe_resource_status status = doe_resource_texture_device(texture) != device ? DOE_RESOURCE_DEVICE_MISMATCH :
-        !doe_resource_texture_available(texture) ? DOE_RESOURCE_UNAVAILABLE :
-        doe_resource_texture_copy_validate(data_size,doe_resource_texture_description(texture),&copy,
-            DOE_RESOURCE_BUFFER_TO_TEXTURE,DOE_RESOURCE_COPY_QUEUE,&admitted);
+    doe_resource_status status = doe_resource_texture_write_validate(device,texture,data_size,&copy,&admitted);
     if (status == DOE_RESOURCE_OK) doe_resource_texture_retain(texture);
     native_unlock(device);
     if (status != DOE_RESOURCE_OK) {
@@ -26,11 +23,15 @@ void native_d3d12_write_texture(native_device *device,const WGPUTexelCopyTexture
         native_device_release(device);
         return;
     }
-    /* Canonical recording below checks usage/availability even for zero writes. */
+    /* Admission includes usage for empty writes, without staging or GPU work. */
+    if (!copy.width || !copy.height || !copy.depth_or_layers) {
+        doe_resource_texture_release(texture);
+        native_device_release(device);
+        return;
+    }
     uint64_t pitch = ((uint64_t)admitted.row_bytes + 255) & ~UINT64_C(255);
-    bool nonempty = copy.width && copy.height && copy.depth_or_layers;
-    uint64_t image_bytes=nonempty ? pitch*admitted.rows : 0;
-    bool overflow=nonempty && image_bytes>UINT64_MAX/copy.depth_or_layers;
+    uint64_t image_bytes=pitch*admitted.rows;
+    bool overflow=image_bytes>UINT64_MAX/copy.depth_or_layers;
     uint64_t bytes=overflow ? UINT64_MAX : image_bytes*copy.depth_or_layers;
     uint64_t bound = native_allocation_bound(device);
     if (overflow || pitch > UINT32_MAX ||
@@ -41,10 +42,7 @@ void native_d3d12_write_texture(native_device *device,const WGPUTexelCopyTexture
         native_device_release(device);
         return;
     }
-    /* A zero transfer still needs a real resource packet for object admission.
-     * The staging allocation is nonzero; no caller byte is read. */
-    uint64_t allocation = bytes ? bytes : 4;
-    unsigned char *packed = calloc(1,(size_t)allocation);
+    unsigned char *packed = calloc(1,(size_t)bytes);
     if (!packed) {
         native_error(device,WGPUErrorType_OutOfMemory,"D3D12 queue texture write staging allocation failed");
         doe_resource_texture_release(texture);
@@ -52,11 +50,11 @@ void native_d3d12_write_texture(native_device *device,const WGPUTexelCopyTexture
         return;
     }
     const unsigned char *source = data;
-    for (uint32_t image=0;nonempty && image<copy.depth_or_layers;++image)
+    for (uint32_t image=0;image<copy.depth_or_layers;++image)
         for (uint32_t row=0;row<admitted.rows;++row)
             memcpy(packed+(uint64_t)image*image_bytes+(uint64_t)row*pitch,
                 source+copy.offset+((uint64_t)image*admitted.image_rows+row)*admitted.pitch,admitted.row_bytes);
-    WGPUBufferDescriptor descriptor = {.size=allocation,.usage=WGPUBufferUsage_CopySrc|WGPUBufferUsage_CopyDst};
+    WGPUBufferDescriptor descriptor = {.size=bytes,.usage=WGPUBufferUsage_CopySrc|WGPUBufferUsage_CopyDst};
     WGPUBuffer staging = native_device_create_buffer(device,&descriptor,bound);
     doe_resource_encoder *encoder = NULL;
     doe_resource_commands *commands = NULL;
@@ -64,7 +62,7 @@ void native_d3d12_write_texture(native_device *device,const WGPUTexelCopyTexture
     native_failure written = native_failure_status(NATIVE_OK);
     if (staging) {
         native_buffer *payload = doe_resource_buffer_native((doe_resource_buffer *)staging);
-        written = native_buffer_write(payload,0,packed,(size_t)allocation);
+        written = native_buffer_write(payload,0,packed,(size_t)bytes);
         status = written.status == NATIVE_OK ? doe_resource_encoder_create(&device->resources,&encoder) : DOE_RESOURCE_STATE;
         copy.offset = 0;
         copy.bytes_per_row = (uint32_t)pitch;

@@ -821,7 +821,15 @@ and native execution errors retain their typed public error
 category rather than being relabeled as validation errors.
 Descriptor labels and SetLabel use the existing label owner, including exact
 length-delimited bytes and resource-finalizer cleanup. Failed WGSL modules retain
-real compiler diagnostics for GetCompilationInfo. Compute and render pipeline construction
+real compiler diagnostics for GetCompilationInfo. Successful modules also retain
+warning/info notices from [global diagnostic controls](../compiler/DIAGNOSTICS.md).
+The native message projection owns its ABI array and borrows immutable module
+text; the existing shader lease pins both through deferred callbacks and early
+public release. Projection allocation failure reports OutOfMemory before resource
+publication. Scoped diagnostic attributes and warnings accumulated before a fatal
+validation error are not promised by this transport. `compilation-diagnostics`
+exercises severity, deferred lifetime and allocation failure without GPU dispatch.
+Compute and render pipeline construction
 is synchronous; the async API delivers its actual result through the requested
 callback mode, not a claimed background compiler. No blanket success stubs or
 fallback provider resolution exist. The public advertised limits

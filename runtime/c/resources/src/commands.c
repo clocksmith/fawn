@@ -220,13 +220,13 @@ doe_resource_status doe_resource_encoder_copy_texture(doe_resource_encoder *enco
     if (status != DOE_RESOURCE_OK) return status;
     if (!resource_buffer_available(buffer) || !resource_texture_live(texture))
         return resource_encoder_fail(encoder, DOE_RESOURCE_UNAVAILABLE);
-    if (buffer->base.config.device.identity != encoder->base.config.device.identity ||
-        texture->base.config.device.identity != encoder->base.config.device.identity)
+    if (buffer->base.config.device.identity != encoder->base.config.device.identity)
         return resource_encoder_fail(encoder, DOE_RESOURCE_DEVICE_MISMATCH);
     uint64_t buffer_usage = direction == DOE_RESOURCE_BUFFER_TO_TEXTURE ? WGPUBufferUsage_CopySrc : WGPUBufferUsage_CopyDst;
     uint64_t texture_usage = direction == DOE_RESOURCE_BUFFER_TO_TEXTURE ? WGPUTextureUsage_CopyDst : WGPUTextureUsage_CopySrc;
-    if (!(buffer->desc.usage & buffer_usage) || !(texture->desc.usage & texture_usage))
-        return resource_encoder_fail(encoder, DOE_RESOURCE_USAGE);
+    status = resource_texture_use_validate(encoder->base.config.device.identity, texture, texture_usage, false);
+    if (status != DOE_RESOURCE_OK) return resource_encoder_fail(encoder, status);
+    if (!(buffer->desc.usage & buffer_usage)) return resource_encoder_fail(encoder, DOE_RESOURCE_USAGE);
     doe_resource_copy_region region;
     status = doe_resource_texture_copy_validate(buffer->desc.size, &texture->desc, copy, direction, alignment, &region);
     if (status != DOE_RESOURCE_OK) return resource_encoder_fail(encoder, status);

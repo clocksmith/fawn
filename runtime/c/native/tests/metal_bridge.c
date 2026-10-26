@@ -963,6 +963,8 @@ int main(int argc, char **argv)
     assert(mocks[2].copies == 1 && mocks[2].fills == 2);
     host_replay_program(&s);
     queue_upload_admission(&s);
+    metal_empty_write_ledger(&s, &mocks[2]);
+    metal_compatible_copy_ledger(&s, &mocks[2]);
     metal_compressed_copy_ledger(&s, &mocks[2]);
     metal_extended_copy_ledger(&s, &mocks[2]);
     metal_f16_consumer(&s, &mocks[2]);

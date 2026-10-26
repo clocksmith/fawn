@@ -835,9 +835,20 @@ static bool module_directive(Parser *p, bool enable) {
 }
 bool parse_tokens(Source *source,CompilerWorkspace *s) {
     Parser p={.source=source,.tokens=s,.exempt_comparison=NO_ID,.exempt_literal=NO_ID};
+    source->diagnostic_severity[0]=1u;
+    source->diagnostic_severity[1]=1u;
+    source->diagnostic_seen=0u;
+    source->unknown_diagnostic=(NameSpan){0};
+    source->diagnostic_work=0u;
     bool first=true;
     while (parser_peek(&p)->kind!=TOKEN_END) {
         if (parser_peek(&p)->kind==';') {++p.cursor;continue;}
+        if (parser_spelled(&p, parser_peek(&p), "diagnostic")) {
+            if (!first) return source_error(source, DOE_COMPILER_PARSE_ERROR, parser_peek(&p)->offset,
+                                           "directives must precede declarations");
+            if (!parser_diagnostic_directive(&p)) return false;
+            continue;
+        }
         if (parser_spelled(&p, parser_peek(&p), "enable") || parser_spelled(&p, parser_peek(&p), "requires")) {
             if (!first) return source_error(source, DOE_COMPILER_PARSE_ERROR, parser_peek(&p)->offset,
                                            "directives must precede declarations");

@@ -83,25 +83,33 @@ void wgpuQueueWriteTexture(WGPUQueue handle, const WGPUTexelCopyTextureInfo *des
     doe_resource_texture_copy copy = texture_copy(destination, layout, size);
     doe_resource_copy_region region;
     native_lock(device);
-    doe_resource_status status = doe_resource_texture_device(texture) != device ? DOE_RESOURCE_DEVICE_MISMATCH :
-        !doe_resource_texture_available(texture) ? DOE_RESOURCE_UNAVAILABLE :
-        doe_resource_texture_copy_validate(data_size, doe_resource_texture_description(texture), &copy,
-            DOE_RESOURCE_BUFFER_TO_TEXTURE, DOE_RESOURCE_COPY_QUEUE, &region);
+    doe_resource_status status = doe_resource_texture_write_validate(device, texture, data_size, &copy, &region);
+    if (status == DOE_RESOURCE_OK) doe_resource_texture_retain(texture);
     native_unlock(device);
+    if (status != DOE_RESOURCE_OK) {
+        native_error(device, native_resource_error(status), "queue texture write range or usage invalid");
+        native_device_release(device);
+        return;
+    }
+    /* Admission is independent of extent; an empty write needs no staging. */
+    if (!copy.width || !copy.height || !copy.depth_or_layers) {
+        doe_resource_texture_release(texture);
+        native_device_release(device);
+        return;
+    }
     /* writeTexture data needs no offset or bytesPerRow block alignment: stage
      * the touched block rows tightly at offset 0 (row_bytes pitch, `rows` rows
      * per image), which the native copy can address. */
     const uint64_t first = copy.offset;
     const uint64_t images = copy.depth_or_layers;
-    uint64_t bytes = status == DOE_RESOURCE_OK ? (uint64_t)region.row_bytes * region.rows * images : 0;
-    const bool tight = status == DOE_RESOURCE_OK && region.pitch == region.row_bytes && region.image_rows == region.rows;
+    uint64_t bytes = (uint64_t)region.row_bytes * region.rows * images;
+    const bool tight = region.pitch == region.row_bytes && region.image_rows == region.rows;
     copy.offset = 0;
-    if (status == DOE_RESOURCE_OK) {
-        copy.bytes_per_row = region.row_bytes;
-        copy.rows_per_image = region.rows;
-    }
-    if (status != DOE_RESOURCE_OK || bytes > SIZE_MAX - 3) {
+    copy.bytes_per_row = region.row_bytes;
+    copy.rows_per_image = region.rows;
+    if (bytes > SIZE_MAX - 3) {
         native_error(device, WGPUErrorType_Validation, "queue texture write range invalid");
+        doe_resource_texture_release(texture);
         native_device_release(device);
         return;
     }
@@ -111,6 +119,7 @@ void wgpuQueueWriteTexture(WGPUQueue handle, const WGPUTexelCopyTextureInfo *des
      * memory, not a validation error of the request. */
     if (descriptor.size > native_allocation_bound(device)) {
         native_error(device, WGPUErrorType_OutOfMemory, "queue texture write staging exceeds the allocation limit");
+        doe_resource_texture_release(texture);
         native_device_release(device);
         return;
     }
@@ -145,5 +154,6 @@ void wgpuQueueWriteTexture(WGPUQueue handle, const WGPUTexelCopyTextureInfo *des
     } else if (staging) native_error(device, written != DOE_VK_OK ?
         native_backend_error(written) : native_resource_error(status), "queue texture write recording failed");
     wgpuBufferRelease(staging);
+    doe_resource_texture_release(texture);
     native_device_release(device);
 }

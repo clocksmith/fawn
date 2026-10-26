@@ -773,3 +773,8 @@ color-space transformations through this spelling. No conversion matrices or
 color defaults are invented. `test-external-handles` checks canonical metadata;
 the named external target control checks MSL/HLSL text and validated SPIR-V,
 including mixed external/ordinary helper signatures, not physical video output.
+
+Global WGSL diagnostic controls and additive ABI18 nonfatal module notices are
+specified in [DIAGNOSTICS.md](DIAGNOSTICS.md). The shared shader/native route
+retains warning/info messages; old ABI layouts and the CLI's lack of a nonfatal
+output channel remain explicit rather than silently equating warnings with off.

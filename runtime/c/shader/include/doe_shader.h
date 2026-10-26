@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: MIT */
 #ifndef DOE_SHADER_H
 #define DOE_SHADER_H
+#include "doe_compiler_diagnostics.h"
 #include "doe_compiler_hlsl.h"
 #include "doe_compiler_metal.h"
 #include "doe_compiler_specialization.h"
@@ -162,6 +163,10 @@ doe_shader_status doe_shader_borrow(const doe_shader *shader, doe_shader_view *o
 /* Exact byte equality only. This helper does not validate a compiler identity
  * supplied by the caller, hash source or equate different entry selections or
  * semantic flags. Target/semantic policy must match independently of identity bytes. */
+/* Immutable module notices, borrowed while this shader is retained. Specialized
+ * artifacts retain their module. NULL/direct artifacts return NULL and count=0. */
+const DoeCompilerNoticeV18 *doe_shader_get_diagnostics(const doe_shader *, size_t *count);
+
 bool doe_shader_matches(const doe_shader *shader, doe_shader_target target, uint32_t semantic_flags,
     const char *source, size_t size,
     const void *identity, size_t identity_size,

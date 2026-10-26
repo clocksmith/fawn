@@ -212,7 +212,10 @@ doe_mtl_status doe_mtl_commands_copy_texture(doe_mtl_commands *commands,
     if (status == DOE_MTL_OK) status = doe_mtl_texture_region_check(destination, destination_region, &full);
     if (status == DOE_MTL_OK && (destination->format.depth || destination->format.stencil) && !full)
         status = DOE_MTL_UNSUPPORTED;
-    if (status == DOE_MTL_OK && (source->desc.format != destination->desc.format ||
+    /* View compatibility also includes combined depth/stencil aspect views;
+     * a copy must retain all aspects and otherwise only changes sRGB encoding. */
+    if (status == DOE_MTL_OK && (!doe_mtl_format_compatible(source->desc.format, destination->desc.format) ||
+        source->format.depth != destination->format.depth || source->format.stencil != destination->format.stencil ||
         source_region.width != destination_region.width || source_region.height != destination_region.height ||
         source_region.depth_or_layers != destination_region.depth_or_layers)) status = DOE_MTL_INVALID_ARGUMENT;
     if (status == DOE_MTL_OK && source == destination && overlaps(source_region, destination_region))

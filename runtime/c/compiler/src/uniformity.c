@@ -2,6 +2,7 @@
  * Copyright (c) 2026 Doe contributors */
 #include "sema.h"
 #include "stage.h"
+#include "diagnostics_internal.h"
 #include <string.h>
 
 /* One Boolean sensitivity run represents reachability from one distinguished
@@ -21,7 +22,8 @@ typedef struct {
     UniformityFrame *frames;
     size_t local_slots, frame_capacity;
     uint32_t frame_count, loop, seed, cf, required, returned, required_offset;
-    bool subgroup, pointers;
+    bool subgroup, pointers, filtered;
+    uint32_t trigger, rule;
     size_t pointer_bytes;
     uint32_t *pointer_offsets;
     unsigned char *pointer_summaries, *pointer_returns, *pointer_state, *pointer_frame_maps;
@@ -315,20 +317,21 @@ static bool call_bit(Uniformity *a,uint32_t id,uint32_t cf,uint32_t *out) {
     if (reference.kind == SOURCE_IMAGE && (reference.index & SOURCE_IMAGE_VARYING) != 0u) *out |= varying(a);
     if ((reference.kind == SOURCE_DERIVATIVE ||
         (reference.kind == SOURCE_IMAGE && (reference.index & SOURCE_IMAGE_DERIVATIVE) != 0u)) &&
-        !a->subgroup && !require_uniform(a,cf,e->source_offset)) return false;
+        !a->subgroup && (!a->filtered || a->trigger==id) && !require_uniform(a,cf,e->source_offset)) return false;
     if (reference.kind==SOURCE_BARRIER) {
-        if (!a->subgroup && !require_uniform(a,cf,e->source_offset)) return false;
+        if (!a->subgroup && (!a->filtered || a->trigger==NO_ID) && !require_uniform(a,cf,e->source_offset)) return false;
         if (e->right != 0u) {
             uint32_t address;
             if (!expression_bit(a,a->compiler->arguments[e->left].expression,cf,&address)) return false;
-            if (!a->subgroup && !require_uniform(a,address,e->source_offset)) return false;
+            if (!a->subgroup && (!a->filtered || a->trigger==NO_ID) && !require_uniform(a,address,e->source_offset)) return false;
         }
         return true;
     }
     const NumericBuiltin *collective = reference.kind == SOURCE_SUBGROUP ?
         builtin_kind((NumericBuiltinKind)reference.index) : NULL;
     if (collective != NULL) {
-        if ((a->subgroup || collective->kind >= BUILTIN_QUAD_BROADCAST) && !require_uniform(a, cf, e->source_offset)) return false;
+        if ((a->subgroup || collective->kind >= BUILTIN_QUAD_BROADCAST) &&
+            (!a->filtered || a->trigger==id) && !require_uniform(a, cf, e->source_offset)) return false;
         if (!a->subgroup || !builtin_subgroup_uniform(collective)) *out |= varying(a);
     }
     const FunctionRecord *function=callee==0u?NULL:&a->compiler->functions[callee-1u];
@@ -345,7 +348,7 @@ static bool call_bit(Uniformity *a,uint32_t id,uint32_t cf,uint32_t *out) {
         const ArgumentSyntax arg=a->compiler->arguments[link];
         uint32_t bit;
         if (!expression_bit(a,arg.expression,cf,&bit)) return false;
-        if (collective != NULL && a->subgroup && i == 1u &&
+        if (collective != NULL && a->subgroup && (!a->filtered || a->trigger==id) && i == 1u &&
             (collective->kind == BUILTIN_SUBGROUP_SHUFFLE_XOR || collective->kind == BUILTIN_SUBGROUP_SHUFFLE_UP ||
              collective->kind == BUILTIN_SUBGROUP_SHUFFLE_DOWN) && !require_uniform(a, bit, e->source_offset)) return false;
         if (function==NULL) {
@@ -695,10 +698,13 @@ static bool function_bits(Uniformity *a,uint32_t index) {
             for (uint32_t i=0u;i<f->formal_count;++i) summary[i+1u] = a->pointer_returns[f->formal_start+i];
         }
         if (run==0u) {
-            if (a->required!=0u)
-                return source_error(a->source,DOE_COMPILER_SEMANTIC_ERROR,a->required_offset,
+            if (a->required!=0u) {
+                if (a->filtered && a->trigger!=NO_ID) {
+                    if (!compiler_uniformity_notice(a->source,a->trigger,a->rule)) return false;
+                } else return source_error(a->source,DOE_COMPILER_SEMANTIC_ERROR,a->required_offset,
                     a->subgroup ? "subgroup uniform control cannot be established" :
                     "uniform control cannot be established");
+            }
             if (a->returned!=0u) a->function_summary[index]|=SUMMARY_RETURN;
         } else if (run==1u) {
             if (a->required!=0u) a->function_summary[index]|=SUMMARY_REQUIRED;
@@ -747,16 +753,23 @@ static bool module_bits(Uniformity *a) {
 bool uniformity_analyze(Source *source,uint64_t limit,uint64_t *used) {
     CompilerWorkspace *c=source->compiler;
     if (used!=NULL) *used=0u;
-    bool barrier=false, subgroup=false;
+    bool barrier=false, subgroup=false, mandatory=false;
+    if (source->diagnostic_work>limit)
+        return source_error(source,DOE_COMPILER_UNSUPPORTED,0u,"uniformity analysis work limit exceeded");
     for (uint32_t i=0u;i<c->expression_count;++i) {
+        c->expressions[i].diagnostic_rule=0u;
         const SourceReference reference=c->expression_references[i];
+        mandatory=mandatory || reference.kind==SOURCE_BARRIER;
         barrier=barrier || reference.kind==SOURCE_BARRIER || reference.kind==SOURCE_DERIVATIVE ||
             (reference.kind == SOURCE_SUBGROUP && reference.index >= (uint32_t)BUILTIN_QUAD_BROADCAST) ||
             (reference.kind==SOURCE_IMAGE && (reference.index & SOURCE_IMAGE_DERIVATIVE)!=0u);
         subgroup=subgroup || c->expression_references[i].kind==SOURCE_SUBGROUP;
     }
-    if (!barrier && !subgroup) return true;
-    Uniformity a={.source=source,.compiler=c,.budget={.limit=limit},
+    if (!barrier && !subgroup) {
+        if (used!=NULL) *used=source->diagnostic_work;
+        return true;
+    }
+    Uniformity a={.source=source,.compiler=c,.budget={.limit=limit,.used=source->diagnostic_work},
         .scope={.values=c->scope,.capacity=(size_t)c->limits.statements+1u},
         .local_slots=(size_t)c->limits.statements+1u,
         .frame_capacity=2u*(size_t)c->limits.control_depth+c->limits.expression_depth+4u};
@@ -799,10 +812,32 @@ bool uniformity_analyze(Source *source,uint64_t limit,uint64_t *used) {
     const uint32_t saved_function=c->current_function;
     /* Both scope analyses reuse dead scratch, but share the one work budget.
      * A subgroup-uniform result never becomes a workgroup barrier proof. */
-    bool ok=!barrier || module_bits(&a);
-    if (ok && subgroup) {
-        a.subgroup=true;
-        ok=module_bits(&a);
+    bool ok=true;
+    const bool filtered=source->diagnostic_severity[0]!=DOE_COMPILER_DIAGNOSTIC_ERROR ||
+        source->diagnostic_severity[1]!=DOE_COMPILER_DIAGNOSTIC_ERROR;
+    if (!filtered) {
+        ok=!barrier || module_bits(&a);
+        if (ok && subgroup) { a.subgroup=true; ok=module_bits(&a); }
+    } else {
+        /* Mandatory barriers remain an independent proof. Each filterable
+         * trigger then reuses this exact dependency analysis, so callee summaries
+         * preserve the originating builtin location rather than the caller. */
+        a.filtered=true; a.trigger=NO_ID;
+        ok=!mandatory || module_bits(&a);
+        for (uint32_t i=0u;ok && i<c->expression_count;++i) {
+            if (!charge(&a,1u)) { ok=false; break; }
+            const SourceReference ref=c->expression_references[i];
+            uint32_t rule=0u;
+            if (ref.kind==SOURCE_DERIVATIVE || (ref.kind==SOURCE_IMAGE && (ref.index&SOURCE_IMAGE_DERIVATIVE)!=0u))
+                rule=DOE_COMPILER_RULE_DERIVATIVE_UNIFORMITY;
+            else if (ref.kind==SOURCE_SUBGROUP) rule=DOE_COMPILER_RULE_SUBGROUP_UNIFORMITY;
+            if (!rule || source->diagnostic_severity[rule-1u]==DOE_COMPILER_DIAGNOSTIC_OFF) continue;
+            a.trigger=i; a.rule=rule; a.subgroup=rule==DOE_COMPILER_RULE_SUBGROUP_UNIFORMITY;
+            ok=module_bits(&a);
+            if (ok && ref.kind==SOURCE_SUBGROUP && ref.index>=(uint32_t)BUILTIN_QUAD_BROADCAST) {
+                a.subgroup=false; ok=module_bits(&a);
+            }
+        }
     }
     c->current_function=saved_function;
     if (used!=NULL) *used=a.budget.used;

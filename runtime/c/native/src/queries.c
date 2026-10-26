@@ -85,10 +85,11 @@ WGPUQuerySet wgpuDeviceCreateQuerySet(WGPUDevice handle, const WGPUQuerySetDescr
         } else if (device->backend.kind==WGPUBackendType_D3D12) {
             failure=native_d3d12_queries_create(device,descriptor->type,descriptor->count,&payload->d3d12_queries);
         } else {
+            doe_vk_error detail = {0};
             doe_vk_status backend = descriptor->type == WGPUQueryType_Occlusion ?
-                doe_vk_occlusion_pool_create(device->backend.value.vulkan.context, descriptor->count, &payload->pool, NULL) :
-                doe_vk_query_pool_create(device->backend.value.vulkan.context, descriptor->count, &payload->pool, NULL);
-            failure = native_failure_status(native_from_vulkan(backend));
+                doe_vk_occlusion_pool_create(device->backend.value.vulkan.context, descriptor->count, &payload->pool, &detail) :
+                doe_vk_query_pool_create(device->backend.value.vulkan.context, descriptor->count, &payload->pool, &detail);
+            failure = native_failure_vulkan(backend, &detail);
         }
     }
     if (failure.status == NATIVE_OK)

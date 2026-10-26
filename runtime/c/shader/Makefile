@@ -18,6 +18,8 @@ $(BUILD)/%.o: src/%.c $(HEADERS) | $(BUILD)
 	$(CC) $(CPPFLAGS) $(CFLAGS) -fPIC -c $< -o $@
 $(BUILD)/libdoe_shader.a: $(OBJECTS)
 	$(AR) rcs $@ $^
+$(BUILD)/test_diagnostics: tests/test_diagnostics.c $(BUILD)/libdoe_shader.a $(COMPILER_LIBRARY) $(HEADERS)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< $(BUILD)/libdoe_shader.a $(COMPILER_LINK) -o $@
 $(BUILD)/test_long_names: tests/test_long_names.c $(BUILD)/libdoe_shader.a $(COMPILER_LIBRARY) $(HEADERS)
 	$(CC) $(CPPFLAGS) $(CFLAGS) tests/test_long_names.c $(BUILD)/libdoe_shader.a $(COMPILER_LINK) -o $@
 $(BUILD)/test_growth: tests/test_growth.c $(BUILD)/libdoe_shader.a $(COMPILER_LIBRARY) $(HEADERS)
@@ -26,7 +28,8 @@ $(BUILD)/test_shader: tests/test_shader.c $(BUILD)/libdoe_shader.a $(COMPILER_LI
 	$(CC) $(CPPFLAGS) $(CFLAGS) tests/test_shader.c $(BUILD)/libdoe_shader.a $(COMPILER_LINK) -o $@
 $(BUILD)/cpp: tests/cpp.cpp $(BUILD)/libdoe_shader.a $(COMPILER_LIBRARY) $(HEADERS)
 	$(CXX) $(CPPFLAGS) -std=c++17 -Wall -Wextra -Wpedantic -Werror tests/cpp.cpp $(BUILD)/libdoe_shader.a $(COMPILER_LINK) -o $@
-test: $(BUILD)/test_long_names $(BUILD)/test_growth $(BUILD)/test_shader $(BUILD)/test_specialize $(BUILD)/cpp
+test: $(BUILD)/test_diagnostics $(BUILD)/test_long_names $(BUILD)/test_growth $(BUILD)/test_shader $(BUILD)/test_specialize $(BUILD)/cpp
+	$(BUILD)/test_diagnostics
 	$(BUILD)/test_long_names
 	$(BUILD)/test_growth
 	$(BUILD)/test_shader

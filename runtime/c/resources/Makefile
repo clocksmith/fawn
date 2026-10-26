@@ -18,6 +18,12 @@ $(BUILD)/libdoe_resources.a: $(OBJECTS)
 	$(AR) rcs $@ $^
 $(BUILD)/test_resources: tests/test_resources.c $(BUILD)/libdoe_resources.a $(LABEL_SOURCES) tests/fixture.h src/internal.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(filter-out %.h,$^) -o $@
+$(BUILD)/test_texture_write: tests/test_texture_write.c $(BUILD)/libdoe_resources.a $(LABEL_SOURCES) tests/fixture.h
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(filter-out %.h,$^) -o $@
+.PHONY: check-texture-write
+check-texture-write: $(BUILD)/test_texture_write
+	$(BUILD)/test_texture_write
+check: check-texture-write
 $(BUILD)/test_extended: tests/test_extended.c $(BUILD)/libdoe_resources.a $(LABEL_SOURCES) tests/fixture.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(filter-out %.h,$^) -o $@
 $(BUILD)/test_lost: tests/test_lost.c $(BUILD)/libdoe_resources.a $(LABEL_SOURCES) tests/fixture.h

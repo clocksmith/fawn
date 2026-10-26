@@ -114,4 +114,97 @@ static void metal_extended_copy_ledger(state *s, mock_native *mock)
     }
     puts("PASS 38 ETC2/EAC/ASTC public Metal format/initialization/copy/early-release cases; host ledger only");
 }
+static void metal_empty_write_ledger(state *s, mock_native *mock)
+{
+    WGPUTextureDescriptor descriptor = WGPU_TEXTURE_DESCRIPTOR_INIT;
+    descriptor.format = WGPUTextureFormat_RGBA8Unorm;
+    descriptor.size = (WGPUExtent3D){1,1,1};
+    const WGPUExtent3D empty[] = {{0,1,1},{1,0,1},{1,1,0}};
+    WGPUTexelCopyBufferLayout layout = WGPU_TEXEL_COPY_BUFFER_LAYOUT_INIT;
+    const unsigned live = mock->live;
+    for (unsigned valid = 0; valid < 2; ++valid) {
+        descriptor.usage = valid ? WGPUTextureUsage_CopyDst : WGPUTextureUsage_TextureBinding;
+        WGPUTexture texture = wgpuDeviceCreateTexture(s->device, &descriptor);
+        assert(texture);
+        /* Texture creation eagerly initializes; only the writes are no-ops. */
+        const unsigned uploads = mock->uploads, commits = mock->commits, created = mock->created;
+        const mock_operation previous = mock->fail;
+        mock->fail = MOCK_BUFFER;
+        WGPUTexelCopyTextureInfo destination = {.texture=texture};
+        for (size_t i = 0; i < sizeof(empty) / sizeof(empty[0]); ++i) {
+            if (!valid) wgpuDevicePushErrorScope(s->device, WGPUErrorFilter_Validation);
+            wgpuQueueWriteTexture(s->queue, &destination, NULL, 0, &layout, &empty[i]);
+            if (!valid) expect_validation(s);
+            assert(!s->errors && mock->uploads == uploads && mock->commits == commits && mock->created == created);
+        }
+        if (valid) {
+            wgpuTextureDestroy(texture);
+            wgpuDevicePushErrorScope(s->device, WGPUErrorFilter_Validation);
+            wgpuQueueWriteTexture(s->queue, &destination, NULL, 0, &layout, &empty[0]);
+            expect_validation(s);
+        }
+        mock->fail = previous;
+        wgpuTextureRelease(texture);
+        assert(mock->live == live && mock->uploads == uploads && mock->commits == commits && mock->created == created);
+    }
+    puts("PASS Metal empty writes retain canonical usage/liveness validation without GPU submission");
+}
+
+static void metal_compatible_copy_ledger(state *s, mock_native *mock)
+{
+    static const WGPUTextureFormat pairs[][2] = {
+        {WGPUTextureFormat_RGBA8Unorm,WGPUTextureFormat_RGBA8UnormSrgb},
+        {WGPUTextureFormat_BGRA8Unorm,WGPUTextureFormat_BGRA8UnormSrgb},
+        {WGPUTextureFormat_BC1RGBAUnorm,WGPUTextureFormat_BC1RGBAUnormSrgb},
+        {WGPUTextureFormat_BC2RGBAUnorm,WGPUTextureFormat_BC2RGBAUnormSrgb},
+        {WGPUTextureFormat_BC3RGBAUnorm,WGPUTextureFormat_BC3RGBAUnormSrgb},
+        {WGPUTextureFormat_BC7RGBAUnorm,WGPUTextureFormat_BC7RGBAUnormSrgb}
+    };
+    for (size_t pair = 0; pair < sizeof(pairs) / sizeof(pairs[0]); ++pair) {
+        for (unsigned reverse = 0; reverse < 2; ++reverse) {
+            const unsigned live = mock->live, copies = mock->image_copies;
+            WGPUTextureDescriptor descriptor = WGPU_TEXTURE_DESCRIPTOR_INIT;
+            descriptor.format = pairs[pair][reverse];
+            descriptor.size = (WGPUExtent3D){4,4,1};
+            descriptor.usage = WGPUTextureUsage_CopySrc | WGPUTextureUsage_CopyDst;
+            WGPUTexture source = wgpuDeviceCreateTexture(s->device, &descriptor);
+            descriptor.format = pairs[pair][1 - reverse];
+            WGPUTexture destination = wgpuDeviceCreateTexture(s->device, &descriptor);
+            assert(source && destination);
+            WGPUTexelCopyTextureInfo from = {.texture=source}, to = {.texture=destination};
+            unsigned char bytes[64] = {0};
+            WGPUTexelCopyBufferLayout layout = {.bytesPerRow=pair < 2 ? 16 : pair == 2 ? 8 : 16,
+                .rowsPerImage=pair < 2 ? 4 : 1};
+            wgpuQueueWriteTexture(s->queue, &from, bytes, sizeof(bytes), &layout, &descriptor.size);
+            WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(s->device, NULL);
+            wgpuCommandEncoderCopyTextureToTexture(encoder, &from, &to, &descriptor.size);
+            wgpuTextureRelease(source);
+            wgpuTextureRelease(destination);
+            submit(s, encoder);
+            assert(!s->errors && mock->image_copies == copies + 1 && mock->live == live);
+            assert(mock->image_from.region.width == 4 && mock->image_to.region.width == 4 &&
+                mock->image_from.region.height == 4 && mock->image_to.region.height == 4);
+        }
+    }
+    WGPUTextureDescriptor descriptor = WGPU_TEXTURE_DESCRIPTOR_INIT;
+    descriptor.format = WGPUTextureFormat_RGBA8Unorm;
+    descriptor.size = (WGPUExtent3D){1,1,1};
+    descriptor.usage = WGPUTextureUsage_CopySrc | WGPUTextureUsage_CopyDst;
+    WGPUTexture source = wgpuDeviceCreateTexture(s->device, &descriptor);
+    descriptor.format = WGPUTextureFormat_BGRA8Unorm;
+    WGPUTexture destination = wgpuDeviceCreateTexture(s->device, &descriptor);
+    assert(source && destination);
+    WGPUTexelCopyTextureInfo from = {.texture=source}, to = {.texture=destination};
+    const unsigned copies = mock->image_copies, commits = mock->commits;
+    WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(s->device, NULL);
+    wgpuDevicePushErrorScope(s->device, WGPUErrorFilter_Validation);
+    wgpuCommandEncoderCopyTextureToTexture(encoder, &from, &to, &descriptor.size);
+    finish_invalid(encoder);
+    expect_validation(s);
+    assert(mock->image_copies == copies && mock->commits == commits);
+    wgpuCommandEncoderRelease(encoder);
+    wgpuTextureRelease(source);
+    wgpuTextureRelease(destination);
+    puts("PASS Metal linear/sRGB copy pairs in both directions and incompatible format rejection; host ledger only");
+}
 #endif

@@ -14,17 +14,17 @@ void native_metal_write_texture(native_device *device, const WGPUTexelCopyTextur
         .origin={destination->origin.x,destination->origin.y,destination->origin.z}, .aspect=destination->aspect};
     doe_resource_copy_region region = {0};
     native_lock(device);
-    doe_resource_status status = doe_resource_texture_device(texture) != device ? DOE_RESOURCE_DEVICE_MISMATCH :
-        !doe_resource_texture_available(texture) ? DOE_RESOURCE_UNAVAILABLE :
-        doe_resource_texture_copy_validate(data_size, doe_resource_texture_description(texture), &copy,
-            DOE_RESOURCE_BUFFER_TO_TEXTURE, DOE_RESOURCE_COPY_QUEUE, &region);
+    doe_resource_status status = doe_resource_texture_write_validate(device, texture, data_size, &copy, &region);
+    if (status == DOE_RESOURCE_OK) doe_resource_texture_retain(texture);
     native_unlock(device);
     if (status != DOE_RESOURCE_OK) {
         native_error(device, native_resource_error(status), "Metal queue texture write range or format invalid");
         native_device_release(device);
         return;
     }
+    /* Admission includes usage for empty writes, without staging or GPU work. */
     if (!copy.width || !copy.height || !copy.depth_or_layers) {
+        doe_resource_texture_release(texture);
         native_device_release(device);
         return;
     }
@@ -33,12 +33,14 @@ void native_metal_write_texture(native_device *device, const WGPUTexelCopyTextur
     const uint64_t allocation_bound = native_allocation_bound(device);
     if (pitch > UINT32_MAX || region.rows > SIZE_MAX / pitch) {
         native_error(device, WGPUErrorType_OutOfMemory, "Metal queue texture write staging extent exceeds limit");
+        doe_resource_texture_release(texture);
         native_device_release(device);
         return;
     }
     uint64_t bytes = pitch * region.rows;
     if (copy.depth_or_layers > SIZE_MAX / bytes || bytes * copy.depth_or_layers > allocation_bound) {
         native_error(device, WGPUErrorType_OutOfMemory, "Metal queue texture write staging extent exceeds limit");
+        doe_resource_texture_release(texture);
         native_device_release(device);
         return;
     }
@@ -46,6 +48,7 @@ void native_metal_write_texture(native_device *device, const WGPUTexelCopyTextur
     unsigned char *packed = calloc(1, (size_t)bytes);
     if (!packed) {
         native_error(device, WGPUErrorType_OutOfMemory, "Metal queue texture write staging allocation failed");
+        doe_resource_texture_release(texture);
         native_device_release(device);
         return;
     }
@@ -89,5 +92,6 @@ void native_metal_write_texture(native_device *device, const WGPUTexelCopyTextur
         native_error(device, type, message);
     }
     wgpuBufferRelease(staging);
+    doe_resource_texture_release(texture);
     native_device_release(device);
 }

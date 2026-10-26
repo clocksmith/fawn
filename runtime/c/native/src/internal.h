@@ -83,6 +83,8 @@ typedef struct native_shader {
     doe_shader *module;
     native_shader_import imported;
     doe_shader_error error;
+    WGPUCompilationMessage *messages;
+    size_t message_count;
 } native_shader;
 
 typedef struct native_texture {

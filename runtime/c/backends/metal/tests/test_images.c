@@ -502,13 +502,83 @@ static void extended_compressed_formats(void) {
     doe_mtl_context_release(context); mock_assert_closed(&mock);
 }
 
+static doe_mtl_native compatible_copy_driver;
+static void *compatible_copy_source, *compatible_copy_destination;
+
+static doe_mtl_status compatible_copy_call(void *userdata, void *command, void *source,
+    const doe_mtl_native_texture_copy *from, void *destination,
+    const doe_mtl_native_texture_copy *to, doe_mtl_error *error)
+{
+    assert(source == compatible_copy_source && destination == compatible_copy_destination);
+    assert(!from->volume && !to->volume);
+    assert(from->region.mip == 0 && to->region.mip == 0 &&
+        from->region.x == 0 && from->region.y == 0 && from->region.z == 0 &&
+        to->region.x == 0 && to->region.y == 0 && to->region.z == 0);
+    assert(from->region.width == 4 && from->region.height == 4 && from->region.depth_or_layers == 1 &&
+        to->region.width == 4 && to->region.height == 4 && to->region.depth_or_layers == 1);
+    return compatible_copy_driver.copy_texture(userdata, command, source, from, destination, to, error);
+}
+
+static void compatible_copies(void)
+{
+    const doe_mtl_format pairs[][2] = {
+        {DOE_MTL_RGBA8_UNORM,DOE_MTL_RGBA8_SRGB}, {DOE_MTL_BGRA8_UNORM,DOE_MTL_BGRA8_SRGB},
+        {DOE_MTL_BC1_RGBA,DOE_MTL_BC1_RGBA_SRGB}, {DOE_MTL_BC2_RGBA,DOE_MTL_BC2_RGBA_SRGB},
+        {DOE_MTL_BC3_RGBA,DOE_MTL_BC3_RGBA_SRGB}, {DOE_MTL_BC7_RGBA,DOE_MTL_BC7_RGBA_SRGB}
+    };
+    mock_native mock;
+    doe_mtl_context *context = context_open(&mock);
+    compatible_copy_driver = context->native;
+    context->native.copy_texture = compatible_copy_call;
+    doe_mtl_buffer *buffer = buffer_new(context, 1024, DOE_MTL_SHARED);
+    const doe_mtl_texture_region region = {0,0,0,0,4,4,1};
+    for (size_t pair = 0; pair < sizeof(pairs) / sizeof(pairs[0]); ++pair) {
+        for (size_t reverse = 0; reverse < 2; ++reverse) {
+            const unsigned live = mock.live, copies = mock.image_copies;
+            doe_mtl_texture_desc desc = {DOE_MTL_TEXTURE_2D, pairs[pair][reverse],4,4,1,1,
+                DOE_MTL_TEXTURE_COPY_SRC | DOE_MTL_TEXTURE_COPY_DST,false,1};
+            doe_mtl_texture *source = image_new(context, desc);
+            desc.format = pairs[pair][1 - reverse];
+            doe_mtl_texture *destination = image_new(context, desc);
+            compatible_copy_source = source->native;
+            compatible_copy_destination = destination->native;
+            doe_mtl_commands *commands = commands_new(context);
+            assert(doe_mtl_commands_upload_texture(commands, buffer, (doe_mtl_texture_buffer_layout){0},
+                source, region, NULL) == DOE_MTL_OK);
+            assert(doe_mtl_commands_copy_texture(commands, source, region, destination, region, NULL) == DOE_MTL_OK);
+            assert(mock.image_copies == copies + 1);
+            /* The raw native copy owns both original allocations until terminal completion. */
+            doe_mtl_texture_release(source);
+            doe_mtl_texture_release(destination);
+            complete(&mock, commands);
+            assert(mock.live == live);
+        }
+    }
+    doe_mtl_texture_desc desc = {DOE_MTL_TEXTURE_2D,DOE_MTL_RGBA8_UNORM,4,4,1,1,
+        DOE_MTL_TEXTURE_COPY_SRC | DOE_MTL_TEXTURE_COPY_DST,false,1};
+    doe_mtl_texture *source = image_new(context, desc);
+    desc.format = DOE_MTL_BGRA8_UNORM;
+    doe_mtl_texture *destination = image_new(context, desc);
+    doe_mtl_commands *commands = commands_new(context);
+    unsigned copies = mock.image_copies;
+    assert(doe_mtl_commands_copy_texture(commands, source, region, destination, region, NULL) == DOE_MTL_INVALID_ARGUMENT);
+    assert(mock.image_copies == copies && source->references == 1 && destination->references == 1);
+    assert(doe_mtl_commands_release(commands) == DOE_MTL_OK);
+    doe_mtl_texture_release(source);
+    doe_mtl_texture_release(destination);
+    doe_mtl_buffer_release(buffer);
+    doe_mtl_context_release(context);
+    mock_assert_closed(&mock);
+}
+
 int main(void) {
+    compatible_copies();
     extended_compressed_formats();
     oversized_compressed_stride();
     selected_aspect_transfer();
     factory_rollback(); descriptor_validation(); mixed_dispatch_lifetime();
     mip_layer_initialization(); copies_and_padding(); compressed_and_volume(); failures_and_busy();
     image_binding_validation(); transfer_record_faults();
-    puts("Metal image ownership controls: 12 groups passed; mocked native calls, no pixel/GPU execution");
+    puts("Metal image ownership controls: 13 groups passed; mocked native calls, no pixel/GPU execution");
     return 0;
 }

@@ -264,6 +264,10 @@ bool resource_texture_available(const doe_resource_texture *texture);
 /* A texture still referenced, destroyed or not: WebGPU admits a destroyed
  * texture when encoding and rejects it at submit (resource_texture_available). */
 bool resource_texture_live(const doe_resource_texture *texture);
+/* Shared transfer identity/usage admission. Recording permits destroyed but
+ * live textures; immediate queue writes require availability as well. */
+doe_resource_status resource_texture_use_validate(const void *device,
+    const doe_resource_texture *texture, uint64_t usage, bool require_available);
 doe_resource_status resource_range(uint64_t total, uint64_t offset, uint64_t requested, uint64_t *size);
 bool resource_format_compatible(WGPUTextureFormat base, WGPUTextureFormat view);
 bool resource_format_depth(WGPUTextureFormat format);

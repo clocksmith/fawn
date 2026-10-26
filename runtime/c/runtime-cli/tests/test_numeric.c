@@ -407,9 +407,14 @@ static void annotated_route(const char *root, const char *work)
     assert(!stream.commands && !stream.count);
 }
 
+
+#include "numeric_parity_cases.h"
+
 int main(int argc, char **argv)
 {
     assert(argc == 3);
+    bias_route(argv[1], argv[2]);
+    policy_types(argv[1]);
     annotated_route(argv[1], argv[2]);
     rmsnorm_route(argv[1], argv[2]);
     attention_route(argv[1], argv[2]);
