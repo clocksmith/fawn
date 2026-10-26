@@ -29,8 +29,8 @@ coordinator's clarification that CSL can be ignored; mapped, not built.
 | emit_csl.zig (237) | quarantined, not built | CSL emitter; see mapping E18 |
 | emit_csl_f16_pack.zig (48) | done (text helpers only) | `tsir_emit.c` |
 | emit_dtype_routing.zig (73) | done | `tsir_emit.c` |
-| emit_dxil.zig (71) | partial: skeleton done, semantic body missing | `tsir_emit.c`, spec `tsir_spec_dxil` |
-| emit_kernel_body.zig (896) | missing | `tsir_emit_kernel_body` returns TSIR_ERR_UNSUPPORTED for every op. The WGSL fused_gemv template was sighted during this run (f32-only bindings, one workgroup_size(1,1,1) compute body) and is the concrete next implementation step, along with the MSL/DXIL/SPIR-V counterparts for fused_gemv, rms_norm, gather. |
+| emit_dxil.zig (71) | done | `tsir_emit.c` skeleton plus `tsir_kernel_body.c` DXIL bodies for fused_gemv, rms_norm, gather |
+| emit_kernel_body.zig (896) | done, non-CSL only | `tsir_kernel_body.c` (758 lines): WGSL, MSL, DXIL, SPIR-V bodies for fused_gemv, rms_norm, gather, exact texts as read from Zig; all other ops and the CSL backend return TSIR_ERR_UNSUPPORTED. CSL bodies are quarantined, not built. Literal epsilon uses a shortest-round-trip f64 writer; scientific-exponent form is unasserted (see G-EPSILON-FORMAT). |
 | emit_kernel_body_attention.zig (443) | quarantined, not built | CSL-only attention body |
 | emit_kernel_body_conv1d.zig (110) | quarantined, not built | CSL-only |
 | emit_kernel_body_gated.zig (115) | quarantined, not built | CSL-only |
@@ -38,33 +38,38 @@ coordinator's clarification that CSL can be ignored; mapped, not built.
 | emit_kernel_body_l2_normalize.zig (73) | quarantined, not built | CSL-only |
 | emit_kernel_body_linear_attention.zig (169) | quarantined, not built | CSL-only |
 | emit_kernel_context.zig (93) | done | `tsir_emit.c` (config, role/index helpers, CSL text helpers) |
-| emit_msl.zig (71) | partial: skeleton done, semantic body missing | `tsir_emit.c`, spec `tsir_spec_msl` |
+| emit_msl.zig (71) | done | `tsir_emit.c` skeleton plus `tsir_kernel_body.c` MSL bodies for fused_gemv, rms_norm, gather |
 | emit_semantic_metadata.zig (91) | done | `tsir_emit.c` |
-| emit_spir_v.zig (71) | partial: skeleton done, semantic body missing | `tsir_emit.c`, spec `tsir_spec_spir_v` |
-| emit_text_skeleton.zig (132) | partial: header, metadata, realization-only path done; semantic-aware body step missing | `tsir_emit.c` |
-| emit_webgpu.zig (141) | partial: realization-only skeleton done; semantic WGSL bodies missing | `tsir_emit.c` (WebGPU uses the same skeleton path for realization-only calls) |
-| family_hint.zig (183) | partial: pure classifier done; IR walking (indexed-access coverage, indirect-access detection) missing | `tsir_frontend.c` `tsir_family_hint_classify`; evidence booleans are caller-supplied and are never claimed to be IR-derived |
-| frontend.zig (885) | missing | `tsir_frontend_lower` returns TSIR_ERR_UNSUPPORTED. Blocked on a C port of the WGSL IR module (`../wgsl/ir/ir.zig`, `ir_query`, `layout_utils`), which is outside the TSIR directory. |
-| frontend_body.zig (178) | missing | same blocker as frontend.zig |
-| frontend_collectives.zig (246) | missing | same blocker |
-| frontend_expr.zig (637) | missing | same blocker |
-| frontend_rejections.zig (122) | missing | same blocker |
+| emit_spir_v.zig (71) | done | `tsir_emit.c` skeleton plus `tsir_kernel_body.c` SPIR-V bodies for fused_gemv, rms_norm, gather |
+| emit_text_skeleton.zig (132) | done | `tsir_emit.c`: header, metadata, realization-only body_comment, and semantic-aware path (header, metadata, kernel body; no partial text on failure) |
+| emit_webgpu.zig (141) | done | `tsir_emit.c` realization-only skeleton plus `tsir_kernel_body.c` WGSL bodies for fused_gemv, rms_norm, gather |
+| family_hint.zig (183) | done | `tsir_frontend.c` `tsir_family_hint_classify` (pure predicate, retained) plus `tsir_family_hint_infer_ir` (indexed-access coverage, indirect-access detection with the Zig depth cap 8 for local aliases) |
+| frontend.zig (885) | done | `tsir_frontend_lower.c`, `tsir_frontend_bindings_axes.c`, `tsir_frontend_axes.c`, `tsir_frontend_reductions.c`, plus `tsir_wgsl_ir.c` (C mirror of `../wgsl/ir/ir.zig`, `ir_query`, `layout_utils`). Per-function bindings, axes, reductions, collectives, rejections, family hint, semantic body; contract_version 1. Approximations: IR OTHER-type detail is "other" (see G-IR-OTHER); general tree walks have a 512 depth guard (see G-DEPTH-GUARD). |
+| frontend_body.zig (178) | done | `tsir_frontend_passes.c` body inference, including RMSNorm epsilon inference (uniform path `uniform:u.eps` with std430 field offset, or literal fallback) |
+| frontend_collectives.zig (246) | done | `tsir_frontend_passes.c` collectives walker (statement-walk order, switch expressions only, axis from innermost recognized for loop or -1) |
+| frontend_expr.zig (637) | done | `tsir_frontend_expr.c` literal/symbolic upper bounds, step, init bound, dispatch-guard scan, step-sign detection, dispatch-axis letter |
+| frontend_rejections.zig (122) | done | `tsir_frontend_passes.c` rejections walker (while loop, unstructured loop, decreasing for loop; `.body[i]`/`.then`/`.else` path segments) |
 | frontend_types.zig (27) | done | `tsir_frontend.c` scalar mapping |
 | mod.zig (57) | partial: public surface is spread across the C headers (no single re-export module); CONTRACT_VERSION done | no separate `tsir_mod` file; a coordinator decision whether a single umbrella header is wanted |
 | planner.zig (295) | done | `tsir_planner.c` |
 | planner_support.zig (47) | done | `tsir_planner.c` |
-| reference_extended_ops.zig (841) | missing | identity, residual_add, gated (gelu/silu/sigmoid), attention_scores, l2_normalize, conv1d_depthwise, linear_attention all return TSIR_ERR_UNSUPPORTED. Deliberately not approximated with libm: the Zig oracle's transcendental behavior is declared (minimax ULP bounds), and a libm approximation would pass smoke tests while breaking bit parity. |
+| reference_extended_ops.zig (841) | done, with transcendental caveat (see G-TRANSCENDENTAL-BIT) | `tsir_extended.c`, `tsir_extended_ops.c`: identity, residual_add, gated (gelu/silu/sigmoid), attention_scores, l2_normalize, conv1d_depthwise all implemented and tested; linear_attention dispatch preserves Zig's fall-through (see G-LINEAR-DEAD-PATH) and its math is implemented separately as `tsir_linear_attention_step` and tested directly. Transcendentals use double-precision evaluation rounded to f32 (`tsir_transcendental.c`), not Zig's declared minimax polynomials. |
 | reference_inputs.zig (26) | done | `tsir_scalar.c` |
-| reference_interpreter.zig (762) | partial: dispatch, empty kernel, GEMV, RMSNorm, gather done; extended-op dispatch missing; transcendental table metadata only | `tsir_reference.c`, `tsir_reference_bodies.c` |
+| reference_interpreter.zig (762) | done | `tsir_reference.c`, `tsir_reference_bodies.c`, `tsir_extended.c`, `tsir_extended_ops.c`: full dispatch order including extended ops; transcendental table metadata retained, plus double-precision exp/tanh/sqrt evaluation (see G-TRANSCENDENTAL-BIT) |
 | reference_reduction.zig (497) | done | `tsir_reference.c` generic rank path (ranks 1, 2, 3, 4+) |
 | reference_scalar.zig (113) | done | `tsir_scalar.c` |
 | reference_types.zig (18) | done | `tsir_reference.h` result type |
 | schema.zig (767) | done | `tsir_schema.h`, `tsir_schema.c` |
-| tools/tsir_bootstrap_manifest_inputs.zig (220) | missing | no C tool built; constants recorded in mapping T1 |
-| tools/tsir_bootstrap_oracle.zig (531) | missing | no C tool built; the C library already covers its three kernel shapes, so a future tool is a JSON/argument layer, not a new interpreter. No JSON parser is hand-rolled here. |
+| tools/tsir_bootstrap_manifest_inputs.zig (220) | partial | `tsir_bootstrap.c` entry writer in Zig field order plus kernel templates (exactness, invariants, tolerance); the WGSL pipeline behind it (parser, sema, ir_builder) is not ported, so digests and descriptor hashes stay caller-supplied (see G-MANIFEST-PIPELINE). No CLI binary built. |
+| tools/tsir_bootstrap_oracle.zig (531) | partial | `tsir_bootstrap.c` oracle runner as a library function: exact Zig status JSON (detail, referenceHash, status), three kernel semantics, canonical kernel names, 16 MiB cap, NotImplemented/InvalidJson mapped to `not_implemented` status. No CLI binary built (no argv parsing or file reads); non-NotImplemented reference failures are reported as `not_implemented` instead of Zig's process failure (see G-ORACLE-CLI). JSON reader reused from runtime/c (`tsir_json.c`), not hand-rolled. |
 
-Totals: done 14 files, partial 8 files, missing 9 files,
-quarantined (not built by design) 7 files. 14 + 8 + 9 + 7 = 38.
+Totals: done 28 files, partial 3 files, missing 0 files,
+quarantined (not built by design) 7 files. 28 + 3 + 0 + 7 = 38.
+Partial files: mod.zig (no single umbrella header, coordinator
+decision), tools/tsir_bootstrap_manifest_inputs.zig (entry writer
+only, no WGSL pipeline), tools/tsir_bootstrap_oracle.zig (library
+runner only, no CLI binary). No Zig file is left unimplemented
+outside the quarantined CSL set.
 
 ## Open items that no code in this directory resolves
 
@@ -114,6 +119,65 @@ quarantined (not built by design) 7 files. 14 + 8 + 9 + 7 = 38.
 - G-NO-GPU: nothing here was run on a GPU, and emitted skeleton text
   is contract text, not a compilable module. No Doe-over-Dawn, release,
   or browser qualification claim is made or implied.
+- G-LINEAR-DEAD-PATH: Zig's tryLinearAttention reads its read-write
+  state binding through inputBytesForReadOnlyBinding, which returns
+  null for any read-write binding, so the Zig interpreter path always
+  falls through for its own declared shape. C preserves that
+  fall-through in dispatch (TSIR_ERR_UNSUPPORTED through
+  tsir_reference_run) and tests the state-update math directly
+  through tsir_linear_attention_step. This is a faithful
+  reproduction of observed Zig behavior, not a redefinition; if the
+  coordinator fixes the Zig input convention, the C dispatch must be
+  revisited.
+- G-TRANSCENDENTAL-BIT: the Zig interpreter header declares
+  exp/log/sin/cos/tan/tanh/rsqrt/recip as sollya-bounded minimax
+  polynomials with ULP bounds (1,1,1,1,2,2,1,1) and states libm is
+  NOT used, but the Zig source in this tree calls std.math.exp/
+  tanh/sqrt, whose exact bit output cannot be established from this
+  VM (no Zig toolchain, no Zig binary). C evaluates exp/tanh/sqrt
+  in double precision and rounds to f32 (within about 1 ULP of the
+  true value). Tests assert exactly-representable cases bit-exactly
+  and everything else within a stated tolerance. Bit parity for
+  every transcendental-bearing op (gated, attention_scores,
+  l2_normalize, linear_attention step) stays unestablished pending
+  a Zig cross-check. log/sin/cos/tan/rsqrt/recip have no C function.
+- G-EPSILON-FORMAT: kernel-body literal epsilon uses a
+  shortest-round-trip f64 writer in Zig {d} style. Tests assert
+  only plain-decimal values (0.00001, 0.5); the scientific-exponent
+  form was not cross-checked against a Zig binary and must not be
+  asserted as Zig-equal without one. CSL attention scale and l2_eps
+  used Zig {e}; those paths are quarantined and unbuilt.
+- G-IR-OTHER: the C WGSL IR mirror collapses type kinds the frontend
+  never distinguishes (samplers, textures, storage textures) into
+  TSIR_IR_TYPE_OTHER. A global of that kind gets the binding-type
+  rejection with detail "other" instead of Zig's specific type tag.
+  Documented approximation, not a silent mismatch: the rejection
+  reason and path match, the detail string differs.
+- G-DEPTH-GUARD: general IR tree walks in the C frontend carry a
+  512 depth guard (the Zig walkers are recursive without an explicit
+  cap in the code read). A tree deeper than 512 levels stops
+  descending instead of recursing unboundedly; no such tree was
+  observed in the fixtures. Local-alias indirect-access detection
+  keeps Zig's exact depth cap 8.
+- G-MANIFEST-PIPELINE: the manifest entry writer is complete, but
+  the WGSL pipeline behind manifest inputs (parser, sema,
+  ir_builder) is not ported, so no manifest entry produced here can
+  be claimed to match a Zig lowering run. Digests and descriptor
+  hashes are caller-supplied inputs.
+- G-ORACLE-CLI: no standalone oracle CLI binary is built. The
+  library runner takes the kernel name and JSON text directly; argv
+  parsing, file reads, and the accepted-and-ignored
+  --semantic-tsir/--realization-tsir flags are not implemented.
+  Also, Zig propagates non-NotImplemented reference errors as
+  process failures, while C reports them as `not_implemented`
+  status instead of failing the caller; no hash is fabricated in
+  either case.
+- G-ORACLE-VALUE: oracle `values` entries beyond f32 range are
+  reported InvalidJson (Zig @floatCast behavior on overflow was not
+  established from the source read). Shape products that overflow
+  usize are likewise InvalidJson, where Zig's elemCount wraps to 0.
+  Both are non-crashing rejections; the exact Zig behavior on those
+  pathological inputs needs a Zig cross-check.
 
 ## What was NOT done, on purpose
 
