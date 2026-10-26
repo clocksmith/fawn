@@ -1580,3 +1580,24 @@ The first 15 resolve only through foreign delegation or fail, with no Doe native
 owner; logging does nothing. None is advertised as implemented C support, and no
 success stub is added for symbol-count equality. Positive capabilities, rejecting
 compatibility contracts and actual physical execution remain distinct evidence.
+
+### Empty texture-copy submission ownership
+
+An empty texture-to-texture copy still records both resource uses. The canonical
+resource command owns their leases through finish/submission, so destroying
+either texture after encoding produces submission validation; releasing only
+public references remains safe. Existing Vulkan, Metal and D3D12 command paths
+skip the zero-extent GPU operation before accessing native texture payloads.
+`tests/texture_transfers.c` exercises each zero axis, destruction of either
+texture, and live early releases; the resource-owner test also verifies exact
+finalization counts.
+
+The same isolated added public controls failed against pre-fix C
+(`e4d95e4df227fc0d74e7b6036c7f10a0104d5437f2e6ddf53c588bccfa7b9e83`),
+passed retained Zig (`3e60dbfa3281210d98639fd2f30e81ed001a31f066e39e106cd867a07b3847d1`),
+and passed patched C on CPU Vulkan. The unchanged older positive transfer
+fixture has a separate implicit-dimension admission difference under Zig;
+that assertion was not removed or counted as passing. Buffer/texture empty
+copies have a shared retained early-return behavior and are not silently
+changed by this texture-to-texture parity repair. Physical execution remains
+unqualified by these host/software checks.

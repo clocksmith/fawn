@@ -250,7 +250,8 @@ doe_resource_status doe_resource_encoder_blit_texture(doe_resource_encoder *enco
     doe_resource_texture_blit normalized;
     status = doe_resource_texture_blit_validate(encoder->base.config.device.identity, copy, alignment, &normalized);
     if (status != DOE_RESOURCE_OK) return resource_encoder_fail(encoder, status);
-    if (!copy->width || !copy->height || !copy->depth_or_layers) return DOE_RESOURCE_OK;
+    /* Empty copies still use both textures at submission. Keep their normal
+     * command leases; each backend skips the zero-extent GPU operation. */
     status = resource_encoder_reserve(encoder);
     if (status != DOE_RESOURCE_OK) return status;
     doe_resource_command command = {.kind = DOE_COMMAND_COPY_TEXTURE};

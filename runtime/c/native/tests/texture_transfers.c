@@ -30,10 +30,42 @@ static void verify(state *s,WGPUBuffer buffer,const unsigned char pixels[36],uns
     }
     wgpuBufferUnmap(buffer);
 }
+static void empty_copy_lifetimes(state *s)
+{
+    for (unsigned axis = 0; axis < 3; ++axis) for (unsigned destroyed = 0; destroyed < 3; ++destroyed) {
+        WGPUTextureDescriptor descriptor = WGPU_TEXTURE_DESCRIPTOR_INIT;
+        descriptor.dimension = WGPUTextureDimension_2D;
+        descriptor.size = (WGPUExtent3D){3,3,1};
+        descriptor.format = WGPUTextureFormat_RGBA8Unorm;
+        descriptor.usage = WGPUTextureUsage_CopySrc | WGPUTextureUsage_CopyDst;
+        WGPUTexture textures[2] = {wgpuDeviceCreateTexture(s->device, &descriptor),
+            wgpuDeviceCreateTexture(s->device, &descriptor)};
+        assert(textures[0] && textures[1]);
+        WGPUTexelCopyTextureInfo from = {.texture=textures[0]}, to = {.texture=textures[1]};
+        WGPUExtent3D size = {1,1,1};
+        if (axis == 0) size.width = 0;
+        else if (axis == 1) size.height = 0;
+        else size.depthOrArrayLayers = 0;
+        WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(s->device, NULL);
+        wgpuCommandEncoderCopyTextureToTexture(encoder, &from, &to, &size);
+        WGPUCommandBuffer commands = wgpuCommandEncoderFinish(encoder, NULL);
+        assert(commands);
+        wgpuCommandEncoderRelease(encoder);
+        if (destroyed) wgpuTextureDestroy(textures[destroyed - 1]);
+        wgpuTextureRelease(textures[0]);
+        wgpuTextureRelease(textures[1]);
+        if (destroyed) wgpuDevicePushErrorScope(s->device, WGPUErrorFilter_Validation);
+        wgpuQueueSubmit(s->queue, 1, &commands);
+        if (destroyed) expect_validation(s);
+        wgpuCommandBufferRelease(commands);
+    }
+}
+
 int main(void)
 {
     state s = {0};
     consumer_init(&s);
+    empty_copy_lifetimes(&s);
     WGPUTexture source = image(&s), destination = image(&s);
     WGPUTextureView view = wgpuTextureCreateView(source,NULL);
     assert(view);
