@@ -284,6 +284,41 @@ static void test_view_lifetime(void)
 
 /* WebGPU defers a destroyed texture's error to submission: views, copies and
  * bind groups naming it are admitted, and the recorded copy is rejected. */
+static void test_empty_texture_copy_leases(void)
+{
+    for (unsigned axis = 0; axis < 3; ++axis) for (unsigned destroyed = 0; destroyed < 3; ++destroyed) {
+        fixture f = fresh();
+        doe_resource_config c = config(&f);
+        doe_resource_texture_desc desc = texture_desc();
+        doe_resource_texture_limits limits = texture_limits();
+        native_token tokens[2] = {{0}, {0}};
+        doe_resource_texture *textures[2];
+        for (unsigned i = 0; i < 2; ++i)
+            assert(doe_resource_texture_create(&c, &desc, &limits, native(&f, &tokens[i]),
+                &textures[i]) == DOE_RESOURCE_OK);
+        doe_resource_texture_blit copy = {.source={.texture=textures[0]},
+            .destination={.texture=textures[1]}, .width=1, .height=1, .depth_or_layers=1};
+        if (axis == 0) copy.width = 0;
+        else if (axis == 1) copy.height = 0;
+        else copy.depth_or_layers = 0;
+        doe_resource_encoder *encoder;
+        assert(doe_resource_encoder_create(&c, &encoder) == DOE_RESOURCE_OK);
+        assert(doe_resource_encoder_blit_texture(encoder, &copy, DOE_RESOURCE_COPY_WEBGPU) == DOE_RESOURCE_OK);
+        doe_resource_commands *commands;
+        assert(doe_resource_encoder_finish(encoder, &commands) == DOE_RESOURCE_OK);
+        doe_resource_encoder_release(encoder);
+        if (destroyed) doe_resource_texture_destroy(textures[destroyed - 1]);
+        for (unsigned i = 0; i < 2; ++i) doe_resource_texture_release(textures[i]);
+        assert(!tokens[0].releases && !tokens[1].releases);
+        doe_resource_status expected = destroyed ? DOE_RESOURCE_UNAVAILABLE : DOE_RESOURCE_OK;
+        assert(doe_resource_commands_begin_submit(commands) == expected);
+        if (!destroyed) assert(doe_resource_commands_settle(commands, DOE_RESOURCE_OK) == DOE_RESOURCE_OK);
+        doe_resource_commands_release(commands);
+        assert(tokens[0].releases == 1 && tokens[1].releases == 1);
+        empty(&f);
+    }
+}
+
 static void test_destroyed_texture(void)
 {
     fixture f = fresh();
@@ -854,6 +889,7 @@ int main(void)
     test_texture_layout();
     test_view_lifetime();
     test_destroyed_texture();
+    test_empty_texture_copy_leases();
     test_binding_layouts();
     test_recorded_submission();
     test_program_replay();
