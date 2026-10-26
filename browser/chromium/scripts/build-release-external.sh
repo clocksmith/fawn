@@ -30,6 +30,7 @@ cd "${LANE_DIR}/src"
 LOCAL_RELEASE_GN_ARGS="is_debug=false is_official_build=false dcheck_always_on=false chrome_pgo_phase=0 symbol_level=0 blink_symbol_level=0 v8_symbol_level=0 is_chrome_for_testing=false is_chrome_for_testing_branded=false is_chrome_branded=false use_clang_modules=false dawn_enable_webgpu_on_webgpu=true"
 OFFICIAL_RELEASE_GN_ARGS="is_debug=false is_official_build=true dcheck_always_on=false chrome_pgo_phase=0 symbol_level=0 blink_symbol_level=0 v8_symbol_level=0 is_chrome_for_testing=false is_chrome_for_testing_branded=false is_chrome_branded=false use_clang_modules=false dawn_enable_webgpu_on_webgpu=true"
 release_profile="${FAWN_CHROMIUM_RELEASE_PROFILE:-official}"
+out_dir="out/fawn_release"
 autoninja_args=()
 while [[ "$#" -gt 0 ]]; do
   case "$1" in
@@ -43,6 +44,14 @@ while [[ "$#" -gt 0 ]]; do
         exit 2
       fi
       release_profile="$2"
+      shift 2
+      ;;
+    --out-dir)
+      if [[ "$#" -lt 2 || -z "$2" ]]; then
+        echo "missing value for --out-dir" >&2
+        exit 2
+      fi
+      out_dir="$2"
       shift 2
       ;;
     *)
@@ -85,26 +94,26 @@ case "${release_profile}" in
 esac
 
 RELEASE_GN_ARGS="${FAWN_CHROMIUM_RELEASE_GN_ARGS:-${DEFAULT_RELEASE_GN_ARGS}}"
-gn gen out/fawn_release "--args=${RELEASE_GN_ARGS}"
+gn gen "${out_dir}" "--args=${RELEASE_GN_ARGS}"
 
 if [[ "${#autoninja_args[@]}" -gt 0 ]]; then
-  autoninja -C out/fawn_release chrome "${autoninja_args[@]}"
+  autoninja -C "${out_dir}" chrome "${autoninja_args[@]}"
 else
-  autoninja -C out/fawn_release chrome
+  autoninja -C "${out_dir}" chrome
 fi
 
-args_sha256="$(shasum -a 256 out/fawn_release/args.gn | awk '{print $1}')"
-cat > out/fawn_release/fawn-release-build.json <<EOF
+args_sha256="$(shasum -a 256 "${out_dir}/args.gn" | awk '{print $1}')"
+cat > "${out_dir}/fawn-release-build.json" <<EOF
 {"target":"chrome","releaseProfile":"${release_profile}","argsSha256":"${args_sha256}"}
 EOF
 
-MACOS_APP="${SCRIPT_DIR}/../src/out/fawn_release/Chromium.app"
+MACOS_APP="${out_dir}/Chromium.app"
 if [[ "$(uname -s)" == "Darwin" && -x "${MACOS_APP}/Contents/MacOS/Chromium" ]]; then
   "${SCRIPT_DIR}/patch-chromium-app-doe.sh" --app "${MACOS_APP}" || \
     echo "warning: unable to patch app default runtime flags" >&2
 fi
 
-"${SCRIPT_DIR}/sync-release-artifacts-local.sh" "out/fawn_release"
+"${SCRIPT_DIR}/sync-release-artifacts-local.sh" "${out_dir}"
 
 if [[ "$(uname -s)" == "Darwin" ]]; then
   LOCAL_OUT="${FAWN_CHROMIUM_RELEASE_LOCAL_OUT:-${LANE_DIR}/out/fawn_release_local}"
