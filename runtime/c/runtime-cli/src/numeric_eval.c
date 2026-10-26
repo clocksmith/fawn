@@ -166,11 +166,13 @@ bool doe_ns_evaluate_matmul(const doe_ns_io *io, doe_ns_evaluation *e, bool deco
             f32_acc = f32_acc + (float)hidden_values[c] * (float)row[c];
             f64_acc += hidden_values[c] * row[c];
         }
+        /* Retained evaluation widens the serial f32 reduction before adding
+         * the double annotation. Rounding bias to f32 changes selected tokens. */
+        stable[r] = (double)f32_acc;
         if (annotation && annotation->candidates[r].has_bias) {
-            f32_acc = f32_acc + (float)annotation->candidates[r].bias;
+            stable[r] += annotation->candidates[r].bias;
             f64_acc += annotation->candidates[r].bias;
         }
-        stable[r] = (double)f32_acc;
         e->candidates[r] = (doe_ns_candidate){.token_id = annotation ? annotation->candidates[r].token_id : r,
             .label = annotation ? annotation->candidates[r].label : NULL,
             .fast = fast[r], .stable = stable[r], .reference = f64_acc};

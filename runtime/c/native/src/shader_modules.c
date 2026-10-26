@@ -15,6 +15,7 @@ static void release_shader(void *userdata, void *handle)
 {
     (void)userdata;
     native_shader *payload = handle;
+    free(payload->messages);
     doe_shader_release(payload->module);
     native_shader_import_dispose(&payload->imported);
     free(payload);
@@ -75,6 +76,28 @@ doe_shader_status native_check_shader_module(doe_shader_target target, const cha
         source,size,&module,error);
     if (module) doe_shader_release(module);
     return status;
+}
+
+/* The native ABI projection borrows message text from the immutable module;
+ * the ordinary shader resource lease pins both through deferred callbacks. */
+static bool prepare_compilation_messages(native_shader *payload)
+{
+    size_t count = 0;
+    const DoeCompilerNoticeV18 *notices = doe_shader_get_diagnostics(payload->module, &count);
+    if (!count) return true;
+    if (!notices || count > SIZE_MAX / sizeof(*payload->messages)) return false;
+    payload->messages = calloc(count, sizeof(*payload->messages));
+    if (!payload->messages) return false;
+    for (size_t i = 0; i < count; i++) {
+        const DoeCompilerNoticeV18 *notice = &notices[i];
+        WGPUCompilationMessageType type = notice->severity == DOE_COMPILER_DIAGNOSTIC_INFO ?
+            WGPUCompilationMessageType_Info : WGPUCompilationMessageType_Warning;
+        payload->messages[i] = (WGPUCompilationMessage){.message=native_string(notice->message),
+            .type=type, .lineNum=notice->line, .linePos=notice->column,
+            .offset=notice->offset, .length=notice->length};
+    }
+    payload->message_count = count;
+    return true;
 }
 
 static WGPUShaderModule publish_shader(native_device *device,const WGPUShaderModuleDescriptor *descriptor,
@@ -145,6 +168,11 @@ static WGPUShaderModule create_shader_module(native_device *device, const WGPUSh
         options.semantic_flags &= ~DOE_COMPILER_DISABLE_DUAL_SOURCE_BLENDING;
     doe_shader_status status = doe_shader_create_module(&options,options.capacities.typed.expressions,
         source->code.data,size,&payload->module,&payload->error);
+    if (status == DOE_SHADER_OK && !prepare_compilation_messages(payload)) {
+        release_shader(NULL, payload);
+        native_error(device, WGPUErrorType_OutOfMemory, "shader compilation messages allocation failed");
+        return NULL;
+    }
     return publish_shader(device,descriptor,payload,status);
 }
 

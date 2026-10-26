@@ -2,6 +2,7 @@
 #include "override.h"
 #include "compile_internal.h"
 #include "text_internal.h"
+#include "diagnostics_internal.h"
 #include <errno.h>
 #include <string.h>
 
@@ -124,11 +125,12 @@ static void validation_publish(const Source *s, const DoeCompilerValidationOutpu
     result->published_entries = result->required_entries;
     result->published_name_bytes = result->required_name_bytes;
 }
-DoeCompilerStatus doe_compiler_validate_module(uint32_t version,
+static DoeCompilerStatus validate_module(uint32_t version,
     const DoeCompilerSpecializationCapacities *caps, size_t capacities_size,
     void *workspace, size_t workspace_size, const char *source, size_t length,
     uint32_t flags, const DoeCompilerValidationOutputs *outputs, size_t outputs_size,
-    DoeCompilerValidationResult *result, size_t result_size) {
+    DoeCompilerValidationResult *result, size_t result_size,
+    const DoeCompilerDiagnosticOutputsV18 *notices, DoeCompilerDiagnosticResultV18 *notice_result) {
     const int saved_errno = errno;
     if (result == NULL) return DOE_COMPILER_INPUT_ERROR;
     if (version != DOE_COMPILER_SPECIALIZATION_ABI_VERSION || capacities_size != sizeof(*caps) ||
@@ -152,6 +154,9 @@ DoeCompilerStatus doe_compiler_validate_module(uint32_t version,
             compiler_valid_span(outputs->entries, outputs->entry_capacity, sizeof(DoeCompilerModuleEntryV13),
                     _Alignof(DoeCompilerModuleEntryV13), true) &&
             compiler_valid_span(outputs->names, outputs->name_capacity, 1u, 1u, true);
+    if (valid && notices != NULL)
+        valid=compiler_valid_span(notices->notices,notices->notice_capacity,sizeof(DoeCompilerNoticeV18),
+            _Alignof(DoeCompilerNoticeV18),true);
     if (!valid) (void)source_error(&s, DOE_COMPILER_INPUT_ERROR, 0u, "invalid validation capacities/workspace/flags/output spans");
     else if (!stage_layout(&caps->target.stages, &limits, &stage_base, &stage_bytes))
         (void)source_error(&s, DOE_COMPILER_INPUT_ERROR, 0u, "invalid validation stage layout");
@@ -169,12 +174,50 @@ DoeCompilerStatus doe_compiler_validate_module(uint32_t version,
         ((flags & DOE_COMPILER_DISABLE_DUAL_SOURCE_BLENDING) != 0u ? MODULE_DISABLE_DUAL_SOURCE_BLENDING : 0u);
         stage_bind(&s, workspace, &caps->target.stages, stage_base);
         NumericEnvironment environment;
-        const bool analyzed = compiler_analyze(&s, c, &environment) && validation_metadata(&s, outputs, result);
+        bool analyzed = compiler_analyze(&s, c, &environment) && validation_metadata(&s, NULL, result);
+        if (analyzed && notice_result != NULL) {
+            notice_result->required_notices=compiler_notice_count(&s);
+            if (notices != NULL && notices->notice_capacity<notice_result->required_notices)
+                analyzed=source_error(&s,DOE_COMPILER_OUTPUT_TOO_SMALL,s.length,"diagnostic output capacity is too small");
+        }
+        if (analyzed) analyzed=validation_metadata(&s,outputs,result);
         const bool restored = numeric_environment_end(&s, &environment);
-        if (analyzed && restored && outputs != NULL) validation_publish(&s, outputs, result);
+        if (analyzed && restored && outputs != NULL) {
+            validation_publish(&s, outputs, result);
+            if (notices != NULL) {
+                compiler_notices_publish(&s,notices->notices);
+                notice_result->published_notices=notice_result->required_notices;
+            }
+        }
     }
     errno = saved_errno;
     return result->diagnostic.status;
+}
+
+DoeCompilerStatus doe_compiler_validate_module(uint32_t version,
+    const DoeCompilerSpecializationCapacities *caps, size_t capacities_size,
+    void *workspace, size_t workspace_size, const char *source, size_t length,
+    uint32_t flags, const DoeCompilerValidationOutputs *outputs, size_t outputs_size,
+    DoeCompilerValidationResult *result, size_t result_size) {
+    return validate_module(version,caps,capacities_size,workspace,workspace_size,source,length,
+        flags,outputs,outputs_size,result,result_size,NULL,NULL);
+}
+DoeCompilerStatus doe_compiler_validate_module_diagnostics(uint32_t version,
+    const DoeCompilerSpecializationCapacities *caps, size_t capacities_size,
+    void *workspace, size_t workspace_size, const char *source, size_t length,
+    uint32_t flags, const DoeCompilerDiagnosticOutputsV18 *outputs, size_t outputs_size,
+    DoeCompilerDiagnosticResultV18 *result, size_t result_size) {
+    if (result==NULL) return DOE_COMPILER_INPUT_ERROR;
+    if (version!=DOE_COMPILER_DIAGNOSTICS_ABI_VERSION || capacities_size!=sizeof(*caps) ||
+        result_size!=sizeof(*result) || (outputs!=NULL ? outputs_size!=sizeof(*outputs) : outputs_size!=0u) ||
+        (outputs!=NULL && (outputs->notice_record_size!=sizeof(DoeCompilerNoticeV18) ||
+            outputs->metadata.override_record_size!=sizeof(DoeCompilerOverrideV13) ||
+            outputs->metadata.entry_record_size!=sizeof(DoeCompilerModuleEntryV13)))) return DOE_COMPILER_ABI_MISMATCH;
+    result->required_notices=0u;
+    result->published_notices=0u;
+    return validate_module(DOE_COMPILER_SPECIALIZATION_ABI_VERSION,caps,capacities_size,
+        workspace,workspace_size,source,length,flags,outputs!=NULL?&outputs->metadata:NULL,
+        outputs!=NULL?sizeof(outputs->metadata):0u,&result->validation,sizeof(result->validation),outputs,result);
 }
 
 bool sampling_layout(uint32_t target, const DoeCompilerSamplingCapacitiesV16 *caps,

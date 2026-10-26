@@ -187,3 +187,14 @@ and retained-module lifetime. The old unknown-option test used bit64 after it
 became `DOE_COMPILER_DISABLE_SUBGROUPS`; it now explicitly accepts that named bit
 and rejects the unassigned bit1024. This corrects the test's classifier, not a
 change to supported compiler semantics or a waiver of a frozen independent gate.
+
+### Nonfatal module diagnostics
+
+ABI18 module validation retains warning/info notices in the immutable module
+allocation, alongside source and entry metadata. `doe_shader_get_diagnostics`
+returns a borrowed notice span while the artifact is retained; specialized
+artifacts retain the source module. NULL and direct/nonmodule artifacts report
+zero notices. Fatal validation preserves the existing error and publishes no
+partial module. See the compiler's [diagnostic contract](../compiler/DIAGNOSTICS.md)
+for global policy semantics, source locations, old-ABI transport limitations,
+and the separate unsupported scoped-attribute boundary.

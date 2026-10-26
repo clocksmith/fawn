@@ -22,7 +22,7 @@ CXXFLAGS = -std=c++17 -fno-exceptions -fno-rtti -O2 -Wall -Wextra -Wpedantic -Wc
 include targets/metal/sources.mk
 include targets/hlsl/sources.mk
 LIB_SOURCES = $(addprefix targets/metal/,$(METAL_SOURCE_NAMES)) $(addprefix targets/hlsl/,$(HLSL_SOURCE_NAMES)) $(shell cat src/sources.txt)
-HEADERS = include/doe_compiler_pool_growth.h src/pointer_lower.h include/doe_compiler_translation.h include/doe_compiler_sampling.h include/doe_compiler_metal_pipeline.h include/doe_compiler_module_specialization.h include/doe_compiler_specialization.h src/override.h src/sources.txt include/doe_compiler_metal.h include/doe_compiler_hlsl.h src/numeric_host.h include/doe_compiler_text.h src/compile_internal.h src/text_internal.h $(wildcard targets/metal/*.h targets/hlsl/*.h targets/*.h) include/doe_compiler_stages.h src/stage.h src/parse_internal.h include/doe_compiler_resources.h include/doe_compiler_features.h include/doe_compiler_module.h src/builtin.h src/spirv_decl.h src/spirv_internal.h include/doe_compiler_typed.h src/sema.h src/numeric.h src/internal.h include/doe_compiler.h include/doe_compiler_v2.h include/doe_compiler_job.h src/cli_json.h src/cli_text.h src/cli_specialization.h
+HEADERS = include/doe_compiler_diagnostics.h src/diagnostics_internal.h include/doe_compiler_pool_growth.h src/pointer_lower.h include/doe_compiler_translation.h include/doe_compiler_sampling.h include/doe_compiler_metal_pipeline.h include/doe_compiler_module_specialization.h include/doe_compiler_specialization.h src/override.h src/sources.txt include/doe_compiler_metal.h include/doe_compiler_hlsl.h src/numeric_host.h include/doe_compiler_text.h src/compile_internal.h src/text_internal.h $(wildcard targets/metal/*.h targets/hlsl/*.h targets/*.h) include/doe_compiler_stages.h src/stage.h src/parse_internal.h include/doe_compiler_resources.h include/doe_compiler_features.h include/doe_compiler_module.h src/builtin.h src/spirv_decl.h src/spirv_internal.h include/doe_compiler_typed.h src/sema.h src/numeric.h src/internal.h include/doe_compiler.h include/doe_compiler_v2.h include/doe_compiler_job.h src/cli_json.h src/cli_text.h src/cli_specialization.h
 SPIRV_VAL ?= spirv-val
 CLI_FAULT_FLAGS = -Wl,--wrap=write,--wrap=close,--wrap=link,--wrap=mkstemp,--wrap=malloc,--wrap=free,--wrap=doe_compiler_job_requirements,--wrap=doe_compiler_stage_requirements
 .PHONY: all test test-cli-modes test-uniform sanitize sanitize-cli sanitize-uniform clean
@@ -634,3 +634,12 @@ test-long-names: all build/test_long_names build/test_entry_names
 
 build/test_entry_names: tests/test_entry_names.c build/libdoe_compiler.so $(HEADERS) | build/.ready
 	$(CC) $(CFLAGS) $< -Lbuild -ldoe_compiler -Wl,-rpath,$(abspath build) -o $@
+
+.PHONY: test-diagnostics
+build/test_diagnostics: tests/test_diagnostics.c build/libdoe_compiler.so $(HEADERS) | build/.ready
+	$(CC) $(CFLAGS) $< -Lbuild -ldoe_compiler -Wl,-rpath,$(abspath build) -o $@
+build/test_diagnostics_abi: tests/test_diagnostics_abi.cpp build/libdoe_compiler.so $(HEADERS) | build/.ready
+	$(CXX) $(CXXFLAGS) $< -Lbuild -ldoe_compiler -Wl,-rpath,$(abspath build) -o $@
+test-diagnostics: build/test_diagnostics build/test_diagnostics_abi
+	build/test_diagnostics
+	build/test_diagnostics_abi

@@ -58,22 +58,6 @@ const doe_json_value *doe_ns_auto_detect(const doe_ns_policy *policy, const doe_
     return NULL;
 }
 
-static bool require_strings(const doe_json_value *object, const char *const *keys)
-{
-    for (; *keys; keys++)
-        if (!doe_ns_string(object, *keys)) return false;
-    return true;
-}
-
-static bool each_valid(const doe_json_value *root, const char *array_key, const char *const *keys)
-{
-    const doe_json_value *array = array_member(root, array_key);
-    if (!array || !array->count) return false;
-    for (size_t i = 0; i < array->count; i++)
-        if (array->items[i]->kind != DOE_JSON_OBJECT || !require_strings(array->items[i], keys)) return false;
-    return true;
-}
-
 static bool contains_text(const doe_json_value *array, const char *text)
 {
     for (size_t i = 0; array && text && i < array->count; i++)
@@ -88,6 +72,103 @@ static bool nonempty_strings(const doe_json_value *object, const char *const *ke
         if (!value || !*value) return false;
     }
     return true;
+}
+
+/* Typed schema admission belongs to policy loading, before a flag can influence
+ * route selection. Optional stage/phase may be absent or null, never mistyped. */
+typedef enum policy_field_kind { POLICY_TEXT, POLICY_BOOL, POLICY_TEXTS, POLICY_PROOFS,
+    POLICY_OPTIONAL_TEXT } policy_field_kind;
+typedef struct policy_field { const char *name; policy_field_kind kind; } policy_field;
+static bool policy_object(const doe_json_value *, const policy_field *, size_t);
+static bool plain_text(const doe_json_value *value)
+{
+    return value && value->kind == DOE_JSON_STRING && value->string_size &&
+        value->string_size == strlen(value->string);
+}
+static bool text_array(const doe_json_value *value)
+{
+    if (!value || value->kind != DOE_JSON_ARRAY || !value->count) return false;
+    for (size_t i = 0; i < value->count; i++) {
+        if (!plain_text(value->items[i])) return false;
+        for (size_t j = 0; j < i; j++)
+            if (!strcmp(value->items[i]->string, value->items[j]->string)) return false;
+    }
+    return true;
+}
+static bool proof_array(const doe_json_value *value)
+{
+    static const policy_field fields[] = {{"theorem",POLICY_TEXT},{"module",POLICY_TEXT},
+        {"category",POLICY_TEXT},{"relation",POLICY_TEXT},{"artifactPath",POLICY_TEXT}};
+    if (!value || value->kind != DOE_JSON_ARRAY || !value->count) return false;
+    for (size_t i = 0; i < value->count; i++)
+        if (!policy_object(value->items[i], fields, sizeof(fields)/sizeof(fields[0]))) return false;
+    return true;
+}
+static bool policy_object(const doe_json_value *object, const policy_field *fields, size_t count)
+{
+    if (!object || object->kind != DOE_JSON_OBJECT) return false;
+    for (size_t i = 0; i < object->count; i++) {
+        const doe_json_member *member = &object->members[i];
+        bool known = false;
+        for (size_t j = 0; j < count; j++)
+            if (member->key_size == strlen(fields[j].name) && !memcmp(member->key, fields[j].name, member->key_size)) known = true;
+        if (!known) return false;
+    }
+    for (size_t i = 0; i < count; i++) {
+        const doe_json_value *value = doe_json_member_value(object, fields[i].name);
+        switch (fields[i].kind) {
+            case POLICY_TEXT: if (!plain_text(value)) return false; break;
+            case POLICY_BOOL: if (!value || value->kind != DOE_JSON_BOOL) return false; break;
+            case POLICY_TEXTS: if (!text_array(value)) return false; break;
+            case POLICY_PROOFS: if (!proof_array(value)) return false; break;
+            case POLICY_OPTIONAL_TEXT:
+                if (value && value->kind != DOE_JSON_NULL && !plain_text(value)) return false;
+                break;
+        }
+    }
+    return true;
+}
+static bool typed_entries(const doe_json_value *root, const char *key, const policy_field *fields, size_t count)
+{
+    const doe_json_value *array = array_member(root, key);
+    if (!array || !array->count) return false;
+    for (size_t i = 0; i < array->count; i++)
+        if (!policy_object(array->items[i], fields, count)) return false;
+    return true;
+}
+static bool registry_types_valid(const doe_json_value *root)
+{
+    static const char *const root_keys[] = {"schemaVersion", "registryVersion", "routeTaxonomyVersion", "proofArtifactPath",
+        "defaultExecutionProfileId", "routeDecisions", "routeDecisionMetadata", "executionProfiles", "autoDetectProfiles",
+        "triggerPolicies", "routingPolicies"};
+    if (!root || root->kind != DOE_JSON_OBJECT || root->count != sizeof(root_keys)/sizeof(root_keys[0])) return false;
+    for (size_t i = 0; i < root->count; i++) {
+        bool known = false;
+        for (size_t j = 0; j < sizeof(root_keys)/sizeof(root_keys[0]); j++)
+            if (root->members[i].key_size == strlen(root_keys[j]) && !memcmp(root->members[i].key, root_keys[j], root->members[i].key_size)) known = true;
+        if (!known) return false;
+    }
+    static const policy_field triggers[] = {{"triggerPolicyId",POLICY_TEXT},
+        {"requireFirstDivergence",POLICY_BOOL},{"requireSelectedTokenDisagreement",POLICY_BOOL},
+        {"requireStableMatchesExactReference",POLICY_BOOL},{"requireFastMissesExactReference",POLICY_BOOL},
+        {"allowedSensitiveOperators",POLICY_TEXTS},{"proofLinks",POLICY_PROOFS}};
+    static const policy_field routing[] = {{"policyId",POLICY_TEXT},{"triggerPolicyId",POLICY_TEXT},
+        {"triggeredDecision",POLICY_TEXT},{"fallbackDecision",POLICY_TEXT},{"proofLinks",POLICY_PROOFS}};
+    static const policy_field metadata[] = {{"decision",POLICY_TEXT},{"selectionMode",POLICY_TEXT},
+        {"committedResultMode",POLICY_TEXT},{"downstreamAction",POLICY_TEXT},{"proofLinks",POLICY_PROOFS}};
+    static const policy_field profiles[] = {{"profileId",POLICY_TEXT},{"surface",POLICY_TEXT},
+        {"description",POLICY_TEXT},{"routingPolicyId",POLICY_TEXT}};
+    static const policy_field detect[] = {{"profileId",POLICY_TEXT},{"enabled",POLICY_BOOL},
+        {"operatorFamily",POLICY_TEXT},{"semanticOpId",POLICY_TEXT},{"semanticStage",POLICY_OPTIONAL_TEXT},
+        {"semanticPhase",POLICY_OPTIONAL_TEXT},{"kernelBasenames",POLICY_TEXTS},{"triggerPolicyId",POLICY_TEXT},
+        {"routingPolicyId",POLICY_TEXT},{"fastPolicyId",POLICY_TEXT},{"stablePolicyId",POLICY_TEXT},
+        {"referencePolicyId",POLICY_TEXT},{"capturePlanId",POLICY_TEXT},{"decisionStrategyId",POLICY_TEXT}};
+    return text_array(doe_json_member_value(root, "routeDecisions")) &&
+        typed_entries(root,"triggerPolicies",triggers,sizeof(triggers)/sizeof(triggers[0])) &&
+        typed_entries(root,"routingPolicies",routing,sizeof(routing)/sizeof(routing[0])) &&
+        typed_entries(root,"routeDecisionMetadata",metadata,sizeof(metadata)/sizeof(metadata[0])) &&
+        typed_entries(root,"executionProfiles",profiles,sizeof(profiles)/sizeof(profiles[0])) &&
+        typed_entries(root,"autoDetectProfiles",detect,sizeof(detect)/sizeof(detect[0]));
 }
 
 /* policy.zig ensureValidRegistry: all references and route semantics, shared by
@@ -119,6 +200,7 @@ static bool registry_links_valid(const doe_json_value *root)
         if (!nonempty_strings(entry, profile_keys) || strcmp(doe_ns_string(entry, "surface"), "ordinary-execution") ||
             !doe_ns_find(root, "routingPolicies", "policyId", doe_ns_string(entry, "routingPolicyId"))) return false;
     }
+    if (!doe_ns_find(root, "executionProfiles", "profileId", doe_ns_string(root, "defaultExecutionProfileId"))) return false;
     const doe_json_value *routing = array_member(root, "routingPolicies");
     for (size_t i = 0; i < routing->count; i++) {
         const doe_json_value *entry = routing->items[i];
@@ -152,19 +234,8 @@ bool doe_ns_policy_load(const char *text, size_t size, const char *path, const c
     policy->root = policy->document.root;
     uint64_t schema = 0;
     const doe_json_value *version = policy->root->kind == DOE_JSON_OBJECT ? doe_json_member_value(policy->root, "schemaVersion") : NULL;
-    static const char *const top[] = {"registryVersion", "routeTaxonomyVersion", "proofArtifactPath",
-        "defaultExecutionProfileId", NULL};
-    static const char *const metadata[] = {"decision", "selectionMode", "committedResultMode", "downstreamAction", NULL};
-    static const char *const profiles[] = {"profileId", "surface", "routingPolicyId", NULL};
-    static const char *const detect[] = {"profileId", "operatorFamily", "semanticOpId", "triggerPolicyId", "routingPolicyId",
-        "fastPolicyId", "stablePolicyId", "referencePolicyId", "capturePlanId", "decisionStrategyId", NULL};
-    static const char *const triggers[] = {"triggerPolicyId", NULL};
-    static const char *const routing[] = {"policyId", "triggerPolicyId", "triggeredDecision", "fallbackDecision", NULL};
-    bool ok = version && doe_json_as_u64(version, UINT32_MAX, &schema) && schema == 3 && require_strings(policy->root, top) &&
-        each_valid(policy->root, "routeDecisionMetadata", metadata) && each_valid(policy->root, "executionProfiles", profiles) &&
-        each_valid(policy->root, "autoDetectProfiles", detect) && each_valid(policy->root, "triggerPolicies", triggers) &&
-        each_valid(policy->root, "routingPolicies", routing) && array_member(policy->root, "routeDecisions") &&
-        registry_links_valid(policy->root);
+    bool ok = registry_types_valid(policy->root) && version &&
+        doe_json_as_u64(version, UINT32_MAX, &schema) && schema == 3 && registry_links_valid(policy->root);
     if (!ok) {
         snprintf(message, message_size, "not a schema 3 numeric stability policy registry");
         doe_ns_policy_free(policy);

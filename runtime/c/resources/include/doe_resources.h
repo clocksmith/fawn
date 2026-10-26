@@ -416,6 +416,14 @@ doe_resource_status doe_resource_texture_copy_validate(uint64_t buffer_size,
     doe_resource_copy_direction direction, doe_resource_copy_alignment alignment,
     doe_resource_copy_region *out);
 
+/* Immediate queue-write admission, before staging allocation: same-device,
+ * available destination with CopyDst usage, then the existing QUEUE layout
+ * rules. Borrowed inputs; no allocation, retention or output mutation on error.
+ * Unlike encoding, an immediate queue write rejects a destroyed texture. */
+doe_resource_status doe_resource_texture_write_validate(const void *device,
+    const doe_resource_texture *texture, uint64_t data_size,
+    const doe_resource_texture_copy *copy, doe_resource_copy_region *out);
+
 /* Texture-to-texture copies share the block/mip geometry owner with buffer
  * transfers. Native execution still checks format capabilities and transitions.
  * Same-texture copies require distinct mip or array-layer subresources. */

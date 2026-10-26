@@ -78,7 +78,7 @@ $(BUILD)/test_sha256: tests/test_sha256.c src/sha256.c src/sha256.h ../common/in
 	$(CC) $(CPPFLAGS) $(CFLAGS) tests/test_sha256.c src/sha256.c -o $@
 $(BUILD)/test_quirks: tests/test_quirks.c $(CORE) $(CORE_HEADERS) | $(BUILD)
 	$(CC) $(CPPFLAGS) $(CFLAGS) tests/test_quirks.c $(CORE) $(LDLIBS) -lm -o $@
-$(BUILD)/test_numeric: tests/test_numeric.c $(CORE) $(CORE_HEADERS) | $(BUILD)
+$(BUILD)/test_numeric: tests/test_numeric.c tests/numeric_parity_cases.h $(CORE) $(CORE_HEADERS) | $(BUILD)
 	$(CC) $(CPPFLAGS) $(CFLAGS) tests/test_numeric.c $(CORE) $(LDLIBS) -lm -o $@
 $(BUILD)/test_trace: tests/test_trace.c $(CORE) $(CORE_HEADERS) | $(BUILD)
 	$(CC) $(CPPFLAGS) $(CFLAGS) tests/test_trace.c $(CORE) $(LDLIBS) -lm -o $@

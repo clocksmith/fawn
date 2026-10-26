@@ -24,6 +24,8 @@ struct doe_shader {
     size_t override_capacity;
     DoeCompilerValidationOutputs validation;
     size_t override_count, module_entry_count, module_name_bytes;
+    DoeCompilerNoticeV18 *notices;
+    size_t notice_count;
     DoeCompilerOverrideValueV13 *values;
     size_t value_count;
     DoeCompilerStageOutputs outputs;

@@ -115,6 +115,27 @@ doe_resource_status doe_resource_texture_copy_validate(uint64_t buffer_size,
     return DOE_RESOURCE_OK;
 }
 
+doe_resource_status resource_texture_use_validate(const void *device,
+    const doe_resource_texture *texture, uint64_t usage, bool require_available)
+{
+    if (!texture || texture->base.config.device.identity != device) return DOE_RESOURCE_DEVICE_MISMATCH;
+    if (!resource_texture_live(texture) || (require_available && !resource_texture_available(texture)))
+        return DOE_RESOURCE_UNAVAILABLE;
+    if ((texture->desc.usage & usage) != usage) return DOE_RESOURCE_USAGE;
+    return DOE_RESOURCE_OK;
+}
+
+doe_resource_status doe_resource_texture_write_validate(const void *device,
+    const doe_resource_texture *texture, uint64_t data_size,
+    const doe_resource_texture_copy *copy, doe_resource_copy_region *out)
+{
+    if (!device || !copy || !out) return DOE_RESOURCE_INVALID_ARGUMENT;
+    doe_resource_status status = resource_texture_use_validate(device, texture, WGPUTextureUsage_CopyDst, true);
+    if (status != DOE_RESOURCE_OK) return status;
+    return doe_resource_texture_copy_validate(data_size, &texture->desc, copy,
+        DOE_RESOURCE_BUFFER_TO_TEXTURE, DOE_RESOURCE_COPY_QUEUE, out);
+}
+
 doe_resource_status doe_resource_texture_blit_validate(const void *device,
     const doe_resource_texture_blit *copy, doe_resource_copy_alignment alignment,
     doe_resource_texture_blit *normalized)

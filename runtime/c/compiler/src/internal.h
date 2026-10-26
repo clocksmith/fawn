@@ -52,6 +52,7 @@ typedef struct {
         struct { NameSpan storage; uint32_t index; } reference;
         struct { NameSpan callee; TypeRef type; } call; } value;
     bool grouped;
+    unsigned char diagnostic_rule; /* Uses existing syntax padding; no workspace growth. */
 } Expression;
 typedef enum {
     BUILTIN_MIN, BUILTIN_MAX, BUILTIN_CLAMP, BUILTIN_EXP, BUILTIN_TANH,
@@ -229,7 +230,9 @@ typedef struct SpecializationContext SpecializationContext;
 typedef struct { const char *source; size_t length; DoeCompilerDiagnostic *diagnostic;
     const CompilerLimits *limits; CompilerWorkspace *compiler;
     uint32_t *exhausted_pool; size_t *minimum_pool_capacity; StageWorkspace *stages;
-    SpecializationContext *specialization; } Source;
+    SpecializationContext *specialization;
+    uint32_t diagnostic_severity[2], diagnostic_seen;
+    NameSpan unknown_diagnostic; uint64_t diagnostic_work; } Source;
 struct CompilerWorkspace {
     CompilerLimits limits;
     union { Token *tokens; IrInstruction *instructions; }; Expression *expressions; Statement *statements; ConstantSyntax *constant_decls;

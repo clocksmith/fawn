@@ -3,6 +3,7 @@
 #include "metal_frontend.h"
 #include "d3d12_graphics_internal.h"
 #include <stdlib.h>
+#include <string.h>
 
 static bool vertices(const WGPUVertexState *source, doe_vk_render_pipeline_desc *native,
     doe_resource_render_pipeline_desc *resource, const WGPULimits *limits, doe_vk_vertex_layout layouts[DOE_VK_MAX_VERTEX_BUFFERS],
@@ -94,6 +95,7 @@ static WGPURenderPipeline create_vulkan_render_pipeline(native_device *device,
     bool automatic = !layout;
     native_lock(device);
     doe_vk_status backend = native_device_status(device);
+    native_failure failure = native_failure_vulkan(backend, NULL);
     doe_resource_status status = automatic ? native_automatic_layout(device, stages, stage_count, &layout) : DOE_RESOURCE_OK;
     if (status == DOE_RESOURCE_OK && (!layout || doe_resource_pipeline_layout_device(layout) != device ||
         !native_pipeline_bindings(payload, stages, stage_count, layout))) status = DOE_RESOURCE_LAYOUT;
@@ -106,7 +108,9 @@ static WGPURenderPipeline create_vulkan_render_pipeline(native_device *device,
         native.immediate_bytes = payload->immediate_bytes;
         native.immediate_stages = ((payload->immediate_stages & WGPUShaderStage_Vertex) ? 1u : 0u) |
             ((payload->immediate_stages & WGPUShaderStage_Fragment) ? 16u : 0u);
-        backend = doe_vk_render_pipeline_create(device->backend.value.vulkan.context, &native, &payload->handle.vulkan, NULL);
+        doe_vk_error detail = {0};
+        backend = doe_vk_render_pipeline_create(device->backend.value.vulkan.context, &native, &payload->handle.vulkan, &detail);
+        failure = native_failure_vulkan(backend, &detail);
         if (backend == DOE_VK_OK) status = doe_resource_render_pipeline_create(&device->resources, layout, &resource,
             (doe_resource_native){payload,NULL,native_pipeline_release}, &pipeline);
     }
@@ -114,8 +118,11 @@ static WGPURenderPipeline create_vulkan_render_pipeline(native_device *device,
     native_unlock(device);
     if (!pipeline) {
         native_pipeline_release(NULL, payload);
-        *error = (native_pipeline_error){backend != DOE_VK_OK ? native_backend_error(backend) : native_resource_error(status),
-            "render pipeline creation or layout admission failed"};
+        error->type = backend != DOE_VK_OK ? native_result_error(failure.status) : native_resource_error(status);
+        if (backend != DOE_VK_OK)
+            native_failure_format(&failure, "render pipeline creation or layout admission failed", error->message);
+        else memcpy(error->message, "render pipeline creation or layout admission failed",
+            sizeof("render pipeline creation or layout admission failed"));
         return NULL;
     }
     size_t size;
