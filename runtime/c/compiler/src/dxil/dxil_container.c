@@ -29,19 +29,22 @@ DxilStatus dxil_write_program_part(uint32_t shader_kind,
     }
     padded_bitcode = ((uint64_t)bitcode_len + 3u) & ~UINT64_C(3);
     total_size = (uint64_t)DXIL_PROGRAM_HEADER_SIZE + padded_bitcode;
-    if (total_size > out_len) {
+    if (total_size > out_len || total_size > UINT32_MAX) {
         return DXIL_OUTPUT_TOO_LARGE;
     }
     program_version = (shader_kind << 16)
         | (shader_model_major << 4) | shader_model_minor;
     write_u32(out, &pos, program_version);
+    /* Microsoft DxilProgramHeader: version, word count, then the
+     * 16-byte DxilBitcodeHeader. Its offset is relative to DXIL magic. */
+    write_u32(out, &pos, (uint32_t)(total_size / 4u));
+    dxil_part_fourcc_bytes(DXIL_PART_FOURCC_DXIL, out + pos);
+    pos += 4;
     dxil_version = (DXIL_PROGRAM_MAJOR_VERSION << 8)
         | DXIL_PROGRAM_MINOR_VERSION;
     write_u32(out, &pos, dxil_version);
-    write_u32(out, &pos, DXIL_PROGRAM_HEADER_SIZE);
+    write_u32(out, &pos, DXIL_PROGRAM_HEADER_SIZE - 8u);
     write_u32(out, &pos, (uint32_t)bitcode_len);
-    write_u32(out, &pos, 0);
-    write_u32(out, &pos, 0);
     if (bitcode_len > 0) {
         memcpy(out + pos, bitcode, bitcode_len);
     }

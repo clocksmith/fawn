@@ -204,21 +204,26 @@ static bool container_bitcode(const uint8_t *container,
         uint32_t part_size = 0;
         uint32_t bitcode_offset = 0;
         uint32_t bitcode_size = 0;
-        if (offset + 8 > container_len) {
+        if ((uint64_t)offset + 8 > container_len) {
             return false;
         }
         if (memcmp(container + offset, "DXIL", 4) != 0) {
             continue;
         }
         part_size = dxil_test_read_u32le(container, offset + 4);
-        if (offset + 8 + part_size > container_len) {
+        if (part_size < DXIL_PROGRAM_HEADER_SIZE
+            || (uint64_t)offset + 8 + part_size > container_len) {
             return false;
         }
         bitcode_offset =
-            dxil_test_read_u32le(container, offset + 8 + 8);
+            dxil_test_read_u32le(container, offset + 8 + 16);
         bitcode_size =
-            dxil_test_read_u32le(container, offset + 8 + 12);
-        *out_bitcode = container + offset + 8 + bitcode_offset;
+            dxil_test_read_u32le(container, offset + 8 + 20);
+        if (bitcode_offset < DXIL_PROGRAM_HEADER_SIZE - 8u
+            || (uint64_t)bitcode_offset + 8 + bitcode_size > part_size) {
+            return false;
+        }
+        *out_bitcode = container + offset + 8 + 8 + bitcode_offset;
         *out_len = bitcode_size;
         return true;
     }

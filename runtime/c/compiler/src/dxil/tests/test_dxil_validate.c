@@ -38,7 +38,70 @@ static size_t build_minimal(uint8_t *buf, size_t buf_len,
     return size;
 }
 
+/* Independent Microsoft DxilProgramHeader bytes, not emitted by our writer.
+ * The optional four-byte gap catches an offset interpreted from the wrong base. */
+static void check_microsoft_program_header(void) {
+    const uint8_t program[32] = {
+        0x60, 0x00, 0x05, 0x00, 0x08, 0x00, 0x00, 0x00,
+        'D', 'X', 'I', 'L', 0x00, 0x01, 0x00, 0x00,
+        0x14, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 'B', 'C', 0xC0, 0xDE
+    };
+    const struct {
+        size_t offset;
+        uint32_t value;
+        DxilValidationError error;
+    } corruptions[] = {
+        {4, 5, DXIL_VALIDATION_DXIL_PART_TOO_SMALL},
+        {4, UINT32_MAX, DXIL_VALIDATION_DXIL_PART_TOO_SMALL},
+        {4, 7, DXIL_VALIDATION_DXIL_PART_TOO_SMALL},
+        {8, 0, DXIL_VALIDATION_BAD_MAGIC},
+        {16, 0, DXIL_VALIDATION_DXIL_PART_TOO_SMALL},
+        {16, UINT32_MAX - 7u, DXIL_VALIDATION_DXIL_PART_TOO_SMALL},
+        {20, 0, DXIL_VALIDATION_DXIL_PART_TOO_SMALL},
+        {20, 3, DXIL_VALIDATION_DXIL_PART_TOO_SMALL},
+        {28, 0, DXIL_VALIDATION_BAD_BITCODE_MAGIC}
+    };
+    uint8_t container[128];
+    uint8_t changed[sizeof(program)];
+    DxilPart part = {DXIL_PART_FOURCC_DXIL, program, sizeof(program)};
+    DxilValidationResult result;
+    size_t written = 0;
+    size_t i = 0;
+    CHECK_STATUS(dxil_write_container(&part, 1, container,
+        sizeof(container), &written), DXIL_OK);
+    dxil_validate(container, written, &result);
+    CHECK(result.valid);
+    CHECK(result.bitcode_size == 4);
+    CHECK(result.shader_kind == DXIL_SHADER_COMPUTE);
+    CHECK(result.dxil_major == 6 && result.dxil_minor == 0);
+    for (i = 0; i < sizeof(corruptions) / sizeof(corruptions[0]); i++) {
+        memcpy(changed, program, sizeof(changed));
+        dxil_test_write_u32le(changed, corruptions[i].offset,
+            corruptions[i].value);
+        part.data = changed;
+        CHECK_STATUS(dxil_write_container(&part, 1, container,
+            sizeof(container), &written), DXIL_OK);
+        dxil_validate(container, written, &result);
+        CHECK(!result.valid);
+        CHECK(result.error == corruptions[i].error);
+        CHECK(!result.has_bitcode_size && !result.has_dxil_part);
+    }
+    /* Reject the inherited private six-word layout rather than accepting a
+     * second format that Microsoft DXC cannot consume. */
+    memcpy(changed, program, sizeof(changed));
+    dxil_test_write_u32le(changed, 4, 0x100);
+    dxil_test_write_u32le(changed, 8, 24);
+    part.data = changed;
+    CHECK_STATUS(dxil_write_container(&part, 1, container,
+        sizeof(container), &written), DXIL_OK);
+    dxil_validate(container, written, &result);
+    CHECK(!result.valid);
+    CHECK(result.error == DXIL_VALIDATION_BAD_MAGIC);
+}
+
 int main(void) {
+    check_microsoft_program_header();
     /* Zig test parity: valid minimal container. */
     {
         uint8_t buf[1024];
