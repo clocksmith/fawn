@@ -3,7 +3,7 @@
 import json
 import subprocess
 import time
-import resource as py_resource
+import os
 import tempfile
 import shlex
 import shutil
@@ -14,6 +14,7 @@ from typing import Any
 from bench.lib import doe_runtime_providers
 from bench.lib import synthetic_assets as synthetic_assets_mod
 from bench.lib.hash_utils import file_sha256
+from bench.lib.child_usage import child_cpu_snapshot, completed_child_cpu_ms, windows_child_usage
 from native_compare_modules import compilation_runner as compilation_runner_mod
 from native_compare_modules.normalization import (
     derive_counter_derived_divisor,
@@ -478,7 +479,7 @@ def run_once(
     time_prefix = time_prefix_cache
     wrapped_command = [*time_prefix, *command] if time_prefix else command
 
-    cpu_usage_before = py_resource.getrusage(py_resource.RUSAGE_CHILDREN)
+    cpu_usage_before = child_cpu_snapshot()
     start = time.perf_counter()
     with tempfile.TemporaryFile(mode="w+b") as stdout_capture, tempfile.TemporaryFile(
         mode="w+b"
@@ -506,7 +507,8 @@ def run_once(
         while True:
             process_running = popen.poll() is None
             if process_running:
-                process_peak_rss_kb = max(process_peak_rss_kb, read_process_rss_kb(popen.pid))
+                observed_rss = windows_child_usage(popen)[1] if os.name == "nt" else read_process_rss_kb(popen.pid)
+                process_peak_rss_kb = max(process_peak_rss_kb, observed_rss)
             sample_count += 1
 
             if gpu_memory_probe == "rocm-smi":
@@ -544,15 +546,9 @@ def run_once(
         stderr = stderr_capture.read().decode("utf-8", errors="replace")
 
         elapsed_ms = (time.perf_counter() - start) * 1000.0
-        cpu_usage_after = py_resource.getrusage(py_resource.RUSAGE_CHILDREN)
-        process_cpu_ms = max(
-            0.0,
-            (
-                (cpu_usage_after.ru_utime + cpu_usage_after.ru_stime)
-                - (cpu_usage_before.ru_utime + cpu_usage_before.ru_stime)
-            )
-            * 1000.0,
-        )
+        process_cpu_ms = completed_child_cpu_ms(popen, cpu_usage_before)
+        if os.name == "nt":
+            process_peak_rss_kb = max(process_peak_rss_kb, windows_child_usage(popen)[1])
 
         stderr_lines: list[str] = []
         stderr_text = stderr if isinstance(stderr, str) else ""
