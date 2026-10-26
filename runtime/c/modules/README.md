@@ -41,8 +41,9 @@ measured duration and its resulting hash are excluded from cross-run comparison.
 `createDoeRuntime({runtime: 'c'})` APIs, including the numeric convenience method.
 It requires `RUNTIME_BINARY` (default: this checkout's scratch CLI build). Explicit
 C selection resolves only `doe-c-module-runner`; configured known Zig binaries and
-missing configured runners fail without fallback. Production Zig defaults stay
-unchanged.
+missing configured runners fail without fallback. The public runtime resolver also
+defaults to C; retained Zig requires explicit legacy selection. Default selection
+is not a full-parity qualification claim.
 
 The existing module gate accepts `--runtime c` (builds the C owner) or an explicit
 `--runner` with `--runtime c`. Its ten promoted fixture cases pass schema, repeated

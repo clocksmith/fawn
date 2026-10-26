@@ -48,11 +48,14 @@ to make them understandable, and executable enforcement to make them dependable.
 C is the selected means; a better Doe is the result that must still be earned.**
 
 C is the chosen migration direction, not an ongoing language contest or a claim
-that C is universally safer or faster. The production default remains the retained
-Zig implementation. The [experimental C migration](docs/c-migration/MIGRATION.md)
-is incremental: accepted compiler and native owners have bounded evidence;
-complete feature parity, backend qualification and production cutover remain open.
-Publishing an increment does not promote it to the production default.
+that C is universally safer or faster. The current package, compiler build and
+runtime CLI routes select C by default; retained Zig requires explicit legacy
+selection, without silent cross-provider fallback. That routing choice is not a
+full-parity or hardware-qualification certificate. The
+[C migration](docs/c-migration/MIGRATION.md) remains incremental: compiler and
+native owners have bounded evidence, and the
+[consistency ledger](docs/c-migration/CONSISTENCY_AUDIT.md) records known gaps and
+uninspected boundaries. CSL is preserved behind its optional quarantine boundary.
 
 The architecture should make reusable semantics explicit: one owner per rule,
 small typed operations with consistent representations, and clear composition of
