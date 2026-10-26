@@ -25,41 +25,37 @@ pub const DxilProgramHeader = struct {
 /// Encode a DXIL program header + bitcode into the buffer.
 /// Returns the number of bytes written.
 pub fn write_dxil_program_part(header: DxilProgramHeader, out: []u8) EmitError!usize {
+    if (header.bitcode.len > std.math.maxInt(u32)) return error.OutputTooLarge;
     const bitcode_size: u32 = @intCast(header.bitcode.len);
-    const padded_bitcode = (bitcode_size + 3) & ~@as(u32, 3);
+    const padded_bitcode = (@as(u64, bitcode_size) + 3) & ~@as(u64, 3);
     const total_size = spec.DXIL_PROGRAM_HEADER_SIZE + padded_bitcode;
-    if (total_size > out.len) return error.OutputTooLarge;
+    if (total_size > out.len or total_size > std.math.maxInt(u32)) return error.OutputTooLarge;
 
     var pos: usize = 0;
 
-    // ProgramVersion: shader kind (4 bits) | major (4 bits) | minor (8 bits) | reserved (16 bits)
+    // ProgramVersion: shader kind (upper 16 bits), major/minor (low nibbles).
     const program_version: u32 = (header.shader_kind << 16) |
         (header.shader_model_major << 4) |
         header.shader_model_minor;
     write_u32(out, &pos, program_version);
 
-    // DXIL version
+    // Microsoft DxilProgramHeader: version, word count, DxilBitcodeHeader.
+    // https://github.com/microsoft/DirectXShaderCompiler/blob/main/include/dxc/DxilContainer/DxilContainer.h
+    write_u32(out, &pos, @intCast(total_size / 4));
+    @memcpy(out[pos .. pos + 4], &spec.PartFourCC.DXIL);
+    pos += 4;
     const dxil_version: u32 = (spec.DXIL_MAJOR_VERSION << 8) | spec.DXIL_MINOR_VERSION;
     write_u32(out, &pos, dxil_version);
-
-    // Bitcode offset (from start of this header, in bytes)
-    write_u32(out, &pos, spec.DXIL_PROGRAM_HEADER_SIZE);
-
-    // Bitcode size (in bytes)
+    // BitcodeOffset is relative to DxilBitcodeHeader at program byte 8.
+    write_u32(out, &pos, spec.DXIL_PROGRAM_HEADER_SIZE - 8);
     write_u32(out, &pos, bitcode_size);
-
-    // Pipeline state validation size (0 for now)
-    write_u32(out, &pos, 0);
-
-    // Pipeline state validation offset (0)
-    write_u32(out, &pos, 0);
 
     // Bitcode blob
     @memcpy(out[pos .. pos + bitcode_size], header.bitcode);
     pos += bitcode_size;
 
     // Pad to 4-byte alignment
-    const pad = padded_bitcode - bitcode_size;
+    const pad: usize = @intCast(padded_bitcode - bitcode_size);
     if (pad > 0) {
         @memset(out[pos .. pos + pad], 0);
         pos += pad;
@@ -201,4 +197,25 @@ test "container with one part round-trips" {
     // Part count should be 1
     const part_count = std.mem.readInt(u32, @as(*const [4]u8, @ptrCast(buf[28..32].ptr)), .little);
     try std.testing.expectEqual(@as(u32, 1), part_count);
+}
+
+test "DXIL program header matches Microsoft wire layout and rejects short output" {
+    const bitcode = [_]u8{ 0x42, 0x43, 0xc0, 0xde, 0xab };
+    const expected = [_]u8{
+        0x60, 0x00, 0x05, 0x00, // compute shader model 6.0
+        0x08, 0x00, 0x00, 0x00, // 32 bytes in uint32 units
+        0x44, 0x58, 0x49, 0x4c, // DXIL
+        0x00, 0x01, 0x00, 0x00, // DXIL version 1.0
+        0x10, 0x00, 0x00, 0x00, // bitcode offset from DXIL magic
+        0x05, 0x00, 0x00, 0x00, // unpadded bitcode byte count
+        0x42, 0x43, 0xc0, 0xde,
+        0xab, 0x00, 0x00, 0x00,
+    };
+    var out: [32]u8 = @splat(0xa5);
+    const header = DxilProgramHeader{ .shader_kind = spec.ShaderKind.COMPUTE, .bitcode = &bitcode };
+    try std.testing.expectError(error.OutputTooLarge, write_dxil_program_part(header, out[0..31]));
+    try std.testing.expectEqualSlices(u8, &@as([32]u8, @splat(0xa5)), &out);
+    const written = try write_dxil_program_part(header, &out);
+    try std.testing.expectEqual(expected.len, written);
+    try std.testing.expectEqualSlices(u8, &expected, &out);
 }
