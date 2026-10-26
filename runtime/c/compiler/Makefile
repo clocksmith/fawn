@@ -655,7 +655,7 @@ test-diagnostics: build/test_diagnostics build/test_diagnostics_abi
 # src/tsir/tests/test_reference_emit.c (2 failing checks, see PARTIAL doc).
 PARTIAL_CFLAGS = -std=c11 -Wall -Wextra -Wpedantic -Werror
 DXIL_PARTIAL_SOURCES = $(wildcard src/dxil/*.c)
-TSIR_PARTIAL_SOURCES = $(wildcard src/tsir/*.c)
+TSIR_PARTIAL_SOURCES = $(filter-out src/tsir/tsir_source%.c src/tsir/tsir_bootstrap_manifest.c,$(wildcard src/tsir/*.c))
 DXIL_PARTIAL_TESTS = test_dxil_md5 test_dxil_bitcode test_dxil_container test_dxil_validate test_dxil_builder_serialize test_dxil_mapping_toolchain test_dxil_ir_native test_dxil_hlsl test_dxil_emit test_dxil_analyze_translate
 TSIR_PARTIAL_TESTS = test_sha_scalar test_digest test_planner test_reference_emit test_new test_new2
 DXIL_PARTIAL_TEST_FILES = src/dxil/tests/test_dxil_md5.c src/dxil/tests/test_dxil_bitcode.c src/dxil/tests/test_dxil_container.c src/dxil/tests/test_dxil_validate.c src/dxil/tests/test_dxil_builder_serialize.c src/dxil/tests/test_dxil_mapping_toolchain.c src/dxil/tests/test_dxil_ir_native.c src/dxil/tests/test_dxil_hlsl.c src/dxil/tests/test_dxil_emit.c src/dxil/tests/test_dxil_analyze_translate.c
@@ -675,7 +675,61 @@ test-dxil-tsir-sanitize: $(DXIL_PARTIAL_TEST_FILES) $(TSIR_PARTIAL_TEST_FILES) |
 		$(CC) $(PARTIAL_CFLAGS) -fsanitize=address,undefined -fno-sanitize-recover=all -g -Isrc/dxil -Isrc/dxil/tests src/dxil/tests/$$t.c $(DXIL_PARTIAL_SOURCES) -lm -o build/$${t}_sanitize || exit 1; \
 		ASAN_OPTIONS=detect_leaks=0:halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1 build/$${t}_sanitize || exit 1; \
 	done
+
 	@for t in $(TSIR_PARTIAL_TESTS); do \
 		$(CC) $(PARTIAL_CFLAGS) -fsanitize=address,undefined -fno-sanitize-recover=all -g -Isrc/tsir -Isrc/tsir/tests src/tsir/tests/$$t.c $(TSIR_PARTIAL_SOURCES) -lm -o build/$${t}_sanitize || exit 1; \
 		ASAN_OPTIONS=detect_leaks=0:halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1 build/$${t}_sanitize || exit 1; \
 	done
+
+# The non-CSL bootstrap tools use the shared C WGSL semantic owner and TSIR
+# owners. Reference emitter sources are identity inputs, never executable Zig.
+# Kept separate from production libdoe_compiler until its migration gates pass.
+TSIR_TOOL_SOURCES = $(wildcard src/tsir/*.c)
+TSIR_TOOL_OBJECTS = $(patsubst src/tsir/%.c,build/tsir/%.o,$(TSIR_TOOL_SOURCES))
+TSIR_TOOL_HEADERS = $(wildcard src/tsir/*.h)
+TSIR_TOOL_CFLAGS = $(PARTIAL_CFLAGS) -O2 -g -fno-fast-math -ffp-contract=off $(EXTRA_CFLAGS)
+build/tsir/%.o: src/tsir/%.c $(TSIR_TOOL_HEADERS) $(HEADERS) | build/.ready
+	mkdir -p $(dir $@)
+	$(CC) $(TSIR_TOOL_CFLAGS) -Isrc/tsir -c $< -o $@
+build/libdoe_tsir.a: $(TSIR_TOOL_OBJECTS)
+	$(AR) rcs $@ $^
+build/doe-tsir-bootstrap-oracle-c: tools/tsir_bootstrap_oracle.c build/libdoe_tsir.a
+	$(CC) $(TSIR_TOOL_CFLAGS) -Isrc/tsir $< build/libdoe_tsir.a -lm -o $@
+build/doe-tsir-bootstrap-manifest-inputs-c: tools/tsir_bootstrap_manifest_inputs.c build/libdoe_tsir.a $(LIB_SOURCES) $(HEADERS)
+	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) -Isrc/tsir $< $(LIB_SOURCES) build/libdoe_tsir.a -lm -o $@
+build/test_bootstrap_manifest: src/tsir/tests/test_bootstrap_manifest.c build/libdoe_tsir.a $(LIB_SOURCES) $(HEADERS)
+	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) -Isrc/tsir $< $(LIB_SOURCES) build/libdoe_tsir.a -lm -o $@
+build/test_bootstrap_writer: src/tsir/tests/test_bootstrap_writer.c build/libdoe_tsir.a
+	$(CC) $(TSIR_TOOL_CFLAGS) -Isrc/tsir $< build/libdoe_tsir.a -lm -o $@
+.PHONY: tsir-bootstrap-tools test-tsir-bootstrap test-tsir-bootstrap-differential
+tsir-bootstrap-tools: build/doe-tsir-bootstrap-oracle-c build/doe-tsir-bootstrap-manifest-inputs-c
+all: tsir-bootstrap-tools
+build/test_tsir_source: src/tsir/tests/test_source.c build/libdoe_tsir.a $(LIB_SOURCES) $(HEADERS)
+	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) -Isrc/tsir $< $(LIB_SOURCES) build/libdoe_tsir.a -lm -o $@
+ORACLE_FAULT_NAMES = bootstrap bootstrap_oracle json reference reference_bodies schema sha256 scalar extended extended_ops digest transcendental
+ORACLE_FAULT_OBJECTS = $(addprefix build/tsir-fault/tsir_,$(addsuffix .o,$(ORACLE_FAULT_NAMES)))
+build/tsir-fault/%.o: src/tsir/%.c $(TSIR_TOOL_HEADERS) src/tsir/tests/oracle_alloc.h | build/.ready
+	mkdir -p $(dir $@)
+	$(CC) $(TSIR_TOOL_CFLAGS) -Isrc/tsir -include src/tsir/tests/oracle_alloc.h -c $< -o $@
+build/test_oracle_alloc: src/tsir/tests/test_oracle_alloc.c $(ORACLE_FAULT_OBJECTS)
+	$(CC) $(TSIR_TOOL_CFLAGS) -Isrc/tsir $< $(ORACLE_FAULT_OBJECTS) -lm -o $@
+build/test_manifest_alloc: src/tsir/tests/test_manifest_alloc.c src/tsir/tests/manifest_alloc.h src/tsir/tests/oracle_alloc.h $(TSIR_TOOL_SOURCES) $(TSIR_TOOL_HEADERS) $(LIB_SOURCES) $(HEADERS) | build/.ready
+	$(CC) $(TSIR_TOOL_CFLAGS) -D_POSIX_C_SOURCE=200809L -Isrc/tsir -include src/tsir/tests/manifest_alloc.h $(LIB_SOURCES) $(TSIR_TOOL_SOURCES) $< -lm -o $@
+.PHONY: test-tsir
+test-tsir: $(TSIR_PARTIAL_TEST_FILES) | build/.ready
+	@for t in $(TSIR_PARTIAL_TESTS); do \
+		$(CC) $(PARTIAL_CFLAGS) -Isrc/tsir -Isrc/tsir/tests src/tsir/tests/$$t.c $(TSIR_PARTIAL_SOURCES) -lm -o build/$$t || exit 1; \
+		build/$$t || exit 1; \
+	done
+test-tsir-bootstrap: tsir-bootstrap-tools build/test_bootstrap_manifest build/test_bootstrap_writer build/test_tsir_source build/test_oracle_alloc build/test_manifest_alloc
+	cd ../../.. && runtime/c/compiler/build/test_bootstrap_manifest
+	build/test_bootstrap_writer
+	cd ../../.. && runtime/c/compiler/build/test_tsir_source
+	build/test_oracle_alloc
+	cd ../../.. && runtime/c/compiler/build/test_manifest_alloc
+	python3 tools/test_bootstrap_oracle.py --c-oracle build/doe-tsir-bootstrap-oracle-c
+	cd ../../.. && DOE_TSIR_MANIFEST_CLI='$(CURDIR)/build/doe-tsir-bootstrap-manifest-inputs-c' python3 -m runtime.c.compiler.tests.test_bootstrap_manifest
+test-tsir-bootstrap-differential: test-tsir-bootstrap
+	python3 tools/test_bootstrap_oracle.py --c-oracle build/doe-tsir-bootstrap-oracle-c --zig-oracle ../../zig/zig-out/bin/doe-tsir-bootstrap-oracle
+	cd ../../.. && DOE_TSIR_MANIFEST_CLI='$(CURDIR)/build/doe-tsir-bootstrap-manifest-inputs-c' DOE_TSIR_MANIFEST_ZIG='$(abspath ../../zig/zig-out/bin/doe-tsir-bootstrap-manifest-inputs)' python3 -m runtime.c.compiler.tests.test_bootstrap_manifest
+	cd ../../.. && python3 runtime/c/compiler/src/tsir/tests/test_targets.py

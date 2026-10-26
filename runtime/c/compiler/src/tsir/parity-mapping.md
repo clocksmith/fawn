@@ -1,6 +1,6 @@
 # TSIR C-versus-Zig parity mapping
 
-Source tree (read-only, not edited): `~/workspace/fawn-tree`, head
+Original mapping source tree (historical worker snapshot): `~/workspace/fawn-tree`, head
 `43040741d1d4822d64c8ec8976d6c652ec345242`.
 Zig scope verified by this worker before coding:
 
@@ -13,6 +13,10 @@ Zig scope verified by this worker before coding:
   `tsir/` and 40 total; the tree at this head has 36 and 38. Line
   counts match the brief exactly; file counts do not, and this
   document uses the verified counts.
+
+Current bootstrap follow-up: see [executable evidence and limits](../../TSIR_BOOTSTRAP.md).
+The facade and both non-CSL tools now execute in C; original mapping rows below
+retain their unrelated qualifications.
 
 ## The registry gap, stated plainly
 
@@ -293,32 +297,24 @@ module), and is listed in gaps.md.
 | E19 | Per-op CSL body files: emit_kernel_body_attention (443), emit_kernel_body_kv (245), emit_kernel_body_linear_attention (169), emit_kernel_body_gated (115), emit_kernel_body_conv1d (110), emit_kernel_body_l2_normalize (73) | n/a (quarantined): mapped, not built |
 | E20 | `emit_webgpu` semantic-aware WGSL bodies (fused_gemv, rms_norm, gather) | done: `tsir_kernel_body.c` WGSL emitters, exact texts, literal and uniform epsilon forms |
 | E21 | `emit_msl`/`emit_dxil`/`emit_spir_v` semantic-aware bodies (fused_gemv, rms_norm, gather, via kernel_body) | done: `tsir_kernel_body.c` MSL/DXIL/SPIR-V emitters, exact texts, including the SPIR-V gather ternary with 0.0 (not 0.0f) |
-| E22 | Emitter code digests (`emitterCodeDigest`): SHA-256 over the emitter's own source text plus the shared skeleton/body/metadata sources it embeds | missing: the C sources are not the Zig sources, so a C "emitter digest" equal to the Zig value cannot be produced by hashing C files. `tsir_emit` does not offer a fake digest. A coordinator decision is needed: either the digest is defined over the C emitter sources (new identity, breaks cross-implementation manifest comparison) or the Zig source bytes are carried as data (not done here). Listed in gaps.md. |
+| E22 | Emitter code digests (`emitterCodeDigest`): SHA-256 over the emitter's own source text plus the shared skeleton/body/metadata sources it embeds | bootstrap reference identity implemented for WebGPU/MSL/SPIR-V by hashing actual retained emitter inputs; six exact target/emitter comparisons against Zig pass. This is reference provenance, not a claim that C implementation source hashes equal Zig. |
 | E23 | `emit_kernel_body` Config-driven live-path knobs (chunk_size_default 1024, hidden_size_default 1024, Gemma 1+weight offset, kv head_dim/max_seq_len/read_len defaults, slot-sharded kv, kv-axis-sharded attention, attention pe-id source) | missing: config fields exist (E14), behavior does not; the non-CSL bodies built here do not consume these knobs (fixed `tsir_` names, no kv/attention paths), and the CSL paths that do are quarantined |
 
 ## Tools: tools/ (751 lines)
 
-Both tools depend on the full Doe pipeline (WGSL parser, sema, IR
-builder, targets, TSIR frontend/planner/emitters) and on bootstrap
-fixture files under `runtime/zig/tests/tsir/`. The JSON/argument
-layers are now ported as library functions in `tsir_bootstrap.c`
-(the reader is the repo bounded JSON reader, reused, not
-hand-rolled); the WGSL pipeline behind manifest inputs is still
-missing, and neither tool has a CLI binary in this directory.
+Both tools now have standalone C executables built by `tsir-bootstrap-tools`.
+The manifest uses the existing C parser/sema and a typed TSIR adapter, then shared
+frontend/planner/digest owners. The oracle shares the reference interpreter and
+bounded JSON reader. Both consume `tsir.h`; CSL stays excluded.
 
 | Row | Zig behavior | C status |
 | --- | --- | --- |
-| T1 | `tsir_bootstrap_manifest_inputs`: emits schema-tool inputs for bootstrap manifest lowering fixtures; kernels fused_gemv (algorithm_exact, invariants reduction_order/accum_dtype), rms_norm (tolerance_bounded max_abs 1e-6), gather (bit_exact_solo); frontend version `frontend-bootstrap-pipeline-v1`, compiler version `doe-tsir-bootstrap-2026-04-24`, WSE3 stream chunk 4096, max WGSL 1 MiB | partial: entry writer in Zig field order plus kernel templates (`tsir_bootstrap_write_manifest_entry`, `tsir_bootstrap_manifest_template`); the WGSL pipeline (parser, sema, ir_builder) and digest computation are missing, so digests and descriptor hashes stay caller-supplied (gaps.md G-MANIFEST-PIPELINE). WSE3 backend is a CSL path and stays quarantined. |
-| T2 | `tsir_bootstrap_oracle`: CLI `--kernel <name> --inputs <path> [--semantic-tsir] [--realization-tsir]`; builds Phase A semantic shapes for fused_gemv/rms_norm/gather, runs reference interpreter, prints status/hash; 16 MiB input cap; NotImplemented/InvalidJson reported as `not_implemented` status, not a crash | partial: oracle run semantics complete as a library function (`tsir_bootstrap_oracle_run`): exact Zig status JSON, three kernel semantics, canonical kernel names, 16 MiB cap, NotImplemented/InvalidJson mapped to `not_implemented` status; the CLI binary itself (argv parsing, file reads) is not built (gaps.md G-ORACLE-CLI). JSON parsing reuses the repo bounded reader, not a hand-rolled parser. |
+| T1 | `tsir_bootstrap_manifest_inputs`: emits schema-tool inputs for bootstrap manifest lowering fixtures; kernels fused_gemv (algorithm_exact, invariants reduction_order/accum_dtype), rms_norm (tolerance_bounded max_abs 1e-6), gather (bit_exact_solo); frontend version `frontend-bootstrap-pipeline-v1`, compiler version `doe-tsir-bootstrap-2026-04-24`, WSE3 stream chunk 4096, max WGSL 1 MiB | implemented for non-CSL bootstrap: actual WGSL pipeline and nine-entry output match retained Zig 0.15.2 byte for byte, including source mutations; explicit source-adapter limits in ../../TSIR_BOOTSTRAP.md. |
+| T2 | `tsir_bootstrap_oracle`: CLI `--kernel <name> --inputs <path> [--semantic-tsir] [--realization-tsir]`; builds Phase A semantic shapes for fused_gemv/rms_norm/gather, runs reference interpreter, prints status/hash; 16 MiB input cap; NotImplemented/InvalidJson reported as `not_implemented` status, not a crash | implemented standalone CLI and library: 67 independent/differential cases, 211 tracked allocation failures; preserves invalid JSON versus execution/file failure boundaries. |
 
-## Summary counts
+## Interpretation
 
-- Rows mapped: R0, R0b, S1-S47 (47), D1-D19 (19), F1-F9 (9),
-  P1-P13 (13), R1-R30 (30), E1-E23 (23), T1-T2 (2): 145 rows.
-- Done: 134 rows. Partial: 5 rows (R5, R6, E13, T1, T2; see the
-  table notes for exact subsets). Missing: 4 rows (R0, R0b, E22, E23).
-  Quarantined (mapped, not built): 2 rows (E18, E19) plus the CSL parts
-  of E13, which are not built. 134 + 5 + 4 + 2 = 145.
-- File-level status is in gaps.md. No row above is marked done on the
-  basis of an existing C subsystem, a stub, or a related-but-different
-  implementation.
+The original 145-row mapping is a triage aid, not universal parity evidence.
+T1/T2 and the three bootstrap reference emitter identities now have executable
+acceptance above. The original registry gaps, unrelated interpreter corners,
+CSL exclusions and production-library integration qualifications remain.

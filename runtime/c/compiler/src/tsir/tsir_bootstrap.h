@@ -11,12 +11,9 @@
  * reader (tsir_json.h, reused from runtime/c, not hand-rolled);
  * the writers below emit Zig's exact field orders.
  *
- * Manifest inputs are PARTIAL: the entry writer is complete, but
- * the WGSL pipeline behind it (parser, sema, ir_builder) is not
- * ported, so digests and descriptor hashes are caller-supplied
- * inputs and must never be invented here. The oracle runner is
- * complete for the three kernel shapes, using tsir_reference_run
- * with an empty realization exactly as Zig does.
+ * The entry writer accepts explicit identities. The actual WGSL pipeline
+ * and nine-entry manifest tool are exposed in tsir_bootstrap_manifest.h.
+ * The oracle runner uses tsir_reference_run with an empty realization.
  *
  * Oracle status JSON, exactly as Zig writeStatus writes it
  * (detail, referenceHash, status, plus a trailing newline):
@@ -28,7 +25,8 @@
  * "bootstrap oracle input JSON is unsupported or missing
  * kernel/inputs" and a null hash. Other failures (allocation)
  * return a TsirStatus and no status JSON. Input over the 16 MiB
- * cap is reported as not_implemented, never a crash. */
+ * cap, malformed hex and reference execution failures return non-OK,
+ * matching Zig's process failure boundary. */
 
 #define TSIR_BOOTSTRAP_MAX_INPUT_BYTES (16u * 1024u * 1024u)
 
@@ -63,6 +61,10 @@ typedef struct TsirManifestEntry {
     const char *tsir_semantic_digest;
 } TsirManifestEntry;
 
+/* Validate before writing and stage privately: invalid input or allocation
+ * failure preserves earlier bytes. Final publication may set buf->err.
+ * Pointer arrays require non-NULL entries; tolerance_epsilon must be a JSON
+ * number token. All strings are escaped by the shared entry writer. */
 TsirStatus tsir_bootstrap_write_manifest_entry(TsirBuffer *buf,
     const TsirManifestEntry *entry);
 
@@ -84,7 +86,8 @@ TsirStatus tsir_bootstrap_manifest_template(const char *kernel,
  * On success *out_status_json holds a NUL-terminated status
  * JSON string (caller frees); the function itself returns
  * TSIR_OK for both pass and not_implemented outcomes, and a
- * non-OK status only for allocation or argument failures. */
+ * non-OK status for argument, input-size, allocation, malformed-hex or
+ * reference execution failures described above. */
 TsirStatus tsir_bootstrap_oracle_run(const char *kernel,
     const char *input_json, size_t input_len,
     char **out_status_json, size_t *out_len);
