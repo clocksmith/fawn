@@ -1,7 +1,9 @@
 /* SPDX-License-Identifier: MIT
  * Copyright (c) 2026 Doe contributors */
 #include "tsir_source_internal.h"
+#include "../sema.h"
 #include <string.h>
+#include <stdlib.h>
 
 uint32_t tsir_source_push_expr(TsirSourceBridge *b, TsirSourceFunction *f, TsirIrExpr e) {
     if (f->view.expr_count == f->expr_cap) {
@@ -27,16 +29,58 @@ uint32_t tsir_source_root(TsirSourceBridge *b, TsirSourceFunction *f, NameSpan n
     for (size_t i = 0u; i < f->view.param_count; ++i) {
         const char *name_text = f->params[i].name;
         if (strlen(name_text) == name.length && !memcmp(b->source.source + name.offset, name_text, name.length))
-            return tsir_source_push_expr(b, f, (TsirIrExpr){.kind = TSIR_IR_EXPR_PARAM_REF,
-                .ty = f->params[i].ty, .ref_index = (uint32_t)i});
+            return load(b, f, tsir_source_push_expr(b, f, (TsirIrExpr){.kind = TSIR_IR_EXPR_PARAM_REF,
+                .ty = f->params[i].ty, .ref_index = (uint32_t)i}), reference);
     }
-    for (uint32_t i = 0u; i < b->compiler->resource_count; ++i) {
-        if (!source_spans_equal(&b->source, name, b->compiler->resources[i].name)) continue;
-        return load(b, f, tsir_source_push_expr(b, f, (TsirIrExpr){.kind = TSIR_IR_EXPR_GLOBAL_REF,
-            .ty = b->globals[i].ty, .ref_index = i}), reference);
+    for (size_t i = 0u; i < b->module.global_count; ++i) {
+        const TsirIrGlobal *global = &b->globals[i];
+        if (strlen(global->name) != name.length ||
+            memcmp(b->source.source + name.offset, global->name, name.length)) continue;
+        uint32_t result = tsir_source_push_expr(b, f, (TsirIrExpr){
+            .kind = TSIR_IR_EXPR_GLOBAL_REF, .ty = global->ty, .ref_index = (uint32_t)i});
+        bool mutable = global->class != TSIR_IR_GLOBAL_CONST &&
+            (!global->has_addr_space || global->addr_space != TSIR_IR_SPACE_HANDLE);
+        return mutable ? load(b, f, result, reference) : result;
     }
     (void)tsir_source_fail(b, name.offset, "TSIR source identity has no adapted binding");
     return TSIR_IR_NONE;
+}
+/* Retained sema.zig resolve_ident_expr classifies every local/parameter
+ * as ref, including immutable lets; only const globals and handles are values.
+ * Mutability governs writes, not the IR load category. */
+static bool is_reference(const TsirSourceBridge *b, const TsirSourceFunction *f, uint32_t id) {
+    for (size_t depth = 0; depth <= f->view.expr_count && id < f->view.expr_count; ++depth) {
+        const TsirIrExpr *e = &f->exprs[id];
+        if (e->kind == TSIR_IR_EXPR_LOCAL_REF || e->kind == TSIR_IR_EXPR_PARAM_REF) return true;
+        if (e->kind == TSIR_IR_EXPR_GLOBAL_REF) {
+            const TsirIrGlobal *g = &b->globals[e->ref_index];
+            return g->class != TSIR_IR_GLOBAL_CONST &&
+                (!g->has_addr_space || g->addr_space != TSIR_IR_SPACE_HANDLE);
+        }
+        if (e->kind == TSIR_IR_EXPR_DEREF) return true;
+        if (e->kind == TSIR_IR_EXPR_MEMBER) id = e->member_base;
+        else if (e->kind == TSIR_IR_EXPR_INDEX) id = e->index_base;
+        else return false;
+    }
+    return false;
+}
+static bool constructor(const TsirSourceBridge *b, const Expression *e) {
+    NameSpan name = e->value.call.callee;
+    if (sema_find_type_alias(&b->source, name) != NO_ID ||
+        sema_find_struct(&b->source, name) != NO_ID) return true;
+    if (source_span_is(&b->source, name, "bitcast")) return false;
+    if (e->value.call.type.offset != NO_ID) return true;
+    if (source_span_is(&b->source, name, "array") ||
+        source_span_is(&b->source, name, "bool") ||
+        source_span_is(&b->source, name, "f32") ||
+        source_span_is(&b->source, name, "f16") ||
+        source_span_is(&b->source, name, "i32") ||
+        source_span_is(&b->source, name, "u32")) return true;
+    uint32_t columns, rows;
+    if (type_matrix_name(&b->source, name, &columns, &rows)) return true;
+    const char *text = b->source.source + name.offset;
+    return (name.length == 4u || name.length == 5u) &&
+        !memcmp(text, "vec", 3u) && text[3] >= '2' && text[3] <= '4';
 }
 static bool binary(ExpressionKind kind, Comparison cmp, TsirIrBinaryOp *out) {
     switch (kind) {
@@ -72,6 +116,32 @@ static bool binary(ExpressionKind kind, Comparison cmp, TsirIrBinaryOp *out) {
     }
     return false;
 }
+/* Retained Zig stores literal payloads as f64 even when the semantic type
+ * is f32/f16. Reuse the compiler numeric owner on an unsuffixed decimal/hex
+ * float token instead of retaining its already-rounded concrete payload. */
+static bool ir_literal(TsirSourceBridge *b, NameSpan span, NumericValue *value) {
+    if (!numeric_parse_literal(&b->source, span, value)) return false;
+    if (value->type != IR_F32 && value->type != IR_F16) return true;
+    const char *token = b->source.source + span.offset;
+    size_t length = span.length;
+    if (length && (token[length - 1u] == 'f' || token[length - 1u] == 'h')) --length;
+    bool float_syntax = false;
+    bool hex = length > 1u && token[0] == '0' && (token[1] == 'x' || token[1] == 'X');
+    for (size_t i = 0; i < length; ++i)
+        if (token[i] == '.' || (hex ? token[i] == 'p' || token[i] == 'P' : token[i] == 'e' || token[i] == 'E'))
+            float_syntax = true;
+    char *normalized = malloc(length + 3u);
+    if (!normalized) { b->status = TSIR_ERR_NOMEM; return false; }
+    memcpy(normalized, token, length);
+    if (!float_syntax) { normalized[length++] = '.'; normalized[length++] = '0'; }
+    normalized[length] = '\0';
+    Source input = b->source;
+    input.source = normalized;
+    input.length = length;
+    bool ok = numeric_parse_literal(&input, (NameSpan){0u, (uint32_t)length}, value);
+    free(normalized);
+    return ok;
+}
 uint32_t tsir_source_expr(TsirSourceBridge *b, TsirSourceFunction *f, uint32_t id, bool reference, unsigned depth) {
     if (b->status != TSIR_OK) return TSIR_IR_NONE;
     if (id >= b->compiler->expression_count || depth > 64u) {
@@ -91,8 +161,8 @@ uint32_t tsir_source_expr(TsirSourceBridge *b, TsirSourceFunction *f, uint32_t i
         case EXPRESSION_BOOLEAN: o.kind = TSIR_IR_EXPR_BOOL_LIT; o.bool_value = e->value.integer != 0u; break;
         case EXPRESSION_LITERAL: {
             NumericValue value;
-            if (!numeric_parse_literal(&b->source, e->value.name, &value)) {
-                b->status = TSIR_ERR_INVALID;
+            if (!ir_literal(b, e->value.name, &value)) {
+                if (b->status == TSIR_OK) b->status = TSIR_ERR_INVALID;
                 return TSIR_IR_NONE;
             }
             if (value.type == IR_ABSTRACT_FLOAT || value.type == IR_F32 || value.type == IR_F16) {
@@ -134,19 +204,19 @@ uint32_t tsir_source_expr(TsirSourceBridge *b, TsirSourceFunction *f, uint32_t i
                     const TsirIrStructDef *def = &b->structs[b->types[base_type].struct_id];
                     for (size_t i = 0; i < def->field_count; ++i)
                         if (!strcmp(def->fields[i].name, o.member_field_name)) o.member_field_index = (uint32_t)i;
-                } else if (e->value.member.member.length == 1u) {
+                } else if (e->value.member.member.length != 0u) {
                     const char *component = strchr("xyzw", o.member_field_name[0]);
                     if (component) o.member_field_index = (uint32_t)(component - "xyzw");
+                    else {
+                        component = strchr("rgba", o.member_field_name[0]);
+                        if (component) o.member_field_index = (uint32_t)(component - "rgba");
+                    }
                 }
             }
             uint32_t result = tsir_source_push_expr(b, f, o);
-            /* Immutable let/parameter projections are values. Global/local
-             * mutable chains are references and acquire a load only at use. */
-            TsirIrExprKind root_kind = f->exprs[base].kind;
-            bool is_reference = root_kind == TSIR_IR_EXPR_GLOBAL_REF ||
-                root_kind == TSIR_IR_EXPR_INDEX || root_kind == TSIR_IR_EXPR_MEMBER ||
-                root_kind == TSIR_IR_EXPR_LOCAL_REF;
-            return is_reference ? load(b, f, result, reference) : result;
+            /* Preserve the retained semantic reference category, independently
+             * of whether the root declaration permits assignment. */
+            return is_reference(b, f, base) ? load(b, f, result, reference) : result;
         }
         case EXPRESSION_NOT: case EXPRESSION_NEGATE: case EXPRESSION_COMPLEMENT:
             o.kind = TSIR_IR_EXPR_UNARY;
@@ -157,6 +227,7 @@ uint32_t tsir_source_expr(TsirSourceBridge *b, TsirSourceFunction *f, uint32_t i
             o.kind = TSIR_IR_EXPR_CALL;
             o.call_name = tsir_source_name(b, e->value.call.callee);
             o.call_is_builtin = true;
+            bool is_constructor = constructor(b, e);
             for (uint32_t i = 0u; i < b->compiler->function_count; ++i)
                 if (source_spans_equal(&b->source, e->value.call.callee, b->compiler->functions[i].name)) o.call_is_builtin = false;
             /* Reserve parent arguments before recursion; nested constructors
@@ -174,16 +245,23 @@ uint32_t tsir_source_expr(TsirSourceBridge *b, TsirSourceFunction *f, uint32_t i
                     (void)tsir_source_fail(b, e->source_offset, "invalid typed argument chain");
                     return TSIR_IR_NONE;
                 }
-                f->args[o.args_start + i] = tsir_source_expr(b, f, b->compiler->arguments[cursor].expression, false, depth + 1u);
+                uint32_t argument = b->compiler->arguments[cursor].expression;
+                bool reference_argument = !is_constructor && o.call_is_builtin && i == 0u &&
+                    (!strncmp(o.call_name, "atomic", 6u) || !strcmp(o.call_name, "arrayLength"));
+                if (reference_argument && argument < b->compiler->expression_count &&
+                    b->compiler->expressions[argument].kind == EXPRESSION_ADDRESS)
+                    argument = b->compiler->expressions[argument].left;
+                f->args[o.args_start + i] = tsir_source_expr(b, f, argument, reference_argument, depth + 1u);
                 cursor = b->compiler->arguments[cursor].next;
             }
-            if (!strcmp(o.call_name, "f32") || !strcmp(o.call_name, "u32") ||
-                !strcmp(o.call_name, "i32") || !strcmp(o.call_name, "f16")) o.kind = TSIR_IR_EXPR_CONSTRUCT;
+            if (is_constructor) o.kind = TSIR_IR_EXPR_CONSTRUCT;
             break;
         }
         case EXPRESSION_ADDRESS: case EXPRESSION_DEREFERENCE:
             o.kind = e->kind == EXPRESSION_ADDRESS ? TSIR_IR_EXPR_ADDRESS_OF : TSIR_IR_EXPR_DEREF;
             o.inner = tsir_source_expr(b, f, e->left, e->kind == EXPRESSION_ADDRESS, depth + 1u);
+            if (e->kind == EXPRESSION_DEREFERENCE)
+                return load(b, f, tsir_source_push_expr(b, f, o), reference);
             break;
         case EXPRESSION_ADD: case EXPRESSION_SUBTRACT: case EXPRESSION_MULTIPLY:
         case EXPRESSION_COMPARE: case EXPRESSION_AND: case EXPRESSION_OR:

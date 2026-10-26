@@ -39,6 +39,18 @@ static bool type_eql(const DxilType *a, const DxilType *b) {
             return a->elem == b->elem && a->len == b->len;
         case DXIL_TKIND_VECTOR:
             return a->elem == b->elem && a->len == b->len;
+        case DXIL_TKIND_VOID:
+        case DXIL_TKIND_I1:
+        case DXIL_TKIND_I8:
+        case DXIL_TKIND_I16:
+        case DXIL_TKIND_I32:
+        case DXIL_TKIND_I64:
+        case DXIL_TKIND_F16:
+        case DXIL_TKIND_F32:
+        case DXIL_TKIND_F64:
+        case DXIL_TKIND_METADATA:
+        case DXIL_TKIND_LABEL:
+            return true;
         default:
             return true;
     }

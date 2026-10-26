@@ -3,6 +3,7 @@
 #include "tsir_frontend.h"
 
 #include "tsir_frontend_expr.h"
+#include "tsir_frontend_internal.h"
 #include "tsir_frontend_passes.h"
 
 #include <stdlib.h>
@@ -297,6 +298,14 @@ static bool tree_contains_local(const TsirIrFunction *func,
                 }
             }
             return false;
+        case TSIR_IR_EXPR_BOOL_LIT:
+        case TSIR_IR_EXPR_INT_LIT:
+        case TSIR_IR_EXPR_FLOAT_LIT:
+        case TSIR_IR_EXPR_PARAM_REF:
+        case TSIR_IR_EXPR_GLOBAL_REF:
+        case TSIR_IR_EXPR_ADDRESS_OF:
+        case TSIR_IR_EXPR_DEREF:
+        case TSIR_IR_EXPR_CONSTRUCT:
         default:
             return false;
     }
@@ -338,6 +347,15 @@ static bool tree_contains_index(const TsirIrFunction *func,
                 }
             }
             return false;
+        case TSIR_IR_EXPR_BOOL_LIT:
+        case TSIR_IR_EXPR_INT_LIT:
+        case TSIR_IR_EXPR_FLOAT_LIT:
+        case TSIR_IR_EXPR_PARAM_REF:
+        case TSIR_IR_EXPR_GLOBAL_REF:
+        case TSIR_IR_EXPR_ADDRESS_OF:
+        case TSIR_IR_EXPR_DEREF:
+        case TSIR_IR_EXPR_CONSTRUCT:
+        case TSIR_IR_EXPR_LOCAL_REF:
         default:
             return false;
     }
@@ -383,6 +401,14 @@ static bool index_field_contains(const TsirIrFunction *func,
                 }
             }
             return false;
+        case TSIR_IR_EXPR_BOOL_LIT:
+        case TSIR_IR_EXPR_INT_LIT:
+        case TSIR_IR_EXPR_FLOAT_LIT:
+        case TSIR_IR_EXPR_PARAM_REF:
+        case TSIR_IR_EXPR_GLOBAL_REF:
+        case TSIR_IR_EXPR_ADDRESS_OF:
+        case TSIR_IR_EXPR_DEREF:
+        case TSIR_IR_EXPR_CONSTRUCT:
         default:
             return false;
     }

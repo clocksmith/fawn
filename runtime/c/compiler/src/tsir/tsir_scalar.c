@@ -230,6 +230,8 @@ TsirStatus tsir_read_f32(const uint8_t *bytes, size_t byte_len,
         case TSIR_SCALAR_BF16:
             *out = tsir_bf16_to_f32(read_u16_le(bytes + offset));
             return TSIR_OK;
+        case TSIR_SCALAR_I32:
+        case TSIR_SCALAR_U32:
         default:
             return TSIR_ERR_UNSUPPORTED;
     }
@@ -267,6 +269,8 @@ TsirStatus tsir_write_f32(uint8_t *bytes, size_t byte_len,
         case TSIR_SCALAR_BF16:
             write_u16_le(bytes + offset, tsir_f32_to_bf16_rne(value));
             return TSIR_OK;
+        case TSIR_SCALAR_I32:
+        case TSIR_SCALAR_U32:
         default:
             return TSIR_ERR_UNSUPPORTED;
     }

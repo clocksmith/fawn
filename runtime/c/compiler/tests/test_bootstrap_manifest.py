@@ -126,6 +126,21 @@ class BootstrapManifestTest(unittest.TestCase):
         self.assertEqual(baseline[:6], entries[:6])
         self.compare_zig(changed)
 
+    def test_module_globals_are_lowered_through_typed_owner(self) -> None:
+        path = self.root / "runtime/zig/tests/tsir/bootstrap/gather.wgsl"
+        original = path.read_text()
+        cases = [
+            ("const zero: u32 = 0u;\n", "let h: u32 = gid.x + zero;"),
+            ("alias Index = u32;\nconst zero: Index = 0u;\n", "let h: u32 = gid.x + zero;"),
+            ("var<private> scratch: u32;\n", "scratch = gid.x;\n    let h: u32 = scratch;"),
+            ("var<workgroup> scratch: array<u32, 64>;\n", "scratch[gid.x] = gid.x;\n    let h: u32 = scratch[gid.x];"),
+            ("override zero: u32 = 0u;\n", "let h: u32 = gid.x + zero;"),
+        ]
+        for declarations, statement in cases:
+            with self.subTest(declarations=declarations):
+                path.write_text(declarations + original.replace("let h: u32 = gid.x;", statement))
+                self.compare_zig(self.c_manifest())
+
     def test_wrong_typed_input_is_rejected(self) -> None:
         path = self.root / "runtime/zig/tests/tsir/bootstrap/gather.wgsl"
         path.write_text(path.read_text().replace("let row: u32 = indices[t];",

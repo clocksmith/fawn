@@ -154,10 +154,15 @@ See [bootstrap evidence and limits](../../TSIR_BOOTSTRAP.md).
   keeps Zig's exact depth cap 8.
 - G-MANIFEST-PIPELINE: real source lowering, planning and identity generation
   now execute through shared C owners. The adapter has explicit compiler pools
-  and a 1 MiB source cap. Module constants/memory roots, switch/continuing and
-  unsupported expressions reject with diagnostics; no source-pattern classifier
-  or Zig fallback substitutes for these paths. These limits do not affect the
-  three bootstrap fixtures. Wider WGSL equivalence remains a separate gate.
+  and a 1 MiB source cap. Constants, aliases, symbolic overrides, private and
+  workgroup roots now use the compiler's existing declaration/specialization
+  owners. Switch, continuing, break-if and phony assignment are projected like
+  retained Zig TSIR; the projection is not an executable general WGSL IR.
+  Five mutated global-declaration fixtures compare exactly against Zig.
+  Packed-integer builtin expansion and ldexp argument materialization remain
+  adapter gaps; immediate roots still reject because retained TSIR has no such
+  address-space representation. Wider WGSL equivalence remains a separate gate.
+  No source-pattern classifier or Zig fallback substitutes for these paths.
 - G-ORACLE-CLI: resolved by the standalone C CLI, including accepted-and-ignored
   provenance flags, first errors and process failures. Shape/byte overflow and
   f32/f16 conversion boundaries are covered against retained Zig.

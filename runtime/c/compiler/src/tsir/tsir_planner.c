@@ -158,6 +158,8 @@ bool tsir_supports_numerical_mode(const TsirTargetDescriptor *descriptor,
         case TSIR_SCALAR_BF16:
             mode = "bf16";
             break;
+        case TSIR_SCALAR_I32:
+        case TSIR_SCALAR_U32:
         default:
             return false;
     }

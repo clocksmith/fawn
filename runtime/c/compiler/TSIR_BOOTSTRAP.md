@@ -60,9 +60,37 @@ compiler, TSIR, planner, reference, JSON and digest owners; it removes the
 previous manifest writer's malformed trailing quote and hardens publication.
 
 The source adapter has a 1 MiB cap, explicit compiler pools and bounded walks.
-Module constants/memory roots, switch/continuing and unsupported expressions
-reject with diagnostics. These limits do not affect the three bootstrap
-fixtures. Broader WGSL equivalence, unrelated interpreter/emitter corners,
+Constants, aliases, overrides and private/workgroup roots use existing compiler
+owners. Switch/continuing, break-if and phony assignments now preserve the
+retained TSIR projection. Packed-integer builtin expansion and ldexp argument
+materialization still need matching IR projection; unsupported immediate roots
+reject explicitly. Broader WGSL equivalence, unrelated interpreter/emitter corners,
 production-library integration, GPU execution and browser/release qualification
 remain separate gates. This inventory does not establish universal runtime
 parity or an advantage over Dawn.
+
+## Dot Linux follow-up
+
+The same base plus the follow-up code passes the retained checks on GCC 14.2
+and actual Zig 0.15.2. Five additional mutated sources exercise module constants,
+aliases, private roots, workgroup arrays and overrides with byte-identical
+manifests. The manifest suite now has seven passing tests. Another 23 control
+and 18 expression adapter checks cover continuing/switch, phony assignment,
+reference categories, constructors, swizzles and binary64 literal payloads.
+The retained 388 checks, 76 source checks, 599 injected allocation failures,
+67 oracle comparisons and target identity checks continue to pass.
+
+Linux allocator-test builds select POSIX declarations before the injected
+allocator header, and initial source-workspace allocation failure preserves
+errno with a regression. Cross-owner style and 35 tool tests pass; the aggregate
+build reaches runtime-cli then stops because this host lacks `xcb/xcb.h`.
+No full aggregate/global pass is claimed. The earlier dot manifest ASan/UBSan
+harness passed with leak detection disabled; LeakSanitizer fails under ptrace.
+That earlier sanitizer receipt does not qualify this subsequent source batch.
+
+Production integration cannot be a source-list-only change: the compiler's
+public ABI forbids allocator dependencies, while these TSIR owners allocate;
+its inventory also serves WASI and Windows, unlike the host filesystem tools.
+Separate developer tools remain the real consumers. Retained DXIL native
+placeholder behavior is a shared production-readiness limit, not a new C
+parity gap. No default, ABI, acceptance threshold or security policy changed.
