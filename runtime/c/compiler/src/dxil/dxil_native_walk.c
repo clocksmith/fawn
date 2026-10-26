@@ -35,6 +35,15 @@ static DxilIrBuiltin param_builtin_to_mapping(DxilIrBuiltin builtin,
         case DXIL_IR_BUILTIN_FRONT_FACING:
             *out = DXIL_BUILTIN_FRONT_FACING;
             return true;
+        case DXIL_IR_BUILTIN_NONE:
+        case DXIL_IR_BUILTIN_FRAG_DEPTH:
+        case DXIL_IR_BUILTIN_NUM_WORKGROUPS:
+        case DXIL_IR_BUILTIN_SAMPLE_INDEX:
+        case DXIL_IR_BUILTIN_SAMPLE_MASK:
+        case DXIL_IR_BUILTIN_SUBGROUP_SIZE:
+        case DXIL_IR_BUILTIN_SUBGROUP_INVOCATION_ID:
+        case DXIL_IR_BUILTIN_CLIP_DISTANCES:
+        case DXIL_IR_BUILTIN_PRIMITIVE_INDEX:
         default:
             *out = DXIL_BUILTIN_OTHER;
             return false;

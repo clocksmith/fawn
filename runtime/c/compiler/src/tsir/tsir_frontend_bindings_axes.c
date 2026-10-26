@@ -28,6 +28,7 @@ static const char *type_tag_name(TsirIrTypeKind kind) {
             return "struct_";
         case TSIR_IR_TYPE_REF:
             return "ref";
+        case TSIR_IR_TYPE_OTHER:
         default:
             return "other";
     }
@@ -45,6 +46,7 @@ static const char *addr_space_name(TsirIrAddrSpace space) {
             return "uniform";
         case TSIR_IR_SPACE_STORAGE:
             return "storage";
+        case TSIR_IR_SPACE_HANDLE:
         default:
             return "handle";
     }
@@ -192,6 +194,9 @@ static int extract_elem_and_shape(const TsirWgslModule *module,
             *elem_out = TSIR_SCALAR_U32;
             return 1;
         }
+        case TSIR_IR_TYPE_ATOMIC:
+        case TSIR_IR_TYPE_REF:
+        case TSIR_IR_TYPE_OTHER:
         default:
             return 0;
     }
@@ -248,7 +253,8 @@ TsirStatus tsir_frontend_extract_bindings(const TsirWgslModule *module,
             if (tsir_ir_unwrap_ref(module, global->ty, &cursor) &&
                 cursor < module->type_count) {
                 t = &module->types[cursor];
-                tag = type_tag_name(t->kind);
+                tag = t->kind == TSIR_IR_TYPE_OTHER && t->unlowerable_tag != NULL ?
+                    t->unlowerable_tag : type_tag_name(t->kind);
             }
             snprintf(path, sizeof(path),
                 "functions[%u].bindings[%u:%u]", func_index,

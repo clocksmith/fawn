@@ -160,6 +160,7 @@ static void record_context(DxilDiagnostic *diagnostic,
     }
     memcpy(diagnostic->context, source + line_start + snippet_start,
         snippet_len);
+    /* CAP counts source bytes; the record reserves one extra terminator byte. */
     diagnostic->context[snippet_len] = '\0';
     diagnostic->context_len = snippet_len;
     diagnostic->line = line;
@@ -179,10 +180,11 @@ void dxil_diagnostic_set(DxilDiagnostic *diagnostic,
     record_context(diagnostic, source, source_len, offset);
     if (diagnostic->line != 0 && diagnostic->context_len != 0) {
         written = snprintf(diagnostic->message,
-            sizeof(diagnostic->message), "%s: %s at %u:%u near `%s`",
+            sizeof(diagnostic->message), "%s: %s at %u:%u near `%.*s`",
             dxil_diagnostic_stage_name(stage),
             dxil_diagnostic_kind_name(kind), diagnostic->line,
-            diagnostic->column, diagnostic->context);
+            diagnostic->column, (int)diagnostic->context_len,
+            diagnostic->context);
     } else {
         written = snprintf(diagnostic->message,
             sizeof(diagnostic->message), "%s: %s",

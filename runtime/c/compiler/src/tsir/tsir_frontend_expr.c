@@ -111,6 +111,20 @@ static bool comparison_shape(const TsirIrFunction *func,
                 (cond->binary_op == TSIR_IR_BIN_GREATER_EQUAL);
             *name_expr_id = cond->binary_lhs;
             return true;
+        case TSIR_IR_BIN_ADD:
+        case TSIR_IR_BIN_SUB:
+        case TSIR_IR_BIN_MUL:
+        case TSIR_IR_BIN_DIV:
+        case TSIR_IR_BIN_REM:
+        case TSIR_IR_BIN_BIT_AND:
+        case TSIR_IR_BIN_BIT_OR:
+        case TSIR_IR_BIN_BIT_XOR:
+        case TSIR_IR_BIN_SHIFT_LEFT:
+        case TSIR_IR_BIN_SHIFT_RIGHT:
+        case TSIR_IR_BIN_EQUAL:
+        case TSIR_IR_BIN_NOT_EQUAL:
+        case TSIR_IR_BIN_LOGICAL_AND:
+        case TSIR_IR_BIN_LOGICAL_OR:
         default:
             return false;
     }
@@ -326,6 +340,14 @@ int tsir_expr_extract_step(const TsirWgslModule *module,
             }
             break;
         }
+        case TSIR_IR_ASSIGN_MUL:
+        case TSIR_IR_ASSIGN_DIV:
+        case TSIR_IR_ASSIGN_REM:
+        case TSIR_IR_ASSIGN_BIT_AND:
+        case TSIR_IR_ASSIGN_BIT_OR:
+        case TSIR_IR_ASSIGN_BIT_XOR:
+        case TSIR_IR_ASSIGN_SHIFT_LEFT:
+        case TSIR_IR_ASSIGN_SHIFT_RIGHT:
         default:
             return 0;
     }
@@ -410,6 +432,14 @@ TsirStepSign tsir_expr_detect_step_sign(const TsirIrFunction *func,
             }
             return TSIR_STEP_UNKNOWN;
         }
+        case TSIR_IR_ASSIGN_MUL:
+        case TSIR_IR_ASSIGN_DIV:
+        case TSIR_IR_ASSIGN_REM:
+        case TSIR_IR_ASSIGN_BIT_AND:
+        case TSIR_IR_ASSIGN_BIT_OR:
+        case TSIR_IR_ASSIGN_BIT_XOR:
+        case TSIR_IR_ASSIGN_SHIFT_LEFT:
+        case TSIR_IR_ASSIGN_SHIFT_RIGHT:
         default:
             return TSIR_STEP_UNKNOWN;
     }

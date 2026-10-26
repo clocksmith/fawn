@@ -232,6 +232,14 @@ static void axes_walk_stmt(AxisCtx *ctx, uint32_t id) {
             }
             return;
         }
+        case TSIR_IR_STMT_LOCAL_DECL:
+        case TSIR_IR_STMT_EXPR:
+        case TSIR_IR_STMT_ASSIGN:
+        case TSIR_IR_STMT_RETURN:
+        case TSIR_IR_STMT_SWITCH:
+        case TSIR_IR_STMT_BREAK:
+        case TSIR_IR_STMT_CONTINUE:
+        case TSIR_IR_STMT_DISCARD:
         default:
             return;
     }

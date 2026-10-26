@@ -30,7 +30,7 @@ coordinator's clarification that CSL can be ignored; mapped, not built.
 | emit_csl_f16_pack.zig (48) | done (text helpers only) | `tsir_emit.c` |
 | emit_dtype_routing.zig (73) | done | `tsir_emit.c` |
 | emit_dxil.zig (71) | done | `tsir_emit.c` skeleton plus `tsir_kernel_body.c` DXIL bodies for fused_gemv, rms_norm, gather |
-| emit_kernel_body.zig (896) | done, non-CSL only | `tsir_kernel_body.c` (758 lines): WGSL, MSL, DXIL, SPIR-V bodies for fused_gemv, rms_norm, gather, exact texts as read from Zig; all other ops and the CSL backend return TSIR_ERR_UNSUPPORTED. CSL bodies are quarantined, not built. Literal epsilon uses a shortest-round-trip f64 writer; scientific-exponent form is unasserted (see G-EPSILON-FORMAT). |
+| emit_kernel_body.zig (896) | done, non-CSL only | `tsir_kernel_body.c` (758 lines): WGSL, MSL, DXIL, SPIR-V bodies for fused_gemv, rms_norm, gather, exact texts as read from Zig; all other ops and the CSL backend return TSIR_ERR_UNSUPPORTED. CSL bodies are quarantined, not built. Literal epsilon uses a shortest-round-trip f64 writer; extreme plain-decimal cases are cross-checked (see G-EPSILON-FORMAT). |
 | emit_kernel_body_attention.zig (443) | quarantined, not built | CSL-only attention body |
 | emit_kernel_body_conv1d.zig (110) | quarantined, not built | CSL-only |
 | emit_kernel_body_gated.zig (115) | quarantined, not built | CSL-only |
@@ -44,7 +44,7 @@ coordinator's clarification that CSL can be ignored; mapped, not built.
 | emit_text_skeleton.zig (132) | done | `tsir_emit.c`: header, metadata, realization-only body_comment, and semantic-aware path (header, metadata, kernel body; no partial text on failure) |
 | emit_webgpu.zig (141) | done | `tsir_emit.c` realization-only skeleton plus `tsir_kernel_body.c` WGSL bodies for fused_gemv, rms_norm, gather |
 | family_hint.zig (183) | done | `tsir_frontend.c` `tsir_family_hint_classify` (pure predicate, retained) plus `tsir_family_hint_infer_ir` (indexed-access coverage, indirect-access detection with the Zig depth cap 8 for local aliases) |
-| frontend.zig (885) | done | `tsir_frontend_lower.c`, `tsir_frontend_bindings_axes.c`, `tsir_frontend_axes.c`, `tsir_frontend_reductions.c`, plus `tsir_wgsl_ir.c` (C mirror of `../wgsl/ir/ir.zig`, `ir_query`, `layout_utils`). Per-function bindings, axes, reductions, collectives, rejections, family hint, semantic body; contract_version 1. Approximations: IR OTHER-type detail is "other" (see G-IR-OTHER); general tree walks have a 512 depth guard (see G-DEPTH-GUARD). |
+| frontend.zig (885) | done | `tsir_frontend_lower.c`, `tsir_frontend_bindings_axes.c`, `tsir_frontend_axes.c`, `tsir_frontend_reductions.c`, plus `tsir_wgsl_ir.c` (C mirror of `../wgsl/ir/ir.zig`, `ir_query`, `layout_utils`). Per-function bindings, axes, reductions, collectives, rejections, family hint, semantic body; contract_version 1. Approximations: manually constructed OTHER without metadata uses "other" (see G-IR-OTHER); general tree walks have a 512 depth guard (see G-DEPTH-GUARD). |
 | frontend_body.zig (178) | done | `tsir_frontend_passes.c` body inference, including RMSNorm epsilon inference (uniform path `uniform:u.eps` with std430 field offset, or literal fallback) |
 | frontend_collectives.zig (246) | done | `tsir_frontend_passes.c` collectives walker (statement-walk order, switch expressions only, axis from innermost recognized for loop or -1) |
 | frontend_expr.zig (637) | done | `tsir_frontend_expr.c` literal/symbolic upper bounds, step, init bound, dispatch-guard scan, step-sign detection, dispatch-axis letter |
@@ -53,9 +53,9 @@ coordinator's clarification that CSL can be ignored; mapped, not built.
 | mod.zig (57) | implemented | `tsir.h` re-exports the non-CSL public owners; both standalone tools consume the facade. |
 | planner.zig (295) | done | `tsir_planner.c` |
 | planner_support.zig (47) | done | `tsir_planner.c` |
-| reference_extended_ops.zig (841) | done, with transcendental caveat (see G-TRANSCENDENTAL-BIT) | `tsir_extended.c`, `tsir_extended_ops.c`: identity, residual_add, gated (gelu/silu/sigmoid), attention_scores, l2_normalize, conv1d_depthwise all implemented and tested; linear_attention dispatch preserves Zig's fall-through (see G-LINEAR-DEAD-PATH) and its math is implemented separately as `tsir_linear_attention_step` and tested directly. Transcendentals use double-precision evaluation rounded to f32 (`tsir_transcendental.c`), not Zig's declared minimax polynomials. |
+| reference_extended_ops.zig (841) | done, with transcendental caveat (see G-TRANSCENDENTAL-BIT) | `tsir_extended.c`, `tsir_extended_ops.c`: identity, residual_add, gated (gelu/silu/sigmoid), attention_scores, l2_normalize, conv1d_depthwise all implemented and tested; linear_attention dispatch preserves Zig's fall-through (see G-LINEAR-DEAD-PATH) and its math is implemented separately as `tsir_linear_attention_step` and tested directly. Transcendentals follow pinned Zig f32 paths; see G-TRANSCENDENTAL-BIT. |
 | reference_inputs.zig (26) | done | `tsir_scalar.c` |
-| reference_interpreter.zig (762) | done | `tsir_reference.c`, `tsir_reference_bodies.c`, `tsir_extended.c`, `tsir_extended_ops.c`: full dispatch order including extended ops; transcendental table metadata retained, plus double-precision exp/tanh/sqrt evaluation (see G-TRANSCENDENTAL-BIT) |
+| reference_interpreter.zig (762) | done | `tsir_reference.c`, `tsir_reference_bodies.c`, `tsir_extended.c`, `tsir_extended_ops.c`: full dispatch order including extended ops; transcendental table metadata retained, plus pinned exp/tanh and existing sqrt evaluation (see G-TRANSCENDENTAL-BIT) |
 | reference_reduction.zig (497) | done | `tsir_reference.c` generic rank path (ranks 1, 2, 3, 4+) |
 | reference_scalar.zig (113) | done | `tsir_scalar.c` |
 | reference_types.zig (18) | done | `tsir_reference.h` result type |
@@ -79,12 +79,8 @@ See [bootstrap evidence and limits](../../TSIR_BOOTSTRAP.md).
   `tsir_targets.c`; the manifest pipeline installs actual correctness hashes
   into planned functions. The older low-level planner API still accepts its
   reduced descriptor, so standalone callers must supply identity explicitly.
-- G-F64: Zig f64 `{d}` formatting is verified only for the plain
-  cases in the tests (0.5-style values, 1.5, 0.000001, integers).
-  Scientific-notation exponents, negative zero, and other exotic
-  values need a Zig cross-check before any manifest digest is
-  compared byte-for-byte against Zig output. The C writer is
-  deterministic and round-trips, but determinism is not Zig equality.
+- G-F64: Shared tsir_format.c now matches 4,152 actual Zig 0.15.2 plain-decimal outputs, including signed zero, subnormals and extreme finite values. Nonfinite rejection preserves errno/fenv including signaling NaNs. This sample is not exhaustive over binary64.
+
 - G-EMITTER-DIGEST: bootstrap manifests now hash the actual retained
   reference emitter source concatenations, exactly matching the format's Zig
   reference identity. This identifies those reference inputs, not C source.
@@ -97,11 +93,8 @@ See [bootstrap evidence and limits](../../TSIR_BOOTSTRAP.md).
 - G-STRINGS: the C API uses NUL-terminated strings, so TSIR names
   containing a NUL byte cannot be represented. Zig slices can contain
   them. No test covers that case because the API cannot express it.
-- G-MINMAX-NAN: C min/max combine propagates NaN, matching the Zig
-  scalar helper's documented propagate contract. If Zig's `@min`/`@max`
-  on the coordinator's toolchain instead follow C `fmin`/`fmax`
-  (NaN-dropping) semantics, the rank-1 min/max NaN tests would need
-  revisiting. The tests assert propagation, per the Zig comment.
+- G-MINMAX-NAN: The pinned Linux x86-64 reference drops one NaN and selects the second payload for two NaNs, without FE_INVALID. The AArch64 reference instead uses native minimum/maximum-number behavior: signaling NaNs quiet and raise FE_INVALID, and quiet payload selection follows that target. C implements both target paths. Signed-zero ties retain numeric-only comparison where the reference does not promise their sign.
+
 - G-GEMV-NANINF: Zig GEMV code does not check `nan_inf`, although
   its docstring summary mentions propagate. C follows the code, not
   the docstring. If the docstring is the intended contract, GEMV
@@ -122,30 +115,12 @@ See [bootstrap evidence and limits](../../TSIR_BOOTSTRAP.md).
   reproduction of observed Zig behavior, not a redefinition; if the
   coordinator fixes the Zig input convention, the C dispatch must be
   revisited.
-- G-TRANSCENDENTAL-BIT: the Zig interpreter header declares
-  exp/log/sin/cos/tan/tanh/rsqrt/recip as sollya-bounded minimax
-  polynomials with ULP bounds (1,1,1,1,2,2,1,1) and states libm is
-  NOT used, but the Zig source in this tree calls std.math.exp/
-  tanh/sqrt, whose exact bit output cannot be established from this
-  VM (no Zig toolchain, no Zig binary). C evaluates exp/tanh/sqrt
-  in double precision and rounds to f32 (within about 1 ULP of the
-  true value). Tests assert exactly-representable cases bit-exactly
-  and everything else within a stated tolerance. Bit parity for
-  every transcendental-bearing op (gated, attention_scores,
-  l2_normalize, linear_attention step) stays unestablished pending
-  a Zig cross-check. log/sin/cos/tan/rsqrt/recip have no C function.
-- G-EPSILON-FORMAT: kernel-body literal epsilon uses a
-  shortest-round-trip f64 writer in Zig {d} style. Tests assert
-  only plain-decimal values (0.00001, 0.5); the scientific-exponent
-  form was not cross-checked against a Zig binary and must not be
-  asserted as Zig-equal without one. CSL attention scale and l2_eps
-  used Zig {e}; those paths are quarantined and unbuilt.
-- G-IR-OTHER: the C WGSL IR mirror collapses type kinds the frontend
-  never distinguishes (samplers, textures, storage textures) into
-  TSIR_IR_TYPE_OTHER. A global of that kind gets the binding-type
-  rejection with detail "other" instead of Zig's specific type tag.
-  Documented approximation, not a silent mismatch: the rejection
-  reason and path match, the detail string differs.
+- G-TRANSCENDENTAL-BIT: exp/tanh now use source-faithful Zig 0.15.2 f32 algorithms with retained MIT/Sun notices; sqrt retains its existing path. A direct differential checks 470 runtime inputs and 36 min/max pairs: 3,354 bit-exact comparisons and eight explicitly qualified signed-zero ties. This is not an exhaustive input or whole-interpreter proof. Header-only declared log/sin/cos/tan/rsqrt/recip are not added as unused alternate engines.
+
+- G-EPSILON-FORMAT: The shared formatter replaces the truncated fixed buffer and incorrect exponent switch. All four non-CSL epsilon emitters and canonical identities pass the same 4,152 actual Zig decimal cases. CSL formatting remains excluded.
+
+- G-IR-OTHER: Source adaptation retains actual sampler/texture/storage-texture tag names for shared retained types; five actual Zig semantic digest/rejection cases pass. Manually constructed OTHER types without metadata still use the generic other detail. C-only type kinds without retained Zig equivalents are not claimed equivalent.
+
 - G-DEPTH-GUARD: general IR tree walks in the C frontend carry a
   512 depth guard (the Zig walkers are recursive without an explicit
   cap in the code read). A tree deeper than 512 levels stops
@@ -159,8 +134,11 @@ See [bootstrap evidence and limits](../../TSIR_BOOTSTRAP.md).
   owners. Switch, continuing, break-if and phony assignment are projected like
   retained Zig TSIR; the projection is not an executable general WGSL IR.
   Five mutated global-declaration fixtures compare exactly against Zig.
-  Packed-integer builtin expansion and ldexp argument materialization remain
-  adapter gaps; immediate roots still reject because retained TSIR has no such
+  Packed-integer builtin expansion and ldexp argument materialization now
+  have 21 shared semantic differential cases overall. Two admission differences
+  remain: C accepts inferred integer-vector ldexp and local-const packed unpack
+  inputs that pinned Zig rejects as TypeMismatch. General WGSL-IR structural
+  identity is not established; immediate roots still reject because retained TSIR has no such
   address-space representation. Wider WGSL equivalence remains a separate gate.
   No source-pattern classifier or Zig fallback substitutes for these paths.
 - G-ORACLE-CLI: resolved by the standalone C CLI, including accepted-and-ignored

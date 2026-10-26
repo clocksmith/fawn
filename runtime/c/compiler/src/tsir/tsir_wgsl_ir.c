@@ -118,6 +118,8 @@ bool tsir_ir_type_alignment(const TsirWgslModule *module, uint32_t ty,
             *out = max_align;
             return true;
         }
+        case TSIR_IR_TYPE_REF:
+        case TSIR_IR_TYPE_OTHER:
         default:
             *out = 4;
             return true;
@@ -220,6 +222,8 @@ bool tsir_ir_type_size(const TsirWgslModule *module, uint32_t ty,
             *out = round_up_u32(offset, max_align, &ok);
             return ok;
         }
+        case TSIR_IR_TYPE_REF:
+        case TSIR_IR_TYPE_OTHER:
         default:
             *out = 4;
             return true;
@@ -288,6 +292,17 @@ bool tsir_ir_find_global_base(const TsirIrFunction *func,
             case TSIR_IR_EXPR_LOAD:
                 cursor = node->inner;
                 break;
+            case TSIR_IR_EXPR_BOOL_LIT:
+            case TSIR_IR_EXPR_INT_LIT:
+            case TSIR_IR_EXPR_FLOAT_LIT:
+            case TSIR_IR_EXPR_PARAM_REF:
+            case TSIR_IR_EXPR_LOCAL_REF:
+            case TSIR_IR_EXPR_ADDRESS_OF:
+            case TSIR_IR_EXPR_DEREF:
+            case TSIR_IR_EXPR_UNARY:
+            case TSIR_IR_EXPR_BINARY:
+            case TSIR_IR_EXPR_CALL:
+            case TSIR_IR_EXPR_CONSTRUCT:
             default:
                 return false;
         }
@@ -340,6 +355,18 @@ uint32_t tsir_ir_resolve_value_alias(const TsirIrFunction *func,
                     break;
                 }
                 return current;
+            case TSIR_IR_EXPR_BOOL_LIT:
+            case TSIR_IR_EXPR_INT_LIT:
+            case TSIR_IR_EXPR_FLOAT_LIT:
+            case TSIR_IR_EXPR_PARAM_REF:
+            case TSIR_IR_EXPR_GLOBAL_REF:
+            case TSIR_IR_EXPR_ADDRESS_OF:
+            case TSIR_IR_EXPR_DEREF:
+            case TSIR_IR_EXPR_UNARY:
+            case TSIR_IR_EXPR_BINARY:
+            case TSIR_IR_EXPR_CALL:
+            case TSIR_IR_EXPR_MEMBER:
+            case TSIR_IR_EXPR_INDEX:
             default:
                 return current;
         }

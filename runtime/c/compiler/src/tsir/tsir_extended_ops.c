@@ -116,6 +116,25 @@ int tsir_try_attention(const TsirSemantic *semantic,
             case TSIR_ROLE_KV_LEN_BUFFER:
             case TSIR_ROLE_PAGE_TABLE:
                 break;
+            case TSIR_ROLE_MATRIX:
+            case TSIR_ROLE_VECTOR:
+            case TSIR_ROLE_INPUT:
+            case TSIR_ROLE_SCALE:
+            case TSIR_ROLE_INDICES:
+            case TSIR_ROLE_TABLE:
+            case TSIR_ROLE_SUMMAND_A:
+            case TSIR_ROLE_SUMMAND_B:
+            case TSIR_ROLE_GATE:
+            case TSIR_ROLE_KEY_PROJECTION:
+            case TSIR_ROLE_VALUE_PROJECTION:
+            case TSIR_ROLE_KEY_CACHE:
+            case TSIR_ROLE_VALUE_CACHE:
+            case TSIR_ROLE_DECODE_POSITION:
+            case TSIR_ROLE_KEY_OUTPUT:
+            case TSIR_ROLE_VALUE_OUTPUT:
+            case TSIR_ROLE_WEIGHT:
+            case TSIR_ROLE_BIAS:
+            case TSIR_ROLE_LINEAR_STATE:
             default:
                 return TRY_NOMATCH;
         }
@@ -430,6 +449,27 @@ int tsir_try_conv(const TsirSemantic *semantic,
                 oi = index;
                 have_o = true;
                 break;
+            case TSIR_ROLE_MATRIX:
+            case TSIR_ROLE_VECTOR:
+            case TSIR_ROLE_SCALE:
+            case TSIR_ROLE_INDICES:
+            case TSIR_ROLE_TABLE:
+            case TSIR_ROLE_QUERY:
+            case TSIR_ROLE_KEY:
+            case TSIR_ROLE_VALUE:
+            case TSIR_ROLE_KV_LEN_BUFFER:
+            case TSIR_ROLE_PAGE_TABLE:
+            case TSIR_ROLE_SUMMAND_A:
+            case TSIR_ROLE_SUMMAND_B:
+            case TSIR_ROLE_GATE:
+            case TSIR_ROLE_KEY_PROJECTION:
+            case TSIR_ROLE_VALUE_PROJECTION:
+            case TSIR_ROLE_KEY_CACHE:
+            case TSIR_ROLE_VALUE_CACHE:
+            case TSIR_ROLE_DECODE_POSITION:
+            case TSIR_ROLE_KEY_OUTPUT:
+            case TSIR_ROLE_VALUE_OUTPUT:
+            case TSIR_ROLE_LINEAR_STATE:
             default:
                 return TRY_NOMATCH;
         }
@@ -668,6 +708,25 @@ int tsir_try_linear_attention(const TsirSemantic *semantic,
                 oi = index;
                 have_o = true;
                 break;
+            case TSIR_ROLE_MATRIX:
+            case TSIR_ROLE_VECTOR:
+            case TSIR_ROLE_INPUT:
+            case TSIR_ROLE_SCALE:
+            case TSIR_ROLE_INDICES:
+            case TSIR_ROLE_TABLE:
+            case TSIR_ROLE_KV_LEN_BUFFER:
+            case TSIR_ROLE_PAGE_TABLE:
+            case TSIR_ROLE_SUMMAND_A:
+            case TSIR_ROLE_SUMMAND_B:
+            case TSIR_ROLE_KEY_PROJECTION:
+            case TSIR_ROLE_VALUE_PROJECTION:
+            case TSIR_ROLE_KEY_CACHE:
+            case TSIR_ROLE_VALUE_CACHE:
+            case TSIR_ROLE_DECODE_POSITION:
+            case TSIR_ROLE_KEY_OUTPUT:
+            case TSIR_ROLE_VALUE_OUTPUT:
+            case TSIR_ROLE_WEIGHT:
+            case TSIR_ROLE_BIAS:
             default:
                 return TRY_NOMATCH;
         }

@@ -1,6 +1,11 @@
 /* SPDX-License-Identifier: MIT
  * Copyright (c) 2026 Doe contributors */
 #include "tsir_bootstrap.h"
+#include "oracle_alloc.h"
+#undef malloc
+#undef calloc
+#undef realloc
+#undef free
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>

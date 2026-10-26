@@ -63,7 +63,7 @@ The source adapter has a 1 MiB cap, explicit compiler pools and bounded walks.
 Constants, aliases, overrides and private/workgroup roots use existing compiler
 owners. Switch/continuing, break-if and phony assignments now preserve the
 retained TSIR projection. Packed-integer builtin expansion and ldexp argument
-materialization still need matching IR projection; unsupported immediate roots
+materialization now have matching tested semantic projections; unsupported immediate roots
 reject explicitly. Broader WGSL equivalence, unrelated interpreter/emitter corners,
 production-library integration, GPU execution and browser/release qualification
 remain separate gates. This inventory does not establish universal runtime
@@ -94,3 +94,26 @@ its inventory also serves WASI and Windows, unlike the host filesystem tools.
 Separate developer tools remain the real consumers. Retained DXIL native
 placeholder behavior is a shared production-readiness limit, not a new C
 parity gap. No default, ABI, acceptance threshold or security policy changed.
+
+## Dot v3 bounded parity batch
+
+All standalone TSIR and DXIL sources now compile with the production strict
+warning flags, including exhaustive enum diagnostics; no warning suppression.
+DXIL diagnostic context now retains its full 96-byte limit without truncation;
+979 DXIL controls pass. The six retained TSIR tests now pass 397 checks.
+Twenty-one actual Zig/C semantic digests cover controls, packed builtins and
+opaque types. Two admission differences remain explicitly reported, not passes.
+Shared binary64 formatting passes 4,152 exact Zig cases through identity and
+four epsilon emitters. Pinned f32 math and NaN min/max fixes pass 3,354 exact
+comparisons plus eight qualified numeric-zero ties; see gaps.md. These are
+bounded differential receipts, not universal or production-runtime parity.
+
+### Darwin/AArch64 integration
+
+Retained Zig `@exp` uses Darwin `expf`, whose finite rounding and signaling-NaN
+handling differ from the portable compiler_rt implementation. The C helper uses
+the same native entrypoint on Darwin. AArch64 min/max uses native minimum/maximum-
+number semantics, including signaling-NaN quieting and FE_INVALID; the x86-64
+path preserves its separately tested reference behavior. The unchanged exact-bit
+comparisons, extended with negative signaling NaNs, exercise both value and operand
+pair paths. These host-specific corrections do not claim universal GPU semantics.

@@ -109,3 +109,11 @@ written permission explicitly allows redistribution.
 The blocking guard is:
 
 `python3 bench/gates/cerebras_artifact_gate.py`
+
+## TSIR retained numeric compatibility
+
+`runtime/c/compiler/src/tsir/tsir_transcendental.c` adapts the f32 algorithms
+from Zig 0.15.2 `lib/compiler_rt/exp.zig` and `lib/std/math/{expm1,tanh}.zig`,
+derived from musl/fdlibm. The file preserves MIT permission and warranty text,
+Zig/musl attribution, and the Sun Microsystems fdlibm permission notice.
+This narrow compatibility port does not vendor the Zig compiler or SDK.

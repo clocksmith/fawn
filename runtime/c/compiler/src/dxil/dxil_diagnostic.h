@@ -66,7 +66,8 @@ typedef enum DxilDiagKind {
 typedef struct DxilDiagnostic {
     char message[DXIL_DIAGNOSTIC_MESSAGE_CAP];
     size_t message_len;
-    char context[DXIL_DIAGNOSTIC_CONTEXT_CAP];
+    /* CAP counts source bytes; reserve a separate C string terminator. */
+    char context[DXIL_DIAGNOSTIC_CONTEXT_CAP + 1u];
     size_t context_len;
     DxilDiagnosticStage stage;
     bool has_kind;

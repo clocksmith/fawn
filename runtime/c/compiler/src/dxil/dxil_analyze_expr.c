@@ -213,6 +213,12 @@ static bool parse_primary(DxilAnalyzeParser *parser,
         case DXIL_IR_SCALAR_U32:
             ty = parser->u32_ty;
             break;
+        case DXIL_IR_SCALAR_VOID:
+        case DXIL_IR_SCALAR_BOOL:
+        case DXIL_IR_SCALAR_ABSTRACT_INT:
+        case DXIL_IR_SCALAR_ABSTRACT_FLOAT:
+        case DXIL_IR_SCALAR_F32:
+        case DXIL_IR_SCALAR_F16:
         default:
             ty = parser->aint_ty;
             break;
@@ -236,6 +242,12 @@ static bool parse_primary(DxilAnalyzeParser *parser,
         case DXIL_IR_SCALAR_F16:
             ty = parser->f16_ty;
             break;
+        case DXIL_IR_SCALAR_VOID:
+        case DXIL_IR_SCALAR_BOOL:
+        case DXIL_IR_SCALAR_ABSTRACT_INT:
+        case DXIL_IR_SCALAR_ABSTRACT_FLOAT:
+        case DXIL_IR_SCALAR_I32:
+        case DXIL_IR_SCALAR_U32:
         default:
             ty = parser->afloat_ty;
             break;

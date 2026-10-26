@@ -113,6 +113,11 @@ static bool resource_type_kind(const DxilIrModule *module,
         case DXIL_IR_TYPE_STORAGE_TEXTURE_2D:
             *out = DXIL_RESTYPE_STORAGE_TEXTURE_2D;
             return true;
+        case DXIL_IR_TYPE_SCALAR:
+        case DXIL_IR_TYPE_VECTOR:
+        case DXIL_IR_TYPE_MATRIX:
+        case DXIL_IR_TYPE_ATOMIC:
+        case DXIL_IR_TYPE_REF:
         default:
             *out = DXIL_RESTYPE_OTHER;
             return true;
@@ -146,6 +151,9 @@ static DxilStatus collect_resources(DxilNativeEmitter *emitter) {
             case DXIL_IR_ADDR_HANDLE:
                 addr = DXIL_ADDR_HANDLE;
                 break;
+            case DXIL_IR_ADDR_FUNCTION:
+            case DXIL_IR_ADDR_PRIVATE:
+            case DXIL_IR_ADDR_WORKGROUP:
             default:
                 addr = DXIL_ADDR_OTHER;
                 break;

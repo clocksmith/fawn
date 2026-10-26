@@ -102,6 +102,10 @@ static const char *builtin_semantic(DxilIrBuiltin builtin) {
             return "SV_ClipDistance";
         case DXIL_IR_BUILTIN_PRIMITIVE_INDEX:
             return "SV_PrimitiveID";
+        case DXIL_IR_BUILTIN_NONE:
+        case DXIL_IR_BUILTIN_NUM_WORKGROUPS:
+        case DXIL_IR_BUILTIN_SUBGROUP_SIZE:
+        case DXIL_IR_BUILTIN_SUBGROUP_INVOCATION_ID:
         default:
             return NULL;
     }
@@ -298,6 +302,10 @@ static DxilStatus emit_bound_global(DxilHlslEmitter *emitter,
                 }
                 return dxil_hlsl_write_text(emitter, ");\n");
             }
+            case DXIL_IR_ADDR_FUNCTION:
+            case DXIL_IR_ADDR_PRIVATE:
+            case DXIL_IR_ADDR_WORKGROUP:
+            case DXIL_IR_ADDR_HANDLE:
             default:
                 break;
         }
@@ -412,6 +420,13 @@ static DxilStatus emit_bound_global(DxilHlslEmitter *emitter,
             }
             return dxil_hlsl_write_text(emitter, ");\n");
         }
+        case DXIL_IR_TYPE_SCALAR:
+        case DXIL_IR_TYPE_VECTOR:
+        case DXIL_IR_TYPE_MATRIX:
+        case DXIL_IR_TYPE_ARRAY:
+        case DXIL_IR_TYPE_ATOMIC:
+        case DXIL_IR_TYPE_STRUCT:
+        case DXIL_IR_TYPE_REF:
         default:
             return DXIL_INVALID_IR;
     }
@@ -493,6 +508,8 @@ static DxilStatus emit_globals(DxilHlslEmitter *emitter) {
                     return status;
                 }
                 break;
+            case DXIL_IR_GLOBAL_INPUT:
+            case DXIL_IR_GLOBAL_OUTPUT:
             default:
                 break;
         }
