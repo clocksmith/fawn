@@ -62,3 +62,27 @@ differ. The fixture prints all pixels, cleans up, then fails if **any** expected
 pixel differs. The optional target is not a dependency of default `check` and
 neither removes nor substitutes any existing MSAA test. Keep failure exit codes
 and logs when recording another driver; identical failures are not a pass.
+
+## Upstream source attribution (subsequent investigation)
+
+The [Vulkan scissor rule](https://docs.vulkan.org/spec/latest/chapters/fragops.html#fragops-scissor)
+rejects each sample outside the half-open rectangle. Thus the exact blue-pixel
+expectation at x=3 with lower scissor bound x=4 is not a fixture tolerance bug.
+
+Official Mesa commit
+[`92550b106c70408cd9f5c25a50c311e68af06d6b`](https://gitlab.freedesktop.org/mesa/mesa/-/commit/92550b106c70408cd9f5c25a50c311e68af06d6b),
+committed 2025-09-20, fixes llvmpipe scissor planes extending almost half a pixel
+past their lower boundaries under multisampling. It replaces the old lower-edge
+subtraction and multisample adjustment with exact inclusive/exclusive edges.
+That mechanism matches this recorded symptom and the independent raw-Vulkan
+reproduction, not just the shared C/Zig backend implementation.
+
+The [source for the pinned Debian Mesa 25.0.7-2+deb13u1](https://sources.debian.org/data/main/m/mesa/25.0.7-2%2Bdeb13u1/src/gallium/drivers/llvmpipe/lp_setup.c)
+still contains the old calculation in `lp_setup_add_scissor_planes` (lines1559–1595).
+The retrieved file's SHA-256 is
+`897cf155b4ef7a3bd29b219927343a62b2f1d39f05a041ad8b0ce49855832409`.
+This is source-level attribution, **not execution on a fixed driver**. The original
+receipt, failed oracle, provider/driver hashes and negative pixel results remain
+unchanged. No driver patch, coordinate workaround, tolerance change or failing
+assertion removal is part of Doe. Fixed-driver and physical-GPU reruns remain
+separate uncompleted qualification work.
