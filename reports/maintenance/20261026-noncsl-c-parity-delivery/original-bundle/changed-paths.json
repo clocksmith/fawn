@@ -1,0 +1,1933 @@
+[
+  {
+    "path": "bench/tests/test_generate_tsir_manifest_fixtures.py",
+    "status": "A",
+    "mode": "100644",
+    "blob_sha": "9d84c2a74db6b6f884472d6db2b7cf7fe9537d58",
+    "size_bytes": 5044,
+    "sha256": "e996386066800539d5071c33eaf1acbd0f61ef9209777decd33d0ebc80269553"
+  },
+  {
+    "path": "bench/tools/generate_tsir_manifest_fixtures.py",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "ae3173b9ac9cd404415c15e9aaa43406ddad0b6f",
+    "size_bytes": 8436,
+    "sha256": "55f317df1d8ee21d8875a0a42e990a93d71a4ce30e3c7a4333ca14d9b79b56a2"
+  },
+  {
+    "path": "docs/tsir-contract.md",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "4fd256cf4fcee810da68ccf3236dd935e0ae7933",
+    "size_bytes": 7846,
+    "sha256": "f2f7aba05d5a9307c1eb02147b23ee8084dec29a782b14080970c64f51f7c837"
+  },
+  {
+    "path": "runtime/c/backends/metal/Makefile",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "3768d6298563d8dc0e72d36f73097389eb977e1d",
+    "size_bytes": 11395,
+    "sha256": "0d155782b04f78ad1b1e0938f97caca229a71b1b2b46041a098f06816afc0c7c"
+  },
+  {
+    "path": "runtime/c/backends/metal/README.md",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "10f73b32cee2e533146048663fad4d00008f888b",
+    "size_bytes": 31698,
+    "sha256": "41fe5dfa53fe46add0c6dc9d3aba4f1bc38db3003488a097bf7881ccac271d0a"
+  },
+  {
+    "path": "runtime/c/backends/metal/src/objc_abi.h",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "c82402555fe4ebe214b0534fadacda662fb2fbf9",
+    "size_bytes": 15229,
+    "sha256": "a5f4354aec5e9f0461d25c0bbe526bca5594296b6027b0401f3086da08e25361"
+  },
+  {
+    "path": "runtime/c/backends/metal/src/objc_library_cache.c",
+    "status": "A",
+    "mode": "100644",
+    "blob_sha": "74a3d5180c0cbae615f9209434a63037b4cc5ba5",
+    "size_bytes": 2985,
+    "sha256": "828dd8d52ec73a3e076ec2e2f710c6017f20b80fc272e11a557d19af6f056973"
+  },
+  {
+    "path": "runtime/c/backends/metal/src/objc_pipeline.c",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "b8f12ffe042f3fde33c45d50c5511fc19788e6cc",
+    "size_bytes": 5033,
+    "sha256": "3bea8968b6aed7bf439be0eb8fb717d35da4ffaf55992c7a252d70eed5531500"
+  },
+  {
+    "path": "runtime/c/backends/metal/src/objc_runtime.c",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "9cbc8b3832c0a42339481771bcdb76255ce32f98",
+    "size_bytes": 19181,
+    "sha256": "b50f37b4d9b105b271bf1cd34b3306716fadfffe791972b88ff96b94dd7cb985"
+  },
+  {
+    "path": "runtime/c/backends/metal/tests/test_library_cache.c",
+    "status": "A",
+    "mode": "100644",
+    "blob_sha": "0ef2a1250dc1e2548a794b016bb423ae47b199b3",
+    "size_bytes": 5157,
+    "sha256": "2e59f1954738775aeb5ff54882ae81d0c7c955ad8b3cea5b5537e024ba816f89"
+  },
+  {
+    "path": "runtime/c/compiler/CATSCAN.md",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "02e0361bd3b70b1c30443c8e4c3eab3c9b40ca53",
+    "size_bytes": 2226,
+    "sha256": "1e5b4b1135feb46233e6edac0781f744e9a48be16d275a290c6d22efa115b84c"
+  },
+  {
+    "path": "runtime/c/compiler/Makefile",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "8d9ac24ed0d4003a91400b7814bc7ae30782e6aa",
+    "size_bytes": 61960,
+    "sha256": "cd613d69e995d99ec7289a84dca5f17bf0e96ce258a3bdcf45f3a28f99d220b2"
+  },
+  {
+    "path": "runtime/c/compiler/README.md",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "36fd991ea7c994ade5ab8c9e0cd63c7e0f43d6ac",
+    "size_bytes": 51590,
+    "sha256": "200045b0df796e126bf2e919cfbcd026754e4846df82967781a7b1473d34ad5f"
+  },
+  {
+    "path": "runtime/c/compiler/TSIR_BOOTSTRAP.md",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "3dfb0e8f2cb606c65794cf6855719738bcf2639b",
+    "size_bytes": 11659,
+    "sha256": "e4ab98c06ba9cd6c9c7124bfe8ae898932661b2cb8c37114b307d852a8a2526c"
+  },
+  {
+    "path": "runtime/c/compiler/TSIR_NONCSL_COMPLETE.md",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "d55432cd075f0817a4df11c0b1ab78b79db401ea",
+    "size_bytes": 2742,
+    "sha256": "1b650cbac9b325685548aa730c769829864310ca4a47452d7a2441ab8f6d8d3f"
+  },
+  {
+    "path": "runtime/c/compiler/host/README.md",
+    "status": "A",
+    "mode": "100644",
+    "blob_sha": "a9f90a8c3194702d965642f1a26e45e45de47ff3",
+    "size_bytes": 4198,
+    "sha256": "fffd4dc702215d0aca60f2b042710a3d467650d5a3c0ca2aceca5cf4cf534950"
+  },
+  {
+    "path": "runtime/c/compiler/host/dxil.c",
+    "status": "A",
+    "mode": "100644",
+    "blob_sha": "e108dd248fbcdefc9b81b8ae4b7d8e8ba3d34cd8",
+    "size_bytes": 2902,
+    "sha256": "ded044f0a9ec045a47669204bc503dcac7812933e93a953d3c5abe644e88426f"
+  },
+  {
+    "path": "runtime/c/compiler/host/exports.map",
+    "status": "A",
+    "mode": "100644",
+    "blob_sha": "f295de95c09349381a6be1b418302286b43eea89",
+    "size_bytes": 232,
+    "sha256": "d30761190663df3a7b640f1874a5571c01091966cdb52d5a6684e93fe70d4aee"
+  },
+  {
+    "path": "runtime/c/compiler/host/host.c",
+    "status": "A",
+    "mode": "100644",
+    "blob_sha": "07d47dc3660b75b7098cc8041079a34cae177a8d",
+    "size_bytes": 1787,
+    "sha256": "91a31e85df550ed2f0f7da4992376cf1ada28026b53b8ed3a8c8a8b8ef93fb6b"
+  },
+  {
+    "path": "runtime/c/compiler/host/internal.h",
+    "status": "A",
+    "mode": "100644",
+    "blob_sha": "3a6ded822e3631d1f36750ab6da5637082212c03",
+    "size_bytes": 523,
+    "sha256": "de9bc4dae09c99665a48237420462f071fe67edb568c80471a8b44ed688b3685"
+  },
+  {
+    "path": "runtime/c/compiler/host/tsir.c",
+    "status": "A",
+    "mode": "100644",
+    "blob_sha": "79ef75cee3aba43b622e1435be0cd4bebe27b61e",
+    "size_bytes": 4638,
+    "sha256": "a1f8266b4a2c7a83712252edc95e26930ddef862773cba679aa817114f72a2f6"
+  },
+  {
+    "path": "runtime/c/compiler/include/doe_compiler_host.h",
+    "status": "A",
+    "mode": "100644",
+    "blob_sha": "7d32b69b6dbc0a04802a6343ae234acb91177361",
+    "size_bytes": 4358,
+    "sha256": "e5e6835b2d77057563f8ad103bf07ad0e8f42cfb6228cbfa33698ad0862b4726"
+  },
+  {
+    "path": "runtime/c/compiler/src/compile.c",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "195897d995d550f198eae4c81310f137ed3b555b",
+    "size_bytes": 28598,
+    "sha256": "887d0dc017413fdf547416a11acebef94edce28ac7703d4430afdd4da4cf1b0d"
+  },
+  {
+    "path": "runtime/c/compiler/src/decimal.h",
+    "status": "A",
+    "mode": "100644",
+    "blob_sha": "3d150c7bad1a747a2f710876a6d17de9477d5b9d",
+    "size_bytes": 3552,
+    "sha256": "3b735d3ac8ef8472349b5243952e6b1f961b3bb1f43e4ca27b4d992273bd10a8"
+  },
+  {
+    "path": "runtime/c/compiler/src/dxil/dxil_analyze.c",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "0b313ef84951efdba3280896538376359a67a11a",
+    "size_bytes": 14066,
+    "sha256": "49d5430a570c8c643846efdc33ee896d6f6fd1c3308c273310585b576d29e2e4"
+  },
+  {
+    "path": "runtime/c/compiler/src/dxil/dxil_analyze.h",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "4da810e6e55b34a6938755e8b3f77978c7857d29",
+    "size_bytes": 1406,
+    "sha256": "16c447610ed74b4e663fe24a5dd0f1fd1178eff7f12abc483fc5dd99c0311090"
+  },
+  {
+    "path": "runtime/c/compiler/src/dxil/dxil_analyze_decl.c",
+    "status": "D",
+    "mode": "100644",
+    "old_blob_sha": "88fe428eac26501788cbc1e5fc68ffe7c37dedbc",
+    "size_bytes": 0
+  },
+  {
+    "path": "runtime/c/compiler/src/dxil/dxil_analyze_expr.c",
+    "status": "D",
+    "mode": "100644",
+    "old_blob_sha": "a321b7bf9b0f841edbbd477e200f5357fa516ee6",
+    "size_bytes": 0
+  },
+  {
+    "path": "runtime/c/compiler/src/dxil/dxil_analyze_internal.h",
+    "status": "D",
+    "mode": "100644",
+    "old_blob_sha": "e95bcb700e431dc7dabc96892b5a97a837bcb20a",
+    "size_bytes": 0
+  },
+  {
+    "path": "runtime/c/compiler/src/dxil/dxil_analyze_stmt.c",
+    "status": "D",
+    "mode": "100644",
+    "old_blob_sha": "44d30ccb6b15c71b60b5e944f6081687fcb63eb9",
+    "size_bytes": 0
+  },
+  {
+    "path": "runtime/c/compiler/src/dxil/dxil_analyze_types.c",
+    "status": "D",
+    "mode": "100644",
+    "old_blob_sha": "241954560964966151ae42e0f220cce1d795ca87",
+    "size_bytes": 0
+  },
+  {
+    "path": "runtime/c/compiler/src/dxil/dxil_emit.c",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "c9ddc56aa7c17aabc83c83a51bd099974bc62824",
+    "size_bytes": 12505,
+    "sha256": "58cd50c6f5d10cbd71745eea8b0133f460167f830c4a7ae68b9f71bd5bc423b5"
+  },
+  {
+    "path": "runtime/c/compiler/src/dxil/dxil_emit.h",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "bd5d43e2833e1319ba36b3a9001794eea91a0ee2",
+    "size_bytes": 4239,
+    "sha256": "a9f48b2935941477891158bfb87fdf617be5e2328bb194b6ffa3eb54aadbc78c"
+  },
+  {
+    "path": "runtime/c/compiler/src/dxil/dxil_files.c",
+    "status": "A",
+    "mode": "100644",
+    "blob_sha": "d724e8b423ccd4b457c769fee4dc7ff4c2b0f551",
+    "size_bytes": 2928,
+    "sha256": "d87ecba33401e5c8d440c310b25f0d397b0fb50958561b36dbe31fa9b1b1304d"
+  },
+  {
+    "path": "runtime/c/compiler/src/dxil/dxil_files.h",
+    "status": "A",
+    "mode": "100644",
+    "blob_sha": "cf85f41d9ca0d54d2bbcbff033a81819ada4aeba",
+    "size_bytes": 682,
+    "sha256": "f70c8281db563191d9489882e2574e4e44b48ee9ace94791e1d9dfa77deca208"
+  },
+  {
+    "path": "runtime/c/compiler/src/dxil/dxil_hlsl.c",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "78c4ce2339b5a6c311f698c0bfe2afc41062fcc4",
+    "size_bytes": 26766,
+    "sha256": "a65a7ed9b0012bb318763c3f6313bc956f2f2a96db0b0565cb782154fb76aa7b"
+  },
+  {
+    "path": "runtime/c/compiler/src/dxil/dxil_hlsl.h",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "6a4c23d3489aad0f382ff51bf14874d3ef6b674d",
+    "size_bytes": 1197,
+    "sha256": "72d9db5f0455552245973c89166a85eac4c3829232f222922aaaa0862aee1de4"
+  },
+  {
+    "path": "runtime/c/compiler/src/dxil/dxil_hlsl_array.c",
+    "status": "A",
+    "mode": "100644",
+    "blob_sha": "a36a80307d1e7897572060efc7125c4448b6c4c8",
+    "size_bytes": 6437,
+    "sha256": "4e4e219e9ce01bf218aac06d958d730158f92ffd0a19c9edb6623426d5d45732"
+  },
+  {
+    "path": "runtime/c/compiler/src/dxil/dxil_hlsl_expr.c",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "6b136dd879f621312c8e4292a82d3757a34af413",
+    "size_bytes": 34118,
+    "sha256": "1f375fe51a5fba9a28e2a8312382b846ee47819427161a6c02dbd82f7b21516a"
+  },
+  {
+    "path": "runtime/c/compiler/src/dxil/dxil_hlsl_helpers.c",
+    "status": "A",
+    "mode": "100644",
+    "blob_sha": "71dcbacb93ef99dfa535da27b5db711a992fe0b0",
+    "size_bytes": 11459,
+    "sha256": "296505840e3356388162806c7a2c5d22145f85269b3dd0d8b59a27b1157425fe"
+  },
+  {
+    "path": "runtime/c/compiler/src/dxil/dxil_hlsl_internal.h",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "1b6eaf4df81e0189c0b5bd2b7696535e8e6ebd3a",
+    "size_bytes": 4311,
+    "sha256": "279315cfaa22597c7ecfe86fe23998c7145216701f16bb8d7efa05f95b02bdd9"
+  },
+  {
+    "path": "runtime/c/compiler/src/dxil/dxil_hlsl_names.c",
+    "status": "A",
+    "mode": "100644",
+    "blob_sha": "e9e5c619eee04d4a228e10fcc45f61af68e63126",
+    "size_bytes": 3843,
+    "sha256": "d05e88eb20c951ffd1ac6474e3d5601c81d07622c2c556143d8375743216cb3f"
+  },
+  {
+    "path": "runtime/c/compiler/src/dxil/dxil_hlsl_numeric.c",
+    "status": "A",
+    "mode": "100644",
+    "blob_sha": "5f1aa9e86d02e40bf429af0ab8ca808b1738f81f",
+    "size_bytes": 7628,
+    "sha256": "5f21bd4f1146b78014f27d01641ec372136165ff99249107af29018b8cc7999b"
+  },
+  {
+    "path": "runtime/c/compiler/src/dxil/dxil_hlsl_numeric.h",
+    "status": "A",
+    "mode": "100644",
+    "blob_sha": "1466dad74d5fcf3a14e00555206ba26d57c9af3b",
+    "size_bytes": 525,
+    "sha256": "d49874ed8547688ee52e60c7e9c2969ca5191ce7bb0be89042d7dc18416f06fc"
+  },
+  {
+    "path": "runtime/c/compiler/src/dxil/dxil_hlsl_pointer.c",
+    "status": "A",
+    "mode": "100644",
+    "blob_sha": "3f06af3c74207638c2cc28246ffbc80677c7f1a9",
+    "size_bytes": 9184,
+    "sha256": "6e12439d67ff3158d517a0c48cffa05e620eceb64b0637db593b603855ea4062"
+  },
+  {
+    "path": "runtime/c/compiler/src/dxil/dxil_hlsl_stage.c",
+    "status": "A",
+    "mode": "100644",
+    "blob_sha": "06942e0d4f64f2faba694076e768b354a964545a",
+    "size_bytes": 9772,
+    "sha256": "22e07019b3e620ec53a389fd860c0cd0068cdc764ef33d4dd042f9b32f3b81ae"
+  },
+  {
+    "path": "runtime/c/compiler/src/dxil/dxil_hlsl_stmt.c",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "64b497249ddf9f2ef3badb74fb6433cb3cda7c52",
+    "size_bytes": 21065,
+    "sha256": "e8e95ee14c9fbad1db36facd895fba47bfacbc1fb1e5db1bc1bd9bfab112367e"
+  },
+  {
+    "path": "runtime/c/compiler/src/dxil/dxil_hlsl_store.c",
+    "status": "A",
+    "mode": "100644",
+    "blob_sha": "81b00d0af586b900636881b22deef548bf44954f",
+    "size_bytes": 7601,
+    "sha256": "9a63ee1dca13b252060b188d2d5217021b6c08ae05a97130308a85539a3697c5"
+  },
+  {
+    "path": "runtime/c/compiler/src/dxil/dxil_hlsl_texture.c",
+    "status": "A",
+    "mode": "100644",
+    "blob_sha": "087e502214a57646c89fa23c9caf4061571c7207",
+    "size_bytes": 19267,
+    "sha256": "6f6a660e68cbb9dcb0341cc8a191c8c3c10dbd19ec0ff07fe41b1b064f6eea9e"
+  },
+  {
+    "path": "runtime/c/compiler/src/dxil/dxil_hlsl_texture.h",
+    "status": "A",
+    "mode": "100644",
+    "blob_sha": "ea80532752166041e7da310777b8313e95a6ce82",
+    "size_bytes": 702,
+    "sha256": "555d9da9d04059dec06e12c0fdb26f900eb1978c35b83f7bdaaef49aed41787e"
+  },
+  {
+    "path": "runtime/c/compiler/src/dxil/dxil_ir.h",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "9106b9cc950c0d12932c0bb67510d30ce2a0d610",
+    "size_bytes": 18064,
+    "sha256": "f2eda043de06ebdc0cc87057391a06d50c00b371f7f234bb1c6957749ba291e2"
+  },
+  {
+    "path": "runtime/c/compiler/src/dxil/dxil_ir_query.c",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "36ac2103757288273a2f4513869631182e898699",
+    "size_bytes": 23385,
+    "sha256": "88dc082677d1aaa6a834ea3b3c7309dd91fb50d5e9a94e5782447078d38550a8"
+  },
+  {
+    "path": "runtime/c/compiler/src/dxil/dxil_ir_validate.c",
+    "status": "A",
+    "mode": "100644",
+    "blob_sha": "eb955e7e1e699c759e40f6c9369d827b89a9b33a",
+    "size_bytes": 11764,
+    "sha256": "b2b141b620a62c3fb196d81e26d00c9336d75373b29aea7850ec215727deaa28"
+  },
+  {
+    "path": "runtime/c/compiler/src/dxil/dxil_native.c",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "b0fecaea3938a57cea91483f8e5b16740ab4b0b4",
+    "size_bytes": 19490,
+    "sha256": "4d5e8f8d3b7aba3a9cd375b902c436b3803d2979ec43d163299d42bb6bf3bf1d"
+  },
+  {
+    "path": "runtime/c/compiler/src/dxil/dxil_process_windows.c",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "7ef895f7a5d890dd055bec0cca5576ecc8a84a6e",
+    "size_bytes": 9799,
+    "sha256": "16dd9637e199ec9e5ba90fc30d38f5a34bb825c31fc64a16ca290a99024b6348"
+  },
+  {
+    "path": "runtime/c/compiler/src/dxil/dxil_source.c",
+    "status": "A",
+    "mode": "100644",
+    "blob_sha": "0964a4737939192febe4221740dd63df2f6853a7",
+    "size_bytes": 16180,
+    "sha256": "fc92bace6daa5da6bd98c67564c1c58cc9fd755f458fd211d065388ef1a37ab0"
+  },
+  {
+    "path": "runtime/c/compiler/src/dxil/dxil_source.h",
+    "status": "A",
+    "mode": "100644",
+    "blob_sha": "c402e86e8732152d3f77e0efec3acdca620e4c0f",
+    "size_bytes": 1121,
+    "sha256": "260f3cc72911cf9cea4771b8ab0b6b5f34d924f9bf5334bbc218873da2598f24"
+  },
+  {
+    "path": "runtime/c/compiler/src/dxil/dxil_source_native_bounds.c",
+    "status": "A",
+    "mode": "100644",
+    "blob_sha": "046be4404462deffde00826329f1e4d36d0e0931",
+    "size_bytes": 9567,
+    "sha256": "17ff08151a80f1d825ae97ba06b379f1a644354fab7fe3ae7d2a2bdc8a69706c"
+  },
+  {
+    "path": "runtime/c/compiler/src/dxil/dxil_source_native_bounds.h",
+    "status": "A",
+    "mode": "100644",
+    "blob_sha": "2bc44676ad3febcd5d815552552a7cfa51d5e461",
+    "size_bytes": 497,
+    "sha256": "b042c67ac6b55f29cb05e977ff9ae50386fe0819e3be01d935b7d27570c0e879"
+  },
+  {
+    "path": "runtime/c/compiler/src/dxil/dxil_source_native_expr.c",
+    "status": "A",
+    "mode": "100644",
+    "blob_sha": "fd635a7a547ff5cb761fc86b231730f9dbee94f0",
+    "size_bytes": 26555,
+    "sha256": "cdfe8a5c897ed46575883b539577fc6f21c4001085b14896a36a89238b0919ac"
+  },
+  {
+    "path": "runtime/c/compiler/src/dxil/dxil_source_native_globals.c",
+    "status": "A",
+    "mode": "100644",
+    "blob_sha": "6b94ac2901471e21ef8b107f3ac5eaf20eba9687",
+    "size_bytes": 6686,
+    "sha256": "841cdb2809054c6b97252ae9a6706fc1fa4d0019ed443af971a325c8a5419672"
+  },
+  {
+    "path": "runtime/c/compiler/src/dxil/dxil_source_native_internal.h",
+    "status": "A",
+    "mode": "100644",
+    "blob_sha": "0c8fd06cd461123ec78fcf73db62ea8211ab086a",
+    "size_bytes": 1982,
+    "sha256": "b650387a1b4c044e339717355fa12bae69c351a8aa51256f8122ed30db77666f"
+  },
+  {
+    "path": "runtime/c/compiler/src/dxil/dxil_source_native_opt.c",
+    "status": "A",
+    "mode": "100644",
+    "blob_sha": "f3ad0534414636beb745b0575197a115dfac70d7",
+    "size_bytes": 12570,
+    "sha256": "39bce7707025ca265e12ea915b65de83bbded0d36bbaac4527327629cb3e8f99"
+  },
+  {
+    "path": "runtime/c/compiler/src/dxil/dxil_source_native_opt.h",
+    "status": "A",
+    "mode": "100644",
+    "blob_sha": "e728a51c9034c3337600751b71d754c9ff5a777d",
+    "size_bytes": 504,
+    "sha256": "edcc61d78d056675d93fb2e4a215f0b74bf170aca2d024639e5a355045c67373"
+  },
+  {
+    "path": "runtime/c/compiler/src/dxil/dxil_source_native_packed.c",
+    "status": "A",
+    "mode": "100644",
+    "blob_sha": "876e144ae3e4a5365aa304e89dfe767486c0b567",
+    "size_bytes": 7636,
+    "sha256": "68f072f86373a943b1011e8aedc96fad7efdca924853d45e5a2e09c25b80b633"
+  },
+  {
+    "path": "runtime/c/compiler/src/dxil/dxil_source_native_packed.h",
+    "status": "A",
+    "mode": "100644",
+    "blob_sha": "d317b3813fc9d78b8d43dd788e3096d8ffa7e538",
+    "size_bytes": 325,
+    "sha256": "e6d80a9f2accf422652a53a529293ac9596bd22d6d410e2ce07fee8726a4b4b8"
+  },
+  {
+    "path": "runtime/c/compiler/src/dxil/dxil_source_native_stmts.c",
+    "status": "A",
+    "mode": "100644",
+    "blob_sha": "404a3e0fe27dea27c652041d42e0c698fb6c0bd1",
+    "size_bytes": 18344,
+    "sha256": "5baa896076fd8a8290efed91ed5796338f4fb49294148cca68474c64c66d43e3"
+  },
+  {
+    "path": "runtime/c/compiler/src/dxil/dxil_source_native_types.c",
+    "status": "A",
+    "mode": "100644",
+    "blob_sha": "3bf1b1ba95a7d88e99f5b50e9683301eeeb4ee1a",
+    "size_bytes": 11321,
+    "sha256": "e30dc451129dab82a0c53bcffbe4407e3e4218c766555b52c13c67a75dade832"
+  },
+  {
+    "path": "runtime/c/compiler/src/dxil/dxil_toolchain.c",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "8fbb8f243051f0769078cf69630787a33d7fe459",
+    "size_bytes": 18561,
+    "sha256": "53742bec901465cde2e96d8df8048f7801dc7b755f1271c84f7d691a3f88b615"
+  },
+  {
+    "path": "runtime/c/compiler/src/dxil/dxil_toolchain.h",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "cdce2520913d0ff1c866e58992cce06923cf9149",
+    "size_bytes": 6043,
+    "sha256": "4baf1e329924db71667c12cfd39831d627b1cc52c1692f76bbc5062f1880cac8"
+  },
+  {
+    "path": "runtime/c/compiler/src/dxil/dxil_translate.c",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "d431873e664a06a51247481d00d6b1dba9e21793",
+    "size_bytes": 4279,
+    "sha256": "37c6f4fca25a47e0fc0a5f053e4c2363dc17ca60c76f54e13f380e4b87dfd562"
+  },
+  {
+    "path": "runtime/c/compiler/src/dxil/dxil_translate.h",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "4c7d51b4f146597dd1b1b60a6d8d336880b09d16",
+    "size_bytes": 3817,
+    "sha256": "1c4fb4baac437fe864b4c63f783d68496dc4892da4890fd1c40dd7ea1835db54"
+  },
+  {
+    "path": "runtime/c/compiler/src/dxil/gaps.md",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "cade3d037d4481dd8c65ac0b92e391711063c6fc",
+    "size_bytes": 5210,
+    "sha256": "a8d690b4e31c663a6728d6086c3eb1550c4344a366a60ba80b8bd6fc84097bd9"
+  },
+  {
+    "path": "runtime/c/compiler/src/dxil/parity-test.md",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "da829d4bd63583925a08cc31e2e3722058c835b7",
+    "size_bytes": 67872,
+    "sha256": "5c29fea43041aafec275c49f819230ad45cf1f340d35cd91e03a3a6b34e71347"
+  },
+  {
+    "path": "runtime/c/compiler/src/dxil/source-integration.md",
+    "status": "A",
+    "mode": "100644",
+    "blob_sha": "0cd97ef62a7e4b1815bcca1e35b39c9e9c9c6da3",
+    "size_bytes": 5232,
+    "sha256": "449c9812c7dbba981c89388fc7bb4b4bfc5158f38ac250f589fec8cc5a56d278"
+  },
+  {
+    "path": "runtime/c/compiler/src/dxil/test-results.md",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "b5e93ade097155bd4ef05f4dad6b1a0980398033",
+    "size_bytes": 6920,
+    "sha256": "46f245195ec73d555ecad43b8278389a9c6d05986bace4399b05d1277e018b15"
+  },
+  {
+    "path": "runtime/c/compiler/src/dxil/tests/test_dxil_hlsl.c",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "469a4d98d8593879fb4eab1de6f73f301940910f",
+    "size_bytes": 13904,
+    "sha256": "ff24cf36752ac7b8b74aeb3b551584bb4990639c80889af58b6093f647598757"
+  },
+  {
+    "path": "runtime/c/compiler/src/dxil/tests/test_dxil_hlsl_access.c",
+    "status": "A",
+    "mode": "100644",
+    "blob_sha": "1c78156b408792a9b483732a79f053ea3c4099d3",
+    "size_bytes": 20501,
+    "sha256": "9a5fc805243d886c28456f00c9847ec1372b6400f14664fd1e2be719c8621a85"
+  },
+  {
+    "path": "runtime/c/compiler/src/dxil/tests/test_dxil_hlsl_complete.c",
+    "status": "A",
+    "mode": "100644",
+    "blob_sha": "5e1ac239939e00204be296a64321418485ca4159",
+    "size_bytes": 6890,
+    "sha256": "04abc988a9c195162eaef486592c88d6b9f2e5bc35e10acbf6ae913ec740161b"
+  },
+  {
+    "path": "runtime/c/compiler/src/dxil/tests/test_dxil_hlsl_numeric.c",
+    "status": "A",
+    "mode": "100644",
+    "blob_sha": "f6d2d94838b54d5daec27a1bc6fa4db985b0bb20",
+    "size_bytes": 5964,
+    "sha256": "d0379b07b34ad27011247b883ecd2dfcc8f36a1f397508036b0e74a2848a6ad9"
+  },
+  {
+    "path": "runtime/c/compiler/src/dxil/tests/test_dxil_hlsl_texture.c",
+    "status": "A",
+    "mode": "100644",
+    "blob_sha": "fa2ef51be99765e5f9dd2444fa604ac3e617dc83",
+    "size_bytes": 19546,
+    "sha256": "52bedd5616e48d10c1782a55f86c5b9ae66c17fb3f668aafcd28459644faf142"
+  },
+  {
+    "path": "runtime/c/compiler/src/dxil/tests/test_dxil_io.c",
+    "status": "A",
+    "mode": "100644",
+    "blob_sha": "f85e1799c05eb85885fe4618976f615611eab28a",
+    "size_bytes": 15619,
+    "sha256": "acd7a0c92377aeb255ea5baabdf3ce7245da3b52c4942c6e9fa265376a96dd29"
+  },
+  {
+    "path": "runtime/c/compiler/src/dxil/tests/test_dxil_native_opt.c",
+    "status": "A",
+    "mode": "100644",
+    "blob_sha": "dcf007949f9cf33298a1b911c290f57941036212",
+    "size_bytes": 10855,
+    "sha256": "0b021a1db7a7ec9d76f5e04ce91339c67fe457c53a47de981920decca8054b1b"
+  },
+  {
+    "path": "runtime/c/compiler/src/dxil/tests/test_dxil_native_projection.c",
+    "status": "A",
+    "mode": "100644",
+    "blob_sha": "3f0e2b4e260299ebdfc7b328097c68ab0df91332",
+    "size_bytes": 9210,
+    "sha256": "eec10827e848e2d0ca2ab82ff9e87c74883d8a26320309c663a45e03efcfe658"
+  },
+  {
+    "path": "runtime/c/compiler/src/dxil/tests/test_dxil_native_projection_expr.c",
+    "status": "A",
+    "mode": "100644",
+    "blob_sha": "5b6f67272258e38144f8b60638fd9054d40973e2",
+    "size_bytes": 15150,
+    "sha256": "2ee2ad3a2d213dfc3d8d6eb7862f24770a2048906846cfa939daf9d56b0be7e4"
+  },
+  {
+    "path": "runtime/c/compiler/src/dxil/tests/test_dxil_source.c",
+    "status": "A",
+    "mode": "100644",
+    "blob_sha": "be75b888c0b81dd2c58d07829c8c394e2cc752be",
+    "size_bytes": 8662,
+    "sha256": "f94cfba23c9d6ebaa22e113d0ffa62cf4cff9d5e1afee1aaf95f82d3aa8944f3"
+  },
+  {
+    "path": "runtime/c/compiler/src/dxil/tests/test_dxil_source_differential.c",
+    "status": "A",
+    "mode": "100644",
+    "blob_sha": "049bc4b1f7cbc957a5ad64b3a06fed3850d24f4d",
+    "size_bytes": 1639,
+    "sha256": "f658c8d26b9a3faba0998b52fc3f20f57aca2b7092d702a2f70503334643b083"
+  },
+  {
+    "path": "runtime/c/compiler/src/dxil/tests/test_dxil_source_differential.py",
+    "status": "A",
+    "mode": "100644",
+    "blob_sha": "19e4bd68b11f591a044516381afb7f93a54ead3e",
+    "size_bytes": 12311,
+    "sha256": "c8a9373146c2ac172cbda48740a8ea317d728662d423d328215ed5aa353a9ef7"
+  },
+  {
+    "path": "runtime/c/compiler/src/dxil/tests/test_hlsl_numeric.py",
+    "status": "A",
+    "mode": "100644",
+    "blob_sha": "0cf2149a076c00a50bf04ba0e194f1419f9b01d6",
+    "size_bytes": 5042,
+    "sha256": "95f3531cc2d1959e73929fe2bfab6ee32e82ae28b20b7da3036ce03cee41c3f4"
+  },
+  {
+    "path": "runtime/c/compiler/src/dxil/tests/test_native_opt.py",
+    "status": "A",
+    "mode": "100644",
+    "blob_sha": "c61a4513cf9cf73933f9382d32145ed3490dd470",
+    "size_bytes": 6436,
+    "sha256": "65c80bce2f89cf96d9808c6e63e1fbf478b03bca260cc906c5a6822ebe8f3cd2"
+  },
+  {
+    "path": "runtime/c/compiler/src/dxil/texture-serialization.md",
+    "status": "A",
+    "mode": "100644",
+    "blob_sha": "ae10551f60170bf65d6f2da3a2e6c11af799b0dd",
+    "size_bytes": 2290,
+    "sha256": "c7fe328065ae15b227699e1d4bd2e007e4d6cc4c26013055f0814b45f6f9d1de"
+  },
+  {
+    "path": "runtime/c/compiler/src/internal.h",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "e2768d8a03700aeb489913c48fedf039ee72f2c4",
+    "size_bytes": 23474,
+    "sha256": "37da36c63afd114193259b74521941e7c888bb5ea94ba5932c2e9b9f3d46780c"
+  },
+  {
+    "path": "runtime/c/compiler/src/numeric.c",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "9d06fddba655ea22830b7d5f300beea90ecba5eb",
+    "size_bytes": 50378,
+    "sha256": "c7b5dc0fbd142a90968b6843d2c40618add5ab3bc9cdc67ca7e7dce8c36497c2"
+  },
+  {
+    "path": "runtime/c/compiler/src/numeric.h",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "56568cff7735a4827807f9a5ecf099212f1e0c39",
+    "size_bytes": 3803,
+    "sha256": "c9ca1236c335889db12ea96306e4c2f5d3169ac7dea96dd41924c6aa12b57fbd"
+  },
+  {
+    "path": "runtime/c/compiler/src/override.c",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "0caeac2437408cd6eaac7fc51e09e6a252e135a3",
+    "size_bytes": 9619,
+    "sha256": "ec2c74703f19b29ba197c7b06bf70f9faa539869b13cefc4eca21c7436361c58"
+  },
+  {
+    "path": "runtime/c/compiler/src/override.h",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "65d7f450e75b68b852e75b9e9cefe6bd006a933e",
+    "size_bytes": 2115,
+    "sha256": "28ebf865db7a5b0185025be1ca4fe3381f1a8a1374d6c98be2a5ad649d8db697"
+  },
+  {
+    "path": "runtime/c/compiler/src/pipeline.c",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "2d1d0fbc31d3a3f866e26d9ad512862b4b08f03c",
+    "size_bytes": 1970,
+    "sha256": "396aff2e484228b12a1e0ee40db1912183b54d9df6df5a763cf14e19cbbbd8d1"
+  },
+  {
+    "path": "runtime/c/compiler/src/sema_declarations.c",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "f969cf328131f608e7e5ad71e6adb29e53873097",
+    "size_bytes": 40474,
+    "sha256": "b368a5ee92df2ae66657cfbac66008906c94e3e55d868fbff486879c790ca617"
+  },
+  {
+    "path": "runtime/c/compiler/src/sema_expression.c",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "369d485eefec202299b98dd51c3e2782fc9d73d7",
+    "size_bytes": 41717,
+    "sha256": "fb6870965b07f43f3a56fb4c8795c4cce58910062459ed799c6ef3c1ddcc8311"
+  },
+  {
+    "path": "runtime/c/compiler/src/tsir/gaps.md",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "0dd2e1fbc608e9ec3eb043382a2b1641903bf70b",
+    "size_bytes": 16263,
+    "sha256": "175330d813b332c7a7b5ffa76800d7fff7cb7b26521279878650eb65ad6a77a7"
+  },
+  {
+    "path": "runtime/c/compiler/src/tsir/parity-mapping.md",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "fccc97fb1e1d7b4da3d44a3c8541e8b5c1dbbf4a",
+    "size_bytes": 37479,
+    "sha256": "9e12e52ddc08771771fd148b9cb7c058144f8ae18afad5240634bd0b51ba6a79"
+  },
+  {
+    "path": "runtime/c/compiler/src/tsir/tests/test_bootstrap_manifest.c",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "6aa4464b1749aeb44c95f13b76695d165de0ecc6",
+    "size_bytes": 4299,
+    "sha256": "9765a02c9d5b720b62f3e46084514538f8591f8b0b732a3a2376d04bc0f0bb75"
+  },
+  {
+    "path": "runtime/c/compiler/src/tsir/tests/test_bootstrap_writer.c",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "7f91139b238b24f0189138dfc055d0c1e5c7fc09",
+    "size_bytes": 2058,
+    "sha256": "dd35c74a863666300664403f44dceef674734928ea1d5a57a29f65a4c7c92f69"
+  },
+  {
+    "path": "runtime/c/compiler/src/tsir/tests/test_digest.c",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "ed46fa54702dbb40211b088ffe1c936984a440fa",
+    "size_bytes": 10057,
+    "sha256": "5d849c09fbd81201f5b44389bf88087862c8d24937ffcd83866377fabcc63278"
+  },
+  {
+    "path": "runtime/c/compiler/src/tsir/tests/test_f64_format.py",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "657a192022f57ccabc93f043d6c96609bdddafbd",
+    "size_bytes": 3611,
+    "sha256": "8ce8ffa843c3ae57aaefad617fbdb73aebe8f5f3528c258ca51b22f279a5c966"
+  },
+  {
+    "path": "runtime/c/compiler/src/tsir/tests/test_manifest_alloc.c",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "48c2a5e01f6cb5e1517e241ae7535094b263e10d",
+    "size_bytes": 6972,
+    "sha256": "bdbda3386e2eeb4f74fbbe75fb8065306f517c5ac010edc123021089f40fa235"
+  },
+  {
+    "path": "runtime/c/compiler/src/tsir/tests/test_new.c",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "4c787554a10f351453a61e3c1fd620c129c64bf9",
+    "size_bytes": 25827,
+    "sha256": "5ffa42b137be5f679a4d6b7698f10e682df3131fdcf446dfe8cfaf688787c300"
+  },
+  {
+    "path": "runtime/c/compiler/src/tsir/tests/test_new2.c",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "67facee4788d450aeb6f97e82bb6f7dd1ace6f0a",
+    "size_bytes": 20508,
+    "sha256": "ac6a735b5d9e88d586b053e263575433ef2fb0a541825ef15d7d3486491924f5"
+  },
+  {
+    "path": "runtime/c/compiler/src/tsir/tests/test_numeric_parity.py",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "c495b6c64e02ce3ed88164a59bd2361ca77dfdb8",
+    "size_bytes": 7027,
+    "sha256": "4bb422843c3a243cd5d04eb51d7b4e42d93c4948c744b5cf774da4e128073160"
+  },
+  {
+    "path": "runtime/c/compiler/src/tsir/tests/test_planner.c",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "3cffef7e10bb0358eba12ac503f3fd22b11cccd9",
+    "size_bytes": 15185,
+    "sha256": "65489829424eea0a01993b634b205778f7ed4aff9341b19d67e860db9fadf62d"
+  },
+  {
+    "path": "runtime/c/compiler/src/tsir/tests/test_reference_emit.c",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "7e978bca1253a3783b6e976cd89a0e541dbe066f",
+    "size_bytes": 34418,
+    "sha256": "99fb2663031e5a589a288fd01ee25f0bb35ebba4df156d25730b582872d55851"
+  },
+  {
+    "path": "runtime/c/compiler/src/tsir/tests/test_sha_scalar.c",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "6789c239fe7ff0aa37c0c80632cc3a3687c8ed3b",
+    "size_bytes": 9723,
+    "sha256": "e2c478ddc72781ae64710400daa550b6bc803ac026fed8bc62888152140e8e5b"
+  },
+  {
+    "path": "runtime/c/compiler/src/tsir/tests/test_source.c",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "5cea12a4c5284766225360b02a2c2dedc897c0a9",
+    "size_bytes": 5648,
+    "sha256": "aaaf00a39d2dc3cf2d4609529e664882c1588513b7c94f875fe7b3853827c6cb"
+  },
+  {
+    "path": "runtime/c/compiler/src/tsir/tests/test_source_control.c",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "9e4c591a756c609bbf198ed5dd058692063ff603",
+    "size_bytes": 4040,
+    "sha256": "7b92687f99b5bfa5d4958baf33ef8625a64f757cecadb1c1aa224281bcbd7a75"
+  },
+  {
+    "path": "runtime/c/compiler/src/tsir/tests/test_source_differential.c",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "98a86f277e0d1fcfad06dd75432734481405ccfe",
+    "size_bytes": 1444,
+    "sha256": "4fc95d4fb9dc5cc529f67e08674ae9c66fe4d940744ba8ecf052ab337b4b6d00"
+  },
+  {
+    "path": "runtime/c/compiler/src/tsir/tests/test_source_differential.py",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "52808465ba5ced0cf9053df19771c1de632f8c22",
+    "size_bytes": 9637,
+    "sha256": "0ba073675bef15545e614e8185b50e74f3059a9040a74b789a0571529117b35f"
+  },
+  {
+    "path": "runtime/c/compiler/src/tsir/tests/test_source_expr.c",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "fcf6ef2f3a44d024952c5750d4507e99aa69dbf5",
+    "size_bytes": 13011,
+    "sha256": "24699840d304e1a8f3c2aaa4f81e9be003fc1798d7464d9bf34b1e49f031efc0"
+  },
+  {
+    "path": "runtime/c/compiler/src/tsir/tests/test_targets.c",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "2ad67f7c316054e3bba98277f256dbe434887f05",
+    "size_bytes": 4350,
+    "sha256": "960580b7c32acf7c7a27d9dd50a84922aa68b7d5ef578b247bdc94a1343d4bb8"
+  },
+  {
+    "path": "runtime/c/compiler/src/tsir/tests/test_targets.py",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "9e1ba82f82ab55a9feaa07ef35395bf903505b7b",
+    "size_bytes": 5560,
+    "sha256": "6533f08f1376bef1a7b288857752e7f0259694134bc2a86ed9ed5425d135d94d"
+  },
+  {
+    "path": "runtime/c/compiler/src/tsir/tests/test_text.c",
+    "status": "A",
+    "mode": "100644",
+    "blob_sha": "d29de3fd2bb31aeebbccfe9380563d13dba95ee6",
+    "size_bytes": 11186,
+    "sha256": "14dda70e4625ff3672eb2c88e89de9136e2ea760dc1734a535933aa64cb5f696"
+  },
+  {
+    "path": "runtime/c/compiler/src/tsir/tests/test_text.py",
+    "status": "A",
+    "mode": "100644",
+    "blob_sha": "3f7dc2cd968a380ce541ab844d6ccdb259f5ffff",
+    "size_bytes": 5691,
+    "sha256": "657e0d2227260c5d31609b7a960ef44edb284abdc4c89327afc0dce33c9155e4"
+  },
+  {
+    "path": "runtime/c/compiler/src/tsir/tsir_bootstrap.c",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "3f915d2dc1c44f95950d5942212c7972f475a355",
+    "size_bytes": 9919,
+    "sha256": "87005c93703bd42762f0e77d98637582514ac9bb2ecebd9389c3b7012914bad2"
+  },
+  {
+    "path": "runtime/c/compiler/src/tsir/tsir_bootstrap.h",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "55157935bd82be0f58f00a1a3f0f7b6c142dc1f6",
+    "size_bytes": 4858,
+    "sha256": "ef356eccee9e736e491aa66241760d075819b62af1b84eb98c73e373c50de5fa"
+  },
+  {
+    "path": "runtime/c/compiler/src/tsir/tsir_bootstrap_manifest.c",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "3652c53da5856efeb22b4e314817a55b998a2709",
+    "size_bytes": 9292,
+    "sha256": "4ac4a27a8038f9df671dc4783def634c3b61c773d16c16e7acba158ee2072cc7"
+  },
+  {
+    "path": "runtime/c/compiler/src/tsir/tsir_bootstrap_oracle.c",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "6dca309e6e2c4c0f3efadcc4a7f1d731820e4cfa",
+    "size_bytes": 29273,
+    "sha256": "838b4d4617648c7567acb2b12b00264bd76b733e94e690616340e128cfdcf0fa"
+  },
+  {
+    "path": "runtime/c/compiler/src/tsir/tsir_digest.c",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "7083aa89f3f248c5f9517f7705667122ce9082d4",
+    "size_bytes": 26628,
+    "sha256": "93660e6ac5d9ad4a27b885c9f9fca96ff0473887f87caea48c74728eed4c447f"
+  },
+  {
+    "path": "runtime/c/compiler/src/tsir/tsir_digest.h",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "ba72f6447d1e2fe9de4e01517aff0029865aa11b",
+    "size_bytes": 1902,
+    "sha256": "6c1b3836fadf793d53fa0fe1dbac778adfb7bb6bcbaaf39220f18731a2ebe3f9"
+  },
+  {
+    "path": "runtime/c/compiler/src/tsir/tsir_emit.c",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "f272745e8782c3e2d736397ac8ca392c193158a2",
+    "size_bytes": 21004,
+    "sha256": "3a9e5bb57ea94d7bef178078bbcebe13c6d6e790fc1dcea25a7dbd27071cbff9"
+  },
+  {
+    "path": "runtime/c/compiler/src/tsir/tsir_emit.h",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "a9eb0e6089b1f7c92fc637d4360f8fd145c63e3b",
+    "size_bytes": 8190,
+    "sha256": "f332f894fcc69b110e32287b2d2c114f84a22cd4c029f7e4df8cdcc26e4eb6af"
+  },
+  {
+    "path": "runtime/c/compiler/src/tsir/tsir_family_hint.c",
+    "status": "A",
+    "mode": "100644",
+    "blob_sha": "e09525a932b0e2cd1bc02c5bd1cd7ebc253da282",
+    "size_bytes": 10774,
+    "sha256": "f55b5a0393ffb96287b71fd5aed5d65fe4de08aecbdd3fba4ef000db9d7f9add"
+  },
+  {
+    "path": "runtime/c/compiler/src/tsir/tsir_file.c",
+    "status": "A",
+    "mode": "100644",
+    "blob_sha": "b75bcdfd65394b88904b17c9b232ae0787d1e5c5",
+    "size_bytes": 4732,
+    "sha256": "3e0906ef516fd199d8d5492beb24b06d79c20cd9ac1f0cc00b27821e4692e8e3"
+  },
+  {
+    "path": "runtime/c/compiler/src/tsir/tsir_file.h",
+    "status": "A",
+    "mode": "100644",
+    "blob_sha": "c323993b9c4739826fd39dde73cb627690116efa",
+    "size_bytes": 628,
+    "sha256": "866ccfbcd54a4c9b8d2b5e55445ba44d0a856eeec159f122513242e6636feeb2"
+  },
+  {
+    "path": "runtime/c/compiler/src/tsir/tsir_format.c",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "ee7fe5b9bee25d391b71b47aa9a474e2140319a5",
+    "size_bytes": 582,
+    "sha256": "a6b93a74074c5f9d6060d2436241e4b05639c4edf29f459579c31b4e269b4701"
+  },
+  {
+    "path": "runtime/c/compiler/src/tsir/tsir_frontend.c",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "c022051bbe9aadabc27cff98929321e1e5ae1c83",
+    "size_bytes": 7805,
+    "sha256": "b3a88da32e2b210e7da13524f4e8cc5f86a3e5521d5b6f7c82c15e9a952501e5"
+  },
+  {
+    "path": "runtime/c/compiler/src/tsir/tsir_frontend.h",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "bebb1c562ad69e235eaeccadf09e5cb5d44d355d",
+    "size_bytes": 4998,
+    "sha256": "594359cfbd99e9f35452793397f852a91e1a8d757027ee7eabec7210f0e18cd4"
+  },
+  {
+    "path": "runtime/c/compiler/src/tsir/tsir_frontend_axes.c",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "d3c49527990a50ca53c39aa39d5175ce0850f654",
+    "size_bytes": 10768,
+    "sha256": "1a53dea491328043d914e7f12f15b2acd613c1f56e1834d51aac24033764391e"
+  },
+  {
+    "path": "runtime/c/compiler/src/tsir/tsir_frontend_bindings_axes.c",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "564a0ccddebb3d337ad59ee92c698322c84e05a2",
+    "size_bytes": 10403,
+    "sha256": "8d5e034ef73091717238f18bb4185f88d15b0c8e0d822525a2d927142a035227"
+  },
+  {
+    "path": "runtime/c/compiler/src/tsir/tsir_frontend_expr.c",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "499c6613a9d2eaf35ae872c03a1c183bdbefc0d5",
+    "size_bytes": 20791,
+    "sha256": "5d62f0234d564e6f798778ba169c0dcfe814378837a655011cea0f6a408b1ba6"
+  },
+  {
+    "path": "runtime/c/compiler/src/tsir/tsir_frontend_expr.h",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "5551e9345b40df7f2f0c0506fbc7268296dd4b33",
+    "size_bytes": 2249,
+    "sha256": "aa37a2dbc1b6fdb1790f330b37a8d9fd456530a7e67c5f9352032f05a0fb3822"
+  },
+  {
+    "path": "runtime/c/compiler/src/tsir/tsir_frontend_lower.c",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "b76cbe075752fe52810678bc076fe339ab690e37",
+    "size_bytes": 6654,
+    "sha256": "e281fd146ee5d4e3bdc8e87b4b7e69f9fead535db4e3b2af7a2ceb0f49bcd1e3"
+  },
+  {
+    "path": "runtime/c/compiler/src/tsir/tsir_frontend_passes.c",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "d4ae2d7f2293065b8c53e022a9d7e207744910ca",
+    "size_bytes": 25322,
+    "sha256": "9326b6ba9a4d9470077c221d90db78fa5a57cf6b0097f7a05339bb1d7c37f850"
+  },
+  {
+    "path": "runtime/c/compiler/src/tsir/tsir_frontend_reductions.c",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "7634854b5cddc7dbf2df6dfff517d099dcdfb66d",
+    "size_bytes": 15976,
+    "sha256": "eba66cfc19255aaa4fb4ef721779fd516c6f78123b3b3b069396c743faea822e"
+  },
+  {
+    "path": "runtime/c/compiler/src/tsir/tsir_planner.c",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "b0c3d06a93f375e10910ee62e564267ae2078852",
+    "size_bytes": 22370,
+    "sha256": "34c1b774885d96322ffcfb39b242fc66acde3d73bcd20c6c8f1dd3a443aee71d"
+  },
+  {
+    "path": "runtime/c/compiler/src/tsir/tsir_planner.h",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "79dea150476af168568a78a77f0ffd5269763feb",
+    "size_bytes": 4063,
+    "sha256": "ee47bea6518511ef8a6b1da5ec05601884dd274487a908636b06330f348c0c87"
+  },
+  {
+    "path": "runtime/c/compiler/src/tsir/tsir_reference.c",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "99f1bcb5b086bcca7335b7e117932419fd5bf3ee",
+    "size_bytes": 19664,
+    "sha256": "6b2d92b095a9cca643144f321bbc5199dc5817c99dfa1a0c0b25c1fa4ae0b591"
+  },
+  {
+    "path": "runtime/c/compiler/src/tsir/tsir_reference.h",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "23e84bc6905071db4d0865342f2d1a2a57d40960",
+    "size_bytes": 2082,
+    "sha256": "05db4c6dc9441a737749c4b2b6ee75de14e2b21cff7041350ad2a4100c843a2f"
+  },
+  {
+    "path": "runtime/c/compiler/src/tsir/tsir_reference_bodies.c",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "febec9db3044e199f25d20414f0a5c7498844629",
+    "size_bytes": 24459,
+    "sha256": "1857650f6660d7e8c39e78b8c8f9f6559fc82f740047a1f25f16b22a37fd23d7"
+  },
+  {
+    "path": "runtime/c/compiler/src/tsir/tsir_schema.c",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "5b07ed55f36a8a612521926c410365a971b05e5e",
+    "size_bytes": 9754,
+    "sha256": "a6b32fdf3c2c1798b9eac5bf98c43c521127a518d15ccf0004bf2b88b9f71ed3"
+  },
+  {
+    "path": "runtime/c/compiler/src/tsir/tsir_schema.h",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "553eb444b27042bb232be7f8f6271be64e3a4ba0",
+    "size_bytes": 16025,
+    "sha256": "508e932b1693ec195d66e1db0279a59a2e17c7758a08d184748702855ca56a9c"
+  },
+  {
+    "path": "runtime/c/compiler/src/tsir/tsir_source.c",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "e06f391e1395b0a193e11416576de1d61a82d476",
+    "size_bytes": 14045,
+    "sha256": "e1d393fdf87eefefdd45e5e275976b211d013388f9e343ae3ee0fbd7126e22e5"
+  },
+  {
+    "path": "runtime/c/compiler/src/tsir/tsir_source.h",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "4f54574492ab6289a1318aa9b75356a24552622c",
+    "size_bytes": 1087,
+    "sha256": "2a178f498cd4ce0f64ba5b352ed16f040577bc45c3bcc36d409fdcdef3af206b"
+  },
+  {
+    "path": "runtime/c/compiler/src/tsir/tsir_source_expr.c",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "213529771627901dad997013222804d549907789",
+    "size_bytes": 19640,
+    "sha256": "140a6caceb9acb340ca0d6e4017faa6c5f3d317bb6e54e8035c09f3db0345032"
+  },
+  {
+    "path": "runtime/c/compiler/src/tsir/tsir_source_stmts.c",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "a46ef2feac8dba969c0c2650720b36e422132f52",
+    "size_bytes": 14632,
+    "sha256": "70dad4a4cbb24045bb9da05e18424464824683230acd74ded95b954e36062739"
+  },
+  {
+    "path": "runtime/c/compiler/src/tsir/tsir_targets.c",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "574e2a27b7e6b8b9351cea45abaa2a6a625fdd61",
+    "size_bytes": 9649,
+    "sha256": "d538372682661008afdbd20b2d951e90d54fc54be7b23e888ce13ff30e8f247b"
+  },
+  {
+    "path": "runtime/c/compiler/src/tsir/tsir_targets.h",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "8371aad466328be9a4dadc2b308e5ff7f5423a58",
+    "size_bytes": 1930,
+    "sha256": "7527410f5ca939aa5af701a1797d88968cdbe8638ddb1fadadcf64637fe343a3"
+  },
+  {
+    "path": "runtime/c/compiler/src/tsir/tsir_text.c",
+    "status": "A",
+    "mode": "100644",
+    "blob_sha": "52d2b8b306467d8057579552c2a1d1299b6106ae",
+    "size_bytes": 1271,
+    "sha256": "1c763a3dd2c376bf6dcff4e8bf8617c1d40597da59739d1a55f683e931cc2972"
+  },
+  {
+    "path": "runtime/c/compiler/src/tsir/tsir_wgsl_ir.c",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "f689ca8f1ace08cd051653c641bf5550cc1b8f6f",
+    "size_bytes": 12125,
+    "sha256": "1a9a4de1e80a8a97f474abe07a593668def9aa6c505229f2c743ea18db6af97d"
+  },
+  {
+    "path": "runtime/c/compiler/src/tsir/tsir_wgsl_ir.h",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "507599b96a83373ec0768c5091eb491a66ea9f78",
+    "size_bytes": 9545,
+    "sha256": "2c4b573c000b0df9f0e018bd4eab0f16d63bf315db8b7ca4a6babe649744c924"
+  },
+  {
+    "path": "runtime/c/compiler/src/validate.c",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "ff999526a2afb7df3ee0a98dcf6ebec08f61d450",
+    "size_bytes": 29383,
+    "sha256": "de7669139497e51d1ae22ebcb25b143789bc733c137801b3020633c02ce0e3b4"
+  },
+  {
+    "path": "runtime/c/compiler/targets/hlsl/access.c",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "b87b99e3cdba212e61168b553e01dcaa4afb379f",
+    "size_bytes": 15239,
+    "sha256": "455b6b98de8bf044f7207d7565fae853015e1360b1211a7f4fd0dc6dd5bd29c5"
+  },
+  {
+    "path": "runtime/c/compiler/targets/hlsl/float_pack.c",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "98d7d68a827000c9a6064783550d44f4045fde07",
+    "size_bytes": 3078,
+    "sha256": "4c6b110afa772ed7bd98b6f532a3b938d513406591843f24cdc97518359ff765"
+  },
+  {
+    "path": "runtime/c/compiler/targets/hlsl/float_pack.h",
+    "status": "A",
+    "mode": "100644",
+    "blob_sha": "45cbde71013bbdc9223bc21a7b61a7d345f2bcd8",
+    "size_bytes": 343,
+    "sha256": "726fc147c1933dd9bff2815786fd378f61d072eeb207306e7f40f0a29680e709"
+  },
+  {
+    "path": "runtime/c/compiler/targets/ir_view.h",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "2dfe311b6fa09a25de78e43b6ebed7b5211c2372",
+    "size_bytes": 3621,
+    "sha256": "dcaaafd2d95e2fe30f93f66ad763c314cb97fba65ce5ac7088a4f498e1a27fbb"
+  },
+  {
+    "path": "runtime/c/compiler/targets/source_facts.h",
+    "status": "A",
+    "mode": "100644",
+    "blob_sha": "ea3b191e48c68ddb0c98a5c5f90d8a4ada270eee",
+    "size_bytes": 5581,
+    "sha256": "37b6db09061b35329ec45c7adfbabad02b8b820d8afe0accd8ebdfb3af809001"
+  },
+  {
+    "path": "runtime/c/compiler/tests/job_machine.py",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "d5405fe63930904b065af3a20b90cb88f1a03a06",
+    "size_bytes": 7722,
+    "sha256": "b59fe075b791b55f1bb0ef879bc870e652b86fdae0b71635b392e822ea2bebb0"
+  },
+  {
+    "path": "runtime/c/compiler/tests/test_api.c",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "3aa5ff1d6ea0750f7076dcd1cc94e18a03e3d563",
+    "size_bytes": 11771,
+    "sha256": "36196271cc6ae1da76443d329850bf46009b1361a347d770fb46d438e05748d3"
+  },
+  {
+    "path": "runtime/c/compiler/tests/test_bootstrap_manifest.py",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "cd3ca390d26f5c726ce2f393049cfadf6e5cc957",
+    "size_bytes": 9127,
+    "sha256": "cbd71331e4060710e86d189d3c2309288c47355fb48b1ea9e9cbffc7e77f8941"
+  },
+  {
+    "path": "runtime/c/compiler/tests/test_cli.py",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "da8e0c6cf735aa371eb6d351cb2fbd155a41c83b",
+    "size_bytes": 20199,
+    "sha256": "a4b7ace28d79c282c3fb1dd1f626d671433115e7ce45c970b1d56adb63f1bac1"
+  },
+  {
+    "path": "runtime/c/compiler/tests/test_compiler_host.c",
+    "status": "A",
+    "mode": "100644",
+    "blob_sha": "d646468d2e184cd4dd1a008052b739e5349f0bce",
+    "size_bytes": 5754,
+    "sha256": "9bd9f5cb4e3ab860a49e34e057d5324c9cb1228c203072430320b818f79e8e23"
+  },
+  {
+    "path": "runtime/c/compiler/tests/test_compiler_host.cpp",
+    "status": "A",
+    "mode": "100644",
+    "blob_sha": "d66da509030067032b75c4848893f65188bbd9e0",
+    "size_bytes": 1068,
+    "sha256": "96524a6b2bac59be69dce37a7ec91a6ef04e8f40c4d4ce97b2da5462478e4016"
+  },
+  {
+    "path": "runtime/c/compiler/tests/test_compiler_host_alloc.c",
+    "status": "A",
+    "mode": "100644",
+    "blob_sha": "8594dbe2d9631941de725591aca0b278266ee7c1",
+    "size_bytes": 3236,
+    "sha256": "9d23ffe3d9ca9ca0168b360cab85a081cf00f04f562be43e309ba2059ccef649"
+  },
+  {
+    "path": "runtime/c/compiler/tests/test_compute.py",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "df016ef4ad357307cf27419ab8f7f6a2302d9047",
+    "size_bytes": 16559,
+    "sha256": "fbf0f33f926cad5e9332e0b7b1c52a19d7e3a0e7960e52ed8ba02e38d2d031b9"
+  },
+  {
+    "path": "runtime/c/compiler/tests/test_compute_api.c",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "06c72eb9ba43bc3cc3746744e03e6aadf3936fbc",
+    "size_bytes": 6898,
+    "sha256": "e64c7c6b06528faafc9a8a75dff04a2355fc9b090ca53ae4f26a697b62a3e4d5"
+  },
+  {
+    "path": "runtime/c/compiler/tests/test_constants.c",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "a28fe24b182e089e54827f61361fcf8611d1ae85",
+    "size_bytes": 3118,
+    "sha256": "c4f8f7721e060729286d535c2f09decc4685b1f41e5fb2bda5b14b6c4aee9cf9"
+  },
+  {
+    "path": "runtime/c/compiler/tests/test_control.py",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "eee342f2bdaa1f624dd37057b62ba79489116a4a",
+    "size_bytes": 10569,
+    "sha256": "263dfb7a8a7a28393e0112d6dcadac5bdf95d2e932dc77263a7eafd0a383d9a0"
+  },
+  {
+    "path": "runtime/c/compiler/tests/test_expressions.py",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "a69ce93db0b9ab0e61fd832e27dd66c411e5a51e",
+    "size_bytes": 15074,
+    "sha256": "5a86ec330594cb77bc3cbce8738bb31b4c35d7037a0bf361d1f59502a0e8bc62"
+  },
+  {
+    "path": "runtime/c/compiler/tests/test_hlsl_abi.cpp",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "29aafeafbb410a03d51f64c26866f81bde589971",
+    "size_bytes": 1992,
+    "sha256": "15cacb3f257299b79705275b3beb74e5bc18c256e0c635ac438df0ac46cdd59c"
+  },
+  {
+    "path": "runtime/c/compiler/tests/test_hlsl_api.c",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "9dde365d53fbba778b8820078a5fe8529af5b533",
+    "size_bytes": 12365,
+    "sha256": "c0379a049af6007a9c3ff7df78e8db99dd7ffd36d9f24c2d61a05780b43f994d"
+  },
+  {
+    "path": "runtime/c/compiler/tests/test_host_exports.py",
+    "status": "A",
+    "mode": "100644",
+    "blob_sha": "1db58aa5cfa736cbeacd9844f5168076fb26b638",
+    "size_bytes": 1855,
+    "sha256": "01b2ad6398c1018d25a8f8ac6bc7a5eb38d1191b5f7700d562449328b72a72ee"
+  },
+  {
+    "path": "runtime/c/compiler/tests/test_job.py",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "2f450371886de27e02644308badd2d2adaf28be5",
+    "size_bytes": 7917,
+    "sha256": "07f448f8b3370b64bc3c650561f4ca04fc40f54ff9560ca420524537de4a8e51"
+  },
+  {
+    "path": "runtime/c/compiler/tests/test_job_api.c",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "e6b34789b4a01272bac5f784df757ab96885ec3b",
+    "size_bytes": 15618,
+    "sha256": "f874ef930acc2d0d1b70cb638750af184a75072130d87ea7755e890bb5f03b1e"
+  },
+  {
+    "path": "runtime/c/compiler/tests/test_uniforms.py",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "e467c1cc702eaa2a8caad032473148e579383d7e",
+    "size_bytes": 9366,
+    "sha256": "b812b20d2d9ce1ed2c83f9ca5747537f5290dd7e45c5e7371cdad6b6c8bdd94f"
+  },
+  {
+    "path": "runtime/c/compiler/tools/build_host_windows.py",
+    "status": "A",
+    "mode": "100644",
+    "blob_sha": "40f828a055a385a342282167849c34d12f947303",
+    "size_bytes": 8364,
+    "sha256": "c090074f4f8d92430ef0f43cbc3ce4ccc58e3040d16b64149e0d9873f4f4b410"
+  },
+  {
+    "path": "runtime/c/compiler/tools/build_windows.py",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "0052c13b59e82a4573eb9898fab42140d36fab30",
+    "size_bytes": 6322,
+    "sha256": "e079fa1630117ad16c1d24854983d7e089470575f8bd6d4ef08266941f48f722"
+  },
+  {
+    "path": "runtime/c/compiler/tools/test_header_dependencies.py",
+    "status": "A",
+    "mode": "100644",
+    "blob_sha": "0b3994f0a0c3ec068d4168c8f914211ec11608ee",
+    "size_bytes": 4984,
+    "sha256": "5d5d6313c15ae45bd798427b744bb7c8a0290eb3dc1329f3853de283d156a5f8"
+  },
+  {
+    "path": "runtime/c/compiler/tools/test_host_dxil.py",
+    "status": "A",
+    "mode": "100644",
+    "blob_sha": "b99b3e42a4fe4643644c7a7dd9dcd0d0a66de50d",
+    "size_bytes": 4940,
+    "sha256": "06e1a065a17ca72c37b9b3d12a2b9a6144e094dd97525a45e4223f762dd3b697"
+  },
+  {
+    "path": "runtime/c/compiler/tools/test_host_install.py",
+    "status": "A",
+    "mode": "100644",
+    "blob_sha": "fd7b30644308d9b03951603567e4bde0be7baf06",
+    "size_bytes": 4176,
+    "sha256": "10077a0a9a8cc0768fc087109141381e738b4bf4f0db0c6358527be2a4eb3dd7"
+  },
+  {
+    "path": "runtime/c/compiler/tools/windows_compile.py",
+    "status": "A",
+    "mode": "100644",
+    "blob_sha": "1f3c5789ede07cd9c752b47e1c7143bd8255a624",
+    "size_bytes": 669,
+    "sha256": "a61794a7a1ee44e248f63dbcd4a26ef44784cd0f24fb5b62bfce107ed26f0e16"
+  },
+  {
+    "path": "runtime/c/native/Makefile",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "dcab687c7cf7edae14307245d05fc2123cc3ac19",
+    "size_bytes": 50625,
+    "sha256": "77e695dec29fdfe8c4079fe4d0d489b635fd52a17d669d5f6737afc7941f1578"
+  },
+  {
+    "path": "runtime/c/native/README.md",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "afee524c1adfa1a52e88c7313ae59033b151dcbf",
+    "size_bytes": 124960,
+    "sha256": "615904e92c0ee92f1977e1b54d290a613087323be956d7c6c1d8cf4ba7b01bdf"
+  },
+  {
+    "path": "runtime/c/native/src/internal.h",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "19beb9d976422c4b24a42e10a3878d89923e8995",
+    "size_bytes": 19744,
+    "sha256": "5692cee812520b9f50d0daaa1b404ee14ce500a032f959c4add483a2682e63a2"
+  },
+  {
+    "path": "runtime/c/native/src/lifecycle.c",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "869035acbd2ad2e9d091eaae1cbf48128735443c",
+    "size_bytes": 23925,
+    "sha256": "2444846c070e8750457f257b98acc16f36e08e5dd85fa241c00ccdd73e1fd03c"
+  },
+  {
+    "path": "runtime/c/native/src/shader_cache.c",
+    "status": "A",
+    "mode": "100644",
+    "blob_sha": "b5c4f34f3053b2ac6a31c26ca2dc9f10dcbcc985",
+    "size_bytes": 2488,
+    "sha256": "0cb509928ca74596589456650a283cdd33aa8037cbd071d7e761dc771be7e8a3"
+  },
+  {
+    "path": "runtime/c/native/src/shader_cache.h",
+    "status": "A",
+    "mode": "100644",
+    "blob_sha": "a8da5cdb292bfbc513f27a4c3b64017eba2aed4e",
+    "size_bytes": 1125,
+    "sha256": "a09cae15d7332ea08f932c42192d39d19e554bbe627cc44bd5d21f865ad2f407"
+  },
+  {
+    "path": "runtime/c/native/src/shader_cache_identity.c",
+    "status": "A",
+    "mode": "100644",
+    "blob_sha": "01d011c1e13825880e111ca622d2e8627b18fd7b",
+    "size_bytes": 12680,
+    "sha256": "ab316d0f0922f7e74f06ba82b98904363df89ddac2172d924622f07778539ed8"
+  },
+  {
+    "path": "runtime/c/native/src/shader_cache_identity.h",
+    "status": "A",
+    "mode": "100644",
+    "blob_sha": "df949aa9f6d5d6e9b3b2ffc34b72f6b4dd289872",
+    "size_bytes": 1073,
+    "sha256": "0050aaa516eab0eb8b71b1993c714745ae12de3f50a561fc4bdf092ecc71bfd8"
+  },
+  {
+    "path": "runtime/c/native/src/shader_disk_cache.c",
+    "status": "A",
+    "mode": "100644",
+    "blob_sha": "da91e8c9b810a8c2b8aa5cc0f5d6ac3970e0ca40",
+    "size_bytes": 3589,
+    "sha256": "900629c45b3ce3ed0adaf596289c9ca645767fbcda90aade47fb01647e08e40c"
+  },
+  {
+    "path": "runtime/c/native/src/shader_disk_cache.h",
+    "status": "A",
+    "mode": "100644",
+    "blob_sha": "4153fee5178261c1a92133b1e10795a2d1bd4be6",
+    "size_bytes": 780,
+    "sha256": "11a187db9a285d1f2cff07d083fbfbe61abb691538a38b7d258c86cf08353c46"
+  },
+  {
+    "path": "runtime/c/native/src/shader_modules.c",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "28021cd17156048239d6b5d96ad9a0b9cb2d84f6",
+    "size_bytes": 10118,
+    "sha256": "6af6521972a68ee71845a2ccc8ff59f6366741388723fdf214c5189a8bdb6522"
+  },
+  {
+    "path": "runtime/c/native/src/stages.c",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "baca88fe6cedf9d3b9055450d39b5b59ce823cea",
+    "size_bytes": 10222,
+    "sha256": "98c605b8f1de01d0f45b3664bb327a4f21b397676c5ebdf9b1c5068104c2ff1e"
+  },
+  {
+    "path": "runtime/c/native/tests/encoder_errors.c",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "5ae5787ad7274d837ca623ba6e124f2a5ce19e31",
+    "size_bytes": 22726,
+    "sha256": "0351611545f7754d9233fbfdb079c7305f6ba5c4f6ddfbad6107b9ca0bd87b01"
+  },
+  {
+    "path": "runtime/c/native/tests/shader_cache.c",
+    "status": "A",
+    "mode": "100644",
+    "blob_sha": "9982b5b054efd4417ad770194114b67c0881e45d",
+    "size_bytes": 16231,
+    "sha256": "13fdf791a4305171c3492bf0c48fac176631c8635a3856452796404cfa3532d6"
+  },
+  {
+    "path": "runtime/c/resources/README.md",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "0eb1fe7f791fa0355135129d5c6b6957f3d13b49",
+    "size_bytes": 38214,
+    "sha256": "a405c9e070d9180ea001954978095614224ad7615abf7978a8aaa8a8d19203b0"
+  },
+  {
+    "path": "runtime/c/resources/include/doe_resources.h",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "6675eabe685d6ab82fec175d280d17b8abb76c05",
+    "size_bytes": 37553,
+    "sha256": "f2fc5a71c4df4cc4af363a865818fa9770a81dcf59f52899a7638c64da68d497"
+  },
+  {
+    "path": "runtime/c/resources/src/commands.c",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "5c6c3d26d703ab1f1b6fbb6e9d93fb221ed9b467",
+    "size_bytes": 32089,
+    "sha256": "54f39bb7803e1728f388d85a1494c3a726861e146eb32ecebb7cdb4070c89311"
+  },
+  {
+    "path": "runtime/c/resources/src/compute_pass.c",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "c778f7a305fce9badca4676df66a86fdd4d3b770",
+    "size_bytes": 11395,
+    "sha256": "0e4e8dcf3d49611aabfca18ffe18716f6fa148afe509647c3e6bc3b6d2b6004d"
+  },
+  {
+    "path": "runtime/c/resources/src/render.c",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "669cc989914b5f21d7e5490da54c591acdd5cd7a",
+    "size_bytes": 35241,
+    "sha256": "57794737d069e4e257ea109328c1b03da222df380be641a365b6892ae0214092"
+  },
+  {
+    "path": "runtime/c/resources/tests/test_extended.c",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "4c9e2672d3ebd55a3b7c027a7d9b6f3c980103b6",
+    "size_bytes": 29793,
+    "sha256": "3a57ae6f075b3b1f8bc34cade54a1a4bd95da5e5d984260535f9ce9daaa49780"
+  },
+  {
+    "path": "runtime/c/runtime-cli/CATSCAN.md",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "bbf1dccaac5542ed5bc2e5269dc5b118ab6968fc",
+    "size_bytes": 2179,
+    "sha256": "47e707a0ffc542ace96947af2214dfd4bd1766026bc5224cc3644766bfd82e18"
+  },
+  {
+    "path": "runtime/c/runtime-cli/README.md",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "35d62cad4370f1f067c972204c82b99ead715bad",
+    "size_bytes": 43522,
+    "sha256": "f511db754b3a381cf22e4ab11e164b56f148c7db4da8e68c286c42ef34900342"
+  },
+  {
+    "path": "runtime/c/runtime-cli/src/cli_options.c",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "56222126bf59b72e1a398c7864fc1846f3c6ea5a",
+    "size_bytes": 14251,
+    "sha256": "6be12383786db1a87bc26b0136541f7585298eda0f9c31145783c322391739cd"
+  },
+  {
+    "path": "runtime/c/runtime-cli/src/cli_options.h",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "4f2803594832d4470c5ba4150414be8a4e7a3b88",
+    "size_bytes": 1721,
+    "sha256": "a8d3269b5def81c65f143af3b55430da0643370a5e2091df2a6d38134a40639f"
+  },
+  {
+    "path": "runtime/c/runtime-cli/src/main.c",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "578c0c7b40c6956468a366da6d0715fad373035c",
+    "size_bytes": 37053,
+    "sha256": "6d79b0de0557c61ddef6d431974beede4eb6f5484ae8ad5f2c9eb1089eb14856"
+  },
+  {
+    "path": "runtime/c/runtime-cli/src/plan.c",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "0f898cafd83c0e615b62ea1462df6a4f32fdaa26",
+    "size_bytes": 22239,
+    "sha256": "ca799f0747e4fd6c480205f5b5d634e30f7421db4de75a434321f7d7436d5e35"
+  },
+  {
+    "path": "runtime/c/runtime-cli/src/plan.h",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "8b5f8d7414a66898f5ba3fe51feb1302a3d3c6b9",
+    "size_bytes": 2214,
+    "sha256": "dcfe512e6cd457b0c983c47cd5f460c221ab1472397307387fa2422f924026eb"
+  },
+  {
+    "path": "runtime/c/runtime-cli/tests/test_cli_host_modes.py",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "2c4483cb9914e3e68dd20321a53d4b41c2278cb6",
+    "size_bytes": 13438,
+    "sha256": "59beadfa2d954660fa627970ca1635e5d5d343cac99fe7a21eafccb8a39c6c84"
+  },
+  {
+    "path": "runtime/c/shader/CATSCAN.md",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "54b27ce94b41f0ef492251723c13442574771bb5",
+    "size_bytes": 2502,
+    "sha256": "4de3bf5485a533a1962a820233d4ec163574604956c2564b5315206fa0f6b7cb"
+  },
+  {
+    "path": "runtime/c/shader/Makefile",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "a1d91f9e205d37d55c3500829185f719aff99604",
+    "size_bytes": 3827,
+    "sha256": "d20fbd433ecf634aaaca2fcc6327cae3bfc23cc33da9600c881c54ca606d0917"
+  },
+  {
+    "path": "runtime/c/shader/README.md",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "6bea6067065e2a86a417983ccd4894f28bad9f3a",
+    "size_bytes": 14183,
+    "sha256": "84c68b3e3e5bdadc7044b19a17337cb86af7f7a16a945fd3c89cc5f04b3f942e"
+  },
+  {
+    "path": "runtime/c/shader/include/doe_shader.h",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "7bd02040742b965f2041e3863ab64b89c522bba5",
+    "size_bytes": 10084,
+    "sha256": "5b8d393f9e7499282aa2a4b6b5c9efcc55ae8cb6dbee89ae157effd49cf37a47"
+  },
+  {
+    "path": "runtime/c/shader/include/doe_shader_artifact.h",
+    "status": "A",
+    "mode": "100644",
+    "blob_sha": "5b616ecadd9bf1f13fbaa693497ece2c7ab8fa20",
+    "size_bytes": 1253,
+    "sha256": "043d2af6aef962abc514f9700826db3713e5731712994dd86fc6790b3bdbfec8"
+  },
+  {
+    "path": "runtime/c/shader/src/artifact.c",
+    "status": "A",
+    "mode": "100644",
+    "blob_sha": "8182ea9cf2ae082bb8362cbacc0a18ba1ff765b2",
+    "size_bytes": 9618,
+    "sha256": "34c7eca5f39a2d265de79889d06aa98d53691f0b233ed16334d28a892ad9d192"
+  },
+  {
+    "path": "runtime/c/shader/src/artifact_internal.h",
+    "status": "A",
+    "mode": "100644",
+    "blob_sha": "7671b01a59c07a787acf4bb3b4ff5db2c558c010",
+    "size_bytes": 1892,
+    "sha256": "e51ea2e6c0d87567043f34c0a639b83a321aa651d73e273002f2dcb2fc595687"
+  },
+  {
+    "path": "runtime/c/shader/src/artifact_validate.c",
+    "status": "A",
+    "mode": "100644",
+    "blob_sha": "c9c31414aaf1208405be1862f4c62f27f492006d",
+    "size_bytes": 7355,
+    "sha256": "52ba69cb5b916687b84d5ca86bb7bf696f546ffd548e0008a964ba30b89ce181"
+  },
+  {
+    "path": "runtime/c/shader/src/module.c",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "9549b822dae0ab19797cc48ffa7224eb86bb1b7c",
+    "size_bytes": 8546,
+    "sha256": "eeb653648aa6abbdbf508f4e397e324ea917d8d78b715f1eab641c03dcd485af"
+  },
+  {
+    "path": "runtime/c/shader/tests/cpp.cpp",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "38dd9d39e29e07bfdac16197fa97e1eab3111ddf",
+    "size_bytes": 3805,
+    "sha256": "0a10088a4ec94b1b572638f301d998075770cd056ea6d3ceb248c6a5309fde0c"
+  },
+  {
+    "path": "runtime/zig/source-layout.json",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "3f9313f5dff9d33ffa283bfb39d5c5df1b0fcfd8",
+    "size_bytes": 296425,
+    "sha256": "687343fc1c19424b8a0f77951456a129a4923a455772ba469c18bf00cf16fd2c"
+  },
+  {
+    "path": "runtime/zig/src/compiler/tsir/reference_reduction.zig",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "79d618566cd5633d9c75be4e232ca82cf175f0d3",
+    "size_bytes": 20798,
+    "sha256": "da0ea9e1c00efa6ff9a8fb4e157c9df4e2dda5347ad7160294d6e32901326120"
+  },
+  {
+    "path": "runtime/zig/src/compiler/tsir/reference_scalar.zig",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "e864f50f060568671f03a3934e7eac3b1ee3ef98",
+    "size_bytes": 4113,
+    "sha256": "84db0b3fa0b9745bf8e64cb8d04ccc10c84a90890965d55744446ee5d84073f9"
+  },
+  {
+    "path": "runtime/zig/src/compiler/tsir/reference_types.zig",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "19867e99924650ccb6381576c23ee1a053402179",
+    "size_bytes": 585,
+    "sha256": "875c89b534a36c57df6c640058d2370c315828b2039fd59ac7f81a799d230ec2"
+  },
+  {
+    "path": "runtime/zig/src/compiler/wgsl/WGSL_SUPPORT.md",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "6072752b55ef0fd8f3daf3bb9283b3a4621b01bf",
+    "size_bytes": 6963,
+    "sha256": "1f02310788e852d23796b08e4acce2fb0df4b9991c479d68514c68e80bf991ec"
+  },
+  {
+    "path": "runtime/zig/src/compiler/wgsl/frontend/sema.zig",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "0ca9988fda260a7b0b3e3850d95927dbbdc504e2",
+    "size_bytes": 43069,
+    "sha256": "cf47d1e0ae63b41c76e4af7b7eb3ac039e11fdfdfd995bf961bd73dd1da02f80"
+  },
+  {
+    "path": "runtime/zig/src/compiler/wgsl/frontend/sema_expr.zig",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "acf0b7679547d47cb738638112f73bd2aa701611",
+    "size_bytes": 20744,
+    "sha256": "50b54922150c438c8e2601b4bacb84857472d23dfc8513e43e431cfbc8529254"
+  },
+  {
+    "path": "runtime/zig/src/compiler/wgsl/frontend/sema_types.zig",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "7235f6581370f1fa9c0feb8538aa3af42ca34696",
+    "size_bytes": 7903,
+    "sha256": "67cd6a5f901d634d7745cec430b32561f9dcaf481fb093bb25c030afb4694268"
+  },
+  {
+    "path": "runtime/zig/src/compiler/wgsl/frontend/sema_typeutils.zig",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "a5f7adb3fbdb185da4fb35d784591adefb3c36df",
+    "size_bytes": 3494,
+    "sha256": "1808e0aafdd686ce5428165cddf5996c9d0a04a5fb691cf6c0d08387eaaae39b"
+  },
+  {
+    "path": "runtime/zig/src/compiler/wgsl/ir/ir_builder.zig",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "56a30035a7d83cb280f4e93f3c4fd2bcea8b2dc9",
+    "size_bytes": 39802,
+    "sha256": "d9834d5c236b1640c75b88571dbe207bba88268ac072ddccdb5d8ce4c9a1043c"
+  },
+  {
+    "path": "runtime/zig/src/compiler/wgsl/ir/ir_opt_rewrite.zig",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "a0a46a5fd9eca6f30e60c2de2e3fe5f219bcd6ed",
+    "size_bytes": 34626,
+    "sha256": "3d265d1b9df9c712d73d1617888bc87c6c66e10fb421def4115169ee173f4007"
+  },
+  {
+    "path": "runtime/zig/src/compiler/wgsl/ir/ir_validate.zig",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "79ed0b3da4a462f7a53e9ad59ac9a39033241b2a",
+    "size_bytes": 11138,
+    "sha256": "ae4d7e5182d72a26be6dc01af2040efe9792b8bbd444bb88f72d6041a85cf8a5"
+  },
+  {
+    "path": "runtime/zig/tests/core/wgsl_parser_ir_test.zig",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "e4a38ceebc0e1150a3e85712b7721c782086bfca",
+    "size_bytes": 25364,
+    "sha256": "74a47e87144873cd922fdd984f09228b1ff452698b876c0ecdc4f3636e61ee33"
+  },
+  {
+    "path": "runtime/zig/tests/wgsl/emit_spirv_builtin_test.zig",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "34a2cd192ca13c6fd1da983a9487e8dc34a8dcea",
+    "size_bytes": 62962,
+    "sha256": "6cef73d4fc74e3646f35dba0cbbfd6c854c10cc67671c49be7fdbcf733c6d3f8"
+  },
+  {
+    "path": "runtime/zig/tests/wgsl/shader_sema_test.zig",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "0535289f8a479895786ff4c84cc1b4537c1000a5",
+    "size_bytes": 23303,
+    "sha256": "5509582c2d01acb7c6f0be1b6960f645cef07ed88f6374af85cbb50ce452e667"
+  },
+  {
+    "path": "runtime/zig/tests/wgsl/tsir_scaffold_test.zig",
+    "status": "M",
+    "mode": "100644",
+    "blob_sha": "283dae030fd4a47195b1c167cc9fdc1f777ddfad",
+    "size_bytes": 19687,
+    "sha256": "dd3b95c88e68f4d3d2af76d883d7b853535aa27fc7dd331c67b2ea2d7711fb1c"
+  }
+]

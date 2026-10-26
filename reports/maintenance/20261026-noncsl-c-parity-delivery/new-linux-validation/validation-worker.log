@@ -1,0 +1,12 @@
+START aggregate
+END aggregate exit 2
+START cross-owner
+END cross-owner exit 0
+START cpu-vulkan
+END cpu-vulkan exit 0
+START compiler-host
+END compiler-host exit 0
+START dxil-tsir
+END dxil-tsir exit 0
+START dxil-tsir-sanitizers
+END dxil-tsir-sanitizers exit 0

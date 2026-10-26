@@ -2,6 +2,9 @@
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
 #endif
+#ifndef _DARWIN_C_SOURCE
+#define _DARWIN_C_SOURCE
+#endif
 #include "shader_cache_identity.h"
 #include "doe_compiler.h"
 #include "../../shader/include/doe_shader_artifact.h"
@@ -213,16 +216,28 @@ static bool loaded_image(uintptr_t anchor, image_hash *hash)
     if (!found) return false;
     const uint8_t *commands = (const uint8_t *)(header + 1);
     size_t offset = 0;
+    bool uuid_found = false;
     for (uint32_t i = 0; i < header->ncmds; ++i) {
         if (offset > header->sizeofcmds || header->sizeofcmds - offset < sizeof(struct load_command))
             return false;
         const struct load_command *command = (const struct load_command *)(commands + offset);
         if (command->cmdsize < sizeof(*command) || command->cmdsize > header->sizeofcmds - offset)
             return false;
+        if (command->cmd == LC_UUID) {
+            if (uuid_found || command->cmdsize < sizeof(struct uuid_command)) return false;
+            const struct uuid_command *uuid = (const struct uuid_command *)command;
+            const uint8_t empty[16] = {0};
+            if (!memcmp(uuid->uuid, empty, sizeof(empty)) ||
+                !span(hash, (uintptr_t)header, (uintptr_t)uuid, sizeof(*uuid))) return false;
+            uuid_found = true;
+        }
         if (command->cmd == LC_SEGMENT_64) {
             if (command->cmdsize < sizeof(struct segment_command_64)) return false;
             const struct segment_command_64 *segment = (const struct segment_command_64 *)command;
-            if (segment->initprot & VM_PROT_READ) {
+            /* dyld makes relocated __DATA_CONST read-only after writing ASLR
+             * pointers. Bind those original bytes by LC_UUID, like the ELF
+             * build ID, and hash only originally immutable mapped payload. */
+            if ((segment->initprot & VM_PROT_READ) && !(segment->initprot & VM_PROT_WRITE)) {
                 uintptr_t address = (uintptr_t)segment->vmaddr + (uintptr_t)slide;
                 if (segment->vmsize > UINTPTR_MAX - address) return false;
                 uintptr_t end = address + (uintptr_t)segment->vmsize;
@@ -248,7 +263,7 @@ static bool loaded_image(uintptr_t anchor, image_hash *hash)
         }
         offset += command->cmdsize;
     }
-    return hash->spans != 0;
+    return uuid_found && hash->spans != 0;
 }
 #else
 static bool loaded_image(uintptr_t anchor, image_hash *hash)

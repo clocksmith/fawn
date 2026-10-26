@@ -1,0 +1,20 @@
+make: Entering directory '/home/x/deco/doe/bench/out/c-parity-delivery-20261026/linux-validation/runtime/c/compiler'
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -Iinclude tests/test_compiler_host.c build/libdoe_compiler_host.so -Wl,-rpath,'$ORIGIN' -o build/test_compiler_host
+g++ -std=c++17 -fno-exceptions -fno-rtti -O2 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror  -Iinclude tests/test_compiler_host.cpp build/libdoe_compiler_host.so -Wl,-rpath,'$ORIGIN' -o build/test_compiler_host_cpp
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -Iinclude tests/test_compiler_host_alloc.c build/host/dxil.o build/host/host.o build/host/tsir.o build/libdoe_tsir.a build/libdoe_dxil.a build/libdoe_compiler_core.a -Wl,--wrap=malloc,--wrap=calloc,--wrap=realloc,--wrap=free -lm -o build/test_compiler_host_alloc
+python3 tools/test_host_install.py --cc 'gcc' --cxx 'g++' --library 'build/libdoe_compiler_host.so'
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -Isrc/dxil -Isrc/dxil/tests src/dxil/tests/test_dxil_io.c build/libdoe_dxil.a build/libdoe_compiler_core.a -lm -o build/test_dxil_io
+build/test_compiler_host ../../..
+PASS: allocating host C ABI, source/manifest/oracle, publication and release
+build/test_compiler_host_cpp
+PASS: ordinary C++ host ABI consumer
+python3 tests/test_host_exports.py 'build/libdoe_compiler_host.so'
+build/test_compiler_host_alloc
+PASS: host oracle 71 acquisition failures, empty publication and retry
+PASS: allocating host C ABI, source/manifest/oracle, publication and release
+PASS: ordinary C++ host ABI consumer
+PASS: moved public C/C++ host artifact and native manifest/oracle CLIs, no loader override
+PASS: bounded host exports; original compiler exports/no-heap imports preserved
+python3 tools/test_host_dxil.py --library 'build/libdoe_compiler_host.so' --child build/test_dxil_io
+PASS: public DXIL ABI source/child/validation, failure atomicity, cleanup and retry
+make: Leaving directory '/home/x/deco/doe/bench/out/c-parity-delivery-20261026/linux-validation/runtime/c/compiler'

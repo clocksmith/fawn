@@ -1,0 +1,86 @@
+{
+  "base_commit": "3918ff8d8dafa929292fe4347cd078c36d2d8b68",
+  "local_reference_commit": "173e43022571fa1c22d48eec065c69c2e3356357",
+  "local_c_commit": "4170a010df689cb8fc167d3fa01ca1575fb21b81",
+  "tree": "056ff282eefdae6b5a3ef786805484c1ca44fa45",
+  "receipts": [
+    {
+      "name": "core",
+      "path": "/tmp/fawn-core-full-final.log",
+      "status": "pass",
+      "sha256": "ccaaddf6dffb32a4d1659344c8034784d807b3b3adb04a8d5c87bf8701518f6e",
+      "bytes": 28513
+    },
+    {
+      "name": "post_naming_integration",
+      "path": "/tmp/fawn-integration-post-naming.log",
+      "status": "pass",
+      "sha256": "e7f27c05f24ecbfa7e803b89ebde86f68e869f8f0d2a396d37edfa3304048bfd",
+      "bytes": 81504
+    },
+    {
+      "name": "zig",
+      "path": "/tmp/fawn-optimizer-review/full-wgsl-final.log",
+      "status": "pass_1077_skip_22",
+      "sha256": "b1351540377a450102371ee52600a702ae667a3becd7cdb06db2dfa2fe6db2d8",
+      "bytes": 3733
+    },
+    {
+      "name": "tsir_and_decimal",
+      "path": "/tmp/fawn-c-parity-completion-evidence/final-differentials.log",
+      "status": "pass_30_and_4152",
+      "sha256": "e5a61a48ffc23ddbc2f3f4c9e3771be5fefa8540340ce93b129f2a2014a8412d",
+      "bytes": 17140
+    },
+    {
+      "name": "post_naming_differential_and_owners",
+      "path": "/tmp/fawn-c-parity-completion-evidence/final-post-naming-gates.log",
+      "status": "pass_24_exact_3_documented_reference_differences",
+      "sha256": "876458ccc897c555eab99530f403a3ce28e23a0e2f174cae8a52198743850360",
+      "bytes": 18534
+    },
+    {
+      "name": "required_aggregate",
+      "path": "/tmp/fawn-c-parity-completion-evidence/final-post-naming-required-aggregate.log",
+      "status": "fail_3_excluded_baseline_CSL_registrations",
+      "sha256": "f04a49dcab04788555860c0c4d52aa7a3fa205977b98d5bdcf10203adb183bcd",
+      "bytes": 631
+    },
+    {
+      "name": "native",
+      "path": "/tmp/fawn-c-parity-completion-evidence/native-frozen-summary.json",
+      "status": "fail_1_MSAA_of_106",
+      "sha256": "f36ba5dcaf3ebb8e65265dbc88b1154640ad3cc9f85fa0cb335ffa95213e6330",
+      "bytes": 1319
+    },
+    {
+      "name": "vulkan_lifetimes",
+      "path": "/tmp/fawn-c-parity-completion-evidence/vulkan-lifetimes-frozen.log",
+      "status": "pass_5",
+      "sha256": "d1a0fd786d4e5c6ddae03978290e5dd13be602edbb1a9c0b87f9bad627b66aa0",
+      "bytes": 14998
+    },
+    {
+      "name": "windows_objects",
+      "path": "/tmp/fawn-hlsl-naming-windows.log",
+      "status": "compile_only_pass",
+      "sha256": "988a51acdcc36a02680bd3ed0faf8757804d791a3f9fd2800a3bbbd05f239d85",
+      "bytes": 70
+    },
+    {
+      "name": "patch",
+      "path": "/tmp/fawn-c-parity-completion-evidence/patch-validation.json",
+      "status": "exact_tree_pass",
+      "sha256": "6be1d1599773df3b29e1f84486cea67abb4ae9cccd56e5a500d4916b0ae1f7af",
+      "bytes": 288
+    }
+  ],
+  "limits": [
+    "CSL excluded; baseline registration gate remains failed",
+    "MSAA unchanged test fails on installed lavapipe; reproduced using independent Vulkan-only program",
+    "No new full Windows DXC or Darwin runtime qualification",
+    "No physical GPU/browser or exhaustive all-code parity claim",
+    "Retained native-DXIL zero/no-store/nonexecuting-control placeholders are shared limitations, not solved by C migration",
+    "Three documented source-admission differences; bounded typed capacities and unsupported caller-IR shapes remain explicit"
+  ]
+}

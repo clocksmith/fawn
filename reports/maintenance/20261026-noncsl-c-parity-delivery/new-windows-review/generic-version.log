@@ -1,0 +1,5 @@
+C:\Users\clocksmith\AppData\Local\deco\toolchains\vs2022-buildtools\VC\Tools\Llvm\bin\clang-cl.exe --version
+clang version 19.1.5
+Target: i686-pc-windows-msvc
+Thread model: posix
+InstalledDir: C:\Users\clocksmith\AppData\Local\deco\toolchains\vs2022-buildtools\VC\Tools\Llvm\bin

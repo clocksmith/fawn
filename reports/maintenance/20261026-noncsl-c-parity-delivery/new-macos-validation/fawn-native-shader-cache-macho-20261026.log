@@ -1,0 +1,7 @@
+gcc -D_POSIX_C_SOURCE=200809L -DWGPU_SHARED_LIBRARY -DWGPU_IMPLEMENTATION -DDOE_COMPUTE_PROGRAM_CONTRACT=2u -Iinclude -I../../zig/vendor/webgpu-headers -I../compiler/include -I../instance/include -I../futures/include -I../callbacks/include -I../resources/include -I../labels/include -I../error-scopes/include -I../shader/include -I../backends/vulkan/include -I../backends/metal/include -I../platform/include -O2 -g -std=c11 -Wall -Wextra -Wpedantic -Werror -fPIC -pthread  tests/shader_cache.c src/shader_cache.c src/shader_disk_cache.c src/shader_cache_identity.c ../backends/vulkan/src/cache_file.c ../shader/src/artifact.c ../shader/src/artifact_validate.c ../shader/src/growth.c ../shader/src/module.c ../shader/src/shader.c ../shader/src/specialize.c ../shader/src/storage.c -L/tmp/doe-c-4250657442/native -ldoe_compiler '-Wl,-rpath,/tmp/doe-c-4250657442/native'  -o /tmp/fawn-parity-mac-review-20261026/native/shader-cache
+python3 tests/mac_shader_cache_identity.py --binary /tmp/fawn-parity-mac-review-20261026/native/shader-cache --changed-binary /tmp/fawn-parity-mac-review-20261026/native/shader-cache-changed-image
+native disk cache: real loaded-image artifact written
+native disk cache: fresh-process target hit without target compilation
+native disk cache: changed actual consumer image misses
+native disk cache: missing loaded-image build ID fails closed
+Mach-O cache identity: fresh-process hit, changed-image miss and zero-UUID rejection passed (host loaded-image control; no GPU)

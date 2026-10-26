@@ -1,0 +1,7 @@
+{
+  "base_commit": "3918ff8d8dafa929292fe4347cd078c36d2d8b68",
+  "target_commit": "4170a010df689cb8fc167d3fa01ca1575fb21b81",
+  "patch": "/tmp/fawn-c-parity-completion-evidence/full-delivery.patch",
+  "patched_tree": "056ff282eefdae6b5a3ef786805484c1ca44fa45",
+  "matches_target": true
+}

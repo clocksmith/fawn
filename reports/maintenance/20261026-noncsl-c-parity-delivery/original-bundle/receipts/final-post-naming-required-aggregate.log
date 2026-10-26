@@ -1,0 +1,8 @@
+make: Entering directory '/workspace/shared/fawn-c-parity-completion-20261026/runtime/c'
+python3 tools/check_style.py
+test: runtime/c/compiler/src/csl/tests/csl_emit_smoke.c: no Makefile or build script in runtime/c names it
+test: runtime/c/compiler/src/csl/tests/csl_spatial_tests.c: no Makefile or build script in runtime/c names it
+test: runtime/c/compiler/src/csl/tests/tsir_csl_tests.c: no Makefile or build script in runtime/c names it
+C style check: 1498 sources, 3 failures; line limit 999
+make: *** [Makefile:24: check-style] Error 1
+make: Leaving directory '/workspace/shared/fawn-c-parity-completion-20261026/runtime/c'

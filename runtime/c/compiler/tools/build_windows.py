@@ -61,7 +61,7 @@ def main() -> None:
         objects.append(str(obj))
     library = out / 'doe_compiler.dll'
     import_library = out / 'doe_compiler.lib'
-    invoke([compiler, '/nologo', '/LD', *objects, '/Fe' + str(library), '/link',
+    invoke([compiler, '--target=x86_64-pc-windows-msvc', '/nologo', '/LD', *objects, '/Fe' + str(library), '/link',
             '/def:' + str(export_file), '/implib:' + str(import_library)], out)
     exports = subprocess.run(['dumpbin', '/nologo', '/exports', str(library)],
                              cwd=out, check=True, timeout=30, capture_output=True, text=True)
@@ -104,7 +104,7 @@ def main() -> None:
     cpp_consumers = [ROOT / 'tests/cpp_consumer.cpp', ROOT / 'tests/cpp_consumer_specialization.cpp']
     for source in cpp_consumers:
         executable = out / (source.stem + '.exe')
-        invoke([compiler, '/nologo', '/MD', '/O2', '/WX', '/std:c++17',
+        invoke([compiler, '--target=x86_64-pc-windows-msvc', '/nologo', '/MD', '/O2', '/WX', '/std:c++17',
                 '/clang:-fno-exceptions', '/clang:-fno-rtti', str(source),
                 '/Fo' + str(out / (source.stem + '.obj')),
                 '/Fe' + str(executable), '/link', str(import_library), '/stack:8388608'], out)

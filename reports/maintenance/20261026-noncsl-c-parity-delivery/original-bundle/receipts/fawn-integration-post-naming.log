@@ -1,0 +1,467 @@
+
+=== Coherent strict host/TSIR/partial integration ===
+mkdir -p build/host/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c host/dxil.c -o build/host/dxil.o
+mkdir -p build/host/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c host/host.c -o build/host/host.o
+mkdir -p build/host/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fPIC -c host/tsir.c -o build/host/tsir.o
+mkdir -p build/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -shared -Wl,-soname,libdoe_compiler_host.so -Wl,--version-script=host/exports.map build/host/dxil.o build/host/host.o build/host/tsir.o build/libdoe_tsir.a build/libdoe_dxil.a build/libdoe_compiler_core.a -lm -o build/libdoe_compiler_host.so
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -Iinclude tests/test_compiler_host.c build/libdoe_compiler_host.so -Wl,-rpath,'$ORIGIN' -o build/test_compiler_host
+g++ -std=c++17 -fno-exceptions -fno-rtti -O2 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror  -Iinclude tests/test_compiler_host.cpp build/libdoe_compiler_host.so -Wl,-rpath,'$ORIGIN' -o build/test_compiler_host_cpp
+build/test_compiler_host ../../..
+PASS: allocating host C ABI, source/manifest/oracle, publication and release
+build/test_compiler_host_cpp
+PASS: ordinary C++ host ABI consumer
+python3 tests/test_host_exports.py 'build/libdoe_compiler_host.so'
+PASS: bounded host exports; original compiler exports/no-heap imports preserved
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -Iinclude tests/test_compiler_host_alloc.c build/host/dxil.o build/host/host.o build/host/tsir.o build/libdoe_tsir.a build/libdoe_dxil.a build/libdoe_compiler_core.a -Wl,--wrap=malloc,--wrap=calloc,--wrap=realloc,--wrap=free -lm -o build/test_compiler_host_alloc
+build/test_compiler_host_alloc
+PASS: host oracle 71 acquisition failures, empty publication and retry
+python3 tools/test_host_install.py --cc 'gcc' --cxx 'g++' --library 'build/libdoe_compiler_host.so'
+PASS: allocating host C ABI, source/manifest/oracle, publication and release
+PASS: ordinary C++ host ABI consumer
+PASS: moved public C/C++ host artifact and native manifest/oracle CLIs, no loader override
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -Isrc/dxil -Isrc/dxil/tests src/dxil/tests/test_dxil_io.c build/libdoe_dxil.a build/libdoe_compiler_core.a -lm -o build/test_dxil_io
+python3 tools/test_host_dxil.py --library 'build/libdoe_compiler_host.so' --child build/test_dxil_io
+PASS: public DXIL ABI source/child/validation, failure atomicity, cleanup and retry
+cd ../../.. && runtime/c/compiler/build/test_bootstrap_manifest
+bootstrap_manifest: 10 checks, 0 failures
+build/test_bootstrap_writer
+TSIR facade/writer: invalid arrays, JSON injection, escaping, atomic publication and first error passed
+build/test_tsir_source_control
+TSIR control source: 23 checks passed
+build/test_tsir_source_expr
+TSIR packed projection: eight builtin trees and indirect-index constructor boundaries passed
+TSIR nested access: struct/vector/matrix/array uncached type and value-base controls passed
+TSIR expression adaptation: 20 category, projection, constructor, reference and numeric controls passed
+cd ../../.. && runtime/c/compiler/build/test_tsir_source
+TSIR source: 81 checks passed
+build/test_oracle_alloc
+bootstrap oracle allocation failures: 211 checks passed
+cd ../../.. && runtime/c/compiler/build/test_manifest_alloc
+bootstrap manifest allocation failures: 400 checks passed
+TSIR source first-allocation errno preservation: passed
+TSIR embedded-NUL frontend allocation failures: 3 checks passed
+TSIR rejected-plan allocation failures: 6 checks passed
+python3 tools/test_bootstrap_oracle.py --c-oracle build/doe-tsir-bootstrap-oracle-c
+bootstrap oracle: 67 checks passed
+cd ../../.. && DOE_TSIR_MANIFEST_CLI='/workspace/shared/fawn-c-parity-completion-20261026/runtime/c/compiler/build/doe-tsir-bootstrap-manifest-inputs-c' python3 -m runtime.c.compiler.tests.test_bootstrap_manifest
+...sssssss..
+----------------------------------------------------------------------
+Ran 8 tests in 0.123s
+
+OK (skipped=7)
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -Isrc/dxil -Isrc/dxil/tests src/dxil/tests/test_dxil_md5.c build/libdoe_dxil.a build/libdoe_compiler_core.a -lm -o build/test_dxil_md5
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -Isrc/dxil -Isrc/dxil/tests src/dxil/tests/test_dxil_bitcode.c build/libdoe_dxil.a build/libdoe_compiler_core.a -lm -o build/test_dxil_bitcode
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -Isrc/dxil -Isrc/dxil/tests src/dxil/tests/test_dxil_container.c build/libdoe_dxil.a build/libdoe_compiler_core.a -lm -o build/test_dxil_container
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -Isrc/dxil -Isrc/dxil/tests src/dxil/tests/test_dxil_validate.c build/libdoe_dxil.a build/libdoe_compiler_core.a -lm -o build/test_dxil_validate
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -Isrc/dxil -Isrc/dxil/tests src/dxil/tests/test_dxil_builder_serialize.c build/libdoe_dxil.a build/libdoe_compiler_core.a -lm -o build/test_dxil_builder_serialize
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -Isrc/dxil -Isrc/dxil/tests src/dxil/tests/test_dxil_mapping_toolchain.c build/libdoe_dxil.a build/libdoe_compiler_core.a -lm -o build/test_dxil_mapping_toolchain
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -Isrc/dxil -Isrc/dxil/tests src/dxil/tests/test_dxil_ir_native.c build/libdoe_dxil.a build/libdoe_compiler_core.a -lm -o build/test_dxil_ir_native
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -Isrc/dxil -Isrc/dxil/tests src/dxil/tests/test_dxil_hlsl.c build/libdoe_dxil.a build/libdoe_compiler_core.a -lm -o build/test_dxil_hlsl
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -Isrc/dxil -Isrc/dxil/tests src/dxil/tests/test_dxil_emit.c build/libdoe_dxil.a build/libdoe_compiler_core.a -lm -o build/test_dxil_emit
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -Isrc/dxil -Isrc/dxil/tests src/dxil/tests/test_dxil_analyze_translate.c build/libdoe_dxil.a build/libdoe_compiler_core.a -lm -o build/test_dxil_analyze_translate
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -Isrc/dxil -Isrc/dxil/tests src/dxil/tests/test_dxil_source.c build/libdoe_dxil.a build/libdoe_compiler_core.a -lm -o build/test_dxil_source
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -Isrc/dxil -Isrc/dxil/tests src/dxil/tests/test_dxil_native_projection_expr.c build/libdoe_dxil.a build/libdoe_compiler_core.a -lm -o build/test_dxil_native_projection_expr
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -Isrc/dxil -Isrc/dxil/tests src/dxil/tests/test_dxil_native_projection.c build/libdoe_dxil.a build/libdoe_compiler_core.a -lm -o build/test_dxil_native_projection
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -Isrc/dxil -Isrc/dxil/tests src/dxil/tests/test_dxil_hlsl_texture.c build/libdoe_dxil.a build/libdoe_compiler_core.a -lm -o build/test_dxil_hlsl_texture
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -Isrc/dxil -Isrc/dxil/tests src/dxil/tests/test_dxil_hlsl_numeric.c build/libdoe_dxil.a build/libdoe_compiler_core.a -lm -o build/test_dxil_hlsl_numeric
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -Isrc/dxil -Isrc/dxil/tests src/dxil/tests/test_dxil_hlsl_complete.c build/libdoe_dxil.a build/libdoe_compiler_core.a -lm -o build/test_dxil_hlsl_complete
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -Isrc/dxil -Isrc/dxil/tests src/dxil/tests/test_dxil_native_opt.c build/libdoe_dxil.a build/libdoe_compiler_core.a -lm -o build/test_dxil_native_opt
+PASS test_dxil_md5 (7 checks)
+PASS test_dxil_bitcode (64 checks)
+PASS test_dxil_container (55 checks)
+PASS test_dxil_validate (97 checks)
+PASS test_dxil_builder_serialize (336 checks)
+PASS test_dxil_mapping_toolchain (230 checks)
+PASS test_dxil_ir_native (123 checks)
+PASS test_dxil_hlsl (149 checks)
+PASS test_dxil_emit (53 checks)
+PASS test_dxil_analyze_translate (45 checks)
+PASS shared DXIL source (827 checks)
+PASS test_dxil_io (controlled child; no DXC qualification) (106 checks)
+PASS test_dxil_native_projection_expr (688 checks)
+PASS native typed projection (86 checks)
+PASS dxil_hlsl_texture (1880 checks)
+PASS dxil_hlsl_numeric (285 checks)
+PASS caller-built HLSL graphics/helper integration (56 checks)
+PASS test_dxil_hlsl_access (89 checks)
+PASS dxil_native_opt (73 checks)
+test_sha_scalar: 90 checks, 0 failures
+test_digest: 29 checks, 0 failures
+test_planner: 83 checks, 0 failures
+test_reference_emit: 92 checks, 0 failures
+test_new: 64 checks, 0 failures
+test_new2: 70 checks, 0 failures
+python3 tools/test_header_dependencies.py --cc 'gcc'
+PASS: src/internal.h rebuilt 5 real objects + 3 archives
+PASS: include/doe_compiler.h rebuilt 5 real objects + 3 archives
+PASS: src/new_private_dependency.h rebuilt 5 real objects + 3 archives
+PASS: include/new_public_dependency.h rebuilt 5 real objects + 3 archives
+PASS: removed source inventory drops stale archive member without cleaning
+
+=== UndefinedBehaviorSanitizer complete owner archive ===
+mkdir -p build/partial-sanitize/undefined/targets/metal/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c targets/metal/bindings.c -o build/partial-sanitize/undefined/targets/metal/bindings.o
+mkdir -p build/partial-sanitize/undefined/targets/metal/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c targets/metal/text.c -o build/partial-sanitize/undefined/targets/metal/text.o
+mkdir -p build/partial-sanitize/undefined/targets/metal/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c targets/metal/zero.c -o build/partial-sanitize/undefined/targets/metal/zero.o
+mkdir -p build/partial-sanitize/undefined/targets/metal/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c targets/metal/types.c -o build/partial-sanitize/undefined/targets/metal/types.o
+mkdir -p build/partial-sanitize/undefined/targets/metal/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c targets/metal/numeric.c -o build/partial-sanitize/undefined/targets/metal/numeric.o
+mkdir -p build/partial-sanitize/undefined/targets/metal/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c targets/metal/access.c -o build/partial-sanitize/undefined/targets/metal/access.o
+mkdir -p build/partial-sanitize/undefined/targets/metal/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c targets/metal/control.c -o build/partial-sanitize/undefined/targets/metal/control.o
+mkdir -p build/partial-sanitize/undefined/targets/metal/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c targets/metal/stage.c -o build/partial-sanitize/undefined/targets/metal/stage.o
+mkdir -p build/partial-sanitize/undefined/targets/metal/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c targets/metal/handles.c -o build/partial-sanitize/undefined/targets/metal/handles.o
+mkdir -p build/partial-sanitize/undefined/targets/metal/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c targets/metal/image.c -o build/partial-sanitize/undefined/targets/metal/image.o
+mkdir -p build/partial-sanitize/undefined/targets/metal/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c targets/metal/graphics.c -o build/partial-sanitize/undefined/targets/metal/graphics.o
+mkdir -p build/partial-sanitize/undefined/targets/metal/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c targets/metal/float_pack.c -o build/partial-sanitize/undefined/targets/metal/float_pack.o
+mkdir -p build/partial-sanitize/undefined/targets/metal/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c targets/metal/subgroup.c -o build/partial-sanitize/undefined/targets/metal/subgroup.o
+mkdir -p build/partial-sanitize/undefined/targets/hlsl/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c targets/hlsl/text.c -o build/partial-sanitize/undefined/targets/hlsl/text.o
+mkdir -p build/partial-sanitize/undefined/targets/hlsl/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c targets/hlsl/types.c -o build/partial-sanitize/undefined/targets/hlsl/types.o
+mkdir -p build/partial-sanitize/undefined/targets/hlsl/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c targets/hlsl/resources.c -o build/partial-sanitize/undefined/targets/hlsl/resources.o
+mkdir -p build/partial-sanitize/undefined/targets/hlsl/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c targets/hlsl/image_types.c -o build/partial-sanitize/undefined/targets/hlsl/image_types.o
+mkdir -p build/partial-sanitize/undefined/targets/hlsl/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c targets/hlsl/image.c -o build/partial-sanitize/undefined/targets/hlsl/image.o
+mkdir -p build/partial-sanitize/undefined/targets/hlsl/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c targets/hlsl/numeric.c -o build/partial-sanitize/undefined/targets/hlsl/numeric.o
+mkdir -p build/partial-sanitize/undefined/targets/hlsl/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c targets/hlsl/access.c -o build/partial-sanitize/undefined/targets/hlsl/access.o
+mkdir -p build/partial-sanitize/undefined/targets/hlsl/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c targets/hlsl/control.c -o build/partial-sanitize/undefined/targets/hlsl/control.o
+mkdir -p build/partial-sanitize/undefined/targets/hlsl/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c targets/hlsl/stage.c -o build/partial-sanitize/undefined/targets/hlsl/stage.o
+mkdir -p build/partial-sanitize/undefined/targets/hlsl/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c targets/hlsl/graphics.c -o build/partial-sanitize/undefined/targets/hlsl/graphics.o
+mkdir -p build/partial-sanitize/undefined/targets/hlsl/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c targets/hlsl/float_pack.c -o build/partial-sanitize/undefined/targets/hlsl/float_pack.o
+mkdir -p build/partial-sanitize/undefined/targets/hlsl/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c targets/hlsl/subgroup.c -o build/partial-sanitize/undefined/targets/hlsl/subgroup.o
+mkdir -p build/partial-sanitize/undefined/src/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/pipeline.c -o build/partial-sanitize/undefined/src/pipeline.o
+mkdir -p build/partial-sanitize/undefined/src/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/override.c -o build/partial-sanitize/undefined/src/override.o
+mkdir -p build/partial-sanitize/undefined/src/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/parse_override.c -o build/partial-sanitize/undefined/src/parse_override.o
+mkdir -p build/partial-sanitize/undefined/src/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/specialization.c -o build/partial-sanitize/undefined/src/specialization.o
+mkdir -p build/partial-sanitize/undefined/src/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/specialization_compile.c -o build/partial-sanitize/undefined/src/specialization_compile.o
+mkdir -p build/partial-sanitize/undefined/src/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/override_plan.c -o build/partial-sanitize/undefined/src/override_plan.o
+mkdir -p build/partial-sanitize/undefined/src/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/override_selection.c -o build/partial-sanitize/undefined/src/override_selection.o
+mkdir -p build/partial-sanitize/undefined/src/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/compile_spans.c -o build/partial-sanitize/undefined/src/compile_spans.o
+mkdir -p build/partial-sanitize/undefined/src/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/compile_metadata.c -o build/partial-sanitize/undefined/src/compile_metadata.o
+mkdir -p build/partial-sanitize/undefined/src/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/compile_text.c -o build/partial-sanitize/undefined/src/compile_text.o
+mkdir -p build/partial-sanitize/undefined/src/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/text_metal.c -o build/partial-sanitize/undefined/src/text_metal.o
+mkdir -p build/partial-sanitize/undefined/src/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/text_hlsl.c -o build/partial-sanitize/undefined/src/text_hlsl.o
+mkdir -p build/partial-sanitize/undefined/src/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/sema_matrix.c -o build/partial-sanitize/undefined/src/sema_matrix.o
+mkdir -p build/partial-sanitize/undefined/src/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/spirv_matrix.c -o build/partial-sanitize/undefined/src/spirv_matrix.o
+mkdir -p build/partial-sanitize/undefined/src/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/spirv_atomic.c -o build/partial-sanitize/undefined/src/spirv_atomic.o
+mkdir -p build/partial-sanitize/undefined/src/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/spirv_uniform.c -o build/partial-sanitize/undefined/src/spirv_uniform.o
+mkdir -p build/partial-sanitize/undefined/src/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/spirv_workgroup.c -o build/partial-sanitize/undefined/src/spirv_workgroup.o
+mkdir -p build/partial-sanitize/undefined/src/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/sema_array.c -o build/partial-sanitize/undefined/src/sema_array.o
+mkdir -p build/partial-sanitize/undefined/src/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/sema_atomic.c -o build/partial-sanitize/undefined/src/sema_atomic.o
+mkdir -p build/partial-sanitize/undefined/src/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/sema_pointer.c -o build/partial-sanitize/undefined/src/sema_pointer.o
+mkdir -p build/partial-sanitize/undefined/src/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/stage.c -o build/partial-sanitize/undefined/src/stage.o
+mkdir -p build/partial-sanitize/undefined/src/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/parse_interface.c -o build/partial-sanitize/undefined/src/parse_interface.o
+mkdir -p build/partial-sanitize/undefined/src/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/sema_stage.c -o build/partial-sanitize/undefined/src/sema_stage.o
+mkdir -p build/partial-sanitize/undefined/src/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/spirv_stage.c -o build/partial-sanitize/undefined/src/spirv_stage.o
+mkdir -p build/partial-sanitize/undefined/src/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/sema_finalize.c -o build/partial-sanitize/undefined/src/sema_finalize.o
+mkdir -p build/partial-sanitize/undefined/src/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/image.c -o build/partial-sanitize/undefined/src/image.o
+mkdir -p build/partial-sanitize/undefined/src/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/sema_image.c -o build/partial-sanitize/undefined/src/sema_image.o
+mkdir -p build/partial-sanitize/undefined/src/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/spirv_image.c -o build/partial-sanitize/undefined/src/spirv_image.o
+mkdir -p build/partial-sanitize/undefined/src/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/module.c -o build/partial-sanitize/undefined/src/module.o
+mkdir -p build/partial-sanitize/undefined/src/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/builtin.c -o build/partial-sanitize/undefined/src/builtin.o
+mkdir -p build/partial-sanitize/undefined/src/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/numeric.c -o build/partial-sanitize/undefined/src/numeric.o
+mkdir -p build/partial-sanitize/undefined/src/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/numeric_math.c -o build/partial-sanitize/undefined/src/numeric_math.o
+mkdir -p build/partial-sanitize/undefined/src/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/numeric_environment.c -o build/partial-sanitize/undefined/src/numeric_environment.o
+mkdir -p build/partial-sanitize/undefined/src/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/lex.c -o build/partial-sanitize/undefined/src/lex.o
+mkdir -p build/partial-sanitize/undefined/src/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/parse.c -o build/partial-sanitize/undefined/src/parse.o
+mkdir -p build/partial-sanitize/undefined/src/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/parse_statements.c -o build/partial-sanitize/undefined/src/parse_statements.o
+mkdir -p build/partial-sanitize/undefined/src/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/validate.c -o build/partial-sanitize/undefined/src/validate.o
+mkdir -p build/partial-sanitize/undefined/src/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/uniformity.c -o build/partial-sanitize/undefined/src/uniformity.o
+mkdir -p build/partial-sanitize/undefined/src/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/types.c -o build/partial-sanitize/undefined/src/types.o
+mkdir -p build/partial-sanitize/undefined/src/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/constants.c -o build/partial-sanitize/undefined/src/constants.o
+mkdir -p build/partial-sanitize/undefined/src/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/sema_declarations.c -o build/partial-sanitize/undefined/src/sema_declarations.o
+mkdir -p build/partial-sanitize/undefined/src/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/sema_expression.c -o build/partial-sanitize/undefined/src/sema_expression.o
+mkdir -p build/partial-sanitize/undefined/src/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/sema_call.c -o build/partial-sanitize/undefined/src/sema_call.o
+mkdir -p build/partial-sanitize/undefined/src/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/sema_select.c -o build/partial-sanitize/undefined/src/sema_select.o
+mkdir -p build/partial-sanitize/undefined/src/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/reflection.c -o build/partial-sanitize/undefined/src/reflection.o
+mkdir -p build/partial-sanitize/undefined/src/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/spirv.c -o build/partial-sanitize/undefined/src/spirv.o
+mkdir -p build/partial-sanitize/undefined/src/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/spirv_switch.c -o build/partial-sanitize/undefined/src/spirv_switch.o
+mkdir -p build/partial-sanitize/undefined/src/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/spirv_module.c -o build/partial-sanitize/undefined/src/spirv_module.o
+mkdir -p build/partial-sanitize/undefined/src/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/spirv_subgroup.c -o build/partial-sanitize/undefined/src/spirv_subgroup.o
+mkdir -p build/partial-sanitize/undefined/src/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/compile.c -o build/partial-sanitize/undefined/src/compile.o
+mkdir -p build/partial-sanitize/undefined/src/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/storage.c -o build/partial-sanitize/undefined/src/storage.o
+mkdir -p build/partial-sanitize/undefined/src/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/sema_packed.c -o build/partial-sanitize/undefined/src/sema_packed.o
+mkdir -p build/partial-sanitize/undefined/src/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/sema_interpolation.c -o build/partial-sanitize/undefined/src/sema_interpolation.o
+mkdir -p build/partial-sanitize/undefined/src/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/sema_bitfield.c -o build/partial-sanitize/undefined/src/sema_bitfield.o
+mkdir -p build/partial-sanitize/undefined/src/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/numeric_bits.c -o build/partial-sanitize/undefined/src/numeric_bits.o
+mkdir -p build/partial-sanitize/undefined/src/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/spirv_bits.c -o build/partial-sanitize/undefined/src/spirv_bits.o
+mkdir -p build/partial-sanitize/undefined/src/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/numeric_half.c -o build/partial-sanitize/undefined/src/numeric_half.o
+mkdir -p build/partial-sanitize/undefined/src/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/sampling.c -o build/partial-sanitize/undefined/src/sampling.o
+mkdir -p build/partial-sanitize/undefined/src/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/sema_decompose.c -o build/partial-sanitize/undefined/src/sema_decompose.o
+mkdir -p build/partial-sanitize/undefined/src/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/numeric_decompose.c -o build/partial-sanitize/undefined/src/numeric_decompose.o
+mkdir -p build/partial-sanitize/undefined/src/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/numeric_float_pack.c -o build/partial-sanitize/undefined/src/numeric_float_pack.o
+mkdir -p build/partial-sanitize/undefined/src/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/sema_float_pack.c -o build/partial-sanitize/undefined/src/sema_float_pack.o
+mkdir -p build/partial-sanitize/undefined/src/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/spirv_float_pack.c -o build/partial-sanitize/undefined/src/spirv_float_pack.o
+mkdir -p build/partial-sanitize/undefined/src/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/sema_subgroup.c -o build/partial-sanitize/undefined/src/sema_subgroup.o
+mkdir -p build/partial-sanitize/undefined/src/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/translation.c -o build/partial-sanitize/undefined/src/translation.o
+mkdir -p build/partial-sanitize/undefined/src/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/pointer_lower.c -o build/partial-sanitize/undefined/src/pointer_lower.o
+mkdir -p build/partial-sanitize/undefined/src/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/pointer_clone.c -o build/partial-sanitize/undefined/src/pointer_clone.o
+mkdir -p build/partial-sanitize/undefined/src/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/parse_diagnostics.c -o build/partial-sanitize/undefined/src/parse_diagnostics.o
+mkdir -p build/partial-sanitize/undefined/src/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/diagnostics.c -o build/partial-sanitize/undefined/src/diagnostics.o
+mkdir -p build/partial-sanitize/undefined/src/dxil/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/dxil/dxil_analyze.c -o build/partial-sanitize/undefined/src/dxil/dxil_analyze.o
+mkdir -p build/partial-sanitize/undefined/src/dxil/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/dxil/dxil_bitcode.c -o build/partial-sanitize/undefined/src/dxil/dxil_bitcode.o
+mkdir -p build/partial-sanitize/undefined/src/dxil/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/dxil/dxil_builder.c -o build/partial-sanitize/undefined/src/dxil/dxil_builder.o
+mkdir -p build/partial-sanitize/undefined/src/dxil/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/dxil/dxil_container.c -o build/partial-sanitize/undefined/src/dxil/dxil_container.o
+mkdir -p build/partial-sanitize/undefined/src/dxil/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/dxil/dxil_diagnostic.c -o build/partial-sanitize/undefined/src/dxil/dxil_diagnostic.o
+mkdir -p build/partial-sanitize/undefined/src/dxil/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/dxil/dxil_emit.c -o build/partial-sanitize/undefined/src/dxil/dxil_emit.o
+mkdir -p build/partial-sanitize/undefined/src/dxil/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/dxil/dxil_error.c -o build/partial-sanitize/undefined/src/dxil/dxil_error.o
+mkdir -p build/partial-sanitize/undefined/src/dxil/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/dxil/dxil_files.c -o build/partial-sanitize/undefined/src/dxil/dxil_files.o
+mkdir -p build/partial-sanitize/undefined/src/dxil/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/dxil/dxil_hlsl.c -o build/partial-sanitize/undefined/src/dxil/dxil_hlsl.o
+mkdir -p build/partial-sanitize/undefined/src/dxil/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/dxil/dxil_hlsl_array.c -o build/partial-sanitize/undefined/src/dxil/dxil_hlsl_array.o
+mkdir -p build/partial-sanitize/undefined/src/dxil/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/dxil/dxil_hlsl_expr.c -o build/partial-sanitize/undefined/src/dxil/dxil_hlsl_expr.o
+mkdir -p build/partial-sanitize/undefined/src/dxil/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/dxil/dxil_hlsl_helpers.c -o build/partial-sanitize/undefined/src/dxil/dxil_hlsl_helpers.o
+mkdir -p build/partial-sanitize/undefined/src/dxil/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/dxil/dxil_hlsl_names.c -o build/partial-sanitize/undefined/src/dxil/dxil_hlsl_names.o
+mkdir -p build/partial-sanitize/undefined/src/dxil/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/dxil/dxil_hlsl_numeric.c -o build/partial-sanitize/undefined/src/dxil/dxil_hlsl_numeric.o
+mkdir -p build/partial-sanitize/undefined/src/dxil/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/dxil/dxil_hlsl_pointer.c -o build/partial-sanitize/undefined/src/dxil/dxil_hlsl_pointer.o
+mkdir -p build/partial-sanitize/undefined/src/dxil/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/dxil/dxil_hlsl_stage.c -o build/partial-sanitize/undefined/src/dxil/dxil_hlsl_stage.o
+mkdir -p build/partial-sanitize/undefined/src/dxil/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/dxil/dxil_hlsl_stmt.c -o build/partial-sanitize/undefined/src/dxil/dxil_hlsl_stmt.o
+mkdir -p build/partial-sanitize/undefined/src/dxil/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/dxil/dxil_hlsl_store.c -o build/partial-sanitize/undefined/src/dxil/dxil_hlsl_store.o
+mkdir -p build/partial-sanitize/undefined/src/dxil/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/dxil/dxil_hlsl_texture.c -o build/partial-sanitize/undefined/src/dxil/dxil_hlsl_texture.o
+mkdir -p build/partial-sanitize/undefined/src/dxil/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/dxil/dxil_ir.c -o build/partial-sanitize/undefined/src/dxil/dxil_ir.o
+mkdir -p build/partial-sanitize/undefined/src/dxil/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/dxil/dxil_ir_query.c -o build/partial-sanitize/undefined/src/dxil/dxil_ir_query.o
+mkdir -p build/partial-sanitize/undefined/src/dxil/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/dxil/dxil_ir_validate.c -o build/partial-sanitize/undefined/src/dxil/dxil_ir_validate.o
+mkdir -p build/partial-sanitize/undefined/src/dxil/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/dxil/dxil_mapping.c -o build/partial-sanitize/undefined/src/dxil/dxil_mapping.o
+mkdir -p build/partial-sanitize/undefined/src/dxil/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/dxil/dxil_md5.c -o build/partial-sanitize/undefined/src/dxil/dxil_md5.o
+mkdir -p build/partial-sanitize/undefined/src/dxil/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/dxil/dxil_native.c -o build/partial-sanitize/undefined/src/dxil/dxil_native.o
+mkdir -p build/partial-sanitize/undefined/src/dxil/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/dxil/dxil_native_walk.c -o build/partial-sanitize/undefined/src/dxil/dxil_native_walk.o
+mkdir -p build/partial-sanitize/undefined/src/dxil/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/dxil/dxil_process_windows.c -o build/partial-sanitize/undefined/src/dxil/dxil_process_windows.o
+mkdir -p build/partial-sanitize/undefined/src/dxil/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/dxil/dxil_serialize.c -o build/partial-sanitize/undefined/src/dxil/dxil_serialize.o
+mkdir -p build/partial-sanitize/undefined/src/dxil/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/dxil/dxil_source.c -o build/partial-sanitize/undefined/src/dxil/dxil_source.o
+mkdir -p build/partial-sanitize/undefined/src/dxil/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/dxil/dxil_source_native_bounds.c -o build/partial-sanitize/undefined/src/dxil/dxil_source_native_bounds.o
+mkdir -p build/partial-sanitize/undefined/src/dxil/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/dxil/dxil_source_native_expr.c -o build/partial-sanitize/undefined/src/dxil/dxil_source_native_expr.o
+mkdir -p build/partial-sanitize/undefined/src/dxil/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/dxil/dxil_source_native_globals.c -o build/partial-sanitize/undefined/src/dxil/dxil_source_native_globals.o
+mkdir -p build/partial-sanitize/undefined/src/dxil/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/dxil/dxil_source_native_opt.c -o build/partial-sanitize/undefined/src/dxil/dxil_source_native_opt.o
+mkdir -p build/partial-sanitize/undefined/src/dxil/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/dxil/dxil_source_native_packed.c -o build/partial-sanitize/undefined/src/dxil/dxil_source_native_packed.o
+mkdir -p build/partial-sanitize/undefined/src/dxil/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/dxil/dxil_source_native_stmts.c -o build/partial-sanitize/undefined/src/dxil/dxil_source_native_stmts.o
+mkdir -p build/partial-sanitize/undefined/src/dxil/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/dxil/dxil_source_native_types.c -o build/partial-sanitize/undefined/src/dxil/dxil_source_native_types.o
+mkdir -p build/partial-sanitize/undefined/src/dxil/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/dxil/dxil_spec.c -o build/partial-sanitize/undefined/src/dxil/dxil_spec.o
+mkdir -p build/partial-sanitize/undefined/src/dxil/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/dxil/dxil_toolchain.c -o build/partial-sanitize/undefined/src/dxil/dxil_toolchain.o
+mkdir -p build/partial-sanitize/undefined/src/dxil/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/dxil/dxil_translate.c -o build/partial-sanitize/undefined/src/dxil/dxil_translate.o
+mkdir -p build/partial-sanitize/undefined/src/dxil/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/dxil/dxil_validate.c -o build/partial-sanitize/undefined/src/dxil/dxil_validate.o
+mkdir -p build/partial-sanitize/undefined/src/tsir/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/tsir/tsir_bootstrap.c -o build/partial-sanitize/undefined/src/tsir/tsir_bootstrap.o
+mkdir -p build/partial-sanitize/undefined/src/tsir/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/tsir/tsir_bootstrap_oracle.c -o build/partial-sanitize/undefined/src/tsir/tsir_bootstrap_oracle.o
+mkdir -p build/partial-sanitize/undefined/src/tsir/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/tsir/tsir_digest.c -o build/partial-sanitize/undefined/src/tsir/tsir_digest.o
+mkdir -p build/partial-sanitize/undefined/src/tsir/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/tsir/tsir_emit.c -o build/partial-sanitize/undefined/src/tsir/tsir_emit.o
+mkdir -p build/partial-sanitize/undefined/src/tsir/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/tsir/tsir_extended.c -o build/partial-sanitize/undefined/src/tsir/tsir_extended.o
+mkdir -p build/partial-sanitize/undefined/src/tsir/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/tsir/tsir_extended_ops.c -o build/partial-sanitize/undefined/src/tsir/tsir_extended_ops.o
+mkdir -p build/partial-sanitize/undefined/src/tsir/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/tsir/tsir_family_hint.c -o build/partial-sanitize/undefined/src/tsir/tsir_family_hint.o
+mkdir -p build/partial-sanitize/undefined/src/tsir/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/tsir/tsir_file.c -o build/partial-sanitize/undefined/src/tsir/tsir_file.o
+mkdir -p build/partial-sanitize/undefined/src/tsir/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/tsir/tsir_format.c -o build/partial-sanitize/undefined/src/tsir/tsir_format.o
+mkdir -p build/partial-sanitize/undefined/src/tsir/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/tsir/tsir_frontend.c -o build/partial-sanitize/undefined/src/tsir/tsir_frontend.o
+mkdir -p build/partial-sanitize/undefined/src/tsir/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/tsir/tsir_frontend_axes.c -o build/partial-sanitize/undefined/src/tsir/tsir_frontend_axes.o
+mkdir -p build/partial-sanitize/undefined/src/tsir/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/tsir/tsir_frontend_bindings_axes.c -o build/partial-sanitize/undefined/src/tsir/tsir_frontend_bindings_axes.o
+mkdir -p build/partial-sanitize/undefined/src/tsir/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/tsir/tsir_frontend_expr.c -o build/partial-sanitize/undefined/src/tsir/tsir_frontend_expr.o
+mkdir -p build/partial-sanitize/undefined/src/tsir/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/tsir/tsir_frontend_lower.c -o build/partial-sanitize/undefined/src/tsir/tsir_frontend_lower.o
+mkdir -p build/partial-sanitize/undefined/src/tsir/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/tsir/tsir_frontend_passes.c -o build/partial-sanitize/undefined/src/tsir/tsir_frontend_passes.o
+mkdir -p build/partial-sanitize/undefined/src/tsir/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/tsir/tsir_frontend_reductions.c -o build/partial-sanitize/undefined/src/tsir/tsir_frontend_reductions.o
+mkdir -p build/partial-sanitize/undefined/src/tsir/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/tsir/tsir_json.c -o build/partial-sanitize/undefined/src/tsir/tsir_json.o
+mkdir -p build/partial-sanitize/undefined/src/tsir/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/tsir/tsir_kernel_body.c -o build/partial-sanitize/undefined/src/tsir/tsir_kernel_body.o
+mkdir -p build/partial-sanitize/undefined/src/tsir/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/tsir/tsir_planner.c -o build/partial-sanitize/undefined/src/tsir/tsir_planner.o
+mkdir -p build/partial-sanitize/undefined/src/tsir/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/tsir/tsir_reference.c -o build/partial-sanitize/undefined/src/tsir/tsir_reference.o
+mkdir -p build/partial-sanitize/undefined/src/tsir/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/tsir/tsir_reference_bodies.c -o build/partial-sanitize/undefined/src/tsir/tsir_reference_bodies.o
+mkdir -p build/partial-sanitize/undefined/src/tsir/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/tsir/tsir_scalar.c -o build/partial-sanitize/undefined/src/tsir/tsir_scalar.o
+mkdir -p build/partial-sanitize/undefined/src/tsir/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/tsir/tsir_schema.c -o build/partial-sanitize/undefined/src/tsir/tsir_schema.o
+mkdir -p build/partial-sanitize/undefined/src/tsir/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/tsir/tsir_sha256.c -o build/partial-sanitize/undefined/src/tsir/tsir_sha256.o
+mkdir -p build/partial-sanitize/undefined/src/tsir/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/tsir/tsir_targets.c -o build/partial-sanitize/undefined/src/tsir/tsir_targets.o
+mkdir -p build/partial-sanitize/undefined/src/tsir/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/tsir/tsir_text.c -o build/partial-sanitize/undefined/src/tsir/tsir_text.o
+mkdir -p build/partial-sanitize/undefined/src/tsir/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/tsir/tsir_transcendental.c -o build/partial-sanitize/undefined/src/tsir/tsir_transcendental.o
+mkdir -p build/partial-sanitize/undefined/src/tsir/
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -fsanitize=undefined -fno-sanitize-recover=all -g -c src/tsir/tsir_wgsl_ir.c -o build/partial-sanitize/undefined/src/tsir/tsir_wgsl_ir.o
+rm -f build/partial-sanitize/undefined/owners.a
+ar rcs build/partial-sanitize/undefined/owners.a build/partial-sanitize/undefined/targets/metal/bindings.o build/partial-sanitize/undefined/targets/metal/text.o build/partial-sanitize/undefined/targets/metal/zero.o build/partial-sanitize/undefined/targets/metal/types.o build/partial-sanitize/undefined/targets/metal/numeric.o build/partial-sanitize/undefined/targets/metal/access.o build/partial-sanitize/undefined/targets/metal/control.o build/partial-sanitize/undefined/targets/metal/stage.o build/partial-sanitize/undefined/targets/metal/handles.o build/partial-sanitize/undefined/targets/metal/image.o build/partial-sanitize/undefined/targets/metal/graphics.o build/partial-sanitize/undefined/targets/metal/float_pack.o build/partial-sanitize/undefined/targets/metal/subgroup.o build/partial-sanitize/undefined/targets/hlsl/text.o build/partial-sanitize/undefined/targets/hlsl/types.o build/partial-sanitize/undefined/targets/hlsl/resources.o build/partial-sanitize/undefined/targets/hlsl/image_types.o build/partial-sanitize/undefined/targets/hlsl/image.o build/partial-sanitize/undefined/targets/hlsl/numeric.o build/partial-sanitize/undefined/targets/hlsl/access.o build/partial-sanitize/undefined/targets/hlsl/control.o build/partial-sanitize/undefined/targets/hlsl/stage.o build/partial-sanitize/undefined/targets/hlsl/graphics.o build/partial-sanitize/undefined/targets/hlsl/float_pack.o build/partial-sanitize/undefined/targets/hlsl/subgroup.o build/partial-sanitize/undefined/src/pipeline.o build/partial-sanitize/undefined/src/override.o build/partial-sanitize/undefined/src/parse_override.o build/partial-sanitize/undefined/src/specialization.o build/partial-sanitize/undefined/src/specialization_compile.o build/partial-sanitize/undefined/src/override_plan.o build/partial-sanitize/undefined/src/override_selection.o build/partial-sanitize/undefined/src/compile_spans.o build/partial-sanitize/undefined/src/compile_metadata.o build/partial-sanitize/undefined/src/compile_text.o build/partial-sanitize/undefined/src/text_metal.o build/partial-sanitize/undefined/src/text_hlsl.o build/partial-sanitize/undefined/src/sema_matrix.o build/partial-sanitize/undefined/src/spirv_matrix.o build/partial-sanitize/undefined/src/spirv_atomic.o build/partial-sanitize/undefined/src/spirv_uniform.o build/partial-sanitize/undefined/src/spirv_workgroup.o build/partial-sanitize/undefined/src/sema_array.o build/partial-sanitize/undefined/src/sema_atomic.o build/partial-sanitize/undefined/src/sema_pointer.o build/partial-sanitize/undefined/src/stage.o build/partial-sanitize/undefined/src/parse_interface.o build/partial-sanitize/undefined/src/sema_stage.o build/partial-sanitize/undefined/src/spirv_stage.o build/partial-sanitize/undefined/src/sema_finalize.o build/partial-sanitize/undefined/src/image.o build/partial-sanitize/undefined/src/sema_image.o build/partial-sanitize/undefined/src/spirv_image.o build/partial-sanitize/undefined/src/module.o build/partial-sanitize/undefined/src/builtin.o build/partial-sanitize/undefined/src/numeric.o build/partial-sanitize/undefined/src/numeric_math.o build/partial-sanitize/undefined/src/numeric_environment.o build/partial-sanitize/undefined/src/lex.o build/partial-sanitize/undefined/src/parse.o build/partial-sanitize/undefined/src/parse_statements.o build/partial-sanitize/undefined/src/validate.o build/partial-sanitize/undefined/src/uniformity.o build/partial-sanitize/undefined/src/types.o build/partial-sanitize/undefined/src/constants.o build/partial-sanitize/undefined/src/sema_declarations.o build/partial-sanitize/undefined/src/sema_expression.o build/partial-sanitize/undefined/src/sema_call.o build/partial-sanitize/undefined/src/sema_select.o build/partial-sanitize/undefined/src/reflection.o build/partial-sanitize/undefined/src/spirv.o build/partial-sanitize/undefined/src/spirv_switch.o build/partial-sanitize/undefined/src/spirv_module.o build/partial-sanitize/undefined/src/spirv_subgroup.o build/partial-sanitize/undefined/src/compile.o build/partial-sanitize/undefined/src/storage.o build/partial-sanitize/undefined/src/sema_packed.o build/partial-sanitize/undefined/src/sema_interpolation.o build/partial-sanitize/undefined/src/sema_bitfield.o build/partial-sanitize/undefined/src/numeric_bits.o build/partial-sanitize/undefined/src/spirv_bits.o build/partial-sanitize/undefined/src/numeric_half.o build/partial-sanitize/undefined/src/sampling.o build/partial-sanitize/undefined/src/sema_decompose.o build/partial-sanitize/undefined/src/numeric_decompose.o build/partial-sanitize/undefined/src/numeric_float_pack.o build/partial-sanitize/undefined/src/sema_float_pack.o build/partial-sanitize/undefined/src/spirv_float_pack.o build/partial-sanitize/undefined/src/sema_subgroup.o build/partial-sanitize/undefined/src/translation.o build/partial-sanitize/undefined/src/pointer_lower.o build/partial-sanitize/undefined/src/pointer_clone.o build/partial-sanitize/undefined/src/parse_diagnostics.o build/partial-sanitize/undefined/src/diagnostics.o build/partial-sanitize/undefined/src/dxil/dxil_analyze.o build/partial-sanitize/undefined/src/dxil/dxil_bitcode.o build/partial-sanitize/undefined/src/dxil/dxil_builder.o build/partial-sanitize/undefined/src/dxil/dxil_container.o build/partial-sanitize/undefined/src/dxil/dxil_diagnostic.o build/partial-sanitize/undefined/src/dxil/dxil_emit.o build/partial-sanitize/undefined/src/dxil/dxil_error.o build/partial-sanitize/undefined/src/dxil/dxil_files.o build/partial-sanitize/undefined/src/dxil/dxil_hlsl.o build/partial-sanitize/undefined/src/dxil/dxil_hlsl_array.o build/partial-sanitize/undefined/src/dxil/dxil_hlsl_expr.o build/partial-sanitize/undefined/src/dxil/dxil_hlsl_helpers.o build/partial-sanitize/undefined/src/dxil/dxil_hlsl_names.o build/partial-sanitize/undefined/src/dxil/dxil_hlsl_numeric.o build/partial-sanitize/undefined/src/dxil/dxil_hlsl_pointer.o build/partial-sanitize/undefined/src/dxil/dxil_hlsl_stage.o build/partial-sanitize/undefined/src/dxil/dxil_hlsl_stmt.o build/partial-sanitize/undefined/src/dxil/dxil_hlsl_store.o build/partial-sanitize/undefined/src/dxil/dxil_hlsl_texture.o build/partial-sanitize/undefined/src/dxil/dxil_ir.o build/partial-sanitize/undefined/src/dxil/dxil_ir_query.o build/partial-sanitize/undefined/src/dxil/dxil_ir_validate.o build/partial-sanitize/undefined/src/dxil/dxil_mapping.o build/partial-sanitize/undefined/src/dxil/dxil_md5.o build/partial-sanitize/undefined/src/dxil/dxil_native.o build/partial-sanitize/undefined/src/dxil/dxil_native_walk.o build/partial-sanitize/undefined/src/dxil/dxil_process_windows.o build/partial-sanitize/undefined/src/dxil/dxil_serialize.o build/partial-sanitize/undefined/src/dxil/dxil_source.o build/partial-sanitize/undefined/src/dxil/dxil_source_native_bounds.o build/partial-sanitize/undefined/src/dxil/dxil_source_native_expr.o build/partial-sanitize/undefined/src/dxil/dxil_source_native_globals.o build/partial-sanitize/undefined/src/dxil/dxil_source_native_opt.o build/partial-sanitize/undefined/src/dxil/dxil_source_native_packed.o build/partial-sanitize/undefined/src/dxil/dxil_source_native_stmts.o build/partial-sanitize/undefined/src/dxil/dxil_source_native_types.o build/partial-sanitize/undefined/src/dxil/dxil_spec.o build/partial-sanitize/undefined/src/dxil/dxil_toolchain.o build/partial-sanitize/undefined/src/dxil/dxil_translate.o build/partial-sanitize/undefined/src/dxil/dxil_validate.o build/partial-sanitize/undefined/src/tsir/tsir_bootstrap.o build/partial-sanitize/undefined/src/tsir/tsir_bootstrap_oracle.o build/partial-sanitize/undefined/src/tsir/tsir_digest.o build/partial-sanitize/undefined/src/tsir/tsir_emit.o build/partial-sanitize/undefined/src/tsir/tsir_extended.o build/partial-sanitize/undefined/src/tsir/tsir_extended_ops.o build/partial-sanitize/undefined/src/tsir/tsir_family_hint.o build/partial-sanitize/undefined/src/tsir/tsir_file.o build/partial-sanitize/undefined/src/tsir/tsir_format.o build/partial-sanitize/undefined/src/tsir/tsir_frontend.o build/partial-sanitize/undefined/src/tsir/tsir_frontend_axes.o build/partial-sanitize/undefined/src/tsir/tsir_frontend_bindings_axes.o build/partial-sanitize/undefined/src/tsir/tsir_frontend_expr.o build/partial-sanitize/undefined/src/tsir/tsir_frontend_lower.o build/partial-sanitize/undefined/src/tsir/tsir_frontend_passes.o build/partial-sanitize/undefined/src/tsir/tsir_frontend_reductions.o build/partial-sanitize/undefined/src/tsir/tsir_json.o build/partial-sanitize/undefined/src/tsir/tsir_kernel_body.o build/partial-sanitize/undefined/src/tsir/tsir_planner.o build/partial-sanitize/undefined/src/tsir/tsir_reference.o build/partial-sanitize/undefined/src/tsir/tsir_reference_bodies.o build/partial-sanitize/undefined/src/tsir/tsir_scalar.o build/partial-sanitize/undefined/src/tsir/tsir_schema.o build/partial-sanitize/undefined/src/tsir/tsir_sha256.o build/partial-sanitize/undefined/src/tsir/tsir_targets.o build/partial-sanitize/undefined/src/tsir/tsir_text.o build/partial-sanitize/undefined/src/tsir/tsir_transcendental.o build/partial-sanitize/undefined/src/tsir/tsir_wgsl_ir.o
+PASS test_dxil_md5 (7 checks)
+PASS test_dxil_bitcode (64 checks)
+PASS test_dxil_container (55 checks)
+PASS test_dxil_validate (97 checks)
+PASS test_dxil_builder_serialize (336 checks)
+PASS test_dxil_mapping_toolchain (230 checks)
+PASS test_dxil_ir_native (123 checks)
+PASS test_dxil_hlsl (149 checks)
+PASS test_dxil_emit (53 checks)
+PASS test_dxil_analyze_translate (45 checks)
+PASS shared DXIL source (827 checks)
+PASS test_dxil_io (controlled child; no DXC qualification) (106 checks)
+PASS test_dxil_native_projection_expr (688 checks)
+PASS native typed projection (86 checks)
+PASS dxil_hlsl_texture (1880 checks)
+PASS dxil_hlsl_numeric (285 checks)
+PASS caller-built HLSL graphics/helper integration (56 checks)
+PASS test_dxil_hlsl_access (89 checks)
+PASS dxil_native_opt (73 checks)
+test_sha_scalar: 90 checks, 0 failures
+test_digest: 29 checks, 0 failures
+test_planner: 83 checks, 0 failures
+test_reference_emit: 92 checks, 0 failures
+test_new: 64 checks, 0 failures
+test_new2: 70 checks, 0 failures
+
+=== Final artifact identities ===
+e604470a22a9426944a5ac8c6329b6728e32548bd5f131b2731f8d1683dc84fa  build/libdoe_compiler.so
+88619b566ca21bed4e002967f7acdfb351f0e11da31e9c213749037fb045ea88  build/libdoe_compiler_host.so
+fab5fb50dff12d887b513ac647656fca388d2236db444d013dd0b4c0e33888cb  build/libdoe_compiler_core.a
+24f0782018d60222770b80a69b0a4f2b31c543d5b7ef20328d677c97877c6737  build/libdoe_dxil.a
+6a216f1249b579888ca6e9e13363ef499da18d9421d57fc9206d3dfdf9739a41  build/libdoe_tsir.a
+
+=== Allocating host and TSIR source bridge UBSan ===
+PASS: allocating host C ABI, source/manifest/oracle, publication and release
+PASS: host oracle 71 acquisition failures, empty publication and retry

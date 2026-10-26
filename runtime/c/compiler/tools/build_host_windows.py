@@ -94,7 +94,7 @@ def main() -> int:
     export_file.write_text("EXPORTS\n" + "\n".join(exports) + "\n", encoding="utf-8")
     library = out / "doe_compiler_host.dll"
     import_library = out / "doe_compiler_host.lib"
-    invoke([compiler, "/nologo", "/LD", *objects, "/Fe" + str(library), "/link",
+    invoke([compiler, "--target=x86_64-pc-windows-msvc", "/nologo", "/LD", *objects, "/Fe" + str(library), "/link",
             "/def:" + str(export_file), "/implib:" + str(import_library)])
     result = invoke(["dumpbin", "/nologo", "/exports", str(library)])
     actual = re.findall(r"^\s+\d+\s+[0-9A-Fa-f]+\s+[0-9A-Fa-f]+\s+(\w+)\s*$",
@@ -104,7 +104,7 @@ def main() -> int:
     include = "/I" + str(ROOT / "include")
     for source in ("test_compiler_host.c", "test_compiler_host.cpp"):
         executable = out / (Path(source).stem + ("_cpp" if source.endswith(".cpp") else "") + ".exe")
-        command = ([compiler, "/nologo", "/MD", "/O2", "/WX", "/std:c++17",
+        command = ([compiler, "--target=x86_64-pc-windows-msvc", "/nologo", "/MD", "/O2", "/WX", "/std:c++17",
                     "/clang:-fno-exceptions", "/clang:-fno-rtti"]
                    if source.endswith(".cpp") else strict)
         invoke([*command, include, str(ROOT / "tests" / source),

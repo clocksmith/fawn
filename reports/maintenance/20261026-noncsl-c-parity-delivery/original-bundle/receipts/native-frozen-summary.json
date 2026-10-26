@@ -1,0 +1,25 @@
+{
+  "checks": 106,
+  "passed": 105,
+  "failed": [
+    {
+      "command": "/tmp/doe-c-1857531807/package-build/native/msaa-sampling",
+      "exit_code": 134,
+      "seconds": 0.064
+    }
+  ],
+  "seconds": 26.862,
+  "environment": {
+    "VK_ICD_FILENAMES": "/workspace/shared/doe-deps/lvp-local.json",
+    "DOE_C_TEST_BACKEND": "vulkan",
+    "DOE_C_TEST_ADAPTER": "software",
+    "LP_NUM_THREADS": "1"
+  },
+  "sha256": {
+    "/tmp/doe-c-1857531807/package-build/native/libwebgpu_doe_c.so": "d9f7845e10c07c4de3138c829aa5c4f3142c7518b8c922772d481820d0eef58f",
+    "/tmp/doe-c-1857531807/package-build/native/libdoe_compiler.so": "e604470a22a9426944a5ac8c6329b6728e32548bd5f131b2731f8d1683dc84fa",
+    "/workspace/shared/fawn-c-parity-completion-20261026/runtime/c/native/Makefile": "77e695dec29fdfe8c4079fe4d0d489b635fd52a17d669d5f6737afc7941f1578",
+    "/workspace/shared/fawn-c-parity-completion-20261026/runtime/c/resources/include/doe_resources.h": "f2fc5a71c4df4cc4af363a865818fa9770a81dcf59f52899a7638c64da68d497"
+  },
+  "scope": "Every distinct native Linux check recipe client/control obtained from make -n check; duplicate procedures-cxx invocation deduplicated. Separate cache warm/reload cases retain their distinct command chains. Per-check 45s timeout. Known MSAA failure remains a failed gate, not waived."
+}
