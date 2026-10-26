@@ -37,33 +37,126 @@ bool runtime_fail(doe_trace_execution *execution, const char *code, const char *
     return false;
 }
 
-typedef struct request_reply {
-    int done;
+/* Each admitted callback owns a distinct lease; a failed wait is not settlement.
+ * WaitAnyOnly callbacks may run in a later wait or provider teardown. */
+typedef struct runtime_reply {
+    atomic_uint references;
+    atomic_uint state;
+    _Atomic(void *) object;
     int status;
-    void *object;
+    bool error;
     char message[256];
-} request_reply;
+    doe_runtime *runtime; /* Device-request lease pins uncaptured-error userdata. */
+    WGPUInstance instance;
+} runtime_reply;
+
+enum { REPLY_DONE = 1, REPLY_ABANDONED = 2 };
+
+static void error_lock(doe_runtime *runtime)
+{
+    while (atomic_flag_test_and_set_explicit(&runtime->error_guard, memory_order_acquire)) {}
+}
+static void error_unlock(doe_runtime *runtime)
+{
+    atomic_flag_clear_explicit(&runtime->error_guard, memory_order_release);
+}
+
+static void runtime_host_release(doe_runtime *runtime)
+{
+    if (atomic_fetch_sub_explicit(&runtime->host_references, 1, memory_order_acq_rel) == 1) free(runtime);
+}
+static runtime_reply *reply_create(doe_runtime *runtime)
+{
+    runtime_reply *reply = calloc(1, sizeof(*reply));
+    if (!reply) return NULL;
+    atomic_init(&reply->references, 2);
+    atomic_init(&reply->state, 0);
+    atomic_init(&reply->object, NULL);
+    reply->runtime = runtime;
+    if (runtime) {
+        atomic_fetch_add_explicit(&runtime->host_references, 1, memory_order_relaxed);
+        reply->instance = runtime->instance;
+        wgpuInstanceAddRef(reply->instance);
+    }
+    return reply;
+}
+static void reply_release(runtime_reply *reply)
+{
+    if (atomic_fetch_sub_explicit(&reply->references, 1, memory_order_acq_rel) != 1) return;
+    doe_runtime *runtime = reply->runtime;
+    WGPUInstance instance = reply->instance;
+    free(reply);
+    if (instance) wgpuInstanceRelease(instance);
+    if (runtime) runtime_host_release(runtime);
+}
+static bool reply_done(runtime_reply *reply)
+{
+    return (atomic_load_explicit(&reply->state, memory_order_acquire) & REPLY_DONE) != 0;
+}
+static void *reply_take(runtime_reply *reply)
+{
+    return atomic_exchange_explicit(&reply->object, NULL, memory_order_acq_rel);
+}
+static void reply_unadmitted(runtime_reply *reply, WGPUFuture future)
+{
+    /* Zero means no registered future. An inline callback already consumed its lease. */
+    if (!future.id && !reply_done(reply)) reply_release(reply);
+}
+
+/* Destroy stops new uncaptured errors. Dawn's terminal lost event additionally
+ * clears and joins its spontaneous error callbacks; C publishes loss after
+ * clearing its handler. Unknown completion must retain callback userdata. */
+static bool device_quiesce(doe_runtime *runtime, WGPUDevice device)
+{
+    wgpuDeviceDestroy(device);
+    if (runtime_wait_future(runtime, wgpuDeviceGetLostFuture(device))) return true;
+    fprintf(stderr, "runtime close: device loss remains unresolved; callback storage retained\n");
+    return false;
+}
+
+static void discard_adapter_reply(runtime_reply *reply)
+{
+    WGPUAdapter object = reply_take(reply);
+    if (object) wgpuAdapterRelease(object);
+}
+
+static bool discard_device_reply(runtime_reply *reply)
+{
+    WGPUDevice object = reply_take(reply);
+    if (!object) return true;
+    if (!device_quiesce(reply->runtime, object)) {
+        /* This unretired callback lease owns both the device and its userdata. */
+        atomic_store_explicit(&reply->object, object, memory_order_release);
+        return false;
+    }
+    wgpuDeviceRelease(object);
+    return true;
+}
 
 static void adapter_reply(WGPURequestAdapterStatus status, WGPUAdapter adapter, WGPUStringView message,
     void *userdata1, void *userdata2)
 {
     (void)userdata2;
-    request_reply *reply = userdata1;
-    reply->done = 1;
+    runtime_reply *reply = userdata1;
     reply->status = (int)status;
-    reply->object = adapter;
     runtime_copy_view(reply->message, sizeof(reply->message), message);
+    atomic_store_explicit(&reply->object, adapter, memory_order_release);
+    unsigned previous = atomic_fetch_or_explicit(&reply->state, REPLY_DONE, memory_order_acq_rel);
+    if (previous & REPLY_ABANDONED) discard_adapter_reply(reply);
+    reply_release(reply);
 }
 
 static void device_reply(WGPURequestDeviceStatus status, WGPUDevice device, WGPUStringView message,
     void *userdata1, void *userdata2)
 {
     (void)userdata2;
-    request_reply *reply = userdata1;
-    reply->done = 1;
+    runtime_reply *reply = userdata1;
     reply->status = (int)status;
-    reply->object = device;
     runtime_copy_view(reply->message, sizeof(reply->message), message);
+    atomic_store_explicit(&reply->object, device, memory_order_release);
+    unsigned previous = atomic_fetch_or_explicit(&reply->state, REPLY_DONE, memory_order_acq_rel);
+    if ((previous & REPLY_ABANDONED) && !discard_device_reply(reply)) return;
+    reply_release(reply);
 }
 
 static void uncaptured_error(WGPUDevice const *device, WGPUErrorType type, WGPUStringView message,
@@ -73,9 +166,12 @@ static void uncaptured_error(WGPUDevice const *device, WGPUErrorType type, WGPUS
     (void)type;
     (void)userdata2;
     doe_runtime *runtime = userdata1;
-    if (runtime->uncaptured) return;
-    runtime->uncaptured = true;
-    runtime_copy_view(runtime->uncaptured_message, sizeof(runtime->uncaptured_message), message);
+    error_lock(runtime);
+    if (!runtime->closing && !runtime->uncaptured) {
+        runtime->uncaptured = true;
+        runtime_copy_view(runtime->uncaptured_message, sizeof(runtime->uncaptured_message), message);
+    }
+    error_unlock(runtime);
 }
 
 /* Polls with zero-timeout waits, which need no TimedWaitAny instance feature,
@@ -105,18 +201,33 @@ static WGPUAdapter request_adapter(doe_runtime *runtime, bool fallback, char *me
 #endif
     if (runtime->options.backend_lane) options.backendType = runtime->policy_backend;
     options.forceFallbackAdapter = fallback ? WGPU_TRUE : WGPU_FALSE;
-    request_reply reply = {0};
+    if (runtime->request_wait_failed) {
+        snprintf(message, message_size, "a previous adapter request remains unresolved");
+        return NULL;
+    }
+    runtime_reply *reply = reply_create(NULL);
+    if (!reply) { snprintf(message, message_size, "adapter reply allocation failed"); return NULL; }
     WGPURequestAdapterCallbackInfo callback = {.mode = WGPUCallbackMode_WaitAnyOnly, .callback = adapter_reply,
-        .userdata1 = &reply};
-    if (!runtime_wait_future(runtime, wgpuInstanceRequestAdapter(runtime->instance, &options, callback)) || !reply.done) {
+        .userdata1 = reply};
+    WGPUFuture future = wgpuInstanceRequestAdapter(runtime->instance, &options, callback);
+    if (!runtime_wait_future(runtime, future) || !reply_done(reply)) {
+        runtime->request_wait_failed = true;
+        unsigned previous = atomic_fetch_or_explicit(&reply->state, REPLY_ABANDONED, memory_order_acq_rel);
+        if (previous & REPLY_DONE) discard_adapter_reply(reply);
+        reply_unadmitted(reply, future);
+        reply_release(reply);
         snprintf(message, message_size, "adapter request did not complete");
         return NULL;
     }
-    if (reply.status != (int)WGPURequestAdapterStatus_Success || !reply.object) {
-        snprintf(message, message_size, "no %s platform adapter: %.180s", fallback ? "fallback" : "nonfallback", reply.message);
+    WGPUAdapter adapter = reply_take(reply);
+    if (reply->status != (int)WGPURequestAdapterStatus_Success || !adapter) {
+        snprintf(message, message_size, "no %s platform adapter: %.180s", fallback ? "fallback" : "nonfallback", reply->message);
+        if (adapter) wgpuAdapterRelease(adapter);
+        reply_release(reply);
         return NULL;
     }
-    return reply.object;
+    reply_release(reply);
+    return adapter;
 }
 
 static void record_adapter(doe_runtime *runtime)
@@ -152,6 +263,8 @@ doe_runtime *doe_runtime_open(const doe_runtime_options *options, char *message,
         snprintf(message, message_size, "out of memory");
         return NULL;
     }
+    atomic_init(&runtime->host_references, 1);
+    atomic_flag_clear(&runtime->error_guard);
     runtime->options = *options;
     DoeNativeDevicePolicy policy = {0};
     if (options->backend_lane && !doe_runtime_load_device_policy(options->backend_lane, &policy, message, message_size, runtime->device_policy_hash, &runtime->policy_backend)) {
@@ -206,9 +319,14 @@ doe_runtime *doe_runtime_open(const doe_runtime_options *options, char *message,
     }
     descriptor.uncapturedErrorCallbackInfo = (WGPUUncapturedErrorCallbackInfo){.callback = uncaptured_error,
         .userdata1 = runtime};
-    request_reply reply = {0};
+    runtime_reply *reply = reply_create(runtime);
+    if (!reply) {
+        snprintf(message, message_size, "device reply allocation failed");
+        doe_runtime_close(runtime);
+        return NULL;
+    }
     WGPURequestDeviceCallbackInfo callback = {.mode = WGPUCallbackMode_WaitAnyOnly, .callback = device_reply,
-        .userdata1 = &reply};
+        .userdata1 = reply};
 #ifdef DOE_RUNTIME_DAWN
     WGPUFuture device_future = wgpuAdapterRequestDevice(runtime->adapter, &descriptor, callback);
 #else
@@ -218,13 +336,19 @@ doe_runtime *doe_runtime_open(const doe_runtime_options *options, char *message,
         wgpuAdapterRequestDevice(runtime->adapter, &descriptor, callback);
 #endif
     if (!runtime_wait_future(runtime, device_future) ||
-        reply.status != (int)WGPURequestDeviceStatus_Success || !reply.object) {
-        snprintf(message, message_size, "device request failed: %.200s", reply.message);
+        !reply_done(reply) || reply->status != (int)WGPURequestDeviceStatus_Success ||
+        !atomic_load_explicit(&reply->object, memory_order_acquire)) {
+        unsigned previous = atomic_fetch_or_explicit(&reply->state, REPLY_ABANDONED, memory_order_acq_rel);
+        bool settled = !(previous & REPLY_DONE) || discard_device_reply(reply);
+        snprintf(message, message_size, "device request failed: %.200s", reply_done(reply) ? reply->message : "unresolved");
+        reply_unadmitted(reply, device_future);
+        if (settled) reply_release(reply);
         doe_runtime_close(runtime);
         return NULL;
     }
     runtime->device_policy = policy;
-    runtime->device = reply.object;
+    runtime->device = reply_take(reply);
+    reply_release(reply);
     runtime->queue = wgpuDeviceGetQueue(runtime->device);
 #ifndef DOE_RUNTIME_DAWN
     runtime->observed_sync_bits = doeNativeQueueSyncInfo(runtime->queue);
@@ -238,9 +362,13 @@ const doe_runtime_adapter *doe_runtime_adapter_info(const doe_runtime *runtime)
     return &runtime->info;
 }
 
-void doe_runtime_close(doe_runtime *runtime)
+bool doe_runtime_close(doe_runtime *runtime)
 {
-    if (!runtime) return;
+    if (!runtime) return true;
+    error_lock(runtime);
+    runtime->closing = true;
+    error_unlock(runtime);
+    if (runtime->device && !device_quiesce(runtime, runtime->device)) return false;
     for (size_t i = 0; i < runtime->pipeline_count; i++) {
         pipeline_entry *entry = &runtime->pipelines[i];
         if (entry->pipeline) wgpuComputePipelineRelease(entry->pipeline);
@@ -263,7 +391,8 @@ void doe_runtime_close(doe_runtime *runtime)
     if (runtime->device) wgpuDeviceRelease(runtime->device);
     if (runtime->adapter) wgpuAdapterRelease(runtime->adapter);
     if (runtime->instance) wgpuInstanceRelease(runtime->instance);
-    free(runtime);
+    runtime_host_release(runtime);
+    return true;
 }
 
 /* Pushes validation, out-of-memory and internal scopes around one command. */
@@ -272,46 +401,62 @@ void runtime_push_scopes(doe_runtime *runtime)
     wgpuDevicePushErrorScope(runtime->device, WGPUErrorFilter_Internal);
     wgpuDevicePushErrorScope(runtime->device, WGPUErrorFilter_OutOfMemory);
     wgpuDevicePushErrorScope(runtime->device, WGPUErrorFilter_Validation);
+    error_lock(runtime);
     runtime->uncaptured = false;
+    error_unlock(runtime);
 }
-
-typedef struct scope_reply {
-    bool done, error;
-    char message[256];
-} scope_reply;
 
 static void scope_popped(WGPUPopErrorScopeStatus status, WGPUErrorType type, WGPUStringView message,
     void *userdata1, void *userdata2)
 {
     (void)userdata2;
-    scope_reply *reply = userdata1;
-    reply->done = true;
+    runtime_reply *reply = userdata1;
     if (status != WGPUPopErrorScopeStatus_Success || type != WGPUErrorType_NoError) {
         reply->error = true;
         runtime_copy_view(reply->message, sizeof(reply->message), message);
         if (!reply->message[0]) snprintf(reply->message, sizeof(reply->message), "error scope reported type %d", (int)type);
     }
+    atomic_fetch_or_explicit(&reply->state, REPLY_DONE, memory_order_acq_rel);
+    reply_release(reply);
 }
 
 /* Pops the three scopes; the first reported error wins. */
 bool runtime_pop_scopes(doe_runtime *runtime, doe_trace_execution *execution)
 {
+    if (runtime->scope_wait_failed) {
+        if (execution->ok) runtime_fail(execution, "error_scope_unresolved", "a previous error scope remains unresolved");
+        return false;
+    }
     bool ok = true;
     for (int i = 0; i < 3; i++) {
-        scope_reply reply = {0};
+        runtime_reply *reply = reply_create(NULL);
+        if (!reply) {
+            runtime->scope_wait_failed = true;
+            if (ok && execution->ok) runtime_fail(execution, "out_of_memory", "error scope reply allocation failed");
+            return false;
+        }
         WGPUPopErrorScopeCallbackInfo callback = {.mode = WGPUCallbackMode_WaitAnyOnly, .callback = scope_popped,
-            .userdata1 = &reply};
-        if (!runtime_wait_future(runtime, wgpuDevicePopErrorScope(runtime->device, callback)) || !reply.done) {
+            .userdata1 = reply};
+        WGPUFuture future = wgpuDevicePopErrorScope(runtime->device, callback);
+        if (!runtime_wait_future(runtime, future) || !reply_done(reply)) {
+            runtime->scope_wait_failed = true;
             /* An earlier failure of this command stays the reported one. */
             if (ok && execution->ok) runtime_fail(execution, "error_scope_unresolved", "an error scope did not resolve");
             ok = false;
-        } else if (reply.error) {
-            if (ok && execution->ok) runtime_fail(execution, "webgpu_error", "%s", reply.message);
+        } else if (reply->error) {
+            if (ok && execution->ok) runtime_fail(execution, "webgpu_error", "%s", reply->message);
             ok = false;
         }
+        reply_unadmitted(reply, future);
+        reply_release(reply);
     }
-    if (runtime->uncaptured) {
-        if (ok && execution->ok) runtime_fail(execution, "webgpu_uncaptured_error", "%s", runtime->uncaptured_message);
+    char message[sizeof(runtime->uncaptured_message)];
+    error_lock(runtime);
+    bool uncaptured = runtime->uncaptured;
+    memcpy(message, runtime->uncaptured_message, sizeof(message));
+    error_unlock(runtime);
+    if (uncaptured) {
+        if (ok && execution->ok) runtime_fail(execution, "webgpu_uncaptured_error", "%s", message);
         ok = false;
     }
     return ok;
@@ -467,6 +612,11 @@ static bool execute_barrier(doe_runtime *runtime, doe_trace_execution *execution
 bool doe_runtime_execute(doe_runtime *runtime, const doe_command *command, doe_trace_execution *execution)
 {
     *execution = (doe_trace_execution){.ok = true};
+    error_lock(runtime);
+    bool closing = runtime->closing;
+    error_unlock(runtime);
+    if (closing || runtime->scope_wait_failed)
+        return runtime_fail(execution, "runtime_unresolved", "runtime teardown or error scopes remain unresolved");
     uint64_t start = doe_runtime_monotonic_ns();
     bool ok = false;
     switch (command->kind) {

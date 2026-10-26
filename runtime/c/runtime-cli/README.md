@@ -15,6 +15,7 @@ back to the Zig CLI, and run results carry `runtimeImplementation`.
 ```bash
 make -C runtime/c/runtime-cli            # builds $(BUILD)/doe-c-runtime and the native library
 make -C runtime/c/runtime-cli check-host # host-only tests
+make -C runtime/c/runtime-cli check-callback-lifetime-ubsan # host-only lifetime controls
 make -C runtime/c/runtime-cli check-surface # real display required
 VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json make -C runtime/c/runtime-cli check
 $(BUILD)/doe-c-runtime --commands examples/rmsnorm_tree_commands.json --execute \
@@ -245,6 +246,14 @@ slice debug braces. Quoted kernel paths are JSON escaped.
   (default process-events). `--webgpu-ffi-queue-wait-timeout-ns` bounds a queue
   wait; timeout is failure, and its callback storage lives through instance
   destruction. Barriers and host readbacks always complete their required work.
+  Adapter, device and error-scope replies own separate callback/caller leases;
+  timeout is not callback retirement. Closing explicitly destroys the device and
+  waits for its device-lost future before freeing spontaneous-error userdata.
+  An unresolved loss wait returns false from `doe_runtime_close`, retains the
+  runtime and handles, rejects subsequent commands and makes the CLI exit fail.
+  The owner may retry closing only after establishing completion. The host-only
+  callback controls exercise delayed/inline replies, allocation rollback,
+  concurrent abandonment and error recording; they do not prove GPU execution.
   Partial upload batches also drain before exit; `--gpu-timestamp-mode` admits
   `off`, `auto` (default), and `require`. Compute and render passes use real
   WebGPU timestamp queries and normalized nanosecond readback, excluding warmups

@@ -87,6 +87,9 @@ bool doe_runtime_flush(doe_runtime *runtime, doe_trace_execution *execution);
 void doe_runtime_flush_pipeline_cache(doe_runtime *runtime);
 bool doe_runtime_write_pipeline_cache(FILE *out, const doe_runtime *runtime);
 bool doe_runtime_write_device_policy(FILE *out, const doe_runtime *runtime);
-void doe_runtime_close(doe_runtime *runtime);
+/* False retains the runtime and its handles because device-loss quiescence was
+ * not proved. Commands refuse after closing starts; the owner may retry close
+ * after completion is established. A true result consumes the runtime. */
+bool doe_runtime_close(doe_runtime *runtime);
 uint64_t doe_runtime_monotonic_ns(void);
 #endif
