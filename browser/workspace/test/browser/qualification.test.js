@@ -9,7 +9,8 @@ import { fileURLToPath } from 'node:url';
 import { validateResult } from '../../qualification/validate.js';
 
 const RUNNER = fileURLToPath(new URL('../../qualification/run.js', import.meta.url));
-const SUBSET = Object.freeze(['failure-after-effect-started', 'handoff-races-effect', 'background-change-regions-scope', 'recovery-effect-absent']);
+const SUBSET = Object.freeze(['failure-after-effect-started', 'failure-after-completion-before-acknowledgment',
+  'handoff-races-effect', 'background-change-regions-scope', 'recovery-effect-absent']);
 const RUN_TIME_LIMIT_MS = 150000;
 const browserArgs = process.env.FAWN_WORKSPACE_TEST_BROWSER_CHANNEL
   ? ['--browser-channel', process.env.FAWN_WORKSPACE_TEST_BROWSER_CHANNEL] : [];
