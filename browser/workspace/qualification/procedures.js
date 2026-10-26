@@ -145,6 +145,9 @@ const PROCEDURES = Object.freeze({
     if (ctx.workflowName === 'form') {
       ctx.record('resubmit', await ctx.workflow(owner, ctx.runId(2), { task: { resubmissionOf: effectId } }));
     }
+    // Journal-only recovery is deliberately lazy. Obtain a genuine read-only
+    // observation before requiring live browser image/socket evidence.
+    await ctx.host.call('observe', ctx.identity(owner));
     await ctx.inspect();
     await ctx.close();
   },
