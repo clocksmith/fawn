@@ -56,8 +56,18 @@ function gitState() {
 }
 
 function countFilesNamed(directory, name) {
-  if (!existsSync(directory)) return 0;
-  return listFiles(directory).filter((path) => path.split(sep).at(-1) === name).length;
+  let entries;
+  try {
+    entries = readdirSync(directory, { withFileTypes: true });
+  } catch (error) {
+    // Browser-owned temporary directories can disappear while a live profile
+    // is inspected. Source-tree inventory above intentionally remains strict.
+    if (error.code === 'ENOENT') return 0;
+    throw error;
+  }
+  return entries.reduce((count, entry) => count
+    + (entry.isDirectory() ? countFilesNamed(join(directory, entry.name), name)
+      : Number(entry.isFile() && entry.name === name)), 0);
 }
 
 const executableCache = new Map();
