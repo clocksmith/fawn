@@ -2180,9 +2180,9 @@
       },
       "src/compiler/wgsl/emit/dxil/dxil_container.zig": {
         "decision": "Keep",
-        "moduleSha256": "bfc2c5e747d760460c70d409e2579206270b3159b43b78cbb8d7525d5f7336ef",
-        "reason": "Keep: reachable compiler implementation with private behavior tests and no merge, elevation, recomposition, or deletion signal.",
-        "reviewer": "codex-recomposition-review/2026-08-08"
+        "moduleSha256": "02d0f8f799f0a6dd537886e54afb9a36eca37d6219e7d88228d277771446794d",
+        "reason": "Keep: DXBC container and DXIL program serialization own the Microsoft wire layout and preflight output bounds; structural admission remains with the validator.",
+        "reviewer": "codex-dxil-header-review/2026-10-26"
       },
       "src/compiler/wgsl/emit/dxil/dxil_serialize.zig": {
         "decision": "Keep",
@@ -2198,9 +2198,9 @@
       },
       "src/compiler/wgsl/emit/dxil/dxil_validate.zig": {
         "decision": "Keep",
-        "moduleSha256": "107a1c71fba7a895027115cfd34d30438567758d46e42c3d0bdcd6a6c66368b1",
-        "reason": "Keep: reachable compiler implementation with private behavior tests and no merge, elevation, recomposition, or deletion signal.",
-        "reviewer": "codex-recomposition-review/2026-08-08"
+        "moduleSha256": "798278190bf068dc27cb2498508e1fb4790a3a1f039ccdf7579b168effd3b208",
+        "reason": "Keep: independent DXBC/DXIL structural admission checks program metadata and logical bitcode bounds; shader semantics remain with compiler and target validation.",
+        "reviewer": "codex-dxil-header-review/2026-10-26"
       },
       "src/compiler/wgsl/emit/dxil/emit_dxil.zig": {
         "decision": "Keep",

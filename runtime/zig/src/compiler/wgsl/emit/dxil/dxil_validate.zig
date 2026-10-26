@@ -54,6 +54,7 @@ pub fn validate(data: []const u8) ValidationResult {
 
 fn validateInner(data: []const u8) ValidationError!ValidationResult {
     if (data.len < DXBC_HEADER_FIXED_SIZE) return error.TooSmall;
+    if (data.len > std.math.maxInt(u32)) return error.SizeMismatch;
 
     // Magic
     if (!std.mem.eql(u8, data[0..4], &DXBC_MAGIC)) return error.BadMagic;
@@ -103,21 +104,23 @@ fn validateInner(data: []const u8) ValidationError!ValidationResult {
 
             const prog_base: u32 = @intCast(part_data_start);
 
-            // Word 0: ProgramVersion — shader_kind(bits 19:16) | major(bits 7:4) | minor(bits 3:0)
+            // Microsoft DxilProgramHeader embeds DxilBitcodeHeader at byte 8.
+            if (!std.mem.eql(u8, data[prog_base + 8 .. prog_base + 12], &FOURCC_DXIL)) return error.BadMagic;
+            const program_size: u64 = @as(u64, readU32(data, prog_base + 4)) * 4;
+            if (program_size < DXIL_PROGRAM_HEADER_SIZE or program_size > part_data_size) return error.DxilPartTooSmall;
+
             const program_version = readU32(data, prog_base);
-            shader_model_kind = (program_version >> 16) & 0xF;
+            shader_model_kind = program_version >> 16;
             dxil_major = @intCast((program_version >> 4) & 0xF);
             dxil_minor = @intCast(program_version & 0xF);
 
-            // Word 2: bitcode offset from program header start
-            const bc_offset_from_header = readU32(data, prog_base + 8);
-            // Word 3: bitcode size
-            const bc_size = readU32(data, prog_base + 12);
+            // BitcodeOffset is relative to the DXIL magic, not ProgramVersion.
+            const bc_offset_from_header = readU32(data, prog_base + 16);
+            const bc_size = readU32(data, prog_base + 20);
             bitcode_size = bc_size;
-
-            // Verify bitcode region is within the part data
-            const bc_abs: u64 = @as(u64, prog_base) + bc_offset_from_header;
-            if (bc_abs + bc_size > part_data_start + part_data_size) return error.DxilPartTooSmall;
+            const bc_abs: u64 = @as(u64, prog_base) + 8 + bc_offset_from_header;
+            if (bc_offset_from_header < DXIL_PROGRAM_HEADER_SIZE - 8 or bc_size < 4 or
+                bc_abs + bc_size > part_data_start + program_size) return error.DxilPartTooSmall;
 
             // Verify LLVM bitcode magic if bitcode is non-empty
             if (bc_size >= 4) {
@@ -284,4 +287,61 @@ test "container with HASH part" {
     try std.testing.expect(result.has_hash_part);
     try std.testing.expectEqual(@as(u32, 2), result.part_count);
     try std.testing.expectEqual(@as(u32, spec.ShaderKind.VERTEX), result.shader_model_kind.?);
+}
+
+// Independent Microsoft-format bytes: do not derive validator fixtures from the writer.
+const CANONICAL_PROGRAM = [_]u8{
+    0x60, 0x00, 0x10, 0x00, // shader kind 16 proves full upper-word decoding
+    0x07, 0x00, 0x00, 0x00, // 28 bytes
+    0x44, 0x58, 0x49, 0x4c,
+    0x00, 0x01, 0x00, 0x00,
+    0x10, 0x00, 0x00, 0x00,
+    0x04, 0x00, 0x00, 0x00,
+    0x42, 0x43, 0xc0, 0xde,
+};
+
+test "DXIL validator accepts independent canonical header and bounds bitcode by program size" {
+    var out: [256]u8 = undefined;
+    const valid_size = try container_mod.write_container(&.{.{ .fourcc = FOURCC_DXIL, .data = &CANONICAL_PROGRAM }}, &out);
+    const good = validate(out[0..valid_size]);
+    try std.testing.expect(good.valid);
+    try std.testing.expectEqual(@as(u32, 16), good.shader_model_kind.?);
+    try std.testing.expectEqual(@as(u32, 4), good.bitcode_size.?);
+
+    const mutations = [_]struct { offset: usize, value: u32 }{
+        .{ .offset = 4, .value = 0 },
+        .{ .offset = 4, .value = 6 },
+        .{ .offset = 4, .value = 8 },
+        .{ .offset = 4, .value = std.math.maxInt(u32) },
+        .{ .offset = 8, .value = 0 },
+        .{ .offset = 16, .value = 0 },
+        .{ .offset = 16, .value = 15 },
+        .{ .offset = 16, .value = std.math.maxInt(u32) },
+        .{ .offset = 20, .value = 0 },
+        .{ .offset = 20, .value = 3 },
+        .{ .offset = 20, .value = 5 },
+        .{ .offset = 20, .value = std.math.maxInt(u32) },
+        .{ .offset = 24, .value = 0 },
+    };
+    for (mutations) |mutation| {
+        var program = CANONICAL_PROGRAM;
+        std.mem.writeInt(u32, program[mutation.offset..][0..4], mutation.value, .little);
+        const size = try container_mod.write_container(&.{.{ .fourcc = FOURCC_DXIL, .data = &program }}, &out);
+        try std.testing.expect(!validate(out[0..size]).valid);
+    }
+}
+
+test "DXIL validator resolves extended bitcode offset relative to embedded header" {
+    var program: [36]u8 = @splat(0);
+    @memcpy(program[0..24], CANONICAL_PROGRAM[0..24]);
+    std.mem.writeInt(u32, program[4..8], 9, .little);
+    std.mem.writeInt(u32, program[16..20], 24, .little);
+    @memcpy(program[32..36], &spec.LLVM_IR_MAGIC);
+    var out: [256]u8 = undefined;
+    const size = try container_mod.write_container(&.{.{ .fourcc = FOURCC_DXIL, .data = &program }}, &out);
+    try std.testing.expect(validate(out[0..size]).valid);
+    // The part still contains the magic, but the declared program no longer does.
+    std.mem.writeInt(u32, program[4..8], 8, .little);
+    const shortened = try container_mod.write_container(&.{.{ .fourcc = FOURCC_DXIL, .data = &program }}, &out);
+    try std.testing.expect(!validate(out[0..shortened]).valid);
 }
