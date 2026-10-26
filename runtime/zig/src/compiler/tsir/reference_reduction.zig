@@ -25,9 +25,9 @@ const writeF32AsElem = scalar.writeF32AsElem;
 ///   * Input dtypes `{f32, f16, bf16}` via upcast to f32; output dtypes
 ///     `{f32, f16, bf16}` via downcast from the f32 accumulator.
 ///
-/// Anything outside this envelope falls through to `NotImplemented` so
-/// the oracle never silently honors a reduction class it has not yet
-/// implemented.
+/// Unsupported shapes fall through to `NotImplemented`; an invalid scalar
+/// fold operator in an otherwise matched shape returns `InvalidReductionOp`.
+/// The oracle never silently substitutes an implementation or scalar result.
 pub fn trySimpleReduction(
     allocator: std.mem.Allocator,
     semantic: schema.Semantic,
@@ -94,7 +94,7 @@ pub fn trySimpleReduction(
     if (rb.elem != .f32 and rb.elem != .f16 and rb.elem != .bf16) return null;
     if (wb.elem != .f32 and wb.elem != .f16 and wb.elem != .bf16) return null;
 
-    const identity = reductionIdentityF32(reduction.op);
+    const identity = try reductionIdentityF32(reduction.op);
     const rank = rb.logical_shape.len;
 
     // 1-D input, scalar output.
@@ -122,7 +122,7 @@ pub fn trySimpleReduction(
                 var i: usize = 0;
                 while (i < n) : (i += 1) {
                     const val = readF32FromBytes(input_bytes, rb.elem, i);
-                    acc = combineF32(reduction.op, acc, val);
+                    acc = try combineF32(reduction.op, acc, val);
                 }
                 return try emitScalarFromF32(allocator, acc, wb.elem);
             },
@@ -147,7 +147,7 @@ pub fn trySimpleReduction(
                     var idx: usize = 0;
                     while (idx < count) : (idx += 2) {
                         if (idx + 1 < count) {
-                            vals[new_count] = combineF32(reduction.op, vals[idx], vals[idx + 1]);
+                            vals[new_count] = try combineF32(reduction.op, vals[idx], vals[idx + 1]);
                         } else {
                             vals[new_count] = vals[idx];
                         }
@@ -212,7 +212,7 @@ pub fn trySimpleReduction(
                     var idx: usize = 0;
                     while (idx < count) : (idx += 2) {
                         if (idx + 1 < count) {
-                            vals[new_count] = combineF32(reduction.op, vals[idx], vals[idx + 1]);
+                            vals[new_count] = try combineF32(reduction.op, vals[idx], vals[idx + 1]);
                         } else {
                             vals[new_count] = vals[idx];
                         }
@@ -231,7 +231,7 @@ pub fn trySimpleReduction(
                     else
                         out_i * n + r_i;
                     const val = readF32FromBytes(input_bytes, rb.elem, flat_idx);
-                    acc = combineF32(reduction.op, acc, val);
+                    acc = try combineF32(reduction.op, acc, val);
                 }
                 writeF32AsElem(output_bytes, out_i, acc, wb.elem);
             }
@@ -321,7 +321,7 @@ pub fn trySimpleReduction(
                     var idx: usize = 0;
                     while (idx < count) : (idx += 2) {
                         if (idx + 1 < count) {
-                            vals[new_count] = combineF32(reduction.op, vals[idx], vals[idx + 1]);
+                            vals[new_count] = try combineF32(reduction.op, vals[idx], vals[idx + 1]);
                         } else {
                             vals[new_count] = vals[idx];
                         }
@@ -342,7 +342,7 @@ pub fn trySimpleReduction(
                         else => unreachable,
                     };
                     const val = readF32FromBytes(input_bytes, rb.elem, flat);
-                    acc = combineF32(reduction.op, acc, val);
+                    acc = try combineF32(reduction.op, acc, val);
                 }
                 writeF32AsElem(output_bytes, out_i, acc, wb.elem);
             }
@@ -434,7 +434,7 @@ pub fn trySimpleReduction(
             while (r < reduce_len) : (r += 1) {
                 const flat = base_offset + r * axis_stride;
                 const val = readF32FromBytes(input_bytes, rb.elem, flat);
-                acc = combineF32(reduction.op, acc, val);
+                acc = try combineF32(reduction.op, acc, val);
             }
             writeF32AsElem(output_bytes, out_linear, acc, wb.elem);
 

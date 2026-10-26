@@ -9,7 +9,7 @@
 int main(void) {
     static const char hash[] =
         "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
-    TsirManifestEntry entry;
+    TsirManifestEntry entry = {0};
     TsirBuffer output;
     tsir_buf_init(&output);
     assert(TSIR_CONTRACT_VERSION == 1u);

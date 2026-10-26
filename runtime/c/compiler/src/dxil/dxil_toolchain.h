@@ -4,6 +4,7 @@
 #define DOE_DXIL_TOOLCHAIN_H
 
 #include <stddef.h>
+#include <stdbool.h>
 #include <stdint.h>
 
 #include "dxil_error.h"
@@ -72,6 +73,13 @@ void dxil_dxc_argv(const char *executable, const char *profile,
     const char *entry_name, const char *output_path,
     const char *input_path, const char *argv[9]);
 
+/* Preserve the legacy argument prefix and append the native-half option only
+ * when required by the typed HLSL entry metadata. The caller must select a
+ * compatible shader model (at least 6.2 for native 16-bit scalar types). */
+void dxil_dxc_argv_options(const char *executable, const char *profile,
+    const char *entry_name, const char *output_path, const char *input_path,
+    bool native16, const char *argv[10]);
+
 /* Runs DXC once. POSIX uses fork/exec; Windows uses CreateProcessW
  * without a shell, with UTF-8 arguments and a restricted inherited-handle
  * list. Each output stream retains at most DXIL_DXC_MAX_OUTPUT_BYTES:
@@ -90,6 +98,13 @@ void dxil_dxc_argv(const char *executable, const char *profile,
 DxilStatus dxil_dxc_run(const char *executable, const char *profile,
     const char *entry_name, const char *output_path,
     const char *input_path, DxilDiscovery discovery,
+    char *errbuf, size_t errcap);
+
+/* Same process/error/ownership contract, with an explicit typed native-half
+ * requirement. The legacy spelling forwards false and keeps its exact argv. */
+DxilStatus dxil_dxc_run_options(const char *executable, const char *profile,
+    const char *entry_name, const char *output_path,
+    const char *input_path, DxilDiscovery discovery, bool native16,
     char *errbuf, size_t errcap);
 
 /* The output validation gate from emit_dxil.zig: validates container

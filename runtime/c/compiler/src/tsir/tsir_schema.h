@@ -8,17 +8,20 @@
 #include <stdint.h>
 
 /* TSIR schema types, mirroring runtime/zig/src/compiler/tsir/schema.zig.
- * All string fields are caller-owned NUL-terminated views; this library
- * never frees them and never stores them beyond the call that uses them,
- * except where a function's contract explicitly says it duplicates a
- * string (planner output, see tsir_planner.h). Array fields are a
- * pointer plus a count; a NULL pointer is valid only with count zero.
- * Enum values are ordered to match the Zig declaration order, and the
- * name tables in tsir_schema.c return the exact Zig snake_case tags.
- * A name function returns NULL for an out-of-range value, never a
- * neighbouring name. Names containing a NUL byte cannot be represented
- * through this API; see gaps.md.
- */
+ * Text is caller-owned. An associated *_length greater than zero selects that
+ * exact byte span (including embedded NUL); zero preserves the legacy strlen
+ * convention. Represent an empty value with "". Nonempty explicit spans need
+ * not be terminated. A NULL text pointer is invalid unless documented optional.
+ * Arrays use pointer/count pairs, with NULL valid only for count zero.
+ * Frontend/planner-owned results keep exact lengths and free their text through
+ * the matching free function. Enum tags retain the Zig declaration order. */
+
+/* Shared byte-view helpers; zero length means legacy NUL-terminated input. */
+size_t tsir_text_length(const char *text, size_t length);
+bool tsir_text_equal(const char *left, size_t left_length,
+    const char *right, size_t right_length);
+bool tsir_text_starts_with(const char *text, size_t length, const char *prefix);
+char *tsir_text_duplicate(const char *text, size_t length);
 
 typedef enum TsirStatus {
     TSIR_OK = 0,
@@ -235,12 +238,15 @@ typedef struct TsirExactness {
     size_t invariant_count;
     const char *tolerance_metric;
     double tolerance_epsilon;
+    size_t tolerance_metric_length;
 } TsirExactness;
 
 typedef struct TsirRejectionEntry {
     TsirRejectionReason reason;
     const char *node_path;
     const char *detail;
+    size_t node_path_length;
+    size_t detail_length;
 } TsirRejectionEntry;
 
 typedef struct TsirNumericalContract {
@@ -276,6 +282,7 @@ typedef struct TsirBufferBinding {
     size_t logical_shape_len;
     TsirScalarKind elem;
     bool read_write;
+    size_t name_length;
 } TsirBufferBinding;
 
 typedef struct TsirIterationAxis {
@@ -283,6 +290,10 @@ typedef struct TsirIterationAxis {
     const char *lower_bound;
     const char *upper_bound;
     const char *step;
+    size_t name_length;
+    size_t lower_bound_length;
+    size_t upper_bound_length;
+    size_t step_length;
 } TsirIterationAxis;
 
 typedef struct TsirReductionRegion {
@@ -309,6 +320,7 @@ typedef struct TsirRmsNormEpsilon {
     TsirOptU32 byte_offset;
     bool has_literal_f64;
     double literal_f64;
+    size_t path_length;
 } TsirRmsNormEpsilon;
 
 typedef struct TsirRmsNormBody {
@@ -384,6 +396,7 @@ typedef struct TsirSemanticFunction {
     size_t collective_count;
     TsirSemanticBody body;
     uint8_t source_digest[32];
+    size_t name_length;
 } TsirSemanticFunction;
 
 typedef struct TsirSemantic {
@@ -393,6 +406,7 @@ typedef struct TsirSemantic {
     size_t function_count;
     const TsirRejectionEntry *rejections;
     size_t rejection_count;
+    size_t frontend_version_length;
 } TsirSemantic;
 
 typedef struct TsirResidencyDecision {
@@ -426,6 +440,7 @@ typedef struct TsirRealizationFunction {
     size_t reduction_count;
     const char *emitter_params_json;
     uint8_t target_descriptor_hash[32];
+    size_t emitter_params_json_length;
 } TsirRealizationFunction;
 
 typedef struct TsirRealization {
@@ -455,6 +470,10 @@ typedef struct TsirManifestLoweringEntry {
     TsirExactness exactness;
     const TsirRejectionReason *rejection_reasons;
     size_t rejection_reason_count;
+    size_t kernel_ref_length;
+    size_t backend_length;
+    size_t frontend_version_length;
+    size_t compiler_version_length;
 } TsirManifestLoweringEntry;
 
 const char *tsir_exactness_class_name(TsirExactnessClass value);

@@ -10,18 +10,6 @@
 #include <stdio.h>
 #include <string.h>
 
-static char *join2(const char *a, const char *b) {
-    size_t la = strlen(a);
-    size_t lb = strlen(b);
-    char *out = (char *)malloc(la + lb + 1);
-    if (out == NULL) {
-        return NULL;
-    }
-    memcpy(out, a, la);
-    memcpy(out + la, b, lb + 1);
-    return out;
-}
-
 /* ---- axes walker ---- */
 
 typedef struct AxisCtx {
@@ -58,30 +46,43 @@ static void axes_walk_block_children(AxisCtx *ctx,
         }
         if (child->kind == TSIR_IR_STMT_LOCAL_DECL) {
             const char *letter = NULL;
+            size_t letter_length = 0;
             if (tsir_expr_dispatch_axis_letter(ctx->func,
                 child->has_initializer, child->initializer,
-                &letter) &&
+                &letter, &letter_length) &&
                 child->local < ctx->func->local_count) {
-                TsirIterationAxis axis;
+                TsirIterationAxis axis = {0};
                 char *upper = NULL;
+                size_t upper_length = 0;
                 char *name_copy = NULL;
                 int rc = 0;
                 rc = tsir_expr_scan_dispatch_guard(ctx->module,
                     ctx->func, block_stmt->range_start,
-                    block_stmt->range_len, i, child->local, &upper);
+                    block_stmt->range_len, i, child->local, &upper, &upper_length);
                 if (rc == -1) {
                     ctx->err = TSIR_ERR_NOMEM;
                     return;
                 }
                 if (rc == 0) {
-                    upper = join2("dispatch.", letter);
+                    upper = tsir_text_duplicate(letter, letter_length);
+                    if (upper != NULL) {
+                        TsirBuffer joined;
+                        tsir_buf_init(&joined);
+                        tsir_buf_puts(&joined, "dispatch.");
+                        tsir_buf_putn(&joined, upper, tsir_text_length(letter, letter_length));
+                        free(upper);
+                        upper = joined.err == TSIR_OK ? joined.data : NULL;
+                        upper_length = joined.len;
+                        if (joined.err != TSIR_OK) tsir_buf_free(&joined);
+                    }
                     if (upper == NULL) {
                         ctx->err = TSIR_ERR_NOMEM;
                         return;
                     }
                 }
-                name_copy = tsir_frontend_dup_str(
-                    ctx->func->locals[child->local].name);
+                name_copy = tsir_text_duplicate(
+                    ctx->func->locals[child->local].name,
+                    ctx->func->locals[child->local].name_length);
                 if (name_copy == NULL) {
                     free(upper);
                     ctx->err = TSIR_ERR_NOMEM;
@@ -89,8 +90,10 @@ static void axes_walk_block_children(AxisCtx *ctx,
                 }
                 memset(&axis, 0, sizeof(axis));
                 axis.name = name_copy;
+                axis.name_length = ctx->func->locals[child->local].name_length;
                 axis.lower_bound = tsir_frontend_dup_str("0");
                 axis.upper_bound = upper;
+                axis.upper_bound_length = upper_length;
                 axis.step = tsir_frontend_dup_str("1");
                 if (axis.lower_bound == NULL ||
                     axis.step == NULL) {
@@ -148,16 +151,17 @@ static void axes_walk_stmt(AxisCtx *ctx, uint32_t id) {
                             stmt->loop_continuing,
                             local) == TSIR_STEP_NEGATIVE;
                     if (!decreasing && local < ctx->func->local_count) {
-                        TsirIterationAxis axis;
+                        TsirIterationAxis axis = {0};
                         char *lower = NULL;
                         char *upper = NULL;
                         char *step = NULL;
+                        size_t lower_length = 0, upper_length = 0, step_length = 0;
                         char *name_copy = NULL;
                         uint64_t literal = 0;
                         int rc = 0;
                         rc = tsir_expr_extract_init_bound(ctx->module,
                             ctx->func, init->has_initializer,
-                            init->initializer, &lower);
+                            init->initializer, &lower, &lower_length);
                         if (rc == -1) {
                             ctx->err = TSIR_ERR_NOMEM;
                             return;
@@ -176,7 +180,7 @@ static void axes_walk_stmt(AxisCtx *ctx, uint32_t id) {
                             rc = tsir_expr_symbolic_upper_bound(
                                 ctx->module, ctx->func,
                                 stmt->has_loop_cond, stmt->loop_cond,
-                                local, &upper);
+                                local, &upper, &upper_length);
                             if (rc == -1) {
                                 free(lower);
                                 ctx->err = TSIR_ERR_NOMEM;
@@ -188,7 +192,7 @@ static void axes_walk_stmt(AxisCtx *ctx, uint32_t id) {
                         }
                         rc = tsir_expr_extract_step(ctx->module,
                             ctx->func, stmt->has_loop_continuing,
-                            stmt->loop_continuing, local, &step);
+                            stmt->loop_continuing, local, &step, &step_length);
                         if (rc == -1) {
                             free(lower);
                             free(upper);
@@ -198,8 +202,9 @@ static void axes_walk_stmt(AxisCtx *ctx, uint32_t id) {
                         if (rc == 0) {
                             step = tsir_frontend_dup_str("1");
                         }
-                        name_copy = tsir_frontend_dup_str(
-                            ctx->func->locals[local].name);
+                        name_copy = tsir_text_duplicate(
+                            ctx->func->locals[local].name,
+                            ctx->func->locals[local].name_length);
                         if (lower == NULL || upper == NULL ||
                             step == NULL || name_copy == NULL) {
                             free(lower);
@@ -211,9 +216,13 @@ static void axes_walk_stmt(AxisCtx *ctx, uint32_t id) {
                         }
                         memset(&axis, 0, sizeof(axis));
                         axis.name = name_copy;
+                        axis.name_length = ctx->func->locals[local].name_length;
                         axis.lower_bound = lower;
+                        axis.lower_bound_length = lower_length;
                         axis.upper_bound = upper;
+                        axis.upper_bound_length = upper_length;
                         axis.step = step;
+                        axis.step_length = step_length;
                         if (!tsir_frontend_axis_append(ctx->axes,
                             axis)) {
                             free(name_copy);

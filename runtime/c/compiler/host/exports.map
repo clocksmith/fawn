@@ -1,0 +1,10 @@
+/* SPDX-License-Identifier: MIT */
+{
+    global:
+    doe_compiler_host_tsir_manifest;
+    doe_compiler_host_tsir_source;
+    doe_compiler_host_tsir_oracle;
+    doe_compiler_host_dxil;
+    doe_compiler_host_release;
+    local: *;
+};

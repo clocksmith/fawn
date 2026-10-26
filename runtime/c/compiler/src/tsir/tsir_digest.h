@@ -33,4 +33,8 @@ TsirStatus tsir_digests_compute_version(const TsirSemantic *semantic,
     const TsirRealization *realization, const char *emitter_version,
     TsirDigests *out);
 
+TsirStatus tsir_digests_compute_version_span(const TsirSemantic *semantic,
+    const TsirRealization *realization, const char *emitter_version,
+    size_t emitter_version_length, TsirDigests *out);
+
 #endif

@@ -322,12 +322,15 @@ doe_resource_status resource_render_pass_active(doe_resource_render_pass *pass)
 
 doe_resource_render_pass *doe_resource_render_pass_rejected(doe_resource_encoder *encoder)
 {
-    if (!encoder || encoder->status == DOE_RESOURCE_OK) return NULL;
+    if (!encoder || (encoder->status == DOE_RESOURCE_OK && !encoder->finished)) return NULL;
     doe_resource_render_pass *pass = resource_allocate(&encoder->base.config,
         sizeof(*pass), _Alignof(doe_resource_render_pass));
     if (!pass) return NULL;
     memset(pass, 0, sizeof(*pass));
     pass->encoder = encoder;
+    /* A pass rejected after Finish cannot record or reopen its parent. Mark it
+     * ended so commands/release preserve the parent's first recording status. */
+    pass->ended = encoder->finished;
     doe_resource_encoder_retain(encoder);
     resource_init(&pass->base, &encoder->base.config, (doe_resource_native){0});
     /* begin() on an open encoder locks it even for an invalid pass; a locked or

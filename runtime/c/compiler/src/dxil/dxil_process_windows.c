@@ -135,11 +135,11 @@ static char *trim_detail(DxilWindowsPipe *pipe) {
     return start;
 }
 
-DxilStatus dxil_dxc_run(const char *executable, const char *profile,
+DxilStatus dxil_dxc_run_options(const char *executable, const char *profile,
     const char *entry_name, const char *output_path,
-    const char *input_path, DxilDiscovery discovery,
+    const char *input_path, DxilDiscovery discovery, bool native16,
     char *errbuf, size_t errcap) {
-    const char *argv[9];
+    const char *argv[10];
     WCHAR command[DXIL_WINDOWS_COMMAND_CAP] = {0};
     size_t command_length = 0;
     size_t i = 0;
@@ -156,8 +156,8 @@ DxilStatus dxil_dxc_run(const char *executable, const char *profile,
     DWORD exit_code = 0;
     DxilStatus status = DXIL_SHADER_TOOLCHAIN_UNAVAILABLE;
     char message[2048];
-    dxil_dxc_argv(executable, profile, entry_name, output_path,
-        input_path, argv);
+    dxil_dxc_argv_options(executable, profile, entry_name, output_path,
+        input_path, native16, argv);
     for (i = 0; argv[i] != NULL; i++) {
         if ((i != 0 && !append_unit(command, &command_length, L' '))
             || !append_argument(command, &command_length, argv[i])) {

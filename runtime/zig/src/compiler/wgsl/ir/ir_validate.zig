@@ -209,6 +209,11 @@ fn type_compatible(module: *const ir.Module, expected: ir.TypeId, actual: ir.Typ
             },
             else => false,
         },
+        .vector => |expected_vector| switch (module.types.get(actual)) {
+            .vector => |actual_vector| expected_vector.len == actual_vector.len and
+                type_compatible(module, expected_vector.elem, actual_vector.elem),
+            else => false,
+        },
         .ref => false,
         else => false,
     };

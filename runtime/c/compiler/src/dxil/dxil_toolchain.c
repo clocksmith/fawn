@@ -1,5 +1,8 @@
 /* SPDX-License-Identifier: MIT
  * Copyright (c) 2026 Doe contributors */
+#if !defined(_WIN32)
+#define _POSIX_C_SOURCE 200809L
+#endif
 #include "dxil_toolchain.h"
 #include "dxil_process.h"
 
@@ -13,6 +16,8 @@
 #if !defined(_WIN32)
 #include <errno.h>
 #include <fcntl.h>
+#include <poll.h>
+#include <signal.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
@@ -151,6 +156,24 @@ void dxil_dxc_argv(const char *executable, const char *profile,
     argv[8] = NULL;
 }
 
+void dxil_dxc_argv_options(const char *executable, const char *profile,
+    const char *entry_name, const char *output_path, const char *input_path,
+    bool native16, const char *argv[10]) {
+    dxil_dxc_argv(executable, profile, entry_name, output_path, input_path, argv);
+    if (native16) {
+        argv[8] = "-enable-16bit-types";
+        argv[9] = NULL;
+    }
+}
+
+DxilStatus dxil_dxc_run(const char *executable, const char *profile,
+    const char *entry_name, const char *output_path,
+    const char *input_path, DxilDiscovery discovery,
+    char *errbuf, size_t errcap) {
+    return dxil_dxc_run_options(executable, profile, entry_name, output_path,
+        input_path, discovery, false, errbuf, errcap);
+}
+
 DxilStatus dxil_validate_output(const uint8_t *bytes, size_t len,
     const char *producer, char *errbuf, size_t errcap) {
     DxilValidationResult result;
@@ -218,6 +241,59 @@ void dxil_dxc_missing_message(DxilDiscovery discovery,
 
 #if !defined(_WIN32)
 
+static void close_pipe(int descriptors[2]) {
+    for (size_t i = 0u; i < 2u; ++i) {
+        if (descriptors[i] >= 0) (void)close(descriptors[i]);
+        descriptors[i] = -1;
+    }
+}
+
+/* Both pipes must be drained concurrently: waiting for stdout EOF while a
+ * child fills stderr deadlocks even if each retained stream is bounded. */
+static int drain_output(int output, int errors, char *output_bytes,
+    size_t *output_length, char *error_bytes, size_t *error_length) {
+    struct pollfd streams[2] = {{output, POLLIN, 0}, {errors, POLLIN, 0}};
+    char *bytes[2] = {output_bytes, error_bytes};
+    size_t *lengths[2] = {output_length, error_length};
+    int failure = 0;
+    while (streams[0].fd >= 0 || streams[1].fd >= 0) {
+        if (poll(streams, 2u, -1) < 0) {
+            if (errno == EINTR) continue;
+            failure = errno;
+            break;
+        }
+        for (size_t i = 0u; i < 2u; ++i) {
+            if (streams[i].fd < 0 || streams[i].revents == 0) continue;
+            if ((streams[i].revents & POLLNVAL) != 0) { failure = EBADF; break; }
+            if ((streams[i].revents & (POLLIN | POLLHUP | POLLERR)) != 0) {
+                char chunk[4096];
+                const ssize_t received = read(streams[i].fd, chunk, sizeof(chunk));
+                if (received < 0) {
+                    if (errno == EINTR) continue;
+                    failure = errno;
+                    break;
+                }
+                if (received == 0) {
+                    (void)close(streams[i].fd);
+                    streams[i].fd = -1;
+                } else {
+                    size_t keep = (size_t)received;
+                    if (keep > DXIL_DXC_MAX_OUTPUT_BYTES - *lengths[i])
+                        keep = DXIL_DXC_MAX_OUTPUT_BYTES - *lengths[i];
+                    memcpy(bytes[i] + *lengths[i], chunk, keep);
+                    *lengths[i] += keep;
+                }
+            }
+        }
+        if (failure != 0) break;
+    }
+    for (size_t i = 0u; i < 2u; ++i) {
+        if (streams[i].fd >= 0) (void)close(streams[i].fd);
+        bytes[i][*lengths[i]] = '\0';
+    }
+    return failure;
+}
+
 /* Trims spaces, tabs, CR, and LF from both ends, in place. */
 static void trim_in_place(char *text) {
     size_t len = strlen(text);
@@ -235,15 +311,15 @@ static void trim_in_place(char *text) {
     text[end - start] = '\0';
 }
 
-DxilStatus dxil_dxc_run(const char *executable, const char *profile,
+DxilStatus dxil_dxc_run_options(const char *executable, const char *profile,
     const char *entry_name, const char *output_path,
-    const char *input_path, DxilDiscovery discovery,
+    const char *input_path, DxilDiscovery discovery, bool native16,
     char *errbuf, size_t errcap) {
     int out_pipe[2] = { -1, -1 };
     int err_pipe[2] = { -1, -1 };
     int errno_pipe[2] = { -1, -1 };
     pid_t pid = -1;
-    const char *argv[9];
+    const char *argv[10];
     char message[2048];
     char detail_buf[DXIL_DXC_MAX_OUTPUT_BYTES + 1];
     char stderr_buf[DXIL_DXC_MAX_OUTPUT_BYTES + 1];
@@ -251,11 +327,14 @@ DxilStatus dxil_dxc_run(const char *executable, const char *profile,
     size_t stderr_len = 0;
     int status_value = 0;
 
-    dxil_dxc_argv(executable, profile, entry_name, output_path,
-        input_path, argv);
+    dxil_dxc_argv_options(executable, profile, entry_name, output_path,
+        input_path, native16, argv);
     if (pipe(out_pipe) != 0 || pipe(err_pipe) != 0
         || pipe(errno_pipe) != 0) {
         const int saved_errno = errno;
+        close_pipe(out_pipe);
+        close_pipe(err_pipe);
+        close_pipe(errno_pipe);
         snprintf(message, sizeof(message),
             "failed to start DXC via %s `%s`: %s",
             dxil_discovery_label(discovery), executable,
@@ -266,7 +345,16 @@ DxilStatus dxil_dxc_run(const char *executable, const char *profile,
     /* The errno pipe reports exec failure without ambiguity: the write
      * end is close-on-exec, so a successful exec closes it and the
      * parent reads EOF, while a failed exec delivers errno. */
-    (void)fcntl(errno_pipe[1], F_SETFD, FD_CLOEXEC);
+    if (fcntl(errno_pipe[1], F_SETFD, FD_CLOEXEC) != 0) {
+        const int saved_errno = errno;
+        close_pipe(out_pipe);
+        close_pipe(err_pipe);
+        close_pipe(errno_pipe);
+        snprintf(message, sizeof(message), "failed to configure DXC process pipe: %s",
+            strerror(saved_errno));
+        write_message(errbuf, errcap, message);
+        return DXIL_SHADER_TOOLCHAIN_UNAVAILABLE;
+    }
     pid = fork();
     if (pid < 0) {
         const int saved_errno = errno;
@@ -285,57 +373,57 @@ DxilStatus dxil_dxc_run(const char *executable, const char *profile,
     }
     if (pid == 0) {
         /* Child: wire stdout/stderr to the pipes, then exec. */
+        int child_errno = 0;
         close(out_pipe[0]);
         close(err_pipe[0]);
         close(errno_pipe[0]);
-        (void)dup2(out_pipe[1], STDOUT_FILENO);
-        (void)dup2(err_pipe[1], STDERR_FILENO);
-        close(out_pipe[1]);
-        close(err_pipe[1]);
-        execvp(executable, (char *const *)argv);
-        {
-            const int exec_errno = errno;
-            (void)!write(errno_pipe[1], &exec_errno, sizeof(exec_errno));
+        if (dup2(out_pipe[1], STDOUT_FILENO) < 0 ||
+            dup2(err_pipe[1], STDERR_FILENO) < 0) child_errno = errno;
+        if (out_pipe[1] != STDOUT_FILENO && out_pipe[1] != STDERR_FILENO)
+            close(out_pipe[1]);
+        if (err_pipe[1] != STDOUT_FILENO && err_pipe[1] != STDERR_FILENO)
+            close(err_pipe[1]);
+        if (child_errno == 0) {
+            execvp(executable, (char *const *)argv);
+            child_errno = errno;
         }
+        ssize_t sent;
+        do { sent = write(errno_pipe[1], &child_errno, sizeof(child_errno)); }
+        while (sent < 0 && errno == EINTR);
         _exit(127);
     }
     close(out_pipe[1]);
     close(err_pipe[1]);
     close(errno_pipe[1]);
     {
-        /* Drain stdout and stderr, keeping at most the cap of each.
-         * Reading to EOF (not just to the cap) avoids deadlocking a
-         * child that writes more than the cap. */
-        ssize_t n = 0;
-        char drain[512];
-        while ((n = read(out_pipe[0], drain, sizeof(drain))) > 0) {
-            size_t i = 0;
-            for (i = 0; i < (size_t)n; i++) {
-                if (detail_len < DXIL_DXC_MAX_OUTPUT_BYTES) {
-                    detail_buf[detail_len] = drain[i];
-                    detail_len++;
-                }
-            }
+        const int drain_error = drain_output(out_pipe[0], err_pipe[0],
+            detail_buf, &detail_len, stderr_buf, &stderr_len);
+        if (drain_error != 0) {
+            (void)kill(pid, SIGKILL);
+            (void)close(errno_pipe[0]);
+            while (waitpid(pid, &status_value, 0) < 0 && errno == EINTR) {}
+            snprintf(message, sizeof(message), "failed to read DXC output: %s",
+                strerror(drain_error));
+            write_message(errbuf, errcap, message);
+            return DXIL_INVALID_IR;
         }
-        while ((n = read(err_pipe[0], drain, sizeof(drain))) > 0) {
-            size_t i = 0;
-            for (i = 0; i < (size_t)n; i++) {
-                if (stderr_len < DXIL_DXC_MAX_OUTPUT_BYTES) {
-                    stderr_buf[stderr_len] = drain[i];
-                    stderr_len++;
-                }
-            }
-        }
-        close(out_pipe[0]);
-        close(err_pipe[0]);
-        detail_buf[detail_len] = '\0';
-        stderr_buf[stderr_len] = '\0';
         /* Exec failure is reported on the errno pipe. */
         {
             int child_errno = 0;
             ssize_t got = 0;
-            got = read(errno_pipe[0], &child_errno, sizeof(child_errno));
+            do {
+                got = read(errno_pipe[0], &child_errno, sizeof(child_errno));
+            } while (got < 0 && errno == EINTR);
+            const int read_error = errno;
             close(errno_pipe[0]);
+            if (got != 0 && got != (ssize_t)sizeof(child_errno)) {
+                (void)kill(pid, SIGKILL);
+                while (waitpid(pid, &status_value, 0) < 0 && errno == EINTR) {}
+                snprintf(message, sizeof(message), "failed to read DXC process status: %s",
+                    strerror(got < 0 ? read_error : EIO));
+                write_message(errbuf, errcap, message);
+                return DXIL_INVALID_IR;
+            }
             if (got == (ssize_t)sizeof(child_errno)) {
                 /* Reap the child before reporting. */
                 while (waitpid(pid, &status_value, 0) < 0
@@ -355,7 +443,12 @@ DxilStatus dxil_dxc_run(const char *executable, const char *profile,
                 return DXIL_SHADER_TOOLCHAIN_UNAVAILABLE;
             }
         }
-        while (waitpid(pid, &status_value, 0) < 0 && errno == EINTR) {
+        pid_t waited;
+        do { waited = waitpid(pid, &status_value, 0); } while (waited < 0 && errno == EINTR);
+        if (waited < 0) {
+            snprintf(message, sizeof(message), "failed to wait for DXC: %s", strerror(errno));
+            write_message(errbuf, errcap, message);
+            return DXIL_INVALID_IR;
         }
     }
     if (WIFEXITED(status_value)) {

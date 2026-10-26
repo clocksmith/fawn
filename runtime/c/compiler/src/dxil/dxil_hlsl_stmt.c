@@ -4,7 +4,7 @@
 
 #include <string.h>
 
-static const char *assign_text(DxilIrAssignOp op) {
+const char *dxil_hlsl_assignment_text(DxilIrAssignOp op) {
     switch (op) {
         case DXIL_IR_ASSIGN_ASSIGN:
             return "=";
@@ -100,7 +100,8 @@ DxilStatus dxil_hlsl_emit_stmt(DxilHlslEmitter *emitter,
             if (dxil_ir_type_get(emitter->module, local->ty,
                     &local_type) == DXIL_OK
                 && local_type.kind == DXIL_IR_TYPE_REF) {
-                status = DXIL_INVALID_IR;
+                status = stmt->is_const && stmt->has_initializer ?
+                    dxil_hlsl_emit_pointer_captures(emitter, function, stmt->initializer) : DXIL_INVALID_IR;
                 break;
             }
             status = dxil_hlsl_write_indent(emitter);
@@ -113,7 +114,10 @@ DxilStatus dxil_hlsl_emit_stmt(DxilHlslEmitter *emitter,
                     break;
                 }
             }
-            status = dxil_hlsl_emit_typed_name(emitter, local->ty, local->name);
+            char local_buffer[32];
+            const char *local_name = dxil_hlsl_local_name(function, stmt->local, local_buffer);
+            status = local_name == NULL ? DXIL_INVALID_IR :
+                dxil_hlsl_emit_typed_name(emitter, local->ty, local_name);
             if (status != DXIL_OK) {
                 break;
             }
@@ -142,7 +146,13 @@ DxilStatus dxil_hlsl_emit_stmt(DxilHlslEmitter *emitter,
             }
             status = dxil_hlsl_write_text(emitter, ";\n");
             break;
-        case DXIL_IR_STMT_ASSIGN:
+        case DXIL_IR_STMT_ASSIGN: {
+            DxilIrExprId captured, unclamped, length;
+            bool guarded = dxil_hlsl_runtime_guard(emitter, function, stmt->assign_lhs, &captured, &unclamped, &length);
+            if (guarded) {
+                status = dxil_hlsl_emit_guarded_store(emitter, function, stmt_id, captured, unclamped, length);
+                break;
+            }
             status = dxil_hlsl_write_indent(emitter);
             if (status != DXIL_OK) {
                 break;
@@ -155,7 +165,7 @@ DxilStatus dxil_hlsl_emit_stmt(DxilHlslEmitter *emitter,
             if (status != DXIL_OK) {
                 break;
             }
-            status = dxil_hlsl_write_text(emitter, assign_text(stmt->assign_op));
+            status = dxil_hlsl_write_text(emitter, dxil_hlsl_assignment_text(stmt->assign_op));
             if (status != DXIL_OK) {
                 break;
             }
@@ -169,7 +179,13 @@ DxilStatus dxil_hlsl_emit_stmt(DxilHlslEmitter *emitter,
             }
             status = dxil_hlsl_write_text(emitter, ";\n");
             break;
+        }
         case DXIL_IR_STMT_RETURN:
+            if (emitter->stage_array_return) {
+                status = stmt->has_return_value ?
+                    dxil_hlsl_emit_stage_return(emitter, function, stmt->return_value) : DXIL_INVALID_IR;
+                break;
+            }
             status = dxil_hlsl_write_indent(emitter);
             if (status != DXIL_OK) {
                 break;

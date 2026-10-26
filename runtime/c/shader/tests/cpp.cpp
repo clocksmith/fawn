@@ -1,11 +1,14 @@
 /* SPDX-License-Identifier: MIT */
 #include "doe_shader.h"
+#include "doe_shader_artifact.h"
 #include <cassert>
 #include <cstdlib>
 #include <cstring>
 static void *allocate(void *, size_t bytes, size_t) { return std::malloc(bytes); }
 static void release(void *, void *memory, size_t, size_t) { std::free(memory); }
 int main() {
+    assert(doe_shader_artifact_size(nullptr) == 0);
+    assert(doe_shader_owned_bytes(nullptr) == 0);
     assert(doe_shader_retain(nullptr) == DOE_SHADER_INVALID_ARGUMENT);
     doe_shader_options options{};
     options.target = DOE_SHADER_HLSL;

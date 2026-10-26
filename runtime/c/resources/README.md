@@ -64,6 +64,10 @@ an alias of device-free compiled data or a second count for one WebGPU object.
   direct/indirect compute snapshots and single-use submission self-leases.
   After a rejected begin, `doe_resource_*_pass_rejected` returns the WebGPU
   invalid pass: one encoder lease, no records, the encoder's rejection reported.
+  A begin rejected after successful Finish also returns an invalid, ended pass;
+  commands and release preserve the finished encoder's original status and the
+  earlier command buffer. Repeated Finish similarly yields invalid commands
+  without invalidating the previously published commands.
   A command on an ended pass returns STATE without failing its encoder; End
   checks the parent lock (`doe_resource_*_pass_closed`); a failed Finish may
   return `doe_resource_commands_rejected`, an invalid command buffer that submit

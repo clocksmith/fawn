@@ -31,6 +31,10 @@ char *doe_plan_asset_root(void);
  * Counts must equal the commands, as plan_validation.zig requires. On failure
  * *plan is left empty and error names the first rejected command. */
 bool doe_plan_parse(const char *text, size_t size, const char *asset_root, doe_plan *plan, doe_stream_error *error);
+/* The same validation and identities, without reading buffer_load assets.
+ * These commands are for dry_run traces only: load payloads are not materialized
+ * and must never be submitted to an execution backend. */
+bool doe_plan_parse_dry_run(const char *text, size_t size, doe_plan *plan, doe_stream_error *error);
 void doe_plan_free(doe_plan *plan);
 /* The IR's shared.kernelRoot, else bench/inference-pipeline/kernels (also when
  * the IR cannot be read), as doe-plan-executor resolves it. Caller frees. */

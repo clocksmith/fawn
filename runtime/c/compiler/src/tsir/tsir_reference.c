@@ -258,9 +258,8 @@ static int try_simple_reduction(const TsirSemantic *semantic,
         wb->elem != TSIR_SCALAR_BF16) {
         return TRY_NOMATCH;
     }
-    /* The identity/combine helpers refuse softmax_stable visibly;
-     * Zig traps here, so reaching this point with that op is an
-     * error, not a fall-through. */
+    /* A compound softmax is not a scalar fold. Both retained Zig and C
+     * reject this invalid reduction contract instead of fabricating a value. */
     if (reduction->op == TSIR_REDUCTION_SOFTMAX_STABLE) {
         *err_out = TSIR_ERR_INVALID;
         return -1;

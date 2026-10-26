@@ -415,8 +415,83 @@ static void test_pass_timestamps(void)
     empty(&f);
 }
 
+static void test_rejected_objects_after_finish(void)
+{
+    fixture f = fresh();
+    doe_resource_config c = config(&f);
+    doe_resource_encoder *encoder;
+    assert(doe_resource_encoder_create(&c, &encoder) == DOE_RESOURCE_OK);
+    size_t allocations = f.allocations;
+    assert(!doe_resource_compute_pass_rejected(encoder));
+    assert(!doe_resource_render_pass_rejected(encoder));
+    assert(!doe_resource_commands_rejected(encoder));
+    assert(f.allocations == allocations && doe_resource_encoder_status(encoder) == DOE_RESOURCE_OK);
+    doe_resource_commands *commands = NULL;
+    assert(doe_resource_encoder_finish(encoder, &commands) == DOE_RESOURCE_OK && commands);
+    doe_resource_compute_pass *compute = NULL;
+    doe_resource_render_pass *render = NULL;
+    assert(doe_resource_encoder_begin_compute(encoder, &compute) == DOE_RESOURCE_STATE && !compute);
+    assert(doe_resource_encoder_begin_render(encoder, NULL, &render) == DOE_RESOURCE_STATE && !render);
+    size_t live = f.live;
+    unsigned references = f.device_references;
+    f.fail_at = f.allocations;
+    assert(!doe_resource_compute_pass_rejected(encoder));
+    f.fail_at = f.allocations;
+    assert(!doe_resource_render_pass_rejected(encoder));
+    f.fail_at = f.allocations;
+    assert(!doe_resource_commands_rejected(encoder));
+    assert(f.live == live && f.device_references == references);
+    assert(doe_resource_encoder_status(encoder) == DOE_RESOURCE_OK);
+    f.fail_at = SIZE_MAX;
+    compute = doe_resource_compute_pass_rejected(encoder);
+    render = doe_resource_render_pass_rejected(encoder);
+    assert(compute && render);
+    assert(doe_resource_compute_pass_ended(compute) && doe_resource_compute_pass_closed(compute));
+    assert(doe_resource_render_pass_ended(render) && doe_resource_render_pass_closed(render));
+    assert(doe_resource_compute_pass_dispatch(compute, 1, 1, 1) == DOE_RESOURCE_STATE);
+    assert(doe_resource_render_pass_set_pipeline(render, NULL) == DOE_RESOURCE_STATE);
+    assert(doe_resource_compute_pass_end(compute) == DOE_RESOURCE_STATE);
+    assert(doe_resource_render_pass_end(render) == DOE_RESOURCE_STATE);
+    assert(doe_resource_encoder_status(encoder) == DOE_RESOURCE_OK);
+    doe_resource_commands *untouched = commands;
+    assert(doe_resource_encoder_finish(encoder, &untouched) == DOE_RESOURCE_STATE && untouched == commands);
+    doe_resource_commands *invalid = doe_resource_commands_rejected(encoder);
+    assert(invalid && doe_resource_commands_begin_submit(invalid) == DOE_RESOURCE_STATE);
+    doe_resource_commands_release(invalid);
+    doe_resource_encoder_release(encoder); /* Both invalid passes retain it. */
+    doe_resource_compute_pass_release(compute);
+    assert(doe_resource_encoder_status(encoder) == DOE_RESOURCE_OK);
+    assert(doe_resource_render_pass_end(render) == DOE_RESOURCE_STATE);
+    doe_resource_render_pass_release(render);
+    assert(doe_resource_commands_begin_submit(commands) == DOE_RESOURCE_OK);
+    doe_resource_commands_release(commands); /* The submit lease remains. */
+    assert(doe_resource_commands_settle(commands, DOE_RESOURCE_OK) == DOE_RESOURCE_OK);
+    empty(&f);
+
+    /* Preserve the original failure even after Finish and later OOM. */
+    assert(doe_resource_encoder_create(&c, &encoder) == DOE_RESOURCE_OK);
+    assert(doe_resource_encoder_invalidate(encoder, DOE_RESOURCE_RANGE) == DOE_RESOURCE_RANGE);
+    commands = NULL;
+    assert(doe_resource_encoder_finish(encoder, &commands) == DOE_RESOURCE_RANGE && !commands);
+    f.fail_at = f.allocations;
+    assert(!doe_resource_compute_pass_rejected(encoder));
+    f.fail_at = SIZE_MAX;
+    compute = doe_resource_compute_pass_rejected(encoder);
+    render = doe_resource_render_pass_rejected(encoder);
+    assert(compute && render);
+    assert(doe_resource_compute_pass_end(compute) == DOE_RESOURCE_STATE);
+    assert(doe_resource_render_pass_end(render) == DOE_RESOURCE_STATE);
+    assert(doe_resource_encoder_status(encoder) == DOE_RESOURCE_RANGE);
+    doe_resource_encoder_release(encoder);
+    doe_resource_compute_pass_release(compute);
+    assert(doe_resource_encoder_status(encoder) == DOE_RESOURCE_RANGE);
+    doe_resource_render_pass_release(render);
+    empty(&f);
+}
+
 int main(void)
 {
+    test_rejected_objects_after_finish();
     test_pass_timestamps();
     test_pass_rejection_and_unbind();
     test_texture_blit();
@@ -425,6 +500,6 @@ int main(void)
     test_external_texture();
     test_render_recording();
     test_clear_and_abandoned_pass();
-    puts("extended resource owner: 8 host suites passed; no render/query GPU execution claimed");
+    puts("extended resource owner: 9 host suites passed; no render/query GPU execution claimed");
     return 0;
 }

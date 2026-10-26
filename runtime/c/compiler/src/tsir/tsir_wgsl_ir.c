@@ -274,7 +274,9 @@ bool tsir_ir_find_global_base(const TsirIrFunction *func,
     if (func == NULL || out == NULL) {
         return false;
     }
-    for (;;) {
+    /* A base chain can visit at most one expression per table entry before
+     * repeating. Bound malformed cycles without imposing a valid-depth cap. */
+    for (size_t visited = 0; visited < func->expr_count; visited++) {
         node = get_expr(func, cursor);
         if (node == NULL) {
             return false;
@@ -307,6 +309,7 @@ bool tsir_ir_find_global_base(const TsirIrFunction *func,
                 return false;
         }
     }
+    return false;
 }
 
 bool tsir_ir_resolve_const_local(const TsirIrFunction *func,

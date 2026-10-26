@@ -159,7 +159,7 @@ static bool base_type(Source *s, NameSpan name, const LocalScope *scope, TypeId 
     else {
         uint32_t columns, rows;
         if (!type_matrix_name(s, name, &columns, &rows) || name.length != 7u)
-            return source_error(s, DOE_COMPILER_UNSUPPORTED, name.offset, "unsupported type name");
+            return source_error_cause(s, DOE_COMPILER_UNSUPPORTED, SOURCE_CAUSE_UNKNOWN_TYPE, name.offset, "unsupported type name");
         if (s->source[name.offset + 6u] != 'f' && s->source[name.offset + 6u] != 'h')
             return source_error(s, DOE_COMPILER_UNSUPPORTED, name.offset, "unsupported matrix element type");
         if (s->source[name.offset + 6u] == 'h' && (s->compiler->module_flags & MODULE_F16) == 0u)
@@ -175,7 +175,7 @@ bool integer_attribute(Source *s, uint32_t expression, const LocalScope *scope, 
     if (!sema_expression(s, expression, scope, true, false, &v)) return false;
     if (count && v.constant.type == IR_ABSTRACT_INT && !sema_materialize(s, &v, IR_I32)) return false;
     if (v.runtime || v.overridable || !v.known || (v.constant.type != IR_U32 && v.constant.type != IR_I32 && v.constant.type != IR_ABSTRACT_INT) || (v.constant.type == IR_I32 && (v.constant.bits&UINT64_C(0x80000000)) != 0u) || v.constant.bits>UINT32_MAX)
-        return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, v.value.source_offset, "attribute or array count requires a nonnegative 32-bit integer constant");
+        return source_error_cause(s, DOE_COMPILER_SEMANTIC_ERROR, SOURCE_CAUSE_INVALID_ATTRIBUTE, v.value.source_offset, "attribute or array count requires a nonnegative 32-bit integer constant");
     *out = (uint32_t)v.constant.bits;
     return true;
 }
@@ -221,7 +221,7 @@ bool sema_type_reference(Source *s, TypeRef ref, const LocalScope *scope, TypeId
             }
             if (g->count_expression != NO_ID && ((s->specialization == NULL &&
                 !integer_attribute(s, g->count_expression, scope, true, &count)) || count == 0u)) {
-                if (s->diagnostic->status == DOE_COMPILER_OK) (void)source_error(s, DOE_COMPILER_SEMANTIC_ERROR, g->name.offset, "array count must be positive");
+                if (s->diagnostic->status == DOE_COMPILER_OK) (void)source_error_cause(s, DOE_COMPILER_SEMANTIC_ERROR, SOURCE_CAUSE_INVALID_TYPE, g->name.offset, "array count must be positive");
                 return false;
             }
             if (!type_intern(s, g->count_expression == NO_ID?TYPE_RUNTIME_ARRAY:TYPE_ARRAY, type, count, &type)) return false;
@@ -240,7 +240,7 @@ bool sema_type_reference(Source *s, TypeRef ref, const LocalScope *scope, TypeId
                 continue;
             }
             if (g->name.length != 4u || memcmp(name, "vec", 3u) != 0 || name[3]<'2' || name[3]>'4')
-                return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, g->name.offset,
+                return source_error_cause(s, DOE_COMPILER_SEMANTIC_ERROR, SOURCE_CAUSE_UNKNOWN_TYPE, g->name.offset,
                                     "unknown type generator");
             if (g->count_expression != NO_ID || type<IR_BOOL || (type>IR_F32 && type != IR_F16))
                 return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, g->name.offset, "vector annotation requires one concrete scalar type");
@@ -268,16 +268,16 @@ static bool scalar_common(Source *s, TypeId a, TypeId b, uint32_t offset, TypeId
         *out = a == IR_ABSTRACT_FLOAT ? b : a;
         return true;
     }
-    return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, offset, "types have no common implicit materialization");
+    return source_error_cause(s, DOE_COMPILER_SEMANTIC_ERROR, SOURCE_CAUSE_TYPE_MISMATCH, offset, "types have no common implicit materialization");
 }
 bool sema_common_type(Source *s, TypeId a, TypeId b, uint32_t offset, TypeId *out) {
     CompilerWorkspace *c = s->compiler;
     const uint32_t base = c->walk_count;
     while (a != b && (a >= IR_PRIMITIVE_COUNT || b >= IR_PRIMITIVE_COUNT)) {
-        if (a<IR_PRIMITIVE_COUNT || b<IR_PRIMITIVE_COUNT) return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, offset, "aggregate shapes differ");
+        if (a<IR_PRIMITIVE_COUNT || b<IR_PRIMITIVE_COUNT) return source_error_cause(s, DOE_COMPILER_SEMANTIC_ERROR, SOURCE_CAUSE_TYPE_MISMATCH, offset, "aggregate shapes differ");
         const TypeRecord *left = &c->types[a-IR_PRIMITIVE_COUNT], *right = &c->types[b-IR_PRIMITIVE_COUNT];
         if (left->kind == TYPE_STRUCT || left->kind != right->kind || left->count != right->count)
-            return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, offset, "aggregate shapes or nominal identities differ");
+            return source_error_cause(s, DOE_COMPILER_SEMANTIC_ERROR, SOURCE_CAUSE_TYPE_MISMATCH, offset, "aggregate shapes or nominal identities differ");
         if (c->walk_count == c->limits.traversal) return source_pool_error(s, DOE_COMPILER_POOL_TRAVERSAL, (size_t)c->walk_count+1u, offset, "common type traversal capacity exceeded");
         c->walk[c->walk_count++] = (WalkItem){.kind = left->kind, .cursor = left->count};
         a = left->element;
@@ -486,13 +486,13 @@ static bool declarations_valid(Source *s) {
         const NameSpan name = module_name(c, i, nominal_count);
         if (!sema_valid_name(s, name)) return false;
         for (uint32_t j = 0u;j<i;++j) if (source_spans_equal(s, name, module_name(c, j, nominal_count)))
-                return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, name.offset, "duplicate module declaration");
+                return source_error_cause(s, DOE_COMPILER_SEMANTIC_ERROR, SOURCE_CAUSE_DUPLICATE_SYMBOL, name.offset, "duplicate module declaration");
     }
     for (uint32_t t = 0u;t<nominal_count;++t) for (uint32_t i = 0u;i<c->types[t].count;++i) {
             const NameSpan name = c->members[c->types[t].element+i].name;
             if (!sema_valid_name(s, name)) return false;
             for (uint32_t j = 0u;j<i;++j) if (source_spans_equal(s, name, c->members[c->types[t].element+j].name))
-                    return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, name.offset, "duplicate struct member name");
+                    return source_error_cause(s, DOE_COMPILER_SEMANTIC_ERROR, SOURCE_CAUSE_DUPLICATE_SYMBOL, name.offset, "duplicate struct member name");
         }
     return true;
 }
@@ -544,7 +544,7 @@ static bool resolve_signatures(Source *s, const LocalScope *scope) {
             sift_formals(s, c->values, 0u, i-1u);
         }
         for (size_t i = 1u;i<count;++i) if (formal_order(s, c->values[i-1u], c->values[i]) == 0)
-                return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, c->formals[c->values[i]].name.offset, "duplicate formal parameter name");
+                return source_error_cause(s, DOE_COMPILER_SEMANTIC_ERROR, SOURCE_CAUSE_DUPLICATE_SYMBOL, c->formals[c->values[i]].name.offset, "duplicate formal parameter name");
     }
     return true;
 }
@@ -626,7 +626,7 @@ bool sema_resolve_declarations(Source *s, LocalScope *scope) {
         const EntryInput *p=&c->entry_inputs[i];
         if (!sema_valid_name(s, p->name)) return false;
         for (uint32_t j = entry->input_first;j<i;++j) if (source_spans_equal(s, p->name, c->entry_inputs[j].name) || p->kind == c->entry_inputs[j].kind)
-                return source_error(s, DOE_COMPILER_SEMANTIC_ERROR, p->name.offset, "duplicate compute input name or builtin");
+                return source_error_cause(s, DOE_COMPILER_SEMANTIC_ERROR, SOURCE_CAUSE_DUPLICATE_SYMBOL, p->name.offset, "duplicate compute input name or builtin");
         for (uint32_t category = 0u;category<5u;++category) {
             const uint32_t count = category == 0u?c->constant_decl_count:category == 1u?c->function_count:category == 2u?c->resource_count:category == 3u?c->type_count:c->workgroup_count;
             for (uint32_t j = 0u;j<count;++j) {

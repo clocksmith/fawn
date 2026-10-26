@@ -451,3 +451,23 @@ shapes, partial failure, untouched outputs, and normal command retirement using
 host call ledgers. `sdk-abi` includes the new format and selector signatures;
 it still needs an Apple SDK. These checks are not physical Metal import/video
 qualification, and the import primitive performs no color-space conversion.
+
+
+### Context-owned Metal library reuse
+
+The existing shared stage constructor now reuses up to sixteen native libraries
+per context, keyed by exact MSL bytes/length and native device identity. It
+snapshots the same bytes sent to NSString before native callbacks, retains both
+library and originating device, and never equates distinct source bytes or
+silently reuses a library from another device. Entry function lookup remains
+separate: multiple entrypoints can share their one source library. Compile
+options remain the constructor's unchanged nil options. Source retention is
+bounded to one MiB per entry; allocation failure merely bypasses caching.
+Native failures and empty sources are not cached. Runtime close drops cached
+library/device references before unloading Objective-C/Foundation/Metal code.
+
+`check-library-cache` uses actual constructor calls through a typed host ledger
+for embedded NUL/length/source changes, mutation during native compilation,
+entrypoint reuse, device isolation, failed compilation, optional-allocation
+failure (Linux linker fault control), FIFO eviction and final ownership release.
+It does not claim an Apple SDK or physical Metal result.

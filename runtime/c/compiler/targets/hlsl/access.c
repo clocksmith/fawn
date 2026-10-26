@@ -37,6 +37,12 @@ static void bounds(HlslEmitter *e, const IrInstruction *ir, const HlslPath *path
         if (step->kind == ACCESS_MEMBER || step->kind == ACCESS_COMPONENT) continue;
         const TypeRecord *input = path_input(e, step);
         if (input == NULL) return;
+        uint32_t extent;
+        bool runtime;
+        if (!target_index_extent(e->module, step->input_type, &extent, &runtime)) {
+            hlsl_error(e, "HLSL indexed access has no typed extent");
+            return;
+        }
         if (step->kind == ACCESS_INDEX_I32) {
             hlsl_text(e, " && (");
             hlsl_value(e, step->index);
@@ -48,7 +54,7 @@ static void bounds(HlslEmitter *e, const IrInstruction *ir, const HlslPath *path
         hlsl_text(e, " && (uint(");
         hlsl_value(e, step->index);
         hlsl_text(e, ") < ");
-        if (input->kind == TYPE_RUNTIME_ARRAY) {
+        if (runtime) {
             const ResourceRecord *r = resource_root(e, ir);
             if (r == NULL || r->tail_stride == 0u || r->tail_stride > UINT32_MAX ||
                 r->tail_offset > UINT32_MAX) {
@@ -57,7 +63,7 @@ static void bounds(HlslEmitter *e, const IrInstruction *ir, const HlslPath *path
             }
             hlsl_format(e, "(bytes >= %" PRIu64 "u ? (bytes - %" PRIu64 "u) / %" PRIu64 "u : 0u)",
                         r->tail_offset, r->tail_offset, r->tail_stride);
-        } else hlsl_format(e, "%uu", input->count);
+        } else hlsl_format(e, "%uu", extent);
         hlsl_text(e, ")");
     }
 }

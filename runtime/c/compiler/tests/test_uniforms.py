@@ -95,6 +95,22 @@ class TestUniforms(CompilerFixture):
         execute(instructions, memory, 0, {(0, 0): struct.pack("<IfI", 1, 2.25, 3)})
         self.assertEqual(memory[(0, 2)], [float_bits(99.0), float_bits(99.0), float_bits(4.5)])
 
+    def test_explicit_alignment_and_entry_binding_reachability(self) -> None:
+        header = "struct P{@align(16) x:u32,y:f32,z:u32}@group(0) @binding(0) var<uniform> p:P;"
+        instructions, reflection = self.compile(header + STORAGE + ENTRY + "o[0]=p.x+p.z;}")
+        self.assertEqual(reflection["bindings"][0]["minimum_binding_size_bytes"], 16)
+        self.assertEqual(reflection["structs"][0]["alignment_bytes"], 16)
+        self.assertEqual(reflection["structs"][0]["members"][0]["alignment_bytes"], 16)
+        memory = {(0, 2): [99]}
+        execute(instructions, memory, 0, {(0, 0): struct.pack("<4I", 2, 0, 3, 0)})
+        self.assertEqual(memory[(0, 2)], [5])
+        duplicates = header + "@group(0) @binding(0) var<uniform> duplicate:P;"
+        # Binding collisions are scoped to resources used by one entry, not
+        # to unrelated/unused declarations in the whole source module.
+        _, reflection = self.compile(duplicates + ENTRY + "return;}")
+        self.assertEqual(reflection["binding_count"], 2)
+        self.reject(duplicates + STORAGE + ENTRY + "o[0]=p.x+duplicate.x;}")
+
     def test_boundaries_names_dead_code_and_uniform_only(self) -> None:
         header = "struct P{x:u32,y:f32,z:u32}@group(0) @binding(0) var<uniform> p:P;"
         self.compile(header + ENTRY + "let snap=p.x;return;}")
@@ -113,13 +129,12 @@ class TestUniforms(CompilerFixture):
             self.assertEqual(reflection["struct_count"], 1)
         invalid_headers = (
             header.replace("z:u32", "x:u32"), header.replace("x:u32", "x:i32"),
-            header.replace("x:u32", "x:array<u32>"), header.replace("x:u32", "@align(16) x:u32"),
+            header.replace("x:u32", "x:array<u32>"),
             header.replace("var<uniform> p:P", "var<uniform> p:u32"), header + "struct P{q:u32}",
             header.replace("struct P{", "struct Missing{"), header + "struct p{q:u32}",
             header.replace("struct P{x:u32,y:f32,z:u32}", "struct P{}"),
             header.replace("struct P{x:u32,y:f32,z:u32}", "struct P{" + ",".join(f"x{i}:u32" for i in range(9)) + "}"),
             header + "".join(f"struct S{i}{{x:u32}}" for i in range(8)),
-            header + "@group(0) @binding(0) var<uniform> duplicate:P;",
             header + "".join(f"@group(1) @binding({i}) var<uniform> q{i}:P;" for i in range(8)),
         )
         for declarations in invalid_headers:

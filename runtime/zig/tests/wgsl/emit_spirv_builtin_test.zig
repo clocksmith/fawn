@@ -88,6 +88,128 @@ test "SPIR-V ldexp materializes abstract integer values as floats" {
     }
 }
 
+test "abstract inference: local const unpack and inferred vector ldexp reach SPIR-V" {
+    const source =
+        \\requires packed_4x8_integer_dot_product;
+        \\@group(0) @binding(0) var<storage, read_write> output: array<u32>;
+        \\@compute @workgroup_size(1) fn main() {
+        \\    const word = 7;
+        \\    output[0u] = unpack4xU8(word + 1).x;
+        \\    output[1u] = u32(ldexp(vec2(1,2), vec2(3,4)).y);
+        \\}
+    ;
+    var binary: [MAX_SPIRV_OUTPUT]u8 = undefined;
+    try testing.expect((try translateToSpirv(allocator, source, &binary)) > 20);
+}
+
+fn abstractInferenceTranslation(test_allocator: std.mem.Allocator) !void {
+    const source =
+        \\requires packed_4x8_integer_dot_product;
+        \\const word = 99;
+        \\@group(0) @binding(0) var<storage, read_write> output: array<u32>;
+        \\@compute @workgroup_size(1) fn main() {
+        \\    const word = 7;
+        \\    { const word = 3; output[0u] = unpack4xU8(word + 1).x; }
+        \\    output[1u] = unpack4xU8(word + 1).x;
+        \\    let pair = vec2(1,2);
+        \\    output[2u] = u32(pair.x) + u32(ldexp(vec2(1,2),vec2(3,4)).y);
+        \\}
+    ;
+    var tree = try parser.parseSource(test_allocator, source);
+    defer tree.deinit();
+    var analyzed = try sema.analyze(test_allocator, &tree);
+    defer analyzed.deinit();
+    // Each use must retain its own resolved lexical const, not the global or
+    // the nearest same-spelled declaration in a later traversal.
+    var observed: usize = 0;
+    for (tree.nodes.items, 0..) |node, index| {
+        if (node.tag != .ident_expr or !std.mem.eql(u8, tree.tokenSlice(node.main_token), "word")) continue;
+        const initializer = analyzed.node_info.items[index].const_initializer;
+        try testing.expect(initializer < tree.nodes.items.len);
+        const expected = if (observed == 0) "3" else "7";
+        try testing.expectEqualStrings(expected, tree.tokenSlice(tree.nodes.items[initializer].main_token));
+        observed += 1;
+    }
+    try testing.expectEqual(@as(usize, 2), observed);
+    var binary: [MAX_SPIRV_OUTPUT]u8 = undefined;
+    try testing.expect((try translateToSpirv(test_allocator, source, &binary)) > 20);
+}
+
+test "abstract inference: lexical const materialization survives every allocation failure" {
+    try testing.checkAllAllocationFailures(allocator, abstractInferenceTranslation, .{});
+}
+
+test "abstract inference: vector IR compatibility still rejects concrete sign and shape mismatch" {
+    var tree = try parser.parseSource(allocator, "@compute @workgroup_size(1) fn main() { let pair = vec2i(1,2); }");
+    defer tree.deinit();
+    var analyzed = try sema.analyze(allocator, &tree);
+    defer analyzed.deinit();
+    var module = try ir_builder.build(allocator, &tree, &analyzed);
+    defer module.deinit();
+    try ir_validate.validate(&module);
+    const original = module.functions.items[0].locals.items[0].ty;
+    const element = module.types.get(original).vector.elem;
+    module.functions.items[0].locals.items[0].ty = try module.types.intern(.{ .vector = .{ .elem = element, .len = 3 } });
+    try testing.expectError(error.InvalidIr, ir_validate.validate(&module));
+    const unsigned = try module.types.intern(.{ .scalar = .u32 });
+    module.functions.items[0].locals.items[0].ty = try module.types.intern(.{ .vector = .{ .elem = unsigned, .len = 2 } });
+    try testing.expectError(error.InvalidIr, ir_validate.validate(&module));
+}
+
+fn contextualVectorTranslation(test_allocator: std.mem.Allocator) !void {
+    const source =
+        \\@group(0) @binding(0) var<storage,read_write> output: array<vec2u>;
+        \\fn take(x:vec2u)->vec2u { return x; }
+        \\fn give()->vec2u { return vec2(1,2); }
+        \\fn signed()->vec2i { return vec2(3,4); }
+        \\@compute @workgroup_size(1) fn main(){
+        \\  let typed:vec2i=vec2(1,2);
+        \\  let unsigned:vec2u=vec2(3,4);
+        \\  output[0u]=take(vec2(5,6)); output[1u]=give();
+        \\  output[2u]=bitcast<vec2u>(vec2(1,2));
+        \\  output[3u]=bitcast<vec2u>(vec2(1.0,2.0));
+        \\  output[4u]=vec2u(typed+signed())+unsigned;
+        \\}
+    ;
+    var tree = try parser.parseSource(test_allocator, source);
+    defer tree.deinit();
+    var analyzed = try sema.analyze(test_allocator, &tree);
+    defer analyzed.deinit();
+    var module = try ir_builder.build(test_allocator, &tree, &analyzed);
+    defer module.deinit();
+    try ir_validate.validate(&module);
+    // Typed user-call/return boundaries cannot rely on target-specific implicit
+    // coercion: the shared IR carries an ordinary constructor explicitly.
+    var calls: usize = 0;
+    var returns: usize = 0;
+    for (module.functions.items) |function| {
+        for (function.exprs.items) |expression| {
+            if (expression.data != .call or expression.data.call.kind != .user or
+                !std.mem.eql(u8, expression.data.call.name, "take")) continue;
+            const argument = function.exprs.items[function.expr_args.items[expression.data.call.args.start]];
+            try testing.expect(argument.data == .construct);
+            try testing.expectEqual(analyzed.u32_type, module.types.get(argument.ty).vector.elem);
+            calls += 1;
+        }
+        if (!std.mem.eql(u8, function.name, "give")) continue;
+        for (function.stmts.items) |statement| {
+            if (statement != .return_ or statement.return_ == null) continue;
+            const value = function.exprs.items[statement.return_.?];
+            try testing.expect(value.data == .construct);
+            try testing.expectEqual(function.return_type, value.ty);
+            returns += 1;
+        }
+    }
+    try testing.expectEqual(@as(usize, 1), calls);
+    try testing.expectEqual(@as(usize, 1), returns);
+    var binary: [MAX_SPIRV_OUTPUT]u8 = undefined;
+    try testing.expect((try translateToSpirv(test_allocator, source, &binary)) > 20);
+}
+
+test "abstract inference: vector contexts and bitcasts survive every allocation failure" {
+    try testing.checkAllAllocationFailures(allocator, contextualVectorTranslation, .{});
+}
+
 test "SPIR-V integer dot keeps signed and unsigned products and reductions in integer arithmetic" {
     inline for (.{ "i32", "u32" }) |element| {
         inline for (.{ "2", "3", "4" }) |lanes| {

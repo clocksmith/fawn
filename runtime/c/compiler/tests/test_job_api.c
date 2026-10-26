@@ -129,7 +129,9 @@ int main(void) {
     assert(requirements.alignment_bytes <= _Alignof(max_align_t));
     DoeCompilerWorkspaceRequirements legacy;
     assert(doe_compiler_workspace_requirements(2u, &legacy, sizeof(legacy)) == DOE_COMPILER_OK);
-    assert(legacy.size_bytes <= 77760u);
+    /* The old M7 ceiling predates the M10/M11 fixed pools. Keep this public
+     * query aligned with the unchanged exact storage.c workspace ledger. */
+    assert(legacy.size_bytes == (UINTPTR_MAX == UINT64_MAX ? 146048u : 145920u));
     void *workspace = malloc(requirements.size_bytes + 16u);
     uint32_t *words = malloc(capacities.words * sizeof(*words));
     uint32_t *expected = malloc(capacities.words * sizeof(*expected));
@@ -213,7 +215,8 @@ int main(void) {
     assert(compile(&changed, workspace, requirements.size_bytes, large_source, changed.source_bytes,
                    words, capacities.words, &result) == DOE_COMPILER_OK);
     free(large_source);
-    /* Maximum configured recursion remains independent of storage capacities. */
+    /* Increasing recursion limits also grows the uniformity frame storage.
+     * Query the changed capacity contract; token/expression pools stay fixed. */
     changed = capacities; changed.expression_depth = 64u; changed.control_depth = 32u;
     char nested[4096] = "@compute @workgroup_size(1) fn nested(){";
     for (unsigned i = 0u; i < 31u; ++i) strcat(nested, "while false{");
@@ -223,8 +226,23 @@ int main(void) {
     for (unsigned i = 0u; i < 63u; ++i) strcat(nested, ")");
     strcat(nested, "{}");
     for (unsigned i = 0u; i < 32u; ++i) strcat(nested, "}");
+    DoeCompilerWorkspaceRequirements nested_requirements;
+    assert(doe_compiler_job_requirements(3u, &changed, sizeof(changed),
+        &nested_requirements, sizeof(nested_requirements)) == DOE_COMPILER_OK);
+    assert(nested_requirements.size_bytes > requirements.size_bytes);
+    memset(workspace, 0xab, requirements.size_bytes);
+    memset(words, 0xab, capacities.words * sizeof(*words));
     assert(compile(&changed, workspace, requirements.size_bytes, nested, strlen(nested),
-                   words, capacities.words, &result) == DOE_COMPILER_OK);
+                   words, capacities.words, &result) == DOE_COMPILER_INPUT_ERROR);
+    atomic_failure(&result, words);
+    assert(all_bytes(workspace, requirements.size_bytes, 0xabu));
+    void *nested_workspace = malloc(nested_requirements.size_bytes + 16u);
+    assert(nested_workspace != NULL);
+    memset(nested_workspace, 0xab, nested_requirements.size_bytes + 16u);
+    assert(compile(&changed, nested_workspace, nested_requirements.size_bytes,
+                   nested, strlen(nested), words, capacities.words, &result) == DOE_COMPILER_OK);
+    assert(all_bytes((unsigned char *)nested_workspace + nested_requirements.size_bytes, 16u, 0xabu));
+    free(nested_workspace);
     const unsigned char replacements[] = {0u,' ',';','{','}','(',')','u',255u};
     char mutated[sizeof(source)];
     for (size_t i = 0u; i < sizeof(source)-1u; ++i) {

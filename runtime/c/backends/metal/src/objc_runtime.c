@@ -169,6 +169,7 @@ static void close_runtime(void *userdata) {
     if (runtime == NULL) return;
     (void)doe_mtl_objc_archive_flush(runtime, NULL);
     doe_mtl_objc_archive_clear(runtime);
+    doe_mtl_objc_library_cache_close(runtime);
     doe_mtl_objc_close_external(runtime);
     if (runtime->metal_library != NULL) dlclose(runtime->metal_library);
     if (runtime->foundation_library != NULL) dlclose(runtime->foundation_library);
@@ -351,6 +352,7 @@ static doe_mtl_status open_apple_runtime(doe_mtl_native *out, doe_mtl_error *err
     native.timeline_value = doe_mtl_objc_timeline_value;
     native.commit = doe_mtl_objc_commit;
     native.observe = doe_mtl_objc_observe;
+    doe_mtl_objc_library_cache_open(runtime);
     *out = native;
     return doe_mtl_fail(DOE_MTL_OK, "Metal runtime load", error);
 unavailable:

@@ -10,9 +10,10 @@
 #include "dxil_diagnostic.h"
 #include "dxil_emit.h"
 
-/* WGSL-to-DXIL translate entry points, porting
- * pipeline/translate_dxil.zig over the bounded analyzer in
- * dxil_analyze.h. All four Zig variants are present; all take WGSL
+/* WGSL-to-DXIL translate entry points. The native compatibility path
+ * uses the canonical native projection in dxil_analyze.h; the toolchain path
+ * uses dxil_source.h over the shared typed C compiler and HLSL owner.
+ * All four Zig variants are present; all take WGSL
  * source text and a caller output buffer, and write the byte count
  * on success.
  *
@@ -31,11 +32,12 @@
  * Lifetime model, explicit: Zig's WithDiagnostic variant allocates
  * the IR module in an arena freed at return, and its toolchain
  * variant allocates with the caller allocator and deinits after
- * emit. In C the IR storage is function-local in both variants, the
- * output bytes are caller-owned and never alias IR storage, and
- * nothing is heap allocated, so there is no leak in either variant
- * and no observable difference between them; the two variants exist
- * so call sites name the path they chose, exactly as in Zig.
+ * emit. The C native path owns a bounded heap IR module and temporary compiler
+ * workspace, both freed before returning.
+ * The toolchain path owns temporary compiler workspace, reflection and
+ * exact HLSL bytes and frees them before return. Output bytes are
+ * caller-owned and never alias temporary storage. The two spellings
+ * of each path differ only in caller diagnostic preference.
  *
  * Diagnostic rule, mirroring Zig: on analyze failure the analyzer's
  * diagnostic stands and its status is returned unchanged. On emit

@@ -540,7 +540,9 @@ bool doe_resource_compute_pass_ended(const doe_resource_compute_pass *pass);
 /* End reports at the call: the pass ended or its parent encoder is not locked. */
 bool doe_resource_compute_pass_closed(const doe_resource_compute_pass *pass);
 /* The WebGPU invalid command buffer after a failed Finish: no commands; submit
- * and program claims reject it. NULL unless the encoder failed, or on OOM. */
+ * and program claims reject it. The encoder must have failed or finished;
+ * NULL for a fresh valid encoder, or on allocation failure. A previously
+ * successful command buffer and the encoder's first status stay unchanged. */
 doe_resource_commands *doe_resource_commands_rejected(doe_resource_encoder *encoder);
 /* A failed queue submit invalidates every command buffer of its batch: an
  * otherwise fresh buffer becomes permanently unsubmittable. Existing submission,
@@ -627,9 +629,10 @@ doe_resource_status doe_resource_encoder_begin_compute(doe_resource_encoder *enc
 void doe_resource_compute_pass_retain(doe_resource_compute_pass *pass);
 void doe_resource_compute_pass_release(doe_resource_compute_pass *pass);
 /* The WebGPU invalid pass returned after a rejected begin: it holds one encoder
- * lease and records nothing. The encoder must already have failed (NULL
- * otherwise, or on allocation failure), so every pass command, End and Finish
- * report that rejection. */
+ * lease and records nothing. The encoder must already have failed or finished
+ * (NULL otherwise, or on allocation failure). An open invalid encoder retains
+ * its sticky rejection; a pass created after Finish is ended and returns STATE
+ * without changing the parent's status or previously finished command buffer. */
 doe_resource_compute_pass *doe_resource_compute_pass_rejected(doe_resource_encoder *encoder);
 doe_resource_status doe_resource_compute_pass_set_pipeline(doe_resource_compute_pass *pass,
     doe_resource_pipeline *pipeline);

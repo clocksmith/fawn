@@ -116,7 +116,7 @@ static uint32_t statement(TsirSourceBridge *b, TsirSourceFunction *f, uint32_t i
             }
             o.local = (uint32_t)f->view.local_count++;
             o.is_const = s->kind != STATEMENT_VAR;
-            f->locals[o.local] = (TsirIrLocal){tsir_source_name(b, l->name), ty, s->kind == STATEMENT_VAR};
+            f->locals[o.local] = (TsirIrLocal){.name = tsir_source_name(b, l->name), .ty = ty, .mutable = s->kind == STATEMENT_VAR};
             f->local_names[o.local] = l->name;
             f->scope[f->scope_count++] = o.local;
             break;

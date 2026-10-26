@@ -227,12 +227,19 @@ enum { MODULE_SUBGROUPS = 1u, MODULE_STANDARD_UNIFORM = 2u, MODULE_CORE_BINDINGS
 typedef struct CompilerWorkspace CompilerWorkspace;
 typedef struct StageWorkspace StageWorkspace;
 typedef struct SpecializationContext SpecializationContext;
+/* Private semantic cause for compatibility adapters. Broad public status and
+ * message remain unchanged; consumers never classify diagnostics by text. */
+typedef enum { SOURCE_CAUSE_NONE, SOURCE_CAUSE_UNKNOWN_IDENTIFIER,
+    SOURCE_CAUSE_UNKNOWN_TYPE, SOURCE_CAUSE_DUPLICATE_SYMBOL,
+    SOURCE_CAUSE_TYPE_MISMATCH, SOURCE_CAUSE_INVALID_TYPE,
+    SOURCE_CAUSE_INVALID_ATTRIBUTE, SOURCE_CAUSE_UNSUPPORTED_BUILTIN } SourceErrorCause;
 typedef struct { const char *source; size_t length; DoeCompilerDiagnostic *diagnostic;
     const CompilerLimits *limits; CompilerWorkspace *compiler;
     uint32_t *exhausted_pool; size_t *minimum_pool_capacity; StageWorkspace *stages;
     SpecializationContext *specialization;
     uint32_t diagnostic_severity[2], diagnostic_seen;
-    NameSpan unknown_diagnostic; uint64_t diagnostic_work; } Source;
+    NameSpan unknown_diagnostic; SourceErrorCause error_cause;
+    uint64_t diagnostic_work; } Source;
 struct CompilerWorkspace {
     CompilerLimits limits;
     union { Token *tokens; IrInstruction *instructions; }; Expression *expressions; Statement *statements; ConstantSyntax *constant_decls;
@@ -283,6 +290,7 @@ typedef struct {
 } LegacyWorkspace;
 
 bool source_error(Source *, DoeCompilerStatus, size_t, const char *);
+bool source_error_cause(Source *, DoeCompilerStatus, SourceErrorCause, size_t, const char *);
 bool source_pool_error(Source *, uint32_t, size_t, size_t, const char *);
 bool compiler_job_layout(const DoeCompilerJobCapacities *, CompilerLimits *, size_t *);
 bool compiler_module_layout(const DoeCompilerModuleCapacities *, CompilerLimits *, size_t *);

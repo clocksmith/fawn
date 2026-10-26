@@ -5,10 +5,17 @@
  * Both early native-module validation and actual stage compilation use it. */
 static doe_mtl_status library_create(doe_mtl_objc *runtime, void *device,
     const char *msl, size_t length, void **out, doe_mtl_error *error) {
-    void *source=doe_mtl_objc_string(runtime,msl,length), *native_error=NULL;
-    if (!source) return doe_mtl_fail(DOE_MTL_INVALID_ARGUMENT,"MSL UTF-8 encoding",error);
+    void *cached = doe_mtl_objc_library_lookup(runtime,device,msl,length);
+    if (cached) { *out = cached; return DOE_MTL_OK; }
+    /* Publish the same immutable bytes passed to NSString, even if a native
+     * callback changes the caller's original source before returning. */
+    char *snapshot = doe_mtl_objc_library_source(runtime,msl,length);
+    void *source=doe_mtl_objc_string(runtime,snapshot ? snapshot : msl,length), *native_error=NULL;
+    if (!source) { free(snapshot); return doe_mtl_fail(DOE_MTL_INVALID_ARGUMENT,"MSL UTF-8 encoding",error); }
     void *library=runtime->library_call(device,runtime->new_library,source,NULL,&native_error);
     doe_mtl_objc_void(runtime,source,runtime->release);
+    if (library && snapshot) doe_mtl_objc_library_store(runtime,device,snapshot,length,library);
+    free(snapshot);
     if (!library) return doe_mtl_objc_error(runtime,native_error,"newLibraryWithSource:options:error:",error);
     *out=library;
     return DOE_MTL_OK;

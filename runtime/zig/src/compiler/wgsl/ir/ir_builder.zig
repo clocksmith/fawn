@@ -172,7 +172,7 @@ const FunctionBuilder = struct {
         return switch (node.tag) {
             .block => try self.lower_block(node),
             .var_stmt, .let_stmt, .const_stmt => try self.lower_local_decl(node),
-            .return_stmt => try self.function.append_stmt(self.allocator, .{ .return_ = if (node.data.lhs != NULL_NODE) try self.lower_value_expr(node.data.lhs) else null }),
+            .return_stmt => try self.function.append_stmt(self.allocator, .{ .return_ = if (node.data.lhs != NULL_NODE) try self.lower_context_value_expr(node.data.lhs, self.function.return_type) else null }),
             .if_stmt => try self.lower_if_stmt(node),
             .for_stmt => try self.lower_for_stmt(node),
             .while_stmt => try self.function.append_stmt(self.allocator, .{ .loop_ = .{
@@ -413,6 +413,26 @@ const FunctionBuilder = struct {
         });
     }
 
+    // Typed user-call and return boundaries need an explicit constructor when
+    // an abstract vector materializes to a different concrete representation.
+    // Reuse the ordinary construct node; target emitters own its conversion.
+    fn lower_context_value_expr(self: *FunctionBuilder, node_idx: u32, expected: ir.TypeId) !ir.ExprId {
+        const value = try self.lower_value_expr(node_idx);
+        const actual = self.function.exprs.items[value].ty;
+        if (actual == expected) return value;
+        const source = self.semantic.types.get(actual);
+        const target = self.semantic.types.get(expected);
+        if (source != .vector or target != .vector) return value;
+        if (source.vector.elem != self.semantic.abstract_int_type and
+            source.vector.elem != self.semantic.abstract_float_type) return value;
+        const args = try self.function.append_expr_args(self.allocator, &.{value});
+        return try self.function.append_expr(self.allocator, .{
+            .ty = expected,
+            .category = .value,
+            .data = .{ .construct = .{ .ty = expected, .args = args } },
+        });
+    }
+
     fn lower_ident(self: *FunctionBuilder, node_idx: u32) !ir.Expr {
         return switch (self.semantic.nodeSymbol(node_idx)) {
             .global => |index| .{ .global_ref = index },
@@ -452,6 +472,8 @@ const FunctionBuilder = struct {
                 try args.append(self.allocator, try self.lower_ref_expr(ref_node));
             } else if (param_is_ref) {
                 try args.append(self.allocator, try self.lower_value_expr(arg_node));
+            } else if (callee_fn) |callee| {
+                try args.append(self.allocator, try self.lower_context_value_expr(arg_node, callee.params.items[i].ty));
             } else {
                 try args.append(self.allocator, try self.lower_value_expr(arg_node));
             }
@@ -654,6 +676,12 @@ fn constant_from_node(
         .int_literal => ir.ConstantValue{ .int = sema_helpers.parse_wgsl_int_literal(u64, tree.tokenSlice(node.main_token)) catch return error.InvalidIr },
         .float_literal => ir.ConstantValue{ .float = sema_helpers.parse_wgsl_float_literal(tree.tokenSlice(node.main_token)) catch return error.InvalidIr },
         .ident_expr => blk: {
+            const info = semantic.node_info.items[node_idx];
+            if (info.const_initializer != NULL_NODE)
+                break :blk try constant_from_node(allocator, tree, semantic, failure, info.const_initializer, depth + 1);
+            // A runtime local/parameter cannot become constant by accidentally
+            // resolving a shadowed module-scope name during materialization.
+            if (info.symbol == .local or info.symbol == .param) break :blk null;
             const name = tree.tokenSlice(node.main_token);
             const global_index = semantic.global_map.get(name) orelse break :blk null;
             const global_info = semantic.globals.items[global_index];

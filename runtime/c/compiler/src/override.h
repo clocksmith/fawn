@@ -22,7 +22,7 @@ struct SpecializationContext {
     unsigned char *workgroups;
     uint32_t *entry_expressions;
     uint32_t selected;
-    bool specializing, all_entries, metal_pipeline;
+    bool specializing, all_entries, metal_pipeline, default_initializers;
     uint32_t metal_sample_mask;
     const DoeCompilerSpecializationCapacities *capacities;
     const DoeCompilerEntrySelectionV5 *selection;

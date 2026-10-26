@@ -12,9 +12,86 @@ const emit_spirv = @import("../../src/compiler/wgsl/emit/spirv/emit_spirv.zig");
 const sema_typeutils = @import("../../src/compiler/wgsl/frontend/sema_typeutils.zig");
 const sema_types = @import("../../src/compiler/wgsl/frontend/sema_types.zig");
 const sema_helpers = @import("../../src/compiler/wgsl/frontend/sema_helpers.zig");
+const parser = @import("../../src/compiler/wgsl/frontend/parser.zig");
+const sema = @import("../../src/compiler/wgsl/frontend/sema.zig");
 
 const testing = std.testing;
 const allocator = testing.allocator;
+
+test "abstract inference: const preserves abstract scalar and vector while let and var materialize" {
+    // WGSL 7.1: an inferred const retains T; let/var require concretization.
+    const source = "@compute @workgroup_size(1) fn main() {" ++
+        "const scalar = 7; const vector = vec2(1,2);" ++
+        "let local_scalar = 7; var local_vector = vec2(1,2);" ++
+        "const typed: u32 = 7; let float_vector = vec2(1.0,2.0); }";
+    var tree = try parser.parseSource(allocator, source);
+    defer tree.deinit();
+    var analyzed = try sema.analyze(allocator, &tree);
+    defer analyzed.deinit();
+    const locals = analyzed.functions.items[0].locals.items;
+    try testing.expectEqual(analyzed.abstract_int_type, locals[0].ty);
+    try testing.expectEqual(analyzed.abstract_int_type, analyzed.types.get(locals[1].ty).vector.elem);
+    try testing.expectEqual(analyzed.i32_type, locals[2].ty);
+    try testing.expectEqual(analyzed.i32_type, analyzed.types.get(locals[3].ty).vector.elem);
+    try testing.expectEqual(analyzed.u32_type, locals[4].ty);
+    try testing.expectEqual(analyzed.f32_type, analyzed.types.get(locals[5].ty).vector.elem);
+}
+
+test "abstract inference: unsigned unpack and ldexp accept abstract inputs but reject concrete signed inputs" {
+    inline for (.{
+        "const word = 7; let result = unpack4xU8(word + 1);",
+        "const pair = vec2(1,2); let result = ldexp(pair,vec2(3,4));",
+        "let result = ldexp(vec2(1,2),vec2(3,4));",
+    }) |body| {
+        var tree = try parser.parseSource(allocator, "@compute @workgroup_size(1) fn main() {" ++ body ++ "}");
+        defer tree.deinit();
+        var analyzed = try sema.analyze(allocator, &tree);
+        defer analyzed.deinit();
+    }
+    inline for (.{
+        "let word = 7; let result = unpack4xU8(word + 1);",
+        "var word = 7; let result = unpack4xU8(word + 1);",
+        "const word: i32 = 7; let result = unpack4xU8(word + 1);",
+        "let pair = vec2(1,2); let result = ldexp(pair,vec2(3,4));",
+        "var pair = vec2(1,2); let result = ldexp(pair,vec2(3,4));",
+        "const pair = vec2i(1,2); let result = ldexp(pair,vec2(3,4));",
+    }) |body| {
+        var tree = try parser.parseSource(allocator, "@compute @workgroup_size(1) fn main() {" ++ body ++ "}");
+        defer tree.deinit();
+        try testing.expectError(error.TypeMismatch, sema.analyze(allocator, &tree));
+    }
+}
+
+test "abstract inference: contextual vector types preserve width and concrete sign checks" {
+    inline for (.{
+        "@compute @workgroup_size(1) fn main(){let pair:vec2i=vec2(1,2);}",
+        "@compute @workgroup_size(1) fn main(){let pair:vec2u=vec2(1,2);}",
+        "fn take(x:vec2i){} @compute @workgroup_size(1) fn main(){take(vec2(1,2));}",
+        "fn give()->vec2i{return vec2(1,2);} @compute @workgroup_size(1) fn main(){let x=give();}",
+        "@compute @workgroup_size(1) fn main(){let x=bitcast<vec2u>(vec2(1,2));}",
+        "@compute @workgroup_size(1) fn main(){let x=bitcast<vec2u>(vec2(1.0,2.0));}",
+    }) |source| {
+        var tree = try parser.parseSource(allocator, source);
+        defer tree.deinit();
+        var analyzed = try sema.analyze(allocator, &tree);
+        defer analyzed.deinit();
+    }
+    inline for (.{
+        "@compute @workgroup_size(1) fn main(){let pair:vec3i=vec2(1,2);}",
+        "@compute @workgroup_size(1) fn main(){let pair:vec2u=vec2i(1,2);}",
+        "fn take(x:vec2u){} @compute @workgroup_size(1) fn main(){take(vec2i(1,2));}",
+        "fn give()->vec3i{return vec2(1,2);} @compute @workgroup_size(1) fn main(){let x=give();}",
+        "@compute @workgroup_size(1) fn main(){let x=bitcast<vec3u>(vec2(1,2));}",
+        "@compute @workgroup_size(1) fn main(){let x=bitcast<vec2u>(vec2(true,false));}",
+        // This repair preserves the existing scalar-abstract bitcast boundary.
+        "@compute @workgroup_size(1) fn main(){let x=bitcast<u32>(1);}",
+        "@compute @workgroup_size(1) fn main(){let x=bitcast<u32>(1.0);}",
+    }) |source| {
+        var tree = try parser.parseSource(allocator, source);
+        defer tree.deinit();
+        try testing.expectError(error.TypeMismatch, sema.analyze(allocator, &tree));
+    }
+}
 
 // ============================================================
 // emit_msl_subgroups tests
@@ -346,19 +423,19 @@ test "typeutils: materialize_inferred_local_type concretizes abstract types" {
     var module = try make_semantic_module();
     defer module.deinit();
 
-    try testing.expectEqual(module.i32_type, sema_typeutils.materialize_inferred_local_type(&module, module.abstract_int_type));
-    try testing.expectEqual(module.f32_type, sema_typeutils.materialize_inferred_local_type(&module, module.abstract_float_type));
+    try testing.expectEqual(module.i32_type, try sema_typeutils.materialize_inferred_local_type(&module, module.abstract_int_type));
+    try testing.expectEqual(module.f32_type, try sema_typeutils.materialize_inferred_local_type(&module, module.abstract_float_type));
 }
 
 test "typeutils: materialize_inferred_local_type preserves concrete types" {
     var module = try make_semantic_module();
     defer module.deinit();
 
-    try testing.expectEqual(module.i32_type, sema_typeutils.materialize_inferred_local_type(&module, module.i32_type));
-    try testing.expectEqual(module.u32_type, sema_typeutils.materialize_inferred_local_type(&module, module.u32_type));
-    try testing.expectEqual(module.f32_type, sema_typeutils.materialize_inferred_local_type(&module, module.f32_type));
-    try testing.expectEqual(module.f16_type, sema_typeutils.materialize_inferred_local_type(&module, module.f16_type));
-    try testing.expectEqual(module.bool_type, sema_typeutils.materialize_inferred_local_type(&module, module.bool_type));
+    try testing.expectEqual(module.i32_type, try sema_typeutils.materialize_inferred_local_type(&module, module.i32_type));
+    try testing.expectEqual(module.u32_type, try sema_typeutils.materialize_inferred_local_type(&module, module.u32_type));
+    try testing.expectEqual(module.f32_type, try sema_typeutils.materialize_inferred_local_type(&module, module.f32_type));
+    try testing.expectEqual(module.f16_type, try sema_typeutils.materialize_inferred_local_type(&module, module.f16_type));
+    try testing.expectEqual(module.bool_type, try sema_typeutils.materialize_inferred_local_type(&module, module.bool_type));
 }
 
 test "typeutils: materialize_inferred_local_type passes through non-scalar types" {
@@ -368,8 +445,8 @@ test "typeutils: materialize_inferred_local_type passes through non-scalar types
     const vec_ty = try module.types.intern(.{ .vector = .{ .elem = module.f32_type, .len = 3 } });
     const arr_ty = try module.types.intern(.{ .array = .{ .elem = module.i32_type, .len = 10 } });
 
-    try testing.expectEqual(vec_ty, sema_typeutils.materialize_inferred_local_type(&module, vec_ty));
-    try testing.expectEqual(arr_ty, sema_typeutils.materialize_inferred_local_type(&module, arr_ty));
+    try testing.expectEqual(vec_ty, try sema_typeutils.materialize_inferred_local_type(&module, vec_ty));
+    try testing.expectEqual(arr_ty, try sema_typeutils.materialize_inferred_local_type(&module, arr_ty));
 }
 
 // ============================================================

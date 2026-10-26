@@ -71,7 +71,7 @@ static void test_scalar_names_and_sizes(void) {
 }
 
 static void test_exactness_well_formed(void) {
-    TsirExactness e;
+    TsirExactness e = {0};
     TsirAlgorithmExactInvariant inv = TSIR_INVARIANT_REDUCTION_ORDER;
     memset(&e, 0, sizeof(e));
     e.class = TSIR_EXACTNESS_BIT_EXACT_SOLO;
@@ -166,7 +166,7 @@ static void test_expected_bytes(void) {
     uint64_t shape1[2] = { 2, 3 };
     uint64_t shape0[2] = { 0, 5 };
     uint64_t shape_big[2] = { 4294967296ull, 4294967296ull };
-    TsirBufferBinding binding;
+    TsirBufferBinding binding = {0};
     uint64_t out = 0;
     TsirStatus st = TSIR_OK;
     memset(&binding, 0, sizeof(binding));

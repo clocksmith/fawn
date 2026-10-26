@@ -20,6 +20,8 @@ The browser/offline adapter preserves validated WGSL with typed source edits;
 its bounded Wasm reactor imports no host functions.
 [ABI13/14 specialization](SPECIALIZATION.md) separates symbolic module validation
 from selected-entry or whole-module emission through shared semantics.
+The separate [host companion](host/README.md) owns allocating TSIR and explicit
+DXC orchestration without changing the allocation-free compiler API or Wasm imports.
 
 ## Invariants
 Unsupported syntax, types and targets reject without fallback.

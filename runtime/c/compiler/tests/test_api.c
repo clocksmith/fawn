@@ -103,22 +103,39 @@ int main(void) {
     }
     const char *const original[] = {
         "group(0)", "binding(0)", "storage, read_write", "read_write", "array<u32>",
-        "@compute", "workgroup_size(1)", "workgroup_size(1)", "workgroup_size(1)",
+        "@compute", "workgroup_size(1)", "workgroup_size(1)",
         "global_invocation_id", "vec3<u32>", "values[id.x] =", "= values[id.x]", "values[id.x] =",
-        "+ 1u", "+ 1u", "+ 1u", "+ 1u", "+ 1u", "+ 1u", "+ 1u", "+ 1u", "+ 1u",
-        "fn main", "@group(0)", "@compute", "1u; }", "values[id.x] =", "fn main", "fn main"
+        "+ 1u", "+ 1u", "+ 1u", "+ 1u", "+ 1u", "+ 1u",
+        "fn main", "@group(0)", "@compute", "values[id.x] =", "fn main", "fn main"
     };
     const char *const replacement[] = {
         "group(4)", "binding(32)", "uniform, read_write", "read", "array<f32>",
-        "@fragment", "workgroup_size(0)", "workgroup_size(257)", "workgroup_size(1,1,1,1)",
+        "@fragment", "workgroup_size(0)", "workgroup_size(1,1,1,1)",
         "subgroup_invocation_id", "vec4<u32>", "other[id.x] =", "= other[id.x]", "values[other.x] =",
-        "/ 1u", "+ 1", "+ 4294967296u", "+ 01u", "+ 0x1u", "+ 1.0u", "+ -1u", "+ 1U", "+ 1uu",
-        "fn values", "@group(0) @group(0)", "@compute @compute", "1u; } fn extra() {}",
+        "+ 4294967296u", "+ 01u", "+ 1.0u", "+ -1u", "+ 1U", "+ 1uu",
+        "fn values", "@group(0) @group(0)", "@compute @compute",
         "values[id.w] =", "fn u32", "fn array"
     };
     assert(sizeof(original) == sizeof(replacement));
     for (size_t i = 0; i < sizeof(original) / sizeof(original[0]); ++i)
         invalid_replacement(original[i], replacement[i]);
+    /* The canonical numeric/module owners supersede these seed-era limits. */
+    const char *const admitted_find[] = {"workgroup_size(1)", "+ 1u", "+ 1u", "+ 1u", "1u; }"};
+    const char *const admitted_replace[] = {"workgroup_size(257)", "/ 1u", "+ 1", "+ 0x1u", "1u; } fn extra() {}"};
+    for (size_t i = 0; i < sizeof(admitted_find) / sizeof(admitted_find[0]); ++i) {
+        replaced(source, sizeof(source), admitted_find[i], admitted_replace[i]);
+        memset(output, 0xa5, sizeof(output));
+        assert(compile_source(source, strlen(source), output + 1u, DOE_COMPILER_MAX_WORDS, &result) == DOE_COMPILER_OK);
+        assert(result.word_count > 100u && result.word_count <= DOE_COMPILER_MAX_WORDS);
+        assert(output[0] == 0xa5a5a5a5u && output[DOE_COMPILER_MAX_WORDS + 1u] == 0xa5a5a5a5u);
+        assert(result.reflection.workgroup_size[0] == (i == 0u ? 257u : 1u));
+        assert(result.reflection.binding_count == 1u && strcmp(result.reflection.entry_point, "main") == 0);
+        if (i == 2u || i == 3u) {
+            assert(result.word_count == first_result.word_count);
+            assert(memcmp(output + 1u, first_output, result.word_count * sizeof(*output)) == 0);
+        }
+        ++checks;
+    }
     /* M4 explicitly lifts the old scalar-subtraction rejection. */
     replaced(source, sizeof(source), "+ 1u", "- 1u");
     assert(compile_source(source, strlen(source), output, DOE_COMPILER_MAX_WORDS, &result) == DOE_COMPILER_OK);

@@ -30,6 +30,8 @@ pub const NodeInfo = struct {
     ty: ir.TypeId = ir.INVALID_TYPE,
     symbol: SymbolRef = .none,
     category: ir.ExprCategory = .value,
+    // Resolved lexical const initializer, never a same-spelled global lookup.
+    const_initializer: u32 = ast_mod.NULL_NODE,
 };
 
 pub const AliasInfo = struct {
@@ -94,6 +96,7 @@ pub const LocalInfo = struct {
     name: []const u8,
     ty: ir.TypeId,
     mutable: bool,
+    const_initializer: u32 = ast_mod.NULL_NODE,
 
     fn deinit(self: *LocalInfo, allocator: std.mem.Allocator) void {
         allocator.free(self.name);

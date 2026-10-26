@@ -76,7 +76,7 @@ static int extract_elem_and_shape(const TsirWgslModule *module,
             uint64_t *nested = NULL;
             size_t nested_len = 0;
             TsirScalarKind nested_elem = TSIR_SCALAR_F32;
-            TsirIrGlobal synthetic;
+            TsirIrGlobal synthetic = {0};
             int rc = 0;
             uint64_t *shape = NULL;
             size_t i = 0;
@@ -110,7 +110,7 @@ static int extract_elem_and_shape(const TsirWgslModule *module,
             uint64_t *nested = NULL;
             size_t nested_len = 0;
             TsirScalarKind nested_elem = TSIR_SCALAR_F32;
-            TsirIrGlobal synthetic;
+            TsirIrGlobal synthetic = {0};
             int rc = 0;
             uint64_t *shape = NULL;
             memset(&synthetic, 0, sizeof(synthetic));
@@ -142,7 +142,7 @@ static int extract_elem_and_shape(const TsirWgslModule *module,
             uint64_t *nested = NULL;
             size_t nested_len = 0;
             TsirScalarKind nested_elem = TSIR_SCALAR_F32;
-            TsirIrGlobal synthetic;
+            TsirIrGlobal synthetic = {0};
             int rc = 0;
             uint64_t *shape = NULL;
             memset(&synthetic, 0, sizeof(synthetic));
@@ -229,7 +229,7 @@ TsirStatus tsir_frontend_extract_bindings(const TsirWgslModule *module,
         size_t shape_len = 0;
         TsirScalarKind elem = TSIR_SCALAR_F32;
         int rc = 0;
-        TsirBufferBinding binding;
+        TsirBufferBinding binding = {0};
         char *name_copy = NULL;
         if (!global->has_binding) {
             continue;
@@ -245,7 +245,9 @@ TsirStatus tsir_frontend_extract_bindings(const TsirWgslModule *module,
         }
         if (rc == 0) {
             char path[256];
-            char detail[256];
+            TsirBuffer detail;
+            size_t tag_length = 0;
+            tsir_buf_init(&detail);
             uint32_t cursor = 0;
             const TsirIrType *t = NULL;
             const char *tag = "other";
@@ -255,30 +257,32 @@ TsirStatus tsir_frontend_extract_bindings(const TsirWgslModule *module,
                 t = &module->types[cursor];
                 tag = t->kind == TSIR_IR_TYPE_OTHER && t->unlowerable_tag != NULL ?
                     t->unlowerable_tag : type_tag_name(t->kind);
+                if (t->kind == TSIR_IR_TYPE_OTHER && t->unlowerable_tag != NULL)
+                    tag_length = t->unlowerable_tag_length;
             }
             snprintf(path, sizeof(path),
                 "functions[%u].bindings[%u:%u]", func_index,
                 global->group, global->binding);
             if (t != NULL && t->kind == TSIR_IR_TYPE_STRUCT) {
-                snprintf(detail, sizeof(detail), "%s_%s",
-                    global->has_addr_space
-                        ? addr_space_name(global->addr_space)
-                        : "none",
-                    tag);
-            } else {
-                snprintf(detail, sizeof(detail), "%s", tag);
+                tsir_buf_puts(&detail, global->has_addr_space ?
+                    addr_space_name(global->addr_space) : "none");
+                tsir_buf_putc(&detail, '_');
             }
-            if (!tsir_frontend_rejection_append(rejections,
-                TSIR_REJECT_BINDING_TYPE_UNLOWERABLE, path,
-                detail)) {
+            tsir_buf_putn(&detail, tag, tsir_text_length(tag, tag_length));
+            if (detail.err != TSIR_OK) {
+                status = detail.err;
+            } else if (!tsir_frontend_rejection_append_span(rejections,
+                TSIR_REJECT_BINDING_TYPE_UNLOWERABLE, path, 0,
+                detail.data, detail.len)) {
                 status = TSIR_ERR_NOMEM;
             }
+            tsir_buf_free(&detail);
             if (status != TSIR_OK) {
                 break;
             }
             continue;
         }
-        name_copy = tsir_frontend_dup_str(global->name);
+        name_copy = tsir_text_duplicate(global->name, global->name_length);
         if (name_copy == NULL) {
             free(shape);
             status = TSIR_ERR_NOMEM;
@@ -286,6 +290,7 @@ TsirStatus tsir_frontend_extract_bindings(const TsirWgslModule *module,
         }
         memset(&binding, 0, sizeof(binding));
         binding.name = name_copy;
+        binding.name_length = global->name_length;
         binding.group = global->group;
         binding.binding = global->binding;
         binding.logical_shape = shape;

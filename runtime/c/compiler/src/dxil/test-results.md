@@ -1,5 +1,10 @@
 # DXIL C port: test results
 
+Historical initial-port receipt. Current shared source-to-DXC integration and
+its separate qualification boundary are recorded in
+[`source-integration.md`](source-integration.md); the paths and environment
+claims below describe the original run, not the current repository checkout.
+
 Run on this Linux VM (Ubuntu, GCC 13.3.0, Python 3.12.3) on 2026-10-26.
 Source under test: `~/workspace/doe-c-work/dxil/` (this directory).
 Read-only Zig source: `~/workspace/fawn-tree`, head

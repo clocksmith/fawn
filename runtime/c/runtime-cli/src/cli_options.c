@@ -35,8 +35,9 @@ static void usage(FILE *out)
           "  [--readback-buffer HANDLE=PATH]...  (final buffer bytes after a successful run; at most 8)\n"
           "  [--numeric-stability-policy <path>] [--numeric-stability-execution-profile <id>]\n"
           "doe-c-runtime --plan <plan.json> --workload <id> --trace-jsonl <path> --trace-meta <path>\n"
-          "  [--kernel-root <path>] [profile, upload and --readback-buffer arguments as above]\n"
+          "  [--dry-run] [--kernel-root <path>] [profile, upload and --readback-buffer arguments as above]\n"
           "  (plan mode, as doe-plan-executor: buffer_write, buffer_load and kernel_dispatch plan steps)\n"
+          "  --dry-run validates the plan and emits dry_run rows without assets, shaders or a device.\n"
           "Commands: upload, buffer_write, barrier, kernel_dispatch (WGSL kernels, buffer and 2D texture\n"
           "bindings), copies in every direction, texture_write, texture_query, texture_destroy (2D\n"
           "uncompressed color textures and their mip levels), render_draw, render_pass, draw_indirect and\n"
@@ -93,6 +94,7 @@ int parse_options(int argc, char **argv, options *out)
         else if (!strcmp(flag, "--family")) TAKE(family);
         else if (!strcmp(flag, "--driver")) TAKE(driver);
         else if (!strcmp(flag, "--execute")) out->execute = true;
+        else if (!strcmp(flag, "--dry-run")) out->dry_run = true;
         else if (!strcmp(flag, "--trace")) out->trace_stdout = true;
         else if (!strcmp(flag, "--emit-normalized")) out->emit_normalized = true;
         else if (!strcmp(flag, "--validate-output-oracles")) out->validate_oracles = true;
@@ -186,8 +188,8 @@ int parse_options(int argc, char **argv, options *out)
 #endif
     }
     if (out->plan) {
-        /* doe-plan-executor always executes and writes both artifacts; it has no
-         * quirks, repeats, oracles or numeric stability policy. */
+        /* doe-plan-executor writes both artifacts, with explicit dry_run rows
+         * when requested; it has no quirks, repeats, oracles or numeric policy. */
         if (out->commands) return reject_argument("--plan", "excludes --commands");
         if (!out->workload || !out->trace_jsonl || !out->trace_meta)
             return reject_argument("--plan", "needs --workload, --trace-jsonl and --trace-meta");
@@ -196,10 +198,13 @@ int parse_options(int argc, char **argv, options *out)
             out->trace_stdout || out->replay || out->trace_backend || out->emit_normalized)
             return reject_argument("--plan", "takes no --quirks, --quirk-mode, --command-repeat, oracle, numeric "
                 "stability or --trace arguments");
-        out->execute = true;
+        if (out->dry_run && out->execute) return reject_argument("--dry-run", "excludes --execute");
+        out->execute = !out->dry_run;
         quirk_mode = "off";
     } else if (out->workload) {
         return reject_argument("--workload", "needs --plan");
+    } else if (out->dry_run) {
+        return reject_argument("--dry-run", "needs --plan");
     }
     if (out->emit_normalized && (out->validate_oracles || out->readback_count))
         return reject_argument("--emit-normalized", "excludes output oracles and readbacks");

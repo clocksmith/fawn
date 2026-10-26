@@ -27,7 +27,17 @@ static int expect_preserved(TsirStatus expected, const char *root,
     return failed;
 }
 
-int main(void) {
+int main(int argc, char **argv) {
+    if (argc == 2) {
+        TsirBuffer result;
+        TsirBootstrapManifestError diagnostic;
+        tsir_buf_init(&result);
+        TsirStatus status = tsir_bootstrap_manifest_generate(argv[1], &result, &diagnostic);
+        int failed = status != TSIR_OK;
+        if (!failed && fwrite(result.data, 1u, result.len, stdout) != result.len) failed = 1;
+        tsir_buf_free(&result);
+        return failed;
+    }
     static const char invalid[] = "@compute fn main( {";
     TsirBuffer output;
     TsirBootstrapManifestError error;
@@ -77,6 +87,15 @@ int main(void) {
         failures++;
     }
     tsir_buf_free(&output);
-    printf("bootstrap_manifest: 9 checks, %d failures\n", failures);
+    tsir_buf_init(&output);
+    tsir_buf_puts(&output, "prefix");
+    status = tsir_bootstrap_manifest_generate("invalid-\xff-root", &output, &error);
+    if (status != TSIR_ERR_INVALID || strcmp(output.data, "prefix") != 0 ||
+        error.system_error == 0 || strcmp(error.stage, "WGSL input read") != 0) {
+        fputs("invalid UTF-8 path did not retain WGSL read failure and output\n", stderr);
+        failures++;
+    }
+    tsir_buf_free(&output);
+    printf("bootstrap_manifest: 10 checks, %d failures\n", failures);
     return failures == 0 ? 0 : 1;
 }

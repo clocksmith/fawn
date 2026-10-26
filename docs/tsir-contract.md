@@ -87,6 +87,13 @@ source-model accuracy or general backend correctness. A workload requiring an
 independent mathematical/source reference must qualify it separately.
 Backends do not validate themselves by agreeing with another unqualified path.
 
+Scalar fold helpers admit only sum, product, min and max. Passing the compound
+`softmax_stable` operator to an otherwise matched simple-reduction path is an
+invalid reduction contract: Zig returns `InvalidReductionOp`, and C returns
+`TSIR_ERR_INVALID`. Neither traps nor substitutes a scalar identity. This is
+distinct from `NotImplemented`/`TSIR_ERR_UNSUPPORTED` for an unsupported oracle
+shape and does not claim a general softmax implementation.
+
 ## Emission
 
 Emitters consume the resolved realization and target descriptor. They emit

@@ -1,5 +1,10 @@
 # Experimental standalone C compiler
 
+The separate [allocating host companion](host/README.md) exposes the non-CSL
+TSIR source/manifest/oracle and shared-compiler DXC consumers through an ordinary
+C/C++ ABI. It preserves the existing allocation-free compiler library and its
+WASI/Windows core source inventory; host integration is not GPU qualification.
+
 The current M13 implementation adds all-entry compute modules, explicit NONE/AUTO/NAME
 selection and source-static resource/workgroup interfaces to the
 [accepted M12 owner](MILESTONE_12_RESULTS.md). Focused developer checks are passing;

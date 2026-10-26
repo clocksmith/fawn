@@ -207,13 +207,16 @@ class TestComputeExpressions(CompilerFixture):
     def test_dimensions_zero_resources_inputs_and_noop(self) -> None:
         for dims, expected in (("1", [1, 1, 1]), ("2,3", [2, 3, 1]),
                                ("2,3,4", [2, 3, 4]), ("256,", [256, 1, 1]),
-                               ("1,16,16,", [1, 16, 16])):
+                               ("1,16,16,", [1, 16, 16]), ("257", [257, 1, 1]),
+                               ("256,2", [256, 2, 1]), ("16,16,2", [16, 16, 2]),
+                               ("1u", [1, 1, 1]), ("4294967295", [4294967295, 1, 1])):
             instructions, reflection = self.compile(f"@compute @workgroup_size({dims}) fn none(){{}}")
             self.assertEqual(reflection["workgroup_size"], expected)
             self.assertEqual(reflection["binding_count"], 0)
             self.assertFalse(any(op == 59 for op, _ in instructions))
             execute(instructions, {}, 0)
-        for dims in ("", "0", "257", "256,2", "16,16,2", "1,0,1", "1,1,1,1", "1,,", "1u"):
+        # The compiler owns representability, not a particular device's limit256.
+        for dims in ("", "0", "1,0,1", "1,1,1,1", "1,,", "4294967296", "4294967295,2"):
             self.reject(f"@compute @workgroup_size({dims}) fn none(){{}}")
         for kind, name, code in INPUTS:
             declaration = f"@builtin({kind}) {name}:" + ("u32" if code == 29 else "vec3u")
@@ -244,7 +247,12 @@ class TestComputeExpressions(CompilerFixture):
         # Parameter declarations resolve their own types in module context.
         self.compile(STORAGE + "@compute @workgroup_size(1) fn f(@builtin(local_invocation_index) u32:u32){out[0u]=u32;}")
         self.reject(STORAGE + "@compute @workgroup_size(1) fn f(@builtin(local_invocation_index) u32:u32){let q:u32=1u;}")
-        self.reject(STORAGE + ENTRY.replace("gid:vec3u", "src:vec3u") + "out[0u]=src[0u];}")
+        # Entry parameters may shadow a module resource; resolve the vector,
+        # not the distinct storage binding with the same spelling.
+        instructions, _ = self.compile(STORAGE + ENTRY.replace("gid:vec3u", "src:vec3u") + "out[0u]=src[0u];}")
+        memory = {(0, 0): [99], (0, 1): [0]}
+        execute(instructions, memory, (7, 0, 0))
+        self.assertEqual(memory, {(0, 0): [99], (0, 1): [7]})
 
     def test_exact_unified_capacity_and_depth(self) -> None:
         expression = "+".join(["1u"] * 10)  # 19 nodes, plus one destination index.

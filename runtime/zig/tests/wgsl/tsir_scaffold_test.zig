@@ -14,6 +14,30 @@ const tsir = @import("../../src/compiler/tsir/mod.zig");
 const tsir_digest = @import("../../src/compiler/tsir/digest.zig");
 const tsir_reference = @import("../../src/compiler/tsir/reference_interpreter.zig");
 const targets = @import("../../src/compiler/targets/mod.zig");
+const scalar = @import("../../src/compiler/tsir/reference_scalar.zig");
+
+test "reference scalar folds reject compound softmax instead of trapping" {
+    try std.testing.expectError(error.InvalidReductionOp, scalar.reductionIdentityF32(.softmax_stable));
+    try std.testing.expectError(error.InvalidReductionOp, scalar.combineF32(.softmax_stable, 0, 1));
+    try std.testing.expectEqual(@as(f32, 0), try scalar.reductionIdentityF32(.sum));
+    try std.testing.expectEqual(@as(f32, 6), try scalar.combineF32(.product, 2, 3));
+    const functions = [_]tsir.SemanticFunction{.{
+        .name = "invalid_simple_softmax",
+        .family_hint = .reduction,
+        .axes = &.{.{ .name = "i", .lower_bound = "0", .upper_bound = "4", .step = "1" }},
+        .bindings = &.{
+            .{ .name = "in", .group = 0, .binding = 0, .logical_shape = &.{4}, .elem = .f32, .read_write = false },
+            .{ .name = "out", .group = 0, .binding = 1, .logical_shape = &.{1}, .elem = .f32, .read_write = true },
+        },
+        .reductions = &.{.{ .axis = 0, .op = .softmax_stable, .target_binding = 1, .contract = .{ .accumulation = .f32, .associativity = .strict_ordered, .nan_inf = .propagate } }},
+        .collectives = &.{},
+        .source_digest = [_]u8{0} ** 32,
+    }};
+    const semantic = tsir.Semantic{ .functions = &functions, .rejections = &.{} };
+    const realization = tsir.Realization{ .functions = &.{}, .emitter_digest = [_]u8{0} ** 32, .rejections = &.{} };
+    const bytes = [_]u8{0} ** 16;
+    try std.testing.expectError(error.InvalidReductionOp, tsir_reference.run(std.testing.allocator, semantic, realization, &.{&bytes}));
+}
 
 test "target descriptors have distinct stable hashes" {
     const wse3_a = targets.descriptorHash(targets.wse3.descriptor);

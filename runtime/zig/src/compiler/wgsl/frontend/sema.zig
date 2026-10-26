@@ -510,7 +510,12 @@ const Analyzer = struct {
         const init_ty = if (node.data.rhs != NULL_NODE) try self.analyze_expr(node.data.rhs, body) else ir.INVALID_TYPE;
         const resolved_type = blk: {
             if (explicit_type != ir.INVALID_TYPE) break :blk explicit_type;
-            if (init_ty != ir.INVALID_TYPE) break :blk materialize_inferred_local_type(self.module, init_ty);
+            if (init_ty != ir.INVALID_TYPE) {
+                // Inferred const declarations retain abstract types. Only
+                // runtime let/var declarations require concretization.
+                if (node.tag == .const_stmt) break :blk init_ty;
+                break :blk try materialize_inferred_local_type(self.module, init_ty);
+            }
             return error.InvalidType;
         };
         if (explicit_type != ir.INVALID_TYPE and init_ty != ir.INVALID_TYPE and !self.type_compatible(explicit_type, init_ty)) {
@@ -522,6 +527,7 @@ const Analyzer = struct {
             .name = try ir.dup_string(self.module.allocator, name),
             .ty = resolved_type,
             .mutable = node.tag == .var_stmt,
+            .const_initializer = if (node.tag == .const_stmt) node.data.rhs else NULL_NODE,
         });
         try body.bind_name(body.function().locals.items[local_index].name, .{ .local = local_index });
     }
@@ -580,7 +586,9 @@ const Analyzer = struct {
             },
             .local => |index| blk: {
                 out.category = .ref;
-                break :blk body.?.function().locals.items[index].ty;
+                const local = body.?.function().locals.items[index];
+                out.const_initializer = local.const_initializer;
+                break :blk local.ty;
             },
             .function => |index| self.module.functions.items[index].return_type,
             .none => return error.UnknownIdentifier,
@@ -643,7 +651,13 @@ const Analyzer = struct {
 
         if (std.mem.eql(u8, name, "bitcast")) {
             if (span.len != 1) return error.TypeMismatch;
-            if (!bitcast_types_compatible(self.module, target_ty, arg_types_buf[0])) return error.TypeMismatch;
+            // Inferred vector expressions previously arrived concretized.
+            // Restore that bitcast boundary without broadening scalar admission.
+            const source_ty = if (self.module.types.get(arg_types_buf[0]) == .vector)
+                try materialize_inferred_local_type(self.module, arg_types_buf[0])
+            else
+                arg_types_buf[0];
+            if (!bitcast_types_compatible(self.module, target_ty, source_ty)) return error.TypeMismatch;
             return target_ty;
         }
         return error.UnsupportedBuiltin;
@@ -799,6 +813,11 @@ const Analyzer = struct {
                     .f32, .f16 => actual_scalar == .abstract_float,
                     else => false,
                 },
+                else => false,
+            },
+            .vector => |expected_vector| switch (self.module.types.get(actual)) {
+                .vector => |actual_vector| expected_vector.len == actual_vector.len and
+                    self.type_compatible(expected_vector.elem, actual_vector.elem),
                 else => false,
             },
             .ref => false,

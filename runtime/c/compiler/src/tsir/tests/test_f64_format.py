@@ -53,7 +53,7 @@ def main() -> int:
         run([os.environ.get("CC", "cc"), "-std=c11", "-O2", "-Wall", "-Wextra",
              "-Wpedantic", "-Werror", str(TSIR / "tests/test_f64_format.c"),
              *[str(TSIR / ("tsir_" + name + ".c")) for name in
-               ("format", "digest", "sha256", "schema", "emit", "kernel_body")],
+               ("format", "digest", "sha256", "schema", "emit", "kernel_body", "text")],
              "-lm", "-o", str(c_binary)])
         source = temp / "format.zig"
         source.write_text('''const std = @import("std");

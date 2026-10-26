@@ -58,11 +58,46 @@ static bool is_reference(const TsirSourceBridge *b, const TsirSourceFunction *f,
                 (!g->has_addr_space || g->addr_space != TSIR_IR_SPACE_HANDLE);
         }
         if (e->kind == TSIR_IR_EXPR_DEREF) return true;
-        if (e->kind == TSIR_IR_EXPR_MEMBER) id = e->member_base;
+        if (e->kind == TSIR_IR_EXPR_MEMBER) {
+            if (e->member_base >= f->view.expr_count) return false;
+            uint32_t type = f->exprs[e->member_base].ty;
+            if (b->module.types != NULL && type < b->module.type_count &&
+                b->module.types[type].kind == TSIR_IR_TYPE_VECTOR &&
+                tsir_text_length(e->member_field_name, e->member_field_name_length) > 1)
+                return false;
+            id = e->member_base;
+        }
         else if (e->kind == TSIR_IR_EXPR_INDEX) id = e->index_base;
         else return false;
     }
     return false;
+}
+/* Intermediate canonical reference paths need not cache resolved_type. Read
+ * the projected aggregate's existing type relationships, never re-run sema. */
+static uint32_t access_type(TsirSourceBridge *b, uint32_t base, bool member,
+    uint32_t field, size_t width, uint32_t offset) {
+    if (base >= b->module.type_count) goto invalid;
+    const TsirIrType *type = &b->types[base];
+    if (member && type->kind == TSIR_IR_TYPE_STRUCT &&
+        type->struct_id < b->module.struct_count) {
+        const TsirIrStructDef *def = &b->structs[type->struct_id];
+        if (field < def->field_count) return def->fields[field].ty;
+    } else if (type->kind == TSIR_IR_TYPE_VECTOR) {
+        if (!member || width == 1u) return type->elem;
+        for (size_t i = 0; i < b->module.type_count; ++i)
+            if (b->types[i].kind == TSIR_IR_TYPE_VECTOR &&
+                b->types[i].elem == type->elem && b->types[i].len == width)
+                return (uint32_t)i;
+    } else if (!member && type->kind == TSIR_IR_TYPE_ARRAY) return type->elem;
+    else if (!member && type->kind == TSIR_IR_TYPE_MATRIX) {
+        for (size_t i = 0; i < b->module.type_count; ++i)
+            if (b->types[i].kind == TSIR_IR_TYPE_VECTOR &&
+                b->types[i].elem == type->elem && b->types[i].len == type->rows)
+                return (uint32_t)i;
+    }
+invalid:
+    (void)tsir_source_fail(b, offset, "typed aggregate access has no TSIR result identity");
+    return TSIR_IR_NONE;
 }
 static bool constructor(const TsirSourceBridge *b, const Expression *e) {
     NameSpan name = e->value.call.callee;
@@ -194,14 +229,17 @@ uint32_t tsir_source_expr(TsirSourceBridge *b, TsirSourceFunction *f, uint32_t i
             if (e->kind == EXPRESSION_LOAD) {
                 o.kind = TSIR_IR_EXPR_INDEX;
                 o.index_base = base;
+                o.ty = access_type(b, f->exprs[base].ty, false, 0u, 0u, e->source_offset);
                 o.index_index = tsir_source_expr(b, f, e->value.reference.index, false, depth + 1u);
             } else {
                 o.kind = TSIR_IR_EXPR_MEMBER;
                 o.member_base = base;
                 o.member_field_name = tsir_source_name(b, e->value.member.member);
                 uint32_t base_type = f->exprs[base].ty;
-                if (base_type < b->module.type_count && b->types[base_type].kind == TSIR_IR_TYPE_STRUCT) {
+                if (base_type < b->module.type_count && b->types[base_type].kind == TSIR_IR_TYPE_STRUCT &&
+                    b->types[base_type].struct_id < b->module.struct_count) {
                     const TsirIrStructDef *def = &b->structs[b->types[base_type].struct_id];
+                    o.member_field_index = TSIR_IR_NONE;
                     for (size_t i = 0; i < def->field_count; ++i)
                         if (!strcmp(def->fields[i].name, o.member_field_name)) o.member_field_index = (uint32_t)i;
                 } else if (e->value.member.member.length != 0u) {
@@ -212,11 +250,18 @@ uint32_t tsir_source_expr(TsirSourceBridge *b, TsirSourceFunction *f, uint32_t i
                         if (component) o.member_field_index = (uint32_t)(component - "rgba");
                     }
                 }
+                o.ty = access_type(b, base_type, true, o.member_field_index,
+                    e->value.member.member.length, e->source_offset);
+                if (base_type < b->module.type_count &&
+                    b->types[base_type].kind == TSIR_IR_TYPE_VECTOR &&
+                    e->value.member.member.length > 1u && is_reference(b, f, base))
+                    o.member_base = load(b, f, base, false);
             }
+            if (b->status != TSIR_OK || o.ty == TSIR_IR_NONE) return TSIR_IR_NONE;
             uint32_t result = tsir_source_push_expr(b, f, o);
-            /* Preserve the retained semantic reference category, independently
-             * of whether the root declaration permits assignment. */
-            return is_reference(b, f, base) ? load(b, f, result, reference) : result;
+            /* Retained vector multi-swizzles are values; single components and
+             * struct members inherit the base category, not mutability. */
+            return is_reference(b, f, result) ? load(b, f, result, reference) : result;
         }
         case EXPRESSION_NOT: case EXPRESSION_NEGATE: case EXPRESSION_COMPLEMENT:
             o.kind = TSIR_IR_EXPR_UNARY;

@@ -12,16 +12,33 @@ The three remaining entries now have actual executable replacements:
   file input, reference interpreter execution, status JSON and failure classes.
 
 See [bootstrap commands, evidence and limits](TSIR_BOOTSTRAP.md) and
-[remaining semantic qualifications](src/tsir/gaps.md). Original Zig sources and
-all CSL exclusions remain intact. This inventory does not establish universal
+[remaining semantic qualifications](src/tsir/gaps.md). The retained Zig oracle remains available; its narrow abstract-admission and
+invalid-reduction safety corrections are identified in the linked evidence.
+All CSL exclusions remain intact. This inventory does not establish universal
 runtime parity, GPU performance, production promotion or browser qualification.
 
-The scoped tools now build through `make all` and `tsir-bootstrap-tools`, with
-an internal static TSIR archive and shared compiler sources. TSIR and DXIL are
-still separate from the production `libdoe_compiler.so` source list; production
-integration and all broader migration gates remain independently required.
-The pre-existing six TSIR tests pass 388 checks on Mars in this follow-up.
+The scoped tools build through `make all` and `tsir-bootstrap-tools`. The new
+[allocating host companion](host/README.md), `libdoe_compiler_host`, exposes
+source/manifest/oracle and explicit-DXC calls through an external C/C++ ABI.
+Allocating TSIR/filesystem work stays out of the allocation-free core
+`libdoe_compiler.so` inventory. The benchmark fixture generator has an explicit
+`--native-only` C route; the independent retained Zig oracle remains available.
+Host integration is not a GPU/browser production-promotion certificate.
 
 Dot v3 removes the standalone strict-warning blockers and adds direct numeric,
 formatting and source semantic differentials. The filename is historical:
 remaining API/adapter and production integration gaps are not declared closed.
+
+## Current correctness follow-up
+
+Low-level planning now hashes a complete target descriptor, not a reduced
+placement-only record. All four non-CSL emitter source identities (including
+DXIL) are exposed. Explicit graph traversal removes the silent 512-level family
+hint cutoff while retaining the reference's eight-local alias rule.
+
+Schema/IR/descriptor text carries optional exact byte lengths. Frontend owned
+copies, canonical JSON, planning, lookup and emission preserve embedded NUL and
+nonterminated spans. `test-tsir-text` compares six actual retained Zig slice
+identities, not a rewritten serializer. See `src/tsir/gaps.md` for API contracts
+and remaining evidence boundaries; the 103-row capability registry does not
+turn TSIR-local tests into exhaustive native/browser parity.

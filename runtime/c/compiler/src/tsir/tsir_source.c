@@ -104,7 +104,7 @@ static bool types(TsirSourceBridge *b) {
                 def->field_count = t->count;
                 for (uint32_t f = 0u; f < t->count; ++f) {
                     const MemberRecord *m = &c->members[t->element + f];
-                    b->fields[t->element + f] = (TsirIrStructField){tsir_source_name(b, m->name), m->type};
+                    b->fields[t->element + f] = (TsirIrStructField){.name = tsir_source_name(b, m->name), .ty = m->type};
                 }
                 break;
             }
@@ -186,8 +186,8 @@ static void cleanup(TsirSourceBridge *b) {
     free(b->fields); free(b->structs); free(b->types); free(b->names);
     free(b->compiler);
 }
-TsirStatus tsir_source_lower(const char *source, size_t length,
-    const char *frontend_version, TsirSemantic *out,
+TsirStatus tsir_source_lower_span(const char *source, size_t length,
+    const char *frontend_version, size_t frontend_version_length, TsirSemantic *out,
     DoeCompilerDiagnostic *diagnostic) {
     const int saved_errno = errno;
     if (!out || !diagnostic) return TSIR_ERR_INVALID;
@@ -253,7 +253,8 @@ TsirStatus tsir_source_lower(const char *source, size_t length,
         if (b.status == TSIR_OK) {
             uint8_t digest[32];
             tsir_sha256((const uint8_t *)source, length, digest);
-            b.status = tsir_frontend_lower(&b.module, digest, frontend_version, out);
+            b.status = tsir_frontend_lower_span(&b.module, digest, frontend_version,
+                frontend_version_length, out);
         }
     } else b.status = TSIR_ERR_INVALID;
     if (!numeric_environment_end(&b.source, &environment)) {
@@ -263,4 +264,10 @@ TsirStatus tsir_source_lower(const char *source, size_t length,
     cleanup(&b);
     errno = saved_errno;
     return b.status;
+}
+
+TsirStatus tsir_source_lower(const char *source, size_t length,
+    const char *frontend_version, TsirSemantic *out,
+    DoeCompilerDiagnostic *diagnostic) {
+    return tsir_source_lower_span(source, length, frontend_version, 0, out, diagnostic);
 }

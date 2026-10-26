@@ -5,6 +5,24 @@
 #define DOE_TARGET_IR_VIEW_H
 #include "../src/internal.h"
 
+/* Logical index extent shared by target views. This reports typed shape only;
+ * guard selection, storage policy and proof-based elision remain callers' work. */
+static inline bool target_index_extent(const CompilerWorkspace *c, TypeId type,
+    uint32_t *count, bool *runtime) {
+    for (uint32_t depth = 0u; depth <= c->type_count; ++depth) {
+        if (type < IR_PRIMITIVE_COUNT || type - IR_PRIMITIVE_COUNT >= c->type_count) return false;
+        const TypeRecord *record = &c->types[type - IR_PRIMITIVE_COUNT];
+        if (record->kind == TYPE_POINTER) { type = record->element; continue; }
+        if (record->kind == TYPE_RUNTIME_ARRAY) {
+            *count = 0u; *runtime = true; return true;
+        }
+        if (record->kind != TYPE_ARRAY && record->kind != TYPE_VECTOR && record->kind != TYPE_MATRIX) return false;
+        if (record->count == 0u) return false;
+        *count = record->count; *runtime = false; return true;
+    }
+    return false;
+}
+
 static inline uint32_t target_immediate_root(const CompilerWorkspace *c, const EntryRecord *entry) {
     for (uint32_t i = 0u; i < entry->state.resolved.workgroup_count; ++i) {
         const uint32_t root = c->entry_references[entry->state.resolved.workgroup_first+i];

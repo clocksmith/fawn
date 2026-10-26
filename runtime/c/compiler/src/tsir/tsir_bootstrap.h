@@ -44,7 +44,8 @@ const char *tsir_bootstrap_canonical_kernel(const char *kernel);
  * means "0" (Zig's KernelSpec defaults). tolerance_epsilon is
  * copied as a raw JSON number token. rejection_reasons NULL
  * means an empty array. kernel_ref is the bare kernel name;
- * "doe.tsir.bootstrap." is prepended. */
+ * "doe.tsir.bootstrap." is prepended. Optional byte lengths and length arrays
+ * follow tsir_schema.h; positive lengths need not include a terminator. */
 typedef struct TsirManifestEntry {
     const char *backend;
     const char *emitter_digest;
@@ -59,6 +60,17 @@ typedef struct TsirManifestEntry {
     const char *target_descriptor_correctness_hash;
     const char *tsir_realization_digest;
     const char *tsir_semantic_digest;
+    size_t backend_length;
+    size_t emitter_digest_length;
+    size_t exactness_class_length;
+    size_t tolerance_metric_length;
+    size_t tolerance_epsilon_length;
+    size_t kernel_ref_length;
+    size_t target_descriptor_correctness_hash_length;
+    size_t tsir_realization_digest_length;
+    size_t tsir_semantic_digest_length;
+    const size_t *algorithm_exact_invariant_lengths;
+    const size_t *rejection_reason_lengths;
 } TsirManifestEntry;
 
 /* Validate before writing and stage privately: invalid input or allocation

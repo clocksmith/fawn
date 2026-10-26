@@ -41,6 +41,75 @@ def check_normalized(binary, work, env):
     assert result.returncode == 0 and json.loads(result.stdout)['kernel'] == kernel
 
 
+def check_plan_dry_run(binary: Path, work: Path, env: dict[str, str]) -> None:
+    from test_cli import check_schemas, plan_document, ZIG_PLAN_HASHES
+    # Deliberately missing assets and kernels: the retained plan executor reads
+    # them only during execution, not while emitting dry_run identities.
+    env = dict(env, DOE_BENCH_ASSET_CACHE_DIR=str(work / 'never-created-assets'))
+    path = work / 'dry.plan.json'
+    rows_path, meta_path = work / 'dry.jsonl', work / 'dry.meta.json'
+    flags = ['--plan', str(path), '--workload', 'c_plan_parity', '--trace-jsonl', str(rows_path),
+             '--trace-meta', str(meta_path), '--kernel-root', str(work / 'never-created-kernels')]
+
+    def run(document: dict[str, object], *extra: str, expected: int = 0,
+            kernel_root: bool = True) -> subprocess.CompletedProcess[str] | list[dict[str, object]]:
+        path.write_text(json.dumps(document), encoding="utf-8")
+        rows_path.write_text('rows untouched', encoding='utf-8')
+        meta_path.write_text('meta untouched', encoding='utf-8')
+        selected_flags = flags if kernel_root else flags[:-2]
+        result = subprocess.run([str(binary), *selected_flags, *extra], cwd=REPO, env=env,
+                                capture_output=True, text=True, timeout=10)
+        assert result.returncode == expected, (extra, result.returncode, result.stderr)
+        if expected:
+            assert rows_path.read_text(encoding="utf-8") == 'rows untouched' and meta_path.read_text(encoding="utf-8") == 'meta untouched'
+            return result
+        meta = json.loads(meta_path.read_text(encoding="utf-8"))
+        rows = [json.loads(line) for line in rows_path.read_text(encoding="utf-8").splitlines()]
+        check_schemas('plan dry run', meta, rows)
+        assert meta['adapterInfo'] is None and meta['hostExecutorInitTotalNs'] == 0
+        assert 'fallbackUsed' not in meta and 'backendSelectionReason' not in meta
+        assert meta['executionRowCount'] == meta['executionSuccessCount'] == len(rows)
+        assert meta['executionDispatchCount'] == document['dispatchCount']
+        for key in ['executionErrorCount', 'executionSubmitCount', 'executionTotalNs', 'executionSetupTotalNs',
+                    'executionEncodeTotalNs', 'executionSubmitWaitTotalNs', 'executionGpuTimestampTotalNs',
+                    'executionGpuTimestampAttemptedCount', 'executionGpuTimestampValidCount', 'hostKernelPrewarmTotalNs']:
+            assert meta[key] == 0, (key, meta[key])
+        assert meta['hostPlanArtifactHash'] == document['planSha256']
+        for row in rows:
+            assert row['executionStatus'] == 'ok' and row['executionStatusCode'] == 'dry_run', row
+            assert row['executionDispatchCount'] == (row['opCode'] == 'kernel_dispatch')
+            assert row['executionSubmitCount'] == row['executionDurationNs'] == 0
+        # Plan rows retain their distinct opCode layout; the command-stream
+        # replay CLI intentionally does not admit this plan artifact format.
+        return rows
+
+    plan = plan_document()
+    assert [row['hash'] for row in run(plan, '--dry-run')] == ZIG_PLAN_HASHES
+    assert [row['hash'] for row in run(plan, '--dry-run', kernel_root=False)] == ZIG_PLAN_HASHES
+    ir_path = work / 'dry.ir.json'
+    ir_path.write_text(json.dumps({'shared': {'kernelRoot': str(work / 'missing-ir-kernels')}}), encoding='utf-8')
+    ir_plan = {**plan, 'irPath': str(ir_path)}
+    assert [row['hash'] for row in run(ir_plan, '--dry-run', kernel_root=False)] == ZIG_PLAN_HASHES
+    ir_path.write_text('invalid optional IR metadata', encoding='utf-8')
+    assert [row['hash'] for row in run(ir_plan, '--dry-run', kernel_root=False)] == ZIG_PLAN_HASHES
+    empty = {**plan, 'commands': [], 'commandCount': 0, 'bufferWriteCount': 0, 'bufferLoadCount': 0, 'dispatchCount': 0}
+    assert run(empty, '--dry-run') == []
+    for extra in [ ['--execute'], ['--readback-buffer', '7001=unused'], ['--commands', 'unused'],
+                   ['--workload', 'not-the-plan'], ['--trace'], ['--emit-normalized'] ]:
+        run(plan, '--dry-run', *extra, expected=2)
+    for mutation in [dict(dispatchCount=3), dict(commands=[None]), dict(extra=1)]:
+        run({**plan, **mutation}, '--dry-run', expected=2)
+    malformed = deepcopy(plan)
+    malformed['commands'][1]['byteLength'] = 3
+    run(malformed, '--dry-run', expected=2)
+    # Normal plan execution still requires its assets rather than silently
+    # executing empty loads from the dry-run lowering route.
+    assert 'cannot be read' in run(plan, expected=2).stderr
+    result = subprocess.run([str(binary), '--dry-run'], cwd=REPO, env=env,
+                            capture_output=True, text=True, timeout=10)
+    assert result.returncode == 2 and 'needs --plan' in result.stderr
+
+
 def main():
     from test_cli import check_schemas, replay_passes
     parser = argparse.ArgumentParser(description=__doc__)
@@ -50,6 +119,7 @@ def main():
     args = parser.parse_args(); args.work.mkdir(parents=True, exist_ok=True)
     env = dict(os.environ, LD_PRELOAD=str(args.no_device.resolve()))
     check_normalized(args.binary, args.work, env)
+    check_plan_dry_run(args.binary, args.work, env)
     bare = subprocess.run([str(args.binary)], cwd=REPO, env=env, capture_output=True, text=True, timeout=10)
     assert bare.returncode == 0 and bare.stdout.count('cmd[') == 5 and 'exec backend=' not in bare.stdout
     assert 'matched=vulkan.intel.gen12.use_temp_buffer_compressed_copy' in bare.stdout
@@ -119,7 +189,7 @@ def main():
     assert record['capture']['errorCode'] == 'capture_requires_native_execution'
     run('native-control', '--commands', str(REPO/'examples/p0_resource_lifecycle_commands.json'),
         '--execute', '--backend', 'native', '--quirk-mode', 'off', expected=99)
-    print('PASS host traces, embedded source hashes, 40 retained normalized commands, semantic artifacts and replay refusal before native instance creation')
+    print('PASS host traces, retained plan dry-run hashes, 40 retained normalized commands, semantic artifacts and replay refusal before native instance creation')
 
 
 if __name__ == '__main__':

@@ -13,7 +13,8 @@
  * TSIR_IR_TYPE_OTHER, and a global of that kind gets the same
  * tsir_binding_type_unlowerable rejection Zig's `else => return
  * null` branch produces. All strings are caller-owned views; this
- * module never frees them and never copies them. Index fields use
+ * module never frees them and never copies them. Optional byte lengths follow
+ * tsir_schema.h, including embedded-NUL and nonterminated spans. Index fields use
  * TSIR_IR_NONE (UINT32_MAX) for "absent", matching Zig's optionals.
  * Expression and statement trees are caller-built flat arrays plus
  * ranges, exactly like Zig's ArrayListUnmanaged stores; ids are
@@ -58,17 +59,20 @@ typedef struct TsirIrType {
     /* Borrowed retained-IR tag for nonlowerable opaque types. NULL keeps the
      * historical generic OTHER tag for callers without source metadata. */
     const char *unlowerable_tag;
+    size_t unlowerable_tag_length;
 } TsirIrType;
 
 typedef struct TsirIrStructField {
     const char *name;
     uint32_t ty;
+    size_t name_length;
 } TsirIrStructField;
 
 typedef struct TsirIrStructDef {
     const char *name;
     const TsirIrStructField *fields;
     size_t field_count;
+    size_t name_length;
 } TsirIrStructDef;
 
 typedef enum TsirIrAddrSpace {
@@ -107,6 +111,7 @@ typedef struct TsirIrGlobal {
     uint32_t binding;
     bool has_override_id;
     uint32_t override_id;
+    size_t name_length;
 } TsirIrGlobal;
 
 typedef enum TsirIrBuiltin {
@@ -120,12 +125,14 @@ typedef struct TsirIrParam {
     uint32_t ty;
     bool has_io;
     TsirIrBuiltin builtin;
+    size_t name_length;
 } TsirIrParam;
 
 typedef struct TsirIrLocal {
     const char *name;
     uint32_t ty;
     bool mutable;
+    size_t name_length;
 } TsirIrLocal;
 
 typedef enum TsirIrBinaryOp {
@@ -210,6 +217,8 @@ typedef struct TsirIrExpr {
     uint32_t member_base;
     uint32_t index_base;
     uint32_t index_index;
+    size_t call_name_length;
+    size_t member_field_name_length;
 } TsirIrExpr;
 
 typedef enum TsirIrLoopKind {
@@ -277,6 +286,7 @@ typedef struct TsirIrFunction {
     size_t stmt_child_count;
     uint32_t root_stmt;
     uint32_t workgroup_size[3];
+    size_t name_length;
 } TsirIrFunction;
 
 typedef struct TsirWgslModule {

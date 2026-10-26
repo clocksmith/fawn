@@ -18,34 +18,18 @@ Current bootstrap follow-up: see [executable evidence and limits](../../TSIR_BOO
 The facade and both non-CSL tools now execute in C; original mapping rows below
 retain their unrelated qualifications.
 
-## The registry gap, stated plainly
+## Registry scope, reconciled against the current tree
 
-The task asked for a row-by-row mapping against a 103-row capability
-registry, and for the known state that C provides 250 of 266 listed native
-API names with 16 retained stubs, delegation-only paths, or no-ops.
+`config/webgpu-capability-inventory.json` contains 103 capability rows, but no
+exhaustive C-versus-Zig parity classification. The original worker's statement
+that this registry was absent is superseded. This document maps the 38-file TSIR
+surface, not every native/browser capability. `runtime/c/native/README.md`
+reconciles 266 retained names against 250 C names: 15 remaining names have only
+foreign delegation or failure, and one logging setter is a no-op. They are not
+16 implemented retained native capabilities awaiting C counterparts.
 
-Searches of this tree found no 103-row registry file and no 266-name
-native API inventory file: `grep` over `runtime/c` and `runtime/zig`
-for a capability registry, and over `docs/c-migration/` for a 250/266
-inventory, returned no such table. The coordinator's prior summary says
-the inventory file lives on the user's Mac at
-`/Users/xyz/.local/state/deco/doe-zig-c-gap-20261026/summary.json`,
-which is not accessible from this VM. That file was not consulted, and
-no registry row is claimed here from memory.
-
-Consequences, applied throughout this document:
-
-1. This mapping maps TSIR's own observable surface instead: every public
-   Zig type, function, and behavior unit in the 40 files, grouped by file.
-2. The 103-row registry itself remains an open gap (row R0 below). The
-   coordinator must supply the inventory file before a registry-row
-   mapping can be written; nothing here substitutes for it.
-3. Existing C behavior for TSIR is: none. `grep -rn Tsir|TSIR` over
-   `runtime/c/compiler/src/*.c|*.h` returned nothing. The existing C
-   WGSL compiler and SPIR-V text emitters are a different subsystem and
-   are NOT counted as TSIR parity. Every TSIR row below therefore starts
-   from "no C behavior" and is classified by what this run implements
-   in `src/` versus what it leaves missing.
+The initial absence of C TSIR was historical input to the original mapping;
+current owners, tools, identity and bounded differential coverage are below.
 
 Status words used below, and nowhere else:
 
@@ -69,12 +53,13 @@ test-mutation hooks). C11, four-space indentation, at most 999 lines
 per file, SPDX `MIT` within the first three lines, header guards,
 `-std=c11 -Wall -Wextra -Wpedantic -Werror`.
 
-## R0: registry gap (unresolved, not papered over)
+## R0: broader registry coverage (not inferred from TSIR tests)
 
 | Row | Zig behavior | Existing C behavior | This run |
 | --- | --- | --- | --- |
-| R0 | 103-row capability registry, C-versus-Zig parity per row | No registry file found in tree; no TSIR C code at all | missing: needs the Mac inventory file. This document maps the TSIR surface instead and does not claim registry coverage. |
-| R0b | 266 listed native API names, 250 provided by C, 16 stubs/delegation/no-ops | Not verifiable from this tree (no inventory file found) | missing: carried forward as coordinator-supplied context only; no stub is reproduced or "fixed" here, and no C function in `src/` returns success for an unimplemented capability. |
+| R0 | 103-row capability registry | Registry is present; no exhaustive language-parity mapping | not claimed: TSIR coverage does not establish every runtime row. |
+| R0b | 266 retained native lookup names versus 250 C names | Reconciled in `runtime/c/native/README.md`: 15 delegation-only/failing entries and one logging no-op | not 16 implemented native features; no success stub is added for symbol-count equality. |
+
 
 ## Schema: schema.zig (767 lines)
 
@@ -113,7 +98,7 @@ names, which the digest emits verbatim as quoted strings.
 | S28 | `RmsNormBody`: formula, epsilon, hidden_extent_axis, reduction_target | done |
 | S29 | `SoftmaxMode`: two_pass_stable, streaming_online | done |
 | S30 | `CausalMode`: none, causal, sliding_window | done |
-| S31 | `AttentionScoresBody`: softmax_mode, head_dim, key_sequence_axis, scale_source, optional scale binding/offset/literal, has_softcap, causal_mode, optional sliding_window_size, optional query_seq_len | done: struct only; no interpreter/emitter for it (see X-rows) |
+| S31 | `AttentionScoresBody`: softmax_mode, head_dim, key_sequence_axis, scale_source, optional scale binding/offset/literal, has_softcap, causal_mode, optional sliding_window_size, optional query_seq_len | done: schema; extended reference interpretation is mapped below, while retained non-CSL emitters reject this body |
 | S32 | `AttentionScaleSource`: uniform_field, literal_f32 | done |
 | S33 | `Conv1DDepthwiseBody`: channels, kernel_size, has_bias | done: struct only |
 | S34 | `L2NormalizeBody`: hidden, eps (f32) | done: struct only |
@@ -139,10 +124,10 @@ string escape set restricted to `\" \\ \n \r \t \uXXXX`, enums as quoted
 snake_case tag names, digests as 64-char lowercase hex, SHA-256 over
 canonical UTF-8 bytes. NaN/Inf f64 values are `InvalidSemantic`, never
 serialized. Zig f64 formatting is `{d}` (shortest round-trip decimal);
-C uses `%.17g` with a shortest-round-trip correction only where needed:
-see gaps.md for the known divergence risk on non-integral f64 values
-(tolerance_epsilon, literal_f32). Integral and small decimal values used
-by the tests match exactly.
+C uses the shared shortest-round-trip formatter, cross-checked against 4,152
+actual Zig plain-decimal cases (not exhaustive binary64 coverage). Text fields
+carry optional explicit byte lengths; canonical control-byte escaping includes
+embedded NUL and no longer truncates at the first zero byte.
 
 | Row | Zig behavior | C status |
 | --- | --- | --- |
@@ -186,19 +171,18 @@ gaps.md G-IR-OTHER).
 | F5 | `frontend_collectives.collectCollectives` (246 lines) | done: `tsir_frontend_passes.c` collectives walker |
 | F6 | `frontend_expr` (637 lines): literal/symbolic upper bounds, step, init bound, dispatch-guard scan, step-sign detection, dispatch-axis letter extraction | done: `tsir_frontend_expr.c` |
 | F7 | `frontend_rejections.recoverRejections` (122 lines): typed rejections for unrepresentable constructs, never placeholder values | done: `tsir_frontend_passes.c` rejections walker |
-| F8 | `family_hint.infer` (183 lines): reductions present -> fused_gemv only when 2 axes, 1 sum reduction on axis 1, nontrivial bound string (dispatch./uniform:/override:/override@id:/const:), and one indexed load covering both axis locals; else reduction; axes present -> gather when any indirect buffer access, else elementwise; else unknown. Hints are tiebreakers only and must not change feasibility | done: `tsir_family_hint_infer_ir` in `tsir_frontend.c` (indexed-access coverage, indirect-access detection with Zig's local-alias depth cap 8); the pure predicate `tsir_family_hint_classify` is retained for callers without IR |
+| F8 | `family_hint.infer` (183 lines): reductions present -> fused_gemv only when 2 axes, 1 sum reduction on axis 1, nontrivial bound string (dispatch./uniform:/override:/override@id:/const:), and one indexed load covering both axis locals; else reduction; axes present -> gather when any indirect buffer access, else elementwise; else unknown. Hints are tiebreakers only and must not change feasibility | done: `tsir_family_hint_infer_ir` in `tsir_family_hint.c` (indexed-access coverage, indirect-access detection with Zig's local-alias depth cap 8); the pure predicate `tsir_family_hint_classify` is retained for callers without IR |
 | F9 | `frontend_body`/`frontend_expr`/`frontend_collectives` internal helpers | done: ported as part of `tsir_frontend_expr.c` and `tsir_frontend_passes.c` |
 
 ## Planner: planner.zig (295), planner_support.zig (47), collective_synthesis.zig (144)
 
-The planner consumes `targets.TargetDescriptor`. Only the correctness
-fields the planner actually reads are mirrored in C as
-`TsirTargetDescriptor` (see `tsir_planner.h`): pe_working_memory_bytes,
-fabric_color_count, max_collective_group_size, native_numerical_modes
-(f32/f16/bf16 names), native_collectives (kind_name, exactness_name),
-runtime_sized_binding_policy (host_copied / fabric_streamed_with_loader
-/ reject). The C descriptor is a plain caller-owned struct, not a claim
-about the full Zig target descriptor.
+The planner consumes the complete correctness identity in `TsirTargetDescriptor`;
+`TsirTargetIdentity` is the same type. Shared `tsir_targets.c` computes each
+planned function's hash before publication. Caller-created reduced descriptors
+are no longer valid: initialize all correctness fields (including required name
+and streaming-GEMM tag), or copy a registered descriptor. The planner-only latency
+hint remains unhashed. All in-tree initializers and bootstrap callers use this
+contract; hash failure leaves empty output and mismatched emission rejects.
 
 | Row | Zig behavior | C status |
 | --- | --- | --- |
@@ -234,8 +218,8 @@ taxonomy, never a silent zero.
 | R2 | `Result`: reference_hash = SHA-256 over the canonical byte image of all output buffers in declared order; outputs caller-owned; empty outputs when rejected | done: `TsirReferenceResult` with caller-owned buffers and `tsir_reference_free_result` |
 | R3 | `freeResult` semantics | done |
 | R4 | Empty kernel: exactly 1 function, 0 bindings, 0 reductions, 0 collectives, 0 inputs -> hash of empty input (e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855) | done, including the exact hash constant in tests |
-| R5 | `reductionIdentityF32`: sum 0, product 1, min +inf, max -inf; softmax_stable unreachable (Zig trap) | partial: identities done for the four foldable ops; softmax_stable returns TSIR_ERR_INVALID visibly in C instead of trapping. Documented divergence: C refuses where Zig would trap; neither produces a value. |
-| R6 | `combineF32`: sum +, product *, min/max IEEE min/max with NaN propagation per propagate contract; softmax_stable unreachable | done for the four ops; softmax_stable -> TSIR_ERR_INVALID |
+| R5 | `reductionIdentityF32`: sum 0, product 1, min +inf, max -inf; compound softmax is not a scalar fold | done: four valid identities; C `TSIR_ERR_INVALID` matches the corrected retained Zig `InvalidReductionOp` error for softmax, replacing the former Zig trap. |
+| R6 | `combineF32`: four valid scalar fold operators; compound softmax invalid | done: valid folds retained; typed invalid-operation error in both languages, with no fabricated value. |
 | R7 | `readF32FromBytes`: f32 little-endian bits; f16 upcast; bf16 as high 16 bits; i32/u32 unreachable (never dispatched for integer bindings in Phase A) | done for f32/f16/bf16; i32/u32 -> TSIR_ERR_UNSUPPORTED visibly |
 | R8 | `writeF32AsElem`: f32 bits; f16 downcast (round-to-nearest-even, subnormal/Inf/NaN per IEEE conversion); bf16 via RNE (see R9) | done: f16 conversion implemented with explicit bit manipulation, not compiler `_Float16`, so `-Wpedantic` stays clean |
 | R9 | `f32ToBf16Rne`: NaN -> high 16 bits with quiet bit 0x40 set; else bias 0x7fff + lsb, wrapping add, shift 16 | done, bit-exact |
@@ -267,12 +251,10 @@ Shared rule (all emitters): any realization-level rejection blocks
 emission (`RejectedRealization`); function index out of range is an
 error; semantic-aware emission checks the realization function's
 target_descriptor_hash against the descriptor hash and fails on
-mismatch. The C descriptor hash is caller-supplied (the Zig
-`targets.descriptorHash` lives outside TSIR); the C emitter compares the
-supplied 32 bytes against the realization function's stored hash, which
-is exactly the check the Zig code performs once the hash is computed.
-The hash computation itself is missing (it belongs to the targets
-module), and is listed in gaps.md.
+mismatch. The low-level planner now computes the actual complete descriptor
+hash through the shared target owner. Emitters compare the supplied identity
+against that stored hash. Span variants preserve target name and metadata bytes,
+including embedded NUL; exact Zig skeleton identity is tested.
 
 | Row | Zig behavior | C status |
 | --- | --- | --- |
@@ -288,8 +270,8 @@ module), and is listed in gaps.md.
 | E10 | MSL skeleton spec: version_key `doe.tsir.msl_skeleton.version`, body_comment `// tsir mechanical skeleton: MSL kernel body is emitted by later lowering.` | done: realization-only emission |
 | E11 | SPIR-V skeleton spec: version_key `doe.tsir.spir_v_skeleton.version`, body_comment `; tsir mechanical skeleton: SPIR-V module body is emitted by later lowering.` | done: realization-only emission |
 | E12 | WebGPU emitter: realization-only calls emit the contract skeleton (its own header/metadata layout, same writers); semantic-aware calls emit executable WGSL for supported body families via kernel_body | done: realization-only skeleton plus WGSL bodies for fused_gemv, rms_norm, gather via `tsir_kernel_body.c` |
-| E13 | `emit_kernel_body` (896 lines): Backend enum webgpu/csl/msl/dxil/spir_v; webgpu/msl/dxil/spir_v bodies support fused_gemv, rms_norm, gather and reject all other ops (including attention_scores, which is fixture-only) with UnsupportedKernelBody; CSL bodies support all 13 non-unknown ops (gated via emit_kernel_body_gated, attention via emit_kernel_body_attention, conv1d, l2_normalize, linear_attention, kv read/write, residual_add) and are build-gated on enable_csl | partial: non-CSL backends done in `tsir_kernel_body.c` (WGSL/MSL/DXIL/SPIR-V bodies for fused_gemv, rms_norm, gather; all other ops return TSIR_ERR_UNSUPPORTED; backend enum `TsirKernelBackend` in `tsir_emit.h`); CSL backend returns TSIR_ERR_UNSUPPORTED and stays quarantined, not built |
-| E14 | `emit_kernel_context.Config` and defaults: var_prefix `tsir_`, no param defaults, no Gemma offset, kv full_per_pe, attention full_per_pe, tile_param pe-id source | done: struct plus defaults (as configuration data; the bodies that consume it are missing per E13) |
+| E13 | `emit_kernel_body` (896 lines): Backend enum webgpu/csl/msl/dxil/spir_v; webgpu/msl/dxil/spir_v bodies support fused_gemv, rms_norm, gather and reject all other ops (including attention_scores, which is fixture-only) with UnsupportedKernelBody; CSL bodies support all 13 non-unknown ops (gated via emit_kernel_body_gated, attention via emit_kernel_body_attention, conv1d, l2_normalize, linear_attention, kv read/write, residual_add) and are build-gated on enable_csl | done (non-CSL scope): `tsir_kernel_body.c` (WGSL/MSL/DXIL/SPIR-V bodies for fused_gemv, rms_norm, gather; all other ops return TSIR_ERR_UNSUPPORTED; backend enum `TsirKernelBackend` in `tsir_emit.h`); CSL backend returns TSIR_ERR_UNSUPPORTED and stays quarantined, not built |
+| E14 | `emit_kernel_context.Config` and defaults: var_prefix `tsir_`, no param defaults, no Gemma offset, kv full_per_pe, attention full_per_pe, tile_param pe-id source | done: struct plus defaults (as configuration data; the CSL bodies that consume it remain excluded per E13) |
 | E15 | `emit_kernel_context` helpers: bindingForRole (first matching role, else MissingBindingRole), bindingForIndex (out of range -> InvalidBodyContract), requireElem (mismatch -> UnsupportedScalarKind), writeCslSqrtNr (f32 form vs upcast form), writeCslBufferArray, writeCslBufferPointer, writeCslExportSymbol | done: helpers implemented byte-exact for the CSL text fragments they produce; they are CSL text helpers, not a CSL emitter claim |
 | E16 | `emit_dtype_routing`: cslElemName (f32/f16/bf16/i32/u32 verbatim), wgslElemName (bf16 maps to f16 spelling, rejected elsewhere), isSupportedComputeElem (f32/f16 only), requireSupportedComputeElem, writeWgslF16Enable (`enable f16;\n\n` only for f16) | done |
 | E17 | `emit_csl_f16_pack` (48 lines): writeBufferArray, writeBufferPointer, writePackLoop, writeExportSymbol | done: text helpers (quarantined CSL text; see n/a note) |
@@ -297,8 +279,8 @@ module), and is listed in gaps.md.
 | E19 | Per-op CSL body files: emit_kernel_body_attention (443), emit_kernel_body_kv (245), emit_kernel_body_linear_attention (169), emit_kernel_body_gated (115), emit_kernel_body_conv1d (110), emit_kernel_body_l2_normalize (73) | n/a (quarantined): mapped, not built |
 | E20 | `emit_webgpu` semantic-aware WGSL bodies (fused_gemv, rms_norm, gather) | done: `tsir_kernel_body.c` WGSL emitters, exact texts, literal and uniform epsilon forms |
 | E21 | `emit_msl`/`emit_dxil`/`emit_spir_v` semantic-aware bodies (fused_gemv, rms_norm, gather, via kernel_body) | done: `tsir_kernel_body.c` MSL/DXIL/SPIR-V emitters, exact texts, including the SPIR-V gather ternary with 0.0 (not 0.0f) |
-| E22 | Emitter code digests (`emitterCodeDigest`): SHA-256 over the emitter's own source text plus the shared skeleton/body/metadata sources it embeds | bootstrap reference identity implemented for WebGPU/MSL/SPIR-V by hashing actual retained emitter inputs; six exact target/emitter comparisons against Zig pass. This is reference provenance, not a claim that C implementation source hashes equal Zig. |
-| E23 | `emit_kernel_body` Config-driven live-path knobs (chunk_size_default 1024, hidden_size_default 1024, Gemma 1+weight offset, kv head_dim/max_seq_len/read_len defaults, slot-sharded kv, kv-axis-sharded attention, attention pe-id source) | missing: config fields exist (E14), behavior does not; the non-CSL bodies built here do not consume these knobs (fixed `tsir_` names, no kv/attention paths), and the CSL paths that do are quarantined |
+| E22 | Emitter code digests (`emitterCodeDigest`): SHA-256 over the emitter's own source text plus the shared skeleton/body/metadata sources it embeds | reference identity implemented for WebGPU/MSL/SPIR-V/DXIL by hashing actual retained emitter inputs; seven exact target/emitter comparisons against Zig pass. This is reference provenance, not a claim that C implementation source hashes equal Zig. |
+| E23 | `emit_kernel_body` Config-driven live-path knobs (chunk_size_default 1024, hidden_size_default 1024, Gemma 1+weight offset, kv head_dim/max_seq_len/read_len defaults, slot-sharded kv, kv-axis-sharded attention, attention pe-id source) | n/a (quarantined): these live knobs are consumed only by retained CSL bodies, not by retained non-CSL bodies; no non-CSL migration gap is inferred |
 
 ## Tools: tools/ (751 lines)
 
@@ -315,6 +297,6 @@ bounded JSON reader. Both consume `tsir.h`; CSL stays excluded.
 ## Interpretation
 
 The original 145-row mapping is a triage aid, not universal parity evidence.
-T1/T2 and the three bootstrap reference emitter identities now have executable
-acceptance above. The original registry gaps, unrelated interpreter corners,
-CSL exclusions and production-library integration qualifications remain.
+T1/T2 and all four non-CSL reference emitter identities have executable
+acceptance above. Registry-wide behavior, unrelated interpreter corners and
+physical runtime qualification are not implied; CSL remains excluded.

@@ -18,8 +18,9 @@ static void emit_key(TsirBuffer *buf, const char *key) {
     tsir_buf_puts(buf, "\":");
 }
 
-static void emit_string(TsirBuffer *buf, const char *text) {
+static void emit_string_span(TsirBuffer *buf, const char *text, size_t length) {
     size_t i = 0;
+    size_t count = tsir_text_length(text, length);
     char tmp[8];
     if (text == NULL) {
         if (buf->err == TSIR_OK) {
@@ -28,7 +29,7 @@ static void emit_string(TsirBuffer *buf, const char *text) {
         return;
     }
     tsir_buf_putc(buf, '"');
-    for (i = 0; text[i] != '\0'; i++) {
+    for (i = 0; i < count; i++) {
         unsigned char c = (unsigned char)text[i];
         switch (c) {
             case '"':
@@ -57,6 +58,10 @@ static void emit_string(TsirBuffer *buf, const char *text) {
         }
     }
     tsir_buf_putc(buf, '"');
+}
+
+static void emit_string(TsirBuffer *buf, const char *text) {
+    emit_string_span(buf, text, 0);
 }
 
 static void emit_u32(TsirBuffer *buf, uint32_t value) {
@@ -148,17 +153,17 @@ static void emit_exactness(TsirBuffer *buf, const TsirExactness *value) {
     tsir_format_f64(buf, value->tolerance_epsilon);
     tsir_buf_putc(buf, ',');
     emit_key(buf, "toleranceMetric");
-    emit_string(buf, value->tolerance_metric);
+    emit_string_span(buf, value->tolerance_metric, value->tolerance_metric_length);
     tsir_buf_putc(buf, '}');
 }
 
 static void emit_rejection(TsirBuffer *buf, const TsirRejectionEntry *value) {
     tsir_buf_putc(buf, '{');
     emit_key(buf, "detail");
-    emit_string(buf, value->detail);
+    emit_string_span(buf, value->detail, value->detail_length);
     tsir_buf_putc(buf, ',');
     emit_key(buf, "nodePath");
-    emit_string(buf, value->node_path);
+    emit_string_span(buf, value->node_path, value->node_path_length);
     tsir_buf_putc(buf, ',');
     emit_key(buf, "reason");
     emit_enum(buf, tsir_rejection_reason_name(value->reason));
@@ -168,16 +173,16 @@ static void emit_rejection(TsirBuffer *buf, const TsirRejectionEntry *value) {
 static void emit_axis(TsirBuffer *buf, const TsirIterationAxis *value) {
     tsir_buf_putc(buf, '{');
     emit_key(buf, "lowerBound");
-    emit_string(buf, value->lower_bound);
+    emit_string_span(buf, value->lower_bound, value->lower_bound_length);
     tsir_buf_putc(buf, ',');
     emit_key(buf, "name");
-    emit_string(buf, value->name);
+    emit_string_span(buf, value->name, value->name_length);
     tsir_buf_putc(buf, ',');
     emit_key(buf, "step");
-    emit_string(buf, value->step);
+    emit_string_span(buf, value->step, value->step_length);
     tsir_buf_putc(buf, ',');
     emit_key(buf, "upperBound");
-    emit_string(buf, value->upper_bound);
+    emit_string_span(buf, value->upper_bound, value->upper_bound_length);
     tsir_buf_putc(buf, '}');
 }
 
@@ -204,7 +209,7 @@ static void emit_binding(TsirBuffer *buf, const TsirBufferBinding *value) {
     tsir_buf_putc(buf, ']');
     tsir_buf_putc(buf, ',');
     emit_key(buf, "name");
-    emit_string(buf, value->name);
+    emit_string_span(buf, value->name, value->name_length);
     tsir_buf_putc(buf, ',');
     emit_key(buf, "readWrite");
     emit_bool(buf, value->read_write);
@@ -271,7 +276,7 @@ static void emit_rms_norm_epsilon(TsirBuffer *buf,
     emit_opt_f64(buf, value->has_literal_f64, value->literal_f64);
     tsir_buf_putc(buf, ',');
     emit_key(buf, "path");
-    emit_string(buf, value->path);
+    emit_string_span(buf, value->path, value->path_length);
     tsir_buf_putc(buf, ',');
     emit_key(buf, "source");
     emit_enum(buf, tsir_epsilon_source_name(value->source));
@@ -391,7 +396,7 @@ static void emit_semantic_function(TsirBuffer *buf,
     emit_enum(buf, tsir_family_hint_name(value->family_hint));
     tsir_buf_putc(buf, ',');
     emit_key(buf, "name");
-    emit_string(buf, value->name);
+    emit_string_span(buf, value->name, value->name_length);
     tsir_buf_putc(buf, ',');
     emit_key(buf, "reductions");
     tsir_buf_putc(buf, '[');
@@ -415,7 +420,7 @@ static void emit_semantic(TsirBuffer *buf, const TsirSemantic *value) {
     emit_u32(buf, value->contract_version);
     tsir_buf_putc(buf, ',');
     emit_key(buf, "frontendVersion");
-    emit_string(buf, value->frontend_version);
+    emit_string_span(buf, value->frontend_version, value->frontend_version_length);
     tsir_buf_putc(buf, ',');
     emit_key(buf, "functions");
     tsir_buf_putc(buf, '[');
@@ -504,7 +509,7 @@ static void emit_realization_function(TsirBuffer *buf,
     tsir_buf_putc(buf, ']');
     tsir_buf_putc(buf, ',');
     emit_key(buf, "emitterParamsJson");
-    emit_string(buf, value->emitter_params_json);
+    emit_string_span(buf, value->emitter_params_json, value->emitter_params_json_length);
     tsir_buf_putc(buf, ',');
     emit_key(buf, "peGrid");
     tsir_buf_putc(buf, '{');
@@ -592,10 +597,10 @@ static void emit_manifest_entry(TsirBuffer *buf,
     size_t i = 0;
     tsir_buf_putc(buf, '{');
     emit_key(buf, "backend");
-    emit_string(buf, value->backend);
+    emit_string_span(buf, value->backend, value->backend_length);
     tsir_buf_putc(buf, ',');
     emit_key(buf, "compilerVersion");
-    emit_string(buf, value->compiler_version);
+    emit_string_span(buf, value->compiler_version, value->compiler_version_length);
     tsir_buf_putc(buf, ',');
     emit_key(buf, "emitterDigest");
     emit_hex_digest(buf, value->emitter_digest);
@@ -604,10 +609,10 @@ static void emit_manifest_entry(TsirBuffer *buf,
     emit_exactness(buf, &value->exactness);
     tsir_buf_putc(buf, ',');
     emit_key(buf, "frontendVersion");
-    emit_string(buf, value->frontend_version);
+    emit_string_span(buf, value->frontend_version, value->frontend_version_length);
     tsir_buf_putc(buf, ',');
     emit_key(buf, "kernelRef");
-    emit_string(buf, value->kernel_ref);
+    emit_string_span(buf, value->kernel_ref, value->kernel_ref_length);
     tsir_buf_putc(buf, ',');
     emit_key(buf, "rejectionReasons");
     tsir_buf_putc(buf, '[');
@@ -810,14 +815,20 @@ TsirStatus tsir_digests_compute(const TsirSemantic *semantic,
     return TSIR_OK;
 }
 
-TsirStatus tsir_digests_compute_version(const TsirSemantic *semantic,
-    const TsirRealization *realization, const char *emitter_version,
+TsirStatus tsir_digests_compute_version_span(const TsirSemantic *semantic,
+    const TsirRealization *realization, const char *emitter_version, size_t emitter_version_length,
     TsirDigests *out) {
     uint8_t digest[32];
     if (emitter_version == NULL) {
         return TSIR_ERR_INVALID;
     }
-    tsir_sha256((const uint8_t *)emitter_version, strlen(emitter_version),
+    tsir_sha256((const uint8_t *)emitter_version, tsir_text_length(emitter_version, emitter_version_length),
         digest);
     return tsir_digests_compute(semantic, realization, digest, out);
+}
+
+TsirStatus tsir_digests_compute_version(const TsirSemantic *semantic,
+    const TsirRealization *realization, const char *emitter_version,
+    TsirDigests *out) {
+    return tsir_digests_compute_version_span(semantic, realization, emitter_version, 0, out);
 }

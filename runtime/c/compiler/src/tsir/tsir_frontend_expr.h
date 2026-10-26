@@ -5,7 +5,7 @@
 
 #include "tsir_wgsl_ir.h"
 
-/* frontend_expr.zig, ported. String results are freshly allocated
+/* frontend_expr.zig, ported. String results carry exact byte lengths and are freshly allocated
  * (free them); a return of 1 means "found, *out allocated", 0 means
  * "shape not recognized, fall back to the Zig placeholder", and -1
  * means allocation failure. Callers map -1 to TSIR_ERR_NOMEM and
@@ -24,25 +24,25 @@ int tsir_expr_literal_upper_bound(const TsirIrFunction *func,
     uint64_t *out);
 int tsir_expr_symbolic_upper_bound(const TsirWgslModule *module,
     const TsirIrFunction *func, bool has_cond, uint32_t cond_id,
-    uint32_t induction, char **out);
+    uint32_t induction, char **out, size_t *out_length);
 int tsir_expr_extract_step(const TsirWgslModule *module,
     const TsirIrFunction *func, bool has_cont, uint32_t cont_id,
-    uint32_t induction, char **out);
+    uint32_t induction, char **out, size_t *out_length);
 int tsir_expr_extract_init_bound(const TsirWgslModule *module,
     const TsirIrFunction *func, bool has_init, uint32_t init_id,
-    char **out);
+    char **out, size_t *out_length);
 TsirStepSign tsir_expr_detect_step_sign(const TsirIrFunction *func,
     bool has_cont, uint32_t cont_id, uint32_t induction);
 bool tsir_expr_dispatch_axis_letter(const TsirIrFunction *func,
-    bool has_init, uint32_t init_id, const char **letter_out);
+    bool has_init, uint32_t init_id, const char **letter_out, size_t *letter_length_out);
 int tsir_expr_scan_dispatch_guard(const TsirWgslModule *module,
     const TsirIrFunction *func, uint32_t range_start,
     uint32_t range_len, uint32_t start_pos, uint32_t dispatch_local,
-    char **out);
+    char **out, size_t *out_length);
 bool tsir_expr_uniform_field_access(const TsirIrFunction *func,
     uint32_t expr_id, uint32_t *global_index_out,
-    const char **field_name_out);
+    const char **field_name_out, size_t *field_length_out);
 int tsir_expr_override_or_const_name(const TsirIrGlobal *global,
-    char **out);
+    char **out, size_t *out_length);
 
 #endif

@@ -3,6 +3,9 @@
 #include "dxil_translate.h"
 
 #include "dxil_analyze.h"
+#include "dxil_source.h"
+#include <errno.h>
+#include <stdlib.h>
 
 DxilTranslateStatus dxil_translate_map_emit_error(DxilStatus status) {
     switch (status) {
@@ -45,26 +48,32 @@ static bool fail_emit(DxilStatus emit_status,
 bool dxil_translate_with_diagnostic(const char *source,
     size_t source_len, uint8_t *out, size_t out_len, size_t *written,
     DxilDiagnostic *diagnostic, DxilTranslateStatus *out_error) {
-    DxilIrModule module;
+    const int saved_errno = errno;
+    DxilIrModule *module = malloc(sizeof(*module));
     char name_buf[16384];
     DxilDiagnostic emission;
     DxilTranslateStatus analyze_error = DXIL_DIAG_INVALID_IR;
-    DxilStatus emit_status = DXIL_OK;
-    if (!dxil_analyze(source, source_len, &module, name_buf,
-            sizeof(name_buf), diagnostic, &analyze_error)) {
-        if (out_error != NULL) {
-            *out_error = analyze_error;
-        }
+    bool success = false;
+    if (module == NULL) {
+        dxil_diagnostic_set_detail(diagnostic, DXIL_DIAG_STAGE_IR_BUILDER,
+            DXIL_DIAG_OUT_OF_MEMORY, "native DXIL module allocation failed");
+        if (out_error != NULL) *out_error = DXIL_DIAG_OUT_OF_MEMORY;
+        errno = saved_errno;
         return false;
     }
-    dxil_diagnostic_clear(&emission);
-    emit_status = dxil_emit_with_diagnostic(&module, out, out_len,
-        written, &emission);
-    if (emit_status != DXIL_OK) {
-        return fail_emit(emit_status, &emission, diagnostic,
-            out_error);
+    if (!dxil_analyze(source, source_len, module, name_buf,
+            sizeof(name_buf), diagnostic, &analyze_error)) {
+        if (out_error != NULL) *out_error = analyze_error;
+    } else {
+        dxil_diagnostic_clear(&emission);
+        const DxilStatus status = dxil_emit_with_diagnostic(module, out, out_len,
+            written, &emission);
+        success = status == DXIL_OK;
+        if (!success) (void)fail_emit(status, &emission, diagnostic, out_error);
     }
-    return true;
+    free(module);
+    errno = saved_errno;
+    return success;
 }
 
 bool dxil_translate_toolchain_with_diagnostic(const char *source,
@@ -72,25 +81,16 @@ bool dxil_translate_toolchain_with_diagnostic(const char *source,
     const DxilToolchainConfig *config, const char *cache_dir,
     size_t *written, DxilDiagnostic *diagnostic,
     DxilTranslateStatus *out_error) {
-    DxilIrModule module;
-    char name_buf[16384];
+    DxilSourceHlsl compiled;
     DxilDiagnostic emission;
-    DxilTranslateStatus analyze_error = DXIL_DIAG_INVALID_IR;
-    DxilStatus emit_status = DXIL_OK;
-    if (!dxil_analyze(source, source_len, &module, name_buf,
-            sizeof(name_buf), diagnostic, &analyze_error)) {
-        if (out_error != NULL) {
-            *out_error = analyze_error;
-        }
+    if (!dxil_source_hlsl(source, source_len, &compiled, diagnostic, out_error))
         return false;
-    }
     dxil_diagnostic_clear(&emission);
-    emit_status = dxil_emit_toolchain_with_diagnostic(&module, out,
-        out_len, config, cache_dir, written, &emission);
-    if (emit_status != DXIL_OK) {
-        return fail_emit(emit_status, &emission, diagnostic,
-            out_error);
-    }
+    const DxilStatus status = dxil_emit_hlsl_toolchain(&compiled.entry,
+        compiled.text, compiled.text_length, out, out_len, config, cache_dir,
+        written, &emission);
+    dxil_source_hlsl_free(&compiled);
+    if (status != DXIL_OK) return fail_emit(status, &emission, diagnostic, out_error);
     return true;
 }
 

@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: MIT
  * Copyright (c) 2026 Doe contributors */
 #include "tsir_planner.h"
+#include "tsir_targets.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -35,18 +36,7 @@ static TsirStatus list_push(PlanList *list, TsirRejectionEntry entry) {
 }
 
 static char *dup_string(const char *text) {
-    size_t len = 0;
-    char *copy = NULL;
-    if (text == NULL) {
-        return NULL;
-    }
-    len = strlen(text);
-    copy = (char *)malloc(len + 1);
-    if (copy == NULL) {
-        return NULL;
-    }
-    memcpy(copy, text, len + 1);
-    return copy;
+    return tsir_text_duplicate(text, 0);
 }
 
 static TsirStatus append_rejection(PlanList *list,
@@ -55,7 +45,7 @@ static TsirStatus append_rejection(PlanList *list,
     char path[128];
     char *path_copy = NULL;
     char *detail_copy = NULL;
-    TsirRejectionEntry entry;
+    TsirRejectionEntry entry = {0};
     int written = snprintf(path, sizeof(path), "functions[%u].%s[%u]",
         function_index, field, node_index);
     if (written < 0 || (size_t)written >= sizeof(path)) {
@@ -71,7 +61,12 @@ static TsirStatus append_rejection(PlanList *list,
     entry.reason = reason;
     entry.node_path = path_copy;
     entry.detail = detail_copy;
-    return list_push(list, entry);
+    TsirStatus status = list_push(list, entry);
+    if (status != TSIR_OK) {
+        free(path_copy);
+        free(detail_copy);
+    }
+    return status;
 }
 
 void tsir_planner_default_options(TsirPlannerOptions *options) {
@@ -82,24 +77,26 @@ void tsir_planner_default_options(TsirPlannerOptions *options) {
     options->loader.max_stream_chunk_bytes = 0;
     memset(options->emitter_digest, 0, 32);
     options->emitter_params_json = TSIR_DEFAULT_EMITTER_PARAMS_JSON;
+    options->emitter_params_json_length = 0;
 }
 
-uint32_t tsir_planner_choose_tile(const char *upper_bound) {
+uint32_t tsir_planner_choose_tile_span(const char *upper_bound, size_t length) {
+    size_t count = tsir_text_length(upper_bound, length);
     uint64_t parsed = 0;
     size_t i = 0;
     uint32_t capped = 0;
     uint32_t out = 1;
-    if (upper_bound == NULL || upper_bound[0] == '\0') {
+    if (upper_bound == NULL || count == 0) {
         return 1;
     }
     i = 0;
     if (upper_bound[0] == '+') {
         i = 1;
-        if (upper_bound[1] == '\0') {
+        if (count == 1) {
             return 1;
         }
     }
-    for (; upper_bound[i] != '\0'; i++) {
+    for (; i < count; i++) {
         char c = upper_bound[i];
         if (c < '0' || c > '9') {
             return 1;
@@ -118,6 +115,10 @@ uint32_t tsir_planner_choose_tile(const char *upper_bound) {
         out *= 2;
     }
     return out;
+}
+
+uint32_t tsir_planner_choose_tile(const char *upper_bound) {
+    return tsir_planner_choose_tile_span(upper_bound, 0);
 }
 
 TsirPEGridShape tsir_planner_choose_pe_grid(
@@ -165,7 +166,9 @@ bool tsir_supports_numerical_mode(const TsirTargetDescriptor *descriptor,
     }
     for (i = 0; i < descriptor->native_numerical_mode_count; i++) {
         if (descriptor->native_numerical_modes[i] != NULL &&
-            strcmp(descriptor->native_numerical_modes[i], mode) == 0) {
+            tsir_text_equal(descriptor->native_numerical_modes[i],
+                descriptor->native_numerical_mode_lengths == NULL ? 0 :
+                    descriptor->native_numerical_mode_lengths[i], mode, 0)) {
             return true;
         }
     }
@@ -238,15 +241,15 @@ static uint64_t choose_stream_chunk_bytes(
 }
 
 static bool collective_exactness_satisfies(const char *capability_name,
-    TsirExactnessClass required) {
+    size_t capability_length, TsirExactnessClass required) {
     const char *required_name = tsir_exactness_class_name(required);
     if (capability_name == NULL || required_name == NULL) {
         return false;
     }
-    if (strcmp(capability_name, required_name) == 0) {
+    if (tsir_text_equal(capability_name, capability_length, required_name, 0)) {
         return true;
     }
-    if (strcmp(capability_name, "bit_exact_solo") == 0) {
+    if (tsir_text_equal(capability_name, capability_length, "bit_exact_solo", 0)) {
         return required == TSIR_EXACTNESS_ALGORITHM_EXACT ||
             required == TSIR_EXACTNESS_TOLERANCE_BOUNDED;
     }
@@ -263,8 +266,9 @@ static bool supports_collective(const TsirTargetDescriptor *descriptor,
     for (i = 0; i < descriptor->native_collective_count; i++) {
         const TsirNativeCollective *cap = &descriptor->native_collectives[i];
         if (cap->kind_name != NULL &&
-            strcmp(cap->kind_name, kind_name) == 0 &&
-            collective_exactness_satisfies(cap->exactness_name, exactness)) {
+            tsir_text_equal(cap->kind_name, cap->kind_name_length, kind_name, 0) &&
+            collective_exactness_satisfies(cap->exactness_name,
+                cap->exactness_name_length, exactness)) {
             return true;
         }
     }
@@ -322,7 +326,8 @@ static TsirStatus plan_function(const TsirSemanticFunction *func,
             return TSIR_ERR_NOMEM;
         }
         for (i = 0; i < func->axis_count; i++) {
-            pf->tiles[i] = tsir_planner_choose_tile(func->axes[i].upper_bound);
+            pf->tiles[i] = tsir_planner_choose_tile_span(func->axes[i].upper_bound,
+                func->axes[i].upper_bound_length);
         }
     }
 
@@ -526,10 +531,11 @@ done:
 TsirStatus tsir_plan_realization(const TsirSemantic *semantic,
     const TsirTargetDescriptor *descriptor,
     const TsirPlannerOptions *options, TsirPlannedRealization *out) {
-    TsirPlannerOptions defaults;
+    TsirPlannerOptions defaults = {0};
     TsirPEGridShape pe_grid;
     PlanList rejections;
     TsirRealizationFunction *functions = NULL;
+    uint8_t descriptor_hash[32];
     size_t i = 0;
     TsirStatus status = TSIR_OK;
     if (semantic == NULL || descriptor == NULL || out == NULL) {
@@ -546,6 +552,10 @@ TsirStatus tsir_plan_realization(const TsirSemantic *semantic,
         return TSIR_ERR_INVALID;
     }
     memset(out, 0, sizeof(*out));
+    status = tsir_target_descriptor_hash(descriptor, descriptor_hash);
+    if (status != TSIR_OK) {
+        return status;
+    }
     memset(&rejections, 0, sizeof(rejections));
     pe_grid = tsir_planner_choose_pe_grid(descriptor);
     if (semantic->function_count > 0) {
@@ -564,7 +574,8 @@ TsirStatus tsir_plan_realization(const TsirSemantic *semantic,
         if (status != TSIR_OK) {
             goto fail;
         }
-        params_copy = dup_string(options->emitter_params_json);
+        params_copy = tsir_text_duplicate(options->emitter_params_json,
+            options->emitter_params_json_length);
         if (params_copy == NULL) {
             free_planned_function(&pf);
             status = TSIR_ERR_NOMEM;
@@ -581,12 +592,8 @@ TsirStatus tsir_plan_realization(const TsirSemantic *semantic,
         rf->reductions = pf.reductions;
         rf->reduction_count = pf.reduction_count;
         rf->emitter_params_json = params_copy;
-        /* Target descriptor hash: computed by the targets module in
-         * Zig (descriptorHash), which is outside TSIR scope. The
-         * planner output leaves it zeroed here; the coordinator must
-         * supply the hash before a plan is digest-compared or
-         * emitted. See gaps.md. */
-        memset(rf->target_descriptor_hash, 0, 32);
+        rf->emitter_params_json_length = options->emitter_params_json_length;
+        memcpy(rf->target_descriptor_hash, descriptor_hash, 32);
     }
     out->functions = functions;
     out->function_count = semantic->function_count;

@@ -1,5 +1,18 @@
 # Owned C shader results
 
+`include/doe_shader_artifact.h` adds local-build serialization of specialized
+target bytes and every typed reflection span. No process pointer or allocator
+callback is persisted. Import binds immutable source/policy, selected entry,
+ordered override key/value bits and Metal coverage policy; validates checksum,
+bounded spans/references and an iterative acyclic type graph; and retains the
+source module through allocator callbacks and the imported artifact lifetime.
+The native owner independently binds all loaded producer/consumer images and
+owns optional filesystem persistence. This format is neither a stable portable
+ABI nor authentication against an actor able to rewrite the user's cache.
+`make -C runtime/c/native check-shader-cache` exercises serialization for all
+three targets, malformed spans/cycles, callback mutation, OOM and release.
+Shader ownership still contains no cache policy or device owner.
+
 Authored and focused-host-checked, consumed by the experimental C-only native
 compute path, not independently or physically qualified.
 This is the persistent ownership half of the standalone C compiler boundary:

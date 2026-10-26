@@ -3,6 +3,8 @@
 #include "dxil_native.h"
 
 #include "dxil_native_internal.h"
+#include <errno.h>
+#include <stdlib.h>
 
 #include <string.h>
 
@@ -402,18 +404,25 @@ static DxilStatus emit_dxil_metadata(DxilNativeEmitter *emitter,
         "dx.entryPoints", &entry_point, 1);
 }
 
-DxilStatus dxil_native_emit(const DxilIrModule *module, uint8_t *out,
-    size_t out_len, size_t *written) {
+typedef struct DxilNativeScratch {
     DxilNativeEmitter emitter;
+    DxilFunctionBody body;
+    uint8_t bitcode[DXIL_NATIVE_MAX_BITCODE_SIZE];
+    uint8_t part[DXIL_NATIVE_MAX_DXIL_PART_SIZE];
+} DxilNativeScratch;
+
+static DxilStatus native_emit(const DxilIrModule *module, uint8_t *out,
+    size_t out_len, size_t *written, DxilNativeScratch *scratch) {
+    DxilNativeEmitter *emitter = &scratch->emitter;
     const DxilIrEntryPoint *entry = NULL;
     const DxilIrFunction *function = NULL;
-    DxilFunctionBody body;
+    DxilFunctionBody *body = &scratch->body;
     DxilTypeIndex entry_fn_ty = 0;
     DxilTypeIndex dx_op_ty = 0;
     uint32_t entry_fn_idx = 0;
     DxilStatus status = DXIL_OK;
-    uint8_t bitcode_buf[DXIL_NATIVE_MAX_BITCODE_SIZE];
-    uint8_t dxil_part_buf[DXIL_NATIVE_MAX_DXIL_PART_SIZE];
+    uint8_t *bitcode_buf = scratch->bitcode;
+    uint8_t *dxil_part_buf = scratch->part;
     uint8_t isgn_buf[64];
     uint8_t osgn_buf[64];
     uint8_t sfi0_buf[16];
@@ -435,71 +444,71 @@ DxilStatus dxil_native_emit(const DxilIrModule *module, uint8_t *out,
         return DXIL_INVALID_IR;
     }
     function = &module->functions[entry->function];
-    memset(&emitter, 0, sizeof(emitter));
-    emitter.module = module;
-    dxil_builder_init(&emitter.builder);
-    memset(bitcode_buf, 0, sizeof(bitcode_buf));
-    status = dxil_builder_type_void(&emitter.builder, &emitter.void_ty);
+    memset(emitter, 0, sizeof(*emitter));
+    emitter->module = module;
+    dxil_builder_init(&emitter->builder);
+    memset(bitcode_buf, 0, DXIL_NATIVE_MAX_BITCODE_SIZE);
+    status = dxil_builder_type_void(&emitter->builder, &emitter->void_ty);
     if (status != DXIL_OK) {
         return status;
     }
-    status = dxil_builder_type_i1(&emitter.builder, &emitter.i1_ty);
+    status = dxil_builder_type_i1(&emitter->builder, &emitter->i1_ty);
     if (status != DXIL_OK) {
         return status;
     }
-    status = dxil_builder_type_i32(&emitter.builder, &emitter.i32_ty);
+    status = dxil_builder_type_i32(&emitter->builder, &emitter->i32_ty);
     if (status != DXIL_OK) {
         return status;
     }
-    status = dxil_builder_type_f32(&emitter.builder, &emitter.f32_ty);
+    status = dxil_builder_type_f32(&emitter->builder, &emitter->f32_ty);
     if (status != DXIL_OK) {
         return status;
     }
-    status = dxil_builder_type_function(&emitter.builder,
-        emitter.i32_ty, &emitter.i32_ty, 1, true, &dx_op_ty);
+    status = dxil_builder_type_function(&emitter->builder,
+        emitter->i32_ty, &emitter->i32_ty, 1, true, &dx_op_ty);
     if (status != DXIL_OK) {
         return status;
     }
-    status = dxil_builder_add_function(&emitter.builder, "dx.op.i32",
-        dx_op_ty, DXIL_LINKAGE_EXTERNAL, false, &emitter.dx_op_fn);
+    status = dxil_builder_add_function(&emitter->builder, "dx.op.i32",
+        dx_op_ty, DXIL_LINKAGE_EXTERNAL, false, &emitter->dx_op_fn);
     if (status != DXIL_OK) {
         return status;
     }
-    status = dxil_builder_type_function(&emitter.builder,
-        emitter.void_ty, NULL, 0, false, &entry_fn_ty);
+    status = dxil_builder_type_function(&emitter->builder,
+        emitter->void_ty, NULL, 0, false, &entry_fn_ty);
     if (status != DXIL_OK) {
         return status;
     }
-    status = dxil_builder_add_function(&emitter.builder, function->name,
+    status = dxil_builder_add_function(&emitter->builder, function->name,
         entry_fn_ty, DXIL_LINKAGE_EXTERNAL, true, &entry_fn_idx);
     if (status != DXIL_OK) {
         return status;
     }
-    status = collect_resources(&emitter);
+    status = collect_resources(emitter);
     if (status != DXIL_OK) {
         return status;
     }
-    status = dxil_builder_create_function_body(&emitter.builder,
-        entry_fn_idx, &body);
+    status = dxil_builder_create_function_body(&emitter->builder,
+        entry_fn_idx, body);
     if (status != DXIL_OK) {
         return status;
     }
-    status = dxil_native_emit_entry_body(&emitter, &body, function, entry->stage);
+    status = dxil_native_emit_entry_body(emitter, body, function, entry->stage);
     if (status != DXIL_OK) {
         return status;
     }
-    status = dxil_builder_add_symtab_entry(&emitter.builder,
-        emitter.builder.functions[entry_fn_idx].value_index,
+    status = dxil_builder_add_symtab_entry(&emitter->builder,
+        emitter->builder.functions[entry_fn_idx].value_index,
         function->name);
     if (status != DXIL_OK) {
         return status;
     }
-    status = emit_dxil_metadata(&emitter, function, entry);
+    status = emit_dxil_metadata(emitter, function, entry);
     if (status != DXIL_OK) {
         return status;
     }
-    status = dxil_serialize(&emitter.builder, &body, 1, bitcode_buf,
-        sizeof(bitcode_buf), &bitcode_size);
+    status = dxil_serialize(&emitter->builder, body, 1, bitcode_buf,
+        DXIL_NATIVE_MAX_BITCODE_SIZE, &bitcode_size);
     if (status != DXIL_OK) {
         return status;
     }
@@ -510,7 +519,7 @@ DxilStatus dxil_native_emit(const DxilIrModule *module, uint8_t *out,
                 ? DXIL_STAGE_VERTEX
                 : DXIL_STAGE_FRAGMENT);
     status = dxil_write_program_part(shader_kind, 6, 0, bitcode_buf,
-        bitcode_size, dxil_part_buf, sizeof(dxil_part_buf),
+        bitcode_size, dxil_part_buf, DXIL_NATIVE_MAX_DXIL_PART_SIZE,
         &dxil_part_size);
     if (status != DXIL_OK) {
         return status;
@@ -543,4 +552,18 @@ DxilStatus dxil_native_emit(const DxilIrModule *module, uint8_t *out,
     parts[3].data = dxil_part_buf;
     parts[3].len = dxil_part_size;
     return dxil_write_container(parts, 4, out, out_len, written);
+}
+
+DxilStatus dxil_native_emit(const DxilIrModule *module, uint8_t *out,
+    size_t out_len, size_t *written) {
+    const int saved_errno = errno;
+    if (module == NULL || out == NULL || written == NULL ||
+        dxil_ir_validate(module) != DXIL_OK || module->entry_point_count == 0u ||
+        module->entry_points[0].function >= module->function_count) return DXIL_INVALID_IR;
+    DxilNativeScratch *scratch = malloc(sizeof(*scratch));
+    if (scratch == NULL) { errno = saved_errno; return DXIL_OUT_OF_MEMORY; }
+    const DxilStatus status = native_emit(module, out, out_len, written, scratch);
+    free(scratch);
+    errno = saved_errno;
+    return status;
 }

@@ -45,6 +45,15 @@ for independent CPU references, physical AMD/Vulkan output, and retained Dawn
 controls. MSL and HLSL evidence covers translation, not physical execution.
 Other module initializers retain the explicit subset described below.
 
+Inferred local `const` values retain their abstract numeric type, and inferred
+vector constructors defer materialization until the surrounding overload or
+runtime declaration requires it. `let`/`var` still concretize; a concrete signed
+integer is not silently admitted where an unsigned or floating overload is
+required. Local constant materialization follows resolved lexical bindings,
+including shadowing, through the shared constant folder. This implements the
+[WGSL declaration type rule](https://www.w3.org/TR/WGSL/#variable-and-value-declarations)
+and preserves typed rejection for unsupported constant expressions.
+
 | Category              | Status              | Notes                                              |
 |-----------------------|---------------------|----------------------------------------------------|
 | Compute shaders       | Full                | Covers Doppler's full compute feature set          |

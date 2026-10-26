@@ -10,7 +10,7 @@
 static TsirSemantic make_simple(TsirSemanticFunction *func,
     TsirBufferBinding *bindings, TsirReductionRegion *reduction,
     TsirReductionOp op, TsirReductionAssociativity assoc) {
-    TsirSemantic semantic;
+    TsirSemantic semantic = {0};
     memset(func, 0, sizeof(*func));
     func->name = "k";
     func->bindings = bindings;
@@ -39,8 +39,8 @@ static TsirRealization empty_realization(void) {
 }
 
 static void test_empty_and_rejected(void) {
-    TsirSemanticFunction func;
-    TsirSemantic semantic;
+    TsirSemanticFunction func = {0};
+    TsirSemantic semantic = {0};
     TsirRealization realization = empty_realization();
     TsirReferenceResult result;
     TsirStatus st = TSIR_OK;
@@ -61,7 +61,7 @@ static void test_empty_and_rejected(void) {
     tsir_reference_free_result(&result);
     /* One semantic rejection blocks everything. */
     {
-        TsirRejectionEntry rejection;
+        TsirRejectionEntry rejection = {0};
         memset(&rejection, 0, sizeof(rejection));
         rejection.reason = TSIR_REJECT_TARGET_UNFIT;
         rejection.node_path = "functions[0]";
@@ -75,7 +75,7 @@ static void test_empty_and_rejected(void) {
 }
 
 static void test_rank1_ops(void) {
-    TsirSemanticFunction func;
+    TsirSemanticFunction func = {0};
     TsirBufferBinding bindings[2];
     TsirReductionRegion reduction;
     uint64_t in_shape[1] = { 4 };
@@ -134,7 +134,7 @@ static void test_rank1_ops(void) {
     {
         uint8_t bin_input[16];
         TsirInputBuffer bin_inputs[1];
-        TsirRealizationFunction rfunc;
+        TsirRealizationFunction rfunc = {0};
         TsirReductionRealizationNode rnode;
         TsirRealization realization_bin;
         put_f32(bin_input, 0, 1.0f);
@@ -207,7 +207,7 @@ static void test_rank1_ops(void) {
 }
 
 static void test_rank2_rank3_rank4(void) {
-    TsirSemanticFunction func;
+    TsirSemanticFunction func = {0};
     TsirBufferBinding bindings[2];
     TsirReductionRegion reduction;
     TsirRealization realization = empty_realization();
@@ -219,7 +219,7 @@ static void test_rank2_rank3_rank4(void) {
         uint64_t out_shape[1] = { 2 };
         uint8_t input[16];
         TsirInputBuffer inputs[1];
-        TsirSemantic semantic;
+        TsirSemantic semantic = {0};
         memset(bindings, 0, sizeof(bindings));
         bindings[0].name = "x";
         bindings[0].logical_shape = in_shape;
@@ -276,7 +276,7 @@ static void test_rank2_rank3_rank4(void) {
         uint64_t out_shape[3] = { 2, 1, 1 };
         uint8_t input[16];
         TsirInputBuffer inputs[1];
-        TsirSemantic semantic;
+        TsirSemantic semantic = {0};
         size_t i = 0;
         memset(bindings, 0, sizeof(bindings));
         bindings[0].name = "x";
@@ -320,7 +320,7 @@ static void test_rank2_rank3_rank4(void) {
         tsir_reference_free_result(&result);
         /* Binomial at rank 4: unsupported. */
         {
-            TsirRealizationFunction rfunc;
+            TsirRealizationFunction rfunc = {0};
             TsirReductionRealizationNode rnode;
             TsirRealization realization_bin;
             memset(&rnode, 0, sizeof(rnode));
@@ -355,8 +355,8 @@ static void test_gemv_rmsnorm_gather(void) {
         TsirSemanticBodyAxis axes_roles[2];
         TsirIterationAxis axes[2];
         TsirReductionRegion reduction;
-        TsirSemanticFunction func;
-        TsirSemantic semantic;
+        TsirSemanticFunction func = {0};
+        TsirSemantic semantic = {0};
         uint64_t w_shape[2] = { 2, 2 };
         uint64_t v_shape[1] = { 2 };
         uint64_t o_shape[1] = { 2 };
@@ -446,8 +446,8 @@ static void test_gemv_rmsnorm_gather(void) {
         TsirSemanticBodyAxis axes_roles[2];
         TsirIterationAxis axes[2];
         TsirReductionRegion reduction;
-        TsirSemanticFunction func;
-        TsirSemantic semantic;
+        TsirSemanticFunction func = {0};
+        TsirSemantic semantic = {0};
         uint64_t shape[1] = { 2 };
         uint8_t x[8];
         uint8_t s[8];
@@ -554,8 +554,8 @@ static void test_gemv_rmsnorm_gather(void) {
         TsirSemanticBodyBinding roles[3];
         TsirSemanticBodyAxis axes_roles[2];
         TsirIterationAxis axes[2];
-        TsirSemanticFunction func;
-        TsirSemantic semantic;
+        TsirSemanticFunction func = {0};
+        TsirSemantic semantic = {0};
         uint64_t idx_shape[1] = { 2 };
         uint64_t tab_shape[2] = { 3, 2 };
         uint64_t out_shape[2] = { 2, 2 };
@@ -652,8 +652,8 @@ static void test_gemv_rmsnorm_gather(void) {
     /* Extended-op shapes are visibly unsupported. */
     {
         TsirReductionRegion reduction;
-        TsirSemanticFunction func;
-        TsirSemantic semantic;
+        TsirSemanticFunction func = {0};
+        TsirSemantic semantic = {0};
         TsirSemanticBodyOp ops[7] = {
             TSIR_BODY_RESIDUAL_ADD, TSIR_BODY_GELU_GATED,
             TSIR_BODY_ATTENTION_SCORES, TSIR_BODY_L2_NORMALIZE,
@@ -735,7 +735,7 @@ static void test_emit_and_frontend(void) {
     }
     /* Skeleton header and gates. */
     {
-        TsirRealizationFunction rfunc;
+        TsirRealizationFunction rfunc = {0};
         TsirRealization realization;
         uint8_t hash[32];
         memset(hash, 0xab, 32);
@@ -777,7 +777,7 @@ static void test_emit_and_frontend(void) {
         }
         /* Rejection gate. */
         {
-            TsirRejectionEntry rejection;
+            TsirRejectionEntry rejection = {0};
             memset(&rejection, 0, sizeof(rejection));
             rejection.reason = TSIR_REJECT_TARGET_UNFIT;
             rejection.node_path = "functions[0]";
@@ -792,8 +792,8 @@ static void test_emit_and_frontend(void) {
         }
         /* Semantic-aware: gates pass, body missing. */
         {
-            TsirSemanticFunction sfunc;
-            TsirSemantic semantic;
+            TsirSemanticFunction sfunc = {0};
+            TsirSemantic semantic = {0};
             memset(&sfunc, 0, sizeof(sfunc));
             sfunc.name = "k";
             memset(&semantic, 0, sizeof(semantic));

@@ -25,7 +25,10 @@ command-stream examples and schema 1 output oracles apply.
 
 ## Invariants
 Unknown inputs reject before device work with exit 2.
-Host-only traces create no device and claim no execution. Replay mismatches fail before device work.
+Host-only traces create no device and claim no execution. Plan dry runs identify
+every row as `dry_run`, keep device times/submits zero and omit adapter and
+selection results; their retained-compatible row/dispatch counts are nominal.
+Replay mismatches fail before device work.
 No silent ignoring, emulation or false success. Commands preserve the first device error; deferred work drains before successful completion. Oracles run on
 isolated zero-filled buffers; a digest mismatch fails the run. Metadata identifies the actual adapter.
 

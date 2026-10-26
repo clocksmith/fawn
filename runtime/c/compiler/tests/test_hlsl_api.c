@@ -80,7 +80,9 @@ int main(int argc, char **argv) {
     assert(result.stages.resources.module.module.schema_version == 9 && result.stages.resources.module.published.resources == 7);
     static const uint32_t kinds[] = {DOE_COMPILER_HLSL_REGISTER_UAV, DOE_COMPILER_HLSL_REGISTER_SRV,
         DOE_COMPILER_HLSL_REGISTER_CBV, DOE_COMPILER_HLSL_REGISTER_SRV,
-        DOE_COMPILER_HLSL_REGISTER_SAMPLER, DOE_COMPILER_HLSL_REGISTER_UAV};
+        /* The fixture's r32uint read-only storage image is a typed SRV,
+         * matching the native resource admission contract, not a writable UAV. */
+        DOE_COMPILER_HLSL_REGISTER_SAMPLER, DOE_COMPILER_HLSL_REGISTER_SRV};
     static const uint32_t slots[] = {5, 9, 2, 4, 7, 10}, spaces[] = {3, 2, 1, 0, 0, 2};
     for (size_t i = 0; i < 6; ++i) {
         assert(storage->bindings[i].resource_index == i && storage->bindings[i].register_kind == kinds[i]);
@@ -90,7 +92,10 @@ int main(int argc, char **argv) {
     assert(!storage->target_entries[0].flags && storage->target_entries[0].dispatch_register == UINT32_MAX);
     assert(storage->target_entries[0].dispatch_space == UINT32_MAX && !storage->target_entries[0].dispatch_bytes);
     assert(storage->target_entries[1].entry_index == 1 && !strcmp(storage->target_entries[1].name, "selected"));
-    assert(storage->target_entries[1].flags == DOE_COMPILER_HLSL_ENTRY_WAVES);
+    /* Logical 2D image views use one-layer native arrays, independently of
+     * the subgroup requirement. Keep this an exact requirement-set check. */
+    const uint32_t selected_flags = DOE_COMPILER_HLSL_ENTRY_WAVES | DOE_COMPILER_HLSL_ENTRY_ARRAY_VIEWS;
+    assert(storage->target_entries[1].flags == selected_flags);
     assert(storage->target_entries[1].dispatch_register == 0 && storage->target_entries[1].dispatch_space == 7);
     assert(storage->target_entries[1].dispatch_bytes == 16);
     assert(!storage->target_entries[2].flags && !storage->target_entries[2].dispatch_bytes);
@@ -100,13 +105,15 @@ int main(int argc, char **argv) {
     assert(strstr(storage->text, "#if DOE_HLSL_ENTRY == 1") && strstr(storage->text, "register(b0, space7)"));
     assert(strstr(storage->text, "register(u5, space3)") && strstr(storage->text, "register(t9, space2)"));
     assert(strstr(storage->text, "register(b2, space1)") && strstr(storage->text, "register(s7, space0)"));
+    assert(strstr(storage->text, "Texture2DArray<uint>") && strstr(storage->text, "register(t10, space2)"));
+    assert(!strstr(storage->text, "register(u10, space2)"));
     assert(compile(&caps, workspace, required.size_bytes, hlsl_source, "first", 3u, &outputs, &result) == DOE_COMPILER_OK);
     assert(result.published_entries == 1 && result.published_bindings == 1);
     assert(!storage->target_entries[0].flags && !strcmp(storage->target_entries[0].name, "first"));
     write_fixture(directory, "first", &outputs, &result);
     assert(compile(&caps, workspace, required.size_bytes, hlsl_source, "selected", 3u, &outputs, &result) == DOE_COMPILER_OK);
     assert(result.published_entries == 1 && storage->target_entries[0].entry_index == 1);
-    assert(storage->target_entries[0].flags == DOE_COMPILER_HLSL_ENTRY_WAVES);
+    assert(storage->target_entries[0].flags == selected_flags);
     assert(result.stages.resources.module.module.selected_entry == 1);
     write_fixture(directory, "selected", &outputs, &result);
     storage->text[result.published_text_bytes] = 0;

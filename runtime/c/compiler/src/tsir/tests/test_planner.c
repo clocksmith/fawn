@@ -3,16 +3,17 @@
 #include "test_common.h"
 
 #include "tsir_planner.h"
+#include "tsir_targets.h"
 
 static const char *modes_a[] = { "f32", "f16", "bf16" };
 static const char *modes_b[] = { "f32" };
 static const TsirNativeCollective collectives_a[] = {
-    { "subgroup_add", "bit_exact_solo" },
-    { "fabric_allreduce", "algorithm_exact" }
+    { .kind_name = "subgroup_add", .exactness_name = "bit_exact_solo" },
+    { .kind_name = "fabric_allreduce", .exactness_name = "algorithm_exact" }
 };
 
 static TsirTargetDescriptor descriptor_a(void) {
-    TsirTargetDescriptor d;
+    TsirTargetDescriptor d = {0};
     memset(&d, 0, sizeof(d));
     d.pe_working_memory_bytes = 65536;
     d.fabric_color_count = 4;
@@ -22,11 +23,14 @@ static TsirTargetDescriptor descriptor_a(void) {
     d.native_collectives = collectives_a;
     d.native_collective_count = 2;
     d.runtime_sized_binding_policy = TSIR_POLICY_HOST_COPIED;
+    d.name = "test-a";
+    d.streaming_gemm = "none";
+    d.sub_tile_lane_width = 1;
     return d;
 }
 
 static TsirTargetDescriptor descriptor_b(void) {
-    TsirTargetDescriptor d;
+    TsirTargetDescriptor d = {0};
     memset(&d, 0, sizeof(d));
     d.pe_working_memory_bytes = 64;
     d.fabric_color_count = 0;
@@ -36,6 +40,9 @@ static TsirTargetDescriptor descriptor_b(void) {
     d.native_collectives = NULL;
     d.native_collective_count = 0;
     d.runtime_sized_binding_policy = TSIR_POLICY_REJECT;
+    d.name = "test-b";
+    d.streaming_gemm = "none";
+    d.sub_tile_lane_width = 1;
     return d;
 }
 
@@ -62,7 +69,7 @@ static void test_tiles_and_grid(void) {
 }
 
 static TsirSemantic make_semantic(const TsirSemanticFunction *func) {
-    TsirSemantic semantic;
+    TsirSemantic semantic = {0};
     memset(&semantic, 0, sizeof(semantic));
     semantic.contract_version = 1;
     semantic.frontend_version = "";
@@ -73,10 +80,10 @@ static TsirSemantic make_semantic(const TsirSemanticFunction *func) {
 
 static void test_residency_replicated_and_sliced(void) {
     TsirTargetDescriptor b = descriptor_b();
-    TsirBufferBinding binding;
-    TsirSemanticFunction func;
-    TsirSemantic semantic;
-    TsirPlannerOptions options;
+    TsirBufferBinding binding = {0};
+    TsirSemanticFunction func = {0};
+    TsirSemantic semantic = {0};
+    TsirPlannerOptions options = {0};
     TsirPlannedRealization plan;
     TsirStatus st = TSIR_OK;
     uint64_t shape[1] = { 16 };
@@ -142,10 +149,10 @@ static void test_residency_replicated_and_sliced(void) {
 }
 
 static void test_residency_streamed_and_host(void) {
-    TsirBufferBinding binding;
-    TsirSemanticFunction func;
-    TsirSemantic semantic;
-    TsirPlannerOptions options;
+    TsirBufferBinding binding = {0};
+    TsirSemanticFunction func = {0};
+    TsirSemantic semantic = {0};
+    TsirPlannerOptions options = {0};
     TsirPlannedRealization plan;
     TsirStatus st = TSIR_OK;
     uint64_t shape[1] = { 0 };
@@ -194,12 +201,12 @@ static void test_reduction_and_collective(void) {
     TsirTargetDescriptor b = descriptor_b();
     TsirReductionRegion reduction;
     TsirCollectiveSemanticNode collective;
-    TsirSemanticFunction func;
-    TsirSemantic semantic;
-    TsirPlannerOptions options;
+    TsirSemanticFunction func = {0};
+    TsirSemantic semantic = {0};
+    TsirPlannerOptions options = {0};
     TsirPlannedRealization plan;
     TsirStatus st = TSIR_OK;
-    TsirIterationAxis axis;
+    TsirIterationAxis axis = {0};
     memset(&reduction, 0, sizeof(reduction));
     reduction.axis = 0;
     reduction.op = TSIR_REDUCTION_SUM;
@@ -256,9 +263,9 @@ static void test_reduction_and_collective(void) {
 static void test_fabric_colors(void) {
     TsirTargetDescriptor a = descriptor_a();
     TsirCollectiveSemanticNode nodes[5];
-    TsirSemanticFunction func;
-    TsirSemantic semantic;
-    TsirPlannerOptions options;
+    TsirSemanticFunction func = {0};
+    TsirSemantic semantic = {0};
+    TsirPlannerOptions options = {0};
     TsirPlannedRealization plan;
     TsirStatus st = TSIR_OK;
     size_t i = 0;
@@ -296,9 +303,9 @@ static void test_fabric_colors(void) {
 static void test_two_failures_accumulate(void) {
     TsirTargetDescriptor b = descriptor_b();
     TsirBufferBinding bindings[2];
-    TsirSemanticFunction func;
-    TsirSemantic semantic;
-    TsirPlannerOptions options;
+    TsirSemanticFunction func = {0};
+    TsirSemantic semantic = {0};
+    TsirPlannerOptions options = {0};
     TsirPlannedRealization plan;
     TsirStatus st = TSIR_OK;
     uint64_t shape[1] = { 64 };
@@ -324,6 +331,43 @@ static void test_two_failures_accumulate(void) {
     tsir_plan_free_realization(&plan);
 }
 
+static void test_planned_identity(void) {
+    TsirTargetDescriptor descriptor = *tsir_target_descriptor(TSIR_TARGET_WEBGPU_GENERIC);
+    TsirSemanticFunction function = {0};
+    TsirSemantic semantic = make_semantic(&function);
+    TsirPlannedRealization plan;
+    uint8_t expected[32];
+    uint8_t original[32];
+    CHECK_STATUS(tsir_target_descriptor_hash(&descriptor, expected), TSIR_OK);
+    memcpy(original, expected, sizeof(original));
+    CHECK_STATUS(tsir_plan_realization(&semantic, &descriptor, NULL, &plan), TSIR_OK);
+    CHECK(plan.function_count == 1);
+    CHECK(memcmp(plan.functions[0].target_descriptor_hash, expected, sizeof(expected)) == 0);
+    tsir_plan_free_realization(&plan);
+
+    /* The planner must hash identity-only fields too, rather than just its
+     * placement inputs or a previously computed caller-supplied byte array. */
+    descriptor.pe_persistent_pool_bytes += 1;
+    CHECK_STATUS(tsir_target_descriptor_hash(&descriptor, expected), TSIR_OK);
+    CHECK(memcmp(original, expected, sizeof(expected)) != 0);
+    CHECK_STATUS(tsir_plan_realization(&semantic, &descriptor, NULL, &plan), TSIR_OK);
+    CHECK(memcmp(plan.functions[0].target_descriptor_hash, expected, sizeof(expected)) == 0);
+    char *text = NULL;
+    size_t text_length = 0;
+    CHECK_STATUS(tsir_emit_skeleton_function(&plan.functions[0], descriptor.name,
+        original, &tsir_spec_dxil, &text, &text_length), TSIR_ERR_INVALID);
+    CHECK(text == NULL && text_length == 0);
+    CHECK_STATUS(tsir_emit_skeleton_function(&plan.functions[0], descriptor.name,
+        expected, &tsir_spec_dxil, &text, &text_length), TSIR_OK);
+    CHECK(text != NULL && text_length != 0);
+    free(text);
+    tsir_plan_free_realization(&plan);
+    descriptor.name = NULL;
+    memset(&plan, 0xa5, sizeof(plan));
+    CHECK_STATUS(tsir_plan_realization(&semantic, &descriptor, NULL, &plan), TSIR_ERR_INVALID);
+    CHECK(plan.functions == NULL && plan.function_count == 0 && plan.rejections == NULL);
+}
+
 int main(void) {
     test_tiles_and_grid();
     test_residency_replicated_and_sliced();
@@ -331,5 +375,6 @@ int main(void) {
     test_reduction_and_collective();
     test_fabric_colors();
     test_two_failures_accumulate();
+    test_planned_identity();
     return finish_tests("test_planner");
 }

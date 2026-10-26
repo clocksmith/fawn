@@ -95,7 +95,7 @@ def main() -> None:
         invoke([compiler, "-std=c11", "-O2", "-fno-fast-math", "-ffp-contract=off",
                 "-frounding-math", "-Wall", "-Wextra", "-Wpedantic", "-Werror",
                 "-I" + str(OWNER), str(work / "probe.c"),
-                *(str(OWNER / name) for name in ("tsir_transcendental.c", "tsir_scalar.c", "tsir_schema.c")),
+                *(str(OWNER / name) for name in ("tsir_transcendental.c", "tsir_scalar.c", "tsir_schema.c", "tsir_text.c")),
                 "-lm", "-o", str(c_binary)], env)
         invoke([zig, "build-exe", "-O", "ReleaseSafe", "--cache-dir", str(work / "local-cache"),
                 "--dep", "scalar", "-Mroot=" + str(work / "probe.zig"),

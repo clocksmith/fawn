@@ -16,23 +16,17 @@
  * below return TSIR_OK with *out_text owned by the caller (free it),
  * or an error with *out_text left NULL.
  *
- * Realization-only skeleton emission is complete and byte-exact for
- * the DXIL, MSL, and SPIR-V specs and for the WebGPU realization-only
- * shape. Semantic-aware emission performs every Zig gate (rejection
- * gate, index gate, target-descriptor-hash gate) and then returns
- * TSIR_ERR_UNSUPPORTED, because the kernel-body writers it would call
- * are not implemented (see gaps.md, E13). That failure is visible,
- * not a skeleton with a fabricated body.
- *
- * Target descriptor hash: Zig computes it in the targets module
- * (outside TSIR). Callers supply the 32-byte hash and the target name
- * explicitly; the emitter compares the supplied hash against the
- * realization function's stored hash, which is exactly the check the
- * Zig skeleton performs once the hash exists. */
+ * Semantic-aware emission preserves every retained Zig gate and emits the
+ * supported non-CSL kernel bodies through the shared body owner. Unsupported
+ * semantic operations fail visibly without publishing partial output.
+ * Target identity is computed by the planner from its complete descriptor;
+ * emitters compare the supplied hash against the stored realization hash. */
 
 typedef struct TsirBackendTextSpec {
     const char *version_key;
     const char *body_comment;
+    size_t version_key_length;
+    size_t body_comment_length;
 } TsirBackendTextSpec;
 
 extern const TsirBackendTextSpec tsir_spec_dxil;
@@ -51,6 +45,7 @@ void tsir_emit_write_reductions(TsirBuffer *buf,
     const TsirReductionRealizationNode *nodes, size_t count);
 void tsir_emit_write_hash(TsirBuffer *buf, const uint8_t hash[32]);
 void tsir_emit_write_quoted(TsirBuffer *buf, const char *text);
+void tsir_emit_write_quoted_span(TsirBuffer *buf, const char *text, size_t length);
 
 /* Realization-only skeleton for one realization function. */
 TsirStatus tsir_emit_skeleton_function(
@@ -77,6 +72,25 @@ TsirStatus tsir_emit_semantic_function(
 TsirStatus tsir_emit_semantic(const TsirSemantic *semantic,
     const TsirRealization *realization, size_t function_index,
     const char *target_name, const uint8_t target_descriptor_hash[32],
+    const TsirBackendTextSpec *spec, char **out_text, size_t *out_len);
+
+/* Length-bearing variants preserve arbitrary target-name bytes. */
+TsirStatus tsir_emit_skeleton_function_span(
+    const TsirRealizationFunction *function, const char *target_name, size_t target_name_length,
+    const uint8_t target_descriptor_hash[32],
+    const TsirBackendTextSpec *spec, char **out_text, size_t *out_len);
+TsirStatus tsir_emit_skeleton_span(const TsirRealization *realization,
+    size_t function_index, const char *target_name, size_t target_name_length,
+    const uint8_t target_descriptor_hash[32],
+    const TsirBackendTextSpec *spec, char **out_text, size_t *out_len);
+TsirStatus tsir_emit_semantic_function_span(
+    const TsirSemanticFunction *semantic_function,
+    const TsirRealizationFunction *function, const char *target_name, size_t target_name_length,
+    const uint8_t target_descriptor_hash[32],
+    const TsirBackendTextSpec *spec, char **out_text, size_t *out_len);
+TsirStatus tsir_emit_semantic_span(const TsirSemantic *semantic,
+    const TsirRealization *realization, size_t function_index,
+    const char *target_name, size_t target_name_length, const uint8_t target_descriptor_hash[32],
     const TsirBackendTextSpec *spec, char **out_text, size_t *out_len);
 
 /* Kernel-backend order, matching emit_kernel_body.zig Backend:

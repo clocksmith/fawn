@@ -8,6 +8,7 @@ import hashlib
 import unittest
 
 from test_cli import CompilerFixture, REPO, execute, float_bits, invoke
+from scalar_machine import execute_scalar
 
 HEADER = """@group(0) @binding(1) var<storage,read_write> out:array<u32>;
 @group(0) @binding(0) var<storage,read> src:array<u32>;
@@ -167,15 +168,29 @@ class TestControlFlow(CompilerFixture):
         with self.assertRaisesRegex(AssertionError, "executed unreachable"):
             execute(bad_unreachable, {(0, 0): [], (0, 1): [77]}, 0)
 
-    def test_reject_outside_frozen_expansion(self) -> None:
-        invalid = ["{}", "else{}", "return 1u;", "return;missing[0u]=1u;",
-                   "return;out[0u]=MISSING;", "out[0]=1u;",
-                   "out[1.0]=1u;", "out[0u]=src[0u]/1u;", "src[0u]=1u;",
-                   "if(gid.x==0u){}else if(gid.x==1u){}", "if gid.x==0u {}",
-                   "if(gid.x==0u)out[0u]=1u;", "if(gid.x==0u){var q=gid.x;}",
+    def test_later_canonical_control_admissions(self) -> None:
+        # Exact old M2 exclusions now supported by the shared owner. Execute
+        # emitted instructions, retaining the independent scalar oracle.
+        cases = (("{}", 77), ("out[0]=1u;", 1), ("out[0u]=src[0u]/1u;", 3),
+                 ("if(gid.x==0u){}else if(gid.x==1u){}", 77),
+                 ("if gid.x==0u {}", 77), ("if(gid.x==0u){var q=gid.x;}", 77),
+                 ("if(gid.x==0u&&gid.x<1u){}", 77),
+                 ("if(gid.x==0u){var q=gid.x;q+=3u;out[0]=q;}", 3))
+        for body, expected in cases:
+            with self.subTest(body=body):
+                instructions, _ = self.compile(HEADER + body + "}")
+                memory = {(0, 0): [3], (0, 1): [77]}
+                execute_scalar(instructions, memory, 0)
+                self.assertEqual(memory, {(0, 0): [3], (0, 1): [expected]})
+
+    def test_invalid_control_and_legacy_capacity(self) -> None:
+        invalid = ["else{}", "return 1u;", "return;missing[0u]=1u;",
+                   "return;out[0u]=MISSING;",
+                   "out[1.0]=1u;", "src[0u]=1u;",
+                   "if(gid.x==0u)out[0u]=1u;",
                    "if(gid.x= =0u){}", "if(gid.x! /*gap*/ =0u){}",
                    "if(gid.x< =0u){}", "if(gid.x> =0u){}",
-                   "if(gid.x==0u&&gid.x<1u){}", "if(gid.x==0u){return;}else{src[0u]=1u;}",
+                   "if(gid.x==0u){return;}else{src[0u]=1u;}",
                    "return;" * 17, "if(gid.x==0u){" * 5 + "}" * 5]
         for body in invalid:
             with self.subTest(body=body):

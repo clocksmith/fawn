@@ -208,13 +208,13 @@ bool tsir_exactness_is_well_formed(const TsirExactness *exactness) {
     name = exactness->tolerance_metric;
     switch (exactness->class) {
         case TSIR_EXACTNESS_BIT_EXACT_SOLO:
-            return exactness->invariant_count == 0 && name[0] == '\0' &&
+            return exactness->invariant_count == 0 && tsir_text_length(name, exactness->tolerance_metric_length) == 0 &&
                 exactness->tolerance_epsilon == 0.0;
         case TSIR_EXACTNESS_ALGORITHM_EXACT:
-            return exactness->invariant_count > 0 && name[0] == '\0' &&
+            return exactness->invariant_count > 0 && tsir_text_length(name, exactness->tolerance_metric_length) == 0 &&
                 exactness->tolerance_epsilon == 0.0;
         case TSIR_EXACTNESS_TOLERANCE_BOUNDED:
-            return exactness->invariant_count == 0 && name[0] != '\0' &&
+            return exactness->invariant_count == 0 && tsir_text_length(name, exactness->tolerance_metric_length) != 0 &&
                 isfinite(exactness->tolerance_epsilon);
         default:
             return false;

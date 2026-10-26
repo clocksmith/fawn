@@ -43,11 +43,65 @@ static void packed_controls(void) {
             (void)tsir_source_push_expr(&b, &f, (TsirIrExpr){.kind = TSIR_IR_EXPR_INDEX,
                 .index_base = 0u, .index_index = root, .ty = IR_U32});
             TsirIterationAxis axis = {.name = "i", .lower_bound = "0", .upper_bound = "4", .step = "1"};
-            assert(tsir_family_hint_infer_ir(&f.view, &axis, 1u, NULL, 0u) == TSIR_HINT_ELEMENTWISE);
+            TsirKernelFamilyHint hint = TSIR_HINT_UNKNOWN;
+            assert(tsir_family_hint_infer_ir(&f.view, &axis, 1u, NULL, 0u, &hint) == TSIR_OK);
+            assert(hint == TSIR_HINT_ELEMENTWISE);
         }
         free(b.types);
     }
     puts("TSIR packed projection: eight builtin trees and indirect-index constructor boundaries passed");
+}
+
+static void nested_access_controls(void) {
+    enum { V4 = IR_PRIMITIVE_COUNT, V2, MATRIX, ARRAY, STRUCT, COUNT };
+    static const char text[] = "s v m a xy z";
+    TsirIrType types[COUNT] = {0};
+    types[V4] = (TsirIrType){.kind = TSIR_IR_TYPE_VECTOR, .elem = IR_F32, .len = 4u};
+    types[V2] = (TsirIrType){.kind = TSIR_IR_TYPE_VECTOR, .elem = IR_F32, .len = 2u};
+    types[MATRIX] = (TsirIrType){.kind = TSIR_IR_TYPE_MATRIX, .elem = IR_F32, .rows = 2u, .columns = 2u};
+    types[ARRAY] = (TsirIrType){.kind = TSIR_IR_TYPE_ARRAY, .elem = V4, .has_len = true, .array_len = 2u};
+    types[STRUCT] = (TsirIrType){.kind = TSIR_IR_TYPE_STRUCT, .struct_id = 0u};
+    TsirIrStructField fields[] = {{.name = "v", .ty = V4}, {.name = "m", .ty = MATRIX}, {.name = "a", .ty = ARRAY}};
+    TsirIrStructDef structure = {.fields = fields, .field_count = 3u};
+    Expression syntax[8] = {0};
+    syntax[0] = (Expression){.kind = EXPRESSION_NAME, .value.name = {0u, 1u}};
+    syntax[1] = (Expression){.kind = EXPRESSION_MEMBER, .left = 0u, .value.member.member = {2u, 1u}};
+    syntax[2] = (Expression){.kind = EXPRESSION_MEMBER, .left = 1u, .value.member.member = {8u, 2u}};
+    syntax[3] = (Expression){.kind = EXPRESSION_INTEGER, .resolved_type = IR_U32, .value.integer = 1u};
+    syntax[4] = (Expression){.kind = EXPRESSION_MEMBER, .left = 0u, .value.member.member = {4u, 1u}};
+    syntax[5] = (Expression){.kind = EXPRESSION_LOAD, .left = 4u, .value.reference.index = 3u};
+    syntax[6] = (Expression){.kind = EXPRESSION_LOAD, .left = 5u, .value.reference.index = 3u};
+    CompilerWorkspace compiler = {.expressions = syntax, .expression_count = 8u};
+    TsirIrExpr expressions[128] = {0};
+    TsirIrLocal local = {.name = "s", .ty = STRUCT, .mutable = true};
+    uint32_t scope = 0u;
+    NameSpan local_name = {0u, 1u};
+    char names[128];
+    TsirSourceBridge bridge = {.compiler = &compiler, .types = types, .structs = &structure,
+        .names = names, .names_cap = sizeof(names),
+        .module = {.types = types, .type_count = COUNT, .structs = &structure, .struct_count = 1u},
+        .source = {.source = text, .length = sizeof(text) - 1u, .compiler = &compiler}};
+    TsirSourceFunction function = {.exprs = expressions, .expr_cap = 128u, .locals = &local,
+        .local_names = &local_name, .scope = &scope, .scope_count = 1u};
+    uint32_t id = tsir_source_expr(&bridge, &function, 2u, false, 0u);
+    assert(id != TSIR_IR_NONE && expressions[id].kind == TSIR_IR_EXPR_MEMBER && expressions[id].ty == V2);
+    uint32_t base = expressions[id].member_base;
+    assert(expressions[base].kind == TSIR_IR_EXPR_LOAD && expressions[base].ty == V4);
+    assert(expressions[expressions[base].inner].ty == V4);
+    syntax[2].value.member.member = (NameSpan){11u, 1u};
+    id = tsir_source_expr(&bridge, &function, 2u, false, 0u);
+    assert(id != TSIR_IR_NONE && expressions[id].kind == TSIR_IR_EXPR_LOAD && expressions[id].ty == IR_F32);
+    id = tsir_source_expr(&bridge, &function, 5u, false, 0u);
+    assert(id != TSIR_IR_NONE && expressions[id].kind == TSIR_IR_EXPR_LOAD && expressions[id].ty == V2);
+    id = tsir_source_expr(&bridge, &function, 6u, false, 0u);
+    assert(id != TSIR_IR_NONE && expressions[id].kind == TSIR_IR_EXPR_LOAD && expressions[id].ty == IR_F32);
+    syntax[4].value.member.member = (NameSpan){6u, 1u};
+    syntax[7] = (Expression){.kind = EXPRESSION_MEMBER, .left = 5u, .value.member.member = {8u, 2u}};
+    id = tsir_source_expr(&bridge, &function, 7u, false, 0u);
+    assert(id != TSIR_IR_NONE && expressions[id].kind == TSIR_IR_EXPR_MEMBER && expressions[id].ty == V2);
+    assert(expressions[expressions[id].member_base].kind == TSIR_IR_EXPR_LOAD);
+    assert(bridge.status == TSIR_OK);
+    puts("TSIR nested access: struct/vector/matrix/array uncached type and value-base controls passed");
 }
 
 int main(void) {
@@ -83,15 +137,30 @@ int main(void) {
     id = tsir_source_root(&b, &f, (NameSpan){6u, 6u}, false);
     assert(expressions[id].kind == TSIR_IR_EXPR_LOAD);
     locals[0].mutable = false;
+    TsirIrType typed[IR_PRIMITIVE_COUNT + 2u] = {0};
+    typed[IR_PRIMITIVE_COUNT] = (TsirIrType){.kind = TSIR_IR_TYPE_VECTOR,
+        .elem = IR_U32, .len = 4};
+    typed[IR_PRIMITIVE_COUNT + 1u] = (TsirIrType){.kind = TSIR_IR_TYPE_VECTOR,
+        .elem = IR_U32, .len = 3};
+    b.types = typed;
+    b.module.types = typed;
+    b.module.type_count = IR_PRIMITIVE_COUNT + 2u;
+    locals[0].ty = IR_PRIMITIVE_COUNT;
+    syntax[0].resolved_type = IR_PRIMITIVE_COUNT;
     syntax[1] = (Expression){.kind = EXPRESSION_MEMBER, .resolved_type = IR_U32,
         .left = 0u, .value.member.member = {14u, 3u}}; /* gba -> first index 1 */
     id = tsir_source_expr(&b, &f, 1u, false, 0u);
-    assert(expressions[id].kind == TSIR_IR_EXPR_LOAD &&
-        expressions[expressions[id].inner].kind == TSIR_IR_EXPR_MEMBER &&
-        expressions[expressions[id].inner].member_field_index == 1u);
+    assert(expressions[id].kind == TSIR_IR_EXPR_MEMBER &&
+        expressions[id].member_field_index == 1u);
     locals[0].mutable = true;
     id = tsir_source_expr(&b, &f, 1u, false, 0u);
-    assert(expressions[id].kind == TSIR_IR_EXPR_LOAD);
+    assert(expressions[id].kind == TSIR_IR_EXPR_MEMBER);
+    syntax[1].value.member.member = (NameSpan){14u, 1u};
+    id = tsir_source_expr(&b, &f, 1u, false, 0u);
+    assert(expressions[id].kind == TSIR_IR_EXPR_LOAD &&
+        expressions[expressions[id].inner].kind == TSIR_IR_EXPR_MEMBER);
+    id = tsir_source_expr(&b, &f, 1u, true, 0u);
+    assert(expressions[id].kind == TSIR_IR_EXPR_MEMBER);
     const NameSpan constructors[] = {{18u, 5u}, {24u, 4u}};
     for (size_t i = 0; i < 2u; ++i) {
         syntax[2] = (Expression){.kind = EXPRESSION_CALL, .resolved_type = IR_U32,
@@ -140,7 +209,8 @@ int main(void) {
     assert(expressions[id].kind == TSIR_IR_EXPR_CALL);
     assert(expressions[edges[expressions[id].args_start]].kind == TSIR_IR_EXPR_CONSTRUCT);
     packed_controls();
+    nested_access_controls();
     assert(b.status == TSIR_OK);
-    puts("TSIR expression adaptation: 18 category, projection, constructor, reference and numeric controls passed");
+    puts("TSIR expression adaptation: 20 category, projection, constructor, reference and numeric controls passed");
     return 0;
 }

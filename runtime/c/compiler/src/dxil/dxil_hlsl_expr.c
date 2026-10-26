@@ -135,8 +135,9 @@ DxilStatus dxil_hlsl_emit_type_only(DxilHlslEmitter *emitter,
                 emitter->module->structs[type.struct_id].name);
         }
         case DXIL_IR_TYPE_SAMPLER:
-        case DXIL_IR_TYPE_SAMPLER_COMPARISON:
             return dxil_hlsl_write_text(emitter, "SamplerState");
+        case DXIL_IR_TYPE_SAMPLER_COMPARISON:
+            return dxil_hlsl_write_text(emitter, "SamplerComparisonState");
         case DXIL_IR_TYPE_TEXTURE_1D:
             return dxil_hlsl_write_text(emitter, "Texture1D<float4>");
         case DXIL_IR_TYPE_TEXTURE_2D:
@@ -208,8 +209,30 @@ DxilStatus dxil_hlsl_emit_typed_name(DxilHlslEmitter *emitter,
     return dxil_hlsl_write_text(emitter, name);
 }
 
+static DxilStatus emit_constant_tree(DxilHlslEmitter *emitter, uint32_t id, unsigned depth) {
+    const DxilIrModule *module = emitter->module;
+    if (id >= module->constant_count || depth > DXIL_IR_MAX_TYPES) return DXIL_INVALID_IR;
+    const DxilIrConstant *value = &module->constants[id];
+    if (!value->composite) {
+        const DxilIrGlobal scalar = {.ty = value->ty, .has_initializer = true,
+            .init_kind = value->kind, .init_bool = value->bool_value,
+            .init_int = value->int_value, .init_float = value->float_value};
+        return dxil_hlsl_emit_constant(emitter, &scalar);
+    }
+    if (value->children.start > module->constant_child_count ||
+        value->children.len > module->constant_child_count - value->children.start) return DXIL_INVALID_IR;
+    DxilStatus status = dxil_hlsl_write_text(emitter, "{");
+    for (uint32_t i = 0u; i < value->children.len && status == DXIL_OK; ++i) {
+        if (i != 0u) status = dxil_hlsl_write_text(emitter, ", ");
+        if (status == DXIL_OK) status = emit_constant_tree(emitter,
+            module->constant_children[value->children.start + i], depth + 1u);
+    }
+    return status == DXIL_OK ? dxil_hlsl_write_text(emitter, "}") : status;
+}
+
 DxilStatus dxil_hlsl_emit_constant(DxilHlslEmitter *emitter,
     const DxilIrGlobal *global) {
+    if (global->has_init_tree) return emit_constant_tree(emitter, global->init_tree, 0u);
     switch (global->init_kind) {
         case DXIL_IR_CONST_BOOL:
             return dxil_hlsl_write_text(emitter,
@@ -408,6 +431,11 @@ static DxilStatus emit_builtin_call(DxilHlslEmitter *emitter,
     const char *name, DxilIrRange args) {
     DxilStatus status = DXIL_OK;
     const char *renamed = NULL;
+    bool handled = false;
+    status = dxil_hlsl_emit_extra_builtin(emitter, function, result_ty, name, args, &handled);
+    if (status != DXIL_OK || handled) return status;
+    if (strcmp(name, "arrayLength") == 0)
+        return dxil_hlsl_emit_array_length(emitter, function, args);
     if (strcmp(name, "workgroupBarrier") == 0) {
         return dxil_hlsl_write_text(emitter, "GroupMemoryBarrierWithGroupSync()");
     }
@@ -563,7 +591,7 @@ static DxilStatus emit_builtin_call(DxilHlslEmitter *emitter,
         if (args.len != 1) {
             return DXIL_INVALID_IR;
         }
-        status = dxil_hlsl_write_text(emitter, "(((");
+        status = dxil_hlsl_write_text(emitter, "((");
         if (status != DXIL_OK) {
             return status;
         }
@@ -643,19 +671,20 @@ static DxilStatus emit_builtin_call(DxilHlslEmitter *emitter,
     return DXIL_UNSUPPORTED_BUILTIN;
 }
 
+const char *dxil_hlsl_local_name(const DxilIrFunction *function, uint32_t local_idx, char buffer[32]) {
+    if (local_idx >= function->local_count || function->locals[local_idx].name == NULL) return NULL;
+    const char *name = function->locals[local_idx].name;
+    if (strcmp(name, "signed") == 0 || strcmp(name, "unsigned") == 0) {
+        (void)snprintf(buffer, 32u, "__doe_local_%u", local_idx);
+        return buffer;
+    }
+    return name;
+}
 static DxilStatus emit_local_name(DxilHlslEmitter *emitter,
     const DxilIrFunction *function, uint32_t local_idx) {
-    const char *name = NULL;
-    char buf[32];
-    if (local_idx >= function->local_count) {
-        return DXIL_INVALID_IR;
-    }
-    name = function->locals[local_idx].name;
-    if (strcmp(name, "signed") == 0 || strcmp(name, "unsigned") == 0) {
-        snprintf(buf, sizeof(buf), "__doe_local_%u", local_idx);
-        return dxil_hlsl_write_text(emitter, buf);
-    }
-    return dxil_hlsl_write_text(emitter, name);
+    char buffer[32];
+    const char *name = dxil_hlsl_local_name(function, local_idx, buffer);
+    return name == NULL ? DXIL_INVALID_IR : dxil_hlsl_write_text(emitter, name);
 }
 
 DxilStatus dxil_hlsl_emit_expr(DxilHlslEmitter *emitter,
@@ -667,6 +696,21 @@ DxilStatus dxil_hlsl_emit_expr(DxilHlslEmitter *emitter,
     }
     if (expr_id >= function->expr_count) {
         return DXIL_INVALID_IR;
+    }
+    if (emitter->store_override) {
+        for (uint32_t i = 0u; i < emitter->store_expression_count; ++i) {
+            if (emitter->store_expressions[i] != expr_id) continue;
+            status = dxil_hlsl_write_temporary(emitter, "doe_store_expr_", emitter->store_owner);
+            if (status == DXIL_OK) status = dxil_hlsl_write_text(emitter, "_");
+            if (status == DXIL_OK) status = dxil_hlsl_write_u32(emitter, expr_id);
+            return status;
+        }
+    }
+    if (emitter->pointer_override &&
+        (expr_id == emitter->pointer_override_raw || expr_id == emitter->pointer_override_length)) {
+        status = dxil_hlsl_write_temporary(emitter, expr_id == emitter->pointer_override_raw ?
+            "doe_pointer_raw_" : "doe_pointer_length_", emitter->pointer_override_owner);
+        return status;
     }
     emitter->depth += 1;
     expr = &function->exprs[expr_id];
@@ -875,7 +919,9 @@ DxilStatus dxil_hlsl_emit_expr(DxilHlslEmitter *emitter,
             if (status != DXIL_OK) {
                 break;
             }
-            status = dxil_hlsl_emit_expr(emitter, function, expr->index_expr);
+            if (dxil_hlsl_pointer_index_captured(emitter, function, expr_id)) {
+                status = dxil_hlsl_emit_captured_index(emitter, function, expr_id, false);
+            } else status = dxil_hlsl_emit_expr(emitter, function, expr->index_expr);
             if (status != DXIL_OK) {
                 break;
             }
