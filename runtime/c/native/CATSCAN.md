@@ -10,7 +10,7 @@ Own ABI conversion and adapter/device leases; excludes resource semantics,
 callbacks, compilation, execution and production selection.
 
 ## Scope
-WebGPU/presentation; unsupported paths reject.
+WebGPU/presentation, including queried packed Metal imports; unsupported paths reject.
 
 ## Contracts
 Pinned ABI, inventoried legacy/browser signatures and
@@ -38,7 +38,6 @@ properties expose physical format before texture creation; compatible views do n
 ## Acceptance
 [Owner checks](Makefile) cover rejection, errors, rollback and cleanup.
 - Evidence: [Records](README.md) distinguish host, SDK, native/window and browser qualification.
-ABI agreement cannot qualify execution.
 
 ## Non-goals
 Parallel resource engines, synthetic completion or default cutover.

@@ -64,6 +64,7 @@ typedef struct doe_mtl_caps {
     uint32_t max_visibility_offset;
     bool counting_visibility;
     bool timeline_enabled; /* Real per-context shared event, explicitly requested. */
+    bool shared_surface_import; /* Loaded IOSurface APIs and selected device texture selector. */
     bool timestamp_stage, timestamp_blit;
     float timestamp_period_ns; /* Paired CPU(ns)/GPU clock calibration; zero means unavailable. */
 } doe_mtl_caps;

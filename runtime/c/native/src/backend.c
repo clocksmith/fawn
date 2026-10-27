@@ -58,6 +58,11 @@ native_result native_backend_open(WGPUBackendType kind, bool fallback, uint32_t 
         if (fallback) return NATIVE_UNAVAILABLE; /* No CPU adapter is advertised. */
         if (surface_platforms && surface_platforms != NATIVE_SURFACE_METAL_LAYER) return NATIVE_UNSUPPORTED;
         status = native_from_metal(doe_mtl_context_create(&result.value.metal.context, NULL));
+        /* The adapter context never submits user work. Probe a real event with
+         * the existing timeline owner before offering shared-event import;
+         * device synchronization policy is still selected independently. */
+        if (status == NATIVE_OK)
+            status = native_from_metal(doe_mtl_context_prefer_timeline(result.value.metal.context, NULL));
         if (status == NATIVE_OK)
             status = native_from_metal(doe_mtl_context_caps(result.value.metal.context, &result.value.metal.caps));
         if (status == NATIVE_OK && native_metal_limits(&result.value.metal.caps,

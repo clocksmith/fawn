@@ -58,7 +58,7 @@ typedef struct native_device {
     DoeLegacyUncapturedErrorCallback legacy_uncaptured;
     bool destroyed;
     bool queue_failed;
-    uint32_t features; /* Enabled WebGPU features, NATIVE_FEATURE bits. */
+    uint32_t features; /* Enabled core bits plus feature-owner private-name slots. */
     doe_vk_timestamp_normalizer *timestamp_normalizer;
     doe_mtl_pipeline *metal_timestamp_pipeline;
     doe_dx_pipeline *d3d12_timestamp_pipeline;
@@ -285,7 +285,7 @@ bool native_metal_timestamp_supported(const doe_mtl_caps *caps);
 doe_vk_status native_dispatch_guard_initialize(native_device *device);
 doe_vk_status native_draw_guard_initialize(native_device *device);
 void native_indirect_guards_release(native_device *device);
-/* Optional WebGPU features as bits of their pinned WGPUFeatureName values. */
+/* Core feature bits use pinned names; private names map only in features.c. */
 #define NATIVE_FEATURE(name) (UINT32_C(1) << (uint32_t)(name))
 bool native_vulkan_subgroups_supported(const doe_vk_caps *caps);
 uint32_t native_adapter_features(const native_backend *backend);

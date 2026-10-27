@@ -2,33 +2,12 @@
  * Real packed IOSurface metadata, before any texture creation. No GPU work. */
 #include "consumer.h"
 #include "doe_native_shared_memory.h"
-#include <IOSurface/IOSurface.h>
-#include <CoreFoundation/CoreFoundation.h>
+#include "iosurface_fixture.h"
 
-static IOSurfaceRef surface_create(uint32_t format)
-{
-    const void *keys[] = {kIOSurfaceWidth,kIOSurfaceHeight,kIOSurfaceBytesPerElement,kIOSurfacePixelFormat};
-    int values[] = {2,2,4,0};
-    memcpy(&values[3],&format,sizeof(format));
-    CFNumberRef numbers[4];
-    const void *objects[4];
-    for (size_t i = 0; i < 4; ++i) {
-        numbers[i] = CFNumberCreate(NULL,kCFNumberIntType,&values[i]);
-        assert(numbers[i]);
-        objects[i] = numbers[i];
-    }
-    CFDictionaryRef properties = CFDictionaryCreate(NULL,keys,objects,4,
-        &kCFTypeDictionaryKeyCallBacks,&kCFTypeDictionaryValueCallBacks);
-    assert(properties);
-    IOSurfaceRef surface = IOSurfaceCreate(properties);
-    CFRelease(properties);
-    for (size_t i = 0; i < 4; ++i) CFRelease(numbers[i]);
-    return surface;
-}
 static void packed_metadata(state *s, uint32_t code, WGPUTextureFormat expected,
     WGPUTextureFormat srgb)
 {
-    IOSurfaceRef surface = surface_create(code);
+    IOSurfaceRef surface = doe_test_iosurface_create(code);
     assert(surface && IOSurfaceGetPixelFormat(surface) == code);
     WGPUSharedTextureMemoryIOSurfaceDescriptor chain = {
         .chain={.sType=DOE_SHARED_STYPE_IOSURFACE},.ioSurface=surface};

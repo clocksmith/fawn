@@ -4,8 +4,15 @@
 25 shared fence/memory entrypoints in
 `runtime/zig/src/dropin/dropin_browser_shared_memory.zig`. The procedure table
 also resolves the 22 names that the retained provider exposes only dynamically.
-This is an additive compatibility boundary, not a new feature advertisement or
-production-provider switch.
+The adapter advertises the pinned Dawn `SharedTextureMemoryIOSurface`
+(`0x50024`) only when IOSurface APIs and the selected Metal device's import
+selector are available. `SharedFenceMTLSharedEvent` (`0x5002a`) requires a real
+event allocated on the adapter context through the existing timeline owner.
+Device requests, `HasFeature` and feature enumeration share the native feature
+owner's compact mapping; ordinary device defaults do not enable these features.
+Adapter probing does not select a device's synchronization policy. The legacy
+compatibility exports remain callable as before; this adds truthful capability
+disclosure for Dawn's browser import gate, without changing provider defaults.
 
 Browser-facing descriptor layouts match Chromium `4a6fb385` / Dawn `758e5e6a`,
 including independent fence/value counts, buffer initialization and usage/size
@@ -64,7 +71,8 @@ All shared-buffer entrypoints remain explicitly unsupported: import/create retur
 null, access/property queries return Error, IsDeviceLost returns true, and the
 retained cleanup/label operations have no created object to act on. Vulkan,
 D3D12, multi-plane shared surfaces and alternate native fence types are not
-silently substituted. The shared APIs do not advertise new requestable features.
+silently substituted. Multiplanar features remain absent; advertising IOSurface
+import does not enable NV12 or unsupported pixel formats.
 
 Ordinary external-texture planes also permit genuine Metal CopySrc blits, using
 the same native plane identity. This does not imply YUV or color conversion.
@@ -81,6 +89,14 @@ the same native plane identity. This does not imply YUV or color conversion.
   IOSurface import, properties before texture creation, exact-format rejection,
   compatible sRGB views and early native/public releases. This selects physical
   Metal but submits no GPU work.
+- `make -C runtime/c/native check-shared-features`: host-only independent queried
+  capability admission, duplicate request sets, enumeration, disabled device
+  features and unknown/private-slot alias rejection.
+- `make -C runtime/c/native check-iosurface-shared` on Darwin: requests both
+  advertised features, imports actual producer-written BGRA pixels, begins
+  access, copies and reads back every pixel through the GPU, then ends access
+  with a fresh exported Metal shared event. Queue completion precedes cleanup;
+  native and public surface/texture leases are released early.
 - `make -C runtime/c/backends/metal check`: existing ownership/native-call tests;
   external typed-call controls include CF retain/release, single-plane admission,
   shared format/usage arguments and event-value reads.
@@ -89,6 +105,6 @@ the same native plane identity. This does not imply YUV or color conversion.
 - `make -C runtime/c/backends/metal sdk-abi`: actual Apple SDK comparison, including
   CFTypeRef/event calls; requires an installed Apple SDK.
 
-The metadata consumer passes on Apple M3. Native event synchronization, GPU
-execution of imported contents and Fawn browser external-image acceptance remain
-separate gates. Metadata, symbol resolution and compilation do not qualify them.
+Both actual IOSurface consumers pass on Apple M3. This establishes their native
+metadata, pixel and new-event path. External producer-fence waits and Fawn browser
+external-image acceptance remain separate gates; native tests do not qualify them.
