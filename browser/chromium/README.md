@@ -103,3 +103,30 @@ No Zig compiler or Zig runtime is used on this default path. Historical vendored
 header paths are provenance inputs, not a Zig build dependency. This selection
 change and host syntax checks do not qualify Chromium integration or Metal GPU
 execution; browser acceptance remains separately required.
+
+### Relocatable Linux C-default launcher
+
+After copying the complete Linux browser output into a separate staging
+directory, install its product entry point from a completed C package stage:
+
+```bash
+python3 browser/chromium/scripts/patch-linux-browser-doe.py \
+  --package-dir /absolute/staged-fawn-linux --c-stage /absolute/completed-c-stage
+```
+
+An existing `chrome-wrapper` requires explicit `--replace-wrapper`; its original
+bytes are retained inside the private closure. The installer refuses active
+Ninja/GN output directories and existing private closures. It checks the stage
+manifest's C runtime/compiler hashes and ELF architecture, copies both libraries
+and licenses under `lib/doe`, and compiles the native `chrome-wrapper` entry point.
+The installation receipt binds its source, compiler command, manifest, browser
+and generated launcher. This does not replace release-package preflight or
+qualify the browser.
+
+The launcher resolves all paths relative to its installed image and uses `execv`
+so the browser keeps the owned PID and inherited private CDP descriptors. It
+defaults to the bundled C runtime, fails if that runtime/compiler is missing, and
+accepts explicit `--use-webgpu-runtime=dawn` rollback. Ambiguous/auto provider
+selection and foreign library overrides are rejected. It adds no sandbox-disabling
+flags. Raw `chrome` remains available for controlled diagnostics; the workspace
+build profile binds that actual image separately from this product entry point.
