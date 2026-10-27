@@ -1091,6 +1091,10 @@
         {
           "path": "src/native/vulkan/vulkan_feature_cache.zig",
           "kind": "inline"
+        },
+        {
+          "path": "src/backend/d3d12/d3d12_dxc_memory.zig",
+          "kind": "inline"
         }
       ],
       "includes": [

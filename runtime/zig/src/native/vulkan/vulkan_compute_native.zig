@@ -403,8 +403,8 @@ fn precompute_pipeline_static_hashes(pip: *DoeComputePipeline) void {
 /// Translate WGSL source to SPIR-V words and store them in shader.spirv_data.
 /// Called from doe_shader_native.zig when dev.backend == .vulkan.
 /// Returns error on OOM or compilation failure.
-pub fn vulkan_create_shader_moduleWithDiagnostic(shader: *DoeShaderModule, wgsl: []const u8, diagnostic: *wgsl_analysis.Diagnostic) wgsl_analysis.TranslateError!void {
-    var cached_translation = shader_translation_cache.lookupComputeSpirvTranslation(alloc, wgsl);
+pub fn vulkan_create_shader_moduleWithDiagnostic(shader: *DoeShaderModule, wgsl: []const u8, diagnostic: *wgsl_analysis.Diagnostic, persistent_cache_allowed: bool) wgsl_analysis.TranslateError!void {
+    var cached_translation = if (persistent_cache_allowed) shader_translation_cache.lookupComputeSpirvTranslation(alloc, wgsl) else null;
     defer if (cached_translation) |*cached| cached.deinit(alloc);
 
     if (cached_translation) |*cached| {
@@ -424,7 +424,7 @@ pub fn vulkan_create_shader_moduleWithDiagnostic(shader: *DoeShaderModule, wgsl:
         return error.InvalidIr;
     }
 
-    shader_translation_cache.storeComputeSpirvTranslation(
+    if (persistent_cache_allowed) shader_translation_cache.storeComputeSpirvTranslation(
         alloc,
         wgsl,
         spirv_buf[0..translation.len],
@@ -878,7 +878,7 @@ fn assignSpirvWordsWithDiagnostic(shader: *DoeShaderModule, spirv_bytes: []const
 }
 
 pub fn vulkan_create_shader_module(shader: *DoeShaderModule, wgsl: []const u8) wgsl_analysis.TranslateError!void {
-    return vulkan_create_shader_moduleWithDiagnostic(shader, wgsl, wgsl_analysis.compatibilityDiagnostic());
+    return vulkan_create_shader_moduleWithDiagnostic(shader, wgsl, wgsl_analysis.compatibilityDiagnostic(), true);
 }
 
 pub fn vulkan_copy_pipeline_spirv(pip: *DoeComputePipeline, shader: *DoeShaderModule) (wgsl_analysis.TranslateError || error{InvalidShaderModule})!void {

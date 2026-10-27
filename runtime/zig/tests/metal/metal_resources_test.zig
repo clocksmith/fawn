@@ -389,3 +389,19 @@ test "strip_extension does not double-strip .wgsl.spv" {
     const result = buffer_pool.strip_extension("test.wgsl.spv");
     try std.testing.expectEqualStrings("test.wgsl", result);
 }
+
+test "device persistent cache policy never serializes a memory-only Metal archive" {
+    // A non-null poison archive makes an accidental bridge call observable.
+    // No native API is called: the missing URL must reject before serialization.
+    var cache = pipeline_cache.MetalPipelineCache{
+        .allocator = std.testing.allocator,
+        .device = null,
+        .archive = @ptrFromInt(16),
+        .archive_path = null,
+        .dirty = true,
+    };
+    cache.flush_archive();
+    try std.testing.expect(cache.dirty);
+    try std.testing.expectEqual(@as(u64, 0), cache.telemetry.serialize_count);
+    try std.testing.expectEqualStrings("", cache.cache_dir);
+}

@@ -13,6 +13,7 @@ const wgsl_runtime_compile = @import("../../compiler/wgsl/runtime/runtime_comput
 const shader_translation_cache = @import("doe_shader_translation_cache.zig");
 const shader_binding_reflection = @import("shader_binding_reflection.zig");
 const shader_stage_limits = @import("shader_stage_limits.zig");
+const device_cache = @import("../cache/doe_device_cache_native.zig");
 const package_metal_pipeline_cache = @import("../cache/doe_package_metal_pipeline_cache.zig");
 const native_types = @import("../support/doe_native_object_types.zig");
 const native_shared = @import("../support/doe_native_shared_types.zig");
@@ -238,6 +239,7 @@ fn doeNativeDeviceCreateShaderModuleOwned(dev_raw: ?*anyopaque, desc: ?*const ab
     diagnostic.clear_last_error();
     const dev = cast(DoeDevice, dev_raw) orelse return null;
     if (!dev.requireAlive()) return null;
+    device_cache.beginUse(dev);
     const d = desc orelse return null;
     const result = if (d.nextInChain == null) blk: {
         diagnostic.set_last_error_stage_name("native_shader_create");
@@ -348,7 +350,7 @@ fn createFromWGSLOwned(dev: *DoeDevice, chain: *const abi_callback.WGPUChainedSt
     var source_transferred = false;
     defer if (!source_transferred) alloc.free(source);
 
-    var cached_translation: ?shader_translation_cache.CachedTranslation = shader_translation_cache.lookupComputeTranslation(alloc, wgsl);
+    var cached_translation: ?shader_translation_cache.CachedTranslation = if (device_cache.persistenceAllowed(dev)) shader_translation_cache.lookupComputeTranslation(alloc, wgsl) else null;
     var msl_buf: [msl_translation.MAX_OUTPUT]u8 = undefined;
     var translation_info = wgsl_runtime_compile.TranslationInfo{};
     var msl_source: []const u8 = undefined;
@@ -374,7 +376,7 @@ fn createFromWGSLOwned(dev: *DoeDevice, chain: *const abi_callback.WGPUChainedSt
             std.log.warn("doe: createShaderModule failed: {s}", .{diagnostic.last_error_buf[0..diagnostic.last_error_len]});
             return null;
         };
-        shader_translation_cache.storeComputeTranslation(
+        if (device_cache.persistenceAllowed(dev)) shader_translation_cache.storeComputeTranslation(
             alloc,
             wgsl,
             msl_buf[0..translation.len],
@@ -417,7 +419,6 @@ fn createFromWGSLOwned(dev: *DoeDevice, chain: *const abi_callback.WGPUChainedSt
 // ============================================================
 
 fn createFromWGSLVulkanOwned(dev: *DoeDevice, wgsl: []const u8, diagnostic: *ShaderDiagnostic) ?*anyopaque {
-    _ = dev;
     const sm = make(DoeShaderModule) orelse {
         recordAllocationFailure(diagnostic, "native_shader_create", "shader module allocation failed");
         return null;
@@ -440,7 +441,7 @@ fn createFromWGSLVulkanOwned(dev: *DoeDevice, wgsl: []const u8, diagnostic: *Sha
         };
     } else {
         const vk_compute = @import("../vulkan/vulkan_compute_native.zig");
-        vk_compute.vulkan_create_shader_moduleWithDiagnostic(sm, wgsl, &diagnostic.compiler) catch |err| {
+        vk_compute.vulkan_create_shader_moduleWithDiagnostic(sm, wgsl, &diagnostic.compiler, device_cache.persistenceAllowed(dev)) catch |err| {
             diagnostic.capture_compile_error(err, "native_shader_create", "Vulkan WGSL→SPIR-V compilation failed");
             return null;
         };
@@ -787,6 +788,7 @@ fn doeNativeDeviceCreateComputePipelineOwned(dev_raw: ?*anyopaque, desc: ?*const
     diagnostic.clear_last_error();
     const dev = cast(DoeDevice, dev_raw) orelse return null;
     if (!dev.requireAlive()) return null;
+    device_cache.beginUse(dev);
     const d = desc orelse return null;
     const sm = cast(DoeShaderModule, d.compute.module) orelse {
         diagnostic.set_last_error_stage_name("native_compile");

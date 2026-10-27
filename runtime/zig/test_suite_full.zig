@@ -12,6 +12,7 @@ const test_src_native_support_doe_device_loss_zig_09817a3f = @import("src/native
 const test_src_native_queue_doe_submission_validation_zig_5683d6fa = @import("src/native/queue/doe_submission_validation.zig");
 const test_src_native_compute_doe_compute_program_native_zig_ae67e6b8 = @import("src/native/compute/doe_compute_program_native.zig");
 const test_src_native_vulkan_vulkan_feature_cache_zig_cb5b8af2 = @import("src/native/vulkan/vulkan_feature_cache.zig");
+const test_src_backend_d3d12_d3d12_dxc_memory_zig_7a2dcd9d = @import("src/backend/d3d12/d3d12_dxc_memory.zig");
 
 comptime {
     _ = suite_aggregate_ee3c65b5;
@@ -26,4 +27,5 @@ comptime {
     _ = test_src_native_queue_doe_submission_validation_zig_5683d6fa;
     _ = test_src_native_compute_doe_compute_program_native_zig_ae67e6b8;
     _ = test_src_native_vulkan_vulkan_feature_cache_zig_cb5b8af2;
+    _ = test_src_backend_d3d12_d3d12_dxc_memory_zig_7a2dcd9d;
 }

@@ -40,6 +40,8 @@ fn trimTrailingSeparator(dir: []const u8) []const u8 {
 pub const VulkanPipelineCache = struct {
     allocator: std.mem.Allocator,
     enabled: bool = true,
+    persistent: bool = true,
+    deferred: bool = false,
     handle: c.VkPipelineCache = c.VK_NULL_U64,
     state: VulkanPipelineCacheState = .disabled,
     device: c.VkDevice = null,
@@ -59,6 +61,14 @@ pub const VulkanPipelineCache = struct {
         return self;
     }
 
+    /// Native public devices must accept their one-way policy before any disk
+    /// cache access. CLI/runtime constructors keep their eager configuration.
+    pub fn initDeferred(allocator: std.mem.Allocator) VulkanPipelineCache {
+        var self = VulkanPipelineCache.init(allocator, .{});
+        self.deferred = true;
+        return self;
+    }
+
     fn setDirectory(self: *VulkanPipelineCache, directory: []const u8) void {
         self.cache_path_len = 0;
         const trimmed = trimTrailingSeparator(directory);
@@ -73,18 +83,19 @@ pub const VulkanPipelineCache = struct {
     }
 
     fn cachePath(self: *const VulkanPipelineCache) ?[]const u8 {
-        if (self.cache_path_len == 0) return null;
+        if (!self.persistent or self.cache_path_len == 0) return null;
         return self.cache_path_buf[0..self.cache_path_len];
     }
 
     fn configureDirectoryFromEnvironment(self: *VulkanPipelineCache) void {
-        if (self.cache_path_len != 0) return;
+        if (!self.persistent or self.cache_path_len != 0) return;
         const value = std.process.getEnvVarOwned(self.allocator, ENV_CACHE_DIR) catch return;
         defer self.allocator.free(value);
         self.setDirectory(value);
     }
 
     pub fn create(self: *VulkanPipelineCache, device: c.VkDevice) !void {
+        if (self.deferred) return;
         if (!self.enabled) {
             self.state = .disabled;
             return;
@@ -269,4 +280,24 @@ test "cache configuration is isolated per provider instance" {
         second.cachePath().?,
     );
     try std.testing.expect(!second.active());
+}
+
+test "device persistent cache policy defers native Vulkan disk access before first use" {
+    var cache = VulkanPipelineCache.initDeferred(std.testing.allocator);
+    // Null would fail active creation. Deferred bootstrap must return without
+    // reading configuration, files, or calling any Vulkan function.
+    try cache.create(null);
+    try std.testing.expect(cache.deferred);
+    try std.testing.expect(cache.cachePath() == null);
+    try std.testing.expectEqual(@as(c.VkPipelineCache, c.VK_NULL_U64), cache.handleForPipelineCreation());
+    cache.setDirectory("cache/must-not-be-used");
+    cache.persistent = false;
+    cache.deferred = false;
+    try std.testing.expect(cache.cachePath() == null);
+    try std.testing.expectError(error.InvalidArgument, cache.create(null));
+    // The in-memory cache remains enabled; persistence and cache use differ.
+    try std.testing.expect(cache.enabled);
+    try std.testing.expect(!cache.persistent);
+    const ordinary = VulkanPipelineCache.init(std.testing.allocator, .{});
+    try std.testing.expect(ordinary.persistent and !ordinary.deferred);
 }

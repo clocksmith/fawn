@@ -536,7 +536,7 @@ test "procedure identity rejects unknown private and malformed names" {
     try std.testing.expect(wgpuGetProcAddress(.{ .data = embedded.ptr, .length = embedded.len }) == null);
     try std.testing.expect(resolveImplementationProc(.{ .data = embedded.ptr, .length = embedded.len }) == null);
     try std.testing.expectEqual(fnPtr(&dropin_abi_procs.wgpuRenderPassEncoderDrawIndexed), wgpuGetProcAddress(.{ .data = embedded.ptr, .length = abi_base.WGPU_STRLEN }));
-    inline for (.{ "wgpuDefinitelyMissing", "doe_vk_context_create", "doeWgpuDropinGetNativeProc" }) |unknown| {
+    inline for (.{ "wgpuDefinitelyMissing", "doe_vk_context_create", "doeWgpuDropinGetNativeProc", "doeNativeDeviceDisablePersistentCache" }) |unknown| {
         try std.testing.expect(wgpuGetProcAddress(.{ .data = unknown.ptr, .length = unknown.len }) == null);
     }
     const trailing = "wgpuRenderPassEncoderDrawIndexedSuffix";
