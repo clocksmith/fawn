@@ -25,6 +25,10 @@ from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW_COMMANDS = {
+    "c-vs-zig-package": (
+        [sys.executable, "-m", "bench.tools.compare_c_vs_zig_package"],
+        "Compare explicit C and Zig providers through output-validated public package work",
+    ),
     "c-vs-zig": (
         [sys.executable, "-m", "bench.tools.run_c_vs_zig_campaign"],
         "Run native C and Zig catalog rows independently and retain strict comparisons and failures",

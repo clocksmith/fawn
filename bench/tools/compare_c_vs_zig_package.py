@@ -189,6 +189,13 @@ def cases(oracle_plans: Path, profiles: list[str]) -> list[dict[str, Any]]:
     return result
 
 
+def configuration_inputs(root: Path) -> set[Path]:
+    """Bind worker policy/module configuration before starting any GPU worker."""
+    return {(root / name).resolve(strict=True) for name in (
+        "config/package-execution-policy.json", "config/determinism-policy.json",
+        "config/numeric-stability-policy.json", "packages/doe-gpu/package.json")}
+
+
 def run(args: argparse.Namespace) -> int:
     if args.iterations < 1 or args.warmup < 0:
         raise ValueError("iterations must be positive and warmup nonnegative")
@@ -199,6 +206,7 @@ def run(args: argparse.Namespace) -> int:
              ROOT / "bench/tools/compare_c_vs_zig_compilation.py", ROOT / "bench/lib/child_usage.py",
              ROOT / "bench/tools/prepare_package_oracle_plans.py", ROOT / "bench/lib/synthetic_assets.py",
              args.oracle_plans.resolve() / "oracle-manifest.json"}
+    paths.update(configuration_inputs(ROOT))
     manifest = json.loads((args.oracle_plans / "oracle-manifest.json").read_text())
     if manifest["generatorSha256"] != digest(ROOT / "bench/tools/prepare_package_oracle_plans.py"):
         raise ValueError("CPU reference generator differs from its receipt")
