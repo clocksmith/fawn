@@ -24,7 +24,7 @@
   ],
   "properties": {
     "$schema": { "type": "string", "const": "fawn-workspace-service.schema.json" },
-    "schemaVersion": { "type": "integer", "const": 3 },
+    "schemaVersion": { "type": "integer", "const": 4 },
     "configVersion": { "type": "string", "minLength": 1 },
     "protocolVersion": {
       "type": "integer",
@@ -74,22 +74,143 @@
     "browser": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["engine", "transport", "channel", "headless", "persistentProfiles"],
+      "required": [
+        "engine",
+        "transport",
+        "channel",
+        "headless",
+        "persistentProfiles"
+      ],
       "properties": {
-        "engine": { "type": "string", "enum": ["chromium"] },
+        "engine": {
+          "type": "string",
+          "enum": [
+            "chromium"
+          ]
+        },
         "transport": {
           "type": "string",
-          "enum": ["pipe"],
+          "enum": [
+            "pipe"
+          ],
           "description": "The service launches Chromium over a private pipe so no remote-debugging endpoint bypasses dispatch."
         },
         "channel": {
           "type": "string",
-          "enum": ["chromium-headless-shell", "chromium", "chrome"],
-          "description": "The browser build both adapters launch, as Playwright's registry names it; a compatibility run may name another."
+          "enum": [
+            "chromium-headless-shell",
+            "chromium",
+            "chrome",
+            "fawn"
+          ],
+          "description": "Installed stock channel, or an explicitly identified Fawn build with a forced runtime."
         },
-        "headless": { "type": "boolean" },
-        "persistentProfiles": { "type": "boolean", "const": true }
-      }
+        "headless": {
+          "type": "boolean"
+        },
+        "persistentProfiles": {
+          "type": "boolean",
+          "const": true
+        },
+        "fawnBuild": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "executable",
+            "dependencies",
+            "runtime"
+          ],
+          "properties": {
+            "executable": {
+              "$ref": "#/$defs/fileArtifact"
+            },
+            "dependencies": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "$ref": "#/$defs/fileArtifact"
+              }
+            },
+            "runtime": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "mode",
+                    "library"
+                  ],
+                  "properties": {
+                    "mode": {
+                      "const": "doe-c"
+                    },
+                    "library": {
+                      "$ref": "#/$defs/fileArtifact"
+                    }
+                  }
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "mode"
+                  ],
+                  "properties": {
+                    "mode": {
+                      "const": "dawn"
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "runtime": {
+                    "properties": {
+                      "mode": {
+                        "const": "doe-c"
+                      }
+                    }
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "dependencies": {
+                    "minItems": 1
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "channel": {
+                "const": "fawn"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "fawnBuild"
+            ]
+          },
+          "else": {
+            "not": {
+              "required": [
+                "fawnBuild"
+              ]
+            }
+          }
+        }
+      ]
     },
     "actionKinds": {
       "type": "array",
@@ -139,6 +260,26 @@
       "items": {
         "type": "string",
         "enum": ["application-state", "external-idempotency", "human-review"]
+      }
+    }
+  },
+  "$defs": {
+    "fileArtifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "sha256"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
       }
     }
   }

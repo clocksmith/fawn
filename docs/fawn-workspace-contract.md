@@ -10,6 +10,15 @@ here.
 
 ## Service and workflow boundaries
 
+An explicitly selected Fawn browser build must use the same trusted dispatcher
+and private-pipe adapters as installed Chromium. Service schema 4 binds an actual
+browser executable, declared dependency files and the selected C runtime by
+SHA-256 before each launch. Missing or changed files fail without fallback;
+Dawn rollback is explicit. Qualification retains that profile alongside the
+unchanged service rules and checks the observed executable. This launch contract
+does not establish Doe GPU ownership: page execution, presentation, lifetime and
+missing-C controls remain the Chromium integration's acceptance boundary.
+
 Fawn provides durable browser workspaces in the environment Doe builds for
 agents. Begin with one shared observation, action, and recovery service above
 stock Chromium, with narrow CDP/Playwright adapters. Persist workspace identity,

@@ -10,6 +10,7 @@ import { mkdirSync, readFileSync, renameSync } from 'node:fs';
 import { join } from 'node:path';
 import playwrightRegistry from 'playwright-core/lib/server/registry/index';
 import { buildProbe, buildSnapshot, elementArgs, queryPage, snapshotArgs } from './page-query.js';
+import { prepareFawnLaunch } from '../browser-launch.js';
 
 const MESSAGE_TERMINATOR = '\0';
 const PIPE_STDIO = Object.freeze(['ignore', 'ignore', 'pipe', 'pipe', 'pipe']);
@@ -121,6 +122,11 @@ class CdpConnection {
     }
     await this._closed;
   }
+
+  async abortLaunch() {
+    this._child.kill('SIGKILL');
+    await this._closed;
+  }
 }
 
 class CdpWorkspaceAdapter {
@@ -134,21 +140,27 @@ class CdpWorkspaceAdapter {
   async openWorkspace(workspaceId) {
     if (this._workspaces.has(workspaceId)) return;
     const profileDir = join(this._profileRoot, workspaceId);
+    const launch = prepareFawnLaunch(this._config.browser);
     const downloadDir = join(this._artifactRoot, workspaceId, 'incoming');
     mkdirSync(profileDir, { recursive: true });
     mkdirSync(downloadDir, { recursive: true });
     const headless = this._config.browser.headless ? ['--headless'] : [];
-    const child = spawn(chromiumExecutable(this._config.browser.channel), [...LAUNCH_ARGS, ...headless, `--user-data-dir=${profileDir}`,
+    const child = spawn(launch?.executablePath ?? chromiumExecutable(this._config.browser.channel), [...LAUNCH_ARGS, ...(launch?.args ?? []), ...headless, `--user-data-dir=${profileDir}`,
       'about:blank'], { stdio: PIPE_STDIO });
     const cdp = new CdpConnection(child, this._config.dispatch.actionTimeoutMs);
-    const { targetInfos } = await cdp.send('Target.getTargets');
-    const pageTarget = targetInfos.find((target) => target.type === 'page')
-      ?? await cdp.send('Target.createTarget', { url: 'about:blank' });
-    const { sessionId } = await cdp.send('Target.attachToTarget', { targetId: pageTarget.targetId, flatten: true });
-    await cdp.send('Page.enable', {}, sessionId);
-    await cdp.send('Runtime.enable', {}, sessionId);
-    await cdp.send('Browser.setDownloadBehavior', { behavior: 'allowAndName', downloadPath: downloadDir, eventsEnabled: true });
-    this._workspaces.set(workspaceId, { cdp, sessionId, downloadDir });
+    try {
+      const { targetInfos } = await cdp.send('Target.getTargets');
+      const pageTarget = targetInfos.find((target) => target.type === 'page')
+        ?? await cdp.send('Target.createTarget', { url: 'about:blank' });
+      const { sessionId } = await cdp.send('Target.attachToTarget', { targetId: pageTarget.targetId, flatten: true });
+      await cdp.send('Page.enable', {}, sessionId);
+      await cdp.send('Runtime.enable', {}, sessionId);
+      await cdp.send('Browser.setDownloadBehavior', { behavior: 'allowAndName', downloadPath: downloadDir, eventsEnabled: true });
+      this._workspaces.set(workspaceId, { cdp, sessionId, downloadDir });
+    } catch (error) {
+      await cdp.abortLaunch();
+      throw error;
+    }
   }
 
   _entry(workspaceId) {

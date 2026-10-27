@@ -8,6 +8,7 @@ import { mkdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { chromium } from 'playwright-core';
 import { buildProbe, buildSnapshot, elementArgs, queryPage, snapshotArgs } from './page-query.js';
+import { prepareFawnLaunch } from '../browser-launch.js';
 
 const UNSAFE_FILENAME_CHARS = /[^A-Za-z0-9._-]/g;
 // Playwright launches its headless shell when no channel is named.
@@ -24,9 +25,11 @@ class PlaywrightWorkspaceAdapter {
   async openWorkspace(workspaceId) {
     if (this._workspaces.has(workspaceId)) return;
     const profileDir = join(this._profileRoot, workspaceId);
+    const launch = prepareFawnLaunch(this._config.browser);
     mkdirSync(profileDir, { recursive: true });
     const context = await chromium.launchPersistentContext(profileDir, {
-      channel: PLAYWRIGHT_CHANNELS[this._config.browser.channel],
+      ...(launch ? { executablePath: launch.executablePath, args: launch.args,
+        chromiumSandbox: true } : { channel: PLAYWRIGHT_CHANNELS[this._config.browser.channel] }),
       headless: this._config.browser.headless,
       acceptDownloads: true,
       timeout: this._config.dispatch.actionTimeoutMs,

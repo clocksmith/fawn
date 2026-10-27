@@ -18,6 +18,7 @@ import { startHost } from './service-client.js';
 import { summarizeAction, summarizeError, summarizeWorkflow } from './summaries.js';
 import { writeVerdict } from './validate.js';
 import { terminationEvidence } from './termination.js';
+import { stageBrowserProfile } from './browser-profile.js';
 
 const CASE_SET_PATH = 'config/fawn-workspace-qualification.json';
 const DEFAULT_OUT_ROOT = 'bench/out/fawn-workspace-qualification';
@@ -40,6 +41,7 @@ function parseArgs(argv) {
     cases: list('cases'),
     workflows: list('workflows'),
     browserChannel: options['browser-channel'] ?? null,
+    browserConfig: options['browser-config'] ?? null,
     headless: options.headless === undefined ? undefined : options.headless !== 'false',
   };
 }
@@ -86,8 +88,9 @@ function identityOf(owner) {
 }
 
 class RunContext {
-  constructor({ caseSet, caseSpec, workflowName, adapter, site, runDir, token, browserChannel, headless }) {
+  constructor({ caseSet, caseSpec, workflowName, adapter, site, runDir, token, browserChannel, browserConfig, headless }) {
     this.browserChannel = browserChannel;
+    this.browserConfig = browserConfig;
     this.headless = headless;
     this.caseSet = caseSet;
     this.caseSpec = caseSpec;
@@ -114,14 +117,14 @@ class RunContext {
   }
 
   async start(extra = {}) {
-    this.host = await startHost({ stateDir: this.stateDir, adapter: this.adapter, browserChannel: this.browserChannel, headless: this.headless, ...extra });
+    this.host = await startHost({ stateDir: this.stateDir, adapter: this.adapter, browserChannel: this.browserChannel, browserConfig: this.browserConfig, headless: this.headless, ...extra });
     this.hostOpens += 1;
     return this.host;
   }
 
   /** Start a second host against the same state without replacing the current one. */
   startDetached() {
-    return startHost({ stateDir: this.stateDir, adapter: this.adapter, browserChannel: this.browserChannel, headless: this.headless });
+    return startHost({ stateDir: this.stateDir, adapter: this.adapter, browserChannel: this.browserChannel, browserConfig: this.browserConfig, headless: this.headless });
   }
 
   async close() {
@@ -269,12 +272,12 @@ function plannedRuns(caseSet, filters) {
   return runs;
 }
 
-async function executeRun({ caseSet, caseSpec, workflowName, adapter, outDir, index, browserChannel, headless }) {
+async function executeRun({ caseSet, caseSpec, workflowName, adapter, outDir, index, browserChannel, browserConfig, headless }) {
   const runDir = join(outDir, 'runs', caseSpec.id, workflowName, adapter);
   mkdirSync(runDir, { recursive: true });
   const site = await startFixtureSite();
   const token = `q${index}`;
-  const ctx = new RunContext({ caseSet, caseSpec, workflowName, adapter, site, runDir, token, browserChannel, headless });
+  const ctx = new RunContext({ caseSet, caseSpec, workflowName, adapter, site, runDir, token, browserChannel, browserConfig, headless });
   const startedAt = new Date();
   let error = null;
   try {
@@ -320,10 +323,14 @@ async function main() {
   const outDir = filters.out ?? join(REPO_ROOT, DEFAULT_OUT_ROOT, `${stamp}Z`);
   mkdirSync(outDir, { recursive: true });
   const identity = resultIdentity();
+  if (filters.browserConfig && filters.browserChannel) throw new Error('choose --browser-config or --browser-channel, not both');
+  if (filters.browserConfig && filters.headless !== undefined) throw new Error('set headless in the explicit browser profile');
+  const profile = stageBrowserProfile(filters.browserConfig, outDir);
+  if (profile) identity.browserLaunchConfig = profile.identity;
   const runs = [];
   const planned = plannedRuns(caseSet, filters);
   for (const [index, plan] of planned.entries()) {
-    const run = await executeRun({ caseSet, ...plan, outDir, index, browserChannel: filters.browserChannel, headless: filters.headless });
+    const run = await executeRun({ caseSet, ...plan, outDir, index, browserChannel: filters.browserChannel, browserConfig: profile?.path, headless: filters.headless });
     runs.push(run);
     console.log(`${run.error ? 'error' : 'ran'}: ${plan.caseSpec.id} ${plan.workflowName} ${plan.adapter} (${run.durationMs} ms)`
       + (run.error ? ` ${run.error.message}` : ''));
@@ -332,8 +339,8 @@ async function main() {
     schemaVersion: RESULT_SCHEMA_VERSION,
     caseSetVersion: caseSet.caseSetVersion,
     scope: filters.cases || filters.workflows || filters.adapters ? 'subset' : 'full',
-    browserChannel: filters.browserChannel ?? loadServiceConfig().browser.channel,
-    headless: filters.headless ?? loadServiceConfig().browser.headless,
+    browserChannel: profile?.config.browser.channel ?? filters.browserChannel ?? loadServiceConfig().browser.channel,
+    headless: filters.headless ?? profile?.config.browser.headless ?? loadServiceConfig().browser.headless,
     filters,
     adapters: filters.adapters ?? caseSet.adapters,
     startedAt: runs[0]?.startedAt ?? null,

@@ -22,6 +22,7 @@ import { REPO_ROOT, executableIdentityKey, repoFileSha256, treeDigest } from './
 import { summarizeAction } from './summaries.js';
 import { terminationMatches } from './termination.js';
 import { evidencePath, caseSetMatches } from './evidence-input.js';
+import { profileFailures } from './browser-profile.js';
 
 const CASE_SET_PATH = 'config/fawn-workspace-qualification.json';
 const STRATEGY_PATH = 'config/doe-product-strategy.json';
@@ -31,6 +32,7 @@ const NO_WORKFLOW = 'none';
 const DISPATCHED_RACE_CLASSES = Object.freeze(['in-flight-at-handoff', 'settled-before-handoff']);
 const CURRENT_IDENTITIES = Object.freeze({
   serviceSource: () => treeDigest('browser/workspace/src').sha256,
+  runtimeSelector: () => repoFileSha256('browser/chromium/scripts/browser-runtime-selector.mjs'),
   harness: () => treeDigest('browser/workspace/qualification').sha256,
   serviceConfig: () => repoFileSha256('config/fawn-workspace-service.json'),
   packageLock: () => repoFileSha256('browser/workspace/package-lock.json'),
@@ -403,6 +405,7 @@ function validateResult(resultDir, { requireCurrentSource = false } = {}) {
   const strategy = loadJson(join(REPO_ROOT, STRATEGY_PATH));
   const failures = [];
   const fail = (failure) => failures.push(failure);
+  for (const detail of profileFailures(resultDir, result)) fail({ check: 'browser-build-profile', detail });
   if (result.caseSetVersion !== caseSet.caseSetVersion
       || !caseSetMatches(resultDir, result.identity.caseSet.sha256, readFileSync(join(REPO_ROOT, CASE_SET_PATH)))) {
     fail({ check: 'case-set-identity', detail: 'the result ran a different case set than the frozen one' });
