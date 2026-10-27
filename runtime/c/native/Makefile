@@ -32,6 +32,12 @@ COMPILER_LINK = -L$(abspath $(dir $(COMPILER_LIBRARY))) $(COMPILER_NAME_LINK) '-
 all: $(NATIVE_LIBRARY)
 $(BUILD)/shader-cache: tests/shader_cache.c src/shader_cache.c src/shader_disk_cache.c src/shader_cache_identity.c src/shader_cache_identity.h src/shader_cache.h src/shader_disk_cache.h ../backends/vulkan/src/cache_file.c $(wildcard ../shader/src/*.c ../shader/src/*.h) ../shader/include/doe_shader.h $(COMPILER_LIBRARY) | $(BUILD)
 	$(CC) $(CPPFLAGS) $(CFLAGS) tests/shader_cache.c src/shader_cache.c src/shader_disk_cache.c src/shader_cache_identity.c ../backends/vulkan/src/cache_file.c $(wildcard ../shader/src/*.c) $(COMPILER_LINK) $(PLATFORM_LIBS) -o $@
+$(BUILD)/shader-image-reuse: tests/shader_image_reuse.c src/shader_cache_identity.c src/shader_cache_identity.h $(wildcard ../shader/src/*.c ../shader/src/*.h) $(COMPILER_LIBRARY) | $(BUILD)
+	$(CC) $(CPPFLAGS) $(CFLAGS) tests/shader_image_reuse.c $(wildcard ../shader/src/*.c) $(COMPILER_LINK) $(PLATFORM_LIBS) -o $@
+.PHONY: check-shader-image-reuse
+check-shader-image-reuse: $(BUILD)/shader-image-reuse
+	$(BUILD)/shader-image-reuse
+check: check-shader-image-reuse
 .PHONY: check-shader-cache
 check-shader-cache: $(BUILD)/shader-cache
 	@directory=$$(mktemp -d); trap 'rm -f "$$directory"/*.bin; rmdir "$$directory"' 0; DOE_SHADER_CACHE_DIR="$$directory" $(BUILD)/shader-cache
