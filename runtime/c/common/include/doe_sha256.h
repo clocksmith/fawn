@@ -4,6 +4,9 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
+#if defined(__APPLE__)
+#include <CommonCrypto/CommonDigest.h>
+#endif
 
 static const uint32_t doe_sha256_rounds[64] = {
     0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
@@ -50,6 +53,15 @@ static inline void doe_sha256_block(uint32_t state[8], const uint8_t chunk[64])
 
 static inline void doe_common_sha256(const void *data, size_t size, uint8_t digest[32])
 {
+#if defined(__APPLE__)
+    /* CommonCrypto is part of libSystem. Its one-shot length is 32-bit;
+     * preserve the portable size_t path for larger inputs or a refused call. */
+    uint8_t accelerated[32];
+    if (size <= UINT32_MAX && CC_SHA256(data, (CC_LONG)size, accelerated) != NULL) {
+        memcpy(digest, accelerated, sizeof(accelerated));
+        return;
+    }
+#endif
     uint32_t state[8] = {0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19};
     const uint8_t *bytes = data;
     size_t full = size / 64;

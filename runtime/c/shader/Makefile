@@ -9,7 +9,7 @@ CFLAGS += -std=c11 -Wall -Wextra -Wpedantic -Werror
 COMPILER_LINK = $(abspath $(COMPILER_LIBRARY)) -Wl,-rpath,$(abspath $(dir $(COMPILER_LIBRARY)))
 SOURCES = $(wildcard src/*.c)
 OBJECTS = $(patsubst src/%.c,$(BUILD)/%.o,$(SOURCES))
-HEADERS = $(wildcard src/*.h include/*.h) $(wildcard ../compiler/include/*.h)
+HEADERS = $(wildcard src/*.h include/*.h) $(wildcard ../compiler/include/*.h) ../common/include/doe_sha256.h
 .PHONY: all test sanitize
 all: $(BUILD)/libdoe_shader.a
 $(BUILD):

@@ -30,9 +30,10 @@ COMPILER_RUNPATH ?= $(abspath $(dir $(COMPILER_LIBRARY)))
 COMPILER_LINK = -L$(abspath $(dir $(COMPILER_LIBRARY))) $(COMPILER_NAME_LINK) '-Wl,-rpath,$(COMPILER_RUNPATH)'
 .PHONY: all check check-build-dependencies check-empty-module clean
 all: $(NATIVE_LIBRARY)
-$(BUILD)/shader-cache: tests/shader_cache.c src/shader_cache.c src/shader_disk_cache.c src/shader_cache_identity.c src/shader_cache_identity.h src/shader_cache.h src/shader_disk_cache.h ../backends/vulkan/src/cache_file.c $(wildcard ../shader/src/*.c ../shader/src/*.h) ../shader/include/doe_shader.h $(COMPILER_LIBRARY) | $(BUILD)
+SHADER_IDENTITY_HEADERS = src/shader_cache_identity.h ../common/include/doe_sha256.h
+$(BUILD)/shader-cache: tests/shader_cache.c src/shader_cache.c src/shader_disk_cache.c src/shader_cache_identity.c $(SHADER_IDENTITY_HEADERS) src/shader_cache.h src/shader_disk_cache.h ../backends/vulkan/src/cache_file.c $(wildcard ../shader/src/*.c ../shader/src/*.h) ../shader/include/doe_shader.h $(COMPILER_LIBRARY) | $(BUILD)
 	$(CC) $(CPPFLAGS) $(CFLAGS) tests/shader_cache.c src/shader_cache.c src/shader_disk_cache.c src/shader_cache_identity.c ../backends/vulkan/src/cache_file.c $(wildcard ../shader/src/*.c) $(COMPILER_LINK) $(PLATFORM_LIBS) -o $@
-$(BUILD)/shader-image-reuse: tests/shader_image_reuse.c src/shader_cache_identity.c src/shader_cache_identity.h $(wildcard ../shader/src/*.c ../shader/src/*.h) $(COMPILER_LIBRARY) | $(BUILD)
+$(BUILD)/shader-image-reuse: tests/shader_image_reuse.c src/shader_cache_identity.c $(SHADER_IDENTITY_HEADERS) $(wildcard ../shader/src/*.c ../shader/src/*.h) $(COMPILER_LIBRARY) | $(BUILD)
 	$(CC) $(CPPFLAGS) $(CFLAGS) tests/shader_image_reuse.c $(wildcard ../shader/src/*.c) $(COMPILER_LINK) $(PLATFORM_LIBS) -o $@
 .PHONY: check-shader-image-reuse
 check-shader-image-reuse: $(BUILD)/shader-image-reuse
@@ -46,7 +47,7 @@ check: check-shader-cache
 check-shader-cache-reload: $(BUILD)/shader-cache
 	@directory=$$(mktemp -d); trap 'rm -f "$$directory"/*.bin; rmdir "$$directory"' 0; \
 	DOE_SHADER_CACHE_DIR="$$directory" $(BUILD)/shader-cache warm && DOE_SHADER_CACHE_DIR="$$directory" $(BUILD)/shader-cache reload
-$(BUILD)/shader-cache-changed-image: tests/shader_cache.c src/shader_cache.c src/shader_disk_cache.c src/shader_cache_identity.c $(wildcard ../shader/src/*.c ../shader/src/*.h ../shader/include/*.h) $(COMPILER_LIBRARY) | $(BUILD)
+$(BUILD)/shader-cache-changed-image: tests/shader_cache.c src/shader_cache.c src/shader_disk_cache.c src/shader_cache_identity.c $(SHADER_IDENTITY_HEADERS) $(wildcard ../shader/src/*.c ../shader/src/*.h ../shader/include/*.h) $(COMPILER_LIBRARY) | $(BUILD)
 	$(CC) $(CPPFLAGS) $(CFLAGS) -DDOE_CACHE_IDENTITY_VARIANT=1 tests/shader_cache.c src/shader_cache.c src/shader_disk_cache.c src/shader_cache_identity.c ../backends/vulkan/src/cache_file.c $(wildcard ../shader/src/*.c) $(COMPILER_LINK) $(PLATFORM_LIBS) -o $@
 ifeq ($(SHARED_PLATFORM),Darwin)
 .PHONY: check-shader-cache-macho
@@ -55,7 +56,7 @@ check-shader-cache-macho: $(BUILD)/shader-cache $(BUILD)/shader-cache-changed-im
 check: check-shader-cache-macho
 endif
 ifeq ($(SHARED_PLATFORM),Linux)
-$(BUILD)/shader-cache-no-build-id: tests/shader_cache.c src/shader_cache.c src/shader_disk_cache.c src/shader_cache_identity.c $(wildcard ../shader/src/*.c ../shader/src/*.h ../shader/include/*.h) $(COMPILER_LIBRARY) | $(BUILD)
+$(BUILD)/shader-cache-no-build-id: tests/shader_cache.c src/shader_cache.c src/shader_disk_cache.c src/shader_cache_identity.c $(SHADER_IDENTITY_HEADERS) $(wildcard ../shader/src/*.c ../shader/src/*.h ../shader/include/*.h) $(COMPILER_LIBRARY) | $(BUILD)
 	$(CC) $(CPPFLAGS) $(CFLAGS) tests/shader_cache.c src/shader_cache.c src/shader_disk_cache.c src/shader_cache_identity.c ../backends/vulkan/src/cache_file.c $(wildcard ../shader/src/*.c) $(COMPILER_LINK) $(PLATFORM_LIBS) -Wl,--build-id=none -o $@
 .PHONY: check-shader-cache-no-build-id
 check-shader-cache-no-build-id: $(BUILD)/shader-cache-no-build-id
