@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Full float32 buffer explicit alternatives, version 1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["kind", "values"],
+  "properties": {
+    "kind": {"const": "f32BufferOneOfV1"},
+    "values": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "array",
+        "minItems": 1,
+        "maxItems": 2,
+        "uniqueItems": true,
+        "items": {
+          "type": "number",
+          "minimum": -3.4028234663852886e38,
+          "maximum": 3.4028234663852886e38
+        }
+      }
+    }
+  },
+  "$comment": "The owning JS validator additionally requires finite exactly representable float32 references and exactly four input bytes per values element. Alternatives are explicit independent CPU results, not an error tolerance."
+}

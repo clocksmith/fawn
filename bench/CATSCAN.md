@@ -20,6 +20,11 @@ Execute governed workloads and convert correctness, reliability, comparability, 
 Inputs:
 - Workload law: [`../docs/workload-system.md`](../docs/workload-system.md).
 - Performance contract: [`../docs/performance-strategy.md`](../docs/performance-strategy.md).
+- Package full-buffer float32 alternatives:
+  [`plans/package_readback_expectation.schema.json`](plans/package_readback_expectation.schema.json).
+  The package plan validator enforces versioned explicit finite per-value
+  alternatives and exact byte count; prospective CPU reference plans never
+  retroactively qualify retained prefix captures.
 
 Outputs:
 - Hash-bound run, compare, claim, replay, failure, and release-admission artifacts.

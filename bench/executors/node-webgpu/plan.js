@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { basename, extname, resolve } from 'node:path';
 import { normalizeDeterminismConfig } from './determinism.js';
 import { readSyntheticAssetData } from './synthetic-assets.js';
+import { f32OneOfProblem, validateF32OneOf } from './readback-oracles.js';
 
 const ALLOWED_BUFFER_USAGES = new Set([
   'storage',
@@ -680,6 +681,11 @@ function normalizeReadbackExpectation(expectation, index, problems) {
     problems.push(`steps[${index}].validate must be an object when provided`);
     return null;
   }
+  if (expectation.kind === 'f32BufferOneOfV1') {
+    const problem = f32OneOfProblem(expectation);
+    if (problem) problems.push(`steps[${index}].validate: ${problem}`);
+    return expectation;
+  }
   if (expectation.kind !== 'sha256Equals') {
     return expectation;
   }
@@ -1101,6 +1107,9 @@ export function materializeBufferData(bufferData) {
 export function validateSampleExpectation(view, expectation) {
   if (!isPlainObject(expectation)) {
     return { ok: true };
+  }
+  if (expectation.kind === 'f32BufferOneOfV1') {
+    return validateF32OneOf(view, expectation);
   }
   if (expectation.kind === 'f32PrefixEquals') {
     const values = Array.isArray(expectation.values) ? expectation.values.map((value) => Number(value)) : [];
