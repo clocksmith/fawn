@@ -639,3 +639,21 @@ $(BUILD)/msaa-scissor-diagnostic: tests/msaa_scissor_diagnostic.c tests/consumer
 .PHONY: check-msaa-scissor-diagnostic
 check-msaa-scissor-diagnostic: $(BUILD)/msaa-scissor-diagnostic
 	$(BUILD)/msaa-scissor-diagnostic
+
+# The Linux control wraps the actual stage disk boundary while forwarding every
+# admitted access to its real owner. The portable control uses the public API.
+$(BUILD)/persistent-cache: tests/persistent_cache.c tests/consumer.h tests/adapter_class.h $(HEADERS) $(OBJECTS) $(COMPILER_LIBRARY) | $(BUILD)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< $(OBJECTS) $(COMPILER_LINK) $(PLATFORM_LIBS) -o $@
+ifeq ($(SHARED_PLATFORM),Linux)
+$(BUILD)/persistent-cache-disk: tests/persistent_cache.c $(HEADERS) $(OBJECTS) $(COMPILER_LIBRARY) | $(BUILD)
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DDOE_TEST_DISK_WRAPPERS $< $(OBJECTS) $(COMPILER_LINK) $(PLATFORM_LIBS) \
+	  -Wl,--wrap=native_shader_disk_lookup,--wrap=native_shader_disk_store -o $@
+.PHONY: check-persistent-cache-disk
+check-persistent-cache-disk: $(BUILD)/persistent-cache-disk
+	@directory=$$(mktemp -d); trap 'rm -f "$$directory"/*.bin; rmdir "$$directory"' 0; DOE_SHADER_CACHE_DIR="$$directory" $(BUILD)/persistent-cache-disk
+check: check-persistent-cache-disk
+endif
+.PHONY: check-persistent-cache
+check-persistent-cache: $(BUILD)/persistent-cache
+	@directory=$$(mktemp -d); trap 'rm -f "$$directory"/*.bin; rmdir "$$directory"' 0; DOE_SHADER_CACHE_DIR="$$directory" $(BUILD)/persistent-cache
+PHYSICAL_CLIENTS += persistent-cache

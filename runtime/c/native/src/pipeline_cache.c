@@ -32,9 +32,13 @@ static uint32_t cache_operation(void *handle, uint32_t version, unsigned operati
         *out = result;
         return result.status;
     }
+    native_device_retain(device);
     native_lock(device);
     native_failure failure = native_failure_status(NATIVE_OK);
     if (!native_device_alive(device)) failure = native_failure_status(NATIVE_INVALID_STATE);
+    else if (operation == 0 &&
+        !native_persistent_cache_reserve(&device->persistent_cache))
+        failure = native_failure_status(NATIVE_INVALID_STATE);
     else if (device->backend.kind == WGPUBackendType_Vulkan) {
         doe_vk_context *context = device->backend.value.vulkan.context;
         doe_vk_error error = {0}; doe_vk_status status = DOE_VK_OK;
@@ -68,6 +72,7 @@ static uint32_t cache_operation(void *handle, uint32_t version, unsigned operati
 #endif
     } else if (operation != 0 || directory) failure = native_failure_status(NATIVE_UNSUPPORTED);
     native_unlock(device);
+    native_device_release(device);
     result.status = cache_status(failure.status);
     result.native_code = failure.native_code;
     if (failure.status != NATIVE_OK) {

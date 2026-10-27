@@ -10,55 +10,39 @@ Own ABI conversion and adapter/device leases, excluding resource semantics,
 callbacks, compilation, execution and production selection.
 
 ## Scope
-WebGPU and presentation.
-[Coverage](README.md) separates Vulkan, Metal and Windows D3D12 composition.
+WebGPU and presentation. [Coverage](README.md) separates Vulkan, Metal and D3D12.
 Missing paths reject.
 
 ## Contracts
-Pinned WebGPU ABI and existing owner contracts apply.
-Instance requirements use the owner's [capability amendment](../instance/CAPABILITIES.md).
+Pinned ABI, inventoried legacy/browser signatures and
+[owner contracts](AGENTS.md) apply. Instance requirements follow the
+[capability amendment](../instance/CAPABILITIES.md).
 
 ## Invariants
-The device/pending owner selects without fallback, reading only
-its payload. Reflection never substitutes for dispatch analysis.
-Unknown work retains resources. Vulkan queues return at acceptance, settle oldest
-first, and zero-initialize textures before queue-ordered access (authorized 2026-10-24).
-Surface uncertainty uses the same pending list; Vulkan presentation requires frame
-fences. Metal registers presentation with the scheduled handler, retaining drawables
-through GPU completion.
-Display timestamps never govern retirement; cleanup never redefines WorkDone.
-Cleanup preserves surface-before-device locking and errors. Invalid configuration
-preserves surfaces; replacement retains frames/views on the existing retirement owner.
-Metal occlusion resolves real visibility buffers under command leases; passes reset
-only begun indices, preserving other results.
-Metal timestamps use calibrated GPU nanosecond conversion; ordered writes preserve
-prior resolves, unavailable samples become zero, and native errors remain sentinels.
-Depth transfers and raster state preserve shared admission.
+Select without fallback; read only the selected payload. Reflection cannot
+replace dispatch analysis. Unknown work retains resources. Vulkan acceptance,
+ordered settlement and texture initialization share the pending owner.
+Presentation retains frame/backbuffer identity and leases across early release,
+teardown and resize; only actual backend completion retires them. Display
+timestamps never redefine WorkDone. Surface-before-device locking, errors, rollback and retirement ownership persist.
+Metal occlusion, calibrated timestamps, unavailable samples, ordered resolves,
+depth and raster state retain their owners.
 Provider code stays resident; foreign callbacks run outside locks.
+Persistent-cache opt-out precedes first access, serialized with shader
+storage and driver-cache configuration. Memory caches remain; independent
+caller-owned caches and opaque driver caches stay separate.
+Legacy getters retain leases. Encoded writes snapshot ordinary staging and
+record ordered copies. External imports reject unimplemented transforms using
+unusable error objects; successful copies cannot imply color conversion.
 
 ## Acceptance
-[Owner checks](Makefile) exercise behavior, rejection, errors,
-rollback and cleanup.
-- Evidence: [Source-bound records](README.md) distinguish
-host controls, native execution and unqualified paths.
+[Owner checks](Makefile) cover rejection, errors, rollback and cleanup.
+- Evidence: [Source-bound records](README.md) distinguish host controls,
+SDK compilation, native/window execution and browser qualification.
+ABI agreement cannot qualify browser/GPU semantics.
 
 ## Non-goals
 Parallel resource engines, synthetic completion or default cutover.
 
 ## Freedom
 Algorithms vary.
-
-HWND/DXGI composition uses the same native pending submission and resource texture
-owners as other backends. Exact backbuffer identity survives early public release;
-no surface teardown or resize forces outstanding frame/view leases away. Actual
-Windows SDK compilation and window/device execution are separate evidence gates.
-
-Retained non-pinned public entrypoints use separately inventoried legacy headers.
-They preserve typed callback signatures, retained getter leases, invalid-resource
-identity and truthful rejecting contracts. Browser-copy adapters lower through the
-ordinary command owner; color conversion is not inferred from a successful copy.
-The selected Chromium/Dawn browser additions use its complete descriptor and
-typed procedure signatures, separately from private retained Doe extensions.
-Encoded writes snapshot bytes into ordinary staging and record ordered copies;
-standard external imports reject unimplemented transforms with genuine unusable
-error resources. CPU ABI agreement does not establish browser/GPU semantics.

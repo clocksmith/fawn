@@ -15,6 +15,7 @@
 #include "doe_shader.h"
 #include "native_shader_import.h"
 #include "shader_cache.h"
+#include "persistent_cache.h"
 #include "doe_vk.h"
 #include "doe_vk_bindings.h"
 #include "doe_vk_timestamp.h"
@@ -48,6 +49,7 @@ typedef struct native_device {
     native_backend backend;
     doe_resource_config resources;
     native_shader_cache shaders;
+    native_persistent_cache_policy persistent_cache;
     doe_label_store *labels;
     unsigned char queue_label_key;
     doe_error_scope_stack *errors;
