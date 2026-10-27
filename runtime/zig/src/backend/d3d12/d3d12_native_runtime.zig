@@ -123,6 +123,17 @@ pub const NativeD3D12Runtime = struct {
         return self;
     }
 
+    /// Select WARP only for an explicit fallback request. The ordinary runtime
+    /// and CLI retain the default hardware selection.
+    pub fn initForAdapter(allocator: std.mem.Allocator, fallback: bool) !NativeD3D12Runtime {
+        if (!fallback) return init(allocator, null);
+        const device = bridge.c.d3d12_bridge_create_warp_device() orelse return error.UnsupportedFeature;
+        var self = NativeD3D12Runtime{ .allocator = allocator, .device = device };
+        errdefer self.deinit();
+        try self.bootstrap();
+        return self;
+    }
+
     // The adapter owns the selection; each runtime retains that same device.
     pub fn initWithDevice(allocator: std.mem.Allocator, device: ?*anyopaque) !NativeD3D12Runtime {
         const selected = device orelse return error.UnsupportedFeature;
@@ -140,6 +151,12 @@ pub const NativeD3D12Runtime = struct {
 
     pub fn releaseDevice(device: ?*anyopaque) void {
         bridge.c.d3d12_bridge_release(device);
+    }
+
+    pub fn adapterUnifiedMemory(self: *const NativeD3D12Runtime) ?bool {
+        var unified_memory: u32 = undefined;
+        if (bridge.c.d3d12_bridge_device_uma(self.device, &unified_memory) != 0) return null;
+        return unified_memory != 0;
     }
 
     pub fn adapterIdentity(self: *const NativeD3D12Runtime) !bridge.c.D3D12AdapterIdentity {

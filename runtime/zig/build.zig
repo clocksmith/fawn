@@ -326,6 +326,10 @@ fn configureNativeGraphics(artifact: *std.Build.Step.Compile, b: *std.Build, tar
             .flags = &.{},
         });
         artifact.addCSourceFile(.{
+            .file = b.path("src/backend/d3d12/d3d12_adapter_bridge.c"),
+            .flags = &.{ "-std=c11", "-Wall", "-Wextra", "-Wpedantic", "-Werror" },
+        });
+        artifact.addCSourceFile(.{
             .file = b.path("src/backend/metal/metal_bridge_stubs.c"),
             .flags = &.{},
         });

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 #pragma once
 #include <stddef.h>
 #include <stdint.h>
@@ -56,6 +57,9 @@ typedef struct {
 
 /* Device and core objects */
 D3D12Handle d3d12_bridge_create_device(void);
+D3D12Handle d3d12_bridge_create_warp_device(void);
+/* Borrow device; returns 0 and writes caller-owned out, or -1 leaving it unchanged. */
+int d3d12_bridge_device_uma(D3D12Handle device, uint32_t* out);
 /* Retains a borrowed COM handle; null is a no-op. Pair with release. */
 void d3d12_bridge_retain(D3D12Handle obj);
 /* Resolve the device's own LUID. Returns 0, or -1 leaving out unchanged.

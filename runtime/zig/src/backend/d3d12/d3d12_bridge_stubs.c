@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 /* d3d12_bridge_stubs.c — No-op D3D12 bridge for non-Windows platforms.
  *
  * The D3D12 Zig backend is compiled on all platforms but the real bridge
@@ -13,6 +14,8 @@ D3D12Handle d3d12_bridge_device_create_storage_buffer(D3D12Handle device, size_t
 
 /* Device and core objects */
 D3D12Handle d3d12_bridge_create_device(void) { return NULL; }
+D3D12Handle d3d12_bridge_create_warp_device(void) { return NULL; }
+int d3d12_bridge_device_uma(D3D12Handle device, uint32_t* out) { (void)device; (void)out; return -1; }
 void d3d12_bridge_retain(D3D12Handle obj) { (void)obj; }
 int d3d12_bridge_device_identity(D3D12Handle device, D3D12AdapterIdentity* out) { (void)device; (void)out; return -1; }
 void        d3d12_bridge_release(D3D12Handle obj) { (void)obj; }
