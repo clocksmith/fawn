@@ -20,7 +20,7 @@ except ModuleNotFoundError:
 REPO_ROOT = ensure_repo_root(__file__)
 from bench.lib.bench_utils import load_json_object as load_json
 
-DEFAULT_CONFIG = "config/doe-chromium-proc-surface.json"
+DEFAULT_CONFIG = "config/doe-chromium-proc-surface.c.json"
 EXPECTED_SURFACE_ID = "doe-chromium-proc-surface"
 
 SymbolChecker = Callable[[str], bool]
@@ -29,7 +29,7 @@ LocalProcChecker = Callable[[str], bool]
 InstanceBootstrapChecker = Callable[[], tuple[bool, str]]
 BrowserSharedMemoryBehaviorChecker = Callable[[], tuple[bool, str]]
 PROC_TABLE_PATTERN = re.compile(
-    r"\s+WGPUProc(?P<suffix>[A-Za-z0-9]+)\s+(?P<field>[a-zA-Z0-9_]+);"
+    r"\s+WGPUProc(?P<suffix>[A-Za-z0-9]+)\s+(?P<field>[a-zA-Z0-9_]+)(?:\s*=\s*nullptr)?;"
 )
 LOCAL_PROC_PATTERN = re.compile(
     r'symbolViewEq\(name,\s*"(?P<symbol>wgpu[A-Za-z0-9]+)"\)'
@@ -58,6 +58,7 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Exit non-zero when the library is missing or lacks required symbols.",
     )
+    parser.add_argument("--table-header", default="", help="Explicit pinned generated Dawn table header for this build.")
     parser.add_argument("--json", action="store_true", dest="emit_json")
     return parser.parse_args()
 
@@ -105,6 +106,9 @@ def check_row(
 
 
 def validate_config(payload: dict[str, Any]) -> list[str]:
+    if payload.get("schemaVersion") == 2:
+        from bench.tools.chromium_c_proc_surface import validate_config as validate_c
+        return validate_c(payload)
     failures: list[str] = []
     if payload.get("schemaVersion") != 1:
         failures.append("schemaVersion must be 1")
@@ -387,6 +391,9 @@ def check_proc_surface(
     instance_bootstrap_checker: InstanceBootstrapChecker | None = None,
     browser_shared_memory_behavior_checker: BrowserSharedMemoryBehaviorChecker | None = None,
 ) -> dict[str, Any]:
+    if payload.get("schemaVersion") == 2:
+        from bench.tools.chromium_c_proc_surface import check as check_c
+        return check_c(payload, root=root, config_path_text=config_path_text, library_override=library_override)
     checks: list[dict[str, Any]] = []
     config_failures = validate_config(payload)
     for index, message in enumerate(config_failures):
@@ -784,6 +791,8 @@ def main() -> int:
     if config_path is None:
         raise SystemExit("config path must be repo-relative or absolute without parent traversal")
     payload = load_json(config_path)
+    if args.table_header:
+        payload["wireProcTable"]["tableHeaderPath"] = args.table_header
     report = check_proc_surface(
         payload,
         root=root,
@@ -793,7 +802,8 @@ def main() -> int:
     if args.emit_json:
         print(json.dumps(report, indent=2))
     elif report["status"] == "pass":
-        print("PASS: Doe Chromium proc surface is ready")
+        print("PASS: C selector CPU prerequisites; ABI and GPU/browser qualification are separate"
+              if payload.get("schemaVersion") == 2 else "PASS: Doe Chromium proc surface is ready")
     else:
         print("BLOCKED: Doe Chromium proc surface is not ready")
         for check_id in report["missingRequired"]:

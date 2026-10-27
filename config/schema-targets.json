@@ -2016,6 +2016,10 @@
     {
       "schema": "config/doppler-generation.schema.json",
       "data": "reports/maintenance/20261012-generation-campaign/reference.json"
+    },
+    {
+      "schema": "config/doe-chromium-proc-surface.c.schema.json",
+      "data": "config/doe-chromium-proc-surface.c.json"
     }
   ],
   "globTargets": [

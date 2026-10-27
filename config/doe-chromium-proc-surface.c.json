@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 2,
+  "surfaceId": "doe-chromium-proc-surface",
+  "surfaceVersion": 2,
+  "lastUpdated": "2026-10-27",
+  "providerImplementation": "c",
+  "libraryPath": "packages/doe-gpu-darwin-arm64/bin/libwebgpu_doe_c.dylib",
+  "selectionMode": "forced_doe_source_selector",
+  "description": "CPU selector-required name/local-address and C ownership source prerequisites; not ABI or GPU/browser qualification. Every other generated procedure slot is inventoried without claiming support.",
+  "requiredSelector": {
+    "sourcePath": "browser/chromium/patches/dawn-doe-runtime.patch",
+    "sourceSha256": "602ff9c5ce364f6e5b4e86ca00d8bf3ed412d20654303ece8dc6518b958a4ba9"
+  },
+  "wireProcTable": {
+    "tableHeaderPath": "browser/chromium/src/out/fawn_release/gen/third_party/dawn/include/dawn/dawn_proc_table.h"
+  },
+  "resolverSourcePath": "runtime/c/native/src/procedures.c",
+  "behaviorSources": {
+    "errorObjects": "runtime/c/native/src/lost_objects.c",
+    "sharedTexture": "runtime/c/native/src/shared_memory.c",
+    "sharedBuffer": "runtime/c/native/src/shared_buffer_memory.c"
+  }
+}

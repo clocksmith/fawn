@@ -46,23 +46,29 @@ identity is available: `adapter_denylist_detail` includes
 `profile_denylisted`, vendor/device IDs, adapter/backend type, and the
 blocklist reason before the adapter is rejected.
 
-The forced-Doe Chromium proc surface is
-[`config/doe-chromium-proc-surface.json`](../../../config/doe-chromium-proc-surface.json)
-and validates against
-[`config/doe-chromium-proc-surface.schema.json`](../../../config/doe-chromium-proc-surface.schema.json).
-The proc-surface checker verifies the selected Doe WebGPU library exports the
-browser-facing WGPU symbols, resolves the generated Dawn wire proc table
-through `wgpuGetProcAddress`, verifies required browser interop procs are
-mapped in the Doe local resolver before native fallback, and can bootstrap a Doe
-`WGPUInstance` before Chromium injects that instance into the WebGPU wire
-server. It also checks the browser shared-memory implementation source so
-error-object constructors allocate tagged Doe handles, macOS shared texture
-memory imports IOSurface handles through Doe, and shared buffer/fence imports
-stay explicitly unsupported until Chromium exposes native handle sources. Shared
-texture, shared buffer, and shared fence proc names must be Doe-owned before
-native fallback can satisfy the generated wire proc table. Error-object procs
-must be Doe-owned and return releasable Doe error handles, not null
-native-fallback placeholders. Chromium texture mailbox paths must use the loaded
+The C forced-selector CPU prerequisite config is
+[`config/doe-chromium-proc-surface.c.json`](../../../config/doe-chromium-proc-surface.c.json),
+validated by its [version 2 schema](../../../config/doe-chromium-proc-surface.c.schema.json).
+The mandatory procedure set is parsed from the exact hash-bound required loads in
+`dawn-doe-runtime.patch`; a changed selector requires an explicit config update.
+Every generated Dawn table slot remains in the report with actual availability,
+export and OS-loaded-image locality. Optional NULL slots are unsupported, never
+advertised capabilities or permission for an unconditional caller to use them.
+The selected C library must resolve every required name, with both explicit and
+terminated lengths, to that same C image's matching export. Unknown names reject.
+The checker separately audits the actual C resolver and error-object/IOSurface/
+shared-buffer owners, exercises CPU-only unsupported buffer rejection, and creates
+and releases an instance. These prerequisites do not establish descriptor ABI,
+GPU output, presentation, lifetime, security or browser milestone acceptance.
+Those independent checks remain required. In particular, a name/address pass does
+not convert an incompatible descriptor or reachable optional call into support.
+The [version 1 Zig config](../../../config/doe-chromium-proc-surface.json) and its
+[schema](../../../config/doe-chromium-proc-surface.schema.json) retain their original
+all-table and Zig source-audit behavior for historical consumers and receipts.
+C source audits are never discharged by Zig source patterns or a foreign fallback.
+C shared-buffer imports remain explicit NULL/Error; Metal shared texture and
+shared-event imports use their native owners and require separate platform proof.
+Chromium texture mailbox paths must use the loaded
 Doe proc table and raw `WGPUTexture` handles rather than generated Dawn C++
 wrapper calls when forced Doe is active; active-Doe present teardown must end Doe
 shared texture access before clearing the association. Chromium buffer mailbox
