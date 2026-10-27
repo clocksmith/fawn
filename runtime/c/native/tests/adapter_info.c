@@ -7,6 +7,7 @@
  * IDs, a Vulkan driver version, and zeros for a NULL adapter. */
 #include "consumer.h"
 #include "doe_native_adapter.h"
+#include "doe_native_legacy.h"
 #include <ctype.h>
 
 static bool same(WGPUStringView a, WGPUStringView b)
@@ -35,10 +36,60 @@ static bool offers_subgroups(WGPUAdapter adapter)
     return found;
 }
 
+typedef struct feature_reply {
+    WGPURequestDeviceStatus status;
+    WGPUDevice device;
+} feature_reply;
+static void feature_device(WGPURequestDeviceStatus status, WGPUDevice device,
+    WGPUStringView message, void *data, void *unused)
+{
+    (void)message; (void)unused;
+    *(feature_reply *)data = (feature_reply){status,device};
+}
+static void required_feature_sets(state *s)
+{
+    WGPUSupportedFeatures offered = WGPU_SUPPORTED_FEATURES_INIT;
+    wgpuAdapterGetFeatures(s->adapter,&offered);
+    assert(offered.featureCount);
+    WGPUFeatureName names[64];
+    for (size_t i = 0; i < 64; ++i) names[i] = offered.features[0];
+    WGPUDeviceDescriptor descriptor = WGPU_DEVICE_DESCRIPTOR_INIT;
+    descriptor.requiredFeatures = names;
+    descriptor.requiredFeatureCount = 1;
+    WGPUDevice unique = wgpuAdapterCreateDevice(s->adapter,&descriptor);
+    assert(unique);
+    descriptor.requiredFeatureCount = 64;
+    WGPUDevice duplicate = wgpuAdapterCreateDevice(s->adapter,&descriptor);
+    assert(duplicate);
+    WGPUSupportedFeatures first = WGPU_SUPPORTED_FEATURES_INIT, repeated = WGPU_SUPPORTED_FEATURES_INIT;
+    wgpuDeviceGetFeatures(unique,&first);
+    wgpuDeviceGetFeatures(duplicate,&repeated);
+    assert(first.featureCount == repeated.featureCount);
+    for (size_t i = 0; i < first.featureCount; ++i)
+        assert(wgpuDeviceHasFeature(duplicate,first.features[i]));
+    wgpuSupportedFeaturesFreeMembers(first);
+    wgpuSupportedFeaturesFreeMembers(repeated);
+    wgpuDeviceRelease(duplicate);
+    wgpuDeviceRelease(unique);
+    feature_reply reply = {0};
+    WGPURequestDeviceCallbackInfo callback = {.mode=WGPUCallbackMode_AllowSpontaneous,
+        .callback=feature_device,.userdata1=&reply};
+    assert(wgpuAdapterRequestDevice(s->adapter,&descriptor,callback).id);
+    assert(reply.status == WGPURequestDeviceStatus_Success && reply.device);
+    wgpuDeviceRelease(reply.device);
+    names[63] = WGPUFeatureName_Force32;
+    reply = (feature_reply){0};
+    assert(wgpuAdapterRequestDevice(s->adapter,&descriptor,callback).id);
+    assert(reply.status == WGPURequestDeviceStatus_Error && !reply.device);
+    assert(!wgpuAdapterCreateDevice(s->adapter,&descriptor));
+    wgpuSupportedFeaturesFreeMembers(offered);
+}
+
 int main(void)
 {
     state s = {0};
     consumer_init(&s);
+    required_feature_sets(&s);
     WGPUAdapterInfo adapter = WGPU_ADAPTER_INFO_INIT, device = WGPU_ADAPTER_INFO_INIT;
     assert(wgpuAdapterGetInfo(s.adapter, &adapter) == WGPUStatus_Success);
     assert(wgpuDeviceGetAdapterInfo(s.device, &device) == WGPUStatus_Success);
@@ -57,7 +108,7 @@ int main(void)
     assert(vendor_id == adapter.vendorID && device_id == adapter.deviceID);
     if (adapter.backendType == WGPUBackendType_Vulkan) assert(driver_version != 0);
     doeNativeAdapterGetPciIdentity(s.adapter, NULL, NULL, NULL); /* NULL outputs are skipped */
-    printf("PASS adapter info vendor \"%.*s\", description \"%.*s\", PCI 0x%x:0x%x driver 0x%x %s\n",
+    printf("PASS repeated supported required-feature set admission and unknown-member rejection; adapter info vendor \"%.*s\", description \"%.*s\", PCI 0x%x:0x%x driver 0x%x %s\n",
         (int)adapter.vendor.length, adapter.vendor.data, (int)adapter.description.length, adapter.description.data,
         vendor_id, device_id, driver_version, adapter_class_scope());
     wgpuAdapterInfoFreeMembers(adapter);

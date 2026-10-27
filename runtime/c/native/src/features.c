@@ -198,14 +198,13 @@ bool native_requested_features(const native_backend *backend,
      * core envelope. Compatibility adapters must not gain it on default creation. */
     const uint32_t offered = native_adapter_features(backend);
     uint32_t requested = offered & NATIVE_FEATURE(WGPUFeatureName_CoreFeaturesAndLimits);
-    uint32_t explicit_requested = 0;
     if (descriptor && descriptor->requiredFeatureCount) {
         if (!descriptor->requiredFeatures) return false;
         for (size_t i = 0; i < descriptor->requiredFeatureCount; ++i) {
             uint32_t name = (uint32_t)descriptor->requiredFeatures[i];
-            if (name >= 32 || !(offered & NATIVE_FEATURE(name)) ||
-                (explicit_requested & NATIVE_FEATURE(name))) return false;
-            explicit_requested |= NATIVE_FEATURE(name);
+            /* requiredFeatures is a set: repeated supported names preserve
+             * the same device capabilities, while every member is validated. */
+            if (name >= 32 || !(offered & NATIVE_FEATURE(name))) return false;
             requested |= NATIVE_FEATURE(name);
         }
     }
