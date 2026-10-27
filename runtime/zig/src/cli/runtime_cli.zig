@@ -105,7 +105,7 @@ fn applyDeferredFlushToTraceRows(
     }
 }
 
-pub fn runCli() !void {
+pub fn runCli() anyerror!void {
     const allocator = std.heap.page_allocator;
     const argv = try std.process.argsAlloc(allocator);
     defer std.process.argsFree(allocator, argv);
@@ -206,6 +206,7 @@ pub fn runCli() !void {
                 .upload_submit_every = options.upload_submit_every,
                 .queue_wait_mode = options.queue_wait_mode,
                 .webgpu_ffi_queue_wait_timeout_ns = options.webgpu_ffi_queue_wait_timeout_ns,
+                .retirement_report_path = options.trace_meta_path,
             },
         );
     }
@@ -236,6 +237,15 @@ pub fn runCli() !void {
 
     var execution_session: ?composition.ExecutionSession = null;
     var execution_context: ?*execution.ExecutionContext = null;
+    var session_failure: ?anyerror = null;
+    defer if (execution_session) |*session| session.retireForExit(.{
+        .path = options.trace_meta_path,
+        .tag = "runtime",
+        .first_error = session_failure,
+    });
+    errdefer |err| {
+        if (session_failure == null) session_failure = err;
+    }
     if (options.execute) {
         const executor_init_start_ns = nowNs();
         execution_session = try composition.ExecutionSession.init(
@@ -270,11 +280,6 @@ pub fn runCli() !void {
             host_timing.host_kernel_prewarm_total_ns += elapsedSince(kernel_prewarm_start_ns);
         } else {
             host_timing.host_executor_init_total_ns += elapsedSince(executor_init_start_ns);
-        }
-    }
-    defer {
-        if (execution_session) |*session| {
-            session.deinit();
         }
     }
 
@@ -441,13 +446,13 @@ pub fn runCli() !void {
                 );
                 if (load_result.inputs.replay_expectations) |expectation_set| {
                     const expectations = expectation_set.expectations;
-                    if (physical_command_index >= expectations.len) return replay.ReplayValidationError.ReplayMissingRow;
+                    if (physical_command_index >= expectations.len) return @as(anyerror!void, replay.ReplayValidationError.ReplayMissingRow);
                     const expected = expectations[physical_command_index];
-                    if (expected.seq != physical_command_index) return replay.ReplayValidationError.ReplaySeqMismatch;
-                    if (!std.mem.eql(u8, expected.command, command_label)) return replay.ReplayValidationError.ReplayCommandMismatch;
-                    if (!replay.matchOptionalText(expected.kernel, kernel_name)) return replay.ReplayValidationError.ReplayKernelMismatch;
-                    if (expected.previous_hash != previous_hash) return replay.ReplayValidationError.ReplayPreviousHashMismatch;
-                    if (expected.hash != semantic_hash) return replay.ReplayValidationError.ReplayHashMismatch;
+                    if (expected.seq != physical_command_index) return @as(anyerror!void, replay.ReplayValidationError.ReplaySeqMismatch);
+                    if (!std.mem.eql(u8, expected.command, command_label)) return @as(anyerror!void, replay.ReplayValidationError.ReplayCommandMismatch);
+                    if (!replay.matchOptionalText(expected.kernel, kernel_name)) return @as(anyerror!void, replay.ReplayValidationError.ReplayKernelMismatch);
+                    if (expected.previous_hash != previous_hash) return @as(anyerror!void, replay.ReplayValidationError.ReplayPreviousHashMismatch);
+                    if (expected.hash != semantic_hash) return @as(anyerror!void, replay.ReplayValidationError.ReplayHashMismatch);
                 }
                 if (options.emit_trace) {
                     try trace.printTraceLineWithSemantic(
@@ -606,12 +611,23 @@ pub fn runCli() !void {
                 trace_summary.pipeline_cache_warmup_ns = snapshot.pipeline_cache_warmup_ns;
             }
         }
-        try trace.writeTraceMeta(path, trace_summary);
+        // Serialize borrowed provider identities while alive; publish only
+        // after the same session's resource obligations have retired.
+        const draft = try std.fmt.allocPrint(allocator, "{s}.before-retirement.json", .{path});
+        defer allocator.free(draft);
+        try trace.writeTraceMeta(draft, trace_summary);
+        if (output_oracle_evidence.failed_count > 0) session_failure = error.OutputOracleMismatch;
+        if (execution_session) |*session| session.retireForExit(.{
+            .path = path,
+            .tag = "runtime",
+            .first_error = session_failure,
+        });
+        try std.fs.cwd().rename(draft, path);
     }
     if (load_result.inputs.replay_expectations) |expectation_set| {
         const expectations = expectation_set.expectations;
         if (expectations.len != physical_command_count_usize) {
-            return replay.ReplayValidationError.ReplayRowCountMismatch;
+            return @as(anyerror!void, replay.ReplayValidationError.ReplayRowCountMismatch);
         }
     }
     if (output_oracle_evidence.failed_count > 0) return error.OutputOracleMismatch;

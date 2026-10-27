@@ -26,20 +26,24 @@ pub const ProviderConfiguration = struct {
 };
 
 pub const OwnedProvider = struct {
-    context: *anyopaque,
-    destroy_context: *const fn (context: *anyopaque) void,
+    context: ?*anyopaque,
+    destroy_context: *const fn (context: *anyopaque) bool,
     ports: port_factory.PortBundle,
 
-    pub fn deinit(self: *OwnedProvider) void {
-        self.destroy_context(self.context);
-        self.context = undefined;
+    /// True means the allocation's resource obligations retired, not that
+    /// its GPU workload succeeded. Unknown retains context and borrowed ports.
+    pub fn deinit(self: *OwnedProvider) bool {
+        const context = self.context orelse return true;
+        if (!self.destroy_context(context)) return false;
+        self.context = null;
+        return true;
     }
 };
 
 fn own(
     comptime Backend: type,
     backend: *Backend,
-    destroy_context: *const fn (context: *anyopaque) void,
+    destroy_context: *const fn (context: *anyopaque) bool,
     reason: []const u8,
     policy_hash: []const u8,
     fallback_used: bool,
@@ -49,6 +53,21 @@ fn own(
         .destroy_context = destroy_context,
         .ports = backend.asPorts(reason, policy_hash, fallback_used),
     };
+}
+
+// These native owners block until actual retirement or terminal device loss;
+// the adapters do not turn a failed GPU result into successful execution.
+fn destroyMetal(context: *anyopaque) bool {
+    metal_backend.destroyContext(context);
+    return true;
+}
+fn destroyVulkan(context: *anyopaque) bool {
+    vulkan_backend.destroyContext(context);
+    return true;
+}
+fn destroyD3D12(context: *anyopaque) bool {
+    d3d12_backend.destroyContext(context);
+    return true;
 }
 
 pub fn initProvider(
@@ -88,7 +107,7 @@ pub fn initProvider(
             break :blk own(
                 metal_backend.ZigMetalBackend,
                 backend,
-                metal_backend.destroyContext,
+                destroyMetal,
                 reason,
                 policy.policy_hash,
                 fallback_used,
@@ -105,7 +124,7 @@ pub fn initProvider(
             break :blk own(
                 vulkan_backend.ZigVulkanBackend,
                 backend,
-                vulkan_backend.destroyContext,
+                destroyVulkan,
                 reason,
                 policy.policy_hash,
                 fallback_used,
@@ -120,7 +139,7 @@ pub fn initProvider(
             break :blk own(
                 d3d12_backend.ZigD3D12Backend,
                 backend,
-                d3d12_backend.destroyContext,
+                destroyD3D12,
                 reason,
                 policy.policy_hash,
                 fallback_used,

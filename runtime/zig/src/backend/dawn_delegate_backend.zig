@@ -52,11 +52,12 @@ fn cast(ctx: *anyopaque) *DawnDelegateBackend {
     return @as(*DawnDelegateBackend, @ptrCast(@alignCast(ctx)));
 }
 
-fn deinit(ctx: *anyopaque) void {
+fn deinit(ctx: *anyopaque) bool {
     const self = cast(ctx);
     const allocator = self.allocator;
-    self.inner.deinit();
+    if (!self.inner.deinit()) return false;
     allocator.destroy(self);
+    return true;
 }
 
 fn execute_command_typed(self: *DawnDelegateBackend, command: model.Command) anyerror!webgpu.NativeExecutionResult {
@@ -178,8 +179,8 @@ fn backend_id(ctx: *anyopaque) backend_ids.BackendId {
     return cast(ctx).effective_id;
 }
 
-pub fn destroyContext(ctx: *anyopaque) void {
-    deinit(ctx);
+pub fn destroyContext(ctx: *anyopaque) bool {
+    return deinit(ctx);
 }
 
 const PortDriver = struct {

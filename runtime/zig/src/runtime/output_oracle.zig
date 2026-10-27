@@ -26,6 +26,7 @@ pub const Evidence = struct {
 };
 
 pub const ValidationOptions = struct {
+    retirement_report_path: ?[]const u8 = null,
     upload_buffer_usage_mode: execution.UploadBufferUsageMode,
     upload_submit_every: u32,
     queue_wait_mode: execution.QueueWaitMode,
@@ -123,7 +124,15 @@ pub fn validate(
     var evidence = Evidence{};
     var command_graph_session: ?Session = null;
     var command_graph_context: ?*execution.ExecutionContext = null;
-    defer if (command_graph_session) |*session| session.deinit();
+    var graph_failure: ?anyerror = null;
+    defer if (command_graph_session) |*session| session.retireForExit(.{
+        .path = options.retirement_report_path,
+        .tag = "oracle-graph",
+        .first_error = graph_failure,
+    });
+    errdefer |err| {
+        if (graph_failure == null) graph_failure = err;
+    }
 
     const has_command_graph_oracle = for (commands) |command| {
         switch (command) {
@@ -154,7 +163,7 @@ pub fn validate(
         prewarmKernelDispatches(context, commands);
     }
 
-    for (commands) |command| {
+    for (commands, 0..) |command, command_index| {
         const original = switch (command) {
             .kernel_dispatch => |dispatch| dispatch,
             else => {
@@ -201,7 +210,17 @@ pub fn validate(
         }
 
         var isolated_session: ?Session = null;
-        defer if (isolated_session) |*session| session.deinit();
+        var isolated_failure: ?anyerror = null;
+        var tag_storage: [64]u8 = undefined;
+        const tag = try std.fmt.bufPrint(&tag_storage, "oracle-isolated-{d}", .{command_index});
+        defer if (isolated_session) |*session| session.retireForExit(.{
+            .path = options.retirement_report_path,
+            .tag = tag,
+            .first_error = isolated_failure,
+        });
+        errdefer |err| {
+            if (isolated_failure == null) isolated_failure = err;
+        }
         const oracle_context = switch (oracle.scope) {
             .isolated_dispatch => blk: {
                 isolated_session = try Session.init(
@@ -284,6 +303,8 @@ pub fn validate(
             evidence.matched_count += 1;
         } else {
             evidence.failed_count += 1;
+            isolated_failure = error.OutputOracleMismatch;
+            if (graph_failure == null) graph_failure = error.OutputOracleMismatch;
         }
         if (oracle.scope == .isolated_dispatch) {
             if (command_graph_context) |context| {
