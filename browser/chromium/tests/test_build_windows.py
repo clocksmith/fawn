@@ -85,10 +85,14 @@ class WindowsBuilderTests(unittest.TestCase):
         self.assertEqual(list(out.iterdir()), [])
         for name in build.RUNTIME_FILES:
             (native / name).write_bytes(name.encode())
+        browser_dxc = out / "dxcompiler.dll"
+        browser_dxc.write_bytes(b"canonical browser compiler")
         records = build.copy_runtime(native, out)
         self.assertEqual(len(records), len(build.RUNTIME_FILES))
         for name in build.RUNTIME_FILES:
-            self.assertEqual((native / name).read_bytes(), (out / name).read_bytes())
+            self.assertEqual((native / name).read_bytes(), (out / "lib/doe" / name).read_bytes())
+        self.assertEqual(browser_dxc.read_bytes(), b"canonical browser compiler")
+        self.assertTrue(all(Path(row["path"]).parent == out / "lib/doe" for row in records))
 
     def test_cmd_metacharacters_rejected(self) -> None:
         for bad in ('a&b', '%PATH%', '!bad!', 'a|b', 'a^b', 'a\nb', 'a"b'):

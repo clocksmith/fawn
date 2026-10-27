@@ -267,7 +267,7 @@ static int launch(int count, wchar_t **args)
     failure = L"Command line exceeds the Windows limit";
     error = ERROR_BUFFER_OVERFLOW;
     if (!dawn) {
-        const wchar_t *files[] = {L"webgpu_doe_c.dll", L"doe_compiler.dll", L"dxcompiler.dll", L"dxil.dll"};
+        const wchar_t *files[] = {L"lib\\doe\\webgpu_doe_c.dll", L"lib\\doe\\doe_compiler.dll", L"lib\\doe\\dxcompiler.dll", L"lib\\doe\\dxil.dll"};
         for (size_t index = 0; index < 4; ++index) {
             if (!sibling(path, root, files[index]) || !file_exists(path, &error)) {
                 failure = L"Required private C runtime dependency missing or invalid";
@@ -276,7 +276,7 @@ static int launch(int count, wchar_t **args)
             }
         }
         if (!argument(command, L"--use-webgpu-runtime=doe")) goto cleanup;
-        if (swprintf(path, COMMAND_CAPACITY, L"--doe-webgpu-library-path=%lswebgpu_doe_c.dll", root) <= 0 ||
+        if (swprintf(path, COMMAND_CAPACITY, L"--doe-webgpu-library-path=%lslib\\doe\\webgpu_doe_c.dll", root) <= 0 ||
             !argument(command, path)) goto cleanup;
     } else if (!argument(command, L"--use-webgpu-runtime=dawn")) goto cleanup;
     if (!has_profile) {
