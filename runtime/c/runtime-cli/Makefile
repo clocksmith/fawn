@@ -35,6 +35,16 @@ RUNTIME_HEADERS = src/cli_options.h src/cli_inputs.h src/cli_output.h src/render
   ../native/include/doe_native_adapter.h ../native/include/doe_native_pipeline_cache.h ../native/include/doe_native_device_policy.h
 .PHONY: all bench-bin bench-bin-dawn check check-dawn check-host dawn native
 all: $(BUILD)/doe-c-runtime
+$(BUILD)/test_render_proxy: tests/test_render_proxy.c src/render.c $(CORE_HEADERS) $(RUNTIME_HEADERS) $(NATIVE_LIBRARY) | $(BUILD)
+	$(CC) $(CPPFLAGS) $(CFLAGS) tests/test_render_proxy.c src/render.c '$(abspath $(NATIVE_LIBRARY))' '-Wl,-rpath,$(abspath $(NATIVE_BUILD))' -o $@
+.PHONY: check-render-proxy
+check-render-proxy: $(BUILD)/test_render_proxy
+	$(BUILD)/test_render_proxy
+check: check-render-proxy
+.PHONY: check-metal-proxy-pixels
+check-metal-proxy-pixels: $(BUILD)/doe-c-runtime
+	@test "$$(uname -s)" = Darwin || { echo 'Metal proxy pixels require an authorized Mac'; exit 1; }
+	$(PYTHON) tests/test_cli_metal_proxy.py --binary '$(abspath $(BUILD)/doe-c-runtime)' --out '$(abspath $(BUILD))/metal-proxy-pixels'
 $(BUILD):
 	mkdir -p $@
 # The toggle effect table, generated from the registry doe-zig-runtime embeds.
