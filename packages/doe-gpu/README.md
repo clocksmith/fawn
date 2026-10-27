@@ -1,6 +1,9 @@
 # doe-gpu
 
 `doe-gpu` provides JavaScript access to Doe's native WebGPU implementation.
+Doe is the compiler/runtime component within
+[Fawn](https://github.com/clocksmith/fawn); there is no separate current Doe
+repository. The package can be used independently of Fawn's browser workspace.
 
 That implementation includes a WGSL compiler and runtime machinery. The compiler
 translates shader programs; the runtime manages GPU objects, pipelines, commands,

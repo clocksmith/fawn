@@ -3,6 +3,8 @@
 `browser/chromium/` owns Doe's repository-local Chromium integration contracts,
 scripts, milestone checks, and diagnostic artifacts. It is not the Chromium
 checkout itself and it does not change the public `doe-gpu/browser` contract.
+It lives in [Fawn](https://github.com/clocksmith/fawn); Doe is the compiler/runtime
+component selected at the webpage's WebGPU boundary.
 
 Fawn provides durable browser workspaces through the
 [workspace service above stock Chromium](../../docs/fawn-workspace-contract.md).
@@ -18,7 +20,8 @@ does not mean a general browser benchmark win or qualified workspace authority.
 
 - The external Chromium checkout/build workspace is selected separately by the
   lane tooling.
-- Core native runtime behavior belongs under `runtime/zig/`.
+- C compiler/native runtime behavior belongs under `runtime/c/`; retained Zig
+  behavior belongs under `runtime/zig/`.
 - Browser schemas and shared policy belong under `config/`.
 - Browser execution and release results belong in lane artifacts.
 - Package evidence cannot promote this lane.

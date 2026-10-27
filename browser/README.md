@@ -1,6 +1,7 @@
 # Browser
 
-`browser/` contains Doe's browser-facing surfaces:
+`browser/` contains Fawn's workspace service and its separate Doe GPU integration.
+Both belong to [clocksmith/fawn](https://github.com/clocksmith/fawn):
 
 - `browser/workspace/`
   - Fawn's durable browser workspaces: the shared observation, action, and
