@@ -106,10 +106,25 @@ class LinuxLauncherTests(unittest.TestCase):
         self.install()
         for arguments in (["--use-webgpu-runtime=auto"], ["--use-webgpu-runtime=dawn", "--use-webgpu-runtime=doe"],
                           ["--doe-webgpu-library-path=/elsewhere.so"], ["--user-data-dir=relative"],
-                          ["--user-data-dir=/one", "--user-data-dir=/two"]):
+                          ["--user-data-dir=/one", "--user-data-dir=/two"],
+                          ["-doe-webgpu-library-path=/elsewhere.so"], ["-use-webgpu-runtime=auto"],
+                          [" \t--use-webgpu-runtime=doe", "-use-webgpu-runtime=dawn"],
+                          [" \t-user-data-dir=relative \r"]):
             failed = subprocess.run([str(self.package / "chrome-wrapper"), *arguments], capture_output=True, text=True)
             self.assertEqual(failed.returncode, 1)
             self.assertEqual(failed.stdout, "")
+
+    def test_pinned_chromium_switch_forms_preserve_forced_selection(self) -> None:
+        self.install()
+        for spelling in ["-use-webgpu-runtime=dawn", " \t--use-webgpu-runtime=dawn\r\n"]:
+            process = subprocess.run([str(self.package / "chrome-wrapper"), spelling], capture_output=True, text=True)
+            self.assertEqual(process.returncode, 7, process.stderr)
+            self.assertEqual(process.stdout.splitlines()[2], "--use-webgpu-runtime=dawn")
+            self.assertTrue(process.stdout.splitlines()[3].endswith("/fawn/dawn"))
+        for terminator in ["--", " \t--\r"]:
+            process = subprocess.run([str(self.package / "chrome-wrapper"), terminator, "-use-webgpu-runtime=dawn"], capture_output=True, text=True)
+            self.assertEqual(process.returncode, 7, process.stderr)
+            self.assertEqual(process.stdout.splitlines()[2], "--use-webgpu-runtime=doe")
 
     def test_explicit_absolute_profile_is_preserved(self) -> None:
         self.install()
