@@ -62,6 +62,10 @@ test "translate fragment shader with MRT output to MSL" {
     try std.testing.expect(std.mem.indexOf(u8, msl, "fragment ") != null);
     try std.testing.expect(std.mem.indexOf(u8, msl, "[[color(0)]]") != null);
     try std.testing.expect(std.mem.indexOf(u8, msl, "[[color(1)]]") != null);
+    try std.testing.expect(std.mem.indexOf(u8, msl, "texture2d<float>") != null);
+    try std.testing.expect(std.mem.indexOf(u8, msl, "[[texture(0)]]") != null);
+    try std.testing.expect(std.mem.indexOf(u8, msl, "[[sampler(1)]]") != null);
+    try std.testing.expect(std.mem.indexOf(u8, msl, ".sample(") != null);
 }
 
 test "translate fragment shader with builtin inputs and discard to MSL" {
@@ -204,4 +208,35 @@ test "arrayLength on struct member compiles to HLSL" {
 }
 test "arrayLength on struct member compiles to SPIR-V" {
     try csl_tests.expectArrayLengthOnStructMemberCompilesToSpirv(std.testing.allocator, translateToSpirv, MAX_SPIRV_OUTPUT);
+}
+
+test "translate vertex and fragment shaders in same module to MSL" {
+    const source =
+        \\@group(0) @binding(0) var<uniform> mvp: mat4x4f;
+        \\struct VertOut {
+        \\    @builtin(position) pos: vec4f,
+        \\    @location(0) color: vec4f,
+        \\}
+        \\@vertex
+        \\fn vs_main(@location(0) in_pos: vec4f, @location(1) in_color: vec4f) -> VertOut {
+        \\    var out: VertOut;
+        \\    out.pos = mvp * in_pos;
+        \\    out.color = in_color;
+        \\    return out;
+        \\}
+        \\@fragment
+        \\fn fs_main(in: VertOut) -> @location(0) vec4f {
+        \\    return in.color;
+        \\}
+    ;
+    var out: [MAX_OUTPUT]u8 = undefined;
+    const len = try translateToMsl(std.testing.allocator, source, &out);
+    try std.testing.expect(len > 0);
+    const msl = out[0..len];
+    try std.testing.expect(std.mem.indexOf(u8, msl, "vertex ") != null);
+    try std.testing.expect(std.mem.indexOf(u8, msl, "fragment ") != null);
+    // Uniform buffer injected into both entry points.
+    try std.testing.expect(std.mem.indexOf(u8, msl, "[[buffer(0)]]") != null);
+    // Fragment shader receives vertex output as [[stage_in]].
+    try std.testing.expect(std.mem.indexOf(u8, msl, "[[stage_in]]") != null);
 }
