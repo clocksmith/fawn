@@ -39,8 +39,8 @@ pub export fn wgpuBufferGetUsage(a0: abi_core.WGPUBuffer) callconv(.c) abi_core.
 }
 
 pub export fn wgpuBufferReadMappedRange(a0: abi_core.WGPUBuffer, a1: usize, a2: ?*anyopaque, a3: usize) callconv(.c) abi_core.WGPUStatus {
-    const src_ptr = native.doeNativeBufferGetMappedRange(a0, a1, a3) orelse return 0;
-    const dst: [*]u8 = @ptrCast(@alignCast(a2 orelse return 0));
+    const src_ptr = native.doeNativeBufferGetConstMappedRange(a0, a1, a3) orelse return abi_core.WGPUStatus_Error;
+    const dst: [*]u8 = @ptrCast(@alignCast(a2 orelse return abi_core.WGPUStatus_Error));
     const src: [*]const u8 = @ptrCast(src_ptr);
     @memcpy(dst[0..a3], src[0..a3]);
     return abi_core.WGPUStatus_Success;
@@ -51,8 +51,8 @@ pub export fn wgpuBufferSetLabel(a0: abi_core.WGPUBuffer, a1: abi_core.WGPUStrin
 }
 
 pub export fn wgpuBufferWriteMappedRange(a0: abi_core.WGPUBuffer, a1: usize, a2: ?*const anyopaque, a3: usize) callconv(.c) abi_core.WGPUStatus {
-    const dst_ptr = native.doeNativeBufferGetMappedRange(a0, a1, a3) orelse return 0;
-    const src: [*]const u8 = @ptrCast(@alignCast(a2 orelse return 0));
+    const dst_ptr = native.doeNativeBufferGetMappedRange(a0, a1, a3) orelse return abi_core.WGPUStatus_Error;
+    const src: [*]const u8 = @ptrCast(@alignCast(a2 orelse return abi_core.WGPUStatus_Error));
     const dst: [*]u8 = @ptrCast(dst_ptr);
     @memcpy(dst[0..a3], src[0..a3]);
     return abi_core.WGPUStatus_Success;

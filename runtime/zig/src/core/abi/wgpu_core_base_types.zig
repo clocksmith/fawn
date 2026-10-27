@@ -77,4 +77,5 @@ pub const WGPUBufferMapAsyncStatus_Success = WGPUMapAsyncStatus_Success;
 
 pub const WGPUStatus = handles.WGPUStatus;
 pub const WGPUStatus_Success: WGPUStatus = handles.WGPUStatus_Success;
+pub const WGPUStatus_Error: WGPUStatus = handles.WGPUStatus_Error;
 pub const TIMESTAMP_BUFFER_SIZE: u64 = 16;

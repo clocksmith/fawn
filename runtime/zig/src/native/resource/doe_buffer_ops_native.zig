@@ -42,6 +42,13 @@ const D3D12_HEAP_TYPE_DEFAULT: c_int = 1;
 const WHOLE_MAP_SIZE = std.math.maxInt(usize);
 const WGPU_BUFFER_USAGE_INDIRECT: u64 = 0x0000000000000100;
 
+fn beginMappedAtCreation(buf: *DoeBuffer) void {
+    buf.mapped = true;
+    buf.map_mode = .write;
+    buf.map_offset = 0;
+    buf.map_size = @intCast(buf.size);
+}
+
 fn resolve_buffer_map_range(buf: *const DoeBuffer, offset: usize, size: usize) ?usize {
     const offset_u64: u64 = @intCast(offset);
     if (offset_u64 > buf.size) return null;
@@ -193,8 +200,7 @@ fn createBuffer(dev_raw: ?*anyopaque, desc: ?*const abi_pipeline.WGPUBufferDescr
             // Cache host-visible mapped pointer to skip HashMap lookup on writeBuffer.
             if (cb.mapped) |m| buf.vk_mapped_ptr = @ptrCast(m);
             if (d.mappedAtCreation != 0) {
-                buf.mapped = true;
-                buf.map_size = @intCast(d.size);
+                beginMappedAtCreation(buf);
             }
             const result = toOpaque(buf);
             label_store.set(result, d.label.data, d.label.length);
@@ -225,8 +231,7 @@ fn createBuffer(dev_raw: ?*anyopaque, desc: ?*const abi_pipeline.WGPUBufferDescr
                 alloc.destroy(buf);
                 return null;
             };
-            buf.mapped = true;
-            buf.map_size = @intCast(d.size);
+            beginMappedAtCreation(buf);
         }
         const result = toOpaque(buf);
         label_store.set(result, d.label.data, d.label.length);
@@ -246,8 +251,7 @@ fn createBuffer(dev_raw: ?*anyopaque, desc: ?*const abi_pipeline.WGPUBufferDescr
         buf.metal_mapped_ptr = metal_bridge_buffer_contents(buf.mtl);
     }
     if (d.mappedAtCreation != 0) {
-        buf.mapped = true;
-        buf.map_size = @intCast(d.size);
+        beginMappedAtCreation(buf);
     }
     const result = toOpaque(buf);
     label_store.set(result, d.label.data, d.label.length);
@@ -306,6 +310,7 @@ pub export fn doeNativeBufferDestroy(raw: ?*anyopaque) callconv(.c) void {
     }
     b.mtl = null;
     b.mapped = false;
+    b.map_mode = .none;
     b.destroyed = true;
     b.map_pending = false;
     b.map_generation +%= 1;
@@ -319,6 +324,7 @@ pub export fn doeNativeBufferUnmap(raw: ?*anyopaque) callconv(.c) void {
             b.d3d12_mapped_ptr = null;
         }
         b.mapped = false;
+        b.map_mode = .none;
         b.map_pending = false;
         b.map_generation +%= 1;
     }
@@ -349,6 +355,7 @@ const MapReply = struct {
                         status = WGPU_MAP_ASYNC_STATUS_ABORTED;
                         buffer.map_pending = false;
                         buffer.mapped = false;
+                        buffer.map_mode = .none;
                     }
                 }
                 if (buffer.destroyed or buffer.map_generation != self.generation) {
@@ -383,6 +390,7 @@ pub export fn doeNativeBufferMapAsync(buf_raw: ?*anyopaque, mode: u64, offset: u
                 b.mapped = true; // Queue admission rejects both pending and mapped buffers.
                 b.map_offset = offset;
                 b.map_size = resolved.?;
+                b.map_mode = if (mode == abi_core.WGPUMapMode_Read) .read else .write;
             }
         }
     }
@@ -466,7 +474,11 @@ pub export fn doeNativeBufferGetConstMappedRange(buf_raw: ?*anyopaque, offset: u
 }
 
 pub export fn doeNativeBufferGetMappedRange(buf_raw: ?*anyopaque, offset: usize, size: usize) callconv(.c) ?*anyopaque {
-    return doeNativeBufferGetConstMappedRange(buf_raw, offset, size);
+    const buf = cast(DoeBuffer, buf_raw) orelse return null;
+    return switch (buf.map_mode) {
+        .none, .read => null,
+        .write => doeNativeBufferGetConstMappedRange(buf_raw, offset, size),
+    };
 }
 
 test "resolve_buffer_map_range accepts whole-map sentinel" {
@@ -502,4 +514,54 @@ test "resolve_buffer_map_range rejects overflow past buffer size" {
     const buf = DoeBuffer{ .size = 1024 };
     try std.testing.expectEqual(@as(?usize, null), resolve_buffer_map_range(&buf, 2048, WHOLE_MAP_SIZE));
     try std.testing.expectEqual(@as(?usize, null), resolve_buffer_map_range(&buf, 128, 1024));
+}
+
+test "buffer mapping access preserves read write creation and unmapped permissions" {
+    var memory: [32]u8 align(16) = @splat(0);
+    var buffer = DoeBuffer{ .size = memory.len, .usage = abi_core.WGPUBufferUsage_MapRead, .metal_mapped_ptr = &memory, .ref_count = 2 };
+    const raw = toOpaque(&buffer);
+    var status: u32 = 0;
+    const callback: abi_callback.WGPUBufferMapCallbackInfo = .{
+        .mode = abi_callback.WGPUCallbackMode_AllowSpontaneous,
+        .callback = struct {
+            fn mapped(result: u32, _: abi_core.WGPUStringView, userdata: ?*anyopaque, _: ?*anyopaque) callconv(.c) void {
+                const out: *u32 = @ptrCast(@alignCast(userdata.?));
+                out.* = result;
+            }
+        }.mapped,
+        .userdata1 = &status,
+    };
+    _ = doeNativeBufferMapAsync(raw, abi_core.WGPUMapMode_Read, 8, 16, callback);
+    try std.testing.expectEqual(WGPU_MAP_ASYNC_STATUS_SUCCESS, status);
+    try std.testing.expect(buffer.map_mode == .read);
+    const expected: ?*anyopaque = @ptrCast(memory[8..].ptr);
+    try std.testing.expectEqual(expected, doeNativeBufferGetConstMappedRange(raw, 8, 16));
+    try std.testing.expectEqual(expected, doeNativeBufferGetConstMappedRange(raw, 8, 16));
+    try std.testing.expect(doeNativeBufferGetMappedRange(raw, 8, 16) == null);
+    try std.testing.expect(doeNativeBufferGetConstMappedRange(raw, 4, 4) == null);
+    try std.testing.expect(doeNativeBufferGetConstMappedRange(raw, 0, 8) == null);
+    try std.testing.expect(doeNativeBufferGetConstMappedRange(raw, 24, 4) == null);
+    buffer.map_pending = true;
+    try std.testing.expect(doeNativeBufferGetConstMappedRange(raw, 8, 16) == null);
+    try std.testing.expect(doeNativeBufferGetMappedRange(raw, 8, 16) == null);
+    buffer.map_pending = false;
+    doeNativeBufferUnmap(raw);
+    try std.testing.expect(buffer.map_mode == .none);
+    try std.testing.expect(doeNativeBufferGetConstMappedRange(raw, 8, 16) == null);
+
+    buffer.usage = abi_core.WGPUBufferUsage_MapWrite;
+    _ = doeNativeBufferMapAsync(raw, abi_core.WGPUMapMode_Write, 8, 16, callback);
+    try std.testing.expectEqual(WGPU_MAP_ASYNC_STATUS_SUCCESS, status);
+    try std.testing.expect(buffer.map_mode == .write);
+    try std.testing.expectEqual(expected, doeNativeBufferGetMappedRange(raw, 8, 16));
+    doeNativeBufferUnmap(raw);
+    try std.testing.expect(buffer.map_mode == .none);
+
+    buffer.usage = abi_core.WGPUBufferUsage_CopyDst;
+    beginMappedAtCreation(&buffer);
+    try std.testing.expectEqual(expected, doeNativeBufferGetMappedRange(raw, 8, 16));
+    doeNativeBufferDestroy(raw);
+    try std.testing.expect(buffer.map_mode == .none);
+    try std.testing.expect(doeNativeBufferGetMappedRange(raw, 8, 16) == null);
+    try std.testing.expectEqual(@as(u32, 2), buffer.ref_count);
 }
