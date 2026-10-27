@@ -1,0 +1,1471 @@
+{
+  "base": "d8ed4913ae5e2ae3d5fdf15a4b43ca46d714467b",
+  "deliveryPatchSha256": "b5643701a0988cae5d67ea06d9a92901f80b1aea6b5ba0bf715cd770cf5864cc",
+  "paths": [
+    {
+      "path": "bench/tests/test_generate_tsir_manifest_fixtures.py",
+      "originalSha256": "e996386066800539d5071c33eaf1acbd0f61ef9209777decd33d0ebc80269553",
+      "finalSha256": "e996386066800539d5071c33eaf1acbd0f61ef9209777decd33d0ebc80269553",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "bench/tools/generate_tsir_manifest_fixtures.py",
+      "originalSha256": "55f317df1d8ee21d8875a0a42e990a93d71a4ce30e3c7a4333ca14d9b79b56a2",
+      "finalSha256": "55f317df1d8ee21d8875a0a42e990a93d71a4ce30e3c7a4333ca14d9b79b56a2",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "docs/tsir-contract.md",
+      "originalSha256": "f2f7aba05d5a9307c1eb02147b23ee8084dec29a782b14080970c64f51f7c837",
+      "finalSha256": "f2f7aba05d5a9307c1eb02147b23ee8084dec29a782b14080970c64f51f7c837",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/backends/metal/Makefile",
+      "originalSha256": "0d155782b04f78ad1b1e0938f97caca229a71b1b2b46041a098f06816afc0c7c",
+      "finalSha256": "0d155782b04f78ad1b1e0938f97caca229a71b1b2b46041a098f06816afc0c7c",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/backends/metal/README.md",
+      "originalSha256": "41fe5dfa53fe46add0c6dc9d3aba4f1bc38db3003488a097bf7881ccac271d0a",
+      "finalSha256": "41fe5dfa53fe46add0c6dc9d3aba4f1bc38db3003488a097bf7881ccac271d0a",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/backends/metal/src/objc_abi.h",
+      "originalSha256": "a5f4354aec5e9f0461d25c0bbe526bca5594296b6027b0401f3086da08e25361",
+      "finalSha256": "a5f4354aec5e9f0461d25c0bbe526bca5594296b6027b0401f3086da08e25361",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/backends/metal/src/objc_library_cache.c",
+      "originalSha256": "828dd8d52ec73a3e076ec2e2f710c6017f20b80fc272e11a557d19af6f056973",
+      "finalSha256": "828dd8d52ec73a3e076ec2e2f710c6017f20b80fc272e11a557d19af6f056973",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/backends/metal/src/objc_pipeline.c",
+      "originalSha256": "3bea8968b6aed7bf439be0eb8fb717d35da4ffaf55992c7a252d70eed5531500",
+      "finalSha256": "3bea8968b6aed7bf439be0eb8fb717d35da4ffaf55992c7a252d70eed5531500",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/backends/metal/src/objc_runtime.c",
+      "originalSha256": "b50f37b4d9b105b271bf1cd34b3306716fadfffe791972b88ff96b94dd7cb985",
+      "finalSha256": "b50f37b4d9b105b271bf1cd34b3306716fadfffe791972b88ff96b94dd7cb985",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/backends/metal/tests/test_library_cache.c",
+      "originalSha256": "2e59f1954738775aeb5ff54882ae81d0c7c955ad8b3cea5b5537e024ba816f89",
+      "finalSha256": "2e59f1954738775aeb5ff54882ae81d0c7c955ad8b3cea5b5537e024ba816f89",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/CATSCAN.md",
+      "originalSha256": "1e5b4b1135feb46233e6edac0781f744e9a48be16d275a290c6d22efa115b84c",
+      "finalSha256": "1e5b4b1135feb46233e6edac0781f744e9a48be16d275a290c6d22efa115b84c",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/Makefile",
+      "originalSha256": "cd613d69e995d99ec7289a84dca5f17bf0e96ce258a3bdcf45f3a28f99d220b2",
+      "finalSha256": "cd613d69e995d99ec7289a84dca5f17bf0e96ce258a3bdcf45f3a28f99d220b2",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/README.md",
+      "originalSha256": "200045b0df796e126bf2e919cfbcd026754e4846df82967781a7b1473d34ad5f",
+      "finalSha256": "200045b0df796e126bf2e919cfbcd026754e4846df82967781a7b1473d34ad5f",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/TSIR_BOOTSTRAP.md",
+      "originalSha256": "e4ab98c06ba9cd6c9c7124bfe8ae898932661b2cb8c37114b307d852a8a2526c",
+      "finalSha256": "e4ab98c06ba9cd6c9c7124bfe8ae898932661b2cb8c37114b307d852a8a2526c",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/TSIR_NONCSL_COMPLETE.md",
+      "originalSha256": "1b650cbac9b325685548aa730c769829864310ca4a47452d7a2441ab8f6d8d3f",
+      "finalSha256": "1b650cbac9b325685548aa730c769829864310ca4a47452d7a2441ab8f6d8d3f",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/host/README.md",
+      "originalSha256": "fffd4dc702215d0aca60f2b042710a3d467650d5a3c0ca2aceca5cf4cf534950",
+      "finalSha256": "fffd4dc702215d0aca60f2b042710a3d467650d5a3c0ca2aceca5cf4cf534950",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/host/dxil.c",
+      "originalSha256": "ded044f0a9ec045a47669204bc503dcac7812933e93a953d3c5abe644e88426f",
+      "finalSha256": "ded044f0a9ec045a47669204bc503dcac7812933e93a953d3c5abe644e88426f",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/host/exports.map",
+      "originalSha256": "d30761190663df3a7b640f1874a5571c01091966cdb52d5a6684e93fe70d4aee",
+      "finalSha256": "d30761190663df3a7b640f1874a5571c01091966cdb52d5a6684e93fe70d4aee",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/host/host.c",
+      "originalSha256": "91a31e85df550ed2f0f7da4992376cf1ada28026b53b8ed3a8c8a8b8ef93fb6b",
+      "finalSha256": "91a31e85df550ed2f0f7da4992376cf1ada28026b53b8ed3a8c8a8b8ef93fb6b",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/host/internal.h",
+      "originalSha256": "de9bc4dae09c99665a48237420462f071fe67edb568c80471a8b44ed688b3685",
+      "finalSha256": "de9bc4dae09c99665a48237420462f071fe67edb568c80471a8b44ed688b3685",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/host/tsir.c",
+      "originalSha256": "a1f8266b4a2c7a83712252edc95e26930ddef862773cba679aa817114f72a2f6",
+      "finalSha256": "a1f8266b4a2c7a83712252edc95e26930ddef862773cba679aa817114f72a2f6",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/include/doe_compiler_host.h",
+      "originalSha256": "e5e6835b2d77057563f8ad103bf07ad0e8f42cfb6228cbfa33698ad0862b4726",
+      "finalSha256": "e5e6835b2d77057563f8ad103bf07ad0e8f42cfb6228cbfa33698ad0862b4726",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/compile.c",
+      "originalSha256": "887d0dc017413fdf547416a11acebef94edce28ac7703d4430afdd4da4cf1b0d",
+      "finalSha256": "887d0dc017413fdf547416a11acebef94edce28ac7703d4430afdd4da4cf1b0d",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/decimal.h",
+      "originalSha256": "3b735d3ac8ef8472349b5243952e6b1f961b3bb1f43e4ca27b4d992273bd10a8",
+      "finalSha256": "3b735d3ac8ef8472349b5243952e6b1f961b3bb1f43e4ca27b4d992273bd10a8",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/dxil/dxil_analyze.c",
+      "originalSha256": "49d5430a570c8c643846efdc33ee896d6f6fd1c3308c273310585b576d29e2e4",
+      "finalSha256": "49d5430a570c8c643846efdc33ee896d6f6fd1c3308c273310585b576d29e2e4",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/dxil/dxil_analyze.h",
+      "originalSha256": "16c447610ed74b4e663fe24a5dd0f1fd1178eff7f12abc483fc5dd99c0311090",
+      "finalSha256": "16c447610ed74b4e663fe24a5dd0f1fd1178eff7f12abc483fc5dd99c0311090",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/dxil/dxil_analyze_decl.c",
+      "originalSha256": null,
+      "finalSha256": null,
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/dxil/dxil_analyze_expr.c",
+      "originalSha256": null,
+      "finalSha256": null,
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/dxil/dxil_analyze_internal.h",
+      "originalSha256": null,
+      "finalSha256": null,
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/dxil/dxil_analyze_stmt.c",
+      "originalSha256": null,
+      "finalSha256": null,
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/dxil/dxil_analyze_types.c",
+      "originalSha256": null,
+      "finalSha256": null,
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/dxil/dxil_emit.c",
+      "originalSha256": "58cd50c6f5d10cbd71745eea8b0133f460167f830c4a7ae68b9f71bd5bc423b5",
+      "finalSha256": "58cd50c6f5d10cbd71745eea8b0133f460167f830c4a7ae68b9f71bd5bc423b5",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/dxil/dxil_emit.h",
+      "originalSha256": "a9f48b2935941477891158bfb87fdf617be5e2328bb194b6ffa3eb54aadbc78c",
+      "finalSha256": "a9f48b2935941477891158bfb87fdf617be5e2328bb194b6ffa3eb54aadbc78c",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/dxil/dxil_files.c",
+      "originalSha256": "d87ecba33401e5c8d440c310b25f0d397b0fb50958561b36dbe31fa9b1b1304d",
+      "finalSha256": "d87ecba33401e5c8d440c310b25f0d397b0fb50958561b36dbe31fa9b1b1304d",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/dxil/dxil_files.h",
+      "originalSha256": "f70c8281db563191d9489882e2574e4e44b48ee9ace94791e1d9dfa77deca208",
+      "finalSha256": "f70c8281db563191d9489882e2574e4e44b48ee9ace94791e1d9dfa77deca208",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/dxil/dxil_hlsl.c",
+      "originalSha256": "a65a7ed9b0012bb318763c3f6313bc956f2f2a96db0b0565cb782154fb76aa7b",
+      "finalSha256": "a65a7ed9b0012bb318763c3f6313bc956f2f2a96db0b0565cb782154fb76aa7b",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/dxil/dxil_hlsl.h",
+      "originalSha256": "72d9db5f0455552245973c89166a85eac4c3829232f222922aaaa0862aee1de4",
+      "finalSha256": "72d9db5f0455552245973c89166a85eac4c3829232f222922aaaa0862aee1de4",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/dxil/dxil_hlsl_array.c",
+      "originalSha256": "4e4e219e9ce01bf218aac06d958d730158f92ffd0a19c9edb6623426d5d45732",
+      "finalSha256": "4e4e219e9ce01bf218aac06d958d730158f92ffd0a19c9edb6623426d5d45732",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/dxil/dxil_hlsl_expr.c",
+      "originalSha256": "1f375fe51a5fba9a28e2a8312382b846ee47819427161a6c02dbd82f7b21516a",
+      "finalSha256": "1f375fe51a5fba9a28e2a8312382b846ee47819427161a6c02dbd82f7b21516a",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/dxil/dxil_hlsl_helpers.c",
+      "originalSha256": "296505840e3356388162806c7a2c5d22145f85269b3dd0d8b59a27b1157425fe",
+      "finalSha256": "296505840e3356388162806c7a2c5d22145f85269b3dd0d8b59a27b1157425fe",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/dxil/dxil_hlsl_internal.h",
+      "originalSha256": "279315cfaa22597c7ecfe86fe23998c7145216701f16bb8d7efa05f95b02bdd9",
+      "finalSha256": "279315cfaa22597c7ecfe86fe23998c7145216701f16bb8d7efa05f95b02bdd9",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/dxil/dxil_hlsl_names.c",
+      "originalSha256": "d05e88eb20c951ffd1ac6474e3d5601c81d07622c2c556143d8375743216cb3f",
+      "finalSha256": "d05e88eb20c951ffd1ac6474e3d5601c81d07622c2c556143d8375743216cb3f",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/dxil/dxil_hlsl_numeric.c",
+      "originalSha256": "5f21bd4f1146b78014f27d01641ec372136165ff99249107af29018b8cc7999b",
+      "finalSha256": "5f21bd4f1146b78014f27d01641ec372136165ff99249107af29018b8cc7999b",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/dxil/dxil_hlsl_numeric.h",
+      "originalSha256": "d49874ed8547688ee52e60c7e9c2969ca5191ce7bb0be89042d7dc18416f06fc",
+      "finalSha256": "d49874ed8547688ee52e60c7e9c2969ca5191ce7bb0be89042d7dc18416f06fc",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/dxil/dxil_hlsl_pointer.c",
+      "originalSha256": "6e12439d67ff3158d517a0c48cffa05e620eceb64b0637db593b603855ea4062",
+      "finalSha256": "6e12439d67ff3158d517a0c48cffa05e620eceb64b0637db593b603855ea4062",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/dxil/dxil_hlsl_stage.c",
+      "originalSha256": "22e07019b3e620ec53a389fd860c0cd0068cdc764ef33d4dd042f9b32f3b81ae",
+      "finalSha256": "22e07019b3e620ec53a389fd860c0cd0068cdc764ef33d4dd042f9b32f3b81ae",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/dxil/dxil_hlsl_stmt.c",
+      "originalSha256": "e8e95ee14c9fbad1db36facd895fba47bfacbc1fb1e5db1bc1bd9bfab112367e",
+      "finalSha256": "e8e95ee14c9fbad1db36facd895fba47bfacbc1fb1e5db1bc1bd9bfab112367e",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/dxil/dxil_hlsl_store.c",
+      "originalSha256": "9a63ee1dca13b252060b188d2d5217021b6c08ae05a97130308a85539a3697c5",
+      "finalSha256": "9a63ee1dca13b252060b188d2d5217021b6c08ae05a97130308a85539a3697c5",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/dxil/dxil_hlsl_texture.c",
+      "originalSha256": "6f6a660e68cbb9dcb0341cc8a191c8c3c10dbd19ec0ff07fe41b1b064f6eea9e",
+      "finalSha256": "6f6a660e68cbb9dcb0341cc8a191c8c3c10dbd19ec0ff07fe41b1b064f6eea9e",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/dxil/dxil_hlsl_texture.h",
+      "originalSha256": "555d9da9d04059dec06e12c0fdb26f900eb1978c35b83f7bdaaef49aed41787e",
+      "finalSha256": "555d9da9d04059dec06e12c0fdb26f900eb1978c35b83f7bdaaef49aed41787e",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/dxil/dxil_ir.h",
+      "originalSha256": "f2eda043de06ebdc0cc87057391a06d50c00b371f7f234bb1c6957749ba291e2",
+      "finalSha256": "f2eda043de06ebdc0cc87057391a06d50c00b371f7f234bb1c6957749ba291e2",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/dxil/dxil_ir_query.c",
+      "originalSha256": "88dc082677d1aaa6a834ea3b3c7309dd91fb50d5e9a94e5782447078d38550a8",
+      "finalSha256": "88dc082677d1aaa6a834ea3b3c7309dd91fb50d5e9a94e5782447078d38550a8",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/dxil/dxil_ir_validate.c",
+      "originalSha256": "b2b141b620a62c3fb196d81e26d00c9336d75373b29aea7850ec215727deaa28",
+      "finalSha256": "b2b141b620a62c3fb196d81e26d00c9336d75373b29aea7850ec215727deaa28",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/dxil/dxil_native.c",
+      "originalSha256": "4d5e8f8d3b7aba3a9cd375b902c436b3803d2979ec43d163299d42bb6bf3bf1d",
+      "finalSha256": "4d5e8f8d3b7aba3a9cd375b902c436b3803d2979ec43d163299d42bb6bf3bf1d",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/dxil/dxil_process_windows.c",
+      "originalSha256": "16dd9637e199ec9e5ba90fc30d38f5a34bb825c31fc64a16ca290a99024b6348",
+      "finalSha256": "16dd9637e199ec9e5ba90fc30d38f5a34bb825c31fc64a16ca290a99024b6348",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/dxil/dxil_source.c",
+      "originalSha256": "fc92bace6daa5da6bd98c67564c1c58cc9fd755f458fd211d065388ef1a37ab0",
+      "finalSha256": "fc92bace6daa5da6bd98c67564c1c58cc9fd755f458fd211d065388ef1a37ab0",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/dxil/dxil_source.h",
+      "originalSha256": "260f3cc72911cf9cea4771b8ab0b6b5f34d924f9bf5334bbc218873da2598f24",
+      "finalSha256": "260f3cc72911cf9cea4771b8ab0b6b5f34d924f9bf5334bbc218873da2598f24",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/dxil/dxil_source_native_bounds.c",
+      "originalSha256": "17ff08151a80f1d825ae97ba06b379f1a644354fab7fe3ae7d2a2bdc8a69706c",
+      "finalSha256": "17ff08151a80f1d825ae97ba06b379f1a644354fab7fe3ae7d2a2bdc8a69706c",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/dxil/dxil_source_native_bounds.h",
+      "originalSha256": "b042c67ac6b55f29cb05e977ff9ae50386fe0819e3be01d935b7d27570c0e879",
+      "finalSha256": "b042c67ac6b55f29cb05e977ff9ae50386fe0819e3be01d935b7d27570c0e879",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/dxil/dxil_source_native_expr.c",
+      "originalSha256": "cdfe8a5c897ed46575883b539577fc6f21c4001085b14896a36a89238b0919ac",
+      "finalSha256": "cdfe8a5c897ed46575883b539577fc6f21c4001085b14896a36a89238b0919ac",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/dxil/dxil_source_native_globals.c",
+      "originalSha256": "841cdb2809054c6b97252ae9a6706fc1fa4d0019ed443af971a325c8a5419672",
+      "finalSha256": "841cdb2809054c6b97252ae9a6706fc1fa4d0019ed443af971a325c8a5419672",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/dxil/dxil_source_native_internal.h",
+      "originalSha256": "b650387a1b4c044e339717355fa12bae69c351a8aa51256f8122ed30db77666f",
+      "finalSha256": "b650387a1b4c044e339717355fa12bae69c351a8aa51256f8122ed30db77666f",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/dxil/dxil_source_native_opt.c",
+      "originalSha256": "39bce7707025ca265e12ea915b65de83bbded0d36bbaac4527327629cb3e8f99",
+      "finalSha256": "39bce7707025ca265e12ea915b65de83bbded0d36bbaac4527327629cb3e8f99",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/dxil/dxil_source_native_opt.h",
+      "originalSha256": "edcc61d78d056675d93fb2e4a215f0b74bf170aca2d024639e5a355045c67373",
+      "finalSha256": "edcc61d78d056675d93fb2e4a215f0b74bf170aca2d024639e5a355045c67373",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/dxil/dxil_source_native_packed.c",
+      "originalSha256": "68f072f86373a943b1011e8aedc96fad7efdca924853d45e5a2e09c25b80b633",
+      "finalSha256": "68f072f86373a943b1011e8aedc96fad7efdca924853d45e5a2e09c25b80b633",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/dxil/dxil_source_native_packed.h",
+      "originalSha256": "e6d80a9f2accf422652a53a529293ac9596bd22d6d410e2ce07fee8726a4b4b8",
+      "finalSha256": "e6d80a9f2accf422652a53a529293ac9596bd22d6d410e2ce07fee8726a4b4b8",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/dxil/dxil_source_native_stmts.c",
+      "originalSha256": "5baa896076fd8a8290efed91ed5796338f4fb49294148cca68474c64c66d43e3",
+      "finalSha256": "5baa896076fd8a8290efed91ed5796338f4fb49294148cca68474c64c66d43e3",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/dxil/dxil_source_native_types.c",
+      "originalSha256": "e30dc451129dab82a0c53bcffbe4407e3e4218c766555b52c13c67a75dade832",
+      "finalSha256": "e30dc451129dab82a0c53bcffbe4407e3e4218c766555b52c13c67a75dade832",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/dxil/dxil_toolchain.c",
+      "originalSha256": "53742bec901465cde2e96d8df8048f7801dc7b755f1271c84f7d691a3f88b615",
+      "finalSha256": "53742bec901465cde2e96d8df8048f7801dc7b755f1271c84f7d691a3f88b615",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/dxil/dxil_toolchain.h",
+      "originalSha256": "4baf1e329924db71667c12cfd39831d627b1cc52c1692f76bbc5062f1880cac8",
+      "finalSha256": "4baf1e329924db71667c12cfd39831d627b1cc52c1692f76bbc5062f1880cac8",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/dxil/dxil_translate.c",
+      "originalSha256": "37c6f4fca25a47e0fc0a5f053e4c2363dc17ca60c76f54e13f380e4b87dfd562",
+      "finalSha256": "37c6f4fca25a47e0fc0a5f053e4c2363dc17ca60c76f54e13f380e4b87dfd562",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/dxil/dxil_translate.h",
+      "originalSha256": "1c4fb4baac437fe864b4c63f783d68496dc4892da4890fd1c40dd7ea1835db54",
+      "finalSha256": "1c4fb4baac437fe864b4c63f783d68496dc4892da4890fd1c40dd7ea1835db54",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/dxil/gaps.md",
+      "originalSha256": "a8d690b4e31c663a6728d6086c3eb1550c4344a366a60ba80b8bd6fc84097bd9",
+      "finalSha256": "a8d690b4e31c663a6728d6086c3eb1550c4344a366a60ba80b8bd6fc84097bd9",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/dxil/parity-test.md",
+      "originalSha256": "5c29fea43041aafec275c49f819230ad45cf1f340d35cd91e03a3a6b34e71347",
+      "finalSha256": "5c29fea43041aafec275c49f819230ad45cf1f340d35cd91e03a3a6b34e71347",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/dxil/source-integration.md",
+      "originalSha256": "449c9812c7dbba981c89388fc7bb4b4bfc5158f38ac250f589fec8cc5a56d278",
+      "finalSha256": "449c9812c7dbba981c89388fc7bb4b4bfc5158f38ac250f589fec8cc5a56d278",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/dxil/test-results.md",
+      "originalSha256": "46f245195ec73d555ecad43b8278389a9c6d05986bace4399b05d1277e018b15",
+      "finalSha256": "46f245195ec73d555ecad43b8278389a9c6d05986bace4399b05d1277e018b15",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/dxil/tests/test_dxil_hlsl.c",
+      "originalSha256": "ff24cf36752ac7b8b74aeb3b551584bb4990639c80889af58b6093f647598757",
+      "finalSha256": "ff24cf36752ac7b8b74aeb3b551584bb4990639c80889af58b6093f647598757",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/dxil/tests/test_dxil_hlsl_access.c",
+      "originalSha256": "9a5fc805243d886c28456f00c9847ec1372b6400f14664fd1e2be719c8621a85",
+      "finalSha256": "9a5fc805243d886c28456f00c9847ec1372b6400f14664fd1e2be719c8621a85",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/dxil/tests/test_dxil_hlsl_complete.c",
+      "originalSha256": "04abc988a9c195162eaef486592c88d6b9f2e5bc35e10acbf6ae913ec740161b",
+      "finalSha256": "04abc988a9c195162eaef486592c88d6b9f2e5bc35e10acbf6ae913ec740161b",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/dxil/tests/test_dxil_hlsl_numeric.c",
+      "originalSha256": "d0379b07b34ad27011247b883ecd2dfcc8f36a1f397508036b0e74a2848a6ad9",
+      "finalSha256": "d0379b07b34ad27011247b883ecd2dfcc8f36a1f397508036b0e74a2848a6ad9",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/dxil/tests/test_dxil_hlsl_texture.c",
+      "originalSha256": "52bedd5616e48d10c1782a55f86c5b9ae66c17fb3f668aafcd28459644faf142",
+      "finalSha256": "52bedd5616e48d10c1782a55f86c5b9ae66c17fb3f668aafcd28459644faf142",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/dxil/tests/test_dxil_io.c",
+      "originalSha256": "acd7a0c92377aeb255ea5baabdf3ce7245da3b52c4942c6e9fa265376a96dd29",
+      "finalSha256": "acd7a0c92377aeb255ea5baabdf3ce7245da3b52c4942c6e9fa265376a96dd29",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/dxil/tests/test_dxil_native_opt.c",
+      "originalSha256": "0b021a1db7a7ec9d76f5e04ce91339c67fe457c53a47de981920decca8054b1b",
+      "finalSha256": "0b021a1db7a7ec9d76f5e04ce91339c67fe457c53a47de981920decca8054b1b",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/dxil/tests/test_dxil_native_projection.c",
+      "originalSha256": "eec10827e848e2d0ca2ab82ff9e87c74883d8a26320309c663a45e03efcfe658",
+      "finalSha256": "eec10827e848e2d0ca2ab82ff9e87c74883d8a26320309c663a45e03efcfe658",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/dxil/tests/test_dxil_native_projection_expr.c",
+      "originalSha256": "2ee2ad3a2d213dfc3d8d6eb7862f24770a2048906846cfa939daf9d56b0be7e4",
+      "finalSha256": "2ee2ad3a2d213dfc3d8d6eb7862f24770a2048906846cfa939daf9d56b0be7e4",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/dxil/tests/test_dxil_source.c",
+      "originalSha256": "f94cfba23c9d6ebaa22e113d0ffa62cf4cff9d5e1afee1aaf95f82d3aa8944f3",
+      "finalSha256": "f94cfba23c9d6ebaa22e113d0ffa62cf4cff9d5e1afee1aaf95f82d3aa8944f3",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/dxil/tests/test_dxil_source_differential.c",
+      "originalSha256": "f658c8d26b9a3faba0998b52fc3f20f57aca2b7092d702a2f70503334643b083",
+      "finalSha256": "f658c8d26b9a3faba0998b52fc3f20f57aca2b7092d702a2f70503334643b083",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/dxil/tests/test_dxil_source_differential.py",
+      "originalSha256": "c8a9373146c2ac172cbda48740a8ea317d728662d423d328215ed5aa353a9ef7",
+      "finalSha256": "c8a9373146c2ac172cbda48740a8ea317d728662d423d328215ed5aa353a9ef7",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/dxil/tests/test_hlsl_numeric.py",
+      "originalSha256": "95f3531cc2d1959e73929fe2bfab6ee32e82ae28b20b7da3036ce03cee41c3f4",
+      "finalSha256": "95f3531cc2d1959e73929fe2bfab6ee32e82ae28b20b7da3036ce03cee41c3f4",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/dxil/tests/test_native_opt.py",
+      "originalSha256": "65c80bce2f89cf96d9808c6e63e1fbf478b03bca260cc906c5a6822ebe8f3cd2",
+      "finalSha256": "65c80bce2f89cf96d9808c6e63e1fbf478b03bca260cc906c5a6822ebe8f3cd2",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/dxil/texture-serialization.md",
+      "originalSha256": "c7fe328065ae15b227699e1d4bd2e007e4d6cc4c26013055f0814b45f6f9d1de",
+      "finalSha256": "c7fe328065ae15b227699e1d4bd2e007e4d6cc4c26013055f0814b45f6f9d1de",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/internal.h",
+      "originalSha256": "37da36c63afd114193259b74521941e7c888bb5ea94ba5932c2e9b9f3d46780c",
+      "finalSha256": "37da36c63afd114193259b74521941e7c888bb5ea94ba5932c2e9b9f3d46780c",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/numeric.c",
+      "originalSha256": "c7b5dc0fbd142a90968b6843d2c40618add5ab3bc9cdc67ca7e7dce8c36497c2",
+      "finalSha256": "c7b5dc0fbd142a90968b6843d2c40618add5ab3bc9cdc67ca7e7dce8c36497c2",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/numeric.h",
+      "originalSha256": "c9ca1236c335889db12ea96306e4c2f5d3169ac7dea96dd41924c6aa12b57fbd",
+      "finalSha256": "c9ca1236c335889db12ea96306e4c2f5d3169ac7dea96dd41924c6aa12b57fbd",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/override.c",
+      "originalSha256": "ec2c74703f19b29ba197c7b06bf70f9faa539869b13cefc4eca21c7436361c58",
+      "finalSha256": "ec2c74703f19b29ba197c7b06bf70f9faa539869b13cefc4eca21c7436361c58",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/override.h",
+      "originalSha256": "28ebf865db7a5b0185025be1ca4fe3381f1a8a1374d6c98be2a5ad649d8db697",
+      "finalSha256": "28ebf865db7a5b0185025be1ca4fe3381f1a8a1374d6c98be2a5ad649d8db697",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/pipeline.c",
+      "originalSha256": "396aff2e484228b12a1e0ee40db1912183b54d9df6df5a763cf14e19cbbbd8d1",
+      "finalSha256": "396aff2e484228b12a1e0ee40db1912183b54d9df6df5a763cf14e19cbbbd8d1",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/sema_declarations.c",
+      "originalSha256": "b368a5ee92df2ae66657cfbac66008906c94e3e55d868fbff486879c790ca617",
+      "finalSha256": "b368a5ee92df2ae66657cfbac66008906c94e3e55d868fbff486879c790ca617",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/sema_expression.c",
+      "originalSha256": "fb6870965b07f43f3a56fb4c8795c4cce58910062459ed799c6ef3c1ddcc8311",
+      "finalSha256": "fb6870965b07f43f3a56fb4c8795c4cce58910062459ed799c6ef3c1ddcc8311",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/tsir/gaps.md",
+      "originalSha256": "175330d813b332c7a7b5ffa76800d7fff7cb7b26521279878650eb65ad6a77a7",
+      "finalSha256": "175330d813b332c7a7b5ffa76800d7fff7cb7b26521279878650eb65ad6a77a7",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/tsir/parity-mapping.md",
+      "originalSha256": "9e12e52ddc08771771fd148b9cb7c058144f8ae18afad5240634bd0b51ba6a79",
+      "finalSha256": "9e12e52ddc08771771fd148b9cb7c058144f8ae18afad5240634bd0b51ba6a79",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/tsir/tests/test_bootstrap_manifest.c",
+      "originalSha256": "9765a02c9d5b720b62f3e46084514538f8591f8b0b732a3a2376d04bc0f0bb75",
+      "finalSha256": "9765a02c9d5b720b62f3e46084514538f8591f8b0b732a3a2376d04bc0f0bb75",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/tsir/tests/test_bootstrap_writer.c",
+      "originalSha256": "dd35c74a863666300664403f44dceef674734928ea1d5a57a29f65a4c7c92f69",
+      "finalSha256": "dd35c74a863666300664403f44dceef674734928ea1d5a57a29f65a4c7c92f69",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/tsir/tests/test_digest.c",
+      "originalSha256": "5d849c09fbd81201f5b44389bf88087862c8d24937ffcd83866377fabcc63278",
+      "finalSha256": "5d849c09fbd81201f5b44389bf88087862c8d24937ffcd83866377fabcc63278",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/tsir/tests/test_f64_format.py",
+      "originalSha256": "8ce8ffa843c3ae57aaefad617fbdb73aebe8f5f3528c258ca51b22f279a5c966",
+      "finalSha256": "8ce8ffa843c3ae57aaefad617fbdb73aebe8f5f3528c258ca51b22f279a5c966",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/tsir/tests/test_manifest_alloc.c",
+      "originalSha256": "bdbda3386e2eeb4f74fbbe75fb8065306f517c5ac010edc123021089f40fa235",
+      "finalSha256": "bdbda3386e2eeb4f74fbbe75fb8065306f517c5ac010edc123021089f40fa235",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/tsir/tests/test_new.c",
+      "originalSha256": "5ffa42b137be5f679a4d6b7698f10e682df3131fdcf446dfe8cfaf688787c300",
+      "finalSha256": "5ffa42b137be5f679a4d6b7698f10e682df3131fdcf446dfe8cfaf688787c300",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/tsir/tests/test_new2.c",
+      "originalSha256": "ac6a735b5d9e88d586b053e263575433ef2fb0a541825ef15d7d3486491924f5",
+      "finalSha256": "ac6a735b5d9e88d586b053e263575433ef2fb0a541825ef15d7d3486491924f5",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/tsir/tests/test_numeric_parity.py",
+      "originalSha256": "4bb422843c3a243cd5d04eb51d7b4e42d93c4948c744b5cf774da4e128073160",
+      "finalSha256": "c93e9058fc15e50fce156634ccc43332adbad52e89a25e29d8a0e4ef191df64d",
+      "changedOnlyForDriverRepair": true
+    },
+    {
+      "path": "runtime/c/compiler/src/tsir/tests/test_planner.c",
+      "originalSha256": "65489829424eea0a01993b634b205778f7ed4aff9341b19d67e860db9fadf62d",
+      "finalSha256": "65489829424eea0a01993b634b205778f7ed4aff9341b19d67e860db9fadf62d",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/tsir/tests/test_reference_emit.c",
+      "originalSha256": "99fb2663031e5a589a288fd01ee25f0bb35ebba4df156d25730b582872d55851",
+      "finalSha256": "99fb2663031e5a589a288fd01ee25f0bb35ebba4df156d25730b582872d55851",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/tsir/tests/test_sha_scalar.c",
+      "originalSha256": "e2c478ddc72781ae64710400daa550b6bc803ac026fed8bc62888152140e8e5b",
+      "finalSha256": "e2c478ddc72781ae64710400daa550b6bc803ac026fed8bc62888152140e8e5b",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/tsir/tests/test_source.c",
+      "originalSha256": "aaaf00a39d2dc3cf2d4609529e664882c1588513b7c94f875fe7b3853827c6cb",
+      "finalSha256": "aaaf00a39d2dc3cf2d4609529e664882c1588513b7c94f875fe7b3853827c6cb",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/tsir/tests/test_source_control.c",
+      "originalSha256": "7b92687f99b5bfa5d4958baf33ef8625a64f757cecadb1c1aa224281bcbd7a75",
+      "finalSha256": "7b92687f99b5bfa5d4958baf33ef8625a64f757cecadb1c1aa224281bcbd7a75",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/tsir/tests/test_source_differential.c",
+      "originalSha256": "4fc95d4fb9dc5cc529f67e08674ae9c66fe4d940744ba8ecf052ab337b4b6d00",
+      "finalSha256": "4fc95d4fb9dc5cc529f67e08674ae9c66fe4d940744ba8ecf052ab337b4b6d00",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/tsir/tests/test_source_differential.py",
+      "originalSha256": "0ba073675bef15545e614e8185b50e74f3059a9040a74b789a0571529117b35f",
+      "finalSha256": "0ba073675bef15545e614e8185b50e74f3059a9040a74b789a0571529117b35f",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/tsir/tests/test_source_expr.c",
+      "originalSha256": "24699840d304e1a8f3c2aaa4f81e9be003fc1798d7464d9bf34b1e49f031efc0",
+      "finalSha256": "24699840d304e1a8f3c2aaa4f81e9be003fc1798d7464d9bf34b1e49f031efc0",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/tsir/tests/test_targets.c",
+      "originalSha256": "960580b7c32acf7c7a27d9dd50a84922aa68b7d5ef578b247bdc94a1343d4bb8",
+      "finalSha256": "960580b7c32acf7c7a27d9dd50a84922aa68b7d5ef578b247bdc94a1343d4bb8",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/tsir/tests/test_targets.py",
+      "originalSha256": "6533f08f1376bef1a7b288857752e7f0259694134bc2a86ed9ed5425d135d94d",
+      "finalSha256": "6533f08f1376bef1a7b288857752e7f0259694134bc2a86ed9ed5425d135d94d",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/tsir/tests/test_text.c",
+      "originalSha256": "14dda70e4625ff3672eb2c88e89de9136e2ea760dc1734a535933aa64cb5f696",
+      "finalSha256": "14dda70e4625ff3672eb2c88e89de9136e2ea760dc1734a535933aa64cb5f696",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/tsir/tests/test_text.py",
+      "originalSha256": "657e0d2227260c5d31609b7a960ef44edb284abdc4c89327afc0dce33c9155e4",
+      "finalSha256": "657e0d2227260c5d31609b7a960ef44edb284abdc4c89327afc0dce33c9155e4",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/tsir/tsir_bootstrap.c",
+      "originalSha256": "87005c93703bd42762f0e77d98637582514ac9bb2ecebd9389c3b7012914bad2",
+      "finalSha256": "87005c93703bd42762f0e77d98637582514ac9bb2ecebd9389c3b7012914bad2",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/tsir/tsir_bootstrap.h",
+      "originalSha256": "ef356eccee9e736e491aa66241760d075819b62af1b84eb98c73e373c50de5fa",
+      "finalSha256": "ef356eccee9e736e491aa66241760d075819b62af1b84eb98c73e373c50de5fa",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/tsir/tsir_bootstrap_manifest.c",
+      "originalSha256": "4ac4a27a8038f9df671dc4783def634c3b61c773d16c16e7acba158ee2072cc7",
+      "finalSha256": "4ac4a27a8038f9df671dc4783def634c3b61c773d16c16e7acba158ee2072cc7",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/tsir/tsir_bootstrap_oracle.c",
+      "originalSha256": "838b4d4617648c7567acb2b12b00264bd76b733e94e690616340e128cfdcf0fa",
+      "finalSha256": "838b4d4617648c7567acb2b12b00264bd76b733e94e690616340e128cfdcf0fa",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/tsir/tsir_digest.c",
+      "originalSha256": "93660e6ac5d9ad4a27b885c9f9fca96ff0473887f87caea48c74728eed4c447f",
+      "finalSha256": "93660e6ac5d9ad4a27b885c9f9fca96ff0473887f87caea48c74728eed4c447f",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/tsir/tsir_digest.h",
+      "originalSha256": "6c1b3836fadf793d53fa0fe1dbac778adfb7bb6bcbaaf39220f18731a2ebe3f9",
+      "finalSha256": "6c1b3836fadf793d53fa0fe1dbac778adfb7bb6bcbaaf39220f18731a2ebe3f9",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/tsir/tsir_emit.c",
+      "originalSha256": "3a9e5bb57ea94d7bef178078bbcebe13c6d6e790fc1dcea25a7dbd27071cbff9",
+      "finalSha256": "3a9e5bb57ea94d7bef178078bbcebe13c6d6e790fc1dcea25a7dbd27071cbff9",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/tsir/tsir_emit.h",
+      "originalSha256": "f332f894fcc69b110e32287b2d2c114f84a22cd4c029f7e4df8cdcc26e4eb6af",
+      "finalSha256": "f332f894fcc69b110e32287b2d2c114f84a22cd4c029f7e4df8cdcc26e4eb6af",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/tsir/tsir_family_hint.c",
+      "originalSha256": "f55b5a0393ffb96287b71fd5aed5d65fe4de08aecbdd3fba4ef000db9d7f9add",
+      "finalSha256": "f55b5a0393ffb96287b71fd5aed5d65fe4de08aecbdd3fba4ef000db9d7f9add",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/tsir/tsir_file.c",
+      "originalSha256": "3e0906ef516fd199d8d5492beb24b06d79c20cd9ac1f0cc00b27821e4692e8e3",
+      "finalSha256": "3e0906ef516fd199d8d5492beb24b06d79c20cd9ac1f0cc00b27821e4692e8e3",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/tsir/tsir_file.h",
+      "originalSha256": "866ccfbcd54a4c9b8d2b5e55445ba44d0a856eeec159f122513242e6636feeb2",
+      "finalSha256": "866ccfbcd54a4c9b8d2b5e55445ba44d0a856eeec159f122513242e6636feeb2",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/tsir/tsir_format.c",
+      "originalSha256": "a6b93a74074c5f9d6060d2436241e4b05639c4edf29f459579c31b4e269b4701",
+      "finalSha256": "a6b93a74074c5f9d6060d2436241e4b05639c4edf29f459579c31b4e269b4701",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/tsir/tsir_frontend.c",
+      "originalSha256": "b3a88da32e2b210e7da13524f4e8cc5f86a3e5521d5b6f7c82c15e9a952501e5",
+      "finalSha256": "b3a88da32e2b210e7da13524f4e8cc5f86a3e5521d5b6f7c82c15e9a952501e5",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/tsir/tsir_frontend.h",
+      "originalSha256": "594359cfbd99e9f35452793397f852a91e1a8d757027ee7eabec7210f0e18cd4",
+      "finalSha256": "594359cfbd99e9f35452793397f852a91e1a8d757027ee7eabec7210f0e18cd4",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/tsir/tsir_frontend_axes.c",
+      "originalSha256": "1a53dea491328043d914e7f12f15b2acd613c1f56e1834d51aac24033764391e",
+      "finalSha256": "1a53dea491328043d914e7f12f15b2acd613c1f56e1834d51aac24033764391e",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/tsir/tsir_frontend_bindings_axes.c",
+      "originalSha256": "8d5e034ef73091717238f18bb4185f88d15b0c8e0d822525a2d927142a035227",
+      "finalSha256": "8d5e034ef73091717238f18bb4185f88d15b0c8e0d822525a2d927142a035227",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/tsir/tsir_frontend_expr.c",
+      "originalSha256": "5d62f0234d564e6f798778ba169c0dcfe814378837a655011cea0f6a408b1ba6",
+      "finalSha256": "5d62f0234d564e6f798778ba169c0dcfe814378837a655011cea0f6a408b1ba6",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/tsir/tsir_frontend_expr.h",
+      "originalSha256": "aa37a2dbc1b6fdb1790f330b37a8d9fd456530a7e67c5f9352032f05a0fb3822",
+      "finalSha256": "aa37a2dbc1b6fdb1790f330b37a8d9fd456530a7e67c5f9352032f05a0fb3822",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/tsir/tsir_frontend_lower.c",
+      "originalSha256": "e281fd146ee5d4e3bdc8e87b4b7e69f9fead535db4e3b2af7a2ceb0f49bcd1e3",
+      "finalSha256": "e281fd146ee5d4e3bdc8e87b4b7e69f9fead535db4e3b2af7a2ceb0f49bcd1e3",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/tsir/tsir_frontend_passes.c",
+      "originalSha256": "9326b6ba9a4d9470077c221d90db78fa5a57cf6b0097f7a05339bb1d7c37f850",
+      "finalSha256": "9326b6ba9a4d9470077c221d90db78fa5a57cf6b0097f7a05339bb1d7c37f850",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/tsir/tsir_frontend_reductions.c",
+      "originalSha256": "eba66cfc19255aaa4fb4ef721779fd516c6f78123b3b3b069396c743faea822e",
+      "finalSha256": "eba66cfc19255aaa4fb4ef721779fd516c6f78123b3b3b069396c743faea822e",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/tsir/tsir_planner.c",
+      "originalSha256": "34c1b774885d96322ffcfb39b242fc66acde3d73bcd20c6c8f1dd3a443aee71d",
+      "finalSha256": "34c1b774885d96322ffcfb39b242fc66acde3d73bcd20c6c8f1dd3a443aee71d",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/tsir/tsir_planner.h",
+      "originalSha256": "ee47bea6518511ef8a6b1da5ec05601884dd274487a908636b06330f348c0c87",
+      "finalSha256": "ee47bea6518511ef8a6b1da5ec05601884dd274487a908636b06330f348c0c87",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/tsir/tsir_reference.c",
+      "originalSha256": "6b2d92b095a9cca643144f321bbc5199dc5817c99dfa1a0c0b25c1fa4ae0b591",
+      "finalSha256": "6b2d92b095a9cca643144f321bbc5199dc5817c99dfa1a0c0b25c1fa4ae0b591",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/tsir/tsir_reference.h",
+      "originalSha256": "05db4c6dc9441a737749c4b2b6ee75de14e2b21cff7041350ad2a4100c843a2f",
+      "finalSha256": "05db4c6dc9441a737749c4b2b6ee75de14e2b21cff7041350ad2a4100c843a2f",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/tsir/tsir_reference_bodies.c",
+      "originalSha256": "1857650f6660d7e8c39e78b8c8f9f6559fc82f740047a1f25f16b22a37fd23d7",
+      "finalSha256": "1857650f6660d7e8c39e78b8c8f9f6559fc82f740047a1f25f16b22a37fd23d7",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/tsir/tsir_schema.c",
+      "originalSha256": "a6b32fdf3c2c1798b9eac5bf98c43c521127a518d15ccf0004bf2b88b9f71ed3",
+      "finalSha256": "a6b32fdf3c2c1798b9eac5bf98c43c521127a518d15ccf0004bf2b88b9f71ed3",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/tsir/tsir_schema.h",
+      "originalSha256": "508e932b1693ec195d66e1db0279a59a2e17c7758a08d184748702855ca56a9c",
+      "finalSha256": "508e932b1693ec195d66e1db0279a59a2e17c7758a08d184748702855ca56a9c",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/tsir/tsir_source.c",
+      "originalSha256": "e1d393fdf87eefefdd45e5e275976b211d013388f9e343ae3ee0fbd7126e22e5",
+      "finalSha256": "e1d393fdf87eefefdd45e5e275976b211d013388f9e343ae3ee0fbd7126e22e5",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/tsir/tsir_source.h",
+      "originalSha256": "2a178f498cd4ce0f64ba5b352ed16f040577bc45c3bcc36d409fdcdef3af206b",
+      "finalSha256": "2a178f498cd4ce0f64ba5b352ed16f040577bc45c3bcc36d409fdcdef3af206b",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/tsir/tsir_source_expr.c",
+      "originalSha256": "140a6caceb9acb340ca0d6e4017faa6c5f3d317bb6e54e8035c09f3db0345032",
+      "finalSha256": "140a6caceb9acb340ca0d6e4017faa6c5f3d317bb6e54e8035c09f3db0345032",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/tsir/tsir_source_stmts.c",
+      "originalSha256": "70dad4a4cbb24045bb9da05e18424464824683230acd74ded95b954e36062739",
+      "finalSha256": "70dad4a4cbb24045bb9da05e18424464824683230acd74ded95b954e36062739",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/tsir/tsir_targets.c",
+      "originalSha256": "d538372682661008afdbd20b2d951e90d54fc54be7b23e888ce13ff30e8f247b",
+      "finalSha256": "d538372682661008afdbd20b2d951e90d54fc54be7b23e888ce13ff30e8f247b",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/tsir/tsir_targets.h",
+      "originalSha256": "7527410f5ca939aa5af701a1797d88968cdbe8638ddb1fadadcf64637fe343a3",
+      "finalSha256": "7527410f5ca939aa5af701a1797d88968cdbe8638ddb1fadadcf64637fe343a3",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/tsir/tsir_text.c",
+      "originalSha256": "1c763a3dd2c376bf6dcff4e8bf8617c1d40597da59739d1a55f683e931cc2972",
+      "finalSha256": "1c763a3dd2c376bf6dcff4e8bf8617c1d40597da59739d1a55f683e931cc2972",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/tsir/tsir_wgsl_ir.c",
+      "originalSha256": "1a9a4de1e80a8a97f474abe07a593668def9aa6c505229f2c743ea18db6af97d",
+      "finalSha256": "1a9a4de1e80a8a97f474abe07a593668def9aa6c505229f2c743ea18db6af97d",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/tsir/tsir_wgsl_ir.h",
+      "originalSha256": "2c4b573c000b0df9f0e018bd4eab0f16d63bf315db8b7ca4a6babe649744c924",
+      "finalSha256": "2c4b573c000b0df9f0e018bd4eab0f16d63bf315db8b7ca4a6babe649744c924",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/src/validate.c",
+      "originalSha256": "de7669139497e51d1ae22ebcb25b143789bc733c137801b3020633c02ce0e3b4",
+      "finalSha256": "de7669139497e51d1ae22ebcb25b143789bc733c137801b3020633c02ce0e3b4",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/targets/hlsl/access.c",
+      "originalSha256": "455b6b98de8bf044f7207d7565fae853015e1360b1211a7f4fd0dc6dd5bd29c5",
+      "finalSha256": "455b6b98de8bf044f7207d7565fae853015e1360b1211a7f4fd0dc6dd5bd29c5",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/targets/hlsl/float_pack.c",
+      "originalSha256": "4c6b110afa772ed7bd98b6f532a3b938d513406591843f24cdc97518359ff765",
+      "finalSha256": "4c6b110afa772ed7bd98b6f532a3b938d513406591843f24cdc97518359ff765",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/targets/hlsl/float_pack.h",
+      "originalSha256": "726fc147c1933dd9bff2815786fd378f61d072eeb207306e7f40f0a29680e709",
+      "finalSha256": "726fc147c1933dd9bff2815786fd378f61d072eeb207306e7f40f0a29680e709",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/targets/ir_view.h",
+      "originalSha256": "dcaaafd2d95e2fe30f93f66ad763c314cb97fba65ce5ac7088a4f498e1a27fbb",
+      "finalSha256": "dcaaafd2d95e2fe30f93f66ad763c314cb97fba65ce5ac7088a4f498e1a27fbb",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/targets/source_facts.h",
+      "originalSha256": "37b6db09061b35329ec45c7adfbabad02b8b820d8afe0accd8ebdfb3af809001",
+      "finalSha256": "37b6db09061b35329ec45c7adfbabad02b8b820d8afe0accd8ebdfb3af809001",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/tests/job_machine.py",
+      "originalSha256": "b59fe075b791b55f1bb0ef879bc870e652b86fdae0b71635b392e822ea2bebb0",
+      "finalSha256": "b59fe075b791b55f1bb0ef879bc870e652b86fdae0b71635b392e822ea2bebb0",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/tests/test_api.c",
+      "originalSha256": "36196271cc6ae1da76443d329850bf46009b1361a347d770fb46d438e05748d3",
+      "finalSha256": "36196271cc6ae1da76443d329850bf46009b1361a347d770fb46d438e05748d3",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/tests/test_bootstrap_manifest.py",
+      "originalSha256": "cbd71331e4060710e86d189d3c2309288c47355fb48b1ea9e9cbffc7e77f8941",
+      "finalSha256": "cbd71331e4060710e86d189d3c2309288c47355fb48b1ea9e9cbffc7e77f8941",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/tests/test_cli.py",
+      "originalSha256": "a4b7ace28d79c282c3fb1dd1f626d671433115e7ce45c970b1d56adb63f1bac1",
+      "finalSha256": "a4b7ace28d79c282c3fb1dd1f626d671433115e7ce45c970b1d56adb63f1bac1",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/tests/test_compiler_host.c",
+      "originalSha256": "9bd9f5cb4e3ab860a49e34e057d5324c9cb1228c203072430320b818f79e8e23",
+      "finalSha256": "9bd9f5cb4e3ab860a49e34e057d5324c9cb1228c203072430320b818f79e8e23",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/tests/test_compiler_host.cpp",
+      "originalSha256": "96524a6b2bac59be69dce37a7ec91a6ef04e8f40c4d4ce97b2da5462478e4016",
+      "finalSha256": "96524a6b2bac59be69dce37a7ec91a6ef04e8f40c4d4ce97b2da5462478e4016",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/tests/test_compiler_host_alloc.c",
+      "originalSha256": "9d23ffe3d9ca9ca0168b360cab85a081cf00f04f562be43e309ba2059ccef649",
+      "finalSha256": "9d23ffe3d9ca9ca0168b360cab85a081cf00f04f562be43e309ba2059ccef649",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/tests/test_compute.py",
+      "originalSha256": "fbf0f33f926cad5e9332e0b7b1c52a19d7e3a0e7960e52ed8ba02e38d2d031b9",
+      "finalSha256": "fbf0f33f926cad5e9332e0b7b1c52a19d7e3a0e7960e52ed8ba02e38d2d031b9",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/tests/test_compute_api.c",
+      "originalSha256": "e64c7c6b06528faafc9a8a75dff04a2355fc9b090ca53ae4f26a697b62a3e4d5",
+      "finalSha256": "e64c7c6b06528faafc9a8a75dff04a2355fc9b090ca53ae4f26a697b62a3e4d5",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/tests/test_constants.c",
+      "originalSha256": "c4f8f7721e060729286d535c2f09decc4685b1f41e5fb2bda5b14b6c4aee9cf9",
+      "finalSha256": "c4f8f7721e060729286d535c2f09decc4685b1f41e5fb2bda5b14b6c4aee9cf9",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/tests/test_control.py",
+      "originalSha256": "263dfb7a8a7a28393e0112d6dcadac5bdf95d2e932dc77263a7eafd0a383d9a0",
+      "finalSha256": "263dfb7a8a7a28393e0112d6dcadac5bdf95d2e932dc77263a7eafd0a383d9a0",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/tests/test_expressions.py",
+      "originalSha256": "5a86ec330594cb77bc3cbce8738bb31b4c35d7037a0bf361d1f59502a0e8bc62",
+      "finalSha256": "5a86ec330594cb77bc3cbce8738bb31b4c35d7037a0bf361d1f59502a0e8bc62",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/tests/test_hlsl_abi.cpp",
+      "originalSha256": "15cacb3f257299b79705275b3beb74e5bc18c256e0c635ac438df0ac46cdd59c",
+      "finalSha256": "15cacb3f257299b79705275b3beb74e5bc18c256e0c635ac438df0ac46cdd59c",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/tests/test_hlsl_api.c",
+      "originalSha256": "c0379a049af6007a9c3ff7df78e8db99dd7ffd36d9f24c2d61a05780b43f994d",
+      "finalSha256": "c0379a049af6007a9c3ff7df78e8db99dd7ffd36d9f24c2d61a05780b43f994d",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/tests/test_host_exports.py",
+      "originalSha256": "01b2ad6398c1018d25a8f8ac6bc7a5eb38d1191b5f7700d562449328b72a72ee",
+      "finalSha256": "01b2ad6398c1018d25a8f8ac6bc7a5eb38d1191b5f7700d562449328b72a72ee",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/tests/test_job.py",
+      "originalSha256": "07f448f8b3370b64bc3c650561f4ca04fc40f54ff9560ca420524537de4a8e51",
+      "finalSha256": "07f448f8b3370b64bc3c650561f4ca04fc40f54ff9560ca420524537de4a8e51",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/tests/test_job_api.c",
+      "originalSha256": "f874ef930acc2d0d1b70cb638750af184a75072130d87ea7755e890bb5f03b1e",
+      "finalSha256": "f874ef930acc2d0d1b70cb638750af184a75072130d87ea7755e890bb5f03b1e",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/tests/test_uniforms.py",
+      "originalSha256": "b812b20d2d9ce1ed2c83f9ca5747537f5290dd7e45c5e7371cdad6b6c8bdd94f",
+      "finalSha256": "b812b20d2d9ce1ed2c83f9ca5747537f5290dd7e45c5e7371cdad6b6c8bdd94f",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/tools/build_host_windows.py",
+      "originalSha256": "c090074f4f8d92430ef0f43cbc3ce4ccc58e3040d16b64149e0d9873f4f4b410",
+      "finalSha256": "c090074f4f8d92430ef0f43cbc3ce4ccc58e3040d16b64149e0d9873f4f4b410",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/tools/build_windows.py",
+      "originalSha256": "e079fa1630117ad16c1d24854983d7e089470575f8bd6d4ef08266941f48f722",
+      "finalSha256": "e079fa1630117ad16c1d24854983d7e089470575f8bd6d4ef08266941f48f722",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/tools/test_header_dependencies.py",
+      "originalSha256": "5d5d6313c15ae45bd798427b744bb7c8a0290eb3dc1329f3853de283d156a5f8",
+      "finalSha256": "5d5d6313c15ae45bd798427b744bb7c8a0290eb3dc1329f3853de283d156a5f8",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/tools/test_host_dxil.py",
+      "originalSha256": "06e1a065a17ca72c37b9b3d12a2b9a6144e094dd97525a45e4223f762dd3b697",
+      "finalSha256": "06e1a065a17ca72c37b9b3d12a2b9a6144e094dd97525a45e4223f762dd3b697",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/tools/test_host_install.py",
+      "originalSha256": "10077a0a9a8cc0768fc087109141381e738b4bf4f0db0c6358527be2a4eb3dd7",
+      "finalSha256": "10077a0a9a8cc0768fc087109141381e738b4bf4f0db0c6358527be2a4eb3dd7",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/compiler/tools/windows_compile.py",
+      "originalSha256": "a61794a7a1ee44e248f63dbcd4a26ef44784cd0f24fb5b62bfce107ed26f0e16",
+      "finalSha256": "a61794a7a1ee44e248f63dbcd4a26ef44784cd0f24fb5b62bfce107ed26f0e16",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/native/Makefile",
+      "originalSha256": "77e695dec29fdfe8c4079fe4d0d489b635fd52a17d669d5f6737afc7941f1578",
+      "finalSha256": "77e695dec29fdfe8c4079fe4d0d489b635fd52a17d669d5f6737afc7941f1578",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/native/README.md",
+      "originalSha256": "615904e92c0ee92f1977e1b54d290a613087323be956d7c6c1d8cf4ba7b01bdf",
+      "finalSha256": "615904e92c0ee92f1977e1b54d290a613087323be956d7c6c1d8cf4ba7b01bdf",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/native/src/internal.h",
+      "originalSha256": "5692cee812520b9f50d0daaa1b404ee14ce500a032f959c4add483a2682e63a2",
+      "finalSha256": "5692cee812520b9f50d0daaa1b404ee14ce500a032f959c4add483a2682e63a2",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/native/src/lifecycle.c",
+      "originalSha256": "2444846c070e8750457f257b98acc16f36e08e5dd85fa241c00ccdd73e1fd03c",
+      "finalSha256": "2444846c070e8750457f257b98acc16f36e08e5dd85fa241c00ccdd73e1fd03c",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/native/src/shader_cache.c",
+      "originalSha256": "0cb509928ca74596589456650a283cdd33aa8037cbd071d7e761dc771be7e8a3",
+      "finalSha256": "0cb509928ca74596589456650a283cdd33aa8037cbd071d7e761dc771be7e8a3",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/native/src/shader_cache.h",
+      "originalSha256": "a09cae15d7332ea08f932c42192d39d19e554bbe627cc44bd5d21f865ad2f407",
+      "finalSha256": "a09cae15d7332ea08f932c42192d39d19e554bbe627cc44bd5d21f865ad2f407",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/native/src/shader_cache_identity.c",
+      "originalSha256": "ab316d0f0922f7e74f06ba82b98904363df89ddac2172d924622f07778539ed8",
+      "finalSha256": "ab316d0f0922f7e74f06ba82b98904363df89ddac2172d924622f07778539ed8",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/native/src/shader_cache_identity.h",
+      "originalSha256": "0050aaa516eab0eb8b71b1993c714745ae12de3f50a561fc4bdf092ecc71bfd8",
+      "finalSha256": "0050aaa516eab0eb8b71b1993c714745ae12de3f50a561fc4bdf092ecc71bfd8",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/native/src/shader_disk_cache.c",
+      "originalSha256": "900629c45b3ce3ed0adaf596289c9ca645767fbcda90aade47fb01647e08e40c",
+      "finalSha256": "900629c45b3ce3ed0adaf596289c9ca645767fbcda90aade47fb01647e08e40c",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/native/src/shader_disk_cache.h",
+      "originalSha256": "11a187db9a285d1f2cff07d083fbfbe61abb691538a38b7d258c86cf08353c46",
+      "finalSha256": "11a187db9a285d1f2cff07d083fbfbe61abb691538a38b7d258c86cf08353c46",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/native/src/shader_modules.c",
+      "originalSha256": "6af6521972a68ee71845a2ccc8ff59f6366741388723fdf214c5189a8bdb6522",
+      "finalSha256": "6af6521972a68ee71845a2ccc8ff59f6366741388723fdf214c5189a8bdb6522",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/native/src/stages.c",
+      "originalSha256": "98c605b8f1de01d0f45b3664bb327a4f21b397676c5ebdf9b1c5068104c2ff1e",
+      "finalSha256": "98c605b8f1de01d0f45b3664bb327a4f21b397676c5ebdf9b1c5068104c2ff1e",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/native/tests/encoder_errors.c",
+      "originalSha256": "0351611545f7754d9233fbfdb079c7305f6ba5c4f6ddfbad6107b9ca0bd87b01",
+      "finalSha256": "0351611545f7754d9233fbfdb079c7305f6ba5c4f6ddfbad6107b9ca0bd87b01",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/native/tests/shader_cache.c",
+      "originalSha256": "13fdf791a4305171c3492bf0c48fac176631c8635a3856452796404cfa3532d6",
+      "finalSha256": "13fdf791a4305171c3492bf0c48fac176631c8635a3856452796404cfa3532d6",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/resources/README.md",
+      "originalSha256": "a405c9e070d9180ea001954978095614224ad7615abf7978a8aaa8a8d19203b0",
+      "finalSha256": "a405c9e070d9180ea001954978095614224ad7615abf7978a8aaa8a8d19203b0",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/resources/include/doe_resources.h",
+      "originalSha256": "f2fc5a71c4df4cc4af363a865818fa9770a81dcf59f52899a7638c64da68d497",
+      "finalSha256": "f2fc5a71c4df4cc4af363a865818fa9770a81dcf59f52899a7638c64da68d497",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/resources/src/commands.c",
+      "originalSha256": "54f39bb7803e1728f388d85a1494c3a726861e146eb32ecebb7cdb4070c89311",
+      "finalSha256": "54f39bb7803e1728f388d85a1494c3a726861e146eb32ecebb7cdb4070c89311",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/resources/src/compute_pass.c",
+      "originalSha256": "0e4e8dcf3d49611aabfca18ffe18716f6fa148afe509647c3e6bc3b6d2b6004d",
+      "finalSha256": "0e4e8dcf3d49611aabfca18ffe18716f6fa148afe509647c3e6bc3b6d2b6004d",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/resources/src/render.c",
+      "originalSha256": "57794737d069e4e257ea109328c1b03da222df380be641a365b6892ae0214092",
+      "finalSha256": "57794737d069e4e257ea109328c1b03da222df380be641a365b6892ae0214092",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/resources/tests/test_extended.c",
+      "originalSha256": "3a57ae6f075b3b1f8bc34cade54a1a4bd95da5e5d984260535f9ce9daaa49780",
+      "finalSha256": "3a57ae6f075b3b1f8bc34cade54a1a4bd95da5e5d984260535f9ce9daaa49780",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/runtime-cli/CATSCAN.md",
+      "originalSha256": "47e707a0ffc542ace96947af2214dfd4bd1766026bc5224cc3644766bfd82e18",
+      "finalSha256": "47e707a0ffc542ace96947af2214dfd4bd1766026bc5224cc3644766bfd82e18",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/runtime-cli/README.md",
+      "originalSha256": "f511db754b3a381cf22e4ab11e164b56f148c7db4da8e68c286c42ef34900342",
+      "finalSha256": "f511db754b3a381cf22e4ab11e164b56f148c7db4da8e68c286c42ef34900342",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/runtime-cli/src/cli_options.c",
+      "originalSha256": "6be12383786db1a87bc26b0136541f7585298eda0f9c31145783c322391739cd",
+      "finalSha256": "6be12383786db1a87bc26b0136541f7585298eda0f9c31145783c322391739cd",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/runtime-cli/src/cli_options.h",
+      "originalSha256": "a8d3269b5def81c65f143af3b55430da0643370a5e2091df2a6d38134a40639f",
+      "finalSha256": "a8d3269b5def81c65f143af3b55430da0643370a5e2091df2a6d38134a40639f",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/runtime-cli/src/main.c",
+      "originalSha256": "6d79b0de0557c61ddef6d431974beede4eb6f5484ae8ad5f2c9eb1089eb14856",
+      "finalSha256": "6d79b0de0557c61ddef6d431974beede4eb6f5484ae8ad5f2c9eb1089eb14856",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/runtime-cli/src/plan.c",
+      "originalSha256": "ca799f0747e4fd6c480205f5b5d634e30f7421db4de75a434321f7d7436d5e35",
+      "finalSha256": "ca799f0747e4fd6c480205f5b5d634e30f7421db4de75a434321f7d7436d5e35",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/runtime-cli/src/plan.h",
+      "originalSha256": "dcfe512e6cd457b0c983c47cd5f460c221ab1472397307387fa2422f924026eb",
+      "finalSha256": "dcfe512e6cd457b0c983c47cd5f460c221ab1472397307387fa2422f924026eb",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/runtime-cli/tests/test_cli_host_modes.py",
+      "originalSha256": "59beadfa2d954660fa627970ca1635e5d5d343cac99fe7a21eafccb8a39c6c84",
+      "finalSha256": "59beadfa2d954660fa627970ca1635e5d5d343cac99fe7a21eafccb8a39c6c84",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/shader/CATSCAN.md",
+      "originalSha256": "4de3bf5485a533a1962a820233d4ec163574604956c2564b5315206fa0f6b7cb",
+      "finalSha256": "4de3bf5485a533a1962a820233d4ec163574604956c2564b5315206fa0f6b7cb",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/shader/Makefile",
+      "originalSha256": "d20fbd433ecf634aaaca2fcc6327cae3bfc23cc33da9600c881c54ca606d0917",
+      "finalSha256": "d20fbd433ecf634aaaca2fcc6327cae3bfc23cc33da9600c881c54ca606d0917",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/shader/README.md",
+      "originalSha256": "84c68b3e3e5bdadc7044b19a17337cb86af7f7a16a945fd3c89cc5f04b3f942e",
+      "finalSha256": "84c68b3e3e5bdadc7044b19a17337cb86af7f7a16a945fd3c89cc5f04b3f942e",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/shader/include/doe_shader.h",
+      "originalSha256": "5b8d393f9e7499282aa2a4b6b5c9efcc55ae8cb6dbee89ae157effd49cf37a47",
+      "finalSha256": "5b8d393f9e7499282aa2a4b6b5c9efcc55ae8cb6dbee89ae157effd49cf37a47",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/shader/include/doe_shader_artifact.h",
+      "originalSha256": "043d2af6aef962abc514f9700826db3713e5731712994dd86fc6790b3bdbfec8",
+      "finalSha256": "043d2af6aef962abc514f9700826db3713e5731712994dd86fc6790b3bdbfec8",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/shader/src/artifact.c",
+      "originalSha256": "34c7eca5f39a2d265de79889d06aa98d53691f0b233ed16334d28a892ad9d192",
+      "finalSha256": "34c7eca5f39a2d265de79889d06aa98d53691f0b233ed16334d28a892ad9d192",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/shader/src/artifact_internal.h",
+      "originalSha256": "e51ea2e6c0d87567043f34c0a639b83a321aa651d73e273002f2dcb2fc595687",
+      "finalSha256": "e51ea2e6c0d87567043f34c0a639b83a321aa651d73e273002f2dcb2fc595687",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/shader/src/artifact_validate.c",
+      "originalSha256": "52ba69cb5b916687b84d5ca86bb7bf696f546ffd548e0008a964ba30b89ce181",
+      "finalSha256": "52ba69cb5b916687b84d5ca86bb7bf696f546ffd548e0008a964ba30b89ce181",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/shader/src/module.c",
+      "originalSha256": "eeb653648aa6abbdbf508f4e397e324ea917d8d78b715f1eab641c03dcd485af",
+      "finalSha256": "eeb653648aa6abbdbf508f4e397e324ea917d8d78b715f1eab641c03dcd485af",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/c/shader/tests/cpp.cpp",
+      "originalSha256": "0a10088a4ec94b1b572638f301d998075770cd056ea6d3ceb248c6a5309fde0c",
+      "finalSha256": "0a10088a4ec94b1b572638f301d998075770cd056ea6d3ceb248c6a5309fde0c",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/zig/source-layout.json",
+      "originalSha256": "687343fc1c19424b8a0f77951456a129a4923a455772ba469c18bf00cf16fd2c",
+      "finalSha256": "687343fc1c19424b8a0f77951456a129a4923a455772ba469c18bf00cf16fd2c",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/zig/src/compiler/tsir/reference_reduction.zig",
+      "originalSha256": "da0ea9e1c00efa6ff9a8fb4e157c9df4e2dda5347ad7160294d6e32901326120",
+      "finalSha256": "da0ea9e1c00efa6ff9a8fb4e157c9df4e2dda5347ad7160294d6e32901326120",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/zig/src/compiler/tsir/reference_scalar.zig",
+      "originalSha256": "84db0b3fa0b9745bf8e64cb8d04ccc10c84a90890965d55744446ee5d84073f9",
+      "finalSha256": "84db0b3fa0b9745bf8e64cb8d04ccc10c84a90890965d55744446ee5d84073f9",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/zig/src/compiler/tsir/reference_types.zig",
+      "originalSha256": "875c89b534a36c57df6c640058d2370c315828b2039fd59ac7f81a799d230ec2",
+      "finalSha256": "875c89b534a36c57df6c640058d2370c315828b2039fd59ac7f81a799d230ec2",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/zig/src/compiler/wgsl/WGSL_SUPPORT.md",
+      "originalSha256": "1f02310788e852d23796b08e4acce2fb0df4b9991c479d68514c68e80bf991ec",
+      "finalSha256": "1f02310788e852d23796b08e4acce2fb0df4b9991c479d68514c68e80bf991ec",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/zig/src/compiler/wgsl/frontend/sema.zig",
+      "originalSha256": "cf47d1e0ae63b41c76e4af7b7eb3ac039e11fdfdfd995bf961bd73dd1da02f80",
+      "finalSha256": "cf47d1e0ae63b41c76e4af7b7eb3ac039e11fdfdfd995bf961bd73dd1da02f80",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/zig/src/compiler/wgsl/frontend/sema_expr.zig",
+      "originalSha256": "50b54922150c438c8e2601b4bacb84857472d23dfc8513e43e431cfbc8529254",
+      "finalSha256": "50b54922150c438c8e2601b4bacb84857472d23dfc8513e43e431cfbc8529254",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/zig/src/compiler/wgsl/frontend/sema_types.zig",
+      "originalSha256": "67cd6a5f901d634d7745cec430b32561f9dcaf481fb093bb25c030afb4694268",
+      "finalSha256": "67cd6a5f901d634d7745cec430b32561f9dcaf481fb093bb25c030afb4694268",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/zig/src/compiler/wgsl/frontend/sema_typeutils.zig",
+      "originalSha256": "1808e0aafdd686ce5428165cddf5996c9d0a04a5fb691cf6c0d08387eaaae39b",
+      "finalSha256": "1808e0aafdd686ce5428165cddf5996c9d0a04a5fb691cf6c0d08387eaaae39b",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/zig/src/compiler/wgsl/ir/ir_builder.zig",
+      "originalSha256": "d9834d5c236b1640c75b88571dbe207bba88268ac072ddccdb5d8ce4c9a1043c",
+      "finalSha256": "d9834d5c236b1640c75b88571dbe207bba88268ac072ddccdb5d8ce4c9a1043c",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/zig/src/compiler/wgsl/ir/ir_opt_rewrite.zig",
+      "originalSha256": "3d265d1b9df9c712d73d1617888bc87c6c66e10fb421def4115169ee173f4007",
+      "finalSha256": "3d265d1b9df9c712d73d1617888bc87c6c66e10fb421def4115169ee173f4007",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/zig/src/compiler/wgsl/ir/ir_validate.zig",
+      "originalSha256": "ae4d7e5182d72a26be6dc01af2040efe9792b8bbd444bb88f72d6041a85cf8a5",
+      "finalSha256": "ae4d7e5182d72a26be6dc01af2040efe9792b8bbd444bb88f72d6041a85cf8a5",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/zig/tests/core/wgsl_parser_ir_test.zig",
+      "originalSha256": "74a47e87144873cd922fdd984f09228b1ff452698b876c0ecdc4f3636e61ee33",
+      "finalSha256": "74a47e87144873cd922fdd984f09228b1ff452698b876c0ecdc4f3636e61ee33",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/zig/tests/wgsl/emit_spirv_builtin_test.zig",
+      "originalSha256": "6cef73d4fc74e3646f35dba0cbbfd6c854c10cc67671c49be7fdbcf733c6d3f8",
+      "finalSha256": "6cef73d4fc74e3646f35dba0cbbfd6c854c10cc67671c49be7fdbcf733c6d3f8",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/zig/tests/wgsl/shader_sema_test.zig",
+      "originalSha256": "5509582c2d01acb7c6f0be1b6960f645cef07ed88f6374af85cbb50ce452e667",
+      "finalSha256": "5509582c2d01acb7c6f0be1b6960f645cef07ed88f6374af85cbb50ce452e667",
+      "changedOnlyForDriverRepair": false
+    },
+    {
+      "path": "runtime/zig/tests/wgsl/tsir_scaffold_test.zig",
+      "originalSha256": "dd3b95c88e68f4d3d2af76d883d7b853535aa27fc7dd331c67b2ea2d7711fb1c",
+      "finalSha256": "dd3b95c88e68f4d3d2af76d883d7b853535aa27fc7dd331c67b2ea2d7711fb1c",
+      "changedOnlyForDriverRepair": false
+    }
+  ],
+  "zigArtifacts": [
+    {
+      "path": "/home/x/deco/doe/bench/out/c-parity-delivery-20261026/linux-validation/runtime/zig/zig-out/bin/doe-tsir-bootstrap-oracle",
+      "bytes": 2853696,
+      "sha256": "944cd105d52c67af5774dbd5bbcc4f2d337666e9a9ff91560a45abbfda722f3c"
+    },
+    {
+      "path": "/home/x/deco/doe/bench/out/c-parity-delivery-20261026/linux-validation/runtime/zig/zig-out/bin/doe-tsir-bootstrap-manifest-inputs",
+      "bytes": 3584984,
+      "sha256": "91c18d47584e742a5c5c0c6492f280dedebc106487a8db999c6c3cb4528fb7c3"
+    }
+  ],
+  "zigVersion": "0.15.2"
+}

@@ -1,0 +1,38 @@
+diff --git a/runtime/c/compiler/src/tsir/tests/test_numeric_parity.py b/runtime/c/compiler/src/tsir/tests/test_numeric_parity.py
+index c495b6c64..d4c502286 100644
+--- a/runtime/c/compiler/src/tsir/tests/test_numeric_parity.py
++++ b/runtime/c/compiler/src/tsir/tests/test_numeric_parity.py
+@@ -28,13 +28,13 @@ pub fn main() !void {
+                 const v = try std.fmt.parseInt(u32, other, 16);
+                 const y: f32 = @bitCast(v);
+                 std.debug.print("{x:0>8} {x:0>8} {x:0>8} {x:0>8}\n", .{
+-                    u, v, bits(scalar.combineF32(.min,x,y)), bits(scalar.combineF32(.max,x,y))});
++                    u, v, bits(try scalar.combineF32(.min,x,y)), bits(try scalar.combineF32(.max,x,y))});
+             }
+         } else {
+             std.debug.print("{x:0>8} {x:0>8} {x:0>8} {x:0>8} {x:0>8} {x:0>8} {x:0>8} {x:0>8}\n", .{
+                 u, bits(std.math.exp(x)), bits(std.math.tanh(x)), bits(std.math.sqrt(x)),
+-                bits(scalar.combineF32(.min,x,1)), bits(scalar.combineF32(.max,x,1)),
+-                bits(scalar.combineF32(.min,1,x)), bits(scalar.combineF32(.max,1,x))});
++                bits(try scalar.combineF32(.min,x,1)), bits(try scalar.combineF32(.max,x,1)),
++                bits(try scalar.combineF32(.min,1,x)), bits(try scalar.combineF32(.max,1,x))});
+         }
+     }
+ }
+@@ -76,8 +76,14 @@ int main(int argc,char **argv) {
+ 
+ 
+ def invoke(command: list[str], env: dict[str, str]) -> subprocess.CompletedProcess[str]:
+-    return subprocess.run(command, env=env, check=True, capture_output=True,
+-                          text=True, timeout=90)
++    try:
++        return subprocess.run(command, env=env, check=True, capture_output=True,
++                              text=True, timeout=90)
++    except subprocess.CalledProcessError as exc:
++        raise RuntimeError(
++            f"command failed ({exc.returncode}): {command!r}\n"
++            f"stdout:\n{exc.stdout}\nstderr:\n{exc.stderr}"
++        ) from exc
+ 
+ 
+ def main() -> None:

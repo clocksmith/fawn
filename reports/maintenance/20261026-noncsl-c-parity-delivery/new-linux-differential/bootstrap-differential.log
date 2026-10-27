@@ -1,0 +1,102 @@
+make: Entering directory '/home/x/deco/doe/bench/out/c-parity-delivery-20261026/linux-validation/runtime/c/compiler'
+python3 src/tsir/tests/test_text.py
+cd ../../.. && runtime/c/compiler/build/test_bootstrap_manifest
+bootstrap_manifest: 10 checks, 0 failures
+build/test_bootstrap_writer
+gcc -std=c11 -O2 -fno-fast-math -ffp-contract=off -frounding-math -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wswitch-enum -Werror  -Isrc/tsir src/tsir/tests/test_source_differential.c targets/metal/bindings.c targets/metal/text.c targets/metal/zero.c targets/metal/types.c targets/metal/numeric.c targets/metal/access.c targets/metal/control.c targets/metal/stage.c targets/metal/handles.c targets/metal/image.c targets/metal/graphics.c targets/metal/float_pack.c targets/metal/subgroup.c targets/hlsl/text.c targets/hlsl/types.c targets/hlsl/resources.c targets/hlsl/image_types.c targets/hlsl/image.c targets/hlsl/numeric.c targets/hlsl/access.c targets/hlsl/control.c targets/hlsl/stage.c targets/hlsl/graphics.c targets/hlsl/float_pack.c targets/hlsl/subgroup.c src/pipeline.c src/override.c src/parse_override.c src/specialization.c src/specialization_compile.c src/override_plan.c src/override_selection.c src/compile_spans.c src/compile_metadata.c src/compile_text.c src/text_metal.c src/text_hlsl.c src/sema_matrix.c src/spirv_matrix.c src/spirv_atomic.c src/spirv_uniform.c src/spirv_workgroup.c src/sema_array.c src/sema_atomic.c src/sema_pointer.c src/stage.c src/parse_interface.c src/sema_stage.c src/spirv_stage.c src/sema_finalize.c src/image.c src/sema_image.c src/spirv_image.c src/module.c src/builtin.c src/numeric.c src/numeric_math.c src/numeric_environment.c src/lex.c src/parse.c src/parse_statements.c src/validate.c src/uniformity.c src/types.c src/constants.c src/sema_declarations.c src/sema_expression.c src/sema_call.c src/sema_select.c src/reflection.c src/spirv.c src/spirv_switch.c src/spirv_module.c src/spirv_subgroup.c src/compile.c src/storage.c src/sema_packed.c src/sema_interpolation.c src/sema_bitfield.c src/numeric_bits.c src/spirv_bits.c  src/numeric_half.c src/sampling.c src/sema_decompose.c src/numeric_decompose.c src/numeric_float_pack.c src/sema_float_pack.c src/spirv_float_pack.c src/sema_subgroup.c src/translation.c  src/pointer_lower.c src/pointer_clone.c src/parse_diagnostics.c src/diagnostics.c build/libdoe_tsir.a -lm -o build/test_source_differential
+TSIR facade/writer: invalid arrays, JSON injection, escaping, atomic publication and first error passed
+build/test_tsir_source_control
+TSIR control source: 23 checks passed
+build/test_tsir_source_expr
+TSIR packed projection: eight builtin trees and indirect-index constructor boundaries passed
+TSIR nested access: struct/vector/matrix/array uncached type and value-base controls passed
+TSIR expression adaptation: 20 category, projection, constructor, reference and numeric controls passed
+cd ../../.. && runtime/c/compiler/build/test_tsir_source
+TSIR source: 81 checks passed
+build/test_oracle_alloc
+bootstrap oracle allocation failures: 211 checks passed
+cd ../../.. && runtime/c/compiler/build/test_manifest_alloc
+bootstrap manifest allocation failures: 400 checks passed
+TSIR source first-allocation errno preservation: passed
+TSIR embedded-NUL frontend allocation failures: 3 checks passed
+TSIR rejected-plan allocation failures: 6 checks passed
+python3 tools/test_bootstrap_oracle.py --c-oracle build/doe-tsir-bootstrap-oracle-c
+bootstrap oracle: 67 checks passed
+cd ../../.. && DOE_TSIR_MANIFEST_CLI='/home/x/deco/doe/bench/out/c-parity-delivery-20261026/linux-validation/runtime/c/compiler/build/doe-tsir-bootstrap-manifest-inputs-c' python3 -m runtime.c.compiler.tests.test_bootstrap_manifest
+........
+----------------------------------------------------------------------
+Ran 8 tests in 0.089s
+
+OK
+text spans: 33 checks, 0 failures
+text spans: 6 actual Zig embedded-NUL semantic/realization/emitter/manifest/target/skeleton identities match
+python3 tools/test_bootstrap_oracle.py --c-oracle build/doe-tsir-bootstrap-oracle-c --zig-oracle ../../zig/zig-out/bin/doe-tsir-bootstrap-oracle
+bootstrap oracle: 67 checks passed (C/Zig differential)
+cd ../../.. && DOE_TSIR_MANIFEST_CLI='/home/x/deco/doe/bench/out/c-parity-delivery-20261026/linux-validation/runtime/c/compiler/build/doe-tsir-bootstrap-manifest-inputs-c' DOE_TSIR_MANIFEST_ZIG='/home/x/deco/doe/bench/out/c-parity-delivery-20261026/linux-validation/runtime/zig/zig-out/bin/doe-tsir-bootstrap-manifest-inputs' python3 -m runtime.c.compiler.tests.test_bootstrap_manifest
+........
+----------------------------------------------------------------------
+Ran 8 tests in 0.088s
+
+OK
+cd ../../.. && python3 runtime/c/compiler/src/tsir/tests/test_targets.py
+targets: 43 checks, 0 failures
+targets differential: 7 Zig identities, 11 source/error checks (including non-ASCII path and invalid UTF-8) passed
+python3 src/tsir/tests/test_source_differential.py
+source semantic differential: empty canonical SHA-256 matches, 0 retained rejections
+source semantic differential: while canonical SHA-256 matches, 1 retained rejections
+source semantic differential: loop-break canonical SHA-256 matches, 1 retained rejections
+source semantic differential: continuing-local canonical SHA-256 matches, 1 retained rejections
+source semantic differential: continuing-for canonical SHA-256 matches, 1 retained rejections
+source semantic differential: switch-nested canonical SHA-256 matches, 0 retained rejections
+source semantic differential: switch-loop-projection canonical SHA-256 matches, 0 retained rejections
+source semantic differential: mixed-nesting canonical SHA-256 matches, 1 retained rejections
+source semantic differential: decreasing-for canonical SHA-256 matches, 1 retained rejections
+source semantic differential: local-const-bound canonical SHA-256 matches, 0 retained rejections
+source semantic differential: local-let-bound canonical SHA-256 matches, 0 retained rejections
+source semantic differential: phony-assignment canonical SHA-256 matches, 0 retained rejections
+source semantic differential: nested-vector-swizzle-values canonical SHA-256 matches, 0 retained rejections
+source semantic differential: nested-aggregate-access canonical SHA-256 matches, 0 retained rejections
+source semantic differential: contextual-vector-declaration canonical SHA-256 matches, 0 retained rejections
+source semantic differential: contextual-vector-argument canonical SHA-256 matches, 0 retained rejections
+source semantic differential: contextual-vector-return canonical SHA-256 matches, 0 retained rejections
+source semantic differential: default-vector-bitcast canonical SHA-256 matches, 0 retained rejections
+source semantic differential: default-float-vector-bitcast canonical SHA-256 matches, 0 retained rejections
+source semantic differential: opaque-sampler canonical SHA-256 matches, 1 retained rejections
+source semantic differential: opaque-comparison-sampler canonical SHA-256 matches, 1 retained rejections
+source semantic differential: opaque-texture-2d canonical SHA-256 matches, 1 retained rejections
+source semantic differential: opaque-depth-2d canonical SHA-256 matches, 1 retained rejections
+source semantic differential: opaque-storage-2d canonical SHA-256 matches, 1 retained rejections
+source semantic differential: packed-indirect-unpack canonical SHA-256 matches, 0 retained rejections
+source semantic differential: packed-all-runtime canonical SHA-256 matches, 0 retained rejections
+source semantic differential: packed-abstract-arguments canonical SHA-256 matches, 0 retained rejections
+source semantic differential: ldexp-abstract canonical SHA-256 matches, 0 retained rejections
+source semantic differential: ldexp-inferred-integer-vector-admission canonical SHA-256 matches, 0 retained rejections
+source semantic differential: packed-local-const-admission canonical SHA-256 matches, 0 retained rejections
+TSIR source semantic differential: 30 canonical semantic SHA-256 cases passed
+python3 src/tsir/tests/test_f64_format.py
+TSIR f64 formatting: 4152 exact Zig decimal cases; canonical identity and four epsilon emitters, caller errno/fenv and first-error controls passed
+python3 src/tsir/tests/test_numeric_parity.py
+Traceback (most recent call last):
+  File "/home/x/deco/doe/bench/out/c-parity-delivery-20261026/linux-validation/runtime/c/compiler/src/tsir/tests/test_numeric_parity.py", line 143, in <module>
+    main()
+    ~~~~^^
+  File "/home/x/deco/doe/bench/out/c-parity-delivery-20261026/linux-validation/runtime/c/compiler/src/tsir/tests/test_numeric_parity.py", line 100, in main
+    invoke([zig, "build-exe", "-O", "ReleaseSafe", "--cache-dir", str(work / "local-cache"),
+    ~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            "--dep", "scalar", "-Mroot=" + str(work / "probe.zig"),
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            "-Mscalar=" + str(ROOT / "runtime/zig/src/compiler/tsir/reference_scalar.zig"),
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            "-lc", "-femit-bin=" + str(zig_binary)], env)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/x/deco/doe/bench/out/c-parity-delivery-20261026/linux-validation/runtime/c/compiler/src/tsir/tests/test_numeric_parity.py", line 79, in invoke
+    return subprocess.run(command, env=env, check=True, capture_output=True,
+           ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                          text=True, timeout=90)
+                          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/subprocess.py", line 578, in run
+    raise CalledProcessError(retcode, process.args,
+                             output=stdout, stderr=stderr)
+subprocess.CalledProcessError: Command '['/home/x/.local/bin/zig', 'build-exe', '-O', 'ReleaseSafe', '--cache-dir', '/home/x/deco/doe/bench/out/c-parity-delivery-20261026/linux-validation/runtime/c/compiler/build/tmp/tsir-numeric-qkglok0l/local-cache', '--dep', 'scalar', '-Mroot=/home/x/deco/doe/bench/out/c-parity-delivery-20261026/linux-validation/runtime/c/compiler/build/tmp/tsir-numeric-qkglok0l/probe.zig', '-Mscalar=/home/x/deco/doe/bench/out/c-parity-delivery-20261026/linux-validation/runtime/zig/src/compiler/tsir/reference_scalar.zig', '-lc', '-femit-bin=/home/x/deco/doe/bench/out/c-parity-delivery-20261026/linux-validation/runtime/c/compiler/build/tmp/tsir-numeric-qkglok0l/probe-zig']' returned non-zero exit status 1.
+make: *** [Makefile:761: test-tsir-bootstrap-differential] Error 1
+make: Leaving directory '/home/x/deco/doe/bench/out/c-parity-delivery-20261026/linux-validation/runtime/c/compiler'

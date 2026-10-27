@@ -1,0 +1,37 @@
+FAILED COMMAND ['/home/x/.local/bin/zig', 'build-exe', '-O', 'ReleaseSafe', '--cache-dir', '/tmp/tsir-numeric-5q0cbcmo/local-cache', '--dep', 'scalar', '-Mroot=/tmp/tsir-numeric-5q0cbcmo/probe.zig', '-Mscalar=/home/x/deco/doe/bench/out/c-parity-delivery-20261026/linux-validation/runtime/zig/src/compiler/tsir/reference_scalar.zig', '-lc', '-femit-bin=/tmp/tsir-numeric-5q0cbcmo/probe-zig']
+STDOUT 
+STDERR /tmp/tsir-numeric-5q0cbcmo/probe.zig:17:49: error: expected type 'f32', found 'error{InvalidReductionOp}!f32'
+                    u, v, bits(scalar.combineF32(.min,x,y)), bits(scalar.combineF32(.max,x,y))});
+                               ~~~~~~~~~~~~~~~~~^~~~~~~~~~
+/tmp/tsir-numeric-5q0cbcmo/probe.zig:17:49: note: cannot convert error union to payload type
+/tmp/tsir-numeric-5q0cbcmo/probe.zig:17:49: note: consider using 'try', 'catch', or 'if'
+/tmp/tsir-numeric-5q0cbcmo/probe.zig:4:12: note: parameter type declared here
+fn bits(x: f32) u32 { return @bitCast(x); }
+           ^~~
+referenced by:
+    callMain [inlined]: .local/zig/zig-x86_64-linux-0.15.2/lib/std/start.zig:627:37
+    callMainWithArgs [inlined]: .local/zig/zig-x86_64-linux-0.15.2/lib/std/start.zig:587:20
+    main: .local/zig/zig-x86_64-linux-0.15.2/lib/std/start.zig:602:28
+    1 reference(s) hidden; use '-freference-trace=4' to see all references
+
+Traceback (most recent call last):
+  File "<stdin>", line 19, in <module>
+  File "/home/x/deco/doe/bench/out/c-parity-delivery-20261026/linux-validation/runtime/c/compiler/src/tsir/tests/test_numeric_parity.py", line 100, in main
+    invoke([zig, "build-exe", "-O", "ReleaseSafe", "--cache-dir", str(work / "local-cache"),
+    ~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            "--dep", "scalar", "-Mroot=" + str(work / "probe.zig"),
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            "-Mscalar=" + str(ROOT / "runtime/zig/src/compiler/tsir/reference_scalar.zig"),
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            "-lc", "-femit-bin=" + str(zig_binary)], env)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<stdin>", line 8, in diagnosed
+  File "/home/x/deco/doe/bench/out/c-parity-delivery-20261026/linux-validation/runtime/c/compiler/src/tsir/tests/test_numeric_parity.py", line 79, in invoke
+    return subprocess.run(command, env=env, check=True, capture_output=True,
+           ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                          text=True, timeout=90)
+                          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/subprocess.py", line 578, in run
+    raise CalledProcessError(retcode, process.args,
+                             output=stdout, stderr=stderr)
+subprocess.CalledProcessError: Command '['/home/x/.local/bin/zig', 'build-exe', '-O', 'ReleaseSafe', '--cache-dir', '/tmp/tsir-numeric-5q0cbcmo/local-cache', '--dep', 'scalar', '-Mroot=/tmp/tsir-numeric-5q0cbcmo/probe.zig', '-Mscalar=/home/x/deco/doe/bench/out/c-parity-delivery-20261026/linux-validation/runtime/zig/src/compiler/tsir/reference_scalar.zig', '-lc', '-femit-bin=/tmp/tsir-numeric-5q0cbcmo/probe-zig']' returned non-zero exit status 1.

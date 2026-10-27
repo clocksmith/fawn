@@ -1,0 +1,49 @@
+{
+  "protocol": "deco.task.v1",
+  "op": "result",
+  "ok": true,
+  "workId": "jupiter-c-parity-differential-20261026-01",
+  "attemptId": "jupiter-c-parity-differential-20261026-01.a1",
+  "state": "failed",
+  "reason": "runner exited 2",
+  "stopped": true,
+  "receipt": {
+    "protocol": "deco.task.v1",
+    "workId": "jupiter-c-parity-differential-20261026-01",
+    "attemptId": "jupiter-c-parity-differential-20261026-01.a1",
+    "state": "failed",
+    "reason": "runner exited 2",
+    "member": "128",
+    "account": "x",
+    "hostname": "jupiter",
+    "runner": "shell",
+    "runnerSession": null,
+    "startedAt": "2026-10-26T23:52:04.032Z",
+    "endedAt": "2026-10-26T23:52:35.933Z",
+    "exitCode": 2,
+    "signal": null,
+    "source": {
+      "repository": "doe",
+      "testedCommit": "d8ed4913ae5e2ae3d5fdf15a4b43ca46d714467b",
+      "dirtyPaths": []
+    },
+    "checks": [],
+    "artifacts": [
+      {
+        "path": "bench/out/c-parity-delivery-20261026/differential/zig-oracle-build.log",
+        "sha256": "8306e3679a2b2525fa5f8d0586ae120412468808bdeec6d6dd438dea7211569b",
+        "bytes": 438
+      },
+      {
+        "path": "bench/out/c-parity-delivery-20261026/differential/bootstrap-differential.log",
+        "sha256": "d04c9beee4bf97b55fcb927bfd6c92c3c96aafc9c034a96aadfa6f5dc533884f",
+        "bytes": 10738
+      }
+    ],
+    "publication": null,
+    "deployment": null,
+    "notes": [
+      "Deployment receipts come from the owning project; the executor does not observe live routes."
+    ]
+  }
+}

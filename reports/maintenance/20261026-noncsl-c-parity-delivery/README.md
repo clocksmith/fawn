@@ -24,8 +24,17 @@ not exhaustive device or release qualification.
 
 The first new Linux bootstrap unittest run executed one case and skipped seven
 because its retained Zig oracle binary was unavailable in the isolated clone.
-Those skips do not establish differential parity. The original bundle's retained
-decimal/semantic differential receipts keep their original source identity.
+Those first skips do not establish differential parity. A fresh retained-Zig
+oracle build and [differential rerun](new-linux-differential/summary.json) then
+passed all eight manifest tests with zero skips, 67 bootstrap oracle checks,
+seven target identities, 11 source-error checks, 30 semantic cases and 4,152
+exact f64 decimal cases. The numeric probe initially failed to compile because
+six calls did not propagate the retained Zig helper's error union. The test
+driver repair preserves its inputs and expected outputs; the rerun passed
+3,395 comparisons over 471 runtime inputs and 49 operand pairs. Both the first
+failure and successful rerun are retained with source bindings. These are host
+compiler differential checks, not physical GPU, browser or performance proof.
+The original bundle's differential receipts retain their original identity.
 
 The required C aggregate still rejects three pre-existing quarantined CSL test
 registrations. The original bundle additionally retains its software-Vulkan MSAA
