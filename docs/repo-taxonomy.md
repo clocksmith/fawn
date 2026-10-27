@@ -1,8 +1,9 @@
-# Doe repository taxonomy
+# Fawn repository taxonomy
 
 ## Purpose
 
-Doe is organized by product boundary first:
+The Fawn repository contains the workspace service and independently usable Doe
+compiler/runtime. It is organized by product boundary first:
 
 - engine/runtime
 - package families
@@ -13,7 +14,9 @@ Doe is organized by product boundary first:
 This avoids treating package subpaths or benchmark entrypoints as standalone
 products.
 
-For a shared project link, use the [Doe overview](https://github.com/doerun/doe#readme).
+For a shared project link, use the [Fawn overview](https://github.com/clocksmith/fawn#readme).
+For Doe specifically, use the [Doe overview](https://github.com/clocksmith/fawn#doe-webgpu-runtime-and-wgsl-compiler)
+or the [runtime source](https://github.com/clocksmith/fawn/tree/main/runtime).
 The root keeps product entry points, licensing, configuration, and automatically
 discovered agent instructions. Supporting archives live with their owning families.
 
@@ -21,8 +24,10 @@ discovered agent instructions. Supporting archives live with their owning famili
 
 ### Runtime
 
+- `runtime/c`
+  - the selected C compiler, runtime and native adapter implementation
 - `runtime/zig`
-  - the Doe runtime, compiler, and backend implementation
+  - the retained Zig runtime, compiler and backend implementation
   - `runtime/zig/src/README.md` is the source ownership map
   - `runtime/zig/source-layout.json` is the machine-enforced directory contract
 - `runtime/bridge`

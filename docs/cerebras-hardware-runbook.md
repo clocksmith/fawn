@@ -67,7 +67,7 @@ explicitly changes directory. For a repo-published bundle, clone the pinned
 checkout and let the wrapper verify the bundled archive:
 
 ```bash
-git clone https://github.com/doerun/doe.git
+git clone https://github.com/clocksmith/fawn.git doe
 cd doe
 git checkout <bundle-commit>
 
