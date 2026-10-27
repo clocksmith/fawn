@@ -113,12 +113,16 @@ static bool stage_load(native_device *device, WGPUShaderModule module, WGPUStrin
         doe_shader_error detail = {0};
         native_lock(device);
         result.compiled = native_shader_cache_stage(&device->shaders,payload->module,&selection,values,count,pipeline);
+        /* Reserve the persistent operation while holding the same mutex as the
+         * one-way browser policy. Memory hits do not touch persistent storage. */
+        const bool use_disk = !result.compiled &&
+            native_persistent_cache_reserve(&device->persistent_cache);
         uint8_t image_identity[32];
-        bool have_identity = device->shaders.image_identity_ready;
+        bool have_identity = use_disk && device->shaders.image_identity_ready;
         if (have_identity) memcpy(image_identity,device->shaders.image_identity,sizeof(image_identity));
         native_unlock(device);
         if (!result.compiled) {
-            if (!have_identity && native_shader_cache_identity(image_identity)) {
+            if (use_disk && !have_identity && native_shader_cache_identity(image_identity)) {
                 native_lock(device);
                 memcpy(device->shaders.image_identity,image_identity,sizeof(image_identity));
                 device->shaders.image_identity_ready = true;

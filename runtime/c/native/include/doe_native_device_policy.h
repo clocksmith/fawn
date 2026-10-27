@@ -25,6 +25,14 @@ typedef struct DoeNativeDevicePolicy {
 DOE_NATIVE_EXTENSION WGPUFuture doeNativeAdapterRequestDeviceWithPolicy(WGPUAdapter adapter,
     const WGPUDeviceDescriptor *descriptor, WGPURequestDeviceCallbackInfo callback,
     uint32_t version, const DoeNativeDevicePolicy *policy, size_t policy_size);
+/* One-way per-device opt-out from Doe-owned persistent shader/driver caches.
+ * Call on a live device before its first persistent cache operation. Prior use
+ * (including an in-flight attempt) rejects with Error; repeated successful
+ * disable is idempotent. Memory caches remain enabled. No environment mutation,
+ * foreign callback or GPU work. The caller holds its ordinary device reference.
+ * Independent caller-owned cache objects and OS/driver caches are outside this
+ * contract. Never appears in the standard wgpuGetProcAddress inventory. */
+DOE_NATIVE_EXTENSION WGPUStatus doeNativeDeviceDisablePersistentCache(WGPUDevice device);
 #ifdef __cplusplus
 }
 #endif

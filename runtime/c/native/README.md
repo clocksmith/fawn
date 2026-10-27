@@ -1678,3 +1678,24 @@ and Windows have mapped-image implementations, but ASLR-sensitive fixups can
 conservatively miss; their actual cross-process hit and hardware qualification
 are not established by Linux controls. Metal library call ledgers likewise do
 not qualify native GPU execution.
+
+Browser hosts can impose a device-local persistent-cache opt-out through
+`doeNativeDeviceDisablePersistentCache`, declared in `doe_native_device_policy.h`.
+Call it before publishing a newly created device or creating its pipelines. A
+successful call permanently suppresses Doe-owned shader-cache reads/writes and
+rejects subsequent private driver-cache configuration on that device. In-memory
+module/stage caches remain enabled. The existing device mutex serializes this
+one-way choice against the first persistent operation, including an operation
+whose disk access is still in flight. Prior use or a destroyed/null device
+returns `WGPUStatus_Error`; repeating a successful opt-out remains successful.
+The function does not mutate process environment, deliver callbacks, or appear
+in the standard WebGPU procedure inventory. Independent caller-owned cache
+objects and opaque OS/driver caches have separate owners.
+
+`check-persistent-cache` exercises actual native devices, module/stage memory
+reuse, late and destroyed-device rejection, private configuration rejection,
+32 disable-versus-first-use races and exactly-once loss delivery after rejected
+policy cleanup. Linux `check-persistent-cache-disk` additionally wraps and
+forwards the actual disk lookup/store boundary: a disabled device performs
+neither operation, while the default device is a positive disk-access control.
+These development controls do not qualify an entire Chromium browser or release.
