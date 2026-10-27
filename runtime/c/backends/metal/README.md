@@ -471,3 +471,11 @@ for embedded NUL/length/source changes, mutation during native compilation,
 entrypoint reuse, device isolation, failed compilation, optional-allocation
 failure (Linux linker fault control), FIFO eviction and final ownership release.
 It does not claim an Apple SDK or physical Metal result.
+
+Whole-subresource copies between equal-sample-count multisampled textures use the
+ordinary typed texture-copy encoder and existing speculative initialization and
+command leases. Partial multisample copies, sample-count mismatches and buffer
+staging of multisampled textures reject before encoding. `test_multisample`
+checks those boundaries and publication after completion; the unchanged public
+`native/tests/msaa_sampling.c` fixture independently reads every sample of the
+copied texture. Host call ledgers alone do not establish those pixel values.

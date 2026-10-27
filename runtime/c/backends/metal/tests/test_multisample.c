@@ -73,7 +73,7 @@ static void allocation_admission(void) {
     desc.mip_levels = 2;
     assert(doe_mtl_texture_create(context, &desc, &out, NULL) == DOE_MTL_UNSUPPORTED);
     desc.mip_levels = 1;
-    desc.usage |= DOE_MTL_TEXTURE_COPY_SRC;
+    desc.usage |= DOE_MTL_TEXTURE_STORAGE;
     assert(doe_mtl_texture_create(context, &desc, &out, NULL) == DOE_MTL_UNSUPPORTED);
     desc = descriptor(DOE_MTL_DEPTH24_STENCIL8, 1);
     context->caps.depth24_stencil8 = false;
@@ -272,13 +272,66 @@ static void sample_pipeline_match(void) {
     doe_mtl_context_release(context);
     mock_assert_closed(&mock);
 }
+static void whole_sample_copies(void) {
+    mock_native mock;
+    doe_mtl_context *context = context_new(&mock);
+    doe_mtl_texture_desc desc = descriptor(DOE_MTL_RGBA8_UNORM, 4);
+    desc.usage |= DOE_MTL_TEXTURE_COPY_SRC | DOE_MTL_TEXTURE_COPY_DST;
+    doe_mtl_texture *source = NULL, *destination = NULL, *flat = NULL;
+    assert(doe_mtl_texture_create(context,&desc,&source,NULL) == DOE_MTL_OK);
+    assert(doe_mtl_texture_create(context,&desc,&destination,NULL) == DOE_MTL_OK);
+    desc.sample_count = 1;
+    desc.type = DOE_MTL_TEXTURE_2D;
+    assert(doe_mtl_texture_create(context,&desc,&flat,NULL) == DOE_MTL_OK);
+    doe_mtl_buffer *buffer = NULL;
+    assert(doe_mtl_buffer_create(context,4096,DOE_MTL_SHARED,&buffer,NULL) == DOE_MTL_OK);
+    const doe_mtl_texture_region whole = {.width=16,.height=8,.depth_or_layers=1};
+    doe_mtl_texture_region partial = whole;
+    partial.width = 8;
+    for (unsigned mode = 0; mode < 5; ++mode) {
+        doe_mtl_commands *commands = commands_new(context);
+        doe_mtl_status status;
+        if (mode < 3) status = doe_mtl_commands_copy_texture(commands,source,
+            mode == 0 ? partial : whole,mode == 2 ? flat : destination,
+            mode == 1 ? partial : whole,NULL);
+        else if (mode == 3) status = doe_mtl_commands_upload_texture(commands,buffer,
+            (doe_mtl_texture_buffer_layout){0},source,whole,NULL);
+        else status = doe_mtl_commands_read_texture(commands,source,whole,buffer,
+            (doe_mtl_texture_buffer_layout){0},NULL);
+        assert(status == (mode == 2 ? DOE_MTL_INVALID_ARGUMENT : DOE_MTL_UNSUPPORTED));
+        assert(!mock.image_copies && !mock.uploads && !mock.reads);
+        assert(doe_mtl_commands_release(commands) == DOE_MTL_OK);
+    }
+    doe_mtl_texture_view *view = NULL;
+    const doe_mtl_texture_view_desc vd = {DOE_MTL_TEXTURE_2D_MS,DOE_MTL_RGBA8_UNORM,0,1,0,1,
+        DOE_MTL_SWIZZLE_RED,DOE_MTL_SWIZZLE_GREEN,DOE_MTL_SWIZZLE_BLUE,DOE_MTL_SWIZZLE_ALPHA};
+    assert(doe_mtl_texture_view_create(source,&vd,&view,NULL) == DOE_MTL_OK);
+    doe_mtl_render_pass_desc pass = color_pass(view,NULL);
+    doe_mtl_commands *commands = commands_new(context);
+    assert(doe_mtl_commands_render(commands,&pass,NULL,0,NULL) == DOE_MTL_OK);
+    assert(doe_mtl_commands_copy_texture(commands,source,whole,destination,whole,NULL) == DOE_MTL_OK);
+    assert(mock.image_copies == 1 && mock.image_from.region.width == 16 &&
+        mock.image_to.region.height == 8);
+    assert(!source->initialized[0] && !destination->initialized[0]);
+    complete(&mock,commands);
+    assert(source->initialized[0] == DOE_MTL_ASPECT_COLOR &&
+        destination->initialized[0] == DOE_MTL_ASPECT_COLOR);
+    doe_mtl_texture_view_release(view);
+    doe_mtl_texture_release(flat);
+    doe_mtl_texture_release(destination);
+    doe_mtl_texture_release(source);
+    doe_mtl_buffer_release(buffer);
+    doe_mtl_context_release(context);
+    mock_assert_closed(&mock);
+}
 int main(void) {
+    whole_sample_copies();
     sample_pipeline_match();
     allocation_admission();
     independent_aspects();
     color_resolve();
     combined_resolve_lifetime();
     rejected_resolves();
-    puts("Metal multisample controls: 6 ownership/aspect/resolve groups passed; no sample or pixel execution");
+    puts("Metal multisample controls: 7 ownership/aspect/resolve/copy groups passed; no sample or pixel execution");
     return 0;
 }
