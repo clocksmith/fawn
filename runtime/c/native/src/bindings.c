@@ -26,7 +26,9 @@ WGPUBindGroupLayout wgpuDeviceCreateBindGroupLayout(WGPUDevice handle,
             (entry->sampler.type != WGPUSamplerBindingType_BindingNotUsed) +
             (entry->texture.sampleType != WGPUTextureSampleType_BindingNotUsed) +
             (entry->storageTexture.access != WGPUStorageTextureAccess_BindingNotUsed) + external;
-        if ((entry->nextInChain && !external) || entry->bindingArraySize || entry->buffer.nextInChain ||
+        /* Pinned Dawn normalizes a scalar binding to one; zero is its API
+         * default spelling. Both lower to the same single resource entry. */
+        if ((entry->nextInChain && !external) || entry->bindingArraySize > 1 || entry->buffer.nextInChain ||
             entry->binding >= device->backend.limits.maxBindingsPerBindGroup ||
             entry->sampler.nextInChain || entry->texture.nextInChain || entry->storageTexture.nextInChain ||
             kinds != 1 || entry->visibility & ~(WGPUShaderStage_Compute | WGPUShaderStage_Vertex | WGPUShaderStage_Fragment)) {
