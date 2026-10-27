@@ -111,12 +111,18 @@ def main() -> int:
                 "/Fo" + str(executable.with_suffix(".obj")), "/Fe" + str(executable),
                 "/link", str(import_library), "/stack:8388608"])
         invoke([str(executable), *([] if source.endswith(".cpp") else [str(ROOT.parents[2])])])
-    for name in ("tsir_bootstrap_oracle", "tsir_bootstrap_manifest_inputs"):
+    def build_control(source: Path, name: str, include: Path) -> Path:
+        obj = out / (name + ".obj")
         executable = out / (name + ".exe")
-        invoke([*strict, "/I" + str(ROOT / "src/tsir"),
-                str(ROOT / "tools" / (name + ".c")), *objects,
-                "/Fe" + str(executable), "/Fo" + str(out / (name + ".obj")),
+        invoke([*strict, "/I" + str(include), "/c", str(source),
+                "/Fo" + str(obj)])
+        invoke([compiler, "--target=x86_64-pc-windows-msvc", "/nologo",
+                str(obj), *objects, "/Fe" + str(executable),
                 "/link", "/stack:8388608"])
+        return executable
+
+    for name in ("tsir_bootstrap_oracle", "tsir_bootstrap_manifest_inputs"):
+        build_control(ROOT / "tools" / (name + ".c"), name, ROOT / "src/tsir")
     rows = json.loads(invoke([str(out / "tsir_bootstrap_manifest_inputs.exe")], ROOT.parents[2]).stdout)
     expected = {(f"doe.tsir.bootstrap.{kernel}", backend)
                 for kernel in ("fused_gemv", "rms_norm", "gather")
@@ -131,12 +137,10 @@ def main() -> int:
                                "--kernel", "gather", "--inputs", str(inputs)]).stdout)
     assert oracle["status"] == "pass"
     assert oracle["referenceHash"] == hashlib.sha256(struct.pack("<f", 3)).hexdigest()
-    child = out / "test_dxil_io.exe"
     # The existing controlled child owns fake-artifact production; no duplicate
     # script/compiler fixture is substituted for the shared process boundary.
-    invoke([*strict, str(ROOT / "src/dxil/tests/test_dxil_io.c"), *objects,
-            "/Fe" + str(child), "/Fo" + str(out / "test_dxil_io.obj"),
-            "/link", "/stack:8388608"])
+    child = build_control(ROOT / "src/dxil/tests/test_dxil_io.c",
+                          "test_dxil_io", ROOT / "src/dxil")
     invoke([str(child)])
     invoke([sys.executable, str(ROOT / "tools/test_host_dxil.py"),
             "--library", str(library), "--child", str(child),
