@@ -30,3 +30,4 @@ pub const WGPU_STRLEN = std.math.maxInt(usize);
 pub const WGPU_FALSE: WGPUBool = 0;
 pub const WGPU_TRUE: WGPUBool = 1;
 pub const WGPUStatus_Success: WGPUStatus = 1;
+pub const WGPUStatus_Error: WGPUStatus = upstream.c.WGPUStatus_Error;

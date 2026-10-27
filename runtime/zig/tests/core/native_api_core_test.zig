@@ -1688,3 +1688,35 @@ test "comptime: all export fn symbols are resolvable" {
         _ = @import("../../src/native/compute/doe_compute_fast.zig").doeNativeComputeDispatchFlush;
     }
 }
+
+test "buffer mapping access copy adapters preserve read-only mappings" {
+    // The standard adapter imports render controls whose C ABI recording peers
+    // must remain linked even when a focused filter excludes render tests.
+    comptime {
+        const render = @import("../../src/native/render/doe_render_native.zig");
+        _ = &render.doeNativeRenderPassRecordViewportState;
+        _ = &render.doeNativeRenderPassRecordScissorState;
+        _ = &render.doeNativeRenderPassRecordBlendConstantState;
+        _ = &render.doeNativeRenderPassRecordStencilReferenceState;
+    }
+    const standard = @import("../../src/dropin/wgpu_dropin_ext_c.zig");
+    var input: [16]u8 align(16) = @splat(7);
+    var output: [16]u8 = @splat(0);
+    const replacement: [16]u8 = @splat(9);
+    var buffer = native.DoeBuffer{ .size = input.len, .mapped = true, .map_mode = .read, .map_size = input.len, .metal_mapped_ptr = &input };
+    const raw: ?*anyopaque = @ptrCast(&buffer);
+    const handle: abi_core.WGPUBuffer = @ptrCast(&buffer);
+    try std.testing.expectEqual(abi_core.WGPUStatus_Success, standard.wgpuBufferReadMappedRange(handle, 0, &output, output.len));
+    try std.testing.expectEqualSlices(u8, &input, &output);
+    try std.testing.expectEqual(abi_core.WGPUStatus_Error, standard.wgpuBufferWriteMappedRange(handle, 0, &replacement, replacement.len));
+    try std.testing.expectEqual(@as(u8, 7), input[0]);
+    buffer_ops.doeNativeBufferUnmap(raw);
+    try std.testing.expectEqual(abi_core.WGPUStatus_Error, standard.wgpuBufferReadMappedRange(handle, 0, &output, output.len));
+    buffer.mapped = true;
+    buffer.map_mode = .write;
+    buffer.map_size = input.len;
+    try std.testing.expectEqual(abi_core.WGPUStatus_Success, standard.wgpuBufferWriteMappedRange(handle, 0, &replacement, replacement.len));
+    try std.testing.expectEqualSlices(u8, &replacement, &input);
+    buffer.map_pending = true;
+    try std.testing.expectEqual(abi_core.WGPUStatus_Error, standard.wgpuBufferWriteMappedRange(handle, 0, &replacement, replacement.len));
+}

@@ -244,6 +244,7 @@ pub const DoeBuffer = struct {
     size: u64 = 0,
     usage: u64 = 0,
     mapped: bool = false,
+    map_mode: enum { none, read, write } = .none,
     map_pending: bool = false,
     map_generation: u64 = 0,
     map_offset: usize = 0,

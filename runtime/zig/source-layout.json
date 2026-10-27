@@ -3002,9 +3002,9 @@
       },
       "src/core/abi/wgpu_core_base_types.zig": {
         "decision": "Keep",
-        "moduleSha256": "a549bd6f5745e4009adc2a42fa5d16b465aac4c9d243a88d18d1ea55d52b6e2f",
-        "reason": "Keep: shared native ABI owner. Standard WGSL/SPIR-V source tags derive from the pinned header; private MSL/HLSL tags and all other ABI values are preserved.",
-        "reviewer": "codex-focused-projection-interchange/2026-10-11"
+        "moduleSha256": "3d052178ca642a1a57093fe9c1a69a71d9ccc05385c1ff44842ebb086cdf019f",
+        "reason": "Keep: Re-export the upstream-owned WGPUStatus_Error for native copy adapters.",
+        "reviewer": "codex-buffer-map-access/2026-10-27"
       },
       "src/core/abi/wgpu_execution_types.zig": {
         "decision": "Keep",
@@ -3020,9 +3020,9 @@
       },
       "src/core/abi/wgpu_handle_types.zig": {
         "decision": "Keep",
-        "moduleSha256": "3e736b50bce46022e7e9edc10a6ecea25f13e8338f1cb297276827afdb739cae",
-        "reason": "Keep: reachable core implementation shared by 20 production consumers with no conflicting ownership signal.",
-        "reviewer": "codex-recomposition-review/2026-08-08"
+        "moduleSha256": "919988b3cf150a9d5b777b47d9594ddce1ae45f891210e24a17b2ba06fa0dc34",
+        "reason": "Keep: Expose the authoritative pinned upstream WGPUStatus_Error used by mapped-copy failures.",
+        "reviewer": "codex-buffer-map-access/2026-10-27"
       },
       "src/core/abi/wgpu_loader.zig": {
         "decision": "Keep",
@@ -3254,9 +3254,9 @@
       },
       "src/dropin/wgpu_dropin_ext_c.zig": {
         "decision": "Keep",
-        "moduleSha256": "4eb8aef43a54080901a711344f7d6b7dfd4c330d995969985f1eca365e86baa8",
-        "reason": "Keep: drop-in C ABI bridge; wgpuQueueWriteTexture forwards the destination aspect and data-layout offset. writeTexture rejects a dataLayout.offset past the data before any copy, including empty copies. Command encoder debug markers forward to the native encoder. Standard render-pass debug-group procedures reach the native pass. writeTexture with empty data and no pointer still validates its offset and copy.",
-        "reviewer": "doe-c-claude-surface/2026-10-24"
+        "moduleSha256": "ae7ed4f7c9169e497314779156e0a17cc1c9cf8a135e12a7e0af5d042ba724e0",
+        "reason": "Keep: Mapped-range copy adapters preserve const-read versus mutable-write admission and return the pinned native Error status.",
+        "reviewer": "codex-buffer-map-access/2026-10-27"
       },
       "src/dropin/wgpu_dropin_lib.zig": {
         "decision": "Keep",
@@ -3686,9 +3686,9 @@
       },
       "src/native/resource/doe_buffer_ops_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "a8835436ce049a12973123c8d0d88552a97bd5456a775302278d47a58b8f773f",
-        "reason": "Keep: Buffer owner selects UAV-capable DEFAULT allocation only for storage usage; upload/readback roles and map-completion fix preserved; invalid usage or mapped size generates a validation error and an invalid buffer (C resource rules). Zero-size buffers allocate a minimal backing on every backend while reporting size 0.",
-        "reviewer": "doe-c-claude-indexed/2026-10-24"
+        "moduleSha256": "7f1856d1003d3572f38efc8144dbc967fb5d8b486a779dfeb945e93196342f1a",
+        "reason": "Keep: Active READ/WRITE mapping access owns mutable-range admission, creation state and lifecycle reset; const spans retain the shared validation path.",
+        "reviewer": "codex-buffer-map-access/2026-10-27"
       },
       "src/native/resource/doe_command_texture_native.zig": {
         "decision": "Keep",
@@ -3800,9 +3800,9 @@
       },
       "src/native/support/doe_native_object_types.zig": {
         "decision": "Keep",
-        "moduleSha256": "b0a3abf40164fe2b63b814d61b48b235ae667fa1446f21f5a0ca08274d11b7e2",
-        "reason": "Keep: default-off C error-scope partial owner uses final-address typed storage, cold creation rollback and checked final deinit; original classifier, callbacks and device references remain with their existing owners; textures record an allowed srgb view; samplers carry error_object; MUTABLE_FORMAT images with a VkImageFormatListCreateInfo only for textures whose viewFormats name the srgb pair. Render pipelines keep their multisample mask and alpha-to-coverage. Passes hold per-group dynamic offsets and the cached workgroup limit. Devices hold their buffer offset alignment limits. Device keeps maxImmediateSize. Compute pipelines keep required binding kinds for automatic-layout dispatch checks. Encoders and passes keep their open debug groups. Render pipelines keep required binding kinds. Layouts and pipelines keep automatic-layout identity. Devices keep dynamic buffer limits; layouts keep their device; render pipelines keep binding buffer types and stages. Devices keep maxColorAttachmentBytesPerSample. Render passes and pipelines keep per-slot color attachments and targets. Pipelines keep a required-binding list instead of a 32-slot table; views keep their swizzle flag. Samplers keep their comparison and filtering flags. Pass color slots hold depthSlice. The device holds resolved per-stage slot, inter-stage and workgroup storage limits. Render passes hold their usage scope. The device holds resolved texture extent, bind group and vertex input limits.",
-        "reviewer": "doe-c-claude-surface/2026-10-24"
+        "moduleSha256": "5bc9d683f531e6f2c56229bc7b4d7db249be3bc2db736553b3db8ffba2903002",
+        "reason": "Keep: The private buffer object retains the active mapping access alongside mapping state and lifetime.",
+        "reviewer": "codex-buffer-map-access/2026-10-27"
       },
       "src/native/support/doe_native_runtime_helpers.zig": {
         "decision": "Keep",
