@@ -10,6 +10,9 @@ const native = @import("../native/mod.zig");
 const texture_sampler = @import("../native/resource/doe_texture_sampler_native.zig");
 const queue_flush_breakdown = @import("../native/queue/doe_queue_flush_breakdown.zig");
 
+// Retained procedure-only browser alias; this is not a new ELF/PE export.
+pub const wgpuQueueCopyExternalImageToTexture = native.doeNativeQueueCopyExternalImageToTexture;
+
 pub const WGPUSharedBufferMemory = ?*anyopaque;
 pub const WGPUSharedFence = ?*anyopaque;
 pub const WGPUSharedTextureMemory = ?*anyopaque;

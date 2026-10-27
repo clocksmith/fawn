@@ -226,6 +226,16 @@ pub fn resolveDoeNativeProc(comptime FnType: type, comptime symbol_name: [:0]con
     return null;
 }
 
+// Runtime wrapper dispatch and typed cached dispatch share these entries.
+pub fn resolveNativeProcByName(symbol_name: []const u8) ?*const fn () callconv(.c) void {
+    inline for (ACTIVE_PROC_GROUPS) |group| {
+        inline for (group) |entry| {
+            if (std.mem.eql(u8, symbol_name, entry.symbol)) return @ptrCast(entry.proc);
+        }
+    }
+    return null;
+}
+
 pub fn manifestOwnerForSymbol(symbol_name: []const u8) ?dropin_symbol_ownership.SymbolOwner {
     if (hasSymbolInEntries(symbol_name, CORE_PROC_ENTRIES)) return NATIVE_OWNER;
     if (comptime TIER != .compute) {

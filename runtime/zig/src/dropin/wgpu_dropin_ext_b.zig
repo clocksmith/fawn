@@ -12,7 +12,7 @@ const async_procs = @import("../core/abi/procs/wgpu_async_procs.zig");
 const callback_delivery = @import("../native/support/doe_callback_owner.zig");
 const native = @import("../native/mod.zig");
 
-extern fn wgpuGetProcAddress(name: abi_core.WGPUStringView) callconv(.c) p1cap.WGPUProc;
+extern fn doeWgpuDropinGetNativeProc(name: abi_core.WGPUStringView) callconv(.c) p1cap.WGPUProc;
 extern fn doeWgpuDropinAbortMissingRequiredSymbol(name: abi_core.WGPUStringView) callconv(.c) noreturn;
 const doeNativeRenderPassBeginOcclusionQuery = native.doeNativeRenderPassBeginOcclusionQuery;
 const doeNativeRenderPassEndOcclusionQuery = native.doeNativeRenderPassEndOcclusionQuery;
@@ -28,7 +28,7 @@ fn symbolView(comptime name: []const u8) abi_core.WGPUStringView {
 }
 
 fn resolveRequiredProc(comptime FnType: type, comptime symbol_name: []const u8) FnType {
-    const proc = wgpuGetProcAddress(symbolView(symbol_name)) orelse
+    const proc = doeWgpuDropinGetNativeProc(symbolView(symbol_name)) orelse
         doeWgpuDropinAbortMissingRequiredSymbol(symbolView(symbol_name));
     return @as(FnType, @ptrCast(proc));
 }

@@ -1467,6 +1467,8 @@ pub fn build(b: *std.Build) void {
     test_inventory_step.dependOn(&test_inventory_check.step);
 
     const bridge_manifest_check = b.addSystemCommand(&.{ "python3", "tools/check_metal_bridge_manifest.py" });
+    const dropin_bridge_manifest_check = b.addSystemCommand(&.{ "python3", "tools/check_dropin_bridge_manifest.py" });
+    bridge_manifest_check.step.dependOn(&dropin_bridge_manifest_check.step);
     const bridge_manifest_step = b.step("bridge-manifest", "Validate the Metal bridge manifest against Zig declarations and bridge sources");
     bridge_manifest_step.dependOn(&bridge_manifest_check.step);
 

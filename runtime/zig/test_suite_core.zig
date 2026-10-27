@@ -89,6 +89,7 @@ const test_src_backend_vulkan_vk_compute_sync_zig_1111ce1b = @import("src/backen
 const test_src_backend_vulkan_vk_descriptors_zig_424d8d65 = @import("src/backend/vulkan/vk_descriptors.zig");
 const test_src_native_vulkan_vulkan_render_attachments_zig_980103b4 = @import("src/native/vulkan/vulkan_render_attachments.zig");
 const test_src_native_render_doe_render_pipeline_native_zig_3fcdde95 = @import("src/native/render/doe_render_pipeline_native.zig");
+const test_src_dropin_wgpu_dropin_lib_zig_f4401a41 = @import("src/dropin/wgpu_dropin_lib.zig");
 
 comptime {
     _ = test_tests_backend_common_artifact_meta_test_zig_80b3c4bd;
@@ -179,4 +180,5 @@ comptime {
     _ = test_src_backend_vulkan_vk_descriptors_zig_424d8d65;
     _ = test_src_native_vulkan_vulkan_render_attachments_zig_980103b4;
     _ = test_src_native_render_doe_render_pipeline_native_zig_3fcdde95;
+    _ = test_src_dropin_wgpu_dropin_lib_zig_f4401a41;
 }

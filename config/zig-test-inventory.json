@@ -913,6 +913,10 @@
         {
           "path": "src/native/render/doe_render_pipeline_native.zig",
           "kind": "inline"
+        },
+        {
+          "path": "src/dropin/wgpu_dropin_lib.zig",
+          "kind": "inline"
         }
       ]
     },
@@ -1550,14 +1554,6 @@
     },
     {
       "path": "src/composition/execution_session.zig",
-      "reason": "declares tests that no Zig test suite compiled when the reachability check was added (2026-10-24); its owner should wire it into a suite or remove the dead tests"
-    },
-    {
-      "path": "src/dropin/dropin_browser_shared_memory.zig",
-      "reason": "declares tests that no Zig test suite compiled when the reachability check was added (2026-10-24); its owner should wire it into a suite or remove the dead tests"
-    },
-    {
-      "path": "src/dropin/wgpu_dropin_lib.zig",
       "reason": "declares tests that no Zig test suite compiled when the reachability check was added (2026-10-24); its owner should wire it into a suite or remove the dead tests"
     },
     {

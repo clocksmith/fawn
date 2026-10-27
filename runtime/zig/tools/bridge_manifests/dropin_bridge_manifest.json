@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "owner": "runtime/zig/src/dropin/wgpu_dropin_lib.zig",
+  "scope": "Private C seams between drop-in ABI modules; no public WebGPU extension or provider capability promise",
+  "symbols": [
+    {
+      "name": "doeWgpuDropinGetNativeProc",
+      "implementation": "resolveImplementationProc",
+      "returnType": "p1_capability_procs.WGPUProc",
+      "argumentType": "abi_base.WGPUStringView",
+      "callingConvention": "c",
+      "elfVisibility": "hidden",
+      "machOVisibility": "hidden",
+      "coffVisibility": "default",
+      "publicProcedureLookup": false,
+      "reason": "Avoid import cycle between public ABI modules and canonical native dispatch; COFF dllexport cannot use hidden visibility in pinned LLVM."
+    }
+  ]
+}

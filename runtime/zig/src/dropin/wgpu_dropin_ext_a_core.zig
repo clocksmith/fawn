@@ -44,7 +44,7 @@ pub const error_scope = @import("../runtime/diagnostics/error_scope.zig");
 pub const task_pool = @import("../runtime/task_pool.zig");
 pub const singleflight = @import("../runtime/pipeline_singleflight.zig");
 
-pub extern fn wgpuGetProcAddress(name: abi_core.WGPUStringView) callconv(.c) p1cap.WGPUProc;
+pub extern fn doeWgpuDropinGetNativeProc(name: abi_core.WGPUStringView) callconv(.c) p1cap.WGPUProc;
 pub extern fn doeWgpuDropinAbortMissingRequiredSymbol(name: abi_core.WGPUStringView) callconv(.c) noreturn;
 pub const doeNativeComputePassSetImmediates = native.doeNativeComputePassSetImmediates;
 pub const doeNativeQuerySetDestroy = native.doeNativeQuerySetDestroy;
@@ -211,7 +211,7 @@ pub fn symbolView(comptime name: []const u8) abi_core.WGPUStringView {
 }
 
 pub fn resolveRequiredProc(comptime FnType: type, comptime symbol_name: []const u8) FnType {
-    const proc = wgpuGetProcAddress(symbolView(symbol_name)) orelse
+    const proc = doeWgpuDropinGetNativeProc(symbolView(symbol_name)) orelse
         doeWgpuDropinAbortMissingRequiredSymbol(symbolView(symbol_name));
     return @as(FnType, @ptrCast(proc));
 }

@@ -3170,9 +3170,9 @@
       },
       "src/dropin/dropin_abi_procs.zig": {
         "decision": "Keep",
-        "moduleSha256": "747cbe636702a43c3ddbd28645ee66845b4eebd5a724b7570e7559697b2b05ed",
-        "reason": "Keep: ABI wrappers translate host calls to native owners. Synchronous map adapters pump native callback delivery and retain callback storage through settlement, including timeout. No shader or backend policy enters this facade.",
-        "reviewer": "codex-callback-bridge-review/2026-10-10"
+        "moduleSha256": "02bca67914bddec877a973ed29b60c3a0d15542629c0592e7f65e72b9bee5f40",
+        "reason": "Keep: Public ABI identity and retained procedure-only browser aliases are distinct from the canonical typed native implementation manifest; the private cross-module resolver has an explicitly owned platform visibility contract.",
+        "reviewer": "codex-procedure-identity/2026-10-27"
       },
       "src/dropin/dropin_behavior_policy.zig": {
         "decision": "Keep",
@@ -3182,9 +3182,9 @@
       },
       "src/dropin/dropin_browser_shared_memory.zig": {
         "decision": "Keep",
-        "moduleSha256": "a148b324104cb518848dd9c5f119f03ae375440edf6e9dd52b1808f70ddccef2",
-        "reason": "Keep: browser shared-memory ABI and lifetime capsule; native ownership must remain isolated.",
-        "reviewer": "codex-recomposition-review/2026-08-08"
+        "moduleSha256": "1de31b70f4b99b55509e4ceb24e15ebafbf1d555c0aa326726a6aadec657030d",
+        "reason": "Keep: Public ABI identity and retained procedure-only browser aliases are distinct from the canonical typed native implementation manifest; the private cross-module resolver has an explicitly owned platform visibility contract.",
+        "reviewer": "codex-procedure-identity/2026-10-27"
       },
       "src/dropin/dropin_diagnostics.zig": {
         "decision": "Keep",
@@ -3194,9 +3194,9 @@
       },
       "src/dropin/dropin_proc_manifest.zig": {
         "decision": "Keep",
-        "moduleSha256": "6b03f2a65ad0b258682bc733e9cc53e8392aa2c4bd8748d37677755f93209167",
-        "reason": "Keep: native proc groups retain typed pointer completeness and active-tier identity authority; project immutable owner/name records without copied symbols.",
-        "reviewer": "codex-c-dropin-policy-author/2026-10-23"
+        "moduleSha256": "f4bec47b481b34f7babf9b52a7ea0e816e1cae05783635e652fce5f0d9268be6",
+        "reason": "Keep: Public ABI identity and retained procedure-only browser aliases are distinct from the canonical typed native implementation manifest; the private cross-module resolver has an explicitly owned platform visibility contract.",
+        "reviewer": "codex-procedure-identity/2026-10-27"
       },
       "src/dropin/dropin_router.zig": {
         "decision": "Keep",
@@ -3230,9 +3230,9 @@
       },
       "src/dropin/wgpu_dropin_ext_a_core.zig": {
         "decision": "Keep",
-        "moduleSha256": "e7a3835c7537de9e60439520a817446eab436f9d117f8b25ad18c27deb605cfc",
-        "reason": "Keep: selected Metal adapter name is copied through the existing backend lifecycle seam into adapter-owned storage and projected by the shared ABI path. Numeric IDs remain unavailable unless discovered; no new enumeration, allocation or public API.",
-        "reviewer": "codex-bee-doe/2026-10-21"
+        "moduleSha256": "1e8c8385df145dda97e6582d5d04af3b08abe6d600f8f3b40ee1b48ee3c5cbd6",
+        "reason": "Keep: Public ABI identity and retained procedure-only browser aliases are distinct from the canonical typed native implementation manifest; the private cross-module resolver has an explicitly owned platform visibility contract.",
+        "reviewer": "codex-procedure-identity/2026-10-27"
       },
       "src/dropin/wgpu_dropin_ext_a_exports.zig": {
         "decision": "Keep",
@@ -3248,9 +3248,9 @@
       },
       "src/dropin/wgpu_dropin_ext_b.zig": {
         "decision": "Keep",
-        "moduleSha256": "ac3785c95f6a36874bd64eb7d878c45b9dde96f36456c0b01439189863789306",
-        "reason": "Keep: frozen C-instance seam preserves this native owner and default behavior; only selected identity/lease routing and required test-only observations change. wgpuCommandEncoderCopyTextureToTexture forwards both copy aspects.",
-        "reviewer": "doe-c-claude-surface/2026-10-24"
+        "moduleSha256": "eca58fcd18e1cf8254c342435568f69895f720e16007229aa98bdb888cb728d4",
+        "reason": "Keep: Public ABI identity and retained procedure-only browser aliases are distinct from the canonical typed native implementation manifest; the private cross-module resolver has an explicitly owned platform visibility contract.",
+        "reviewer": "codex-procedure-identity/2026-10-27"
       },
       "src/dropin/wgpu_dropin_ext_c.zig": {
         "decision": "Keep",
@@ -3260,9 +3260,9 @@
       },
       "src/dropin/wgpu_dropin_lib.zig": {
         "decision": "Keep",
-        "moduleSha256": "76a143eff0180e87e4a16d5e6a075ec10e155d9a3b1cfac293d054c89bb9ce41",
-        "reason": "Keep: actual proc loading, caching, last-error and diagnostics remain native; original-owner diagnostics use the selected policy facade without an independent shortcut.",
-        "reviewer": "codex-c-dropin-policy-author/2026-10-23"
+        "moduleSha256": "a041ce3fb45803c9e802e20637388e9bfd559c6760313e8185649e3fc7fb8464",
+        "reason": "Keep: Public ABI identity and retained procedure-only browser aliases are distinct from the canonical typed native implementation manifest; the private cross-module resolver has an explicitly owned platform visibility contract.",
+        "reviewer": "codex-procedure-identity/2026-10-27"
       },
       "src/evidence/mod.zig": {
         "decision": "Keep",
