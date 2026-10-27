@@ -138,3 +138,33 @@ Chromium's process singleton from forwarding a default launch to an already
 running stock or opposite-provider profile. An explicit absolute
 `--user-data-dir=/path` is preserved; use a fresh isolated profile for build
 verification and close it before changing the selected provider.
+
+
+The Linux C frontdoor requests early GPU sandbox startup. On X11 with ANGLE's
+GLX backend, the managed pre-sandbox hook maps the fixed GLVND/Mesa library
+closure without querying GLX capabilities. It admits existing DRM character
+nodes only after matching the collected GPU vendor and rechecking node identity.
+The broker receives exact read-only GPU metadata/topology paths and trusted
+system drirc files; metadata/config writes, home configuration and unrelated
+files/devices remain denied. GLX capabilities and driver helper threads start
+after the sandbox seals. Native Dawn, Wayland, explicit ANGLE Vulkan/software
+and late-sandbox policies keep their existing behavior.
+
+For a Mesa host with a real X11 session and an already-built patched Chromium
+checkout, the focused resource check compiles the actual owning translation
+units and uses the real broker and GPU sandbox:
+
+```bash
+python3 browser/chromium/tests/test_linux_glx_resources.py build \
+  --chromium-root /absolute/patched-chromium/src \
+  --out /absolute/new-glx-cpu-build
+python3 browser/chromium/tests/test_linux_glx_resources.py run \
+  --binary /absolute/new-glx-cpu-build/controls \
+  --provider /absolute/staged-fawn-linux/lib/doe/libwebgpu_doe_c.so \
+  --out /absolute/new-glx-cpu-results
+```
+
+The check binds the actual DRM sysfs identity and compares unrestricted and
+sandboxed accelerated GLX metadata. It creates no GL context or GPU work;
+page WebGPU, native pixels, compositor output and browser acceptance require
+their separate physical controls.

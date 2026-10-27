@@ -8,7 +8,7 @@ Own Fawn page WebGPU; require correctness, benefit and maintainability.
 
 ## Authority
 
-- Owns Chromium integration contracts, runtime selection, packaging, lifecycle probes, and release evidence.
+- Owns Chromium contracts, runtime selection, packaging, lifecycle probes, release evidence and scoped Linux GPU policy.
 - Wider integration needs traced paths, measured selection and separate acceptance; excludes unrelated policy and inherited evidence.
 
 ## Scope
@@ -30,7 +30,7 @@ Outputs:
 - Forced Doe fails closed; governed fallback remains explicit and typed.
 - Windows C dependencies stay in private `lib/doe`, separate from browser/Dawn;
   launch preserves caller working directory.
-- Launch alone proves neither application nor performance value.
+- Launch proves neither application nor performance value.
 - Layered cohorts stop after unknown completion; visual owners stop and drain after measurement.
 - Hosted artwork keeps input-independent visible-time scheduling; input keeps each
   scene's weighted response through transitions without delaying handoffs or resetting material.
@@ -51,4 +51,4 @@ Outputs:
 
 ## Freedom
 
-Mechanisms must preserve boundaries and pass acceptance evidence.
+Preserve boundaries and pass acceptance evidence.

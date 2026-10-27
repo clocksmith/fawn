@@ -12,19 +12,48 @@ index 1b29f20028..431f92682f 100644
      switches::kForceVideoOverlays,
      switches::kSkiaGraphiteDawnBackend,
  #if BUILDFLAG(IS_ANDROID)
+diff --git a/content/common/BUILD.gn b/content/common/BUILD.gn
+index e41489d4c9..5b1578e860 100644
+--- a/content/common/BUILD.gn
++++ b/content/common/BUILD.gn
+@@ -369,6 +369,10 @@ source_set("common") {
+     sources -= [ "cursors/webcursor_aura.cc" ]
+   }
+ 
++  if (use_ozone) {
++    deps += [ "//ui/ozone" ]
++  }
++
+   if (is_linux || is_chromeos) {
+     sources += [
+       "gpu_pre_sandbox_hook_linux.cc",
 diff --git a/content/common/gpu_pre_sandbox_hook_linux.cc b/content/common/gpu_pre_sandbox_hook_linux.cc
-index 2e53794fa3..d99d37ca19 100644
+index 2e53794fa3..7e6651e87d 100644
 --- a/content/common/gpu_pre_sandbox_hook_linux.cc
 +++ b/content/common/gpu_pre_sandbox_hook_linux.cc
-@@ -16,6 +16,7 @@
+@@ -8,6 +8,7 @@
+ #include <errno.h>
+ #include <stdlib.h>
+ #include <sys/stat.h>
++#include <sys/sysmacros.h>
+ 
+ #include <array>
+ #include <memory>
+@@ -16,16 +17,21 @@
  #include <vector>
  
  #include "base/base_paths.h"
 +#include "base/command_line.h"
  #include "base/files/file_enumerator.h"
  #include "base/files/file_path.h"
++#include "base/files/file_util.h"
  #include "base/files/scoped_file.h"
-@@ -26,6 +27,7 @@
+ #include "base/functional/bind.h"
+ #include "base/logging.h"
+ #include "base/path_service.h"
++#include "base/strings/string_number_conversions.h"
++#include "base/strings/string_util.h"
+ #include "base/strings/stringprintf.h"
  #include "build/build_config.h"
  #include "build/buildflag.h"
  #include "content/public/common/content_switches.h"
@@ -32,10 +61,254 @@ index 2e53794fa3..d99d37ca19 100644
  #include "media/gpu/buildflags.h"
  #include "sandbox/linux/bpf_dsl/policy.h"
  #include "sandbox/linux/syscall_broker/broker_command.h"
-@@ -696,6 +698,23 @@ bool LoadLibrariesForGpu(
+@@ -36,6 +42,10 @@
+ #include "sandbox/policy/linux/bpf_cros_arm_gpu_policy_linux.h"
+ #include "sandbox/policy/linux/bpf_gpu_policy_linux.h"
+ #include "sandbox/policy/linux/sandbox_linux.h"
++#include "ui/gl/gl_implementation.h"
++#if BUILDFLAG(IS_OZONE)
++#include "ui/ozone/public/ozone_platform.h"
++#endif
+ 
+ #if BUILDFLAG(USE_V4L2_CODEC)
+ #include "media/gpu/v4l2/v4l2_device.h"
+@@ -224,11 +234,135 @@ void AddImgPvrGpuPermissions(std::vector<BrokerFilePermission>* permissions) {
+   permissions->push_back(BrokerFilePermission::ReadWrite(kPvrSyncPath));
+ }
+ 
+-void AddDrmGpuDevPermissions(std::vector<BrokerFilePermission>* permissions,
+-                             const std::string& path) {
++// Only the early external-runtime X11 GLX route needs desktop resources after
++// sealing. Preserve the normal policy for native Dawn, Wayland and other GL
++// implementations. The caller binds the actual serialized GPU preference.
++bool UsesEarlyExternalGlxResources(bool early_sandbox) {
++#if BUILDFLAG(IS_LINUX) && BUILDFLAG(IS_OZONE)
++  const auto* command_line = base::CommandLine::ForCurrentProcess();
++  if (!early_sandbox ||
++      command_line->GetSwitchValueASCII(switches::kUseWebGPURuntime) != "doe" ||
++      command_line->HasSwitch(switches::kDisableWebGPUDoe) ||
++      ui::OzonePlatform::GetPlatformName() != "x11") {
++    return false;
++  }
++  const auto requested =
++      gl::GetRequestedGLImplementationFromCommandLine(command_line);
++  // X11's default allowed implementation is EGL ANGLE with its GLX backend.
++  if (!requested) {
++    return true;
++  }
++  return requested->gl == gl::kGLImplementationEGLANGLE &&
++         (requested->angle == gl::ANGLEImplementation::kDefault ||
++          requested->angle == gl::ANGLEImplementation::kOpenGL ||
++          requested->angle == gl::ANGLEImplementation::kOpenGLES);
++#else
++  return false;
++#endif
++}
++
++bool MatchesGpuVendor(
++    unsigned int vendor,
++    const sandbox::policy::SandboxSeccompBPF::Options& options) {
++  return (vendor == 0x8086 && options.use_intel_specific_policies) ||
++         (vendor == 0x1002 && options.use_amd_specific_policies) ||
++         (vendor == 0x10de && options.use_nvidia_specific_policies) ||
++         (vendor == 0x1af4 && options.use_virtio_specific_policies);
++}
++
++// Broker readlink uses read permission. Authorize each exact topology
++// component, never its descendants; stat-with-intermediates alone cannot allow
++// readlink.
++void AddExactTopologyPermissions(std::vector<BrokerFilePermission>* permissions,
++                                 base::FilePath path) {
++  while (path.value() != "/sys" && path.value().starts_with("/sys/")) {
++    permissions->push_back(BrokerFilePermission::ReadOnly(path.value()));
++    path = path.DirName();
++  }
++  if (path.value() == "/sys") {
++    permissions->push_back(BrokerFilePermission::ReadOnly(path.value()));
++  }
++}
++
++bool AddExternalGlxDrmPermissions(
++    std::vector<BrokerFilePermission>* permissions,
++    const std::string& node,
++    const struct stat& info,
++    const sandbox::policy::SandboxSeccompBPF::Options& options) {
++  constexpr unsigned int kDrmMajor = 226;
++  if (!S_ISCHR(info.st_mode) || major(info.st_rdev) != kDrmMajor) {
++    return false;
++  }
++  const base::FilePath alias(base::StringPrintf(
++      "/sys/dev/char/%u:%u", major(info.st_rdev), minor(info.st_rdev)));
++  const base::FilePath device =
++      base::MakeAbsoluteFilePath(alias.Append("device"));
++  if (!device.value().starts_with("/sys/devices/")) {
++    return false;
++  }
++  std::string vendor_text;
++  unsigned int vendor = 0;
++  if (!base::ReadFileToString(device.Append("vendor"), &vendor_text) ||
++      !base::HexStringToUInt(
++          base::TrimWhitespaceASCII(vendor_text, base::TRIM_ALL), &vendor) ||
++      !MatchesGpuVendor(vendor, options)) {
++    return false;
++  }
++  const base::FilePath canonical_node = base::MakeAbsoluteFilePath(alias);
++  struct stat current;
++  if (!canonical_node.value().starts_with("/sys/devices/") ||
++      lstat(node.c_str(), &current) != 0 || current.st_ino != info.st_ino ||
++      current.st_dev != info.st_dev || current.st_rdev != info.st_rdev ||
++      !S_ISCHR(current.st_mode)) {
++    return false;
++  }
++  permissions->push_back(BrokerFilePermission::ReadWrite(node));
++  for (const auto& topology :
++       {alias, alias.Append("device"), alias.Append("device/drm"),
++        alias.Append("device/subsystem"), canonical_node,
++        canonical_node.Append("device"), device.Append("drm")}) {
++    AddExactTopologyPermissions(permissions, topology);
++  }
++  for (const char* field : {"vendor", "device", "revision", "subsystem_vendor",
++                            "subsystem_device", "uevent"}) {
++    permissions->push_back(BrokerFilePermission::ReadOnly(
++        alias.Append("device").Append(field).value()));
++    permissions->push_back(
++        BrokerFilePermission::ReadOnly(device.Append(field).value()));
++  }
++  return true;
++}
++
++void AddSystemDrircPermissions(std::vector<BrokerFilePermission>* permissions) {
++  const base::FilePath directory("/usr/share/drirc.d");
++  struct stat info;
++  if (lstat(directory.value().c_str(), &info) != 0 || !S_ISDIR(info.st_mode) ||
++      info.st_uid != 0 || (info.st_mode & 0022)) {
++    return;
++  }
++  permissions->push_back(BrokerFilePermission::ReadOnly(directory.value()));
++  base::FileEnumerator files(directory, false, base::FileEnumerator::FILES,
++                             FILE_PATH_LITERAL("*.conf"));
++  for (auto path = files.Next(); !path.empty(); path = files.Next()) {
++    if (lstat(path.value().c_str(), &info) == 0 && S_ISREG(info.st_mode) &&
++        info.st_uid == 0 && !(info.st_mode & 0022)) {
++      permissions->push_back(BrokerFilePermission::ReadOnly(path.value()));
++    }
++  }
++}
++
++void AddDrmGpuDevPermissions(
++    std::vector<BrokerFilePermission>* permissions,
++    const std::string& path,
++    const sandbox::policy::SandboxSeccompBPF::Options* external_glx = nullptr) {
+   struct stat st;
+ 
+-  if (stat(path.c_str(), &st) == 0) {
++  if ((external_glx ? lstat(path.c_str(), &st) : stat(path.c_str(), &st)) ==
++      0) {
++    if (external_glx) {
++      AddExternalGlxDrmPermissions(permissions, path, st, *external_glx);
++      return;
++    }
+     permissions->push_back(BrokerFilePermission::ReadWrite(path));
+ 
+     uint32_t major = (static_cast<uint32_t>(st.st_rdev) >> 8) & 0xff;
+@@ -240,13 +374,16 @@ void AddDrmGpuDevPermissions(std::vector<BrokerFilePermission>* permissions,
+   }
+ }
+ 
+-void AddDrmGpuPermissions(std::vector<BrokerFilePermission>* permissions) {
++void AddDrmGpuPermissions(
++    std::vector<BrokerFilePermission>* permissions,
++    const sandbox::policy::SandboxSeccompBPF::Options* external_glx = nullptr) {
+   permissions->push_back(BrokerFilePermission::ReadOnly("/dev/dri"));
+   for (int i = 0; i <= 9; ++i) {
++    AddDrmGpuDevPermissions(
++        permissions, base::StringPrintf("/dev/dri/card%d", i), external_glx);
+     AddDrmGpuDevPermissions(permissions,
+-                            base::StringPrintf("/dev/dri/card%d", i));
+-    AddDrmGpuDevPermissions(permissions,
+-                            base::StringPrintf("/dev/dri/renderD%d", i + 128));
++                            base::StringPrintf("/dev/dri/renderD%d", i + 128),
++                            external_glx);
+   }
+ }
+ 
+@@ -604,23 +741,26 @@ void LoadChromecastV4L2Libraries() {
+ }  // namespace
+ 
+ sandbox::syscall_broker::BrokerCommandSet CommandSetForGPU(
+-    const sandbox::policy::SandboxLinux::Options& options) {
++    const sandbox::policy::SandboxLinux::Options& options,
++    bool early_sandbox) {
+   sandbox::syscall_broker::BrokerCommandSet command_set;
+   command_set.set(sandbox::syscall_broker::COMMAND_ACCESS);
+   command_set.set(sandbox::syscall_broker::COMMAND_OPEN);
+   command_set.set(sandbox::syscall_broker::COMMAND_STAT);
+-  if (IsChromeOS() &&
+-      (options.use_amd_specific_policies ||
+-       options.use_intel_specific_policies ||
+-       options.use_nvidia_specific_policies ||
+-       options.use_virtio_specific_policies || IsArchitectureArm())) {
++  if (UsesEarlyExternalGlxResources(early_sandbox) ||
++      (IsChromeOS() &&
++       (options.use_amd_specific_policies ||
++        options.use_intel_specific_policies ||
++        options.use_nvidia_specific_policies ||
++        options.use_virtio_specific_policies || IsArchitectureArm()))) {
+     command_set.set(sandbox::syscall_broker::COMMAND_READLINK);
+   }
+   return command_set;
+ }
+ 
+ std::vector<BrokerFilePermission> FilePermissionsForGpu(
+-    const sandbox::policy::SandboxSeccompBPF::Options& options) {
++    const sandbox::policy::SandboxSeccompBPF::Options& options,
++    bool early_sandbox) {
+   // All GPU process policies need this file brokered out.
+   static const char kDriRcPath[] = "/etc/drirc";
+   std::vector<BrokerFilePermission> permissions = {
+@@ -669,11 +809,31 @@ std::vector<BrokerFilePermission> FilePermissionsForGpu(
+   }
+ 
+   AddStandardGpuPermissions(&permissions);
++  if (UsesEarlyExternalGlxResources(early_sandbox)) {
++    AddDrmGpuPermissions(&permissions, &options);
++    AddSystemDrircPermissions(&permissions);
++  }
+   return permissions;
+ }
+ 
+ bool LoadLibrariesForGpu(
+-    const sandbox::policy::SandboxSeccompBPF::Options& options) {
++    const sandbox::policy::SandboxSeccompBPF::Options& options,
++    bool early_sandbox) {
++  if (UsesEarlyExternalGlxResources(early_sandbox)) {
++    // Map fixed GLVND/Mesa library closures only. GLX screen/capability queries
++    // create helper threads and must remain after the single-thread seal.
++    if (!dlopen("libGL.so.1", dlopen_flag)) {
++      LOG(ERROR) << "runtime_glx_library_load_failed: " << dlerror();
++      return false;
++    }
++    if ((options.use_intel_specific_policies ||
++         options.use_amd_specific_policies ||
++         options.use_virtio_specific_policies) &&
++        !dlopen("libGLX_mesa.so.0", dlopen_flag)) {
++      LOG(ERROR) << "runtime_glx_mesa_library_load_failed: " << dlerror();
++      return false;
++    }
++  }
+   LoadVulkanLibraries();
+   if (IsArchitectureArm()) {
+     LoadArmGpuLibraries();
+@@ -696,11 +856,36 @@ bool LoadLibrariesForGpu(
  }
  
  bool GpuPreSandboxHook(sandbox::policy::SandboxLinux::Options options) {
++  return GpuPreSandboxHookWithEarlyGlxResources(false, options);
++}
++
++bool GpuPreSandboxHookWithEarlyGlxResources(
++    bool early_sandbox,
++    sandbox::policy::SandboxLinux::Options options) {
 +  const auto* command_line = base::CommandLine::ForCurrentProcess();
 +  if (command_line->GetSwitchValueASCII(switches::kUseWebGPURuntime) == "doe" &&
 +      !command_line->HasSwitch(switches::kDisableWebGPUDoe)) {
@@ -54,10 +327,58 @@ index 2e53794fa3..d99d37ca19 100644
 +    dlclose(handle);
 +  }
    sandbox::policy::SandboxLinux::GetInstance()->StartBrokerProcess(
-       CommandSetForGPU(options), FilePermissionsForGpu(options), options);
+-      CommandSetForGPU(options), FilePermissionsForGpu(options), options);
++      CommandSetForGPU(options, early_sandbox),
++      FilePermissionsForGpu(options, early_sandbox), options);
+ 
+-  if (!LoadLibrariesForGpu(options))
++  if (!LoadLibrariesForGpu(options, early_sandbox)) {
+     return false;
++  }
+ 
+   // TODO(tsepez): enable namspace sandbox here once crashes are understood.
+ 
+diff --git a/content/common/gpu_pre_sandbox_hook_linux.h b/content/common/gpu_pre_sandbox_hook_linux.h
+index 764a5502ba..0bb5822ffe 100644
+--- a/content/common/gpu_pre_sandbox_hook_linux.h
++++ b/content/common/gpu_pre_sandbox_hook_linux.h
+@@ -19,23 +19,31 @@ namespace content {
+ // require general GPU usage.
+ bool GpuPreSandboxHook(sandbox::policy::SandboxLinux::Options options);
+ 
++// Binds the actual GPU preference; other hook users retain the legacy policy.
++bool GpuPreSandboxHookWithEarlyGlxResources(
++    bool early_sandbox,
++    sandbox::policy::SandboxLinux::Options options);
++
+ // These functions can be used by other pre-sandbox hooks that need GPU access
+ // in addition to their other permissions.
+ 
+ // Returns the set of commands (open, stat, unlink, rename, etc...) that are
+ // needed for a process to use the GPU.
+ sandbox::syscall_broker::BrokerCommandSet CommandSetForGPU(
+-    const sandbox::policy::SandboxLinux::Options& options);
++    const sandbox::policy::SandboxLinux::Options& options,
++    bool early_sandbox = false);
+ 
+ // Returns a list of file permissions that are needed for a process to use
+ // the GPU. These will include the libraries that make up the graphics driver.
+ std::vector<sandbox::syscall_broker::BrokerFilePermission>
+ FilePermissionsForGpu(
+-    const sandbox::policy::SandboxSeccompBPF::Options& options);
++    const sandbox::policy::SandboxSeccompBPF::Options& options,
++    bool early_sandbox = false);
+ 
+ // Loads the libraries needed for a process to use the GPU.
+ bool LoadLibrariesForGpu(
+-    const sandbox::policy::SandboxSeccompBPF::Options& options);
++    const sandbox::policy::SandboxSeccompBPF::Options& options,
++    bool early_sandbox = false);
+ 
+ }  // namespace content
  
 diff --git a/content/gpu/gpu_main.cc b/content/gpu/gpu_main.cc
-index 543e347e14..433a283871 100644
+index 543e347e14..8105bb5574 100644
 --- a/content/gpu/gpu_main.cc
 +++ b/content/gpu/gpu_main.cc
 @@ -85,6 +85,10 @@
@@ -89,6 +410,17 @@ index 543e347e14..433a283871 100644
      // On Linux, reading system memory doesn't work through the GPU sandbox.
      // This value is cached, so access it here to populate the cache.
      base::SysInfo::AmountOfTotalPhysicalMemory();
+@@ -568,7 +583,9 @@ bool StartSandboxLinux(gpu::GpuWatchdogThread* watchdog_thread,
+   bool res = sandbox::policy::SandboxLinux::GetInstance()->InitializeSandbox(
+       sandbox::policy::SandboxTypeFromCommandLine(
+           *base::CommandLine::ForCurrentProcess()),
+-      base::BindOnce(GpuPreSandboxHook), sandbox_options);
++      base::BindOnce(GpuPreSandboxHookWithEarlyGlxResources,
++                     gpu_prefs.gpu_sandbox_start_early),
++      sandbox_options);
+ 
+   if (watchdog_thread) {
+     watchdog_thread->Start();
 diff --git a/gpu/command_buffer/service/dawn_instance.cc b/gpu/command_buffer/service/dawn_instance.cc
 index 1b77642ce9..c5bcd0ebdb 100644
 --- a/gpu/command_buffer/service/dawn_instance.cc
@@ -380,3 +712,39 @@ index 33d4a4a084..3b4e757bf0 100644
  
    // Objects in the UI process.
    std::unique_ptr<KeyboardLayoutEngine> keyboard_layout_engine_;
+diff --git a/ui/ozone/public/ozone_platform.cc b/ui/ozone/public/ozone_platform.cc
+index 264fadd94e..b0969240dc 100644
+--- a/ui/ozone/public/ozone_platform.cc
++++ b/ui/ozone/public/ozone_platform.cc
+@@ -116,10 +116,15 @@ bool OzonePlatform::IsInitialized() {
+ }
+ 
+ // static
+-std::string OzonePlatform::GetPlatformNameForTest() {
++std::string OzonePlatform::GetPlatformName() {
+   return GetOzonePlatformName();
+ }
+ 
++// static
++std::string OzonePlatform::GetPlatformNameForTest() {
++  return GetPlatformName();
++}
++
+ // static
+ bool OzonePlatform::RunningOnWaylandForTest() {
+   return OzonePlatform::GetPlatformNameForTest() == "wayland";
+diff --git a/ui/ozone/public/ozone_platform.h b/ui/ozone/public/ozone_platform.h
+index 4537244c51..9655cc8696 100644
+--- a/ui/ozone/public/ozone_platform.h
++++ b/ui/ozone/public/ozone_platform.h
+@@ -269,7 +269,9 @@ class COMPONENT_EXPORT(OZONE) OzonePlatform {
+ 
+   static bool IsInitialized();
+ 
+-  // Returns the current ozone platform name.
++  // Returns the actual selected platform, including automatic selection.
++  static std::string GetPlatformName();
++
+   // Some tests may skip based on the platform name.
+   static std::string GetPlatformNameForTest();
+   static bool RunningOnWaylandForTest();
