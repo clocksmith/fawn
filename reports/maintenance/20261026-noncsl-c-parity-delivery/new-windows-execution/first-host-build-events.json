@@ -1,0 +1,151 @@
+{
+  "protocol": "deco.task.v1",
+  "op": "events",
+  "ok": true,
+  "workId": "fawn-windows-native-host-cli-e5-20261027-a",
+  "events": [
+    {
+      "seq": 1,
+      "at": "2026-10-27T00:02:38.544Z",
+      "type": "accepted",
+      "attemptId": "fawn-windows-native-host-cli-e5-20261027-a.a1",
+      "commandId": "fawn-windows-native-host-cli-e5-20261027-a:start:6e0c62a964c8",
+      "op": "start",
+      "reply": {
+        "ok": true,
+        "workId": "fawn-windows-native-host-cli-e5-20261027-a",
+        "attemptId": "fawn-windows-native-host-cli-e5-20261027-a.a1",
+        "state": "accepted"
+      },
+      "plan": {
+        "argv": [
+          "C:\\WINDOWS\\system32\\cmd.exe",
+          "/d",
+          "/s",
+          "/c",
+          "C:\\Users\\clocksmith\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe bench/out/miles-native-e5.py"
+        ],
+        "cwd": "C:\\Users\\clocksmith\\deco\\doe"
+      },
+      "continues": null,
+      "runnerSession": null,
+      "effectiveScope": {
+        "requested": {
+          "writePaths": [
+            "bench/out/fawn-windows-build/native-e5",
+            "bench/out/fawn-windows-build/compiler-host-e5",
+            "bench/out/fawn-windows-build/runtime-cli-e5",
+            "bench/out/fawn-windows-build/native-e5-pipeline.json"
+          ],
+          "network": false,
+          "publish": false,
+          "deploy": false
+        },
+        "enforced": {
+          "mechanism": "none: commands run with the account permissions",
+          "writePaths": "not enforced",
+          "network": "not enforced",
+          "publish": "not enforced",
+          "deploy": "not enforced"
+        }
+      },
+      "source": {
+        "head": "8001ce0afeefe1ab331ddded9c7ff85f7f4c47bb",
+        "branch": "main",
+        "dirtyPaths": [
+          "packages/doe-gpu/bench/"
+        ]
+      }
+    },
+    {
+      "seq": 2,
+      "at": "2026-10-27T00:02:43.977Z",
+      "type": "running",
+      "attemptId": "fawn-windows-native-host-cli-e5-20261027-a.a1",
+      "supervisor": {
+        "pid": 4472,
+        "started": "2026-10-27T00:02:40.4863661Z"
+      },
+      "runner": {
+        "pid": 14476,
+        "started": "2026-10-27T00:02:42.5111724Z"
+      }
+    },
+    {
+      "seq": 3,
+      "at": "2026-10-27T00:02:48.607Z",
+      "type": "output",
+      "attemptId": "fawn-windows-native-host-cli-e5-20261027-a.a1",
+      "stream": "stdout",
+      "text": "Starting actual Windows SDK native build from e5d8ffc6aed94a2aaa7fd59ab92edaec369b08a7"
+    },
+    {
+      "seq": 4,
+      "at": "2026-10-27T00:05:16.289Z",
+      "type": "output",
+      "attemptId": "fawn-windows-native-host-cli-e5-20261027-a.a1",
+      "stream": "stdout",
+      "text": "PASS: native actual Windows SDK build and owner controls"
+    },
+    {
+      "seq": 5,
+      "at": "2026-10-27T00:05:16.297Z",
+      "type": "output",
+      "attemptId": "fawn-windows-native-host-cli-e5-20261027-a.a1",
+      "stream": "stdout",
+      "text": "Starting actual Windows SDK compiler-host build from e5d8ffc6aed94a2aaa7fd59ab92edaec369b08a7"
+    },
+    {
+      "seq": 6,
+      "at": "2026-10-27T00:05:35.133Z",
+      "type": "output",
+      "attemptId": "fawn-windows-native-host-cli-e5-20261027-a.a1",
+      "stream": "stderr",
+      "text": "Traceback (most recent call last):"
+    },
+    {
+      "seq": 7,
+      "at": "2026-10-27T00:05:35.141Z",
+      "type": "output",
+      "attemptId": "fawn-windows-native-host-cli-e5-20261027-a.a1",
+      "stream": "stderr",
+      "text": "  File \"C:\\Users\\clocksmith\\deco\\doe\\bench\\out\\miles-native-e5.py\", line 27, in <module>"
+    },
+    {
+      "seq": 8,
+      "at": "2026-10-27T00:05:35.148Z",
+      "type": "output",
+      "attemptId": "fawn-windows-native-host-cli-e5-20261027-a.a1",
+      "stream": "stderr",
+      "text": "    if code:raise subprocess.CalledProcessError(code,command)"
+    },
+    {
+      "seq": 9,
+      "at": "2026-10-27T00:05:35.155Z",
+      "type": "output",
+      "attemptId": "fawn-windows-native-host-cli-e5-20261027-a.a1",
+      "stream": "stderr",
+      "text": "            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^"
+    },
+    {
+      "seq": 10,
+      "at": "2026-10-27T00:05:35.162Z",
+      "type": "output",
+      "attemptId": "fawn-windows-native-host-cli-e5-20261027-a.a1",
+      "stream": "stderr",
+      "text": "subprocess.CalledProcessError: Command '['C:\\\\Users\\\\clocksmith\\\\.cache\\\\codex-runtimes\\\\codex-primary-runtime\\\\dependencies\\\\python\\\\python.exe', 'C:\\\\Users\\\\clocksmith\\\\deco\\\\doe\\\\bench\\\\out\\\\fawn-windows-build\\\\doe-e5d8ffc6a\\\\runtime\\\\c\\\\compiler\\\\tools\\\\build_host_windows.py', '--out', 'C:\\\\Users\\\\clocksmith\\\\deco\\\\doe\\\\bench\\\\out\\\\fawn-windows-build\\\\compiler-host-e5', '--clang-cl', 'C:\\\\Users\\\\clocksmith\\\\deco\\\\doe\\\\bench\\\\out\\\\fawn-windows-build\\\\chromium\\\\src\\\\third_party\\\\llvm-build\\\\Release+Asserts\\\\bin\\\\clang-cl.exe', '--dxc', 'C:\\\\Users\\\\clocksmith\\\\AppData\\\\Local\\\\deco\\\\validation\\\\doe-d3d12-159b58-ki3pcb23\\\\dxc\\\\bin\\\\x64\\\\dxc.exe']' returned non-zero exit status 1."
+    },
+    {
+      "seq": 11,
+      "at": "2026-10-27T00:05:35.328Z",
+      "type": "failed",
+      "attemptId": "fawn-windows-native-host-cli-e5-20261027-a.a1",
+      "stopped": true,
+      "reason": "runner exited 1",
+      "exitCode": 1,
+      "signal": null,
+      "receipt": "attempts/fawn-windows-native-host-cli-e5-20261027-a.a1/result.json"
+    }
+  ],
+  "lastSeq": 11
+}

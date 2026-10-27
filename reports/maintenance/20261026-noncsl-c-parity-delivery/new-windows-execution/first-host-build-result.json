@@ -1,0 +1,59 @@
+{
+  "protocol": "deco.task.v1",
+  "op": "result",
+  "ok": true,
+  "workId": "fawn-windows-native-host-cli-e5-20261027-a",
+  "attemptId": "fawn-windows-native-host-cli-e5-20261027-a.a1",
+  "state": "failed",
+  "reason": "runner exited 1",
+  "stopped": true,
+  "receipt": {
+    "protocol": "deco.task.v1",
+    "workId": "fawn-windows-native-host-cli-e5-20261027-a",
+    "attemptId": "fawn-windows-native-host-cli-e5-20261027-a.a1",
+    "state": "failed",
+    "reason": "runner exited 1",
+    "member": "bee",
+    "account": "clocksmith",
+    "hostname": "miles",
+    "runner": "shell",
+    "runnerSession": null,
+    "startedAt": "2026-10-27T00:02:40.552Z",
+    "endedAt": "2026-10-27T00:05:35.210Z",
+    "exitCode": 1,
+    "signal": null,
+    "source": {
+      "repository": "doe",
+      "testedCommit": "8001ce0afeefe1ab331ddded9c7ff85f7f4c47bb",
+      "dirtyPaths": [
+        "packages/doe-gpu/bench/"
+      ]
+    },
+    "checks": [],
+    "artifacts": [
+      {
+        "path": "bench/out/fawn-windows-build/native-e5-pipeline.json",
+        "sha256": "3fb475ee7a4f549cd1ac2e3275366807cc68c3a498943a295d89aa376414cb27",
+        "bytes": 4139
+      },
+      {
+        "path": "bench/out/fawn-windows-build/native-e5/native-scope.json",
+        "sha256": "69df4daaab75cc62b49c5c6d9046fcf8d37dd5dada3fd15cd49347482ff5a926",
+        "bytes": 74468
+      },
+      {
+        "path": "bench/out/fawn-windows-build/compiler-host-e5/scope.json",
+        "error": "ENOENT"
+      },
+      {
+        "path": "bench/out/fawn-windows-build/runtime-cli-e5/cli-scope.json",
+        "error": "ENOENT"
+      }
+    ],
+    "publication": null,
+    "deployment": null,
+    "notes": [
+      "Deployment receipts come from the owning project; the executor does not observe live routes."
+    ]
+  }
+}

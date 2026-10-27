@@ -1,0 +1,3 @@
+C:\Users\clocksmith\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe C:\Users\clocksmith\deco\doe\bench\out\fawn-windows-build\doe-hostfix-e5\runtime\c\compiler\tools\test_host_dxil.py --library C:\Users\clocksmith\deco\doe\bench\out\fawn-windows-build\compiler-host-e5-b\doe_compiler_host.dll --child C:\Users\clocksmith\deco\doe\bench\out\fawn-windows-build\compiler-host-e5-b\test_dxil_io.exe --real-dxc C:\Users\clocksmith\AppData\Local\deco\validation\doe-d3d12-159b58-ki3pcb23\dxc\bin\x64\dxc.exe
+PASS: public source-to-DXIL ABI with explicitly selected actual DXC
+PASS: public DXIL ABI source/child/validation, failure atomicity, cleanup and retry

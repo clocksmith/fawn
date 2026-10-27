@@ -50,3 +50,12 @@ architecture. The portability changes are separate from the byte-exact imported
 delivery. Full native rebuilds, matched performance and browser builds retain
 their own source and artifact receipts; earlier platform results do not qualify
 the changed bytes.
+
+Fresh [Windows execution](new-windows-execution/summary.json) of the integrated
+source passed 40 DXC process controls and real compilation/container checks.
+The allocating host passed C/C++ consumers, bootstrap/oracle checks, 103 controlled
+I/O checks (including native-16 option propagation), and real source-to-DXIL ABI
+execution after a compile/link driver repair. Its first rejection is retained.
+Raw enclosing-checkout metadata is preserved; a separate binding checks all 35
+DXC inputs against archived source `e5d8ffc6a`. These checks do not qualify
+D3D12 devices, browser operation, GPU performance or release promotion.

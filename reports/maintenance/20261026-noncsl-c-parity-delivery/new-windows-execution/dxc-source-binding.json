@@ -1,0 +1,65 @@
+{
+  "kind": "source-archive-binding",
+  "archiveSource": {
+    "sourceCommit": "e5d8ffc6aed94a2aaa7fd59ab92edaec369b08a7",
+    "archive": "C:/Users/clocksmith/deco/doe/bench/out/fawn-windows-build/doe-e5d8ffc6a.tar",
+    "archiveBytes": 751636480,
+    "archiveSha256": "ffba9044b3991b3a3f043fe1dbeb41db947a16eed52e78f55aa95786530eb088",
+    "source": "C:/Users/clocksmith/deco/doe/bench/out/fawn-windows-build/doe-e5d8ffc6a",
+    "patches": {
+      "browser/chromium/patches/chromium-doe-runtime.patch": "a81879ec7c0c84b161de753889053031bbcbcf923d48d5012169695da9e2f807",
+      "browser/chromium/patches/dawn-doe-runtime.patch": "602ff9c5ce364f6e5b4e86ca00d8bf3ed412d20654303ece8dc6518b958a4ba9"
+    },
+    "checkoutBefore": {
+      "head": "8001ce0afeefe1ab331ddded9c7ff85f7f4c47bb",
+      "status": "?? packages/doe-gpu/bench/\n"
+    },
+    "checkoutAfter": {
+      "head": "8001ce0afeefe1ab331ddded9c7ff85f7f4c47bb",
+      "status": "?? packages/doe-gpu/bench/\n"
+    },
+    "scope": "Pinned code archive only; active checkout not advanced, no runtime build or timing"
+  },
+  "rawSummarySha256": "8093b00dcd329232b3a026b5fec379614901212e26c5e3d5750c84d5c63ac635",
+  "rawReportedEnclosingCheckoutCommit": "8001ce0afeefe1ab331ddded9c7ff85f7f4c47bb",
+  "verifiedCodeCommit": "e5d8ffc6aed94a2aaa7fd59ab92edaec369b08a7",
+  "verifiedInputFiles": {
+    "runtime/c/compiler/src/dxil/dxil_toolchain.c": "53742bec901465cde2e96d8df8048f7801dc7b755f1271c84f7d691a3f88b615",
+    "runtime/c/compiler/src/dxil/dxil_process_windows.c": "16dd9637e199ec9e5ba90fc30d38f5a34bb825c31fc64a16ca290a99024b6348",
+    "runtime/c/compiler/src/dxil/dxil_mapping.c": "d62230ae867a6cf24a22d93f641757ad69b1ea042cd54bdbe1864d59dc28b2eb",
+    "runtime/c/compiler/src/dxil/dxil_spec.c": "18438e94100aee133de624f9bac0ec06fbe74791afbd3d31f8f9ec8e4801c159",
+    "runtime/c/compiler/src/dxil/dxil_validate.c": "bc0a507bbf0b2120c1de62e6a25e7006caaa63c400e9cfa9530715ef1b87fb95",
+    "runtime/c/compiler/src/dxil/tests/dxc_process_probe.c": "0abcaedd7d6d70fdca7774c5c15fb13fcb5798682355094974bd51a329dee1f2",
+    "runtime/c/compiler/tools/test_dxil_windows.py": "9b491fb800dd78b583796cb2adbeee6e2ab440df50d1adb54b755a25712aaa31",
+    "runtime/c/compiler/src/dxil/dxil_analyze.h": "16c447610ed74b4e663fe24a5dd0f1fd1178eff7f12abc483fc5dd99c0311090",
+    "runtime/c/compiler/src/dxil/dxil_bitcode.h": "637ef9edfb67974d6ce6543880205754043435c08236e7a7be6243932b147dd6",
+    "runtime/c/compiler/src/dxil/dxil_builder.h": "11fa73d081da5edab4ff881804f940f1faaf9f445dec33bee1577d0d1016880b",
+    "runtime/c/compiler/src/dxil/dxil_container.h": "242d92db85c5b2ff2744fc9ceaf6c0675dfc4cb93604888500124bbef38dad6d",
+    "runtime/c/compiler/src/dxil/dxil_diagnostic.h": "3baf967991a36b7d185cd80d1fad67c31583bc79db9ce60cb5533b6a8dabc8ae",
+    "runtime/c/compiler/src/dxil/dxil_emit.h": "a9f48b2935941477891158bfb87fdf617be5e2328bb194b6ffa3eb54aadbc78c",
+    "runtime/c/compiler/src/dxil/dxil_error.h": "e0f4c65befbbc69327ac59647895bc46f98c030a15cfd917317e885d99b6aabd",
+    "runtime/c/compiler/src/dxil/dxil_files.h": "f70c8281db563191d9489882e2574e4e44b48ee9ace94791e1d9dfa77deca208",
+    "runtime/c/compiler/src/dxil/dxil_hlsl.h": "72d9db5f0455552245973c89166a85eac4c3829232f222922aaaa0862aee1de4",
+    "runtime/c/compiler/src/dxil/dxil_hlsl_internal.h": "279315cfaa22597c7ecfe86fe23998c7145216701f16bb8d7efa05f95b02bdd9",
+    "runtime/c/compiler/src/dxil/dxil_hlsl_numeric.h": "d49874ed8547688ee52e60c7e9c2969ca5191ce7bb0be89042d7dc18416f06fc",
+    "runtime/c/compiler/src/dxil/dxil_hlsl_texture.h": "555d9da9d04059dec06e12c0fdb26f900eb1978c35b83f7bdaaef49aed41787e",
+    "runtime/c/compiler/src/dxil/dxil_ir.h": "f2eda043de06ebdc0cc87057391a06d50c00b371f7f234bb1c6957749ba291e2",
+    "runtime/c/compiler/src/dxil/dxil_mapping.h": "2a2fb4bbc1d7896b7ec4280befe7d377b8c898e054603ed0d31d97bb539d7a16",
+    "runtime/c/compiler/src/dxil/dxil_md5.h": "36f92862fa2b34e58f9c1710dcee1f92d9cdc26293f52d300dc34de96c35561a",
+    "runtime/c/compiler/src/dxil/dxil_native.h": "c1db62f37f9d42b36a17d39edd4f5b2034d6f2a71c39d1e0c85f84c80afe7468",
+    "runtime/c/compiler/src/dxil/dxil_native_internal.h": "69a9d085e118cca9726159ee8be59e26cc0c0d95d9cfe29d9538dc4684ed9e88",
+    "runtime/c/compiler/src/dxil/dxil_process.h": "caa5696c0fdfaa4eba03f318a682886f617ac16c69cb200a2354552f99766f37",
+    "runtime/c/compiler/src/dxil/dxil_serialize.h": "21589254a80e745c797e43022d42964bfdac424944830e76a2fe619a1e3993f1",
+    "runtime/c/compiler/src/dxil/dxil_source.h": "260f3cc72911cf9cea4771b8ab0b6b5f34d924f9bf5334bbc218873da2598f24",
+    "runtime/c/compiler/src/dxil/dxil_source_native_bounds.h": "b042c67ac6b55f29cb05e977ff9ae50386fe0819e3be01d935b7d27570c0e879",
+    "runtime/c/compiler/src/dxil/dxil_source_native_internal.h": "b650387a1b4c044e339717355fa12bae69c351a8aa51256f8122ed30db77666f",
+    "runtime/c/compiler/src/dxil/dxil_source_native_opt.h": "edcc61d78d056675d93fb2e4a215f0b74bf170aca2d024639e5a355045c67373",
+    "runtime/c/compiler/src/dxil/dxil_source_native_packed.h": "e6d80a9f2accf422652a53a529293ac9596bd22d6d410e2ce07fee8726a4b4b8",
+    "runtime/c/compiler/src/dxil/dxil_spec.h": "aff4cc52b06dd0767ffa2b0641246dca2582555c78af3f0e5313c1f4d384d2e1",
+    "runtime/c/compiler/src/dxil/dxil_toolchain.h": "4baf1e329924db71667c12cfd39831d627b1cc52c1692f76bbc5062f1880cac8",
+    "runtime/c/compiler/src/dxil/dxil_translate.h": "1c4fb4baac437fe864b4c63f783d68496dc4892da4890fd1c40dd7ea1835db54",
+    "runtime/c/compiler/src/dxil/dxil_validate.h": "78063488a051c2f1a01ed30019288559200e2079fb53f6a1f3ff7c570379ca55"
+  },
+  "checkCount": 40,
+  "note": "Raw summary git metadata names the enclosing active checkout. Every bound input above was independently matched to the stated immutable Git commit; original summary bytes preserved. Tests exercise native16=false; native16=true has a separate host I/O control."
+}

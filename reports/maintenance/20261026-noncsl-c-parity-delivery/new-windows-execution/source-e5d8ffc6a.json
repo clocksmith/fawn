@@ -1,0 +1,20 @@
+{
+  "sourceCommit": "e5d8ffc6aed94a2aaa7fd59ab92edaec369b08a7",
+  "archive": "C:/Users/clocksmith/deco/doe/bench/out/fawn-windows-build/doe-e5d8ffc6a.tar",
+  "archiveBytes": 751636480,
+  "archiveSha256": "ffba9044b3991b3a3f043fe1dbeb41db947a16eed52e78f55aa95786530eb088",
+  "source": "C:/Users/clocksmith/deco/doe/bench/out/fawn-windows-build/doe-e5d8ffc6a",
+  "patches": {
+    "browser/chromium/patches/chromium-doe-runtime.patch": "a81879ec7c0c84b161de753889053031bbcbcf923d48d5012169695da9e2f807",
+    "browser/chromium/patches/dawn-doe-runtime.patch": "602ff9c5ce364f6e5b4e86ca00d8bf3ed412d20654303ece8dc6518b958a4ba9"
+  },
+  "checkoutBefore": {
+    "head": "8001ce0afeefe1ab331ddded9c7ff85f7f4c47bb",
+    "status": "?? packages/doe-gpu/bench/\n"
+  },
+  "checkoutAfter": {
+    "head": "8001ce0afeefe1ab331ddded9c7ff85f7f4c47bb",
+    "status": "?? packages/doe-gpu/bench/\n"
+  },
+  "scope": "Pinned code archive only; active checkout not advanced, no runtime build or timing"
+}

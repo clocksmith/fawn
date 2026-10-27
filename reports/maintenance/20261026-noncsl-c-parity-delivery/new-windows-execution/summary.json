@@ -1,0 +1,26 @@
+{
+  "consumer": "Source-bound Windows execution acceptance for the imported non-CSL compiler delivery; not GPU/browser/release qualification",
+  "verifiedCodeCommit": "e5d8ffc6aed94a2aaa7fd59ab92edaec369b08a7",
+  "rawEnclosingCheckoutCommit": "8001ce0afeefe1ab331ddded9c7ff85f7f4c47bb",
+  "processControls": 40,
+  "runnerSourceSha256": "16dd9637e199ec9e5ba90fc30d38f5a34bb825c31fc64a16ca290a99024b6348",
+  "processHandleCounts": 190,
+  "realDxc": "Compilation, container validation/dumpbin and invalid-HLSL rejection passed",
+  "host": "Allocating DLL, C/C++ consumers, bootstrap/oracle and source-to-DXIL ABI passed after explicit build-driver-only overlay",
+  "controlledIoChecks": 103,
+  "native16": "true option exercised by controlled child; real source-to-DXIL ABI test separately passed with actual DXC; this is not a claim of physical half-precision GPU execution",
+  "buildDriverOverlay": "hostfix-source-overlay.json",
+  "rawArchive": "windows-e5-dxc-host-complete-proof.tar.gz",
+  "rawArchiveSha256": "9e2936fe121311d5741639f432743904896cd38ba27d025ca5fc74587d09912b",
+  "limits": [
+    "No adapter/device execution, D3D12, performance, browser or release admission",
+    "Raw source metadata from enclosing checkout is preserved; outer binding independently checks all 35 DXC inputs against archived source",
+    "Native and CLI scope receipts establish Windows SDK build/host controls only"
+  ],
+  "firstHostBuildFailure": {
+    "log": "first-native-e5-compiler-host.log",
+    "durableResult": "first-host-build-result.json",
+    "reason": "clang-cl rejected /Fo with multiple source inputs; build-driver-only repair committed separately",
+    "repairCommit": "e19105930"
+  }
+}
