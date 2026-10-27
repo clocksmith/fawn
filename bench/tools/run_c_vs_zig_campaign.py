@@ -2,7 +2,8 @@
 
 Each provider runs separately with the same Doe-side workload parameters. Failed
 rows remain in the ledger and never prevent later rows from being attempted.
-This tool does not implement timing selection, oracles, or comparison policy.
+This tool does not implement timing selection or independent oracles. It refuses
+performance comparison when a provider has no independent output evidence.
 """
 
 from __future__ import annotations
@@ -80,6 +81,28 @@ def receipt_failures(receipt: dict[str, Any], implementation: str, iterations: i
     return sorted(set(failures))
 
 
+def oracle_failures(receipt: dict[str, Any]) -> list[str]:
+    """Reject absent correctness evidence before requesting a speed comparison.
+
+    Matching dispatch counters do not prove shader behavior. The canonical
+    comparator still validates the declared command, reference and artifacts;
+    this admission check prevents its optional-oracle path admitting these runs.
+    """
+    failures = []
+    for sample in receipt.get("samples", []):
+        meta = sample.get("traceMeta", {})
+        count = meta.get("outputOracleCount", 0)
+        if (type(count) is not int or count <= 0
+                or meta.get("outputOracleMatchedCount") != count
+                or meta.get("outputOracleFailedCount") != 0):
+            failures.append("positive successful output oracle missing")
+        if meta.get("outputOracleReferenceClass") != "independent_v1":
+            failures.append("independent output reference missing")
+    if not receipt.get("samples"):
+        failures.append("output oracle samples missing")
+    return sorted(set(failures))
+
+
 def row_result(row: dict[str, Any], output: Path, args: argparse.Namespace, index: int) -> dict[str, Any]:
     folder = output / "rows" / row["id"]
     folder.mkdir(parents=True)
@@ -87,7 +110,8 @@ def row_result(row: dict[str, Any], output: Path, args: argparse.Namespace, inde
     if index % 2:
         providers.reverse()
     result: dict[str, Any] = {"id": row["id"], "status": "running", "providerOrder": [p[0] for p in providers],
-                              "providers": {}, "comparisons": {}, "failures": []}
+                              "providers": {}, "comparisons": {}, "failures": [],
+                              "admissionFailures": [], "claimEligible": False}
     receipts = {}
     for product, implementation, executor in providers:
         environment = os.environ.copy()
@@ -108,7 +132,12 @@ def row_result(row: dict[str, Any], output: Path, args: argparse.Namespace, inde
             receipt = json.loads(path.read_bytes())
             run.update({"receipt": str(path), "receiptSha256": digest(path)})
             run["failures"] += receipt_failures(receipt, implementation, args.iterations)
-            receipts[product] = path
+            run["admissionFailures"] = oracle_failures(receipt)
+            result["admissionFailures"] += [
+                f"{product}: {failure}" for failure in run["admissionFailures"]
+            ]
+            if not run["failures"] and not run["admissionFailures"]:
+                receipts[product] = path
         result["providers"][product] = run
         result["failures"] += [f"{product}: {failure}" for failure in run["failures"]]
         if run["timedOut"]:
@@ -131,6 +160,8 @@ def row_result(row: dict[str, Any], output: Path, args: argparse.Namespace, inde
             result["comparisonPath"] = str(folder / "comparison.json")
             result["comparisonSha256"] = digest(folder / "comparison.json")
     result["status"] = "failed" if result["failures"] else "executed"
+    if result["status"] == "executed" and result["admissionFailures"]:
+        result["status"] = "diagnostic"
     write_json(folder / "row.json", result)
     return result
 
@@ -182,7 +213,8 @@ def campaign(args: argparse.Namespace) -> int:
                      "cache": "fresh CLI processes; warm filesystem; C translation persistence disabled; driver cache not purged; registry pipeline-cache flags",
                      "memory": "Windows owned-process peak working set; POSIX sampled process RSS plus GNU time when available; not aggregate tree or VRAM"},
         "inputs": before, "plannedRuntimeRows": [row["id"] for row in runtime_rows],
-        "compilerRowsRequiringSeparateCompilerComparison": compiler_rows, "rows": [], "status": "running",
+        "compilerRowsRequiringSeparateCompilerComparison": compiler_rows,
+        "claimEligible": False, "rows": [], "status": "running",
     }
     write_json(output / "ledger.json", ledger)
     for index, row in enumerate(runtime_rows):
@@ -203,7 +235,9 @@ def campaign(args: argparse.Namespace) -> int:
             return 1
         write_json(output / "ledger.json", ledger)
     failed = [row["id"] for row in ledger["rows"] if row["status"] == "failed"]
+    diagnostic = [row["id"] for row in ledger["rows"] if row["status"] == "diagnostic"]
     ledger.update({"status": "failed" if failed else "executed", "failedRows": failed,
+                   "diagnosticRows": diagnostic,
                    "endedAt": datetime.now(timezone.utc).isoformat()})
     write_json(output / "ledger.json", ledger)
     return 1 if failed else 0

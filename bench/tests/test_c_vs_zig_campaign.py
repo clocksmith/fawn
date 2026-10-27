@@ -16,6 +16,56 @@ from bench.tools import run_c_vs_zig_campaign as campaign
 
 
 class CampaignTests(unittest.TestCase):
+    def test_successful_dispatch_without_output_proof_is_not_compared(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary)
+            args = argparse.Namespace(backend="metal", catalog="unused",
+                                      iterations=1, warmup=0, timeout=1)
+
+            def run(command: list[str], *unused: object) -> dict:
+                product = command[command.index("--product") + 1]
+                folder = Path(command[command.index("--out") + 1])
+                folder = folder / "run-artifacts" / product
+                folder.mkdir(parents=True)
+                receipt = {
+                    "runtimeIdentity": {"runtimeImplementation":
+                                        "c" if product == "doe-c" else "zig"},
+                    "execution": {"success": True, "timedSampleCount": 1},
+                    "samples": [{"success": True, "returnCode": 0,
+                                 "traceMeta": {
+                                     "fallbackUsed": False,
+                                     "executionErrorCount": 0,
+                                     "executionUnsupportedCount": 0,
+                                     "executionSkippedCount": 0,
+                                     "executionDispatchCount": 200000,
+                                     "outputOracleCount": 0,
+                                     "outputOracleFailedCount": 0,
+                                 }}],
+                }
+                (folder / "sample.run.json").write_text(json.dumps(receipt))
+                return {"exitCode": 0, "timedOut": False}
+
+            with patch.object(campaign, "execute", side_effect=run) as execute:
+                result = campaign.row_result({"id": "render"}, output, args, 0)
+            self.assertEqual(execute.call_count, 2)
+            self.assertEqual(result["status"], "diagnostic")
+            self.assertFalse(result["claimEligible"])
+            self.assertFalse(result["comparisons"])
+            self.assertTrue(result["admissionFailures"])
+            self.assertTrue(all(p.get("receipt")
+                                for p in result["providers"].values()))
+
+    def test_zero_or_partial_oracle_counts_never_satisfy_admission(self) -> None:
+        for count, matched in ((0, 0), (2, 1), (True, True)):
+            receipt = {"samples": [{"traceMeta": {
+                "outputOracleCount": count,
+                "outputOracleMatchedCount": matched,
+                "outputOracleFailedCount": 0,
+                "outputOracleReferenceClass": "independent_v1",
+            }}]}
+            with self.subTest(count=count, matched=matched):
+                self.assertTrue(campaign.oracle_failures(receipt))
+
     def test_gpu_timeout_does_not_start_the_other_provider(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             args = argparse.Namespace(backend="metal", catalog="unused", iterations=16, warmup=1, timeout=1)
