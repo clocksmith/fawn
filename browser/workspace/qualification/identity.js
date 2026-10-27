@@ -112,7 +112,11 @@ function inspectBrowserProcesses(hostPid, profileRoot) {
       .map((path) => ({ ...describeExecutable(path), codeModulesSha256 })),
     processImages: imagePaths.map(describeImage),
     codeModules,
-    mappedCodeModules: inspection.mappedCodeModules.sort().map(describeImage),
+    mappedCodeModules: inspection.mappedCodeModules.sort().map(path => ({ ...describeImage(path),
+      processes: inspection.mappedCodeModuleObservations.filter(entry => entry.path === path)
+        .map(({ path: _path, ...entry }) => entry).sort((left, right) => left.pid - right.pid),
+    })),
+    unavailableModuleMappings: inspection.unavailableModuleMappings,
     listeningTcpSockets: inspection.listeningTcpSockets,
     devToolsActivePortFiles: countFilesNamed(profileRoot, DEVTOOLS_PORT_FILE),
   };
