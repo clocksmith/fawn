@@ -179,7 +179,7 @@ function usage() {
 Options:
   --mode dawn|doe|auto|both Runtime mode to run (default: both)
   --chrome PATH             Chrome binary path
-  --doe-lib PATH            libwebgpu_doe_full.{so,dylib,dll} path (for doe mode)
+  --doe-lib PATH            Doe provider path (default: ${DEFAULT_DOE_LIB})
   --runtime-selector-policy PATH
                             Runtime selector policy JSON path (default: config/browser-runtime-selector-policy.json)
   --runtime-selector-profile-id ID
