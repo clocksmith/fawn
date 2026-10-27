@@ -25,11 +25,13 @@ int main(int argc, char **argv) {
     char library[PATH_MAX];
     char compiler[PATH_MAX];
     char library_argument[PATH_MAX + 64];
+    char profile_argument[PATH_MAX + 64];
     char **forwarded = NULL;
     int result = 1;
     int dawn = 0;
     int explicit_mode = 0;
     int positional = 0;
+    int has_profile = 0;
     size_t count = 0;
     ssize_t length = readlink("/proc/self/exe", image, sizeof(image) - 1);
     if (length <= 0 || (size_t)length >= sizeof(image) - 1) {
@@ -61,6 +63,15 @@ int main(int argc, char **argv) {
             fputs("Fawn: the product launcher uses its bundled C library; use the raw image for diagnostics\n", stderr);
             goto cleanup;
         }
+        if (strncmp(argv[index], "--user-data-dir=", 16) == 0) {
+            if (has_profile++ || argv[index][16] != '/') {
+                fputs("Fawn: select one absolute user-data-dir\n", stderr);
+                goto cleanup;
+            }
+        } else if (strcmp(argv[index], "--user-data-dir") == 0) {
+            fputs("Fawn: use --user-data-dir=/absolute/profile\n", stderr);
+            goto cleanup;
+        }
     }
     if (!readable_file(browser) || access(browser, X_OK) != 0) {
         fprintf(stderr, "Fawn: bundled Chromium image is unavailable: %s\n", browser);
@@ -70,7 +81,7 @@ int main(int argc, char **argv) {
         fputs("Fawn: bundled Doe C runtime/compiler is missing or unreadable; no fallback\n", stderr);
         goto cleanup;
     }
-    forwarded = calloc((size_t)argc + 4, sizeof(*forwarded));
+    forwarded = calloc((size_t)argc + 5, sizeof(*forwarded));
     if (!forwarded) { fputs("Fawn: cannot allocate launch arguments\n", stderr); goto cleanup; }
     forwarded[count++] = browser;
     forwarded[count++] = dawn ? "--use-webgpu-runtime=dawn" : "--use-webgpu-runtime=doe";
@@ -78,6 +89,22 @@ int main(int argc, char **argv) {
         int written = snprintf(library_argument, sizeof(library_argument), "--doe-webgpu-library-path=%s", library);
         if (written < 0 || (size_t)written >= sizeof(library_argument)) goto cleanup;
         forwarded[count++] = library_argument;
+    }
+    if (!has_profile) {
+        const char *base = getenv("XDG_CONFIG_HOME");
+        const char *suffix = "";
+        if (!base || base[0] != '/') { base = getenv("HOME"); suffix = "/.config"; }
+        if (!base || base[0] != '/') {
+            fputs("Fawn: cannot resolve a private profile; select an absolute user-data-dir\n", stderr);
+            goto cleanup;
+        }
+        int written = snprintf(profile_argument, sizeof(profile_argument),
+            "--user-data-dir=%s%s/fawn/%s", base, suffix, dawn ? "dawn" : "doe-c");
+        if (written < 0 || (size_t)written >= sizeof(profile_argument)) {
+            fputs("Fawn: private profile path is too long\n", stderr);
+            goto cleanup;
+        }
+        forwarded[count++] = profile_argument;
     }
     positional = 0;
     for (int index = 1; index < argc; ++index) {
