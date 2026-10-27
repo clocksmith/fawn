@@ -1,7 +1,28 @@
 /* SPDX-License-Identifier: MIT */
 #include "internal.h"
 #include "feature_formats.h"
+#include "doe_native_shared_memory.h"
 #include <stdlib.h>
+
+/* Pinned Dawn extension identities are not bit positions. Keep the mapping in
+ * the feature owner: raw core values 24/25 must never alias these capabilities. */
+static const struct { uint32_t name, slot; } shared_features[] = {
+    {DOE_SHARED_FEATURE_IOSURFACE,24}, {DOE_SHARED_FEATURE_MTL_EVENT,25}
+};
+static uint32_t feature_bit(uint32_t name)
+{
+    if (name >= WGPUFeatureName_CoreFeaturesAndLimits && name <= WGPUFeatureName_SubgroupSizeControl)
+        return NATIVE_FEATURE(name);
+    for (size_t i = 0; i < sizeof(shared_features) / sizeof(shared_features[0]); ++i)
+        if (shared_features[i].name == name) return NATIVE_FEATURE(shared_features[i].slot);
+    return 0;
+}
+static WGPUFeatureName feature_name(uint32_t slot)
+{
+    for (size_t i = 0; i < sizeof(shared_features) / sizeof(shared_features[0]); ++i)
+        if (shared_features[i].slot == slot) return (WGPUFeatureName)shared_features[i].name;
+    return (WGPUFeatureName)slot;
+}
 
 uint32_t native_timestamp_workgroup(const doe_vk_caps *caps)
 {
@@ -85,6 +106,8 @@ uint32_t native_adapter_features(const native_backend *backend)
     if (backend->kind == WGPUBackendType_Metal) {
         const doe_mtl_caps *caps = &backend->value.metal.caps;
         return native_format_adapter_features(backend) | NATIVE_FEATURE(WGPUFeatureName_CoreFeaturesAndLimits) |
+            (caps->shared_surface_import ? feature_bit(DOE_SHARED_FEATURE_IOSURFACE) : 0) |
+            (caps->timeline_enabled ? feature_bit(DOE_SHARED_FEATURE_MTL_EVENT) : 0) |
             NATIVE_FEATURE(WGPUFeatureName_ShaderF16) |
             NATIVE_FEATURE(WGPUFeatureName_ClipDistances) |
             (caps->primitive_index ? NATIVE_FEATURE(WGPUFeatureName_PrimitiveIndex) : 0) |
@@ -204,8 +227,9 @@ bool native_requested_features(const native_backend *backend,
             uint32_t name = (uint32_t)descriptor->requiredFeatures[i];
             /* requiredFeatures is a set: repeated supported names preserve
              * the same device capabilities, while every member is validated. */
-            if (name >= 32 || !(offered & NATIVE_FEATURE(name))) return false;
-            requested |= NATIVE_FEATURE(name);
+            uint32_t bit = feature_bit(name);
+            if (!bit || !(offered & bit)) return false;
+            requested |= bit;
         }
     }
     requested = native_feature_dependencies(requested);
@@ -216,7 +240,7 @@ bool native_requested_features(const native_backend *backend,
 
 bool native_feature_enabled(const native_device *device, WGPUFeatureName feature)
 {
-    return device && (uint32_t)feature < 32 && (device->features & NATIVE_FEATURE(feature));
+    return device && (device->features & feature_bit((uint32_t)feature));
 }
 static bool feature_list(uint32_t mask, WGPUSupportedFeatures *features)
 {
@@ -228,7 +252,7 @@ static bool feature_list(uint32_t mask, WGPUSupportedFeatures *features)
     WGPUFeatureName *names = malloc(count * sizeof(*names));
     if (!names) return false;
     size_t written = 0;
-    for (uint32_t name = 0; name < 32; ++name) if (mask & NATIVE_FEATURE(name)) names[written++] = (WGPUFeatureName)name;
+    for (uint32_t name = 0; name < 32; ++name) if (mask & NATIVE_FEATURE(name)) names[written++] = feature_name(name);
     features->features = names;
     features->featureCount = written;
     return true;
@@ -249,7 +273,7 @@ void wgpuDeviceGetFeatures(WGPUDevice handle, WGPUSupportedFeatures *features)
 WGPUBool wgpuAdapterHasFeature(WGPUAdapter handle, WGPUFeatureName feature)
 {
     native_adapter *adapter = (native_adapter *)handle;
-    return adapter && (uint32_t)feature < 32 && (native_adapter_features(&adapter->backend) & NATIVE_FEATURE(feature));
+    return adapter && (native_adapter_features(&adapter->backend) & feature_bit((uint32_t)feature));
 }
 WGPUBool wgpuDeviceHasFeature(WGPUDevice handle, WGPUFeatureName feature)
 {

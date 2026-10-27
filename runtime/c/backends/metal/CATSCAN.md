@@ -13,6 +13,7 @@ public validation, provider selection and qualification.
 ## Scope
 ABI/tests, compressed transfers and equal-count whole multisample copies.
 Packed IOSurface import publishes physical format and dimensions before textures.
+Capability discovery checks loaded APIs and selected device selectors.
 
 ## Contracts
 MSL and workgroup/slot facts enter the

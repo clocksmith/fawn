@@ -11,6 +11,8 @@ typedef struct native_shared_fence *WGPUSharedFence;
 typedef struct native_shared_texture_memory *WGPUSharedTextureMemory;
 typedef void *WGPUSharedBufferMemory;
 enum {
+    DOE_SHARED_FEATURE_IOSURFACE = 0x00050024,
+    DOE_SHARED_FEATURE_MTL_EVENT = 0x0005002A,
     DOE_SHARED_STYPE_IOSURFACE = 0x00050023,
     DOE_SHARED_STYPE_MTL_EVENT_DESCRIPTOR = 0x00050032,
     DOE_SHARED_STYPE_MTL_EVENT_EXPORT = 0x00050033,

@@ -684,10 +684,26 @@ check: check-singleton-layout
 PHYSICAL_CLIENTS += singleton-layout
 
 ifeq ($(SHARED_PLATFORM),Darwin)
-$(BUILD)/iosurface-metadata: tests/iosurface_metadata.c tests/consumer.h tests/adapter_class.h $(NATIVE_LIBRARY) | $(BUILD)
+$(BUILD)/iosurface-metadata: tests/iosurface_metadata.c tests/iosurface_fixture.h tests/consumer.h tests/adapter_class.h $(NATIVE_LIBRARY) | $(BUILD)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -framework IOSurface -framework CoreFoundation -o $@
 .PHONY: check-iosurface-metadata
 check-iosurface-metadata: $(BUILD)/iosurface-metadata
 	DOE_C_TEST_BACKEND=metal DOE_C_TEST_ADAPTER=physical $(BUILD)/iosurface-metadata
 PHYSICAL_CLIENTS += iosurface-metadata
+endif
+
+$(BUILD)/shared-features: tests/shared_features.c $(HEADERS) $(OBJECTS) $(COMPILER_LIBRARY) | $(BUILD)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< $(OBJECTS) $(COMPILER_LINK) $(PLATFORM_LIBS) -o $@
+.PHONY: check-shared-features
+check-shared-features: $(BUILD)/shared-features
+	$(BUILD)/shared-features
+check: check-shared-features
+
+ifeq ($(SHARED_PLATFORM),Darwin)
+$(BUILD)/iosurface-shared: tests/iosurface_shared.c tests/iosurface_fixture.h tests/consumer.h tests/adapter_class.h $(NATIVE_LIBRARY) | $(BUILD)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< -L$(BUILD) -lwebgpu_doe_c -Wl,-rpath,$(abspath $(BUILD)) -framework IOSurface -framework CoreFoundation -o $@
+.PHONY: check-iosurface-shared
+check-iosurface-shared: $(BUILD)/iosurface-shared
+	DOE_C_TEST_BACKEND=metal DOE_C_TEST_ADAPTER=physical $(BUILD)/iosurface-shared
+PHYSICAL_CLIENTS += iosurface-shared
 endif
