@@ -59,7 +59,7 @@ try {
     await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
     const origin = `http://127.0.0.1:${server.address().port}`;
     const stateDir = join(output, name);
-    const run = { adapter: name, passed: false, reports, inspections: [] };
+    const run = { adapter: name, passed: false, gpuCompletion: 'not-dispatched', reports, inspections: [] };
     result.runs.push(run);
     let service;
     const open = () => WorkspaceService.open({ stateDir, config, createAdapter: factory });
@@ -76,10 +76,12 @@ try {
         kind: 'navigate', target: { url: `${origin}/` } });
       assert.equal(navigated.outcome, 'completed');
       const observation = await session.observe();
+      run.gpuCompletion = 'unknown';
       run.action = await session.act(observation, { actionId: 'run-gpu', authorizedIntent: 'gpu:run', kind: 'click',
         target: findElement(observation, value => value.selector === '#run', 'GPU run button'),
         completion: { completedWhen: [{ kind: 'element-present', selector: '#completed' }],
           failedWhen: [{ kind: 'element-present', selector: '#failed' }] } });
+      if (reports.length === 1 && reports[0].queueCompleted === true) run.gpuCompletion = 'completed';
       assert.equal(run.action.outcome, 'completed', JSON.stringify({ action: run.action, reports }));
       assert.equal(reports.length, 1);
       assertGpuReport(reports[0]);
