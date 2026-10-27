@@ -11,12 +11,12 @@ resolves, visibility/timestamps, drawables, transfers and retirement. Exclude WG
 public validation, provider selection and qualification.
 
 ## Scope
-ABI/tests, including compressed transfers.
+ABI/tests, compressed transfers and equal-count whole multisample copies.
 
 ## Contracts
 MSL and workgroup/slot facts enter the
 [compute boundary](include/doe_metal.h); stage/render facts enter the
-[graphics boundary](include/doe_metal_render.h). Outputs: statuses and completion-backed buffer access. Device capabilities bound workgroups and formats; pipelines independently
+[graphics boundary](include/doe_metal_render.h). Outputs: statuses and completion-backed buffer access. Device capabilities bound workgroups and formats; pipelines
 check maxTotalThreadsPerThreadgroup. Indirect compute guards GPU arguments in scratch,
 under [invariants](../../../../INTENT.md).
 Presentation borrows CAMetalLayer; texture/command leases retain drawables. presentDrawable schedules presentation; GPU completion permits caller-lease

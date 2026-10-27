@@ -144,6 +144,7 @@ static doe_mtl_status buffer_texture_transfer(doe_mtl_commands *commands,
     status = doe_mtl_buffer_preflight(commands, buffer, upload);
     if (status == DOE_MTL_OK) status = doe_mtl_texture_preflight(commands, texture,
         upload ? DOE_MTL_TEXTURE_COPY_DST : DOE_MTL_TEXTURE_COPY_SRC);
+    if (status == DOE_MTL_OK && texture->desc.sample_count != 1) status = DOE_MTL_UNSUPPORTED;
     if (status == DOE_MTL_OK) status = transfer_format(texture, aspect, &format, &aspects, &copy.options);
     if (status == DOE_MTL_OK) status = doe_mtl_texture_region_check(texture, region, &full);
     if (status == DOE_MTL_OK && (format.depth || format.stencil) && !full) status = DOE_MTL_UNSUPPORTED;
@@ -207,14 +208,15 @@ doe_mtl_status doe_mtl_commands_copy_texture(doe_mtl_commands *commands,
     status = doe_mtl_texture_preflight(commands, source, DOE_MTL_TEXTURE_COPY_SRC);
     if (status == DOE_MTL_OK) status = doe_mtl_texture_preflight(commands, destination, DOE_MTL_TEXTURE_COPY_DST);
     if (status == DOE_MTL_OK) status = doe_mtl_texture_region_check(source, source_region, &full);
-    if (status == DOE_MTL_OK && (source->format.depth || source->format.stencil) && !full)
+    if (status == DOE_MTL_OK && (source->format.depth || source->format.stencil || source->desc.sample_count > 1) && !full)
         status = DOE_MTL_UNSUPPORTED;
     if (status == DOE_MTL_OK) status = doe_mtl_texture_region_check(destination, destination_region, &full);
-    if (status == DOE_MTL_OK && (destination->format.depth || destination->format.stencil) && !full)
+    if (status == DOE_MTL_OK && (destination->format.depth || destination->format.stencil || destination->desc.sample_count > 1) && !full)
         status = DOE_MTL_UNSUPPORTED;
     /* View compatibility also includes combined depth/stencil aspect views;
      * a copy must retain all aspects and otherwise only changes sRGB encoding. */
-    if (status == DOE_MTL_OK && (!doe_mtl_format_compatible(source->desc.format, destination->desc.format) ||
+    if (status == DOE_MTL_OK && (source->desc.sample_count != destination->desc.sample_count ||
+        !doe_mtl_format_compatible(source->desc.format, destination->desc.format) ||
         source->format.depth != destination->format.depth || source->format.stencil != destination->format.stencil ||
         source_region.width != destination_region.width || source_region.height != destination_region.height ||
         source_region.depth_or_layers != destination_region.depth_or_layers)) status = DOE_MTL_INVALID_ARGUMENT;

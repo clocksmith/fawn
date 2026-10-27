@@ -24,7 +24,7 @@ static doe_mtl_status texture_validate(const doe_mtl_context *context,
     if (desc->sample_count > 1) {
         if ((desc->type != DOE_MTL_TEXTURE_2D_MS && desc->type != DOE_MTL_TEXTURE_2D_MS_ARRAY) ||
             desc->mip_levels != 1 || format->compressed ||
-            (desc->usage & (DOE_MTL_TEXTURE_COPY_SRC | DOE_MTL_TEXTURE_COPY_DST | DOE_MTL_TEXTURE_STORAGE)) != 0)
+            (desc->usage & DOE_MTL_TEXTURE_STORAGE) != 0)
             return DOE_MTL_UNSUPPORTED;
     } else if (desc->type == DOE_MTL_TEXTURE_2D_MS || desc->type == DOE_MTL_TEXTURE_2D_MS_ARRAY)
         return DOE_MTL_INVALID_ARGUMENT;
