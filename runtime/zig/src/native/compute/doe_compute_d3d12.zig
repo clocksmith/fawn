@@ -1,11 +1,14 @@
 //! Bounded public D3D12 compute admission and recorded-command integration.
-//! Dense group(0) scalar storage arrays with explicit or automatic layouts and one compute entry.
+//! Dense group(0) scalar storage arrays with explicit or automatic layouts and one selected compute entry.
 const std = @import("std");
 const objects = @import("../support/doe_native_object_types.zig");
 const helpers = @import("../support/doe_native_object_helpers.zig");
 const commands = @import("../support/doe_native_command_types.zig");
 const resources = @import("../../backend/dropin_resource_ops.zig");
 const bridge = @import("../../backend/dropin_queue_submit.zig").d3d12_bridge.c;
+const ir = @import("../../compiler/wgsl/ir/ir.zig");
+const compute_translation = @import("../../compiler/wgsl/runtime/runtime_compute_translation.zig");
+const bindings = @import("../../compiler/wgsl/pipeline/binding_reflection.zig");
 const analysis = @import("../../compiler/wgsl/pipeline/analysis.zig");
 const hlsl = @import("../../compiler/wgsl/pipeline/translate_hlsl.zig");
 const binding = @import("../../contracts/model/model_binding_value_types.zig");
@@ -24,12 +27,19 @@ const MAX_STORAGE_BINDINGS = objects.D3D12_STORAGE_BINDING_LIMIT;
 pub fn createPipeline(device: *objects.DoeDevice, shader: *objects.DoeShaderModule, layout: ?*objects.DoePipelineLayout, entry: []const u8, diagnostic: *ShaderDiagnostic) !*objects.DoeComputePipeline {
     if (entry.len == 0) return error.UnsupportedEntryPoint;
     const source = shader.wgsl_source orelse return error.UnsupportedShaderFormat;
-    var module = (try analysis.analyze(.{ .allocator = alloc, .source = source, .robustness = analysis.default_translation_robustness_config(), .diagnostic = &diagnostic.compiler })).module;
+    var module = (try analysis.analyze(.{ .allocator = alloc, .source = source, .robustness = compute_translation.compute_runtime_robustness_config(), .diagnostic = &diagnostic.compiler })).module;
     defer module.deinit();
+    const workgroup = try selectedWorkgroup(&module, entry);
+    var used: [bindings.MAX_BINDINGS]bindings.BindingMeta = undefined;
+    const used_count = try bindings.extractEntryPointBindings(alloc, &module, entry, &used);
     var count: u32 = 0;
     var storage: [MAX_STORAGE_BINDINGS]StorageBinding = @splat(.{});
     for (module.globals.items) |global| {
         const point = global.binding orelse continue;
+        const required = for (used[0..used_count]) |meta| {
+            if (meta.group == point.group and meta.binding == point.binding) break true;
+        } else false;
+        if (!required) continue;
         if (point.group != 0 or point.binding >= MAX_STORAGE_BINDINGS or global.addr_space != .storage or
             (global.access != .read_write and global.access != .read) or storage[point.binding].minimum_size != 0) return error.UnsupportedBinding;
         const array = switch (module.types.get(global.ty)) {
@@ -53,14 +63,6 @@ pub fn createPipeline(device: *objects.DoeDevice, shader: *objects.DoeShaderModu
     if (count == 0) return error.UnsupportedBinding;
     // Dense slots preserve the public flat binding contract; sparse CLI admission is separate.
     for (storage[0..count]) |slot| if (slot.minimum_size == 0) return error.UnsupportedBinding;
-    var workgroup: [3]u32 = .{ 0, 0, 0 };
-    for (module.functions.items) |function| {
-        if (function.stage != null) {
-            if (function.stage != .compute or !std.mem.eql(u8, function.name, entry) or workgroup[0] != 0) return error.UnsupportedEntryPoint;
-            workgroup = function.workgroup_size;
-        }
-    }
-    if (workgroup[0] == 0 or workgroup[0] > 1024 or workgroup[1] != 1 or workgroup[2] != 1) return error.UnsupportedWorkgroupSize;
     const pl = layout orelse try createAutomaticLayout(device, shader, storage[0..count]);
     // Automatic creation owns one reference; the pipeline retains its own below.
     defer if (layout == null) layouts.doeNativePipelineLayoutRelease(helpers.toOpaque(pl));
@@ -72,7 +74,7 @@ pub fn createPipeline(device: *objects.DoeDevice, shader: *objects.DoeShaderModu
     for (entries) |item| {
         if (item.binding >= count or seen[item.binding] or item.binding_array_size != 0) return error.UnsupportedLayout;
         const expected = if (storage[item.binding].read_only) binding.WGPUBufferBindingType_ReadOnlyStorage else binding.WGPUBufferBindingType_Storage;
-        if (item.buffer_binding_type != expected or item.buffer_has_dynamic_offset) return error.UnsupportedLayout;
+        if (item.buffer_binding_type != expected) return error.UnsupportedLayout;
         seen[item.binding] = true;
     }
     const text = try alloc.alloc(u8, hlsl.MAX_OUTPUT);
@@ -219,4 +221,44 @@ pub fn record(device: *objects.DoeDevice, list: ?*anyopaque, dispatch: Dispatch,
             bridge.d3d12_bridge_command_list_resource_barrier_transition(list, dispatch.bufs[index], state, dc.RESOURCE_STATE_COPY_DEST);
         }
     }
+}
+
+fn selectedWorkgroup(module: *const ir.Module, name: []const u8) ![3]u32 {
+    var found: ?[3]u32 = null;
+    for (module.entry_points.items) |entry| {
+        if (!std.mem.eql(u8, module.functions.items[entry.function].name, name)) continue;
+        if (found != null or entry.stage != .compute) return error.UnsupportedEntryPoint;
+        found = entry.workgroup_size;
+    }
+    const size = found orelse return error.UnsupportedEntryPoint;
+    if (size[0] == 0 or size[0] > 1024 or size[1] != 1 or size[2] != 1) return error.UnsupportedWorkgroupSize;
+    return size;
+}
+
+test "D3D12 selected compute entry owns workgroup and reachable bindings" {
+    const source =
+        \\@group(0) @binding(0) var<storage,read_write> selected_values: array<u32>;
+        \\@group(1) @binding(7) var<storage,read> unused: array<u32>;
+        \\fn helper() { selected_values[0] = 3u; }
+        \\@compute @workgroup_size(8) fn transform() { helper(); }
+        \\@compute @workgroup_size(1) fn other() { selected_values[0] = unused[0]; }
+        \\@compute @workgroup_size(8,2) fn two_dimensional() {}
+        \\@vertex fn vertex() -> @builtin(position) vec4f { return vec4f(0.0); }
+    ;
+    var diagnostic = analysis.Diagnostic{};
+    var module = (try analysis.analyze(.{ .allocator = std.testing.allocator, .source = source, .robustness = analysis.default_translation_robustness_config(), .diagnostic = &diagnostic })).module;
+    defer module.deinit();
+    try std.testing.expectEqual([3]u32{ 8, 1, 1 }, try selectedWorkgroup(&module, "transform"));
+    try std.testing.expectEqual([3]u32{ 1, 1, 1 }, try selectedWorkgroup(&module, "other"));
+    try std.testing.expectError(error.UnsupportedEntryPoint, selectedWorkgroup(&module, "missing"));
+    try std.testing.expectError(error.UnsupportedEntryPoint, selectedWorkgroup(&module, "helper"));
+    try std.testing.expectError(error.UnsupportedEntryPoint, selectedWorkgroup(&module, "vertex"));
+    try std.testing.expectError(error.UnsupportedWorkgroupSize, selectedWorkgroup(&module, "two_dimensional"));
+    var reflected: [bindings.MAX_BINDINGS]bindings.BindingMeta = undefined;
+    const count = try bindings.extractEntryPointBindings(std.testing.allocator, &module, "transform", &reflected);
+    try std.testing.expectEqual(@as(usize, 1), count);
+    try std.testing.expectEqual(@as(u32, 0), reflected[0].group);
+    try std.testing.expectEqual(@as(u32, 0), reflected[0].binding);
+    try module.entry_points.append(std.testing.allocator, module.entry_points.items[0]);
+    try std.testing.expectError(error.UnsupportedEntryPoint, selectedWorkgroup(&module, "transform"));
 }

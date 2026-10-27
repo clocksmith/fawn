@@ -890,9 +890,9 @@
       },
       "src/backend/d3d12/d3d12_native_runtime.zig": {
         "decision": "Keep",
-        "moduleSha256": "a9afb4710c78a1cf6eb225266890e0bdb3cea295cf43388503b03039a8274c10",
-        "reason": "Keep: device lifetime owns command-handle storage buffers and descriptors through checked queue completion and final retirement.",
-        "reviewer": "codex-d3d12-cli-storage/2026-10-21"
+        "moduleSha256": "52a9924190ebde3f3a4404b4abfca201ea134821cd937a41a08d073efcc3cc70",
+        "reason": "Keep: retain the adapter-selected hardware or WARP device through runtime creation and query its optional architecture without inventing capabilities.",
+        "reviewer": "codex-windows-d3d12-owner/2026-10-27"
       },
       "src/backend/d3d12/d3d12_query_set.zig": {
         "decision": "Keep",
@@ -956,9 +956,9 @@
       },
       "src/backend/dropin_capabilities.zig": {
         "decision": "Keep",
-        "moduleSha256": "22066e4ef0a69ae7816291f247faa138f8c35b29b82bacbd22718ee109c43fbd",
-        "reason": "Keep: reachable backend implementation shared by 3 production consumers with no conflicting ownership signal.",
-        "reviewer": "codex-recomposition-review/2026-08-08"
+        "moduleSha256": "39365f2dad19e4c793604962f11a7bfdc0dcc59da2fbeef35da3516080a803ff",
+        "reason": "Keep: classify D3D12 adapters from real software/optional UMA identity while preserving unknown results; physical and WARP compute controls exercise the selected device.",
+        "reviewer": "codex-windows-d3d12-owner/2026-10-27"
       },
       "src/backend/dropin_external_texture.zig": {
         "decision": "Keep",
@@ -3536,9 +3536,9 @@
       },
       "src/native/compute/doe_compute_ext_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "a0283d391fa58f9788409bec6cc5c28f2d7935eb541427a5b2ce8e88fdff3cdb",
-        "reason": "Keep: the encoder owns pass identity and recording lifetime; native adapters validate operations against that single state. setBindGroup resolves dynamic offsets; dispatch validates pipeline, workgroup counts and explicit-layout bind groups. Dispatch passes the pipeline's required binding kinds for automatic layouts. Compute pass debug groups are balanced at end(). Compute getBindGroupLayout layouts belong to the pipeline's automatic layout; dispatch passes its identity. Dispatches pass the full required-binding list; bindings above the execution slot table fail explicitly. Each dispatch validates the usage scope of the bind groups its pipeline uses and its indirect buffer. Automatic compute layouts preserve reflected buffer address space/access and compute visibility so bind-group usage validation sees the shader actual resource type.",
-        "reviewer": "Codex/2026-10-25"
+        "moduleSha256": "efceb2261656543859d0c7848e25fb7093f4c7e09952418cc028d3e607026351",
+        "reason": "Keep: common dynamic-offset validation owns count, alignment, checked range and encoder poisoning; D3D12 consumes the same recorded effective offsets.",
+        "reviewer": "codex-windows-d3d12-owner/2026-10-27"
       },
       "src/native/compute/doe_compute_fast.zig": {
         "decision": "Keep",
@@ -3584,9 +3584,9 @@
       },
       "src/native/lifecycle/doe_instance_device_native.zig": {
         "decision": "Keep",
-        "moduleSha256": "c34202e2c41d43b08554abff8a29c02b472dcfaf3ba3c52964c038dbc6c396f6",
-        "reason": "Keep: default-off C error-scope partial owner uses final-address typed storage, cold creation rollback and checked final deinit; original classifier, callbacks and device references remain with their existing owners. requestAdapter honors forceFallbackAdapter: a CPU adapter or unavailable. Device creation records required buffer offset alignment limits. requiredLimits resolve the per-stage slot, inter-stage and workgroup storage limits. requiredLimits also resolve the texture extent, bind group and vertex input limits.",
-        "reviewer": "doe-c-claude-surface/2026-10-24"
+        "moduleSha256": "8dbf541f49ac562bb022b3b34cda96e7cddd57971beecacbb4d684a4d9aadddd",
+        "reason": "Keep: honor explicit D3D12 fallback selection, preserve the selected device ownership and publish its actual adapter classification.",
+        "reviewer": "codex-windows-d3d12-owner/2026-10-27"
       },
       "src/native/mod.zig": {
         "decision": "Keep",
@@ -4466,9 +4466,9 @@
       },
       "src/native/compute/doe_compute_d3d12.zig": {
         "decision": "Keep",
-        "moduleSha256": "0dfc2bc1c69ab042a0b79b9c1679ad42e86da24a6f9b9dd8cb7151a61face2f4",
-        "reason": "Keep: the native WGSL pipeline admits source entry identity and compiles its mapped HLSL target entry while preserving descriptor and bytecode ownership.",
-        "reviewer": "codex-hlsl-target-names/2026-10-27"
+        "moduleSha256": "31696581413ddb13023584f843a75bacaa09a53e844c5ad334e69fad8012bc9c",
+        "reason": "Keep: select one existing compute entry and its reachable resources through compiler IR; preserve HLSL entry identity, view guards and validated effective binding offsets.",
+        "reviewer": "codex-windows-d3d12-owner/2026-10-27"
       },
       "src/backend/d3d12/d3d12_kernel_buffers.zig": {
         "decision": "Keep",

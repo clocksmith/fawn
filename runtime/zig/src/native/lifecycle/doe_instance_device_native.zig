@@ -56,7 +56,7 @@ const WGPU_WAIT_STATUS_ERROR: u32 = 3;
 const WGPU_REQUEST_STATUS_SUCCESS: u32 = 1;
 const WGPU_REQUEST_STATUS_UNAVAILABLE: u32 = 3;
 const WGPU_REQUEST_STATUS_ERROR: u32 = 4;
-const MSG_ADAPTER_UNAVAILABLE = "metal default device unavailable";
+const MSG_ADAPTER_UNAVAILABLE = "requested adapter unavailable";
 const MSG_ADAPTER_ALLOCATION_FAILED = "adapter allocation failed";
 const MSG_VK_ADAPTER_PROBE_FAILED = "vulkan physical adapter probe failed";
 const MSG_INVALID_ADAPTER = "invalid adapter handle";
@@ -258,7 +258,7 @@ fn create_adapter_for_instance(inst: ?*anyopaque, fallback: bool) CreateAdapterE
 
     switch (selected_backend()) {
         .d3d12 => {
-            var rt = NativeD3D12Runtime.init(alloc, null) catch return error.D3D12AdapterProbeFailed;
+            var rt = NativeD3D12Runtime.initForAdapter(alloc, fallback) catch return error.D3D12AdapterProbeFailed;
             defer rt.deinit();
             const identity = rt.adapterIdentity() catch return error.D3D12AdapterProbeFailed;
             if (fallback and identity.software == 0) return error.AdapterUnavailable;
@@ -268,7 +268,10 @@ fn create_adapter_for_instance(inst: ?*anyopaque, fallback: bool) CreateAdapterE
             adapter.d3d12_device = rt.retainDevice();
             adapter.vendor_id = identity.vendor_id;
             adapter.device_id = identity.device_id;
-            adapter.adapter_type = if (identity.software != 0) 3 else 4;
+            adapter.adapter_type = backend_capabilities.d3d12AdapterType(
+                identity.software != 0,
+                rt.adapterUnifiedMemory(),
+            );
             const name = std.mem.sliceTo(&identity.name, 0);
             adapter.device_name_len = @min(name.len, adapter.device_name.len);
             @memcpy(adapter.device_name[0..adapter.device_name_len], name[0..adapter.device_name_len]);

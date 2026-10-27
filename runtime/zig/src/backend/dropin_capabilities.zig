@@ -37,3 +37,19 @@ test "adapter Vulkan classification preserves physical classes and unknown value
     const cases = [_][2]u32{ .{ 0, 4 }, .{ 1, 2 }, .{ 2, 1 }, .{ 3, 4 }, .{ 4, 3 }, .{ 0xffff, 4 } };
     for (cases) |case| try std.testing.expectEqual(case[1], vulkanAdapterType(case[0]));
 }
+
+// D3D12 reports software directly and UMA through architecture feature support.
+// Preserve unknown classification when the architecture query is unavailable.
+pub fn d3d12AdapterType(software: bool, unified_memory: ?bool) u32 {
+    if (software) return 3; // WGPUAdapterType_CPU
+    const uma = unified_memory orelse return 4; // WGPUAdapterType_Unknown
+    return if (uma) 2 else 1; // IntegratedGPU / DiscreteGPU
+}
+
+test "adapter D3D12 classification preserves software UMA discrete and unknown" {
+    try std.testing.expectEqual(@as(u32, 3), d3d12AdapterType(true, null));
+    try std.testing.expectEqual(@as(u32, 3), d3d12AdapterType(true, true));
+    try std.testing.expectEqual(@as(u32, 4), d3d12AdapterType(false, null));
+    try std.testing.expectEqual(@as(u32, 2), d3d12AdapterType(false, true));
+    try std.testing.expectEqual(@as(u32, 1), d3d12AdapterType(false, false));
+}
