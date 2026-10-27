@@ -127,6 +127,7 @@ def build(args: argparse.Namespace) -> None:
         clang = (build_dir / compile_commands["gpu_main"][0]).resolve()
         sysroot = root / "build/linux/debian_bullseye_amd64-sysroot"
         command = [str(clang), "-fuse-ld=lld", "-Wl,--gc-sections", "-Wl,--no-undefined",
+                   "-Wl,--wrap=dlsym",
                    "-nostdlib++", "--sysroot=" + str(sysroot), "-o", str(out / "controls"),
                    str(out / "controls.o"), str(out / "ozone_platform.o"),
                    *map(str, objects), "-Wl,--start-group", *map(str, archives),
@@ -182,8 +183,20 @@ def run(args: argparse.Namespace) -> None:
         ("metadata-sandbox", ["--type=gpu-process", "--use-webgpu-runtime=doe", "--ozone-platform=x11", "--metadata-sandbox",
                               "--doe-webgpu-library-path=" + str(args.provider.resolve())]),
     ]
+    # The real loader remains untouched except in these explicit CPU failure
+    # controls. Every nonmatching route must avoid the injected query entirely.
+    cases += [("query-error-" + name, [*flags, "--prewarm-query-error"])
+              for name, flags in cases[:7]]
+    cases += [
+        ("vulkan-metadata-baseline", ["--type=gpu-process", "--use-webgpu-runtime=doe", "--ozone-platform=x11",
+                                      "--metadata-baseline", "--vulkan-metadata"]),
+        ("vulkan-metadata-sandbox", ["--type=gpu-process", "--use-webgpu-runtime=doe", "--ozone-platform=x11",
+                                     "--metadata-sandbox", "--vulkan-metadata",
+                                     "--doe-webgpu-library-path=" + str(args.provider.resolve())]),
+    ]
     rows = []
     baseline = None
+    vulkan_baseline = None
     try:
         for name, flags in cases:
             if name == "metadata-sandbox":
@@ -220,7 +233,20 @@ def run(args: argparse.Namespace) -> None:
                     baseline = observed
                 elif observed != baseline or b"PRE_SEAL fixed library/resource preparation threads=1" not in stdout:
                     raise RuntimeError("Protected metadata differs from independent baseline")
-        write_json(out / "verdict.json", {"passed": True, "baseline": baseline, "nativePixelClaim": False, "browserClaim": False})
+            elif name == "query-error-external-x11":
+                if b"runtime_vulkan_metadata_failed: result=-1 count=7" not in stderr:
+                    raise RuntimeError("Missing exact failed VkResult/count diagnostic")
+            elif name.startswith("vulkan-metadata-"):
+                observed = sorted(re.findall(rb"^VULKAN_EXTENSION (.+)$", stdout, re.M))
+                if not observed or b"VK_KHR_surface" not in observed:
+                    raise RuntimeError("Loader-only metadata cannot establish ICD discovery")
+                if name == "vulkan-metadata-baseline":
+                    vulkan_baseline = observed
+                elif observed != vulkan_baseline or b"PRE_SEAL fixed library/resource preparation threads=1" not in stdout:
+                    raise RuntimeError("Protected Vulkan metadata differs from independent baseline")
+        write_json(out / "verdict.json", {"passed": True, "baseline": baseline,
+                   "vulkanExtensions": [name.decode() for name in vulkan_baseline or []],
+                   "nativePixelClaim": False, "browserClaim": False})
     finally:
         drift = [path for path, digest in inputs.items() if sha256(Path(path)) != digest]
         write_json(out / "source-verdict.json", {"sourceDrift": drift})

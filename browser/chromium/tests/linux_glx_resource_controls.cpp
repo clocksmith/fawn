@@ -1,6 +1,7 @@
 // Actual GPU broker/GLX resource control. No GL context, device, draw or dispatch.
 // Compiled with the pinned owning TU flags; checks stay enabled in release builds.
 #include "content/common/gpu_pre_sandbox_hook_linux.cc"
+#include "third_party/vulkan-headers/src/include/vulkan/vulkan_core.h"
 #include <X11/Xlib.h>
 #include <dirent.h>
 #include <sys/prctl.h>
@@ -17,6 +18,27 @@
 using sandbox::syscall_broker::BrokerFilePermission;
 using sandbox::syscall_broker::BrokerProcess;
 using sandbox::syscall_broker::BrokerSandboxConfig;
+
+namespace {
+bool fail_metadata_query = false;
+unsigned metadata_queries = 0;
+
+VKAPI_ATTR VkResult VKAPI_CALL FailedMetadataQuery(
+    const char*, uint32_t* count, VkExtensionProperties*) {
+  ++metadata_queries;
+  *count = 7;
+  return VK_ERROR_OUT_OF_HOST_MEMORY;
+}
+}  // namespace
+
+extern "C" void* __real_dlsym(void*, const char*);
+extern "C" void* __wrap_dlsym(void* library, const char* name) {
+  if (fail_metadata_query &&
+      strcmp(name, "vkEnumerateInstanceExtensionProperties") == 0) {
+    return reinterpret_cast<void*>(&FailedMetadataQuery);
+  }
+  return __real_dlsym(library, name);
+}
 
 unsigned ExpectedHex(const char* name) {
   unsigned value = 0;
@@ -78,6 +100,29 @@ void ObserveGlx(Display* display, void* library) {
   }
 }
 
+void ObserveVulkanMetadata() {
+  void* library = dlopen("libvulkan.so.1", RTLD_NOW | RTLD_LOCAL);
+  CHECK(library);
+  auto enumerate = reinterpret_cast<PFN_vkEnumerateInstanceExtensionProperties>(
+      dlsym(library, "vkEnumerateInstanceExtensionProperties"));
+  CHECK(enumerate);
+  uint32_t count = 0;
+  CHECK_EQ(enumerate(nullptr, &count, nullptr), VK_SUCCESS);
+  CHECK_GT(count, 0u);
+  CHECK_LT(count, 1024u);
+  std::vector<VkExtensionProperties> properties(count);
+  CHECK_EQ(enumerate(nullptr, &count, properties.data()), VK_SUCCESS);
+  CHECK_LE(count, properties.size());
+  bool surface = false;
+  printf("VULKAN_METADATA count=%u\n", count);
+  for (uint32_t i = 0; i < count; ++i) {
+    printf("VULKAN_EXTENSION %s\n", properties[i].extensionName);
+    surface |= strcmp(properties[i].extensionName, "VK_KHR_surface") == 0;
+  }
+  CHECK(surface);  // Loader-only extensions cannot satisfy the hardware fixture.
+  dlclose(library);
+}
+
 void MetadataControl(const sandbox::policy::SandboxLinux::Options& options) {
   const auto* command_line = base::CommandLine::ForCurrentProcess();
   Display* display = XOpenDisplay(nullptr);
@@ -105,11 +150,16 @@ void MetadataControl(const sandbox::policy::SandboxLinux::Options& options) {
     CHECK(content::LoadLibrariesForGpu(options, true));
     CHECK_EQ(CountThreads(), 1u);
   }
-  void* library = dlopen("libGL.so.1", RTLD_NOW | RTLD_NOLOAD);
-  CHECK(library);
-  ObserveGlx(display, library);
+  void* library = nullptr;
+  if (command_line->HasSwitch("vulkan-metadata")) {
+    ObserveVulkanMetadata();
+  } else {
+    library = dlopen("libGL.so.1", RTLD_NOW | RTLD_NOLOAD);
+    CHECK(library);
+    ObserveGlx(display, library);
+  }
   CHECK_EQ(XCloseDisplay(display), 0);
-  dlclose(library);
+  if (library) dlclose(library);
   printf("PASS metadata-only native hardware identity seal=%d; NO GL context/device/draw/dispatch\n", seal);
   fflush(stdout);
 }
@@ -128,6 +178,15 @@ int main(int argc, char** argv) {
   CHECK(options.use_intel_specific_policies || options.use_amd_specific_policies ||
         options.use_nvidia_specific_policies || options.use_virtio_specific_policies);
   const bool early = !command_line->HasSwitch("late-policy");
+  if (command_line->HasSwitch("prewarm-query-error")) {
+    fail_metadata_query = true;
+    CHECK_EQ(content::LoadLibrariesForGpu(options, early), !expect);
+    CHECK_EQ(metadata_queries, expect ? 1u : 0u);
+    CHECK_EQ(CountThreads(), 1u);
+    printf("PASS metadata failure transport/route queries=%u externalGlx=%d\n",
+           metadata_queries, expect);
+    return 0;
+  }
   if (command_line->HasSwitch("metadata-baseline") || command_line->HasSwitch("metadata-sandbox")) {
     MetadataControl(options);
     return 0;
