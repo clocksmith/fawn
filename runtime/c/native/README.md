@@ -1538,8 +1538,11 @@ read-write formats. Baseline r32 read-write remains available. This deliberately
 corrects retained blanket core-format read-write admission: translation success
 is not evidence that arbitrary formats support native read/write. Tier2 implies
 Tier1, which implies RG11 rendering; sliced compression implies its base
-compression feature. Explicit duplicate feature requests reject without
-publishing a partially enabled set.
+compression feature. Required features use set semantics: repeating a supported
+name preserves the same enabled capabilities. An unknown or unsupported member
+still rejects the whole request without publishing a partially enabled set.
+`adapter-info` checks both synchronous and callback-based constructors, including
+64 repetitions followed by an unknown-member negative control.
 
 Vulkan intersects each optional requirement with actual format queries and the
 enabled extended-storage feature. A driver lacking signed-normalized blending
