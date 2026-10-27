@@ -1504,24 +1504,71 @@ async function runMode(chromium, mode, args, localUrl, localPort) {
           const gpu = browserRuntime?.gpu ?? navigator.gpu;
           const getCanvasContext = (canvas) =>
             browserRuntime ? browserRuntime.createCanvasContext(canvas) : canvas.getContext("webgpu");
-          const withOpTimeout = async (label, promiseFactory) => {
+          let completionUnknown = false;
+          let firstUnknownOperation = null;
+          const ownedQueues = new Map();
+          const withOpTimeout = async (label, promiseFactory, completionWait = false) => {
+            if (completionUnknown) throw new Error("GPU completion unknown; no subsequent operation allowed");
             let timeoutId = null;
             try {
               return await Promise.race([
                 promiseFactory(),
                 new Promise((_, reject) => {
                   timeoutId = setTimeout(
-                    () => reject(new Error(`${label} timed out after ${opTimeoutMs}ms`)),
+                    () => {
+                      completionUnknown = true;
+                      firstUnknownOperation ??= label;
+                      reject(new Error(`${label} timed out after ${opTimeoutMs}ms`));
+                    },
                     opTimeoutMs,
                   );
                 }),
               ]);
+            } catch (error) {
+              if (completionWait) {
+                completionUnknown = true;
+                firstUnknownOperation ??= label;
+              }
+              throw error;
             } finally {
               if (timeoutId !== null) {
                 clearTimeout(timeoutId);
               }
             }
           };
+          const queueState = (queue) => {
+            const state = ownedQueues.get(queue);
+            if (!state) throw new Error("unregistered owned GPU queue");
+            if (completionUnknown) throw new Error("GPU completion unknown; no subsequent queue work");
+            return state;
+          };
+          const noteQueueWork = (queue) => { queueState(queue).workEpoch += 1; };
+          const queueWork = (queue, operation, ...args) => {
+            const state = queueState(queue);
+            const value = queue[operation](...args);
+            state.workEpoch += 1;
+            return value;
+          };
+          const settleQueue = async (queue, label) => {
+            const state = queueState(queue);
+            const epoch = state.workEpoch;
+            state.completionWaits += 1;
+            await withOpTimeout(label, () => queue.onSubmittedWorkDone(), true);
+            state.settledEpoch = epoch;
+          };
+          const settlePendingQueues = async () => {
+            for (const [queue, state] of ownedQueues) {
+              if (state.workEpoch !== state.settledEpoch) {
+                await settleQueue(queue, `queue ${state.labels.join("+")} onSubmittedWorkDone`);
+              }
+            }
+          };
+          const withCompletion = async (label, promiseFactory) => {
+            const value = await withOpTimeout(label, promiseFactory, true);
+            await settlePendingQueues();
+            return value;
+          };
+          const queueProof = () => Array.from(ownedQueues.values(), (state) => ({ ...state, labels: [...state.labels] }));
           const alignTo = (value, alignment) =>
             Math.ceil(value / alignment) * alignment;
           const readTextureRgba = async (readDevice, texture, width, height, label) => {
@@ -1536,8 +1583,8 @@ async function runMode(chromium, mode, args, localUrl, localPort) {
               { buffer: readback, bytesPerRow, rowsPerImage: height },
               { width, height, depthOrArrayLayers: 1 },
             );
-            readDevice.queue.submit([encoder.finish()]);
-            await withOpTimeout(`${label} mapAsync`, () => readback.mapAsync(GPUMapMode.READ));
+            queueWork(readDevice.queue, "submit", [encoder.finish()]);
+            await withCompletion(`${label} mapAsync`, () => readback.mapAsync(GPUMapMode.READ));
             const bytes = new Uint8Array(readback.getMappedRange()).slice(0);
             readback.unmap();
             readback.destroy();
@@ -1565,6 +1612,10 @@ async function runMode(chromium, mode, args, localUrl, localPort) {
 
         const result = {
           apiSurface,
+          gpuCompletion: "not-dispatched",
+          firstUnknownOperation: null,
+          queueCompletionProofVersion: 1,
+          queueCompletions: [],
           userAgent: navigator.userAgent,
           webgpuAvailable: typeof gpu !== "undefined",
           adapterAvailable: false,
@@ -1629,6 +1680,11 @@ async function runMode(chromium, mode, args, localUrl, localPort) {
         };
         const attachDeviceDiagnostics = (diagnosticDevice, label) => {
           if (!diagnosticDevice || typeof diagnosticDevice !== "object") return;
+          if (!ownedQueues.has(diagnosticDevice.queue)) {
+            ownedQueues.set(diagnosticDevice.queue, { labels: [label], workEpoch: 0, settledEpoch: 0, completionWaits: 0 });
+          } else if (!ownedQueues.get(diagnosticDevice.queue).labels.includes(label)) {
+            ownedQueues.get(diagnosticDevice.queue).labels.push(label);
+          }
           if (typeof diagnosticDevice.addEventListener === "function") {
             diagnosticDevice.addEventListener("uncapturederror", (event) => {
               result.diagnostics.uncapturedErrors.push({
@@ -1652,6 +1708,7 @@ async function runMode(chromium, mode, args, localUrl, localPort) {
           await new Promise((resolve) => setTimeout(resolve, 0));
         };
 
+        try {
           if (!result.webgpuAvailable) {
             result.errors.push("WebGPU surface is unavailable");
             return result;
@@ -1684,6 +1741,8 @@ async function runMode(chromium, mode, args, localUrl, localPort) {
             }
           } catch (error) {
             result.smoke.requestAdapterXrCompatible.error = String(error);
+            if (completionUnknown) throw error;
+            await settlePendingQueues();
           }
 
           adapter = await withOpTimeout("requestAdapter", () => gpu.requestAdapter());
@@ -1721,6 +1780,8 @@ async function runMode(chromium, mode, args, localUrl, localPort) {
               result.webgpuCanvasApi.preferredCanvasFormat = gpu.getPreferredCanvasFormat();
             } catch (error) {
               result.errors.push(`getPreferredCanvasFormat failed: ${String(error)}`);
+              if (completionUnknown) throw error;
+              await settlePendingQueues();
             }
           }
 
@@ -1751,9 +1812,13 @@ async function runMode(chromium, mode, args, localUrl, localPort) {
               result.smoke.recovery.deviceLost.promiseAvailable;
           } catch (error) {
             result.smoke.recovery.deviceLost.error = String(error);
+            if (completionUnknown) throw error;
+            await settlePendingQueues();
           }
         } catch (error) {
           result.errors.push(`adapter/device init failed: ${String(error)}`);
+          if (completionUnknown) throw error;
+          await settlePendingQueues();
           return result;
         }
 
@@ -1777,6 +1842,8 @@ async function runMode(chromium, mode, args, localUrl, localPort) {
             result.smoke.recovery.validationError.captured;
         } catch (error) {
           result.smoke.recovery.validationError.error = String(error);
+          if (completionUnknown) throw error;
+          await settlePendingQueues();
         }
 
         try {
@@ -1788,7 +1855,7 @@ async function runMode(chromium, mode, args, localUrl, localPort) {
               GPUBufferUsage.COPY_SRC |
               GPUBufferUsage.COPY_DST,
           });
-          device.queue.writeBuffer(storage, 0, input);
+          queueWork(device.queue, "writeBuffer", storage, 0, input);
           const readback = device.createBuffer({
             size: input.byteLength,
             usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
@@ -1820,8 +1887,8 @@ async function runMode(chromium, mode, args, localUrl, localPort) {
           pass.dispatchWorkgroups(input.length);
           pass.end();
           encoder.copyBufferToBuffer(storage, 0, readback, 0, input.byteLength);
-          device.queue.submit([encoder.finish()]);
-          await withOpTimeout("computeIncrement readback mapAsync", () =>
+          queueWork(device.queue, "submit", [encoder.finish()]);
+          await withCompletion("computeIncrement readback mapAsync", () =>
             readback.mapAsync(GPUMapMode.READ),
           );
           const actual = Array.from(new Uint32Array(readback.getMappedRange()));
@@ -1831,6 +1898,8 @@ async function runMode(chromium, mode, args, localUrl, localPort) {
             JSON.stringify(actual) === JSON.stringify(result.smoke.computeIncrement.expected);
         } catch (error) {
           result.smoke.computeIncrement.error = String(error);
+          if (completionUnknown) throw error;
+          await settlePendingQueues();
         }
         result.smoke.recovery.postValidationCompute.actual = result.smoke.computeIncrement.actual;
         result.smoke.recovery.postValidationCompute.pass = result.smoke.computeIncrement.pass;
@@ -1900,8 +1969,8 @@ async function runMode(chromium, mode, args, localUrl, localPort) {
             { buffer: readback, bytesPerRow, rowsPerImage: height },
             { width, height, depthOrArrayLayers: 1 },
           );
-          device.queue.submit([encoder.finish()]);
-          await withOpTimeout("renderTriangle readback mapAsync", () =>
+          queueWork(device.queue, "submit", [encoder.finish()]);
+          await withCompletion("renderTriangle readback mapAsync", () =>
             readback.mapAsync(GPUMapMode.READ),
           );
           const data = new Uint8Array(readback.getMappedRange());
@@ -1916,6 +1985,8 @@ async function runMode(chromium, mode, args, localUrl, localPort) {
             centerRgba[0] > centerRgba[2] + 20;
         } catch (error) {
           result.smoke.renderTriangle.error = String(error);
+          if (completionUnknown) throw error;
+          await settlePendingQueues();
         }
 
         try {
@@ -1974,7 +2045,7 @@ async function runMode(chromium, mode, args, localUrl, localPort) {
           });
           pass.executeBundles([bundle]);
           pass.end();
-          device.queue.submit([encoder.finish()]);
+          queueWork(device.queue, "submit", [encoder.finish()]);
           const readback = await readTextureRgba(device, texture, width, height, "renderBundle readback");
           const centerRgba = sampleRgba(readback.bytes, readback.bytesPerRow, 32, 32);
           texture.destroy();
@@ -1982,6 +2053,8 @@ async function runMode(chromium, mode, args, localUrl, localPort) {
           result.smoke.renderBundle.pass = isRedDominant(centerRgba);
         } catch (error) {
           result.smoke.renderBundle.error = String(error);
+          if (completionUnknown) throw error;
+          await settlePendingQueues();
         }
 
         try {
@@ -2025,7 +2098,7 @@ async function runMode(chromium, mode, args, localUrl, localPort) {
             size: 16,
             usage: GPUBufferUsage.INDIRECT | GPUBufferUsage.COPY_DST,
           });
-          device.queue.writeBuffer(indirect, 0, new Uint32Array([3, 1, 0, 0]));
+          queueWork(device.queue, "writeBuffer", indirect, 0, new Uint32Array([3, 1, 0, 0]));
           const encoder = device.createCommandEncoder();
           const pass = encoder.beginRenderPass({
             colorAttachments: [
@@ -2040,7 +2113,7 @@ async function runMode(chromium, mode, args, localUrl, localPort) {
           pass.setPipeline(pipeline);
           pass.drawIndirect(indirect, 0);
           pass.end();
-          device.queue.submit([encoder.finish()]);
+          queueWork(device.queue, "submit", [encoder.finish()]);
           const readback = await readTextureRgba(device, texture, width, height, "renderIndirect readback");
           const centerRgba = sampleRgba(readback.bytes, readback.bytesPerRow, 32, 32);
           indirect.destroy();
@@ -2049,6 +2122,8 @@ async function runMode(chromium, mode, args, localUrl, localPort) {
           result.smoke.renderIndirect.pass = isRedDominant(centerRgba);
         } catch (error) {
           result.smoke.renderIndirect.error = String(error);
+          if (completionUnknown) throw error;
+          await settlePendingQueues();
         }
 
         try {
@@ -2085,7 +2160,7 @@ async function runMode(chromium, mode, args, localUrl, localPort) {
                 GPUBufferUsage.STORAGE |
                 GPUBufferUsage.COPY_DST,
             });
-            timestampDevice.queue.writeBuffer(timestampStorage, 0, new Uint32Array([1]));
+            queueWork(timestampDevice.queue, "writeBuffer", timestampStorage, 0, new Uint32Array([1]));
             const timestampShader = timestampDevice.createShaderModule({
               code: `
                 @group(0) @binding(0) var<storage, read_write> data: array<u32>;
@@ -2117,8 +2192,8 @@ async function runMode(chromium, mode, args, localUrl, localPort) {
             pass.end();
             encoder.resolveQuerySet(querySet, 0, 2, resolveBuffer, 0);
             encoder.copyBufferToBuffer(resolveBuffer, 0, readback, 0, 16);
-            timestampDevice.queue.submit([encoder.finish()]);
-            await withOpTimeout("timestampQuery readback mapAsync", () =>
+            queueWork(timestampDevice.queue, "submit", [encoder.finish()]);
+            await withCompletion("timestampQuery readback mapAsync", () =>
               readback.mapAsync(GPUMapMode.READ),
             );
             const values = new BigUint64Array(readback.getMappedRange()).slice(0);
@@ -2140,6 +2215,8 @@ async function runMode(chromium, mode, args, localUrl, localPort) {
           }
         } catch (error) {
           result.smoke.timestampQuery.error = String(error);
+          if (completionUnknown) throw error;
+          await settlePendingQueues();
         }
 
         const runMiniBenches = async () => {
@@ -2159,6 +2236,8 @@ async function runMode(chromium, mode, args, localUrl, localPort) {
             } catch (error) {
               const message = `bench fallback device init failed: ${String(error)}`;
               result.benches.errors.push(message);
+              if (completionUnknown) throw error;
+              await settlePendingQueues();
               result.errors.push(message);
               return;
             }
@@ -2171,24 +2250,24 @@ async function runMode(chromium, mode, args, localUrl, localPort) {
               size,
               usage: GPUBufferUsage.COPY_DST,
             });
+            noteQueueWork(benchDevice.queue);
             for (let i = 0; i < uploadWarmupIters; i += 1) {
               benchDevice.queue.writeBuffer(uploadBuffer, 0, payload);
             }
-            await withOpTimeout("writeBuffer warmup onSubmittedWorkDone", () =>
-              benchDevice.queue.onSubmittedWorkDone(),
-            );
+            await settleQueue(benchDevice.queue, "writeBuffer warmup onSubmittedWorkDone");
+            noteQueueWork(benchDevice.queue);
             const uploadStart = performance.now();
             for (let i = 0; i < uploadIters; i += 1) {
               benchDevice.queue.writeBuffer(uploadBuffer, 0, payload);
             }
-            await withOpTimeout("writeBuffer timed onSubmittedWorkDone", () =>
-              benchDevice.queue.onSubmittedWorkDone(),
-            );
+            await settleQueue(benchDevice.queue, "writeBuffer timed onSubmittedWorkDone");
             const uploadEnd = performance.now();
             result.benches.writeBuffer64kbUsPerOp =
               ((uploadEnd - uploadStart) * 1000) / uploadIters;
           } catch (error) {
             result.benches.errors.push(`writeBuffer bench failed: ${String(error)}`);
+            if (completionUnknown) throw error;
+            await settlePendingQueues();
           }
 
           try {
@@ -2202,6 +2281,7 @@ async function runMode(chromium, mode, args, localUrl, localPort) {
               layout: "auto",
               compute: { module: shader, entryPoint: "main" },
             });
+            noteQueueWork(benchDevice.queue);
             for (let i = 0; i < dispatchWarmupIters; i += 1) {
               const encoder = benchDevice.createCommandEncoder();
               const pass = encoder.beginComputePass();
@@ -2210,9 +2290,8 @@ async function runMode(chromium, mode, args, localUrl, localPort) {
               pass.end();
               benchDevice.queue.submit([encoder.finish()]);
             }
-            await withOpTimeout("dispatch warmup onSubmittedWorkDone", () =>
-              benchDevice.queue.onSubmittedWorkDone(),
-            );
+            await settleQueue(benchDevice.queue, "dispatch warmup onSubmittedWorkDone");
+            noteQueueWork(benchDevice.queue);
             const dispatchStart = performance.now();
             for (let i = 0; i < dispatchIters; i += 1) {
               const encoder = benchDevice.createCommandEncoder();
@@ -2222,14 +2301,14 @@ async function runMode(chromium, mode, args, localUrl, localPort) {
               pass.end();
               benchDevice.queue.submit([encoder.finish()]);
             }
-            await withOpTimeout("dispatch timed onSubmittedWorkDone", () =>
-              benchDevice.queue.onSubmittedWorkDone(),
-            );
+            await settleQueue(benchDevice.queue, "dispatch timed onSubmittedWorkDone");
             const dispatchEnd = performance.now();
             result.benches.computeDispatchUsPerOp =
               ((dispatchEnd - dispatchStart) * 1000) / dispatchIters;
           } catch (error) {
             result.benches.errors.push(`dispatch bench failed: ${String(error)}`);
+            if (completionUnknown) throw error;
+            await settlePendingQueues();
           }
         };
 
@@ -2261,7 +2340,7 @@ async function runMode(chromium, mode, args, localUrl, localPort) {
                   GPUTextureUsage.TEXTURE_BINDING |
                   GPUTextureUsage.RENDER_ATTACHMENT,
               });
-              device.queue.copyExternalImageToTexture(
+              queueWork(device.queue, "copyExternalImageToTexture",
                 {
                   source: sourceValue,
                   origin: { x: 0, y: 0 },
@@ -2277,10 +2356,7 @@ async function runMode(chromium, mode, args, localUrl, localPort) {
                 },
                 { width, height, depthOrArrayLayers: 1 },
               );
-              await withOpTimeout(
-                `copyExternalImageToTexture ${sourceType} onSubmittedWorkDone`,
-                () => device.queue.onSubmittedWorkDone(),
-              );
+              await settleQueue(device.queue, `copyExternalImageToTexture ${sourceType} onSubmittedWorkDone`);
               const readback = await readTextureRgba(
                 device,
                 texture,
@@ -2293,6 +2369,8 @@ async function runMode(chromium, mode, args, localUrl, localPort) {
               attempt.pass = isGreenDominant(topLeftRgba);
             } catch (error) {
               attempt.error = String(error);
+              if (completionUnknown) throw error;
+              await settlePendingQueues();
             } finally {
               texture?.destroy();
               copyAttempts.push(attempt);
@@ -2333,6 +2411,8 @@ async function runMode(chromium, mode, args, localUrl, localPort) {
           }
         } catch (error) {
           result.smoke.copyExternalImageToTexture.error = String(error);
+          if (completionUnknown) throw error;
+          await settlePendingQueues();
         }
 
         let importStage = "requestAdapter";
@@ -2480,11 +2560,9 @@ async function runMode(chromium, mode, args, localUrl, localPort) {
             pass.draw(6);
             pass.end();
             importStage = "submit";
-            importDevice.queue.submit([encoder.finish()]);
+            queueWork(importDevice.queue, "submit", [encoder.finish()]);
             importStage = "onSubmittedWorkDone";
-            await withOpTimeout("importExternalTexture onSubmittedWorkDone", () =>
-              importDevice.queue.onSubmittedWorkDone(),
-            );
+            await settleQueue(importDevice.queue, "importExternalTexture onSubmittedWorkDone");
             importStage = "readback";
             const readback = await readTextureRgba(
               importDevice,
@@ -2503,10 +2581,27 @@ async function runMode(chromium, mode, args, localUrl, localPort) {
           }
         } catch (error) {
           result.smoke.importExternalTexture.error = `${importStage}: ${String(error)}`;
+          if (completionUnknown) throw error;
+          await settlePendingQueues();
         }
 
+        await settlePendingQueues();
+        result.queueCompletions = queueProof();
+        if (result.queueCompletions.some((state) => state.workEpoch !== state.settledEpoch)) {
+          completionUnknown = true;
+          firstUnknownOperation ??= "final owned queue settlement";
+          throw new Error("owned queue work did not reach a proven completion epoch");
+        }
         await settleDeviceDiagnostics();
+        result.gpuCompletion = "completed";
         return result;
+        } catch (error) {
+          result.gpuCompletion = "unknown";
+          result.firstUnknownOperation = firstUnknownOperation;
+          result.queueCompletions = queueProof();
+          result.errors.push(String(error));
+          return result;
+        }
       },
         {
           uploadIters: args.uploadIters,
@@ -2525,16 +2620,22 @@ async function runMode(chromium, mode, args, localUrl, localPort) {
 
     // A later artwork/lifecycle failure must not erase completed WebGPU evidence.
     let fawnPrismaticLifecycle;
-    try {
-      fawnPrismaticLifecycle = await runFawnPrismaticLifecycleProbe(
-        browser,
-        localUrl,
-        args.opTimeoutMs,
-      );
-    } catch (error) {
-      const detail = String(error?.stack ?? error);
-      fawnPrismaticLifecycle = { pass: false, error: detail };
-      suite.errors.push(`fawn prismatic lifecycle: ${detail}`);
+    if (suite.gpuCompletion === "unknown" || !suite.adapterAvailable) {
+      fawnPrismaticLifecycle = { pass: false, skipped: true,
+        error: suite.gpuCompletion === "unknown" ? "GPU completion unknown; lifecycle not dispatched" : "core adapter unavailable; lifecycle not dispatched" };
+    } else {
+      try {
+        fawnPrismaticLifecycle = await runFawnPrismaticLifecycleProbe(
+          browser,
+          localUrl,
+          args.opTimeoutMs,
+        );
+      } catch (error) {
+        const detail = String(error?.stack ?? error);
+        fawnPrismaticLifecycle = { pass: false, error: detail };
+        suite.gpuCompletion = "unknown";
+        suite.errors.push(`fawn prismatic lifecycle: ${detail}`);
+      }
     }
 
     const runtimeSelection = buildRuntimeSelection(mode, args, launchArgs);
@@ -2553,6 +2654,7 @@ async function runMode(chromium, mode, args, localUrl, localPort) {
     };
   } catch (error) {
     result = makeFailedResult(mode, args, launchArgs, browserVersion, startMs, error);
+    result.gpuCompletion = "unknown";
   } finally {
     if (browser) {
       browserClose.attempted = true;
@@ -2571,6 +2673,7 @@ async function runMode(chromium, mode, args, localUrl, localPort) {
   }
 
   result.browserClose = browserClose;
+  if (!browserClose.pass) result.gpuCompletion = "unknown";
   result.elapsedMs = Date.now() - startMs;
   return result;
 }
@@ -2599,6 +2702,7 @@ function computeComparison(modeResults) {
 }
 
 function hasFailure(result) {
+  if (result.gpuCompletion === "unknown" || result.browserClose?.pass !== true) return true;
   if (result.fawnPrismaticLifecycle?.pass !== true) return true;
   if (!result.webgpuAvailable || !result.adapterAvailable) return true;
   if (result.activeRuntimeProof?.matched !== true) return true;
@@ -2613,6 +2717,24 @@ function hasFailure(result) {
   return false;
 }
 
+async function runModes(chromium, modes, args, url, port) {
+  const modeResults = [];
+  let failed = false;
+  for (const mode of modes) {
+    const result = await runMode(chromium, mode, args, url, port);
+    modeResults.push(result);
+    const status = hasFailure(result) ? "FAIL" : "PASS";
+    console.log(
+      `[${status}] ${mode}: webgpu=${result.webgpuAvailable} adapter=${result.adapterAvailable} compute=${result.smoke.computeIncrement.pass} render=${result.smoke.renderTriangle.pass} bundle=${result.smoke.renderBundle.pass} indirect=${result.smoke.renderIndirect.pass} timestamp=${result.smoke.timestampQuery.pass} xrCompatible=${result.smoke.requestAdapterXrCompatible.pass} copyExternal=${result.smoke.copyExternalImageToTexture.pass} importExternal=${result.smoke.importExternalTexture.pass} canvas=${result.webgpuCanvasApi?.webgpuContextAvailable ?? false} upload64kb_us=${result.benches.writeBuffer64kbUsPerOp?.toFixed(3) ?? "n/a"} dispatch_us=${result.benches.computeDispatchUsPerOp?.toFixed(3) ?? "n/a"}`,
+    );
+    if (hasFailure(result)) {
+      failed = true;
+    }
+    if (result.gpuCompletion === "unknown") break;
+  }
+  return { modeResults, failed };
+}
+
 async function main() {
   const args = parseArgs(process.argv);
   const chromium = await loadChromiumDriver();
@@ -2623,17 +2745,9 @@ async function main() {
   let failed = false;
 
   try {
-    for (const mode of modes) {
-      const result = await runMode(chromium, mode, args, url, port);
-      modeResults.push(result);
-      const status = hasFailure(result) ? "FAIL" : "PASS";
-      console.log(
-        `[${status}] ${mode}: webgpu=${result.webgpuAvailable} adapter=${result.adapterAvailable} compute=${result.smoke.computeIncrement.pass} render=${result.smoke.renderTriangle.pass} bundle=${result.smoke.renderBundle.pass} indirect=${result.smoke.renderIndirect.pass} timestamp=${result.smoke.timestampQuery.pass} xrCompatible=${result.smoke.requestAdapterXrCompatible.pass} copyExternal=${result.smoke.copyExternalImageToTexture.pass} importExternal=${result.smoke.importExternalTexture.pass} canvas=${result.webgpuCanvasApi?.webgpuContextAvailable ?? false} upload64kb_us=${result.benches.writeBuffer64kbUsPerOp?.toFixed(3) ?? "n/a"} dispatch_us=${result.benches.computeDispatchUsPerOp?.toFixed(3) ?? "n/a"}`,
-      );
-      if (hasFailure(result)) {
-        failed = true;
-      }
-    }
+    const completed = await runModes(chromium, modes, args, url, port);
+    modeResults.push(...completed.modeResults);
+    failed = completed.failed;
   } finally {
     server.close();
   }

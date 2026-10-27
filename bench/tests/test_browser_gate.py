@@ -340,6 +340,55 @@ def test_validate_smoke_report_rejects_failed_browser_close_when_recorded() -> N
     assert "smoke mode doe browserClose pass must be true" in errors
 
 
+def test_validate_smoke_report_rejects_unknown_completion_when_recorded() -> None:
+    root = Path(__file__).resolve().parents[2]
+    payload = json.loads((root / "examples/browser-smoke-report.sample.json").read_text(encoding="utf-8"))
+    payload["modeResults"][0]["gpuCompletion"] = "unknown"
+    assert "smoke mode dawn GPU completion must be known completed" in validate_smoke_report(payload, require_hash_chain=False)
+
+
+def test_validate_smoke_report_cannot_erase_recorded_unknown_operation() -> None:
+    root = Path(__file__).resolve().parents[2]
+    payload = json.loads((root / "examples/browser-smoke-report.sample.json").read_text(encoding="utf-8"))
+    payload["modeResults"][0]["gpuCompletion"] = "completed"
+    payload["modeResults"][0]["firstUnknownOperation"] = "submitted work timed out"
+    assert "smoke mode dawn cannot erase a recorded unknown GPU operation" in validate_smoke_report(payload, require_hash_chain=False)
+
+
+def test_validate_smoke_report_accepts_explicit_completed_operation() -> None:
+    root = Path(__file__).resolve().parents[2]
+    payload = json.loads((root / "examples/browser-smoke-report.sample.json").read_text(encoding="utf-8"))
+    payload["modeResults"][0]["gpuCompletion"] = "completed"
+    payload["modeResults"][0]["firstUnknownOperation"] = None
+    assert validate_smoke_report(payload, require_hash_chain=False) == []
+
+
+def test_validate_smoke_report_requires_each_used_queue_settled() -> None:
+    root = Path(__file__).resolve().parents[2]
+    payload = json.loads((root / "examples/browser-smoke-report.sample.json").read_text(encoding="utf-8"))
+    row = payload["modeResults"][0]
+    row["gpuCompletion"] = "completed"
+    row["queueCompletionProofVersion"] = 1
+    row["queueCompletions"] = [
+        {"labels": ["primary"], "workEpoch": 2, "settledEpoch": 2, "completionWaits": 1},
+        {"labels": ["import"], "workEpoch": 1, "settledEpoch": 0, "completionWaits": 1},
+    ]
+    assert "smoke mode dawn owned queue work must reach an observed completion epoch" in validate_smoke_report(payload, require_hash_chain=False)
+    row["queueCompletions"][1]["settledEpoch"] = 1
+    assert validate_smoke_report(payload, require_hash_chain=False) == []
+
+
+def test_validate_smoke_report_rejects_fake_empty_or_unwaited_queue_proof() -> None:
+    root = Path(__file__).resolve().parents[2]
+    payload = json.loads((root / "examples/browser-smoke-report.sample.json").read_text(encoding="utf-8"))
+    row = payload["modeResults"][0]
+    row["queueCompletionProofVersion"] = 1
+    for queues in ([], [{"labels": ["primary"], "workEpoch": 0, "settledEpoch": 0, "completionWaits": 0}],
+                   [{"labels": ["primary"], "workEpoch": 1, "settledEpoch": 1, "completionWaits": 0}]):
+        row["queueCompletions"] = queues
+        assert any("queue" in error for error in validate_smoke_report(payload, require_hash_chain=False))
+
+
 def test_validate_smoke_report_requires_bundle_comparison() -> None:
     root = Path(__file__).resolve().parents[2]
     payload = json.loads((root / "examples/browser-smoke-report.sample.json").read_text(encoding="utf-8"))

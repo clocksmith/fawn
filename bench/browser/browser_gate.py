@@ -736,6 +736,41 @@ def validate_smoke_report(
         )
         if row.get("errors"):
             errors.append(f"smoke mode {mode} errors must be empty")
+        has_queue_completion = any(key in row for key in (
+            "gpuCompletion", "queueCompletionProofVersion", "queueCompletions"
+        ))
+        if has_queue_completion and row.get("gpuCompletion") != "completed":
+            errors.append(f"smoke mode {mode} GPU completion must be known completed")
+        if row.get("firstUnknownOperation") is not None:
+            errors.append(f"smoke mode {mode} cannot erase a recorded unknown GPU operation")
+        if "queueCompletionProofVersion" in row or "queueCompletions" in row:
+            queues = row.get("queueCompletions")
+            version = row.get("queueCompletionProofVersion")
+            if type(version) is not int or version != 1:
+                errors.append(f"smoke mode {mode} queue completion proof version must be 1")
+            if not isinstance(queues, list) or not queues:
+                errors.append(f"smoke mode {mode} requires owned queue completion evidence")
+            else:
+                used_queue = False
+                for queue in queues:
+                    if not isinstance(queue, dict):
+                        errors.append(f"smoke mode {mode} invalid owned queue completion evidence")
+                        continue
+                    labels = queue.get("labels")
+                    values = [queue.get(key) for key in ("workEpoch", "settledEpoch", "completionWaits")]
+                    valid_labels = isinstance(labels, list) and bool(labels) and all(
+                        isinstance(label, str) and bool(label) for label in labels
+                    )
+                    valid_values = all(type(value) is int and value >= 0 for value in values)
+                    if not valid_labels or not valid_values:
+                        errors.append(f"smoke mode {mode} invalid owned queue completion evidence")
+                        continue
+                    work, settled, waits = values
+                    used_queue = used_queue or work > 0
+                    if settled != work or (work > 0 and waits == 0):
+                        errors.append(f"smoke mode {mode} owned queue work must reach an observed completion epoch")
+                if not used_queue:
+                    errors.append(f"smoke mode {mode} owned queue proof cannot contain zero work only")
         browser_close = row.get("browserClose")
         if browser_close is not None and (
             not isinstance(browser_close, dict) or browser_close.get("pass") is not True

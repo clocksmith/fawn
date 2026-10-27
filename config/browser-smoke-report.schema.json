@@ -253,6 +253,10 @@
     "ModeResult": {
       "type": "object",
       "additionalProperties": true,
+      "dependentRequired": {
+        "queueCompletionProofVersion": ["queueCompletions", "gpuCompletion"],
+        "queueCompletions": ["queueCompletionProofVersion", "gpuCompletion"]
+      },
       "required": [
         "mode",
         "runtimeSelection",
@@ -268,6 +272,23 @@
       ],
       "properties": {
         "mode": { "$ref": "#/$defs/RuntimeMode" },
+        "gpuCompletion": { "type": "string", "const": "completed" },
+        "firstUnknownOperation": { "type": "null" },
+        "queueCompletionProofVersion": { "type": "integer", "const": 1 },
+        "queueCompletions": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["labels", "workEpoch", "settledEpoch", "completionWaits"],
+            "properties": {
+              "labels": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+              "workEpoch": { "type": "integer", "minimum": 0 },
+              "settledEpoch": { "type": "integer", "minimum": 0 },
+              "completionWaits": { "type": "integer", "minimum": 0 }
+            }
+          }
+        },
         "runtimeSelection": { "$ref": "#/$defs/RuntimeSelection" },
         "shaderCompilerIdentity": { "$ref": "#/$defs/ShaderCompilerIdentity" },
         "webgpuAvailable": { "type": "boolean", "const": true },
