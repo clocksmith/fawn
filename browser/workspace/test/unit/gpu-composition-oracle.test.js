@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { assertGpuReport } from '../support/gpu-composition-oracle.js';
 
-const report = { adapter: { isFallbackAdapter: false }, values: [2, 4, 6, 8, 10, 12, 14, 16],
+const report = { queueCompleted: true, adapter: { isFallbackAdapter: false }, values: [2, 4, 6, 8, 10, 12, 14, 16],
   pixels: Array.from({ length: 64 }, () => [0, 255, 0, 255]).flat(), canvasFrames: 2, format: 'bgra8unorm' };
 assertGpuReport(report);
 for (const change of [
@@ -12,6 +12,7 @@ for (const change of [
   value => { value.adapter.isFallbackAdapter = true; },
   value => { delete value.adapter.isFallbackAdapter; },
   value => { value.error = 'GPU error'; },
+  value => { value.queueCompleted = false; },
   value => { value.canvasFrames = 0; },
   value => { value.format = 'unexpected'; },
 ]) {

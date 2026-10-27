@@ -9,7 +9,7 @@ document.querySelector('#run').onclick = async () => {
   let device;
   let context;
   const buffers = [];
-  const report = {};
+  const report = { queueCompleted: false };
   try {
     if (!navigator.gpu) throw new Error('WebGPU unavailable');
     const adapter = await navigator.gpu.requestAdapter({ forceFallbackAdapter: false });
@@ -73,6 +73,7 @@ document.querySelector('#run').onclick = async () => {
     readback.unmap();
     pixels.unmap();
     await device.queue.onSubmittedWorkDone();
+    report.queueCompleted = true;
     const validation = await device.popErrorScope();
     if (validation) throw new Error(validation.message);
     await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
