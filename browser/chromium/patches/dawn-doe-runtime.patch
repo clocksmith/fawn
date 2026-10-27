@@ -11,6 +11,30 @@ index 3b12d481a..6863031f7 100644
  
      BackendValidationLevel backendValidationLevel = BackendValidationLevel::Disabled;
      bool beginCaptureOnStartup = false;
+diff --git a/src/dawn/native/BUILD.gn b/src/dawn/native/BUILD.gn
+index df48386e6..33db73f3f 100644
+--- a/src/dawn/native/BUILD.gn
++++ b/src/dawn/native/BUILD.gn
+@@ -784,6 +784,7 @@ source_set("sources") {
+       "webgpu/ExternalTextureWGPU.cpp",
+       "webgpu/ExternalTextureWGPU.h",
+       "webgpu/Forward.h",
++      "webgpu/InnerRuntimeDescriptor.h",
+       "webgpu/ObjectWGPU.h",
+       "webgpu/PhysicalDeviceWGPU.cpp",
+       "webgpu/PhysicalDeviceWGPU.h",
+diff --git a/src/dawn/native/CMakeLists.txt b/src/dawn/native/CMakeLists.txt
+index ff24f89e0..7b2f0df11 100644
+--- a/src/dawn/native/CMakeLists.txt
++++ b/src/dawn/native/CMakeLists.txt
+@@ -612,6 +612,7 @@ if (DAWN_ENABLE_WEBGPU_ON_WEBGPU)
+         "webgpu/DeviceWGPU.h"
+         "webgpu/ExternalTextureWGPU.h"
+         "webgpu/Forward.h"
++        "webgpu/InnerRuntimeDescriptor.h"
+         "webgpu/ObjectWGPU.h"
+         "webgpu/PhysicalDeviceWGPU.h"
+         "webgpu/PipelineLayoutWGPU.h"
 diff --git a/src/dawn/native/Instance.cpp b/src/dawn/native/Instance.cpp
 index 54520ef46..2eb4ec165 100644
 --- a/src/dawn/native/Instance.cpp
@@ -62,10 +86,10 @@ index 7d5e1972c..50fe30140 100644
      bool mBeginCaptureOnStartup = false;
      BackendValidationLevel mBackendValidationLevel = BackendValidationLevel::Disabled;
 diff --git a/src/dawn/native/webgpu/BackendWGPU.cpp b/src/dawn/native/webgpu/BackendWGPU.cpp
-index 665dea721..b53aedde6 100644
+index 665dea721..dd5466c52 100644
 --- a/src/dawn/native/webgpu/BackendWGPU.cpp
 +++ b/src/dawn/native/webgpu/BackendWGPU.cpp
-@@ -27,7 +27,11 @@
+@@ -27,21 +27,33 @@
  
  #include "src/dawn/native/webgpu/BackendWGPU.h"
  
@@ -75,9 +99,10 @@ index 665dea721..b53aedde6 100644
  #include "dawn/dawn_proc_table.h"
 +#include "src/utils/log.h"
  #include "src/dawn/native/Instance.h"
++#include "src/dawn/native/webgpu/InnerRuntimeDescriptor.h"
  #include "src/dawn/native/webgpu/PhysicalDeviceWGPU.h"
  
-@@ -35,7 +39,13 @@ namespace dawn::native::webgpu {
+ namespace dawn::native::webgpu {
  
  Backend::Backend(InstanceBase* instance, wgpu::BackendType backendType)
      : BackendConnection(instance, backendType) {
@@ -92,7 +117,15 @@ index 665dea721..b53aedde6 100644
  
      // Enable all instance features and limits.
      WGPUInstanceDescriptor instanceDesc = WGPU_INSTANCE_DESCRIPTOR_INIT;
-@@ -61,10 +71,480 @@ Backend::Backend(InstanceBase* instance, wgpu::BackendType backendType)
+ 
+     WGPUDawnTogglesDescriptor toggleDescriptor = WGPU_DAWN_TOGGLES_DESCRIPTOR_INIT;
+-    instanceDesc.nextInChain = &toggleDescriptor.chain;
++    instanceDesc.nextInChain = InnerRuntimeDescriptorChain(
++        &toggleDescriptor, &toggleDescriptor.chain, instance->IsWebGPUExternalRuntimeRequired());
+ 
+     auto toggles = instance->GetTogglesState();
+     auto enabledTogglesName = toggles.GetEnabledToggleNames();
+@@ -61,10 +73,487 @@ Backend::Backend(InstanceBase* instance, wgpu::BackendType backendType)
      instanceDesc.requiredLimits = &limits;
  
      mInnerInstance = mDawnProcs.createInstance(&instanceDesc);
@@ -108,6 +141,13 @@ index 665dea721..b53aedde6 100644
 +    std::string error;
 +    if (path.empty() || !mExternalRuntimeLib.Open(path, &error)) {
 +        dawn::ErrorLog() << "runtime_artifact_load_failed: " << path << ": " << error;
++        return false;
++    }
++    mExternalCacheDisableProc = reinterpret_cast<DisablePersistentCacheProc>(
++        mExternalRuntimeLib.GetProc("doeNativeDeviceDisablePersistentCache", &error));
++    if (!mExternalCacheDisableProc) {
++        dawn::ErrorLog() << "runtime_cache_policy_unavailable: "
++                        << "doeNativeDeviceDisablePersistentCache: " << error;
 +        return false;
 +    }
 +    auto lookup = reinterpret_cast<WGPUProcGetProcAddress>(
@@ -573,7 +613,7 @@ index 665dea721..b53aedde6 100644
  Backend::~Backend() {
      if (mInnerInstance) {
          mDawnProcs.instanceRelease(mInnerInstance);
-@@ -74,6 +554,9 @@ Backend::~Backend() {
+@@ -74,24 +563,31 @@ Backend::~Backend() {
  
  std::vector<Ref<PhysicalDeviceBase>> Backend::DiscoverPhysicalDevices(
      const UnpackedPtr<RequestAdapterOptions>& options) {
@@ -583,32 +623,141 @@ index 665dea721..b53aedde6 100644
      // TODO(crbug.com/413053623): Expose Instance::EnumerateAdapters in DawnProcTable
      // So that we can discover multiple WebGPU physical devices.
  
+     // Pass through all of the core options. Note if backendType=WebGPU,
+     // RequestAdapter will return null since it's not enabled by default.
+     WGPURequestAdapterOptions innerAdapterOption = *ToAPI(*options);
++    WGPUChainedStruct* outerRequiredChain = innerAdapterOption.nextInChain;
+     // Get rid of the request adapter WebGPU backend options extension.
+     // TODO(crbug.com/462137660): Implement for various extensions.
+     innerAdapterOption.nextInChain = nullptr;
+ 
+     // Keep DawnTogglesDescriptor.
+     WGPUDawnTogglesDescriptor innerToggles = WGPU_DAWN_TOGGLES_DESCRIPTOR_INIT;
++    WGPUDawnTogglesDescriptor* nativeToggles = nullptr;
+     if (auto* toggles = options.Get<DawnTogglesDescriptor>()) {
+         innerToggles = *ToAPI(toggles);
+         // Unchain any other extensions if exist.
+         innerToggles.chain.next = nullptr;
+-        innerAdapterOption.nextInChain = &(innerToggles.chain);
++        nativeToggles = &innerToggles;
+     }
++    innerAdapterOption.nextInChain = InnerRuntimeDescriptorChain(
++        nativeToggles, outerRequiredChain, GetInstance()->IsWebGPUExternalRuntimeRequired());
+ 
+     WGPUAdapter innerAdapter = nullptr;
+ 
+@@ -126,6 +622,10 @@ WGPUInstance Backend::GetInnerInstance() const {
+     return mInnerInstance;
+ }
+ 
++DisablePersistentCacheProc Backend::GetExternalCacheDisableProc() const {
++    return mExternalCacheDisableProc;
++}
++
+ BackendConnection* Connect(InstanceBase* instance) {
+     return new Backend(instance, wgpu::BackendType::WebGPU);
+ }
 diff --git a/src/dawn/native/webgpu/BackendWGPU.h b/src/dawn/native/webgpu/BackendWGPU.h
-index 399d42a2e..408cd8c8b 100644
+index 399d42a2e..720a518cb 100644
 --- a/src/dawn/native/webgpu/BackendWGPU.h
 +++ b/src/dawn/native/webgpu/BackendWGPU.h
-@@ -30,6 +30,7 @@
+@@ -30,7 +30,9 @@
  
  #include <vector>
  
 +#include "src/dawn/common/DynamicLib.h"
  #include "src/dawn/native/BackendConnection.h"
++#include "src/dawn/native/webgpu/InnerRuntimeDescriptor.h"
  
  namespace dawn::native::webgpu {
-@@ -48,6 +49,8 @@ class Backend : public BackendConnection {
+ 
+@@ -46,8 +48,12 @@ class Backend : public BackendConnection {
+ 
+     const DawnProcTable& GetFunctions() const;
      WGPUInstance GetInnerInstance() const;
++    DisablePersistentCacheProc GetExternalCacheDisableProc() const;
  
    private:
 +    bool LoadDoeWireProcTable();
 +    dawn::DynamicLib mExternalRuntimeLib;
++    DisablePersistentCacheProc mExternalCacheDisableProc = nullptr;
      // The dawn proc table used as the underlying backend. It can be specified when creating the
      // backend. This is different from the static global gProcTable.
      DawnProcTable mDawnProcs;
 diff --git a/src/dawn/native/webgpu/DeviceWGPU.cpp b/src/dawn/native/webgpu/DeviceWGPU.cpp
-index 8af48f595..66e850a46 100644
+index 8af48f595..8e97595f9 100644
 --- a/src/dawn/native/webgpu/DeviceWGPU.cpp
 +++ b/src/dawn/native/webgpu/DeviceWGPU.cpp
-@@ -433,6 +433,7 @@ MaybeError Device::CopyFromStagingToTextureImpl(BufferBase* source,
+@@ -54,6 +54,7 @@
+ #include "src/dawn/native/webgpu/CommandBufferWGPU.h"
+ #include "src/dawn/native/webgpu/ComputePipelineWGPU.h"
+ #include "src/dawn/native/webgpu/ExternalTextureWGPU.h"
++#include "src/dawn/native/webgpu/InnerRuntimeDescriptor.h"
+ #include "src/dawn/native/webgpu/PhysicalDeviceWGPU.h"
+ #include "src/dawn/native/webgpu/PipelineLayoutWGPU.h"
+ #include "src/dawn/native/webgpu/QuerySetWGPU.h"
+@@ -146,6 +147,7 @@ Device::Device(AdapterBase* adapter,
+     DAWN_ASSERT(adapter->GetPhysicalDevice()->GetBackendType() == wgpu::BackendType::WebGPU);
+ 
+     WGPUDeviceDescriptor apiDesc = *(ToAPI(*descriptor));
++    WGPUChainedStruct* outerRequiredChain = apiDesc.nextInChain;
+     std::string label = "Inner Device on " + adapter->GetPhysicalDevice()->GetName();
+     apiDesc.label = ToOutputStringView(label);
+ 
+@@ -162,7 +164,16 @@ Device::Device(AdapterBase* adapter,
+     apiToggleDescriptor.disabledToggleCount = disabledTogglesName.size();
+     apiToggleDescriptor.disabledToggles = disabledTogglesName.data();
+ 
+-    apiDesc.nextInChain = &apiToggleDescriptor.chain;
++    apiDesc.nextInChain = InnerRuntimeDescriptorChain(
++        &apiToggleDescriptor, outerRequiredChain,
++        adapter->GetInstance()->IsWebGPUExternalRuntimeRequired());
++
++    std::vector<WGPUFeatureName> innerFeatureStorage;
++    auto innerFeatures = InnerRuntimeRequiredFeatures(
++        {apiDesc.requiredFeatures, apiDesc.requiredFeatureCount},
++        adapter->GetInstance()->IsWebGPUExternalRuntimeRequired(), innerFeatureStorage);
++    apiDesc.requiredFeatures = innerFeatures.data();
++    apiDesc.requiredFeatureCount = innerFeatures.size();
+ 
+     // Acquire a Ref to the outer webgpu::Device to avoid possible dangling pointer in the callback.
+     Ref<Device>* outerDeviceRef = new Ref<Device>(this);
+@@ -199,6 +210,14 @@ Device::Device(AdapterBase* adapter,
+     // TODO(crbug.com/413053623): use adapterRequestDevice instead as dawn_wire doesn't support
+     // adapterCreateDevice.
+     mInnerHandle = wgpu->adapterCreateDevice(innerAdapter, &apiDesc);
++    if (adapter->GetInstance()->IsWebGPUExternalRuntimeRequired()) {
++        auto* backend = ToBackend(adapter->GetPhysicalDevice())->GetBackend();
++        if (!ApplyExternalDeviceCachePolicy(
++                mInnerHandle, backend->GetInnerInstance(), backend->GetExternalCacheDisableProc(),
++                wgpu->deviceDestroy, wgpu->deviceRelease, wgpu->instanceProcessEvents)) {
++            dawn::ErrorLog() << "runtime_cache_policy_failed: unpublished external device rejected";
++        }
++    }
+ }
+ 
+ Device::~Device() {
+@@ -210,6 +229,10 @@ WGPUInstance Device::GetInnerInstance() const {
+ }
+ 
+ MaybeError Device::Initialize(const UnpackedPtr<DeviceDescriptor>& descriptor) {
++    if (!mInnerHandle) {
++        return DAWN_UNRECOVERABLE_ERROR(
++            "Inner WebGPU device creation or mandatory browser cache policy failed.");
++    }
+     Ref<Queue> queue;
+     DAWN_TRY_ASSIGN(queue, Queue::Create(this, &descriptor->defaultQueue));
+     return DeviceBase::Initialize(descriptor, std::move(queue));
+@@ -380,7 +403,7 @@ void Device::DestroyImpl(DestroyReason reason) {
+     //   is implicitly destroyed. This case is thread-safe because there are no
+     //   other threads using the device since there are no other live refs.
+ 
+-    if (ToBackend(GetQueue())->IsCapturing()) {
++    if (GetQueue() && ToBackend(GetQueue())->IsCapturing()) {
+         EndCapture();
+     }
+ 
+@@ -433,6 +456,7 @@ MaybeError Device::CopyFromStagingToTextureImpl(BufferBase* source,
  }
  
  MaybeError Device::TickImpl() {
@@ -616,3 +765,101 @@ index 8af48f595..66e850a46 100644
      wgpu->deviceTick(mInnerHandle);
      return {};
  }
+diff --git a/src/dawn/native/webgpu/InnerRuntimeDescriptor.h b/src/dawn/native/webgpu/InnerRuntimeDescriptor.h
+new file mode 100644
+index 000000000..d5f5e3c0d
+--- /dev/null
++++ b/src/dawn/native/webgpu/InnerRuntimeDescriptor.h
+@@ -0,0 +1,92 @@
++// Copyright 2026 The Doe Authors
++// Use of this source code is governed by a BSD-style license that can be
++// found in the LICENSE file.
++
++#ifndef SRC_DAWN_NATIVE_WEBGPU_INNERRUNTIMEDESCRIPTOR_H_
++#define SRC_DAWN_NATIVE_WEBGPU_INNERRUNTIMEDESCRIPTOR_H_
++
++#include <span>
++#include <vector>
++
++#include "dawn/webgpu.h"
++
++namespace dawn::native::webgpu {
++
++// Private toggles are already applied to the outer Dawn objects. Preserve
++// native-Dawn forwarding. For an external provider, consume only the leading
++// Dawn tuning/cache and fieldless WebGPU-backend routing nodes. The external
++// device must pass the mandatory cache-disable policy before publication.
++// Leave the first other
++// requirement and its complete tail borrowed and unchanged, including unknown
++// chains: the external provider must admit them or reject the request.
++inline WGPUChainedStruct* InnerRuntimeDescriptorChain(
++    WGPUDawnTogglesDescriptor* nativeToggles,
++    WGPUChainedStruct* outerChain,
++    bool externalRuntime) {
++    if (!externalRuntime) {
++        return nativeToggles ? &nativeToggles->chain : nullptr;
++    }
++    while (outerChain &&
++           (outerChain->sType == WGPUSType_DawnTogglesDescriptor ||
++            outerChain->sType == WGPUSType_DawnCacheDeviceDescriptor ||
++            outerChain->sType == WGPUSType_RequestAdapterWebGPUBackendOptions)) {
++        outerChain = outerChain->next;
++    }
++    return outerChain;
++}
++
++// TextureWGPU resolves outer Dawn internal usages into ordinary texture usage
++// bits. Preserve the exact public/unknown feature order and native-Dawn span;
++// only that consumed private feature is absent from the external request.
++inline std::span<const WGPUFeatureName> InnerRuntimeRequiredFeatures(
++    std::span<const WGPUFeatureName> required,
++    bool externalRuntime,
++    std::vector<WGPUFeatureName>& storage) {
++    if (!externalRuntime) {
++        return required;
++    }
++    bool hasPrivateFeature = false;
++    for (WGPUFeatureName feature : required) {
++        hasPrivateFeature |= feature == WGPUFeatureName_DawnInternalUsages;
++    }
++    if (!hasPrivateFeature) {
++        return required;
++    }
++    storage.clear();
++    storage.reserve(required.size());
++    for (WGPUFeatureName feature : required) {
++        if (feature != WGPUFeatureName_DawnInternalUsages) {
++            storage.push_back(feature);
++        }
++    }
++    return storage;
++}
++
++// This is a private provider requirement, not a WebGPU procedure or capability.
++using DisablePersistentCacheProc = WGPUStatus (*)(WGPUDevice);
++
++// Called before a created external device is published or used for shaders.
++// A refused policy destroys/releases only that unpublished device, then pumps
++// the existing instance owner to deliver its ready loss/failed-creation event.
++inline bool ApplyExternalDeviceCachePolicy(
++    WGPUDevice& device,
++    WGPUInstance instance,
++    DisablePersistentCacheProc disable,
++    WGPUProcDeviceDestroy destroy,
++    WGPUProcDeviceRelease release,
++    WGPUProcInstanceProcessEvents processEvents) {
++    if (device && disable && disable(device) == WGPUStatus_Success) {
++        return true;
++    }
++    if (device) {
++        destroy(device);
++        release(device);
++        device = nullptr;
++    }
++    processEvents(instance);
++    return false;
++}
++
++}  // namespace dawn::native::webgpu
++
++#endif  // SRC_DAWN_NATIVE_WEBGPU_INNERRUNTIMEDESCRIPTOR_H_
