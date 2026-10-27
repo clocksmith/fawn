@@ -1019,7 +1019,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--doe-chromium-proc-surface",
-        default="config/doe-chromium-proc-surface.json",
+        default="config/doe-chromium-proc-surface.c.json",
         help="Doe Chromium proc-surface config passed to the checker.",
     )
     parser.add_argument(

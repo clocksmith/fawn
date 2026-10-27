@@ -1,0 +1,102 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "fawn://config/doe-chromium-proc-surface.c.schema.json",
+  "title": "C provider forced Chromium selector CPU prerequisites",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "surfaceId",
+    "surfaceVersion",
+    "lastUpdated",
+    "providerImplementation",
+    "selectionMode",
+    "resolverSourcePath",
+    "libraryPath",
+    "description",
+    "requiredSelector",
+    "wireProcTable",
+    "behaviorSources"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 2
+    },
+    "surfaceId": {
+      "const": "doe-chromium-proc-surface"
+    },
+    "surfaceVersion": {
+      "const": 2
+    },
+    "lastUpdated": {
+      "const": "2026-10-27"
+    },
+    "providerImplementation": {
+      "const": "c"
+    },
+    "selectionMode": {
+      "const": "forced_doe_source_selector"
+    },
+    "resolverSourcePath": {
+      "const": "runtime/c/native/src/procedures.c"
+    },
+    "libraryPath": {
+      "type": "string",
+      "minLength": 1
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1
+    },
+    "requiredSelector": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sourcePath",
+        "sourceSha256"
+      ],
+      "properties": {
+        "sourcePath": {
+          "const": "browser/chromium/patches/dawn-doe-runtime.patch"
+        },
+        "sourceSha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      }
+    },
+    "wireProcTable": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "tableHeaderPath"
+      ],
+      "properties": {
+        "tableHeaderPath": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "behaviorSources": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "errorObjects",
+        "sharedTexture",
+        "sharedBuffer"
+      ],
+      "properties": {
+        "errorObjects": {
+          "const": "runtime/c/native/src/lost_objects.c"
+        },
+        "sharedTexture": {
+          "const": "runtime/c/native/src/shared_memory.c"
+        },
+        "sharedBuffer": {
+          "const": "runtime/c/native/src/shared_buffer_memory.c"
+        }
+      }
+    }
+  }
+}
