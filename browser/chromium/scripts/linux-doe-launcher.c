@@ -1,0 +1,94 @@
+/* Relocatable Linux product entry point. execv preserves the owned browser PID
+ * and private CDP descriptors; the browser retains its normal sandbox policy. */
+#define _POSIX_C_SOURCE 200809L
+#include <errno.h>
+#include <limits.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <unistd.h>
+
+static int package_path(char *out, size_t size, const char *root, const char *suffix) {
+    int length = snprintf(out, size, "%s/%s", root, suffix);
+    return length >= 0 && (size_t)length < size;
+}
+
+static int readable_file(const char *path) {
+    struct stat metadata;
+    return stat(path, &metadata) == 0 && S_ISREG(metadata.st_mode) && access(path, R_OK) == 0;
+}
+
+int main(int argc, char **argv) {
+    char image[PATH_MAX];
+    char browser[PATH_MAX];
+    char library[PATH_MAX];
+    char compiler[PATH_MAX];
+    char library_argument[PATH_MAX + 64];
+    char **forwarded = NULL;
+    int result = 1;
+    int dawn = 0;
+    int explicit_mode = 0;
+    int positional = 0;
+    size_t count = 0;
+    ssize_t length = readlink("/proc/self/exe", image, sizeof(image) - 1);
+    if (length <= 0 || (size_t)length >= sizeof(image) - 1) {
+        fputs("Fawn: cannot resolve the installed launcher image\n", stderr);
+        goto cleanup;
+    }
+    image[length] = '\0';
+    char *separator = strrchr(image, '/');
+    if (!separator) goto cleanup;
+    *separator = '\0';
+    if (!package_path(browser, sizeof(browser), image, "chrome") ||
+        !package_path(library, sizeof(library), image, "lib/doe/libwebgpu_doe_c.so") ||
+        !package_path(compiler, sizeof(compiler), image, "lib/doe/libdoe_compiler.so")) {
+        fputs("Fawn: installed package path is too long\n", stderr);
+        goto cleanup;
+    }
+    for (int index = 1; index < argc; ++index) {
+        if (positional) continue;
+        if (strcmp(argv[index], "--") == 0) { positional = 1; continue; }
+        if (strncmp(argv[index], "--use-webgpu-runtime", 20) == 0) {
+            if (explicit_mode || (strcmp(argv[index], "--use-webgpu-runtime=doe") != 0 &&
+                                  strcmp(argv[index], "--use-webgpu-runtime=dawn") != 0)) {
+                fputs("Fawn: select exactly one explicit doe or dawn runtime\n", stderr);
+                goto cleanup;
+            }
+            explicit_mode = 1;
+            dawn = strcmp(argv[index], "--use-webgpu-runtime=dawn") == 0;
+        } else if (strncmp(argv[index], "--doe-webgpu-library-path", 24) == 0) {
+            fputs("Fawn: the product launcher uses its bundled C library; use the raw image for diagnostics\n", stderr);
+            goto cleanup;
+        }
+    }
+    if (!readable_file(browser) || access(browser, X_OK) != 0) {
+        fprintf(stderr, "Fawn: bundled Chromium image is unavailable: %s\n", browser);
+        goto cleanup;
+    }
+    if (!dawn && (!readable_file(library) || !readable_file(compiler))) {
+        fputs("Fawn: bundled Doe C runtime/compiler is missing or unreadable; no fallback\n", stderr);
+        goto cleanup;
+    }
+    forwarded = calloc((size_t)argc + 4, sizeof(*forwarded));
+    if (!forwarded) { fputs("Fawn: cannot allocate launch arguments\n", stderr); goto cleanup; }
+    forwarded[count++] = browser;
+    forwarded[count++] = dawn ? "--use-webgpu-runtime=dawn" : "--use-webgpu-runtime=doe";
+    if (!dawn) {
+        int written = snprintf(library_argument, sizeof(library_argument), "--doe-webgpu-library-path=%s", library);
+        if (written < 0 || (size_t)written >= sizeof(library_argument)) goto cleanup;
+        forwarded[count++] = library_argument;
+    }
+    positional = 0;
+    for (int index = 1; index < argc; ++index) {
+        if (!positional && strncmp(argv[index], "--use-webgpu-runtime", 20) == 0) continue;
+        if (strcmp(argv[index], "--") == 0) positional = 1;
+        forwarded[count++] = argv[index];
+    }
+    forwarded[count] = NULL;
+    execv(browser, forwarded);
+    fprintf(stderr, "Fawn: cannot execute Chromium: %s\n", strerror(errno));
+cleanup:
+    free(forwarded);
+    return result;
+}
