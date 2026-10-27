@@ -28,7 +28,7 @@ index e41489d4c9..5b1578e860 100644
      sources += [
        "gpu_pre_sandbox_hook_linux.cc",
 diff --git a/content/common/gpu_pre_sandbox_hook_linux.cc b/content/common/gpu_pre_sandbox_hook_linux.cc
-index 2e53794fa3..7e6651e87d 100644
+index 2e53794fa3..365d63a014 100644
 --- a/content/common/gpu_pre_sandbox_hook_linux.cc
 +++ b/content/common/gpu_pre_sandbox_hook_linux.cc
 @@ -8,6 +8,7 @@
@@ -36,12 +36,12 @@ index 2e53794fa3..7e6651e87d 100644
  #include <stdlib.h>
  #include <sys/stat.h>
 +#include <sys/sysmacros.h>
- 
+
  #include <array>
  #include <memory>
 @@ -16,16 +17,21 @@
  #include <vector>
- 
+
  #include "base/base_paths.h"
 +#include "base/command_line.h"
  #include "base/files/file_enumerator.h"
@@ -69,15 +69,14 @@ index 2e53794fa3..7e6651e87d 100644
 +#if BUILDFLAG(IS_OZONE)
 +#include "ui/ozone/public/ozone_platform.h"
 +#endif
- 
+
  #if BUILDFLAG(USE_V4L2_CODEC)
  #include "media/gpu/v4l2/v4l2_device.h"
-@@ -224,11 +234,135 @@ void AddImgPvrGpuPermissions(std::vector<BrokerFilePermission>* permissions) {
-   permissions->push_back(BrokerFilePermission::ReadWrite(kPvrSyncPath));
- }
- 
--void AddDrmGpuDevPermissions(std::vector<BrokerFilePermission>* permissions,
--                             const std::string& path) {
+@@ -46,6 +56,35 @@ using sandbox::syscall_broker::BrokerFilePermission;
+ using sandbox::syscall_broker::BrokerProcess;
+
+ namespace content {
++
 +// Only the early external-runtime X11 GLX route needs desktop resources after
 +// sealing. Preserve the normal policy for native Dawn, Wayland and other GL
 +// implementations. The caller binds the actual serialized GPU preference.
@@ -104,6 +103,17 @@ index 2e53794fa3..7e6651e87d 100644
 +  return false;
 +#endif
 +}
++
++
+ namespace {
+
+ inline bool IsChromeOS() {
+@@ -224,11 +263,109 @@ void AddImgPvrGpuPermissions(std::vector<BrokerFilePermission>* permissions) {
+   permissions->push_back(BrokerFilePermission::ReadWrite(kPvrSyncPath));
+ }
+
+-void AddDrmGpuDevPermissions(std::vector<BrokerFilePermission>* permissions,
+-                             const std::string& path) {
 +
 +bool MatchesGpuVendor(
 +    unsigned int vendor,
@@ -200,7 +210,7 @@ index 2e53794fa3..7e6651e87d 100644
 +    const std::string& path,
 +    const sandbox::policy::SandboxSeccompBPF::Options* external_glx = nullptr) {
    struct stat st;
- 
+
 -  if (stat(path.c_str(), &st) == 0) {
 +  if ((external_glx ? lstat(path.c_str(), &st) : stat(path.c_str(), &st)) ==
 +      0) {
@@ -209,12 +219,12 @@ index 2e53794fa3..7e6651e87d 100644
 +      return;
 +    }
      permissions->push_back(BrokerFilePermission::ReadWrite(path));
- 
+
      uint32_t major = (static_cast<uint32_t>(st.st_rdev) >> 8) & 0xff;
-@@ -240,13 +374,16 @@ void AddDrmGpuDevPermissions(std::vector<BrokerFilePermission>* permissions,
+@@ -240,13 +377,16 @@ void AddDrmGpuDevPermissions(std::vector<BrokerFilePermission>* permissions,
    }
  }
- 
+
 -void AddDrmGpuPermissions(std::vector<BrokerFilePermission>* permissions) {
 +void AddDrmGpuPermissions(
 +    std::vector<BrokerFilePermission>* permissions,
@@ -231,10 +241,10 @@ index 2e53794fa3..7e6651e87d 100644
 +                            external_glx);
    }
  }
- 
-@@ -604,23 +741,26 @@ void LoadChromecastV4L2Libraries() {
+
+@@ -604,23 +744,26 @@ void LoadChromecastV4L2Libraries() {
  }  // namespace
- 
+
  sandbox::syscall_broker::BrokerCommandSet CommandSetForGPU(
 -    const sandbox::policy::SandboxLinux::Options& options) {
 +    const sandbox::policy::SandboxLinux::Options& options,
@@ -258,7 +268,7 @@ index 2e53794fa3..7e6651e87d 100644
    }
    return command_set;
  }
- 
+
  std::vector<BrokerFilePermission> FilePermissionsForGpu(
 -    const sandbox::policy::SandboxSeccompBPF::Options& options) {
 +    const sandbox::policy::SandboxSeccompBPF::Options& options,
@@ -266,9 +276,9 @@ index 2e53794fa3..7e6651e87d 100644
    // All GPU process policies need this file brokered out.
    static const char kDriRcPath[] = "/etc/drirc";
    std::vector<BrokerFilePermission> permissions = {
-@@ -669,11 +809,31 @@ std::vector<BrokerFilePermission> FilePermissionsForGpu(
+@@ -669,11 +812,31 @@ std::vector<BrokerFilePermission> FilePermissionsForGpu(
    }
- 
+
    AddStandardGpuPermissions(&permissions);
 +  if (UsesEarlyExternalGlxResources(early_sandbox)) {
 +    AddDrmGpuPermissions(&permissions, &options);
@@ -276,7 +286,7 @@ index 2e53794fa3..7e6651e87d 100644
 +  }
    return permissions;
  }
- 
+
  bool LoadLibrariesForGpu(
 -    const sandbox::policy::SandboxSeccompBPF::Options& options) {
 +    const sandbox::policy::SandboxSeccompBPF::Options& options,
@@ -299,9 +309,9 @@ index 2e53794fa3..7e6651e87d 100644
    LoadVulkanLibraries();
    if (IsArchitectureArm()) {
      LoadArmGpuLibraries();
-@@ -696,11 +856,36 @@ bool LoadLibrariesForGpu(
+@@ -696,11 +859,36 @@ bool LoadLibrariesForGpu(
  }
- 
+
  bool GpuPreSandboxHook(sandbox::policy::SandboxLinux::Options options) {
 +  return GpuPreSandboxHookWithEarlyGlxResources(false, options);
 +}
@@ -330,22 +340,25 @@ index 2e53794fa3..7e6651e87d 100644
 -      CommandSetForGPU(options), FilePermissionsForGpu(options), options);
 +      CommandSetForGPU(options, early_sandbox),
 +      FilePermissionsForGpu(options, early_sandbox), options);
- 
+
 -  if (!LoadLibrariesForGpu(options))
 +  if (!LoadLibrariesForGpu(options, early_sandbox)) {
      return false;
 +  }
- 
+
    // TODO(tsepez): enable namspace sandbox here once crashes are understood.
- 
+
 diff --git a/content/common/gpu_pre_sandbox_hook_linux.h b/content/common/gpu_pre_sandbox_hook_linux.h
-index 764a5502ba..0bb5822ffe 100644
+index 764a5502ba..5088f458a3 100644
 --- a/content/common/gpu_pre_sandbox_hook_linux.h
 +++ b/content/common/gpu_pre_sandbox_hook_linux.h
-@@ -19,23 +19,31 @@ namespace content {
+@@ -19,23 +19,34 @@ namespace content {
  // require general GPU usage.
  bool GpuPreSandboxHook(sandbox::policy::SandboxLinux::Options options);
- 
+
++// One owner for the actual early external-runtime X11 GLX route.
++bool UsesEarlyExternalGlxResources(bool early_sandbox);
++
 +// Binds the actual GPU preference; other hook users retain the legacy policy.
 +bool GpuPreSandboxHookWithEarlyGlxResources(
 +    bool early_sandbox,
@@ -353,14 +366,14 @@ index 764a5502ba..0bb5822ffe 100644
 +
  // These functions can be used by other pre-sandbox hooks that need GPU access
  // in addition to their other permissions.
- 
+
  // Returns the set of commands (open, stat, unlink, rename, etc...) that are
  // needed for a process to use the GPU.
  sandbox::syscall_broker::BrokerCommandSet CommandSetForGPU(
 -    const sandbox::policy::SandboxLinux::Options& options);
 +    const sandbox::policy::SandboxLinux::Options& options,
 +    bool early_sandbox = false);
- 
+
  // Returns a list of file permissions that are needed for a process to use
  // the GPU. These will include the libraries that make up the graphics driver.
  std::vector<sandbox::syscall_broker::BrokerFilePermission>
@@ -368,34 +381,34 @@ index 764a5502ba..0bb5822ffe 100644
 -    const sandbox::policy::SandboxSeccompBPF::Options& options);
 +    const sandbox::policy::SandboxSeccompBPF::Options& options,
 +    bool early_sandbox = false);
- 
+
  // Loads the libraries needed for a process to use the GPU.
  bool LoadLibrariesForGpu(
 -    const sandbox::policy::SandboxSeccompBPF::Options& options);
 +    const sandbox::policy::SandboxSeccompBPF::Options& options,
 +    bool early_sandbox = false);
- 
+
  }  // namespace content
- 
+
 diff --git a/content/gpu/gpu_main.cc b/content/gpu/gpu_main.cc
-index 543e347e14..8105bb5574 100644
+index 543e347e14..f1ed29a326 100644
 --- a/content/gpu/gpu_main.cc
 +++ b/content/gpu/gpu_main.cc
 @@ -85,6 +85,10 @@
  #include "ui/gl/gl_switches.h"
  #include "ui/gl/init/gl_factory.h"
- 
+
 +#if BUILDFLAG(IS_OZONE)
 +#include "ui/ozone/public/ozone_platform.h"
 +#endif
 +
  #if BUILDFLAG(IS_WIN)
  #include <windows.h>
- 
+
 @@ -197,6 +201,17 @@ class ContentSandboxHelper : public gpu::GpuSandboxHelper {
      webnn::PreSandboxWebNNInitialization(/*is_gpu_process=*/true);
  #endif
- 
+
 +#if BUILDFLAG(IS_LINUX) && BUILDFLAG(IS_OZONE)
 +    // Both GPU startup paths use this resource-preparation hook. Ozone's X11
 +    // connections must exist before an early sandbox seals socket/connect;
@@ -410,7 +423,17 @@ index 543e347e14..8105bb5574 100644
      // On Linux, reading system memory doesn't work through the GPU sandbox.
      // This value is cached, so access it here to populate the cache.
      base::SysInfo::AmountOfTotalPhysicalMemory();
-@@ -568,7 +583,9 @@ bool StartSandboxLinux(gpu::GpuWatchdogThread* watchdog_thread,
+@@ -565,10 +580,19 @@ bool StartSandboxLinux(gpu::GpuWatchdogThread* watchdog_thread,
+   base::IncreaseFdLimitTo(new_max_fds);
+ #endif
+
++  // Mesa's optional worker scheduling remains denied for nonself targets;
++  // report EPERM instead of terminating this explicitly early GLX route.
++  sandbox_options.gpu_sched_setscheduler_failure =
++      UsesEarlyExternalGlxResources(gpu_prefs.gpu_sandbox_start_early)
++          ? sandbox::SchedTargetFailurePolicy::kReturnEPERM
++          : sandbox::SchedTargetFailurePolicy::kCrash;
++
    bool res = sandbox::policy::SandboxLinux::GetInstance()->InitializeSandbox(
        sandbox::policy::SandboxTypeFromCommandLine(
            *base::CommandLine::ForCurrentProcess()),
@@ -418,7 +441,7 @@ index 543e347e14..8105bb5574 100644
 +      base::BindOnce(GpuPreSandboxHookWithEarlyGlxResources,
 +                     gpu_prefs.gpu_sandbox_start_early),
 +      sandbox_options);
- 
+
    if (watchdog_thread) {
      watchdog_thread->Start();
 diff --git a/gpu/command_buffer/service/dawn_instance.cc b/gpu/command_buffer/service/dawn_instance.cc
@@ -660,6 +683,209 @@ index c4aa207273..bf1bb60efb 100644
  GPU_CONFIG_EXPORT extern const char kGpuRecentCrashCount[];
  GPU_CONFIG_EXPORT extern const char kDisableGpuRasterization[];
  GPU_CONFIG_EXPORT extern const char kDisableMipmapGeneration[];
+diff --git a/sandbox/linux/seccomp-bpf-helpers/sigsys_handlers.cc b/sandbox/linux/seccomp-bpf-helpers/sigsys_handlers.cc
+index 3882967d4b..69a6b59684 100644
+--- a/sandbox/linux/seccomp-bpf-helpers/sigsys_handlers.cc
++++ b/sandbox/linux/seccomp-bpf-helpers/sigsys_handlers.cc
+@@ -369,6 +369,11 @@ intptr_t SIGSYSSchedHandler(const struct arch_seccomp_data& args,
+                              static_cast<intptr_t>(args.args[4]),
+                              static_cast<intptr_t>(args.args[5]));
+       }
++      if (args.nr == __NR_sched_setscheduler &&
++          aux == reinterpret_cast<void*>(static_cast<uintptr_t>(
++                     SchedTargetFailurePolicy::kReturnEPERM))) {
++        return -EPERM;
++      }
+       break;
+   }
+
+@@ -434,7 +439,13 @@ bpf_dsl::ResultExpr CrashSIGSYSSockopt() {
+ }
+
+ bpf_dsl::ResultExpr RewriteSchedSIGSYS() {
+-  return bpf_dsl::Trap(SIGSYSSchedHandler, nullptr);
++  return RewriteSchedSIGSYS(SchedTargetFailurePolicy::kCrash);
++}
++
++bpf_dsl::ResultExpr RewriteSchedSIGSYS(
++    SchedTargetFailurePolicy failure_policy) {
++  return bpf_dsl::Trap(SIGSYSSchedHandler,
++                      reinterpret_cast<void*>(static_cast<uintptr_t>(failure_policy)));
+ }
+
+ bpf_dsl::ResultExpr RewriteFstatatSIGSYS(int fs_denied_errno) {
+diff --git a/sandbox/linux/seccomp-bpf-helpers/sigsys_handlers.h b/sandbox/linux/seccomp-bpf-helpers/sigsys_handlers.h
+index 5fca3fdaf6..e6af56fd31 100644
+--- a/sandbox/linux/seccomp-bpf-helpers/sigsys_handlers.h
++++ b/sandbox/linux/seccomp-bpf-helpers/sigsys_handlers.h
+@@ -20,6 +20,13 @@ struct arch_seccomp_data;
+
+ namespace sandbox {
+
++// An unauthorized scheduler target remains denied. Some optional driver
++// requests can observe EPERM instead of deliberately crashing the process.
++enum class SchedTargetFailurePolicy {
++  kCrash,
++  kReturnEPERM,
++};
++
+ // This handler will crash the currently running process. The crashing address
+ // will be the number of the current system call, extracted from |args|.
+ // This handler will also print to stderr the number of the crashing syscall.
+@@ -100,6 +107,8 @@ SANDBOX_EXPORT bpf_dsl::ResultExpr CrashSIGSYSPtrace();
+ SANDBOX_EXPORT bpf_dsl::ResultExpr CrashSIGSYSSocket();
+ SANDBOX_EXPORT bpf_dsl::ResultExpr CrashSIGSYSSockopt();
+ SANDBOX_EXPORT bpf_dsl::ResultExpr RewriteSchedSIGSYS();
++SANDBOX_EXPORT bpf_dsl::ResultExpr RewriteSchedSIGSYS(
++    SchedTargetFailurePolicy failure_policy);
+ SANDBOX_EXPORT bpf_dsl::ResultExpr RewriteFstatatSIGSYS(int fs_denied_errno);
+
+ #if defined(__NR_socketcall)
+diff --git a/sandbox/linux/seccomp-bpf-helpers/syscall_parameters_restrictions.cc b/sandbox/linux/seccomp-bpf-helpers/syscall_parameters_restrictions.cc
+index 88e6b30e29..1a3eaade1a 100644
+--- a/sandbox/linux/seccomp-bpf-helpers/syscall_parameters_restrictions.cc
++++ b/sandbox/linux/seccomp-bpf-helpers/syscall_parameters_restrictions.cc
+@@ -396,6 +396,11 @@ ResultExpr RestrictGetSetpriority(pid_t target_pid) {
+ }
+
+ ResultExpr RestrictSchedTarget(pid_t target_pid, int sysno) {
++  return RestrictSchedTarget(target_pid, sysno, SchedTargetFailurePolicy::kCrash);
++}
++
++ResultExpr RestrictSchedTarget(pid_t target_pid, int sysno,
++                               SchedTargetFailurePolicy failure_policy) {
+   switch (sysno) {
+     case __NR_sched_getaffinity:
+     case __NR_sched_getattr:
+@@ -413,7 +418,7 @@ ResultExpr RestrictSchedTarget(pid_t target_pid, int sysno) {
+       const Arg<pid_t> pid(0);
+       return Switch(pid)
+           .Cases({0, target_pid}, Allow())
+-          .Default(RewriteSchedSIGSYS());
++          .Default(RewriteSchedSIGSYS(failure_policy));
+     }
+     default:
+       NOTREACHED();
+diff --git a/sandbox/linux/seccomp-bpf-helpers/syscall_parameters_restrictions.h b/sandbox/linux/seccomp-bpf-helpers/syscall_parameters_restrictions.h
+index 0d58ffa8e5..f367a5ace6 100644
+--- a/sandbox/linux/seccomp-bpf-helpers/syscall_parameters_restrictions.h
++++ b/sandbox/linux/seccomp-bpf-helpers/syscall_parameters_restrictions.h
+@@ -10,6 +10,7 @@
+
+ #include "build/build_config.h"
+ #include "sandbox/linux/bpf_dsl/bpf_dsl_forward.h"
++#include "sandbox/linux/seccomp-bpf-helpers/sigsys_handlers.h"
+ #include "sandbox/sandbox_export.h"
+
+ // These are helpers to build seccomp-bpf policies, i.e. policies for a
+@@ -88,6 +89,8 @@ SANDBOX_EXPORT bpf_dsl::ResultExpr RestrictGetSetpriority(pid_t target_pid);
+ // sched_setparam(), sched_setscheduler()
+ SANDBOX_EXPORT bpf_dsl::ResultExpr RestrictSchedTarget(pid_t target_pid,
+                                                        int sysno);
++SANDBOX_EXPORT bpf_dsl::ResultExpr RestrictSchedTarget(
++    pid_t target_pid, int sysno, SchedTargetFailurePolicy failure_policy);
+
+ // Restricts the |pid| argument of prlimit64 to 0 (meaning the calling process)
+ // or target_pid.
+diff --git a/sandbox/policy/linux/bpf_gpu_policy_linux.cc b/sandbox/policy/linux/bpf_gpu_policy_linux.cc
+index 74333b96d1..66fe41ee05 100644
+--- a/sandbox/policy/linux/bpf_gpu_policy_linux.cc
++++ b/sandbox/policy/linux/bpf_gpu_policy_linux.cc
+@@ -35,7 +35,13 @@ namespace sandbox {
+ namespace policy {
+
+ GpuProcessPolicy::GpuProcessPolicy(MremapPolicy mremap_policy)
+-    : mremap_policy_(mremap_policy) {}
++    : GpuProcessPolicy(mremap_policy, SchedTargetFailurePolicy::kCrash) {}
++
++GpuProcessPolicy::GpuProcessPolicy(
++    MremapPolicy mremap_policy,
++    SchedTargetFailurePolicy sched_setscheduler_failure)
++    : mremap_policy_(mremap_policy),
++      sched_setscheduler_failure_(sched_setscheduler_failure) {}
+
+ GpuProcessPolicy::~GpuProcessPolicy() {}
+
+@@ -104,6 +110,12 @@ ResultExpr GpuProcessPolicy::EvaluateSyscall(int sysno) const {
+     case __NR_sysinfo:
+     case __NR_uname:  // https://crbug.com/1075934
+       return Allow();
++    case __NR_sched_setscheduler:
++      if (sched_setscheduler_failure_ == SchedTargetFailurePolicy::kReturnEPERM) {
++        return RestrictSchedTarget(GetPolicyPid(), sysno,
++                                   sched_setscheduler_failure_);
++      }
++      return BPFBasePolicy::EvaluateSyscall(sysno);
+     case __NR_sched_setaffinity:
+       return RestrictSchedTarget(GetPolicyPid(), sysno);
+     case __NR_prlimit64:
+diff --git a/sandbox/policy/linux/bpf_gpu_policy_linux.h b/sandbox/policy/linux/bpf_gpu_policy_linux.h
+index cf02752619..9a18819e4d 100644
+--- a/sandbox/policy/linux/bpf_gpu_policy_linux.h
++++ b/sandbox/policy/linux/bpf_gpu_policy_linux.h
+@@ -6,6 +6,7 @@
+ #define SANDBOX_POLICY_LINUX_BPF_GPU_POLICY_LINUX_H_
+
+ #include "sandbox/linux/bpf_dsl/bpf_dsl.h"
++#include "sandbox/linux/seccomp-bpf-helpers/sigsys_handlers.h"
+ #include "sandbox/policy/export.h"
+ #include "sandbox/policy/linux/bpf_base_policy_linux.h"
+
+@@ -20,6 +21,8 @@ enum class MremapPolicy {
+ class SANDBOX_POLICY_EXPORT GpuProcessPolicy : public BPFBasePolicy {
+  public:
+   explicit GpuProcessPolicy(MremapPolicy mremap_policy);
++  GpuProcessPolicy(MremapPolicy mremap_policy,
++                   SchedTargetFailurePolicy sched_setscheduler_failure);
+
+   GpuProcessPolicy(const GpuProcessPolicy&) = delete;
+   GpuProcessPolicy& operator=(const GpuProcessPolicy&) = delete;
+@@ -30,6 +33,7 @@ class SANDBOX_POLICY_EXPORT GpuProcessPolicy : public BPFBasePolicy {
+
+  private:
+   MremapPolicy mremap_policy_;
++  const SchedTargetFailurePolicy sched_setscheduler_failure_;
+ };
+
+ }  // namespace policy
+diff --git a/sandbox/policy/linux/sandbox_seccomp_bpf_linux.cc b/sandbox/policy/linux/sandbox_seccomp_bpf_linux.cc
+index 50b2478e6c..eb9062088d 100644
+--- a/sandbox/policy/linux/sandbox_seccomp_bpf_linux.cc
++++ b/sandbox/policy/linux/sandbox_seccomp_bpf_linux.cc
+@@ -143,7 +143,8 @@ std::unique_ptr<BPFBasePolicy> GetGpuProcessSandbox(
+       return std::make_unique<CrosVirtIoGpuProcessPolicy>(mremap_policy);
+     }
+   }
+-  return std::make_unique<GpuProcessPolicy>(mremap_policy);
++  return std::make_unique<GpuProcessPolicy>(
++      mremap_policy, options.gpu_sched_setscheduler_failure);
+ }
+ #endif  // !defined(IN_NACL_HELPER)
+
+diff --git a/sandbox/policy/linux/sandbox_seccomp_bpf_linux.h b/sandbox/policy/linux/sandbox_seccomp_bpf_linux.h
+index 7fe9953416..91738b9d47 100644
+--- a/sandbox/policy/linux/sandbox_seccomp_bpf_linux.h
++++ b/sandbox/policy/linux/sandbox_seccomp_bpf_linux.h
+@@ -10,6 +10,7 @@
+ #include "base/files/scoped_file.h"
+ #include "build/build_config.h"
+ #include "sandbox/linux/bpf_dsl/policy.h"
++#include "sandbox/linux/seccomp-bpf-helpers/sigsys_handlers.h"
+ #include "sandbox/linux/seccomp-bpf/sandbox_bpf.h"
+ #include "sandbox/policy/export.h"
+ #include "sandbox/policy/linux/bpf_base_policy_linux.h"
+@@ -32,6 +33,11 @@ class SANDBOX_POLICY_EXPORT SandboxSeccompBPF {
+     // Options for GPU's PreSandboxHook.
+     bool accelerated_video_decode_enabled = false;
+     bool accelerated_video_encode_enabled = false;
++
++    // Only affects denied nonself sched_setscheduler targets in the generic GPU
++    // policy. Existing allowed self/current-TID operations remain identical.
++    SchedTargetFailurePolicy gpu_sched_setscheduler_failure =
++        SchedTargetFailurePolicy::kCrash;
+   };
+
+   SandboxSeccompBPF() = delete;
 diff --git a/ui/ozone/platform/x11/ozone_platform_x11.cc b/ui/ozone/platform/x11/ozone_platform_x11.cc
 index 33d4a4a084..3b4e757bf0 100644
 --- a/ui/ozone/platform/x11/ozone_platform_x11.cc

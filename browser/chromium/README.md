@@ -168,3 +168,28 @@ The check binds the actual DRM sysfs identity and compares unrestricted and
 sandboxed accelerated GLX metadata. It creates no GL context or GPU work;
 page WebGPU, native pixels, compositor output and browser acceptance require
 their separate physical controls.
+
+On that same early external X11 GLX route, a denied `sched_setscheduler` request
+for another thread or process returns `EPERM`. Self and current-thread requests
+retain Chromium's existing target checks; other scheduler operations and all
+other launch routes retain their existing policies. This permits Mesa's optional
+worker-priority request to fail without terminating the GPU process. The denied
+worker keeps its inherited scheduler, which must be accounted for in any later
+provider performance comparison.
+
+The CPU scheduler check compiles the real GPU policy, its factory and header
+consumers, then installs that policy in owned fixture processes:
+
+```bash
+python3 browser/chromium/tests/test_linux_sched_targets.py build \
+  --chromium-root /absolute/patched-chromium/src \
+  --out /absolute/new-scheduler-cpu-build
+python3 browser/chromium/tests/test_linux_sched_targets.py run \
+  --binary /absolute/new-scheduler-cpu-build/controls \
+  --out /absolute/new-scheduler-cpu-results
+```
+
+It verifies allowed self/current-thread requests, denied sibling/foreign requests
+with unchanged target priorities, and fatal controls for the default policy,
+unrelated affinity operation and other launch routes. It creates no GL context
+or GPU work and does not establish browser acceptance.
