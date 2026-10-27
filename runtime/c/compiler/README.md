@@ -1,15 +1,23 @@
-# Experimental standalone C compiler
+# Doe C WGSL compiler
+
+Doe is the compiler/runtime component within
+[Fawn](https://github.com/clocksmith/fawn). This compiler owns WGSL admission,
+typed semantics and SPIR-V, MSL and HLSL emission. Its core uses caller-owned
+memory; the separate host companion owns allocation and explicit DXC processes.
+Native device execution, package consumers and Fawn browser integration have
+their own acceptance gates.
 
 The separate [allocating host companion](host/README.md) exposes the non-CSL
 TSIR source/manifest/oracle and shared-compiler DXC consumers through an ordinary
 C/C++ ABI. It preserves the existing allocation-free compiler library and its
 WASI/Windows core source inventory; host integration is not GPU qualification.
 
-The current M13 implementation adds all-entry compute modules, explicit NONE/AUTO/NAME
+The retained M13 milestone introduced all-entry compute modules, explicit NONE/AUTO/NAME
 selection and source-static resource/workgroup interfaces to the
 [accepted M12 owner](MILESTONE_12_RESULTS.md). Focused developer checks are passing;
-independently sealed integrated qualification remains pending. Production defaults
-remain Zig. The [frozen M13 contract](MILESTONE_13.md) and
+independently sealed integrated qualification remains pending. Current source
+compiler/build routes select C, with retained Zig selected explicitly; this routing
+does not certify complete parity or a qualified browser. The [frozen M13 contract](MILESTONE_13.md) and
 [semantic-Walk liveness amendment](MILESTONE_13_AMENDMENT_01.md) describe this boundary.
 
 M12 extends one shared WGSL compiler

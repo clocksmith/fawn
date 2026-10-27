@@ -1,6 +1,11 @@
 # Fawn workspace service
 
 The shared observation, action and recovery service above stock Chromium.
+This is Fawn's workspace owner inside
+[clocksmith/fawn](https://github.com/clocksmith/fawn). Doe, developed in the same
+repository, owns the independently usable native WebGPU runtime and WGSL compiler.
+The service is JavaScript: an end-to-end C GPU route means selecting Doe's C
+compiler/runtime in the browser, not rewriting workspace or Chromium code in C.
 [The workspace contract](../../docs/fawn-workspace-contract.md) owns requirements
 and acceptance; [status](../../docs/status/fawn-workspace.md) records what is
 established. Its behavior is qualified on the frozen case set for a recorded

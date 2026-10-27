@@ -1,5 +1,10 @@
 # C developer build and staging
 
+This directory implements **Doe in C** inside the
+[Fawn repository](https://github.com/clocksmith/fawn): the WGSL compiler, native
+WebGPU runtime and their explicit host adapters. Fawn's workspace service owns
+browser actions and recovery; it is a separate JavaScript component.
+
 This is the explicit, partial C provider, not a production-default switch or a
 complete replacement package. Read [the common guide](STYLE.md),
 [migration status](../../docs/c-migration/MIGRATION.md), and the

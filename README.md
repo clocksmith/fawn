@@ -34,6 +34,26 @@ for the protocol, source layout and developer commands. The
 The optional [Chromium integration](browser/chromium/README.md) has separate build,
 GPU ownership and release gates. It is not required to use the workspace service.
 
+## What end-to-end C means
+
+**Doe owns shader meaning and GPU execution. Fawn owns browser work, authority
+and recovery.** The C implementation replaces Doe's compiler and native runtime;
+Fawn's workspace service remains JavaScript and upstream Chromium remains C++.
+Platform graphics drivers and DXC on Windows remain explicit dependencies.
+
+The complete integrated path is an authorized Fawn action, a Chromium webpage's
+ordinary WebGPU request, the explicitly selected Doe C runtime and C compiler,
+physical GPU execution, checked output or presentation, and Fawn's durable record
+of the outcome. It must also handle callbacks, cancellation, resource retirement
+and browser shutdown. A missing C library must fail rather than select Zig or
+Dawn; switching back to Dawn is a separate explicit choice.
+
+That complete path needs its own source-bound browser and workspace evidence.
+Standalone compiler, native and package checks establish their exercised
+boundaries; they do not complete the integrated browser gate. Follow
+[current backend evidence](docs/backend-evidence-matrix.md) and
+[workspace status](docs/status/fawn-workspace.md) for the admitted scope.
+
 ## Doe: WebGPU runtime and WGSL compiler
 
 ![Doe brings compiled WGSL and bound resources together through its selected native backend.](assets/readme/execution.svg)
