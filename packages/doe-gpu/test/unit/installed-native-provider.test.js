@@ -38,6 +38,10 @@ try {
   assert.equal(accepted.source, 'c-package');
   assert.equal(accepted.librarySha256, provider.buildIdentity.artifactSha256);
   assert.equal(accepted.sourceCommit, manifest.source_commit);
+  const canonicalProvider = { ...provider, doeLibraryPath: realpathSync.native(library),
+    buildMetadataPath: realpathSync.native(metadata) };
+  assert.equal(assertInstalledNativeProvider(canonicalProvider, platform).librarySha256,
+    provider.buildIdentity.artifactSha256);
   assert.throws(() => assertInstalledNativeProvider({ ...provider, buildMetadataSource: 'prebuild' }, platform), /C package manifest/);
   assert.throws(() => assertInstalledNativeProvider({ ...provider, libraryFlavor: 'doe-dropin' }, platform), /C package manifest/);
   assert.throws(() => assertInstalledNativeProvider({ ...provider, buildIdentity: {} }, platform), /source identity/);

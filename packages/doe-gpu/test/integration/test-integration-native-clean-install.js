@@ -6,6 +6,8 @@ import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { assertStagedPlatformFresh } from '../../scripts/platform-staging.js';
 import { assertInstalledNativeProvider } from '../lib/installed-native-provider.js';
+import { nativeInstallPlatform } from '../lib/native-install-platform.js';
+import { npmInvocation } from '../lib/npm-invocation.js';
 
 // These tests resolve the library shipped in the installed platform package.
 // A developer DOE_WEBGPU_LIB override would bypass exactly that resolution.
@@ -67,14 +69,9 @@ const runtimeHost = runtimeArgumentIndex === -1
 if (!['node', 'bun', 'electron'].includes(runtimeHost)) {
   throw new Error(`unsupported native clean-install runtime: ${runtimeHost}`);
 }
-const platformPackageName = new Map([
-  ['linux-x64', 'doe-gpu-linux-x64'],
-  ['darwin-arm64', 'doe-gpu-darwin-arm64'],
-]).get(`${process.platform}-${process.arch}`);
-const platformLibraryName = new Map([
-  ['linux-x64', 'libwebgpu_doe_c.so'],
-  ['darwin-arm64', 'libwebgpu_doe_c.dylib'],
-]).get(`${process.platform}-${process.arch}`);
+const platform = nativeInstallPlatform();
+const platformPackageName = platform?.packageName;
+const platformLibraryName = platform?.libraryName;
 
 if (!platformPackageName && requireNative) {
   throw new Error(`no native clean-install package contract for ${process.platform}-${process.arch}`);
@@ -96,7 +93,7 @@ if (!existsSync(stagedPlatformLibrary)) {
 assertStagedPlatformFresh({ platformPackageRoot, packageRoot, workspaceRoot: repoRoot, libraryFilename: platformLibraryName });
 
 const scratch = await mkdtemp(join(tmpdir(), 'doe-gpu-native-clean-install-'));
-const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+const npm = npmInvocation();
 
 function execute(command, args, cwd = scratch, env = undefined) {
   return spawnSync(command, args, {
@@ -117,7 +114,8 @@ function requireSuccess(result, label) {
 }
 
 function pack(directory, label) {
-  const result = execute(npm, [
+  const result = execute(npm.executable, [
+    ...npm.prefixArgs,
     'pack',
     '--ignore-scripts',
     '--pack-destination',
@@ -294,7 +292,8 @@ try {
     resolve(scratch, 'package.json'),
     `${JSON.stringify(fixtureManifest, null, 2)}\n`,
   );
-  const installed = execute(npm, [
+  const installed = execute(npm.executable, [
+    ...npm.prefixArgs,
     'install',
     '--ignore-scripts',
     '--omit=optional',
@@ -337,9 +336,6 @@ try {
   assertInstalledNativeProvider(receipt.provider, resolve(scratch, `node_modules/${platformPackageName}`));
   const metadataFilename = receipt.provider.buildMetadataSource === 'c-package'
     ? 'doe-c-manifest.json' : 'doe-build-metadata.json';
-  if (!receipt.provider?.doeLibraryPath?.includes(`/node_modules/${platformPackageName}/`)) {
-    throw new Error(`native library escaped the clean install: ${executed.stdout}`);
-  }
   const expected = [2, 4, 6, 8, 10, 12, 14, 16];
   if (JSON.stringify(receipt.result?.output) !== JSON.stringify(expected)) {
     throw new Error(`installed native kernel output mismatch: ${executed.stdout}`);
