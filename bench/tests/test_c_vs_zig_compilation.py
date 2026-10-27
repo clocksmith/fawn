@@ -131,6 +131,20 @@ class CompilerProcessTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "declared entry"):
             compiler.declared_entries("bench/kernels/new-unreviewed.wgsl")
 
+    def test_msl_uses_compiler_owned_host_and_reserved_main_symbols(self) -> None:
+        entries = [{"name": "main", "stage": "compute"},
+                   {"name": "second", "stage": "compute"}]
+        c = (b'[[host_name("main")]] kernel void doe_entry0(){}\n'
+             b'[[host_name("second")]] kernel void doe_entry1(){}')
+        zig = b'[[kernel]]\nvoid main_kernel(){}\n[[kernel]]\nvoid second(){}'
+        compiler.check_entries(c, "msl", entries)
+        compiler.check_entries(zig, "msl", entries)
+        compiler.check_entries(b'vertex Type main_vertex(Input x){}', "msl",
+                               [{"name": "main", "stage": "vertex"}])
+        with self.assertRaisesRegex(ValueError, "entry set"):
+            compiler.check_entries(c.replace(b'host_name("second")',
+                                              b'host_name("wrong")'), "msl", entries)
+
 
 if __name__ == "__main__":
     unittest.main()

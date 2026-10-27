@@ -123,9 +123,21 @@ def check_entries(data: bytes, target: str, entries: list[dict[str, Any]]) -> No
         return
     text = data.decode("utf-8")
     if target == "msl":
-        found = {(name, "compute" if stage == "kernel" else stage)
-                 for stage, name in re.findall(
-                     r"\b(kernel|vertex|fragment)\s+[\w:<>]+\s+(\w+)\s*\(", text)}
+        # The C emitter publishes source entry identity via host_name while
+        # Zig's MSL maps reserve main and rename it by its actual stage.
+        hosts = {(symbol, stage): name for name, stage, symbol in re.findall(
+            r'\[\[host_name\("([^"\\]+)"\)\]\]\s+'
+            r'(kernel|vertex|fragment)\s+[\w:<>]+\s+(\w+)\s*\(', text)}
+        found = set()
+        for keyword, attribute, symbol in re.findall(
+                r'(?:\b(kernel|vertex|fragment)|\[\[(kernel|vertex|fragment)\]\])'
+                r'\s+[\w:<>]+\s+(\w+)\s*\(', text):
+            stage = keyword or attribute
+            name = hosts.get((symbol, stage), symbol)
+            semantic_stage = "compute" if stage == "kernel" else stage
+            if ("main", semantic_stage) in expected and name == "main_" + stage:
+                name = "main"
+            found.add((name, semantic_stage))
         if found != expected:
             raise ValueError("MSL entry set differs from declared source work")
     else:
