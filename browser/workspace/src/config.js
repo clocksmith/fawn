@@ -4,7 +4,7 @@
 
 import { readFileSync } from 'node:fs';
 import { REJECTION_CODES, workspaceError } from './errors.js';
-import { validateFawnBuild } from './browser-launch.js';
+import { BROWSER_CHANNELS, validateFawnBuild } from './browser-launch.js';
 
 const DEFAULT_CONFIG_URL = new URL('../../../config/fawn-workspace-service.json', import.meta.url);
 const SUPPORTED_SCHEMA_VERSION = 4;
@@ -20,8 +20,6 @@ const POSITIVE_INTEGER_FIELDS = Object.freeze([
   'dispatch.completionTimeoutMs',
   'dispatch.completionPollMs',
 ]);
-
-const BROWSER_CHANNELS = Object.freeze(['chromium-headless-shell', 'chromium', 'chrome', 'fawn']);
 
 const NON_EMPTY_LIST_FIELDS = Object.freeze([
   'actionKinds',

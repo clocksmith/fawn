@@ -263,6 +263,8 @@ node qualification/create-browser-profile.js --executable /absolute/browser/imag
   --runtime doe-c --library /absolute/libwebgpu_doe_native.so \
   --dependency /absolute/libdoe_compiler.so --out /absolute/new-c-profile.json
 npm run qualify -- --browser-config /absolute/new-c-profile.json
+npm run compare -- --browser-config /absolute/new-c-profile.json
+npm run differentiate -- --browser-config /absolute/new-c-profile.json
 ```
 
 Repeat `--dependency FILE` for every additional packaged dependency. The generator
@@ -273,6 +275,12 @@ and rejects profile/receipt or executable mismatches. These checks establish
 launch identity. Doe ownership still requires the Chromium lane's actual page
 compute/presentation, lifecycle and missing-C negative controls; a workspace run
 or matching command line alone does not qualify C GPU execution.
+
+Scripted comparisons and both scripted differentiation suites forward the same
+profile to treatment and control, retain their frozen headless mode, and require
+the selected image to match the OS-observed images. Both also support installed
+`--browser-channel` selection. The billed model-driven suite retains its own
+frozen browser and rejects these overrides; no profile is silently ignored.
 
 Schema 3 stock-browser configurations remain readable. To select a Fawn build,
 start with the schema 4 canonical config; protocol 3 and existing journal records

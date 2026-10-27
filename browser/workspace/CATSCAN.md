@@ -43,6 +43,8 @@ Outputs:
 - Explicit Fawn build selection binds the browser image and private runtime
   closure before launch; both adapters force the selected C or Dawn provider
   without fallback. Launch identity does not establish GPU ownership.
+- Treatment and control share the requested browser launch configuration;
+  observed image mismatches cannot establish comparison advantage.
 
 ## Acceptance
 

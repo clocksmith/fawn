@@ -17,6 +17,7 @@ import { loadServiceConfig } from '../src/config.js';
 import { startFixtureSite } from './fixture-site.js';
 import { REPO_ROOT, executableIdentityKey, inspectBrowserProcesses, resultIdentity, waitForProfileRelease } from './identity.js';
 import { startHost } from './service-client.js';
+import { stageBrowserProfile, matchesSelectedBuild } from './browser-profile.js';
 
 const POLICY_PATH = 'config/browser-product-comparison-policy.json';
 const CASE_SET_PATH = 'config/fawn-workspace-qualification.json';
@@ -40,7 +41,8 @@ const TREATMENT_RECOVERY = Object.freeze({ form: 'form-recovery', export: 'expor
 function parseArgs(argv) {
   const options = {};
   for (let index = 0; index < argv.length; index += 2) options[argv[index].replace(/^--/, '')] = argv[index + 1];
-  return { out: options.out ?? null, scenarios: options.scenarios ? options.scenarios.split(',') : null };
+  return { out: options.out ?? null, scenarios: options.scenarios ? options.scenarios.split(',') : null,
+    browserChannel: options['browser-channel'] ?? null, browserConfig: options['browser-config'] ?? null };
 }
 
 function median(values) {
@@ -87,7 +89,9 @@ function beforeEffectFor(scenario, site) {
 }
 
 class Side {
-  constructor({ name, caseSet, policy, site }) {
+  constructor({ name, caseSet, policy, site, browserChannel, browserConfig }) {
+    this.browserChannel = browserChannel;
+    this.browserConfig = browserConfig;
     this.name = name;
     this.caseSet = caseSet;
     this.policy = policy;
@@ -101,7 +105,8 @@ class Side {
 
   async start() {
     if (this.name === 'treatment') {
-      this.host = await startHost({ stateDir: this.stateDir, adapter: this.policy.browserRuntime.treatmentAdapter });
+      this.host = await startHost({ stateDir: this.stateDir, adapter: this.policy.browserRuntime.treatmentAdapter,
+        browserChannel: this.browserChannel, browserConfig: this.browserConfig, headless: this.policy.browserRuntime.headless });
       if (!this.owner) await this.setup();
     } else {
       this.host = await startHost({
@@ -109,6 +114,7 @@ class Side {
         allowedOrigins: [this.site.origin],
         actionTimeoutMs: this.actionTimeoutMs,
         headless: this.policy.browserRuntime.headless,
+        browserChannel: this.browserChannel, browserConfig: this.browserConfig,
       }, BASELINE_HOST);
     }
   }
@@ -262,11 +268,11 @@ function evaluateScenario(scenario, rows, criteria) {
   };
 }
 
-async function runScenario(scenario, { caseSet, policy, outDir }) {
+async function runScenario(scenario, { caseSet, policy, outDir, browserChannel, browserConfig }) {
   const sides = {};
   for (const name of SIDES) {
     const site = await startFixtureSite();
-    sides[name] = new Side({ name, caseSet, policy, site });
+    sides[name] = new Side({ name, caseSet, policy, site, browserChannel, browserConfig });
     await sides[name].start();
     // A warm-up task opens the browser so repetitions compare warm sessions.
     await sides[name].run({ ...scenario, fault: 'none' }, scenario.workflow, buildTask(caseSet, { ...scenario, pagePath: undefined }, site, `${scenario.id}-${name}-warmup`));
@@ -323,24 +329,32 @@ async function main() {
   const stamp = new Date().toISOString().replace(/[:.]/g, '').slice(0, 15);
   const outDir = options.out ?? join(REPO_ROOT, DEFAULT_OUT_ROOT, `${stamp}Z`);
   mkdirSync(outDir, { recursive: true });
+  if (options.browserConfig && options.browserChannel) throw new Error('choose browser config or channel');
+  const profile = stageBrowserProfile(options.browserConfig, outDir);
+  if (profile && profile.config.browser.headless !== policy.browserRuntime.headless) throw new Error('profile must preserve frozen comparison headless mode');
+  loadServiceConfig(profile?.path ?? undefined, { browserChannel: options.browserChannel });
+  const identity = resultIdentity();
+  if (profile) identity.browserLaunchConfig = profile.identity;
   const scenarios = policy.scenarios.filter((scenario) => !options.scenarios || options.scenarios.includes(scenario.id));
   const rows = [];
   const inspections = { treatment: [], control: [] };
   for (const scenario of scenarios) {
-    const result = await runScenario(scenario, { caseSet, policy, outDir });
+    const result = await runScenario(scenario, { caseSet, policy, outDir,
+      browserChannel: options.browserChannel, browserConfig: profile?.path });
     rows.push(...result.rows);
     for (const name of SIDES) inspections[name].push(...result.inspections[name]);
     console.log(`ran: ${scenario.id}`);
   }
   const browsers = browserIdentity(inspections);
   const sameBrowser = JSON.stringify(browsers.treatment.map(executableIdentityKey)) === JSON.stringify(browsers.control.map(executableIdentityKey))
-    && browsers.treatment.length === 1;
+    && browsers.treatment.length === 1 && matchesSelectedBuild(profile?.config, browsers.treatment);
   const evaluation = scenarios.map((scenario) => evaluateScenario(scenario, rows.filter((row) => row.scenarioId === scenario.id), policy.criteria));
   const comparison = {
     schemaVersion: COMPARISON_SCHEMA_VERSION,
     comparisonVersion: policy.comparisonVersion,
     scope: options.scenarios ? 'subset' : 'full',
-    identity: resultIdentity(),
+    identity,
+    browserChannel: profile?.config.browser.channel ?? options.browserChannel ?? loadServiceConfig().browser.channel,
     browsers,
     equalOpportunityChecks: {
       sameBrowserBinary: sameBrowser,

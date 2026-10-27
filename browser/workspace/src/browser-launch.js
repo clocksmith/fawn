@@ -6,6 +6,8 @@ import { posix, win32 } from 'node:path';
 import { forcedRuntimeArgs } from '../../chromium/scripts/browser-runtime-selector.mjs';
 
 const SHA256 = /^[a-f0-9]{64}$/;
+const STOCK_CHANNELS = Object.freeze({ 'chromium-headless-shell': undefined, chromium: 'chromium', chrome: 'chrome' });
+const BROWSER_CHANNELS = Object.freeze([...Object.keys(STOCK_CHANNELS), 'fawn']);
 
 function artifactShape(artifact, name, platform) {
   const grammar = platform === 'win32' ? win32 : posix;
@@ -44,7 +46,7 @@ function validateFawnBuild(browser, { platform = process.platform } = {}) {
 }
 
 function verifiedArtifact(artifact) {
-  const path = realpathSync(artifact.path);
+  const path = realpathSync.native(artifact.path);
   if (!statSync(path).isFile()) throw new Error(`Fawn artifact is not a file: ${path}`);
   const sha256 = createHash('sha256').update(readFileSync(path)).digest('hex');
   if (sha256 !== artifact.sha256) throw new Error(`Fawn artifact SHA-256 mismatch: ${path}`);
@@ -68,4 +70,11 @@ function prepareFawnLaunch(browser) {
       fallbackAllowed: false }) });
 }
 
-export { validateFawnBuild, prepareFawnLaunch };
+function playwrightLaunchOptions(browser) {
+  const launch = prepareFawnLaunch(browser);
+  if (launch) return { executablePath: launch.executablePath, args: launch.args, chromiumSandbox: true };
+  if (!Object.hasOwn(STOCK_CHANNELS, browser.channel)) throw new Error(`unsupported browser channel: ${browser.channel}`);
+  return { channel: STOCK_CHANNELS[browser.channel] };
+}
+
+export { BROWSER_CHANNELS, validateFawnBuild, prepareFawnLaunch, playwrightLaunchOptions };

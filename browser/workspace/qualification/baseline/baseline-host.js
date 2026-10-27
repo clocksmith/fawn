@@ -8,8 +8,11 @@ import { join } from 'node:path';
 import { createInterface } from 'node:readline';
 import { chromium } from 'playwright-core';
 import { BASELINE_WORKFLOWS, ProgressFile } from './baseline-workflows.js';
+import { loadServiceConfig } from '../../src/config.js';
+import { playwrightLaunchOptions } from '../../src/browser-launch.js';
 
 const options = JSON.parse(process.argv[2]);
+const browserConfig = loadServiceConfig(options.browserConfig ?? undefined, { browserChannel: options.browserChannel }).browser;
 const PROFILE_DIRECTORY = 'profile';
 const PROGRESS_FILE = 'progress.json';
 
@@ -24,6 +27,7 @@ let context = null;
 async function page() {
   if (!context) {
     context = await chromium.launchPersistentContext(join(options.stateDir, PROFILE_DIRECTORY), {
+      ...playwrightLaunchOptions(browserConfig),
       headless: options.headless,
       acceptDownloads: true,
       timeout: options.actionTimeoutMs,

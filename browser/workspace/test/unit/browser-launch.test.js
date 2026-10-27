@@ -4,12 +4,13 @@ import { spawnSync } from 'node:child_process';
 import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, rmSync, realpathSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { loadServiceConfig, validateServiceConfig } from '../../src/config.js';
-import { prepareFawnLaunch, validateFawnBuild } from '../../src/browser-launch.js';
-import { stageBrowserProfile, profileFailures } from '../../qualification/browser-profile.js';
+import { prepareFawnLaunch, validateFawnBuild, playwrightLaunchOptions } from '../../src/browser-launch.js';
+import { stageBrowserProfile, profileFailures, matchesSelectedBuild } from '../../qualification/browser-profile.js';
 import { forcedRuntimeArgs } from '../../../chromium/scripts/browser-runtime-selector.mjs';
 
-const root = realpathSync(mkdtempSync(join(tmpdir(), 'fawn-build-')));
+const root = realpathSync.native(mkdtempSync(join(tmpdir(), 'fawn-build-')));
 const digest = bytes => createHash('sha256').update(bytes).digest('hex');
 const clone = value => structuredClone(value);
 const artifact = name => {
@@ -20,11 +21,19 @@ const artifact = name => {
 try {
   const config = clone(loadServiceConfig());
   assert.equal(prepareFawnLaunch(config.browser), null);
+  assert.deepEqual(playwrightLaunchOptions(config.browser), { channel: undefined });
+  assert.deepEqual(playwrightLaunchOptions({ ...config.browser, channel: 'chrome' }), { channel: 'chrome' });
+  assert.throws(() => playwrightLaunchOptions({ ...config.browser, channel: 'unrecognized' }));
   config.browser.channel = 'fawn';
   config.browser.fawnBuild = { executable: artifact('Chromium ü image'),
     dependencies: [artifact('compiler library')], runtime: { mode: 'doe-c', library: artifact('Doe C library') } };
   validateServiceConfig(config);
   const launch = prepareFawnLaunch(config.browser);
+  assert.deepEqual(playwrightLaunchOptions(config.browser), { executablePath: launch.executablePath,
+    args: launch.args, chromiumSandbox: true });
+  assert.equal(matchesSelectedBuild(config, [config.browser.fawnBuild.executable]), true);
+  assert.equal(matchesSelectedBuild(config, [{ sha256: '0'.repeat(64) }]), false);
+  assert.equal(matchesSelectedBuild(config, []), false);
   assert.deepEqual(launch.args.filter(value => value !== '--do-not-de-elevate'),
     ['--use-webgpu-runtime=doe', `--doe-webgpu-library-path=${config.browser.fawnBuild.runtime.library.path}`]);
   assert.equal(launch.identity.fallbackAllowed, false);
@@ -77,12 +86,16 @@ try {
   assert.throws(() => validateFawnBuild(windows, { platform: 'win32' }));
   const generated = join(root, 'generated.json');
   const cli = new URL('../../qualification/create-browser-profile.js', import.meta.url);
-  const argv = [cli.pathname, '--executable', config.browser.fawnBuild.executable.path,
+  const argv = [fileURLToPath(cli), '--executable', config.browser.fawnBuild.executable.path,
     '--runtime', 'doe-c', '--library', config.browser.fawnBuild.runtime.library.path,
     '--dependency', config.browser.fawnBuild.dependencies[0].path, '--out', generated];
   assert.equal(spawnSync(process.execPath, argv, { encoding: 'utf8' }).status, 0);
   assert.deepEqual(JSON.parse(readFileSync(generated)).browser, config.browser);
   assert.notEqual(spawnSync(process.execPath, argv, { encoding: 'utf8' }).status, 0);
+  const modelOverride = spawnSync(process.execPath, [fileURLToPath(new URL('../../qualification/differentiate.js', import.meta.url)),
+    '--suite', 'modelDrivenDifferentiation', '--mode', 'offline', '--browser-channel', 'chrome'], { encoding: 'utf8' });
+  assert.notEqual(modelOverride.status, 0);
+  assert.match(modelOverride.stderr, /frozen browser selection/);
 
   const source = join(root, 'profile.json');
   const out = join(root, 'evidence');
