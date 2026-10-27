@@ -107,6 +107,8 @@ def artifact_query(path: Path) -> None:
 
 def stage_artifacts(build: Path, products: Path) -> dict[str, dict[str, str]]:
     """Stage only the named target's DLL and import library, failing closed."""
+    build = build.resolve()
+    products = products.resolve()
     manifest = build / 'doe-dawn-artifacts.txt'
     paths = manifest.read_text(encoding='utf-8').splitlines()
     if len(paths) != 2:
