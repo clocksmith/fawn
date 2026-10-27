@@ -34,6 +34,8 @@ Outputs:
 - Correctness and structural equivalence precede performance interpretation.
 - Missing work, asymmetric timing, hidden fallback, or failed oracles cannot become wins.
 - Diagnostic evidence cannot be relabeled to promote a claim.
+- Output proof belongs to its actual execution. Separate preflight or replay
+  evidence cannot be assigned to timed samples or admit their comparison.
 
 ## Acceptance
 

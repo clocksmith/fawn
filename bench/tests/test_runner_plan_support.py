@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import sys
 import tempfile
@@ -326,6 +327,78 @@ class RunnerPlanSupportTests(unittest.TestCase):
         self.assertEqual([sample["runIndex"] for sample in result["commandSamples"]], [2, 3, 4])
         self.assertEqual(result["timingsMs"], [3.0, 4.0, 5.0])
         self.assertEqual(result["stats"]["count"], 3)
+
+    def test_preflight_cannot_fill_or_overwrite_timed_output_evidence(self) -> None:
+        oracle = {
+            "outputOracleCount": 1, "outputOracleMatchedCount": 1,
+            "outputOracleFailedCount": 0, "outputOracleKind": "sha256_exact_v1",
+            "outputOracleReferenceClass": "independent_v1",
+            "outputOracleActualSha256": "a" * 64,
+            "outputOracleExpectedSha256": "a" * 64,
+        }
+        execution = {
+            "executionErrorCount": 0, "executionSkippedCount": 0,
+            "executionUnsupportedCount": 0, "executionTotalNs": 4_000_000,
+            "executionEncodeTotalNs": 4_000_000,
+            "executionDispatchCount": 1, "executionRowCount": 1,
+            "executionSuccessCount": 1,
+        }
+        cases = {
+            "missing": {},
+            "wrong": {**oracle, "outputOracleActualSha256": "b" * 64,
+                      "outputOracleMatchedCount": 0, "outputOracleFailedCount": 1},
+            "isolated": oracle,
+        }
+        for label, timed_oracle in cases.items():
+            with self.subTest(label=label), tempfile.TemporaryDirectory() as tmp:
+                folder = Path(tmp)
+                commands_path = folder / "commands.json"
+                commands_path.write_text("[]", encoding="utf-8")
+                workload = SimpleNamespace(
+                    id="alpha", domain="compute", commands_path=str(commands_path),
+                    plan_path="", quirks_path="", vendor="apple", api="metal",
+                    family="m3", driver="test", dawn_filter="", extra_args=[],
+                    comparable=True, strict_normalization_unit="",
+                )
+
+                def worker(command, **kwargs):
+                    is_preflight = "--validate-output-oracles" in command
+                    meta = {**execution, **(oracle if is_preflight else timed_oracle)}
+                    path = kwargs["trace_meta_path"]
+                    path.write_text(json.dumps(meta), encoding="utf-8")
+                    return 91.0 if is_preflight else 4.0, 2.0, 0, {}
+
+                with patch("bench.native_compare_modules.runner.run_once",
+                           side_effect=worker):
+                    result = run_workload(
+                        name="doe-c",
+                        template=resolve_executor_command_template("doe_c_direct_metal"),
+                        workload=workload, iterations=1, warmup=0, out_dir=folder,
+                        gpu_memory_probe="none", resource_sample_ms=100,
+                        resource_sample_target_count=0, timing_divisor=1.0,
+                        command_repeat=1, ignore_first_ops=0,
+                        upload_buffer_usage="copy-dst-copy-src", upload_submit_every=1,
+                        inject_upload_runtime_flags=False,
+                        required_timing_class="operation", comparability_mode="strict",
+                        benchmark_policy=SimpleNamespace(), emit_shell=False,
+                    )
+                sample = result["commandSamples"][0]
+                actual_oracle = {k: v for k, v in sample["traceMeta"].items()
+                                 if k.startswith("outputOracle")}
+                self.assertEqual(actual_oracle, timed_oracle)
+                self.assertEqual(sample["elapsedMs"], 4.0)
+                self.assertEqual(result["timingsMs"], [4.0])
+                raw_sample = json.loads(Path(sample["traceMetaPath"]).read_bytes())
+                self.assertEqual({k: v for k, v in raw_sample.items()
+                                  if k.startswith("outputOracle")}, timed_oracle)
+                preflight = json.loads((folder / "doe-c.preflight.json").read_bytes())
+                self.assertEqual(preflight["executionRole"], "isolated-oracle-preflight")
+                self.assertEqual(preflight["traceMeta"]["outputOracleActualSha256"],
+                                 "a" * 64)
+                self.assertEqual(preflight["wallMs"], 91.0)
+                self.assertEqual(preflight["traceMetaSha256"], hashlib.sha256(
+                    Path(preflight["traceMetaPath"]).read_bytes()).hexdigest())
+                self.assertNotEqual(preflight["traceMetaPath"], sample["traceMetaPath"])
 
     @patch("bench.native_compare_modules.runner.run_once")
     def test_strict_oracle_preflight_skips_doe_runtime_plan_templates(self, mock_run_once) -> None:

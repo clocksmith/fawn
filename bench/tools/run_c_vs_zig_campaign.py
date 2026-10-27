@@ -88,7 +88,13 @@ def oracle_failures(receipt: dict[str, Any]) -> list[str]:
     comparator still validates the declared command, reference and artifacts;
     this admission check prevents its optional-oracle path admitting these runs.
     """
-    failures = []
+    # The current native schema 1/2/3 oracles validate isolated execution,
+    # including when invoked by a timed worker. No native same-stream capture
+    # contract exists yet. Digests/counters alone must not invent that support.
+    failures = [
+        "native timed command-stream output proof is not implemented; "
+        "isolated oracle validation cannot admit a performance comparison"
+    ]
     for sample in receipt.get("samples", []):
         meta = sample.get("traceMeta", {})
         count = meta.get("outputOracleCount", 0)
