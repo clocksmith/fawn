@@ -10,7 +10,7 @@ CLI = ../runtime-cli/src
 # The policy, routing, numeric JSON and SHA owners are shared host C code.
 include sources.mk
 SOURCES = $(MODULE_SOURCES) $(BUILD)/quirk_toggles.c
-HEADERS = src/module.h $(wildcard $(CLI)/*.h)
+HEADERS = src/module.h $(wildcard $(CLI)/*.h) ../common/include/doe_sha256.h
 .PHONY: all check check-package bench-bin
 all: $(BUILD)/doe-c-module-runner
 $(BUILD):
