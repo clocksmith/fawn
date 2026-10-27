@@ -55,6 +55,59 @@ class CampaignTests(unittest.TestCase):
             self.assertTrue(all(p.get("receipt")
                                 for p in result["providers"].values()))
 
+    def test_valid_preflight_never_admits_missing_wrong_or_isolated_timed_proof(self) -> None:
+        valid = {
+            "fallbackUsed": False, "executionErrorCount": 0,
+            "executionUnsupportedCount": 0, "executionSkippedCount": 0,
+            "outputOracleCount": 1, "outputOracleMatchedCount": 1,
+            "outputOracleFailedCount": 0, "outputOracleKind": "sha256_exact_v1",
+            "outputOracleReferenceClass": "independent_v1",
+            "outputOracleActualSha256": "a" * 64,
+            "outputOracleExpectedSha256": "a" * 64,
+        }
+        cases = {
+            "missing": {key: value for key, value in valid.items()
+                        if not key.startswith("outputOracle")},
+            "wrong": {**valid, "outputOracleActualSha256": "b" * 64,
+                      "outputOracleMatchedCount": 0, "outputOracleFailedCount": 1},
+            "isolated": valid,
+        }
+        for label, meta in cases.items():
+            with self.subTest(label=label), tempfile.TemporaryDirectory() as tmp:
+                args = argparse.Namespace(backend="metal", catalog="unused",
+                                          iterations=1, warmup=0, timeout=1)
+
+                def run(command: list[str], *unused: object) -> dict:
+                    # A compare invocation has no --product; reaching it fails.
+                    product = command[command.index("--product") + 1]
+                    folder = Path(command[command.index("--out") + 1])
+                    receipts = folder / "run-artifacts" / product
+                    receipts.mkdir(parents=True)
+                    (folder / "valid.preflight.meta.json").write_text(
+                        json.dumps(valid), encoding="utf-8")
+                    receipt = {
+                        "runtimeIdentity": {"runtimeImplementation":
+                                            "c" if product == "doe-c" else "zig"},
+                        "execution": {"success": True, "timedSampleCount": 1},
+                        "samples": [{"success": True, "returnCode": 0,
+                                     "measuredRawMs": 3.25, "traceMeta": meta}],
+                    }
+                    (receipts / "sample.run.json").write_text(
+                        json.dumps(receipt), encoding="utf-8")
+                    return {"exitCode": 0, "timedOut": False}
+
+                with patch.object(campaign, "execute", side_effect=run) as execute:
+                    result = campaign.row_result({"id": "compute"}, Path(tmp), args, 0)
+                self.assertEqual(execute.call_count, 2)
+                self.assertFalse(result["comparisons"])
+                self.assertFalse(result["claimEligible"])
+                self.assertTrue(any("timed command-stream" in error
+                                    for error in result["admissionFailures"]))
+                for provider in result["providers"].values():
+                    retained = json.loads(Path(provider["receipt"]).read_bytes())
+                    self.assertEqual(retained["samples"][0]["measuredRawMs"], 3.25)
+                    self.assertEqual(retained["samples"][0]["traceMeta"], meta)
+
     def test_zero_or_partial_oracle_counts_never_satisfy_admission(self) -> None:
         for count, matched in ((0, 0), (2, 1), (True, True)):
             receipt = {"samples": [{"traceMeta": {
@@ -78,7 +131,8 @@ class CampaignTests(unittest.TestCase):
         meta.update(outputOracleActualSha256="a" * 64,
                     outputOracleExpectedSha256="a" * 64,
                     outputOracleKind="sha256_exact_v1")
-        self.assertEqual(campaign.oracle_failures(receipt), [])
+        self.assertTrue(any("timed command-stream" in error
+                            for error in campaign.oracle_failures(receipt)))
 
     def test_float_oracle_cannot_use_exact_digest_to_bypass_reference(self) -> None:
         meta = {
