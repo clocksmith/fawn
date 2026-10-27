@@ -196,7 +196,7 @@ fn emit_array_length(self: anytype, function: ir.Function, call_args: ir.Range) 
                 .array => |arr| {
                     if (arr.len != null) return error.InvalidIr;
                     try self.write("doe_arrayLength_");
-                    try self.write(global.name);
+                    try self.emit_identifier(global.name);
                     try self.write("()");
                     return;
                 },
@@ -215,9 +215,9 @@ fn emit_array_length(self: anytype, function: ir.Function, call_args: ir.Range) 
             if (member.field_index >= struct_def.fields.items.len) return error.InvalidIr;
             const field = struct_def.fields.items[member.field_index];
             try self.write("doe_arrayLength_");
-            try self.write(global.name);
+            try self.emit_identifier(global.name);
             try self.write("_");
-            try self.write(field.name);
+            try self.emit_identifier(field.name);
             try self.write("()");
             return;
         },

@@ -69,7 +69,7 @@ test "hlsl vertex: struct input parameter flattened to semantics" {
     // Output semantics
     try testing.expect(contains(hlsl, "SV_Position"));
     // Struct reconstruction in wrapper body
-    try testing.expect(contains(hlsl, "VertIn in;"));
+    try testing.expect(contains(hlsl, "VertIn __doe_hlsl_user_696e;"));
 }
 
 test "hlsl fragment: scalar return with location" {

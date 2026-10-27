@@ -351,7 +351,7 @@ test "hlsl control flow: generated loop flag cannot shadow a source local" {
     var out: [MAX_HLSL_OUTPUT]u8 = undefined;
     const len = try translateToHlsl(allocator, source, &out);
     const hlsl = out[0..len];
-    try testing.expect(contains(hlsl, "uint doe_loop_break_5 = 0;"));
+    try testing.expect(contains(hlsl, "uint __doe_hlsl_user_646f655f6c6f6f705f627265616b5f35 = 0;"));
     try testing.expect(contains(hlsl, "bool __doe_loop_break_"));
     try testing.expect(!contains(hlsl, "bool doe_loop_break_"));
 }
@@ -417,4 +417,113 @@ test "hlsl indexed compare exchange preserves semantic result types and pointer 
     try testing.expect(contains(hlsl, "__doe_atomicCompareExchangeWeak_signed_values(doe_pointer_index_"));
     try testing.expect(contains(hlsl, "a.old_value"));
     try testing.expect(contains(hlsl, "a.exchanged"));
+}
+
+test "hlsl reserved names preserve declarations references and user calls" {
+    const source =
+        \\struct matrix { out: f32, }
+        \\@group(0) @binding(0) var<storage, read> vector: array<matrix>;
+        \\@group(0) @binding(1) var<storage, read_write> out: array<f32>;
+        \\fn point(in: f32) -> f32 { let sample = in; return sample; }
+        \\@compute @workgroup_size(1) fn main() {
+        \\    out[0] = point(vector[0].out);
+        \\}
+    ;
+    var out: [MAX_HLSL_OUTPUT]u8 = undefined;
+    const len = try translateToHlsl(allocator, source, &out);
+    const hlsl = out[0..len];
+    try testing.expect(contains(hlsl, "struct __doe_hlsl_user_6d6174726978"));
+    try testing.expect(contains(hlsl, "float __doe_hlsl_user_6f7574;"));
+    try testing.expect(contains(hlsl, "StructuredBuffer<__doe_hlsl_user_6d6174726978> __doe_hlsl_user_766563746f72"));
+    try testing.expect(contains(hlsl, "RWStructuredBuffer<float> __doe_hlsl_user_6f7574"));
+    try testing.expect(contains(hlsl, "float __doe_hlsl_user_706f696e74(float __doe_hlsl_user_696e)"));
+    try testing.expect(contains(hlsl, "const float __doe_hlsl_user_73616d706c65 = __doe_hlsl_user_696e"));
+    try testing.expect(contains(hlsl, " = __doe_hlsl_user_706f696e74(__doe_hlsl_user_766563746f72["));
+    try testing.expect(contains(hlsl, "].__doe_hlsl_user_6f7574)"));
+}
+
+test "hlsl reserved resource metadata helpers match declarations and calls" {
+    const source =
+        \\@group(0) @binding(0) var matrix: texture_2d<f32>;
+        \\@group(0) @binding(1) var<storage, read_write> out: array<u32>;
+        \\@compute @workgroup_size(1) fn main() {
+        \\    out[0] = textureDimensions(matrix, 0).x + arrayLength(&out);
+        \\}
+    ;
+    var out: [MAX_HLSL_OUTPUT]u8 = undefined;
+    const len = try translateToHlsl(allocator, source, &out);
+    const hlsl = out[0..len];
+    try testing.expect(contains(hlsl, "Texture2D<float4> __doe_hlsl_user_6d6174726978"));
+    try testing.expect(contains(hlsl, "doe_textureDimensions___doe_hlsl_user_6d6174726978(uint level)"));
+    try testing.expect(contains(hlsl, "__doe_hlsl_user_6d6174726978.GetDimensions"));
+    try testing.expect(contains(hlsl, "doe_textureDimensions___doe_hlsl_user_6d6174726978(uint(0))"));
+    try testing.expect(contains(hlsl, "doe_arrayLength___doe_hlsl_user_6f7574()"));
+}
+
+test "hlsl reserved entry maps the selected DXC name without changing source identity" {
+    const source = "@compute @workgroup_size(1) fn out() {}";
+    var out: [MAX_HLSL_OUTPUT]u8 = undefined;
+    const len = try translateToHlsl(allocator, source, &out);
+    try testing.expect(contains(out[0..len], "void __doe_hlsl_user_6f7574()"));
+    const target = try mod.emit_hlsl.entryPointName(allocator, "out");
+    defer allocator.free(target);
+    try testing.expectEqualStrings("__doe_hlsl_user_6f7574", target);
+}
+
+test "hlsl generated name collision: helper-name-collision" {
+    const source =
+        \\@group(0) @binding(0) var<storage,read_write> out: array<u32>;
+        \\fn doe_arrayLength___doe_hlsl_user_6f7574() -> u32 { return 3u; }
+        \\@compute @workgroup_size(1) fn main() { out[0] = doe_arrayLength___doe_hlsl_user_6f7574(); }
+    ;
+    var out: [MAX_HLSL_OUTPUT]u8 = undefined;
+    const len = try translateToHlsl(allocator, source, &out);
+    try testing.expect(contains(out[0..len], "__doe_hlsl_user_646f655f61727261794c656e6774685f5f5f646f655f686c736c5f757365725f366637353734"));
+}
+
+test "hlsl generated name collision: cbuffer-name-collision" {
+    const source =
+        \\struct Params { value: vec4f, }
+        \\@group(0) @binding(0) var<uniform> params: Params;
+        \\@group(0) @binding(1) var<storage,read_write> output: array<f32,1>;
+        \\fn doe_uniform_params() -> f32 { return params.value.x; }
+        \\@compute @workgroup_size(1) fn main() { output[0] = doe_uniform_params(); }
+    ;
+    var out: [MAX_HLSL_OUTPUT]u8 = undefined;
+    const len = try translateToHlsl(allocator, source, &out);
+    try testing.expect(contains(out[0..len], "float __doe_hlsl_user_646f655f756e69666f726d5f706172616d73()"));
+}
+
+test "hlsl generated name collision: stage-name-collision" {
+    const source =
+        \\struct main_stage_out { value: f32, }
+        \\fn main_impl(value: f32) -> f32 { return value + 1.0; }
+        \\@vertex fn main(@builtin(vertex_index) out: u32) -> @builtin(position) vec4f { var item: main_stage_out; item.value = main_impl(f32(out)); return vec4f(item.value, 0.0, 0.0, 1.0); }
+    ;
+    var out: [MAX_HLSL_OUTPUT]u8 = undefined;
+    const len = try translateToHlsl(allocator, source, &out);
+    try testing.expect(contains(out[0..len], "struct __doe_hlsl_user_6d61696e5f73746167655f6f7574"));
+}
+
+test "hlsl generated name collision: helper-local-shadowing" {
+    const source =
+        \\@group(0) @binding(0) var<storage,read_write> count: array<u32>;
+        \\var<workgroup> result: array<atomic<u32>,4>;
+        \\@compute @workgroup_size(1) fn main() { let previous = atomicAdd(&result[0], count[0]); count[0] = previous + arrayLength(&count); }
+    ;
+    var out: [MAX_HLSL_OUTPUT]u8 = undefined;
+    const len = try translateToHlsl(allocator, source, &out);
+    try testing.expect(contains(out[0..len], "__doe_hlsl_user_636f756e74.GetDimensions"));
+}
+
+test "hlsl generated name collision: texture-name-collision" {
+    const source =
+        \\@group(0) @binding(0) var matrix: texture_2d<f32>;
+        \\@group(0) @binding(1) var<storage,read_write> out: array<u32,1>;
+        \\fn doe_textureDimensions___doe_hlsl_user_6d6174726978(level: u32) -> vec2u { return vec2u(level); }
+        \\@compute @workgroup_size(1) fn main() { out[0] = textureDimensions(matrix,0).x + doe_textureDimensions___doe_hlsl_user_6d6174726978(2).x; }
+    ;
+    var out: [MAX_HLSL_OUTPUT]u8 = undefined;
+    const len = try translateToHlsl(allocator, source, &out);
+    try testing.expect(contains(out[0..len], "uint2 __doe_hlsl_user_646f655f7465787475726544696d656e73696f6e735f5f5f646f655f686c736c5f757365725f366436313734373236393738"));
 }

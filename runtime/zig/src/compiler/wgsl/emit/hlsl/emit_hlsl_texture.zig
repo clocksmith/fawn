@@ -1,6 +1,7 @@
 const std = @import("std");
 const ir = @import("../../ir/ir.zig");
 const ir_query = @import("../../ir/ir_query.zig");
+const identifiers = @import("hlsl_identifiers.zig");
 const maps = @import("emit_hlsl_maps.zig");
 
 pub const EmitError = error{
@@ -37,7 +38,7 @@ pub fn emit_texture_builtin(
                 try ctx.write(") >= int2(0, 0)) && all(uint2(int2(");
                 try ctx.emit_expr(function, coord_expr);
                 try ctx.write(")) < doe_textureDimensions_");
-                try ctx.write(global_name);
+                try ctx.emit_identifier(global_name);
                 try ctx.write("())) ? ");
                 try ctx.emit_expr(function, texture_expr);
                 try ctx.write(".Load(int3(int2(");
@@ -61,7 +62,7 @@ pub fn emit_texture_builtin(
                 try ctx.write(") >= 0 && uint(int(");
                 try ctx.emit_expr(function, coord_expr);
                 try ctx.write(")) < doe_textureDimensions_");
-                try ctx.write(global_name);
+                try ctx.emit_identifier(global_name);
                 try ctx.write("(uint(");
                 try ctx.emit_expr(function, level_expr);
                 try ctx.write("))) ? ");
@@ -77,7 +78,7 @@ pub fn emit_texture_builtin(
                 try ctx.write(") >= int2(0, 0)) && all(uint2(int2(");
                 try ctx.emit_expr(function, coord_expr);
                 try ctx.write(")) < doe_textureDimensions_");
-                try ctx.write(global_name);
+                try ctx.emit_identifier(global_name);
                 try ctx.write("(uint(");
                 try ctx.emit_expr(function, level_expr);
                 try ctx.write(")))) ? ");
@@ -226,7 +227,7 @@ pub fn emit_texture_builtin(
             try ctx.write(") >= int2(0, 0)) && all(uint2(int2(");
             try ctx.emit_expr(function, coord_expr);
             try ctx.write(")) < doe_textureDimensions_");
-            try ctx.write(global_name);
+            try ctx.emit_identifier(global_name);
             try ctx.write("())) ? (");
             try ctx.emit_expr(function, texture_expr);
             try ctx.write("[uint2(int2(");
@@ -250,7 +251,7 @@ pub fn emit_texture_builtin(
             .global_ref => |index| {
                 const global = module.globals.items[index];
                 try ctx.write("doe_textureDimensions_");
-                try ctx.write(global.name);
+                try ctx.emit_identifier(global.name);
                 switch (module.types.get(global.ty)) {
                     .texture_1d, .texture_2d, .texture_cube, .texture_depth_cube, .texture_2d_array, .texture_3d => {
                         if (args.len != 2) return error.InvalidIr;
@@ -277,7 +278,7 @@ pub fn emit_texture_builtin(
             .global_ref => |index| {
                 const global = module.globals.items[index];
                 try ctx.write("doe_textureNumLevels_");
-                try ctx.write(global.name);
+                try ctx.emit_identifier(global.name);
                 try ctx.write("()");
                 return true;
             },
@@ -291,7 +292,7 @@ pub fn emit_texture_builtin(
             .global_ref => |index| {
                 const global = module.globals.items[index];
                 try ctx.write("doe_textureNumLayers_");
-                try ctx.write(global.name);
+                try ctx.emit_identifier(global.name);
                 try ctx.write("()");
                 return true;
             },
@@ -306,6 +307,10 @@ const WriteCtx = struct {
     module: *const ir.Module,
     buf: []u8,
     pos: *usize,
+
+    fn emit_identifier(self: *WriteCtx, name: []const u8) EmitError!void {
+        try identifiers.emit(name, self.buf, self.pos);
+    }
 
     fn write(self: *WriteCtx, text: []const u8) EmitError!void {
         if (self.pos.* + text.len > self.buf.len) return error.OutputTooLarge;
@@ -337,16 +342,16 @@ const WriteCtx = struct {
                         return;
                     }
                 }
-                try self.write(param.name);
+                try self.emit_identifier(param.name);
             },
-            .global_ref => |index| try self.write(self.module.globals.items[index].name),
+            .global_ref => |index| try self.emit_identifier(self.module.globals.items[index].name),
             .local_ref => |index| {
                 var name_buffer: [32]u8 = undefined;
-                try self.write(try maps.local_name(self.module, function, index, &name_buffer));
+                try self.emit_identifier(try maps.local_name(self.module, function, index, &name_buffer));
             },
             .load => |inner| try self.emit_expr(function, inner),
             .call => |call| {
-                try self.write(call.name);
+                try self.emit_identifier(call.name);
                 try self.write("(");
                 var i: u32 = 0;
                 while (i < call.args.len) : (i += 1) {
@@ -358,7 +363,7 @@ const WriteCtx = struct {
             .member => |member| {
                 try self.emit_expr(function, member.base);
                 try self.write(".");
-                try self.write(member.field_name);
+                try self.emit_identifier(member.field_name);
             },
             .binary => |binary| {
                 try self.write("(");
@@ -457,6 +462,10 @@ const HelperCtx = struct {
     buf: []u8,
     pos: *usize,
 
+    fn emit_identifier(self: *HelperCtx, name: []const u8) EmitError!void {
+        try identifiers.emit(name, self.buf, self.pos);
+    }
+
     fn w(self: *HelperCtx, text: []const u8) EmitError!void {
         if (self.pos.* + text.len > self.buf.len) return error.OutputTooLarge;
         @memcpy(self.buf[self.pos.* .. self.pos.* + text.len], text);
@@ -465,62 +474,62 @@ const HelperCtx = struct {
 
     fn emit_dims_1d(self: *HelperCtx, name: []const u8) EmitError!void {
         try self.w("\nuint doe_textureDimensions_");
-        try self.w(name);
+        try self.emit_identifier(name);
         try self.w("(uint level) {\n    uint w = 0u; uint lvls = 0u;\n    ");
-        try self.w(name);
+        try self.emit_identifier(name);
         try self.w(".GetDimensions(level, w, lvls);\n    return w;\n}\n");
     }
 
     fn emit_dims_2d(self: *HelperCtx, name: []const u8) EmitError!void {
         try self.w("\nuint2 doe_textureDimensions_");
-        try self.w(name);
+        try self.emit_identifier(name);
         try self.w("(uint level) {\n    uint w = 0u; uint h = 0u; uint lvls = 0u;\n    ");
-        try self.w(name);
+        try self.emit_identifier(name);
         try self.w(".GetDimensions(level, w, h, lvls);\n    return uint2(w, h);\n}\n");
     }
 
     fn emit_dims_2d_array(self: *HelperCtx, name: []const u8) EmitError!void {
         try self.w("\nuint2 doe_textureDimensions_");
-        try self.w(name);
+        try self.emit_identifier(name);
         try self.w("(uint level) {\n    uint w = 0u; uint h = 0u; uint elems = 0u; uint lvls = 0u;\n    ");
-        try self.w(name);
+        try self.emit_identifier(name);
         try self.w(".GetDimensions(level, w, h, elems, lvls);\n    return uint2(w, h);\n}\n");
     }
 
     fn emit_dims_3d(self: *HelperCtx, name: []const u8) EmitError!void {
         try self.w("\nuint3 doe_textureDimensions_");
-        try self.w(name);
+        try self.emit_identifier(name);
         try self.w("(uint level) {\n    uint w = 0u; uint h = 0u; uint d = 0u; uint lvls = 0u;\n    ");
-        try self.w(name);
+        try self.emit_identifier(name);
         try self.w(".GetDimensions(level, w, h, d, lvls);\n    return uint3(w, h, d);\n}\n");
     }
 
     fn emit_dims_storage(self: *HelperCtx, name: []const u8) EmitError!void {
         try self.w("\nuint2 doe_textureDimensions_");
-        try self.w(name);
+        try self.emit_identifier(name);
         try self.w("() {\n    uint w = 0u; uint h = 0u;\n    ");
-        try self.w(name);
+        try self.emit_identifier(name);
         try self.w(".GetDimensions(w, h);\n    return uint2(w, h);\n}\n");
     }
 
     fn emit_num_levels(self: *HelperCtx, name: []const u8, is_array: bool, is_3d: bool, is_1d: bool) EmitError!void {
         try self.w("\nuint doe_textureNumLevels_");
-        try self.w(name);
+        try self.emit_identifier(name);
         if (is_3d) {
             try self.w("() {\n    uint w = 0u; uint h = 0u; uint d = 0u; uint lvls = 0u;\n    ");
-            try self.w(name);
+            try self.emit_identifier(name);
             try self.w(".GetDimensions(0, w, h, d, lvls);\n");
         } else if (is_array) {
             try self.w("() {\n    uint w = 0u; uint h = 0u; uint elems = 0u; uint lvls = 0u;\n    ");
-            try self.w(name);
+            try self.emit_identifier(name);
             try self.w(".GetDimensions(0, w, h, elems, lvls);\n");
         } else if (is_1d) {
             try self.w("() {\n    uint w = 0u; uint lvls = 0u;\n    ");
-            try self.w(name);
+            try self.emit_identifier(name);
             try self.w(".GetDimensions(0, w, lvls);\n");
         } else {
             try self.w("() {\n    uint w = 0u; uint h = 0u; uint lvls = 0u;\n    ");
-            try self.w(name);
+            try self.emit_identifier(name);
             try self.w(".GetDimensions(0, w, h, lvls);\n");
         }
         try self.w("    return lvls;\n}\n");
@@ -528,9 +537,9 @@ const HelperCtx = struct {
 
     fn emit_num_layers(self: *HelperCtx, name: []const u8) EmitError!void {
         try self.w("\nuint doe_textureNumLayers_");
-        try self.w(name);
+        try self.emit_identifier(name);
         try self.w("() {\n    uint w = 0u; uint h = 0u; uint elems = 0u; uint lvls = 0u;\n    ");
-        try self.w(name);
+        try self.emit_identifier(name);
         try self.w(".GetDimensions(0, w, h, elems, lvls);\n    return elems;\n}\n");
     }
 };

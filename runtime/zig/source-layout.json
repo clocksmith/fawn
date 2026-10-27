@@ -2204,9 +2204,9 @@
       },
       "src/compiler/wgsl/emit/dxil/emit_dxil.zig": {
         "decision": "Keep",
-        "moduleSha256": "2a194e21dde1e3cf8c91de8f935b06d79938122a54f212becc02b3b3d6ccc554",
-        "reason": "Keep: preserve component ownership while balancing owned references and reporting allocation failure explicitly.",
-        "reviewer": "codex-native-ownership/2026-09-06"
+        "moduleSha256": "aaf5cb25abaa5acbfb0de1897e308189308159dd33fc87c449f83cbe80c2bd83",
+        "reason": "Keep: DXC fallback selects the emitted target entry while preserving source entry identity and releasing the owned name on every path.",
+        "reviewer": "codex-hlsl-target-names/2026-10-27"
       },
       "src/compiler/wgsl/emit/dxil/emit_dxil_native.zig": {
         "decision": "Keep",
@@ -2216,15 +2216,15 @@
       },
       "src/compiler/wgsl/emit/hlsl/emit_hlsl.zig": {
         "decision": "Keep",
-        "moduleSha256": "9c308cc0bd5235b8ead03b8d9800986a0cf4542462fa5424cbd0048def972df4",
-        "reason": "Keep: bounded shared-array compare exchange reuses semantic result types and preserves target identity, captured indices and both result fields.",
-        "reviewer": "codex-indexed-atomic-cas/2026-10-21"
+        "moduleSha256": "4ad09643a97734341c497b1ffc277238703c1b76bec41f0374ecc17c610ec7f5",
+        "reason": "Keep: declarations, references, types and generated resource helpers share target identifier encoding without changing IR meaning or caller-owned output bounds.",
+        "reviewer": "codex-hlsl-target-names/2026-10-27"
       },
       "src/compiler/wgsl/emit/hlsl/emit_hlsl_builtins.zig": {
         "decision": "Keep",
-        "moduleSha256": "f4321516a457707eeef56a1f5d8026dcd668eb5dbaab0c205049d42a4c513a0e",
-        "reason": "Keep: packed integer admission and arithmetic stay compiler-owned; shared typed lowering preserves signedness and single evaluation. Source targets share an exact integer reduction, while Vulkan owns GLSL instruction selection.",
-        "reviewer": "codex-packed-integers/2026-10-11"
+        "moduleSha256": "72ab293bcf000d2f219e08cd2f91eacdb1cf0eda118a091c8be5a7e276363ff4",
+        "reason": "Keep: builtin lowering owns its HLSL tokens while resource metadata helper calls share the same encoded identifiers as their declarations.",
+        "reviewer": "codex-hlsl-target-names/2026-10-27"
       },
       "src/compiler/wgsl/emit/hlsl/emit_hlsl_maps.zig": {
         "decision": "Keep",
@@ -2234,15 +2234,15 @@
       },
       "src/compiler/wgsl/emit/hlsl/emit_hlsl_stage.zig": {
         "decision": "Keep",
-        "moduleSha256": "27f3eab3e629466ae8e2970d5a60b0a701428b756bdacc13cc20b79ddd862d79",
-        "reason": "Keep: reserved generated loop flags preserve source identifier identity and continuing control flow across compute and stage emission.",
-        "reviewer": "codex-hlsl-loop-flag/2026-10-21"
+        "moduleSha256": "89af28e752f26d4c1d468400227b7e9bb8a227d144aa573fa11039f1fcebcb81",
+        "reason": "Keep: stage wrappers preserve semantic inputs and outputs, pair generated symbols with mapped source names, and use temporaries in the reserved internal namespace.",
+        "reviewer": "codex-hlsl-target-names/2026-10-27"
       },
       "src/compiler/wgsl/emit/hlsl/emit_hlsl_texture.zig": {
         "decision": "Keep",
-        "moduleSha256": "3e5a245086756e89c2c5c46034397e2d1a926bf584cdd43056bc823758e232aa",
-        "reason": "Keep: HLSL emission preserves IR local identity across shadowing scopes and inlined continuing clauses, including stage and texture consumers.",
-        "reviewer": "codex-hlsl-local-identity/2026-10-21"
+        "moduleSha256": "55b81f2acc49ed7491126bfb9330595126933e08f0bf823b729f34417f2451c9",
+        "reason": "Keep: texture lowering owns target operations and keeps resource expressions and metadata helper declarations and calls on one identifier mapping.",
+        "reviewer": "codex-hlsl-target-names/2026-10-27"
       },
       "src/compiler/wgsl/emit/msl/emit_msl.zig": {
         "decision": "Keep",
@@ -4466,9 +4466,9 @@
       },
       "src/native/compute/doe_compute_d3d12.zig": {
         "decision": "Keep",
-        "moduleSha256": "151fb9c16407919217af8e367d45458a0ece96075043472d166d02c102577f75",
-        "reason": "Keep: bounded D3D12 integration derives automatic single-storage-binding layouts only after existing analyzed-IR admission, using authoritative shader buffer reflection and existing native layout constructors/releases. Automatic layouts are marked and stay exclusive to their pipeline; dispatch validation admits explicit layouts whose entries match the pipeline layout, treating the package's type-erased flat buffer entries as unspecified. Descriptors still derive from pipeline storage slots; shader compiler and queue ownership remain unchanged.",
-        "reviewer": "claude-d3d12-package/2026-10-22"
+        "moduleSha256": "0dfc2bc1c69ab042a0b79b9c1679ad42e86da24a6f9b9dd8cb7151a61face2f4",
+        "reason": "Keep: the native WGSL pipeline admits source entry identity and compiles its mapped HLSL target entry while preserving descriptor and bytecode ownership.",
+        "reviewer": "codex-hlsl-target-names/2026-10-27"
       },
       "src/backend/d3d12/d3d12_kernel_buffers.zig": {
         "decision": "Keep",
@@ -4559,6 +4559,12 @@
         "moduleSha256": "26f8f8f8851eb4e9d4a2e215107eb44ff81540dad2224dc0d23032c4c05dae15",
         "reason": "Keep: one owner for building WebGPU usage scopes from native objects (records and rule in support/doe_usage_scope_types.zig); render passes accumulate attachment, bind group and buffer uses, dispatches check the groups their pipeline uses, and draws and dispatches reject aliased writable bindings.",
         "reviewer": "doe-c-claude-indexed/2026-10-24"
+      },
+      "src/compiler/wgsl/emit/hlsl/hlsl_identifiers.zig": {
+        "decision": "Keep",
+        "moduleSha256": "37f27d6e9460a2952a613be5e093c96192d3213f97885ea39a89fb7ec27a18a8",
+        "reason": "Keep: one compiler-owned target identifier policy encodes reserved names injectively, protects generated namespaces and helper resource references, and supplies matching DXC entry names through bounded output and explicit allocation ownership.",
+        "reviewer": "codex-hlsl-target-names/2026-10-27"
       }
     },
     "linePolicy": {

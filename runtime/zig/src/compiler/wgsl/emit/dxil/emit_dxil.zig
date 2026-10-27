@@ -100,7 +100,10 @@ pub fn emitWithToolchainConfigWithDiagnostic(module: *const ir.Module, out: []u8
         return error.ShaderToolchainUnavailable;
     }
 
-    const lowered = try lower(module);
+    var lowered = try lower(module);
+    const target_entry = try emit_hlsl.entryPointName(std.heap.page_allocator, lowered.entry_point.name);
+    defer std.heap.page_allocator.free(target_entry);
+    lowered.entry_point.name = target_entry;
     var hlsl_buf: [emit_hlsl.MAX_OUTPUT]u8 = undefined;
     const hlsl_len = emit_hlsl.emit(module, &hlsl_buf) catch |err| switch (err) {
         error.OutputTooLarge => return error.OutputTooLarge,

@@ -34,7 +34,7 @@ fn emit_impl_function(self: anytype, function_index: ir.FunctionId) !void {
     try self.write("\n");
     try self.emit_type_only(function.return_type);
     try self.write(" ");
-    try self.write(function.name);
+    try self.emit_identifier(function.name);
     try self.write("_impl(");
     for (function.params.items, 0..) |param, index| {
         if (index > 0) try self.write(", ");
@@ -49,7 +49,7 @@ fn emit_impl_function(self: anytype, function_index: ir.FunctionId) !void {
 
 fn emit_output_struct(self: anytype, function: ir.Function, stage: ir.ShaderStage) !void {
     try self.write("\nstruct ");
-    try self.write(function.name);
+    try self.emit_identifier(function.name);
     try self.write("_stage_out {\n");
     self.indent += 4;
     if (function.return_io) |io| {
@@ -91,9 +91,9 @@ fn emit_wrapper_function(self: anytype, function_index: ir.FunctionId, stage: ir
     const is_struct_return = function.return_io == null and get_struct_def(self, function.return_type) != null;
 
     try self.write("\n");
-    try self.write(function.name);
+    try self.emit_identifier(function.name);
     try self.write("_stage_out ");
-    try self.write(function.name);
+    try self.emit_identifier(function.name);
     try self.write("(");
     var first_param = true;
     for (function.params.items) |param| {
@@ -132,19 +132,19 @@ fn emit_wrapper_function(self: anytype, function_index: ir.FunctionId, stage: ir
             try self.write_indent();
             try self.emit_type_only(param.ty);
             try self.write(" ");
-            try self.write(param.name);
+            try self.emit_identifier(param.name);
             try self.write(";\n");
             for (struct_def.fields.items) |field| {
                 if (field.io == null) continue;
                 try self.write_indent();
-                try self.write(param.name);
+                try self.emit_identifier(param.name);
                 try self.write(".");
-                try self.write(field.name);
+                try self.emit_identifier(field.name);
                 try self.write(" = ");
                 if (maps.hlsl_intrinsic_builtin(field.io.?.builtin)) |intrinsic| {
                     try self.write(intrinsic);
                 } else {
-                    try self.write(field.name);
+                    try self.emit_identifier(field.name);
                 }
                 try self.write(";\n");
             }
@@ -152,21 +152,21 @@ fn emit_wrapper_function(self: anytype, function_index: ir.FunctionId, stage: ir
     }
 
     try self.write_indent();
-    try self.write(function.name);
-    try self.write("_stage_out out;\n");
+    try self.emit_identifier(function.name);
+    try self.write("_stage_out __doe_hlsl_stage_output;\n");
 
     if (function.return_io != null and function.return_io.?.builtin == .clip_distances) {
         try self.write_indent();
-        try self.write(function.name);
-        try self.write("_impl(out.value, ");
+        try self.emit_identifier(function.name);
+        try self.write("_impl(__doe_hlsl_stage_output.value, ");
         try emit_wrapper_args(self, function);
         try self.write(");\n");
     } else if (is_struct_return) {
         // Call impl, store result, then decompose struct fields to output.
         try self.write_indent();
         try self.emit_type_only(function.return_type);
-        try self.write(" _result = ");
-        try self.write(function.name);
+        try self.write(" __doe_hlsl_stage_result = ");
+        try self.emit_identifier(function.name);
         try self.write("_impl(");
         try emit_wrapper_args(self, function);
         try self.write(");\n");
@@ -174,24 +174,24 @@ fn emit_wrapper_function(self: anytype, function_index: ir.FunctionId, stage: ir
             for (struct_def.fields.items) |field| {
                 if (field.io == null) continue;
                 try self.write_indent();
-                try self.write("out.");
-                try self.write(field.name);
-                try self.write(" = _result.");
-                try self.write(field.name);
+                try self.write("__doe_hlsl_stage_output.");
+                try self.emit_identifier(field.name);
+                try self.write(" = __doe_hlsl_stage_result.");
+                try self.emit_identifier(field.name);
                 try self.write(";\n");
             }
         }
     } else {
         try self.write_indent();
-        try self.write("out.value = ");
-        try self.write(function.name);
+        try self.write("__doe_hlsl_stage_output.value = ");
+        try self.emit_identifier(function.name);
         try self.write("_impl(");
         try emit_wrapper_args(self, function);
         try self.write(");\n");
     }
 
     try self.write_indent();
-    try self.write("return out;\n");
+    try self.write("return __doe_hlsl_stage_output;\n");
     self.indent -= 4;
     try self.write("}\n");
 }
@@ -207,7 +207,7 @@ fn emit_wrapper_args(self: anytype, function: ir.Function) !void {
                 continue;
             }
         }
-        try self.write(param.name);
+        try self.emit_identifier(param.name);
         first_arg = false;
     }
 }
@@ -221,7 +221,7 @@ fn emit_clip_distance_impl_function(self: anytype, function_index: ir.FunctionId
     if (return_array.len == null) return error.InvalidIr;
 
     try self.write("\nvoid ");
-    try self.write(function.name);
+    try self.emit_identifier(function.name);
     try self.write("_impl(out ");
     try self.emit_typed_name(function.return_type, CLIP_DISTANCE_RESULT_NAME);
     for (function.params.items) |param| {
