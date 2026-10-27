@@ -91,7 +91,7 @@ index 1b77642ce9..c5bcd0ebdb 100644
    std::string_view dawn_search_path_view = dawn_search_path;
    if (!dawn_search_path.empty()) {
 diff --git a/gpu/command_buffer/service/webgpu_decoder_impl.cc b/gpu/command_buffer/service/webgpu_decoder_impl.cc
-index 6030a9f57c..f6a24bcc8b 100644
+index 6030a9f57c..20eab4e962 100644
 --- a/gpu/command_buffer/service/webgpu_decoder_impl.cc
 +++ b/gpu/command_buffer/service/webgpu_decoder_impl.cc
 @@ -13,6 +13,7 @@
@@ -160,7 +160,32 @@ index 6030a9f57c..f6a24bcc8b 100644
  
  #if BUILDFLAG(IS_WIN)
    // On Windows, query the LUID of ANGLE's adapter.
-@@ -1817,7 +1836,17 @@ wgpu::Adapter WebGPUDecoderImpl::CreatePreferredAdapter(
+@@ -1772,7 +1791,6 @@ wgpu::Adapter WebGPUDecoderImpl::CreatePreferredAdapter(
+     adapter_options_get_gl_proc.display = EGL_NO_DISPLAY;
+   }
+ 
+-  ChainStruct(adapter_options, &adapter_options_get_gl_proc);
+ #endif
+ 
+   // Build a list of backend types we will search for, in order of preference.
+@@ -1808,6 +1826,16 @@ wgpu::Adapter WebGPUDecoderImpl::CreatePreferredAdapter(
+     }
+   }
+ 
++#if BUILDFLAG(USE_DAWN) && BUILDFLAG(DAWN_ENABLE_BACKEND_OPENGLES)
++  // GL loader callbacks belong only to a selected GL backend. They are not a
++  // requirement on an external Vulkan/Metal/D3D adapter, and cannot be passed
++  // through the external provider's core WebGPU descriptor contract.
++  if (!use_doe_runtime_ ||
++      std::ranges::contains(backend_types, wgpu::BackendType::OpenGLES)) {
++    ChainStruct(adapter_options, &adapter_options_get_gl_proc);
++  }
++#endif
++
+   // `CanUseAdapter` is a helper to determine if an adapter is not blocklisted,
+   // supports all required features, and matches the requested adapter options
+   // (some of which may be set by command-line flags).
+@@ -1817,7 +1845,17 @@ wgpu::Adapter WebGPUDecoderImpl::CreatePreferredAdapter(
      wgpu::AdapterInfo adapter_info = {};
      adapter.GetInfo(&adapter_info);
  
@@ -179,7 +204,7 @@ index 6030a9f57c..f6a24bcc8b 100644
        return false;
      }
  
-@@ -1859,7 +1888,7 @@ wgpu::Adapter WebGPUDecoderImpl::CreatePreferredAdapter(
+@@ -1859,7 +1897,7 @@ wgpu::Adapter WebGPUDecoderImpl::CreatePreferredAdapter(
      // SharedTextureMemory.
      supports_external_textures = native_adapter.SupportsExternalImages();
  #endif
@@ -188,7 +213,7 @@ index 6030a9f57c..f6a24bcc8b 100644
        return false;
      }
  
-@@ -2246,7 +2275,7 @@ error::Error WebGPUDecoderImpl::HandleAssociateMailboxImmediate(
+@@ -2246,7 +2284,7 @@ error::Error WebGPUDecoderImpl::HandleAssociateMailboxImmediate(
    std::unique_ptr<SharedImageRepresentationAndAccess> representation_and_access;
    auto it = known_device_metadata_.find(device);
    CHECK(it != known_device_metadata_.end());
@@ -197,7 +222,7 @@ index 6030a9f57c..f6a24bcc8b 100644
      representation_and_access = AssociateMailboxUsingSkiaFallback(
          mailbox, flags, device, usage, internal_usage, std::move(view_formats));
    } else {
-@@ -2348,6 +2377,10 @@ WebGPUDecoderImpl::AssociateMailboxDawnBuffer(const Mailbox& mailbox,
+@@ -2348,6 +2386,10 @@ WebGPUDecoderImpl::AssociateMailboxDawnBuffer(const Mailbox& mailbox,
                                                const wgpu::Device& device,
                                                wgpu::BackendType backendType,
                                                wgpu::BufferUsage usage) {
